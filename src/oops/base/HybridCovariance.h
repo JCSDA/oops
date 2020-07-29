@@ -68,9 +68,9 @@ HybridCovariance<MODEL>::HybridCovariance(const Geometry_ & resol, const Variabl
   const eckit::LocalConfiguration ensConf(config, "ensemble");
   ensemble_.reset(new EnsembleCovariance<MODEL>(resol,  vars, ensConf, xb, fg));
 
-  ensWeight_ = config.getDouble("ensemble_weight");
+  ensWeight_ = config.getDouble("ensemble weight");
   ASSERT(ensWeight_ > 0.0);
-  staWeight_ = config.getDouble("static_weight");
+  staWeight_ = config.getDouble("static weight");
   ASSERT(staWeight_ > 0.0);
   Log::trace() << "HybridCovariance created." << std::endl;
 }

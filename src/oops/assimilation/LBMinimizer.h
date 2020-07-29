@@ -62,7 +62,7 @@ template<typename MODEL, typename OBS>
 ControlIncrement<MODEL, OBS> *
 LBMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
   int ninner = config.getInt("ninner");
-  double gnreduc = config.getDouble("gradient_norm_reduction");
+  double gnreduc = config.getDouble("gradient norm reduction");
 
   if (gradJb_) {
     gradJb_.reset(new CtrlInc_(J_.jb().resolution(), *gradJb_));

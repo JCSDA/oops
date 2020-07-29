@@ -19,6 +19,7 @@ list( APPEND l95_test_input
   testinput/4dvar.rplanczos.yaml
   testinput/4dvar.modbias.yaml
   testinput/4dvar.obsbias.yaml
+  testinput/4dvar.allbiases.yaml
   testinput/4dforcing.yaml
   testinput/4dsaddlepoint.yaml
   testinput/4dhybrid.yaml
@@ -74,6 +75,7 @@ list( APPEND l95_testoutput
   testoutput/4dvar.ipcg.test
   testoutput/4dvar.modbias.test
   testoutput/4dvar.obsbias.test
+  testoutput/4dvar.allbiases.test
   testoutput/4dvar.pcg.test
   testoutput/4dvar.planczos.test
   testoutput/4dvar.rpcg.test
@@ -574,7 +576,17 @@ oops_add_test( TESTNAME 4dvar.obsbias
                MODELNAME l95
                YAMLNAME testinput/4dvar.obsbias.yaml
                EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeob4d )
+               COMPARE
+               TEST_DEPENDS test_l95_forecast test_l95_makeobsbias )
+#--------------------------------------------------------------------
+
+oops_add_test( TESTNAME 4dvar.allbiases
+               MODELNAME l95
+               YAMLNAME testinput/4dvar.allbiases.yaml
+               EXENAME l95_4dvar.x
+               COMPARE
+               TEST_DEPENDS test_l95_forecast test_l95_makeobsbias )
+#--------------------------------------------------------------------
 
 oops_add_test( TESTNAME 4dvar.alpha
                MODELNAME l95

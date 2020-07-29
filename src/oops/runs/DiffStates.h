@@ -37,33 +37,27 @@ template <typename MODEL> class DiffStates : public Application {
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
 //  Setup resolution
-    const eckit::LocalConfiguration stateResolConf(fullConfig, "stateResol");
+    const eckit::LocalConfiguration stateResolConf(fullConfig, "state geometry");
     const Geometry_ stateResol(stateResolConf, this->getComm());
 
-    const eckit::LocalConfiguration incResolConf(fullConfig, "incrementResol");
+    const eckit::LocalConfiguration incResolConf(fullConfig, "increment geometry");
     const Geometry_ incResol(incResolConf, this->getComm());
 
 //  Read first state
     const eckit::LocalConfiguration stateConf1(fullConfig, "state1");
-    std::vector<std::string> vv1;
-    stateConf1.get("variables", vv1);
-    oops::Variables vars1(vv1);
-    State_ xx1(stateResol, vars1, stateConf1);
+    State_ xx1(stateResol, stateConf1);
     Log::test() << "Input state 1: " << xx1 << std::endl;
 
 //  Read second state (to take away from the first)
     const eckit::LocalConfiguration stateConf2(fullConfig, "state2");
-    std::vector<std::string> vv2;
-    stateConf2.get("variables", vv2);
-    oops::Variables vars2(vv2);
-    State_ xx2(stateResol, vars2, stateConf2);
+    State_ xx2(stateResol, stateConf2);
     Log::test() << "Input state 2: " << xx2 << std::endl;
 
 //  Assertions on two states
     ASSERT(xx1.validTime() == xx2.validTime());
 
 //  Create increment
-    Increment_ dx(incResol, vars1, xx1.validTime());
+    Increment_ dx(incResol, xx1.variables(), xx1.validTime());
     dx.diff(xx1, xx2);
 
 //  Write increment

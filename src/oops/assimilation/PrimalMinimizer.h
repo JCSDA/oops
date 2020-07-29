@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -57,13 +57,9 @@ template<typename MODEL, typename OBS>
 ControlIncrement<MODEL, OBS> *
 PrimalMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
   int ninner = config.getInt("ninner");
-  double gnreduc = config.getDouble("gradient_norm_reduction");
+  double gnreduc = config.getDouble("gradient norm reduction");
 
-  bool runOnlineAdjTest = false;
-  if (config.has("onlineDiagnostics")) {
-    const eckit::LocalConfiguration onlineDiag(config, "onlineDiagnostics");
-    runOnlineAdjTest = onlineDiag.getBool("onlineAdjTest");
-  }
+  bool runOnlineAdjTest = config.getBool("online diagnostics.online adj test", false);
 
   Log::info() << classname() << ": max iter = " << ninner
               << ", requested norm reduction = " << gnreduc << std::endl;

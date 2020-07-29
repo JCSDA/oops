@@ -89,7 +89,7 @@ ObsAuxIncrements<OBS>::ObsAuxIncrements(const ObsSpaces_ & odb, const eckit::Con
   : auxs_(0)
 {
   std::vector<eckit::LocalConfiguration> obsconf;
-  conf.get("ObsTypes", obsconf);
+  conf.get("observations", obsconf);
   for (std::size_t jobs = 0; jobs < obsconf.size(); ++jobs) {
     boost::shared_ptr<ObsAuxIncrement_> tmp(new ObsAuxIncrement_(odb[jobs], obsconf[jobs]));
     auxs_.push_back(tmp);

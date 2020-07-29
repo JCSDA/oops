@@ -108,7 +108,7 @@ CostJb3D<MODEL>::CostJb3D(const eckit::Configuration & config, const Geometry_ &
                           const Variables & ctlvars, const util::Duration & len,
                           const State_ & xb)
   : xb_(xb), B_(), winLength_(len), controlvars_(ctlvars), resol_(), time_(),
-    conf_(config, "Covariance")
+    conf_(config, "background error")
 {
   Log::trace() << "CostJb3D constructed." << std::endl;
 }

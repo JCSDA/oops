@@ -75,20 +75,20 @@ ObsFilters<OBS>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration & c
 
 // Get filters configuration
   std::vector<eckit::LocalConfiguration> confs;
-  conf.get("ObsFilters", confs);
+  conf.get("obs filters", confs);
 
 // Prepare QC handling and statistics if any filters are present
   if (confs.size() > 0) {
     eckit::LocalConfiguration preconf;
-    preconf.set("Filter", "QCmanager");
+    preconf.set("filter", "QCmanager");
     filters_.push_back(FilterFactory<OBS>::create(os, preconf, qcflags, obserr));
   }
 
 // Create the filters
   for (std::size_t jj = 0; jj < confs.size(); ++jj) {
     bool apply = true;
-    if (confs[jj].has("apply_at_iterations")) {
-      std::set<int> iters = parseIntSet(confs[jj].getString("apply_at_iterations"));
+    if (confs[jj].has("apply at iterations")) {
+      std::set<int> iters = parseIntSet(confs[jj].getString("apply at iterations"));
       const int iter = conf.getInt("iteration");
       apply = contains(iters, iter);
     }

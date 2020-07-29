@@ -115,9 +115,8 @@ CostJbTotal<MODEL, OBS>::CostJbTotal(const CtrlVar_ & xb, JbState_ * jb,
                                 const eckit::Configuration & conf,
                                 const Geometry_ & resol, const ObsSpaces_ & odb)
   : xb_(xb), jb_(jb),
-    jbModBias_(conf.getSubConfiguration("Jb.ModelBiasCovariance"), resol),
-    jbObsBias_(odb, eckit::LocalConfiguration(conf, "Jo")),
-    dxFG_(), resol_()
+    jbModBias_(conf.getSubConfiguration("model aux error"), resol),
+    jbObsBias_(odb, conf), dxFG_(), resol_()
 {
   Log::trace() << "CostJbTotal contructed." << std::endl;
 }

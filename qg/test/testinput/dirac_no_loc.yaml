@@ -1,5 +1,5 @@
-Covariance:
-  covariance: ensemble
+background error:
+  covariance model: ensemble
   members:
   - date: 2010-01-01T12:00:00Z
     filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1DT12H
@@ -21,32 +21,21 @@ Covariance:
     filename: Data/forecast.ens.9.2009-12-31T00:00:00Z.P1DT12H
   - date: 2010-01-01T12:00:00Z
     filename: Data/forecast.ens.10.2009-12-31T00:00:00Z.P1DT12H
-  variables:
-  - x
 dirac:
-  ixdir: 
-  - 20
-  iydir:
-  - 10
-  izdir:
-  - 1
-initial:
+  ixdir: [20]
+  iydir: [10]
+  izdir: [1]
+geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+initial condition:
   date: 2010-01-01T12:00:00Z
   filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H
-logging:
-  categories: Info, Test, Warning, Error
 model:
   tstep: PT1H
-output_B:
+output B:
   datadir: Data
   date: 2010-01-01T12:00:00Z
   exp: dirac_no_loc_B
   type: an
-resolution:
-  nx: 40
-  ny: 20
-  depths:
-  - 4500.0
-  - 5500.0
-variables:
-- x

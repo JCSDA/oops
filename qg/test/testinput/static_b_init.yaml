@@ -1,18 +1,14 @@
-Covariance:
-  covariance: QgError
+background error:
+  covariance model: QgError
   horizontal_length_scale: 2.2e6
   maximum_condition_number: 1.0e6
   standard_deviation: 1.8e7
   vertical_length_scale: 15000.0
-Geometry:
+geometry:
   nx: 40
   ny: 20
-  depths:
-  - 4500.0
-  - 5500.0
-State:
+  depths: [4500.0, 5500.0]
+background:
   filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D
   date: 2009-12-31T00:00:00Z
-Variables:
-  variables:
-  - x
+analysis variables: [x]

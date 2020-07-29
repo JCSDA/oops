@@ -132,7 +132,7 @@ ModelSpaceCovariance4DBase<MODEL>* Covariance4DFactory<MODEL>::create(
                                                          const Geometry_ & resol,
                                                          const Variables & vars,
                                                          const State4D_ & xb, const State4D_ & fg) {
-  const std::string id = conf.getString("covariance");
+  const std::string id = conf.getString("covariance model");
   Log::trace() << "ModelSpaceCovariance4DBase type = " << id << std::endl;
   typename std::map<std::string, Covariance4DFactory<MODEL>*>::iterator jcov = getMakers().find(id);
   if (jcov == getMakers().end()) {
@@ -145,19 +145,15 @@ ModelSpaceCovariance4DBase<MODEL>* Covariance4DFactory<MODEL>::create(
     ABORT("Element does not exist in Covariance4DFactory.");
   }
   Variables vars_out(vars);
-  if (conf.has("variable_changes")) {
+  if (conf.has("variable changes")) {
     std::vector<eckit::LocalConfiguration> chvarconfs;
-    conf.get("variable_changes", chvarconfs);
+    conf.get("variable changes", chvarconfs);
     for (const auto & config : boost::adaptors::reverse(chvarconfs)) {
-      eckit::LocalConfiguration config_in;
-      config.get("inputVariables", config_in);
-      Variables vars_in(config_in);
+      Variables vars_in(config, "input variables");
       if (!(vars_in == vars_out)) {
         ABORT("Sequence of variable changes is not consistent");
       }
-      eckit::LocalConfiguration config_out;
-      config.get("outputVariables", config_out);
-      vars_out = Variables(config_out);
+      vars_out = Variables(config, "output variables");
     }
   }
   return (*jcov).second->make(conf, resol, vars_out, xb, fg);
@@ -171,9 +167,9 @@ ModelSpaceCovariance4DBase<MODEL>::ModelSpaceCovariance4DBase(const State4D_ & b
                                                               const Geometry_ & resol,
                                                               const eckit::Configuration & conf) {
   ASSERT(bg.size() == fg.size());
-  if (conf.has("variable_changes")) {
+  if (conf.has("variable changes")) {
     std::vector<eckit::LocalConfiguration> chvarconfs;
-    conf.get("variable_changes", chvarconfs);
+    conf.get("variable changes", chvarconfs);
     for (const auto & config : chvarconfs) {
       chvars_.push_back(LinearVariableChangeFactory<MODEL>::create(bg[0], fg[0], resol, config));
     }

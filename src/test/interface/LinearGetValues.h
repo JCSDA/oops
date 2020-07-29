@@ -75,23 +75,22 @@ template <typename MODEL, typename OBS> class LinearGetValuesFixture : private b
   }
 
   LinearGetValuesFixture<MODEL, OBS>() {
-    testconf_.reset(new LocalConfig_(TestEnvironment::config(), "LinearGetValuesTest"));
+    testconf_.reset(new LocalConfig_(TestEnvironment::config(), "linear getvalues test"));
 
     // Geometry
-    const LocalConfig_ resolConfig(TestEnvironment::config(), "Geometry");
+    const LocalConfig_ resolConfig(TestEnvironment::config(), "geometry");
     resol_.reset(new Geometry_(resolConfig, oops::mpi::comm()));
 
     // Variables
-    const LocalConfig_ varConfig(TestEnvironment::config(), "GeoVaLsVariables");
-    geovalvars_.reset(new Variables_(varConfig));
+    geovalvars_.reset(new Variables_(TestEnvironment::config(), "state variables"));
 
     // Locations
-    const LocalConfig_ locsConfig(TestEnvironment::config(), "Locations");
+    const LocalConfig_ locsConfig(TestEnvironment::config(), "locations");
     locs_.reset(new Locations_(locsConfig, oops::mpi::comm()));
 
     // Window times
-    timebeg_.reset(new DateTime_(locsConfig.getString("window_begin")));
-    timeend_.reset(new DateTime_(locsConfig.getString("window_end")));
+    timebeg_.reset(new DateTime_(locsConfig.getString("window begin")));
+    timeend_.reset(new DateTime_(locsConfig.getString("window end")));
 
     // GeoVaLs
     geovals_.reset(new GeoVaLs_(*locs_, *geovalvars_));
@@ -100,9 +99,9 @@ template <typename MODEL, typename OBS> class LinearGetValuesFixture : private b
     getvalues_.reset(new GetValues_(*resol_, *locs_));
 
     // State
-    const LocalConfig_ stateConfig(TestEnvironment::config(), "State");
-    statevars_.reset(new Variables_(stateConfig));
-    state_.reset(new State_(*resol_, *statevars_, stateConfig));
+    const LocalConfig_ stateConfig(TestEnvironment::config(), "background");
+    state_.reset(new State_(*resol_, stateConfig));
+    statevars_.reset(new Variables_(state_->variables()));
 
     // Valid time
     time_.reset(new DateTime_(state_->validTime()));
@@ -198,7 +197,7 @@ template <typename MODEL, typename OBS> void testLinearGetValuesLinearity() {
   // Compute geovals
   Test_::lineargetvalues().fillGeoVaLsTL(dx2, Test_::timebeg(), Test_::timeend(), gv2);
 
-  const double tol = Test_::testconf().getDouble("toleranceLinearity", 1.0e-11);
+  const double tol = Test_::testconf().getDouble("tolerance linearity", 1.0e-11);
   EXPECT(oops::is_close(gv1.rms(), gv2.rms(), tol));
 }
 
@@ -210,8 +209,8 @@ template <typename MODEL, typename OBS> void testLinearGetValuesLinearApproximat
   typedef oops::Increment<MODEL>              Increment_;
   typedef oops::State<MODEL>                  State_;
 
-  const unsigned int ntest = Test_::testconf().getInt("numiterTL", 10);
-  double zz = Test_::testconf().getDouble("firstmulTL", 1.0e-2);
+  const unsigned int ntest = Test_::testconf().getInt("iterations TL", 10);
+  double zz = Test_::testconf().getDouble("first multiplier TL", 1.0e-2);
 
   // Compute nonlinear geovals
   State_ xx0(Test_::state());
@@ -260,7 +259,7 @@ template <typename MODEL, typename OBS> void testLinearGetValuesLinearApproximat
   // Analyze results
   const double approx = *std::min_element(errors.begin(), errors.end());
   oops::Log::test() << "Test LinearGetValuesTL min error = " << approx << std::endl;
-  const double tol = Test_::testconf().getDouble("toleranceTL", 1.0e-11);
+  const double tol = Test_::testconf().getDouble("tolerance TL", 1.0e-11);
   EXPECT(approx < tol);
 }
 
@@ -293,7 +292,7 @@ template <typename MODEL, typename OBS> void testLinearGetValuesAdjoint() {
   // Dot products
   const double dot1 = dot_product(dx_in, dx_ou);
   const double dot2 = dot_product(gv_in, gv_ou);
-  const double tol = Test_::testconf().getDouble("toleranceAD", 1.0e-11);
+  const double tol = Test_::testconf().getDouble("tolerance AD", 1.0e-11);
   EXPECT(oops::is_close(dot1, dot2, tol));
 
   oops::Log::test() << "Dot Product <dx, M^Tgv> = " << std::setprecision(16) << dot1 << std::endl;

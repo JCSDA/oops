@@ -61,29 +61,29 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
 // -----------------------------------------------------------------------------
 
   int execute(const eckit::Configuration & fullConfig) const {
-    // Setup observation window
-    const eckit::LocalConfiguration windowConfig(fullConfig, "Assimilation Window");
-    const util::Duration winlen(windowConfig.getString("window_length"));
-    const util::DateTime winbgn(windowConfig.getString("window_begin"));
+    //  Setup observation window
+    const util::DateTime winbgn(fullConfig.getString("window begin"));
+    const util::Duration winlen(fullConfig.getString("window length"));
     const util::DateTime winend(winbgn + winlen);
     const util::DateTime winhalf = winbgn + winlen/2;
+    Log::info() << "Observation window from " << winbgn << " to " << winend << std::endl;
 
     // Setup geometry
-    const eckit::LocalConfiguration geometryConfig(fullConfig, "Geometry");
+    const eckit::LocalConfiguration geometryConfig(fullConfig, "geometry");
     const Geometry_ geometry(geometryConfig, this->getComm());
 
     // Setup observations
-    const eckit::LocalConfiguration obsConfig(fullConfig, "Observations");
-    ObsSpaces_ obsdb(obsConfig, this->getComm(), winbgn, winend);
+    ObsSpaces_ obsdb(fullConfig, this->getComm(), winbgn, winend);
     Observations_ yobs(obsdb, "ObsValue");
 
     // Get background configurations
-    const eckit::LocalConfiguration bgConfig(fullConfig, "Background");
-    const Variables statevars(bgConfig);
+    const eckit::LocalConfiguration bgConfig(fullConfig, "background");
 
     // Read all ensemble members
-    StateEnsemble_ ens_xx(geometry, statevars, bgConfig);
+    StateEnsemble_ ens_xx(geometry, bgConfig);
     const size_t nens = ens_xx.size();
+
+    const Variables statevars = ens_xx.variables();
 
     // set up solver
     std::unique_ptr<LocalSolver_> solver =

@@ -36,15 +36,14 @@ template <typename OBS> void testConstructor() {
 
   oops::instantiateObsErrorFactory<OBS>();
 
-  const eckit::LocalConfiguration obsconf(TestEnvironment::config(), "Observations");
   std::vector<eckit::LocalConfiguration> conf;
-  obsconf.get("ObsTypes", conf);
+  TestEnvironment::config().get("observations", conf);
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     ObsVector_ obserr(Test_::obspace()[jj], "ObsError");
     obserr.save("EffectiveError");
 
-    const eckit::LocalConfiguration rconf(conf[jj], "Covariance");
+    const eckit::LocalConfiguration rconf(conf[jj], "obs error");
     std::unique_ptr<Covar_> R(
       oops::ObsErrorFactory<OBS>::create(rconf, Test_::obspace()[jj]));
     EXPECT(R.get());
@@ -63,15 +62,14 @@ template <typename OBS> void testMultiplies() {
 
   oops::instantiateObsErrorFactory<OBS>();
 
-  const eckit::LocalConfiguration obsconf(TestEnvironment::config(), "Observations");
   std::vector<eckit::LocalConfiguration> conf;
-  obsconf.get("ObsTypes", conf);
+  TestEnvironment::config().get("observations", conf);
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     ObsVector_ obserr(Test_::obspace()[jj], "ObsError");
     obserr.save("EffectiveError");
 
-    const eckit::LocalConfiguration rconf(conf[jj], "Covariance");
+    const eckit::LocalConfiguration rconf(conf[jj], "obs error");
     std::unique_ptr<Covar_> R(
       oops::ObsErrorFactory<OBS>::create(rconf, Test_::obspace()[jj]));
 

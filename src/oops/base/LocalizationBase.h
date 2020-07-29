@@ -127,7 +127,7 @@ std::unique_ptr<LocalizationBase<MODEL>>
 LocalizationFactory<MODEL>::create(const Geometry_ & geometry, const EnsemblePtr_ ensemble,
                                    const eckit::Configuration & conf) {
   Log::trace() << "LocalizationBase<MODEL>::create starting" << std::endl;
-  const std::string id = conf.getString("localization");
+  const std::string id = conf.getString("localization method");
   typename std::map<std::string, LocalizationFactory<MODEL>*>::iterator
     jloc = getMakers().find(id);
   if (jloc == getMakers().end()) {

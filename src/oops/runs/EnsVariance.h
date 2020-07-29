@@ -26,71 +26,68 @@
 
 namespace oops {
 
-  template <typename MODEL> class EnsVariance : public Application {
-    typedef IncrementEnsemble<MODEL>                 Ensemble_;
-    typedef boost::shared_ptr<IncrementEnsemble<MODEL> > EnsemblePtr_;
-    typedef Geometry<MODEL>                          Geometry_;
-    typedef Increment4D<MODEL>                       Increment4D_;
-    typedef State<MODEL>                             State_;
-    typedef State4D<MODEL>                           State4D_;
+template <typename MODEL> class EnsVariance : public Application {
+  typedef IncrementEnsemble<MODEL>                 Ensemble_;
+  typedef boost::shared_ptr<IncrementEnsemble<MODEL> > EnsemblePtr_;
+  typedef Geometry<MODEL>                          Geometry_;
+  typedef Increment4D<MODEL>                       Increment4D_;
+  typedef State<MODEL>                             State_;
+  typedef State4D<MODEL>                           State4D_;
 
-   public:
-    // -----------------------------------------------------------------------------
-    explicit EnsVariance(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {}
-    // -----------------------------------------------------------------------------
-    virtual ~EnsVariance() {}
-    // -----------------------------------------------------------------------------
-    int execute(const eckit::Configuration & fullConfig) const {
-      // Setup Geometry
-      const eckit::LocalConfiguration resolConfig(fullConfig, "Geometry");
-      const Geometry_ resol(resolConfig, this->getComm());
+ public:
+  // -----------------------------------------------------------------------------
+  explicit EnsVariance(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {}
+  // -----------------------------------------------------------------------------
+  virtual ~EnsVariance() {}
+  // -----------------------------------------------------------------------------
+  int execute(const eckit::Configuration & fullConfig) const {
+    // Setup Geometry
+    const eckit::LocalConfiguration resolConfig(fullConfig, "geometry");
+    const Geometry_ resol(resolConfig, this->getComm());
 
-      // Setup variables
-      const eckit::LocalConfiguration varConfig(fullConfig, "Variables");
-      const Variables vars(varConfig);
+    // Setup background
+    const eckit::LocalConfiguration bkgConfig(fullConfig, "background");
+    State4D_ xx(resol, bkgConfig);
 
-      // Setup background
-      const eckit::LocalConfiguration bkgConfig(fullConfig, "Background");
-      State4D_ xx(resol, vars, bkgConfig);
+    // Compute transformed ensemble perturbations
+    //        ens_k = K^-1 dx_k
+    const eckit::LocalConfiguration ensConfig(fullConfig, "ensemble");
+    Variables vars(ensConfig, "output variables");
+    EnsemblePtr_ ens_k(new Ensemble_(ensConfig, xx, xx, resol, vars));
 
-      // Compute transformed ensemble perturbations
-      //        ens_k = K^-1 dx_k
-      const eckit::LocalConfiguration ensConfig(fullConfig, "Ensemble");
-      EnsemblePtr_ ens_k(new Ensemble_(ensConfig, xx, xx, resol));
+    // Get ensemble size
+    unsigned nm = ens_k->size();
 
-      // Get ensemble size
-      unsigned nm = ens_k->size();
+    // Compute ensemble standard deviation
+    Increment4D_ km1dx((*ens_k)[0]);
+    km1dx.zero();
+    Increment4D_ sigb2(km1dx);
+    sigb2.zero();
 
-      // Compute ensemble standard deviation
-      Increment4D_ km1dx((*ens_k)[0]);
-      km1dx.zero();
-      Increment4D_ sigb2(km1dx);
-      sigb2.zero();
+    for (unsigned jj = 0; jj < nm; ++jj) {
+      km1dx = (*ens_k)[jj];
 
-      for (unsigned jj = 0; jj < nm; ++jj) {
-        km1dx = (*ens_k)[jj];
-
-        // Accumulate km1dx^2
-        km1dx.schur_product_with(km1dx);
-        sigb2 += km1dx;
-      }
-      const double rk = 1.0/(static_cast<double>(nm) - 1.0);
-      sigb2 *= rk;
-
-      // Write variance to file
-      const eckit::LocalConfiguration varianceout(fullConfig, "VarianceOut");
-      sigb2.write(varianceout);
-      Log::test() << "Variance: " << std::endl << sigb2 << std::endl;
-
-      return 0;
+      // Accumulate km1dx^2
+      km1dx.schur_product_with(km1dx);
+      sigb2 += km1dx;
     }
-    // -----------------------------------------------------------------------------
-   private:
-    std::string appname() const {
-      return "oops::EnsVariance<" + MODEL::name() + ">";
-    }
-    // -----------------------------------------------------------------------------
-  };
+    const double rk = 1.0/(static_cast<double>(nm) - 1.0);
+    sigb2 *= rk;
+
+    // Write variance to file
+    const eckit::LocalConfiguration varianceout(fullConfig, "variance output");
+    sigb2.write(varianceout);
+    Log::test() << "Variance: " << std::endl << sigb2 << std::endl;
+
+    return 0;
+  }
+  // -----------------------------------------------------------------------------
+ private:
+  std::string appname() const {
+    return "oops::EnsVariance<" + MODEL::name() + ">";
+  }
+  // -----------------------------------------------------------------------------
+};
 
 }  // namespace oops
 

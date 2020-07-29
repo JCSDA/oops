@@ -52,32 +52,32 @@ template <typename MODEL> class GenEnsPertB : public Application {
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
 //  Setup resolution
-    const eckit::LocalConfiguration resolConfig(fullConfig, "resolution");
+    const eckit::LocalConfiguration resolConfig(fullConfig, "geometry");
     const Geometry_ resol(resolConfig, this->getComm());
-
-//  Setup variables
-    const Variables vars(fullConfig);
 
 //  Setup Model
     const eckit::LocalConfiguration modelConfig(fullConfig, "model");
     const Model_ model(resol, modelConfig);
 
 //  Setup initial state
-    const eckit::LocalConfiguration initialConfig(fullConfig, "initial");
-    const State_ xx(resol, model.variables(), initialConfig);
+    const eckit::LocalConfiguration initialConfig(fullConfig, "initial condition");
+    const State_ xx(resol, initialConfig);
     Log::test() << "Initial state: " << xx << std::endl;
 
 //  Setup augmented state
     const ModelAux_ moderr(resol, initialConfig);
 
 //  Setup times
-    const util::Duration fclength(fullConfig.getString("forecast_length"));
+    const util::Duration fclength(fullConfig.getString("forecast length"));
     const util::DateTime bgndate(xx.validTime());
     const util::DateTime enddate(bgndate + fclength);
     Log::info() << "Running forecast from " << bgndate << " to " << enddate << std::endl;
 
+//  Setup variables
+    const Variables vars(fullConfig, "perturbed variables");
+
 //  Setup B matrix
-    const eckit::LocalConfiguration covar(fullConfig, "Covariance");
+    const eckit::LocalConfiguration covar(fullConfig, "background error");
     std::unique_ptr< ModelSpaceCovarianceBase<MODEL> >
       Bmat(CovarianceFactory<MODEL>::create(covar, resol, vars, xx, xx));
 

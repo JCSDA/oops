@@ -25,10 +25,10 @@ namespace test {
 class ObsTestFixture : TestFixture {
  public:
   ObsTestFixture() {
-    const eckit::LocalConfiguration conf(TestConfig::config(), "Observations");
-    const util::DateTime bgn(conf.getString("window_begin"));
-    const util::DateTime end(conf.getString("window_end"));
-    const eckit::LocalConfiguration otconf(conf, "Observation");
+    const eckit::LocalConfiguration conf(TestConfig::config(), "observations");
+    const util::DateTime bgn(conf.getString("window begin"));
+    const util::DateTime end(conf.getString("window end"));
+    const eckit::LocalConfiguration otconf(conf, "observation");
     ot_.reset(new lorenz95::ObsTableView(otconf, oops::mpi::comm(), bgn, end));
   }
   ~ObsTestFixture() {}

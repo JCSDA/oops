@@ -102,16 +102,16 @@ template<typename MODEL, typename OBS> class CostFct4DEnsVar : public CostFuncti
 
 template<typename MODEL, typename OBS>
 CostFct4DEnsVar<MODEL, OBS>::CostFct4DEnsVar(const eckit::Configuration & config,
-                                        const eckit::mpi::Comm & comm)
+                                             const eckit::mpi::Comm & comm)
   : CostFunction<MODEL, OBS>::CostFunction(config), comm_(comm),
-    resol_(eckit::LocalConfiguration(config, "resolution"), comm),
+    resol_(eckit::LocalConfiguration(config, "geometry"), comm),
     model_(resol_, eckit::LocalConfiguration(config, "model")),
-    ctlvars_(config), an2model_(), inc2model_()
+    ctlvars_(config, "analysis variables"), an2model_(), inc2model_()
 {
-  windowLength_ = util::Duration(config.getString("window_length"));
-  windowBegin_ = util::DateTime(config.getString("window_begin"));
+  windowLength_ = util::Duration(config.getString("window length"));
+  windowBegin_ = util::DateTime(config.getString("window begin"));
   windowEnd_ = windowBegin_ + windowLength_;
-  windowSub_ = util::Duration(config.getString("window_sub"));
+  windowSub_ = util::Duration(config.getString("subwindow"));
 
   ncontrol_ = windowLength_.toSeconds() / windowSub_.toSeconds();
   ASSERT(windowLength_.toSeconds() == windowSub_.toSeconds()*ncontrol_);
@@ -173,7 +173,7 @@ void CostFct4DEnsVar<MODEL, OBS>::doLinearize(const Geometry_ & resol,
                                          const eckit::Configuration & innerConf,
                                          const CtrlVar_ & bg, const CtrlVar_ & fg) {
   Log::trace() << "CostFct4DEnsVar::doLinearize start" << std::endl;
-  eckit::LocalConfiguration conf(innerConf, "linearmodel");
+  eckit::LocalConfiguration conf(innerConf, "linear model");
   inc2model_.reset(LinearVariableChangeFactory<MODEL>::create(bg.state()[0], fg.state()[0],
                                                               resol, conf));
   inc2model_->setInputVariables(ctlvars_);

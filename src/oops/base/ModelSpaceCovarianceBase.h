@@ -55,9 +55,6 @@ class ModelSpaceCovarianceBase {
                            const Geometry_ &, const eckit::Configuration &);
   virtual ~ModelSpaceCovarianceBase() {}
 
-//  const LinearVariableChangeBase_ & getK(const unsigned & ii) const {return *chvars_[ii];}
-//  bool hasK() const { return (chvars_.size() == 0) ? false : true; }
-
   void randomize(Increment_ &) const;
   void multiply(const Increment_ &, Increment_ &) const;
   void inverseMultiply(const Increment_ &, Increment_ &) const;
@@ -130,7 +127,7 @@ ModelSpaceCovarianceBase<MODEL>* CovarianceFactory<MODEL>::create(
                                                          const Geometry_ & resol,
                                                          const Variables & vars,
                                                          const State_ & xb, const State_ & fg) {
-  const std::string id = conf.getString("covariance");
+  const std::string id = conf.getString("covariance model");
   Log::trace() << "ModelSpaceCovarianceBase type = " << id << std::endl;
   typename std::map<std::string, CovarianceFactory<MODEL>*>::iterator jcov = getMakers().find(id);
   if (jcov == getMakers().end()) {
@@ -143,19 +140,15 @@ ModelSpaceCovarianceBase<MODEL>* CovarianceFactory<MODEL>::create(
     ABORT("Element does not exist in CovarianceFactory.");
   }
   Variables vars_out(vars);
-  if (conf.has("variable_changes")) {
+  if (conf.has("variable changes")) {
     std::vector<eckit::LocalConfiguration> chvarconfs;
-    conf.get("variable_changes", chvarconfs);
+    conf.get("variable changes", chvarconfs);
     for (const auto & config : boost::adaptors::reverse(chvarconfs)) {
-      eckit::LocalConfiguration config_in;
-      config.get("inputVariables", config_in);
-      Variables vars_in(config_in);
+      Variables vars_in(config, "input variables");
       if (!(vars_in == vars_out)) {
         ABORT("Sequence of variable changes is not consistent");
       }
-      eckit::LocalConfiguration config_out;
-      config.get("outputVariables", config_out);
-      vars_out = Variables(config_out);
+      vars_out = Variables(config, "output variables");
     }
   }
   return (*jcov).second->make(conf, resol, vars_out, xb, fg);
@@ -167,9 +160,9 @@ template <typename MODEL>
 ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(const State_ & bg, const State_ & fg,
                                                           const Geometry_ & resol,
                                                           const eckit::Configuration & conf) {
-  if (conf.has("variable_changes")) {
+  if (conf.has("variable changes")) {
     std::vector<eckit::LocalConfiguration> chvarconfs;
-    conf.get("variable_changes", chvarconfs);
+    conf.get("variable changes", chvarconfs);
     for (const auto & config : chvarconfs) {
       chvars_.push_back(LinearVariableChangeFactory<MODEL>::create(bg, fg, resol, config));
     }

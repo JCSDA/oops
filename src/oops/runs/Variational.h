@@ -66,15 +66,7 @@ template <typename MODEL, typename OBS> class Variational : public Application {
 /// it can be 3D or 4D (strong vs weak constraint), etc...
 
 //  Setup cost function
-    eckit::LocalConfiguration cfConf(fullConfig, "cost_function");
-
-//  ------------------ Temporary until yaml files are modified -----------------
-    const eckit::LocalConfiguration rconf(fullConfig, "resolution");
-    const eckit::LocalConfiguration mconf(fullConfig, "model");
-    cfConf.set("resolution", rconf);  // move resolution inside cost_function
-    cfConf.set("model", mconf);       // move   model    inside cost_function
-//  ------------------ Temporary until yaml files are modified -----------------
-
+    eckit::LocalConfiguration cfConf(fullConfig, "cost function");
     std::unique_ptr<CostFunction<MODEL, OBS>>
       J(CostFactory<MODEL, OBS>::create(cfConf, this->getComm()));
     Log::trace() << "Variational: cost function has been set up" << std::endl;
@@ -84,13 +76,14 @@ template <typename MODEL, typename OBS> class Variational : public Application {
     Log::trace() << "Variational: first guess has been set up" << std::endl;
 
 //  Perform Incremental Variational Assimilation
-    int iouter = IncrementalAssimilation<MODEL, OBS>(xx, *J, fullConfig);
+    eckit::LocalConfiguration varConf(fullConfig, "variational");
+    int iouter = IncrementalAssimilation<MODEL, OBS>(xx, *J, varConf);
     Log::info() << "Variational: incremental assimilation done "
                 << iouter << " iterations." << std::endl;
 
 //  Save analysis and final diagnostics
     PostProcessor<State_> post;
-    const util::DateTime winbgn(cfConf.getString("window_begin"));
+    const util::DateTime winbgn(cfConf.getString("window begin"));
     const eckit::LocalConfiguration outConfig(fullConfig, "output");
     post.enrollProcessor(new StateWriter<State_>(outConfig));
 

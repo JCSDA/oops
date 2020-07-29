@@ -20,6 +20,7 @@
 #include "lorenz95/FieldL95.h"
 #include "lorenz95/Resolution.h"
 
+#include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
@@ -55,7 +56,7 @@ class StateL95 : public util::Printable,
 
 /// Constructor, destructor
   StateL95(const Resolution &, const oops::Variables &, const util::DateTime &);
-  StateL95(const Resolution &, const oops::Variables &, const eckit::Configuration &);
+  StateL95(const Resolution &, const eckit::Configuration &);
   StateL95(const Resolution &, const StateL95 &);
   StateL95(const StateL95 &);
   virtual ~StateL95();
@@ -78,6 +79,7 @@ class StateL95 : public util::Printable,
   const util::DateTime & validTime() const {return time_;}
   void updateTime(const util::Duration & dt) {time_ += dt;}
   util::DateTime & validTime() {return time_;}
+  const oops::Variables & variables() const {return vars_;}
 
 // For accumulator
   void zero();
@@ -87,6 +89,7 @@ class StateL95 : public util::Printable,
   void print(std::ostream &) const;
   FieldL95 fld_;
   util::DateTime time_;
+  oops::Variables vars_;
 };
 // -----------------------------------------------------------------------------
 

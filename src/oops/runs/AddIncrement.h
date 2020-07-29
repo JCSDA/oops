@@ -36,24 +36,21 @@ template <typename MODEL> class AddIncrement : public Application {
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
 //  Setup resolution
-    const eckit::LocalConfiguration stateResolConf(fullConfig, "stateResol");
+    const eckit::LocalConfiguration stateResolConf(fullConfig, "state geometry");
     const Geometry_ stateResol(stateResolConf, this->getComm());
 
-    const eckit::LocalConfiguration incResolConf(fullConfig, "incrementResol");
+    const eckit::LocalConfiguration incResolConf(fullConfig, "increment geometry");
     const Geometry_ incResol(incResolConf, this->getComm());
 
 //  Read state
     const eckit::LocalConfiguration stateConf(fullConfig, "state");
-    std::vector<std::string> statevv;
-    stateConf.get("variables", statevv);
-    oops::Variables stateVars(statevv);
-    State_ xx(stateResol, stateVars, stateConf);
+    State_ xx(stateResol, stateConf);
     Log::test() << "State: " << xx << std::endl;
 
 //  Read increment
     const eckit::LocalConfiguration incConf(fullConfig, "increment");
     std::vector<std::string> incvv;
-    incConf.get("variables", incvv);
+    incConf.get("added variables", incvv);
     oops::Variables incVars(incvv);
     Increment_ dx(incResol, incVars, xx.validTime());
     dx.read(incConf);

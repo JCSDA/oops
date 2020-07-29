@@ -31,11 +31,11 @@ namespace test {
 class ModBiasTestFixture : TestFixture {
  public:
   ModBiasTestFixture() {
-    eckit::LocalConfiguration res(TestConfig::config(), "resolution");
+    eckit::LocalConfiguration res(TestConfig::config(), "geometry");
     resol_.reset(new lorenz95::Resolution(res, oops::mpi::comm()));
-    conf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "ModelBiasCovariance"));
+    conf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "model aux error"));
     nobias_.reset(new eckit::LocalConfiguration());
-    bias1_ = TestConfig::config().getDouble("ModelBias.bias");
+    bias1_ = TestConfig::config().getDouble("model aux control.bias");
     bias2_ = 2.5 * bias1_;
     fact_ = 1.2345;
   }

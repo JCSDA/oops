@@ -1,116 +1,99 @@
-EnsembleApplication:
-  current_member: 2
-cost_function:
-  cost_type: 3D-Var
-  Jb:
-    Background:
-      state:
-      - date: 2010-01-01T12:00:00Z
-        filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H
-    Covariance:
-      covariance: QgError
-      horizontal_length_scale: 2.2e6
-      maximum_condition_number: 1.0e6
-      standard_deviation: 1.8e7
-      vertical_length_scale: 15000.0
-  Jo:
-    ObsTypes:
-    - Covariance:
-        covariance: diagonal
-        random_amplitude: 0.4
-      ObsOperator:
-        ObsType: Stream
-      ObsSpace:
-        ObsDataIn:
-          obsfile: Data/truth.obs3d
-        ObsDataOut:
-          obsfile: Data/%{member}%.eda_3dvar.obs3d
-        ObsType: Stream
-    - Covariance:
-        covariance: diagonal
-        random_amplitude: 0.5
-      ObsOperator:
-        ObsType: Wind
-      ObsSpace:
-        ObsDataIn:
-          obsfile: Data/truth.obs3d
-        ObsDataOut:
-          obsfile: Data/%{member}%.eda_3dvar.obs3d
-        ObsType: Wind
-    - Covariance:
-        covariance: diagonal
-        random_amplitude: 0.2
-      ObsOperator:
-        ObsType: WSpeed
-      ObsSpace:
-        ObsDataIn:
-          obsfile: Data/truth.obs3d
-        ObsDataOut:
-          obsfile: Data/%{member}%.eda_3dvar.obs3d
-        ObsType: WSpeed
-  varchange: Identity
-  variables:
-  - x
-  window_begin: 2010-01-01T09:00:00Z
-  window_length: PT6H
+ensemble application:
+  current member: 2
+cost function:
+  cost type: 3D-Var
+  window begin: 2010-01-01T09:00:00Z
+  window length: PT6H
+  analysis variables: [x]
+  geometry:
+    nx: 40
+    ny: 20
+    depths: [4500.0, 5500.0]
+  model:
+    name: QG
+    tstep: PT1H
+  background:
+    date: 2010-01-01T12:00:00Z
+    filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H
+  background error:
+    covariance model: QgError
+    horizontal_length_scale: 2.2e6
+    maximum_condition_number: 1.0e6
+    standard_deviation: 1.8e7
+    vertical_length_scale: 15000.0
+  observations:
+  - obs error:
+      covariance model: diagonal
+      random_amplitude: 0.4
+    obs operator:
+      obs type: Stream
+    obs space:
+      obsdatain:
+        obsfile: Data/truth.obs3d
+      obsdataout:
+        obsfile: Data/%{member}%.eda_3dvar.obs3d
+      obs type: Stream
+  - obs error:
+      covariance model: diagonal
+      random_amplitude: 0.5
+    obs operator:
+      obs type: Wind
+    obs space:
+      obsdatain:
+        obsfile: Data/truth.obs3d
+      obsdataout:
+        obsfile: Data/%{member}%.eda_3dvar.obs3d
+      obs type: Wind
+  - obs error:
+      covariance model: diagonal
+      random_amplitude: 0.2
+    obs operator:
+      obs type: WSpeed
+    obs space:
+      obsdatain:
+        obsfile: Data/truth.obs3d
+      obsdataout:
+        obsfile: Data/%{member}%.eda_3dvar.obs3d
+      obs type: WSpeed
+variational:
+  minimizer:
+    algorithm: DRIPCG
+  iterations:
+  - diagnostics:
+      departures: ombg
+    gradient norm reduction: 1.0e-10
+    linear model:
+      trajectory:
+        tstep: PT1H
+      tstep: PT6H
+      variable change: Identity
+      name: QgIdTLM
+    ninner: 10
+    geometry:
+      nx: 20
+      ny: 10
+      depths: [4500.0, 5500.0]
+    test: on
+  - diagnostics:
+      departures: ombg
+    gradient norm reduction: 1.0e-10
+    linear model:
+      trajectory:
+        tstep: PT1H
+      tstep: PT6H
+      variable change: Identity
+      name: QgIdTLM
+    ninner: 10
+    geometry:
+      nx: 40
+      ny: 20
+      depths: [4500.0, 5500.0]
+    test: on
 final:
   diagnostics:
     departures: oman
-minimizer:
-  algorithm: DRIPCG
-model:
-  name: QG
-  tstep: PT1H
-  variables:
-  - x
 output:
   datadir: Data
   exp: %{member}%.eda_3dvar
   frequency: PT6H
   type: an
-resolution:
-  nx: 40
-  ny: 20
-  depths:
-  - 4500.0
-  - 5500.0
-variational:
-  iteration:
-  - diagnostics:
-      departures: ombg
-    gradient_norm_reduction: 1.0e-10
-    linearmodel:
-      trajectory:
-        tstep: PT1H
-      tstep: PT6H
-      varchange: Identity
-      variables:
-      - x
-      version: QgIdTLM
-    ninner: 10
-    resolution:
-      nx: 20
-      ny: 10
-      depths:
-      - 4500.0
-      - 5500.0
-    test: on
-  - diagnostics:
-      departures: ombg
-    gradient_norm_reduction: 1.0e-10
-    linearmodel:
-      trajectory:
-        tstep: PT1H
-      tstep: PT6H
-      varchange: Identity
-      variables:
-      - x
-      version: QgIdTLM
-    ninner: 10
-    resolution:
-      nx: 40
-      ny: 20
-      depths:
-      - 4500.0
-      - 5500.0
-    test: on

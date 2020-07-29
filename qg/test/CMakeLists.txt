@@ -484,12 +484,17 @@ oops_add_test( TESTNAME 3dvar
                EXENAME  qg_4dvar.x
                TEST_DEPENDS test_qg_forecast test_qg_make_obs_3d )
 
-oops_add_test( TESTNAME 3dvar_change_var
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/3dvar_change_var.yaml
-               EXENAME  qg_4dvar.x
-               TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_3d )
+# This test will be changed in next PR (May 2020)
+# oops_add_test( TESTNAME 3dvar_change_var
+#                MODELNAME qg
+#                OMP 2
+#                YAMLNAME testinput/3dvar_change_var.yaml
+#                EXENAME  qg_4dvar.x
+#                TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_3d
+#                COMPARE)
+# This test will be changed in next PR (May 2020)
+
+#--------------------------------------------------------------------
 
 oops_add_test( TESTNAME 3dvar_hybrid
                MODELNAME qg

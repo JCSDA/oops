@@ -40,7 +40,7 @@ template<typename MODEL> class State4D : public util::Printable {
   static const std::string classname() {return "State4D";}
 
 /// The arguments define the number of sub-windows and the resolution
-  State4D(const Geometry_ &, const Variables &, const eckit::Configuration &);
+  State4D(const Geometry_ &, const eckit::Configuration &);
   explicit State4D(const State_ &);
 
 /// I/O and diagnostics
@@ -55,6 +55,7 @@ template<typename MODEL> class State4D : public util::Printable {
   const State_ & operator[](const int ii) const {return state4d_[ii];}
 
   Geometry_ geometry() const { return state4d_[0].geometry(); }
+  const Variables & variables() const {return state4d_[0].variables();}
   const std::vector<util::DateTime> validTimes() const;
 
 /// Accumulator
@@ -70,20 +71,23 @@ template<typename MODEL> class State4D : public util::Printable {
 // =============================================================================
 
 template<typename MODEL>
-State4D<MODEL>::State4D(const Geometry_ & resol, const Variables & vars,
-                        const eckit::Configuration & config) {
+State4D<MODEL>::State4D(const Geometry_ & resol, const eckit::Configuration & config) {
+  Log::trace() << "State4D config : " << config << std::endl;
   // 4D state:
-  if (config.has("state")) {
+  if (config.has("states")) {
     std::vector<eckit::LocalConfiguration> confs;
-    config.get("state", confs);
+    config.get("states", confs);
     state4d_.reserve(confs.size());
     for (auto & conf : confs) {
       if (config.has("member")) conf.set("member", config.getInt("member"));
-      state4d_.emplace_back(resol, vars, conf);
+      state4d_.emplace_back(State_(resol, conf));
     }
   } else {
   // 3D state:
-    state4d_.emplace_back(resol, vars, config);
+    state4d_.emplace_back(State_(resol, config));
+  }
+  for (size_t jj = 1; jj < state4d_.size(); ++jj) {
+    ASSERT(state4d_[jj].variables() == state4d_[0].variables());
   }
   Log::trace() << "State4D constructed." << std::endl;
 }
@@ -101,17 +105,20 @@ State4D<MODEL>::State4D(const State_ & state3d) {
 template<typename MODEL>
 void State4D<MODEL>::read(const eckit::Configuration & config) {
   // 4D state
-  if (config.has("state")) {
+  if (config.has("states")) {
     std::vector<eckit::LocalConfiguration> confs;
-    config.get("state", confs);
+    config.get("states", confs);
     ASSERT(state4d_.size() == confs.size());
-    for (size_t ii = 0; ii < state4d_.size(); ++ii) {
-      state4d_[ii].read(confs[ii]);;
+    for (size_t jj = 0; jj < state4d_.size(); ++jj) {
+      state4d_[jj].read(confs[jj]);;
     }
   } else {
   // 3D state
     ASSERT(state4d_.size() == 1);
     state4d_[0].read(config);
+  }
+  for (size_t jj = 1; jj < state4d_.size(); ++jj) {
+    ASSERT(state4d_[jj].variables() == state4d_[0].variables());
   }
 }
 
@@ -120,12 +127,12 @@ void State4D<MODEL>::read(const eckit::Configuration & config) {
 template<typename MODEL>
 void State4D<MODEL>::write(const eckit::Configuration & config) const {
   // 4D state
-  if (config.has("state")) {
+  if (config.has("states")) {
     std::vector<eckit::LocalConfiguration> confs;
-    config.get("state", confs);
+    config.get("states", confs);
     ASSERT(state4d_.size() == confs.size());
-    for (size_t ii = 0; ii < state4d_.size(); ++ii) {
-      state4d_[ii].write(confs[ii]);
+    for (size_t jj = 0; jj < state4d_.size(); ++jj) {
+      state4d_[jj].write(confs[jj]);
     }
   } else {
   // 3D state
@@ -163,8 +170,8 @@ template<typename MODEL>
 void State4D<MODEL>::accumul(const double & zz, const State4D & xx) {
   Log::trace() << "State4D<MODEL>::accumul starting" << std::endl;
   ASSERT(xx.size() == state4d_.size());
-  for (size_t ii = 0; ii < state4d_.size(); ++ii) {
-    state4d_[ii].accumul(zz, xx[ii]);
+  for (size_t jj = 0; jj < state4d_.size(); ++jj) {
+    state4d_[jj].accumul(zz, xx[jj]);
   }
   Log::trace() << "State4D<MODEL>::accumul done" << std::endl;
 }

@@ -32,16 +32,16 @@ template <typename OBS> void testLocalObsSpace() {
   typedef oops::ObsSpace<OBS>               LocalObsSpace_;
   typedef oops::ObsVector<OBS>              ObsVector_;
 
-  const eckit::LocalConfiguration localconf(TestEnvironment::config(), "LocalObsSpace");
+  const eckit::LocalConfiguration localconf(TestEnvironment::config(), "local obs space");
 
   // get center (for localization) from yaml
-  eckit::LocalConfiguration geolocconf(localconf, "GeoLocation");
+  eckit::LocalConfiguration geolocconf(localconf, "location");
   double lon = geolocconf.getDouble("lon");
   double lat = geolocconf.getDouble("lat");
   const eckit::geometry::Point2 center(lon, lat);
 
   // get localization info from yaml
-  eckit::LocalConfiguration locconf(localconf, "Localization");
+  eckit::LocalConfiguration locconf(localconf, "localization");
 
   int totalNobs = 0;
 
@@ -69,19 +69,19 @@ template <typename OBS> void testLocalObsVector() {
   typedef oops::ObsSpace<OBS>               LocalObsSpace_;
   typedef oops::ObsVector<OBS>              ObsVector_;
 
-  const eckit::LocalConfiguration localconf(TestEnvironment::config(), "LocalObsSpace");
+  const eckit::LocalConfiguration localconf(TestEnvironment::config(), "local obs space");
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     // get center (for localization) from yaml
-    eckit::LocalConfiguration geolocconf(localconf, "GeoLocation");
+    eckit::LocalConfiguration geolocconf(localconf, "location");
     double lon = geolocconf.getDouble("lon");
     double lat = geolocconf.getDouble("lat");
     const eckit::geometry::Point2 center(lon, lat);
 
     // get localization info from yaml
-    eckit::LocalConfiguration locconf(localconf, "Localization");
+    eckit::LocalConfiguration locconf(localconf, "localization");
 
-    const std::string varname = localconf.getString("varname");
+    const std::string varname = localconf.getString("variable name");
 
     // initialize full ObsVector for a specified variable
     ObsVector_ fullvec(Test_::obspace()[jj], varname);

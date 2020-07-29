@@ -67,9 +67,9 @@ template <typename OBS>
 ObsErrors<OBS>::ObsErrors(const eckit::Configuration & config,
                             const ObsSpaces_ & os) : err_() {
   std::vector<eckit::LocalConfiguration> obsconf;
-  config.get("ObsTypes", obsconf);
+  config.get("observations", obsconf);
   for (size_t jj = 0; jj < os.size(); ++jj) {
-    eckit::LocalConfiguration conf(obsconf[jj], "Covariance");
+    eckit::LocalConfiguration conf(obsconf[jj], "obs error");
     err_.emplace_back(ObsErrorFactory<OBS>::create(conf, os[jj]));
   }
 }

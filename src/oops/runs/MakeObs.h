@@ -54,23 +54,22 @@ template <typename MODEL, typename OBS> class MakeObs : public Application {
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
 //  Setup observation window
-    const eckit::LocalConfiguration windowConf(fullConfig, "Assimilation Window");
-    const util::DateTime winbgn(windowConf.getString("window_begin"));
-    const util::Duration winlen(windowConf.getString("window_length"));
+    const util::DateTime winbgn(fullConfig.getString("window begin"));
+    const util::Duration winlen(fullConfig.getString("window length"));
     const util::DateTime winend(winbgn + winlen);
-    Log::info() << "Observation window is:" << windowConf << std::endl;
+    Log::info() << "Observation window from " << winbgn << " to " << winend << std::endl;
 
 //  Setup geometry
-    const eckit::LocalConfiguration geometryConfig(fullConfig, "Geometry");
+    const eckit::LocalConfiguration geometryConfig(fullConfig, "geometry");
     const Geometry_ geometry(geometryConfig, this->getComm());
 
 //  Setup Model
-    const eckit::LocalConfiguration modelConfig(fullConfig, "Model");
+    const eckit::LocalConfiguration modelConfig(fullConfig, "model");
     const Model_ model(geometry, modelConfig);
 
 //  Setup initial "true" state
-    const eckit::LocalConfiguration initialConfig(fullConfig, "Initial Condition");
-    State_ xx(geometry, model.variables(), initialConfig);
+    const eckit::LocalConfiguration initialConfig(fullConfig, "initial condition");
+    State_ xx(geometry, initialConfig);
     Log::test() << "Initial state: " << xx << std::endl;
 
 //  Setup forecast outputs
@@ -81,22 +80,23 @@ template <typename MODEL, typename OBS> class MakeObs : public Application {
     post.enrollProcessor(new StateInfo<State_>("fc", prtConf));
 
 //  Setup observations
-    const eckit::LocalConfiguration obsconf(fullConfig, "Observations");
-    ObsSpaces_ obspace(obsconf, this->getComm(), winbgn, winend);
+    const eckit::LocalConfiguration obsConfig(fullConfig);  // to be replaced
+    ObsSpaces_ obspace(obsConfig, this->getComm(), winbgn, winend);
 
     CalcHofX<MODEL, OBS> hofx(obspace, geometry, fullConfig);
-    Observations_ yobs = hofx.compute(model, xx, post);
+    const util::Duration flength(fullConfig.getString("forecast length"));
+    Observations_ yobs = hofx.compute(model, xx, post, flength);
 
     Log::test() << "Final state: " << xx << std::endl;
 
     Log::info() << "Generated observation: " << yobs << std::endl;
 
 //  Perturb observations
-    if (obsconf.has("obspert")) {
+    if (fullConfig.has("obspert")) {
       Departures_ ypert(obspace);
-      ObsErrors_ matR(obsconf, obspace);
+      ObsErrors_ matR(obsConfig, obspace);
       matR.randomize(ypert);
-      double opert = obsconf.getDouble("obspert");
+      double opert = fullConfig.getDouble("obspert");
       ypert *= opert;
       yobs += ypert;
       Log::info() << "Perturbed observation: " << yobs << std::endl;

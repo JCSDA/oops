@@ -59,7 +59,7 @@ ObsAuxControls<OBS>::ObsAuxControls(const ObsSpaces_ & odb, const eckit::Configu
   : auxs_(0)
 {
   std::vector<eckit::LocalConfiguration> obsconf;
-  conf.get("ObsTypes", obsconf);
+  conf.get("observations", obsconf);
   for (std::size_t jobs = 0; jobs < obsconf.size(); ++jobs) {
     boost::shared_ptr<ObsAuxControl_> tmp(new ObsAuxControl_(odb[jobs], obsconf[jobs]));
     auxs_.push_back(tmp);

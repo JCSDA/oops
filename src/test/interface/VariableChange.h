@@ -52,11 +52,11 @@ template <typename MODEL> class VariableChangeFixture : private boost::noncopyab
     oops::instantiateVariableChangeFactory<MODEL>();
 
     // Geometry for the test
-    const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "Geometry");
+    const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "geometry");
     resol_.reset(new Geometry_(resolConfig, oops::mpi::comm()));
 
     // Configuration (list of all variable changes)
-    TestEnvironment::config().get("VariableChangeTests", confs_);
+    TestEnvironment::config().get("variable change tests", confs_);
   }
 
   ~VariableChangeFixture<MODEL>() {}
@@ -75,21 +75,18 @@ template <typename MODEL> void testVariableChangeInverse() {
 
   // Loop over all variable changes
   for (std::size_t jj = 0; jj < Test_::confs().size(); ++jj) {
-    eckit::LocalConfiguration varinconf(Test_::confs()[jj], "inputVariables");
-    eckit::LocalConfiguration varoutconf(Test_::confs()[jj], "outputVariables");
-    oops::Variables varin(varinconf);
-    oops::Variables varout(varoutconf);
+    oops::Variables varout(Test_::confs()[jj], "output variables");
 
     // Construct variable change
     std::unique_ptr<VariableChange_> \
       changevar(VariableChangeFactory_::create(Test_::confs()[jj], Test_::resol()));
 
     // User specified tolerance for pass/fail
-    const double tol = Test_::confs()[jj].getDouble("toleranceInverse");
+    const double tol = Test_::confs()[jj].getDouble("tolerance inverse");
 
     // Create states with input and output variables
     const eckit::LocalConfiguration initialConfig(Test_::confs()[jj], "state");
-    State_  xin(Test_::resol(), varin, initialConfig);
+    State_  xin(Test_::resol(), initialConfig);
     State_ xout(Test_::resol(), varout, xin.validTime());
 
     // Save copy of the initial state
@@ -97,7 +94,7 @@ template <typename MODEL> void testVariableChangeInverse() {
 
     // Order, inverse first or not (default)
     // Note: switch input and output variables in configuration if true
-    const bool inverseFirst = Test_::confs()[jj].getBool("inverseFirst", false);
+    const bool inverseFirst = Test_::confs()[jj].getBool("inverse first", false);
 
     // Convert from input to output variables and back (or vice versa)
     if (inverseFirst) {

@@ -102,12 +102,8 @@ VariableChangeBase<MODEL> * VariableChangeFactory<MODEL>::create(const eckit::Co
                                                                  const Geometry_ & resol)
 {
   Log::trace() << "VariableChangeBase<MODEL>::create starting" << std::endl;
-  std::string id;
-  if (conf.has("varchange")) {
-    id = conf.getString("varchange");
-  } else {
-    id = "Identity";
-  }
+// Not good: should not create anything if no variable change required. YT
+  std::string id = conf.getString("variable change", "Identity");
   typename std::map<std::string, VariableChangeFactory<MODEL>*>::iterator
     jerr = getMakers().find(id);
   if (jerr == getMakers().end()) {
@@ -125,14 +121,14 @@ template<typename MODEL>
 VariableChangeBase<MODEL>::VariableChangeBase(const eckit::Configuration & conf)
   : varin_(), varout_()
 {
-  if (conf.has("inputVariables")) {
-    varin_.reset(new Variables(conf.getSubConfiguration("inputVariables")));
-    Log::trace() << "VariableChangeBase<MODEL>::VariableChangeBase inputvars: "
+  if (conf.has("input variables")) {
+    varin_.reset(new Variables(conf, "input variables"));
+    Log::trace() << "VariableChangeBase<MODEL>::VariableChangeBase input variables: "
                  << *varin_ << std::endl;
   }
-  if (conf.has("outputVariables")) {
-    varout_.reset(new Variables(conf.getSubConfiguration("outputVariables")));
-    Log::trace() << "VariableChangeBase<MODEL>::VariableChangeBase outputvars: "
+  if (conf.has("output variables")) {
+    varout_.reset(new Variables(conf, "output variables"));
+    Log::trace() << "VariableChangeBase<MODEL>::VariableChangeBase output variables: "
                  << *varout_ << std::endl;
   }
 }

@@ -62,13 +62,13 @@ class EnsembleCovariance4D : public ModelSpaceCovariance4DBase<MODEL> {
 /// Constructor, destructor
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-EnsembleCovariance4D<MODEL>::EnsembleCovariance4D(const Geometry_ & resol, const Variables &,
+EnsembleCovariance4D<MODEL>::EnsembleCovariance4D(const Geometry_ & resol, const Variables & vars,
                                                   const eckit::Configuration & conf,
                                                   const State4D_ & xb, const State4D_ & fg)
   : ModelSpaceCovariance4DBase<MODEL>(xb, fg, resol, conf), ens_(), loc_()
 {
   Log::trace() << "EnsembleCovariance4D::EnsembleCovariance4D start" << std::endl;
-  ens_.reset(new Ensemble_(conf, xb, fg, resol));
+  ens_.reset(new Ensemble_(conf, xb, fg, resol, vars));
   if (conf.has("localization")) {
     const eckit::LocalConfiguration confloc(conf, "localization");
     loc_ = LocalizationFactory<MODEL>::create(resol, ens_, confloc);

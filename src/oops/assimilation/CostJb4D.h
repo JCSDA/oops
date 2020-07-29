@@ -98,7 +98,7 @@ template<typename MODEL> class CostJb4D : public CostJbState<MODEL> {
 template<typename MODEL>
 CostJb4D<MODEL>::CostJb4D(const eckit::Configuration & config, const Geometry_ &,
                           const Variables & ctlvars, const State4D_ & xb)
-  : xb_(xb), B_(), ctlvars_(ctlvars), resol_(), times_(), conf_(config, "Covariance")
+  : xb_(xb), B_(), ctlvars_(ctlvars), resol_(), times_(), conf_(config, "background error")
 {
   Log::trace() << "CostJb4D contructed." << std::endl;
 }

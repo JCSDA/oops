@@ -53,7 +53,7 @@ template <typename OBS> class ObsAuxIncrementFixture : private boost::noncopyabl
   }
 
   ObsAuxIncrementFixture<OBS>() {
-    Test_::config().get("ObsTypes", conf_);
+    TestEnvironment::config().get("observations", conf_);
     for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
       std::shared_ptr<Covariance_> tmp(new Covariance_(Test_::obspace()[jj], conf_[jj]));
       covar_.push_back(tmp);
@@ -87,7 +87,7 @@ template <typename OBS> void testObsAuxIncrementCopyConstructor() {
   typedef oops::ObsAuxIncrement<OBS>    AuxIncr_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    if (AuxTest_::config(jj).has("ObsBias")) {
+    if (AuxTest_::config(jj).has("obs bias")) {
       AuxIncr_ dx1(Test_::obspace()[jj], AuxTest_::config(jj));
       ObsAuxIncrementFixture<OBS>::covariance(jj).randomize(dx1);
 
@@ -110,7 +110,7 @@ template <typename OBS> void testObsAuxIncrementChangeRes() {
   typedef oops::ObsAuxIncrement<OBS>    AuxIncr_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    if (AuxTest_::config(jj).has("ObsBias")) {
+    if (AuxTest_::config(jj).has("obs bias")) {
       AuxIncr_ dx1(Test_::obspace()[jj], AuxTest_::config(jj));
       ObsAuxIncrementFixture<OBS>::covariance(jj).randomize(dx1);
 
@@ -133,7 +133,7 @@ template <typename OBS> void testObsAuxIncrementTriangle() {
   typedef oops::ObsAuxIncrement<OBS>    AuxIncr_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    if (AuxTest_::config(jj).has("ObsBias")) {
+    if (AuxTest_::config(jj).has("obs bias")) {
       AuxIncr_ dx1(Test_::obspace()[jj], AuxTest_::config(jj));
       ObsAuxIncrementFixture<OBS>::covariance(jj).randomize(dx1);
       AuxIncr_ dx2(Test_::obspace()[jj], AuxTest_::config(jj));

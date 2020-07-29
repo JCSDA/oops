@@ -33,7 +33,7 @@ namespace test {
 template <typename OBS> void testConstructor() {
   typedef oops::Locations<OBS>        Locations_;
 
-  const eckit::LocalConfiguration conf(TestEnvironment::config(), "Locations");
+  const eckit::LocalConfiguration conf(TestEnvironment::config(), "locations");
   std::unique_ptr<Locations_> locs(new Locations_(conf, oops::mpi::comm()));
   EXPECT(locs.get());
 

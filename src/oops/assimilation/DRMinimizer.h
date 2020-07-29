@@ -72,13 +72,9 @@ template<typename MODEL, typename OBS>
 ControlIncrement<MODEL, OBS> *
 DRMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
   int ninner = config.getInt("ninner");
-  double gnreduc = config.getDouble("gradient_norm_reduction");
+  double gnreduc = config.getDouble("gradient norm reduction");
 
-  bool runOnlineAdjTest = false;
-  if (config.has("onlineDiagnostics")) {
-    const eckit::LocalConfiguration onlineDiag(config, "onlineDiagnostics");
-    runOnlineAdjTest = onlineDiag.getBool("onlineAdjTest");
-  }
+  bool runOnlineAdjTest = config.getBool("online diagnostics.online adj test", false);
 
   if (gradJb_) {
     gradJb_.reset(new CtrlInc_(J_.jb().resolution(), *gradJb_));

@@ -1,10 +1,10 @@
-forecast_length: P3D
-initial:
+forecast length: P3D
+initial condition:
   date: '2010-01-01T00:00:00Z'
   filename: Data/test.an.2010-01-01T00:00:00Z.l95
 model:
   name: PseudoModel
-  variables: ['x']
+  state variables: ['x']
   states:
   - date: '2010-01-01T12:00:00Z'
     filename: Data/test.fc.2010-01-01T00:00:00Z.PT12H
@@ -25,5 +25,5 @@ output:
   exp: test
   frequency: PT112H
   type: pseudofc
-resolution:
+geometry:
   resol: '40'

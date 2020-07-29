@@ -83,7 +83,7 @@ template <typename MODEL, typename OBS>
 Observer<MODEL, OBS>::Observer(const eckit::Configuration & conf, const ObsSpace_ & obsdb,
                           const ObsAuxCtrl_ & ybias, ObsVector_ & yobs,
                           ObsDataPtr_<int> qcflags, ObsDataPtr_<float> obserr)
-  : hop_(obsdb, eckit::LocalConfiguration(conf, "ObsOperator")),
+  : hop_(obsdb, eckit::LocalConfiguration(conf, "obs operator")),
     obsdb_(obsdb), yobs_(yobs), ybias_(ybias), filters_(obsdb, conf, qcflags, obserr)
 {
   Log::trace() << "Observer::Observer starting" << std::endl;

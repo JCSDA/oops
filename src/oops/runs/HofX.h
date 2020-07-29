@@ -49,40 +49,38 @@ template <typename MODEL, typename OBS> class HofX : public Application {
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
 //  Setup observation window
-    const eckit::LocalConfiguration windowConf(fullConfig, "Assimilation Window");
-    const util::Duration winlen(windowConf.getString("window_length"));
-    const util::DateTime winbgn(windowConf.getString("window_begin"));
+    const util::Duration winlen(fullConfig.getString("window length"));
+    const util::DateTime winbgn(fullConfig.getString("window begin"));
     const util::DateTime winend(winbgn + winlen);
-    Log::info() << "Observation window is:" << windowConf << std::endl;
+    Log::info() << "Observation window from " << winbgn << " to " << winend << std::endl;
 
 //  Setup geometry
-    const eckit::LocalConfiguration geometryConfig(fullConfig, "Geometry");
+    const eckit::LocalConfiguration geometryConfig(fullConfig, "geometry");
     const Geometry_ geometry(geometryConfig, this->getComm());
 
 //  Setup Model
-    const eckit::LocalConfiguration modelConfig(fullConfig, "Model");
+    const eckit::LocalConfiguration modelConfig(fullConfig, "model");
     const Model_ model(geometry, modelConfig);
 
 //  Setup initial state
-    const eckit::LocalConfiguration initialConfig(fullConfig, "Initial Condition");
-    State_ xx(geometry, model.variables(), initialConfig);
+    const eckit::LocalConfiguration initialConfig(fullConfig, "initial condition");
+    State_ xx(geometry, initialConfig);
     Log::test() << "Initial state: " << xx << std::endl;
 
 //  Setup forecast outputs
     PostProcessor<State_> post;
 
     eckit::LocalConfiguration prtConf;
-    fullConfig.get("Prints", prtConf);
+    fullConfig.get("prints", prtConf);
     post.enrollProcessor(new StateInfo<State_>("fc", prtConf));
 
 //  Setup observations
-    const eckit::LocalConfiguration obsconf(fullConfig, "Observations");
-    Log::info() << "Observations configuration is:" << obsconf << std::endl;
-    ObsSpaces_ obspace(obsconf, this->getComm(), winbgn, winend);
+    ObsSpaces_ obspace(fullConfig, this->getComm(), winbgn, winend);
 
 //  Setup and run observer
     CalcHofX<MODEL, OBS> hofx(obspace, geometry, fullConfig);
-    const Observations_ & yobs = hofx.compute(model, xx, post);
+    const util::Duration flength(fullConfig.getString("forecast length"));
+    const Observations_ & yobs = hofx.compute(model, xx, post, flength);
     hofx.saveQcFlags("EffectiveQC");
     hofx.saveObsErrors("EffectiveError");
 

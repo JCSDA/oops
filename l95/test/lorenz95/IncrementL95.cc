@@ -35,11 +35,11 @@ class IncrementTestFixture : TestFixture {
  public:
   IncrementTestFixture() {
     file_.reset(new eckit::LocalConfiguration(TestConfig::config(), "state"));
-    eckit::LocalConfiguration res(TestConfig::config(), "resolution");
+    eckit::LocalConfiguration res(TestConfig::config(), "geometry");
     resol_.reset(new lorenz95::Resolution(res, oops::mpi::comm()));
     date_str_ = file_->getString("date");
     time_.reset(new util::DateTime(date_str_));
-    vars_.reset(new oops::Variables(TestConfig::config()));
+    vars_.reset(new oops::Variables());
   }
   ~IncrementTestFixture() {}
   std::unique_ptr<const eckit::LocalConfiguration> file_;
@@ -331,7 +331,7 @@ CASE("test_IncrementL95") {
     lorenz95::IncrementL95 dx(*fix.resol_, *fix.vars_, tt);
     dx.read(*fix.file_);
 
-    eckit::LocalConfiguration opFileCfg(TestConfig::config(), "outputFile");
+    eckit::LocalConfiguration opFileCfg(TestConfig::config(), "output file");
     dx.write(opFileCfg);
 
     // Should read back in and compare values

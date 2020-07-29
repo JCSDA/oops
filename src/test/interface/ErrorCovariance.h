@@ -60,21 +60,20 @@ template <typename MODEL> class ErrorCovarianceFixture : private boost::noncopya
   ErrorCovarianceFixture<MODEL>() {
     oops::instantiateCovarFactory<MODEL>();
 
-    test_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "CovarianceTest"));
+    test_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "covariance test"));
 
-    const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "Geometry");
+    const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "geometry");
     resol_.reset(new Geometry_(resolConfig, oops::mpi::comm()));
 
-    const eckit::LocalConfiguration varConfig(TestEnvironment::config(), "Variables");
-    ctlvars_.reset(new oops::Variables(varConfig));
+    ctlvars_.reset(new oops::Variables(TestEnvironment::config(), "analysis variables"));
 
-    const eckit::LocalConfiguration fgconf(TestEnvironment::config(), "State");
-    oops::State<MODEL> xx(*resol_, *ctlvars_, fgconf);
+    const eckit::LocalConfiguration fgconf(TestEnvironment::config(), "background");
+    oops::State<MODEL> xx(*resol_, fgconf);
 
     time_.reset(new util::DateTime(xx.validTime()));
 
 //  Setup the B matrix
-    const eckit::LocalConfiguration covar(TestEnvironment::config(), "Covariance");
+    const eckit::LocalConfiguration covar(TestEnvironment::config(), "background error");
     B_.reset(oops::CovarianceFactory<MODEL>::create(covar, *resol_, *ctlvars_, xx, xx));
   }
 

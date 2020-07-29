@@ -54,13 +54,12 @@ template <typename MODEL> class IncrementFixture : private boost::noncopyable {
 
   IncrementFixture<MODEL>() {
 //  Setup a geometry
-    const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "Geometry");
+    const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "geometry");
     resol_.reset(new Geometry_(resolConfig, oops::mpi::comm()));
 
-    const eckit::LocalConfiguration varConfig(TestEnvironment::config(), "Variables");
-    ctlvars_.reset(new oops::Variables(varConfig));
+    ctlvars_.reset(new oops::Variables(TestEnvironment::config(), "inc variables"));
 
-    time_.reset(new util::DateTime(TestEnvironment::config().getString("TestDate")));
+    time_.reset(new util::DateTime(TestEnvironment::config().getString("test date")));
   }
 
   ~IncrementFixture<MODEL>() {}

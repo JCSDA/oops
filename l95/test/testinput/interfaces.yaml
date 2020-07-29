@@ -1,105 +1,106 @@
-Covariance:
-  covariance: L95Error
+background error:
+  covariance model: L95Error
   date: '2010-01-01T03:00:00Z'
   length_scale: 1.0
   standard_deviation: 0.6
-CovarianceTest:
+covariance test:
   tolerance: 1.0e-10
-Geometry:
+geometry:
   resol: 40
-LocalObsSpace:
-  GeoLocation:
+local obs space:
+  location:
     lon: 0.5
     lat: 0
-  Localization:
+  localization:
     lengthscale: 0.2
-  varname:  ObsValue
+  variable name:  ObsValue
   reference nobs: 64
-LinearModel:
+linear model:
   trajectory:
     f: 8.0
     tstep: PT1H30M
   tstep: PT1H30M
-  version: L95TLM
-LinearModelTest:
-  fclength: PT48H
-  testiterTL: 12
-  toleranceAD: 1.0e-14
-  toleranceTL: 1.0e-07
-LinearObsOpTest:
-  coefTL: '0.1'
-  toleranceAD: '1.0e-16'
-  toleranceTL: '1.0e-14'
-Localization:
+  name: L95TLM
+linear model test:
+  forecast length: PT48H
+  iterations TL: 12
+  tolerance AD: 1.0e-14
+  tolerance TL: 1.0e-07
+localization:
   length_scale: 1.0
-  localization: L95
-Locations:
-  positions:
-  - 0.717
+  localization method: L95
+locations:
+  positions: [0.717]
   time: 2010-01-01T15:00:00Z
-Model:
+model:
   f: 8.0
   name: L95
   tstep: PT1H30M
-ModelBias:
+model aux control:
   bias: 0.2
-ModelBiasCovariance:
+model aux error:
   standard_deviation: 1.0
-ModelTest:
-  fclength: PT48H
-  finalnorm: 7.938
+model test:
+  forecast length: PT48H
+  final norm: 7.938
   tolerance: 0.00005
-Observations:
-  ObsTypes:
-  - Covariance:
-      covariance: diagonal
-    GeoVaLs:
-      filename: Data/l95.gom
-      norm: 101.4587929124312
-    ObsSpace:
-      ObsDataIn:
-        filename: Data/truth.2010-01-02T00:00:00Z.obt
-      ObsDataOut:
-        filename: Data/test.2010-01-02T00:00:00Z.obt
-    ObsOperator: {}
-    ObsBias:
-      bias: 0.3
-    ObsBiasCovariance:
-      standard_deviation: 0.5
-    rmsequiv: 8.3207407741318846
-    tolerance: 1.0e-10
-State:
+observations:
+- obs error:
+    covariance model: diagonal
+  geovals:
+    filename: Data/l95.gom
+    state variables: [x]
+    norm: 101.4587929124312
+  obs space:
+    obsdatain:  Data/truth.2010-01-02T00:00:00Z.obt
+    obsdataout: Data/test.2010-01-02T00:00:00Z.obt
+  obs operator: {}
+  linear obs operator test:
+    coef TL: '0.1'
+    tolerance AD: '1.0e-16'
+    tolerance TL: '1.0e-14'
+  obs bias:
+    bias: 0.3
+  obs bias error:
+    standard_deviation: 0.5
+  rms ref: 8.3207407741318846
+  tolerance: 1.0e-10
+background:
   date: '2010-01-01T03:00:00Z'
   filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H
-StateTest:
-  InterpTest: null
-  Locations:
+initial condition:
+  date: '2010-01-01T03:00:00Z'
+  filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H
+state test:
+  #interp test: null
+  locations:
     positions:
     - 0.717
     time: 2010-01-01T15:00:00Z
-  StateFile:
+  statefile:
     date: '2010-01-01T03:00:00Z'
     filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H
-  StateGenerate:
+  state generate:
     date: '2010-01-01T03:00:00Z'
     mean: 8.0
     sinus: 2.0
-  Variables: null
   date: '2010-01-01T03:00:00Z'
-  interp_tolerance: 0.004
-  norm-file: 8.025826422250747
-  norm-gen: 8.12403840464
+  interpolation tolerance: 0.004
+  norm file: 8.025826422250747
+  norm generated state: 8.12403840464
   tolerance: 1.0e-12
   values:
   - 6.042838
-InterpTest:
-  GeoVaLs:
-    filename: Data/l95.gom
-  Locations:
-    positions: [0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95]
-    time: 2010-01-01T15:00:00Z
-  tolerance: 1.0e-12
-TestDate: '2010-01-01T03:00:00Z'
-Variables: null
-window_begin: '2010-01-01T03:00:00Z'
-window_end: '2010-01-02T03:00:00Z'
+# interp test:
+#   geovals:
+#     filename: Data/l95.gom
+#   locations:
+#     positions: [0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95]
+#     time: 2010-01-01T15:00:00Z
+#   tolerance: 1.0e-12
+test date: '2010-01-01T03:00:00Z'
+analysis variables: [x]
+loc variables: [x]
+inc variables: [x]
+window begin: '2010-01-01T03:00:00Z'
+window end: '2010-01-02T03:00:00Z'

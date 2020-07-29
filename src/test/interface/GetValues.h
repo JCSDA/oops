@@ -68,23 +68,22 @@ template <typename MODEL, typename OBS> class GetValuesFixture : private boost::
   }
 
   GetValuesFixture<MODEL, OBS>() {
-    testconf_.reset(new LocalConfig_(TestEnvironment::config(), "GetValuesTest"));
+    testconf_.reset(new LocalConfig_(TestEnvironment::config(), "getvalues test"));
 
     // Geometry
-    const LocalConfig_ resolConfig(TestEnvironment::config(), "Geometry");
+    const LocalConfig_ resolConfig(TestEnvironment::config(), "geometry");
     resol_.reset(new Geometry_(resolConfig, oops::mpi::comm()));
 
     // Variables
-    const LocalConfig_ varConfig(TestEnvironment::config(), "GeoVaLsVariables");
-    geovalvars_.reset(new Variables_(varConfig));
+    geovalvars_.reset(new Variables_(TestEnvironment::config(), "state variables"));
 
     // Locations
-    const LocalConfig_ locsConfig(TestEnvironment::config(), "Locations");
+    const LocalConfig_ locsConfig(TestEnvironment::config(), "locations");
     locs_.reset(new Locations_(locsConfig, oops::mpi::comm()));
 
     // Window times
-    timebeg_.reset(new DateTime_(locsConfig.getString("window_begin")));
-    timeend_.reset(new DateTime_(locsConfig.getString("window_end")));
+    timebeg_.reset(new DateTime_(locsConfig.getString("window begin")));
+    timeend_.reset(new DateTime_(locsConfig.getString("window end")));
 
     // GeoVaLs
     geovals_.reset(new GeoVaLs_(*locs_, *geovalvars_));
@@ -128,9 +127,8 @@ template <typename MODEL, typename OBS> void testGetValuesMultiWindow() {
   const util::Duration windowlength = Test_::timeend() - Test_::timebeg();
   const util::DateTime timemid = Test_::timebeg() + windowlength/2;
 
-  const eckit::LocalConfiguration confgen(Test_::testconf(), "StateGenerate");
-  const oops::Variables statevars(confgen);
-  const State_ xx(Test_::resol(), statevars, confgen);
+  const eckit::LocalConfiguration confgen(Test_::testconf(), "state generate");
+  const State_ xx(Test_::resol(), confgen);
 
   EXPECT(xx.norm() > 0.0);
 
@@ -153,7 +151,7 @@ template <typename MODEL, typename OBS> void testGetValuesMultiWindow() {
 
 /*! \brief Interpolation test
  *
- * \details **testGetValuesInterpolation()** tests the creation of an 
+ * \details **testGetValuesInterpolation()** tests the creation of an
  * analytic state for a given model.  The conceptual steps are as follows:
  * 1. Initialize the JEDI State object based on idealized analytic formulae
  * 2. Interpolate the State variables onto selected "observation" locations
@@ -166,22 +164,22 @@ template <typename MODEL, typename OBS> void testGetValuesMultiWindow() {
  *
  * The interpolated state values are compared to the analytic solution for
  * a series of **locations** which includes values optionally specified by the
- * user in the "StateTest" section of the config file in addition to a
- * randomly-generated list of **Nrandom** random locations.  Nrandom is also
- * specified by the user in the "StateTest" section of the config file, as is the
- * (nondimensional) tolerence level (**interp_tolerance**) to be used for the tests.
+ * user in the "state test" section of the config file in addition to a
+ * randomly-generated list of **nrandom** random locations.  nrandom is also
+ * specified by the user in the "state test" section of the config file, as is the
+ * (nondimensional) tolerence level (**interpolation tolerance**) to be used for the tests.
  *
  * Relevant parameters in the **State* section of the config file include
  *
  * * **norm-gen** Normalization test for the generated State
- * * **interp_tolerance** tolerance for the interpolation test
+ * * **interpolation tolerance** tolerance for the interpolation test
  *
  * \date April, 2018: M. Miesch (JCSDA) adapted a preliminary version in the
  * feature/interp branch
  *
  * \warning Since this model compares the interpolated state values to an exact analytic
  * solution, it requires that the "analytic_init" option be implemented in the model and
- * selected in the "State.StateGenerate" section of the config file.
+ * selected in the "state.state generate" section of the config file.
  */
 
 template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
@@ -190,12 +188,11 @@ template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
   typedef oops::State<MODEL>              State_;
   typedef oops::GeoVaLs<OBS>              GeoVaLs_;
 
-  const eckit::LocalConfiguration confgen(Test_::testconf(), "StateGenerate");
-  const oops::Variables statevars(confgen);
-  const State_ xx(Test_::resol(), statevars, confgen);
+  const eckit::LocalConfiguration confgen(Test_::testconf(), "state generate");
+  const State_ xx(Test_::resol(), confgen);
 
   // Interpolation tolerance
-  double interp_tol = Test_::testconf().getDouble("interp_tolerance");
+  double interp_tol = Test_::testconf().getDouble("interpolation tolerance");
 
   // Ceate a GeoVaLs object from locs and vars
   GeoVaLs_ gval(Test_::locs(), Test_::geovalvars());

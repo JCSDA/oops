@@ -101,7 +101,7 @@ template <typename OBS>
 std::unique_ptr<ObsErrorBase<OBS>>
 ObsErrorFactory<OBS>::create(const eckit::Configuration & conf, const ObsSpace_ & obs) {
   Log::trace() << "ObsErrorBase<OBS>::create starting" << std::endl;
-  const std::string id = conf.getString("covariance");
+  const std::string id = conf.getString("covariance model");
   typename std::map<std::string, ObsErrorFactory<OBS>*>::iterator
     jerr = getMakers().find(id);
   if (jerr == getMakers().end()) {

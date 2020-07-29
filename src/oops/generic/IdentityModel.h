@@ -57,7 +57,7 @@ class IdentityModel : public ModelBase<MODEL> {
 
 template<typename MODEL>
 IdentityModel<MODEL>::IdentityModel(const Geometry_ & resol, const eckit::Configuration & conf)
-  : tstep_(util::Duration(conf.getString("tstep"))), vars_(conf) {
+  : tstep_(util::Duration(conf.getString("tstep"))), vars_(conf, "state variables") {
   Log::trace() << "IdentityModel<MODEL>::IdentityModel done" << std::endl;
 }
 

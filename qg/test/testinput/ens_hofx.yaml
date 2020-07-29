@@ -1,16 +1,11 @@
-EnsembleApplication:
+ensemble application:
   members: 5
-Assimilation Window:
-  window_begin: 2010-01-01T00:00:00Z
-  window_length: PT12H
-Geometry:
+geometry:
   nx: 40
   ny: 20
-  depths:
-  - 4500.0
-  - 5500.0
-Initial Condition:
-  state:
+  depths: [4500.0, 5500.0]
+initial condition:
+  members:
   - date: 2010-01-01T00:00:00Z
     filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1D
   - date: 2010-01-01T00:00:00Z
@@ -21,36 +16,36 @@ Initial Condition:
     filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1D
   - date: 2010-01-01T00:00:00Z
     filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1D
-Model:
+model:
   name: QG
   tstep: PT1H
-  variables:
-  - x
-Observations:
-  ObsTypes:
-  - ObsOperator:
-      ObsType: Stream
-    ObsSpace:
-      ObsDataIn:
-        obsfile: Data/truth.obs4d_12h
-      ObsDataOut:
-        obsfile: Data/%{member}%.ens_hofx.obs4d_12h
-      ObsType: Stream
-  - ObsOperator:
-      ObsType: Wind
-    ObsSpace:
-      ObsDataIn:
-        obsfile: Data/truth.obs4d_12h
-      ObsDataOut:
-        obsfile: Data/%{member}%.ens_hofx.obs4d_12h
-      ObsType: Wind
-  - ObsOperator:
-      ObsType: WSpeed
-    ObsSpace:
-      ObsDataIn:
-        obsfile: Data/truth.obs4d_12h
-      ObsDataOut:
-        obsfile: Data/%{member}%.ens_hofx.obs4d_12h
-      ObsType: WSpeed
-Prints:
+forecast length: PT12H
+window begin: 2010-01-01T00:00:00Z
+window length: PT12H
+observations:
+- obs operator:
+    obs type: Stream
+  obs space:
+    obsdatain:
+      obsfile: Data/truth.obs4d_12h
+    obsdataout:
+      obsfile: Data/%{member}%.ens_hofx.obs4d_12h
+    obs type: Stream
+- obs operator:
+    obs type: Wind
+  obs space:
+    obsdatain:
+      obsfile: Data/truth.obs4d_12h
+    obsdataout:
+      obsfile: Data/%{member}%.ens_hofx.obs4d_12h
+    obs type: Wind
+- obs operator:
+    obs type: WSpeed
+  obs space:
+    obsdatain:
+      obsfile: Data/truth.obs4d_12h
+    obsdataout:
+      obsfile: Data/%{member}%.ens_hofx.obs4d_12h
+    obs type: WSpeed
+prints:
   frequency: PT3H

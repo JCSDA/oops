@@ -47,13 +47,11 @@ class GeoVaLsFixture : private boost::noncopyable {
   }
 
   GeoVaLsFixture(): ospaces_() {
-    const util::DateTime tbgn(TestEnvironment::config().getString("window_begin"));
-    const util::DateTime tend(TestEnvironment::config().getString("window_end"));
+    const util::DateTime tbgn(TestEnvironment::config().getString("window begin"));
+    const util::DateTime tend(TestEnvironment::config().getString("window end"));
 
-    const eckit::LocalConfiguration conf(TestEnvironment::config(), "Observations");
-    ospaces_.reset(new ObsSpaces_(conf, oops::mpi::comm(), tbgn, tend));
-
-    conf.get("ObsTypes", confs_);
+    ospaces_.reset(new ObsSpaces_(TestEnvironment::config(), oops::mpi::comm(), tbgn, tend));
+    TestEnvironment::config().get("observations", confs_);
   }
 
   ~GeoVaLsFixture() {}
@@ -69,8 +67,8 @@ template <typename OBS> void testConstructor() {
   typedef oops::GeoVaLs<OBS>    GeoVaLs_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    eckit::LocalConfiguration gconf(Test_::conf(jj), "GeoVaLs");
-    oops::Variables geovars(gconf);
+    eckit::LocalConfiguration gconf(Test_::conf(jj), "geovals");
+    oops::Variables geovars(gconf, "state variables");
     std::unique_ptr<GeoVaLs_> ov(new GeoVaLs_(gconf, Test_::obspace()[jj], geovars));
     EXPECT(ov.get());
 
@@ -88,8 +86,8 @@ template <typename OBS> void testUtils() {
   const double tol = 1e-6;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    eckit::LocalConfiguration gconf(Test_::conf(jj), "GeoVaLs");
-    oops::Variables geovars(gconf);
+    eckit::LocalConfiguration gconf(Test_::conf(jj), "geovals");
+    oops::Variables geovars(gconf, "state variables");
     GeoVaLs_ gval(gconf, Test_::obspace()[jj], geovars);
 
     const double zz = dot_product(gval, gval);
@@ -164,8 +162,8 @@ template <typename OBS> void testRead() {
 
   const double tol = 1.0e-9;
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    eckit::LocalConfiguration gconf(Test_::conf(jj), "GeoVaLs");
-    oops::Variables geovars(gconf);
+    eckit::LocalConfiguration gconf(Test_::conf(jj), "geovals");
+    oops::Variables geovars(gconf, "state variables");
     GeoVaLs_ gval(gconf, Test_::obspace()[jj], geovars);
 
     const double xx = gconf.getDouble("norm");

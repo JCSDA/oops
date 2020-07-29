@@ -1,283 +1,279 @@
-resolution:
-  resol: '40'
-cost_function:
-  cost_type: 4D-Ens-Var
-  window_begin: '2010-01-01T03:00:00Z'
-  window_length: PT12H
-  window_sub: PT1H30M
-  varchange: Identity
-  Jo:
-    ObsTypes:
-    - Covariance:
-        covariance: diagonal
-      ObsSpace:
-        ObsDataIn:
-          filename: Data/l95.truth4d.2010-01-01T12:00:00Z.obt
-        ObsDataOut:
-          filename: Data/l95.4densvar.2010-01-01T12:00:00Z.obt
-      ObsOperator: {}
-  Jb:
-    Background:
-      state:
+cost function:
+  cost type: 4D-Ens-Var
+  window begin: 2010-01-01T03:00:00Z
+  window length: PT12H
+  subwindow: PT1H30M
+  analysis variables: [x]
+  geometry:
+    resol: 40
+  model:
+    name: L95
+    f: 8.0
+    tstep: PT1H30M
+  observations:
+  - obs error:
+      covariance model: diagonal
+    obs space:
+      obsdatain:  Data/l95.truth4d.2010-01-01T12:00:00Z.obt
+      obsdataout: Data/l95.4densvar.2010-01-01T12:00:00Z.obt
+    obs operator: {}
+  background:
+    states:
+    - date: 2010-01-01T03:00:00Z
+      filename: Data/test.fc.2010-01-01T00:00:00Z.PT3H
+    - date: 2010-01-01T04:30:00Z
+      filename: Data/test.fc.2010-01-01T00:00:00Z.PT4H30M
+    - date: 2010-01-01T06:00:00Z
+      filename: Data/test.fc.2010-01-01T00:00:00Z.PT6H
+    - date: 2010-01-01T07:30:00Z
+      filename: Data/test.fc.2010-01-01T00:00:00Z.PT7H30M
+    - date: 2010-01-01T09:00:00Z
+      filename: Data/test.fc.2010-01-01T00:00:00Z.PT9H
+    - date: 2010-01-01T10:30:00Z
+      filename: Data/test.fc.2010-01-01T00:00:00Z.PT10H30M
+    - date: 2010-01-01T12:00:00Z
+      filename: Data/test.fc.2010-01-01T00:00:00Z.PT12H
+    - date: 2010-01-01T13:30:00Z
+      filename: Data/test.fc.2010-01-01T00:00:00Z.PT13H30M
+    - date: 2010-01-01T15:00:00Z
+      filename: Data/test.fc.2010-01-01T00:00:00Z.PT15H
+  background error:
+    covariance model: ensemble
+    localization:
+      length_scale: 1.0
+      localization method: L95
+    members:
+    - states:
       - date: '2010-01-01T03:00:00Z'
-        filename: Data/test.fc.2010-01-01T00:00:00Z.PT3H
+        filename: Data/test.ens.1.2010-01-01T00:00:00Z.PT3H
       - date: '2010-01-01T04:30:00Z'
-        filename: Data/test.fc.2010-01-01T00:00:00Z.PT4H30M
+        filename: Data/test.ens.1.2010-01-01T00:00:00Z.PT4H30M
       - date: '2010-01-01T06:00:00Z'
-        filename: Data/test.fc.2010-01-01T00:00:00Z.PT6H
+        filename: Data/test.ens.1.2010-01-01T00:00:00Z.PT6H
       - date: '2010-01-01T07:30:00Z'
-        filename: Data/test.fc.2010-01-01T00:00:00Z.PT7H30M
+        filename: Data/test.ens.1.2010-01-01T00:00:00Z.PT7H30M
       - date: '2010-01-01T09:00:00Z'
-        filename: Data/test.fc.2010-01-01T00:00:00Z.PT9H
+        filename: Data/test.ens.1.2010-01-01T00:00:00Z.PT9H
       - date: '2010-01-01T10:30:00Z'
-        filename: Data/test.fc.2010-01-01T00:00:00Z.PT10H30M
+        filename: Data/test.ens.1.2010-01-01T00:00:00Z.PT10H30M
       - date: '2010-01-01T12:00:00Z'
-        filename: Data/test.fc.2010-01-01T00:00:00Z.PT12H
+        filename: Data/test.ens.1.2010-01-01T00:00:00Z.PT12H
       - date: '2010-01-01T13:30:00Z'
-        filename: Data/test.fc.2010-01-01T00:00:00Z.PT13H30M
+        filename: Data/test.ens.1.2010-01-01T00:00:00Z.PT13H30M
       - date: '2010-01-01T15:00:00Z'
-        filename: Data/test.fc.2010-01-01T00:00:00Z.PT15H
-    Covariance:
-      covariance: ensemble
-      localization:
-        length_scale: '1.0'
-        localization: L95
-      members:
-      - state:
-        - date: '2010-01-01T03:00:00Z'
-          filename: Data/test.ens.1.2010-01-01T00:00:00Z.PT3H
-        - date: '2010-01-01T04:30:00Z'
-          filename: Data/test.ens.1.2010-01-01T00:00:00Z.PT4H30M
-        - date: '2010-01-01T06:00:00Z'
-          filename: Data/test.ens.1.2010-01-01T00:00:00Z.PT6H
-        - date: '2010-01-01T07:30:00Z'
-          filename: Data/test.ens.1.2010-01-01T00:00:00Z.PT7H30M
-        - date: '2010-01-01T09:00:00Z'
-          filename: Data/test.ens.1.2010-01-01T00:00:00Z.PT9H
-        - date: '2010-01-01T10:30:00Z'
-          filename: Data/test.ens.1.2010-01-01T00:00:00Z.PT10H30M
-        - date: '2010-01-01T12:00:00Z'
-          filename: Data/test.ens.1.2010-01-01T00:00:00Z.PT12H
-        - date: '2010-01-01T13:30:00Z'
-          filename: Data/test.ens.1.2010-01-01T00:00:00Z.PT13H30M
-        - date: '2010-01-01T15:00:00Z'
-          filename: Data/test.ens.1.2010-01-01T00:00:00Z.PT15H
-      - state:
-        - date: '2010-01-01T03:00:00Z'
-          filename: Data/test.ens.2.2010-01-01T00:00:00Z.PT3H
-        - date: '2010-01-01T04:30:00Z'
-          filename: Data/test.ens.2.2010-01-01T00:00:00Z.PT4H30M
-        - date: '2010-01-01T06:00:00Z'
-          filename: Data/test.ens.2.2010-01-01T00:00:00Z.PT6H
-        - date: '2010-01-01T07:30:00Z'
-          filename: Data/test.ens.2.2010-01-01T00:00:00Z.PT7H30M
-        - date: '2010-01-01T09:00:00Z'
-          filename: Data/test.ens.2.2010-01-01T00:00:00Z.PT9H
-        - date: '2010-01-01T10:30:00Z'
-          filename: Data/test.ens.2.2010-01-01T00:00:00Z.PT10H30M
-        - date: '2010-01-01T12:00:00Z'
-          filename: Data/test.ens.2.2010-01-01T00:00:00Z.PT12H
-        - date: '2010-01-01T13:30:00Z'
-          filename: Data/test.ens.2.2010-01-01T00:00:00Z.PT13H30M
-        - date: '2010-01-01T15:00:00Z'
-          filename: Data/test.ens.2.2010-01-01T00:00:00Z.PT15H
-      - state:
-        - date: '2010-01-01T03:00:00Z'
-          filename: Data/test.ens.3.2010-01-01T00:00:00Z.PT3H
-        - date: '2010-01-01T04:30:00Z'
-          filename: Data/test.ens.3.2010-01-01T00:00:00Z.PT4H30M
-        - date: '2010-01-01T06:00:00Z'
-          filename: Data/test.ens.3.2010-01-01T00:00:00Z.PT6H
-        - date: '2010-01-01T07:30:00Z'
-          filename: Data/test.ens.3.2010-01-01T00:00:00Z.PT7H30M
-        - date: '2010-01-01T09:00:00Z'
-          filename: Data/test.ens.3.2010-01-01T00:00:00Z.PT9H
-        - date: '2010-01-01T10:30:00Z'
-          filename: Data/test.ens.3.2010-01-01T00:00:00Z.PT10H30M
-        - date: '2010-01-01T12:00:00Z'
-          filename: Data/test.ens.3.2010-01-01T00:00:00Z.PT12H
-        - date: '2010-01-01T13:30:00Z'
-          filename: Data/test.ens.3.2010-01-01T00:00:00Z.PT13H30M
-        - date: '2010-01-01T15:00:00Z'
-          filename: Data/test.ens.3.2010-01-01T00:00:00Z.PT15H
-      - state:
-        - date: '2010-01-01T03:00:00Z'
-          filename: Data/test.ens.4.2010-01-01T00:00:00Z.PT3H
-        - date: '2010-01-01T04:30:00Z'
-          filename: Data/test.ens.4.2010-01-01T00:00:00Z.PT4H30M
-        - date: '2010-01-01T06:00:00Z'
-          filename: Data/test.ens.4.2010-01-01T00:00:00Z.PT6H
-        - date: '2010-01-01T07:30:00Z'
-          filename: Data/test.ens.4.2010-01-01T00:00:00Z.PT7H30M
-        - date: '2010-01-01T09:00:00Z'
-          filename: Data/test.ens.4.2010-01-01T00:00:00Z.PT9H
-        - date: '2010-01-01T10:30:00Z'
-          filename: Data/test.ens.4.2010-01-01T00:00:00Z.PT10H30M
-        - date: '2010-01-01T12:00:00Z'
-          filename: Data/test.ens.4.2010-01-01T00:00:00Z.PT12H
-        - date: '2010-01-01T13:30:00Z'
-          filename: Data/test.ens.4.2010-01-01T00:00:00Z.PT13H30M
-        - date: '2010-01-01T15:00:00Z'
-          filename: Data/test.ens.4.2010-01-01T00:00:00Z.PT15H
-      - state:
-        - date: '2010-01-01T03:00:00Z'
-          filename: Data/test.ens.5.2010-01-01T00:00:00Z.PT3H
-        - date: '2010-01-01T04:30:00Z'
-          filename: Data/test.ens.5.2010-01-01T00:00:00Z.PT4H30M
-        - date: '2010-01-01T06:00:00Z'
-          filename: Data/test.ens.5.2010-01-01T00:00:00Z.PT6H
-        - date: '2010-01-01T07:30:00Z'
-          filename: Data/test.ens.5.2010-01-01T00:00:00Z.PT7H30M
-        - date: '2010-01-01T09:00:00Z'
-          filename: Data/test.ens.5.2010-01-01T00:00:00Z.PT9H
-        - date: '2010-01-01T10:30:00Z'
-          filename: Data/test.ens.5.2010-01-01T00:00:00Z.PT10H30M
-        - date: '2010-01-01T12:00:00Z'
-          filename: Data/test.ens.5.2010-01-01T00:00:00Z.PT12H
-        - date: '2010-01-01T13:30:00Z'
-          filename: Data/test.ens.5.2010-01-01T00:00:00Z.PT13H30M
-        - date: '2010-01-01T15:00:00Z'
-          filename: Data/test.ens.5.2010-01-01T00:00:00Z.PT15H
-      - state:
-        - date: '2010-01-01T03:00:00Z'
-          filename: Data/test.ens.6.2010-01-01T00:00:00Z.PT3H
-        - date: '2010-01-01T04:30:00Z'
-          filename: Data/test.ens.6.2010-01-01T00:00:00Z.PT4H30M
-        - date: '2010-01-01T06:00:00Z'
-          filename: Data/test.ens.6.2010-01-01T00:00:00Z.PT6H
-        - date: '2010-01-01T07:30:00Z'
-          filename: Data/test.ens.6.2010-01-01T00:00:00Z.PT7H30M
-        - date: '2010-01-01T09:00:00Z'
-          filename: Data/test.ens.6.2010-01-01T00:00:00Z.PT9H
-        - date: '2010-01-01T10:30:00Z'
-          filename: Data/test.ens.6.2010-01-01T00:00:00Z.PT10H30M
-        - date: '2010-01-01T12:00:00Z'
-          filename: Data/test.ens.6.2010-01-01T00:00:00Z.PT12H
-        - date: '2010-01-01T13:30:00Z'
-          filename: Data/test.ens.6.2010-01-01T00:00:00Z.PT13H30M
-        - date: '2010-01-01T15:00:00Z'
-          filename: Data/test.ens.6.2010-01-01T00:00:00Z.PT15H
-      - state:
-        - date: '2010-01-01T03:00:00Z'
-          filename: Data/test.ens.7.2010-01-01T00:00:00Z.PT3H
-        - date: '2010-01-01T04:30:00Z'
-          filename: Data/test.ens.7.2010-01-01T00:00:00Z.PT4H30M
-        - date: '2010-01-01T06:00:00Z'
-          filename: Data/test.ens.7.2010-01-01T00:00:00Z.PT6H
-        - date: '2010-01-01T07:30:00Z'
-          filename: Data/test.ens.7.2010-01-01T00:00:00Z.PT7H30M
-        - date: '2010-01-01T09:00:00Z'
-          filename: Data/test.ens.7.2010-01-01T00:00:00Z.PT9H
-        - date: '2010-01-01T10:30:00Z'
-          filename: Data/test.ens.7.2010-01-01T00:00:00Z.PT10H30M
-        - date: '2010-01-01T12:00:00Z'
-          filename: Data/test.ens.7.2010-01-01T00:00:00Z.PT12H
-        - date: '2010-01-01T13:30:00Z'
-          filename: Data/test.ens.7.2010-01-01T00:00:00Z.PT13H30M
-        - date: '2010-01-01T15:00:00Z'
-          filename: Data/test.ens.7.2010-01-01T00:00:00Z.PT15H
-      - state:
-        - date: '2010-01-01T03:00:00Z'
-          filename: Data/test.ens.8.2010-01-01T00:00:00Z.PT3H
-        - date: '2010-01-01T04:30:00Z'
-          filename: Data/test.ens.8.2010-01-01T00:00:00Z.PT4H30M
-        - date: '2010-01-01T06:00:00Z'
-          filename: Data/test.ens.8.2010-01-01T00:00:00Z.PT6H
-        - date: '2010-01-01T07:30:00Z'
-          filename: Data/test.ens.8.2010-01-01T00:00:00Z.PT7H30M
-        - date: '2010-01-01T09:00:00Z'
-          filename: Data/test.ens.8.2010-01-01T00:00:00Z.PT9H
-        - date: '2010-01-01T10:30:00Z'
-          filename: Data/test.ens.8.2010-01-01T00:00:00Z.PT10H30M
-        - date: '2010-01-01T12:00:00Z'
-          filename: Data/test.ens.8.2010-01-01T00:00:00Z.PT12H
-        - date: '2010-01-01T13:30:00Z'
-          filename: Data/test.ens.8.2010-01-01T00:00:00Z.PT13H30M
-        - date: '2010-01-01T15:00:00Z'
-          filename: Data/test.ens.8.2010-01-01T00:00:00Z.PT15H
-      - state:
-        - date: '2010-01-01T03:00:00Z'
-          filename: Data/test.ens.9.2010-01-01T00:00:00Z.PT3H
-        - date: '2010-01-01T04:30:00Z'
-          filename: Data/test.ens.9.2010-01-01T00:00:00Z.PT4H30M
-        - date: '2010-01-01T06:00:00Z'
-          filename: Data/test.ens.9.2010-01-01T00:00:00Z.PT6H
-        - date: '2010-01-01T07:30:00Z'
-          filename: Data/test.ens.9.2010-01-01T00:00:00Z.PT7H30M
-        - date: '2010-01-01T09:00:00Z'
-          filename: Data/test.ens.9.2010-01-01T00:00:00Z.PT9H
-        - date: '2010-01-01T10:30:00Z'
-          filename: Data/test.ens.9.2010-01-01T00:00:00Z.PT10H30M
-        - date: '2010-01-01T12:00:00Z'
-          filename: Data/test.ens.9.2010-01-01T00:00:00Z.PT12H
-        - date: '2010-01-01T13:30:00Z'
-          filename: Data/test.ens.9.2010-01-01T00:00:00Z.PT13H30M
-        - date: '2010-01-01T15:00:00Z'
-          filename: Data/test.ens.9.2010-01-01T00:00:00Z.PT15H
-      - state:
-        - date: '2010-01-01T03:00:00Z'
-          filename: Data/test.ens.10.2010-01-01T00:00:00Z.PT3H
-        - date: '2010-01-01T04:30:00Z'
-          filename: Data/test.ens.10.2010-01-01T00:00:00Z.PT4H30M
-        - date: '2010-01-01T06:00:00Z'
-          filename: Data/test.ens.10.2010-01-01T00:00:00Z.PT6H
-        - date: '2010-01-01T07:30:00Z'
-          filename: Data/test.ens.10.2010-01-01T00:00:00Z.PT7H30M
-        - date: '2010-01-01T09:00:00Z'
-          filename: Data/test.ens.10.2010-01-01T00:00:00Z.PT9H
-        - date: '2010-01-01T10:30:00Z'
-          filename: Data/test.ens.10.2010-01-01T00:00:00Z.PT10H30M
-        - date: '2010-01-01T12:00:00Z'
-          filename: Data/test.ens.10.2010-01-01T00:00:00Z.PT12H
-        - date: '2010-01-01T13:30:00Z'
-          filename: Data/test.ens.10.2010-01-01T00:00:00Z.PT13H30M
-        - date: '2010-01-01T15:00:00Z'
-          filename: Data/test.ens.10.2010-01-01T00:00:00Z.PT15H
-      variables:
-      - dummy
-  Jc:
+        filename: Data/test.ens.1.2010-01-01T00:00:00Z.PT15H
+    - states:
+      - date: '2010-01-01T03:00:00Z'
+        filename: Data/test.ens.2.2010-01-01T00:00:00Z.PT3H
+      - date: '2010-01-01T04:30:00Z'
+        filename: Data/test.ens.2.2010-01-01T00:00:00Z.PT4H30M
+      - date: '2010-01-01T06:00:00Z'
+        filename: Data/test.ens.2.2010-01-01T00:00:00Z.PT6H
+      - date: '2010-01-01T07:30:00Z'
+        filename: Data/test.ens.2.2010-01-01T00:00:00Z.PT7H30M
+      - date: '2010-01-01T09:00:00Z'
+        filename: Data/test.ens.2.2010-01-01T00:00:00Z.PT9H
+      - date: '2010-01-01T10:30:00Z'
+        filename: Data/test.ens.2.2010-01-01T00:00:00Z.PT10H30M
+      - date: '2010-01-01T12:00:00Z'
+        filename: Data/test.ens.2.2010-01-01T00:00:00Z.PT12H
+      - date: '2010-01-01T13:30:00Z'
+        filename: Data/test.ens.2.2010-01-01T00:00:00Z.PT13H30M
+      - date: '2010-01-01T15:00:00Z'
+        filename: Data/test.ens.2.2010-01-01T00:00:00Z.PT15H
+    - states:
+      - date: '2010-01-01T03:00:00Z'
+        filename: Data/test.ens.3.2010-01-01T00:00:00Z.PT3H
+      - date: '2010-01-01T04:30:00Z'
+        filename: Data/test.ens.3.2010-01-01T00:00:00Z.PT4H30M
+      - date: '2010-01-01T06:00:00Z'
+        filename: Data/test.ens.3.2010-01-01T00:00:00Z.PT6H
+      - date: '2010-01-01T07:30:00Z'
+        filename: Data/test.ens.3.2010-01-01T00:00:00Z.PT7H30M
+      - date: '2010-01-01T09:00:00Z'
+        filename: Data/test.ens.3.2010-01-01T00:00:00Z.PT9H
+      - date: '2010-01-01T10:30:00Z'
+        filename: Data/test.ens.3.2010-01-01T00:00:00Z.PT10H30M
+      - date: '2010-01-01T12:00:00Z'
+        filename: Data/test.ens.3.2010-01-01T00:00:00Z.PT12H
+      - date: '2010-01-01T13:30:00Z'
+        filename: Data/test.ens.3.2010-01-01T00:00:00Z.PT13H30M
+      - date: '2010-01-01T15:00:00Z'
+        filename: Data/test.ens.3.2010-01-01T00:00:00Z.PT15H
+    - states:
+      - date: '2010-01-01T03:00:00Z'
+        filename: Data/test.ens.4.2010-01-01T00:00:00Z.PT3H
+      - date: '2010-01-01T04:30:00Z'
+        filename: Data/test.ens.4.2010-01-01T00:00:00Z.PT4H30M
+      - date: '2010-01-01T06:00:00Z'
+        filename: Data/test.ens.4.2010-01-01T00:00:00Z.PT6H
+      - date: '2010-01-01T07:30:00Z'
+        filename: Data/test.ens.4.2010-01-01T00:00:00Z.PT7H30M
+      - date: '2010-01-01T09:00:00Z'
+        filename: Data/test.ens.4.2010-01-01T00:00:00Z.PT9H
+      - date: '2010-01-01T10:30:00Z'
+        filename: Data/test.ens.4.2010-01-01T00:00:00Z.PT10H30M
+      - date: '2010-01-01T12:00:00Z'
+        filename: Data/test.ens.4.2010-01-01T00:00:00Z.PT12H
+      - date: '2010-01-01T13:30:00Z'
+        filename: Data/test.ens.4.2010-01-01T00:00:00Z.PT13H30M
+      - date: '2010-01-01T15:00:00Z'
+        filename: Data/test.ens.4.2010-01-01T00:00:00Z.PT15H
+    - states:
+      - date: '2010-01-01T03:00:00Z'
+        filename: Data/test.ens.5.2010-01-01T00:00:00Z.PT3H
+      - date: '2010-01-01T04:30:00Z'
+        filename: Data/test.ens.5.2010-01-01T00:00:00Z.PT4H30M
+      - date: '2010-01-01T06:00:00Z'
+        filename: Data/test.ens.5.2010-01-01T00:00:00Z.PT6H
+      - date: '2010-01-01T07:30:00Z'
+        filename: Data/test.ens.5.2010-01-01T00:00:00Z.PT7H30M
+      - date: '2010-01-01T09:00:00Z'
+        filename: Data/test.ens.5.2010-01-01T00:00:00Z.PT9H
+      - date: '2010-01-01T10:30:00Z'
+        filename: Data/test.ens.5.2010-01-01T00:00:00Z.PT10H30M
+      - date: '2010-01-01T12:00:00Z'
+        filename: Data/test.ens.5.2010-01-01T00:00:00Z.PT12H
+      - date: '2010-01-01T13:30:00Z'
+        filename: Data/test.ens.5.2010-01-01T00:00:00Z.PT13H30M
+      - date: '2010-01-01T15:00:00Z'
+        filename: Data/test.ens.5.2010-01-01T00:00:00Z.PT15H
+    - states:
+      - date: '2010-01-01T03:00:00Z'
+        filename: Data/test.ens.6.2010-01-01T00:00:00Z.PT3H
+      - date: '2010-01-01T04:30:00Z'
+        filename: Data/test.ens.6.2010-01-01T00:00:00Z.PT4H30M
+      - date: '2010-01-01T06:00:00Z'
+        filename: Data/test.ens.6.2010-01-01T00:00:00Z.PT6H
+      - date: '2010-01-01T07:30:00Z'
+        filename: Data/test.ens.6.2010-01-01T00:00:00Z.PT7H30M
+      - date: '2010-01-01T09:00:00Z'
+        filename: Data/test.ens.6.2010-01-01T00:00:00Z.PT9H
+      - date: '2010-01-01T10:30:00Z'
+        filename: Data/test.ens.6.2010-01-01T00:00:00Z.PT10H30M
+      - date: '2010-01-01T12:00:00Z'
+        filename: Data/test.ens.6.2010-01-01T00:00:00Z.PT12H
+      - date: '2010-01-01T13:30:00Z'
+        filename: Data/test.ens.6.2010-01-01T00:00:00Z.PT13H30M
+      - date: '2010-01-01T15:00:00Z'
+        filename: Data/test.ens.6.2010-01-01T00:00:00Z.PT15H
+    - states:
+      - date: '2010-01-01T03:00:00Z'
+        filename: Data/test.ens.7.2010-01-01T00:00:00Z.PT3H
+      - date: '2010-01-01T04:30:00Z'
+        filename: Data/test.ens.7.2010-01-01T00:00:00Z.PT4H30M
+      - date: '2010-01-01T06:00:00Z'
+        filename: Data/test.ens.7.2010-01-01T00:00:00Z.PT6H
+      - date: '2010-01-01T07:30:00Z'
+        filename: Data/test.ens.7.2010-01-01T00:00:00Z.PT7H30M
+      - date: '2010-01-01T09:00:00Z'
+        filename: Data/test.ens.7.2010-01-01T00:00:00Z.PT9H
+      - date: '2010-01-01T10:30:00Z'
+        filename: Data/test.ens.7.2010-01-01T00:00:00Z.PT10H30M
+      - date: '2010-01-01T12:00:00Z'
+        filename: Data/test.ens.7.2010-01-01T00:00:00Z.PT12H
+      - date: '2010-01-01T13:30:00Z'
+        filename: Data/test.ens.7.2010-01-01T00:00:00Z.PT13H30M
+      - date: '2010-01-01T15:00:00Z'
+        filename: Data/test.ens.7.2010-01-01T00:00:00Z.PT15H
+    - states:
+      - date: '2010-01-01T03:00:00Z'
+        filename: Data/test.ens.8.2010-01-01T00:00:00Z.PT3H
+      - date: '2010-01-01T04:30:00Z'
+        filename: Data/test.ens.8.2010-01-01T00:00:00Z.PT4H30M
+      - date: '2010-01-01T06:00:00Z'
+        filename: Data/test.ens.8.2010-01-01T00:00:00Z.PT6H
+      - date: '2010-01-01T07:30:00Z'
+        filename: Data/test.ens.8.2010-01-01T00:00:00Z.PT7H30M
+      - date: '2010-01-01T09:00:00Z'
+        filename: Data/test.ens.8.2010-01-01T00:00:00Z.PT9H
+      - date: '2010-01-01T10:30:00Z'
+        filename: Data/test.ens.8.2010-01-01T00:00:00Z.PT10H30M
+      - date: '2010-01-01T12:00:00Z'
+        filename: Data/test.ens.8.2010-01-01T00:00:00Z.PT12H
+      - date: '2010-01-01T13:30:00Z'
+        filename: Data/test.ens.8.2010-01-01T00:00:00Z.PT13H30M
+      - date: '2010-01-01T15:00:00Z'
+        filename: Data/test.ens.8.2010-01-01T00:00:00Z.PT15H
+    - states:
+      - date: '2010-01-01T03:00:00Z'
+        filename: Data/test.ens.9.2010-01-01T00:00:00Z.PT3H
+      - date: '2010-01-01T04:30:00Z'
+        filename: Data/test.ens.9.2010-01-01T00:00:00Z.PT4H30M
+      - date: '2010-01-01T06:00:00Z'
+        filename: Data/test.ens.9.2010-01-01T00:00:00Z.PT6H
+      - date: '2010-01-01T07:30:00Z'
+        filename: Data/test.ens.9.2010-01-01T00:00:00Z.PT7H30M
+      - date: '2010-01-01T09:00:00Z'
+        filename: Data/test.ens.9.2010-01-01T00:00:00Z.PT9H
+      - date: '2010-01-01T10:30:00Z'
+        filename: Data/test.ens.9.2010-01-01T00:00:00Z.PT10H30M
+      - date: '2010-01-01T12:00:00Z'
+        filename: Data/test.ens.9.2010-01-01T00:00:00Z.PT12H
+      - date: '2010-01-01T13:30:00Z'
+        filename: Data/test.ens.9.2010-01-01T00:00:00Z.PT13H30M
+      - date: '2010-01-01T15:00:00Z'
+        filename: Data/test.ens.9.2010-01-01T00:00:00Z.PT15H
+    - states:
+      - date: '2010-01-01T03:00:00Z'
+        filename: Data/test.ens.10.2010-01-01T00:00:00Z.PT3H
+      - date: '2010-01-01T04:30:00Z'
+        filename: Data/test.ens.10.2010-01-01T00:00:00Z.PT4H30M
+      - date: '2010-01-01T06:00:00Z'
+        filename: Data/test.ens.10.2010-01-01T00:00:00Z.PT6H
+      - date: '2010-01-01T07:30:00Z'
+        filename: Data/test.ens.10.2010-01-01T00:00:00Z.PT7H30M
+      - date: '2010-01-01T09:00:00Z'
+        filename: Data/test.ens.10.2010-01-01T00:00:00Z.PT9H
+      - date: '2010-01-01T10:30:00Z'
+        filename: Data/test.ens.10.2010-01-01T00:00:00Z.PT10H30M
+      - date: '2010-01-01T12:00:00Z'
+        filename: Data/test.ens.10.2010-01-01T00:00:00Z.PT12H
+      - date: '2010-01-01T13:30:00Z'
+        filename: Data/test.ens.10.2010-01-01T00:00:00Z.PT13H30M
+      - date: '2010-01-01T15:00:00Z'
+        filename: Data/test.ens.10.2010-01-01T00:00:00Z.PT15H
+  variable change: Identity
+  constraints:
   - jcdfi:
-      alpha: '1000.0'
+      alpha: 1000.0
       cutoff: PT3H
+      filtered variables: [x]
 variational:
-  iteration:
-  - diagnostics:
+  minimizer:
+    algorithm: DRIPCG
+  iterations:
+  - ninner: 10
+    gradient norm reduction: 1e-10
+    geometry:
+      resol: 40
+    linear model:
+      name: L95TLM
+      trajectory:
+        f: 8.0
+        tstep: PT1H30M
+      tstep: PT1H30M
+      variable change: Identity
+    diagnostics:
       departures: ombg
-    gradient_norm_reduction: 1e-10
-    linearmodel:
+    test: on
+  - ninner: 10
+    gradient norm reduction: 1e-10
+    geometry:
+      resol: 40
+    linear model:
+      name: L95TLM
       trajectory:
-        f: '8.0'
+        f: 8.0
         tstep: PT1H30M
       tstep: PT1H30M
-      varchange: Identity
-      version: L95TLM
-    ninner: '10'
-    resolution:
-      resol: '40'
-    test: 'on'
-  - gradient_norm_reduction: 1e-10
-    linearmodel:
-      trajectory:
-        f: '8.0'
-        tstep: PT1H30M
-      tstep: PT1H30M
-      varchange: Identity
-      version: L95TLM
-    ninner: '10'
-    resolution:
-      resol: '40'
-    test: 'on'
-minimizer:
-  algorithm: DRIPCG
+      variable change: Identity
+    test: on
 final:
   diagnostics:
     departures: oman
   prints:
     frequency: PT1H30M
-model:
-  f: '8.0'
-  name: L95
-  tstep: PT1H30M
 output:
   datadir: Data
   exp: test

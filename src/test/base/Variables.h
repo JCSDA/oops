@@ -43,9 +43,8 @@ void testConstructor() {
 // -----------------------------------------------------------------------------
 
 void testCopyConstructor() {
-  const eckit::LocalConfiguration varconf =
-          eckit::LocalConfiguration(TestEnvironment::config(), "Variables");
-  std::unique_ptr<oops::Variables> vars(new oops::Variables(varconf));
+  eckit::LocalConfiguration conf(TestEnvironment::config());
+  std::unique_ptr<oops::Variables> vars(new oops::Variables(conf, "test variables"));
   EXPECT(vars.get());
 
   std::unique_ptr<oops::Variables> other(new oops::Variables(*vars));

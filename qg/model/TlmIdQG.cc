@@ -30,7 +30,7 @@ namespace qg {
 static oops::LinearModelMaker<QgTraits, TlmIdQG> makerQGIdTLM_("QgIdTLM");
 // -----------------------------------------------------------------------------
 TlmIdQG::TlmIdQG(const GeometryQG & resol, const eckit::Configuration & tlConf)
-  : keyConfig_(0), tstep_(), resol_(resol), linvars_(tlConf)
+  : keyConfig_(0), tstep_(), resol_(resol), linvars_({"x"})
 {
   tstep_ = util::Duration(tlConf.getString("tstep"));
   qg_model_setup_f90(keyConfig_, tlConf);

@@ -56,7 +56,7 @@ class CalcHofX {
   CalcHofX(const ObsSpaces_ &, const Geometry_ &, const eckit::Configuration &);
 
 /// \brief Computes 4D H(x) (running the model)
-  const Observations_ & compute(const Model_ &, State_ &, PostProcessor_ &);
+  const Observations_ & compute(const Model_ &, State_ &, PostProcessor_ &, const util::Duration &);
 /// \brief Computes 4D H(x) (using State4D)
   const Observations_ & compute(const State4D_ &);
 
@@ -71,8 +71,8 @@ class CalcHofX {
 
   const eckit::LocalConfiguration obsconf_;  // configuration for observer
   const ObsSpaces_ & obspaces_;              // ObsSpaces used in H(x)
-  const Geometry_ &  geometry_;              // Model Geometry
   ObsAuxCtrls_       ybias_;                 // obs bias
+  const Geometry_ &  geometry_;              // Model Geometry
   ModelAux_          moderr_;                // model bias
   const util::DateTime winbgn_;              // window for assimilation
   const util::Duration winlen_;
@@ -80,18 +80,15 @@ class CalcHofX {
   std::shared_ptr<Observers<MODEL, OBS> > pobs_;  // Observer
 };
 
-
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
 CalcHofX<MODEL, OBS>::CalcHofX(const ObsSpaces_ & obspaces, const Geometry_ & geometry,
                           const eckit::Configuration & config) :
-  obsconf_(config.getSubConfiguration("Observations")),
-  obspaces_(obspaces), geometry_(geometry),
-  ybias_(obspaces_, config.getSubConfiguration("Observations")),
-  moderr_(geometry_, config.getSubConfiguration("Initial Condition")),
-  winbgn_(config.getString("Assimilation Window.window_begin")),
-  winlen_(config.getString("Assimilation Window.window_length")) {}
+  obsconf_(config), obspaces_(obspaces), ybias_(obspaces_, obsconf_),
+  geometry_(geometry), moderr_(geometry_, config.getSubConfiguration("initial condition")),
+  winbgn_(config.getString("window begin")),
+  winlen_(config.getString("window length")) {}
 
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
@@ -105,13 +102,13 @@ void CalcHofX<MODEL, OBS>::initObserver() {
 
 template <typename MODEL, typename OBS>
 const Observations<OBS> & CalcHofX<MODEL, OBS>::compute(const Model_ & model, State_ & xx,
-                                                     PostProcessor_ & post) {
+                                 PostProcessor_ & post, const util::Duration & length) {
   oops::Log::trace() << "CalcHofX<MODEL, OBS>::compute (model) start" << std::endl;
 
   this->initObserver();
 //  run the model and compute H(x)
   post.enrollProcessor(pobs_);
-  model.forecast(xx, moderr_, winlen_, post);
+  model.forecast(xx, moderr_, length, post);
 
   oops::Log::trace() << "CalcHofX<MODEL, OBS>::compute (model) done" << std::endl;
   return pobs_->hofx();

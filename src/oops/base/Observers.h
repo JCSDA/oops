@@ -89,7 +89,8 @@ Observers<MODEL, OBS>::Observers(const eckit::Configuration & conf, const ObsSpa
 
   const int iterout = conf.getInt("iteration", 0);
   std::vector<eckit::LocalConfiguration> typeconf;
-  conf.get("ObsTypes", typeconf);
+  conf.get("observations", typeconf);
+  ASSERT(obsdb.size() == typeconf.size());
   observers_.reserve(obsdb.size());
   for (size_t jj = 0; jj < obsdb.size(); ++jj) {
     typeconf[jj].set("iteration", iterout);

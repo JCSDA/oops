@@ -56,7 +56,7 @@ template<typename MODEL> class IncrementEnsemble {
   IncrementEnsemble(const StateEnsemble_ & ens, const State4D_ & mean,
                     const Variables & vars);
   IncrementEnsemble(const eckit::Configuration &,
-                    const State4D_ &, const State4D_ &, const Geometry_ &);
+                    const State4D_ &, const State4D_ &, const Geometry_ &, const Variables &);
 
   /// Accessors
   unsigned int size() const {
@@ -84,8 +84,7 @@ template<typename MODEL> class IncrementEnsemble {
 // ====================================================================================
 
 template<typename MODEL>
-IncrementEnsemble<MODEL>::IncrementEnsemble(const Geometry_ & resol,
-                                            const Variables & vars,
+IncrementEnsemble<MODEL>::IncrementEnsemble(const Geometry_ & resol, const Variables & vars,
                                             const std::vector<util::DateTime> & timeslots,
                                             const int rank)
   : vars_(vars), ensemblePerturbs_()
@@ -118,8 +117,8 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const StateEnsemble_ & ensemble,
 template<typename MODEL>
 IncrementEnsemble<MODEL>::IncrementEnsemble(const eckit::Configuration & conf,
                                             const State4D_ & xb, const State4D_ & fg,
-                                            const Geometry_ & resol)
-  : vars_(conf), ensemblePerturbs_()
+                                            const Geometry_ & resol, const Variables & vars)
+  : vars_(vars), ensemblePerturbs_()
 {
   // Get rank from config
   std::vector<eckit::LocalConfiguration> memberConfig;
@@ -135,9 +134,9 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const eckit::Configuration & conf,
 
   // Setup change of variable
   ChvarVec_ chvars;
-  if (conf.has("variable_changes")) {
+  if (conf.has("variable changes")) {
     std::vector<eckit::LocalConfiguration> chvarconfs;
-    conf.get("variable_changes", chvarconfs);
+    conf.get("variable changes", chvarconfs);
     for (const auto & conf : chvarconfs) {
       chvars.push_back(LinearVariableChangeFactory<MODEL>::create(xb[0], fg[0], resol, conf));
     }
@@ -145,7 +144,7 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const eckit::Configuration & conf,
   // TODO(Benjamin): one change of variable for each timeslot
 
   // Read ensemble
-  StateEnsemble_ ensemble(resol, vars_, conf);
+  StateEnsemble_ ensemble(resol, conf);
   State4D_ bgmean = ensemble.mean();
 
   ensemblePerturbs_.reserve(ensemble.size());

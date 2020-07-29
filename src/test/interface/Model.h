@@ -65,19 +65,19 @@ template <typename MODEL> class ModelFixture : private boost::noncopyable {
   }
 
   ModelFixture<MODEL>() {
-    test_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "ModelTest"));
+    test_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "model test"));
 
-    const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "Geometry");
+    const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "geometry");
     resol_.reset(new Geometry_(resolConfig, oops::mpi::comm()));
 
-    const eckit::LocalConfiguration biasConf(TestEnvironment::config(), "ModelBias");
+    const eckit::LocalConfiguration biasConf(TestEnvironment::config(), "model aux control");
     bias_.reset(new ModelAux_(*resol_, biasConf));
 
-    const eckit::LocalConfiguration conf(TestEnvironment::config(), "Model");
+    const eckit::LocalConfiguration conf(TestEnvironment::config(), "model");
     model_.reset(new Model_(*resol_, conf));
 
-    const eckit::LocalConfiguration iniConf(TestEnvironment::config(), "State");
-    xref_.reset(new State_(*resol_, model_->variables(), iniConf));
+    const eckit::LocalConfiguration iniConf(TestEnvironment::config(), "initial condition");
+    xref_.reset(new State_(*resol_, iniConf));
   }
 
   ~ModelFixture<MODEL>() {}
@@ -126,9 +126,9 @@ template <typename MODEL> void testModelForecast() {
   typedef ModelFixture<MODEL>   Test_;
   typedef oops::State<MODEL>    State_;
 
-  const double fnorm = Test_::test().getDouble("finalnorm");
+  const double fnorm = Test_::test().getDouble("final norm");
   const double tol = Test_::test().getDouble("tolerance");
-  const util::Duration len(Test_::test().getString("fclength"));
+  const util::Duration len(Test_::test().getString("forecast length"));
 
   const double ininorm = Test_::xref().norm();
   State_ xx(Test_::xref());
@@ -156,11 +156,11 @@ template <typename MODEL> void testModelReForecast() {
   typedef ModelFixture<MODEL>   Test_;
   typedef oops::State<MODEL>    State_;
 
-  const bool testreforecast = Test_::test().getBool("testreforecast", true);
+  const bool testreforecast = Test_::test().getBool("test reforecast", true);
 
   if (testreforecast) {
     // Forecast duration
-    const util::Duration len(Test_::test().getString("fclength"));
+    const util::Duration len(Test_::test().getString("forecast length"));
 
     const double ininorm = Test_::xref().norm();
 

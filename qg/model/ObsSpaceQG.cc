@@ -34,18 +34,18 @@ int ObsSpaceQG::theObsFileCount_ = 0;
 
 ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
                        const util::DateTime & bgn, const util::DateTime & end)
-  : oops::ObsSpaceBase(config, comm, bgn, end), obsname_(config.getString("ObsType")),
+  : oops::ObsSpaceBase(config, comm, bgn, end), obsname_(config.getString("obs type")),
     winbgn_(bgn), winend_(end), obsvars_(), isLocal_(false), comm_(comm)
 {
   typedef std::map< std::string, F90odb >::iterator otiter;
 
   std::string ofin("-");
-  if (config.has("ObsDataIn")) {
-    ofin = config.getString("ObsDataIn.obsfile");
+  if (config.has("obsdatain")) {
+    ofin = config.getString("obsdatain.obsfile");
   }
   std::string ofout("-");
-  if (config.has("ObsDataOut")) {
-    ofout = config.getString("ObsDataOut.obsfile");
+  if (config.has("obsdataout")) {
+    ofout = config.getString("obsdataout.obsfile");
   }
   oops::Log::trace() << "ObsSpaceQG: Obs files are: " << ofin << " and " << ofout << std::endl;
   std::string ref = ofin + ofout;
@@ -75,8 +75,8 @@ ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config, const eckit::mpi::Co
   }
 
   //  Generate locations etc... if required
-  if (config.has("Generate")) {
-    const eckit::LocalConfiguration gconf(config, "Generate");
+  if (config.has("generate")) {
+    const eckit::LocalConfiguration gconf(config, "generate");
     const util::Duration first(gconf.getString("begin"));
     const util::DateTime start(winbgn_ + first);
     const util::Duration freq(gconf.getString("obs_period"));

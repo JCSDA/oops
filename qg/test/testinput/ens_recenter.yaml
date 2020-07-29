@@ -1,8 +1,8 @@
-Center:
+center:
   date: 2010-01-01T00:00:00Z
   filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1D
 
-Ensemble:
+ensemble:
 - date: 2010-01-01T00:00:00Z
   filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1D
 - date: 2010-01-01T00:00:00Z
@@ -14,21 +14,14 @@ Ensemble:
 - date: 2010-01-01T00:00:00Z
   filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1D
 
-variables:
-  - x
+recenter variables: [x]
 
-Geometry:
+geometry:
   nx: 40
   ny: 20
-  depths:
-  - 4500.0
-  - 5500.0
+  depths: [4500.0, 5500.0]
 
-Variables:
-  variables:
-  - x
-
-RecenterOut:
+recentered output:
   datadir: Data
   exp: recenter
   type: ens

@@ -56,10 +56,8 @@ class ControlVariable : public util::Printable,
   static const std::string classname() {return "oops::ControlVariable";}
 
 /// The arguments define the number of sub-windows and the resolution
-  ControlVariable(const eckit::Configuration &, const Variables &,
-                  const Geometry_ &, const ObsSpaces_ &);
-  ControlVariable(const eckit::Configuration &, const State_ &,
-                  const ObsSpaces_ &);
+  ControlVariable(const eckit::Configuration &, const Geometry_ &, const ObsSpaces_ &);
+  ControlVariable(const eckit::Configuration &, const State_ &, const ObsSpaces_ &);
   explicit ControlVariable(const ControlVariable &);
   ~ControlVariable();
 
@@ -93,11 +91,10 @@ class ControlVariable : public util::Printable,
 
 template<typename MODEL, typename OBS>
 ControlVariable<MODEL, OBS>::ControlVariable(const eckit::Configuration & conf,
-                                        const Variables & vars, const Geometry_ & resol,
-                                        const ObsSpaces_ & odb)
-  : state4d_(resol, vars, eckit::LocalConfiguration(conf, "Jb.Background")),
-    modbias_(resol, conf.getSubConfiguration("Jb.Background.ModelBias")),
-    obsbias_(odb, eckit::LocalConfiguration(conf, "Jo"))
+                                             const Geometry_ & resol, const ObsSpaces_ & odb)
+  : state4d_(resol, eckit::LocalConfiguration(conf, "background")),
+    modbias_(resol, conf.getSubConfiguration("model aux control")),
+    obsbias_(odb, conf)
 {
   Log::trace() << "ControlVariable contructed" << std::endl;
 }
@@ -109,8 +106,8 @@ ControlVariable<MODEL, OBS>::ControlVariable(const eckit::Configuration & conf,
                                         const State_ & statein,
                                         const ObsSpaces_ & odb)
   : state4d_(statein),
-    modbias_(statein.geometry(), conf.getSubConfiguration("Jb.Background.ModelBias")),
-    obsbias_(odb, eckit::LocalConfiguration(conf, "Jo"))
+    modbias_(statein.geometry(), conf.getSubConfiguration("model aux control")),
+    obsbias_(odb, conf)
 {
   Log::trace() << "ControlVariable contructed" << std::endl;
 }

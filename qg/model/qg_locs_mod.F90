@@ -116,10 +116,10 @@ if (self%nlocs>klocs) then
   enddo
 endif
 
-if (f_conf%has("window_end")) then
-   call f_conf%get_or_die("window_begin",str)
+if (f_conf%has("window end")) then
+   call f_conf%get_or_die("window begin",str)
    call datetime_create(str, window_begin)
-   call f_conf%get_or_die("window_end",str)
+   call f_conf%get_or_die("window end",str)
    call datetime_create(str, window_end)
    call datetime_diff(window_end, window_begin, window_len)
    allocate(self%times(self%nlocs))

@@ -42,11 +42,11 @@ class StateTestFixture : TestFixture {
  public:
   StateTestFixture() {
     file_.reset(new eckit::LocalConfiguration(TestConfig::config(), "state"));
-    eckit::LocalConfiguration res(TestConfig::config(), "resolution");
+    eckit::LocalConfiguration res(TestConfig::config(), "geometry");
     resol_.reset(new lorenz95::Resolution(res, oops::mpi::comm()));
     date_str_ = file_->getString("date");
     time_.reset(new util::DateTime(date_str_));
-    vars_.reset(new oops::Variables(TestConfig::config()));
+    vars_.reset(new oops::Variables());
   }
   ~StateTestFixture() {}
   std::unique_ptr<const eckit::LocalConfiguration> file_;
@@ -67,7 +67,7 @@ CASE("test_StateL95") {
 // -----------------------------------------------------------------------------
   SECTION("test_stateL95_readin_constructor") {
     std::unique_ptr<lorenz95::StateL95>
-      xx(new lorenz95::StateL95(*fix.resol_, *fix.vars_, *fix.file_));
+      xx(new lorenz95::StateL95(*fix.resol_, *fix.file_));
     EXPECT(xx.get() != NULL);
   }
 // -----------------------------------------------------------------------------
@@ -169,103 +169,6 @@ CASE("test_StateL95") {
       EXPECT((xx.getField())[i] == doubleVec[i]);
     }
   }
-// -----------------------------------------------------------------------------
-/*
-  SECTION("test_stateL95_stream_output") {
-    lorenz95::StateL95 xx(*fix.resol_, *fix.vars_, *fix.time_);
-    xx.read(*fix.file_);
-
-    // use the operator<< method to write the value to a file
-
-    std::filebuf fb;
-    std::string filename("StateL95Test.txt");
-    fb.open(filename.c_str(), std::ios::out);
-    std::ostream os(&fb);
-    os << xx;
-    fb.close();
-
-    std::vector<double> doubleVec(xx.getField().resol());
-    for (int i = 0; i < xx.getField().resol(); ++i) {
-      doubleVec[i] = xx.getField()[i];
-    }
-    std::vector<double>::iterator iter;
-    iter = std::min_element(doubleVec.begin(), doubleVec.end());
-    double min = *iter;
-    iter = std::max_element(doubleVec.begin(), doubleVec.end());
-    double max = *iter;
-//    double avg = 0.0;
-
-    // then read the values that were written to the file
-    int idxStart;
-    int idxEnd;
-    double inputDouble = 0.0;
-    std::string input;
-    std::string inputTest;
-    std::string inputTimeTest(" Valid time: " + fix.file_->getString("date"));
-    std::ifstream inputFile(filename.c_str());
-    if (inputFile.is_open()) {
-      getline(inputFile, input);  // ignore the first (blank) line
-      getline(inputFile, input);
-
-      EXPECT(input == inputTimeTest);
-
-      getline(inputFile, input);
-      // test min value
-      idxStart = input.find("=");
-      idxEnd = input.find(",");
-      inputTest = input.substr(idxStart + 1, (idxEnd - 1) - idxStart);
-      inputDouble = boost::lexical_cast<double>(inputTest);
-      EXPECT(oops::is_close(inputDouble, min, 0.000001));
-      // test max value
-      idxStart = input.find("=", idxEnd);
-      idxEnd = input.find(",", idxEnd + 1);
-      inputTest = input.substr(idxStart + 1, (idxEnd - 1) - idxStart);
-      inputDouble = boost::lexical_cast<double>(inputTest);
-      EXPECT(oops::is_close(inputDouble, max, 0.000001));
-      // test avg value
-//      idxStart = input.find("=", idxEnd + 1);
-//      idxEnd = input.find(",", idxEnd + 1);
-//      inputTest = input.substr(idxStart + 1);
-//      inputDouble = boost::lexical_cast<double>(inputTest);
-//      EXPECT(oops::is_close(inputDouble, avg, 0.000001));
-    } else {
-      // if we can't open the file then we can't
-      // verify that the value was correctly written
-      oops::Log::error() << "operator<< functionality cannot be determined" << std::endl;
-    }
-    inputFile.close();
-  }
-*/
-// -----------------------------------------------------------------------------
-//  SECTION("test_stateL95_step_traj") {
-//    lorenz95::StateL95 xx(*fix.resol_, *fix.vars_, *fix.time_);
-//    xx.read(*fix.file_);
-//
-//    // construct a ModelL95 object
-//    eckit::LocalConfiguration modelCfg(TestConfig::config(), "model");
-//    lorenz95::ModelL95 modelL95(*fix.resol_, modelCfg);
-//
-//    // construct a ModelBias object
-//    eckit::LocalConfiguration biasCfg(TestConfig::config(), "ModelBias");
-//    lorenz95::ModelBias modelBias(*fix.resol_, biasCfg);
-//
-//    // construct a ModelTrajectory object
-//    lorenz95::ModelTrajectory modelTraj(true);
-//    // copy construct a FieldL95 object to set params
-//    // in the ModelTrajectory object
-//    lorenz95::FieldL95 fieldL95(xx.getField());
-//    modelTraj.set(fieldL95);
-//
-//    xx.stepTraj(modelL95, modelBias, modelTraj);
-//
-//    // create test data
-//    modelL95.stepRK(fieldL95, modelBias, modelTraj);
-//
-//    // test xx data against newly created fieldL95 test data
-//    for(int i = 0; i < xx.getField().resol(); ++i) {
-//      EXPECT(xx.getField()[i] == fieldL95[i]);
-//    }
-//  }
 // -----------------------------------------------------------------------------
 }  //  CASE
 // -----------------------------------------------------------------------------

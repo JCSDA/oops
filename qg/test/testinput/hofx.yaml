@@ -1,45 +1,40 @@
-Assimilation Window:
-  window_begin: 2010-01-01T00:00:00Z
-  window_length: PT12H
-Geometry:
+geometry:
   nx: 40
   ny: 20
-  depths:
-  - 4500.0
-  - 5500.0
-Initial Condition:
+  depths: [4500.0, 5500.0]
+initial condition:
   date: 2010-01-01T00:00:00Z
   filename: Data/truth.fc.2009-12-15T00:00:00Z.P17D
-Model:
+model:
   name: QG
   tstep: PT1H
-  variables:
-  - x
-Observations:
-  ObsTypes:
-  - ObsSpace:
-      ObsDataIn:
-        obsfile: Data/truth.obs4d_12h
-      ObsDataOut:
-        obsfile: Data/hofx.obs4d_12h
-      ObsType: Stream
-    ObsOperator:
-      ObsType: Stream
-  - ObsSpace:
-      ObsDataIn:
-        obsfile: Data/truth.obs4d_12h
-      ObsDataOut:
-        obsfile: Data/hofx.obs4d_12h
-      ObsType: Wind
-    ObsOperator:
-      ObsType: Wind
-  - ObsSpace:
-      ObsDataIn:
-        obsfile: Data/truth.obs4d_12h
-      ObsDataOut:
-        obsfile: Data/hofx.obs4d_12h
-      ObsType: WSpeed
-    ObsOperator:
-      ObsType: WSpeed
-Prints:
+forecast length: PT12H
+window begin: 2010-01-01T00:00:00Z
+window length: PT12H
+observations:
+- obs space:
+    obsdatain:
+      obsfile: Data/truth.obs4d_12h
+    obsdataout:
+      obsfile: Data/hofx.obs4d_12h
+    obs type: Stream
+  obs operator:
+    obs type: Stream
+- obs space:
+    obsdatain:
+      obsfile: Data/truth.obs4d_12h
+    obsdataout:
+      obsfile: Data/hofx.obs4d_12h
+    obs type: Wind
+  obs operator:
+    obs type: Wind
+- obs space:
+    obsdatain:
+      obsfile: Data/truth.obs4d_12h
+    obsdataout:
+      obsfile: Data/hofx.obs4d_12h
+    obs type: WSpeed
+  obs operator:
+    obs type: WSpeed
+prints:
   frequency: PT3H

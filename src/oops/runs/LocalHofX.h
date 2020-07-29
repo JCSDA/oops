@@ -55,24 +55,23 @@ template <typename MODEL, typename OBS> class LocalHofX : public Application {
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
 //  Setup observation window
-    const eckit::LocalConfiguration windowConf(fullConfig, "Assimilation Window");
-    const util::Duration winlen(windowConf.getString("window_length"));
-    const util::DateTime winbgn(windowConf.getString("window_begin"));
+    const util::Duration winlen(fullConfig.getString("window length"));
+    const util::DateTime winbgn(fullConfig.getString("window begin"));
     const util::DateTime winend(winbgn + winlen);
-    Log::info() << "Observation window is:" << windowConf << std::endl;
+    Log::info() << "Observation window from " << winbgn << " to " << winend << std::endl;
 
 //  Setup resolution
-    const eckit::LocalConfiguration resolConfig(fullConfig, "Geometry");
+    const eckit::LocalConfiguration resolConfig(fullConfig, "geometry");
     const Geometry_ resol(resolConfig, this->getComm());
 
 //  Setup Model
-    const eckit::LocalConfiguration modelConfig(fullConfig, "Model");
+    const eckit::LocalConfiguration modelConfig(fullConfig, "model");
     const Model_ model(resol, modelConfig);
 
 //  Setup initial state
-    const eckit::LocalConfiguration initialConfig(fullConfig, "Initial Condition");
+    const eckit::LocalConfiguration initialConfig(fullConfig, "initial condition");
     Log::info() << "Initial configuration is:" << initialConfig << std::endl;
-    State_ xx(resol, model.variables(), initialConfig);
+    State_ xx(resol, initialConfig);
     Log::test() << "Initial state: " << xx << std::endl;
 
 //  Setup augmented state
@@ -86,9 +85,7 @@ template <typename MODEL, typename OBS> class LocalHofX : public Application {
     post.enrollProcessor(new StateInfo<State_>("fc", prtConf));
 
 //  Setup observations
-    eckit::LocalConfiguration obsconf(fullConfig, "Observations");
-    Log::debug() << "Observations configuration is:" << obsconf << std::endl;
-    ObsSpaces_ obsdb(obsconf, this->getComm(), winbgn, winend);
+    ObsSpaces_ obsdb(fullConfig, this->getComm(), winbgn, winend);
 
 //  Get points for finding local obs
     std::vector<eckit::LocalConfiguration> centerconf;
@@ -102,17 +99,17 @@ template <typename MODEL, typename OBS> class LocalHofX : public Application {
        double lat = centerconf[jj].getDouble("lat");
        centers.push_back(eckit::geometry::Point2(lon, lat));
        std::shared_ptr<ObsSpaces_>
-          lobs(new ObsSpaces_(obsdb, centers[jj], obsconf));
+          lobs(new ObsSpaces_(obsdb, centers[jj], fullConfig));
        localobs.push_back(lobs);
        Log::test() << "Local obs around: " << centers[jj] << std::endl;
        Log::test() << *localobs[jj] << std::endl;
        //  Setup obs bias<
-       std::shared_ptr<ObsAuxCtrls_> lobias(new ObsAuxCtrls_(obsdb, obsconf));
+       std::shared_ptr<ObsAuxCtrls_> lobias(new ObsAuxCtrls_(obsdb, fullConfig));
        localobias.push_back(lobias);
        QCData_ qc(*localobs[jj]);
        //  Setup observer
        std::shared_ptr<Observers<MODEL, OBS>>
-          lpobs(new Observers<MODEL, OBS>(obsconf, *localobs[jj], *localobias[jj], qc));
+          lpobs(new Observers<MODEL, OBS>(fullConfig, *localobs[jj], *localobias[jj], qc));
        pobs.push_back(lpobs);
        post.enrollProcessor(pobs[jj]);
     }

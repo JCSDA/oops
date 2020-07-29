@@ -43,16 +43,15 @@ namespace lorenz95 {
 // -----------------------------------------------------------------------------
 /// Constructor, destructor
 // -----------------------------------------------------------------------------
-StateL95::StateL95(const Resolution & resol, const oops::Variables &,
+StateL95::StateL95(const Resolution & resol, const oops::Variables & vars,
                    const util::DateTime & vt)
-  : fld_(resol), time_(vt)
+  : fld_(resol), time_(vt), vars_(vars)
 {
   oops::Log::trace() << "StateL95::StateL95 created" << std::endl;
 }
 // -----------------------------------------------------------------------------
-StateL95::StateL95(const Resolution & resol, const oops::Variables &,
-                   const eckit::Configuration & conf)
-  : fld_(resol), time_(conf.getString("date"))
+StateL95::StateL95(const Resolution & resol, const eckit::Configuration & conf)
+  : fld_(resol), time_(conf.getString("date")), vars_({"x"})
 {
   oops::Log::trace() << "StateL95::StateL95 conf " << conf << std::endl;
   if (conf.has("filename")) {
@@ -64,14 +63,14 @@ StateL95::StateL95(const Resolution & resol, const oops::Variables &,
 }
 // -----------------------------------------------------------------------------
 StateL95::StateL95(const Resolution & resol, const StateL95 & xx)
-  : fld_(resol), time_(xx.time_)
+  : fld_(resol), time_(xx.time_), vars_(xx.vars_)
 {
   fld_ = xx.fld_;
   oops::Log::trace() << "StateL95::StateL95 created by interpolation." << std::endl;
 }
 // -----------------------------------------------------------------------------
 StateL95::StateL95(const StateL95 & xx)
-  : fld_(xx.fld_), time_(xx.time_)
+  : fld_(xx.fld_), time_(xx.time_), vars_(xx.vars_)
 {
   oops::Log::trace() << "StateL95::StateL95 copy-created." << std::endl;
 }
@@ -85,6 +84,7 @@ StateL95::~StateL95() {
 StateL95 & StateL95::operator=(const StateL95 & rhs) {
   fld_ = rhs.fld_;
   time_ = rhs.time_;
+  vars_ = rhs.vars_;
   return *this;
 }
 // -----------------------------------------------------------------------------

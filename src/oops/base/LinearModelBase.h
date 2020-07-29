@@ -139,7 +139,7 @@ template <typename MODEL>
 LinearModelBase<MODEL>* LinearModelFactory<MODEL>::create(const Geometry_ & geom,
                                                     const eckit::Configuration & conf) {
   Log::trace() << "LinearModelBase<MODEL>::create starting" << std::endl;
-  const std::string id = conf.getString("version");
+  const std::string id = conf.getString("name");
   typename std::map<std::string, LinearModelFactory<MODEL>*>::iterator
     jerr = getMakers().find(id);
   if (jerr == getMakers().end()) {

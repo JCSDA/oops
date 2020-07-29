@@ -27,8 +27,8 @@ ObsBias::ObsBias(const ObsSpaceQG &, const eckit::Configuration & conf)
   : bias_(ntypes, 0.0), active_(false), geovars_(), hdiags_() {
   oops::Log::info() << "ObsBias: conf = " << conf << std::endl;
   eckit::LocalConfiguration biasconf;
-  if (conf.has("ObsBias")) {
-    conf.get("ObsBias", biasconf);
+  if (conf.has("obs bias")) {
+    conf.get("obs bias", biasconf);
     active_ = biasconf.has("stream") || biasconf.has("uwind") ||
               biasconf.has("vwind") || biasconf.has("wspeed");
   }

@@ -30,8 +30,8 @@ ObsBiasCovariance::ObsBiasCovariance(const ObsSpaceQG &, const eckit::Configurat
   : conf_(conf), variance_(ObsBias::ntypes, 0.0)
 {
   std::vector<double> zz(4, 0.0);
-  if (conf.has("ObsBiasCovariance")) {
-    const eckit::LocalConfiguration covconf(conf, "ObsBiasCovariance");
+  if (conf.has("obs bias error")) {
+    const eckit::LocalConfiguration covconf(conf, "obs bias error");
     if (covconf.has("stream")) zz[0] = covconf.getDouble("stream");
     if (covconf.has("uwind"))  zz[1] = covconf.getDouble("uwind");
     if (covconf.has("vwind"))  zz[2] = covconf.getDouble("vwind");

@@ -18,7 +18,6 @@
 #include "eckit/testing/Test.h"
 #include "lorenz95/ModelBias.h"
 #include "lorenz95/ModelBiasCorrection.h"
-#include "lorenz95/ModelBiasCovariance.h"
 #include "lorenz95/ModelL95.h"
 #include "lorenz95/ModelTrajectory.h"
 #include "lorenz95/Resolution.h"
@@ -37,11 +36,11 @@ namespace test {
 class TlmTestFixture : TestFixture {
  public:
   TlmTestFixture() {
-    eckit::LocalConfiguration res(TestConfig::config(), "resolution");
+    eckit::LocalConfiguration res(TestConfig::config(), "geometry");
     resol_.reset(new lorenz95::Resolution(res, oops::mpi::comm()));
     eckit::LocalConfiguration mod(TestConfig::config(), "model");
     model_.reset(new lorenz95::ModelL95(*resol_, mod));
-    tlconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "linearmodel"));
+    tlconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "linear model"));
   }
   ~TlmTestFixture() {}
   std::unique_ptr<lorenz95::ModelL95>   model_;
@@ -57,61 +56,6 @@ CASE("test_tlmL95") {
     EXPECT(tlm.get() != NULL);
   }
 // -----------------------------------------------------------------------------
-/*
-  SECTION("test_tlmL95_set_get_Trajectory") {
-    lorenz95::TLML95 tlm(*fix.resol_, *fix.tlconf_, *fix.model_);
-
-    // construct a StateL95 object
-    std::string date_string("2014-09-12T09:35:00Z");
-    util::DateTime dt(date_string);
-    oops::Variables vars();
-    std::unique_ptr<lorenz95::StateL95> stateL95(new lorenz95::StateL95(*fix.resol_, vars, dt));
-
-    // construct a ModelBias object
-    boost::shared_ptr<const eckit::LocalConfiguration> biasCfg(new eckit::LocalConfiguration(TestConfig::config(), "ModelBias"));
-    std::unique_ptr<lorenz95::ModelBias> modelBias(new lorenz95::ModelBias(*biasCfg, *fix.resol_));
-
-    tlm.setTrajectory(*stateL95, *modelBias);
-
-    std::unique_ptr<lorenz95::ModelTrajectory> modelTraj(new lorenz95::ModelTrajectory(true));
-    oops::Log::error() << "PMC: getTraj result <" << tlm.getTrajectory(dt)->get(1) << ">" << std::endl;
-    modelTraj->set(tlm.getTrajectory(dt)->get(1));
-    //oops::Log::error() << "PMC: modelTraj 1st " << modelTraj->get(1)
-    oops::Log::error() << "PMC: modelTraj resol  <" << modelTraj->get(1).resol() << ">" << std::endl;
-    for(int i = 0; i < modelTraj->get(1).resol(); ++i) {
-      oops::Log::error() << "PMC: modelTraj FieldL95 elements " << modelTraj->get(1)[i] << std::endl;
-    }
-  }
-*/
-// -----------------------------------------------------------------------------
-/*
-  SECTION("test_tlmL95_stepTL") {
-    lorenz95::TLML95 tlm(*fix.resol_, *fix.tlconf_, *fix.model_);
-
-    // construct a FieldL95 object
-    std::unique_ptr<lorenz95::FieldL95> fieldL95(new lorenz95::FieldL95(*fix.resol_));
-
-    // construct a datetime object
-    std::string dateString("2014-10-08T11:25:45Z");
-    util::DateTime dt(dateString);
-
-    //construct a ModelBiasCorrection object
-    std::unique_ptr<const eckit::LocalConfiguration> covarCfg(new eckit::LocalConfiguration(TestConfig::config(), "Covariance"));
-    std::unique_ptr<lorenz95::ModelBiasCovariance> modelBiasCovariance(
-        new lorenz95::ModelBiasCovariance(*covarCfg, *fix.resol_));
-    std::unique_ptr<lorenz95::ModelBiasCorrection> modelBiasCorrection(
-        new lorenz95::ModelBiasCorrection(*modelBiasCovariance));
-
-    tlm.stepTL(*fieldL95, dt, *modelBiasCorrection);
-
-    oops::Log::error() << "PMC: original dt was " << dateString << std::endl;
-    oops::Log::error() << "PMC: modified dt is  " << dt.toString() << std::endl;
-  }
-// -----------------------------------------------------------------------------
-  SECTION("test_tlmL95_stepAD") {
-  }
-*/
-// -----------------------------------------------------------------------------
   SECTION("test_tlmL95_get_classname") {
     lorenz95::TLML95 tlm(*fix.resol_, *fix.tlconf_);
     EXPECT(tlm.classname() == "lorenz95::TLML95");
@@ -124,7 +68,7 @@ CASE("test_tlmL95") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_tlmL95_get_resolution") {
-    eckit::LocalConfiguration rescf(TestConfig::config(), "resolution");
+    eckit::LocalConfiguration rescf(TestConfig::config(), "geometry");
     lorenz95::Resolution resol(rescf, oops::mpi::comm());
     lorenz95::TLML95 tlm(*fix.resol_, *fix.tlconf_);
     EXPECT(tlm.resolution().npoints() == resol.npoints());

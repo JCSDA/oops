@@ -40,7 +40,7 @@ class WeightedDiff : public PostBase<FLDS> {
   typedef Geometry<MODEL>            Geometry_;
 
  public:
-  WeightedDiff(const eckit::Configuration &, const util::DateTime &, const util::Duration &,
+  WeightedDiff(const Variables &, const util::DateTime &, const util::Duration &,
                const util::Duration &, const Geometry_ &, WeightingFct &);
   virtual ~WeightedDiff() {}
 
@@ -67,7 +67,7 @@ class WeightedDiff : public PostBase<FLDS> {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename INCR, typename FLDS>
-WeightedDiff<MODEL, INCR, FLDS>::WeightedDiff(const eckit::Configuration & config,
+WeightedDiff<MODEL, INCR, FLDS>::WeightedDiff(const Variables & vars,
                                               const util::DateTime & vt,
                                               const util::Duration & span,
                                               const util::Duration & tstep,
@@ -78,7 +78,6 @@ WeightedDiff<MODEL, INCR, FLDS>::WeightedDiff(const eckit::Configuration & confi
     vtime_(vt), bgn_(vt-span/2), end_(vt+span/2), tstep_(tstep),
     bgnleg_(), endleg_(), current_()
 {
-  const Variables vars(config);
   avg_ = new Accumulator<MODEL, INCR, FLDS>(resol, vars, vtime_);
 }
 

@@ -44,7 +44,7 @@ class StateQG : public util::Printable,
 
 /// Constructor, destructor
   StateQG(const GeometryQG &, const oops::Variables &, const util::DateTime &);  // Is it used?
-  StateQG(const GeometryQG &, const oops::Variables &, const eckit::Configuration &);
+  StateQG(const GeometryQG &, const eckit::Configuration &);
   StateQG(const GeometryQG &, const StateQG &);
   StateQG(const StateQG &);
   virtual ~StateQG();
@@ -69,6 +69,7 @@ class StateQG : public util::Printable,
   boost::shared_ptr<const GeometryQG> geometry() const {
     return fields_->geometry();
   }
+  const oops::Variables & variables() const {return fields_->variables();}
 
 /// Other
   void zero();
@@ -78,7 +79,6 @@ class StateQG : public util::Printable,
   void print(std::ostream &) const;
   const bool lbc_ = true;
   std::unique_ptr<FieldsQG> fields_;
-  std::unique_ptr<FieldsQG> stash_;
 };
 // -----------------------------------------------------------------------------
 

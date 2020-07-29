@@ -45,9 +45,9 @@ template <typename MODEL> class ModelAuxControlFixture : private boost::noncopya
   }
 
   ModelAuxControlFixture() {
-    conf_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "ModelBias"));
+    conf_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "model aux control"));
 
-    const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "Geometry");
+    const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "geometry");
     resol_.reset(new Geometry_(resolConfig, oops::mpi::comm()));
   }
 

@@ -87,7 +87,6 @@ template<typename MODEL, typename OBS> class CostJcDFI : public CostTermBase<MOD
   void resetLinearization() override;
 
  private:
-  const eckit::LocalConfiguration conf_;
   util::DateTime vt_;
   util::Duration span_;
   double alpha_;
@@ -99,6 +98,7 @@ template<typename MODEL, typename OBS> class CostJcDFI : public CostTermBase<MOD
   util::Duration tlstep_;
   mutable std::shared_ptr<WeightedDiff<MODEL, Increment_, State_> > filter_;
   mutable std::shared_ptr<WeightedDiffTLAD<MODEL> > ftlad_;
+  Variables vars_;
 };
 
 // =============================================================================
@@ -107,14 +107,14 @@ template<typename MODEL, typename OBS>
 CostJcDFI<MODEL, OBS>::CostJcDFI(const eckit::Configuration & conf, const Geometry_ & resol,
                             const util::DateTime & vt, const util::Duration & span,
                             const util::Duration & tstep)
-  : conf_(conf), vt_(vt), span_(span), alpha_(0), wfct_(), gradFG_(),
-    resol_(resol), tstep_(tstep), tlres_(), tlstep_(), filter_()
+  : vt_(vt), span_(span), alpha_(0), wfct_(), gradFG_(),
+    resol_(resol), tstep_(tstep), tlres_(), tlstep_(), filter_(), vars_(conf, "filtered variables")
 {
   alpha_ = conf.getDouble("alpha");
   if (conf.has("ftime")) vt_ = util::DateTime(conf.getString("ftime"));
   if (conf.has("span")) span_ = util::Duration(conf.getString("span"));
 //  wfct_.reset(WeightFactory::create(config)); YT
-  wfct_.reset(new DolphChebyshev(conf_));
+  wfct_.reset(new DolphChebyshev(conf));
   Log::debug() << "CostJcDFI created vt = " << vt_ << ", span = " << span_ << std::endl;
   Log::trace() << "CostJcDFI created" << std::endl;
 }
@@ -124,7 +124,7 @@ CostJcDFI<MODEL, OBS>::CostJcDFI(const eckit::Configuration & conf, const Geomet
 template<typename MODEL, typename OBS>
 std::shared_ptr<PostBase<State<MODEL> > >
 CostJcDFI<MODEL, OBS>::initialize(const CtrlVar_ &, const eckit::Configuration &) {
-  filter_.reset(new WeightedDiff<MODEL, Increment_, State_>(conf_, vt_, span_,
+  filter_.reset(new WeightedDiff<MODEL, Increment_, State_>(vars_, vt_, span_,
                                                             tstep_, resol_, *wfct_));
   return filter_;
 }
@@ -147,8 +147,8 @@ std::shared_ptr<PostBaseTLAD<MODEL> >
 CostJcDFI<MODEL, OBS>::initializeTraj(const CtrlVar_ &, const Geometry_ & tlres,
                                  const eckit::Configuration & innerConf) {
   tlres_.reset(new Geometry_(tlres));
-  tlstep_ = util::Duration(innerConf.getString("linearmodel.tstep"));
-  ftlad_.reset(new WeightedDiffTLAD<MODEL>(conf_, vt_, span_, tstep_, *tlres_, *wfct_));
+  tlstep_ = util::Duration(innerConf.getString("linear model.tstep"));
+  ftlad_.reset(new WeightedDiffTLAD<MODEL>(vars_, vt_, span_, tstep_, *tlres_, *wfct_));
   return ftlad_;
 }
 
@@ -164,8 +164,7 @@ void CostJcDFI<MODEL, OBS>::finalizeTraj() {
 
 template<typename MODEL, typename OBS>
 Increment<MODEL> * CostJcDFI<MODEL, OBS>::newDualVector() const {
-  const Variables vars(conf_);
-  Increment_ * dx = new Increment_(*tlres_, vars, vt_);
+  Increment_ * dx = new Increment_(*tlres_, vars_, vt_);
   return dx;
 }
 

@@ -52,9 +52,9 @@ template <typename MODEL> class StateFixture : private boost::noncopyable {
   }
 
   StateFixture<MODEL>() {
-    test_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "StateTest"));
+    test_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "state test"));
 
-    const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "Geometry");
+    const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "geometry");
     resol_.reset(new Geometry_(resolConfig, oops::mpi::comm()));
   }
 
@@ -70,14 +70,13 @@ template <typename MODEL> void testStateConstructors() {
   typedef StateFixture<MODEL>   Test_;
   typedef oops::State<MODEL>    State_;
 
-  const double norm = Test_::test().getDouble("norm-file");
+  const double norm = Test_::test().getDouble("norm file");
   const double tol = Test_::test().getDouble("tolerance");
   const util::DateTime vt(Test_::test().getString("date"));
 
 // Test main constructor
-  const eckit::LocalConfiguration conf(Test_::test(), "StateFile");
-  const oops::Variables vars(conf);
-  std::unique_ptr<State_> xx1(new State_(Test_::resol(), vars, conf));
+  const eckit::LocalConfiguration conf(Test_::test(), "statefile");
+  std::unique_ptr<State_> xx1(new State_(Test_::resol(), conf));
 
   EXPECT(xx1.get());
   const double norm1 = xx1->norm();
@@ -117,7 +116,7 @@ template <typename MODEL> void testStateConstructors() {
  *
  * \warning Since this model compares the interpolated state values to an exact analytic
  * solution, it requires that the "analytic_init" option be implemented in the model and
- * selected in the "State.StateGenerate" section of the config file.
+ * selected in the "state.state generate" section of the config file.
  */
 
 template <typename MODEL> void testStateAnalyticInitialCondition() {
@@ -125,18 +124,17 @@ template <typename MODEL> void testStateAnalyticInitialCondition() {
   typedef oops::State<MODEL>     State_;
 
   // This creates a State object called xx based on information
-  // from the "Geometry" and "StateTest.StateGenerate" sections of
+  // from the "geometry" and "state test.state generate" sections of
   // the config file and checks its norm
 
-  if (!Test_::test().has("StateGenerate")) {
+  if (!Test_::test().has("state generate")) {
     oops::Log::warning() << "Bypassing Analytical Initial Condition Test";
     return;
   }
 
-  const eckit::LocalConfiguration confgen(Test_::test(), "StateGenerate");
-  const oops::Variables statevars(confgen);
-  const State_ xx(Test_::resol(), statevars, confgen);
-  const double norm = Test_::test().getDouble("norm-gen");
+  const eckit::LocalConfiguration confgen(Test_::test(), "state generate");
+  const State_ xx(Test_::resol(), confgen);
+  const double norm = Test_::test().getDouble("norm generated state");
   const double tol = Test_::test().getDouble("tolerance");
 
   oops::Log::debug() << "xx.norm(): " << std::fixed << std::setprecision(8) << xx.norm()

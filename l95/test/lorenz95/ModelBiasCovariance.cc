@@ -28,9 +28,9 @@ namespace test {
 class ModBiasCovTestFixture : TestFixture {
  public:
   ModBiasCovTestFixture() {
-    eckit::LocalConfiguration res(TestConfig::config(), "resolution");
+    eckit::LocalConfiguration res(TestConfig::config(), "geometry");
     resol_.reset(new lorenz95::Resolution(res, oops::mpi::comm()));
-    covconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "ModelBiasCovariance"));
+    covconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "model aux error"));
     nobias_.reset(new eckit::LocalConfiguration());
   }
   ~ModBiasCovTestFixture() {}

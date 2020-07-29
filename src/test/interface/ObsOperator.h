@@ -1,8 +1,8 @@
 /*
  * (C) Copyright 2017-2018 UCAR
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
 #ifndef TEST_INTERFACE_OBSOPERATOR_H_
@@ -37,12 +37,11 @@ template <typename OBS> void testConstructor() {
   typedef ObsTestsFixture<OBS> Test_;
   typedef oops::ObsOperator<OBS>       ObsOperator_;
 
-  const eckit::LocalConfiguration obsconf(TestEnvironment::config(), "Observations");
   std::vector<eckit::LocalConfiguration> conf;
-  obsconf.get("ObsTypes", conf);
+  TestEnvironment::config().get("observations", conf);
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    eckit::LocalConfiguration obsopconf(conf[jj], "ObsOperator");
+    eckit::LocalConfiguration obsopconf(conf[jj], "obs operator");
     std::unique_ptr<ObsOperator_> hop(new ObsOperator_(Test_::obspace()[jj], obsopconf));
     EXPECT(hop.get());
 
@@ -61,21 +60,20 @@ template <typename OBS> void testSimulateObs() {
   typedef oops::ObsOperator<OBS>       ObsOperator_;
   typedef oops::ObsVector<OBS>         ObsVector_;
 
-  const eckit::LocalConfiguration obsconf(TestEnvironment::config(), "Observations");
   std::vector<eckit::LocalConfiguration> conf;
-  obsconf.get("ObsTypes", conf);
+  TestEnvironment::config().get("observations", conf);
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     // initialize observation operator (set variables requested from the model,
     // variables simulated by the observation operator, other init)
-    eckit::LocalConfiguration obsopconf(conf[jj], "ObsOperator");
+    eckit::LocalConfiguration obsopconf(conf[jj], "obs operator");
     ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
 
     // initialize bias correction
     const ObsAuxCtrl_ ybias(Test_::obspace()[jj], conf[jj]);
 
     // read geovals from the file
-    eckit::LocalConfiguration gconf(conf[jj], "GeoVaLs");
+    eckit::LocalConfiguration gconf(conf[jj], "geovals");
     oops::Variables hopvars = hop.requiredVars();
     hopvars += ybias.requiredVars();
     const GeoVaLs_ gval(gconf, Test_::obspace()[jj], hopvars);
@@ -96,25 +94,25 @@ template <typename OBS> void testSimulateObs() {
     hofx.save("hofx");
 
     // apply bias correction if it is required
-    if (conf[jj].has("ObsBias")) {
+    if (conf[jj].has("obs bias")) {
       const ObsVector_ bias(Test_::obspace()[jj], "ObsBias", false);
       hofx += bias;
     }
 
     const double tol = conf[jj].getDouble("tolerance");
-    if (conf[jj].has("vecequiv")) {
+    if (conf[jj].has("vector ref")) {
       // if reference h(x) is saved in file as a vector, read from file
       // and compare the norm of difference to zero
-      ObsVector_ obsref(Test_::obspace()[jj], conf[jj].getString("vecequiv"));
+      ObsVector_ obsref(Test_::obspace()[jj], conf[jj].getString("vector ref"));
       obsref -= hofx;
       const double zz = obsref.rms();
       oops::Log::info() << "Vector difference between reference and computed: " << obsref;
       EXPECT(zz < 100*tol);  //  change tol from percent to actual value.
                              //  tol used in is_close is relative
-    } else if (conf[jj].has("normequiv")) {
+    } else if (conf[jj].has("norm ref")) {
       // if reference h(x) is saved in file as a vector, read from file
       // and compare the difference, normalised by the reference values to zero
-      ObsVector_ obsref(Test_::obspace()[jj], conf[jj].getString("normequiv"));
+      ObsVector_ obsref(Test_::obspace()[jj], conf[jj].getString("norm ref"));
       obsref -= hofx;
       obsref /= hofx;
       const double zz = obsref.rms();
@@ -125,7 +123,7 @@ template <typename OBS> void testSimulateObs() {
     } else {
       // else compare h(x) norm to the norm from the config
       const double zz = hofx.rms();
-      const double xx = conf[jj].getDouble("rmsequiv");
+      const double xx = conf[jj].getDouble("rms ref");
 
       oops::Log::debug() << "zz: " << std::fixed << std::setprecision(8) << zz << std::endl;
       oops::Log::debug() << "xx: " << std::fixed << std::setprecision(8) << xx << std::endl;

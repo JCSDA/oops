@@ -35,22 +35,22 @@ int execute(const eckit::Configuration & fullConfig) const {
   int tasks_per_member = 0;
   int mymember = 0;
 
-  if ( fullConfig.has("EnsembleApplication.members") &&
-       !(fullConfig.has("EnsembleApplication.current_member")) ) {
-    members = fullConfig.getInt("EnsembleApplication.members");
+  if ( fullConfig.has("ensemble application.members") &&
+       !(fullConfig.has("ensemble application.current member")) ) {
+    members = fullConfig.getInt("ensemble application.members");
     tasks_per_member = ntasks / members;
     mymember = mytask / tasks_per_member + 1;
     Log::info() << "Running " << members << " EDA members handled by "
                 << ntasks << " total MPI tasks and "
                 << tasks_per_member << " MPI tasks per member." << std::endl;
-  } else if ( !(fullConfig.has("EnsembleApplication.members")) &&
-             fullConfig.has("EnsembleApplication.current_member") ) {
+  } else if ( !(fullConfig.has("ensemble application.members")) &&
+             fullConfig.has("ensemble application.current member") ) {
     tasks_per_member = ntasks;
-    mymember = fullConfig.getInt("EnsembleApplication.current_member");
+    mymember = fullConfig.getInt("ensemble application.current member");
     Log::info() << "Running EDA member number " << mymember
                 << " handled by " << ntasks << " total MPI tasks." << std::endl;
   } else {
-    ABORT("The options are EnsembleApplication.current_member OR EnsembleApplication.members");
+    ABORT("The options are ensemble application.current member OR ensemble application.members");
   }
 
   ASSERT(ntasks%members == 0);
@@ -67,11 +67,11 @@ int execute(const eckit::Configuration & fullConfig) const {
   config.set("output.member", mymember);
 
 // To read different backgrounds
-  config.set("cost_function.Jb.Background.member", mymember);
+  config.set("cost function.background.member", mymember);
 
 // To perturb the observations and write hofx in different files:
-  config.set("cost_function.Jo.member", mymember);
-  if (mymember > 1) config.set("cost_function.Jo.ObsPert", true);
+  config.set("cost function.member", mymember);
+  if (mymember > 1) config.set("cost function.ObsPert", true);
 
   Log::debug() << "EDA config for member 0 = " << config << std::endl;
 

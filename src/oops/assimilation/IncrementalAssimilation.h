@@ -35,7 +35,7 @@ int IncrementalAssimilation(ControlVariable<MODEL, OBS> & xx, CostFunction<MODEL
 
 // Setup outer loop
   std::vector<eckit::LocalConfiguration> iterconfs;
-  config.get("variational.iteration", iterconfs);
+  config.get("iterations", iterconfs);
   const unsigned int nouter = iterconfs.size();
   Log::info() << "Running incremental assimilation with " << nouter
               << " outer iterations." << std::endl;

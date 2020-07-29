@@ -38,8 +38,7 @@ class GeoVaLs : public util::Printable,
   static const std::string classname() {return "oops::GeoVaLs";}
 
   GeoVaLs(const Locations_ &, const Variables &);
-  GeoVaLs(const eckit::Configuration &, const ObsSpace_ &,
-          const Variables &);
+  GeoVaLs(const eckit::Configuration &, const ObsSpace_ &, const Variables &);
   GeoVaLs(const GeoVaLs &);
 
   ~GeoVaLs();

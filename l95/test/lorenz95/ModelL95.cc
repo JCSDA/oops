@@ -33,7 +33,7 @@ namespace test {
 class ModelTestFixture : TestFixture {
  public:
   ModelTestFixture() {
-    eckit::LocalConfiguration res(TestConfig::config(), "resolution");
+    eckit::LocalConfiguration res(TestConfig::config(), "geometry");
     resol_.reset(new lorenz95::Resolution(res, oops::mpi::comm()));
     nlconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "model"));
   }
@@ -68,7 +68,7 @@ ModelTestFixture fix;
     lorenz95::FieldL95 fieldL95(*fix.resol_);
 
     // construct a ModelBias object
-    eckit::LocalConfiguration biasCfg(TestConfig::config(), "ModelBias");
+    eckit::LocalConfiguration biasCfg(TestConfig::config(), "model aux control");
     lorenz95::ModelBias modelBias(*fix.resol_, biasCfg);
 
     // construct a ModelTrajectory object

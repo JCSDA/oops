@@ -96,13 +96,13 @@ CostFct3DVar<MODEL, OBS>::CostFct3DVar(const eckit::Configuration & config,
                                   const eckit::mpi::Comm & comm)
   : CostFunction<MODEL, OBS>::CostFunction(config),
     windowLength_(), windowHalf_(), comm_(comm),
-    resol_(eckit::LocalConfiguration(config, "resolution"), comm),
+    resol_(eckit::LocalConfiguration(config, "geometry"), comm),
     model_(resol_, eckit::LocalConfiguration(config, "model")),
-    ctlvars_(config), an2model_(), inc2model_()
+    ctlvars_(config, "analysis variables"), an2model_(), inc2model_()
 {
   Log::trace() << "CostFct3DVar::CostFct3DVar start" << std::endl;
-  windowLength_ = util::Duration(config.getString("window_length"));
-  windowBegin_ = util::DateTime(config.getString("window_begin"));
+  windowLength_ = util::Duration(config.getString("window length"));
+  windowBegin_ = util::DateTime(config.getString("window begin"));
   windowEnd_ = windowBegin_ + windowLength_;
   windowHalf_ = windowBegin_ + windowLength_/2;
 
@@ -171,7 +171,7 @@ void CostFct3DVar<MODEL, OBS>::doLinearize(const Geometry_ & resol,
                                       const eckit::Configuration & innerConf,
                                       const CtrlVar_ & bg, const CtrlVar_ & fg) {
   Log::trace() << "CostFct3DVar::doLinearize start" << std::endl;
-  eckit::LocalConfiguration conf(innerConf, "linearmodel");
+  eckit::LocalConfiguration conf(innerConf, "linear model");
   inc2model_.reset(LinearVariableChangeFactory<MODEL>::create(bg.state()[0], fg.state()[0],
                                                               resol, conf));
   inc2model_->setInputVariables(ctlvars_);

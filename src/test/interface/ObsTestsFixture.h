@@ -33,14 +33,12 @@ class ObsTestsFixture : private boost::noncopyable {
   static const util::DateTime & tbgn() {return *getInstance().tbgn_;}
   static const util::DateTime & tend() {return *getInstance().tend_;}
   static ObsSpaces_ & obspace()        {return *getInstance().ospaces_;}
-  static const eckit::LocalConfiguration & config() {return *getInstance().conf_;}
 
  private:
-  ObsTestsFixture(): tbgn_(), tend_(), conf_(), ospaces_() {
-    tbgn_.reset(new util::DateTime(TestEnvironment::config().getString("window_begin")));
-    tend_.reset(new util::DateTime(TestEnvironment::config().getString("window_end")));
-    conf_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "Observations"));
-    ospaces_.reset(new ObsSpaces_(*conf_, oops::mpi::comm(), *tbgn_, *tend_));
+  ObsTestsFixture(): tbgn_(), tend_(), ospaces_() {
+    tbgn_.reset(new util::DateTime(TestEnvironment::config().getString("window begin")));
+    tend_.reset(new util::DateTime(TestEnvironment::config().getString("window end")));
+    ospaces_.reset(new ObsSpaces_(TestEnvironment::config(), oops::mpi::comm(), *tbgn_, *tend_));
   }
 
   ~ObsTestsFixture() {}
@@ -52,7 +50,6 @@ class ObsTestsFixture : private boost::noncopyable {
 
   std::unique_ptr<const util::DateTime> tbgn_;
   std::unique_ptr<const util::DateTime> tend_;
-  std::unique_ptr<const eckit::LocalConfiguration> conf_;
   std::unique_ptr<ObsSpaces_> ospaces_;
 };
 

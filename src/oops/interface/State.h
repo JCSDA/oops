@@ -42,7 +42,7 @@ class State : public util::Printable,
 
 /// Constructor, destructor
   State(const Geometry_ &, const Variables &, const util::DateTime &);
-  State(const Geometry_ &, const Variables &, const eckit::Configuration &);
+  State(const Geometry_ &, const eckit::Configuration &);
   State(const Geometry_ &, const State &);
   State(const State &);
   explicit State(const State_ &);
@@ -62,6 +62,7 @@ class State : public util::Printable,
   void write(const eckit::Configuration &) const;
   double norm() const;  // Only for tests
   Geometry_ geometry() const;
+  const Variables & variables() const;
 
 /// Accumulator
   void zero();
@@ -87,12 +88,11 @@ State<MODEL>::State(const Geometry_ & resol, const Variables & vars,
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-State<MODEL>::State(const Geometry_ & resol, const Variables & vars,
-                    const eckit::Configuration & conf) : state_()
+State<MODEL>::State(const Geometry_ & resol, const eckit::Configuration & conf) : state_()
 {
   Log::trace() << "State<MODEL>::State read starting" << std::endl;
   util::Timer timer(classname(), "State");
-  state_.reset(new State_(resol.geometry(), vars, conf));
+  state_.reset(new State_(resol.geometry(), conf));
   Log::trace() << "State<MODEL>::State read done" << std::endl;
 }
 
@@ -190,6 +190,15 @@ Geometry<MODEL> State<MODEL>::geometry() const {
   Geometry<MODEL> geom(state_->geometry());
   Log::trace() << "State<MODEL>::geometry done" << std::endl;
   return geom;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+const Variables & State<MODEL>::variables() const {
+  Log::trace() << "State<MODEL>::variables starting" << std::endl;
+  util::Timer timer(classname(), "variables");
+  return state_->variables();
 }
 
 // -----------------------------------------------------------------------------

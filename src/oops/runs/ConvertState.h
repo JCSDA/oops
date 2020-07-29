@@ -41,21 +41,18 @@ template <typename MODEL> class ConvertState : public Application {
 // -------------------------------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
 //  Setup resolution for intput and output
-    const eckit::LocalConfiguration inputResolConfig(fullConfig, "inputresolution");
+    const eckit::LocalConfiguration inputResolConfig(fullConfig, "input geometry");
     const Geometry_ resol1(inputResolConfig, this->getComm());
 
-    const eckit::LocalConfiguration outputResolConfig(fullConfig, "outputresolution");
+    const eckit::LocalConfiguration outputResolConfig(fullConfig, "output geometry");
     const Geometry_ resol2(outputResolConfig, this->getComm());
 
-//  Input and output variables
-    const std::vector<std::string> vi = fullConfig.getStringVector("inputVariables.variables");
-    oops::Variables varsi(vi);
-    const std::vector<std::string> vo = fullConfig.getStringVector("outputVariables.variables", vi);
-    oops::Variables varso(vo);
+//  Output variables
+    oops::Variables varsout(fullConfig, "output variables");
 
 //  Variable transform, identity if not specified in config
     std::unique_ptr<VariableChange_> changevar(VariableChangeFactory_::create(fullConfig, resol2));
-    bool inverse = fullConfig.getBool("doinverse", false);
+    bool inverse = fullConfig.getBool("do inverse", false);
 
 //  List of input and output states
     std::vector<eckit::LocalConfiguration> statesConf;
@@ -69,14 +66,14 @@ template <typename MODEL> class ConvertState : public Application {
 
 //    Read state
       const eckit::LocalConfiguration inputConfig(statesConf[jm], "input");
-      State_ xxi(resol1, varsi, inputConfig);
+      State_ xxi(resol1, inputConfig);
       Log::test() << "Input state: " << xxi << std::endl;
 
 //    Copy and change resolution
       State_ xx(resol2, xxi);
 
 //    New state with variables after variable change
-      State_ xxo(resol2, varso, xxi.validTime());
+      State_ xxo(resol2, varsout, xxi.validTime());
 
 //    Variable transform
       if (!inverse) {

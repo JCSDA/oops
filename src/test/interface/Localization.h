@@ -56,16 +56,15 @@ template <typename MODEL> class LocalizationFixture : private boost::noncopyable
   }
 
   LocalizationFixture<MODEL>() {
-    const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "Geometry");
+    const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "geometry");
     resol_.reset(new Geometry_(resolConfig, oops::mpi::comm()));
 
-    const eckit::LocalConfiguration varConfig(TestEnvironment::config(), "Variables");
-    ctlvars_.reset(new oops::Variables(varConfig));
+    ctlvars_.reset(new oops::Variables(TestEnvironment::config(), "loc variables"));
 
-    time_.reset(new util::DateTime(TestEnvironment::config().getString("TestDate")));
+    time_.reset(new util::DateTime(TestEnvironment::config().getString("test date")));
 
 //  Setup the localization matrix
-    const eckit::LocalConfiguration conf(TestEnvironment::config(), "Localization");
+    const eckit::LocalConfiguration conf(TestEnvironment::config(), "localization");
     local_ = oops::LocalizationFactory<MODEL>::create(*resol_, NULL, conf);
   }
 

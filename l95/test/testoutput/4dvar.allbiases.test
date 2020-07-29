@@ -1,0 +1,24 @@
+Test     : CostJb   : Nonlinear Jb = 0
+Test     : CostJo   : Nonlinear Jo(Lorenz 95) = 294.698, nobs = 160, Jo/n = 1.84186, err = 0.4
+Test     : CostJcDFI: Nonlinear Jc = 0.338917
+Test     : CostFunction: Nonlinear J = 295.037
+Test     : DRPLanczosMinimizer: reduction in residual norm = 0.00019037
+Test     : CostFunction::addIncrement: Analysis: 
+Test     :  Valid time: 2010-01-01T03:00:00Z
+Test     :  Min=7.65316, Max=8.69872, Average=7.98899
+Test     : ModelBias = 0.356145
+Test     : ObsBias = 0.597716
+Test     : CostJb   : Nonlinear Jb = 2.3711
+Test     : CostJo   : Nonlinear Jo(Lorenz 95) = 0.66566, nobs = 160, Jo/n = 0.00416037, err = 0.4
+Test     : CostJcDFI: Nonlinear Jc = 0.360284
+Test     : CostFunction: Nonlinear J = 3.39704
+Test     : DRPLanczosMinimizer: reduction in residual norm = 0.0118398
+Test     : CostFunction::addIncrement: Analysis: 
+Test     :  Valid time: 2010-01-01T03:00:00Z
+Test     :  Min=7.65676, Max=8.71418, Average=7.98899
+Test     : ModelBias = 0.280414
+Test     : ObsBias = 0.599605
+Test     : CostJb   : Nonlinear Jb = 2.40735
+Test     : CostJo   : Nonlinear Jo(Lorenz 95) = 0.402556, nobs = 160, Jo/n = 0.00251598, err = 0.4
+Test     : CostJcDFI: Nonlinear Jc = 0.357821
+Test     : CostFunction: Nonlinear J = 3.16773

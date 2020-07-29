@@ -1,47 +1,43 @@
-Assimilation Window:
-  window_begin: &date_bgn 2010-01-01T00:00:00Z
-  window_length: PT12H
+window begin: &date_bgn 2010-01-01T00:00:00Z
+window length: PT12H
 
-Geometry:
+geometry:
   nx: 40
   ny: 20
-  depths:
-  - 4500.0
-  - 5500.0
+  depths: [4500.0, 5500.0]
 
 # update (and use for H(x) 3 states at 00Z, 06Z & 12Z
-Background:
-  variables: [x]
+background:
   members:
-  - state:
+  - states:
     - date: *date_bgn
       filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1D
     - date: &date_mid 2010-01-01T06:00:00Z
       filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1DT6H
     - date: &date_end 2010-01-01T12:00:00Z
       filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1DT12H
-  - state:
+  - states:
     - date: *date_bgn
       filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1D
     - date: *date_mid
       filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1DT6H
     - date: *date_end
       filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1DT12H
-  - state:
+  - states:
     - date: *date_bgn
       filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1D
     - date: *date_mid
       filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1DT6H
     - date: *date_end
       filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1DT12H
-  - state:
+  - states:
     - date: *date_bgn
       filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1D
     - date: *date_mid
       filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1DT6H
     - date: *date_end
       filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1DT12H
-  - state:
+  - states:
     - date: *date_bgn
       filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1D
     - date: *date_mid
@@ -49,44 +45,43 @@ Background:
     - date: *date_end
       filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1DT12H
 
-Observations:
-  ObsTypes:
-  - ObsOperator:
-      ObsType: Stream
-    ObsSpace:
-      ObsDataIn:
-        obsfile: Data/truth.obs4d_12h
-      ObsDataOut:
-        obsfile: Data/letkf.obs4d_12h
-      ObsType: Stream
-    Covariance:
-      covariance: diagonal
-      Localization:
-        lengthscale: 5e6
-  - ObsOperator:
-      ObsType: Wind
-    ObsSpace:
-      ObsDataIn:
-        obsfile: Data/truth.obs4d_12h
-      ObsDataOut:
-        obsfile: Data/letkf.obs4d_12h
-      ObsType: Wind
-    Covariance:
-      covariance: diagonal
-      Localization:
-        lengthscale: 5e6
-  - ObsOperator:
-      ObsType: WSpeed
-    ObsSpace:
-      ObsDataIn:
-        obsfile: Data/truth.obs4d_12h
-      ObsDataOut:
-        obsfile: Data/letkf.obs4d_12h
-      ObsType: WSpeed
-    Covariance:
-      covariance: diagonal
-      Localization:
-        lengthscale: 5e6
+observations:
+- obs operator:
+    obs type: Stream
+  obs space:
+    obsdatain:
+      obsfile: Data/truth.obs4d_12h
+    obsdataout:
+      obsfile: Data/letkf.obs4d_12h
+    obs type: Stream
+  obs error:
+    covariance model: diagonal
+    localization:
+      lengthscale: 5e6
+- obs operator:
+    obs type: Wind
+  obs space:
+    obsdatain:
+      obsfile: Data/truth.obs4d_12h
+    obsdataout:
+      obsfile: Data/letkf.obs4d_12h
+    obs type: Wind
+  obs error:
+    covariance model: diagonal
+    localization:
+      lengthscale: 5e6
+- obs operator:
+    obs type: WSpeed
+  obs space:
+    obsdatain:
+      obsfile: Data/truth.obs4d_12h
+    obsdataout:
+      obsfile: Data/letkf.obs4d_12h
+    obs type: WSpeed
+  obs error:
+    covariance model: diagonal
+    localization:
+      lengthscale: 5e6
 
 letkf:
   solver: LETKF
@@ -95,7 +90,7 @@ letkf:
     mult: 1.1
 
 output:
-  state:
+  states:
   - datadir: Data
     date: *date_bgn
     exp: letkf.bgn.%{member}%

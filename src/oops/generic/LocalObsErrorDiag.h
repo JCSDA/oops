@@ -49,8 +49,8 @@ LocalObsErrorDiag<OBS>::LocalObsErrorDiag
   : ObsErrorDiag<OBS>(conf, obsdb)
 {
 // if Localization section is available; localize covariances
-  if (conf.has("Localization")) {
-    eckit::LocalConfiguration locconf(conf, "Localization");
+  if (conf.has("localization")) {
+    eckit::LocalConfiguration locconf(conf, "localization");
     std::unique_ptr<ObsLocalization_> loc(ObsLocalizationFactory<OBS>::create(locconf, obsdb));
     loc->multiply(this->inverseVariance_);
   }

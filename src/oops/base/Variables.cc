@@ -1,8 +1,8 @@
 /*
  * (C) Copyright 2017-2018 UCAR
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
 #include "oops/base/Variables.h"
@@ -32,11 +32,15 @@ Variables::Variables()
 
 // -----------------------------------------------------------------------------
 
-Variables::Variables(const eckit::Configuration & conf)
+Variables::Variables(const eckit::Configuration & conf, const std::string & name)
   : convention_(""), vars_(0), channels_(0) {
   Log::trace() << "Variables::Variables start " << conf << std::endl;
   std::vector<std::string> vars;
-  conf.get("variables", vars);
+  conf.get(name, vars);
+  if (vars.size() == 0) {
+    Log::error() << name << " not found in " << conf << std::endl;
+    ABORT("Undefined variable");
+  }
   // hack to read channels
   if (conf.has("channels")) {
     std::string chlist = conf.getString("channels");
@@ -102,6 +106,18 @@ bool Variables::operator==(const Variables & rhs) const {
   return convention_ == rhs.convention_
     && vars_ == rhs.vars_
     && channels_ == rhs.channels_;
+}
+
+// -----------------------------------------------------------------------------
+
+bool Variables::operator<=(const Variables & rhs) const {
+  ASSERT(convention_ == rhs.convention_);
+  ASSERT(channels_.empty());
+  bool is_in_rhs = true;
+  for (size_t jj = 0; jj < vars_.size(); ++jj) {
+    is_in_rhs = is_in_rhs && rhs.has(vars_[jj]);
+  }
+  return is_in_rhs;
 }
 
 // -----------------------------------------------------------------------------

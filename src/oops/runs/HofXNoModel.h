@@ -41,26 +41,23 @@ template <typename MODEL, typename OBS> class HofXNoModel : public Application {
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
 //  Setup observation window
-    const eckit::LocalConfiguration windowConf(fullConfig, "Assimilation Window");
-    const util::Duration winlen(windowConf.getString("window_length"));
-    const util::DateTime winbgn(windowConf.getString("window_begin"));
+    const util::Duration winlen(fullConfig.getString("window length"));
+    const util::DateTime winbgn(fullConfig.getString("window begin"));
     const util::DateTime winend(winbgn + winlen);
+    Log::info() << "Observation window from " << winbgn << " to " << winend << std::endl;
 
 //  Setup geometry
-    const eckit::LocalConfiguration geometryConfig(fullConfig, "Geometry");
+    const eckit::LocalConfiguration geometryConfig(fullConfig, "geometry");
     const Geometry_ geometry(geometryConfig, this->getComm());
 
 //  Setup states for H(x)
-    const eckit::LocalConfiguration stateConfig(fullConfig, "Forecasts");
+    const eckit::LocalConfiguration stateConfig(fullConfig, "forecasts");
     Log::info() << "States configuration is:" << stateConfig << std::endl;
-    oops::Variables vars(stateConfig);
-    State4D_ xx(geometry, vars, stateConfig);
+    State4D_ xx(geometry, stateConfig);
     Log::test() << "Initial state: " << xx[0] << std::endl;
 
 //  Setup observations
-    const eckit::LocalConfiguration obsconf(fullConfig, "Observations");
-    Log::info() << "Observations configuration is:" << obsconf << std::endl;
-    ObsSpaces_ obspace(obsconf, this->getComm(), winbgn, winend);
+    ObsSpaces_ obspace(fullConfig, this->getComm(), winbgn, winend);
 
 //  Setup and run observer
     CalcHofX<MODEL, OBS> hofx(obspace, geometry, fullConfig);

@@ -1,6 +1,6 @@
-EnsembleApplication:
+ensemble application:
   members: 2
-forecast_length: P2D
+forecast length: P2D
 members:
   - date: 2009-12-31T00:00:00Z
     filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D
@@ -8,8 +8,6 @@ members:
     filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D
 model:
   name: QG
-  variables:
-  - x
   tstep: PT1H
 output:
   datadir: Data
@@ -19,9 +17,7 @@ output:
   type: fc
 prints:
   frequency: PT3H
-resolution:
+geometry:
   nx: 40
   ny: 20
-  depths:
-  - 4500.0
-  - 5500.0
+  depths: [4500.0, 5500.0]

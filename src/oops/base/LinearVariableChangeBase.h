@@ -120,7 +120,7 @@ LinearVariableChangeBase<MODEL> * LinearVariableChangeFactory<MODEL>::create(
      const State_ & bg, const State_ & fg,
      const Geometry_ & geom, const eckit::Configuration & conf) {
   Log::trace() << "LinearVariableChangeBase<MODEL>::create starting" << std::endl;
-  const std::string id = conf.getString("varchange");
+  const std::string id = conf.getString("variable change");
   typename std::map<std::string, LinearVariableChangeFactory<MODEL>*>::iterator
     jerr = getMakers().find(id);
 
@@ -145,14 +145,14 @@ template<typename MODEL>
 LinearVariableChangeBase<MODEL>::LinearVariableChangeBase(const eckit::Configuration & conf)
   : varin_(), varout_()
 {
-  if (conf.has("inputVariables")) {
-    varin_.reset(new Variables(conf.getSubConfiguration("inputVariables")));
-    Log::trace() << "LinearVariableChangeBase<MODEL>::LinearVariableChangeBase inputvars: "
+  if (conf.has("input variables")) {
+    varin_.reset(new Variables(conf, "input variables"));
+    Log::trace() << "LinearVariableChangeBase<MODEL>::LinearVariableChangeBase input variables: "
                  << *varin_ << std::endl;
   }
-  if (conf.has("outputVariables")) {
-    varout_.reset(new Variables(conf.getSubConfiguration("outputVariables")));
-    Log::trace() << "LinearVariableChangeBase<MODEL>::LinearVariableChangeBase outputvars: "
+  if (conf.has("output variables")) {
+    varout_.reset(new Variables(conf, "output variables"));
+    Log::trace() << "LinearVariableChangeBase<MODEL>::LinearVariableChangeBase output variables: "
                  << *varout_ << std::endl;
   }
 }

@@ -25,10 +25,10 @@ namespace test {
 class ObsTableTestFixture : public TestFixture {
  public:
   ObsTableTestFixture() : comm_(oops::mpi::comm()) {
-    obsconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "Observations"));
-    bgn_.reset(new util::DateTime(obsconf_->getString("window_begin")));
-    end_.reset(new util::DateTime(obsconf_->getString("window_end")));
-    testconf_.reset(new eckit::LocalConfiguration(*obsconf_, "Observation.ObsSpace"));
+    obsconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "observations"));
+    bgn_.reset(new util::DateTime(obsconf_->getString("window begin")));
+    end_.reset(new util::DateTime(obsconf_->getString("window end")));
+    testconf_.reset(new eckit::LocalConfiguration(*obsconf_, "observation.obs space"));
   }
   ~ObsTableTestFixture() {}
   std::unique_ptr<const eckit::LocalConfiguration> obsconf_;
@@ -104,7 +104,7 @@ CASE("test_ObsTable") {
       ot(new lorenz95::ObsTable(otconf, fix.comm_, t1, t2));
 
     // More complete test in makeobs* tests.
-    eckit::LocalConfiguration genconf(*fix.obsconf_, "Generate");
+    eckit::LocalConfiguration genconf(*fix.obsconf_, "generate");
 
     ot->generateDistribution(genconf);
   }

@@ -15,7 +15,6 @@
 #include <map>
 #include <memory>
 
-#include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Accumulator.h"
 #include "oops/base/DolphChebyshev.h"
 #include "oops/base/PostBaseTLAD.h"
@@ -49,7 +48,7 @@ class WeightedDiffTLAD : public PostBaseTLAD<MODEL> {
   typedef State<MODEL>               State_;
 
  public:
-  WeightedDiffTLAD(const eckit::Configuration &, const util::DateTime &, const util::Duration &,
+  WeightedDiffTLAD(const Variables &, const util::DateTime &, const util::Duration &,
                    const util::Duration &, const Geometry_ &, WeightingFct &);
   virtual ~WeightedDiffTLAD() {}
 
@@ -73,7 +72,7 @@ class WeightedDiffTLAD : public PostBaseTLAD<MODEL> {
   void doProcessingAD(Increment_ &) override;
   void doLastAD(Increment_ &) override {}
 
-  const eckit::LocalConfiguration conf_;
+  Variables vars_;
   WeightingFct & wfct_;
   WeightedDiff<MODEL, Increment_, State_> wdiff_;
   std::map< util::DateTime, double > weights_;
@@ -92,14 +91,14 @@ class WeightedDiffTLAD : public PostBaseTLAD<MODEL> {
 // =============================================================================
 
 template <typename MODEL>
-WeightedDiffTLAD<MODEL>::WeightedDiffTLAD(const eckit::Configuration & config,
+WeightedDiffTLAD<MODEL>::WeightedDiffTLAD(const Variables & vars,
                                           const util::DateTime & vt,
                                           const util::Duration & span,
                                           const util::Duration & tstep,
                                           const Geometry_ & resol,
                                           WeightingFct & wfct)
   : PostBaseTLAD<MODEL>(vt-span/2, vt+span/2),
-    conf_(config), wfct_(wfct), wdiff_(conf_, vt, span, tstep, resol, wfct_),
+    vars_(vars), wfct_(wfct), wdiff_(vars, vt, span, tstep, resol, wfct_),
     weights_(), forcing_(), avg_(0), sum_(0.0), linit_(false),
     vtime_(vt), bgn_(vt-span/2), end_(vt+span/2), tstep_(tstep),
     bgnleg_(), endleg_()
@@ -140,8 +139,7 @@ void WeightedDiffTLAD<MODEL>::doFinalizeTraj(const State_ & xx) {
 template <typename MODEL>
 void WeightedDiffTLAD<MODEL>::setupTL(const Geometry_ & resol) {
   Log::trace() << "WeightedDiffTLAD::setupTL start" << std::endl;
-  const Variables vars(conf_);
-  avg_ = new Accumulator<MODEL, Increment_, Increment_>(resol, vars, vtime_);
+  avg_ = new Accumulator<MODEL, Increment_, Increment_>(resol, vars_, vtime_);
   Log::trace() << "WeightedDiffTLAD::setupTL done" << std::endl;
 }
 

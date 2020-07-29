@@ -27,8 +27,8 @@ namespace lorenz95 {
 ObsBiasCovariance::ObsBiasCovariance(const ObsTableView &, const eckit::Configuration & conf)
   : conf_(conf), variance_(0.0), active_(false)
 {
-  if (conf_.has("ObsBiasCovariance")) {
-    const eckit::LocalConfiguration covconf(conf_, "ObsBiasCovariance");
+  if (conf_.has("obs bias error")) {
+    const eckit::LocalConfiguration covconf(conf_, "obs bias error");
     if (covconf.has("standard_deviation")) {
       active_ = true;
       const double zz = covconf.getDouble("standard_deviation");

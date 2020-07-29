@@ -90,8 +90,8 @@ template <typename MODEL, typename OBS>
 ObserverTLAD<MODEL, OBS>::ObserverTLAD(const eckit::Configuration & config,
                                   const ObsSpace_ & obsdb,
                                   const ObsAuxCtrl_ & ybias)
-  : obsdb_(obsdb), hop_(obsdb, eckit::LocalConfiguration(config, "ObsOperator")),
-    hoptlad_(obsdb, eckit::LocalConfiguration(config, "LinearObsOperator")),
+  : obsdb_(obsdb), hop_(obsdb, eckit::LocalConfiguration(config, "obs operator")),
+    hoptlad_(obsdb, eckit::LocalConfiguration(config, "linear obs operator")),
     ybias_(ybias), geovars_(), lingetvals_(), gvals_()
 {
   geovars_ += hop_.requiredVars();

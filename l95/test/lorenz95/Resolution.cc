@@ -29,7 +29,7 @@ namespace test {
 class ResolutionTestFixture : TestFixture {
  public:
   ResolutionTestFixture() : comm_(oops::mpi::comm()) {
-    testconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "resolution"));
+    testconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "geometry"));
   }
   ~ResolutionTestFixture() {}
   std::unique_ptr<const eckit::LocalConfiguration> testconf_;

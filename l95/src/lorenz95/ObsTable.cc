@@ -45,17 +45,17 @@ ObsTable::ObsTable(const eckit::Configuration & config, const eckit::mpi::Comm &
   oops::Log::trace() << "ObsTable::ObsTable starting" << std::endl;
   nameIn_.clear();
   nameOut_.clear();
-  if (config.has("ObsDataIn")) {
-    nameIn_ = config.getString("ObsDataIn.filename");
+  if (config.has("obsdatain")) {
+    nameIn_ = config.getString("obsdatain");
     otOpen(nameIn_);
   }
   //  Generate locations etc... if required
-  if (config.has("Generate")) {
-    const eckit::LocalConfiguration gconf(config, "Generate");
+  if (config.has("generate")) {
+    const eckit::LocalConfiguration gconf(config, "generate");
     generateDistribution(gconf);
   }
-  if (config.has("ObsDataOut")) {
-    nameOut_ = config.getString("ObsDataOut.filename");
+  if (config.has("obsdataout")) {
+    nameOut_ = config.getString("obsdataout");
     sf::swapNameMember(config, nameOut_);
   }
   oops::Log::trace() << "ObsTable::ObsTable created nobs = " << nobs() << std::endl;

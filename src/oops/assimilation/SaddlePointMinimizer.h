@@ -69,7 +69,7 @@ template<typename MODEL, typename OBS>
 ControlIncrement<MODEL, OBS> *
 SaddlePointMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
   int ninner = config.getInt("ninner");
-  int gnreduc = config.getDouble("gradient_norm_reduction");
+  int gnreduc = config.getDouble("gradient norm reduction");
 
 //  if (!gradJb_) gradJb_.reset(new CtrlInc_(J_.jb()));
 

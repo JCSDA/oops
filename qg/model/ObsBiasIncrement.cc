@@ -26,8 +26,8 @@ namespace qg {
 ObsBiasIncrement::ObsBiasIncrement(const ObsSpaceQG &, const eckit::Configuration & conf)
   : bias_(ObsBias::ntypes, 0.0), active_(ObsBias::ntypes, false)
 {
-  if (conf.has("ObsBiasCovariance")) {
-    const eckit::LocalConfiguration covconf(conf, "ObsBiasCovariance");
+  if (conf.has("obs bias error")) {
+    const eckit::LocalConfiguration covconf(conf, "obs bias error");
     active_[0] = covconf.has("stream");
     active_[1] = covconf.has("uwind");
     active_[2] = covconf.has("vwind");

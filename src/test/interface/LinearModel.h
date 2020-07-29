@@ -81,33 +81,32 @@ template <typename MODEL> class LinearModelFixture : private boost::noncopyable 
   }
 
   LinearModelFixture<MODEL>() {
-    test_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "LinearModelTest"));
-    const util::Duration len(test_->getString("fclength"));
+    test_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "linear model test"));
+    const util::Duration len(test_->getString("forecast length"));
 
-    const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "Geometry");
+    const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "geometry");
     resol_.reset(new Geometry_(resolConfig, oops::mpi::comm()));
 
-    const eckit::LocalConfiguration varConfig(TestEnvironment::config(), "Variables");
-    ctlvars_.reset(new oops::Variables(varConfig));
+    ctlvars_.reset(new oops::Variables(TestEnvironment::config(), "analysis variables"));
 
-    const eckit::LocalConfiguration biasConf(TestEnvironment::config(), "ModelBias");
+    const eckit::LocalConfiguration biasConf(TestEnvironment::config(), "model aux control");
     bias_.reset(new ModelAux_(*resol_, biasConf));
     dbias_.reset(new ModelAuxIncr_(*resol_, biasConf));
 
-    const eckit::LocalConfiguration nlConf(TestEnvironment::config(), "Model");
+    const eckit::LocalConfiguration nlConf(TestEnvironment::config(), "model");
     model_.reset(new Model_(*resol_, nlConf));
 
-    const eckit::LocalConfiguration iniConf(TestEnvironment::config(), "State");
-    xref_.reset(new State_(*resol_, model_->variables(), iniConf));
+    const eckit::LocalConfiguration iniConf(TestEnvironment::config(), "initial condition");
+    xref_.reset(new State_(*resol_, iniConf));
     time_.reset(new util::DateTime(xref_->validTime()));
 
 //  Create a covariance matrix
     oops::instantiateCovarFactory<MODEL>();
-    const eckit::LocalConfiguration covar(TestEnvironment::config(), "Covariance");
+    const eckit::LocalConfiguration covar(TestEnvironment::config(), "background error");
     B_.reset(oops::CovarianceFactory<MODEL>::create(covar, *resol_, *ctlvars_, *xref_, *xref_));
 
 //  Linear model configuration
-    tlConf_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "LinearModel"));
+    tlConf_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "linear model"));
 
 //  Setup trajectory for TL and AD
     oops::instantiateTlmFactory<MODEL>();
@@ -184,7 +183,7 @@ template <typename MODEL> void testLinearModelZeroPert() {
   typedef oops::Increment<MODEL>         Increment_;
   typedef oops::ModelAuxIncrement<MODEL> ModelAuxIncr_;
 
-  const util::Duration len(Test_::test().getString("fclength"));
+  const util::Duration len(Test_::test().getString("forecast length"));
   const util::DateTime t1(Test_::time());
   const util::DateTime t2(t1 + len);
   EXPECT(t2 > t1);
@@ -214,7 +213,7 @@ template <typename MODEL> void testLinearModelLinearity() {
   typedef oops::Increment<MODEL>         Increment_;
   typedef oops::ModelAuxIncrement<MODEL> ModelAuxIncr_;
 
-  const util::Duration len(Test_::test().getString("fclength"));
+  const util::Duration len(Test_::test().getString("forecast length"));
   const util::DateTime t1(Test_::time());
   const util::DateTime t2(t1 + len);
   EXPECT(t2 > t1);
@@ -238,7 +237,7 @@ template <typename MODEL> void testLinearModelLinearity() {
   Test_::tlm().forecastTL(dx2, daux2, len);
   EXPECT(dx2.validTime() == t2);
 
-  const double tol = Test_::test().getDouble("toleranceAD");
+  const double tol = Test_::test().getDouble("tolerance AD");
   EXPECT(oops::is_close(dx1.norm(), dx2.norm(), tol));
 }
 
@@ -249,7 +248,7 @@ template <typename MODEL> void testLinearApproximation() {
   typedef oops::Increment<MODEL>         Increment_;
   typedef oops::State<MODEL>             State_;
 
-  const util::Duration len(Test_::test().getString("fclength"));
+  const util::Duration len(Test_::test().getString("forecast length"));
   const util::DateTime t1(Test_::time());
   const util::DateTime t2(t1 + len);
   EXPECT(t2 > t1);
@@ -266,10 +265,10 @@ template <typename MODEL> void testLinearApproximation() {
   State_ xx0(Test_::xref());
   Test_::model().forecast(xx0, Test_::bias(), len, post);
 
-  const unsigned int ntest = Test_::test().getInt("testiterTL");
+  const unsigned int ntest = Test_::test().getInt("iterations TL");
   double zz = 1.0;
-  if (Test_::test().has("firstmulTL")) {
-    zz = Test_::test().getDouble("firstmulTL");
+  if (Test_::test().has("first multiplier TL")) {
+    zz = Test_::test().getDouble("first multiplier TL");
   }
 
   std::vector<double> errors;
@@ -297,7 +296,7 @@ template <typename MODEL> void testLinearApproximation() {
 // Analyze results
   const double approx = *std::min_element(errors.begin(), errors.end());
   oops::Log::test() << "Test TL min error = " << approx << std::endl;
-  const double tol = Test_::test().getDouble("toleranceTL");
+  const double tol = Test_::test().getDouble("tolerance TL");
   EXPECT(approx < tol);
 }
 
@@ -308,7 +307,7 @@ template <typename MODEL> void testLinearModelAdjoint() {
   typedef oops::Increment<MODEL>         Increment_;
   typedef oops::ModelAuxIncrement<MODEL> ModelAuxIncr_;
 
-  const util::Duration len(Test_::test().getString("fclength"));
+  const util::Duration len(Test_::test().getString("forecast length"));
   const util::DateTime t1(Test_::time());
   const util::DateTime t2(t1 + len);
   EXPECT(t2 > t1);
@@ -336,7 +335,7 @@ template <typename MODEL> void testLinearModelAdjoint() {
 
   const double dot1 = dot_product(dx11, dx21);
   const double dot2 = dot_product(dx12, dx22);
-  const double tol = Test_::test().getDouble("toleranceAD");
+  const double tol = Test_::test().getDouble("tolerance AD");
   EXPECT(oops::is_close(dot1, dot2, tol));
 }
 

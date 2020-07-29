@@ -1,11 +1,13 @@
-forecast_length: P18D
-initial:
+forecast length: P18D
+geometry:
+  nx: 40
+  ny: 20
+  depths: [4000.0, 6000.0]
+initial condition:
   date: 2009-12-15T00:00:00Z
   read_from_file: 0
 model:
   name: QG
-  variables:
-  - x
   tstep: PT10M
 output:
   datadir: Data
@@ -15,9 +17,3 @@ output:
   type: fc
 prints:
   frequency: PT3H
-resolution:
-  nx: 40
-  ny: 20
-  depths:
-  - 4000.0
-  - 6000.0

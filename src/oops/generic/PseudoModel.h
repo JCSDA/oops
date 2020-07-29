@@ -61,7 +61,7 @@ class PseudoModel : public ModelBase<MODEL> {
 
 template<typename MODEL>
 PseudoModel<MODEL>::PseudoModel(const Geometry_ & resol, const eckit::Configuration & conf)
-  : tstep_(util::Duration(conf.getString("tstep"))), vars_(conf),
+  : tstep_(util::Duration(conf.getString("tstep"))), vars_(conf, "state variables"),
     confs_(conf.getSubConfigurations("states")),
     currentstate_(0) {
   Log::trace() << "PseudoModel<MODEL>::PseudoModel done" << std::endl;

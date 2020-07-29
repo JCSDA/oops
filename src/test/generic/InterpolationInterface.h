@@ -67,10 +67,10 @@ void testInterpolation() {
   typedef oops::InterpolatorFactory InterpolatorFactory_;
 
   // Skip this test if it's not specified in the yaml
-  if (!topConf.has("test_interpolation_interface"))
+  if (!topConf.has("test interpolation interface"))
       return;
 
-  eckit::LocalConfiguration config = topConf.getSubConfiguration("test_interpolation_interface");
+  eckit::LocalConfiguration config = topConf.getSubConfiguration("test interpolation interface");
 
   // Default to atlas interpolator
   std::string intname = "atlas";
@@ -110,13 +110,13 @@ void testInterpolation() {
   }
 
   // Generate random point cloud as output grid
-  const std::size_t N = static_cast<size_t>(config.getInt("NRandom"));
-  unsigned int seed = static_cast<unsigned int>(config.getInt("Seed"));
+  const std::size_t N = static_cast<size_t>(config.getInt("nrandom"));
+  unsigned int seed = static_cast<unsigned int>(config.getInt("seed"));
 
   // Distribute output longitudes over MPI tasks
   unsigned int check_no_obs = 0;
-  if (config.has("check_no_obs")) {
-    check_no_obs = static_cast<unsigned int>(config.getInt("check_no_obs"));
+  if (config.has("check no obs")) {
+    check_no_obs = static_cast<unsigned int>(config.getInt("check no obs"));
   }
   size_t ntasks = oops::mpi::comm().size();
   if (check_no_obs == 1) {
@@ -201,8 +201,8 @@ void testInterpolation() {
   /// that have not yet implemented the adjoint
 
   bool skip_adjoint_test = false;
-  if (config.has("skip_adjoint_test"))
-      skip_adjoint_test = config.getBool("skip_adjoint_test");
+  if (config.has("skip adjoint test"))
+      skip_adjoint_test = config.getBool("skip adjoint test");
 
   if (skip_adjoint_test) {
     oops::Log::info() << "\n----------------------------------------------------"

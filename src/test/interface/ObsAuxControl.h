@@ -35,7 +35,7 @@ template <typename OBS> void testConstructor() {
   typedef oops::ObsAuxControl<OBS>    ObsAux_;
 
   std::vector<eckit::LocalConfiguration> oconf;
-  Test_::config().get("ObsTypes", oconf);
+  TestEnvironment::config().get("observations", oconf);
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     std::unique_ptr<ObsAux_> bias(new ObsAux_(Test_::obspace()[jj], oconf[jj]));
     EXPECT(bias.get());
@@ -52,7 +52,7 @@ template <typename OBS> void testCopyConstructor() {
   typedef oops::ObsAuxControl<OBS>    ObsAux_;
 
   std::vector<eckit::LocalConfiguration> oconf;
-  Test_::config().get("ObsTypes", oconf);
+  TestEnvironment::config().get("observations", oconf);
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     std::unique_ptr<ObsAux_> bias(new ObsAux_(Test_::obspace()[jj], oconf[jj]));
 

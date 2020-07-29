@@ -42,7 +42,7 @@ class WeightedMean : public PostBase<FLDS> {
   typedef Geometry<MODEL>            Geometry_;
 
  public:
-  WeightedMean(const util::DateTime &, const util::Duration &,
+  WeightedMean(const Variables &, const util::DateTime &, const util::Duration &,
                const Geometry_ &, const eckit::Configuration &);
   virtual ~WeightedMean() {}
 
@@ -67,7 +67,8 @@ class WeightedMean : public PostBase<FLDS> {
 // =============================================================================
 
 template <typename MODEL, typename FLDS>
-WeightedMean<MODEL, FLDS>::WeightedMean(const util::DateTime & vt,
+WeightedMean<MODEL, FLDS>::WeightedMean(const Variables & vars,
+                                        const util::DateTime & vt,
                                         const util::Duration & span,
                                         const Geometry_ & resol,
                                         const eckit::Configuration & config)
@@ -75,7 +76,6 @@ WeightedMean<MODEL, FLDS>::WeightedMean(const util::DateTime & vt,
       wfct_(), weights_(), avg_(0), sum_(0.0), linit_(false),
       bgn_(vt-span/2), end_(vt+span/2), endleg_()
 {
-  const Variables vars(config);
   avg_ = new Accumulator<MODEL, FLDS, FLDS>(resol, vars, vt);
 //  wfct_.reset(WeightFactory::create(config)); YT
   wfct_.reset(new DolphChebyshev(config));

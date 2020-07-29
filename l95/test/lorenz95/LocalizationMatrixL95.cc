@@ -23,10 +23,10 @@ namespace test {
 class LocalizationMatrixFixture : TestFixture {
  public:
   LocalizationMatrixFixture() {
-    eckit::LocalConfiguration res(TestConfig::config(), "resolution");
+    eckit::LocalConfiguration res(TestConfig::config(), "geometry");
     resol_.reset(new lorenz95::Resolution(res, oops::mpi::comm()));
 
-    eckit::LocalConfiguration cfg(TestConfig::config(), "Covariance");
+    eckit::LocalConfiguration cfg(TestConfig::config(), "background error");
     cfg_.reset(new eckit::LocalConfiguration(cfg));
   }
   ~LocalizationMatrixFixture() {}

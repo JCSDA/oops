@@ -18,6 +18,7 @@
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
 #include "oops/base/StateWriter.h"
+#include "oops/base/Variables.h"
 #include "oops/base/WeightedMean.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Model.h"
@@ -46,7 +47,7 @@ template <typename MODEL> class ExternalDFI : public Application {
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
 //  Setup resolution
-    const eckit::LocalConfiguration resolConfig(fullConfig, "resolution");
+    const eckit::LocalConfiguration resolConfig(fullConfig, "geometry");
     const Geometry_ resol(resolConfig, this->getComm());
 
 //  Setup Model
@@ -54,15 +55,15 @@ template <typename MODEL> class ExternalDFI : public Application {
     const Model_ model(resol, modelConfig);
 
 //  Setup initial state
-    const eckit::LocalConfiguration initialConfig(fullConfig, "initial");
-    State_ xx(resol, model.variables(), initialConfig);
+    const eckit::LocalConfiguration initialConfig(fullConfig, "initial condition");
+    State_ xx(resol, initialConfig);
     Log::test() << "Initial state: " << xx << std::endl;
 
 //  Setup augmented state
     const ModelAux_ moderr(resol, initialConfig);
 
 //  Setup times
-    const util::Duration fclength(fullConfig.getString("forecast_length"));
+    const util::Duration fclength(fullConfig.getString("forecast length"));
     const util::DateTime bgndate(xx.validTime());
     const util::DateTime enddate(bgndate + fclength);
     Log::info() << "Running forecast from " << bgndate << " to " << enddate << std::endl;
@@ -80,8 +81,9 @@ template <typename MODEL> class ExternalDFI : public Application {
     const eckit::LocalConfiguration dfiConf(fullConfig, "dfi");
     const util::Duration dfispan(dfiConf.getString("filter_span"));
     const util::DateTime dfitime(bgndate+dfispan/2);
+    const Variables vars(dfiConf, "filtered variables");
     std::shared_ptr< WeightedMean<MODEL, State_> >
-      pdfi(new WeightedMean<MODEL, State_>(dfitime, dfispan, resol, dfiConf));
+      pdfi(new WeightedMean<MODEL, State_>(vars, dfitime, dfispan, resol, dfiConf));
     pp.enrollProcessor(pdfi);
 
 //  Run DFI forecast

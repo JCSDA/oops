@@ -66,7 +66,7 @@ ObsAuxCovariances<OBS>::ObsAuxCovariances(const ObsSpaces_ & odb,
 {
   Log::trace() << "ObsAuxCovariances<OBS>::ObsAuxCovariances starting" << std::endl;
   std::vector<eckit::LocalConfiguration> obsconf;
-  conf.get("ObsTypes", obsconf);
+  conf.get("observations", obsconf);
   for (std::size_t jobs = 0; jobs < obsconf.size(); ++jobs) {
     boost::shared_ptr<ObsAuxCovariance_> tmp(new ObsAuxCovariance_(odb[jobs], obsconf[jobs]));
     cov_.push_back(tmp);

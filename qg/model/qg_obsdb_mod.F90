@@ -85,8 +85,8 @@ character(len=1024) :: fin,fout
 character(len=:),allocatable :: str
 
 ! Input file
-if (f_conf%has("ObsDataIn")) then
-  call f_conf%get_or_die("ObsDataIn.obsfile",str)
+if (f_conf%has("obsdatain")) then
+  call f_conf%get_or_die("obsdatain.obsfile",str)
   fin = str
 else
   fin = ''
@@ -94,7 +94,7 @@ endif
 call fckit_log%info('qg_obsdb_setup: file in = '//trim(fin))
 
 ! Output file
-call f_conf%get_or_die("ObsDataOut.obsfile",str)
+call f_conf%get_or_die("obsdataout.obsfile",str)
 call swap_name_member(f_conf, str)
 
 fout = str

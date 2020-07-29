@@ -45,9 +45,9 @@ template <typename MODEL> class ModelAuxCovarianceFixture : private boost::nonco
   }
 
   ModelAuxCovarianceFixture() {
-    conf_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "ModelBiasCovariance"));
+    conf_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "model aux error"));
 
-    const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "Geometry");
+    const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "geometry");
     resol_.reset(new Geometry_(resolConfig, oops::mpi::comm()));
   }
 

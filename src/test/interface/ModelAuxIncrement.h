@@ -56,11 +56,11 @@ template <typename MODEL> class ModelAuxIncrementFixture : private boost::noncop
 
   ModelAuxIncrementFixture<MODEL>() {
 //  Setup a geometry
-    const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "Geometry");
+    const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "geometry");
     resol_.reset(new Geometry_(resolConfig, oops::mpi::comm()));
 
 //  Setup a covariance matrix
-    conf_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "ModelBiasCovariance"));
+    conf_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "model aux error"));
     covar_.reset(new Covariance_(*conf_, *resol_));
   }
 

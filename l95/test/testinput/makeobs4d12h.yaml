@@ -1,23 +1,21 @@
-Assimilation Window:
-  window_begin: 2010-01-01T03:00:00Z
-  window_length: PT12H
-Geometry:
-  resol: '40'
-Initial Condition:
-  date: '2010-01-01T03:00:00Z'
-  filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H
-Model:
-  f: '8.0'
+geometry:
+  resol: 40
+model:
+  f: 8.0
   name: L95
   tstep: PT1H30M
-Observations:
-  ObsTypes:
-  - ObsSpace:
-      ObsDataOut:
-        filename: Data/l95.truth4d.2010-01-01T12:00:00Z.obt
-      Generate:
-        begin: PT1H30M
-        obs_density: '10'
-        obs_error: '0.4'
-        obs_frequency: PT1H30M
-    ObsOperator: {}
+initial condition:
+  date: 2010-01-01T03:00:00Z
+  filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H
+forecast length: PT12H
+window begin: 2010-01-01T03:00:00Z
+window length: PT12H
+observations:
+- obs space:
+    obsdataout: Data/l95.truth4d.2010-01-01T12:00:00Z.obt
+    generate:
+      begin: PT1H30M
+      obs_density: 10
+      obs_error: 0.4
+      obs_frequency: PT1H30M
+  obs operator: {}

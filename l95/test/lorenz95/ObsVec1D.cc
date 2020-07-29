@@ -28,10 +28,10 @@ namespace test {
 class ObsVecTestFixture : TestFixture {
  public:
   ObsVecTestFixture() {
-    const eckit::LocalConfiguration conf(TestConfig::config(), "Observations");
-    const util::DateTime bgn(conf.getString("window_begin"));
-    const util::DateTime end(conf.getString("window_end"));
-    const eckit::LocalConfiguration otconf(conf, "Observation.ObsSpace");
+    const eckit::LocalConfiguration conf(TestConfig::config(), "observations");
+    const util::DateTime bgn(conf.getString("window begin"));
+    const util::DateTime end(conf.getString("window end"));
+    const eckit::LocalConfiguration otconf(conf, "observation.obs space");
     obstable_.reset(new lorenz95::ObsTableView(otconf, oops::mpi::comm(), bgn, end));
     const std::vector<std::string> vv{"zz"};
   }

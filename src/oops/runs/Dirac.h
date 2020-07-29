@@ -55,22 +55,22 @@ template <typename MODEL> class Dirac : public Application {
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
     //  Setup resolution
-    const eckit::LocalConfiguration resolConfig(fullConfig, "resolution");
+    const eckit::LocalConfiguration resolConfig(fullConfig, "geometry");
     const Geometry_ resol(resolConfig, this->getComm());
 
-    //  Setup variables
-    const Variables vars(fullConfig);
-
     // Setup background state
-    const eckit::LocalConfiguration backgroundConfig(fullConfig, "initial");
-    State4D_ xx(resol, vars, backgroundConfig);
+    const eckit::LocalConfiguration backgroundConfig(fullConfig, "initial condition");
+    State4D_ xx(resol, backgroundConfig);
+
+    //  Setup variables
+    const Variables vars = xx.variables();
 
     //  Setup timeslots
     std::vector<util::DateTime> timeslots = xx.validTimes();
     Log::info() << "Number of ensemble time-slots:" << timeslots.size() << std::endl;
 
     // Apply B to Dirac
-    const eckit::LocalConfiguration covarConfig(fullConfig, "Covariance");
+    const eckit::LocalConfiguration covarConfig(fullConfig, "background error");
     if (xx.size() == 1) {
       //  3D covariance
       std::unique_ptr<ModelSpaceCovarianceBase<MODEL>> B(CovarianceFactory<MODEL>::create(
@@ -86,7 +86,7 @@ template <typename MODEL> class Dirac : public Application {
       B->multiply(dxdirin, dxdirout);
 
       //  Write increment
-      const eckit::LocalConfiguration output_B(fullConfig, "output_B");
+      const eckit::LocalConfiguration output_B(fullConfig, "output B");
       dxdirout.write(output_B);
       Log::test() << "Increment: " << dxdirout << std::endl;
     } else {
@@ -105,7 +105,7 @@ template <typename MODEL> class Dirac : public Application {
       B->multiply(dxdirin, dxdirout);
 
       //  Write increment
-      const eckit::LocalConfiguration output_B(fullConfig, "output_B");
+      const eckit::LocalConfiguration output_B(fullConfig, "output B");
       dxdirout.write(output_B);
       Log::test() << "Increment4D: " << dxdirout << std::endl;
     }
@@ -130,7 +130,7 @@ template <typename MODEL> class Dirac : public Application {
 
     if (hasLoc) {
       // Setup ensemble
-      EnsemblePtr_ ens(new Ensemble_(ensConfig, xx, xx, resol));
+      EnsemblePtr_ ens(new Ensemble_(ensConfig, xx, xx, resol, vars));
 
       // Apply localization to Dirac
       if (xx.size() == 1) {
@@ -147,7 +147,7 @@ template <typename MODEL> class Dirac : public Application {
         loc_->multiply(dxdir);
 
         //  Write increment
-        const eckit::LocalConfiguration output_localization(fullConfig, "output_localization");
+        const eckit::LocalConfiguration output_localization(fullConfig, "output localization");
         dxdir.write(output_localization);
         Log::test() << "Increment: " << dxdir << std::endl;
       } else {
@@ -165,7 +165,7 @@ template <typename MODEL> class Dirac : public Application {
         loc_->multiply(dxdir);
 
         //  Write increment
-        const eckit::LocalConfiguration output_localization(fullConfig, "output_localization");
+        const eckit::LocalConfiguration output_localization(fullConfig, "output localization");
         dxdir.write(output_localization);
         Log::test() << "Increment4D: " << dxdir << std::endl;
       }

@@ -39,8 +39,7 @@ template <typename MODEL> void testConstructor() {
   typedef oops::GeometryIterator<MODEL>   GeometryIterator_;
   typedef oops::Geometry<MODEL>           Geometry_;
 
-  const eckit::LocalConfiguration
-       geomConfig(TestEnvironment::config(), "Geometry");
+  const eckit::LocalConfiguration geomConfig(TestEnvironment::config(), "geometry");
   Geometry_ geom(geomConfig, oops::mpi::comm());
 
   std::unique_ptr<GeometryIterator_> iter(new GeometryIterator_(geom.begin()));
@@ -58,8 +57,7 @@ template <typename MODEL> void testGetSetLocal() {
   typedef oops::Increment<MODEL>         Increment_;
   typedef IncrementFixture<MODEL>        Test_;
 
-  const eckit::LocalConfiguration
-       geomConfig(TestEnvironment::config(), "Geometry");
+  const eckit::LocalConfiguration geomConfig(TestEnvironment::config(), "geometry");
   Geometry_ geom(geomConfig, oops::mpi::comm());
 
   // randomize increment dx1

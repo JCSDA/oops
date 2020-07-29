@@ -27,10 +27,10 @@ namespace test {
 class LocsTestFixture : TestFixture {
  public:
   LocsTestFixture() {
-    const eckit::LocalConfiguration conf(TestConfig::config(), "Observations");
-    const util::DateTime bgn(conf.getString("window_begin"));
-    const util::DateTime end(conf.getString("window_end"));
-    const eckit::LocalConfiguration otconf(conf, "Observation.ObsSpace");
+    const eckit::LocalConfiguration conf(TestConfig::config(), "observations");
+    const util::DateTime bgn(conf.getString("window begin"));
+    const util::DateTime end(conf.getString("window end"));
+    const eckit::LocalConfiguration otconf(conf, "observation.obs space");
     ot_.reset(new lorenz95::ObsTable(otconf, oops::mpi::comm(), bgn, end));
     t1_.reset(new util::DateTime("2010-01-01T12:00:00Z"));
     t2_.reset(new util::DateTime("2010-01-02T00:00:00Z"));

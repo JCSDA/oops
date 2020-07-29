@@ -1,6 +1,6 @@
-stateResol:
+state geometry:
   resol: 40
-incrementResol:
+increment geometry:
   resol: 40
 state1:
   date: '2010-01-02T00:00:00Z'

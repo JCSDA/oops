@@ -60,16 +60,15 @@ template <typename MODEL> class LinearVariableChangeFixture : private boost::non
   LinearVariableChangeFixture<MODEL>() {
     oops::instantiateVariableChangeFactory<MODEL>();
 
-    const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "Geometry");
+    const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "geometry");
     resol_.reset(new Geometry_(resolConfig, oops::mpi::comm()));
 
-    const oops::Variables vars(eckit::LocalConfiguration(TestEnvironment::config(), "State"));
-    const eckit::LocalConfiguration fgconf(TestEnvironment::config(), "State");
-    xx_.reset(new State_(*resol_, vars, fgconf));
+    const eckit::LocalConfiguration fgconf(TestEnvironment::config(), "background");
+    xx_.reset(new State_(*resol_, fgconf));
 
     time_.reset(new util::DateTime(xx_->validTime()));
 
-    TestEnvironment::config().get("LinearVariableChangeTests", confs_);
+    TestEnvironment::config().get("linear variable change tests", confs_);
   }
 
   ~LinearVariableChangeFixture<MODEL>() {}
@@ -89,10 +88,8 @@ template <typename MODEL> void testLinearVariableChangeZero() {
   typedef oops::LinearVariableChangeFactory<MODEL> LinearVariableChangeFactory_;
 
   for (std::size_t jj = 0; jj < Test_::confs().size(); ++jj) {
-    eckit::LocalConfiguration varinconf(Test_::confs()[jj], "inputVariables");
-    eckit::LocalConfiguration varoutconf(Test_::confs()[jj], "outputVariables");
-    oops::Variables varin(varinconf);
-    oops::Variables varout(varoutconf);
+    oops::Variables varin(Test_::confs()[jj], "input variables");
+    oops::Variables varout(Test_::confs()[jj], "output variables");
 
     std::unique_ptr<LinearVariableChange_> changevar(LinearVariableChangeFactory_::create(
                                       Test_::xx(), Test_::xx(),
@@ -113,7 +110,7 @@ template <typename MODEL> void testLinearVariableChangeZero() {
     changevar->multiplyAD(dxin, KTdxin);
     EXPECT(KTdxin.norm() == 0.0);
 
-    const bool testinverse = Test_::confs()[jj].getBool("testinverse", true);
+    const bool testinverse = Test_::confs()[jj].getBool("test inverse", true);
     if (testinverse)
       {
         Increment_   KIdxin(Test_::resol(), varout, Test_::time());
@@ -141,10 +138,8 @@ template <typename MODEL> void testLinearVariableChangeAdjoint() {
   typedef oops::LinearVariableChangeFactory<MODEL> LinearVariableChangeFactory_;
 
   for (std::size_t jj = 0; jj < Test_::confs().size(); ++jj) {
-    eckit::LocalConfiguration varinconf(Test_::confs()[jj], "inputVariables");
-    eckit::LocalConfiguration varoutconf(Test_::confs()[jj], "outputVariables");
-    oops::Variables varin(varinconf);
-    oops::Variables varout(varoutconf);
+    oops::Variables varin(Test_::confs()[jj], "input variables");
+    oops::Variables varout(Test_::confs()[jj], "output variables");
 
     std::unique_ptr<LinearVariableChange_> changevar(LinearVariableChangeFactory_::create(
                                       Test_::xx(), Test_::xx(),
@@ -175,7 +170,7 @@ template <typename MODEL> void testLinearVariableChangeAdjoint() {
                       << (zz1-zz2)/zz2 << std::endl;
     const double tol = 1e-10;
     EXPECT(oops::is_close(zz1, zz2, tol));
-    const bool testinverse = Test_::confs()[jj].getBool("testinverse", true);
+    const bool testinverse = Test_::confs()[jj].getBool("test inverse", true);
     if (testinverse)
       {
         Increment_   invKdxin(Test_::resol(), varout, Test_::time());
@@ -209,14 +204,12 @@ template <typename MODEL> void testLinearVariableChangeInverse() {
   typedef oops::LinearVariableChangeFactory<MODEL> LinearVariableChangeFactory_;
 
   for (std::size_t jj = 0; jj < Test_::confs().size(); ++jj) {
-    eckit::LocalConfiguration varinconf(Test_::confs()[jj], "inputVariables");
-    eckit::LocalConfiguration varoutconf(Test_::confs()[jj], "outputVariables");
-    oops::Variables varin(varinconf);
-    oops::Variables varout(varoutconf);
+    oops::Variables varin(Test_::confs()[jj], "input variables");
+    oops::Variables varout(Test_::confs()[jj], "output variables");
 
-    const double tol = Test_::confs()[jj].getDouble("toleranceInverse");
+    const double tol = Test_::confs()[jj].getDouble("tolerance inverse");
 
-    const bool testinverse = Test_::confs()[jj].getBool("testinverse", false);
+    const bool testinverse = Test_::confs()[jj].getBool("test inverse", false);
     if (testinverse)
       {
       oops::Log::info() << "Testing multiplyInverse" << std::endl;

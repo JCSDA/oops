@@ -41,7 +41,7 @@ template <typename MODEL> class GeometryFixture : private boost::noncopyable {
   }
 
   GeometryFixture() {
-    conf_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "Geometry"));
+    conf_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "geometry"));
   }
 
   ~GeometryFixture() {}

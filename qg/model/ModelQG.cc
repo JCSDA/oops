@@ -30,7 +30,7 @@ namespace qg {
 static oops::ModelMaker<QgTraits, ModelQG> makermodel_("QG");
 // -----------------------------------------------------------------------------
 ModelQG::ModelQG(const GeometryQG & resol, const eckit::Configuration & model)
-  : keyConfig_(0), tstep_(0), geom_(resol), vars_(model)
+  : keyConfig_(0), tstep_(0), geom_(resol), vars_({"x"})
 {
   oops::Log::trace() << "ModelQG::ModelQG" << std::endl;
   tstep_ = util::Duration(model.getString("tstep"));

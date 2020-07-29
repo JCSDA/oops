@@ -23,52 +23,51 @@
 
 namespace oops {
 
-  template <typename MODEL> class StaticBInit : public Application {
-    typedef ModelSpaceCovarianceBase<MODEL>  Covariance_;
-    typedef Geometry<MODEL>                  Geometry_;
-    typedef Increment<MODEL>                 Increment_;
-    typedef State<MODEL>                     State_;
+template <typename MODEL> class StaticBInit : public Application {
+  typedef ModelSpaceCovarianceBase<MODEL>  Covariance_;
+  typedef Geometry<MODEL>                  Geometry_;
+  typedef Increment<MODEL>                 Increment_;
+  typedef State<MODEL>                     State_;
 
-   public:
-    // -----------------------------------------------------------------------------
-    explicit StaticBInit(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {
-      instantiateCovarFactory<MODEL>();
-    }
-    // -----------------------------------------------------------------------------
-    virtual ~StaticBInit() {}
-    // -----------------------------------------------------------------------------
-    int execute(const eckit::Configuration & fullConfig) const {
-      //  Setup resolution
-      const eckit::LocalConfiguration resolConfig(fullConfig, "Geometry");
-      const Geometry_ resol(resolConfig, this->getComm());
+ public:
+  // -----------------------------------------------------------------------------
+  explicit StaticBInit(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {
+    instantiateCovarFactory<MODEL>();
+  }
+  // -----------------------------------------------------------------------------
+  virtual ~StaticBInit() {}
+  // -----------------------------------------------------------------------------
+  int execute(const eckit::Configuration & fullConfig) const {
+    //  Setup resolution
+    const eckit::LocalConfiguration resolConfig(fullConfig, "geometry");
+    const Geometry_ resol(resolConfig, this->getComm());
 
-      //  Setup variables
-      const eckit::LocalConfiguration varConfig(fullConfig, "Variables");
-      const Variables vars(varConfig);
+    //  Setup variables
+    const Variables vars(fullConfig, "analysis variables");
 
-      //  Setup background state
-      const eckit::LocalConfiguration bkgconf(fullConfig, "State");
-      State_ xx(resol, vars, bkgconf);
+    //  Setup background state
+    const eckit::LocalConfiguration bkgconf(fullConfig, "background");
+    State_ xx(resol, bkgconf);
 
-      //  Initialize static B matrix
-      const eckit::LocalConfiguration covarconf(fullConfig, "Covariance");
-      std::unique_ptr< Covariance_ >
-       Bmat(CovarianceFactory<MODEL>::create(covarconf, resol, vars, xx, xx));
+    //  Initialize static B matrix
+    const eckit::LocalConfiguration covarconf(fullConfig, "background error");
+    std::unique_ptr< Covariance_ >
+     Bmat(CovarianceFactory<MODEL>::create(covarconf, resol, vars, xx, xx));
 
-      //  Randomize B matrix
-      Increment_ dx(resol, vars, xx.validTime());
-      Bmat->randomize(dx);
-      Log::test() << dx << std::endl;
+    //  Randomize B matrix
+    Increment_ dx(resol, vars, xx.validTime());
+    Bmat->randomize(dx);
+    Log::test() << dx << std::endl;
 
-      return 0;
-    }
-    // -----------------------------------------------------------------------------
-   private:
-    std::string appname() const {
-      return "oops::StaticBInit<" + MODEL::name() + ">";
-    }
-    // -----------------------------------------------------------------------------
-  };
+    return 0;
+  }
+  // -----------------------------------------------------------------------------
+ private:
+  std::string appname() const {
+    return "oops::StaticBInit<" + MODEL::name() + ">";
+  }
+  // -----------------------------------------------------------------------------
+};
 
 }  // namespace oops
 

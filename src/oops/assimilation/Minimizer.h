@@ -96,10 +96,10 @@ template<typename MODEL, typename OBS>
 void Minimizer<MODEL, OBS>::tlmTests(const eckit::Configuration & config) {
 // Tangent Linear tests
 
-  if (config.has("onlineDiagnostics")) {
-    const eckit::LocalConfiguration onlineDiag(config, "onlineDiagnostics");
-    bool runTlmTaylorTest = onlineDiag.getBool("tlmTaylorTest");
-    bool runTlmApproxTest = onlineDiag.getBool("tlmApproxTest");
+  if (config.has("online diagnostics")) {
+    const eckit::LocalConfiguration onlineDiag(config, "online diagnostics");
+    bool runTlmTaylorTest = onlineDiag.getBool("tlm taylor test", false);
+    bool runTlmApproxTest = onlineDiag.getBool("tlm approx test", false);
 
     const H_  H(J_);
     const Ht_ Ht(J_);
@@ -119,10 +119,10 @@ template<typename MODEL, typename OBS>
 void Minimizer<MODEL, OBS>::adjTests(const eckit::Configuration & config) {
 // Adjoint tests
 
-  if (config.has("onlineDiagnostics")) {
-    const eckit::LocalConfiguration onlineDiag(config, "onlineDiagnostics");
-    bool runAdjTlmTest    = onlineDiag.getBool("adjTlmTest");
-    bool runAdjObsTest    = onlineDiag.getBool("adjObsTest");
+  if (config.has("online diagnostics")) {
+    const eckit::LocalConfiguration onlineDiag(config, "online diagnostics");
+    bool runAdjTlmTest    = onlineDiag.getBool("adj tlm test", false);
+    bool runAdjObsTest    = onlineDiag.getBool("adj obs test", false);
 
     const H_  H(J_);
     const Ht_ Ht(J_);
@@ -190,9 +190,9 @@ void Minimizer<MODEL, OBS>::tlmPropagTest(const eckit::Configuration & config,
    TO DO:
      write to file depending on requriements */
 
-  if (config.has("onlineDiagnostics")) {
-    const eckit::LocalConfiguration onlineDiag(config, "onlineDiagnostics");
-    bool runTlmPropagTest = onlineDiag.getBool("tlmPropagTest");
+  if (config.has("online diagnostics")) {
+    const eckit::LocalConfiguration onlineDiag(config, "online diagnostics");
+    bool runTlmPropagTest = onlineDiag.getBool("tlm propagation test", false);
 
     if (runTlmPropagTest) {
       // print log

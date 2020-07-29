@@ -1,24 +1,23 @@
-Covariance:
-  covariance: L95Error
-  date: '2010-01-01T00:00:00Z'
-  length_scale: '1.0'
-  standard_deviation: '0.6'
-forecast_length: PT27H
-initial:
-  date: '2010-01-01T00:00:00Z'
-  filename: Data/test.an.2010-01-01T00:00:00Z.l95
-members: '10'
+members: 10
+geometry:
+  resol: 40
 model:
-  f: '8.0'
   name: L95
+  f: 8.0
   tstep: PT1H30M
+perturbed variables: [x]
+background error:
+  covariance model: L95Error
+  date: 2010-01-01T00:00:00Z
+  length_scale: 1.0
+  standard_deviation: 0.6
+forecast length: PT27H
+initial condition:
+  date: 2010-01-01T00:00:00Z
+  filename: Data/test.an.2010-01-01T00:00:00Z.l95
 output:
   datadir: Data
-  date: '2010-01-01T00:00:00Z'
+  date: 2010-01-01T00:00:00Z
   exp: test
   frequency: PT1H30M
   type: ens
-resolution:
-  resol: '40'
-variables:
- - dummy

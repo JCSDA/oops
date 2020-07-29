@@ -78,7 +78,7 @@ AnalyticInit<OBS>::~AnalyticInit() {
  * information in the Locations object.  Currently, this information
  * about the vertical profile is obtained from an existing GeoVaLs object
  * (passed as *gvals*) that represents the output of the State::interpolate()
- * method.  The State.StateGenerate section of the configuration file is
+ * method.  The state.state generate section of the configuration file is
  * also passed to this constructor to provide further information required
  * for the analytic initialization.
  *

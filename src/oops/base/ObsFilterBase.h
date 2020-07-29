@@ -106,7 +106,7 @@ boost::shared_ptr<ObsFilterBase<OBS>>
 FilterFactory<OBS>::create(const ObsSpace_ & os, const eckit::Configuration & conf,
                              ObsDataPtr_<int> flags, ObsDataPtr_<float> obserr) {
   Log::trace() << "ObsFilterBase<OBS>::create starting" << std::endl;
-  const std::string id = conf.getString("Filter");
+  const std::string id = conf.getString("filter");
   typename std::map<std::string, FilterFactory<OBS>*>::iterator
     jloc = getMakers().find(id);
   if (jloc == getMakers().end()) {

@@ -104,11 +104,11 @@ ObserversTLAD<MODEL, OBS>::ObserversTLAD(const eckit::Configuration & config,
 {
   // setup observers
   std::vector<eckit::LocalConfiguration> typeconf;
-  config.get("ObsTypes", typeconf);
+  config.get("observations", typeconf);
   for (std::size_t jobs = 0; jobs < obsdb.size(); ++jobs) {
     // Set LinearObsOperator section to ObsOperator section if not available
-    if (!typeconf[jobs].has("LinearObsOperator")) {
-      typeconf[jobs].set("LinearObsOperator", typeconf[jobs].getSubConfiguration("ObsOperator"));
+    if (!typeconf[jobs].has("linear obs operator")) {
+      typeconf[jobs].set("linear obs operator", typeconf[jobs].getSubConfiguration("obs operator"));
     }
     std::shared_ptr<ObserverTLAD_> tmp(new ObserverTLAD_(typeconf[jobs], obsdb[jobs],
                                        ybias[jobs]));

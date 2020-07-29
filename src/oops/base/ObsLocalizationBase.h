@@ -86,7 +86,7 @@ template <typename OBS>
 std::unique_ptr<ObsLocalizationBase<OBS>> ObsLocalizationFactory<OBS>::create(
                               const eckit::Configuration & conf, const ObsSpace_ & obsspace) {
   Log::trace() << "ObsLocalizationBase<OBS>::create starting" << std::endl;
-  const std::string id = conf.getString("localization");
+  const std::string id = conf.getString("localization method");
   typename std::map<std::string, ObsLocalizationFactory<OBS>*>::iterator
     jloc = getMakers().find(id);
   if (jloc == getMakers().end()) {

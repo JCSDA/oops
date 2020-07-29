@@ -25,7 +25,7 @@ class Variables : public util::Printable {
   static const std::string classname() {return "oops::Variables";}
 
   Variables();
-  explicit Variables(const eckit::Configuration &);
+  Variables(const eckit::Configuration &, const std::string &);
   explicit Variables(const std::vector<std::string> &, const std::string & conv = "");
   Variables(const std::vector<std::string> &, const std::vector<int>);
 
@@ -37,6 +37,7 @@ class Variables : public util::Printable {
   size_t size() const {return vars_.size();}
   const std::string & operator[](const size_t kk) const {return vars_.at(kk);}
   bool operator==(const Variables &) const;
+  bool operator<=(const Variables &) const;
 
   bool has(const std::string &) const;
   size_t find(const std::string &) const;

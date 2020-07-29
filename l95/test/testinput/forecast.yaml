@@ -1,16 +1,16 @@
-forecast_length: P3D
-initial:
-  date: '2010-01-01T00:00:00Z'
-  filename: Data/test.an.2010-01-01T00:00:00Z.l95
+geometry:
+  resol: '40'
 model:
   f: '8.0'
   name: L95
   tstep: PT1H30M
+forecast length: P3D
+initial condition:
+  date: '2010-01-01T00:00:00Z'
+  filename: Data/test.an.2010-01-01T00:00:00Z.l95
 output:
   datadir: Data
   date: '2010-01-01T00:00:00Z'
   exp: test
   frequency: PT1H30M
   type: fc
-resolution:
-  resol: '40'

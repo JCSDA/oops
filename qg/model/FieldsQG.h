@@ -88,6 +88,7 @@ class FieldsQG : public util::Printable,
   void write(const eckit::Configuration &) const;
   double norm() const;
   boost::shared_ptr<const GeometryQG> geometry() const {return geom_;}
+  const oops::Variables & variables() const {return vars_;}
 
   const util::DateTime & time() const {return time_;}
   util::DateTime & time() {return time_;}

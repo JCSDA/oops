@@ -1,32 +1,21 @@
-Geometry:
+geometry:
   nx: 40
   ny: 20
-  depths:
-  - 4500.0
-  - 5500.0
-GeoVaLsVariables:
-  variables: [u,v]
-LinearGetValuesTest:
-  toleranceLinearity: 1.0e-11
-  numiterTL: 10
-  firstmulTL: 1.0
-  toleranceTL: 1.0e-11
-  toleranceAD: 1.0e-11
-Locations:
-  window_begin: 2010-01-01T00:00:00Z
-  window_end: 2010-01-02T00:00:00Z
+  depths: [4500.0, 5500.0]
+state variables: [u, v]
+linear getvalues test:
+  tolerance linearity: 1.0e-11
+  iterations TL: 10
+  first multiplier TL: 1.0
+  tolerance TL: 1.0e-11
+  tolerance AD: 1.0e-11
+locations:
+  window begin: 2010-01-01T00:00:00Z
+  window end: 2010-01-02T00:00:00Z
   Nrandom: 8
-  lons:
-  - -10.0
-  - 12.0
-  lats:
-  - 35.0
-  - 45.0
-  z:
-  - 5000
-  - 9000
-State:
+  lons: [-10.0, 12.0]
+  lats: [35.0, 45.0]
+  z: [5000, 9000]
+background:
   date: 2009-12-31T00:00:00Z
   filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D
-  variables:
-  - x

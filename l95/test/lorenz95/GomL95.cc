@@ -29,17 +29,15 @@ namespace test {
 class GomTestFixture : TestFixture {
  public:
   GomTestFixture() {
-    const eckit::LocalConfiguration conf(TestConfig::config(), "Observations");
-    const util::DateTime bgn(conf.getString("window_begin"));
-    const util::DateTime end(conf.getString("window_end"));
-    const eckit::LocalConfiguration otconf(conf, "Observation.ObsSpace");
+    const eckit::LocalConfiguration conf(TestConfig::config(), "observations");
+    const util::DateTime bgn(conf.getString("window begin"));
+    const util::DateTime end(conf.getString("window end"));
+    const eckit::LocalConfiguration otconf(conf, "observation.obs space");
     lorenz95::ObsTable ot(otconf, oops::mpi::comm(), bgn, end);
     util::DateTime t1("2010-01-01T03:00:00Z");
     util::DateTime t2("2010-01-02T06:00:00Z");
     locs_.reset(ot.locations(t1, t2));
-    eckit::LocalConfiguration vconf;
-    conf.get("Variables", vconf);
-    novar_.reset(new oops::Variables(vconf));
+    novar_.reset(new oops::Variables());
   }
   ~GomTestFixture() {}
   std::unique_ptr<lorenz95::LocsL95> locs_;

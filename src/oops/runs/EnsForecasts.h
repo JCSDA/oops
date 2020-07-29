@@ -42,22 +42,22 @@ template <typename MODEL> class EnsForecast : public Application {
     int tasks_per_member = 0;
     int mymember = 0;
 
-    if ( fullConfig.has("EnsembleApplication.members") &&
-         !(fullConfig.has("EnsembleApplication.current_member")) ) {
-      members = fullConfig.getInt("EnsembleApplication.members");
+    if ( fullConfig.has("ensemble application.members") &&
+         !(fullConfig.has("ensemble application.current member")) ) {
+      members = fullConfig.getInt("ensemble application.members");
       tasks_per_member = ntasks / members;
       mymember = mytask / tasks_per_member + 1;
       Log::info() << "Running " << members << " EnsForecast members handled by "
                   << ntasks << " total MPI tasks and "
                   << tasks_per_member << " MPI tasks per member." << std::endl;
-    } else if ( !(fullConfig.has("EnsembleApplication.members")) &&
-               fullConfig.has("EnsembleApplication.current_member") ) {
+    } else if ( !(fullConfig.has("ensemble application.members")) &&
+               fullConfig.has("ensemble application.current member") ) {
       tasks_per_member = ntasks;
-      mymember = fullConfig.getInt("EnsembleApplication.current_member");
+      mymember = fullConfig.getInt("ensemble application.current member");
       Log::info() << "Running EnsForecast member number " << mymember
                   << " handled by " << ntasks << " total MPI tasks." << std::endl;
     } else {
-      ABORT("The options are EnsembleApplication.current_member OR EnsembleApplication.members");
+      ABORT("The options are ensemble application.current member OR ensemble application.members");
     }
 
     ASSERT(ntasks%members == 0);
@@ -70,7 +70,7 @@ template <typename MODEL> class EnsForecast : public Application {
 // Add the useful info in the eckit configuration
     eckit::LocalConfiguration config(fullConfig);
     config.set("output.member", mymember);  // To write analysis in different files
-    config.set("initial", memberConf[mymember-1]);
+    config.set("initial condition", memberConf[mymember-1]);
 
     Log::debug() << "EnsForecast config for member 0 = " << config << std::endl;
 

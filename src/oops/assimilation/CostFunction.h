@@ -106,6 +106,7 @@ template<typename MODEL, typename OBS> class CostFunction : private boost::nonco
   void setupTerms(const eckit::Configuration &);
   void setupTerms(const eckit::Configuration &, const State_ &);
   const LinearModel_ & getTLM(const unsigned isub = 0) const {return tlm_[isub];}
+  const CtrlVar_ & background() const {return *xb_;}
 
  private:
   virtual void addIncr(CtrlVar_ &, const CtrlInc_ &, PostProcessor<Increment_>&) const = 0;
@@ -178,7 +179,7 @@ CostFactory<MODEL, OBS>::CostFactory(const std::string & name) {
 template <typename MODEL, typename OBS>
 CostFunction<MODEL, OBS>* CostFactory<MODEL, OBS>::create(const eckit::Configuration & config,
                                                 const eckit::mpi::Comm & comm) {
-  std::string id = config.getString("cost_type");
+  std::string id = config.getString("cost type");
   Log::trace() << "Variational Assimilation Type=" << id << std::endl;
   typename std::map<std::string, CostFactory<MODEL, OBS>*>::iterator j = getMakers().find(id);
   if (j == getMakers().end()) {
@@ -205,23 +206,19 @@ void CostFunction<MODEL, OBS>::setupTerms(const eckit::Configuration & config) {
   Log::trace() << "CostFunction::setupTerms start" << std::endl;
 
 // Jo
-  eckit::LocalConfiguration joconf(config, "Jo");
-  CostJo<MODEL, OBS> * jo = this->newJo(joconf);
+  CostJo<MODEL, OBS> * jo = this->newJo(config);
   jterms_.push_back(jo);
   Log::trace() << "CostFunction::setupTerms Jo added" << std::endl;
 
 // Jb
-  const Variables anvars(config);
-  Log::info() << "CostFunction: analysis variables: " << anvars << std::endl;
-  const eckit::LocalConfiguration jbConf(config, "Jb");
-  xb_.reset(new CtrlVar_(config, anvars, this->geometry(), jo->obspaces()));
-  jb_.reset(new JbTotal_(*xb_, this->newJb(jbConf, this->geometry(), *xb_),
+  xb_.reset(new CtrlVar_(config, this->geometry(), jo->obspaces()));
+  jb_.reset(new JbTotal_(*xb_, this->newJb(config, this->geometry(), *xb_),
                          config, this->geometry(), jo->obspaces()));
   Log::trace() << "CostFunction::setupTerms Jb added" << std::endl;
 
 // Other constraints
   std::vector<eckit::LocalConfiguration> jcs;
-  config.get("Jc", jcs);
+  config.get("constraints", jcs);
   for (size_t jj = 0; jj < jcs.size(); ++jj) {
     CostTermBase<MODEL, OBS> * jc = this->newJc(jcs[jj], this->geometry());
     jterms_.push_back(jc);
@@ -237,21 +234,19 @@ void CostFunction<MODEL, OBS>::setupTerms(const eckit::Configuration & config,
   Log::trace() << "CostFunction::setupTerms start" << std::endl;
 
 // Jo
-  eckit::LocalConfiguration joconf(config, "Jo");
-  CostJo<MODEL, OBS> * jo = this->newJo(joconf);
+  CostJo<MODEL, OBS> * jo = this->newJo(config);
   jterms_.push_back(jo);
   Log::trace() << "CostFunction::setupTerms Jo added" << std::endl;
 
 // Jb
-  const eckit::LocalConfiguration jbConf(config, "Jb");
   xb_.reset(new CtrlVar_(config, statein, jo->obspaces()));
-  jb_.reset(new JbTotal_(*xb_, this->newJb(jbConf, this->geometry(), *xb_),
+  jb_.reset(new JbTotal_(*xb_, this->newJb(config, this->geometry(), *xb_),
                          config, this->geometry(), jo->obspaces()));
   Log::trace() << "CostFunction::setupTerms Jb added" << std::endl;
 
 // Other constraints
   std::vector<eckit::LocalConfiguration> jcs;
-  config.get("Jc", jcs);
+  config.get("constraints", jcs);
   for (size_t jj = 0; jj < jcs.size(); ++jj) {
     CostTermBase<MODEL, OBS> * jc = this->newJc(jcs[jj], this->geometry());
     jterms_.push_back(jc);
@@ -300,7 +295,7 @@ double CostFunction<MODEL, OBS>::linearize(const CtrlVar_ & fguess,
                                       PostProcessor<State_> post) {
   Log::trace() << "CostFunction::linearize start" << std::endl;
 // Inner loop resolution
-  const eckit::LocalConfiguration resConf(innerConf, "resolution");
+  const eckit::LocalConfiguration resConf(innerConf, "geometry");
   const Geometry_ lowres(resConf, this->geometry().getComm());
 
 // Setup trajectory for terms of cost function
@@ -313,7 +308,7 @@ double CostFunction<MODEL, OBS>::linearize(const CtrlVar_ & fguess,
 
 // Setup linear model (and trajectory)
 // YT: TrajectorySaver should be QuadraticCostFunction
-  const eckit::LocalConfiguration tlmConf(innerConf, "linearmodel");
+  const eckit::LocalConfiguration tlmConf(innerConf, "linear model");
   tlm_.clear();   // YT: Should release at the end and should be inside quadratic J object
   PostProcessor<State_> pp(post);
   pp.enrollProcessor(new TrajectorySaver<MODEL>(tlmConf, lowres, fguess.modVar(), tlm_, pptraj));

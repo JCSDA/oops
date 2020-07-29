@@ -24,8 +24,8 @@ ObsBias::ObsBias(const ObsTableView &, const eckit::Configuration & conf)
   : bias_(0.0), active_(false), geovars_(), hdiags_()
 {
   oops::Log::trace() << "ObsBias::ObsBias conf is:" << conf << std::endl;
-  if (conf.has("ObsBias")) {
-    const eckit::LocalConfiguration biasconf(conf, "ObsBias");
+  if (conf.has("obs bias")) {
+    const eckit::LocalConfiguration biasconf(conf, "obs bias");
     if (biasconf.has("bias")) {
       bias_ = biasconf.getDouble("bias");
       active_ = true;

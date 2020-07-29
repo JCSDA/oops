@@ -102,14 +102,14 @@ template<typename MODEL, typename OBS>
 CostFctWeak<MODEL, OBS>::CostFctWeak(const eckit::Configuration & config,
                                 const eckit::mpi::Comm & comm)
   : CostFunction<MODEL, OBS>::CostFunction(config), comm_(comm),
-    resol_(eckit::LocalConfiguration(config, "resolution"), comm),
+    resol_(eckit::LocalConfiguration(config, "geometry"), comm),
     model_(resol_, eckit::LocalConfiguration(config, "model")),
-    tlforcing_(false), ctlvars_(config), an2model_(), inc2model_()
+    tlforcing_(false), ctlvars_(config, "analysis variables"), an2model_(), inc2model_()
 {
-  windowLength_ = util::Duration(config.getString("window_length"));
-  windowBegin_ = util::DateTime(config.getString("window_begin"));
+  windowLength_ = util::Duration(config.getString("window length"));
+  windowBegin_ = util::DateTime(config.getString("window begin"));
   windowEnd_ = windowBegin_ + windowLength_;
-  windowSub_ = util::Duration(config.getString("window_sub"));
+  windowSub_ = util::Duration(config.getString("subwindow"));
 
   nsubwin_ = windowLength_.toSeconds() / windowSub_.toSeconds();
   ASSERT(windowLength_.toSeconds() == windowSub_.toSeconds()*nsubwin_);
@@ -176,7 +176,7 @@ void CostFctWeak<MODEL, OBS>::doLinearize(const Geometry_ & resol,
                                      const eckit::Configuration & innerConf,
                                      const CtrlVar_ & bg, const CtrlVar_ & fg) {
   Log::trace() << "CostFctWeak::doLinearize start" << std::endl;
-  eckit::LocalConfiguration conf(innerConf, "linearmodel");
+  eckit::LocalConfiguration conf(innerConf, "linear model");
   inc2model_.reset(LinearVariableChangeFactory<MODEL>::create(bg.state()[0], fg.state()[0],
                                                              resol, conf));
   inc2model_->setInputVariables(ctlvars_);
