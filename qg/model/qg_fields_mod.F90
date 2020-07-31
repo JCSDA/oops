@@ -852,6 +852,7 @@ type(datetime),intent(inout) :: vdate          !< Date and time
 
 ! Local variables
 integer :: ix,iy,iz
+real(kind_real) :: uval
 real(kind_real),allocatable :: x(:,:,:),q(:,:,:)
 character(len=30) :: ic
 character(len=20) :: sdate
@@ -903,6 +904,10 @@ case ('large-vortices')
     call large_vortices(0.0_kind_real,domain_meridional,fld%geom%z(iz),'x',fld%x_north(iz))
     call large_vortices(0.0_kind_real,0.0_kind_real,fld%geom%z(iz),'x',fld%x_south(iz))
   enddo
+case ('uniform_field')
+  ! Uniform field
+  call f_conf%get_or_die("uval",uval)
+  x = uval
 case default
   call abor1_ftn ('qg_fields_analytic_init: unknown initialization')
 end select

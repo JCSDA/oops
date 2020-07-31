@@ -11,6 +11,7 @@
 #ifndef OOPS_BASE_INCREMENTENSEMBLE_H_
 #define OOPS_BASE_INCREMENTENSEMBLE_H_
 
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -132,6 +133,20 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const eckit::Configuration & conf,
      timeslots[jsub] = xb[jsub].validTime();
   }
 
+  // Read inflation field
+  std::unique_ptr<Increment4D_> inflationField;
+  if (conf.has("inflation field")) {
+    const eckit::LocalConfiguration inflationConfig(conf, "inflation field");
+    inflationField = std::make_unique<Increment4D_>(resol, vars, timeslots);
+    inflationField->read(inflationConfig);
+  }
+
+  // Get inflation value
+  double inflationValue = 1;
+  if (conf.has("inflation value")) {
+     conf.get("inflation value", inflationValue);
+  }
+
   // Setup change of variable
   ChvarVec_ chvars;
   if (conf.has("variable changes")) {
@@ -152,6 +167,12 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const eckit::Configuration & conf,
     // Ensemble will be centered around ensemble mean
     Increment4D_ dx(resol, vars_, timeslots);
     dx.diff(ensemble[ie], bgmean);
+
+    // Apply inflation
+    if (conf.has("inflation field")) {
+      dx.schur_product_with(*inflationField);
+    }
+    dx *= inflationValue;
 
     // Apply inverse of the linear balance operator
     for (unsigned jsub = 0; jsub < timeslots.size(); ++jsub) {

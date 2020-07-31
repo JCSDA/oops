@@ -31,6 +31,8 @@ list( APPEND qg_testinput
   testinput/ens_hofx.yaml
   testinput/ens_recenter.yaml
   testinput/ens_variance.yaml
+  testinput/ens_variance_inflation_field.yaml
+  testinput/ens_variance_inflation_value.yaml
   testinput/forecast.yaml
   testinput/gen_ens_pert_B.yaml
   testinput/getvalues.yaml
@@ -45,6 +47,7 @@ list( APPEND qg_testinput
   testinput/make_obs_4d_biased.yaml
   testinput/static_b_init.yaml
   testinput/truth.yaml
+  testinput/uniform_field.yaml
 )
 
 list( APPEND qg_testoutput
@@ -77,6 +80,8 @@ list( APPEND qg_testoutput
   testoutput/ens_hofx.test
   testoutput/ens_recenter.test
   testoutput/ens_variance.test
+  testoutput/ens_variance_inflation_field.test
+  testoutput/ens_variance_inflation_value.test
   testoutput/forecast.test
   testoutput/gen_ens_pert_B.test
   testoutput/hofx.test
@@ -88,6 +93,7 @@ list( APPEND qg_testoutput
   testoutput/make_obs_4d_biased.test
   testoutput/static_b_init.test
   testoutput/truth.test
+  testoutput/uniform_field.test
 )
 
 # Create data directory for test input and symlink all files
@@ -398,6 +404,25 @@ oops_add_test( TESTNAME ens_recenter
                EXENAME  qg_ens_recenter.x
                TEST_DEPENDS test_qg_gen_ens_pert_B )
 
+oops_add_test( TESTNAME uniform_field
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/uniform_field.yaml
+               EXENAME qg_forecast.x )
+
+oops_add_test( TESTNAME ens_variance_inflation_field
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/ens_variance_inflation_field.yaml
+               EXENAME  qg_ens_variance.x
+               TEST_DEPENDS test_qg_gen_ens_pert_B uniform_field )
+
+oops_add_test( TESTNAME ens_variance_inflation_value
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/ens_variance_inflation_value.yaml
+               EXENAME  qg_ens_variance.x
+               TEST_DEPENDS test_qg_gen_ens_pert_B )
 
 #####################################################################
 # other tests

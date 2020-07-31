@@ -1,14 +1,15 @@
-forecast length: P4D
+forecast length: PT0S
 initial condition:
-  analytic_init: large-vortices
+  analytic_init: uniform_field
   date: 2010-01-01T00:00:00Z
+  uval: 2.0
 model:
   name: QG
   tstep: PT10M
 output:
   datadir: Data
   date: 2010-01-01T00:00:00Z
-  exp: large-vortices
+  exp: uniform_field
   frequency: PT12H
   type: fc
 prints:
