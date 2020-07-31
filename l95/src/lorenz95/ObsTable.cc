@@ -29,6 +29,7 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/missingValues.h"
 #include "oops/util/Random.h"
 #include "oops/util/stringFunctions.h"
 
@@ -80,8 +81,14 @@ bool ObsTable::has(const std::string & col) const {
 
 void ObsTable::putdb(const std::string & col, const std::vector<int> & vec) const {
   std::vector<double> tmp(vec.size());
+  int intmiss = util::missingValue(intmiss);
+  double doublemiss = util::missingValue(doublemiss);
   for (size_t jobs = 0; jobs < vec.size(); ++jobs) {
-    tmp[jobs] = static_cast<double>(vec[jobs]);
+    if (vec[jobs] == intmiss) {
+      tmp[jobs] = doublemiss;
+    } else {
+      tmp[jobs] = static_cast<double>(vec[jobs]);
+    }
   }
   this->putdb(col, tmp);
 }
@@ -90,8 +97,14 @@ void ObsTable::putdb(const std::string & col, const std::vector<int> & vec) cons
 
 void ObsTable::putdb(const std::string & col, const std::vector<float> & vec) const {
   std::vector<double> tmp(vec.size());
+  float floatmiss = util::missingValue(floatmiss);
+  double doublemiss = util::missingValue(doublemiss);
   for (size_t jobs = 0; jobs < vec.size(); ++jobs) {
-    tmp[jobs] = static_cast<double>(vec[jobs]);
+    if (vec[jobs] == floatmiss) {
+      tmp[jobs] = doublemiss;
+    } else {
+      tmp[jobs] = static_cast<double>(vec[jobs]);
+    }
   }
   this->putdb(col, tmp);
 }
@@ -113,10 +126,15 @@ void ObsTable::putdb(const std::string & col, const std::vector<double> & vec) c
 void ObsTable::getdb(const std::string & col, std::vector<int> & vec) const {
   std::vector<double> tmp;
   this->getdb(col, tmp);
-
+  int intmiss = util::missingValue(intmiss);
+  double doublemiss = util::missingValue(doublemiss);
   vec.resize(nobs());
   for (size_t jobs = 0; jobs < nobs(); ++jobs) {
-    vec[jobs] = lround(tmp[jobs]);
+    if (tmp[jobs] == doublemiss) {
+      vec[jobs] = intmiss;
+    } else {
+      vec[jobs] = lround(tmp[jobs]);
+    }
   }
 }
 
@@ -125,10 +143,15 @@ void ObsTable::getdb(const std::string & col, std::vector<int> & vec) const {
 void ObsTable::getdb(const std::string & col, std::vector<float> & vec) const {
   std::vector<double> tmp;
   this->getdb(col, tmp);
-
+  float floatmiss = util::missingValue(floatmiss);
+  double doublemiss = util::missingValue(doublemiss);
   vec.resize(nobs());
   for (size_t jobs = 0; jobs < nobs(); ++jobs) {
-    vec[jobs] = static_cast<float>(tmp[jobs]);
+    if (tmp[jobs] == doublemiss) {
+      vec[jobs] = floatmiss;
+    } else {
+      vec[jobs] = static_cast<float>(tmp[jobs]);
+    }
   }
 }
 

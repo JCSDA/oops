@@ -39,7 +39,7 @@ class ObsVec1D : public util::Printable,
   explicit ObsVec1D(const ObsTableView &, const std::string & name = "", const bool fail = true);
   ObsVec1D(const ObsVec1D &);
   ObsVec1D(const ObsTableView &, const ObsVec1D &);
-  ~ObsVec1D() {}
+  ~ObsVec1D() = default;
 
   ObsVec1D & operator= (const ObsVec1D &);
   ObsVec1D & operator*= (const double &);
@@ -58,7 +58,7 @@ class ObsVec1D : public util::Printable,
   double dot_product_with(const ObsVec1D &) const;
   double rms() const;
 
-  unsigned int nobs() const {return data_.size();}
+  unsigned int nobs() const;
 
 // I/O
   void save(const std::string &) const;
@@ -68,6 +68,7 @@ class ObsVec1D : public util::Printable,
 
   const ObsTableView & obsdb_;
   std::vector<double> data_;
+  const double missing_;
 };
 //-----------------------------------------------------------------------------
 }  // namespace lorenz95

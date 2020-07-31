@@ -1,4 +1,6 @@
 set( _l95_srcs
+        BackgroundCheck.cc
+        BackgroundCheck.h
         ErrorCovarianceL95.cc
         ErrorCovarianceL95.h
         FieldL95.cc

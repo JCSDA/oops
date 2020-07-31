@@ -47,7 +47,6 @@ class ObservationTLAD : public util::Printable,
   static const std::string classname() {return "lorenz95::ObservationTLAD";}
 
   ObservationTLAD(const ObsTableView &, const eckit::Configuration &);
-  ~ObservationTLAD();
 
 // Obs Operators
   void setTrajectory(const GomL95 &, const ObsBias &);

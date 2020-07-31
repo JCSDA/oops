@@ -17,6 +17,7 @@
 #include "lorenz95/ObsBiasCorrection.h"
 #include "lorenz95/ObsVec1D.h"
 #include "oops/base/Variables.h"
+#include "oops/util/missingValues.h"
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
@@ -25,10 +26,6 @@ namespace lorenz95 {
 ObservationTLAD::ObservationTLAD(const ObsTableView &, const eckit::Configuration &)
   : inputs_()
 {}
-
-// -----------------------------------------------------------------------------
-
-ObservationTLAD::~ObservationTLAD() {}
 
 // -----------------------------------------------------------------------------
 
@@ -48,10 +45,13 @@ void ObservationTLAD::simulateObsTL(const GomL95 & gom, ObsVec1D & ovec,
 
 void ObservationTLAD::simulateObsAD(GomL95 & gom, const ObsVec1D & ovec,
                                     ObsBiasCorrection & bias) const {
+  const double missing = util::missingValue(missing);
   for (size_t jj = 0; jj < gom.size(); ++jj) {
     const int ii = gom.getindx(jj);
-    gom[jj] = ovec[ii];
-    bias.value() += ovec[ii];
+    if (ovec[ii] != missing) {
+      gom[jj] = ovec[ii];
+      bias.value() += ovec[ii];
+    }
   }
 }
 

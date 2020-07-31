@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2020-2020 UCAR.
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -11,40 +12,30 @@
 #include "lorenz95/ObsVec1D.h"
 
 #include <math.h>
-
-#include <boost/foreach.hpp>
+#include <limits>
 
 #include "eckit/config/Configuration.h"
 #include "eckit/exception/Exceptions.h"
-#include "lorenz95/GomL95.h"
 #include "lorenz95/ObsTableView.h"
-#include "oops/util/DateTime.h"
-#include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/missingValues.h"
 
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
 ObsVec1D::ObsVec1D(const ObsTableView & ot,
                    const std::string & name, const bool fail)
-  : obsdb_(ot), data_(ot.nobs())
+  : obsdb_(ot), data_(ot.nobs()), missing_(util::missingValue(missing_))
 {
-  BOOST_FOREACH(double & val, data_) val = 0.0;
+  for (double & val : data_) { val = 0.0; }
   if (!name.empty()) {
     if (fail || obsdb_.has(name)) obsdb_.getdb(name, data_);
   }
 }
 // -----------------------------------------------------------------------------
 ObsVec1D::ObsVec1D(const ObsVec1D & other)
-  : obsdb_(other.obsdb_), data_(other.data_.size())
+  : obsdb_(other.obsdb_), data_(other.data_.size()), missing_(util::missingValue(missing_))
 {
   data_ = other.data_;
-}
-// -----------------------------------------------------------------------------
-ObsVec1D::ObsVec1D(const ObsTableView & ot, const ObsVec1D & other)
-  : obsdb_(ot), data_(ot.nobs()) {
-  for (size_t ii = 0; ii < ot.nobs(); ++ii) {
-    data_[ii] = other[ot.index(ii)];
-  }
 }
 // -----------------------------------------------------------------------------
 ObsVec1D & ObsVec1D::operator= (const ObsVec1D & rhs) {
@@ -52,47 +43,89 @@ ObsVec1D & ObsVec1D::operator= (const ObsVec1D & rhs) {
   data_ = rhs.data_;
   return *this;
 }
+
+// -----------------------------------------------------------------------------
+ObsVec1D::ObsVec1D(const ObsTableView & ot, const ObsVec1D & other)
+  : obsdb_(ot), data_(ot.nobs()), missing_(util::missingValue(missing_)) {
+  for (size_t ii = 0; ii < ot.nobs(); ++ii) {
+    data_[ii] = other[ot.index(ii)];
+  }
+}
 // -----------------------------------------------------------------------------
 ObsVec1D & ObsVec1D::operator*= (const double & zz) {
-  BOOST_FOREACH(double & val, data_) val *= zz;
+  for (double & val : data_) {
+    if (val != missing_) val *= zz;
+  }
   return *this;
 }
 // -----------------------------------------------------------------------------
 ObsVec1D & ObsVec1D::operator+= (const ObsVec1D & rhs) {
   ASSERT(data_.size() == rhs.data_.size());
-  for (unsigned int jj = 0; jj < data_.size(); ++jj) data_[jj] += rhs.data_[jj];
+  for (size_t jj = 0; jj < data_.size(); ++jj) {
+    if (data_[jj] == missing_ || rhs.data_[jj] == missing_) {
+      data_[jj] = missing_;
+    } else {
+      data_[jj] += rhs.data_[jj];
+    }
+  }
   return *this;
 }
 // -----------------------------------------------------------------------------
 ObsVec1D & ObsVec1D::operator-= (const ObsVec1D & rhs) {
   ASSERT(data_.size() == rhs.data_.size());
-  for (unsigned int jj = 0; jj < data_.size(); ++jj) data_[jj] -= rhs.data_[jj];
+  for (size_t jj = 0; jj < data_.size(); ++jj) {
+    if (data_[jj] == missing_ || rhs.data_[jj] == missing_) {
+      data_[jj] = missing_;
+    } else {
+      data_[jj] -= rhs.data_[jj];
+    }
+  }
   return *this;
 }
 // -----------------------------------------------------------------------------
 ObsVec1D & ObsVec1D::operator*= (const ObsVec1D & rhs) {
   ASSERT(data_.size() == rhs.data_.size());
-  for (unsigned int jj = 0; jj < data_.size(); ++jj) data_[jj] *= rhs.data_[jj];
+  for (size_t jj = 0; jj < data_.size(); ++jj) {
+    if (data_[jj] == missing_ || rhs.data_[jj] == missing_) {
+      data_[jj] = missing_;
+    } else {
+      data_[jj] *= rhs.data_[jj];
+    }
+  }
   return *this;
 }
 // -----------------------------------------------------------------------------
 ObsVec1D & ObsVec1D::operator/= (const ObsVec1D & rhs) {
   ASSERT(data_.size() == rhs.data_.size());
-  for (unsigned int jj = 0; jj < data_.size(); ++jj) data_[jj] /= rhs.data_[jj];
+  for (size_t jj = 0; jj < data_.size(); ++jj) {
+    if (data_[jj] == missing_ || rhs.data_[jj] == missing_) {
+      data_[jj] = missing_;
+    } else {
+      data_[jj] /= rhs.data_[jj];
+    }
+  }
   return *this;
 }
 // -----------------------------------------------------------------------------
 void ObsVec1D::zero() {
-  BOOST_FOREACH(double & val, data_) val = 0.0;
+  for (double & val : data_) val = 0.0;
 }
 // -----------------------------------------------------------------------------
 void ObsVec1D::invert() {
-  BOOST_FOREACH(double & val, data_) val = 1.0/val;
+  for (double & val : data_) {
+    if (val != missing_) val = 1.0/val;
+  }
 }
 // -----------------------------------------------------------------------------
 void ObsVec1D::axpy(const double & zz, const ObsVec1D & rhs) {
   ASSERT(data_.size() == rhs.data_.size());
-  for (unsigned int jj = 0; jj < data_.size(); ++jj) data_[jj] += zz * rhs.data_[jj];
+  for (size_t jj = 0; jj < data_.size(); ++jj) {
+    if (data_[jj] == missing_ || rhs.data_[jj] == missing_) {
+      data_[jj] = missing_;
+    } else {
+      data_[jj] += zz * rhs.data_[jj];
+    }
+  }
 }
 // -----------------------------------------------------------------------------
 void ObsVec1D::random() {
@@ -102,15 +135,25 @@ void ObsVec1D::random() {
 double ObsVec1D::dot_product_with(const ObsVec1D & other) const {
   ASSERT(data_.size() == other.data_.size());
   double zz = 0.0;
-  for (unsigned int jj = 0; jj < data_.size(); ++jj) zz += data_[jj] * other.data_[jj];
+  for (size_t jj = 0; jj < data_.size(); ++jj) {
+    if ((data_[jj] != missing_) && (other.data_[jj] != missing_)) {
+      zz += data_[jj] * other.data_[jj];
+    }
+  }
   return zz;
 }
 // -----------------------------------------------------------------------------
 double ObsVec1D::rms() const {
   double zz = 0.0;
-  for (unsigned int jj = 0; jj < data_.size(); ++jj) zz += data_[jj] * data_[jj];
-  zz = sqrt(zz/data_.size());
+  for (const double & val : data_) {
+    if (val != missing_) zz += val * val;
+  }
+  zz = sqrt(zz/static_cast<double>(nobs()));
   return zz;
+}
+// -----------------------------------------------------------------------------
+unsigned int ObsVec1D::nobs() const {
+  return data_.size() - std::count(data_.begin(), data_.end(), missing_);
 }
 // -----------------------------------------------------------------------------
 void ObsVec1D::save(const std::string & name) const {
@@ -119,16 +162,20 @@ void ObsVec1D::save(const std::string & name) const {
 // -----------------------------------------------------------------------------
 void ObsVec1D::print(std::ostream & os) const {
   ASSERT(data_.size() > 0);
-  double zmin = data_[0];
-  double zmax = data_[0];
+  double zmin = std::numeric_limits<double>::max();
+  double zmax = std::numeric_limits<double>::lowest();
   double zavg = 0.0;
-  BOOST_FOREACH(const double & val, data_) {
-    if (val < zmin) zmin = val;
-    if (val > zmax) zmax = val;
-    zavg += val;
+  size_t nobs = 0;
+  for (const double & val : data_) {
+    if (val != missing_) {
+      if (val < zmin) zmin = val;
+      if (val > zmax) zmax = val;
+      zavg += val;
+      ++nobs;
+    }
   }
-  zavg /= data_.size();
-  os << "Lorenz 95 nobs= " << data_.size() << " Min=" << zmin << ", Max=" << zmax
+  zavg /= static_cast<double>(nobs);
+  os << "Lorenz 95 nobs= " << nobs << " Min=" << zmin << ", Max=" << zmax
      << ", Average=" << zavg;
 }
 // -----------------------------------------------------------------------------
