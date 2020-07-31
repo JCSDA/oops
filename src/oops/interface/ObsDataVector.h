@@ -128,23 +128,6 @@ void ObsDataVector<OBS, DATATYPE>::save(const std::string & name) const {
   Log::trace() << "ObsDataVector<OBS, DATATYPE>::save done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename OBS>
-bool compareFlags(const ObsDataVector<OBS, int> & first,
-                  const ObsDataVector<OBS, int> & second) {
-  Log::trace() << "compareFlags(ObsDataVector<OBS, int>) starting" << std::endl;
-  bool compare = compareFlags(first.obsdatavector(), second.obsdatavector());
-  Log::trace() << "compareFlags(ObsDataVector<OBS, int>) done" << std::endl;
-  return compare;
-}
-// -----------------------------------------------------------------------------
-template<typename OBS>
-size_t numZero(const ObsDataVector<OBS, int> & data) {
-  Log::trace() << "numZero(ObsDataVector<OBS, int>) starting" << std::endl;
-  size_t nzero = numZero(data.obsdatavector());
-  Log::trace() << "numZero(ObsDataVector<OBS, int>) done" << std::endl;
-  return nzero;
-}
-// -----------------------------------------------------------------------------
 
 }  // namespace oops
 
