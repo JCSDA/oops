@@ -137,7 +137,7 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const eckit::Configuration & conf,
   std::unique_ptr<Increment4D_> inflationField;
   if (conf.has("inflation field")) {
     const eckit::LocalConfiguration inflationConfig(conf, "inflation field");
-    inflationField = std::make_unique<Increment4D_>(resol, vars, timeslots);
+    inflationField.reset(new Increment4D_(resol, vars, timeslots));
     inflationField->read(inflationConfig);
   }
 
