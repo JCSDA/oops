@@ -231,6 +231,8 @@ oops/util/abor1_cpp.cc
 oops/util/abor1_cpp.h
 oops/util/abor1_ftn.F90
 oops/util/CompareNVectors.h
+oops/util/CompositePath.cc
+oops/util/CompositePath.h
 oops/util/dateFunctions.cc
 oops/util/dateFunctions.h
 oops/util/datetime_f.cc
@@ -349,6 +351,7 @@ test/util/Parameters.h
 test/util/ScalarOrMap.h
 test/util/FloatCompare.h
 test/util/CompareNVectors.h
+test/util/CompositePath.h
 )
 
 list (APPEND oops_fheader_files
@@ -516,6 +519,11 @@ ecbuild_add_test( TARGET  test_util_scalarormap
 
 ecbuild_add_test( TARGET  test_util_floatcompare
                   SOURCES test/util/FloatCompare.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_compositepath
+                  SOURCES test/util/CompositePath.cc
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 
