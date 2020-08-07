@@ -82,3 +82,8 @@ ecbuild_add_executable( TARGET  qg_ens_recenter.x
                         SOURCES qgEnsRecenter.cc
                         LIBS    qg
                       )
+
+ecbuild_add_executable( TARGET  qg_rtpp.x
+                        SOURCES qgRTPP.cc
+                        LIBS    qg
+                      )

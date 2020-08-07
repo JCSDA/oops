@@ -221,6 +221,7 @@ oops/runs/HofXNoModel.h
 oops/runs/LocalEnsembleDA.h
 oops/runs/LocalHofX.h
 oops/runs/MakeObs.h
+oops/runs/RTPP.h
 oops/runs/Run.cc
 oops/runs/Run.h
 oops/runs/StaticBInit.h
