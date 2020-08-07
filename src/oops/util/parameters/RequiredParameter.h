@@ -10,38 +10,54 @@
 
 #include <set>
 #include <string>
+#include <utility>
 
 #include <boost/optional.hpp>
 
 #include "eckit/config/Configuration.h"
+#include "oops/util/CompositePath.h"
 #include "oops/util/parameters/ParameterBase.h"
 #include "oops/util/parameters/ParameterTraits.h"
 
 namespace oops {
 
-/// \brief A parameter that must be present in a Configuration (otherwise an exception is thrown).
+/// \brief A mandatory parameter.
+///
+/// An exception is thrown if the value of this parameter is not found in the Configuration object
+/// from which parameters are deserialized.
+///
+/// \tparam T
+///   Type of the value stored in the parameter.
 template <typename T>
 class RequiredParameter : public ParameterBase {
  public:
-  explicit RequiredParameter(const char *name, Parameters *parent = nullptr)
+  /// \brief Constructor.
+  ///
+  /// \param name
+  ///   Name of the key from which this parameter's value will be loaded when parameters are
+  ///   deserialized from a Configuration object.
+  /// \param parent
+  ///   Pointer to the Parameters object representing the collection of options located at
+  ///   the same level of the configuration tree as \p name. A call to deserialize()
+  ///   on that object will automatically trigger a call to deserialize() on this
+  ///   parameter.
+  explicit RequiredParameter(
+      const char *name, Parameters *parent = nullptr)
     : ParameterBase(parent), name_(name)
   {}
 
-  void deserialize(const eckit::Configuration &config, std::set<std::string> &usedKeys) override {
-    boost::optional<T> newValue = ParameterTraits<T>::get(config, name_);
-    if (newValue == boost::none) {
-      throw eckit::BadParameter("Mandatory parameter '" + name_ + "' not found", Here());
-    }
-    value_ = newValue;
-    usedKeys.insert(name_);
-  }
+  /// \brief Load the value of this parameter from \p config.
+  ///
+  /// An exception is thrown if \p config does not contain a key with the name specified in this
+  /// parameter's constructor.
+  void deserialize(util::CompositePath &path, const eckit::Configuration &config) override;
 
-  /// \brief Returns the stored value.
+  /// \brief The value stored in this parameter.
   ///
   /// An exception is thrown if the value hasn't been loaded from a Configuration yet.
   const T &value() const { return value_.value(); }
 
-  /// \brief Returns the stored value.
+  /// \brief The value stored in this parameter.
   ///
   /// An exception is thrown if the value hasn't been loaded from a Configuration yet.
   operator const T &() const { return value_.value(); }
@@ -52,6 +68,16 @@ class RequiredParameter : public ParameterBase {
   // default-constructible.
   boost::optional<T> value_;
 };
+
+template <typename T>
+void RequiredParameter<T>::deserialize(util::CompositePath &path,
+                                       const eckit::Configuration &config) {
+  boost::optional<T> newValue = ParameterTraits<T>::get(path, config, name_);
+  if (newValue == boost::none)
+    throw eckit::BadParameter(path.path() + ": Mandatory parameter '" + name_ + "' not found",
+                              Here());
+  value_ = std::move(newValue);
+}
 
 }  // namespace oops
 

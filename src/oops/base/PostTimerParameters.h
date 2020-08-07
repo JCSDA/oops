@@ -22,6 +22,7 @@ namespace oops {
 
 /// \brief Options controlling PostTimer
 class PostTimerParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(PostTimerParameters, Parameters)
  public:
   /// frequency of calling the PostProcessor (default = 0 -- call at every step)
   oops::Parameter<util::Duration> frequency{"frequency", util::Duration(0), this};
