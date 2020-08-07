@@ -11,6 +11,7 @@
 #ifndef OOPS_ASSIMILATION_JQTERMTLAD_H_
 #define OOPS_ASSIMILATION_JQTERMTLAD_H_
 
+#include <memory>
 #include <vector>
 
 #include "oops/assimilation/JqTerm.h"
@@ -41,7 +42,7 @@ class JqTermTLAD : public PostBaseTLAD<MODEL> {
   void computeModelErrorTraj(const State4D_ &, Increment4D_ &);
   void computeModelErrorTL(Increment4D_ &);
 
-  GeneralizedDepartures * releaseOutputFromTL() override {return 0;}
+  std::unique_ptr<GeneralizedDepartures> releaseOutputFromTL() override {return nullptr;}
   void setupAD(const Increment4D_ & dx);
 
  private:

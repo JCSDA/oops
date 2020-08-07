@@ -13,6 +13,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <boost/noncopyable.hpp>
@@ -97,14 +98,16 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
            std::shared_ptr<const GeneralizedDepartures>, CtrlInc_ &) const override;
 
   /// Multiply by \f$ R\f$ and \f$ R^{-1}\f$.
-  Departures_ * multiplyCovar(const GeneralizedDepartures &) const override;
-  Departures_ * multiplyCoInv(const GeneralizedDepartures &) const override;
+  std::unique_ptr<GeneralizedDepartures>
+    multiplyCovar(const GeneralizedDepartures &) const override;
+  std::unique_ptr<GeneralizedDepartures>
+    multiplyCoInv(const GeneralizedDepartures &) const override;
 
   /// Provide new departure.
-  Departures_ * newDualVector() const override;
+  std::unique_ptr<GeneralizedDepartures> newDualVector() const override;
 
   /// Return gradient at first guess ie \f$ R^{-1} {\cal H}(x^t ) - y\f$.
-  Departures_ * newGradientFG() const override {return new Departures_(*gradFG_);}
+  std::unique_ptr<GeneralizedDepartures> newGradientFG() const override;
 
   /// Reset obs operator trajectory.
   void resetLinearization() override;
@@ -295,32 +298,41 @@ std::shared_ptr<PostBaseTLAD<MODEL> > CostJo<MODEL, OBS>::setupAD(
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-Departures<OBS> * CostJo<MODEL, OBS>::multiplyCovar(const GeneralizedDepartures & v1) const {
+std::unique_ptr<GeneralizedDepartures>
+CostJo<MODEL, OBS>::multiplyCovar(const GeneralizedDepartures & v1) const {
   Log::trace() << "CostJo::multiplyCovar start" << std::endl;
-  Departures_ * y1 = new Departures_(dynamic_cast<const Departures_ &>(v1));
+  std::unique_ptr<Departures_> y1(new Departures_(dynamic_cast<const Departures_ &>(v1)));
   Rmat_->multiply(*y1);
-  return y1;
+  return std::move(y1);
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-Departures<OBS> * CostJo<MODEL, OBS>::multiplyCoInv(const GeneralizedDepartures & v1) const {
+std::unique_ptr<GeneralizedDepartures>
+CostJo<MODEL, OBS>::multiplyCoInv(const GeneralizedDepartures & v1) const {
   Log::trace() << "CostJo::multiplyCoInv start" << std::endl;
-  Departures_ * y1 = new Departures_(dynamic_cast<const Departures_ &>(v1));
+  std::unique_ptr<Departures_> y1(new Departures_(dynamic_cast<const Departures_ &>(v1)));
   Rmat_->inverseMultiply(*y1);
-  return y1;
+  return std::move(y1);
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-Departures<OBS> * CostJo<MODEL, OBS>::newDualVector() const {
+std::unique_ptr<GeneralizedDepartures> CostJo<MODEL, OBS>::newDualVector() const {
   Log::trace() << "CostJo::newDualVector start" << std::endl;
-  Departures_ * ydep = new Departures_(obspace_);
+  std::unique_ptr<Departures_> ydep(new Departures_(obspace_));
   ydep->zero();
   Log::trace() << "CostJo::newDualVector done" << std::endl;
-  return ydep;
+  return std::move(ydep);
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL, typename OBS>
+std::unique_ptr<GeneralizedDepartures> CostJo<MODEL, OBS>::newGradientFG() const {
+  return std::unique_ptr<Departures_>(new Departures_(*gradFG_));
 }
 
 // -----------------------------------------------------------------------------

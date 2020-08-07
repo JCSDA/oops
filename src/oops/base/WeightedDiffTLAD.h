@@ -14,6 +14,7 @@
 #include <cmath>
 #include <map>
 #include <memory>
+#include <utility>
 
 #include "oops/base/Accumulator.h"
 #include "oops/base/DolphChebyshev.h"
@@ -53,7 +54,7 @@ class WeightedDiffTLAD : public PostBaseTLAD<MODEL> {
   virtual ~WeightedDiffTLAD() {}
 
   Increment_ * releaseDiff() {return wdiff_.releaseDiff();}
-  Increment_ * releaseOutputFromTL() override;
+  std::unique_ptr<GeneralizedDepartures> releaseOutputFromTL() override;
   void setupTL(const Geometry_ &);
   void setupAD(std::shared_ptr<const Increment_>);
 
@@ -77,7 +78,7 @@ class WeightedDiffTLAD : public PostBaseTLAD<MODEL> {
   WeightedDiff<MODEL, Increment_, State_> wdiff_;
   std::map< util::DateTime, double > weights_;
   std::shared_ptr<const Increment_> forcing_;
-  Accumulator<MODEL, Increment_, Increment_> * avg_;  // Should be unique_ptr
+  std::unique_ptr<Accumulator<MODEL, Increment_, Increment_>> avg_;
   double sum_;
   bool linit_;
   const util::DateTime vtime_;
@@ -99,7 +100,7 @@ WeightedDiffTLAD<MODEL>::WeightedDiffTLAD(const Variables & vars,
                                           WeightingFct & wfct)
   : PostBaseTLAD<MODEL>(vt-span/2, vt+span/2),
     vars_(vars), wfct_(wfct), wdiff_(vars, vt, span, tstep, resol, wfct_),
-    weights_(), forcing_(), avg_(0), sum_(0.0), linit_(false),
+    weights_(), forcing_(), avg_(), sum_(0.0), linit_(false),
     vtime_(vt), bgn_(vt-span/2), end_(vt+span/2), tstep_(tstep),
     bgnleg_(), endleg_()
 {
@@ -139,7 +140,7 @@ void WeightedDiffTLAD<MODEL>::doFinalizeTraj(const State_ & xx) {
 template <typename MODEL>
 void WeightedDiffTLAD<MODEL>::setupTL(const Geometry_ & resol) {
   Log::trace() << "WeightedDiffTLAD::setupTL start" << std::endl;
-  avg_ = new Accumulator<MODEL, Increment_, Increment_>(resol, vars_, vtime_);
+  avg_.reset(new Accumulator<MODEL, Increment_, Increment_>(resol, vars_, vtime_));
   Log::trace() << "WeightedDiffTLAD::setupTL done" << std::endl;
 }
 
@@ -184,11 +185,11 @@ void WeightedDiffTLAD<MODEL>::doProcessingTL(const Increment_ & xx) {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-Increment<MODEL> * WeightedDiffTLAD<MODEL>::releaseOutputFromTL() {
+std::unique_ptr<GeneralizedDepartures> WeightedDiffTLAD<MODEL>::releaseOutputFromTL() {
   Log::trace() << "WeightedDiffTLAD::releaseOutputFromTL" << std::endl;
   ASSERT(linit_);
   ASSERT(std::abs(sum_) < 1.0e-8);
-  return avg_;
+  return std::move(avg_);
 }
 
 // -----------------------------------------------------------------------------

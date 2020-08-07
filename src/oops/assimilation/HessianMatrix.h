@@ -15,7 +15,6 @@
 
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
-#include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/util/PrintAdjTest.h"
 

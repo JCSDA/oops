@@ -92,9 +92,8 @@ class PostProcessorTLAD {
   }
 
 /// Get TL dual space output
-  GeneralizedDepartures * releaseOutputFromTL(unsigned int ii) {
-    GeneralizedDepartures * lambda = processors_[ii]->releaseOutputFromTL();
-    return lambda;
+  std::unique_ptr<GeneralizedDepartures> releaseOutputFromTL(unsigned int ii) {
+    return processors_[ii]->releaseOutputFromTL();
   }
 
 /// Adjoint methods

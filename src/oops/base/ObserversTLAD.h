@@ -12,10 +12,12 @@
 #define OOPS_BASE_OBSERVERSTLAD_H_
 
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "eckit/config/Configuration.h"
 #include "oops/base/Departures.h"
+#include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/ObsAuxControls.h"
 #include "oops/base/ObsAuxIncrements.h"
 #include "oops/base/Observations.h"
@@ -49,7 +51,7 @@ class ObserversTLAD : public PostBaseTLAD<MODEL> {
                 const util::Duration & tslot = util::Duration(0), const bool subwin = false);
   ~ObserversTLAD() {}
 
-  Departures_ * releaseOutputFromTL() override {return ydeptl_.release();}
+  std::unique_ptr<GeneralizedDepartures> releaseOutputFromTL() override {return std::move(ydeptl_);}
   void setupTL(const ObsAuxIncrs_ &);
   void setupAD(std::shared_ptr<const Departures_>, ObsAuxIncrs_ &);
 

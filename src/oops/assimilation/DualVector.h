@@ -12,6 +12,7 @@
 #define OOPS_ASSIMILATION_DUALVECTOR_H_
 
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "oops/assimilation/ControlIncrement.h"
@@ -46,7 +47,7 @@ template<typename MODEL, typename OBS> class DualVector {
   CtrlInc_ & dx() {return *dxjb_;}
 
 // Store and retrieve other elements (takes ownership)
-  void append(GeneralizedDepartures *);
+  void append(std::unique_ptr<GeneralizedDepartures> &&);
   std::shared_ptr<const GeneralizedDepartures> getv(const unsigned) const;
 
 // Linear algebra
@@ -103,21 +104,20 @@ void DualVector<MODEL, OBS>::clear() {
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL, typename OBS>
-void DualVector<MODEL, OBS>::append(GeneralizedDepartures * pv) {
+void DualVector<MODEL, OBS>::append(std::unique_ptr<GeneralizedDepartures> && uv) {
 // Since there is no duck-typing in C++, we do it manually.
-  Increment_ * pi = dynamic_cast<Increment_*>(pv);
-  if (pi != 0) {
-    std::shared_ptr<Increment_> si(pi);
+  std::shared_ptr<GeneralizedDepartures> sv = std::move(uv);
+  std::shared_ptr<Increment_> si = std::dynamic_pointer_cast<Increment_>(sv);
+  if (si != nullptr) {
     dxjc_.push_back(si);
     ijc_.push_back(size_);
   }
-  Departures_ * pd = dynamic_cast<Departures_*>(pv);
-  if (pd != 0) {
-    std::shared_ptr<Departures_> sd(pd);
+  std::shared_ptr<Departures_> sd = std::dynamic_pointer_cast<Departures_>(sv);
+  if (sd != nullptr) {
     dxjo_.push_back(sd);
     ijo_.push_back(size_);
   }
-  ASSERT(pi != 0 || pd != 0);
+  ASSERT(si != nullptr || sd != nullptr);
   ++size_;
 }
 // -----------------------------------------------------------------------------

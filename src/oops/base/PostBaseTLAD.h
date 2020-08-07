@@ -11,6 +11,8 @@
 #ifndef OOPS_BASE_POSTBASETLAD_H_
 #define OOPS_BASE_POSTBASETLAD_H_
 
+#include <memory>
+
 #include <boost/noncopyable.hpp>
 
 #include "eckit/config/Configuration.h"
@@ -78,7 +80,7 @@ class PostBaseTLAD : private boost::noncopyable {
   }
 
 /// Return TL dual space output
-  virtual GeneralizedDepartures * releaseOutputFromTL() = 0;
+  virtual std::unique_ptr<GeneralizedDepartures> releaseOutputFromTL() = 0;
 
 /// Adjoint methods
   void initializeAD(Increment_ & dx, const util::DateTime & bgn,

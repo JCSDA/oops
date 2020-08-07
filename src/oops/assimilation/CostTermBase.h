@@ -63,14 +63,16 @@ template<typename MODEL, typename OBS> class CostTermBase {
                                ControlIncrement<MODEL, OBS> &) const = 0;
 
 /// Multiply by covariance (or weight) matrix and its inverse.
-  virtual GeneralizedDepartures * multiplyCovar(const GeneralizedDepartures &) const = 0;
-  virtual GeneralizedDepartures * multiplyCoInv(const GeneralizedDepartures &) const = 0;
+  virtual std::unique_ptr<GeneralizedDepartures>
+    multiplyCovar(const GeneralizedDepartures &) const = 0;
+  virtual std::unique_ptr<GeneralizedDepartures>
+    multiplyCoInv(const GeneralizedDepartures &) const = 0;
 
 /// Provide new dual space vector (for example a Departure for Jo).
-  virtual GeneralizedDepartures * newDualVector() const = 0;
+  virtual std::unique_ptr<GeneralizedDepartures> newDualVector() const = 0;
 
 /// Gradient at first guess.
-  virtual GeneralizedDepartures * newGradientFG() const = 0;
+  virtual std::unique_ptr<GeneralizedDepartures> newGradientFG() const = 0;
 
 /// Reset trajectory.
   virtual void resetLinearization() = 0;

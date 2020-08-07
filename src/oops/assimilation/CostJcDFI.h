@@ -12,6 +12,7 @@
 #define OOPS_ASSIMILATION_COSTJCDFI_H_
 
 #include <memory>
+#include <utility>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/ControlIncrement.h"
@@ -74,14 +75,16 @@ template<typename MODEL, typename OBS> class CostJcDFI : public CostTermBase<MOD
            std::shared_ptr<const GeneralizedDepartures>, CtrlInc_ &) const override;
 
 /// Multiply by \f$ C\f$ and \f$ C^{-1}\f$.
-  Increment_ * multiplyCovar(const GeneralizedDepartures &) const override;
-  Increment_ * multiplyCoInv(const GeneralizedDepartures &) const override;
+  std::unique_ptr<GeneralizedDepartures>
+    multiplyCovar(const GeneralizedDepartures &) const override;
+  std::unique_ptr<GeneralizedDepartures>
+    multiplyCoInv(const GeneralizedDepartures &) const override;
 
 /// Provide new increment.
-  Increment_ * newDualVector() const override;
+  std::unique_ptr<GeneralizedDepartures> newDualVector() const override;
 
 /// Gradient of \f$ J_c\f$ at first guess.
-  Increment_ * newGradientFG() const override {return new Increment_(*gradFG_);}
+  std::unique_ptr<GeneralizedDepartures> newGradientFG() const override;
 
 /// Reset trajectory.
   void resetLinearization() override;
@@ -163,9 +166,16 @@ void CostJcDFI<MODEL, OBS>::finalizeTraj() {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-Increment<MODEL> * CostJcDFI<MODEL, OBS>::newDualVector() const {
-  Increment_ * dx = new Increment_(*tlres_, vars_, vt_);
-  return dx;
+std::unique_ptr<GeneralizedDepartures> CostJcDFI<MODEL, OBS>::newDualVector() const {
+  std::unique_ptr<Increment_> dx(new Increment_(*tlres_, vars_, vt_));
+  return std::move(dx);
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL, typename OBS>
+std::unique_ptr<GeneralizedDepartures> CostJcDFI<MODEL, OBS>::newGradientFG() const {
+  return std::unique_ptr<Increment_>(new Increment_(*gradFG_));
 }
 
 // -----------------------------------------------------------------------------
@@ -192,22 +202,24 @@ CostJcDFI<MODEL, OBS>::setupAD(std::shared_ptr<const GeneralizedDepartures> pv,
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-Increment<MODEL> * CostJcDFI<MODEL, OBS>::multiplyCovar(const GeneralizedDepartures & dv1) const {
+std::unique_ptr<GeneralizedDepartures>
+CostJcDFI<MODEL, OBS>::multiplyCovar(const GeneralizedDepartures & dv1) const {
   const Increment_ & dx1 = dynamic_cast<const Increment_ &>(dv1);
-  Increment_ * dx2 = new Increment_(dx1);
+  std::unique_ptr<Increment_> dx2(new Increment_(dx1));
   const double za = 1.0/alpha_;
   *dx2 *= za;
-  return dx2;
+  return std::move(dx2);
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-Increment<MODEL> * CostJcDFI<MODEL, OBS>::multiplyCoInv(const GeneralizedDepartures & dv1) const {
+std::unique_ptr<GeneralizedDepartures>
+CostJcDFI<MODEL, OBS>::multiplyCoInv(const GeneralizedDepartures & dv1) const {
   const Increment_ & dx1 = dynamic_cast<const Increment_ &>(dv1);
-  Increment_ * dx2 = new Increment_(dx1);
+  std::unique_ptr<Increment_> dx2(new Increment_(dx1));
   *dx2 *= alpha_;
-  return dx2;
+  return std::move(dx2);
 }
 
 // -----------------------------------------------------------------------------
