@@ -1,8 +1,11 @@
 minimal:
   req_float_parameter: 3
   req_duration_parameter: PT1H
+manual_registration:
+  req_float_parameter: 3
+  req_duration_parameter: PT1H
+  req_duration_parameter_manually_registered: PT1H
 full:
-  embedded_int_parameter: 13
   float_parameter: 3.5
   int_parameter: 4
   bool_parameter: false
@@ -12,7 +15,6 @@ full:
   req_float_parameter: 6
   req_duration_parameter: PT06H30M
   fruit_parameter: apple
-  opt_embedded_date_time_parameter: 2010-03-04T05:06:07Z
   range_parameter:
     min: 7
     max: 8.5
@@ -22,27 +24,6 @@ full:
       max: 10
     - min: 11
       max: 12
-alternative:
-  float_parameter: 13.5
-  int_parameter: 14
-  bool_parameter: true
-  opt_float_parameter: 15.5
-  opt_date_time_parameter: 2010-02-13T04:05:06Z
-  opt_duration_parameter: PT11H02M03S
-  req_float_parameter: 16
-  req_duration_parameter: PT16H30M
-  fruit_parameter: orange
-  range_parameter:
-    min: 17
-    max: 18.5
-  int_parameters: [11, 12]
-  range_parameters:
-    - min: 19
-      max: 110
-    - min: 111
-      max: 112
-  embedded_int_parameter: 23
-  opt_embedded_date_time_parameter: 2010-03-14T05:06:17Z
 misspelled_float:
   float_parometer: 3.5
 misspelled_int:

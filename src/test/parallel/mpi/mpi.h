@@ -31,7 +31,6 @@ namespace eckit
 namespace test {
 
 class TestParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(TestParameters, Parameters)
  public:
   oops::RequiredParameter<std::vector<util::DateTime>> values{"values", this};
 };

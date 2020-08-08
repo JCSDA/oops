@@ -12,44 +12,25 @@
 #include <string>
 
 namespace eckit {
-  class Channel;
   class Configuration;
-  class LocalConfiguration;
-}
-
-namespace util {
-  class CompositePath;
 }
 
 namespace oops {
 
 class Parameters;
 
-/// \brief Abstract interface of parameters that can be loaded from and saved to Configuration
-/// objects.
+/// \brief Abstract interface of parameters that can be loaded from Configuration objects.
 class ParameterBase {
- protected:
+ public:
   /// \brief Registers the newly created parameter in \p parent.
   explicit ParameterBase(Parameters *parent = nullptr);
 
-  ParameterBase(const ParameterBase &other) noexcept = default;
-  ParameterBase(ParameterBase &&other) noexcept = default;
-  ParameterBase &operator=(const ParameterBase &other) noexcept = default;
-  ParameterBase &operator=(ParameterBase &&other) noexcept = default;
+  virtual ~ParameterBase() {}
 
- public:
-  virtual ~ParameterBase() = default;
-
-  /// \brief Load the parameter's value from \p config, if present.
+  /// \brief Load the parameter's value from \p config , if present.
   ///
-  /// \param path
-  ///   Location of the configuration \p config in the full configuration loaded from a YAML file.
-  ///   This object may be modified in-place during deserialization, but must be restored to its
-  ///   original state before this function returns.
-  /// \param config
-  ///   Configuration from which parameter values are to be loaded.
-  virtual void deserialize(util::CompositePath &path,
-                           const eckit::Configuration &config) = 0;
+  /// Names of any keys in \p config accessed during deserialization are added to \p usedKeys.
+  virtual void deserialize(const eckit::Configuration &config, std::set<std::string> &usedKeys) = 0;
 };
 
 }  // namespace oops

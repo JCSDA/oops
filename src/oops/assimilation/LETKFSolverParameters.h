@@ -15,8 +15,6 @@ namespace oops {
 
 /// Parameters for LETKF inflation
 class LETKFInflationParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(LETKFInflationParameters, Parameters)
-
  public:
   // multiplicative prior inflation Pf'=mult*Pf
   Parameter<double> mult{"mult", 1.0, this};
@@ -48,7 +46,6 @@ class LETKFInflationParameters : public Parameters {
 
 /// LETKF parameters
 class LETKFSolverParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(LETKFSolverParameters, Parameters)
  public:
   Parameter<LETKFInflationParameters> infl{"letkf.inflation", {}, this};
 };

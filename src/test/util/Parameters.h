@@ -9,9 +9,7 @@
 #define TEST_UTIL_PARAMETERS_H_
 
 #include <map>
-#include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
@@ -36,50 +34,42 @@ enum class Fruit {
   APPLE, ORANGE
 };
 
-struct FruitParameterTraitsHelper {
-  typedef Fruit EnumType;
-  static constexpr char enumTypeName[] = "Fruit";
-  static constexpr std::pair<Fruit, const char*> valuesAndNames[] = {
-    { Fruit::APPLE, "apple" },
-    { Fruit::ORANGE, "orange" }
-  };
-};
-
-constexpr char FruitParameterTraitsHelper::enumTypeName[];
-constexpr std::pair<Fruit, const char*> FruitParameterTraitsHelper::valuesAndNames[];
-
 }  // namespace test
 
 namespace oops {
 
 template <>
-struct ParameterTraits<test::Fruit> : public EnumParameterTraits<test::FruitParameterTraitsHelper>
-{};
+struct ParameterTraits<test::Fruit> {
+  static boost::optional<test::Fruit> get(const eckit::Configuration &config,
+                                                const std::string& name) {
+    std::string value;
+    if (config.get(name, value)) {
+      if (value == "apple")
+        return test::Fruit::APPLE;
+      if (value == "orange")
+        return test::Fruit::ORANGE;
+      throw eckit::BadParameter("Bad conversion from std::string '" + value + "' to Fruit",
+                                Here());
+    } else {
+      return boost::none;
+    }
+  }
+};
 
 }  // namespace oops
 
 namespace test {
 
-// Classes required by most tests in this file
-
 class RangeParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(RangeParameters, Parameters)
  public:
+  RangeParameters() : oops::Parameters(true) {}
   oops::Parameter<float> minParameter{"min", 0.0f, this};
   oops::Parameter<float> maxParameter{"max", 0.0f, this};
 };
 
-class EmbeddedParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(EmbeddedParameters, Parameters)
+class MyParameters : public oops::Parameters {
  public:
-  oops::Parameter<int> intParameter{"embedded_int_parameter", 3, this};
-  oops::OptionalParameter<util::DateTime> optDateTimeParameter{"opt_embedded_date_time_parameter",
-                                                               this};
-};
-
-class MyParametersBase : public oops::Parameters {
-  OOPS_ABSTRACT_PARAMETERS(MyParametersBase, Parameters)
- public:
+  MyParameters() : oops::Parameters(true) {}
   oops::Parameter<float> floatParameter{"float_parameter", 1.5f, this};
   oops::Parameter<int> intParameter{"int_parameter", 2, this};
   oops::Parameter<bool> boolParameter{"bool_parameter", true, this};
@@ -87,29 +77,20 @@ class MyParametersBase : public oops::Parameters {
   oops::OptionalParameter<util::DateTime> optDateTimeParameter{"opt_date_time_parameter", this};
   oops::OptionalParameter<util::Duration> optDurationParameter{"opt_duration_parameter", this};
   oops::Parameter<Fruit> fruitParameter{"fruit_parameter", Fruit::ORANGE, this};
-  oops::Parameter<RangeParameters> rangeParameter{"range_parameter", RangeParameters(), this};
+  oops::Parameter<RangeParameters> rangeParameter{"range_parameter", {}, this};
   oops::Parameter<std::vector<int>> intParameters{"int_parameters", {}, this};
   oops::Parameter<std::vector<RangeParameters>> rangeParameters{"range_parameters", {}, this};
-  EmbeddedParameters embeddedParameters{this};
 };
 
-class MyOptionalParameters : public MyParametersBase {
-  OOPS_CONCRETE_PARAMETERS(MyOptionalParameters, MyParametersBase)
- public:
-};
-
-class MyOptionalAndRequiredParameters : public MyParametersBase {
-  OOPS_CONCRETE_PARAMETERS(MyOptionalAndRequiredParameters, MyParametersBase)
+class MyParametersRequired : public MyParameters {
  public:
   oops::RequiredParameter<float> reqFloatParameter{"req_float_parameter", this};
   oops::RequiredParameter<util::Duration> reqDurationParameter{"req_duration_parameter", this};
 };
 
-// Class required by tests checking map-valued parameters
-
 class MyMapParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(MyMapParameters, Parameters)
  public:
+  MyMapParameters() : oops::Parameters(true) {}
   oops::Parameter<std::map<int, float>> intToFloatMapParameter{
       "int_to_float_map", std::map<int, float>(), this};
   oops::Parameter<std::map<std::string, util::Duration>> stringToDurationMapParameter{
@@ -128,10 +109,91 @@ class MyMapParameters : public oops::Parameters {
                                             util::ScalarOrMap<std::string, util::Duration>(), this};
 };
 
+void testSpellCheckerOnError() {
+  std::ostringstream ss;
+  eckit::Channel &warningLog = eckit::Log::warning();
+  // eckit::Channel type needed to use addStream
+  warningLog.addStream(ss);
+  MyParameters params;
+  const::eckit::LocalConfiguration floatConf(TestEnvironment::config(), "misspelled_float");
+  params.deserialize(floatConf);
+  EXPECT(ss.str() == "Warning: float_parometer was in config file, but never used.\n");
+
+  ss.str("");
+  const eckit::LocalConfiguration intConf(TestEnvironment::config(), "misspelled_int");
+  params.deserialize(intConf);
+  EXPECT(ss.str() == "Warning: int_parometer was in config file, but never used.\n");
+
+  ss.str("");
+  const eckit::LocalConfiguration boolConf(TestEnvironment::config(), "misspelled_bool");
+  params.deserialize(boolConf);
+  EXPECT(ss.str() == "Warning: bool_parometer was in config file, but never used.\n");
+
+  ss.str("");
+  const eckit::LocalConfiguration dtConf(TestEnvironment::config(), "misspelled_dt");
+  params.deserialize(dtConf);
+  EXPECT(ss.str() == "Warning: opt_date_time_parometer was in config file, but never used.\n");
+
+  ss.str("");
+  const eckit::LocalConfiguration durConf(TestEnvironment::config(), "misspelled_dur");
+  params.deserialize(durConf);
+  EXPECT(ss.str() == "Warning: opt_duration_parometer was in config file, but never used.\n");
+
+  ss.str("");
+  const eckit::LocalConfiguration fruitConf(TestEnvironment::config(), "misspelled_fruit");
+  params.deserialize(fruitConf);
+  EXPECT(ss.str() == "Warning: fruit_parometer was in config file, but never used.\n");
+
+  ss.str("");
+  const eckit::LocalConfiguration intsConf(TestEnvironment::config(), "misspelled_ints");
+  params.deserialize(intsConf);
+  EXPECT(ss.str() == "Warning: int_parometers was in config file, but never used.\n");
+
+  ss.str("");
+  const eckit::LocalConfiguration nestedParamConf
+          (TestEnvironment::config(), "misspelled_nested_param");
+  params.deserialize(nestedParamConf);
+  EXPECT(ss.str() == "Warning: mox was in config file, but never used.\n");
+
+  ss.str("");
+  const eckit::LocalConfiguration nestedParamsConf
+          (TestEnvironment::config(), "misspelled_nested_params");
+  params.deserialize(nestedParamsConf);
+  EXPECT(ss.str() == "Warning: mon was in config file, but never used.\n");
+
+  ss.str("");
+  const eckit::LocalConfiguration nestingParamsConf
+          (TestEnvironment::config(), "misspelled_nesting_param");
+  params.deserialize(nestingParamsConf);
+  EXPECT(ss.str() == "Warning: ronge_parameter was in config file, but never used.\n");
+
+  ss.str("");
+  warningLog.reset();
+}
+
+void testSpellCheckerManualEntry() {
+  std::ostringstream ss;
+  eckit::Channel &warningLog = eckit::Log::warning();
+  warningLog.addStream(ss);
+  MyParametersRequired params;
+  const::eckit::LocalConfiguration partialConf(TestEnvironment::config(), "manual_registration");
+  params.deserialize(partialConf);
+  EXPECT(ss.str() ==
+    "Warning: req_duration_parameter_manually_registered was in config file, but never used.\n");
+
+  ss.str("");
+  params.registerExternalParameter("req_duration_parameter_manually_registered");
+  params.deserialize(partialConf);
+  EXPECT(ss.str().empty());
+
+  ss.str("");
+  warningLog.reset();
+}
+
 void testDefaultValues() {
   const eckit::LocalConfiguration conf(TestEnvironment::config());
 
-  MyOptionalAndRequiredParameters params;
+  MyParametersRequired params;
 
   EXPECT_EQUAL(params.floatParameter, 1.5f);
   EXPECT_EQUAL(params.floatParameter.value(), 1.5f);
@@ -147,8 +209,6 @@ void testDefaultValues() {
   EXPECT(params.rangeParameter.value().maxParameter == 0.0f);
   EXPECT(params.intParameters.value().empty());
   EXPECT(params.rangeParameters.value().empty());
-  EXPECT(params.embeddedParameters.intParameter.value() == 3);
-  EXPECT(params.embeddedParameters.optDateTimeParameter.value() == boost::none);
 
   const eckit::LocalConfiguration minimalConf(conf, "minimal");
   params.deserialize(minimalConf);
@@ -168,12 +228,10 @@ void testDefaultValues() {
   EXPECT(params.rangeParameter.value().maxParameter == 0.0f);
   EXPECT(params.intParameters.value().empty());
   EXPECT(params.rangeParameters.value().empty());
-  EXPECT(params.embeddedParameters.intParameter.value() == 3);
-  EXPECT(params.embeddedParameters.optDateTimeParameter.value() == boost::none);
 }
 
 void testCorrectValues() {
-  MyOptionalAndRequiredParameters params;
+  MyParametersRequired params;
   const eckit::LocalConfiguration fullConf(TestEnvironment::config(), "full");
   params.deserialize(fullConf);
 
@@ -199,76 +257,70 @@ void testCorrectValues() {
   EXPECT(params.rangeParameters.value()[0].maxParameter == 10.0f);
   EXPECT(params.rangeParameters.value()[1].minParameter == 11.0f);
   EXPECT(params.rangeParameters.value()[1].maxParameter == 12.0f);
-  EXPECT(params.embeddedParameters.intParameter.value() == 13);
-  EXPECT(params.embeddedParameters.optDateTimeParameter.value() != boost::none);
-  EXPECT_EQUAL(params.embeddedParameters.optDateTimeParameter.value().get(),
-               util::DateTime(2010, 3, 4, 5, 6, 7));
 }
 
 void testIncorrectValueOfFloatParameter() {
-  MyOptionalAndRequiredParameters params;
+  MyParametersRequired params;
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "error_in_float_parameter");
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::BadParameter);
 }
 
 void testIncorrectValueOfOptionalFloatParameter() {
-  MyOptionalAndRequiredParameters params;
+  MyParametersRequired params;
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "error_in_opt_float_parameter");
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::BadParameter);
 }
 
 void testIncorrectValueOfOptionalDateTimeParameter() {
-  MyOptionalAndRequiredParameters params;
+  MyParametersRequired params;
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "error_in_opt_date_time_parameter");
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::BadParameter);
 }
 
 void testIncorrectValueOfOptionalDurationParameter() {
-  MyOptionalAndRequiredParameters params;
+  MyParametersRequired params;
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "error_in_opt_duration_parameter");
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::BadParameter);
 }
 
 void testIncorrectValueOfEnumParameter() {
-  MyOptionalAndRequiredParameters params;
+  MyParametersRequired params;
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "error_in_fruit_parameter");
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::BadParameter);
 }
 
 void testIncorrectValueOfIntParameters() {
-  MyOptionalAndRequiredParameters params;
+  MyParametersRequired params;
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "error_in_int_parameters");
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::Exception);
 }
 
 void testIncorrectValueOfRangeParameters() {
-  MyOptionalAndRequiredParameters params;
+  MyParametersRequired params;
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "error_in_range_parameters");
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::Exception);
 }
 
 void testMissingRequiredFloatParameter() {
-  MyOptionalAndRequiredParameters params;
+  MyParametersRequired params;
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "missing_req_float_parameter");
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::BadParameter);
 }
 
 void testMissingRequiredDurationParameter() {
-  MyOptionalAndRequiredParameters params;
+  MyParametersRequired params;
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "missing_req_duration_parameter");
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::BadParameter);
 }
-
-// Tests of parameters storing maps and ScalarOrMaps
 
 void testMapParameters(const MyMapParameters &params) {
   // Map parameters
@@ -353,90 +405,6 @@ void testMapParametersJsonStyleUnquotedKeys() {
   testMapParameters(params);
 }
 
-// Tests of special member functions
-
-void expectMatchesFullConf(const MyOptionalAndRequiredParameters &params) {
-  EXPECT_EQUAL(params.floatParameter, 3.5f);
-  EXPECT_EQUAL(params.rangeParameter.value().minParameter, 7.0f);
-  EXPECT_EQUAL(params.rangeParameters.value()[0].minParameter, 9.0f);
-  EXPECT(params.embeddedParameters.intParameter.value() == 13);
-}
-
-void expectMatchesAlternativeConf(const MyOptionalAndRequiredParameters &params) {
-  EXPECT_EQUAL(params.floatParameter, 13.5f);
-  EXPECT_EQUAL(params.rangeParameter.value().minParameter, 17.0f);
-  EXPECT_EQUAL(params.rangeParameters.value()[0].minParameter, 19.0f);
-  EXPECT(params.embeddedParameters.intParameter.value() == 23);
-}
-
-void testCopyConstructor() {
-  const eckit::LocalConfiguration fullConf(TestEnvironment::config(), "full");
-  const eckit::LocalConfiguration alternativeConf(TestEnvironment::config(), "alternative");
-
-  MyOptionalAndRequiredParameters params;
-  params.deserialize(fullConf);
-
-  MyOptionalAndRequiredParameters otherParams = params;
-  expectMatchesFullConf(otherParams);
-
-  otherParams.deserialize(alternativeConf);
-  expectMatchesAlternativeConf(otherParams);
-
-  expectMatchesFullConf(params);
-
-  params.deserialize(alternativeConf);
-  expectMatchesAlternativeConf(params);
-}
-
-void testMoveConstructor() {
-  const eckit::LocalConfiguration fullConf(TestEnvironment::config(), "full");
-  const eckit::LocalConfiguration alternativeConf(TestEnvironment::config(), "alternative");
-
-  MyOptionalAndRequiredParameters params;
-  params.deserialize(fullConf);
-
-  MyOptionalAndRequiredParameters otherParams = std::move(params);
-  expectMatchesFullConf(otherParams);
-
-  otherParams.deserialize(alternativeConf);
-  expectMatchesAlternativeConf(otherParams);
-}
-
-void testCopyAssignmentOperator() {
-  const eckit::LocalConfiguration fullConf(TestEnvironment::config(), "full");
-  const eckit::LocalConfiguration alternativeConf(TestEnvironment::config(), "alternative");
-
-  MyOptionalAndRequiredParameters params;
-  params.deserialize(fullConf);
-
-  MyOptionalAndRequiredParameters otherParams;
-  otherParams = params;
-  expectMatchesFullConf(otherParams);
-
-  otherParams.deserialize(alternativeConf);
-  expectMatchesAlternativeConf(otherParams);
-
-  expectMatchesFullConf(params);
-
-  params.deserialize(alternativeConf);
-  expectMatchesAlternativeConf(params);
-}
-
-void testMoveAssignmentOperator() {
-  const eckit::LocalConfiguration fullConf(TestEnvironment::config(), "full");
-  const eckit::LocalConfiguration alternativeConf(TestEnvironment::config(), "alternative");
-
-  MyOptionalAndRequiredParameters params;
-  params.deserialize(fullConf);
-
-  MyOptionalAndRequiredParameters otherParams;
-  otherParams = std::move(params);
-  expectMatchesFullConf(otherParams);
-
-  otherParams.deserialize(alternativeConf);
-  expectMatchesAlternativeConf(otherParams);
-}
-
 class Parameters : public oops::Test {
  private:
   std::string testid() const override {return "test::Parameters";}
@@ -444,6 +412,12 @@ class Parameters : public oops::Test {
   void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
+    ts.emplace_back(CASE("util/Parameters/testSpellCheckerOnError") {
+                      testSpellCheckerOnError();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testSpellCheckerManualEntry") {
+                      testSpellCheckerManualEntry();
+                    });
     ts.emplace_back(CASE("util/Parameters/defaultValues") {
                       testDefaultValues();
                     });
@@ -480,20 +454,6 @@ class Parameters : public oops::Test {
     ts.emplace_back(CASE("util/Parameters/testMissingRequiredDurationParameter") {
                       testMissingRequiredDurationParameter();
                     });
-
-    ts.emplace_back(CASE("util/Parameters/testCopyConstructor") {
-                      testCopyConstructor();
-                    });
-    ts.emplace_back(CASE("util/Parameters/testMoveConstructor") {
-                      testMoveConstructor();
-                    });
-    ts.emplace_back(CASE("util/Parameters/testCopyAssignmentOperator") {
-                      testCopyAssignmentOperator();
-                    });
-    ts.emplace_back(CASE("util/Parameters/testMoveAssignmentOperator") {
-                      testMoveAssignmentOperator();
-                    });
-
     // Test fails because of a bug in the eckit YAML parser
     // ts.emplace_back(CASE("util/Parameters/mapParametersYamlStyleQuotedKeys") {
     //                   testMapParametersYamlStyleQuotedKeys();

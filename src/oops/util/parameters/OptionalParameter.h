@@ -10,63 +10,42 @@
 
 #include <set>
 #include <string>
-#include <utility>
 
 #include <boost/optional.hpp>
 
 #include "eckit/config/Configuration.h"
-#include "oops/util/CompositePath.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
 #include "oops/util/parameters/ParameterBase.h"
 #include "oops/util/parameters/ParameterTraits.h"
 
 namespace oops {
 
-/// \brief An optional parameter without a default value.
-///
-/// The interface of this class makes it possible to determine whether the value of this parameter
-/// was found in the Configuration object from which parameters were deserialized.
-///
-/// \tparam T
-///   Type of the value stored in the parameter.
+/// \brief A parameter that does not need to be present in a Configuration and for which no
+/// sensible default value can be defined.
 template <typename T>
 class OptionalParameter : public ParameterBase {
  public:
-  /// \brief Constructor.
-  ///
-  /// \param name
-  ///   Name of the key from which this parameter's value will be loaded when parameters are
-  ///   deserialized from a Configuration object.
-  /// \param parent
-  ///   Pointer to the Parameters object representing the collection of options located at
-  ///   the same level of the configuration tree as \p name. A call to deserialize()
-  ///   on that object will automatically trigger a call to deserialize() on this
-  ///   parameter.
-  explicit OptionalParameter(
-      const char *name, Parameters *parent = nullptr)
+  explicit OptionalParameter(const char *name, Parameters *parent = nullptr)
     : ParameterBase(parent), name_(name)
   {}
 
-  void deserialize(util::CompositePath &path, const eckit::Configuration &config) override;
+  void deserialize(const eckit::Configuration &config, std::set<std::string> &usedKeys) override {
+    boost::optional<T> newValue = ParameterTraits<T>::get(config, name_);
+    if (newValue != boost::none) {
+      value_ = newValue;
+      usedKeys.insert(name_);
+    }
+  }
 
-  /// \brief The value stored in this parameter, or boost::none if no value is stored.
   const boost::optional<T> &value() const { return value_; }
 
-  /// \brief The value stored in this parameter, or boost::none if no value is stored.
   operator const boost::optional<T> &() const { return value_; }
 
  private:
   std::string name_;
   boost::optional<T> value_;
 };
-
-template <typename T>
-void OptionalParameter<T>::deserialize(util::CompositePath &path,
-                                       const eckit::Configuration &config) {
-  boost::optional<T> newValue = ParameterTraits<T>::get(path, config, name_);
-  if (newValue != boost::none) {
-    value_ = std::move(newValue);
-  }
-}
 
 }  // namespace oops
 
