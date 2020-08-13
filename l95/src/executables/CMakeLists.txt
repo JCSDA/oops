@@ -37,7 +37,3 @@ ecbuild_add_executable( TARGET  l95_hofx_nomodel.x
 ecbuild_add_executable( TARGET  l95_enshofx.x
                         SOURCES EnsHofX.cc
                         LIBS    lorenz95 )
-
-ecbuild_add_executable( TARGET  l95_localhofx.x
-                        SOURCES LocalHofX.cc
-                        LIBS    lorenz95 )

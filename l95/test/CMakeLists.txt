@@ -41,7 +41,6 @@ list( APPEND l95_test_input
   testinput/identitymodel.yaml
   testinput/letkfOOPS.yaml
   testinput/letkf.yaml
-  testinput/localhofx.yaml
   testinput/interfaces.yaml
   testinput/makeobs3d.yaml
   testinput/makeobs4d.yaml
@@ -96,7 +95,6 @@ list( APPEND l95_testoutput
   testoutput/hofx.nomodel.test
   testoutput/letkf.test
   testoutput/letkf_oops.test
-  testoutput/localhofx.test
   testoutput/makeobs3d.test
   testoutput/makeobs4d.test
   testoutput/makeobs4d12h.test
@@ -436,13 +434,6 @@ oops_add_test( TESTNAME hofx.nomodel
                YAMLNAME testinput/hofx_nomodel.yaml
                EXENAME l95_hofx_nomodel.x
                TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
-
-oops_add_test( TESTNAME localhofx
-               MODELNAME l95
-               YAMLNAME testinput/localhofx.yaml
-               EXENAME l95_localhofx.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d ) 
-
 
 #####################################################################
 # ensemble-related tests
