@@ -112,6 +112,10 @@ double RPCGMinimizer<MODEL, OBS>::solve(Dual_ & vv, double & vvp, Dual_ & rr,
 
   std::vector<Dual_> vVEC;  // required for re-orthogonalization
   std::vector<Dual_> wVEC;  // required for re-orthogonalization
+  // reserve space to avoid extra copies
+  vVEC.reserve(maxiter+1);
+  wVEC.reserve(maxiter+1);
+
   std::vector<double> vpVEC;
   std::vector<double> wpVEC;
 

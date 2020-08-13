@@ -95,6 +95,11 @@ double DRGMRESRMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlIn
   std::vector<CtrlInc_> c;
   std::vector<CtrlInc_> u;
   std::vector<CtrlInc_> uh;
+  // reserve space in vectors to avoid extra copies
+  c.reserve(maxiter);
+  u.reserve(maxiter);
+  uh.reserve(maxiter);
+
   CtrlInc_ cc(xh);
   CtrlInc_ zz(xh);
   CtrlInc_ zh(xh);

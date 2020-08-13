@@ -123,6 +123,10 @@ double DRPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_
   std::vector<CtrlInc_> vvecs;
   std::vector<CtrlInc_> zvecs;
   std::vector<double> scals;
+  // reserve space in vectors to avoid extra copies
+  vvecs.reserve(maxiter+1);
+  zvecs.reserve(maxiter+1);
+  scals.reserve(maxiter+1);
 
   // J0
   const double costJ0 = costJ0Jb + costJ0JoJc;

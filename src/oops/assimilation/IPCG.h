@@ -73,6 +73,9 @@ double IPCG(VECTOR & x, const VECTOR & b,
 
   std::vector<VECTOR> vVEC;  // required for re-orthogonalization
   std::vector<VECTOR> zVEC;  // required for re-orthogonalization
+  // reserve space to avoid extra copies
+  vVEC.reserve(maxiter+1);
+  zVEC.reserve(maxiter+1);
 
   // Initial residual r = b - Ax
   r = b;

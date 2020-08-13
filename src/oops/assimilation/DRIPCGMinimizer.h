@@ -113,6 +113,10 @@ double DRIPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_
   std::vector<CtrlInc_> vvecs;  // for re-orthogonalization
   std::vector<CtrlInc_> zvecs;  // for re-orthogonalization
   std::vector<double> scals;  // for re-orthogonalization
+  // reserve space in vectors to avoid extra copies
+  vvecs.reserve(maxiter+1);
+  zvecs.reserve(maxiter+1);
+  scals.reserve(maxiter+1);
 
   const double costJ0 = costJ0Jb + costJ0JoJc;
 

@@ -108,6 +108,11 @@ double RPLanczosMinimizer<MODEL, OBS>::solve(Dual_ & vv, double & vvp, Dual_ & r
   std::vector<Dual_> vVEC;  // required for re-orthogonalization
   std::vector<Dual_> tVEC;  // required for re-orthogonalization
   std::vector<Dual_> zVEC;  // required for solution
+  // reserve space to avoid extra copies
+  vVEC.reserve(maxiter+1);
+  tVEC.reserve(maxiter+1);
+  zVEC.reserve(maxiter+1);
+
   std::vector<double> vpVEC;
   std::vector<double> tpVEC;
   std::vector<double> zpVEC;

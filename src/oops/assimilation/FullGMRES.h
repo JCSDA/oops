@@ -69,6 +69,9 @@ double FullGMRES(VECTOR & xx, const VECTOR & bb, const AMATRIX & A,
                  const double tolerance, std::vector<VECTOR> & pqVEC,
                  std::vector<VECTOR> & xyVEC) {
   std::vector<VECTOR> VV;
+  // reserve space to avoid extra copies
+  VV.reserve(maxiter+1);
+
   std::vector< std::vector<double> > H;
   std::vector<double> cs(maxiter+1, 0);
   std::vector<double> sn(maxiter+1, 0);

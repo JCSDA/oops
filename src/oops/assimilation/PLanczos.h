@@ -67,6 +67,10 @@ double PLanczos(VECTOR & xx, const VECTOR & bb,
 
   std::vector<VECTOR> vVEC;
   std::vector<VECTOR> zVEC;
+  // reserve space to avoid extra copies
+  vVEC.reserve(maxiter+1);
+  zVEC.reserve(maxiter+1);
+
   std::vector<double> alphas;
   std::vector<double> betas;
   std::vector<double> dd;
