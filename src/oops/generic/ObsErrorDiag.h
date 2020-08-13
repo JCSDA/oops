@@ -27,7 +27,7 @@ namespace oops {
 class ObsErrorDiagParameters : public Parameters {
  public:
   /// perturbation amplitude multiplier
-  Parameter<double> pert{"random_amplitude", 1.0, this};
+  Parameter<double> pert{"random amplitude", 1.0, this};
 };
 
 // -----------------------------------------------------------------------------

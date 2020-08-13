@@ -24,7 +24,7 @@ cost function:
   observations:
   - obs error:
       covariance model: diagonal
-      random_amplitude: 0.4
+      random amplitude: 0.4
     obs operator:
       obs type: Stream
     obs space:
@@ -35,7 +35,7 @@ cost function:
       obs type: Stream
   - obs error:
       covariance model: diagonal
-      random_amplitude: 0.5
+      random amplitude: 0.5
     obs operator:
       obs type: Wind
     obs space:
@@ -46,7 +46,7 @@ cost function:
       obs type: Wind
   - obs error:
       covariance model: diagonal
-      random_amplitude: 0.2
+      random amplitude: 0.2
     obs operator:
       obs type: WSpeed
     obs space:
