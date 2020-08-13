@@ -15,6 +15,9 @@
 #include "eckit/config/LocalConfiguration.h"
 
 #include "oops/base/Variables.h"
+#include "oops/util/parameters/OptionalParameter.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 #include "oops/util/Printable.h"
 
 namespace lorenz95 {
@@ -24,6 +27,18 @@ namespace lorenz95 {
   class ObsDiags1D;
   class ObsVec1D;
 
+/// Parameters for L95 BackgroundCheck
+/// background check: all obs for which {|y-H(x)| < threshold} pass QC
+class BackgroundCheckParameters : public oops::Parameters {
+ public:
+  /// threshold for background check
+  oops::RequiredParameter<double> threshold{"threshold", this};
+
+  /// optional inflation factor: if this parameter is present, obs error stddev
+  /// for obs that don't pass the check is multiplied by the specified factor.
+  /// Otherwise, obs that don't pass the check are rejected.
+  oops::OptionalParameter<double> inflation{"inflate obs error", this};
+};
 
 /// Simple background check: all obs for which {|y-H(x)| < threshold} pass QC
 class BackgroundCheck : public util::Printable {
@@ -42,8 +57,9 @@ class BackgroundCheck : public util::Printable {
   void print(std::ostream & os) const;
 
   const ObsTableView & obsdb_;
-  const float threshold_;
-  boost::shared_ptr<ObsData1D<int> > qcflags_;
+  BackgroundCheckParameters options_;
+  boost::shared_ptr<ObsData1D<int> > qcflags_;   // QC flags
+  boost::shared_ptr<ObsData1D<float> > obserr_;  // obs error stddev
   const oops::Variables novars_;
 };
 

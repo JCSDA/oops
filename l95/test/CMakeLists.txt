@@ -3,6 +3,7 @@ include ( oops_add_test )
 list( APPEND l95_test_input
   testinput/3dvar.yaml
   testinput/3dvar_qc.yaml
+  testinput/3dvar_qc_obserr.yaml
   testinput/3dvar_qc_iterations.yaml
   testinput/3dfgat.yaml
   testinput/4dvar.alpha.yaml
@@ -61,6 +62,7 @@ list( APPEND l95_test_data
 list( APPEND l95_testoutput
   testoutput/3dvar.test
   testoutput/3dvar_qc.test
+  testoutput/3dvar_qc_obserr.test
   testoutput/3dvar_qc_iterations.test
   testoutput/3dfgat.test
   testoutput/4densvar.test
@@ -472,6 +474,12 @@ oops_add_test( TESTNAME 3dvar
 oops_add_test( TESTNAME 3dvar_qc
                MODELNAME l95
                YAMLNAME testinput/3dvar_qc.yaml
+               EXENAME l95_4dvar.x
+               TEST_DEPENDS test_l95_forecast test_l95_makeob3d )
+
+oops_add_test( TESTNAME 3dvar_qc_obserr
+               MODELNAME l95
+               YAMLNAME testinput/3dvar_qc_obserr.yaml
                EXENAME l95_4dvar.x
                TEST_DEPENDS test_l95_forecast test_l95_makeob3d )
 
