@@ -73,6 +73,18 @@ template <typename MODEL> class LinearModelFixture : private boost::noncopyable 
   static const ModelAux_        & bias()       {return *getInstance().bias_;}
   static const ModelAuxIncr_    & dbias()      {return *getInstance().dbias_;}
   static const LinearModel_     & tlm()        {return *getInstance().tlm_;}
+  static void reset() {
+    getInstance().tlm_.reset();
+    getInstance().B_.reset();
+    getInstance().time_.reset();
+    getInstance().xref_.reset();
+    getInstance().model_.reset();
+    getInstance().dbias_.reset();
+    getInstance().bias_.reset();
+    getInstance().ctlvars_.reset();
+    getInstance().resol_.reset();
+    getInstance().test_.reset();
+  }
 
  private:
   static LinearModelFixture<MODEL>& getInstance() {
@@ -345,7 +357,7 @@ template <typename MODEL>
 class LinearModel : public oops::Test {
  public:
   LinearModel() {}
-  virtual ~LinearModel() {}
+  virtual ~LinearModel() {LinearModelFixture<MODEL>::reset();}
 
  private:
   std::string testid() const {return "test::LinearModel<" + MODEL::name() + ">";}
