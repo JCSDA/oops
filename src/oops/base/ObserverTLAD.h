@@ -14,8 +14,6 @@
 #include <memory>
 #include <vector>
 
-#include <boost/shared_ptr.hpp>
-
 #include "eckit/config/Configuration.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Increment.h"

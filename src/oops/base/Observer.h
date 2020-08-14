@@ -12,8 +12,6 @@
 #include <string>
 #include <vector>
 
-#include <boost/shared_ptr.hpp>
-
 #include "oops/base/ObsFilters.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
@@ -48,7 +46,7 @@ class Observer : public util::Printable {
   typedef ObsOperator<OBS>         ObsOperator_;
   typedef ObsVector<OBS>           ObsVector_;
   typedef State<MODEL>             State_;
-  template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<OBS, DATA> >;
+  template <typename DATA> using ObsDataPtr_ = std::shared_ptr<ObsDataVector<OBS, DATA> >;
 
  public:
   Observer(const eckit::Configuration &, const ObsSpace_ &, const ObsAuxCtrl_ &,

@@ -8,9 +8,8 @@
 #ifndef LORENZ95_BACKGROUNDCHECK_H_
 #define LORENZ95_BACKGROUNDCHECK_H_
 
+#include <memory>
 #include <ostream>
-
-#include "boost/shared_ptr.hpp"
 
 #include "eckit/config/LocalConfiguration.h"
 
@@ -44,7 +43,7 @@ class BackgroundCheckParameters : public oops::Parameters {
 class BackgroundCheck : public util::Printable {
  public:
   BackgroundCheck(const ObsTableView &, const eckit::Configuration &,
-            boost::shared_ptr<ObsData1D<int> >, boost::shared_ptr<ObsData1D<float> >);
+                  std::shared_ptr<ObsData1D<int> >, std::shared_ptr<ObsData1D<float> >);
 
   void preProcess() const {}
   void priorFilter(const GomL95 &) const {}
@@ -58,8 +57,8 @@ class BackgroundCheck : public util::Printable {
 
   const ObsTableView & obsdb_;
   BackgroundCheckParameters options_;
-  boost::shared_ptr<ObsData1D<int> > qcflags_;   // QC flags
-  boost::shared_ptr<ObsData1D<float> > obserr_;  // obs error stddev
+  std::shared_ptr<ObsData1D<int> > qcflags_;   // QC flags
+  std::shared_ptr<ObsData1D<float> > obserr_;  // obs error stddev
   const oops::Variables novars_;
 };
 

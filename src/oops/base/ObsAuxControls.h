@@ -9,10 +9,9 @@
 #define OOPS_BASE_OBSAUXCONTROLS_H_
 
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
-
-#include <boost/shared_ptr.hpp>
 
 #include "oops/base/ObsSpaces.h"
 #include "oops/interface/ObsAuxControl.h"
@@ -49,7 +48,7 @@ class ObsAuxControls : public util::Printable {
 
  private:
   void print(std::ostream &) const;
-  std::vector<boost::shared_ptr<ObsAuxControl_> > auxs_;
+  std::vector<std::unique_ptr<ObsAuxControl_> > auxs_;
 };
 
 // =============================================================================
@@ -61,8 +60,8 @@ ObsAuxControls<OBS>::ObsAuxControls(const ObsSpaces_ & odb, const eckit::Configu
   std::vector<eckit::LocalConfiguration> obsconf;
   conf.get("observations", obsconf);
   for (std::size_t jobs = 0; jobs < obsconf.size(); ++jobs) {
-    boost::shared_ptr<ObsAuxControl_> tmp(new ObsAuxControl_(odb[jobs], obsconf[jobs]));
-    auxs_.push_back(tmp);
+    auxs_.push_back(
+      std::unique_ptr<ObsAuxControl_>(new ObsAuxControl_(odb[jobs], obsconf[jobs])));
   }
 }
 

@@ -13,7 +13,6 @@
 #include <memory>
 
 #include <boost/lexical_cast.hpp>
-#include <boost/shared_ptr.hpp>
 
 #include "./TestConfig.h"
 #include "eckit/config/LocalConfiguration.h"

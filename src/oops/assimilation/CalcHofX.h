@@ -11,9 +11,6 @@
 #include <string>
 #include <vector>
 
-#include <boost/make_shared.hpp>
-#include <boost/shared_ptr.hpp>
-
 #include "eckit/config/LocalConfiguration.h"
 
 #include "oops/assimilation/State4D.h"

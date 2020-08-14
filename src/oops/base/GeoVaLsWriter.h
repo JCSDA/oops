@@ -8,6 +8,8 @@
 #ifndef OOPS_BASE_GEOVALSWRITER_H_
 #define OOPS_BASE_GEOVALSWRITER_H_
 
+#include <memory>
+
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/ObsFilterBase.h"
 #include "oops/base/Variables.h"
@@ -29,7 +31,7 @@ class GeoVaLsWriter : public ObsFilterBase<OBS> {
   typedef ObsDiagnostics<OBS>      ObsDiags_;
   typedef ObsSpace<OBS>            ObsSpace_;
   typedef ObsVector<OBS>           ObsVector_;
-  template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<OBS, DATA> >;
+  template <typename DATA> using ObsDataPtr_ = std::shared_ptr<ObsDataVector<OBS, DATA> >;
 
  public:
   GeoVaLsWriter(const ObsSpace_ &, const eckit::Configuration & conf,

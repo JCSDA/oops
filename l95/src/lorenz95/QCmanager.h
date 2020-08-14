@@ -8,9 +8,8 @@
 #ifndef LORENZ95_QCMANAGER_H_
 #define LORENZ95_QCMANAGER_H_
 
+#include <memory>
 #include <ostream>
-
-#include "boost/shared_ptr.hpp"
 
 #include "eckit/config/LocalConfiguration.h"
 
@@ -29,7 +28,7 @@ namespace lorenz95 {
 class QCmanager : public util::Printable {
  public:
   QCmanager(const ObsTableView &, const eckit::Configuration &,
-            boost::shared_ptr<ObsData1D<int> >, boost::shared_ptr<ObsData1D<float> >): novars_() {}
+            std::shared_ptr<ObsData1D<int> >, std::shared_ptr<ObsData1D<float> >): novars_() {}
   ~QCmanager() {}
 
   void preProcess() const {}

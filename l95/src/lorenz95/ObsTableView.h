@@ -13,8 +13,6 @@
 #include <string>
 #include <vector>
 
-#include <boost/shared_ptr.hpp>
-
 #include "eckit/geometry/Point2.h"
 #include "eckit/mpi/Comm.h"
 
@@ -71,7 +69,7 @@ class ObsTableView : public util::Printable,
   const std::vector<double> & obsdist() const {return obsdist_;}
  private:
   void print(std::ostream &) const;
-  boost::shared_ptr<ObsTable> obstable_;
+  std::shared_ptr<ObsTable> obstable_;
   std::vector<size_t> localobs_;
   std::vector<double> obsdist_;
 };

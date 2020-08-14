@@ -9,11 +9,11 @@
 #define OOPS_BASE_OBSAUXCOVARIANCES_H_
 
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include <boost/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
 #include "oops/base/ObsAuxControls.h"
@@ -52,7 +52,7 @@ class ObsAuxCovariances : public util::Printable,
 
  private:
   void print(std::ostream &) const;
-  std::vector<boost::shared_ptr<ObsAuxCovariance_> > cov_;
+  std::vector<std::unique_ptr<ObsAuxCovariance_> > cov_;
   const ObsSpaces_ & odb_;
   const eckit::LocalConfiguration conf_;
 };
@@ -68,8 +68,8 @@ ObsAuxCovariances<OBS>::ObsAuxCovariances(const ObsSpaces_ & odb,
   std::vector<eckit::LocalConfiguration> obsconf;
   conf.get("observations", obsconf);
   for (std::size_t jobs = 0; jobs < obsconf.size(); ++jobs) {
-    boost::shared_ptr<ObsAuxCovariance_> tmp(new ObsAuxCovariance_(odb[jobs], obsconf[jobs]));
-    cov_.push_back(tmp);
+    cov_.push_back(
+       std::unique_ptr<ObsAuxCovariance_>(new ObsAuxCovariance_(odb[jobs], obsconf[jobs])));
   }
   Log::trace() << "ObsAuxCovariances<OBS>::ObsAuxCovariances done" << std::endl;
 }

@@ -28,7 +28,6 @@ namespace oops {
 
 template <typename MODEL> class EnsVariance : public Application {
   typedef IncrementEnsemble<MODEL>                 Ensemble_;
-  typedef boost::shared_ptr<IncrementEnsemble<MODEL> > EnsemblePtr_;
   typedef Geometry<MODEL>                          Geometry_;
   typedef Increment4D<MODEL>                       Increment4D_;
   typedef State<MODEL>                             State_;
@@ -53,19 +52,19 @@ template <typename MODEL> class EnsVariance : public Application {
     //        ens_k = K^-1 dx_k
     const eckit::LocalConfiguration ensConfig(fullConfig, "ensemble");
     Variables vars(ensConfig, "output variables");
-    EnsemblePtr_ ens_k(new Ensemble_(ensConfig, xx, xx, resol, vars));
+    Ensemble_ ens_k(ensConfig, xx, xx, resol, vars);
 
     // Get ensemble size
-    unsigned nm = ens_k->size();
+    unsigned nm = ens_k.size();
 
     // Compute ensemble standard deviation
-    Increment4D_ km1dx((*ens_k)[0]);
+    Increment4D_ km1dx(ens_k[0]);
     km1dx.zero();
     Increment4D_ sigb2(km1dx);
     sigb2.zero();
 
     for (unsigned jj = 0; jj < nm; ++jj) {
-      km1dx = (*ens_k)[jj];
+      km1dx = ens_k[jj];
 
       // Accumulate km1dx^2
       km1dx.schur_product_with(km1dx);

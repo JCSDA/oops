@@ -20,7 +20,7 @@ static oops::FilterMaker<L95ObsTraits,
 
 // -----------------------------------------------------------------------------
 BackgroundCheck::BackgroundCheck(const ObsTableView & obsdb, const eckit::Configuration & conf,
-        boost::shared_ptr<ObsData1D<int> > qcflags, boost::shared_ptr<ObsData1D<float> > obserr)
+           std::shared_ptr<ObsData1D<int> > qcflags, std::shared_ptr<ObsData1D<float> > obserr)
   : obsdb_(obsdb), qcflags_(qcflags), obserr_(obserr), novars_()
 {
   options_.deserialize(conf);

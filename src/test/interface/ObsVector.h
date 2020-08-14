@@ -17,8 +17,6 @@
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
-#include <boost/shared_ptr.hpp>
-
 #include "eckit/testing/Test.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/runs/Test.h"

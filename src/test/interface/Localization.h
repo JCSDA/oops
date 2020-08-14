@@ -41,7 +41,6 @@ template <typename MODEL> class LocalizationFixture : private boost::noncopyable
   typedef oops::LocalizationBase<MODEL>                 Localization_;
   typedef oops::Geometry<MODEL>                         Geometry_;
   typedef oops::IncrementEnsemble<MODEL>                Ensemble_;
-  typedef boost::shared_ptr<oops::IncrementEnsemble<MODEL>> EnsemblePtr_;
 
  public:
   static const Geometry_       & resol()        {return *getInstance().resol_;}

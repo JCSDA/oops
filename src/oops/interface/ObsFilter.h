@@ -11,8 +11,6 @@
 #include <memory>
 #include <string>
 
-#include <boost/shared_ptr.hpp>
-
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/ObsFilterBase.h"
 #include "oops/base/Variables.h"
@@ -34,7 +32,7 @@ class ObsFilter : public ObsFilterBase<OBS> {
   typedef ObsDiagnostics<OBS>      ObsDiags_;
   typedef ObsSpace<OBS>            ObsSpace_;
   typedef ObsVector<OBS>           ObsVector_;
-  template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<OBS, DATA> >;
+  template <typename DATA> using ObsDataPtr_ = std::shared_ptr<ObsDataVector<OBS, DATA> >;
   template <typename DATA> using ObsDataVec_ = typename OBS::template ObsDataVector<DATA>;
 
  public:
@@ -70,8 +68,8 @@ ObsFilter<OBS, FILTER>::ObsFilter(const ObsSpace_ & os,
   Log::trace() << "ObsFilter<OBS, FILTER>::ObsFilter Configuration starting" << std::endl;
   util::Timer timer(classname(), "ObsFilter");
 
-  boost::shared_ptr<ObsDataVec_<int> > qc;
-  boost::shared_ptr<ObsDataVec_<float> > oberr;
+  std::shared_ptr<ObsDataVec_<int> > qc;
+  std::shared_ptr<ObsDataVec_<float> > oberr;
   if (flags) qc = flags->obsdatavectorptr();
   if (obserr) oberr = obserr->obsdatavectorptr();
 

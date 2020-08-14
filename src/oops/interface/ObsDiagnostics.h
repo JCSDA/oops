@@ -8,6 +8,7 @@
 #ifndef OOPS_INTERFACE_OBSDIAGNOSTICS_H_
 #define OOPS_INTERFACE_OBSDIAGNOSTICS_H_
 
+#include <memory>
 #include <ostream>
 #include <string>
 #include <vector>
@@ -51,7 +52,7 @@ class ObsDiagnostics : public util::Printable,
 
  private:
   void print(std::ostream &) const;
-  boost::shared_ptr<ObsDiags_> diags_;
+  std::unique_ptr<ObsDiags_> diags_;
 };
 
 // -----------------------------------------------------------------------------

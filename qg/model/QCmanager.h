@@ -8,9 +8,8 @@
 #ifndef QG_MODEL_QCMANAGER_H_
 #define QG_MODEL_QCMANAGER_H_
 
+#include <memory>
 #include <ostream>
-
-#include "boost/shared_ptr.hpp"
 
 #include "eckit/config/LocalConfiguration.h"
 
@@ -27,7 +26,7 @@ namespace qg {
 class QCmanager : public util::Printable {
  public:
   QCmanager(const ObsSpaceQG &, const eckit::Configuration &,
-            boost::shared_ptr<ObsDataQG<int> >, boost::shared_ptr<ObsDataQG<float> >): novars_() {}
+            std::shared_ptr<ObsDataQG<int> >, std::shared_ptr<ObsDataQG<float> >): novars_() {}
   ~QCmanager() {}
 
   void preProcess() const {}

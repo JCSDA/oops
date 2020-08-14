@@ -7,10 +7,8 @@
 #ifndef OOPS_BASE_QCDATA_H_
 #define OOPS_BASE_QCDATA_H_
 
+#include <memory>
 #include <vector>
-
-#include <boost/make_shared.hpp>
-#include <boost/shared_ptr.hpp>
 
 #include "oops/base/ObsSpaces.h"
 #include "oops/interface/ObsDataVector.h"
@@ -25,7 +23,7 @@ template <typename OBS>
 class QCData {
   typedef ObsSpaces<OBS>           ObsSpaces_;
   template <typename DATA> using ObsData_ = ObsDataVector<OBS, DATA>;
-  template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsData_<DATA> >;
+  template <typename DATA> using ObsDataPtr_ = std::shared_ptr<ObsData_<DATA> >;
 
  public:
 /// \brief Initializes QC data
@@ -50,11 +48,11 @@ QCData<OBS>::QCData(const ObsSpaces_ & obspaces) {
   obserr_.reserve(obspaces.size());
   for (size_t jj = 0; jj < obspaces.size(); ++jj) {
 //  Allocate QC flags
-    qcflags_.emplace_back(boost::make_shared<ObsData_<int>>(obspaces[jj],
-                            obspaces[jj].obsvariables()));
+    qcflags_.emplace_back(std::shared_ptr<ObsData_<int>>(new ObsData_<int>(obspaces[jj],
+                            obspaces[jj].obsvariables())));
 //  Allocate and read initial obs error
-    obserr_.emplace_back(boost::make_shared<ObsData_<float>>(obspaces[jj],
-                            obspaces[jj].obsvariables(), "ObsError"));
+    obserr_.emplace_back(std::shared_ptr<ObsData_<float>>(new ObsData_<float>(obspaces[jj],
+                            obspaces[jj].obsvariables(), "ObsError")));
   }
 }
 

@@ -9,10 +9,10 @@
 #define OOPS_BASE_OBSFILTERBASE_H_
 
 #include <map>
+#include <memory>
 #include <string>
 
 #include <boost/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
 
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
@@ -57,18 +57,18 @@ class ObsFilterBase : public util::Printable,
 template <typename OBS>
 class FilterFactory {
   typedef ObsSpace<OBS>    ObsSpace_;
-  template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<OBS, DATA> >;
+  template <typename DATA> using ObsDataPtr_ = std::shared_ptr<ObsDataVector<OBS, DATA> >;
  public:
-  static boost::shared_ptr<ObsFilterBase<OBS>> create(const ObsSpace_ &,
-                                                        const eckit::Configuration &,
+  static std::shared_ptr<ObsFilterBase<OBS>> create(const ObsSpace_ &,
+                                                    const eckit::Configuration &,
                                                     ObsDataPtr_<int> flags = ObsDataPtr_<int>(),
-                                                 ObsDataPtr_<float> obserr = ObsDataPtr_<float>());
+                                               ObsDataPtr_<float> obserr = ObsDataPtr_<float>());
   virtual ~FilterFactory() = default;
  protected:
   explicit FilterFactory(const std::string &);
  private:
   virtual ObsFilterBase<OBS> * make(const ObsSpace_ &, const eckit::Configuration &,
-                                      ObsDataPtr_<int> &, ObsDataPtr_<float> &) = 0;
+                                    ObsDataPtr_<int> &, ObsDataPtr_<float> &) = 0;
   static std::map < std::string, FilterFactory<OBS> * > & getMakers() {
     static std::map < std::string, FilterFactory<OBS> * > makers_;
     return makers_;
@@ -80,7 +80,7 @@ class FilterFactory {
 template<class OBS, class T>
 class FilterMaker : public FilterFactory<OBS> {
   typedef ObsSpace<OBS>    ObsSpace_;
-  template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<OBS, DATA> >;
+  template <typename DATA> using ObsDataPtr_ = std::shared_ptr<ObsDataVector<OBS, DATA> >;
   virtual ObsFilterBase<OBS> * make(const ObsSpace_ & os, const eckit::Configuration & conf,
                                       ObsDataPtr_<int> & flags, ObsDataPtr_<float> & obserr)
     { return new T(os, conf, flags, obserr); }
@@ -102,7 +102,7 @@ FilterFactory<OBS>::FilterFactory(const std::string & name) {
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-boost::shared_ptr<ObsFilterBase<OBS>>
+std::shared_ptr<ObsFilterBase<OBS>>
 FilterFactory<OBS>::create(const ObsSpace_ & os, const eckit::Configuration & conf,
                              ObsDataPtr_<int> flags, ObsDataPtr_<float> obserr) {
   Log::trace() << "ObsFilterBase<OBS>::create starting" << std::endl;
@@ -118,7 +118,7 @@ FilterFactory<OBS>::create(const ObsSpace_ & os, const eckit::Configuration & co
     }
     ABORT("Element does not exist in FilterFactory.");
   }
-  boost::shared_ptr<ObsFilterBase<OBS>> ptr(jloc->second->make(os, conf, flags, obserr));
+  std::shared_ptr<ObsFilterBase<OBS>> ptr(jloc->second->make(os, conf, flags, obserr));
   Log::trace() << "ObsFilterBase<OBS>::create done" << std::endl;
   return ptr;
 }

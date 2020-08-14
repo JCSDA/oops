@@ -8,12 +8,9 @@
 #ifndef OOPS_INTERFACE_OBSDATAVECTOR_H_
 #define OOPS_INTERFACE_OBSDATAVECTOR_H_
 
-#include <math.h>
 #include <memory>
 #include <ostream>
 #include <string>
-
-#include <boost/shared_ptr.hpp>
 
 #include "oops/base/Variables.h"
 #include "oops/interface/ObsSpace.h"
@@ -42,8 +39,8 @@ class ObsDataVector : public util::Printable,
   ObsDataVec_ & obsdatavector() {return *data_;}
   const ObsDataVec_ & obsdatavector() const {return *data_;}
 
-  boost::shared_ptr<ObsDataVec_> obsdatavectorptr() {return data_;}
-  boost::shared_ptr<const ObsDataVec_> obsdatavectorptr() const {return data_;}
+  std::shared_ptr<ObsDataVec_> obsdatavectorptr() {return data_;}
+  std::shared_ptr<const ObsDataVec_> obsdatavectorptr() const {return data_;}
 
   ObsDataVector & operator = (const ObsDataVector &);
 
@@ -56,7 +53,7 @@ class ObsDataVector : public util::Printable,
 
  private:
   void print(std::ostream &) const;
-  boost::shared_ptr<ObsDataVec_> data_;
+  std::shared_ptr<ObsDataVec_> data_;
 };
 
 // -----------------------------------------------------------------------------

@@ -8,12 +8,11 @@
 #ifndef OOPS_BASE_OBSFILTERS_H_
 #define OOPS_BASE_OBSFILTERS_H_
 
+#include <memory>
 #include <set>
-#include <string>
 #include <vector>
 
 #include <boost/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/ObsFilterBase.h"
@@ -40,8 +39,8 @@ class ObsFilters : public util::Printable,
   typedef ObsFilterBase<OBS>      ObsFilterBase_;
   typedef ObsSpace<OBS>           ObsSpace_;
   typedef ObsVector<OBS>          ObsVector_;
-  typedef boost::shared_ptr<ObsFilterBase<OBS> >  ObsFilterPtr_;
-  template <typename DATA> using ObsDataPtr_ = boost::shared_ptr<ObsDataVector<OBS, DATA> >;
+  typedef std::shared_ptr<ObsFilterBase<OBS> >  ObsFilterPtr_;
+  template <typename DATA> using ObsDataPtr_ = std::shared_ptr<ObsDataVector<OBS, DATA> >;
 
  public:
   ObsFilters(const ObsSpace_ &, const eckit::Configuration &,
