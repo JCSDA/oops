@@ -12,10 +12,12 @@
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
 #include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/runs/Variational.h"
+#include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
