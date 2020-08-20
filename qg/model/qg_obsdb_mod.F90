@@ -443,7 +443,7 @@ character(len=50) :: stime
 character(len=1024) :: record
 
 ! Open NetCDF file
-call ncerr(nf90_open(trim(self%filein)//'.nc',nf90_nowrite,ncid))
+call ncerr(nf90_open(trim(self%filein),nf90_nowrite,ncid))
 
 ! Get dimensions ids
 call ncerr(nf90_inq_dimid(ncid,'ngrp',ngrp_id))
@@ -539,7 +539,7 @@ character(len=6) :: igrpchar
 character(len=50) :: stime
 
 ! Create NetCDF file
-call ncerr(nf90_create(trim(self%fileout)//'.nc',or(nf90_clobber,nf90_64bit_offset),ncid))
+call ncerr(nf90_create(trim(self%fileout),or(nf90_clobber,nf90_64bit_offset),ncid))
 
 ! Define dimensions
 call ncerr(nf90_def_dim(ncid,'nstrmax',50,nstrmax_id))

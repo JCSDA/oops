@@ -10,7 +10,7 @@ output variables: [x]
 states:
 - input:
     date: 2010-01-01T09:00:00Z
-    filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT9H
+    filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT9H.nc
   output:
     date: 2010-01-01T09:00:00Z
     datadir: Data

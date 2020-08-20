@@ -6,7 +6,7 @@ dfi:
 forecast length: P7D
 initial condition:
   date: 2010-01-01T00:00:00Z
-  filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D
+  filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D.nc
 model:
   name: QG
   tstep: PT1H

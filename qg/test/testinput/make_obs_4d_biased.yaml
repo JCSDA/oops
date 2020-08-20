@@ -4,7 +4,7 @@ geometry:
   depths: [4500.0, 5500.0]
 initial condition:
   date: 2010-01-01T00:00:00Z
-  filename: Data/truth.fc.2009-12-15T00:00:00Z.P17D
+  filename: Data/truth.fc.2009-12-15T00:00:00Z.P17D.nc
 model:
   name: QG
   tstep: PT1H
@@ -16,7 +16,7 @@ observations:
     obs type: Stream
   obs space:
     obsdataout:
-      obsfile: Data/truth.obs4d_biased
+      obsfile: Data/truth.obs4d_biased.nc
     obs type: Stream
     generate:
       begin: PT3H
@@ -30,7 +30,7 @@ observations:
     obs type: Wind
   obs space:
     obsdataout:
-      obsfile: Data/truth.obs4d_biased
+      obsfile: Data/truth.obs4d_biased.nc
     obs type: Wind
     generate:
       begin: PT6H
@@ -44,7 +44,7 @@ observations:
     obs type: WSpeed
   obs space:
     obsdataout:
-      obsfile: Data/truth.obs4d_biased
+      obsfile: Data/truth.obs4d_biased.nc
     obs type: WSpeed
     generate:
       begin: PT3H

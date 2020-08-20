@@ -9,6 +9,6 @@ geometry:
   ny: 20
   depths: [4500.0, 5500.0]
 background:
-  filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D
+  filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
   date: 2009-12-31T00:00:00Z
 analysis variables: [x]

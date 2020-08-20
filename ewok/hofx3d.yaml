@@ -1,0 +1,9 @@
+window begin: '{% current_cycle + $(window_offset) - $(window_length) %}'
+window length: $(window_length)
+geometry:
+  $(GEOMETRY)
+forecasts:
+  states:
+  - $(BACKGROUND)
+observations:
+  $(OBSERVATIONS)

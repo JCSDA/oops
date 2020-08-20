@@ -79,14 +79,14 @@ if ((typ=='fc').or.(typ=='ens')) then
   call datetime_diff(vdate,rdate,step)
   call duration_to_string(step,sstep)
   lenfn = lenfn+1+len_trim(referencedate)+1+len_trim(sstep)
-  genfilename = trim(prefix)//'.'//trim(referencedate)//'.'// trim(sstep)
+  genfilename = trim(prefix)//'.'//trim(referencedate)//'.'// trim(sstep)//'.nc'
 endif
 
 ! Analysis or increment case
 if ((typ=='an').or.(typ=='in')) then
   call datetime_to_string(vdate,validitydate)
   lenfn = lenfn+1+len_trim(validitydate)
-  genfilename = trim(prefix)//'.'//trim(validitydate)
+  genfilename = trim(prefix)//'.'//trim(validitydate)//'.nc'
 endif
 
 ! Check filename length

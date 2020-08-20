@@ -1,0 +1,4 @@
+covariance model: L95Error
+date: '{{window_begin}}'
+length_scale: 1.0
+standard_deviation: 0.6

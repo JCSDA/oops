@@ -7,15 +7,15 @@ geometry:
 initial condition:
   members:
   - date: 2010-01-01T00:00:00Z
-    filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1D
+    filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1D.nc
   - date: 2010-01-01T00:00:00Z
-    filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1D
+    filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1D.nc
   - date: 2010-01-01T00:00:00Z
-    filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1D
+    filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1D.nc
   - date: 2010-01-01T00:00:00Z
-    filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1D
+    filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1D.nc
   - date: 2010-01-01T00:00:00Z
-    filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1D
+    filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1D.nc
 model:
   name: QG
   tstep: PT1H
@@ -27,25 +27,25 @@ observations:
     obs type: Stream
   obs space:
     obsdatain:
-      obsfile: Data/truth.obs4d_12h
+      obsfile: Data/truth.obs4d_12h.nc
     obsdataout:
-      obsfile: Data/%{member}%.ens_hofx.obs4d_12h
+      obsfile: Data/%{member}%.ens_hofx.obs4d_12h.nc
     obs type: Stream
 - obs operator:
     obs type: Wind
   obs space:
     obsdatain:
-      obsfile: Data/truth.obs4d_12h
+      obsfile: Data/truth.obs4d_12h.nc
     obsdataout:
-      obsfile: Data/%{member}%.ens_hofx.obs4d_12h
+      obsfile: Data/%{member}%.ens_hofx.obs4d_12h.nc
     obs type: Wind
 - obs operator:
     obs type: WSpeed
   obs space:
     obsdatain:
-      obsfile: Data/truth.obs4d_12h
+      obsfile: Data/truth.obs4d_12h.nc
     obsdataout:
-      obsfile: Data/%{member}%.ens_hofx.obs4d_12h
+      obsfile: Data/%{member}%.ens_hofx.obs4d_12h.nc
     obs type: WSpeed
 prints:
   frequency: PT3H

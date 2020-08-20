@@ -5,7 +5,7 @@ cost function:
   analysis variables: [x]
   background:
     date: 2010-01-01T12:00:00Z
-    filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H
+    filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H.nc
   background error:
     covariance model: hybrid
     static:
@@ -25,24 +25,24 @@ cost function:
         vertical_length_scale: 30000.0
       members:
       - date: 2010-01-01T12:00:00Z
-        filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1DT12H
+        filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1DT12H.nc
       - date: 2010-01-01T12:00:00Z
-        filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1DT12H
+        filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1DT12H.nc
       - date: 2010-01-01T12:00:00Z
-        filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1DT12H
+        filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1DT12H.nc
       - date: 2010-01-01T12:00:00Z
-        filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1DT12H
+        filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1DT12H.nc
       - date: 2010-01-01T12:00:00Z
-        filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1DT12H
+        filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1DT12H.nc
     ensemble weight: 0.707
   observations:
   - obs operator:
       obs type: Stream
     obs space:
       obsdatain:
-        obsfile: Data/truth.obs3d
+        obsfile: Data/truth.obs3d.nc
       obsdataout:
-        obsfile: Data/3dvar_hybrid.obs3d
+        obsfile: Data/3dvar_hybrid.obs3d.nc
       obs type: Stream
     obs error:
       covariance model: diagonal
@@ -50,9 +50,9 @@ cost function:
       obs type: Wind
     obs space:
       obsdatain:
-        obsfile: Data/truth.obs3d
+        obsfile: Data/truth.obs3d.nc
       obsdataout:
-        obsfile: Data/3dvar_hybrid.obs3d
+        obsfile: Data/3dvar_hybrid.obs3d.nc
       obs type: Wind
     obs error:
       covariance model: diagonal
@@ -60,9 +60,9 @@ cost function:
       obs type: WSpeed
     obs space:
       obsdatain:
-        obsfile: Data/truth.obs3d
+        obsfile: Data/truth.obs3d.nc
       obsdataout:
-        obsfile: Data/3dvar_hybrid.obs3d
+        obsfile: Data/3dvar_hybrid.obs3d.nc
       obs type: WSpeed
     obs error:
       covariance model: diagonal

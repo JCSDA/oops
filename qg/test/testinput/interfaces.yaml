@@ -58,9 +58,9 @@ observations:
     norm: 5190236838.6347504
   obs space:
     obsdatain:
-      obsfile: Data/truth.obs4d_24h
+      obsfile: Data/truth.obs4d_24h.nc
     obsdataout:
-      obsfile: Data/interface.obs4d_24h
+      obsfile: Data/interface.obs4d_24h.nc
     obs type: Stream
   obs operator:
     obs type: Stream
@@ -82,9 +82,9 @@ observations:
     norm: 1016.3608615365378
   obs space:
     obsdatain:
-      obsfile: Data/truth.obs4d_24h
+      obsfile: Data/truth.obs4d_24h.nc
     obsdataout:
-      obsfile: Data/interface.obs4d_24h
+      obsfile: Data/interface.obs4d_24h.nc
     obs type: Wind
   obs operator:
     obs type: Wind
@@ -106,9 +106,9 @@ observations:
     norm: 1169.499384622432
   obs space:
     obsdatain:
-      obsfile: Data/truth.obs4d_24h
+      obsfile: Data/truth.obs4d_24h.nc
     obsdataout:
-      obsfile: Data/interface.obs4d_24h
+      obsfile: Data/interface.obs4d_24h.nc
     obs type: WSpeed
   obs operator:
     obs type: WSpeed
@@ -120,10 +120,10 @@ observations:
   tolerance: 1.0e-8
 background:
   date: 2009-12-31T00:00:00Z
-  filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D
+  filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
 initial condition:
   date: 2009-12-31T00:00:00Z
-  filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D
+  filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
 state test:
   # interpolation test:
   #   variables: [u, v]
@@ -134,7 +134,7 @@ state test:
     z: [5000, 9000]
   statefile:
     date: 2009-12-31T00:00:00Z
-    filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D
+    filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
   state generate:
     analytic_init: large-vortices
     date: 2009-12-31T00:00:00Z

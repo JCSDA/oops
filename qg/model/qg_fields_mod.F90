@@ -637,7 +637,7 @@ else
   call qg_fields_zero(fld)
 
   ! Open NetCDF file
-  call ncerr(nf90_open(trim(filename)//'.nc',nf90_nowrite,ncid))
+  call ncerr(nf90_open(trim(filename),nf90_nowrite,ncid))
 
   ! Get dimensions ids
   call ncerr(nf90_inq_dimid(ncid,'nx',nx_id))
@@ -767,7 +767,7 @@ call fckit_log%info('qg_fields_write_file: writing '//trim(filename))
 call datetime_to_string(vdate,sdate)
 
 ! Create NetCDF file
-call ncerr(nf90_create(trim(filename)//'.nc',or(nf90_clobber,nf90_64bit_offset),ncid))
+call ncerr(nf90_create(trim(filename),or(nf90_clobber,nf90_64bit_offset),ncid))
 
 ! Define dimensions
 call ncerr(nf90_def_dim(ncid,'nx',fld%geom%nx,nx_id))

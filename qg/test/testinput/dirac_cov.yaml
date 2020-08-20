@@ -14,7 +14,7 @@ geometry:
   depths: [4500.0, 5500.0]
 initial condition:
   date: 2010-01-01T12:00:00Z
-  filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H
+  filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H.nc
 model:
   tstep: PT1H
 output B:

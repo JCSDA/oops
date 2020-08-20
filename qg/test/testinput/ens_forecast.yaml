@@ -3,9 +3,9 @@ ensemble application:
 forecast length: P2D
 members:
   - date: 2009-12-31T00:00:00Z
-    filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D
+    filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
   - date: 2009-12-31T00:00:00Z
-    filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D
+    filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
 model:
   name: QG
   tstep: PT1H

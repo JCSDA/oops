@@ -12,7 +12,7 @@ cost function:
     tstep: PT1H
   background:
     date: 2010-01-01T00:00:00Z
-    filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D
+    filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D.nc
   background error:
     covariance model: QgError
     horizontal_length_scale: 2.2e6
@@ -26,9 +26,9 @@ cost function:
       obs type: Stream
     obs space:
       obsdatain:
-        obsfile: Data/truth.obs4d_biased
+        obsfile: Data/truth.obs4d_biased.nc
       obsdataout:
-        obsfile: Data/4dvar_obs_biased.obs4d_biased
+        obsfile: Data/4dvar_obs_biased.obs4d_biased.nc
       obs type: Stream
     obs bias:
       stream: 0.0
@@ -40,9 +40,9 @@ cost function:
       obs type: Wind
     obs space:
       obsdatain:
-        obsfile: Data/truth.obs4d_biased
+        obsfile: Data/truth.obs4d_biased.nc
       obsdataout:
-        obsfile: Data/4dvar_obs_biased.obs4d_biased
+        obsfile: Data/4dvar_obs_biased.obs4d_biased.nc
       obs type: Wind
     obs bias:
       uwind: 0.0
@@ -54,9 +54,9 @@ cost function:
       obs type: WSpeed
     obs space:
       obsdatain:
-        obsfile: Data/truth.obs4d_biased
+        obsfile: Data/truth.obs4d_biased.nc
       obsdataout:
-        obsfile: Data/4dvar_obs_biased.obs4d_biased
+        obsfile: Data/4dvar_obs_biased.obs4d_biased.nc
       obs type: WSpeed
   constraints:
   - jcdfi:

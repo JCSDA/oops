@@ -14,7 +14,7 @@ cost function:
     tstep: PT1H
   background:
     date: 2010-01-01T09:00:00Z
-    filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT9H
+    filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT9H.nc
   background error:
     covariance model: QgError
     horizontal_length_scale: 2.2e6
@@ -29,9 +29,9 @@ cost function:
       obs type: Stream
     obs space:
       obsdatain:
-        obsfile: Data/truth.obs3d
+        obsfile: Data/truth.obs3d.nc
       obsdataout:
-        obsfile: Data/%{member}%.eda_3dfgat.obs3d
+        obsfile: Data/%{member}%.eda_3dfgat.obs3d.nc
       obs type: Stream
   - obs error:
       covariance model: diagonal
@@ -40,9 +40,9 @@ cost function:
       obs type: Wind
     obs space:
       obsdatain:
-        obsfile: Data/truth.obs3d
+        obsfile: Data/truth.obs3d.nc
       obsdataout:
-        obsfile: Data/%{member}%.eda_3dfgat.obs3d
+        obsfile: Data/%{member}%.eda_3dfgat.obs3d.nc
       obs type: Wind
   - obs error:
       covariance model: diagonal
@@ -51,9 +51,9 @@ cost function:
       obs type: WSpeed
     obs space:
       obsdatain:
-        obsfile: Data/truth.obs3d
+        obsfile: Data/truth.obs3d.nc
       obsdataout:
-        obsfile: Data/%{member}%.eda_3dfgat.obs3d
+        obsfile: Data/%{member}%.eda_3dfgat.obs3d.nc
       obs type: WSpeed
 variational:
   minimizer:

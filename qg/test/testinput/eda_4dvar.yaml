@@ -14,7 +14,7 @@ cost function:
     tstep: PT1H
   background:
     date: 2010-01-01T00:00:00Z
-    filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D
+    filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D.nc
   background error:
     covariance model: QgError
     horizontal_length_scale: 2.2e6
@@ -27,9 +27,9 @@ cost function:
     obs space:
       obs type: Stream
       obsdatain:
-        obsfile: Data/truth.obs4d_24h
+        obsfile: Data/truth.obs4d_24h.nc
       obsdataout:
-        obsfile: Data/%{member}%.eda_4dvar.obs4d_24h
+        obsfile: Data/%{member}%.eda_4dvar.obs4d_24h.nc
     obs error:
       covariance model: diagonal
       random amplitude: 0.4
@@ -38,9 +38,9 @@ cost function:
     obs space:
       obs type: Wind
       obsdatain:
-        obsfile: Data/truth.obs4d_24h
+        obsfile: Data/truth.obs4d_24h.nc
       obsdataout:
-        obsfile: Data/%{member}%.eda_4dvar.obs4d_24h
+        obsfile: Data/%{member}%.eda_4dvar.obs4d_24h.nc
     obs error:
       covariance model: diagonal
       random amplitude: 0.5
@@ -49,9 +49,9 @@ cost function:
     obs space:
       obs type: WSpeed
       obsdatain:
-        obsfile: Data/truth.obs4d_24h
+        obsfile: Data/truth.obs4d_24h.nc
       obsdataout:
-        obsfile: Data/%{member}%.eda_4dvar.obs4d_24h
+        obsfile: Data/%{member}%.eda_4dvar.obs4d_24h.nc
     obs error:
       covariance model: diagonal
       random amplitude: 0.2

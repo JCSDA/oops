@@ -1,0 +1,11 @@
+obs operator:
+  obs type: Stream
+obs space:
+  source: truth
+  obsdatain:
+    obsfile: $(expdir)/{{current_cycle}}/obs.stream.{{current_cycle}}.nc
+  obsdataout:
+    obsfile: $(expdir)/{{current_cycle}}/obs.stream.$(experiment).{{current_cycle}}.nc
+  obs type: Stream
+obs error:
+  covariance model: diagonal

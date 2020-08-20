@@ -9,7 +9,7 @@ cost function:
     depths: [4500.0, 5500.0]
   background:
     date: 2010-01-01T12:00:00Z
-    filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H
+    filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H.nc
   background error:
     covariance model: ensemble
     date: 2010-01-01T12:00:00Z
@@ -21,25 +21,25 @@ cost function:
       vertical_length_scale: 3694.0
     members:
     - date: 2010-01-01T12:00:00Z
-      filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1DT12H
+      filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1DT12H.nc
     - date: 2010-01-01T12:00:00Z
-      filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1DT12H
+      filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1DT12H.nc
     - date: 2010-01-01T12:00:00Z
-      filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1DT12H
+      filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1DT12H.nc
     - date: 2010-01-01T12:00:00Z
-      filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1DT12H
+      filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1DT12H.nc
     - date: 2010-01-01T12:00:00Z
-      filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1DT12H
+      filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1DT12H.nc
     - date: 2010-01-01T12:00:00Z
-      filename: Data/forecast.ens.6.2009-12-31T00:00:00Z.P1DT12H
+      filename: Data/forecast.ens.6.2009-12-31T00:00:00Z.P1DT12H.nc
     - date: 2010-01-01T12:00:00Z
-      filename: Data/forecast.ens.7.2009-12-31T00:00:00Z.P1DT12H
+      filename: Data/forecast.ens.7.2009-12-31T00:00:00Z.P1DT12H.nc
     - date: 2010-01-01T12:00:00Z
-      filename: Data/forecast.ens.8.2009-12-31T00:00:00Z.P1DT12H
+      filename: Data/forecast.ens.8.2009-12-31T00:00:00Z.P1DT12H.nc
     - date: 2010-01-01T12:00:00Z
-      filename: Data/forecast.ens.9.2009-12-31T00:00:00Z.P1DT12H
+      filename: Data/forecast.ens.9.2009-12-31T00:00:00Z.P1DT12H.nc
     - date: 2010-01-01T12:00:00Z
-      filename: Data/forecast.ens.10.2009-12-31T00:00:00Z.P1DT12H
+      filename: Data/forecast.ens.10.2009-12-31T00:00:00Z.P1DT12H.nc
   observations:
   - obs error:
       covariance model: diagonal
@@ -47,9 +47,9 @@ cost function:
       obs type: Stream  
     obs space:
       obsdatain:
-        obsfile: Data/truth.obs3d
+        obsfile: Data/truth.obs3d.nc
       obsdataout:
-        obsfile: Data/3densvar.obs3d
+        obsfile: Data/3densvar.obs3d.nc
       obs type: Stream
   - obs error:
       covariance model: diagonal
@@ -57,9 +57,9 @@ cost function:
       obs type: Wind  
     obs space:
       obsdatain:
-        obsfile: Data/truth.obs3d
+        obsfile: Data/truth.obs3d.nc
       obsdataout:
-        obsfile: Data/3densvar.obs3d
+        obsfile: Data/3densvar.obs3d.nc
       obs type: Wind
   - obs error:
       covariance model: diagonal
@@ -67,9 +67,9 @@ cost function:
       obs type: WSpeed  
     obs space:
       obsdatain:
-        obsfile: Data/truth.obs3d
+        obsfile: Data/truth.obs3d.nc
       obsdataout:
-        obsfile: Data/3densvar.obs3d
+        obsfile: Data/3densvar.obs3d.nc
       obs type: WSpeed
 variational:
   minimizer:

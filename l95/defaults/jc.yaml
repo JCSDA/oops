@@ -1,0 +1,4 @@
+jcdfi:
+  filtered variables: [x]
+  alpha: 100.0
+  cutoff: PT3H
