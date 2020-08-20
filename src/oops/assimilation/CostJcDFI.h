@@ -148,9 +148,9 @@ double CostJcDFI<MODEL, OBS>::finalize() {
 template<typename MODEL, typename OBS>
 std::shared_ptr<PostBaseTLAD<MODEL> >
 CostJcDFI<MODEL, OBS>::initializeTraj(const CtrlVar_ &, const Geometry_ & tlres,
-                                 const eckit::Configuration & innerConf) {
+                                      const eckit::Configuration & innerConf) {
   tlres_.reset(new Geometry_(tlres));
-  tlstep_ = util::Duration(innerConf.getString("linear model.tstep"));
+  tlstep_ = util::Duration(innerConf.getString("linear model.tstep", tstep_.toString()));
   ftlad_.reset(new WeightedDiffTLAD<MODEL>(vars_, vt_, span_, tstep_, *tlres_, *wfct_));
   return ftlad_;
 }
@@ -191,8 +191,7 @@ CostJcDFI<MODEL, OBS>::setupTL(const CtrlInc_ &) const {
 
 template<typename MODEL, typename OBS>
 std::shared_ptr<PostBaseTLAD<MODEL> >
-CostJcDFI<MODEL, OBS>::setupAD(std::shared_ptr<const GeneralizedDepartures> pv,
-                          CtrlInc_ &) const {
+CostJcDFI<MODEL, OBS>::setupAD(std::shared_ptr<const GeneralizedDepartures> pv, CtrlInc_ &) const {
   std::shared_ptr<const Increment_>
     dx = std::dynamic_pointer_cast<const Increment_>(pv);
   ftlad_->setupAD(dx);

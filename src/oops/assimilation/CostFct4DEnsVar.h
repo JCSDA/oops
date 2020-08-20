@@ -22,15 +22,13 @@
 #include "oops/assimilation/CostJcDFI.h"
 #include "oops/assimilation/CostJo.h"
 #include "oops/assimilation/CostTermBase.h"
-#include "oops/base/LinearVariableChangeBase.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/StateInfo.h"
-#include "oops/base/VariableChangeBase.h"
+#include "oops/base/TrajectorySaver.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
-#include "oops/interface/Model.h"
 #include "oops/interface/State.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -56,9 +54,6 @@ template<typename MODEL, typename OBS> class CostFct4DEnsVar : public CostFuncti
   typedef CostFunction<MODEL, OBS>        CostFct_;
   typedef Geometry<MODEL>                 Geometry_;
   typedef State<MODEL>                    State_;
-  typedef Model<MODEL>                    Model_;
-  typedef VariableChangeBase<MODEL>       ChangeVar_;
-  typedef LinearVariableChangeBase<MODEL> ChangeVarTLAD_;
 
  public:
   CostFct4DEnsVar(const eckit::Configuration &, const eckit::mpi::Comm &);
@@ -82,7 +77,8 @@ template<typename MODEL, typename OBS> class CostFct4DEnsVar : public CostFuncti
   CostJo<MODEL, OBS>       * newJo(const eckit::Configuration &) const override;
   CostTermBase<MODEL, OBS> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
   void doLinearize(const Geometry_ &, const eckit::Configuration &,
-                   const CtrlVar_ &, const CtrlVar_ &) override;
+                   const CtrlVar_ &, const CtrlVar_ &,
+                   PostProcessor<State_> &, PostProcessorTLAD<MODEL> &) override;
   const Geometry_ & geometry() const override {return resol_;}
 
   util::Duration windowLength_;
@@ -91,11 +87,8 @@ template<typename MODEL, typename OBS> class CostFct4DEnsVar : public CostFuncti
   util::Duration windowSub_;
   const eckit::mpi::Comm & comm_;
   Geometry_ resol_;
-  Model_ model_;
   unsigned int ncontrol_;
   const Variables ctlvars_;
-  std::unique_ptr<ChangeVar_> an2model_;
-  std::unique_ptr<ChangeVarTLAD_> inc2model_;
 };
 
 // =============================================================================
@@ -105,8 +98,7 @@ CostFct4DEnsVar<MODEL, OBS>::CostFct4DEnsVar(const eckit::Configuration & config
                                              const eckit::mpi::Comm & comm)
   : CostFunction<MODEL, OBS>::CostFunction(config), comm_(comm),
     resol_(eckit::LocalConfiguration(config, "geometry"), comm),
-    model_(resol_, eckit::LocalConfiguration(config, "model")),
-    ctlvars_(config, "analysis variables"), an2model_(), inc2model_()
+    ctlvars_(config, "analysis variables")
 {
   windowLength_ = util::Duration(config.getString("window length"));
   windowBegin_ = util::DateTime(config.getString("window begin"));
@@ -118,8 +110,6 @@ CostFct4DEnsVar<MODEL, OBS>::CostFct4DEnsVar(const eckit::Configuration & config
 
   this->setupTerms(config);
 
-  an2model_.reset(VariableChangeFactory<MODEL>::create(config, resol_));
-
   Log::trace() << "CostFct4DEnsVar constructed" << std::endl;
 }
 
@@ -127,8 +117,8 @@ CostFct4DEnsVar<MODEL, OBS>::CostFct4DEnsVar(const eckit::Configuration & config
 
 template <typename MODEL, typename OBS>
 CostJb4D<MODEL> * CostFct4DEnsVar<MODEL, OBS>::newJb(const eckit::Configuration & jbConf,
-                                                const Geometry_ & resol,
-                                                const CtrlVar_ & xb) const {
+                                                     const Geometry_ & resol,
+                                                     const CtrlVar_ & xb) const {
   return new CostJb4D<MODEL>(jbConf, resol, ctlvars_, xb.state());
 }
 
@@ -143,7 +133,7 @@ CostJo<MODEL, OBS> * CostFct4DEnsVar<MODEL, OBS>::newJo(const eckit::Configurati
 
 template <typename MODEL, typename OBS>
 CostTermBase<MODEL, OBS> * CostFct4DEnsVar<MODEL, OBS>::newJc(const eckit::Configuration & jcConf,
-                                                    const Geometry_ & resol) const {
+                                                              const Geometry_ & resol) const {
   const eckit::LocalConfiguration jcdfi(jcConf, "jcdfi");
   const util::DateTime vt(windowBegin_ + windowLength_/2);
   return new CostJcDFI<MODEL, OBS>(jcdfi, resol, vt, windowLength_, windowSub_);
@@ -152,32 +142,26 @@ CostTermBase<MODEL, OBS> * CostFct4DEnsVar<MODEL, OBS>::newJc(const eckit::Confi
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-void CostFct4DEnsVar<MODEL, OBS>::runNL(CtrlVar_ & xx,
-                                   PostProcessor<State_> & post) const {
-  State_ xm(xx.state()[0].geometry(), model_.variables(), windowBegin_);
-  post.initialize(xm, windowEnd_, windowSub_);
+void CostFct4DEnsVar<MODEL, OBS>::runNL(CtrlVar_ & xx, PostProcessor<State_> & post) const {
+  post.initialize(xx.state()[0], windowEnd_, windowSub_);
   for (unsigned int jsub = 0; jsub <= ncontrol_; ++jsub) {
     util::DateTime now(windowBegin_ + jsub*windowSub_);
     ASSERT(xx.state()[jsub].validTime() == now);
-
-    an2model_->changeVar(xx.state()[jsub], xm);
-    post.process(xm);
+    post.process(xx.state()[jsub]);
   }
-  post.finalize(xm);
+  post.finalize(xx.state()[ncontrol_]);
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
 void CostFct4DEnsVar<MODEL, OBS>::doLinearize(const Geometry_ & resol,
-                                         const eckit::Configuration & innerConf,
-                                         const CtrlVar_ & bg, const CtrlVar_ & fg) {
+                                              const eckit::Configuration & conf,
+                                              const CtrlVar_ &, const CtrlVar_ &,
+                                              PostProcessor<State_> & pp,
+                                              PostProcessorTLAD<MODEL> & pptraj) {
   Log::trace() << "CostFct4DEnsVar::doLinearize start" << std::endl;
-  eckit::LocalConfiguration conf(innerConf, "linear model");
-  inc2model_.reset(LinearVariableChangeFactory<MODEL>::create(bg.state()[0], fg.state()[0],
-                                                              resol, conf));
-  inc2model_->setInputVariables(ctlvars_);
-  inc2model_->setOutputVariables(CostFct_::getTLM().variables());
+  pp.enrollProcessor(new TrajectorySaver<MODEL>(conf, resol, pptraj));
   Log::trace() << "CostFct4DEnsVar::doLinearize done" << std::endl;
 }
 
@@ -185,24 +169,21 @@ void CostFct4DEnsVar<MODEL, OBS>::doLinearize(const Geometry_ & resol,
 
 template <typename MODEL, typename OBS>
 void CostFct4DEnsVar<MODEL, OBS>::runTLM(CtrlInc_ & dx,
-                                    PostProcessorTLAD<MODEL> & cost,
-                                    PostProcessor<Increment_> post,
-                                    const bool) const {
-  Increment_ dxmodel(dx.state()[0].geometry(), CostFct_::getTLM().variables(), windowBegin_);
-
-  cost.initializeTL(dxmodel, windowEnd_, windowSub_);
-  post.initialize(dxmodel, windowEnd_, windowSub_);
+                                         PostProcessorTLAD<MODEL> & cost,
+                                         PostProcessor<Increment_> post,
+                                         const bool) const {
+  cost.initializeTL(dx.state()[0], windowEnd_, windowSub_);
+  post.initialize(dx.state()[0], windowEnd_, windowSub_);
 
   for (unsigned int jsub = 0; jsub <= ncontrol_; ++jsub) {
     util::DateTime now(windowBegin_ + jsub*windowSub_);
     ASSERT(dx.state()[jsub].validTime() == now);
-    inc2model_->multiply(dx.state()[jsub], dxmodel);
 
-    cost.processTL(dxmodel);
-    post.process(dxmodel);
+    cost.processTL(dx.state()[jsub]);
+    post.process(dx.state()[jsub]);
   }
-  cost.finalizeTL(dxmodel);
-  post.finalize(dxmodel);
+  cost.finalizeTL(dx.state()[ncontrol_]);
+  post.finalize(dx.state()[ncontrol_]);
 }
 
 // -----------------------------------------------------------------------------
@@ -222,33 +203,29 @@ void CostFct4DEnsVar<MODEL, OBS>::zeroAD(CtrlInc_ & dx) const {
 
 template <typename MODEL, typename OBS>
 void CostFct4DEnsVar<MODEL, OBS>::runADJ(CtrlInc_ & dx,
-                                    PostProcessorTLAD<MODEL> & cost,
-                                    PostProcessor<Increment_> post,
-                                    const bool) const {
-  Increment_ dxmodel(dx.state()[0].geometry(), CostFct_::getTLM().variables(), windowEnd_);
-
-  post.initialize(dxmodel, windowBegin_, windowSub_);
-  cost.initializeAD(dxmodel, windowBegin_, windowSub_);
+                                         PostProcessorTLAD<MODEL> & cost,
+                                         PostProcessor<Increment_> post,
+                                         const bool) const {
+  post.initialize(dx.state()[ncontrol_], windowBegin_, windowSub_);
+  cost.initializeAD(dx.state()[ncontrol_], windowBegin_, windowSub_);
 
   for (int jsub = ncontrol_; jsub >= 0; --jsub) {
+    cost.processAD(dx.state()[jsub]);
+    post.process(dx.state()[jsub]);
+
     util::DateTime now(windowBegin_ + jsub*windowSub_);
-    dxmodel.zero(now);
-
-    cost.processAD(dxmodel);
-    post.process(dxmodel);
-
     ASSERT(dx.state()[jsub].validTime() == now);
-    inc2model_->multiplyAD(dxmodel, dx.state()[jsub]);
   }
-  cost.finalizeAD(dxmodel);
-  post.finalize(dxmodel);
+
+  cost.finalizeAD(dx.state()[0]);
+  post.finalize(dx.state()[0]);
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
 void CostFct4DEnsVar<MODEL, OBS>::addIncr(CtrlVar_ & xx, const CtrlInc_ & dx,
-                                     PostProcessor<Increment_> &) const {
+                                          PostProcessor<Increment_> &) const {
   for (unsigned jsub = 0; jsub <= ncontrol_; ++jsub) {
     xx.state()[jsub] += dx.state()[jsub];
   }

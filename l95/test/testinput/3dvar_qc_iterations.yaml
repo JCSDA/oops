@@ -4,11 +4,6 @@ cost function:
   window length: PT6H
   geometry:
     resol: 40
-  model:
-    name: L95
-    f: 8.0
-    tstep: PT1H30M
-  variable change: Identity
   analysis variables: [x]
   background:
     date: 2010-01-02T00:00:00Z
@@ -38,10 +33,6 @@ variational:
     gradient norm reduction: 1e-10
     geometry:
       resol: 40
-    linear model:
-      name: identity
-      variable change: Identity
-      tstep: PT0H
     diagnostics:
       departures: ombg
     test: on
@@ -49,10 +40,6 @@ variational:
     gradient norm reduction: 1e-10
     geometry:
       resol: 40
-    linear model:
-      name: identity
-      variable change: Identity
-      tstep: PT0H
     test: on
 final:
   diagnostics:

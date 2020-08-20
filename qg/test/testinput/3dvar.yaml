@@ -7,9 +7,6 @@ cost function:
     nx: 40
     ny: 20
     depths: [4500.0, 5500.0]
-  model:
-    name: QG
-    tstep: PT1H
   background:
     date: 2010-01-01T12:00:00Z
     filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H
@@ -57,12 +54,6 @@ variational:
   - diagnostics:
       departures: ombg
     gradient norm reduction: 1.0e-10
-    linear model:
-      trajectory:
-        tstep: PT1H
-      tstep: PT6H
-      variable change: Identity
-      name: QgIdTLM
     ninner: 10
     geometry:
       nx: 20
@@ -72,12 +63,6 @@ variational:
   - diagnostics:
       departures: ombg
     gradient norm reduction: 1.0e-10
-    linear model:
-      trajectory:
-        tstep: PT1H
-      tstep: PT6H
-      variable change: Identity
-      name: QgIdTLM
     ninner: 10
     geometry:
       nx: 40

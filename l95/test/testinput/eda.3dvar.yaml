@@ -4,13 +4,8 @@ cost function:
   cost type: 3D-Var
   window begin: 2010-01-01T21:00:00Z
   window length: PT6H
-  variable change: Identity
   geometry:
     resol: 40
-  model:
-    f: 8.0
-    name: L95
-    tstep: PT1H30M
   analysis variables: [x]
   background:
     date: 2010-01-02T00:00:00Z
@@ -36,10 +31,6 @@ variational:
       resol: 40
     ninner: 10
     gradient norm reduction: 1e-10
-    linear model:
-      name: identity
-      variable change: Identity
-      tstep: PT0H
     diagnostics:
       departures: ombg
     test: on
@@ -47,10 +38,6 @@ variational:
       resol: 40
     ninner: 10
     gradient norm reduction: 1e-10
-    linear model:
-      name: identity
-      variable change: Identity
-      tstep: PT0H
     test: on
 final:
   diagnostics:

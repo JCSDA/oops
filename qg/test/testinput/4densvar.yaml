@@ -352,21 +352,12 @@ cost function:
     nx: 40
     ny: 20
     depths: [4500.0, 5500.0]
-  model:
-    name: QG
-    tstep: PT1H
 variational:
   minimizer:
     algorithm: DRPLanczos
   iterations:
   - ninner: 10
     gradient norm reduction: 1.0e-10
-    linear model:
-      name: QgTLM
-      trajectory:
-        tstep: PT1H
-      tstep: PT1H
-      variable change: Identity
     geometry:
       nx: 40
       ny: 20
@@ -376,12 +367,6 @@ variational:
     test: on
   - ninner: 10
     gradient norm reduction: 1.0e-10
-    linear model:
-      name: QgTLM
-      trajectory:
-        tstep: PT1H
-      tstep: PT1H
-      variable change: Identity
     geometry:
       nx: 40
       ny: 20

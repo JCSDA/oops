@@ -24,10 +24,12 @@
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/StateInfo.h"
+#include "oops/base/TrajectorySaver.h"
 #include "oops/base/VariableChangeBase.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
+#include "oops/interface/LinearModel.h"
 #include "oops/interface/Model.h"
 #include "oops/interface/State.h"
 #include "oops/util/DateTime.h"
@@ -53,6 +55,7 @@ template<typename MODEL, typename OBS> class CostFct4DVar : public CostFunction<
   typedef Geometry<MODEL>                 Geometry_;
   typedef State<MODEL>                    State_;
   typedef Model<MODEL>                    Model_;
+  typedef LinearModel<MODEL>              LinearModel_;
   typedef VariableChangeBase<MODEL>       VarCha_;
   typedef LinearVariableChangeBase<MODEL> LinVarCha_;
 
@@ -78,7 +81,8 @@ template<typename MODEL, typename OBS> class CostFct4DVar : public CostFunction<
   CostJo<MODEL, OBS>       * newJo(const eckit::Configuration &) const override;
   CostTermBase<MODEL, OBS> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
   void doLinearize(const Geometry_ &, const eckit::Configuration &,
-                   const CtrlVar_ &, const CtrlVar_ &) override;
+                   const CtrlVar_ &, const CtrlVar_ &,
+                   PostProcessor<State_> &, PostProcessorTLAD<MODEL> &) override;
   const Geometry_ & geometry() const override {return resol_;}
 
   util::Duration windowLength_;
@@ -88,6 +92,7 @@ template<typename MODEL, typename OBS> class CostFct4DVar : public CostFunction<
   Geometry_ resol_;
   Model_ model_;
   const Variables ctlvars_;
+  boost::ptr_vector<LinearModel_> tlm_;
   std::unique_ptr<VarCha_> an2model_;
   std::unique_ptr<LinVarCha_> inc2model_;
 };
@@ -100,7 +105,7 @@ CostFct4DVar<MODEL, OBS>::CostFct4DVar(const eckit::Configuration & config,
   : CostFunction<MODEL, OBS>::CostFunction(config), comm_(comm),
     resol_(eckit::LocalConfiguration(config, "geometry"), comm),
     model_(resol_, eckit::LocalConfiguration(config, "model")),
-    ctlvars_(config, "analysis variables"), an2model_(), inc2model_()
+    ctlvars_(config, "analysis variables"), tlm_(), an2model_(), inc2model_()
 {
   Log::trace() << "CostFct4DVar:CostFct4DVar" << std::endl;
   windowLength_ = util::Duration(config.getString("window length"));
@@ -116,8 +121,8 @@ CostFct4DVar<MODEL, OBS>::CostFct4DVar(const eckit::Configuration & config,
 
 template <typename MODEL, typename OBS>
 CostJb3D<MODEL> * CostFct4DVar<MODEL, OBS>::newJb(const eckit::Configuration & jbConf,
-                                             const Geometry_ & resol,
-                                             const CtrlVar_ & xb) const {
+                                                  const Geometry_ & resol,
+                                                  const CtrlVar_ & xb) const {
   ASSERT(xb.state().checkStatesNumber(1));
   return new CostJb3D<MODEL>(jbConf, resol, ctlvars_, windowLength_, xb.state()[0]);
 }
@@ -133,7 +138,7 @@ CostJo<MODEL, OBS> * CostFct4DVar<MODEL, OBS>::newJo(const eckit::Configuration 
 
 template <typename MODEL, typename OBS>
 CostTermBase<MODEL, OBS> * CostFct4DVar<MODEL, OBS>::newJc(const eckit::Configuration & jcConf,
-                                                 const Geometry_ & resol) const {
+                                                           const Geometry_ & resol) const {
   const eckit::LocalConfiguration jcdfi(jcConf, "jcdfi");
   const util::DateTime vt(windowBegin_ + windowLength_/2);
   return new CostJcDFI<MODEL, OBS>(jcdfi, resol, vt, windowLength_);
@@ -156,14 +161,20 @@ void CostFct4DVar<MODEL, OBS>::runNL(CtrlVar_ & xx, PostProcessor<State_> & post
 
 template<typename MODEL, typename OBS>
 void CostFct4DVar<MODEL, OBS>::doLinearize(const Geometry_ & resol,
-                                      const eckit::Configuration & innerConf,
-                                      const CtrlVar_ & bg, const CtrlVar_ & fg) {
+                                           const eckit::Configuration & innerConf,
+                                           const CtrlVar_ & bg, const CtrlVar_ & fg,
+                                           PostProcessor<State_> & pp,
+                                           PostProcessorTLAD<MODEL> & pptraj) {
   Log::trace() << "CostFct4DVar::doLinearize start" << std::endl;
   eckit::LocalConfiguration conf(innerConf, "linear model");
+// Setup linear model (and trajectory)
+  tlm_.clear();   // YT: Should release at the end and should be inside quadratic J object
+  pp.enrollProcessor(new TrajectorySaver<MODEL>(conf, resol, fg.modVar(), tlm_, pptraj));
+
+// Setup change of variables
   inc2model_.reset(LinearVariableChangeFactory<MODEL>::create(bg.state()[0], fg.state()[0],
-                                                             resol, conf));
+                                                              resol, conf));
   inc2model_->setInputVariables(ctlvars_);
-  inc2model_->setOutputVariables(CostFct_::getTLM().variables());
   Log::trace() << "CostFct4DVar::doLinearize done" << std::endl;
 }
 
@@ -171,13 +182,15 @@ void CostFct4DVar<MODEL, OBS>::doLinearize(const Geometry_ & resol,
 
 template <typename MODEL, typename OBS>
 void CostFct4DVar<MODEL, OBS>::runTLM(CtrlInc_ & dx,
-                                 PostProcessorTLAD<MODEL> & cost,
-                                 PostProcessor<Increment_> post,
-                                 const bool idModel) const {
+                                      PostProcessorTLAD<MODEL> & cost,
+                                      PostProcessor<Increment_> post,
+                                      const bool idModel) const {
+  ASSERT(tlm_.size() == 1);
   ASSERT(dx.state()[0].validTime() == windowBegin_);
-  Increment_ dxmodel(dx.state()[0].geometry(), CostFct_::getTLM().variables(), windowBegin_);
+  Increment_ dxmodel(dx.state()[0].geometry(), tlm_[0].variables(), windowBegin_);
+  inc2model_->setOutputVariables(tlm_[0].variables());
   inc2model_->multiply(dx.state()[0], dxmodel);
-  CostFct_::getTLM().forecastTL(dxmodel, dx.modVar(), windowLength_, post, cost, idModel);
+  tlm_[0].forecastTL(dxmodel, dx.modVar(), windowLength_, post, cost, idModel);
   inc2model_->multiplyInverse(dxmodel, dx.state()[0]);
   ASSERT(dx.state()[0].validTime() == windowEnd_);
 }
@@ -195,13 +208,15 @@ void CostFct4DVar<MODEL, OBS>::zeroAD(CtrlInc_ & dx) const {
 
 template <typename MODEL, typename OBS>
 void CostFct4DVar<MODEL, OBS>::runADJ(CtrlInc_ & dx,
-                                 PostProcessorTLAD<MODEL> & cost,
-                                 PostProcessor<Increment_> post,
-                                 const bool idModel) const {
+                                      PostProcessorTLAD<MODEL> & cost,
+                                      PostProcessor<Increment_> post,
+                                      const bool idModel) const {
+  ASSERT(tlm_.size() == 1);
   ASSERT(dx.state()[0].validTime() == windowEnd_);
-  Increment_ dxmodel(dx.state()[0].geometry(), CostFct_::getTLM().variables(), windowEnd_);
+  Increment_ dxmodel(dx.state()[0].geometry(), tlm_[0].variables(), windowEnd_);
+  inc2model_->setOutputVariables(tlm_[0].variables());
   inc2model_->multiplyInverseAD(dx.state()[0], dxmodel);
-  CostFct_::getTLM().forecastAD(dxmodel, dx.modVar(), windowLength_, post, cost, idModel);
+  tlm_[0].forecastAD(dxmodel, dx.modVar(), windowLength_, post, cost, idModel);
   inc2model_->multiplyAD(dxmodel, dx.state()[0]);
   ASSERT(dx.state()[0].validTime() == windowBegin_);
 }
@@ -210,7 +225,7 @@ void CostFct4DVar<MODEL, OBS>::runADJ(CtrlInc_ & dx,
 
 template<typename MODEL, typename OBS>
 void CostFct4DVar<MODEL, OBS>::addIncr(CtrlVar_ & xx, const CtrlInc_ & dx,
-                                  PostProcessor<Increment_> &) const {
+                                       PostProcessor<Increment_> &) const {
   ASSERT(xx.state().checkStatesNumber(1));
   xx.state()[0] += dx.state()[0];
 }

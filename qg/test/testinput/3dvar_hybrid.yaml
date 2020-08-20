@@ -70,9 +70,6 @@ cost function:
     nx: 40
     ny: 20
     depths: [4500.0, 5500.0]
-  model:
-    name: QG
-    tstep: PT1H
 variational:
   minimizer:
     algorithm: DRIPCG
@@ -83,12 +80,6 @@ variational:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
-    linear model:
-      name: QgIdTLM
-      trajectory:
-        tstep: PT1H
-      tstep: PT6H
-      variable change: Identity
     diagnostics:
       departures: ombg
     test: on
@@ -98,12 +89,6 @@ variational:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
-    linear model:
-      name: QgIdTLM
-      trajectory:
-        tstep: PT1H
-      tstep: PT6H
-      variable change: Identity
     diagnostics:
       departures: ombg
     test: on

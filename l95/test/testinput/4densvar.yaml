@@ -6,10 +6,6 @@ cost function:
   analysis variables: [x]
   geometry:
     resol: 40
-  model:
-    name: L95
-    f: 8.0
-    tstep: PT1H30M
   observations:
   - obs error:
       covariance model: diagonal
@@ -233,7 +229,6 @@ cost function:
         filename: Data/test.ens.10.2010-01-01T00:00:00Z.PT13H30M
       - date: '2010-01-01T15:00:00Z'
         filename: Data/test.ens.10.2010-01-01T00:00:00Z.PT15H
-  variable change: Identity
   constraints:
   - jcdfi:
       alpha: 1000.0
@@ -247,13 +242,6 @@ variational:
     gradient norm reduction: 1e-10
     geometry:
       resol: 40
-    linear model:
-      name: L95TLM
-      trajectory:
-        f: 8.0
-        tstep: PT1H30M
-      tstep: PT1H30M
-      variable change: Identity
     diagnostics:
       departures: ombg
     test: on
@@ -261,13 +249,6 @@ variational:
     gradient norm reduction: 1e-10
     geometry:
       resol: 40
-    linear model:
-      name: L95TLM
-      trajectory:
-        f: 8.0
-        tstep: PT1H30M
-      tstep: PT1H30M
-      variable change: Identity
     test: on
 final:
   diagnostics:
