@@ -1,9 +1,9 @@
 /*
- * (C) Copyright 2009-2016 ECMWF.
- * 
+ * (C) Copyright 2009-2020 ECMWF.
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -12,9 +12,41 @@
 
 #include <stdint.h>
 #include <limits>
+#include <sstream>
+
+#include <boost/lexical_cast.hpp>
 
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
+
+
+// -----------------------------------------------------------------------------
+
+void failBadFormat(const std::string& str) {
+  std::string message = "Badly formatted date: ";
+  message.append(str);
+  ABORT(message);
+}
+
+
+// -----------------------------------------------------------------------------
+
+int eatChars(std::istream & is, int nchars) {
+  // consume nchars characters from the stream and interpret as an integer
+  if (nchars < 0) ABORT("Cannot read a negative number of characters.");
+  std::string str((size_t) nchars, '\0');
+  is.get(&str[0], nchars+1);  // nchars+1 because istream.get reads (count-1) chars.
+
+  int ret = 0;
+  try {
+    ret = std::stoi(str);
+  }
+  catch (...) {
+    failBadFormat(str);
+  }
+  return ret;
+}
+
 
 /// Non-member functions for manipulating date and time
 
@@ -141,6 +173,58 @@ bool validYYYYMMDD(const int year, const int month, const int day) {
   }
 
   return good;
+}
+
+
+// -----------------------------------------------------------------------------
+/*! Set year, month, day, hour, minute and second from an ISO 8601 formatted string
+ *  \param str ISO 8601 formatted string
+ *  \param year
+ *  \param month
+ *  \param day
+ *  \param hour
+ *  \param minute
+ *  \param second
+ */
+void stringToYYYYMMDDhhmmss(const std::string & str,
+                            int & year, int & month, int & day,
+                            int & hour, int & minute, int & second) {
+  std::istringstream datestream(str);
+
+  year = eatChars(datestream, 4);
+
+  bool dashes = (datestream.peek() == '-');
+  if (dashes) datestream.get();
+
+  month = eatChars(datestream, 2);
+  if (dashes) {
+    char c = datestream.get();
+    if (c != '-') {failBadFormat(str);}
+  }
+
+  day = eatChars(datestream, 2);
+
+  char c = datestream.get();
+  if (c != 'T') {failBadFormat(str);}
+
+  hour = eatChars(datestream, 2);
+
+  bool colons = (datestream.peek() == ':');
+  if (colons) datestream.get();
+
+  minute = eatChars(datestream, 2);
+  if (colons) {
+    char c = datestream.get();
+    if (c != ':') {failBadFormat(str);}
+  }
+
+  second = eatChars(datestream, 2);
+
+  c = datestream.get();
+  if (c != 'Z') {failBadFormat(str);}
+
+  datestream.peek();
+  if (!datestream.eof()) {failBadFormat(str);}
 }
 
 // -----------------------------------------------------------------------------

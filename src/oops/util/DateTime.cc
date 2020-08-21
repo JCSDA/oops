@@ -18,7 +18,6 @@
 #include <limits>
 #include <sstream>
 #include <string>
-#include <boost/lexical_cast.hpp>
 
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/dateFunctions.h"
@@ -60,79 +59,11 @@ void DateTime::set(const std::string & str) {
   int hour;
   int minute;
   int second;
-  stringToYYYYMMDDhhmmss(str, year, month, day, hour, minute, second);
+  df::stringToYYYYMMDDhhmmss(str, year, month, day, hour, minute, second);
   date_ = df::dateToJulian(year, month, day);
   time_ = df::hmsToSeconds(hour, minute, second);
 }
 
-// -----------------------------------------------------------------------------
-
-void DateTime::stringToYYYYMMDDhhmmss(const std::string & str,
-                              int & year, int & month, int & day,
-                              int & hour, int & minute, int & second) const {
-  std::istringstream datestream(str);
-
-  year = eatChars(datestream, 4);
-
-  bool dashes = (datestream.peek() == '-');
-  if (dashes) datestream.get();
-
-  month = eatChars(datestream, 2);
-  if (dashes) {
-    char c = datestream.get();
-    if (c != '-') {failBadFormat(str);}
-  }
-
-  day = eatChars(datestream, 2);
-
-  char c = datestream.get();
-  if (c != 'T') {failBadFormat(str);}
-
-  hour = eatChars(datestream, 2);
-
-  bool colons = (datestream.peek() == ':');
-  if (colons) datestream.get();
-
-  minute = eatChars(datestream, 2);
-  if (colons) {
-    char c = datestream.get();
-    if (c != ':') {failBadFormat(str);}
-  }
-
-  second = eatChars(datestream, 2);
-
-  c = datestream.get();
-  if (c != 'Z') {failBadFormat(str);}
-
-  datestream.peek();
-  if (!datestream.eof()) {failBadFormat(str);}
-}
-
-// -----------------------------------------------------------------------------
-
-int DateTime::eatChars(std::istream & is, int nchars) const {
-  // consume nchars characters from the stream and interpret as an integer
-  if (nchars < 0) ABORT("Cannot read a negative number of characters.");
-  std::string str((size_t) nchars, '\0');
-  is.get(&str[0], nchars+1);  // nchars+1 because istream.get reads (count-1) chars.
-
-  int ret = 0;
-  try {
-    ret = boost::lexical_cast<int>(str);
-  }
-  catch (boost::bad_lexical_cast&) {
-    failBadFormat(str);
-  }
-  return ret;
-}
-
-// -----------------------------------------------------------------------------
-
-void DateTime::failBadFormat(const std::string& str) const {
-  std::string message = "Badly formatted date: ";
-  message.append(str);
-  ABORT(message);
-}
 
 // -----------------------------------------------------------------------------
 

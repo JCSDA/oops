@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2009-2020 ECMWF.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -89,12 +89,6 @@ class DateTime {
 /// Set the time from an ISO 8601 format string: ${date}T${time}Z
 /// where date is YYYYMMDD or YYYY-MM-DD and time is hhmmss or hh:mm:ss
   void set(const std::string &);
-
-  void stringToYYYYMMDDhhmmss(const std::string & str,
-                              int & year, int & month, int & day,
-                              int & hour, int & minute, int & second) const;
-  int eatChars(std::istream &, int) const;
-  void failBadFormat(const std::string&) const;
 
   void addSeconds(const int64_t &);
   void failIfUnset() const;

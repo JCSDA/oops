@@ -238,6 +238,8 @@ oops/util/dateFunctions.h
 oops/util/datetime_f.cc
 oops/util/datetime_f.h
 oops/util/datetime_mod.F90
+oops/util/PartialDateTime.cc
+oops/util/PartialDateTime.h
 oops/util/DateTime.cc
 oops/util/DateTime.h
 oops/util/datetime.intfb.h
@@ -499,6 +501,10 @@ ecbuild_add_test( TARGET  test_util_isanypointinvolumeinterior
                   SOURCES test/util/IsAnyPointInVolumeInterior.cc
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_partialdatetime
+                  SOURCES test/util/PartialDateTime.cc
+                  LIBS    oops eckit )
 
 ecbuild_add_test( TARGET  test_util_datetime
                   SOURCES test/util/DateTime.cc

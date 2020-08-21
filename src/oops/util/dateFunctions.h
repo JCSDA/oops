@@ -12,6 +12,8 @@
 #define OOPS_UTIL_DATEFUNCTIONS_H_
 
 #include <stdint.h>
+#include <string>
+
 
 namespace util {
   /// Namespace for non-member date-handling functions
@@ -30,6 +32,10 @@ namespace util {
     bool validHhmmss(const int hour, const int minute, const int second);
 
     bool validYYYYMMDD(const int year, const int month, const int day);
+
+    void stringToYYYYMMDDhhmmss(const std::string & str,
+                                int & year, int & month, int & day,
+                                int & hour, int & minute, int & second);
 
   }  // namespace datefunctions
 }  // namespace util
