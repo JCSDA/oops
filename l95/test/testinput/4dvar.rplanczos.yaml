@@ -22,7 +22,7 @@ cost function:
       covariance model: diagonal
     obs space:
       obsdatain:  Data/l95.truth4d.2010-01-02T00:00:00Z.obt
-      obsdataout: Data/l95.4dvar.rpcg.2010-01-02T00:00:00Z.obt
+      obsdataout: Data/l95.4dvar.rplanczos.2010-01-02T00:00:00Z.obt
     obs operator: {}
   constraints:
   - jcdfi:

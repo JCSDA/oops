@@ -13,41 +13,10 @@ cost function:
     date: 2010-01-01T03:00:00Z
     filename: Data/test.fc.2010-01-01T00:00:00Z.PT3H
   background error:
-    covariance model: hybrid
-    ensemble:
-      covariance model: ensemble
-      localization:
-        localization method: L95
-        length_scale: 1.0
-      date: 2010-01-01T03:00:00Z
-      members:
-      - date: 2010-01-01T03:00:00Z
-        filename: Data/test.ens.1.2010-01-01T00:00:00Z.PT3H
-      - date: 2010-01-01T03:00:00Z
-        filename: Data/test.ens.2.2010-01-01T00:00:00Z.PT3H
-      - date: 2010-01-01T03:00:00Z
-        filename: Data/test.ens.3.2010-01-01T00:00:00Z.PT3H
-      - date: 2010-01-01T03:00:00Z
-        filename: Data/test.ens.4.2010-01-01T00:00:00Z.PT3H
-      - date: 2010-01-01T03:00:00Z
-        filename: Data/test.ens.5.2010-01-01T00:00:00Z.PT3H
-      - date: 2010-01-01T03:00:00Z
-        filename: Data/test.ens.6.2010-01-01T00:00:00Z.PT3H
-      - date: 2010-01-01T03:00:00Z
-        filename: Data/test.ens.7.2010-01-01T00:00:00Z.PT3H
-      - date: 2010-01-01T03:00:00Z
-        filename: Data/test.ens.8.2010-01-01T00:00:00Z.PT3H
-      - date: 2010-01-01T03:00:00Z
-        filename: Data/test.ens.9.2010-01-01T00:00:00Z.PT3H
-      - date: 2010-01-01T03:00:00Z
-        filename: Data/test.ens.10.2010-01-01T00:00:00Z.PT3H
-    static:
-      covariance model: L95Error
-      date: 2010-01-01T03:00:00Z
-      length_scale: 1.0
-      standard_deviation: 0.6
-    ensemble weight: 0.4
-    static weight: 0.6
+    covariance model: L95Error
+    date: 2010-01-01T03:00:00Z
+    length_scale: 1.0
+    standard_deviation: 0.6
   model aux control:
     bias: 0.0
   model aux error:
@@ -56,7 +25,7 @@ cost function:
   - obs operator: {}
     obs space:
       obsdatain: Data/l95.biased.2010-01-02T00:00:00Z.obt
-      obsdataout: Data/l95.4dvar.allbias.2010-01-02T00:00:00Z.obt
+      obsdataout: Data/l95.4dvar.allbiases.2010-01-02T00:00:00Z.obt
     obs error:
       covariance model: diagonal
     obs bias:

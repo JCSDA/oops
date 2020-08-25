@@ -44,7 +44,7 @@ cost function:
       covariance model: diagonal
     obs space:
       obsdatain:  Data/l95.truth4d.2010-01-02T00:00:00Z.obt
-      obsdataout: Data/l95.4dhybrid.2010-01-02T00:00:00Z.obt
+      obsdataout: Data/l95.4dvar.alpha.2010-01-02T00:00:00Z.obt
     obs operator: {}
 variational:
   minimizer:

@@ -5,6 +5,7 @@ list( APPEND qg_testinput
   testinput/3dvar_hybrid.yaml
   testinput/3dfgat.yaml
   testinput/4densvar.yaml
+  testinput/4densvar_hybrid.yaml
   testinput/4dvar_dripcg.yaml
   testinput/4dvar_drpcg_lmp.yaml
   testinput/4dvar_drpfom.yaml
@@ -58,6 +59,7 @@ list( APPEND qg_testoutput
   testoutput/3dvar_hybrid.test
   testoutput/3dfgat.test
   testoutput/4densvar.test
+  testoutput/4densvar_hybrid.test
   testoutput/4dvar_dripcg.test
   testoutput/4dvar_drpcg_lmp.test
   testoutput/4dvar_drpfom.test
@@ -551,6 +553,13 @@ oops_add_test( TESTNAME 4densvar
                MODELNAME qg
                OMP 2
                YAMLNAME testinput/4densvar.yaml
+               EXENAME  qg_4dvar.x
+               TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_4d_12h )
+
+oops_add_test( TESTNAME 4densvar_hybrid
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/4densvar_hybrid.yaml
                EXENAME  qg_4dvar.x
                TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_4d_12h )
 

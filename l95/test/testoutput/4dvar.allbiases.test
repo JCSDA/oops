@@ -2,23 +2,23 @@ Test     : CostJb   : Nonlinear Jb = 0
 Test     : CostJo   : Nonlinear Jo(Lorenz 95) = 294.698, nobs = 160, Jo/n = 1.84186, err = 0.4
 Test     : CostJcDFI: Nonlinear Jc = 0.338917
 Test     : CostFunction: Nonlinear J = 295.037
-Test     : DRPLanczosMinimizer: reduction in residual norm = 0.00019037
+Test     : DRPLanczosMinimizer: reduction in residual norm = 9.41823e-05
 Test     : CostFunction::addIncrement: Analysis: 
 Test     :  Valid time: 2010-01-01T03:00:00Z
-Test     :  Min=7.65316, Max=8.69872, Average=7.98899
-Test     : ModelBias = 0.356145
-Test     : ObsBias = 0.597716
-Test     : CostJb   : Nonlinear Jb = 2.3711
-Test     : CostJo   : Nonlinear Jo(Lorenz 95) = 0.66566, nobs = 160, Jo/n = 0.00416037, err = 0.4
-Test     : CostJcDFI: Nonlinear Jc = 0.360284
-Test     : CostFunction: Nonlinear J = 3.39704
-Test     : DRPLanczosMinimizer: reduction in residual norm = 0.0118398
+Test     :  Min=7.66146, Max=8.65431, Average=7.99961
+Test     : ModelBias = 0.351503
+Test     : ObsBias = 0.5881
+Test     : CostJb   : Nonlinear Jb = 2.37634
+Test     : CostJo   : Nonlinear Jo(Lorenz 95) = 0.820597, nobs = 160, Jo/n = 0.00512873, err = 0.4
+Test     : CostJcDFI: Nonlinear Jc = 0.365469
+Test     : CostFunction: Nonlinear J = 3.5624
+Test     : DRPLanczosMinimizer: reduction in residual norm = 0.012503
 Test     : CostFunction::addIncrement: Analysis: 
 Test     :  Valid time: 2010-01-01T03:00:00Z
-Test     :  Min=7.65676, Max=8.71418, Average=7.98899
-Test     : ModelBias = 0.280414
-Test     : ObsBias = 0.599605
-Test     : CostJb   : Nonlinear Jb = 2.40735
-Test     : CostJo   : Nonlinear Jo(Lorenz 95) = 0.402556, nobs = 160, Jo/n = 0.00251598, err = 0.4
-Test     : CostJcDFI: Nonlinear Jc = 0.357821
-Test     : CostFunction: Nonlinear J = 3.16773
+Test     :  Min=7.66624, Max=8.66691, Average=7.99865
+Test     : ModelBias = 0.276465
+Test     : ObsBias = 0.590795
+Test     : CostJb   : Nonlinear Jb = 2.44253
+Test     : CostJo   : Nonlinear Jo(Lorenz 95) = 0.525164, nobs = 160, Jo/n = 0.00328227, err = 0.4
+Test     : CostJcDFI: Nonlinear Jc = 0.360309
+Test     : CostFunction: Nonlinear J = 3.328

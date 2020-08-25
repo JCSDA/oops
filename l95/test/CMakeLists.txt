@@ -6,6 +6,10 @@ list( APPEND l95_test_input
   testinput/3dvar_qc_obserr.yaml
   testinput/3dvar_qc_iterations.yaml
   testinput/3dfgat.yaml
+  testinput/4densvar.yaml
+  testinput/4densvar.hybrid.yaml
+  testinput/4dforcing.yaml
+  testinput/4dsaddlepoint.yaml
   testinput/4dvar.alpha.yaml
   testinput/4dvar.drgmresr.yaml
   testinput/4dvar.dripcg.yaml
@@ -15,6 +19,7 @@ list( APPEND l95_test_input
   testinput/4dvar.drplanczos.yaml
   testinput/4dvar.drplanclmp.yaml
   testinput/4dvar.gmresr.yaml
+  testinput/4dvar.hybrid.yaml
   testinput/4dvar.ipcg.yaml
   testinput/4dvar.pcg.yaml
   testinput/4dvar.planczos.yaml
@@ -23,10 +28,6 @@ list( APPEND l95_test_input
   testinput/4dvar.modbias.yaml
   testinput/4dvar.obsbias.yaml
   testinput/4dvar.allbiases.yaml
-  testinput/4dforcing.yaml
-  testinput/4dsaddlepoint.yaml
-  testinput/4dhybrid.yaml
-  testinput/4densvar.yaml
   testinput/diffstates.yaml
   testinput/eda.3dfgat.yaml
   testinput/eda.3dvar.yaml
@@ -66,8 +67,8 @@ list( APPEND l95_testoutput
   testoutput/3dvar_qc_iterations.test
   testoutput/3dfgat.test
   testoutput/4densvar.test
+  testoutput/4densvar.hybrid.test
   testoutput/4dforcing.test
-  testoutput/4dhybrid.test
   testoutput/4dsaddlepoint.test
   testoutput/4dvar.alpha.test
   testoutput/4dvar.drgmresr.test
@@ -78,6 +79,7 @@ list( APPEND l95_testoutput
   testoutput/4dvar.drplanclmp.test
   testoutput/4dvar.drplanczos.test
   testoutput/4dvar.gmresr.test
+  testoutput/4dvar.hybrid.test
   testoutput/4dvar.ipcg.test
   testoutput/4dvar.modbias.test
   testoutput/4dvar.obsbias.test
@@ -617,9 +619,9 @@ oops_add_test( TESTNAME 4dvar.alpha
                EXENAME l95_4dvar.x
                TEST_DEPENDS test_l95_forecast test_l95_makeob4d test_l95_genenspert)
 
-oops_add_test( TESTNAME 4dhybrid
+oops_add_test( TESTNAME 4dvar.hybrid
                MODELNAME l95
-               YAMLNAME testinput/4dhybrid.yaml
+               YAMLNAME testinput/4dvar.hybrid.yaml
                EXENAME l95_4dvar.x
                TEST_DEPENDS test_l95_forecast test_l95_makeob4d test_l95_genenspert )
 
@@ -628,6 +630,12 @@ oops_add_test( TESTNAME 4densvar
                YAMLNAME testinput/4densvar.yaml
                EXENAME l95_4dvar.x
                TEST_DEPENDS test_l95_forecast test_l95_makeob4d12h test_l95_genenspert )
+
+oops_add_test( TESTNAME 4densvar.hybrid
+               MODELNAME l95
+               YAMLNAME testinput/4densvar.hybrid.yaml
+               EXENAME l95_4dvar.x
+               TEST_DEPENDS test_l95_forecast test_l95_makeob4d test_l95_genenspert )
 
 
 #####################################################################

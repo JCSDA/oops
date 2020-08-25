@@ -94,6 +94,7 @@ oops/base/GeoVaLsWriter.h
 oops/base/LocalIncrement.cc
 oops/base/LocalIncrement.h
 oops/base/HybridCovariance.h
+oops/base/HybridCovariance4D.h
 oops/base/IdentityMatrix.h
 oops/base/IncrementEnsemble.h
 oops/base/InterpolatorBase.h
