@@ -417,7 +417,7 @@ oops_add_test( TESTNAME ens_variance_inflation_field
                OMP 2
                YAMLNAME testinput/ens_variance_inflation_field.yaml
                EXENAME  qg_ens_variance.x
-               TEST_DEPENDS test_qg_gen_ens_pert_B uniform_field )
+               TEST_DEPENDS test_qg_gen_ens_pert_B test_qg_uniform_field )
 
 oops_add_test( TESTNAME ens_variance_inflation_value
                MODELNAME qg
