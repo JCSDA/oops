@@ -57,5 +57,6 @@ observations:
   obs filters:
   - filter: GOMsaver
     filename: Data/truth.obs4d_24h.wspeed.gom
+make obs: true
 prints:
   frequency: PT3H

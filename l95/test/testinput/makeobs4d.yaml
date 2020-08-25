@@ -22,3 +22,4 @@ observations:
   obs filters:
   - filter: GOMsaver
     filename: Data/l95.gom
+make obs: true

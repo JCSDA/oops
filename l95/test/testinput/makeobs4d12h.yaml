@@ -19,3 +19,4 @@ observations:
       obs_error: 0.4
       obs_frequency: PT1H30M
   obs operator: {}
+make obs: true

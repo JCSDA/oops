@@ -22,10 +22,6 @@ ecbuild_add_executable( TARGET  l95_letkf.x
                         SOURCES LETKF.cc
                         LIBS    lorenz95)
 
-ecbuild_add_executable( TARGET  l95_makeobs.x
-                        SOURCES MakeObs.cc
-                        LIBS    lorenz95 )
-
 ecbuild_add_executable( TARGET  l95_hofx.x
                         SOURCES HofX.cc
                         LIBS    lorenz95 )

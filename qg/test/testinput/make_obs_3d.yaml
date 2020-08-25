@@ -48,3 +48,4 @@ observations:
       obs_density: 100
       obs_error: 12.0
       obs_period: PT2H
+make obs: true

@@ -136,7 +136,7 @@ oops_add_test( TESTNAME make_obs_4d_24h
                MODELNAME qg
                OMP 2
                YAMLNAME testinput/make_obs_4d_24h.yaml
-               EXENAME  qg_make_obs.x
+               EXENAME  qg_hofx.x
                TEST_DEPENDS test_qg_truth )
 
 
@@ -335,21 +335,21 @@ oops_add_test( TESTNAME make_obs_3d
                MODELNAME qg
                OMP 2
                YAMLNAME testinput/make_obs_3d.yaml
-               EXENAME  qg_make_obs.x
+               EXENAME  qg_hofx.x
                TEST_DEPENDS test_qg_truth )
 
 oops_add_test( TESTNAME make_obs_4d_12h
                MODELNAME qg
                OMP 2
                YAMLNAME testinput/make_obs_4d_12h.yaml
-               EXENAME  qg_make_obs.x
+               EXENAME  qg_hofx.x
                TEST_DEPENDS test_qg_truth )
 
 oops_add_test( TESTNAME make_obs_4d_biased
                MODELNAME qg
                OMP 2
                YAMLNAME testinput/make_obs_4d_biased.yaml
-               EXENAME  qg_make_obs.x
+               EXENAME  qg_hofx.x
                TEST_DEPENDS test_qg_truth )
 
 oops_add_test( TESTNAME hofx

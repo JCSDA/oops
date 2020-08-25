@@ -48,5 +48,6 @@ observations:
       obs_density: 50
       obs_error: 12.0
       obs_period: PT2H
+make obs: true
 prints:
   frequency: PT3H

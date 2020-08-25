@@ -46,6 +46,7 @@ list( APPEND l95_test_input
   testinput/makeobs4d.yaml
   testinput/makeobs4d12h.yaml
   testinput/makeobsbias.yaml
+  testinput/makeobspert.yaml
   testinput/pseudomodel.yaml
   testinput/test.yaml
   testinput/truth.yaml
@@ -99,6 +100,7 @@ list( APPEND l95_testoutput
   testoutput/makeobs4d.test
   testoutput/makeobs4d12h.test
   testoutput/makeobsbias.test
+  testoutput/makeobspert.test
   testoutput/truth.test
   testoutput/CTestCostData.txt.test
 )
@@ -222,7 +224,7 @@ oops_add_test( TESTNAME truth
 oops_add_test( TESTNAME makeobs4d
                MODELNAME l95
                YAMLNAME testinput/makeobs4d.yaml
-               EXENAME l95_makeobs.x
+               EXENAME l95_hofx.x
                TEST_DEPENDS test_l95_truth)
 
 
@@ -408,20 +410,26 @@ oops_add_test( TESTNAME forecast_identitymodel
 oops_add_test( TESTNAME makeobs3d
                MODELNAME l95
                YAMLNAME testinput/makeobs3d.yaml
-               EXENAME l95_makeobs.x
+               EXENAME l95_hofx.x
                TEST_DEPENDS test_l95_truth ) 
 
 oops_add_test( TESTNAME makeobsbias
                MODELNAME l95
                YAMLNAME testinput/makeobsbias.yaml
-               EXENAME l95_makeobs.x
+               EXENAME l95_hofx.x
                TEST_DEPENDS test_l95_truth ) 
 
 oops_add_test( TESTNAME makeobs4d12h
                MODELNAME l95
                YAMLNAME testinput/makeobs4d12h.yaml
-               EXENAME l95_makeobs.x
+               EXENAME l95_hofx.x
                TEST_DEPENDS test_l95_truth ) 
+
+oops_add_test( TESTNAME makeobspert
+               MODELNAME l95
+               YAMLNAME testinput/makeobspert.yaml
+               EXENAME l95_hofx.x
+               TEST_DEPENDS test_l95_truth )
 
 oops_add_test( TESTNAME hofx
                MODELNAME l95

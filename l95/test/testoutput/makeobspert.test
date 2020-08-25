@@ -7,3 +7,6 @@ Test     :  Min=6.56213, Max=9.58572, Average=8.00692
 Test     : H(x): 
 Test     : Lorenz 95 nobs= 160 Min=6.55895, Max=9.58572, Average=8.01323
 Test     : End H(x)
+Test     : Perturbed H(x): 
+Test     : Lorenz 95 nobs= 160 Min=6.26715, Max=9.41343, Average=8.04793
+Test     : End Perturbed H(x)

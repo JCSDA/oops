@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2020-2020 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -12,15 +13,17 @@
 #define OOPS_RUNS_HOFX_H_
 
 #include <string>
-#include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/CalcHofX.h"
+#include "oops/base/Departures.h"
 #include "oops/base/instantiateObsFilterFactory.h"
+#include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
+#include "oops/generic/instantiateObsErrorFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Model.h"
 #include "oops/interface/State.h"
@@ -32,20 +35,26 @@
 
 namespace oops {
 
+/// Application runs model forecast from "initial condition" for the "forecast length"
+/// and computes H(x) on the run. If "obspert" is specified in the config, the resulting
+/// H(x) is perturbed. It is saved as "hofx" by default, or as specified "hofx group name"
 template <typename MODEL, typename OBS> class HofX : public Application {
+  typedef Departures<OBS>            Departures_;
   typedef Geometry<MODEL>            Geometry_;
   typedef Model<MODEL>               Model_;
   typedef Observations<OBS>          Observations_;
+  typedef ObsErrors<OBS>             ObsErrors_;
   typedef ObsSpaces<OBS>             ObsSpaces_;
   typedef State<MODEL>               State_;
 
  public:
 // -----------------------------------------------------------------------------
   explicit HofX(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {
+    instantiateObsErrorFactory<OBS>();
     instantiateObsFilterFactory<OBS>();
   }
 // -----------------------------------------------------------------------------
-  virtual ~HofX() {}
+  virtual ~HofX() = default;
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
 //  Setup observation window
@@ -80,15 +89,31 @@ template <typename MODEL, typename OBS> class HofX : public Application {
 //  Setup and run observer
     CalcHofX<MODEL, OBS> hofx(obspace, geometry, fullConfig);
     const util::Duration flength(fullConfig.getString("forecast length"));
-    const Observations_ & yobs = hofx.compute(model, xx, post, flength);
+    Observations_ yobs = hofx.compute(model, xx, post, flength);
     hofx.saveQcFlags("EffectiveQC");
     hofx.saveObsErrors("EffectiveError");
 
     Log::test() << "Final state: " << xx << std::endl;
-
-//  Save H(x)
     Log::test() << "H(x): " << std::endl << yobs << "End H(x)" << std::endl;
-    yobs.save("hofx");
+
+//  Perturb H(x) if needed (can be used for generating obs in OSSE: perturbed H(x) could be saved
+//  as ObsValue if "hofx group name" == ObsValue.
+    bool obspert = fullConfig.getBool("obs perturbations", false);
+    if (obspert) {
+      Departures_ ypert(obspace);
+      ObsErrors_ matR(fullConfig, obspace);
+      matR.randomize(ypert);
+      yobs += ypert;
+      Log::test() << "Perturbed H(x): " << std::endl << yobs << "End Perturbed H(x)" << std::endl;
+    }
+
+//  Save H(x) either as observations (if "make obs" == true) or as "hofx"
+    const bool makeobs = fullConfig.getBool("make obs", false);
+    if (makeobs) {
+      yobs.save("ObsValue");
+    } else {
+      yobs.save("hofx");
+    }
 
     return 0;
   }

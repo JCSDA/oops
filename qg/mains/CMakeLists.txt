@@ -38,11 +38,6 @@ ecbuild_add_executable( TARGET  qg_hofx_nomodel.x
                         LIBS    qg
                       )
 
-ecbuild_add_executable( TARGET  qg_make_obs.x
-                        SOURCES qgMakeObs.cc
-                        LIBS    qg
-                      )
-
 ecbuild_add_executable( TARGET  qg_diffstates.x
                         SOURCES qgDiffStates.cc
                         LIBS    qg
