@@ -98,6 +98,7 @@ class Increment : public oops::GeneralizedDepartures,
 
 /// Get geometry
   Geometry_ geometry() const;
+  const Variables & variables() const {return variables_;}
 
 #if ATLASIFIED
 /// ATLAS FieldSet
@@ -119,6 +120,7 @@ class Increment : public oops::GeneralizedDepartures,
  private:
   void print(std::ostream &) const;
   std::unique_ptr<Increment_> increment_;
+  const Variables variables_;
 };
 
 // -----------------------------------------------------------------------------
@@ -138,7 +140,7 @@ State<MODEL> & operator+=(State<MODEL> & xx, const Increment<MODEL> & dx) {
 
 template<typename MODEL>
 Increment<MODEL>::Increment(const Geometry_ & resol, const Variables & vars,
-                            const util::DateTime & time) : increment_()
+                            const util::DateTime & time) : increment_(), variables_(vars)
 {
   Log::trace() << "Increment<MODEL>::Increment starting" << std::endl;
   util::Timer timer(classname(), "Increment");
@@ -150,7 +152,7 @@ Increment<MODEL>::Increment(const Geometry_ & resol, const Variables & vars,
 
 template<typename MODEL>
 Increment<MODEL>::Increment(const Geometry_ & resol, const Increment & other)
-  : increment_()
+  : increment_(), variables_(other.variables_)
 {
   Log::trace() << "Increment<MODEL>::Increment starting" << std::endl;
   util::Timer timer(classname(), "Increment");
@@ -161,7 +163,8 @@ Increment<MODEL>::Increment(const Geometry_ & resol, const Increment & other)
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-Increment<MODEL>::Increment(const Increment & other, const bool copy) : increment_()
+Increment<MODEL>::Increment(const Increment & other, const bool copy)
+  : increment_(), variables_(other.variables_)
 {
   Log::trace() << "Increment<MODEL>::Increment copy starting" << std::endl;
   util::Timer timer(classname(), "Increment");

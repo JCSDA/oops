@@ -50,6 +50,14 @@ namespace oops {
     return *this;
   }
 
+  LocalIncrement & LocalIncrement::operator *=(const std::vector<double> & rhs) {
+    ASSERT(vals_.size() == rhs.size());
+    for (unsigned i=0; i < vals_.size(); ++i) {
+      vals_[i] *= rhs[i];
+    }
+    return *this;
+  }
+
   void LocalIncrement::setVals(std::vector<double> & valsIn) {
     ASSERT(vals_.size() == valsIn.size());
     vals_ = valsIn;

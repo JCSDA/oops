@@ -40,6 +40,7 @@ list( APPEND l95_test_input
   testinput/hofx.yaml
   testinput/hofx_nomodel.yaml
   testinput/identitymodel.yaml
+  testinput/letkfGSI.yaml
   testinput/letkfOOPS.yaml
   testinput/letkf.yaml
   testinput/interfaces.yaml
@@ -98,6 +99,8 @@ list( APPEND l95_testoutput
   testoutput/hofx.nomodel.test
   testoutput/letkf.test
   testoutput/letkf_oops.test
+  testoutput/letkf_gsi.test
+  testoutput/localhofx.test
   testoutput/makeobs3d.test
   testoutput/makeobs4d.test
   testoutput/makeobs4d12h.test
@@ -691,3 +694,11 @@ oops_add_test( TESTNAME letkf
                YAMLNAME testinput/letkf.yaml
                EXENAME l95_letkf.x
                TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+
+oops_add_test( TESTNAME letkf_gsi
+               MODELNAME l95
+               YAMLNAME testinput/letkfGSI.yaml
+               EXENAME l95_letkf.x
+               CTOL 1e-4
+               TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+

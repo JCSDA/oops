@@ -31,6 +31,10 @@ oops/assimilation/FGMRES.h
 oops/assimilation/FGMRESMinimizer.h
 oops/assimilation/FtnTriDiagSpectrum.F90
 oops/assimilation/FullGMRES.h
+oops/assimilation/GETKFSolver.h
+oops/assimilation/gletkfInterface.h
+oops/assimilation/gletkf_interface.f90
+oops/assimilation/gletkf_mod.f90
 oops/assimilation/GMRESR.h
 oops/assimilation/GMRESRMinimizer.h
 oops/assimilation/HBHtMatrix.h
@@ -51,6 +55,7 @@ oops/assimilation/LBGMRESRMinimizer.h
 oops/assimilation/LBHessianMatrix.h
 oops/assimilation/LBMinimizer.h
 oops/assimilation/LETKFSolver.h
+oops/assimilation/LETKFSolverGSI.h
 oops/assimilation/LETKFSolverOOPS.h
 oops/assimilation/LETKFSolverParameters.h
 oops/assimilation/linsysteigen.h
@@ -167,6 +172,7 @@ oops/generic/unstructured_grid_interface.F90
 oops/generic/unstructured_grid_mod.F90
 oops/generic/UnstructuredGrid.cc
 oops/generic/UnstructuredGrid.h
+oops/generic/VerticalLocEV.h
 oops/generic/InterpolatorAtlas.h
 oops/generic/InterpolatorAtlas.cc
 
@@ -342,6 +348,7 @@ test/interface/VariableChange.h
 test/parallel/mpi/mpi.h
 
 test/generic/InterpolationInterface.h
+test/generic/VerticalLocEV.h
 
 test/util/Fortran.h
 test/util/IsAnyPointInVolumeInterior.h

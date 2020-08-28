@@ -49,6 +49,7 @@ list( APPEND qg_testinput
   testinput/rtpp.yaml
   testinput/static_b_init.yaml
   testinput/truth.yaml
+  testinput/verticallocev.yaml
   testinput/uniform_field.yaml
 )
 
@@ -191,6 +192,12 @@ ecbuild_add_test( TARGET  test_qg_increment
 ecbuild_add_test( TARGET  test_qg_error_covariance
                   SOURCES executables/TestErrorCovariance.cc
                   ARGS    "testinput/interfaces.yaml"
+                  LIBS    qg
+                  TEST_DEPENDS test_qg_truth )
+
+ecbuild_add_test( TARGET  test_qg_verticallocev
+                  SOURCES executables/TestVerticalLocEV.cc
+                  ARGS    "testinput/verticallocev.yaml"
                   LIBS    qg
                   TEST_DEPENDS test_qg_truth )
 

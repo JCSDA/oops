@@ -57,7 +57,7 @@ class LETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
   void measurementUpdate(const IncrementEnsemble_ &,
                          const GeometryIterator_ &, IncrementEnsemble_ &) override;
 
- private:
+ protected:
   /// Computes weights
   virtual void computeWeights(const Departures_ &, const DeparturesEnsemble_ &,
                               const ObsErrors_ &);
@@ -200,7 +200,7 @@ void LETKFSolver<MODEL, OBS>::applyWeights(const IncrementEnsemble_ & bkg_pert,
   for (size_t itime=0; itime < bkg_pert[0].size(); ++itime) {
     // make grid point forecast pert ensemble array
     Eigen::MatrixXd Xb(ngp, nens_);
-    for (int iens=0; iens < nens_; ++iens) {
+    for (size_t iens=0; iens < nens_; ++iens) {
       LocalIncrement gp = bkg_pert[iens][itime].getLocal(i);
       std::vector<double> tmp = gp.getVals();
       for (size_t iv=0; iv < ngp; ++iv) {
@@ -240,7 +240,7 @@ void LETKFSolver<MODEL, OBS>::applyWeights(const IncrementEnsemble_ & bkg_pert,
     }
 
     // assign Xa to ana_pert
-    for (int iens=0; iens < nens_; ++iens) {
+    for (size_t iens=0; iens < nens_; ++iens) {
       for (size_t iv=0; iv < ngp; ++iv) {
         tmp1[iv] = Xa(iv, iens)+xa(iv);   // if Xa = Xb*Wa;
       }
