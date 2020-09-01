@@ -45,7 +45,7 @@ class ObsAuxCovariance : public util::Printable,
   ~ObsAuxCovariance();
 
 /// Operators
-  void linearize(const ObsAuxControl_ &);
+  void linearize(const ObsAuxControl_ &, const eckit::Configuration &);
   void multiply(const ObsAuxIncrement_ &, ObsAuxIncrement_ &) const;
   void inverseMultiply(const ObsAuxIncrement_ &, ObsAuxIncrement_ &) const;
   void randomize(ObsAuxIncrement_ &) const;
@@ -82,10 +82,11 @@ ObsAuxCovariance<OBS>::~ObsAuxCovariance() {
 // -----------------------------------------------------------------------------
 
 template<typename OBS>
-void ObsAuxCovariance<OBS>::linearize(const ObsAuxControl_ & xx) {
+void ObsAuxCovariance<OBS>::linearize(const ObsAuxControl_ & xx,
+                                      const eckit::Configuration & innerConf) {
   Log::trace() << "ObsAuxCovariance<OBS>::linearize starting" << std::endl;
   util::Timer timer(classname(), "linearize");
-  cov_->linearize(xx.obsauxcontrol());
+  cov_->linearize(xx.obsauxcontrol(), innerConf);
   Log::trace() << "ObsAuxCovariance<OBS>::linearize done" << std::endl;
 }
 

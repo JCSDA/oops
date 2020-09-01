@@ -39,7 +39,7 @@ class ObsBiasCovariance : public util::Printable,
   ~ObsBiasCovariance() {}
 
 /// Linear algebra operators
-  void linearize(const ObsBias &) {}
+  void linearize(const ObsBias &, const eckit::Configuration &) {}
   void multiply(const ObsBiasIncrement &, ObsBiasIncrement &) const;
   void inverseMultiply(const ObsBiasIncrement &, ObsBiasIncrement &) const;
   void randomize(ObsBiasIncrement &) const;

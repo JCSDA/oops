@@ -295,7 +295,7 @@ double CostFunction<MODEL, OBS>::linearize(const CtrlVar_ & fguess,
 
 // Setup trajectory for terms of cost function
   PostProcessorTLAD<MODEL> pptraj;
-  JqTermTLAD_ * jq = jb_->initializeTraj(fguess, lowres);
+  JqTermTLAD_ * jq = jb_->initializeTraj(fguess, lowres, innerConf);
   pptraj.enrollProcessor(jq);
   for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
     pptraj.enrollProcessor(jterms_[jj].initializeTraj(fguess, lowres, innerConf));

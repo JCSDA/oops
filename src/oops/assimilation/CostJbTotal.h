@@ -54,7 +54,8 @@ template<typename MODEL, typename OBS> class CostJbTotal {
 
 /// Initialize before nonlinear model integration.
   JqTerm_ * initialize(const CtrlVar_ &) const;
-  JqTermTLAD_ * initializeTraj(const CtrlVar_ &, const Geometry_ &);
+  JqTermTLAD_ * initializeTraj(const CtrlVar_ &, const Geometry_ &,
+                               const eckit::Configuration &);
 
 /// Finalize computation after nonlinear model integration.
   double finalize(JqTerm_ *) const;
@@ -155,14 +156,16 @@ double CostJbTotal<MODEL, OBS>::finalize(JqTerm_ * jqnl) const {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-JqTermTLAD<MODEL> * CostJbTotal<MODEL, OBS>::initializeTraj(const CtrlVar_ & fg,
-                                                       const Geometry_ & resol) {
+JqTermTLAD<MODEL> * CostJbTotal<MODEL, OBS>::initializeTraj(
+                                             const CtrlVar_ & fg,
+                                             const Geometry_ & resol,
+                                             const eckit::Configuration & innerConf) {
   fg_ = &fg;
   resol_.reset(new Geometry_(resol));
 // Linearize terms
   jb_->linearize(fg.state(), *resol_);
   jbModBias_.linearize(fg.modVar(), *resol_);
-  jbObsBias_.linearize(fg.obsVar());
+  jbObsBias_.linearize(fg.obsVar(), innerConf);
 
   JqTermTLAD_ * jqlin = jb_->initializeJqTLAD();
 
