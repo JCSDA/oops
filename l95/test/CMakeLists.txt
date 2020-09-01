@@ -230,7 +230,7 @@ oops_add_test( TESTNAME makeobs4d
                MODELNAME l95
                YAMLNAME testinput/makeobs4d.yaml
                EXENAME l95_hofx.x
-               TEST_DEPENDS test_l95_truth)
+               TEST_DEPENDS test_l95_truth )
 
 
 #####################################################################
@@ -416,19 +416,19 @@ oops_add_test( TESTNAME makeobs3d
                MODELNAME l95
                YAMLNAME testinput/makeobs3d.yaml
                EXENAME l95_hofx.x
-               TEST_DEPENDS test_l95_truth ) 
+               TEST_DEPENDS test_l95_truth )
 
 oops_add_test( TESTNAME makeobsbias
                MODELNAME l95
                YAMLNAME testinput/makeobsbias.yaml
                EXENAME l95_hofx.x
-               TEST_DEPENDS test_l95_truth ) 
+               TEST_DEPENDS test_l95_truth )
 
 oops_add_test( TESTNAME makeobs4d12h
                MODELNAME l95
                YAMLNAME testinput/makeobs4d12h.yaml
                EXENAME l95_hofx.x
-               TEST_DEPENDS test_l95_truth ) 
+               TEST_DEPENDS test_l95_truth )
 
 oops_add_test( TESTNAME makeobspert
                MODELNAME l95
@@ -473,31 +473,31 @@ oops_add_test( TESTNAME 3dvar
                MODELNAME l95
                YAMLNAME testinput/3dvar.yaml
                EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeob3d ) 
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
 
 oops_add_test( TESTNAME 3dvar_qc
                MODELNAME l95
                YAMLNAME testinput/3dvar_qc.yaml
                EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeob3d )
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
 
 oops_add_test( TESTNAME 3dvar_qc_obserr
                MODELNAME l95
                YAMLNAME testinput/3dvar_qc_obserr.yaml
                EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeob3d )
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
 
 oops_add_test( TESTNAME 3dvar_qc_iterations
                MODELNAME l95
                YAMLNAME testinput/3dvar_qc_iterations.yaml
                EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeob3d )
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
 
 oops_add_test( TESTNAME 3dfgat
                MODELNAME l95
                YAMLNAME testinput/3dfgat.yaml
                EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeob3d ) 
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
 
 
 #####################################################################
@@ -508,97 +508,97 @@ oops_add_test( TESTNAME 4dvar.drgmresr
                MODELNAME l95
                YAMLNAME testinput/4dvar.drgmresr.yaml
                EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeob4d ) 
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 oops_add_test( TESTNAME 4dvar.dripcg
                MODELNAME l95
                YAMLNAME testinput/4dvar.dripcg.yaml
                EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeob4d ) 
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 oops_add_test( TESTNAME 4dvar.dripcgqn
                MODELNAME l95
                YAMLNAME testinput/4dvar.dripcgqn.yaml
                EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeob4d ) 
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 oops_add_test( TESTNAME 4dvar.drpcg
                MODELNAME l95
                YAMLNAME testinput/4dvar.drpcg.yaml
                EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeob4d )
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 oops_add_test( TESTNAME 4dvar.drpcgqn
                MODELNAME l95
                YAMLNAME testinput/4dvar.drpcgqn.yaml
                EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeob4d )
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 oops_add_test( TESTNAME 4dvar.drplanczos
                MODELNAME l95
                YAMLNAME testinput/4dvar.drplanczos.yaml
                EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeob4d )
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 oops_add_test( TESTNAME 4dvar.drplanclmp
                MODELNAME l95
                YAMLNAME testinput/4dvar.drplanclmp.yaml
                EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeob4d )
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 oops_add_test( TESTNAME 4dvar.gmresr
                MODELNAME l95
                YAMLNAME testinput/4dvar.gmresr.yaml
                EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeob4d )
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 oops_add_test( TESTNAME 4dvar.ipcg
                MODELNAME l95
                YAMLNAME testinput/4dvar.ipcg.yaml
                EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeob4d )
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 oops_add_test( TESTNAME 4dvar.pcg
                MODELNAME l95
                YAMLNAME testinput/4dvar.pcg.yaml
                EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeob4d )
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 oops_add_test( TESTNAME 4dvar.planczos
                MODELNAME l95
                YAMLNAME testinput/4dvar.planczos.yaml
                EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeob4d )
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 oops_add_test( TESTNAME 4dvar.rpcg
                MODELNAME l95
                YAMLNAME testinput/4dvar.rpcg.yaml
                EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeob4d )
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 oops_add_test( TESTNAME 4dvar.rplanczos
                MODELNAME l95
                YAMLNAME testinput/4dvar.rplanczos.yaml
                EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeob4d )
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 oops_add_test( TESTNAME 4dvar.modbias
                MODELNAME l95
                YAMLNAME testinput/4dvar.modbias.yaml
                EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeob4d )
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 oops_add_test( TESTNAME 4dforcing
                MODELNAME l95
                YAMLNAME testinput/4dforcing.yaml
                EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeob4d )
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 oops_add_test( TESTNAME 4dsaddlepoint
                MODELNAME l95
                YAMLNAME testinput/4dsaddlepoint.yaml
                EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeob4d )
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 oops_add_test( TESTNAME 4dvar.obsbias
                MODELNAME l95
@@ -620,25 +620,25 @@ oops_add_test( TESTNAME 4dvar.alpha
                MODELNAME l95
                YAMLNAME testinput/4dvar.alpha.yaml
                EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeob4d test_l95_genenspert)
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d test_l95_genenspert )
 
 oops_add_test( TESTNAME 4dvar.hybrid
                MODELNAME l95
                YAMLNAME testinput/4dvar.hybrid.yaml
                EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeob4d test_l95_genenspert )
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d test_l95_genenspert )
 
 oops_add_test( TESTNAME 4densvar
                MODELNAME l95
                YAMLNAME testinput/4densvar.yaml
                EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeob4d12h test_l95_genenspert )
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d12h test_l95_genenspert )
 
 oops_add_test( TESTNAME 4densvar.hybrid
                MODELNAME l95
                YAMLNAME testinput/4densvar.hybrid.yaml
                EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeob4d test_l95_genenspert )
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d test_l95_genenspert )
 
 
 #####################################################################
@@ -675,7 +675,7 @@ oops_add_test( TESTNAME diffstates
                MODELNAME l95
                YAMLNAME testinput/diffstates.yaml
                EXENAME l95_diffstates.x
-               TEST_DEPENDS test_l95_eda_3dvar  test_l95_eda_4dvar_member3 )
+               TEST_DEPENDS test_l95_eda_3dvar test_l95_eda_4dvar_member3 )
 
 
 #####################################################################
