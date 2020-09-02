@@ -95,35 +95,32 @@ template <typename MODEL> void testLinearVariableChangeZero() {
                                       Test_::xx(), Test_::xx(),
                                       Test_::resol(), Test_::confs()[jj]));
 
-    Increment_   dxin(Test_::resol(), varin,  Test_::time());
-    Increment_ KTdxin(Test_::resol(), varout, Test_::time());
-    Increment_  dxout(Test_::resol(), varout, Test_::time());
-    Increment_ Kdxout(Test_::resol(), varin,  Test_::time());
+    Increment_  dxinTlIAd(Test_::resol(), varin,  Test_::time());
+    Increment_  dxinAdInv(Test_::resol(), varout, Test_::time());
+    Increment_ dxoutTlIAd(Test_::resol(), varout, Test_::time());
+    Increment_ dxoutAdInv(Test_::resol(), varin,  Test_::time());
 
-    // dxout = 0, check if K.dxout = 0
-    dxout.zero();
-    changevar->multiply(dxout, Kdxout);
-    EXPECT(Kdxout.norm() == 0.0);
+    // dxinTlIAd = 0, check if K.dxinTlIAd = 0
+    dxinTlIAd.zero();
+    changevar->multiply(dxinTlIAd, dxoutTlIAd);
+    EXPECT(dxoutTlIAd.norm() == 0.0);
 
-    // dxin = 0, check if K^T.dxin = 0
-    dxin.zero();
-    changevar->multiplyAD(dxin, KTdxin);
-    EXPECT(KTdxin.norm() == 0.0);
+    // dxinAdInv = 0, check if K^T.dxinAdInv = 0
+    dxinAdInv.zero();
+    changevar->multiplyAD(dxinAdInv, dxoutAdInv);
+    EXPECT(dxoutAdInv.norm() == 0.0);
 
     const bool testinverse = Test_::confs()[jj].getBool("test inverse", true);
     if (testinverse)
       {
-        Increment_   KIdxin(Test_::resol(), varout, Test_::time());
-        Increment_ KTIdxout(Test_::resol(), varin,  Test_::time());
-
         oops::Log::info() << "Doing zero test for inverse" << std::endl;
-        dxout.zero();
-        changevar->multiplyInverseAD(dxout, KTIdxout);
-        EXPECT(KTIdxout.norm() == 0.0);
+        dxinTlIAd.zero();
+        changevar->multiplyInverseAD(dxinTlIAd, dxoutTlIAd);
+        EXPECT(dxoutTlIAd.norm() == 0.0);
 
-        dxin.zero();
-        changevar->multiplyInverse(dxin, KIdxin);
-        EXPECT(KIdxin.norm() == 0.0);
+        dxinAdInv.zero();
+        changevar->multiplyInverse(dxinAdInv, dxoutAdInv);
+        EXPECT(dxoutAdInv.norm() == 0.0);
       } else {
       oops::Log::info() << "Not doing zero test for inverse" << std::endl;
     }
@@ -145,24 +142,24 @@ template <typename MODEL> void testLinearVariableChangeAdjoint() {
                                       Test_::xx(), Test_::xx(),
                                       Test_::resol(), Test_::confs()[jj]));
 
-    Increment_   dxin(Test_::resol(), varin,  Test_::time());
-    Increment_ KTdxin(Test_::resol(), varout, Test_::time());
-    Increment_  dxout(Test_::resol(), varout, Test_::time());
-    Increment_ Kdxout(Test_::resol(), varin,  Test_::time());
+    Increment_  dxinAdInv(Test_::resol(), varout, Test_::time());
+    Increment_  dxinTlIAd(Test_::resol(), varin,  Test_::time());
+    Increment_ dxoutAdInv(Test_::resol(), varin,  Test_::time());
+    Increment_ dxoutTlIAd(Test_::resol(), varout, Test_::time());
 
-    dxin.random();
-    dxout.random();
+    dxinAdInv.random();
+    dxinTlIAd.random();
 
-    Increment_  dxin0(dxin);
-    Increment_  dxout0(dxout);
+    Increment_  dxinAdInv0(dxinAdInv);
+    Increment_  dxinTlIAd0(dxinTlIAd);
 
-    changevar->multiply(dxout, Kdxout);
-    changevar->multiplyAD(dxin, KTdxin);
+    changevar->multiply(dxinTlIAd, dxoutTlIAd);
+    changevar->multiplyAD(dxinAdInv, dxoutAdInv);
 
-    // zz1 = <Kdxout,dxin>
-    double zz1 = dot_product(Kdxout, dxin0);
-    // zz2 = <dxout,KTdxin>
-    double zz2 = dot_product(dxout0, KTdxin);
+    // zz1 = <dxoutTlIAd,dxinAdInv>
+    double zz1 = dot_product(dxoutTlIAd, dxinAdInv0);
+    // zz2 = <dxout,dxoutAdInv>
+    double zz2 = dot_product(dxinTlIAd0, dxoutAdInv);
 
     oops::Log::info() << "<dxout,KTdxin>-<Kdxout,dxin>/<dxout,KTdxin>="
                       << (zz1-zz2)/zz1 << std::endl;
@@ -173,17 +170,17 @@ template <typename MODEL> void testLinearVariableChangeAdjoint() {
     const bool testinverse = Test_::confs()[jj].getBool("test inverse", true);
     if (testinverse)
       {
-        Increment_   invKdxin(Test_::resol(), varout, Test_::time());
-        Increment_ KTIdxout(Test_::resol(), varin,  Test_::time());
         oops::Log::info() << "Doing adjoint test for inverse" << std::endl;
-        dxin.random();
-        dxout.random();
-        dxin0 = dxin;
-        dxout0 = dxout;
-        changevar->multiplyInverseAD(dxout, KTIdxout);
-        changevar->multiplyInverse(dxin, invKdxin);
-        zz1 = dot_product(KTIdxout, dxin0);
-        zz2 = dot_product(dxout0, invKdxin);
+        dxoutAdInv.zero();
+        dxoutTlIAd.zero();
+        dxinAdInv.random();
+        dxinTlIAd.random();
+        dxinAdInv0 = dxinAdInv;
+        dxinTlIAd0 = dxinTlIAd;
+        changevar->multiplyInverseAD(dxinTlIAd, dxoutTlIAd);
+        changevar->multiplyInverse(dxinAdInv, dxoutAdInv);
+        zz1 = dot_product(dxoutTlIAd, dxinAdInv0);
+        zz2 = dot_product(dxinTlIAd0, dxoutAdInv);
         oops::Log::info() << "<dxout,KinvTdxin>-<Kinvdxout,dxin>/<dxout,KinvTdxin>="
                       << (zz1-zz2)/zz1 << std::endl;
         oops::Log::info() << "<dxout,KinvTdxin>-<Kinvdxout,dxin>/<Kinvdxout,dxin>="
@@ -217,17 +214,17 @@ template <typename MODEL> void testLinearVariableChangeInverse() {
                                         Test_::xx(), Test_::xx(),
                                         Test_::resol(), Test_::confs()[jj]));
 
-      Increment_    dxin(Test_::resol(), varin,  Test_::time());
-      Increment_  KIdxin(Test_::resol(), varout, Test_::time());
-      Increment_ KKIdxin(Test_::resol(), varin,  Test_::time());
+      Increment_  dxinInv(Test_::resol(), varout, Test_::time());
+      Increment_ dxoutInv(Test_::resol(), varin,  Test_::time());
+      Increment_    dxout(Test_::resol(), varout, Test_::time());
 
-      dxin.random();
+      dxinInv.random();
 
-      changevar->multiplyInverse(dxin, KIdxin);
-      changevar->multiply(KIdxin, KKIdxin);
+      changevar->multiplyInverse(dxinInv, dxoutInv);
+      changevar->multiply(dxoutInv, dxout);
 
-      const double zz1 = dxin.norm();
-      const double zz2 = KKIdxin.norm();
+      const double zz1 = dxinInv.norm();
+      const double zz2 = dxout.norm();
 
       oops::Log::info() << "<x>, <KK^{-1}x>=" << zz1 << " " << zz2 << std::endl;
       oops::Log::info() << "<x>-<KK^{-1}x>=" << zz1-zz2 << std::endl;

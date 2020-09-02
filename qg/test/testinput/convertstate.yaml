@@ -3,16 +3,47 @@ input geometry:
   ny: 20
   depths: [4500.0, 5500.0]
 output geometry:
-  nx: 40
-  ny: 20
+  nx: 20
+  ny: 10
   depths: [4500.0, 5500.0]
-output variables: [x]
+variable changes:
+  - variable change: ChVarQG
+    input variables: [x]
+    output variables: [q]
+  - variable change: ChVarQG
+    input variables: [q]
+    output variables: [x]
+  - variable change: ChVarQG
+    input variables: [q]
+    output variables: [x]
+    do inverse: true
+  - variable change: ChVarQG
+    input variables: [x]
+    output variables: [q]
+    do inverse: true
+  - variable change: Identity
+    input variables: [x]
+    output variables: [x]
+  - variable change: Identity
+    input variables: [x]
+    output variables: [x]
+    do inverse: true
 states:
 - input:
     date: 2010-01-01T09:00:00Z
     filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT9H.nc
+    state variables: [x]
   output:
     date: 2010-01-01T09:00:00Z
+    datadir: Data
+    exp: convert
+    type: fc
+- input:
+    date: 2010-01-01T10:00:00Z
+    filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT10H.nc
+    state variables: [x]
+  output:
+    date: 2010-01-01T10:00:00Z
     datadir: Data
     exp: convert
     type: fc

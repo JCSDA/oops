@@ -72,6 +72,7 @@ list( APPEND qg_testoutput
   testoutput/4dvar_rpcg.test
   testoutput/4dvar_saddlepoint.test
   testoutput/analytic_forecast.test
+  testoutput/convertstate.test
   testoutput/dfi.test
   testoutput/diffstates.test
   testoutput/dirac_cov.test
@@ -460,13 +461,12 @@ oops_add_test( TESTNAME dfi
                EXENAME  qg_dfi.x
                TEST_DEPENDS test_qg_forecast )
 
-ecbuild_add_test( TARGET test_qg_convertstate
-                  OMP    2
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_convertstate.x
-                  ARGS testinput/convertstate.yaml testoutput/convertstate.log.out
-                  DEPENDS qg_convertstate.x
-                  TEST_DEPENDS test_qg_forecast )
-
+oops_add_test( TESTNAME convertstate
+               MODELNAME qg
+               OMP    2
+               YAMLNAME testinput/convertstate.yaml
+               EXENAME qg_convertstate.x
+               TEST_DEPENDS test_qg_forecast )
 
 #####################################################################
 # QG dirac tests
@@ -676,7 +676,7 @@ oops_add_test( TESTNAME diffstates
                MODELNAME qg
                YAMLNAME testinput/diffstates.yaml
                EXENAME  qg_diffstates.x
-               TEST_DEPENDS test_qg_eda_3dvar_member2  test_qg_eda_4dvar 
+               TEST_DEPENDS test_qg_eda_3dvar_member2  test_qg_eda_4dvar
                DEPENDS qg_eda.x )
 
 

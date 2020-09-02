@@ -24,7 +24,7 @@ namespace eckit {
 
 namespace oops {
 
-// -----------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 
 /// Base class for generic variable transform
 
@@ -52,7 +52,7 @@ class VariableChangeBase : public util::Printable,
   std::unique_ptr<Variables> varout_;
 };
 
-// -----------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 
 /// VariableChangeFactory Factory
 template <typename MODEL>
@@ -71,7 +71,7 @@ class VariableChangeFactory {
   }
 };
 
-// -----------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 
 template<class MODEL, class T>
 class VariableChangeMaker : public VariableChangeFactory<MODEL> {
@@ -84,7 +84,7 @@ class VariableChangeMaker : public VariableChangeFactory<MODEL> {
     : VariableChangeFactory<MODEL>(name) {}
 };
 
-// -----------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 
 template <typename MODEL>
 VariableChangeFactory<MODEL>::VariableChangeFactory(const std::string & name) {
@@ -95,7 +95,7 @@ VariableChangeFactory<MODEL>::VariableChangeFactory(const std::string & name) {
   getMakers()[name] = this;
 }
 
-// -----------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 
 template <typename MODEL>
 VariableChangeBase<MODEL> * VariableChangeFactory<MODEL>::create(const eckit::Configuration & conf,
@@ -115,7 +115,7 @@ VariableChangeBase<MODEL> * VariableChangeFactory<MODEL>::create(const eckit::Co
   return ptr;
 }
 
-// =============================================================================
+// =================================================================================================
 
 template<typename MODEL>
 VariableChangeBase<MODEL>::VariableChangeBase(const eckit::Configuration & conf)
@@ -133,27 +133,31 @@ VariableChangeBase<MODEL>::VariableChangeBase(const eckit::Configuration & conf)
   }
 }
 
-// -----------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 
 template<typename MODEL>
-State<MODEL> VariableChangeBase<MODEL>::changeVar(const State_ & dxin) const {
-  ASSERT(varin_);
-  State_ dxout(dxin.geometry(), *varin_, dxin.validTime());
-  this->multiply(dxin, dxout);
-  return dxout;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-State<MODEL> VariableChangeBase<MODEL>::changeVarInverse(const State_ & dxin) const {
+State<MODEL> VariableChangeBase<MODEL>::changeVar(const State_ & xin) const {
+  Log::trace() << "VariableChangeBase<MODEL>::changeVar starting" << std::endl;
   ASSERT(varout_);
-  State_ dxout(dxin.geometry(), *varout_, dxin.validTime());
-  this->multiplyInverse(dxin, dxout);
-  return dxout;
+  State_ xout(xin.geometry(), *varout_, xin.validTime());
+  this->changeVar(xin, xout);
+  Log::trace() << "VariableChangeBase<MODEL>::changeVar done" << std::endl;
+  return xout;
 }
 
-// -----------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
+
+template<typename MODEL>
+State<MODEL> VariableChangeBase<MODEL>::changeVarInverse(const State_ & xin) const {
+  Log::trace() << "VariableChangeBase<MODEL>::changeVarInverse starting" << std::endl;
+  ASSERT(varin_);
+  State_ xout(xin.geometry(), *varin_, xin.validTime());
+  this->changeVarInverse(xin, xout);
+  Log::trace() << "VariableChangeBase<MODEL>::changeVarInverse done" << std::endl;
+  return xout;
+}
+
+// -------------------------------------------------------------------------------------------------
 
 }  // namespace oops
 

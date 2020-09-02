@@ -1,8 +1,8 @@
 ! (C) Copyright 2009-2016 ECMWF.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
-! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
-! In applying this licence, ECMWF does not waive the privileges and immunities 
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
 ! granted to it by virtue of its status as an intergovernmental organisation nor
 ! does it submit to any jurisdiction.
 
@@ -56,9 +56,9 @@ endif
 if (vars_in%variable(1) == vars_out%variable(1)) then
   self%varchange = 'identity'
 elseif ((vars_in%variable(1) == 'x') .and. (vars_out%variable(1) == 'q')) then
-  self%varchange = 'q_to_x'
-elseif ((vars_in%variable(1) == 'q') .and. (vars_out%variable(1) == 'x')) then
   self%varchange = 'x_to_q'
+elseif ((vars_in%variable(1) == 'q') .and. (vars_out%variable(1) == 'x')) then
+  self%varchange = 'q_to_x'
 else
   call abor1_ftn('qg_change_var_setup: wrong change of variable')
 endif
@@ -90,6 +90,9 @@ case ('x_to_q')
   ! Conversion
   call convert_x_to_q_tl(fld_in%geom,fld_in%gfld3d,fld_out%gfld3d)
   fld_out%lq = .true.
+
+  ! Copy boundary conditions
+  call qg_fields_copy(fld_out,fld_in,.true.)
 case ('q_to_x')
   ! Check fields variables
   if (.not.fld_in%lq) call abor1_ftn('qg_change_var: wrong input fields variables for '//trim(conf%varchange))
@@ -97,6 +100,9 @@ case ('q_to_x')
   ! Conversion
   call convert_q_to_x_tl(fld_in%geom,fld_in%gfld3d,fld_out%gfld3d)
   fld_out%lq = .false.
+
+  ! Copy boundary conditions
+  call qg_fields_copy(fld_out,fld_in,.true.)
 case default
   call abor1_ftn('qg_change_var: wrong variable change')
 end select
@@ -128,6 +134,9 @@ case ('x_to_q')
   ! Conversion
   call convert_q_to_x_tl(fld_in%geom,fld_in%gfld3d,fld_out%gfld3d)
   fld_out%lq = .false.
+
+  ! Copy boundary conditions
+  call qg_fields_copy(fld_out,fld_in,.true.)
 case ('q_to_x')
   ! Check fields variables
   if (fld_in%lq) call abor1_ftn('qg_change_var_inv: wrong input fields variables for '//trim(conf%varchange))
@@ -135,6 +144,9 @@ case ('q_to_x')
   ! Conversion
   call convert_x_to_q_tl(fld_in%geom,fld_in%gfld3d,fld_out%gfld3d)
   fld_out%lq = .true.
+
+  ! Copy boundary conditions
+  call qg_fields_copy(fld_out,fld_in,.true.)
 case default
   call abor1_ftn('qg_change_var_inv: wrong variable change')
 end select
@@ -166,6 +178,9 @@ case ('x_to_q')
   ! Conversion
   call convert_x_to_q_ad(fld_in%geom,fld_in%gfld3d,fld_out%gfld3d)
   fld_out%lq = .false.
+
+  ! Copy boundary conditions
+  call qg_fields_copy(fld_out,fld_in,.true.)
 case ('q_to_x')
   ! Check fields variables
   if (fld_in%lq) call abor1_ftn('qg_change_var_ad: wrong input fields variables for '//trim(conf%varchange))
@@ -173,6 +188,9 @@ case ('q_to_x')
   ! Conversion
   call convert_q_to_x_ad(fld_in%geom,fld_in%gfld3d,fld_out%gfld3d)
   fld_out%lq = .true.
+
+  ! Copy boundary conditions
+  call qg_fields_copy(fld_out,fld_in,.true.)
 case default
   call abor1_ftn('qg_change_var_ad: wrong variable change')
 end select
@@ -204,6 +222,9 @@ case ('x_to_q')
   ! Conversion
   call convert_q_to_x_ad(fld_in%geom,fld_in%gfld3d,fld_out%gfld3d)
   fld_out%lq = .true.
+
+  ! Copy boundary conditions
+  call qg_fields_copy(fld_out,fld_in,.true.)
 case ('q_to_x')
   ! Check fields variables
   if (.not.fld_in%lq) call abor1_ftn('qg_change_var_inv_ad: wrong input fields variables for '//trim(conf%varchange))
@@ -211,6 +232,9 @@ case ('q_to_x')
   ! Conversion
   call convert_x_to_q_ad(fld_in%geom,fld_in%gfld3d,fld_out%gfld3d)
   fld_out%lq = .false.
+
+  ! Copy boundary conditions
+  call qg_fields_copy(fld_out,fld_in,.true.)
 case default
   call abor1_ftn('qg_change_var_inv_ad: wrong variable change')
 end select

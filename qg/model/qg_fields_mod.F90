@@ -296,20 +296,33 @@ call normal_distribution(self%gfld3d,0.0_kind_real,1.0_kind_real,rseed)
 end subroutine qg_fields_random
 ! ------------------------------------------------------------------------------
 !> Copy fields
-subroutine qg_fields_copy(self,other)
+subroutine qg_fields_copy(self,other,bconly)
 
 implicit none
 
 ! Passed variables
-type(qg_fields),intent(inout) :: self  !< Fields
-type(qg_fields),intent(in)    :: other !< Other fields
+type(qg_fields),intent(inout) :: self   !< Fields
+type(qg_fields),intent(in)    :: other  !< Other fields
+logical,intent(in),optional   :: bconly !< Boundary condition only flag
+
+! Local variables
+logical :: lbconly
+
+! Local flag
+lbconly = .false.
+if (present(bconly)) lbconly = bconly
 
 ! Check resolution
 call qg_fields_check_resolution(self,other)
-call qg_fields_check_variables(self,other)
 
-! Copy field
-self%gfld3d = other%gfld3d
+if (.not.lbconly) then
+  ! Check variables
+  call qg_fields_check_variables(self,other)
+
+  ! Copy 3D field
+  self%gfld3d = other%gfld3d
+end if
+
 if (self%lbc) then
   if (other%lbc) then
     self%x_north = other%x_north

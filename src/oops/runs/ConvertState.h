@@ -47,12 +47,16 @@ template <typename MODEL> class ConvertState : public Application {
     const eckit::LocalConfiguration outputResolConfig(fullConfig, "output geometry");
     const Geometry_ resol2(outputResolConfig, this->getComm());
 
-//  Output variables
-    oops::Variables varsout(fullConfig, "output variables");
+//  Variable transform(s)
+    std::vector<std::unique_ptr<VariableChange_>> chvars;
+    std::vector<bool> inverse;
 
-//  Variable transform, identity if not specified in config
-    std::unique_ptr<VariableChange_> changevar(VariableChangeFactory_::create(fullConfig, resol2));
-    bool inverse = fullConfig.getBool("do inverse", false);
+    std::vector<eckit::LocalConfiguration> chvarconfs;
+    fullConfig.get("variable changes", chvarconfs);
+    for (int cv = 0; cv < chvarconfs.size(); ++cv) {
+      chvars.emplace_back(VariableChangeFactory_::create(chvarconfs[cv], resol2));
+      inverse.push_back(chvarconfs[cv].getBool("do inverse", false));
+    }
 
 //  List of input and output states
     std::vector<eckit::LocalConfiguration> statesConf;
@@ -70,23 +74,25 @@ template <typename MODEL> class ConvertState : public Application {
       Log::test() << "Input state: " << xxi << std::endl;
 
 //    Copy and change resolution
-      State_ xx(resol2, xxi);
+      std::unique_ptr<State_> xx(new State_(resol2, xxi));  // Pointer that can be reset after chvar
 
-//    New state with variables after variable change
-      State_ xxo(resol2, varsout, xxi.validTime());
-
-//    Variable transform
-      if (!inverse) {
-        changevar->changeVar(xx, xxo);
-      } else {
-        changevar->changeVarInverse(xx, xxo);
+//    Variable transform(s)
+      for (int cv = 0; cv < chvars.size(); ++cv) {
+        if (!inverse[cv]) {
+          State_ xchvarout = chvars[cv]->changeVar(*xx);
+          xx.reset(new State_(xchvarout));
+        } else {
+          State_ xchvarout = chvars[cv]->changeVarInverse(*xx);
+          xx.reset(new State_(xchvarout));
+        }
+        Log::test() << "State after " << *chvars[cv] << " transform: " << *xx << std::endl;
       }
 
 //    Write state
       const eckit::LocalConfiguration outputConfig(statesConf[jm], "output");
-      xxo.write(outputConfig);
+      xx->write(outputConfig);
 
-      Log::test() << "Output state: " << xxo << std::endl;
+      Log::test() << "Output state: " << *xx << std::endl;
     }
     return 0;
   }
