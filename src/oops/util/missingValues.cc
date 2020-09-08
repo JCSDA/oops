@@ -47,5 +47,10 @@ const DateTime & missingValue(const DateTime &) {
   return dtmiss;
 }
 // -----------------------------------------------------------------------------
+const std::string & missingValue(const std::string &) {
+  static const std::string strmiss("*** MISSING ***");
+  return strmiss;
+}
+// -----------------------------------------------------------------------------
 
 }  // namespace util

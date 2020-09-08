@@ -361,6 +361,7 @@ test/util/ScalarOrMap.h
 test/util/FloatCompare.h
 test/util/CompareNVectors.h
 test/util/CompositePath.h
+test/util/MissingValues.h
 )
 
 list (APPEND oops_fheader_files
@@ -553,6 +554,11 @@ ecbuild_add_test( TARGET  test_oops_atlas_interpolation_interface
 
 ecbuild_add_test( TARGET  test_util_comparenvectors
                   SOURCES test/util/CompareNVectors.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_missingvalues
+                  SOURCES test/util/MissingValues.cc
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 
