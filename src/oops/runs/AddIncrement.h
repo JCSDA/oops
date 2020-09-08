@@ -54,7 +54,7 @@ template <typename MODEL> class AddIncrement : public Application {
     oops::Variables incVars(incvv);
     Increment_ dx(incResol, incVars, xx.validTime());
     dx.read(incConf);
-    Log::test() << "Increment: " << xx << std::endl;
+    Log::test() << "Increment: " << dx << std::endl;
 
 //  Assertions on state versus increment
     ASSERT(xx.validTime() == dx.validTime());
