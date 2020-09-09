@@ -23,7 +23,7 @@
 #include "eckit/config/Configuration.h"
 #include "eckit/testing/Test.h"
 #include "oops/interface/Geometry.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "test/TestEnvironment.h"
 
@@ -54,7 +54,7 @@ template <typename MODEL> void testConstructor() {
   typedef oops::Geometry<MODEL>        Geometry_;
 
   std::unique_ptr<Geometry_> geom(new Geometry_(GeometryFixture<MODEL>::getConfig(),
-                                                oops::mpi::comm()));
+                                                oops::mpi::world()));
 
   EXPECT(geom.get());
 
@@ -66,7 +66,7 @@ template <typename MODEL> void testConstructor() {
 template <typename MODEL> void testCopyConstructor() {
   typedef oops::Geometry<MODEL>        Geometry_;
   std::unique_ptr<Geometry_> geom(new Geometry_(GeometryFixture<MODEL>::getConfig(),
-                                                oops::mpi::comm()));
+                                                oops::mpi::world()));
 
 
   std::unique_ptr<Geometry_> other(new Geometry_(*geom));

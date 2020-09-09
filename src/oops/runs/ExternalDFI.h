@@ -24,7 +24,7 @@
 #include "oops/interface/Model.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
@@ -41,7 +41,7 @@ template <typename MODEL> class ExternalDFI : public Application {
 
  public:
 // -----------------------------------------------------------------------------
-  explicit ExternalDFI(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {}
+  explicit ExternalDFI(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {}
 // -----------------------------------------------------------------------------
   virtual ~ExternalDFI() {}
 // -----------------------------------------------------------------------------

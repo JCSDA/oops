@@ -18,7 +18,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "lorenz95/Resolution.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/Logger.h"
 #include "test/TestFixture.h"
@@ -28,7 +28,7 @@ namespace test {
 // -----------------------------------------------------------------------------
 class ResolutionTestFixture : TestFixture {
  public:
-  ResolutionTestFixture() : comm_(oops::mpi::comm()) {
+  ResolutionTestFixture() : comm_(oops::mpi::world()) {
     testconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "geometry"));
   }
   ~ResolutionTestFixture() {}

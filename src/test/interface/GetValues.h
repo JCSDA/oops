@@ -31,7 +31,7 @@
 #include "oops/interface/GetValues.h"
 #include "oops/interface/Locations.h"
 #include "oops/interface/State.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
@@ -72,14 +72,14 @@ template <typename MODEL, typename OBS> class GetValuesFixture : private boost::
 
     // Geometry
     const LocalConfig_ resolConfig(TestEnvironment::config(), "geometry");
-    resol_.reset(new Geometry_(resolConfig, oops::mpi::comm()));
+    resol_.reset(new Geometry_(resolConfig, oops::mpi::world()));
 
     // Variables
     geovalvars_.reset(new Variables_(TestEnvironment::config(), "state variables"));
 
     // Locations
     const LocalConfig_ locsConfig(TestEnvironment::config(), "locations");
-    locs_.reset(new Locations_(locsConfig, oops::mpi::comm()));
+    locs_.reset(new Locations_(locsConfig, oops::mpi::world()));
 
     // Window times
     timebeg_.reset(new DateTime_(locsConfig.getString("window begin")));

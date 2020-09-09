@@ -78,9 +78,9 @@ class ObsSpace : public util::Printable,
 
 template <typename OBS>
 ObsSpace<OBS>::ObsSpace(const eckit::Configuration & conf,
-                          const eckit::mpi::Comm & comm,
-                          const util::DateTime & bgn,
-                          const util::DateTime & end) : obsdb_() {
+                        const eckit::mpi::Comm & comm,
+                        const util::DateTime & bgn,
+                        const util::DateTime & end) : obsdb_() {
   Log::trace() << "ObsSpace<OBS>::ObsSpace starting" << std::endl;
   util::Timer timer(classname(), "ObsSpace");
   obsdb_.reset(new ObsSpace_(conf, comm, bgn, end));
@@ -91,8 +91,8 @@ ObsSpace<OBS>::ObsSpace(const eckit::Configuration & conf,
 
 template <typename OBS>
 ObsSpace<OBS>::ObsSpace(const ObsSpace<OBS> & os,
-                          const eckit::geometry::Point2 & center,
-                          const eckit::Configuration & conf) : obsdb_() {
+                        const eckit::geometry::Point2 & center,
+                        const eckit::Configuration & conf) : obsdb_() {
   Log::trace() << "ObsSpace<OBS>::ObsSpace (local) starting" << std::endl;
   util::Timer timer(classname(), "ObsSpace");
   obsdb_.reset(new ObsSpace_(os.obsspace(), center, conf));
@@ -103,8 +103,9 @@ ObsSpace<OBS>::ObsSpace(const ObsSpace<OBS> & os,
 
 template <typename OBS>
 ObsSpace<OBS>::ObsSpace(const ObsSpace_ & os,
-     const eckit::geometry::Point2 & center, const eckit::Configuration & conf):
-         obsdb_() {
+                        const eckit::geometry::Point2 & center,
+                        const eckit::Configuration & conf):
+                        obsdb_() {
   Log::trace() << "ObsSpace<OBS>::ObsSpace (local) derived state starting" << std::endl;
   util::Timer timer(classname(), "ObsSpace");
   obsdb_.reset(new ObsSpace_(os, center, conf));

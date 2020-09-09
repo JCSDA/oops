@@ -18,7 +18,7 @@
 #include "lorenz95/ObservationL95.h"
 #include "lorenz95/ObsTable.h"
 #include "oops/base/Variables.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "test/TestFixture.h"
@@ -33,7 +33,7 @@ class GomTestFixture : TestFixture {
     const util::DateTime bgn(conf.getString("window begin"));
     const util::DateTime end(conf.getString("window end"));
     const eckit::LocalConfiguration otconf(conf, "observation.obs space");
-    lorenz95::ObsTable ot(otconf, oops::mpi::comm(), bgn, end);
+    lorenz95::ObsTable ot(otconf, oops::mpi::world(), bgn, end);
     util::DateTime t1("2010-01-01T03:00:00Z");
     util::DateTime t2("2010-01-02T06:00:00Z");
     locs_.reset(ot.locations(t1, t2));

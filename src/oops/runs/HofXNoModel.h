@@ -17,7 +17,7 @@
 #include "oops/base/Observations.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/interface/Geometry.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -33,7 +33,7 @@ template <typename MODEL, typename OBS> class HofXNoModel : public Application {
 
  public:
 // -----------------------------------------------------------------------------
-  explicit HofXNoModel(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {
+  explicit HofXNoModel(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {
     instantiateObsFilterFactory<OBS>();
   }
 // -----------------------------------------------------------------------------

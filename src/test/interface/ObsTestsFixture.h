@@ -15,7 +15,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/ObsSpaces.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
@@ -38,7 +38,7 @@ class ObsTestsFixture : private boost::noncopyable {
   ObsTestsFixture(): tbgn_(), tend_(), ospaces_() {
     tbgn_.reset(new util::DateTime(TestEnvironment::config().getString("window begin")));
     tend_.reset(new util::DateTime(TestEnvironment::config().getString("window end")));
-    ospaces_.reset(new ObsSpaces_(TestEnvironment::config(), oops::mpi::comm(), *tbgn_, *tend_));
+    ospaces_.reset(new ObsSpaces_(TestEnvironment::config(), oops::mpi::world(), *tbgn_, *tend_));
   }
 
   ~ObsTestsFixture() {}

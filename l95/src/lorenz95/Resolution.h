@@ -15,8 +15,8 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
-#include "eckit/mpi/Comm.h"
 #include "lorenz95/Iterator.h"
+#include "oops/mpi/mpi.h"
 #include "oops/util/Printable.h"
 
 namespace lorenz95 {
@@ -30,7 +30,7 @@ class Resolution : public util::Printable {
  public:
   Resolution(const eckit::Configuration & conf, const eckit::mpi::Comm & comm)
               : resol_(conf.getInt("resol")), comm_(comm) {}
-  explicit Resolution(const int resol): resol_(resol), comm_(eckit::mpi::comm("self")) {}
+  explicit Resolution(const int resol): resol_(resol), comm_(oops::mpi::myself()) {}
   Resolution(const Resolution & other): resol_(other.resol_), comm_(other.comm_) {}
   ~Resolution() {}
 

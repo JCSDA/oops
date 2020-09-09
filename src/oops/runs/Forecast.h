@@ -21,7 +21,7 @@
 #include "oops/interface/Model.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -37,7 +37,7 @@ template <typename MODEL> class Forecast : public Application {
 
  public:
 // -----------------------------------------------------------------------------
-  explicit Forecast(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {}
+  explicit Forecast(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {}
 // -----------------------------------------------------------------------------
   virtual ~Forecast() {}
 // -----------------------------------------------------------------------------

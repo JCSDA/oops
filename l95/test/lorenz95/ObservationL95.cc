@@ -15,7 +15,7 @@
 #include "eckit/testing/Test.h"
 #include "lorenz95/ObservationL95.h"
 #include "lorenz95/ObsTableView.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "test/TestFixture.h"
 
@@ -29,7 +29,7 @@ class ObsTestFixture : TestFixture {
     const util::DateTime bgn(conf.getString("window begin"));
     const util::DateTime end(conf.getString("window end"));
     const eckit::LocalConfiguration otconf(conf, "observation");
-    ot_.reset(new lorenz95::ObsTableView(otconf, oops::mpi::comm(), bgn, end));
+    ot_.reset(new lorenz95::ObsTableView(otconf, oops::mpi::world(), bgn, end));
   }
   ~ObsTestFixture() {}
   std::unique_ptr<lorenz95::ObsTableView> ot_;

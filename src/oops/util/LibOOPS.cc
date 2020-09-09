@@ -22,7 +22,7 @@
 #include "eckit/log/PrefixTarget.h"
 #include "eckit/utils/Translator.h"
 
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/util/LibOOPS.h"
 
 extern void trap_sigfpe(const int);
@@ -63,7 +63,7 @@ LibOOPS& LibOOPS::instance() {
  * has been created.
  */
 void LibOOPS::initialise() {
-  rank_ = oops::mpi::comm().rank();
+  rank_ = oops::mpi::world().rank();
 
   const int it = getEnv("OOPS_TRACE", 0);
   if (it > 0 && rank_ == 0) trace_ = true;

@@ -207,8 +207,8 @@ oops/interface/ObsVector.h
 oops/interface/State.h
 oops/interface/VariableChange.h
 
-oops/parallel/mpi/mpi.cc
-oops/parallel/mpi/mpi.h
+oops/mpi/mpi.cc
+oops/mpi/mpi.h
 
 oops/runs/AddIncrement.h
 oops/runs/Application.h
@@ -345,7 +345,7 @@ test/interface/ObsVector.h
 test/interface/State.h
 test/interface/VariableChange.h
 
-test/parallel/mpi/mpi.h
+test/mpi/mpi.h
 
 test/generic/InterpolationInterface.h
 test/generic/VerticalLocEV.h
@@ -541,9 +541,9 @@ ecbuild_add_test( TARGET  test_util_compositepath
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 
-ecbuild_add_test( TARGET  test_parallel_mpi_mpi
+ecbuild_add_test( TARGET  test_mpi_mpi
                   MPI     4
-                  SOURCES test/parallel/mpi/mpi.cc
+                  SOURCES test/mpi/mpi.cc
                   ARGS    "test/testinput/mpi.yaml"
                   LIBS    oops )
 

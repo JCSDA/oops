@@ -28,7 +28,7 @@
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "test/TestEnvironment.h"
@@ -56,7 +56,7 @@ template <typename MODEL> class LocalizationFixture : private boost::noncopyable
 
   LocalizationFixture<MODEL>() {
     const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "geometry");
-    resol_.reset(new Geometry_(resolConfig, oops::mpi::comm()));
+    resol_.reset(new Geometry_(resolConfig, oops::mpi::world()));
 
     ctlvars_.reset(new oops::Variables(TestEnvironment::config(), "loc variables"));
 

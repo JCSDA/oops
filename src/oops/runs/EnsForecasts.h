@@ -17,7 +17,7 @@
 #include "eckit/config/Configuration.h"
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/mpi/Comm.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/runs/Forecast.h"
 #include "oops/util/Logger.h"
@@ -27,7 +27,7 @@ namespace oops {
 template <typename MODEL> class EnsForecast : public Application {
  public:
 // -----------------------------------------------------------------------------
-  explicit EnsForecast(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {}
+  explicit EnsForecast(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {}
 // -----------------------------------------------------------------------------
   virtual ~EnsForecast() {}
 // -----------------------------------------------------------------------------
@@ -36,8 +36,8 @@ template <typename MODEL> class EnsForecast : public Application {
     fullConfig.get("members", memberConf);
 
 // Get the MPI partition information
-    const int ntasks = oops::mpi::comm().size();
-    const int mytask = oops::mpi::comm().rank();
+    const int ntasks = this->getComm().size();
+    const int mytask = this->getComm().rank();
     int members = 1;
     int tasks_per_member = 0;
     int mymember = 0;
@@ -65,7 +65,7 @@ template <typename MODEL> class EnsForecast : public Application {
 // Create  the communicator for each member, named comm_member_{i}
     std::string commNameStr = "comm_member_" + std::to_string(mymember);
     char const *commName = commNameStr.c_str();
-    eckit::mpi::Comm & commMember = eckit::mpi::comm().split(mymember, commName);
+    eckit::mpi::Comm & commMember = this->getComm().split(mymember, commName);
 
 // Add the useful info in the eckit configuration
     eckit::LocalConfiguration config(fullConfig);

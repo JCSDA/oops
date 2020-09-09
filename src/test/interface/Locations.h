@@ -22,7 +22,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "oops/interface/Locations.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "test/TestEnvironment.h"
 
@@ -34,7 +34,7 @@ template <typename OBS> void testConstructor() {
   typedef oops::Locations<OBS>        Locations_;
 
   const eckit::LocalConfiguration conf(TestEnvironment::config(), "locations");
-  std::unique_ptr<Locations_> locs(new Locations_(conf, oops::mpi::comm()));
+  std::unique_ptr<Locations_> locs(new Locations_(conf, oops::mpi::world()));
   EXPECT(locs.get());
 
   locs.reset();

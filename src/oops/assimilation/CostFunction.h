@@ -35,7 +35,7 @@
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
@@ -149,7 +149,7 @@ template<class MODEL, class OBS, class FCT>
 class CostMaker : public CostFactory<MODEL, OBS> {
  private:
   CostFunction<MODEL, OBS> * make(const eckit::Configuration & config,
-                             const eckit::mpi::Comm & comm) override
+                                  const eckit::mpi::Comm & comm) override
     {return new FCT(config, comm);}
  public:
   explicit CostMaker(const std::string & name) : CostFactory<MODEL, OBS>(name) {}
@@ -173,7 +173,7 @@ CostFactory<MODEL, OBS>::CostFactory(const std::string & name) {
 
 template <typename MODEL, typename OBS>
 CostFunction<MODEL, OBS>* CostFactory<MODEL, OBS>::create(const eckit::Configuration & config,
-                                                const eckit::mpi::Comm & comm) {
+                                                          const eckit::mpi::Comm & comm) {
   std::string id = config.getString("cost type");
   Log::trace() << "Variational Assimilation Type=" << id << std::endl;
   typename std::map<std::string, CostFactory<MODEL, OBS>*>::iterator j = getMakers().find(id);

@@ -34,7 +34,7 @@
 #include "eckit/testing/Test.h"
 
 #include "oops/base/InterpolatorBase.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Random.h"
@@ -118,11 +118,11 @@ void testInterpolation() {
   if (config.has("check no obs")) {
     check_no_obs = static_cast<unsigned int>(config.getInt("check no obs"));
   }
-  size_t ntasks = oops::mpi::comm().size();
+  size_t ntasks = oops::mpi::world().size();
   if (check_no_obs == 1) {
     ntasks = ntasks-1;
   }
-  size_t myrank = oops::mpi::comm().rank();
+  size_t myrank = oops::mpi::world().rank();
 
   // number of output points on this mpi task
   size_t myN = 0;
@@ -257,7 +257,7 @@ void testInterpolation() {
         mydot1 += infield(jnode, jlev)*adcheck1(jnode, jlev);
     }
   }
-  oops::mpi::comm().allReduce(mydot1, dot1, eckit::mpi::sum());
+  oops::mpi::world().allReduce(mydot1, dot1, eckit::mpi::sum());
 
   double dot2 = 0;
   double mydot2 = 0;
@@ -265,7 +265,7 @@ void testInterpolation() {
     for (size_t jlev = 0; jlev < nlev; ++jlev)
       mydot2 += outfield(jnode, jlev)*adcheck2(jnode, jlev);
   }
-  oops::mpi::comm().allReduce(mydot2, dot2, eckit::mpi::sum());
+  oops::mpi::world().allReduce(mydot2, dot2, eckit::mpi::sum());
 
   EXPECT(oops::is_close(dot1, dot2, tolerance));
 

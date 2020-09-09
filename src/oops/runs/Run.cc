@@ -16,7 +16,6 @@
 #include "eckit/config/YAMLConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 
-#include "oops/parallel/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/LibOOPS.h"
 #include "oops/util/Logger.h"

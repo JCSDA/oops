@@ -28,7 +28,7 @@
 #include "oops/interface/Model.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -68,7 +68,7 @@ template <typename MODEL> class ModelFixture : private boost::noncopyable {
     test_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "model test"));
 
     const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "geometry");
-    resol_.reset(new Geometry_(resolConfig, oops::mpi::comm()));
+    resol_.reset(new Geometry_(resolConfig, oops::mpi::world()));
 
     const eckit::LocalConfiguration biasConf(TestEnvironment::config(), "model aux control");
     bias_.reset(new ModelAux_(*resol_, biasConf));

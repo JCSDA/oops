@@ -24,7 +24,7 @@
 #include "eckit/testing/Test.h"
 #include "eckit/utils/Tokenizer.h"
 
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/CompareNVectors.h"
 #include "oops/util/FloatCompare.h"
@@ -38,7 +38,7 @@ namespace oops {
 // -----------------------------------------------------------------------------
 class Test : public Application {
  public:
-  explicit Test(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {}
+  explicit Test(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {}
   virtual ~Test() {}
   int execute(const eckit::Configuration & config) const;
  private:

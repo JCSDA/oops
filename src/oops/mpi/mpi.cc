@@ -8,17 +8,26 @@
  * nor does it submit to any jurisdiction.
  */
 
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
+
+#include <string>
+
+#include "eckit/exception/Exceptions.h"
 
 namespace oops {
   namespace mpi {
 
-    const eckit::mpi::Comm& comm() {
+    const eckit::mpi::Comm & world() {
       return eckit::mpi::comm();
     }
 
-    void allGather(const Eigen::VectorXd & sendbuf, std::vector<Eigen::VectorXd> & recvbuf) {
-      const int ntasks = comm().size();
+    const eckit::mpi::Comm & myself() {
+      return eckit::mpi::self();
+    }
+
+    void allGather(const eckit::mpi::Comm & comm,
+                   const Eigen::VectorXd & sendbuf, std::vector<Eigen::VectorXd> & recvbuf) {
+      const int ntasks = comm.size();
       int buf_size = sendbuf.size();
 
       std::vector<double> vbuf(sendbuf.data(), sendbuf.data() + buf_size);
@@ -30,8 +39,8 @@ namespace oops {
       std::vector<int> displs(ntasks);
       for (int ii = 0; ii < ntasks; ++ii) displs[ii] = ii * buf_size;
 
-      comm().allGatherv(vbuf.begin(), vbuf.end(),
-                        vbuf_total.begin(), recvcounts.data(), displs.data());
+      comm.allGatherv(vbuf.begin(), vbuf.end(),
+                      vbuf_total.begin(), recvcounts.data(), displs.data());
 
       for (int ii = 0; ii < ntasks; ++ii) {
         std::vector<double> vloc(vbuf_total.begin() + ii * buf_size,

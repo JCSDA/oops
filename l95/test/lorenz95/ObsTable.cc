@@ -15,7 +15,7 @@
 #include "eckit/testing/Test.h"
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/ObsTable.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "test/TestFixture.h"
 
@@ -24,7 +24,7 @@ namespace test {
 // -----------------------------------------------------------------------------
 class ObsTableTestFixture : public TestFixture {
  public:
-  ObsTableTestFixture() : comm_(oops::mpi::comm()) {
+  ObsTableTestFixture() : comm_(oops::mpi::world()) {
     obsconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "observations"));
     bgn_.reset(new util::DateTime(obsconf_->getString("window begin")));
     end_.reset(new util::DateTime(obsconf_->getString("window end")));

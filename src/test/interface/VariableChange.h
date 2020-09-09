@@ -24,7 +24,7 @@
 #include "oops/generic/instantiateVariableChangeFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/State.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/Logger.h"
 #include "test/TestEnvironment.h"
@@ -53,7 +53,7 @@ template <typename MODEL> class VariableChangeFixture : private boost::noncopyab
 
     // Geometry for the test
     const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "geometry");
-    resol_.reset(new Geometry_(resolConfig, oops::mpi::comm()));
+    resol_.reset(new Geometry_(resolConfig, oops::mpi::world()));
 
     // Configuration (list of all variable changes)
     TestEnvironment::config().get("variable change tests", confs_);

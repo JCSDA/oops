@@ -26,7 +26,7 @@
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/State.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
@@ -55,7 +55,7 @@ template <typename MODEL> class StateFixture : private boost::noncopyable {
     test_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "state test"));
 
     const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "geometry");
-    resol_.reset(new Geometry_(resolConfig, oops::mpi::comm()));
+    resol_.reset(new Geometry_(resolConfig, oops::mpi::world()));
   }
 
   ~StateFixture<MODEL>() {}

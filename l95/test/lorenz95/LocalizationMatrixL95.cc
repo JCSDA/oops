@@ -15,7 +15,7 @@
 #include "eckit/testing/Test.h"
 #include "lorenz95/LocalizationMatrixL95.h"
 #include "lorenz95/Resolution.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "test/TestFixture.h"
 
@@ -24,7 +24,7 @@ class LocalizationMatrixFixture : TestFixture {
  public:
   LocalizationMatrixFixture() {
     eckit::LocalConfiguration res(TestConfig::config(), "geometry");
-    resol_.reset(new lorenz95::Resolution(res, oops::mpi::comm()));
+    resol_.reset(new lorenz95::Resolution(res, oops::mpi::world()));
 
     eckit::LocalConfiguration cfg(TestConfig::config(), "background error");
     cfg_.reset(new eckit::LocalConfiguration(cfg));

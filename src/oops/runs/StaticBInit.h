@@ -17,7 +17,7 @@
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/State.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/Logger.h"
 
@@ -31,7 +31,7 @@ template <typename MODEL> class StaticBInit : public Application {
 
  public:
   // -----------------------------------------------------------------------------
-  explicit StaticBInit(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {
+  explicit StaticBInit(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {
     instantiateCovarFactory<MODEL>();
   }
   // -----------------------------------------------------------------------------

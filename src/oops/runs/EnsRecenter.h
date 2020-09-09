@@ -18,7 +18,7 @@
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/State.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
 
@@ -31,7 +31,7 @@ template <typename MODEL> class EnsRecenter : public Application {
 
  public:
   // -----------------------------------------------------------------------------
-  explicit EnsRecenter(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {}
+  explicit EnsRecenter(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {}
   // -----------------------------------------------------------------------------
   virtual ~EnsRecenter() {}
   // -----------------------------------------------------------------------------

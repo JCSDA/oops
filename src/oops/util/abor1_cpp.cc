@@ -13,7 +13,7 @@
 #include <cstdlib>
 #include <string>
 
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/util/LibOOPS.h"
 #include "oops/util/Logger.h"
 
@@ -21,7 +21,7 @@ namespace util {
 void abor1_cpp(const std::string & cderror) {
   oops::Log::error() << cderror << std::endl;
   oops::LibOOPS::instance().finalise(false /* finaliseMPI? */);
-  oops::mpi::comm().abort(EXIT_FAILURE);
+  oops::mpi::world().abort(EXIT_FAILURE);
 }
 
 void abor1_cpp(const std::string & cderror, const std::string & file,
@@ -29,7 +29,7 @@ void abor1_cpp(const std::string & cderror, const std::string & file,
   oops::Log::error() << "ABORT: " << cderror << std::endl;
   oops::Log::error() << "       in file '" << file << "', line " << line << std::endl;
   oops::LibOOPS::instance().finalise(false /* finaliseMPI? */);
-  oops::mpi::comm().abort(EXIT_FAILURE);
+  oops::mpi::world().abort(EXIT_FAILURE);
 }
 
 void abor1_cpp_(const char cderror[]) {

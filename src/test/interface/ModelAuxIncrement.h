@@ -27,7 +27,7 @@
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/ModelAuxCovariance.h"
 #include "oops/interface/ModelAuxIncrement.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
@@ -57,7 +57,7 @@ template <typename MODEL> class ModelAuxIncrementFixture : private boost::noncop
   ModelAuxIncrementFixture<MODEL>() {
 //  Setup a geometry
     const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "geometry");
-    resol_.reset(new Geometry_(resolConfig, oops::mpi::comm()));
+    resol_.reset(new Geometry_(resolConfig, oops::mpi::world()));
 
 //  Setup a covariance matrix
     conf_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "model aux error"));

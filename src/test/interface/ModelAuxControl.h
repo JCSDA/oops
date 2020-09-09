@@ -23,7 +23,7 @@
 #include "eckit/testing/Test.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxControl.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "test/TestEnvironment.h"
 
@@ -48,7 +48,7 @@ template <typename MODEL> class ModelAuxControlFixture : private boost::noncopya
     conf_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "model aux control"));
 
     const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "geometry");
-    resol_.reset(new Geometry_(resolConfig, oops::mpi::comm()));
+    resol_.reset(new Geometry_(resolConfig, oops::mpi::world()));
   }
 
   ~ModelAuxControlFixture() {}

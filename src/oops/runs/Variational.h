@@ -33,7 +33,7 @@
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Model.h"
 #include "oops/interface/State.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -48,7 +48,7 @@ template <typename MODEL, typename OBS> class Variational : public Application {
 
  public:
 // -----------------------------------------------------------------------------
-  explicit Variational(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {
+  explicit Variational(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {
     instantiateCostFactory<MODEL, OBS>();
     instantiateCovarFactory<MODEL>();
     instantiateMinFactory<MODEL, OBS>();

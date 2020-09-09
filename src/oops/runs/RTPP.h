@@ -16,7 +16,7 @@
 #include "oops/assimilation/State4D.h"
 #include "oops/base/StateEnsemble.h"
 #include "oops/interface/Geometry.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/Logger.h"
 
@@ -33,7 +33,7 @@ template <typename MODEL> class RTPP : public Application {
  public:
 // -----------------------------------------------------------------------------
 
-  explicit RTPP(const eckit::mpi::Comm & comm = oops::mpi::comm()) : Application(comm) {}
+  explicit RTPP(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {}
 
 // -----------------------------------------------------------------------------
 

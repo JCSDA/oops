@@ -22,7 +22,7 @@
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
@@ -50,7 +50,7 @@ class GeoVaLsFixture : private boost::noncopyable {
     const util::DateTime tbgn(TestEnvironment::config().getString("window begin"));
     const util::DateTime tend(TestEnvironment::config().getString("window end"));
 
-    ospaces_.reset(new ObsSpaces_(TestEnvironment::config(), oops::mpi::comm(), tbgn, tend));
+    ospaces_.reset(new ObsSpaces_(TestEnvironment::config(), oops::mpi::world(), tbgn, tend));
     TestEnvironment::config().get("observations", confs_);
   }
 

@@ -17,7 +17,7 @@
 #include <vector>
 
 #include "oops/assimilation/linsysteigen.h"  // for solving small full linear systems.
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/util/dot_product.h"
 
 namespace oops {
@@ -56,7 +56,7 @@ void blockTriDiagSolve(const std::vector<Eigen::MatrixXd> & alphas,
                        const Eigen::MatrixXd & beta0, Eigen::MatrixXd & ss,
                        bool & complexValues) {
   const int iter = alphas.size();
-  const int members = oops::mpi::comm().size();
+  const int members = oops::mpi::world().size();  // only for toy models
   complexValues = false;
   Eigen::MatrixXd TT = Eigen::MatrixXd::Zero(iter * members, iter * members);
 

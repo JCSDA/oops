@@ -18,7 +18,7 @@
 #include "eckit/testing/Test.h"
 #include "lorenz95/ObsTableView.h"
 #include "lorenz95/ObsVec1D.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "test/TestFixture.h"
 
@@ -32,7 +32,7 @@ class ObsVecTestFixture : TestFixture {
     const util::DateTime bgn(conf.getString("window begin"));
     const util::DateTime end(conf.getString("window end"));
     const eckit::LocalConfiguration otconf(conf, "observation.obs space");
-    obstable_.reset(new lorenz95::ObsTableView(otconf, oops::mpi::comm(), bgn, end));
+    obstable_.reset(new lorenz95::ObsTableView(otconf, oops::mpi::world(), bgn, end));
     const std::vector<std::string> vv{"zz"};
   }
   ~ObsVecTestFixture() {}

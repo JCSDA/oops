@@ -5,16 +5,18 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef TEST_PARALLEL_MPI_MPI_H_
-#define TEST_PARALLEL_MPI_MPI_H_
+#ifndef TEST_MPI_MPI_H_
+#define TEST_MPI_MPI_H_
 
 #include <string>
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/mpi/Comm.h"
 #include "eckit/testing/Test.h"
+
 #include "oops/../test/TestEnvironment.h"
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Expect.h"
@@ -35,9 +37,19 @@ class TestParameters : public oops::Parameters {
   oops::RequiredParameter<std::vector<util::DateTime>> values{"values", this};
 };
 
-CASE("parallel/mpi/mpi/allGathervUsingSerialize") {
+CASE("mpi/mpi/defaultCommunicators") {
+  const eckit::mpi::Comm & world = oops::mpi::world();
+  size_t worldsize = world.size();
+  EXPECT_EQUAL(worldsize, 4);
+
+  const eckit::mpi::Comm & talk_to_myself = oops::mpi::myself();
+  size_t myownsize = talk_to_myself.size();
+  EXPECT_EQUAL(myownsize, 1);
+}
+
+CASE("mpi/mpi/allGathervUsingSerialize") {
   const eckit::Configuration &conf = TestEnvironment::config();
-  const eckit::mpi::Comm &comm = oops::mpi::comm();
+  const eckit::mpi::Comm &comm = oops::mpi::world();
 
   TestParameters localParams;
   const size_t rank = comm.rank();
@@ -59,11 +71,11 @@ CASE("parallel/mpi/mpi/allGathervUsingSerialize") {
 
 class Mpi : public oops::Test {
  private:
-  std::string testid() const override {return "test::parallel::mpi::mpi";}
+  std::string testid() const override {return "test::mpi::mpi";}
 
   void register_tests() const override {}
 };
 
 }  // namespace test
 
-#endif  // TEST_PARALLEL_MPI_MPI_H_
+#endif  // TEST_MPI_MPI_H_

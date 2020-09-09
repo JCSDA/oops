@@ -18,7 +18,7 @@
 #include "eckit/mpi/Comm.h"
 #include "eckit/serialisation/ResizableMemoryStream.h"
 
-#include "oops/parallel/mpi/mpi.h"
+#include "oops/mpi/mpi.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Timer.h"
 
@@ -89,18 +89,18 @@ void TimerHelper::print(std::ostream & os) const {
   os << "------------------------- Timing Statistics -------------------------" << std::endl;
 
 // For MPI applications, gather and print statistics across tasks
-  size_t ntasks = oops::mpi::comm().size();
+  size_t ntasks = oops::mpi::world().size();
   if (ntasks > 1) {
     int tag = 1234;
 //  Tasks send their numbers to task 0
-    if (oops::mpi::comm().rank() > 0) {
+    if (oops::mpi::world().rank() > 0) {
       eckit::ResizableBuffer bufr(8000);
       eckit::ResizableMemoryStream sstr(bufr);
       sstr << timers_.size();
       for (cit jt = timers_.begin(); jt != timers_.end(); ++jt) {
         sstr << jt->first << jt->second;
       }
-      eckit::mpi::comm().send(static_cast<const char*>(bufr.data()), sstr.position(), 0, tag);
+      oops::mpi::world().send(static_cast<const char*>(bufr.data()), sstr.position(), 0, tag);
     } else {  // Task 0
 //    Structure for global statistics
       std::map<std::string, std::array<double, 3>> stats;
@@ -109,12 +109,12 @@ void TimerHelper::print(std::ostream & os) const {
       }
 //    Task 0 receives stats from other tasks
       for (size_t from = 1; from < ntasks; ++from) {
-        eckit::mpi::Status st = eckit::mpi::comm().probe(from, tag);
-        size_t size = eckit::mpi::comm().getCount<char>(st);
+        eckit::mpi::Status st = oops::mpi::world().probe(from, tag);
+        size_t size = oops::mpi::world().getCount<char>(st);
         eckit::ResizableBuffer bufr(size);
         bufr.zero();
 
-        eckit::mpi::comm().receive(static_cast<char*>(bufr.data()), bufr.size(), from, tag);
+        oops::mpi::world().receive(static_cast<char*>(bufr.data()), bufr.size(), from, tag);
         eckit::ResizableMemoryStream sstr(bufr);
 
         std::string name;
