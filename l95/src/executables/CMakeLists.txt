@@ -14,6 +14,10 @@ ecbuild_add_executable( TARGET  l95_diffstates.x
                         SOURCES DiffStates.cc
                         LIBS    lorenz95 )
 
+ecbuild_add_executable( TARGET  l95_addincrement.x
+                        SOURCES AddIncrement.cc
+                        LIBS    lorenz95 )
+
 ecbuild_add_executable( TARGET  l95_eda.x
                         SOURCES EDA.cc
                         LIBS    lorenz95 )

@@ -16,6 +16,7 @@ list( APPEND qg_testinput
   testinput/4dvar_obs_biased.yaml
   testinput/4dvar_rpcg.yaml
   testinput/4dvar_saddlepoint.yaml
+  testinput/addincrement.yaml
   testinput/analytic_forecast.yaml
   testinput/convertstate.yaml
   testinput/dfi.yaml
@@ -73,6 +74,7 @@ list( APPEND qg_testoutput
   testoutput/4dvar_saddlepoint.test
   testoutput/analytic_forecast.test
   testoutput/convertstate.test
+  testoutput/addincrement.test
   testoutput/dfi.test
   testoutput/diffstates.test
   testoutput/dirac_cov.test
@@ -676,8 +678,14 @@ oops_add_test( TESTNAME diffstates
                MODELNAME qg
                YAMLNAME testinput/diffstates.yaml
                EXENAME  qg_diffstates.x
-               TEST_DEPENDS test_qg_eda_3dvar_member2  test_qg_eda_4dvar
+               TEST_DEPENDS test_qg_eda_3dvar_member2 test_qg_eda_4dvar
                DEPENDS qg_eda.x )
+
+oops_add_test( TESTNAME addincrement
+               MODELNAME qg
+               YAMLNAME testinput/addincrement.yaml
+               EXENAME  qg_addincrement.x
+               TEST_DEPENDS test_qg_diffstates )
 
 
 #####################################################################
