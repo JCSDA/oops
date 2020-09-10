@@ -30,6 +30,7 @@ list( APPEND l95_test_input
   testinput/4dvar.allbiases.yaml
   testinput/diffstates.yaml
   testinput/addincrement.yaml
+  testinput/addincrement_scaled.yaml
   testinput/eda.3dfgat.yaml
   testinput/eda.3dvar.yaml
   testinput/eda.4dvar.member3.yaml
@@ -92,6 +93,7 @@ list( APPEND l95_testoutput
   testoutput/4dvar.rplanczos.test
   testoutput/diffstates.test
   testoutput/addincrement.test
+  testoutput/addincrement_scaled.test
   testoutput/enshofx.test
   testoutput/forecast.test
   testoutput/forecast_pseudomodel.test
@@ -682,6 +684,12 @@ oops_add_test( TESTNAME diffstates
 oops_add_test( TESTNAME addincrement
                MODELNAME l95
                YAMLNAME testinput/addincrement.yaml
+               EXENAME l95_addincrement.x
+               TEST_DEPENDS test_l95_diffstates )
+
+oops_add_test( TESTNAME addincrement_scaled
+               MODELNAME l95
+               YAMLNAME testinput/addincrement_scaled.yaml
                EXENAME l95_addincrement.x
                TEST_DEPENDS test_l95_diffstates )
 

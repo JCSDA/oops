@@ -56,6 +56,12 @@ template <typename MODEL> class AddIncrement : public Application {
     dx.read(incConf);
     Log::test() << "Increment: " << dx << std::endl;
 
+//  Scale increment
+    if (incConf.has("scaling factor")) {
+      dx *= incConf.getDouble("scaling factor");
+      Log::test() << "Scaled the increment: " << dx << std::endl;
+    }
+
 //  Assertions on state versus increment
     ASSERT(xx.validTime() == dx.validTime());
 
