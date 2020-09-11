@@ -37,6 +37,12 @@ set( CMAKE_CXX_FLAGS_BIT         "-O2" )
 set( CMAKE_CXX_LINK_FLAGS        "" )
 
 ####################################################################
+# FLAGS FOR AUTOPROFILING
+####################################################################
+
+set( CXX_AUTOPROFILING_FLAGS        "-finstrument-functions" )
+
+####################################################################
 
 # Meaning of flags
 # ----------------

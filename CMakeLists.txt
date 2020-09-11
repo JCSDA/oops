@@ -25,6 +25,8 @@ option( ENABLE_LORENZ95_MODEL "Build LORENZ95 toy model" ON )
 option( ENABLE_QG_MODEL "Build QG toy model" ON )
 option( ENABLE_OOPS_DOC "Build OOPS documentation" OFF )
 option( ENABLE_MKL "Use MKL for LAPACK implementation (if available)" ON )
+option( ENABLE_GPTL "Use GPTL profiling library (if available)" OFF )
+option( ENABLE_AUTOPROFILING "Enable function-based autoprofiling with GPTL (if available)" OFF )
 
 include( ${PROJECT_NAME}_compiler_flags )
 include( GNUInstallDirs )
@@ -53,6 +55,18 @@ if(OpenMP_FOUND)
     find_package( atlas 0.18.1 REQUIRED COMPONENTS OMP OMP_Fortran )
 else()
     find_package( atlas 0.18.1 REQUIRED )
+endif()
+
+#Optional Dependencies
+find_package( jedicmake QUIET )
+if( jedicmake_FOUND AND ENABLE_GPTL )
+    find_package( GPTL )
+    add_compile_definitions(ENABLE_GPTL)
+endif()
+
+if ( GPTL_FOUND AND ENABLE_AUTOPROFILING )
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_AUTOPROFILING_FLAGS}")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${Fortran_AUTOPROFILING_FLAGS}")
 endif()
 
 ## Sources

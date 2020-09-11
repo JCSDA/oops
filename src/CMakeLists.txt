@@ -449,6 +449,9 @@ target_link_libraries( ${PROJECT_NAME} PUBLIC eckit )
 target_link_libraries( ${PROJECT_NAME} PUBLIC fckit )
 target_link_libraries( ${PROJECT_NAME} PUBLIC atlas_f )
 target_link_libraries( ${PROJECT_NAME} PUBLIC Boost::boost )
+if ( GPTL_FOUND )
+	target_link_libraries( ${PROJECT_NAME} PUBLIC GPTL::GPTL )
+endif()
 
 #Configure include directory layout for build-tree to match install-tree
 set(OOPS_BUILD_DIR_INCLUDE_PATH ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/include)

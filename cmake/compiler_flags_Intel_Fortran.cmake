@@ -35,6 +35,12 @@ set( CMAKE_Fortran_FLAGS_BIT     "-O2 -ip -ipo -unroll -inline -no-heap-arrays" 
 set( CMAKE_Fortran_LINK_FLAGS    "" )
 
 ####################################################################
+# FLAGS FOR AUTOPROFILING
+####################################################################
+
+set( Fortran_AUTOPROFILING_FLAGS        "-finstrument-functions" )
+
+####################################################################
 
 # Meaning of flags
 # ----------------

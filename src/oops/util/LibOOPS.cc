@@ -24,6 +24,14 @@
 
 #include "oops/mpi/mpi.h"
 #include "oops/util/LibOOPS.h"
+#include "oops/util/Logger.h"
+
+#ifdef ENABLE_GPTL
+#include <gptl.h>
+#include <gptlmpi.h>
+
+int do_profile = false;  // Flag says whether to enable profiling with GPTL (default false)
+#endif
 
 extern void trap_sigfpe(const int);
 
@@ -31,15 +39,17 @@ namespace oops {
 
 //------------------------------------------------------------------------------
 
-bool getEnv(const std::string& env, bool default_value) {
-  if (::getenv(env.c_str())) {return eckit::Translator<std::string, bool>()(::getenv(env.c_str()));}
-  return default_value;
-}
+  bool getEnv(const std::string& env, bool default_value) {
+    if (::getenv(env.c_str()))
+      {return eckit::Translator<std::string, bool>()(::getenv(env.c_str()));}
+    return default_value;
+  }
 
-int getEnv(const std::string& env, int default_value) {
-  if (::getenv(env.c_str())) {return eckit::Translator<std::string, int>()(::getenv(env.c_str()));}
-  return default_value;
-}
+  int getEnv(const std::string& env, int default_value) {
+    if (::getenv(env.c_str()))
+      {return eckit::Translator<std::string, int>()(::getenv(env.c_str()));}
+    return default_value;
+  }
 
 //------------------------------------------------------------------------------
 
@@ -85,6 +95,10 @@ void LibOOPS::initialise() {
     do_abortfpe = getEnv("OOPS_ABORTFPE", 1);
     trap_sigfpe(do_abortfpe);
   }
+
+#ifdef ENABLE_GPTL
+  do_profile = getEnv("OOPS_PROFILE", 0);
+#endif
 }
 
 /** Add a rank-dependent tee file
@@ -105,7 +119,20 @@ void LibOOPS::teeOutput(const std::string & fileprefix) {
  */
 void LibOOPS::finalise(bool finaliseMPI) {
     eckit::Log::flush();
-
+#ifdef ENABLE_GPTL
+    if (do_profile) {
+      int ret;
+      if (oops::mpi::comm().rank() == 0) {
+        oops::Log::info() << "Calling GPTLpr(0)" << std::endl;
+        ret = GPTLpr(0);                       // Print timing info for rank 0
+      }
+      // Summarize timing info across ranksL For now assume MPI_COMM_WORLD
+      if (oops::mpi::comm().size() > 1) {
+        oops::Log::info() << "Calling GPTLpr_summary" << std::endl;
+        ret = GPTLpr_summary(MPI_COMM_WORLD);
+      }
+    }
+#endif
     // Make sure that these specialised channels that wrap eckit::Log::info() are
     // destroyed before eckit::Log::info gets destroyed.
     // Just in case someone still tries to log, we reset to empty channels.

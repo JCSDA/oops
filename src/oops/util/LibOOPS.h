@@ -18,6 +18,7 @@
 #include <memory>
 #include <string>
 #include "eckit/system/Library.h"
+#include "eckit/utils/Translator.h"
 
 namespace oops {
 
