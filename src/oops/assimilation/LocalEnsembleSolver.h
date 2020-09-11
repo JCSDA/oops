@@ -24,6 +24,7 @@
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/util/Logger.h"
+#include "oops/util/Timer.h"
 
 namespace oops {
 
@@ -42,6 +43,8 @@ class LocalEnsembleSolver {
   typedef StateEnsemble<MODEL>      StateEnsemble_;
 
  public:
+  static const std::string classname() {return "oops::LocalEnsembleSolver";}
+
   /// initialize solver with \p obspaces, \p geometry, full \p config and \p nens ensemble size
   LocalEnsembleSolver(ObsSpaces_ & obspaces, const Geometry_ & geometry,
                       const eckit::Configuration & config, size_t nens);
@@ -83,6 +86,8 @@ LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
 template <typename MODEL, typename OBS>
 Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(const StateEnsemble_ & ens_xx,
                                                                size_t iteration) {
+  util::Timer timer(classname(), "computeHofX");
+
   ASSERT(ens_xx.size() == Yb_.size());
 
   const size_t nens = ens_xx.size();

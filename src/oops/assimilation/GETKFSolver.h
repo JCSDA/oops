@@ -10,6 +10,7 @@
 
 #include <Eigen/Dense>
 #include <cfloat>
+#include <string>
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
@@ -30,6 +31,7 @@
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/util/Logger.h"
+#include "oops/util/Timer.h"
 
 namespace oops {
 
@@ -57,6 +59,8 @@ class GETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
   typedef VerticalLocEV<MODEL>      VerticalLocEV_;
 
  public:
+  static const std::string classname() {return "oops::GETKFSolver";}
+
   /// Constructor (allocates Wa, wa, HZb_,
   /// saves options from the config, computes VerticalLocEV_)
   GETKFSolver(ObsSpaces_ &, const Geometry_ &, const eckit::Configuration &, size_t);
@@ -134,6 +138,8 @@ GETKFSolver<MODEL, OBS>::GETKFSolver(ObsSpaces_ & obspaces, const Geometry_ & ge
 template <typename MODEL, typename OBS>
 Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble_ & ens_xx,
                                                        size_t iteration) {
+  util::Timer timer(classname(), "computeHofX");
+
   // compute H(x) for the original ensemble members
   Observations_ yb_mean = LocalEnsembleSolver<MODEL, OBS>::computeHofX(ens_xx, iteration);
 
@@ -165,6 +171,7 @@ void GETKFSolver<MODEL, OBS>::computeWeights(const Departures_ & dy,
   // compute transformation matrix, save in Wa_, wa_
   // Yb(nobs,neig*nens), YbOrig(nobs,nens)
   // uses GSI GETKF code
+  util::Timer timer(classname(), "computeWeights");
 
   const int nobsl = dy.nobs();
 
@@ -204,6 +211,7 @@ void GETKFSolver<MODEL, OBS>::applyWeights(const IncrementEnsemble_ & bkg_pert,
                                            IncrementEnsemble_ & ana_pert,
                                            const GeometryIterator_ & i) {
   // apply Wa_, wa_
+  util::Timer timer(classname(), "applyWeights");
 
   const LETKFInflationParameters & inflopt = options_.infl;
 
@@ -279,6 +287,8 @@ template <typename MODEL, typename OBS>
 void GETKFSolver<MODEL, OBS>::measurementUpdate(const IncrementEnsemble_ & bkg_pert,
                                                 const GeometryIterator_ & i,
                                                 IncrementEnsemble_ & ana_pert) {
+  util::Timer timer(classname(), "measurementUpdate");
+
   // create the local subset of observations
   ObsSpaces_ local_obs(this->obspaces_, *i, this->obsconf_);
   Departures_ local_omb(local_obs, this->omb_);

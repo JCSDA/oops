@@ -23,6 +23,8 @@
 
 #include <Eigen/Dense>
 
+#include <string>
+
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/LETKFSolver.h"
 #include "oops/assimilation/LETKFSolverParameters.h"
@@ -35,6 +37,7 @@
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/util/Logger.h"
+#include "oops/util/Timer.h"
 
 namespace oops {
 
@@ -49,6 +52,8 @@ class LETKFSolverOOPS : public LETKFSolver<MODEL, OBS> {
   typedef ObsSpaces<OBS>            ObsSpaces_;
 
  public:
+  static const std::string classname() {return "oops::LETKFSolverOOPS";}
+
   /// Constructor (allocates Wa, wa, saves options from the config)
   LETKFSolverOOPS(ObsSpaces_ &, const Geometry_ &, const eckit::Configuration &, size_t);
 
@@ -121,6 +126,8 @@ void LETKFSolverOOPS<MODEL, OBS>::computeWeights(const Departures_ & dy,
                                             const DeparturesEnsemble_ & Yb,
                                             const ObsErrors_ & R) {
   // compute transformation matrix, save in Wa_, wa_, and trans_
+  util::Timer timer(classname(), "computeWeights");
+
   const LETKFInflationParameters & inflopt = options_.infl;
   double infl = inflopt.mult;
   // fill in the work matrix (note that since the matrix is symmetric,
@@ -175,6 +182,8 @@ void LETKFSolverOOPS<MODEL, OBS>::applyWeights(const IncrementEnsemble_ & bkg_pe
                                           IncrementEnsemble_ & ana_pert,
                                           const GeometryIterator_ & i) {
 // apply Wa_, wa_ (here combined in the trans_ matrix)
+  util::Timer timer(classname(), "applyWeights");
+
   for (size_t itime=0; itime < bkg_pert[0].size(); ++itime) {
     for (size_t jj=0; jj < nens_; ++jj) {
       LocalIncrement gp = bkg_pert[0][itime].getLocal(i);

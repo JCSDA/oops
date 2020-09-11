@@ -23,6 +23,7 @@
 
 #include <Eigen/Dense>
 #include <cfloat>
+#include <string>
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
@@ -37,6 +38,7 @@
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/util/Logger.h"
+#include "oops/util/Timer.h"
 
 namespace oops {
 
@@ -51,6 +53,8 @@ class LETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
   typedef ObsSpaces<OBS>            ObsSpaces_;
 
  public:
+  static const std::string classname() {return "oops::LETKFSolver";}
+
   LETKFSolver(ObsSpaces_ &, const Geometry_ &, const eckit::Configuration &, size_t);
 
   /// KF update + posterior inflation at a grid point location (GeometryIterator_)
@@ -124,6 +128,8 @@ template <typename MODEL, typename OBS>
 void LETKFSolver<MODEL, OBS>::measurementUpdate(const IncrementEnsemble_ & bkg_pert,
                                                 const GeometryIterator_ & i,
                                                 IncrementEnsemble_ & ana_pert) {
+  util::Timer timer(classname(), "measurementUpdate");
+
   // create the local subset of observations
   ObsSpaces_ local_obs(this->obspaces_, *i, this->obsconf_);
   Departures_ local_omb(local_obs, this->omb_);
@@ -151,6 +157,8 @@ void LETKFSolver<MODEL, OBS>::computeWeights(const Departures_ & dy_oops,
   // compute transformation matrix, save in Wa_, wa_
   // uses C++ eigen interface
   // implements LETKF from Hunt et al. 2007
+  util::Timer timer(classname(), "computeWeights");
+
   const LETKFInflationParameters & inflopt = options_.infl;
 
   // cast oops objects to eigen
@@ -189,6 +197,7 @@ void LETKFSolver<MODEL, OBS>::applyWeights(const IncrementEnsemble_ & bkg_pert,
                                            IncrementEnsemble_ & ana_pert,
                                            const GeometryIterator_ & i) {
   // applies Wa_, wa_
+  util::Timer timer(classname(), "applyWeights");
 
   const LETKFInflationParameters & inflopt = options_.infl;
 
