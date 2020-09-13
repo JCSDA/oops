@@ -122,12 +122,12 @@ void LibOOPS::finalise(bool finaliseMPI) {
 #ifdef ENABLE_GPTL
     if (do_profile) {
       int ret;
-      if (oops::mpi::comm().rank() == 0) {
+      if (oops::mpi::world().rank() == 0) {
         oops::Log::info() << "Calling GPTLpr(0)" << std::endl;
         ret = GPTLpr(0);                       // Print timing info for rank 0
       }
       // Summarize timing info across ranksL For now assume MPI_COMM_WORLD
-      if (oops::mpi::comm().size() > 1) {
+      if (oops::mpi::world().size() > 1) {
         oops::Log::info() << "Calling GPTLpr_summary" << std::endl;
         ret = GPTLpr_summary(MPI_COMM_WORLD);
       }
