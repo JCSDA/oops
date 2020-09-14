@@ -148,3 +148,39 @@ map_parameter_json_style_unquoted_keys:
   duration_or_string_to_duration_map_1: { day: PT14H, night: PT10H }
   float_or_int_to_float_map_2: 3.5
   duration_or_string_to_duration_map_2: PT12H
+device: # These parameters must be sorted alphabetically for the serialization test.
+  device_with_default:
+    paper_format: A3
+    type: printer
+  optional_device:
+    paper_format: Letter
+    type: printer
+  required_device:
+    diameter: 30
+    type: screen
+alternative_device:
+  optional_device:
+    type: screen
+    diameter: 40
+  required_device:
+    type: printer
+    paper_format: A5
+  device_with_default:
+    type: screen
+    diameter: 20
+device_with_default_not_set:
+  device_with_default: {}
+  optional_device: {}
+  required_device:
+    diameter: 30
+    type: screen
+optional_device_not_set:
+  device_with_default: {}
+  optional_device: {}
+  required_device:
+    diameter: 30
+    type: screen
+required_device_not_set:
+  device_with_default: {}
+  optional_device: {}
+  required_device: {}

@@ -304,6 +304,7 @@ oops/util/utilNamespaceDoc.h
 oops/util/unstructured_interpolation_mod.f90
 
 oops/util/parameters/OptionalParameter.h
+oops/util/parameters/OptionalPolymorphicParameter.h
 oops/util/parameters/Parameter.h
 oops/util/parameters/ParameterBase.cc
 oops/util/parameters/ParameterBase.h
@@ -311,7 +312,10 @@ oops/util/parameters/Parameters.cc
 oops/util/parameters/Parameters.h
 oops/util/parameters/ParameterTraits.h
 oops/util/parameters/ParameterTraitsScalarOrMap.h
+oops/util/parameters/PolymorphicParameter.h
+oops/util/parameters/PolymorphicParameterTraits.h
 oops/util/parameters/RequiredParameter.h
+oops/util/parameters/RequiredPolymorphicParameter.h
 )
 
 list( APPEND oops_test_src_files

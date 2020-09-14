@@ -14,6 +14,8 @@
 #include <utility>
 #include <vector>
 
+#include <boost/make_unique.hpp>
+
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include "eckit/config/LocalConfiguration.h"
@@ -23,11 +25,14 @@
 #include "oops/util/Expect.h"
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/OptionalParameter.h"
+#include "oops/util/parameters/OptionalPolymorphicParameter.h"
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/ParameterTraits.h"
 #include "oops/util/parameters/ParameterTraitsScalarOrMap.h"
+#include "oops/util/parameters/PolymorphicParameter.h"
 #include "oops/util/parameters/RequiredParameter.h"
+#include "oops/util/parameters/RequiredPolymorphicParameter.h"
 
 namespace test {
 
@@ -127,6 +132,69 @@ class MyMapParameters : public oops::Parameters {
                                             util::ScalarOrMap<std::string, util::Duration>(), this};
 };
 
+// Classes required to test support for polymorphic parameters.
+
+class DeviceTypeDependentParameters : public oops::Parameters {
+  OOPS_ABSTRACT_PARAMETERS(DeviceTypeDependentParameters, Parameters)
+};
+
+class ScreenParameters : public DeviceTypeDependentParameters {
+  OOPS_CONCRETE_PARAMETERS(ScreenParameters, DeviceTypeDependentParameters)
+ public:
+  oops::OptionalParameter<float> diameter{"diameter", this};
+};
+
+class PrinterParameters : public DeviceTypeDependentParameters {
+  OOPS_CONCRETE_PARAMETERS(PrinterParameters, DeviceTypeDependentParameters)
+ public:
+  oops::Parameter<std::string> paperFormat{"paper_format", "A4", this};
+};
+
+class DeviceFactory {
+ public:
+  static std::unique_ptr<DeviceTypeDependentParameters> createParameters(const std::string &name) {
+    if (name == "screen") {
+      return boost::make_unique<ScreenParameters>();
+    }
+    if (name == "printer") {
+      return boost::make_unique<PrinterParameters>();
+    }
+    throw eckit::BadParameter("Unrecognized device type");
+  }
+
+  static std::vector<std::string> getMakerNames() {
+    return {"screen", "printer"};
+  }
+};
+
+class RequiredDeviceParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(RequiredDeviceParameters, Parameters)
+ public:
+  oops::RequiredPolymorphicParameter<DeviceTypeDependentParameters, DeviceFactory>
+    device{"type", this};
+};
+
+class DeviceParametersWithDefault : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(DeviceParametersWithDefault, Parameters)
+ public:
+  oops::PolymorphicParameter<DeviceTypeDependentParameters, DeviceFactory>
+    device{"type", "screen", this};
+};
+
+class OptionalDeviceParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(OptionalDeviceParameters, Parameters)
+ public:
+  oops::OptionalPolymorphicParameter<DeviceTypeDependentParameters, DeviceFactory>
+   device{"type", this};
+};
+
+class AllDeviceParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(AllDeviceParameters, Parameters)
+ public:
+  oops::RequiredParameter<RequiredDeviceParameters> requiredDevice{"required_device", this};
+  oops::Parameter<DeviceParametersWithDefault> deviceWithDefault{"device_with_default", {}, this};
+  oops::Parameter<OptionalDeviceParameters> optionalDevice{"optional_device", {}, this};
+};
 
 template <typename ParametersType>
 void doTestSerialization(const eckit::Configuration &config) {
@@ -479,6 +547,207 @@ void testMoveAssignmentOperator() {
   expectMatchesAlternativeConf(otherParams);
 }
 
+// Tests of polymorphic parameters
+
+void testPolymorphicParametersDeserialization() {
+  AllDeviceParameters params;
+  EXPECT(params.optionalDevice.value().device.value() == nullptr);
+  EXPECT_EQUAL(params.deviceWithDefault.value().device.id(), "screen");
+
+  const eckit::LocalConfiguration conf(TestEnvironment::config(), "device");
+  params.deserialize(conf);
+
+  {
+    EXPECT(params.optionalDevice.value().device.value() != nullptr);
+    EXPECT(params.optionalDevice.value().device.id() != boost::none);
+    EXPECT_EQUAL(*params.optionalDevice.value().device.id(), "printer");
+    const DeviceTypeDependentParameters &device =
+        *params.optionalDevice.value().device.value();
+    auto deviceParameters = dynamic_cast<const PrinterParameters*>(&device);
+    EXPECT(deviceParameters != nullptr);
+    EXPECT_EQUAL(deviceParameters->paperFormat.value(), "Letter");
+  }
+  {
+    EXPECT_EQUAL(params.requiredDevice.value().device.id(), "screen");
+    const DeviceTypeDependentParameters &device = params.requiredDevice.value().device.value();
+    auto deviceParameters = dynamic_cast<const ScreenParameters*>(&device);
+    EXPECT(deviceParameters != nullptr);
+    EXPECT(deviceParameters->diameter.value() != boost::none);
+    EXPECT_EQUAL(*deviceParameters->diameter.value(), 30.0f);
+  }
+  {
+    EXPECT_EQUAL(params.deviceWithDefault.value().device.id(), "printer");
+    const DeviceTypeDependentParameters &device =
+        params.deviceWithDefault.value().device.value();
+    auto deviceParameters = dynamic_cast<const PrinterParameters*>(&device);
+    EXPECT(deviceParameters != nullptr);
+    EXPECT_EQUAL(deviceParameters->paperFormat.value(), "A3");
+  }
+}
+
+// Tests behavior of PolymorphicParameter<PARAMETERS, ...>::deserialize() when the YAML file doesn't
+// contain the keyword used to select the type of the subclass of PARAMETERS to be instantiated.
+void testPolymorphicParametersIncompleteDeserialization() {
+  AllDeviceParameters params;
+
+  const eckit::LocalConfiguration conf(TestEnvironment::config(), "device_with_default_not_set");
+  params.deserialize(conf);
+
+  {
+    EXPECT_EQUAL(params.deviceWithDefault.value().device.id(), "screen");
+    const DeviceTypeDependentParameters &device =
+        params.deviceWithDefault.value().device.value();
+    auto deviceParameters = dynamic_cast<const ScreenParameters*>(&device);
+    EXPECT(deviceParameters != nullptr);
+    EXPECT(deviceParameters->diameter.value() == boost::none);
+  }
+}
+
+// Tests behavior of OptionalPolymorphicParameter<PARAMETERS, ...>::deserialize() when the YAML file
+// doesn't contain the keyword used to select the type of the subclass of PARAMETERS to be
+// instantiated.
+void testOptionalPolymorphicParametersIncompleteDeserialization() {
+  AllDeviceParameters params;
+
+  const eckit::LocalConfiguration conf(TestEnvironment::config(), "optional_device_not_set");
+  params.deserialize(conf);
+
+  {
+    EXPECT(params.optionalDevice.value().device.id() == boost::none);
+    EXPECT(params.optionalDevice.value().device.value() == nullptr);
+  }
+}
+
+// Tests behavior of RequiredPolymorphicParameter<PARAMETERS, ...>::deserialize() when the YAML file
+// doesn't contain the keyword used to select the type of the subclass of PARAMETERS to be
+// instantiated.
+void testRequiredPolymorphicParametersIncompleteDeserialization() {
+  AllDeviceParameters params;
+
+  const eckit::LocalConfiguration conf(TestEnvironment::config(), "required_device_not_set");
+  EXPECT_THROWS(params.deserialize(conf));
+}
+
+void expectMatchesFullConf(const AllDeviceParameters &params) {
+  {
+    const DeviceTypeDependentParameters *device = params.optionalDevice.value().device.value();
+    EXPECT(device != nullptr);
+    auto deviceParameters = dynamic_cast<const PrinterParameters*>(device);
+    EXPECT(deviceParameters != nullptr);
+    EXPECT_EQUAL(deviceParameters->paperFormat.value(), "Letter");
+  }
+  {
+    const DeviceTypeDependentParameters &device = params.requiredDevice.value().device.value();
+    auto deviceParameters = dynamic_cast<const ScreenParameters*>(&device);
+    EXPECT(deviceParameters != nullptr);
+    EXPECT(deviceParameters->diameter.value() != boost::none);
+    EXPECT_EQUAL(*deviceParameters->diameter.value(), 30.0f);
+  }
+  {
+    const DeviceTypeDependentParameters &device = params.deviceWithDefault.value().device.value();
+    auto deviceParameters = dynamic_cast<const PrinterParameters*>(&device);
+    EXPECT(deviceParameters != nullptr);
+    EXPECT_EQUAL(deviceParameters->paperFormat.value(), "A3");
+  }
+}
+
+void expectMatchesAlternativeConf(const AllDeviceParameters &params) {
+  {
+    const DeviceTypeDependentParameters *device = params.optionalDevice.value().device.value();
+    EXPECT(device != nullptr);
+    auto deviceParameters = dynamic_cast<const ScreenParameters*>(device);
+    EXPECT(deviceParameters != nullptr);
+    EXPECT(deviceParameters->diameter.value() != boost::none);
+    EXPECT_EQUAL(*deviceParameters->diameter.value(), 40.0f);
+  }
+  {
+    const DeviceTypeDependentParameters &device = params.requiredDevice.value().device.value();
+    auto deviceParameters = dynamic_cast<const PrinterParameters*>(&device);
+    EXPECT(deviceParameters != nullptr);
+    EXPECT_EQUAL(deviceParameters->paperFormat.value(), "A5");
+  }
+  {
+    const DeviceTypeDependentParameters &device = params.deviceWithDefault.value().device.value();
+    auto deviceParameters = dynamic_cast<const ScreenParameters*>(&device);
+    EXPECT(deviceParameters != nullptr);
+    EXPECT(deviceParameters->diameter.value() != boost::none);
+    EXPECT_EQUAL(*deviceParameters->diameter.value(), 20.0f);
+  }
+}
+
+void testPolymorphicParametersCopyConstructor() {
+  const eckit::LocalConfiguration fullConf(TestEnvironment::config(), "device");
+  const eckit::LocalConfiguration alternativeConf(TestEnvironment::config(), "alternative_device");
+
+  AllDeviceParameters params;
+  params.deserialize(fullConf);
+
+  AllDeviceParameters otherParams = params;
+  expectMatchesFullConf(otherParams);
+
+  otherParams.deserialize(alternativeConf);
+  expectMatchesAlternativeConf(otherParams);
+
+  expectMatchesFullConf(params);
+
+  params.deserialize(alternativeConf);
+  expectMatchesAlternativeConf(params);
+}
+
+void testPolymorphicParametersMoveConstructor() {
+  const eckit::LocalConfiguration fullConf(TestEnvironment::config(), "device");
+  const eckit::LocalConfiguration alternativeConf(TestEnvironment::config(), "alternative_device");
+
+  AllDeviceParameters params;
+  params.deserialize(fullConf);
+
+  AllDeviceParameters otherParams = std::move(params);
+  expectMatchesFullConf(otherParams);
+
+  otherParams.deserialize(alternativeConf);
+  expectMatchesAlternativeConf(otherParams);
+}
+
+void testPolymorphicParametersCopyAssignmentOperator() {
+  const eckit::LocalConfiguration fullConf(TestEnvironment::config(), "device");
+  const eckit::LocalConfiguration alternativeConf(TestEnvironment::config(), "alternative_device");
+
+  AllDeviceParameters params;
+  params.deserialize(fullConf);
+
+  AllDeviceParameters otherParams;
+  otherParams = params;
+  expectMatchesFullConf(otherParams);
+
+  otherParams.deserialize(alternativeConf);
+  expectMatchesAlternativeConf(otherParams);
+
+  expectMatchesFullConf(params);
+
+  params.deserialize(alternativeConf);
+  expectMatchesAlternativeConf(params);
+}
+
+void testPolymorphicParametersMoveAssignmentOperator() {
+  const eckit::LocalConfiguration fullConf(TestEnvironment::config(), "device");
+  const eckit::LocalConfiguration alternativeConf(TestEnvironment::config(), "alternative_device");
+
+  AllDeviceParameters params;
+  params.deserialize(fullConf);
+
+  AllDeviceParameters otherParams;
+  otherParams = std::move(params);
+  expectMatchesFullConf(otherParams);
+
+  otherParams.deserialize(alternativeConf);
+  expectMatchesAlternativeConf(otherParams);
+}
+
+void testPolymorphicParametersSerialization() {
+  const eckit::LocalConfiguration conf(TestEnvironment::config(), "device");
+  doTestSerialization<AllDeviceParameters>(conf);
+}
+
 class Parameters : public oops::Test {
  private:
   std::string testid() const override {return "test::Parameters";}
@@ -557,6 +826,36 @@ class Parameters : public oops::Test {
 
     ts.emplace_back(CASE("util/Parameters/mapParametersSerialization") {
                       testMapParametersSerialization();
+                    });
+
+    ts.emplace_back(CASE("util/Parameters/testPolymorphicParametersDeserialization") {
+                      testPolymorphicParametersDeserialization();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testPolymorphicParametersIncompleteDeserialization") {
+                      testPolymorphicParametersIncompleteDeserialization();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testOptionalPolymorphicParameters"
+                         "IncompleteDeserialization") {
+                      testOptionalPolymorphicParametersIncompleteDeserialization();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testRequiredPolymorphicParameters"
+                         "IncompleteDeserialization") {
+                      testRequiredPolymorphicParametersIncompleteDeserialization();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testPolymorphicParametersCopyConstructor") {
+                      testPolymorphicParametersCopyConstructor();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testPolymorphicParametersMoveConstructor") {
+                      testPolymorphicParametersMoveConstructor();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testPolymorphicParametersCopyAssignmentOperator") {
+                      testPolymorphicParametersCopyAssignmentOperator();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testPolymorphicParametersMoveAssignmentOperator") {
+                      testPolymorphicParametersMoveAssignmentOperator();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testPolymorphicParametersSerialization") {
+                      testPolymorphicParametersSerialization();
                     });
   }
 };
