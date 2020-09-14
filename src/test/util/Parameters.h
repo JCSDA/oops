@@ -127,6 +127,36 @@ class MyMapParameters : public oops::Parameters {
                                             util::ScalarOrMap<std::string, util::Duration>(), this};
 };
 
+
+template <typename ParametersType>
+void doTestSerialization(const eckit::Configuration &config) {
+  // We deserialize a configuration loaded from a YAML file into parameters and then serialize them
+  // back into a configuration. The test verifies that the configuration objects produce the same
+  // output when printed.
+  //
+  // For this to work, parameter names in the YAML file must be ordered alphabetically; that's
+  // because the YAML parser creates configurations storing keys and values OrderedMapContent
+  // objects (preserving the order in which individual options were specified in the YAML file),
+  // but the LocalConfiguration::set() method stores keys and values in MapContent objects (with
+  // keys ordered alphabetically).
+
+  ParametersType params;
+  params.deserialize(config);
+
+  eckit::LocalConfiguration outputConfig;
+  params.serialize(outputConfig);
+
+  std::stringstream expectedStream;
+  expectedStream << config;
+  const std::string expected = expectedStream.str();
+
+  std::stringstream receivedStream;
+  receivedStream << outputConfig;
+  std::string received = receivedStream.str();
+
+  EXPECT_EQUAL(received, expected);
+}
+
 void testDefaultValues() {
   const eckit::LocalConfiguration conf(TestEnvironment::config());
 
@@ -202,6 +232,12 @@ void testCorrectValues() {
   EXPECT(params.embeddedParameters.optDateTimeParameter.value() != boost::none);
   EXPECT_EQUAL(params.embeddedParameters.optDateTimeParameter.value().get(),
                util::DateTime(2010, 3, 4, 5, 6, 7));
+}
+
+void testSerialization() {
+  MyOptionalAndRequiredParameters params;
+  const eckit::LocalConfiguration fullConf(TestEnvironment::config(), "full");
+  doTestSerialization<MyOptionalAndRequiredParameters>(fullConf);
 }
 
 void testIncorrectValueOfFloatParameter() {
@@ -352,6 +388,13 @@ void testMapParametersJsonStyleUnquotedKeys() {
   testMapParameters(params);
 }
 
+void testMapParametersSerialization() {
+  MyMapParameters params;
+  const eckit::LocalConfiguration conf(TestEnvironment::config(),
+                                       "map_parameter_json_style_quoted_keys");
+  doTestSerialization<MyMapParameters>(conf);
+}
+
 // Tests of special member functions
 
 void expectMatchesFullConf(const MyOptionalAndRequiredParameters &params) {
@@ -492,6 +535,9 @@ class Parameters : public oops::Test {
     ts.emplace_back(CASE("util/Parameters/testMoveAssignmentOperator") {
                       testMoveAssignmentOperator();
                     });
+    ts.emplace_back(CASE("util/Parameters/serialization") {
+                      testSerialization();
+                    });
 
     // Test fails because of a bug in the eckit YAML parser
     // ts.emplace_back(CASE("util/Parameters/mapParametersYamlStyleQuotedKeys") {
@@ -508,6 +554,10 @@ class Parameters : public oops::Test {
     // ts.emplace_back(CASE("util/Parameters/mapParametersJsonStyleUnquotedKeys") {
     //                   testMapParametersJsonStyleUnquotedKeys();
     //                 });
+
+    ts.emplace_back(CASE("util/Parameters/mapParametersSerialization") {
+                      testMapParametersSerialization();
+                    });
   }
 };
 

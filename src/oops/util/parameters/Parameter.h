@@ -38,20 +38,23 @@ class Parameter : public ParameterBase {
   ///
   /// \param name
   ///   Name of the key from which this parameter's value will be loaded when parameters are
-  ///   deserialized from a Configuration object.
+  ///   deserialized from a Configuration object. Similarly, name of the key to which this
+  ///   parameter's value will be saved when parameters are serialized to a Configuration object.
   /// \param defaultValue
   ///   Default value of the parameter, used if the Configuration object from which parameters are
   ///   deserialized doesn't contain a key with name \p name.
   /// \param parent
   ///   Pointer to the Parameters object representing the collection of options located at
-  ///   the same level of the configuration tree as \p name. A call to deserialize()
-  ///   on that object will automatically trigger a call to deserialize() on this
+  ///   the same level of the configuration tree as \p name. A call to deserialize() or serialize()
+  ///   on that object will automatically trigger a call to deserialize() or serialize() on this
   ///   parameter.
   Parameter(const char *name, const T& defaultValue, Parameters *parent = nullptr)
     : ParameterBase(parent), name_(name), value_(defaultValue)
   {}
 
   void deserialize(util::CompositePath &path, const eckit::Configuration &config) override;
+
+  void serialize(eckit::LocalConfiguration &config) const override;
 
   /// \brief The value stored in this parameter.
   const T &value() const { return value_; }
@@ -71,6 +74,11 @@ void Parameter<T>::deserialize(util::CompositePath &path,
   if (newValue != boost::none) {
     value_ = std::move(newValue.get());
   }
+}
+
+template <typename T>
+void Parameter<T>::serialize(eckit::LocalConfiguration &config) const {
+  ParameterTraits<T>::set(config, name_, value_);
 }
 
 }  // namespace oops

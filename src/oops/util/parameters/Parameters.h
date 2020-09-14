@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "oops/util/parameters/ParameterBase.h"
+#include "oops/util/Printable.h"
 
 namespace eckit {
   class Channel;
@@ -95,7 +96,7 @@ namespace oops {
 ///       OOPS_CONCRETE_PARAMETERS(MyConcreteParameters, MyAbstractParameters)
 ///       // rest of class definition
 ///     };
-class Parameters : public ParameterBase {
+class Parameters : public ParameterBase, public util::Printable {
  protected:
   Parameters() : ParameterBase() {}
   explicit Parameters(Parameters* parent) : ParameterBase(parent) {}
@@ -110,6 +111,8 @@ class Parameters : public ParameterBase {
 
  private:
   virtual Parameters* cloneImpl() const = 0;
+
+  void print(std::ostream &os) const override;
 
  public:
   /// \brief Return a unique_ptr to a clone of this object.
@@ -139,6 +142,8 @@ class Parameters : public ParameterBase {
   /// \param config
   ///   Configuration from which parameter values are to be loaded.
   void deserialize(util::CompositePath &path, const eckit::Configuration &config) override;
+
+  void serialize(eckit::LocalConfiguration &config) const override;
 
  private:
   std::vector<ParameterBase*> children_;

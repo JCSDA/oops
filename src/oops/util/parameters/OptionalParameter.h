@@ -35,11 +35,12 @@ class OptionalParameter : public ParameterBase {
   ///
   /// \param name
   ///   Name of the key from which this parameter's value will be loaded when parameters are
-  ///   deserialized from a Configuration object.
+  ///   deserialized from a Configuration object. Similarly, name of the key to which this
+  ///   parameter's value will be saved when parameters are serialized to a Configuration object.
   /// \param parent
   ///   Pointer to the Parameters object representing the collection of options located at
-  ///   the same level of the configuration tree as \p name. A call to deserialize()
-  ///   on that object will automatically trigger a call to deserialize() on this
+  ///   the same level of the configuration tree as \p name. A call to deserialize() or serialize()
+  ///   on that object will automatically trigger a call to deserialize() or serialize() on this
   ///   parameter.
   explicit OptionalParameter(
       const char *name, Parameters *parent = nullptr)
@@ -47,6 +48,8 @@ class OptionalParameter : public ParameterBase {
   {}
 
   void deserialize(util::CompositePath &path, const eckit::Configuration &config) override;
+
+  void serialize(eckit::LocalConfiguration &config) const override;
 
   /// \brief The value stored in this parameter, or boost::none if no value is stored.
   const boost::optional<T> &value() const { return value_; }
@@ -66,6 +69,12 @@ void OptionalParameter<T>::deserialize(util::CompositePath &path,
   if (newValue != boost::none) {
     value_ = std::move(newValue);
   }
+}
+
+template <typename T>
+void OptionalParameter<T>::serialize(eckit::LocalConfiguration &config) const {
+  if (value_ != boost::none)
+    ParameterTraits<T>::set(config, name_, *value_);
 }
 
 }  // namespace oops

@@ -64,6 +64,20 @@ struct ParameterTraits<util::ScalarOrMap<Key, Value>, std::false_type>
     throw eckit::Exception(eckit::StringTools::join("\n", messages.begin(), messages.end()),
                            Here());
   }
+
+  static void set(eckit::LocalConfiguration &config,
+                  const std::string &name,
+                  const util::ScalarOrMap<Key, Value> &value) {
+    if (value.isScalar()) {
+      ParameterTraits<Value>::set(config, name, value.at(Key()));
+    } else {
+      for (const std::pair<const Key, Value> &keyValue : value)
+        ParameterTraits<Value>::set(
+          config,
+          name + config.separator() + boost::lexical_cast<std::string>(keyValue.first),
+          keyValue.second);
+    }
+  }
 };
 }  // namespace oops
 

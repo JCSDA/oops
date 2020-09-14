@@ -363,6 +363,7 @@ test/util/FloatCompare.h
 test/util/CompareNVectors.h
 test/util/CompositePath.h
 test/util/MissingValues.h
+test/util/stringFunctions.h
 )
 
 list (APPEND oops_fheader_files
@@ -541,6 +542,11 @@ ecbuild_add_test( TARGET  test_util_floatcompare
 
 ecbuild_add_test( TARGET  test_util_compositepath
                   SOURCES test/util/CompositePath.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_stringfunctions
+                  SOURCES test/util/stringFunctions.cc
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 

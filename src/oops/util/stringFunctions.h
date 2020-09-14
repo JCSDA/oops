@@ -16,6 +16,27 @@ namespace util {
 
     void swapNameMember(const eckit::Configuration &, std::string &);
 
+    /// \brief Convert sequence elements to strings and join them using a delimiter.
+    ///
+    /// This is a generalization of eckit::StringTools::join. It calls \p toString on
+    /// each element of the range [begin, end) and joins the resulting strings, inserting the
+    /// delimiter \p delimiter between each pair of adjacent strings.
+    ///
+    /// \param toString
+    ///   An unary function object taking a dereferenced \c Iterator and returning a \c std::string.
+    template<typename Iterator, typename Converter>
+    std::string join(const std::string &delimiter, Iterator begin, Iterator end,
+                     Converter toString) {
+      if (begin == end)
+        return "";
+      std::string r(toString(*begin));
+      for (Iterator it = ++begin; it != end; ++it) {
+        r += delimiter;
+        r += toString(*it);
+      }
+      return r;
+    }
+
   }  // namespace stringfunctions
 }  // namespace util
 

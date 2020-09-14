@@ -1,27 +1,27 @@
 minimal:
   req_float_parameter: 3
   req_duration_parameter: PT1H
-full:
+full: # These parameters must be sorted alphabetically for the serialization test.
+  bool_parameter: false
   embedded_int_parameter: 13
   float_parameter: 3.5
-  int_parameter: 4
-  bool_parameter: false
-  opt_float_parameter: 5.5
-  opt_date_time_parameter: 2010-02-03T04:05:06Z
-  opt_duration_parameter: PT01H02M03S
-  req_float_parameter: 6
-  req_duration_parameter: PT06H30M
   fruit_parameter: apple
-  opt_embedded_date_time_parameter: 2010-03-04T05:06:07Z
-  range_parameter:
-    min: 7
-    max: 8.5
+  int_parameter: 4
   int_parameters: [1, 2]
+  opt_date_time_parameter: 2010-02-03T04:05:06Z
+  opt_duration_parameter: PT1H2M3S
+  opt_embedded_date_time_parameter: 2010-03-04T05:06:07Z
+  opt_float_parameter: 5.5
+  range_parameter:
+    max: 8.5
+    min: 7
   range_parameters:
-    - min: 9
-      max: 10
-    - min: 11
-      max: 12
+    - max: 10
+      min: 9
+    - max: 12
+      min: 11
+  req_duration_parameter: PT6H30M
+  req_float_parameter: 6
 alternative:
   float_parameter: 13.5
   int_parameter: 14
@@ -134,13 +134,13 @@ map_parameter_yaml_style_unquoted_keys:
     night: PT10H
   float_or_int_to_float_map_2: 3.5
   duration_or_string_to_duration_map_2: PT12H
-map_parameter_json_style_quoted_keys:
+map_parameter_json_style_quoted_keys: # These parameters must be sorted alphabetically for the serialization test.
+  duration_or_string_to_duration_map_1: { "day": PT14H, "night": PT10H }
+  duration_or_string_to_duration_map_2: PT12H
+  float_or_int_to_float_map_1: { "6": 2.5, "8": 4 }
+  float_or_int_to_float_map_2: 3.5
   int_to_float_map: { "5": 1.5, "7": 3 }
   string_to_duration_map: { "day": PT16H, "night": PT8H }
-  float_or_int_to_float_map_1: { "6": 2.5, "8": 4 }
-  duration_or_string_to_duration_map_1: { "day": PT14H, "night": PT10H }
-  float_or_int_to_float_map_2: 3.5
-  duration_or_string_to_duration_map_2: PT12H
 map_parameter_json_style_unquoted_keys:
   int_to_float_map: { 5: 1.5, 7: 3 }
   string_to_duration_map: { day: PT16H, night: PT8H }

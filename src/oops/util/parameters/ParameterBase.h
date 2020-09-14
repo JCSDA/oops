@@ -50,6 +50,9 @@ class ParameterBase {
   ///   Configuration from which parameter values are to be loaded.
   virtual void deserialize(util::CompositePath &path,
                            const eckit::Configuration &config) = 0;
+
+  /// \brief Save the parameter's value to \p config.
+  virtual void serialize(eckit::LocalConfiguration &config) const = 0;
 };
 
 }  // namespace oops

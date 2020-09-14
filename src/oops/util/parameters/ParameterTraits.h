@@ -8,9 +8,11 @@
 #ifndef OOPS_UTIL_PARAMETERS_PARAMETERTRAITS_H_
 #define OOPS_UTIL_PARAMETERS_PARAMETERTRAITS_H_
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <set>
+#include <sstream>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -30,8 +32,8 @@
 
 namespace oops {
 
-/// \brief Traits dictating how parameters of type T are extracted from eckit::Configuration
-/// objects.
+/// \brief Traits dictating how parameters of type T are transferred to and from
+/// eckit::Configuration objects.
 ///
 /// Each specialization of this template must provide the following member functions:
 ///
@@ -48,6 +50,9 @@ namespace oops {
 /// /// before this function returns.
 /// static boost::optional<T> get(util::CompositePath &path, const eckit::Configuration &config,
 ///                               const std::string &name);
+///
+/// /// \brief Save the value \p value of the option \p name to the configuration \p config.
+/// static void set(eckit::LocalConfiguration &config, const std::string &name, const T &value);
 /// \endcode
 template <typename T,
           typename IsTDerivedFromParameters =
@@ -55,8 +60,8 @@ template <typename T,
                                           std::is_convertible<T*, Parameters*>::value>::type>
 struct ParameterTraits;
 
-/// \brief Generic implementation of the get() method for types for which this method
-/// is overloaded in eckit::LocalConfiguration.
+/// \brief Generic implementation of the get() and set() methods for types for which these methods
+/// are overloaded in eckit::LocalConfiguration.
 template <typename T>
 struct GenericParameterTraits
 {
@@ -69,6 +74,12 @@ struct GenericParameterTraits
     } else {
       return boost::none;
     }
+  }
+
+  static void set(eckit::LocalConfiguration &config,
+                  const std::string &name,
+                  const T &value) {
+    config.set(name, value);
   }
 };
 
@@ -119,6 +130,21 @@ struct EnumParameterTraits {
       return boost::none;
     }
   }
+
+  static void set(eckit::LocalConfiguration &config,
+                  const std::string &name,
+                  const EnumType &value) {
+    for (util::NamedEnumerator<EnumType> namedValue : Helper::namedValues)
+      if (value == namedValue.value) {
+        config.set(name, namedValue.name);
+        return;
+      }
+
+    std::stringstream message;
+    message << "The value '" << std::to_string(static_cast<std::intmax_t>(value)) <<
+               "' cannot be converted to a " << Helper::enumTypeName;
+    throw eckit::BadParameter(message.str(), Here());
+  }
 };
 
 template <typename T>
@@ -167,6 +193,14 @@ struct ParameterTraits<T, std::true_type>
       return boost::none;
     }
   }
+
+  static void set(eckit::LocalConfiguration &config,
+                  const std::string &name,
+                  const T &value) {
+    eckit::LocalConfiguration subConfig;
+    value.serialize(subConfig);
+    config.set(name, subConfig);
+  }
 };
 
 /// \brief Specialization for DateTime objects.
@@ -182,6 +216,12 @@ struct ParameterTraits<util::DateTime> {
       return boost::none;
     }
   }
+
+  static void set(eckit::LocalConfiguration &config,
+             const std::string &name,
+             const util::DateTime &value) {
+    config.set(name, value.toString());
+  }
 };
 
 /// \brief Specialization for Duration objects.
@@ -196,6 +236,12 @@ struct ParameterTraits<util::Duration> {
     } else {
       return boost::none;
     }
+  }
+
+  static void set(eckit::LocalConfiguration &config,
+             const std::string &name,
+             const util::Duration &value) {
+    config.set(name, value.toString());
   }
 };
 
@@ -222,6 +268,21 @@ struct ParameterTraits<std::vector<Value>, std::false_type> {
     }
 
     return result;
+  }
+
+  static void set(eckit::LocalConfiguration &config,
+                  const std::string &name,
+                  const std::vector<Value> &value) {
+    std::vector<eckit::LocalConfiguration> subConfigs;
+    subConfigs.reserve(value.size());
+
+    eckit::LocalConfiguration temp;
+    const std::string dummyName = "a";
+    for (size_t i = 0; i < value.size(); ++i) {
+      ParameterTraits<Value>::set(temp, dummyName, value[i]);
+      subConfigs.push_back(temp.getSubConfiguration(dummyName));
+    }
+    config.set(name, subConfigs);
   }
 };
 
@@ -281,6 +342,16 @@ struct ParameterTraits<std::map<Key, Value>, std::false_type> {
     }
 
     return result;
+  }
+
+  static void set(eckit::LocalConfiguration &config,
+                  const std::string &name,
+                  const std::map<Key, Value> &value) {
+    for (const std::pair<const Key, Value> &keyValue : value)
+      ParameterTraits<Value>::set(
+        config,
+        name + config.separator() + boost::lexical_cast<std::string>(keyValue.first),
+        keyValue.second);
   }
 };
 
