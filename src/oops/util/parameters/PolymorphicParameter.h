@@ -48,7 +48,7 @@ class PolymorphicParameter : public ParameterBase {
   ///   Pointer to the Parameters object representing the collection of options located at
   ///   the same level of the configuration tree as `name`. A call to deserialize() on that object
   ///   will automatically trigger a call to deserialize() on the newly created object.
-  PolymorphicParameter(const char *name, const char* defaultId, Parameters *parent = nullptr);
+  PolymorphicParameter(const char *name, const char* defaultId, Parameters *parent);
 
   PolymorphicParameter(const PolymorphicParameter &other)
     : name_(other.name_), id_(other.id_), value_(other.value_ ? other.value_->clone() : nullptr)

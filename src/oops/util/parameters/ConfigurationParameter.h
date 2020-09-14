@@ -27,7 +27,7 @@ namespace oops {
 /// to access the values of options not deserialized into other member variables.
 class ConfigurationParameter : public ParameterBase {
  public:
-  explicit ConfigurationParameter(Parameters *parent = nullptr) : ParameterBase(parent) {}
+  explicit ConfigurationParameter(Parameters *parent) : ParameterBase(parent) {}
 
   /// \brief Stores a copy of \p config in this object.
   void deserialize(util::CompositePath &path, const eckit::Configuration &config) override;

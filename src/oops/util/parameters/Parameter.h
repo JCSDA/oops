@@ -55,7 +55,7 @@ class Parameter : public ParameterBase {
   ///   Zero or more constraints that must be satisfied by the value of this parameter loaded from
   ///   a Configuration object; if that's not the case, an exception will be thrown during
   ///   deserialization.
-  Parameter(const char *name, const T& defaultValue, Parameters *parent = nullptr,
+  Parameter(const char *name, const T& defaultValue, Parameters *parent,
             std::vector<std::shared_ptr<const ParameterConstraint<T>>> constraints = {})
     : ParameterBase(parent), name_(name), value_(defaultValue), constraints_(std::move(constraints))
   {}

@@ -50,7 +50,7 @@ class OptionalParameter : public ParameterBase {
   ///   a Configuration object; if that's not the case, an exception will be thrown during
   ///   deserialization.
   explicit OptionalParameter(
-      const char *name, Parameters *parent = nullptr,
+      const char *name, Parameters *parent,
       std::vector<std::shared_ptr<const ParameterConstraint<T>>> constraints = {})
     : ParameterBase(parent), name_(name), constraints_(std::move(constraints))
   {}

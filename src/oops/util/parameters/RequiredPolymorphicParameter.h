@@ -104,7 +104,7 @@ class RequiredPolymorphicParameter : public ParameterBase {
   ///   the same level of the configuration tree as `name`. A call to deserialize() or serialize()
   ///   on that object will automatically trigger a call to deserialize() or serialize() on this
   ///   parameter.
-  explicit RequiredPolymorphicParameter(const char *name, Parameters *parent = nullptr)
+  explicit RequiredPolymorphicParameter(const char *name, Parameters *parent)
     : ParameterBase(parent), name_(name)
   {}
 
