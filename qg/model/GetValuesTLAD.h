@@ -8,6 +8,7 @@
 #ifndef QG_MODEL_GETVALUESTLAD_H_
 #define QG_MODEL_GETVALUESTLAD_H_
 
+#include <memory>
 #include <ostream>
 #include <string>
 
@@ -15,13 +16,13 @@
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
+#include "model/LocationsQG.h"
 #include "oops/qg/QgFortran.h"
 
 namespace qg {
   class GeometryQG;
   class GomQG;
   class IncrementQG;
-  class LocationsQG;
   class StateQG;
 
 /// \brief used for getting state values at observation locations
@@ -33,7 +34,7 @@ class GetValuesTLAD : public util::Printable,
 
 /// \brief saves all locations \p locs to use during filling GeoVaLs
   GetValuesTLAD(const GeometryQG &, const LocationsQG & locs);
-  virtual ~GetValuesTLAD();
+  ~GetValuesTLAD() {}
 
   /// \brief fills in \p geovals for all observations in the timeframe (\p t1, \p t2],
   //  \p geovals are interpolated trilinearly from \p state at the nearest gridpoints
@@ -51,7 +52,7 @@ class GetValuesTLAD : public util::Printable,
 /// Data
  private:
   void print(std::ostream &) const;
-  F90getvalues key_;
+  LocationsQG locs_;
 };
 // -----------------------------------------------------------------------------
 

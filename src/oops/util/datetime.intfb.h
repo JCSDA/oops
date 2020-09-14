@@ -1,8 +1,8 @@
 ! (C) Copyright 2009-2016 ECMWF.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
-! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
-! In applying this licence, ECMWF does not waive the privileges and immunities 
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
 ! granted to it by virtue of its status as an intergovernmental organisation nor
 ! does it submit to any jurisdiction.
 
@@ -73,6 +73,12 @@ subroutine c_datetime_update(ptt,kdt) bind(C,name='datetime_update_f')
   type(c_ptr), value :: ptt
   integer(c_int64_t), intent(in) :: kdt
 end subroutine c_datetime_update
+!-------------------------------------------------------------------------------
+subroutine c_push_to_datetime_vector(c_times, c_dt) bind(C,name='push_to_datetime_vector_f')
+  use, intrinsic :: iso_c_binding
+  implicit none
+  type(c_ptr), value :: c_times, c_dt
+end subroutine c_push_to_datetime_vector
 !-------------------------------------------------------------------------------
 end interface
 !-------------------------------------------------------------------------------

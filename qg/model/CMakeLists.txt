@@ -102,7 +102,8 @@ qg_getvalues_mod.F90
 qg_gom_interface.F90
 qg_gom_mod.F90
 qg_interp_mod.F90
-qg_locs_interface.F90
+qg_locs_f.cc
+qg_locs_f.h
 qg_locs_mod.F90
 qg_model_interface.F90
 qg_model_mod.F90

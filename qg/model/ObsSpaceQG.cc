@@ -13,16 +13,22 @@
 
 #include <map>
 #include <string>
+#include <utility>
 
+#include "atlas/array.h"
+#include "atlas/field.h"
 #include "eckit/config/Configuration.h"
 #include "eckit/exception/Exceptions.h"
 #include "eckit/geometry/Sphere.h"
 
 #include "oops/util/abor1_cpp.h"
+#include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 
 #include "model/ObsVecQG.h"
+
+using atlas::array::make_view;
 
 namespace qg {
 // -----------------------------------------------------------------------------
@@ -105,19 +111,19 @@ ObsSpaceQG::ObsSpaceQG(const ObsSpaceQG & obsdb,
 {
   oops::Log::trace() << "ObsSpaceQG for LocalObs starting" << std::endl;
   const double dist = conf.getDouble("lengthscale");
-  F90locs key_locs;
-  int iobs;
-  // get number of obs
-  qg_obsdb_nobs_f90(key_, obsname_.size(), obsname_.c_str(), iobs);
+
   // get locations of all obs
-  qg_obsdb_locations_f90(key_, obsname_.size(), obsname_.c_str(), winbgn_, winend_, key_locs);
-  for (int jj = 0; jj < iobs; ++jj) {
-    double lat, lon, z;
-    qg_locs_element_f90(key_locs, jj, lon, lat, z);
-    eckit::geometry::Point2 obsPoint(lon, lat);
+  std::unique_ptr<LocationsQG> locs = locations(winbgn_, winend_);
+
+  atlas::Field field_lonlat = locs->lonlat();
+  auto lonlat = make_view<double, 2>(field_lonlat);
+
+  for (int jj = 0; jj < locs->size(); ++jj) {
+    eckit::geometry::Point2 obsPoint(lonlat(jj, 0), lonlat(jj, 1));
     double localDist = eckit::geometry::Sphere::distance(6.371e6, refPoint, obsPoint);
     if (localDist < dist) localobs_.push_back(jj);
   }
+
   oops::Log::trace() << "ObsSpaceQG for LocalObs done" << std::endl;
 }
 
@@ -165,9 +171,11 @@ bool ObsSpaceQG::has(const std::string & col) const {
 
 std::unique_ptr<LocationsQG> ObsSpaceQG::locations(const util::DateTime & t1,
                              const util::DateTime & t2) const {
-  F90locs key_locs;
-  qg_obsdb_locations_f90(key_, obsname_.size(), obsname_.c_str(), t1, t2, key_locs);
-  return std::unique_ptr<LocationsQG>(new LocationsQG(key_locs));
+  atlas::FieldSet fields;
+  std::vector<util::DateTime> times;
+  qg_obsdb_locations_f90(key_, obsname_.size(), obsname_.c_str(), t1, t2,
+                         fields.get(), times);
+  return std::unique_ptr<LocationsQG>(new LocationsQG(fields, std::move(times)));
 }
 
 // -----------------------------------------------------------------------------

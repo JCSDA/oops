@@ -5,6 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
+#include <memory>
+
 #include "model/GetValuesQG.h"
 
 #include "oops/util/Logger.h"
@@ -20,19 +22,14 @@ namespace qg {
 // -----------------------------------------------------------------------------
 /// Constructor, destructor
 // -----------------------------------------------------------------------------
-GetValuesQG::GetValuesQG(const GeometryQG & geom, const LocationsQG & locs) {
-  qg_getvalues_create_f90(key_, geom.toFortran(), locs.toFortran());
-}
-// -----------------------------------------------------------------------------
-GetValuesQG::~GetValuesQG() {
-  qg_getvalues_delete_f90(key_);
-}
+GetValuesQG::GetValuesQG(const GeometryQG & geom, const LocationsQG & locs)
+  : locs_(locs) {}
 // -----------------------------------------------------------------------------
 /// Get state values at observation locations
 // -----------------------------------------------------------------------------
 void GetValuesQG::fillGeoVaLs(const StateQG & state, const util::DateTime & t1,
                               const util::DateTime & t2, GomQG & gom) const {
-  qg_getvalues_interp_f90(key_, state.fields().toFortran(),
+  qg_getvalues_interp_f90(locs_, state.fields().toFortran(),
                           t1, t2, gom.toFortran());
 }
 // -----------------------------------------------------------------------------

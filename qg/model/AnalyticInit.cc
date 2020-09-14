@@ -26,7 +26,7 @@ void AnalyticInit::fillGeoVaLs(const LocationsQG & locs,
                                GomQG & geovals) const {
   // Optionally replace values with analytic init
   if (config_.has("analytic_init"))
-    qg_gom_analytic_init_f90(geovals.toFortran(), locs.toFortran(), config_);
+    qg_gom_analytic_init_f90(geovals.toFortran(), locs, config_);
 }
 // -----------------------------------------------------------------------------
 }  // namespace qg

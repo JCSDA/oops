@@ -5,6 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
+#include<memory>
+
 #include "model/GetValuesTLAD.h"
 
 #include "oops/util/Logger.h"
@@ -20,17 +22,13 @@ namespace qg {
 // -----------------------------------------------------------------------------
 /// Constructor, destructor
 // -----------------------------------------------------------------------------
-GetValuesTLAD::GetValuesTLAD(const GeometryQG & geom, const LocationsQG & locs) {
-  qg_getvalues_create_f90(key_, geom.toFortran(), locs.toFortran());
-}
-// -----------------------------------------------------------------------------
-GetValuesTLAD::~GetValuesTLAD() {
-  qg_getvalues_delete_f90(key_);
+GetValuesTLAD::GetValuesTLAD(const GeometryQG & geom, const LocationsQG & locs)
+  : locs_(locs) {
 }
 // -----------------------------------------------------------------------------
 void GetValuesTLAD::setTrajectory(const StateQG & state, const util::DateTime & t1,
                                   const util::DateTime & t2, GomQG & geovals) {
-  qg_getvalues_interp_f90(key_, state.fields().toFortran(),
+  qg_getvalues_interp_f90(locs_, state.fields().toFortran(),
                           t1, t2, geovals.toFortran());
 }
 // -----------------------------------------------------------------------------
@@ -38,13 +36,13 @@ void GetValuesTLAD::setTrajectory(const StateQG & state, const util::DateTime & 
 // -----------------------------------------------------------------------------
 void GetValuesTLAD::fillGeoVaLsTL(const IncrementQG & inc, const util::DateTime & t1,
                                   const util::DateTime & t2, GomQG & geovals) const {
-  qg_getvalues_interp_tl_f90(key_, inc.fields().toFortran(),
+  qg_getvalues_interp_tl_f90(locs_, inc.fields().toFortran(),
                              t1, t2, geovals.toFortran());
 }
 // -----------------------------------------------------------------------------
 void GetValuesTLAD::fillGeoVaLsAD(IncrementQG & inc, const util::DateTime & t1,
                                   const util::DateTime & t2, const GomQG & geovals) const {
-  qg_getvalues_interp_ad_f90(key_, inc.fields().toFortran(),
+  qg_getvalues_interp_ad_f90(locs_, inc.fields().toFortran(),
                              t1, t2, geovals.toFortran());
 }
 // -----------------------------------------------------------------------------

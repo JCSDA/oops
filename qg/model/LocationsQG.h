@@ -12,12 +12,17 @@
 #define QG_MODEL_LOCATIONSQG_H_
 
 #include <iomanip>
+#include <memory>
 #include <ostream>
 #include <string>
 #include <vector>
 
+#include "atlas/field.h"
+#include "atlas/functionspace/PointCloud.h"
+#include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
 
+#include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
@@ -33,17 +38,25 @@ class LocationsQG : public util::Printable,
   static const std::string classname() {return "qg::LocationsQG";}
 
 // Constructors and basic operators
-  explicit LocationsQG(const F90locs key) : keyLocs_(key) {}
+  LocationsQG(atlas::FieldSet &, std::vector<util::DateTime> &&);
   LocationsQG(const eckit::Configuration &, const eckit::mpi::Comm &);
-  ~LocationsQG() {qg_locs_delete_f90(keyLocs_);}
+  LocationsQG(const LocationsQG &);
+  ~LocationsQG() {}
 
 // Utilities
-  int size() const;
-  int toFortran() const {return keyLocs_;}
+  int size() const {return pointcloud_->size();}
+  atlas::functionspace::PointCloud & pointcloud() {return *pointcloud_;}
+  atlas::Field lonlat() const {return pointcloud_->lonlat();}
+  atlas::Field & altitude() {ASSERT(altitude_); return *altitude_;}
+  atlas::Field & index() {ASSERT(index_); return *index_;}
+  util::DateTime & times(size_t idx) {return times_[idx];}
 
  private:
   void print(std::ostream &) const;
-  F90locs keyLocs_;
+  std::unique_ptr<atlas::functionspace::PointCloud> pointcloud_;
+  std::unique_ptr<atlas::Field> altitude_;
+  std::unique_ptr<atlas::Field> index_;
+  std::vector<util::DateTime> times_;
 };
 
 }  // namespace qg

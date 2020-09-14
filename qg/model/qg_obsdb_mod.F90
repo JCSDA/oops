@@ -9,6 +9,7 @@
 
 module qg_obsdb_mod
 
+use atlas_module
 use datetime_mod
 use duration_mod
 use fckit_configuration_module, only: fckit_configuration
@@ -297,7 +298,7 @@ endif
 end subroutine qg_obsdb_has
 ! ------------------------------------------------------------------------------
 !> Get locations from observation data
-subroutine qg_obsdb_locations(self,grp,t1,t2,locs)
+subroutine qg_obsdb_locations(self,grp,t1,t2,fields,c_times)
 
 implicit none
 
@@ -306,7 +307,8 @@ type(qg_obsdb),intent(in) :: self   !< Observation data
 character(len=*),intent(in) :: grp  !< Group
 type(datetime),intent(in) :: t1     !< Time 1
 type(datetime),intent(in) :: t2     !< Time 2
-type(qg_locs),intent(inout) :: locs !< Locations
+type(atlas_fieldset), intent(inout) :: fields !< Locations FieldSet
+type(c_ptr), intent(in), value :: c_times !< pointer to times array in C++
 
 ! Local variables
 integer :: nlocs, jo
@@ -314,6 +316,9 @@ integer,allocatable :: indx(:)
 character(len=8),parameter :: col = 'Location'
 type(group_data),pointer :: jgrp
 type(column_data),pointer :: jcol
+type(atlas_field) :: field_z, field_lonlat, field_idx
+real(kind_real), pointer :: z(:), lonlat(:,:)
+integer(c_int), pointer :: idx(:)
 
 ! Count observations
 call qg_obsdb_count_time(self,grp,t1,t2,nlocs)
@@ -329,23 +334,32 @@ call qg_obsdb_find_column(jgrp,col,jcol)
 if (.not.associated(jcol)) call abor1_ftn('qg_obsdb_locations: obs column not found')
 
 ! Set number of observations
-locs%nlocs = nlocs
 
-! Allocation
-call qg_locs_delete(locs)
-allocate(locs%lon(nlocs))
-allocate(locs%lat(nlocs))
-allocate(locs%z(nlocs))
-allocate(locs%times(nlocs))
-allocate(locs%indx(nlocs))
-locs%indx = indx
+field_lonlat = atlas_field(name="lonlat", kind=atlas_real(kind_real), shape=[2,nlocs])
+field_z = atlas_field(name="altitude", kind=atlas_real(kind_real), shape=[nlocs])
+field_idx = atlas_field(name="index",kind=atlas_integer(c_int), shape=[nlocs])
+
+call field_lonlat%data(lonlat)
+call field_z%data(z)
+call field_idx%data(idx)
+
 ! Copy coordinates
-do jo = 1,nlocs
-  locs%lon(jo) = jcol%values(1,indx(jo))
-  locs%lat(jo) = jcol%values(2,indx(jo))
-  locs%z(jo) = jcol%values(3,indx(jo))
-  locs%times(jo) = jgrp%times(indx(jo))
+do jo = 1, nlocs
+  lonlat(1,jo) = jcol%values(1,indx(jo))
+  lonlat(2,jo) = jcol%values(2,indx(jo))
+  z(jo) = jcol%values(3,indx(jo))
+  idx(jo) = indx(jo)
+  call f_c_push_to_datetime_vector(c_times, jgrp%times(indx(jo)))
 enddo
+
+call fields%add(field_lonlat)
+call fields%add(field_z)
+call fields%add(field_idx)
+
+! release pointers
+call field_lonlat%final()
+call field_z%final()
+call field_idx%final()
 
 deallocate(indx)
 

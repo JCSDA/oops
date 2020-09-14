@@ -1,8 +1,8 @@
 ! (C) Copyright 2009-2016 ECMWF.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
-! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
-! In applying this licence, ECMWF does not waive the privileges and immunities 
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
 ! granted to it by virtue of its status as an intergovernmental organisation nor
 ! does it submit to any jurisdiction.
 
@@ -19,7 +19,7 @@ private
 public datetime, datetime_create, datetime_set, datetime_delete, &
      & assignment(=), c_f_datetime, f_c_datetime, datetime_to_string, &
      & operator(<), operator(<=), operator(>=), operator(>), &
-     & datetime_update, datetime_diff, &
+     & datetime_update, datetime_diff, f_c_push_to_datetime_vector, &
      & datetime_to_ifs, datetime_from_ifs, datetime_to_YYYYMMDDhhmmss
 
 !>  Derived type encapsulating a C++ DateTime pointer.
@@ -268,5 +268,15 @@ datetime_gt = (c_datetime_diff(dt1%ptr, dt2%ptr) > 0)
 end function datetime_gt
 
 !-------------------------------------------------------------------------------
+!> Push a datetime object to a vector of DateTime objects in C++
+
+subroutine f_c_push_to_datetime_vector(c_times, dt)
+  implicit none
+  type(c_ptr), value, intent(in) :: c_times
+  type(datetime), intent(in)  :: dt
+  call c_push_to_datetime_vector(c_times, dt%ptr)
+end subroutine f_c_push_to_datetime_vector
 
 end module datetime_mod
+
+!-------------------------------------------------------------------------------

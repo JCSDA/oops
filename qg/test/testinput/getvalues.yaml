@@ -3,7 +3,7 @@ getvalues test:
     analytic_init: large-vortices
     date: 2009-12-31T00:00:00Z
     state variables: [x]
-  interpolation tolerance: 1.0e-2
+  interpolation tolerance: 1.5e-2
 geometry:
   nx: 40
   ny: 20

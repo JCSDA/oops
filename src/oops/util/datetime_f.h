@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -11,6 +11,7 @@
 #ifndef OOPS_UTIL_DATETIME_F_H_
 #define OOPS_UTIL_DATETIME_F_H_
 
+#include <vector>
 #include "oops/util/DateTime.h"
 
 namespace util {
@@ -31,6 +32,8 @@ extern "C" {
   void datetime_setints_f(util::DateTime *, const int64_t &, const int &);
   int64_t datetime_diff_f(const util::DateTime *, const util::DateTime *);
   void datetime_update_f(util::DateTime *, const int64_t &);
+  void push_to_datetime_vector_f(std::vector<util::DateTime> *,
+                                 util::DateTime *);
 }
 
 }  // namespace util

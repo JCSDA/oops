@@ -61,7 +61,7 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
 
   /// create locations between times (\p t1, \p t2]
   std::unique_ptr<LocationsQG> locations(const util::DateTime & t1,
-                               const util::DateTime & t2) const;
+                                         const util::DateTime & t2) const;
 
   void printJo(const ObsVecQG &, const ObsVecQG &) const;
 

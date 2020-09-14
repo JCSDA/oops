@@ -1,13 +1,14 @@
 ! (C) Copyright 2009-2016 ECMWF.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
-! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
-! In applying this licence, ECMWF does not waive the privileges and immunities 
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
 ! granted to it by virtue of its status as an intergovernmental organisation nor
 ! does it submit to any jurisdiction.
 
 module qg_gom_mod
 
+use atlas_module, only: atlas_field
 use fckit_configuration_module, only: fckit_configuration
 use fckit_log_module, only: fckit_log
 use iso_c_binding
@@ -64,9 +65,10 @@ implicit none
 
 ! Passed variables
 type(qg_gom),intent(inout) :: self !< GOM
-integer,intent(in) :: kobs(:)      !< Observations index
+integer, intent(in) :: kobs(:)     !< Observations index
 type(oops_variables),intent(in) :: vars !< Variables
 
+! Local variables
 integer :: ivar
 
 ! Set attributes
@@ -560,6 +562,15 @@ integer :: iloc
 real(kind_real) :: x,y
 character(len=30) :: ic
 character(len=:),allocatable :: str
+real(kind_real), pointer :: lonlat(:,:), z(:)
+type(atlas_field) :: lonlat_field, z_field
+
+! get locations
+lonlat_field = locs%lonlat()
+call lonlat_field%data(lonlat)
+
+z_field = locs%altitude()
+call z_field%data(z)
 
 ! Check allocation
 if (.not. self%lalloc) call abor1_ftn('qg_gom_analytic init: gom not allocated')
@@ -568,30 +579,33 @@ if (.not. self%lalloc) call abor1_ftn('qg_gom_analytic init: gom not allocated')
 call f_conf%get_or_die("analytic_init",str)
 ic = str
 call fckit_log%info('qg_gom_analytic_init: ic = '//trim(ic))
-do iloc=1,locs%nlocs
+do iloc=1,locs%nlocs()
   select case (trim(ic))
   case ('baroclinic-instability')
     ! Go to cartesian coordinates
-    call lonlat_to_xy(locs%lon(iloc),locs%lat(iloc),x,y)
+    call lonlat_to_xy(lonlat(1,iloc),lonlat(2,iloc),x,y)
 
     ! Compute values for baroclinic instability
-    if (self%ix>0) call baroclinic_instability(x,y,locs%z(iloc),'x',self%values(self%ix,iloc))
-    if (self%iq>0) call baroclinic_instability(x,y,locs%z(iloc),'q',self%values(self%iq,iloc))
-    if (self%iu>0) call baroclinic_instability(x,y,locs%z(iloc),'u',self%values(self%iu,iloc))
-    if (self%iv>0) call baroclinic_instability(x,y,locs%z(iloc),'v',self%values(self%iv,iloc))
+    if (self%ix>0) call baroclinic_instability(x,y,z(iloc),'x',self%values(self%ix,iloc))
+    if (self%iq>0) call baroclinic_instability(x,y,z(iloc),'q',self%values(self%iq,iloc))
+    if (self%iu>0) call baroclinic_instability(x,y,z(iloc),'u',self%values(self%iu,iloc))
+    if (self%iv>0) call baroclinic_instability(x,y,z(iloc),'v',self%values(self%iv,iloc))
   case ('large-vortices')
     ! Go to cartesian coordinates
-    call lonlat_to_xy(locs%lon(iloc),locs%lat(iloc),x,y)
+    call lonlat_to_xy(lonlat(1,iloc),lonlat(2,iloc),x,y)
 
     ! Compute values for large vortices
-    if (self%ix>0) call large_vortices(x,y,locs%z(iloc),'x',self%values(self%ix,iloc))
-    if (self%iq>0) call large_vortices(x,y,locs%z(iloc),'q',self%values(self%iq,iloc))
-    if (self%iu>0) call large_vortices(x,y,locs%z(iloc),'u',self%values(self%iu,iloc))
-    if (self%iv>0) call large_vortices(x,y,locs%z(iloc),'v',self%values(self%iv,iloc))
+    if (self%ix>0) call large_vortices(x,y,z(iloc),'x',self%values(self%ix,iloc))
+    if (self%iq>0) call large_vortices(x,y,z(iloc),'q',self%values(self%iq,iloc))
+    if (self%iu>0) call large_vortices(x,y,z(iloc),'u',self%values(self%iu,iloc))
+    if (self%iv>0) call large_vortices(x,y,z(iloc),'v',self%values(self%iv,iloc))
   case default
     call abor1_ftn('qg_gom_analytic_init: unknown initialization')
   endselect
 enddo
+
+call lonlat_field%final()
+call z_field%final()
 
 end subroutine qg_gom_analytic_init
 ! ------------------------------------------------------------------------------

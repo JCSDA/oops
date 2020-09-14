@@ -12,6 +12,8 @@
 #ifndef QG_MODEL_QGFORTRAN_H_
 #define QG_MODEL_QGFORTRAN_H_
 
+#include <memory>
+#include <string>
 #include <vector>
 
 #include "atlas/field.h"
@@ -32,6 +34,7 @@ namespace util {
 }
 
 namespace qg {
+  class LocationsQG;
   class ObsSpaceQG;
 
 // Change of variable key type
@@ -42,14 +45,10 @@ typedef int F90geom;
 typedef int F90iter;
 // Model key type
 typedef int F90model;
-// Locations key type
-typedef int F90locs;
 // Gom key type
 typedef int F90gom;
 // Fields key type
 typedef int F90flds;
-// GetValues key type
-typedef int F90getvalues;
 // Error covariance key type
 typedef int F90error_covariance;
 // Error standard deviation key type
@@ -139,15 +138,13 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  GetValues
 // -----------------------------------------------------------------------------
-  void qg_getvalues_create_f90(F90getvalues &, const F90geom &, const F90locs &);
-  void qg_getvalues_delete_f90(F90getvalues &);
-  void qg_getvalues_interp_f90(const F90getvalues &, const F90flds &,
+  void qg_getvalues_interp_f90(const LocationsQG &, const F90flds &,
                                const util::DateTime &,
                                const util::DateTime &, const F90gom &);
-  void qg_getvalues_interp_tl_f90(const F90getvalues &, const F90flds &,
+  void qg_getvalues_interp_tl_f90(const LocationsQG &, const F90flds &,
                                   const util::DateTime &,
                                   const util::DateTime &, const F90gom &);
-  void qg_getvalues_interp_ad_f90(const F90getvalues &, const F90flds &,
+  void qg_getvalues_interp_ad_f90(const LocationsQG &, const F90flds &,
                                   const util::DateTime &,
                                   const util::DateTime &, const F90gom &);
 
@@ -164,6 +161,7 @@ extern "C" {
   void qg_geom_clone_f90(F90geom &, const F90geom &);
   void qg_geom_info_f90(const F90geom &, int &, int &, int &, double &, double &);
   void qg_geom_delete_f90(F90geom &);
+  void qg_geom_dimensions_f90(double &, double &, double &, double &, double &);
 
 // -----------------------------------------------------------------------------
 //  Geometry iterator
@@ -178,7 +176,7 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Local Values (GOM)
 // -----------------------------------------------------------------------------
-  void qg_gom_setup_f90(F90gom &, const F90locs &, const oops::Variables &);
+  void qg_gom_setup_f90(F90gom &, const LocationsQG &, const oops::Variables &);
   void qg_gom_create_f90(F90gom &);
   void qg_gom_delete_f90(F90gom &);
   void qg_gom_copy_f90(const F90gom &, const F90gom &);
@@ -196,18 +194,8 @@ extern "C" {
   void qg_gom_maxloc_f90(const F90gom &, double &, int &, int &);
   void qg_gom_read_file_f90(const F90gom &, const eckit::Configuration &);
   void qg_gom_write_file_f90(const F90gom &, const eckit::Configuration &);
-  void qg_gom_analytic_init_f90(const F90gom &, const F90locs &,
+  void qg_gom_analytic_init_f90(const F90gom &, const LocationsQG &,
                                 const eckit::Configuration &);
-
-// -----------------------------------------------------------------------------
-//  Locations
-// -----------------------------------------------------------------------------
-  void qg_locs_create_f90(F90locs &);
-  void qg_locs_test_f90(const F90locs &, const eckit::Configuration &,
-                        const int &, const double *, const double *, const double*);
-  void qg_locs_delete_f90(F90locs &);
-  void qg_locs_nobs_f90(const F90locs &, int &);
-  void qg_locs_element_f90(const F90locs &, const int &, double &, double &, double &);
 
 // -----------------------------------------------------------------------------
 //  Model
@@ -234,7 +222,7 @@ extern "C" {
                         const int &, const char *, int &);
   void qg_obsdb_locations_f90(const F90odb &, const int &, const char *,
                               const util::DateTime &, const util::DateTime &,
-                              F90locs &);
+                              atlas::field::FieldSetImpl *, std::vector<util::DateTime> &);
   void qg_obsdb_generate_f90(const F90odb &, const int &, const char *,
                              const eckit::Configuration &, const util::DateTime &,
                              const util::Duration &, const int &, int &);

@@ -2,13 +2,14 @@
 ! (C) Copyright 2017-2019 UCAR.
 !
 ! This software is licensed under the terms of the Apache Licence Version 2.0
-! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
-! In applying this licence, ECMWF does not waive the privileges and immunities 
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
 ! granted to it by virtue of its status as an intergovernmental organisation nor
 ! does it submit to any jurisdiction.
 
 module qg_obsdb_interface
 
+use atlas_module
 use fckit_configuration_module, only: fckit_configuration
 use datetime_mod
 use duration_mod
@@ -18,6 +19,7 @@ use string_f_c_mod
 use qg_locs_mod
 use qg_obsdb_mod
 use qg_obsvec_mod
+use kinds
 
 private
 ! ------------------------------------------------------------------------------
@@ -190,7 +192,7 @@ call qg_obsdb_has(self,trim(grp),trim(col),c_has)
 end subroutine qg_obsdb_has_c
 ! ------------------------------------------------------------------------------
 !> Get locations from observation data
-subroutine qg_obsdb_locations_c(c_key_self,lgrp,c_grp,c_t1,c_t2,c_key_locs) bind(c,name='qg_obsdb_locations_f90')
+subroutine qg_obsdb_locations_c(c_key_self,lgrp,c_grp,c_t1,c_t2,c_fields,c_times) bind(c,name='qg_obsdb_locations_f90')
 
 implicit none
 
@@ -200,25 +202,26 @@ integer(c_int),intent(in) :: lgrp                        !< Group size
 character(kind=c_char,len=1),intent(in) :: c_grp(lgrp+1) !< Group name
 type(c_ptr),value,intent(in) :: c_t1                     !< Time 1
 type(c_ptr),value,intent(in) :: c_t2                     !< Time 2
-integer(c_int),intent(inout) :: c_key_locs               !< Locations
+type(c_ptr), intent(in), value :: c_fields               !< Locations fieldset
+type(c_ptr), intent(in), value :: c_times                !< times
 
 ! Local variables
 type(qg_obsdb),pointer :: self
 character(len=lgrp) :: grp
 type(datetime) :: t1,t2
-type(qg_locs),pointer :: locs
+type(atlas_fieldset) :: fields
 
 ! Interface
 call qg_obsdb_registry%get(c_key_self,self)
 call c_f_string(c_grp,grp)
 call c_f_datetime(c_t1,t1)
 call c_f_datetime(c_t2,t2)
-call qg_locs_registry%init()
-call qg_locs_registry%add(c_key_locs)
-call qg_locs_registry%get(c_key_locs,locs)
+fields = atlas_fieldset(c_fields)
 
 ! Call Fortran
-call qg_obsdb_locations(self,grp,t1,t2,locs)
+call qg_obsdb_locations(self,grp,t1,t2,fields,c_times)
+
+call fields%final()
 
 end subroutine qg_obsdb_locations_c
 ! ------------------------------------------------------------------------------

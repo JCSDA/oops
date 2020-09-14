@@ -1,8 +1,8 @@
 ! (C) Copyright 2009-2016 ECMWF.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
-! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
-! In applying this licence, ECMWF does not waive the privileges and immunities 
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
 ! granted to it by virtue of its status as an intergovernmental organisation nor
 ! does it submit to any jurisdiction.
 
@@ -13,6 +13,7 @@ use fckit_configuration_module, only: fckit_configuration
 use fckit_log_module,only: fckit_log
 use kinds
 use iso_c_binding
+use qg_projection_mod
 use qg_geom_mod
 
 implicit none
@@ -180,5 +181,26 @@ call qg_geom_registry%get(c_key_self,self)
 call qg_geom_info(self,c_nx,c_ny,c_nz,c_deltax,c_deltay)
 
 end subroutine qg_geom_info_c
+! ------------------------------------------------------------------------------
+!> Get dimensions of computational domain
+subroutine qg_geom_dimensions_c(lonmin, lonmax, latmin, latmax, zmax) bind(c,name='qg_geom_dimensions_f90')
+
+    use qg_constants_mod
+    implicit none
+
+    ! Passed variables
+    real(c_double), intent(inout) :: lonmin  !< longitude min
+    real(c_double), intent(inout) :: lonmax  !< longitude max
+    real(c_double), intent(inout) :: latmin  !< latitude min
+    real(c_double), intent(inout) :: latmax  !< latitude max
+    real(c_double), intent(inout) :: zmax    !< vertical max
+
+    call xy_to_lonlat(0.0_kind_real, 0.0_kind_real, lonmin, latmin)
+    call xy_to_lonlat(domain_zonal, domain_meridional, lonmax, latmax)
+
+    zmax = domain_depth
+
+end subroutine qg_geom_dimensions_c
+
 ! ------------------------------------------------------------------------------
 end module qg_geom_interface

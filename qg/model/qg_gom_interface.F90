@@ -1,13 +1,14 @@
 ! (C) Copyright 2009-2016 ECMWF.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
-! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
-! In applying this licence, ECMWF does not waive the privileges and immunities 
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
 ! granted to it by virtue of its status as an intergovernmental organisation nor
 ! does it submit to any jurisdiction.
 
 module qg_gom_interface
 
+use atlas_module, only: atlas_field
 use fckit_configuration_module, only: fckit_configuration
 use iso_c_binding
 use qg_geom_mod
@@ -22,29 +23,37 @@ private
 contains
 ! ------------------------------------------------------------------------------
 !> Setup GOM
-subroutine qg_gom_setup_c(c_key_self,c_key_locs,c_vars) bind(c,name='qg_gom_setup_f90')
+subroutine qg_gom_setup_c(c_key_self,c_locs,c_vars) bind(c,name='qg_gom_setup_f90')
 
 implicit none
 
 ! Passed variables
-integer(c_int),intent(inout) :: c_key_self       !< GOM
-integer(c_int),intent(inout) :: c_key_locs       !< Locations
-type(c_ptr),value,intent(in) :: c_vars !< Variables
+integer(c_int),intent(inout) :: c_key_self  !< GOM
+type(c_ptr),value,intent(in) :: c_locs      !< Locations
+type(c_ptr),value,intent(in) :: c_vars      !< Variables
 
 ! Local variables
 type(qg_gom),pointer :: self
-type(qg_locs),pointer :: locs
+type(qg_locs) :: locs
 type(oops_variables) :: vars
+type(atlas_field) :: index
+integer, pointer :: kobs(:)
 
 ! Interface
 call qg_gom_registry%init()
 call qg_gom_registry%add(c_key_self)
 call qg_gom_registry%get(c_key_self,self)
-call qg_locs_registry%get(c_key_locs,locs)
+locs = qg_locs(c_locs)
 vars = oops_variables(c_vars)
 
+! get observations index
+index = locs%index()
+call index%data(kobs)
+
 ! Call Fortran
-call qg_gom_setup(self,locs%indx,vars)
+call qg_gom_setup(self,kobs,vars)
+
+call index%final()
 
 end subroutine qg_gom_setup_c
 ! ------------------------------------------------------------------------------
@@ -417,24 +426,24 @@ call qg_gom_write_file(self,f_conf)
 end subroutine qg_gom_write_file_c
 ! ------------------------------------------------------------------------------
 !> GOM analytic initialization
-subroutine qg_gom_analytic_init_c(c_key_self,c_key_locs,c_conf) bind(c,name='qg_gom_analytic_init_f90')
+subroutine qg_gom_analytic_init_c(c_key_self,c_locs,c_conf) bind(c,name='qg_gom_analytic_init_f90')
 
 implicit none
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_self !< GOM
-integer(c_int),intent(in) :: c_key_locs !< Locations
+type(c_ptr),value,intent(in) :: c_locs !< Locations
 type(c_ptr),value,intent(in) :: c_conf  !< Configuration
 
 ! Local variables
 type(fckit_configuration) :: f_conf
 type(qg_gom),pointer :: self
-type(qg_locs),pointer :: locs
+type(qg_locs) :: locs
 
 ! Interface
 f_conf = fckit_configuration(c_conf)
 call qg_gom_registry%get(c_key_self,self)
-call qg_locs_registry%get(c_key_locs,locs)
+locs = qg_locs(c_locs)
 
 ! Call Fortran
 call qg_gom_analytic_init(self,locs,f_conf)

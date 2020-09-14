@@ -25,7 +25,7 @@ namespace qg {
 GomQG::GomQG(const LocationsQG & locs, const oops::Variables & var) {
   // gom_setup just creates and allocates the GeoVaLs object without filling
   // in values
-  qg_gom_setup_f90(keyGom_, locs.toFortran(), var);
+  qg_gom_setup_f90(keyGom_, locs, var);
 }
 // -----------------------------------------------------------------------------
 /*! QG GeoVaLs Constructor with Config */
