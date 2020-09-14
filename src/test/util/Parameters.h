@@ -24,6 +24,7 @@
 #include "oops/runs/Test.h"
 #include "oops/util/Expect.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/ConfigurationParameter.h"
 #include "oops/util/parameters/NumericConstraints.h"
 #include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/OptionalPolymorphicParameter.h"
@@ -197,7 +198,7 @@ class AllDeviceParameters : public oops::Parameters {
   oops::Parameter<OptionalDeviceParameters> optionalDevice{"optional_device", {}, this};
 };
 
-// Parameters used to test constraints
+// Classes used to test parameter constraints
 
 class ConstrainedParameters : public oops::Parameters {
   OOPS_CONCRETE_PARAMETERS(ConstrainedParameters, Parameters)
@@ -260,6 +261,16 @@ class ConstrainedOptionalParameters : public oops::Parameters {
     "float_with_max", this, {oops::maxConstraint(5.5f)}};
   oops::OptionalParameter<float> floatWithExclusiveMax{
     "float_with_exclusive_max", this, {oops::exclusiveMaxConstraint(5.5f)}};
+};
+
+// Classes used to test the ConfigurationParameter class
+
+class IncompleteParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(IncompleteParameters, Parameters)
+ public:
+  oops::Parameter<float> floatParameter{"float_parameter", 1.5f, this};
+  oops::Parameter<int> intParameter{"int_parameter", 2, this};
+  oops::ConfigurationParameter config{this};
 };
 
 template <typename ParametersType>
@@ -954,6 +965,22 @@ void testOptionalParametersWithExclusiveMaxConstraint() {
   doTestExclusiveMaxConstraint<ConstrainedOptionalParameters>();
 }
 
+// ConfigurationParameter
+
+void testConfigurationParameter() {
+  const eckit::LocalConfiguration fullConf(TestEnvironment::config(), "full");
+  IncompleteParameters params;
+  params.deserialize(fullConf);
+
+  EXPECT_EQUAL(params.floatParameter, 3.5f);
+  EXPECT_EQUAL(params.intParameter, 4);
+  // params.config should contain values loaded also into other, more specific parameters...
+  EXPECT_EQUAL(params.config.value().getFloat("float_parameter"), 3.5f);
+  EXPECT_EQUAL(params.config.value().getInt("int_parameter"), 4);
+  // as well as all other values, for example this one:
+  EXPECT_NOT(params.config.value().getBool("bool_parameter"));
+}
+
 class Parameters : public oops::Test {
  private:
   std::string testid() const override {return "test::Parameters";}
@@ -1102,6 +1129,10 @@ class Parameters : public oops::Test {
                     });
     ts.emplace_back(CASE("util/Parameters/testOptionalParametersWithExclusiveMaxConstraint") {
                       testOptionalParametersWithExclusiveMaxConstraint();
+                    });
+
+    ts.emplace_back(CASE("util/Parameters/testConfigurationParameter") {
+                      testConfigurationParameter();
                     });
   }
 };
