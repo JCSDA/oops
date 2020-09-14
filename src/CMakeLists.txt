@@ -276,6 +276,7 @@ oops/util/missing_values_mod.F90
 oops/util/netcdf_utils_mod.f90
 oops/util/missingValues.cc
 oops/util/missingValues.h
+oops/util/NamedEnumerator.h
 oops/util/ObjectCounter.h
 oops/util/ObjectCountHelper.cc
 oops/util/ObjectCountHelper.h
@@ -435,7 +436,6 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/oops/util/linkedList_i.f
 target_sources( ${PROJECT_NAME} PRIVATE ${oops_test_src_files})
 install( DIRECTORY test DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/oops FILES_MATCHING PATTERN "*.h")
 
-#TODO: Reenable cxx_std_14 when supported by intel jedi-stack modules (jedi-stack #125)
 target_compile_features( ${PROJECT_NAME} PUBLIC cxx_std_11 )
 if(OpenMP_FOUND)
     target_link_libraries( ${PROJECT_NAME} PUBLIC OpenMP::OpenMP_Fortran OpenMP::OpenMP_CXX )

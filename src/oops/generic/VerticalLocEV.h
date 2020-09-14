@@ -42,6 +42,7 @@ namespace oops {
  * 3221– 3232. https://doi.org/10.1029/2018MS001468
  */
 class VerticalLocalizationParameters : public Parameters {
+  OOPS_CONCRETE_PARAMETERS(VerticalLocalizationParameters, Parameters)
  public:
   // fraction of the variance retained after the eigen spectrum
   // of the vertical localization function is truncated

@@ -10,7 +10,9 @@
 
 #include <list>
 #include <map>
+#include <set>
 #include <string>
+#include <utility>
 
 #include "eckit/config/Configuration.h"
 #include "eckit/exception/Exceptions.h"
@@ -27,15 +29,17 @@ namespace oops {
 template <typename Key, typename Value>
 struct ParameterTraits<util::ScalarOrMap<Key, Value>, std::false_type>
 {
-  static boost::optional<util::ScalarOrMap<Key, Value>> get(
-      const eckit::Configuration &config, const std::string& name) {
+  static boost::optional<util::ScalarOrMap<Key, Value>> get(util::CompositePath &path,
+                                                            const eckit::Configuration &config,
+                                                            const std::string& name) {
     if (!config.has(name))
       return boost::none;
 
     std::list<std::string> messages;
     try {
       // Try to extract a scalar from config.name.
-      if (boost::optional<Value> scalar = ParameterTraits<Value>::get(config, name)) {
+      if (boost::optional<Value> scalar =
+          ParameterTraits<Value>::get(path, config, name)) {
         return util::ScalarOrMap<Key, Value>(*scalar);
       }
     }
@@ -47,7 +51,7 @@ struct ParameterTraits<util::ScalarOrMap<Key, Value>, std::false_type>
     try {
       // Try to extract a map from config.name.
       if (boost::optional<std::map<Key, Value>> map =
-          ParameterTraits<std::map<Key, Value>>::get(config, name)) {
+          ParameterTraits<std::map<Key, Value>>::get(path, config, name)) {
         return util::ScalarOrMap<Key, Value>(*map);
       }
     }

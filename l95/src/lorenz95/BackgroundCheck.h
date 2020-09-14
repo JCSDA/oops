@@ -29,6 +29,8 @@ namespace lorenz95 {
 /// Parameters for L95 BackgroundCheck
 /// background check: all obs for which {|y-H(x)| < threshold} pass QC
 class BackgroundCheckParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(BackgroundCheckParameters, Parameters)
+
  public:
   /// threshold for background check
   oops::RequiredParameter<double> threshold{"threshold", this};

@@ -25,6 +25,7 @@ namespace oops {
 
 /// \brief Parameters for diagonal obs errors
 class ObsErrorDiagParameters : public Parameters {
+  OOPS_CONCRETE_PARAMETERS(ObsErrorDiagParameters, Parameters)
  public:
   /// perturbation amplitude multiplier
   Parameter<double> pert{"random amplitude", 1.0, this};
