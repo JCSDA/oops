@@ -8,15 +8,18 @@
 #ifndef OOPS_UTIL_PARAMETERS_REQUIREDPARAMETER_H_
 #define OOPS_UTIL_PARAMETERS_REQUIREDPARAMETER_H_
 
+#include <memory>
 #include <set>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include <boost/optional.hpp>
 
 #include "eckit/config/Configuration.h"
 #include "oops/util/CompositePath.h"
 #include "oops/util/parameters/ParameterBase.h"
+#include "oops/util/parameters/ParameterConstraint.h"
 #include "oops/util/parameters/ParameterTraits.h"
 
 namespace oops {
@@ -42,9 +45,14 @@ class RequiredParameter : public ParameterBase {
   ///   the same level of the configuration tree as \p name. A call to deserialize() or serialize()
   ///   on that object will automatically trigger a call to deserialize() or serialize() on this
   ///   parameter.
+  /// \param constraints
+  ///   Zero or more constraints that must be satisfied by the value of this parameter loaded from
+  ///   a Configuration object; if that's not the case, an exception will be thrown during
+  ///   deserialization.
   explicit RequiredParameter(
-      const char *name, Parameters *parent = nullptr)
-    : ParameterBase(parent), name_(name)
+      const char *name, Parameters *parent = nullptr,
+      std::vector<std::shared_ptr<const ParameterConstraint<T>>> constraints = {})
+    : ParameterBase(parent), name_(name), constraints_(std::move(constraints))
   {}
 
   /// \brief Load the value of this parameter from \p config.
@@ -70,6 +78,7 @@ class RequiredParameter : public ParameterBase {
   // The value is stored in a boost::optional object because T may not be
   // default-constructible.
   boost::optional<T> value_;
+  std::vector<std::shared_ptr<const ParameterConstraint<T>>> constraints_;
 };
 
 template <typename T>
@@ -79,6 +88,9 @@ void RequiredParameter<T>::deserialize(util::CompositePath &path,
   if (newValue == boost::none)
     throw eckit::BadParameter(path.path() + ": Mandatory parameter '" + name_ + "' not found",
                               Here());
+  util::PathComponent component(path, name_);
+  for (const std::shared_ptr<const ParameterConstraint<T>> &constraint : constraints_)
+    constraint->checkValue(path.path(), newValue.get());  // will throw if constraint is violated
   value_ = std::move(newValue);
 }
 

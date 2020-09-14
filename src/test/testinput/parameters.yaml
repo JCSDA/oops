@@ -184,3 +184,84 @@ required_device_not_set:
   device_with_default: {}
   optional_device: {}
   required_device: {}
+constraints_met:
+  int_with_min: 5
+  int_with_exclusive_min: 6
+  int_with_max: 5
+  int_with_exclusive_max: 4
+  float_with_min: 5.5
+  float_with_exclusive_min: 6
+  float_with_max: 5.5
+  float_with_exclusive_max: 5
+int_min_constraint_not_met:
+  int_with_min: 4 # violates constraint
+  int_with_exclusive_min: 6
+  int_with_max: 5
+  int_with_exclusive_max: 4
+  float_with_min: 5.5
+  float_with_exclusive_min: 6
+  float_with_max: 5.5
+  float_with_exclusive_max: 5
+float_min_constraint_not_met:
+  float_with_min: 5 # violates constraint
+  int_with_min: 5
+  int_with_exclusive_min: 6
+  int_with_max: 5
+  int_with_exclusive_max: 4
+  float_with_exclusive_min: 6
+  float_with_max: 5.5
+  float_with_exclusive_max: 5
+int_exclusive_min_constraint_not_met:
+  int_with_exclusive_min: 5 # violates constraint
+  int_with_min: 5
+  int_with_max: 5
+  int_with_exclusive_max: 4
+  float_with_min: 5.5
+  float_with_exclusive_min: 6
+  float_with_max: 5.5
+  float_with_exclusive_max: 5
+float_exclusive_min_constraint_not_met:
+  float_with_exclusive_min: 5.5 # violates constraint
+  int_with_min: 5
+  int_with_exclusive_min: 6
+  int_with_max: 5
+  int_with_exclusive_max: 4
+  float_with_min: 5.5
+  float_with_max: 5.5
+  float_with_exclusive_max: 5
+int_max_constraint_not_met:
+  int_with_max: 6 # violates constraint
+  int_with_min: 5
+  int_with_exclusive_min: 6
+  int_with_exclusive_max: 4
+  float_with_min: 5.5
+  float_with_exclusive_min: 6
+  float_with_max: 5.5
+  float_with_exclusive_max: 5
+float_max_constraint_not_met:
+  float_with_max: 6 # violates constraint
+  int_with_min: 5
+  int_with_exclusive_min: 6
+  int_with_max: 5
+  int_with_exclusive_max: 4
+  float_with_min: 5.5
+  float_with_exclusive_min: 6
+  float_with_exclusive_max: 5
+int_exclusive_max_constraint_not_met:
+  int_with_exclusive_max: 5 # violates constraint
+  int_with_min: 5
+  int_with_exclusive_min: 6
+  int_with_max: 5
+  float_with_min: 5.5
+  float_with_exclusive_min: 6
+  float_with_max: 5.5
+  float_with_exclusive_max: 5
+float_exclusive_max_constraint_not_met:
+  float_with_exclusive_max: 5.5 # violates constraint
+  int_with_min: 5
+  int_with_exclusive_min: 6
+  int_with_max: 5
+  int_with_exclusive_max: 4
+  float_with_min: 5.5
+  float_with_exclusive_min: 6
+  float_with_max: 5.5

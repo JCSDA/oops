@@ -24,6 +24,7 @@
 #include "oops/runs/Test.h"
 #include "oops/util/Expect.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/NumericConstraints.h"
 #include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/OptionalPolymorphicParameter.h"
 #include "oops/util/parameters/Parameter.h"
@@ -194,6 +195,71 @@ class AllDeviceParameters : public oops::Parameters {
   oops::RequiredParameter<RequiredDeviceParameters> requiredDevice{"required_device", this};
   oops::Parameter<DeviceParametersWithDefault> deviceWithDefault{"device_with_default", {}, this};
   oops::Parameter<OptionalDeviceParameters> optionalDevice{"optional_device", {}, this};
+};
+
+// Parameters used to test constraints
+
+class ConstrainedParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(ConstrainedParameters, Parameters)
+ public:
+  oops::Parameter<int> intWithMin{
+    "int_with_min", 10, this, {oops::minConstraint(5)}};
+  oops::Parameter<int> intWithExclusiveMin{
+    "int_with_exclusive_min", 10, this, {oops::exclusiveMinConstraint(5)}};
+  oops::Parameter<int> intWithMax{
+    "int_with_max", 0, this, {oops::maxConstraint(5)}};
+  oops::Parameter<int> intWithExclusiveMax{
+    "int_with_exclusive_max", 0, this, {oops::exclusiveMaxConstraint(5)}};
+  oops::Parameter<float> floatWithMin{
+    "float_with_min", 10.f, this, {oops::minConstraint(5.5f)}};
+  oops::Parameter<float> floatWithExclusiveMin{
+    "float_with_exclusive_min", 10.f, this, {oops::exclusiveMinConstraint(5.5f)}};
+  oops::Parameter<float> floatWithMax{
+    "float_with_max", 0.f, this, {oops::maxConstraint(5.5f)}};
+  oops::Parameter<float> floatWithExclusiveMax{
+    "float_with_exclusive_max", 0.f, this, {oops::exclusiveMaxConstraint(5.5f)}};
+};
+
+class ConstrainedRequiredParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(ConstrainedRequiredParameters, Parameters)
+ public:
+  oops::RequiredParameter<int> intWithMin{
+    "int_with_min", this, {oops::minConstraint(5)}};
+  oops::RequiredParameter<int> intWithExclusiveMin{
+    "int_with_exclusive_min", this, {oops::exclusiveMinConstraint(5)}};
+  oops::RequiredParameter<int> intWithMax{
+    "int_with_max", this, {oops::maxConstraint(5)}};
+  oops::RequiredParameter<int> intWithExclusiveMax{
+    "int_with_exclusive_max", this, {oops::exclusiveMaxConstraint(5)}};
+  oops::RequiredParameter<float> floatWithMin{
+    "float_with_min", this, {oops::minConstraint(5.5f)}};
+  oops::RequiredParameter<float> floatWithExclusiveMin{
+    "float_with_exclusive_min", this, {oops::exclusiveMinConstraint(5.5f)}};
+  oops::RequiredParameter<float> floatWithMax{
+    "float_with_max", this, {oops::maxConstraint(5.5f)}};
+  oops::RequiredParameter<float> floatWithExclusiveMax{
+    "float_with_exclusive_max", this, {oops::exclusiveMaxConstraint(5.5f)}};
+};
+
+class ConstrainedOptionalParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(ConstrainedOptionalParameters, Parameters)
+ public:
+  oops::OptionalParameter<int> intWithMin{
+    "int_with_min", this, {oops::minConstraint(5)}};
+  oops::OptionalParameter<int> intWithExclusiveMin{
+    "int_with_exclusive_min", this, {oops::exclusiveMinConstraint(5)}};
+  oops::OptionalParameter<int> intWithMax{
+    "int_with_max", this, {oops::maxConstraint(5)}};
+  oops::OptionalParameter<int> intWithExclusiveMax{
+    "int_with_exclusive_max", this, {oops::exclusiveMaxConstraint(5)}};
+  oops::OptionalParameter<float> floatWithMin{
+    "float_with_min", this, {oops::minConstraint(5.5f)}};
+  oops::OptionalParameter<float> floatWithExclusiveMin{
+    "float_with_exclusive_min", this, {oops::exclusiveMinConstraint(5.5f)}};
+  oops::OptionalParameter<float> floatWithMax{
+    "float_with_max", this, {oops::maxConstraint(5.5f)}};
+  oops::OptionalParameter<float> floatWithExclusiveMax{
+    "float_with_exclusive_max", this, {oops::exclusiveMaxConstraint(5.5f)}};
 };
 
 template <typename ParametersType>
@@ -748,6 +814,146 @@ void testPolymorphicParametersSerialization() {
   doTestSerialization<AllDeviceParameters>(conf);
 }
 
+// Constraint tests
+
+// - Generic routines
+
+template <typename ParametersType>
+void doTestMinConstraint() {
+  const eckit::LocalConfiguration conf(TestEnvironment::config());
+  {
+    const eckit::LocalConfiguration validConf(conf, "constraints_met");
+    ParametersType params;
+    EXPECT_NO_THROW(params.deserialize(validConf));
+  }
+  {
+    const eckit::LocalConfiguration invalidConf(conf, "int_min_constraint_not_met");
+    ParametersType params;
+    EXPECT_THROWS(params.deserialize(invalidConf));
+  }
+  {
+    const eckit::LocalConfiguration invalidConf(conf, "float_min_constraint_not_met");
+    ParametersType params;
+    EXPECT_THROWS(params.deserialize(invalidConf));
+  }
+}
+
+template <typename ParametersType>
+void doTestExclusiveMinConstraint() {
+  const eckit::LocalConfiguration conf(TestEnvironment::config());
+  {
+    const eckit::LocalConfiguration validConf(conf, "constraints_met");
+    ParametersType params;
+    EXPECT_NO_THROW(params.deserialize(validConf));
+  }
+  {
+    const eckit::LocalConfiguration invalidConf(conf, "int_exclusive_min_constraint_not_met");
+    ParametersType params;
+    EXPECT_THROWS(params.deserialize(invalidConf));
+  }
+  {
+    const eckit::LocalConfiguration invalidConf(conf, "float_exclusive_min_constraint_not_met");
+    ParametersType params;
+    EXPECT_THROWS(params.deserialize(invalidConf));
+  }
+}
+
+template <typename ParametersType>
+void doTestMaxConstraint() {
+  const eckit::LocalConfiguration conf(TestEnvironment::config());
+  {
+    const eckit::LocalConfiguration validConf(conf, "constraints_met");
+    ParametersType params;
+    EXPECT_NO_THROW(params.deserialize(validConf));
+  }
+  {
+    const eckit::LocalConfiguration invalidConf(conf, "int_max_constraint_not_met");
+    ParametersType params;
+    EXPECT_THROWS(params.deserialize(invalidConf));
+  }
+  {
+    const eckit::LocalConfiguration invalidConf(conf, "float_max_constraint_not_met");
+    ParametersType params;
+    EXPECT_THROWS(params.deserialize(invalidConf));
+  }
+}
+
+template <typename ParametersType>
+void doTestExclusiveMaxConstraint() {
+  const eckit::LocalConfiguration conf(TestEnvironment::config());
+  {
+    const eckit::LocalConfiguration validConf(conf, "constraints_met");
+    ParametersType params;
+    EXPECT_NO_THROW(params.deserialize(validConf));
+  }
+  {
+    const eckit::LocalConfiguration invalidConf(conf, "int_exclusive_max_constraint_not_met");
+    ParametersType params;
+    EXPECT_THROWS(params.deserialize(invalidConf));
+  }
+  {
+    const eckit::LocalConfiguration invalidConf(conf, "float_exclusive_max_constraint_not_met");
+    ParametersType params;
+    EXPECT_THROWS(params.deserialize(invalidConf));
+  }
+}
+
+// - Minimum constraints
+
+void testParametersWithMinConstraint() {
+  doTestMinConstraint<ConstrainedParameters>();
+}
+
+void testRequiredParametersWithMinConstraint() {
+  doTestMinConstraint<ConstrainedRequiredParameters>();
+}
+
+void testOptionalParametersWithMinConstraint() {
+  doTestMinConstraint<ConstrainedOptionalParameters>();
+}
+
+// - Exclusive minimum constraints
+
+void testParametersWithExclusiveMinConstraint() {
+  doTestExclusiveMinConstraint<ConstrainedParameters>();
+}
+
+void testRequiredParametersWithExclusiveMinConstraint() {
+  doTestExclusiveMinConstraint<ConstrainedRequiredParameters>();
+}
+
+void testOptionalParametersWithExclusiveMinConstraint() {
+  doTestExclusiveMinConstraint<ConstrainedOptionalParameters>();
+}
+
+// - Maximum constraints
+
+void testParametersWithMaxConstraint() {
+  doTestMaxConstraint<ConstrainedParameters>();
+}
+
+void testRequiredParametersWithMaxConstraint() {
+  doTestMaxConstraint<ConstrainedRequiredParameters>();
+}
+
+void testOptionalParametersWithMaxConstraint() {
+  doTestMaxConstraint<ConstrainedOptionalParameters>();
+}
+
+// - Exclusive maximum constraints
+
+void testParametersWithExclusiveMaxConstraint() {
+  doTestExclusiveMaxConstraint<ConstrainedParameters>();
+}
+
+void testRequiredParametersWithExclusiveMaxConstraint() {
+  doTestExclusiveMaxConstraint<ConstrainedRequiredParameters>();
+}
+
+void testOptionalParametersWithExclusiveMaxConstraint() {
+  doTestExclusiveMaxConstraint<ConstrainedOptionalParameters>();
+}
+
 class Parameters : public oops::Test {
  private:
   std::string testid() const override {return "test::Parameters";}
@@ -856,6 +1062,46 @@ class Parameters : public oops::Test {
                     });
     ts.emplace_back(CASE("util/Parameters/testPolymorphicParametersSerialization") {
                       testPolymorphicParametersSerialization();
+                    });
+
+    ts.emplace_back(CASE("util/Parameters/testParametersWithMinConstraint") {
+                      testParametersWithMinConstraint();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testRequiredParametersWithMinConstraint") {
+                      testRequiredParametersWithMinConstraint();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testOptionalParametersWithMinConstraint") {
+                      testOptionalParametersWithMinConstraint();
+                    });
+
+    ts.emplace_back(CASE("util/Parameters/testParametersWithExclusiveMinConstraint") {
+                      testParametersWithExclusiveMinConstraint();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testRequiredParametersWithExclusiveMinConstraint") {
+                      testRequiredParametersWithExclusiveMinConstraint();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testOptionalParametersWithExclusiveMinConstraint") {
+                      testOptionalParametersWithExclusiveMinConstraint();
+                    });
+
+    ts.emplace_back(CASE("util/Parameters/testParametersWithMaxConstraint") {
+                      testParametersWithMaxConstraint();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testRequiredParametersWithMaxConstraint") {
+                      testRequiredParametersWithMaxConstraint();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testOptionalParametersWithMaxConstraint") {
+                      testOptionalParametersWithMaxConstraint();
+                    });
+
+    ts.emplace_back(CASE("util/Parameters/testParametersWithExclusiveMaxConstraint") {
+                      testParametersWithExclusiveMaxConstraint();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testRequiredParametersWithExclusiveMaxConstraint") {
+                      testRequiredParametersWithExclusiveMaxConstraint();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testOptionalParametersWithExclusiveMaxConstraint") {
+                      testOptionalParametersWithExclusiveMaxConstraint();
                     });
   }
 };
