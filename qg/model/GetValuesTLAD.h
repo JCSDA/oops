@@ -16,7 +16,7 @@
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
-#include "model/LocationsQG.h"
+#include "oops/qg/LocationsQG.h"
 #include "oops/qg/QgFortran.h"
 
 namespace qg {

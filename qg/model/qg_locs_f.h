@@ -11,7 +11,7 @@
 #include "atlas/field.h"
 #include "atlas/functionspace/PointCloud.h"
 
-#include "model/LocationsQG.h"
+#include "oops/qg/LocationsQG.h"
 #include "oops/util/DateTime.h"
 
 // ------------------------------------------------------------------------------
