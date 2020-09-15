@@ -18,12 +18,31 @@
 #include "eckit/config/Configuration.h"
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/util/CompositePath.h"
+#include "oops/util/parameters/ObjectJsonSchema.h"
 #include "oops/util/parameters/Parameters.h"
 
 namespace oops {
 
 /// \brief Traits dictating how instances of subclasses of `PARAMETERS` (itself a subclass of
 /// Parameters) are transferred to and from eckit::Configuration objects.
+///
+/// \tparam PARAMETERS
+///   Common base class of the classes whose transfer to and from Configuration objects is
+///   controlled by this instantiation of PolymorphicParameterTraits.
+///
+/// \tparam FACTORY
+///   A factory class able to create instances of subclasses of `PARAMETERS` and enumerate
+///   valid identifiers of these subclasses. It needs to provide the following functions:
+///
+///       /// Return a new instance of the subclass of PARAMETERS identified by the string `id`.
+///       static std::unique_ptr<PARAMETERS> createParameters(const std::string &id);
+///
+///       /// Return the list of identifiers recognized by createParameters().
+///       ///
+///       /// Here, StringContainer can be any container of `std::string` objects that can be
+///       /// iterated over by a range-based `for` loop (e.g. `std::vector<std::string>` or
+///       /// `std::set<std::string>`); it can be returned by value or by reference.
+///       static StringContainer getMakerNames();
 template <typename PARAMETERS, typename FACTORY>
 struct PolymorphicParameterTraits {
   /// \brief Try to deserialize a polymorphic parameter from a Configuration object.
@@ -51,6 +70,15 @@ struct PolymorphicParameterTraits {
                   const PARAMETERS &value) {
     config.set(name, id);
     value.serialize(config);
+  }
+
+  static ObjectJsonSchema jsonSchema(const std::string &name) {
+    std::map<std::string, ObjectJsonSchema> variants;
+    for (const std::string &id : FACTORY::getMakerNames()) {
+      std::unique_ptr<PARAMETERS> params = FACTORY::createParameters(id);
+      variants[id] = params->jsonSchema();
+    }
+    return ObjectJsonSchema(name, variants);
   }
 };
 

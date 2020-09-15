@@ -23,6 +23,7 @@ namespace util {
 
 namespace oops {
 
+class ObjectJsonSchema;
 class Parameters;
 
 /// \brief Abstract interface of parameters that can be loaded from and saved to Configuration
@@ -53,6 +54,10 @@ class ParameterBase {
 
   /// \brief Save the parameter's value to \p config.
   virtual void serialize(eckit::LocalConfiguration &config) const = 0;
+
+  /// \brief Return an object encapsulating the JSON schema specifying the expected structure of
+  /// the JSON (or YAML) node from which this parameter is loaded.
+  virtual ObjectJsonSchema jsonSchema() const = 0;
 };
 
 }  // namespace oops

@@ -78,6 +78,25 @@ struct ParameterTraits<util::ScalarOrMap<Key, Value>, std::false_type>
           keyValue.second);
     }
   }
+
+  static ObjectJsonSchema jsonSchema(const std::string &name) {
+    std::stringstream oneOf;
+    {
+      eckit::Channel ch;
+      ch.setStream(oneOf);
+      ch << "[\n";
+      {
+        eckit::AutoIndent indent(ch);
+        ObjectJsonSchema scalarSchema = ParameterTraits<Value>::jsonSchema("");
+        ObjectJsonSchema mapSchema = ParameterTraits<std::map<Key, Value>>::jsonSchema("");
+        ch << toString(scalarSchema.properties().at("")) << ",\n";
+        ch << toString(mapSchema.properties().at("")) << '\n';
+      }
+      ch << "]";
+    }
+
+    return ObjectJsonSchema({{name, {{"oneOf", oneOf.str()}}}});
+  }
 };
 }  // namespace oops
 

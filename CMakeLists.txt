@@ -69,6 +69,10 @@ if ( GPTL_FOUND AND ENABLE_AUTOPROFILING )
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${Fortran_AUTOPROFILING_FLAGS}")
 endif()
 
+# JSON validation
+find_package(nlohmann_json)
+find_package(nlohmann_json_schema_validator)
+
 ## Sources
 add_subdirectory( src )
 add_subdirectory( tools )

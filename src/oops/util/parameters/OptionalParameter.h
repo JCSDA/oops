@@ -18,6 +18,7 @@
 
 #include "eckit/config/Configuration.h"
 #include "oops/util/CompositePath.h"
+#include "oops/util/parameters/ObjectJsonSchema.h"
 #include "oops/util/parameters/ParameterBase.h"
 #include "oops/util/parameters/ParameterConstraint.h"
 #include "oops/util/parameters/ParameterTraits.h"
@@ -59,6 +60,8 @@ class OptionalParameter : public ParameterBase {
 
   void serialize(eckit::LocalConfiguration &config) const override;
 
+  ObjectJsonSchema jsonSchema() const override;
+
   /// \brief The value stored in this parameter, or boost::none if no value is stored.
   const boost::optional<T> &value() const { return value_; }
 
@@ -87,6 +90,16 @@ template <typename T>
 void OptionalParameter<T>::serialize(eckit::LocalConfiguration &config) const {
   if (value_ != boost::none)
     ParameterTraits<T>::set(config, name_, *value_);
+}
+
+template <typename T>
+ObjectJsonSchema OptionalParameter<T>::jsonSchema() const {
+  ObjectJsonSchema schema = ParameterTraits<T>::jsonSchema(name_);
+  for (const std::shared_ptr<const ParameterConstraint<T>> &constraint : constraints_) {
+    PropertyJsonSchema constraintSchema = constraint->jsonSchema();
+    schema.extendPropertySchema(name_, std::move(constraintSchema));
+  }
+  return schema;
 }
 
 }  // namespace oops

@@ -31,6 +31,10 @@ class MinConstraint : public ParameterConstraint<T> {
                             " is not greater than or equal to " + std::to_string(min_));
   }
 
+  PropertyJsonSchema jsonSchema() const override {
+    return {{"minimum", std::to_string(min_)}};
+  }
+
  private:
   T min_;
 };
@@ -50,6 +54,10 @@ class ExclusiveMinConstraint : public ParameterConstraint<T> {
     if (!(value > min_))
       throw eckit::BadValue(path + ": Property value " + std::to_string(value) +
                             " is not greater than " + std::to_string(min_));
+  }
+
+  PropertyJsonSchema jsonSchema() const override {
+    return {{"exclusiveMinimum", std::to_string(min_)}};
   }
 
  private:
@@ -74,6 +82,10 @@ class MaxConstraint : public ParameterConstraint<T> {
                             " is not less than or equal to " + std::to_string(max_));
   }
 
+  PropertyJsonSchema jsonSchema() const override {
+    return {{"maximum", std::to_string(max_)}};
+  }
+
  private:
   T max_;
 };
@@ -93,6 +105,10 @@ class ExclusiveMaxConstraint : public ParameterConstraint<T> {
     if (!(value < max_))
       throw eckit::BadValue(path + ": Property value " + std::to_string(value) +
                             " is not less than " + std::to_string(max_));
+  }
+
+  PropertyJsonSchema jsonSchema() const override {
+    return {{"exclusiveMaximum", std::to_string(max_)}};
   }
 
  private:

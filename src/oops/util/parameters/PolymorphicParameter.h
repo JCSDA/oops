@@ -17,6 +17,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/util/CompositePath.h"
+#include "oops/util/parameters/ObjectJsonSchema.h"
 #include "oops/util/parameters/ParameterBase.h"
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/PolymorphicParameterTraits.h"
@@ -70,6 +71,8 @@ class PolymorphicParameter : public ParameterBase {
 
   void serialize(eckit::LocalConfiguration &config) const override;
 
+  ObjectJsonSchema jsonSchema() const override;
+
   /// \brief Identifier of the subclass of `PARAMETERS` whose instance is stored in this object.
   const std::string &id() const { return id_; }
 
@@ -113,6 +116,11 @@ void PolymorphicParameter<PARAMETERS, FACTORY>::deserialize(util::CompositePath 
 template <typename PARAMETERS, typename FACTORY>
 void PolymorphicParameter<PARAMETERS, FACTORY>::serialize(eckit::LocalConfiguration &config) const {
   Traits::set(config, name_, id_, *value_);
+}
+
+template <typename PARAMETERS, typename FACTORY>
+ObjectJsonSchema PolymorphicParameter<PARAMETERS, FACTORY>::jsonSchema() const {
+  return Traits::jsonSchema(name_);
 }
 
 }  // namespace oops

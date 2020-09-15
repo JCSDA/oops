@@ -143,7 +143,23 @@ class Parameters : public ParameterBase, public util::Printable {
   ///   Configuration from which parameter values are to be loaded.
   void deserialize(util::CompositePath &path, const eckit::Configuration &config) override;
 
+  /// \brief If OOPS has been built with support for JSON Schema-based validation, check if the
+  /// configuration \p config can be deserialized into this Parameters object and if not, throw an
+  /// exception with an explanatory message. If validation is not supported, return immediately.
+  ///
+  /// The check is done by validating the JSON representation of \p config against the JSON schema
+  /// returned by jsonSchema().
+  ///
+  /// To check if JSON Schema-based validation is supported, call isValidationSupported.
+  void validate(const eckit::Configuration &config);
+
+  /// \brief Return true if OOPS has been built with support for JSON Schema-based validation (which
+  /// requires certain third-party libraries), false otherwise.
+  static bool isValidationSupported();
+
   void serialize(eckit::LocalConfiguration &config) const override;
+
+  ObjectJsonSchema jsonSchema() const override;
 
  private:
   std::vector<ParameterBase*> children_;

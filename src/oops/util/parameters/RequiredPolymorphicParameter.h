@@ -16,6 +16,7 @@
 #include <boost/optional.hpp>
 
 #include "eckit/exception/Exceptions.h"
+#include "oops/util/parameters/ObjectJsonSchema.h"
 #include "oops/util/parameters/ParameterBase.h"
 #include "oops/util/parameters/PolymorphicParameterTraits.h"
 
@@ -128,6 +129,8 @@ class RequiredPolymorphicParameter : public ParameterBase {
 
   void serialize(eckit::LocalConfiguration &config) const override;
 
+  ObjectJsonSchema jsonSchema() const override;
+
   /// \brief Returns the identifier of the subclass of `PARAMETERS` whose instance is stored in this
   /// object.
   ///
@@ -178,6 +181,13 @@ void RequiredPolymorphicParameter<PARAMETERS, FACTORY>::serialize(
     eckit::LocalConfiguration &config) const {
   if (value_ != nullptr)
     Traits::set(config, name_, id_, *value_);
+}
+
+template <typename PARAMETERS, typename FACTORY>
+ObjectJsonSchema RequiredPolymorphicParameter<PARAMETERS, FACTORY>::jsonSchema() const {
+  ObjectJsonSchema schema = Traits::jsonSchema(name_);
+  schema.require(name_);
+  return schema;
 }
 
 }  // namespace oops

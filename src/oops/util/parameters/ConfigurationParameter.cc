@@ -6,12 +6,18 @@
  */
 
 #include "oops/util/parameters/ConfigurationParameter.h"
+#include "oops/util/parameters/ObjectJsonSchema.h"
 
 namespace oops {
 
 void ConfigurationParameter::deserialize(util::CompositePath &path,
                                          const eckit::Configuration &config) {
   value_ = eckit::LocalConfiguration(config);
+}
+
+ObjectJsonSchema ConfigurationParameter::jsonSchema() const {
+  // An empty schema, imposing no constraints.
+  return ObjectJsonSchema({}, {}, true /*additionalProperties?*/);
 }
 
 void ConfigurationParameter::serialize(eckit::LocalConfiguration &config) const {

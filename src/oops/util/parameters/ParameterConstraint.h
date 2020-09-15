@@ -11,6 +11,8 @@
 #include <memory>
 #include <string>
 
+#include "oops/util/parameters/ObjectJsonSchema.h"
+
 namespace oops {
 
 /// \brief Interface for classes representing constraints that must be met by parameters.
@@ -36,6 +38,11 @@ class ParameterConstraint {
   /// \param value
   ///   Value to be checked.
   virtual void checkValue(const std::string &path, const T &value) const = 0;
+
+  /// \brief Return a JSON schema describing the constraint.
+  ///
+  /// The result will be merged into the existing schema used to validate the parameter.
+  virtual PropertyJsonSchema jsonSchema() const = 0;
 };
 
 }  // namespace oops

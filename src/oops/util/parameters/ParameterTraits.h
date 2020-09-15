@@ -28,7 +28,9 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/NamedEnumerator.h"
+#include "oops/util/parameters/ObjectJsonSchema.h"
 #include "oops/util/parameters/Parameters.h"
+#include "oops/util/stringFunctions.h"  // for join()
 
 namespace oops {
 
@@ -53,6 +55,10 @@ namespace oops {
 ///
 /// /// \brief Save the value \p value of the option \p name to the configuration \p config.
 /// static void set(eckit::LocalConfiguration &config, const std::string &name, const T &value);
+///
+/// /// \brief Return an object encapsulating the JSON schema specifying the expected structure of
+/// /// the YAML node from which option \p name is loaded.
+/// static ObjectJsonSchema jsonSchema(const std::string &name);
 /// \endcode
 template <typename T,
           typename IsTDerivedFromParameters =
@@ -145,10 +151,32 @@ struct EnumParameterTraits {
                "' cannot be converted to a " << Helper::enumTypeName;
     throw eckit::BadParameter(message.str(), Here());
   }
+
+  static ObjectJsonSchema jsonSchema(const std::string &name) {
+    std::string enumSchema = '[' +
+        util::stringfunctions::join(", ",
+                                    std::begin(Helper::namedValues),
+                                    std::end(Helper::namedValues),
+                                    quotedName) +
+        ']';
+    return ObjectJsonSchema({{name, {{"enum", enumSchema}}}});
+  }
+
+ private:
+  static std::string quotedName(util::NamedEnumerator<EnumType> namedValue) {
+    std::string result = "\"";
+    result += namedValue.name;
+    result += "\"";
+    return result;
+  }
 };
 
 template <typename T>
-struct IntegerParameterTraits : public GenericParameterTraits<T> {};
+struct IntegerParameterTraits : public GenericParameterTraits<T> {
+  static ObjectJsonSchema jsonSchema(const std::string &name) {
+    return ObjectJsonSchema({{name, {{"type", "\"integer\""}}}});
+  }
+};
 
 template <>
 struct ParameterTraits<int, std::false_type> : public IntegerParameterTraits<int> {};
@@ -157,7 +185,11 @@ template <>
 struct ParameterTraits<size_t, std::false_type> : public IntegerParameterTraits<size_t> {};
 
 template <typename T>
-struct FloatingPointParameterTraits : public GenericParameterTraits<T> {};
+struct FloatingPointParameterTraits : public GenericParameterTraits<T> {
+  static ObjectJsonSchema jsonSchema(const std::string &name) {
+    return ObjectJsonSchema({{name, {{"type", "\"number\""}}}});
+  }
+};
 
 template <>
 struct ParameterTraits<float, std::false_type> : public FloatingPointParameterTraits<float> {};
@@ -166,15 +198,27 @@ template <>
 struct ParameterTraits<double, std::false_type> : public FloatingPointParameterTraits<double> {};
 
 template <>
-struct ParameterTraits<bool, std::false_type> : public GenericParameterTraits<bool> {};
+struct ParameterTraits<bool, std::false_type> : public GenericParameterTraits<bool> {
+  static ObjectJsonSchema jsonSchema(const std::string &name) {
+    return ObjectJsonSchema({{name, {{"type", "\"boolean\""}}}});
+  }
+};
 
 template <>
 struct ParameterTraits<std::string, std::false_type> :
-    public GenericParameterTraits<std::string> {};
+    public GenericParameterTraits<std::string> {
+  static ObjectJsonSchema jsonSchema(const std::string &name) {
+    return ObjectJsonSchema({{name, {{"type", R"(["string", "number"])"}}}});
+  }
+};
 
 template <>
 struct ParameterTraits<eckit::LocalConfiguration, std::false_type> :
-    public GenericParameterTraits<eckit::LocalConfiguration> {};
+    public GenericParameterTraits<eckit::LocalConfiguration> {
+  static ObjectJsonSchema jsonSchema(const std::string &name) {
+    return ObjectJsonSchema({{name, PropertyJsonSchema()}});
+  }
+};
 
 /// \brief Specialization for types derived from Parameters.
 template <typename T>
@@ -201,6 +245,11 @@ struct ParameterTraits<T, std::true_type>
     value.serialize(subConfig);
     config.set(name, subConfig);
   }
+
+  static ObjectJsonSchema jsonSchema(const std::string &name) {
+    T value;
+    return ObjectJsonSchema({{name, value.jsonSchema().toPropertyJsonSchema()}});
+  }
 };
 
 /// \brief Specialization for DateTime objects.
@@ -222,6 +271,11 @@ struct ParameterTraits<util::DateTime> {
              const util::DateTime &value) {
     config.set(name, value.toString());
   }
+
+  static ObjectJsonSchema jsonSchema(const std::string &name) {
+    return ObjectJsonSchema({{name, {{"type", "\"string\""},
+                                     {"format", "\"date-time\""}}}});
+  }
 };
 
 /// \brief Specialization for Duration objects.
@@ -242,6 +296,11 @@ struct ParameterTraits<util::Duration> {
              const std::string &name,
              const util::Duration &value) {
     config.set(name, value.toString());
+  }
+
+  static ObjectJsonSchema jsonSchema(const std::string &name) {
+    return ObjectJsonSchema({{name, {{"type", "\"string\""},
+                                     {"format", "\"duration\""}}}});
   }
 };
 
@@ -283,6 +342,12 @@ struct ParameterTraits<std::vector<Value>, std::false_type> {
       subConfigs.push_back(temp.getSubConfiguration(dummyName));
     }
     config.set(name, subConfigs);
+  }
+
+  static ObjectJsonSchema jsonSchema(const std::string &name) {
+    ObjectJsonSchema itemSchema = ParameterTraits<Value>::jsonSchema("");
+    return ObjectJsonSchema({{name, {{"type", "\"array\""},
+                                     {"items", toString(itemSchema.properties().at(""))}}}});
   }
 };
 
@@ -352,6 +417,26 @@ struct ParameterTraits<std::map<Key, Value>, std::false_type> {
         config,
         name + config.separator() + boost::lexical_cast<std::string>(keyValue.first),
         keyValue.second);
+  }
+
+  static ObjectJsonSchema jsonSchema(const std::string &name) {
+    std::stringstream patternProperties;
+    {
+      eckit::Channel ch;
+      ch.setStream(patternProperties);
+      ch << "{\n";
+      {
+        eckit::AutoIndent indent(ch);
+        ch << R"("" : )";
+        ObjectJsonSchema itemSchema = ParameterTraits<Value>::jsonSchema("");
+        ch << toString(itemSchema.properties().at(""));
+        ch << '\n';
+      }
+      ch << "}";
+    }
+
+    return ObjectJsonSchema({{name, {{"type", "\"object\""},
+                                     {"patternProperties", patternProperties.str()}}}});
   }
 };
 

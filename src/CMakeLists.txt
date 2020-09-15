@@ -306,6 +306,8 @@ oops/util/unstructured_interpolation_mod.f90
 oops/util/parameters/ConfigurationParameter.cc
 oops/util/parameters/ConfigurationParameter.h
 oops/util/parameters/NumericConstraints.h
+oops/util/parameters/ObjectJsonSchema.cc
+oops/util/parameters/ObjectJsonSchema.h
 oops/util/parameters/OptionalParameter.h
 oops/util/parameters/OptionalPolymorphicParameter.h
 oops/util/parameters/Parameter.h
@@ -318,6 +320,8 @@ oops/util/parameters/ParameterTraits.h
 oops/util/parameters/ParameterTraitsScalarOrMap.h
 oops/util/parameters/PolymorphicParameter.h
 oops/util/parameters/PolymorphicParameterTraits.h
+oops/util/parameters/PropertyJsonSchema.cc
+oops/util/parameters/PropertyJsonSchema.h
 oops/util/parameters/RequiredParameter.h
 oops/util/parameters/RequiredPolymorphicParameter.h
 )
@@ -480,6 +484,11 @@ install(DIRECTORY ${CMAKE_BINARY_DIR}/${MODULE_DIR}/ DESTINATION ${MODULE_DIR})
 target_include_directories(${PROJECT_NAME} INTERFACE
                                 $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/${MODULE_DIR}>
                                 $<INSTALL_INTERFACE:${MODULE_DIR}>)
+
+if (${nlohmann_json_FOUND} AND ${nlohmann_json_schema_validator_FOUND})
+  target_link_libraries( oops PUBLIC nlohmann_json nlohmann_json_schema_validator )
+  target_compile_definitions( oops PRIVATE OOPS_HAVE_NLOHMANN_JSON_SCHEMA_VALIDATOR )
+endif()
 
 ## Tests
 

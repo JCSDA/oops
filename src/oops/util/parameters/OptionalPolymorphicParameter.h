@@ -15,6 +15,7 @@
 
 #include <boost/optional.hpp>
 
+#include "oops/util/parameters/ObjectJsonSchema.h"
 #include "oops/util/parameters/ParameterBase.h"
 #include "oops/util/parameters/PolymorphicParameterTraits.h"
 
@@ -71,6 +72,8 @@ class OptionalPolymorphicParameter : public ParameterBase {
 
   void serialize(eckit::LocalConfiguration &config) const override;
 
+  ObjectJsonSchema jsonSchema() const override;
+
   /// \brief Returns the identifier of the subclass of `PARAMETERS` whose instance is stored in this
   /// object, or boost::none if no value is stored.
   const boost::optional<std::string> &id() const { return id_; }
@@ -106,6 +109,11 @@ void OptionalPolymorphicParameter<PARAMETERS, FACTORY>::serialize(
     eckit::LocalConfiguration &config) const {
   if (id_ != boost::none && value_ != nullptr)
     Traits::set(config, name_, *id_, *value_);
+}
+
+template <typename PARAMETERS, typename FACTORY>
+ObjectJsonSchema OptionalPolymorphicParameter<PARAMETERS, FACTORY>::jsonSchema() const {
+  return Traits::jsonSchema(name_);
 }
 
 }  // namespace oops

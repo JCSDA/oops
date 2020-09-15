@@ -34,6 +34,8 @@ class ConfigurationParameter : public ParameterBase {
 
   void serialize(eckit::LocalConfiguration &config) const override;
 
+  ObjectJsonSchema jsonSchema() const override;
+
   /// \brief The value stored in this parameter.
   const eckit::LocalConfiguration &value() const { return value_; }
 

@@ -184,6 +184,42 @@ required_device_not_set:
   device_with_default: {}
   optional_device: {}
   required_device: {}
+invalid_type_of_device_with_default:
+  device_with_default:
+    diameter: 30
+    type: ABCDEF
+  required_device:
+    diameter: 30
+    type: screen
+invalid_type_of_optional_device:
+  optional_device:
+    diameter: 30
+    type: ABCDEF
+  required_device:
+    diameter: 30
+    type: screen
+invalid_type_of_required_device:
+  required_device:
+    diameter: 30
+    type: ABCDEF
+misspelled_diameter_of_optional_device:
+  optional_device:
+    diamester: 30
+    type: ABCDEF
+  required_device:
+    diameter: 30
+    type: screen
+misspelled_diameter_of_device_with_default:
+  device_with_default:
+    diamester: 30
+    type: ABCDEF
+  required_device:
+    diameter: 30
+    type: screen
+misspelled_diameter_of_required_device:
+  required_device:
+    diamester: 30
+    type: screen
 constraints_met:
   int_with_min: 5
   int_with_exclusive_min: 6
