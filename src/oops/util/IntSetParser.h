@@ -11,13 +11,11 @@
 #include <set>
 #include <string>
 
+// Import the definition of contains(), which used to be declared here
+#include "oops/util/AssociativeContainers.h"
+
 namespace oops {
   std::set<int> parseIntSet(const std::string &);
-
-  template<typename TT>
-  bool contains(const std::set<TT> & set, const TT & elem) {
-    return set.find(elem) != set.end();
-  }
 }  // namespace oops
 
 #endif  // OOPS_UTIL_INTSETPARSER_H_

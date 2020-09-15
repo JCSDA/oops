@@ -236,6 +236,7 @@ oops/runs/Variational.h
 oops/util/abor1_cpp.cc
 oops/util/abor1_cpp.h
 oops/util/abor1_ftn.F90
+oops/util/AssociativeContainers.h
 oops/util/CompareNVectors.h
 oops/util/CompositePath.cc
 oops/util/CompositePath.h
@@ -369,6 +370,7 @@ test/util/Random.h
 test/util/random.F90
 test/util/FCString.h
 test/util/f_c_string.F90
+test/util/AssociativeContainers.h
 test/util/Parameters.h
 test/util/ScalarOrMap.h
 test/util/FloatCompare.h
@@ -585,6 +587,11 @@ ecbuild_add_test( TARGET  test_util_comparenvectors
 
 ecbuild_add_test( TARGET  test_util_missingvalues
                   SOURCES test/util/MissingValues.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_associativecontainers
+                  SOURCES test/util/AssociativeContainers.cc
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 
