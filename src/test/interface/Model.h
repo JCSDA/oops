@@ -208,9 +208,9 @@ class Model : public oops::Test {
   Model() {}
   virtual ~Model() {ModelFixture<MODEL>::reset();}
  private:
-  std::string testid() const {return "test::Model<" + MODEL::name() + ">";}
+  std::string testid() const override {return "test::Model<" + MODEL::name() + ">";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/Model/testModelConstructor")
@@ -222,6 +222,8 @@ class Model : public oops::Test {
     ts.emplace_back(CASE("interface/Model/testModelReForecast")
       { testModelReForecast<MODEL>(); });
   }
+
+  void clear() const override {}
 };
 
 // =================================================================================================

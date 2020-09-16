@@ -109,9 +109,9 @@ template <typename MODEL> class Localization : public oops::Test {
   Localization() {}
   virtual ~Localization() {}
  private:
-  std::string testid() const {return "test::Localization<" + MODEL::name() + ">";}
+  std::string testid() const override {return "test::Localization<" + MODEL::name() + ">";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/Localization/testLocalizationZero")
@@ -119,6 +119,8 @@ template <typename MODEL> class Localization : public oops::Test {
     ts.emplace_back(CASE("interface/Localization/testLocalizationMultiply")
       { testLocalizationMultiply<MODEL>(); });
   }
+
+  void clear() const override {}
 };
 
 // -----------------------------------------------------------------------------

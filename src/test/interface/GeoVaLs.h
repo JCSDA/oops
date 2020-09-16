@@ -184,9 +184,9 @@ class GeoVaLs : public oops::Test {
   GeoVaLs() {}
   virtual ~GeoVaLs() {}
  private:
-  std::string testid() const {return "test::GeoVaLs<" + OBS::name() + ">";}
+  std::string testid() const override {return "test::GeoVaLs<" + OBS::name() + ">";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/GeoVaLs/testConstructor")
@@ -196,6 +196,8 @@ class GeoVaLs : public oops::Test {
     ts.emplace_back(CASE("interface/GeoVaLs/testRead")
       { testRead<OBS>(); });
   }
+
+  void clear() const override {}
 };
 
 // =============================================================================

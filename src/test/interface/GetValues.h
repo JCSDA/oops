@@ -231,9 +231,10 @@ class GetValues : public oops::Test {
   virtual ~GetValues() {}
 
  private:
-  std::string testid() const {return "test::GetValues<" + MODEL::name() + ", " + OBS::name() + ">";}
+  std::string testid() const override {return "test::GetValues<" + MODEL::name() +
+                                              ", " + OBS::name() + ">";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/GeometryIterator/testGetValuesConstructor")
@@ -243,6 +244,8 @@ class GetValues : public oops::Test {
     ts.emplace_back(CASE("interface/GeometryIterator/testGetValuesInterpolation")
       { testGetValuesInterpolation<MODEL, OBS>(); });
   }
+
+  void clear() const override {}
 };
 
 // =================================================================================================

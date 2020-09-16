@@ -85,14 +85,16 @@ class FCString : public oops::Test {
   virtual ~FCString() {}
 
  private:
-  std::string testid() const {return "test::FCString";}
+  std::string testid() const override {return "test::FCString";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("util/FCString/testPushStringVector")
       { testPushStringVector(); });
   }
+
+  void clear() const override {}
 };
 
 // -----------------------------------------------------------------------------

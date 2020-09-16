@@ -44,6 +44,7 @@ class Test : public Application {
  private:
   virtual void register_tests() const = 0;
   virtual std::string testid() const = 0;
+  virtual void clear() const = 0;
   static bool init_unit_test() {return true;}
   std::string appname() const {return "oops::Test running " + testid();}
 };
@@ -67,6 +68,8 @@ int Test::execute(const eckit::Configuration & config) const {
   int result = eckit::testing::run_tests(argc, argv, false);
   Log::trace() << "Finished running the unit tests" << std::endl;
   Log::error() << "Finished running the unit tests, result = " << result << std::endl;
+
+  this->clear();
 
 // Return test status
   return result;

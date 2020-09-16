@@ -77,6 +77,8 @@ class AssociativeContainers : public oops::Test {
   std::string testid() const override {return "test::AssociativeContainers";}
 
   void register_tests() const override {}
+
+  void clear() const override {}
 };
 
 }  // namespace test

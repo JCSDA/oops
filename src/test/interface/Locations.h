@@ -49,14 +49,16 @@ class Locations : public oops::Test {
   Locations() {}
   virtual ~Locations() {}
  private:
-  std::string testid() const {return "test::Locations<" + OBS::name() + ">";}
+  std::string testid() const override {return "test::Locations<" + OBS::name() + ">";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/Locations/testConstructor")
       { testConstructor<OBS>(); });
   }
+
+  void clear() const override {}
 };
 
 // -----------------------------------------------------------------------------

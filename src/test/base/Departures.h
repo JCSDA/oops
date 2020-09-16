@@ -60,16 +60,21 @@ template <typename OBS> void testDepartures() {
 }
 
 template <typename OBS> class Departures : public oops::Test {
+  typedef ObsTestsFixture<OBS>     Test_;
  public:
   Departures() {}
   virtual ~Departures() {}
  private:
-  std::string testid() const {return "test::Departures<" + OBS::name() + ">";}
+  std::string testid() const override {return "test::Departures<" + OBS::name() + ">";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
     ts.emplace_back(CASE("base/Departures/testDepartures")
       { testDepartures<OBS>(); });
+  }
+
+  void clear() const override {
+    Test_::reset();
   }
 };
 

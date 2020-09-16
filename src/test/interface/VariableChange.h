@@ -125,14 +125,16 @@ template <typename MODEL> class VariableChange : public oops::Test {
   VariableChange() {}
   virtual ~VariableChange() {}
  private:
-  std::string testid() const {return "test::VariableChange<" + MODEL::name() + ">";}
+  std::string testid() const override {return "test::VariableChange<" + MODEL::name() + ">";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/VariableChange/testVariableChangeInverse")
       { testVariableChangeInverse<MODEL>(); });
   }
+
+  void clear() const override {}
 };
 
 // -------------------------------------------------------------------------------------------------

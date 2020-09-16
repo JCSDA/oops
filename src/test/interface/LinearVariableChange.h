@@ -245,9 +245,9 @@ class LinearVariableChange : public oops::Test {
   LinearVariableChange() {}
   virtual ~LinearVariableChange() {}
  private:
-  std::string testid() const {return "test::LinearVariableChange<" + MODEL::name() + ">";}
+  std::string testid() const override {return "test::LinearVariableChange<" + MODEL::name() + ">";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/LinearVariableChange/testLinearVariableChangeZero")
@@ -257,6 +257,8 @@ class LinearVariableChange : public oops::Test {
     ts.emplace_back(CASE("interface/LinearVariableChange/testLinearVariableChangeInverse")
       { testLinearVariableChangeInverse<MODEL>(); });
   }
+
+  void clear() const override {}
 };
 
 // -----------------------------------------------------------------------------

@@ -315,13 +315,14 @@ template <typename OBS> void testTangentLinear() {
 
 template <typename OBS>
 class LinearObsOperator : public oops::Test {
+  typedef ObsTestsFixture<OBS> Test_;
  public:
   LinearObsOperator() {}
   virtual ~LinearObsOperator() {}
  private:
-  std::string testid() const {return "test::LinearObsOperator<" + OBS::name() + ">";}
+  std::string testid() const override {return "test::LinearObsOperator<" + OBS::name() + ">";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/GeometryIterator/testConstructor")
@@ -332,6 +333,10 @@ class LinearObsOperator : public oops::Test {
       { testTangentLinear<OBS>(); });
     ts.emplace_back(CASE("interface/GeometryIterator/testAdjoint")
       { testAdjoint<OBS>(); });
+  }
+
+  void clear() const override {
+    Test_::reset();
   }
 };
 

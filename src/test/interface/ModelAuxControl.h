@@ -112,9 +112,9 @@ class ModelAuxControl : public oops::Test {
   ModelAuxControl() {}
   virtual ~ModelAuxControl() {}
  private:
-  std::string testid() const {return "test::ModelAuxControl<" + MODEL::name() + ">";}
+  std::string testid() const override {return "test::ModelAuxControl<" + MODEL::name() + ">";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/ModelAuxControl/testConstructor")
@@ -124,6 +124,8 @@ class ModelAuxControl : public oops::Test {
     ts.emplace_back(CASE("interface/ModelAuxControl/testChangeRes")
       { testChangeRes<MODEL>(); });
   }
+
+  void clear() const override {}
 };
 
 // =============================================================================

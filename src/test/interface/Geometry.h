@@ -84,9 +84,9 @@ template <typename MODEL> class Geometry : public oops::Test {
   Geometry() {}
   virtual ~Geometry() {}
  private:
-  std::string testid() const {return "test::Geometry<" + MODEL::name() + ">";}
+  std::string testid() const override {return "test::Geometry<" + MODEL::name() + ">";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/Geometry/testConstructor")
@@ -94,6 +94,8 @@ template <typename MODEL> class Geometry : public oops::Test {
     ts.emplace_back(CASE("interface/Geometry/testCopyConstructor")
       { testCopyConstructor<MODEL>(); });
   }
+
+  void clear() const override {}
 };
 
 // =============================================================================

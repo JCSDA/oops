@@ -155,6 +155,8 @@ class PostTimer : public oops::Test {
                       testConfCtor();
                     });
   }
+
+  void clear() const override {}
 };
 
 }  // namespace test

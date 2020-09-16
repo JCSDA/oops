@@ -70,19 +70,24 @@ template <typename OBS> void testCopyConstructor() {
 
 template <typename OBS>
 class ObsAuxControl : public oops::Test {
+  typedef ObsTestsFixture<OBS> Test_;
  public:
   ObsAuxControl() {}
   virtual ~ObsAuxControl() {}
  private:
-  std::string testid() const {return "test::ObsAuxControl<" + OBS::name() + ">";}
+  std::string testid() const override {return "test::ObsAuxControl<" + OBS::name() + ">";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/ObsAuxControl/testConstructor")
       { testConstructor<OBS>(); });
     ts.emplace_back(CASE("interface/ObsAuxControl/testCopyConstructor")
       { testCopyConstructor<OBS>(); });
+  }
+
+  void clear() const override {
+    Test_::reset();
   }
 };
 

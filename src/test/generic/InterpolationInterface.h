@@ -285,14 +285,16 @@ class InterpolationInterface : public oops::Test {
   virtual ~InterpolationInterface() {}
 
  private:
-  std::string testid() const {return "test::InterpolationInterface";}
+  std::string testid() const override {return "test::InterpolationInterface";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("generic/InterpolationInterface/testInterpolation")
       { testInterpolation(); });
   }
+
+  void clear() const override {}
 };
 
 // -----------------------------------------------------------------------------

@@ -137,19 +137,24 @@ template <typename OBS> void testSimulateObs() {
 
 template <typename OBS>
 class ObsOperator : public oops::Test {
+  typedef ObsTestsFixture<OBS> Test_;
  public:
   ObsOperator() {}
   virtual ~ObsOperator() {}
  private:
-  std::string testid() const {return "test::ObsOperator<" + OBS::name() + ">";}
+  std::string testid() const override {return "test::ObsOperator<" + OBS::name() + ">";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/ObsOperator/testConstructor")
       { testConstructor<OBS>(); });
     ts.emplace_back(CASE("interface/ObsOperator/testSimulateObs")
       { testSimulateObs<OBS>(); });
+  }
+
+  void clear() const override {
+    Test_::reset();
   }
 };
 

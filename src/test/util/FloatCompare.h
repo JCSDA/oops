@@ -207,6 +207,7 @@ class FloatCompare : public oops::Test {
   std::string testid() const override {return "test::FloatCompare";}
 
   void register_tests() const override {}
+  void clear() const override {}
 };
 
 }  // namespace test

@@ -42,17 +42,22 @@ template <typename OBS> void testConstructor() {
 // -----------------------------------------------------------------------------
 
 template <typename OBS> class ObsSpace : public oops::Test {
+  typedef ObsTestsFixture<OBS> Test_;
  public:
   ObsSpace() {}
   virtual ~ObsSpace() {}
  private:
-  std::string testid() const {return "test::ObsSpace<" + OBS::name() + ">";}
+  std::string testid() const override {return "test::ObsSpace<" + OBS::name() + ">";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/ObsSpace/testConstructor")
       { testConstructor<OBS>(); });
+  }
+
+  void clear() const override {
+    Test_::reset();
   }
 };
 

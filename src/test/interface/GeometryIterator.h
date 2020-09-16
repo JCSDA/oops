@@ -90,9 +90,9 @@ template <typename MODEL> class GeometryIterator : public oops::Test {
   virtual ~GeometryIterator() {}
 
  private:
-  std::string testid() const {return "test::GeometryIterator<" + MODEL::name() + ">";}
+  std::string testid() const override {return "test::GeometryIterator<" + MODEL::name() + ">";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/GeometryIterator/testConstructor")
@@ -100,6 +100,8 @@ template <typename MODEL> class GeometryIterator : public oops::Test {
     ts.emplace_back(CASE("interface/GeometryIterator/testGetSetLocal")
       { testGetSetLocal<MODEL>(); });
   }
+
+  void clear() const override {}
 };
 
 // =============================================================================

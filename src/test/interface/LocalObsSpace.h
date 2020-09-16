@@ -110,18 +110,23 @@ template <typename OBS> void testLocalObsVector() {
 // -----------------------------------------------------------------------------
 
 template <typename OBS> class LocalObsSpace : public oops::Test {
+  typedef ObsTestsFixture<OBS> Test_;
  public:
   LocalObsSpace() {}
   virtual ~LocalObsSpace() {}
  private:
-  std::string testid() const {return "test::LocalObsSpace<" + OBS::name() + ">";}
+  std::string testid() const override {return "test::LocalObsSpace<" + OBS::name() + ">";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
     ts.emplace_back(CASE("interface/LocalObsSpace/testLocalObsSpace")
       { testLocalObsSpace<OBS>(); });
     ts.emplace_back(CASE("interface/LocalObsSpace/testLocalObsVector")
       { testLocalObsVector<OBS>(); });
+  }
+
+  void clear() const override {
+    Test_::reset();
   }
 };
 

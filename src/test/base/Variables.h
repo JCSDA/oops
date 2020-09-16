@@ -63,9 +63,9 @@ class Variables : public oops::Test {
   Variables() {}
   virtual ~Variables() {}
  private:
-  std::string testid() const {return "test::Variables";}
+  std::string testid() const override {return "test::Variables";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("Variables/testConstructor")
@@ -73,6 +73,8 @@ class Variables : public oops::Test {
     ts.emplace_back(CASE("Variables/testCopyConstructor")
       { testCopyConstructor(); });
   }
+
+  void clear() const override {}
 };
 
 }  // namespace test

@@ -85,13 +85,14 @@ template <typename OBS> void testNotZero() {
 
 template <typename OBS>
 class ObsVector : public oops::Test {
+  typedef ObsTestsFixture<OBS> Test_;
  public:
   ObsVector() {}
   virtual ~ObsVector() {}
  private:
-  std::string testid() const {return "test::ObsVector<" + OBS::name() + ">";}
+  std::string testid() const override {return "test::ObsVector<" + OBS::name() + ">";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/ObsVector/testConstructor")
@@ -100,6 +101,10 @@ class ObsVector : public oops::Test {
       { testCopyConstructor<OBS>(); });
     ts.emplace_back(CASE("interface/ObsVector/testNotZero")
       { testNotZero<OBS>(); });
+  }
+
+  void clear() const override {
+    Test_::reset();
   }
 };
 

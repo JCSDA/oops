@@ -231,9 +231,9 @@ class Increment : public oops::Test {
   virtual ~Increment() {}
 
  private:
-  std::string testid() const {return "test::Increment<" + MODEL::name() + ">";}
+  std::string testid() const override {return "test::Increment<" + MODEL::name() + ">";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/Increment/testIncrementConstructor")
@@ -251,6 +251,8 @@ class Increment : public oops::Test {
 //    ts.emplace_back(CASE("interface/Increment/testIncrementSerialize")
 //      { testIncrementSerialize<MODEL>(); });
   }
+
+  void clear() const override {}
 };
 
 // =============================================================================

@@ -242,14 +242,16 @@ template <typename OBS> void testObsAuxIncrementAxpy() {
 
 template <typename OBS>
 class ObsAuxIncrement : public oops::Test {
+  typedef ObsTestsFixture<OBS> Test_;
+
  public:
   ObsAuxIncrement() {}
   virtual ~ObsAuxIncrement() {}
 
  private:
-  std::string testid() const {return "test::ObsAuxIncrement<" + OBS::name() + ">";}
+  std::string testid() const override {return "test::ObsAuxIncrement<" + OBS::name() + ">";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/ObsAuxIncrement/testObsAuxIncrementConstructor")
@@ -266,6 +268,10 @@ class ObsAuxIncrement : public oops::Test {
       { testObsAuxIncrementDotProduct<OBS>(); });
     ts.emplace_back(CASE("interface/ObsAuxIncrement/testObsAuxIncrementAxpy")
       { testObsAuxIncrementAxpy<OBS>(); });
+  }
+
+  void clear() const override {
+    Test_::reset();
   }
 };
 

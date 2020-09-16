@@ -152,6 +152,8 @@ class Random : public oops::Test {
     ts.emplace_back(CASE("util/Random/testFortranRandom")
       { testFortranRandom(); });
   }
+
+  void clear() const override {}
 };
 
 // -----------------------------------------------------------------------------

@@ -85,14 +85,16 @@ class ModelAuxCovariance : public oops::Test {
   ModelAuxCovariance() {}
   virtual ~ModelAuxCovariance() {}
  private:
-  std::string testid() const {return "test::ModelAuxCovariance<" + MODEL::name() + ">";}
+  std::string testid() const override {return "test::ModelAuxCovariance<" + MODEL::name() + ">";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/ModelAuxCovariance/testConstructor")
       { testConstructor<MODEL>(); });
   }
+
+  void clear() const override {}
 };
 
 // =============================================================================

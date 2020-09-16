@@ -152,9 +152,9 @@ class State : public oops::Test {
   State() {}
   virtual ~State() {}
  private:
-  std::string testid() const {return "test::State<" + MODEL::name() + ">";}
+  std::string testid() const override {return "test::State<" + MODEL::name() + ">";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/State/testStateConstructors")
@@ -162,6 +162,8 @@ class State : public oops::Test {
     ts.emplace_back(CASE("interface/State/testStateAnalyticInitialCondition")
       { testStateAnalyticInitialCondition<MODEL>(); });
   }
+
+  void clear() const override {}
 };
 
 // -----------------------------------------------------------------------------

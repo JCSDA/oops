@@ -220,10 +220,11 @@ template <typename MODEL> class ModelAuxIncrement : public oops::Test {
  public:
   ModelAuxIncrement() {}
   virtual ~ModelAuxIncrement() {}
- private:
-  std::string testid() const {return "test::ModelAuxIncrement<" + MODEL::name() + ">";}
 
-  void register_tests() const {
+ private:
+  std::string testid() const override {return "test::ModelAuxIncrement<" + MODEL::name() + ">";}
+
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
     ts.emplace_back(CASE("interface/ModelAuxIncrement/testModelAuxIncrementConstructor")
       { testModelAuxIncrementConstructor<MODEL>(); });
@@ -240,6 +241,8 @@ template <typename MODEL> class ModelAuxIncrement : public oops::Test {
     ts.emplace_back(CASE("interface/ModelAuxIncrement/testModelAuxIncrementAxpy")
       { testModelAuxIncrementAxpy<MODEL>(); });
   }
+
+  void clear() const override {}
 };
 
 // =============================================================================

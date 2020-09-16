@@ -39,8 +39,6 @@ namespace test {
 template <typename MODEL> void testVerticalLocEV() {
   typedef IncrementFixture<MODEL>         Test_;
   typedef oops::Geometry<MODEL>           Geometry_;
-  typedef oops::Increment4D<MODEL>        Increment4D_;
-  typedef oops::IncrementEnsemble<MODEL>  IncrementEnsemble_;
   typedef oops::VerticalLocEV<MODEL>      VerticalLocEV_;
 
   const Geometry_ & geometry = Test_::resol();
@@ -86,14 +84,16 @@ class VerticalLocEV : public oops::Test {
   virtual ~VerticalLocEV() = default;
 
  private:
-  std::string testid() const {return "test::VerticalLocEV<" + MODEL::name() + ">";}
+  std::string testid() const override {return "test::VerticalLocEV<" + MODEL::name() + ">";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("generic/VerticalLocEV/testVerticalLocEV")
       { testVerticalLocEV<MODEL>(); });
   }
+
+  void clear() const override {}
 };
 
 // =============================================================================

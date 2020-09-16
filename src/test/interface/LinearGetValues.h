@@ -309,10 +309,10 @@ class LinearGetValues : public oops::Test {
   virtual ~LinearGetValues() {}
 
  private:
-  std::string testid() const {return "test::LinearGetValues<" + MODEL::name() + ", "
+  std::string testid() const override {return "test::LinearGetValues<" + MODEL::name() + ", "
                                                               + OBS::name() + ">";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/GeometryIterator/testLinearGetValuesConstructor")
@@ -326,6 +326,8 @@ class LinearGetValues : public oops::Test {
     ts.emplace_back(CASE("interface/GeometryIterator/testLinearGetValuesAdjoint")
       { testLinearGetValuesAdjoint<MODEL, OBS>(); });
   }
+
+  void clear() const override {}
 };
 
 // =================================================================================================

@@ -1396,6 +1396,8 @@ class Parameters : public oops::Test {
                       testSchemaConflictDetection();
                     });
   }
+
+  void clear() const override {}
 };
 
 }  // namespace test

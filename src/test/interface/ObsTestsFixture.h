@@ -34,6 +34,12 @@ class ObsTestsFixture : private boost::noncopyable {
   static const util::DateTime & tend() {return *getInstance().tend_;}
   static ObsSpaces_ & obspace()        {return *getInstance().ospaces_;}
 
+  static void reset() {
+    getInstance().ospaces_.reset();
+    getInstance().tend_.reset();
+    getInstance().tbgn_.reset();
+  }
+
  private:
   ObsTestsFixture(): tbgn_(), tend_(), ospaces_() {
     tbgn_.reset(new util::DateTime(TestEnvironment::config().getString("window begin")));

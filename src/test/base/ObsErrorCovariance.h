@@ -102,19 +102,24 @@ template <typename OBS> void testMultiplies() {
 
 template <typename OBS>
 class ObsErrorCovariance : public oops::Test {
+  typedef ObsTestsFixture<OBS>     Test_;
  public:
   ObsErrorCovariance() {}
   virtual ~ObsErrorCovariance() {}
  private:
-  std::string testid() const {return "test::ObsErrorCovariance<" + OBS::name() + ">";}
+  std::string testid() const override {return "test::ObsErrorCovariance<" + OBS::name() + ">";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/ObsErrorCovariance/testConstructor")
       { testConstructor<OBS>(); });
     ts.emplace_back(CASE("interface/ObsErrorCovariance/testMultiplies")
       { testMultiplies<OBS>(); });
+  }
+
+  void clear() const override {
+    Test_::reset();
   }
 };
 

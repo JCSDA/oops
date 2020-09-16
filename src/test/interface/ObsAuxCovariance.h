@@ -55,17 +55,22 @@ template <typename OBS> void testConstructor() {
 
 template <typename OBS>
 class ObsAuxCovariance : public oops::Test {
+  typedef ObsTestsFixture<OBS>  Test_;
  public:
   ObsAuxCovariance() {}
   virtual ~ObsAuxCovariance() {}
  private:
-  std::string testid() const {return "test::ObsAuxCovariance<" + OBS::name() + ">";}
+  std::string testid() const override {return "test::ObsAuxCovariance<" + OBS::name() + ">";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/ObsAuxCovariance/testConstructor")
       { testConstructor<OBS>(); });
+  }
+
+  void clear() const override {
+    Test_::reset();
   }
 };
 

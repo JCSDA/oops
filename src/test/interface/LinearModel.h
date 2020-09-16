@@ -360,9 +360,9 @@ class LinearModel : public oops::Test {
   virtual ~LinearModel() {LinearModelFixture<MODEL>::reset();}
 
  private:
-  std::string testid() const {return "test::LinearModel<" + MODEL::name() + ">";}
+  std::string testid() const override {return "test::LinearModel<" + MODEL::name() + ">";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("interface/GeometryIterator/testLinearModelConstructor")
@@ -378,6 +378,8 @@ class LinearModel : public oops::Test {
     ts.emplace_back(CASE("interface/GeometryIterator/testLinearModelAdjoint")
       { testLinearModelAdjoint<MODEL>(); });
   }
+
+  void clear() const override {}
 };
 
 // =============================================================================
