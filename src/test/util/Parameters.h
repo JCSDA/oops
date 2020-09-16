@@ -1220,6 +1220,22 @@ void testSchemaConflictDetection() {
   EXPECT_THROWS(conflictingParameters.jsonSchema());
 }
 
+// validateAndDeserialize
+
+void testValidateAndDeserialize() {
+  {
+    const eckit::LocalConfiguration conf(TestEnvironment::config(), "full");
+    EXPECT_NO_THROW(oops::validateAndDeserialize<MyOptionalAndRequiredParameters>(conf));
+  }
+
+  {
+    const::eckit::LocalConfiguration conf(TestEnvironment::config(), "misspelled_float");
+    if (validationSupported)
+      EXPECT_THROWS(oops::validateAndDeserialize<MyOptionalParameters>(conf));
+  }
+}
+
+
 class Parameters : public oops::Test {
  private:
   std::string testid() const override {return "test::Parameters";}
@@ -1394,6 +1410,10 @@ class Parameters : public oops::Test {
 
     ts.emplace_back(CASE("util/Parameters/testSchemaConflictDetection") {
                       testSchemaConflictDetection();
+                    });
+
+    ts.emplace_back(CASE("util/Parameters/testValidateAndDeserialize") {
+                      testValidateAndDeserialize();
                     });
   }
 

@@ -306,6 +306,7 @@ oops/util/unstructured_interpolation_mod.f90
 
 oops/util/parameters/ConfigurationParameter.cc
 oops/util/parameters/ConfigurationParameter.h
+oops/util/parameters/HasParameters_.h
 oops/util/parameters/NumericConstraints.h
 oops/util/parameters/ObjectJsonSchema.cc
 oops/util/parameters/ObjectJsonSchema.h

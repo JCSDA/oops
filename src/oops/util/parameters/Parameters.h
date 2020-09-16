@@ -153,6 +153,9 @@ class Parameters : public ParameterBase, public util::Printable {
   /// To check if JSON Schema-based validation is supported, call isValidationSupported.
   void validate(const eckit::Configuration &config);
 
+  /// \brief Call validate(config) and then deserialize(config).
+  void validateAndDeserialize(const eckit::Configuration &config);
+
   /// \brief Return true if OOPS has been built with support for JSON Schema-based validation (which
   /// requires certain third-party libraries), false otherwise.
   static bool isValidationSupported();
@@ -164,6 +167,20 @@ class Parameters : public ParameterBase, public util::Printable {
  private:
   std::vector<ParameterBase*> children_;
 };
+
+/// \brief Deserialize the configuration \p config into a new instance of \c ParametersType
+/// after validating it against the JSON schema defined by \c ParametersType.
+///
+/// If \p config is not the top-level configuration loaded from a YAML file, then paths to nodes
+/// of the YAML tree included in any error messages will be incomplete.
+///
+/// \tparam ParametersType A concrete subclass of Parameters.
+template <typename ParametersType>
+ParametersType validateAndDeserialize(const eckit::Configuration &config) {
+  ParametersType parameters;
+  parameters.validateAndDeserialize(config);
+  return parameters;
+}
 
 }  // namespace oops
 

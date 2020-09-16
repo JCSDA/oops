@@ -32,7 +32,20 @@ namespace eckit {
 namespace oops {
 
 /// Encapsulates the nonlinear forecast model
-
+///
+/// Note: implementations of this interface can opt to extract their settings either from
+/// a Configuration object or from a subclass of ModelParametersBase.
+///
+/// In the former case, they should provide a constructor with the following signature:
+///
+///    Model(const Geometry_ &, const eckit::Configuration &);
+///
+/// In the latter case, the implementer should first define a subclass of ModelParametersBase
+/// holding the settings of the model in question. The implementation of the Model interface
+/// should then typedef `Parameters_` to the name of that subclass and provide a constructor with
+/// the following signature:
+///
+///    Model(const Geometry_ &, const Parameters_ &);
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
@@ -47,6 +60,7 @@ class Model : public util::Printable,
  public:
   static const std::string classname() {return "oops::Model";}
 
+  Model(const Geometry_ &, const ModelParametersBase &);
   Model(const Geometry_ &, const eckit::Configuration &);
   virtual ~Model();
 
@@ -70,15 +84,22 @@ class Model : public util::Printable,
 // =============================================================================
 
 template<typename MODEL>
-Model<MODEL>::Model(const Geometry_ & resol, const eckit::Configuration & conf)
+Model<MODEL>::Model(const Geometry_ & resol, const ModelParametersBase & params)
   : model_()
 {
   Log::trace() << "Model<MODEL>::Model starting" << std::endl;
   util::Timer timer(classname(), "Model");
-  Log::debug() << "Model config is:" << conf << std::endl;
-  model_.reset(ModelFactory<MODEL>::create(resol, conf));
+  Log::debug() << "Model config is:" << params << std::endl;
+  model_.reset(ModelFactory<MODEL>::create(resol, params));
   Log::trace() << "Model<MODEL>::Model done" << std::endl;
 }
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+Model<MODEL>::Model(const Geometry_ & resol, const eckit::Configuration & conf)
+  : Model(resol, validateAndDeserialize<ModelParametersWrapper<MODEL>>(conf).modelParameters)
+{}
 
 // -----------------------------------------------------------------------------
 

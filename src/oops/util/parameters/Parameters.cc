@@ -97,6 +97,11 @@ void Parameters::validate(const eckit::Configuration &config) {
 #endif
 }
 
+void Parameters::validateAndDeserialize(const eckit::Configuration &config) {
+  validate(config);
+  deserialize(config);
+}
+
 bool Parameters::isValidationSupported() {
 #ifdef OOPS_HAVE_NLOHMANN_JSON_SCHEMA_VALIDATOR
   return true;
