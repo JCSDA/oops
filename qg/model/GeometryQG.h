@@ -51,6 +51,7 @@ class GeometryQG : public util::Printable,
 
   GeometryQGIterator begin() const;
   GeometryQGIterator end() const;
+  std::vector<double> verticalCoord(std::string &) const;
   const eckit::mpi::Comm & getComm() const {return comm_;}
   atlas::FunctionSpace * atlasFunctionSpace() const {return atlasFunctionSpace_.get();}
   atlas::FieldSet * atlasFieldSet() const {return atlasFieldSet_.get();}

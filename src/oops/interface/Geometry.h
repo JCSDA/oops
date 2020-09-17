@@ -53,8 +53,11 @@ class Geometry : public util::Printable,
 /// Interfacing
   const Geometry_ & geometry() const {return *geom_;}
 
+  // begining and end of the grid counter on this mpi tile
   GeometryIterator_ begin() const;
   GeometryIterator_ end()   const;
+  // vertical coordinate in units specified by string
+  std::vector<double> verticalCoord(std::string &) const;
 
   const eckit::mpi::Comm & getComm() const {return geom_->getComm();}
 #if ATLASIFIED
@@ -111,6 +114,16 @@ GeometryIterator<MODEL> Geometry<MODEL>::begin() const {
   util::Timer timer(classname(), "begin");
   Log::trace() << "Geometry<MODEL>::begin done" << std::endl;
   return GeometryIterator_(geom_->begin());
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+std::vector<double> Geometry<MODEL>::verticalCoord(std::string & str) const {
+  Log::trace() << "Geometry<MODEL>::verticalCoord starting" << std::endl;
+  util::Timer timer(classname(), "verticalCoord");
+  Log::trace() << "Geometry<MODEL>::verticalCoord done" << std::endl;
+  return geom_->verticalCoord(str);
 }
 
 // -----------------------------------------------------------------------------

@@ -9,6 +9,7 @@
  */
 
 #include "lorenz95/Resolution.h"
+#include <string>
 #include <vector>
 
 // -----------------------------------------------------------------------------
@@ -20,6 +21,11 @@ Iterator Resolution::begin() const {
 // -----------------------------------------------------------------------------
 Iterator Resolution::end() const {
   return Iterator(*this, resol_);
+}
+// -------------------------------------------------------------------------------------------------
+std::vector<double> Resolution::verticalCoord(std::string & vcUnits) const {
+  std::vector<double> vc(1, 1.0);
+  return vc;
 }
 
 // -----------------------------------------------------------------------------

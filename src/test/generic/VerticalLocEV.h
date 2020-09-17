@@ -54,7 +54,7 @@ template <typename MODEL> void testVerticalLocEV() {
   EXPECT(nEigExpected == neig);
 
   // check that truncation and rescaling was done correctley
-  EXPECT(vertloc.testTruncateEvecs());
+  EXPECT(vertloc.testTruncateEvecs(geometry));
 
 /* TODO(Issue #828) finish unit test for modulated product
   // check modulation

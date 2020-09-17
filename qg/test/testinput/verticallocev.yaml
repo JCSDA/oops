@@ -8,5 +8,6 @@ inc variables: [x]
 vertical localization:
   nlevels: 6
   lengthscale: 3
+  lengthscale units: levels
   fraction of retained variance: 0.5
 expected neig: 2 

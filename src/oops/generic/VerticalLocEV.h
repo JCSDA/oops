@@ -51,6 +51,8 @@ class VerticalLocalizationParameters : public Parameters {
   Parameter<double> VertLocToll{"fraction of retained variance", 1.0, this};
   // localization distance at which Gaspari-Cohn = 0
   RequiredParameter<double> VertLocDist{"lengthscale", this};
+  // localization distance at which Gaspari-Cohn = 0
+  RequiredParameter<std::string> VertLocUnits{"lengthscale units", this};
   // for now: specify number of levels here
   RequiredParameter<int> nlevels{"nlevels", this};
 };
@@ -80,11 +82,11 @@ class VerticalLocEV: public util::Printable,
   size_t neig() const {return neig_;}
 
 // tests if the truncation and rescaling are done properly
-  bool testTruncateEvecs();
+  bool testTruncateEvecs(const Geometry_ &);
 
  private:
 // compute vertical correlations and eigen vectors
-  Eigen::MatrixXd computeCorrMatrix();
+  Eigen::MatrixXd computeCorrMatrix(const Geometry_ &);
   void computeCorrMatrixEvec(const Eigen::MatrixXd &);
 
 // truncate Evec sequence
@@ -109,7 +111,7 @@ template<typename MODEL>
     options_.deserialize(conf);
 
     // compute vertical corrleation matrix fo nLevs
-    Eigen::MatrixXd cov = computeCorrMatrix();
+    Eigen::MatrixXd cov = computeCorrMatrix(geom);
     // compute truncated correlation matrix
     computeCorrMatrixEvec(cov);
     neig_ = truncateEvecs();
@@ -117,14 +119,16 @@ template<typename MODEL>
 
 // -------------------------------------------------------------------------------------------------
 template<typename MODEL>
-  Eigen::MatrixXd VerticalLocEV<MODEL>::computeCorrMatrix() {
+  Eigen::MatrixXd VerticalLocEV<MODEL>::computeCorrMatrix(const Geometry_ & geom) {
     // for now, localize using distance in the level space
     // (e.g. decay to zero 3 levels away)
     size_t nLevs = options_.nlevels;
     std::vector<double> vCoord(nLevs);
-    for (size_t ii=0; ii < nLevs; ++ii) {
-      vCoord[ii] = ii+1;
-    }
+
+    std::string locUnits = options_.VertLocUnits;
+    oops::Log::debug() << "locUnits: " << locUnits << std::endl;
+    vCoord = geom.verticalCoord(locUnits);
+
     // compute vertical correlations and eigen vectors
     Eigen::MatrixXd cov(nLevs, nLevs);
     for (size_t jj=0; jj < nLevs; ++jj) {
@@ -132,6 +136,8 @@ template<typename MODEL>
         cov(ii, jj) = oops::gc99(std::abs(vCoord[jj]-vCoord[ii])/options_.VertLocDist);
       }
     }
+    oops::Log::debug() << "corr: " << cov << std::endl;
+
     return cov;
   }
 
@@ -203,9 +209,9 @@ template<typename MODEL>
 
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-bool VerticalLocEV<MODEL>::testTruncateEvecs() {
+bool VerticalLocEV<MODEL>::testTruncateEvecs(const Geometry_ & geom) {
   // make reference solution
-  Eigen::MatrixXd cov = computeCorrMatrix();
+  Eigen::MatrixXd cov = computeCorrMatrix(geom);
   // only the lower traingle of cov is stored
   // transform to full matrix
   Eigen::MatrixXd covOld = cov+cov.transpose();

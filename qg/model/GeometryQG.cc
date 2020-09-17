@@ -8,10 +8,15 @@
  * does it submit to any jurisdiction.
  */
 
+#include <sstream>
+
 #include "atlas/field.h"
 #include "atlas/functionspace.h"
 #include "atlas/grid.h"
 #include "atlas/util/Config.h"
+
+#include "oops/util/abor1_cpp.h"
+#include "oops/util/Logger.h"
 
 #include "eckit/config/Configuration.h"
 
@@ -85,6 +90,27 @@ GeometryQGIterator GeometryQG::end() const {
   qg_geom_info_f90(keyGeom_, nx, ny, nz, deltax, deltay);
   return GeometryQGIterator(*this, nx*ny+1);
 }
+// -------------------------------------------------------------------------------------------------
+std::vector<double> GeometryQG::verticalCoord(std::string & vcUnits) const {
+  // returns vertical coordinate in untis of vcUnits
+  int nx = 0;
+  int ny = 0;
+  int nz;
+  double deltax;
+  double deltay;
+  qg_geom_info_f90(keyGeom_, nx, ny, nz, deltax, deltay);
+  std::vector<double> vc(nz);
+  if (vcUnits == "levels") {
+    for (int i=0; i < nz; ++i) {vc[i]=i+1;}
+  } else {
+    std::stringstream errorMsg;
+    errorMsg << "Uknown vertical coordinate unit " << vcUnits << std::endl;
+    ABORT(errorMsg.str());
+  }
+  oops::Log::debug() << "QG vert coord: " << vc << std::endl;
+  return vc;
+}
+
 // -----------------------------------------------------------------------------
 void GeometryQG::print(std::ostream & os) const {
   int nx;

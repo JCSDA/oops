@@ -12,6 +12,7 @@
 #define LORENZ95_RESOLUTION_H_
 
 #include <iostream>
+#include <string>
 #include <vector>
 
 #include "eckit/config/Configuration.h"
@@ -38,6 +39,7 @@ class Resolution : public util::Printable {
 
   Iterator begin() const;
   Iterator end() const;
+  std::vector<double> verticalCoord(std::string &) const;
   const eckit::mpi::Comm & getComm() const {return comm_;}
 
  private:
