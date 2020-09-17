@@ -167,6 +167,50 @@ namespace test {
     EXPECT_NOT(oops::allNonEmptyVectorsExpectedSize(N, v2a, vEmpty, v2b, vEmpty, v1a));
   }
 
+  void testSameNonZeroSize()
+  {
+    // Vectors used in testing
+    const std::vector <size_t> vEmpty1 {};
+    const std::vector <std::string> vEmpty2 {};
+    const std::vector <int> v1a {1};
+    const std::vector <float> v1b {1.0};
+    const std::vector <std::string> v1c {"1"};
+    const std::vector <int> v2a {1, 2};
+    const std::vector <float> v2b {1.0, 2.0};
+    const std::vector <std::string> v2c {"1", "2"};
+
+    // Empty vectors
+    EXPECT_NOT(oops::allVectorsSameNonZeroSize(vEmpty1));
+    EXPECT_NOT(oops::allVectorsSameNonZeroSize(vEmpty1, vEmpty2));
+
+    // Vectors of length 1
+    EXPECT(oops::allVectorsSameNonZeroSize(v1a));
+    EXPECT(oops::allVectorsSameNonZeroSize(v1a, v1b));
+    EXPECT(oops::allVectorsSameNonZeroSize(v1a, v1b, v1c));
+
+    // Vectors of length 2
+    EXPECT(oops::allVectorsSameNonZeroSize(v2a));
+    EXPECT(oops::allVectorsSameNonZeroSize(v2a, v2b));
+    EXPECT(oops::allVectorsSameNonZeroSize(v2a, v2b, v2c));
+
+    // Two vectors of different lengths (one empty)
+    EXPECT_NOT(oops::allVectorsSameNonZeroSize(vEmpty1, v1a));
+
+    // Two non-empty vectors of different lengths
+    EXPECT_NOT(oops::allVectorsSameNonZeroSize(v1a, v2a));
+
+    // Three vectors of different lengths (one empty)
+    EXPECT_NOT(oops::allVectorsSameNonZeroSize(vEmpty1, v1a, v1b));
+    EXPECT_NOT(oops::allVectorsSameNonZeroSize(v1a, vEmpty1, v1b));
+    EXPECT_NOT(oops::allVectorsSameNonZeroSize(v1a, v1b, vEmpty1));
+
+    // Four non-empty vectors of different lengths, various orders
+    EXPECT_NOT(oops::allVectorsSameNonZeroSize(v1a, v2a, v2b, v2c));
+    EXPECT_NOT(oops::allVectorsSameNonZeroSize(v2a, v1a, v2b, v2c));
+    EXPECT_NOT(oops::allVectorsSameNonZeroSize(v2a, v2b, v1a, v2c));
+    EXPECT_NOT(oops::allVectorsSameNonZeroSize(v2a, v2b, v2c, v1a));
+  }
+
   CASE("util/CompareNVectors/empty") {
     testEmpty();
   }
@@ -181,6 +225,10 @@ namespace test {
 
   CASE("util/CompareNVectors/nonEmptyExpectedSize") {
     testNonEmptyExpectedSize();
+  }
+
+  CASE("util/CompareNVectors/sameNonZeroSize") {
+    testExpectedSize();
   }
 
 class CompareNVectors : public oops::Test {
