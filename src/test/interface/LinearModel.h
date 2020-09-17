@@ -104,7 +104,8 @@ template <typename MODEL> class LinearModelFixture : private boost::noncopyable 
     const eckit::LocalConfiguration biasConf(TestEnvironment::config(), "model aux control");
     bias_.reset(new ModelAux_(*resol_, biasConf));
 
-    const eckit::LocalConfiguration dbiasConf(TestEnvironment::config(), "model aux error");
+    const eckit::LocalConfiguration dbiasConf =
+          TestEnvironment::config().getSubConfiguration("model aux error");
     dbias_.reset(new ModelAuxIncr_(*resol_, dbiasConf));
 
     const eckit::LocalConfiguration nlConf(TestEnvironment::config(), "model");
