@@ -35,7 +35,8 @@ class ModBiasTestFixture : TestFixture {
     resol_.reset(new lorenz95::Resolution(res, oops::mpi::world()));
     conf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "model aux error"));
     nobias_.reset(new eckit::LocalConfiguration());
-    bias1_ = TestConfig::config().getDouble("model aux control.bias");
+    modelBiasConf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "model aux control"));
+    bias1_ = modelBiasConf_->getDouble("bias");
     bias2_ = 2.5 * bias1_;
     fact_ = 1.2345;
   }
@@ -43,6 +44,7 @@ class ModBiasTestFixture : TestFixture {
   std::unique_ptr<lorenz95::Resolution> resol_;
   std::unique_ptr<const eckit::LocalConfiguration> conf_;
   std::unique_ptr<const eckit::LocalConfiguration> nobias_;
+  std::unique_ptr<const eckit::LocalConfiguration> modelBiasConf_;
   double bias1_;
   double bias2_;
   double fact_;
@@ -129,9 +131,9 @@ CASE("test_modelBiasCorrection") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_modelBiasCorrection_diff_active") {
-    lorenz95::ModelBias xx1(*fix.resol_, *fix.conf_);
+    lorenz95::ModelBias xx1(*fix.resol_, *fix.modelBiasConf_);
     xx1.bias() = fix.bias1_;
-    lorenz95::ModelBias xx2(*fix.resol_, *fix.conf_);
+    lorenz95::ModelBias xx2(*fix.resol_, *fix.modelBiasConf_);
     xx2.bias() = fix.bias2_;
 
     lorenz95::ModelBiasCorrection dx(*fix.resol_, *fix.conf_);
@@ -142,9 +144,9 @@ CASE("test_modelBiasCorrection") {
   }
 // -----------------------------------------------------------------------------
   SECTION("test_modelBiasCorrection_diff_inactive") {
-    lorenz95::ModelBias xx1(*fix.resol_, *fix.conf_);
+    lorenz95::ModelBias xx1(*fix.resol_, *fix.modelBiasConf_);
     xx1.bias() = fix.bias1_;
-    lorenz95::ModelBias xx2(*fix.resol_, *fix.conf_);
+    lorenz95::ModelBias xx2(*fix.resol_, *fix.modelBiasConf_);
     xx2.bias() = fix.bias2_;
 
     lorenz95::ModelBiasCorrection dx(*fix.resol_, *fix.nobias_);

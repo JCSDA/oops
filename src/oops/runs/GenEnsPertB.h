@@ -65,7 +65,7 @@ template <typename MODEL> class GenEnsPertB : public Application {
     Log::test() << "Initial state: " << xx << std::endl;
 
 //  Setup augmented state
-    const ModelAux_ moderr(resol, initialConfig);
+    const ModelAux_ moderr(resol, fullConfig.getSubConfiguration("model aux control"));
 
 //  Setup times
     const util::Duration fclength(fullConfig.getString("forecast length"));
