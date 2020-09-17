@@ -128,6 +128,8 @@ oops/base/ObsLocalizationBase.h
 oops/base/ObsSpaceBase.cc
 oops/base/ObsSpaceBase.h
 oops/base/ObsSpaces.h
+oops/base/ParameterTraitsVariables.cc
+oops/base/ParameterTraitsVariables.h
 oops/base/PostBase.h
 oops/base/PostBaseTLAD.h
 oops/base/PostProcessor.h

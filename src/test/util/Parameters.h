@@ -21,6 +21,8 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "oops/../test/TestEnvironment.h"
+#include "oops/base/ParameterTraitsVariables.h"
+#include "oops/base/Variables.h"
 #include "oops/runs/Test.h"
 #include "oops/util/Expect.h"
 #include "oops/util/Logger.h"
@@ -98,6 +100,7 @@ class MyParametersBase : public oops::Parameters {
   oops::Parameter<RangeParameters> rangeParameter{"range_parameter", RangeParameters(), this};
   oops::Parameter<std::vector<int>> intParameters{"int_parameters", {}, this};
   oops::Parameter<std::vector<RangeParameters>> rangeParameters{"range_parameters", {}, this};
+  oops::Parameter<oops::Variables> variablesParameter{"variables_parameter", {}, this};
   EmbeddedParameters embeddedParameters{this};
 };
 
@@ -134,6 +137,15 @@ class MyMapParameters : public oops::Parameters {
   oops::Parameter<util::ScalarOrMap<std::string, util::Duration>>
     durationOrStringToDurationMapParameter2{"duration_or_string_to_duration_map_2",
                                             util::ScalarOrMap<std::string, util::Duration>(), this};
+};
+
+// Class required by tests checking Variables-valued parameters
+
+class VariablesParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(VariablesParameters, Parameters)
+ public:
+  oops::Parameter<oops::Variables> filterVariables{"filter_variables", {}, this};
+  oops::Parameter<oops::Variables> operatorVariables{"operator_variables", {}, this};
 };
 
 // Classes required to test support for polymorphic parameters.
@@ -369,6 +381,7 @@ void testDefaultValues() {
   EXPECT(params.rangeParameter.value().maxParameter == 0.0f);
   EXPECT(params.intParameters.value().empty());
   EXPECT(params.rangeParameters.value().empty());
+  EXPECT(params.variablesParameter.value() == oops::Variables());
   EXPECT(params.embeddedParameters.intParameter.value() == 3);
   EXPECT(params.embeddedParameters.optDateTimeParameter.value() == boost::none);
 
@@ -391,6 +404,7 @@ void testDefaultValues() {
   EXPECT(params.rangeParameter.value().maxParameter == 0.0f);
   EXPECT(params.intParameters.value().empty());
   EXPECT(params.rangeParameters.value().empty());
+  EXPECT(params.variablesParameter.value() == oops::Variables());
   EXPECT(params.embeddedParameters.intParameter.value() == 3);
   EXPECT(params.embeddedParameters.optDateTimeParameter.value() == boost::none);
 }
@@ -423,6 +437,8 @@ void testCorrectValues() {
   EXPECT(params.rangeParameters.value()[0].maxParameter == 10.0f);
   EXPECT(params.rangeParameters.value()[1].minParameter == 11.0f);
   EXPECT(params.rangeParameters.value()[1].maxParameter == 12.0f);
+  EXPECT(params.variablesParameter.value() ==
+         oops::Variables({"u", "v"}, std::vector<int>({5, 6, 7})));
   EXPECT(params.embeddedParameters.intParameter.value() == 13);
   EXPECT(params.embeddedParameters.optDateTimeParameter.value() != boost::none);
   EXPECT_EQUAL(params.embeddedParameters.optDateTimeParameter.value().get(),
@@ -687,10 +703,84 @@ void testMapParametersJsonStyleUnquotedKeys() {
 }
 
 void testMapParametersSerialization() {
-  MyMapParameters params;
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "map_parameter_json_style_quoted_keys");
   doTestSerialization<MyMapParameters>(conf);
+}
+
+// Parameters storing Variables objects
+
+void testVariablesDeserializationWithoutChannels() {
+  VariablesParameters params;
+  const eckit::LocalConfiguration conf(TestEnvironment::config(), "variables_without_channels");
+  EXPECT_NO_THROW(params.validate(conf));
+  params.deserialize(conf);
+
+  const oops::Variables expectedFilterVariables(conf, "filter_variables");
+  const oops::Variables expectedOperatorVariables(conf, "operator_variables");
+
+  EXPECT_EQUAL(params.filterVariables.value(), expectedFilterVariables);
+  EXPECT_EQUAL(params.operatorVariables.value(), expectedOperatorVariables);
+}
+
+void testVariablesDeserializationWithChannels() {
+  VariablesParameters params;
+  const eckit::LocalConfiguration conf(TestEnvironment::config(), "variables_with_channels");
+  EXPECT_NO_THROW(params.validate(conf));
+  params.deserialize(conf);
+
+  const oops::Variables expectedFilterVariables(conf, "filter_variables");
+  const oops::Variables expectedOperatorVariables(conf, "operator_variables");
+
+  EXPECT_EQUAL(params.filterVariables.value(), expectedFilterVariables);
+  EXPECT_EQUAL(params.operatorVariables.value(), expectedOperatorVariables);
+}
+
+void testVariablesSerializationWithoutChannels() {
+  VariablesParameters params;
+  const eckit::LocalConfiguration conf(TestEnvironment::config(), "variables_without_channels");
+  doTestSerialization<VariablesParameters>(conf);
+}
+
+void testVariablesSerializationWithChannels() {
+  const eckit::LocalConfiguration conf(TestEnvironment::config(), "variables_with_channels");
+  doTestSerialization<VariablesParameters>(conf);
+}
+
+void testCompositeVariablesSerialization() {
+  // Variable objects containing variables that don't share the same channel suffixes
+  // cannot be represented by a single Configuration object.
+  {
+    oops::Variables var1({"air_temperature", "air_pressure"}, std::vector<int>({5, 6, 7}));
+    oops::Variables var2({"relative_humidity"}, std::vector<int>({1, 2, 3}));
+    var1 += var2;
+
+    eckit::LocalConfiguration conf;
+    EXPECT_THROWS(oops::ParameterTraits<oops::Variables>::set(conf, "name", var1));
+  }
+
+  // Case with some variables having channel suffixes and others not
+  {
+    oops::Variables var1({"air_temperature", "air_pressure"}, std::vector<int>({5, 6, 7}));
+    // var2 won't have channels
+    const eckit::LocalConfiguration helperConf(TestEnvironment::config(),
+                                               "variables_without_channels");
+    oops::Variables var2(helperConf, "operator_variables");
+    var1 += var2;
+
+    eckit::LocalConfiguration conf;
+    EXPECT_THROWS(oops::ParameterTraits<oops::Variables>::set(conf, "name", var1));
+  }
+
+  // Case with all variables having the same channel suffixes
+  {
+    oops::Variables var1({"air_temperature", "air_pressure"}, std::vector<int>({5, 6, 7}));
+    oops::Variables var2({"relative_humidity"}, std::vector<int>({5, 6, 7}));
+    var1 += var2;
+
+    eckit::LocalConfiguration conf;
+    EXPECT_NO_THROW(oops::ParameterTraits<oops::Variables>::set(conf, "name", var1));
+  }
 }
 
 // Tests of special member functions
@@ -1339,6 +1429,22 @@ class Parameters : public oops::Test {
 
     ts.emplace_back(CASE("util/Parameters/mapParametersSerialization") {
                       testMapParametersSerialization();
+                    });
+
+    ts.emplace_back(CASE("util/Parameters/testVariablesDeserializationWithoutChannels") {
+                      testVariablesDeserializationWithoutChannels();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testVariablesDeserializationWithChannels") {
+                      testVariablesDeserializationWithChannels();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testVariablesSerializationWithoutChannels") {
+                      testVariablesSerializationWithoutChannels();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testVariablesSerializationWithChannels") {
+                      testVariablesSerializationWithChannels();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testCompositeVariablesSerialization") {
+                      testCompositeVariablesSerialization();
                     });
 
     ts.emplace_back(CASE("util/Parameters/testPolymorphicParametersDeserialization") {
