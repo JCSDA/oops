@@ -25,7 +25,7 @@ initial condition:
   - date: '2010-01-01T03:00:00Z'
     filename: Data/test.ens.10.2010-01-01T00:00:00Z.PT3H
 model:
-  f: '8.0'
+  f: 8.0
   name: L95
   tstep: PT1H30M
 forecast length: P1D

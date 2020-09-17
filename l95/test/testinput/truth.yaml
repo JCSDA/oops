@@ -1,7 +1,7 @@
 geometry:
   resol: '40'
 model:
-  f: '8.0'
+  f: 8.0
   name: L95
   tstep: PT1H30M
 forecast length: P1D

@@ -28,6 +28,7 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/Parameters.h"
 #include "test/TestFixture.h"
 
 namespace test {
@@ -38,8 +39,12 @@ class TlmTestFixture : TestFixture {
   TlmTestFixture() {
     eckit::LocalConfiguration res(TestConfig::config(), "geometry");
     resol_.reset(new lorenz95::Resolution(res, oops::mpi::world()));
+
     eckit::LocalConfiguration mod(TestConfig::config(), "model");
-    model_.reset(new lorenz95::ModelL95(*resol_, mod));
+    lorenz95::ModelL95Parameters modelParameters;
+    modelParameters.validateAndDeserialize(mod);
+    model_.reset(new lorenz95::ModelL95(*resol_, modelParameters));
+
     tlconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "linear model"));
   }
   ~TlmTestFixture() {}

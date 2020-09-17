@@ -35,34 +35,36 @@ class ModelTestFixture : TestFixture {
   ModelTestFixture() {
     eckit::LocalConfiguration res(TestConfig::config(), "geometry");
     resol_.reset(new lorenz95::Resolution(res, oops::mpi::world()));
-    nlconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "model"));
+
+    eckit::LocalConfiguration model(TestConfig::config(), "model");
+    nlparams_.validateAndDeserialize(model);
   }
   ~ModelTestFixture() {}
   std::unique_ptr<lorenz95::Resolution> resol_;
-  std::unique_ptr<const eckit::LocalConfiguration> nlconf_;
+  lorenz95::ModelL95Parameters nlparams_;
 };
 // -----------------------------------------------------------------------------
 CASE("test_modelL95") {
 ModelTestFixture fix;
 // -----------------------------------------------------------------------------
   SECTION("test_modelL95_constructor") {
-    std::unique_ptr<lorenz95::ModelL95> model(new lorenz95::ModelL95(*fix.resol_, *fix.nlconf_));
+    std::unique_ptr<lorenz95::ModelL95> model(new lorenz95::ModelL95(*fix.resol_, fix.nlparams_));
     EXPECT(model != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_modelL95_get_classname") {
-    lorenz95::ModelL95 model(*fix.resol_, *fix.nlconf_);
+    lorenz95::ModelL95 model(*fix.resol_, fix.nlparams_);
     EXPECT(model.classname() == "lorenz95::ModelL95");
   }
 // -----------------------------------------------------------------------------
   SECTION("test_modelL95_get_timestep") {
-    lorenz95::ModelL95 model(*fix.resol_, *fix.nlconf_);
-    util::Duration dt(fix.nlconf_->getString("tstep"));
+    lorenz95::ModelL95 model(*fix.resol_, fix.nlparams_);
+    util::Duration dt(fix.nlparams_.tstep);
     EXPECT(model.timeResolution().toSeconds() == dt.toSeconds());
   }
 // -----------------------------------------------------------------------------
   SECTION("test_modelL95_stepRk") {
-    lorenz95::ModelL95 model(*fix.resol_, *fix.nlconf_);
+    lorenz95::ModelL95 model(*fix.resol_, fix.nlparams_);
 
     // construct a FieldL95 object
     lorenz95::FieldL95 fieldL95(*fix.resol_);

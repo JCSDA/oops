@@ -5,7 +5,7 @@ cost function:
   geometry:
     resol: '40'
   model:
-    f: '8.0'
+    f: 8.0
     name: L95
     tstep: PT1H30M
   analysis variables: [x]
@@ -55,7 +55,7 @@ variational:
     gradient norm reduction: 1e-10
     linear model:
       trajectory:
-        f: '8.0'
+        f: 8.0
         tstep: PT1H30M
       tstep: PT1H30M
       variable change: Identity
@@ -67,7 +67,7 @@ variational:
   - gradient norm reduction: 1e-10
     linear model:
       trajectory:
-        f: '8.0'
+        f: 8.0
         tstep: PT1H30M
       tstep: PT1H30M
       variable change: Identity
