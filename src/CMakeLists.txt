@@ -318,6 +318,7 @@ oops/util/parameters/ParameterBase.h
 oops/util/parameters/ParameterConstraint.h
 oops/util/parameters/Parameters.cc
 oops/util/parameters/Parameters.h
+oops/util/parameters/ParametersOrConfiguration.h
 oops/util/parameters/ParameterTraits.h
 oops/util/parameters/ParameterTraitsScalarOrMap.h
 oops/util/parameters/PolymorphicParameter.h

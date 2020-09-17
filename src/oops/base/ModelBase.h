@@ -20,6 +20,7 @@
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
 #include "oops/util/abor1_cpp.h"
+#include "oops/util/AssociativeContainers.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
@@ -27,6 +28,7 @@
 #include "oops/util/parameters/HasParameters_.h"
 #include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/ParametersOrConfiguration.h"
 #include "oops/util/parameters/RequiredPolymorphicParameter.h"
 #include "oops/util/Printable.h"
 
@@ -150,11 +152,7 @@ class ModelFactory {
 
   /// \brief Return the names of all models that can be created by one of the registered makers.
   static std::vector<std::string> getMakerNames() {
-    std::vector<std::string> names;
-    names.reserve(getMakers().size());
-    for (const auto &nameAndMaker : getMakers())
-      names.push_back(nameAndMaker.first);
-    return names;
+    return keys(getMakers());
   }
 
   virtual ~ModelFactory() = default;
@@ -178,52 +176,22 @@ class ModelFactory {
 
 /// \brief A subclass of ModelFactory able to create instances of T (a concrete subclass of
 /// ModelBase<MODEL>).
-///
-/// This generic implementation is used if T doesn't provide a definition of type Parameters_.
-/// It is then assumed that the constructor of T takes a reference to eckit::Configuration rather
-/// than a subclass of Parameters.
-template<class MODEL, class T, class Enable = void>
+template<class MODEL, class T>
 class ModelMaker : public ModelFactory<MODEL> {
  private:
-  typedef GenericModelParameters Parameters_;
+  /// Defined as T::Parameters_ if T defines a Parameters_ type; otherwise as
+  /// GenericModelParameters.
+  typedef TParameters_IfAvailableElseFallbackType_t<T, GenericModelParameters> Parameters_;
 
  public:
   typedef Geometry<MODEL>   Geometry_;
 
   explicit ModelMaker(const std::string & name) : ModelFactory<MODEL>(name) {}
 
-  virtual ModelBase<MODEL> * make(const Geometry_ & geom, const ModelParametersBase & parameters) {
+  ModelBase<MODEL> * make(const Geometry_ & geom, const ModelParametersBase & parameters) override {
     const auto &stronglyTypedParameters = dynamic_cast<const Parameters_&>(parameters);
-    return new T(geom.geometry(), stronglyTypedParameters.config.value());
-  }
-
-  std::unique_ptr<ModelParametersBase> makeParameters() const override {
-    return boost::make_unique<Parameters_>();
-  }
-};
-
-// -----------------------------------------------------------------------------
-
-/// \brief A subclass of ModelFactory able to create instances of T (a concrete subclass of
-/// ModelBase<MODEL>).
-///
-/// This specialization is used if T provides a definition of type Parameters_ (which should be a
-/// subclass of ModelParametersBase). It is then assumed that the constructor of T takes a
-/// reference to an instance of T::Parameters_.
-template<class MODEL, class T >
-class ModelMaker<MODEL, T, typename std::enable_if<HasParameters_<T>::value>::type> :
-    public ModelFactory<MODEL> {
- private:
-  typedef typename T::Parameters_ Parameters_;
-
- public:
-  typedef Geometry<MODEL>   Geometry_;
-
-  explicit ModelMaker(const std::string & name) : ModelFactory<MODEL>(name) {}
-
-  virtual ModelBase<MODEL> * make(const Geometry_ & geom, const ModelParametersBase & parameters) {
-    const auto &stronglyTypedParameters = dynamic_cast<const Parameters_&>(parameters);
-    return new T(geom.geometry(), stronglyTypedParameters);
+    return new T(geom.geometry(),
+                 parametersOrConfiguration<HasParameters_<T>::value>(stronglyTypedParameters));
   }
 
   std::unique_ptr<ModelParametersBase> makeParameters() const override {
