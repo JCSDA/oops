@@ -88,7 +88,7 @@ phases:
         && export FC=mpifort
         && export CC=mpicc
         && export CXX=mpicxx
-        && ecbuild /jcsda/oops-bundle/
+        &&  cmake -DCMAKE_MODULE_PATH=/usr/local/share/ecbuild/cmake/ -DCMAKE_BUILD_TYPE=Debug -DENABLE_GPROF=ON -DCMAKE_CXX_COMPILER=$(which g++) -DCMAKE_C_COMPILER=$(which gcc) -DCMAKE_Fortran_COMPILER=$(which gfortran) /jcsda/oops-bundle/
         && cd oops
         && make -j4"
 
@@ -120,3 +120,8 @@ phases:
         && ctest -VV --rerun-failed";
         else echo "Build failed";
         fi
+      - echo 'Connect to CodeCov'
+      - cd /build_container/oops
+      - pwd
+      - ls
+      - bash /jcsda/oops-bundle/oops/CI/codecov_script.sh

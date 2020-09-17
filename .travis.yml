@@ -1,6 +1,12 @@
 #======================================================================
 # Project settings
 #======================================================================
+env:
+  global:
+  - secure: XyvtxajZUw3ObIpcTecY3qEPDNNhIkbVlVY5QBgymkZqJZGwXBYHagHMywB9lVC1ACasogzarnx3Yxf3G7aSoSHGRGEo9bsgNPB3fm66h/VrjYLYhT1XWgAJbuywVRwEvqicHF5FKPouAafVyMKYcFka/IUm+eJRGqmC9Uap0yR9AXjQT93UcoJseGn/quNS5qrTjkIV543fKvZ2Pr2AlanDepyQKzqaM0KN4GG0hFxl/E9E9PU+eUN/N7nt3/QgtFVgZpeYx+P3zZsav0ByjMEmAP8dzpPge44Qz6TiEomMF52D5ry1ok6V/iPOgfW0jPscppGbzj58ee3YBlY+GQp+LXe8RNradkCJIbSVrigNv3vv1Xv4mpYi7uu2JROx+9VX179H80Ca/y1C9mnPvRWSmFg2gUpYRuYeHb+krg/iRKOvh0N9T38j/P+HA3YQyD0J+xMSImMvi5XOuvhi3B27PLnGMptbxE1gz62ccgEKmdjiDL4BDYzeOqew1nmBXnqAgVniUGR+Yux2+tralYpawO0u1iYJyrTdkxoDeR2SAzDocJm6/ri5V1fP7cEPc4eSHxwFrqNITBeyh7vZHU+ZArQrC5J40WJh1uo23TdLiA8sH1XGreSkUudmPxnt2rZ8ATAbuS85lWDQEegaQH+DYd+F3/akEJxLuH8MQYM=
+  - secure: lqVsqiUeblhERNDdgJU7dU5EojE31qsj2u5MGlpjghPGVJqhJ5ZyMTJ7zHsCAS8sldzrkaUGH+2tvTTa+LocEqBgJuxRBuucJA48VyoWYmbi0baqWxHoxWsW42KvVWxOCT3TfpfanDsVWI7ShuOlES3SxJaZdjD7CeYIilh3ks61YuxxPI6KZi8w6+phI+miQ3ZUHJMHGdaw3J2Bg3TXlaXJjRDHoweXEe4TnOfU10eokkNmvPj6EL1l50ilBSe+ZicAt4ZACkrWmkjivg9A2cP8gfJPxTp4wKKXOelusTVu9IueAg36fxHhNpQQsGND60rq5xYfcCEc60RxA8PJ8K/wvkrRLeEuEoQNNrwi0FgOb5fhWdsmGG9Bxqlgb3B69rDItI/RqiiKpFxdCnB2wCaD/Jqbw8JwXjIgkf4pJ2RFWo7MM7qj854XOYOV97S2Fc0C9yz3SOHW9gGu0rcGoT2sJivzWUTaKMkNcECJetMugCJwh4Puy6kj9vdh2RjPBkJtQXXYuR+BG2K5WUiggG7oI5hnNq2lxakbqxHJtolZuzuaAjRQhvTgX+7muUii9SNSo/Cjj0B3XPgmWp4ieqAg9OgeauKxc+BuqfNJk8R3LtlbXonAtZLjFSgY9pwNNwEKdF3KT36f2lQO3sumCFjk9OtcH7GU5Y6BGjZPnNA=
+  - secure: Oax5AhsSipTMVFsBKOHbNM4jjBsFMJXAr7lfdUwfnpHuh85jfS5gNcoJALtRFJeWXAEFgntBAUHLToMxb+9hIa3B+dDYfN2eUGxu+VSS0sYJWr8e4KzJf15jRaDzSh+BmocsCzBYgPA1qHcuIHRfD9/MOa1AdaJF8mpejTrrukGmhJ24xXkUsJChqoX/VeDCRcYoS9LG0AbQZkdjtRCXt+jkCHTcw8Jdjhf1qAMeUvZABohg/Mw1Psn60B1bfab7vjwaSZWng2C2Ji2NriPYr8oe3rt1Uwa3q/qZeVTo7wlhP6FZUzgnXfoCWqfx7c+Z32vxtl7+vml6xKDUZiEwI8tS/gx9drsMxAOzb+g3hVyu55uld3OlhQN97htYQszcTyJ5NzGsD4ym0jM1IKEEXTad9tcxbINQ2+rO79EGsNLflj37f7t4EQ+wnLC6xu3gm16OsW+EMxVMLTZHp5VQWEDFqM0LMGlg8D8V75gORhXPNlbAEIAm4U+4vu/8Wjb7pKicbNZV45HJT3Cn6Ri5JU0BzpTP/GlSLbwOXcl5ggmcjpgtdDOhSZ8BHDs4bJMhNWrvnJLLzh9V+kH4EfHI0UxIcR+vW5gt04IM78qmPkeAhjLl/Yh7a2bRCEU3QCzqssLiTg7izBxN6r+0t14tEAbpzeNFsIiVc7ewO6DpWRY=
+
 branches:
   only:
     - develop
@@ -22,76 +28,21 @@ before_install:
   - echo $TRAVIS_BRANCH
   - export BRANCH=$(if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then echo $TRAVIS_BRANCH; else echo $TRAVIS_PULL_REQUEST_BRANCH; fi)
   - echo "TRAVIS_BRANCH=$TRAVIS_BRANCH, PR=$PR, BRANCH=$BRANCH"
-#======================================================================
-# Clone all repos
-#======================================================================
 
-  - mkdir ${REPO_SOURCE_DIR}/oops-bundle
-  - cp CI/CMakeLists.txt ${REPO_SOURCE_DIR}/oops-bundle/
-
-  - if [ "$BRANCH" = "develop" ];
-    then export BRANCH_FORK="release-stable";
-    else export BRANCH_FORK=$BRANCH;
-    fi
-
-#  checkout for the same branch name in fckit
-  - git clone https://github.com/jcsda/fckit.git ${REPO_SOURCE_DIR}/oops-bundle/fckit
-  - cd ${REPO_SOURCE_DIR}/oops-bundle/fckit
-  - git checkout $BRANCH_FORK || echo "No branch named $BRANCH in atlas repo"; git checkout release-stable
-  - cd $REPO_SOURCE_DIR
-
-#  checkout for the same branch name in atlas
-  - git clone https://github.com/jcsda/atlas.git ${REPO_SOURCE_DIR}/oops-bundle/atlas
-  - cd ${REPO_SOURCE_DIR}/oops-bundle/atlas
-  - git checkout $BRANCH_FORK || echo "No branch named $BRANCH in atlas repo"; git checkout release-stable
-  - cd $REPO_SOURCE_DIR
-
-#  clone the testing branch of oops
-  - git clone -b $BRANCH https://github.com/jcsda/oops.git ${REPO_SOURCE_DIR}/oops-bundle/oops 
-
-#  do no switch to develop branch by removing 
-#  develop UPDATE in CMakeLists.txt in oops-bundle
-
-  - cd ${REPO_SOURCE_DIR}/oops-bundle
-  - sed -i 's/BRANCH develop UPDATE//' CMakeLists.txt
-  - cat CMakeLists.txt
-  - cd ${REPO_SOURCE_DIR}
-  - ls ${REPO_SOURCE_DIR}
-  - ls ${REPO_SOURCE_DIR}/oops-bundle
-  - find . -name \* -exec chmod 777 {} \;
-
-#======================================================================
-# get docker image
-# FROM  jcsda/docker:latest
-#======================================================================
-  - cd ${REPO_SOURCE_DIR}/oops-bundle/oops
-  - date
   - cd CI
-  - docker build -t jcsda/dockerl2 --build-arg=Dockerfile .  #Dockerfile handles ssh for mpi
-  - date
+  - REPO_SOURCE_DIR=${TRAVIS_BUILD_DIR}/jcsda/src_repo
+  - git clone https://${GH_TOKEN}@github.com/jcsda/jedi-build-package.git ${REPO_SOURCE_DIR}/jedi_build_package
+
+  - docker pull jcsda/docker-clang-mpich-dev
   - docker images
-# request codecov to detect CI environment to pass through to docker
-  - ci_env=`bash <(curl -s https://codecov.io/env)`
-  - echo $ci_env
-  - docker run -d -t $ci_env --name jcsda_container -v ${REPO_SOURCE_DIR}/oops-bundle:/jcsda/src_repo jcsda/dockerl2
-  - docker ps -a
-  - date
-
-#======================================================================
-# Here are the run steps
-#======================================================================
 script:
-  - docker exec jcsda_container ls
-  - docker exec jcsda_container bash -c 'cp -r /jcsda/.openmpi/ ~/' 
-##  use cmake with flags to generate test coverage reports
-  - date
-  - docker exec jcsda_container bash -c 'cd /build_container && cmake -DCMAKE_MODULE_PATH=/usr/local/share/ecbuild/cmake/ -DCMAKE_BUILD_TYPE=Debug -DENABLE_GPROF=ON  /jcsda/src_repo'
-  - date
-  - docker exec jcsda_container bash -c 'cd /build_container/oops && make -j4'
-  - date
-  - docker exec jcsda_container bash -c 'cd /build_container/oops && ctest'
-  - date
-#upload to codecov
-  - docker exec jcsda_container bash -c 'cd /build_container/oops && ls'
-  - docker exec jcsda_container bash -c 'cd /build_container/oops && bash <(curl -s https://codecov.io/bash) -t 3b511d7d-c15d-4ee5-8a1e-29c6d97d2032 -R /jcsda/src_repo/oops/'
+  - docker run -d -t --env GH_TOKEN=$GH_TOKEN --env AWS_ACCESS_KEY_ID=$aws_access_key_id --env AWS_SECRET_ACCESS_KEY=$aws_secret_access_key --env GH_BRANCH=$BRANCH --name clang_container -v ${REPO_SOURCE_DIR}/jedi_build_package:/jcsda/src_repo jcsda/docker-clang-mpich-dev
 
+  - docker exec clang_container bash -c 'mkdir ~/.aws'
+  - docker exec clang_container bash -c 'echo [default] >> ~/.aws/credentials '
+  - docker exec clang_container bash -c 'echo aws_access_key_id = $aws_access_key_id >> ~/.aws/credentials'
+  - docker exec clang_container bash -c 'echo aws_secret_access_key = $aws_secret_access_key >> ~/.aws/credentials'
+  - docker exec clang_container bash -c 'ls /jcsda/src_repo'
+  - docker exec clang_container bash -c 'cd /jcsda/src_repo && pip install --user -e .'
+
+  - docker exec clang_container bash -c 'cd /jcsda/src_repo && ~/.local/bin/jedi-build --gh-token=$GH_TOKEN -j 4 --env-id=travis-clang --branch-map atlas:release-stable fckit:release-stable -br ${GH_BRANCH} -p oops -vvv -3 -u --submit-dashboard --site TravisCI --abort-on-build-errors --abort-on-test-errors'
