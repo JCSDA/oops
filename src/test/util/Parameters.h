@@ -490,6 +490,28 @@ void testSerialization() {
   doTestSerialization<MyOptionalAndRequiredParameters>(fullConf);
 }
 
+void testToConfiguration() {
+  MyOptionalAndRequiredParameters params;
+  const eckit::LocalConfiguration inputConfig(TestEnvironment::config(), "full");
+  EXPECT_NO_THROW(params.validate(inputConfig));
+  params.deserialize(inputConfig);
+
+  eckit::LocalConfiguration serializeOutput;
+  params.serialize(serializeOutput);
+
+  eckit::LocalConfiguration toConfigurationOutput = params.toConfiguration();
+
+  std::stringstream expectedStream;
+  expectedStream << serializeOutput;
+  const std::string expected = expectedStream.str();
+
+  std::stringstream receivedStream;
+  receivedStream << toConfigurationOutput;
+  std::string received = receivedStream.str();
+
+  EXPECT_EQUAL(received, expected);
+}
+
 void testIncorrectValueOfFloatParameter() {
   MyOptionalAndRequiredParameters params;
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
@@ -1294,6 +1316,9 @@ class Parameters : public oops::Test {
                     });
     ts.emplace_back(CASE("util/Parameters/serialization") {
                       testSerialization();
+                    });
+    ts.emplace_back(CASE("util/Parameters/toConfiguration") {
+                      testToConfiguration();
                     });
 
     // Test fails because of a bug in the eckit YAML parser

@@ -73,6 +73,12 @@ void Parameters::serialize(eckit::LocalConfiguration &config) const {
   }
 }
 
+eckit::LocalConfiguration Parameters::toConfiguration() const {
+  eckit::LocalConfiguration config;
+  serialize(config);
+  return config;
+}
+
 void Parameters::validate(const eckit::Configuration &config) {
 #ifdef OOPS_HAVE_NLOHMANN_JSON_SCHEMA_VALIDATOR
   std::string strSchema = jsonSchema().toString(true /*includeSchemaKeyword?*/);

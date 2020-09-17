@@ -160,7 +160,12 @@ class Parameters : public ParameterBase, public util::Printable {
   /// requires certain third-party libraries), false otherwise.
   static bool isValidationSupported();
 
+  /// \brief Store the values of all previously registered parameters in \p config.
   void serialize(eckit::LocalConfiguration &config) const override;
+
+  /// \brief Store the values of all previously registered parameters in a new LocalConfiguration
+  /// object and return it.
+  eckit::LocalConfiguration toConfiguration() const;
 
   ObjectJsonSchema jsonSchema() const override;
 
