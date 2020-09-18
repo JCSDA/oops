@@ -27,6 +27,7 @@
 #include "oops/util/Expect.h"
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/ConfigurationParameter.h"
+#include "oops/util/parameters/IgnoreOtherParameters.h"
 #include "oops/util/parameters/NumericConstraints.h"
 #include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/OptionalPolymorphicParameter.h"
@@ -330,6 +331,16 @@ class ConflictingParameters : public oops::Parameters {
  public:
   ConstrainedParameters constrained{this};
   OtherConstrainedParameters otherConstrained{this};
+};
+
+// Classes used to test the IgnoreOtherParameters class
+
+class TolerantParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(TolerantParameters, Parameters)
+ public:
+  oops::Parameter<float> floatParameter{"float_parameter", 1.5f, this};
+  oops::Parameter<int> intParameter{"int_parameter", 2, this};
+  oops::IgnoreOtherParameters config{this};
 };
 
 template <typename ParametersType>
@@ -1337,6 +1348,29 @@ void testSchemaConflictDetection() {
   EXPECT_THROWS(conflictingParameters.jsonSchema());
 }
 
+// IgnoreOtherParameters
+
+void testIgnoreOtherParameters() {
+  {
+    // We are tolerant: we ignore unregistred parameters...
+    const eckit::LocalConfiguration fullConf(TestEnvironment::config(), "full");
+    TolerantParameters params;
+    EXPECT_NO_THROW(params.validate(fullConf));
+    params.deserialize(fullConf);
+
+    EXPECT_EQUAL(params.floatParameter, 3.5f);
+    EXPECT_EQUAL(params.intParameter, 4);
+  }
+
+  {
+    // ... but everything in moderation: we still detect errors in registered parameters
+    const eckit::LocalConfiguration badConf(TestEnvironment::config(), "error_in_float_parameter");
+    TolerantParameters params;
+    if (validationSupported)
+      EXPECT_THROWS(params.validate(badConf));
+  }
+}
+
 // validateAndDeserialize
 
 void testValidateAndDeserialize() {
@@ -1546,6 +1580,10 @@ class Parameters : public oops::Test {
 
     ts.emplace_back(CASE("util/Parameters/testSchemaConflictDetection") {
                       testSchemaConflictDetection();
+                    });
+
+    ts.emplace_back(CASE("util/Parameters/testIgnoreOtherParameters") {
+                      testIgnoreOtherParameters();
                     });
 
     ts.emplace_back(CASE("util/Parameters/testValidateAndDeserialize") {

@@ -309,7 +309,10 @@ oops/util/unstructured_interpolation_mod.f90
 
 oops/util/parameters/ConfigurationParameter.cc
 oops/util/parameters/ConfigurationParameter.h
+oops/util/parameters/GenericParameters.h
 oops/util/parameters/HasParameters_.h
+oops/util/parameters/IgnoreOtherParameters.cc
+oops/util/parameters/IgnoreOtherParameters.h
 oops/util/parameters/NumericConstraints.h
 oops/util/parameters/ObjectJsonSchema.cc
 oops/util/parameters/ObjectJsonSchema.h
@@ -341,6 +344,7 @@ test/base/ObsErrorCovariance.h
 test/interface/ErrorCovariance.h
 test/interface/Geometry.h
 test/interface/GeometryIterator.h
+test/interface/GeometryFixture.h
 test/interface/GeoVaLs.h
 test/interface/GetValues.h
 test/interface/Increment.h

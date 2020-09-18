@@ -28,6 +28,7 @@
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 
+#include "test/interface/GeometryFixture.h"
 #include "test/interface/Increment.h"
 #include "test/TestEnvironment.h"
 
@@ -39,8 +40,7 @@ template <typename MODEL> void testConstructor() {
   typedef oops::GeometryIterator<MODEL>   GeometryIterator_;
   typedef oops::Geometry<MODEL>           Geometry_;
 
-  const eckit::LocalConfiguration geomConfig(TestEnvironment::config(), "geometry");
-  Geometry_ geom(geomConfig, oops::mpi::world());
+  Geometry_ geom(GeometryFixture<MODEL>::getParameters(), oops::mpi::world());
 
   std::unique_ptr<GeometryIterator_> iter(new GeometryIterator_(geom.begin()));
   EXPECT(iter.get());
@@ -57,8 +57,7 @@ template <typename MODEL> void testGetSetLocal() {
   typedef oops::Increment<MODEL>         Increment_;
   typedef IncrementFixture<MODEL>        Test_;
 
-  const eckit::LocalConfiguration geomConfig(TestEnvironment::config(), "geometry");
-  Geometry_ geom(geomConfig, oops::mpi::world());
+  Geometry_ geom(GeometryFixture<MODEL>::getParameters(), oops::mpi::world());
 
   // randomize increment dx1
   Increment_ dx1(Test_::resol(), Test_::ctlvars(), Test_::time());

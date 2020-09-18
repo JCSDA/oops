@@ -25,6 +25,11 @@
 #include "oops/interface/GeometryIterator.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
+#include "oops/util/parameters/ConfigurationParameter.h"
+#include "oops/util/parameters/GenericParameters.h"
+#include "oops/util/parameters/HasParameters_.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/ParametersOrConfiguration.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Timer.h"
 
@@ -36,6 +41,19 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
+/// Note: implementations of this interface can opt to extract their settings either from
+/// a Configuration object or from a subclass of Parameters.
+///
+/// In the former case, they should provide a constructor with the following signature:
+///
+///    Geometry(const eckit::LocalConfiguration &, const eckit::mpi::Comm &);
+///
+/// In the latter case, the implementer should first define a subclass of Parameters
+/// holding the settings of the geometry in question. The implementation of the Geometry interface
+/// should then typedef `Parameters_` to the name of that subclass and provide a constructor with
+/// the following signature:
+///
+///    Geometry(const Parameters_ &, const eckit::mpi::Comm &);
 template <typename MODEL>
 class Geometry : public util::Printable,
                  private util::ObjectCounter<Geometry<MODEL> > {
@@ -43,9 +61,14 @@ class Geometry : public util::Printable,
   typedef GeometryIterator<MODEL>               GeometryIterator_;
 
  public:
+  /// Set to Geometry_::Parameters_ if Geometry_ provides a type called Parameters_
+  /// and to GenericParameters (a thin wrapper of an eckit::LocalConfiguration object) if not.
+  typedef TParameters_IfAvailableElseFallbackType_t<Geometry_, GenericParameters> Parameters_;
+
   static const std::string classname() {return "oops::Geometry";}
 
-  Geometry(const eckit::Configuration &, const eckit::mpi::Comm &);
+  Geometry(const Parameters_ &, const eckit::mpi::Comm &);
+  Geometry(const eckit::LocalConfiguration &, const eckit::mpi::Comm &);
   Geometry(const Geometry &);
   explicit Geometry(boost::shared_ptr<const Geometry_>);
   ~Geometry();
@@ -74,11 +97,21 @@ class Geometry : public util::Printable,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-Geometry<MODEL>::Geometry(const eckit::Configuration & conf,
+Geometry<MODEL>::Geometry(const eckit::LocalConfiguration & config,
+                          const eckit::mpi::Comm & comm):
+  Geometry(validateAndDeserialize<Parameters_>(config), comm)
+{}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+Geometry<MODEL>::Geometry(const Parameters_ & parameters,
                           const eckit::mpi::Comm & comm): geom_() {
   Log::trace() << "Geometry<MODEL>::Geometry starting" << std::endl;
   util::Timer timer(classname(), "Geometry");
-  geom_.reset(new Geometry_(conf, comm));
+  geom_.reset(new Geometry_(
+                parametersOrConfiguration<HasParameters_<Geometry_>::value>(parameters),
+                comm));
   Log::trace() << "Geometry<MODEL>::Geometry done" << std::endl;
 }
 
