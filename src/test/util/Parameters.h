@@ -449,55 +449,58 @@ void misspelledParameterNames() {
   MyOptionalParameters floatParam;
   const::eckit::LocalConfiguration floatConf(TestEnvironment::config(), "misspelled_float");
   if (validationSupported)
-    EXPECT_THROWS(floatParam.validate(floatConf));
+    EXPECT_THROWS_MSG(floatParam.validate(floatConf), "additional properties are not allowed");
 
   MyOptionalParameters intParam;
   const eckit::LocalConfiguration intConf(TestEnvironment::config(), "misspelled_int");
   if (validationSupported)
-    EXPECT_THROWS(intParam.validate(intConf));
+    EXPECT_THROWS_MSG(intParam.validate(intConf), "additional properties are not allowed");
 
   MyOptionalParameters boolParam;
   const eckit::LocalConfiguration boolConf(TestEnvironment::config(), "misspelled_bool");
   if (validationSupported)
-    EXPECT_THROWS(boolParam.validate(boolConf));
+    EXPECT_THROWS_MSG(boolParam.validate(boolConf), "additional properties are not allowed");
 
   MyOptionalParameters dtParam;
   const eckit::LocalConfiguration dtConf(TestEnvironment::config(), "misspelled_dt");
   if (validationSupported)
-    EXPECT_THROWS(dtParam.validate(dtConf));
+    EXPECT_THROWS_MSG(dtParam.validate(dtConf), "additional properties are not allowed");
 
   MyOptionalParameters durParam;
   const eckit::LocalConfiguration durConf(TestEnvironment::config(), "misspelled_dur");
   if (validationSupported)
-    EXPECT_THROWS(durParam.validate(durConf));
+    EXPECT_THROWS_MSG(durParam.validate(durConf), "additional properties are not allowed");
 
   MyOptionalParameters fruitParam;
   const eckit::LocalConfiguration fruitConf(TestEnvironment::config(), "misspelled_fruit");
   if (validationSupported)
-    EXPECT_THROWS(fruitParam.validate(fruitConf));
+    EXPECT_THROWS_MSG(fruitParam.validate(fruitConf), "additional properties are not allowed");
 
   MyOptionalParameters intsParam;
   const eckit::LocalConfiguration intsConf(TestEnvironment::config(), "misspelled_ints");
   if (validationSupported)
-    EXPECT_THROWS(intsParam.validate(intsConf));
+    EXPECT_THROWS_MSG(intsParam.validate(intsConf), "additional properties are not allowed");
 
   MyOptionalParameters nestedParam;
   const eckit::LocalConfiguration nestedParamConf
           (TestEnvironment::config(), "misspelled_nested_param");
   if (validationSupported)
-    EXPECT_THROWS(nestedParam.validate(nestedParamConf));
+    EXPECT_THROWS_MSG(nestedParam.validate(nestedParamConf),
+                      "additional properties are not allowed");
 
   MyOptionalParameters nestedParams;
   const eckit::LocalConfiguration nestedParamsConf
           (TestEnvironment::config(), "misspelled_nested_params");
   if (validationSupported)
-    EXPECT_THROWS(nestedParams.validate(nestedParamsConf));
+    EXPECT_THROWS_MSG(nestedParams.validate(nestedParamsConf),
+                      "additional properties are not allowed");
 
   MyOptionalParameters nestingParam;
   const eckit::LocalConfiguration nestingParamConf
           (TestEnvironment::config(), "misspelled_nesting_param");
   if (validationSupported)
-    EXPECT_THROWS(nestingParam.validate(nestingParamConf));
+    EXPECT_THROWS_MSG(nestingParam.validate(nestingParamConf),
+                      "additional properties are not allowed");
 }
 
 void testSerialization() {
@@ -533,7 +536,7 @@ void testIncorrectValueOfFloatParameter() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "error_in_float_parameter");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf), "unexpected value type");
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::BadParameter);
 }
 
@@ -542,7 +545,7 @@ void testIncorrectValueOfOptionalFloatParameter() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "error_in_opt_float_parameter");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf), "unexpected value type");
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::BadParameter);
 }
 
@@ -551,7 +554,7 @@ void testIncorrectValueOfOptionalDateTimeParameter() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "error_in_opt_date_time_parameter");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf), "ABCDEF is not a date-time string");
   // Conversion from string to DateTime calls abort() on failure,
   // so we can't test this call. Leaving it commented-out in case this changes in future.
   // EXPECT_THROWS_AS(params.deserialize(conf), eckit::BadParameter);
@@ -562,7 +565,7 @@ void testIncorrectValueOfOptionalDurationParameter() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "error_in_opt_duration_parameter");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf), "ABCDEF is not a duration string");
   // Conversion from string to Duration calls abort() on failure,
   // so we can't test this call. Leaving it commented-out in case this changes in future.
   // EXPECT_THROWS_AS(params.deserialize(conf), eckit::BadParameter);
@@ -573,7 +576,7 @@ void testIncorrectValueOfEnumParameter() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "error_in_fruit_parameter");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf), "unrecognized enum value");
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::BadParameter);
 }
 
@@ -582,7 +585,7 @@ void testIncorrectValueOfIntParameters() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "error_in_int_parameters");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf), "unexpected value type");
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::Exception);
 }
 
@@ -591,7 +594,7 @@ void testIncorrectValueOfRangeParameters() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "error_in_range_parameters");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf), "unexpected value type");
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::Exception);
 }
 
@@ -600,7 +603,8 @@ void testMissingRequiredFloatParameter() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "missing_req_float_parameter");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf),
+                      "required property 'req_float_parameter' not found in object");
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::BadParameter);
 }
 
@@ -609,7 +613,8 @@ void testMissingRequiredDurationParameter() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "missing_req_duration_parameter");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf),
+                      "required property 'req_duration_parameter' not found in object");
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::BadParameter);
 }
 
@@ -951,7 +956,7 @@ void testRequiredPolymorphicParametersIncompleteDeserialization() {
 
   const eckit::LocalConfiguration conf(TestEnvironment::config(), "required_device_not_set");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf), "required property 'type' not found in object");
   EXPECT_THROWS(params.deserialize(conf));
 }
 
@@ -963,7 +968,7 @@ void testInvalidPolymorphicParametersId() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "invalid_type_of_device_with_default");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf), "unrecognized enum value");
   EXPECT_THROWS(params.deserialize(conf));
 }
 
@@ -975,7 +980,7 @@ void testInvalidOptionalPolymorphicParametersId() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "invalid_type_of_optional_device");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf), "unrecognized enum value");
   EXPECT_THROWS(params.deserialize(conf));
 }
 
@@ -987,7 +992,7 @@ void testInvalidRequiredPolymorphicParametersId() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "invalid_type_of_required_device");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf), "unrecognized enum value");
   EXPECT_THROWS(params.deserialize(conf));
 }
 
@@ -997,7 +1002,7 @@ void testMisspelledPropertyOfPolymorphicParameters() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "misspelled_diameter_of_device_with_default");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf), "additional properties are not allowed");
 }
 
 void testMisspelledPropertyOfOptionalPolymorphicParameters() {
@@ -1006,7 +1011,7 @@ void testMisspelledPropertyOfOptionalPolymorphicParameters() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "misspelled_diameter_of_optional_device");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf), "additional properties are not allowed");
 }
 
 void testMisspelledPropertyOfRequiredPolymorphicParameters() {
@@ -1015,7 +1020,7 @@ void testMisspelledPropertyOfRequiredPolymorphicParameters() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "misspelled_diameter_of_required_device");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf), "additional properties are not allowed");
 }
 
 void expectMatchesFullConf(const AllDeviceParameters &params) {
@@ -1157,14 +1162,14 @@ void doTestMinConstraint() {
     const eckit::LocalConfiguration invalidConf(conf, "int_min_constraint_not_met");
     ParametersType params;
     if (validationSupported)
-      EXPECT_THROWS(params.validate(invalidConf));
+      EXPECT_THROWS_MSG(params.validate(invalidConf), "value is below minimum");
     EXPECT_THROWS(params.deserialize(invalidConf));
   }
   {
     const eckit::LocalConfiguration invalidConf(conf, "float_min_constraint_not_met");
     ParametersType params;
     if (validationSupported)
-      EXPECT_THROWS(params.validate(invalidConf));
+      EXPECT_THROWS_MSG(params.validate(invalidConf), "value is below minimum");
     EXPECT_THROWS(params.deserialize(invalidConf));
   }
 }
@@ -1207,14 +1212,14 @@ void doTestMaxConstraint() {
     const eckit::LocalConfiguration invalidConf(conf, "int_max_constraint_not_met");
     ParametersType params;
     if (validationSupported)
-      EXPECT_THROWS(params.validate(invalidConf));
+      EXPECT_THROWS_MSG(params.validate(invalidConf), "value exceeds maximum");
     EXPECT_THROWS(params.deserialize(invalidConf));
   }
   {
     const eckit::LocalConfiguration invalidConf(conf, "float_max_constraint_not_met");
     ParametersType params;
     if (validationSupported)
-      EXPECT_THROWS(params.validate(invalidConf));
+      EXPECT_THROWS_MSG(params.validate(invalidConf), "value exceeds maximum");
     EXPECT_THROWS(params.deserialize(invalidConf));
   }
 }

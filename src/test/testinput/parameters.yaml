@@ -216,14 +216,14 @@ invalid_type_of_required_device:
 misspelled_diameter_of_optional_device:
   optional_device:
     diamester: 30
-    type: ABCDEF
+    type: screen
   required_device:
     diameter: 30
     type: screen
 misspelled_diameter_of_device_with_default:
   device_with_default:
     diamester: 30
-    type: ABCDEF
+    type: screen
   required_device:
     diameter: 30
     type: screen

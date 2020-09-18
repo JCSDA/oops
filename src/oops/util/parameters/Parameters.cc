@@ -19,6 +19,7 @@
 
 #ifdef OOPS_HAVE_NLOHMANN_JSON_SCHEMA_VALIDATOR
 #include <regex>
+#include <boost/algorithm/string/replace.hpp>
 #include "eckit/log/JSON.h"
 #include <nlohmann/json-schema.hpp>
 #endif
@@ -28,6 +29,64 @@ namespace oops {
 namespace {
 
 #ifdef OOPS_HAVE_NLOHMANN_JSON_SCHEMA_VALIDATOR
+
+/// \brief JSON schema validation error handler.
+///
+/// Throws an exception like the default error handler, but tries to make the error message more
+/// readable.
+class ValidationErrorHandler : public nlohmann::json_schema::basic_error_handler {
+ private:
+  void error(const nlohmann::json_pointer<nlohmann::basic_json<>> &pointer,
+             const nlohmann::json &instance,
+             const std::string &message) override {
+    // The base class implementation sets an internal flag indicating validation failure
+    basic_error_handler::error(pointer, instance, message);
+
+    const std::string editedMessage = postprocessErrorMessage(message);
+    const std::string errorLocation = getPath(pointer);
+
+    std::stringstream exceptionMessage;
+    exceptionMessage << "Error: YAML validation failed."
+                     << "\n  Location:      " << errorLocation
+                     << "\n  Invalid value: " << instance.dump()
+                     << "\n  Cause:         " << editedMessage;
+    throw std::invalid_argument(exceptionMessage.str());
+  }
+
+  /// Try to make the error message more readable
+  std::string postprocessErrorMessage(const std::string &message) {
+    std::string editedMessage = message;
+    boost::algorithm::replace_all(editedMessage,
+                                  "at least one subschema has failed, but all of them "
+                                  "are required to validate - ",
+                                  "");
+
+    const std::regex additionalPropertyRegex("validation failed for additional property '(.*?)': "
+                                             "instance invalid as per false-schema");
+    editedMessage = std::regex_replace(editedMessage, additionalPropertyRegex,
+                                       "additional properties are not allowed "
+                                       "('$1' was unexpected)");
+
+    boost::algorithm::replace_all(editedMessage, "instance not found in required enum",
+                                  "unrecognized enum value");
+
+    boost::algorithm::replace_all(editedMessage, "instance", "value");
+
+    return editedMessage;
+  }
+
+  /// Return the path to the given JSON node
+  std::string getPath(const nlohmann::json_pointer<nlohmann::basic_json<>> &pointer) {
+    std::string path = pointer.to_string();
+    if (path.empty()) {
+      // The json_pointer::to_string() method returns an empty string if the pointer refers to
+      // the root of the JSON hierarchy. Use a slash instead.
+      path = "/";
+    }
+    return path;
+  }
+};
+
 void checkStringFormat(const std::string &format, const std::string &value) {
   if (format == "duration") {
     // Matches ISO 8601 representations of durations, for example P1Y (a duration of 1 year),
@@ -43,7 +102,7 @@ void checkStringFormat(const std::string &format, const std::string &value) {
     nlohmann::json_schema::default_string_format_check(format, value);
   }
 }
-#endif
+#endif  // OOPS_HAVE_NLOHMANN_JSON_SCHEMA_VALIDATOR
 
 }  // namespace
 
@@ -99,7 +158,9 @@ void Parameters::validate(const eckit::Configuration &config) {
 
   nlohmann::json_schema::json_validator validator(nullptr, checkStringFormat);
   validator.set_root_schema(jsonSchema);
-  validator.validate(jsonConfig);
+
+  ValidationErrorHandler errorHandler;
+  validator.validate(jsonConfig, errorHandler);
 #endif
 }
 
