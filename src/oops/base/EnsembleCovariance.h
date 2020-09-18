@@ -73,7 +73,7 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Var
   ens_.reset(new Ensemble_(conf, xb4D, fg4D, resol, vars));
   if (conf.has("localization")) {
     const eckit::LocalConfiguration confloc(conf, "localization");
-    loc_ = LocalizationFactory<MODEL>::create(resol, ens_, confloc);
+    loc_ = LocalizationFactory<MODEL>::create(resol, confloc);
   }
   Log::trace() << "EnsembleCovariance::EnsembleCovariance done" << std::endl;
 }

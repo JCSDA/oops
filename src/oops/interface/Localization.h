@@ -18,7 +18,6 @@
 #include <string>
 
 #include "eckit/config/Configuration.h"
-#include "oops/base/IncrementEnsemble.h"
 #include "oops/base/LocalizationBase.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -31,11 +30,10 @@ template<typename MODEL, typename LOC>
 class Localization : public LocalizationBase<MODEL> {
   typedef Geometry<MODEL>            Geometry_;
   typedef Increment<MODEL>           Increment_;
-  typedef std::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
  public:
   static const std::string classname() {return "oops::Localization";}
 
-  Localization(const Geometry_ &, const EnsemblePtr_, const eckit::Configuration &);
+  Localization(const Geometry_ &, const eckit::Configuration &);
   ~Localization();
 
   void multiply(Increment_ &) const override;
@@ -49,7 +47,7 @@ class Localization : public LocalizationBase<MODEL> {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename LOC>
-Localization<MODEL, LOC>::Localization(const Geometry_ & geometry, const EnsemblePtr_,
+Localization<MODEL, LOC>::Localization(const Geometry_ & geometry,
                                        const eckit::Configuration & conf) {
   Log::trace() << "Localization<MODEL>::Localization starting" << std::endl;
   util::Timer timer(classname(), "Localization");

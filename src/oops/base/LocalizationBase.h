@@ -19,9 +19,9 @@
 #include <boost/noncopyable.hpp>
 
 #include "oops/assimilation/Increment4D.h"
-#include "oops/base/IncrementEnsemble.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
+#include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
 
@@ -80,15 +80,14 @@ void LocalizationBase<MODEL>::multiply(Increment4D_ & dx) const {
 template <typename MODEL>
 class LocalizationFactory {
   typedef Geometry<MODEL>                             Geometry_;
-  typedef std::shared_ptr<IncrementEnsemble<MODEL>>   EnsemblePtr_;
  public:
   static std::unique_ptr<LocalizationBase<MODEL>> create(const Geometry_ &,
-                          const EnsemblePtr_, const eckit::Configuration &);
+                          const eckit::Configuration &);
   virtual ~LocalizationFactory() = default;
  protected:
   explicit LocalizationFactory(const std::string &);
  private:
-  virtual LocalizationBase<MODEL> * make(const Geometry_ &, const EnsemblePtr_,
+  virtual LocalizationBase<MODEL> * make(const Geometry_ &,
                                          const eckit::Configuration &) = 0;
   static std::map < std::string, LocalizationFactory<MODEL> * > & getMakers() {
     static std::map < std::string, LocalizationFactory<MODEL> * > makers_;
@@ -101,10 +100,9 @@ class LocalizationFactory {
 template<class MODEL, class T>
 class LocalizationMaker : public LocalizationFactory<MODEL> {
   typedef Geometry<MODEL>                             Geometry_;
-  typedef std::shared_ptr<IncrementEnsemble<MODEL>>   EnsemblePtr_;
-  virtual LocalizationBase<MODEL> * make(const Geometry_ & geometry, const EnsemblePtr_ ensemble,
+  virtual LocalizationBase<MODEL> * make(const Geometry_ & geometry,
                                          const eckit::Configuration & conf)
-    { return new T(geometry, ensemble, conf); }
+    { return new T(geometry, conf); }
  public:
   explicit LocalizationMaker(const std::string & name) : LocalizationFactory<MODEL>(name) {}
 };
@@ -124,7 +122,7 @@ LocalizationFactory<MODEL>::LocalizationFactory(const std::string & name) {
 
 template <typename MODEL>
 std::unique_ptr<LocalizationBase<MODEL>>
-LocalizationFactory<MODEL>::create(const Geometry_ & geometry, const EnsemblePtr_ ensemble,
+LocalizationFactory<MODEL>::create(const Geometry_ & geometry,
                                    const eckit::Configuration & conf) {
   Log::trace() << "LocalizationBase<MODEL>::create starting" << std::endl;
   const std::string id = conf.getString("localization method");
@@ -140,7 +138,7 @@ LocalizationFactory<MODEL>::create(const Geometry_ & geometry, const EnsemblePtr
     }
     ABORT("Element does not exist in LocalizationFactory.");
   }
-  std::unique_ptr<LocalizationBase<MODEL>> ptr(jloc->second->make(geometry, ensemble, conf));
+  std::unique_ptr<LocalizationBase<MODEL>> ptr(jloc->second->make(geometry, conf));
   Log::trace() << "LocalizationBase<MODEL>::create done" << std::endl;
   return ptr;
 }

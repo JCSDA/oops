@@ -141,7 +141,7 @@ template <typename MODEL> class Dirac : public Application {
 
         //  Setup localization
         std::unique_ptr<Localization_> loc_ =
-                LocalizationFactory<MODEL>::create(resol, ens, locConfig);
+                LocalizationFactory<MODEL>::create(resol, locConfig);
 
         //  Apply localization
         loc_->multiply(dxdir);
@@ -159,7 +159,7 @@ template <typename MODEL> class Dirac : public Application {
 
         //  Setup localization
         std::unique_ptr<Localization_> loc_ =
-                    LocalizationFactory<MODEL>::create(resol, ens, locConfig);
+                    LocalizationFactory<MODEL>::create(resol, locConfig);
 
         //  Apply localization
         loc_->multiply(dxdir);
