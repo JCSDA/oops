@@ -1,7 +1,7 @@
 ensemble application:
   members: 10
 geometry:
-  resol: '40'
+  resol: 40
 initial condition:
   members:
   - date: '2010-01-01T03:00:00Z'

@@ -29,7 +29,7 @@ observations:
 #example_tests:
 #  test_read_config: '42'
 geometry:
-  resol: '40'
+  resol: 40
 linear model:
   trajectory:
     f: 8.0
@@ -45,10 +45,10 @@ output file:
   date: '2014-09-12T09:35:00Z'
   exp: IncrementL95Test
   filename: IncrementL95Test.txt
-  resol: '40'
+  resol: 40
   type: txt
 geometry:
-  resol: '40'
+  resol: 40
 state:
   date: '2010-01-01T03:00:00Z'
   filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H

@@ -26,4 +26,4 @@ output:
   frequency: PT112H
   type: pseudofc
 geometry:
-  resol: '40'
+  resol: 40

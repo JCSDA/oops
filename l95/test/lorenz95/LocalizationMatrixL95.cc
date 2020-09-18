@@ -17,17 +17,32 @@
 #include "lorenz95/Resolution.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
+#include "oops/util/parameters/IgnoreOtherParameters.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 #include "test/TestFixture.h"
 
 namespace test {
+// -----------------------------------------------------------------------------
+class LocalizationMatrixTestParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(LocalizationMatrixTestParameters, Parameters)
+
+ public:
+  oops::RequiredParameter<lorenz95::ResolutionParameters> resol{"geometry", this};
+  oops::RequiredParameter<eckit::LocalConfiguration> backgroundError{"background error", this};
+  /// \brief Don't treat the presence of other parameter groups as an error (this makes it
+  /// possible to reuse a single YAML file in tests of implementations of multiple oops interfaces).
+  oops::IgnoreOtherParameters ignoreOthers{this};
+};
+// -----------------------------------------------------------------------------
 class LocalizationMatrixFixture : TestFixture {
  public:
   LocalizationMatrixFixture() {
-    eckit::LocalConfiguration res(TestConfig::config(), "geometry");
-    resol_.reset(new lorenz95::Resolution(res, oops::mpi::world()));
+    LocalizationMatrixTestParameters parameters;
+    parameters.validateAndDeserialize(TestConfig::config());
+    resol_.reset(new lorenz95::Resolution(parameters.resol, oops::mpi::world()));
 
-    eckit::LocalConfiguration cfg(TestConfig::config(), "background error");
-    cfg_.reset(new eckit::LocalConfiguration(cfg));
+    cfg_.reset(new eckit::LocalConfiguration(parameters.backgroundError));
   }
   ~LocalizationMatrixFixture() {}
   std::unique_ptr<lorenz95::Resolution> resol_;

@@ -33,17 +33,35 @@
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/IgnoreOtherParameters.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 #include "test/TestFixture.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
+class StateTestParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(StateTestParameters, Parameters)
+
+ public:
+  oops::RequiredParameter<eckit::LocalConfiguration> state{"state", this};
+  oops::RequiredParameter<lorenz95::ResolutionParameters> resol{"geometry", this};
+  /// \brief Don't treat the presence of other parameter groups as an error (this makes it
+  /// possible to reuse a single YAML file in tests of implementations of multiple oops interfaces).
+  oops::IgnoreOtherParameters ignoreOthers{this};
+};
+// -----------------------------------------------------------------------------
 class StateTestFixture : TestFixture {
  public:
   StateTestFixture() {
-    file_.reset(new eckit::LocalConfiguration(TestConfig::config(), "state"));
-    eckit::LocalConfiguration res(TestConfig::config(), "geometry");
-    resol_.reset(new lorenz95::Resolution(res, oops::mpi::world()));
+    StateTestParameters parameters;
+    parameters.validateAndDeserialize(TestConfig::config());
+
+    file_.reset(new eckit::LocalConfiguration(parameters.state));
+
+    resol_.reset(new lorenz95::Resolution(parameters.resol, oops::mpi::world()));
+
     date_str_ = file_->getString("date");
     time_.reset(new util::DateTime(date_str_));
     vars_.reset(new oops::Variables());

@@ -24,19 +24,37 @@
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/IgnoreOtherParameters.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 #include "test/TestFixture.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
+class ModBiasTestParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(ModBiasTestParameters, Parameters)
+
+ public:
+  oops::RequiredParameter<lorenz95::ResolutionParameters> resol{"geometry", this};
+  oops::RequiredParameter<eckit::LocalConfiguration> modelAuxControl{"model aux control", this};
+  oops::RequiredParameter<eckit::LocalConfiguration> modelAuxError{"model aux error", this};
+  /// \brief Don't treat the presence of other parameter groups as an error (this makes it
+  /// possible to reuse a single YAML file in tests of implementations of multiple oops interfaces).
+  oops::IgnoreOtherParameters ignoreOthers{this};
+};
+// -----------------------------------------------------------------------------
 class ModBiasTestFixture : TestFixture {
  public:
   ModBiasTestFixture() {
-    eckit::LocalConfiguration res(TestConfig::config(), "geometry");
-    resol_.reset(new lorenz95::Resolution(res, oops::mpi::world()));
-    biasconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "model aux control"));
+    ModBiasTestParameters parameters;
+    parameters.validateAndDeserialize(TestConfig::config());
+
+    resol_.reset(new lorenz95::Resolution(parameters.resol, oops::mpi::world()));
+
+    biasconf_.reset(new eckit::LocalConfiguration(parameters.modelAuxControl));
     nobias_.reset(new eckit::LocalConfiguration());
-    eckit::LocalConfiguration covarCfg(TestConfig::config(), "model aux error");
+    const eckit::LocalConfiguration &covarCfg = parameters.modelAuxError;
     lorenz95::ModelBiasCovariance covar(covarCfg, *resol_);
     bias1_ = biasconf_->getDouble("bias");
     bias2_ = 2.5 * bias1_;

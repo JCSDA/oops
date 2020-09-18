@@ -13,4 +13,4 @@ output:
   frequency: PT112H
   type: idfc
 geometry:
-  resol: '40'
+  resol: 40

@@ -23,20 +23,38 @@
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/IgnoreOtherParameters.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 #include "test/TestFixture.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
+class ModBiasTestParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(ModBiasTestParameters, Parameters)
+
+ public:
+  oops::RequiredParameter<lorenz95::ResolutionParameters> resol{"geometry", this};
+  oops::RequiredParameter<eckit::LocalConfiguration> modelAuxControl{"model aux control", this};
+  oops::RequiredParameter<eckit::LocalConfiguration> modelAuxError{"model aux error", this};
+  /// \brief Don't treat the presence of other parameter groups as an error (this makes it
+  /// possible to reuse a single YAML file in tests of implementations of multiple oops interfaces).
+  oops::IgnoreOtherParameters ignoreOthers{this};
+};
+// -----------------------------------------------------------------------------
 class ModBiasTestFixture : TestFixture {
  public:
   ModBiasTestFixture() {
-    eckit::LocalConfiguration res(TestConfig::config(), "geometry");
-    resol_.reset(new lorenz95::Resolution(res, oops::mpi::world()));
-    conf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "model aux error"));
+    ModBiasTestParameters parameters;
+    parameters.validateAndDeserialize(TestConfig::config());
+
+    resol_.reset(new lorenz95::Resolution(parameters.resol, oops::mpi::world()));
+
+    conf_.reset(new eckit::LocalConfiguration(parameters.modelAuxError));
     nobias_.reset(new eckit::LocalConfiguration());
     modelBiasConf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "model aux control"));
-    bias1_ = modelBiasConf_->getDouble("bias");
+    bias1_ = parameters.modelAuxControl.value().getDouble("bias");
     bias2_ = 2.5 * bias1_;
     fact_ = 1.2345;
   }

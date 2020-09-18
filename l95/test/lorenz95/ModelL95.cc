@@ -25,19 +25,34 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/IgnoreOtherParameters.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 #include "test/TestFixture.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
+class ModelTestParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(ModelTestParameters, Parameters)
+
+ public:
+  oops::RequiredParameter<lorenz95::ResolutionParameters> resol{"geometry", this};
+  oops::RequiredParameter<lorenz95::ModelL95Parameters> model{"model", this};
+  /// \brief Don't treat the presence of other parameter groups as an error (this makes it
+  /// possible to reuse a single YAML file in tests of implementations of multiple oops interfaces).
+  oops::IgnoreOtherParameters ignoreOthers{this};
+};
+
+// -----------------------------------------------------------------------------
 class ModelTestFixture : TestFixture {
  public:
   ModelTestFixture() {
-    eckit::LocalConfiguration res(TestConfig::config(), "geometry");
-    resol_.reset(new lorenz95::Resolution(res, oops::mpi::world()));
+    ModelTestParameters parameters;
+    parameters.validateAndDeserialize(TestConfig::config());
 
-    eckit::LocalConfiguration model(TestConfig::config(), "model");
-    nlparams_.validateAndDeserialize(model);
+    nlparams_ = parameters.model;
+    resol_.reset(new lorenz95::Resolution(parameters.resol, oops::mpi::world()));
   }
   ~ModelTestFixture() {}
   std::unique_ptr<lorenz95::Resolution> resol_;

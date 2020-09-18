@@ -28,26 +28,40 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/IgnoreOtherParameters.h"
 #include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 #include "test/TestFixture.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
+class TlmTestParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(TlmTestParameters, Parameters)
+
+ public:
+  oops::RequiredParameter<lorenz95::ResolutionParameters> resol{"geometry", this};
+  oops::RequiredParameter<lorenz95::ModelL95Parameters> model{"model", this};
+  oops::RequiredParameter<eckit::LocalConfiguration> linearModel{"linear model", this};
+  /// \brief Don't treat the presence of other parameter groups as an error (this makes it
+  /// possible to reuse a single YAML file in tests of implementations of multiple oops interfaces).
+  oops::IgnoreOtherParameters ignoreOthers{this};
+};
+
+// -----------------------------------------------------------------------------
 class TlmTestFixture : TestFixture {
  public:
   TlmTestFixture() {
-    eckit::LocalConfiguration res(TestConfig::config(), "geometry");
-    resol_.reset(new lorenz95::Resolution(res, oops::mpi::world()));
+    TlmTestParameters parameters;
+    parameters.validateAndDeserialize(TestConfig::config());
 
-    eckit::LocalConfiguration mod(TestConfig::config(), "model");
-    lorenz95::ModelL95Parameters modelParameters;
-    modelParameters.validateAndDeserialize(mod);
-    model_.reset(new lorenz95::ModelL95(*resol_, modelParameters));
+    resol_.reset(new lorenz95::Resolution(parameters.resol, oops::mpi::world()));
+    model_.reset(new lorenz95::ModelL95(*resol_, parameters.model));
 
-    tlconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "linear model"));
+    tlconf_.reset(new eckit::LocalConfiguration(parameters.linearModel));
   }
   ~TlmTestFixture() {}
+
   std::unique_ptr<lorenz95::ModelL95>   model_;
   std::unique_ptr<lorenz95::Resolution> resol_;
   std::unique_ptr<const eckit::LocalConfiguration> tlconf_;
@@ -74,7 +88,10 @@ CASE("test_tlmL95") {
 // -----------------------------------------------------------------------------
   SECTION("test_tlmL95_get_resolution") {
     eckit::LocalConfiguration rescf(TestConfig::config(), "geometry");
-    lorenz95::Resolution resol(rescf, oops::mpi::world());
+    lorenz95::ResolutionParameters resolParameters;
+    resolParameters.validateAndDeserialize(rescf);
+    lorenz95::Resolution resol(resolParameters, oops::mpi::world());
+
     lorenz95::TLML95 tlm(*fix.resol_, *fix.tlconf_);
     EXPECT(tlm.resolution().npoints() == resol.npoints());
   }

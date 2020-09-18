@@ -21,18 +21,34 @@
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/IgnoreOtherParameters.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 #include "test/TestFixture.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
+class ResolutionTestParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(ResolutionTestParameters, Parameters)
+
+ public:
+  oops::RequiredParameter<lorenz95::ResolutionParameters> resol{"geometry", this};
+  /// \brief Don't treat the presence of other parameter groups as an error (this makes it
+  /// possible to reuse a single YAML file in tests of implementations of multiple oops interfaces).
+  oops::IgnoreOtherParameters ignoreOthers{this};
+};
+
+// -----------------------------------------------------------------------------
 class ResolutionTestFixture : TestFixture {
  public:
   ResolutionTestFixture() : comm_(oops::mpi::world()) {
-    testconf_.reset(new eckit::LocalConfiguration(TestConfig::config(), "geometry"));
+    ResolutionTestParameters parameters;
+    parameters.validateAndDeserialize(TestConfig::config());
+    parameters_ = parameters.resol;
   }
   ~ResolutionTestFixture() {}
-  std::unique_ptr<const eckit::LocalConfiguration> testconf_;
+  lorenz95::ResolutionParameters parameters_;
   const eckit::mpi::Comm & comm_;
 };
 // -----------------------------------------------------------------------------
@@ -40,26 +56,26 @@ CASE("test_resolution") {
   ResolutionTestFixture fix;
 // -----------------------------------------------------------------------------
   SECTION("test_resolution_constructor") {
-    std::unique_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*fix.testconf_,
+    std::unique_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(fix.parameters_,
                                                                          fix.comm_));
     EXPECT(resol.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_resolution_copy_constructor") {
-    std::unique_ptr<lorenz95::Resolution> xx(new lorenz95::Resolution(*fix.testconf_,
+    std::unique_ptr<lorenz95::Resolution> xx(new lorenz95::Resolution(fix.parameters_,
                                                                       fix.comm_));
     std::unique_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*xx));
     EXPECT(resol.get() != NULL);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_resolution_get_npoints") {
-    std::unique_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*fix.testconf_,
+    std::unique_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(fix.parameters_,
                                                                           fix.comm_));
-    EXPECT(resol->npoints() == fix.testconf_->getInt("resol"));
+    EXPECT(resol->npoints() == fix.parameters_.resol);
   }
 // -----------------------------------------------------------------------------
   SECTION("test_resolution_stream_output") {
-    std::unique_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(*fix.testconf_,
+    std::unique_ptr<lorenz95::Resolution> resol(new lorenz95::Resolution(fix.parameters_,
                                                                          fix.comm_));
 
     // use the operator<< method to write the value to a file
