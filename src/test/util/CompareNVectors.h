@@ -228,7 +228,7 @@ namespace test {
   }
 
   CASE("util/CompareNVectors/sameNonZeroSize") {
-    testExpectedSize();
+    testSameNonZeroSize();
   }
 
 class CompareNVectors : public oops::Test {
