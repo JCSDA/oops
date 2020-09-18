@@ -285,6 +285,7 @@ oops/util/ObjectCountHelper.cc
 oops/util/ObjectCountHelper.h
 oops/util/Printable.h
 oops/util/PrintAdjTest.h
+oops/util/PropertiesOfNVectors.h
 oops/util/random_f.cc
 oops/util/random_f.h
 oops/util/random_mod.F90
@@ -381,6 +382,7 @@ test/util/FloatCompare.h
 test/util/CompareNVectors.h
 test/util/CompositePath.h
 test/util/MissingValues.h
+test/util/PropertiesOfNVectors.h
 test/util/stringFunctions.h
 )
 
@@ -599,6 +601,10 @@ ecbuild_add_test( TARGET  test_util_associativecontainers
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 
+ecbuild_add_test( TARGET  test_util_propertiesofnvectors
+                  SOURCES test/util/PropertiesOfNVectors.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
 
 if( HAVE_FCTEST )
 
