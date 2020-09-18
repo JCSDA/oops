@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2020-2020 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -14,27 +15,32 @@
 #include <ostream>
 #include <string>
 
-#include <boost/noncopyable.hpp>
-
 #include "oops/base/ModelBase.h"
 #include "oops/base/Variables.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
-#include "oops/util/Printable.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 
 #include "oops/qg/GeometryQG.h"
 #include "oops/qg/QgFortran.h"
 #include "oops/qg/QgTraits.h"
 
-// Forward declarations
-namespace eckit {
-  class Configuration;
-}
 
 namespace qg {
   class ModelBias;
   class FieldsQG;
   class StateQG;
+
+// -----------------------------------------------------------------------------
+
+class ModelQgParameters : public oops::ModelParametersBase {
+  OOPS_CONCRETE_PARAMETERS(ModelQgParameters, ModelParametersBase)
+
+ public:
+  oops::RequiredParameter<util::Duration> tstep{"tstep", this};
+};
+
 
 // -----------------------------------------------------------------------------
 /// QG model definition.
@@ -45,9 +51,11 @@ namespace qg {
 class ModelQG: public oops::ModelBase<QgTraits>,
                private util::ObjectCounter<ModelQG> {
  public:
+  typedef ModelQgParameters Parameters_;
+
   static const std::string classname() {return "qg::ModelQG";}
 
-  ModelQG(const GeometryQG &, const eckit::Configuration &);
+  ModelQG(const GeometryQG &, const ModelQgParameters &);
   ~ModelQG();
 
 /// Prepare model integration
@@ -61,13 +69,13 @@ class ModelQG: public oops::ModelBase<QgTraits>,
   void finalize(StateQG &) const;
 
 /// Utilities
-  const util::Duration & timeResolution() const {return tstep_;}
+  const util::Duration & timeResolution() const {return params_.tstep;}
   const oops::Variables & variables() const {return vars_;}
 
  private:
   void print(std::ostream &) const;
   F90model keyConfig_;
-  util::Duration tstep_;
+  ModelQgParameters params_;
   const GeometryQG geom_;
   const oops::Variables vars_;
 };
