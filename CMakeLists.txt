@@ -70,8 +70,8 @@ if ( GPTL_FOUND AND ENABLE_AUTOPROFILING )
 endif()
 
 # JSON validation
-find_package(nlohmann_json)
-find_package(nlohmann_json_schema_validator)
+find_package(nlohmann_json QUIET)
+find_package(nlohmann_json_schema_validator QUIET)
 
 ## Sources
 add_subdirectory( src )
