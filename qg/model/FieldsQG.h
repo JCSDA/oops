@@ -93,7 +93,6 @@ class FieldsQG : public util::Printable,
   const util::DateTime & time() const {return time_;}
   util::DateTime & time() {return time_;}
 
-  int & toFortran() {return keyFlds_;}
   const int & toFortran() const {return keyFlds_;}
 
   bool isForModel(const bool &) const;

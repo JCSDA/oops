@@ -46,7 +46,6 @@ class GeometryQG : public util::Printable,
   GeometryQG(const GeometryQG &);
   ~GeometryQG();
 
-  F90geom & toFortran() {return keyGeom_;}
   const F90geom & toFortran() const {return keyGeom_;}
 
   GeometryQGIterator begin() const;

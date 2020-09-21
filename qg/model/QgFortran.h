@@ -260,7 +260,7 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Wind observations
 // -----------------------------------------------------------------------------
-  void qg_wind_equiv_f90(const F90gom &, F90ovec &, const double &);
+  void qg_wind_equiv_f90(const F90gom &, const F90ovec &, const double &);
   void qg_wind_equiv_tl_f90(const F90gom &, const F90ovec &, const double &);
   void qg_wind_equiv_ad_f90(const F90gom &, const F90ovec &, double &);
 
@@ -270,7 +270,7 @@ extern "C" {
   void qg_wspeed_equiv_f90(const F90gom &, const F90ovec &, const double &);
   void qg_wspeed_equiv_tl_f90(const F90gom &, const F90ovec &, const F90gom &, const double &);
   void qg_wspeed_equiv_ad_f90(const F90gom &, const F90ovec &, const F90gom &, double &);
-  void qg_wspeed_gettraj_f90(const int &, const oops::Variables &, F90gom &);
+  void qg_wspeed_gettraj_f90(const int &, const oops::Variables &, const F90gom &);
   void qg_wspeed_settraj_f90(const F90gom &, const F90gom &);
 
 }

@@ -54,7 +54,6 @@ class ObsVecQG : public util::Printable,
 
   unsigned int nobs() const;
 
-  int & toFortran() {return keyOvec_;}
   const int & toFortran() const {return keyOvec_;}
 
 // I/O

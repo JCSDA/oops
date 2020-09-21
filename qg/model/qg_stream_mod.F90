@@ -15,13 +15,13 @@ use qg_obsvec_mod
 implicit none
 
 private
-public :: qg_stream_equiv,qg_stream_equiv_tl,qg_stream_equiv_ad
+public :: qg_stream_equiv,qg_stream_equiv_ad
 ! ------------------------------------------------------------------------------
 contains
 ! ------------------------------------------------------------------------------
 ! Public
 ! ------------------------------------------------------------------------------
-!> Get equivalent for streamfunction
+!> Get equivalent for streamfunction (TL calls this subroutine too)
 subroutine qg_stream_equiv(gom,hofx,bias)
 
 implicit none
@@ -40,26 +40,6 @@ do iobs=1,gom%nobs
 enddo
 
 end subroutine qg_stream_equiv
-! ------------------------------------------------------------------------------
-!> Get equivalent for streamfunction - tangent linear
-subroutine qg_stream_equiv_tl(gom,hofx,bias)
-
-implicit none
-
-! Passed variables
-type(qg_gom),intent(in) :: gom        !< GOM
-type(qg_obsvec),intent(inout) :: hofx !< Observation vector
-real(kind_real),intent(in) :: bias    !< Bias
-
-! Local variables
-integer :: iobs
-
-! Loop over observations
-do iobs=1,gom%nobs
-  hofx%values(1,gom%indx(iobs)) = gom%values(1,iobs)+bias
-enddo
-
-end subroutine qg_stream_equiv_tl
 ! ------------------------------------------------------------------------------
 !> Get equivalent for streamfunction - adjoint
 subroutine qg_stream_equiv_ad(gom,hofx,bias)
