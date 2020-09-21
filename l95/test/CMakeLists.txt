@@ -25,6 +25,7 @@ list( APPEND l95_test_input
   testinput/4dvar.planczos.yaml
   testinput/4dvar.rpcg.yaml
   testinput/4dvar.rplanczos.yaml
+  testinput/4dvar.minres.yaml
   testinput/4dvar.modbias.yaml
   testinput/4dvar.obsbias.yaml
   testinput/4dvar.allbiases.yaml
@@ -91,6 +92,7 @@ list( APPEND l95_testoutput
   testoutput/4dvar.planczos.test
   testoutput/4dvar.rpcg.test
   testoutput/4dvar.rplanczos.test
+  testoutput/4dvar.minres.test
   testoutput/diffstates.test
   testoutput/addincrement.test
   testoutput/addincrement_scaled.test
@@ -583,6 +585,12 @@ oops_add_test( TESTNAME 4dvar.rpcg
 oops_add_test( TESTNAME 4dvar.rplanczos
                MODELNAME l95
                YAMLNAME testinput/4dvar.rplanczos.yaml
+               EXENAME l95_4dvar.x
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+
+oops_add_test( TESTNAME 4dvar.minres
+               MODELNAME l95
+               YAMLNAME testinput/4dvar.minres.yaml
                EXENAME l95_4dvar.x
                TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
