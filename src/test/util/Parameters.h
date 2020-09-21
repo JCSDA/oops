@@ -27,6 +27,7 @@
 #include "oops/util/Expect.h"
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/ConfigurationParameter.h"
+#include "oops/util/parameters/HasParameters_.h"
 #include "oops/util/parameters/IgnoreOtherParameters.h"
 #include "oops/util/parameters/NumericConstraints.h"
 #include "oops/util/parameters/OptionalParameter.h"
@@ -342,6 +343,40 @@ class TolerantParameters : public oops::Parameters {
   oops::Parameter<int> intParameter{"int_parameter", 2, this};
   oops::IgnoreOtherParameters config{this};
 };
+
+// Classes used to test HasParameters_
+
+struct WithoutParameters_ {};
+
+struct WithParameters_NotDerivedFromOopsParameters {
+  typedef std::string Parameters_;
+};
+
+class PrivateParameters : private oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(PrivateParameters, Parameters)
+ public:
+};
+
+struct WithParameters_DerivedPrivatelyFromOopsParameters {
+  typedef PrivateParameters Parameters_;
+};
+
+namespace nonoops {
+
+struct Parameters {};
+
+struct SomeParameters : Parameters {};
+
+}  // namespace nonoops
+
+struct WithParameters_DerivedFromNonOopsParameters {
+  typedef PrivateParameters Parameters_;
+};
+
+struct WithParameters_DerivedFromOopsParameters {
+  typedef MyOptionalParameters Parameters_;
+};
+
 
 template <typename ParametersType>
 void doTestSerialization(const eckit::Configuration &config) {
@@ -1386,6 +1421,16 @@ void testValidateAndDeserialize() {
   }
 }
 
+// HasParameters_
+
+void testHasParameters_() {
+  EXPECT_NOT(oops::HasParameters_<WithoutParameters_>::value);
+  EXPECT_NOT(oops::HasParameters_<WithParameters_NotDerivedFromOopsParameters>::value);
+  EXPECT_NOT(oops::HasParameters_<WithParameters_DerivedPrivatelyFromOopsParameters>::value);
+  EXPECT_NOT(oops::HasParameters_<WithParameters_DerivedFromNonOopsParameters>::value);
+  EXPECT(oops::HasParameters_<WithParameters_DerivedFromOopsParameters>::value);
+}
+
 
 class Parameters : public oops::Test {
  private:
@@ -1588,6 +1633,10 @@ class Parameters : public oops::Test {
 
     ts.emplace_back(CASE("util/Parameters/testValidateAndDeserialize") {
                       testValidateAndDeserialize();
+                    });
+
+    ts.emplace_back(CASE("util/Parameters/testHasParameters_") {
+                      testHasParameters_();
                     });
   }
 
