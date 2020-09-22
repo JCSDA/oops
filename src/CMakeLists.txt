@@ -339,6 +339,8 @@ list( APPEND oops_test_src_files
 test/TestEnvironment.h
 test/TestFixture.h
 
+test/assimilation/rotmat.h
+
 test/base/ObsErrorCovariance.h
 
 test/interface/ErrorCovariance.h
@@ -610,6 +612,12 @@ ecbuild_add_test( TARGET  test_util_propertiesofnvectors
                   SOURCES test/util/PropertiesOfNVectors.cc
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
+
+ecbuild_add_test( TARGET  test_assimilation_rotmat
+                  SOURCES test/assimilation/rotmat.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
 
 if( HAVE_FCTEST )
 
