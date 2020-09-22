@@ -171,30 +171,6 @@ void ObsTable::getdb(const std::string & col, std::vector<double> & vec) const {
 
 // -----------------------------------------------------------------------------
 
-LocsL95 * ObsTable::locations(const util::DateTime & t1, const util::DateTime & t2) const {
-  std::vector<int> olist = timeSelect(t1, t2);
-  const int nobs = olist.size();
-  std::vector<double> locs(nobs);
-  std::vector<util::DateTime> times(nobs);
-  for (int jobs = 0; jobs < nobs; ++jobs) {
-    locs[jobs] = locations_[olist[jobs]];
-    times[jobs] = times_[olist[jobs]];
-  }
-  return new LocsL95(olist, locs, times);
-}
-
-// -----------------------------------------------------------------------------
-
-std::vector<int> ObsTable::timeSelect(const util::DateTime & t1,
-                                      const util::DateTime & t2) const {
-  std::vector<int> mask;
-  for (unsigned int jobs = 0; jobs < nobs(); ++jobs)
-    if (times_[jobs] > t1 && times_[jobs] <= t2) mask.push_back(jobs);
-  return mask;
-}
-
-// -----------------------------------------------------------------------------
-
 void ObsTable::generateDistribution(const eckit::Configuration & config) {
   oops::Log::trace() << "ObsTable::generateDistribution starting" << std::endl;
 

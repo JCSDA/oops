@@ -56,7 +56,6 @@ void ObjectCountHelper::stop() {
 // -----------------------------------------------------------------------------
 
 std::shared_ptr<ObjectCountHelper> ObjectCountHelper::create(const std::string & cname) {
-  if (!counters_) ObjectCountHelper::start();  // Happens in unit tests...
   std::shared_ptr<ObjectCountHelper> pcount;
   typedef std::map<std::string, std::shared_ptr<ObjectCountHelper> >::iterator it;
   it jj = counters_->find(cname);

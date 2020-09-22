@@ -54,7 +54,6 @@ list( APPEND l95_test_input
   testinput/makeobsbias.yaml
   testinput/makeobspert.yaml
   testinput/pseudomodel.yaml
-  testinput/test.yaml
   testinput/truth.yaml
 )
 
@@ -148,76 +147,6 @@ ecbuild_add_resources( TARGET   l95_test_scripts
                        SOURCES_PACK
                        ${l95_test_input}
                      )
-
-
-#####################################################################
-# internal tests
-#####################################################################
-
-ecbuild_add_test( TARGET test_l95_resolution
-                  SOURCES lorenz95/Resolution.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 )
-
-ecbuild_add_test( TARGET test_l95_stateL95
-                  SOURCES lorenz95/StateL95.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 )
-
-ecbuild_add_test( TARGET test_l95_tlmL95
-                  SOURCES lorenz95/TLML95.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 )
-
-ecbuild_add_test( TARGET test_l95_ObsTable
-                  SOURCES lorenz95/ObsTable.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 )
-
-ecbuild_add_test( TARGET test_l95_obsVec1D
-                  SOURCES lorenz95/ObsVec1D.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 )
-
-ecbuild_add_test( TARGET test_l95_gomL95
-                  SOURCES lorenz95/GomL95.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 )
-
-ecbuild_add_test( TARGET test_l95_observationL95
-                  SOURCES lorenz95/ObservationL95.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 )
-
-ecbuild_add_test( TARGET test_l95_incrementL95
-                  SOURCES lorenz95/IncrementL95.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 )
-
-ecbuild_add_test( TARGET test_l95_localizationMatrixL95
-                  SOURCES lorenz95/LocalizationMatrixL95.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 )
-
-ecbuild_add_test( TARGET test_l95_modelBias
-                  SOURCES lorenz95/ModelBias.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 )
-
-ecbuild_add_test( TARGET test_l95_modelBiasCorrection
-                  SOURCES lorenz95/ModelBiasCorrection.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 )
-
-ecbuild_add_test( TARGET test_l95_modelBiasCovariance
-                  SOURCES lorenz95/ModelBiasCovariance.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 )
-
-ecbuild_add_test( TARGET test_l95_modelL95
-                  SOURCES lorenz95/ModelL95.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 )
 
 
 #####################################################################
