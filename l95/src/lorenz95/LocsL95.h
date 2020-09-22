@@ -37,7 +37,6 @@ class LocsL95 : public util::Printable,
 
   LocsL95(const std::vector<int> &, const std::vector<double> &,
           const std::vector<util::DateTime> &);
-  LocsL95(const eckit::Configuration &, const eckit::mpi::Comm &);
   ~LocsL95() {}
 
   size_t size() const {return locs_.size();}

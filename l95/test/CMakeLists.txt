@@ -177,11 +177,6 @@ ecbuild_add_test( TARGET test_l95_obsVec1D
                   ARGS "testinput/test.yaml"
                   LIBS lorenz95 )
 
-ecbuild_add_test( TARGET test_l95_locsL95
-                  SOURCES lorenz95/LocsL95.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 )
-
 ecbuild_add_test( TARGET test_l95_gomL95
                   SOURCES lorenz95/GomL95.cc lorenz95/TestConfig.h
                   ARGS "testinput/test.yaml"

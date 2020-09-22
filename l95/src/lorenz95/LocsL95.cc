@@ -29,19 +29,6 @@ LocsL95::LocsL95(const std::vector<int> & indx, const std::vector<double> & locs
 
 // -----------------------------------------------------------------------------
 
-LocsL95::LocsL95(const eckit::Configuration & conf, const eckit::mpi::Comm &)
-  : indx_(), locs_(), times_() {
-  conf.get("positions", locs_);
-  const util::DateTime time(conf.getString("time"));
-  for (size_t jj = 0; jj < locs_.size(); ++jj) {
-    ASSERT(locs_.at(jj) >= 0.0 && locs_.at(jj) <= 1.0);
-    indx_.push_back(jj + 1);
-    times_.push_back(time);
-  }
-}
-
-// -----------------------------------------------------------------------------
-
 void LocsL95::print(std::ostream & os) const {
   os << locs_.size();
   if (locs_.size() > 0) os << " " << locs_.at(0);
