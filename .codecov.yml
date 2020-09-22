@@ -9,3 +9,4 @@ coverage:
 
 ignore:
   - "src/test"
+  - "src/oops/contrib"
