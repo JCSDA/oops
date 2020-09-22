@@ -54,9 +54,9 @@ void TriDiagSolve(const std::vector<double> & diag, const std::vector<double> & 
 void blockTriDiagSolve(const std::vector<Eigen::MatrixXd> & alphas,
                        const std::vector<Eigen::MatrixXd> & betas,
                        const Eigen::MatrixXd & beta0, Eigen::MatrixXd & ss,
-                       bool & complexValues) {
+                       bool & complexValues,
+                       const int members) {
   const int iter = alphas.size();
-  const int members = oops::mpi::world().size();  // only for toy models
   complexValues = false;
   Eigen::MatrixXd TT = Eigen::MatrixXd::Zero(iter * members, iter * members);
 

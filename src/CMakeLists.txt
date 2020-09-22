@@ -340,6 +340,7 @@ test/TestEnvironment.h
 test/TestFixture.h
 
 test/assimilation/rotmat.h
+test/assimilation/TriDiagSolve.h
 
 test/base/ObsErrorCovariance.h
 
@@ -618,6 +619,10 @@ ecbuild_add_test( TARGET  test_assimilation_rotmat
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 
+ecbuild_add_test( TARGET  test_assimilation_tridiagsolve
+                  SOURCES test/assimilation/TriDiagSolve.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
 
 if( HAVE_FCTEST )
 
