@@ -42,6 +42,20 @@ namespace oops {
  *  the actual linear model which can be a model specific one or a generic one 
  *  (identity). The interface for the linear model comprises two levels (LinearModel  
  *  and LinearModelBase) because we want run time polymorphism. 
+ *
+ *  Note: implementations of this interface can opt to extract their settings either from
+ *  a Configuration object or from a subclass of LinearModelParametersBase.
+ *
+ *  In the former case, they should provide a constructor with the following signature:
+ *
+ *     LinearModel(const Geometry_ &, const eckit::Configuration &);
+ *
+ *  In the latter case, the implementer should first define a subclass of LinearModelParametersBase
+ *  holding the settings of the model in question. The implementation of the LinearModel interface
+ *  should then typedef `Parameters_` to the name of that subclass and provide a constructor with
+ *  the following signature:
+ *
+ *     LinearModel(const Geometry_ &, const Parameters_ &);
  */
 // -----------------------------------------------------------------------------
 
@@ -59,6 +73,7 @@ class LinearModel : public util::Printable,
  public:
   static const std::string classname() {return "oops::LinearModel";}
 
+  LinearModel(const Geometry_ &, const LinearModelParametersBase &);
   LinearModel(const Geometry_ &, const eckit::Configuration &);
   ~LinearModel();
 
@@ -102,15 +117,23 @@ class LinearModel : public util::Printable,
 // =============================================================================
 
 template<typename MODEL>
-LinearModel<MODEL>::LinearModel(const Geometry_ & resol, const eckit::Configuration & conf)
+LinearModel<MODEL>::LinearModel(const Geometry_ & resol, const LinearModelParametersBase & params)
   : tlm_()
 {
   Log::trace() << "LinearModel<MODEL>::LinearModel starting" << std::endl;
   util::Timer timer(classname(), "LinearModel");
-  Log::debug() << "LinearModel config is:" << conf << std::endl;
-  tlm_.reset(LinearModelFactory<MODEL>::create(resol, conf));
+  Log::debug() << "LinearModel config is:" << params << std::endl;
+  tlm_.reset(LinearModelFactory<MODEL>::create(resol, params));
   Log::trace() << "LinearModel<MODEL>::LinearModel done" << std::endl;
 }
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+LinearModel<MODEL>::LinearModel(const Geometry_ & resol, const eckit::Configuration & conf)
+  : LinearModel(resol,
+                validateAndDeserialize<LinearModelParametersWrapper<MODEL>>(conf).modelParameters)
+{}
 
 // -----------------------------------------------------------------------------
 

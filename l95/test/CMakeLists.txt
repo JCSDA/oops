@@ -48,6 +48,7 @@ list( APPEND l95_test_input
   testinput/letkfOOPS.yaml
   testinput/letkf.yaml
   testinput/interfaces.yaml
+  testinput/linearmodelfactory.yaml
   testinput/makeobs3d.yaml
   testinput/makeobs4d.yaml
   testinput/makeobs4d12h.yaml
@@ -658,3 +659,11 @@ oops_add_test( TESTNAME letkf_gsi
                CTOL 1e-4
                TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
 
+#####################################################################
+# tests of factory and parameters classes
+#####################################################################
+
+ecbuild_add_test( TARGET test_l95_linearmodelfactory
+                  SOURCES lorenz95/LinearModelFactory.cc
+                  ARGS "testinput/linearmodelfactory.yaml"
+                  LIBS lorenz95 )
