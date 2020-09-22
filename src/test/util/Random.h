@@ -1,8 +1,8 @@
 /*
  * (C) Copyright 2019 UCAR
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  *
  */
 
@@ -56,8 +56,8 @@ class RandomFixture : private boost::noncopyable {
 // -----------------------------------------------------------------------------
 /*! Test C++ implementation of random number generators
  *
- * \details This is intended to make sure that the random number generators in 
- * oops::util::Random.h are reproducible.  Specifically, we want to make sure that 
+ * \details This is intended to make sure that the random number generators in
+ * oops::util::Random.h are reproducible.  Specifically, we want to make sure that
  * they are independent of the compiler and platform for a given random seed.
  *
 */
@@ -68,10 +68,10 @@ void testCppRandom() {
   std::size_t N = static_cast<size_t>(Test_::test().getInt("N"));
   unsigned int seed = static_cast<unsigned int>(Test_::test().getInt("seed"));
 
-  /*! Test uniform real distrubution 
-   *  The tolerance is based on the precision of the data type, in this case <double>.  
-   *  We have to take into account the magnitude of the number 
-   *  itself, which requires a multiplication.  This can potentially decrease 
+  /*! Test uniform real distrubution
+   *  The tolerance is based on the precision of the data type, in this case <double>.
+   *  We have to take into account the magnitude of the number
+   *  itself, which requires a multiplication.  This can potentially decrease
    *  the accuracy by one significant digit.  So, also include a safety factor sfac.
   */
   double sfac = 10;
@@ -98,7 +98,7 @@ void testCppRandom() {
   double normal_mean = Test_::test().getDouble("normal_mean");
   double normal_sdev = Test_::test().getDouble("normal_sdev");
   util::NormalDistribution<double> z(N, normal_mean, normal_sdev, seed);
-  std::vector<double> z_check = Test_::test().getDoubleVector("normal_answer");
+  std::vector<double> z_check = Test_::test().getDoubleVector("normal_double_answer");
   oops::Log::info() << "\nTesting oops::util::Random.h Gaussian Distribution: \n"
                     << z << std::endl;
   for (std::size_t jj = 0; jj < N; ++jj)
@@ -118,8 +118,8 @@ void testCppRandom() {
 // -----------------------------------------------------------------------------
 /*! Test Fortran implementation of random number generators
  *
- * \details This is intended to make sure that the random number generators in 
- * oops::util::Random.h are reproducible.  Specifically, we want to make sure that 
+ * \details This is intended to make sure that the random number generators in
+ * oops::util::Random.h are reproducible.  Specifically, we want to make sure that
  * they are independent of the compiler and platform for a given random seed.
  *
  */
@@ -130,8 +130,11 @@ void testFortranRandom() {
   const eckit::Configuration * config = &Test_::test();
 
   EXPECT(test_uniform_real_f(&config) == 0);
+  EXPECT(test_uniform_double_f(&config) == 0);
   EXPECT(test_uniform_int_f(&config) == 0);
+  EXPECT(test_uniform_long_f(&config) == 0);
   EXPECT(test_normal_real_f(&config) == 0);
+  EXPECT(test_normal_double_f(&config) == 0);
 }
 
 // -----------------------------------------------------------------------------
@@ -160,4 +163,3 @@ class Random : public oops::Test {
 }  // namespace test
 
 #endif  // TEST_UTIL_RANDOM_H_
-
