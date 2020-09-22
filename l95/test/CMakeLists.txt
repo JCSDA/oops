@@ -18,6 +18,7 @@ list( APPEND l95_test_input
   testinput/4dvar.drpcgqn.yaml
   testinput/4dvar.drplanczos.yaml
   testinput/4dvar.drplanclmp.yaml
+  testinput/4dvar.fgmres.yaml
   testinput/4dvar.gmresr.yaml
   testinput/4dvar.hybrid.yaml
   testinput/4dvar.ipcg.yaml
@@ -82,6 +83,7 @@ list( APPEND l95_testoutput
   testoutput/4dvar.drpcgqn.test
   testoutput/4dvar.drplanclmp.test
   testoutput/4dvar.drplanczos.test
+  testoutput/4dvar.fgmres.test
   testoutput/4dvar.gmresr.test
   testoutput/4dvar.hybrid.test
   testoutput/4dvar.ipcg.test
@@ -544,6 +546,12 @@ oops_add_test( TESTNAME 4dvar.drplanczos
 oops_add_test( TESTNAME 4dvar.drplanclmp
                MODELNAME l95
                YAMLNAME testinput/4dvar.drplanclmp.yaml
+               EXENAME l95_4dvar.x
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+
+oops_add_test( TESTNAME 4dvar.fgmres
+               MODELNAME l95
+               YAMLNAME testinput/4dvar.fgmres.yaml
                EXENAME l95_4dvar.x
                TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
