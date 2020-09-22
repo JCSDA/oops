@@ -151,7 +151,6 @@ oops/base/Variables.h
 oops/base/WeightedDiff.h
 oops/base/WeightedDiffTLAD.h
 oops/base/WeightedMean.h
-oops/base/WeightingFct.cc
 oops/base/WeightingFct.h
 
 oops/contrib/dcmip_initial_conditions_test_1_2_3_v5.f90

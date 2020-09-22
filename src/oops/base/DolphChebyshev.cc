@@ -22,10 +22,6 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-static WeightMaker<DolphChebyshev> makerDolph_("DolphChebyshev");
-
-// -----------------------------------------------------------------------------
-
 DolphChebyshev::DolphChebyshev(const eckit::Configuration & config) {
   tau_ = util::Duration(config.getString("cutoff"));
 }

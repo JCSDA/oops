@@ -77,7 +77,6 @@ WeightedMean<MODEL, FLDS>::WeightedMean(const Variables & vars,
       bgn_(vt-span/2), end_(vt+span/2), endleg_()
 {
   avg_ = new Accumulator<MODEL, FLDS, FLDS>(resol, vars, vt);
-//  wfct_.reset(WeightFactory::create(config)); YT
   wfct_.reset(new DolphChebyshev(config));
 }
 
