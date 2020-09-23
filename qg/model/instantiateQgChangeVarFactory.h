@@ -16,7 +16,6 @@
 
 #include "oops/qg/ChangeVarQG.h"
 #include "oops/qg/ChangeVarTLADQG.h"
-#include "oops/qg/ErrorStdDevQG.h"
 #include "oops/qg/QgTraits.h"
 
 namespace qg {
@@ -28,9 +27,6 @@ void instantiateQgChangeVarFactory() {
   static oops::LinearVariableChangeMaker<qg::QgTraits,
                                    oops::LinearVariableChange<qg::QgTraits, qg::ChangeVarTLADQG> >
                makerChLinVarQG_("ChVarQG");
-  static oops::LinearVariableChangeMaker<qg::QgTraits,
-                                   oops::LinearVariableChange<qg::QgTraits, qg::ErrorStdDevQG> >
-               makerErrStdDevrQG_("ErrStdDevQG");
 }
 
 }  // namespace qg

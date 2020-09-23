@@ -51,8 +51,6 @@ typedef int F90gom;
 typedef int F90flds;
 // Error covariance key type
 typedef int F90error_covariance;
-// Error standard deviation key type
-typedef int F90error_stddev;
 // Observation vector key type
 typedef int F90ovec;
 // Observation data base type
@@ -86,14 +84,6 @@ extern "C" {
   void qg_error_covariance_inv_mult_f90(const F90error_covariance &, const F90flds &,
                                         const F90flds &);
   void qg_error_covariance_randomize_f90(const F90error_covariance &, const F90flds &);
-
-// -----------------------------------------------------------------------------
-//  Error standard deviation
-// -----------------------------------------------------------------------------
-  void qg_error_stddev_setup_f90(F90error_stddev &, const eckit::Configuration &);
-  void qg_error_stddev_delete_f90(F90error_stddev &);
-  void qg_error_stddev_mult_f90(const F90error_stddev &, const F90flds &, const F90flds &);
-  void qg_error_stddev_inv_mult_f90(const F90error_stddev &, const F90flds &, const F90flds &);
 
 // -----------------------------------------------------------------------------
 //  Fields
