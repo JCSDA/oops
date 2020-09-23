@@ -25,12 +25,10 @@ class LocalIncrement: public util::Printable {
 
   const oops::Variables & getVars() const {return vars_;}
   const std::vector<double> & getVals() const {return vals_;}
-  const std::vector<double> getVals(const std::string &) const;
   void setVals(std::vector<double> &);
 
   /// Linear algebra operators
   LocalIncrement & operator+=(const LocalIncrement &);
-  LocalIncrement & operator-=(const LocalIncrement &);
   LocalIncrement & operator*=(const double &);
   LocalIncrement & operator*=(const std::vector<double> &);
 
