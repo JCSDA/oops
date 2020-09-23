@@ -71,6 +71,8 @@ template<typename MODEL> class Increment4D : public util::Printable {
 /// Linear algebra operators
   void diff(const State4D_ &, const State4D_ &);
   void zero();
+  void random();
+  void ones();
   void dirac(std::vector<eckit::LocalConfiguration>);
   Increment4D & operator=(const Increment4D &);
   Increment4D & operator+=(const Increment4D &);
@@ -217,6 +219,20 @@ template<typename MODEL>
 void Increment4D<MODEL>::zero() {
   for (iter_ jsub = incr4d_.begin(); jsub != incr4d_.end(); ++jsub) {
     jsub->second->zero();
+  }
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+void Increment4D<MODEL>::random() {
+  for (iter_ jsub = incr4d_.begin(); jsub != incr4d_.end(); ++jsub) {
+    jsub->second->random();
+  }
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+void Increment4D<MODEL>::ones() {
+  for (iter_ jsub = incr4d_.begin(); jsub != incr4d_.end(); ++jsub) {
+    jsub->second->ones();
   }
 }
 // -----------------------------------------------------------------------------

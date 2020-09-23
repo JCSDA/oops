@@ -78,6 +78,7 @@ class IncrementQG : public oops::GeneralizedDepartures,
   void diff(const StateQG &, const StateQG &);
   void zero();
   void zero(const util::DateTime &);
+  void ones();
   IncrementQG & operator =(const IncrementQG &);
   IncrementQG & operator+=(const IncrementQG &);
   IncrementQG & operator-=(const IncrementQG &);

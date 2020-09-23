@@ -38,7 +38,7 @@ private
 public :: qg_fields
 public :: qg_fields_registry
 public :: qg_fields_create,qg_fields_create_default,qg_fields_create_from_other,qg_fields_delete, &
-        & qg_fields_zero,qg_fields_dirac,qg_fields_random, &
+        & qg_fields_zero,qg_fields_ones,qg_fields_dirac,qg_fields_random, &
         & qg_fields_copy,qg_fields_self_add,qg_fields_self_sub,qg_fields_self_mul,qg_fields_axpy,qg_fields_self_schur, &
         & qg_fields_dot_prod,qg_fields_add_incr,qg_fields_diff_incr,qg_fields_change_resol,qg_fields_read_file, &
         & qg_fields_write_file,qg_fields_analytic_init,qg_fields_gpnorm,qg_fields_rms,qg_fields_sizes,qg_fields_vars, &
@@ -234,6 +234,28 @@ if (self%lbc) then
 endif
 
 end subroutine qg_fields_zero
+! ------------------------------------------------------------------------------
+!> Set fields to ones
+subroutine qg_fields_ones(self)
+
+implicit none
+
+! Passed variables
+type(qg_fields),intent(inout) :: self
+
+! Check field
+call qg_fields_check(self)
+
+! Set fields to ones
+self%gfld3d = 1.0
+if (self%lbc) then
+  self%x_north = 1.0
+  self%x_south = 1.0
+  self%q_north = 1.0
+  self%q_south = 1.0
+endif
+
+end subroutine qg_fields_ones
 ! ------------------------------------------------------------------------------
 !> Set fields to Diracs
 subroutine qg_fields_dirac(self,f_conf)

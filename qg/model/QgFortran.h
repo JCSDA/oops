@@ -92,6 +92,7 @@ extern "C" {
   void qg_fields_create_from_other_f90(F90flds &, const F90flds &);
   void qg_fields_delete_f90(F90flds &);
   void qg_fields_zero_f90(const F90flds &);
+  void qg_fields_ones_f90(const F90flds &);
   void qg_fields_dirac_f90(const F90flds &, const eckit::Configuration &);
   void qg_fields_random_f90(const F90flds &);
   void qg_fields_copy_f90(const F90flds &, const F90flds &);

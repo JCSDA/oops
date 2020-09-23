@@ -105,6 +105,10 @@ void FieldsQG::zero(const util::DateTime & time) {
   time_ = time;
 }
 // -----------------------------------------------------------------------------
+void FieldsQG::ones() {
+  qg_fields_ones_f90(keyFlds_);
+}
+// -----------------------------------------------------------------------------
 void FieldsQG::axpy(const double & zz, const FieldsQG & rhs) {
   qg_fields_axpy_f90(keyFlds_, zz, rhs.keyFlds_);
 }

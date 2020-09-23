@@ -121,6 +121,25 @@ call qg_fields_zero(self)
 
 end subroutine qg_fields_zero_c
 ! ------------------------------------------------------------------------------
+!> Set fields to ones
+subroutine qg_fields_ones_c(c_key_self) bind(c,name='qg_fields_ones_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_self !< Fields
+
+! Local variables
+type(qg_fields),pointer :: self
+
+! Interface
+call qg_fields_registry%get(c_key_self,self)
+
+! Call Fortran
+call qg_fields_ones(self)
+
+end subroutine qg_fields_ones_c
+! ------------------------------------------------------------------------------
 !> Set fields to Diracs
 subroutine qg_fields_dirac_c(c_key_self,c_conf) bind(c,name='qg_fields_dirac_f90')
 
