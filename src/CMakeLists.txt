@@ -339,8 +339,11 @@ list( APPEND oops_test_src_files
 test/TestEnvironment.h
 test/TestFixture.h
 
+test/assimilation/PCG.h
 test/assimilation/rotmat.h
 test/assimilation/TriDiagSolve.h
+test/assimilation/Vector3D.cc
+test/assimilation/Vector3D.h
 
 test/base/ObsErrorCovariance.h
 
@@ -611,6 +614,11 @@ ecbuild_add_test( TARGET  test_util_associativecontainers
 
 ecbuild_add_test( TARGET  test_util_propertiesofnvectors
                   SOURCES test/util/PropertiesOfNVectors.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_assimilation_pcg
+                  SOURCES test/assimilation/PCG.cc
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 
