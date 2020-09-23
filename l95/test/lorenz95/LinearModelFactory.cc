@@ -10,7 +10,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "lorenz95/L95Traits.h"
-#include "lorenz95/TLML95.h"
+#include "lorenz95/LocsL95.h"
 #include "oops/interface/LinearModel.h"
 #include "oops/runs/Run.h"
 #include "oops/runs/Test.h"
@@ -23,13 +23,6 @@ CASE("test_linearmodelparameterswrapper_valid_name") {
   eckit::LocalConfiguration config(TestEnvironment::config(), "valid linear model name");
   oops::LinearModelParametersWrapper<lorenz95::L95Traits> parameters;
   EXPECT_NO_THROW(parameters.validateAndDeserialize(config));
-
-  // Constructing a TLML95 object here introduces a dependency on a non-inline function from
-  // the lorenz95 library and thus prevents the linker from dropping that library from the list of
-  // dependencies. This ensures static initialization of that library is completed before main()
-  // starts and hence the L95TLM linear model is registered in the linear model factory.
-  lorenz95::Resolution resol(40);
-  lorenz95::TLML95 tlm(resol, config);
 }
 
 CASE("test_linearmodelparameterswrapper_invalid_name") {
@@ -47,6 +40,15 @@ CASE("test_linearmodelfactory") {
 }
 
 class LinearModelFactory : public oops::Test {
+ public:
+  LinearModelFactory() {
+    // Constructing a LocsL95 object introduces a dependency on a non-inline function from
+    // the lorenz95 library and thus prevents the linker from dropping that library from the list of
+    // dependencies. This ensures static initialization of that library is completed before main()
+    // starts and hence the L95TLM linear model is registered in the linear model factory.
+    lorenz95::LocsL95 locs({}, {}, {});
+  }
+
  private:
   std::string testid() const override {return "test::LinearModelFactory";}
 
