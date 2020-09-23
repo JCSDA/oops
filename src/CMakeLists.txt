@@ -341,6 +341,7 @@ test/TestFixture.h
 
 test/assimilation/PCG.h
 test/assimilation/rotmat.h
+test/assimilation/SpectralLMP.h
 test/assimilation/TriDiagSolve.h
 test/assimilation/Vector3D.cc
 test/assimilation/Vector3D.h
@@ -421,6 +422,7 @@ list( APPEND oops_test_input
   test/testinput/parameters.yaml
   test/testinput/empty.yaml
   test/testinput/mpi.yaml
+  test/testinput/spectrallmp.yaml
 )
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test/testinput)
 CREATE_SYMLINK( ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${oops_test_input} )
@@ -627,6 +629,11 @@ ecbuild_add_test( TARGET  test_assimilation_pcg
 ecbuild_add_test( TARGET  test_assimilation_rotmat
                   SOURCES test/assimilation/rotmat.cc
                   ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_assimilation_spectrallmp
+                  SOURCES test/assimilation/SpectralLMP.cc
+                  ARGS    "test/testinput/spectrallmp.yaml"
                   LIBS    oops )
 
 ecbuild_add_test( TARGET  test_assimilation_tridiagsolve

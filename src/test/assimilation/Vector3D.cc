@@ -15,6 +15,14 @@ namespace test {
     : x_(x), y_(y), z_(z)
   {}
 
+  Vector3D::Vector3D(const Vector3D& rhs,
+                     const bool copy)
+    : x_(rhs.x_), y_(rhs.y_), z_(rhs.z_)
+  {
+    // NB the argument 'copy' is present in order to match the signature
+    // required by various minimiser functions.
+  }
+
   Vector3D& Vector3D::operator=(const Vector3D& rhs)
   {
     this->x_ = rhs.x_;

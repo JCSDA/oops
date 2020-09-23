@@ -35,6 +35,9 @@ namespace test {
     Vector3D vEq = v1;
     EXPECT(vEq.x() == 1.0 && vEq.y() == 2.0 && vEq.z() == 3.0);
 
+    const Vector3D vCopy(v1);
+    EXPECT(vCopy.x() == 1.0 && vCopy.y() == 2.0 && vCopy.z() == 3.0);
+
     Vector3D vAdd = v1;
     vAdd += v2;
     EXPECT(vAdd.x() == 5.0 && vAdd.y() == 7.0 && vAdd.z() == 9.0);

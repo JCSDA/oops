@@ -15,6 +15,7 @@ namespace test {
     Vector3D(const double& x,
              const double& y,
              const double& z);
+    Vector3D(const Vector3D&, const bool copy = true);
     Vector3D& operator=(const Vector3D&);
     Vector3D& operator+=(const Vector3D&);
     Vector3D& operator-=(const Vector3D&);
@@ -24,9 +25,9 @@ namespace test {
     /// x -> x + mult * rhs
     void axpy(const double, const Vector3D&);
     double dot_product_with(const Vector3D&) const;
-    double x() {return x_;}
-    double y() {return y_;}
-    double z() {return z_;}
+    double x() const {return x_;}
+    double y() const {return y_;}
+    double z() const {return z_;}
 
    private:
     double x_;
