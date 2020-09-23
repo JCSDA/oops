@@ -373,7 +373,7 @@ oops_add_test( TESTNAME hofx
                MODELNAME l95
                YAMLNAME testinput/hofx.yaml
                EXENAME l95_hofx.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+               TEST_DEPENDS test_l95_truth test_l95_makeobs4d )
 
 oops_add_test( TESTNAME hofx.nomodel
                MODELNAME l95

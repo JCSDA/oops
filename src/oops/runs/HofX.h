@@ -15,6 +15,7 @@
 #include <string>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/exception/Exceptions.h"
 #include "oops/assimilation/CalcHofX.h"
 #include "oops/base/Departures.h"
 #include "oops/base/instantiateObsFilterFactory.h"
@@ -74,7 +75,16 @@ template <typename MODEL, typename OBS> class HofX : public Application {
 //  Setup initial state
     const eckit::LocalConfiguration initialConfig(fullConfig, "initial condition");
     State_ xx(geometry, initialConfig);
+    const util::Duration flength(fullConfig.getString("forecast length"));
     Log::test() << "Initial state: " << xx << std::endl;
+
+//  Check that window specified for forecast is at least the same as obs window
+    if (winbgn < xx.validTime() || winend > xx.validTime() + flength) {
+      Log::error() << "Observation window can not be outside of forecast window." << std::endl;
+      Log::error() << "Obs window: " << winbgn << " to " << winend << std::endl;
+      Log::error() << "Forecast runs from: " << xx.validTime() << " for " << flength << std::endl;
+      throw eckit::BadValue("Observation window can not be outside of forecast window.");
+    }
 
 //  Setup forecast outputs
     PostProcessor<State_> post;
@@ -88,7 +98,6 @@ template <typename MODEL, typename OBS> class HofX : public Application {
 
 //  Setup and run observer
     CalcHofX<MODEL, OBS> hofx(obspace, geometry, fullConfig);
-    const util::Duration flength(fullConfig.getString("forecast length"));
     Observations_ yobs = hofx.compute(model, xx, post, flength);
     hofx.saveQcFlags("EffectiveQC");
     hofx.saveObsErrors("EffectiveError");
