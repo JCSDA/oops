@@ -215,7 +215,7 @@ class Model : public oops::Test {
 
     ts.emplace_back(CASE("interface/Model/testModelConstructor")
       { testModelConstructor<MODEL>(); });
-    ts.emplace_back(CASE("interface/Model/testModelNoForecasat")
+    ts.emplace_back(CASE("interface/Model/testModelNoForecast")
       { testModelNoForecast<MODEL>(); });
     ts.emplace_back(CASE("interface/Model/testModelForecast")
       { testModelForecast<MODEL>(); });
