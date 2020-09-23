@@ -154,6 +154,9 @@ void testInterpolation() {
   std::unique_ptr<Interpolator_>
     interpolator(InterpolatorFactory_::create(config, fs1, fs2));
 
+  // Test print method
+  oops::Log::info() << "Interpolator created:\n" << *interpolator << std::endl;
+
   // Next - define the input fields
   atlas::Field field1 = fs1.createField<double>(name("testfield"));
 
@@ -193,6 +196,26 @@ void testInterpolation() {
 
   for (size_t jnode = 0; jnode < static_cast<size_t>(fs2.size()); ++jnode) {
     EXPECT(oops::is_close(outfield(jnode, jlev),
+           testfunc(lonlat2(jnode, 0), lonlat2(jnode, 1), jlev, nlev), tolerance));
+  }
+
+  oops::Log::info() << "\n----------------------------------------------------"
+                    << "\nRepeat for single field"
+                    << "\n----------------------------------------------------"
+                    << std::endl;
+
+  // define output field
+  atlas::Field field2 = fs2.createField<double>(name("testoutput") |
+                        levels(field1.levels()));
+
+  // apply interpolation
+  interpolator->apply(field1, field2);
+
+  // check result from interpolation
+  auto outfield2 = make_view<double, 2>(field2);
+
+  for (size_t jnode = 0; jnode < static_cast<size_t>(fs2.size()); ++jnode) {
+    EXPECT(oops::is_close(outfield2(jnode, jlev),
            testfunc(lonlat2(jnode, 0), lonlat2(jnode, 1), jlev, nlev), tolerance));
   }
 

@@ -39,10 +39,10 @@ class InterpolatorAtlas : public InterpolatorBase,
                     const atlas::field::FieldSetImpl * = nullptr);
 
   ~InterpolatorAtlas() { }
-  void apply(atlas::Field const &, atlas::Field &);
-  void apply(atlas::FieldSet const &, atlas::FieldSet &) override;
+  void apply(const atlas::Field &, atlas::Field &) override;
+  void apply(const atlas::FieldSet &, atlas::FieldSet &) override;
 
-  void apply_ad(atlas::FieldSet const &, atlas::FieldSet &) override {
+  void apply_ad(const atlas::FieldSet &, atlas::FieldSet &) override {
     std::string ErrorMsg = "Interpolator Adjoint not yet implemented for Atlas";
     ABORT(ErrorMsg);
   }

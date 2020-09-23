@@ -39,8 +39,10 @@ class InterpolatorBase : public util::Printable,
  public:
   virtual ~InterpolatorBase() {}
 
-  virtual void apply(atlas::FieldSet const &, atlas::FieldSet &) = 0;
-  virtual void apply_ad(atlas::FieldSet const &, atlas::FieldSet &) = 0;
+  virtual void apply(const atlas::FieldSet &, atlas::FieldSet &) = 0;
+  virtual void apply(const atlas::Field &, atlas::Field &) = 0;
+
+  virtual void apply_ad(const atlas::FieldSet &, atlas::FieldSet &) = 0;
 
  private:
   virtual void print(std::ostream &) const = 0;
