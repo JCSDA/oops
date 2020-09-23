@@ -345,7 +345,9 @@ test/assimilation/TriDiagSolve.h
 test/assimilation/Vector3D.cc
 test/assimilation/Vector3D.h
 
+test/base/Fortran.h
 test/base/ObsErrorCovariance.h
+test/base/variables.F90
 
 test/interface/ErrorCovariance.h
 test/interface/Geometry.h
