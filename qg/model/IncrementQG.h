@@ -30,6 +30,7 @@
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
+#include "oops/util/Serializable.h"
 
 #include "oops/qg/FieldsQG.h"
 #include "oops/qg/GeometryQG.h"
@@ -63,6 +64,7 @@ namespace qg {
 
 class IncrementQG : public oops::GeneralizedDepartures,
                     public util::Printable,
+                    public util::Serializable,
                     private util::ObjectCounter<IncrementQG> {
  public:
   static const std::string classname() {return "qg::IncrementQG";}
@@ -116,13 +118,13 @@ class IncrementQG : public oops::GeneralizedDepartures,
   void setLocal(const oops::LocalIncrement &, const GeometryQGIterator &);
 
 /// Serialization
-  size_t serialSize() const;
-  void serialize(std::vector<double> &) const;
-  void deserialize(const std::vector<double> &, size_t &);
+  size_t serialSize() const override;
+  void serialize(std::vector<double> &) const override;
+  void deserialize(const std::vector<double> &, size_t &) override;
 
 /// Data
  private:
-  void print(std::ostream &) const;
+  void print(std::ostream &) const override;
   const bool lbc_ = false;
   std::unique_ptr<FieldsQG> fields_;
   std::unique_ptr<FieldsQG> stash_;

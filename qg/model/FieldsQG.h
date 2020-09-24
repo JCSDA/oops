@@ -27,6 +27,7 @@
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
+#include "oops/util/Serializable.h"
 
 #include "oops/qg/GeometryQG.h"
 #include "oops/qg/GeometryQGIterator.h"
@@ -48,6 +49,7 @@ namespace qg {
 // -----------------------------------------------------------------------------
 /// Class to represent a Fields for the QG model
 class FieldsQG : public util::Printable,
+                 public util::Serializable,
                  private util::ObjectCounter<FieldsQG> {
  public:
   static const std::string classname() {return "qg::FieldsQG";}
@@ -102,12 +104,12 @@ class FieldsQG : public util::Printable,
   void setLocal(const oops::LocalIncrement &, const GeometryQGIterator &);
 
 /// Serialization
-  size_t serialSize() const;
-  void serialize(std::vector<double> &) const;
-  void deserialize(const std::vector<double> &, size_t &);
+  size_t serialSize() const override;
+  void serialize(std::vector<double> &) const override;
+  void deserialize(const std::vector<double> &, size_t &) override;
 
  private:
-  void print(std::ostream &) const;
+  void print(std::ostream &) const override;
   F90flds keyFlds_;
   boost::shared_ptr<const GeometryQG> geom_;
   const oops::Variables vars_;

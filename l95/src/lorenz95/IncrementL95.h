@@ -28,6 +28,7 @@
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
+#include "oops/util/Serializable.h"
 
 namespace eckit {
   class Configuration;
@@ -54,6 +55,7 @@ namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
 class IncrementL95 : public util::Printable,
+                     public util::Serializable,
                      public oops::GeneralizedDepartures,
                      private util::ObjectCounter<IncrementL95> {
  public:
@@ -108,12 +110,12 @@ class IncrementL95 : public util::Printable,
   void accumul(const double &, const StateL95 &);
 
 /// Serialize and deserialize
-  size_t serialSize() const;
-  void serialize(std::vector<double> &) const;
-  void deserialize(const std::vector<double> &, size_t &);
+  size_t serialSize() const override;
+  void serialize(std::vector<double> &) const override;
+  void deserialize(const std::vector<double> &, size_t &) override;
 
  private:
-  void print(std::ostream &) const;
+  void print(std::ostream &) const override;
   FieldL95 fld_;
   util::DateTime time_;
 };

@@ -26,6 +26,7 @@
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
+#include "oops/util/Serializable.h"
 
 namespace oops {
 
@@ -47,6 +48,7 @@ template<typename MODEL, typename OBS> class ControlIncrement;
 // -----------------------------------------------------------------------------
 template<typename MODEL, typename OBS>
 class ControlIncrement : public util::Printable,
+                         public util::Serializable,
                          private util::ObjectCounter<ControlIncrement<MODEL, OBS> > {
   typedef CostJbTotal<MODEL, OBS>  JbTotal_;
   typedef Geometry<MODEL>          Geometry_;
@@ -93,12 +95,12 @@ class ControlIncrement : public util::Printable,
   const ObsAuxIncrs_ & obsVar() const {return obsbias_;}
 
 /// Serialize and deserialize ControlIncrement
-  size_t serialSize() const;
-  void serialize(std::vector<double> &) const;
-  void deserialize(const std::vector<double> &);
+  size_t serialSize() const override;
+  void serialize(std::vector<double> &) const override;
+  void deserialize(const std::vector<double> &, size_t &) override;
 
  private:
-  void print(std::ostream &) const;
+  void print(std::ostream &) const override;
   Increment4D_  incrm4d_;
   ModelAuxIncr_ modbias_;   // not only for bias, better name?
   ObsAuxIncrs_  obsbias_;   // not only for bias, better name?
@@ -230,7 +232,7 @@ size_t ControlIncrement<MODEL, OBS>::serialSize() const {
 // -----------------------------------------------------------------------------
 template<typename MODEL, typename OBS>
 void ControlIncrement<MODEL, OBS>::serialize(std::vector<double> & vec) const {
-  vec.reserve(this->serialSize());  // allocate memory to avoid reallocations
+  vec.reserve(vec.size() + this->serialSize());  // allocate memory to avoid reallocations
 
   vec.push_back(-111.0);
   incrm4d_.serialize(vec);
@@ -245,23 +247,23 @@ void ControlIncrement<MODEL, OBS>::serialize(std::vector<double> & vec) const {
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL, typename OBS>
-void ControlIncrement<MODEL, OBS>::deserialize(const std::vector<double> & vec) {
-  size_t ptr = 0;
-  ASSERT(vec.at(ptr) == -111.0);
-  ++ptr;
+void ControlIncrement<MODEL, OBS>::deserialize(const std::vector<double> & vec, size_t & indx) {
+  ASSERT(vec.at(indx) == -111.0);
+  ++indx;
 
-  incrm4d_.deserialize(vec, ptr);
+  incrm4d_.deserialize(vec, indx);
 
-  ASSERT(vec.at(ptr) == -222.0);
-  ++ptr;
+  ASSERT(vec.at(indx) == -222.0);
+  ++indx;
 
-  modbias_.deserialize(vec, ptr);
+  modbias_.deserialize(vec, indx);
 
-  ASSERT(vec.at(ptr) == -333.0);
-  ++ptr;
+  ASSERT(vec.at(indx) == -333.0);
+  ++indx;
 
-  obsbias_.deserialize(vec, ptr);
-  ASSERT(vec.at(ptr) == -444.0);
+  obsbias_.deserialize(vec, indx);
+  ASSERT(vec.at(indx) == -444.0);
+  ++indx;
 }
 // -----------------------------------------------------------------------------
 

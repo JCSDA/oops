@@ -210,16 +210,24 @@ template <typename MODEL> void testIncrementSerialize() {
 // Test serialize-deserialize
   std::vector<double> vect;
   dx1.serialize(vect);
+  EXPECT(vect.size() == dx1.serialSize());
 
   size_t index = 0;
   dx2.deserialize(vect, index);
+  EXPECT(index == dx1.serialSize());
+  EXPECT(index == dx2.serialSize());
 
-  EXPECT(dx1.norm() > 0.0);
-  EXPECT(dx2.norm() > 0.0);
-  EXPECT(dx2.validTime() == Test_::time());
+  dx1.serialize(vect);
+  EXPECT(vect.size() == dx1.serialSize() * 2);
 
-  dx2 -= dx1;
-  EXPECT(dx2.norm() == 0.0);
+  if (dx1.serialSize() > 0) {  // until all models have implemented serialize
+    EXPECT(dx1.norm() > 0.0);
+    EXPECT(dx2.norm() > 0.0);
+    EXPECT(dx2.validTime() == Test_::time());
+
+    dx2 -= dx1;
+    EXPECT(dx2.norm() == 0.0);
+  }
 }
 
 // =============================================================================
@@ -248,8 +256,8 @@ class Increment : public oops::Test {
       { testIncrementDotProduct<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementAxpy")
       { testIncrementAxpy<MODEL>(); });
-//    ts.emplace_back(CASE("interface/Increment/testIncrementSerialize")
-//      { testIncrementSerialize<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/testIncrementSerialize")
+      { testIncrementSerialize<MODEL>(); });
   }
 
   void clear() const override {}

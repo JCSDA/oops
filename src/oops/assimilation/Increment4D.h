@@ -37,6 +37,7 @@
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
+#include "oops/util/Serializable.h"
 
 namespace oops {
 
@@ -47,7 +48,8 @@ namespace oops {
  */
 
 // -----------------------------------------------------------------------------
-template<typename MODEL> class Increment4D : public util::Printable {
+template<typename MODEL> class Increment4D : public util::Printable,
+                                             public util::Serializable {
   typedef Geometry<MODEL>    Geometry_;
   typedef Increment<MODEL>   Increment_;
   typedef CostJbState<MODEL> JbState_;
@@ -113,14 +115,14 @@ template<typename MODEL> class Increment4D : public util::Printable {
   void shift_backward();
 
 /// Serialize and deserialize
-  size_t serialSize() const;
-  void serialize(std::vector<double> &) const;
-  void deserialize(const std::vector<double> &, size_t &);
+  size_t serialSize() const override;
+  void serialize(std::vector<double> &) const override;
+  void deserialize(const std::vector<double> &, size_t &) override;
 
  private:
   Increment_ & get(const int);
   const Increment_ & get(const int) const;
-  void print(std::ostream &) const;
+  void print(std::ostream &) const override;
 
   typedef typename boost::ptr_map<int, Increment_>::iterator iter_;
   typedef typename boost::ptr_map<int, Increment_>::const_iterator icst_;

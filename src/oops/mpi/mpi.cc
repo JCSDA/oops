@@ -15,40 +15,73 @@
 #include "eckit/exception/Exceptions.h"
 
 namespace oops {
-  namespace mpi {
+namespace mpi {
 
-    const eckit::mpi::Comm & world() {
-      return eckit::mpi::comm();
+// ------------------------------------------------------------------------------------------------
+
+const eckit::mpi::Comm & world() {
+  return eckit::mpi::comm();
+}
+
+// ------------------------------------------------------------------------------------------------
+
+const eckit::mpi::Comm & myself() {
+  return eckit::mpi::self();
+}
+
+// ------------------------------------------------------------------------------------------------
+
+void gather(const eckit::mpi::Comm & comm, const std::vector<double> & send,
+            std::vector<double> & recv, const size_t root) {
+  int ntasks = comm.size();
+  if (ntasks > 1) {
+    int mysize = send.size();
+    std::vector<int> sizes(ntasks);
+    comm.allGather(mysize, sizes.begin(), sizes.end());
+    std::vector<int> displs(ntasks);
+    size_t rcvsz = sizes[0];
+    displs[0] = 0;
+    for (size_t jj = 1; jj < ntasks; ++jj) {
+      displs[jj] = displs[jj - 1] + sizes[jj - 1];
+      rcvsz += sizes[jj];
     }
+    if (comm.rank() == root) recv.resize(rcvsz);
 
-    const eckit::mpi::Comm & myself() {
-      return eckit::mpi::self();
-    }
+    comm.gatherv(send, recv, sizes, displs, root);
+  } else {
+    recv = send;
+  }
+}
 
-    void allGather(const eckit::mpi::Comm & comm,
-                   const Eigen::VectorXd & sendbuf, std::vector<Eigen::VectorXd> & recvbuf) {
-      const int ntasks = comm.size();
-      int buf_size = sendbuf.size();
+// ------------------------------------------------------------------------------------------------
 
-      std::vector<double> vbuf(sendbuf.data(), sendbuf.data() + buf_size);
-      std::vector<double> vbuf_total(ntasks * buf_size);
+void allGather(const eckit::mpi::Comm & comm,
+               const Eigen::VectorXd & sendbuf, std::vector<Eigen::VectorXd> & recvbuf) {
+  const int ntasks = comm.size();
+  int buf_size = sendbuf.size();
 
-      std::vector<int> recvcounts(ntasks);
-      for (int ii = 0; ii < ntasks; ++ii) recvcounts[ii] = buf_size;
+  std::vector<double> vbuf(sendbuf.data(), sendbuf.data() + buf_size);
+  std::vector<double> vbuf_total(ntasks * buf_size);
 
-      std::vector<int> displs(ntasks);
-      for (int ii = 0; ii < ntasks; ++ii) displs[ii] = ii * buf_size;
+  std::vector<int> recvcounts(ntasks);
+  for (int ii = 0; ii < ntasks; ++ii) recvcounts[ii] = buf_size;
 
-      comm.allGatherv(vbuf.begin(), vbuf.end(),
-                      vbuf_total.begin(), recvcounts.data(), displs.data());
+  std::vector<int> displs(ntasks);
+  for (int ii = 0; ii < ntasks; ++ii) displs[ii] = ii * buf_size;
 
-      for (int ii = 0; ii < ntasks; ++ii) {
-        std::vector<double> vloc(vbuf_total.begin() + ii * buf_size,
-                                 vbuf_total.begin() + (ii + 1) * buf_size);
-        Eigen::VectorXd my_vect = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(vloc.data(),
-                                                                                vloc.size());
-        recvbuf[ii] = my_vect;
-      }
-    }
-  }  // namespace mpi
+  comm.allGatherv(vbuf.begin(), vbuf.end(),
+                  vbuf_total.begin(), recvcounts.data(), displs.data());
+
+  for (int ii = 0; ii < ntasks; ++ii) {
+    std::vector<double> vloc(vbuf_total.begin() + ii * buf_size,
+                             vbuf_total.begin() + (ii + 1) * buf_size);
+    Eigen::VectorXd my_vect = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(vloc.data(),
+                                                                            vloc.size());
+    recvbuf[ii] = my_vect;
+  }
+}
+
+// ------------------------------------------------------------------------------------------------
+
+}  // namespace mpi
 }  // namespace oops

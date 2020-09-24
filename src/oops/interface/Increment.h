@@ -34,6 +34,7 @@
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
+#include "oops/util/Serializable.h"
 #include "oops/util/Timer.h"
 
 namespace oops {
@@ -48,6 +49,7 @@ namespace oops {
 template <typename MODEL>
 class Increment : public oops::GeneralizedDepartures,
                   public util::Printable,
+                  public util::Serializable,
                   private util::ObjectCounter<Increment<MODEL> > {
   typedef typename MODEL::Increment  Increment_;
   typedef Geometry<MODEL>            Geometry_;
@@ -114,12 +116,12 @@ class Increment : public oops::GeneralizedDepartures,
 #endif
 
 /// Serialize and deserialize
-  size_t serialSize() const;
-  void serialize(std::vector<double> &) const;
-  void deserialize(const std::vector<double> &, size_t &);
+  size_t serialSize() const override;
+  void serialize(std::vector<double> &) const override;
+  void deserialize(const std::vector<double> &, size_t &) override;
 
  private:
-  void print(std::ostream &) const;
+  void print(std::ostream &) const override;
   std::unique_ptr<Increment_> increment_;
   const Variables variables_;
 };

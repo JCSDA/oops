@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "oops/util/Printable.h"
+#include "oops/util/Serializable.h"
 
 // Forward declarations
 namespace eckit {
@@ -33,7 +34,8 @@ namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
 /// Class to represent fields for the L95 model
-class FieldL95 : public util::Printable {
+class FieldL95 : public util::Printable,
+                 public util::Serializable {
  public:
   static const std::string classname() {return "lorenz95::FieldL95";}
 
@@ -75,12 +77,12 @@ class FieldL95 : public util::Printable {
   void field_from_ug(const oops::UnstructuredGrid &, const int &);
 
 /// Serialize and deserialize
-  size_t serialSize() const;
-  void serialize(std::vector<double> &) const;
-  void deserialize(const std::vector<double> &, size_t &);
+  size_t serialSize() const override;
+  void serialize(std::vector<double> &) const override;
+  void deserialize(const std::vector<double> &, size_t &) override;
 
  private:
-  void print(std::ostream &) const;
+  void print(std::ostream &) const override;
   const int resol_;
   std::vector<double> x_;
 };
