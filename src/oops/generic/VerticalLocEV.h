@@ -53,8 +53,6 @@ class VerticalLocalizationParameters : public Parameters {
   RequiredParameter<double> VertLocDist{"lengthscale", this};
   // localization distance at which Gaspari-Cohn = 0
   RequiredParameter<std::string> VertLocUnits{"lengthscale units", this};
-  // for now: specify number of levels here
-  RequiredParameter<int> nlevels{"nlevels", this};
 };
 
 // ----------------------------------------------------------------------------
@@ -120,19 +118,15 @@ template<typename MODEL>
 // -------------------------------------------------------------------------------------------------
 template<typename MODEL>
   Eigen::MatrixXd VerticalLocEV<MODEL>::computeCorrMatrix(const Geometry_ & geom) {
-    // for now, localize using distance in the level space
-    // (e.g. decay to zero 3 levels away)
-    size_t nLevs = options_.nlevels;
-    std::vector<double> vCoord(nLevs);
-
     std::string locUnits = options_.VertLocUnits;
     oops::Log::debug() << "locUnits: " << locUnits << std::endl;
-    vCoord = geom.verticalCoord(locUnits);
+    std::vector<double> vCoord = geom.verticalCoord(locUnits);
+    size_t nlevs = vCoord.size();
 
     // compute vertical correlations and eigen vectors
-    Eigen::MatrixXd cov(nLevs, nLevs);
-    for (size_t jj=0; jj < nLevs; ++jj) {
-      for (size_t ii=jj; ii < nLevs; ++ii) {
+    Eigen::MatrixXd cov(nlevs, nlevs);
+    for (size_t jj=0; jj < nlevs; ++jj) {
+      for (size_t ii=jj; ii < nlevs; ++ii) {
         cov(ii, jj) = oops::gc99(std::abs(vCoord[jj]-vCoord[ii])/options_.VertLocDist);
       }
     }

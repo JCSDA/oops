@@ -26,7 +26,7 @@ observations:
       lengthscale: .1
   obs space:
     obsdatain:  Data/l95.truth3d.2010-01-02T00:00:00Z.obt
-    obsdataout: Data/l95.letkf.2010-01-02T00:00:00Z.obt
+    obsdataout: Data/l95.letkf_oops.2010-01-02T00:00:00Z.obt
   obs operator: {}
 
 letkf:
@@ -39,5 +39,5 @@ letkf:
 output:
   datadir: Data
   date: *date
-  exp: letkf.%{member}%
+  exp: letkf_oops.%{member}%
   type: an

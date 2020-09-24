@@ -26,11 +26,15 @@ observations:
       lengthscale: .1
   obs space:
     obsdatain:  Data/l95.truth3d.2010-01-02T00:00:00Z.obt
-    obsdataout: Data/l95.letkf_gsi.2010-01-02T00:00:00Z.obt
+    obsdataout: Data/l95.getkf.2010-01-02T00:00:00Z.obt
   obs operator: {}
 
 letkf:
-  solver: GSI LETKF
+  solver: GETKF
+  vertical localization:
+    fraction of retained variance: .99
+    lengthscale: 10
+    lengthscale units: bogus
   inflation:
     rtps: 0.5
     rtpp: 0.5
@@ -39,5 +43,5 @@ letkf:
 output:
   datadir: Data
   date: *date
-  exp: letkf_gsi.%{member}%
+  exp: getkf.%{member}%
   type: an

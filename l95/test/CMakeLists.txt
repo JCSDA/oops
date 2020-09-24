@@ -41,6 +41,7 @@ list( APPEND l95_test_input
   testinput/forecast_pseudomodel.yaml
   testinput/forecast_identitymodel.yaml
   testinput/genenspert.yaml
+  testinput/getkf.yaml
   testinput/hofx.yaml
   testinput/hofx_nomodel.yaml
   testinput/identitymodel.yaml
@@ -103,6 +104,7 @@ list( APPEND l95_testoutput
   testoutput/forecast_pseudomodel.test
   testoutput/forecast_identitymodel.test
   testoutput/genenspert.test
+  testoutput/getkf.test
   testoutput/hofx.test
   testoutput/hofx.nomodel.test
   testoutput/letkf.test
@@ -655,6 +657,13 @@ oops_add_test( TESTNAME letkf
 oops_add_test( TESTNAME letkf_gsi
                MODELNAME l95
                YAMLNAME testinput/letkfGSI.yaml
+               EXENAME l95_letkf.x
+               CTOL 1e-4
+               TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+
+oops_add_test( TESTNAME getkf
+               MODELNAME l95
+               YAMLNAME testinput/getkf.yaml
                EXENAME l95_letkf.x
                CTOL 1e-4
                TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
