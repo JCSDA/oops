@@ -32,8 +32,6 @@ type :: qg_model_config
   real(kind_real) :: dt !< Time step (seconds)
 end type qg_model_config
 
-real(kind_real),parameter :: eps = 1.0e-10 !< Epsilon value for adjoint tests
-
 #define LISTED_TYPE qg_model_config
 
 !> Linked list interface - defines registry_t type

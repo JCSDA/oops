@@ -20,8 +20,6 @@ implicit none
 
 public
 ! ------------------------------------------------------------------------------
-logical,parameter :: test_covariance = .false. !< Test error covariance inverse and adjoint
-! ------------------------------------------------------------------------------
 contains
 ! ------------------------------------------------------------------------------
 !> Setup error covariance matrix
@@ -92,9 +90,6 @@ call qg_error_covariance_registry%get(c_key_conf,conf)
 call qg_fields_registry%get(c_key_in,fld_in)
 call qg_fields_registry%get(c_key_out,fld_out)
 
-! Test error covariance inverse and adjoint
-if (test_covariance) call qg_error_covariance_test(conf,fld_in)
-
 ! Call Fortran
 call qg_error_covariance_mult(conf,fld_in,fld_out)
 
@@ -116,9 +111,6 @@ type(qg_fields),pointer :: fld_out
 ! Interface
 call qg_error_covariance_registry%get(c_key_conf,conf)
 call qg_fields_registry%get(c_key_out,fld_out)
-
-! Test error covariance inverse and adjoint
-if (test_covariance) call qg_error_covariance_test(conf,fld_out)
 
 ! Call Fortran
 call qg_error_covariance_randomize(conf,fld_out)
