@@ -22,7 +22,6 @@
 #include "oops/assimilation/DualVector.h"
 #include "oops/assimilation/HMatrix.h"
 #include "oops/assimilation/HtMatrix.h"
-#include "oops/assimilation/Minimizer.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
 #include "oops/util/abor1_cpp.h"
