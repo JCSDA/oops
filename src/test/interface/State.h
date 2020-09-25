@@ -96,6 +96,19 @@ template <typename MODEL> void testStateConstructors() {
 // Recompute initial norm to make sure nothing bad happened
   const double norm2 = xx1->norm();
   EXPECT(norm1 == norm2);
+
+// Test State(const Geometry_ &, const Variables &, const util::DateTime &) constructor
+  oops::Variables vars(xx1->variables());
+  State_ xx3(Test_::resol(), vars, vt);
+  EXPECT(xx3.norm() == 0);
+  EXPECT(xx3.validTime() == vt);
+  EXPECT(xx3.variables() == vars);
+
+// Test State(const Geometry_ &, const State &) constructor
+  State_ xx4(Test_::resol(), *xx1);
+  EXPECT(oops::is_close(xx4.norm(), norm, tol));
+  EXPECT(xx4.validTime() == vt);
+  EXPECT(xx4.variables() == xx1->variables());
 }
 
 // -----------------------------------------------------------------------------
