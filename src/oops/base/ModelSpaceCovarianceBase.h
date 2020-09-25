@@ -139,19 +139,22 @@ ModelSpaceCovarianceBase<MODEL>* CovarianceFactory<MODEL>::create(
     }
     ABORT("Element does not exist in CovarianceFactory.");
   }
-  Variables vars_out(vars);
+  Variables vars_in(vars);
+  Variables vars_out;
   if (conf.has("variable changes")) {
     std::vector<eckit::LocalConfiguration> chvarconfs;
     conf.get("variable changes", chvarconfs);
     for (const auto & config : boost::adaptors::reverse(chvarconfs)) {
-      Variables vars_in(config, "input variables");
+      vars_out = Variables(config, "output variables");
       if (!(vars_in == vars_out)) {
+        Log::error() << "Input variables:  " << vars_in << std::endl;
+        Log::error() << "Output variables: " << vars_out << std::endl;
         ABORT("Sequence of variable changes is not consistent");
       }
-      vars_out = Variables(config, "output variables");
+      vars_in = Variables(config, "input variables");
     }
   }
-  return (*jcov).second->make(conf, resol, vars_out, xb, fg);
+  return (*jcov).second->make(conf, resol, vars_in, xb, fg);
 }
 
 // =============================================================================

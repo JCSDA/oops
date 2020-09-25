@@ -32,6 +32,12 @@ linear variable change tests:
 - input variables:  [x]
   output variables: [q]
   variable change: ChVarQG
+  test inverse: 1
+  tolerance inverse: 1.0e-8
+- input variables:  [q]
+  output variables: [x]
+  variable change: ChVarQG
+  test inverse: 1
   tolerance inverse: 1.0e-8
 localization:
   horizontal_length_scale: 4.0e6

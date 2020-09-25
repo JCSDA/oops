@@ -26,7 +26,7 @@
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
-ErrorCovarianceQG::ErrorCovarianceQG(const GeometryQG & resol, const oops::Variables &,
+ErrorCovarianceQG::ErrorCovarianceQG(const GeometryQG & resol, const oops::Variables & vars,
                                      const eckit::Configuration & conf,
                                      const StateQG &, const StateQG &) {
   qg_error_covariance_setup_f90(keyConfig_, conf, resol.toFortran());

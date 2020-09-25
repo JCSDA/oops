@@ -14,11 +14,14 @@
 
 #include <ostream>
 #include <string>
+#include <vector>
 
 #include "oops/base/ModelBase.h"
+#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/Variables.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
+#include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/RequiredParameter.h"
 
@@ -38,6 +41,7 @@ class ModelQgParameters : public oops::ModelParametersBase {
   OOPS_CONCRETE_PARAMETERS(ModelQgParameters, ModelParametersBase)
 
  public:
+  oops::Parameter<oops::Variables> vars{"model variables", oops::Variables({"x"}), this};
   oops::RequiredParameter<util::Duration> tstep{"tstep", this};
 };
 

@@ -17,7 +17,6 @@ ensemble:
   inflation field:
   - date: 2010-01-01T00:00:00Z
     filename: Data/uniform_field.fc.2010-01-01T00:00:00Z.PT0S.nc
-  variable change: ChVarQG
 geometry:
   nx: 40
   ny: 20

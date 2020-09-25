@@ -102,12 +102,12 @@ template <typename MODEL> void testLinearVariableChangeZero() {
 
     // dxinTlIAd = 0, check if K.dxinTlIAd = 0
     dxinTlIAd.zero();
-    changevar->multiply(dxinTlIAd, dxoutTlIAd);
+    dxoutTlIAd = changevar->multiply(dxinTlIAd);
     EXPECT(dxoutTlIAd.norm() == 0.0);
 
     // dxinAdInv = 0, check if K^T.dxinAdInv = 0
     dxinAdInv.zero();
-    changevar->multiplyAD(dxinAdInv, dxoutAdInv);
+    dxoutAdInv = changevar->multiplyAD(dxinAdInv);
     EXPECT(dxoutAdInv.norm() == 0.0);
 
     const bool testinverse = Test_::confs()[jj].getBool("test inverse", true);
@@ -115,11 +115,11 @@ template <typename MODEL> void testLinearVariableChangeZero() {
       {
         oops::Log::info() << "Doing zero test for inverse" << std::endl;
         dxinTlIAd.zero();
-        changevar->multiplyInverseAD(dxinTlIAd, dxoutTlIAd);
+        dxoutTlIAd = changevar->multiplyInverseAD(dxinTlIAd);
         EXPECT(dxoutTlIAd.norm() == 0.0);
 
         dxinAdInv.zero();
-        changevar->multiplyInverse(dxinAdInv, dxoutAdInv);
+        dxoutAdInv = changevar->multiplyInverse(dxinAdInv);
         EXPECT(dxoutAdInv.norm() == 0.0);
       } else {
       oops::Log::info() << "Not doing zero test for inverse" << std::endl;
@@ -153,8 +153,8 @@ template <typename MODEL> void testLinearVariableChangeAdjoint() {
     Increment_  dxinAdInv0(dxinAdInv);
     Increment_  dxinTlIAd0(dxinTlIAd);
 
-    changevar->multiply(dxinTlIAd, dxoutTlIAd);
-    changevar->multiplyAD(dxinAdInv, dxoutAdInv);
+    dxoutTlIAd = changevar->multiply(dxinTlIAd);
+    dxoutAdInv = changevar->multiplyAD(dxinAdInv);
 
     // zz1 = <dxoutTlIAd,dxinAdInv>
     double zz1 = dot_product(dxoutTlIAd, dxinAdInv0);
@@ -177,8 +177,8 @@ template <typename MODEL> void testLinearVariableChangeAdjoint() {
         dxinTlIAd.random();
         dxinAdInv0 = dxinAdInv;
         dxinTlIAd0 = dxinTlIAd;
-        changevar->multiplyInverseAD(dxinTlIAd, dxoutTlIAd);
-        changevar->multiplyInverse(dxinAdInv, dxoutAdInv);
+        dxoutTlIAd = changevar->multiplyInverseAD(dxinTlIAd);
+        dxoutAdInv = changevar->multiplyInverse(dxinAdInv);
         zz1 = dot_product(dxoutTlIAd, dxinAdInv0);
         zz2 = dot_product(dxinTlIAd0, dxoutAdInv);
         oops::Log::info() << "<dxout,KinvTdxin>-<Kinvdxout,dxin>/<dxout,KinvTdxin>="
@@ -220,8 +220,8 @@ template <typename MODEL> void testLinearVariableChangeInverse() {
 
       dxinInv.random();
 
-      changevar->multiplyInverse(dxinInv, dxoutInv);
-      changevar->multiply(dxoutInv, dxout);
+      dxoutInv = changevar->multiplyInverse(dxinInv);
+      dxout = changevar->multiply(dxoutInv);
 
       const double zz1 = dxinInv.norm();
       const double zz2 = dxout.norm();

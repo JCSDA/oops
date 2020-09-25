@@ -68,7 +68,7 @@ class TlmIdQG: public oops::LinearModelBase<QgTraits>,
   F90model keyConfig_;
   util::Duration tstep_;
   const GeometryQG resol_;
-  const oops::Variables linvars_;
+  oops::Variables linvars_;
 };
 // -----------------------------------------------------------------------------
 

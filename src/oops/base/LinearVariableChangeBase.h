@@ -162,7 +162,7 @@ LinearVariableChangeBase<MODEL>::LinearVariableChangeBase(const eckit::Configura
 template<typename MODEL>
 Increment<MODEL> LinearVariableChangeBase<MODEL>::multiply(const Increment<MODEL> & dxin) const {
   ASSERT(varin_);
-  Increment_ dxout(dxin.geometry(), *varin_, dxin.validTime());
+  Increment_ dxout(dxin.geometry(), *varout_, dxin.validTime());
   this->multiply(dxin, dxout);
   return dxout;
 }
@@ -172,7 +172,7 @@ Increment<MODEL> LinearVariableChangeBase<MODEL>::multiply(const Increment<MODEL
 template<typename MODEL>
 Increment<MODEL> LinearVariableChangeBase<MODEL>::multiplyAD(const Increment_ & dxin) const {
   ASSERT(varout_);
-  Increment_ dxout(dxin.geometry(), *varout_, dxin.validTime());
+  Increment_ dxout(dxin.geometry(), *varin_, dxin.validTime());
   this->multiplyAD(dxin, dxout);
   return dxout;
 }
@@ -182,7 +182,7 @@ Increment<MODEL> LinearVariableChangeBase<MODEL>::multiplyAD(const Increment_ & 
 template<typename MODEL>
 Increment<MODEL> LinearVariableChangeBase<MODEL>::multiplyInverse(const Increment_ & dxin) const {
   ASSERT(varout_);
-  Increment_ dxout(dxin.geometry(), *varout_, dxin.validTime());
+  Increment_ dxout(dxin.geometry(), *varin_, dxin.validTime());
   this->multiplyInverse(dxin, dxout);
   return dxout;
 }
@@ -192,7 +192,7 @@ Increment<MODEL> LinearVariableChangeBase<MODEL>::multiplyInverse(const Incremen
 template<typename MODEL>
 Increment<MODEL> LinearVariableChangeBase<MODEL>::multiplyInverseAD(const Increment_ & dxin) const {
   ASSERT(varin_);
-  Increment_ dxout(dxin.geometry(), *varin_, dxin.validTime());
+  Increment_ dxout(dxin.geometry(), *varout_, dxin.validTime());
   this->multiplyInverseAD(dxin, dxout);
   return dxout;
 }
