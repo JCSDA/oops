@@ -340,9 +340,11 @@ list( APPEND oops_test_src_files
 test/TestEnvironment.h
 test/TestFixture.h
 
-test/assimilation/PCG.h
+test/assimilation/FullGMRES.h
 test/assimilation/rotmat.h
+test/assimilation/SolveMatrixEquation.h
 test/assimilation/SpectralLMP.h
+test/assimilation/TestVector3D.h
 test/assimilation/TriDiagSolve.h
 test/assimilation/Vector3D.cc
 test/assimilation/Vector3D.h
@@ -622,8 +624,8 @@ ecbuild_add_test( TARGET  test_util_propertiesofnvectors
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 
-ecbuild_add_test( TARGET  test_assimilation_pcg
-                  SOURCES test/assimilation/PCG.cc
+ecbuild_add_test( TARGET  test_assimilation_fullgmres
+                  SOURCES test/assimilation/FullGMRES.cc
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 
@@ -632,9 +634,19 @@ ecbuild_add_test( TARGET  test_assimilation_rotmat
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 
+ecbuild_add_test( TARGET  test_assimilation_solvematrixequation
+                  SOURCES test/assimilation/SolveMatrixEquation.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
 ecbuild_add_test( TARGET  test_assimilation_spectrallmp
                   SOURCES test/assimilation/SpectralLMP.cc
                   ARGS    "test/testinput/spectrallmp.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_assimilation_testvector3d
+                  SOURCES test/assimilation/TestVector3D.cc
+                  ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 
 ecbuild_add_test( TARGET  test_assimilation_tridiagsolve

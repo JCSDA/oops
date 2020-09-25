@@ -85,7 +85,7 @@ double FGMRES(VECTOR & x, const VECTOR & b,
 
   r = b;
   double xnrm2 = dot_product(x, x);
-  if (xnrm2 != 0) {
+  if (xnrm2 > 0.0) {
     A.multiply(x, work);
     r -= work;  // r = b - Ax
   }

@@ -82,4 +82,8 @@ namespace test {
   {
     return this->x_ * rhs.x_ + this->y_ * rhs.y_ + this->z_ * rhs.z_;
   }
+
+  void Vector3D::print(std::ostream & os) const {
+    os << x_ << ", " << y_ << ", " << z_ << std::endl;
+  }
 }  // namespace test

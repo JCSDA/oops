@@ -8,9 +8,11 @@
 #ifndef TEST_ASSIMILATION_VECTOR3D_H_
 #define TEST_ASSIMILATION_VECTOR3D_H_
 
+#include "oops/util/Printable.h"
+
 namespace test {
 
-  class Vector3D {
+  class Vector3D : public util::Printable {
    public:
     Vector3D(const double& x,
              const double& y,
@@ -30,6 +32,8 @@ namespace test {
     double z() const {return z_;}
 
    private:
+    void print(std::ostream & os) const;
+
     double x_;
     double y_;
     double z_;

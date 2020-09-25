@@ -6,10 +6,10 @@
  */
 
 #include "oops/runs/Run.h"
-#include "test/assimilation/PCG.h"
+#include "test/assimilation/FullGMRES.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  test::PCG tests;
+  test::FullGMRES tests;
   return run.execute(tests);
 }
