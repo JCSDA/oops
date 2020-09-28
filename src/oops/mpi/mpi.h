@@ -83,7 +83,8 @@ void gather(const eckit::mpi::Comm & comm, const std::vector<SERIALIZABLE> & sen
 // ------------------------------------------------------------------------------------------------
 // allGather for eigen vectors
 // ------------------------------------------------------------------------------------------------
-void allGather(const Eigen::VectorXd &, std::vector<Eigen::VectorXd> &);
+void allGather(const eckit::mpi::Comm & comm,
+               const Eigen::VectorXd &, std::vector<Eigen::VectorXd> &);
 
 /// \brief A wrapper around the MPI *all gather* operation for serializable types.
 ///
@@ -121,4 +122,3 @@ void allGathervUsingSerialize(const eckit::mpi::Comm &comm, CIter first, CIter l
 
 }  // namespace mpi
 }  // namespace oops
-
