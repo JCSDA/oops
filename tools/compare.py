@@ -89,7 +89,7 @@ def line_diff(line1,line2,lnum,ftol,idif):
         if (dat1 != dat2):
           lineerror=lineerror+1
           print("Data string mismatch at line "+str(lnum)+": "+\
-                +dat1[0]+" not equal to "+dat2[0])
+                dat1[0]+" not equal to "+dat2[0])
 
 
       #Compare if one is float and other is integer
