@@ -18,6 +18,7 @@
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include "eckit/testing/Test.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/runs/Test.h"
 #include "oops/util/dot_product.h"
@@ -49,8 +50,16 @@ template <typename OBS> void testCopyConstructor() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     std::unique_ptr<ObsVector_> ov(new ObsVector_(Test_::obspace()[jj]));
+
+    ov->random();
+
     std::unique_ptr<ObsVector_> other(new ObsVector_(*ov));
     EXPECT(other.get());
+
+    const double ov2 = dot_product(*ov, *ov);
+    const double other2 = dot_product(*other, *other);
+
+    EXPECT(ov2 == other2);
 
     other.reset();
     EXPECT(!other.get());
@@ -67,28 +76,90 @@ template <typename OBS> void testNotZero() {
   const double zero = 0.0;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    ObsVector_ ov(Test_::obspace()[jj]);
+    ObsVector_ ov1(Test_::obspace()[jj]);
+    ov1.random();
 
-    ov.random();
+    const double zz = dot_product(ov1, ov1);
+    EXPECT(zz > zero);
 
-    const double ovov2 = dot_product(ov, ov);
-    EXPECT(ovov2 > zero);
+    ObsVector_ ov2(ov1);
+    ov2.zero();
 
-    ov.zero();
+    EXPECT(dot_product(ov2, ov1) == zero);
+    EXPECT(dot_product(ov2, ov2) == zero);
+  }
+}
+// -----------------------------------------------------------------------------
 
-    const double zz = dot_product(ov, ov);
-    EXPECT(zz == zero);
+template <typename OBS> void testLinearAlgebra() {
+  typedef ObsTestsFixture<OBS>  Test_;
+  typedef oops::ObsVector<OBS>  ObsVector_;
+  const double tolerance = 1.0e-8;
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    ObsVector_ ov1(Test_::obspace()[jj]);
+    ov1.random();
+
+    // test *=, += and -=
+    ObsVector_ ov2(ov1);
+    ov2 += ov1;
+    ov1 *= 2.0;
+    ov2 -= ov1;
+    EXPECT(dot_product(ov2, ov2) < tolerance);
+
+    // test =
+    ObsVector_ ov3(ov1);
+    ov2 = ov1;
+    ov2 -= ov3;
+    EXPECT(dot_product(ov2, ov2) < tolerance);
+
+    // test *=(const ObsVector &) and /=(const ObsVector &)
+    ov2 = ov1;
+    ov2 *= ov1;
+    ov2 /= ov1;
+    ov2 -= ov1;
+    EXPECT(dot_product(ov2, ov2) < tolerance);
+
+    // test axpy
+    ov2 = ov1;
+    ov3 = ov1;
+    ov2.axpy(2.0, ov1);
+    ov3 *= 3;
+    ov2 -= ov3;
+    EXPECT(dot_product(ov2, ov2) < tolerance);
+
+    // test invert()
+    ov2 = ov1;
+    ov2.invert();
+    ov2 *= ov1;
+    EXPECT(std::abs(dot_product(ov2, ov2) - ov2.nobs()) < tolerance);
   }
 }
 
+// -----------------------------------------------------------------------------
+template <typename OBS> void testReadWrite() {
+  typedef ObsTestsFixture<OBS>  Test_;
+  typedef oops::ObsVector<OBS>  ObsVector_;
+  const double tolerance = 1.0e-8;
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    ObsVector_ ov1(Test_::obspace()[jj]);
+    ov1.random();
+
+    ov1.save("test");
+    ObsVector_ ov2(Test_::obspace()[jj], "test");
+    ov2 -= ov1;
+    EXPECT(dot_product(ov2, ov2) < tolerance);
+  }
+}
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
 class ObsVector : public oops::Test {
   typedef ObsTestsFixture<OBS> Test_;
+
  public:
   ObsVector() {}
   virtual ~ObsVector() {}
+
  private:
   std::string testid() const override {return "test::ObsVector<" + OBS::name() + ">";}
 
@@ -101,6 +172,10 @@ class ObsVector : public oops::Test {
       { testCopyConstructor<OBS>(); });
     ts.emplace_back(CASE("interface/ObsVector/testNotZero")
       { testNotZero<OBS>(); });
+    ts.emplace_back(CASE("interface/ObsVector/testLinearAlgebra")
+      { testLinearAlgebra<OBS>(); });
+    ts.emplace_back(CASE("interface/ObsVector/testReadWrite")
+      { testReadWrite<OBS>(); });
   }
 
   void clear() const override {

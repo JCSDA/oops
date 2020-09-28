@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -46,8 +46,8 @@ class ObsVec1D : public util::Printable,
   ObsVec1D & operator*= (const ObsVec1D &);
   ObsVec1D & operator/= (const ObsVec1D &);
 
-  const double & operator[](const std::size_t ii) const {return data_[ii];}
-  double & operator[](const std::size_t ii) {return data_[ii];}
+  const double & operator[](const std::size_t ii) const {return data_.at(ii);}
+  double & operator[](const std::size_t ii) {return data_.at(ii);}
 
   void zero();
   void axpy(const double &, const ObsVec1D &);

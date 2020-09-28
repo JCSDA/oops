@@ -2,8 +2,8 @@
 ! (C) Copyright 2017-2019 UCAR.
 !
 ! This software is licensed under the terms of the Apache Licence Version 2.0
-! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
-! In applying this licence, ECMWF does not waive the privileges and immunities 
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
 ! granted to it by virtue of its status as an intergovernmental organisation nor
 ! does it submit to any jurisdiction.
 
@@ -74,7 +74,7 @@ if (allocated(self%values)) deallocate(self%values)
 allocate(self%values(self%nlev,self%nobs))
 
 ! Initialization
-self%values = 0.0_kind_real 
+self%values = 0.0_kind_real
 
 end subroutine qg_obsvec_setup
 ! ------------------------------------------------------------------------------
@@ -412,6 +412,9 @@ integer :: i1, i2
 i1 = iob / self%nobs + 1
 i2 = iob - self%nobs*(i1-1) + 1
 ! Retrieve obs. value from vector
+
+if (i1>self%nlev .or. i2>self%nobs) call abor1_ftn ('qg_obsvec_getat: index is out of bounds')
+
 val = self%values(i1,i2)
 
 end subroutine qg_obsvec_getat
