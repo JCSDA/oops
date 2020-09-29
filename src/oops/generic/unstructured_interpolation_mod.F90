@@ -1,4 +1,4 @@
-! (C) Copyright 2019 UCAR
+! (C) Copyright 2019-2020 UCAR
 !
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -18,6 +18,7 @@ use fckit_mpi_module,      only: fckit_mpi_comm, fckit_mpi_sum
 implicit none
 private
 public unstrc_interp
+public unstrc_interp_registry
 
 !---------------------------------------------------------------------------------------------------
 
@@ -40,10 +41,23 @@ type unstrc_interp
     procedure, public :: write
 endtype unstrc_interp
 
+! ------------------------------------------------------------------------------
+!> Registry for unstrc_interpo objects
+
+#define LISTED_TYPE unstrc_interp
+
+!> Linked list interface - defines registry_t type
+#include "oops/util/linkedList_i.f"
+
+!> Global registry
+type(registry_t) :: unstrc_interp_registry
 
 !---------------------------------------------------------------------------------------------------
 
 contains
+!-------------------------------------------------------------------------------
+!> Linked list implementation
+#include "oops/util/linkedList_c.f"
 
 !---------------------------------------------------------------------------------------------------
 

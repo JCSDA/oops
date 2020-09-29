@@ -26,7 +26,7 @@ using atlas::option::levels;
 
 namespace oops {
 
-static InterpolatorMaker<InterpolatorAtlas> makerId_("atlas");
+static InterpolatorMaker<InterpolatorAtlas> makerAtlas_("atlas");
 
 // -----------------------------------------------------------------------------
 InterpolatorAtlas::InterpolatorAtlas(const eckit::Configuration & config,

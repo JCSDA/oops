@@ -13,10 +13,10 @@
 
 #include "atlas/field.h"
 #include "atlas/functionspace.h"
-#include "atlas/interpolation.h"
 #include "eckit/config/Configuration.h"
 
 #include "oops/base/InterpolatorBase.h"
+#include "oops/mpi/mpi.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/ObjectCounter.h"
 
@@ -24,31 +24,34 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-/*! \brief Interface for Atlas interpolation
+/*! \brief Interface for Unstructured interpolation
  *
  */
 
-class InterpolatorAtlas : public InterpolatorBase,
-                          private util::ObjectCounter<InterpolatorAtlas> {
+class InterpolatorUnstructured : public InterpolatorBase,
+                          private util::ObjectCounter<InterpolatorUnstructured> {
  public:
-  static const std::string classname() {return "oops::InterpolatorAtlas";}
+  static const std::string classname() {return "oops::InterpolatorUnstructured";}
 
-  InterpolatorAtlas(const eckit::Configuration &, const atlas::FunctionSpace &,
+  InterpolatorUnstructured(const eckit::Configuration &, const atlas::FunctionSpace &,
                     const atlas::FunctionSpace &,
-                    const atlas::field::FieldSetImpl * = nullptr);
+                    const atlas::field::FieldSetImpl * = nullptr,
+                    const eckit::mpi::Comm & = oops::mpi::world());
+  ~InterpolatorUnstructured();
 
-  ~InterpolatorAtlas() { }
   void apply(const atlas::Field &, atlas::Field &) override;
   void apply(const atlas::FieldSet &, atlas::FieldSet &) override;
 
-  void apply_ad(const atlas::FieldSet &, atlas::FieldSet &) override {
-    std::string ErrorMsg = "Interpolator Adjoint not yet implemented for Atlas";
-    ABORT(ErrorMsg);
-  }
+  void apply_ad(const atlas::Field &, atlas::Field &);
+  void apply_ad(const atlas::FieldSet &, atlas::FieldSet &) override;
+
+  int write(const eckit::Configuration &) override;
 
  private:
+  int keyUnstructuredInterpolator_;
+  const atlas::FunctionSpace *in_fspace_;
+  const atlas::FunctionSpace *out_fspace_;
   void print(std::ostream &) const override;
-  std::unique_ptr<atlas::Interpolation> interpolator_;
 };
 
 // -----------------------------------------------------------------------------

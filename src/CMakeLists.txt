@@ -103,6 +103,7 @@ oops/base/HybridCovariance4D.h
 oops/base/IdentityMatrix.h
 oops/base/IncrementEnsemble.h
 oops/base/InterpolatorBase.h
+oops/base/InterpolatorBase.cc
 oops/base/instantiateCovarFactory.h
 oops/base/instantiateObsFilterFactory.h
 oops/base/LinearModelBase.h
@@ -165,6 +166,12 @@ oops/generic/instantiateModelFactory.h
 oops/generic/instantiateObsErrorFactory.h
 oops/generic/instantiateTlmFactory.h
 oops/generic/instantiateVariableChangeFactory.h
+oops/generic/InterpolatorAtlas.h
+oops/generic/InterpolatorAtlas.cc
+oops/generic/interpolatorunstrc_f.h
+oops/generic/interpolatorunstrc_interface.F90
+oops/generic/InterpolatorUnstructured.h
+oops/generic/InterpolatorUnstructured.cc
 oops/generic/LinearModelId.h
 oops/generic/LocalObsErrorDiag.h
 oops/generic/ObsErrorDiag.h
@@ -172,11 +179,10 @@ oops/generic/PseudoModel.h
 oops/generic/unstructured_grid_f.h
 oops/generic/unstructured_grid_interface.F90
 oops/generic/unstructured_grid_mod.F90
+oops/generic/unstructured_interpolation_mod.F90
 oops/generic/UnstructuredGrid.cc
 oops/generic/UnstructuredGrid.h
 oops/generic/VerticalLocEV.h
-oops/generic/InterpolatorAtlas.h
-oops/generic/InterpolatorAtlas.cc
 
 oops/interface/AnalyticInit.h
 oops/interface/ErrorCovariance.h
@@ -306,7 +312,6 @@ oops/util/Timer.h
 oops/util/TimerHelper.cc
 oops/util/TimerHelper.h
 oops/util/utilNamespaceDoc.h
-oops/util/unstructured_interpolation_mod.f90
 
 oops/util/parameters/ConfigurationParameter.cc
 oops/util/parameters/ConfigurationParameter.h
@@ -421,6 +426,7 @@ list( APPEND oops_test_input
   test/testinput/random.yaml
   test/testinput/pushstringvector.yaml
   test/testinput/atlas_interpolation_interface.yaml
+  test/testinput/unstructured_interpolation.yaml
   test/testinput/variables.yaml
   test/testinput/parameters.yaml
   test/testinput/empty.yaml
@@ -429,6 +435,7 @@ list( APPEND oops_test_input
 )
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test/testinput)
 CREATE_SYMLINK( ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${oops_test_input} )
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test/testoutput)
 
 function(generate_fortran_bindings output filename)
 
@@ -602,6 +609,11 @@ ecbuild_add_test( TARGET  test_mpi_mpi
 ecbuild_add_test( TARGET  test_oops_atlas_interpolation_interface
                   SOURCES test/generic/InterpolationInterface.cc
                   ARGS    "test/testinput/atlas_interpolation_interface.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_oops_unstructured_interpolation
+                  SOURCES test/generic/InterpolationInterface.cc
+                  ARGS    "test/testinput/unstructured_interpolation.yaml"
                   LIBS    oops )
 
 ecbuild_add_test( TARGET  test_util_comparenvectors
