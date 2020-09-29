@@ -25,13 +25,12 @@ phases:
       - echo "CODEBUILD_GIT_BRANCH=${CODEBUILD_GIT_BRANCH}"
       - echo "CODEBUILD_SOURCE_VERSION=${CODEBUILD_SOURCE_VERSION}"
 
-      - echo "check for same branch names"
-      - ls
-      - ls /usr/local/lib/python3.6/dist-packages/
-      - pip install boto3
-      - pip install pygithub 
-      - python CI/update_webhook_branchname.py $CODEBUILD_GIT_BRANCH $CODEBUILD_RESOLVED_SOURCE_VERSION 
-
+      - echo "check for same branch names, except for develop"
+      - if ! [ "$CODEBUILD_GIT_BRANCH" = "develop" ]; then 
+        pip install boto3;
+        pip install pygithub; 
+        python CI/update_webhook_branchname.py $CODEBUILD_GIT_BRANCH $CODEBUILD_RESOLVED_SOURCE_VERSION;
+        fi
 
   build:
     commands:
