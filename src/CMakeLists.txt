@@ -108,10 +108,12 @@ oops/base/instantiateCovarFactory.h
 oops/base/instantiateObsFilterFactory.h
 oops/base/LinearModelBase.h
 oops/base/LinearVariableChangeBase.h
+oops/base/LinearVariableChangeParametersBase.h
 oops/base/LocalizationBase.h
 oops/base/ModelBase.h
 oops/base/ModelSpaceCovariance4DBase.h
 oops/base/ModelSpaceCovarianceBase.h
+oops/base/ModelSpaceCovarianceParametersBase.h
 oops/base/ObsAuxControls.h
 oops/base/ObsAuxCovariances.h
 oops/base/ObsAuxIncrements.h

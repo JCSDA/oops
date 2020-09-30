@@ -39,10 +39,15 @@ class LinearVariableChange : public oops::LinearVariableChangeBase<MODEL> {
   typedef State<MODEL>               State_;
 
  public:
+  /// Defined as CHVAR::Parameters_ if CHVAR defines a Parameters_ type; otherwise as
+  /// GenericLinearVariableChangeParameters
+  typedef TParameters_IfAvailableElseFallbackType_t<
+    CHVAR, GenericLinearVariableChangeParameters> Parameters_;
+
   static const std::string classname() {return "oops::LinearVariableChange";}
 
   LinearVariableChange(const State_ &, const State_ &,
-                       const Geometry_ &, const eckit::Configuration &);
+                       const Geometry_ &, const Parameters_ &);
   virtual ~LinearVariableChange();
 
   void multiply(const Increment_ &, Increment_ &) const override;
@@ -61,12 +66,13 @@ class LinearVariableChange : public oops::LinearVariableChangeBase<MODEL> {
 template<typename MODEL, typename CHVAR>
 LinearVariableChange<MODEL, CHVAR>::LinearVariableChange(const State_ & bg, const State_ & fg,
                                                          const Geometry_ & geom,
-                                                         const eckit::Configuration & conf)
-  : LinearVariableChangeBase<MODEL>(conf), chvar_()
+                                                         const Parameters_ & params)
+  : LinearVariableChangeBase<MODEL>(params), chvar_()
 {
   Log::trace() << "LinearVariableChange<MODEL, CHVAR>::LinearVariableChange starting" << std::endl;
   util::Timer timer(classname(), "LinearVariableChange");
-  chvar_.reset(new CHVAR(bg.state(), fg.state(), geom.geometry(), conf));
+  chvar_.reset(new CHVAR(bg.state(), fg.state(), geom.geometry(),
+                         parametersOrConfiguration<HasParameters_<CHVAR>::value>(params)));
   Log::trace() << "LinearVariableChange<MODEL, CHVAR>::LinearVariableChange done" << std::endl;
 }
 

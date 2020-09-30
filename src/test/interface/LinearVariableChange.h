@@ -33,6 +33,7 @@
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
+#include "oops/util/Expect.h"
 #include "oops/util/Logger.h"
 #include "test/TestEnvironment.h"
 
@@ -239,11 +240,48 @@ template <typename MODEL> void testLinearVariableChangeInverse() {
 
 // -----------------------------------------------------------------------------
 
+template <typename MODEL> void testLinearVariableChangeParametersWrapperValidName() {
+  typedef LinearVariableChangeFixture<MODEL> Test_;
+  for (const eckit::Configuration &config : Test_::confs()) {
+    oops::LinearVariableChangeParametersWrapper<MODEL> parameters;
+    EXPECT_NO_THROW(parameters.validateAndDeserialize(config));
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL> void testLinearVariableChangeParametersWrapperInvalidName() {
+  eckit::LocalConfiguration config;
+  config.set("variable change", "###INVALID###");
+  oops::LinearVariableChangeParametersWrapper<MODEL> parameters;
+  if (oops::Parameters::isValidationSupported())
+    EXPECT_THROWS_MSG(parameters.validate(config), "unrecognized enum value");
+  EXPECT_THROWS_MSG(parameters.deserialize(config),
+                    "does not exist in LinearVariableChangeFactory");
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL> void testLinearVariableChangeFactoryGetMakerNames() {
+  typedef LinearVariableChangeFixture<MODEL> Test_;
+  const std::vector<std::string> registeredNames =
+      oops::LinearVariableChangeFactory<MODEL>::getMakerNames();
+  for (const eckit::Configuration &config : Test_::confs()) {
+    const std::string validName = config.getString("variable change");
+    const bool found = std::find(registeredNames.begin(), registeredNames.end(), validName) !=
+        registeredNames.end();
+    EXPECT(found);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
 template <typename MODEL>
 class LinearVariableChange : public oops::Test {
  public:
   LinearVariableChange() {}
   virtual ~LinearVariableChange() {}
+
  private:
   std::string testid() const override {return "test::LinearVariableChange<" + MODEL::name() + ">";}
 
@@ -256,6 +294,15 @@ class LinearVariableChange : public oops::Test {
       { testLinearVariableChangeAdjoint<MODEL>(); });
     ts.emplace_back(CASE("interface/LinearVariableChange/testLinearVariableChangeInverse")
       { testLinearVariableChangeInverse<MODEL>(); });
+    ts.emplace_back(CASE("interface/LinearVariableChange/"
+                         "testLinearVariableChangeParametersWrapperValidName")
+      { testLinearVariableChangeParametersWrapperValidName<MODEL>(); });
+    ts.emplace_back(CASE("interface/LinearVariableChange/"
+                         "testLinearVariableChangeParametersWrapperInvalidName")
+      { testLinearVariableChangeParametersWrapperInvalidName<MODEL>(); });
+    ts.emplace_back(CASE("interface/LinearVariableChange/"
+                         "testLinearVariableChangeFactoryGetMakerNames")
+      { testLinearVariableChangeFactoryGetMakerNames<MODEL>(); });
   }
 
   void clear() const override {}

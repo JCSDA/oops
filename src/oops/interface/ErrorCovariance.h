@@ -54,8 +54,15 @@ class ErrorCovariance : public oops::ModelSpaceCovarianceBase<MODEL>,
   typedef State<MODEL>               State_;
 
  public:
+  /// Defined as Covariance_::Parameters_ if Covariance_ defines a Parameters_ type; otherwise as
+  /// GenericModelSpaceCovarianceParameters<MODEL>.
+  typedef TParameters_IfAvailableElseFallbackType_t<
+    Covariance_, GenericModelSpaceCovarianceParameters<MODEL>> Parameters_;
+
   static const std::string classname() {return "oops::ErrorCovariance";}
 
+  ErrorCovariance(const Geometry_ &, const Variables &, const Parameters_ &,
+                  const State_ &, const State_ &);
   ErrorCovariance(const Geometry_ &, const Variables &, const eckit::Configuration &,
                   const State_ &, const State_ &);
   virtual ~ErrorCovariance();
@@ -74,15 +81,29 @@ class ErrorCovariance : public oops::ModelSpaceCovarianceBase<MODEL>,
 
 template<typename MODEL>
 ErrorCovariance<MODEL>::ErrorCovariance(const Geometry_ & resol, const Variables & vars,
-                                        const eckit::Configuration & conf,
+                                        const Parameters_ & parameters,
                                         const State_ & xb, const State_ & fg)
-  : ModelSpaceCovarianceBase<MODEL>(xb, fg, resol, conf), covariance_()
+  : ModelSpaceCovarianceBase<MODEL>(xb, fg, resol, parameters), covariance_()
 {
   Log::trace() << "ErrorCovariance<MODEL>::ErrorCovariance starting" << std::endl;
   util::Timer timer(classname(), "ErrorCovariance");
-  covariance_.reset(new Covariance_(resol.geometry(), vars, conf, xb.state(), fg.state()));
+  covariance_.reset(new Covariance_(resol.geometry(), vars,
+                                    parametersOrConfiguration<HasParameters_<Covariance_>::value>(
+                                      parameters),
+                                    xb.state(), fg.state()));
   Log::trace() << "ErrorCovariance<MODEL>::ErrorCovariance done" << std::endl;
 }
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+ErrorCovariance<MODEL>::ErrorCovariance(const Geometry_ & resol, const Variables & vars,
+                                        const eckit::Configuration & conf,
+                                        const State_ & xb, const State_ & fg)
+  : ErrorCovariance<MODEL>(resol, vars,
+                           validateAndDeserialize<Parameters_>(conf),
+                           xb, fg)
+{}
 
 // -----------------------------------------------------------------------------
 
