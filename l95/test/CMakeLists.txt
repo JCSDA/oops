@@ -58,6 +58,20 @@ list( APPEND l95_test_input
   testinput/makeobspert.yaml
   testinput/pseudomodel.yaml
   testinput/truth.yaml
+  testinput/simplifiedl95_DRGMRESR.yaml
+  testinput/simplifiedl95_DRIPCG.yaml
+  testinput/simplifiedl95_DRPCG.yaml
+  testinput/simplifiedl95_DRPFOM.yaml
+  testinput/simplifiedl95_DRPLanczos.yaml
+  testinput/simplifiedl95_FGMRES.yaml
+  testinput/simplifiedl95_GMRESR.yaml
+  testinput/simplifiedl95_IPCG.yaml
+  testinput/simplifiedl95_LBGMRESR.yaml
+  testinput/simplifiedl95_MINRES.yaml
+  testinput/simplifiedl95_PCG.yaml
+  testinput/simplifiedl95_PLanczos.yaml
+  testinput/simplifiedl95_RPCG.yaml
+  testinput/simplifiedl95_RPLanczos.yaml
 )
 
 list( APPEND l95_test_data
@@ -65,6 +79,8 @@ list( APPEND l95_test_data
   truth.an.2010-01-01T00:00:00Z.l95
   truth.fc.2010-01-01T00:00:00Z.PT3H
   truth.2010-01-02T00:00:00Z.obt
+  simplifiedl95.fc
+  simplifiedl95.truth.obt
 )
 
 list( APPEND l95_testoutput
@@ -120,6 +136,20 @@ list( APPEND l95_testoutput
   testoutput/makeobspert.test
   testoutput/truth.test
   testoutput/CTestCostData.txt.test
+  testoutput/simplifiedl95_DRGMRESR.test
+  testoutput/simplifiedl95_DRIPCG.test
+  testoutput/simplifiedl95_DRPCG.test
+  testoutput/simplifiedl95_DRPFOM.test
+  testoutput/simplifiedl95_DRPLanczos.test
+  testoutput/simplifiedl95_FGMRES.test
+  testoutput/simplifiedl95_GMRESR.test
+  testoutput/simplifiedl95_IPCG.test
+  testoutput/simplifiedl95_LBGMRESR.test
+  testoutput/simplifiedl95_MINRES.test
+  testoutput/simplifiedl95_PCG.test
+  testoutput/simplifiedl95_PLanczos.test
+  testoutput/simplifiedl95_RPCG.test
+  testoutput/simplifiedl95_RPLanczos.test
 )
 
 
@@ -696,3 +726,78 @@ ecbuild_add_test( TARGET test_l95_linearmodelfactory
                   SOURCES lorenz95/LinearModelFactory.cc
                   ARGS "testinput/linearmodelfactory.yaml"
                   LIBS lorenz95 )
+
+#####################################################################
+# tests with simplified L95
+#####################################################################
+
+oops_add_test( TESTNAME simplifiedl95_DRGMRESR
+               MODELNAME l95
+               YAMLNAME testinput/simplifiedl95_DRGMRESR.yaml
+               EXENAME l95_4dvar.x )
+
+oops_add_test( TESTNAME simplifiedl95_DRIPCG
+               MODELNAME l95
+               YAMLNAME testinput/simplifiedl95_DRIPCG.yaml
+               EXENAME l95_4dvar.x )
+
+oops_add_test( TESTNAME simplifiedl95_DRPCG
+               MODELNAME l95
+               YAMLNAME testinput/simplifiedl95_DRPCG.yaml
+               EXENAME l95_4dvar.x )
+
+oops_add_test( TESTNAME simplifiedl95_DRPFOM
+               MODELNAME l95
+               YAMLNAME testinput/simplifiedl95_DRPFOM.yaml
+               EXENAME l95_4dvar.x )
+
+oops_add_test( TESTNAME simplifiedl95_DRPLanczos
+               MODELNAME l95
+               YAMLNAME testinput/simplifiedl95_DRPLanczos.yaml
+               EXENAME l95_4dvar.x )
+
+oops_add_test( TESTNAME simplifiedl95_FGMRES
+               MODELNAME l95
+               YAMLNAME testinput/simplifiedl95_FGMRES.yaml
+               EXENAME l95_4dvar.x )
+
+oops_add_test( TESTNAME simplifiedl95_GMRESR
+               MODELNAME l95
+               YAMLNAME testinput/simplifiedl95_GMRESR.yaml
+               EXENAME l95_4dvar.x )
+
+oops_add_test( TESTNAME simplifiedl95_IPCG
+               MODELNAME l95
+               YAMLNAME testinput/simplifiedl95_IPCG.yaml
+               EXENAME l95_4dvar.x )
+
+oops_add_test( TESTNAME simplifiedl95_LBGMRESR
+               MODELNAME l95
+               YAMLNAME testinput/simplifiedl95_LBGMRESR.yaml
+               EXENAME l95_4dvar.x )
+
+oops_add_test( TESTNAME simplifiedl95_MINRES
+               MODELNAME l95
+               YAMLNAME testinput/simplifiedl95_MINRES.yaml
+               EXENAME l95_4dvar.x )
+
+oops_add_test( TESTNAME simplifiedl95_PCG
+               MODELNAME l95
+               YAMLNAME testinput/simplifiedl95_PCG.yaml
+               EXENAME l95_4dvar.x )
+
+oops_add_test( TESTNAME simplifiedl95_PLanczos
+               MODELNAME l95
+               YAMLNAME testinput/simplifiedl95_PLanczos.yaml
+               EXENAME l95_4dvar.x )
+
+oops_add_test( TESTNAME simplifiedl95_RPCG
+               MODELNAME l95
+               YAMLNAME testinput/simplifiedl95_RPCG.yaml
+               EXENAME l95_4dvar.x )
+
+#oops_add_test( TESTNAME simplifiedl95_RPLanczos
+#               MODELNAME l95
+#               YAMLNAME testinput/simplifiedl95_RPLanczos.yaml
+#               EXENAME l95_4dvar.x )
+#
