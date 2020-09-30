@@ -234,8 +234,8 @@ cost function:
     static:
       covariance model: L95Error
       date: '2010-01-01T03:00:00Z'
-      length_scale: '1.0'
-      standard_deviation: '0.6'
+      length_scale: 1.0
+      standard_deviation: 0.6
     static weight: '0.6'
   constraints:
   - jcdfi:
