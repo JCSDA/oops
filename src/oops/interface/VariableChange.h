@@ -37,9 +37,14 @@ class VariableChange : public oops::VariableChangeBase<MODEL> {
   typedef State<MODEL>               State_;
 
  public:
+  /// Defined as CHVAR::Parameters_ if CHVAR defines a Parameters_ type; otherwise as
+  /// GenericVariableChangeParameters
+  typedef TParameters_IfAvailableElseFallbackType_t<
+    CHVAR, GenericVariableChangeParameters> Parameters_;
+
   static const std::string classname() {return "oops::VariableChange";}
 
-  VariableChange(const Geometry_ &, const eckit::Configuration &);
+  VariableChange(const Geometry_ &, const Parameters_ &);
   virtual ~VariableChange();
 
   void changeVar(const State_ &, State_ &) const override;
@@ -55,12 +60,13 @@ class VariableChange : public oops::VariableChangeBase<MODEL> {
 
 template<typename MODEL, typename CHVAR>
 VariableChange<MODEL, CHVAR>::VariableChange(const Geometry_ & geom,
-                                             const eckit::Configuration & conf)
-  : VariableChangeBase<MODEL>(conf), chvar_()
+                                             const Parameters_ & params)
+  : VariableChangeBase<MODEL>(params), chvar_()
 {
   Log::trace() << "VariableChange<MODEL, CHVAR>::VariableChange starting" << std::endl;
   util::Timer timer(classname(), "VariableChange");
-  chvar_.reset(new CHVAR(geom.geometry(), conf));
+  chvar_.reset(new CHVAR(geom.geometry(),
+                         parametersOrConfiguration<HasParameters_<CHVAR>::value>(params)));
   Log::trace() << "VariableChange<MODEL, CHVAR>::VariableChange done" << std::endl;
 }
 

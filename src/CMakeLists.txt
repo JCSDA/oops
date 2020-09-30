@@ -146,6 +146,7 @@ oops/base/StateInfo.h
 oops/base/StateWriter.h
 oops/base/TrajectorySaver.h
 oops/base/VariableChangeBase.h
+oops/base/VariableChangeParametersBase.h
 oops/base/variables_f.cc
 oops/base/variables_f.h
 oops/base/variables_mod.F90

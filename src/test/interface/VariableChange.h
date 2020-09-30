@@ -26,6 +26,7 @@
 #include "oops/interface/State.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
+#include "oops/util/Expect.h"
 #include "oops/util/Logger.h"
 #include "test/TestEnvironment.h"
 
@@ -120,6 +121,42 @@ template <typename MODEL> void testVariableChangeInverse() {
 
 // -------------------------------------------------------------------------------------------------
 
+template <typename MODEL> void testVariableChangeParametersWrapperValidName() {
+  typedef VariableChangeFixture<MODEL> Test_;
+  for (const eckit::Configuration &config : Test_::confs()) {
+    oops::VariableChangeParametersWrapper<MODEL> parameters;
+    EXPECT_NO_THROW(parameters.validateAndDeserialize(config));
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+template <typename MODEL> void testVariableChangeParametersWrapperInvalidName() {
+  eckit::LocalConfiguration config;
+  config.set("variable change", "###INVALID###");
+  oops::VariableChangeParametersWrapper<MODEL> parameters;
+  if (oops::Parameters::isValidationSupported())
+    EXPECT_THROWS_MSG(parameters.validate(config), "unrecognized enum value");
+  EXPECT_THROWS_MSG(parameters.deserialize(config),
+                    "does not exist in VariableChangeFactory");
+}
+
+// -------------------------------------------------------------------------------------------------
+
+template <typename MODEL> void testVariableChangeFactoryGetMakerNames() {
+  typedef VariableChangeFixture<MODEL> Test_;
+  const std::vector<std::string> registeredNames =
+      oops::VariableChangeFactory<MODEL>::getMakerNames();
+  for (const eckit::Configuration &config : Test_::confs()) {
+    const std::string validName = config.getString("variable change");
+    const bool found = std::find(registeredNames.begin(), registeredNames.end(), validName) !=
+        registeredNames.end();
+    EXPECT(found);
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
 template <typename MODEL> class VariableChange : public oops::Test {
  public:
   VariableChange() {}
@@ -132,6 +169,15 @@ template <typename MODEL> class VariableChange : public oops::Test {
 
     ts.emplace_back(CASE("interface/VariableChange/testVariableChangeInverse")
       { testVariableChangeInverse<MODEL>(); });
+    ts.emplace_back(CASE("interface/VariableChange/"
+                         "testVariableChangeParametersWrapperValidName")
+      { testVariableChangeParametersWrapperValidName<MODEL>(); });
+    ts.emplace_back(CASE("interface/VariableChange/"
+                         "testVariableChangeParametersWrapperInvalidName")
+      { testVariableChangeParametersWrapperInvalidName<MODEL>(); });
+    ts.emplace_back(CASE("interface/VariableChange/"
+                         "testVariableChangeFactoryGetMakerNames")
+      { testVariableChangeFactoryGetMakerNames<MODEL>(); });
   }
 
   void clear() const override {}
