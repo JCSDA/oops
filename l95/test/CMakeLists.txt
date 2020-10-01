@@ -734,70 +734,84 @@ ecbuild_add_test( TARGET test_l95_linearmodelfactory
 oops_add_test( TESTNAME simplifiedl95_DRGMRESR
                MODELNAME l95
                YAMLNAME testinput/simplifiedl95_DRGMRESR.yaml
+               CTOL 1e-8
                EXENAME l95_4dvar.x )
 
 oops_add_test( TESTNAME simplifiedl95_DRIPCG
                MODELNAME l95
                YAMLNAME testinput/simplifiedl95_DRIPCG.yaml
+               CTOL 1e-8
                EXENAME l95_4dvar.x )
 
 oops_add_test( TESTNAME simplifiedl95_DRPCG
                MODELNAME l95
                YAMLNAME testinput/simplifiedl95_DRPCG.yaml
+               CTOL 1e-8
                EXENAME l95_4dvar.x )
 
 oops_add_test( TESTNAME simplifiedl95_DRPFOM
                MODELNAME l95
                YAMLNAME testinput/simplifiedl95_DRPFOM.yaml
+               CTOL 1e-8
                EXENAME l95_4dvar.x )
 
 oops_add_test( TESTNAME simplifiedl95_DRPLanczos
                MODELNAME l95
                YAMLNAME testinput/simplifiedl95_DRPLanczos.yaml
+               CTOL 1e-8
                EXENAME l95_4dvar.x )
 
 oops_add_test( TESTNAME simplifiedl95_FGMRES
                MODELNAME l95
                YAMLNAME testinput/simplifiedl95_FGMRES.yaml
+               CTOL 1e-8
                EXENAME l95_4dvar.x )
 
 oops_add_test( TESTNAME simplifiedl95_GMRESR
                MODELNAME l95
                YAMLNAME testinput/simplifiedl95_GMRESR.yaml
+               CTOL 1e-8
                EXENAME l95_4dvar.x )
 
 oops_add_test( TESTNAME simplifiedl95_IPCG
                MODELNAME l95
                YAMLNAME testinput/simplifiedl95_IPCG.yaml
+               CTOL 1e-8
                EXENAME l95_4dvar.x )
 
 oops_add_test( TESTNAME simplifiedl95_LBGMRESR
                MODELNAME l95
                YAMLNAME testinput/simplifiedl95_LBGMRESR.yaml
+               CTOL 1e-8
                EXENAME l95_4dvar.x )
 
 oops_add_test( TESTNAME simplifiedl95_MINRES
                MODELNAME l95
                YAMLNAME testinput/simplifiedl95_MINRES.yaml
+               CTOL 1e-8
                EXENAME l95_4dvar.x )
 
 oops_add_test( TESTNAME simplifiedl95_PCG
                MODELNAME l95
                YAMLNAME testinput/simplifiedl95_PCG.yaml
+               CTOL 1e-8
                EXENAME l95_4dvar.x )
 
 oops_add_test( TESTNAME simplifiedl95_PLanczos
                MODELNAME l95
                YAMLNAME testinput/simplifiedl95_PLanczos.yaml
+               CTOL 1e-8
                EXENAME l95_4dvar.x )
 
 oops_add_test( TESTNAME simplifiedl95_RPCG
                MODELNAME l95
                YAMLNAME testinput/simplifiedl95_RPCG.yaml
+               CTOL 1e-8
                EXENAME l95_4dvar.x )
 
 #oops_add_test( TESTNAME simplifiedl95_RPLanczos
 #               MODELNAME l95
 #               YAMLNAME testinput/simplifiedl95_RPLanczos.yaml
+#               CTOL 1e-8
 #               EXENAME l95_4dvar.x )
 #
