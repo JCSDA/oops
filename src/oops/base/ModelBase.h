@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2018 UCAR
+ * (C) Copyright 2018-2020 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -23,7 +23,6 @@
 #include "oops/util/AssociativeContainers.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
-#include "oops/util/ObjectCounter.h"
 #include "oops/util/parameters/ConfigurationParameter.h"
 #include "oops/util/parameters/HasParameters_.h"
 #include "oops/util/parameters/OptionalParameter.h"
@@ -40,41 +39,35 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-/// Base class for encapsulation of the forecast model.
-/*!
- * Defines the interfaces for a forecast model.
- */
-
+/// \brief Base class for the forecasting model
+/// Defines the interfaces for a forecast model.
 template <typename MODEL>
 class ModelBase : public util::Printable,
                   private boost::noncopyable {
-  typedef Geometry<MODEL>            Geometry_;
-  typedef ModelAuxControl<MODEL>     ModelAux_;
-  typedef State<MODEL>               State_;
+  typedef typename MODEL::ModelAuxControl   ModelAux_;
+  typedef typename MODEL::State             State_;
 
  public:
   static const std::string classname() {return "oops::ModelBase";}
 
-  ModelBase() {}
-  virtual ~ModelBase() {}
+  ModelBase() = default;
+  virtual ~ModelBase() = default;
 
-// Run the model forecast
-  void initialize(State_ &) const;
-  void step(State_ &, const ModelAux_ &) const;
-  void finalize(State_ &) const;
+  /// \brief Forecast initialization, called before every forecast run
+  virtual void initialize(State_ &) const = 0;
+  /// \brief Forecast "step", called during forecast run; updates state to the next time
+  virtual void step(State_ &, const ModelAux_ &) const = 0;
+  /// \brief Forecast finalization; called after each forecast run
+  virtual void finalize(State_ &) const = 0;
 
-// Information and diagnostics
+  /// \brief Time step for running Model's forecast in oops (frequency with which the
+  /// State will be updated)
   virtual const util::Duration & timeResolution() const = 0;
+  /// \brief Model variables (only used in 4DVar)
   virtual const oops::Variables & variables() const = 0;
 
- protected:
-// Run the model forecast
-  virtual void initialize(typename MODEL::State &) const = 0;
-  virtual void step(typename MODEL::State &, const typename MODEL::ModelAuxControl &) const = 0;
-  virtual void finalize(typename MODEL::State &) const = 0;
-
  private:
-// Information and diagnostics
+  /// \brief Print; used for logging
   virtual void print(std::ostream &) const = 0;
 };
 
@@ -238,33 +231,6 @@ std::unique_ptr<ModelParametersBase> ModelFactory<MODEL>::createParameters(
     throw std::runtime_error(name + " does not exist in the model factory");
   }
   return it->second->makeParameters();
-}
-
-// =============================================================================
-
-template<typename MODEL>
-void ModelBase<MODEL>::initialize(State_ & xx) const {
-  Log::trace() << "ModelBase<MODEL>::initialize starting" << std::endl;
-  this->initialize(xx.state());
-  Log::trace() << "ModelBase<MODEL>::initialize done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void ModelBase<MODEL>::step(State_ & xx, const ModelAux_ & merr) const {
-  Log::trace() << "ModelBase<MODEL>::step starting" << std::endl;
-  this->step(xx.state(), merr.modelauxcontrol());
-  Log::trace() << "ModelBase<MODEL>::step done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void ModelBase<MODEL>::finalize(State_ & xx) const {
-  Log::trace() << "ModelBase<MODEL>::finalize starting" << std::endl;
-  this->finalize(xx.state());
-  Log::trace() << "ModelBase<MODEL>::finalize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

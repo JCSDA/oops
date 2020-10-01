@@ -11,8 +11,6 @@
 
 #include "model/ModelQG.h"
 
-#include <utility>
-
 #include "eckit/exception/Exceptions.h"
 
 #include "oops/util/Logger.h"
@@ -29,7 +27,7 @@ namespace qg {
 static oops::ModelMaker<QgTraits, ModelQG> makermodel_("QG");
 // -----------------------------------------------------------------------------
 ModelQG::ModelQG(const GeometryQG & resol, const ModelQgParameters & params)
-  : keyConfig_(0), params_(std::move(params)), geom_(resol),
+  : keyConfig_(0), params_(params), geom_(resol),
     vars_(params.vars)
 {
   oops::Log::trace() << "ModelQG::ModelQG" << std::endl;
