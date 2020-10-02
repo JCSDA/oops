@@ -97,7 +97,7 @@ Model<MODEL>::Model(const Geometry_ & resol, const ModelParametersBase & params)
 {
   Log::trace() << "Model<MODEL>::Model starting" << std::endl;
   util::Timer timer(classname(), "Model");
-  Log::debug() << "Model config is:" << params << std::endl;
+  Log::info() << "Model configuration is:" << params << std::endl;
   model_.reset(ModelFactory<MODEL>::create(resol, params));
   Log::trace() << "Model<MODEL>::Model done" << std::endl;
 }

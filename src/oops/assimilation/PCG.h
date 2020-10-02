@@ -108,7 +108,7 @@ double PCG(VECTOR & x, const VECTOR & b,
       p  = s;
     } else {
       double beta = dot_product(s, r)/rdots_old;
-      Log::debug() << "PCG beta = " << beta << std::endl;
+      Log::info() << "PCG beta = " << beta << std::endl;
 
       p *= beta;
       p += s;      // p = s + beta*p

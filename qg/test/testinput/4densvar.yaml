@@ -319,8 +319,8 @@ cost function:
     obs space:
       obsdatain:
         obsfile: Data/truth.obs4d_12h.nc
-      obsdataout:
-        obsfile: Data/4densvar.obs4d_12h.nc
+#      obsdataout:
+#        obsfile: Data/4densvar.obs4d_12h.nc
       obs type: Stream
   - obs error:
       covariance model: diagonal
@@ -329,8 +329,8 @@ cost function:
     obs space:
       obsdatain:
         obsfile: Data/truth.obs4d_12h.nc
-      obsdataout:
-        obsfile: Data/4densvar.obs4d_12h.nc
+#      obsdataout:
+#        obsfile: Data/4densvar.obs4d_12h.nc
       obs type: Wind
   - obs error:
       covariance model: diagonal
@@ -339,15 +339,15 @@ cost function:
     obs space:
       obsdatain:
         obsfile: Data/truth.obs4d_12h.nc
-      obsdataout:
-        obsfile: Data/4densvar.obs4d_12h.nc
+#      obsdataout:
+#        obsfile: Data/4densvar.obs4d_12h.nc
       obs type: WSpeed
-  constraints:
-  - jcdfi:
-      alpha: 1.0e-13
-      cutoff: PT3H
-      type: DolphChebyshev
-      filtered variables: [x]
+#  constraints:
+#  - jcdfi:
+#      alpha: 1.0e-13
+#      cutoff: PT3H
+#      type: DolphChebyshev
+#      filtered variables: [x]
   geometry:
     nx: 40
     ny: 20

@@ -8,8 +8,8 @@
 #ifndef OOPS_GENERIC_UNSTRUCTURED_GRID_F_H_
 #define OOPS_GENERIC_UNSTRUCTURED_GRID_F_H_
 
-#include "atlas/field/FieldSet.h"
-#include "atlas/functionspace/detail/FunctionSpaceImpl.h"
+#include "atlas/field.h"
+#include "atlas/functionspace.h"
 
 #include "oops/util/DateTime.h"
 

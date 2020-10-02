@@ -502,6 +502,7 @@ oops_add_test( TESTNAME dirac_loc_3d
 oops_add_test( TESTNAME dirac_loc_4d
                MODELNAME qg
                OMP 2
+               MPI 13
                YAMLNAME testinput/dirac_loc_4d.yaml
                EXENAME  qg_dirac.x
                TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B )
@@ -563,6 +564,7 @@ oops_add_test( TESTNAME 3dfgat
 oops_add_test( TESTNAME 4densvar
                MODELNAME qg
                OMP 2
+               MPI 13
                YAMLNAME testinput/4densvar.yaml
                EXENAME  qg_4dvar.x
                TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_4d_12h )
@@ -570,6 +572,7 @@ oops_add_test( TESTNAME 4densvar
 oops_add_test( TESTNAME 4densvar_hybrid
                MODELNAME qg
                OMP 2
+               MPI 13
                YAMLNAME testinput/4densvar_hybrid.yaml
                EXENAME  qg_4dvar.x
                TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_4d_12h )
@@ -616,12 +619,12 @@ oops_add_test( TESTNAME 4dvar_drplanczos_hybrid
                EXENAME  qg_4dvar.x
                TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_4d_24h )
 
-oops_add_test( TESTNAME 4dvar_forcing
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/4dvar_forcing.yaml
-               EXENAME  qg_4dvar.x
-               TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
+#oops_add_test( TESTNAME 4dvar_forcing
+#               MODELNAME qg
+#               OMP 2
+#               YAMLNAME testinput/4dvar_forcing.yaml
+#               EXENAME  qg_4dvar.x
+#               TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
 
 oops_add_test( TESTNAME 4dvar_ipcg
                MODELNAME qg
@@ -646,7 +649,7 @@ oops_add_test( TESTNAME 4dvar_rpcg
 
 oops_add_test( TESTNAME 4dvar_saddlepoint
                MODELNAME qg
-               OMP 2
+               MPI 2
                YAMLNAME testinput/4dvar_saddlepoint.yaml
                EXENAME  qg_4dvar.x
                TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h

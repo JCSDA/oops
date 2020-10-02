@@ -24,7 +24,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "oops/assimilation/Increment4D.h"
-#include "oops/base/IncrementEnsemble.h"
+#include "oops/base/IncrementEnsemble4D.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/VerticalLocEV.h"
 #include "oops/interface/Geometry.h"
@@ -43,7 +43,7 @@ template <typename MODEL> void testVerticalLocEV() {
   typedef oops::Geometry<MODEL>           Geometry_;
   typedef oops::VerticalLocEV<MODEL>      VerticalLocEV_;
   typedef oops::Increment4D<MODEL>        Increment4D_;
-  typedef oops::IncrementEnsemble<MODEL>        IncrementEnsemble_;
+  typedef oops::IncrementEnsemble4D<MODEL>        IncrementEnsemble_;
 
   const Geometry_ & geometry = Test_::resol();
   eckit::LocalConfiguration vertlocconf(TestEnvironment::config(), "vertical localization");

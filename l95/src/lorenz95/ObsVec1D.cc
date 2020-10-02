@@ -145,10 +145,14 @@ double ObsVec1D::dot_product_with(const ObsVec1D & other) const {
 // -----------------------------------------------------------------------------
 double ObsVec1D::rms() const {
   double zz = 0.0;
+  double iobs = 0.0;
   for (const double & val : data_) {
-    if (val != missing_) zz += val * val;
+    if (val != missing_) {
+      zz += val * val;
+      iobs += 1.0;
+    }
   }
-  zz = sqrt(zz/static_cast<double>(nobs()));
+  if (iobs > 0.0) zz = sqrt(zz/iobs);
   return zz;
 }
 // -----------------------------------------------------------------------------
@@ -161,22 +165,25 @@ void ObsVec1D::save(const std::string & name) const {
 }
 // -----------------------------------------------------------------------------
 void ObsVec1D::print(std::ostream & os) const {
-  ASSERT(data_.size() > 0);
   double zmin = std::numeric_limits<double>::max();
   double zmax = std::numeric_limits<double>::lowest();
   double zavg = 0.0;
-  size_t nobs = 0;
+  size_t iobs = 0;
   for (const double & val : data_) {
     if (val != missing_) {
       if (val < zmin) zmin = val;
       if (val > zmax) zmax = val;
       zavg += val;
-      ++nobs;
+      ++iobs;
     }
   }
-  zavg /= static_cast<double>(nobs);
-  os << "Lorenz 95 nobs= " << nobs << " Min=" << zmin << ", Max=" << zmax
-     << ", Average=" << zavg;
+  if (iobs > 0) {
+    zavg /= static_cast<double>(iobs);
+    os << "Lorenz 95 nobs= " << iobs << " Min=" << zmin << ", Max=" << zmax
+       << ", Average=" << zavg;
+  } else {
+    os << "Lorenz 95 : No observations";
+  }
 }
 // -----------------------------------------------------------------------------
 }  // namespace lorenz95

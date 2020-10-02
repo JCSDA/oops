@@ -118,7 +118,6 @@ CostJcDFI<MODEL, OBS>::CostJcDFI(const eckit::Configuration & conf, const Geomet
   if (conf.has("span")) span_ = util::Duration(conf.getString("span"));
 //  wfct_.reset(WeightFactory::create(config)); YT
   wfct_.reset(new DolphChebyshev(conf));
-  Log::debug() << "CostJcDFI created vt = " << vt_ << ", span = " << span_ << std::endl;
   Log::trace() << "CostJcDFI created" << std::endl;
 }
 

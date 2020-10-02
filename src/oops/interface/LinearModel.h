@@ -122,7 +122,7 @@ LinearModel<MODEL>::LinearModel(const Geometry_ & resol, const LinearModelParame
 {
   Log::trace() << "LinearModel<MODEL>::LinearModel starting" << std::endl;
   util::Timer timer(classname(), "LinearModel");
-  Log::debug() << "LinearModel config is:" << params << std::endl;
+  Log::info() << "LinearModel configuration is:" << params << std::endl;
   tlm_.reset(LinearModelFactory<MODEL>::create(resol, params));
   Log::trace() << "LinearModel<MODEL>::LinearModel done" << std::endl;
 }

@@ -11,6 +11,7 @@
 #ifndef OOPS_BASE_OBSERVERSTLAD_H_
 #define OOPS_BASE_OBSERVERSTLAD_H_
 
+#include <algorithm>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -83,12 +84,7 @@ class ObserversTLAD : public PostBaseTLAD<MODEL> {
 
   util::DateTime winbgn_;   //!< Begining of assimilation window
   util::DateTime winend_;   //!< End of assimilation window
-  util::DateTime bgn_;      //!< Begining of currently active observations
-  util::DateTime end_;      //!< End of currently active observations
   util::Duration hslot_, hslottraj_;    //!< Half time slot
-  const bool subwindows_;
-  unsigned int nwindows_;   //!< number of subwindows (default 1)
-  util::Duration winlen_;   //!< length of subwindow (default winend_-winbgn_)
 };
 
 // -----------------------------------------------------------------------------
@@ -101,8 +97,7 @@ ObserversTLAD<MODEL, OBS>::ObserversTLAD(const eckit::Configuration & config,
     observerstlad_(), obspace_(obsdb),
     ydeptl_(), ybiastl_(), ydepad_(), ybiasad_(),
     winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()),
-    bgn_(winbgn_), end_(winend_), hslot_(tslot/2), hslottraj_(tslot/2),
-    subwindows_(subwin), nwindows_(1), winlen_(winend_-winbgn_)
+    hslot_(tslot/2), hslottraj_(tslot/2)
 {
   // setup observers
   std::vector<eckit::LocalConfiguration> typeconf;
@@ -112,8 +107,7 @@ ObserversTLAD<MODEL, OBS>::ObserversTLAD(const eckit::Configuration & config,
     if (!typeconf[jobs].has("linear obs operator")) {
       typeconf[jobs].set("linear obs operator", typeconf[jobs].getSubConfiguration("obs operator"));
     }
-    std::shared_ptr<ObserverTLAD_> tmp(new ObserverTLAD_(typeconf[jobs], obsdb[jobs],
-                                       ybias[jobs]));
+    std::shared_ptr<ObserverTLAD_> tmp(new ObserverTLAD_(typeconf[jobs], obsdb[jobs], ybias[jobs]));
     observerstlad_.push_back(tmp);
   }
   Log::trace() << "ObserversTLAD::ObserversTLAD" << std::endl;
@@ -121,28 +115,15 @@ ObserversTLAD<MODEL, OBS>::ObserversTLAD(const eckit::Configuration & config,
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
 void ObserversTLAD<MODEL, OBS>::doInitializeTraj(const State_ & xx,
-               const util::DateTime & end, const util::Duration & tstep) {
+                                                 const util::DateTime & end,
+                                                 const util::Duration & tstep) {
   Log::trace() << "ObserversTLAD::doInitializeTraj start" << std::endl;
 // Create full trajectory object
 
-  const util::DateTime bgn(xx.validTime());
   if (hslottraj_ == util::Duration(0)) hslottraj_ = tstep/2;
-  if (subwindows_) {
-    if (bgn == end) {
-      bgn_ = bgn - hslottraj_;
-      end_ = end + hslottraj_;
-    } else {
-      bgn_ = bgn;
-      end_ = end;
-    }
-    winlen_ = end_ - bgn_;
-    nwindows_ = (winend_-winbgn_).toSeconds() / winlen_.toSeconds();
-  }
-  if (bgn_ < winbgn_) bgn_ = winbgn_;
-  if (end_ > winend_) end_ = winend_;
 
   for (std::size_t jj = 0; jj < observerstlad_.size(); ++jj) {
-    observerstlad_[jj]->doInitializeTraj(xx, bgn_, winlen_, nwindows_);
+    observerstlad_[jj]->doInitializeTraj(xx, winbgn_, winend_);
   }
   Log::trace() << "ObserversTLAD::doInitializeTraj done" << std::endl;
 }
@@ -150,15 +131,11 @@ void ObserversTLAD<MODEL, OBS>::doInitializeTraj(const State_ & xx,
 template <typename MODEL, typename OBS>
 void ObserversTLAD<MODEL, OBS>::doProcessingTraj(const State_ & xx) {
   Log::trace() << "ObserversTLAD::doProcessingTraj start" << std::endl;
-  util::DateTime t1(xx.validTime()-hslottraj_);
-  util::DateTime t2(xx.validTime()+hslottraj_);
-  if (t1 < bgn_) t1 = bgn_;
-  if (t2 > end_) t2 = end_;
-
-  int iwin = (t1-winbgn_).toSeconds() / winlen_.toSeconds();
+  util::DateTime t1 = std::max(xx.validTime()-hslottraj_, winbgn_);
+  util::DateTime t2 = std::min(xx.validTime()+hslottraj_, winend_);
 
   for (std::size_t jj = 0; jj < observerstlad_.size(); ++jj) {
-    observerstlad_[jj]->doProcessingTraj(xx, t1, t2, iwin);
+    observerstlad_[jj]->doProcessingTraj(xx, t1, t2);
   }
   Log::trace() << "ObserversTLAD::doProcessingTraj done" << std::endl;
 }
@@ -182,24 +159,12 @@ void ObserversTLAD<MODEL, OBS>::setupTL(const ObsAuxIncrs_ & ybiastl) {
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
 void ObserversTLAD<MODEL, OBS>::doInitializeTL(const Increment_ & dx,
-                   const util::DateTime & end, const util::Duration & tstep) {
+                                               const util::DateTime & end,
+                                               const util::Duration & tstep) {
   Log::trace() << "ObserversTLAD::doInitializeTL start" << std::endl;
-  const util::DateTime bgn(dx.validTime());
   if (hslot_ == util::Duration(0)) hslot_ = tstep/2;
-  if (subwindows_) {
-    if (bgn == end) {
-      bgn_ = bgn - hslot_;
-      end_ = end + hslot_;
-    } else {
-      bgn_ = bgn;
-      end_ = end;
-    }
-  }
-  if (bgn_ < winbgn_) bgn_ = winbgn_;
-  if (end_ > winend_) end_ = winend_;
-
   for (std::size_t jj = 0; jj < observerstlad_.size(); ++jj) {
-    observerstlad_[jj]->doInitializeTL(dx, bgn_, end_);
+    observerstlad_[jj]->doInitializeTL(dx, winbgn_, winend_);
   }
   Log::trace() << "ObserversTLAD::doInitializeTL done" << std::endl;
 }
@@ -207,15 +172,11 @@ void ObserversTLAD<MODEL, OBS>::doInitializeTL(const Increment_ & dx,
 template <typename MODEL, typename OBS>
 void ObserversTLAD<MODEL, OBS>::doProcessingTL(const Increment_ & dx) {
   Log::trace() << "ObserversTLAD::doProcessingTL start" << std::endl;
-  util::DateTime t1(dx.validTime()-hslot_);
-  util::DateTime t2(dx.validTime()+hslot_);
-  if (t1 < bgn_) t1 = bgn_;
-  if (t2 > end_) t2 = end_;
+  util::DateTime t1 = std::max(dx.validTime()-hslot_, winbgn_);
+  util::DateTime t2 = std::min(dx.validTime()+hslot_, winend_);
 
-// Index for current bin
-  unsigned int iwin = (t1 - winbgn_).toSeconds() / winlen_.toSeconds();
   for (std::size_t jj = 0; jj < observerstlad_.size(); ++jj) {
-    observerstlad_[jj]->doProcessingTL(dx, t1, t2, iwin);
+    observerstlad_[jj]->doProcessingTL(dx, t1, t2);
   }
   Log::trace() << "ObserversTLAD::doProcessingTL done" << std::endl;
 }
@@ -231,7 +192,7 @@ void ObserversTLAD<MODEL, OBS>::doFinalizeTL(const Increment_ & dx) {
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
 void ObserversTLAD<MODEL, OBS>::setupAD(std::shared_ptr<const Departures_> ydepad,
-                                   ObsAuxIncrs_ & ybiasad) {
+                                        ObsAuxIncrs_ & ybiasad) {
   Log::trace() << "ObserversTLAD::setupAD start" << std::endl;
   ydepad_  = ydepad;
   ybiasad_ = &ybiasad;
@@ -240,24 +201,12 @@ void ObserversTLAD<MODEL, OBS>::setupAD(std::shared_ptr<const Departures_> ydepa
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
 void ObserversTLAD<MODEL, OBS>::doFirstAD(Increment_ & dx, const util::DateTime & bgn,
-                                    const util::Duration & tstep) {
+                                          const util::Duration & tstep) {
   Log::trace() << "ObserversTLAD::doFirstAD start" << std::endl;
   if (hslot_ == util::Duration(0)) hslot_ = tstep/2;
-  const util::DateTime end(dx.validTime());
-  if (subwindows_) {
-    if (bgn == end) {
-      bgn_ = bgn - hslot_;
-      end_ = end + hslot_;
-    } else {
-      bgn_ = bgn;
-      end_ = end;
-    }
-  }
-  if (bgn_ < winbgn_) bgn_ = winbgn_;
-  if (end_ > winend_) end_ = winend_;
 
   for (std::size_t jj = 0; jj < observerstlad_.size(); ++jj) {
-    observerstlad_[jj]->doFirstAD(dx, (*ydepad_)[jj], (*ybiasad_)[jj], bgn_, end_);
+    observerstlad_[jj]->doFirstAD(dx, (*ydepad_)[jj], (*ybiasad_)[jj], winbgn_, winend_);
   }
   Log::trace() << "ObserversTLAD::doFirstAD done" << std::endl;
 }
@@ -265,15 +214,11 @@ void ObserversTLAD<MODEL, OBS>::doFirstAD(Increment_ & dx, const util::DateTime 
 template <typename MODEL, typename OBS>
 void ObserversTLAD<MODEL, OBS>::doProcessingAD(Increment_ & dx) {
   Log::trace() << "ObserversTLAD::doProcessingAD start" << std::endl;
-  util::DateTime t1(dx.validTime()-hslot_);
-  util::DateTime t2(dx.validTime()+hslot_);
-  if (t1 < bgn_) t1 = bgn_;
-  if (t2 > end_) t2 = end_;
+  util::DateTime t1 = std::max(dx.validTime()-hslot_, winbgn_);
+  util::DateTime t2 = std::min(dx.validTime()+hslot_, winend_);
 
-// Index for current window
-  unsigned int iwin = (t1 - winbgn_).toSeconds() / winlen_.toSeconds();
   for (std::size_t jj = 0; jj < observerstlad_.size(); ++jj) {
-    observerstlad_[jj]->doProcessingAD(dx, t1, t2, iwin);
+    observerstlad_[jj]->doProcessingAD(dx, t1, t2);
   }
   Log::trace() << "ObserversTLAD::doProcessingAD done" << std::endl;
 }

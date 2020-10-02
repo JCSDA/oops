@@ -14,36 +14,33 @@
 #include <memory>
 #include <vector>
 
-#include "oops/assimilation/JqTerm.h"
-#include "oops/assimilation/State4D.h"
 #include "oops/base/PostBaseTLAD.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
+#include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 
 namespace oops {
-  template<typename MODEL> class Increment4D;
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
 class JqTermTLAD : public PostBaseTLAD<MODEL> {
   typedef Increment<MODEL>           Increment_;
-  typedef Increment4D<MODEL>         Increment4D_;
   typedef State<MODEL>               State_;
-  typedef State4D<MODEL>        State4D_;
 
  public:
-  explicit JqTermTLAD(unsigned nsub);
+  explicit JqTermTLAD(const eckit::mpi::Comm &);
   ~JqTermTLAD() {}
 
-  void clear() {xi_.clear();}
-  void computeModelErrorTraj(const State4D_ &, Increment4D_ &);
-  void computeModelErrorTL(Increment4D_ &);
+  void clear() {xi_.reset();}
+// void computeModelErrorTraj(const State_ &, Increment_ &);  // not used
+  State_ & getMxi() const;
+  void computeModelErrorTL(Increment_ &);
 
   std::unique_ptr<GeneralizedDepartures> releaseOutputFromTL() override {return nullptr;}
-  void setupAD(const Increment4D_ & dx);
+  void setupAD(const Increment_ & dx);
 
  private:
   void doInitializeTraj(const State_ &, const util::DateTime &,
@@ -60,18 +57,17 @@ class JqTermTLAD : public PostBaseTLAD<MODEL> {
   void doProcessingAD(Increment_ &) override {}
   void doLastAD(Increment_ &) override {}
 
-  JqTerm<MODEL> jq_;
-  std::vector<Increment_> mxi_;
-  std::vector<Increment_> xi_;
-  const unsigned nsubwin_;
-  unsigned current_;
+  const eckit::mpi::Comm & commTime_;
+  std::unique_ptr<State_> xtraj_;
+  std::unique_ptr<Increment_> mxi_;
+  std::unique_ptr<Increment_> xi_;
 };
 
 // =============================================================================
 
 template <typename MODEL>
-JqTermTLAD<MODEL>::JqTermTLAD(unsigned nsub)
-  : jq_(nsub), mxi_(), xi_(), nsubwin_(nsub), current_(0)
+JqTermTLAD<MODEL>::JqTermTLAD(const eckit::mpi::Comm & comm)
+  : commTime_(comm), xtraj_(), mxi_(), xi_()
 {
   Log::trace() << "JqTermTLAD::JqTermTLAD" << std::endl;
 }
@@ -81,17 +77,52 @@ JqTermTLAD<MODEL>::JqTermTLAD(unsigned nsub)
 template <typename MODEL>
 void JqTermTLAD<MODEL>::doFinalizeTraj(const State_ & xx) {
   Log::trace() << "JqTermTLAD::doFinalizeTraj start" << std::endl;
-  jq_.finalize(xx);
+  xtraj_.reset(new State_(xx));
   Log::trace() << "JqTermTLAD::doFinalizeTraj done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
+/*
 template <typename MODEL>
-void JqTermTLAD<MODEL>::computeModelErrorTraj(const State4D_ & fg, Increment4D_ & dx) {
+void JqTermTLAD<MODEL>::computeModelErrorTraj(const State_ & fg, Increment_ & dx) {
   Log::trace() << "JqTermTLAD::computeModelErrorTraj start" << std::endl;
-  jq_.computeModelError(fg, dx);
+
+  static int tag = 83655;
+  size_t mytime = commTime_.rank();
+// Send values of M(x_i) at end of my subwindow to next subwindow
+  if (mytime + 1 < commTime_.size()) {
+    Log::debug() << "JqTermTLAD::computeModelErrorTraj: sending to " << mytime+1
+                 << " " << tag << std::endl;
+    oops::mpi::send(commTime_, fg, mytime+1, tag);
+    Log::debug() << "JqTermTLAD::computeModelErrorTraj: sent to " << mytime+1
+                 << " " << tag << std::endl;
+  }
+
+// Receive values at beginning of my subwindow from previous subwindow
+  if (mytime > 0) {
+    State_ mxi(fg);
+    Log::debug() << "JqTermTLAD::computeModelErrorTraj: receiving from " << mytime-1
+                 << " " << tag << std::endl;
+    oops::mpi::receive(commTime_, mxi, mytime-1, tag);
+    Log::debug() << "JqTermTLAD::computeModelErrorTraj: received from " << mytime-1
+                 << " " << tag << std::endl;
+
+//  Compute x_i - M(x_{i-1})
+    dx.diff(fg, mxi);
+  }
+  ++tag;
   Log::trace() << "JqTermTLAD::computeModelErrorTraj done" << std::endl;
+}
+*/
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+State<MODEL> & JqTermTLAD<MODEL>::getMxi() const {
+  Log::trace() << "JqTermTLAD::getMxi" << std::endl;
+// Retrieve M(x-i)
+  return *xtraj_;
 }
 
 // -----------------------------------------------------------------------------
@@ -99,36 +130,34 @@ void JqTermTLAD<MODEL>::computeModelErrorTraj(const State4D_ & fg, Increment4D_ 
 template <typename MODEL>
 void JqTermTLAD<MODEL>::doFinalizeTL(const Increment_ & dx) {
   Log::trace() << "JqTermTLAD::doFinalizeTL start" << std::endl;
-  if (mxi_.size() < nsubwin_ - 1) mxi_.push_back(dx);
+  int mytime = commTime_.rank();
+  if (mytime + 1 < commTime_.size()) oops::mpi::send(commTime_, dx, mytime+1, 2468);
   Log::trace() << "JqTermTLAD::doFinalizeTL done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void JqTermTLAD<MODEL>::computeModelErrorTL(Increment4D_ & dx) {
+void JqTermTLAD<MODEL>::computeModelErrorTL(Increment_ & dx) {
   Log::trace() << "JqTermTLAD::computeModelErrorTL start" << std::endl;
 // Compute x_i - M(x_{i-1})
-  for (unsigned jsub = 1; jsub < nsubwin_; ++jsub) {
-    int isub = jsub+dx.first();
-    dx[isub] -= mxi_[jsub-1];
-    Log::info() << "JqTermTLAD: x_" << jsub << " - M(x_" << jsub-1 << ")" << dx[isub] << std::endl;
+  int mytime = commTime_.rank();
+  if (mytime > 0) {
+    Increment_ mxim1(dx, false);
+    oops::mpi::receive(commTime_, mxim1, mytime-1, 2468);
+    dx -= mxim1;
   }
-  mxi_.clear();
+  Log::info() << "JqTermTLAD: x_i - M(x_i)" << dx << std::endl;
   Log::trace() << "JqTermTLAD::computeModelErrorTL done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void JqTermTLAD<MODEL>::setupAD(const Increment4D_ & dx) {
+void JqTermTLAD<MODEL>::setupAD(const Increment_ & dx) {
   Log::trace() << "JqTermTLAD::setupAD start" << std::endl;
-  xi_.clear();
-  for (unsigned jsub = 0; jsub < nsubwin_; ++jsub) {
-    int isub = jsub+dx.first();
-    xi_.push_back(dx[isub]);
-  }
-  current_ = nsubwin_;
+  int mytime = commTime_.rank();
+  if (mytime > 0) oops::mpi::send(commTime_, dx, mytime-1, 8642);
   Log::trace() << "JqTermTLAD::setupAD done" << std::endl;
 }
 
@@ -138,12 +167,12 @@ template <typename MODEL>
 void JqTermTLAD<MODEL>::doFirstAD(Increment_ & dx, const util::DateTime &,
                                   const util::Duration &) {
   Log::trace() << "JqTermTLAD::doFirstAD start" << std::endl;
-  ASSERT(current_ >= 0);
-  ASSERT(current_ <= nsubwin_);
-  if (current_ < xi_.size()) {
-    dx -= xi_[current_];
+  int mytime = commTime_.rank();
+  if (mytime + 1 < commTime_.size()) {
+    Increment_ xip1(dx, false);
+    oops::mpi::receive(commTime_, xip1, mytime+1, 8642);
+    dx -= xip1;
   }
-  current_ -= 1;
   Log::trace() << "JqTermTLAD::doFirstAD done" << std::endl;
 }
 

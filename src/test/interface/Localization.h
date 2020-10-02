@@ -64,7 +64,7 @@ template <typename MODEL> class LocalizationFixture : private boost::noncopyable
 
 //  Setup the localization matrix
     const eckit::LocalConfiguration conf(TestEnvironment::config(), "localization");
-    local_ = oops::LocalizationFactory<MODEL>::create(*resol_, conf);
+    local_ = oops::LocalizationFactory<MODEL>::create(*resol_, *time_, conf);
   }
 
   ~LocalizationFixture<MODEL>() {}
@@ -84,7 +84,7 @@ template <typename MODEL> void testLocalizationZero() {
   Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
 
   EXPECT(dx.norm() == 0.0);
-  Test_::localization().multiply(dx);
+  Test_::localization().localize(dx);
   EXPECT(dx.norm() == 0.0);
 }
 
@@ -98,7 +98,7 @@ template <typename MODEL> void testLocalizationMultiply() {
   dx.random();
 
   EXPECT(dx.norm() > 0.0);
-  Test_::localization().multiply(dx);
+  Test_::localization().localize(dx);
   EXPECT(dx.norm() > 0.0);
 }
 

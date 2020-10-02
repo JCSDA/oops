@@ -182,6 +182,7 @@ class ModelMaker : public ModelFactory<MODEL> {
   explicit ModelMaker(const std::string & name) : ModelFactory<MODEL>(name) {}
 
   ModelBase<MODEL> * make(const Geometry_ & geom, const ModelParametersBase & parameters) override {
+    Log::trace() << "ModelBase<MODEL>::make starting" << std::endl;
     const auto &stronglyTypedParameters = dynamic_cast<const Parameters_&>(parameters);
     return new T(geom.geometry(),
                  parametersOrConfiguration<HasParameters_<T>::value>(stronglyTypedParameters));
@@ -196,11 +197,13 @@ class ModelMaker : public ModelFactory<MODEL> {
 
 template <typename MODEL>
 ModelFactory<MODEL>::ModelFactory(const std::string & name) {
+  Log::trace() << "ModelFactory<MODEL>::ModelFactory starting" << std::endl;
   if (getMakers().find(name) != getMakers().end()) {
     Log::error() << name << " already registered in the model factory."  << std::endl;
     ABORT("Element already registered in ModelFactory.");
   }
   getMakers()[name] = this;
+  Log::trace() << "ModelFactory<MODEL>::ModelFactory done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -226,6 +229,7 @@ ModelBase<MODEL> * ModelFactory<MODEL>::create(const Geometry_ & geom,
 template <typename MODEL>
 std::unique_ptr<ModelParametersBase> ModelFactory<MODEL>::createParameters(
     const std::string &name) {
+  Log::trace() << "ModelFactory<MODEL>::createParameters starting" << std::endl;
   typename std::map<std::string, ModelFactory<MODEL>*>::iterator it = getMakers().find(name);
   if (it == getMakers().end()) {
     throw std::runtime_error(name + " does not exist in the model factory");

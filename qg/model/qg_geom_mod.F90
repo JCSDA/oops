@@ -8,7 +8,7 @@
 
 module qg_geom_mod
 
-use atlas_module, only: atlas_field, atlas_fieldset, atlas_real, atlas_functionspace_structuredcolumns
+use atlas_module, only: atlas_field, atlas_fieldset, atlas_real, atlas_functionspace_pointcloud
 use fckit_configuration_module, only: fckit_configuration
 use fckit_log_module,only: fckit_log
 use kinds
@@ -21,28 +21,27 @@ implicit none
 private
 public :: qg_geom
 public :: qg_geom_registry
-public :: qg_geom_setup,qg_geom_create_atlas_grid_conf,qg_geom_fill_atlas_fieldset,qg_geom_clone,qg_geom_delete,qg_geom_info
+public :: qg_geom_setup,qg_geom_set_atlas_lonlat,qg_geom_fill_atlas_fieldset,qg_geom_clone,qg_geom_delete,qg_geom_info
 ! ------------------------------------------------------------------------------
 type :: qg_geom
-  integer :: nx                                                 !< Number of points in the zonal direction
-  integer :: ny                                                 !< Number of points in the meridional direction
-  integer :: nz                                                 !< Number of vertical levels
-  real(kind_real) :: deltax                                     !< Zonal cell size
-  real(kind_real) :: deltay                                     !< Meridional cell size
-  real(kind_real),allocatable :: x(:)                           !< Zonal coordinate
-  real(kind_real),allocatable :: y(:)                           !< Meridional coordinate
-  real(kind_real),allocatable :: z(:)                           !< Altitude
-  real(kind_real),allocatable :: lat(:,:)                       !< Latitude
-  real(kind_real),allocatable :: lon(:,:)                       !< Longitude
-  real(kind_real),allocatable :: area(:,:)                      !< Area
-  real(kind_real),allocatable :: f(:,:)                         !< Coefficients of PV operator
-  real(kind_real),allocatable :: f_p(:,:)                       !< Coefficients of PV operator, right eigenvectors
-  real(kind_real),allocatable :: f_pinv(:,:)                    !< Coefficients of PV operator, right eigenvectors inverse
-  real(kind_real),allocatable :: f_d(:)                         !< Coefficients of PV operator, eigenvalues
-  real(kind_real),allocatable :: bet(:)                         !< Beta coefficient
-  real(kind_real),allocatable :: heat(:,:)                      !< Heating term
-  type(atlas_functionspace_structuredcolumns) :: afunctionspace !< ATLAS function space
-  type(atlas_fieldset) :: afieldset                             !< ATLAS fieldset
+  integer :: nx                                          !< Number of points in the zonal direction
+  integer :: ny                                          !< Number of points in the meridional direction
+  integer :: nz                                          !< Number of vertical levels
+  real(kind_real) :: deltax                              !< Zonal cell size
+  real(kind_real) :: deltay                              !< Meridional cell size
+  real(kind_real),allocatable :: x(:)                    !< Zonal coordinate
+  real(kind_real),allocatable :: y(:)                    !< Meridional coordinate
+  real(kind_real),allocatable :: z(:)                    !< Altitude
+  real(kind_real),allocatable :: lat(:,:)                !< Latitude
+  real(kind_real),allocatable :: lon(:,:)                !< Longitude
+  real(kind_real),allocatable :: area(:,:)               !< Area
+  real(kind_real),allocatable :: f(:,:)                  !< Coefficients of PV operator
+  real(kind_real),allocatable :: f_p(:,:)                !< Coefficients of PV operator, right eigenvectors
+  real(kind_real),allocatable :: f_pinv(:,:)             !< Coefficients of PV operator, right eigenvectors inverse
+  real(kind_real),allocatable :: f_d(:)                  !< Coefficients of PV operator, eigenvalues
+  real(kind_real),allocatable :: bet(:)                  !< Beta coefficient
+  real(kind_real),allocatable :: heat(:,:)               !< Heating term
+  type(atlas_functionspace_pointcloud) :: afunctionspace !< ATLAS function space
 end type qg_geom
 
 #define LISTED_TYPE qg_geom
@@ -220,57 +219,54 @@ endselect
 
 end subroutine qg_geom_setup
 ! ------------------------------------------------------------------------------
-!> Create ATLAS grid configuration
-subroutine qg_geom_create_atlas_grid_conf(self,fconf)
+!> Set ATLAS lon/lat field
+subroutine qg_geom_set_atlas_lonlat(self,afieldset)
 
 ! Passed variables
-type(qg_geom),intent(inout) :: self              !< Geometry
-type(fckit_configuration),intent(inout) :: fconf !< ATLAS grid configuration
+type(qg_geom),intent(inout) :: self             !< Geometry
+type(atlas_fieldset),intent(inout) :: afieldset !< ATLAS fieldset
 
 ! Local variables
-type(fckit_configuration) :: xspace,yspace
+integer :: ix,iy,inode
+real(kind_real), pointer :: real_ptr(:,:)
+type(atlas_field) :: afield
 
-! Create xspace configuration
-xspace = fckit_configuration()
-call xspace%set("type","linear")
-call xspace%set("N",self%nx)
-call xspace%set("start",self%lon(1,1))
-call xspace%set("end",self%lon(self%nx,1))
-call xspace%set("endpoint",.true.)
+! Create lon/lat field
+afield = atlas_field(name="lonlat", kind=atlas_real(kind_real), shape=(/2,self%nx*self%ny/))
+call afield%data(real_ptr)
+inode = 0
+do iy=1,self%ny
+  do ix=1,self%nx
+    inode = inode+1
+    real_ptr(1,inode) = self%lon(ix,iy)
+    real_ptr(2,inode) = self%lat(ix,iy)
+  end do
+end do
+call afieldset%add(afield)
+call afield%final()
 
-! Create yspace configuration
-yspace = fckit_configuration()
-call yspace%set("type","custom")
-call yspace%set("N",self%ny)
-call yspace%set("values",self%lat(1,:))
-
-! Create ATLAS grid configuration
-call fconf%set("type","structured")
-call fconf%set("xspace",xspace)
-call fconf%set("yspace",yspace)
-
-end subroutine qg_geom_create_atlas_grid_conf
+end subroutine qg_geom_set_atlas_lonlat
 ! ------------------------------------------------------------------------------
 !> Fill ATLAS fieldset
 subroutine qg_geom_fill_atlas_fieldset(self,afieldset)
 
 ! Passed variables
-type(qg_geom),intent(inout) :: self                                      !< Geometry
-type(atlas_fieldset),intent(inout) :: afieldset                          !< ATLAS fieldset
+type(qg_geom),intent(inout) :: self             !< Geometry
+type(atlas_fieldset),intent(inout) :: afieldset !< ATLAS fieldset
 
 ! Local variables
-integer :: i,j,k,node
+integer :: ix,iy,iz,inode
 real(kind_real),pointer :: real_ptr_1(:),real_ptr_2(:,:)
 type(atlas_field) :: afield
 
 ! Add area
 afield = self%afunctionspace%create_field(name='area',kind=atlas_real(kind_real),levels=0)
 call afield%data(real_ptr_1)
-node = 0
-do j=self%afunctionspace%j_begin(),self%afunctionspace%j_end()
-  do i=self%afunctionspace%i_begin(j),self%afunctionspace%i_end(j)
-    node = node+1
-    real_ptr_1(node) = self%area(i,j)
+inode = 0
+do iy=1,self%ny
+  do ix=1,self%nx
+    inode = inode+1
+    real_ptr_1(inode) = self%area(ix,iy)
   enddo
 enddo
 call afieldset%add(afield)
@@ -279,8 +275,8 @@ call afield%final()
 ! Add vertical unit
 afield = self%afunctionspace%create_field(name='vunit',kind=atlas_real(kind_real),levels=self%nz)
 call afield%data(real_ptr_2)
-do k=1,self%nz
-  real_ptr_2(k,1:self%afunctionspace%size_owned()) = self%z(k)
+do iz=1,self%nz
+  real_ptr_2(iz,1:self%nx*self%ny) = self%z(iz)
 end do
 call afieldset%add(afield)
 call afield%final()
@@ -328,8 +324,7 @@ self%f_pinv = other%f_pinv
 self%f_d = other%f_d
 self%bet = other%bet
 self%heat = other%heat
-self%afunctionspace = atlas_functionspace_structuredcolumns(other%afunctionspace%c_ptr())
-self%afieldset = atlas_fieldset(other%afieldset%c_ptr())
+self%afunctionspace = atlas_functionspace_pointcloud(other%afunctionspace%c_ptr())
 
 end subroutine qg_geom_clone
 ! ------------------------------------------------------------------------------
@@ -353,7 +348,6 @@ deallocate(self%f_d)
 deallocate(self%bet)
 deallocate(self%heat)
 call self%afunctionspace%final()
-call self%afieldset%final()
 
 end subroutine qg_geom_delete
 ! ------------------------------------------------------------------------------

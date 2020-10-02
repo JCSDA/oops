@@ -30,7 +30,7 @@
 #include "oops/assimilation/LETKFSolverParameters.h"
 #include "oops/base/Departures.h"
 #include "oops/base/DeparturesEnsemble.h"
-#include "oops/base/IncrementEnsemble.h"
+#include "oops/base/IncrementEnsemble4D.h"
 #include "oops/base/LocalIncrement.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/ObsSpaces.h"
@@ -43,13 +43,13 @@ namespace oops {
 
 template <typename MODEL, typename OBS>
 class LETKFSolverOOPS : public LETKFSolver<MODEL, OBS> {
-  typedef Departures<OBS>           Departures_;
-  typedef DeparturesEnsemble<OBS>   DeparturesEnsemble_;
-  typedef Geometry<MODEL>           Geometry_;
-  typedef GeometryIterator<MODEL>   GeometryIterator_;
-  typedef IncrementEnsemble<MODEL>  IncrementEnsemble_;
-  typedef ObsErrors<OBS>            ObsErrors_;
-  typedef ObsSpaces<OBS>            ObsSpaces_;
+  typedef Departures<OBS>             Departures_;
+  typedef DeparturesEnsemble<OBS>     DeparturesEnsemble_;
+  typedef Geometry<MODEL>             Geometry_;
+  typedef GeometryIterator<MODEL>     GeometryIterator_;
+  typedef IncrementEnsemble4D<MODEL>  IncrementEnsemble4D_;
+  typedef ObsErrors<OBS>              ObsErrors_;
+  typedef ObsSpaces<OBS>              ObsSpaces_;
 
  public:
   static const std::string classname() {return "oops::LETKFSolverOOPS";}
@@ -63,7 +63,7 @@ class LETKFSolverOOPS : public LETKFSolver<MODEL, OBS> {
                       const ObsErrors_ &) override;
 
   /// Applies weights and adds posterior inflation
-  void applyWeights(const IncrementEnsemble_ &, IncrementEnsemble_ &,
+  void applyWeights(const IncrementEnsemble4D_ &, IncrementEnsemble4D_ &,
                     const GeometryIterator_ &) override;
 
   LETKFSolverParameters options_;
@@ -178,8 +178,8 @@ void LETKFSolverOOPS<MODEL, OBS>::computeWeights(const Departures_ & dy,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-void LETKFSolverOOPS<MODEL, OBS>::applyWeights(const IncrementEnsemble_ & bkg_pert,
-                                          IncrementEnsemble_ & ana_pert,
+void LETKFSolverOOPS<MODEL, OBS>::applyWeights(const IncrementEnsemble4D_ & bkg_pert,
+                                          IncrementEnsemble4D_ & ana_pert,
                                           const GeometryIterator_ & i) {
 // apply Wa_, wa_ (here combined in the trans_ matrix)
   util::Timer timer(classname(), "applyWeights");

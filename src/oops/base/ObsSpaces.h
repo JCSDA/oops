@@ -21,9 +21,9 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 #include "eckit/geometry/Point2.h"
-#include "eckit/mpi/Comm.h"
 
 #include "oops/interface/ObsSpace.h"
+#include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
@@ -46,9 +46,9 @@ class ObsSpaces : public util::Printable,
   static const std::string classname() {return "oops::ObsSpaces";}
 
   ObsSpaces(const eckit::Configuration &, const eckit::mpi::Comm &,
-            const util::DateTime &, const util::DateTime &);
-  ObsSpaces(const ObsSpaces &, const eckit::geometry::Point2 &,
-            const eckit::Configuration &);
+            const util::DateTime &, const util::DateTime &,
+            const eckit::mpi::Comm & time = oops::mpi::myself());
+  ObsSpaces(const ObsSpaces &, const eckit::geometry::Point2 &, const eckit::Configuration &);
   explicit ObsSpaces(const std::shared_ptr<ObsSpace_> &);
   explicit ObsSpaces(const ObsSpaces &);
   ~ObsSpaces();
@@ -77,7 +77,8 @@ class ObsSpaces : public util::Printable,
 
 template <typename OBS>
 ObsSpaces<OBS>::ObsSpaces(const eckit::Configuration & conf, const eckit::mpi::Comm & comm,
-                            const util::DateTime & bgn, const util::DateTime & end)
+                          const util::DateTime & bgn, const util::DateTime & end,
+                          const eckit::mpi::Comm & time)
   : spaces_(0), wbgn_(bgn), wend_(end)
 {
   const int mymember = conf.getInt("member", 0);
@@ -87,8 +88,7 @@ ObsSpaces<OBS>::ObsSpaces(const eckit::Configuration & conf, const eckit::mpi::C
   for (std::size_t jj = 0; jj < typeconfs.size(); ++jj) {
     eckit::LocalConfiguration obsconf(typeconfs[jj], "obs space");
     if (members) obsconf.set("member", mymember);
-    Log::debug() << "ObsSpaces::ObsSpaces : conf " << obsconf << std::endl;
-    std::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsconf, comm, bgn, end));
+    std::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsconf, comm, bgn, end, time));
     spaces_.push_back(tmp);
   }
   ASSERT(spaces_.size() >0);
@@ -98,7 +98,7 @@ ObsSpaces<OBS>::ObsSpaces(const eckit::Configuration & conf, const eckit::mpi::C
 
 template <typename OBS>
 ObsSpaces<OBS>::ObsSpaces(const ObsSpaces<OBS> & obss, const eckit::geometry::Point2 & center,
-                            const eckit::Configuration & conf)
+                          const eckit::Configuration & conf)
   : spaces_(0), wbgn_(obss.wbgn_), wend_(obss.wend_)
 {
   std::vector<eckit::LocalConfiguration> typeconfs;

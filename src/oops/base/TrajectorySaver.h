@@ -13,8 +13,6 @@
 
 #include <memory>
 
-#include <boost/ptr_container/ptr_vector.hpp>
-
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/PostBase.h"
 #include "oops/interface/Geometry.h"
@@ -40,18 +38,15 @@ class TrajectorySaver : public PostBase<State<MODEL> > {
 
  public:
   TrajectorySaver(const eckit::Configuration &, const Geometry_ &,
-                  const ModelAux_ &, boost::ptr_vector<LinearModel_> &, PPTLAD_);
+                  const ModelAux_ &, std::shared_ptr<LinearModel_>, PPTLAD_);
   TrajectorySaver(const eckit::Configuration &, const Geometry_ &, PPTLAD_);
   ~TrajectorySaver() {}
 
  private:
-  const Geometry_    resol_;
+  const Geometry_ & resol_;
   PPTLAD_ pptraj_;
-  const bool fourd_;
-  const eckit::LocalConfiguration   tlConf_;
   std::unique_ptr<const ModelAux_>  lrBias_;
-  boost::ptr_vector<LinearModel_> * tlm_;
-  LinearModel_ *     subtlm_;
+  std::shared_ptr<LinearModel_>     tlm_;
 
   void doInitialize(const State_ &, const util::DateTime &, const util::Duration &) override;
   void doProcessing(const State_ &) override;
@@ -64,11 +59,10 @@ template <typename MODEL>
 TrajectorySaver<MODEL>::TrajectorySaver(const eckit::Configuration & conf,
                                         const Geometry_ & resol,
                                         const ModelAux_ & bias,
-                                        boost::ptr_vector<LinearModel_> & tlm,
+                                        std::shared_ptr<LinearModel_> tlm,
                                         PPTLAD_ pptraj):
   PostBase<State_>(conf),
-  resol_(resol), pptraj_(pptraj), fourd_(true),
-  tlConf_(conf), lrBias_(new ModelAux_(resol, bias)), tlm_(&tlm), subtlm_(0)
+  resol_(resol), pptraj_(pptraj), lrBias_(new ModelAux_(resol, bias)), tlm_(tlm)
 {
   Log::trace() << "TrajectorySaver::TrajectorySaver 4D" << std::endl;
 }
@@ -77,8 +71,7 @@ template <typename MODEL>
 TrajectorySaver<MODEL>::TrajectorySaver(const eckit::Configuration & conf,
                                         const Geometry_ & resol, PPTLAD_ pptraj):
   PostBase<State_>(conf),
-  resol_(resol), pptraj_(pptraj), fourd_(false),
-  tlConf_(), lrBias_(), tlm_(nullptr), subtlm_(0)
+  resol_(resol), pptraj_(pptraj), lrBias_(), tlm_()
 {
   Log::trace() << "TrajectorySaver::TrajectorySaver 3D" << std::endl;
 }
@@ -88,7 +81,6 @@ void TrajectorySaver<MODEL>::doInitialize(const State_ & x0,
                                           const util::DateTime & end,
                                           const util::Duration & step) {
   Log::trace() << "TrajectorySaver::doInitialize start" << std::endl;
-  if (fourd_) subtlm_ = new LinearModel_(resol_, tlConf_);
   State_ xlr(resol_, x0);
   pptraj_.initializeTraj(xlr, end, step);
   Log::trace() << "TrajectorySaver::doInitialize done" << std::endl;
@@ -98,10 +90,7 @@ template <typename MODEL>
 void TrajectorySaver<MODEL>::doProcessing(const State_ & xx) {
   Log::trace() << "TrajectorySaver::doProcessing start" << std::endl;
   State_ xlr(resol_, xx);
-  if (fourd_) {
-    ASSERT(subtlm_ != 0);
-    subtlm_->setTrajectory(xx, xlr, *lrBias_);
-  }
+  if (tlm_) tlm_->setTrajectory(xx, xlr, *lrBias_);
   pptraj_.processTraj(xlr);
   Log::trace() << "TrajectorySaver::doProcessing done" << std::endl;
 }
@@ -110,9 +99,7 @@ template <typename MODEL>
 void TrajectorySaver<MODEL>::doFinalize(const State_ & xx) {
   Log::trace() << "TrajectorySaver::doFinalize start" << std::endl;
   State_ xlr(resol_, xx);
-  if (fourd_) tlm_->push_back(subtlm_);
   pptraj_.finalizeTraj(xlr);
-  subtlm_ = 0;
   Log::trace() << "TrajectorySaver::doFinalize done" << std::endl;
 }
 // -----------------------------------------------------------------------------

@@ -254,26 +254,33 @@ void ObsTable::otOpen(const std::string & filename) {
   }
 
   fin >> nobs;
-  locations_.resize(nobs);
-  std::vector<double> newcol(nobs);
+  locations_.clear();
+  std::vector<double> newcol;
   for (int jc = 0; jc < ncol; ++jc) {
     ASSERT(data_.find(colnames[jc]) == data_.end());
     data_.insert(std::pair<std::string, std::vector<double> >(colnames[jc], newcol));
   }
 
   times_.clear();
-  int jjj;
   for (int jobs = 0; jobs < nobs; ++jobs) {
+    int jjj;
     fin >> jjj;
     ASSERT(jjj == jobs);
     std::string sss;
     fin >> sss;
     util::DateTime ttt(sss);
-    times_.push_back(ttt);
-    fin >> locations_[jobs];
+    bool inside = ttt > winbgn_ && ttt <= winend_;
+
+    if (inside) times_.push_back(ttt);
+    double loc;
+    fin >> loc;
+    if (inside) locations_.push_back(loc);
     for (std::map<std::string, std::vector<double> >::iterator jo = data_.begin();
-         jo != data_.end(); ++jo)
-      fin >> jo->second[jobs];
+         jo != data_.end(); ++jo) {
+      double val;
+      fin >> val;
+      if (inside) jo->second.push_back(val);
+    }
   }
 
   fin.close();

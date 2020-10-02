@@ -195,10 +195,10 @@ class CovarMaker : public CovarianceFactory<MODEL> {
   typedef Geometry<MODEL>            Geometry_;
   typedef State<MODEL>               State_;
 
-  virtual ModelSpaceCovarianceBase<MODEL> * make(
+  ModelSpaceCovarianceBase<MODEL> * make(
       const ModelSpaceCovarianceParametersBase<MODEL> & params,
       const Geometry_ & resol, const Variables & vars,
-      const State_ & xb, const State_ & fg) {
+      const State_ & xb, const State_ & fg) override {
     const auto &stronglyTypedParams = dynamic_cast<const Parameters_&>(params);
     return new COVAR(resol, vars,
                      parametersOrConfiguration<HasParameters_<COVAR>::value>(stronglyTypedParams),

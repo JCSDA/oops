@@ -16,11 +16,11 @@
 #include "oops/assimilation/LocalEnsembleSolver.h"
 #include "oops/assimilation/State4D.h"
 #include "oops/base/Departures.h"
-#include "oops/base/IncrementEnsemble.h"
+#include "oops/base/IncrementEnsemble4D.h"
 #include "oops/base/instantiateObsFilterFactory.h"
 #include "oops/base/Observations.h"
 #include "oops/base/ObsSpaces.h"
-#include "oops/base/StateEnsemble.h"
+#include "oops/base/StateEnsemble4D.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
@@ -38,12 +38,12 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
   typedef Departures<OBS>                  Departures_;
   typedef Geometry<MODEL>                  Geometry_;
   typedef GeometryIterator<MODEL>          GeometryIterator_;
-  typedef IncrementEnsemble<MODEL>         IncrementEnsemble_;
+  typedef IncrementEnsemble4D<MODEL>       IncrementEnsemble4D_;
   typedef LocalEnsembleSolver<MODEL, OBS>  LocalSolver_;
   typedef ObsSpaces<OBS>                   ObsSpaces_;
   typedef Observations<OBS>                Observations_;
   typedef State4D<MODEL>                   State4D_;
-  typedef StateEnsemble<MODEL>             StateEnsemble_;
+  typedef StateEnsemble4D<MODEL>           StateEnsemble4D_;
 
  public:
 // -----------------------------------------------------------------------------
@@ -80,7 +80,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     const eckit::LocalConfiguration bgConfig(fullConfig, "background");
 
     // Read all ensemble members
-    StateEnsemble_ ens_xx(geometry, bgConfig);
+    StateEnsemble4D_ ens_xx(geometry, bgConfig);
     const size_t nens = ens_xx.size();
 
     const Variables statevars = ens_xx.variables();
@@ -100,7 +100,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     Log::test() << "Background mean :" << bkg_mean << std::endl;
 
     // calculate background ensemble perturbations
-    IncrementEnsemble_ bkg_pert(ens_xx, bkg_mean, statevars);
+    IncrementEnsemble4D_ bkg_pert(ens_xx, bkg_mean, statevars);
 
     // TODO(Travis) optionally save the background mean / standard deviation
 
@@ -113,7 +113,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     Log::test() << "background y - H(x): " << std::endl << ombg << std::endl;
 
     // initialize empty analysis perturbations
-    IncrementEnsemble_ ana_pert(geometry, statevars, ens_xx[0].validTimes(), bkg_pert.size());
+    IncrementEnsemble4D_ ana_pert(geometry, statevars, ens_xx[0].validTimes(), bkg_pert.size());
 
     // run the solver at each gridpoint
     Log::info() << "Beginning core local solver..." << std::endl;

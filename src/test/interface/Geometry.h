@@ -35,7 +35,7 @@ template <typename MODEL> void testConstructor() {
   typedef oops::Geometry<MODEL>        Geometry_;
 
   std::unique_ptr<Geometry_> geom(new Geometry_(GeometryFixture<MODEL>::getParameters(),
-                                                oops::mpi::world()));
+                                                oops::mpi::world(), oops::mpi::myself()));
 
   EXPECT(geom.get());
 
@@ -47,7 +47,7 @@ template <typename MODEL> void testConstructor() {
 template <typename MODEL> void testCopyConstructor() {
   typedef oops::Geometry<MODEL>        Geometry_;
   std::unique_ptr<Geometry_> geom(new Geometry_(GeometryFixture<MODEL>::getParameters(),
-                                                oops::mpi::world()));
+                                                oops::mpi::world(), oops::mpi::myself()));
 
 
   std::unique_ptr<Geometry_> other(new Geometry_(*geom));

@@ -31,7 +31,7 @@
 #include "oops/assimilation/LocalEnsembleSolver.h"
 #include "oops/base/Departures.h"
 #include "oops/base/DeparturesEnsemble.h"
-#include "oops/base/IncrementEnsemble.h"
+#include "oops/base/IncrementEnsemble4D.h"
 #include "oops/base/LocalIncrement.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/ObsSpaces.h"
@@ -44,13 +44,13 @@ namespace oops {
 
 template <typename MODEL, typename OBS>
 class LETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
-  typedef Departures<OBS>           Departures_;
-  typedef DeparturesEnsemble<OBS>   DeparturesEnsemble_;
-  typedef Geometry<MODEL>           Geometry_;
-  typedef GeometryIterator<MODEL>   GeometryIterator_;
-  typedef IncrementEnsemble<MODEL>  IncrementEnsemble_;
-  typedef ObsErrors<OBS>            ObsErrors_;
-  typedef ObsSpaces<OBS>            ObsSpaces_;
+  typedef Departures<OBS>             Departures_;
+  typedef DeparturesEnsemble<OBS>     DeparturesEnsemble_;
+  typedef Geometry<MODEL>             Geometry_;
+  typedef GeometryIterator<MODEL>     GeometryIterator_;
+  typedef IncrementEnsemble4D<MODEL>  IncrementEnsemble4D_;
+  typedef ObsErrors<OBS>              ObsErrors_;
+  typedef ObsSpaces<OBS>              ObsSpaces_;
 
  public:
   static const std::string classname() {return "oops::LETKFSolver";}
@@ -58,8 +58,8 @@ class LETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
   LETKFSolver(ObsSpaces_ &, const Geometry_ &, const eckit::Configuration &, size_t);
 
   /// KF update + posterior inflation at a grid point location (GeometryIterator_)
-  void measurementUpdate(const IncrementEnsemble_ &,
-                         const GeometryIterator_ &, IncrementEnsemble_ &) override;
+  void measurementUpdate(const IncrementEnsemble4D_ &,
+                         const GeometryIterator_ &, IncrementEnsemble4D_ &) override;
 
  protected:
   /// Computes weights
@@ -67,7 +67,7 @@ class LETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
                               const ObsErrors_ &);
 
   /// Applies weights and adds posterior inflation
-  virtual void applyWeights(const IncrementEnsemble_ &, IncrementEnsemble_ &,
+  virtual void applyWeights(const IncrementEnsemble4D_ &, IncrementEnsemble4D_ &,
                             const GeometryIterator_ &);
 
   LETKFSolverParameters options_;
@@ -125,9 +125,9 @@ LETKFSolver<MODEL, OBS>::LETKFSolver(ObsSpaces_ & obspaces, const Geometry_ & ge
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-void LETKFSolver<MODEL, OBS>::measurementUpdate(const IncrementEnsemble_ & bkg_pert,
+void LETKFSolver<MODEL, OBS>::measurementUpdate(const IncrementEnsemble4D_ & bkg_pert,
                                                 const GeometryIterator_ & i,
-                                                IncrementEnsemble_ & ana_pert) {
+                                                IncrementEnsemble4D_ & ana_pert) {
   util::Timer timer(classname(), "measurementUpdate");
 
   // create the local subset of observations
@@ -193,8 +193,8 @@ void LETKFSolver<MODEL, OBS>::computeWeights(const Departures_ & dy_oops,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-void LETKFSolver<MODEL, OBS>::applyWeights(const IncrementEnsemble_ & bkg_pert,
-                                           IncrementEnsemble_ & ana_pert,
+void LETKFSolver<MODEL, OBS>::applyWeights(const IncrementEnsemble4D_ & bkg_pert,
+                                           IncrementEnsemble4D_ & ana_pert,
                                            const GeometryIterator_ & i) {
   // applies Wa_, wa_
   util::Timer timer(classname(), "applyWeights");

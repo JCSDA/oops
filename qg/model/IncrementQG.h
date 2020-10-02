@@ -19,7 +19,7 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include "atlas/field/FieldSet.h"
+#include "atlas/field.h"
 
 #include "eckit/config/LocalConfiguration.h"
 
@@ -127,7 +127,6 @@ class IncrementQG : public oops::GeneralizedDepartures,
   void print(std::ostream &) const override;
   const bool lbc_ = false;
   std::unique_ptr<FieldsQG> fields_;
-  std::unique_ptr<FieldsQG> stash_;
 };
 // -----------------------------------------------------------------------------
 

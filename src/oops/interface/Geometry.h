@@ -17,12 +17,11 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include "atlas/field/FieldSet.h"
-#include "atlas/functionspace/FunctionSpace.h"
-
-#include "eckit/mpi/Comm.h"
+#include "atlas/field.h"
+#include "atlas/functionspace.h"
 
 #include "oops/interface/GeometryIterator.h"
+#include "oops/mpi/mpi.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/parameters/ConfigurationParameter.h"
@@ -67,8 +66,9 @@ class Geometry : public util::Printable,
 
   static const std::string classname() {return "oops::Geometry";}
 
-  Geometry(const Parameters_ &, const eckit::mpi::Comm &);
-  Geometry(const eckit::LocalConfiguration &, const eckit::mpi::Comm &);
+  Geometry(const Parameters_ &, const eckit::mpi::Comm &, const eckit::mpi::Comm &);
+  Geometry(const eckit::Configuration &, const eckit::mpi::Comm &,
+           const eckit::mpi::Comm & time = oops::mpi::myself());
   Geometry(const Geometry &);
   explicit Geometry(boost::shared_ptr<const Geometry_>);
   ~Geometry();
@@ -88,25 +88,29 @@ class Geometry : public util::Printable,
   atlas::FieldSet * atlasFieldSet() const {return geom_->atlasFieldSet();}
 #endif
 
+  const eckit::mpi::Comm & timeComm() const {return time_;}
  private:
   Geometry & operator=(const Geometry &);
   void print(std::ostream &) const;
   boost::shared_ptr<const Geometry_> geom_;
+  const eckit::mpi::Comm & time_;
 };
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-Geometry<MODEL>::Geometry(const eckit::LocalConfiguration & config,
-                          const eckit::mpi::Comm & comm):
-  Geometry(validateAndDeserialize<Parameters_>(config), comm)
+Geometry<MODEL>::Geometry(const eckit::Configuration & config,
+                          const eckit::mpi::Comm & comm,
+                          const eckit::mpi::Comm & time)
+  : Geometry(validateAndDeserialize<Parameters_>(config), comm, time)
 {}
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
 Geometry<MODEL>::Geometry(const Parameters_ & parameters,
-                          const eckit::mpi::Comm & comm): geom_() {
+                          const eckit::mpi::Comm & comm,
+                          const eckit::mpi::Comm & time): geom_(), time_(time) {
   Log::trace() << "Geometry<MODEL>::Geometry starting" << std::endl;
   util::Timer timer(classname(), "Geometry");
   geom_.reset(new Geometry_(
@@ -118,14 +122,16 @@ Geometry<MODEL>::Geometry(const Parameters_ & parameters,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-Geometry<MODEL>::Geometry(const Geometry & other): geom_(other.geom_) {
+Geometry<MODEL>::Geometry(const Geometry & other): geom_(other.geom_), time_(other.time_) {
   Log::trace() << "Geometry<MODEL>::Geometry copy done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-Geometry<MODEL>::Geometry(boost::shared_ptr<const Geometry_> ptr): geom_(ptr) {
+Geometry<MODEL>::Geometry(boost::shared_ptr<const Geometry_> ptr)
+  : geom_(ptr), time_(oops::mpi::myself())
+{
   Log::trace() << "Geometry<MODEL>::Geometry shared_ptr done" << std::endl;
 }
 

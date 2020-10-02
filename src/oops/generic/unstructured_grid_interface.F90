@@ -103,7 +103,7 @@ igrid = c_igrid+1
 ! Call Fortran
 nl = self%grid(igrid)%nl0
 nv = self%grid(igrid)%nv
-nts = self%nts
+nts = 1
 
 end subroutine ug_get_dims_c
 ! ------------------------------------------------------------------------------

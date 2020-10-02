@@ -16,10 +16,7 @@
 #include <string>
 #include <vector>
 
-#include "atlas/array.h"
-#include "atlas/field/Field.h"
-#include "atlas/field/FieldSet.h"
-#include "atlas/util/Metadata.h"
+#include "atlas/field.h"
 
 #include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/LocalIncrement.h"
@@ -30,8 +27,10 @@
 #if !ATLASIFIED
 #include "oops/generic/UnstructuredGrid.h"
 #endif
+#include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
+#include "oops/util/gatherPrint.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Serializable.h"
@@ -120,10 +119,15 @@ class Increment : public oops::GeneralizedDepartures,
   void serialize(std::vector<double> &) const override;
   void deserialize(const std::vector<double> &, size_t &) override;
 
+  void shift_forward(const util::DateTime &);
+  void shift_backward(const util::DateTime &);
+  const eckit::mpi::Comm & timeComm() const {return commTime_;}
+
  private:
   void print(std::ostream &) const override;
   std::unique_ptr<Increment_> increment_;
   const Variables variables_;
+  const eckit::mpi::Comm & commTime_;
 };
 
 // -----------------------------------------------------------------------------
@@ -143,7 +147,8 @@ State<MODEL> & operator+=(State<MODEL> & xx, const Increment<MODEL> & dx) {
 
 template<typename MODEL>
 Increment<MODEL>::Increment(const Geometry_ & resol, const Variables & vars,
-                            const util::DateTime & time) : increment_(), variables_(vars)
+                            const util::DateTime & time)
+  : increment_(), variables_(vars), commTime_(resol.timeComm())
 {
   Log::trace() << "Increment<MODEL>::Increment starting" << std::endl;
   util::Timer timer(classname(), "Increment");
@@ -155,7 +160,7 @@ Increment<MODEL>::Increment(const Geometry_ & resol, const Variables & vars,
 
 template<typename MODEL>
 Increment<MODEL>::Increment(const Geometry_ & resol, const Increment & other)
-  : increment_(), variables_(other.variables_)
+  : increment_(), variables_(other.variables_), commTime_(other.commTime_)
 {
   Log::trace() << "Increment<MODEL>::Increment starting" << std::endl;
   util::Timer timer(classname(), "Increment");
@@ -167,7 +172,7 @@ Increment<MODEL>::Increment(const Geometry_ & resol, const Increment & other)
 
 template<typename MODEL>
 Increment<MODEL>::Increment(const Increment & other, const bool copy)
-  : increment_(), variables_(other.variables_)
+  : increment_(), variables_(other.variables_), commTime_(other.commTime_)
 {
   Log::trace() << "Increment<MODEL>::Increment copy starting" << std::endl;
   util::Timer timer(classname(), "Increment");
@@ -296,6 +301,7 @@ double Increment<MODEL>::dot_product_with(const Increment & dx) const {
   Log::trace() << "Increment<MODEL>::dot_product_with starting" << std::endl;
   util::Timer timer(classname(), "dot_product_with");
   double zz = increment_->dot_product_with(*dx.increment_);
+  commTime_.allReduceInPlace(zz, eckit::mpi::Operation::SUM);
   Log::trace() << "Increment<MODEL>::dot_product_with done" << std::endl;
   return zz;
 }
@@ -378,6 +384,9 @@ double Increment<MODEL>::norm() const {
   Log::trace() << "Increment<MODEL>::norm starting" << std::endl;
   util::Timer timer(classname(), "norm");
   double zz = increment_->norm();
+  zz *= zz;
+  commTime_.allReduceInPlace(zz, eckit::mpi::Operation::SUM);
+  zz = sqrt(zz);
   Log::trace() << "Increment<MODEL>::norm done" << std::endl;
   return zz;
 }
@@ -397,30 +406,30 @@ Geometry<MODEL> Increment<MODEL>::geometry() const {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void Increment<MODEL>::setAtlas(atlas::FieldSet * afieldset) const {
+void Increment<MODEL>::setAtlas(atlas::FieldSet * atlasFieldSet) const {
   Log::trace() << "Increment<MODEL>::setAtlas starting" << std::endl;
   util::Timer timer(classname(), "setAtlas");
-  increment_->setAtlas(afieldset);
+  increment_->setAtlas(atlasFieldSet);
   Log::trace() << "Increment<MODEL>::setAtlas done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void Increment<MODEL>::toAtlas(atlas::FieldSet * afieldset) const {
+void Increment<MODEL>::toAtlas(atlas::FieldSet * atlasFieldSet) const {
   Log::trace() << "Increment<MODEL>::toAtlas starting" << std::endl;
   util::Timer timer(classname(), "toAtlas");
-  increment_->toAtlas(afieldset);
+  increment_->toAtlas(atlasFieldSet);
   Log::trace() << "Increment<MODEL>::toAtlas done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void Increment<MODEL>::fromAtlas(atlas::FieldSet * afieldset) {
+void Increment<MODEL>::fromAtlas(atlas::FieldSet * atlasFieldSet) {
   Log::trace() << "Increment<MODEL>::fromAtlas starting" << std::endl;
   util::Timer timer(classname(), "fromAtlas");
-  increment_->fromAtlas(afieldset);
+  increment_->fromAtlas(atlasFieldSet);
   Log::trace() << "Increment<MODEL>::fromAtlas done" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -489,10 +498,57 @@ void Increment<MODEL>::deserialize(const std::vector<double> & vect, size_t & cu
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
+void Increment<MODEL>::shift_forward(const util::DateTime & begin) {
+  static int tag = 159357;
+  int mytime = commTime_.rank();
+
+// Send values of M.dx_i at end of my subwindow to next subwindow
+  if (mytime + 1 < commTime_.size()) {
+    oops::mpi::send(commTime_, *increment_, mytime+1, tag);
+  }
+
+// Receive values at beginning of my subwindow from previous subwindow
+  if (mytime > 0) {
+    oops::mpi::receive(commTime_, *increment_, mytime-1, tag);
+  } else {
+    increment_->zero(begin);
+  }
+
+  ++tag;
+}
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::shift_backward(const util::DateTime & end) {
+  static int tag = 753951;
+  int mytime = commTime_.rank();
+
+// Send values of dx_i at start of my subwindow to previous subwindow
+  if (mytime > 0) {
+    oops::mpi::send(commTime_, *increment_, mytime-1, tag);
+  }
+
+// Receive values at end of my subwindow from next subwindow
+  if (mytime + 1 < commTime_.size()) {
+    oops::mpi::receive(commTime_, *increment_, mytime+1, tag);
+  } else {
+    increment_->zero(end);
+  }
+
+  ++tag;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
 void Increment<MODEL>::print(std::ostream & os) const {
   Log::trace() << "Increment<MODEL>::print starting" << std::endl;
   util::Timer timer(classname(), "print");
-  os << *increment_;
+  if (commTime_.size() > 1) {
+    gatherPrint(os, *increment_, commTime_);
+  } else {
+    os << *increment_;
+  }
   Log::trace() << "Increment<MODEL>::print done" << std::endl;
 }
 

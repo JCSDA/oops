@@ -120,6 +120,21 @@ void StateQG::write(const eckit::Configuration & files) const {
   fields_->write(files);
 }
 // -----------------------------------------------------------------------------
+/// Serialization
+// -----------------------------------------------------------------------------
+size_t StateQG::serialSize() const {
+  size_t nn = fields_->serialSize();
+  return nn;
+}
+// -----------------------------------------------------------------------------
+void StateQG::serialize(std::vector<double> & vect) const {
+  fields_->serialize(vect);
+}
+// -----------------------------------------------------------------------------
+void StateQG::deserialize(const std::vector<double> & vect, size_t & index) {
+  fields_->deserialize(vect, index);
+}
+// -----------------------------------------------------------------------------
 void StateQG::print(std::ostream & os) const {
   os << std::endl << "  Valid time: " << validTime();
   os << *fields_;

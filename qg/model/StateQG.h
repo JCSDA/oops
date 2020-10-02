@@ -14,6 +14,7 @@
 #include <memory>
 #include <ostream>
 #include <string>
+#include <vector>
 
 #include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
@@ -70,6 +71,11 @@ class StateQG : public util::Printable,
     return fields_->geometry();
   }
   const oops::Variables & variables() const {return fields_->variables();}
+
+/// Serialization
+  size_t serialSize() const;
+  void serialize(std::vector<double> &) const;
+  void deserialize(const std::vector<double> &, size_t &);
 
 /// Other
   void zero();

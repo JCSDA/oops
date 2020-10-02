@@ -563,86 +563,77 @@ call qg_fields_vars(fld,c_lq,c_lbc)
 end subroutine qg_fields_vars_c
 ! ------------------------------------------------------------------------------
 !> Create ATLAS fields
-subroutine qg_fields_set_atlas_c(c_key_fld,c_vars,c_dt,c_afieldset) bind (c,name='qg_fields_set_atlas_f90')
+subroutine qg_fields_set_atlas_c(c_key_fld,c_vars,c_afieldset) bind (c,name='qg_fields_set_atlas_f90')
 
 implicit none
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_fld           !< Fields
 type(c_ptr),value,intent(in) :: c_vars           !< List of variables
-type(c_ptr),value,intent(in) :: c_dt             !< Date and time
 type(c_ptr),intent(in),value :: c_afieldset      !< ATLAS fieldset pointer
 
 ! Local variables
 type(qg_fields),pointer :: fld
 type(oops_variables) :: vars
-type(datetime) :: fdate
 type(atlas_fieldset) :: afieldset
 
 ! Interface
 call qg_fields_registry%get(c_key_fld,fld)
 vars = oops_variables(c_vars)
-call c_f_datetime(c_dt,fdate)
 afieldset = atlas_fieldset(c_afieldset)
 
 ! Call Fortran
-call qg_fields_set_atlas(fld,vars,fdate,afieldset)
+call qg_fields_set_atlas(fld,vars,afieldset)
 
 end subroutine qg_fields_set_atlas_c
 ! ------------------------------------------------------------------------------
 !> Convert fields to ATLAS
-subroutine qg_fields_to_atlas_c(c_key_fld,c_vars,c_dt,c_afieldset) bind (c,name='qg_fields_to_atlas_f90')
+subroutine qg_fields_to_atlas_c(c_key_fld,c_vars,c_afieldset) bind (c,name='qg_fields_to_atlas_f90')
 
 implicit none
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_fld           !< Fields
 type(c_ptr),value,intent(in) :: c_vars           !< List of variables
-type(c_ptr),value,intent(in) :: c_dt             !< Date and time
 type(c_ptr),intent(in),value :: c_afieldset      !< ATLAS fieldset pointer
 
 ! Local variables
 type(qg_fields),pointer :: fld
 type(oops_variables) :: vars
-type(datetime) :: fdate
 type(atlas_fieldset) :: afieldset
 
 ! Interface
 call qg_fields_registry%get(c_key_fld,fld)
 vars = oops_variables(c_vars)
-call c_f_datetime(c_dt,fdate)
 afieldset = atlas_fieldset(c_afieldset)
 
 ! Call Fortran
-call qg_fields_to_atlas(fld,vars,fdate,afieldset)
+call qg_fields_to_atlas(fld,vars,afieldset)
 
 end subroutine qg_fields_to_atlas_c
 ! ------------------------------------------------------------------------------
 !> Get fields from ATLAS
-subroutine qg_fields_from_atlas_c(c_key_fld,c_vars,c_dt,c_afieldset) bind (c,name='qg_fields_from_atlas_f90')
+subroutine qg_fields_from_atlas_c(c_key_fld,c_vars,c_afieldset) bind (c,name='qg_fields_from_atlas_f90')
 
 implicit none
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_fld           !< Fields
 type(c_ptr),value,intent(in) :: c_vars           !< List of variables
-type(c_ptr),value,intent(in) :: c_dt             !< Date and time
 type(c_ptr),intent(in),value :: c_afieldset      !< ATLAS fieldset pointer
 
 ! Local variables
 type(qg_fields),pointer :: fld
 type(oops_variables) :: vars
-type(datetime) :: fdate
 type(atlas_fieldset) :: afieldset
 
 ! Interface
 call qg_fields_registry%get(c_key_fld,fld)
 vars = oops_variables(c_vars)
-call c_f_datetime(c_dt,fdate)
 afieldset = atlas_fieldset(c_afieldset)
 
 ! Call Fortran
-call qg_fields_from_atlas(fld,vars,fdate,afieldset)
+call qg_fields_from_atlas(fld,vars,afieldset)
 
 end subroutine qg_fields_from_atlas_c
 ! ------------------------------------------------------------------------------

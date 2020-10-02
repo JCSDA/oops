@@ -17,7 +17,7 @@
 #include "eckit/config/Configuration.h"
 
 #include "oops/assimilation/Increment4D.h"
-#include "oops/base/IncrementEnsemble.h"
+#include "oops/base/IncrementEnsemble4D.h"
 #include "oops/base/LocalIncrement.h"
 #include "oops/generic/gc99.h"
 #include "oops/interface/Geometry.h"
@@ -62,7 +62,7 @@ class VerticalLocEV: public util::Printable,
   typedef Geometry<MODEL>            Geometry_;
   typedef GeometryIterator<MODEL>    GeometryIterator_;
   typedef Increment4D<MODEL>         Increment4D_;
-  typedef IncrementEnsemble<MODEL>   IncrementEnsemble_;
+  typedef IncrementEnsemble4D<MODEL> IncrementEnsemble4D_;
 
  public:
   static const std::string classname() {return "oops::VerticalLocEV";}
@@ -70,10 +70,10 @@ class VerticalLocEV: public util::Printable,
   VerticalLocEV(const Geometry_ & , const eckit::Configuration &);
 
 // modulate an increment
-  void modulateIncrement(const Increment4D_ &, IncrementEnsemble_ &) const;
+  void modulateIncrement(const Increment4D_ &, IncrementEnsemble4D_ &) const;
 
 // modulate an incrementEnsemble at a {gridPoint, timeSlice}
-  Eigen::MatrixXd modulateIncrement(const IncrementEnsemble_ &,
+  Eigen::MatrixXd modulateIncrement(const IncrementEnsemble4D_ &,
                                     const GeometryIterator_ &, size_t) const;
 
 // returns number of retained eigen modes
@@ -230,7 +230,7 @@ bool VerticalLocEV<MODEL>::testTruncateEvecs(const Geometry_ & geom) {
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 void VerticalLocEV<MODEL>::modulateIncrement(const Increment4D_ & incr,
-                                      IncrementEnsemble_ & incrsOut) const {
+                                      IncrementEnsemble4D_ & incrsOut) const {
   // modulate an increment incr using Eivec_
   // returns incrsOut
 
@@ -259,7 +259,7 @@ void VerticalLocEV<MODEL>::modulateIncrement(const Increment4D_ & incr,
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 Eigen::MatrixXd VerticalLocEV<MODEL>::modulateIncrement(
-                                  const IncrementEnsemble_ & incrs,
+                                  const IncrementEnsemble4D_ & incrs,
                                   const GeometryIterator_ & gi,
                                   size_t itime) const {
   // modulate an increment at grid point

@@ -294,9 +294,8 @@ if (any(iydir<1).or.any(iydir>self%geom%ny)) call abor1_ftn('qg_fields_dirac: in
 if (any(izdir<1).or.any(izdir>self%geom%nz)) call abor1_ftn('qg_fields_dirac: invalid izdir')
 
 ! Setup Diracs
-call qg_fields_zero(self)
 do idir=1,ndir
-   self%gfld3d(ixdir(idir),iydir(idir),izdir(idir)) = 1.0
+  self%gfld3d(ixdir(idir),iydir(idir),izdir(idir)) = 1.0
 end do
 
 end subroutine qg_fields_dirac
@@ -1124,27 +1123,22 @@ endif
 end subroutine qg_fields_vars
 ! ------------------------------------------------------------------------------
 !> Set ATLAS field
-subroutine qg_fields_set_atlas(self,vars,vdate,afieldset)
+subroutine qg_fields_set_atlas(self,vars,afieldset)
 
 implicit none
 
 ! Passed variables
 type(qg_fields),intent(in) :: self              !< Fields
 type(oops_variables),intent(in) :: vars         !< Variables
-type(datetime),intent(in) :: vdate              !< Date and time
 type(atlas_fieldset),intent(inout) :: afieldset !< ATLAS fieldset
 
 ! Local variables
-character(len=20) :: sdate
 character(len=1024) :: fieldname
 type(atlas_field) :: afield
 
-! Set date
-call datetime_to_string(vdate,sdate)
-
 ! Get or create field
-if (vars%has('x')) fieldname = 'x_'//sdate
-if (vars%has('q')) fieldname = 'q_'//sdate
+if (vars%has('x')) fieldname = 'x'
+if (vars%has('q')) fieldname = 'q'
 if (afieldset%has_field(trim(fieldname))) then
   ! Get afield
   afield = afieldset%field(trim(fieldname))
@@ -1162,27 +1156,22 @@ call afield%final()
 end subroutine qg_fields_set_atlas
 ! ------------------------------------------------------------------------------
 !> Convert fields to ATLAS
-subroutine qg_fields_to_atlas(self,vars,vdate,afieldset)
+subroutine qg_fields_to_atlas(self,vars,afieldset)
 
 implicit none
 
 ! Passed variables
 type(qg_fields),intent(in) :: self              !< Fields
 type(oops_variables),intent(in) :: vars         !< Variables
-type(datetime),intent(in) :: vdate              !< Date and time
 type(atlas_fieldset),intent(inout) :: afieldset !< ATLAS fieldset
 
 ! Local variables
-integer :: iv,i,j,k,node
+integer :: iv,ix,iy,iz,inode
 integer(kind_int),pointer :: int_ptr_1(:),int_ptr_2(:,:)
 real(kind_real) :: gfld3d(self%geom%nx,self%geom%ny,self%geom%nz)
 real(kind_real),pointer :: real_ptr_1(:),real_ptr_2(:,:)
-character(len=20) :: sdate
 character(len=1024) :: fieldname
 type(atlas_field) :: afield
-
-! Set date
-call datetime_to_string(vdate,sdate)
 
 ! Get variable
 if (vars%has('x')) then
@@ -1201,8 +1190,8 @@ if (vars%has('q')) then
 end if
 
 ! Get or create field
-if (vars%has('x')) fieldname = 'x_'//sdate
-if (vars%has('q')) fieldname = 'q_'//sdate
+if (vars%has('x')) fieldname = 'x'
+if (vars%has('q')) fieldname = 'q'
 if (afieldset%has_field(trim(fieldname))) then
   ! Get afield
   afield = afieldset%field(trim(fieldname))
@@ -1216,12 +1205,12 @@ end if
 
 ! Copy field
 call afield%data(real_ptr_2)
-do k=1,self%geom%nz
-  node = 0
-  do j=self%geom%afunctionspace%j_begin(),self%geom%afunctionspace%j_end()
-    do i=self%geom%afunctionspace%i_begin(j),self%geom%afunctionspace%i_end(j)
-      node = node+1
-      real_ptr_2(k,node) = gfld3d(i,j,k)
+do iz=1,self%geom%nz
+  inode = 0
+  do iy=1,self%geom%ny
+    do ix=1,self%geom%nx
+      inode = inode+1
+      real_ptr_2(iz,inode) = gfld3d(ix,iy,iz)
     enddo
   enddo
 enddo
@@ -1232,41 +1221,36 @@ call afield%final()
 end subroutine qg_fields_to_atlas
 ! ------------------------------------------------------------------------------
 !> Get fields from ATLAS
-subroutine qg_fields_from_atlas(self,vars,vdate,afieldset)
+subroutine qg_fields_from_atlas(self,vars,afieldset)
 
 implicit none
 
 ! Passed variables
 type(qg_fields),intent(inout) :: self           !< Fields
 type(oops_variables),intent(in) :: vars         !< Variables
-type(datetime),intent(in) :: vdate              !< Date and time
 type(atlas_fieldset),intent(inout) :: afieldset !< ATLAS fieldset
 
 ! Local variables
-integer :: i,j,k,node
+integer :: ix,iy,iz,inode
 real(kind_real) :: gfld3d(self%geom%nx,self%geom%ny,self%geom%nz)
 real(kind_real),pointer :: real_ptr_1(:),real_ptr_2(:,:)
 character(len=1) :: cgrid
-character(len=20) :: sdate
 character(len=1024) :: fieldname
 type(atlas_field) :: afield
 
-! Set date
-call datetime_to_string(vdate,sdate)
-
 ! Get field
-if (vars%has('x')) fieldname = 'x_'//sdate
-if (vars%has('q')) fieldname = 'q_'//sdate
+if (vars%has('x')) fieldname = 'x'
+if (vars%has('q')) fieldname = 'q'
 afield = afieldset%field(trim(fieldname))
 
 ! Copy field
 call afield%data(real_ptr_2)
-do k=1,self%geom%nz
-  node = 0
-  do j=1,self%geom%ny
-    do i=1,self%geom%nx
-      node = node+1
-      gfld3d(i,j,k) = real_ptr_2(k,node)
+do iz=1,self%geom%nz
+  inode = 0
+  do iy=1,self%geom%ny
+    do ix=1,self%geom%nx
+      inode = inode+1
+      gfld3d(ix,iy,iz) = real_ptr_2(iz,inode)
     enddo
   enddo
 enddo
@@ -1358,9 +1342,9 @@ subroutine qg_fields_serialize(fld,vsize,vect_fld)
 implicit none
 
 ! Passed variables
-type(qg_fields),intent(in) :: fld              !< Fields
-integer,intent(in) :: vsize                    !< Size
-real(kind_real),intent(out) :: vect_fld(vsize) !< Vector
+type(qg_fields),intent(in) :: fld                !< Fields
+integer,intent(in) :: vsize                      !< Size
+real(kind_real),intent(inout) :: vect_fld(vsize) !< Vector
 
 ! Local variables
 integer :: ix,iy,iz,ind

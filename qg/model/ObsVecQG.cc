@@ -122,11 +122,13 @@ double ObsVecQG::dot_product_with(const ObsVecQG & other) const {
 }
 // -----------------------------------------------------------------------------
 double ObsVecQG::rms() const {
-  double zz;
-  qg_obsvec_dotprod_f90(keyOvec_, keyOvec_, zz);
   int iobs;
   qg_obsvec_nobs_f90(keyOvec_, iobs);
-  zz = sqrt(zz/iobs);
+  double zz = 0.0;
+  if (iobs > 0) {
+    qg_obsvec_dotprod_f90(keyOvec_, keyOvec_, zz);
+    zz = sqrt(zz/iobs);
+  }
   return zz;
 }
 // -----------------------------------------------------------------------------

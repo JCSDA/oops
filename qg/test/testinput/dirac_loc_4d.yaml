@@ -278,7 +278,7 @@ background error:
     - date: 2010-01-01T12:00:00Z
       filename: Data/forecast.ens.10.2009-12-31T00:00:00Z.P1DT12H.nc
 dirac:
-- date: 2010-01-01T06:00:00Z
+  date: 2010-01-01T06:00:00Z
   ixdir: [20]
   iydir: [10]
   izdir: [1]

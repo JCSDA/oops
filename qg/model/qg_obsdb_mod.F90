@@ -72,7 +72,7 @@ contains
 #include "oops/util/linkedList_c.f"
 ! ------------------------------------------------------------------------------
 !> Setup observation data
-subroutine qg_obsdb_setup(self,f_conf)
+subroutine qg_obsdb_setup(self,f_conf,winbgn,winend)
 use string_utils
 
 implicit none
@@ -80,6 +80,8 @@ implicit none
 ! Passed variables
 type(qg_obsdb),intent(inout) :: self           !< Observation data
 type(fckit_configuration),intent(in) :: f_conf !< FCKIT configuration
+type(datetime),intent(in) :: winbgn            !< Start of window
+type(datetime),intent(in) :: winend            !< End of window
 
 ! Local variables
 character(len=1024) :: fin,fout
@@ -95,11 +97,15 @@ endif
 call fckit_log%info('qg_obsdb_setup: file in = '//trim(fin))
 
 ! Output file
-call f_conf%get_or_die("obsdataout.obsfile",str)
-call swap_name_member(f_conf, str)
+if (f_conf%has("obsdataout")) then
+  call f_conf%get_or_die("obsdataout.obsfile",str)
+  call swap_name_member(f_conf, str)
 
-fout = str
-call fckit_log%info('qg_obsdb_setup: file out = '//trim(fout))
+  fout = str
+  call fckit_log%info('qg_obsdb_setup: file out = '//trim(fout))
+else
+  fout = ''
+endif
 
 ! Set attributes
 self%ngrp = 0
@@ -107,7 +113,7 @@ self%filein = fin
 self%fileout = fout
 
 ! Read observation data
-if (self%filein/='') call qg_obsdb_read(self)
+if (self%filein/='') call qg_obsdb_read(self,winbgn,winend)
 
 end subroutine qg_obsdb_setup
 ! ------------------------------------------------------------------------------
@@ -440,21 +446,27 @@ end subroutine qg_obsdb_nobs
 !  Private
 ! ------------------------------------------------------------------------------
 !> Read observation data
-subroutine qg_obsdb_read(self)
+subroutine qg_obsdb_read(self,winbgn,winend)
 
 implicit none
 
 ! Passed variables
 type(qg_obsdb),intent(inout) :: self !< Observation data
+type(datetime),intent(in) :: winbgn  !< Start of window
+type(datetime),intent(in) :: winend  !< End of window
 
 ! Local variables
-integer :: igrp,icol,iobs,ncol
+integer :: igrp,icol,iobs,ncol,nobsfile,jobs
 integer :: ncid,grpname_id,ngrp_id,nobs_id,ncol_id,times_id,nlev_id,colname_id,values_id
 type(group_data),pointer :: jgrp
 type(column_data),pointer :: jcol
 character(len=6) :: igrpchar
 character(len=50) :: stime
 character(len=1024) :: record
+logical, allocatable :: inwindow(:)
+type(datetime) :: tobs
+type(datetime), allocatable :: alltimes(:)
+real(kind_real),allocatable :: readbuf(:,:)
 
 ! Open NetCDF file
 call ncerr(nf90_open(trim(self%filein),nf90_nowrite,ncid))
@@ -487,9 +499,9 @@ do igrp=1,self%ngrp
   call ncerr(nf90_inq_dimid(ncid,'ncol_'//igrpchar,ncol_id))
 
   ! Get dimensions
-  call ncerr(nf90_inquire_dimension(ncid,nobs_id,len=jgrp%nobs))
+  call ncerr(nf90_inquire_dimension(ncid,nobs_id,len=nobsfile))
   call ncerr(nf90_inquire_dimension(ncid,ncol_id,len=ncol))
-  write(record,*) 'qg_obsdb_read: reading ',jgrp%nobs,' ',jgrp%grpname,' observations'
+  write(record,*) 'qg_obsdb_read: reading ',nobsfile,' ',jgrp%grpname,' observations'
   call fckit_log%info(record)
 
   ! Get variables ids
@@ -499,14 +511,37 @@ do igrp=1,self%ngrp
   call ncerr(nf90_inq_varid(ncid,'values_'//igrpchar,values_id))
 
   ! Allocation
-  allocate(jgrp%times(jgrp%nobs))
+  allocate(inwindow(nobsfile))
+  allocate(alltimes(nobsfile))
 
-  ! Get variables
+  ! Read in times
   call ncerr(nf90_get_var(ncid,grpname_id,jgrp%grpname,(/1,igrp/),(/50,1/)))
-  do iobs=1,jgrp%nobs
+  jgrp%nobs = 0
+  do iobs=1,nobsfile
     call ncerr(nf90_get_var(ncid,times_id,stime,(/1,iobs/),(/50,1/)))
-    call datetime_create(stime,jgrp%times(iobs))
+    call datetime_create(stime,tobs)
+    if (tobs > winbgn .and. tobs <= winend) then
+      inwindow(iobs) = .true.
+      alltimes(iobs) = tobs
+      jgrp%nobs = jgrp%nobs + 1
+    else
+      inwindow(iobs) = .false.
+    endif
   end do
+  write(record,*) 'qg_obsdb_read: keeping ',jgrp%nobs,' ',jgrp%grpname,' observations'
+  call fckit_log%info(record)
+
+  allocate(jgrp%times(jgrp%nobs))
+  jobs=0
+  do iobs=1,nobsfile
+    if (inwindow(iobs)) then
+      jobs = jobs + 1
+      jgrp%times(jobs) = alltimes(iobs)
+    endif
+  end do
+  deallocate(alltimes)
+  write(record,*) 'qg_obsdb_read: ',jgrp%grpname,' after times ',jgrp%nobs
+  call fckit_log%info(record)
 
   ! Loop over columns
   do icol=1,ncol
@@ -522,15 +557,36 @@ do igrp=1,self%ngrp
     ! Get variables
     call ncerr(nf90_get_var(ncid,nlev_id,jcol%nlev,(/icol/)))
     call ncerr(nf90_get_var(ncid,colname_id,jcol%colname,(/1,icol/),(/50,1/)))
+  write(record,*) 'qg_obsdb_read: ',jgrp%grpname,' after get var ',jgrp%nobs
+  call fckit_log%info(record)
 
     ! Allocation
+    allocate(readbuf(jcol%nlev,nobsfile))
     allocate(jcol%values(jcol%nlev,jgrp%nobs))
 
-    ! Get variables
-    call ncerr(nf90_get_var(ncid,values_id,jcol%values(1:jcol%nlev,:),(/1,icol,1/),(/jcol%nlev,1,jgrp%nobs/)))
+    ! Get values
+    call ncerr(nf90_get_var(ncid,values_id,readbuf(1:jcol%nlev,:),(/1,icol,1/),(/jcol%nlev,1,nobsfile/)))
+  write(record,*) 'qg_obsdb_read: ',jgrp%grpname,' after get values ',jgrp%nobs
+  call fckit_log%info(record)
+
+    jobs = 0
+    do iobs=1,nobsfile
+      if (inwindow(iobs)) then
+        jobs = jobs + 1
+        jcol%values(:,jobs) = readbuf(:,iobs)
+      endif
+    enddo
+    deallocate(readbuf)
+  write(record,*) 'qg_obsdb_read: ',jgrp%grpname,' after readbuf ',jgrp%nobs, jobs
+  call fckit_log%info(record)
   enddo
+  deallocate(inwindow)
+  write(record,*) 'qg_obsdb_read: ',jgrp%grpname,' done ',jgrp%nobs
+  call fckit_log%info(record)
 enddo
 
+  write(record,*) 'qg_obsdb_read: closing file'
+  call fckit_log%info(record)
 ! Close NetCDF file
 call ncerr(nf90_close(ncid))
 

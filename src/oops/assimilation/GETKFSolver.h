@@ -20,13 +20,13 @@
 #include "oops/assimilation/State4D.h"
 #include "oops/base/Departures.h"
 #include "oops/base/DeparturesEnsemble.h"
-#include "oops/base/IncrementEnsemble.h"
+#include "oops/base/IncrementEnsemble4D.h"
 #include "oops/base/LocalIncrement.h"
 #include "oops/base/ObsEnsemble.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
 #include "oops/base/ObsSpaces.h"
-#include "oops/base/StateEnsemble.h"
+#include "oops/base/StateEnsemble4D.h"
 #include "oops/generic/VerticalLocEV.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
@@ -45,18 +45,18 @@ namespace oops {
  */
 template <typename MODEL, typename OBS>
 class GETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
-  typedef Departures<OBS>           Departures_;
-  typedef DeparturesEnsemble<OBS>   DeparturesEnsemble_;
-  typedef Geometry<MODEL>           Geometry_;
-  typedef GeometryIterator<MODEL>   GeometryIterator_;
-  typedef IncrementEnsemble<MODEL>  IncrementEnsemble_;
-  typedef ObsEnsemble<OBS>          ObsEnsemble_;
-  typedef ObsErrors<OBS>            ObsErrors_;
-  typedef Observations<OBS>         Observations_;
-  typedef ObsSpaces<OBS>            ObsSpaces_;
-  typedef State4D<MODEL>            State4D_;
-  typedef StateEnsemble<MODEL>      StateEnsemble_;
-  typedef VerticalLocEV<MODEL>      VerticalLocEV_;
+  typedef Departures<OBS>             Departures_;
+  typedef DeparturesEnsemble<OBS>     DeparturesEnsemble_;
+  typedef Geometry<MODEL>             Geometry_;
+  typedef GeometryIterator<MODEL>     GeometryIterator_;
+  typedef IncrementEnsemble4D<MODEL>  IncrementEnsemble4D_;
+  typedef ObsEnsemble<OBS>            ObsEnsemble_;
+  typedef ObsErrors<OBS>              ObsErrors_;
+  typedef Observations<OBS>           Observations_;
+  typedef ObsSpaces<OBS>              ObsSpaces_;
+  typedef State4D<MODEL>              State4D_;
+  typedef StateEnsemble4D<MODEL>      StateEnsemble4D_;
+  typedef VerticalLocEV<MODEL>        VerticalLocEV_;
 
  public:
   static const std::string classname() {return "oops::GETKFSolver";}
@@ -65,11 +65,11 @@ class GETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
   /// saves options from the config, computes VerticalLocEV_)
   GETKFSolver(ObsSpaces_ &, const Geometry_ &, const eckit::Configuration &, size_t);
 
-  Observations_ computeHofX(const StateEnsemble_ &, size_t) override;
+  Observations_ computeHofX(const StateEnsemble4D_ &, size_t) override;
 
   /// entire KF update (computeWeights+applyWeights) for a grid point GeometryIterator_
-  void measurementUpdate(const IncrementEnsemble_ &, const GeometryIterator_ &,
-                         IncrementEnsemble_ &) override;
+  void measurementUpdate(const IncrementEnsemble4D_ &, const GeometryIterator_ &,
+                         IncrementEnsemble4D_ &) override;
 
  private:
   /// Computes weights
@@ -77,7 +77,7 @@ class GETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
                       const DeparturesEnsemble_ &, const ObsErrors_ &);
 
   /// Applies weights and adds posterior inflation
-  void applyWeights(const IncrementEnsemble_ &, IncrementEnsemble_ &,
+  void applyWeights(const IncrementEnsemble4D_ &, IncrementEnsemble4D_ &,
                     const GeometryIterator_ &);
 
  private:
@@ -136,7 +136,7 @@ GETKFSolver<MODEL, OBS>::GETKFSolver(ObsSpaces_ & obspaces, const Geometry_ & ge
 
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
-Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble_ & ens_xx,
+Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & ens_xx,
                                                        size_t iteration) {
   util::Timer timer(classname(), "computeHofX");
 
@@ -145,8 +145,8 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble_ & en
 
   // modulate ensemble of obs
   State4D_ xx_mean(ens_xx.mean());
-  IncrementEnsemble_ dx(ens_xx, xx_mean, xx_mean[0].variables());
-  IncrementEnsemble_ Ztmp(geometry_, xx_mean[0].variables(), ens_xx[0].validTimes(), neig_);
+  IncrementEnsemble4D_ dx(ens_xx, xx_mean, xx_mean[0].variables());
+  IncrementEnsemble4D_ Ztmp(geometry_, xx_mean[0].variables(), ens_xx[0].validTimes(), neig_);
   size_t ii = 0;
   for (size_t iens = 0; iens < nens_; ++iens) {
     vertloc_.modulateIncrement(dx[iens], Ztmp);
@@ -207,8 +207,8 @@ void GETKFSolver<MODEL, OBS>::computeWeights(const Departures_ & dy,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-void GETKFSolver<MODEL, OBS>::applyWeights(const IncrementEnsemble_ & bkg_pert,
-                                           IncrementEnsemble_ & ana_pert,
+void GETKFSolver<MODEL, OBS>::applyWeights(const IncrementEnsemble4D_ & bkg_pert,
+                                           IncrementEnsemble4D_ & ana_pert,
                                            const GeometryIterator_ & i) {
   // apply Wa_, wa_
   util::Timer timer(classname(), "applyWeights");
@@ -284,9 +284,9 @@ void GETKFSolver<MODEL, OBS>::applyWeights(const IncrementEnsemble_ & bkg_pert,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-void GETKFSolver<MODEL, OBS>::measurementUpdate(const IncrementEnsemble_ & bkg_pert,
+void GETKFSolver<MODEL, OBS>::measurementUpdate(const IncrementEnsemble4D_ & bkg_pert,
                                                 const GeometryIterator_ & i,
-                                                IncrementEnsemble_ & ana_pert) {
+                                                IncrementEnsemble4D_ & ana_pert) {
   util::Timer timer(classname(), "measurementUpdate");
 
   // create the local subset of observations

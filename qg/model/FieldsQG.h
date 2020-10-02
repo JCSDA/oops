@@ -17,7 +17,7 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include "atlas/field/FieldSet.h"
+#include "atlas/field.h"
 
 #include "eckit/config/LocalConfiguration.h"
 

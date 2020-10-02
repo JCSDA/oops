@@ -115,11 +115,11 @@ extern "C" {
   void qg_fields_rms_f90(const F90flds &, double &);
   void qg_fields_sizes_f90(const F90flds &, int &, int &, int &, int &);
   void qg_fields_vars_f90(const F90flds &, int &, int &);
-  void qg_fields_set_atlas_f90(const F90flds &, const oops::Variables &, const util::DateTime &,
+  void qg_fields_set_atlas_f90(const F90flds &, const oops::Variables &,
                                atlas::field::FieldSetImpl *);
-  void qg_fields_to_atlas_f90(const F90flds &, const oops::Variables &, const util::DateTime &,
+  void qg_fields_to_atlas_f90(const F90flds &, const oops::Variables &,
                               atlas::field::FieldSetImpl *);
-  void qg_fields_from_atlas_f90(const F90flds &, const oops::Variables &, const util::DateTime &,
+  void qg_fields_from_atlas_f90(const F90flds &, const oops::Variables &,
                                 atlas::field::FieldSetImpl *);
   void qg_fields_getpoint_f90(const F90flds&, const F90iter&, const int &, double &);
   void qg_fields_setpoint_f90(const F90flds&, const F90iter&, const int &, const double &);
@@ -143,12 +143,10 @@ extern "C" {
 //  Geometry
 // -----------------------------------------------------------------------------
   void qg_geom_setup_f90(F90geom &, const eckit::Configuration &);
-  void qg_geom_create_atlas_grid_conf_f90(const F90geom &, const eckit::Configuration &);
+  void qg_geom_set_atlas_lonlat_f90(const F90geom &, atlas::field::FieldSetImpl *);
   void qg_geom_set_atlas_functionspace_pointer_f90(const F90geom &,
                                                    atlas::functionspace::FunctionSpaceImpl *);
   void qg_geom_fill_atlas_fieldset_f90(const F90geom &, atlas::field::FieldSetImpl *);
-  void qg_geom_set_atlas_fieldset_pointer_f90(const F90geom &,
-                                              atlas::field::FieldSetImpl *);
   void qg_geom_clone_f90(F90geom &, const F90geom &);
   void qg_geom_info_f90(const F90geom &, int &, int &, int &, double &, double &);
   void qg_geom_delete_f90(F90geom &);
@@ -200,7 +198,8 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Observation Handler
 // -----------------------------------------------------------------------------
-  void qg_obsdb_setup_f90(F90odb &, const eckit::Configuration &);
+  void qg_obsdb_setup_f90(F90odb &, const eckit::Configuration &,
+                          const util::DateTime &, const util::DateTime &);
   void qg_obsdb_delete_f90(F90odb &);
   void qg_obsdb_get_f90(const F90odb &, const int &, const char *,
                         const int &, const char *, const F90ovec &);

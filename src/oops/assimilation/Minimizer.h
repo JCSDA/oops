@@ -257,7 +257,7 @@ void Minimizer<MODEL, OBS>::tlmTaylorTest(const H_ & H) {
 
      // ||M(x+pdx) - M(x)||
      CtrlInc_ diff_nl(mdx, false);
-     diff_nl.state()[0].diff(mpertxx.state()[0], mxx.state()[0]);
+     diff_nl.state().diff(mpertxx.state(), mxx.state());
      double nom = sqrt(dot_product(diff_nl, diff_nl));
 
      // print results
@@ -303,7 +303,7 @@ void Minimizer<MODEL, OBS>::adjModelTest(const Ht_ & Ht,
 // run ADJ
   dummy.zero();
   CtrlInc_ mtdx2(dx2);
-  mtdx2.state()[0].updateTime(mdx1.state()[0].validTime() - dx1.state()[0].validTime());
+  mtdx2.state().updateTime(mdx1.state().validTime() - dx1.state().validTime());
   Ht.multiply(dummy, mtdx2, false);
 
 // calculate FWD < M dx1, dx2 >

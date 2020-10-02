@@ -33,7 +33,7 @@ class Localization : public LocalizationBase<MODEL> {
  public:
   static const std::string classname() {return "oops::Localization";}
 
-  Localization(const Geometry_ &, const eckit::Configuration &);
+  Localization(const Geometry_ &, const util::DateTime &, const eckit::Configuration &);
   ~Localization();
 
   void multiply(Increment_ &) const override;
@@ -48,6 +48,7 @@ class Localization : public LocalizationBase<MODEL> {
 
 template <typename MODEL, typename LOC>
 Localization<MODEL, LOC>::Localization(const Geometry_ & geometry,
+                                       const util::DateTime & time,
                                        const eckit::Configuration & conf) {
   Log::trace() << "Localization<MODEL>::Localization starting" << std::endl;
   util::Timer timer(classname(), "Localization");

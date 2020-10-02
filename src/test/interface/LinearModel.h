@@ -23,7 +23,6 @@
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
-#include <boost/ptr_container/ptr_vector.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
@@ -125,14 +124,12 @@ template <typename MODEL> class LinearModelFixture : private boost::noncopyable 
 
 //  Setup trajectory for TL and AD
     oops::instantiateTlmFactory<MODEL>();
-    boost::ptr_vector<LinearModel_> tlmvec;
     oops::PostProcessor<State_> post;
     oops::PostProcessorTLAD<MODEL> pptraj;
-    post.enrollProcessor(new oops::TrajectorySaver<MODEL>(*tlConf_, *resol_, *bias_, tlmvec,
-                                                          pptraj));
+    tlm_.reset(new LinearModel_(*resol_, *tlConf_));
+    post.enrollProcessor(new oops::TrajectorySaver<MODEL>(*tlConf_, *resol_, *bias_, tlm_, pptraj));
     State_ xx(*xref_);
     model_->forecast(xx, *bias_, len, post);
-    tlm_.reset(tlmvec.release(tlmvec.begin()).release());
   }
 
   ~LinearModelFixture<MODEL>() {}
@@ -147,7 +144,7 @@ template <typename MODEL> class LinearModelFixture : private boost::noncopyable 
   std::unique_ptr<const ModelAux_>       bias_;
   std::unique_ptr<const ModelAuxIncr_>   dbias_;
   std::unique_ptr<const Covariance_>     B_;
-  std::unique_ptr<const LinearModel_>    tlm_;
+  std::shared_ptr<LinearModel_>          tlm_;
 };
 
 // =============================================================================

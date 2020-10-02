@@ -170,12 +170,15 @@ testfound = False
 for line_run in file_run:
    if re.search('Test     : ', line_run):
 
+       #Strip line
+       line_strip = line_run[line_run.find('Test     : '):]
+
        #Check strings and integers
-       lineerror = line_diff(line_run,lines_ref[refline],refline+1,ftol,idif)
+       lineerror = line_diff(line_strip,lines_ref[refline],refline+1,ftol,idif)
        error=error+lineerror
 
        #Write ref file in case update needed
-       file_runref.write(line_run)
+       file_runref.write(line_strip)
 
        #Tick the reference line
        refline = refline + 1

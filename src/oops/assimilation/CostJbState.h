@@ -24,9 +24,8 @@ namespace util {
 namespace oops {
 
 // Forward declaration
-  template<typename MODEL> class Increment4D;
-  template<typename MODEL> class State4D;
-  template<typename MODEL> class JqTerm;
+  template<typename MODEL> class Increment;
+  template<typename MODEL> class State;
   template<typename MODEL> class JqTermTLAD;
 
 // -----------------------------------------------------------------------------
@@ -34,14 +33,13 @@ namespace oops {
 /// Jb Cost Function Base Class
 /*!
  * The CostJbState is the base class for the Jb term corresponding to the
- * state part (3D or 4D) of the control variable.
+ * state part of the control variable.
  */
 
 template<typename MODEL> class CostJbState : private boost::noncopyable {
-  typedef Increment<MODEL>           Increment_;
-  typedef State4D<MODEL>             State4D_;
-  typedef Increment4D<MODEL>         Increment4D_;
   typedef Geometry<MODEL>            Geometry_;
+  typedef Increment<MODEL>           Increment_;
+  typedef State<MODEL>               State_;
 
  public:
 /// Constructor
@@ -50,36 +48,36 @@ template<typename MODEL> class CostJbState : private boost::noncopyable {
 /// Destructor
   virtual ~CostJbState() {}
 
-/// Initialize Jq computations if needed.
-  virtual JqTerm<MODEL> * initializeJq() const = 0;
-  virtual JqTermTLAD<MODEL> * initializeJqTLAD() const = 0;
-
-/// Get increment from state (usually first guess).
-  virtual void computeIncrement(const State4D_ &, const State4D_ &,
-                                Increment4D_ &) const = 0;
+/// Get increment from state. This is usually first guess - background.
+/// The third state argument is M(x) at the end of the window/subwindows for
+/// computing the model error term (M(x_{i-1})-x_i) when active.
+  virtual void computeIncrement(const State_ &, const State_ &, const State_ &,
+                                Increment_ &) const = 0;
 
 /// Linearize before the linear computations.
-  virtual void linearize(const State4D_ &, const Geometry_ &) = 0;
+  virtual void linearize(const State_ &, const Geometry_ &) = 0;
 
 /// Add Jb gradient.
-  virtual void addGradient(const Increment4D_ &, Increment4D_ &, Increment4D_ &) const = 0;
+  virtual void addGradient(const Increment_ &, Increment_ &, Increment_ &) const = 0;
+
+/// Initialize Jq computations if needed.
+  virtual JqTermTLAD<MODEL> * initializeJqTLAD() const = 0;
 
 /// Finalize \f$ J_b\f$ after the TL run.
   virtual JqTermTLAD<MODEL> * initializeJqTL() const = 0;
 
 /// Initialize \f$ J_b\f$ before the AD run.
-  virtual JqTermTLAD<MODEL> * initializeJqAD(const Increment4D_ &) const = 0;
+  virtual JqTermTLAD<MODEL> * initializeJqAD(const Increment_ &) const = 0;
 
 /// Multiply by \f$ B\f$ and \f$ B^{-1}\f$.
-  virtual void Bmult(const Increment4D_ &, Increment4D_ &) const = 0;
-  virtual void Bminv(const Increment4D_ &, Increment4D_ &) const = 0;
+  virtual void Bmult(const Increment_ &, Increment_ &) const = 0;
+  virtual void Bminv(const Increment_ &, Increment_ &) const = 0;
 
 /// Randomize
-  virtual void randomize(Increment4D_ &) const = 0;
+  virtual void randomize(Increment_ &) const = 0;
 
 /// Create new increment (set to 0).
-  virtual unsigned int nstates() const = 0;
-  virtual Increment_ * newStateIncrement(const unsigned int) const = 0;
+  virtual Increment_ * newStateIncrement() const = 0;
 };
 
 // -----------------------------------------------------------------------------

@@ -63,7 +63,7 @@ ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config, const eckit::mpi::Co
   if ( it == theObsFileRegister_.end() ) {
     // Open new file
     oops::Log::trace() << "ObsSpaceQG::getHelper: " << "Opening " << ref << std::endl;
-    qg_obsdb_setup_f90(key_, config);
+    qg_obsdb_setup_f90(key_, config, bgn, end);
     theObsFileRegister_[ref] = key_;
   } else {
     // File already open

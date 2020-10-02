@@ -14,6 +14,7 @@
 
 #include <ostream>
 #include <string>
+#include <vector>
 
 #include <boost/shared_ptr.hpp>
 
@@ -84,6 +85,11 @@ class StateL95 : public util::Printable,
 // For accumulator
   void zero();
   void accumul(const double &, const StateL95 &);
+
+/// Serialize and deserialize
+  size_t serialSize() const;
+  void serialize(std::vector<double> &) const;
+  void deserialize(const std::vector<double> &, size_t &);
 
  private:
   void print(std::ostream &) const;

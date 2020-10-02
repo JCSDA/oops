@@ -14,8 +14,6 @@
 
 
 #include "eckit/config/LocalConfiguration.h"
-#include "oops/assimilation/Increment4D.h"
-#include "oops/assimilation/State4D.h"
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
@@ -29,9 +27,8 @@ namespace oops {
 template <typename MODEL> class EnsVariance : public Application {
   typedef IncrementEnsemble<MODEL>                 Ensemble_;
   typedef Geometry<MODEL>                          Geometry_;
-  typedef Increment4D<MODEL>                       Increment4D_;
+  typedef Increment<MODEL>                         Increment_;
   typedef State<MODEL>                             State_;
-  typedef State4D<MODEL>                           State4D_;
 
  public:
   // -----------------------------------------------------------------------------
@@ -46,7 +43,7 @@ template <typename MODEL> class EnsVariance : public Application {
 
     // Setup background
     const eckit::LocalConfiguration bkgConfig(fullConfig, "background");
-    State4D_ xx(resol, bkgConfig);
+    State_ xx(resol, bkgConfig);
 
     // Compute transformed ensemble perturbations
     //        ens_k = K^-1 dx_k
@@ -58,9 +55,9 @@ template <typename MODEL> class EnsVariance : public Application {
     unsigned nm = ens_k.size();
 
     // Compute ensemble standard deviation
-    Increment4D_ km1dx(ens_k[0]);
+    Increment_ km1dx(ens_k[0]);
     km1dx.zero();
-    Increment4D_ sigb2(km1dx);
+    Increment_ sigb2(km1dx);
     sigb2.zero();
 
     for (unsigned jj = 0; jj < nm; ++jj) {

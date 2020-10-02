@@ -16,7 +16,6 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/GMRESR.h"
-#include "oops/assimilation/State4D.h"
 #include "oops/base/IdentityMatrix.h"
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/LocalizationBase.h"
@@ -39,7 +38,6 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL> {
   typedef Increment<MODEL>                          Increment_;
   typedef LocalizationBase<MODEL>                   Localization_;
   typedef State<MODEL>                              State_;
-  typedef State4D<MODEL>                            State4D_;
   typedef IncrementEnsemble<MODEL>                  Ensemble_;
   typedef std::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
 
@@ -68,12 +66,10 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Var
   : ModelSpaceCovarianceBase<MODEL>(xb, fg, resol, conf), ens_(), loc_()
 {
   Log::trace() << "EnsembleCovariance::EnsembleCovariance start" << std::endl;
-  State4D_ xb4D(xb);
-  State4D_ fg4D(fg);
-  ens_.reset(new Ensemble_(conf, xb4D, fg4D, resol, vars));
+  ens_.reset(new Ensemble_(conf, xb, fg, resol, vars));
   if (conf.has("localization")) {
     const eckit::LocalConfiguration confloc(conf, "localization");
-    loc_ = LocalizationFactory<MODEL>::create(resol, confloc);
+    loc_ = LocalizationFactory<MODEL>::create(resol, xb.validTime(), confloc);
   }
   Log::trace() << "EnsembleCovariance::EnsembleCovariance done" << std::endl;
 }
@@ -84,21 +80,20 @@ EnsembleCovariance<MODEL>::~EnsembleCovariance() {
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-void EnsembleCovariance<MODEL>::doMultiply(const Increment_ & dxi,
-                                           Increment_ & dxo) const {
+void EnsembleCovariance<MODEL>::doMultiply(const Increment_ & dxi, Increment_ & dxo) const {
   dxo.zero();
   for (unsigned int ie = 0; ie < ens_->size(); ++ie) {
     if (loc_) {
       // Localized covariance matrix
       Increment_ dx(dxi);
-      dx.schur_product_with((*ens_)[ie][0]);
-      loc_->multiply(dx);
-      dx.schur_product_with((*ens_)[ie][0]);
+      dx.schur_product_with((*ens_)[ie]);
+      loc_->localize(dx);
+      dx.schur_product_with((*ens_)[ie]);
       dxo.axpy(1.0, dx, false);
     } else {
       // Raw covariance matrix
-      double wgt = dxi.dot_product_with((*ens_)[ie][0]);
-      dxo.axpy(wgt, (*ens_)[ie][0], false);
+      double wgt = dxi.dot_product_with((*ens_)[ie]);
+      dxo.axpy(wgt, (*ens_)[ie], false);
     }
   }
   const double rk = 1.0/(static_cast<double>(ens_->size()) - 1.0);
@@ -106,8 +101,7 @@ void EnsembleCovariance<MODEL>::doMultiply(const Increment_ & dxi,
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-void EnsembleCovariance<MODEL>::doInverseMultiply(const Increment_ & dxi,
-                                                  Increment_ & dxo) const {
+void EnsembleCovariance<MODEL>::doInverseMultiply(const Increment_ & dxi, Increment_ & dxo) const {
   IdentityMatrix<Increment_> Id;
   dxo.zero();
   GMRESR(dxo, dxi, *this, Id, 10, 1.0e-3);

@@ -15,7 +15,7 @@ ensemble:
   - date: 2010-01-01T00:00:00Z
     filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1D.nc
   inflation field:
-  - date: 2010-01-01T00:00:00Z
+    date: 2010-01-01T00:00:00Z
     filename: Data/uniform_field.fc.2010-01-01T00:00:00Z.PT0S.nc
 geometry:
   nx: 40

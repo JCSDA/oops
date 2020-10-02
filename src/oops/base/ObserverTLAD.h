@@ -52,22 +52,17 @@ class ObserverTLAD {
                const ObsSpace_ &, const ObsAuxCtrl_ &);
   ~ObserverTLAD() {}
 
-  void doInitializeTraj(const State_ &,
-                        const util::DateTime &, const util::Duration &, const int &);
-  void doProcessingTraj(const State_ &, const util::DateTime &,
-                        const util::DateTime &, const int &);
+  void doInitializeTraj(const State_ &, const util::DateTime &, const util::DateTime &);
+  void doProcessingTraj(const State_ &, const util::DateTime &, const util::DateTime &);
   void doFinalizeTraj(const State_ &);
 
-  void doInitializeTL(const Increment_ &,
-                      const util::DateTime &, const util::DateTime &);
-  void doProcessingTL(const Increment_ &, const util::DateTime &,
-                      const util::DateTime &, const int &);
+  void doInitializeTL(const Increment_ &, const util::DateTime &, const util::DateTime &);
+  void doProcessingTL(const Increment_ &, const util::DateTime &, const util::DateTime &);
   void doFinalizeTL(const Increment_ &, ObsVector_ &, const ObsAuxIncr_ &);
 
   void doFirstAD(Increment_ &, const ObsVector_ &, ObsAuxIncr_ &,
                  const util::DateTime &, const util::DateTime &);
-  void doProcessingAD(Increment_ &, const util::DateTime &,
-                      const util::DateTime &, const int &);
+  void doProcessingAD(Increment_ &, const util::DateTime &, const util::DateTime &);
   void doLastAD(Increment_ &);
 
  private:
@@ -79,15 +74,15 @@ class ObserverTLAD {
   const ObsAuxCtrl_ & ybias_;
   Variables geovars_;
 
-  std::vector<std::unique_ptr<LinearGetValues_>> lingetvals_;
+  std::unique_ptr<LinearGetValues_> lingetvals_;
   std::shared_ptr<GeoVaLs_> gvals_;
 };
 
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
 ObserverTLAD<MODEL, OBS>::ObserverTLAD(const eckit::Configuration & config,
-                                  const ObsSpace_ & obsdb,
-                                  const ObsAuxCtrl_ & ybias)
+                                       const ObsSpace_ & obsdb,
+                                       const ObsAuxCtrl_ & ybias)
   : obsdb_(obsdb), hop_(obsdb, eckit::LocalConfiguration(config, "obs operator")),
     hoptlad_(obsdb, eckit::LocalConfiguration(config, "linear obs operator")),
     ybias_(ybias), geovars_(), lingetvals_(), gvals_()
@@ -99,27 +94,20 @@ ObserverTLAD<MODEL, OBS>::ObserverTLAD(const eckit::Configuration & config,
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
 void ObserverTLAD<MODEL, OBS>::doInitializeTraj(const State_ & xx,
-               const util::DateTime & begin, const util::Duration & winlen, const int & nwin) {
+                                                const util::DateTime & winbgn,
+                                                const util::DateTime & winend) {
   Log::trace() << "ObserverTLAD::doInitializeTraj start" << std::endl;
-  util::DateTime bgn = begin;
-  util::DateTime end = bgn + winlen;
-  // create one LinearGetValues per subwindow
-  for (int iwin = 0; iwin < nwin; ++iwin) {
-    lingetvals_.emplace_back(new LinearGetValues_(xx.geometry(),
-                                 hop_.locations(bgn, end)));
-    bgn = end;
-    end = end + winlen;
-  }
-  gvals_.reset(new GeoVaLs_(hop_.locations(begin, end), geovars_));
+  lingetvals_.reset(new LinearGetValues_(xx.geometry(), hop_.locations(winbgn, winend)));
+  gvals_.reset(new GeoVaLs_(hop_.locations(winbgn, winend), geovars_));
   Log::trace() << "ObserverTLAD::doInitializeTraj done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
 void ObserverTLAD<MODEL, OBS>::doProcessingTraj(const State_ & xx, const util::DateTime & t1,
-                                           const util::DateTime & t2, const int & iwin) {
+                                                const util::DateTime & t2) {
   Log::trace() << "ObserverTLAD::doProcessingTraj start" << std::endl;
 // Call nonlinear getValues
-  lingetvals_[iwin]->setTrajectory(xx, t1, t2, *gvals_);
+  lingetvals_->setTrajectory(xx, t1, t2, *gvals_);
   Log::trace() << "ObserverTLAD::doProcessingTraj done" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -133,24 +121,25 @@ void ObserverTLAD<MODEL, OBS>::doFinalizeTraj(const State_ & xx) {
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
 void ObserverTLAD<MODEL, OBS>::doInitializeTL(const Increment_ & dx,
-                   const util::DateTime & begin, const util::DateTime & end) {
+                                              const util::DateTime & winbgn,
+                                              const util::DateTime & winend) {
   Log::trace() << "ObserverTLAD::doInitializeTL start" << std::endl;
-  gvals_.reset(new GeoVaLs_(hop_.locations(begin, end), hoptlad_.requiredVars()));
+  gvals_.reset(new GeoVaLs_(hop_.locations(winbgn, winend), hoptlad_.requiredVars()));
   Log::trace() << "ObserverTLAD::doInitializeTL done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
 void ObserverTLAD<MODEL, OBS>::doProcessingTL(const Increment_ & dx, const util::DateTime & t1,
-                                         const util::DateTime & t2, const int & iwin) {
+                                              const util::DateTime & t2) {
   Log::trace() << "ObserverTLAD::doProcessingTL start" << std::endl;
 // Get increment variables at obs locations
-  lingetvals_[iwin]->fillGeoVaLsTL(dx, t1, t2, *gvals_);
+  lingetvals_->fillGeoVaLsTL(dx, t1, t2, *gvals_);
   Log::trace() << "ObserverTLAD::doProcessingTL done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
 void ObserverTLAD<MODEL, OBS>::doFinalizeTL(const Increment_ &, ObsVector_ & ydeptl,
-                                       const ObsAuxIncr_ & ybiastl) {
+                                            const ObsAuxIncr_ & ybiastl) {
   Log::trace() << "ObserverTLAD::doFinalizeTL start" << std::endl;
   hoptlad_.simulateObsTL(*gvals_, ydeptl, ybiastl);
   gvals_.reset();
@@ -159,21 +148,21 @@ void ObserverTLAD<MODEL, OBS>::doFinalizeTL(const Increment_ &, ObsVector_ & yde
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
 void ObserverTLAD<MODEL, OBS>::doFirstAD(Increment_ & dx, const ObsVector_ & ydepad,
-                                    ObsAuxIncr_ & ybiasad,
-                                    const util::DateTime & begin,
-                                    const util::DateTime & end) {
+                                         ObsAuxIncr_ & ybiasad,
+                                         const util::DateTime & winbgn,
+                                         const util::DateTime & winend) {
   Log::trace() << "ObserverTLAD::doFirstAD start" << std::endl;
-  gvals_.reset(new GeoVaLs_(hop_.locations(begin, end), hoptlad_.requiredVars()));
+  gvals_.reset(new GeoVaLs_(hop_.locations(winbgn, winend), hoptlad_.requiredVars()));
   hoptlad_.simulateObsAD(*gvals_, ydepad, ybiasad);
   Log::trace() << "ObserverTLAD::doFirstAD done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
 void ObserverTLAD<MODEL, OBS>::doProcessingAD(Increment_ & dx, const util::DateTime & t1,
-                                         const util::DateTime & t2, const int & iwin) {
+                                              const util::DateTime & t2) {
   Log::trace() << "ObserverTLAD::doProcessingAD start" << std::endl;
 // Adjoint of get increment variables at obs locations
-  lingetvals_[iwin]->fillGeoVaLsAD(dx, t1, t2, *gvals_);
+  lingetvals_->fillGeoVaLsAD(dx, t1, t2, *gvals_);
   Log::trace() << "ObserverTLAD::doProcessingAD done" << std::endl;
 }
 // -----------------------------------------------------------------------------

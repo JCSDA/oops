@@ -160,6 +160,7 @@ double DRIPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_
 
     double rho = dot_product(pp, ap);
     double alpha = rdots/rho;
+    Log::info() << "DRIPCGMinimizer rho = " << rho << ", alpha = " << alpha << std::endl;
 
     xx.axpy(alpha, pp);   // xx = xx + alpha*pp
     xh.axpy(alpha, ph);   // xh = xh + alpha*ph
@@ -181,6 +182,12 @@ double DRIPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_
 
     rdots_old = rdots;
     rdots = dot_product(rr, ss);
+//  There is an issue where in some cases ss goes to zero before rr. The convergence
+//  check below only checks for rr. Leaving the commented lines here for further invertigation.
+//  double sdots = dot_product(ss, ss);
+//  double rdotr = dot_product(rr, rr);
+//  Log::info() << "DRIPCGMinimizer rdots = " << rdots
+//              << ", sdots = " << sdots << ", rdotr = " << rdotr << std::endl;
     normReduction = sqrt(dot_product(rr, rr)/dotRr0);
 
     Log::info() << "DRIPCG end of iteration " << jiter+1 << ". Norm reduction= "

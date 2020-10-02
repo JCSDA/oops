@@ -49,7 +49,6 @@ oops/assimilation/instantiateLocalEnsembleSolverFactory.h
 oops/assimilation/instantiateMinFactory.h
 oops/assimilation/IPCG.h
 oops/assimilation/IPCGMinimizer.h
-oops/assimilation/JqTerm.h
 oops/assimilation/JqTermTLAD.h
 oops/assimilation/LBGMRESRMinimizer.h
 oops/assimilation/LBHessianMatrix.h
@@ -92,16 +91,14 @@ oops/base/DiagonalMatrix.h
 oops/base/DolphChebyshev.cc
 oops/base/DolphChebyshev.h
 oops/base/EnsembleCovariance.h
-oops/base/EnsembleCovariance4D.h
-oops/base/ErrorCovariance4D.h
 oops/base/GeneralizedDepartures.h
 oops/base/GeoVaLsWriter.h
 oops/base/LocalIncrement.cc
 oops/base/LocalIncrement.h
 oops/base/HybridCovariance.h
-oops/base/HybridCovariance4D.h
 oops/base/IdentityMatrix.h
 oops/base/IncrementEnsemble.h
+oops/base/IncrementEnsemble4D.h
 oops/base/InterpolatorBase.h
 oops/base/InterpolatorBase.cc
 oops/base/instantiateCovarFactory.h
@@ -111,7 +108,6 @@ oops/base/LinearVariableChangeBase.h
 oops/base/LinearVariableChangeParametersBase.h
 oops/base/LocalizationBase.h
 oops/base/ModelBase.h
-oops/base/ModelSpaceCovariance4DBase.h
 oops/base/ModelSpaceCovarianceBase.h
 oops/base/ModelSpaceCovarianceParametersBase.h
 oops/base/ObsAuxControls.h
@@ -142,6 +138,7 @@ oops/base/PostTimer.h
 oops/base/PostTimerParameters.h
 oops/base/QCData.h
 oops/base/StateEnsemble.h
+oops/base/StateEnsemble4D.h
 oops/base/StateInfo.h
 oops/base/StateWriter.h
 oops/base/TrajectorySaver.h
@@ -271,6 +268,7 @@ oops/util/duration.intfb.h
 oops/util/Expect.h
 oops/util/FloatCompare.h
 oops/util/formats.h
+oops/util/gatherPrint.h
 oops/util/IntSetParser.cc
 oops/util/IntSetParser.h
 oops/util/IsAnyPointInVolumeInterior.h

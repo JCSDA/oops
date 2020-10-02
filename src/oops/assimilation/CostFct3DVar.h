@@ -111,8 +111,7 @@ CostJb3D<MODEL> * CostFct3DVar<MODEL, OBS>::newJb(const eckit::Configuration & j
                                                   const Geometry_ & resol,
                                                   const CtrlVar_ & xb) const {
   Log::trace() << "CostFct3DVar::newJb" << std::endl;
-  ASSERT(xb.state().checkStatesNumber(1));
-  return new CostJb3D<MODEL>(jbConf, resol, ctlvars_, util::Duration(0), xb.state()[0]);
+  return new CostJb3D<MODEL>(jbConf, resol, ctlvars_, util::Duration(0), xb.state());
 }
 
 // -----------------------------------------------------------------------------
@@ -139,14 +138,13 @@ CostTermBase<MODEL, OBS> * CostFct3DVar<MODEL, OBS>::newJc(const eckit::Configur
 template <typename MODEL, typename OBS>
 void CostFct3DVar<MODEL, OBS>::runNL(CtrlVar_ & xx, PostProcessor<State_> & post) const {
   Log::trace() << "CostFct3DVar::runNL start" << std::endl;
-  ASSERT(xx.state().checkStatesNumber(1));
-  ASSERT(xx.state()[0].validTime() == windowHalf_);
+  ASSERT(xx.state().validTime() == windowHalf_);
 
-  post.initialize(xx.state()[0], windowHalf_, windowLength_);
-  post.process(xx.state()[0]);
-  post.finalize(xx.state()[0]);
+  post.initialize(xx.state(), windowHalf_, windowLength_);
+  post.process(xx.state());
+  post.finalize(xx.state());
 
-  ASSERT(xx.state()[0].validTime() == windowHalf_);
+  ASSERT(xx.state().validTime() == windowHalf_);
   Log::trace() << "CostFct3DVar::runNL done" << std::endl;
 }
 
@@ -170,18 +168,18 @@ void CostFct3DVar<MODEL, OBS>::runTLM(CtrlInc_ & dx,
                                       PostProcessor<Increment_> post,
                                       const bool) const {
   Log::trace() << "CostFct3DVar::runTLM start" << std::endl;
-  ASSERT(dx.state()[0].validTime() == windowHalf_);
+  ASSERT(dx.state().validTime() == windowHalf_);
 
-  cost.initializeTL(dx.state()[0], windowHalf_, windowLength_);
-  post.initialize(dx.state()[0], windowHalf_, windowLength_);
+  cost.initializeTL(dx.state(), windowHalf_, windowLength_);
+  post.initialize(dx.state(), windowHalf_, windowLength_);
 
-  cost.processTL(dx.state()[0]);
-  post.process(dx.state()[0]);
+  cost.processTL(dx.state());
+  post.process(dx.state());
 
-  cost.finalizeTL(dx.state()[0]);
-  post.finalize(dx.state()[0]);
+  cost.finalizeTL(dx.state());
+  post.finalize(dx.state());
 
-  ASSERT(dx.state()[0].validTime() == windowHalf_);
+  ASSERT(dx.state().validTime() == windowHalf_);
   Log::trace() << "CostFct3DVar::runTLM done" << std::endl;
 }
 
@@ -190,7 +188,7 @@ void CostFct3DVar<MODEL, OBS>::runTLM(CtrlInc_ & dx,
 template <typename MODEL, typename OBS>
 void CostFct3DVar<MODEL, OBS>::zeroAD(CtrlInc_ & dx) const {
   Log::trace() << "CostFct3DVar::zeroAD start" << std::endl;
-  dx.state()[0].zero(windowHalf_);
+  dx.state().zero(windowHalf_);
   dx.modVar().zero();
   dx.obsVar().zero();
   Log::trace() << "CostFct3DVar::zeroAD done" << std::endl;
@@ -204,18 +202,18 @@ void CostFct3DVar<MODEL, OBS>::runADJ(CtrlInc_ & dx,
                                       PostProcessor<Increment_> post,
                                       const bool) const {
   Log::trace() << "CostFct3DVar::runADJ start" << std::endl;
-  ASSERT(dx.state()[0].validTime() == windowHalf_);
+  ASSERT(dx.state().validTime() == windowHalf_);
 
-  post.initialize(dx.state()[0], windowHalf_, windowLength_);
-  cost.initializeAD(dx.state()[0], windowHalf_, windowLength_);
+  post.initialize(dx.state(), windowHalf_, windowLength_);
+  cost.initializeAD(dx.state(), windowHalf_, windowLength_);
 
-  cost.processAD(dx.state()[0]);
-  post.process(dx.state()[0]);
+  cost.processAD(dx.state());
+  post.process(dx.state());
 
-  cost.finalizeAD(dx.state()[0]);
-  post.finalize(dx.state()[0]);
+  cost.finalizeAD(dx.state());
+  post.finalize(dx.state());
 
-  ASSERT(dx.state()[0].validTime() == windowHalf_);
+  ASSERT(dx.state().validTime() == windowHalf_);
 
   Log::trace() << "CostFct3DVar::runADJ done" << std::endl;
 }
@@ -226,10 +224,9 @@ template<typename MODEL, typename OBS>
 void CostFct3DVar<MODEL, OBS>::addIncr(CtrlVar_ & xx, const CtrlInc_ & dx,
                                        PostProcessor<Increment_> &) const {
   Log::trace() << "CostFct3DVar::addIncr start" << std::endl;
-  ASSERT(xx.state().checkStatesNumber(1));
-  ASSERT(xx.state()[0].validTime() == windowHalf_);
-  ASSERT(dx.state()[0].validTime() == windowHalf_);
-  xx.state()[0] += dx.state()[0];
+  ASSERT(xx.state().validTime() == windowHalf_);
+  ASSERT(dx.state().validTime() == windowHalf_);
+  xx.state() += dx.state();
   Log::trace() << "CostFct3DVar::addIncr done" << std::endl;
 }
 

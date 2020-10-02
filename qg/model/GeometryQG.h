@@ -60,7 +60,7 @@ class GeometryQG : public util::Printable,
   void print(std::ostream &) const;
   F90geom keyGeom_;
   const eckit::mpi::Comm & comm_;
-  std::unique_ptr<atlas::functionspace::StructuredColumns> atlasFunctionSpace_;
+  std::unique_ptr<atlas::functionspace::PointCloud> atlasFunctionSpace_;
   std::unique_ptr<atlas::FieldSet> atlasFieldSet_;
 };
 // -----------------------------------------------------------------------------

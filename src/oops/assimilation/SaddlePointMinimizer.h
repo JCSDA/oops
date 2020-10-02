@@ -11,10 +11,10 @@
 #ifndef OOPS_ASSIMILATION_SADDLEPOINTMINIMIZER_H_
 #define OOPS_ASSIMILATION_SADDLEPOINTMINIMIZER_H_
 
+#include <iomanip>
 #include <memory>
 #include <string>
 #include <vector>
-
 
 #include "eckit/config/Configuration.h"
 

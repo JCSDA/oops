@@ -585,13 +585,14 @@ oops_add_test( TESTNAME 4dvar.modbias
                EXENAME l95_4dvar.x
                TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-oops_add_test( TESTNAME 4dforcing
-               MODELNAME l95
-               YAMLNAME testinput/4dforcing.yaml
-               EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+#oops_add_test( TESTNAME 4dforcing
+#               MODELNAME l95
+#               YAMLNAME testinput/4dforcing.yaml
+#               EXENAME l95_4dvar.x
+#               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 oops_add_test( TESTNAME 4dsaddlepoint
+               MPI 2
                MODELNAME l95
                YAMLNAME testinput/4dsaddlepoint.yaml
                EXENAME l95_4dvar.x
@@ -626,12 +627,14 @@ oops_add_test( TESTNAME 4dvar.hybrid
                TEST_DEPENDS test_l95_forecast test_l95_makeobs4d test_l95_genenspert )
 
 oops_add_test( TESTNAME 4densvar
+               MPI 9
                MODELNAME l95
                YAMLNAME testinput/4densvar.yaml
                EXENAME l95_4dvar.x
                TEST_DEPENDS test_l95_forecast test_l95_makeobs4d12h test_l95_genenspert )
 
 oops_add_test( TESTNAME 4densvar.hybrid
+               MPI 9
                MODELNAME l95
                YAMLNAME testinput/4densvar.hybrid.yaml
                EXENAME l95_4dvar.x

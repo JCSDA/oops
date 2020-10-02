@@ -69,7 +69,8 @@ integer,intent(in) :: nts                     !< Number of timeslots
 self%colocated = colocated
 
 ! Set number of timeslots
-self%nts = nts
+if (nts>1) call abor1_ftn('create_ug: number of timeslots should be one now')
+self%nts = 1
 
 end subroutine create_ug
 !-------------------------------------------------------------------------------
@@ -180,30 +181,28 @@ type(unstructured_grid),intent(in) :: self      !< Unstructured grid
 type(atlas_fieldset),intent(inout) :: afieldset !< ATLAS fieldset
 
 ! Local variables
-integer :: iv,its,igrid
+integer :: iv,igrid
 character(len=1024) :: fieldname
 type(atlas_field) :: afield
 
 ! Copy fields
 do igrid=1,self%ngrid
-  do its=1,self%nts
-    do iv=1,self%grid(igrid)%nv
-      ! Get or create field
-      write(fieldname,'(a,i2.2,a,i2.2)') 'var_',iv,'_',its
-      if (afieldset%has_field(trim(fieldname))) then
-        ! Get field
-        afield = afieldset%field(trim(fieldname))
-      else
-        ! Create field
-        afield = self%afunctionspace%create_field(name=trim(fieldname),kind=atlas_real(kind_real),levels=self%grid(igrid)%nl0)
+  do iv=1,self%grid(igrid)%nv
+    ! Get or create field
+    write(fieldname,'(a,i2.2)') 'var_',iv
+    if (afieldset%has_field(trim(fieldname))) then
+      ! Get field
+      afield = afieldset%field(trim(fieldname))
+    else
+      ! Create field
+      afield = self%afunctionspace%create_field(name=trim(fieldname),kind=atlas_real(kind_real),levels=self%grid(igrid)%nl0)
 
-        ! Add field
-        call afieldset%add(afield)
-      endif
+      ! Add field
+      call afieldset%add(afield)
+    endif
 
-      ! Release pointer
-      call afield%final()
-    enddo
+    ! Release pointer
+    call afield%final()
   enddo
 enddo
 
@@ -219,35 +218,33 @@ type(unstructured_grid),intent(in) :: self      !< Unstructured grid
 type(atlas_fieldset),intent(inout) :: afieldset !< ATLAS fieldset
 
 ! Local variables
-integer :: iv,its,igrid
+integer :: iv,igrid
 real(kind_real),pointer :: real_ptr_2(:,:)
 character(len=1024) :: fieldname
 type(atlas_field) :: afield
 
 ! Copy fields
 do igrid=1,self%ngrid
-  do its=1,self%nts
-    do iv=1,self%grid(igrid)%nv
-      ! Get or create field
-      write(fieldname,'(a,i2.2,a,i2.2)') 'var_',iv,'_',its
-      if (afieldset%has_field(trim(fieldname))) then
-        ! Get field
-        afield = afieldset%field(trim(fieldname))
-      else
-        ! Create field
-        afield = self%afunctionspace%create_field(name=trim(fieldname),kind=atlas_real(kind_real),levels=self%grid(igrid)%nl0)
+  do iv=1,self%grid(igrid)%nv
+    ! Get or create field
+    write(fieldname,'(a,i2.2)') 'var_',iv
+    if (afieldset%has_field(trim(fieldname))) then
+      ! Get field
+      afield = afieldset%field(trim(fieldname))
+    else
+      ! Create field
+      afield = self%afunctionspace%create_field(name=trim(fieldname),kind=atlas_real(kind_real),levels=self%grid(igrid)%nl0)
 
-        ! Add field
-        call afieldset%add(afield)
-      endif
+      ! Add field
+      call afieldset%add(afield)
+    endif
 
-      ! Copy data
-      call afield%data(real_ptr_2)
-      real_ptr_2(1:self%grid(igrid)%nl0,1:self%grid(igrid)%nmga) = transpose(self%grid(igrid)%fld(:,:,iv,its))
+    ! Copy data
+    call afield%data(real_ptr_2)
+    real_ptr_2(1:self%grid(igrid)%nl0,1:self%grid(igrid)%nmga) = transpose(self%grid(igrid)%fld(:,:,iv,1))
 
-      ! Release pointer
-      call afield%final()
-    enddo
+    ! Release pointer
+    call afield%final()
   enddo
 enddo
 
@@ -263,7 +260,7 @@ type(unstructured_grid),intent(inout) :: self   !< Unstructured grid
 type(atlas_fieldset),intent(inout) :: afieldset !< ATLAS fieldset
 
 ! Local variables
-integer :: iv,its,igrid
+integer :: iv,igrid
 real(kind_real),pointer :: real_ptr_2(:,:)
 character(len=1024) :: fieldname
 type(atlas_field) :: afield
@@ -273,19 +270,17 @@ call allocate_unstructured_grid_field(self)
 
 ! Copy fields
 do igrid=1,self%ngrid
-  do its=1,self%nts
-    do iv=1,self%grid(igrid)%nv
-      ! Get field
-      write(fieldname,'(a,i2.2,a,i2.2)') 'var_',iv,'_',its
-      afield = afieldset%field(trim(fieldname))
+  do iv=1,self%grid(igrid)%nv
+    ! Get field
+    write(fieldname,'(a,i2.2)') 'var_',iv
+    afield = afieldset%field(trim(fieldname))
 
-      ! Copy data
-      call afield%data(real_ptr_2)
-      self%grid(igrid)%fld(:,:,iv,its) = transpose(real_ptr_2(1:self%grid(igrid)%nl0,1:self%grid(igrid)%nmga))
+    ! Copy data
+    call afield%data(real_ptr_2)
+    self%grid(igrid)%fld(:,:,iv,1) = transpose(real_ptr_2(1:self%grid(igrid)%nl0,1:self%grid(igrid)%nmga))
 
-      ! Release pointer
-      call afield%final()
-    enddo
+    ! Release pointer
+    call afield%final()
   enddo
 enddo
 
@@ -327,7 +322,7 @@ integer :: igrid
 ! Allocation
 do igrid=1,self%ngrid
    if (.not.allocated(self%grid(igrid)%fld)) allocate(self%grid(igrid)%fld(self%grid(igrid)%nmga,self%grid(igrid)%nl0,&
- & self%grid(igrid)%nv,self%grid(igrid)%nts))
+ & self%grid(igrid)%nv,1))
 enddo
 
 end subroutine allocate_unstructured_grid_field

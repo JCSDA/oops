@@ -16,11 +16,9 @@
 #include <string>
 #include <vector>
 
-
 #include "eckit/config/Configuration.h"
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/instantiateCovarFactory.h"
-#include "oops/base/ModelSpaceCovariance4DBase.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/Variables.h"
@@ -38,9 +36,7 @@ namespace oops {
 template <typename MODEL> class Dirac : public Application {
   typedef Geometry<MODEL>                           Geometry_;
   typedef Increment<MODEL>                          Increment_;
-  typedef Increment4D<MODEL>                        Increment4D_;
   typedef State<MODEL>                              State_;
-  typedef State4D<MODEL>                            State4D_;
   typedef LocalizationBase<MODEL>                   Localization_;
   typedef IncrementEnsemble<MODEL>                  Ensemble_;
   typedef std::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
@@ -54,61 +50,68 @@ template <typename MODEL> class Dirac : public Application {
   virtual ~Dirac() {}
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
+    const eckit::LocalConfiguration backgroundConfig(fullConfig, "initial condition");
+    std::vector<eckit::LocalConfiguration> confs;
+    backgroundConfig.get("states", confs);
+    size_t nslots = confs.size();
+
+    const eckit::mpi::Comm * commSpace = &this->getComm();
+    const eckit::mpi::Comm * commTime = &oops::mpi::myself();
+    if (nslots > 1) {
+      size_t ntasks = this->getComm().size();
+      ASSERT(ntasks % nslots == 0);
+      size_t myrank = this->getComm().rank();
+      size_t ntaskpslot = ntasks / nslots;
+      size_t myslot = myrank / ntaskpslot;
+
+      // Create a communicator for same sub-window, to be used for communications in space
+      std::string sgeom = "comm_geom_" + std::to_string(myslot);
+      char const *geomName = sgeom.c_str();
+      commSpace = &this->getComm().split(myslot, geomName);
+      ASSERT(commSpace->size() == ntaskpslot);
+
+      // Create a communicator for same local area, to be used for communications in time
+      size_t myarea = commSpace->rank();
+      std::string stime = "comm_time_" + std::to_string(myarea);
+      char const *timeName = stime.c_str();
+      commTime = &this->getComm().split(myarea, timeName);
+      ASSERT(commTime->size() == nslots);
+    }
+
     //  Setup resolution
     const eckit::LocalConfiguration resolConfig(fullConfig, "geometry");
-    const Geometry_ resol(resolConfig, this->getComm());
+    const Geometry_ resol(resolConfig, *commSpace, *commTime);
 
     // Setup background state
-    const eckit::LocalConfiguration backgroundConfig(fullConfig, "initial condition");
-    State4D_ xx(resol, backgroundConfig);
+    State_ xx(resol, backgroundConfig);
 
     //  Setup variables
     const Variables vars = xx.variables();
 
-    //  Setup timeslots
-    std::vector<util::DateTime> timeslots = xx.validTimes();
-    Log::info() << "Number of ensemble time-slots:" << timeslots.size() << std::endl;
+    //  Setup time
+    util::DateTime time = xx.validTime();
 
     // Apply B to Dirac
     const eckit::LocalConfiguration covarConfig(fullConfig, "background error");
-    if (xx.size() == 1) {
-      //  3D covariance
-      std::unique_ptr<ModelSpaceCovarianceBase<MODEL>> B(CovarianceFactory<MODEL>::create(
-        covarConfig, resol, vars, xx[0], xx[0]));
 
-      //  Setup Dirac
-      Increment_ dxdirin(resol, vars, timeslots[0]);
-      Increment_ dxdirout(resol, vars, timeslots[0]);
-      const eckit::LocalConfiguration diracConfig(fullConfig, "dirac");
-      dxdirin.dirac(diracConfig);
+    //  Covariance
+    std::unique_ptr<ModelSpaceCovarianceBase<MODEL>> B(CovarianceFactory<MODEL>::create(
+      covarConfig, resol, vars, xx, xx));
 
-      //  Apply 3D B matrix to Dirac increment
-      B->multiply(dxdirin, dxdirout);
+    //  Setup Dirac
+    Increment_ dxdirin(resol, vars, time);
+    Increment_ dxdirout(resol, vars, time);
+    const eckit::LocalConfiguration diracConfig(fullConfig, "dirac");
+    dxdirin.dirac(diracConfig);
+    Log::test() << "Input Dirac increment: " << dxdirin << std::endl;
 
-      //  Write increment
-      const eckit::LocalConfiguration output_B(fullConfig, "output B");
-      dxdirout.write(output_B);
-      Log::test() << "Increment: " << dxdirout << std::endl;
-    } else {
-      //  4D covariance
-      std::unique_ptr<ModelSpaceCovariance4DBase<MODEL>> B(Covariance4DFactory<MODEL>::create(
-        covarConfig, resol, vars, xx, xx));
+    //  Apply 3D B matrix to Dirac increment
+    B->multiply(dxdirin, dxdirout);
 
-      //  Setup Dirac
-      Increment4D_ dxdirin(resol, vars, timeslots);
-      Increment4D_ dxdirout(resol, vars, timeslots);
-      std::vector<eckit::LocalConfiguration> diracConfigs;
-      fullConfig.get("dirac", diracConfigs);
-      dxdirin.dirac(diracConfigs);
-
-      //  Apply 4D B matrix to Dirac increment
-      B->multiply(dxdirin, dxdirout);
-
-      //  Write increment
-      const eckit::LocalConfiguration output_B(fullConfig, "output B");
-      dxdirout.write(output_B);
-      Log::test() << "Increment4D: " << dxdirout << std::endl;
-    }
+    //  Write increment
+    const eckit::LocalConfiguration output_B(fullConfig, "output B");
+    dxdirout.write(output_B);
+    Log::test() << "B * Increment: " << dxdirout << std::endl;
 
     //  Setup localization and ensemble configurations
     eckit::LocalConfiguration locConfig;
@@ -129,46 +132,24 @@ template <typename MODEL> class Dirac : public Application {
     }
 
     if (hasLoc) {
-      // Setup ensemble
-      EnsemblePtr_ ens(new Ensemble_(ensConfig, xx, xx, resol, vars));
-
       // Apply localization to Dirac
-      if (xx.size() == 1) {
-        //  Setup Dirac
-        Increment_ dxdir(resol, vars, timeslots[0]);
-        const eckit::LocalConfiguration diracConfig(fullConfig, "dirac");
-        dxdir.dirac(diracConfig);
 
-        //  Setup localization
-        std::unique_ptr<Localization_> loc_ =
-                LocalizationFactory<MODEL>::create(resol, locConfig);
+      //  Setup Dirac
+      Increment_ dxdir(resol, vars, time);
+      const eckit::LocalConfiguration diracConfig(fullConfig, "dirac");
+      dxdir.dirac(diracConfig);
 
-        //  Apply localization
-        loc_->multiply(dxdir);
+      //  Setup localization
+      std::unique_ptr<Localization_> loc_ =
+              LocalizationFactory<MODEL>::create(resol, time, locConfig);
 
-        //  Write increment
-        const eckit::LocalConfiguration output_localization(fullConfig, "output localization");
-        dxdir.write(output_localization);
-        Log::test() << "Increment: " << dxdir << std::endl;
-      } else {
-        //  Setup Dirac
-        Increment4D_ dxdir(resol, vars, timeslots);
-        std::vector<eckit::LocalConfiguration> diracConfigs;
-        fullConfig.get("dirac", diracConfigs);
-        dxdir.dirac(diracConfigs);
+      //  Apply localization
+      loc_->localize(dxdir);
 
-        //  Setup localization
-        std::unique_ptr<Localization_> loc_ =
-                    LocalizationFactory<MODEL>::create(resol, locConfig);
-
-        //  Apply localization
-        loc_->multiply(dxdir);
-
-        //  Write increment
-        const eckit::LocalConfiguration output_localization(fullConfig, "output localization");
-        dxdir.write(output_localization);
-        Log::test() << "Increment4D: " << dxdir << std::endl;
-      }
+      //  Write increment
+      const eckit::LocalConfiguration output_localization(fullConfig, "output localization");
+      dxdir.write(output_localization);
+      Log::test() << "Localized Increment: " << dxdir << std::endl;
     }
 
     return 0;

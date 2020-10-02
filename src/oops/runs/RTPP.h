@@ -16,18 +16,19 @@
 #include "oops/assimilation/State4D.h"
 #include "oops/base/StateEnsemble.h"
 #include "oops/interface/Geometry.h"
+#include "oops/interface/Increment.h"
+#include "oops/interface/State.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/Logger.h"
-
 
 namespace oops {
 
 /// \brief Application for relaxation to prior perturbation (RTPP) inflation
 template <typename MODEL> class RTPP : public Application {
   typedef Geometry<MODEL>                  Geometry_;
-  typedef Increment4D<MODEL>               Increment4D_;
-  typedef State4D<MODEL>                   State4D_;
+  typedef Increment<MODEL>                 Increment_;
+  typedef State<MODEL>                     State_;
   typedef StateEnsemble<MODEL>             StateEnsemble_;
 
  public:
@@ -62,8 +63,8 @@ template <typename MODEL> class RTPP : public Application {
       anvars = Variables(fullConfig, "analysis variables");
 
     // calculate ensemble means
-    State4D_ bg_mean = bgens.mean();
-    State4D_ an_mean = anens.mean();
+    State_ bg_mean = bgens.mean();
+    State_ an_mean = anens.mean();
 
     Log::test() << "Background member 1:" << bgens[0] << std::endl;
     Log::test() << "Analysis member 1:" << anens[0] << std::endl;
@@ -71,10 +72,10 @@ template <typename MODEL> class RTPP : public Application {
     // update analysis with RTPP
     for (size_t jj = 0; jj < nens; ++jj) {
       // calculate RTPP perturbation
-      Increment4D_ pertTot(geometry, anvars, anens[jj].validTimes());
+      Increment_ pertTot(geometry, anvars, anens[jj].validTime());
       pertTot.zero();
 
-      Increment4D_ pert(pertTot);
+      Increment_ pert(pertTot);
 
       pert.diff(bgens[jj], bg_mean);
       pertTot.axpy(factor, pert);

@@ -87,7 +87,7 @@ class Departures : public util::Printable,
 
 template<typename OBS>
 Departures<OBS>::Departures(const ObsSpaces_ & obsdb,
-                              const std::string & name, const bool fail): dep_()
+                            const std::string & name, const bool fail): dep_()
 {
   dep_.reserve(obsdb.size());
   for (size_t jj = 0; jj < obsdb.size(); ++jj) {
@@ -98,7 +98,7 @@ Departures<OBS>::Departures(const ObsSpaces_ & obsdb,
 // -----------------------------------------------------------------------------
 template<typename OBS>
 Departures<OBS>::Departures(const ObsSpaces_ & obsdb,
-                              const Departures & other): dep_() {
+                            const Departures & other): dep_() {
   dep_.reserve(obsdb.size());
   for (size_t jj = 0; jj < other.dep_.size(); ++jj) {
     dep_.emplace_back(obsdb[jj], other[jj]);

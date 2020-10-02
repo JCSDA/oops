@@ -27,7 +27,6 @@
 #include "oops/assimilation/CostJo.h"
 #include "oops/assimilation/CostTermBase.h"
 #include "oops/assimilation/DualVector.h"
-#include "oops/assimilation/JqTerm.h"
 #include "oops/assimilation/JqTermTLAD.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
@@ -57,7 +56,6 @@ template<typename MODEL, typename OBS> class CostFunction : private boost::nonco
   typedef ControlVariable<MODEL, OBS>   CtrlVar_;
   typedef CostJbTotal<MODEL, OBS>       JbTotal_;
   typedef CostTermBase<MODEL, OBS>      CostBase_;
-  typedef JqTerm<MODEL>                 JqTerm_;
   typedef JqTermTLAD<MODEL>             JqTermTLAD_;
   typedef Geometry<MODEL>               Geometry_;
   typedef State<MODEL>                  State_;
@@ -258,8 +256,7 @@ double CostFunction<MODEL, OBS>::evaluate(const CtrlVar_ & fguess,
   Log::trace() << "CostFunction::evaluate start" << std::endl;
 // Setup terms of cost function
   PostProcessor<State_> pp(post);
-  JqTerm_ * jq = jb_->initialize(fguess);
-  pp.enrollProcessor(jq);
+  jb_->initialize(fguess);
   for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
     pp.enrollProcessor(jterms_[jj].initialize(fguess, config));
   }
@@ -270,7 +267,7 @@ double CostFunction<MODEL, OBS>::evaluate(const CtrlVar_ & fguess,
 
 // Cost function value
   double zzz = 0.0;
-  costJb_ = jb_->finalize(jq);
+  costJb_ = jb_->finalize(mfguess);
   zzz += costJb_;
   costJoJc_ = 0.0;
   for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
@@ -291,7 +288,7 @@ double CostFunction<MODEL, OBS>::linearize(const CtrlVar_ & fguess,
   Log::trace() << "CostFunction::linearize start" << std::endl;
 // Inner loop resolution
   const eckit::LocalConfiguration resConf(innerConf, "geometry");
-  const Geometry_ lowres(resConf, this->geometry().getComm());
+  const Geometry_ lowres(resConf, this->geometry().getComm(), this->geometry().timeComm());
 
 // Setup trajectory for terms of cost function
   PostProcessorTLAD<MODEL> pptraj;
@@ -332,6 +329,7 @@ void CostFunction<MODEL, OBS>::computeGradientFG(CtrlInc_ & grad) const {
   }
 
   this->runADJ(grad, costad, pp);
+  Log::info() << "CostFunction::computeGradientFG: gradient:" << grad << std::endl;
   Log::trace() << "CostFunction::computeGradientFG done" << std::endl;
 }
 
@@ -339,7 +337,7 @@ void CostFunction<MODEL, OBS>::computeGradientFG(CtrlInc_ & grad) const {
 
 template<typename MODEL, typename OBS>
 void CostFunction<MODEL, OBS>::addIncrement(CtrlVar_ & xx, const CtrlInc_ & dx,
-                                       PostProcessor<Increment_> post) const {
+                                            PostProcessor<Increment_> post) const {
   Log::trace() << "CostFunction::addIncrement start" << std::endl;
   Log::info() << "CostFunction::addIncrement: First guess:" << xx << std::endl;
   Log::info() << "CostFunction::addIncrement: Increment:" << dx << std::endl;

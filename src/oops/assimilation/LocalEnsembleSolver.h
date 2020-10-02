@@ -16,11 +16,11 @@
 #include "oops/assimilation/CalcHofX.h"
 #include "oops/base/Departures.h"
 #include "oops/base/DeparturesEnsemble.h"
-#include "oops/base/IncrementEnsemble.h"
+#include "oops/base/IncrementEnsemble4D.h"
 #include "oops/base/ObsEnsemble.h"
 #include "oops/base/Observations.h"
 #include "oops/base/ObsSpaces.h"
-#include "oops/base/StateEnsemble.h"
+#include "oops/base/StateEnsemble4D.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/util/Logger.h"
@@ -31,16 +31,16 @@ namespace oops {
 /// \brief Base class for LETKF-type solvers
 template <typename MODEL, typename OBS>
 class LocalEnsembleSolver {
-  typedef CalcHofX<MODEL, OBS>      CalcHofX_;
-  typedef Departures<OBS>           Departures_;
-  typedef DeparturesEnsemble<OBS>   DeparturesEnsemble_;
-  typedef Geometry<MODEL>           Geometry_;
-  typedef GeometryIterator<MODEL>   GeometryIterator_;
-  typedef IncrementEnsemble<MODEL>  IncrementEnsemble_;
-  typedef ObsEnsemble<OBS>          ObsEnsemble_;
-  typedef Observations<OBS>         Observations_;
-  typedef ObsSpaces<OBS>            ObsSpaces_;
-  typedef StateEnsemble<MODEL>      StateEnsemble_;
+  typedef CalcHofX<MODEL, OBS>        CalcHofX_;
+  typedef Departures<OBS>             Departures_;
+  typedef DeparturesEnsemble<OBS>     DeparturesEnsemble_;
+  typedef Geometry<MODEL>             Geometry_;
+  typedef GeometryIterator<MODEL>     GeometryIterator_;
+  typedef IncrementEnsemble4D<MODEL>  IncrementEnsemble4D_;
+  typedef ObsEnsemble<OBS>            ObsEnsemble_;
+  typedef Observations<OBS>           Observations_;
+  typedef ObsSpaces<OBS>              ObsSpaces_;
+  typedef StateEnsemble4D<MODEL>      StateEnsemble4D_;
 
  public:
   static const std::string classname() {return "oops::LocalEnsembleSolver";}
@@ -51,15 +51,15 @@ class LocalEnsembleSolver {
   virtual ~LocalEnsembleSolver() = default;
 
   /// computes ensemble H(\p xx), returns mean H(\p xx), saves as hofx \p iteration
-  virtual Observations_ computeHofX(const StateEnsemble_ & xx, size_t iteration);
+  virtual Observations_ computeHofX(const StateEnsemble4D_ & xx, size_t iteration);
 
   /// update background ensemble \p bg to analysis ensemble \p an at a grid point location \p i
-  virtual void measurementUpdate(const IncrementEnsemble_ & bg,
-                                 const GeometryIterator_ & i, IncrementEnsemble_ & an) = 0;
+  virtual void measurementUpdate(const IncrementEnsemble4D_ & bg,
+                                 const GeometryIterator_ & i, IncrementEnsemble4D_ & an) = 0;
 
   /// copy \p an[\p i] = \p bg[\p i] (e.g. when there are no local observations to update state)
-  virtual void copyLocalIncrement(const IncrementEnsemble_ & bg,
-                                  const GeometryIterator_ & i, IncrementEnsemble_ & an) const;
+  virtual void copyLocalIncrement(const IncrementEnsemble4D_ & bg,
+                                  const GeometryIterator_ & i, IncrementEnsemble4D_ & an) const;
 
  protected:
   const eckit::LocalConfiguration obsconf_;  // configuration for observations
@@ -84,7 +84,7 @@ LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(const StateEnsemble_ & ens_xx,
+Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & ens_xx,
                                                                size_t iteration) {
   util::Timer timer(classname(), "computeHofX");
 
@@ -123,9 +123,9 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(const StateEnsemb
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-void LocalEnsembleSolver<MODEL, OBS>::copyLocalIncrement(const IncrementEnsemble_ & bkg_pert,
+void LocalEnsembleSolver<MODEL, OBS>::copyLocalIncrement(const IncrementEnsemble4D_ & bkg_pert,
                                                          const GeometryIterator_ & i,
-                                                         IncrementEnsemble_ & ana_pert) const {
+                                                         IncrementEnsemble4D_ & ana_pert) const {
   // ana_pert[i]=bkg_pert[i]
   for (size_t itime=0; itime < bkg_pert[0].size(); ++itime) {
     for (size_t iens=0; iens < bkg_pert.size(); ++iens) {

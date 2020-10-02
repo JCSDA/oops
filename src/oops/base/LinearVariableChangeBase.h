@@ -188,9 +188,9 @@ class LinearVariableChangeMaker : public LinearVariableChangeFactory<MODEL> {
   typedef Geometry<MODEL>   Geometry_;
   typedef State<MODEL>      State_;
 
-  virtual LinearVariableChangeBase<MODEL> * make(const State_ & bg, const State_ & fg,
-                                                 const Geometry_ & geom,
-                                                 const LinearVariableChangeParametersBase& params) {
+  LinearVariableChangeBase<MODEL> * make(const State_ & bg, const State_ & fg,
+                                       const Geometry_ & geom,
+                                       const LinearVariableChangeParametersBase& params) override {
     const auto &stronglyTypedParams = dynamic_cast<const Parameters_&>(params);
     return new T(bg, fg, geom,
                  parametersOrConfiguration<HasParameters_<T>::value>(stronglyTypedParams));

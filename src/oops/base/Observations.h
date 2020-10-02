@@ -68,6 +68,7 @@ template <typename OBS> class Observations : public util::Printable {
 
  private:
   void print(std::ostream &) const;
+  size_t nobs() const;
 
 /// Data
   const ObsSpaces_ &      obsdb_;
@@ -78,7 +79,7 @@ template <typename OBS> class Observations : public util::Printable {
 
 template <typename OBS>
 Observations<OBS>::Observations(const ObsSpaces_ & obsdb,
-                                  const std::string & name): obsdb_(obsdb), obs_()
+                                const std::string & name): obsdb_(obsdb), obs_()
 {
   obs_.reserve(obsdb.size());
   for (std::size_t jj = 0; jj < obsdb.size(); ++jj) {
@@ -89,7 +90,7 @@ Observations<OBS>::Observations(const ObsSpaces_ & obsdb,
 // -----------------------------------------------------------------------------
 template <typename OBS>
 Observations<OBS>::Observations(const ObsSpaces_ & obsdb,
-                                  const Observations & other): obsdb_(obsdb), obs_() {
+                                const Observations & other): obsdb_(obsdb), obs_() {
   obs_.reserve(obsdb.size());
   for (std::size_t jj = 0; jj < other.size(); ++jj) {
     obs_.emplace_back(obsdb[jj], other[jj]);
@@ -99,12 +100,14 @@ Observations<OBS>::Observations(const ObsSpaces_ & obsdb,
 // -----------------------------------------------------------------------------
 template <typename OBS>
 Observations<OBS>::Observations(const Observations & other)
-: obsdb_(other.obsdb_), obs_(other.obs_) {}
+: obsdb_(other.obsdb_), obs_(other.obs_) {
+}
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
 Observations<OBS>::Observations(Observations && other)
-: obsdb_(other.obsdb_), obs_(std::move(other.obs_)) {}
+: obsdb_(other.obsdb_), obs_(std::move(other.obs_)) {
+}
 // -----------------------------------------------------------------------------
 template <typename OBS>
 Observations<OBS> & Observations<OBS>::operator=(const Observations & other) {
@@ -167,6 +170,15 @@ Observations<OBS> & Observations<OBS>::operator *=(const double factor) {
     obs_[jj] *= factor;
   }
   return *this;
+}
+// -----------------------------------------------------------------------------
+template<typename OBS>
+size_t Observations<OBS>::nobs() const {
+  size_t nobs = 0;
+  for (size_t jj = 0; jj < obs_.size(); ++jj) {
+    nobs += obs_[jj].nobs();
+  }
+  return nobs;
 }
 // -----------------------------------------------------------------------------
 template <typename OBS>
