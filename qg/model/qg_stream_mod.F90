@@ -36,7 +36,7 @@ integer :: iobs
 
 ! Loop over observations
 do iobs=1,gom%nobs
-  hofx%values(1,gom%indx(iobs)) = gom%values(1,iobs)+bias
+  hofx%values(1,iobs) = gom%values(1,iobs)+bias
 enddo
 
 end subroutine qg_stream_equiv
@@ -56,8 +56,8 @@ integer :: iobs
 
 ! Loop over observations
 do iobs=1,gom%nobs
-  gom%values(1,iobs) = hofx%values(1,gom%indx(iobs))
-  bias = bias+hofx%values(1,gom%indx(iobs))
+  gom%values(1,iobs) = hofx%values(1,iobs)
+  bias = bias+hofx%values(1,iobs)
 enddo
 
 end subroutine qg_stream_equiv_ad

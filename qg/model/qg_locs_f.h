@@ -25,7 +25,6 @@ extern "C" {
   atlas::field::FieldImpl* qg_locs_lonlat_f90(qg::LocationsQG*);
   atlas::field::FieldImpl* qg_locs_altitude_f90(qg::LocationsQG*);
   util::DateTime& qg_locs_times_f90(qg::LocationsQG*, size_t &);
-  atlas::field::FieldImpl* qg_locs_index_f90(qg::LocationsQG*);
 }
 
 }  // namespace qg

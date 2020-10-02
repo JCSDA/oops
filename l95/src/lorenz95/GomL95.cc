@@ -131,27 +131,6 @@ void GomL95::write(const eckit::Configuration & conf) const {
   oops::Log::trace() << "GomL95::write file closed." << std::endl;
 }
 // -----------------------------------------------------------------------------
-/*! GomL95 analytic initialization */
-
-void GomL95::analytic_init(const LocsL95 & locs, const eckit::Configuration & conf)
-{
-  oops::Log::trace() << "GomL95::GomL95 analytic init " << std::endl;
-
-  // analytic init for testing interpolation
-  for (size_t jj = 0; jj < size_; ++jj) locval_[jj] = 0.0;
-  if (conf.has("mean")) {
-    const double zz = conf.getDouble("mean");
-    for (size_t jj = 0; jj < size_; ++jj) locval_[jj] = zz;
-  }
-  if (conf.has("sinus")) {
-    const double zz = conf.getDouble("sinus");
-    const double pi = std::acos(-1.0);
-    for (size_t jj = 0; jj < size_; ++jj)
-      locval_[jj] += zz * std::sin(2.0*pi*locs[jj]);
-  }
-  oops::Log::trace() << "GomL95::GomL95 analytic init finished" << std::endl;
-}
-// -----------------------------------------------------------------------------
 void GomL95::print(std::ostream & os) const {
   double zmin = locval_[0];
   double zmax = locval_[0];

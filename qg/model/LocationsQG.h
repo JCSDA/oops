@@ -48,14 +48,12 @@ class LocationsQG : public util::Printable,
   atlas::functionspace::PointCloud & pointcloud() {return *pointcloud_;}
   atlas::Field lonlat() const {return pointcloud_->lonlat();}
   atlas::Field & altitude() {ASSERT(altitude_); return *altitude_;}
-  atlas::Field & index() {ASSERT(index_); return *index_;}
   util::DateTime & times(size_t idx) {return times_[idx];}
 
  private:
   void print(std::ostream &) const;
   std::unique_ptr<atlas::functionspace::PointCloud> pointcloud_;
   std::unique_ptr<atlas::Field> altitude_;
-  std::unique_ptr<atlas::Field> index_;
   std::vector<util::DateTime> times_;
 };
 

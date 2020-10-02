@@ -26,7 +26,6 @@ procedure, public :: nlocs => locs_nlocs
 procedure, public :: lonlat => locs_lonlat
 procedure, public :: altitude => locs_altitude
 procedure, public :: times => locs_times
-procedure, public :: index => locs_index
 end type qg_locs
 
 interface qg_locs
@@ -78,14 +77,6 @@ function locs_times(self, jj) result(dt)
   integer(c_size_t) :: idx
   idx = jj - 1
   call c_f_datetime(qg_locs_times_c(self%ptr, idx), dt)
-end function
-
-! ------------------------------------------------------------------------------
-function locs_index(self) result(field)
-  class(qg_locs), intent(in) :: self  ! locations object
-  type(atlas_Field) :: field
-  field = atlas_Field(qg_locs_index_c(self%ptr))
-  call field%return()
 end function
 
 ! ------------------------------------------------------------------------------

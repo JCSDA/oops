@@ -18,7 +18,7 @@ use oops_variables_mod
 implicit none
 
 private
-public :: qg_wspeed_equiv,qg_wspeed_equiv_tl,qg_wspeed_equiv_ad,qg_wspeed_gettraj,qg_wspeed_settraj
+public :: qg_wspeed_equiv,qg_wspeed_equiv_tl,qg_wspeed_equiv_ad,qg_wspeed_settraj
 ! ------------------------------------------------------------------------------
 contains
 ! ------------------------------------------------------------------------------
@@ -42,7 +42,7 @@ if (abs(bias)>epsilon(bias)) call abor1_ftn ('qg_wspeed_equiv: bias not implemen
 
 ! Loop over observations
 do iobs=1,gom%nobs
-  hofx%values(1,gom%indx(iobs)) = sqrt(gom%values(1,iobs)*gom%values(1,iobs)+gom%values(2,iobs)*gom%values(2,iobs))
+  hofx%values(1,iobs) = sqrt(gom%values(1,iobs)*gom%values(1,iobs)+gom%values(2,iobs)*gom%values(2,iobs))
 enddo
 
 end subroutine qg_wspeed_equiv
@@ -64,13 +64,13 @@ real(kind_real) :: zu,zv,zt
 
 ! Loop over observations
 do iobs=1,gom%nobs
-  zu = traj%values(1,gom%indx(iobs))
-  zv = traj%values(2,gom%indx(iobs))
+  zu = traj%values(1,iobs)
+  zv = traj%values(2,iobs)
   zt = sqrt(zu**2+zv**2)
   if (zt>epsilon(zt)) then
-    hofx%values(1,gom%indx(iobs)) = (zu*gom%values(1,iobs)+zv*gom%values(2,iobs))/zt
+    hofx%values(1,iobs) = (zu*gom%values(1,iobs)+zv*gom%values(2,iobs))/zt
   else
-    hofx%values(1,gom%indx(iobs)) = 0.0
+    hofx%values(1,iobs) = 0.0
   endif
 enddo
 
@@ -93,12 +93,12 @@ real(kind_real) :: zu,zv,zt
 
 ! Loop over observations
 do iobs=1,gom%nobs
-  zu = traj%values(1,gom%indx(iobs))
-  zv = traj%values(2,gom%indx(iobs))
+  zu = traj%values(1,iobs)
+  zv = traj%values(2,iobs)
   zt = sqrt(zu**2+zv**2)
   if (zt>epsilon(zt)) then
-    gom%values(1,iobs) = zu*hofx%values(1,gom%indx(iobs))/zt
-    gom%values(2,iobs) = zv*hofx%values(1,gom%indx(iobs))/zt
+    gom%values(1,iobs) = zu*hofx%values(1,iobs)/zt
+    gom%values(2,iobs) = zv*hofx%values(1,iobs)/zt
   else
     gom%values(1,iobs) = 0.0
     gom%values(2,iobs) = 0.0
@@ -106,36 +106,6 @@ do iobs=1,gom%nobs
 enddo
 
 end subroutine qg_wspeed_equiv_ad
-! ------------------------------------------------------------------------------
-!> Get wind speed trajectory
-subroutine qg_wspeed_gettraj(nobs,vars,traj)
-
-implicit none
-
-! Passed variables
-integer,intent(in) :: nobs        !< Number of observations
-type(oops_variables),intent(in) :: vars  !< Variables
-type(qg_gom),intent(inout) ::traj !< GOM trajectory
-
-! Local variables
-integer,allocatable :: mobs(:)
-integer :: jj
-
-! Allocation
-allocate(mobs(nobs))
-
-! Initialization
-do jj=1,nobs
-  mobs(jj) = jj
-enddo
-
-! Setup GOM
-call qg_gom_setup(traj,mobs,vars)
-
-! Release memory
-deallocate(mobs)
-
-end subroutine qg_wspeed_gettraj
 ! ------------------------------------------------------------------------------
 !> Set wind speed trajectory
 subroutine qg_wspeed_settraj(gom,traj)
@@ -151,8 +121,8 @@ integer :: iobs
 
 ! Loop over observations
 do iobs=1,gom%nobs
-  traj%values(1,gom%indx(iobs)) = gom%values(1,iobs)
-  traj%values(2,gom%indx(iobs)) = gom%values(2,iobs)
+  traj%values(1,iobs) = gom%values(1,iobs)
+  traj%values(2,iobs) = gom%values(2,iobs)
 enddo
 
 end subroutine qg_wspeed_settraj

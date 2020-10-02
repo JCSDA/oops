@@ -33,12 +33,6 @@ function qg_locs_times_c(locs, idx) bind(C,name="qg_locs_times_f90")
     integer(c_size_t) idx
 end function
 
-function qg_locs_index_c(locs) bind(C,name="qg_locs_index_f90")
-    use iso_c_binding, only: c_ptr
-    type(c_ptr) :: qg_locs_index_c
-    type(c_ptr), value :: locs
-end function
-
 !-------------------------------------------------------------------------------
 end interface
 !-------------------------------------------------------------------------------

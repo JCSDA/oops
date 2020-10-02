@@ -322,9 +322,8 @@ integer,allocatable :: indx(:)
 character(len=8),parameter :: col = 'Location'
 type(group_data),pointer :: jgrp
 type(column_data),pointer :: jcol
-type(atlas_field) :: field_z, field_lonlat, field_idx
+type(atlas_field) :: field_z, field_lonlat
 real(kind_real), pointer :: z(:), lonlat(:,:)
-integer(c_int), pointer :: idx(:)
 
 ! Count observations
 call qg_obsdb_count_time(self,grp,t1,t2,nlocs)
@@ -343,29 +342,24 @@ if (.not.associated(jcol)) call abor1_ftn('qg_obsdb_locations: obs column not fo
 
 field_lonlat = atlas_field(name="lonlat", kind=atlas_real(kind_real), shape=[2,nlocs])
 field_z = atlas_field(name="altitude", kind=atlas_real(kind_real), shape=[nlocs])
-field_idx = atlas_field(name="index",kind=atlas_integer(c_int), shape=[nlocs])
 
 call field_lonlat%data(lonlat)
 call field_z%data(z)
-call field_idx%data(idx)
 
 ! Copy coordinates
 do jo = 1, nlocs
   lonlat(1,jo) = jcol%values(1,indx(jo))
   lonlat(2,jo) = jcol%values(2,indx(jo))
   z(jo) = jcol%values(3,indx(jo))
-  idx(jo) = indx(jo)
   call f_c_push_to_datetime_vector(c_times, jgrp%times(indx(jo)))
 enddo
 
 call fields%add(field_lonlat)
 call fields%add(field_z)
-call fields%add(field_idx)
 
 ! release pointers
 call field_lonlat%final()
 call field_z%final()
-call field_idx%final()
 
 deallocate(indx)
 

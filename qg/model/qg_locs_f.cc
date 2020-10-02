@@ -27,9 +27,6 @@ atlas::field::FieldImpl* qg_locs_altitude_f90(qg::LocationsQG* locs) {
 util::DateTime& qg_locs_times_f90(qg::LocationsQG* locs, size_t & idx) {
     return locs->times(idx);
 }
-atlas::field::FieldImpl* qg_locs_index_f90(qg::LocationsQG* locs) {
-    return locs->index().get();
-}
 // -----------------------------------------------------------------------------
 
 }  // namespace qg
