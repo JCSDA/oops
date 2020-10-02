@@ -305,6 +305,12 @@ ecbuild_add_test( TARGET  test_qg_localization
                   LIBS    qg
                   TEST_DEPENDS test_qg_truth )
 
+ecbuild_add_test( TARGET  test_qg_variable_change
+                  SOURCES executables/TestVariableChange.cc
+                  ARGS    "testinput/interfaces.yaml"
+                  LIBS    qg
+                  TEST_DEPENDS test_qg_truth )
+
 ecbuild_add_test( TARGET  test_qg_linear_variable_change
                   MPI    1
                   SOURCES executables/TestLinearVariableChange.cc
