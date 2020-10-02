@@ -46,7 +46,7 @@ class LinearModelFactory : public oops::Test {
     // the lorenz95 library and thus prevents the linker from dropping that library from the list of
     // dependencies. This ensures static initialization of that library is completed before main()
     // starts and hence the L95TLM linear model is registered in the linear model factory.
-    lorenz95::LocsL95 locs({}, {}, {});
+    lorenz95::LocsL95 locs({}, {});
   }
 
  private:

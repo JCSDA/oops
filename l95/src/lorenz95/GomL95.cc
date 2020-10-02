@@ -31,31 +31,19 @@ namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
 GomL95::GomL95(const LocsL95 & locs, const oops::Variables &)
-  : size_(0), iobs_(), locval_()
+  : size_(locs.size()), locval_(size_)
 {
   oops::Log::trace() << "GomL95::GomL95 starting " << std::endl;
-  size_ = locs.size();
-  iobs_.resize(size_);
-  locval_.resize(size_);
-  for (size_t jj = 0; jj < size_; ++jj) iobs_[jj] = locs.globalIndex(jj);
   for (size_t jj = 0; jj < size_; ++jj) locval_[jj] = locs[jj];
 }
 // -----------------------------------------------------------------------------
 /*! Constructor with Configuration */
 GomL95::GomL95(const eckit::Configuration & conf,
                const ObsTableView &, const oops::Variables &)
-  : size_(0), iobs_(), locval_()
+  : size_(0), locval_()
 {
-    this->read(conf);
+  this->read(conf);
 }
-// -----------------------------------------------------------------------------
-GomL95::GomL95(const GomL95 & other)
-  : size_(other.size_), iobs_(other.iobs_), locval_(other.locval_)
-{
-  oops::Log::trace() << "GomL95::GomL95 copied" << std::endl;
-}
-// -----------------------------------------------------------------------------
-GomL95::~GomL95() {}
 // -----------------------------------------------------------------------------
 GomL95 & GomL95::operator*=(const double & zz) {
   for (size_t jj = 0; jj < size_; ++jj) locval_[jj] *= zz;
@@ -118,11 +106,9 @@ void GomL95::read(const eckit::Configuration & conf) {
 
   if (size_ != size) {
     size_ = size;
-    iobs_.resize(size_);
     locval_.resize(size_);
   }
 
-  for (size_t jj = 0; jj < size_; ++jj) fin >> iobs_[jj];
   for (size_t jj = 0; jj < size_; ++jj) fin >> locval_[jj];
 
   fin.close();
@@ -136,7 +122,6 @@ void GomL95::write(const eckit::Configuration & conf) const {
   if (!fout.is_open()) ABORT("GomL95::write: Error opening file: " + filename);
 
   fout << size_ << std::endl;
-  for (size_t jj = 0; jj < size_; ++jj) fout << iobs_[jj] << " ";
   fout << std::endl;
   fout.precision(std::numeric_limits<double>::digits10);
   for (size_t jj = 0; jj < size_; ++jj) fout << locval_[jj] << " ";
@@ -144,6 +129,27 @@ void GomL95::write(const eckit::Configuration & conf) const {
 
   fout.close();
   oops::Log::trace() << "GomL95::write file closed." << std::endl;
+}
+// -----------------------------------------------------------------------------
+/*! GomL95 analytic initialization */
+
+void GomL95::analytic_init(const LocsL95 & locs, const eckit::Configuration & conf)
+{
+  oops::Log::trace() << "GomL95::GomL95 analytic init " << std::endl;
+
+  // analytic init for testing interpolation
+  for (size_t jj = 0; jj < size_; ++jj) locval_[jj] = 0.0;
+  if (conf.has("mean")) {
+    const double zz = conf.getDouble("mean");
+    for (size_t jj = 0; jj < size_; ++jj) locval_[jj] = zz;
+  }
+  if (conf.has("sinus")) {
+    const double zz = conf.getDouble("sinus");
+    const double pi = std::acos(-1.0);
+    for (size_t jj = 0; jj < size_; ++jj)
+      locval_[jj] += zz * std::sin(2.0*pi*locs[jj]);
+  }
+  oops::Log::trace() << "GomL95::GomL95 analytic init finished" << std::endl;
 }
 // -----------------------------------------------------------------------------
 void GomL95::print(std::ostream & os) const {

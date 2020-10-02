@@ -203,7 +203,7 @@ std::unique_ptr<LocsL95> ObsTableView::locations(const util::DateTime & t1,
     times[i] = all_times[localobs_[mask[i]]];
   }
   oops::Log::trace() << "ObsTableView::locations done" << std::endl;
-  return std::unique_ptr<LocsL95>(new LocsL95(mask, locs, times));
+  return std::unique_ptr<LocsL95>(new LocsL95(locs, times));
 }
 
 // -----------------------------------------------------------------------------
