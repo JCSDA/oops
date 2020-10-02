@@ -113,7 +113,7 @@ ObsSpaceQG::ObsSpaceQG(const ObsSpaceQG & obsdb,
   const double dist = conf.getDouble("lengthscale");
 
   // get locations of all obs
-  std::unique_ptr<LocationsQG> locs = locations(winbgn_, winend_);
+  std::unique_ptr<LocationsQG> locs = locations();
 
   atlas::Field field_lonlat = locs->lonlat();
   auto lonlat = make_view<double, 2>(field_lonlat);
@@ -169,12 +169,10 @@ bool ObsSpaceQG::has(const std::string & col) const {
 
 // -----------------------------------------------------------------------------
 
-std::unique_ptr<LocationsQG> ObsSpaceQG::locations(const util::DateTime & t1,
-                             const util::DateTime & t2) const {
+std::unique_ptr<LocationsQG> ObsSpaceQG::locations() const {
   atlas::FieldSet fields;
   std::vector<util::DateTime> times;
-  qg_obsdb_locations_f90(key_, obsname_.size(), obsname_.c_str(), t1, t2,
-                         fields.get(), times);
+  qg_obsdb_locations_f90(key_, obsname_.size(), obsname_.c_str(), fields.get(), times);
   return std::unique_ptr<LocationsQG>(new LocationsQG(fields, std::move(times)));
 }
 

@@ -22,7 +22,6 @@
 #include "oops/interface/ObsDiagnostics.h"
 #include "oops/interface/ObsSpace.h"
 #include "oops/interface/ObsVector.h"
-#include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -58,7 +57,7 @@ class ObsOperator : public util::Printable,
 
 /// Other
   const Variables & requiredVars() const;  // Required input variables from Model
-  Locations_ locations(const util::DateTime &, const util::DateTime &) const;
+  Locations_ locations() const;
 
  private:
   void print(std::ostream &) const;
@@ -109,11 +108,10 @@ const Variables & ObsOperator<OBS>::requiredVars() const {
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-Locations<OBS> ObsOperator<OBS>::locations(const util::DateTime & t1,
-                                               const util::DateTime & t2) const {
+Locations<OBS> ObsOperator<OBS>::locations() const {
   Log::trace() << "ObsOperator<OBS>::locations starting" << std::endl;
   util::Timer timer(classname(), "locations");
-  return Locations_(oper_->locations(t1, t2));
+  return Locations_(oper_->locations());
 }
 
 // -----------------------------------------------------------------------------

@@ -42,9 +42,8 @@ void ObsWSpeedQG::simulateObs(const GomQG & gom, ObsVecQG & ovec,
 
 // -----------------------------------------------------------------------------
 
-std::unique_ptr<LocationsQG> ObsWSpeedQG::locations(const util::DateTime & t1,
-                             const util::DateTime & t2) const {
-  return obsdb_.locations(t1, t2);
+std::unique_ptr<LocationsQG> ObsWSpeedQG::locations() const {
+  return obsdb_.locations();
 }
 
 // -----------------------------------------------------------------------------

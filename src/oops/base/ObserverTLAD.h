@@ -19,6 +19,7 @@
 #include "oops/interface/Increment.h"
 #include "oops/interface/LinearGetValues.h"
 #include "oops/interface/LinearObsOperator.h"
+#include "oops/interface/Locations.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsAuxIncrement.h"
 #include "oops/interface/ObsDiagnostics.h"
@@ -39,6 +40,7 @@ class ObserverTLAD {
   typedef Increment<MODEL>             Increment_;
   typedef LinearGetValues<MODEL, OBS>  LinearGetValues_;
   typedef LinearObsOperator<OBS>       LinearObsOperator_;
+  typedef Locations<OBS>               Locations_;
   typedef ObsAuxControl<OBS>           ObsAuxCtrl_;
   typedef ObsAuxIncrement<OBS>         ObsAuxIncr_;
   typedef ObsDiagnostics<OBS>          ObsDiags_;
@@ -73,6 +75,7 @@ class ObserverTLAD {
 
   const ObsAuxCtrl_ & ybias_;
   Variables geovars_;
+  Locations_ locs_;
 
   std::unique_ptr<LinearGetValues_> lingetvals_;
   std::shared_ptr<GeoVaLs_> gvals_;
@@ -85,7 +88,7 @@ ObserverTLAD<MODEL, OBS>::ObserverTLAD(const eckit::Configuration & config,
                                        const ObsAuxCtrl_ & ybias)
   : obsdb_(obsdb), hop_(obsdb, eckit::LocalConfiguration(config, "obs operator")),
     hoptlad_(obsdb, eckit::LocalConfiguration(config, "linear obs operator")),
-    ybias_(ybias), geovars_(), lingetvals_(), gvals_()
+    ybias_(ybias), geovars_(), locs_(hop_.locations()), lingetvals_(), gvals_()
 {
   geovars_ += hop_.requiredVars();
   geovars_ += ybias_.requiredVars();
@@ -97,8 +100,8 @@ void ObserverTLAD<MODEL, OBS>::doInitializeTraj(const State_ & xx,
                                                 const util::DateTime & winbgn,
                                                 const util::DateTime & winend) {
   Log::trace() << "ObserverTLAD::doInitializeTraj start" << std::endl;
-  lingetvals_.reset(new LinearGetValues_(xx.geometry(), hop_.locations(winbgn, winend)));
-  gvals_.reset(new GeoVaLs_(hop_.locations(winbgn, winend), geovars_));
+  lingetvals_.reset(new LinearGetValues_(xx.geometry(), locs_));
+  gvals_.reset(new GeoVaLs_(locs_, geovars_));
   Log::trace() << "ObserverTLAD::doInitializeTraj done" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -124,7 +127,7 @@ void ObserverTLAD<MODEL, OBS>::doInitializeTL(const Increment_ & dx,
                                               const util::DateTime & winbgn,
                                               const util::DateTime & winend) {
   Log::trace() << "ObserverTLAD::doInitializeTL start" << std::endl;
-  gvals_.reset(new GeoVaLs_(hop_.locations(winbgn, winend), hoptlad_.requiredVars()));
+  gvals_.reset(new GeoVaLs_(locs_, hoptlad_.requiredVars()));
   Log::trace() << "ObserverTLAD::doInitializeTL done" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -152,7 +155,7 @@ void ObserverTLAD<MODEL, OBS>::doFirstAD(Increment_ & dx, const ObsVector_ & yde
                                          const util::DateTime & winbgn,
                                          const util::DateTime & winend) {
   Log::trace() << "ObserverTLAD::doFirstAD start" << std::endl;
-  gvals_.reset(new GeoVaLs_(hop_.locations(winbgn, winend), hoptlad_.requiredVars()));
+  gvals_.reset(new GeoVaLs_(locs_, hoptlad_.requiredVars()));
   hoptlad_.simulateObsAD(*gvals_, ydepad, ybiasad);
   Log::trace() << "ObserverTLAD::doFirstAD done" << std::endl;
 }
