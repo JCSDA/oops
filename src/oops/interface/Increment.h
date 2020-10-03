@@ -499,43 +499,50 @@ void Increment<MODEL>::deserialize(const std::vector<double> & vect, size_t & cu
 
 template<typename MODEL>
 void Increment<MODEL>::shift_forward(const util::DateTime & begin) {
+  Log::trace() << "Increment<MODEL>::Increment shift_forward starting" << std::endl;
+  util::Timer timer(classname(), "shift_forward");
   static int tag = 159357;
   int mytime = commTime_.rank();
 
 // Send values of M.dx_i at end of my subwindow to next subwindow
   if (mytime + 1 < commTime_.size()) {
-    oops::mpi::send(commTime_, *increment_, mytime+1, tag);
+    oops::mpi::send(commTime_, *this, mytime+1, tag);
   }
 
 // Receive values at beginning of my subwindow from previous subwindow
   if (mytime > 0) {
-    oops::mpi::receive(commTime_, *increment_, mytime-1, tag);
+    oops::mpi::receive(commTime_, *this, mytime-1, tag);
   } else {
     increment_->zero(begin);
   }
 
   ++tag;
+  Log::trace() << "Increment<MODEL>::Increment shift_forward done" << std::endl;
 }
+
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 void Increment<MODEL>::shift_backward(const util::DateTime & end) {
+  Log::trace() << "Increment<MODEL>::Increment shift_backward starting" << std::endl;
+  util::Timer timer(classname(), "shift_backward");
   static int tag = 753951;
   int mytime = commTime_.rank();
 
 // Send values of dx_i at start of my subwindow to previous subwindow
   if (mytime > 0) {
-    oops::mpi::send(commTime_, *increment_, mytime-1, tag);
+    oops::mpi::send(commTime_, *this, mytime-1, tag);
   }
 
 // Receive values at end of my subwindow from next subwindow
   if (mytime + 1 < commTime_.size()) {
-    oops::mpi::receive(commTime_, *increment_, mytime+1, tag);
+    oops::mpi::receive(commTime_, *this, mytime+1, tag);
   } else {
     increment_->zero(end);
   }
 
   ++tag;
+  Log::trace() << "Increment<MODEL>::Increment shift_backward done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

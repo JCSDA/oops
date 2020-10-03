@@ -44,7 +44,7 @@ class ObsTable : public oops::ObsSpaceBase,
   static const std::string classname() {return "lorenz95::ObsTable";}
 
   ObsTable(const eckit::Configuration &, const eckit::mpi::Comm &,
-           const util::DateTime &, const util::DateTime &);
+           const util::DateTime &, const util::DateTime &, const eckit::mpi::Comm &);
   ~ObsTable();
 
   void putdb(const std::string &, const std::vector<int> &) const;
@@ -76,6 +76,7 @@ class ObsTable : public oops::ObsSpaceBase,
   std::vector<double> locations_;
   mutable std::map<std::string, std::vector<double> > data_;
 
+  const eckit::mpi::Comm & comm_;
   const oops::Variables obsvars_;
   std::string nameIn_;
   std::string nameOut_;

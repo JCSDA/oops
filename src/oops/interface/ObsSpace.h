@@ -88,7 +88,7 @@ ObsSpace<OBS>::ObsSpace(const eckit::Configuration & conf,
                         const eckit::mpi::Comm & time) : obsdb_(), time_(time) {
   Log::trace() << "ObsSpace<OBS>::ObsSpace starting" << std::endl;
   util::Timer timer(classname(), "ObsSpace");
-  obsdb_.reset(new ObsSpace_(conf, comm, bgn, end));
+  obsdb_.reset(new ObsSpace_(conf, comm, bgn, end, time));
   Log::trace() << "ObsSpace<OBS>::ObsSpace done" << std::endl;
 }
 
