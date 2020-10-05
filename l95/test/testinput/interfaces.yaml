@@ -34,6 +34,9 @@ state test:
 inc variables: [x]
 test date: '2010-01-01T03:00:00Z'
 
+increment test:
+  date: '2010-01-01T03:00:00Z'
+
 model:
   f: 8.0
   name: L95

@@ -31,6 +31,7 @@
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
+#include "oops/util/Logger.h"
 #include "test/TestEnvironment.h"
 
 
@@ -42,9 +43,11 @@ template <typename MODEL> class IncrementFixture : private boost::noncopyable {
   typedef oops::Geometry<MODEL>       Geometry_;
 
  public:
-  static const Geometry_       & resol()   {return *getInstance().resol_;}
-  static const oops::Variables & ctlvars() {return *getInstance().ctlvars_;}
-  static const util::DateTime  & time()    {return *getInstance().time_;}
+  static const Geometry_            & resol()     {return *getInstance().resol_;}
+  static const oops::Variables      & ctlvars()   {return *getInstance().ctlvars_;}
+  static const util::DateTime       & time()      {return *getInstance().time_;}
+  static const double               & tolerance() {return getInstance().tolerance_;}
+  static const eckit::Configuration & test()      {return *getInstance().test_;}
 
  private:
   static IncrementFixture<MODEL>& getInstance() {
@@ -59,13 +62,23 @@ template <typename MODEL> class IncrementFixture : private boost::noncopyable {
 
     ctlvars_.reset(new oops::Variables(TestEnvironment::config(), "inc variables"));
 
-    time_.reset(new util::DateTime(TestEnvironment::config().getString("test date")));
+    test_.reset(new eckit::LocalConfiguration(TestEnvironment::config()));
+    time_.reset(new util::DateTime(test_->getString("increment test.date")));
+    const double tol_default = 1e-8;
+    tolerance_ = test_->getDouble("increment test.tolerance", tol_default);
+    if (tolerance_ > tol_default) {
+      oops::Log::warning() <<
+        "Warning: Increment norm tolerance greater than 1e-8 "
+        "may not be suitable for certain solvers." <<
+        std::endl; }
   }
 
   ~IncrementFixture<MODEL>() {}
 
   std::unique_ptr<Geometry_>       resol_;
   std::unique_ptr<oops::Variables> ctlvars_;
+  std::unique_ptr<const eckit::LocalConfiguration> test_;
+  double                           tolerance_;
   std::unique_ptr<util::DateTime>  time_;
 };
 
@@ -138,7 +151,7 @@ template <typename MODEL> void testIncrementOpPlusEq() {
   dx1 *= 2.0;
 
   dx2 -= dx1;
-  EXPECT(dx2.norm()< 1e-8);
+  EXPECT(dx2.norm() < Test_::tolerance());
 }
 
 // -----------------------------------------------------------------------------
@@ -191,7 +204,7 @@ template <typename MODEL> void testIncrementAxpy() {
   dx2 -= dx1;
   dx2 -= dx1;
 
-  EXPECT(dx2.norm()< 1e-8);
+  EXPECT(dx2.norm() < Test_::tolerance());
 }
 
 // -----------------------------------------------------------------------------
