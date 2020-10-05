@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "oops/base/Departures.h"
+#include "oops/base/ObsErrors.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/util/Logger.h"
@@ -33,6 +34,7 @@ namespace oops {
 // -----------------------------------------------------------------------------
 template <typename OBS> class Observations : public util::Printable {
   typedef Departures<OBS>          Departures_;
+  typedef ObsErrors<OBS>           ObsErrors_;
   typedef ObsSpaces<OBS>           ObsSpaces_;
   typedef ObsVector<OBS>           ObsVector_;
 
@@ -65,6 +67,9 @@ template <typename OBS> class Observations : public util::Printable {
   void zero();
   void accumul(const Observations &);
   Observations & operator*=(const double);
+
+/// Perturbations
+  void perturb(const ObsErrors_ &);
 
  private:
   void print(std::ostream &) const;
@@ -179,6 +184,14 @@ size_t Observations<OBS>::nobs() const {
     nobs += obs_[jj].nobs();
   }
   return nobs;
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
+void Observations<OBS>::perturb(const ObsErrors_ & Rmat) {
+  Departures_ ypert(obsdb_);
+  Rmat.randomize(ypert);
+  *this += ypert;
+  Log::trace() << "Observations perturbed" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename OBS>

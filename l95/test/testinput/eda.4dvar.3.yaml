@@ -1,6 +1,5 @@
-ensemble application:
-  current member: 3
 cost function:
+  obs perturbations seed: 3
   cost type: 4D-Var
   window begin: 2010-01-01T03:00:00Z
   window length: P1D
@@ -23,7 +22,7 @@ cost function:
   - obs operator: {}
     obs space:
       obsdatain:  Data/l95.truth4d.2010-01-02T00:00:00Z.obt
-      obsdataout: Data/%{member}%.eda.4dvar.2010-01-02T00:00:00Z.obt
+      obsdataout: Data/mem003.eda.4dvar.2010-01-02T00:00:00Z.obt
     obs error:
       covariance model: diagonal
       random amplitude: 0.2
@@ -50,6 +49,7 @@ variational:
     test: on
     diagnostics:
       departures: ombg
+    obs perturbations: true
   - geometry:
       resol: 40
     ninner: 10
@@ -69,7 +69,7 @@ final:
     frequency: PT1H30M
 output:
   datadir: Data
-  exp: %{member}%.eda.4dvar
+  exp: mem003.eda.4dvar
   first: PT3H
   frequency: PT06H
   type: an

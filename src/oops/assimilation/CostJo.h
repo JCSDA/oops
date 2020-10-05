@@ -205,10 +205,9 @@ double CostJo<MODEL, OBS>::finalize() {
   Rmat_.reset(new ObsErrors_(obsconf_, obspace_));
 
 // Perturb observations according to obs error statistics
-  if (iterout == 0 && obsconf_.getBool("ObsPert", false)) {
-    Departures_ ypert_(obspace_);
-    Rmat_->randomize(ypert_);
-    yobs_ += ypert_;
+  bool obspert = currentConf_->getBool("obs perturbations", false);
+  if (obspert) {
+    yobs_.perturb(*Rmat_);
     Log::info() << "Perturbed observations: " << yobs_ << std::endl;
   }
 

@@ -1,7 +1,6 @@
-ensemble application:
-  current member: 2
 cost function:
-  cost type: 3D-Var
+  obs perturbations seed: 2
+  cost type: 4D-Var
   window begin: 2010-01-01T09:00:00Z
   window length: PT6H
   analysis variables: [x]
@@ -9,9 +8,12 @@ cost function:
     nx: 40
     ny: 20
     depths: [4500.0, 5500.0]
+  model:
+    name: QG
+    tstep: PT1H
   background:
-    date: 2010-01-01T12:00:00Z
-    filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H.nc
+    date: 2010-01-01T09:00:00Z
+    filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT9H.nc
   background error:
     covariance model: QgError
     horizontal_length_scale: 2.2e6
@@ -28,7 +30,7 @@ cost function:
       obsdatain:
         obsfile: Data/truth.obs3d.nc
       obsdataout:
-        obsfile: Data/%{member}%.eda_3dvar.obs3d.nc
+        obsfile: Data/mem002.eda_3dfgat.obs3d.nc
       obs type: Stream
   - obs error:
       covariance model: diagonal
@@ -39,7 +41,7 @@ cost function:
       obsdatain:
         obsfile: Data/truth.obs3d.nc
       obsdataout:
-        obsfile: Data/%{member}%.eda_3dvar.obs3d.nc
+        obsfile: Data/mem002.eda_3dfgat.obs3d.nc
       obs type: Wind
   - obs error:
       covariance model: diagonal
@@ -50,7 +52,7 @@ cost function:
       obsdatain:
         obsfile: Data/truth.obs3d.nc
       obsdataout:
-        obsfile: Data/%{member}%.eda_3dvar.obs3d.nc
+        obsfile: Data/mem002.eda_3dfgat.obs3d.nc
       obs type: WSpeed
 variational:
   minimizer:
@@ -59,26 +61,25 @@ variational:
   - diagnostics:
       departures: ombg
     gradient norm reduction: 1.0e-10
-    ninner: 10
-    geometry:
-      nx: 20
-      ny: 10
-      depths: [4500.0, 5500.0]
-    test: on
-  - diagnostics:
-      departures: ombg
-    gradient norm reduction: 1.0e-10
+    linear model:
+      trajectory:
+        tstep: PT1H
+      tstep: PT6H
+      variable change: Identity
+      name: QgIdTLM
     ninner: 10
     geometry:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
     test: on
+    obs perturbations: true
 final:
   diagnostics:
     departures: oman
 output:
   datadir: Data
-  exp: %{member}%.eda_3dvar
+  exp: mem002.eda_3dfgat
+  first: PT3H
   frequency: PT6H
   type: an

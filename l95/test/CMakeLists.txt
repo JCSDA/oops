@@ -31,12 +31,25 @@ list( APPEND l95_test_input
   testinput/4dvar.modbias.yaml
   testinput/4dvar.obsbias.yaml
   testinput/4dvar.allbiases.yaml
-  testinput/diffstates.yaml
   testinput/addincrement.yaml
   testinput/addincrement_scaled.yaml
+  testinput/diffstates.yaml
+  testinput/eda.3dfgat.1.yaml
+  testinput/eda.3dfgat.2.yaml
+  testinput/eda.3dfgat.3.yaml
+  testinput/eda.3dfgat.4.yaml
   testinput/eda.3dfgat.yaml
+  testinput/eda.3dvar.1.yaml
+  testinput/eda.3dvar.2.yaml
+  testinput/eda.3dvar.3.yaml
+  testinput/eda.3dvar.4.yaml
   testinput/eda.3dvar.yaml
-  testinput/eda.4dvar.member3.yaml
+  testinput/eda.4dvar.3.yaml
+  testinput/eda.4dvar.yaml
+  testinput/enshofx.1.yaml
+  testinput/enshofx.2.yaml
+  testinput/enshofx.3.yaml
+  testinput/enshofx.4.yaml
   testinput/enshofx.yaml
   testinput/forecast.yaml
   testinput/forecast_pseudomodel.yaml
@@ -437,7 +450,7 @@ oops_add_test( TESTNAME genenspert
                EXENAME l95_genpert.x )
 
 ecbuild_add_test( TARGET test_l95_enshofx
-                  MPI 10
+                  MPI 4
                   COMMAND ${CMAKE_BINARY_DIR}/bin/l95_enshofx.x
                   ARGS testinput/enshofx.yaml testoutput/enshofx.log.out
                   DEPENDS l95_enshofx.x
@@ -659,10 +672,10 @@ ecbuild_add_test( TARGET test_l95_eda_3dvar
                   DEPENDS l95_eda.x
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
 
-ecbuild_add_test( TARGET test_l95_eda_4dvar_member3
+ecbuild_add_test( TARGET test_l95_eda_4dvar
                   MPI 1
                   COMMAND ${CMAKE_BINARY_DIR}/bin/l95_eda.x
-                  ARGS testinput/eda.4dvar.member3.yaml
+                  ARGS testinput/eda.4dvar.yaml
                   DEPENDS l95_eda.x
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
@@ -675,7 +688,7 @@ oops_add_test( TESTNAME diffstates
                MODELNAME l95
                YAMLNAME testinput/diffstates.yaml
                EXENAME l95_diffstates.x
-               TEST_DEPENDS test_l95_eda_3dvar test_l95_eda_4dvar_member3 )
+               TEST_DEPENDS test_l95_eda_3dvar test_l95_eda_4dvar )
 
 oops_add_test( TESTNAME addincrement
                MODELNAME l95
