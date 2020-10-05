@@ -31,9 +31,6 @@ namespace oops {
 
 /// Computes observation equivalent during model run.
 
-// Sub-windows knowledge could be removed if vector of obs was used in
-// weak constraint 4D-Var. YT
-
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
@@ -48,7 +45,7 @@ class Observers : public PostBase<State<MODEL>> {
 
  public:
   Observers(const eckit::Configuration &, const ObsSpaces_ & obsdb, const ObsAuxCtrls_ &,
-            QCData_ &, const util::Duration & tslot = util::Duration(0));
+            QCData_ &);
   ~Observers() {}
 
   const Observations_ & hofx() {return yobs_;}
@@ -74,11 +71,10 @@ class Observers : public PostBase<State<MODEL>> {
 
 template <typename MODEL, typename OBS>
 Observers<MODEL, OBS>::Observers(const eckit::Configuration & conf, const ObsSpaces_ & obsdb,
-                                 const ObsAuxCtrls_ & ybias, QCData_ & qc,
-                                 const util::Duration & tslot)
+                                 const ObsAuxCtrls_ & ybias, QCData_ & qc)
   : PostBase<State_>(),
     obspace_(obsdb), yobs_(obsdb),
-    winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()), hslot_(tslot/2), observers_(0)
+    winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()), hslot_(0), observers_(0)
 {
   Log::trace() << "Observers::Observers starting" << std::endl;
 
@@ -102,7 +98,7 @@ void Observers<MODEL, OBS>::doInitialize(const State_ & xx, const util::DateTime
                                          const util::Duration & tstep) {
   Log::trace() << "Observers::doInitialize start" << std::endl;
   const util::DateTime bgn(xx.validTime());
-  if (hslot_ == util::Duration(0)) hslot_ = tstep/2;
+  hslot_ = tstep/2;
 
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
     observers_[jj]->doInitialize(xx, winbgn_, winend_);

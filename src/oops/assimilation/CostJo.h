@@ -36,7 +36,6 @@
 #include "oops/interface/State.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"
-#include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
 
@@ -71,11 +70,10 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   /// Construct \f$ J_o\f$ from \f$ R\f$ and \f$ y_{obs}\f$.
   CostJo(const eckit::Configuration &, const eckit::mpi::Comm &,
          const util::DateTime &, const util::DateTime &,
-         const util::Duration & tslot = util::Duration(0),
          const eckit::mpi::Comm & ctime = oops::mpi::myself());
 
   CostJo(const eckit::Configuration &, const util::DateTime &, const util::DateTime &,
-         const util::Duration &, const ObsSpaces_ &);
+         const ObsSpaces_ &);
 
   /// Destructor
   virtual ~CostJo() {}
@@ -131,9 +129,6 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   /// Observers passed by \f$ J_o\f$ to the model during integration.
   mutable std::shared_ptr<Observers_> pobs_;
 
-  /// Time slot.
-  const util::Duration tslot_;
-
   /// Linearized observation operators.
   std::shared_ptr<ObserversTLAD_> pobstlad_;
 
@@ -146,10 +141,10 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
 template<typename MODEL, typename OBS>
 CostJo<MODEL, OBS>::CostJo(const eckit::Configuration & joConf, const eckit::mpi::Comm & comm,
                            const util::DateTime & winbgn, const util::DateTime & winend,
-                           const util::Duration & tslot, const eckit::mpi::Comm & ctime)
+                           const eckit::mpi::Comm & ctime)
   : obsconf_(joConf), obspace_(obsconf_, comm, winbgn, winend, ctime),
     yobs_(obspace_, "ObsValue"),
-    Rmat_(), currentConf_(), gradFG_(), pobs_(), tslot_(tslot),
+    Rmat_(), currentConf_(), gradFG_(), pobs_(),
     pobstlad_(), qc_(obspace_)
 {
   Log::trace() << "CostJo::CostJo done" << std::endl;
@@ -160,10 +155,10 @@ CostJo<MODEL, OBS>::CostJo(const eckit::Configuration & joConf, const eckit::mpi
 template<typename MODEL, typename OBS>
 CostJo<MODEL, OBS>::CostJo(const eckit::Configuration & joConf,
                            const util::DateTime & winbgn, const util::DateTime & winend,
-                           const util::Duration & tslot, const ObsSpaces_ & localobs)
+                           const ObsSpaces_ & localobs)
   : obsconf_(joConf), obspace_(localobs),
     yobs_(obspace_, "ObsValue"),
-    Rmat_(), currentConf_(), gradFG_(), pobs_(), tslot_(tslot),
+    Rmat_(), currentConf_(), gradFG_(), pobs_(),
     pobstlad_(), qc_(obspaces)
 {
   Log::trace() << "CostJo::CostJo local obs done" << std::endl;
@@ -179,7 +174,7 @@ CostJo<MODEL, OBS>::initialize(const CtrlVar_ & xx, const eckit::Configuration &
   currentConf_.reset(new eckit::LocalConfiguration(conf));
   const int iterout = currentConf_->getInt("iteration");
   obsconf_.set("iteration", iterout);
-  pobs_.reset(new Observers_(obsconf_, obspace_, xx.obsVar(), qc_, tslot_));
+  pobs_.reset(new Observers_(obsconf_, obspace_, xx.obsVar(), qc_));
   Log::trace() << "CostJo::initialize done" << std::endl;
   return pobs_;
 }
@@ -255,7 +250,7 @@ std::shared_ptr<PostBaseTLAD<MODEL> >
 CostJo<MODEL, OBS>::initializeTraj(const CtrlVar_ & xx, const Geometry_ &,
                               const eckit::Configuration & conf) {
   Log::trace() << "CostJo::initializeTraj start" << std::endl;
-  pobstlad_.reset(new ObserversTLAD_(obsconf_, obspace_, xx.obsVar(), tslot_));
+  pobstlad_.reset(new ObserversTLAD_(obsconf_, obspace_, xx.obsVar()));
   Log::trace() << "CostJo::initializeTraj done" << std::endl;
   return pobstlad_;
 }

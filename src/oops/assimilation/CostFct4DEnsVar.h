@@ -162,7 +162,7 @@ template <typename MODEL, typename OBS>
 CostJo<MODEL, OBS> * CostFct4DEnsVar<MODEL, OBS>::newJo(const eckit::Configuration & joConf) const {
   Log::trace() << "CostFct4DEnsVar::newJo" << std::endl;
   return new CostJo<MODEL, OBS>(joConf, *commSpace_,
-                                subWinBegin_, subWinEnd_, subWinLength_, *commTime_);
+                                subWinBegin_, subWinEnd_, *commTime_);
 }
 
 // -----------------------------------------------------------------------------
