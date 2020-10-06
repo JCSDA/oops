@@ -47,6 +47,7 @@ class FieldL95 : public util::Printable,
 
 /// Linear algebra
   void zero();
+  void ones();
   void dirac(const eckit::Configuration &);
   FieldL95 & operator=(const FieldL95 &);
   FieldL95 & operator+=(const FieldL95 &);

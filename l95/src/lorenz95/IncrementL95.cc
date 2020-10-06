@@ -57,7 +57,7 @@ IncrementL95::IncrementL95(const Resolution & resol, const IncrementL95 & dx)
 }
 // -----------------------------------------------------------------------------
 IncrementL95::IncrementL95(const IncrementL95 & dx, const bool copy)
-  : fld_(dx.fld_), time_(dx.time_)
+  : fld_(dx.fld_, copy), time_(dx.time_)
 {
   oops::Log::trace() << "IncrementL95::IncrementL95 copy-created." << std::endl;
 }
@@ -104,6 +104,10 @@ void IncrementL95::zero() {
 void IncrementL95::zero(const util::DateTime & vt) {
   fld_.zero();
   time_ = vt;
+}
+// -----------------------------------------------------------------------------
+void IncrementL95::ones() {
+  fld_.ones();
 }
 // -----------------------------------------------------------------------------
 void IncrementL95::dirac(const eckit::Configuration & config) {

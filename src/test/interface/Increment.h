@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2020 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -62,8 +63,8 @@ template <typename MODEL> class IncrementFixture : private boost::noncopyable {
 
     ctlvars_.reset(new oops::Variables(TestEnvironment::config(), "inc variables"));
 
-    test_.reset(new eckit::LocalConfiguration(TestEnvironment::config()));
-    time_.reset(new util::DateTime(test_->getString("increment test.date")));
+    test_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "increment test"));
+    time_.reset(new util::DateTime(test_->getString("date")));
     const double tol_default = 1e-8;
     tolerance_ = test_->getDouble("increment test.tolerance", tol_default);
     if (tolerance_ > tol_default) {
@@ -80,6 +81,8 @@ template <typename MODEL> class IncrementFixture : private boost::noncopyable {
   std::unique_ptr<const eckit::LocalConfiguration> test_;
   double                           tolerance_;
   std::unique_ptr<util::DateTime>  time_;
+  std::unique_ptr<bool> skipAccumTest_;
+  std::unique_ptr<bool> skipDiffTest_;
 };
 
 // =============================================================================
@@ -109,6 +112,39 @@ template <typename MODEL> void testIncrementCopyConstructor() {
 // Check that the copy is equal to the original
   dx2 -= dx1;
   EXPECT(dx2.norm() == 0.0);
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL> void testIncrementCopyBoolConstructor() {
+  typedef IncrementFixture<MODEL>   Test_;
+  typedef oops::Increment<MODEL>    Increment_;
+
+  Increment_ dx1(Test_::resol(), Test_::ctlvars(), Test_::time());
+  dx1.random();
+  EXPECT(dx1.norm() > 0.0);
+
+  // Test with copy set to true
+  Increment_ dx2(dx1, true);
+  EXPECT(dx2.norm() == dx1.norm());
+
+  // Test with copy set to false
+  Increment_ dx3(dx1, false);
+  EXPECT(dx3.norm() == 0.0);
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL> void testIncrementChangeResConstructor() {
+  typedef IncrementFixture<MODEL>   Test_;
+  typedef oops::Increment<MODEL>    Increment_;
+
+  // For now this is just a copy and not a change res, would require config changes
+  Increment_ dx1(Test_::resol(), Test_::ctlvars(), Test_::time());
+  Increment_ dx2(Test_::resol(), dx1);
+
+  // Check they are same. Should be replaced with change res and check they are different
+  EXPECT(dx2.norm() == dx1.norm());
 }
 
 // -----------------------------------------------------------------------------
@@ -183,8 +219,20 @@ template <typename MODEL> void testIncrementZero() {
   EXPECT(dx.norm() > 0.0);
 
 // test zero
-  dx->zero();
+  dx.zero();
   EXPECT(dx.norm() == 0.0);
+  EXPECT(dx.validTime() == Test_::time());
+
+// Create a new time one hour in the future
+  util::Duration onehour(3600);
+  util::DateTime newTime(Test_::time().toString());
+  newTime+=onehour;
+
+// Confirm zero with setting new datetime works
+  dx.random();
+  dx.zero(newTime);
+  EXPECT(dx.norm() == 0.0);
+  EXPECT(dx.validTime() == newTime);
 }
 
 // -----------------------------------------------------------------------------
@@ -205,6 +253,56 @@ template <typename MODEL> void testIncrementAxpy() {
   dx2 -= dx1;
 
   EXPECT(dx2.norm() < Test_::tolerance());
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL> void testIncrementAccum() {
+  typedef IncrementFixture<MODEL>   Test_;
+  typedef oops::Increment<MODEL>    Increment_;
+  typedef oops::State<MODEL>        State_;
+
+  // Option to skip test
+  bool skipTest = Test_::test().getBool("skip accum test", false);
+  if (skipTest) {
+    oops::Log::warning() << "Skipping Increment.accum test";
+    return;
+  }
+
+  // Create two different random increments
+  Increment_ dx1(Test_::resol(), Test_::ctlvars(), Test_::time());
+  dx1.random();
+
+  Increment_ dx2(Test_::resol(), Test_::ctlvars(), Test_::time());
+  dx2.random();
+
+  Increment_ diff(dx1);
+  diff -= dx2;
+  EXPECT(diff.norm() != 0.0);
+
+  // Create a state that is equal to dx2
+  State_ x(Test_::resol(), Test_::ctlvars(), Test_::time());
+  x.zero();
+  x += dx2;
+
+  // Create copy of dx1 to test against axpy
+  Increment_ dx3(dx1);
+
+  // Test accum
+  dx1.accumul(2.0, x);
+
+  // Use axpy for reference
+  dx3.axpy(2.0, dx2);
+
+  // Check axpy did something
+  diff = dx3;
+  diff -= dx2;
+  EXPECT(diff.norm() != 0.0);
+
+  // Check accumul matches axpy
+  diff = dx1;
+  diff -= dx3;
+  EXPECT(diff.norm() == 0.0);
 }
 
 // -----------------------------------------------------------------------------
@@ -243,6 +341,101 @@ template <typename MODEL> void testIncrementSerialize() {
   }
 }
 
+// -----------------------------------------------------------------------------
+
+template <typename MODEL> void testIncrementDiff() {
+  typedef IncrementFixture<MODEL>   Test_;
+  typedef oops::Increment<MODEL>    Increment_;
+  typedef oops::State<MODEL>        State_;
+
+  // Option to skip test
+  bool skipTest = Test_::test().getBool("skip diff test", false);
+  if (skipTest) {
+    oops::Log::warning() << "Skipping Increment.diff test";
+    return;
+  }
+
+  // Create two states to diff
+  State_ x1(Test_::resol(), Test_::ctlvars(), Test_::time());
+  State_ x2(Test_::resol(), Test_::ctlvars(), Test_::time());
+
+  // Create two different random increments
+  Increment_ dx1(Test_::resol(), Test_::ctlvars(), Test_::time());
+  dx1.random();
+
+  Increment_ dx2(Test_::resol(), Test_::ctlvars(), Test_::time());
+  dx2.random();
+
+  // Create some different increments
+  Increment_ diff1(dx1);
+  Increment_ diff2(Test_::resol(), Test_::ctlvars(), Test_::time());
+  diff1 -= dx2;
+  EXPECT(diff1.norm() != 0.0);
+
+  // Fill states with some different random values
+  x1.zero();
+  x1+=dx1;
+  x2.zero();
+  x2+=dx2;
+
+  // Use difference of states to compute difference
+  diff2.diff(x1, x2);
+
+  // Compare difference with -= operator
+  EXPECT(diff1.norm() == diff2.norm());
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL> void testIncrementTime() {
+  typedef IncrementFixture<MODEL>   Test_;
+  typedef oops::Increment<MODEL>    Increment_;
+
+  // Create an increment
+  Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
+
+  // Move increment time forward by one hour
+  util::Duration onehour(3600);
+  dx.updateTime(onehour);
+
+  // Confirm new valid time and that validTime function works
+  util::DateTime newTime(Test_::time().toString());
+  newTime+=onehour;
+  EXPECT(dx.validTime() == newTime);
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL> void testIncrementSchur() {
+  typedef IncrementFixture<MODEL>   Test_;
+  typedef oops::Increment<MODEL>    Increment_;
+
+  // Create two identical random increments
+  Increment_ dx1(Test_::resol(), Test_::ctlvars(), Test_::time());
+  dx1.random();
+  Increment_ dx2(dx1);
+  EXPECT(dx1.norm() == dx2.norm());
+
+  // Compute schur product
+  dx1.schur_product_with(dx2);
+
+  // Checks
+  EXPECT(dx1.norm() != dx2.norm());
+
+  // Pass through zeros
+  dx1.random();
+  dx2.zero();
+  dx1.schur_product_with(dx2);
+  EXPECT(dx1.norm() == 0.0);
+
+  // Pass through ones
+  dx1.random();
+  Increment_ dx1in(dx1);
+  dx2.ones();
+  dx1.schur_product_with(dx2);
+  EXPECT(dx1.norm() == dx1in.norm());
+}
+
 // =============================================================================
 
 template <typename MODEL>
@@ -261,6 +454,10 @@ class Increment : public oops::Test {
       { testIncrementConstructor<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementCopyConstructor")
       { testIncrementCopyConstructor<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/testIncrementCopyBoolConstructor")
+      { testIncrementCopyBoolConstructor<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/testIncrementChangeResConstructor")
+      { testIncrementChangeResConstructor<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementTriangle")
       { testIncrementTriangle<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementOpPlusEq")
@@ -269,6 +466,16 @@ class Increment : public oops::Test {
       { testIncrementDotProduct<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementAxpy")
       { testIncrementAxpy<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/testIncrementAccum")
+      { testIncrementAccum<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/testIncrementDiff")
+      { testIncrementDiff<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/testIncrementZero")
+      { testIncrementZero<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/testIncrementTime")
+      { testIncrementTime<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/testIncrementSchur")
+      { testIncrementSchur<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementSerialize")
       { testIncrementSerialize<MODEL>(); });
   }
