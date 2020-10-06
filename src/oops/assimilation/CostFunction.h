@@ -98,7 +98,7 @@ template<typename MODEL, typename OBS> class CostFunction : private boost::nonco
 
  protected:
   void setupTerms(const eckit::Configuration &);
-  void setupTerms(const eckit::Configuration &, const State_ &);
+  void setupTerms(const eckit::Configuration &, const State_ &);  // generic 1d-var
   const CtrlVar_ & background() const {return *xb_;}
 
  private:
@@ -220,7 +220,9 @@ void CostFunction<MODEL, OBS>::setupTerms(const eckit::Configuration & config) {
 }
 
 // -----------------------------------------------------------------------------
-
+// This setup terms method has been written for the generic 1d-var which is
+// under development in UFO
+// -----------------------------------------------------------------------------
 template<typename MODEL, typename OBS>
 void CostFunction<MODEL, OBS>::setupTerms(const eckit::Configuration & config,
                                           const State_ & statein) {

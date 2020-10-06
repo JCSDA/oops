@@ -72,6 +72,7 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
          const util::DateTime &, const util::DateTime &,
          const eckit::mpi::Comm & ctime = oops::mpi::myself());
 
+  /// Constructor added for generic 1d-var under development in ufo
   CostJo(const eckit::Configuration &, const util::DateTime &, const util::DateTime &,
          const ObsSpaces_ &);
 
@@ -151,7 +152,7 @@ CostJo<MODEL, OBS>::CostJo(const eckit::Configuration & joConf, const eckit::mpi
 }
 
 // =============================================================================
-
+/// Constructor added for generic 1d-var under development in ufo
 template<typename MODEL, typename OBS>
 CostJo<MODEL, OBS>::CostJo(const eckit::Configuration & joConf,
                            const util::DateTime & winbgn, const util::DateTime & winend,
@@ -161,7 +162,7 @@ CostJo<MODEL, OBS>::CostJo(const eckit::Configuration & joConf,
     Rmat_(), currentConf_(), gradFG_(), pobs_(),
     pobstlad_(), qc_(obspaces)
 {
-  Log::trace() << "CostJo::CostJo local obs done" << std::endl;
+  Log::trace() << "CostJo::CostJo using local obs spaces done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
