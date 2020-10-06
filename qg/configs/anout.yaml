@@ -1,5 +1,4 @@
 datadir: $(experiment_dir)/{{current_cycle}}
-filename: $(experiment_dir)/{{current_cycle}}/$(experiment).an.{{current_cycle}}.nc
 exp: $(experiment)
 #first: '{% $(window_length) - $(window_offset) %}'
 first: PT3H
