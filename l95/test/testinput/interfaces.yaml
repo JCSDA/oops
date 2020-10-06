@@ -25,6 +25,12 @@ state test:
   statefile:
     date: '2010-01-01T03:00:00Z'
     filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H
+  statefileout:
+    datadir: Data
+    exp: out
+    type: fc
+    date: '2010-01-01T03:00:00Z'
+    filename: Data/out.fc.2010-01-01T03:00:00Z.PT0S
   state generate:
     date: '2010-01-01T03:00:00Z'
     mean: 8.0

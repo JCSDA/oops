@@ -63,6 +63,7 @@ class StateQG : public util::Printable,
   double norm() const {return fields_->norm();}
   const util::DateTime & validTime() const {return fields_->time();}
   util::DateTime & validTime() {return fields_->time();}
+  void updateTime(const util::Duration & dt) {fields_->updateTime(dt);}
 
 /// Access to fields
   FieldsQG & fields() {return *fields_;}

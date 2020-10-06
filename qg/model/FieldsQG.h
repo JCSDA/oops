@@ -95,6 +95,7 @@ class FieldsQG : public util::Printable,
 
   const util::DateTime & time() const {return time_;}
   util::DateTime & time() {return time_;}
+  void updateTime(const util::Duration & dt) {time_ += dt;}
 
   const int & toFortran() const {return keyFlds_;}
 

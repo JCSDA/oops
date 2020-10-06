@@ -117,6 +117,7 @@ template <typename MODEL> void testStateConstructors() {
 }
 
 // -----------------------------------------------------------------------------
+
 /*! \brief Interpolation test
  *
  * \details **testStateAnalyticInitialCondition()** tests the creation of an
@@ -164,6 +165,140 @@ template <typename MODEL> void testStateAnalyticInitialCondition() {
 
 // -----------------------------------------------------------------------------
 
+/*! \brief Tests of zero and accumul
+ *
+ * \details testStateZeroAndAccumul tests the folllowing:
+ *
+ * 1. Call State.zero() and check the resulting norm is indeed zero.
+ * 2. Call State.accumul(), passing a multiplication factor and a second State
+ *    as arguments, and verify that the resulting norm is as expected.
+ *    Several multiplication factors are tested.
+ */
+
+template <typename MODEL> void testStateZeroAndAccumul() {
+  typedef StateFixture<MODEL>    Test_;
+  typedef oops::State<MODEL>     State_;
+
+  const eckit::LocalConfiguration conf(Test_::test(), "statefile");
+  State_ xx(Test_::resol(), conf);
+  const double tol = Test_::test().getDouble("tolerance");
+
+  // Set state xx to zero
+  xx.zero();
+  EXPECT(xx.norm() == 0.0);
+
+  // Set state xx to various multiples of yy
+  const State_ yy(Test_::resol(), conf);
+  const std::vector<double> mults {3.0, 0.0, -3.0};
+  for (const auto & mult : mults) {
+    xx.zero();
+    xx.accumul(mult, yy);
+    EXPECT(oops::is_close(xx.norm(), std::abs(mult) * yy.norm(), tol));
+  }
+
+  // Ensure that a non-zero state, when acted on with accumul, is not equal to the result
+  State_ zz(Test_::resol(), conf);
+  zz.accumul(3.0, yy);
+  EXPECT_NOT(oops::is_close(zz.norm(), yy.norm(), tol, oops::TestVerbosity::SILENT));
+}
+
+/*! \brief validTime and updateTime tests
+ *
+ * \details **testStateDateTime()** tests the validTime and updateTime routines.
+ *
+ * This is performed by updating the initial state time in two ways:
+ * - two lots of one hour,
+ * - one lot of two hours.
+ *
+ * validTime is then used in the comparison of the two times obtained.
+ */
+
+template <typename MODEL> void testStateDateTime() {
+  typedef StateFixture<MODEL>    Test_;
+  typedef oops::State<MODEL>     State_;
+
+  // Configuration to read initial state
+  const eckit::LocalConfiguration conf(Test_::test(), "statefile");
+  State_ xx(Test_::resol(), conf);
+
+  // Update the time by two lots of one hour
+  const util::Duration onehour(3600);
+  xx.updateTime(onehour);
+  xx.updateTime(onehour);
+
+  // Create another state
+  State_ yy(Test_::resol(), conf);
+
+  // Update the time of the second state by two hours
+  const util::Duration twohours(7200);
+  yy.updateTime(twohours);
+
+  EXPECT(xx.validTime() == yy.validTime());
+
+  // Increment the first state's time again and check the times are now not equal
+  xx.updateTime(onehour);
+  EXPECT_NOT(xx.validTime() == yy.validTime());
+}
+
+// -----------------------------------------------------------------------------
+
+/*! \brief Read and write tests
+ *
+ * \details **testStateReadWrite()** tests reading and writing model state files.
+ *
+ * The tests are as follows:
+ * 1. Read an input file and check it sets a state correctly.
+ * 2. Write an output file and read it in again, checking the states are the same.
+ */
+
+template <typename MODEL> void testStateReadWrite() {
+  typedef StateFixture<MODEL>    Test_;
+  typedef oops::State<MODEL>     State_;
+
+  // Configuration to read initial state
+  const eckit::LocalConfiguration conf(Test_::test(), "statefile");
+  State_ xx(Test_::resol(), conf);
+  const double tol = Test_::test().getDouble("tolerance");
+
+  // Determine initial state norm
+  const double norm = xx.norm();
+
+  // Set state to zero
+  xx.zero();
+
+  // Read input file
+  xx.read(conf);
+
+  // Check norm has its initial value
+  EXPECT(xx.norm() == norm);
+
+  if (Test_::test().has("statefileout")) {
+    // Modify state
+    const double mult = 2.0;
+    xx.accumul(mult, xx);
+
+    // Determine modified state norm
+    const double normout = xx.norm();
+
+    // Configuration to read and write output state
+    const eckit::LocalConfiguration confout(Test_::test(), "statefileout");
+
+    // Write modified state to output file
+    xx.write(confout);
+
+    // Read modifed state from output file
+    State_ yy(Test_::resol(), confout);
+
+    // Check modified state norm has its expected value
+    EXPECT(oops::is_close(yy.norm(), normout, tol));
+
+    // Check modified state norm is not equal to the initial norm
+    EXPECT_NOT(oops::is_close(norm, normout, tol, oops::TestVerbosity::SILENT));
+  }
+}
+
+// -----------------------------------------------------------------------------
+
 template <typename MODEL>
 class State : public oops::Test {
  public:
@@ -179,6 +314,12 @@ class State : public oops::Test {
       { testStateConstructors<MODEL>(); });
     ts.emplace_back(CASE("interface/State/testStateAnalyticInitialCondition")
       { testStateAnalyticInitialCondition<MODEL>(); });
+    ts.emplace_back(CASE("interface/State/testStateZeroAndAccumul")
+      { testStateZeroAndAccumul<MODEL>(); });
+    ts.emplace_back(CASE("interface/State/testStateDateTime")
+                    { testStateDateTime<MODEL>(); });
+    ts.emplace_back(CASE("interface/State/testStateReadWrite")
+      { testStateReadWrite<MODEL>(); });
   }
 
   void clear() const override {}
