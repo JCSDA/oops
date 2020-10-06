@@ -585,16 +585,14 @@ oops_add_test( TESTNAME 3dfgat
 
 oops_add_test( TESTNAME 4densvar
                MODELNAME qg
-               OMP 2
-               MPI 13
+               MPI 7
                YAMLNAME testinput/4densvar.yaml
                EXENAME  qg_4dvar.x
                TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_4d_12h )
 
 oops_add_test( TESTNAME 4densvar_hybrid
                MODELNAME qg
-               OMP 2
-               MPI 13
+               MPI 7
                YAMLNAME testinput/4densvar_hybrid.yaml
                EXENAME  qg_4dvar.x
                TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_4d_12h )
