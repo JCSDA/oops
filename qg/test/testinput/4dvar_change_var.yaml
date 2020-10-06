@@ -60,7 +60,7 @@ cost function:
     depths: [4500.0, 5500.0]
   model:
     name: QG
-    model variables: ["q"]
+    use potential vorticity: true
     tstep: PT1H
 variational:
   minimizer:

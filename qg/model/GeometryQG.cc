@@ -18,17 +18,15 @@
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 
-#include "eckit/config/Configuration.h"
-
 #include "model/GeometryQG.h"
 #include "model/QgFortran.h"
 
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
-GeometryQG::GeometryQG(const eckit::Configuration & conf,
+GeometryQG::GeometryQG(const GeometryQgParameters & params,
                        const eckit::mpi::Comm & comm) : comm_(comm) {
-  qg_geom_setup_f90(keyGeom_, conf);
+  qg_geom_setup_f90(keyGeom_, params.toConfiguration());
 
   // Set ATLAS lon/lat field
   atlasFieldSet_.reset(new atlas::FieldSet());

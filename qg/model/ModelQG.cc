@@ -28,7 +28,7 @@ static oops::ModelMaker<QgTraits, ModelQG> makermodel_("QG");
 // -----------------------------------------------------------------------------
 ModelQG::ModelQG(const GeometryQG & resol, const ModelQgParameters & params)
   : keyConfig_(0), params_(params), geom_(resol),
-    vars_(params.vars)
+    vars_(params.variables())
 {
   oops::Log::trace() << "ModelQG::ModelQG" << std::endl;
   qg_model_setup_f90(keyConfig_, params.toConfiguration());
