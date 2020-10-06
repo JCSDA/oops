@@ -102,17 +102,19 @@ class Increment : public oops::GeneralizedDepartures,
   Geometry_ geometry() const;
   const Variables & variables() const {return variables_;}
 
-#if ATLASIFIED
 /// ATLAS FieldSet
   void setAtlas(atlas::FieldSet *) const;
   void toAtlas(atlas::FieldSet *) const;
   void fromAtlas(atlas::FieldSet *);
-#else
-/// Unstructured grid
-  void ug_coord(UnstructuredGrid &) const;
-  void field_to_ug(UnstructuredGrid &, const int & = 0) const;
-  void field_from_ug(const UnstructuredGrid &, const int & = 0);
-#endif
+
+/// ATLAS fieldset
+  void toAtlas();
+  atlas::FieldSet & atlas() {
+    return atlasFieldSet_;
+  }
+  const atlas::FieldSet & atlas() const {
+    return atlasFieldSet_;
+  }
 
 /// Serialize and deserialize
   size_t serialSize() const override;
@@ -128,6 +130,7 @@ class Increment : public oops::GeneralizedDepartures,
   std::unique_ptr<Increment_> increment_;
   const Variables variables_;
   const eckit::mpi::Comm & commTime_;
+  atlas::FieldSet atlasFieldSet_;
 };
 
 // -----------------------------------------------------------------------------
@@ -401,15 +404,20 @@ Geometry<MODEL> Increment<MODEL>::geometry() const {
   Log::trace() << "Increment<MODEL>::geometry done" << std::endl;
   return geom;
 }
-// -----------------------------------------------------------------------------
-#if ATLASIFIED
+
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 void Increment<MODEL>::setAtlas(atlas::FieldSet * atlasFieldSet) const {
   Log::trace() << "Increment<MODEL>::setAtlas starting" << std::endl;
   util::Timer timer(classname(), "setAtlas");
+#if ATLASIFIED
   increment_->setAtlas(atlasFieldSet);
+#else
+  oops::UnstructuredGrid ug(1, 1);
+  increment_.ug_coord(ug);
+  ug.setAtlas(atlasFieldSet);
+#endif
   Log::trace() << "Increment<MODEL>::setAtlas done" << std::endl;
 }
 
@@ -419,7 +427,14 @@ template<typename MODEL>
 void Increment<MODEL>::toAtlas(atlas::FieldSet * atlasFieldSet) const {
   Log::trace() << "Increment<MODEL>::toAtlas starting" << std::endl;
   util::Timer timer(classname(), "toAtlas");
+#if ATLASIFIED
   increment_->toAtlas(atlasFieldSet);
+#else
+  oops::UnstructuredGrid ug(1, 1);
+  increment_.ug_coord(ug);
+  increment_.field_to_ug(ug);
+  ug.toAtlas(atlasFieldSet);
+#endif
   Log::trace() << "Increment<MODEL>::toAtlas done" << std::endl;
 }
 
@@ -429,43 +444,35 @@ template<typename MODEL>
 void Increment<MODEL>::fromAtlas(atlas::FieldSet * atlasFieldSet) {
   Log::trace() << "Increment<MODEL>::fromAtlas starting" << std::endl;
   util::Timer timer(classname(), "fromAtlas");
+#if ATLASIFIED
   increment_->fromAtlas(atlasFieldSet);
+#else
+  oops::UnstructuredGrid ug(1, 1);
+  increment_.ug_coord(ug);
+  increment_.field_to_ug(ug);
+  ug.fromAtlas(atlasFieldSet);
+  increment_.field_from_ug(ug);
+#endif
   Log::trace() << "Increment<MODEL>::fromAtlas done" << std::endl;
 }
+
 // -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::toAtlas() {
+  Log::trace() << "Increment<MODEL>::toAtlas starting" << std::endl;
+#if ATLASIFIED
+  increment_->toAtlas(&atlasFieldSet_);
 #else
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void Increment<MODEL>::ug_coord(UnstructuredGrid & ug) const {
-  Log::trace() << "Increment<MODEL>::ug_coord starting" << std::endl;
-  util::Timer timer(classname(), "ug_coord");
-  increment_->ug_coord(ug);
-  Log::trace() << "Increment<MODEL>::ug_coord done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void Increment<MODEL>::field_to_ug(UnstructuredGrid & ug, const int & its) const {
-  Log::trace() << "Increment<MODEL>::field_to_ug starting" << std::endl;
-  util::Timer timer(classname(), "field_to_ug");
-  increment_->field_to_ug(ug, its);
-  Log::trace() << "Increment<MODEL>::field_to_ug done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void Increment<MODEL>::field_from_ug(const UnstructuredGrid & ug, const int & its) {
-  Log::trace() << "Increment<MODEL>::field_from_ug starting" << std::endl;
-  util::Timer timer(classname(), "field_from_ug");
-  increment_->field_from_ug(ug, its);
-  Log::trace() << "Increment<MODEL>::field_from_ug done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
+  oops::UnstructuredGrid ug(1, 1);
+  increment_.ug_coord(ug);
+  increment_.field_to_ug(ug);
+  ug.toAtlas(&atlasFieldSet_);
 #endif
+  increment_.reset();
+  Log::trace() << "Increment<MODEL>::toAtlas done" << std::endl;
+}
+
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
@@ -502,7 +509,7 @@ void Increment<MODEL>::shift_forward(const util::DateTime & begin) {
   Log::trace() << "Increment<MODEL>::Increment shift_forward starting" << std::endl;
   util::Timer timer(classname(), "shift_forward");
   static int tag = 159357;
-  int mytime = commTime_.rank();
+  size_t mytime = commTime_.rank();
 
 // Send values of M.dx_i at end of my subwindow to next subwindow
   if (mytime + 1 < commTime_.size()) {
@@ -527,7 +534,7 @@ void Increment<MODEL>::shift_backward(const util::DateTime & end) {
   Log::trace() << "Increment<MODEL>::Increment shift_backward starting" << std::endl;
   util::Timer timer(classname(), "shift_backward");
   static int tag = 753951;
-  int mytime = commTime_.rank();
+  size_t mytime = commTime_.rank();
 
 // Send values of dx_i at start of my subwindow to previous subwindow
   if (mytime > 0) {
