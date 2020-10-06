@@ -45,7 +45,7 @@ phases:
       - cd jedi-build-package
       - pip install --user -e .
 
-      - ~/.local/bin/jedi-build --gh-token=$GIT_PASS -j 4 --env-id=codebuild-clang --branch-map atlas:release-stable fckit:release-stable -br ${CODEBUILD_GIT_BRANCH} -p oops -vvv -u --submit-dashboard --abort-on-build-errors --abort-on-test-errors
+      - ~/.local/bin/jedi-build --gh-token=$GIT_PASS -j 4 --env-id=docker-clang --branch-map atlas:release-stable fckit:release-stable -br ${CODEBUILD_GIT_BRANCH} -p oops -vvv -3 -u --submit-dashboard --site CodeBuild --abort-on-build-errors --abort-on-test-errors
 
       
 artifacts:
