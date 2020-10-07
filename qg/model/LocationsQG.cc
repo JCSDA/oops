@@ -117,12 +117,6 @@ LocationsQG::LocationsQG(const eckit::Configuration & config, const eckit::mpi::
       times_.push_back(winbgn + (j+1)*dt);
     }
   }
-
-  /*! And define indices */
-  index_.reset(new atlas::Field("index", make_datatype<int>(), make_shape(nlocs)));
-  auto idx = make_view<int, 1>(*index_);
-  for (unsigned int j=0; j < nlocs; ++j)
-    idx(j) = j+1;
 }
 
 // -------------------------------------------------------------------------
@@ -130,7 +124,6 @@ LocationsQG::LocationsQG(const eckit::Configuration & config, const eckit::mpi::
 LocationsQG::LocationsQG(const LocationsQG & other) {
   pointcloud_.reset(new atlas::functionspace::PointCloud(other.lonlat()));
   altitude_.reset(new atlas::Field(*other.altitude_));
-  index_.reset(new atlas::Field(*other.index_));
   times_ = other.times_;
 }
 // -------------------------------------------------------------------------
@@ -144,11 +137,6 @@ LocationsQG::LocationsQG(atlas::FieldSet & fields,
     altitude_.reset(new atlas::Field(fields.field("altitude")));
   } else {
     altitude_.reset(new atlas::Field(atlas::Field()));
-  }
-  if (fields.has_field("index")) {
-    index_.reset(new atlas::Field(fields.field("index")));
-  } else {
-    index_.reset(new atlas::Field(atlas::Field()));
   }
   times_ = times;
 }

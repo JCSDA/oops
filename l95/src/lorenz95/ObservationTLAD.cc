@@ -36,8 +36,7 @@ void ObservationTLAD::setTrajectory(const GomL95 &, const ObsBias &) {}
 void ObservationTLAD::simulateObsTL(const GomL95 & gom, ObsVec1D & ovec,
                                     const ObsBiasCorrection & bias) const {
   for (size_t jj = 0; jj < gom.size(); ++jj) {
-    const int ii = gom.getindx(jj);
-    ovec[ii] = gom[jj] + bias.value();
+    ovec[jj] = gom[jj] + bias.value();
   }
 }
 
@@ -47,10 +46,9 @@ void ObservationTLAD::simulateObsAD(GomL95 & gom, const ObsVec1D & ovec,
                                     ObsBiasCorrection & bias) const {
   const double missing = util::missingValue(missing);
   for (size_t jj = 0; jj < gom.size(); ++jj) {
-    const int ii = gom.getindx(jj);
-    if (ovec[ii] != missing) {
-      gom[jj] = ovec[ii];
-      bias.value() += ovec[ii];
+    if (ovec[jj] != missing) {
+      gom[jj] = ovec[jj];
+      bias.value() += ovec[jj];
     }
   }
 }

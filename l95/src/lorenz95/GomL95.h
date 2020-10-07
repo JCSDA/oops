@@ -37,8 +37,6 @@ class GomL95 : public util::Printable,
   GomL95(const LocsL95 &, const oops::Variables &);
   GomL95(const eckit::Configuration &, const ObsTableView &,
          const oops::Variables &);
-  explicit GomL95(const GomL95 &);
-  ~GomL95();
 
   void zero();
   void random();
@@ -56,11 +54,9 @@ class GomL95 : public util::Printable,
   size_t size() const {return size_;}
   const double & operator[](const int ii) const {return locval_[ii];}
   double & operator[](const int ii) {return locval_[ii];}
-  int getindx(const int il) const {return iobs_[il];}
 
  private:
   size_t size_;
-  std::vector<int> iobs_;
   std::vector<double> locval_;
 };
 
