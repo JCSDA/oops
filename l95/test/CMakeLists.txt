@@ -60,7 +60,6 @@ list( APPEND l95_test_input
   testinput/hofx_nomodel.yaml
   testinput/identitymodel.yaml
   testinput/letkfGSI.yaml
-  testinput/letkfOOPS.yaml
   testinput/letkf.yaml
   testinput/interfaces.yaml
   testinput/linearmodelfactory.yaml
@@ -139,7 +138,6 @@ list( APPEND l95_testoutput
   testoutput/hofx.test
   testoutput/hofx.nomodel.test
   testoutput/letkf.test
-  testoutput/letkf_oops.test
   testoutput/letkf_gsi.test
   testoutput/localhofx.test
   testoutput/makeobs3d.test
@@ -706,13 +704,6 @@ oops_add_test( TESTNAME addincrement_scaled
 #####################################################################
 # LETKF tests
 #####################################################################
-
-oops_add_test( TESTNAME letkf_oops
-               MODELNAME l95
-               YAMLNAME testinput/letkfOOPS.yaml
-               EXENAME l95_letkf.x
-               COMPARE
-               TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
 
 oops_add_test( TESTNAME letkf
                MODELNAME l95

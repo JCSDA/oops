@@ -55,7 +55,6 @@ oops/assimilation/LBHessianMatrix.h
 oops/assimilation/LBMinimizer.h
 oops/assimilation/LETKFSolver.h
 oops/assimilation/LETKFSolverGSI.h
-oops/assimilation/LETKFSolverOOPS.h
 oops/assimilation/LETKFSolverParameters.h
 oops/assimilation/linsysteigen.h
 oops/assimilation/LocalEnsembleSolver.h
