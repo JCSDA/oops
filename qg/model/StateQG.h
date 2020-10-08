@@ -68,7 +68,7 @@ class StateQG : public util::Printable,
 /// Access to fields
   FieldsQG & fields() {return *fields_;}
   const FieldsQG & fields() const {return *fields_;}
-  boost::shared_ptr<const GeometryQG> geometry() const {
+  std::shared_ptr<const GeometryQG> geometry() const {
     return fields_->geometry();
   }
   const oops::Variables & variables() const {return fields_->variables();}

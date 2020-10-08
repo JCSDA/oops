@@ -17,8 +17,6 @@
 #include <string>
 #include <vector>
 
-#include <boost/shared_ptr.hpp>
-
 #include "atlas/field.h"
 
 #include "eckit/config/LocalConfiguration.h"
@@ -108,7 +106,7 @@ class IncrementQG : public oops::GeneralizedDepartures,
   FieldsQG & fields() {return *fields_;}
   const FieldsQG & fields() const {return *fields_;}
 
-  boost::shared_ptr<const GeometryQG> geometry() const {
+  std::shared_ptr<const GeometryQG> geometry() const {
     return fields_->geometry();
   }
 

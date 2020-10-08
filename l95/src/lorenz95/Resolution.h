@@ -46,8 +46,6 @@ class Resolution : public util::Printable {
   Resolution(const ResolutionParameters & parameters, const eckit::mpi::Comm & comm)
               : resol_(parameters.resol), comm_(comm) {}
   explicit Resolution(const int resol): resol_(resol), comm_(oops::mpi::myself()) {}
-  Resolution(const Resolution & other): resol_(other.resol_), comm_(other.comm_) {}
-  ~Resolution() {}
 
   int npoints() const {return resol_;}
 
@@ -57,7 +55,6 @@ class Resolution : public util::Printable {
   const eckit::mpi::Comm & getComm() const {return comm_;}
 
  private:
-  Resolution & operator=(const Resolution &);
   void print(std::ostream & os) const {os << resol_;}
   const int resol_;
   const eckit::mpi::Comm & comm_;
