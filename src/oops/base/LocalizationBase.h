@@ -129,8 +129,7 @@ class LocalizationMaker : public LocalizationFactory<MODEL> {
 template <typename MODEL>
 LocalizationFactory<MODEL>::LocalizationFactory(const std::string & name) {
   if (getMakers().find(name) != getMakers().end()) {
-    Log::error() << name << " already registered in localization factory." << std::endl;
-    ABORT("Element already registered in LocalizationFactory.");
+    throw std::runtime_error(name + " already registered in localization factory.");
   }
   getMakers()[name] = this;
 }
@@ -154,7 +153,7 @@ LocalizationFactory<MODEL>::create(const Geometry_ & geometry,
          jj = getMakers().begin(); jj != getMakers().end(); ++jj) {
        Log::error() << "A " << jj->first << " Localization" << std::endl;
     }
-    ABORT("Element does not exist in LocalizationFactory.");
+    throw std::runtime_error(id + " does not exist in localization factory.");
   }
   std::unique_ptr<LocalizationBase<MODEL>> ptr(jloc->second->make(geometry, time, conf));
   Log::trace() << "LocalizationBase<MODEL>::create done" << std::endl;

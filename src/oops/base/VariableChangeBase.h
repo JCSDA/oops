@@ -19,7 +19,6 @@
 #include "oops/base/VariableChangeParametersBase.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/State.h"
-#include "oops/util/abor1_cpp.h"
 #include "oops/util/AssociativeContainers.h"
 #include "oops/util/parameters/ConfigurationParameter.h"
 #include "oops/util/parameters/HasParameters_.h"
@@ -190,8 +189,7 @@ class VariableChangeMaker : public VariableChangeFactory<MODEL> {
 template <typename MODEL>
 VariableChangeFactory<MODEL>::VariableChangeFactory(const std::string & name) {
   if (getMakers().find(name) != getMakers().end()) {
-    Log::error() << name << " already registered in the variable change factory."  << std::endl;
-    ABORT("Element already registered in VariableChangeFactory.");
+    throw std::runtime_error(name + " already registered in the variable change factory.");
   }
   getMakers()[name] = this;
 }
@@ -208,8 +206,7 @@ VariableChangeBase<MODEL> * VariableChangeFactory<MODEL>::create(
   typename std::map<std::string, VariableChangeFactory<MODEL>*>::iterator
     jerr = getMakers().find(id);
   if (jerr == getMakers().end()) {
-    Log::error() << id << " does not exist in the variable change factory factory." << std::endl;
-    ABORT("Element does not exist in VariableChangeFactory.");
+    throw std::runtime_error(id + " does not exist in variable change factory.");
   }
   VariableChangeBase<MODEL> * ptr = jerr->second->make(params, resol);
   Log::trace() << "VariableChangeBase<MODEL>::create done" << std::endl;

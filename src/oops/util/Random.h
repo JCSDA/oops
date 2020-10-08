@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 #include <boost/random.hpp>
+#include "eckit/exception/Exceptions.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/formats.h"
 #include "oops/util/Logger.h"
@@ -194,9 +195,7 @@ class NormalDistribution : public Random<datatype> {
                      unsigned int seed = static_cast<std::uint32_t>(std::time(nullptr)),
                      bool reset = false): Random<datatype>(N), mean_(mean), sdev_(sdev) {
     if (!std::is_floating_point<datatype>::value) {
-      oops::Log::error() << "NormalDistribution only implemented for floating point data types"
-                         << std::endl;
-      ABORT("NormalDistribution only implemented for floating point data types");
+      throw eckit::BadCast("NormalDistribution only implemented for floating point data types");
     }
     static boost::random::mt19937 generator(seed);
     if (reset) generator.seed(seed);

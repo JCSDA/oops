@@ -24,7 +24,6 @@
 #include "oops/assimilation/HtMatrix.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
-#include "oops/util/abor1_cpp.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/formats.h"
 #include "oops/util/Logger.h"
@@ -397,8 +396,7 @@ class MinMaker : public MinFactory<MODEL, OBS> {
 template <typename MODEL, typename OBS>
 MinFactory<MODEL, OBS>::MinFactory(const std::string & name) {
   if (getMakers().find(name) != getMakers().end()) {
-    Log::error() << name << " already registered in minimizer factory." << std::endl;
-    ABORT("Element already registered in MinFactory.");
+    throw std::runtime_error(name + " already registered in minimizer factory.");
   }
   getMakers()[name] = this;
 }
@@ -412,8 +410,7 @@ Minimizer<MODEL, OBS>* MinFactory<MODEL, OBS>::create(const eckit::Configuration
   Log::info() << "Minimizer algorithm=" << id << std::endl;
   typename std::map<std::string, MinFactory<MODEL, OBS>*>::iterator j = getMakers().find(id);
   if (j == getMakers().end()) {
-    Log::error() << id << " does not exist in minimizer factory." << std::endl;
-    ABORT("Element does not exist in MinFactory.");
+    throw std::runtime_error(id + " does not exist in minimizer factory.");
   }
   return (*j).second->make(config, J);
 }

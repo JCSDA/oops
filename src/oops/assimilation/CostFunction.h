@@ -35,7 +35,6 @@
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
 #include "oops/mpi/mpi.h"
-#include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Duration.h"
@@ -161,8 +160,7 @@ class CostMaker : public CostFactory<MODEL, OBS> {
 template <typename MODEL, typename OBS>
 CostFactory<MODEL, OBS>::CostFactory(const std::string & name) {
   if (getMakers().find(name) != getMakers().end()) {
-    Log::error() << name << " already registered in cost function factory." << std::endl;
-    ABORT("Element already registered in CostFactory.");
+    throw std::runtime_error(name + " already registered in cost function factory.");
   }
   getMakers()[name] = this;
 }
@@ -176,8 +174,7 @@ CostFunction<MODEL, OBS>* CostFactory<MODEL, OBS>::create(const eckit::Configura
   Log::trace() << "Variational Assimilation Type=" << id << std::endl;
   typename std::map<std::string, CostFactory<MODEL, OBS>*>::iterator j = getMakers().find(id);
   if (j == getMakers().end()) {
-    Log::error() << id << " does not exist in cost function factory." << std::endl;
-    ABORT("Element does not exist in CostFactory.");
+    throw std::runtime_error(id + " does not exist in cost function factory.");
   }
   Log::trace() << "CostFactory::create found cost function type" << std::endl;
   return (*j).second->make(config, comm);

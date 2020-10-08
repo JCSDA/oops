@@ -10,7 +10,6 @@
 
 #include <Eigen/Dense>
 
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -22,7 +21,6 @@
 #include "oops/generic/gc99.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
-#include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/parameters/Parameter.h"
@@ -157,10 +155,9 @@ template<typename MODEL>
 
     // assert condition on the trace of the correlation matrix
     if ((evalsum-Evals_.size()) > 1e-5) {
-      std::stringstream errorMsg;
-      errorMsg << "VerticalLocEV trace(cov)~=cov.size: " <<
-          "trace(cov)=" << evalsum << "cov.size=" << Evals_.size() << std::endl;
-      ABORT(errorMsg.str());
+      Log::error() << "VerticalLocEV trace(cov)~=cov.size: trace(cov)=" <<
+                       evalsum << "cov.size=" << Evals_.size() << std::endl;
+      throw eckit::BadValue("VerticalLocEV trace(cov)~=cov.size");
     }
 
     // compute number of evals bellow tolerence
@@ -189,11 +186,10 @@ template<typename MODEL>
 
     // assert that the trace of the new and old cov is the same
     if ((evalsum-Evals_.sum()) > 1e-5) {
-      std::stringstream errorMsg;
-      errorMsg  << "VerticalLocEV::truncateEvecs trace(cov)~=trace(covTrunc): " <<
+      Log::error() << "VerticalLocEV::truncateEvecs trace(cov)~=trace(covTrunc): " <<
           " trace(cov)=" << evalsum << " trace(covTrunc)=" << Evals_.sum() <<
           " diff=" << (evalsum-Evals_.sum()) << std::endl;
-      ABORT(errorMsg.str());
+      throw eckit::BadValue("VerticalLocEV::truncateEvecs trace(cov)~=trace(covTrunc)");
     }
 
     // return number of truncated eigen values

@@ -13,6 +13,7 @@
 #include <sstream>
 #include <string>
 
+#include "eckit/exception/Exceptions.h"
 #include "eckit/testing/Test.h"
 
 #include "oops/util/Duration.h"
@@ -49,6 +50,13 @@ namespace {
     util::DateTime d2(d1);
     std::string s2(d2.toString());
     EXPECT(s2 == s1);
+  }
+
+// -----------------------------------------------------------------------------
+
+  CASE("test_uninitialized_date") {
+    util::DateTime d1;
+    EXPECT_THROWS_AS(d1.toString(), eckit::BadValue);
   }
 
 // -----------------------------------------------------------------------------

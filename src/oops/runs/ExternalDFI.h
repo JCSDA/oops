@@ -15,6 +15,7 @@
 #include <string>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/exception/Exceptions.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
 #include "oops/base/StateWriter.h"
@@ -26,7 +27,6 @@
 #include "oops/interface/State.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
-#include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -99,7 +99,8 @@ template <typename MODEL> class ExternalDFI : public Application {
 
 //  Run forecast from initialized state
     const util::Duration fclen = fclength - dfispan/2;
-    if (fclength < util::Duration(0)) ABORT("DFI: fliter span longer than forecast");
+    if (fclength < util::Duration(0))
+      throw eckit::BadParameter("DFI: filter span longer than forecast");
     State_ zz(*xdfi);
     model.forecast(zz, moderr, fclen, post);
     Log::test() << "Final state: " << zz << std::endl;

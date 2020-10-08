@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/exception/Exceptions.h"
 #include "oops/assimilation/GMRESR.h"
 #include "oops/base/IdentityMatrix.h"
 #include "oops/base/IncrementEnsemble.h"
@@ -24,7 +25,6 @@
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
-#include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
@@ -109,7 +109,7 @@ void EnsembleCovariance<MODEL>::doInverseMultiply(const Increment_ & dxi, Increm
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 void EnsembleCovariance<MODEL>::doRandomize(Increment_ &) const {
-  ABORT("EnsembleCovariance::doRandomize: Would it make sense?");
+  throw eckit::NotImplemented("EnsembleCovariance::doRandomize: Would it make sense?", Here());
 }
 // -----------------------------------------------------------------------------
 }  // namespace oops

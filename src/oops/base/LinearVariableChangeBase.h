@@ -23,7 +23,6 @@
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
-#include "oops/util/abor1_cpp.h"
 #include "oops/util/AssociativeContainers.h"
 #include "oops/util/parameters/ConfigurationParameter.h"
 #include "oops/util/parameters/HasParameters_.h"
@@ -210,8 +209,7 @@ class LinearVariableChangeMaker : public LinearVariableChangeFactory<MODEL> {
 template <typename MODEL>
 LinearVariableChangeFactory<MODEL>::LinearVariableChangeFactory(const std::string & name) {
   if (getMakers().find(name) != getMakers().end()) {
-    Log::error() << name << " already registered in the variable change factory."  << std::endl;
-    ABORT("Element already registered in LinearVariableChangeFactory.");
+    throw std::runtime_error(name + " already registered in the linear variable change factory.");
   }
   getMakers()[name] = this;
 }
@@ -234,7 +232,7 @@ LinearVariableChangeBase<MODEL> * LinearVariableChangeFactory<MODEL>::create(
          jj = getMakers().begin(); jj !=  getMakers().end(); ++jj) {
       Log::error() << "A " << jj->first << " variable change option" << std::endl;
     }
-    ABORT("Element does not exist in LinearVariableChangeFactory.");
+    throw std::runtime_error(id + " does not exist in the linear variable change factory.");
   }
 
   LinearVariableChangeBase<MODEL> * ptr = jerr->second->make(bg, fg, geom, parameters);

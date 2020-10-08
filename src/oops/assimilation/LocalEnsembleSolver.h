@@ -178,8 +178,7 @@ class LocalEnsembleSolverMaker : public LocalEnsembleSolverFactory<MODEL, OBS> {
 template <typename MODEL, typename OBS>
 LocalEnsembleSolverFactory<MODEL, OBS>::LocalEnsembleSolverFactory(const std::string & name) {
   if (getMakers().find(name) != getMakers().end()) {
-    Log::error() << name << " already registered in local ensemble  solver factory." << std::endl;
-    ABORT("Element already registered in LocalEnsembleSolverFactory.");
+    throw std::runtime_error(name + " already registered in local ensemble solver factory.");
   }
   getMakers()[name] = this;
 }
@@ -195,13 +194,13 @@ LocalEnsembleSolverFactory<MODEL, OBS>::create(ObsSpaces_ & obspaces, const Geom
   typename std::map<std::string, LocalEnsembleSolverFactory<MODEL, OBS>*>::iterator
     jloc = getMakers().find(id);
   if (jloc == getMakers().end()) {
-    Log::error() << id << " does not exist in LETKF solver factory." << std::endl;
+    Log::error() << id << " does not exist in local ensemble solver factory." << std::endl;
     Log::error() << "LETKF solver Factory has " << getMakers().size() << " elements:" << std::endl;
     for (typename std::map<std::string, LocalEnsembleSolverFactory<MODEL, OBS>*>::const_iterator
          jj = getMakers().begin(); jj != getMakers().end(); ++jj) {
        Log::error() << "A " << jj->first << " LocalEnsembleSolver" << std::endl;
     }
-    ABORT("Element does not exist in LocalEnsembleSolverFactory.");
+    throw std::runtime_error(id + " does not exist in local ensemble solver factory.");
   }
   std::unique_ptr<LocalEnsembleSolver<MODEL, OBS>>
     ptr(jloc->second->make(obspaces, geometry, conf, nens));

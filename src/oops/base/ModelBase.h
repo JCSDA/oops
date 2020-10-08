@@ -19,7 +19,6 @@
 #include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
-#include "oops/util/abor1_cpp.h"
 #include "oops/util/AssociativeContainers.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -199,8 +198,7 @@ template <typename MODEL>
 ModelFactory<MODEL>::ModelFactory(const std::string & name) {
   Log::trace() << "ModelFactory<MODEL>::ModelFactory starting" << std::endl;
   if (getMakers().find(name) != getMakers().end()) {
-    Log::error() << name << " already registered in the model factory."  << std::endl;
-    ABORT("Element already registered in ModelFactory.");
+    throw std::runtime_error(name + " already registered in the model factory.");
   }
   getMakers()[name] = this;
   Log::trace() << "ModelFactory<MODEL>::ModelFactory done" << std::endl;
@@ -216,8 +214,7 @@ ModelBase<MODEL> * ModelFactory<MODEL>::create(const Geometry_ & geom,
   typename std::map<std::string, ModelFactory<MODEL>*>::iterator
     jerr = getMakers().find(id);
   if (jerr == getMakers().end()) {
-    Log::error() << id << " does not exist in the model factory." << std::endl;
-    ABORT("Element does not exist in ModelFactory.");
+    throw std::runtime_error(id + " does not exist in the model factory");
   }
   ModelBase<MODEL> * ptr = jerr->second->make(geom, parameters);
   Log::trace() << "ModelFactory<MODEL>::create done" << std::endl;

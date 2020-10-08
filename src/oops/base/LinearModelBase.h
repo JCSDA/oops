@@ -24,7 +24,6 @@
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/ModelAuxIncrement.h"
 #include "oops/interface/State.h"
-#include "oops/util/abor1_cpp.h"
 #include "oops/util/AssociativeContainers.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -230,8 +229,7 @@ class LinearModelMaker : public LinearModelFactory<MODEL> {
 template <typename MODEL>
 LinearModelFactory<MODEL>::LinearModelFactory(const std::string & name) {
   if (getMakers().find(name) != getMakers().end()) {
-    Log::error() << name << " already registered in the tangent linear model factory." << std::endl;
-    ABORT("Element already registered in LinearModelFactory.");
+    throw std::runtime_error(name + " already registered in tangent linear model factory.");
   }
   getMakers()[name] = this;
 }
@@ -252,7 +250,7 @@ LinearModelBase<MODEL>* LinearModelFactory<MODEL>::create(
          jj = getMakers().begin(); jj !=  getMakers().end(); ++jj) {
       Log::error() << "A " << jj->first << " linear model" << std::endl;
     }
-    ABORT("Element does not exist in LinearModelFactory.");
+    throw std::runtime_error(id + " does not exist in tangent linear model factory.");
   }
   LinearModelBase<MODEL> * ptr = jerr->second->make(geom, parameters);
   Log::trace() << "LinearModelBase<MODEL>::create done" << std::endl;

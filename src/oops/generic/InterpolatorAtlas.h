@@ -15,9 +15,9 @@
 #include "atlas/functionspace.h"
 #include "atlas/interpolation.h"
 #include "eckit/config/Configuration.h"
+#include "eckit/exception/Exceptions.h"
 
 #include "oops/base/InterpolatorBase.h"
-#include "oops/util/abor1_cpp.h"
 #include "oops/util/ObjectCounter.h"
 
 namespace oops {
@@ -42,8 +42,7 @@ class InterpolatorAtlas : public InterpolatorBase,
   void apply(const atlas::FieldSet &, atlas::FieldSet &) override;
 
   void apply_ad(const atlas::FieldSet &, atlas::FieldSet &) override {
-    std::string ErrorMsg = "Interpolator Adjoint not yet implemented for Atlas";
-    ABORT(ErrorMsg);
+    throw eckit::NotImplemented("Interpolator Adjoint not yet implemented for Atlas", Here());
   }
 
  private:
