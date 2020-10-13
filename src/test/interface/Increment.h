@@ -63,10 +63,10 @@ template <typename MODEL> class IncrementFixture : private boost::noncopyable {
 
     ctlvars_.reset(new oops::Variables(TestEnvironment::config(), "inc variables"));
 
+    const double tol_default = 1e-8;
     test_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "increment test"));
     time_.reset(new util::DateTime(test_->getString("date")));
-    const double tol_default = 1e-8;
-    tolerance_ = test_->getDouble("increment test.tolerance", tol_default);
+    tolerance_ = test_->getDouble("tolerance", tol_default);
     if (tolerance_ > tol_default) {
       oops::Log::warning() <<
         "Warning: Increment norm tolerance greater than 1e-8 "
