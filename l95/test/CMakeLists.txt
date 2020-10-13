@@ -816,9 +816,8 @@ oops_add_test( TESTNAME simplifiedl95_RPCG
                CTOL 1e-8
                EXENAME l95_4dvar.x )
 
-#oops_add_test( TESTNAME simplifiedl95_RPLanczos
-#               MODELNAME l95
-#               YAMLNAME testinput/simplifiedl95_RPLanczos.yaml
-#               CTOL 1e-8
-#               EXENAME l95_4dvar.x )
-#
+oops_add_test( TESTNAME simplifiedl95_RPLanczos
+               MODELNAME l95
+               YAMLNAME testinput/simplifiedl95_RPLanczos.yaml
+               CTOL 1e-8
+               EXENAME l95_4dvar.x )
