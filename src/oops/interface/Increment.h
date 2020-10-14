@@ -24,9 +24,6 @@
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/interface/State.h"
-#if !ATLASIFIED
-#include "oops/generic/UnstructuredGrid.h"
-#endif
 #include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -411,13 +408,7 @@ template<typename MODEL>
 void Increment<MODEL>::setAtlas(atlas::FieldSet * atlasFieldSet) const {
   Log::trace() << "Increment<MODEL>::setAtlas starting" << std::endl;
   util::Timer timer(classname(), "setAtlas");
-#if ATLASIFIED
   increment_->setAtlas(atlasFieldSet);
-#else
-  oops::UnstructuredGrid ug(1, 1);
-  increment_.ug_coord(ug);
-  ug.setAtlas(atlasFieldSet);
-#endif
   Log::trace() << "Increment<MODEL>::setAtlas done" << std::endl;
 }
 
@@ -427,14 +418,7 @@ template<typename MODEL>
 void Increment<MODEL>::toAtlas(atlas::FieldSet * atlasFieldSet) const {
   Log::trace() << "Increment<MODEL>::toAtlas starting" << std::endl;
   util::Timer timer(classname(), "toAtlas");
-#if ATLASIFIED
   increment_->toAtlas(atlasFieldSet);
-#else
-  oops::UnstructuredGrid ug(1, 1);
-  increment_.ug_coord(ug);
-  increment_.field_to_ug(ug);
-  ug.toAtlas(atlasFieldSet);
-#endif
   Log::trace() << "Increment<MODEL>::toAtlas done" << std::endl;
 }
 
@@ -444,15 +428,7 @@ template<typename MODEL>
 void Increment<MODEL>::fromAtlas(atlas::FieldSet * atlasFieldSet) {
   Log::trace() << "Increment<MODEL>::fromAtlas starting" << std::endl;
   util::Timer timer(classname(), "fromAtlas");
-#if ATLASIFIED
   increment_->fromAtlas(atlasFieldSet);
-#else
-  oops::UnstructuredGrid ug(1, 1);
-  increment_.ug_coord(ug);
-  increment_.field_to_ug(ug);
-  ug.fromAtlas(atlasFieldSet);
-  increment_.field_from_ug(ug);
-#endif
   Log::trace() << "Increment<MODEL>::fromAtlas done" << std::endl;
 }
 
@@ -461,14 +437,7 @@ void Increment<MODEL>::fromAtlas(atlas::FieldSet * atlasFieldSet) {
 template<typename MODEL>
 void Increment<MODEL>::toAtlas() {
   Log::trace() << "Increment<MODEL>::toAtlas starting" << std::endl;
-#if ATLASIFIED
   increment_->toAtlas(&atlasFieldSet_);
-#else
-  oops::UnstructuredGrid ug(1, 1);
-  increment_.ug_coord(ug);
-  increment_.field_to_ug(ug);
-  ug.toAtlas(&atlasFieldSet_);
-#endif
   increment_.reset();
   Log::trace() << "Increment<MODEL>::toAtlas done" << std::endl;
 }

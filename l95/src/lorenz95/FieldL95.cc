@@ -21,7 +21,6 @@
 #include "lorenz95/GomL95.h"
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/Resolution.h"
-#include "oops/generic/UnstructuredGrid.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Random.h"
@@ -148,18 +147,6 @@ void FieldL95::schur(const FieldL95 & rhs) {
 void FieldL95::random() {
   util::NormalDistribution<double> xx(resol_, 0.0, 1.0, 1);
   for (int jj = 0; jj < resol_; ++jj) x_[jj] = xx[jj];
-}
-// -----------------------------------------------------------------------------
-void FieldL95::ug_coord(oops::UnstructuredGrid & ug) const {
-  ABORT("FieldL95 unstructured grid setup not implemented.");
-}
-// -----------------------------------------------------------------------------
-void FieldL95::field_to_ug(oops::UnstructuredGrid & ug, const int & its) const {
-  ABORT("FieldL95 conversion to unstructured grid not implemented.");
-}
-// -----------------------------------------------------------------------------
-void FieldL95::field_from_ug(const oops::UnstructuredGrid & ug, const int & its) {
-  ABORT("FieldL95 conversion from unstructured grid not implemented.");
 }
 // -----------------------------------------------------------------------------
 void FieldL95::read(std::ifstream & fin) {
