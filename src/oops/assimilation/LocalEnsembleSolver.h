@@ -51,7 +51,8 @@ class LocalEnsembleSolver {
   virtual ~LocalEnsembleSolver() = default;
 
   /// computes ensemble H(\p xx), returns mean H(\p xx), saves as hofx \p iteration
-  virtual Observations_ computeHofX(const StateEnsemble4D_ & xx, size_t iteration);
+  virtual Observations_ computeHofX(const StateEnsemble4D_ & xx, size_t iteration,
+                      bool readFromDisk);
 
   /// update background ensemble \p bg to analysis ensemble \p an at a grid point location \p i
   virtual void measurementUpdate(const IncrementEnsemble4D_ & bg,
@@ -85,24 +86,34 @@ LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
 
 template <typename MODEL, typename OBS>
 Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & ens_xx,
-                                                               size_t iteration) {
+                                                   size_t iteration, bool readFromDisk) {
   util::Timer timer(classname(), "computeHofX");
 
   ASSERT(ens_xx.size() == Yb_.size());
 
   const size_t nens = ens_xx.size();
   ObsEnsemble_ obsens(obspaces_, nens);
-  for (size_t jj = 0; jj < nens; ++jj) {
+  if (readFromDisk) {
+    // read hofx from disk
+    Log::debug() << "Read H(X) from disk" << std::endl;
+    for (size_t jj = 0; jj < nens; ++jj) {
+      obsens[jj].read("hofx"+std::to_string(iteration)+"_"+std::to_string(jj+1));
+      Log::test() << "H(x) for member " << jj+1 << ":" << std::endl << obsens[jj] << std::endl;
+    }
+  } else {
     // compute and save H(x)
-    obsens[jj] = hofx_.compute(ens_xx[jj]);
-    Log::test() << "H(x) for member " << jj+1 << ":" << std::endl << obsens[jj] << std::endl;
-    obsens[jj].save("hofx"+std::to_string(iteration)+"_"+std::to_string(jj+1));
+    Log::debug() << "Computing H(X) online" << std::endl;
+    for (size_t jj = 0; jj < nens; ++jj) {
+      obsens[jj] = hofx_.compute(ens_xx[jj]);
+      Log::test() << "H(x) for member " << jj+1 << ":" << std::endl << obsens[jj] << std::endl;
+      obsens[jj].save("hofx"+std::to_string(iteration)+"_"+std::to_string(jj+1));
+    }
+    // TODO(someone) still need to use QC flags (mask obsens)
+    // QC flags and Obs errors are set to that of the last
+    // ensemble member (those obs errors will be used in the assimilation)
+    hofx_.saveQcFlags("EffectiveQC");
+    hofx_.saveObsErrors("EffectiveError");
   }
-  // TODO(someone) still need to use QC flags (mask obsens)
-  // QC flags and Obs errors are set to that of the last
-  // ensemble member (those obs errors will be used in the assimilation)
-  hofx_.saveQcFlags("EffectiveQC");
-  hofx_.saveObsErrors("EffectiveError");
 
   // calculate H(x) ensemble mean
   Observations_ yb_mean(obsens.mean());
@@ -190,7 +201,7 @@ std::unique_ptr<LocalEnsembleSolver<MODEL, OBS>>
 LocalEnsembleSolverFactory<MODEL, OBS>::create(ObsSpaces_ & obspaces, const Geometry_ & geometry,
                                   const eckit::Configuration & conf, size_t nens) {
   Log::trace() << "LocalEnsembleSolver<MODEL, OBS>::create starting" << std::endl;
-  const std::string id = conf.getString("letkf.solver");
+  const std::string id = conf.getString("local ensemble DA.solver");
   typename std::map<std::string, LocalEnsembleSolverFactory<MODEL, OBS>*>::iterator
     jloc = getMakers().find(id);
   if (jloc == getMakers().end()) {

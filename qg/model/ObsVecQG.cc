@@ -136,6 +136,10 @@ void ObsVecQG::save(const std::string & name) const {
   obsdb_.putdb(name, keyOvec_);
 }
 // -----------------------------------------------------------------------------
+void ObsVecQG::read(const std::string & name) {
+  obsdb_.getdb(name, keyOvec_);
+}
+// -----------------------------------------------------------------------------
 void ObsVecQG::print(std::ostream & os) const {
   double scaling, zmin, zmax, zavg;
   qg_obsvec_stats_f90(keyOvec_, scaling, zmin, zmax, zavg);

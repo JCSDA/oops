@@ -164,6 +164,10 @@ void ObsVec1D::save(const std::string & name) const {
   obsdb_.putdb(name, data_);
 }
 // -----------------------------------------------------------------------------
+void ObsVec1D::read(const std::string & name) {
+  obsdb_.getdb(name, data_);
+}
+// -----------------------------------------------------------------------------
 void ObsVec1D::print(std::ostream & os) const {
   double zmin = std::numeric_limits<double>::max();
   double zmax = std::numeric_limits<double>::lowest();

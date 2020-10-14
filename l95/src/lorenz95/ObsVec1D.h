@@ -60,6 +60,7 @@ class ObsVec1D : public util::Printable,
 
 // I/O
   void save(const std::string &) const;
+  void read(const std::string &);
 
  private:
   void print(std::ostream &) const;

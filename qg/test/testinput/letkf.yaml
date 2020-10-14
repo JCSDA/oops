@@ -83,7 +83,9 @@ observations:
     localization:
       lengthscale: 5e6
 
-letkf:
+driver:
+
+local ensemble DA:
   solver: LETKF
   inflation:
     rtpp: 0.5

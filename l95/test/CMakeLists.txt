@@ -56,8 +56,10 @@ list( APPEND l95_test_input
   testinput/forecast_identitymodel.yaml
   testinput/genenspert.yaml
   testinput/getkf.yaml
+  testinput/getkf_offline_hofx.yaml
   testinput/hofx.yaml
   testinput/hofx_nomodel.yaml
+  testinput/hofx_for_getkf_nomodel.yaml
   testinput/identitymodel.yaml
   testinput/letkfGSI.yaml
   testinput/letkf.yaml
@@ -135,8 +137,10 @@ list( APPEND l95_testoutput
   testoutput/forecast_identitymodel.test
   testoutput/genenspert.test
   testoutput/getkf.test
+  testoutput/getkf_offline_hofx.test
   testoutput/hofx.test
   testoutput/hofx.nomodel.test
+  testoutput/hofx_for_getkf_nomodel.test
   testoutput/letkf.test
   testoutput/letkf_gsi.test
   testoutput/localhofx.test
@@ -722,8 +726,23 @@ oops_add_test( TESTNAME getkf
                MODELNAME l95
                YAMLNAME testinput/getkf.yaml
                EXENAME l95_letkf.x
-               CTOL 1e-4
+               CTOL 1e-3
                TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+
+oops_add_test( TESTNAME hofx_for_getkf_nomodel
+               MODELNAME l95
+               YAMLNAME testinput/hofx_for_getkf_nomodel.yaml
+               EXENAME l95_letkf.x 
+               CTOL 1e-3
+               TEST_DEPENDS letkf )
+
+oops_add_test( TESTNAME getkf_offline_hofx
+               MODELNAME l95
+               YAMLNAME testinput/getkf_offline_hofx.yaml
+               EXENAME l95_letkf.x
+               CTOL 1e-3
+               TEST_DEPENDS hofx_for_getkf_nomodel )
+
 
 #####################################################################
 # tests of factory and parameters classes

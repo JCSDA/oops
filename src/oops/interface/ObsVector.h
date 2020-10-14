@@ -73,6 +73,7 @@ class ObsVector : public util::Printable,
 
 // I/O
   void save(const std::string &) const;
+  void read(const std::string &);
 
   unsigned int nobs() const;
 
@@ -290,6 +291,16 @@ void ObsVector<OBS>::save(const std::string & name) const {
   data_->save(name);
 
   Log::trace() << "ObsVector<OBS>::save done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
+void ObsVector<OBS>::read(const std::string & name) {
+  Log::trace() << "ObsVector<OBS>::read starting " << name << std::endl;
+  util::Timer timer(classname(), "read");
+
+  data_->read(name);
+
+  Log::trace() << "ObsVector<OBS>::read done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 

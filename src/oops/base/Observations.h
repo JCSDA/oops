@@ -60,8 +60,9 @@ template <typename OBS> class Observations : public util::Printable {
   Departures_ operator-(const Observations & other) const;
   Observations & operator+=(const Departures_ &);
 
-/// Save observations values
+/// Save/read observations values
   void save(const std::string &) const;
+  void read(const std::string &);
 
 /// Accumulator
   void zero();
@@ -152,6 +153,13 @@ template <typename OBS>
 void Observations<OBS>::save(const std::string & name) const {
   for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
     obs_[jj].save(name);
+  }
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
+void Observations<OBS>::read(const std::string & name) {
+  for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
+    obs_[jj].read(name);
   }
 }
 // -----------------------------------------------------------------------------
