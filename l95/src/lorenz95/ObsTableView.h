@@ -55,8 +55,9 @@ class ObsTableView : public util::Printable,
 
   void random(std::vector<double> &) const;
   unsigned int nobs() const;
+  std::vector<double> locations() const;
   void generateDistribution(const eckit::Configuration &);
-  std::unique_ptr<LocsL95> locations() const;
+  std::unique_ptr<LocsL95> locations(const util::DateTime & t1, const util::DateTime & t2) const;
   void printJo(const ObsVec1D &, const ObsVec1D &);
 
   size_t index(const size_t ii) const {return localobs_[ii];}

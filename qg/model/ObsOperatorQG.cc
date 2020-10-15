@@ -19,6 +19,7 @@
 #include "model/ObsSpaceQG.h"
 #include "model/ObsVecQG.h"
 #include "oops/base/Variables.h"
+#include "oops/util/DateTime.h"
 
 namespace qg {
 
@@ -47,8 +48,9 @@ const oops::Variables & ObsOperatorQG::requiredVars() const {
 
 // -----------------------------------------------------------------------------
 
-std::unique_ptr<LocationsQG> ObsOperatorQG::locations() const {
-  return oper_->locations();
+std::unique_ptr<LocationsQG> ObsOperatorQG::locations(const util::DateTime & t1,
+                             const util::DateTime & t2) const {
+  return oper_->locations(t1, t2);
 }
 
 // -----------------------------------------------------------------------------

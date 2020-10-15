@@ -18,6 +18,7 @@
 
 #include "oops/base/Variables.h"
 #include "oops/util/abor1_cpp.h"
+#include "oops/util/DateTime.h"
 #include "oops/util/Printable.h"
 
 #include "oops/qg/ObsSpaceQG.h"
@@ -41,7 +42,8 @@ class ObsOpBaseQG : public util::Printable,
 
 /// Other
   virtual const oops::Variables & requiredVars() const = 0;  // Required from Model
-  virtual std::unique_ptr<LocationsQG> locations() const = 0;
+  virtual std::unique_ptr<LocationsQG> locations(const util::DateTime &,
+                                       const util::DateTime &) const = 0;
 
  private:
   virtual void print(std::ostream &) const = 0;

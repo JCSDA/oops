@@ -304,28 +304,35 @@ endif
 end subroutine qg_obsdb_has
 ! ------------------------------------------------------------------------------
 !> Get locations from observation data
-subroutine qg_obsdb_locations(self,grp,fields,c_times)
+subroutine qg_obsdb_locations(self,grp,t1,t2,fields,c_times)
 
 implicit none
 
 ! Passed variables
 type(qg_obsdb),intent(in) :: self   !< Observation data
 character(len=*),intent(in) :: grp  !< Group
+type(datetime),intent(in) :: t1     !< Time 1
+type(datetime),intent(in) :: t2     !< Time 2
 type(atlas_fieldset), intent(inout) :: fields !< Locations FieldSet
 type(c_ptr), intent(in), value :: c_times !< pointer to times array in C++
 
 ! Local variables
 integer :: nlocs, jo
+integer,allocatable :: indx(:)
 character(len=8),parameter :: col = 'Location'
 type(group_data),pointer :: jgrp
 type(column_data),pointer :: jcol
 type(atlas_field) :: field_z, field_lonlat
 real(kind_real), pointer :: z(:), lonlat(:,:)
 
+! Count observations
+call qg_obsdb_count_time(self,grp,t1,t2,nlocs)
+allocate(indx(nlocs))
+call qg_obsdb_count_indx(self,grp,t1,t2,indx)
+
 ! Find observation group
 call qg_obsdb_find_group(self,grp,jgrp)
 if (.not.associated(jgrp)) call abor1_ftn('qg_obsdb_locations: obs group not found')
-nlocs = jgrp%nobs
 
 ! Find observation column
 call qg_obsdb_find_column(jgrp,col,jcol)
@@ -341,10 +348,10 @@ call field_z%data(z)
 
 ! Copy coordinates
 do jo = 1, nlocs
-  lonlat(1,jo) = jcol%values(1,jo)
-  lonlat(2,jo) = jcol%values(2,jo)
-  z(jo) = jcol%values(3,jo)
-  call f_c_push_to_datetime_vector(c_times, jgrp%times(jo))
+  lonlat(1,jo) = jcol%values(1,indx(jo))
+  lonlat(2,jo) = jcol%values(2,indx(jo))
+  z(jo) = jcol%values(3,indx(jo))
+  call f_c_push_to_datetime_vector(c_times, jgrp%times(indx(jo)))
 enddo
 
 call fields%add(field_lonlat)
@@ -353,6 +360,8 @@ call fields%add(field_z)
 ! release pointers
 call field_lonlat%final()
 call field_z%final()
+
+deallocate(indx)
 
 end subroutine qg_obsdb_locations
 ! ------------------------------------------------------------------------------
@@ -810,5 +819,64 @@ enddo
 self%ngrp = self%ngrp+1
 
 end subroutine qg_obsdb_create
+! ------------------------------------------------------------------------------
+!> Get observation data size between times
+subroutine qg_obsdb_count_time(self,grp,t1,t2,kobs)
+
+implicit none
+
+! Passed variables
+type(qg_obsdb),intent(in) :: self  !< Observation data
+character(len=*),intent(in) :: grp !< Group
+type(datetime),intent(in) :: t1    !< Time 1
+type(datetime),intent(in) :: t2    !< Time 2
+integer,intent(inout) :: kobs      !< Number of observations
+
+! Local variables
+type(group_data),pointer :: jgrp
+integer :: jobs
+
+! Find observation group
+call qg_obsdb_find_group(self,grp,jgrp)
+if (.not.associated(jgrp)) call abor1_ftn('qg_obsdb_count_time: obs group not found')
+
+! Time selection
+kobs = 0
+do jobs=1,jgrp%nobs
+  if ((t1<jgrp%times(jobs)).and.(jgrp%times(jobs)<=t2)) kobs = kobs+1
+enddo
+
+end subroutine qg_obsdb_count_time
+! ------------------------------------------------------------------------------
+!> Get observation data index
+subroutine qg_obsdb_count_indx(self,grp,t1,t2,indx)
+
+implicit none
+
+! Passed variables
+type(qg_obsdb),intent(in) :: self  !< Observation data
+character(len=*),intent(in) :: grp !< Group
+type(datetime),intent(in) :: t1    !< Time 1
+type(datetime),intent(in) :: t2    !< Time 2
+integer,intent(inout) :: indx(:)   !< Observation index
+
+! Local variables
+type(group_data),pointer :: jgrp
+integer :: jobs,io
+
+! Find observation group
+call qg_obsdb_find_group(self,grp,jgrp)
+if (.not.associated(jgrp)) call abor1_ftn('qg_obsdb_count_indx: obs group not found')
+
+! Time selection
+io = 0
+do jobs=1,jgrp%nobs
+  if ((t1<jgrp%times(jobs)).and.(jgrp%times(jobs)<=t2)) then
+    io = io+1
+    indx(io)=jobs
+  endif
+enddo
+
+end subroutine qg_obsdb_count_indx
 ! ------------------------------------------------------------------------------
 end module qg_obsdb_mod

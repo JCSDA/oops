@@ -16,7 +16,6 @@
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/GetValues.h"
-#include "oops/interface/Locations.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsDiagnostics.h"
@@ -39,7 +38,6 @@ namespace oops {
 template <typename MODEL, typename OBS>
 class Observer : public util::Printable {
   typedef GeoVaLs<OBS>             GeoVaLs_;
-  typedef Locations<OBS>           Locations_;
   typedef ObsDiagnostics<OBS>      ObsDiags_;
   typedef ObsSpace<OBS>            ObsSpace_;
   typedef GetValues<MODEL, OBS>    GetValues_;
@@ -73,7 +71,6 @@ class Observer : public util::Printable {
 
   ObsFilters_ filters_;
   Variables geovars_;  // Variables needed from model (through geovals)
-  Locations_ locs_;
   std::unique_ptr<GetValues_> getvals_;
   std::shared_ptr<GeoVaLs_> gvals_;
 };
@@ -85,8 +82,7 @@ Observer<MODEL, OBS>::Observer(const eckit::Configuration & conf, const ObsSpace
                           const ObsAuxCtrl_ & ybias, ObsVector_ & yobs,
                           ObsDataPtr_<int> qcflags, ObsDataPtr_<float> obserr)
   : hop_(obsdb, eckit::LocalConfiguration(conf, "obs operator")),
-    obsdb_(obsdb), yobs_(yobs), ybias_(ybias), filters_(obsdb, conf, qcflags, obserr),
-    locs_(hop_.locations())
+    obsdb_(obsdb), yobs_(yobs), ybias_(ybias), filters_(obsdb, conf, qcflags, obserr)
 {
   Log::trace() << "Observer::Observer starting" << std::endl;
   geovars_ += hop_.requiredVars();
@@ -112,8 +108,8 @@ void Observer<MODEL, OBS>::doInitialize(const State_ & xx,
                                    const util::DateTime & end) {
   Log::trace() << "Observer::doInitialize start" << std::endl;
   filters_.preProcess();
-  getvals_.reset(new GetValues_(xx.geometry(), locs_));
-  gvals_.reset(new GeoVaLs_(locs_, geovars_));
+  getvals_.reset(new GetValues_(xx.geometry(), hop_.locations(begin, end)));
+  gvals_.reset(new GeoVaLs_(hop_.locations(begin, end), geovars_));
   Log::trace() << "Observer::doInitialize done" << std::endl;
 }
 
@@ -138,7 +134,7 @@ void Observer<MODEL, OBS>::doFinalize() {
   oops::Variables vars;
   vars += filters_.requiredHdiagnostics();
   vars += ybias_.requiredHdiagnostics();
-  ObsDiags_ ydiags(obsdb_, locs_, vars);
+  ObsDiags_ ydiags(obsdb_, hop_.locations(obsdb_.windowStart(), obsdb_.windowEnd()), vars);
   hop_.simulateObs(*gvals_, yobs_, ybias_, ydiags);
   filters_.postFilter(yobs_, ydiags);
   Log::trace() << "Observer::doFinalize done" << std::endl;
