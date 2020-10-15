@@ -12,6 +12,7 @@
 #ifndef QG_MODEL_OBSVECQG_H_
 #define QG_MODEL_OBSVECQG_H_
 
+#include <Eigen/Dense>
 #include <ostream>
 #include <string>
 
@@ -22,6 +23,9 @@
 
 namespace qg {
   class ObsSpaceQG;
+
+  template<typename DATATYPE>
+  class ObsDataQG;
 
 // -----------------------------------------------------------------------------
 /// ObsVecQG class to handle vectors in observation space for QG model.
@@ -43,7 +47,7 @@ class ObsVecQG : public util::Printable,
   ObsVecQG & operator-= (const ObsVecQG &);
   ObsVecQG & operator*= (const ObsVecQG &);
   ObsVecQG & operator/= (const ObsVecQG &);
-  double operator[](const size_t ii) const;
+  Eigen::VectorXd  packEigen() const;
 
   void zero();
   void axpy(const double &, const ObsVecQG &);
@@ -51,6 +55,7 @@ class ObsVecQG : public util::Printable,
   void random();
   double dot_product_with(const ObsVecQG &) const;
   double rms() const;
+  void mask(const ObsDataQG<int> &) {}
 
   unsigned int nobs() const;
 

@@ -151,6 +151,23 @@ template <typename OBS> void testReadWrite() {
   }
 }
 // -----------------------------------------------------------------------------
+template <typename OBS> void testPackEigen() {
+  typedef ObsTestsFixture<OBS>  Test_;
+  typedef oops::ObsVector<OBS>  ObsVector_;
+  const double tolerance = 1.0e-8;
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    ObsVector_ ov1(Test_::obspace()[jj]);
+    ov1.random();
+    double rms1 = ov1.rms();
+
+    Eigen::VectorXd vec = ov1.packEigen();
+    EXPECT(vec.size() == ov1.nobs());
+
+    double rms2 = sqrt(vec.squaredNorm() / ov1.nobs());
+    EXPECT(std::abs(rms1-rms2) < tolerance);
+  }
+}
+// -----------------------------------------------------------------------------
 
 template <typename OBS>
 class ObsVector : public oops::Test {
@@ -176,6 +193,8 @@ class ObsVector : public oops::Test {
       { testLinearAlgebra<OBS>(); });
     ts.emplace_back(CASE("interface/ObsVector/testReadWrite")
       { testReadWrite<OBS>(); });
+    ts.emplace_back(CASE("interface/ObsVector/testPackEigen")
+      { testPackEigen<OBS>(); });
   }
 
   void clear() const override {

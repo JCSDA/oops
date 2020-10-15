@@ -160,8 +160,26 @@ unsigned int ObsVec1D::nobs() const {
   return data_.size() - std::count(data_.begin(), data_.end(), missing_);
 }
 // -----------------------------------------------------------------------------
+void ObsVec1D::mask(const ObsData1D<int> & mask) {
+  for (size_t jj = 0; jj < data_.size(); ++jj) {
+    if (mask[jj]) data_.at(jj) = missing_;
+  }
+}
+// -----------------------------------------------------------------------------
 void ObsVec1D::save(const std::string & name) const {
   obsdb_.putdb(name, data_);
+}
+// -----------------------------------------------------------------------------
+Eigen::VectorXd ObsVec1D::packEigen() const {
+  Eigen::VectorXd vec(nobs());
+  size_t ii = 0;
+  for (const double & val : data_) {
+    if (val != missing_) {
+      vec(ii++) = val;
+    }
+  }
+  ASSERT(ii == nobs());
+  return vec;
 }
 // -----------------------------------------------------------------------------
 void ObsVec1D::read(const std::string & name) {

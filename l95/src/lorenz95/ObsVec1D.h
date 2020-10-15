@@ -11,6 +11,7 @@
 #ifndef LORENZ95_OBSVEC1D_H_
 #define LORENZ95_OBSVEC1D_H_
 
+#include <Eigen/Dense>
 #include <ostream>
 #include <string>
 #include <vector>
@@ -46,6 +47,7 @@ class ObsVec1D : public util::Printable,
   ObsVec1D & operator*= (const ObsVec1D &);
   ObsVec1D & operator/= (const ObsVec1D &);
 
+  Eigen::VectorXd  packEigen() const;
   const double & operator[](const std::size_t ii) const {return data_.at(ii);}
   double & operator[](const std::size_t ii) {return data_.at(ii);}
 
@@ -55,6 +57,7 @@ class ObsVec1D : public util::Printable,
   void random();
   double dot_product_with(const ObsVec1D &) const;
   double rms() const;
+  void mask(const ObsData1D<int> &);
 
   unsigned int nobs() const;
 
