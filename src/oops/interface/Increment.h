@@ -415,7 +415,7 @@ void Increment<MODEL>::setAtlas(atlas::FieldSet * atlasFieldSet) const {
   increment_->setAtlas(atlasFieldSet);
 #else
   oops::UnstructuredGrid ug(1, 1);
-  increment_.ug_coord(ug);
+  increment_->ug_coord(ug);
   ug.setAtlas(atlasFieldSet);
 #endif
   Log::trace() << "Increment<MODEL>::setAtlas done" << std::endl;
@@ -431,8 +431,8 @@ void Increment<MODEL>::toAtlas(atlas::FieldSet * atlasFieldSet) const {
   increment_->toAtlas(atlasFieldSet);
 #else
   oops::UnstructuredGrid ug(1, 1);
-  increment_.ug_coord(ug);
-  increment_.field_to_ug(ug);
+  increment_->ug_coord(ug);
+  increment_->field_to_ug(ug);
   ug.toAtlas(atlasFieldSet);
 #endif
   Log::trace() << "Increment<MODEL>::toAtlas done" << std::endl;
@@ -448,10 +448,10 @@ void Increment<MODEL>::fromAtlas(atlas::FieldSet * atlasFieldSet) {
   increment_->fromAtlas(atlasFieldSet);
 #else
   oops::UnstructuredGrid ug(1, 1);
-  increment_.ug_coord(ug);
-  increment_.field_to_ug(ug);
+  increment_->ug_coord(ug);
+  increment_->field_to_ug(ug);
   ug.fromAtlas(atlasFieldSet);
-  increment_.field_from_ug(ug);
+  increment_->field_from_ug(ug);
 #endif
   Log::trace() << "Increment<MODEL>::fromAtlas done" << std::endl;
 }
@@ -465,8 +465,8 @@ void Increment<MODEL>::toAtlas() {
   increment_->toAtlas(&atlasFieldSet_);
 #else
   oops::UnstructuredGrid ug(1, 1);
-  increment_.ug_coord(ug);
-  increment_.field_to_ug(ug);
+  increment_->ug_coord(ug);
+  increment_->field_to_ug(ug);
   ug.toAtlas(&atlasFieldSet_);
 #endif
   increment_.reset();
