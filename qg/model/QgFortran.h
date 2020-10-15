@@ -211,7 +211,6 @@ extern "C" {
   void qg_obsdb_has_f90(const F90odb &, const int &, const char *,
                         const int &, const char *, int &);
   void qg_obsdb_locations_f90(const F90odb &, const int &, const char *,
-                              const util::DateTime &, const util::DateTime &,
                               atlas::field::FieldSetImpl *, std::vector<util::DateTime> &);
   void qg_obsdb_generate_f90(const F90odb &, const int &, const char *,
                              const eckit::Configuration &, const util::DateTime &,

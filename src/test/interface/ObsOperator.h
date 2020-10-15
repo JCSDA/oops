@@ -84,10 +84,7 @@ template <typename OBS> void testSimulateObs() {
     // create diagnostics to hold HofX diags
     oops::Variables diagvars;
     diagvars += ybias.requiredHdiagnostics();
-    ObsDiags_ diags(Test_::obspace()[jj],
-                    hop.locations(Test_::obspace()[jj].windowStart(),
-                                  Test_::obspace()[jj].windowEnd()),
-                    diagvars);
+    ObsDiags_ diags(Test_::obspace()[jj], hop.locations(), diagvars);
 
     // call H(x), save result in the output file as @hofx
     hop.simulateObs(gval, hofx, ybias, diags);

@@ -39,7 +39,7 @@ ObsTableView::ObsTableView(const ObsTableView & obstable,
                            const eckit::Configuration & conf)
   : obstable_(obstable.obstable_), localobs_(), obsdist_()
 {
-  std::vector<double> locations = obstable.locations();
+  std::vector<double> locations = obstable.obstable_->locations();
   const double dist = conf.getDouble("lengthscale");
   for (unsigned int jj = 0; jj < obstable.nobs(); ++jj) {
     double curdist = std::abs(center[0] - locations[jj]);
@@ -162,18 +162,6 @@ unsigned int ObsTableView::nobs() const {
 
 // -----------------------------------------------------------------------------
 
-std::vector<double> ObsTableView::locations() const {
-  std::vector<double> full = obstable_->locations();
-  std::vector<double> local(nobs());
-  for (unsigned int i = 0; i < nobs(); i++) {
-    local[i] = full[localobs_[i]];
-  }
-  oops::Log::trace() << "ObsTableView::locations done" << std::endl;
-  return local;
-}
-
-// -----------------------------------------------------------------------------
-
 void ObsTableView::generateDistribution(const eckit::Configuration & conf) {
   obstable_->generateDistribution(conf);
   int nobs = obstable_->nobs();
@@ -184,24 +172,17 @@ void ObsTableView::generateDistribution(const eckit::Configuration & conf) {
 
 // -----------------------------------------------------------------------------
 
-std::unique_ptr<LocsL95> ObsTableView::locations(const util::DateTime & t1,
-                         const util::DateTime & t2) const {
+std::unique_ptr<LocsL95> ObsTableView::locations() const {
   // get times and locations from the obsspace
   std::vector<util::DateTime> all_times = obstable_->times();
   std::vector<double> all_locs = obstable_->locations();
-  // find local times that are within t1 and t2
-  std::vector<int> mask;
-  for (unsigned int i = 0; i < nobs(); i++) {
-    if (all_times[localobs_[i]] > t1 && all_times[localobs_[i]] <= t2)
-      mask.push_back(i);
-  }
   // set up locations
-  const unsigned int nobs_t = mask.size();
-  std::vector<double> locs(nobs_t);
-  std::vector<util::DateTime> times(nobs_t);
-  for (unsigned int i = 0; i < nobs_t; i++) {
-    locs[i] = all_locs[localobs_[mask[i]]];
-    times[i] = all_times[localobs_[mask[i]]];
+  const unsigned int nobs = localobs_.size();
+  std::vector<double> locs(nobs);
+  std::vector<util::DateTime> times(nobs);
+  for (unsigned int i = 0; i < nobs; i++) {
+    locs[i] = all_locs[localobs_[i]];
+    times[i] = all_times[localobs_[i]];
   }
   oops::Log::trace() << "ObsTableView::locations done" << std::endl;
   return std::unique_ptr<LocsL95>(new LocsL95(locs, times));
