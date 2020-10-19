@@ -48,8 +48,7 @@ class ObserversTLAD : public PostBaseTLAD<MODEL> {
 
  public:
   ObserversTLAD(const eckit::Configuration &,
-                const ObsSpaces_ &, const ObsAuxCtrls_ &,
-                const util::Duration & tslot = util::Duration(0), const bool subwin = false);
+                const ObsSpaces_ &, const ObsAuxCtrls_ &);
   ~ObserversTLAD() {}
 
   std::unique_ptr<GeneralizedDepartures> releaseOutputFromTL() override {return std::move(ydeptl_);}
@@ -91,13 +90,12 @@ class ObserversTLAD : public PostBaseTLAD<MODEL> {
 template <typename MODEL, typename OBS>
 ObserversTLAD<MODEL, OBS>::ObserversTLAD(const eckit::Configuration & config,
                                   const ObsSpaces_ & obsdb,
-                                  const ObsAuxCtrls_ & ybias,
-                                  const util::Duration & tslot, const bool subwin)
+                                  const ObsAuxCtrls_ & ybias)
   : PostBaseTLAD<MODEL>(obsdb.windowStart(), obsdb.windowEnd()),
     observerstlad_(), obspace_(obsdb),
     ydeptl_(), ybiastl_(), ydepad_(), ybiasad_(),
     winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()),
-    hslot_(tslot/2), hslottraj_(tslot/2)
+    hslot_(0), hslottraj_(0)
 {
   // setup observers
   std::vector<eckit::LocalConfiguration> typeconf;
@@ -120,7 +118,7 @@ void ObserversTLAD<MODEL, OBS>::doInitializeTraj(const State_ & xx,
   Log::trace() << "ObserversTLAD::doInitializeTraj start" << std::endl;
 // Create full trajectory object
 
-  if (hslottraj_ == util::Duration(0)) hslottraj_ = tstep/2;
+  hslottraj_ = tstep/2;
 
   for (std::size_t jj = 0; jj < observerstlad_.size(); ++jj) {
     observerstlad_[jj]->doInitializeTraj(xx, winbgn_, winend_);
@@ -162,7 +160,7 @@ void ObserversTLAD<MODEL, OBS>::doInitializeTL(const Increment_ & dx,
                                                const util::DateTime & end,
                                                const util::Duration & tstep) {
   Log::trace() << "ObserversTLAD::doInitializeTL start" << std::endl;
-  if (hslot_ == util::Duration(0)) hslot_ = tstep/2;
+  hslot_ = tstep/2;
   for (std::size_t jj = 0; jj < observerstlad_.size(); ++jj) {
     observerstlad_[jj]->doInitializeTL(dx, winbgn_, winend_);
   }
@@ -203,7 +201,7 @@ template <typename MODEL, typename OBS>
 void ObserversTLAD<MODEL, OBS>::doFirstAD(Increment_ & dx, const util::DateTime & bgn,
                                           const util::Duration & tstep) {
   Log::trace() << "ObserversTLAD::doFirstAD start" << std::endl;
-  if (hslot_ == util::Duration(0)) hslot_ = tstep/2;
+  hslot_ = tstep/2;
 
   for (std::size_t jj = 0; jj < observerstlad_.size(); ++jj) {
     observerstlad_[jj]->doFirstAD(dx, (*ydepad_)[jj], (*ybiasad_)[jj], winbgn_, winend_);

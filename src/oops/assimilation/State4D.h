@@ -79,7 +79,6 @@ State4D<MODEL>::State4D(const Geometry_ & resol, const eckit::Configuration & co
     config.get("states", confs);
     state4d_.reserve(confs.size());
     for (auto & conf : confs) {
-      if (config.has("member")) conf.set("member", config.getInt("member"));
       state4d_.emplace_back(State_(resol, conf));
     }
   } else {
@@ -132,6 +131,7 @@ void State4D<MODEL>::write(const eckit::Configuration & config) const {
     config.get("states", confs);
     ASSERT(state4d_.size() == confs.size());
     for (size_t jj = 0; jj < state4d_.size(); ++jj) {
+      if (config.has("member")) confs[jj].set("member", config.getInt("member"));
       state4d_[jj].write(confs[jj]);
     }
   } else {

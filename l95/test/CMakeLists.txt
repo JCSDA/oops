@@ -31,23 +31,37 @@ list( APPEND l95_test_input
   testinput/4dvar.modbias.yaml
   testinput/4dvar.obsbias.yaml
   testinput/4dvar.allbiases.yaml
-  testinput/diffstates.yaml
   testinput/addincrement.yaml
   testinput/addincrement_scaled.yaml
+  testinput/diffstates.yaml
+  testinput/eda.3dfgat.1.yaml
+  testinput/eda.3dfgat.2.yaml
+  testinput/eda.3dfgat.3.yaml
+  testinput/eda.3dfgat.4.yaml
   testinput/eda.3dfgat.yaml
+  testinput/eda.3dvar.1.yaml
+  testinput/eda.3dvar.2.yaml
+  testinput/eda.3dvar.3.yaml
+  testinput/eda.3dvar.4.yaml
   testinput/eda.3dvar.yaml
-  testinput/eda.4dvar.member3.yaml
+  testinput/eda.4dvar.3.yaml
+  testinput/eda.4dvar.yaml
+  testinput/enshofx.1.yaml
+  testinput/enshofx.2.yaml
+  testinput/enshofx.3.yaml
+  testinput/enshofx.4.yaml
   testinput/enshofx.yaml
   testinput/forecast.yaml
   testinput/forecast_pseudomodel.yaml
   testinput/forecast_identitymodel.yaml
   testinput/genenspert.yaml
   testinput/getkf.yaml
+  testinput/getkf_offline_hofx.yaml
   testinput/hofx.yaml
   testinput/hofx_nomodel.yaml
+  testinput/hofx_for_getkf_nomodel.yaml
   testinput/identitymodel.yaml
   testinput/letkfGSI.yaml
-  testinput/letkfOOPS.yaml
   testinput/letkf.yaml
   testinput/interfaces.yaml
   testinput/linearmodelfactory.yaml
@@ -123,10 +137,11 @@ list( APPEND l95_testoutput
   testoutput/forecast_identitymodel.test
   testoutput/genenspert.test
   testoutput/getkf.test
+  testoutput/getkf_offline_hofx.test
   testoutput/hofx.test
   testoutput/hofx.nomodel.test
+  testoutput/hofx_for_getkf_nomodel.test
   testoutput/letkf.test
-  testoutput/letkf_oops.test
   testoutput/letkf_gsi.test
   testoutput/localhofx.test
   testoutput/makeobs3d.test
@@ -437,7 +452,7 @@ oops_add_test( TESTNAME genenspert
                EXENAME l95_genpert.x )
 
 ecbuild_add_test( TARGET test_l95_enshofx
-                  MPI 10
+                  MPI 4
                   COMMAND ${CMAKE_BINARY_DIR}/bin/l95_enshofx.x
                   ARGS testinput/enshofx.yaml testoutput/enshofx.log.out
                   DEPENDS l95_enshofx.x
@@ -659,10 +674,10 @@ ecbuild_add_test( TARGET test_l95_eda_3dvar
                   DEPENDS l95_eda.x
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
 
-ecbuild_add_test( TARGET test_l95_eda_4dvar_member3
+ecbuild_add_test( TARGET test_l95_eda_4dvar
                   MPI 1
                   COMMAND ${CMAKE_BINARY_DIR}/bin/l95_eda.x
-                  ARGS testinput/eda.4dvar.member3.yaml
+                  ARGS testinput/eda.4dvar.yaml
                   DEPENDS l95_eda.x
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
@@ -675,7 +690,7 @@ oops_add_test( TESTNAME diffstates
                MODELNAME l95
                YAMLNAME testinput/diffstates.yaml
                EXENAME l95_diffstates.x
-               TEST_DEPENDS test_l95_eda_3dvar test_l95_eda_4dvar_member3 )
+               TEST_DEPENDS test_l95_eda_3dvar test_l95_eda_4dvar )
 
 oops_add_test( TESTNAME addincrement
                MODELNAME l95
@@ -694,13 +709,6 @@ oops_add_test( TESTNAME addincrement_scaled
 # LETKF tests
 #####################################################################
 
-oops_add_test( TESTNAME letkf_oops
-               MODELNAME l95
-               YAMLNAME testinput/letkfOOPS.yaml
-               EXENAME l95_letkf.x
-               COMPARE
-               TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
-
 oops_add_test( TESTNAME letkf
                MODELNAME l95
                YAMLNAME testinput/letkf.yaml
@@ -718,8 +726,23 @@ oops_add_test( TESTNAME getkf
                MODELNAME l95
                YAMLNAME testinput/getkf.yaml
                EXENAME l95_letkf.x
-               CTOL 1e-4
+               CTOL 1e-3
                TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+
+oops_add_test( TESTNAME hofx_for_getkf_nomodel
+               MODELNAME l95
+               YAMLNAME testinput/hofx_for_getkf_nomodel.yaml
+               EXENAME l95_letkf.x 
+               CTOL 1e-3
+               TEST_DEPENDS letkf )
+
+oops_add_test( TESTNAME getkf_offline_hofx
+               MODELNAME l95
+               YAMLNAME testinput/getkf_offline_hofx.yaml
+               EXENAME l95_letkf.x
+               CTOL 1e-3
+               TEST_DEPENDS hofx_for_getkf_nomodel )
+
 
 #####################################################################
 # tests of factory and parameters classes
@@ -812,9 +835,8 @@ oops_add_test( TESTNAME simplifiedl95_RPCG
                CTOL 1e-8
                EXENAME l95_4dvar.x )
 
-#oops_add_test( TESTNAME simplifiedl95_RPLanczos
-#               MODELNAME l95
-#               YAMLNAME testinput/simplifiedl95_RPLanczos.yaml
-#               CTOL 1e-8
-#               EXENAME l95_4dvar.x )
-#
+oops_add_test( TESTNAME simplifiedl95_RPLanczos
+               MODELNAME l95
+               YAMLNAME testinput/simplifiedl95_RPLanczos.yaml
+               CTOL 1e-8
+               EXENAME l95_4dvar.x )

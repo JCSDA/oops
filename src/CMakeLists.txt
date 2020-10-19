@@ -55,7 +55,6 @@ oops/assimilation/LBHessianMatrix.h
 oops/assimilation/LBMinimizer.h
 oops/assimilation/LETKFSolver.h
 oops/assimilation/LETKFSolverGSI.h
-oops/assimilation/LETKFSolverOOPS.h
 oops/assimilation/LETKFSolverParameters.h
 oops/assimilation/linsysteigen.h
 oops/assimilation/LocalEnsembleSolver.h
@@ -223,9 +222,7 @@ oops/runs/Application.h
 oops/runs/ConvertState.h
 oops/runs/DiffStates.h
 oops/runs/Dirac.h
-oops/runs/EDA.h
-oops/runs/EnsForecasts.h
-oops/runs/EnsHofX.h
+oops/runs/EnsembleApplication.h
 oops/runs/EnsRecenter.h
 oops/runs/EnsVariance.h
 oops/runs/ExternalDFI.h

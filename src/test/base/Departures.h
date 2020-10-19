@@ -49,7 +49,7 @@ template <typename OBS> void testDepartures() {
   EXPECT(ydiff.rms() != 0.0);
 
   // check pack operator
-  Eigen::MatrixXd ypack = y.packEigen();
+  Eigen::VectorXd ypack = y.packEigen();
   oops::Log::info() << "ypack: " << ypack << std::endl;
   double rms = ypack.norm() / sqrt(ypack.size());
   oops::Log::test() << "rms(ypack)=" << rms << std::endl;

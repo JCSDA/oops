@@ -1,0 +1,42 @@
+Test     : Initial state for member 1:
+Test     :  Valid time: 2010-01-02T00:00:00Z
+Test     :  Min=3.53609, Max=11.1974, Average=7.90978
+Test     : Initial state for member 2:
+Test     :  Valid time: 2010-01-02T00:00:00Z
+Test     :  Min=3.77507, Max=11.1844, Average=7.75047
+Test     : Initial state for member 3:
+Test     :  Valid time: 2010-01-02T00:00:00Z
+Test     :  Min=5.36882, Max=10.844, Average=7.80576
+Test     : Initial state for member 4:
+Test     :  Valid time: 2010-01-02T00:00:00Z
+Test     :  Min=4.14639, Max=11.6734, Average=7.76001
+Test     : Initial state for member 5:
+Test     :  Valid time: 2010-01-02T00:00:00Z
+Test     :  Min=3.17563, Max=10.8183, Average=7.60243
+Test     : H(x) for member 1:
+Test     : Lorenz 95 nobs= 120 Min=3.53609, Max=11.1974, Average=7.90978
+Test     : H(x) for member 2:
+Test     : Lorenz 95 nobs= 120 Min=3.77507, Max=11.1844, Average=7.75048
+Test     : H(x) for member 3:
+Test     : Lorenz 95 nobs= 120 Min=5.36882, Max=10.844, Average=7.80576
+Test     : H(x) for member 4:
+Test     : Lorenz 95 nobs= 120 Min=4.14639, Max=11.6734, Average=7.76001
+Test     : H(x) for member 5:
+Test     : Lorenz 95 nobs= 120 Min=3.17563, Max=10.8183, Average=7.60243
+Test     : H(Zx) - ymean for member 1 eig 1 :
+Test     : Lorenz 95 nobs= 120 Min=-1.98233, Max=2.72039, Average=0.144086
+Test     : H(Zx) - ymean for member 2 eig 1 :
+Test     : Lorenz 95 nobs= 120 Min=-2.99197, Max=2.48195, Average=-0.0152143
+Test     : H(Zx) - ymean for member 3 eig 1 :
+Test     : Lorenz 95 nobs= 120 Min=-2.26382, Max=3.22817, Average=0.040069
+Test     : H(Zx) - ymean for member 4 eig 1 :
+Test     : Lorenz 95 nobs= 120 Min=-3.42627, Max=3.04791, Average=-0.0056785
+Test     : H(Zx) - ymean for member 5 eig 1 :
+Test     : Lorenz 95 nobs= 120 Min=-3.79871, Max=2.34904, Average=-0.163263
+Test     : H(x) ensemble background mean: 
+Test     : Lorenz 95 nobs= 120 Min=5.25199, Max=9.50207, Average=7.76569
+Test     : background y - H(x): 
+Test     : Lorenz 95 nobs= 120 Min=-1.48378, Max=2.74405, Average=0.2457
+Test     : Background mean :
+Test     :  Valid time: 2010-01-02T00:00:00Z
+Test     :  Min=5.25199, Max=9.50208, Average=7.76569

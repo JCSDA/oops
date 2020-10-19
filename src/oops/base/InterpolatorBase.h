@@ -15,7 +15,6 @@
 #include "atlas/field.h"
 #include "atlas/functionspace.h"
 #include "eckit/config/Configuration.h"
-#include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
 

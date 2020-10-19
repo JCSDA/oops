@@ -28,10 +28,26 @@ list( APPEND qg_testinput
   testinput/dirac_loc_3d.yaml
   testinput/dirac_loc_4d.yaml
   testinput/dirac_no_loc.yaml
+  testinput/eda_3dfgat_1.yaml
+  testinput/eda_3dfgat_2.yaml
+  testinput/eda_3dfgat_3.yaml
+  testinput/eda_3dfgat_4.yaml
   testinput/eda_3dfgat.yaml
-  testinput/eda_3dvar_member2.yaml
+  testinput/eda_3dvar_2.yaml
+  testinput/eda_3dvar.yaml
+  testinput/eda_4dvar_1.yaml
+  testinput/eda_4dvar_2.yaml
+  testinput/eda_4dvar_3.yaml
+  testinput/eda_4dvar_4.yaml
   testinput/eda_4dvar.yaml
+  testinput/ens_forecast_1.yaml
+  testinput/ens_forecast_2.yaml
   testinput/ens_forecast.yaml
+  testinput/ens_hofx_1.yaml
+  testinput/ens_hofx_2.yaml
+  testinput/ens_hofx_3.yaml
+  testinput/ens_hofx_4.yaml
+  testinput/ens_hofx_5.yaml
   testinput/ens_hofx.yaml
   testinput/ens_recenter.yaml
   testinput/ens_variance.yaml
@@ -569,16 +585,14 @@ oops_add_test( TESTNAME 3dfgat
 
 oops_add_test( TESTNAME 4densvar
                MODELNAME qg
-               OMP 2
-               MPI 13
+               MPI 7
                YAMLNAME testinput/4densvar.yaml
                EXENAME  qg_4dvar.x
                TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_4d_12h )
 
 oops_add_test( TESTNAME 4densvar_hybrid
                MODELNAME qg
-               OMP 2
-               MPI 13
+               MPI 7
                YAMLNAME testinput/4densvar_hybrid.yaml
                EXENAME  qg_4dvar.x
                TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_4d_12h )
@@ -673,10 +687,10 @@ ecbuild_add_test( TARGET test_qg_eda_3dfgat
                   DEPENDS qg_eda.x
                   TEST_DEPENDS test_qg_forecast test_qg_make_obs_3d )
 
-ecbuild_add_test( TARGET test_qg_eda_3dvar_member2
+ecbuild_add_test( TARGET test_qg_eda_3dvar
                   MPI    1
                   COMMAND ${CMAKE_BINARY_DIR}/bin/qg_eda.x
-                  ARGS testinput/eda_3dvar_member2.yaml
+                  ARGS testinput/eda_3dvar.yaml
                   DEPENDS qg_eda.x
                   TEST_DEPENDS test_qg_forecast test_qg_make_obs_3d )
 
@@ -696,7 +710,7 @@ oops_add_test( TESTNAME diffstates
                MODELNAME qg
                YAMLNAME testinput/diffstates.yaml
                EXENAME  qg_diffstates.x
-               TEST_DEPENDS test_qg_eda_3dvar_member2 test_qg_eda_4dvar
+               TEST_DEPENDS test_qg_eda_3dvar test_qg_eda_4dvar
                DEPENDS qg_eda.x )
 
 oops_add_test( TESTNAME addincrement

@@ -49,8 +49,8 @@ class ObsSpaces : public util::Printable,
             const util::DateTime &, const util::DateTime &,
             const eckit::mpi::Comm & time = oops::mpi::myself());
   ObsSpaces(const ObsSpaces &, const eckit::geometry::Point2 &, const eckit::Configuration &);
+/// Constructor added for generic 1d-var under development in ufo
   explicit ObsSpaces(const std::shared_ptr<ObsSpace_> &);
-  explicit ObsSpaces(const ObsSpaces &);
   ~ObsSpaces();
 
 /// Access
@@ -81,13 +81,13 @@ ObsSpaces<OBS>::ObsSpaces(const eckit::Configuration & conf, const eckit::mpi::C
                           const eckit::mpi::Comm & time)
   : spaces_(0), wbgn_(bgn), wend_(end)
 {
-  const int mymember = conf.getInt("member", 0);
-  bool members = conf.has("member");
+  const int seed_member = conf.getInt("obs perturbations seed", 0);
   std::vector<eckit::LocalConfiguration> typeconfs;
   conf.get("observations", typeconfs);
   for (std::size_t jj = 0; jj < typeconfs.size(); ++jj) {
     eckit::LocalConfiguration obsconf(typeconfs[jj], "obs space");
-    if (members) obsconf.set("member", mymember);
+    obsconf.set("obs perturbations seed", seed_member);
+    Log::debug() << "ObsSpaces::ObsSpaces : conf " << obsconf << std::endl;
     std::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsconf, comm, bgn, end, time));
     spaces_.push_back(tmp);
   }
@@ -112,20 +112,11 @@ ObsSpaces<OBS>::ObsSpaces(const ObsSpaces<OBS> & obss, const eckit::geometry::Po
 }
 
 // -----------------------------------------------------------------------------
-
+/// Constructor added for generic 1d-var under development in ufo
 template <typename OBS>
 ObsSpaces<OBS>::ObsSpaces(const std::shared_ptr<ObsSpace_> & obss)
   : spaces_(obss), wbgn_(obss->windowStart()), wend_(obss->windowEnd())
 {}
-
-// -----------------------------------------------------------------------------
-
-template <typename OBS>
-ObsSpaces<OBS>::ObsSpaces(const ObsSpaces & other)
-  : spaces_(other.spaces_), wbgn_(other.wbgn_), wend_(other.wend_)
-{
-  Log::trace() << "ObsSpaces copied" << std::endl;
-}
 
 // -----------------------------------------------------------------------------
 

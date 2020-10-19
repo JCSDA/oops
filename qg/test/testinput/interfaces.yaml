@@ -134,6 +134,12 @@ state test:
   statefile:
     date: 2009-12-31T00:00:00Z
     filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
+  statefileout:
+    datadir: Data
+    exp: out
+    type: fc
+    date: '2009-12-15T00:00:00Z'
+    filename: Data/out.fc.2009-12-15T00:00:00Z.P16D.nc
   state generate:
     analytic_init: large-vortices
     date: 2009-12-31T00:00:00Z
@@ -180,3 +186,6 @@ loc variables: [x]
 inc variables: [x]
 window begin: 2010-01-01T00:00:00Z
 window end: 2010-01-02T00:00:00Z
+
+increment test:
+ date: 2009-12-31T00:00:00Z

@@ -19,6 +19,7 @@
 
 #include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/ObsSpaces.h"
+#include "oops/base/QCData.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
@@ -43,6 +44,7 @@ class Departures : public util::Printable,
                    public GeneralizedDepartures {
   typedef ObsSpaces<OBS>           ObsSpaces_;
   typedef ObsVector<OBS>           ObsVector_;
+  typedef QCData<OBS>              QCData_;
 
  public:
 /// \brief create Departures for all obs (read from ObsSpace if name is specified)
@@ -68,10 +70,14 @@ class Departures : public util::Printable,
   void axpy(const double &, const Departures &);
   double dot_product_with(const Departures &) const;
   double rms() const;
+/// Return number of departures (excluding departures that are masked out)
   size_t nobs() const;
 
-/// Pack operators
-  Eigen::MatrixXd  packEigen() const;   // pack departures as a 1D Eigen vector
+/// Mask out departures where the passed in qc flags are > 0
+  void mask(const QCData_ &);
+
+/// Pack departures in an Eigen vector (excluding departures that are masked out)
+  Eigen::VectorXd  packEigen() const;
 
 /// Save departures values
   void save(const std::string &) const;
@@ -197,16 +203,23 @@ size_t Departures<OBS>::nobs() const {
   return nobs;
 }
 // -----------------------------------------------------------------------------
-template <typename OBS>
-Eigen::MatrixXd Departures<OBS>::packEigen() const {
-  Eigen::MatrixXd data1d(1, this->nobs());
-  int i = 0;
-  for (size_t idep = 0; idep < dep_.size(); ++idep) {
-    for (size_t iob = 0; iob < dep_[idep].nobs(); ++iob) {
-      data1d(0, i++) = dep_[idep][iob];
-    }
+template<typename OBS>
+void Departures<OBS>::mask(const QCData_ & qc) {
+  for (size_t ii = 0; ii < dep_.size(); ++ii) {
+    dep_[ii].mask(*qc.qcFlags(ii));
   }
-  return data1d;
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
+Eigen::VectorXd Departures<OBS>::packEigen() const {
+  Eigen::VectorXd vec(nobs());
+  size_t ii = 0;
+  for (size_t idep = 0; idep < dep_.size(); ++idep) {
+    vec.segment(ii, dep_[idep].nobs()) = dep_[idep].packEigen();
+    ii += dep_[idep].nobs();
+  }
+  ASSERT(ii == nobs());
+  return vec;
 }
 // -----------------------------------------------------------------------------
 template <typename OBS>

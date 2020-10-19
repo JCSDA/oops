@@ -35,7 +35,6 @@
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
 #include "oops/mpi/mpi.h"
-#include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Duration.h"
@@ -98,7 +97,7 @@ template<typename MODEL, typename OBS> class CostFunction : private boost::nonco
 
  protected:
   void setupTerms(const eckit::Configuration &);
-  void setupTerms(const eckit::Configuration &, const State_ &);
+  void setupTerms(const eckit::Configuration &, const State_ &);  // generic 1d-var
   const CtrlVar_ & background() const {return *xb_;}
 
  private:
@@ -161,8 +160,7 @@ class CostMaker : public CostFactory<MODEL, OBS> {
 template <typename MODEL, typename OBS>
 CostFactory<MODEL, OBS>::CostFactory(const std::string & name) {
   if (getMakers().find(name) != getMakers().end()) {
-    Log::error() << name << " already registered in cost function factory." << std::endl;
-    ABORT("Element already registered in CostFactory.");
+    throw std::runtime_error(name + " already registered in cost function factory.");
   }
   getMakers()[name] = this;
 }
@@ -176,8 +174,7 @@ CostFunction<MODEL, OBS>* CostFactory<MODEL, OBS>::create(const eckit::Configura
   Log::trace() << "Variational Assimilation Type=" << id << std::endl;
   typename std::map<std::string, CostFactory<MODEL, OBS>*>::iterator j = getMakers().find(id);
   if (j == getMakers().end()) {
-    Log::error() << id << " does not exist in cost function factory." << std::endl;
-    ABORT("Element does not exist in CostFactory.");
+    throw std::runtime_error(id + " does not exist in cost function factory.");
   }
   Log::trace() << "CostFactory::create found cost function type" << std::endl;
   return (*j).second->make(config, comm);
@@ -220,7 +217,9 @@ void CostFunction<MODEL, OBS>::setupTerms(const eckit::Configuration & config) {
 }
 
 // -----------------------------------------------------------------------------
-
+// This setup terms method has been written for the generic 1d-var which is
+// under development in UFO
+// -----------------------------------------------------------------------------
 template<typename MODEL, typename OBS>
 void CostFunction<MODEL, OBS>::setupTerms(const eckit::Configuration & config,
                                           const State_ & statein) {

@@ -25,6 +25,7 @@
 
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/ObsVec1D.h"
+#include "oops/mpi/mpi.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -40,8 +41,10 @@ namespace lorenz95 {
 // -----------------------------------------------------------------------------
 
 ObsTable::ObsTable(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
-                   const util::DateTime & bgn, const util::DateTime & end)
-  : oops::ObsSpaceBase(config, comm, bgn, end), winbgn_(bgn), winend_(end), obsvars_()
+                   const util::DateTime & bgn, const util::DateTime & end,
+                   const eckit::mpi::Comm & timeComm)
+  : oops::ObsSpaceBase(config, comm, bgn, end), winbgn_(bgn), winend_(end), comm_(timeComm),
+    obsvars_()
 {
   oops::Log::trace() << "ObsTable::ObsTable starting" << std::endl;
   nameIn_.clear();
@@ -291,29 +294,56 @@ void ObsTable::otOpen(const std::string & filename) {
 
 void ObsTable::otWrite(const std::string & filename) const {
   oops::Log::trace() << "ObsTable::otWrite writing " << filename << std::endl;
-  std::ofstream fout(filename.c_str());
-  if (!fout.is_open()) ABORT("ObsTable::otWrite: Error opening file: " + filename);
 
-  int ncol = data_.size();
-  fout << ncol << std::endl;
-
-  for (std::map<std::string, std::vector<double> >::const_iterator jo = data_.begin();
-       jo != data_.end(); ++jo)
-    fout << jo->first << std::endl;
+  const size_t ioproc = 0;
 
   int nobs = times_.size();
-  fout << nobs << std::endl;
-  for (int jobs = 0; jobs < nobs; ++jobs) {
-    fout << jobs;
-    fout << "  " << times_[jobs];
-    fout << "  " << locations_[jobs];
-    for (std::map<std::string, std::vector<double> >::const_iterator jo = data_.begin();
-         jo != data_.end(); ++jo)
-      fout << "  " << jo->second[jobs];
-    fout << std::endl;
+  if (comm_.size() > 1) comm_.allReduceInPlace(nobs, eckit::mpi::Operation::SUM);
+
+  std::vector<util::DateTime> timebuff(nobs);
+  oops::mpi::gather(comm_, times_, timebuff, ioproc);
+
+  std::vector<double> locbuff(nobs);
+  oops::mpi::gather(comm_, locations_, locbuff, ioproc);
+
+  std::vector<double> datasend(times_.size() * data_.size());
+  size_t iobs = 0;
+  for (size_t jobs = 0; jobs < times_.size(); ++jobs) {
+    for (auto jo = data_.begin(); jo != data_.end(); ++jo) {
+      datasend[iobs] = jo->second[jobs];
+      ++iobs;
+    }
+  }
+  std::vector<double> databuff(data_.size() * nobs);
+  oops::mpi::gather(comm_, datasend, databuff, ioproc);
+
+  if (comm_.rank() == ioproc) {
+    std::ofstream fout(filename.c_str());
+    if (!fout.is_open()) ABORT("ObsTable::otWrite: Error opening file: " + filename);
+
+    int ncol = data_.size();
+    fout << ncol << std::endl;
+
+    for (auto jo = data_.begin(); jo != data_.end(); ++jo)
+      fout << jo->first << std::endl;
+
+    fout << nobs << std::endl;
+
+    size_t iii = 0;
+    for (int jobs = 0; jobs < nobs; ++jobs) {
+      fout << jobs;
+      fout << "  " << timebuff[jobs];
+      fout << "  " << locbuff[jobs];
+      for (int jcol = 0; jcol < ncol; ++jcol) {
+        fout << "  " << databuff[iii];
+        ++iii;
+      }
+      fout << std::endl;
+    }
+
+    fout.close();
   }
 
-  fout.close();
   oops::Log::trace() << "ObsTable::otWrite done" << std::endl;
 }
 

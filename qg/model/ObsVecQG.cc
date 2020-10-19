@@ -89,12 +89,6 @@ ObsVecQG & ObsVecQG::operator/= (const ObsVecQG & rhs) {
   return *this;
 }
 // -----------------------------------------------------------------------------
-double ObsVecQG::operator[] (const size_t ii) const {
-  double val;
-  qg_obsvec_getat_f90(keyOvec_, ii, val);
-  return val;
-}
-// -----------------------------------------------------------------------------
 void ObsVecQG::zero() {
   qg_obsvec_zero_f90(keyOvec_);
 }
@@ -134,6 +128,20 @@ double ObsVecQG::rms() const {
 // -----------------------------------------------------------------------------
 void ObsVecQG::save(const std::string & name) const {
   obsdb_.putdb(name, keyOvec_);
+}
+// -----------------------------------------------------------------------------
+Eigen::VectorXd ObsVecQG::packEigen() const {
+  Eigen::VectorXd vec(nobs());
+  double val;
+  for (unsigned int ii = 0; ii < nobs(); ++ii) {
+    qg_obsvec_getat_f90(keyOvec_, ii, val);
+    vec(ii) = val;
+  }
+  return vec;
+}
+// -----------------------------------------------------------------------------
+void ObsVecQG::read(const std::string & name) {
+  obsdb_.getdb(name, keyOvec_);
 }
 // -----------------------------------------------------------------------------
 void ObsVecQG::print(std::ostream & os) const {

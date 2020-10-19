@@ -39,6 +39,7 @@ class GeoVaLsFixture : private boost::noncopyable {
  public:
   static ObsSpaces_         & obspace() {return *getInstance().ospaces_;}
   static eckit::LocalConfiguration conf(const size_t ii) {return getInstance().confs_[ii];}
+  static void reset() {getInstance().ospaces_.reset();}
 
  private:
   static GeoVaLsFixture<OBS>& getInstance() {
@@ -180,6 +181,7 @@ template <typename OBS> void testRead() {
 
 template <typename OBS>
 class GeoVaLs : public oops::Test {
+  typedef GeoVaLsFixture<OBS> Test_;
  public:
   GeoVaLs() {}
   virtual ~GeoVaLs() {}
@@ -197,7 +199,9 @@ class GeoVaLs : public oops::Test {
       { testRead<OBS>(); });
   }
 
-  void clear() const override {}
+  void clear() const override {
+    Test_::reset();
+  }
 };
 
 // =============================================================================

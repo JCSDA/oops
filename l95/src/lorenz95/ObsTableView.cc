@@ -23,8 +23,9 @@
 namespace lorenz95 {
 
 ObsTableView::ObsTableView(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
-                           const util::DateTime & bgn, const util::DateTime & end)
-  : obstable_(new ObsTable(config, comm, bgn, end)),
+                           const util::DateTime & bgn, const util::DateTime & end,
+                           const eckit::mpi::Comm & time)
+  : obstable_(new ObsTable(config, comm, bgn, end, time)),
     localobs_(obstable_->nobs()), obsdist_(obstable_->nobs(), 0.0)
 {
   std::iota(localobs_.begin(), localobs_.end(), 0);
@@ -36,7 +37,7 @@ ObsTableView::ObsTableView(const eckit::Configuration & config, const eckit::mpi
 ObsTableView::ObsTableView(const ObsTableView & obstable,
                            const eckit::geometry::Point2 & center,
                            const eckit::Configuration & conf)
-  :  obstable_(obstable.obstable_), localobs_(), obsdist_()
+  : obstable_(obstable.obstable_), localobs_(), obsdist_()
 {
   std::vector<double> locations = obstable.obstable_->locations();
   const double dist = conf.getDouble("lengthscale");

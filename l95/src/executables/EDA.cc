@@ -7,12 +7,13 @@
 
 #include "lorenz95/instantiateLocalizationFactory.h"
 #include "lorenz95/L95Traits.h"
-#include "oops/runs/EDA.h"
+#include "oops/runs/EnsembleApplication.h"
 #include "oops/runs/Run.h"
+#include "oops/runs/Variational.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
   lorenz95::instantiateLocalizationFactory();
-  oops::EDA<lorenz95::L95Traits, lorenz95::L95ObsTraits> eda;
+  oops::EnsembleApplication<oops::Variational <lorenz95::L95Traits, lorenz95::L95ObsTraits> >eda;
   return run.execute(eda);
 }

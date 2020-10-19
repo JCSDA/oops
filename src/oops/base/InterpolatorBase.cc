@@ -12,7 +12,6 @@
 
 #include "eckit/config/Configuration.h"
 
-#include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 
 // -----------------------------------------------------------------------------
@@ -27,8 +26,7 @@ InterpolatorFactory::InterpolatorFactory(const std::string & name) {
     // If the interpolator is already registered, do not abort.  Instead, just
     // write this message and return.
     //
-    // Log::error() << name << " already registered in the interpolator factory."  << std::endl;
-    // ABORT("Element already registered in InterpolatorFactory.");
+    // throw std::runtime_error(name + " already registered in the interpolator factory.");
     Log::info() << name << " already registered in the interpolator factory."  << std::endl;
   } else {
     getMakers()[name] = this;
@@ -52,8 +50,7 @@ InterpolatorBase * InterpolatorFactory::create(
   typename std::map<std::string, InterpolatorFactory*>::iterator
     jerr = getMakers().find(id);
   if (jerr == getMakers().end()) {
-    Log::error() << id << " does not exist in the interpolator factory makers list." << std::endl;
-    ABORT("Element does not exist in InterpolatorFactory.");
+    throw std::runtime_error(id + " does not exist in the interpolator factory.");
   }
   InterpolatorBase * ptr = jerr->second->make(conf, fs1, fs2, masks);
   Log::trace() << "InterpolatorBase::create done" << std::endl;

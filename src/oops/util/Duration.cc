@@ -17,7 +17,7 @@
 #include <sstream>
 #include <string>
 
-#include "oops/util/abor1_cpp.h"
+#include "eckit/exception/Exceptions.h"
 
 namespace util {
 
@@ -137,7 +137,7 @@ void Duration::set(const std::string & str) {
 void Duration::failBadFormat(const std::string& str) const {
   std::string message = "Badly formed duration string: ";
   message.append(str);
-  ABORT(message);
+  throw eckit::BadValue(message);
 }
 
 // -----------------------------------------------------------------------------
@@ -147,7 +147,7 @@ std::string Duration::eatDigits(std::istream & is) {
   char c;
   std::locale loc;
   while (isdigit(c = is.get(), loc)) {
-    if (!is.good()) ABORT("Error converting string to Duration");
+    if (!is.good()) throw eckit::BadCast("Error converting string to Duration");
     str.push_back(c);
   }
   is.unget();

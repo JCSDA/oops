@@ -11,11 +11,10 @@
 #ifndef OOPS_INTERFACE_GEOMETRY_H_
 #define OOPS_INTERFACE_GEOMETRY_H_
 
+#include <memory>
 #include <ostream>
 #include <string>
 #include <vector>
-
-#include <boost/shared_ptr.hpp>
 
 #include "atlas/field.h"
 #include "atlas/functionspace.h"
@@ -38,8 +37,11 @@ namespace eckit {
 
 namespace oops {
 
-// -----------------------------------------------------------------------------
-
+namespace interface {
+/// \brief Interface class for the geometry of the model/state space
+///
+/// \details Can contain information about model resolution, gridpoints, MPI distribution
+///
 /// Note: implementations of this interface can opt to extract their settings either from
 /// a Configuration object or from a subclass of Parameters.
 ///
@@ -66,51 +68,48 @@ class Geometry : public util::Printable,
 
   static const std::string classname() {return "oops::Geometry";}
 
-  Geometry(const Parameters_ &, const eckit::mpi::Comm &, const eckit::mpi::Comm &);
-  Geometry(const eckit::Configuration &, const eckit::mpi::Comm &,
-           const eckit::mpi::Comm & time = oops::mpi::myself());
-  Geometry(const Geometry &);
-  explicit Geometry(boost::shared_ptr<const Geometry_>);
-  ~Geometry();
+  /// Constructors from yaml (and mpi communicator), implement one (using Parameters preferred)
+  Geometry(const Parameters_ &, const eckit::mpi::Comm &);
+  Geometry(const eckit::Configuration &, const eckit::mpi::Comm &);
+  /// Constructor from pointer to the MODEL::Geometry (used in 1DVar filter)
+  explicit Geometry(std::shared_ptr<const Geometry_>);
+  /// Destructor (overridden for timer and log purposes)
+  virtual ~Geometry();
 
-/// Interfacing
-  const Geometry_ & geometry() const {return *geom_;}
-
-  // begining and end of the grid counter on this mpi tile
+  /// Iterator to the first gridpoint of Geometry (only used in LocalEnsembleDA)
   GeometryIterator_ begin() const;
+  /// Iterator to the last gridpoint fo Geometry (only used in LocalEnsembleDA)
   GeometryIterator_ end()   const;
-  // vertical coordinate in units specified by string
+  /// Values of vertical coordinate in units specified by string (only used in GETKF)
   std::vector<double> verticalCoord(std::string &) const;
 
+  /// Accessor to the geometry communicator
   const eckit::mpi::Comm & getComm() const {return geom_->getComm();}
 #if ATLASIFIED
   atlas::FunctionSpace * atlasFunctionSpace() const {return geom_->atlasFunctionSpace();}
   atlas::FieldSet * atlasFieldSet() const {return geom_->atlasFieldSet();}
 #endif
 
-  const eckit::mpi::Comm & timeComm() const {return time_;}
+ protected:
+  std::shared_ptr<const Geometry_> geom_;  /// pointer to the Geometry implementation
+
  private:
-  Geometry & operator=(const Geometry &);
   void print(std::ostream &) const;
-  boost::shared_ptr<const Geometry_> geom_;
-  const eckit::mpi::Comm & time_;
 };
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
 Geometry<MODEL>::Geometry(const eckit::Configuration & config,
-                          const eckit::mpi::Comm & comm,
-                          const eckit::mpi::Comm & time)
-  : Geometry(validateAndDeserialize<Parameters_>(config), comm, time)
+                          const eckit::mpi::Comm & comm)
+  : Geometry(validateAndDeserialize<Parameters_>(config), comm)
 {}
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
 Geometry<MODEL>::Geometry(const Parameters_ & parameters,
-                          const eckit::mpi::Comm & comm,
-                          const eckit::mpi::Comm & time): geom_(), time_(time) {
+                          const eckit::mpi::Comm & comm): geom_() {
   Log::trace() << "Geometry<MODEL>::Geometry starting" << std::endl;
   util::Timer timer(classname(), "Geometry");
   geom_.reset(new Geometry_(
@@ -122,15 +121,8 @@ Geometry<MODEL>::Geometry(const Parameters_ & parameters,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-Geometry<MODEL>::Geometry(const Geometry & other): geom_(other.geom_), time_(other.time_) {
-  Log::trace() << "Geometry<MODEL>::Geometry copy done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
-Geometry<MODEL>::Geometry(boost::shared_ptr<const Geometry_> ptr)
-  : geom_(ptr), time_(oops::mpi::myself())
+Geometry<MODEL>::Geometry(std::shared_ptr<const Geometry_> ptr)
+  : geom_(ptr)
 {
   Log::trace() << "Geometry<MODEL>::Geometry shared_ptr done" << std::endl;
 }
@@ -185,7 +177,65 @@ void Geometry<MODEL>::print(std::ostream & os) const {
   Log::trace() << "Geometry<MODEL>::print done" << std::endl;
 }
 
+}  // namespace interface
+
 // -----------------------------------------------------------------------------
+/// \brief Geometry class used in oops; subclass of interface class above
+///
+/// \details Handles additional MPI communicator parameter in the constructors
+/// (for MPI distribution in time, used in oops for 4DEnVar and weak-constraint 4DVar).
+/// Adds extra methods that do not need to be implemented in the implementations:
+/// - geometry() (for interfacing in oops)
+/// - timeComm() (accessor to the MPI communicator in time)
+template <typename MODEL>
+class Geometry : public interface::Geometry<MODEL> {
+  typedef typename MODEL::Geometry              Geometry_;
+ public:
+  typedef typename interface::Geometry<MODEL>::Parameters_ Parameters_;
+
+  /// Constructor from Parameters and mpi communicators: \p geometry for spatial distribution
+  /// (handled by the implementation) and \p time for distribution in time (handled by oops)
+  Geometry(const Parameters_ &, const eckit::mpi::Comm & geometry,
+           const eckit::mpi::Comm & time);
+  /// Constructor from Configuration and mpi communicators: \p geometry for spatial distribution
+  /// (handled by the implementation) and \p time for distribution in time (handled by oops)
+  Geometry(const eckit::Configuration &, const eckit::mpi::Comm & geometry,
+           const eckit::mpi::Comm & time = oops::mpi::myself());
+  /// Constructor from pointer to the MODEL::Geometry (used in 1DVar filter)
+  explicit Geometry(std::shared_ptr<const Geometry_>);
+
+  /// Interfacing with other oops classes
+  const Geometry_ & geometry() const {return *this->geom_;}
+
+  /// Accessor to the MPI communicator for distribution in time
+  const eckit::mpi::Comm & timeComm() const {return *timeComm_;}
+
+ private:
+  const eckit::mpi::Comm * timeComm_;  /// pointer to the MPI communicator in time
+};
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+Geometry<MODEL>::Geometry(const eckit::Configuration & config,
+                          const eckit::mpi::Comm & geometry, const eckit::mpi::Comm & time):
+  interface::Geometry<MODEL>(config, geometry), timeComm_(&time)
+{}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+Geometry<MODEL>::Geometry(const Parameters_ & parameters,
+                          const eckit::mpi::Comm & geometry, const eckit::mpi::Comm & time):
+  interface::Geometry<MODEL>(parameters, geometry), timeComm_(&time)
+{}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+Geometry<MODEL>::Geometry(std::shared_ptr<const Geometry_> ptr):
+  interface::Geometry<MODEL>(ptr), timeComm_(&oops::mpi::myself())
+{}
 
 }  // namespace oops
 

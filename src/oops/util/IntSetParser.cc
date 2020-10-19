@@ -14,7 +14,6 @@
 #include <vector>
 
 #include "eckit/exception/Exceptions.h"
-#include "oops/util/abor1_cpp.h"
 
 namespace oops {
 
@@ -36,7 +35,7 @@ std::vector<std::string> splitString(const std::string& str, char delim)
 // -----------------------------------------------------------------------------
 
 /// Function to convert string to channel number. String to integer conversion in standard
-//  routines (eg, std::stoi) will sometimes abort when non-numeric characers are
+//  routines (eg, std::stoi) will sometimes throw when non-numeric characers are
 //  in the input string instead of throwing an invalid_argument exception. This routine
 //  checks for non-numeric characters and returns a -1 (channel numbers should be positive)
 //  if such characters exist. The blank (' ') is included in the find_first_not_of below
@@ -46,8 +45,7 @@ std::vector<std::string> splitString(const std::string& str, char delim)
 int stringToChanNum(const std::string& str) {
   // Abort if input string contains non-valid characters
   if (str.find_first_not_of("0123456789 ") != std::string::npos) {
-    std::string ErrMsg = "Input string contains non-numeric characters";
-    ABORT(ErrMsg);
+    throw eckit::BadValue("Input string contains non-numeric characters");
   }
 
   int chnum;

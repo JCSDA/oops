@@ -22,13 +22,13 @@
 #include <boost/range/adaptor/reversed.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/exception/Exceptions.h"
 #include "oops/base/LinearVariableChangeBase.h"
 #include "oops/base/ModelSpaceCovarianceParametersBase.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
-#include "oops/util/abor1_cpp.h"
 #include "oops/util/AssociativeContainers.h"
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/ConfigurationParameter.h"
@@ -218,8 +218,7 @@ class CovarMaker : public CovarianceFactory<MODEL> {
 template <typename MODEL>
 CovarianceFactory<MODEL>::CovarianceFactory(const std::string & name) {
   if (getMakers().find(name) != getMakers().end()) {
-    Log::error() << name << " already registered in covariance factory." << std::endl;
-    ABORT("Element already registered in CovarianceFactory.");
+    throw std::runtime_error(name + " already registered in covariance factory.");
   }
   getMakers()[name] = this;
 }
@@ -242,7 +241,7 @@ ModelSpaceCovarianceBase<MODEL>* CovarianceFactory<MODEL>::create(
          jj = getMakers().begin(); jj != getMakers().end(); ++jj) {
        Log::error() << "A " << jj->first << " B" << std::endl;
     }
-    ABORT("Element does not exist in CovarianceFactory.");
+    throw std::runtime_error(id + " does not exist in covariance factory.");
   }
   Variables vars_in(vars);
   Variables vars_out;
@@ -256,7 +255,7 @@ ModelSpaceCovarianceBase<MODEL>* CovarianceFactory<MODEL>::create(
       if (!(vars_in == vars_out)) {
         Log::error() << "Input variables:  " << vars_in << std::endl;
         Log::error() << "Output variables: " << vars_out << std::endl;
-        ABORT("Sequence of variable changes is not consistent");
+        throw eckit::BadParameter("Sequence of variable changes is not consistent");
       }
       vars_in = *variableChangeParameters.inputVariables.value();
     }

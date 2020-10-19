@@ -119,7 +119,7 @@ CostJb3D<MODEL> * CostFct3DVar<MODEL, OBS>::newJb(const eckit::Configuration & j
 template <typename MODEL, typename OBS>
 CostJo<MODEL, OBS> * CostFct3DVar<MODEL, OBS>::newJo(const eckit::Configuration & joConf) const {
   Log::trace() << "CostFct3DVar::newJo" << std::endl;
-  return new CostJo<MODEL, OBS>(joConf, comm_, windowBegin_, windowEnd_, windowLength_);
+  return new CostJo<MODEL, OBS>(joConf, comm_, windowBegin_, windowEnd_);
 }
 
 // -----------------------------------------------------------------------------

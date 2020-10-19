@@ -53,8 +53,9 @@ class ObsErrors : public util::Printable,
 /// Generate random perturbation
   void randomize(Departures_ &) const;
 
-/// Pack inverseVariance
-  Eigen::MatrixXd packInverseVarianceEigen() const;
+/// Pack inverseVariance into an Eigen vector (excluding observations
+///  that are masked out)
+  Eigen::VectorXd packInverseVarianceEigen() const;
 
  private:
   void print(std::ostream &) const;
@@ -104,24 +105,24 @@ void ObsErrors<OBS>::randomize(Departures_ & dy) const {
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-Eigen::MatrixXd ObsErrors<OBS>::packInverseVarianceEigen() const {
+Eigen::VectorXd ObsErrors<OBS>::packInverseVarianceEigen() const {
   // compute nobs accross all obs errors
-  int nobs = 0;
+  unsigned int nobs = 0;
   for (size_t iov = 0; iov < err_.size(); ++iov) {
     const ObsVector_ & ov = err_[iov]->inverseVariance();
     nobs += ov.nobs();
   }
 
   // concatinate all inverseVariance into a 1d vector
-  Eigen::MatrixXd data1d(1, nobs);
-  size_t i = 0;
+  Eigen::VectorXd vec(nobs);
+  unsigned int ii = 0;
   for (size_t iov = 0; iov < err_.size(); ++iov) {
     const ObsVector_ & ov = err_[iov]->inverseVariance();
-    for (size_t iob = 0; iob < ov.nobs(); ++iob) {
-      data1d(i++) = ov[iob];
-    }
+    vec.segment(ii, ov.nobs()) = ov.packEigen();
+    ii += ov.nobs();
   }
-  return data1d;
+  ASSERT(ii == nobs);
+  return vec;
 }
 
 // -----------------------------------------------------------------------------

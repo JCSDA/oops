@@ -9,7 +9,7 @@ cost function:
     depths: [4500.0, 5500.0]
   model:
     name: QG
-    tstep: PT1H
+    tstep: PT15M
   background:
     date: 2010-01-01T00:00:00Z
     filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D.nc
@@ -60,33 +60,33 @@ variational:
   minimizer:
     algorithm: DRIPCG
   iterations:
-  - diagnostics:
-      departures: ombg
-    gradient norm reduction: 1.0e-10
-    linear model:
-      trajectory:
-        tstep: PT1H
-      tstep: PT1H
-      variable change: Identity
-      name: QgTLM
-    ninner: 20
-    geometry:
-      nx: 40
-      ny: 20
-      depths: [4500.0, 5500.0]
-    test: on
   - gradient norm reduction: 1.0e-10
-    linear model:
-      trajectory:
-        tstep: PT1H
-      tstep: PT1H
-      variable change: Identity
-      name: QgTLM
     ninner: 10
     geometry:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
+    linear model:
+      trajectory:
+        tstep: PT30M
+      tstep: PT1H
+      variable change: Identity
+      name: QgTLM
+    diagnostics:
+      departures: ombg
+    test: on
+  - gradient norm reduction: 1.0e-10
+    ninner: 15
+    geometry:
+      nx: 40
+      ny: 20
+      depths: [4500.0, 5500.0]
+    linear model:
+      trajectory:
+        tstep: PT30M
+      tstep: PT1H
+      variable change: Identity
+      name: QgTLM
     test: on
 final:
   diagnostics:

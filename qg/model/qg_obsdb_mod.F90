@@ -611,57 +611,57 @@ igrp = 0
 jgrp => self%grphead
 do while (associated(jgrp))
   igrp = igrp+1
-  write(igrpchar,'(i6.6)') igrp
+  if (jgrp%nobs > 0) then
+    write(igrpchar,'(i6.6)') igrp
+    ! Enter definitions mode
+    call ncerr(nf90_redef(ncid))
 
-  ! Enter definitions mode
-  call ncerr(nf90_redef(ncid))
+    ! Compute dimensions
+    ncol = 0
+    nlevmax = 0
+    jcol => jgrp%colhead
+    do while (associated(jcol))
+      ncol = ncol+1
+      nlevmax = max(jcol%nlev,nlevmax)
+      jcol => jcol%next
+    enddo
 
-  ! Compute dimensions
-  ncol = 0
-  nlevmax = 0
-  jcol => jgrp%colhead
-  do while (associated(jcol))
-    ncol = ncol+1
-    nlevmax = max(jcol%nlev,nlevmax)
-    jcol => jcol%next
-  enddo
+    ! Define dimensions
+    call ncerr(nf90_def_dim(ncid,'nobs_'//igrpchar,jgrp%nobs,nobs_id))
+    call ncerr(nf90_def_dim(ncid,'ncol_'//igrpchar,ncol,ncol_id))
+    call ncerr(nf90_def_dim(ncid,'nlevmax_'//igrpchar,nlevmax,nlevmax_id))
 
-  ! Define dimensions
-  call ncerr(nf90_def_dim(ncid,'nobs_'//igrpchar,jgrp%nobs,nobs_id))
-  call ncerr(nf90_def_dim(ncid,'ncol_'//igrpchar,ncol,ncol_id))
-  call ncerr(nf90_def_dim(ncid,'nlevmax_'//igrpchar,nlevmax,nlevmax_id))
+    ! Define variable
+    call ncerr(nf90_def_var(ncid,'times_'//igrpchar,nf90_char,(/nstrmax_id,nobs_id/),times_id))
+    call ncerr(nf90_def_var(ncid,'nlev_'//igrpchar,nf90_int,(/ncol_id/),nlev_id))
+    call ncerr(nf90_def_var(ncid,'colname_'//igrpchar,nf90_char,(/nstrmax_id,ncol_id/),colname_id))
+    call ncerr(nf90_def_var(ncid,'values_'//igrpchar,nf90_double,(/nlevmax_id,ncol_id,nobs_id/),values_id))
 
-  ! Define variable
-  call ncerr(nf90_def_var(ncid,'times_'//igrpchar,nf90_char,(/nstrmax_id,nobs_id/),times_id))
-  call ncerr(nf90_def_var(ncid,'nlev_'//igrpchar,nf90_int,(/ncol_id/),nlev_id))
-  call ncerr(nf90_def_var(ncid,'colname_'//igrpchar,nf90_char,(/nstrmax_id,ncol_id/),colname_id))
-  call ncerr(nf90_def_var(ncid,'values_'//igrpchar,nf90_double,(/nlevmax_id,ncol_id,nobs_id/),values_id))
-
-  ! End definitions
-  call ncerr(nf90_enddef(ncid))
-
-  ! Put variables
-  call ncerr(nf90_put_var(ncid,grpname_id,jgrp%grpname,(/1,igrp/),(/50,1/)))
-  do iobs=1,jgrp%nobs
-    call datetime_to_string(jgrp%times(iobs),stime)
-    call ncerr(nf90_put_var(ncid,times_id,stime,(/1,iobs/),(/50,1/)))
-  end do
-
-  ! Loop over columns
-  icol = 0
-  jcol => jgrp%colhead
-  do while (associated(jcol))
-    icol = icol+1
+    ! End definitions
+    call ncerr(nf90_enddef(ncid))
 
     ! Put variables
-    call ncerr(nf90_put_var(ncid,nlev_id,jcol%nlev,(/icol/)))
-    call ncerr(nf90_put_var(ncid,colname_id,jcol%colname,(/1,icol/),(/50,1/)))
-    call ncerr(nf90_put_var(ncid,values_id,jcol%values(1:jcol%nlev,:),(/1,icol,1/),(/jcol%nlev,1,jgrp%nobs/)))
+    call ncerr(nf90_put_var(ncid,grpname_id,jgrp%grpname,(/1,igrp/),(/50,1/)))
+    do iobs=1,jgrp%nobs
+      call datetime_to_string(jgrp%times(iobs),stime)
+      call ncerr(nf90_put_var(ncid,times_id,stime,(/1,iobs/),(/50,1/)))
+    end do
 
-    ! Update
-    jcol => jcol%next
-  enddo
+    ! Loop over columns
+    icol = 0
+    jcol => jgrp%colhead
+    do while (associated(jcol))
+      icol = icol+1
 
+      ! Put variables
+      call ncerr(nf90_put_var(ncid,nlev_id,jcol%nlev,(/icol/)))
+      call ncerr(nf90_put_var(ncid,colname_id,jcol%colname,(/1,icol/),(/50,1/)))
+      call ncerr(nf90_put_var(ncid,values_id,jcol%values(1:jcol%nlev,:),(/1,icol,1/),(/jcol%nlev,1,jgrp%nobs/)))
+
+      ! Update
+      jcol => jcol%next
+    enddo
+  endif
   ! Update
   jgrp=>jgrp%next
 end do

@@ -65,7 +65,7 @@ class GETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
   /// saves options from the config, computes VerticalLocEV_)
   GETKFSolver(ObsSpaces_ &, const Geometry_ &, const eckit::Configuration &, size_t);
 
-  Observations_ computeHofX(const StateEnsemble4D_ &, size_t) override;
+  Observations_ computeHofX(const StateEnsemble4D_ &, size_t, bool) override;
 
   /// entire KF update (computeWeights+applyWeights) for a grid point GeometryIterator_
   void measurementUpdate(const IncrementEnsemble4D_ &, const GeometryIterator_ &,
@@ -103,7 +103,7 @@ GETKFSolver<MODEL, OBS>::GETKFSolver(ObsSpaces_ & obspaces, const Geometry_ & ge
                                 const eckit::Configuration & config, size_t nens)
   : LocalEnsembleSolver<MODEL, OBS>(obspaces, geometry, config, nens),
     nens_(nens), geometry_(geometry),
-    vertloc_(geometry_, config.getSubConfiguration("letkf.vertical localization")),
+    vertloc_(geometry_, config.getSubConfiguration("local ensemble DA.vertical localization")),
     neig_(vertloc_.neig()), nanal_(neig_*nens_), HZb_(obspaces, nanal_)
 {
   options_.deserialize(config);
@@ -137,27 +137,50 @@ GETKFSolver<MODEL, OBS>::GETKFSolver(ObsSpaces_ & obspaces, const Geometry_ & ge
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
 Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & ens_xx,
-                                                       size_t iteration) {
+                                           size_t iteration, bool readFromFile) {
   util::Timer timer(classname(), "computeHofX");
 
-  // compute H(x) for the original ensemble members
-  Observations_ yb_mean = LocalEnsembleSolver<MODEL, OBS>::computeHofX(ens_xx, iteration);
-
-  // modulate ensemble of obs
-  State4D_ xx_mean(ens_xx.mean());
-  IncrementEnsemble4D_ dx(ens_xx, xx_mean, xx_mean[0].variables());
-  IncrementEnsemble4D_ Ztmp(geometry_, xx_mean[0].variables(), ens_xx[0].validTimes(), neig_);
-  size_t ii = 0;
-  for (size_t iens = 0; iens < nens_; ++iens) {
-    vertloc_.modulateIncrement(dx[iens], Ztmp);
-    for (size_t ieig = 0; ieig < neig_; ++ieig) {
-      State4D_ tmpState = xx_mean;
-      tmpState += Ztmp[ieig];
-      Observations_ tmpObs = this->hofx_.compute(tmpState);
-      HZb_[ii++] = tmpObs - yb_mean;
+  // compute/read H(x) for the original ensemble members
+  // also computes omb_
+  Observations_ yb_mean =
+            LocalEnsembleSolver<MODEL, OBS>::computeHofX(ens_xx, iteration, readFromFile);
+  if (readFromFile) {
+    Log::debug() << "Read H(X) from disk" << std::endl;
+    // read modulated ensemble
+    Observations_ ytmp(yb_mean);
+    size_t ii = 0;
+    for (size_t iens = 0; iens < nens_; ++iens) {
+      for (size_t ieig = 0; ieig < neig_; ++ieig) {
+        ytmp.read("hofxm"+std::to_string(iteration)+"_"+std::to_string(ieig+1)+
+                      "_"+std::to_string(iens+1));
+        HZb_[ii] = ytmp - yb_mean;
+        Log::test() << "H(Zx) - ymean for member " << iens+1 << " eig "<< ieig+1
+                    << " :" << std::endl << HZb_[ii] << std::endl;
+        ii = ii + 1;
+      }
+    }
+  } else {
+    Log::debug() << "Computing H(X) online" << std::endl;
+    // modulate ensemble of obs
+    State4D_ xx_mean(ens_xx.mean());
+    IncrementEnsemble4D_ dx(ens_xx, xx_mean, xx_mean[0].variables());
+    IncrementEnsemble4D_ Ztmp(geometry_, xx_mean[0].variables(), ens_xx[0].validTimes(), neig_);
+    size_t ii = 0;
+    for (size_t iens = 0; iens < nens_; ++iens) {
+      vertloc_.modulateIncrement(dx[iens], Ztmp);
+      for (size_t ieig = 0; ieig < neig_; ++ieig) {
+        State4D_ tmpState = xx_mean;
+        tmpState += Ztmp[ieig];
+        Observations_ tmpObs = this->hofx_.compute(tmpState);
+        HZb_[ii] = tmpObs - yb_mean;
+        tmpObs.save("hofxm"+std::to_string(iteration)+"_"+std::to_string(ieig+1)+
+                      "_"+std::to_string(iens+1));
+        Log::test() << "H(Zx) - ymean for member " << iens+1 << " eig "<< ieig+1 << " :"
+                    << std::endl << HZb_[ii] << std::endl;
+        ii = ii + 1;
+      }
     }
   }
-
   return yb_mean;
 }
 

@@ -45,7 +45,7 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
  public:
   /// create full ObsSpace (read or generate data)
   ObsSpaceQG(const eckit::Configuration &, const eckit::mpi::Comm &,
-             const util::DateTime &, const util::DateTime &);
+             const util::DateTime &, const util::DateTime &, const eckit::mpi::Comm &);
   /// create local ObsSpace
   ObsSpaceQG(const ObsSpaceQG &, const eckit::geometry::Point2 &,
              const eckit::Configuration &);

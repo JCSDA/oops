@@ -82,12 +82,13 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     // Read all ensemble members
     StateEnsemble4D_ ens_xx(geometry, bgConfig);
     const size_t nens = ens_xx.size();
-
     const Variables statevars = ens_xx.variables();
 
     // set up solver
     std::unique_ptr<LocalSolver_> solver =
          LocalEnsembleSolverFactory<MODEL, OBS>::create(obsdb, geometry, fullConfig, nens);
+    const eckit::LocalConfiguration driverConfig(fullConfig, "driver");
+
 
     for (size_t jj = 0; jj < nens; ++jj) {
       // TODO(Travis) change the way input file name is specified, make
@@ -95,22 +96,26 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
       Log::test() << "Initial state for member " << jj+1 << ":" << ens_xx[jj] << std::endl;
     }
 
+    // compute H(x)
+    bool readFromDisk = driverConfig.getBool("read HX from disk", false);
+    Observations_ yb_mean = solver->computeHofX(ens_xx, 0, readFromDisk);
+    Log::test() << "H(x) ensemble background mean: " << std::endl << yb_mean << std::endl;
+
+    Departures_ ombg(yobs - yb_mean);
+    ombg.save("ombg");
+    Log::test() << "background y - H(x): " << std::endl << ombg << std::endl;
+
+    // quit early if running in observer-only mode
+    bool observerOnly = driverConfig.getBool("run as observer only", false);
+    if (observerOnly) {return 0;}
+
     // calculate background mean
     State4D_ bkg_mean = ens_xx.mean();
     Log::test() << "Background mean :" << bkg_mean << std::endl;
 
     // calculate background ensemble perturbations
     IncrementEnsemble4D_ bkg_pert(ens_xx, bkg_mean, statevars);
-
     // TODO(Travis) optionally save the background mean / standard deviation
-
-    // compute H(x)
-    Observations_ yb_mean = solver->computeHofX(ens_xx, 0);
-    Log::test() << "H(x) ensemble background mean: " << std::endl << yb_mean << std::endl;
-
-    Departures_ ombg(yobs - yb_mean);
-    ombg.save("ombg");
-    Log::test() << "background y - H(x): " << std::endl << ombg << std::endl;
 
     // initialize empty analysis perturbations
     IncrementEnsemble4D_ ana_pert(geometry, statevars, ens_xx[0].validTimes(), bkg_pert.size());
@@ -146,17 +151,25 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
       ens_xx[jj].write(outConfig);
     }
 
-    Observations_ ya_mean = solver->computeHofX(ens_xx, 1);
-    Log::test() << "H(x) ensemble analysis mean: " << std::endl << ya_mean << std::endl;
+    // posterior observer
+    // note: if H(X) is read from file, it might have used different time slots for observation
+    // then LETKF background/analysis perturbations.
+    // hence one might not expect that oman and omaf are comparable
+    // TODO(#926) make explicit separation of background and forecast states in yaml config
+    bool do_posterior_observer = driverConfig.getBool("do posterior observer", true);
+    if (do_posterior_observer) {
+      Observations_ ya_mean = solver->computeHofX(ens_xx, 1, false);
+      Log::test() << "H(x) ensemble analysis mean: " << std::endl << ya_mean << std::endl;
 
-    // calculate analysis obs departures
-    Departures_ oman(yobs - ya_mean);
-    oman.save("oman");
-    Log::test() << "analysis y - H(x): " << std::endl << oman << std::endl;
+      // calculate analysis obs departures
+      Departures_ oman(yobs - ya_mean);
+      oman.save("oman");
+      Log::test() << "analysis y - H(x): " << std::endl << oman << std::endl;
 
-    // display overall background/analysis RMS stats
-    Log::test() << "ombg RMS: " << ombg.rms() << std::endl
+      // display overall background/analysis RMS stats
+      Log::test() << "ombg RMS: " << ombg.rms() << std::endl
                 << "oman RMS: " << oman.rms() << std::endl;
+    }
 
     return 0;
   }

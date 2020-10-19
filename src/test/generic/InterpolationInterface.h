@@ -311,7 +311,7 @@ void testInterpolation() {
                       << std::endl;
 
     if (interpolator->write(config) != 0)
-      ABORT("Write method not implemented");
+      throw eckit::NotImplemented("Write method not implemented", Here());
 
     // read interpolator back as a new object
     config.set("read_from_file", true);

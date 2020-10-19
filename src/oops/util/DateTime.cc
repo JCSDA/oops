@@ -19,7 +19,7 @@
 #include <sstream>
 #include <string>
 
-#include "oops/util/abor1_cpp.h"
+#include "eckit/exception/Exceptions.h"
 #include "oops/util/dateFunctions.h"
 #include "oops/util/Duration.h"
 
@@ -135,7 +135,7 @@ void DateTime::addSeconds(const int64_t &seconds) {
 
 DateTime& DateTime::operator+=(const util::Duration & s) {
   if (s.toSeconds()<std::numeric_limits<int64_t>::min() ||
-      s.toSeconds()>std::numeric_limits<int64_t>::max()) ABORT("out of range");
+      s.toSeconds()>std::numeric_limits<int64_t>::max()) throw eckit::BadParameter("out of range");
   failIfUnset();
   int64_t  secs = s.toSeconds();
   addSeconds(secs);
@@ -232,7 +232,7 @@ bool DateTime::operator>=(const DateTime& other) const {
 
 void DateTime::failIfUnset() const {
   if (date_ == 0) {
-    ABORT("DateTime was default-constructed and never set");
+    throw eckit::BadValue("DateTime was default-constructed and never set");
   }
 }
 

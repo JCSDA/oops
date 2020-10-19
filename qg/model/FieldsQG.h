@@ -11,11 +11,10 @@
 #ifndef QG_MODEL_FIELDSQG_H_
 #define QG_MODEL_FIELDSQG_H_
 
+#include <memory>
 #include <ostream>
 #include <string>
 #include <vector>
-
-#include <boost/shared_ptr.hpp>
 
 #include "atlas/field.h"
 
@@ -90,11 +89,12 @@ class FieldsQG : public util::Printable,
   void analytic_init(const eckit::Configuration &);
   void write(const eckit::Configuration &) const;
   double norm() const;
-  boost::shared_ptr<const GeometryQG> geometry() const {return geom_;}
+  std::shared_ptr<const GeometryQG> geometry() const {return geom_;}
   const oops::Variables & variables() const {return vars_;}
 
   const util::DateTime & time() const {return time_;}
   util::DateTime & time() {return time_;}
+  void updateTime(const util::Duration & dt) {time_ += dt;}
 
   const int & toFortran() const {return keyFlds_;}
 
@@ -111,7 +111,7 @@ class FieldsQG : public util::Printable,
  private:
   void print(std::ostream &) const override;
   F90flds keyFlds_;
-  boost::shared_ptr<const GeometryQG> geom_;
+  std::shared_ptr<const GeometryQG> geom_;
   const oops::Variables vars_;
   const bool lbc_;
   util::DateTime time_;

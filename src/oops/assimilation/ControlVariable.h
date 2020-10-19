@@ -55,6 +55,7 @@ class ControlVariable : public util::Printable,
 
 /// The arguments define the number of sub-windows and the resolution
   ControlVariable(const eckit::Configuration &, const Geometry_ &, const ObsSpaces_ &);
+/// Constructor added for generic 1d-var under development in ufo
   ControlVariable(const eckit::Configuration &, const State_ &, const ObsSpaces_ &);
   explicit ControlVariable(const ControlVariable &);
   ~ControlVariable();
@@ -98,7 +99,7 @@ ControlVariable<MODEL, OBS>::ControlVariable(const eckit::Configuration & conf,
 }
 
 // =============================================================================
-
+/// Constructor added for generic 1d-var under development in ufo
 template<typename MODEL, typename OBS>
 ControlVariable<MODEL, OBS>::ControlVariable(const eckit::Configuration & conf,
                                              const State_ & statein, const ObsSpaces_ & odb)

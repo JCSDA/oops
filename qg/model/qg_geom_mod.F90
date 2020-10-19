@@ -72,7 +72,8 @@ integer,allocatable :: ipiv(:),ipivsave(:)
 real(kind_real) :: mapfac,distx,disty,f
 real(kind_real),allocatable :: real_array(:),depths(:),wi(:),vl(:,:),work(:)
 real(kind_real),allocatable :: fsave(:,:),vrlu(:,:),vrlusave(:,:)
-character(len=1024) :: htype,record
+character(len=1024) :: record
+logical :: htype
 character(len=:),allocatable :: str
 
 ! Get horizontal resolution data
@@ -141,7 +142,7 @@ end do
 ! Coefficients of PV operator
 self%f = 0.0
 do iz=1,self%nz
-  f = f0**2*real(self%nz-1,kind_real)/(g*dlogtheta*depths(iz))
+  f = f0**2/(g*dlogtheta*depths(iz))
   if (iz>1) then
     self%f(iz,iz-1) = f
     self%f(iz,iz) = self%f(iz,iz)-f
@@ -189,19 +190,13 @@ do iy=1,self%ny
 enddo
 
 ! Set heating term 
-if (f_conf%has("heating")) then
-  call f_conf%get_or_die("heating",str)
-  htype = str
-else
-  ! This default value is for backward compatibility
-  htype = 'gaussian'
-endif
-call fckit_log%info('qg_geom_setup: heating type = '//trim(htype))
-select case (trim(htype))
-case ('none')
+call f_conf%get_or_die("heating",htype)
+if (.not. htype) then
   ! No heating term
+  call fckit_log%info('qg_geom_setup: heating off')
   self%heat = 0.0
-case ('gaussian')
+else
+  call fckit_log%info('qg_geom_setup: Gaussian heating on')
   ! Gaussian source
   ix_c = self%nx/4
   iy_c = 3*self%ny/4
@@ -213,9 +208,7 @@ case ('gaussian')
       self%heat(ix,iy) = heating_amplitude*exp(-(distx**2+disty**2)/heating_scale**2)
     enddo
   enddo
-case default
-  call abor1_ftn('qg_geom_setup: wrong heating type')
-endselect
+endif
 
 end subroutine qg_geom_setup
 ! ------------------------------------------------------------------------------

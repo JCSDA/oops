@@ -11,7 +11,6 @@
 #include "oops/assimilation/GETKFSolver.h"
 #include "oops/assimilation/LETKFSolver.h"
 #include "oops/assimilation/LETKFSolverGSI.h"
-#include "oops/assimilation/LETKFSolverOOPS.h"
 #include "oops/assimilation/LocalEnsembleSolver.h"
 
 namespace oops {
@@ -19,8 +18,6 @@ namespace oops {
 template <typename MODEL, typename OBS> void instantiateLocalEnsembleSolverFactory() {
   static LocalEnsembleSolverMaker<MODEL, OBS, LETKFSolver<MODEL, OBS> > makerLETKF_("LETKF");
   static LocalEnsembleSolverMaker<MODEL, OBS, LETKFSolverGSI<MODEL, OBS> > makerGSI_("GSI LETKF");
-  static LocalEnsembleSolverMaker<MODEL, OBS, LETKFSolverOOPS<MODEL, OBS> >
-    makerLETKFnoEigen_("LETKF_OOPS");
   static LocalEnsembleSolverMaker<MODEL, OBS, GETKFSolver<MODEL, OBS> > makerGETKF_("GETKF");
 }
 

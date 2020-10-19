@@ -12,11 +12,10 @@
 #ifndef LORENZ95_STATEL95_H_
 #define LORENZ95_STATEL95_H_
 
+#include <memory>
 #include <ostream>
 #include <string>
 #include <vector>
-
-#include <boost/shared_ptr.hpp>
 
 #include "lorenz95/FieldL95.h"
 #include "lorenz95/Resolution.h"
@@ -69,8 +68,8 @@ class StateL95 : public util::Printable,
 // Utilities
   const FieldL95 & getField() const {return fld_;}
   FieldL95 & getField() {return fld_;}
-  boost::shared_ptr<const Resolution> geometry() const {
-    boost::shared_ptr<const Resolution> geom(new Resolution(fld_.resol()));
+  std::shared_ptr<const Resolution> geometry() const {
+    std::shared_ptr<const Resolution> geom(new Resolution(fld_.resol()));
     return geom;
   }
 

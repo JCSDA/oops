@@ -187,7 +187,7 @@ void LETKFSolver<MODEL, OBS>::computeWeights(const Departures_ & dy_oops,
       * eivec_.transpose();
 
   // wa = Pa Yb^T R^-1 dy
-  wa_ = work * (Yb * (diagInvR.asDiagonal()*dy.transpose()));
+  wa_ = work * (Yb * (diagInvR.asDiagonal()*dy));
 }
 
 // -----------------------------------------------------------------------------

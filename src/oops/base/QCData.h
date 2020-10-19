@@ -8,6 +8,7 @@
 #define OOPS_BASE_QCDATA_H_
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "oops/base/ObsSpaces.h"
@@ -26,8 +27,9 @@ class QCData {
   template <typename DATA> using ObsDataPtr_ = std::shared_ptr<ObsData_<DATA> >;
 
  public:
-/// \brief Initializes QC data
-  explicit QCData(const ObsSpaces_ &);
+/// \brief Initializes QC data, optionally setting the variable names to read.
+  explicit QCData(const ObsSpaces_ &, const std::string qcName = "",
+                  const std::string errName = "ObsError");
 
 /// \brief accessor to QC flag
   const ObsDataPtr_<int> qcFlags(const size_t ii) const {return qcflags_[ii];}
@@ -43,16 +45,17 @@ class QCData {
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-QCData<OBS>::QCData(const ObsSpaces_ & obspaces) {
+QCData<OBS>::QCData(const ObsSpaces_ & obspaces, const std::string qcName,
+                    const std::string errName) {
   qcflags_.reserve(obspaces.size());
   obserr_.reserve(obspaces.size());
   for (size_t jj = 0; jj < obspaces.size(); ++jj) {
 //  Allocate QC flags
     qcflags_.emplace_back(std::shared_ptr<ObsData_<int>>(new ObsData_<int>(obspaces[jj],
-                            obspaces[jj].obsvariables())));
+                            obspaces[jj].obsvariables(), qcName)));
 //  Allocate and read initial obs error
     obserr_.emplace_back(std::shared_ptr<ObsData_<float>>(new ObsData_<float>(obspaces[jj],
-                            obspaces[jj].obsvariables(), "ObsError")));
+                            obspaces[jj].obsvariables(), errName)));
   }
 }
 
