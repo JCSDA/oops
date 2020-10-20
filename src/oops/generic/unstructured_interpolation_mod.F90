@@ -132,6 +132,7 @@ ageometry = atlas_geometry("UnitSphere")
 
 ! Create KDTree
 kd = atlas_indexkdtree(ageometry)
+call kd%reserve(ngrid_in_glo)
 call kd%build(ngrid_in_glo,lons_in_glo,lats_in_glo)
 
 ! Loop over observations
