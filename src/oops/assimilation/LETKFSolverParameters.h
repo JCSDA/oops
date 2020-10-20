@@ -50,7 +50,7 @@ class LETKFInflationParameters : public Parameters {
 class LETKFSolverParameters : public Parameters {
   OOPS_CONCRETE_PARAMETERS(LETKFSolverParameters, Parameters)
  public:
-  Parameter<LETKFInflationParameters> infl{"letkf.inflation", {}, this};
+  Parameter<LETKFInflationParameters> infl{"local ensemble DA.inflation", {}, this};
 };
 
 // -----------------------------------------------------------------------------

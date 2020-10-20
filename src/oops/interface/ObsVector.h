@@ -11,6 +11,7 @@
 #ifndef OOPS_INTERFACE_OBSVECTOR_H_
 #define OOPS_INTERFACE_OBSVECTOR_H_
 
+#include <Eigen/Dense>
 #include <math.h>
 #include <memory>
 #include <ostream>
@@ -61,8 +62,8 @@ class ObsVector : public util::Printable,
   ObsVector & operator*= (const ObsVector &);
   ObsVector & operator/= (const ObsVector &);
 
-// accessors for data local PE
-  double operator[](const size_t ii) const {return (*data_)[ii];}
+/// Pack into an Eigen vector (excluding vector elements that are masked out)
+  Eigen::VectorXd  packEigen() const;
 
   void zero();
   void axpy(const double &, const ObsVector &);
@@ -70,9 +71,12 @@ class ObsVector : public util::Printable,
   void random();
   double dot_product_with(const ObsVector &) const;
   double rms() const;
+/// Mask out elements of the vector where the passed in flags are > 0
+  void mask(const ObsDataVector<OBS, int> &);
 
 // I/O
   void save(const std::string &) const;
+  void read(const std::string &);
 
   unsigned int nobs() const;
 
@@ -245,6 +249,14 @@ double ObsVector<OBS>::dot_product_with(const ObsVector & other) const {
 }
 // -----------------------------------------------------------------------------
 template <typename OBS>
+void ObsVector<OBS>::mask(const ObsDataVector<OBS, int> & qc) {
+  Log::trace() << "ObsVector<OBS>::mask starting" << std::endl;
+  util::Timer timer(classname(), "mask");
+  data_->mask(qc.obsdatavector());
+  Log::trace() << "ObsVector<OBS>::mask done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
 double ObsVector<OBS>::rms() const {
   Log::trace() << "ObsVector<OBS>::rms starting" << std::endl;
   util::Timer timer(classname(), "rms");
@@ -290,6 +302,28 @@ void ObsVector<OBS>::save(const std::string & name) const {
   data_->save(name);
 
   Log::trace() << "ObsVector<OBS>::save done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
+Eigen::VectorXd  ObsVector<OBS>::packEigen() const {
+  Log::trace() << "ObsVector<OBS>::packEigen starting " << std::endl;
+  util::Timer timer(classname(), "packEigen");
+
+  Eigen::VectorXd vec = data_->packEigen();
+  ASSERT(vec.size() == nobs());
+
+  Log::trace() << "ObsVector<OBS>::packEigen done" << std::endl;
+  return vec;
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
+void ObsVector<OBS>::read(const std::string & name) {
+  Log::trace() << "ObsVector<OBS>::read starting " << name << std::endl;
+  util::Timer timer(classname(), "read");
+
+  data_->read(name);
+
+  Log::trace() << "ObsVector<OBS>::read done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 

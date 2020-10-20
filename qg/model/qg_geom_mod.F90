@@ -142,7 +142,7 @@ end do
 ! Coefficients of PV operator
 self%f = 0.0
 do iz=1,self%nz
-  f = f0**2*real(self%nz-1,kind_real)/(g*dlogtheta*depths(iz))
+  f = f0**2/(g*dlogtheta*depths(iz))
   if (iz>1) then
     self%f(iz,iz-1) = f
     self%f(iz,iz) = self%f(iz,iz)-f

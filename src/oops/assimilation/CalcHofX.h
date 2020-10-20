@@ -61,6 +61,10 @@ class CalcHofX {
   void saveQcFlags(const std::string &) const;
 /// \brief saves obs error variances (modified in QC) to ObsSpaces
   void saveObsErrors(const std::string &) const;
+/// Mask out the obs errors where the passed in qc flags are > 0
+  void maskObsErrors(const QCData_ &);
+
+  std::shared_ptr<QCData_> qc() const {return qc_;}
 
  private:
 /// \brief helper method to initialize qc flags and observer
@@ -73,7 +77,7 @@ class CalcHofX {
   ModelAux_          moderr_;                // model bias
   const util::DateTime winbgn_;              // window for assimilation
   const util::Duration winlen_;
-  std::unique_ptr<QCData_> qc_;              // QC-related (flags and obserrors)
+  std::shared_ptr<QCData_> qc_;              // QC-related (flags and obserrors)
   std::shared_ptr<Observers<MODEL, OBS> > pobs_;  // Observer
 };
 
@@ -162,6 +166,14 @@ void CalcHofX<MODEL, OBS>::saveObsErrors(const std::string & name) const {
   }
 }
 
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename OBS>
+void CalcHofX<MODEL, OBS>::maskObsErrors(const QCData_ & qcMask) {
+  for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
+    qc_->obsErrors(jj)->mask(*qcMask.qcFlags(jj));
+  }
+}
 }  // namespace oops
 
 #endif  // OOPS_ASSIMILATION_CALCHOFX_H_
