@@ -89,7 +89,7 @@ def line_diff(line1,line2,lnum,ftol,idif):
         if (dat1 != dat2):
           lineerror=lineerror+1
           print("Data string mismatch at line "+str(lnum)+": "+\
-                +dat1[0]+" not equal to "+dat2[0])
+                dat1[0]+" not equal to "+dat2[0])
 
 
       #Compare if one is float and other is integer
@@ -170,12 +170,15 @@ testfound = False
 for line_run in file_run:
    if re.search('Test     : ', line_run):
 
+       #Strip line
+       line_strip = line_run[line_run.find('Test     : '):]
+
        #Check strings and integers
-       lineerror = line_diff(line_run,lines_ref[refline],refline+1,ftol,idif)
+       lineerror = line_diff(line_strip,lines_ref[refline],refline+1,ftol,idif)
        error=error+lineerror
 
        #Write ref file in case update needed
-       file_runref.write(line_run)
+       file_runref.write(line_strip)
 
        #Tick the reference line
        refline = refline + 1

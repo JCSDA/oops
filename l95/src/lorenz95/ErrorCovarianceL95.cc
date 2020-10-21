@@ -27,11 +27,11 @@ class Variables;
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
 ErrorCovarianceL95::ErrorCovarianceL95(const Resolution & geom, const oops::Variables &,
-                                       const eckit::Configuration & config,
+                                       const ErrorCovarianceL95Parameters & params,
                                        const StateL95 &, const StateL95 &) :
-  time_(util::DateTime(config.getString("date"))),
-  sigmab_(config.getDouble("standard_deviation")),
-  rscale_(1.0/config.getDouble("length_scale"))
+  time_(params.date),
+  sigmab_(params.standardDeviation),
+  rscale_(1.0/params.lengthScale)
 {
 // Gaussian structure function
   resol_ = geom.npoints();

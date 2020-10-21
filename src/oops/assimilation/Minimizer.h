@@ -22,10 +22,8 @@
 #include "oops/assimilation/DualVector.h"
 #include "oops/assimilation/HMatrix.h"
 #include "oops/assimilation/HtMatrix.h"
-#include "oops/assimilation/Minimizer.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
-#include "oops/util/abor1_cpp.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/formats.h"
 #include "oops/util/Logger.h"
@@ -258,7 +256,7 @@ void Minimizer<MODEL, OBS>::tlmTaylorTest(const H_ & H) {
 
      // ||M(x+pdx) - M(x)||
      CtrlInc_ diff_nl(mdx, false);
-     diff_nl.state()[0].diff(mpertxx.state()[0], mxx.state()[0]);
+     diff_nl.state().diff(mpertxx.state(), mxx.state());
      double nom = sqrt(dot_product(diff_nl, diff_nl));
 
      // print results
@@ -304,7 +302,7 @@ void Minimizer<MODEL, OBS>::adjModelTest(const Ht_ & Ht,
 // run ADJ
   dummy.zero();
   CtrlInc_ mtdx2(dx2);
-  mtdx2.state()[0].updateTime(mdx1.state()[0].validTime() - dx1.state()[0].validTime());
+  mtdx2.state().updateTime(mdx1.state().validTime() - dx1.state().validTime());
   Ht.multiply(dummy, mtdx2, false);
 
 // calculate FWD < M dx1, dx2 >
@@ -398,8 +396,7 @@ class MinMaker : public MinFactory<MODEL, OBS> {
 template <typename MODEL, typename OBS>
 MinFactory<MODEL, OBS>::MinFactory(const std::string & name) {
   if (getMakers().find(name) != getMakers().end()) {
-    Log::error() << name << " already registered in minimizer factory." << std::endl;
-    ABORT("Element already registered in MinFactory.");
+    throw std::runtime_error(name + " already registered in minimizer factory.");
   }
   getMakers()[name] = this;
 }
@@ -413,8 +410,7 @@ Minimizer<MODEL, OBS>* MinFactory<MODEL, OBS>::create(const eckit::Configuration
   Log::info() << "Minimizer algorithm=" << id << std::endl;
   typename std::map<std::string, MinFactory<MODEL, OBS>*>::iterator j = getMakers().find(id);
   if (j == getMakers().end()) {
-    Log::error() << id << " does not exist in minimizer factory." << std::endl;
-    ABORT("Element does not exist in MinFactory.");
+    throw std::runtime_error(id + " does not exist in minimizer factory.");
   }
   return (*j).second->make(config, J);
 }

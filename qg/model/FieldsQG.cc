@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-#include "atlas/field/FieldSet.h"
+#include "atlas/field.h"
 
 #include "eckit/config/Configuration.h"
 #include "eckit/config/LocalConfiguration.h"
@@ -105,6 +105,10 @@ void FieldsQG::zero(const util::DateTime & time) {
   time_ = time;
 }
 // -----------------------------------------------------------------------------
+void FieldsQG::ones() {
+  qg_fields_ones_f90(keyFlds_);
+}
+// -----------------------------------------------------------------------------
 void FieldsQG::axpy(const double & zz, const FieldsQG & rhs) {
   qg_fields_axpy_f90(keyFlds_, zz, rhs.keyFlds_);
 }
@@ -143,15 +147,15 @@ void FieldsQG::diff(const FieldsQG & x1, const FieldsQG & x2) {
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::setAtlas(atlas::FieldSet * afieldset) const {
-  qg_fields_set_atlas_f90(keyFlds_, vars_, time_, afieldset->get());
+  qg_fields_set_atlas_f90(keyFlds_, vars_, afieldset->get());
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::toAtlas(atlas::FieldSet * afieldset) const {
-  qg_fields_to_atlas_f90(keyFlds_, vars_, time_, afieldset->get());
+  qg_fields_to_atlas_f90(keyFlds_, vars_, afieldset->get());
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::fromAtlas(atlas::FieldSet * afieldset) {
-  qg_fields_from_atlas_f90(keyFlds_, vars_, time_, afieldset->get());
+  qg_fields_from_atlas_f90(keyFlds_, vars_, afieldset->get());
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::read(const eckit::Configuration & config) {
@@ -225,7 +229,7 @@ size_t FieldsQG::serialSize() const {
   size_t nn = 0;
   int nx, ny, nz, nb;
   qg_fields_sizes_f90(keyFlds_, nx, ny, nz, nb);
-  nn += nx * ny * nz + nb * nx * nz;
+  nn += nx * ny * nz + nb * (nx + 1) * nz;
   nn += time_.serialSize();
   return nn;
 }

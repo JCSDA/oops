@@ -43,7 +43,6 @@ class GeometryQGIterator: public std::iterator<std::forward_iterator_tag,
   eckit::geometry::Point2 operator*() const;
   GeometryQGIterator& operator++();
 
-  F90iter & toFortran() {return keyIter_;}
   const F90iter & toFortran() const {return keyIter_;}
 
  private:

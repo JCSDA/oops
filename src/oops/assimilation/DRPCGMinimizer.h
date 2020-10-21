@@ -162,7 +162,6 @@ double DRPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_
     if (jiter > 0) {
       // beta_{i} = r_{i+1}^T z_{i+1} / r_{i}^T z_{i}
       double beta = rdots/rdots_old;
-      Log::debug() << "DRPCG beta = " << beta << std::endl;
 
       // p_{i+1} = z_{i+1} + beta*p_{i}
       pp *= beta;

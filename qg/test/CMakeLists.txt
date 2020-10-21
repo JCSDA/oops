@@ -6,6 +6,7 @@ list( APPEND qg_testinput
   testinput/3dfgat.yaml
   testinput/4densvar.yaml
   testinput/4densvar_hybrid.yaml
+  testinput/4dvar_change_var.yaml
   testinput/4dvar_dripcg.yaml
   testinput/4dvar_drpcg_lmp.yaml
   testinput/4dvar_drpfom.yaml
@@ -27,10 +28,26 @@ list( APPEND qg_testinput
   testinput/dirac_loc_3d.yaml
   testinput/dirac_loc_4d.yaml
   testinput/dirac_no_loc.yaml
+  testinput/eda_3dfgat_1.yaml
+  testinput/eda_3dfgat_2.yaml
+  testinput/eda_3dfgat_3.yaml
+  testinput/eda_3dfgat_4.yaml
   testinput/eda_3dfgat.yaml
-  testinput/eda_3dvar_member2.yaml
+  testinput/eda_3dvar_2.yaml
+  testinput/eda_3dvar.yaml
+  testinput/eda_4dvar_1.yaml
+  testinput/eda_4dvar_2.yaml
+  testinput/eda_4dvar_3.yaml
+  testinput/eda_4dvar_4.yaml
   testinput/eda_4dvar.yaml
+  testinput/ens_forecast_1.yaml
+  testinput/ens_forecast_2.yaml
   testinput/ens_forecast.yaml
+  testinput/ens_hofx_1.yaml
+  testinput/ens_hofx_2.yaml
+  testinput/ens_hofx_3.yaml
+  testinput/ens_hofx_4.yaml
+  testinput/ens_hofx_5.yaml
   testinput/ens_hofx.yaml
   testinput/ens_recenter.yaml
   testinput/ens_variance.yaml
@@ -63,6 +80,7 @@ list( APPEND qg_testoutput
   testoutput/3dfgat.test
   testoutput/4densvar.test
   testoutput/4densvar_hybrid.test
+  testoutput/4dvar_change_var.test
   testoutput/4dvar_dripcg.test
   testoutput/4dvar_drpcg_lmp.test
   testoutput/4dvar_drpfom.test
@@ -303,6 +321,12 @@ ecbuild_add_test( TARGET  test_qg_localization
                   LIBS    qg
                   TEST_DEPENDS test_qg_truth )
 
+ecbuild_add_test( TARGET  test_qg_variable_change
+                  SOURCES executables/TestVariableChange.cc
+                  ARGS    "testinput/interfaces.yaml"
+                  LIBS    qg
+                  TEST_DEPENDS test_qg_truth )
+
 ecbuild_add_test( TARGET  test_qg_linear_variable_change
                   MPI    1
                   SOURCES executables/TestLinearVariableChange.cc
@@ -500,6 +524,7 @@ oops_add_test( TESTNAME dirac_loc_3d
 oops_add_test( TESTNAME dirac_loc_4d
                MODELNAME qg
                OMP 2
+               MPI 13
                YAMLNAME testinput/dirac_loc_4d.yaml
                EXENAME  qg_dirac.x
                TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B )
@@ -530,15 +555,13 @@ oops_add_test( TESTNAME 3dvar
                EXENAME  qg_4dvar.x
                TEST_DEPENDS test_qg_forecast test_qg_make_obs_3d )
 
-# This test will be changed in next PR (May 2020)
-# oops_add_test( TESTNAME 3dvar_change_var
-#                MODELNAME qg
-#                OMP 2
-#                YAMLNAME testinput/3dvar_change_var.yaml
-#                EXENAME  qg_4dvar.x
-#                TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_3d
-#                COMPARE)
-# This test will be changed in next PR (May 2020)
+oops_add_test( TESTNAME 3dvar_change_var
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/3dvar_change_var.yaml
+               EXENAME  qg_4dvar.x
+               TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_3d
+               COMPARE)
 
 #--------------------------------------------------------------------
 
@@ -562,17 +585,24 @@ oops_add_test( TESTNAME 3dfgat
 
 oops_add_test( TESTNAME 4densvar
                MODELNAME qg
-               OMP 2
+               MPI 7
                YAMLNAME testinput/4densvar.yaml
                EXENAME  qg_4dvar.x
                TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_4d_12h )
 
 oops_add_test( TESTNAME 4densvar_hybrid
                MODELNAME qg
-               OMP 2
+               MPI 7
                YAMLNAME testinput/4densvar_hybrid.yaml
                EXENAME  qg_4dvar.x
                TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_4d_12h )
+
+oops_add_test( TESTNAME 4dvar_change_var
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/4dvar_change_var.yaml
+               EXENAME  qg_4dvar.x
+               TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
 
 oops_add_test( TESTNAME 4dvar_dripcg
                MODELNAME qg
@@ -609,12 +639,12 @@ oops_add_test( TESTNAME 4dvar_drplanczos_hybrid
                EXENAME  qg_4dvar.x
                TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_4d_24h )
 
-oops_add_test( TESTNAME 4dvar_forcing
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/4dvar_forcing.yaml
-               EXENAME  qg_4dvar.x
-               TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
+#oops_add_test( TESTNAME 4dvar_forcing
+#               MODELNAME qg
+#               OMP 2
+#               YAMLNAME testinput/4dvar_forcing.yaml
+#               EXENAME  qg_4dvar.x
+#               TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
 
 oops_add_test( TESTNAME 4dvar_ipcg
                MODELNAME qg
@@ -639,7 +669,7 @@ oops_add_test( TESTNAME 4dvar_rpcg
 
 oops_add_test( TESTNAME 4dvar_saddlepoint
                MODELNAME qg
-               OMP 2
+               MPI 2
                YAMLNAME testinput/4dvar_saddlepoint.yaml
                EXENAME  qg_4dvar.x
                TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h
@@ -657,10 +687,10 @@ ecbuild_add_test( TARGET test_qg_eda_3dfgat
                   DEPENDS qg_eda.x
                   TEST_DEPENDS test_qg_forecast test_qg_make_obs_3d )
 
-ecbuild_add_test( TARGET test_qg_eda_3dvar_member2
+ecbuild_add_test( TARGET test_qg_eda_3dvar
                   MPI    1
                   COMMAND ${CMAKE_BINARY_DIR}/bin/qg_eda.x
-                  ARGS testinput/eda_3dvar_member2.yaml
+                  ARGS testinput/eda_3dvar.yaml
                   DEPENDS qg_eda.x
                   TEST_DEPENDS test_qg_forecast test_qg_make_obs_3d )
 
@@ -680,7 +710,7 @@ oops_add_test( TESTNAME diffstates
                MODELNAME qg
                YAMLNAME testinput/diffstates.yaml
                EXENAME  qg_diffstates.x
-               TEST_DEPENDS test_qg_eda_3dvar_member2 test_qg_eda_4dvar
+               TEST_DEPENDS test_qg_eda_3dvar test_qg_eda_4dvar
                DEPENDS qg_eda.x )
 
 oops_add_test( TESTNAME addincrement

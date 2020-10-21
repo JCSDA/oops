@@ -12,11 +12,7 @@
 #define OOPS_BASE_INSTANTIATECOVARFACTORY_H_
 
 #include "oops/base/EnsembleCovariance.h"
-#include "oops/base/EnsembleCovariance4D.h"
-#include "oops/base/ErrorCovariance4D.h"
 #include "oops/base/HybridCovariance.h"
-#include "oops/base/HybridCovariance4D.h"
-#include "oops/base/ModelSpaceCovariance4DBase.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/interface/ErrorCovariance.h"
 
@@ -26,10 +22,6 @@ template <typename MODEL> void instantiateCovarFactory() {
   static CovarMaker<MODEL, EnsembleCovariance<MODEL> >  makerEnsemble_("ensemble");
   static CovarMaker<MODEL, HybridCovariance<MODEL> >    makerHybrid_("hybrid");
   static CovarMaker<MODEL, ErrorCovariance<MODEL> >     makerModel_(MODEL::nameCovar());
-
-  static Covar4DMaker<MODEL, EnsembleCovariance4D<MODEL> >  makerEnsemble4D_("ensemble");
-  static Covar4DMaker<MODEL, HybridCovariance4D<MODEL> >    makerHybrid4D_("hybrid");
-  static Covar4DMaker<MODEL, ErrorCovariance4D<MODEL> >     makerModel4D_(MODEL::nameCovar4D());
 }
 
 }  // namespace oops

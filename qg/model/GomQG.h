@@ -57,7 +57,6 @@ class GomQG : public util::Printable,
   void read(const eckit::Configuration &);
   void write(const eckit::Configuration &) const;
 
-  int & toFortran() {return keyGom_;}
   const int & toFortran() const {return keyGom_;}
 
  private:

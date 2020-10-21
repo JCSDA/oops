@@ -16,7 +16,7 @@
 
 #include <boost/lexical_cast.hpp>
 
-#include "oops/util/abor1_cpp.h"
+#include "eckit/exception/Exceptions.h"
 #include "oops/util/Logger.h"
 
 
@@ -25,7 +25,7 @@
 void failBadFormat(const std::string& str) {
   std::string message = "Badly formatted date: ";
   message.append(str);
-  ABORT(message);
+  throw eckit::BadValue(message);
 }
 
 
@@ -33,7 +33,7 @@ void failBadFormat(const std::string& str) {
 
 int eatChars(std::istream & is, int nchars) {
   // consume nchars characters from the stream and interpret as an integer
-  if (nchars < 0) ABORT("Cannot read a negative number of characters.");
+  if (nchars < 0) throw eckit::BadParameter("Cannot read a negative number of characters.");
   std::string str((size_t) nchars, '\0');
   is.get(&str[0], nchars+1);  // nchars+1 because istream.get reads (count-1) chars.
 
@@ -65,7 +65,7 @@ uint64_t dateToJulian(const int year, const int month, const int day) {
 
   if (!util::datefunctions::validYYYYMMDD(year, month, day)) {
     oops::Log::error() << "year=" << year << " month=" << month << " day=" << day << std::endl;
-    ABORT("Not a valid date");
+    throw eckit::BadParameter("Not a valid date");
   }
 
   int m1 = (month - 14)/12;
@@ -105,7 +105,7 @@ void julianToDate(const uint64_t julian, int & yy, int & mm, int & dd) {
     yy = static_cast<int>(year);
   } else {
     oops::Log::error() << "year=" << year << std::endl;
-    ABORT("year out of range");
+    throw eckit::BadParameter("Year out of range");
   }
 }
 
@@ -115,7 +115,7 @@ int hmsToSeconds(const int hour, const int minute, const int second) {
   if (!util::datefunctions::validHhmmss(hour, minute, second)) {
     oops::Log::error() << "hour=" << hour << " minute=" << minute <<
                " second=" << second << std::endl;
-    ABORT("Not a valid time");
+    throw eckit::BadParameter("Not a valid time");
   }
   return 3600 * hour + 60 * minute + second;
 }
@@ -134,7 +134,7 @@ void secondToHms(const int seconds, int & hh, int & mm, int & ss) {
     ss = local_sec;
   } else {
     oops::Log::error() << "seconds=" << seconds << std::endl;
-    ABORT("seconds out of range");
+    throw eckit::BadParameter("seconds out of range");
   }
 }
 

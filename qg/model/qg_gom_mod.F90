@@ -38,7 +38,6 @@ type :: qg_gom
   integer :: iu                               !< Zonal wind index
   integer :: iv                               !< Meridian wind index
   integer :: nv                               !< Number of variables
-  integer,allocatable :: indx(:)              !< Observations index
   real(kind_real), allocatable :: values(:,:) !< Observations values
   logical :: lalloc                           !< Allocation flag
 end type qg_gom
@@ -59,20 +58,20 @@ contains
 #include "oops/util/linkedList_c.f"
 ! ------------------------------------------------------------------------------
 !> Setup GOM
-subroutine qg_gom_setup(self,kobs,vars)
+subroutine qg_gom_setup(self,nobs,vars)
 
 implicit none
 
 ! Passed variables
 type(qg_gom),intent(inout) :: self !< GOM
-integer, intent(in) :: kobs(:)     !< Observations index
+integer, intent(in) :: nobs        !< Number of observations
 type(oops_variables),intent(in) :: vars !< Variables
 
 ! Local variables
 integer :: ivar
 
 ! Set attributes
-self%nobs = size(kobs)
+self%nobs = nobs
 self%used = 0
 self%nv = 0
 self%ix = 0; self%iq = 0; self%iu = 0; self%iv = 0
@@ -96,12 +95,8 @@ do ivar = 1, vars%nvars()
 enddo
 
 ! Allocation
-allocate(self%indx(self%nobs))
 allocate(self%values(self%nv,self%nobs))
 self%lalloc = .true.
-
-! Initialization
-self%indx = kobs
 
 end subroutine qg_gom_setup
 ! ------------------------------------------------------------------------------
@@ -129,7 +124,6 @@ type(qg_gom),intent(inout) :: self !< GOM
 ! Release memory
 if (self%lalloc) then
   deallocate(self%values)
-  deallocate(self%indx)
 endif
 
 end subroutine qg_gom_delete
@@ -154,13 +148,11 @@ self%used = other%used
 ! Allocation
 if (.not.self%lalloc) then
    allocate(self%values(self%nv,self%nobs))
-   allocate(self%indx(self%nobs))
    self%lalloc = .true.
 endif
 
 ! Copy
 self%values = other%values
-self%indx = other%indx
 
 end subroutine qg_gom_copy
 ! ------------------------------------------------------------------------------
@@ -442,7 +434,7 @@ type(qg_gom),intent(inout) :: self             !< GOM
 type(fckit_configuration),intent(in) :: f_conf !< FCKIT configuration
 
 ! Local variables
-integer :: ncid,nobs_id,nv_id,indx_id,values_id
+integer :: ncid,nobs_id,nv_id,values_id
 character(len=1024) :: filename
 character(len=:),allocatable :: str
 
@@ -474,7 +466,6 @@ call ncerr(nf90_get_att(ncid,nf90_global,'iv',self%iv))
 call ncerr(nf90_get_att(ncid,nf90_global,'nv',self%nv))
 
 ! Allocation
-allocate(self%indx(self%nobs))
 allocate(self%values(self%nv,self%nobs))
 self%lalloc = .true.
 
@@ -482,11 +473,9 @@ self%lalloc = .true.
 call qg_gom_zero(self)
 
 ! Get variables ids
-call ncerr(nf90_inq_varid(ncid,'indx',indx_id))
 call ncerr(nf90_inq_varid(ncid,'values',values_id))
 
 ! Get variables
-call ncerr(nf90_get_var(ncid,indx_id,self%indx))
 call ncerr(nf90_get_var(ncid,values_id,self%values))
 
 ! Close NetCDF file
@@ -504,7 +493,7 @@ type(qg_gom),intent(inout) :: self !< GOM
 type(fckit_configuration),intent(in) :: f_conf !< FCKIT configuration
 
 ! Local variables
-integer :: ncid,nobs_id,nv_id,indx_id,values_id
+integer :: ncid,nobs_id,nv_id,values_id
 character(len=1024) :: filename
 character(len=:),allocatable :: str
 
@@ -532,14 +521,12 @@ call ncerr(nf90_put_att(ncid,nf90_global,'iv',self%iv))
 call ncerr(nf90_put_att(ncid,nf90_global,'nv',self%nv))
 
 ! Define variables
-call ncerr(nf90_def_var(ncid,'indx',nf90_int,(/nobs_id/),indx_id))
 call ncerr(nf90_def_var(ncid,'values',nf90_double,(/nv_id,nobs_id/),values_id))
 
 ! End definitions
 call ncerr(nf90_enddef(ncid))
 
 ! Put variables
-call ncerr(nf90_put_var(ncid,indx_id,self%indx))
 call ncerr(nf90_put_var(ncid,values_id,self%values))
 
 ! Close NetCDF file

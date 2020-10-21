@@ -18,42 +18,74 @@ list( APPEND l95_test_input
   testinput/4dvar.drpcgqn.yaml
   testinput/4dvar.drplanczos.yaml
   testinput/4dvar.drplanclmp.yaml
+  testinput/4dvar.fgmres.yaml
   testinput/4dvar.gmresr.yaml
   testinput/4dvar.hybrid.yaml
   testinput/4dvar.ipcg.yaml
+  testinput/4dvar.lbgmresr.yaml
   testinput/4dvar.pcg.yaml
   testinput/4dvar.planczos.yaml
   testinput/4dvar.rpcg.yaml
   testinput/4dvar.rplanczos.yaml
+  testinput/4dvar.minres.yaml
   testinput/4dvar.modbias.yaml
   testinput/4dvar.obsbias.yaml
   testinput/4dvar.allbiases.yaml
-  testinput/diffstates.yaml
   testinput/addincrement.yaml
   testinput/addincrement_scaled.yaml
+  testinput/diffstates.yaml
+  testinput/eda.3dfgat.1.yaml
+  testinput/eda.3dfgat.2.yaml
+  testinput/eda.3dfgat.3.yaml
+  testinput/eda.3dfgat.4.yaml
   testinput/eda.3dfgat.yaml
+  testinput/eda.3dvar.1.yaml
+  testinput/eda.3dvar.2.yaml
+  testinput/eda.3dvar.3.yaml
+  testinput/eda.3dvar.4.yaml
   testinput/eda.3dvar.yaml
-  testinput/eda.4dvar.member3.yaml
+  testinput/eda.4dvar.3.yaml
+  testinput/eda.4dvar.yaml
+  testinput/enshofx.1.yaml
+  testinput/enshofx.2.yaml
+  testinput/enshofx.3.yaml
+  testinput/enshofx.4.yaml
   testinput/enshofx.yaml
   testinput/forecast.yaml
   testinput/forecast_pseudomodel.yaml
   testinput/forecast_identitymodel.yaml
   testinput/genenspert.yaml
+  testinput/getkf.yaml
+  testinput/getkf_offline_hofx.yaml
   testinput/hofx.yaml
   testinput/hofx_nomodel.yaml
+  testinput/hofx_for_getkf_nomodel.yaml
   testinput/identitymodel.yaml
   testinput/letkfGSI.yaml
-  testinput/letkfOOPS.yaml
   testinput/letkf.yaml
   testinput/interfaces.yaml
+  testinput/linearmodelfactory.yaml
   testinput/makeobs3d.yaml
   testinput/makeobs4d.yaml
   testinput/makeobs4d12h.yaml
   testinput/makeobsbias.yaml
   testinput/makeobspert.yaml
   testinput/pseudomodel.yaml
-  testinput/test.yaml
   testinput/truth.yaml
+  testinput/simplifiedl95_DRGMRESR.yaml
+  testinput/simplifiedl95_DRIPCG.yaml
+  testinput/simplifiedl95_DRPCG.yaml
+  testinput/simplifiedl95_DRPFOM.yaml
+  testinput/simplifiedl95_DRPLanczos.yaml
+  testinput/simplifiedl95_FGMRES.yaml
+  testinput/simplifiedl95_GMRESR.yaml
+  testinput/simplifiedl95_IPCG.yaml
+  testinput/simplifiedl95_LBGMRESR.yaml
+  testinput/simplifiedl95_MINRES.yaml
+  testinput/simplifiedl95_PCG.yaml
+  testinput/simplifiedl95_PLanczos.yaml
+  testinput/simplifiedl95_RPCG.yaml
+  testinput/simplifiedl95_RPLanczos.yaml
 )
 
 list( APPEND l95_test_data
@@ -61,6 +93,8 @@ list( APPEND l95_test_data
   truth.an.2010-01-01T00:00:00Z.l95
   truth.fc.2010-01-01T00:00:00Z.PT3H
   truth.2010-01-02T00:00:00Z.obt
+  simplifiedl95.fc
+  simplifiedl95.truth.obt
 )
 
 list( APPEND l95_testoutput
@@ -81,9 +115,11 @@ list( APPEND l95_testoutput
   testoutput/4dvar.drpcgqn.test
   testoutput/4dvar.drplanclmp.test
   testoutput/4dvar.drplanczos.test
+  testoutput/4dvar.fgmres.test
   testoutput/4dvar.gmresr.test
   testoutput/4dvar.hybrid.test
   testoutput/4dvar.ipcg.test
+  testoutput/4dvar.lbgmresr.test
   testoutput/4dvar.modbias.test
   testoutput/4dvar.obsbias.test
   testoutput/4dvar.allbiases.test
@@ -91,6 +127,7 @@ list( APPEND l95_testoutput
   testoutput/4dvar.planczos.test
   testoutput/4dvar.rpcg.test
   testoutput/4dvar.rplanczos.test
+  testoutput/4dvar.minres.test
   testoutput/diffstates.test
   testoutput/addincrement.test
   testoutput/addincrement_scaled.test
@@ -99,10 +136,12 @@ list( APPEND l95_testoutput
   testoutput/forecast_pseudomodel.test
   testoutput/forecast_identitymodel.test
   testoutput/genenspert.test
+  testoutput/getkf.test
+  testoutput/getkf_offline_hofx.test
   testoutput/hofx.test
   testoutput/hofx.nomodel.test
+  testoutput/hofx_for_getkf_nomodel.test
   testoutput/letkf.test
-  testoutput/letkf_oops.test
   testoutput/letkf_gsi.test
   testoutput/localhofx.test
   testoutput/makeobs3d.test
@@ -112,6 +151,20 @@ list( APPEND l95_testoutput
   testoutput/makeobspert.test
   testoutput/truth.test
   testoutput/CTestCostData.txt.test
+  testoutput/simplifiedl95_DRGMRESR.test
+  testoutput/simplifiedl95_DRIPCG.test
+  testoutput/simplifiedl95_DRPCG.test
+  testoutput/simplifiedl95_DRPFOM.test
+  testoutput/simplifiedl95_DRPLanczos.test
+  testoutput/simplifiedl95_FGMRES.test
+  testoutput/simplifiedl95_GMRESR.test
+  testoutput/simplifiedl95_IPCG.test
+  testoutput/simplifiedl95_LBGMRESR.test
+  testoutput/simplifiedl95_MINRES.test
+  testoutput/simplifiedl95_PCG.test
+  testoutput/simplifiedl95_PLanczos.test
+  testoutput/simplifiedl95_RPCG.test
+  testoutput/simplifiedl95_RPLanczos.test
 )
 
 
@@ -144,81 +197,6 @@ ecbuild_add_resources( TARGET   l95_test_scripts
                        SOURCES_PACK
                        ${l95_test_input}
                      )
-
-
-#####################################################################
-# internal tests
-#####################################################################
-
-ecbuild_add_test( TARGET test_l95_resolution
-                  SOURCES lorenz95/Resolution.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 )
-
-ecbuild_add_test( TARGET test_l95_stateL95
-                  SOURCES lorenz95/StateL95.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 )
-
-ecbuild_add_test( TARGET test_l95_tlmL95
-                  SOURCES lorenz95/TLML95.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 )
-
-ecbuild_add_test( TARGET test_l95_ObsTable
-                  SOURCES lorenz95/ObsTable.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 )
-
-ecbuild_add_test( TARGET test_l95_obsVec1D
-                  SOURCES lorenz95/ObsVec1D.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 )
-
-ecbuild_add_test( TARGET test_l95_locsL95
-                  SOURCES lorenz95/LocsL95.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 )
-
-ecbuild_add_test( TARGET test_l95_gomL95
-                  SOURCES lorenz95/GomL95.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 )
-
-ecbuild_add_test( TARGET test_l95_observationL95
-                  SOURCES lorenz95/ObservationL95.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 )
-
-ecbuild_add_test( TARGET test_l95_incrementL95
-                  SOURCES lorenz95/IncrementL95.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 )
-
-ecbuild_add_test( TARGET test_l95_localizationMatrixL95
-                  SOURCES lorenz95/LocalizationMatrixL95.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 )
-
-ecbuild_add_test( TARGET test_l95_modelBias
-                  SOURCES lorenz95/ModelBias.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 )
-
-ecbuild_add_test( TARGET test_l95_modelBiasCorrection
-                  SOURCES lorenz95/ModelBiasCorrection.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 )
-
-ecbuild_add_test( TARGET test_l95_modelBiasCovariance
-                  SOURCES lorenz95/ModelBiasCovariance.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 )
-
-ecbuild_add_test( TARGET test_l95_modelL95
-                  SOURCES lorenz95/ModelL95.cc lorenz95/TestConfig.h
-                  ARGS "testinput/test.yaml"
-                  LIBS lorenz95 )
 
 
 #####################################################################
@@ -265,6 +243,12 @@ ecbuild_add_test( TARGET test_l95_state
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
+ecbuild_add_test( TARGET test_l95_getvalues
+                  SOURCES executables/TestGetValues.cc
+                  ARGS "testinput/interfaces.yaml"
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth )
+
 ecbuild_add_test( TARGET test_l95_modelaux
                   SOURCES executables/TestModelAuxControl.cc
                   ARGS "testinput/interfaces.yaml"
@@ -291,6 +275,12 @@ ecbuild_add_test( TARGET test_l95_identitymodel
 
 ecbuild_add_test( TARGET test_l95_increment
                   SOURCES executables/TestIncrement.cc
+                  ARGS "testinput/interfaces.yaml"
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth )
+
+ecbuild_add_test( TARGET test_l95_lineargetvalues
+                  SOURCES executables/TestLinearGetValues.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
@@ -444,7 +434,7 @@ oops_add_test( TESTNAME hofx
                MODELNAME l95
                YAMLNAME testinput/hofx.yaml
                EXENAME l95_hofx.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+               TEST_DEPENDS test_l95_truth test_l95_makeobs4d )
 
 oops_add_test( TESTNAME hofx.nomodel
                MODELNAME l95
@@ -462,7 +452,7 @@ oops_add_test( TESTNAME genenspert
                EXENAME l95_genpert.x )
 
 ecbuild_add_test( TARGET test_l95_enshofx
-                  MPI 10
+                  MPI 4
                   COMMAND ${CMAKE_BINARY_DIR}/bin/l95_enshofx.x
                   ARGS testinput/enshofx.yaml testoutput/enshofx.log.out
                   DEPENDS l95_enshofx.x
@@ -550,6 +540,12 @@ oops_add_test( TESTNAME 4dvar.drplanclmp
                EXENAME l95_4dvar.x
                TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
+oops_add_test( TESTNAME 4dvar.fgmres
+               MODELNAME l95
+               YAMLNAME testinput/4dvar.fgmres.yaml
+               EXENAME l95_4dvar.x
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+
 oops_add_test( TESTNAME 4dvar.gmresr
                MODELNAME l95
                YAMLNAME testinput/4dvar.gmresr.yaml
@@ -559,6 +555,12 @@ oops_add_test( TESTNAME 4dvar.gmresr
 oops_add_test( TESTNAME 4dvar.ipcg
                MODELNAME l95
                YAMLNAME testinput/4dvar.ipcg.yaml
+               EXENAME l95_4dvar.x
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+
+oops_add_test( TESTNAME 4dvar.lbgmresr
+               MODELNAME l95
+               YAMLNAME testinput/4dvar.lbgmresr.yaml
                EXENAME l95_4dvar.x
                TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
@@ -586,19 +588,26 @@ oops_add_test( TESTNAME 4dvar.rplanczos
                EXENAME l95_4dvar.x
                TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
+oops_add_test( TESTNAME 4dvar.minres
+               MODELNAME l95
+               YAMLNAME testinput/4dvar.minres.yaml
+               EXENAME l95_4dvar.x
+               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+
 oops_add_test( TESTNAME 4dvar.modbias
                MODELNAME l95
                YAMLNAME testinput/4dvar.modbias.yaml
                EXENAME l95_4dvar.x
                TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-oops_add_test( TESTNAME 4dforcing
-               MODELNAME l95
-               YAMLNAME testinput/4dforcing.yaml
-               EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+#oops_add_test( TESTNAME 4dforcing
+#               MODELNAME l95
+#               YAMLNAME testinput/4dforcing.yaml
+#               EXENAME l95_4dvar.x
+#               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 oops_add_test( TESTNAME 4dsaddlepoint
+               MPI 2
                MODELNAME l95
                YAMLNAME testinput/4dsaddlepoint.yaml
                EXENAME l95_4dvar.x
@@ -633,12 +642,14 @@ oops_add_test( TESTNAME 4dvar.hybrid
                TEST_DEPENDS test_l95_forecast test_l95_makeobs4d test_l95_genenspert )
 
 oops_add_test( TESTNAME 4densvar
+               MPI 9
                MODELNAME l95
                YAMLNAME testinput/4densvar.yaml
                EXENAME l95_4dvar.x
                TEST_DEPENDS test_l95_forecast test_l95_makeobs4d12h test_l95_genenspert )
 
 oops_add_test( TESTNAME 4densvar.hybrid
+               MPI 9
                MODELNAME l95
                YAMLNAME testinput/4densvar.hybrid.yaml
                EXENAME l95_4dvar.x
@@ -663,10 +674,10 @@ ecbuild_add_test( TARGET test_l95_eda_3dvar
                   DEPENDS l95_eda.x
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
 
-ecbuild_add_test( TARGET test_l95_eda_4dvar_member3
+ecbuild_add_test( TARGET test_l95_eda_4dvar
                   MPI 1
                   COMMAND ${CMAKE_BINARY_DIR}/bin/l95_eda.x
-                  ARGS testinput/eda.4dvar.member3.yaml
+                  ARGS testinput/eda.4dvar.yaml
                   DEPENDS l95_eda.x
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
@@ -679,7 +690,7 @@ oops_add_test( TESTNAME diffstates
                MODELNAME l95
                YAMLNAME testinput/diffstates.yaml
                EXENAME l95_diffstates.x
-               TEST_DEPENDS test_l95_eda_3dvar test_l95_eda_4dvar_member3 )
+               TEST_DEPENDS test_l95_eda_3dvar test_l95_eda_4dvar )
 
 oops_add_test( TESTNAME addincrement
                MODELNAME l95
@@ -698,13 +709,6 @@ oops_add_test( TESTNAME addincrement_scaled
 # LETKF tests
 #####################################################################
 
-oops_add_test( TESTNAME letkf_oops
-               MODELNAME l95
-               YAMLNAME testinput/letkfOOPS.yaml
-               EXENAME l95_letkf.x
-               COMPARE
-               TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
-
 oops_add_test( TESTNAME letkf
                MODELNAME l95
                YAMLNAME testinput/letkf.yaml
@@ -718,3 +722,121 @@ oops_add_test( TESTNAME letkf_gsi
                CTOL 1e-4
                TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
 
+oops_add_test( TESTNAME getkf
+               MODELNAME l95
+               YAMLNAME testinput/getkf.yaml
+               EXENAME l95_letkf.x
+               CTOL 1e-3
+               TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+
+oops_add_test( TESTNAME hofx_for_getkf_nomodel
+               MODELNAME l95
+               YAMLNAME testinput/hofx_for_getkf_nomodel.yaml
+               EXENAME l95_letkf.x 
+               CTOL 1e-3
+               TEST_DEPENDS letkf )
+
+oops_add_test( TESTNAME getkf_offline_hofx
+               MODELNAME l95
+               YAMLNAME testinput/getkf_offline_hofx.yaml
+               EXENAME l95_letkf.x
+               CTOL 1e-3
+               TEST_DEPENDS hofx_for_getkf_nomodel )
+
+
+#####################################################################
+# tests of factory and parameters classes
+#####################################################################
+
+ecbuild_add_test( TARGET test_l95_linearmodelfactory
+                  SOURCES lorenz95/LinearModelFactory.cc
+                  ARGS "testinput/linearmodelfactory.yaml"
+                  LIBS lorenz95 )
+
+#####################################################################
+# tests with simplified L95
+#####################################################################
+
+oops_add_test( TESTNAME simplifiedl95_DRGMRESR
+               MODELNAME l95
+               YAMLNAME testinput/simplifiedl95_DRGMRESR.yaml
+               CTOL 1e-8
+               EXENAME l95_4dvar.x )
+
+oops_add_test( TESTNAME simplifiedl95_DRIPCG
+               MODELNAME l95
+               YAMLNAME testinput/simplifiedl95_DRIPCG.yaml
+               CTOL 1e-8
+               EXENAME l95_4dvar.x )
+
+oops_add_test( TESTNAME simplifiedl95_DRPCG
+               MODELNAME l95
+               YAMLNAME testinput/simplifiedl95_DRPCG.yaml
+               CTOL 1e-8
+               EXENAME l95_4dvar.x )
+
+oops_add_test( TESTNAME simplifiedl95_DRPFOM
+               MODELNAME l95
+               YAMLNAME testinput/simplifiedl95_DRPFOM.yaml
+               CTOL 1e-8
+               EXENAME l95_4dvar.x )
+
+oops_add_test( TESTNAME simplifiedl95_DRPLanczos
+               MODELNAME l95
+               YAMLNAME testinput/simplifiedl95_DRPLanczos.yaml
+               CTOL 1e-8
+               EXENAME l95_4dvar.x )
+
+oops_add_test( TESTNAME simplifiedl95_FGMRES
+               MODELNAME l95
+               YAMLNAME testinput/simplifiedl95_FGMRES.yaml
+               CTOL 1e-8
+               EXENAME l95_4dvar.x )
+
+oops_add_test( TESTNAME simplifiedl95_GMRESR
+               MODELNAME l95
+               YAMLNAME testinput/simplifiedl95_GMRESR.yaml
+               CTOL 1e-8
+               EXENAME l95_4dvar.x )
+
+oops_add_test( TESTNAME simplifiedl95_IPCG
+               MODELNAME l95
+               YAMLNAME testinput/simplifiedl95_IPCG.yaml
+               CTOL 1e-8
+               EXENAME l95_4dvar.x )
+
+oops_add_test( TESTNAME simplifiedl95_LBGMRESR
+               MODELNAME l95
+               YAMLNAME testinput/simplifiedl95_LBGMRESR.yaml
+               CTOL 1e-8
+               EXENAME l95_4dvar.x )
+
+oops_add_test( TESTNAME simplifiedl95_MINRES
+               MODELNAME l95
+               YAMLNAME testinput/simplifiedl95_MINRES.yaml
+               CTOL 1e-8
+               EXENAME l95_4dvar.x )
+
+oops_add_test( TESTNAME simplifiedl95_PCG
+               MODELNAME l95
+               YAMLNAME testinput/simplifiedl95_PCG.yaml
+               CTOL 1e-8
+               EXENAME l95_4dvar.x )
+
+oops_add_test( TESTNAME simplifiedl95_PLanczos
+               MODELNAME l95
+               YAMLNAME testinput/simplifiedl95_PLanczos.yaml
+               CTOL 1e-8
+               EXENAME l95_4dvar.x )
+
+oops_add_test( TESTNAME simplifiedl95_RPCG
+               MODELNAME l95
+               YAMLNAME testinput/simplifiedl95_RPCG.yaml
+               CTOL 1e-8
+               EXENAME l95_4dvar.x )
+
+oops_add_test( TESTNAME simplifiedl95_RPLanczos
+               MODELNAME l95
+               YAMLNAME testinput/simplifiedl95_RPLanczos.yaml
+               CTOL 1e-8
+               EXENAME l95_4dvar.x )

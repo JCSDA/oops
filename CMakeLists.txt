@@ -14,7 +14,7 @@ cmake_minimum_required( VERSION 3.12 )
 project( oops LANGUAGES CXX Fortran )
 
 ## Ecbuild integration
-find_package( ecbuild QUIET )
+find_package( ecbuild 3.3.2 REQUIRED )
 include( ecbuild_system NO_POLICY_SCOPE )
 ecbuild_declare_project()
 list( APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake )
@@ -70,8 +70,8 @@ if ( GPTL_FOUND AND ENABLE_AUTOPROFILING )
 endif()
 
 # JSON validation
-find_package(nlohmann_json)
-find_package(nlohmann_json_schema_validator)
+find_package(nlohmann_json QUIET)
+find_package(nlohmann_json_schema_validator QUIET)
 
 ## Sources
 add_subdirectory( src )

@@ -11,6 +11,7 @@
 #ifndef OOPS_BASE_OBSERVERS_H_
 #define OOPS_BASE_OBSERVERS_H_
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
@@ -30,9 +31,6 @@ namespace oops {
 
 /// Computes observation equivalent during model run.
 
-// Sub-windows knowledge could be removed if vector of obs was used in
-// weak constraint 4D-Var. YT
-
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
@@ -47,8 +45,7 @@ class Observers : public PostBase<State<MODEL>> {
 
  public:
   Observers(const eckit::Configuration &, const ObsSpaces_ & obsdb, const ObsAuxCtrls_ &,
-            QCData_ &,
-            const util::Duration & tslot = util::Duration(0), const bool subwin = false);
+            QCData_ &);
   ~Observers() {}
 
   const Observations_ & hofx() {return yobs_;}
@@ -65,10 +62,7 @@ class Observers : public PostBase<State<MODEL>> {
 
   util::DateTime winbgn_;   //!< Begining of assimilation window
   util::DateTime winend_;   //!< End of assimilation window
-  util::DateTime bgn_;      //!< Begining of currently active observations
-  util::DateTime end_;      //!< End of currently active observations
   util::Duration hslot_;    //!< Half time slot
-  const bool subwindows_;
 
   std::vector<std::shared_ptr<Observer_>> observers_;
 };
@@ -77,13 +71,10 @@ class Observers : public PostBase<State<MODEL>> {
 
 template <typename MODEL, typename OBS>
 Observers<MODEL, OBS>::Observers(const eckit::Configuration & conf, const ObsSpaces_ & obsdb,
-                                 const ObsAuxCtrls_ & ybias, QCData_ & qc,
-                                 const util::Duration & tslot, const bool swin)
+                                 const ObsAuxCtrls_ & ybias, QCData_ & qc)
   : PostBase<State_>(),
     obspace_(obsdb), yobs_(obsdb),
-    winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()),
-    bgn_(winbgn_), end_(winend_), hslot_(tslot/2), subwindows_(swin),
-    observers_(0)
+    winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()), hslot_(0), observers_(0)
 {
   Log::trace() << "Observers::Observers starting" << std::endl;
 
@@ -107,21 +98,10 @@ void Observers<MODEL, OBS>::doInitialize(const State_ & xx, const util::DateTime
                                          const util::Duration & tstep) {
   Log::trace() << "Observers::doInitialize start" << std::endl;
   const util::DateTime bgn(xx.validTime());
-  if (hslot_ == util::Duration(0)) hslot_ = tstep/2;
-  if (subwindows_) {
-    if (bgn == end) {
-      bgn_ = bgn - hslot_;
-      end_ = end + hslot_;
-    } else {
-      bgn_ = bgn;
-      end_ = end;
-    }
-  }
-  if (bgn_ < winbgn_) bgn_ = winbgn_;
-  if (end_ > winend_) end_ = winend_;
+  hslot_ = tstep/2;
 
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
-    observers_[jj]->doInitialize(xx, bgn_, end_);
+    observers_[jj]->doInitialize(xx, winbgn_, winend_);
   }
   Log::trace() << "Observers::doInitialize done" << std::endl;
 }
@@ -131,10 +111,8 @@ void Observers<MODEL, OBS>::doInitialize(const State_ & xx, const util::DateTime
 template <typename MODEL, typename OBS>
 void Observers<MODEL, OBS>::doProcessing(const State_ & xx) {
   Log::trace() << "Observers::doProcessing start" << std::endl;
-  util::DateTime t1(xx.validTime()-hslot_);
-  util::DateTime t2(xx.validTime()+hslot_);
-  if (t1 < bgn_) t1 = bgn_;
-  if (t2 > end_) t2 = end_;
+  util::DateTime t1 = std::max(xx.validTime()-hslot_, winbgn_);
+  util::DateTime t2 = std::min(xx.validTime()+hslot_, winend_);
 
 // Get state variables at obs locations
   for (size_t jj = 0; jj < observers_.size(); ++jj) {

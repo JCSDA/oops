@@ -53,7 +53,7 @@ template <typename MODEL> class ConvertState : public Application {
 
     std::vector<eckit::LocalConfiguration> chvarconfs;
     fullConfig.get("variable changes", chvarconfs);
-    for (int cv = 0; cv < chvarconfs.size(); ++cv) {
+    for (size_t cv = 0; cv < chvarconfs.size(); ++cv) {
       chvars.emplace_back(VariableChangeFactory_::create(chvarconfs[cv], resol2));
       inverse.push_back(chvarconfs[cv].getBool("do inverse", false));
     }
@@ -77,7 +77,7 @@ template <typename MODEL> class ConvertState : public Application {
       std::unique_ptr<State_> xx(new State_(resol2, xxi));  // Pointer that can be reset after chvar
 
 //    Variable transform(s)
-      for (int cv = 0; cv < chvars.size(); ++cv) {
+      for (size_t cv = 0; cv < chvars.size(); ++cv) {
         if (!inverse[cv]) {
           State_ xchvarout = chvars[cv]->changeVar(*xx);
           xx.reset(new State_(xchvarout));

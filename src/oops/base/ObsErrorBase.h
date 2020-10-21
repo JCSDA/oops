@@ -89,8 +89,7 @@ class ObsErrorMaker : public ObsErrorFactory<OBS> {
 template <typename OBS>
 ObsErrorFactory<OBS>::ObsErrorFactory(const std::string & name) {
   if (getMakers().find(name) != getMakers().end()) {
-    Log::error() << name << " already registered in observation error factory." << std::endl;
-    ABORT("Element already registered in ObsErrorFactory.");
+    throw std::runtime_error(name + " already registered in obs error factory.");
   }
   getMakers()[name] = this;
 }
@@ -105,8 +104,7 @@ ObsErrorFactory<OBS>::create(const eckit::Configuration & conf, const ObsSpace_ 
   typename std::map<std::string, ObsErrorFactory<OBS>*>::iterator
     jerr = getMakers().find(id);
   if (jerr == getMakers().end()) {
-    Log::error() << id << " does not exist in observation error factory." << std::endl;
-    ABORT("Element does not exist in ObsErrorFactory.");
+    throw std::runtime_error(id + " does not exist in obs error factory.");
   }
   std::unique_ptr<ObsErrorBase<OBS>> ptr(jerr->second->make(conf, obs));
   Log::trace() << "ObsErrorBase<OBS>::create done" << std::endl;

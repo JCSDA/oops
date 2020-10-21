@@ -24,7 +24,7 @@ namespace oops {
 
 /// FGMRES Minimizer
 /*!
- * Implements the standard Preconditioned Conjugate Gradients algorithm.
+ * Implements the Flexible GMRES solver for Ax=b.
  */
 
 // -----------------------------------------------------------------------------

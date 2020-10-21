@@ -174,6 +174,35 @@ void StateL95::accumul(const double & zz, const StateL95 & xx) {
   fld_.axpy(zz, xx.fld_);
 }
 // -----------------------------------------------------------------------------
-
+/// Serialize - deserialize
+// -----------------------------------------------------------------------------
+size_t StateL95::serialSize() const {
+  size_t nn = 3;
+  nn += fld_.serialSize();
+  nn += time_.serialSize();
+  return nn;
+}
+// -----------------------------------------------------------------------------
+void StateL95::serialize(std::vector<double> & vect) const {
+  vect.push_back(1001.0);
+  fld_.serialize(vect);
+  vect.push_back(2002.0);
+  time_.serialize(vect);
+  vect.push_back(3003.0);
+}
+// -----------------------------------------------------------------------------
+void StateL95::deserialize(const std::vector<double> & vect, size_t & index) {
+  size_t ii = index + this->serialSize();
+  ASSERT(vect.at(index) == 1001.0);
+  ++index;
+  fld_.deserialize(vect, index);
+  ASSERT(vect.at(index) == 2002.0);
+  ++index;
+  time_.deserialize(vect, index);
+  ASSERT(vect.at(index) == 3003.0);
+  ++index;
+  ASSERT(index == ii);
+}
+// -----------------------------------------------------------------------------
 
 }  // namespace lorenz95

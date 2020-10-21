@@ -13,7 +13,7 @@
 
 #include <map>
 #include <memory>
-
+#include <string>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/mpi/Comm.h"
@@ -79,16 +79,18 @@ template<typename MODEL, typename OBS> class CostFct4DEnsVar : public CostFuncti
   void doLinearize(const Geometry_ &, const eckit::Configuration &,
                    const CtrlVar_ &, const CtrlVar_ &,
                    PostProcessor<State_> &, PostProcessorTLAD<MODEL> &) override;
-  const Geometry_ & geometry() const override {return resol_;}
+  const Geometry_ & geometry() const override {return *resol_;}
 
-  util::Duration windowLength_;
-  util::DateTime windowBegin_;
-  util::DateTime windowEnd_;
-  util::Duration windowSub_;
-  const eckit::mpi::Comm & comm_;
-  Geometry_ resol_;
-  unsigned int ncontrol_;
+  util::Duration subWinLength_;
+  util::DateTime subWinTime_;
+  util::DateTime subWinBegin_;
+  util::DateTime subWinEnd_;
+  size_t nsubwin_;
+  size_t mysubwin_;
+  std::unique_ptr<Geometry_> resol_;
   const Variables ctlvars_;
+  eckit::mpi::Comm * commSpace_;
+  eckit::mpi::Comm * commTime_;
 };
 
 // =============================================================================
@@ -96,21 +98,52 @@ template<typename MODEL, typename OBS> class CostFct4DEnsVar : public CostFuncti
 template<typename MODEL, typename OBS>
 CostFct4DEnsVar<MODEL, OBS>::CostFct4DEnsVar(const eckit::Configuration & config,
                                              const eckit::mpi::Comm & comm)
-  : CostFunction<MODEL, OBS>::CostFunction(config), comm_(comm),
-    resol_(eckit::LocalConfiguration(config, "geometry"), comm),
-    ctlvars_(config, "analysis variables")
+  : CostFunction<MODEL, OBS>::CostFunction(config),
+    resol_(), ctlvars_(config, "analysis variables")
 {
-  windowLength_ = util::Duration(config.getString("window length"));
-  windowBegin_ = util::DateTime(config.getString("window begin"));
-  windowEnd_ = windowBegin_ + windowLength_;
-  windowSub_ = util::Duration(config.getString("subwindow"));
+  Log::trace() << "CostFct4DEnsVar::CostFct4DEnsVar start" << std::endl;
+  util::Duration windowLength(config.getString("window length"));
+  util::DateTime windowBegin(config.getString("window begin"));
+  util::DateTime windowEnd = windowBegin + windowLength;
+  subWinLength_ = util::Duration(config.getString("subwindow"));
 
-  ncontrol_ = windowLength_.toSeconds() / windowSub_.toSeconds();
-  ASSERT(windowLength_.toSeconds() == windowSub_.toSeconds()*ncontrol_);
+  nsubwin_ = windowLength.toSeconds() / subWinLength_.toSeconds() + 1;  // Not like WC
+  ASSERT(windowLength.toSeconds() == subWinLength_.toSeconds() * (nsubwin_ - 1));
+
+  size_t ntasks = comm.size();
+  ASSERT(ntasks % nsubwin_ == 0);
+  size_t myrank = comm.rank();
+  size_t ntaskpslot = ntasks / nsubwin_;
+  size_t mysubwin_ = myrank / ntaskpslot;
+
+// Define local sub-window
+  subWinTime_  = windowBegin + mysubwin_ * subWinLength_;
+  subWinBegin_ = subWinTime_ - subWinLength_/2;
+  subWinEnd_   = subWinTime_ + subWinLength_/2;
+  if (mysubwin_ == 0) subWinBegin_ = subWinTime_;
+  if (mysubwin_ == nsubwin_ - 1) subWinEnd_ = subWinTime_;
+  ASSERT(subWinBegin_ >= windowBegin);
+  ASSERT(subWinEnd_ <= windowEnd);
+
+// Create a communicator for same sub-window, to be used for communications in space
+  std::string sgeom = "comm_geom_" + std::to_string(mysubwin_);
+  char const *geomName = sgeom.c_str();
+  commSpace_ = &comm.split(mysubwin_, geomName);
+
+// Create a communicator for same local area, to be used for communications in time
+  size_t myarea = commSpace_->rank();
+  std::string stime = "comm_time_" + std::to_string(myarea);
+  char const *timeName = stime.c_str();
+  commTime_ = &comm.split(myarea, timeName);
+  ASSERT(commTime_->size() == nsubwin_);
+
+// Now can setup the rest
+  resol_.reset(new Geometry_(eckit::LocalConfiguration(config, "geometry"),
+                             *commSpace_, *commTime_));
 
   this->setupTerms(config);
 
-  Log::trace() << "CostFct4DEnsVar constructed" << std::endl;
+  Log::trace() << "CostFct4DEnsVar::CostFct4DEnsVar done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -119,14 +152,17 @@ template <typename MODEL, typename OBS>
 CostJb4D<MODEL> * CostFct4DEnsVar<MODEL, OBS>::newJb(const eckit::Configuration & jbConf,
                                                      const Geometry_ & resol,
                                                      const CtrlVar_ & xb) const {
-  return new CostJb4D<MODEL>(jbConf, resol, ctlvars_, xb.state());
+  Log::trace() << "CostFct4DEnsVar::newJb" << std::endl;
+  return new CostJb4D<MODEL>(jbConf, *commTime_, resol, ctlvars_, xb.state());
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
 CostJo<MODEL, OBS> * CostFct4DEnsVar<MODEL, OBS>::newJo(const eckit::Configuration & joConf) const {
-  return new CostJo<MODEL, OBS>(joConf, comm_, windowBegin_, windowEnd_, windowSub_, true);
+  Log::trace() << "CostFct4DEnsVar::newJo" << std::endl;
+  return new CostJo<MODEL, OBS>(joConf, *commSpace_,
+                                subWinBegin_, subWinEnd_, *commTime_);
 }
 
 // -----------------------------------------------------------------------------
@@ -134,22 +170,28 @@ CostJo<MODEL, OBS> * CostFct4DEnsVar<MODEL, OBS>::newJo(const eckit::Configurati
 template <typename MODEL, typename OBS>
 CostTermBase<MODEL, OBS> * CostFct4DEnsVar<MODEL, OBS>::newJc(const eckit::Configuration & jcConf,
                                                               const Geometry_ & resol) const {
-  const eckit::LocalConfiguration jcdfi(jcConf, "jcdfi");
-  const util::DateTime vt(windowBegin_ + windowLength_/2);
-  return new CostJcDFI<MODEL, OBS>(jcdfi, resol, vt, windowLength_, windowSub_);
+  Log::trace() << "CostFct4DEnsVar::newJc" << std::endl;
+//  const eckit::LocalConfiguration jcdfi(jcConf, "jcdfi");
+//  const util::DateTime vt(subWinBegin_ + windowLength_/2);
+//  return new CostJcDFI<MODEL, OBS>(jcdfi, resol, vt, windowLength_, subWinLength_);
+  Log::warning() << "CostFct4DEnsVar::newJc NO Jc" << std::endl;
+  CostTermBase<MODEL, OBS> * pjc = 0;
+  return pjc;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
 void CostFct4DEnsVar<MODEL, OBS>::runNL(CtrlVar_ & xx, PostProcessor<State_> & post) const {
-  post.initialize(xx.state()[0], windowEnd_, windowSub_);
-  for (unsigned int jsub = 0; jsub <= ncontrol_; ++jsub) {
-    util::DateTime now(windowBegin_ + jsub*windowSub_);
-    ASSERT(xx.state()[jsub].validTime() == now);
-    post.process(xx.state()[jsub]);
-  }
-  post.finalize(xx.state()[ncontrol_]);
+  Log::trace() << "CostFct4DEnsVar::runNL start" << std::endl;
+  ASSERT(xx.state().validTime() == subWinTime_);
+
+  post.initialize(xx.state(), subWinTime_, subWinLength_);
+  post.process(xx.state());
+  post.finalize(xx.state());
+
+  Log::info() << "CostFct4DEnsVar::runNL: " << xx << std::endl;
+  Log::trace() << "CostFct4DEnsVar::runNL done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -172,31 +214,31 @@ void CostFct4DEnsVar<MODEL, OBS>::runTLM(CtrlInc_ & dx,
                                          PostProcessorTLAD<MODEL> & cost,
                                          PostProcessor<Increment_> post,
                                          const bool) const {
-  cost.initializeTL(dx.state()[0], windowEnd_, windowSub_);
-  post.initialize(dx.state()[0], windowEnd_, windowSub_);
+  Log::trace() << "CostFct4DEnsVar::runTLM start" << std::endl;
+  ASSERT(dx.state().validTime() == subWinTime_);
 
-  for (unsigned int jsub = 0; jsub <= ncontrol_; ++jsub) {
-    util::DateTime now(windowBegin_ + jsub*windowSub_);
-    ASSERT(dx.state()[jsub].validTime() == now);
+  cost.initializeTL(dx.state(), subWinTime_, subWinLength_);
+  post.initialize(dx.state(), subWinTime_, subWinLength_);
 
-    cost.processTL(dx.state()[jsub]);
-    post.process(dx.state()[jsub]);
-  }
-  cost.finalizeTL(dx.state()[ncontrol_]);
-  post.finalize(dx.state()[ncontrol_]);
+  cost.processTL(dx.state());
+  post.process(dx.state());
+
+  cost.finalizeTL(dx.state());
+  post.finalize(dx.state());
+
+  Log::info() << "CostFct4DEnsVar::runTLM: " << dx << std::endl;
+  Log::trace() << "CostFct4DEnsVar::runTLM done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
 void CostFct4DEnsVar<MODEL, OBS>::zeroAD(CtrlInc_ & dx) const {
-  util::DateTime now(windowBegin_);
-  for (unsigned int jsub = 0; jsub <= ncontrol_; ++jsub) {
-    dx.state()[jsub].zero(now);
-    now += windowSub_;
-  }
+  Log::trace() << "CostFct4DEnsVar::zeroAD start" << std::endl;
+  dx.state().zero(subWinTime_);
   dx.modVar().zero();
   dx.obsVar().zero();
+  Log::trace() << "CostFct4DEnsVar::zeroAD done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -206,19 +248,19 @@ void CostFct4DEnsVar<MODEL, OBS>::runADJ(CtrlInc_ & dx,
                                          PostProcessorTLAD<MODEL> & cost,
                                          PostProcessor<Increment_> post,
                                          const bool) const {
-  post.initialize(dx.state()[ncontrol_], windowBegin_, windowSub_);
-  cost.initializeAD(dx.state()[ncontrol_], windowBegin_, windowSub_);
+  Log::trace() << "CostFct4DEnsVar::runADJ start" << std::endl;
 
-  for (int jsub = ncontrol_; jsub >= 0; --jsub) {
-    cost.processAD(dx.state()[jsub]);
-    post.process(dx.state()[jsub]);
+  post.initialize(dx.state(), subWinTime_, subWinLength_);
+  cost.initializeAD(dx.state(), subWinTime_, subWinLength_);
 
-    util::DateTime now(windowBegin_ + jsub*windowSub_);
-    ASSERT(dx.state()[jsub].validTime() == now);
-  }
+  cost.processAD(dx.state());
+  post.process(dx.state());
 
-  cost.finalizeAD(dx.state()[0]);
-  post.finalize(dx.state()[0]);
+  cost.finalizeAD(dx.state());
+  post.finalize(dx.state());
+
+  Log::info() << "CostFct4DEnsVar::runADJ: " << dx << std::endl;
+  Log::trace() << "CostFct4DEnsVar::runADJ done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -226,9 +268,11 @@ void CostFct4DEnsVar<MODEL, OBS>::runADJ(CtrlInc_ & dx,
 template<typename MODEL, typename OBS>
 void CostFct4DEnsVar<MODEL, OBS>::addIncr(CtrlVar_ & xx, const CtrlInc_ & dx,
                                           PostProcessor<Increment_> &) const {
-  for (unsigned jsub = 0; jsub <= ncontrol_; ++jsub) {
-    xx.state()[jsub] += dx.state()[jsub];
-  }
+  Log::trace() << "CostFct4DEnsVar::addIncr start" << std::endl;
+  ASSERT(xx.state().validTime() == subWinTime_);
+  ASSERT(dx.state().validTime() == subWinTime_);
+  xx.state() += dx.state();
+  Log::trace() << "CostFct4DEnsVar::addIncr done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

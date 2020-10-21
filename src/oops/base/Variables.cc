@@ -17,7 +17,6 @@
 #include "eckit/exception/Exceptions.h"
 #include "eckit/types/Types.h"
 
-#include "oops/util/abor1_cpp.h"
 #include "oops/util/IntSetParser.h"
 #include "oops/util/Logger.h"
 
@@ -39,7 +38,7 @@ Variables::Variables(const eckit::Configuration & conf, const std::string & name
   conf.get(name, vars);
   if (vars.size() == 0) {
     Log::error() << name << " not found in " << conf << std::endl;
-    ABORT("Undefined variable");
+    throw eckit::BadParameter("Undefined variable: '" + name + "'");
   }
   // hack to read channels
   if (conf.has("channels")) {

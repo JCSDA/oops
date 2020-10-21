@@ -3,7 +3,7 @@ cost function:
   window begin: '2010-01-01T03:00:00Z'
   window length: P1D
   geometry:
-    resol: '40'
+    resol: 40
   model:
     f: 8.0
     name: L95
@@ -15,8 +15,8 @@ cost function:
   background error:
     covariance model: L95Error
     date: '2010-01-01T03:00:00Z'
-    length_scale: '1.0'
-    standard_deviation: '0.6'
+    length_scale: 1.0
+    standard_deviation: 0.6
   observations:
   - obs error:
       covariance model: diagonal
@@ -49,7 +49,7 @@ variational:
       name: L95TLM
     ninner: '10'
     geometry:
-      resol: '40'
+      resol: 40
     test: 'on'
   - gradient norm reduction: 1e-10
     linear model:
@@ -61,7 +61,7 @@ variational:
       name: L95TLM
     ninner: '10'
     geometry:
-      resol: '40'
+      resol: 40
     test: 'on'
 final:
   diagnostics:

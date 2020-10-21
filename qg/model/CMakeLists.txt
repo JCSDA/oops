@@ -7,8 +7,6 @@ ChangeVarTLADQG.cc
 ChangeVarTLADQG.h
 ErrorCovarianceQG.cc
 ErrorCovarianceQG.h
-ErrorStdDevQG.cc
-ErrorStdDevQG.h
 FieldsQG.cc
 FieldsQG.h
 GeometryQG.cc
@@ -89,8 +87,6 @@ qg_convert_x_to_uv_mod.F90
 qg_differential_solver_mod.F90
 qg_error_covariance_interface.F90
 qg_error_covariance_mod.F90
-qg_error_stddev_interface.F90
-qg_error_stddev_mod.F90
 qg_fields_interface.F90
 qg_fields_mod.F90
 qg_geom_interface.F90

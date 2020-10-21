@@ -1,10 +1,10 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * (C) Copyright 2017-2019 UCAR. 
+ * (C) Copyright 2017-2019 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -89,12 +89,6 @@ ObsVecQG & ObsVecQG::operator/= (const ObsVecQG & rhs) {
   return *this;
 }
 // -----------------------------------------------------------------------------
-double ObsVecQG::operator[] (const size_t ii) const {
-  double val;
-  qg_obsvec_getat_f90(keyOvec_, ii, val);
-  return val;
-}
-// -----------------------------------------------------------------------------
 void ObsVecQG::zero() {
   qg_obsvec_zero_f90(keyOvec_);
 }
@@ -122,16 +116,32 @@ double ObsVecQG::dot_product_with(const ObsVecQG & other) const {
 }
 // -----------------------------------------------------------------------------
 double ObsVecQG::rms() const {
-  double zz;
-  qg_obsvec_dotprod_f90(keyOvec_, keyOvec_, zz);
   int iobs;
   qg_obsvec_nobs_f90(keyOvec_, iobs);
-  zz = sqrt(zz/iobs);
+  double zz = 0.0;
+  if (iobs > 0) {
+    qg_obsvec_dotprod_f90(keyOvec_, keyOvec_, zz);
+    zz = sqrt(zz/iobs);
+  }
   return zz;
 }
 // -----------------------------------------------------------------------------
 void ObsVecQG::save(const std::string & name) const {
   obsdb_.putdb(name, keyOvec_);
+}
+// -----------------------------------------------------------------------------
+Eigen::VectorXd ObsVecQG::packEigen() const {
+  Eigen::VectorXd vec(nobs());
+  double val;
+  for (unsigned int ii = 0; ii < nobs(); ++ii) {
+    qg_obsvec_getat_f90(keyOvec_, ii, val);
+    vec(ii) = val;
+  }
+  return vec;
+}
+// -----------------------------------------------------------------------------
+void ObsVecQG::read(const std::string & name) {
+  obsdb_.getdb(name, keyOvec_);
 }
 // -----------------------------------------------------------------------------
 void ObsVecQG::print(std::ostream & os) const {

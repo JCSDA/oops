@@ -12,11 +12,10 @@
 #ifndef LORENZ95_INCREMENTL95_H_
 #define LORENZ95_INCREMENTL95_H_
 
+#include <memory>
 #include <ostream>
 #include <string>
 #include <vector>
-
-#include <boost/shared_ptr.hpp>
 
 #include "lorenz95/FieldL95.h"
 #include "lorenz95/Iterator.h"
@@ -28,6 +27,7 @@
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
+#include "oops/util/Serializable.h"
 
 namespace eckit {
   class Configuration;
@@ -54,6 +54,7 @@ namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
 class IncrementL95 : public util::Printable,
+                     public util::Serializable,
                      public oops::GeneralizedDepartures,
                      private util::ObjectCounter<IncrementL95> {
  public:
@@ -69,6 +70,7 @@ class IncrementL95 : public util::Printable,
   void diff(const StateL95 &, const StateL95 &);
   void zero();
   void zero(const util::DateTime &);
+  void ones();
   void dirac(const eckit::Configuration &);
   IncrementL95 & operator =(const IncrementL95 &);
   IncrementL95 & operator+=(const IncrementL95 &);
@@ -98,8 +100,8 @@ class IncrementL95 : public util::Printable,
 /// Access to data
   const FieldL95 & getField() const {return fld_;}
   FieldL95 & getField() {return fld_;}
-  boost::shared_ptr<const Resolution> geometry() const {
-    boost::shared_ptr<const Resolution> geom(new Resolution(fld_.resol()));
+  std::shared_ptr<const Resolution> geometry() const {
+    std::shared_ptr<const Resolution> geom(new Resolution(fld_.resol()));
     return geom;
   }
   std::vector<double> & asVector() {return fld_.asVector();}
@@ -108,12 +110,12 @@ class IncrementL95 : public util::Printable,
   void accumul(const double &, const StateL95 &);
 
 /// Serialize and deserialize
-  size_t serialSize() const;
-  void serialize(std::vector<double> &) const;
-  void deserialize(const std::vector<double> &, size_t &);
+  size_t serialSize() const override;
+  void serialize(std::vector<double> &) const override;
+  void deserialize(const std::vector<double> &, size_t &) override;
 
  private:
-  void print(std::ostream &) const;
+  void print(std::ostream &) const override;
   FieldL95 fld_;
   util::DateTime time_;
 };

@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "oops/util/Printable.h"
+#include "oops/util/Serializable.h"
 
 namespace eckit {
   class Configuration;
@@ -27,7 +28,8 @@ namespace qg {
 
 // -----------------------------------------------------------------------------
 
-class ModelBiasIncrement : public util::Printable {
+class ModelBiasIncrement : public util::Printable,
+                           public util::Serializable {
  public:
 /// Constructor, destructor
   ModelBiasIncrement(const GeometryQG &, const eckit::Configuration &) {}
@@ -51,13 +53,13 @@ class ModelBiasIncrement : public util::Printable {
   double norm() const {return 0.0;}
 
 /// Serialization
-  size_t serialSize() {return 0;}
-  void serialize(std::vector<double> & vect) const {}
-  void deserialize(const std::vector<double> &, size_t & index) {}
+  size_t serialSize() const override {return 0;}
+  void serialize(std::vector<double> &) const override {}
+  void deserialize(const std::vector<double> &, size_t &) override {}
 
  private:
   explicit ModelBiasIncrement(const ModelBiasCovariance &);
-  void print(std::ostream & os) const {}
+  void print(std::ostream & os) const override {}
 };
 
 // -----------------------------------------------------------------------------

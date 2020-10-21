@@ -15,7 +15,6 @@ ensemble:
   - date: 2010-01-01T00:00:00Z
     filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1D.nc
   inflation value: 2.0
-  variable change: ChVarQG
 geometry:
   nx: 40
   ny: 20

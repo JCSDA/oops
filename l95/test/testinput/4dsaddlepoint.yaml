@@ -17,12 +17,13 @@ cost function:
     - date: '2010-01-01T15:00:00Z'
       filename: Data/test.fc.2010-01-01T00:00:00Z.PT15H
   background error:
-    covariance model: L95Error
-    covariance_time:
-    - date: '2010-01-01T03:00:00Z'
+    covariances:
+    - covariance model: L95Error
+      date: '2010-01-01T03:00:00Z'
       length_scale: 1.0
       standard_deviation: 0.6
-    - date: '2010-01-01T15:00:00Z'
+    - covariance model: L95Error
+      date: '2010-01-01T15:00:00Z'
       length_scale: 1.0
       standard_deviation: 0.2
   observations:
@@ -32,11 +33,11 @@ cost function:
       obsdatain:  Data/l95.truth4d.2010-01-02T00:00:00Z.obt
       obsdataout: Data/l95.4dsaddlepoint.2010-01-02T00:00:00Z.obt
     obs operator: {}
-  constraints:
-  - jcdfi:
-      filtered variables: [x]
-      alpha: 100.0
-      cutoff: PT3H
+#  constraints:
+#  - jcdfi:
+#      filtered variables: [x]
+#      alpha: 100.0
+#      cutoff: PT3H
 variational:
   minimizer:
     algorithm: SaddlePoint

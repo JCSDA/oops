@@ -1,4 +1,6 @@
 set( _l95_srcs
+        AnalyticInit.cc
+        AnalyticInit.h
         BackgroundCheck.cc
         BackgroundCheck.h
         ErrorCovarianceL95.cc

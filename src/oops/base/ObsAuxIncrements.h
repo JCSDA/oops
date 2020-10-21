@@ -18,13 +18,15 @@
 #include "oops/interface/ObsAuxIncrement.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
+#include "oops/util/Serializable.h"
 
 namespace oops {
 
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-class ObsAuxIncrements : public util::Printable {
+class ObsAuxIncrements : public util::Printable,
+                         public util::Serializable {
   typedef ObsAuxIncrement<OBS>     ObsAuxIncrement_;
   typedef ObsAuxControls<OBS>      ObsAuxControls_;
   typedef ObsSpaces<OBS>           ObsSpaces_;
@@ -59,12 +61,12 @@ class ObsAuxIncrements : public util::Printable {
   double norm() const;
 
 /// Serialize-Deserialize
-  size_t serialSize() const;
-  void serialize(std::vector<double> &) const;
-  void deserialize(const std::vector<double>, size_t &);
+  size_t serialSize() const override;
+  void serialize(std::vector<double> &) const override;
+  void deserialize(const std::vector<double> &, size_t &) override;
 
  private:
-  void print(std::ostream &) const;
+  void print(std::ostream &) const override;
   std::vector<std::unique_ptr<ObsAuxIncrement_> > auxs_;
 };
 
@@ -255,7 +257,7 @@ void ObsAuxIncrements<OBS>::serialize(std::vector<double> & vect) const {
 }
 // -----------------------------------------------------------------------------
 template<typename OBS>
-void ObsAuxIncrements<OBS>::deserialize(const std::vector<double> vect, size_t & index) {
+void ObsAuxIncrements<OBS>::deserialize(const std::vector<double> & vect, size_t & index) {
   Log::trace() << "ObsAuxIncrements<OBS>::deserialize starting" << std::endl;
   for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) {
     auxs_[jobs]->deserialize(vect, index);

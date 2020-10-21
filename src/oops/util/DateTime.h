@@ -16,6 +16,8 @@
 #include <string>
 #include <vector>
 
+#include "oops/util/Serializable.h"
+
 // Forward declarations
 namespace util {
   class Duration;
@@ -31,7 +33,7 @@ namespace util {
  * DateTime is represented internally as UTC quantized to the nearest second.
  */
 
-class DateTime {
+class DateTime : public util::Serializable {
 /// << and >> can be used to output and set the time as ISO 8601 strings
   friend std::istream& operator>>(std::istream& is, DateTime& uri);
   friend std::ostream& operator<<(std::ostream&, const DateTime&);
@@ -77,9 +79,9 @@ class DateTime {
   std::size_t timestamp() const;
 
   // Serialize and deserialize
-  size_t serialSize() const;
-  void serialize(std::vector<double> &) const;
-  void deserialize(const std::vector<double> &, size_t &);
+  size_t serialSize() const override;
+  void serialize(std::vector<double> &) const override;
+  void deserialize(const std::vector<double> &, size_t &) override;
 
  private:
 // -- Copy allowed

@@ -26,7 +26,7 @@ using atlas::option::levels;
 
 namespace oops {
 
-static InterpolatorMaker<InterpolatorAtlas> makerId_("atlas");
+static InterpolatorMaker<InterpolatorAtlas> makerAtlas_("atlas");
 
 // -----------------------------------------------------------------------------
 InterpolatorAtlas::InterpolatorAtlas(const eckit::Configuration & config,
@@ -42,13 +42,13 @@ InterpolatorAtlas::InterpolatorAtlas(const eckit::Configuration & config,
 }
 
 // -----------------------------------------------------------------------------
-void InterpolatorAtlas::apply(atlas::Field const & infield,
+void InterpolatorAtlas::apply(const atlas::Field & infield,
                               atlas::Field & outfield) {
       interpolator_->execute(infield, outfield);
 }
 
 // -----------------------------------------------------------------------------
-void InterpolatorAtlas::apply(atlas::FieldSet const & infields,
+void InterpolatorAtlas::apply(const atlas::FieldSet & infields,
                               atlas::FieldSet & outfields) {
   // Allocate space for the output fields if the caller has not already done so
   for (size_t ifield = 0; ifield < static_cast<size_t>(infields.size()); ++ifield) {

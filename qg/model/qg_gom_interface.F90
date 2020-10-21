@@ -36,8 +36,6 @@ type(c_ptr),value,intent(in) :: c_vars      !< Variables
 type(qg_gom),pointer :: self
 type(qg_locs) :: locs
 type(oops_variables) :: vars
-type(atlas_field) :: index
-integer, pointer :: kobs(:)
 
 ! Interface
 call qg_gom_registry%init()
@@ -46,14 +44,8 @@ call qg_gom_registry%get(c_key_self,self)
 locs = qg_locs(c_locs)
 vars = oops_variables(c_vars)
 
-! get observations index
-index = locs%index()
-call index%data(kobs)
-
 ! Call Fortran
-call qg_gom_setup(self,kobs,vars)
-
-call index%final()
+call qg_gom_setup(self,locs%nlocs(),vars)
 
 end subroutine qg_gom_setup_c
 ! ------------------------------------------------------------------------------

@@ -50,7 +50,6 @@ class ModelBias : public util::Printable,
   ModelBias & operator+=(const ModelBiasCorrection &);
 
   const double & bias() const {return bias_;}
-  double & bias() {return bias_;}
 
 /// I/O and diagnostics
   void read(const eckit::Configuration &) {}

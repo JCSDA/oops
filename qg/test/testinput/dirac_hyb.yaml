@@ -37,6 +37,7 @@ background error:
     vertical_length_scale: 15000.0
   static weight: 0.707
 dirac:
+  date: 2010-01-01T12:00:00Z
   ixdir: [20]
   iydir: [10]
   izdir: [1]

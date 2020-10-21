@@ -33,6 +33,7 @@
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
+#include "oops/util/Expect.h"
 #include "oops/util/Logger.h"
 #include "test/TestEnvironment.h"
 
@@ -102,12 +103,12 @@ template <typename MODEL> void testLinearVariableChangeZero() {
 
     // dxinTlIAd = 0, check if K.dxinTlIAd = 0
     dxinTlIAd.zero();
-    changevar->multiply(dxinTlIAd, dxoutTlIAd);
+    dxoutTlIAd = changevar->multiply(dxinTlIAd);
     EXPECT(dxoutTlIAd.norm() == 0.0);
 
     // dxinAdInv = 0, check if K^T.dxinAdInv = 0
     dxinAdInv.zero();
-    changevar->multiplyAD(dxinAdInv, dxoutAdInv);
+    dxoutAdInv = changevar->multiplyAD(dxinAdInv);
     EXPECT(dxoutAdInv.norm() == 0.0);
 
     const bool testinverse = Test_::confs()[jj].getBool("test inverse", true);
@@ -115,11 +116,11 @@ template <typename MODEL> void testLinearVariableChangeZero() {
       {
         oops::Log::info() << "Doing zero test for inverse" << std::endl;
         dxinTlIAd.zero();
-        changevar->multiplyInverseAD(dxinTlIAd, dxoutTlIAd);
+        dxoutTlIAd = changevar->multiplyInverseAD(dxinTlIAd);
         EXPECT(dxoutTlIAd.norm() == 0.0);
 
         dxinAdInv.zero();
-        changevar->multiplyInverse(dxinAdInv, dxoutAdInv);
+        dxoutAdInv = changevar->multiplyInverse(dxinAdInv);
         EXPECT(dxoutAdInv.norm() == 0.0);
       } else {
       oops::Log::info() << "Not doing zero test for inverse" << std::endl;
@@ -153,8 +154,8 @@ template <typename MODEL> void testLinearVariableChangeAdjoint() {
     Increment_  dxinAdInv0(dxinAdInv);
     Increment_  dxinTlIAd0(dxinTlIAd);
 
-    changevar->multiply(dxinTlIAd, dxoutTlIAd);
-    changevar->multiplyAD(dxinAdInv, dxoutAdInv);
+    dxoutTlIAd = changevar->multiply(dxinTlIAd);
+    dxoutAdInv = changevar->multiplyAD(dxinAdInv);
 
     // zz1 = <dxoutTlIAd,dxinAdInv>
     double zz1 = dot_product(dxoutTlIAd, dxinAdInv0);
@@ -177,8 +178,8 @@ template <typename MODEL> void testLinearVariableChangeAdjoint() {
         dxinTlIAd.random();
         dxinAdInv0 = dxinAdInv;
         dxinTlIAd0 = dxinTlIAd;
-        changevar->multiplyInverseAD(dxinTlIAd, dxoutTlIAd);
-        changevar->multiplyInverse(dxinAdInv, dxoutAdInv);
+        dxoutTlIAd = changevar->multiplyInverseAD(dxinTlIAd);
+        dxoutAdInv = changevar->multiplyInverse(dxinAdInv);
         zz1 = dot_product(dxoutTlIAd, dxinAdInv0);
         zz2 = dot_product(dxinTlIAd0, dxoutAdInv);
         oops::Log::info() << "<dxout,KinvTdxin>-<Kinvdxout,dxin>/<dxout,KinvTdxin>="
@@ -220,8 +221,8 @@ template <typename MODEL> void testLinearVariableChangeInverse() {
 
       dxinInv.random();
 
-      changevar->multiplyInverse(dxinInv, dxoutInv);
-      changevar->multiply(dxoutInv, dxout);
+      dxoutInv = changevar->multiplyInverse(dxinInv);
+      dxout = changevar->multiply(dxoutInv);
 
       const double zz1 = dxinInv.norm();
       const double zz2 = dxout.norm();
@@ -239,11 +240,48 @@ template <typename MODEL> void testLinearVariableChangeInverse() {
 
 // -----------------------------------------------------------------------------
 
+template <typename MODEL> void testLinearVariableChangeParametersWrapperValidName() {
+  typedef LinearVariableChangeFixture<MODEL> Test_;
+  for (const eckit::Configuration &config : Test_::confs()) {
+    oops::LinearVariableChangeParametersWrapper<MODEL> parameters;
+    EXPECT_NO_THROW(parameters.validateAndDeserialize(config));
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL> void testLinearVariableChangeParametersWrapperInvalidName() {
+  eckit::LocalConfiguration config;
+  config.set("variable change", "###INVALID###");
+  oops::LinearVariableChangeParametersWrapper<MODEL> parameters;
+  if (oops::Parameters::isValidationSupported())
+    EXPECT_THROWS_MSG(parameters.validate(config), "unrecognized enum value");
+  EXPECT_THROWS_MSG(parameters.deserialize(config),
+                    "does not exist in LinearVariableChangeFactory");
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL> void testLinearVariableChangeFactoryGetMakerNames() {
+  typedef LinearVariableChangeFixture<MODEL> Test_;
+  const std::vector<std::string> registeredNames =
+      oops::LinearVariableChangeFactory<MODEL>::getMakerNames();
+  for (const eckit::Configuration &config : Test_::confs()) {
+    const std::string validName = config.getString("variable change");
+    const bool found = std::find(registeredNames.begin(), registeredNames.end(), validName) !=
+        registeredNames.end();
+    EXPECT(found);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
 template <typename MODEL>
 class LinearVariableChange : public oops::Test {
  public:
   LinearVariableChange() {}
   virtual ~LinearVariableChange() {}
+
  private:
   std::string testid() const override {return "test::LinearVariableChange<" + MODEL::name() + ">";}
 
@@ -256,6 +294,15 @@ class LinearVariableChange : public oops::Test {
       { testLinearVariableChangeAdjoint<MODEL>(); });
     ts.emplace_back(CASE("interface/LinearVariableChange/testLinearVariableChangeInverse")
       { testLinearVariableChangeInverse<MODEL>(); });
+    ts.emplace_back(CASE("interface/LinearVariableChange/"
+                         "testLinearVariableChangeParametersWrapperValidName")
+      { testLinearVariableChangeParametersWrapperValidName<MODEL>(); });
+    ts.emplace_back(CASE("interface/LinearVariableChange/"
+                         "testLinearVariableChangeParametersWrapperInvalidName")
+      { testLinearVariableChangeParametersWrapperInvalidName<MODEL>(); });
+    ts.emplace_back(CASE("interface/LinearVariableChange/"
+                         "testLinearVariableChangeFactoryGetMakerNames")
+      { testLinearVariableChangeFactoryGetMakerNames<MODEL>(); });
   }
 
   void clear() const override {}

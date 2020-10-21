@@ -21,6 +21,7 @@
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
+#include "oops/util/Serializable.h"
 #include "oops/util/Timer.h"
 
 namespace eckit {
@@ -33,6 +34,7 @@ namespace oops {
 
 template <typename OBS>
 class ObsAuxIncrement : public util::Printable,
+                        public util::Serializable,
                         private util::ObjectCounter<ObsAuxIncrement<OBS> > {
   typedef typename OBS::ObsAuxIncrement     ObsAuxIncrement_;
   typedef ObsAuxControl<OBS>       ObsAuxControl_;
@@ -66,12 +68,12 @@ class ObsAuxIncrement : public util::Printable,
   double norm() const;
 
 /// Serialize and deserialize
-  size_t serialSize() const;
-  void serialize(std::vector<double> &) const;
-  void deserialize(const std::vector<double> &, size_t &);
+  size_t serialSize() const override;
+  void serialize(std::vector<double> &) const override;
+  void deserialize(const std::vector<double> &, size_t &) override;
 
  private:
-  void print(std::ostream &) const;
+  void print(std::ostream &) const override;
   std::unique_ptr<ObsAuxIncrement_> aux_;
 };
 

@@ -18,6 +18,8 @@
 #include "eckit/config/Configuration.h"
 #include "lorenz95/Iterator.h"
 #include "oops/mpi/mpi.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 #include "oops/util/Printable.h"
 
 namespace lorenz95 {
@@ -25,15 +27,25 @@ namespace lorenz95 {
 class Iterator;
 
 // -----------------------------------------------------------------------------
+/// \brief Parameters controlling a Lorenz95 model's resolution.
+class ResolutionParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(ResolutionParameters, Parameters)
+
+ public:
+  /// \brief Number of gridpoints.
+  oops::RequiredParameter<int> resol{"resol", this};
+};
+
+// -----------------------------------------------------------------------------
 /// Handles resolution.
 
 class Resolution : public util::Printable {
  public:
-  Resolution(const eckit::Configuration & conf, const eckit::mpi::Comm & comm)
-              : resol_(conf.getInt("resol")), comm_(comm) {}
+  typedef ResolutionParameters Parameters_;
+
+  Resolution(const ResolutionParameters & parameters, const eckit::mpi::Comm & comm)
+              : resol_(parameters.resol), comm_(comm) {}
   explicit Resolution(const int resol): resol_(resol), comm_(oops::mpi::myself()) {}
-  Resolution(const Resolution & other): resol_(other.resol_), comm_(other.comm_) {}
-  ~Resolution() {}
 
   int npoints() const {return resol_;}
 
@@ -43,7 +55,6 @@ class Resolution : public util::Printable {
   const eckit::mpi::Comm & getComm() const {return comm_;}
 
  private:
-  Resolution & operator=(const Resolution &);
   void print(std::ostream & os) const {os << resol_;}
   const int resol_;
   const eckit::mpi::Comm & comm_;

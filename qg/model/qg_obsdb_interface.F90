@@ -26,26 +26,32 @@ private
 contains
 ! ------------------------------------------------------------------------------
 !> Setup observation data
-subroutine qg_obsdb_setup_c(c_key_self,c_conf) bind(c,name='qg_obsdb_setup_f90')
+subroutine qg_obsdb_setup_c(c_key_self,c_conf,c_winbgn,c_winend) bind(c,name='qg_obsdb_setup_f90')
 
 implicit none
 
 ! Passed variables
 integer(c_int),intent(inout) :: c_key_self !< Observation data
-type(c_ptr),value,intent(in) :: c_conf        !< Configuration
+type(c_ptr),value,intent(in) :: c_conf     !< Configuration
+type(c_ptr),value,intent(in) :: c_winbgn   !< Start of window
+type(c_ptr),value,intent(in) :: c_winend   !< End of window
 
 ! Local variables
 type(fckit_configuration) :: f_conf
 type(qg_obsdb),pointer :: self
+type(datetime) :: winbgn
+type(datetime) :: winend
 
 ! Interface
 f_conf = fckit_configuration(c_conf)
 call qg_obsdb_registry%init()
 call qg_obsdb_registry%add(c_key_self)
 call qg_obsdb_registry%get(c_key_self,self)
+call c_f_datetime(c_winbgn,winbgn)
+call c_f_datetime(c_winend,winend)
 
 ! Call Fortran
-call qg_obsdb_setup(self,f_conf)
+call qg_obsdb_setup(self,f_conf,winbgn,winend)
 
 end subroutine qg_obsdb_setup_c
 ! ------------------------------------------------------------------------------

@@ -11,17 +11,25 @@
 #include <string>
 
 #include "oops/base/ModelBase.h"
+#include "oops/base/ParameterTraitsVariables.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
-
-namespace eckit {
-  class Configuration;
-}
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
+
+class IdentityModelParameters : public ModelParametersBase {
+  OOPS_CONCRETE_PARAMETERS(IdentityModelParameters, ModelParametersBase)
+
+ public:
+  oops::RequiredParameter<util::Duration> tstep{"tstep", this};
+  oops::RequiredParameter<Variables> vars{"state variables", this};
+};
 
 /// Generic implementation of identity model
 template <typename MODEL>
@@ -31,9 +39,11 @@ class IdentityModel : public ModelBase<MODEL> {
   typedef typename MODEL::State             State_;
 
  public:
+  typedef IdentityModelParameters           Parameters_;
+
   static const std::string classname() {return "oops::IdentityModel";}
 
-  IdentityModel(const Geometry_ &, const eckit::Configuration &);
+  IdentityModel(const Geometry_ &, const IdentityModelParameters &);
 
 /// initialize forecast
   void initialize(State_ &) const override;
@@ -43,21 +53,20 @@ class IdentityModel : public ModelBase<MODEL> {
   void finalize(State_ &) const override;
 
 /// model time step
-  const util::Duration & timeResolution() const override {return tstep_;}
+  const util::Duration & timeResolution() const override {return params_.tstep;}
 /// model variables
-  const oops::Variables & variables() const override {return vars_;}
+  const oops::Variables & variables() const override {return params_.vars;}
 
  private:
   void print(std::ostream &) const override {}
-  const util::Duration tstep_;
-  const oops::Variables vars_;
+  const IdentityModelParameters params_;
 };
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-IdentityModel<MODEL>::IdentityModel(const Geometry_ & resol, const eckit::Configuration & conf)
-  : tstep_(util::Duration(conf.getString("tstep"))), vars_(conf, "state variables") {
+IdentityModel<MODEL>::IdentityModel(const Geometry_ & resol, const IdentityModelParameters & params)
+  : params_(params) {
   Log::trace() << "IdentityModel<MODEL>::IdentityModel done" << std::endl;
 }
 
@@ -73,7 +82,7 @@ void IdentityModel<MODEL>::initialize(State_ & xx) const {
 template<typename MODEL>
 void IdentityModel<MODEL>::step(State_ & xx, const ModelAux_ & merr) const {
   Log::trace() << "IdentityModel<MODEL>:step Starting " << std::endl;
-  xx.updateTime(tstep_);
+  xx.updateTime(params_.tstep);
   Log::trace() << "IdentityModel<MODEL>::step done" << std::endl;
 }
 

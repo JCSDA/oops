@@ -18,8 +18,6 @@ implicit none
 
 private
 ! ------------------------------------------------------------------------------
-logical,parameter :: test_model_ad = .false. !< Test adjoint of the model
-! ------------------------------------------------------------------------------
 contains
 ! ------------------------------------------------------------------------------
 !> Setup model
@@ -122,9 +120,6 @@ type(qg_fields),pointer :: traj
 call qg_model_registry%get(c_key_conf,conf)
 call qg_fields_registry%get(c_key_traj,traj)
 call qg_fields_registry%get(c_key_incr,fld)
-
-! Test adjoint of the model
-if (test_model_ad) call qg_model_propagate_test(conf,traj,fld)
 
 ! Call Fortran
 call qg_model_propagate_ad(conf,traj,fld)

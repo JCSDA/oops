@@ -20,7 +20,6 @@
 #include "oops/interface/ObsDiagnostics.h"
 #include "oops/interface/ObsSpace.h"
 #include "oops/interface/ObsVector.h"
-#include "oops/util/abor1_cpp.h"
 #include "oops/util/Printable.h"
 
 namespace oops {
@@ -93,8 +92,7 @@ class FilterMaker : public FilterFactory<OBS> {
 template <typename OBS>
 FilterFactory<OBS>::FilterFactory(const std::string & name) {
   if (getMakers().find(name) != getMakers().end()) {
-    Log::error() << name << " already registered in obs filter factory." << std::endl;
-    ABORT("Element already registered in FilterFactory.");
+    throw std::runtime_error(name + " already registered in obs filter factory.");
   }
   getMakers()[name] = this;
 }
@@ -116,7 +114,7 @@ FilterFactory<OBS>::create(const ObsSpace_ & os, const eckit::Configuration & co
          jj = getMakers().begin(); jj != getMakers().end(); ++jj) {
        Log::error() << "A " << jj->first << " Filter" << std::endl;
     }
-    ABORT("Element does not exist in FilterFactory.");
+    throw std::runtime_error(id + " does not exist in obs filter factory.");
   }
   std::shared_ptr<ObsFilterBase<OBS>> ptr(jloc->second->make(os, conf, flags, obserr));
   Log::trace() << "ObsFilterBase<OBS>::create done" << std::endl;

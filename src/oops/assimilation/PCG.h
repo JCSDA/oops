@@ -79,7 +79,7 @@ double PCG(VECTOR & x, const VECTOR & b,
   // Initial residual r = b - Ax
   r = b;
   double xnrm2 = dot_product(x, x);
-  if (xnrm2 != 0) {
+  if (xnrm2 > 0.0) {
     A.multiply(x, s);
     r -= s;
   }
@@ -108,7 +108,7 @@ double PCG(VECTOR & x, const VECTOR & b,
       p  = s;
     } else {
       double beta = dot_product(s, r)/rdots_old;
-      Log::debug() << "PCG beta = " << beta << std::endl;
+      Log::info() << "PCG beta = " << beta << std::endl;
 
       p *= beta;
       p += s;      // p = s + beta*p

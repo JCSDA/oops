@@ -11,13 +11,12 @@
 #ifndef QG_MODEL_FIELDSQG_H_
 #define QG_MODEL_FIELDSQG_H_
 
+#include <memory>
 #include <ostream>
 #include <string>
 #include <vector>
 
-#include <boost/shared_ptr.hpp>
-
-#include "atlas/field/FieldSet.h"
+#include "atlas/field.h"
 
 #include "eckit/config/LocalConfiguration.h"
 
@@ -27,6 +26,7 @@
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
+#include "oops/util/Serializable.h"
 
 #include "oops/qg/GeometryQG.h"
 #include "oops/qg/GeometryQGIterator.h"
@@ -48,6 +48,7 @@ namespace qg {
 // -----------------------------------------------------------------------------
 /// Class to represent a Fields for the QG model
 class FieldsQG : public util::Printable,
+                 public util::Serializable,
                  private util::ObjectCounter<FieldsQG> {
  public:
   static const std::string classname() {return "qg::FieldsQG";}
@@ -62,6 +63,7 @@ class FieldsQG : public util::Printable,
 
   void zero();
   void zero(const util::DateTime &);
+  void ones();
   FieldsQG & operator=(const FieldsQG &);
   FieldsQG & operator+=(const FieldsQG &);
   FieldsQG & operator-=(const FieldsQG &);
@@ -87,13 +89,13 @@ class FieldsQG : public util::Printable,
   void analytic_init(const eckit::Configuration &);
   void write(const eckit::Configuration &) const;
   double norm() const;
-  boost::shared_ptr<const GeometryQG> geometry() const {return geom_;}
+  std::shared_ptr<const GeometryQG> geometry() const {return geom_;}
   const oops::Variables & variables() const {return vars_;}
 
   const util::DateTime & time() const {return time_;}
   util::DateTime & time() {return time_;}
+  void updateTime(const util::Duration & dt) {time_ += dt;}
 
-  int & toFortran() {return keyFlds_;}
   const int & toFortran() const {return keyFlds_;}
 
   bool isForModel(const bool &) const;
@@ -102,14 +104,14 @@ class FieldsQG : public util::Printable,
   void setLocal(const oops::LocalIncrement &, const GeometryQGIterator &);
 
 /// Serialization
-  size_t serialSize() const;
-  void serialize(std::vector<double> &) const;
-  void deserialize(const std::vector<double> &, size_t &);
+  size_t serialSize() const override;
+  void serialize(std::vector<double> &) const override;
+  void deserialize(const std::vector<double> &, size_t &) override;
 
  private:
-  void print(std::ostream &) const;
+  void print(std::ostream &) const override;
   F90flds keyFlds_;
-  boost::shared_ptr<const GeometryQG> geom_;
+  std::shared_ptr<const GeometryQG> geom_;
   const oops::Variables vars_;
   const bool lbc_;
   util::DateTime time_;

@@ -32,8 +32,8 @@ ObsSpaceBase::ObsSpaceBase(const eckit::Configuration & conf, const eckit::mpi::
   util::Duration dt(winbgn_ - ref);
   seed_ = dt.toSeconds();
 
-  int member = conf.getInt("member", 0);
-  seed_ += member;  // Won't repeat if more seconds between analysis cycles than members in EDA
+  // Won't repeat if more seconds between analysis cycles than members in EDA
+  seed_ += conf.getInt("obs perturbations seed", 0);
 
 //             31622400 seconds max in 1 year
 //          12197962800 seed at this step for 2010-01-01T03:00:00Z

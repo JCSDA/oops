@@ -1,0 +1,77 @@
+#
+#=== Tests of SpectralLMP ===#
+#
+
+SpectralLMP_preconditioner_maxpairs1_ritz_useoldpairs:
+  window begin: 2018-04-14T20:30:00Z
+  window end: 2018-04-15T03:30:00Z
+  nouter: 1
+  preconditioner:
+    maxpairs: 1
+    ritz: on
+    useoldpairs: on
+
+SpectralLMP_preconditioner_maxpairs1_ritz_dontuseoldpairs:
+  window begin: 2018-04-14T20:30:00Z
+  window end: 2018-04-15T03:30:00Z
+  nouter: 1
+  preconditioner:
+    maxpairs: 1
+    ritz: on
+    useoldpairs: off
+
+SpectralLMP_preconditioner_maxpairs1_noritz_useoldpairs:
+  window begin: 2018-04-14T20:30:00Z
+  window end: 2018-04-15T03:30:00Z
+  nouter: 1
+  preconditioner:
+    maxpairs: 1
+    ritz: off
+    useoldpairs: on
+
+SpectralLMP_preconditioner_maxpairs1_noritz_dontuseoldpairs:
+  window begin: 2018-04-14T20:30:00Z
+  window end: 2018-04-15T03:30:00Z
+  nouter: 1
+  preconditioner:
+    maxpairs: 1
+    ritz: off
+    useoldpairs: off
+
+SpectralLMP_preconditioner_maxpairs10_ritz_useoldpairs:
+  window begin: 2018-04-14T20:30:00Z
+  window end: 2018-04-15T03:30:00Z
+  nouter: 1
+  preconditioner:
+    maxpairs: 10
+    ritz: on
+    useoldpairs: on
+
+SpectralLMP_preconditioner_maxpairs10_ritz_dontuseoldpairs:
+  window begin: 2018-04-14T20:30:00Z
+  window end: 2018-04-15T03:30:00Z
+  nouter: 1
+  preconditioner:
+    maxpairs: 10
+    ritz: on
+    useoldpairs: off
+
+SpectralLMP_preconditioner_maxpairs10_noritz_useoldpairs:
+  window begin: 2018-04-14T20:30:00Z
+  window end: 2018-04-15T03:30:00Z
+  nouter: 1
+  preconditioner:
+    maxpairs: 10
+    ritz: off
+    useoldpairs: on
+
+SpectralLMP_preconditioner_maxpairs10_noritz_dontuseoldpairs:
+  window begin: 2018-04-14T20:30:00Z
+  window end: 2018-04-15T03:30:00Z
+  nouter: 1
+  preconditioner:
+    maxpairs: 10
+    ritz: off
+    useoldpairs: off
+  
+

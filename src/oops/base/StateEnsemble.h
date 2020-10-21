@@ -12,38 +12,38 @@
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "oops/assimilation/State4D.h"
 #include "oops/base/Accumulator.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
+#include "oops/interface/State.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
 
 // -----------------------------------------------------------------------------
 
-/// \brief Ensemble of 4D states
+/// \brief Ensemble of states
 template<typename MODEL> class StateEnsemble {
   typedef Geometry<MODEL>      Geometry_;
-  typedef State4D<MODEL>       State4D_;
+  typedef State<MODEL>         State_;
 
  public:
-  /// Create ensemble of 4D states
+  /// Create ensemble of states
   StateEnsemble(const Geometry_ &, const eckit::Configuration &);
 
   /// calculate ensemble mean
-  State4D_ mean() const;
+  State_ mean() const;
 
   /// Accessors
-  unsigned int size() const { return states_.size(); }
-  State4D_ & operator[](const int ii) { return states_[ii]; }
-  const State4D_ & operator[](const int ii) const { return states_[ii]; }
+  size_t size() const { return states_.size(); }
+  State_ & operator[](const int ii) { return states_[ii]; }
+  const State_ & operator[](const int ii) const { return states_[ii]; }
 
   /// Information
   const Variables & variables() const {return states_[0].variables();}
 
  private:
-  std::vector<State4D_> states_;
+  std::vector<State_> states_;
 };
 
 // ====================================================================================
@@ -57,7 +57,7 @@ StateEnsemble<MODEL>::StateEnsemble(const Geometry_ & resol,
   states_.reserve(memberConfig.size());
   // Loop over all ensemble members
   for (size_t jj = 0; jj < memberConfig.size(); ++jj) {
-    states_.emplace_back(State4D_(resol, memberConfig[jj]));
+    states_.emplace_back(State_(resol, memberConfig[jj]));
   }
   Log::trace() << "StateEnsemble:contructor done" << std::endl;
 }
@@ -65,9 +65,9 @@ StateEnsemble<MODEL>::StateEnsemble(const Geometry_ & resol,
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-State4D<MODEL> StateEnsemble<MODEL>::mean() const {
+State<MODEL> StateEnsemble<MODEL>::mean() const {
   // Compute ensemble mean
-  Accumulator<MODEL, State4D_, State4D_> ensmean(states_[0]);
+  Accumulator<MODEL, State_, State_> ensmean(states_[0]);
 
   const double rr = 1.0/static_cast<double>(states_.size());
   for (size_t iens = 0; iens < states_.size(); ++iens) {

@@ -40,7 +40,7 @@ class ObsTableView : public util::Printable,
   static const std::string classname() {return "lorenz95::ObsTableView";}
 
   ObsTableView(const eckit::Configuration &, const eckit::mpi::Comm &,
-               const util::DateTime &, const util::DateTime &);
+               const util::DateTime &, const util::DateTime &, const eckit::mpi::Comm &);
   ObsTableView(const ObsTableView &, const eckit::geometry::Point2 &,
                const eckit::Configuration &);
   ~ObsTableView();

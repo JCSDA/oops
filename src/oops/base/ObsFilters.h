@@ -83,12 +83,14 @@ ObsFilters<OBS>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration & c
     filters_.push_back(FilterFactory<OBS>::create(os, preconf, qcflags, obserr));
   }
 
-// Create the filters
+// Create the filters, only at 0-th iteration, or at iterations specified in "apply at iterations"
   for (std::size_t jj = 0; jj < confs.size(); ++jj) {
-    bool apply = true;
+    // Only create filters for the 0-th iteration
+    const int iter = conf.getInt("iteration");
+    bool apply = (iter == 0);
+    // If "apply at iterations" is set, check if this is the right iteration
     if (confs[jj].has("apply at iterations")) {
       std::set<int> iters = parseIntSet(confs[jj].getString("apply at iterations"));
-      const int iter = conf.getInt("iteration");
       apply = contains(iters, iter);
     }
     if (apply) {

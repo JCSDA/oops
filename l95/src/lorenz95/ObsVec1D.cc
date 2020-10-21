@@ -1,10 +1,10 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
  * (C) Copyright 2020-2020 UCAR.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -145,10 +145,14 @@ double ObsVec1D::dot_product_with(const ObsVec1D & other) const {
 // -----------------------------------------------------------------------------
 double ObsVec1D::rms() const {
   double zz = 0.0;
+  double iobs = 0.0;
   for (const double & val : data_) {
-    if (val != missing_) zz += val * val;
+    if (val != missing_) {
+      zz += val * val;
+      iobs += 1.0;
+    }
   }
-  zz = sqrt(zz/static_cast<double>(nobs()));
+  if (iobs > 0.0) zz = sqrt(zz/iobs);
   return zz;
 }
 // -----------------------------------------------------------------------------
@@ -156,27 +160,52 @@ unsigned int ObsVec1D::nobs() const {
   return data_.size() - std::count(data_.begin(), data_.end(), missing_);
 }
 // -----------------------------------------------------------------------------
+void ObsVec1D::mask(const ObsData1D<int> & mask) {
+  for (size_t jj = 0; jj < data_.size(); ++jj) {
+    if (mask[jj]) data_.at(jj) = missing_;
+  }
+}
+// -----------------------------------------------------------------------------
 void ObsVec1D::save(const std::string & name) const {
   obsdb_.putdb(name, data_);
 }
 // -----------------------------------------------------------------------------
+Eigen::VectorXd ObsVec1D::packEigen() const {
+  Eigen::VectorXd vec(nobs());
+  size_t ii = 0;
+  for (const double & val : data_) {
+    if (val != missing_) {
+      vec(ii++) = val;
+    }
+  }
+  ASSERT(ii == nobs());
+  return vec;
+}
+// -----------------------------------------------------------------------------
+void ObsVec1D::read(const std::string & name) {
+  obsdb_.getdb(name, data_);
+}
+// -----------------------------------------------------------------------------
 void ObsVec1D::print(std::ostream & os) const {
-  ASSERT(data_.size() > 0);
   double zmin = std::numeric_limits<double>::max();
   double zmax = std::numeric_limits<double>::lowest();
   double zavg = 0.0;
-  size_t nobs = 0;
+  size_t iobs = 0;
   for (const double & val : data_) {
     if (val != missing_) {
       if (val < zmin) zmin = val;
       if (val > zmax) zmax = val;
       zavg += val;
-      ++nobs;
+      ++iobs;
     }
   }
-  zavg /= static_cast<double>(nobs);
-  os << "Lorenz 95 nobs= " << nobs << " Min=" << zmin << ", Max=" << zmax
-     << ", Average=" << zavg;
+  if (iobs > 0) {
+    zavg /= static_cast<double>(iobs);
+    os << "Lorenz 95 nobs= " << iobs << " Min=" << zmin << ", Max=" << zmax
+       << ", Average=" << zavg;
+  } else {
+    os << "Lorenz 95 : No observations";
+  }
 }
 // -----------------------------------------------------------------------------
 }  // namespace lorenz95

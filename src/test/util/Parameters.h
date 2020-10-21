@@ -21,10 +21,14 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "oops/../test/TestEnvironment.h"
+#include "oops/base/ParameterTraitsVariables.h"
+#include "oops/base/Variables.h"
 #include "oops/runs/Test.h"
 #include "oops/util/Expect.h"
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/ConfigurationParameter.h"
+#include "oops/util/parameters/HasParameters_.h"
+#include "oops/util/parameters/IgnoreOtherParameters.h"
 #include "oops/util/parameters/NumericConstraints.h"
 #include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/OptionalPolymorphicParameter.h"
@@ -98,6 +102,7 @@ class MyParametersBase : public oops::Parameters {
   oops::Parameter<RangeParameters> rangeParameter{"range_parameter", RangeParameters(), this};
   oops::Parameter<std::vector<int>> intParameters{"int_parameters", {}, this};
   oops::Parameter<std::vector<RangeParameters>> rangeParameters{"range_parameters", {}, this};
+  oops::Parameter<oops::Variables> variablesParameter{"variables_parameter", {}, this};
   EmbeddedParameters embeddedParameters{this};
 };
 
@@ -134,6 +139,15 @@ class MyMapParameters : public oops::Parameters {
   oops::Parameter<util::ScalarOrMap<std::string, util::Duration>>
     durationOrStringToDurationMapParameter2{"duration_or_string_to_duration_map_2",
                                             util::ScalarOrMap<std::string, util::Duration>(), this};
+};
+
+// Class required by tests checking Variables-valued parameters
+
+class VariablesParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(VariablesParameters, Parameters)
+ public:
+  oops::Parameter<oops::Variables> filterVariables{"filter_variables", {}, this};
+  oops::Parameter<oops::Variables> operatorVariables{"operator_variables", {}, this};
 };
 
 // Classes required to test support for polymorphic parameters.
@@ -320,6 +334,50 @@ class ConflictingParameters : public oops::Parameters {
   OtherConstrainedParameters otherConstrained{this};
 };
 
+// Classes used to test the IgnoreOtherParameters class
+
+class TolerantParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(TolerantParameters, Parameters)
+ public:
+  oops::Parameter<float> floatParameter{"float_parameter", 1.5f, this};
+  oops::Parameter<int> intParameter{"int_parameter", 2, this};
+  oops::IgnoreOtherParameters config{this};
+};
+
+// Classes used to test HasParameters_
+
+struct WithoutParameters_ {};
+
+struct WithParameters_NotDerivedFromOopsParameters {
+  typedef std::string Parameters_;
+};
+
+class PrivateParameters : private oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(PrivateParameters, Parameters)
+ public:
+};
+
+struct WithParameters_DerivedPrivatelyFromOopsParameters {
+  typedef PrivateParameters Parameters_;
+};
+
+namespace nonoops {
+
+struct Parameters {};
+
+struct SomeParameters : Parameters {};
+
+}  // namespace nonoops
+
+struct WithParameters_DerivedFromNonOopsParameters {
+  typedef PrivateParameters Parameters_;
+};
+
+struct WithParameters_DerivedFromOopsParameters {
+  typedef MyOptionalParameters Parameters_;
+};
+
+
 template <typename ParametersType>
 void doTestSerialization(const eckit::Configuration &config) {
   // We deserialize a configuration loaded from a YAML file into parameters and then serialize them
@@ -369,6 +427,7 @@ void testDefaultValues() {
   EXPECT(params.rangeParameter.value().maxParameter == 0.0f);
   EXPECT(params.intParameters.value().empty());
   EXPECT(params.rangeParameters.value().empty());
+  EXPECT(params.variablesParameter.value() == oops::Variables());
   EXPECT(params.embeddedParameters.intParameter.value() == 3);
   EXPECT(params.embeddedParameters.optDateTimeParameter.value() == boost::none);
 
@@ -391,6 +450,7 @@ void testDefaultValues() {
   EXPECT(params.rangeParameter.value().maxParameter == 0.0f);
   EXPECT(params.intParameters.value().empty());
   EXPECT(params.rangeParameters.value().empty());
+  EXPECT(params.variablesParameter.value() == oops::Variables());
   EXPECT(params.embeddedParameters.intParameter.value() == 3);
   EXPECT(params.embeddedParameters.optDateTimeParameter.value() == boost::none);
 }
@@ -423,6 +483,8 @@ void testCorrectValues() {
   EXPECT(params.rangeParameters.value()[0].maxParameter == 10.0f);
   EXPECT(params.rangeParameters.value()[1].minParameter == 11.0f);
   EXPECT(params.rangeParameters.value()[1].maxParameter == 12.0f);
+  EXPECT(params.variablesParameter.value() ==
+         oops::Variables({"u", "v"}, std::vector<int>({5, 6, 7})));
   EXPECT(params.embeddedParameters.intParameter.value() == 13);
   EXPECT(params.embeddedParameters.optDateTimeParameter.value() != boost::none);
   EXPECT_EQUAL(params.embeddedParameters.optDateTimeParameter.value().get(),
@@ -433,55 +495,58 @@ void misspelledParameterNames() {
   MyOptionalParameters floatParam;
   const::eckit::LocalConfiguration floatConf(TestEnvironment::config(), "misspelled_float");
   if (validationSupported)
-    EXPECT_THROWS(floatParam.validate(floatConf));
+    EXPECT_THROWS_MSG(floatParam.validate(floatConf), "additional properties are not allowed");
 
   MyOptionalParameters intParam;
   const eckit::LocalConfiguration intConf(TestEnvironment::config(), "misspelled_int");
   if (validationSupported)
-    EXPECT_THROWS(intParam.validate(intConf));
+    EXPECT_THROWS_MSG(intParam.validate(intConf), "additional properties are not allowed");
 
   MyOptionalParameters boolParam;
   const eckit::LocalConfiguration boolConf(TestEnvironment::config(), "misspelled_bool");
   if (validationSupported)
-    EXPECT_THROWS(boolParam.validate(boolConf));
+    EXPECT_THROWS_MSG(boolParam.validate(boolConf), "additional properties are not allowed");
 
   MyOptionalParameters dtParam;
   const eckit::LocalConfiguration dtConf(TestEnvironment::config(), "misspelled_dt");
   if (validationSupported)
-    EXPECT_THROWS(dtParam.validate(dtConf));
+    EXPECT_THROWS_MSG(dtParam.validate(dtConf), "additional properties are not allowed");
 
   MyOptionalParameters durParam;
   const eckit::LocalConfiguration durConf(TestEnvironment::config(), "misspelled_dur");
   if (validationSupported)
-    EXPECT_THROWS(durParam.validate(durConf));
+    EXPECT_THROWS_MSG(durParam.validate(durConf), "additional properties are not allowed");
 
   MyOptionalParameters fruitParam;
   const eckit::LocalConfiguration fruitConf(TestEnvironment::config(), "misspelled_fruit");
   if (validationSupported)
-    EXPECT_THROWS(fruitParam.validate(fruitConf));
+    EXPECT_THROWS_MSG(fruitParam.validate(fruitConf), "additional properties are not allowed");
 
   MyOptionalParameters intsParam;
   const eckit::LocalConfiguration intsConf(TestEnvironment::config(), "misspelled_ints");
   if (validationSupported)
-    EXPECT_THROWS(intsParam.validate(intsConf));
+    EXPECT_THROWS_MSG(intsParam.validate(intsConf), "additional properties are not allowed");
 
   MyOptionalParameters nestedParam;
   const eckit::LocalConfiguration nestedParamConf
           (TestEnvironment::config(), "misspelled_nested_param");
   if (validationSupported)
-    EXPECT_THROWS(nestedParam.validate(nestedParamConf));
+    EXPECT_THROWS_MSG(nestedParam.validate(nestedParamConf),
+                      "additional properties are not allowed");
 
   MyOptionalParameters nestedParams;
   const eckit::LocalConfiguration nestedParamsConf
           (TestEnvironment::config(), "misspelled_nested_params");
   if (validationSupported)
-    EXPECT_THROWS(nestedParams.validate(nestedParamsConf));
+    EXPECT_THROWS_MSG(nestedParams.validate(nestedParamsConf),
+                      "additional properties are not allowed");
 
   MyOptionalParameters nestingParam;
   const eckit::LocalConfiguration nestingParamConf
           (TestEnvironment::config(), "misspelled_nesting_param");
   if (validationSupported)
-    EXPECT_THROWS(nestingParam.validate(nestingParamConf));
+    EXPECT_THROWS_MSG(nestingParam.validate(nestingParamConf),
+                      "additional properties are not allowed");
 }
 
 void testSerialization() {
@@ -517,7 +582,7 @@ void testIncorrectValueOfFloatParameter() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "error_in_float_parameter");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf), "unexpected value type");
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::BadParameter);
 }
 
@@ -526,7 +591,7 @@ void testIncorrectValueOfOptionalFloatParameter() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "error_in_opt_float_parameter");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf), "unexpected value type");
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::BadParameter);
 }
 
@@ -535,7 +600,7 @@ void testIncorrectValueOfOptionalDateTimeParameter() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "error_in_opt_date_time_parameter");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf), "ABCDEF is not a date-time string");
   // Conversion from string to DateTime calls abort() on failure,
   // so we can't test this call. Leaving it commented-out in case this changes in future.
   // EXPECT_THROWS_AS(params.deserialize(conf), eckit::BadParameter);
@@ -546,7 +611,7 @@ void testIncorrectValueOfOptionalDurationParameter() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "error_in_opt_duration_parameter");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf), "ABCDEF is not a duration string");
   // Conversion from string to Duration calls abort() on failure,
   // so we can't test this call. Leaving it commented-out in case this changes in future.
   // EXPECT_THROWS_AS(params.deserialize(conf), eckit::BadParameter);
@@ -557,7 +622,7 @@ void testIncorrectValueOfEnumParameter() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "error_in_fruit_parameter");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf), "unrecognized enum value");
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::BadParameter);
 }
 
@@ -566,7 +631,7 @@ void testIncorrectValueOfIntParameters() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "error_in_int_parameters");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf), "unexpected value type");
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::Exception);
 }
 
@@ -575,7 +640,7 @@ void testIncorrectValueOfRangeParameters() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "error_in_range_parameters");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf), "unexpected value type");
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::Exception);
 }
 
@@ -584,7 +649,8 @@ void testMissingRequiredFloatParameter() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "missing_req_float_parameter");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf),
+                      "required property 'req_float_parameter' not found in object");
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::BadParameter);
 }
 
@@ -593,7 +659,8 @@ void testMissingRequiredDurationParameter() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "missing_req_duration_parameter");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf),
+                      "required property 'req_duration_parameter' not found in object");
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::BadParameter);
 }
 
@@ -687,10 +754,84 @@ void testMapParametersJsonStyleUnquotedKeys() {
 }
 
 void testMapParametersSerialization() {
-  MyMapParameters params;
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "map_parameter_json_style_quoted_keys");
   doTestSerialization<MyMapParameters>(conf);
+}
+
+// Parameters storing Variables objects
+
+void testVariablesDeserializationWithoutChannels() {
+  VariablesParameters params;
+  const eckit::LocalConfiguration conf(TestEnvironment::config(), "variables_without_channels");
+  EXPECT_NO_THROW(params.validate(conf));
+  params.deserialize(conf);
+
+  const oops::Variables expectedFilterVariables(conf, "filter_variables");
+  const oops::Variables expectedOperatorVariables(conf, "operator_variables");
+
+  EXPECT_EQUAL(params.filterVariables.value(), expectedFilterVariables);
+  EXPECT_EQUAL(params.operatorVariables.value(), expectedOperatorVariables);
+}
+
+void testVariablesDeserializationWithChannels() {
+  VariablesParameters params;
+  const eckit::LocalConfiguration conf(TestEnvironment::config(), "variables_with_channels");
+  EXPECT_NO_THROW(params.validate(conf));
+  params.deserialize(conf);
+
+  const oops::Variables expectedFilterVariables(conf, "filter_variables");
+  const oops::Variables expectedOperatorVariables(conf, "operator_variables");
+
+  EXPECT_EQUAL(params.filterVariables.value(), expectedFilterVariables);
+  EXPECT_EQUAL(params.operatorVariables.value(), expectedOperatorVariables);
+}
+
+void testVariablesSerializationWithoutChannels() {
+  VariablesParameters params;
+  const eckit::LocalConfiguration conf(TestEnvironment::config(), "variables_without_channels");
+  doTestSerialization<VariablesParameters>(conf);
+}
+
+void testVariablesSerializationWithChannels() {
+  const eckit::LocalConfiguration conf(TestEnvironment::config(), "variables_with_channels");
+  doTestSerialization<VariablesParameters>(conf);
+}
+
+void testCompositeVariablesSerialization() {
+  // Variable objects containing variables that don't share the same channel suffixes
+  // cannot be represented by a single Configuration object.
+  {
+    oops::Variables var1({"air_temperature", "air_pressure"}, std::vector<int>({5, 6, 7}));
+    oops::Variables var2({"relative_humidity"}, std::vector<int>({1, 2, 3}));
+    var1 += var2;
+
+    eckit::LocalConfiguration conf;
+    EXPECT_THROWS(oops::ParameterTraits<oops::Variables>::set(conf, "name", var1));
+  }
+
+  // Case with some variables having channel suffixes and others not
+  {
+    oops::Variables var1({"air_temperature", "air_pressure"}, std::vector<int>({5, 6, 7}));
+    // var2 won't have channels
+    const eckit::LocalConfiguration helperConf(TestEnvironment::config(),
+                                               "variables_without_channels");
+    oops::Variables var2(helperConf, "operator_variables");
+    var1 += var2;
+
+    eckit::LocalConfiguration conf;
+    EXPECT_THROWS(oops::ParameterTraits<oops::Variables>::set(conf, "name", var1));
+  }
+
+  // Case with all variables having the same channel suffixes
+  {
+    oops::Variables var1({"air_temperature", "air_pressure"}, std::vector<int>({5, 6, 7}));
+    oops::Variables var2({"relative_humidity"}, std::vector<int>({5, 6, 7}));
+    var1 += var2;
+
+    eckit::LocalConfiguration conf;
+    EXPECT_NO_THROW(oops::ParameterTraits<oops::Variables>::set(conf, "name", var1));
+  }
 }
 
 // Tests of special member functions
@@ -861,7 +1002,7 @@ void testRequiredPolymorphicParametersIncompleteDeserialization() {
 
   const eckit::LocalConfiguration conf(TestEnvironment::config(), "required_device_not_set");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf), "required property 'type' not found in object");
   EXPECT_THROWS(params.deserialize(conf));
 }
 
@@ -873,7 +1014,7 @@ void testInvalidPolymorphicParametersId() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "invalid_type_of_device_with_default");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf), "unrecognized enum value");
   EXPECT_THROWS(params.deserialize(conf));
 }
 
@@ -885,7 +1026,7 @@ void testInvalidOptionalPolymorphicParametersId() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "invalid_type_of_optional_device");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf), "unrecognized enum value");
   EXPECT_THROWS(params.deserialize(conf));
 }
 
@@ -897,7 +1038,7 @@ void testInvalidRequiredPolymorphicParametersId() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "invalid_type_of_required_device");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf), "unrecognized enum value");
   EXPECT_THROWS(params.deserialize(conf));
 }
 
@@ -907,7 +1048,7 @@ void testMisspelledPropertyOfPolymorphicParameters() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "misspelled_diameter_of_device_with_default");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf), "additional properties are not allowed");
 }
 
 void testMisspelledPropertyOfOptionalPolymorphicParameters() {
@@ -916,7 +1057,7 @@ void testMisspelledPropertyOfOptionalPolymorphicParameters() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "misspelled_diameter_of_optional_device");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf), "additional properties are not allowed");
 }
 
 void testMisspelledPropertyOfRequiredPolymorphicParameters() {
@@ -925,7 +1066,7 @@ void testMisspelledPropertyOfRequiredPolymorphicParameters() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "misspelled_diameter_of_required_device");
   if (validationSupported)
-    EXPECT_THROWS(params.validate(conf));
+    EXPECT_THROWS_MSG(params.validate(conf), "additional properties are not allowed");
 }
 
 void expectMatchesFullConf(const AllDeviceParameters &params) {
@@ -1067,14 +1208,14 @@ void doTestMinConstraint() {
     const eckit::LocalConfiguration invalidConf(conf, "int_min_constraint_not_met");
     ParametersType params;
     if (validationSupported)
-      EXPECT_THROWS(params.validate(invalidConf));
+      EXPECT_THROWS_MSG(params.validate(invalidConf), "value is below minimum");
     EXPECT_THROWS(params.deserialize(invalidConf));
   }
   {
     const eckit::LocalConfiguration invalidConf(conf, "float_min_constraint_not_met");
     ParametersType params;
     if (validationSupported)
-      EXPECT_THROWS(params.validate(invalidConf));
+      EXPECT_THROWS_MSG(params.validate(invalidConf), "value is below minimum");
     EXPECT_THROWS(params.deserialize(invalidConf));
   }
 }
@@ -1117,14 +1258,14 @@ void doTestMaxConstraint() {
     const eckit::LocalConfiguration invalidConf(conf, "int_max_constraint_not_met");
     ParametersType params;
     if (validationSupported)
-      EXPECT_THROWS(params.validate(invalidConf));
+      EXPECT_THROWS_MSG(params.validate(invalidConf), "value exceeds maximum");
     EXPECT_THROWS(params.deserialize(invalidConf));
   }
   {
     const eckit::LocalConfiguration invalidConf(conf, "float_max_constraint_not_met");
     ParametersType params;
     if (validationSupported)
-      EXPECT_THROWS(params.validate(invalidConf));
+      EXPECT_THROWS_MSG(params.validate(invalidConf), "value exceeds maximum");
     EXPECT_THROWS(params.deserialize(invalidConf));
   }
 }
@@ -1242,6 +1383,29 @@ void testSchemaConflictDetection() {
   EXPECT_THROWS(conflictingParameters.jsonSchema());
 }
 
+// IgnoreOtherParameters
+
+void testIgnoreOtherParameters() {
+  {
+    // We are tolerant: we ignore unregistred parameters...
+    const eckit::LocalConfiguration fullConf(TestEnvironment::config(), "full");
+    TolerantParameters params;
+    EXPECT_NO_THROW(params.validate(fullConf));
+    params.deserialize(fullConf);
+
+    EXPECT_EQUAL(params.floatParameter, 3.5f);
+    EXPECT_EQUAL(params.intParameter, 4);
+  }
+
+  {
+    // ... but everything in moderation: we still detect errors in registered parameters
+    const eckit::LocalConfiguration badConf(TestEnvironment::config(), "error_in_float_parameter");
+    TolerantParameters params;
+    if (validationSupported)
+      EXPECT_THROWS(params.validate(badConf));
+  }
+}
+
 // validateAndDeserialize
 
 void testValidateAndDeserialize() {
@@ -1255,6 +1419,16 @@ void testValidateAndDeserialize() {
     if (validationSupported)
       EXPECT_THROWS(oops::validateAndDeserialize<MyOptionalParameters>(conf));
   }
+}
+
+// HasParameters_
+
+void testHasParameters_() {
+  EXPECT_NOT(oops::HasParameters_<WithoutParameters_>::value);
+  EXPECT_NOT(oops::HasParameters_<WithParameters_NotDerivedFromOopsParameters>::value);
+  EXPECT_NOT(oops::HasParameters_<WithParameters_DerivedPrivatelyFromOopsParameters>::value);
+  EXPECT_NOT(oops::HasParameters_<WithParameters_DerivedFromNonOopsParameters>::value);
+  EXPECT(oops::HasParameters_<WithParameters_DerivedFromOopsParameters>::value);
 }
 
 
@@ -1339,6 +1513,22 @@ class Parameters : public oops::Test {
 
     ts.emplace_back(CASE("util/Parameters/mapParametersSerialization") {
                       testMapParametersSerialization();
+                    });
+
+    ts.emplace_back(CASE("util/Parameters/testVariablesDeserializationWithoutChannels") {
+                      testVariablesDeserializationWithoutChannels();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testVariablesDeserializationWithChannels") {
+                      testVariablesDeserializationWithChannels();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testVariablesSerializationWithoutChannels") {
+                      testVariablesSerializationWithoutChannels();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testVariablesSerializationWithChannels") {
+                      testVariablesSerializationWithChannels();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testCompositeVariablesSerialization") {
+                      testCompositeVariablesSerialization();
                     });
 
     ts.emplace_back(CASE("util/Parameters/testPolymorphicParametersDeserialization") {
@@ -1437,8 +1627,16 @@ class Parameters : public oops::Test {
                       testSchemaConflictDetection();
                     });
 
+    ts.emplace_back(CASE("util/Parameters/testIgnoreOtherParameters") {
+                      testIgnoreOtherParameters();
+                    });
+
     ts.emplace_back(CASE("util/Parameters/testValidateAndDeserialize") {
                       testValidateAndDeserialize();
+                    });
+
+    ts.emplace_back(CASE("util/Parameters/testHasParameters_") {
+                      testHasParameters_();
                     });
   }
 

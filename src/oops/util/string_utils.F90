@@ -38,7 +38,7 @@ if ( f_conf%has("member") ) then
   member_folder = "%{member}%"
   member_index = index(str, member_folder)
   if ( member_index>0 ) then
-    str2 = str(1:member_index-1) // "mem" // mymember_str // &
+    str2 = str(1:member_index-1) // mymember_str // &
       str(member_index+len(member_folder):len(str))
     deallocate(str)
     str=str2

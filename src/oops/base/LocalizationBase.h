@@ -18,10 +18,10 @@
 
 #include <boost/noncopyable.hpp>
 
-#include "oops/assimilation/Increment4D.h"
-#include "oops/base/IncrementEnsemble.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
+#include "oops/mpi/mpi.h"
+#include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
 
@@ -37,15 +37,16 @@ template <typename MODEL>
 class LocalizationBase : public util::Printable,
                          private boost::noncopyable {
   typedef Increment<MODEL>                        Increment_;
-  typedef Increment4D<MODEL>                      Increment4D_;
 
  public:
   LocalizationBase() = default;
   virtual ~LocalizationBase() = default;
 
-  virtual void multiply(Increment_ &) const = 0;
   /// default implementation of 4D localization (used in model-specific implementations)
-  virtual void multiply(Increment4D_ &) const;
+  virtual void localize(Increment_ &) const;
+
+ protected:
+  virtual void multiply(Increment_ &) const = 0;
 
  private:
   virtual void print(std::ostream &) const = 0;
@@ -54,22 +55,35 @@ class LocalizationBase : public util::Printable,
 // -----------------------------------------------------------------------------
 /// Default implementation of 4D localization (used in model-specific implementations)
 template <typename MODEL>
-void LocalizationBase<MODEL>::multiply(Increment4D_ & dx) const {
+void LocalizationBase<MODEL>::localize(Increment_ & dx) const {
   Log::trace() << "LocalizationBase<MODEL>::multiply starting" << std::endl;
-  // Sum over timeslots
-  Increment_ dxtmp(dx[dx.first()]);
-  for (int isub = dx.first()+1; isub <= dx.last(); ++isub) {
-     dxtmp.axpy(1.0, dx[isub], false);
-  }
+  const eckit::mpi::Comm & comm = dx.timeComm();
+  static int tag = 23456;
+  size_t nslots = comm.size();
+  int mytime = comm.rank();
 
-  // Apply 3D localization
-  this->multiply(dxtmp);
-
-  // Copy result to all timeslots
-  for (int isub = dx.first(); isub <= dx.last(); ++isub) {
-     dx[isub].zero();
-     dx[isub].axpy(1.0, dxtmp, false);
+  if (mytime > 0) {
+    util::DateTime dt = dx.validTime();   // Save original time value
+    oops::mpi::send(comm, dx, 0, tag);
+    dx.zero();
+    oops::mpi::receive(comm, dx, 0, tag);
+    dx.updateTime(dt - dx.validTime());  // Set time back to original value
+  } else {
+    // Sum over timeslots
+    for (size_t jj = 1; jj < nslots; ++jj) {
+      Increment_ dxtmp(dx);
+      oops::mpi::receive(comm, dxtmp, jj, tag);
+      dx.axpy(1.0, dxtmp, false);
+    }
+    // Apply 3D localization
+    this->multiply(dx);
+    // Copy result to all timeslots
+    for (size_t jj = 1; jj < nslots; ++jj) {
+      oops::mpi::send(comm, dx, jj, tag);
+    }
   }
+  ++tag;
+
   Log::trace() << "LocalizationBase<MODEL>::multiply done" << std::endl;
 }
 
@@ -80,15 +94,16 @@ void LocalizationBase<MODEL>::multiply(Increment4D_ & dx) const {
 template <typename MODEL>
 class LocalizationFactory {
   typedef Geometry<MODEL>                             Geometry_;
-  typedef std::shared_ptr<IncrementEnsemble<MODEL>>   EnsemblePtr_;
  public:
   static std::unique_ptr<LocalizationBase<MODEL>> create(const Geometry_ &,
-                          const EnsemblePtr_, const eckit::Configuration &);
+                                                         const util::DateTime &,
+                                                         const eckit::Configuration &);
   virtual ~LocalizationFactory() = default;
  protected:
   explicit LocalizationFactory(const std::string &);
  private:
-  virtual LocalizationBase<MODEL> * make(const Geometry_ &, const EnsemblePtr_,
+  virtual LocalizationBase<MODEL> * make(const Geometry_ &,
+                                         const util::DateTime &,
                                          const eckit::Configuration &) = 0;
   static std::map < std::string, LocalizationFactory<MODEL> * > & getMakers() {
     static std::map < std::string, LocalizationFactory<MODEL> * > makers_;
@@ -101,10 +116,10 @@ class LocalizationFactory {
 template<class MODEL, class T>
 class LocalizationMaker : public LocalizationFactory<MODEL> {
   typedef Geometry<MODEL>                             Geometry_;
-  typedef std::shared_ptr<IncrementEnsemble<MODEL>>   EnsemblePtr_;
-  virtual LocalizationBase<MODEL> * make(const Geometry_ & geometry, const EnsemblePtr_ ensemble,
+  virtual LocalizationBase<MODEL> * make(const Geometry_ & geometry,
+                                         const util::DateTime & time,
                                          const eckit::Configuration & conf)
-    { return new T(geometry, ensemble, conf); }
+    { return new T(geometry, time, conf); }
  public:
   explicit LocalizationMaker(const std::string & name) : LocalizationFactory<MODEL>(name) {}
 };
@@ -114,8 +129,7 @@ class LocalizationMaker : public LocalizationFactory<MODEL> {
 template <typename MODEL>
 LocalizationFactory<MODEL>::LocalizationFactory(const std::string & name) {
   if (getMakers().find(name) != getMakers().end()) {
-    Log::error() << name << " already registered in localization factory." << std::endl;
-    ABORT("Element already registered in LocalizationFactory.");
+    throw std::runtime_error(name + " already registered in localization factory.");
   }
   getMakers()[name] = this;
 }
@@ -124,7 +138,8 @@ LocalizationFactory<MODEL>::LocalizationFactory(const std::string & name) {
 
 template <typename MODEL>
 std::unique_ptr<LocalizationBase<MODEL>>
-LocalizationFactory<MODEL>::create(const Geometry_ & geometry, const EnsemblePtr_ ensemble,
+LocalizationFactory<MODEL>::create(const Geometry_ & geometry,
+                                   const util::DateTime & time,
                                    const eckit::Configuration & conf) {
   Log::trace() << "LocalizationBase<MODEL>::create starting" << std::endl;
   const std::string id = conf.getString("localization method");
@@ -138,9 +153,9 @@ LocalizationFactory<MODEL>::create(const Geometry_ & geometry, const EnsemblePtr
          jj = getMakers().begin(); jj != getMakers().end(); ++jj) {
        Log::error() << "A " << jj->first << " Localization" << std::endl;
     }
-    ABORT("Element does not exist in LocalizationFactory.");
+    throw std::runtime_error(id + " does not exist in localization factory.");
   }
-  std::unique_ptr<LocalizationBase<MODEL>> ptr(jloc->second->make(geometry, ensemble, conf));
+  std::unique_ptr<LocalizationBase<MODEL>> ptr(jloc->second->make(geometry, time, conf));
   Log::trace() << "LocalizationBase<MODEL>::create done" << std::endl;
   return ptr;
 }

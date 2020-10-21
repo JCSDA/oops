@@ -1,6 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * (C) Copyright 2018 UCAR.
+ * (C) Copyright 2018-2020 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -13,8 +13,6 @@
 #include <string>
 
 #include <boost/noncopyable.hpp>
-
-#include "eckit/exception/Exceptions.h"
 
 #include "oops/base/ModelBase.h"
 #include "oops/interface/Geometry.h"
@@ -31,7 +29,9 @@ namespace eckit {
 
 namespace oops {
 
-/// Encapsulates the nonlinear forecast model
+/// \brief Encapsulates the nonlinear forecast model
+/// Note: to see methods that need to be implemented in the forecast model implementation,
+/// see ModelBase class.
 ///
 /// Note: implementations of this interface can opt to extract their settings either from
 /// a Configuration object or from a subclass of ModelParametersBase.
@@ -64,20 +64,28 @@ class Model : public util::Printable,
   Model(const Geometry_ &, const eckit::Configuration &);
   virtual ~Model();
 
-// Run the forecast
-  void forecast(State_ &, const ModelAux_ &,
-                const util::Duration &, PostProcessor<State_> &) const;
+  /// \brief Run the forecast from state \p xx for \p len time, with \p post postprocessors
+  /// Does not need to be implemented in the models
+  void forecast(State_ & xx, const ModelAux_ &,
+                const util::Duration & len, PostProcessor<State_> & post) const;
 
-// Information and diagnostics
+  /// \brief Time step for running Model's forecast in oops (frequency with which the
+  /// State will be updated)
   const util::Duration & timeResolution() const {return model_->timeResolution();}
+  /// \brief Model variables (only used in 4DVar)
   const oops::Variables & variables() const {return model_->variables();}
 
  private:
+  /// \brief Forecast initialization, called before every forecast run
   void initialize(State_ &) const;
+  /// \brief Forecast "step", called during forecast run; updates state to the next time
   void step(State_ &, const ModelAux_ &) const;
+  /// \brief Forecast finalization; called after each forecast run
   void finalize(State_ &) const;
+  /// \brief Print, used in logging
   void print(std::ostream &) const;
 
+  /// \brief Pointer to the Model implementation
   std::unique_ptr<ModelBase_> model_;
 };
 
@@ -89,7 +97,7 @@ Model<MODEL>::Model(const Geometry_ & resol, const ModelParametersBase & params)
 {
   Log::trace() << "Model<MODEL>::Model starting" << std::endl;
   util::Timer timer(classname(), "Model");
-  Log::debug() << "Model config is:" << params << std::endl;
+  Log::info() << "Model configuration is:" << params << std::endl;
   model_.reset(ModelFactory<MODEL>::create(resol, params));
   Log::trace() << "Model<MODEL>::Model done" << std::endl;
 }
@@ -111,8 +119,6 @@ Model<MODEL>::~Model() {
   Log::trace() << "Model<MODEL>::~Model done" << std::endl;
 }
 
-// -----------------------------------------------------------------------------
-//  ****** NOTE: The forecast method below is not from MODEL::Model ******
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
@@ -139,14 +145,12 @@ void Model<MODEL>::forecast(State_ & xx, const ModelAux_ & maux,
 }
 
 // -----------------------------------------------------------------------------
-//  ****** NOTE: The forecast method above is not from MODEL::Model ******
-// -----------------------------------------------------------------------------
 
 template<typename MODEL>
 void Model<MODEL>::initialize(State_ & xx) const {
   Log::trace() << "Model<MODEL>::initialize starting" << std::endl;
   util::Timer timer(classname(), "initialize");
-  model_->initialize(xx);
+  model_->initialize(xx.state());
   Log::trace() << "Model<MODEL>::initialize done" << std::endl;
 }
 
@@ -156,7 +160,7 @@ template<typename MODEL>
 void Model<MODEL>::step(State_ & xx, const ModelAux_ & maux) const {
   Log::trace() << "Model<MODEL>::step starting" << std::endl;
   util::Timer timer(classname(), "step");
-  model_->step(xx, maux);
+  model_->step(xx.state(), maux.modelauxcontrol());
   Log::trace() << "Model<MODEL>::step done" << std::endl;
 }
 
@@ -166,7 +170,7 @@ template<typename MODEL>
 void Model<MODEL>::finalize(State_ & xx) const {
   Log::trace() << "Model<MODEL>::finalize starting" << std::endl;
   util::Timer timer(classname(), "finalize");
-  model_->finalize(xx);
+  model_->finalize(xx.state());
   Log::trace() << "Model<MODEL>::finalize done" << std::endl;
 }
 

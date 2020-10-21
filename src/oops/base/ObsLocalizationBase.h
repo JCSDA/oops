@@ -17,7 +17,6 @@
 #include "eckit/config/Configuration.h"
 #include "oops/interface/ObsSpace.h"
 #include "oops/interface/ObsVector.h"
-#include "oops/util/abor1_cpp.h"
 #include "oops/util/Printable.h"
 
 namespace oops {
@@ -74,8 +73,7 @@ class ObsLocalizationMaker : public ObsLocalizationFactory<OBS> {
 template <typename OBS>
 ObsLocalizationFactory<OBS>::ObsLocalizationFactory(const std::string & name) {
   if (getMakers().find(name) != getMakers().end()) {
-    Log::error() << name << " already registered in generic localization factory." << std::endl;
-    ABORT("Element already registered in ObsLocalizationFactory.");
+    throw std::runtime_error(name + " already registered in obs localization factory.");
   }
   getMakers()[name] = this;
 }
@@ -90,8 +88,7 @@ std::unique_ptr<ObsLocalizationBase<OBS>> ObsLocalizationFactory<OBS>::create(
   typename std::map<std::string, ObsLocalizationFactory<OBS>*>::iterator
     jloc = getMakers().find(id);
   if (jloc == getMakers().end()) {
-    Log::error() << id << " does not exist in obs localization factory." << std::endl;
-    ABORT("Element does not exist in ObsLocalizationFactory.");
+    throw std::runtime_error(id + " does not exist in obs localization factory.");
   }
   std::unique_ptr<ObsLocalizationBase<OBS>> ptr(jloc->second->make(conf, obsspace));
   Log::trace() << "ObsLocalizationBase<OBS>::create done" << std::endl;

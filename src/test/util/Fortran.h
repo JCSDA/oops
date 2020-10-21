@@ -1,8 +1,8 @@
 /*
  * (C) Copyright 2019 UCAR
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  *
  */
 
@@ -25,8 +25,11 @@ namespace test {
 extern "C" {
 
   std::int32_t test_uniform_real_f(const eckit::Configuration * const *);
+  std::int32_t test_uniform_double_f(const eckit::Configuration * const *);
   std::int32_t test_uniform_int_f(const eckit::Configuration * const *);
+  std::int32_t test_uniform_long_f(const eckit::Configuration * const *);
   std::int32_t test_normal_real_f(const eckit::Configuration * const *);
+  std::int32_t test_normal_double_f(const eckit::Configuration * const *);
 
   void test_push_string_vector_f(const eckit::Configuration * const *,
                                  std::vector<std::string> &);

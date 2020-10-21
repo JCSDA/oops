@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "oops/base/Departures.h"
+#include "oops/base/ObsErrors.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/util/Logger.h"
@@ -33,6 +34,7 @@ namespace oops {
 // -----------------------------------------------------------------------------
 template <typename OBS> class Observations : public util::Printable {
   typedef Departures<OBS>          Departures_;
+  typedef ObsErrors<OBS>           ObsErrors_;
   typedef ObsSpaces<OBS>           ObsSpaces_;
   typedef ObsVector<OBS>           ObsVector_;
 
@@ -58,16 +60,21 @@ template <typename OBS> class Observations : public util::Printable {
   Departures_ operator-(const Observations & other) const;
   Observations & operator+=(const Departures_ &);
 
-/// Save observations values
+/// Save/read observations values
   void save(const std::string &) const;
+  void read(const std::string &);
 
 /// Accumulator
   void zero();
   void accumul(const Observations &);
   Observations & operator*=(const double);
 
+/// Perturbations
+  void perturb(const ObsErrors_ &);
+
  private:
   void print(std::ostream &) const;
+  size_t nobs() const;
 
 /// Data
   const ObsSpaces_ &      obsdb_;
@@ -78,7 +85,7 @@ template <typename OBS> class Observations : public util::Printable {
 
 template <typename OBS>
 Observations<OBS>::Observations(const ObsSpaces_ & obsdb,
-                                  const std::string & name): obsdb_(obsdb), obs_()
+                                const std::string & name): obsdb_(obsdb), obs_()
 {
   obs_.reserve(obsdb.size());
   for (std::size_t jj = 0; jj < obsdb.size(); ++jj) {
@@ -89,7 +96,7 @@ Observations<OBS>::Observations(const ObsSpaces_ & obsdb,
 // -----------------------------------------------------------------------------
 template <typename OBS>
 Observations<OBS>::Observations(const ObsSpaces_ & obsdb,
-                                  const Observations & other): obsdb_(obsdb), obs_() {
+                                const Observations & other): obsdb_(obsdb), obs_() {
   obs_.reserve(obsdb.size());
   for (std::size_t jj = 0; jj < other.size(); ++jj) {
     obs_.emplace_back(obsdb[jj], other[jj]);
@@ -99,12 +106,14 @@ Observations<OBS>::Observations(const ObsSpaces_ & obsdb,
 // -----------------------------------------------------------------------------
 template <typename OBS>
 Observations<OBS>::Observations(const Observations & other)
-: obsdb_(other.obsdb_), obs_(other.obs_) {}
+: obsdb_(other.obsdb_), obs_(other.obs_) {
+}
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
 Observations<OBS>::Observations(Observations && other)
-: obsdb_(other.obsdb_), obs_(std::move(other.obs_)) {}
+: obsdb_(other.obsdb_), obs_(std::move(other.obs_)) {
+}
 // -----------------------------------------------------------------------------
 template <typename OBS>
 Observations<OBS> & Observations<OBS>::operator=(const Observations & other) {
@@ -148,6 +157,13 @@ void Observations<OBS>::save(const std::string & name) const {
 }
 // -----------------------------------------------------------------------------
 template <typename OBS>
+void Observations<OBS>::read(const std::string & name) {
+  for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
+    obs_[jj].read(name);
+  }
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
 void Observations<OBS>::zero() {
   for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
     obs_[jj].zero();
@@ -167,6 +183,23 @@ Observations<OBS> & Observations<OBS>::operator *=(const double factor) {
     obs_[jj] *= factor;
   }
   return *this;
+}
+// -----------------------------------------------------------------------------
+template<typename OBS>
+size_t Observations<OBS>::nobs() const {
+  size_t nobs = 0;
+  for (size_t jj = 0; jj < obs_.size(); ++jj) {
+    nobs += obs_[jj].nobs();
+  }
+  return nobs;
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
+void Observations<OBS>::perturb(const ObsErrors_ & Rmat) {
+  Departures_ ypert(obsdb_);
+  Rmat.randomize(ypert);
+  *this += ypert;
+  Log::trace() << "Observations perturbed" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename OBS>

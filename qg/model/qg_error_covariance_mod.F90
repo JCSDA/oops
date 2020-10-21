@@ -26,7 +26,7 @@ private
 public :: qg_error_covariance_config
 public :: qg_error_covariance_registry
 public :: qg_error_covariance_setup,qg_error_covariance_delete,qg_error_covariance_mult, &
-        & qg_error_covariance_randomize,qg_error_covariance_test
+        & qg_error_covariance_randomize
 ! ------------------------------------------------------------------------------
 type :: qg_error_covariance_config
   real(kind_real) :: sigma                           !< Standard deviation
@@ -278,83 +278,6 @@ call qg_fields_random(fld_tmp)
 call qg_error_covariance_sqrt_mult(conf,fld_tmp,fld_out)
 
 end subroutine qg_error_covariance_randomize
-! ------------------------------------------------------------------------------
-!> Test error covariance adjoint
-subroutine qg_error_covariance_test(conf,fld_in)
-
-implicit none
-
-! Passed variables
-type(qg_error_covariance_config),intent(in) :: conf !< Error covariance configuration
-type(qg_fields),intent(in) :: fld_in                !< Input field
-
-! Local variables
-type(qg_fields) :: fld1,fld2,fld3,fld1_save,fld2_save
-real(kind_real) :: dot1,dot2
-character(len=1024) :: record
-
-! Allocation
-call qg_fields_create_from_other(fld1,fld_in)
-call qg_fields_create_from_other(fld2,fld_in)
-call qg_fields_create_from_other(fld3,fld_in)
-call qg_fields_create_from_other(fld1_save,fld_in)
-call qg_fields_create_from_other(fld2_save,fld_in)
-
-! Initialization
-call qg_fields_random(fld1_save)
-call qg_fields_random(fld2_save)
-
-! Zonal correlation square-root auto-adjointness
-call qg_error_covariance_sqrt_mult_zonal(conf,fld1_save,fld2)
-call qg_error_covariance_sqrt_mult_zonal(conf,fld2_save,fld1)
-call qg_fields_dot_prod(fld1,fld1_save,dot1)
-call qg_fields_dot_prod(fld2,fld2_save,dot2)
-if (abs(dot1-dot2)/abs(dot1)>eps_ad) then
-  write(record,*) 'qg_error_covariance_test: sqrt_mult_zonal/sqrt_mult_zonal failed: ',abs(dot1-dot2)/abs(dot1)
-  call abor1_ftn(record)
-endif
-
-! Meridional correlation square-root auto-adjointness
-call qg_error_covariance_sqrt_mult_meridional(conf,fld1_save,fld2)
-call qg_error_covariance_sqrt_mult_meridional(conf,fld2_save,fld1)
-call qg_fields_dot_prod(fld1,fld1_save,dot1)
-call qg_fields_dot_prod(fld2,fld2_save,dot2)
-if (abs(dot1-dot2)/abs(dot1)>eps_ad) then
-  write(record,*) 'qg_error_covariance_test: sqrt_mult_meridional/sqrt_mult_meridional failed: ',abs(dot1-dot2)/abs(dot1)
-  call abor1_ftn(record)
-endif
-
-! Vertical correlation square-root auto-adjointness
-call qg_error_covariance_sqrt_mult_vertical(conf,fld1_save,fld2)
-call qg_error_covariance_sqrt_mult_vertical(conf,fld2_save,fld1)
-call qg_fields_dot_prod(fld1,fld1_save,dot1)
-call qg_fields_dot_prod(fld2,fld2_save,dot2)
-if (abs(dot1-dot2)/abs(dot1)>eps_ad) then
-  write(record,*) 'qg_error_covariance_test: sqrt_mult_vertical/sqrt_mult_vertical failed: ',abs(dot1-dot2)/abs(dot1)
-  call abor1_ftn(record)
-endif
-
-! Correlation square-root adjointness
-call qg_error_covariance_sqrt_mult(conf,fld1_save,fld2)
-call qg_error_covariance_sqrt_mult_ad(conf,fld2_save,fld1)
-call qg_fields_dot_prod(fld1,fld1_save,dot1)
-call qg_fields_dot_prod(fld2,fld2_save,dot2)
-if (abs(dot1-dot2)/abs(dot1)>eps_ad) then
-  write(record,*) 'qg_error_covariance_test: sqrt_mult/sqrt_mult_ad failed: ',abs(dot1-dot2)/abs(dot1)
-  call abor1_ftn(record)
-endif
-
-! Correlation auto-adjointness
-call qg_error_covariance_mult(conf,fld1_save,fld2)
-call qg_error_covariance_mult(conf,fld2_save,fld1)
-call qg_fields_dot_prod(fld1,fld1_save,dot1)
-call qg_fields_dot_prod(fld2,fld2_save,dot2)
-if (abs(dot1-dot2)/abs(dot1)>eps_ad) then
-  write(record,*) 'qg_error_covariance_test: mult/mult failed: ',abs(dot1-dot2)/abs(dot1)
-  call abor1_ftn(record)
-endif
-
-end subroutine qg_error_covariance_test
 ! ------------------------------------------------------------------------------
 ! Private
 ! ------------------------------------------------------------------------------

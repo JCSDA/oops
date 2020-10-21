@@ -27,26 +27,21 @@ namespace eckit {
 
 namespace lorenz95 {
 
-
-
 /// LocsL95 class to handle locations for L95 model.
 class LocsL95 : public util::Printable,
                 private util::ObjectCounter<LocsL95> {
  public:
   static const std::string classname() {return "lorenz95::LocsL95";}
 
-  LocsL95(const std::vector<int> &, const std::vector<double> &,
+  LocsL95(const std::vector<double> &,
           const std::vector<util::DateTime> &);
   LocsL95(const eckit::Configuration &, const eckit::mpi::Comm &);
-  ~LocsL95() {}
 
   size_t size() const {return locs_.size();}
   const double & operator[](const size_t ii) const {return locs_.at(ii);}
   const std::vector<util::DateTime> & times() const {return times_;}
-  const int & globalIndex(const size_t ii) const {return indx_.at(ii);}
  private:
   void print(std::ostream & os) const;
-  std::vector<int> indx_;
   std::vector<double> locs_;
   std::vector<util::DateTime> times_;
 };

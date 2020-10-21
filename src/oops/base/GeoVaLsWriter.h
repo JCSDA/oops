@@ -42,7 +42,7 @@ class GeoVaLsWriter : public ObsFilterBase<OBS> {
 
   void priorFilter(const GeoVaLs_ & gv) const override {
     const double zz = sqrt(dot_product(gv, gv));
-    Log::debug() << "GeoVaLsWriter norm = " << zz << std::endl;
+    Log::info() << "GeoVaLsWriter norm = " << zz << std::endl;
     gv.write(conf_);
   }
 

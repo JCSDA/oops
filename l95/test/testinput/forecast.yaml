@@ -1,5 +1,5 @@
 geometry:
-  resol: '40'
+  resol: 40
 model:
   f: 8.0
   name: L95

@@ -161,9 +161,9 @@ double RPLanczosMinimizer<MODEL, OBS>::solve(Dual_ & vv, double & vvp, Dual_ & r
   zpVEC.push_back(zzp);
   tpVEC.push_back(ttp);
 
-  int jiter;
+  int jiter = 0;
   Log::info() << std::endl;
-  for (jiter = 0; jiter < maxiter; ++jiter) {
+  while (jiter < maxiter) {
     Log::info() << "RPLanczos Starting Iteration " << jiter+1 << std::endl;
 
     // ww = (RinvHBHt + I) zz - beta * vold
@@ -237,6 +237,8 @@ double RPLanczosMinimizer<MODEL, OBS>::solve(Dual_ & vv, double & vvp, Dual_ & r
 
     Log::info() << "RPLanczos end of iteration " << jiter+1 << ". Norm reduction= "
                 << util::full_precision(normReduction) << std::endl << std::endl;
+
+    ++jiter;
 
     if (normReduction < tolerance) {
       Log::info() << "RPLanczos: Achieved required reduction in residual norm." << std::endl;

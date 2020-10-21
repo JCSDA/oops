@@ -162,7 +162,7 @@ double RPCGMinimizer<MODEL, OBS>::solve(Dual_ & vv, double & vvp, Dual_ & rr,
 
     if (jiter > 0) {
       double beta = dotwr/dotwr_old;
-      Log::debug() << "RPCG beta = " << beta << std::endl;
+      Log::info() << "RPCG beta = " << beta << std::endl;
 
       pp *= beta;
       ppp *= beta;
@@ -183,7 +183,7 @@ double RPCGMinimizer<MODEL, OBS>::solve(Dual_ & vv, double & vvp, Dual_ & rr,
     qqp = ppp;  // qqaug = ppaug + Rinv_aug ttaug
 
     double alpha = dotwr/(dot_product(qq, tt) + qqp * ttp);
-    Log::debug() << "RPCG alpha = " << alpha << std::endl;
+    Log::info() << "RPCG alpha = " << alpha << std::endl;
 
     vv.axpy(alpha, pp);
     vvp = vvp + alpha*ppp;  // vvaug = vvaug + alpha*ppaug

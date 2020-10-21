@@ -92,7 +92,7 @@ template<typename MODEL, typename OBS> class CostFct4DVar : public CostFunction<
   Geometry_ resol_;
   Model_ model_;
   const Variables ctlvars_;
-  boost::ptr_vector<LinearModel_> tlm_;
+  std::shared_ptr<LinearModel_> tlm_;
   std::unique_ptr<VarCha_> an2model_;
   std::unique_ptr<LinVarCha_> inc2model_;
 };
@@ -123,15 +123,14 @@ template <typename MODEL, typename OBS>
 CostJb3D<MODEL> * CostFct4DVar<MODEL, OBS>::newJb(const eckit::Configuration & jbConf,
                                                   const Geometry_ & resol,
                                                   const CtrlVar_ & xb) const {
-  ASSERT(xb.state().checkStatesNumber(1));
-  return new CostJb3D<MODEL>(jbConf, resol, ctlvars_, windowLength_, xb.state()[0]);
+  return new CostJb3D<MODEL>(jbConf, resol, ctlvars_, windowLength_, xb.state());
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
 CostJo<MODEL, OBS> * CostFct4DVar<MODEL, OBS>::newJo(const eckit::Configuration & joConf) const {
-  return new CostJo<MODEL, OBS>(joConf, comm_, windowBegin_, windowEnd_, util::Duration(0));
+  return new CostJo<MODEL, OBS>(joConf, comm_, windowBegin_, windowEnd_);
 }
 
 // -----------------------------------------------------------------------------
@@ -148,13 +147,14 @@ CostTermBase<MODEL, OBS> * CostFct4DVar<MODEL, OBS>::newJc(const eckit::Configur
 
 template <typename MODEL, typename OBS>
 void CostFct4DVar<MODEL, OBS>::runNL(CtrlVar_ & xx, PostProcessor<State_> & post) const {
-  ASSERT(xx.state().checkStatesNumber(1));
-  ASSERT(xx.state()[0].validTime() == windowBegin_);
-  State_ xm(xx.state()[0].geometry(), model_.variables(), windowBegin_);
-  an2model_->changeVar(xx.state()[0], xm);
+  ASSERT(xx.state().validTime() == windowBegin_);
+
+  State_ xm(xx.state().geometry(), model_.variables(), windowBegin_);
+  an2model_->changeVar(xx.state(), xm);
   model_.forecast(xm, xx.modVar(), windowLength_, post);
-  an2model_->changeVarInverse(xm, xx.state()[0]);
-  ASSERT(xx.state()[0].validTime() == windowEnd_);
+  an2model_->changeVarInverse(xm, xx.state());
+
+  ASSERT(xx.state().validTime() == windowEnd_);
 }
 
 // -----------------------------------------------------------------------------
@@ -168,11 +168,11 @@ void CostFct4DVar<MODEL, OBS>::doLinearize(const Geometry_ & resol,
   Log::trace() << "CostFct4DVar::doLinearize start" << std::endl;
   eckit::LocalConfiguration conf(innerConf, "linear model");
 // Setup linear model (and trajectory)
-  tlm_.clear();   // YT: Should release at the end and should be inside quadratic J object
+  tlm_.reset(new LinearModel_(resol, conf));
   pp.enrollProcessor(new TrajectorySaver<MODEL>(conf, resol, fg.modVar(), tlm_, pptraj));
 
 // Setup change of variables
-  inc2model_.reset(LinearVariableChangeFactory<MODEL>::create(bg.state()[0], fg.state()[0],
+  inc2model_.reset(LinearVariableChangeFactory<MODEL>::create(bg.state(), fg.state(),
                                                               resol, conf));
   inc2model_->setInputVariables(ctlvars_);
   Log::trace() << "CostFct4DVar::doLinearize done" << std::endl;
@@ -185,21 +185,23 @@ void CostFct4DVar<MODEL, OBS>::runTLM(CtrlInc_ & dx,
                                       PostProcessorTLAD<MODEL> & cost,
                                       PostProcessor<Increment_> post,
                                       const bool idModel) const {
-  ASSERT(tlm_.size() == 1);
-  ASSERT(dx.state()[0].validTime() == windowBegin_);
-  Increment_ dxmodel(dx.state()[0].geometry(), tlm_[0].variables(), windowBegin_);
-  inc2model_->setOutputVariables(tlm_[0].variables());
-  inc2model_->multiply(dx.state()[0], dxmodel);
-  tlm_[0].forecastTL(dxmodel, dx.modVar(), windowLength_, post, cost, idModel);
-  inc2model_->multiplyInverse(dxmodel, dx.state()[0]);
-  ASSERT(dx.state()[0].validTime() == windowEnd_);
+  inc2model_->setOutputVariables(tlm_->variables());
+
+  ASSERT(dx.state().validTime() == windowBegin_);
+
+  Increment_ dxmodel(dx.state().geometry(), tlm_->variables(), windowBegin_);
+  inc2model_->multiply(dx.state(), dxmodel);
+  tlm_->forecastTL(dxmodel, dx.modVar(), windowLength_, post, cost, idModel);
+  inc2model_->multiplyInverse(dxmodel, dx.state());
+
+  ASSERT(dx.state().validTime() == windowEnd_);
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
 void CostFct4DVar<MODEL, OBS>::zeroAD(CtrlInc_ & dx) const {
-  dx.state()[0].zero(windowEnd_);
+  dx.state().zero(windowEnd_);
   dx.modVar().zero();
   dx.obsVar().zero();
 }
@@ -211,14 +213,15 @@ void CostFct4DVar<MODEL, OBS>::runADJ(CtrlInc_ & dx,
                                       PostProcessorTLAD<MODEL> & cost,
                                       PostProcessor<Increment_> post,
                                       const bool idModel) const {
-  ASSERT(tlm_.size() == 1);
-  ASSERT(dx.state()[0].validTime() == windowEnd_);
-  Increment_ dxmodel(dx.state()[0].geometry(), tlm_[0].variables(), windowEnd_);
-  inc2model_->setOutputVariables(tlm_[0].variables());
-  inc2model_->multiplyInverseAD(dx.state()[0], dxmodel);
-  tlm_[0].forecastAD(dxmodel, dx.modVar(), windowLength_, post, cost, idModel);
-  inc2model_->multiplyAD(dxmodel, dx.state()[0]);
-  ASSERT(dx.state()[0].validTime() == windowBegin_);
+  ASSERT(dx.state().validTime() == windowEnd_);
+
+  Increment_ dxmodel(dx.state().geometry(), tlm_->variables(), windowEnd_);
+  inc2model_->setOutputVariables(tlm_->variables());
+  inc2model_->multiplyInverseAD(dx.state(), dxmodel);
+  tlm_->forecastAD(dxmodel, dx.modVar(), windowLength_, post, cost, idModel);
+  inc2model_->multiplyAD(dxmodel, dx.state());
+
+  ASSERT(dx.state().validTime() == windowBegin_);
 }
 
 // -----------------------------------------------------------------------------
@@ -226,8 +229,7 @@ void CostFct4DVar<MODEL, OBS>::runADJ(CtrlInc_ & dx,
 template<typename MODEL, typename OBS>
 void CostFct4DVar<MODEL, OBS>::addIncr(CtrlVar_ & xx, const CtrlInc_ & dx,
                                        PostProcessor<Increment_> &) const {
-  ASSERT(xx.state().checkStatesNumber(1));
-  xx.state()[0] += dx.state()[0];
+  xx.state() += dx.state();
 }
 
 // -----------------------------------------------------------------------------

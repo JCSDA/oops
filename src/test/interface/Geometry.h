@@ -25,36 +25,17 @@
 #include "oops/interface/Geometry.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
+#include "test/interface/GeometryFixture.h"
 #include "test/TestEnvironment.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
-template <typename MODEL> class GeometryFixture : private boost::noncopyable {
- public:
-  static const eckit::Configuration & getConfig() {return *getInstance().conf_;}
-
- private:
-  static GeometryFixture<MODEL>& getInstance() {
-    static GeometryFixture<MODEL> theGeometryFixture;
-    return theGeometryFixture;
-  }
-
-  GeometryFixture() {
-    conf_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "geometry"));
-  }
-
-  ~GeometryFixture() {}
-
-  std::unique_ptr<const eckit::LocalConfiguration> conf_;
-};
-
-// -----------------------------------------------------------------------------
 template <typename MODEL> void testConstructor() {
   typedef oops::Geometry<MODEL>        Geometry_;
 
-  std::unique_ptr<Geometry_> geom(new Geometry_(GeometryFixture<MODEL>::getConfig(),
-                                                oops::mpi::world()));
+  std::unique_ptr<Geometry_> geom(new Geometry_(GeometryFixture<MODEL>::getParameters(),
+                                                oops::mpi::world(), oops::mpi::myself()));
 
   EXPECT(geom.get());
 
@@ -65,8 +46,8 @@ template <typename MODEL> void testConstructor() {
 // -----------------------------------------------------------------------------
 template <typename MODEL> void testCopyConstructor() {
   typedef oops::Geometry<MODEL>        Geometry_;
-  std::unique_ptr<Geometry_> geom(new Geometry_(GeometryFixture<MODEL>::getConfig(),
-                                                oops::mpi::world()));
+  std::unique_ptr<Geometry_> geom(new Geometry_(GeometryFixture<MODEL>::getParameters(),
+                                                oops::mpi::world(), oops::mpi::myself()));
 
 
   std::unique_ptr<Geometry_> other(new Geometry_(*geom));

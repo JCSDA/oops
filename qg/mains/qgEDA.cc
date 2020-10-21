@@ -8,13 +8,14 @@
 #include "model/instantiateQgChangeVarFactory.h"
 #include "model/instantiateQgLocalizationFactory.h"
 #include "model/QgTraits.h"
-#include "oops/runs/EDA.h"
+#include "oops/runs/EnsembleApplication.h"
 #include "oops/runs/Run.h"
+#include "oops/runs/Variational.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
   qg::instantiateQgChangeVarFactory();
   qg::instantiateQgLocalizationFactory();
-  oops::EDA<qg::QgTraits, qg::QgObsTraits> eda;
+  oops::EnsembleApplication< oops::Variational<qg::QgTraits, qg::QgObsTraits> > eda;
   return run.execute(eda);
 }

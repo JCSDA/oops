@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2020-2020 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -10,10 +11,6 @@
 
 #include "model/ModelQG.h"
 
-#include <vector>
-
-#include "eckit/config/Configuration.h"
-#include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 
 #include "oops/util/Logger.h"
@@ -29,12 +26,12 @@ namespace qg {
 // -----------------------------------------------------------------------------
 static oops::ModelMaker<QgTraits, ModelQG> makermodel_("QG");
 // -----------------------------------------------------------------------------
-ModelQG::ModelQG(const GeometryQG & resol, const eckit::Configuration & model)
-  : keyConfig_(0), tstep_(0), geom_(resol), vars_({"x"})
+ModelQG::ModelQG(const GeometryQG & resol, const ModelQgParameters & params)
+  : keyConfig_(0), params_(params), geom_(resol),
+    vars_(params.variables())
 {
   oops::Log::trace() << "ModelQG::ModelQG" << std::endl;
-  tstep_ = util::Duration(model.getString("tstep"));
-  qg_model_setup_f90(keyConfig_, model);
+  qg_model_setup_f90(keyConfig_, params.toConfiguration());
   oops::Log::trace() << "ModelQG created" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -52,7 +49,7 @@ void ModelQG::step(StateQG & xx, const ModelBias &) const {
   ASSERT(xx.fields().isForModel(true));
   oops::Log::debug() << "ModelQG::step fields in" << xx.fields() << std::endl;
   qg_model_propagate_f90(keyConfig_, xx.fields().toFortran());
-  xx.validTime() += tstep_;
+  xx.validTime() += params_.tstep;
   oops::Log::debug() << "ModelQG::step fields out" << xx.fields() << std::endl;
 }
 // -----------------------------------------------------------------------------

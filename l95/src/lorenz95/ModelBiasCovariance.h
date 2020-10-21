@@ -43,7 +43,6 @@ class ModelBiasCovariance : public util::Printable,
   void randomize(ModelBiasCorrection &) const;
 
   const eckit::Configuration & config() const {return conf_;}
-  bool active() const {return active_;}  // For tests only
 
  private:
   void print(std::ostream &) const;

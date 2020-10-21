@@ -30,4 +30,20 @@
 
 #endif  // EXPECT_EQUAL
 
+/// Check if \p expr throws an exception with a message containing the string \p msg.
+#define EXPECT_THROWS_MSG(expr, msg)                                                         \
+  do {                                                                                       \
+    bool exceptionWithMsgThrown = false;                                                     \
+    try {                                                                                    \
+      expr;                                                                                  \
+    }                                                                                        \
+    catch (const std::exception &ex) {                                                       \
+      if (std::strstr(ex.what(), msg) != nullptr)                                            \
+        exceptionWithMsgThrown = true;                                                       \
+    }                                                                                        \
+    if (!exceptionWithMsgThrown)                                                             \
+      throw eckit::testing::TestException("Expected exception with message (" #msg           \
+                                          ") not thrown in: " #expr, Here());                \
+  } while (false)
+
 #endif  // OOPS_UTIL_EXPECT_H_

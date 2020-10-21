@@ -39,12 +39,14 @@ int ObsSpaceQG::theObsFileCount_ = 0;
 // -----------------------------------------------------------------------------
 
 ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
-                       const util::DateTime & bgn, const util::DateTime & end)
+                       const util::DateTime & bgn, const util::DateTime & end,
+                       const eckit::mpi::Comm & timeComm)
   : oops::ObsSpaceBase(config, comm, bgn, end), obsname_(config.getString("obs type")),
     winbgn_(bgn), winend_(end), obsvars_(), isLocal_(false), comm_(comm)
 {
   typedef std::map< std::string, F90odb >::iterator otiter;
 
+  eckit::LocalConfiguration fileconf(config);
   std::string ofin("-");
   if (config.has("obsdatain")) {
     ofin = config.getString("obsdatain.obsfile");
@@ -52,6 +54,14 @@ ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config, const eckit::mpi::Co
   std::string ofout("-");
   if (config.has("obsdataout")) {
     ofout = config.getString("obsdataout.obsfile");
+    if (timeComm.size() > 1) {
+      std::ostringstream ss;
+      ss << "_" << timeComm.rank();
+      std::size_t found = ofout.find_last_of(".");
+      if (found == std::string::npos) found = ofout.length();
+      std::string fileout = ofout.insert(found, ss.str());
+      fileconf.set("obsdataout.obsfile", fileout);
+    }
   }
   oops::Log::trace() << "ObsSpaceQG: Obs files are: " << ofin << " and " << ofout << std::endl;
   std::string ref = ofin + ofout;
@@ -63,7 +73,7 @@ ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config, const eckit::mpi::Co
   if ( it == theObsFileRegister_.end() ) {
     // Open new file
     oops::Log::trace() << "ObsSpaceQG::getHelper: " << "Opening " << ref << std::endl;
-    qg_obsdb_setup_f90(key_, config);
+    qg_obsdb_setup_f90(key_, fileconf, bgn, end);
     theObsFileRegister_[ref] = key_;
   } else {
     // File already open

@@ -15,8 +15,8 @@
 #include <string>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/exception/Exceptions.h"
 #include "oops/assimilation/CalcHofX.h"
-#include "oops/base/Departures.h"
 #include "oops/base/instantiateObsFilterFactory.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
@@ -39,7 +39,6 @@ namespace oops {
 /// and computes H(x) on the run. If "obspert" is specified in the config, the resulting
 /// H(x) is perturbed. It is saved as "hofx" by default, or as specified "hofx group name"
 template <typename MODEL, typename OBS> class HofX : public Application {
-  typedef Departures<OBS>            Departures_;
   typedef Geometry<MODEL>            Geometry_;
   typedef Model<MODEL>               Model_;
   typedef Observations<OBS>          Observations_;
@@ -74,7 +73,16 @@ template <typename MODEL, typename OBS> class HofX : public Application {
 //  Setup initial state
     const eckit::LocalConfiguration initialConfig(fullConfig, "initial condition");
     State_ xx(geometry, initialConfig);
+    const util::Duration flength(fullConfig.getString("forecast length"));
     Log::test() << "Initial state: " << xx << std::endl;
+
+//  Check that window specified for forecast is at least the same as obs window
+    if (winbgn < xx.validTime() || winend > xx.validTime() + flength) {
+      Log::error() << "Observation window can not be outside of forecast window." << std::endl;
+      Log::error() << "Obs window: " << winbgn << " to " << winend << std::endl;
+      Log::error() << "Forecast runs from: " << xx.validTime() << " for " << flength << std::endl;
+      throw eckit::BadValue("Observation window can not be outside of forecast window.");
+    }
 
 //  Setup forecast outputs
     PostProcessor<State_> post;
@@ -88,7 +96,6 @@ template <typename MODEL, typename OBS> class HofX : public Application {
 
 //  Setup and run observer
     CalcHofX<MODEL, OBS> hofx(obspace, geometry, fullConfig);
-    const util::Duration flength(fullConfig.getString("forecast length"));
     Observations_ yobs = hofx.compute(model, xx, post, flength);
     hofx.saveQcFlags("EffectiveQC");
     hofx.saveObsErrors("EffectiveError");
@@ -100,10 +107,8 @@ template <typename MODEL, typename OBS> class HofX : public Application {
 //  as ObsValue if "hofx group name" == ObsValue.
     bool obspert = fullConfig.getBool("obs perturbations", false);
     if (obspert) {
-      Departures_ ypert(obspace);
       ObsErrors_ matR(fullConfig, obspace);
-      matR.randomize(ypert);
-      yobs += ypert;
+      yobs.perturb(matR);
       Log::test() << "Perturbed H(x): " << std::endl << yobs << "End Perturbed H(x)" << std::endl;
     }
 

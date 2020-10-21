@@ -59,6 +59,10 @@ void FieldL95::zero() {
   for (int jj = 0; jj < resol_; ++jj) x_[jj] = 0.0;
 }
 // -----------------------------------------------------------------------------
+void FieldL95::ones() {
+  for (int jj = 0; jj < resol_; ++jj) x_[jj] = 1.0;
+}
+// -----------------------------------------------------------------------------
 void FieldL95::dirac(const eckit::Configuration & config) {
 // Get Diracs position
   std::vector<int> ixdir(config.getIntVector("ixdir"));

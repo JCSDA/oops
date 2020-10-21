@@ -19,8 +19,11 @@
 #include <boost/noncopyable.hpp>
 
 #include "eckit/config/Configuration.h"
+#include "oops/base/ModelSpaceCovarianceParametersBase.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 #include "oops/util/Printable.h"
 
 // Forward declarations
@@ -33,6 +36,18 @@ namespace lorenz95 {
   class StateL95;
   class Resolution;
 
+  struct L95Traits;
+
+class ErrorCovarianceL95Parameters : public oops::ModelSpaceCovarianceParametersBase<L95Traits> {
+  OOPS_CONCRETE_PARAMETERS(ErrorCovarianceL95Parameters,
+                           ModelSpaceCovarianceParametersBase<L95Traits>)
+
+ public:
+  oops::RequiredParameter<util::DateTime> date{"date", this};
+  oops::RequiredParameter<double> standardDeviation{"standard_deviation", this};
+  oops::RequiredParameter<double> lengthScale{"length_scale", this};
+};
+
 /// Background error covariance matrix for Lorenz 95 model.
 /*!
  *  Gaussian background error covariance matrix for Lorenz 95 model.
@@ -43,10 +58,12 @@ class ErrorCovarianceL95 : public util::Printable,
                            private boost::noncopyable,
                            private util::ObjectCounter<ErrorCovarianceL95> {
  public:
+  typedef ErrorCovarianceL95Parameters Parameters_;
+
   static const std::string classname() {return "lorenz95::ErrorCovarianceL95";}
 
   ErrorCovarianceL95(const Resolution &, const oops::Variables &,
-                     const eckit::Configuration &, const StateL95 &, const StateL95 &);
+                     const ErrorCovarianceL95Parameters &, const StateL95 &, const StateL95 &);
   ~ErrorCovarianceL95();
 
   void multiply(const IncrementL95 &, IncrementL95 &) const;

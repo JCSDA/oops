@@ -59,8 +59,7 @@ SaddlePointPrecondMatrix<MODEL, OBS>::SaddlePointPrecondMatrix(const CostFct_ & 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-void SaddlePointPrecondMatrix<MODEL, OBS>::multiply(const SPVector_ & x,
-                                               SPVector_ & z) const {
+void SaddlePointPrecondMatrix<MODEL, OBS>::multiply(const SPVector_ & x, SPVector_ & z) const {
   z.lambda().clear();
   z.lambda().dx(new CtrlInc_(j_.jb()));
   z.dx(new CtrlInc_(j_.jb()));
@@ -85,13 +84,14 @@ void SaddlePointPrecondMatrix<MODEL, OBS>::multiply(const SPVector_ & x,
 
 template<typename MODEL, typename OBS>
 void SaddlePointPrecondMatrix<MODEL, OBS>::Lhatinv(const CtrlInc_ & xx, CtrlInc_ & zz,
-                                              const int norder) const {
+                                                   const int norder) const {
 // Approximate L=I + (I-L) + (I-L)^2 + ... + (I-L)^norder
   CtrlInc_ ww(xx);
 
   zz = xx;
-  for (int i = 0; i < norder; ++i) {
+  for (int jj = 0; jj < norder; ++jj) {
     j_.runTLM(ww, idmodel_);
+    ww.shift_forward();
     zz += ww;
   }
 }
@@ -100,12 +100,13 @@ void SaddlePointPrecondMatrix<MODEL, OBS>::Lhatinv(const CtrlInc_ & xx, CtrlInc_
 
 template<typename MODEL, typename OBS>
 void SaddlePointPrecondMatrix<MODEL, OBS>::Lhatinvt(const CtrlInc_ & xx, CtrlInc_ & zz,
-                                               const int norder) const {
+                                                    const int norder) const {
 // Approximate L'=I + (I-L') + (I-L')^2 + ... + (I-L')^norder
   CtrlInc_ ww(xx);
 
   zz = xx;
-  for (int i = 0; i < norder; ++i) {
+  for (int jj = 0; jj < norder; ++jj) {
+    ww.shift_backward();
     j_.runADJ(ww, idmodel_);
     zz += ww;
   }

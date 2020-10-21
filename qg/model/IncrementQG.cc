@@ -16,7 +16,7 @@
 #include <utility>
 #include <vector>
 
-#include "atlas/field/FieldSet.h"
+#include "atlas/field.h"
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
@@ -41,26 +41,26 @@ namespace qg {
 // -----------------------------------------------------------------------------
 IncrementQG::IncrementQG(const GeometryQG & resol, const oops::Variables & vars,
                          const util::DateTime & vt)
-  : fields_(new FieldsQG(resol, vars, lbc_, vt)), stash_()
+  : fields_(new FieldsQG(resol, vars, lbc_, vt))
 {
   fields_->zero();
   oops::Log::trace() << "IncrementQG constructed." << std::endl;
 }
 // -----------------------------------------------------------------------------
 IncrementQG::IncrementQG(const GeometryQG & resol, const IncrementQG & other)
-  : fields_(new FieldsQG(*other.fields_, resol)), stash_()
+  : fields_(new FieldsQG(*other.fields_, resol))
 {
   oops::Log::trace() << "IncrementQG constructed from other." << std::endl;
 }
 // -----------------------------------------------------------------------------
 IncrementQG::IncrementQG(const IncrementQG & other, const bool copy)
-  : fields_(new FieldsQG(*other.fields_, copy)), stash_()
+  : fields_(new FieldsQG(*other.fields_, copy))
 {
   oops::Log::trace() << "IncrementQG copy-created." << std::endl;
 }
 // -----------------------------------------------------------------------------
 IncrementQG::IncrementQG(const IncrementQG & other)
-  : fields_(new FieldsQG(*other.fields_)), stash_()
+  : fields_(new FieldsQG(*other.fields_))
 {
   oops::Log::trace() << "IncrementQG copy-created." << std::endl;
 }
@@ -74,9 +74,6 @@ IncrementQG::~IncrementQG() {
 void IncrementQG::diff(const StateQG & x1, const StateQG & x2) {
   ASSERT(this->validTime() == x1.validTime());
   ASSERT(this->validTime() == x2.validTime());
-  oops::Log::debug() << "IncrementQG:diff incr " << *fields_ << std::endl;
-  oops::Log::debug() << "IncrementQG:diff x1 " << x1.fields() << std::endl;
-  oops::Log::debug() << "IncrementQG:diff x2 " << x2.fields() << std::endl;
   fields_->diff(x1.fields(), x2.fields());
 }
 // -----------------------------------------------------------------------------
@@ -110,6 +107,10 @@ void IncrementQG::zero(const util::DateTime & vt) {
   fields_->zero(vt);
 }
 // -----------------------------------------------------------------------------
+void IncrementQG::ones() {
+  fields_->ones();
+}
+// -----------------------------------------------------------------------------
 void IncrementQG::axpy(const double & zz, const IncrementQG & dx,
                        const bool check) {
   ASSERT(!check || this->validTime() == dx.validTime());
@@ -133,7 +134,9 @@ void IncrementQG::random() {
 }
 // -----------------------------------------------------------------------------
 void IncrementQG::dirac(const eckit::Configuration & config) {
-  fields_->dirac(config);
+  fields_->zero();
+  util::DateTime dd(config.getString("date"));
+  if (this->validTime() == dd) fields_->dirac(config);
 }
 // -----------------------------------------------------------------------------
 /// ATLAS FieldSet

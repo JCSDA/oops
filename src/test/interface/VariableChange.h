@@ -26,6 +26,7 @@
 #include "oops/interface/State.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
+#include "oops/util/Expect.h"
 #include "oops/util/Logger.h"
 #include "test/TestEnvironment.h"
 
@@ -75,8 +76,6 @@ template <typename MODEL> void testVariableChangeInverse() {
 
   // Loop over all variable changes
   for (std::size_t jj = 0; jj < Test_::confs().size(); ++jj) {
-    oops::Variables varout(Test_::confs()[jj], "output variables");
-
     // Construct variable change
     std::unique_ptr<VariableChange_> \
       changevar(VariableChangeFactory_::create(Test_::confs()[jj], Test_::resol()));
@@ -86,11 +85,10 @@ template <typename MODEL> void testVariableChangeInverse() {
 
     // Create states with input and output variables
     const eckit::LocalConfiguration initialConfig(Test_::confs()[jj], "state");
-    State_  xin(Test_::resol(), initialConfig);
-    State_ xout(Test_::resol(), varout, xin.validTime());
+    State_ xx(Test_::resol(), initialConfig);
 
     // Save copy of the initial state
-    State_ xref(xin);
+    State_ xref(xx);
 
     // Order, inverse first or not (default)
     // Note: switch input and output variables in configuration if true
@@ -98,16 +96,20 @@ template <typename MODEL> void testVariableChangeInverse() {
 
     // Convert from input to output variables and back (or vice versa)
     if (inverseFirst) {
-      changevar->changeVarInverse(xin, xout);
-      changevar->changeVar(xout, xin);
+      oops::Variables varin(Test_::confs()[jj], "input variables");
+      State_ xin(Test_::resol(), varin, xx.validTime());
+      changevar->changeVarInverse(xx, xin);
+      changevar->changeVar(xin, xx);
     } else {
-      changevar->changeVar(xin, xout);
-      changevar->changeVarInverse(xout, xin);
+      oops::Variables varout(Test_::confs()[jj], "output variables");
+      State_ xout(Test_::resol(), varout, xx.validTime());
+      changevar->changeVar(xx, xout);
+      changevar->changeVarInverse(xout, xx);
     }
 
     // Compute norms of the result and reference
     const double xxnorm_ref = xref.norm();
-    const double xxnorm_tst =  xin.norm();
+    const double xxnorm_tst =   xx.norm();
 
     // Print the input and final state
     oops::Log::info() << "<xin>, <K^{-1}[K(xin)]>, (<xin>-<K^{-1}[K(xin)]<xin>)/>=" << xxnorm_ref <<
@@ -115,6 +117,42 @@ template <typename MODEL> void testVariableChangeInverse() {
 
     // Is result similar to the reference
     EXPECT(oops::is_close(xxnorm_tst, xxnorm_ref, tol));
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+template <typename MODEL> void testVariableChangeParametersWrapperValidName() {
+  typedef VariableChangeFixture<MODEL> Test_;
+  for (const eckit::Configuration &config : Test_::confs()) {
+    oops::VariableChangeParametersWrapper<MODEL> parameters;
+    EXPECT_NO_THROW(parameters.validateAndDeserialize(config));
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+template <typename MODEL> void testVariableChangeParametersWrapperInvalidName() {
+  eckit::LocalConfiguration config;
+  config.set("variable change", "###INVALID###");
+  oops::VariableChangeParametersWrapper<MODEL> parameters;
+  if (oops::Parameters::isValidationSupported())
+    EXPECT_THROWS_MSG(parameters.validate(config), "unrecognized enum value");
+  EXPECT_THROWS_MSG(parameters.deserialize(config),
+                    "does not exist in VariableChangeFactory");
+}
+
+// -------------------------------------------------------------------------------------------------
+
+template <typename MODEL> void testVariableChangeFactoryGetMakerNames() {
+  typedef VariableChangeFixture<MODEL> Test_;
+  const std::vector<std::string> registeredNames =
+      oops::VariableChangeFactory<MODEL>::getMakerNames();
+  for (const eckit::Configuration &config : Test_::confs()) {
+    const std::string validName = config.getString("variable change");
+    const bool found = std::find(registeredNames.begin(), registeredNames.end(), validName) !=
+        registeredNames.end();
+    EXPECT(found);
   }
 }
 
@@ -132,6 +170,15 @@ template <typename MODEL> class VariableChange : public oops::Test {
 
     ts.emplace_back(CASE("interface/VariableChange/testVariableChangeInverse")
       { testVariableChangeInverse<MODEL>(); });
+    ts.emplace_back(CASE("interface/VariableChange/"
+                         "testVariableChangeParametersWrapperValidName")
+      { testVariableChangeParametersWrapperValidName<MODEL>(); });
+    ts.emplace_back(CASE("interface/VariableChange/"
+                         "testVariableChangeParametersWrapperInvalidName")
+      { testVariableChangeParametersWrapperInvalidName<MODEL>(); });
+    ts.emplace_back(CASE("interface/VariableChange/"
+                         "testVariableChangeFactoryGetMakerNames")
+      { testVariableChangeFactoryGetMakerNames<MODEL>(); });
   }
 
   void clear() const override {}

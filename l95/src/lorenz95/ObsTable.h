@@ -44,7 +44,7 @@ class ObsTable : public oops::ObsSpaceBase,
   static const std::string classname() {return "lorenz95::ObsTable";}
 
   ObsTable(const eckit::Configuration &, const eckit::mpi::Comm &,
-           const util::DateTime &, const util::DateTime &);
+           const util::DateTime &, const util::DateTime &, const eckit::mpi::Comm &);
   ~ObsTable();
 
   void putdb(const std::string &, const std::vector<int> &) const;
@@ -55,8 +55,6 @@ class ObsTable : public oops::ObsSpaceBase,
   void getdb(const std::string &, std::vector<double> &) const;
 
   bool has(const std::string & col) const;
-  LocsL95 * locations(const util::DateTime & t1, const util::DateTime & t2) const;
-  std::vector<int> timeSelect(const util::DateTime &, const util::DateTime &) const;
   void generateDistribution(const eckit::Configuration &);
   void random(std::vector<double> &) const;
   void printJo(const ObsVec1D &, const ObsVec1D &);
@@ -78,6 +76,7 @@ class ObsTable : public oops::ObsSpaceBase,
   std::vector<double> locations_;
   mutable std::map<std::string, std::vector<double> > data_;
 
+  const eckit::mpi::Comm & comm_;
   const oops::Variables obsvars_;
   std::string nameIn_;
   std::string nameOut_;

@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "oops/util/Printable.h"
+#include "oops/util/Serializable.h"
 
 namespace eckit {
   class Configuration;
@@ -26,7 +27,8 @@ namespace qg {
 
 // -----------------------------------------------------------------------------
 
-class ObsBiasIncrement : public util::Printable {
+class ObsBiasIncrement : public util::Printable,
+                         public util::Serializable {
  public:
 /// Constructor, destructor
   ObsBiasIncrement();
@@ -61,12 +63,12 @@ class ObsBiasIncrement : public util::Printable {
   const double & wspd() const {return bias_[3];}
 
 /// Serialization
-  size_t serialSize() const;
-  void serialize(std::vector<double> &) const;
-  void deserialize(const std::vector<double> &, size_t &);
+  size_t serialSize() const override;
+  void serialize(std::vector<double> &) const override;
+  void deserialize(const std::vector<double> &, size_t &) override;
 
  private:
-  void print(std::ostream &) const;
+  void print(std::ostream &) const override;
   void makePassive();
 
   std::vector<double> bias_;

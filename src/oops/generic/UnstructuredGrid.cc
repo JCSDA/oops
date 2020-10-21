@@ -79,17 +79,10 @@ void UnstructuredGrid::defineGrids(std::vector<eckit::LocalConfiguration> & grid
       ss << std::setw(2) << std::setfill('0') << iv+1;
       variables.push_back("var_" + ss.str());
     }
-    std::vector<std::string> timeslots;
-    for (int its = 0; its < nts; ++its) {
-      std::ostringstream ss;
-      ss << std::setw(2) << std::setfill('0') << its+1;
-      timeslots.push_back(ss.str());
-    }
     eckit::LocalConfiguration grid;
     grid.set("grid_index", jgrid);
     grid.set("nl", nl);
     grid.set("variables", variables);
-    grid.set("timeslots", timeslots);
     grid.set("lev2d", "first");
     grids.push_back(grid);
   }

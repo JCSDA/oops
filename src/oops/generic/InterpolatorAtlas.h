@@ -5,8 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef OOPS_GENERIC_INTERPOLATORATLAS_H_
-#define OOPS_GENERIC_INTERPOLATORATLAS_H_
+#pragma once
 
 #include <memory>
 #include <ostream>
@@ -16,9 +15,9 @@
 #include "atlas/functionspace.h"
 #include "atlas/interpolation.h"
 #include "eckit/config/Configuration.h"
+#include "eckit/exception/Exceptions.h"
 
 #include "oops/base/InterpolatorBase.h"
-#include "oops/util/abor1_cpp.h"
 #include "oops/util/ObjectCounter.h"
 
 namespace oops {
@@ -39,12 +38,11 @@ class InterpolatorAtlas : public InterpolatorBase,
                     const atlas::field::FieldSetImpl * = nullptr);
 
   ~InterpolatorAtlas() { }
-  void apply(atlas::Field const &, atlas::Field &);
-  void apply(atlas::FieldSet const &, atlas::FieldSet &) override;
+  void apply(const atlas::Field &, atlas::Field &) override;
+  void apply(const atlas::FieldSet &, atlas::FieldSet &) override;
 
-  void apply_ad(atlas::FieldSet const &, atlas::FieldSet &) override {
-    std::string ErrorMsg = "Interpolator Adjoint not yet implemented for Atlas";
-    ABORT(ErrorMsg);
+  void apply_ad(const atlas::FieldSet &, atlas::FieldSet &) override {
+    throw eckit::NotImplemented("Interpolator Adjoint not yet implemented for Atlas", Here());
   }
 
  private:
@@ -55,5 +53,3 @@ class InterpolatorAtlas : public InterpolatorBase,
 // -----------------------------------------------------------------------------
 
 }  // namespace oops
-
-#endif  // OOPS_GENERIC_INTERPOLATORATLAS_H_

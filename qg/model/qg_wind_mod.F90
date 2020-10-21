@@ -16,13 +16,13 @@ use qg_obsvec_mod
 implicit none
 
 private
-public :: qg_wind_equiv,qg_wind_equiv_tl,qg_wind_equiv_ad
+public :: qg_wind_equiv,qg_wind_equiv_ad
 ! ------------------------------------------------------------------------------
 contains
 ! ------------------------------------------------------------------------------
 ! Public
 ! ------------------------------------------------------------------------------
-!> Get equivalent for wind
+!> Get equivalent for wind (TL calls this subroutine too)
 subroutine qg_wind_equiv(gom,hofx,bias)
 
 implicit none
@@ -37,30 +37,10 @@ integer :: iobs
 
 ! Loop over observations
 do iobs=1,gom%nobs
-  hofx%values(1:2,gom%indx(iobs)) = gom%values(1:2,iobs)+bias
+  hofx%values(1:2,iobs) = gom%values(1:2,iobs)+bias
 enddo
 
 end subroutine qg_wind_equiv
-! ------------------------------------------------------------------------------
-!> Get equivalent for wind - tangent linear
-subroutine qg_wind_equiv_tl(gom,hofx,bias)
-
-implicit none
-
-! Passed variables
-type(qg_gom),intent(in) :: gom        !< GOM
-type(qg_obsvec),intent(inout) :: hofx !< Observation vector
-real(kind_real),intent(in) :: bias(2) !< Bias
-
-! Local variables
-integer :: iobs
-
-! Loop over observations
-do iobs=1,gom%nobs
-  hofx%values(1:2,gom%indx(iobs)) = gom%values(1:2,iobs)+bias
-enddo
-
-end subroutine qg_wind_equiv_tl
 ! ------------------------------------------------------------------------------
 !> Get equivalent for wind - adjoint
 subroutine qg_wind_equiv_ad(gom,hofx,bias)
@@ -77,9 +57,9 @@ integer :: iobs
 
 ! Loop over observations
 do iobs=1,gom%nobs
-  gom%values(1:2,iobs) = hofx%values(1:2,gom%indx(iobs))
-  bias(1) = bias(1)+hofx%values(1,gom%indx(iobs))
-  bias(2) = bias(2)+hofx%values(2,gom%indx(iobs))
+  gom%values(1:2,iobs) = hofx%values(1:2,iobs)
+  bias(1) = bias(1)+hofx%values(1,iobs)
+  bias(2) = bias(2)+hofx%values(2,iobs)
 enddo
 
 end subroutine qg_wind_equiv_ad

@@ -5,4 +5,4 @@ test interpolation interface:
     nrandom: 18
     seed: 675839
     tolerance: 1.e-3
-    skip adjoint test: true
+    adjoint_test: false

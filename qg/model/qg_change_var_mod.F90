@@ -82,24 +82,23 @@ select case (trim(conf%varchange))
 case ('identity')
   ! Copy fields
   call qg_fields_copy(fld_out,fld_in)
-  fld_out%lq = fld_in%lq
 case ('x_to_q')
   ! Check fields variables
   if (fld_in%lq) call abor1_ftn('qg_change_var: wrong input fields variables for '//trim(conf%varchange))
+  if (.not.fld_out%lq) call abor1_ftn('qg_change_var: wrong output fields variables for '//trim(conf%varchange))
 
   ! Conversion
   call convert_x_to_q_tl(fld_in%geom,fld_in%gfld3d,fld_out%gfld3d)
-  fld_out%lq = .true.
 
   ! Copy boundary conditions
   call qg_fields_copy(fld_out,fld_in,.true.)
 case ('q_to_x')
   ! Check fields variables
   if (.not.fld_in%lq) call abor1_ftn('qg_change_var: wrong input fields variables for '//trim(conf%varchange))
+  if (fld_out%lq) call abor1_ftn('qg_change_var: wrong output fields variables for '//trim(conf%varchange))
 
   ! Conversion
   call convert_q_to_x_tl(fld_in%geom,fld_in%gfld3d,fld_out%gfld3d)
-  fld_out%lq = .false.
 
   ! Copy boundary conditions
   call qg_fields_copy(fld_out,fld_in,.true.)
@@ -126,24 +125,23 @@ select case (trim(conf%varchange))
 case ('identity')
   ! Copy fields
   call qg_fields_copy(fld_out,fld_in)
-  fld_out%lq = fld_in%lq
 case ('x_to_q')
   ! Check fields variables
   if (.not.fld_in%lq) call abor1_ftn('qg_change_var_inv: wrong input fields variables for '//trim(conf%varchange))
+  if (fld_out%lq) call abor1_ftn('qg_change_var_inv: wrong output fields variables for '//trim(conf%varchange))
 
   ! Conversion
   call convert_q_to_x_tl(fld_in%geom,fld_in%gfld3d,fld_out%gfld3d)
-  fld_out%lq = .false.
 
   ! Copy boundary conditions
   call qg_fields_copy(fld_out,fld_in,.true.)
 case ('q_to_x')
   ! Check fields variables
   if (fld_in%lq) call abor1_ftn('qg_change_var_inv: wrong input fields variables for '//trim(conf%varchange))
+  if (.not.fld_out%lq) call abor1_ftn('qg_change_var_inv: wrong output fields variables for '//trim(conf%varchange))
 
   ! Conversion
   call convert_x_to_q_tl(fld_in%geom,fld_in%gfld3d,fld_out%gfld3d)
-  fld_out%lq = .true.
 
   ! Copy boundary conditions
   call qg_fields_copy(fld_out,fld_in,.true.)
@@ -170,24 +168,23 @@ select case (trim(conf%varchange))
 case ('identity')
   ! Copy fields
   call qg_fields_copy(fld_out,fld_in)
-  fld_out%lq = fld_in%lq
 case ('x_to_q')
   ! Check fields variables
   if (.not.fld_in%lq) call abor1_ftn('qg_change_var_ad: wrong input fields variables for '//trim(conf%varchange))
+  if (fld_out%lq) call abor1_ftn('qg_change_var_ad: wrong output fields variables for '//trim(conf%varchange))
 
   ! Conversion
   call convert_x_to_q_ad(fld_in%geom,fld_in%gfld3d,fld_out%gfld3d)
-  fld_out%lq = .false.
 
   ! Copy boundary conditions
   call qg_fields_copy(fld_out,fld_in,.true.)
 case ('q_to_x')
   ! Check fields variables
   if (fld_in%lq) call abor1_ftn('qg_change_var_ad: wrong input fields variables for '//trim(conf%varchange))
+  if (.not.fld_out%lq) call abor1_ftn('qg_change_var_ad: wrong output fields variables for '//trim(conf%varchange))
 
   ! Conversion
   call convert_q_to_x_ad(fld_in%geom,fld_in%gfld3d,fld_out%gfld3d)
-  fld_out%lq = .true.
 
   ! Copy boundary conditions
   call qg_fields_copy(fld_out,fld_in,.true.)
@@ -214,24 +211,23 @@ select case (trim(conf%varchange))
 case ('identity')
   ! Copy fields
   call qg_fields_copy(fld_out,fld_in)
-  fld_out%lq = fld_in%lq
 case ('x_to_q')
   ! Check fields variables
   if (fld_in%lq) call abor1_ftn('qg_change_var_inv_ad: wrong input fields variables for '//trim(conf%varchange))
+  if (.not.fld_out%lq) call abor1_ftn('qg_change_var_inv_ad: wrong output fields variables for '//trim(conf%varchange))
 
   ! Conversion
   call convert_q_to_x_ad(fld_in%geom,fld_in%gfld3d,fld_out%gfld3d)
-  fld_out%lq = .true.
 
   ! Copy boundary conditions
   call qg_fields_copy(fld_out,fld_in,.true.)
 case ('q_to_x')
   ! Check fields variables
   if (.not.fld_in%lq) call abor1_ftn('qg_change_var_inv_ad: wrong input fields variables for '//trim(conf%varchange))
+  if (fld_out%lq) call abor1_ftn('qg_change_var_inv_ad: wrong output fields variables for '//trim(conf%varchange))
 
   ! Conversion
   call convert_x_to_q_ad(fld_in%geom,fld_in%gfld3d,fld_out%gfld3d)
-  fld_out%lq = .false.
 
   ! Copy boundary conditions
   call qg_fields_copy(fld_out,fld_in,.true.)

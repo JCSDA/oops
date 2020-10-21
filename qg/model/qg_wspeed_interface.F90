@@ -115,7 +115,7 @@ call qg_gom_registry%get(c_key_traj,traj)
 vars = oops_variables(c_vars)
 
 ! Call Fortran
-call qg_wspeed_gettraj(c_nobs,vars,traj)
+call qg_gom_setup(traj,c_nobs,vars)
 
 end subroutine qg_wspeed_gettraj_c
 ! ------------------------------------------------------------------------------

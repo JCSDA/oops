@@ -17,19 +17,21 @@
 #include <string>
 #include <vector>
 
-#include <boost/shared_ptr.hpp>
-
-#include "atlas/field/FieldSet.h"
+#include "atlas/field.h"
 
 #include "eckit/config/LocalConfiguration.h"
 
 #include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/LocalIncrement.h"
+#if !ATLASIFIED
+#include "oops/generic/UnstructuredGrid.h"
+#endif
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
+#include "oops/util/Serializable.h"
 
 #include "oops/qg/FieldsQG.h"
 #include "oops/qg/GeometryQG.h"
@@ -63,6 +65,7 @@ namespace qg {
 
 class IncrementQG : public oops::GeneralizedDepartures,
                     public util::Printable,
+                    public util::Serializable,
                     private util::ObjectCounter<IncrementQG> {
  public:
   static const std::string classname() {return "qg::IncrementQG";}
@@ -78,6 +81,7 @@ class IncrementQG : public oops::GeneralizedDepartures,
   void diff(const StateQG &, const StateQG &);
   void zero();
   void zero(const util::DateTime &);
+  void ones();
   IncrementQG & operator =(const IncrementQG &);
   IncrementQG & operator+=(const IncrementQG &);
   IncrementQG & operator-=(const IncrementQG &);
@@ -101,11 +105,18 @@ class IncrementQG : public oops::GeneralizedDepartures,
   void toAtlas(atlas::FieldSet *) const;
   void fromAtlas(atlas::FieldSet *);
 
+#if !ATLASIFIED
+/// Unstructured grid (doing nothing, just to check compilation if ATLASIFIED=0)
+  void ug_coord(oops::UnstructuredGrid &) const {}
+  void field_to_ug(oops::UnstructuredGrid &) const {}
+  void field_from_ug(const oops::UnstructuredGrid &) {}
+#endif
+
 /// Access to fields
   FieldsQG & fields() {return *fields_;}
   const FieldsQG & fields() const {return *fields_;}
 
-  boost::shared_ptr<const GeometryQG> geometry() const {
+  std::shared_ptr<const GeometryQG> geometry() const {
     return fields_->geometry();
   }
 
@@ -115,16 +126,15 @@ class IncrementQG : public oops::GeneralizedDepartures,
   void setLocal(const oops::LocalIncrement &, const GeometryQGIterator &);
 
 /// Serialization
-  size_t serialSize() const;
-  void serialize(std::vector<double> &) const;
-  void deserialize(const std::vector<double> &, size_t &);
+  size_t serialSize() const override;
+  void serialize(std::vector<double> &) const override;
+  void deserialize(const std::vector<double> &, size_t &) override;
 
 /// Data
  private:
-  void print(std::ostream &) const;
+  void print(std::ostream &) const override;
   const bool lbc_ = false;
   std::unique_ptr<FieldsQG> fields_;
-  std::unique_ptr<FieldsQG> stash_;
 };
 // -----------------------------------------------------------------------------
 

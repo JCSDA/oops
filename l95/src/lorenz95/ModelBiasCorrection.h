@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "oops/util/Printable.h"
+#include "oops/util/Serializable.h"
 
 namespace eckit {
   class Configuration;
@@ -28,7 +29,8 @@ namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
 
-class ModelBiasCorrection : public util::Printable {
+class ModelBiasCorrection : public util::Printable,
+                            public util::Serializable {
  public:
 /// Constructor, destructor
   ModelBiasCorrection(const Resolution &, const eckit::Configuration &);
@@ -55,13 +57,13 @@ class ModelBiasCorrection : public util::Printable {
   const double & bias() const {return bias_;}
 
 /// Serialize and deserialize
-  size_t serialSize() const;
-  void serialize(std::vector<double> &) const;
-  void deserialize(const std::vector<double> &, size_t &);
+  size_t serialSize() const override;
+  void serialize(std::vector<double> &) const override;
+  void deserialize(const std::vector<double> &, size_t &) override;
 
  private:
   ModelBiasCorrection(const ModelBiasCorrection &);
-  void print(std::ostream &) const;
+  void print(std::ostream &) const override;
   double bias_;
   bool active_;
 };

@@ -14,6 +14,7 @@
 #include <memory>
 #include <ostream>
 #include <string>
+#include <vector>
 
 #include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
@@ -62,14 +63,20 @@ class StateQG : public util::Printable,
   double norm() const {return fields_->norm();}
   const util::DateTime & validTime() const {return fields_->time();}
   util::DateTime & validTime() {return fields_->time();}
+  void updateTime(const util::Duration & dt) {fields_->updateTime(dt);}
 
 /// Access to fields
   FieldsQG & fields() {return *fields_;}
   const FieldsQG & fields() const {return *fields_;}
-  boost::shared_ptr<const GeometryQG> geometry() const {
+  std::shared_ptr<const GeometryQG> geometry() const {
     return fields_->geometry();
   }
   const oops::Variables & variables() const {return fields_->variables();}
+
+/// Serialization
+  size_t serialSize() const;
+  void serialize(std::vector<double> &) const;
+  void deserialize(const std::vector<double> &, size_t &);
 
 /// Other
   void zero();

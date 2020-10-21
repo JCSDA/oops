@@ -32,6 +32,12 @@ linear variable change tests:
 - input variables:  [x]
   output variables: [q]
   variable change: ChVarQG
+  test inverse: 1
+  tolerance inverse: 1.0e-8
+- input variables:  [q]
+  output variables: [x]
+  variable change: ChVarQG
+  test inverse: 1
   tolerance inverse: 1.0e-8
 localization:
   horizontal_length_scale: 4.0e6
@@ -125,28 +131,61 @@ initial condition:
   date: 2009-12-31T00:00:00Z
   filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
 state test:
-  # interpolation test:
-  #   variables: [u, v]
-  locations:
-    nrandom: 8
-    lons: [-10.0, 12.0]
-    lats: [35.0, 45.0]
-    z: [5000, 9000]
   statefile:
     date: 2009-12-31T00:00:00Z
     filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
+  statefileout:
+    datadir: Data
+    exp: out
+    type: fc
+    date: '2009-12-15T00:00:00Z'
+    filename: Data/out.fc.2009-12-15T00:00:00Z.P16D.nc
   state generate:
     analytic_init: large-vortices
     date: 2009-12-31T00:00:00Z
   date: 2009-12-31T00:00:00Z
-  interpolation tolerance: 0.04
   norm file: 195415162.30387616
   norm generated state: 148702024.11261204
   tolerance: 1.0e-08
-  values: [6.042838]
 test date: 2009-12-31T00:00:00Z
+variable change tests:
+- input variables: [x]
+  output variables: [q]
+  variable change: ChVarQG
+  state:
+    date: 2009-12-31T00:00:00Z
+    filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
+  tolerance inverse: 1.0e-8
+- input variables: [q]
+  output variables: [x]
+  variable change: ChVarQG
+  state:
+    date: 2009-12-31T00:00:00Z
+    filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
+    state variables: [q]
+  tolerance inverse: 1.0e-8
+- input variables: [x]
+  output variables: [q]
+  inverse first: true
+  variable change: ChVarQG
+  state:
+    date: 2009-12-31T00:00:00Z
+    filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
+    state variables: [q]
+  tolerance inverse: 1.0e-8
+- input variables: [q]
+  output variables: [x]
+  inverse first: true
+  variable change: ChVarQG
+  state:
+    date: 2009-12-31T00:00:00Z
+    filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
+  tolerance inverse: 1.0e-8
 analysis variables: [x]
 loc variables: [x]
 inc variables: [x]
 window begin: 2010-01-01T00:00:00Z
 window end: 2010-01-02T00:00:00Z
+
+increment test:
+ date: 2009-12-31T00:00:00Z

@@ -13,6 +13,7 @@
 
 #include <string>
 
+#include "lorenz95/AnalyticInit.h"
 #include "lorenz95/ErrorCovarianceL95.h"
 #include "lorenz95/GetValuesL95.h"
 #include "lorenz95/GetValuesTLAD.h"
@@ -73,6 +74,7 @@ struct L95ObsTraits {
 
   typedef lorenz95::GomL95                 GeoVaLs;
   typedef lorenz95::LocsL95                Locations;
+  typedef lorenz95::AnalyticInit           AnalyticInit;
 };
 
 }  // namespace lorenz95

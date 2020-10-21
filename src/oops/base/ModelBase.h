@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2018 UCAR
+ * (C) Copyright 2018-2020 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -19,14 +19,14 @@
 #include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
-#include "oops/util/abor1_cpp.h"
+#include "oops/util/AssociativeContainers.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
-#include "oops/util/ObjectCounter.h"
 #include "oops/util/parameters/ConfigurationParameter.h"
 #include "oops/util/parameters/HasParameters_.h"
 #include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/ParametersOrConfiguration.h"
 #include "oops/util/parameters/RequiredPolymorphicParameter.h"
 #include "oops/util/Printable.h"
 
@@ -38,41 +38,35 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-/// Base class for encapsulation of the forecast model.
-/*!
- * Defines the interfaces for a forecast model.
- */
-
+/// \brief Base class for the forecasting model
+/// Defines the interfaces for a forecast model.
 template <typename MODEL>
 class ModelBase : public util::Printable,
                   private boost::noncopyable {
-  typedef Geometry<MODEL>            Geometry_;
-  typedef ModelAuxControl<MODEL>     ModelAux_;
-  typedef State<MODEL>               State_;
+  typedef typename MODEL::ModelAuxControl   ModelAux_;
+  typedef typename MODEL::State             State_;
 
  public:
   static const std::string classname() {return "oops::ModelBase";}
 
-  ModelBase() {}
-  virtual ~ModelBase() {}
+  ModelBase() = default;
+  virtual ~ModelBase() = default;
 
-// Run the model forecast
-  void initialize(State_ &) const;
-  void step(State_ &, const ModelAux_ &) const;
-  void finalize(State_ &) const;
+  /// \brief Forecast initialization, called before every forecast run
+  virtual void initialize(State_ &) const = 0;
+  /// \brief Forecast "step", called during forecast run; updates state to the next time
+  virtual void step(State_ &, const ModelAux_ &) const = 0;
+  /// \brief Forecast finalization; called after each forecast run
+  virtual void finalize(State_ &) const = 0;
 
-// Information and diagnostics
+  /// \brief Time step for running Model's forecast in oops (frequency with which the
+  /// State will be updated)
   virtual const util::Duration & timeResolution() const = 0;
+  /// \brief Model variables (only used in 4DVar)
   virtual const oops::Variables & variables() const = 0;
 
- protected:
-// Run the model forecast
-  virtual void initialize(typename MODEL::State &) const = 0;
-  virtual void step(typename MODEL::State &, const typename MODEL::ModelAuxControl &) const = 0;
-  virtual void finalize(typename MODEL::State &) const = 0;
-
  private:
-// Information and diagnostics
+  /// \brief Print; used for logging
   virtual void print(std::ostream &) const = 0;
 };
 
@@ -150,11 +144,7 @@ class ModelFactory {
 
   /// \brief Return the names of all models that can be created by one of the registered makers.
   static std::vector<std::string> getMakerNames() {
-    std::vector<std::string> names;
-    names.reserve(getMakers().size());
-    for (const auto &nameAndMaker : getMakers())
-      names.push_back(nameAndMaker.first);
-    return names;
+    return keys(getMakers());
   }
 
   virtual ~ModelFactory() = default;
@@ -178,52 +168,23 @@ class ModelFactory {
 
 /// \brief A subclass of ModelFactory able to create instances of T (a concrete subclass of
 /// ModelBase<MODEL>).
-///
-/// This generic implementation is used if T doesn't provide a definition of type Parameters_.
-/// It is then assumed that the constructor of T takes a reference to eckit::Configuration rather
-/// than a subclass of Parameters.
-template<class MODEL, class T, class Enable = void>
+template<class MODEL, class T>
 class ModelMaker : public ModelFactory<MODEL> {
  private:
-  typedef GenericModelParameters Parameters_;
+  /// Defined as T::Parameters_ if T defines a Parameters_ type; otherwise as
+  /// GenericModelParameters.
+  typedef TParameters_IfAvailableElseFallbackType_t<T, GenericModelParameters> Parameters_;
 
  public:
   typedef Geometry<MODEL>   Geometry_;
 
   explicit ModelMaker(const std::string & name) : ModelFactory<MODEL>(name) {}
 
-  virtual ModelBase<MODEL> * make(const Geometry_ & geom, const ModelParametersBase & parameters) {
+  ModelBase<MODEL> * make(const Geometry_ & geom, const ModelParametersBase & parameters) override {
+    Log::trace() << "ModelBase<MODEL>::make starting" << std::endl;
     const auto &stronglyTypedParameters = dynamic_cast<const Parameters_&>(parameters);
-    return new T(geom.geometry(), stronglyTypedParameters.config.value());
-  }
-
-  std::unique_ptr<ModelParametersBase> makeParameters() const override {
-    return boost::make_unique<Parameters_>();
-  }
-};
-
-// -----------------------------------------------------------------------------
-
-/// \brief A subclass of ModelFactory able to create instances of T (a concrete subclass of
-/// ModelBase<MODEL>).
-///
-/// This specialization is used if T provides a definition of type Parameters_ (which should be a
-/// subclass of ModelParametersBase). It is then assumed that the constructor of T takes a
-/// reference to an instance of T::Parameters_.
-template<class MODEL, class T >
-class ModelMaker<MODEL, T, typename std::enable_if<HasParameters_<T>::value>::type> :
-    public ModelFactory<MODEL> {
- private:
-  typedef typename T::Parameters_ Parameters_;
-
- public:
-  typedef Geometry<MODEL>   Geometry_;
-
-  explicit ModelMaker(const std::string & name) : ModelFactory<MODEL>(name) {}
-
-  virtual ModelBase<MODEL> * make(const Geometry_ & geom, const ModelParametersBase & parameters) {
-    const auto &stronglyTypedParameters = dynamic_cast<const Parameters_&>(parameters);
-    return new T(geom.geometry(), stronglyTypedParameters);
+    return new T(geom.geometry(),
+                 parametersOrConfiguration<HasParameters_<T>::value>(stronglyTypedParameters));
   }
 
   std::unique_ptr<ModelParametersBase> makeParameters() const override {
@@ -235,11 +196,12 @@ class ModelMaker<MODEL, T, typename std::enable_if<HasParameters_<T>::value>::ty
 
 template <typename MODEL>
 ModelFactory<MODEL>::ModelFactory(const std::string & name) {
+  Log::trace() << "ModelFactory<MODEL>::ModelFactory starting" << std::endl;
   if (getMakers().find(name) != getMakers().end()) {
-    Log::error() << name << " already registered in the model factory."  << std::endl;
-    ABORT("Element already registered in ModelFactory.");
+    throw std::runtime_error(name + " already registered in the model factory.");
   }
   getMakers()[name] = this;
+  Log::trace() << "ModelFactory<MODEL>::ModelFactory done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -252,8 +214,7 @@ ModelBase<MODEL> * ModelFactory<MODEL>::create(const Geometry_ & geom,
   typename std::map<std::string, ModelFactory<MODEL>*>::iterator
     jerr = getMakers().find(id);
   if (jerr == getMakers().end()) {
-    Log::error() << id << " does not exist in the model factory." << std::endl;
-    ABORT("Element does not exist in ModelFactory.");
+    throw std::runtime_error(id + " does not exist in the model factory");
   }
   ModelBase<MODEL> * ptr = jerr->second->make(geom, parameters);
   Log::trace() << "ModelFactory<MODEL>::create done" << std::endl;
@@ -265,38 +226,12 @@ ModelBase<MODEL> * ModelFactory<MODEL>::create(const Geometry_ & geom,
 template <typename MODEL>
 std::unique_ptr<ModelParametersBase> ModelFactory<MODEL>::createParameters(
     const std::string &name) {
+  Log::trace() << "ModelFactory<MODEL>::createParameters starting" << std::endl;
   typename std::map<std::string, ModelFactory<MODEL>*>::iterator it = getMakers().find(name);
   if (it == getMakers().end()) {
     throw std::runtime_error(name + " does not exist in the model factory");
   }
   return it->second->makeParameters();
-}
-
-// =============================================================================
-
-template<typename MODEL>
-void ModelBase<MODEL>::initialize(State_ & xx) const {
-  Log::trace() << "ModelBase<MODEL>::initialize starting" << std::endl;
-  this->initialize(xx.state());
-  Log::trace() << "ModelBase<MODEL>::initialize done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void ModelBase<MODEL>::step(State_ & xx, const ModelAux_ & merr) const {
-  Log::trace() << "ModelBase<MODEL>::step starting" << std::endl;
-  this->step(xx.state(), merr.modelauxcontrol());
-  Log::trace() << "ModelBase<MODEL>::step done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void ModelBase<MODEL>::finalize(State_ & xx) const {
-  Log::trace() << "ModelBase<MODEL>::finalize starting" << std::endl;
-  this->finalize(xx.state());
-  Log::trace() << "ModelBase<MODEL>::finalize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

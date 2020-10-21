@@ -10,19 +10,17 @@
 
 #include <Eigen/Dense>
 
-#include <sstream>
 #include <string>
 #include <vector>
 
 #include "eckit/config/Configuration.h"
 
 #include "oops/assimilation/Increment4D.h"
-#include "oops/base/IncrementEnsemble.h"
+#include "oops/base/IncrementEnsemble4D.h"
 #include "oops/base/LocalIncrement.h"
 #include "oops/generic/gc99.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
-#include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/parameters/Parameter.h"
@@ -53,8 +51,6 @@ class VerticalLocalizationParameters : public Parameters {
   RequiredParameter<double> VertLocDist{"lengthscale", this};
   // localization distance at which Gaspari-Cohn = 0
   RequiredParameter<std::string> VertLocUnits{"lengthscale units", this};
-  // for now: specify number of levels here
-  RequiredParameter<int> nlevels{"nlevels", this};
 };
 
 // ----------------------------------------------------------------------------
@@ -64,7 +60,7 @@ class VerticalLocEV: public util::Printable,
   typedef Geometry<MODEL>            Geometry_;
   typedef GeometryIterator<MODEL>    GeometryIterator_;
   typedef Increment4D<MODEL>         Increment4D_;
-  typedef IncrementEnsemble<MODEL>   IncrementEnsemble_;
+  typedef IncrementEnsemble4D<MODEL> IncrementEnsemble4D_;
 
  public:
   static const std::string classname() {return "oops::VerticalLocEV";}
@@ -72,10 +68,10 @@ class VerticalLocEV: public util::Printable,
   VerticalLocEV(const Geometry_ & , const eckit::Configuration &);
 
 // modulate an increment
-  void modulateIncrement(const Increment4D_ &, IncrementEnsemble_ &) const;
+  void modulateIncrement(const Increment4D_ &, IncrementEnsemble4D_ &) const;
 
 // modulate an incrementEnsemble at a {gridPoint, timeSlice}
-  Eigen::MatrixXd modulateIncrement(const IncrementEnsemble_ &,
+  Eigen::MatrixXd modulateIncrement(const IncrementEnsemble4D_ &,
                                     const GeometryIterator_ &, size_t) const;
 
 // returns number of retained eigen modes
@@ -120,19 +116,15 @@ template<typename MODEL>
 // -------------------------------------------------------------------------------------------------
 template<typename MODEL>
   Eigen::MatrixXd VerticalLocEV<MODEL>::computeCorrMatrix(const Geometry_ & geom) {
-    // for now, localize using distance in the level space
-    // (e.g. decay to zero 3 levels away)
-    size_t nLevs = options_.nlevels;
-    std::vector<double> vCoord(nLevs);
-
     std::string locUnits = options_.VertLocUnits;
     oops::Log::debug() << "locUnits: " << locUnits << std::endl;
-    vCoord = geom.verticalCoord(locUnits);
+    std::vector<double> vCoord = geom.verticalCoord(locUnits);
+    size_t nlevs = vCoord.size();
 
     // compute vertical correlations and eigen vectors
-    Eigen::MatrixXd cov(nLevs, nLevs);
-    for (size_t jj=0; jj < nLevs; ++jj) {
-      for (size_t ii=jj; ii < nLevs; ++ii) {
+    Eigen::MatrixXd cov(nlevs, nlevs);
+    for (size_t jj=0; jj < nlevs; ++jj) {
+      for (size_t ii=jj; ii < nlevs; ++ii) {
         cov(ii, jj) = oops::gc99(std::abs(vCoord[jj]-vCoord[ii])/options_.VertLocDist);
       }
     }
@@ -163,10 +155,9 @@ template<typename MODEL>
 
     // assert condition on the trace of the correlation matrix
     if ((evalsum-Evals_.size()) > 1e-5) {
-      std::stringstream errorMsg;
-      errorMsg << "VerticalLocEV trace(cov)~=cov.size: " <<
-          "trace(cov)=" << evalsum << "cov.size=" << Evals_.size() << std::endl;
-      ABORT(errorMsg.str());
+      Log::error() << "VerticalLocEV trace(cov)~=cov.size: trace(cov)=" <<
+                       evalsum << "cov.size=" << Evals_.size() << std::endl;
+      throw eckit::BadValue("VerticalLocEV trace(cov)~=cov.size");
     }
 
     // compute number of evals bellow tolerence
@@ -195,11 +186,10 @@ template<typename MODEL>
 
     // assert that the trace of the new and old cov is the same
     if ((evalsum-Evals_.sum()) > 1e-5) {
-      std::stringstream errorMsg;
-      errorMsg  << "VerticalLocEV::truncateEvecs trace(cov)~=trace(covTrunc): " <<
+      Log::error() << "VerticalLocEV::truncateEvecs trace(cov)~=trace(covTrunc): " <<
           " trace(cov)=" << evalsum << " trace(covTrunc)=" << Evals_.sum() <<
           " diff=" << (evalsum-Evals_.sum()) << std::endl;
-      ABORT(errorMsg.str());
+      throw eckit::BadValue("VerticalLocEV::truncateEvecs trace(cov)~=trace(covTrunc)");
     }
 
     // return number of truncated eigen values
@@ -236,7 +226,7 @@ bool VerticalLocEV<MODEL>::testTruncateEvecs(const Geometry_ & geom) {
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 void VerticalLocEV<MODEL>::modulateIncrement(const Increment4D_ & incr,
-                                      IncrementEnsemble_ & incrsOut) const {
+                                      IncrementEnsemble4D_ & incrsOut) const {
   // modulate an increment incr using Eivec_
   // returns incrsOut
 
@@ -265,7 +255,7 @@ void VerticalLocEV<MODEL>::modulateIncrement(const Increment4D_ & incr,
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 Eigen::MatrixXd VerticalLocEV<MODEL>::modulateIncrement(
-                                  const IncrementEnsemble_ & incrs,
+                                  const IncrementEnsemble4D_ & incrs,
                                   const GeometryIterator_ & gi,
                                   size_t itime) const {
   // modulate an increment at grid point

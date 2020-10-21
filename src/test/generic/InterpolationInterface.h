@@ -154,6 +154,9 @@ void testInterpolation() {
   std::unique_ptr<Interpolator_>
     interpolator(InterpolatorFactory_::create(config, fs1, fs2));
 
+  // Test print method
+  oops::Log::info() << "Interpolator created:\n" << *interpolator << std::endl;
+
   // Next - define the input fields
   atlas::Field field1 = fs1.createField<double>(name("testfield"));
 
@@ -196,78 +199,140 @@ void testInterpolation() {
            testfunc(lonlat2(jnode, 0), lonlat2(jnode, 1), jlev, nlev), tolerance));
   }
 
+  oops::Log::info() << "\n----------------------------------------------------"
+                    << "\nRepeat for single field"
+                    << "\n----------------------------------------------------"
+                    << std::endl;
+
+  // define output field
+  atlas::Field field2 = fs2.createField<double>(name("testoutput") |
+                        levels(field1.levels()));
+
+  // apply interpolation
+  interpolator->apply(field1, field2);
+
+  // check result from interpolation
+  auto outfield2 = make_view<double, 2>(field2);
+
+  for (size_t jnode = 0; jnode < static_cast<size_t>(fs2.size()); ++jnode) {
+    EXPECT(oops::is_close(outfield2(jnode, jlev),
+           testfunc(lonlat2(jnode, 0), lonlat2(jnode, 1), jlev, nlev), tolerance));
+  }
+
   // --------------------------------------------------
   /// Now test the adjoint.  But, skip this test for interpolators like atlas
   /// that have not yet implemented the adjoint
 
-  bool skip_adjoint_test = false;
-  if (config.has("skip adjoint test"))
-      skip_adjoint_test = config.getBool("skip adjoint test");
+  bool adjoint_test = true;
+  if (config.has("adjoint_test"))
+      adjoint_test = config.getBool("adjoint_test");
 
-  if (skip_adjoint_test) {
+  if (!adjoint_test) {
     oops::Log::info() << "\n----------------------------------------------------"
                       << "\nSkipping adjoint test for interpolator " << intname
                       << "\n----------------------------------------------------"
                       << std::endl;
-    return;
-  }
+  } else {
+    oops::Log::info() << "\n----------------------------------------------------"
+                      << "\nTesting adjoint for interpolator " << intname
+                      << "\n----------------------------------------------------"
+                      << std::endl;
 
-  oops::Log::info() << "\n----------------------------------------------------"
-                    << "\nTesting adjoint for interpolator " << intname
-                    << "\n----------------------------------------------------"
-                    << std::endl;
+    // define random field on output grid
+    size_t nout = fs2.size()*nlev;
 
-  // define random field on output grid
-  size_t nout = fs2.size()*nlev;
+    util::UniformDistribution<double> x(nout, 0.0, 1.0);
 
-  util::UniformDistribution<double> x(nout, 0.0, 1.0);
+    atlas::Field field2_adcheck = fs2.createField<double>(name("adcheck")|levels(nlev));
+    auto adcheck2 = make_view<double, 2>(field2_adcheck);
 
-  atlas::Field field2_adcheck = fs2.createField<double>(name("adcheck")|levels(nlev));
-  auto adcheck2 = make_view<double, 2>(field2_adcheck);
-
-  size_t idx = 0;
-  for (size_t jnode = 0; jnode < static_cast<size_t>(fs2.size()); ++jnode) {
-    for (size_t jlev = 0; jlev < static_cast<size_t>(nlev); ++jlev) {
-      adcheck2(jnode, jlev) = x[idx];
-      ++idx;
+    size_t idx = 0;
+    for (size_t jnode = 0; jnode < static_cast<size_t>(fs2.size()); ++jnode) {
+      for (size_t jlev = 0; jlev < static_cast<size_t>(nlev); ++jlev) {
+        adcheck2(jnode, jlev) = x[idx];
+        ++idx;
+      }
     }
-  }
-  atlas::FieldSet adcheck_grid2;
-  adcheck_grid2.add(field2_adcheck);
+    atlas::FieldSet adcheck_grid2;
+    adcheck_grid2.add(field2_adcheck);
 
-  // Define empty FieldSet for the result (on grid1)
-  atlas::FieldSet adcheck_grid1;
+    // Define empty FieldSet for the result (on grid1)
+    atlas::FieldSet adcheck_grid1;
 
-  // Apply interpolator adjoint
-  interpolator->apply_ad(adcheck_grid2, adcheck_grid1);
+    // Apply interpolator adjoint
+    interpolator->apply_ad(adcheck_grid2, adcheck_grid1);
 
-  // Check adjoint
+    // Check adjoint
 
-  // we need to implement a general dot product for atlas Fields.
-  // For now, do it manually.
+    // we need to implement a general dot product for atlas Fields.
+    // For now, do it manually.
 
-  double dot1 = 0;
-  double mydot1 = 0;
-  atlas::Field field1_adcheck = adcheck_grid1.field("adcheck");
-  auto adcheck1 = make_view<double, 2>(field1_adcheck);
-  atlas::mesh::IsGhostNode is_ghost(fs1.nodes());
-  for (size_t jnode = 0; jnode < static_cast<size_t>(fs1.size()); ++jnode) {
-    if (is_ghost(jnode) == 0) {
+    double dot1 = 0;
+    double mydot1 = 0;
+    atlas::Field field1_adcheck = adcheck_grid1.field("adcheck");
+    auto adcheck1 = make_view<double, 2>(field1_adcheck);
+    atlas::mesh::IsGhostNode is_ghost(fs1.nodes());
+    for (size_t jnode = 0; jnode < static_cast<size_t>(fs1.size()); ++jnode) {
+      if (is_ghost(jnode) == 0) {
+        for (size_t jlev = 0; jlev < nlev; ++jlev)
+          mydot1 += infield(jnode, jlev)*adcheck1(jnode, jlev);
+      }
+    }
+    oops::mpi::world().allReduce(mydot1, dot1, eckit::mpi::sum());
+
+    double dot2 = 0;
+    double mydot2 = 0;
+    for (size_t jnode = 0; jnode < static_cast<size_t>(fs2.size()); ++jnode) {
       for (size_t jlev = 0; jlev < nlev; ++jlev)
-        mydot1 += infield(jnode, jlev)*adcheck1(jnode, jlev);
+        mydot2 += outfield(jnode, jlev)*adcheck2(jnode, jlev);
+    }
+    oops::mpi::world().allReduce(mydot2, dot2, eckit::mpi::sum());
+
+    EXPECT(oops::is_close(dot1, dot2, tolerance));
+  }
+
+  // --------------------------------------------------
+  // Now test writing and reading the weights to a file.
+  // Not all interpolators have this capability so only do it if requested
+
+  bool readwrite_test = false;
+  if (config.has("readwrite_test"))
+      readwrite_test = config.getBool("readwrite_test");
+
+  if (!readwrite_test) {
+    oops::Log::info() << "\n----------------------------------------------------"
+                      << "\nSkipping read/write test for interpolator " << intname
+                      << "\n----------------------------------------------------"
+                      << std::endl;
+  } else {
+    oops::Log::info() << "\n----------------------------------------------------"
+                      << "\nTesting read/write for interpolator " << intname
+                      << "\n----------------------------------------------------"
+                      << std::endl;
+
+    if (interpolator->write(config) != 0)
+      throw eckit::NotImplemented("Write method not implemented", Here());
+
+    // read interpolator back as a new object
+    config.set("read_from_file", true);
+    std::string infile = config.getString("outfile");
+    config.set("infile", infile);
+
+    std::unique_ptr<Interpolator_>
+      interpolator_read(InterpolatorFactory_::create(config, fs1, fs2));
+
+    // test by applying this interpolator to our previous infield
+    atlas::Field field2_read = fs2.createField<double>(name("testoutput") |
+                               levels(field1.levels()));
+
+    interpolator->apply(field1, field2_read);
+    auto outfield2_read = make_view<double, 2>(field2_read);
+
+    for (size_t jnode = 0; jnode < static_cast<size_t>(fs2.size()); ++jnode) {
+      EXPECT(oops::is_close(outfield2_read(jnode, jlev),
+             testfunc(lonlat2(jnode, 0), lonlat2(jnode, 1), jlev, nlev), tolerance));
     }
   }
-  oops::mpi::world().allReduce(mydot1, dot1, eckit::mpi::sum());
-
-  double dot2 = 0;
-  double mydot2 = 0;
-  for (size_t jnode = 0; jnode < static_cast<size_t>(fs2.size()); ++jnode) {
-    for (size_t jlev = 0; jlev < nlev; ++jlev)
-      mydot2 += outfield(jnode, jlev)*adcheck2(jnode, jlev);
-  }
-  oops::mpi::world().allReduce(mydot2, dot2, eckit::mpi::sum());
-
-  EXPECT(oops::is_close(dot1, dot2, tolerance));
 
   oops::Log::info() << "\n----------------------------------------------------"
                     << "\nFinishing test of oops interface for interpolator "

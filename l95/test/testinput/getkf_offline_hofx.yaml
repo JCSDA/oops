@@ -1,0 +1,50 @@
+window begin: 2010-01-01T21:00:00Z
+window length: PT6H
+
+geometry:
+  resol: 40
+
+# use 3D for middle of the window
+background:
+  members:
+  - date: &date 2010-01-02T00:00:00Z
+    filename: Data/test.ens.1.2010-01-01T00:00:00Z.P1D
+  - date: *date
+    filename: Data/test.ens.2.2010-01-01T00:00:00Z.P1D
+  - date: *date
+    filename: Data/test.ens.3.2010-01-01T00:00:00Z.P1D
+  - date: *date
+    filename: Data/test.ens.4.2010-01-01T00:00:00Z.P1D
+  - date: *date
+    filename: Data/test.ens.5.2010-01-01T00:00:00Z.P1D
+
+observations:
+- obs error:
+    covariance model: localized diagonal
+    localization:
+      localization method: Gaspari-Cohn
+      lengthscale: .1
+  obs space:
+    obsdatain:  Data/l95.getkf.2010-01-02T00:00:00Z.obt
+  obs operator: {}
+
+driver: 
+  read HX from disk: true
+  do posterior observer: false
+
+local ensemble DA:
+  solver: GETKF
+  vertical localization:
+    fraction of retained variance: .99
+    lengthscale: 10
+    lengthscale units: bogus
+  inflation:
+    rtps: 0.5
+    rtpp: 0.5
+    mult: 1.0
+
+output:
+  datadir: Data
+  date: *date
+  exp: getkf.%{member}%
+  type: an

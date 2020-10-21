@@ -1,0 +1,12 @@
+valid linear model name:
+  name: L95TLM
+  trajectory:
+    f: 8.0
+    tstep: PT1H30M
+  tstep: PT1H30M
+invalid linear model name:
+  name: bogus
+  trajectory:
+    f: 8.0
+    tstep: PT1H30M
+  tstep: PT1H30M

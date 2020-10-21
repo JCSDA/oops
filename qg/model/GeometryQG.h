@@ -22,16 +22,29 @@
 #include "eckit/mpi/Comm.h"
 
 #include "oops/util/ObjectCounter.h"
+#include "oops/util/parameters/Parameter.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 #include "oops/util/Printable.h"
 
 #include "oops/qg/GeometryQGIterator.h"
 #include "oops/qg/QgFortran.h"
 
-namespace eckit {
-  class Configuration;
-}
-
 namespace qg {
+
+class GeometryQgParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(GeometryQgParameters, Parameters)
+
+ public:
+  /// Domain size
+  oops::RequiredParameter<int> nx{"nx", this};
+  oops::RequiredParameter<int> ny{"ny", this};
+  /// Depths
+  oops::RequiredParameter<std::vector<float>> depths{"depths", this};
+  /// Heating option (AS: should it be in geometry or model?)
+  oops::Parameter<bool> heating{"heating", true, this};
+};
+
 class GeometryQGIterator;
 
 // -----------------------------------------------------------------------------
@@ -40,13 +53,14 @@ class GeometryQGIterator;
 class GeometryQG : public util::Printable,
                    private util::ObjectCounter<GeometryQG> {
  public:
+  typedef GeometryQgParameters Parameters_;
+
   static const std::string classname() {return "qg::GeometryQG";}
 
-  GeometryQG(const eckit::Configuration &, const eckit::mpi::Comm &);
+  GeometryQG(const GeometryQgParameters &, const eckit::mpi::Comm &);
   GeometryQG(const GeometryQG &);
   ~GeometryQG();
 
-  F90geom & toFortran() {return keyGeom_;}
   const F90geom & toFortran() const {return keyGeom_;}
 
   GeometryQGIterator begin() const;
@@ -61,7 +75,7 @@ class GeometryQG : public util::Printable,
   void print(std::ostream &) const;
   F90geom keyGeom_;
   const eckit::mpi::Comm & comm_;
-  std::unique_ptr<atlas::functionspace::StructuredColumns> atlasFunctionSpace_;
+  std::unique_ptr<atlas::functionspace::PointCloud> atlasFunctionSpace_;
   std::unique_ptr<atlas::FieldSet> atlasFieldSet_;
 };
 // -----------------------------------------------------------------------------

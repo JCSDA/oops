@@ -49,14 +49,12 @@ oops/assimilation/instantiateLocalEnsembleSolverFactory.h
 oops/assimilation/instantiateMinFactory.h
 oops/assimilation/IPCG.h
 oops/assimilation/IPCGMinimizer.h
-oops/assimilation/JqTerm.h
 oops/assimilation/JqTermTLAD.h
 oops/assimilation/LBGMRESRMinimizer.h
 oops/assimilation/LBHessianMatrix.h
 oops/assimilation/LBMinimizer.h
 oops/assimilation/LETKFSolver.h
 oops/assimilation/LETKFSolverGSI.h
-oops/assimilation/LETKFSolverOOPS.h
 oops/assimilation/LETKFSolverParameters.h
 oops/assimilation/linsysteigen.h
 oops/assimilation/LocalEnsembleSolver.h
@@ -92,25 +90,25 @@ oops/base/DiagonalMatrix.h
 oops/base/DolphChebyshev.cc
 oops/base/DolphChebyshev.h
 oops/base/EnsembleCovariance.h
-oops/base/EnsembleCovariance4D.h
-oops/base/ErrorCovariance4D.h
 oops/base/GeneralizedDepartures.h
 oops/base/GeoVaLsWriter.h
 oops/base/LocalIncrement.cc
 oops/base/LocalIncrement.h
 oops/base/HybridCovariance.h
-oops/base/HybridCovariance4D.h
 oops/base/IdentityMatrix.h
 oops/base/IncrementEnsemble.h
+oops/base/IncrementEnsemble4D.h
 oops/base/InterpolatorBase.h
+oops/base/InterpolatorBase.cc
 oops/base/instantiateCovarFactory.h
 oops/base/instantiateObsFilterFactory.h
 oops/base/LinearModelBase.h
 oops/base/LinearVariableChangeBase.h
+oops/base/LinearVariableChangeParametersBase.h
 oops/base/LocalizationBase.h
 oops/base/ModelBase.h
-oops/base/ModelSpaceCovariance4DBase.h
 oops/base/ModelSpaceCovarianceBase.h
+oops/base/ModelSpaceCovarianceParametersBase.h
 oops/base/ObsAuxControls.h
 oops/base/ObsAuxCovariances.h
 oops/base/ObsAuxIncrements.h
@@ -128,6 +126,8 @@ oops/base/ObsLocalizationBase.h
 oops/base/ObsSpaceBase.cc
 oops/base/ObsSpaceBase.h
 oops/base/ObsSpaces.h
+oops/base/ParameterTraitsVariables.cc
+oops/base/ParameterTraitsVariables.h
 oops/base/PostBase.h
 oops/base/PostBaseTLAD.h
 oops/base/PostProcessor.h
@@ -137,10 +137,12 @@ oops/base/PostTimer.h
 oops/base/PostTimerParameters.h
 oops/base/QCData.h
 oops/base/StateEnsemble.h
+oops/base/StateEnsemble4D.h
 oops/base/StateInfo.h
 oops/base/StateWriter.h
 oops/base/TrajectorySaver.h
 oops/base/VariableChangeBase.h
+oops/base/VariableChangeParametersBase.h
 oops/base/variables_f.cc
 oops/base/variables_f.h
 oops/base/variables_mod.F90
@@ -149,11 +151,11 @@ oops/base/Variables.h
 oops/base/WeightedDiff.h
 oops/base/WeightedDiffTLAD.h
 oops/base/WeightedMean.h
-oops/base/WeightingFct.cc
 oops/base/WeightingFct.h
 
-oops/generic/dcmip_initial_conditions_test_1_2_3_v5.f90
-oops/generic/dcmip_initial_conditions_test_4_v3.f90
+oops/contrib/dcmip_initial_conditions_test_1_2_3_v5.f90
+oops/contrib/dcmip_initial_conditions_test_4_v3.f90
+
 oops/generic/gc99.h
 oops/generic/gc99.cc
 oops/generic/IdentityModel.h
@@ -163,6 +165,12 @@ oops/generic/instantiateModelFactory.h
 oops/generic/instantiateObsErrorFactory.h
 oops/generic/instantiateTlmFactory.h
 oops/generic/instantiateVariableChangeFactory.h
+oops/generic/InterpolatorAtlas.h
+oops/generic/InterpolatorAtlas.cc
+oops/generic/interpolatorunstrc_f.h
+oops/generic/interpolatorunstrc_interface.F90
+oops/generic/InterpolatorUnstructured.h
+oops/generic/InterpolatorUnstructured.cc
 oops/generic/LinearModelId.h
 oops/generic/LocalObsErrorDiag.h
 oops/generic/ObsErrorDiag.h
@@ -170,11 +178,10 @@ oops/generic/PseudoModel.h
 oops/generic/unstructured_grid_f.h
 oops/generic/unstructured_grid_interface.F90
 oops/generic/unstructured_grid_mod.F90
+oops/generic/unstructured_interpolation_mod.F90
 oops/generic/UnstructuredGrid.cc
 oops/generic/UnstructuredGrid.h
 oops/generic/VerticalLocEV.h
-oops/generic/InterpolatorAtlas.h
-oops/generic/InterpolatorAtlas.cc
 
 oops/interface/AnalyticInit.h
 oops/interface/ErrorCovariance.h
@@ -215,9 +222,7 @@ oops/runs/Application.h
 oops/runs/ConvertState.h
 oops/runs/DiffStates.h
 oops/runs/Dirac.h
-oops/runs/EDA.h
-oops/runs/EnsForecasts.h
-oops/runs/EnsHofX.h
+oops/runs/EnsembleApplication.h
 oops/runs/EnsRecenter.h
 oops/runs/EnsVariance.h
 oops/runs/ExternalDFI.h
@@ -260,6 +265,7 @@ oops/util/duration.intfb.h
 oops/util/Expect.h
 oops/util/FloatCompare.h
 oops/util/formats.h
+oops/util/gatherPrint.h
 oops/util/IntSetParser.cc
 oops/util/IntSetParser.h
 oops/util/IsAnyPointInVolumeInterior.h
@@ -283,12 +289,14 @@ oops/util/ObjectCountHelper.cc
 oops/util/ObjectCountHelper.h
 oops/util/Printable.h
 oops/util/PrintAdjTest.h
+oops/util/PropertiesOfNVectors.h
 oops/util/random_f.cc
 oops/util/random_f.h
 oops/util/random_mod.F90
 oops/util/Random.h
 oops/util/random.intfb.h
 oops/util/ScalarOrMap.h
+oops/util/Serializable.h
 oops/util/signal_trap.cc
 oops/util/sqr.h
 oops/util/string_f_c_interface.cc
@@ -302,11 +310,13 @@ oops/util/Timer.h
 oops/util/TimerHelper.cc
 oops/util/TimerHelper.h
 oops/util/utilNamespaceDoc.h
-oops/util/unstructured_interpolation_mod.f90
 
 oops/util/parameters/ConfigurationParameter.cc
 oops/util/parameters/ConfigurationParameter.h
+oops/util/parameters/GenericParameters.h
 oops/util/parameters/HasParameters_.h
+oops/util/parameters/IgnoreOtherParameters.cc
+oops/util/parameters/IgnoreOtherParameters.h
 oops/util/parameters/NumericConstraints.h
 oops/util/parameters/ObjectJsonSchema.cc
 oops/util/parameters/ObjectJsonSchema.h
@@ -318,6 +328,7 @@ oops/util/parameters/ParameterBase.h
 oops/util/parameters/ParameterConstraint.h
 oops/util/parameters/Parameters.cc
 oops/util/parameters/Parameters.h
+oops/util/parameters/ParametersOrConfiguration.h
 oops/util/parameters/ParameterTraits.h
 oops/util/parameters/ParameterTraitsScalarOrMap.h
 oops/util/parameters/PolymorphicParameter.h
@@ -332,11 +343,23 @@ list( APPEND oops_test_src_files
 test/TestEnvironment.h
 test/TestFixture.h
 
+test/assimilation/FullGMRES.h
+test/assimilation/rotmat.h
+test/assimilation/SolveMatrixEquation.h
+test/assimilation/SpectralLMP.h
+test/assimilation/TestVector3D.h
+test/assimilation/TriDiagSolve.h
+test/assimilation/Vector3D.cc
+test/assimilation/Vector3D.h
+
+test/base/Fortran.h
 test/base/ObsErrorCovariance.h
+test/base/variables.F90
 
 test/interface/ErrorCovariance.h
 test/interface/Geometry.h
 test/interface/GeometryIterator.h
+test/interface/GeometryFixture.h
 test/interface/GeoVaLs.h
 test/interface/GetValues.h
 test/interface/Increment.h
@@ -378,6 +401,7 @@ test/util/FloatCompare.h
 test/util/CompareNVectors.h
 test/util/CompositePath.h
 test/util/MissingValues.h
+test/util/PropertiesOfNVectors.h
 test/util/stringFunctions.h
 )
 
@@ -400,13 +424,16 @@ list( APPEND oops_test_input
   test/testinput/random.yaml
   test/testinput/pushstringvector.yaml
   test/testinput/atlas_interpolation_interface.yaml
+  test/testinput/unstructured_interpolation.yaml
   test/testinput/variables.yaml
   test/testinput/parameters.yaml
   test/testinput/empty.yaml
   test/testinput/mpi.yaml
+  test/testinput/spectrallmp.yaml
 )
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test/testinput)
 CREATE_SYMLINK( ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${oops_test_input} )
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test/testoutput)
 
 function(generate_fortran_bindings output filename)
 
@@ -489,7 +516,8 @@ target_include_directories(${PROJECT_NAME} INTERFACE
                                 $<INSTALL_INTERFACE:${MODULE_DIR}>)
 
 if (${nlohmann_json_FOUND} AND ${nlohmann_json_schema_validator_FOUND})
-  target_link_libraries( oops PUBLIC nlohmann_json nlohmann_json_schema_validator )
+  message(STATUS "[OOPS] JSON Schema Validator activated.")
+  target_link_libraries( oops PRIVATE nlohmann_json nlohmann_json_schema_validator )
   target_compile_definitions( oops PRIVATE OOPS_HAVE_NLOHMANN_JSON_SCHEMA_VALIDATOR )
 endif()
 
@@ -581,6 +609,11 @@ ecbuild_add_test( TARGET  test_oops_atlas_interpolation_interface
                   ARGS    "test/testinput/atlas_interpolation_interface.yaml"
                   LIBS    oops )
 
+ecbuild_add_test( TARGET  test_oops_unstructured_interpolation
+                  SOURCES test/generic/InterpolationInterface.cc
+                  ARGS    "test/testinput/unstructured_interpolation.yaml"
+                  LIBS    oops )
+
 ecbuild_add_test( TARGET  test_util_comparenvectors
                   SOURCES test/util/CompareNVectors.cc
                   ARGS    "test/testinput/empty.yaml"
@@ -596,6 +629,40 @@ ecbuild_add_test( TARGET  test_util_associativecontainers
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 
+ecbuild_add_test( TARGET  test_util_propertiesofnvectors
+                  SOURCES test/util/PropertiesOfNVectors.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_assimilation_fullgmres
+                  SOURCES test/assimilation/FullGMRES.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_assimilation_rotmat
+                  SOURCES test/assimilation/rotmat.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_assimilation_solvematrixequation
+                  SOURCES test/assimilation/SolveMatrixEquation.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_assimilation_spectrallmp
+                  SOURCES test/assimilation/SpectralLMP.cc
+                  ARGS    "test/testinput/spectrallmp.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_assimilation_testvector3d
+                  SOURCES test/assimilation/TestVector3D.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_assimilation_tridiagsolve
+                  SOURCES test/assimilation/TriDiagSolve.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
 
 if( HAVE_FCTEST )
 

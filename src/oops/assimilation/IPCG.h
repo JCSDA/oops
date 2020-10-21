@@ -80,7 +80,7 @@ double IPCG(VECTOR & x, const VECTOR & b,
   // Initial residual r = b - Ax
   r = b;
   double xnrm2 = dot_product(x, x);
-  if (xnrm2 != 0) {
+  if (xnrm2 > 0.0) {
     A.multiply(x, s);
     r -= s;
   }

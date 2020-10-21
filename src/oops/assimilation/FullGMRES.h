@@ -83,7 +83,7 @@ double FullGMRES(VECTOR & xx, const VECTOR & bb, const AMATRIX & A,
 
   VECTOR rr(bb);
   double xnrm2 = dot_product(xx, xx);
-  if (xnrm2 != 0) {
+  if (xnrm2 > 0.0) {
     A.multiply(xx, ww);
     rr -= ww;  // r = b - Ax
   }
