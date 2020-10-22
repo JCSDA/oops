@@ -1,4 +1,4 @@
-datadir: $(expdir)/{{current_cycle}}
+datadir: $(experiment_dir)/{{current_cycle}}
 exp: $(experiment)
 #first: '{% $(window_length) - $(window_offset) %}'
 first: PT3H

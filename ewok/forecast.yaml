@@ -1,6 +1,6 @@
 forecast length: $(forecast_length)
 initial condition:
-  $(INITIAL_CONDITION)
+  $(AN_TEMPLATE)
 geometry:
   $(GEOMETRY)
 model:
