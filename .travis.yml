@@ -31,7 +31,7 @@ before_install:
 
   - cd CI
   - REPO_SOURCE_DIR=${TRAVIS_BUILD_DIR}/jcsda/src_repo
-  - git clone https://github.com/jcsda-internal/jedi-build-package.git ${REPO_SOURCE_DIR}/jedi_build_package
+  - git clone https://github.com/JCSDA-internal/jedi-build-package.git ${REPO_SOURCE_DIR}/jedi_build_package
 
   - docker pull jcsda/docker-clang-mpich-dev
   - docker images
