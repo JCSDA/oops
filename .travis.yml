@@ -34,7 +34,7 @@ before_install:
   # test cloning another repo from jcsda-internal
   - git clone https://github.com/jcsda-internal/fckit.git ${REPO_SOURCE_DIR}/test
   - ls ${REPO_SOURCE_DIR}
-  - git clone https://github.com/JCSDA-internal/jedi-build-package.git ${REPO_SOURCE_DIR}/jedi_build_package
+  - git clone https://github.com/jcsda/jedi-build-package.git ${REPO_SOURCE_DIR}/jedi_build_package
 
   - docker pull jcsda/docker-clang-mpich-dev
   - docker images
