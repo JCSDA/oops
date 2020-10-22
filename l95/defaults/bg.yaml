@@ -1,2 +1,2 @@
 date: '{{window_begin}}'
-filename: '$(expdir)/{{current_cycle}}/$(experiment).bg.{{current_cycle}}.l95'
+filename: '$(experiment_dir)/{{current_cycle}}/$(experiment).bg.{{current_cycle}}.l95'
