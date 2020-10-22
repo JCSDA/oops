@@ -34,12 +34,12 @@ before_install:
   # test cloning another repo from jcsda-internal
   - git clone https://github.com/jcsda-internal/fckit.git ${REPO_SOURCE_DIR}/test
   - ls ${REPO_SOURCE_DIR}
-  - git clone https://github.com/jcsda/jedi-build-package.git ${REPO_SOURCE_DIR}/jedi_build_package
+  - git clone https://github.com/jcsda-internal/jedi-build-package.git ${REPO_SOURCE_DIR}
 
   - docker pull jcsda/docker-clang-mpich-dev
   - docker images
 script:
-  - docker run -d -t --env GH_TOKEN=$GH_TOKEN --env AWS_ACCESS_KEY_ID=$aws_access_key_id --env AWS_SECRET_ACCESS_KEY=$aws_secret_access_key --env GH_BRANCH=$BRANCH --name clang_container -v ${REPO_SOURCE_DIR}/jedi_build_package:/jcsda/src_repo jcsda/docker-clang-mpich-dev
+  - docker run -d -t --env GH_TOKEN=$GH_TOKEN --env AWS_ACCESS_KEY_ID=$aws_access_key_id --env AWS_SECRET_ACCESS_KEY=$aws_secret_access_key --env GH_BRANCH=$BRANCH --name clang_container -v ${REPO_SOURCE_DIR}/jedi-build-package:/jcsda/src_repo jcsda/docker-clang-mpich-dev
 
   - docker exec clang_container bash -c 'mkdir ~/.aws'
   - docker exec clang_container bash -c 'echo [default] >> ~/.aws/credentials '
