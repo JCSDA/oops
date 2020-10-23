@@ -175,12 +175,7 @@ oops/generic/LinearModelId.h
 oops/generic/LocalObsErrorDiag.h
 oops/generic/ObsErrorDiag.h
 oops/generic/PseudoModel.h
-oops/generic/unstructured_grid_f.h
-oops/generic/unstructured_grid_interface.F90
-oops/generic/unstructured_grid_mod.F90
 oops/generic/unstructured_interpolation_mod.F90
-oops/generic/UnstructuredGrid.cc
-oops/generic/UnstructuredGrid.h
 oops/generic/VerticalLocEV.h
 
 oops/interface/AnalyticInit.h

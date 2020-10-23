@@ -23,9 +23,6 @@
 
 #include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/LocalIncrement.h"
-#if !ATLASIFIED
-#include "oops/generic/UnstructuredGrid.h"
-#endif
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Duration.h"
@@ -104,13 +101,6 @@ class IncrementQG : public oops::GeneralizedDepartures,
   void setAtlas(atlas::FieldSet *) const;
   void toAtlas(atlas::FieldSet *) const;
   void fromAtlas(atlas::FieldSet *);
-
-#if !ATLASIFIED
-/// Unstructured grid (doing nothing, just to check compilation if ATLASIFIED=0)
-  void ug_coord(oops::UnstructuredGrid &) const {}
-  void field_to_ug(oops::UnstructuredGrid &) const {}
-  void field_from_ug(const oops::UnstructuredGrid &) {}
-#endif
 
 /// Access to fields
   FieldsQG & fields() {return *fields_;}

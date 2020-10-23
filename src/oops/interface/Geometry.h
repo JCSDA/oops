@@ -85,10 +85,8 @@ class Geometry : public util::Printable,
 
   /// Accessor to the geometry communicator
   const eckit::mpi::Comm & getComm() const {return geom_->getComm();}
-#if ATLASIFIED
   atlas::FunctionSpace * atlasFunctionSpace() const {return geom_->atlasFunctionSpace();}
   atlas::FieldSet * atlasFieldSet() const {return geom_->atlasFieldSet();}
-#endif
 
  protected:
   std::shared_ptr<const Geometry_> geom_;  /// pointer to the Geometry implementation
