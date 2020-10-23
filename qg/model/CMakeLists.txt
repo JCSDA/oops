@@ -126,8 +126,6 @@ ecbuild_add_library( TARGET   qg
                      INSTALL_HEADERS LISTED
                      LINKER_LANGUAGE CXX )
 
-target_compile_definitions(qg PUBLIC ATLASIFIED=1)
-
 #Configure include directory layout for build-tree to match install-tree
 set(QG_BUILD_DIR_INCLUDE_PATH ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/include)
 add_custom_target(qg_headers ALL COMMAND ${CMAKE_COMMAND} -E make_directory "${QG_BUILD_DIR_INCLUDE_PATH}/oops"

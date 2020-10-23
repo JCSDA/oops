@@ -14,9 +14,10 @@
 #include <fstream>
 #include <string>
 
+#include "atlas/field.h"
+
 #include "eckit/exception/Exceptions.h"
 
-#include "oops/generic/UnstructuredGrid.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
@@ -211,18 +212,18 @@ void IncrementL95::setLocal(const oops::LocalIncrement & gp, const Iterator & i)
   fld_[i.index()] = vals[0];
 }
 // -----------------------------------------------------------------------------
-/// Convert to/from unstructured grid
+/// Convert to/from ATLAS fieldset
 // -----------------------------------------------------------------------------
-void IncrementL95::ug_coord(oops::UnstructuredGrid & ug) const {
-  fld_.ug_coord(ug);
+void IncrementL95::setAtlas(atlas::FieldSet *) const {
+  ABORT("FieldL95 setAtlas not implemented");
 }
 // -----------------------------------------------------------------------------
-void IncrementL95::field_to_ug(oops::UnstructuredGrid & ug, const int & its) const {
-  fld_.field_to_ug(ug, its);
+void IncrementL95::toAtlas(atlas::FieldSet *) const {
+  ABORT("FieldL95 toAtlas not implemented");
 }
 // -----------------------------------------------------------------------------
-void IncrementL95::field_from_ug(const oops::UnstructuredGrid & ug, const int & its) {
-  fld_.field_from_ug(ug, its);
+void IncrementL95::fromAtlas(atlas::FieldSet *) {
+  ABORT("FieldL95 fromAtlas not implemented");
 }
 // -----------------------------------------------------------------------------
 /// Serialize - deserialize
