@@ -33,7 +33,7 @@ const eckit::mpi::Comm & myself() {
 
 void gather(const eckit::mpi::Comm & comm, const std::vector<double> & send,
             std::vector<double> & recv, const size_t root) {
-  int ntasks = comm.size();
+  size_t ntasks = comm.size();
   if (ntasks > 1) {
     int mysize = send.size();
     std::vector<int> sizes(ntasks);

@@ -115,13 +115,13 @@ CASE("mpi/mpi/gatherSerializable") {
   std::vector<util::DateTime> globalValues(numGlobalValues);
 
   util::DateTime zeroDate("0001-01-01T00:00:00Z");
-  for (int ii = 0; ii < numGlobalValues; ++ii) {
+  for (size_t ii = 0; ii < numGlobalValues; ++ii) {
     globalValues[ii] = zeroDate;
   }
 
   std::vector<util::DateTime> zeroValues = globalValues;
 
-  int root_gather = conf.getInt("root for gathering", 0);
+  size_t root_gather = conf.getInt("root for gathering", 0);
 
   oops::mpi::gather(comm, localValues, globalValues, root_gather);
   if (rank == root_gather) {
@@ -148,7 +148,7 @@ CASE("mpi/mpi/gatherDouble") {
   std::vector<double> globalDouble(numGlobalDouble, 0.0);
   std::vector<double> zerosDouble = globalDouble;
 
-  int root_gather = conf.getInt("root for gathering", 0);
+  size_t root_gather = conf.getInt("root for gathering", 0);
 
   oops::mpi::gather(comm, localDouble, globalDouble, root_gather);
 
