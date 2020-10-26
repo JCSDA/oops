@@ -92,7 +92,9 @@ ObsAuxControls<OBS>::~ObsAuxControls() {
 template<typename OBS>
 void ObsAuxControls<OBS>::read(const eckit::Configuration & conf) {
   Log::trace() << "ObsAuxControls<OBS>::read starting" << std::endl;
-  for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) auxs_[jobs]->read(conf);
+  std::vector<eckit::LocalConfiguration> obsconf;
+  conf.get("observations", obsconf);
+  for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) auxs_[jobs]->read(obsconf[jobs]);
   Log::trace() << "ObsAuxControls<OBS>::read done" << std::endl;
 }
 
@@ -101,7 +103,9 @@ void ObsAuxControls<OBS>::read(const eckit::Configuration & conf) {
 template<typename OBS>
 void ObsAuxControls<OBS>::write(const eckit::Configuration & conf) const {
   Log::trace() << "ObsAuxControls<OBS>::write starting" << std::endl;
-  for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) auxs_[jobs]->write(conf);
+  std::vector<eckit::LocalConfiguration> obsconf;
+  conf.get("observations", obsconf);
+  for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) auxs_[jobs]->write(obsconf[jobs]);
   Log::trace() << "ObsAuxControls<OBS>::write done" << std::endl;
 }
 
