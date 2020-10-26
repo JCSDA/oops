@@ -42,22 +42,17 @@ namespace util {
 
 template <typename datatype>
 class Random : public util::Printable {
-  typedef std::vector<datatype>  dataList;
  public:
   const datatype & operator[](const std::size_t ii) const {return data_[ii];}
   std::vector<datatype> data() {return data_;}
   void sort() {std::sort(data_.begin(), data_.end());}
-
-  typedef typename dataList::const_iterator const_iterator;
-  const_iterator cbegin() const {return data_.cbegin();}
-  const_iterator cend() const {return data_.cend();}
 
  protected:
   explicit Random(size_t N): N_(N) {data_.reserve(N);}
   virtual ~Random() {}
 
   std::size_t N_;
-  dataList data_;
+  std::vector<datatype> data_;
 
  private:
   /*! This prints in a format that can be easily inserted into a yaml file for testing */
