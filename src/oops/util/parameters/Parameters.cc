@@ -64,8 +64,8 @@ class ValidationErrorHandler : public nlohmann::json_schema::basic_error_handler
     const std::regex additionalPropertyRegex("validation failed for additional property '(.*?)': "
                                              "instance invalid as per false-schema");
     editedMessage = std::regex_replace(editedMessage, additionalPropertyRegex,
-                                       "additional properties are not allowed "
-                                       "('$1' was unexpected)");
+                                       std::string("additional properties are not allowed "
+                                       "('$1' was unexpected)"));
 
     boost::algorithm::replace_all(editedMessage, "instance not found in required enum",
                                   "unrecognized enum value");

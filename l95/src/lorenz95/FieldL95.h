@@ -23,10 +23,6 @@ namespace eckit {
   class Configuration;
 }
 
-namespace oops {
-  class UnstructuredGrid;
-}
-
 namespace lorenz95 {
   class LocsL95;
   class GomL95;
@@ -71,11 +67,6 @@ class FieldL95 : public util::Printable,
   const double & operator[](const int ii) const {return x_[ii];}
   std::vector<double> & asVector() {return x_;}
   const std::vector<double> & asVector() const {return x_;}
-
-/// Unstructured grid
-  void ug_coord(oops::UnstructuredGrid &) const;
-  void field_to_ug(oops::UnstructuredGrid &, const int &) const;
-  void field_from_ug(const oops::UnstructuredGrid &, const int &);
 
 /// Serialize and deserialize
   size_t serialSize() const override;

@@ -17,6 +17,8 @@
 #include <string>
 #include <vector>
 
+#include "atlas/field.h"
+
 #include "lorenz95/FieldL95.h"
 #include "lorenz95/Iterator.h"
 #include "lorenz95/Resolution.h"
@@ -35,7 +37,6 @@ namespace eckit {
 
 namespace oops {
   class LocalIncrement;
-  class UnstructuredGrid;
   class Variables;
 }
 
@@ -81,10 +82,10 @@ class IncrementL95 : public util::Printable,
   void schur_product_with(const IncrementL95 &);
   void random();
 
-/// Unstructured grid
-  void ug_coord(oops::UnstructuredGrid &) const;
-  void field_to_ug(oops::UnstructuredGrid &, const int &) const;
-  void field_from_ug(const oops::UnstructuredGrid &, const int &);
+/// ATLAS
+  void setAtlas(atlas::FieldSet *) const;
+  void toAtlas(atlas::FieldSet *) const;
+  void fromAtlas(atlas::FieldSet *);
 
 // Utilities
   void read(const eckit::Configuration &);

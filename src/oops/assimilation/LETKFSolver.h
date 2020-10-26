@@ -5,18 +5,6 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-/// Local Ensemble Tranform Kalman Filter solver
-/*!
- * An implementation of the LETKF from Hunt et al. 2007
- * this version is implemented using Eigen algebra and
- * temporary Eigen matrices for Xa and Xb
- * this verion implements RTPP and RTPS.
- *
- * Hunt, B. R., Kostelich, E. J., & Szunyogh, I. (2007). Efficient data
- * assimilation for spatiotemporal chaos: A local ensemble transform Kalman
- * filter. Physica D: Nonlinear Phenomena, 230(1-2), 112-126.
- */
-
 
 #ifndef OOPS_ASSIMILATION_LETKFSOLVER_H_
 #define OOPS_ASSIMILATION_LETKFSOLVER_H_
@@ -42,6 +30,17 @@
 
 namespace oops {
 
+/// Local Ensemble Tranform Kalman Filter solver
+/*!
+ * An implementation of the LETKF from Hunt et al. 2007
+ * this version is implemented using Eigen algebra and
+ * temporary Eigen matrices for Xa and Xb
+ * this verion implements RTPP and RTPS.
+ *
+ * Hunt, B. R., Kostelich, E. J., & Szunyogh, I. (2007). Efficient data
+ * assimilation for spatiotemporal chaos: A local ensemble transform Kalman
+ * filter. Physica D: Nonlinear Phenomena, 230(1-2), 112-126.
+ */
 template <typename MODEL, typename OBS>
 class LETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
   typedef Departures<OBS>             Departures_;

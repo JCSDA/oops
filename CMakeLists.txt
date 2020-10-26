@@ -78,7 +78,7 @@ add_subdirectory( src )
 add_subdirectory( tools )
 
 if( ENABLE_OOPS_DOC )
-    add_subdirectory( Documents )
+    add_subdirectory( docs )
 endif()
 
 if( ENABLE_LORENZ95_MODEL )

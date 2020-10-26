@@ -1,5 +1,5 @@
 import os
-import ewok
+from solo.date import JediDate, DateIncrement
 
 __all__ = ["fc_file", "obs_file", "r2d2_obsfile", "r2d2_anfile"]
 
@@ -7,7 +7,8 @@ __all__ = ["fc_file", "obs_file", "r2d2_obsfile", "r2d2_anfile"]
 def fc_file(fcout, step):
     fc = {}
     fc['date'] = fcout['date']
-    keys = [fcout['exp'], fcout['type'], fcout['date'], ewok.jediformat(step)]
+    step = DateIncrement(duration=step)
+    keys = [fcout['exp'], fcout['type'], fcout['date'], str(step)]
     fname = '.'.join(keys)
     fc['filename'] = os.path.join(fcout['datadir'], fname)
     return fc
@@ -19,15 +20,15 @@ def obs_file(conf):
 
 
 def r2d2_obsfile(conf, date):
-    sdate = ewok.jediformat(date)
-    r2d2keys = ['l95', conf['source'], sdate, 'obt']
+    sdate = JediDate(date)
+    r2d2keys = ['l95', conf['source'], str(sdate), 'obt']
     r2d2file = '.'.join(r2d2keys)
     return r2d2file
 
 
 def r2d2_anfile(conf, date):
-    sdate = ewok.jediformat(date)
-    r2d2keys = [conf['exp'], conf['type'], sdate, 'l95']
+    sdate = JediDate(date)
+    r2d2keys = [conf['exp'], conf['type'], str(sdate), 'l95']
     r2d2file = '.'.join(r2d2keys)
     return r2d2file
 
