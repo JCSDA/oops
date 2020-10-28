@@ -1,7 +1,9 @@
-find_package( Eigen3 REQUIRED )
-include_directories( ${EIGEN3_INCLUDE_DIR} )
-
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/src )
-
-add_subdirectory( src )
+add_subdirectory( src/lorenz95 )
+add_subdirectory( src/executables )
 add_subdirectory( test )
+
+ecbuild_add_test( TARGET l95_coding_norms
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/oops_cpplint.py
+                  ARGS --quiet --recursive ${CMAKE_CURRENT_SOURCE_DIR} )
+

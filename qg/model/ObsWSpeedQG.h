@@ -11,67 +11,50 @@
 #ifndef QG_MODEL_OBSWSPEEDQG_H_
 #define QG_MODEL_OBSWSPEEDQG_H_
 
+#include <memory>
 #include <ostream>
 #include <string>
-#include <vector>
 
-#include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
+#include "oops/base/Variables.h"
+#include "oops/util/ObjectCounter.h"
 
-#include "model/ObsSpaceQG.h"
-#include "model/ObservationsQG.h"
-#include "model/ObsWSpeedTLAD.h"
-#include "util/ObjectCounter.h"
+#include "oops/qg/ObsOpBaseQG.h"
+#include "oops/qg/ObsSpaceQG.h"
+#include "oops/qg/QgTraits.h"
 
 // Forward declarations
 namespace eckit {
   class Configuration;
 }
 
-namespace util {
-  class DateTime;
-}
-
 namespace qg {
   class GomQG;
   class LocationsQG;
   class ObsBias;
-  class ObsBiasIncrement;
   class ObsVecQG;
 
 // -----------------------------------------------------------------------------
 /// Wind speed observation for QG model.
-/*!
- *  ObsWSpeedQG for QG model inherits from ObsEquivalent.
- */
 
-class ObsWSpeedQG : public ObservationsQG,
+class ObsWSpeedQG : public ObsOpBaseQG,
                     private util::ObjectCounter<ObsWSpeedQG> {
  public:
   static const std::string classname() {return "qg::ObsWSpeedQG";}
 
-  ObsWSpeedQG(ObsSpaceQG &, const eckit::Configuration &);
-  virtual ~ObsWSpeedQG();
+  ObsWSpeedQG(const ObsSpaceQG &, const eckit::Configuration &);
 
 // Obs Operator
-  void obsEquiv(const GomQG &, ObsVecQG &, const ObsBias &) const;
-
-// Is there a way to put this in the TLAD class?
-  LinearObsOp * getTLAD() const {return new ObsWSpeedTLAD(obsdb_, keyOperWspeed_);}
+  void simulateObs(const GomQG &, ObsVecQG &, const ObsBias &) const override;
 
 // Other
-  void generateObsError(const eckit::Configuration &);
-  boost::shared_ptr<const VariablesQG> variables() const {return varin_;}
-
-  int & toFortran() {return keyOperWspeed_;}
-  const int & toFortran() const {return keyOperWspeed_;}
+  const oops::Variables & requiredVars() const override {return varin_;}
+  std::unique_ptr<LocationsQG> locations(const util::DateTime &,
+                               const util::DateTime &) const override;
 
  private:
-  void print(std::ostream &) const;
-  ObsSpaceQG & obsdb_;
-  const std::string obsname_;
-  F90hop keyOperWspeed_;
-  boost::shared_ptr<const VariablesQG> varin_;
+  void print(std::ostream &) const override;
+  const ObsSpaceQG & obsdb_;
+  const oops::Variables varin_;
 };
 // -----------------------------------------------------------------------------
 

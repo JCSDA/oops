@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -12,16 +12,18 @@
 #define OOPS_INTERFACE_MODELAUXINCREMENT_H_
 
 #include <iostream>
+#include <memory>
 #include <string>
+#include <vector>
 
-#include <boost/scoped_ptr.hpp>
 
-#include "util/Logger.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxControl.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
-#include "util/Timer.h"
+#include "oops/util/Logger.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
+#include "oops/util/Serializable.h"
+#include "oops/util/Timer.h"
 
 namespace eckit {
   class Configuration;
@@ -33,6 +35,7 @@ namespace oops {
 
 template <typename MODEL>
 class ModelAuxIncrement : public util::Printable,
+                          public util::Serializable,
                           private util::ObjectCounter<ModelAuxIncrement<MODEL> > {
   typedef typename MODEL::ModelAuxIncrement     ModelAuxIncrement_;
   typedef Geometry<MODEL>            Geometry_;
@@ -66,9 +69,14 @@ class ModelAuxIncrement : public util::Printable,
   void write(const eckit::Configuration &) const;
   double norm() const;
 
+/// Serialize and deserialize
+  size_t serialSize() const override;
+  void serialize(std::vector<double> &) const override;
+  void deserialize(const std::vector<double> &, size_t &) override;
+
  private:
-  void print(std::ostream &) const;
-  boost::scoped_ptr<ModelAuxIncrement_> aux_;
+  void print(std::ostream &) const override;
+  std::unique_ptr<ModelAuxIncrement_> aux_;
 };
 
 // -----------------------------------------------------------------------------
@@ -215,6 +223,29 @@ double ModelAuxIncrement<MODEL>::norm() const {
   double zz = aux_->norm();
   Log::trace() << "ModelAuxIncrement<MODEL>::norm done" << std::endl;
   return zz;
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+size_t ModelAuxIncrement<MODEL>::serialSize() const {
+  Log::trace() << "ModelAuxIncrement<MODEL>::serialSize" << std::endl;
+  util::Timer timer(classname(), "serialSize");
+  return aux_->serialSize();
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+void ModelAuxIncrement<MODEL>::serialize(std::vector<double> & vect) const {
+  Log::trace() << "ModelAuxIncrement<MODEL>::serialize starting" << std::endl;
+  util::Timer timer(classname(), "serialize");
+  aux_->serialize(vect);
+  Log::trace() << "ModelAuxIncrement<MODEL>::serialize done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+void ModelAuxIncrement<MODEL>::deserialize(const std::vector<double> & vect, size_t & current) {
+  Log::trace() << "ModelAuxIncrement<MODEL>::deserialize starting" << std::endl;
+  util::Timer timer(classname(), "deserialize");
+  aux_->deserialize(vect, current);
+  Log::trace() << "ModelAuxIncrement<MODEL>::deserialize done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>

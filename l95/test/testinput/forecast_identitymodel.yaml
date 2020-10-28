@@ -1,0 +1,16 @@
+forecast length: P3D
+initial condition:
+  date: '2010-01-01T00:00:00Z'
+  filename: Data/test.an.2010-01-01T00:00:00Z.l95
+model:
+  name: Identity
+  state variables: ['x']
+  tstep: PT12H
+output:
+  datadir: Data
+  date: '2010-01-01T00:00:00Z'
+  exp: test
+  frequency: PT112H
+  type: idfc
+geometry:
+  resol: 40

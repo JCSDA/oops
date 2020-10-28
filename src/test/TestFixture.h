@@ -13,23 +13,20 @@
 
 #pragma once
 
-#include "eckit/testing/Setup.h"
-#include "util/LibOOPS.h"
+#include "oops/util/LibOOPS.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
-
-struct TestFixture : public eckit::testing::Setup {
-  TestFixture() : eckit::testing::Setup() {
-    // Common setup for every boost unit-test goes here
+struct TestFixture  {
+  TestFixture() {
+    // Common setup for every unit-test goes here
   }
 
   ~TestFixture() {
     oops::LibOOPS::instance().finalise();
   }
 };
-
 // -----------------------------------------------------------------------------
 
 }  // namespace test

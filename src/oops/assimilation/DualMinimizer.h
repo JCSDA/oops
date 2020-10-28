@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -11,11 +11,11 @@
 #ifndef OOPS_ASSIMILATION_DUALMINIMIZER_H_
 #define OOPS_ASSIMILATION_DUALMINIMIZER_H_
 
+#include <memory>
 #include <string>
 
-#include <boost/scoped_ptr.hpp>
 
-#include "util/Logger.h"
+#include "eckit/config/Configuration.h"
 #include "oops/assimilation/BMatrix.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
@@ -25,8 +25,8 @@
 #include "oops/assimilation/HtMatrix.h"
 #include "oops/assimilation/Minimizer.h"
 #include "oops/assimilation/RinvMatrix.h"
-#include "eckit/config/Configuration.h"
-#include "util/dot_product.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 
@@ -37,47 +37,43 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> class DualMinimizer : public Minimizer<MODEL> {
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef BMatrix<MODEL>             Bmat_;
-  typedef DualVector<MODEL>          Dual_;
-  typedef HBHtMatrix<MODEL>          HBHt_;
-  typedef Minimizer<MODEL>           Minimizer_;
-  typedef RinvMatrix<MODEL>          Rinv_;
+template<typename MODEL, typename OBS> class DualMinimizer : public Minimizer<MODEL, OBS> {
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef BMatrix<MODEL, OBS>             Bmat_;
+  typedef DualVector<MODEL, OBS>          Dual_;
+  typedef HBHtMatrix<MODEL, OBS>          HBHt_;
+  typedef Minimizer<MODEL, OBS>           Minimizer_;
+  typedef RinvMatrix<MODEL, OBS>          Rinv_;
 
  public:
-  explicit DualMinimizer(const CostFct_ & J)
-   : Minimizer_(J), J_(J), gradJb_(0) {}
+  explicit DualMinimizer(const CostFct_ & J): Minimizer_(J), J_(J), gradJb_() {}
   ~DualMinimizer() {}
-  virtual const std::string classname() const override =0;
+  const std::string classname() const override = 0;
 
  private:
   CtrlInc_ * doMinimize(const eckit::Configuration &) override;
   virtual double solve(Dual_ &, double &, Dual_ &, const HBHt_ &, const Rinv_ &,
-                       const int &, const double &, Dual_ &, const double &) =0;
+                       const int &, const double &, Dual_ &, const double &) = 0;
 
   const CostFct_ & J_;
-  boost::scoped_ptr<CtrlInc_> gradJb_;
+  std::unique_ptr<CtrlInc_> gradJb_;
 };
 
 // =============================================================================
 
-template<typename MODEL>
-ControlIncrement<MODEL> * DualMinimizer<MODEL>::doMinimize(const eckit::Configuration & config) {
+template<typename MODEL, typename OBS>
+ControlIncrement<MODEL, OBS> *
+DualMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
   int ninner = config.getInt("ninner");
-  double gnreduc = config.getDouble("gradient_norm_reduction");
+  double gnreduc = config.getDouble("gradient norm reduction");
 
-  bool runOnlineAdjTest = false;
-  if (config.has("onlineDiagnostics")) {
-    const eckit::LocalConfiguration onlineDiag(config, "onlineDiagnostics");
-    runOnlineAdjTest = onlineDiag.getBool("onlineAdjTest");
-  }
+  bool runOnlineAdjTest = config.getBool("online diagnostics.online adj test", false);
 
-  if (gradJb_ == 0) {
-    gradJb_.reset(new CtrlInc_(J_.jb()));
-  } else {
+  if (gradJb_) {
     gradJb_.reset(new CtrlInc_(J_.jb().resolution(), *gradJb_));
+  } else {
+    gradJb_.reset(new CtrlInc_(J_.jb()));
   }
 
   Log::info() << std::endl;
@@ -88,8 +84,8 @@ ControlIncrement<MODEL> * DualMinimizer<MODEL>::doMinimize(const eckit::Configur
   const Bmat_ B(J_);
   const HBHt_ HBHt(J_, runOnlineAdjTest);
   const Rinv_ Rinv(J_);
-  const HMatrix<MODEL> H(J_);
-  const HtMatrix<MODEL> Ht(J_);
+  const HMatrix<MODEL, OBS> H(J_);
+  const HtMatrix<MODEL, OBS> Ht(J_);
 
 // Define minimisation starting point in dual space
   Dual_ vv;
@@ -134,7 +130,8 @@ ControlIncrement<MODEL> * DualMinimizer<MODEL>::doMinimize(const eckit::Configur
   CtrlInc_ * dx = new CtrlInc_(J_.jb());
   B.multiply(dh, *dx);    // BHtaug vvaug
 
-  Log::info() << classname() << ": Estimated Final Jb = " << 0.5 * dot_product(*dx, dh) << std::endl;
+  Log::info() << classname() << ": Estimated Final Jb = "
+              << 0.5 * dot_product(*dx, dh) << std::endl;
   Log::info() << classname() << " output" << *dx << std::endl;
 
 // Update gradient Jb

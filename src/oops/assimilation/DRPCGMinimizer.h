@@ -16,15 +16,15 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
-#include "util/Logger.h"
 #include "oops/assimilation/BMatrix.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/DRMinimizer.h"
 #include "oops/assimilation/HtRinvHMatrix.h"
 #include "oops/assimilation/QNewtonLMP.h"
-#include "util/dot_product.h"
-#include "util/formats.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/formats.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 
@@ -75,11 +75,11 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> class DRPCGMinimizer : public DRMinimizer<MODEL> {
-  typedef BMatrix<MODEL>             Bmat_;
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef HtRinvHMatrix<MODEL>       HtRinvH_;
+template<typename MODEL, typename OBS> class DRPCGMinimizer : public DRMinimizer<MODEL, OBS> {
+  typedef BMatrix<MODEL, OBS>             Bmat_;
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef HtRinvHMatrix<MODEL, OBS>       HtRinvH_;
 
  public:
   const std::string classname() const override {return "DRPCGMinimizer";}
@@ -95,15 +95,15 @@ template<typename MODEL> class DRPCGMinimizer : public DRMinimizer<MODEL> {
 
 // =============================================================================
 
-template<typename MODEL>
-DRPCGMinimizer<MODEL>::DRPCGMinimizer(const eckit::Configuration & conf, const CostFct_ & J)
-  : DRMinimizer<MODEL>(J), lmp_(conf)
+template<typename MODEL, typename OBS>
+DRPCGMinimizer<MODEL, OBS>::DRPCGMinimizer(const eckit::Configuration & conf, const CostFct_ & J)
+  : DRMinimizer<MODEL, OBS>(J), lmp_(conf)
 {}
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-double DRPCGMinimizer<MODEL>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_ & rr,
+template<typename MODEL, typename OBS>
+double DRPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_ & rr,
                                    const Bmat_ & B, const HtRinvH_ & HtRinvH,
                                    const double costJ0Jb, const double costJ0JoJc,
                                    const int maxiter, const double tolerance) {
@@ -123,6 +123,10 @@ double DRPCGMinimizer<MODEL>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_ & rr
   std::vector<CtrlInc_> vvecs;
   std::vector<CtrlInc_> zvecs;
   std::vector<double> scals;
+  // reserve space in vectors to avoid extra copies
+  vvecs.reserve(maxiter+1);
+  zvecs.reserve(maxiter+1);
+  scals.reserve(maxiter+1);
 
   // J0
   const double costJ0 = costJ0Jb + costJ0JoJc;
@@ -158,7 +162,6 @@ double DRPCGMinimizer<MODEL>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_ & rr
     if (jiter > 0) {
       // beta_{i} = r_{i+1}^T z_{i+1} / r_{i}^T z_{i}
       double beta = rdots/rdots_old;
-      Log::debug() << "DRPCG beta = " << beta << std::endl;
 
       // p_{i+1} = z_{i+1} + beta*p_{i}
       pp *= beta;

@@ -17,12 +17,14 @@
 #include <boost/noncopyable.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
+
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
 
 namespace qg {
   class ObsBias;
   class ObsBiasIncrement;
+  class ObsSpaceQG;
 
 // -----------------------------------------------------------------------------
 
@@ -33,11 +35,11 @@ class ObsBiasCovariance : public util::Printable,
   static const std::string classname() {return "qg::ObsBiasCovariance";}
 
 /// Constructor, destructor
-  explicit ObsBiasCovariance(const eckit::Configuration &);
+  ObsBiasCovariance(const ObsSpaceQG &, const eckit::Configuration &);
   ~ObsBiasCovariance() {}
 
 /// Linear algebra operators
-  void linearize(const ObsBias &) {}
+  void linearize(const ObsBias &, const eckit::Configuration &) {}
   void multiply(const ObsBiasIncrement &, ObsBiasIncrement &) const;
   void inverseMultiply(const ObsBiasIncrement &, ObsBiasIncrement &) const;
   void randomize(ObsBiasIncrement &) const;

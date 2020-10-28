@@ -1,0 +1,5 @@
+datadir: '$(experiment_dir)/{{current_cycle}}'
+date: '{{current_cycle}}'
+exp: $(experiment)
+frequency: PT3H
+type: fc

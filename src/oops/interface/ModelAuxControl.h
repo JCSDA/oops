@@ -12,15 +12,15 @@
 #define OOPS_INTERFACE_MODELAUXCONTROL_H_
 
 #include <iostream>
+#include <memory>
 #include <string>
 
-#include <boost/scoped_ptr.hpp>
 
-#include "util/Logger.h"
 #include "oops/interface/Geometry.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
-#include "util/Timer.h"
+#include "oops/util/Logger.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
+#include "oops/util/Timer.h"
 
 namespace eckit {
   class Configuration;
@@ -56,7 +56,7 @@ class ModelAuxControl : public util::Printable,
  private:
   ModelAuxControl & operator=(const ModelAuxControl &);
   void print(std::ostream &) const;
-  boost::scoped_ptr<ModelAuxControl_> aux_;
+  std::unique_ptr<ModelAuxControl_> aux_;
 };
 
 // =============================================================================

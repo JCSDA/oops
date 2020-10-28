@@ -11,22 +11,24 @@
 #ifndef OOPS_INTERFACE_LINEARMODEL_H_
 #define OOPS_INTERFACE_LINEARMODEL_H_
 
+#include <memory>
 #include <string>
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
-#include "util/Logger.h"
+#include "oops/base/LinearModelBase.h"
+#include "oops/base/PostProcessor.h"
+#include "oops/base/PostProcessorTLAD.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
-#include "oops/interface/LinearModelBase.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/ModelAuxIncrement.h"
 #include "oops/interface/State.h"
-#include "util/Duration.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
-#include "util/Timer.h"
+#include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
+#include "oops/util/Timer.h"
 
 namespace eckit {
   class Configuration;
@@ -40,6 +42,20 @@ namespace oops {
  *  the actual linear model which can be a model specific one or a generic one 
  *  (identity). The interface for the linear model comprises two levels (LinearModel  
  *  and LinearModelBase) because we want run time polymorphism. 
+ *
+ *  Note: implementations of this interface can opt to extract their settings either from
+ *  a Configuration object or from a subclass of LinearModelParametersBase.
+ *
+ *  In the former case, they should provide a constructor with the following signature:
+ *
+ *     LinearModel(const Geometry_ &, const eckit::Configuration &);
+ *
+ *  In the latter case, the implementer should first define a subclass of LinearModelParametersBase
+ *  holding the settings of the model in question. The implementation of the LinearModel interface
+ *  should then typedef `Parameters_` to the name of that subclass and provide a constructor with
+ *  the following signature:
+ *
+ *     LinearModel(const Geometry_ &, const Parameters_ &);
  */
 // -----------------------------------------------------------------------------
 
@@ -57,19 +73,20 @@ class LinearModel : public util::Printable,
  public:
   static const std::string classname() {return "oops::LinearModel";}
 
+  LinearModel(const Geometry_ &, const LinearModelParametersBase &);
   LinearModel(const Geometry_ &, const eckit::Configuration &);
   ~LinearModel();
 
 /// Run the tangent linear forecast
   void forecastTL(Increment_ &, const ModelAuxIncr_ &, const util::Duration &,
                   PostProcessor<Increment_> post = PostProcessor<Increment_>(),
-                  PostProcessorTL<Increment_> cost = PostProcessorTL<Increment_>(),
+                  PostProcessorTLAD<MODEL> cost = PostProcessorTLAD<MODEL>(),
                   const bool idmodel = false) const;
 
 /// Run the adjoint forecast
   void forecastAD(Increment_ &, ModelAuxIncr_ &, const util::Duration &,
                   PostProcessor<Increment_> post = PostProcessor<Increment_>(),
-                  PostProcessorAD<Increment_> cost = PostProcessorAD<Increment_>(),
+                  PostProcessorTLAD<MODEL> cost = PostProcessorTLAD<MODEL>(),
                   const bool idmodel = false) const;
 
 // Set the linearization trajectory
@@ -77,9 +94,9 @@ class LinearModel : public util::Printable,
 
 // Information and diagnostics
   const util::Duration & timeResolution() const {return tlm_->timeResolution();}
+  const oops::Variables & variables() const {return tlm_->variables();}
 
  protected:
-
 // Run the TL forecast
   void initializeTL(Increment_ &) const;
   void stepTL(Increment_ &, const ModelAuxIncr_ &) const;
@@ -94,21 +111,29 @@ class LinearModel : public util::Printable,
 // diagnostics
   void print(std::ostream &) const;
 
-  boost::scoped_ptr<LinearModelBase_> tlm_;
+  std::unique_ptr<LinearModelBase_> tlm_;
 };
 
 // =============================================================================
 
 template<typename MODEL>
-LinearModel<MODEL>::LinearModel(const Geometry_ & resol, const eckit::Configuration & conf)
+LinearModel<MODEL>::LinearModel(const Geometry_ & resol, const LinearModelParametersBase & params)
   : tlm_()
 {
   Log::trace() << "LinearModel<MODEL>::LinearModel starting" << std::endl;
   util::Timer timer(classname(), "LinearModel");
-  Log::debug() << "LinearModel config is:" << conf << std::endl;
-  tlm_.reset(LinearModelFactory<MODEL>::create(resol, conf));
+  Log::info() << "LinearModel configuration is:" << params << std::endl;
+  tlm_.reset(LinearModelFactory<MODEL>::create(resol, params));
   Log::trace() << "LinearModel<MODEL>::LinearModel done" << std::endl;
 }
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+LinearModel<MODEL>::LinearModel(const Geometry_ & resol, const eckit::Configuration & conf)
+  : LinearModel(resol,
+                validateAndDeserialize<LinearModelParametersWrapper<MODEL>>(conf).modelParameters)
+{}
 
 // -----------------------------------------------------------------------------
 
@@ -130,10 +155,9 @@ template<typename MODEL>
 void LinearModel<MODEL>::forecastTL(Increment_ & dx, const ModelAuxIncr_ & mctl,
                                     const util::Duration & len,
                                     PostProcessor<Increment_> post,
-                                    PostProcessorTL<Increment_> cost,
+                                    PostProcessorTLAD<MODEL> cost,
                                     const bool idmodel) const {
   Log::trace() << "LinearModel<MODEL>::forecastTL starting" << std::endl;
-  util::Timer timer(classname(), "forecastTL");
 
   const util::DateTime end(dx.validTime() + len);
   const util::Duration tstep(tlm_->timeResolution());
@@ -141,6 +165,8 @@ void LinearModel<MODEL>::forecastTL(Increment_ & dx, const ModelAuxIncr_ & mctl,
   this->initializeTL(dx);
   cost.initializeTL(dx, end, tstep);
   post.initialize(dx, end, tstep);
+  cost.processTL(dx);
+  post.process(dx);
   if (idmodel) {
     while (dx.validTime() < end) {
       dx.updateTime(tstep);
@@ -169,10 +195,9 @@ template<typename MODEL>
 void LinearModel<MODEL>::forecastAD(Increment_ & dx, ModelAuxIncr_ & mctl,
                                     const util::Duration & len,
                                     PostProcessor<Increment_> post,
-                                    PostProcessorAD<Increment_> cost,
+                                    PostProcessorTLAD<MODEL> cost,
                                     const bool idmodel) const {
   Log::trace() << "LinearModel<MODEL>::forecastAD starting" << std::endl;
-  util::Timer timer(classname(), "forecastAD");
 
   const util::DateTime bgn(dx.validTime() - len);
   const util::Duration tstep(tlm_->timeResolution());
@@ -193,6 +218,8 @@ void LinearModel<MODEL>::forecastAD(Increment_ & dx, ModelAuxIncr_ & mctl,
       post.process(dx);
     }
   }
+  cost.processAD(dx);
+  post.process(dx);
   cost.finalizeAD(dx);
   post.finalize(dx);
   this->finalizeAD(dx);

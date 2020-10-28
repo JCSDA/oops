@@ -15,15 +15,15 @@
 #include <string>
 #include <vector>
 
-#include "util/Logger.h"
 #include "oops/assimilation/BMatrix.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/DRMinimizer.h"
 #include "oops/assimilation/HtRinvHMatrix.h"
 #include "oops/assimilation/QNewtonLMP.h"
-#include "util/dot_product.h"
-#include "util/formats.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/formats.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 
@@ -70,11 +70,11 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> class DRIPCGMinimizer : public DRMinimizer<MODEL> {
-  typedef BMatrix<MODEL>             Bmat_;
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef HtRinvHMatrix<MODEL>       HtRinvH_;
+template<typename MODEL, typename OBS> class DRIPCGMinimizer : public DRMinimizer<MODEL, OBS> {
+  typedef BMatrix<MODEL, OBS>             Bmat_;
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef HtRinvHMatrix<MODEL, OBS>       HtRinvH_;
 
  public:
   const std::string classname() const override {return "DRIPCGMinimizer";}
@@ -90,15 +90,15 @@ template<typename MODEL> class DRIPCGMinimizer : public DRMinimizer<MODEL> {
 
 // =============================================================================
 
-template<typename MODEL>
-DRIPCGMinimizer<MODEL>::DRIPCGMinimizer(const eckit::Configuration & conf, const CostFct_ & J)
-  : DRMinimizer<MODEL>(J), lmp_(conf)
+template<typename MODEL, typename OBS>
+DRIPCGMinimizer<MODEL, OBS>::DRIPCGMinimizer(const eckit::Configuration & conf, const CostFct_ & J)
+  : DRMinimizer<MODEL, OBS>(J), lmp_(conf)
 {}
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-double DRIPCGMinimizer<MODEL>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_ & rr,
+template<typename MODEL, typename OBS>
+double DRIPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_ & rr,
                                     const Bmat_ & B, const HtRinvH_ & HtRinvH,
                                     const double costJ0Jb, const double costJ0JoJc,
                                     const int maxiter, const double tolerance) {
@@ -108,11 +108,19 @@ double DRIPCGMinimizer<MODEL>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_ & rr
   CtrlInc_ ss(xh);
   CtrlInc_ sh(xh);
   CtrlInc_ dr(xh);
-  CtrlInc_ ww(xh);
+  CtrlInc_ r0(xh);
 
   std::vector<CtrlInc_> vvecs;  // for re-orthogonalization
   std::vector<CtrlInc_> zvecs;  // for re-orthogonalization
   std::vector<double> scals;  // for re-orthogonalization
+  // reserve space in vectors to avoid extra copies
+  vvecs.reserve(maxiter+1);
+  zvecs.reserve(maxiter+1);
+  scals.reserve(maxiter+1);
+
+  const double costJ0 = costJ0Jb + costJ0JoJc;
+
+  r0 = rr;
 
   lmp_.multiply(rr, sh);
   B.multiply(sh, ss);
@@ -152,10 +160,16 @@ double DRIPCGMinimizer<MODEL>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_ & rr
 
     double rho = dot_product(pp, ap);
     double alpha = rdots/rho;
+    Log::info() << "DRIPCGMinimizer rho = " << rho << ", alpha = " << alpha << std::endl;
 
     xx.axpy(alpha, pp);   // xx = xx + alpha*pp
     xh.axpy(alpha, ph);   // xh = xh + alpha*ph
     rr.axpy(-alpha, ap);  // rr = rr - alpha*ap
+
+    // Compute the quadratic cost function
+    double costJ = costJ0 - 0.5 * dot_product(xx, r0);
+    double costJb = costJ0Jb + 0.5 * dot_product(xx, xh);
+    double costJoJc = costJ - costJb;
 
     // Re-orthogonalization
     for (int jj = 0; jj < jiter; ++jj) {
@@ -168,10 +182,22 @@ double DRIPCGMinimizer<MODEL>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_ & rr
 
     rdots_old = rdots;
     rdots = dot_product(rr, ss);
+//  There is an issue where in some cases ss goes to zero before rr. The convergence
+//  check below only checks for rr. Leaving the commented lines here for further invertigation.
+//  double sdots = dot_product(ss, ss);
+//  double rdotr = dot_product(rr, rr);
+//  Log::info() << "DRIPCGMinimizer rdots = " << rdots
+//              << ", sdots = " << sdots << ", rdotr = " << rdotr << std::endl;
     normReduction = sqrt(dot_product(rr, rr)/dotRr0);
 
     Log::info() << "DRIPCG end of iteration " << jiter+1 << ". Norm reduction= "
-                << util::full_precision(normReduction) << std::endl << std::endl;
+                << util::full_precision(normReduction) << std::endl
+                << "  Quadratic cost function: J   (" <<  jiter+1 << ") = "
+                << util::full_precision(costJ)         << std::endl
+                << "  Quadratic cost function: Jb  (" <<  jiter+1 << ") = "
+                << util::full_precision(costJb)        << std::endl
+                << "  Quadratic cost function: JoJc(" << jiter+1 << ") = "
+                << util::full_precision(costJoJc)      << std::endl << std::endl;
 
     // Save the pairs for preconditioning
     lmp_.push(pp, ph, ap, rho);

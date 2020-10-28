@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -11,28 +11,23 @@
 #ifndef OOPS_BASE_DEPARTURES_H_
 #define OOPS_BASE_DEPARTURES_H_
 
+#include <Eigen/Dense>
+#include <cstddef>
 #include <iostream>
 #include <string>
+#include <vector>
 
-#include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
-
-#include "util/Logger.h"
 #include "oops/base/GeneralizedDepartures.h"
-#include "oops/interface/ModelAtLocations.h"
-#include "oops/interface/ObsAuxIncrement.h"
-#include "oops/interface/ObsErrorBase.h"
-#include "oops/interface/ObservationSpace.h"
-#include "oops/interface/LinearObsOperator.h"
+#include "oops/base/ObsSpaces.h"
+#include "oops/base/QCData.h"
 #include "oops/interface/ObsVector.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
-#include "util/Printable.h"
-#include "util/dot_product.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/Logger.h"
+#include "oops/util/Printable.h"
 
 namespace oops {
 
-template<typename MODEL> class Departures;
+template<typename OBS> class Observations;
 
 /// Difference between two observation vectors.
 /*!
@@ -44,163 +39,201 @@ template<typename MODEL> class Departures;
  */
 
 // -----------------------------------------------------------------------------
-template <typename MODEL>
+template <typename OBS>
 class Departures : public util::Printable,
                    public GeneralizedDepartures {
-  typedef ModelAtLocations<MODEL>    GOM_;
-  typedef ObsAuxIncrement<MODEL>     ObsAuxIncr_;
-  typedef ObsErrorBase<MODEL>        ObsErrorBase_;
-  typedef LinearObsOperator<MODEL>   LinearObsOperator_;
-  typedef ObservationSpace<MODEL>    ObsSpace_;
-  typedef ObsVector<MODEL>           ObsVector_;
+  typedef ObsSpaces<OBS>           ObsSpaces_;
+  typedef ObsVector<OBS>           ObsVector_;
+  typedef QCData<OBS>              QCData_;
 
  public:
-// Constructors and destructor
-  explicit Departures(const ObsSpace_ &);
-  explicit Departures(ObsVector_ *);
-  explicit Departures(const Departures &);
-  ~Departures();
+/// \brief create Departures for all obs (read from ObsSpace if name is specified)
+  Departures(const ObsSpaces_ &,
+             const std::string & name = "", const bool failIfNameNotFound = true);
+/// \brief create local Departures
+  Departures(const ObsSpaces_ &, const Departures &);
+
+/// Access
+  size_t size() const {return dep_.size();}
+  ObsVector_ & operator[](const size_t ii) {return dep_.at(ii);}
+  const ObsVector_ & operator[](const size_t ii) const {return dep_.at(ii);}
 
 // Linear algebra operators
-  Departures & operator=(const Departures &);
   Departures & operator+=(const Departures &);
   Departures & operator-=(const Departures &);
   Departures & operator*=(const double &);
   Departures & operator*=(const Departures &);
   Departures & operator/=(const Departures &);
   void zero();
+  void random();
   void invert();
   void axpy(const double &, const Departures &);
   double dot_product_with(const Departures &) const;
+  double rms() const;
+/// Return number of departures (excluding departures that are masked out)
+  size_t nobs() const;
 
-/// Compute observations equivalents (TL)
-  void runObsOperatorTL(const LinearObsOperator_ &, const GOM_ &, const ObsAuxIncr_ &);
+/// Mask out departures where the passed in qc flags are > 0
+  void mask(const QCData_ &);
 
-/// Compute observations equivalents (AD)
-  void runObsOperatorAD(const LinearObsOperator_ &, GOM_ &, ObsAuxIncr_ &) const;
-
-/// Get departue values
-  const ObsVector_ & depvalues() const {return *dep_;}
+/// Pack departures in an Eigen vector (excluding departures that are masked out)
+  Eigen::VectorXd  packEigen() const;
 
 /// Save departures values
   void save(const std::string &) const;
 
-/// Number of obs (for info only)
-  unsigned int numberOfObs() const {return dep_->size();}
-
-/// Double despatch for obs error covariance
-  void helpCovarRandomize(const ObsErrorBase_ & R) {
-    R.randomize(*dep_);
-  }
-
  private:
   void print(std::ostream &) const;
 
-  boost::scoped_ptr<ObsVector_> dep_;
+/// Data
+  std::vector<ObsVector_> dep_;
 };
 
 // =============================================================================
 
-template<typename MODEL>
-Departures<MODEL>::Departures(const ObsSpace_ & obsgeom): dep_(new ObsVector_(obsgeom))
+template<typename OBS>
+Departures<OBS>::Departures(const ObsSpaces_ & obsdb,
+                            const std::string & name, const bool fail): dep_()
 {
+  dep_.reserve(obsdb.size());
+  for (size_t jj = 0; jj < obsdb.size(); ++jj) {
+    dep_.emplace_back(obsdb[jj], name, fail);
+  }
   Log::trace() << "Departures created" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-Departures<MODEL>::Departures(ObsVector_ * val): dep_(val)
-{
-  Log::trace() << "Departures created" << std::endl;
+template<typename OBS>
+Departures<OBS>::Departures(const ObsSpaces_ & obsdb,
+                            const Departures & other): dep_() {
+  dep_.reserve(obsdb.size());
+  for (size_t jj = 0; jj < other.dep_.size(); ++jj) {
+    dep_.emplace_back(obsdb[jj], other[jj]);
+  }
+  Log::trace() << "Local Departures created" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-Departures<MODEL>::Departures(const Departures & other): dep_(new ObsVector_(*other.dep_))
-{
-  Log::trace() << "Departures copy-created" << std::endl;
-}
-// -----------------------------------------------------------------------------
-template<typename MODEL>
-Departures<MODEL>::~Departures() {
-  Log::trace() << "Departures destructed" << std::endl;
-}
-// -----------------------------------------------------------------------------
-template<typename MODEL>
-void Departures<MODEL>::runObsOperatorTL(const LinearObsOperator_ & hop, const GOM_ & gom,
-                                         const ObsAuxIncr_ & octl) {
-  hop.obsEquivTL(gom, *dep_, octl);
-}
-// -----------------------------------------------------------------------------
-template<typename MODEL>
-void Departures<MODEL>::runObsOperatorAD(const LinearObsOperator_ & hop, GOM_ & gom,
-                                         ObsAuxIncr_ & octl) const {
-  hop.obsEquivAD(gom, *dep_, octl);
-}
-// -----------------------------------------------------------------------------
-template<typename MODEL>
-Departures<MODEL> & Departures<MODEL>::operator=(const Departures & rhs) {
-  *dep_ = *rhs.dep_;
+template<typename OBS>
+Departures<OBS> & Departures<OBS>::operator+=(const Departures & rhs) {
+  for (size_t jj = 0; jj < dep_.size(); ++jj) {
+    dep_[jj] += rhs[jj];
+  }
   return *this;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-Departures<MODEL> & Departures<MODEL>::operator+=(const Departures & rhs) {
-  *dep_ += *rhs.dep_;
+template<typename OBS>
+Departures<OBS> & Departures<OBS>::operator-=(const Departures & rhs) {
+  for (size_t jj = 0; jj < dep_.size(); ++jj) {
+    dep_[jj] -= rhs[jj];
+  }
   return *this;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-Departures<MODEL> & Departures<MODEL>::operator-=(const Departures & rhs) {
-  *dep_ -= *rhs.dep_;
+template<typename OBS>
+Departures<OBS> & Departures<OBS>::operator*=(const double & zz) {
+  for (size_t jj = 0; jj < dep_.size(); ++jj) {
+    dep_[jj] *= zz;
+  }
   return *this;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-Departures<MODEL> & Departures<MODEL>::operator*=(const double & zz) {
-  *dep_ *= zz;
+template<typename OBS>
+Departures<OBS> & Departures<OBS>::operator*=(const Departures & rhs) {
+  for (size_t jj = 0; jj < dep_.size(); ++jj) {
+    dep_[jj] *= rhs[jj];
+  }
   return *this;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-Departures<MODEL> & Departures<MODEL>::operator*=(const Departures & rhs) {
-  *dep_ *= *rhs.dep_;
+template<typename OBS>
+Departures<OBS> & Departures<OBS>::operator/=(const Departures & rhs) {
+  for (size_t jj = 0; jj < dep_.size(); ++jj) {
+    dep_[jj] /= rhs[jj];
+  }
   return *this;
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-Departures<MODEL> & Departures<MODEL>::operator/=(const Departures & rhs) {
-  *dep_ /= *rhs.dep_;
-  return *this;
+template<typename OBS>
+void Departures<OBS>::zero() {
+  for (size_t jj = 0; jj < dep_.size(); ++jj) {
+    dep_[jj].zero();
+  }
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void Departures<MODEL>::zero() {
-  dep_->zero();
+template<typename OBS>
+void Departures<OBS>::random() {
+  for (size_t jj = 0; jj < dep_.size(); ++jj) {
+    dep_[jj].random();
+  }
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void Departures<MODEL>::invert() {
-  dep_->invert();
+template<typename OBS>
+void Departures<OBS>::invert() {
+  for (size_t jj = 0; jj < dep_.size(); ++jj) {
+    dep_[jj].invert();
+  }
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-void Departures<MODEL>::axpy(const double & zz, const Departures & rhs) {
-  dep_->axpy(zz, *rhs.dep_);
+template<typename OBS>
+void Departures<OBS>::axpy(const double & zz, const Departures & rhs) {
+  for (size_t jj = 0; jj < dep_.size(); ++jj) {
+    dep_[jj].axpy(zz, rhs[jj]);
+  }
 }
 // -----------------------------------------------------------------------------
-template<typename MODEL>
-double Departures<MODEL>::dot_product_with(const Departures & other) const {
-  double zz = dot_product(*dep_, *other.dep_);
+template<typename OBS>
+double Departures<OBS>::dot_product_with(const Departures & other) const {
+  double zz = 0.0;
+  for (size_t jj = 0; jj < dep_.size(); ++jj) {
+    zz += dot_product(dep_[jj], other[jj]);
+  }
   return zz;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void Departures<MODEL>::save(const std::string & name) const {
-  dep_->save(name);
+template<typename OBS>
+double Departures<OBS>::rms() const {
+  return sqrt(dot_product_with(*this) / this->nobs());
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void Departures<MODEL>::print(std::ostream & os) const {
-  os << *dep_;
+template<typename OBS>
+size_t Departures<OBS>::nobs() const {
+  size_t nobs = 0;
+  for (size_t jj = 0; jj < dep_.size(); ++jj) {
+    nobs += dep_[jj].nobs();
+  }
+  return nobs;
+}
+// -----------------------------------------------------------------------------
+template<typename OBS>
+void Departures<OBS>::mask(const QCData_ & qc) {
+  for (size_t ii = 0; ii < dep_.size(); ++ii) {
+    dep_[ii].mask(*qc.qcFlags(ii));
+  }
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
+Eigen::VectorXd Departures<OBS>::packEigen() const {
+  Eigen::VectorXd vec(nobs());
+  size_t ii = 0;
+  for (size_t idep = 0; idep < dep_.size(); ++idep) {
+    vec.segment(ii, dep_[idep].nobs()) = dep_[idep].packEigen();
+    ii += dep_[idep].nobs();
+  }
+  ASSERT(ii == nobs());
+  return vec;
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
+void Departures<OBS>::save(const std::string & name) const {
+  for (size_t jj = 0; jj < dep_.size(); ++jj) {
+    dep_[jj].save(name);
+  }
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
+void Departures<OBS>::print(std::ostream & os) const {
+  for (size_t jj = 0; jj < dep_.size(); ++jj) {
+    os << dep_[jj] << std::endl;
+  }
 }
 // -----------------------------------------------------------------------------
 }  // namespace oops

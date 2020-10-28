@@ -13,56 +13,71 @@
 
 #include <string>
 
-#include "model/ErrorCovarianceQG.h"
-#include "model/GeometryQG.h"
-#include "model/GomQG.h"
-#include "model/IncrementQG.h"
-#include "model/LinearObsOp.h"
-#include "model/LocalizationMatrixQG.h"
-#include "model/LocationsQG.h"
-#include "model/ModelQG.h"
-#include "model/ModelBias.h"
-#include "model/ModelBiasIncrement.h"
-#include "model/ModelBiasCovariance.h"
-#include "model/ObservationsQG.h"
-#include "model/ObsBias.h"
-#include "model/ObsBiasIncrement.h"
-#include "model/ObsBiasCovariance.h"
-#include "model/ObsSpaceQG.h"
-#include "model/ObsVecQG.h"
-#include "model/StateQG.h"
-#include "model/VariablesQG.h"
+#include "oops/qg/AnalyticInit.h"
+#include "oops/qg/ChangeVarQG.h"
+#include "oops/qg/ErrorCovarianceQG.h"
+#include "oops/qg/GeometryQG.h"
+#include "oops/qg/GeometryQGIterator.h"
+#include "oops/qg/GetValuesQG.h"
+#include "oops/qg/GetValuesTLAD.h"
+#include "oops/qg/GomQG.h"
+#include "oops/qg/IncrementQG.h"
+#include "oops/qg/LocationsQG.h"
+#include "oops/qg/ModelBias.h"
+#include "oops/qg/ModelBiasCovariance.h"
+#include "oops/qg/ModelBiasIncrement.h"
+#include "oops/qg/ObsBias.h"
+#include "oops/qg/ObsBiasCovariance.h"
+#include "oops/qg/ObsBiasIncrement.h"
+#include "oops/qg/ObsDataQG.h"
+#include "oops/qg/ObsDiagsQG.h"
+#include "oops/qg/ObsOperatorQG.h"
+#include "oops/qg/ObsOperatorTLAD.h"
+#include "oops/qg/ObsSpaceQG.h"
+#include "oops/qg/ObsVecQG.h"
+#include "oops/qg/StateQG.h"
 
 namespace qg {
 
 struct QgTraits {
   static std::string name() {return "QG";}
+  static std::string nameCovar() {return "QgError";}
+  static std::string nameCovar4D() {return "QgError";}
 
   typedef qg::GeometryQG            Geometry;
-  typedef qg::VariablesQG                 Variables;
+
+  typedef qg::GeometryQGIterator    GeometryIterator;
+
+  typedef qg::GetValuesQG           GetValues;
+  typedef qg::GetValuesTLAD         LinearGetValues;
 
   typedef qg::StateQG               State;
-  typedef qg::ModelQG               Model;
   typedef qg::IncrementQG           Increment;
   typedef qg::ErrorCovarianceQG     Covariance;
 
   typedef qg::ModelBias             ModelAuxControl;
   typedef qg::ModelBiasIncrement    ModelAuxIncrement;
   typedef qg::ModelBiasCovariance   ModelAuxCovariance;
+};
+
+struct QgObsTraits {
+  static std::string name() {return "QG obs";}
 
   typedef qg::ObsSpaceQG            ObsSpace;
-  typedef qg::ObservationsQG        ObsOperator;
-  typedef qg::LinearObsOp           LinearObsOperator;
   typedef qg::ObsVecQG              ObsVector;
+  typedef qg::ObsOperatorQG         ObsOperator;
+  typedef qg::ObsOperatorTLAD       LinearObsOperator;
+  template <typename DATATYPE> using ObsDataVector = qg::ObsDataQG<DATATYPE>;
 
   typedef qg::ObsBias               ObsAuxControl;
   typedef qg::ObsBiasIncrement      ObsAuxIncrement;
   typedef qg::ObsBiasCovariance     ObsAuxCovariance;
 
-  typedef qg::GomQG                 ModelAtLocations;
-  typedef qg::LocationsQG                 Locations;
+  typedef qg::ObsDiagsQG            ObsDiagnostics;
 
-  typedef qg::LocalizationMatrixQG  LocalizationMatrix;
+  typedef qg::GomQG                 GeoVaLs;
+  typedef qg::LocationsQG           Locations;
+  typedef qg::AnalyticInit          AnalyticInit;
 };
 
 }  // namespace qg

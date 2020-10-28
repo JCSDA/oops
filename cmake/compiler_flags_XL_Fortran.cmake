@@ -53,6 +53,12 @@ set( CMAKE_Fortran_FLAGS_BIT     "-O3 -qstrict" )
 set( CMAKE_Fortran_LINK_FLAGS    "${CMAKE_Fortran_LINK_FLAGS} -b64 -bbigtoc -bmaxstack:0x800000000 -bloadmap:map -bmap:map")
 
 ####################################################################
+# FLAGS FOR AUTOPROFILING
+####################################################################
+
+set( Fortran_AUTOPROFILING_FLAGS        "" )
+
+####################################################################
 
 # Meaning of flags
 # ----------------

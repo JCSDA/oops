@@ -17,9 +17,9 @@
 
 #include "oops/assimilation/rotmat.h"
 #include "oops/assimilation/UpTriSolve.h"
-#include "util/dot_product.h"
-#include "util/formats.h"
-#include "util/Logger.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/formats.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 
@@ -85,7 +85,7 @@ double FGMRES(VECTOR & x, const VECTOR & b,
 
   r = b;
   double xnrm2 = dot_product(x, x);
-  if (xnrm2 != 0) {
+  if (xnrm2 > 0.0) {
     A.multiply(x, work);
     r -= work;  // r = b - Ax
   }

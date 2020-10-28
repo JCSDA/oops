@@ -15,9 +15,9 @@
 #include <string>
 #include <boost/noncopyable.hpp>
 
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
 #include "eckit/config/LocalConfiguration.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
 
 namespace lorenz95 {
   class ModelBias;
@@ -43,7 +43,6 @@ class ModelBiasCovariance : public util::Printable,
   void randomize(ModelBiasCorrection &) const;
 
   const eckit::Configuration & config() const {return conf_;}
-  bool active() const {return active_;}  // For tests only
 
  private:
   void print(std::ostream &) const;

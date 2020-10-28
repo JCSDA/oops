@@ -1,9 +1,10 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ * (C) Copyright 2020-2020 UCAR.
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -12,70 +13,76 @@
 #define OOPS_RUNS_HOFX_H_
 
 #include <string>
-#include <vector>
-
-#include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/Logger.h"
+#include "eckit/exception/Exceptions.h"
+#include "oops/assimilation/CalcHofX.h"
+#include "oops/base/instantiateObsFilterFactory.h"
+#include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
-#include "oops/base/Observer.h"
+#include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
+#include "oops/generic/instantiateObsErrorFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Model.h"
-#include "oops/interface/ModelAuxControl.h"
-#include "oops/interface/ObsAuxControl.h"
-#include "oops/interface/ObservationSpace.h"
-#include "oops/interface/ObsOperator.h"
 #include "oops/interface/State.h"
+#include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 
-template <typename MODEL> class HofX : public Application {
+/// Application runs model forecast from "initial condition" for the "forecast length"
+/// and computes H(x) on the run. If "obspert" is specified in the config, the resulting
+/// H(x) is perturbed. It is saved as "hofx" by default, or as specified "hofx group name"
+template <typename MODEL, typename OBS> class HofX : public Application {
   typedef Geometry<MODEL>            Geometry_;
   typedef Model<MODEL>               Model_;
-  typedef ModelAuxControl<MODEL>     ModelAux_;
-  typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
-  typedef Observations<MODEL>        Observations_;
-  typedef ObsOperator<MODEL>         ObsOperator_;
-  typedef ObservationSpace<MODEL>    ObsSpace_;
+  typedef Observations<OBS>          Observations_;
+  typedef ObsErrors<OBS>             ObsErrors_;
+  typedef ObsSpaces<OBS>             ObsSpaces_;
   typedef State<MODEL>               State_;
 
  public:
 // -----------------------------------------------------------------------------
-  HofX() {}
+  explicit HofX(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {
+    instantiateObsErrorFactory<OBS>();
+    instantiateObsFilterFactory<OBS>();
+  }
 // -----------------------------------------------------------------------------
-  virtual ~HofX() {}
+  virtual ~HofX() = default;
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
 //  Setup observation window
-    const eckit::LocalConfiguration windowConf(fullConfig, "assimilation_window");
-    const util::Duration winlen(windowConf.getString("window_length"));
-    const util::DateTime winbgn(windowConf.getString("window_begin"));
+    const util::Duration winlen(fullConfig.getString("window length"));
+    const util::DateTime winbgn(fullConfig.getString("window begin"));
     const util::DateTime winend(winbgn + winlen);
-    Log::info() << "Observation window is:" << windowConf << std::endl;
+    Log::info() << "Observation window from " << winbgn << " to " << winend << std::endl;
 
-//  Setup resolution
-    const eckit::LocalConfiguration resolConfig(fullConfig, "resolution");
-    const Geometry_ resol(resolConfig);
+//  Setup geometry
+    const eckit::LocalConfiguration geometryConfig(fullConfig, "geometry");
+    const Geometry_ geometry(geometryConfig, this->getComm());
 
 //  Setup Model
     const eckit::LocalConfiguration modelConfig(fullConfig, "model");
-    const Model_ model(resol, modelConfig);
+    const Model_ model(geometry, modelConfig);
 
 //  Setup initial state
-    const eckit::LocalConfiguration initialConfig(fullConfig, "initial");
-    Log::info() << "Initial configuration is:" << initialConfig << std::endl;
-    State_ xx(resol, initialConfig);
-    Log::test() << "Initial state: " << xx.norm() << std::endl;
+    const eckit::LocalConfiguration initialConfig(fullConfig, "initial condition");
+    State_ xx(geometry, initialConfig);
+    const util::Duration flength(fullConfig.getString("forecast length"));
+    Log::test() << "Initial state: " << xx << std::endl;
 
-//  Setup augmented state
-    ModelAux_ moderr(resol, initialConfig);
+//  Check that window specified for forecast is at least the same as obs window
+    if (winbgn < xx.validTime() || winend > xx.validTime() + flength) {
+      Log::error() << "Observation window can not be outside of forecast window." << std::endl;
+      Log::error() << "Obs window: " << winbgn << " to " << winend << std::endl;
+      Log::error() << "Forecast runs from: " << xx.validTime() << " for " << flength << std::endl;
+      throw eckit::BadValue("Observation window can not be outside of forecast window.");
+    }
 
 //  Setup forecast outputs
     PostProcessor<State_> post;
@@ -85,39 +92,32 @@ template <typename MODEL> class HofX : public Application {
     post.enrollProcessor(new StateInfo<State_>("fc", prtConf));
 
 //  Setup observations
-    eckit::LocalConfiguration biasConf;
-    fullConfig.get("ObsBias", biasConf);
-    ObsAuxCtrl_ ybias(biasConf);
+    ObsSpaces_ obspace(fullConfig, this->getComm(), winbgn, winend);
 
-//  Setup observations
-    std::vector<boost::shared_ptr<Observer<MODEL, State_> > > pobs;
+//  Setup and run observer
+    CalcHofX<MODEL, OBS> hofx(obspace, geometry, fullConfig);
+    Observations_ yobs = hofx.compute(model, xx, post, flength);
+    hofx.saveQcFlags("EffectiveQC");
+    hofx.saveObsErrors("EffectiveError");
 
-    std::vector<eckit::LocalConfiguration> obsconf;
-    fullConfig.get("Observation", obsconf);
-    size_t nobs = obsconf.size();
+    Log::test() << "Final state: " << xx << std::endl;
+    Log::test() << "H(x): " << std::endl << yobs << "End H(x)" << std::endl;
 
-    for (size_t jobs = 0; jobs < nobs; ++jobs) {
-      Log::debug() << "Observation configuration is:" << obsconf[jobs] << std::endl;
-      ObsSpace_ obsdb(obsconf[jobs], winbgn, winend);
-      ObsOperator_ hop(obsdb, obsconf[jobs]);
-      Observations_ yy(obsdb);
-
-      boost::shared_ptr<Observer<MODEL, State_> >
-        pp(new Observer<MODEL, State_>(obsdb, hop, yy, ybias));
-      post.enrollProcessor(pp);
-      pobs.push_back(pp);
+//  Perturb H(x) if needed (can be used for generating obs in OSSE: perturbed H(x) could be saved
+//  as ObsValue if "hofx group name" == ObsValue.
+    bool obspert = fullConfig.getBool("obs perturbations", false);
+    if (obspert) {
+      ObsErrors_ matR(fullConfig, obspace);
+      yobs.perturb(matR);
+      Log::test() << "Perturbed H(x): " << std::endl << yobs << "End Perturbed H(x)" << std::endl;
     }
 
-//  Compute H(x)
-    model.forecast(xx, moderr, winlen, post);
-    Log::info() << "HofX: Finished observation computation." << std::endl;
-    Log::test() << "Final state: " << xx.norm() << std::endl;
-
-//  Save H(x)
-    for (size_t jobs = 0; jobs < nobs; ++jobs) {
-      boost::scoped_ptr<Observations_> yobs(pobs[jobs]->release());
-      Log::test() << "H(x): " << *yobs << std::endl;
-      yobs->save("hofx");
+//  Save H(x) either as observations (if "make obs" == true) or as "hofx"
+    const bool makeobs = fullConfig.getBool("make obs", false);
+    if (makeobs) {
+      yobs.save("ObsValue");
+    } else {
+      yobs.save("hofx");
     }
 
     return 0;
@@ -125,10 +125,11 @@ template <typename MODEL> class HofX : public Application {
 // -----------------------------------------------------------------------------
  private:
   std::string appname() const {
-    return "oops::HofX<" + MODEL::name() + ">";
+    return "oops::HofX<" + MODEL::name() + ", " + OBS::name() + ">";
   }
 // -----------------------------------------------------------------------------
 };
 
 }  // namespace oops
+
 #endif  // OOPS_RUNS_HOFX_H_

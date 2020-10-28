@@ -11,54 +11,37 @@
 #ifndef TEST_INTERFACE_OBSAUXCOVARIANCE_H_
 #define TEST_INTERFACE_OBSAUXCOVARIANCE_H_
 
+#include <memory>
 #include <string>
+#include <vector>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
-#include "oops/runs/Test.h"
-#include "oops/interface/ObsAuxCovariance.h"
-#include "test/TestEnvironment.h"
 #include "eckit/config/Configuration.h"
+#include "oops/interface/ObsAuxCovariance.h"
+#include "oops/runs/Test.h"
+#include "test/interface/ObsTestsFixture.h"
+#include "test/TestEnvironment.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
-template <typename MODEL> class ObsAuxCovarianceFixture : private boost::noncopyable {
- public:
-  static const eckit::Configuration & config() {return *getInstance().conf_;}
 
- private:
-  static ObsAuxCovarianceFixture<MODEL>& getInstance() {
-    static ObsAuxCovarianceFixture<MODEL> theObsAuxCovarianceFixture;
-    return theObsAuxCovarianceFixture;
+template <typename OBS> void testConstructor() {
+  typedef ObsTestsFixture<OBS>  Test_;
+  typedef oops::ObsAuxCovariance<OBS>    Covariance_;
+
+  std::vector<eckit::LocalConfiguration> oconf;
+  TestEnvironment::config().get("observations", oconf);
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    std::unique_ptr<Covariance_> bias(new Covariance_(Test_::obspace()[jj], oconf[jj]));
+    EXPECT(bias.get());
+
+    bias.reset();
+    EXPECT(!bias.get());
   }
-
-  ObsAuxCovarianceFixture() {
-    conf_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "ObsBiasCovariance"));
-  }
-
-  ~ObsAuxCovarianceFixture() {}
-
-  boost::scoped_ptr<const eckit::LocalConfiguration>  conf_;
-};
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL> void testConstructor() {
-  typedef ObsAuxCovarianceFixture<MODEL>   Test_;
-  typedef oops::ObsAuxCovariance<MODEL>    Covariance_;
-
-  boost::scoped_ptr<Covariance_> bias(new Covariance_(Test_::config()));
-  BOOST_CHECK(bias.get());
-
-  bias.reset();
-  BOOST_CHECK(!bias.get());
 }
 
 // -----------------------------------------------------------------------------
@@ -70,19 +53,24 @@ template <typename MODEL> void testConstructor() {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> class ObsAuxCovariance : public oops::Test {
+template <typename OBS>
+class ObsAuxCovariance : public oops::Test {
+  typedef ObsTestsFixture<OBS>  Test_;
  public:
   ObsAuxCovariance() {}
   virtual ~ObsAuxCovariance() {}
  private:
-  std::string testid() const {return "test::ObsAuxCovariance<" + MODEL::name() + ">";}
+  std::string testid() const override {return "test::ObsAuxCovariance<" + OBS::name() + ">";}
 
-  void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/ObsAuxCovariance");
+  void register_tests() const override {
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testConstructor<MODEL>));
+    ts.emplace_back(CASE("interface/ObsAuxCovariance/testConstructor")
+      { testConstructor<OBS>(); });
+  }
 
-    boost::unit_test::framework::master_test_suite().add(ts);
+  void clear() const override {
+    Test_::reset();
   }
 };
 

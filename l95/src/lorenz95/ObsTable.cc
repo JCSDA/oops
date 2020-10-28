@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -11,77 +11,161 @@
 #include "lorenz95/ObsTable.h"
 
 #include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/exception/Exceptions.h"
 
-#include "util/abor1_cpp.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
-#include "util/Logger.h"
-
+#include "lorenz95/LocsL95.h"
 #include "lorenz95/ObsVec1D.h"
+#include "oops/mpi/mpi.h"
+#include "oops/util/abor1_cpp.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
+#include "oops/util/missingValues.h"
+#include "oops/util/Random.h"
+#include "oops/util/stringFunctions.h"
 
-using std::string;
-using std::endl;
-using std::ifstream;
-using std::ofstream;
-
-
-using oops::Log;
+namespace sf = util::stringfunctions;
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
 
-ObsTable::ObsTable(const eckit::Configuration & config,
-                   const util::DateTime & bgn, const util::DateTime & end)
-  : winbgn_(bgn), winend_(end)
+ObsTable::ObsTable(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
+                   const util::DateTime & bgn, const util::DateTime & end,
+                   const eckit::mpi::Comm & timeComm)
+  : oops::ObsSpaceBase(config, comm, bgn, end), winbgn_(bgn), winend_(end), comm_(timeComm),
+    obsvars_()
 {
+  oops::Log::trace() << "ObsTable::ObsTable starting" << std::endl;
   nameIn_.clear();
   nameOut_.clear();
-  if (config.has("ObsData")) {
-    const eckit::LocalConfiguration dataConfig(config, "ObsData");
-    if (dataConfig.has("ObsDataIn")) {
-      nameIn_ = dataConfig.getString("ObsDataIn.filename");
-      Log::trace() << "ObsTable::ObsTable reading observations from " << nameIn_ << std::endl;
-      otOpen(nameIn_);
-    }
-    if (dataConfig.has("ObsDataOut")) {
-      nameOut_ = dataConfig.getString("ObsDataOut.filename");
-    }
+  if (config.has("obsdatain")) {
+    nameIn_ = config.getString("obsdatain");
+    otOpen(nameIn_);
   }
-  Log::trace() << "ObsTable::ObsTable created" << std::endl;
+  //  Generate locations etc... if required
+  if (config.has("generate")) {
+    const eckit::LocalConfiguration gconf(config, "generate");
+    generateDistribution(gconf);
+  }
+  if (config.has("obsdataout")) {
+    nameOut_ = config.getString("obsdataout");
+    sf::swapNameMember(config, nameOut_);
+  }
+  oops::Log::trace() << "ObsTable::ObsTable created nobs = " << nobs() << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 ObsTable::~ObsTable() {
   if (!nameOut_.empty()) {
-    Log::trace() << "ObsTable::~ObsTable saving nameOut = " << nameOut_ << std::endl;
     otWrite(nameOut_);
   }
-  Log::trace() << "ObsTable::ObsTable destructed" << std::endl;
+  oops::Log::trace() << "ObsTable::ObsTable destructed" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-void ObsTable::putdb(const string & col, const std::vector<double> & vec) const {
+bool ObsTable::has(const std::string & col) const {
+  return (data_.find(col) != data_.end());
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsTable::putdb(const std::string & col, const std::vector<int> & vec) const {
+  std::vector<double> tmp(vec.size());
+  int intmiss = util::missingValue(intmiss);
+  double doublemiss = util::missingValue(doublemiss);
+  for (size_t jobs = 0; jobs < vec.size(); ++jobs) {
+    if (vec[jobs] == intmiss) {
+      tmp[jobs] = doublemiss;
+    } else {
+      tmp[jobs] = static_cast<double>(vec[jobs]);
+    }
+  }
+  this->putdb(col, tmp);
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsTable::putdb(const std::string & col, const std::vector<float> & vec) const {
+  std::vector<double> tmp(vec.size());
+  float floatmiss = util::missingValue(floatmiss);
+  double doublemiss = util::missingValue(doublemiss);
+  for (size_t jobs = 0; jobs < vec.size(); ++jobs) {
+    if (vec[jobs] == floatmiss) {
+      tmp[jobs] = doublemiss;
+    } else {
+      tmp[jobs] = static_cast<double>(vec[jobs]);
+    }
+  }
+  this->putdb(col, tmp);
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsTable::putdb(const std::string & col, const std::vector<double> & vec) const {
   ASSERT(vec.size() == nobs());
-  ASSERT(data_.find(col) == data_.end());
-  data_.insert(std::pair<string, std::vector<double> >(col, vec));
+  if (data_.find(col) != data_.end()) {
+    oops::Log::info() << "ObsTable::putdb over-writing " << col << std::endl;
+    data_[col] = vec;
+  } else {
+    data_.insert(std::pair<std::string, std::vector<double> >(col, vec));
+  }
 }
 
 // -----------------------------------------------------------------------------
 
-void ObsTable::getdb(const string & col, std::vector<double> & vec) const {
-  std::map<string, std::vector<double> >::const_iterator ic = data_.find(col);
-  ASSERT(ic != data_.end());
+void ObsTable::getdb(const std::string & col, std::vector<int> & vec) const {
+  std::vector<double> tmp;
+  this->getdb(col, tmp);
+  int intmiss = util::missingValue(intmiss);
+  double doublemiss = util::missingValue(doublemiss);
+  vec.resize(nobs());
+  for (size_t jobs = 0; jobs < nobs(); ++jobs) {
+    if (tmp[jobs] == doublemiss) {
+      vec[jobs] = intmiss;
+    } else {
+      vec[jobs] = lround(tmp[jobs]);
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsTable::getdb(const std::string & col, std::vector<float> & vec) const {
+  std::vector<double> tmp;
+  this->getdb(col, tmp);
+  float floatmiss = util::missingValue(floatmiss);
+  double doublemiss = util::missingValue(doublemiss);
+  vec.resize(nobs());
+  for (size_t jobs = 0; jobs < nobs(); ++jobs) {
+    if (tmp[jobs] == doublemiss) {
+      vec[jobs] = floatmiss;
+    } else {
+      vec[jobs] = static_cast<float>(tmp[jobs]);
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsTable::getdb(const std::string & col, std::vector<double> & vec) const {
+  std::map<std::string, std::vector<double> >::const_iterator ic = data_.find(col);
+  if (ic == data_.end()) {
+    oops::Log::error() << "ObsTable::getdb " << col << " not found." << std::endl;
+    ABORT("ObsTable::getdb column not found");
+  }
   vec.resize(nobs());
   for (unsigned int jobs = 0; jobs < nobs(); ++jobs) {
     vec[jobs] = ic->second[jobs];
@@ -90,29 +174,8 @@ void ObsTable::getdb(const string & col, std::vector<double> & vec) const {
 
 // -----------------------------------------------------------------------------
 
-std::vector<double> ObsTable::locations(const util::DateTime & t1,
-                                        const util::DateTime & t2) const {
-  std::vector<int> olist = timeSelect(t1, t2);
-  const int nobs = olist.size();
-  std::vector<double> locs(nobs);
-  for (int jobs = 0; jobs < nobs; ++jobs) locs[jobs]=locations_[olist[jobs]];
-  return locs;
-}
-
-// -----------------------------------------------------------------------------
-
-std::vector<int> ObsTable::timeSelect(const util::DateTime & t1,
-                                      const util::DateTime & t2) const {
-  std::vector<int> mask;
-  for (unsigned int jobs = 0; jobs < nobs(); ++jobs)
-    if (times_[jobs] > t1 && times_[jobs] <= t2) mask.push_back(jobs);
-  return mask;
-}
-
-// -----------------------------------------------------------------------------
-
 void ObsTable::generateDistribution(const eckit::Configuration & config) {
-  Log::trace() << "ObsTable::generateDistribution starting" << std::endl;
+  oops::Log::trace() << "ObsTable::generateDistribution starting" << std::endl;
 
   util::Duration first(config.getString("begin"));
   util::Duration last(winend_-winbgn_);
@@ -131,7 +194,6 @@ void ObsTable::generateDistribution(const eckit::Configuration & config) {
   const unsigned int nobs_locations = config.getInt("obs_density");
   const unsigned int nobs = nobs_locations*nobstimes;
   double dx = 1.0/static_cast<double>(nobs_locations);
-  Log::trace() << "ObservationL95:generateDistribution nobs=" << nobs << std::endl;
 
   times_.resize(nobs);
   locations_.resize(nobs);
@@ -151,95 +213,145 @@ void ObsTable::generateDistribution(const eckit::Configuration & config) {
   }
   ASSERT(iobs == nobs);
 
-  Log::trace() << "ObsTable::generateDistribution done" << std::endl;
+// Generate obs error
+  const double err = config.getDouble("obs_error");
+  std::vector<double> obserr(nobs);
+  for (unsigned int jj = 0; jj < nobs; ++jj) {
+    obserr[jj] = err;
+  }
+  this->putdb("ObsError", obserr);
+
+  oops::Log::trace() << "ObsTable::generateDistribution done, nobs= " << nobs << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsTable::random(std::vector<double> & data) const {
+  util::NormalDistribution<double> x(data.size(), 0.0, 1.0, getSeed());
+  for (size_t jj = 0; jj < data.size(); ++jj) data[jj] = x[jj];
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsTable::printJo(const ObsVec1D & ydep, const ObsVec1D & grad) {
-  Log::info() << "ObsTable::printJo not implemented" << std::endl;
+  oops::Log::info() << "ObsTable::printJo not implemented" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 //  ObsTable Private Methods
 // -----------------------------------------------------------------------------
 
-void ObsTable::otOpen(const string & filename) {
-  Log::trace() << "ObsTable::ot_read starting" << std::endl;
-  ifstream fin(filename.c_str());
-  if (!fin.is_open()) ABORT("ObsTable::otOpen: Error opening file");
+void ObsTable::otOpen(const std::string & filename) {
+  oops::Log::trace() << "ObsTable::ot_read starting" << std::endl;
+  std::ifstream fin(filename.c_str());
+  if (!fin.is_open()) ABORT("ObsTable::otOpen: Error opening file: " + filename);
 
   int ncol, nobs;
   fin >> ncol;
 
-  std::vector<string> colnames;
+  std::vector<std::string> colnames;
   for (int jc = 0; jc < ncol; ++jc) {
-    string col;
+    std::string col;
     fin >> col;
     colnames.push_back(col);
   }
 
   fin >> nobs;
-  locations_.resize(nobs);
-  std::vector<double> newcol(nobs);
+  locations_.clear();
+  std::vector<double> newcol;
   for (int jc = 0; jc < ncol; ++jc) {
     ASSERT(data_.find(colnames[jc]) == data_.end());
-    data_.insert(std::pair<string, std::vector<double> >(colnames[jc], newcol));
+    data_.insert(std::pair<std::string, std::vector<double> >(colnames[jc], newcol));
   }
 
   times_.clear();
-  int jjj;
   for (int jobs = 0; jobs < nobs; ++jobs) {
+    int jjj;
     fin >> jjj;
     ASSERT(jjj == jobs);
-    string sss;
+    std::string sss;
     fin >> sss;
     util::DateTime ttt(sss);
-    times_.push_back(ttt);
-    fin >> locations_[jobs];
-    for (std::map<string, std::vector<double> >::iterator jo = data_.begin();
-         jo != data_.end(); ++jo)
-      fin >> jo->second[jobs];
+    bool inside = ttt > winbgn_ && ttt <= winend_;
+
+    if (inside) times_.push_back(ttt);
+    double loc;
+    fin >> loc;
+    if (inside) locations_.push_back(loc);
+    for (std::map<std::string, std::vector<double> >::iterator jo = data_.begin();
+         jo != data_.end(); ++jo) {
+      double val;
+      fin >> val;
+      if (inside) jo->second.push_back(val);
+    }
   }
 
   fin.close();
-  Log::trace() << "ObsTable::ot_read done" << std::endl;
+  oops::Log::trace() << "ObsTable::ot_read done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-void ObsTable::otWrite(const string & filename) const {
-  Log::trace() << "ObsTable::otWrite writing " << filename << std::endl;
-  ofstream fout(filename.c_str());
-  if (!fout.is_open()) ABORT("ObsTable::otWrite: Error opening file");
+void ObsTable::otWrite(const std::string & filename) const {
+  oops::Log::trace() << "ObsTable::otWrite writing " << filename << std::endl;
 
-  int ncol = data_.size();
-  fout << ncol << endl;
-
-  for (std::map<string, std::vector<double> >::const_iterator jo = data_.begin();
-       jo != data_.end(); ++jo)
-    fout << jo->first << endl;
+  const size_t ioproc = 0;
 
   int nobs = times_.size();
-  fout << nobs << endl;
-  for (int jobs = 0; jobs < nobs; ++jobs) {
-    fout << jobs;
-    fout << "  " << times_[jobs];
-    fout << "  " << locations_[jobs];
-    for (std::map<string, std::vector<double> >::const_iterator jo = data_.begin();
-         jo != data_.end(); ++jo)
-      fout << "  " << jo->second[jobs];
-    fout << endl;
+  if (comm_.size() > 1) comm_.allReduceInPlace(nobs, eckit::mpi::Operation::SUM);
+
+  std::vector<util::DateTime> timebuff(nobs);
+  oops::mpi::gather(comm_, times_, timebuff, ioproc);
+
+  std::vector<double> locbuff(nobs);
+  oops::mpi::gather(comm_, locations_, locbuff, ioproc);
+
+  std::vector<double> datasend(times_.size() * data_.size());
+  size_t iobs = 0;
+  for (size_t jobs = 0; jobs < times_.size(); ++jobs) {
+    for (auto jo = data_.begin(); jo != data_.end(); ++jo) {
+      datasend[iobs] = jo->second[jobs];
+      ++iobs;
+    }
+  }
+  std::vector<double> databuff(data_.size() * nobs);
+  oops::mpi::gather(comm_, datasend, databuff, ioproc);
+
+  if (comm_.rank() == ioproc) {
+    std::ofstream fout(filename.c_str());
+    if (!fout.is_open()) ABORT("ObsTable::otWrite: Error opening file: " + filename);
+
+    int ncol = data_.size();
+    fout << ncol << std::endl;
+
+    for (auto jo = data_.begin(); jo != data_.end(); ++jo)
+      fout << jo->first << std::endl;
+
+    fout << nobs << std::endl;
+
+    size_t iii = 0;
+    for (int jobs = 0; jobs < nobs; ++jobs) {
+      fout << jobs;
+      fout << "  " << timebuff[jobs];
+      fout << "  " << locbuff[jobs];
+      for (int jcol = 0; jcol < ncol; ++jcol) {
+        fout << "  " << databuff[iii];
+        ++iii;
+      }
+      fout << std::endl;
+    }
+
+    fout.close();
   }
 
-  fout.close();
-  Log::trace() << "ObsTable::otWrite done" << std::endl;
+  oops::Log::trace() << "ObsTable::otWrite done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsTable::print(std::ostream & os) const {
-  os << "ObsTable::print not implemented";
+  os << "ObsTable: assimilation window = " << winbgn_ << " to " << winend_ << std::endl;
+  os << "ObsTable: file in = " << nameIn_ << ", file out = " << nameOut_ << std::endl;
 }
 
 // -----------------------------------------------------------------------------

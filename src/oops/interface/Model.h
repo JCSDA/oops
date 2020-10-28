@@ -1,28 +1,27 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ * (C) Copyright 2018-2020 UCAR.
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
- * granted to it by virtue of its status as an intergovernmental organisation nor
- * does it submit to any jurisdiction.
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
 #ifndef OOPS_INTERFACE_MODEL_H_
 #define OOPS_INTERFACE_MODEL_H_
 
+#include <memory>
 #include <string>
 
 #include <boost/noncopyable.hpp>
 
-#include "util/Logger.h"
+#include "oops/base/ModelBase.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
-#include "util/Duration.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
-#include "util/Timer.h"
+#include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
+#include "oops/util/Printable.h"
+#include "oops/util/Timer.h"
 
 namespace eckit {
   class Configuration;
@@ -30,50 +29,85 @@ namespace eckit {
 
 namespace oops {
 
-/// Encapsulates the nonlinear forecast model
-
+/// \brief Encapsulates the nonlinear forecast model
+/// Note: to see methods that need to be implemented in the forecast model implementation,
+/// see ModelBase class.
+///
+/// Note: implementations of this interface can opt to extract their settings either from
+/// a Configuration object or from a subclass of ModelParametersBase.
+///
+/// In the former case, they should provide a constructor with the following signature:
+///
+///    Model(const Geometry_ &, const eckit::Configuration &);
+///
+/// In the latter case, the implementer should first define a subclass of ModelParametersBase
+/// holding the settings of the model in question. The implementation of the Model interface
+/// should then typedef `Parameters_` to the name of that subclass and provide a constructor with
+/// the following signature:
+///
+///    Model(const Geometry_ &, const Parameters_ &);
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
 class Model : public util::Printable,
               private boost::noncopyable,
               private util::ObjectCounter<Model<MODEL> >  {
-  typedef typename MODEL::Model                 Model_;
+  typedef ModelBase<MODEL>           ModelBase_;
   typedef Geometry<MODEL>            Geometry_;
-  typedef ModelAuxControl<MODEL>      ModelAux_;
+  typedef ModelAuxControl<MODEL>     ModelAux_;
   typedef State<MODEL>               State_;
 
  public:
   static const std::string classname() {return "oops::Model";}
 
+  Model(const Geometry_ &, const ModelParametersBase &);
   Model(const Geometry_ &, const eckit::Configuration &);
-  ~Model();
+  virtual ~Model();
 
-// Run the forecast
-  void forecast(State_ &, const ModelAux_ &,
-                const util::Duration &, PostProcessor<State_> &) const;
+  /// \brief Run the forecast from state \p xx for \p len time, with \p post postprocessors
+  /// Does not need to be implemented in the models
+  void forecast(State_ & xx, const ModelAux_ &,
+                const util::Duration & len, PostProcessor<State_> & post) const;
 
-// Information and diagnostics
+  /// \brief Time step for running Model's forecast in oops (frequency with which the
+  /// State will be updated)
   const util::Duration & timeResolution() const {return model_->timeResolution();}
+  /// \brief Model variables (only used in 4DVar)
+  const oops::Variables & variables() const {return model_->variables();}
 
  private:
+  /// \brief Forecast initialization, called before every forecast run
   void initialize(State_ &) const;
+  /// \brief Forecast "step", called during forecast run; updates state to the next time
   void step(State_ &, const ModelAux_ &) const;
+  /// \brief Forecast finalization; called after each forecast run
   void finalize(State_ &) const;
+  /// \brief Print, used in logging
   void print(std::ostream &) const;
 
-  boost::scoped_ptr<Model_> model_;
+  /// \brief Pointer to the Model implementation
+  std::unique_ptr<ModelBase_> model_;
 };
 
 // =============================================================================
 
 template<typename MODEL>
-Model<MODEL>::Model(const Geometry_ & resol, const eckit::Configuration & conf) : model_() {
+Model<MODEL>::Model(const Geometry_ & resol, const ModelParametersBase & params)
+  : model_()
+{
   Log::trace() << "Model<MODEL>::Model starting" << std::endl;
   util::Timer timer(classname(), "Model");
-  model_.reset(new Model_(resol.geometry(), conf));
+  Log::info() << "Model configuration is:" << params << std::endl;
+  model_.reset(ModelFactory<MODEL>::create(resol, params));
   Log::trace() << "Model<MODEL>::Model done" << std::endl;
 }
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+Model<MODEL>::Model(const Geometry_ & resol, const eckit::Configuration & conf)
+  : Model(resol, validateAndDeserialize<ModelParametersWrapper<MODEL>>(conf).modelParameters)
+{}
 
 // -----------------------------------------------------------------------------
 
@@ -86,20 +120,18 @@ Model<MODEL>::~Model() {
 }
 
 // -----------------------------------------------------------------------------
-//  ****** NOTE: The forecast method below is not from MODEL::Model ******
-// -----------------------------------------------------------------------------
 
 template<typename MODEL>
 void Model<MODEL>::forecast(State_ & xx, const ModelAux_ & maux,
                             const util::Duration & len,
                             PostProcessor<State_> & post) const {
   Log::trace() << "Model<MODEL>::forecast starting" << std::endl;
-  util::Timer timer(classname(), "forecast");
 
   const util::DateTime end(xx.validTime() + len);
   Log::info() << "Model:forecast: forecast starting: " << xx << std::endl;
   this->initialize(xx);
   post.initialize(xx, end, model_->timeResolution());
+  post.process(xx);
   while (xx.validTime() < end) {
     this->step(xx, maux);
     post.process(xx);
@@ -112,8 +144,6 @@ void Model<MODEL>::forecast(State_ & xx, const ModelAux_ & maux,
   Log::trace() << "Model<MODEL>::forecast done" << std::endl;
 }
 
-// -----------------------------------------------------------------------------
-//  ****** NOTE: The forecast method above is not from MODEL::Model ******
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>

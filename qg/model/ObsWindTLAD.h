@@ -12,49 +12,45 @@
 #define QG_MODEL_OBSWINDTLAD_H_
 
 #include <string>
-#include <vector>
 
-#include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
+#include "oops/base/Variables.h"
+#include "oops/util/ObjectCounter.h"
 
-#include "model/LinearObsOp.h"
-#include "model/ObsSpaceQG.h"
-#include "util/ObjectCounter.h"
+#include "oops/qg/ObsOpBaseTLAD.h"
 
 // Forward declarations
-namespace util {
-  class DateTime;
+namespace eckit {
+  class Configuration;
 }
 
 namespace qg {
   class GomQG;
   class ObsBias;
   class ObsBiasIncrement;
+  class ObsSpaceQG;
   class ObsVecQG;
 
 // -----------------------------------------------------------------------------
+/// Wind TL/AD observation operator for QG model.
 
-class ObsWindTLAD : public LinearObsOp, private util::ObjectCounter<ObsWindTLAD> {
+class ObsWindTLAD : public ObsOpBaseTLAD,
+                    private util::ObjectCounter<ObsWindTLAD> {
  public:
   static const std::string classname() {return "qg::ObsWindTLAD";}
 
-  ObsWindTLAD(const ObsSpaceQG &, const int &);
-  virtual ~ObsWindTLAD();
+  ObsWindTLAD(const ObsSpaceQG &, const eckit::Configuration &);
 
 // Obs Operators
-  void setTrajectory(const GomQG &, const ObsBias &);
-  void obsEquivTL(const GomQG &, ObsVecQG &, const ObsBiasIncrement &) const;
-  void obsEquivAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &) const;
+  void setTrajectory(const GomQG &, const ObsBias &) override;
+  void simulateObsTL(const GomQG &, ObsVecQG &, const ObsBiasIncrement &) const override;
+  void simulateObsAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &) const override;
 
 // Other
-  boost::shared_ptr<const VariablesQG> variables() const {return varin_;}
-
-  int& toFortran() {return keyOperWind_;}
-  const int& toFortran() const {return keyOperWind_;}
+  const oops::Variables & requiredVars() const override {return varin_;}
 
  private:
-  F90hop keyOperWind_;
-  boost::shared_ptr<const VariablesQG> varin_;
+  void print(std::ostream &) const override;
+  const oops::Variables varin_;
 };
 // -----------------------------------------------------------------------------
 

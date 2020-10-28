@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -13,12 +13,12 @@
 
 #include <string>
 
-#include "util/Logger.h"
+#include "eckit/config/Configuration.h"
 #include "oops/assimilation/BMatrix.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/Minimizer.h"
-#include "eckit/config/Configuration.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 
@@ -30,40 +30,36 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> class PrimalMinimizer : public Minimizer<MODEL> {
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef BMatrix<MODEL>             Bmat_;
-  typedef HessianMatrix<MODEL>       Hessian_;
-  typedef Minimizer<MODEL>           Minimizer_;
+template<typename MODEL, typename OBS> class PrimalMinimizer : public Minimizer<MODEL, OBS> {
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef BMatrix<MODEL, OBS>             Bmat_;
+  typedef HessianMatrix<MODEL, OBS>       Hessian_;
+  typedef Minimizer<MODEL, OBS>           Minimizer_;
 
  public:
-  explicit PrimalMinimizer(const CostFct_ & J)
-   : Minimizer_(J), J_(J) {}
+  explicit PrimalMinimizer(const CostFct_ & J): Minimizer_(J), J_(J) {}
   ~PrimalMinimizer() {}
-  virtual const std::string classname() const override =0;
+  const std::string classname() const override = 0;
 
  private:
   CtrlInc_ * doMinimize(const eckit::Configuration &) override;
   virtual double solve(CtrlInc_ &, const CtrlInc_ &,
                        const Hessian_ &, const Bmat_ &,
-                       const int, const double) =0;
+                       const int, const double) = 0;
 
   const CostFct_ & J_;
 };
 
 // =============================================================================
 
-template<typename MODEL>
-ControlIncrement<MODEL> * PrimalMinimizer<MODEL>::doMinimize(const eckit::Configuration & config) {
+template<typename MODEL, typename OBS>
+ControlIncrement<MODEL, OBS> *
+PrimalMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
   int ninner = config.getInt("ninner");
-  double gnreduc = config.getDouble("gradient_norm_reduction");
+  double gnreduc = config.getDouble("gradient norm reduction");
 
-  bool runOnlineAdjTest = false;
-  if (config.has("onlineDiagnostics")) {
-    const eckit::LocalConfiguration onlineDiag(config, "onlineDiagnostics");
-    runOnlineAdjTest = onlineDiag.getBool("onlineAdjTest");
-  }
+  bool runOnlineAdjTest = config.getBool("online diagnostics.online adj test", false);
 
   Log::info() << classname() << ": max iter = " << ninner
               << ", requested norm reduction = " << gnreduc << std::endl;

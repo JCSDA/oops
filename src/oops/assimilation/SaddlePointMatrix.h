@@ -17,13 +17,10 @@
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/DualVector.h"
 #include "oops/assimilation/SaddlePointVector.h"
-#include "oops/base/PostProcessorTL.h"
-#include "oops/base/PostProcessorAD.h"
-#include "oops/interface/Increment.h"
+#include "oops/base/PostProcessorTLAD.h"
 
 namespace oops {
-  template<typename MODEL> class JqTermTL;
-  template<typename MODEL> class JqTermAD;
+  template<typename MODEL> class JqTermTLAD;
 
 /// The Saddle-point matrix.
 /*!
@@ -31,14 +28,12 @@ namespace oops {
  *  method. This class defines objects that apply the saddle-point matrix.
  */
 
-template<typename MODEL>
+template<typename MODEL, typename OBS>
 class SaddlePointMatrix : private boost::noncopyable {
-  typedef Increment<MODEL>           Increment_;
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef SaddlePointVector<MODEL>   SPVector_;
-  typedef JqTermAD<MODEL>            JqTermAD_;
-  typedef JqTermTL<MODEL>            JqTermTL_;
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef SaddlePointVector<MODEL, OBS>   SPVector_;
+  typedef JqTermTLAD<MODEL>          JqTermTLAD_;
 
  public:
   explicit SaddlePointMatrix(const CostFct_ & j): j_(j) {}
@@ -50,18 +45,18 @@ class SaddlePointMatrix : private boost::noncopyable {
 
 // =============================================================================
 
-template<typename MODEL>
-void SaddlePointMatrix<MODEL>::multiply(const SPVector_ & x,
+template<typename MODEL, typename OBS>
+void SaddlePointMatrix<MODEL, OBS>::multiply(const SPVector_ & x,
                                         SPVector_ & z) const {
   CtrlInc_ ww(j_.jb());
 
 // The three blocks below could be done in parallel
 
 // ADJ block
-  PostProcessorAD<Increment_> costad;
+  PostProcessorTLAD<MODEL> costad;
   j_.zeroAD(ww);
   z.dx(new CtrlInc_(j_.jb()));
-  JqTermAD_ * jqad = j_.jb().initializeAD(z.dx(), x.lambda().dx());
+  JqTermTLAD_ * jqad = j_.jb().initializeAD(z.dx(), x.lambda().dx());
   costad.enrollProcessor(jqad);
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
     costad.enrollProcessor(j_.jterm(jj).setupAD(x.lambda().getv(jj), ww));
@@ -70,8 +65,8 @@ void SaddlePointMatrix<MODEL>::multiply(const SPVector_ & x,
   z.dx() += ww;
 
 // TLM block
-  PostProcessorTL<Increment_> costtl;
-  JqTermTL_ * jqtl = j_.jb().initializeTL();
+  PostProcessorTLAD<MODEL> costtl;
+  JqTermTLAD_ * jqtl = j_.jb().initializeTL();
   costtl.enrollProcessor(jqtl);
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
     costtl.enrollProcessor(j_.jterm(jj).setupTL(x.dx()));
@@ -86,7 +81,7 @@ void SaddlePointMatrix<MODEL>::multiply(const SPVector_ & x,
   }
 
 // Diagonal block
-  DualVector<MODEL> diag;
+  DualVector<MODEL, OBS> diag;
   diag.dx(new CtrlInc_(j_.jb()));
   j_.jb().multiplyB(x.lambda().dx(), diag.dx());
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {

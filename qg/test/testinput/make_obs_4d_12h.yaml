@@ -1,0 +1,53 @@
+geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+initial condition:
+  date: 2010-01-01T00:00:00Z
+  filename: Data/truth.fc.2009-12-15T00:00:00Z.P17D.nc
+model:
+  name: QG
+  tstep: PT1H
+forecast length: PT12H
+window begin: 2010-01-01T00:00:00Z
+window length: PT12H
+observations:
+- obs operator:
+    obs type: Stream
+  obs space:
+    obsdataout:
+      obsfile: Data/truth.obs4d_12h.nc
+    obs type: Stream
+    generate:
+      begin: PT2H
+      nval: 1
+      obs_density: 50
+      obs_error: 4.0e6
+      obs_period: PT2H
+- obs operator:
+    obs type: Wind
+  obs space:
+    obsdataout:
+      obsfile: Data/truth.obs4d_12h.nc
+    obs type: Wind
+    generate:
+      begin: PT1H
+      nval: 2
+      obs_density: 40
+      obs_error: 6.0
+      obs_period: PT6H
+- obs operator:
+    obs type: WSpeed
+  obs space:
+    obsdataout:
+      obsfile: Data/truth.obs4d_12h.nc
+    obs type: WSpeed
+    generate:
+      begin: PT1H
+      nval: 1
+      obs_density: 50
+      obs_error: 12.0
+      obs_period: PT2H
+make obs: true
+prints:
+  frequency: PT3H

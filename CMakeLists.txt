@@ -1,127 +1,108 @@
+# (C) Copyright 2009-2016 ECMWF.
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+# In applying this licence, ECMWF does not waive the privileges and immunities
+# granted to it by virtue of its status as an intergovernmental organisation nor
+# does it submit to any jurisdiction.
+
 ################################################################################
-# cmake options:
-#
-#       -DCMAKE_BUILD_TYPE=Debug|RelWithDebInfo|Release|Production
-#       -DCMAKE_INSTALL_PREFIX=/path/to/install
-#
-#       -DCMAKE_C_COMPILER=gcc
-#       -DCMAKE_CXX_COMPILER=g++
-#
-#       -DCMAKE_PREFIX_PATH=/path/to/jasper:/path/to/any/package/out/of/place
-#       -DBUILD_SHARED_LIBS=OFF
+# OOPS
 ################################################################################
 
-cmake_minimum_required( VERSION 2.8.4 FATAL_ERROR )
+cmake_minimum_required( VERSION 3.12 )
+project( oops VERSION 1.0.0 LANGUAGES CXX Fortran )
 
-project( oops C CXX Fortran)
-
-set( CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/../ecbuild/cmake")
-
-set( ECBUILD_DEFAULT_BUILD_TYPE Release )
-set( ENABLE_OS_TESTS OFF CACHE BOOL "Disable OS tests" FORCE )
-set( ENABLE_LARGE_FILE_SUPPORT OFF CACHE BOOL "Disable testing of large file support" FORCE )
-
+## Ecbuild integration
+find_package( ecbuild 3.3.2 REQUIRED )
 include( ecbuild_system NO_POLICY_SCOPE )
-ecbuild_requires_macro_version( 1.6 )
-
-################################################################################
-# OOPS project
-################################################################################
-
 ecbuild_declare_project()
+list( APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake )
+set( CMAKE_DIRECTORY_LABELS ${PROJECT_NAME} )
 
-ecbuild_enable_fortran( REQUIRED )
+## Configuration options
+option( ENABLE_LORENZ95_MODEL "Build LORENZ95 toy model" ON )
+option( ENABLE_QG_MODEL "Build QG toy model" ON )
+option( ENABLE_OOPS_DOC "Build OOPS documentation" OFF )
+option( ENABLE_MKL "Use MKL for LAPACK implementation (if available)" ON )
+option( ENABLE_GPTL "Use GPTL profiling library (if available)" OFF )
+option( ENABLE_AUTOPROFILING "Enable function-based autoprofiling with GPTL (if available)" OFF )
 
-# eckit
-ecbuild_use_package( PROJECT eckit VERSION 0.12.0 REQUIRED )
-include_directories( ${ECKIT_INCLUDE_DIRS} )
+include( ${PROJECT_NAME}_compiler_flags )
+include( GNUInstallDirs )
 
-# fckit (optional for now)
-ecbuild_use_package( PROJECT fckit )
-ecbuild_add_option( FEATURE FCTEST
-                    DEFAULT ${ENABLE_TESTS}
-                    DESCRIPTION "Fortran Unit Testing Framework"
-                    REQUIRED_PACKAGES "PROJECT fckit" )
-include_directories( ${FCKIT_INCLUDE_DIRS} )
-
-list( APPEND OOPS_TPLS eckit )
-
-set( OOPS_LINKER_LANGUAGE CXX )
-
-set( OOPS_SENSITIVE_TESTS true )
-if ( CMAKE_CXX_COMPILER_ID MATCHES "Cray" OR CMAKE_CXX_COMPILER_ID MATCHES "Intel" )
-  set( OOPS_SENSITIVE_TESTS false )
+## Dependencies
+if( ENABLE_MKL )
+    find_package( MKL )
+endif()
+if( MKL_FOUND )
+    set( LAPACK_LIBRARIES ${MKL_LIBRARIES} )
+else()
+    find_package( LAPACK REQUIRED )
 endif()
 
-################################################################################
-# Dependencies
-################################################################################
+find_package( Eigen3 REQUIRED NO_MODULE HINTS
+    $ENV{Eigen3_ROOT} $ENV{EIGEN3_ROOT} $ENV{Eigen_ROOT} $ENV{EIGEN_ROOT}
+    $ENV{Eigen3_PATH} $ENV{EIGEN3_PATH} $ENV{Eigen_PATH} $ENV{EIGEN_PATH})
 
-# Boost
-set( Boost_MINIMUM_VERSION "1.47" )
-find_package( Boost ${Boost_MINIMUM_VERSION} REQUIRED
-              COMPONENTS unit_test_framework )
-include_directories( ${Boost_INCLUDE_DIR} )
-
-# LAPACK
-if( NOT ( BUILD_SITE MATCHES "cc[abt].*" ) )  # Should depend on toolchain, not machine
-  ecbuild_find_package( NAME LAPACK REQUIRED )
-  include_directories( ${LAPACK_INCLUDE_DIR} )
+find_package( OpenMP COMPONENTS CXX Fortran )
+find_package( MPI REQUIRED COMPONENTS CXX Fortran )
+find_package( NetCDF REQUIRED COMPONENTS Fortran )
+find_package( Boost 1.64.0 REQUIRED)
+find_package( eckit 1.11.6 REQUIRED COMPONENTS MPI )
+find_package( fckit 0.7.0 REQUIRED )
+if(OpenMP_FOUND)
+    find_package( atlas 0.20.2 REQUIRED COMPONENTS OMP OMP_Fortran )
+else()
+    find_package( atlas 0.20.2 REQUIRED )
 endif()
 
-# Xml2
-find_package( LibXml2 REQUIRED )
-include_directories( ${LIBXML2_INCLUDE_DIR} )
-
-################################################################################
-# Export package info
-################################################################################
-
-list( APPEND OOPS_TPLS LAPACK LibXml2 )
-set( OOPS_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/src
-                       ${CMAKE_Fortran_MODULE_DIRECTORY} )
-set( OOPS_LIBRARIES oops )
-
-get_directory_property( OOPS_DEFINITIONS COMPILE_DEFINITIONS )
-
-foreach( _tpl ${OOPS_TPLS} )
-  string( TOUPPER ${_tpl} TPL )
-  list( APPEND OOPS_EXTRA_DEFINITIONS   ${${TPL}_DEFINITIONS}  ${${TPL}_TPL_DEFINITIONS}  )
-  list( APPEND OOPS_EXTRA_INCLUDE_DIRS  ${${TPL}_INCLUDE_DIRS} ${${TPL}_TPL_INCLUDE_DIRS} )
-  list( APPEND OOPS_EXTRA_LIBRARIES     ${${TPL}_LIBRARIES}    ${${TPL}_TPL_LIBRARIES}    )
-endforeach()
-
-################################################################################
-# Sources
-################################################################################
-
-ecbuild_add_cxx11_flags()
-ecbuild_add_option( FEATURE MPI DEFAULT OFF )
-
-if ( HAVE_MPI AND NOT ECKIT_HAVE_MPI )
-  ecbuild_error("OOPS was requested to build with MPI but eckit wasn't built with MPI: ECKIT_HAVE_MPI = ${ECKIT_HAVE_MPI}")
+#Optional Dependencies
+find_package( jedicmake QUIET )
+if( jedicmake_FOUND AND ENABLE_GPTL )
+    find_package( GPTL )
+    add_compile_definitions(ENABLE_GPTL)
 endif()
 
-include( oops_compiler_flags )
-include_directories( ${OOPS_INCLUDE_DIRS} ${OOPS_EXTRA_INCLUDE_DIRS} )
+if ( GPTL_FOUND AND ENABLE_AUTOPROFILING )
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_AUTOPROFILING_FLAGS}")
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${Fortran_AUTOPROFILING_FLAGS}")
+endif()
+
+# JSON validation
+find_package(nlohmann_json QUIET)
+find_package(nlohmann_json_schema_validator QUIET)
+
+## Sources
 add_subdirectory( src )
+add_subdirectory( tools )
 
-# Build plugins: The idea is that these become separate builds,
-# which find OOPS as an installed package or subproject
+if( ENABLE_OOPS_DOC )
+    add_subdirectory( docs )
+endif()
 
-add_subdirectory( l95 )
-add_subdirectory( qg )
+if( ENABLE_LORENZ95_MODEL )
+  add_subdirectory( l95 )
+endif()
+if( ENABLE_QG_MODEL )
+  add_subdirectory( qg )
+endif()
 
-ecbuild_dont_pack ( FILES .pydevproject .project .cproject oops.sublime-project )
-ecbuild_dont_pack ( FILES .settings tools l95/tools qg/scripts )
+## Package Config
 
-################################################################################
-# Finalise configuration
-################################################################################
+ecbuild_install_project( NAME ${PROJECT_NAME} )
 
-# prepares a tar.gz of the sources and/or binaries
-ecbuild_install_project( NAME oops )
+#Export Targets
+set(EXPORTED_TARGET_NAMESPACE "") #TODO: set to "oops::" once all packages are ready for namespaced targets
+set(INSTALL_TARGETS_PATH lib/cmake/${PROJECT_NAME})
+get_filename_component(TARGETS_FILE "${PROJECT_TARGETS_FILE}" NAME)
+# export(EXPORT ${PROJECT_NAME}-targets NAMESPACE "${EXPORTED_TARGET_NAMESPACE}" FILE ${PROJECT_TARGETS_FILE}) #Build-tree
+#install(EXPORT ${PROJECT_NAME}-targets NAMESPACE "${EXPORTED_TARGET_NAMESPACE}" DESTINATION ${INSTALL_TARGETS_PATH}) #Install-tree
 
-# print the summary of the configuration
+#Export package config for build and install trees
+set( BINDIR_BUILD_EXPORT ${CMAKE_BINARY_DIR}/bin ) #Exported binary (tools) directory locations for build-tree
+file( MAKE_DIRECTORY ${BINDIR_BUILD_EXPORT} )
+set( BINDIR_INSTALL_EXPORT ${CMAKE_INSTALL_FULL_BINDIR} ) #Exported binary (tools) directory locations for install-tree
+ecbuild_generate_project_config(${PROJECT_NAME}-config.cmake.in PATH_VARS BINDIR_BUILD_EXPORT BINDIR_INSTALL_EXPORT )
+
 ecbuild_print_summary()
-

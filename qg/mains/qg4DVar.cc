@@ -8,15 +8,16 @@
  * does it submit to any jurisdiction.
  */
 
-#include "model/QgTraits.h"
-#include "model/instantiateQgObsFactory.h"
-#include "oops/runs/Variational.h"
+#include "oops/qg/instantiateQgChangeVarFactory.h"
+#include "oops/qg/instantiateQgLocalizationFactory.h"
+#include "oops/qg/QgTraits.h"
 #include "oops/runs/Run.h"
+#include "oops/runs/Variational.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  qg::instantiateQgObsFactory();
-  oops::Variational<qg::QgTraits> var;
-  run.execute(var);
-  return 0;
-};
+  qg::instantiateQgChangeVarFactory();
+  qg::instantiateQgLocalizationFactory();
+  oops::Variational<qg::QgTraits, qg::QgObsTraits> var;
+  return run.execute(var);
+}

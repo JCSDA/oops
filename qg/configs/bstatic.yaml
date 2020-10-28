@@ -1,0 +1,5 @@
+covariance model: QgError
+horizontal_length_scale: 2.2e6
+maximum_condition_number: 1.0e6
+standard_deviation: 1.8e7
+vertical_length_scale: 15000.0

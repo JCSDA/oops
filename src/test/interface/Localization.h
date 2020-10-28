@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -11,41 +11,42 @@
 #ifndef TEST_INTERFACE_LOCALIZATION_H_
 #define TEST_INTERFACE_LOCALIZATION_H_
 
-#include <iostream>
-#include <string>
 #include <cmath>
+#include <iostream>
+#include <memory>
+#include <string>
+#include <vector>
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#define BOOST_TEST_DYN_LINK
+#define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
-#include <boost/test/unit_test.hpp>
 
-#include "oops/runs/Test.h"
+#include "eckit/config/LocalConfiguration.h"
+#include "eckit/testing/Test.h"
+#include "oops/base/IncrementEnsemble.h"
+#include "oops/base/LocalizationBase.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
-#include "oops/interface/Localization.h"
-#include "oops/interface/Variables.h"
+#include "oops/mpi/mpi.h"
+#include "oops/runs/Test.h"
+#include "oops/util/DateTime.h"
 #include "test/TestEnvironment.h"
-#include "eckit/config/LocalConfiguration.h"
-#include "util/DateTime.h"
 
 namespace test {
 
-// =============================================================================
+// -----------------------------------------------------------------------------
 
 template <typename MODEL> class LocalizationFixture : private boost::noncopyable {
-  typedef oops::Localization<MODEL>   Localization_;
-  typedef oops::Geometry<MODEL>       Geometry_;
-  typedef oops::Variables<MODEL>      Variables_;
+  typedef oops::LocalizationBase<MODEL>                 Localization_;
+  typedef oops::Geometry<MODEL>                         Geometry_;
+  typedef oops::IncrementEnsemble<MODEL>                Ensemble_;
 
  public:
-  static const Geometry_      & resol()        {return *getInstance().resol_;}
-  static const Variables_     & ctlvars()      {return *getInstance().ctlvars_;}
-  static const util::DateTime & time()         {return *getInstance().time_;}
-  static const Localization_  & localization() {return *getInstance().local_;}
+  static const Geometry_       & resol()        {return *getInstance().resol_;}
+  static const oops::Variables & ctlvars()      {return *getInstance().ctlvars_;}
+  static const util::DateTime  & time()         {return *getInstance().time_;}
+  static const Localization_   & localization() {return *getInstance().local_;}
 
  private:
   static LocalizationFixture<MODEL>& getInstance() {
@@ -54,28 +55,27 @@ template <typename MODEL> class LocalizationFixture : private boost::noncopyable
   }
 
   LocalizationFixture<MODEL>() {
-    const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "Geometry");
-    resol_.reset(new Geometry_(resolConfig));
+    const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "geometry");
+    resol_.reset(new Geometry_(resolConfig, oops::mpi::world()));
 
-    const eckit::LocalConfiguration varConfig(TestEnvironment::config(), "Variables");
-    ctlvars_.reset(new Variables_(varConfig));
+    ctlvars_.reset(new oops::Variables(TestEnvironment::config(), "loc variables"));
 
-    time_.reset(new util::DateTime(TestEnvironment::config().getString("TestDate")));
+    time_.reset(new util::DateTime(TestEnvironment::config().getString("test date")));
 
 //  Setup the localization matrix
-    const eckit::LocalConfiguration conf(TestEnvironment::config(), "Localization");
-    local_.reset(new Localization_(*resol_, conf));
+    const eckit::LocalConfiguration conf(TestEnvironment::config(), "localization");
+    local_ = oops::LocalizationFactory<MODEL>::create(*resol_, *time_, conf);
   }
 
   ~LocalizationFixture<MODEL>() {}
 
-  boost::scoped_ptr<const Geometry_>      resol_;
-  boost::scoped_ptr<const Variables_>     ctlvars_;
-  boost::scoped_ptr<const util::DateTime> time_;
-  boost::scoped_ptr<Localization_>        local_;
+  std::unique_ptr<const Geometry_>       resol_;
+  std::unique_ptr<const oops::Variables> ctlvars_;
+  std::unique_ptr<const util::DateTime>  time_;
+  std::unique_ptr<Localization_>         local_;
 };
 
-// =============================================================================
+// -----------------------------------------------------------------------------
 
 template <typename MODEL> void testLocalizationZero() {
   typedef LocalizationFixture<MODEL> Test_;
@@ -83,9 +83,9 @@ template <typename MODEL> void testLocalizationZero() {
 
   Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
 
-  BOOST_CHECK_EQUAL(dx.norm(), 0.0);
-  Test_::localization().multiply(dx);
-  BOOST_CHECK_EQUAL(dx.norm(), 0.0);
+  EXPECT(dx.norm() == 0.0);
+  Test_::localization().localize(dx);
+  EXPECT(dx.norm() == 0.0);
 }
 
 // -----------------------------------------------------------------------------
@@ -97,30 +97,33 @@ template <typename MODEL> void testLocalizationMultiply() {
   Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
   dx.random();
 
-  BOOST_CHECK(dx.norm() > 0.0);
-  Test_::localization().multiply(dx);
-  BOOST_CHECK(dx.norm() > 0.0);
+  EXPECT(dx.norm() > 0.0);
+  Test_::localization().localize(dx);
+  EXPECT(dx.norm() > 0.0);
 }
-// =============================================================================
+
+// -----------------------------------------------------------------------------
 
 template <typename MODEL> class Localization : public oops::Test {
  public:
   Localization() {}
   virtual ~Localization() {}
  private:
-  std::string testid() const {return "test::Localization<" + MODEL::name() + ">";}
+  std::string testid() const override {return "test::Localization<" + MODEL::name() + ">";}
 
-  void register_tests() const {
-    boost::unit_test::test_suite * ts = BOOST_TEST_SUITE("interface/Localization");
+  void register_tests() const override {
+    std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts->add(BOOST_TEST_CASE(&testLocalizationZero<MODEL>));
-    ts->add(BOOST_TEST_CASE(&testLocalizationMultiply<MODEL>));
-
-    boost::unit_test::framework::master_test_suite().add(ts);
+    ts.emplace_back(CASE("interface/Localization/testLocalizationZero")
+      { testLocalizationZero<MODEL>(); });
+    ts.emplace_back(CASE("interface/Localization/testLocalizationMultiply")
+      { testLocalizationMultiply<MODEL>(); });
   }
+
+  void clear() const override {}
 };
 
-// =============================================================================
+// -----------------------------------------------------------------------------
 
 }  // namespace test
 

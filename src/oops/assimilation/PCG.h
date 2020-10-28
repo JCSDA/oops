@@ -14,9 +14,9 @@
 #include <cmath>
 #include <vector>
 
-#include "util/dot_product.h"
-#include "util/formats.h"
-#include "util/Logger.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/formats.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 
@@ -72,11 +72,14 @@ double PCG(VECTOR & x, const VECTOR & b,
 
   std::vector<VECTOR> vVEC;  // required for re-orthogonalization
   std::vector<VECTOR> zVEC;  // required for re-orthogonalization
+  // reserve space to avoid extra copies
+  vVEC.reserve(maxiter+1);
+  zVEC.reserve(maxiter+1);
 
   // Initial residual r = b - Ax
   r = b;
   double xnrm2 = dot_product(x, x);
-  if (xnrm2 != 0) {
+  if (xnrm2 > 0.0) {
     A.multiply(x, s);
     r -= s;
   }
@@ -105,7 +108,7 @@ double PCG(VECTOR & x, const VECTOR & b,
       p  = s;
     } else {
       double beta = dot_product(s, r)/rdots_old;
-      Log::debug() << "PCG beta = " << beta << std::endl;
+      Log::info() << "PCG beta = " << beta << std::endl;
 
       p *= beta;
       p += s;      // p = s + beta*p

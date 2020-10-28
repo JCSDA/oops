@@ -13,19 +13,12 @@
 #include <cmath>
 #include <vector>
 
-#include <boost/math/constants/constants.hpp>
-#include <boost/math/special_functions/acosh.hpp>
-
-#include "util/Logger.h"
 #include "eckit/config/Configuration.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
+#include "eckit/exception/Exceptions.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
 
 namespace oops {
-
-// -----------------------------------------------------------------------------
-
-static WeightMaker<DolphChebyshev> makerDolph_("DolphChebyshev");
 
 // -----------------------------------------------------------------------------
 
@@ -38,23 +31,20 @@ DolphChebyshev::DolphChebyshev(const eckit::Configuration & config) {
 std::map< util::DateTime, double > DolphChebyshev::setWeights(const util::DateTime & bgn,
                                                               const util::DateTime & end,
                                                               const util::Duration & dt) {
-  const double pi = boost::math::constants::pi<double>();
+  const double pi = 4.0*std::atan(1.0);
   const util::Duration window(end-bgn);
   const int nstep = window.toSeconds() / dt.toSeconds();
   ASSERT(window.toSeconds() == dt.toSeconds()*nstep);
 
   const int M = nstep/2;
   const int N = 2*M + 1;
-  Log::debug() << "DolphChebyshev M = " << M << ", N = " << N << std::endl;
 
   const int tt = tau_.toSeconds() / dt.toSeconds();
   ASSERT(tau_.toSeconds() == dt.toSeconds()*tt);
   ASSERT(tt > 1);
   const double thetas = 2.0 * pi / tt;
   const double x0 = 1.0 / std::cos(thetas/2.0);
-  const double rr = 1.0 / std::cosh(nstep * boost::math::acosh(x0));
-  Log::debug() << "DolphChebyshev thetas = " << thetas <<
-                ", x0 = " << x0 << ", rr = " << rr << std::endl;
+  const double rr = 1.0 / std::cosh(nstep * std::acosh(x0));
 
   std::vector<double> w(M+1);
   for (int n = 0; n <= M; ++n) {
@@ -70,11 +60,6 @@ std::map< util::DateTime, double > DolphChebyshev::setWeights(const util::DateTi
         tnm2 = tnm1;
         tnm1 = t2m;
       }
-//        if (std::abs(xx)<=1.0) {
-//          t2m = std::cos(2*M*std::acos(xx));
-//        } else {
-//          t2m = std::cosh(2*M*boost::math::acosh(xx));
-//        }
       sum += t2m * std::cos(m*tn);
     }
     w[n] = (1.0 + 2.0 * rr * sum) / N;
@@ -85,13 +70,11 @@ std::map< util::DateTime, double > DolphChebyshev::setWeights(const util::DateTi
   util::DateTime now(bgn);
   for (int jj = -M; jj <= M; ++jj) {
     int n = std::abs(jj);
-    Log::debug() << "DolphChebyshev now = " << now << ", n = " << n << ", w = " << w[n] << std::endl;
     weights[now] = w[n];
     checksum += w[n];
     now += dt;
   }
   ASSERT(now == end+dt);
-  Log::debug() << "DolphChebyshev checksum = " << checksum << std::endl;
   ASSERT(std::abs(checksum-1.0) < 1.0e-8);
 
   return weights;

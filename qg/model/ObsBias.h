@@ -16,8 +16,9 @@
 #include <vector>
 #include <boost/noncopyable.hpp>
 
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
+#include "oops/base/Variables.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
 
 namespace eckit {
   class Configuration;
@@ -25,6 +26,7 @@ namespace eckit {
 
 namespace qg {
   class ObsBiasIncrement;
+  class ObsSpaceQG;
 
 /// Class to handle observation bias parameters.
 
@@ -37,11 +39,12 @@ class ObsBias : public util::Printable,
   static const unsigned int ntypes = 4;
   static const std::string classname() {return "qg::ObsBias";}
 
-  explicit ObsBias(const eckit::Configuration &);
+  ObsBias(const ObsSpaceQG &, const eckit::Configuration &);
   ObsBias(const ObsBias &, const bool);
   ~ObsBias() {}
 
   ObsBias & operator+=(const ObsBiasIncrement &);
+  ObsBias & operator=(const ObsBias &);
 
 /// I/O and diagnostics
   void read(const eckit::Configuration &) {}
@@ -49,6 +52,10 @@ class ObsBias : public util::Printable,
   double norm() const;
 
   const double & operator[](const unsigned int ii) const {return bias_[ii];}
+
+  /// Other
+  const oops::Variables & requiredVars() const {return geovars_;}
+  const oops::Variables & requiredHdiagnostics() const {return hdiags_;}
 
   const double & stream() const {return bias_[0];}
   const double & wind() const {return bias_[1];}
@@ -58,6 +65,8 @@ class ObsBias : public util::Printable,
   void print(std::ostream &) const;
   std::vector<double> bias_;
   bool active_;
+  const oops::Variables geovars_;
+  const oops::Variables hdiags_;
 };
 
 // -----------------------------------------------------------------------------

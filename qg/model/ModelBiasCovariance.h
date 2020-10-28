@@ -16,8 +16,9 @@
 #include <boost/noncopyable.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
+
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
 
 namespace qg {
   class ModelBias;
@@ -38,8 +39,8 @@ class ModelBiasCovariance : public util::Printable,
 
 /// Linear algebra operators
   void linearize(const ModelBias &, const GeometryQG &) {}
-  void multiply(const ModelBiasIncrement &, ModelBiasIncrement) const {}
-  void inverseMultiply(const ModelBiasIncrement &, ModelBiasIncrement) const {}
+  void multiply(const ModelBiasIncrement &, ModelBiasIncrement &) const {}
+  void inverseMultiply(const ModelBiasIncrement &, ModelBiasIncrement &) const {}
   void randomize(ModelBiasIncrement &) const {}
 
   const eckit::Configuration & config() const {return conf_;}

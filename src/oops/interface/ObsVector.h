@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -11,17 +11,19 @@
 #ifndef OOPS_INTERFACE_OBSVECTOR_H_
 #define OOPS_INTERFACE_OBSVECTOR_H_
 
+#include <Eigen/Dense>
 #include <math.h>
+#include <memory>
 #include <ostream>
 #include <string>
 
-#include <boost/scoped_ptr.hpp>
-
-#include "util/Logger.h"
-#include "oops/interface/ObservationSpace.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
-#include "util/Timer.h"
+#include "oops/interface/ObsDataVector.h"
+#include "oops/interface/ObsSpace.h"
+#include "oops/util/gatherPrint.h"
+#include "oops/util/Logger.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
+#include "oops/util/Timer.h"
 
 namespace eckit {
   class Configuration;
@@ -35,17 +37,17 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
+template <typename OBS>
 class ObsVector : public util::Printable,
-                  private util::ObjectCounter<ObsVector<MODEL> > {
-  typedef typename MODEL::ObsVector             ObsVector_;
+                  private util::ObjectCounter<ObsVector<OBS> > {
+  typedef typename OBS::ObsVector             ObsVector_;
 
  public:
   static const std::string classname() {return "oops::ObsVector";}
 
-  explicit ObsVector(const ObservationSpace<MODEL> &);
-  explicit ObsVector(const ObsVector &, const bool copy = true);
-  explicit ObsVector(ObsVector_ *);
+  explicit ObsVector(const ObsSpace<OBS> &, const std::string name = "", const bool fail = true);
+  explicit ObsVector(const ObsVector &);
+  ObsVector(const ObsSpace<OBS> &, const ObsVector &);
   ~ObsVector();
 
 /// Interfacing
@@ -60,215 +62,268 @@ class ObsVector : public util::Printable,
   ObsVector & operator*= (const ObsVector &);
   ObsVector & operator/= (const ObsVector &);
 
+/// Pack into an Eigen vector (excluding vector elements that are masked out)
+  Eigen::VectorXd  packEigen() const;
+
   void zero();
   void axpy(const double &, const ObsVector &);
   void invert();
   void random();
   double dot_product_with(const ObsVector &) const;
   double rms() const;
-  unsigned int size() const {return data_->size();}
+/// Mask out elements of the vector where the passed in flags are > 0
+  void mask(const ObsDataVector<OBS, int> &);
 
 // I/O
-  void read(const std::string &);
   void save(const std::string &) const;
+  void read(const std::string &);
+
+  unsigned int nobs() const;
 
  private:
   void print(std::ostream &) const;
-  boost::scoped_ptr<ObsVector_> data_;
+  std::unique_ptr<ObsVector_> data_;
+  const eckit::mpi::Comm & commTime_;
 };
 
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-ObsVector<MODEL>::ObsVector(const ObservationSpace<MODEL> & os): data_() {
-  Log::trace() << "ObsVector<MODEL>::ObsVector starting" << std::endl;
+template <typename OBS>
+ObsVector<OBS>::ObsVector(const ObsSpace<OBS> & os, const std::string name,
+                          const bool fail): data_(), commTime_(os.timeComm()) {
+  Log::trace() << "ObsVector<OBS>::ObsVector starting " << name << std::endl;
   util::Timer timer(classname(), "ObsVector");
 
-  data_.reset(new ObsVector_(os.observationspace()));
+  data_.reset(new ObsVector_(os.obsspace(), name, fail));
 
-  Log::trace() << "ObsVector<MODEL>::ObsVector done" << std::endl;
+  Log::trace() << "ObsVector<OBS>::ObsVector done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-ObsVector<MODEL>::ObsVector(const ObsVector & other, const bool copy): data_() {
-  Log::trace() << "ObsVector<MODEL>::ObsVector starting" << std::endl;
+template <typename OBS>
+ObsVector<OBS>::ObsVector(const ObsVector & other): data_(), commTime_(other.commTime_) {
+  Log::trace() << "ObsVector<OBS>::ObsVector starting" << std::endl;
   util::Timer timer(classname(), "ObsVector");
 
-  data_.reset(new ObsVector_(*other.data_, copy));
+  data_.reset(new ObsVector_(*other.data_));
 
-  Log::trace() << "ObsVector<MODEL>::ObsVector done" << std::endl;
+  Log::trace() << "ObsVector<OBS>::ObsVector done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-ObsVector<MODEL>::ObsVector(ObsVector_ * data): data_(data) {
-  Log::trace() << "ObsVector<MODEL>::ObsVector done" << std::endl;
+template <typename OBS>
+ObsVector<OBS>::ObsVector(const ObsSpace<OBS> & os, const ObsVector & other)
+  : data_(), commTime_(os.timeComm())
+{
+  Log::trace() << "ObsVector<OBS>::ObsVector starting" << std::endl;
+  util::Timer timer(classname(), "ObsVector");
+
+  data_.reset(new ObsVector_(os.obsspace(), other.obsvector()));
+
+  Log::trace() << "ObsVector<OBS>::ObsVector done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-ObsVector<MODEL>::~ObsVector() {
-  Log::trace() << "ObsVector<MODEL>::~ObsVector starting" << std::endl;
+template <typename OBS>
+ObsVector<OBS>::~ObsVector() {
+  Log::trace() << "ObsVector<OBS>::~ObsVector starting" << std::endl;
   util::Timer timer(classname(), "~ObsVector");
 
   data_.reset();
 
-  Log::trace() << "ObsVector<MODEL>::~ObsVector done" << std::endl;
+  Log::trace() << "ObsVector<OBS>::~ObsVector done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-ObsVector<MODEL> & ObsVector<MODEL>::operator=(const ObsVector & rhs) {
-  Log::trace() << "ObsVector<MODEL>::operator= starting" << std::endl;
+template <typename OBS>
+ObsVector<OBS> & ObsVector<OBS>::operator=(const ObsVector & rhs) {
+  Log::trace() << "ObsVector<OBS>::operator= starting" << std::endl;
   util::Timer timer(classname(), "operator=");
 
   *data_ = *rhs.data_;
 
-  Log::trace() << "ObsVector<MODEL>::operator= done" << std::endl;
+  Log::trace() << "ObsVector<OBS>::operator= done" << std::endl;
   return *this;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-ObsVector<MODEL> & ObsVector<MODEL>::operator*=(const double & zz) {
-  Log::trace() << "ObsVector<MODEL>::operator*= starting" << std::endl;
+template <typename OBS>
+ObsVector<OBS> & ObsVector<OBS>::operator*=(const double & zz) {
+  Log::trace() << "ObsVector<OBS>::operator*= starting" << std::endl;
   util::Timer timer(classname(), "operator*=");
 
   *data_ *= zz;
 
-  Log::trace() << "ObsVector<MODEL>::operator*= done" << std::endl;
+  Log::trace() << "ObsVector<OBS>::operator*= done" << std::endl;
   return *this;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-ObsVector<MODEL> & ObsVector<MODEL>::operator+=(const ObsVector & rhs) {
-  Log::trace() << "ObsVector<MODEL>::operator+= starting" << std::endl;
+template <typename OBS>
+ObsVector<OBS> & ObsVector<OBS>::operator+=(const ObsVector & rhs) {
+  Log::trace() << "ObsVector<OBS>::operator+= starting" << std::endl;
   util::Timer timer(classname(), "operator+=");
 
   *data_ += *rhs.data_;
 
-  Log::trace() << "ObsVector<MODEL>::operator+= done" << std::endl;
+  Log::trace() << "ObsVector<OBS>::operator+= done" << std::endl;
   return *this;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-ObsVector<MODEL> & ObsVector<MODEL>::operator-=(const ObsVector & rhs) {
-  Log::trace() << "ObsVector<MODEL>::operator-= starting" << std::endl;
+template <typename OBS>
+ObsVector<OBS> & ObsVector<OBS>::operator-=(const ObsVector & rhs) {
+  Log::trace() << "ObsVector<OBS>::operator-= starting" << std::endl;
   util::Timer timer(classname(), "operator-=");
 
   *data_ -= *rhs.data_;
 
-  Log::trace() << "ObsVector<MODEL>::operator-= done" << std::endl;
+  Log::trace() << "ObsVector<OBS>::operator-= done" << std::endl;
   return *this;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-ObsVector<MODEL> & ObsVector<MODEL>::operator*=(const ObsVector & rhs) {
-  Log::trace() << "ObsVector<MODEL>::operator*= starting" << std::endl;
+template <typename OBS>
+ObsVector<OBS> & ObsVector<OBS>::operator*=(const ObsVector & rhs) {
+  Log::trace() << "ObsVector<OBS>::operator*= starting" << std::endl;
   util::Timer timer(classname(), "operator*=");
 
   *data_ *= *rhs.data_;
 
-  Log::trace() << "ObsVector<MODEL>::operator*= done" << std::endl;
+  Log::trace() << "ObsVector<OBS>::operator*= done" << std::endl;
   return *this;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-ObsVector<MODEL> & ObsVector<MODEL>::operator/=(const ObsVector & rhs) {
-  Log::trace() << "ObsVector<MODEL>::operator/= starting" << std::endl;
+template <typename OBS>
+ObsVector<OBS> & ObsVector<OBS>::operator/=(const ObsVector & rhs) {
+  Log::trace() << "ObsVector<OBS>::operator/= starting" << std::endl;
   util::Timer timer(classname(), "operator/=");
 
   *data_ /= *rhs.data_;
 
-  Log::trace() << "ObsVector<MODEL>::operator/= done" << std::endl;
+  Log::trace() << "ObsVector<OBS>::operator/= done" << std::endl;
   return *this;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void ObsVector<MODEL>::zero() {
-  Log::trace() << "ObsVector<MODEL>::zero starting" << std::endl;
+template <typename OBS>
+void ObsVector<OBS>::zero() {
+  Log::trace() << "ObsVector<OBS>::zero starting" << std::endl;
   util::Timer timer(classname(), "zero");
 
   data_->zero();
 
-  Log::trace() << "ObsVector<MODEL>::zero done" << std::endl;
+  Log::trace() << "ObsVector<OBS>::zero done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void ObsVector<MODEL>::axpy(const double & zz, const ObsVector & rhs) {
-  Log::trace() << "ObsVector<MODEL>::axpy starting" << std::endl;
+template <typename OBS>
+void ObsVector<OBS>::axpy(const double & zz, const ObsVector & rhs) {
+  Log::trace() << "ObsVector<OBS>::axpy starting" << std::endl;
   util::Timer timer(classname(), "axpy");
 
   data_->axpy(zz, *rhs.data_);
 
-  Log::trace() << "ObsVector<MODEL>::axpy done" << std::endl;
+  Log::trace() << "ObsVector<OBS>::axpy done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void ObsVector<MODEL>::invert() {
-  Log::trace() << "ObsVector<MODEL>::invert starting" << std::endl;
+template <typename OBS>
+void ObsVector<OBS>::invert() {
+  Log::trace() << "ObsVector<OBS>::invert starting" << std::endl;
   util::Timer timer(classname(), "invert");
 
   data_->invert();
 
-  Log::trace() << "ObsVector<MODEL>::invert done" << std::endl;
+  Log::trace() << "ObsVector<OBS>::invert done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void ObsVector<MODEL>::random() {
-  Log::trace() << "ObsVector<MODEL>::random starting" << std::endl;
+template <typename OBS>
+void ObsVector<OBS>::random() {
+  Log::trace() << "ObsVector<OBS>::random starting" << std::endl;
   util::Timer timer(classname(), "random");
 
   data_->random();
 
-  Log::trace() << "ObsVector<MODEL>::random done" << std::endl;
+  Log::trace() << "ObsVector<OBS>::random done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-double ObsVector<MODEL>::dot_product_with(const ObsVector & other) const {
-  Log::trace() << "ObsVector<MODEL>::dot_product starting" << std::endl;
+template <typename OBS>
+double ObsVector<OBS>::dot_product_with(const ObsVector & other) const {
+  Log::trace() << "ObsVector<OBS>::dot_product starting" << std::endl;
   util::Timer timer(classname(), "dot_product");
 
-  const double zz = data_->dot_product_with(*other.data_);
+  double zz = data_->dot_product_with(*other.data_);
+  commTime_.allReduceInPlace(zz, eckit::mpi::Operation::SUM);
 
-  Log::trace() << "ObsVector<MODEL>::dot_product done" << std::endl;
+  Log::trace() << "ObsVector<OBS>::dot_product done" << std::endl;
   return zz;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-double ObsVector<MODEL>::rms() const {
-  Log::trace() << "ObsVector<MODEL>::rms starting" << std::endl;
+template <typename OBS>
+void ObsVector<OBS>::mask(const ObsDataVector<OBS, int> & qc) {
+  Log::trace() << "ObsVector<OBS>::mask starting" << std::endl;
+  util::Timer timer(classname(), "mask");
+  data_->mask(qc.obsdatavector());
+  Log::trace() << "ObsVector<OBS>::mask done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
+double ObsVector<OBS>::rms() const {
+  Log::trace() << "ObsVector<OBS>::rms starting" << std::endl;
   util::Timer timer(classname(), "rms");
 
-  const double zz = data_->rms();
+  double zz = 0.0;
+  size_t ntot = this->nobs();
+  if (ntot > 0) {
+    zz = data_->rms();
+    double zzz = zz * zz * static_cast<double>(data_->nobs());
+    commTime_.allReduceInPlace(zzz, eckit::mpi::Operation::SUM);
+    zzz /= static_cast<double>(ntot);
+    zz = std::sqrt(zzz);
+  }
 
-  Log::trace() << "ObsVector<MODEL>::rms done" << std::endl;
+  Log::trace() << "ObsVector<OBS>::rms done" << std::endl;
   return zz;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void ObsVector<MODEL>::print(std::ostream & os) const {
-  Log::trace() << "ObsVector<MODEL>::print starting" << std::endl;
+template <typename OBS>
+unsigned int ObsVector<OBS>::nobs() const {
+  int nobs = data_->nobs();
+  commTime_.allReduceInPlace(nobs, eckit::mpi::Operation::SUM);
+  return nobs;
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
+void ObsVector<OBS>::print(std::ostream & os) const {
+  Log::trace() << "ObsVector<OBS>::print starting" << std::endl;
   util::Timer timer(classname(), "print");
-
-  os << *data_;
-
-  Log::trace() << "ObsVector<MODEL>::print done" << std::endl;
+  if (commTime_.size() > 1) {
+    gatherPrint(os, *data_, commTime_);
+  } else {
+    os << *data_;
+  }
+  Log::trace() << "ObsVector<OBS>::print done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void ObsVector<MODEL>::read(const std::string & name) {
-  Log::trace() << "ObsVector<MODEL>::read starting" << std::endl;
-  util::Timer timer(classname(), "read");
-
-  data_->read(name);
-
-  Log::trace() << "ObsVector<MODEL>::read done" << std::endl;
-}
-// -----------------------------------------------------------------------------
-template <typename MODEL>
-void ObsVector<MODEL>::save(const std::string & name) const {
-  Log::trace() << "ObsVector<MODEL>::save starting";
+template <typename OBS>
+void ObsVector<OBS>::save(const std::string & name) const {
+  Log::trace() << "ObsVector<OBS>::save starting " << name << std::endl;
   util::Timer timer(classname(), "save");
 
   data_->save(name);
 
-  Log::trace() << "ObsVector<MODEL>::save done" << std::endl;
+  Log::trace() << "ObsVector<OBS>::save done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
+Eigen::VectorXd  ObsVector<OBS>::packEigen() const {
+  Log::trace() << "ObsVector<OBS>::packEigen starting " << std::endl;
+  util::Timer timer(classname(), "packEigen");
+
+  Eigen::VectorXd vec = data_->packEigen();
+  ASSERT(vec.size() == nobs());
+
+  Log::trace() << "ObsVector<OBS>::packEigen done" << std::endl;
+  return vec;
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
+void ObsVector<OBS>::read(const std::string & name) {
+  Log::trace() << "ObsVector<OBS>::read starting " << name << std::endl;
+  util::Timer timer(classname(), "read");
+
+  data_->read(name);
+
+  Log::trace() << "ObsVector<OBS>::read done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 

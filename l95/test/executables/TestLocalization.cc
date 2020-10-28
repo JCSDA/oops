@@ -8,14 +8,15 @@
  * does it submit to any jurisdiction.
  */
 
+#include "lorenz95/instantiateLocalizationFactory.h"
 #include "lorenz95/L95Traits.h"
 #include "oops/runs/Run.h"
 #include "test/interface/Localization.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
+  lorenz95::instantiateLocalizationFactory();
   test::Localization<lorenz95::L95Traits> tests;
-  run.execute(tests);
-  return 0;
-};
+  return run.execute(tests);
+}
 

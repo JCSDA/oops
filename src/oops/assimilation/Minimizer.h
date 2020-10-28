@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -11,9 +11,9 @@
 #ifndef OOPS_ASSIMILATION_MINIMIZER_H_
 #define OOPS_ASSIMILATION_MINIMIZER_H_
 
-#include <boost/noncopyable.hpp>
 #include <map>
 #include <string>
+#include <boost/noncopyable.hpp>
 
 #include "eckit/config/Configuration.h"
 #include "oops/assimilation/ControlIncrement.h"
@@ -22,37 +22,34 @@
 #include "oops/assimilation/DualVector.h"
 #include "oops/assimilation/HMatrix.h"
 #include "oops/assimilation/HtMatrix.h"
-#include "oops/assimilation/Minimizer.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
-
-#include "util/abor1_cpp.h"
-#include "util/dot_product.h"
-#include "util/formats.h"
-#include "util/Logger.h"
-#include "util/PrintAdjTest.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/formats.h"
+#include "oops/util/Logger.h"
+#include "oops/util/PrintAdjTest.h"
 
 namespace oops {
 
 // -----------------------------------------------------------------------------
 
 /// A Minimizer knows how to minimize a cost function
-template<typename MODEL> class Minimizer : private boost::noncopyable {
-  typedef CostFunction<MODEL>      CostFct_;
-  typedef ControlIncrement<MODEL>  CtrlInc_;
-  typedef DualVector<MODEL>        Dual_;
-  typedef HMatrix<MODEL>           H_;
-  typedef HtMatrix<MODEL>          Ht_;
-  typedef State<MODEL>             State_;
+template<typename MODEL, typename OBS> class Minimizer : private boost::noncopyable {
+  typedef CostFunction<MODEL, OBS>      CostFct_;
+  typedef ControlIncrement<MODEL, OBS>  CtrlInc_;
+  typedef DualVector<MODEL, OBS>        Dual_;
+  typedef HMatrix<MODEL, OBS>           H_;
+  typedef HtMatrix<MODEL, OBS>          Ht_;
+  typedef State<MODEL>                  State_;
 
  public:
-  explicit Minimizer(const CostFct_ & J): J_(J), outerIteration_(0) {};
+  explicit Minimizer(const CostFct_ & J): J_(J), outerIteration_(0) {}
   virtual ~Minimizer() {}
-  ControlIncrement<MODEL> * minimize(const eckit::Configuration &);
-  virtual const std::string classname() const =0;
+  ControlIncrement<MODEL, OBS> * minimize(const eckit::Configuration &);
+  virtual const std::string classname() const = 0;
 
  private:
-  virtual ControlIncrement<MODEL> * doMinimize(const eckit::Configuration &) =0;
+  virtual ControlIncrement<MODEL, OBS> * doMinimize(const eckit::Configuration &) = 0;
 
   void adjTests(const eckit::Configuration &);
   void adjModelTest(const Ht_ &, const H_ &);
@@ -70,44 +67,45 @@ template<typename MODEL> class Minimizer : private boost::noncopyable {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-ControlIncrement<MODEL> * Minimizer<MODEL>::minimize(const eckit::Configuration & config) {
+template<typename MODEL, typename OBS>
+ControlIncrement<MODEL, OBS> *
+Minimizer<MODEL, OBS>::minimize(const eckit::Configuration & config) {
   // TLM tests
-  this->tlmTests(config);  
+  this->tlmTests(config);
 
   // ADJ tests
   this->adjTests(config);
 
   // Minimize
-  ControlIncrement<MODEL> * dx = this->doMinimize(config);
+  ControlIncrement<MODEL, OBS> * dx = this->doMinimize(config);
 
   // TLM propagation test
-  this->tlmPropagTest(config, *dx);  
+  this->tlmPropagTest(config, *dx);
 
   // Update outer loop counter
-  outerIteration_++; 
+  outerIteration_++;
 
   return dx;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void Minimizer<MODEL>::tlmTests(const eckit::Configuration & config) {
+template<typename MODEL, typename OBS>
+void Minimizer<MODEL, OBS>::tlmTests(const eckit::Configuration & config) {
 // Tangent Linear tests
 
-  if (config.has("onlineDiagnostics")) {
-    const eckit::LocalConfiguration onlineDiag(config, "onlineDiagnostics");
-    bool runTlmTaylorTest = onlineDiag.getBool("tlmTaylorTest");
-    bool runTlmApproxTest = onlineDiag.getBool("tlmApproxTest");
+  if (config.has("online diagnostics")) {
+    const eckit::LocalConfiguration onlineDiag(config, "online diagnostics");
+    bool runTlmTaylorTest = onlineDiag.getBool("tlm taylor test", false);
+    bool runTlmApproxTest = onlineDiag.getBool("tlm approx test", false);
 
     const H_  H(J_);
     const Ht_ Ht(J_);
-  
+
     // Online tests
     // TLM linear approximation test
     if (outerIteration_ == 0 && runTlmApproxTest) this->tlmApproxTest(H);
-  
+
     // TLM Taylor test
     if (outerIteration_ == 0 && runTlmTaylorTest) this->tlmTaylorTest(H);
   }
@@ -115,22 +113,22 @@ void Minimizer<MODEL>::tlmTests(const eckit::Configuration & config) {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void Minimizer<MODEL>::adjTests(const eckit::Configuration & config) {
+template<typename MODEL, typename OBS>
+void Minimizer<MODEL, OBS>::adjTests(const eckit::Configuration & config) {
 // Adjoint tests
 
-  if (config.has("onlineDiagnostics")) {
-    const eckit::LocalConfiguration onlineDiag(config, "onlineDiagnostics");
-    bool runAdjTlmTest    = onlineDiag.getBool("adjTlmTest");
-    bool runAdjObsTest    = onlineDiag.getBool("adjObsTest");
+  if (config.has("online diagnostics")) {
+    const eckit::LocalConfiguration onlineDiag(config, "online diagnostics");
+    bool runAdjTlmTest    = onlineDiag.getBool("adj tlm test", false);
+    bool runAdjObsTest    = onlineDiag.getBool("adj obs test", false);
 
     const H_  H(J_);
     const Ht_ Ht(J_);
-  
+
     // Online tests
     // Model adjoint test
     if (runAdjTlmTest) this->adjModelTest(Ht, H);
-  
+
     // Obs adjoint test
     if (runAdjObsTest) this->adjObsTest(Ht, H);
   }
@@ -138,13 +136,13 @@ void Minimizer<MODEL>::adjTests(const eckit::Configuration & config) {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void Minimizer<MODEL>::tlmApproxTest(const H_ & H) {
+template<typename MODEL, typename OBS>
+void Minimizer<MODEL, OBS>::tlmApproxTest(const H_ & H) {
 /* TL approx test:
    calculate and store:
      M(x + dx), M(x), M'(dx)
-   where dx is initialized using randomization 
-   
+   where dx is initialized using randomization
+
    TO DO:
      write to file depending on requriements */
 
@@ -160,11 +158,11 @@ void Minimizer<MODEL>::tlmApproxTest(const H_ & H) {
 
 // run NL for unperturbed initial condition
   PostProcessor<State_> pp;
-  ControlVariable<MODEL> mxx(J_.jb().getBackground());
+  ControlVariable<MODEL, OBS> mxx(J_.jb().getBackground());
   J_.runNL(mxx, pp);
 
 // run NL for perturbed initial condition
-  ControlVariable<MODEL> mpertxx(J_.jb().getBackground());
+  ControlVariable<MODEL, OBS> mpertxx(J_.jb().getBackground());
   J_.addIncrement(mpertxx, dx);
   J_.runNL(mpertxx, pp);
 
@@ -174,53 +172,49 @@ void Minimizer<MODEL>::tlmApproxTest(const H_ & H) {
   H.multiply(mdx, dummy);
 
 // print log
-  Log::info() << std::endl
-              << "TLM Linear Approximation Test: done." 
-              << std::endl;
+  Log::info() << std::endl << "TLM Linear Approximation Test: done." << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void Minimizer<MODEL>::tlmPropagTest(const eckit::Configuration & config, 
+template<typename MODEL, typename OBS>
+void Minimizer<MODEL, OBS>::tlmPropagTest(const eckit::Configuration & config,
                                      const CtrlInc_ & dx) {
 /* TL propagation test:
    calculate and store:
      M'(dx)
-   where dx comes from minimization stopped at requested iteration 
-   
+   where dx comes from minimization stopped at requested iteration
+
    TO DO:
      write to file depending on requriements */
 
-  if (config.has("onlineDiagnostics")) {
-    const eckit::LocalConfiguration onlineDiag(config, "onlineDiagnostics");
-    bool runTlmPropagTest = onlineDiag.getBool("tlmPropagTest");
+  if (config.has("online diagnostics")) {
+    const eckit::LocalConfiguration onlineDiag(config, "online diagnostics");
+    bool runTlmPropagTest = onlineDiag.getBool("tlm propagation test", false);
 
     if (runTlmPropagTest) {
       // print log
       Log::info() << "TLM Propagation Test - starting: " << outerIteration_
                   << std::endl << std::endl;
-    
+
       // construct propagation matrix
       const H_ H(J_);
-    
+
       // run TL for the input perturbation: M'(dx)
       Dual_ dummy;
       CtrlInc_ mdx(dx);
       H.multiply(mdx, dummy);
-    
+
       // print log
-      Log::info() << std::endl
-                  << "TLM Propagation Test: done." 
-                  << std::endl;
+      Log::info() << std::endl << "TLM Propagation Test: done." << std::endl;
     }
   }
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void Minimizer<MODEL>::tlmTaylorTest(const H_ & H) {
+template<typename MODEL, typename OBS>
+void Minimizer<MODEL, OBS>::tlmTaylorTest(const H_ & H) {
 /* TL Taylor test:
    ||M(x + p dx) - M(x)|| / ||M'(p dx)|| -> 1
    where p is a scalar damping factor and dx is initialized
@@ -238,7 +232,7 @@ void Minimizer<MODEL>::tlmTaylorTest(const H_ & H) {
 
 // run NL for unperturbed initial condition: M(x)
   PostProcessor<State_> pp;
-  ControlVariable<MODEL> mxx(J_.jb().getBackground());
+  ControlVariable<MODEL, OBS> mxx(J_.jb().getBackground());
   J_.runNL(mxx, pp);
 
 // run TL for the un-damped perturbation: M'(dx)
@@ -247,38 +241,38 @@ void Minimizer<MODEL>::tlmTaylorTest(const H_ & H) {
   H.multiply(mdx, dummy);
 
 // loop over decreasing increments
-  for (unsigned int i = 0; i < 14; ++i) {
+  for (unsigned int jj = 0; jj < 14; ++jj) {
      // ||p M'(dx)||
      CtrlInc_ pmdx(mdx);
-     pmdx *= 1./pow(10.0,i);
+     pmdx *= 1./pow(10.0, jj);
      double denom = sqrt(dot_product(pmdx, pmdx));
 
      // run perturbed NL: M(x+pdx)
-     ControlVariable<MODEL> mpertxx(J_.jb().getBackground());
+     ControlVariable<MODEL, OBS> mpertxx(J_.jb().getBackground());
      CtrlInc_ pdx(dx);
-     pdx *= 1./pow(10.0,i);
+     pdx *= 1./pow(10.0, jj);
      J_.addIncrement(mpertxx, pdx);
      J_.runNL(mpertxx, pp);
 
      // ||M(x+pdx) - M(x)||
      CtrlInc_ diff_nl(mdx, false);
-     diff_nl.state()[0].diff(mpertxx.state()[0], mxx.state()[0]);
+     diff_nl.state().diff(mpertxx.state(), mxx.state());
      double nom = sqrt(dot_product(diff_nl, diff_nl));
 
      // print results
      Log::info() << std::endl
-                 << "TLM Taylor test:  p = " << std::setw(8) << 1./pow(10.0,i)
+                 << "TLM Taylor test:  p = " << std::setw(8) << 1./pow(10.0, jj)
                  << ", ||M(x) - M(x+p dx)|| / ||p M'(dx)|| = "
                  << util::full_precision(1.+std::abs(1.-nom/denom))
-                 << std::endl << std::endl;
+                 << std::endl;
   }
   Log::info() << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void Minimizer<MODEL>::adjModelTest(const Ht_ & Ht,
+template<typename MODEL, typename OBS>
+void Minimizer<MODEL, OBS>::adjModelTest(const Ht_ & Ht,
                                     const H_ & H) {
 /* Perform the adjoint test of the linear model
    <M dx1, dx2> - <dx1, Mt dx2>)/<M dx1, dx2>
@@ -292,15 +286,23 @@ void Minimizer<MODEL>::adjModelTest(const Ht_ & Ht,
   J_.jb().randomize(dx1);
   J_.jb().randomize(dx2);
 
+/* zero out modvar and obsvar
+   since only model is being tested
+*/
+  dx1.obsVar().zero();
+  dx1.modVar().zero();
+  dx2.obsVar().zero();
+  dx2.modVar().zero();
+
 // run TL
   Dual_ dummy;
   CtrlInc_ mdx1(dx1);
   H.multiply(mdx1, dummy, false);
 
 // run ADJ
-  dummy.zero(); 
+  dummy.zero();
   CtrlInc_ mtdx2(dx2);
-  mtdx2.state()[0].updateTime(mdx1.state()[0].validTime() - dx1.state()[0].validTime());
+  mtdx2.state().updateTime(mdx1.state().validTime() - dx1.state().validTime());
   Ht.multiply(dummy, mtdx2, false);
 
 // calculate FWD < M dx1, dx2 >
@@ -317,8 +319,8 @@ void Minimizer<MODEL>::adjModelTest(const Ht_ & Ht,
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void Minimizer<MODEL>::adjObsTest(const Ht_ & Ht,
+template<typename MODEL, typename OBS>
+void Minimizer<MODEL, OBS>::adjObsTest(const Ht_ & Ht,
                                   const H_ & H) {
 /* Perform the adjoint test of the linear observation operator
    (<H dx, dy> - <dx, Ht dy>)/<H dx, dy>
@@ -361,56 +363,54 @@ void Minimizer<MODEL>::adjObsTest(const Ht_ & Ht,
 // -----------------------------------------------------------------------------
 
 /// Minimizer Factory
-template <typename MODEL>
+template <typename MODEL, typename OBS>
 class MinFactory {
-  typedef CostFunction<MODEL>        CostFct_;
+  typedef CostFunction<MODEL, OBS>        CostFct_;
  public:
-  static Minimizer<MODEL> * create(const eckit::Configuration &, const CostFct_ &);
-  virtual ~MinFactory() { getMakers().clear(); }
+  static Minimizer<MODEL, OBS> * create(const eckit::Configuration &, const CostFct_ &);
+  virtual ~MinFactory() = default;
  protected:
   explicit MinFactory(const std::string &);
  private:
-  virtual Minimizer<MODEL> * make(const eckit::Configuration &, const CostFct_ &) =0;
-  static std::map < std::string, MinFactory<MODEL> * > & getMakers() {
-    static std::map < std::string, MinFactory<MODEL> * > makers_;
+  virtual Minimizer<MODEL, OBS> * make(const eckit::Configuration &, const CostFct_ &) = 0;
+  static std::map < std::string, MinFactory<MODEL, OBS> * > & getMakers() {
+    static std::map < std::string, MinFactory<MODEL, OBS> * > makers_;
     return makers_;
   }
 };
 
 // -----------------------------------------------------------------------------
 
-template<class MODEL, class FCT>
-class MinMaker : public MinFactory<MODEL> {
-  typedef CostFunction<MODEL>        CostFct_;
-  virtual Minimizer<MODEL> * make(const eckit::Configuration & conf, const CostFct_ & J) {
+template<class MODEL, class OBS, class FCT>
+class MinMaker : public MinFactory<MODEL, OBS> {
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  virtual Minimizer<MODEL, OBS> * make(const eckit::Configuration & conf, const CostFct_ & J) {
     return new FCT(conf, J);
   }
  public:
-  explicit MinMaker(const std::string & name) : MinFactory<MODEL>(name) {}
+  explicit MinMaker(const std::string & name) : MinFactory<MODEL, OBS>(name) {}
 };
 
 // =============================================================================
 
-template <typename MODEL>
-MinFactory<MODEL>::MinFactory(const std::string & name) {
+template <typename MODEL, typename OBS>
+MinFactory<MODEL, OBS>::MinFactory(const std::string & name) {
   if (getMakers().find(name) != getMakers().end()) {
-    Log::error() << name << " already registered in minimizer factory." << std::endl;
-    ABORT("Element already registered in MinFactory.");
+    throw std::runtime_error(name + " already registered in minimizer factory.");
   }
   getMakers()[name] = this;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-Minimizer<MODEL>* MinFactory<MODEL>::create(const eckit::Configuration & config,
+template <typename MODEL, typename OBS>
+Minimizer<MODEL, OBS>* MinFactory<MODEL, OBS>::create(const eckit::Configuration & config,
                                             const CostFct_ & J) {
   std::string id = config.getString("algorithm");
   Log::info() << "Minimizer algorithm=" << id << std::endl;
-  typename std::map<std::string, MinFactory<MODEL>*>::iterator j = getMakers().find(id);
+  typename std::map<std::string, MinFactory<MODEL, OBS>*>::iterator j = getMakers().find(id);
   if (j == getMakers().end()) {
-    Log::error() << id << " does not exist in minimizer factory." << std::endl;
-    ABORT("Element does not exist in MinFactory.");
+    throw std::runtime_error(id + " does not exist in minimizer factory.");
   }
   return (*j).second->make(config, J);
 }

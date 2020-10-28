@@ -42,6 +42,12 @@ set( CMAKE_Fortran_FLAGS_BIT     "-O2 -hflex_mp=conservative -hadd_paren -hfp1" 
 set( CMAKE_Fortran_LINK_FLAGS    "-Wl,-Map,loadmap" )
 
 ####################################################################
+# FLAGS FOR AUTOPROFILING
+####################################################################
+
+set( Fortran_AUTOPROFILING_FLAGS        "" )
+
+####################################################################
 
 # Meaning of flags
 # ----------------

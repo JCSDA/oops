@@ -1,0 +1,15 @@
+state geometry:
+  resol: 40
+increment geometry:
+  resol: 40
+state1:
+  date: '2010-01-02T00:00:00Z'
+  filename: Data/mem003.eda.3dvar.an.2010-01-02T00:00:00Z
+state2:
+  date: '2010-01-02T00:00:00Z'
+  filename: Data/mem003.eda.4dvar.an.2010-01-02T00:00:00Z
+output:
+  datadir: Data
+  date: '2010-01-02T00:00:00Z'
+  exp: difst
+  type: in

@@ -15,9 +15,9 @@
 #include <iostream>
 #include <vector>
 
-#include "util/dot_product.h"
-#include "util/formats.h"
-#include "util/Logger.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/formats.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 
@@ -72,7 +72,7 @@ double MINRES(VECTOR & x, const VECTOR & b,
 
   r = b;
   double xnrm2 = dot_product(x, x);
-  if (xnrm2 != 0) {
+  if (xnrm2 > 0.0) {
     A.multiply(x, work);  // sx = Ax
     r -= work;  // r = b - Ax
   }
@@ -96,10 +96,9 @@ double MINRES(VECTOR & x, const VECTOR & b,
   double dbar = 0;
   double phibar = beta;
 
-  int jiter;
   // MINRES iteration
   Log::info() << std::endl;
-  for (jiter = 0; jiter < maxiter; ++jiter) {
+  for (int jiter = 0; jiter < maxiter; ++jiter) {
     Log::info() << " MINRES Starting Iteration " << jiter+1 << std::endl;
 
     v = y;

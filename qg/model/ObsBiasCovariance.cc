@@ -17,26 +17,26 @@
 #include <string>
 #include <vector>
 
-#include "util/Logger.h"
+#include "eckit/config/LocalConfiguration.h"
 #include "model/ObsBias.h"
 #include "model/ObsBiasIncrement.h"
-#include "eckit/config/LocalConfiguration.h"
-
-using oops::Log;
+#include "oops/util/Logger.h"
+#include "oops/util/Random.h"
 
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
-ObsBiasCovariance::ObsBiasCovariance(const eckit::Configuration & conf)
+ObsBiasCovariance::ObsBiasCovariance(const ObsSpaceQG &, const eckit::Configuration & conf)
   : conf_(conf), variance_(ObsBias::ntypes, 0.0)
 {
-//  if (!conf.empty()) {
-    std::vector<double> zz(4, 0.0);
-    if (conf.has("stream")) zz[0] = conf.getDouble("stream");
-    if (conf.has("uwind"))  zz[1] = conf.getDouble("uwind");
-    if (conf.has("vwind"))  zz[2] = conf.getDouble("vwind");
-    if (conf.has("wspeed")) zz[3] = conf.getDouble("wspeed");
-
+  std::vector<double> zz(4, 0.0);
+  if (conf.has("obs bias error")) {
+    const eckit::LocalConfiguration covconf(conf, "obs bias error");
+    if (covconf.has("stream")) zz[0] = covconf.getDouble("stream");
+    if (covconf.has("uwind"))  zz[1] = covconf.getDouble("uwind");
+    if (covconf.has("vwind"))  zz[2] = covconf.getDouble("vwind");
+    if (covconf.has("wspeed")) zz[3] = covconf.getDouble("wspeed");
+  }
     std::string strn = "";
     for (unsigned int jj = 0; jj < ObsBias::ntypes; ++jj) {
       if (jj > 0) strn += ", ";
@@ -50,7 +50,7 @@ ObsBiasCovariance::ObsBiasCovariance(const eckit::Configuration & conf)
         strn += "0.0";
       }
     }
-    Log::info() << "ObsBiasCovariance created, variances = " << strn << std::endl;
+    oops::Log::info() << "ObsBiasCovariance created, variances = " << strn << std::endl;
 //  }
 }
 // -----------------------------------------------------------------------------
@@ -77,12 +77,10 @@ void ObsBiasCovariance::inverseMultiply(const ObsBiasIncrement & dxin,
 }
 // -----------------------------------------------------------------------------
 void ObsBiasCovariance::randomize(ObsBiasIncrement & dx) const {
-  static std::mt19937 generator(4);
-  static std::normal_distribution<double> distribution(0.0, 1.0);
+  static util::NormalDistribution<double> dist(ObsBias::ntypes, 0.0, 1.0, 4);
   for (unsigned int jj = 0; jj < ObsBias::ntypes; ++jj) {
     if (variance_[jj] > 0.0) {
-      double zz = distribution(generator);
-      dx[jj] = zz * std::sqrt(variance_[jj]);
+      dx[jj] = dist[jj] * std::sqrt(variance_[jj]);
     } else {
       dx[jj] = 0.0;
     }

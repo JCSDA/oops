@@ -1,0 +1,10 @@
+Test     : CostJb   : Nonlinear Jb = 0
+Test     : CostJo   : Nonlinear Jo(Lorenz 95) = 28, nobs = 3, Jo/n = 9.33333, err = 1
+Test     : CostFunction: Nonlinear J = 28
+Test     : MINRESMinimizer: reduction in residual norm = 1.11022e-16
+Test     : CostFunction::addIncrement: Analysis:
+Test     :  Valid time: 2010-01-01T00:30:00Z
+Test     :  Min=4, Max=6, Average=5
+Test     : CostJb   : Nonlinear Jb = 7
+Test     : CostJo   : Nonlinear Jo(Lorenz 95) = 7, nobs = 3, Jo/n = 2.33333, err = 1
+Test     : CostFunction: Nonlinear J = 14

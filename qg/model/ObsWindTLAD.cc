@@ -10,35 +10,28 @@
 
 #include "model/ObsWindTLAD.h"
 
-#include "util/Logger.h"
+#include <vector>
+
+#include "eckit/config/Configuration.h"
 #include "model/GomQG.h"
 #include "model/ObsBias.h"
 #include "model/ObsBiasIncrement.h"
 #include "model/ObsSpaceQG.h"
 #include "model/ObsVecQG.h"
 #include "model/QgFortran.h"
-#include "model/VariablesQG.h"
-
-
-using oops::Log;
+#include "oops/base/Variables.h"
+#include "oops/util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
-
-ObsWindTLAD::ObsWindTLAD(const ObsSpaceQG & odb, const int & keyOperWind)
-  : keyOperWind_(keyOperWind), varin_()
-{
-  int keyVarin;
-  qg_obsoper_inputs_f90(keyOperWind_, keyVarin);
-  varin_.reset(new VariablesQG(keyVarin));
-  Log::trace() << "ObsWindTLAD created" << std::endl;
-}
-
+static ObsOpTLADMaker<ObsWindTLAD> makerWindTL_("Wind");
 // -----------------------------------------------------------------------------
 
-ObsWindTLAD::~ObsWindTLAD() {
-  Log::trace() << "ObsWindTLAD destrcuted" << std::endl;
+ObsWindTLAD::ObsWindTLAD(const ObsSpaceQG &, const eckit::Configuration & config)
+  : varin_(std::vector<std::string>{"u", "v"})
+{
+  oops::Log::trace() << "ObsWindTLAD created" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -47,16 +40,22 @@ void ObsWindTLAD::setTrajectory(const GomQG &, const ObsBias &) {}
 
 // -----------------------------------------------------------------------------
 
-void ObsWindTLAD::obsEquivTL(const GomQG & gom, ObsVecQG & ovec,
-                             const ObsBiasIncrement & bias) const {
+void ObsWindTLAD::simulateObsTL(const GomQG & gom, ObsVecQG & ovec,
+                                const ObsBiasIncrement & bias) const {
   qg_wind_equiv_tl_f90(gom.toFortran(), ovec.toFortran(), bias.wind());
 }
 
 // -----------------------------------------------------------------------------
 
-void ObsWindTLAD::obsEquivAD(GomQG & gom, const ObsVecQG & ovec,
-                             ObsBiasIncrement & bias) const {
+void ObsWindTLAD::simulateObsAD(GomQG & gom, const ObsVecQG & ovec,
+                                ObsBiasIncrement & bias) const {
   qg_wind_equiv_ad_f90(gom.toFortran(), ovec.toFortran(), bias.wind());
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsWindTLAD::print(std::ostream & os) const {
+  os << "ObsStreamTLAD::print not implemented" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

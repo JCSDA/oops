@@ -1,9 +1,10 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ * (C) Copyright 2017-2019 UCAR.
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -12,78 +13,60 @@
 
 #include <algorithm>
 #include <string>
+#include <utility>
+#include <vector>
+
+#include "atlas/field.h"
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/Logger.h"
-#include "model/GomQG.h"
-#include "model/LocationsQG.h"
-#include "model/ModelBiasIncrement.h"
+#include "eckit/exception/Exceptions.h"
+
+#include "oops/base/Variables.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
+
 #include "model/ErrorCovarianceQG.h"
 #include "model/FieldsQG.h"
 #include "model/GeometryQG.h"
+#include "model/GomQG.h"
+#include "model/LocationsQG.h"
+#include "model/ModelBiasIncrement.h"
 #include "model/StateQG.h"
-#include "model/VariablesQG.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
-
-using oops::Log;
-
 
 namespace qg {
 
 // -----------------------------------------------------------------------------
 /// Constructor, destructor
 // -----------------------------------------------------------------------------
-IncrementQG::IncrementQG(const GeometryQG & resol, const VariablesQG & vars,
+IncrementQG::IncrementQG(const GeometryQG & resol, const oops::Variables & vars,
                          const util::DateTime & vt)
-  : fields_(new FieldsQG(resol, vars, vt)), stash_()
+  : fields_(new FieldsQG(resol, vars, lbc_, vt))
 {
   fields_->zero();
-  Log::trace() << "IncrementQG constructed." << std::endl;
+  oops::Log::trace() << "IncrementQG constructed." << std::endl;
 }
 // -----------------------------------------------------------------------------
 IncrementQG::IncrementQG(const GeometryQG & resol, const IncrementQG & other)
-  : fields_(new FieldsQG(*other.fields_, resol)), stash_()
+  : fields_(new FieldsQG(*other.fields_, resol))
 {
-  Log::trace() << "IncrementQG constructed from other." << std::endl;
+  oops::Log::trace() << "IncrementQG constructed from other." << std::endl;
 }
 // -----------------------------------------------------------------------------
 IncrementQG::IncrementQG(const IncrementQG & other, const bool copy)
-  : fields_(new FieldsQG(*other.fields_, copy)), stash_()
+  : fields_(new FieldsQG(*other.fields_, copy))
 {
-  Log::trace() << "IncrementQG copy-created." << std::endl;
+  oops::Log::trace() << "IncrementQG copy-created." << std::endl;
 }
 // -----------------------------------------------------------------------------
 IncrementQG::IncrementQG(const IncrementQG & other)
-  : fields_(new FieldsQG(*other.fields_)), stash_()
+  : fields_(new FieldsQG(*other.fields_))
 {
-  Log::trace() << "IncrementQG copy-created." << std::endl;
+  oops::Log::trace() << "IncrementQG copy-created." << std::endl;
 }
 // -----------------------------------------------------------------------------
 IncrementQG::~IncrementQG() {
-  Log::trace() << "IncrementQG destructed" << std::endl;
-}
-// -----------------------------------------------------------------------------
-void IncrementQG::activateModel() {
-// Should get variables from model. YT
-  eckit::LocalConfiguration modelvars;
-  modelvars.set("variables", "tl");
-  VariablesQG vars(modelvars);
-// Should get variables from model. YT
-  stash_.reset(new FieldsQG(*fields_, vars));
-  swap(fields_, stash_);
-  ASSERT(fields_);
-  ASSERT(stash_);
-  Log::trace() << "IncrementQG activated for TLM" << std::endl;
-}
-// -----------------------------------------------------------------------------
-void IncrementQG::deactivateModel() {
-  swap(fields_, stash_);
-  *fields_ = *stash_;
-  stash_.reset();
-  ASSERT(fields_);
-  ASSERT(!stash_);
-  Log::trace() << "IncrementQG deactivated for TLM" << std::endl;
+  oops::Log::trace() << "IncrementQG destructed" << std::endl;
 }
 // -----------------------------------------------------------------------------
 /// Basic operators
@@ -91,9 +74,6 @@ void IncrementQG::deactivateModel() {
 void IncrementQG::diff(const StateQG & x1, const StateQG & x2) {
   ASSERT(this->validTime() == x1.validTime());
   ASSERT(this->validTime() == x2.validTime());
-  Log::debug() << "IncrementQG:diff incr " << *fields_ << std::endl;
-  Log::debug() << "IncrementQG:diff x1 " << x1.fields() << std::endl;
-  Log::debug() << "IncrementQG:diff x2 " << x2.fields() << std::endl;
   fields_->diff(x1.fields(), x2.fields());
 }
 // -----------------------------------------------------------------------------
@@ -127,6 +107,10 @@ void IncrementQG::zero(const util::DateTime & vt) {
   fields_->zero(vt);
 }
 // -----------------------------------------------------------------------------
+void IncrementQG::ones() {
+  fields_->ones();
+}
+// -----------------------------------------------------------------------------
 void IncrementQG::axpy(const double & zz, const IncrementQG & dx,
                        const bool check) {
   ASSERT(!check || this->validTime() == dx.validTime());
@@ -149,20 +133,24 @@ void IncrementQG::random() {
   fields_->random();
 }
 // -----------------------------------------------------------------------------
-/// Interpolate to observation location
-// -----------------------------------------------------------------------------
-void IncrementQG::interpolateTL(const LocationsQG & locs, GomQG & cols) const {
-  Log::debug() << "IncrementQG::interpolateTL fields in" << *fields_ << std::endl;
-  fields_->interpolateTL(locs, cols);
-  Log::debug() << "IncrementQG::interpolateTL fields out" << *fields_ << std::endl;
-  Log::debug() << "IncrementQG::interpolateTL gom " << cols << std::endl;
+void IncrementQG::dirac(const eckit::Configuration & config) {
+  fields_->zero();
+  util::DateTime dd(config.getString("date"));
+  if (this->validTime() == dd) fields_->dirac(config);
 }
 // -----------------------------------------------------------------------------
-void IncrementQG::interpolateAD(const LocationsQG & locs, const GomQG & cols) {
-  Log::debug() << "IncrementQG::interpolateAD gom " << cols << std::endl;
-  Log::debug() << "IncrementQG::interpolateAD fields in" << *fields_ << std::endl;
-  fields_->interpolateAD(locs, cols);
-  Log::debug() << "IncrementQG::interpolateAD fields out" << *fields_ << std::endl;
+/// ATLAS FieldSet
+// -----------------------------------------------------------------------------
+void IncrementQG::setAtlas(atlas::FieldSet * afieldset) const {
+  fields_->setAtlas(afieldset);
+}
+// -----------------------------------------------------------------------------
+void IncrementQG::toAtlas(atlas::FieldSet * afieldset) const {
+  fields_->toAtlas(afieldset);
+}
+// -----------------------------------------------------------------------------
+void IncrementQG::fromAtlas(atlas::FieldSet * afieldset) {
+  fields_->fromAtlas(afieldset);
 }
 // -----------------------------------------------------------------------------
 /// I/O and diagnostics
@@ -175,9 +163,32 @@ void IncrementQG::write(const eckit::Configuration & files) const {
   fields_->write(files);
 }
 // -----------------------------------------------------------------------------
+/// Serialization
+// -----------------------------------------------------------------------------
+size_t IncrementQG::serialSize() const {
+  size_t nn = fields_->serialSize();
+  return nn;
+}
+// -----------------------------------------------------------------------------
+void IncrementQG::serialize(std::vector<double> & vect) const {
+  fields_->serialize(vect);
+}
+// -----------------------------------------------------------------------------
+void IncrementQG::deserialize(const std::vector<double> & vect, size_t & index) {
+  fields_->deserialize(vect, index);
+}
+// -----------------------------------------------------------------------------
 void IncrementQG::print(std::ostream & os) const {
   os << std::endl << "  Valid time: " << validTime();
   os << *fields_;
+}
+// -----------------------------------------------------------------------------
+oops::LocalIncrement IncrementQG::getLocal(const GeometryQGIterator & iter) const {
+  return fields_->getLocal(iter);
+}
+// -----------------------------------------------------------------------------
+void IncrementQG::setLocal(const oops::LocalIncrement & values, const GeometryQGIterator & iter) {
+  fields_->setLocal(values, iter);
 }
 // -----------------------------------------------------------------------------
 

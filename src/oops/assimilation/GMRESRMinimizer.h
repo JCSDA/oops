@@ -29,15 +29,16 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> class GMRESRMinimizer : public PrimalMinimizer<MODEL> {
-  typedef BMatrix<MODEL>             Bmat_;
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef HessianMatrix<MODEL>       Hessian_;
+template<typename MODEL, typename OBS> class GMRESRMinimizer : public PrimalMinimizer<MODEL, OBS> {
+  typedef BMatrix<MODEL, OBS>             Bmat_;
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef HessianMatrix<MODEL, OBS>       Hessian_;
 
  public:
   const std::string classname() const override {return "GMRESRMinimizer";}
-  GMRESRMinimizer(const eckit::Configuration &, const CostFct_ & J): PrimalMinimizer<MODEL>(J) {}
+  GMRESRMinimizer(const eckit::Configuration &, const CostFct_ & J)
+     : PrimalMinimizer<MODEL, OBS>(J) {}
   ~GMRESRMinimizer() {}
 
  private:
@@ -48,8 +49,8 @@ template<typename MODEL> class GMRESRMinimizer : public PrimalMinimizer<MODEL> {
 
 // =============================================================================
 
-template<typename MODEL>
-double GMRESRMinimizer<MODEL>::solve(CtrlInc_ & dx, const CtrlInc_ & rhs,
+template<typename MODEL, typename OBS>
+double GMRESRMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, const CtrlInc_ & rhs,
                                      const Hessian_ & hessian, const Bmat_ & B,
                                      const int ninner, const double gnreduc) {
 // Solve the linear system

@@ -20,9 +20,9 @@
 #include "oops/assimilation/HBHtMatrix.h"
 #include "oops/assimilation/RinvMatrix.h"
 #include "oops/base/IdentityMatrix.h"
-#include "util/dot_product.h"
-#include "util/formats.h"
-#include "util/Logger.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/formats.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 
@@ -64,15 +64,15 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> class RPCGMinimizer : public DualMinimizer<MODEL> {
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef DualVector<MODEL>          Dual_;
-  typedef HBHtMatrix<MODEL>          HBHt_;
-  typedef RinvMatrix<MODEL>          Rinv_;
+template<typename MODEL, typename OBS> class RPCGMinimizer : public DualMinimizer<MODEL, OBS> {
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef DualVector<MODEL, OBS>          Dual_;
+  typedef HBHtMatrix<MODEL, OBS>          HBHt_;
+  typedef RinvMatrix<MODEL, OBS>          Rinv_;
 
  public:
   const std::string classname() const override {return "RPCGMinimizer";}
-  RPCGMinimizer(const eckit::Configuration &, const CostFct_ & J): DualMinimizer<MODEL>(J) {}
+  RPCGMinimizer(const eckit::Configuration &, const CostFct_ & J): DualMinimizer<MODEL, OBS>(J) {}
   ~RPCGMinimizer() {}
 
  private:
@@ -82,8 +82,8 @@ template<typename MODEL> class RPCGMinimizer : public DualMinimizer<MODEL> {
 
 // =============================================================================
 
-template<typename MODEL>
-double RPCGMinimizer<MODEL>::solve(Dual_ & vv, double & vvp, Dual_ & rr,
+template<typename MODEL, typename OBS>
+double RPCGMinimizer<MODEL, OBS>::solve(Dual_ & vv, double & vvp, Dual_ & rr,
                                    const HBHt_ & HBHt, const Rinv_ & Rinv,
                                    const int & maxiter, const double & tolerance,
                                    Dual_ & dy, const double & sigma) {
@@ -112,6 +112,10 @@ double RPCGMinimizer<MODEL>::solve(Dual_ & vv, double & vvp, Dual_ & rr,
 
   std::vector<Dual_> vVEC;  // required for re-orthogonalization
   std::vector<Dual_> wVEC;  // required for re-orthogonalization
+  // reserve space to avoid extra copies
+  vVEC.reserve(maxiter+1);
+  wVEC.reserve(maxiter+1);
+
   std::vector<double> vpVEC;
   std::vector<double> wpVEC;
 
@@ -158,7 +162,7 @@ double RPCGMinimizer<MODEL>::solve(Dual_ & vv, double & vvp, Dual_ & rr,
 
     if (jiter > 0) {
       double beta = dotwr/dotwr_old;
-      Log::debug() << "RPCG beta = " << beta << std::endl;
+      Log::info() << "RPCG beta = " << beta << std::endl;
 
       pp *= beta;
       ppp *= beta;
@@ -179,7 +183,7 @@ double RPCGMinimizer<MODEL>::solve(Dual_ & vv, double & vvp, Dual_ & rr,
     qqp = ppp;  // qqaug = ppaug + Rinv_aug ttaug
 
     double alpha = dotwr/(dot_product(qq, tt) + qqp * ttp);
-    Log::debug() << "RPCG alpha = " << alpha << std::endl;
+    Log::info() << "RPCG alpha = " << alpha << std::endl;
 
     vv.axpy(alpha, pp);
     vvp = vvp + alpha*ppp;  // vvaug = vvaug + alpha*ppaug

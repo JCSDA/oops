@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -12,87 +12,78 @@
 
 #include <algorithm>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/Logger.h"
-#include "model/GomQG.h"
-#include "model/LocationsQG.h"
-#include "model/ModelBias.h"
+#include "eckit/exception/Exceptions.h"
+
+#include "oops/base/Variables.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
+
 #include "model/FieldsQG.h"
 #include "model/GeometryQG.h"
+#include "model/GomQG.h"
 #include "model/IncrementQG.h"
+#include "model/LocationsQG.h"
+#include "model/ModelBias.h"
 #include "model/ModelQG.h"
-#include "model/VariablesQG.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
 
-using oops::Log;
 
 namespace qg {
 
 // -----------------------------------------------------------------------------
 /// Constructor, destructor
 // -----------------------------------------------------------------------------
-StateQG::StateQG(const GeometryQG & resol, const VariablesQG & vars,
+StateQG::StateQG(const GeometryQG & resol, const oops::Variables & vars,
                  const util::DateTime & vt)
-  : fields_(new FieldsQG(resol, vars, vt)), stash_()
+  : fields_(new FieldsQG(resol, vars, lbc_, vt))
 {
-  Log::trace() << "StateQG::StateQG created." << std::endl;
+  oops::Log::trace() << "StateQG::StateQG created." << std::endl;
 }
 // -----------------------------------------------------------------------------
 StateQG::StateQG(const GeometryQG & resol, const eckit::Configuration & file)
-  : fields_(), stash_()
+  : fields_()
 {
-// Should get variables from file. YT
-  eckit::LocalConfiguration modelvars;
-  modelvars.set("variables", "cv");
-  VariablesQG vars(modelvars);
-// Should get variables from file. YT
-  fields_.reset(new FieldsQG(resol, vars, util::DateTime()));
-  fields_->read(file);
+  oops::Variables vars({"x"});
+  if (file.has("state variables")) vars = oops::Variables(file, "state variables");
+  oops::Log::trace() << "StateQG::StateQG variables: " << vars << std::endl;
+  fields_.reset(new FieldsQG(resol, vars, 1, util::DateTime()));
+  if (file.has("analytic_init")) {
+    fields_->analytic_init(file);
+  } else if (file.has("read_from_file")) {
+    const int read_from_file = file.getInt("read_from_file");
+    if (read_from_file == 0) {
+       fields_->analytic_init(file);
+    } else if (read_from_file == 1) {
+      fields_->read(file);
+    }
+  } else {
+    fields_->read(file);
+  }
 
   ASSERT(fields_);
-  Log::trace() << "StateQG::StateQG created and read in." << std::endl;
+  oops::Log::trace() << "StateQG::StateQG created and read in." << std::endl;
 }
 // -----------------------------------------------------------------------------
 StateQG::StateQG(const GeometryQG & resol, const StateQG & other)
-  : fields_(new FieldsQG(*other.fields_, resol)), stash_()
+  : fields_(new FieldsQG(*other.fields_, resol))
 {
   ASSERT(fields_);
-  Log::trace() << "StateQG::StateQG created by interpolation." << std::endl;
+  oops::Log::trace() << "StateQG::StateQG created by interpolation." << std::endl;
 }
 // -----------------------------------------------------------------------------
 StateQG::StateQG(const StateQG & other)
-  : fields_(new FieldsQG(*other.fields_)), stash_()
+  : fields_(new FieldsQG(*other.fields_))
 {
   ASSERT(fields_);
-  Log::trace() << "StateQG::StateQG copied." << std::endl;
+  oops::Log::trace() << "StateQG::StateQG copied." << std::endl;
 }
 // -----------------------------------------------------------------------------
 StateQG::~StateQG() {
-  Log::trace() << "StateQG::StateQG destructed." << std::endl;
-}
-// -----------------------------------------------------------------------------
-void StateQG::activateModel() {
-// Should get variables from model. YT
-  eckit::LocalConfiguration modelvars;
-  modelvars.set("variables", "nl");
-  VariablesQG vars(modelvars);
-// Should get variables from model. YT
-  stash_.reset(new FieldsQG(*fields_, vars));
-  swap(fields_, stash_);
-  ASSERT(fields_);
-  ASSERT(stash_);
-  Log::trace() << "StateQG activated for Model" << std::endl;
-}
-// -----------------------------------------------------------------------------
-void StateQG::deactivateModel() {
-  swap(fields_, stash_);
-  *fields_ = *stash_;
-  stash_.reset();
-  ASSERT(fields_);
-  ASSERT(!stash_);
-  Log::trace() << "StateQG deactivated for Model" << std::endl;
+  oops::Log::trace() << "StateQG::StateQG destructed." << std::endl;
 }
 // -----------------------------------------------------------------------------
 /// Basic operators
@@ -103,17 +94,11 @@ StateQG & StateQG::operator=(const StateQG & rhs) {
   return *this;
 }
 // -----------------------------------------------------------------------------
-/// Interpolate to observation location
-// -----------------------------------------------------------------------------
-void StateQG::interpolate(const LocationsQG & locs, GomQG & cols) const {
-  fields_->interpolate(locs, cols);
-}
-// -----------------------------------------------------------------------------
 /// Interpolate full fields
 // -----------------------------------------------------------------------------
 void StateQG::changeResolution(const StateQG & other) {
   fields_->changeResolution(*other.fields_);
-  Log::trace() << "StateQG interpolated" << std::endl;
+  oops::Log::trace() << "StateQG interpolated" << std::endl;
 }
 // -----------------------------------------------------------------------------
 /// Interactions with Increments
@@ -135,6 +120,21 @@ void StateQG::write(const eckit::Configuration & files) const {
   fields_->write(files);
 }
 // -----------------------------------------------------------------------------
+/// Serialization
+// -----------------------------------------------------------------------------
+size_t StateQG::serialSize() const {
+  size_t nn = fields_->serialSize();
+  return nn;
+}
+// -----------------------------------------------------------------------------
+void StateQG::serialize(std::vector<double> & vect) const {
+  fields_->serialize(vect);
+}
+// -----------------------------------------------------------------------------
+void StateQG::deserialize(const std::vector<double> & vect, size_t & index) {
+  fields_->deserialize(vect, index);
+}
+// -----------------------------------------------------------------------------
 void StateQG::print(std::ostream & os) const {
   os << std::endl << "  Valid time: " << validTime();
   os << *fields_;
@@ -149,6 +149,5 @@ void StateQG::zero() {
 void StateQG::accumul(const double & zz, const StateQG & xx) {
   fields_->axpy(zz, *xx.fields_);
 }
-// -----------------------------------------------------------------------------
 
 }  // namespace qg

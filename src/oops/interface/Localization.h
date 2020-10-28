@@ -1,96 +1,88 @@
 /*
- * (C) Copyright 2009-2016 ECMWF.
- * 
- * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
- * granted to it by virtue of its status as an intergovernmental organisation nor
- * does it submit to any jurisdiction.
- */
+* Copyright 2011 ECMWF
+* Copyright 2020-2020 UCAR
+*
+* This software was developed at ECMWF for evaluation
+* and may be used for academic and research purposes only.
+* The software is provided as is without any warranty.
+*
+* This software can be used, copied and modified but not
+* redistributed or sold. This notice must be reproduced
+* on each copy made.
+*/
 
 #ifndef OOPS_INTERFACE_LOCALIZATION_H_
 #define OOPS_INTERFACE_LOCALIZATION_H_
 
+#include <memory>
 #include <string>
 
-#include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
-
-#include "util/Logger.h"
+#include "eckit/config/Configuration.h"
+#include "oops/base/LocalizationBase.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
-#include "util/Timer.h"
-
-namespace eckit {
-  class Configuration;
-}
 
 namespace oops {
 
 // -----------------------------------------------------------------------------
-
-template <typename MODEL>
-class Localization : public util::Printable,
-                     private boost::noncopyable,
-                     private util::ObjectCounter<Localization<MODEL> > {
-  typedef typename MODEL::LocalizationMatrix Localization_;
+/// \brief Model-space localization class: intended for model-specific implementations
+template<typename MODEL, typename LOC>
+class Localization : public LocalizationBase<MODEL> {
   typedef Geometry<MODEL>            Geometry_;
   typedef Increment<MODEL>           Increment_;
-
  public:
   static const std::string classname() {return "oops::Localization";}
 
-  Localization(const Geometry_ &, const eckit::Configuration &);
-  virtual ~Localization();
+  Localization(const Geometry_ &, const util::DateTime &, const eckit::Configuration &);
+  ~Localization();
 
-  void multiply(Increment_ &) const;
+  void multiply(Increment_ &) const override;
 
  private:
-  void print(std::ostream &) const;
-  boost::scoped_ptr<Localization_> local_;
+  void print(std::ostream &) const override;
+
+  std::unique_ptr<LOC> loc_;
 };
 
-// =============================================================================
+// -----------------------------------------------------------------------------
 
-template<typename MODEL>
-Localization<MODEL>::Localization(const Geometry_ & resol,
-                                  const eckit::Configuration & conf) : local_()
-{
+template <typename MODEL, typename LOC>
+Localization<MODEL, LOC>::Localization(const Geometry_ & geometry,
+                                       const util::DateTime & time,
+                                       const eckit::Configuration & conf) {
   Log::trace() << "Localization<MODEL>::Localization starting" << std::endl;
   util::Timer timer(classname(), "Localization");
-  local_.reset(new Localization_(resol.geometry(), conf));
+  loc_.reset(new LOC(geometry.geometry(), conf));
   Log::trace() << "Localization<MODEL>::Localization done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-Localization<MODEL>::~Localization() {
+template <typename MODEL, typename LOC>
+Localization<MODEL, LOC>::~Localization() {
   Log::trace() << "Localization<MODEL>::~Localization starting" << std::endl;
   util::Timer timer(classname(), "~Localization");
-  local_.reset();
+  loc_.reset();
   Log::trace() << "Localization<MODEL>::~Localization done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void Localization<MODEL>::multiply(Increment_ & dx) const {
-  Log::trace() << "Localization<MODEL>::mult starting" << std::endl;
-  util::Timer timer(classname(), "mult");
-  local_->multiply(dx.increment());
-  Log::trace() << "Localization<MODEL>::mult done" << std::endl;
+template <typename MODEL, typename LOC>
+void Localization<MODEL, LOC>::multiply(Increment_ & dx) const {
+  Log::trace() << "Localization<MODEL>::multiply starting" << std::endl;
+  util::Timer timer(classname(), "multiply");
+  loc_->multiply(dx.increment());
+  Log::trace() << "Localization<MODEL>::multiply done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void Localization<MODEL>::print(std::ostream & os) const {
+template <typename MODEL, typename LOC>
+void Localization<MODEL, LOC>::print(std::ostream & os) const {
   Log::trace() << "Localization<MODEL>::print starting" << std::endl;
   util::Timer timer(classname(), "print");
-  os << *local_;
+  os << *loc_;
   Log::trace() << "Localization<MODEL>::print done" << std::endl;
 }
 

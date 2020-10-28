@@ -1,6 +1,6 @@
 2
-ObsErr
-ObsVal
+ObsError
+ObsValue
 160
 0  2010-01-01T06:00:00Z  0  0.4  8
 1  2010-01-01T06:00:00Z  0.05  0.4  8

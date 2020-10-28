@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2017-2019 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -11,23 +12,20 @@
 #ifndef OOPS_INTERFACE_STATE_H_
 #define OOPS_INTERFACE_STATE_H_
 
+#include <memory>
 #include <string>
+#include <vector>
 
-#include <boost/scoped_ptr.hpp>
-
+#include "eckit/config/Configuration.h"
 #include "oops/base/PostProcessor.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
-#include "oops/interface/Locations.h"
-#include "oops/interface/ModelAtLocations.h"
-#include "oops/interface/Variables.h"
-#include "util/DateTime.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
-#include "util/Timer.h"
-
-namespace eckit {
-  class Configuration;
-}
+#include "oops/util/DateTime.h"
+#include "oops/util/gatherPrint.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
+#include "oops/util/Serializable.h"
+#include "oops/util/Timer.h"
 
 namespace oops {
 
@@ -37,20 +35,20 @@ namespace oops {
 
 template <typename MODEL>
 class State : public util::Printable,
+              public util::Serializable,
               private util::ObjectCounter<State<MODEL> > {
-  typedef typename MODEL::State                 State_;
+  typedef typename MODEL::State      State_;
   typedef Geometry<MODEL>            Geometry_;
-  typedef Locations<MODEL>           Locations_;
-  typedef ModelAtLocations<MODEL>    ModelAtLocations_;
-  typedef Variables<MODEL>           Variables_;
 
  public:
   static const std::string classname() {return "oops::State";}
 
 /// Constructor, destructor
+  State(const Geometry_ &, const Variables &, const util::DateTime &);
   State(const Geometry_ &, const eckit::Configuration &);
   State(const Geometry_ &, const State &);
   State(const State &);
+  explicit State(const State_ &);
   ~State();
   State & operator=(const State &);  // Is that used anywhere?
 
@@ -58,56 +56,74 @@ class State : public util::Printable,
   State_ & state() {return *state_;}
   const State_ & state() const {return *state_;}
 
-/// Interpolate to observation location
-  void interpolate(const Locations_ &, ModelAtLocations_ &) const;
-
 /// Time
   const util::DateTime validTime() const {return state_->validTime();}
+  void updateTime(const util::Duration & dt) {state_->updateTime(dt);}
 
 /// I/O and diagnostics
   void read(const eckit::Configuration &);
   void write(const eckit::Configuration &) const;
-  double norm() const;
+  double norm() const;  // Only for tests
   Geometry_ geometry() const;
+  const Variables & variables() const;
 
- protected:
-/// Protected methods are for Accumulator. Could we find a better design?
-  State(const Geometry_ &, const Variables_ &, const util::DateTime &);
+/// Accumulator
   void zero();
   void accumul(const double &, const State &);
 
+/// Serialize and deserialize
+  size_t serialSize() const override;
+  void serialize(std::vector<double> &) const override;
+  void deserialize(const std::vector<double> &, size_t &) override;
+
  private:
-  void print(std::ostream &) const;
-  boost::scoped_ptr<State_> state_;
+  void print(std::ostream &) const override;
+  std::unique_ptr<State_> state_;
+  const eckit::mpi::Comm & commTime_;
 };
 
 // =============================================================================
 
 template<typename MODEL>
-State<MODEL>::State(const Geometry_ & resol, const Variables_ & vars,
-                    const util::DateTime & time) : state_()
+State<MODEL>::State(const Geometry_ & resol, const Variables & vars,
+                    const util::DateTime & time) : state_(), commTime_(resol.timeComm())
 {
   Log::trace() << "State<MODEL>::State starting" << std::endl;
   util::Timer timer(classname(), "State");
-  state_.reset(new State_(resol.geometry(), vars.variables(), time));
+  state_.reset(new State_(resol.geometry(), vars, time));
   Log::trace() << "State<MODEL>::State done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-State<MODEL>::State(const Geometry_ & resol, const eckit::Configuration & conf) : state_()
+State<MODEL>::State(const Geometry_ & resol, const eckit::Configuration & conf)
+  : state_(), commTime_(resol.timeComm())
 {
   Log::trace() << "State<MODEL>::State read starting" << std::endl;
   util::Timer timer(classname(), "State");
-  state_.reset(new State_(resol.geometry(), conf));
+
+  eckit::LocalConfiguration myconf;
+  if (conf.has("states")) {
+//  Parallel 4D state:
+    std::vector<eckit::LocalConfiguration> confs;
+    conf.get("states", confs);
+    ASSERT(confs.size() == resol.timeComm().size());
+    myconf = confs[resol.timeComm().rank()];
+  } else {
+//  3D state:
+    myconf = eckit::LocalConfiguration(conf);
+  }
+
+  state_.reset(new State_(resol.geometry(), myconf));
   Log::trace() << "State<MODEL>::State read done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-State<MODEL>::State(const Geometry_ & resol, const State & other) : state_()
+State<MODEL>::State(const Geometry_ & resol, const State & other)
+  : state_(), commTime_(resol.timeComm())
 {
   Log::trace() << "State<MODEL>::State interpolated starting" << std::endl;
   util::Timer timer(classname(), "State");
@@ -118,12 +134,24 @@ State<MODEL>::State(const Geometry_ & resol, const State & other) : state_()
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-State<MODEL>::State(const State & other) : state_()
+State<MODEL>::State(const State & other) : state_(), commTime_(other.commTime_)
 {
   Log::trace() << "State<MODEL>::State starting copy" << std::endl;
   util::Timer timer(classname(), "State");
   state_.reset(new State_(*other.state_));
   Log::trace() << "State<MODEL>::State copy done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+State<MODEL>::State(const State_ & target) : state_(), commTime_(oops::mpi::myself())
+{
+  Log::trace() << "State<MODEL>::State starting copy from derived state" << std::endl;
+  util::Timer timer(classname(), "State");
+  Log::warning() << "State<MODEL>::State creating State from derived state" << std::endl;
+  state_.reset(new State_(target));
+  Log::trace() << "State<MODEL>::State copy from derived state done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -145,16 +173,6 @@ State<MODEL> & State<MODEL>::operator=(const State & rhs) {
   *state_ = *rhs.state_;
   Log::trace() << "State<MODEL>::operator= done" << std::endl;
   return *this;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void State<MODEL>::interpolate(const Locations_ & locs, ModelAtLocations_ & gom) const {
-  Log::trace() << "State<MODEL>::interpolate starting" << std::endl;
-  util::Timer timer(classname(), "interpolate");
-  state_->interpolate(locs.locations(), gom.modelatlocations());
-  Log::trace() << "State<MODEL>::interpolate done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -184,6 +202,9 @@ double State<MODEL>::norm() const {
   Log::trace() << "State<MODEL>::norm starting" << std::endl;
   util::Timer timer(classname(), "norm");
   double zz = state_->norm();
+  zz *= zz;
+  commTime_.allReduceInPlace(zz, eckit::mpi::Operation::SUM);
+  zz = sqrt(zz);
   Log::trace() << "State<MODEL>::norm done" << std::endl;
   return zz;
 }
@@ -201,12 +222,53 @@ Geometry<MODEL> State<MODEL>::geometry() const {
 
 // -----------------------------------------------------------------------------
 
+template<typename MODEL>
+const Variables & State<MODEL>::variables() const {
+  Log::trace() << "State<MODEL>::variables starting" << std::endl;
+  util::Timer timer(classname(), "variables");
+  return state_->variables();
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+size_t State<MODEL>::serialSize() const {
+  Log::trace() << "State<MODEL>::serialSize" << std::endl;
+  util::Timer timer(classname(), "serialSize");
+  return state_->serialSize();
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void State<MODEL>::serialize(std::vector<double> & vect) const {
+  Log::trace() << "State<MODEL>::serialize starting" << std::endl;
+  util::Timer timer(classname(), "serialize");
+  state_->serialize(vect);
+  Log::trace() << "State<MODEL>::serialize done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void State<MODEL>::deserialize(const std::vector<double> & vect, size_t & current) {
+  Log::trace() << "State<MODEL>::State deserialize starting" << std::endl;
+  util::Timer timer(classname(), "deserialize");
+  state_->deserialize(vect, current);
+  Log::trace() << "State<MODEL>::State deserialize done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
 
 template<typename MODEL>
 void State<MODEL>::print(std::ostream & os) const {
   Log::trace() << "State<MODEL>::print starting" << std::endl;
   util::Timer timer(classname(), "print");
-  os << *state_;
+  if (commTime_.size() > 1) {
+    gatherPrint(os, *state_, commTime_);
+  } else {
+    os << *state_;
+  }
   Log::trace() << "State<MODEL>::print done" << std::endl;
 }
 

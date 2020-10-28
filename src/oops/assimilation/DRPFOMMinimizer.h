@@ -17,7 +17,6 @@
 
 #include <boost/ptr_container/ptr_vector.hpp>
 
-#include "util/Logger.h"
 #include "oops/assimilation/BMatrix.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
@@ -25,8 +24,9 @@
 #include "oops/assimilation/HtRinvHMatrix.h"
 #include "oops/assimilation/SpectralLMP.h"
 #include "oops/assimilation/UpHessSolve.h"
-#include "util/dot_product.h"
-#include "util/formats.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/formats.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 
@@ -64,11 +64,11 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> class DRPFOMMinimizer : public DRMinimizer<MODEL> {
-  typedef BMatrix<MODEL>             Bmat_;
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef HtRinvHMatrix<MODEL>       HtRinvH_;
+template<typename MODEL, typename OBS> class DRPFOMMinimizer : public DRMinimizer<MODEL, OBS> {
+  typedef BMatrix<MODEL, OBS>             Bmat_;
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef HtRinvHMatrix<MODEL, OBS>       HtRinvH_;
 
  public:
   const std::string classname() const override {return "DRPFOMMinimizer";}
@@ -91,20 +91,19 @@ template<typename MODEL> class DRPFOMMinimizer : public DRMinimizer<MODEL> {
 
 // =============================================================================
 
-template<typename MODEL>
-DRPFOMMinimizer<MODEL>::DRPFOMMinimizer(const eckit::Configuration & conf,
+template<typename MODEL, typename OBS>
+DRPFOMMinimizer<MODEL, OBS>::DRPFOMMinimizer(const eckit::Configuration & conf,
                                         const CostFct_ & J)
-  : DRMinimizer<MODEL>(J), lmp_(conf),
+  : DRMinimizer<MODEL, OBS>(J), lmp_(conf),
     hvecs_(), vvecs_(), zvecs_(), alphas_(), betas_() {}
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-double DRPFOMMinimizer<MODEL>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_ & rr,
+template<typename MODEL, typename OBS>
+double DRPFOMMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_ & rr,
                                      const Bmat_ & B, const HtRinvH_ & HtRinvH,
                                      const double costJ0Jb, const double costJ0JoJc,
                                      const int maxiter, const double tolerance) {
-
   // dx   increment
   // dxh  B^{-1} dx
   // rr   (sum B^{-1} dx_i^{b} +) G^T R^{-1} d
@@ -121,7 +120,7 @@ double DRPFOMMinimizer<MODEL>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_ & r
   // J0
   const double costJ0 = costJ0Jb + costJ0JoJc;
 
-  //lmp_.update(vvecs_, hvecs_, zvecs_, alphas_, betas_);
+  // lmp_.update(vvecs_, hvecs_, zvecs_, alphas_, betas_);
   hvecs_.clear();
   zvecs_.clear();
   vvecs_.clear();
@@ -249,7 +248,7 @@ double DRPFOMMinimizer<MODEL>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_ & r
   }
 
   // Calculate the solution (dxh = Binv dx)
-  for (int jj = 0; jj < ss.size(); ++jj) {
+  for (unsigned int jj = 0; jj < ss.size(); ++jj) {
     dx.axpy(ss[jj], zvecs_[jj]);
     dxh.axpy(ss[jj], hvecs_[jj]);
   }

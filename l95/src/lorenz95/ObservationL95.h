@@ -11,14 +11,18 @@
 #ifndef LORENZ95_OBSERVATIONL95_H_
 #define LORENZ95_OBSERVATIONL95_H_
 
+#include <memory>
 #include <ostream>
 #include <string>
 
 #include <boost/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
 
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
+#include "lorenz95/ObservationTLAD.h"
+#include "lorenz95/ObsTableView.h"
+
+#include "oops/base/Variables.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
 
 // Forward declarations
 namespace eckit {
@@ -31,10 +35,10 @@ namespace util {
 
 namespace lorenz95 {
   class GomL95;
+  class LocsL95;
   class ObsBias;
-  class ObsTable;
+  class ObsDiags1D;
   class ObsVec1D;
-  class NoVariables;
 
 /// Observation for Lorenz 95 model.
 /*!
@@ -49,25 +53,22 @@ class ObservationL95 : public util::Printable,
  public:
   static const std::string classname() {return "lorenz95::ObservationL95";}
 
-  static ObservationL95 * create(ObsTable & ot, const eckit::Configuration & conf)
-    {return new ObservationL95(ot, conf);}
-
+  ObservationL95(const ObsTableView &, const eckit::Configuration &);
   ~ObservationL95();
 
 // Obs Operators
-  void obsEquiv(const GomL95 &, ObsVec1D &, const ObsBias &) const;
+  void simulateObs(const GomL95 &, ObsVec1D &, const ObsBias &, ObsDiags1D &) const;
 
 // Other
-  void generateObsError(const eckit::Configuration &);
-  boost::shared_ptr<const NoVariables> variables() const {return inputs_;}
+  const oops::Variables & requiredVars() const {return inputs_;}
+  std::unique_ptr<LocsL95> locations(const util::DateTime &, const util::DateTime &) const;
 
-  const ObsTable & table() const {return obsdb_;}
+  const ObsTableView & table() const {return obsdb_;}
 
  private:
   void print(std::ostream &) const;
-  ObservationL95(ObsTable &, const eckit::Configuration &);
-  ObsTable & obsdb_;
-  boost::shared_ptr<const NoVariables> inputs_;
+  const ObsTableView & obsdb_;
+  const oops::Variables inputs_;
 };
 
 // -----------------------------------------------------------------------------

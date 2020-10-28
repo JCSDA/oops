@@ -10,34 +10,28 @@
 
 #include "model/ObsStreamTLAD.h"
 
-#include "util/Logger.h"
+#include <vector>
+
+#include "eckit/config/Configuration.h"
 #include "model/GomQG.h"
 #include "model/ObsBias.h"
 #include "model/ObsBiasIncrement.h"
 #include "model/ObsSpaceQG.h"
 #include "model/ObsVecQG.h"
-#include "model/VariablesQG.h"
-
-
-using oops::Log;
+#include "model/QgFortran.h"
+#include "oops/base/Variables.h"
+#include "oops/util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
-
-ObsStreamTLAD::ObsStreamTLAD(const ObsSpaceQG &, const int & keyOperStrm)
-  : keyOperStrm_(keyOperStrm), varin_()
-{
-  int keyVarin;
-  qg_obsoper_inputs_f90(keyOperStrm_, keyVarin);
-  varin_.reset(new VariablesQG(keyVarin));
-  Log::trace() << "ObsStreamTLAD created" << std::endl;
-}
-
+static ObsOpTLADMaker<ObsStreamTLAD> makerStreamTL_("Stream");
 // -----------------------------------------------------------------------------
 
-ObsStreamTLAD::~ObsStreamTLAD() {
-  Log::trace() << "ObsStreamTLAD destrcuted" << std::endl;
+ObsStreamTLAD::ObsStreamTLAD(const ObsSpaceQG &, const eckit::Configuration & config)
+  : varin_(std::vector<std::string>{"x"})
+{
+  oops::Log::trace() << "ObsStreamTLAD created" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -46,16 +40,22 @@ void ObsStreamTLAD::setTrajectory(const GomQG &, const ObsBias &) {}
 
 // -----------------------------------------------------------------------------
 
-void ObsStreamTLAD::obsEquivTL(const GomQG & gom, ObsVecQG & ovec,
-                               const ObsBiasIncrement & bias) const {
+void ObsStreamTLAD::simulateObsTL(const GomQG & gom, ObsVecQG & ovec,
+                                  const ObsBiasIncrement & bias) const {
   qg_stream_equiv_tl_f90(gom.toFortran(), ovec.toFortran(), bias.stream());
 }
 
 // -----------------------------------------------------------------------------
 
-void ObsStreamTLAD::obsEquivAD(GomQG & gom, const ObsVecQG & ovec,
-                               ObsBiasIncrement & bias) const {
+void ObsStreamTLAD::simulateObsAD(GomQG & gom, const ObsVecQG & ovec,
+                                  ObsBiasIncrement & bias) const {
   qg_stream_equiv_ad_f90(gom.toFortran(), ovec.toFortran(), bias.stream());
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsStreamTLAD::print(std::ostream & os) const {
+  os << "ObsStreamTLAD::print not implemented" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

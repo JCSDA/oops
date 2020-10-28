@@ -1,0 +1,21 @@
+state geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+increment geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+state:
+  date: '2010-01-01T12:00:00Z'
+  filename: Data/mem002.eda_3dvar.an.2010-01-01T12:00:00Z.nc
+increment:
+  date: '2010-01-01T12:00:00Z'
+  filename: Data/difst.in.2010-01-01T12:00:00Z.nc
+  added variables: [x]
+  scaling factor: 0.5
+output:
+  datadir: Data
+  date: '2010-01-01T12:00:00Z'
+  exp: addinc_scaled
+  type: an

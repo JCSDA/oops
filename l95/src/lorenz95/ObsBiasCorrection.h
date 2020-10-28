@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -13,8 +13,10 @@
 
 #include <cmath>
 #include <iostream>
+#include <vector>
 
-#include "util/Printable.h"
+#include "oops/util/Printable.h"
+#include "oops/util/Serializable.h"
 
 namespace eckit {
   class Configuration;
@@ -22,14 +24,16 @@ namespace eckit {
 
 namespace lorenz95 {
   class ObsBias;
+  class ObsTableView;
 
 // -----------------------------------------------------------------------------
 
-class ObsBiasCorrection : public util::Printable {
+class ObsBiasCorrection : public util::Printable,
+                          public util::Serializable {
  public:
 /// Constructor, destructor
-  explicit ObsBiasCorrection();
-  explicit ObsBiasCorrection(const eckit::Configuration &);
+  ObsBiasCorrection();
+  ObsBiasCorrection(const ObsTableView &, const eckit::Configuration &);
   ObsBiasCorrection(const ObsBiasCorrection &, const bool copy = true);
   ObsBiasCorrection(const ObsBiasCorrection &, const eckit::Configuration &);
   ~ObsBiasCorrection() {}
@@ -52,8 +56,13 @@ class ObsBiasCorrection : public util::Printable {
   double & value() {return bias_;}
   const double & value() const {return bias_;}
 
+/// Serialize and deserialize
+  size_t serialSize() const override;
+  void serialize(std::vector<double> &) const override;
+  void deserialize(const std::vector<double> &, size_t &) override;
+
  private:
-  void print(std::ostream &) const;
+  void print(std::ostream &) const override;
   double bias_;
   bool active_;
 };

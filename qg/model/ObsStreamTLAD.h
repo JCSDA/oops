@@ -12,53 +12,45 @@
 #define QG_MODEL_OBSSTREAMTLAD_H_
 
 #include <string>
-#include <vector>
 
-#include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
+#include "oops/base/Variables.h"
+#include "oops/util/ObjectCounter.h"
 
-#include "model/LinearObsOp.h"
-#include "model/ObsSpaceQG.h"
-#include "util/ObjectCounter.h"
+#include "oops/qg/ObsOpBaseTLAD.h"
 
 // Forward declarations
-namespace util {
-  class DateTime;
+namespace eckit {
+  class Configuration;
 }
 
 namespace qg {
   class GomQG;
   class ObsBias;
   class ObsBiasIncrement;
+  class ObsSpaceQG;
   class ObsVecQG;
 
 // -----------------------------------------------------------------------------
-/// Streamfunction observation for QG model.
-/*!
- *  ObsStreamTLAD for QG model inherits from ObsEquivalent.
- */
+/// Streamfunction TL/AD observation operator for QG model.
 
-class ObsStreamTLAD : public LinearObsOp, private util::ObjectCounter<ObsStreamTLAD> {
+class ObsStreamTLAD : public ObsOpBaseTLAD,
+                      private util::ObjectCounter<ObsStreamTLAD> {
  public:
   static const std::string classname() {return "qg::ObsStreamTLAD";}
 
-  ObsStreamTLAD(const ObsSpaceQG &, const int &);
-  virtual ~ObsStreamTLAD();
+  ObsStreamTLAD(const ObsSpaceQG &, const eckit::Configuration &);
 
 // Obs Operators
-  void setTrajectory(const GomQG &, const ObsBias &);
-  void obsEquivTL(const GomQG &, ObsVecQG &, const ObsBiasIncrement &) const;
-  void obsEquivAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &) const;
+  void setTrajectory(const GomQG &, const ObsBias &) override;
+  void simulateObsTL(const GomQG &, ObsVecQG &, const ObsBiasIncrement &) const override;
+  void simulateObsAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &) const override;
 
 // Other
-  boost::shared_ptr<const VariablesQG> variables() const {return varin_;}
-
-  int& toFortran() {return keyOperStrm_;}
-  const int& toFortran() const {return keyOperStrm_;}
+  const oops::Variables & requiredVars() const override {return varin_;}
 
  private:
-  F90hop keyOperStrm_;
-  boost::shared_ptr<const VariablesQG> varin_;
+  void print(std::ostream &) const override;
+  const oops::Variables varin_;
 };
 // -----------------------------------------------------------------------------
 

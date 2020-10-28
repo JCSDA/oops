@@ -10,12 +10,6 @@
 # FLAGS COMMON TO ALL BUILD TYPES
 ####################################################################
 
-if( HAVE_OMP )
-  set( CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -qopenmp")
-else( )
-  set( CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -qopenmp-stubs")
-endif( )
-
 ####################################################################
 # RELEASE FLAGS
 ####################################################################
@@ -39,6 +33,12 @@ set( CMAKE_Fortran_FLAGS_BIT     "-O2 -ip -ipo -unroll -inline -no-heap-arrays" 
 ####################################################################
 
 set( CMAKE_Fortran_LINK_FLAGS    "" )
+
+####################################################################
+# FLAGS FOR AUTOPROFILING
+####################################################################
+
+set( Fortran_AUTOPROFILING_FLAGS        "-finstrument-functions" )
 
 ####################################################################
 

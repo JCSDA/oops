@@ -26,9 +26,9 @@ namespace oops {
  *  for the other terms of the cost function.
  */
 
-template<typename MODEL> class RinvMatrix : private boost::noncopyable {
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef DualVector<MODEL>          Dual_;
+template<typename MODEL, typename OBS> class RinvMatrix : private boost::noncopyable {
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef DualVector<MODEL, OBS>          Dual_;
 
  public:
   explicit RinvMatrix(const CostFct_ & j): j_(j) {}

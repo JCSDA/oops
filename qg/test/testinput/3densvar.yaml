@@ -1,0 +1,103 @@
+cost function:
+  cost type: 3D-Var
+  window begin: 2010-01-01T09:00:00Z
+  window length: PT6H
+  analysis variables: [x]
+  geometry:
+    nx: 40
+    ny: 20
+    depths: [4500.0, 5500.0]
+  background:
+    date: 2010-01-01T12:00:00Z
+    filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H.nc
+  background error:
+    covariance model: ensemble
+    date: 2010-01-01T12:00:00Z
+    localization:
+      horizontal_length_scale: 2.0e6
+      localization method: QG
+      maximum_condition_number: 1.0e6
+      standard_deviation: 1.0
+      vertical_length_scale: 3694.0
+    members:
+    - date: 2010-01-01T12:00:00Z
+      filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1DT12H.nc
+    - date: 2010-01-01T12:00:00Z
+      filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1DT12H.nc
+    - date: 2010-01-01T12:00:00Z
+      filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1DT12H.nc
+    - date: 2010-01-01T12:00:00Z
+      filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1DT12H.nc
+    - date: 2010-01-01T12:00:00Z
+      filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1DT12H.nc
+    - date: 2010-01-01T12:00:00Z
+      filename: Data/forecast.ens.6.2009-12-31T00:00:00Z.P1DT12H.nc
+    - date: 2010-01-01T12:00:00Z
+      filename: Data/forecast.ens.7.2009-12-31T00:00:00Z.P1DT12H.nc
+    - date: 2010-01-01T12:00:00Z
+      filename: Data/forecast.ens.8.2009-12-31T00:00:00Z.P1DT12H.nc
+    - date: 2010-01-01T12:00:00Z
+      filename: Data/forecast.ens.9.2009-12-31T00:00:00Z.P1DT12H.nc
+    - date: 2010-01-01T12:00:00Z
+      filename: Data/forecast.ens.10.2009-12-31T00:00:00Z.P1DT12H.nc
+  observations:
+  - obs error:
+      covariance model: diagonal
+    obs operator:
+      obs type: Stream  
+    obs space:
+      obsdatain:
+        obsfile: Data/truth.obs3d.nc
+      obsdataout:
+        obsfile: Data/3densvar.obs3d.nc
+      obs type: Stream
+  - obs error:
+      covariance model: diagonal
+    obs operator:
+      obs type: Wind  
+    obs space:
+      obsdatain:
+        obsfile: Data/truth.obs3d.nc
+      obsdataout:
+        obsfile: Data/3densvar.obs3d.nc
+      obs type: Wind
+  - obs error:
+      covariance model: diagonal
+    obs operator:
+      obs type: WSpeed  
+    obs space:
+      obsdatain:
+        obsfile: Data/truth.obs3d.nc
+      obsdataout:
+        obsfile: Data/3densvar.obs3d.nc
+      obs type: WSpeed
+variational:
+  minimizer:
+    algorithm: DRIPCG
+  iterations:
+  - diagnostics:
+      departures: ombg
+    gradient norm reduction: 1.0e-10
+    ninner: 10
+    geometry:
+      nx: 40
+      ny: 20
+      depths: [4500.0, 5500.0]
+    test: on
+  - diagnostics:
+      departures: ombg
+    gradient norm reduction: 1.0e-10
+    ninner: 10
+    geometry:
+      nx: 40
+      ny: 20
+      depths: [4500.0, 5500.0]
+    test: on
+final:
+  diagnostics:
+    departures: oman
+output:
+  datadir: Data
+  exp: 3densvar
+  frequency: PT6H
+  type: an

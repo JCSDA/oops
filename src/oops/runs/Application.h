@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -14,7 +14,9 @@
 #include <iostream>
 #include <string>
 
-#include "util/Printable.h"
+#include "eckit/mpi/Comm.h"
+
+#include "oops/util/Printable.h"
 
 namespace eckit {
   class Configuration;
@@ -26,12 +28,16 @@ namespace oops {
 
 class Application : public util::Printable {
  public:
-  Application() {}
+  explicit Application(const eckit::mpi::Comm & comm) : comm_(comm) {}
   virtual ~Application() {}
-  virtual int execute(const eckit::Configuration &) const =0;
+  virtual int execute(const eckit::Configuration &) const = 0;
+
+ protected:
+  const eckit::mpi::Comm& getComm() const {return comm_;}
 
  private:
-  virtual std::string appname() const =0;
+  const eckit::mpi::Comm & comm_;
+  virtual std::string appname() const = 0;
   virtual void print(std::ostream & os) const {os << appname();}
 };
 

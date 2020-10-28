@@ -14,8 +14,7 @@
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  test::ObsAuxIncrement<lorenz95::L95Traits> tests;
-  run.execute(tests);
-  return 0;
-};
+  test::ObsAuxIncrement<lorenz95::L95ObsTraits> tests;
+  return run.execute(tests);
+}
 

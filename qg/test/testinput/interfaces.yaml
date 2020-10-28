@@ -1,0 +1,191 @@
+background error:
+  covariance model: QgError
+  horizontal_length_scale: 1.0e6
+  maximum_condition_number: 1.0e6
+  standard_deviation: 8.0e6
+  vertical_length_scale: 2787.0
+covariance test:
+  tolerance: 0.06
+geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+local obs space:
+  location:
+    lon: -10
+    lat: 10
+  localization:
+    lengthscale: 4e6
+  reference nobs: 172
+  variable name: ObsValue
+linear model:
+  trajectory:
+    tstep: PT1H
+  tstep: PT1H
+  name: QgTLM
+linear model test:
+  forecast length: PT24H
+  iterations TL: 12
+  tolerance AD: 1.0e-12
+  tolerance TL: 1.0e-6
+linear variable change tests:
+- input variables:  [x]
+  output variables: [q]
+  variable change: ChVarQG
+  test inverse: 1
+  tolerance inverse: 1.0e-8
+- input variables:  [q]
+  output variables: [x]
+  variable change: ChVarQG
+  test inverse: 1
+  tolerance inverse: 1.0e-8
+localization:
+  horizontal_length_scale: 4.0e6
+  localization method: QG
+  maximum_condition_number: 1.0e6
+  standard_deviation: 1.0
+  vertical_length_scale: 30000.0
+locations: {}
+model:
+  name: QG
+  tstep: PT1H
+model aux control: null
+model aux error: null
+model test:
+  forecast length: PT24H
+  final norm: 170792839.48101598
+  tolerance: 0.005
+observations:
+- obs error:
+    covariance model: diagonal
+  geovals:
+    filename: Data/truth.obs4d_24h.stream.gom
+    state variables: [x]
+    norm: 5190236838.6347504
+  obs space:
+    obsdatain:
+      obsfile: Data/truth.obs4d_24h.nc
+    obsdataout:
+      obsfile: Data/interface.obs4d_24h.nc
+    obs type: Stream
+  obs operator:
+    obs type: Stream
+  linear obs operator test:
+    coef TL: 1.e-4
+    tolerance AD: 1.0e-10
+    tolerance TL: 1.0e-6
+  obs bias:
+    stream: '-10.0'
+  obs bias error:
+    stream: '2.0e7'
+  rms ref: 183502589.5028424
+  tolerance: 1.0e-8
+- obs error:
+    covariance model: diagonal
+  geovals:
+    filename: Data/truth.obs4d_24h.wind.gom
+    state variables: [u, v]
+    norm: 1016.3608615365378
+  obs space:
+    obsdatain:
+      obsfile: Data/truth.obs4d_24h.nc
+    obsdataout:
+      obsfile: Data/interface.obs4d_24h.nc
+    obs type: Wind
+  obs operator:
+    obs type: Wind
+  linear obs operator test:
+    coef TL: 1.e-4
+    tolerance AD: 1.0e-10
+    tolerance TL: 1.0e-6
+  obs bias:
+    uwind: '10.0'
+  obs bias error:
+    uwind: '15.0'
+  rms ref: 39.644266100943696
+  tolerance: 1.0e-8
+- obs error:
+    covariance model: diagonal
+  geovals:
+    filename: Data/truth.obs4d_24h.wspeed.gom
+    state variables: [u, v]
+    norm: 1169.499384622432
+  obs space:
+    obsdatain:
+      obsfile: Data/truth.obs4d_24h.nc
+    obsdataout:
+      obsfile: Data/interface.obs4d_24h.nc
+    obs type: WSpeed
+  obs operator:
+    obs type: WSpeed
+  linear obs operator test:
+    coef TL: 1.e-4
+    tolerance AD: 1.0e-10
+    tolerance TL: 1.0e-6
+  rms ref: 58.474969231121605
+  tolerance: 1.0e-8
+background:
+  date: 2009-12-31T00:00:00Z
+  filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
+initial condition:
+  date: 2009-12-31T00:00:00Z
+  filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
+state test:
+  statefile:
+    date: 2009-12-31T00:00:00Z
+    filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
+  statefileout:
+    datadir: Data
+    exp: out
+    type: fc
+    date: '2009-12-15T00:00:00Z'
+    filename: Data/out.fc.2009-12-15T00:00:00Z.P16D.nc
+  state generate:
+    analytic_init: large-vortices
+    date: 2009-12-31T00:00:00Z
+  date: 2009-12-31T00:00:00Z
+  norm file: 195415162.30387616
+  norm generated state: 148702024.11261204
+  tolerance: 1.0e-08
+test date: 2009-12-31T00:00:00Z
+variable change tests:
+- input variables: [x]
+  output variables: [q]
+  variable change: ChVarQG
+  state:
+    date: 2009-12-31T00:00:00Z
+    filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
+  tolerance inverse: 1.0e-8
+- input variables: [q]
+  output variables: [x]
+  variable change: ChVarQG
+  state:
+    date: 2009-12-31T00:00:00Z
+    filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
+    state variables: [q]
+  tolerance inverse: 1.0e-8
+- input variables: [x]
+  output variables: [q]
+  inverse first: true
+  variable change: ChVarQG
+  state:
+    date: 2009-12-31T00:00:00Z
+    filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
+    state variables: [q]
+  tolerance inverse: 1.0e-8
+- input variables: [q]
+  output variables: [x]
+  inverse first: true
+  variable change: ChVarQG
+  state:
+    date: 2009-12-31T00:00:00Z
+    filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
+  tolerance inverse: 1.0e-8
+analysis variables: [x]
+loc variables: [x]
+inc variables: [x]
+window begin: 2010-01-01T00:00:00Z
+window end: 2010-01-02T00:00:00Z
+
+increment test:
+ date: 2009-12-31T00:00:00Z

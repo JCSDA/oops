@@ -9,13 +9,14 @@
  */
 
 #include "lorenz95/L95Traits.h"
+#include "oops/generic/instantiateModelFactory.h"
 #include "oops/runs/Run.h"
 #include "test/interface/Model.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
+  oops::instantiateModelFactory<lorenz95::L95Traits>();
   test::Model<lorenz95::L95Traits> tests;
-  run.execute(tests);
-  return 0;
-};
+  return run.execute(tests);
+}
 

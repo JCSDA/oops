@@ -1,9 +1,10 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ * (C) Copyright 2017-2019 UCAR.
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -11,21 +12,26 @@
 #ifndef OOPS_INTERFACE_INCREMENT_H_
 #define OOPS_INTERFACE_INCREMENT_H_
 
+#include <memory>
 #include <string>
+#include <vector>
+
+#include "atlas/field.h"
 
 #include "oops/base/GeneralizedDepartures.h"
-#include "oops/base/PostProcessorTL.h"
-#include "oops/base/PostProcessorAD.h"
+#include "oops/base/LocalIncrement.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
-#include "oops/interface/Locations.h"
-#include "oops/interface/ModelAtLocations.h"
+#include "oops/interface/GeometryIterator.h"
 #include "oops/interface/State.h"
-#include "oops/interface/Variables.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
-#include "util/Timer.h"
+#include "oops/mpi/mpi.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
+#include "oops/util/gatherPrint.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
+#include "oops/util/Serializable.h"
+#include "oops/util/Timer.h"
 
 namespace oops {
 
@@ -39,19 +45,18 @@ namespace oops {
 template <typename MODEL>
 class Increment : public oops::GeneralizedDepartures,
                   public util::Printable,
+                  public util::Serializable,
                   private util::ObjectCounter<Increment<MODEL> > {
   typedef typename MODEL::Increment  Increment_;
   typedef Geometry<MODEL>            Geometry_;
-  typedef Locations<MODEL>           Locations_;
-  typedef ModelAtLocations<MODEL>    ModelAtLocations_;
+  typedef GeometryIterator<MODEL>    GeometryIterator_;
   typedef State<MODEL>               State_;
-  typedef Variables<MODEL>           Variables_;
 
  public:
   static const std::string classname() {return "oops::Increment";}
 
 /// Constructor, destructor
-  Increment(const Geometry_ &, const Variables_ &, const util::DateTime &);
+  Increment(const Geometry_ &, const Variables &, const util::DateTime &);
   Increment(const Geometry_ &, const Increment &);
   Increment(const Increment &, const bool copy = true);
   virtual ~Increment();
@@ -59,10 +64,6 @@ class Increment : public oops::GeneralizedDepartures,
 /// Interfacing
   Increment_ & increment() {return *increment_;}
   const Increment_ & increment() const {return *increment_;}
-
-/// Interpolate to observation location
-  void interpolateTL(const Locations_ &, ModelAtLocations_ &) const;
-  void interpolateAD(const Locations_ &, const ModelAtLocations_ &);
 
 /// Interactions with State
   void diff(const State_ &, const State_ &);
@@ -74,6 +75,8 @@ class Increment : public oops::GeneralizedDepartures,
 /// Linear algebra operators
   void zero();
   void zero(const util::DateTime &);
+  void ones();
+  void dirac(const eckit::Configuration &);
   Increment & operator =(const Increment &);
   Increment & operator+=(const Increment &);
   Increment & operator-=(const Increment &);
@@ -89,12 +92,42 @@ class Increment : public oops::GeneralizedDepartures,
   void write(const eckit::Configuration &) const;
   double norm() const;
 
+  LocalIncrement getLocal(const GeometryIterator_ & iter) const;
+  void setLocal(const LocalIncrement & gp, const GeometryIterator_ & iter);
+
 /// Get geometry
   Geometry_ geometry() const;
+  const Variables & variables() const {return variables_;}
+
+/// ATLAS FieldSet
+  void setAtlas(atlas::FieldSet *) const;
+  void toAtlas(atlas::FieldSet *) const;
+  void fromAtlas(atlas::FieldSet *);
+
+/// ATLAS fieldset
+  void toAtlas();
+  atlas::FieldSet & atlas() {
+    return atlasFieldSet_;
+  }
+  const atlas::FieldSet & atlas() const {
+    return atlasFieldSet_;
+  }
+
+/// Serialize and deserialize
+  size_t serialSize() const override;
+  void serialize(std::vector<double> &) const override;
+  void deserialize(const std::vector<double> &, size_t &) override;
+
+  void shift_forward(const util::DateTime &);
+  void shift_backward(const util::DateTime &);
+  const eckit::mpi::Comm & timeComm() const {return commTime_;}
 
  private:
-  void print(std::ostream &) const;
-  boost::scoped_ptr<Increment_> increment_;
+  void print(std::ostream &) const override;
+  std::unique_ptr<Increment_> increment_;
+  const Variables variables_;
+  const eckit::mpi::Comm & commTime_;
+  atlas::FieldSet atlasFieldSet_;
 };
 
 // -----------------------------------------------------------------------------
@@ -113,12 +146,13 @@ State<MODEL> & operator+=(State<MODEL> & xx, const Increment<MODEL> & dx) {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-Increment<MODEL>::Increment(const Geometry_ & resol, const Variables_ & vars,
-                            const util::DateTime & time) : increment_()
+Increment<MODEL>::Increment(const Geometry_ & resol, const Variables & vars,
+                            const util::DateTime & time)
+  : increment_(), variables_(vars), commTime_(resol.timeComm())
 {
   Log::trace() << "Increment<MODEL>::Increment starting" << std::endl;
   util::Timer timer(classname(), "Increment");
-  increment_.reset(new Increment_(resol.geometry(), vars.variables(), time));
+  increment_.reset(new Increment_(resol.geometry(), vars, time));
   Log::trace() << "Increment<MODEL>::Increment done" << std::endl;
 }
 
@@ -126,7 +160,7 @@ Increment<MODEL>::Increment(const Geometry_ & resol, const Variables_ & vars,
 
 template<typename MODEL>
 Increment<MODEL>::Increment(const Geometry_ & resol, const Increment & other)
-  : increment_()
+  : increment_(), variables_(other.variables_), commTime_(other.commTime_)
 {
   Log::trace() << "Increment<MODEL>::Increment starting" << std::endl;
   util::Timer timer(classname(), "Increment");
@@ -137,7 +171,8 @@ Increment<MODEL>::Increment(const Geometry_ & resol, const Increment & other)
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-Increment<MODEL>::Increment(const Increment & other, const bool copy) : increment_()
+Increment<MODEL>::Increment(const Increment & other, const bool copy)
+  : increment_(), variables_(other.variables_), commTime_(other.commTime_)
 {
   Log::trace() << "Increment<MODEL>::Increment copy starting" << std::endl;
   util::Timer timer(classname(), "Increment");
@@ -153,26 +188,6 @@ Increment<MODEL>::~Increment() {
   util::Timer timer(classname(), "~Increment");
   increment_.reset();
   Log::trace() << "Increment<MODEL>::~Increment done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void Increment<MODEL>::interpolateTL(const Locations_ & loc, ModelAtLocations_ & gom) const {
-  Log::trace() << "Increment<MODEL>::interpolateTL starting" << std::endl;
-  util::Timer timer(classname(), "interpolateTL");
-  increment_->interpolateTL(loc.locations(), gom.modelatlocations());
-  Log::trace() << "Increment<MODEL>::interpolateTL done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void Increment<MODEL>::interpolateAD(const Locations_ & loc, const ModelAtLocations_ & gom) {
-  Log::trace() << "Increment<MODEL>::interpolateAD starting" << std::endl;
-  util::Timer timer(classname(), "interpolateAD");
-  increment_->interpolateAD(loc.locations(), gom.modelatlocations());
-  Log::trace() << "Increment<MODEL>::interpolateAD done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -203,6 +218,26 @@ void Increment<MODEL>::zero(const util::DateTime & tt) {
   util::Timer timer(classname(), "zero");
   increment_->zero(tt);
   Log::trace() << "Increment<MODEL>::zero done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::ones() {
+  Log::trace() << "Increment<MODEL>::ones starting" << std::endl;
+  util::Timer timer(classname(), "ones");
+  increment_->ones();
+  Log::trace() << "Increment<MODEL>::ones done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::dirac(const eckit::Configuration & config) {
+  Log::trace() << "Increment<MODEL>::dirac starting" << std::endl;
+  util::Timer timer(classname(), "dirac");
+  increment_->dirac(config);
+  Log::trace() << "Increment<MODEL>::dirac done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -266,6 +301,7 @@ double Increment<MODEL>::dot_product_with(const Increment & dx) const {
   Log::trace() << "Increment<MODEL>::dot_product_with starting" << std::endl;
   util::Timer timer(classname(), "dot_product_with");
   double zz = increment_->dot_product_with(*dx.increment_);
+  commTime_.allReduceInPlace(zz, eckit::mpi::Operation::SUM);
   Log::trace() << "Increment<MODEL>::dot_product_with done" << std::endl;
   return zz;
 }
@@ -303,6 +339,27 @@ void Increment<MODEL>::accumul(const double & zz, const State_ & xx) {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
+LocalIncrement Increment<MODEL>::getLocal(const GeometryIterator_ & iter) const {
+  Log::trace() << "Increment<MODEL>::getLocal starting" << std::endl;
+  util::Timer timer(classname(), "getLocal");
+  LocalIncrement gp = increment_->getLocal(iter.geometryiter());
+  Log::trace() << "Increment<MODEL>::getLocal done" << std::endl;
+  return gp;
+}
+
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+void Increment<MODEL>::setLocal(const LocalIncrement & gp,
+                                const GeometryIterator_ & iter) {
+  Log::trace() << "Increment<MODEL>::setLocal starting" << std::endl;
+  util::Timer timer(classname(), "setLocal");
+  increment_->setLocal(gp, iter.geometryiter());
+  Log::trace() << "Increment<MODEL>::setLocal done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
 void Increment<MODEL>::read(const eckit::Configuration & conf) {
   Log::trace() << "Increment<MODEL>::read starting" << std::endl;
   util::Timer timer(classname(), "read");
@@ -327,6 +384,9 @@ double Increment<MODEL>::norm() const {
   Log::trace() << "Increment<MODEL>::norm starting" << std::endl;
   util::Timer timer(classname(), "norm");
   double zz = increment_->norm();
+  zz *= zz;
+  commTime_.allReduceInPlace(zz, eckit::mpi::Operation::SUM);
+  zz = sqrt(zz);
   Log::trace() << "Increment<MODEL>::norm done" << std::endl;
   return zz;
 }
@@ -345,10 +405,133 @@ Geometry<MODEL> Increment<MODEL>::geometry() const {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
+void Increment<MODEL>::setAtlas(atlas::FieldSet * atlasFieldSet) const {
+  Log::trace() << "Increment<MODEL>::setAtlas starting" << std::endl;
+  util::Timer timer(classname(), "setAtlas");
+  increment_->setAtlas(atlasFieldSet);
+  Log::trace() << "Increment<MODEL>::setAtlas done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::toAtlas(atlas::FieldSet * atlasFieldSet) const {
+  Log::trace() << "Increment<MODEL>::toAtlas starting" << std::endl;
+  util::Timer timer(classname(), "toAtlas");
+  increment_->toAtlas(atlasFieldSet);
+  Log::trace() << "Increment<MODEL>::toAtlas done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::fromAtlas(atlas::FieldSet * atlasFieldSet) {
+  Log::trace() << "Increment<MODEL>::fromAtlas starting" << std::endl;
+  util::Timer timer(classname(), "fromAtlas");
+  increment_->fromAtlas(atlasFieldSet);
+  Log::trace() << "Increment<MODEL>::fromAtlas done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::toAtlas() {
+  Log::trace() << "Increment<MODEL>::toAtlas starting" << std::endl;
+  increment_->toAtlas(&atlasFieldSet_);
+  increment_.reset();
+  Log::trace() << "Increment<MODEL>::toAtlas done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+size_t Increment<MODEL>::serialSize() const {
+  Log::trace() << "Increment<MODEL>::serialSize" << std::endl;
+  util::Timer timer(classname(), "serialSize");
+  return increment_->serialSize();
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::serialize(std::vector<double> & vect) const {
+  Log::trace() << "Increment<MODEL>::serialize starting" << std::endl;
+  util::Timer timer(classname(), "serialize");
+  increment_->serialize(vect);
+  Log::trace() << "Increment<MODEL>::serialize done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::deserialize(const std::vector<double> & vect, size_t & current) {
+  Log::trace() << "Increment<MODEL>::Increment deserialize starting" << std::endl;
+  util::Timer timer(classname(), "deserialize");
+  increment_->deserialize(vect, current);
+  Log::trace() << "Increment<MODEL>::Increment deserialize done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::shift_forward(const util::DateTime & begin) {
+  Log::trace() << "Increment<MODEL>::Increment shift_forward starting" << std::endl;
+  util::Timer timer(classname(), "shift_forward");
+  static int tag = 159357;
+  size_t mytime = commTime_.rank();
+
+// Send values of M.dx_i at end of my subwindow to next subwindow
+  if (mytime + 1 < commTime_.size()) {
+    oops::mpi::send(commTime_, *this, mytime+1, tag);
+  }
+
+// Receive values at beginning of my subwindow from previous subwindow
+  if (mytime > 0) {
+    oops::mpi::receive(commTime_, *this, mytime-1, tag);
+  } else {
+    increment_->zero(begin);
+  }
+
+  ++tag;
+  Log::trace() << "Increment<MODEL>::Increment shift_forward done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::shift_backward(const util::DateTime & end) {
+  Log::trace() << "Increment<MODEL>::Increment shift_backward starting" << std::endl;
+  util::Timer timer(classname(), "shift_backward");
+  static int tag = 753951;
+  size_t mytime = commTime_.rank();
+
+// Send values of dx_i at start of my subwindow to previous subwindow
+  if (mytime > 0) {
+    oops::mpi::send(commTime_, *this, mytime-1, tag);
+  }
+
+// Receive values at end of my subwindow from next subwindow
+  if (mytime + 1 < commTime_.size()) {
+    oops::mpi::receive(commTime_, *this, mytime+1, tag);
+  } else {
+    increment_->zero(end);
+  }
+
+  ++tag;
+  Log::trace() << "Increment<MODEL>::Increment shift_backward done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
 void Increment<MODEL>::print(std::ostream & os) const {
   Log::trace() << "Increment<MODEL>::print starting" << std::endl;
   util::Timer timer(classname(), "print");
-  os << *increment_;
+  if (commTime_.size() > 1) {
+    gatherPrint(os, *increment_, commTime_);
+  } else {
+    os << *increment_;
+  }
   Log::trace() << "Increment<MODEL>::print done" << std::endl;
 }
 

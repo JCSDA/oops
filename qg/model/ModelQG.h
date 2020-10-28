@@ -1,9 +1,10 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ * (C) Copyright 2020-2020 UCAR.
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -13,19 +14,21 @@
 
 #include <ostream>
 #include <string>
-#include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
+#include <vector>
 
-#include "model/QgFortran.h"
-#include "model/GeometryQG.h"
-#include "util/Duration.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
+#include "oops/base/ModelBase.h"
+#include "oops/base/ParameterTraitsVariables.h"
+#include "oops/base/Variables.h"
+#include "oops/util/Duration.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/parameters/Parameter.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 
-// Forward declarations
-namespace eckit {
-  class Configuration;
-}
+#include "oops/qg/GeometryQG.h"
+#include "oops/qg/QgFortran.h"
+#include "oops/qg/QgTraits.h"
+
 
 namespace qg {
   class ModelBias;
@@ -33,18 +36,40 @@ namespace qg {
   class StateQG;
 
 // -----------------------------------------------------------------------------
+
+class ModelQgParameters : public oops::ModelParametersBase {
+  OOPS_CONCRETE_PARAMETERS(ModelQgParameters, ModelParametersBase)
+
+ public:
+  /// Model option: using stream function or potential vorticity as variable
+  oops::Parameter<bool> use_vorticity{"use potential vorticity", false, this};
+  /// Model time step
+  oops::RequiredParameter<util::Duration> tstep{"tstep", this};
+
+  oops::Variables variables() const {
+    if (use_vorticity) {
+      return oops::Variables({"q"});
+    } else {
+      return oops::Variables({"x"});
+    }
+  }
+};
+
+
+// -----------------------------------------------------------------------------
 /// QG model definition.
 /*!
  *  QG nonlinear model definition and configuration parameters.
  */
 
-class ModelQG: public util::Printable,
-               private boost::noncopyable,
+class ModelQG: public oops::ModelBase<QgTraits>,
                private util::ObjectCounter<ModelQG> {
  public:
+  typedef ModelQgParameters Parameters_;
+
   static const std::string classname() {return "qg::ModelQG";}
 
-  ModelQG(const GeometryQG &, const eckit::Configuration &);
+  ModelQG(const GeometryQG &, const ModelQgParameters &);
   ~ModelQG();
 
 /// Prepare model integration
@@ -58,13 +83,15 @@ class ModelQG: public util::Printable,
   void finalize(StateQG &) const;
 
 /// Utilities
-  const util::Duration & timeResolution() const {return tstep_;}
+  const util::Duration & timeResolution() const {return params_.tstep;}
+  const oops::Variables & variables() const {return vars_;}
 
  private:
   void print(std::ostream &) const;
   F90model keyConfig_;
-  util::Duration tstep_;
+  ModelQgParameters params_;
   const GeometryQG geom_;
+  const oops::Variables vars_;
 };
 // -----------------------------------------------------------------------------
 

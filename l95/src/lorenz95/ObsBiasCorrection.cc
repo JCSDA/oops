@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -13,22 +13,22 @@
 #include <iostream>
 #include <string>
 
-#include "util/Logger.h"
-#include "lorenz95/ObsBias.h"
-#include "lorenz95/ObsBiasCovariance.h"
 #include "eckit/config/Configuration.h"
-
-
-using oops::Log;
+#include "eckit/config/LocalConfiguration.h"
+#include "lorenz95/ObsBias.h"
+#include "oops/util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-ObsBiasCorrection::ObsBiasCorrection(const eckit::Configuration & conf)
+ObsBiasCorrection::ObsBiasCorrection(const ObsTableView &, const eckit::Configuration & conf)
   : bias_(0.0), active_(false)
 {
-  active_ = conf.has("standard_deviation");
-  if (active_) {Log::trace() << "ObsBiasCorrection::ObsBiasCorrection created." << std::endl;}
+  if (conf.has("obs bias error")) {
+    const eckit::LocalConfiguration covconf(conf, "obs bias error");
+    active_ = covconf.has("standard_deviation");
+  }
+  if (active_) {oops::Log::trace() << "ObsBiasCorrection::ObsBiasCorrection created." << std::endl;}
 }
 // -----------------------------------------------------------------------------
 ObsBiasCorrection::ObsBiasCorrection(const ObsBiasCorrection & other,
@@ -85,6 +85,19 @@ double ObsBiasCorrection::dot_product_with(const ObsBiasCorrection & rhs) const 
   double zz = 0.0;
   if (active_) zz = bias_ * rhs.bias_;
   return zz;
+}
+// -----------------------------------------------------------------------------
+size_t ObsBiasCorrection::serialSize() const {
+  return 1;
+}
+// -----------------------------------------------------------------------------
+void ObsBiasCorrection::serialize(std::vector<double> & vect) const {
+  vect.push_back(bias_);
+}
+// -----------------------------------------------------------------------------
+void ObsBiasCorrection::deserialize(const std::vector<double> & vect, size_t & index) {
+  if (!vect.empty()) bias_ = vect.at(index);
+  ++index;
 }
 // -----------------------------------------------------------------------------
 void ObsBiasCorrection::print(std::ostream & os) const {

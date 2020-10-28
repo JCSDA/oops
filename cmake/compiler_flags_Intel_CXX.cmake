@@ -10,12 +10,6 @@
 # FLAGS COMMON TO ALL BUILD TYPES
 ####################################################################
 
-if( HAVE_OMP )
-  set( CMAKE_CXX_FLAGS     "${CMAKE_CXX_FLAGS} -qopenmp")
-else( )
-  set( CMAKE_CXX_FLAGS     "${CMAKE_CXX_FLAGS} -qopenmp-stubs")
-endif( )
-
 ####################################################################
 # RELEASE FLAGS
 ####################################################################
@@ -29,6 +23,12 @@ set( CMAKE_CXX_FLAGS_RELEASE     "-O3" )
 set( CMAKE_CXX_FLAGS_DEBUG       "-O0 -g -traceback -fp-trap=common" )
 
 ####################################################################
+# RELEASE WITH DEBUG INFO (DEFAULT)
+####################################################################
+
+set( CMAKE_CXX_FLAGS_RELWITHDEBINFO  "-O2 -g -DNDEBUG" )
+
+####################################################################
 # BIT REPRODUCIBLE FLAGS
 ####################################################################
 
@@ -39,6 +39,12 @@ set( CMAKE_CXX_FLAGS_BIT         "-O2" )
 ####################################################################
 
 set( CMAKE_CXX_LINK_FLAGS        "" )
+
+####################################################################
+# FLAGS FOR AUTOPROFILING
+####################################################################
+
+set( CXX_AUTOPROFILING_FLAGS        "-finstrument-functions" )
 
 ####################################################################
 

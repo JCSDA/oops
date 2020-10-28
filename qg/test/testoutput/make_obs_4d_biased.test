@@ -1,0 +1,21 @@
+Test     : Initial state: 
+Test     :   Valid time: 2010-01-01T00:00:00Z
+Test     :   Resolution = 40, 20, 2
+Test     :   Variable = streamfunction
+Test     :   Boundary conditions are activated
+Test     :   Scaling=  1e+08, Min=     -5.1807, Max=      1.0739, RMS=      1.9152
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
+Test     : Final state: 
+Test     :   Valid time: 2010-01-02T00:00:00Z
+Test     :   Resolution = 40, 20, 2
+Test     :   Variable = streamfunction
+Test     :   Boundary conditions are activated
+Test     :   Scaling=  1e+08, Min=     -4.4100, Max=      1.1396, RMS=      1.7043
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
+Test     : H(x): 
+Test     : Stream nobs= 800 Scaling=  1e+08, Min=     -6.2451, Max=      1.3118, Average=     -1.2514
+Test     : Wind nobs= 800 Scaling=     10, Min=     -6.9902, Max=     12.6868, Average=      1.8047
+Test     : WSpeed nobs= 400 Scaling=     10, Min=      0.1601, Max=     19.1139, Average=      4.9728
+Test     : End H(x)

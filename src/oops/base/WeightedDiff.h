@@ -11,18 +11,18 @@
 #ifndef OOPS_BASE_WEIGHTEDDIFF_H_
 #define OOPS_BASE_WEIGHTEDDIFF_H_
 
-#include <boost/scoped_ptr.hpp>
 #include <cmath>
 #include <map>
 
 #include "oops/base/Accumulator.h"
 #include "oops/base/DolphChebyshev.h"
 #include "oops/base/PostBase.h"
+#include "oops/base/Variables.h"
 #include "oops/base/WeightingFct.h"
 #include "oops/interface/Geometry.h"
-#include "oops/interface/Variables.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 
@@ -38,12 +38,10 @@ namespace oops {
 template <typename MODEL, typename INCR, typename FLDS>
 class WeightedDiff : public PostBase<FLDS> {
   typedef Geometry<MODEL>            Geometry_;
-  typedef Variables<MODEL>           Variables_;
 
  public:
-  WeightedDiff(const util::DateTime &, const util::Duration &,
-               const Geometry_ &, const eckit::Configuration &,
-               const util::Duration &, WeightingFct &);
+  WeightedDiff(const Variables &, const util::DateTime &, const util::Duration &,
+               const util::Duration &, const Geometry_ &, WeightingFct &);
   virtual ~WeightedDiff() {}
 
   INCR * releaseDiff();
@@ -54,7 +52,6 @@ class WeightedDiff : public PostBase<FLDS> {
 
   WeightingFct & wfct_;
   std::map< util::DateTime, double > weights_;
-//  std::unique_ptr< Accumulator<MODEL, INCR, FLDS> > avg_;
   Accumulator<MODEL, INCR, FLDS> * avg_;
   double sum_;
   bool linit_;
@@ -64,23 +61,23 @@ class WeightedDiff : public PostBase<FLDS> {
   util::Duration tstep_;
   util::DateTime bgnleg_;
   util::DateTime endleg_;
+  util::DateTime current_;
 };
 
-// =============================================================================
+// -----------------------------------------------------------------------------
 
 template <typename MODEL, typename INCR, typename FLDS>
-WeightedDiff<MODEL, INCR, FLDS>::WeightedDiff(const util::DateTime & vt,
+WeightedDiff<MODEL, INCR, FLDS>::WeightedDiff(const Variables & vars,
+                                              const util::DateTime & vt,
                                               const util::Duration & span,
-                                              const Geometry_ & resol,
-                                              const eckit::Configuration & config,
                                               const util::Duration & tstep,
+                                              const Geometry_ & resol,
                                               WeightingFct & wfct)
   : PostBase<FLDS>(vt-span/2, vt+span/2),
     wfct_(wfct), weights_(), avg_(0), sum_(0.0), linit_(false),
     vtime_(vt), bgn_(vt-span/2), end_(vt+span/2), tstep_(tstep),
-    bgnleg_(), endleg_()
+    bgnleg_(), endleg_(), current_()
 {
-  Variables_ vars(config);
   avg_ = new Accumulator<MODEL, INCR, FLDS>(resol, vars, vtime_);
 }
 
@@ -88,9 +85,6 @@ WeightedDiff<MODEL, INCR, FLDS>::WeightedDiff(const util::DateTime & vt,
 
 template <typename MODEL, typename INCR, typename FLDS>
 INCR * WeightedDiff<MODEL, INCR, FLDS>::releaseDiff() {
-  Log::debug() << "WeightedDiff: release sum = " << sum_
-               << ", bgnleg_ = " << bgnleg_ << ", endleg_ = " << endleg_
-               << ", bgn_ = " << bgn_ << ", end_ = " << end_ << std::endl;
   ASSERT(linit_);
   ASSERT(std::abs(sum_) < 1.0e-8);
   return avg_;
@@ -113,9 +107,7 @@ void WeightedDiff<MODEL, INCR, FLDS>::doInitialize(const FLDS & xx,
   }
   bgnleg_ = bgn;
   endleg_ = end;
-  Log::debug() << "WeightedDiff: initialized"
-               << " bgnleg_ = " << bgnleg_ << ", endleg_ = " << endleg_
-               << ", bgn_ = " << bgn_ << ", end_ = " << end_ << std::endl;
+  current_ = bgn-tstep;
 }
 
 // -----------------------------------------------------------------------------
@@ -123,15 +115,15 @@ void WeightedDiff<MODEL, INCR, FLDS>::doInitialize(const FLDS & xx,
 template <typename MODEL, typename INCR, typename FLDS>
 void WeightedDiff<MODEL, INCR, FLDS>::doProcessing(const FLDS & xx) {
   const util::DateTime now(xx.validTime());
+  ASSERT(now > current_);
   if (((bgnleg_ < end_ && endleg_ > bgn_) || bgnleg_ == endleg_) &&
       (now != endleg_ || now == end_ || now == bgnleg_)) {
     ASSERT(weights_.find(now) != weights_.end());
     const double zz = weights_[now];
     avg_->accumul(zz, xx);
     sum_ += zz;
-    Log::debug() << "WeightedDiff: time = " << now
-                 << ", weight = " << zz << ", sum = " << sum_ << std::endl;
   }
+  current_ = now;
 }
 
 // -----------------------------------------------------------------------------

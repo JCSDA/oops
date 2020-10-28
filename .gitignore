@@ -13,7 +13,9 @@ exp.summary.txt
 *.v3breakpoints
 *.swp
 *.sublime-workspace
+.vscode
 *~
+*.DS_Store
 CMakeLists.txt.user
 dependencies.mk
 loadmap

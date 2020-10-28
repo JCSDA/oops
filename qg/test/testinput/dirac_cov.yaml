@@ -1,0 +1,24 @@
+background error:
+  covariance model: QgError
+  horizontal_length_scale: 2.2e6
+  maximum_condition_number: 1.0e6
+  standard_deviation: 1.8e7
+  vertical_length_scale: 15000.0
+dirac:
+  date: 2010-01-01T12:00:00Z
+  ixdir: [20]
+  iydir: [10]
+  izdir: [1]
+geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+initial condition:
+  date: 2010-01-01T12:00:00Z
+  filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H.nc
+model:
+  tstep: PT1H
+output B:
+  datadir: Data
+  exp: dirac_qg_cov
+  type: an

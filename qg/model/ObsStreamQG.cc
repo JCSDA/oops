@@ -10,49 +10,40 @@
 
 #include "model/ObsStreamQG.h"
 
-#include "util/Logger.h"
+#include <vector>
+
+#include "eckit/config/Configuration.h"
 #include "model/GomQG.h"
 #include "model/ObsBias.h"
 #include "model/ObsSpaceQG.h"
 #include "model/ObsVecQG.h"
-#include "model/VariablesQG.h"
-#include "eckit/config/Configuration.h"
-
-using oops::Log;
+#include "oops/base/Variables.h"
+#include "oops/util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
+static ObsOpMaker<ObsStreamQG> makerStream_("Stream");
+// -----------------------------------------------------------------------------
 
-ObsStreamQG::ObsStreamQG(ObsSpaceQG & odb, const eckit::Configuration & config)
-  : obsdb_(odb), obsname_("Stream"), varin_()
+ObsStreamQG::ObsStreamQG(const ObsSpaceQG & odb, const eckit::Configuration & config)
+  : obsdb_(odb), varin_(std::vector<std::string>{"x"})
 {
-  const eckit::Configuration * configc = &config;
-  qg_stream_setup_f90(keyOperStrm_, &configc);
-  int keyVarin;
-  qg_obsoper_inputs_f90(keyOperStrm_, keyVarin);
-  varin_.reset(new VariablesQG(keyVarin));
-  Log::trace() << "ObsStreamQG created " << obsname_ << std::endl;
+  oops::Log::trace() << "ObsStreamQG created." << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-ObsStreamQG::~ObsStreamQG() {
-  qg_stream_delete_f90(keyOperStrm_);
-}
-
-// -----------------------------------------------------------------------------
-
-void ObsStreamQG::obsEquiv(const GomQG & gom, ObsVecQG & ovec,
-                           const ObsBias & bias) const {
+void ObsStreamQG::simulateObs(const GomQG & gom, ObsVecQG & ovec,
+                              const ObsBias & bias) const {
   qg_stream_equiv_f90(gom.toFortran(), ovec.toFortran(), bias.stream());
 }
 
 // -----------------------------------------------------------------------------
 
-void ObsStreamQG::generateObsError(const eckit::Configuration & conf) {
-  const double err = conf.getDouble("obs_error");
-  qg_obsdb_seterr_f90(obsdb_.toFortran(), keyOperStrm_, err);
+std::unique_ptr<LocationsQG> ObsStreamQG::locations(const util::DateTime & t1,
+                             const util::DateTime & t2) const {
+  return obsdb_.locations(t1, t2);
 }
 
 // -----------------------------------------------------------------------------

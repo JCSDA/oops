@@ -10,53 +10,41 @@
 
 #include "model/ObsWindQG.h"
 
-#include "util/Logger.h"
+#include <vector>
+
+#include "eckit/config/Configuration.h"
 #include "model/GomQG.h"
-#include "model/LocationsQG.h"
 #include "model/ObsBias.h"
-#include "model/ObsBiasIncrement.h"
 #include "model/ObsSpaceQG.h"
 #include "model/ObsVecQG.h"
 #include "model/QgFortran.h"
-#include "model/VariablesQG.h"
-#include "eckit/config/Configuration.h"
-
-
-using oops::Log;
+#include "oops/base/Variables.h"
+#include "oops/util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
+static ObsOpMaker<ObsWindQG>   makerWind_("Wind");
+// -----------------------------------------------------------------------------
 
-ObsWindQG::ObsWindQG(ObsSpaceQG & odb, const eckit::Configuration & config)
-  : obsdb_(odb), obsname_("Wind"), varin_()
+ObsWindQG::ObsWindQG(const ObsSpaceQG & odb, const eckit::Configuration & config)
+  : obsdb_(odb), varin_(std::vector<std::string>{"u", "v"})
 {
-  const eckit::Configuration * configc = &config;
-  qg_wind_setup_f90(keyOperWind_, &configc);
-  int keyVarin;
-  qg_obsoper_inputs_f90(keyOperWind_, keyVarin);
-  varin_.reset(new VariablesQG(keyVarin));
-  Log::trace() << "ObsWindQG created " << obsname_ << std::endl;
+  oops::Log::trace() << "ObsWindQG created." << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-ObsWindQG::~ObsWindQG() {
-  qg_wind_delete_f90(keyOperWind_);
-}
-
-// -----------------------------------------------------------------------------
-
-void ObsWindQG::obsEquiv(const GomQG & gom, ObsVecQG & ovec,
-                         const ObsBias & bias) const {
+void ObsWindQG::simulateObs(const GomQG & gom, ObsVecQG & ovec,
+                            const ObsBias & bias) const {
   qg_wind_equiv_f90(gom.toFortran(), ovec.toFortran(), bias.wind());
 }
 
 // -----------------------------------------------------------------------------
 
-void ObsWindQG::generateObsError(const eckit::Configuration & conf) {
-  const double err = conf.getDouble("obs_error");
-  qg_obsdb_seterr_f90(obsdb_.toFortran(), keyOperWind_, err);
+std::unique_ptr<LocationsQG> ObsWindQG::locations(const util::DateTime & t1,
+                             const util::DateTime & t2) const {
+  return obsdb_.locations(t1, t2);
 }
 
 // -----------------------------------------------------------------------------

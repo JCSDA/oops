@@ -1,0 +1,12 @@
+obs operator:
+  obs type: Wind
+obs space:
+  source: truth
+  obsdatain: 
+    obsfile: $(experiment_dir)/{{current_cycle}}/obs.wind.{{current_cycle}}.nc
+  obsdataout: 
+    obsfile: $(experiment_dir)/{{current_cycle}}/obs.wind.$(experiment).{{current_cycle}}.nc
+  obs type: Wind
+obs error:
+  covariance model: diagonal
+filename: obs space.obsdatain.obsfile

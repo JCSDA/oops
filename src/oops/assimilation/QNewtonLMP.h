@@ -16,10 +16,9 @@
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/Logger.h"
-#include "util/dot_product.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/Logger.h"
 
-#include <boost/scoped_ptr.hpp>
 
 namespace oops {
 

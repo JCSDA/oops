@@ -1,0 +1,18 @@
+getvalues test:
+  state generate:
+    analytic_init: large-vortices
+    date: 2009-12-31T00:00:00Z
+    state variables: [x]
+  interpolation tolerance: 1.5e-2
+geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+state variables: [u, v]
+locations:
+  window begin: 2010-01-01T00:00:00Z
+  window end: 2010-01-02T00:00:00Z
+  nrandom: 8
+  lons: [-10.0, 12.0]
+  lats: [35.0, 45.0]
+  z: [5000, 9000]

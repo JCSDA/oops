@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -11,124 +11,200 @@
 #ifndef OOPS_BASE_OBSERVATIONS_H_
 #define OOPS_BASE_OBSERVATIONS_H_
 
+#include <cstddef>
 #include <ostream>
 #include <string>
+#include <utility>
+#include <vector>
 
-#include "eckit/config/Configuration.h"
-#include "util/Logger.h"
 #include "oops/base/Departures.h"
-#include "oops/interface/ModelAtLocations.h"
-#include "oops/interface/ObsAuxControl.h"
-#include "oops/interface/ObservationSpace.h"
-#include "oops/interface/ObsOperator.h"
+#include "oops/base/ObsErrors.h"
+#include "oops/base/ObsSpaces.h"
 #include "oops/interface/ObsVector.h"
-#include "util/DateTime.h"
-#include "util/Printable.h"
+#include "oops/util/Logger.h"
+#include "oops/util/Printable.h"
 
 namespace oops {
 
-template<typename MODEL> class Observations;
-
 /// Observations Class.
 /*!
- *  Contains observed values or their model equivalents and the associated
- *  observation operator.
+ *  Contains observed values or their model equivalents
  */
 
 // -----------------------------------------------------------------------------
-template <typename MODEL> class Observations : public util::Printable {
-  typedef Departures<MODEL>          Departures_;
-  typedef ModelAtLocations<MODEL>    GOM_;
-  typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
-  typedef ObsOperator<MODEL>         ObsOperator_;
-  typedef ObservationSpace<MODEL>    ObsSpace_;
-  typedef ObsVector<MODEL>           ObsVector_;
+template <typename OBS> class Observations : public util::Printable {
+  typedef Departures<OBS>          Departures_;
+  typedef ObsErrors<OBS>           ObsErrors_;
+  typedef ObsSpaces<OBS>           ObsSpaces_;
+  typedef ObsVector<OBS>           ObsVector_;
 
  public:
-  explicit Observations(const ObsSpace_ &);
-  explicit Observations(const Observations &);
-  ~Observations();
+/// \brief create Observations for all obs (read from ObsSpace if name is specified)
+  explicit Observations(const ObsSpaces_ &, const std::string & name = "");
+/// \brief create local Observations
+  Observations(const ObsSpaces_ &, const Observations &);
+
+/// destructor and copy/move constructor/assignments
+  ~Observations() = default;
+  Observations(const Observations &);
+  Observations(Observations &&);
   Observations & operator=(const Observations &);
+  Observations & operator=(Observations &&);
+
+/// Access
+  std::size_t size() const {return obs_.size();}
+  ObsVector_ & operator[](const std::size_t ii) {return obs_.at(ii);}
+  const ObsVector_ & operator[](const std::size_t ii) const {return obs_.at(ii);}
 
 /// Interactions with Departures
-  ObsVector_ * operator-(const Observations & other) const;
+  Departures_ operator-(const Observations & other) const;
   Observations & operator+=(const Departures_ &);
 
-/// Compute observations equivalents
-  void runObsOperator(const ObsOperator_ &, const GOM_ &, const ObsAuxCtrl_ &);
-
-/// Get observations values
-  const ObsVector_ & obsvalues() const {return obs_;}
-
-/// Save observations values
+/// Save/read observations values
   void save(const std::string &) const;
-  void read(const eckit::Configuration &);
+  void read(const std::string &);
+
+/// Accumulator
+  void zero();
+  void accumul(const Observations &);
+  Observations & operator*=(const double);
+
+/// Perturbations
+  void perturb(const ObsErrors_ &);
 
  private:
   void print(std::ostream &) const;
+  size_t nobs() const;
 
-  ObsVector_ obs_;
+/// Data
+  const ObsSpaces_ &      obsdb_;
+  std::vector<ObsVector_> obs_;
 };
 
 // =============================================================================
 
-template <typename MODEL>
-Observations<MODEL>::Observations(const ObsSpace_ & obsdb): obs_(obsdb)
+template <typename OBS>
+Observations<OBS>::Observations(const ObsSpaces_ & obsdb,
+                                const std::string & name): obsdb_(obsdb), obs_()
 {
+  obs_.reserve(obsdb.size());
+  for (std::size_t jj = 0; jj < obsdb.size(); ++jj) {
+    obs_.emplace_back(obsdb[jj], name, true);
+  }
   Log::trace() << "Observations created" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-Observations<MODEL>::Observations(const Observations & other): obs_(other.obs_)
-{
-  Log::trace() << "Observations copy-created" << std::endl;
+template <typename OBS>
+Observations<OBS>::Observations(const ObsSpaces_ & obsdb,
+                                const Observations & other): obsdb_(obsdb), obs_() {
+  obs_.reserve(obsdb.size());
+  for (std::size_t jj = 0; jj < other.size(); ++jj) {
+    obs_.emplace_back(obsdb[jj], other[jj]);
+  }
+  Log::trace() << "Local observations created" << std::endl;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-Observations<MODEL>::~Observations() {
-  Log::trace() << "Observations destructed" << std::endl;
+template <typename OBS>
+Observations<OBS>::Observations(const Observations & other)
+: obsdb_(other.obsdb_), obs_(other.obs_) {
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-Observations<MODEL> & Observations<MODEL>::operator=(const Observations & rhs) {
-  obs_ = rhs.obs_;
+
+template <typename OBS>
+Observations<OBS>::Observations(Observations && other)
+: obsdb_(other.obsdb_), obs_(std::move(other.obs_)) {
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
+Observations<OBS> & Observations<OBS>::operator=(const Observations & other) {
+// only allow assignment for Observations created from the same ObsSpaces
+  ASSERT(&obsdb_ == &other.obsdb_);
+  obs_ = other.obs_;
   return *this;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-ObsVector<MODEL> * Observations<MODEL>::operator-(const Observations & other) const {
-  ObsVector_ * ovec = new ObsVector_(obs_, true);
-  *ovec -= other.obs_;
-  return ovec;
-}
-// -----------------------------------------------------------------------------
-template <typename MODEL>
-Observations<MODEL> & Observations<MODEL>::operator+=(const Departures_ & dy) {
-  obs_ += dy.depvalues();
+template <typename OBS>
+Observations<OBS> & Observations<OBS>::operator=(Observations && other) {
+// only allow assignment for Observations created from the same ObsSpaces
+  ASSERT(&obsdb_ == &other.obsdb_);
+  obs_ = std::move(other.obs_);
   return *this;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void Observations<MODEL>::runObsOperator(const ObsOperator_ & hop, const GOM_ & gom,
-                                         const ObsAuxCtrl_ & ybias) {
-  hop.obsEquiv(gom, obs_, ybias);
+template <typename OBS>
+Departures<OBS> Observations<OBS>::operator-(const Observations & other) const {
+  Departures_ diff(obsdb_);
+  for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
+    diff[jj]  = obs_[jj];
+    diff[jj] -= other[jj];
+  }
+  return diff;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void Observations<MODEL>::save(const std::string & name) const {
-  obs_.save(name);
+template <typename OBS>
+Observations<OBS> & Observations<OBS>::operator+=(const Departures_ & dy) {
+  for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
+    obs_[jj] += dy[jj];
+  }
+  return *this;
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void Observations<MODEL>::read(const eckit::Configuration & config) {
-  const std::string name = config.getString("ObsData.obsvalue");
-  obs_.read(name);
-  Log::trace() << "Observations:Observations have been read" << std::endl;
+template <typename OBS>
+void Observations<OBS>::save(const std::string & name) const {
+  for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
+    obs_[jj].save(name);
+  }
 }
 // -----------------------------------------------------------------------------
-template <typename MODEL>
-void Observations<MODEL>::print(std::ostream & os) const {
-  os << obs_;
+template <typename OBS>
+void Observations<OBS>::read(const std::string & name) {
+  for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
+    obs_[jj].read(name);
+  }
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
+void Observations<OBS>::zero() {
+  for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
+    obs_[jj].zero();
+  }
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
+void Observations<OBS>::accumul(const Observations & y) {
+  for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
+    obs_[jj] += y[jj];
+  }
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
+Observations<OBS> & Observations<OBS>::operator *=(const double factor) {
+  for (std::size_t jj = 0; jj < obs_.size(); ++jj) {
+    obs_[jj] *= factor;
+  }
+  return *this;
+}
+// -----------------------------------------------------------------------------
+template<typename OBS>
+size_t Observations<OBS>::nobs() const {
+  size_t nobs = 0;
+  for (size_t jj = 0; jj < obs_.size(); ++jj) {
+    nobs += obs_[jj].nobs();
+  }
+  return nobs;
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
+void Observations<OBS>::perturb(const ObsErrors_ & Rmat) {
+  Departures_ ypert(obsdb_);
+  Rmat.randomize(ypert);
+  *this += ypert;
+  Log::trace() << "Observations perturbed" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
+void Observations<OBS>::print(std::ostream & os) const {
+  for (std::size_t jj = 0; jj < obs_.size(); ++jj) os << obs_[jj] << std::endl;
 }
 // -----------------------------------------------------------------------------
 }  // namespace oops

@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -11,8 +11,9 @@
 #ifndef TEST_TESTENVIRONMENT_H_
 #define TEST_TESTENVIRONMENT_H_
 
+#include <memory>
+
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 
@@ -42,7 +43,7 @@ class TestEnvironment : private boost::noncopyable {
   TestEnvironment() {}
   ~TestEnvironment() {}
 
-  boost::scoped_ptr<const eckit::LocalConfiguration> config_;
+  std::unique_ptr<const eckit::Configuration> config_;
 };
 
 }  // namespace test

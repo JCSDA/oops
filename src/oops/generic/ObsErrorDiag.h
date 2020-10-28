@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -12,108 +12,101 @@
 #define OOPS_GENERIC_OBSERRORDIAG_H_
 
 #include <sstream>
-#include <string>
 
-#include <boost/scoped_ptr.hpp>
-
-#include "util/Logger.h"
-#include "oops/interface/ObsErrorBase.h"
-
-namespace eckit {
-  class Configuration;
-}
+#include "eckit/config/Configuration.h"
+#include "oops/base/ObsErrorBase.h"
+#include "oops/interface/ObsSpace.h"
+#include "oops/interface/ObsVector.h"
+#include "oops/util/Logger.h"
+#include "oops/util/parameters/Parameter.h"
+#include "oops/util/parameters/Parameters.h"
 
 namespace oops {
 
-// -----------------------------------------------------------------------------
-/// Diagonal observation error covariance matrix.
+/// \brief Parameters for diagonal obs errors
+class ObsErrorDiagParameters : public Parameters {
+  OOPS_CONCRETE_PARAMETERS(ObsErrorDiagParameters, Parameters)
+ public:
+  /// perturbation amplitude multiplier
+  Parameter<double> pert{"random amplitude", 1.0, this};
+};
 
-template<typename MODEL>
-class ObsErrorDiag : public ObsErrorBase<MODEL> {
-  typedef typename MODEL::ObsSpace              ObsSpace_;
-  typedef typename MODEL::ObsVector             ObsVector_;
+// -----------------------------------------------------------------------------
+/// \brief Diagonal observation error covariance matrix.
+template<typename OBS>
+class ObsErrorDiag : public ObsErrorBase<OBS> {
+  typedef ObsSpace<OBS>              ObsSpace_;
+  typedef ObsVector<OBS>             ObsVector_;
 
  public:
-  ObsErrorDiag(const ObsSpace_ &, const eckit::Configuration &);
-  ~ObsErrorDiag();
-
-/// Linearize and reset for inner loop (nothing in this simple case)
-  void linearize(const ObsVector_ &) {}
+  ObsErrorDiag(const eckit::Configuration &, const ObsSpace_ &);
 
 /// Multiply a Departure by \f$R\f$
-  ObsVector_ * multiply(const ObsVector_ &) const;
+  void multiply(ObsVector_ &) const override;
 
 /// Multiply a Departure by \f$R^{-1}\f$
-  ObsVector_ * inverseMultiply(const ObsVector_ &) const;
+  void inverseMultiply(ObsVector_ &) const override;
 
 /// Generate random perturbation
-  void randomize(ObsVector_ &) const;
+  void randomize(ObsVector_ &) const override;
 
 /// Get mean error for Jo table
-  double getRMSE() const {return stddev_->rms();}
+  double getRMSE() const override {return stddev_.rms();}
+
+/// Return inverseVariance
+  const ObsVector_ & inverseVariance() const override {return inverseVariance_;}
+
+ protected:
+  ObsVector_ stddev_;
+  ObsVector_ inverseVariance_;
 
  private:
-  void print(std::ostream &) const;
-
-  boost::scoped_ptr<ObsVector_> stddev_;
-  boost::scoped_ptr<ObsVector_> inverseVariance_;
+  void print(std::ostream &) const override;
+  ObsErrorDiagParameters options_;
 };
 
 // =============================================================================
 
-template<typename MODEL>
-ObsErrorDiag<MODEL>::ObsErrorDiag(const ObsSpace_ & obsgeom, const eckit::Configuration & config)
-  : stddev_(), inverseVariance_()
+template<typename OBS>
+ObsErrorDiag<OBS>::ObsErrorDiag(const eckit::Configuration & conf, const ObsSpace_ & obsgeom)
+  : stddev_(obsgeom, "EffectiveError"), inverseVariance_(obsgeom)
 {
-  stddev_.reset(new ObsVector_(obsgeom));
-  const std::string col = config.getString("obserror");
-  stddev_->read(col);
-
-  inverseVariance_.reset(new ObsVector_(*stddev_));
-  *inverseVariance_ *= *inverseVariance_;
-  inverseVariance_->invert();
-
-  Log::trace() << "ObsErrorDiag:ObsErrorDiag constructed" << std::endl;
+  options_.deserialize(conf);
+  inverseVariance_ = stddev_;
+  inverseVariance_ *= stddev_;
+  inverseVariance_.invert();
+  Log::trace() << "ObsErrorDiag:ObsErrorDiag constructed nobs = " << stddev_.nobs() << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-ObsErrorDiag<MODEL>::~ObsErrorDiag() {
-  Log::trace() << "ObsErrorDiag:~ObsErrorDiag destructed" << std::endl;
+template<typename OBS>
+void ObsErrorDiag<OBS>::multiply(ObsVector_ & dy) const {
+  dy /= inverseVariance_;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-typename MODEL::ObsVector * ObsErrorDiag<MODEL>::multiply(const ObsVector_ & dy) const {
-  ObsVector_ * res = new ObsVector_(dy);
-  *res /= *inverseVariance_;
-  return res;
+template<typename OBS>
+void ObsErrorDiag<OBS>::inverseMultiply(ObsVector_ & dy) const {
+  dy *= inverseVariance_;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-typename MODEL::ObsVector * ObsErrorDiag<MODEL>::inverseMultiply(const ObsVector_ & dy) const {
-  ObsVector_ * res = new ObsVector_(dy);
-  *res *= *inverseVariance_;
-  return res;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void ObsErrorDiag<MODEL>::randomize(ObsVector_ & dy) const {
+template<typename OBS>
+void ObsErrorDiag<OBS>::randomize(ObsVector_ & dy) const {
   dy.random();
-  dy *= *stddev_;
+  dy *= stddev_;
+  dy *= options_.pert;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void ObsErrorDiag<MODEL>::print(std::ostream & os) const {
-  os << "ObsErrorDiag<MODEL>::print not implemeted yet";
+template<typename OBS>
+void ObsErrorDiag<OBS>::print(std::ostream & os) const {
+  os << "Diagonal observation error covariance, inverse variances: "
+     << inverseVariance_ << std::endl;
 }
 
 // -----------------------------------------------------------------------------

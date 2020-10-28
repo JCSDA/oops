@@ -11,18 +11,17 @@
 #ifndef OOPS_ASSIMILATION_LBHESSIANMATRIX_H_
 #define OOPS_ASSIMILATION_LBHESSIANMATRIX_H_
 
+#include <memory>
+
 #include <boost/noncopyable.hpp>
 
-#include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/ControlIncrement.h"
+#include "oops/assimilation/CostFunction.h"
 #include "oops/base/GeneralizedDepartures.h"
-#include "oops/base/PostProcessorTL.h"
-#include "oops/base/PostProcessorAD.h"
-#include "oops/interface/Increment.h"
+#include "oops/base/PostProcessorTLAD.h"
 
 namespace oops {
-  template<typename MODEL> class JqTermTL;
-  template<typename MODEL> class JqTermAD;
+  template<typename MODEL> class JqTermTLAD;
 
 /// The Hessian matrix: \f$ I  + B H^T R^{-1} H \f$.
 /*!
@@ -31,20 +30,18 @@ namespace oops {
  *  matrix which includes all the terms of the cost function.
  */
 
-template<typename MODEL> class LBHessianMatrix : private boost::noncopyable {
-  typedef Increment<MODEL>           Increment_;
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef JqTermAD<MODEL>            JqTermAD_;
-  typedef JqTermTL<MODEL>            JqTermTL_;
+template<typename MODEL, typename OBS> class LBHessianMatrix : private boost::noncopyable {
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef JqTermTLAD<MODEL>          JqTermTLAD_;
 
  public:
   explicit LBHessianMatrix(const CostFct_ & j): j_(j) {}
 
   void multiply(const CtrlInc_ & dx, CtrlInc_ & dz) const {
 //  Setup TL terms of cost function
-    PostProcessorTL<Increment_> costtl;
-    JqTermTL_ * jqtl = j_.jb().initializeTL();
+    PostProcessorTLAD<MODEL> costtl;
+    JqTermTLAD_ * jqtl = j_.jb().initializeTL();
     costtl.enrollProcessor(jqtl);
     unsigned iq = 0;
     if (jqtl) iq = 1;
@@ -59,7 +56,7 @@ template<typename MODEL> class LBHessianMatrix : private boost::noncopyable {
 //  Finalize Jb+Jq
 
 //  Get TLM outputs, multiply by covariance inverses and setup ADJ forcing terms
-    PostProcessorAD<Increment_> costad;
+    PostProcessorTLAD<MODEL> costad;
     dz.zero();
     CtrlInc_ dw(j_.jb());
 
@@ -67,14 +64,14 @@ template<typename MODEL> class LBHessianMatrix : private boost::noncopyable {
     CtrlInc_ tmp(j_.jb());
     j_.jb().finalizeTL(jqtl, dx, dw);
     tmp = dw;
-    JqTermAD_ * jqad = j_.jb().initializeAD(dz, tmp);
+    JqTermTLAD_ * jqad = j_.jb().initializeAD(dz, tmp);
     costad.enrollProcessor(jqad);
 
     j_.zeroAD(dw);
 //  Jo + Jc
     for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
-      boost::scoped_ptr<GeneralizedDepartures> ww(costtl.releaseOutputFromTL(iq+jj));
-      boost::shared_ptr<GeneralizedDepartures> zz(j_.jterm(jj).multiplyCoInv(*ww));
+      std::unique_ptr<GeneralizedDepartures> ww(costtl.releaseOutputFromTL(iq+jj));
+      std::shared_ptr<GeneralizedDepartures> zz(j_.jterm(jj).multiplyCoInv(*ww));
       costad.enrollProcessor(j_.jterm(jj).setupAD(zz, dw));
     }
 

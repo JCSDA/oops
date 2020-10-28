@@ -1,0 +1,24 @@
+dfi:
+  cutoff: PT3H
+  filter_span: PT12H
+  type: DolphChebyshev
+  filtered variables: [x]
+forecast length: P7D
+initial condition:
+  date: 2010-01-01T00:00:00Z
+  filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D.nc
+model:
+  name: QG
+  tstep: PT1H
+output:
+  datadir: Data
+  date: 2010-01-01T00:00:00Z
+  exp: dfi
+  frequency: PT03H
+  type: fc
+prints:
+  frequency: PT3H
+geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]

@@ -2,48 +2,8 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
 list( APPEND oops_src_files
 
-util/abor1_cpp.h
-util/abor1_cpp.cc
-util/abor1_ftn.F90
-util/config.intfb.h
-util/config_f.h
-util/config_f.cc
-util/config_mod.F90
-util/dateFunctions.h
-util/dateFunctions.cc
-util/DateTime.h
-util/DateTime.cc
-util/datetime_f.h
-util/datetime_f.cc
-util/datetime.intfb.h
-util/datetime_mod.F90
-util/dot_product.h
-util/Duration.h
-util/Duration.cc
-util/duration.intfb.h
-util/duration_f.h
-util/duration_f.cc
-util/duration_mod.F90
-util/formats.h
-util/kinds.F90
-util/LibOOPS.h
-util/LibOOPS.cc
-util/ObjectCounter.h
-util/ObjectCountHelper.h
-util/ObjectCountHelper.cc
-util/Printable.h
-util/PrintAdjTest.h
-util/set_err_trap.F90
-util/signal_trap.c
-util/string_f_c_mod.F90
-util/Timer.h
-util/Timer.cc
-util/TimerHelper.h
-util/TimerHelper.cc
-util/utilNamespaceDoc.h
-util/Logger.h
-
 oops/assimilation/BMatrix.h
+oops/assimilation/CalcHofX.h
 oops/assimilation/ControlIncrement.h
 oops/assimilation/ControlVariable.h
 oops/assimilation/CostFct3DVar.h
@@ -61,45 +21,56 @@ oops/assimilation/CostJo.h
 oops/assimilation/CostTermBase.h
 oops/assimilation/DRGMRESRMinimizer.h
 oops/assimilation/DRIPCGMinimizer.h
-oops/assimilation/DRPCGMinimizer.h
-oops/assimilation/DRPLanczosMinimizer.h
 oops/assimilation/DRMinimizer.h
+oops/assimilation/DRPCGMinimizer.h
+oops/assimilation/DRPFOMMinimizer.h
+oops/assimilation/DRPLanczosMinimizer.h
 oops/assimilation/DualMinimizer.h
 oops/assimilation/DualVector.h
 oops/assimilation/FGMRES.h
 oops/assimilation/FGMRESMinimizer.h
 oops/assimilation/FtnTriDiagSpectrum.F90
 oops/assimilation/FullGMRES.h
+oops/assimilation/GETKFSolver.h
+oops/assimilation/gletkfInterface.h
+oops/assimilation/gletkf_interface.f90
+oops/assimilation/gletkf_mod.f90
 oops/assimilation/GMRESR.h
 oops/assimilation/GMRESRMinimizer.h
 oops/assimilation/HBHtMatrix.h
+oops/assimilation/HessianMatrix.h
+oops/assimilation/HMatrix.h
+oops/assimilation/HtMatrix.h
+oops/assimilation/HtRinvHMatrix.h
+oops/assimilation/Increment4D.h
+oops/assimilation/IncrementalAssimilation.h
+oops/assimilation/instantiateCostFactory.h
+oops/assimilation/instantiateLocalEnsembleSolverFactory.h
+oops/assimilation/instantiateMinFactory.h
+oops/assimilation/IPCG.h
+oops/assimilation/IPCGMinimizer.h
+oops/assimilation/JqTermTLAD.h
 oops/assimilation/LBGMRESRMinimizer.h
 oops/assimilation/LBHessianMatrix.h
 oops/assimilation/LBMinimizer.h
-oops/assimilation/BMatrix.h
-oops/assimilation/HMatrix.h
-oops/assimilation/HessianMatrix.h
-oops/assimilation/HtMatrix.h
-oops/assimilation/HtRinvHMatrix.h
-oops/assimilation/IPCG.h
-oops/assimilation/IPCGMinimizer.h
-oops/assimilation/Increment4D.h
-oops/assimilation/IncrementalAssimilation.h
-oops/assimilation/JqTerm.h
-oops/assimilation/JqTermAD.h
-oops/assimilation/JqTermTL.h
+oops/assimilation/LETKFSolver.h
+oops/assimilation/LETKFSolverGSI.h
+oops/assimilation/LETKFSolverParameters.h
+oops/assimilation/linsysteigen.h
+oops/assimilation/LocalEnsembleSolver.h
+oops/assimilation/Minimizer.h
 oops/assimilation/MINRES.h
 oops/assimilation/MINRESMinimizer.h
-oops/assimilation/Minimizer.h
 oops/assimilation/PCG.h
 oops/assimilation/PCGMinimizer.h
 oops/assimilation/PLanczos.h
 oops/assimilation/PLanczosMinimizer.h
 oops/assimilation/PrimalMinimizer.h
 oops/assimilation/QNewtonLMP.h
+oops/assimilation/RinvMatrix.h
+oops/assimilation/rotmat.h
 oops/assimilation/RPCGMinimizer.h
 oops/assimilation/RPLanczosMinimizer.h
-oops/assimilation/RinvMatrix.h
 oops/assimilation/SaddlePointLMPMatrix.h
 oops/assimilation/SaddlePointMatrix.h
 oops/assimilation/SaddlePointMinimizer.h
@@ -109,88 +80,355 @@ oops/assimilation/SpectralLMP.h
 oops/assimilation/State4D.h
 oops/assimilation/TriDiagSolve.h
 oops/assimilation/TriDiagSpectrum.h
+oops/assimilation/UpHessSolve.h
 oops/assimilation/UpTriSolve.h
-oops/assimilation/instantiateCostFactory.h
-oops/assimilation/instantiateMinFactory.h
-oops/assimilation/rotmat.h
 
 oops/base/Accumulator.h
 oops/base/Departures.h
+oops/base/DeparturesEnsemble.h
 oops/base/DiagonalMatrix.h
-oops/base/DolphChebyshev.h
 oops/base/DolphChebyshev.cc
-oops/base/Ensemble.h
+oops/base/DolphChebyshev.h
 oops/base/EnsembleCovariance.h
-oops/base/EnsemblesCollection.h
 oops/base/GeneralizedDepartures.h
+oops/base/GeoVaLsWriter.h
+oops/base/LocalIncrement.cc
+oops/base/LocalIncrement.h
 oops/base/HybridCovariance.h
 oops/base/IdentityMatrix.h
+oops/base/IncrementEnsemble.h
+oops/base/IncrementEnsemble4D.h
+oops/base/InterpolatorBase.h
+oops/base/InterpolatorBase.cc
+oops/base/instantiateCovarFactory.h
+oops/base/instantiateObsFilterFactory.h
+oops/base/LinearModelBase.h
+oops/base/LinearVariableChangeBase.h
+oops/base/LinearVariableChangeParametersBase.h
+oops/base/LocalizationBase.h
+oops/base/ModelBase.h
 oops/base/ModelSpaceCovarianceBase.h
+oops/base/ModelSpaceCovarianceParametersBase.h
+oops/base/ObsAuxControls.h
+oops/base/ObsAuxCovariances.h
+oops/base/ObsAuxIncrements.h
+oops/base/ObsEnsemble.h
+oops/base/ObsErrorBase.h
+oops/base/ObsErrors.h
 oops/base/Observations.h
 oops/base/Observer.h
-oops/base/ObserverTL.h
-oops/base/ObserverAD.h
+oops/base/Observers.h
+oops/base/ObserversTLAD.h
+oops/base/ObserverTLAD.h
+oops/base/ObsFilterBase.h
+oops/base/ObsFilters.h
+oops/base/ObsLocalizationBase.h
+oops/base/ObsSpaceBase.cc
+oops/base/ObsSpaceBase.h
+oops/base/ObsSpaces.h
+oops/base/ParameterTraitsVariables.cc
+oops/base/ParameterTraitsVariables.h
 oops/base/PostBase.h
-oops/base/PostBaseTL.h
-oops/base/PostBaseAD.h
+oops/base/PostBaseTLAD.h
 oops/base/PostProcessor.h
-oops/base/PostProcessorTL.h
-oops/base/PostProcessorAD.h
-oops/base/PostTimer.h
+oops/base/PostProcessorTLAD.h
 oops/base/PostTimer.cc
+oops/base/PostTimer.h
+oops/base/PostTimerParameters.h
+oops/base/QCData.h
+oops/base/StateEnsemble.h
+oops/base/StateEnsemble4D.h
 oops/base/StateInfo.h
 oops/base/StateWriter.h
 oops/base/TrajectorySaver.h
+oops/base/VariableChangeBase.h
+oops/base/VariableChangeParametersBase.h
+oops/base/variables_f.cc
+oops/base/variables_f.h
+oops/base/variables_mod.F90
+oops/base/Variables.cc
+oops/base/Variables.h
 oops/base/WeightedDiff.h
-oops/base/WeightedDiffTL.h
-oops/base/WeightedDiffAD.h
+oops/base/WeightedDiffTLAD.h
 oops/base/WeightedMean.h
 oops/base/WeightingFct.h
-oops/base/WeightingFct.cc
-oops/base/instantiateCovarFactory.h
 
-oops/generic/ObsErrorDiag.h
+oops/contrib/dcmip_initial_conditions_test_1_2_3_v5.f90
+oops/contrib/dcmip_initial_conditions_test_4_v3.f90
+
+oops/generic/gc99.h
+oops/generic/gc99.cc
+oops/generic/IdentityModel.h
+oops/generic/IdLinearVariableChange.h
+oops/generic/IdVariableChange.h
+oops/generic/instantiateModelFactory.h
 oops/generic/instantiateObsErrorFactory.h
+oops/generic/instantiateTlmFactory.h
+oops/generic/instantiateVariableChangeFactory.h
+oops/generic/InterpolatorAtlas.h
+oops/generic/InterpolatorAtlas.cc
+oops/generic/interpolatorunstrc_f.h
+oops/generic/interpolatorunstrc_interface.F90
+oops/generic/InterpolatorUnstructured.h
+oops/generic/InterpolatorUnstructured.cc
+oops/generic/LinearModelId.h
+oops/generic/LocalObsErrorDiag.h
+oops/generic/ObsErrorDiag.h
+oops/generic/PseudoModel.h
+oops/generic/unstructured_interpolation_mod.F90
+oops/generic/VerticalLocEV.h
 
+oops/interface/AnalyticInit.h
 oops/interface/ErrorCovariance.h
 oops/interface/Geometry.h
+oops/interface/GeometryIterator.h
+oops/interface/GeoVaLs.h
+oops/interface/GetValues.h
 oops/interface/Increment.h
+oops/interface/LinearGetValues.h
 oops/interface/LinearModel.h
 oops/interface/LinearObsOperator.h
+oops/interface/LinearVariableChange.h
 oops/interface/Localization.h
 oops/interface/Locations.h
 oops/interface/Model.h
-oops/interface/ModelAtLocations.h
 oops/interface/ModelAuxControl.h
 oops/interface/ModelAuxCovariance.h
 oops/interface/ModelAuxIncrement.h
 oops/interface/ObsAuxControl.h
 oops/interface/ObsAuxCovariance.h
 oops/interface/ObsAuxIncrement.h
-oops/interface/ObsErrorBase.h
+oops/interface/ObsDataVector.h
+oops/interface/ObsDiagnostics.h
 oops/interface/ObsErrorCovariance.h
+oops/interface/ObsFilter.h
+oops/interface/ObsLocalization.h
 oops/interface/ObsOperator.h
+oops/interface/ObsSpace.h
 oops/interface/ObsVector.h
-oops/interface/ObservationSpace.h
 oops/interface/State.h
-oops/interface/Variables.h
+oops/interface/VariableChange.h
 
+oops/mpi/mpi.cc
+oops/mpi/mpi.h
+
+oops/runs/AddIncrement.h
 oops/runs/Application.h
-oops/runs/EnsForecasts.h
+oops/runs/ConvertState.h
+oops/runs/DiffStates.h
+oops/runs/Dirac.h
+oops/runs/EnsembleApplication.h
+oops/runs/EnsRecenter.h
+oops/runs/EnsVariance.h
 oops/runs/ExternalDFI.h
 oops/runs/Forecast.h
 oops/runs/GenEnsPertB.h
 oops/runs/HofX.h
-oops/runs/MakeObs.h
-oops/runs/Run.h
+oops/runs/HofXNoModel.h
+oops/runs/LocalEnsembleDA.h
+oops/runs/RTPP.h
 oops/runs/Run.cc
+oops/runs/Run.h
+oops/runs/StaticBInit.h
 oops/runs/Test.h
 oops/runs/Variational.h
 
-test/base/TestSuiteOpObsFixture.h
-test/base/TestSuiteOpObsTLAD.h
-test/base/TestSuiteOpObsTL.h
+oops/util/abor1_cpp.cc
+oops/util/abor1_cpp.h
+oops/util/abor1_ftn.F90
+oops/util/AssociativeContainers.h
+oops/util/CompareNVectors.h
+oops/util/CompositePath.cc
+oops/util/CompositePath.h
+oops/util/dateFunctions.cc
+oops/util/dateFunctions.h
+oops/util/datetime_f.cc
+oops/util/datetime_f.h
+oops/util/datetime_mod.F90
+oops/util/PartialDateTime.cc
+oops/util/PartialDateTime.h
+oops/util/DateTime.cc
+oops/util/DateTime.h
+oops/util/datetime.intfb.h
+oops/util/dot_product.h
+oops/util/duration_f.cc
+oops/util/duration_f.h
+oops/util/duration_mod.F90
+oops/util/Duration.cc
+oops/util/Duration.h
+oops/util/duration.intfb.h
+oops/util/Expect.h
+oops/util/FloatCompare.h
+oops/util/formats.h
+oops/util/gatherPrint.h
+oops/util/IntSetParser.cc
+oops/util/IntSetParser.h
+oops/util/IsAnyPointInVolumeInterior.h
+oops/util/IsPointInVolumeInterior.h
+oops/util/kinds.F90
+oops/util/liboops_f.cc
+oops/util/liboops_f.h
+oops/util/liboops_mod.F90
+oops/util/LibOOPS.cc
+oops/util/LibOOPS.h
+oops/util/Logger.h
+oops/util/missing_values_f.cc
+oops/util/missing_values_f.h
+oops/util/missing_values_mod.F90
+oops/util/netcdf_utils_mod.f90
+oops/util/missingValues.cc
+oops/util/missingValues.h
+oops/util/NamedEnumerator.h
+oops/util/ObjectCounter.h
+oops/util/ObjectCountHelper.cc
+oops/util/ObjectCountHelper.h
+oops/util/Printable.h
+oops/util/PrintAdjTest.h
+oops/util/PropertiesOfNVectors.h
+oops/util/random_f.cc
+oops/util/random_f.h
+oops/util/random_mod.F90
+oops/util/Random.h
+oops/util/random.intfb.h
+oops/util/ScalarOrMap.h
+oops/util/Serializable.h
+oops/util/signal_trap.cc
+oops/util/sqr.h
+oops/util/string_f_c_interface.cc
+oops/util/string_f_c_interface.h
+oops/util/string_f_c_mod.F90
+oops/util/string_utils.F90
+oops/util/stringFunctions.cc
+oops/util/stringFunctions.h
+oops/util/Timer.cc
+oops/util/Timer.h
+oops/util/TimerHelper.cc
+oops/util/TimerHelper.h
+oops/util/utilNamespaceDoc.h
+
+oops/util/parameters/ConfigurationParameter.cc
+oops/util/parameters/ConfigurationParameter.h
+oops/util/parameters/GenericParameters.h
+oops/util/parameters/HasParameters_.h
+oops/util/parameters/IgnoreOtherParameters.cc
+oops/util/parameters/IgnoreOtherParameters.h
+oops/util/parameters/NumericConstraints.h
+oops/util/parameters/ObjectJsonSchema.cc
+oops/util/parameters/ObjectJsonSchema.h
+oops/util/parameters/OptionalParameter.h
+oops/util/parameters/OptionalPolymorphicParameter.h
+oops/util/parameters/Parameter.h
+oops/util/parameters/ParameterBase.cc
+oops/util/parameters/ParameterBase.h
+oops/util/parameters/ParameterConstraint.h
+oops/util/parameters/Parameters.cc
+oops/util/parameters/Parameters.h
+oops/util/parameters/ParametersOrConfiguration.h
+oops/util/parameters/ParameterTraits.h
+oops/util/parameters/ParameterTraitsScalarOrMap.h
+oops/util/parameters/PolymorphicParameter.h
+oops/util/parameters/PolymorphicParameterTraits.h
+oops/util/parameters/PropertyJsonSchema.cc
+oops/util/parameters/PropertyJsonSchema.h
+oops/util/parameters/RequiredParameter.h
+oops/util/parameters/RequiredPolymorphicParameter.h
 )
+
+list( APPEND oops_test_src_files
+test/TestEnvironment.h
+test/TestFixture.h
+
+test/assimilation/FullGMRES.h
+test/assimilation/rotmat.h
+test/assimilation/SolveMatrixEquation.h
+test/assimilation/SpectralLMP.h
+test/assimilation/TestVector3D.h
+test/assimilation/TriDiagSolve.h
+test/assimilation/Vector3D.cc
+test/assimilation/Vector3D.h
+
+test/base/Fortran.h
+test/base/ObsErrorCovariance.h
+test/base/variables.F90
+
+test/interface/ErrorCovariance.h
+test/interface/Geometry.h
+test/interface/GeometryIterator.h
+test/interface/GeometryFixture.h
+test/interface/GeoVaLs.h
+test/interface/GetValues.h
+test/interface/Increment.h
+test/interface/LinearGetValues.h
+test/interface/LinearModel.h
+test/interface/LinearObsOperator.h
+test/interface/LinearVariableChange.h
+test/interface/LocalObsSpace.h
+test/interface/Locations.h
+test/interface/Model.h
+test/interface/ModelAuxControl.h
+test/interface/ModelAuxCovariance.h
+test/interface/ModelAuxIncrement.h
+test/interface/ObsAuxControl.h
+test/interface/ObsAuxCovariance.h
+test/interface/ObsAuxIncrement.h
+test/interface/ObsOperator.h
+test/interface/ObsSpace.h
+test/interface/ObsTestsFixture.h
+test/interface/ObsVector.h
+test/interface/State.h
+test/interface/VariableChange.h
+
+test/mpi/mpi.h
+
+test/generic/InterpolationInterface.h
+test/generic/VerticalLocEV.h
+
+test/util/Fortran.h
+test/util/IsAnyPointInVolumeInterior.h
+test/util/Random.h
+test/util/random.F90
+test/util/FCString.h
+test/util/f_c_string.F90
+test/util/AssociativeContainers.h
+test/util/Parameters.h
+test/util/ScalarOrMap.h
+test/util/FloatCompare.h
+test/util/CompareNVectors.h
+test/util/CompositePath.h
+test/util/MissingValues.h
+test/util/PropertiesOfNVectors.h
+test/util/stringFunctions.h
+)
+
+list (APPEND oops_fheader_files
+oops/util/linkedList_c.f
+oops/util/linkedList_i.f
+)
+
+# macro to create a symlink from src to dst
+function(CREATE_SYMLINK src dst)
+    foreach (FILENAME ${ARGN})
+        execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
+            ${src}/${FILENAME}
+            ${dst}/${FILENAME} )
+        endforeach(FILENAME)
+endfunction(CREATE_SYMLINK)
+
+# oops test input files
+list( APPEND oops_test_input
+  test/testinput/random.yaml
+  test/testinput/pushstringvector.yaml
+  test/testinput/atlas_interpolation_interface.yaml
+  test/testinput/unstructured_interpolation.yaml
+  test/testinput/variables.yaml
+  test/testinput/parameters.yaml
+  test/testinput/empty.yaml
+  test/testinput/mpi.yaml
+  test/testinput/spectrallmp.yaml
+)
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test/testinput)
+CREATE_SYMLINK( ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${oops_test_input} )
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test/testoutput)
 
 function(generate_fortran_bindings output filename)
 
@@ -222,36 +460,223 @@ function(generate_fortran_bindings output filename)
   set_source_files_properties(${outfile} PROPERTIES GENERATED TRUE)
 endfunction()
 
-ecbuild_add_library( TARGET     oops
-                     SOURCES    
-                                ${FORTRAN_BINDINGS}
+ecbuild_add_library( TARGET     ${PROJECT_NAME}
+                     SOURCES    ${FORTRAN_BINDINGS}
                                 ${oops_src_files}
-                     LIBS       ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES} fckit eckit_mpi eckit
                      INSTALL_HEADERS LISTED
-                     LINKER_LANGUAGE ${OOPS_LINKER_LANGUAGE}
-                   )
+                     HEADER_DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+                     LINKER_LANGUAGE CXX )
 
-ecbuild_add_test( TARGET  test_util.x
-                  BOOST
-                  SOURCES util/test/DateTime.cc
-                          util/test/Duration.cc
-                          util/test/test_main.cc
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/oops/util/linkedList_i.f
+               ${CMAKE_CURRENT_SOURCE_DIR}/oops/util/linkedList_c.f
+               DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/oops/util )
+
+target_sources( ${PROJECT_NAME} PRIVATE ${oops_test_src_files})
+install( DIRECTORY test DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/oops FILES_MATCHING PATTERN "*.h")
+
+target_compile_features( ${PROJECT_NAME} PUBLIC cxx_std_11 )
+if(OpenMP_FOUND)
+    target_link_libraries( ${PROJECT_NAME} PUBLIC OpenMP::OpenMP_Fortran OpenMP::OpenMP_CXX )
+endif()
+
+target_link_libraries( ${PROJECT_NAME} PUBLIC NetCDF::NetCDF_Fortran ) # For utils/netcdf_utils_mod
+target_link_libraries( ${PROJECT_NAME} PUBLIC MPI::MPI_Fortran MPI::MPI_CXX )
+target_link_libraries( ${PROJECT_NAME} PUBLIC ${LAPACK_LIBRARIES} )
+target_link_libraries( ${PROJECT_NAME} PUBLIC Eigen3::Eigen )
+target_link_libraries( ${PROJECT_NAME} PUBLIC eckit )
+target_link_libraries( ${PROJECT_NAME} PUBLIC fckit )
+target_link_libraries( ${PROJECT_NAME} PUBLIC atlas_f )
+target_link_libraries( ${PROJECT_NAME} PUBLIC Boost::boost )
+if ( GPTL_FOUND )
+	target_link_libraries( ${PROJECT_NAME} PUBLIC GPTL::GPTL )
+endif()
+
+#Configure include directory layout for build-tree to match install-tree
+set(OOPS_BUILD_DIR_INCLUDE_PATH ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/include)
+add_custom_target(oops_test_headers ALL COMMAND ${CMAKE_COMMAND} -E make_directory ${OOPS_BUILD_DIR_INCLUDE_PATH}/oops
+                                           COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/test ${OOPS_BUILD_DIR_INCLUDE_PATH}/oops/test)
+add_dependencies(oops oops_test_headers)
+
+target_include_directories(${PROJECT_NAME} INTERFACE
+                                $<BUILD_INTERFACE:${OOPS_BUILD_DIR_INCLUDE_PATH}>
+                                $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+                                $<INSTALL_INTERFACE:include/oops>)
+
+#Fortran module output directory for build and install interfaces
+set(MODULE_DIR module/${PROJECT_NAME}/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_Fortran_COMPILER_VERSION})
+set_target_properties(${PROJECT_NAME} PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/${MODULE_DIR})
+install(DIRECTORY ${CMAKE_BINARY_DIR}/${MODULE_DIR}/ DESTINATION ${MODULE_DIR})
+target_include_directories(${PROJECT_NAME} INTERFACE
+                                $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/${MODULE_DIR}>
+                                $<INSTALL_INTERFACE:${MODULE_DIR}>)
+
+if (${nlohmann_json_FOUND} AND ${nlohmann_json_schema_validator_FOUND})
+  message(STATUS "[OOPS] JSON Schema Validator activated.")
+  target_link_libraries( oops PRIVATE nlohmann_json nlohmann_json_schema_validator )
+  target_compile_definitions( oops PRIVATE OOPS_HAVE_NLOHMANN_JSON_SCHEMA_VALIDATOR )
+endif()
+
+## Tests
+
+ecbuild_add_test( TARGET oops_coding_norms
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/${PROJECT_NAME}_cpplint.py
+                  ARGS --quiet --recursive ${CMAKE_CURRENT_SOURCE_DIR} )
+
+ecbuild_add_test( TARGET  test_oops_base_variables
+                  SOURCES test/base/Variables.cc
+                  ARGS    "test/testinput/variables.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_base_posttimer
+                  SOURCES test/base/PostTimer.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops eckit)
+
+ecbuild_add_test( TARGET  test_util_random
+                  SOURCES test/base/Random.cc
+                  ARGS    "test/testinput/random.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_pushstringvector
+                  SOURCES test/base/FCString.cc
+                  ARGS    "test/testinput/pushstringvector.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_parameters
+                  SOURCES test/base/Parameters.cc
+                  ARGS    "test/testinput/parameters.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_generic_gc99
+                  SOURCES test/generic/gc99.cc
+                  LIBS    oops eckit )
+
+ecbuild_add_test( TARGET  test_util_isanypointinvolumeinterior
+                  SOURCES test/util/IsAnyPointInVolumeInterior.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_partialdatetime
+                  SOURCES test/util/PartialDateTime.cc
+                  LIBS    oops eckit )
+
+ecbuild_add_test( TARGET  test_util_datetime
+                  SOURCES test/util/DateTime.cc
+                  LIBS    oops eckit )
+
+ecbuild_add_test( TARGET  test_util_duration
+                  SOURCES test/util/Duration.cc
+                  LIBS    oops eckit )
+
+ecbuild_add_test( TARGET  test_util_intset_parser
+                  SOURCES test/util/IntSetParser.cc
+                  LIBS    oops eckit )
+
+ecbuild_add_test( TARGET  test_util_scalarormap
+                  SOURCES test/util/ScalarOrMap.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_floatcompare
+                  SOURCES test/util/FloatCompare.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_compositepath
+                  SOURCES test/util/CompositePath.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_stringfunctions
+                  SOURCES test/util/stringFunctions.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_mpi_mpi
+                  MPI     4
+                  SOURCES test/mpi/mpi.cc
+                  ARGS    "test/testinput/mpi.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_oops_atlas_interpolation_interface
+                  SOURCES test/generic/InterpolationInterface.cc
+                  ARGS    "test/testinput/atlas_interpolation_interface.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_oops_unstructured_interpolation
+                  SOURCES test/generic/InterpolationInterface.cc
+                  ARGS    "test/testinput/unstructured_interpolation.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_comparenvectors
+                  SOURCES test/util/CompareNVectors.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_missingvalues
+                  SOURCES test/util/MissingValues.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_associativecontainers
+                  SOURCES test/util/AssociativeContainers.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_propertiesofnvectors
+                  SOURCES test/util/PropertiesOfNVectors.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_assimilation_fullgmres
+                  SOURCES test/assimilation/FullGMRES.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_assimilation_rotmat
+                  SOURCES test/assimilation/rotmat.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_assimilation_solvematrixequation
+                  SOURCES test/assimilation/SolveMatrixEquation.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_assimilation_spectrallmp
+                  SOURCES test/assimilation/SpectralLMP.cc
+                  ARGS    "test/testinput/spectrallmp.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_assimilation_testvector3d
+                  SOURCES test/assimilation/TestVector3D.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_assimilation_tridiagsolve
+                  SOURCES test/assimilation/TriDiagSolve.cc
+                  ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 
 if( HAVE_FCTEST )
-add_fctest( TARGET  test_util_config_intfb.x
-            SOURCES util/test/config.F90
-            CONDITION HAVE_FCTEST
-            LIBS    oops )
 
 add_fctest( TARGET  test_util_datetime_intfb.x
-            SOURCES util/test/datetime.F90
+            SOURCES test/util/datetime.F90
+            LINKER_LANGUAGE Fortran
             CONDITION HAVE_FCTEST
             LIBS    oops )
 
 add_fctest( TARGET  test_util_duration_intfb.x
-            SOURCES util/test/duration.F90
+            SOURCES test/util/duration.F90
+            LINKER_LANGUAGE Fortran
             CONDITION HAVE_FCTEST
             LIBS    oops )
-endif()
 
+add_fctest( TARGET  test_util_missing_values_f.x
+            SOURCES test/util/missing_values.F90
+            LINKER_LANGUAGE Fortran
+            CONDITION HAVE_FCTEST
+            LIBS    oops )
+
+endif()

@@ -1,0 +1,90 @@
+Test     : Initial state for member 0:
+Test     :  Valid time: 2010-01-01T03:00:00Z
+Test     :  Min=6.77563, Max=9.58375, Average=8.05758
+Test     : Final state for member 0:
+Test     :  Valid time: 2010-01-02T03:00:00Z
+Test     :  Min=3.21752, Max=11.6627, Average=7.84602
+Test     : H(x) for member 0:
+Test     : Lorenz 95 nobs= 160 Min=3.21752, Max=11.6627, Average=7.98622
+Test     : End H(x) for member 0
+Test     : Initial state for member 1:
+Test     :  Valid time: 2010-01-01T03:00:00Z
+Test     :  Min=6.65478, Max=9.15492, Average=7.92347
+Test     : Final state for member 1:
+Test     :  Valid time: 2010-01-02T03:00:00Z
+Test     :  Min=3.37329, Max=11.3831, Average=7.67679
+Test     : H(x) for member 1:
+Test     : Lorenz 95 nobs= 160 Min=3.70121, Max=11.274, Average=7.83958
+Test     : End H(x) for member 1
+Test     : Initial state for member 2:
+Test     :  Valid time: 2010-01-01T03:00:00Z
+Test     :  Min=6.68284, Max=8.6424, Average=7.86167
+Test     : Final state for member 2:
+Test     :  Valid time: 2010-01-02T03:00:00Z
+Test     :  Min=4.80264, Max=11.5457, Average=7.77423
+Test     : H(x) for member 2:
+Test     : Lorenz 95 nobs= 160 Min=4.80264, Max=11.5457, Average=7.83767
+Test     : End H(x) for member 2
+Test     : Initial state for member 3:
+Test     :  Valid time: 2010-01-01T03:00:00Z
+Test     :  Min=6.31785, Max=9.21326, Average=7.85972
+Test     : Final state for member 3:
+Test     :  Valid time: 2010-01-02T03:00:00Z
+Test     :  Min=3.15896, Max=11.4182, Average=7.71317
+Test     : H(x) for member 3:
+Test     : Lorenz 95 nobs= 160 Min=3.15896, Max=11.6734, Average=7.80837
+Test     : End H(x) for member 3
+Test     : Initial state for member 4:
+Test     :  Valid time: 2010-01-01T03:00:00Z
+Test     :  Min=6.73481, Max=9.69558, Average=7.75098
+Test     : Final state for member 4:
+Test     :  Valid time: 2010-01-02T03:00:00Z
+Test     :  Min=2.58571, Max=11.1087, Average=7.52551
+Test     : H(x) for member 4:
+Test     : Lorenz 95 nobs= 160 Min=3.80165, Max=10.8183, Average=7.70106
+Test     : End H(x) for member 4
+Test     : Initial state for member 5:
+Test     :  Valid time: 2010-01-01T03:00:00Z
+Test     :  Min=6.86487, Max=9.88486, Average=8.01435
+Test     : Final state for member 5:
+Test     :  Valid time: 2010-01-02T03:00:00Z
+Test     :  Min=2.47211, Max=11.9171, Average=7.73606
+Test     : H(x) for member 5:
+Test     : Lorenz 95 nobs= 160 Min=2.47211, Max=11.9603, Average=7.91962
+Test     : End H(x) for member 5
+Test     : Initial state for member 6:
+Test     :  Valid time: 2010-01-01T03:00:00Z
+Test     :  Min=6.50085, Max=8.79072, Average=7.87644
+Test     : Final state for member 6:
+Test     :  Valid time: 2010-01-02T03:00:00Z
+Test     :  Min=4.38182, Max=11.3824, Average=7.7142
+Test     : H(x) for member 6:
+Test     : Lorenz 95 nobs= 160 Min=4.40463, Max=11.2692, Average=7.83456
+Test     : End H(x) for member 6
+Test     : Initial state for member 7:
+Test     :  Valid time: 2010-01-01T03:00:00Z
+Test     :  Min=6.71261, Max=8.88913, Average=7.73812
+Test     : Final state for member 7:
+Test     :  Valid time: 2010-01-02T03:00:00Z
+Test     :  Min=4.1669, Max=11.0728, Average=7.62218
+Test     : H(x) for member 7:
+Test     : Lorenz 95 nobs= 160 Min=4.9543, Max=11.0728, Average=7.71041
+Test     : End H(x) for member 7
+Test     : Initial state for member 8:
+Test     :  Valid time: 2010-01-01T03:00:00Z
+Test     :  Min=6.59707, Max=9.32727, Average=7.94866
+Test     : Final state for member 8:
+Test     :  Valid time: 2010-01-02T03:00:00Z
+Test     :  Min=3.12835, Max=11.8686, Average=7.71032
+Test     : H(x) for member 8:
+Test     : Lorenz 95 nobs= 160 Min=4.16082, Max=11.8686, Average=7.8647
+Test     : End H(x) for member 8
+Test     : Initial state for member 9:
+Test     :  Valid time: 2010-01-01T03:00:00Z
+Test     :  Min=6.89285, Max=9.01122, Average=7.99797
+Test     : Final state for member 9:
+Test     :  Valid time: 2010-01-02T03:00:00Z
+Test     :  Min=4.08623, Max=11.7555, Average=7.82686
+Test     : H(x) for member 9:
+Test     : Lorenz 95 nobs= 160 Min=4.08623, Max=11.7555, Average=7.93082
+Test     : End H(x) for member 9

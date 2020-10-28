@@ -16,17 +16,16 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
-#include "util/Logger.h"
-#include "oops/base/IdentityMatrix.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
+#include "oops/assimilation/GMRESR.h"
 #include "oops/assimilation/LBHessianMatrix.h"
 #include "oops/assimilation/LBMinimizer.h"
 #include "oops/assimilation/QNewtonLMP.h"
-#include "oops/assimilation/GMRESR.h"
-
-#include "util/dot_product.h"
-#include "util/formats.h"
+#include "oops/base/IdentityMatrix.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/formats.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 
@@ -51,10 +50,10 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> class LBGMRESRMinimizer : public LBMinimizer<MODEL> {
-  typedef LBHessianMatrix<MODEL>  LBHessianMatrix_;
-  typedef CostFunction<MODEL>     CostFct_;
-  typedef ControlIncrement<MODEL> CtrlInc_;
+template<typename MODEL, typename OBS> class LBGMRESRMinimizer : public LBMinimizer<MODEL, OBS> {
+  typedef LBHessianMatrix<MODEL, OBS>  LBHessianMatrix_;
+  typedef CostFunction<MODEL, OBS>     CostFct_;
+  typedef ControlIncrement<MODEL, OBS> CtrlInc_;
 
  public:
   const std::string classname() const override {return "LBGMRESRMinimizer";}
@@ -62,22 +61,22 @@ template<typename MODEL> class LBGMRESRMinimizer : public LBMinimizer<MODEL> {
   ~LBGMRESRMinimizer() {}
 
  private:
-  void solve(CtrlInc_ &, CtrlInc_ &, const LBHessianMatrix_ &, 
+  void solve(CtrlInc_ &, CtrlInc_ &, const LBHessianMatrix_ &,
              const int, const double) override;
 };
 
 // =============================================================================
 
-template<typename MODEL>
-LBGMRESRMinimizer<MODEL>::LBGMRESRMinimizer(const eckit::Configuration & conf, 
+template<typename MODEL, typename OBS>
+LBGMRESRMinimizer<MODEL, OBS>::LBGMRESRMinimizer(const eckit::Configuration & conf,
                                             const CostFct_ & J)
-  : LBMinimizer<MODEL>(J)
+  : LBMinimizer<MODEL, OBS>(J)
 {}
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void LBGMRESRMinimizer<MODEL>::solve(CtrlInc_ & dx, CtrlInc_ & rr,
+template<typename MODEL, typename OBS>
+void LBGMRESRMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & rr,
                                      const LBHessianMatrix_ & LBHessian,
                                      const int maxiter, const double tolerance) {
   IdentityMatrix<CtrlInc_> Id;

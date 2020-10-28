@@ -11,11 +11,11 @@
 #ifndef OOPS_ASSIMILATION_SADDLEPOINTVECTOR_H_
 #define OOPS_ASSIMILATION_SADDLEPOINTVECTOR_H_
 
-#include <boost/scoped_ptr.hpp>
+#include <memory>
 
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/DualVector.h"
-#include "util/dot_product.h"
+#include "oops/util/dot_product.h"
 
 namespace oops {
 
@@ -27,9 +27,9 @@ namespace oops {
 /// Control vector for the saddle point formulation.
 
 // -----------------------------------------------------------------------------
-template<typename MODEL> class SaddlePointVector {
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef DualVector<MODEL>          Multipliers_;
+template<typename MODEL, typename OBS> class SaddlePointVector {
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef DualVector<MODEL, OBS>          Multipliers_;
 
  public:
   SaddlePointVector(CtrlInc_ *, Multipliers_ *);
@@ -58,29 +58,29 @@ template<typename MODEL> class SaddlePointVector {
   double dot_product_with(const SaddlePointVector &) const;
 
  private:
-  boost::scoped_ptr<Multipliers_> lambda_;
-  boost::scoped_ptr<CtrlInc_> dx_;
+  std::unique_ptr<Multipliers_> lambda_;
+  std::unique_ptr<CtrlInc_> dx_;
 };
 
 // =============================================================================
 
-template<typename MODEL>
-SaddlePointVector<MODEL>::SaddlePointVector(CtrlInc_ * dx,
+template<typename MODEL, typename OBS>
+SaddlePointVector<MODEL, OBS>::SaddlePointVector(CtrlInc_ * dx,
                                             Multipliers_ * lambda)
   : lambda_(lambda), dx_(dx)
 {}
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-SaddlePointVector<MODEL>::SaddlePointVector(const SaddlePointVector & other)
+template<typename MODEL, typename OBS>
+SaddlePointVector<MODEL, OBS>::SaddlePointVector(const SaddlePointVector & other)
   : lambda_(new Multipliers_(*other.lambda_)), dx_(new CtrlInc_(*other.dx_))
 {}
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> SaddlePointVector<MODEL> &
-        SaddlePointVector<MODEL>::operator=(const SaddlePointVector & rhs) {
+template<typename MODEL, typename OBS> SaddlePointVector<MODEL, OBS> &
+        SaddlePointVector<MODEL, OBS>::operator=(const SaddlePointVector & rhs) {
   *lambda_ = *rhs.lambda_;
   *dx_     = *rhs.dx_;
   return *this;
@@ -88,8 +88,8 @@ template<typename MODEL> SaddlePointVector<MODEL> &
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> SaddlePointVector<MODEL> &
-        SaddlePointVector<MODEL>::operator+=(const SaddlePointVector & rhs) {
+template<typename MODEL, typename OBS> SaddlePointVector<MODEL, OBS> &
+        SaddlePointVector<MODEL, OBS>::operator+=(const SaddlePointVector & rhs) {
   *lambda_ += *rhs.lambda_;
   *dx_     += *rhs.dx_;
   return *this;
@@ -97,8 +97,8 @@ template<typename MODEL> SaddlePointVector<MODEL> &
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> SaddlePointVector<MODEL> &
-        SaddlePointVector<MODEL>::operator-=(const SaddlePointVector & rhs) {
+template<typename MODEL, typename OBS> SaddlePointVector<MODEL, OBS> &
+        SaddlePointVector<MODEL, OBS>::operator-=(const SaddlePointVector & rhs) {
   *lambda_ -= *rhs.lambda_;
   *dx_     -= *rhs.dx_;
   return *this;
@@ -106,8 +106,8 @@ template<typename MODEL> SaddlePointVector<MODEL> &
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> SaddlePointVector<MODEL> &
-        SaddlePointVector<MODEL>::operator*=(const double rhs) {
+template<typename MODEL, typename OBS> SaddlePointVector<MODEL, OBS> &
+        SaddlePointVector<MODEL, OBS>::operator*=(const double rhs) {
   *lambda_ *= rhs;
   *dx_     *= rhs;
   return *this;
@@ -115,14 +115,14 @@ template<typename MODEL> SaddlePointVector<MODEL> &
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> void SaddlePointVector<MODEL>::zero() {
+template<typename MODEL, typename OBS> void SaddlePointVector<MODEL, OBS>::zero() {
   lambda_->zero();
   dx_->zero();
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> void SaddlePointVector<MODEL>::axpy(const double zz,
+template<typename MODEL, typename OBS> void SaddlePointVector<MODEL, OBS>::axpy(const double zz,
                                                const SaddlePointVector & rhs) {
   lambda_->axpy(zz, *rhs.lambda_);
   dx_->axpy(zz, *rhs.dx_);
@@ -130,7 +130,7 @@ template<typename MODEL> void SaddlePointVector<MODEL>::axpy(const double zz,
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> double SaddlePointVector<MODEL>::dot_product_with(
+template<typename MODEL, typename OBS> double SaddlePointVector<MODEL, OBS>::dot_product_with(
                                     const SaddlePointVector & x2) const {
 return dot_product(*lambda_, *x2.lambda_)
       +dot_product(*dx_, *x2.dx_);

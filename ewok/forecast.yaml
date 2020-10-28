@@ -1,0 +1,9 @@
+forecast length: $(forecast_length)
+initial condition:
+  $(AN_TEMPLATE)
+geometry:
+  $(GEOMETRY)
+model:
+  $(MODEL)
+output:
+  $(FC_OUTPUT)

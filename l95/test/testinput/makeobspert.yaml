@@ -1,0 +1,28 @@
+geometry:
+  resol: 40
+model:
+  f: 8.0
+  name: L95
+  tstep: PT1H30M
+initial condition:
+  date: 2010-01-01T03:00:00Z
+  filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H
+forecast length: P1D
+window begin: 2010-01-01T03:00:00Z
+window length: P1D
+observations:
+- obs space:
+    obsdataout: Data/l95.perturbed4d.2010-01-02T00:00:00Z.obt
+    generate:
+      begin: PT3H
+      obs_density: 20
+      obs_error: 0.4
+      obs_frequency: PT3H
+  obs operator: {}
+  obs error:
+    covariance model: diagonal
+  obs filters:
+  - filter: GOMsaver
+    filename: Data/l95.gom
+obs perturbations: true
+make obs: true

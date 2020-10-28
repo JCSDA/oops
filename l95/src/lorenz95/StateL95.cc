@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2017-2019 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -12,12 +13,10 @@
 
 #include <fstream>
 #include <string>
+#include <vector>
 
-#include "util/Logger.h"
 #include "eckit/config/Configuration.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
-#include "util/abor1_cpp.h"
+#include "eckit/exception/Exceptions.h"
 
 #include "lorenz95/FieldL95.h"
 #include "lorenz95/GomL95.h"
@@ -28,44 +27,56 @@
 #include "lorenz95/ModelTrajectory.h"
 #include "lorenz95/Resolution.h"
 
+#include "oops/util/abor1_cpp.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
+#include "oops/util/stringFunctions.h"
 
-
-using oops::Log;
+namespace oops {
+  class Variables;
+}
+namespace sf = util::stringfunctions;
 
 namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
 /// Constructor, destructor
 // -----------------------------------------------------------------------------
-StateL95::StateL95(const Resolution & resol, const NoVariables &,
+StateL95::StateL95(const Resolution & resol, const oops::Variables & vars,
                    const util::DateTime & vt)
-  : fld_(resol), time_(vt)
+  : fld_(resol), time_(vt), vars_(vars)
 {
-  Log::trace() << "StateL95::StateL95 created" << std::endl;
+  oops::Log::trace() << "StateL95::StateL95 created" << std::endl;
 }
 // -----------------------------------------------------------------------------
-StateL95::StateL95(const Resolution & resol, const eckit::Configuration & file)
-  : fld_(resol), time_(util::DateTime())
+StateL95::StateL95(const Resolution & resol, const eckit::Configuration & conf)
+  : fld_(resol), time_(conf.getString("date")), vars_({"x"})
 {
-  this->read(file);
-  Log::trace() << "StateL95::StateL95 created and read in." << std::endl;
+  oops::Log::trace() << "StateL95::StateL95 conf " << conf << std::endl;
+  if (conf.has("filename")) {
+    this->read(conf);
+  } else {
+    fld_.generate(conf);
+  }
+  oops::Log::trace() << "StateL95::StateL95 created and read in." << std::endl;
 }
 // -----------------------------------------------------------------------------
 StateL95::StateL95(const Resolution & resol, const StateL95 & xx)
-  : fld_(resol), time_(xx.time_)
+  : fld_(resol), time_(xx.time_), vars_(xx.vars_)
 {
   fld_ = xx.fld_;
-  Log::trace() << "StateL95::StateL95 created by interpolation." << std::endl;
+  oops::Log::trace() << "StateL95::StateL95 created by interpolation." << std::endl;
 }
 // -----------------------------------------------------------------------------
 StateL95::StateL95(const StateL95 & xx)
-  : fld_(xx.fld_), time_(xx.time_)
+  : fld_(xx.fld_), time_(xx.time_), vars_(xx.vars_)
 {
-  Log::trace() << "StateL95::StateL95 copy-created." << std::endl;
+  oops::Log::trace() << "StateL95::StateL95 copy-created." << std::endl;
 }
 // -----------------------------------------------------------------------------
 StateL95::~StateL95() {
-  Log::trace() << "StateL95::StateL95 destructed." << std::endl;
+  oops::Log::trace() << "StateL95::StateL95 destructed." << std::endl;
 }
 // -----------------------------------------------------------------------------
 /// Basic operators
@@ -73,13 +84,8 @@ StateL95::~StateL95() {
 StateL95 & StateL95::operator=(const StateL95 & rhs) {
   fld_ = rhs.fld_;
   time_ = rhs.time_;
+  vars_ = rhs.vars_;
   return *this;
-}
-// -----------------------------------------------------------------------------
-/// Interpolate to observation location
-// -----------------------------------------------------------------------------
-void StateL95::interpolate(const LocsL95 & locs, GomL95 & vals) const {
-  fld_.interp(locs, vals);
 }
 // -----------------------------------------------------------------------------
 /// Interactions with Increments
@@ -93,10 +99,11 @@ StateL95 & StateL95::operator+=(const IncrementL95 & dx) {
 /// Utilities
 // -----------------------------------------------------------------------------
 void StateL95::read(const eckit::Configuration & config) {
-  const std::string filename(config.getString("filename"));
-  Log::trace() << "StateL95::read opening " << filename << std::endl;
+  std::string filename(config.getString("filename"));
+  sf::swapNameMember(config, filename);
+  oops::Log::trace() << "StateL95::read opening " << filename << std::endl;
   std::ifstream fin(filename.c_str());
-  if (!fin.is_open()) ABORT("StateL95::read: Error opening file");
+  if (!fin.is_open()) ABORT("StateL95::read: Error opening file: " + filename);
 
   int resol;
   fin >> resol;
@@ -105,16 +112,14 @@ void StateL95::read(const eckit::Configuration & config) {
   std::string stime;
   fin >> stime;
   const util::DateTime tt(stime);
-  const util::DateTime tc(config.getString("date"));
-  if (tc != tt) {
+  if (time_ != tt) {
     ABORT("StateL95::read: date and data file inconsistent.");
   }
-  time_ = tt;
 
   fld_.read(fin);
 
   fin.close();
-  Log::trace() << "StateL95::read: file closed." << std::endl;
+  oops::Log::trace() << "StateL95::read: file closed." << std::endl;
 }
 // -----------------------------------------------------------------------------
 void StateL95::write(const eckit::Configuration & config) const {
@@ -139,9 +144,11 @@ void StateL95::write(const eckit::Configuration & config) const {
     filename += "."+time_.toString();
   }
 
-  Log::trace() << "StateL95::write opening " << filename << std::endl;
+  sf::swapNameMember(config, filename);
+
+  oops::Log::trace() << "StateL95::write opening " << filename << std::endl;
   std::ofstream fout(filename.c_str());
-  if (!fout.is_open()) ABORT("StateL95::write: Error opening file");
+  if (!fout.is_open()) ABORT("StateL95::write: Error opening file: " + filename);
 
   fout << fld_.resol() << std::endl;
   fout << time_ << std::endl;
@@ -149,12 +156,52 @@ void StateL95::write(const eckit::Configuration & config) const {
   fout << std::endl;
 
   fout.close();
-  Log::trace() << "StateL95::write file closed." << std::endl;
+  oops::Log::trace() << "StateL95::write file closed." << std::endl;
 }
 // -----------------------------------------------------------------------------
 void StateL95::print(std::ostream & os) const {
   os << std::endl << " Valid time: " << time_;
   os << std::endl << fld_;
+}
+// -----------------------------------------------------------------------------
+/// For accumulator
+// -----------------------------------------------------------------------------
+void StateL95::zero() {
+  fld_.zero();
+}
+// -----------------------------------------------------------------------------
+void StateL95::accumul(const double & zz, const StateL95 & xx) {
+  fld_.axpy(zz, xx.fld_);
+}
+// -----------------------------------------------------------------------------
+/// Serialize - deserialize
+// -----------------------------------------------------------------------------
+size_t StateL95::serialSize() const {
+  size_t nn = 3;
+  nn += fld_.serialSize();
+  nn += time_.serialSize();
+  return nn;
+}
+// -----------------------------------------------------------------------------
+void StateL95::serialize(std::vector<double> & vect) const {
+  vect.push_back(1001.0);
+  fld_.serialize(vect);
+  vect.push_back(2002.0);
+  time_.serialize(vect);
+  vect.push_back(3003.0);
+}
+// -----------------------------------------------------------------------------
+void StateL95::deserialize(const std::vector<double> & vect, size_t & index) {
+  size_t ii = index + this->serialSize();
+  ASSERT(vect.at(index) == 1001.0);
+  ++index;
+  fld_.deserialize(vect, index);
+  ASSERT(vect.at(index) == 2002.0);
+  ++index;
+  time_.deserialize(vect, index);
+  ASSERT(vect.at(index) == 3003.0);
+  ++index;
+  ASSERT(index == ii);
 }
 // -----------------------------------------------------------------------------
 

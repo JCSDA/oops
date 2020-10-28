@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -15,24 +15,24 @@
 #include <sstream>
 #include <string>
 
-#include "util/Logger.h"
+#include "eckit/config/Configuration.h"
 #include "model/ObsBias.h"
 #include "model/ObsBiasCovariance.h"
-#include "eckit/config/Configuration.h"
-
-using oops::Log;
-
+#include "oops/util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
-ObsBiasIncrement::ObsBiasIncrement(const eckit::Configuration & conf)
+ObsBiasIncrement::ObsBiasIncrement(const ObsSpaceQG &, const eckit::Configuration & conf)
   : bias_(ObsBias::ntypes, 0.0), active_(ObsBias::ntypes, false)
 {
-  active_[0] = conf.has("stream");
-  active_[1] = conf.has("uwind");
-  active_[2] = conf.has("vwind");
-  active_[3] = conf.has("wspeed");
+  if (conf.has("obs bias error")) {
+    const eckit::LocalConfiguration covconf(conf, "obs bias error");
+    active_[0] = covconf.has("stream");
+    active_[1] = covconf.has("uwind");
+    active_[2] = covconf.has("vwind");
+    active_[3] = covconf.has("wspeed");
+  }
   bool on = false;
   std::string strn = "";
   for (unsigned int jj = 0; jj < ObsBias::ntypes; ++jj) {
@@ -44,7 +44,7 @@ ObsBiasIncrement::ObsBiasIncrement(const eckit::Configuration & conf)
       strn += "off";
     }
   }
-  if (on) {Log::trace() << "ObsBiasIncrement created : " << strn << std::endl;}
+  if (on) {oops::Log::trace() << "ObsBiasIncrement created : " << strn << std::endl;}
 }
 // -----------------------------------------------------------------------------
 ObsBiasIncrement::ObsBiasIncrement(const ObsBiasIncrement & other,
@@ -128,8 +128,26 @@ double ObsBiasIncrement::norm() const {
       ++ii;
     }
   }
-  if (ii>0) zz = std::sqrt(zz/ii);
+  if (ii > 0) zz = std::sqrt(zz/ii);
   return zz;
+}
+// -----------------------------------------------------------------------------
+size_t ObsBiasIncrement::serialSize() const {
+  size_t nn = bias_.size();
+  return nn;
+}
+// -----------------------------------------------------------------------------
+void ObsBiasIncrement::serialize(std::vector<double> & vect) const {
+  vect.insert(vect.end(), bias_.begin(), bias_.end());
+  oops::Log::trace() << "ObsBiasIncrement::serialize done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+void ObsBiasIncrement::deserialize(const std::vector<double> & vect, size_t & index) {
+  for (unsigned int jj = 0; jj < bias_.size(); ++jj) {
+    bias_[jj] = vect[index];
+    ++index;
+  }
+  oops::Log::trace() << "ObsBiasIncrement::deserialize done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 void ObsBiasIncrement::print(std::ostream & os) const {

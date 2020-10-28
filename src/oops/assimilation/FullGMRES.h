@@ -17,9 +17,9 @@
 
 #include "oops/assimilation/rotmat.h"
 #include "oops/assimilation/UpTriSolve.h"
-#include "util/dot_product.h"
-#include "util/formats.h"
-#include "util/Logger.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/formats.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 
@@ -69,6 +69,9 @@ double FullGMRES(VECTOR & xx, const VECTOR & bb, const AMATRIX & A,
                  const double tolerance, std::vector<VECTOR> & pqVEC,
                  std::vector<VECTOR> & xyVEC) {
   std::vector<VECTOR> VV;
+  // reserve space to avoid extra copies
+  VV.reserve(maxiter+1);
+
   std::vector< std::vector<double> > H;
   std::vector<double> cs(maxiter+1, 0);
   std::vector<double> sn(maxiter+1, 0);
@@ -80,7 +83,7 @@ double FullGMRES(VECTOR & xx, const VECTOR & bb, const AMATRIX & A,
 
   VECTOR rr(bb);
   double xnrm2 = dot_product(xx, xx);
-  if (xnrm2 != 0) {
+  if (xnrm2 > 0.0) {
     A.multiply(xx, ww);
     rr -= ww;  // r = b - Ax
   }

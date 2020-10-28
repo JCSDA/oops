@@ -25,7 +25,8 @@ namespace oops {
  *  First solves L y = rhs then solves U sol = y
 */
 
-void UpHessSolve(std::vector< std::vector<double> > & UpHess, const std::vector<double> & rhs, std::vector<double> & sol) {
+void UpHessSolve(std::vector< std::vector<double> > & UpHess, const std::vector<double> & rhs,
+                 std::vector<double> & sol) {
   const double n = rhs.size();
   ASSERT(UpHess.size() == n);
   sol.resize(n);
@@ -34,7 +35,7 @@ void UpHessSolve(std::vector< std::vector<double> > & UpHess, const std::vector<
 
   // Step 1: Compute the LU factorization
   // Note that L = I + diag(v(2:n),-1)
-  v[0]=0;
+  v[0] = 0;
   for (int ii = 0; ii <= n-2; ++ii) {
     v[ii+1] = UpHess[ii][ii+1]/UpHess[ii][ii];
     for (int jj = ii; jj <= n-1; ++jj) {
@@ -54,7 +55,7 @@ void UpHessSolve(std::vector< std::vector<double> > & UpHess, const std::vector<
     y[ii] = rhs[ii] - v[ii]*y[ii-1];
   }
 
-  //Step 3: Solve the upper triangular system U sol = y
+  // Step 3: Solve the upper triangular system U sol = y
   UpTriSolve(UpHess, y, sol, n);
 }
 

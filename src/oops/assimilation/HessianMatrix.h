@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -13,17 +13,13 @@
 
 #include <boost/noncopyable.hpp>
 
-#include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/ControlIncrement.h"
-#include "oops/base/GeneralizedDepartures.h"
-#include "oops/base/PostProcessorTL.h"
-#include "oops/base/PostProcessorAD.h"
-#include "oops/interface/Increment.h"
-#include "util/PrintAdjTest.h"
+#include "oops/assimilation/CostFunction.h"
+#include "oops/base/PostProcessorTLAD.h"
+#include "oops/util/PrintAdjTest.h"
 
 namespace oops {
-  template<typename MODEL> class JqTermTL;
-  template<typename MODEL> class JqTermAD;
+  template<typename MODEL> class JqTermTLAD;
 
 /// The Hessian matrix: \f$ B^{-1} + H^T R^{-1} H \f$.
 /*!
@@ -32,12 +28,10 @@ namespace oops {
  *  matrix which includes all the terms of the cost function.
  */
 
-template<typename MODEL> class HessianMatrix : private boost::noncopyable {
-  typedef Increment<MODEL>           Increment_;
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef JqTermAD<MODEL>            JqTermAD_;
-  typedef JqTermTL<MODEL>            JqTermTL_;
+template<typename MODEL, typename OBS> class HessianMatrix : private boost::noncopyable {
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef JqTermTLAD<MODEL>               JqTermTLAD_;
 
  public:
   explicit HessianMatrix(const CostFct_ & j,
@@ -53,23 +47,21 @@ template<typename MODEL> class HessianMatrix : private boost::noncopyable {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> 
-HessianMatrix<MODEL>::HessianMatrix(const CostFct_ & j,
-                                    const bool test) 
+template<typename MODEL, typename OBS>
+HessianMatrix<MODEL, OBS>::HessianMatrix(const CostFct_ & j, const bool test)
   : j_(j), test_(test), iter_(0)
 {}
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> 
-void HessianMatrix<MODEL>::multiply(const CtrlInc_ & dx, 
-                                    CtrlInc_ & dz) const {
+template<typename MODEL, typename OBS>
+void HessianMatrix<MODEL, OBS>::multiply(const CtrlInc_ & dx, CtrlInc_ & dz) const {
 // Increment counter
   iter_++;
 
 // Setup TL terms of cost function
-  PostProcessorTL<Increment_> costtl;
-  JqTermTL_ * jqtl = j_.jb().initializeTL();
+  PostProcessorTLAD<MODEL> costtl;
+  JqTermTLAD_ * jqtl = j_.jb().initializeTL();
   costtl.enrollProcessor(jqtl);
   unsigned iq = 0;
   if (jqtl) iq = 1;
@@ -84,7 +76,7 @@ void HessianMatrix<MODEL>::multiply(const CtrlInc_ & dx,
 // Finalize Jb+Jq
 
 // Get TLM outputs, multiply by covariance inverses and setup ADJ forcing terms
-  PostProcessorAD<Increment_> costad;
+  PostProcessorTLAD<MODEL> costad;
   dz.zero();
   CtrlInc_ dw(j_.jb());
 
@@ -92,13 +84,13 @@ void HessianMatrix<MODEL>::multiply(const CtrlInc_ & dx,
   CtrlInc_ tmp(j_.jb());
   j_.jb().finalizeTL(jqtl, dx, dw);
   j_.jb().multiplyBinv(dw, tmp);
-  JqTermAD_ * jqad = j_.jb().initializeAD(dz, tmp);
+  JqTermTLAD_ * jqad = j_.jb().initializeAD(dz, tmp);
   costad.enrollProcessor(jqad);
 
   j_.zeroAD(dw);
 
-  DualVector<MODEL> ww;
-  DualVector<MODEL> zz;
+  DualVector<MODEL, OBS> ww;
+  DualVector<MODEL, OBS> zz;
 
 // Jo + Jc
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
@@ -121,7 +113,6 @@ void HessianMatrix<MODEL>::multiply(const CtrlInc_ & dx,
      Log::info() << "Online adjoint test, iteration: " << iter_ << std::endl
                  << util::PrintAdjTest(adj_tst_fwd, adj_tst_bwd, "G")
                  << std::endl;
-
   }
 }
 

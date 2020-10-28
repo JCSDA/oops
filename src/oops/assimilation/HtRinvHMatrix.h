@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -12,19 +12,15 @@
 #define OOPS_ASSIMILATION_HTRINVHMATRIX_H_
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
 
-#include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/ControlIncrement.h"
+#include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/DualVector.h"
-#include "oops/base/PostProcessorTL.h"
-#include "oops/base/PostProcessorAD.h"
-#include "oops/interface/Increment.h"
-#include "util/dot_product.h"
-#include "util/formats.h"
-#include "util/Logger.h"
-#include "util/PrintAdjTest.h"
+#include "oops/base/PostProcessorTLAD.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/formats.h"
+#include "oops/util/Logger.h"
+#include "oops/util/PrintAdjTest.h"
 
 namespace oops {
 
@@ -36,14 +32,12 @@ namespace oops {
  *  operators for the other terms of the cost function.
  */
 
-template<typename MODEL> class HtRinvHMatrix : private boost::noncopyable {
-  typedef Increment<MODEL>           Increment_;
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef CostFunction<MODEL>        CostFct_;
+template<typename MODEL, typename OBS> class HtRinvHMatrix : private boost::noncopyable {
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef CostFunction<MODEL, OBS>        CostFct_;
 
  public:
-  explicit HtRinvHMatrix(const CostFct_ & j, 
-                         const bool test = false); 
+  explicit HtRinvHMatrix(const CostFct_ & j, const bool test = false);
 
   void multiply(const CtrlInc_ & dx, CtrlInc_ & dz) const;
 
@@ -55,22 +49,20 @@ template<typename MODEL> class HtRinvHMatrix : private boost::noncopyable {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> 
-HtRinvHMatrix<MODEL>::HtRinvHMatrix(const CostFct_ & j, 
-                                    const bool test)
+template<typename MODEL, typename OBS>
+HtRinvHMatrix<MODEL, OBS>::HtRinvHMatrix(const CostFct_ & j, const bool test)
   : j_(j), test_(test), iter_(0)
 {}
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> 
-void HtRinvHMatrix<MODEL>::multiply(const CtrlInc_ & dx, 
-                                    CtrlInc_ & dz) const {
+template<typename MODEL, typename OBS>
+void HtRinvHMatrix<MODEL, OBS>::multiply(const CtrlInc_ & dx, CtrlInc_ & dz) const {
 // Increment counter
-  iter_++;  
+  iter_++;
 
 // Setup TL terms of cost function
-  PostProcessorTL<Increment_> costtl;
+  PostProcessorTLAD<MODEL> costtl;
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
     costtl.enrollProcessor(j_.jterm(jj).setupTL(dx));
   }
@@ -81,11 +73,11 @@ void HtRinvHMatrix<MODEL>::multiply(const CtrlInc_ & dx,
 
 // Get TLM outputs, multiply by covariance inverses, and setup ADJ forcing terms
   j_.zeroAD(dz);
-  PostProcessorAD<Increment_> costad;
+  PostProcessorTLAD<MODEL> costad;
 
-  DualVector<MODEL> ww;
-  DualVector<MODEL> zz;
-  
+  DualVector<MODEL, OBS> ww;
+  DualVector<MODEL, OBS> zz;
+
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
     ww.append(costtl.releaseOutputFromTL(jj));
     zz.append(j_.jterm(jj).multiplyCoInv(*ww.getv(jj)));
@@ -94,8 +86,8 @@ void HtRinvHMatrix<MODEL>::multiply(const CtrlInc_ & dx,
 
 // Run ADJ
   j_.runADJ(dz, costad);
-  
-  if (test_) { 
+
+  if (test_) {
      // <G dx, dy>, where dy = Rinv H dx
      double adj_tst_fwd = dot_product(ww, zz);
      // <dx, Gt dy> , where dy = Rinv H dx
