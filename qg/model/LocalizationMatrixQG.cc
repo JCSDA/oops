@@ -10,26 +10,26 @@
 
 #include "model/LocalizationMatrixQG.h"
 
-#include "model/QgFortran.h"
+#include "eckit/config/Configuration.h"
 #include "model/GeometryQG.h"
 #include "model/IncrementQG.h"
-#include "eckit/config/Configuration.h"
+#include "model/QgFortran.h"
 
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
 LocalizationMatrixQG::LocalizationMatrixQG(const GeometryQG & resol,
                                            const eckit::Configuration & config) {
-  const eckit::Configuration * configc = &config;
-  qg_localization_setup_f90(keyFtnConfig_, &configc, resol.toFortran());
+  qg_error_covariance_setup_f90(keyLocal_, config, resol.toFortran());
 }
 // -----------------------------------------------------------------------------
 LocalizationMatrixQG::~LocalizationMatrixQG() {
-  qg_localization_delete_f90(keyFtnConfig_);
+  qg_error_covariance_delete_f90(keyLocal_);
 }
 // -----------------------------------------------------------------------------
 void LocalizationMatrixQG::multiply(IncrementQG & dx) const {
-  qg_localization_mult_f90(keyFtnConfig_, dx.fields().toFortran());
+  IncrementQG dxtmp(dx);
+  qg_error_covariance_mult_f90(keyLocal_, dxtmp.fields().toFortran(), dx.fields().toFortran());
 }
 // -----------------------------------------------------------------------------
 void LocalizationMatrixQG::print(std::ostream & os) const {

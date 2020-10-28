@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -15,11 +15,16 @@
 #include <string>
 
 #include "eckit/config/Configuration.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
+#include "oops/base/ModelBase.h"
+#include "oops/base/Variables.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
+#include "oops/util/Printable.h"
 
+#include "lorenz95/L95Traits.h"
 #include "lorenz95/Resolution.h"
 
 namespace lorenz95 {
@@ -28,16 +33,28 @@ namespace lorenz95 {
   class ModelTrajectory;
   class StateL95;
 
+// -----------------------------------------------------------------------------
+
+class ModelL95Parameters : public oops::ModelParametersBase {
+  OOPS_CONCRETE_PARAMETERS(ModelL95Parameters, ModelParametersBase)
+
+ public:
+  oops::RequiredParameter<util::Duration> tstep{"tstep", this};
+  oops::RequiredParameter<double> f{"f", this};
+};
+
 /// Lorenz 95 model configuration and computations.
 
 // -----------------------------------------------------------------------------
 
-class ModelL95 : public util::Printable,
+class ModelL95 : public oops::ModelBase<L95Traits>,
                  private util::ObjectCounter<ModelL95> {
  public:
+  typedef ModelL95Parameters Parameters_;
+
   static const std::string classname() {return "lorenz95::ModelL95";}
 
-  ModelL95(const Resolution &, const eckit::Configuration &);
+  ModelL95(const Resolution &, const ModelL95Parameters &);
   ~ModelL95();
 
 // Run the forecast
@@ -48,6 +65,7 @@ class ModelL95 : public util::Printable,
 
 // Information and diagnostics
   const util::Duration & timeResolution() const {return tstep_;}
+  const oops::Variables & variables() const {return vars_;}
 
  private:
   void print(std::ostream &) const;
@@ -58,10 +76,11 @@ class ModelL95 : public util::Printable,
   const double f_;
   const util::Duration tstep_;
   const double dt_;
+  const oops::Variables vars_;
 };
 
 // -----------------------------------------------------------------------------
 
-}  // namespace l95
+}  // namespace lorenz95
 
 #endif  // LORENZ95_MODELL95_H_

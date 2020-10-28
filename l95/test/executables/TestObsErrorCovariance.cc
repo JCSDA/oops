@@ -10,12 +10,11 @@
 
 #include "lorenz95/L95Traits.h"
 #include "oops/runs/Run.h"
-#include "test/interface/ObsErrorCovariance.h"
+#include "test/base/ObsErrorCovariance.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  test::ObsErrorCovariance<lorenz95::L95Traits> tests;
-  run.execute(tests);
-  return 0;
-};
+  test::ObsErrorCovariance<lorenz95::L95ObsTraits> tests;
+  return run.execute(tests);
+}
 

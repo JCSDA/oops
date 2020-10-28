@@ -16,28 +16,29 @@
 #include "oops/assimilation/BMatrix.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
-#include "oops/assimilation/HessianMatrix.h"
 #include "oops/assimilation/FGMRES.h"
+#include "oops/assimilation/HessianMatrix.h"
 #include "oops/assimilation/PrimalMinimizer.h"
 
 namespace oops {
 
 /// FGMRES Minimizer
 /*!
- * Implements the standard Preconditioned Conjugate Gradients algorithm.
+ * Implements the Flexible GMRES solver for Ax=b.
  */
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> class FGMRESMinimizer : public PrimalMinimizer<MODEL> {
-  typedef BMatrix<MODEL>             Bmat_;
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef HessianMatrix<MODEL>       Hessian_;
+template<typename MODEL, typename OBS> class FGMRESMinimizer : public PrimalMinimizer<MODEL, OBS> {
+  typedef BMatrix<MODEL, OBS>             Bmat_;
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef HessianMatrix<MODEL, OBS>       Hessian_;
 
  public:
   const std::string classname() const override {return "FGMRESMinimizer";}
-  FGMRESMinimizer(const eckit::Configuration &, const CostFct_ & J): PrimalMinimizer<MODEL>(J) {}
+  FGMRESMinimizer(const eckit::Configuration &, const CostFct_ & J)
+     : PrimalMinimizer<MODEL, OBS>(J) {}
   ~FGMRESMinimizer() {}
 
  private:
@@ -48,8 +49,8 @@ template<typename MODEL> class FGMRESMinimizer : public PrimalMinimizer<MODEL> {
 
 // =============================================================================
 
-template<typename MODEL>
-double FGMRESMinimizer<MODEL>::solve(CtrlInc_ & dx, const CtrlInc_ & rhs,
+template<typename MODEL, typename OBS>
+double FGMRESMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, const CtrlInc_ & rhs,
                                   const Hessian_ & hessian, const Bmat_ & B,
                                   const int ninner, const double gnreduc) {
 // Solve the linear system

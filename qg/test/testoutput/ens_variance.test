@@ -1,0 +1,6 @@
+Test     : Variance: 
+Test     :   Valid time: 2010-01-01T00:00:00Z
+Test     :   Resolution = 40, 20, 2
+Test     :   Variable = streamfunction
+Test     :   Boundary conditions are not activated
+Test     :   Scaling=  1e+14, Min=      0.0047, Max=     15.0092, RMS=      2.8630

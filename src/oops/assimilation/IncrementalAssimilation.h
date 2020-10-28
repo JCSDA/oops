@@ -11,11 +11,10 @@
 #ifndef OOPS_ASSIMILATION_INCREMENTALASSIMILATION_H_
 #define OOPS_ASSIMILATION_INCREMENTALASSIMILATION_H_
 
+#include <memory>
 #include <vector>
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
-#include "util/Logger.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/ControlVariable.h"
 #include "oops/assimilation/CostFunction.h"
@@ -23,32 +22,34 @@
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
 #include "oops/interface/State.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 
-template<typename MODEL>
-void IncrementalAssimilation(ControlVariable<MODEL> & xx, CostFunction<MODEL> & J,
-                             const eckit::Configuration & config) {
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef Minimizer<MODEL>           Minimizer_;
-  typedef State<MODEL>               State_;
+template<typename MODEL, typename OBS>
+int IncrementalAssimilation(ControlVariable<MODEL, OBS> & xx, CostFunction<MODEL, OBS> & J,
+                            const eckit::Configuration & config) {
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef Minimizer<MODEL, OBS>           Minimizer_;
+  typedef State<MODEL>                    State_;
 
 // Setup outer loop
   std::vector<eckit::LocalConfiguration> iterconfs;
-  config.get("variational.iteration", iterconfs);
-  unsigned int nouter = iterconfs.size();
-  Log::info() << "Running incremental assimilation with " << nouter << " outer iterations." << std::endl;
+  config.get("iterations", iterconfs);
+  const unsigned int nouter = iterconfs.size();
+  Log::info() << "Running incremental assimilation with " << nouter
+              << " outer iterations." << std::endl;
 
 // Setup minimizer
   eckit::LocalConfiguration minConf(config, "minimizer");
-  const long nnout = nouter;
-  minConf.set("nouter", nnout);
-  boost::scoped_ptr<Minimizer_> minim(MinFactory<MODEL>::create(minConf, J));
+  minConf.set("nouter", static_cast<const int>(nouter));
+  std::unique_ptr<Minimizer_> minim(MinFactory<MODEL, OBS>::create(minConf, J));
 
   for (unsigned jouter = 0; jouter < nouter; ++jouter) {
+    iterconfs[jouter].set("iteration", static_cast<int>(jouter));
 //  Get configuration for current outer iteration
     Log::info() << "IncrementalAssimilation: Configuration for outer iteration "
-              << jouter << ":\n" << iterconfs[jouter];
+                << jouter << ":\n" << iterconfs[jouter];
 
 //  Setup for the trajectory run
     PostProcessor<State_> post;
@@ -61,7 +62,7 @@ void IncrementalAssimilation(ControlVariable<MODEL> & xx, CostFunction<MODEL> & 
     J.linearize(xx, iterconfs[jouter], post);
 
 //  Minimization
-    boost::scoped_ptr<CtrlInc_> dx(minim->minimize(iterconfs[jouter]));
+    std::unique_ptr<CtrlInc_> dx(minim->minimize(iterconfs[jouter]));
 
 //  Compute analysis in physical space
     J.addIncrement(xx, *dx);
@@ -69,6 +70,7 @@ void IncrementalAssimilation(ControlVariable<MODEL> & xx, CostFunction<MODEL> & 
 //  Clean-up trajectory, etc...
     J.resetLinearization();
   }
+  return nouter;
 }
 
 }  // namespace oops

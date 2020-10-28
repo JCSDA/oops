@@ -11,18 +11,20 @@
 #ifndef OOPS_BASE_WEIGHTEDMEAN_H_
 #define OOPS_BASE_WEIGHTEDMEAN_H_
 
-#include <boost/scoped_ptr.hpp>
 #include <cmath>
 #include <map>
+#include <memory>
+
+#include "eckit/exception/Exceptions.h"
 
 #include "oops/base/Accumulator.h"
 #include "oops/base/DolphChebyshev.h"
 #include "oops/base/PostBase.h"
+#include "oops/base/Variables.h"
 #include "oops/base/WeightingFct.h"
 #include "oops/interface/Geometry.h"
-#include "oops/interface/Variables.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
 
 namespace oops {
 
@@ -38,10 +40,9 @@ namespace oops {
 template <typename MODEL, typename FLDS>
 class WeightedMean : public PostBase<FLDS> {
   typedef Geometry<MODEL>            Geometry_;
-  typedef Variables<MODEL>           Variables_;
 
  public:
-  WeightedMean(const util::DateTime &, const util::Duration &,
+  WeightedMean(const Variables &, const util::DateTime &, const util::Duration &,
                const Geometry_ &, const eckit::Configuration &);
   virtual ~WeightedMean() {}
 
@@ -52,7 +53,7 @@ class WeightedMean : public PostBase<FLDS> {
 
   void doProcessing(const FLDS &) override;
 
-  boost::scoped_ptr<WeightingFct> wfct_;
+  std::unique_ptr<WeightingFct> wfct_;
   std::map< util::DateTime, double > weights_;
 //  std::unique_ptr< Accumulator<MODEL, FLDS, FLDS> > avg_;
   Accumulator<MODEL, FLDS, FLDS> * avg_;
@@ -66,7 +67,8 @@ class WeightedMean : public PostBase<FLDS> {
 // =============================================================================
 
 template <typename MODEL, typename FLDS>
-WeightedMean<MODEL, FLDS>::WeightedMean(const util::DateTime & vt,
+WeightedMean<MODEL, FLDS>::WeightedMean(const Variables & vars,
+                                        const util::DateTime & vt,
                                         const util::Duration & span,
                                         const Geometry_ & resol,
                                         const eckit::Configuration & config)
@@ -74,9 +76,7 @@ WeightedMean<MODEL, FLDS>::WeightedMean(const util::DateTime & vt,
       wfct_(), weights_(), avg_(0), sum_(0.0), linit_(false),
       bgn_(vt-span/2), end_(vt+span/2), endleg_()
 {
-  const Variables_ vars(config);
   avg_ = new Accumulator<MODEL, FLDS, FLDS>(resol, vars, vt);
-//  wfct_.reset(WeightFactory::create(config)); YT
   wfct_.reset(new DolphChebyshev(config));
 }
 

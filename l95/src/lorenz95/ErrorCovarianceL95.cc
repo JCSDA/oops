@@ -17,23 +17,24 @@
 #include "lorenz95/IncrementL95.h"
 #include "lorenz95/Resolution.h"
 #include "lorenz95/StateL95.h"
-#include "util/Logger.h"
+#include "oops/util/Logger.h"
+
+namespace oops {
+class Variables;
+}
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-ErrorCovarianceL95::ErrorCovarianceL95(const Resolution & geom, const NoVariables &,
-                                       const eckit::Configuration & config, const StateL95 &) :
-  time_(util::DateTime(config.getString("date"))),
-  sigmab_(config.getDouble("standard_deviation")),
-  rscale_(1.0/config.getDouble("length_scale"))
-{}
-// -----------------------------------------------------------------------------
-ErrorCovarianceL95::~ErrorCovarianceL95() {}
-// -----------------------------------------------------------------------------
-void ErrorCovarianceL95::linearize(const StateL95 &, const Resolution & resol) {
+ErrorCovarianceL95::ErrorCovarianceL95(const Resolution & geom, const oops::Variables &,
+                                       const ErrorCovarianceL95Parameters & params,
+                                       const StateL95 &, const StateL95 &) :
+  time_(params.date),
+  sigmab_(params.standardDeviation),
+  rscale_(1.0/params.lengthScale)
+{
 // Gaussian structure function
-  resol_ = resol.npoints();
+  resol_ = geom.npoints();
   size_ = resol_/2+1;
   std::vector<double> structFct(resol_);
   for (unsigned int jj = 0; jj < resol_; ++jj) {
@@ -49,6 +50,8 @@ void ErrorCovarianceL95::linearize(const StateL95 &, const Resolution & resol) {
     bcoefs_[jj] = std::real(coefs[jj]);
   }
 }
+// -----------------------------------------------------------------------------
+ErrorCovarianceL95::~ErrorCovarianceL95() {}
 // -----------------------------------------------------------------------------
 void ErrorCovarianceL95::multiply(const IncrementL95 & dxin,
                                   IncrementL95 & dxout) const {
@@ -86,7 +89,8 @@ void ErrorCovarianceL95::randomize(IncrementL95 & dx) const {
 }
 // -----------------------------------------------------------------------------
 void ErrorCovarianceL95::print(std::ostream & os) const {
-  os << "ErrorCovarianceL95::print not implemented";
+  os << "ErrorCovarianceL95: time = " << time_ << ", std dev = " << sigmab_
+     << ", length scale = " << 1.0/rscale_ << std::endl;
 }
 // -----------------------------------------------------------------------------
 

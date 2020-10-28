@@ -11,18 +11,23 @@
 #ifndef QG_MODEL_STATEQG_H_
 #define QG_MODEL_STATEQG_H_
 
+#include <memory>
 #include <ostream>
 #include <string>
+#include <vector>
 
-#include <boost/scoped_ptr.hpp>
+#include "oops/util/DateTime.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
 
-#include "model/FieldsQG.h"
-#include "util/DateTime.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
+#include "oops/qg/FieldsQG.h"
 
 namespace eckit {
   class Configuration;
+}
+
+namespace oops {
+  class Variables;
 }
 
 namespace qg {
@@ -30,14 +35,8 @@ namespace qg {
   class LocationsQG;
   class GeometryQG;
   class IncrementQG;
-  class VariablesQG;
 
 /// QG model state
-/*!
- * A State contains everything that is needed to propagate the state
- * forward in time.
- */
-
 // -----------------------------------------------------------------------------
 class StateQG : public util::Printable,
                 private util::ObjectCounter<StateQG> {
@@ -45,15 +44,12 @@ class StateQG : public util::Printable,
   static const std::string classname() {return "qg::StateQG";}
 
 /// Constructor, destructor
-  StateQG(const GeometryQG &, const VariablesQG &, const util::DateTime &);  // Is it used?
+  StateQG(const GeometryQG &, const oops::Variables &, const util::DateTime &);  // Is it used?
   StateQG(const GeometryQG &, const eckit::Configuration &);
   StateQG(const GeometryQG &, const StateQG &);
   StateQG(const StateQG &);
   virtual ~StateQG();
   StateQG & operator=(const StateQG &);
-
-/// Interpolate to observation location
-  void interpolate(const LocationsQG &, GomQG &) const;
 
 /// Interpolate full fields
   void changeResolution(const StateQG & xx);
@@ -67,26 +63,29 @@ class StateQG : public util::Printable,
   double norm() const {return fields_->norm();}
   const util::DateTime & validTime() const {return fields_->time();}
   util::DateTime & validTime() {return fields_->time();}
+  void updateTime(const util::Duration & dt) {fields_->updateTime(dt);}
 
 /// Access to fields
   FieldsQG & fields() {return *fields_;}
   const FieldsQG & fields() const {return *fields_;}
-
-  boost::shared_ptr<const GeometryQG> geometry() const {
+  std::shared_ptr<const GeometryQG> geometry() const {
     return fields_->geometry();
   }
+  const oops::Variables & variables() const {return fields_->variables();}
+
+/// Serialization
+  size_t serialSize() const;
+  void serialize(std::vector<double> &) const;
+  void deserialize(const std::vector<double> &, size_t &);
 
 /// Other
-  void activateModel();
-  void deactivateModel();
-
   void zero();
   void accumul(const double &, const StateQG &);
 
  private:
   void print(std::ostream &) const;
-  boost::scoped_ptr<FieldsQG> fields_;
-  boost::scoped_ptr<FieldsQG> stash_;
+  const bool lbc_ = true;
+  std::unique_ptr<FieldsQG> fields_;
 };
 // -----------------------------------------------------------------------------
 

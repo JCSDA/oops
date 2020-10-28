@@ -11,8 +11,12 @@
 #ifndef OOPS_ASSIMILATION_SADDLEPOINTLMPMATRIX_H_
 #define OOPS_ASSIMILATION_SADDLEPOINTLMPMATRIX_H_
 
+#include <Eigen/Dense>
+#include <iostream>
+#include <memory>
+#include <vector>
+
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFctWeak.h"
@@ -21,11 +25,6 @@
 #include "oops/assimilation/SaddlePointPrecondMatrix.h"
 #include "oops/assimilation/SaddlePointVector.h"
 #include "oops/base/IdentityMatrix.h"
-#include "oops/interface/Increment.h"
-
-#include <Eigen/Dense>
-#include <iostream>
-#include <vector>
 
 namespace oops {
 
@@ -52,14 +51,13 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
+template<typename MODEL, typename OBS>
 class SaddlePointLMPMatrix : private boost::noncopyable {
-  typedef Increment<MODEL>           Increment_;
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef CostFctWeak<MODEL>         CostFctWeak_;
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef SaddlePointVector<MODEL>   SPVector_;
-  typedef DualVector<MODEL>          LagVector_;
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef CostFctWeak<MODEL, OBS>         CostFctWeak_;
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef SaddlePointVector<MODEL, OBS>   SPVector_;
+  typedef DualVector<MODEL, OBS>          LagVector_;
 
  public:
   explicit SaddlePointLMPMatrix(const CostFct_ & j);
@@ -71,7 +69,6 @@ class SaddlePointLMPMatrix : private boost::noncopyable {
   void multiply(const SPVector_ &, SPVector_ &) const;
 
  private:
-
   void Pinitmultiply(const SPVector_ &, SPVector_ &) const;
 
   void Gmultiply(const SPVector_ &, Eigen::VectorXd &) const;
@@ -86,7 +83,7 @@ class SaddlePointLMPMatrix : private boost::noncopyable {
   std::vector<SPVector_> pqVEC_;
   std::vector<LagVector_> RpVEC_;
   std::vector<CtrlInc_>   RqVEC_;
-  boost::scoped_ptr<SPVector_> spvecinit_;
+  std::unique_ptr<SPVector_> spvecinit_;
   int nvec_;
   Eigen::MatrixXd ZMat_;
   Eigen::MatrixXd FMat_;
@@ -94,16 +91,16 @@ class SaddlePointLMPMatrix : private boost::noncopyable {
 
 // =============================================================================
 
-template<typename MODEL>
-SaddlePointLMPMatrix<MODEL>::SaddlePointLMPMatrix(const CostFct_ & j)
+template<typename MODEL, typename OBS>
+SaddlePointLMPMatrix<MODEL, OBS>::SaddlePointLMPMatrix(const CostFct_ & j)
   : j_(dynamic_cast<const CostFctWeak_ &>(j)),
     idmodel_(false)
 {}
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-  void SaddlePointLMPMatrix<MODEL>::setup(const std::vector<SPVector_> & xyVEC,
+template<typename MODEL, typename OBS>
+  void SaddlePointLMPMatrix<MODEL, OBS>::setup(const std::vector<SPVector_> & xyVEC,
                                           const std::vector<SPVector_> & pqVEC) {
   xyVEC_.clear();
   pqVEC_.clear();
@@ -159,8 +156,8 @@ template<typename MODEL>
 }
 
 // =============================================================================
-template<typename MODEL>
-void SaddlePointLMPMatrix<MODEL>::Pinitmultiply(const SPVector_ & x,
+template<typename MODEL, typename OBS>
+void SaddlePointLMPMatrix<MODEL, OBS>::Pinitmultiply(const SPVector_ & x,
                                                 SPVector_ & z) const {
 //  P0 = [D   0   L]
 //       [0   R   0]
@@ -183,7 +180,7 @@ void SaddlePointLMPMatrix<MODEL>::Pinitmultiply(const SPVector_ & x,
   z.lambda().dx() -= ww;
 
 // Diagonal block
-  DualVector<MODEL> diag;
+  DualVector<MODEL, OBS> diag;
   diag.dx(new CtrlInc_(j_.jb()));
   j_.jb().multiplyB(x.lambda().dx(), diag.dx());
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
@@ -198,7 +195,7 @@ void SaddlePointLMPMatrix<MODEL>::Pinitmultiply(const SPVector_ & x,
 //       [0  R  0]
 //       [I  0  0]
   z.dx() = x.lambda().dx();
-  DualVector<MODEL> diag;
+  DualVector<MODEL, OBS> diag;
   diag.dx(new CtrlInc_(j_.jb()));
   j_.jb().multiplyB(x.lambda().dx(), diag.dx());
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
@@ -211,12 +208,12 @@ void SaddlePointLMPMatrix<MODEL>::Pinitmultiply(const SPVector_ & x,
 */
 }
 // =============================================================================
-template<typename MODEL>
-void SaddlePointLMPMatrix<MODEL>::multiply(const SPVector_ & x,
+template<typename MODEL, typename OBS>
+void SaddlePointLMPMatrix<MODEL, OBS>::multiply(const SPVector_ & x,
                                            SPVector_ & z) const {
 // z = P0inv*x - P0inv*R*Finv*G*P0inv*x
 
-  SaddlePointPrecondMatrix<MODEL> P0inv(j_);
+  SaddlePointPrecondMatrix<MODEL, OBS> P0inv(j_);
   SPVector_ svw(x);
   SPVector_ svt(x);
 
@@ -233,8 +230,8 @@ void SaddlePointLMPMatrix<MODEL>::multiply(const SPVector_ & x,
 }
 
 // =============================================================================
-template<typename MODEL>
-void SaddlePointLMPMatrix<MODEL>::Gmultiply(const SPVector_ & x,
+template<typename MODEL, typename OBS>
+void SaddlePointLMPMatrix<MODEL, OBS>::Gmultiply(const SPVector_ & x,
                                             Eigen::VectorXd & z) const {
   Eigen::VectorXd v1(nvec_);
   Eigen::VectorXd v2(nvec_);
@@ -255,8 +252,8 @@ void SaddlePointLMPMatrix<MODEL>::Gmultiply(const SPVector_ & x,
 }
 
 // =============================================================================
-template<typename MODEL>
-void SaddlePointLMPMatrix<MODEL>::Rmultiply(Eigen::VectorXd & x, SPVector_ & rx) const {
+template<typename MODEL, typename OBS>
+void SaddlePointLMPMatrix<MODEL, OBS>::Rmultiply(Eigen::VectorXd & x, SPVector_ & rx) const {
   LagVector_ ww(rx.lambda());
   ww.zero();
   CtrlInc_ zz(rx.dx());
@@ -271,10 +268,10 @@ void SaddlePointLMPMatrix<MODEL>::Rmultiply(Eigen::VectorXd & x, SPVector_ & rx)
 }
 
 // =============================================================================
-template<typename MODEL>
-void SaddlePointLMPMatrix<MODEL>::Fmultiply(Eigen::VectorXd & x,
+template<typename MODEL, typename OBS>
+void SaddlePointLMPMatrix<MODEL, OBS>::Fmultiply(Eigen::VectorXd & x,
                                             Eigen::VectorXd & fx) const {
-  SaddlePointPrecondMatrix<MODEL> P0inv(j_);
+  SaddlePointPrecondMatrix<MODEL, OBS> P0inv(j_);
   SPVector_ tmp(*spvecinit_);
   SPVector_ tmp2(*spvecinit_);
   Eigen::VectorXd ww(2*nvec_);

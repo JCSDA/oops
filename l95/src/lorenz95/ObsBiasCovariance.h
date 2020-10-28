@@ -15,9 +15,9 @@
 #include <string>
 #include <boost/noncopyable.hpp>
 
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
 #include "eckit/config/LocalConfiguration.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
 
 namespace eckit {
   class Configuration;
@@ -26,6 +26,7 @@ namespace eckit {
 namespace lorenz95 {
   class ObsBias;
   class ObsBiasCorrection;
+  class ObsTableView;
 
 // -----------------------------------------------------------------------------
 
@@ -36,11 +37,11 @@ class ObsBiasCovariance : public util::Printable,
   static const std::string classname() {return "lorenz95::ObsBiasCovariance";}
 
 /// Constructor, destructor
-  explicit ObsBiasCovariance(const eckit::Configuration &);
+  ObsBiasCovariance(const ObsTableView &, const eckit::Configuration &);
   ~ObsBiasCovariance() {}
 
 /// Linear algebra operators
-  void linearize(const ObsBias &) {}
+  void linearize(const ObsBias &, const eckit::Configuration &) {}
   void multiply(const ObsBiasCorrection &, ObsBiasCorrection &) const;
   void inverseMultiply(const ObsBiasCorrection &, ObsBiasCorrection &) const;
   void randomize(ObsBiasCorrection &) const;

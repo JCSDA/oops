@@ -50,6 +50,12 @@ set( CMAKE_CXX_LINK_FLAGS        "-Wl,-Map,loadmap -Wl,-z,muldefs -Ktrap=fp $ENV
 set( CMAKE_CXX_LINK_EXECUTABLE   "<CMAKE_CXX_COMPILER>  <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS>  -o <TARGET> <LINK_LIBRARIES> -Wl,-Bdynamic")
 
 ####################################################################
+# FLAGS FOR AUTOPROFILING
+####################################################################
+
+set( CXX_AUTOPROFILING_FLAGS        "" )
+
+####################################################################
 
 # Meaning of flags
 # ----------------

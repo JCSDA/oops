@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2020-2020 UCAR
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -13,15 +14,16 @@
 
 #include <ostream>
 #include <string>
-#include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
+#include <vector>
 
 #include "eckit/config/Configuration.h"
-#include "util/DateTime.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
 
-#include "model/QgFortran.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
+
+#include "oops/qg/GeometryQG.h"
+#include "oops/qg/QgFortran.h"
+#include "oops/qg/QgTraits.h"
 
 // Forward declarations
 namespace qg {
@@ -32,18 +34,18 @@ namespace qg {
 
 // -----------------------------------------------------------------------------
 class LocalizationMatrixQG: public util::Printable,
-                            private boost::noncopyable,
                             private util::ObjectCounter<LocalizationMatrixQG> {
  public:
   static const std::string classname() {return "qg::LocalizationMatrixQG";}
 
   LocalizationMatrixQG(const GeometryQG &, const eckit::Configuration &);
   ~LocalizationMatrixQG();
+
   void multiply(IncrementQG &) const;
 
  private:
-  void print(std::ostream &) const;
-  F90lclz keyFtnConfig_;
+  void print(std::ostream &) const override;
+  F90lclz keyLocal_;
 };
 // -----------------------------------------------------------------------------
 

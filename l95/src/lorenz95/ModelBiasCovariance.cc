@@ -12,14 +12,14 @@
 
 #include <cmath>
 #include <iostream>
-#include <random>
 #include <string>
 
-#include "util/Logger.h"
-#include "lorenz95/ModelBiasCorrection.h"
 #include "eckit/config/Configuration.h"
+#include "eckit/exception/Exceptions.h"
 
-using oops::Log;
+#include "lorenz95/ModelBiasCorrection.h"
+#include "oops/util/Logger.h"
+#include "oops/util/Random.h"
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
@@ -32,7 +32,7 @@ ModelBiasCovariance::ModelBiasCovariance(const eckit::Configuration & conf, cons
     const double zz = conf_.getDouble("standard_deviation");
     variance_ = zz * zz;
     ASSERT(variance_ > 0.0);
-    Log::info() << "ModelBiasCovariance variance = " << variance_ << std::endl;
+    oops::Log::info() << "ModelBiasCovariance variance = " << variance_ << std::endl;
   }
 }
 // -----------------------------------------------------------------------------
@@ -58,13 +58,16 @@ void ModelBiasCovariance::inverseMultiply(const ModelBiasCorrection & dxin,
 // -----------------------------------------------------------------------------
 void ModelBiasCovariance::randomize(ModelBiasCorrection & dx) const {
   const double stdev = std::sqrt(variance_);
-  static std::mt19937 generator(3);
-  static std::normal_distribution<double> distribution(0.0, stdev);
-  dx.bias() = distribution(generator);
+  util::NormalDistribution<double> x(1, 0.0, stdev, 3);
+  dx.bias() = x[0];
 }
 // -----------------------------------------------------------------------------
 void ModelBiasCovariance::print(std::ostream & os) const {
-  os << "ModelBiasCovariance::print not implemented";
+  if (active_) {
+    os << "ModelBiasCovariance: variance = " << variance_ << std::endl;
+  } else {
+    os << "ModelBiasCovariance not active" << std::endl;
+  }
 }
 // -----------------------------------------------------------------------------
 }  // namespace lorenz95

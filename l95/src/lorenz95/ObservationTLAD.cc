@@ -13,26 +13,19 @@
 #include <string>
 
 #include "eckit/config/Configuration.h"
-#include "util/Logger.h"
-#include "util/DateTime.h"
-
 #include "lorenz95/GomL95.h"
-#include "lorenz95/NoVariables.h"
 #include "lorenz95/ObsBiasCorrection.h"
-#include "lorenz95/ObsTable.h"
 #include "lorenz95/ObsVec1D.h"
+#include "oops/base/Variables.h"
+#include "oops/util/missingValues.h"
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
 
-ObservationTLAD::ObservationTLAD(const ObsTable &)
-  : inputs_(new NoVariables())
+ObservationTLAD::ObservationTLAD(const ObsTableView &, const eckit::Configuration &)
+  : inputs_()
 {}
-
-// -----------------------------------------------------------------------------
-
-ObservationTLAD::~ObservationTLAD() {}
 
 // -----------------------------------------------------------------------------
 
@@ -40,29 +33,30 @@ void ObservationTLAD::setTrajectory(const GomL95 &, const ObsBias &) {}
 
 // -----------------------------------------------------------------------------
 
-void ObservationTLAD::obsEquivTL(const GomL95 & gom, ObsVec1D & ovec,
-                                 const ObsBiasCorrection & bias) const {
-  for (int jj = 0; jj < gom.nobs(); ++jj) {
-    const int ii = gom.getindx(jj);
-    ovec(ii) = gom[jj] + bias.value();
+void ObservationTLAD::simulateObsTL(const GomL95 & gom, ObsVec1D & ovec,
+                                    const ObsBiasCorrection & bias) const {
+  for (size_t jj = 0; jj < gom.size(); ++jj) {
+    ovec[jj] = gom[jj] + bias.value();
   }
 }
 
 // -----------------------------------------------------------------------------
 
-void ObservationTLAD::obsEquivAD(GomL95 & gom, const ObsVec1D & ovec,
-                                 ObsBiasCorrection & bias) const {
-  for (int jj = 0; jj < gom.nobs(); ++jj) {
-    const int ii = gom.getindx(jj);
-    gom[jj] = ovec(ii);
-    bias.value() += ovec(ii);
+void ObservationTLAD::simulateObsAD(GomL95 & gom, const ObsVec1D & ovec,
+                                    ObsBiasCorrection & bias) const {
+  const double missing = util::missingValue(missing);
+  for (size_t jj = 0; jj < gom.size(); ++jj) {
+    if (ovec[jj] != missing) {
+      gom[jj] = ovec[jj];
+      bias.value() += ovec[jj];
+    }
   }
 }
 
 // -----------------------------------------------------------------------------
 
 void ObservationTLAD::print(std::ostream & os) const {
-  os << "ObservationTLAD::print not implemented";
+  os << "ObservationTLAD: Lorenz 95 Linear Obs Operator";
 }
 
 // -----------------------------------------------------------------------------

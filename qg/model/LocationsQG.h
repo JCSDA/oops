@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -11,42 +11,50 @@
 #ifndef QG_MODEL_LOCATIONSQG_H_
 #define QG_MODEL_LOCATIONSQG_H_
 
+#include <iomanip>
+#include <memory>
 #include <ostream>
 #include <string>
+#include <vector>
 
-#include "model/ObsSpaceQG.h"
-#include "model/QgFortran.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
+#include "atlas/field.h"
+#include "atlas/functionspace/PointCloud.h"
+#include "eckit/exception/Exceptions.h"
+#include "eckit/mpi/Comm.h"
+
+#include "oops/util/DateTime.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
+
+#include "oops/qg/QgFortran.h"
 
 namespace qg {
 
+// -----------------------------------------------------------------------------
 /// LocationsQG class to handle locations for QG model.
-
 class LocationsQG : public util::Printable,
-              private util::ObjectCounter<LocationsQG> {
+                    private util::ObjectCounter<LocationsQG> {
  public:
   static const std::string classname() {return "qg::LocationsQG";}
 
-  LocationsQG(const ObsSpaceQG & ot,
-        const util::DateTime & t1, const util::DateTime & t2) {
-    keyLoc_ = ot.locations(t1, t2);
-  }
+// Constructors and basic operators
+  LocationsQG(atlas::FieldSet &, std::vector<util::DateTime> &&);
+  LocationsQG(const eckit::Configuration &, const eckit::mpi::Comm &);
+  LocationsQG(const LocationsQG &);
+  ~LocationsQG() {}
 
-  ~LocationsQG() {qg_loc_delete_f90(keyLoc_);}
+// Utilities
+  int size() const {return pointcloud_->size();}
+  atlas::functionspace::PointCloud & pointcloud() {return *pointcloud_;}
+  atlas::Field lonlat() const {return pointcloud_->lonlat();}
+  atlas::Field & altitude() {ASSERT(altitude_); return *altitude_;}
+  util::DateTime & times(size_t idx) {return times_[idx];}
 
-  int nobs() const {
-    int nobs;
-    qg_loc_nobs_f90(keyLoc_, nobs);
-    return nobs;
-  }
-
-  int toFortran() const {return keyLoc_;}
  private:
-  void print(std::ostream & os) const {
-    os << "LocationsQG::print not implemented";
-  }
-  F90locs keyLoc_;
+  void print(std::ostream &) const;
+  std::unique_ptr<atlas::functionspace::PointCloud> pointcloud_;
+  std::unique_ptr<atlas::Field> altitude_;
+  std::vector<util::DateTime> times_;
 };
 
 }  // namespace qg

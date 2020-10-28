@@ -14,8 +14,7 @@
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  test::ObsAuxControl<qg::QgTraits> tests;
-  run.execute(tests);
-  return 0;
-};
+  test::ObsAuxControl<qg::QgObsTraits> tests;
+  return run.execute(tests);
+}
 

@@ -15,15 +15,15 @@
 #include <string>
 #include <vector>
 
-#include "util/Logger.h"
 #include "oops/assimilation/BMatrix.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
-#include "oops/assimilation/HtRinvHMatrix.h"
 #include "oops/assimilation/DRMinimizer.h"
+#include "oops/assimilation/HtRinvHMatrix.h"
 #include "oops/base/IdentityMatrix.h"
-#include "util/dot_product.h"
-#include "util/formats.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/formats.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 
@@ -69,15 +69,15 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> class DRGMRESRMinimizer : public DRMinimizer<MODEL> {
-  typedef BMatrix<MODEL>             Bmat_;
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef HtRinvHMatrix<MODEL>       HtRinvH_;
+template<typename MODEL, typename OBS> class DRGMRESRMinimizer : public DRMinimizer<MODEL, OBS> {
+  typedef BMatrix<MODEL, OBS>             Bmat_;
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef HtRinvHMatrix<MODEL, OBS>       HtRinvH_;
 
  public:
   const std::string classname() const override {return "DRGMRESRMinimizer";}
-  DRGMRESRMinimizer(const eckit::Configuration &, const CostFct_ & J): DRMinimizer<MODEL>(J) {}
+  DRGMRESRMinimizer(const eckit::Configuration &, const CostFct_ & J): DRMinimizer<MODEL, OBS>(J) {}
   ~DRGMRESRMinimizer() {}
  private:
   double solve(CtrlInc_ &, CtrlInc_ &, CtrlInc_ &, const Bmat_ &, const HtRinvH_ &,
@@ -86,8 +86,8 @@ template<typename MODEL> class DRGMRESRMinimizer : public DRMinimizer<MODEL> {
 
 // =============================================================================
 
-template<typename MODEL>
-double DRGMRESRMinimizer<MODEL>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_ & rr,
+template<typename MODEL, typename OBS>
+double DRGMRESRMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_ & rr,
                                       const Bmat_ & B, const HtRinvH_ & HtRinvH,
                                       const double costJ0Jb, const double costJ0JoJc,
                                       const int maxiter, const double tolerance) {
@@ -95,6 +95,11 @@ double DRGMRESRMinimizer<MODEL>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_ & 
   std::vector<CtrlInc_> c;
   std::vector<CtrlInc_> u;
   std::vector<CtrlInc_> uh;
+  // reserve space in vectors to avoid extra copies
+  c.reserve(maxiter);
+  u.reserve(maxiter);
+  uh.reserve(maxiter);
+
   CtrlInc_ cc(xh);
   CtrlInc_ zz(xh);
   CtrlInc_ zh(xh);

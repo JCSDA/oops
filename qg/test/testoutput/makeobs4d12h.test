@@ -1,5 +1,0 @@
-Test     : Initial state: 14.7101
-Test     : Final state: 14.6092
-Test     : Generated observation: Stream nobs= 300 Min=-28.281, Max=11.3653, Average=-7.87884
-Test     : Generated observation: Wind nobs= 160 Min=-9.13149, Max=13.5288, Average=1.41975
-Test     : Generated observation: WSpeed nobs= 300 Min=1.28211, Max=13.5728, Average=5.84825

@@ -10,40 +10,44 @@
 
 #include "lorenz95/TLML95.h"
 
+#include "eckit/config/LocalConfiguration.h"
+#include "eckit/exception/Exceptions.h"
+
+#include "oops/util/abor1_cpp.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
+
 #include "lorenz95/FieldL95.h"
 #include "lorenz95/IncrementL95.h"
-#include "lorenz95/ModelL95.h"
+#include "lorenz95/L95Traits.h"
 #include "lorenz95/ModelBias.h"
 #include "lorenz95/ModelBiasCorrection.h"
+#include "lorenz95/ModelL95.h"
 #include "lorenz95/ModelTrajectory.h"
 #include "lorenz95/Resolution.h"
 #include "lorenz95/StateL95.h"
-#include "lorenz95/L95Traits.h"
-#include "eckit/config/LocalConfiguration.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
-#include "util/Logger.h"
-#include "util/abor1_cpp.h"
 
-using oops::Log;
 
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
 static oops::LinearModelMaker<L95Traits, TLML95> makerTLML95_("L95TLM");
 // -----------------------------------------------------------------------------
-TLML95::TLML95(const Resolution & resol, const eckit::Configuration & tlConf)
-  : resol_(resol), tstep_(util::Duration(tlConf.getString("tstep"))),
+TLML95::TLML95(const Resolution & resol, const Parameters_ & params)
+  : resol_(resol), tstep_(params.tstep),
     dt_(tstep_.toSeconds()/432000.0), traj_(),
-    lrmodel_(resol_, eckit::LocalConfiguration(tlConf, "trajectory"))
+    lrmodel_(resol_, params.trajectory),
+    vars_()
 {
-  Log::trace() << "TLML95::TLML95 created" << std::endl;
+  oops::Log::info() << "TLML95: resol = " << resol_ << ", tstep = " << tstep_ << std::endl;
+  oops::Log::trace() << "TLML95::TLML95 created" << std::endl;
 }
 // -----------------------------------------------------------------------------
 TLML95::~TLML95() {
   for (trajIter jtra = traj_.begin(); jtra != traj_.end(); ++jtra) {
     delete jtra->second;
   }
-  Log::trace() << "TLML95::~TLML95 destructed" << std::endl;
+  oops::Log::trace() << "TLML95::~TLML95 destructed" << std::endl;
 }
 // -----------------------------------------------------------------------------
 void TLML95::setTrajectory(const StateL95 & xx, StateL95 &, const ModelBias & bias) {
@@ -58,7 +62,7 @@ void TLML95::setTrajectory(const StateL95 & xx, StateL95 &, const ModelBias & bi
 const ModelTrajectory * TLML95::getTrajectory(const util::DateTime & tt) const {
   trajICst itra = traj_.find(tt);
   if (itra == traj_.end()) {
-    Log::error() << "TLML95: trajectory not available at time " << tt << std::endl;
+    oops::Log::error() << "TLML95: trajectory not available at time " << tt << std::endl;
     ABORT("TLML95: trajectory not available");
   }
   return itra->second;
@@ -135,6 +139,11 @@ void TLML95::stepAD(IncrementL95 & xx, ModelBiasCorrection & bias) const {
   xx.getField() += zz;
 }
 // -----------------------------------------------------------------------------
+// intel 19 tries to aggressive optimize these functions in a way that leads
+// to memory violations.  So, turn off optimizations.
+#ifdef __INTEL_COMPILER
+#pragma optimize("", off)
+#endif
 void TLML95::tendenciesTL(const FieldL95 & xx, const double & bias,
                           const FieldL95 & xtraj, FieldL95 & dx) const {
   const int nn = resol_.npoints();
@@ -172,8 +181,12 @@ void TLML95::tendenciesAD(FieldL95 & xx, double & bias,
     bias -= dxdt;
   }
 }
+#ifdef __INTEL_COMPILER
+#pragma optimize("", on)
+#endif
 // -----------------------------------------------------------------------------
 void TLML95::print(std::ostream & os) const {
+  os << "TLML95: resol = " << resol_ << ", tstep = " << tstep_;
   os << "L95 Model Trajectory, nstep=" << traj_.size() << "\n";
   typedef std::map< util::DateTime, ModelTrajectory * >::const_iterator trajICst;
   if (traj_.size() > 0) {

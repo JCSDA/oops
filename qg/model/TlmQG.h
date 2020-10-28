@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -16,15 +16,16 @@
 #include <string>
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
-#include "oops/interface/LinearModelBase.h"
+#include "oops/base/LinearModelBase.h"
+#include "oops/base/Variables.h"
+#include "oops/util/Duration.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
 
-#include "util/Duration.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
-
-#include "model/QgTraits.h"
+#include "oops/qg/ModelQG.h"
+#include "oops/qg/QgFortran.h"
+#include "oops/qg/QgTraits.h"
 
 // Forward declarations
 namespace eckit {
@@ -61,6 +62,7 @@ class TlmQG: public oops::LinearModelBase<QgTraits>,
 /// Other utilities
   const util::Duration & timeResolution() const override {return tstep_;}
   const GeometryQG & resolution() const {return resol_;}
+  const oops::Variables & variables() const override {return linvars_;}
 
  private:
   void print(std::ostream &) const override;
@@ -71,8 +73,9 @@ class TlmQG: public oops::LinearModelBase<QgTraits>,
   F90model keyConfig_;
   util::Duration tstep_;
   const GeometryQG resol_;
-  std::map< util::DateTime, F90traj> traj_;
+  std::map< util::DateTime, F90flds> traj_;
   const ModelQG lrmodel_;
+  oops::Variables linvars_;
 };
 // -----------------------------------------------------------------------------
 

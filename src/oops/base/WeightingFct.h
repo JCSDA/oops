@@ -12,13 +12,8 @@
 #define OOPS_BASE_WEIGHTINGFCT_H_
 
 #include <map>
-#include <string>
 
-#include "util/DateTime.h"
-
-namespace eckit {
-  class Configuration;
-}
+#include "oops/util/DateTime.h"
 
 namespace util {
   class Duration;
@@ -35,34 +30,11 @@ namespace oops {
 
 class WeightingFct {
  public:
-  virtual ~WeightingFct() {}
+  virtual ~WeightingFct() = default;
 
   virtual std::map< util::DateTime, double > setWeights(const util::DateTime &,
                                                         const util::DateTime &,
-                                                        const util::Duration &) =0;
-};
-
-// -----------------------------------------------------------------------------
-
-/// Factory
-class WeightFactory {
- public:
-  static WeightingFct * create(const eckit::Configuration &);
-  virtual ~WeightFactory() { makers_->clear(); }
-
- protected:
-  explicit WeightFactory(const std::string &);
- private:
-  virtual WeightingFct * make(const eckit::Configuration &) =0;
-  static std::map < std::string, WeightFactory * > * makers_;
-};
-
-template<class FCT>
-class WeightMaker : public WeightFactory {
-  virtual WeightingFct * make(const eckit::Configuration & config)
-    {return new FCT(config);}
- public:
-  explicit WeightMaker(const std::string & name) : WeightFactory(name) {}
+                                                        const util::Duration &) = 0;
 };
 
 // -----------------------------------------------------------------------------

@@ -10,65 +10,58 @@
 
 #include "model/ObsWSpeedTLAD.h"
 
-#include "util/Logger.h"
+#include <vector>
+
+#include "eckit/config/Configuration.h"
 #include "model/GomQG.h"
 #include "model/ObsBias.h"
 #include "model/ObsBiasIncrement.h"
 #include "model/ObsSpaceQG.h"
 #include "model/ObsVecQG.h"
 #include "model/QgFortran.h"
-#include "model/VariablesQG.h"
-
-using oops::Log;
-
+#include "oops/base/Variables.h"
+#include "oops/util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
-
-ObsWSpeedTLAD::ObsWSpeedTLAD(const ObsSpaceQG & odb, const int & keyOperWspeed)
-  : keyOperWspeed_(keyOperWspeed), traj_(), varin_()
-{
-  int keyVarin;
-  qg_obsoper_inputs_f90(keyOperWspeed_, keyVarin);
-  varin_.reset(new VariablesQG(keyVarin));
-  qg_wspeed_gettraj_f90(keyOperWspeed_, odb.nobs(), traj_.toFortran());
-  Log::trace() << "ObsWSpeedTLAD created" << std::endl;
-}
-
+static ObsOpTLADMaker<ObsWSpeedTLAD> makerWSpeedTL_("WSpeed");
 // -----------------------------------------------------------------------------
 
-ObsWSpeedTLAD::~ObsWSpeedTLAD() {
-  Log::trace() << "ObsWSpeedTLAD destructed" << std::endl;
+ObsWSpeedTLAD::ObsWSpeedTLAD(const ObsSpaceQG & odb, const eckit::Configuration & config)
+  : traj_(), varin_(std::vector<std::string>{"u", "v"})
+{
+  qg_wspeed_gettraj_f90(odb.nobs(), varin_, traj_.toFortran());
+  oops::Log::trace() << "ObsWSpeedTLAD created" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsWSpeedTLAD::setTrajectory(const GomQG & gom, const ObsBias &) {
   qg_wspeed_settraj_f90(gom.toFortran(), traj_.toFortran());
-  Log::trace() << "ObsWSpeedTLAD trajectory was set " << traj_ << std::endl;
+  oops::Log::trace() << "ObsWSpeedTLAD trajectory was set " << traj_ << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-void ObsWSpeedTLAD::obsEquivTL(const GomQG & gom, ObsVecQG & ovec,
-                               const ObsBiasIncrement & bias) const {
-  Log::debug() << "ObsWSpeedTLAD::obsEquivTL gom " << gom << std::endl;
-  Log::debug() << "ObsWSpeedTLAD::obsEquivTL traj " << traj_ << std::endl;
+void ObsWSpeedTLAD::simulateObsTL(const GomQG & gom, ObsVecQG & ovec,
+                                  const ObsBiasIncrement & bias) const {
   qg_wspeed_equiv_tl_f90(gom.toFortran(), ovec.toFortran(),
                          traj_.toFortran(), bias.wspd());
-  Log::debug() << "ObsWSpeedTLAD::obsEquivTL obsvec " << ovec << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-void ObsWSpeedTLAD::obsEquivAD(GomQG & gom, const ObsVecQG & ovec,
-                               ObsBiasIncrement & bias) const {
-  Log::debug() << "ObsWSpeedTLAD::obsEquivAD obsvec " << ovec << std::endl;
-  Log::debug() << "ObsWSpeedTLAD::obsEquivTL traj " << traj_ << std::endl;
+void ObsWSpeedTLAD::simulateObsAD(GomQG & gom, const ObsVecQG & ovec,
+                                  ObsBiasIncrement & bias) const {
   qg_wspeed_equiv_ad_f90(gom.toFortran(), ovec.toFortran(),
                          traj_.toFortran(), bias.wspd());
-  Log::debug() << "ObsWSpeedTLAD::obsEquivAD gom " << gom << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsWSpeedTLAD::print(std::ostream & os) const {
+  os << "ObsStreamTLAD::print not implemented" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

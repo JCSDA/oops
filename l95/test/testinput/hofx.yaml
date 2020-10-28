@@ -1,0 +1,17 @@
+geometry:
+  resol: 40
+initial condition:
+  date: 2010-01-01T00:00:00Z
+  filename: Data/test.an.2010-01-01T00:00:00Z.l95
+model:
+  f: 8.0
+  name: L95
+  tstep: PT1H30M
+forecast length: P2D
+window begin: 2010-01-01T03:00:00Z  # obs window starts 3 hr after forecast start
+window length: P1D                  # obs window ends before forecast ends
+observations:
+- obs space:
+    obsdatain:  Data/l95.truth4d.2010-01-02T00:00:00Z.obt
+    obsdataout: Data/l95.hofx.2010-01-02T00:00:00Z.obt
+  obs operator: {}

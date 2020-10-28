@@ -1,430 +1,732 @@
 ! (C) Copyright 2009-2016 ECMWF.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
-! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
-! In applying this licence, ECMWF does not waive the privileges and immunities 
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
 ! granted to it by virtue of its status as an intergovernmental organisation nor
 ! does it submit to any jurisdiction.
 
-!> Interfaces to be called from C++ for Fortran handling of QG model fields
+module qg_fields_interface
 
-! ------------------------------------------------------------------------------
-
-subroutine qg_field_create_c(c_key_self, c_key_geom, c_key_vars) bind(c,name='qg_field_create_f90')
+use atlas_module, only: atlas_fieldset
+use datetime_mod
+use fckit_configuration_module, only: fckit_configuration
 use iso_c_binding
-use qg_fields
+use kinds
+use qg_fields_mod
 use qg_geom_mod
-use qg_vars_mod
+use qg_geom_iter_mod
+use qg_gom_mod
+use qg_locs_mod
+use oops_variables_mod
+
 implicit none
-integer(c_int), intent(inout) :: c_key_self
-integer(c_int), intent(in) :: c_key_geom !< Geometry
-integer(c_int), intent(in) :: c_key_vars !< List of variables
 
-type(qg_field), pointer :: self
-type(qg_geom),  pointer :: geom
-type(qg_vars),  pointer :: vars
-
-call qg_geom_registry%get(c_key_geom, geom)
-call qg_vars_registry%get(c_key_vars, vars)
-call qg_field_registry%init()
-call qg_field_registry%add(c_key_self)
-call qg_field_registry%get(c_key_self,self)
-
-call create(self, geom, vars)
-
-end subroutine qg_field_create_c
-
+private
 ! ------------------------------------------------------------------------------
-
-subroutine qg_field_delete_c(c_key_self) bind(c,name='qg_field_delete_f90')
-use iso_c_binding
-use qg_fields
-implicit none
-integer(c_int), intent(inout) :: c_key_self
-type(qg_field), pointer :: self
-
-call qg_field_registry%get(c_key_self,self)
-
-call delete(self)
-
-call qg_field_registry%remove(c_key_self)
-
-end subroutine qg_field_delete_c
-
+contains
 ! ------------------------------------------------------------------------------
+!> Create fields from geometry and variables
+subroutine qg_fields_create_c(c_key_self,c_key_geom,c_vars,c_lbc) bind(c,name='qg_fields_create_f90')
 
-subroutine qg_field_zero_c(c_key_self) bind(c,name='qg_field_zero_f90')
-use iso_c_binding
-use qg_fields
 implicit none
-integer(c_int), intent(in) :: c_key_self
-type(qg_field), pointer :: self
 
-call qg_field_registry%get(c_key_self,self)
-call zeros(self)
+! Passed variables
+integer(c_int),intent(inout) :: c_key_self       !< Fields
+integer(c_int),intent(in) :: c_key_geom          !< Geometry
+type(c_ptr),value,intent(in) :: c_vars           !< List of variables
+logical(c_bool),intent(in) :: c_lbc              !< Boundaries flag
 
-end subroutine qg_field_zero_c
+! Local variables
+type(qg_fields),pointer :: self
+type(qg_geom),pointer :: geom
+type(oops_variables) :: vars
+logical :: lbc
 
+! Interface
+call qg_fields_registry%init()
+call qg_fields_registry%add(c_key_self)
+call qg_fields_registry%get(c_key_self,self)
+call qg_geom_registry%get(c_key_geom,geom)
+vars = oops_variables(c_vars)
+lbc = c_lbc
+
+! Call Fortran
+call qg_fields_create(self,geom,vars,lbc)
+
+end subroutine qg_fields_create_c
 ! ------------------------------------------------------------------------------
+!> Create fields from another one
+subroutine qg_fields_create_from_other_c(c_key_self,c_key_other) bind(c,name='qg_fields_create_from_other_f90')
 
-subroutine qg_field_random_c(c_key_self) bind(c,name='qg_field_random_f90')
-use iso_c_binding
-use qg_fields
 implicit none
-integer(c_int), intent(in) :: c_key_self
-type(qg_field), pointer :: self
 
-call qg_field_registry%get(c_key_self,self)
-call random(self)
+! Passed variables
+integer(c_int),intent(inout) :: c_key_self  !< Fields
+integer(c_int),intent(in)    :: c_key_other !< Other fields
 
-end subroutine qg_field_random_c
+! Local variables
+type(qg_fields),pointer :: self
+type(qg_fields),pointer :: other
 
+! Interface
+call qg_fields_registry%get(c_key_other,other)
+call qg_fields_registry%init()
+call qg_fields_registry%add(c_key_self)
+call qg_fields_registry%get(c_key_self,self)
+
+! Call Fortran
+call qg_fields_create_from_other(self,other)
+
+end subroutine qg_fields_create_from_other_c
 ! ------------------------------------------------------------------------------
+!> Delete fields
+subroutine qg_fields_delete_c(c_key_self) bind(c,name='qg_fields_delete_f90')
 
-subroutine qg_field_copy_c(c_key_self,c_key_rhs) bind(c,name='qg_field_copy_f90')
-use iso_c_binding
-use qg_fields
 implicit none
-integer(c_int), intent(in) :: c_key_self
-integer(c_int), intent(in) :: c_key_rhs
 
-type(qg_field), pointer :: self
-type(qg_field), pointer :: rhs
-call qg_field_registry%get(c_key_self,self)
-call qg_field_registry%get(c_key_rhs,rhs)
+! Passed variables
+integer(c_int),intent(inout) :: c_key_self !< Fields
 
-call copy(self, rhs)
+! Local variables
+type(qg_fields),pointer :: self
 
-end subroutine qg_field_copy_c
+! Interface
+call qg_fields_registry%get(c_key_self,self)
 
+! Call Fortran
+call qg_fields_delete(self)
+
+! Clear interface
+call qg_fields_registry%remove(c_key_self)
+
+end subroutine qg_fields_delete_c
 ! ------------------------------------------------------------------------------
+!> Set fields to zero
+subroutine qg_fields_zero_c(c_key_self) bind(c,name='qg_fields_zero_f90')
 
-subroutine qg_field_self_add_c(c_key_self,c_key_rhs) bind(c,name='qg_field_self_add_f90')
-use iso_c_binding
-use qg_fields
 implicit none
-integer(c_int), intent(in) :: c_key_self
-integer(c_int), intent(in) :: c_key_rhs
 
-type(qg_field), pointer :: self
-type(qg_field), pointer :: rhs
-call qg_field_registry%get(c_key_self,self)
-call qg_field_registry%get(c_key_rhs,rhs)
+! Passed variables
+integer(c_int),intent(in) :: c_key_self !< Fields
 
-call self_add(self,rhs)
+! Local variables
+type(qg_fields),pointer :: self
 
-end subroutine qg_field_self_add_c
+! Interface
+call qg_fields_registry%get(c_key_self,self)
 
+! Call Fortran
+call qg_fields_zero(self)
+
+end subroutine qg_fields_zero_c
 ! ------------------------------------------------------------------------------
+!> Set fields to ones
+subroutine qg_fields_ones_c(c_key_self) bind(c,name='qg_fields_ones_f90')
 
-subroutine qg_field_self_schur_c(c_key_self,c_key_rhs) bind(c,name='qg_field_self_schur_f90')
-use iso_c_binding
-use qg_fields
 implicit none
-integer(c_int), intent(in) :: c_key_self
-integer(c_int), intent(in) :: c_key_rhs
 
-type(qg_field), pointer :: self
-type(qg_field), pointer :: rhs
-call qg_field_registry%get(c_key_self,self)
-call qg_field_registry%get(c_key_rhs,rhs)
+! Passed variables
+integer(c_int),intent(in) :: c_key_self !< Fields
 
-call self_schur(self,rhs)
+! Local variables
+type(qg_fields),pointer :: self
 
-end subroutine qg_field_self_schur_c
+! Interface
+call qg_fields_registry%get(c_key_self,self)
 
+! Call Fortran
+call qg_fields_ones(self)
+
+end subroutine qg_fields_ones_c
 ! ------------------------------------------------------------------------------
+!> Set fields to Diracs
+subroutine qg_fields_dirac_c(c_key_self,c_conf) bind(c,name='qg_fields_dirac_f90')
 
-subroutine qg_field_self_sub_c(c_key_self,c_key_rhs) bind(c,name='qg_field_self_sub_f90')
-use iso_c_binding
-use qg_fields
 implicit none
-integer(c_int), intent(in) :: c_key_self
-integer(c_int), intent(in) :: c_key_rhs
 
-type(qg_field), pointer :: self
-type(qg_field), pointer :: rhs
-call qg_field_registry%get(c_key_self,self)
-call qg_field_registry%get(c_key_rhs,rhs)
+! Passed variables
+integer(c_int),intent(in) :: c_key_self !< Fields
+type(c_ptr),value,intent(in) :: c_conf  !< Configuration
 
-call self_sub(self,rhs)
+! Local variables
+type(fckit_configuration) :: f_conf
+type(qg_fields),pointer :: self
 
-end subroutine qg_field_self_sub_c
+! Interface
+f_conf = fckit_configuration(c_conf)
+call qg_fields_registry%get(c_key_self,self)
 
+! Call Fortran
+call qg_fields_dirac(self,f_conf)
+
+end subroutine qg_fields_dirac_c
 ! ------------------------------------------------------------------------------
+!> Generate random fields
+subroutine qg_fields_random_c(c_key_self) bind(c,name='qg_fields_random_f90')
 
-subroutine qg_field_self_mul_c(c_key_self,c_zz) bind(c,name='qg_field_self_mul_f90')
-use iso_c_binding
-use qg_fields
-use kinds
 implicit none
-integer(c_int), intent(in) :: c_key_self
-real(c_double), intent(in) :: c_zz
-type(qg_field), pointer :: self
-real(kind=kind_real) :: zz
 
-call qg_field_registry%get(c_key_self,self)
-zz = c_zz
+! Passed variables
+integer(c_int),intent(in) :: c_key_self !< Fields
 
-call self_mul(self,zz)
+! Local variables
+type(qg_fields),pointer :: self
 
-end subroutine qg_field_self_mul_c
+! Interface
+call qg_fields_registry%get(c_key_self,self)
 
+! Call Fortran
+call qg_fields_random(self)
+
+end subroutine qg_fields_random_c
 ! ------------------------------------------------------------------------------
+!> Copy fields
+subroutine qg_fields_copy_c(c_key_self,c_key_other) bind(c,name='qg_fields_copy_f90')
 
-subroutine qg_field_axpy_c(c_key_self,c_zz,c_key_rhs) bind(c,name='qg_field_axpy_f90')
-use iso_c_binding
-use qg_fields
-use kinds
 implicit none
-integer(c_int), intent(in) :: c_key_self
-real(c_double), intent(in) :: c_zz
-integer(c_int), intent(in) :: c_key_rhs
 
-type(qg_field), pointer :: self
-type(qg_field), pointer :: rhs
-real(kind=kind_real) :: zz
+! Passed variables
+integer(c_int),intent(in) :: c_key_self  !< Fields
+integer(c_int),intent(in) :: c_key_other !< Other fields
 
-call qg_field_registry%get(c_key_self,self)
-call qg_field_registry%get(c_key_rhs,rhs)
-zz = c_zz
+! Local variables
+type(qg_fields),pointer :: self
+type(qg_fields),pointer :: other
 
-call axpy(self,zz,rhs)
+! Interface
+call qg_fields_registry%get(c_key_self,self)
+call qg_fields_registry%get(c_key_other,other)
 
-end subroutine qg_field_axpy_c
+! Call Fortran
+call qg_fields_copy(self,other)
 
+end subroutine qg_fields_copy_c
 ! ------------------------------------------------------------------------------
+!> Add fields
+subroutine qg_fields_self_add_c(c_key_self,c_key_rhs) bind(c,name='qg_fields_self_add_f90')
 
-subroutine qg_field_dot_prod_c(c_key_fld1,c_key_fld2,c_prod) bind(c,name='qg_field_dot_prod_f90')
-use iso_c_binding
-use qg_fields
-use kinds
 implicit none
-integer(c_int), intent(in)    :: c_key_fld1, c_key_fld2
-real(c_double), intent(inout) :: c_prod
-real(kind=kind_real) :: zz
-type(qg_field), pointer :: fld1, fld2
 
-call qg_field_registry%get(c_key_fld1,fld1)
-call qg_field_registry%get(c_key_fld2,fld2)
+! Passed variables
+integer(c_int),intent(in) :: c_key_self !< Fields
+integer(c_int),intent(in) :: c_key_rhs  !< Right-hand side
 
-call dot_prod(fld1,fld2,zz)
+! Local variables
+type(qg_fields),pointer :: self
+type(qg_fields),pointer :: rhs
 
-c_prod = zz
+! Interface
+call qg_fields_registry%get(c_key_self,self)
+call qg_fields_registry%get(c_key_rhs,rhs)
 
-end subroutine qg_field_dot_prod_c
+! Call Fortran
+call qg_fields_self_add(self,rhs)
 
+end subroutine qg_fields_self_add_c
 ! ------------------------------------------------------------------------------
+!> Subtract fields
+subroutine qg_fields_self_sub_c(c_key_self,c_key_rhs) bind(c,name='qg_fields_self_sub_f90')
 
-subroutine qg_field_add_incr_c(c_key_self,c_key_rhs) bind(c,name='qg_field_add_incr_f90')
-use iso_c_binding
-use qg_fields
 implicit none
-integer(c_int), intent(in) :: c_key_self
-integer(c_int), intent(in) :: c_key_rhs
-type(qg_field), pointer :: self
-type(qg_field), pointer :: rhs
 
-call qg_field_registry%get(c_key_self,self)
-call qg_field_registry%get(c_key_rhs,rhs)
+! Passed variables
+integer(c_int),intent(in) :: c_key_self !< Fields
+integer(c_int),intent(in) :: c_key_rhs  !< Right-hand side
 
-call add_incr(self,rhs)
+! Local variables
+type(qg_fields),pointer :: self
+type(qg_fields),pointer :: rhs
 
-end subroutine qg_field_add_incr_c
+! Interface
+call qg_fields_registry%get(c_key_self,self)
+call qg_fields_registry%get(c_key_rhs,rhs)
 
+! Call Fortran
+call qg_fields_self_sub(self,rhs)
+
+end subroutine qg_fields_self_sub_c
 ! ------------------------------------------------------------------------------
+!> Multiply fields by a scalar
+subroutine qg_fields_self_mul_c(c_key_self,c_zz) bind(c,name='qg_fields_self_mul_f90')
 
-subroutine qg_field_diff_incr_c(c_key_lhs,c_key_x1,c_key_x2) bind(c,name='qg_field_diff_incr_f90')
-use iso_c_binding
-use qg_fields
 implicit none
-integer(c_int), intent(in) :: c_key_lhs
-integer(c_int), intent(in) :: c_key_x1
-integer(c_int), intent(in) :: c_key_x2
-type(qg_field), pointer :: lhs
-type(qg_field), pointer :: x1
-type(qg_field), pointer :: x2
 
-call qg_field_registry%get(c_key_lhs,lhs)
-call qg_field_registry%get(c_key_x1,x1)
-call qg_field_registry%get(c_key_x2,x2)
+! Passed variables
+integer(c_int),intent(in) :: c_key_self !< Fields
+real(c_double),intent(in) :: c_zz       !< Multiplier
 
-call diff_incr(lhs,x1,x2)
+! Local variables
+type(qg_fields),pointer :: self
 
-end subroutine qg_field_diff_incr_c
+! Interface
+call qg_fields_registry%get(c_key_self,self)
 
+! Call Fortran
+call qg_fields_self_mul(self,c_zz)
+
+end subroutine qg_fields_self_mul_c
 ! ------------------------------------------------------------------------------
+!> Apply axpy operator to fields
+subroutine qg_fields_axpy_c(c_key_self,c_zz,c_key_rhs) bind(c,name='qg_fields_axpy_f90')
 
-subroutine qg_field_change_resol_c(c_key_fld,c_key_rhs) bind(c,name='qg_field_change_resol_f90')
-use iso_c_binding
-use qg_fields
 implicit none
-integer(c_int), intent(in) :: c_key_fld
-integer(c_int), intent(in) :: c_key_rhs
-type(qg_field), pointer :: fld, rhs
 
-call qg_field_registry%get(c_key_fld,fld)
-call qg_field_registry%get(c_key_rhs,rhs)
+! Passed variables
+integer(c_int),intent(in) :: c_key_self !< Fields
+real(c_double),intent(in) :: c_zz       !< Multiplier
+integer(c_int),intent(in) :: c_key_rhs  !< Right-hand side
 
-call change_resol(fld,rhs)
+! Local variables
+type(qg_fields),pointer :: self
+type(qg_fields),pointer :: rhs
 
-end subroutine qg_field_change_resol_c
+! Interface
+call qg_fields_registry%get(c_key_self,self)
+call qg_fields_registry%get(c_key_rhs,rhs)
 
+! Call Fortran
+call qg_fields_axpy(self,c_zz,rhs)
+
+end subroutine qg_fields_axpy_c
 ! ------------------------------------------------------------------------------
-
-subroutine qg_field_read_file_c(c_key_fld, c_conf, c_dt) bind(c,name='qg_field_read_file_f90')
-use iso_c_binding
-use qg_fields
-use datetime_mod
+!> Schur product of fields
+subroutine qg_fields_self_schur_c(c_key_self,c_key_rhs) bind(c,name='qg_fields_self_schur_f90')
 
 implicit none
-integer(c_int), intent(in) :: c_key_fld  !< Fields
-type(c_ptr), intent(in)    :: c_conf !< Configuration
-type(c_ptr), intent(inout) :: c_dt   !< DateTime
 
-type(qg_field), pointer :: fld
+! Passed variables
+integer(c_int),intent(in) :: c_key_self !< Fields
+integer(c_int),intent(in) :: c_key_rhs  !< Right-hand side
+
+! Local variables
+type(qg_fields),pointer :: self
+type(qg_fields),pointer :: rhs
+
+! Interface
+call qg_fields_registry%get(c_key_self,self)
+call qg_fields_registry%get(c_key_rhs,rhs)
+
+! Call Fortran
+call qg_fields_self_schur(self,rhs)
+
+end subroutine qg_fields_self_schur_c
+! ------------------------------------------------------------------------------
+!> Compute dot product for fields
+subroutine qg_fields_dot_prod_c(c_key_fld1,c_key_fld2,c_prod) bind(c,name='qg_fields_dot_prod_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in)    :: c_key_fld1 !< First fields
+integer(c_int),intent(in)    :: c_key_fld2 !< Second fields
+real(c_double),intent(inout) :: c_prod     !< Dot product
+
+! Local variables
+type(qg_fields),pointer :: fld1,fld2
+
+! Interface
+call qg_fields_registry%get(c_key_fld1,fld1)
+call qg_fields_registry%get(c_key_fld2,fld2)
+
+! Call Fortran
+call qg_fields_dot_prod(fld1,fld2,c_prod)
+
+end subroutine qg_fields_dot_prod_c
+! ------------------------------------------------------------------------------
+!> Add increment to fields
+subroutine qg_fields_add_incr_c(c_key_self,c_key_rhs) bind(c,name='qg_fields_add_incr_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_self !< Fields
+integer(c_int),intent(in) :: c_key_rhs  !< Right-hand side
+
+! Local variables
+type(qg_fields),pointer :: self
+type(qg_fields),pointer :: rhs
+
+! Interface
+call qg_fields_registry%get(c_key_self,self)
+call qg_fields_registry%get(c_key_rhs,rhs)
+
+! Call Fortran
+call qg_fields_add_incr(self,rhs)
+
+end subroutine qg_fields_add_incr_c
+! ------------------------------------------------------------------------------
+!> Compute increment from the difference of two fields
+subroutine qg_fields_diff_incr_c(c_key_lhs,c_key_fld1,c_key_fld2) bind(c,name='qg_fields_diff_incr_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_lhs  !< Left-hand side
+integer(c_int),intent(in) :: c_key_fld1 !< First fields
+integer(c_int),intent(in) :: c_key_fld2 !< Second fields
+
+! Local variables
+type(qg_fields),pointer :: lhs
+type(qg_fields),pointer :: fld1
+type(qg_fields),pointer :: fld2
+
+! Interface
+call qg_fields_registry%get(c_key_lhs,lhs)
+call qg_fields_registry%get(c_key_fld1,fld1)
+call qg_fields_registry%get(c_key_fld2,fld2)
+
+! Call Fortran
+call qg_fields_diff_incr(lhs,fld1,fld2)
+
+end subroutine qg_fields_diff_incr_c
+! ------------------------------------------------------------------------------
+!> Change fields resolution
+subroutine qg_fields_change_resol_c(c_key_fld,c_key_rhs) bind(c,name='qg_fields_change_resol_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_fld !< Fields
+integer(c_int),intent(in) :: c_key_rhs !< Right-hand side
+
+! Local variables
+type(qg_fields),pointer :: fld,rhs
+
+! Interface
+call qg_fields_registry%get(c_key_fld,fld)
+call qg_fields_registry%get(c_key_rhs,rhs)
+
+! Call Fortran
+call qg_fields_change_resol(fld,rhs)
+
+end subroutine qg_fields_change_resol_c
+! ------------------------------------------------------------------------------
+!> Read fields from file
+subroutine qg_fields_read_file_c(c_key_fld,c_conf,c_dt) bind(c,name='qg_fields_read_file_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_fld  !< Fields
+type(c_ptr),value,intent(in) :: c_conf  !< Configuration
+type(c_ptr),value,intent(in) :: c_dt    !< Date and time
+
+! Local variables
+type(fckit_configuration) :: f_conf
+type(qg_fields),pointer :: fld
 type(datetime) :: fdate
 
-call qg_field_registry%get(c_key_fld,fld)
-call c_f_datetime(c_dt, fdate)
-call read_file(fld, c_conf, fdate)
+! Interface
+f_conf = fckit_configuration(c_conf)
+call qg_fields_registry%get(c_key_fld,fld)
+call c_f_datetime(c_dt,fdate)
 
-end subroutine qg_field_read_file_c
+! Call Fortran
+call qg_fields_read_file(fld,f_conf,fdate)
 
+end subroutine qg_fields_read_file_c
 ! ------------------------------------------------------------------------------
-
-subroutine qg_field_write_file_c(c_key_fld, c_conf, c_dt) bind(c,name='qg_field_write_file_f90')
-use iso_c_binding
-use qg_fields
-use datetime_mod
+!> Write fields to file
+subroutine qg_fields_write_file_c(c_key_fld,c_conf,c_dt) bind(c,name='qg_fields_write_file_f90')
 
 implicit none
-integer(c_int), intent(in) :: c_key_fld  !< Fields
-type(c_ptr), intent(in) :: c_conf !< Configuration
-type(c_ptr), intent(in) :: c_dt   !< DateTime
 
-type(qg_field), pointer :: fld
+! Passed variables
+integer(c_int),intent(in) :: c_key_fld !< Fields
+type(c_ptr),value,intent(in) :: c_conf !< Configuration
+type(c_ptr),value,intent(in) :: c_dt   !< Date and time
+
+! Local variables
+type(fckit_configuration) :: f_conf
+type(qg_fields),pointer :: fld
 type(datetime) :: fdate
 
-call qg_field_registry%get(c_key_fld,fld)
-call c_f_datetime(c_dt, fdate)
-call write_file(fld, c_conf, fdate)
+! Interface
+f_conf = fckit_configuration(c_conf)
+call qg_fields_registry%get(c_key_fld,fld)
+call c_f_datetime(c_dt,fdate)
 
-end subroutine qg_field_write_file_c
+! Call Fortran
+call qg_fields_write_file(fld,f_conf,fdate)
 
+end subroutine qg_fields_write_file_c
 ! ------------------------------------------------------------------------------
+!> Analytic initialization of fields
+subroutine qg_fields_analytic_init_c(c_key_fld,c_conf,c_dt) bind(c,name='qg_fields_analytic_init_f90')
 
-subroutine qg_field_gpnorm_c(c_key_fld, kf, pstat) bind(c,name='qg_field_gpnorm_f90')
-use iso_c_binding
-use qg_fields
-use kinds
 implicit none
-integer(c_int), intent(in) :: c_key_fld
-integer(c_int), intent(in) :: kf
-real(c_double), intent(inout) :: pstat(3*kf)
 
-type(qg_field), pointer :: fld
-real(kind=kind_real) :: zstat(3, kf)
-integer :: jj, js, jf
+! Passed variables
+integer(c_int),intent(in) :: c_key_fld  !< Fields
+type(c_ptr),value,intent(in) :: c_conf  !< Configuration
+type(c_ptr),value,intent(in) :: c_dt !< Date and time
 
-call qg_field_registry%get(c_key_fld,fld)
+! Local variables
+type(fckit_configuration) :: f_conf
+type(qg_fields),pointer :: fld
+type(datetime) :: fdate
 
-call gpnorm(fld, kf, zstat)
-jj=0
-do jf = 1, kf
-  do js = 1, 3
-    jj=jj+1
-    pstat(jj) = zstat(js,jf)
-  enddo
-enddo
+! Interface
+f_conf = fckit_configuration(c_conf)
+call qg_fields_registry%get(c_key_fld,fld)
+call c_f_datetime(c_dt,fdate)
 
-end subroutine qg_field_gpnorm_c
+! Call Fortran
+ call qg_fields_analytic_init(fld,f_conf,fdate)
 
+end subroutine qg_fields_analytic_init_c
 ! ------------------------------------------------------------------------------
+!> Fields statistics
+subroutine qg_fields_gpnorm_c(c_key_fld,nb,pstat) bind(c,name='qg_fields_gpnorm_f90')
 
-subroutine qg_field_rms_c(c_key_fld, prms) bind(c,name='qg_field_rms_f90')
-use iso_c_binding
-use qg_fields
-use kinds
 implicit none
-integer(c_int), intent(in) :: c_key_fld
-real(c_double), intent(inout) :: prms
 
-type(qg_field), pointer :: fld
-real(kind=kind_real) :: zz
+! Passed variables
+integer(c_int),intent(in) :: c_key_fld          !< Fields
+integer(c_int),intent(in) :: nb                 !< Number of boundaries
+real(c_double),intent(inout) :: pstat(4*(1+nb)) !< Statistics
 
-call qg_field_registry%get(c_key_fld,fld)
+! Local variables
+type(qg_fields),pointer :: fld
 
-call fldrms(fld, zz)
+! Interface
+call qg_fields_registry%get(c_key_fld,fld)
 
-prms = zz
+! Call Fortran
+call qg_fields_gpnorm(fld,nb,pstat)
 
-end subroutine qg_field_rms_c
-
+end subroutine qg_fields_gpnorm_c
 ! ------------------------------------------------------------------------------
+!> Fields RMS
+subroutine qg_fields_rms_c(c_key_fld,prms) bind(c,name='qg_fields_rms_f90')
 
-subroutine qg_field_interp_tl_c(c_key_fld,c_key_loc,c_key_gom) bind(c,name='qg_field_interp_tl_f90')
-use iso_c_binding
-use qg_fields
-use qg_locs_mod
-use qg_goms_mod
 implicit none
-integer(c_int), intent(in) :: c_key_fld
-integer(c_int), intent(in) :: c_key_loc
-integer(c_int), intent(in) :: c_key_gom
-type(qg_field), pointer :: fld
-type(qg_locs),  pointer :: locs
-type(qg_goms),  pointer :: gom
 
-call qg_field_registry%get(c_key_fld,fld)
-call qg_locs_registry%get(c_key_loc,locs)
-call qg_goms_registry%get(c_key_gom,gom)
+! Passed variables
+integer(c_int),intent(in) :: c_key_fld !< Fields
+real(c_double),intent(inout) :: prms
 
-call interp_tl(fld, locs, gom)
+! Local variables
+type(qg_fields),pointer :: fld
 
-end subroutine qg_field_interp_tl_c
+! Interface
+call qg_fields_registry%get(c_key_fld,fld)
 
+! Call Fortran
+call qg_fields_rms(fld,prms)
+
+end subroutine qg_fields_rms_c
 ! ------------------------------------------------------------------------------
+!> Get fields geometry
+subroutine qg_fields_sizes_c(c_key_fld,c_nx,c_ny,c_nz,c_nb) bind(c,name='qg_fields_sizes_f90')
 
-subroutine qg_field_interp_ad_c(c_key_fld,c_key_loc,c_key_gom) bind(c,name='qg_field_interp_ad_f90')
-use iso_c_binding
-use qg_fields
-use qg_locs_mod
-use qg_goms_mod
 implicit none
-integer(c_int), intent(in) :: c_key_fld
-integer(c_int), intent(in) :: c_key_loc
-integer(c_int), intent(in) :: c_key_gom
-type(qg_field), pointer :: fld
-type(qg_locs),  pointer :: locs
-type(qg_goms),  pointer :: gom
 
-call qg_field_registry%get(c_key_fld,fld)
-call qg_locs_registry%get(c_key_loc,locs)
-call qg_goms_registry%get(c_key_gom,gom)
+! Passed variables
+integer(c_int),intent(in) :: c_key_fld !< Fields
+integer(c_int),intent(inout) :: c_nx   !< X size
+integer(c_int),intent(inout) :: c_ny   !< Y size
+integer(c_int),intent(inout) :: c_nz   !< Z size
+integer(c_int),intent(inout) :: c_nb   !< Number of boundaries
 
-call interp_ad(fld, locs, gom)
+! Local variables
+type(qg_fields),pointer :: fld
 
-end subroutine qg_field_interp_ad_c
+! Interface
+call qg_fields_registry%get(c_key_fld,fld)
 
+! Call Fortran
+call qg_fields_sizes(fld,c_nx,c_ny,c_nz,c_nb)
+
+end subroutine qg_fields_sizes_c
 ! ------------------------------------------------------------------------------
+!> Get fields variables
+subroutine qg_fields_vars_c(c_key_fld,c_lq,c_lbc) bind(c,name='qg_fields_vars_f90')
 
-subroutine qg_fieldnum_c(c_key_fld, nx, ny, nf, nb) bind(c,name='qg_field_sizes_f90')
-use iso_c_binding
-use qg_fields
 implicit none
-integer(c_int), intent(in) :: c_key_fld
-integer(kind=c_int), intent(inout) :: nx, ny, nf, nb
-type(qg_field), pointer :: fld
 
-call qg_field_registry%get(c_key_fld,fld)
+! Passed variables
+integer(c_int),intent(in) :: c_key_fld !< Fields
+integer(c_int),intent(inout) :: c_lq   !< Potential vorticity flag
+integer(c_int),intent(inout) :: c_lbc  !< Boundaries flag
 
-nx = fld%nx
-ny = fld%ny
-nf = fld%nf
-nb =0
-if (fld%lbc) nb = 2
+! Local variables
+type(qg_fields),pointer :: fld
 
-end subroutine qg_fieldnum_c
+! Interface
+call qg_fields_registry%get(c_key_fld,fld)
 
+! Call Fortran
+call qg_fields_vars(fld,c_lq,c_lbc)
+
+end subroutine qg_fields_vars_c
 ! ------------------------------------------------------------------------------
+!> Create ATLAS fields
+subroutine qg_fields_set_atlas_c(c_key_fld,c_vars,c_afieldset) bind (c,name='qg_fields_set_atlas_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_fld           !< Fields
+type(c_ptr),value,intent(in) :: c_vars           !< List of variables
+type(c_ptr),intent(in),value :: c_afieldset      !< ATLAS fieldset pointer
+
+! Local variables
+type(qg_fields),pointer :: fld
+type(oops_variables) :: vars
+type(atlas_fieldset) :: afieldset
+
+! Interface
+call qg_fields_registry%get(c_key_fld,fld)
+vars = oops_variables(c_vars)
+afieldset = atlas_fieldset(c_afieldset)
+
+! Call Fortran
+call qg_fields_set_atlas(fld,vars,afieldset)
+
+end subroutine qg_fields_set_atlas_c
+! ------------------------------------------------------------------------------
+!> Convert fields to ATLAS
+subroutine qg_fields_to_atlas_c(c_key_fld,c_vars,c_afieldset) bind (c,name='qg_fields_to_atlas_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_fld           !< Fields
+type(c_ptr),value,intent(in) :: c_vars           !< List of variables
+type(c_ptr),intent(in),value :: c_afieldset      !< ATLAS fieldset pointer
+
+! Local variables
+type(qg_fields),pointer :: fld
+type(oops_variables) :: vars
+type(atlas_fieldset) :: afieldset
+
+! Interface
+call qg_fields_registry%get(c_key_fld,fld)
+vars = oops_variables(c_vars)
+afieldset = atlas_fieldset(c_afieldset)
+
+! Call Fortran
+call qg_fields_to_atlas(fld,vars,afieldset)
+
+end subroutine qg_fields_to_atlas_c
+! ------------------------------------------------------------------------------
+!> Get fields from ATLAS
+subroutine qg_fields_from_atlas_c(c_key_fld,c_vars,c_afieldset) bind (c,name='qg_fields_from_atlas_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_fld           !< Fields
+type(c_ptr),value,intent(in) :: c_vars           !< List of variables
+type(c_ptr),intent(in),value :: c_afieldset      !< ATLAS fieldset pointer
+
+! Local variables
+type(qg_fields),pointer :: fld
+type(oops_variables) :: vars
+type(atlas_fieldset) :: afieldset
+
+! Interface
+call qg_fields_registry%get(c_key_fld,fld)
+vars = oops_variables(c_vars)
+afieldset = atlas_fieldset(c_afieldset)
+
+! Call Fortran
+call qg_fields_from_atlas(fld,vars,afieldset)
+
+end subroutine qg_fields_from_atlas_c
+! ------------------------------------------------------------------------------
+!> Get points from fields
+subroutine qg_fields_getpoint_c(c_key_fld,c_key_iter,c_nval,c_vals) bind(c,name='qg_fields_getpoint_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_fld         !< Fields
+integer(c_int),intent(in) :: c_key_iter        !< Geometry iterator
+integer(c_int),intent(in) :: c_nval            !< Number of values
+real(c_double),intent(inout) :: c_vals(c_nval) !< Values
+
+! Local variables
+type(qg_fields),pointer :: fld
+type(qg_geom_iter),pointer :: iter
+
+! Interface
+call qg_fields_registry%get(c_key_fld,fld)
+call qg_geom_iter_registry%get(c_key_iter,iter)
+
+! Call Fortran
+call qg_fields_getpoint(fld,iter,c_nval,c_vals)
+
+end subroutine qg_fields_getpoint_c
+! ------------------------------------------------------------------------------
+!> Set points for the fields
+subroutine qg_fields_setpoint_c(c_key_fld,c_key_iter,c_nval,c_vals) bind(c,name='qg_fields_setpoint_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_fld         !< Fields
+integer(c_int),intent(in) :: c_key_iter        !< Geometry iterator
+integer(c_int),intent(in) :: c_nval            !< Number of values
+real(c_double),intent(in) :: c_vals(c_nval)    !< Values
+
+! Local variables
+type(qg_fields),pointer :: fld
+type(qg_geom_iter),pointer :: iter
+
+! Interface
+call qg_fields_registry%get(c_key_fld,fld)
+call qg_geom_iter_registry%get(c_key_iter,iter)
+
+! Call Fortran
+call qg_fields_setpoint(fld,iter,c_nval,c_vals)
+
+end subroutine qg_fields_setpoint_c
+! ------------------------------------------------------------------------------
+!> Serialize fields
+subroutine qg_fields_serialize_c(c_key_fld,c_vsize,c_vect_fld) bind(c,name='qg_fields_serialize_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_fld            !< Fields
+integer(c_int),intent(in) :: c_vsize              !< Size
+real(c_double),intent(out) :: c_vect_fld(c_vsize) !< Vector
+
+! Local variables
+type(qg_fields),pointer :: fld
+
+! Interface
+call qg_fields_registry%get(c_key_fld,fld)
+
+! Call Fortran
+call qg_fields_serialize(fld,c_vsize,c_vect_fld)
+
+
+end subroutine qg_fields_serialize_c
+! ------------------------------------------------------------------------------
+!> Deserialize fields
+subroutine qg_fields_deserialize_c(c_key_self,c_vsize,c_vect_fld,c_index) bind(c,name='qg_fields_deserialize_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_self          !< Fields
+integer(c_int),intent(in) :: c_vsize             !< Size
+real(c_double),intent(in) :: c_vect_fld(c_vsize) !< Vector
+integer(c_int), intent(inout):: c_index          !< Index
+
+! Local variables
+type(qg_fields),pointer :: self
+
+! Interface
+call qg_fields_registry%get(c_key_self,self)
+
+! Call Fortran
+call qg_fields_deserialize(self,c_vsize,c_vect_fld,c_index)
+
+end subroutine qg_fields_deserialize_c
+! ------------------------------------------------------------------------------
+end module qg_fields_interface

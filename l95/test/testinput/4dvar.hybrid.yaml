@@ -1,0 +1,98 @@
+cost function:
+  cost type: 4D-Var
+  window begin: '2010-01-01T03:00:00Z'
+  window length: P1D
+  geometry:
+    resol: 40
+  model:
+    f: 8.0
+    name: L95
+    tstep: PT1H30M
+  analysis variables: [x]
+  background:
+    date: '2010-01-01T03:00:00Z'
+    filename: Data/test.fc.2010-01-01T00:00:00Z.PT3H
+  background error:
+    covariance model: hybrid
+    ensemble:
+      covariance model: ensemble
+      date: '2010-01-01T03:00:00Z'
+      localization:
+        length_scale: 1.0
+        localization method: L95
+      members:
+      - date: '2010-01-01T03:00:00Z'
+        filename: Data/test.ens.1.2010-01-01T00:00:00Z.PT3H
+      - date: '2010-01-01T03:00:00Z'
+        filename: Data/test.ens.2.2010-01-01T00:00:00Z.PT3H
+      - date: '2010-01-01T03:00:00Z'
+        filename: Data/test.ens.3.2010-01-01T00:00:00Z.PT3H
+      - date: '2010-01-01T03:00:00Z'
+        filename: Data/test.ens.4.2010-01-01T00:00:00Z.PT3H
+      - date: '2010-01-01T03:00:00Z'
+        filename: Data/test.ens.5.2010-01-01T00:00:00Z.PT3H
+      - date: '2010-01-01T03:00:00Z'
+        filename: Data/test.ens.6.2010-01-01T00:00:00Z.PT3H
+      - date: '2010-01-01T03:00:00Z'
+        filename: Data/test.ens.7.2010-01-01T00:00:00Z.PT3H
+      - date: '2010-01-01T03:00:00Z'
+        filename: Data/test.ens.8.2010-01-01T00:00:00Z.PT3H
+      - date: '2010-01-01T03:00:00Z'
+        filename: Data/test.ens.9.2010-01-01T00:00:00Z.PT3H
+      - date: '2010-01-01T03:00:00Z'
+        filename: Data/test.ens.10.2010-01-01T00:00:00Z.PT3H
+    ensemble weight: '0.4'
+    static:
+      covariance model: L95Error
+      date: '2010-01-01T03:00:00Z'
+      length_scale: 1.0
+      standard_deviation: 0.6
+    static weight: '0.6'
+  observations:
+  - obs error:
+      covariance model: diagonal
+    obs space:
+      obsdatain:  Data/l95.truth4d.2010-01-02T00:00:00Z.obt
+      obsdataout: Data/l95.4dvar.hybrid.2010-01-02T00:00:00Z.obt
+    obs operator: {}
+variational:
+  minimizer:
+    algorithm: DRIPCG
+  iterations:
+  - diagnostics:
+      departures: ombg
+    gradient norm reduction: 1e-10
+    linear model:
+      trajectory:
+        f: 8.0
+        tstep: PT1H30M
+      tstep: PT1H30M
+      variable change: Identity
+      name: L95TLM
+    ninner: '10'
+    geometry:
+      resol: 40
+    test: 'on'
+  - gradient norm reduction: 1e-10
+    linear model:
+      trajectory:
+        f: 8.0
+        tstep: PT1H30M
+      tstep: PT1H30M
+      variable change: Identity
+      name: L95TLM
+    ninner: '10'
+    geometry:
+      resol: 40
+    test: 'on'
+final:
+  diagnostics:
+    departures: oman
+  prints:
+    frequency: PT1H30M
+output:
+  datadir: Data
+  exp: test
+  first: PT3H
+  frequency: PT06H
+  type: an

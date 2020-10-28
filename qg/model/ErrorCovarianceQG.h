@@ -14,20 +14,23 @@
 #include <ostream>
 #include <string>
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
-#include "model/QgFortran.h"
-#include "model/GeometryQG.h"
 #include "eckit/config/Configuration.h"
-#include "util/DateTime.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
+
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
+
+#include "oops/qg/GeometryQG.h"
+#include "oops/qg/QgFortran.h"
 
 // Forward declarations
+namespace oops {
+  class Variables;
+}
+
 namespace qg {
   class IncrementQG;
   class StateQG;
-  class VariablesQG;
 
 // -----------------------------------------------------------------------------
 /// Background error covariance matrix for QG model.
@@ -38,19 +41,17 @@ class ErrorCovarianceQG : public util::Printable,
  public:
   static const std::string classname() {return "qg::ErrorCovarianceQG";}
 
-  ErrorCovarianceQG(const GeometryQG &, const VariablesQG &, const eckit::Configuration &, const StateQG &);
+  ErrorCovarianceQG(const GeometryQG &, const oops::Variables &,
+                    const eckit::Configuration &, const StateQG &, const StateQG &);
   ~ErrorCovarianceQG();
 
-  void linearize(const StateQG &, const GeometryQG &);
   void multiply(const IncrementQG &, IncrementQG &) const;
   void inverseMultiply(const IncrementQG &, IncrementQG &) const;
   void randomize(IncrementQG &) const;
 
  private:
   void print(std::ostream &) const;
-  F90bmat keyFtnConfig_;
-  boost::scoped_ptr<const GeometryQG> geom_;
-  util::DateTime time_;
+  F90error_covariance keyConfig_;
 };
 // -----------------------------------------------------------------------------
 

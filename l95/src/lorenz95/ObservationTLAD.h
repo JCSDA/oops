@@ -13,30 +13,25 @@
 
 #include <ostream>
 #include <string>
-#include <boost/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
 
-#include "lorenz95/ObservationL95.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
+#include <boost/noncopyable.hpp>
+
+#include "lorenz95/ObsTableView.h"
+
+#include "oops/base/Variables.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
 
 // Forward declarations
 namespace eckit {
   class Configuration;
 }
 
-namespace util {
-  class DateTime;
-}
-
 namespace lorenz95 {
   class GomL95;
-  class ObservationL95;
   class ObsBias;
   class ObsBiasCorrection;
-  class ObsTable;
   class ObsVec1D;
-  class NoVariables;
 
 /// Observation for Lorenz 95 model.
 /*!
@@ -51,23 +46,19 @@ class ObservationTLAD : public util::Printable,
  public:
   static const std::string classname() {return "lorenz95::ObservationTLAD";}
 
-  static ObservationTLAD * create(const ObservationL95 & hop)
-    {return new ObservationTLAD(hop.table());}
-
-  ~ObservationTLAD();
+  ObservationTLAD(const ObsTableView &, const eckit::Configuration &);
 
 // Obs Operators
   void setTrajectory(const GomL95 &, const ObsBias &);
-  void obsEquivTL(const GomL95 &, ObsVec1D &, const ObsBiasCorrection &) const;
-  void obsEquivAD(GomL95 &, const ObsVec1D &, ObsBiasCorrection &) const;
+  void simulateObsTL(const GomL95 &, ObsVec1D &, const ObsBiasCorrection &) const;
+  void simulateObsAD(GomL95 &, const ObsVec1D &, ObsBiasCorrection &) const;
 
 // Other
-  boost::shared_ptr<const NoVariables> variables() const {return inputs_;}
+  const oops::Variables & requiredVars() const {return inputs_;}
 
  private:
   void print(std::ostream &) const;
-  explicit ObservationTLAD(const ObsTable &);
-  boost::shared_ptr<const NoVariables> inputs_;
+  const oops::Variables inputs_;
 };
 
 // -----------------------------------------------------------------------------

@@ -1,0 +1,40 @@
+Test     : CostJb   : Nonlinear Jb = 0
+Test     : CostJo   : Nonlinear Jo(Stream) = 17715.2, nobs = 800, Jo/n = 22.144, err = 4e+06
+Test     : CostJo   : Nonlinear Jo(Wind) = 1784.27, nobs = 800, Jo/n = 2.23034, err = 6
+Test     : CostJo   : Nonlinear Jo(WSpeed) = 179.84, nobs = 400, Jo/n = 0.4496, err = 12
+Test     : CostJcDFI: Nonlinear Jc = 57.9613
+Test     : CostFunction: Nonlinear J = 19737.2
+Test     : DRPCGMinimizer: reduction in residual norm = 0.00387793
+Test     : CostFunction::addIncrement: Analysis: 
+Test     :   Valid time: 2010-01-01T00:00:00Z
+Test     :   Resolution = 40, 20, 2
+Test     :   Variable = streamfunction
+Test     :   Boundary conditions are activated
+Test     :   Scaling=  1e+08, Min=     -5.1520, Max=      1.0618, RMS=      1.8848
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
+Test     : ObsBias = -1.16824e+07, 0, 0, 0
+Test     : ObsBias = 0, 9.67042, 0, 0
+Test     : CostJb   : Nonlinear Jb = 60.42
+Test     : CostJo   : Nonlinear Jo(Stream) = 366, nobs = 800, Jo/n = 0.4575, err = 4e+06
+Test     : CostJo   : Nonlinear Jo(Wind) = 147.6, nobs = 800, Jo/n = 0.1846, err = 6
+Test     : CostJo   : Nonlinear Jo(WSpeed) = 33.38, nobs = 400, Jo/n = 0.08346, err = 12
+Test     : CostJcDFI: Nonlinear Jc = 59.25
+Test     : CostFunction: Nonlinear J = 666.7
+Test     : DRPCGMinimizer: reduction in residual norm = 0.1576
+Test     : CostFunction::addIncrement: Analysis: 
+Test     :   Valid time: 2010-01-01T00:00:00Z
+Test     :   Resolution = 40, 20, 2
+Test     :   Variable = streamfunction
+Test     :   Boundary conditions are activated
+Test     :   Scaling=  1e+08, Min=     -5.2306, Max=      1.0568, RMS=      1.9156
+Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
+Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
+Test     : ObsBias = -9.70392e+06, 0, 0, 0
+Test     : ObsBias = 0, 9.83281, 0, 0
+Test     : CostJb   : Nonlinear Jb = 57.71
+Test     : CostJo   : Nonlinear Jo(Stream) = 131.3, nobs = 800, Jo/n = 0.1641, err = 4e+06
+Test     : CostJo   : Nonlinear Jo(Wind) = 84.24, nobs = 800, Jo/n = 0.1053, err = 6
+Test     : CostJo   : Nonlinear Jo(WSpeed) = 17.63, nobs = 400, Jo/n = 0.04408, err = 12
+Test     : CostJcDFI: Nonlinear Jc = 67.67
+Test     : CostFunction: Nonlinear J = 358.5

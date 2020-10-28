@@ -1,0 +1,51 @@
+---
+test_random:
+  N: 6
+  seed: 1234321
+
+  # test of uniform real distribution
+  uniform_real_range: [1.0,10.0]
+  uniform_real_answer:
+    - 4.078718517208472
+    - 2.198630972998217
+    - 1.001622545765713
+    - 1.425280560972169
+    - 3.474966624518856
+    - 3.815046805655584
+
+  # test of uniform integer distribution
+  uniform_int_range: [1, 100]
+  uniform_int_answer:
+    - 35
+    - 14
+    - 1
+    - 5
+    - 28
+    - 32
+
+  # test of normal distributions
+  normal_mean: 0.0
+  normal_sdev: 2.0
+  normal_real_answer:
+    - 1.3358529806137085
+    - 0.6954649090766907
+    - 0.0004652288043872
+    - 0.1580210030078888
+    - 1.2160784006118774
+    - 0.8664194345474243
+  normal_double_answer:
+    - 0.2555872769596826
+    - 0.9757256078466211
+    - 2.2210924238279892
+    - -1.0002023949934293
+    - -3.0675886845536913
+    - -1.9446352978057253
+
+  # test of random shuffle
+  shuffle_answer:
+    - 1
+    - 5
+    - 3
+    - 4
+    - 0
+    - 2

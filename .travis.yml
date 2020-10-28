@@ -1,0 +1,51 @@
+#======================================================================
+# Project settings
+#======================================================================
+env:
+  global:
+  - secure: XAv4plDS26a33O9BgTgtj9rZMOENBve3RwPx7+yXal8eQgNo0LzVndXv0KrFelBeom5l7V2dBj8zZ02+VpiohAiUZgEjw4nlZUzgwB/r4nBYKNCyvjFXGEml36l/VkXlgiLIHlLy1AB8XoOZXVaLapQmxC943kDYOkunPZPL0QMJn95Esf3M28GI2HjBZRc1OXru4Z3RqfHFuPUaJWvAlDPSVa9adAxp8ee7fPIOWYPsQVlaW0btlxLgf/2uSl9S2lM1dP1Ulb1vQWB07CXplPTlClpdJ2kFiLyymhd1KSqSBon8mJDE7mKQzq0M7u7vYluDJmzsBr/qCq09PaJD+Yqor+eUxaZYavEgBccuod2W0/nTEJPGntmqLQaHIzHjnYp8nWZbpyv9xdJLzyHttxnSGTOtMPRy8sg4BACrVc21MM9OXGwmqxmDYKktJbQlOiea1OT8v1DvshPX/zCy6ggFsHpqWi/4ghz+f90yLl6cUf4fIVFDWj1qNHYFiocJSm4UDFecph1AB7WZ5cCD8HzM3A5wvkxg6yVXJPOFf0vzpS2wiRdsBqaA/zI60saC7GWpwtnFqeTY2KxWbRFnCPzDmTno5kn0x/UpIMfJhAJXZX0HRUxrdUKsF/121q5vn92mmm5PHl0J6efwTUAjYq/qh/U6roVB+6Etr+F8L8A=
+  - secure: bNIWwjbDc4e10HoyICFz75Q7vyL6T/sxFBN+KhKl7wkOXC3KehccauxlQ50OF8g4gjLLbAASfidLt7b+LIMlO78mQ3rvKfy0K60R4bhL4SbPU2WLB2mVlhx/ABmutcEuLaJNFwkGGZOCbp751KQ+jQs6fgJjUuaAPcpFVymoYl/hHMTbigbqGIuIc+7kpB4jiD/T/omU1AN3nR01q+vExnnQphhmELY+d3+0MyQyG/+NnkBD0QTuNNVTWmv/Dkx767ONRZDFgFnhNwSTsPk8HeCrSxaiqXE9r3Titz7cGA4WL11kXiTTNDon7C1DKBrNQLLHSvX7fKBz4+umVAGPNE1Y9xe1UGB6Joo/KRQ7Q3xWEUssDYg5sw4P/lPvw7vIBvm0jc0NIRGKHwCqXDHsdKLJgCs7reB+R7LbE8kh47oTw8ae2pzIBiGFZkGKW5Ry2NC653xkwBJ0Ux5sW0E2/b4L6PC5c/NNSo4OC4XuKUooFrQgnHl0t+/B4gpBnWeTBsYZDtecOqpermEgaSUUC4HvyVDk1MkbdKXetOX6SD+U7KBwhpNnHf0GbSDqGfYZqIp40H6eu0nrS5wKH4aNRG83u67M4jCF8aNvAkbHoSHhqvlU3ieRNljKCR/oULxEXopRS/PI87Isi/x9SyaXGU3gcXKm+OGSiAw1Xh8ViQM=
+  - secure: Q/rWudtNgt4r1LjWlNmD9K28zaNu0q5NggjfurB1GQzYi0ml1rDm8cw8s26uqO5Q5QewZophM9mIwA4GBjeh9I77UgqjvghLutBVVtXszHvHWHuZMYxagYDhXJ/ECUoJnF7eMJYiAciwgZxRtTfPCQhDn6gfolplyzxGkVRwyukFf4HPEw6Q0dcHtSJRBpwcQLhzCnE0HbaRLNdqcorVw30e7xM/sIW8LBzRpccl7L119a8CRwPLnd8H9rPSj+PBdkZ0xcAQR8gjVRspgoqMu+KAxo9WlBRvq0lrBxSQR4BNmNlDsAnoL+C3XYvm8Ngyz4CvRyHKU6t1lPi2QGAX2Gyd6N9kFKmEMWIV6umbPSuyNeoHV6aJs1AwciSMiazP47A6j4t17cVphFU37examhtrKaER2MXN3ZlPZ3jEq6xUQONrZhFEjYIhcpPhKnFhV5hOXfAGvHDmTGo0HbKt/oU/Lvtq00y55RR2/GctsMj5RZDmfc1lWajwNWv0Lwq18UdSl9fJfjJYYQM+LfM9KmmW+WiX8Zp1G3O2UHMAZNPIt8Hm5EzZYhbtz6HxoplIrCebj9L3K91ctXz+rKV3zhRnknO44ySQGCSuv9pT8yUSg9bNSTfI+qu6Q0igBl1xHN/Qm0oN2Hugx3YLWFkPS6w9+SeK+MfVIlvbmeIFCkg=
+    
+branches:
+  only:
+    - develop
+
+language: cpp
+
+services:
+  - docker
+
+before_install:
+  - date
+  - REPO_SOURCE_DIR=${TRAVIS_BUILD_DIR}/jcsda/src_repo
+
+#  create the same file structure on Travis VM and Docker container
+  - mkdir -p ${TRAVIS_BUILD_DIR}/jcsda/src_repo
+# echo branch info
+  - echo $TRAVIS_PULL_REQUEST
+  - echo $TRAVIS_PULL_REQUEST_BRANCH
+  - echo $TRAVIS_BRANCH
+  - export BRANCH=$(if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then echo $TRAVIS_BRANCH; else echo $TRAVIS_PULL_REQUEST_BRANCH; fi)
+  - echo "TRAVIS_BRANCH=$TRAVIS_BRANCH, PR=$PR, BRANCH=$BRANCH"
+
+  - REPO_SOURCE_DIR=${TRAVIS_BUILD_DIR}/jcsda/src_repo
+
+  # test cloning another repo from jcsda-internal
+  - git clone https://github.com/jcsda-internal/fckit.git ${REPO_SOURCE_DIR}/test
+  - ls ${REPO_SOURCE_DIR}
+  - git clone https://github.com/jcsda-internal/jedi-build-package.git ${REPO_SOURCE_DIR}
+
+  - docker pull jcsda/docker-clang-mpich-dev
+  - docker images
+script:
+  - docker run -d -t --env GH_TOKEN=$GH_TOKEN --env AWS_ACCESS_KEY_ID=$aws_access_key_id --env AWS_SECRET_ACCESS_KEY=$aws_secret_access_key --env GH_BRANCH=$BRANCH --name clang_container -v ${REPO_SOURCE_DIR}/jedi-build-package:/jcsda/src_repo jcsda/docker-clang-mpich-dev
+
+  - docker exec clang_container bash -c 'mkdir ~/.aws'
+  - docker exec clang_container bash -c 'echo [default] >> ~/.aws/credentials '
+  - docker exec clang_container bash -c 'echo aws_access_key_id = $aws_access_key_id >> ~/.aws/credentials'
+  - docker exec clang_container bash -c 'echo aws_secret_access_key = $aws_secret_access_key >> ~/.aws/credentials'
+  - docker exec clang_container bash -c 'ls /jcsda/src_repo'
+  - docker exec clang_container bash -c 'cd /jcsda/src_repo && pip install --user -e .'
+
+  - docker exec clang_container bash -c 'cd /jcsda/src_repo && ~/.local/bin/jedi-build --gh-token=$GH_TOKEN -j 4 --env-id=docker-clang --branch-map atlas:release-stable fckit:release-stable -br ${GH_BRANCH} -p oops -vvv -3 -u --submit-dashboard --site TravisCI --abort-on-build-errors --abort-on-test-errors'

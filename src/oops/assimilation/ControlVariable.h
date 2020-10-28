@@ -16,12 +16,14 @@
 #include <string>
 
 #include "eckit/config/Configuration.h"
-#include "oops/assimilation/State4D.h"
+#include "oops/base/ObsAuxControls.h"
+#include "oops/base/ObsSpaces.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxControl.h"
-#include "oops/interface/ObsAuxControl.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
+#include "oops/interface/State.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
 
 namespace oops {
 
@@ -36,22 +38,25 @@ namespace oops {
  * and reduce the number of arguments to be passed around.
  */
 
-template<typename MODEL> class ControlVariable;
+template<typename MODEL, typename OBS> class ControlVariable;
 
 // -----------------------------------------------------------------------------
-template<typename MODEL>
+template<typename MODEL, typename OBS>
 class ControlVariable : public util::Printable,
-                        private util::ObjectCounter<ControlVariable<MODEL> > {
+                        private util::ObjectCounter<ControlVariable<MODEL, OBS> > {
   typedef Geometry<MODEL>            Geometry_;
-  typedef ModelAuxControl<MODEL>      ModelAux_;
-  typedef ObsAuxControl<MODEL>       ObsAuxCtrl_;
-  typedef State4D<MODEL>             State4D_;
+  typedef ModelAuxControl<MODEL>     ModelAux_;
+  typedef ObsAuxControls<OBS>        ObsAuxCtrls_;
+  typedef ObsSpaces<OBS>             ObsSpaces_;
+  typedef State<MODEL>               State_;
 
  public:
   static const std::string classname() {return "oops::ControlVariable";}
 
 /// The arguments define the number of sub-windows and the resolution
-  ControlVariable(const eckit::Configuration &, const Geometry_ &);
+  ControlVariable(const eckit::Configuration &, const Geometry_ &, const ObsSpaces_ &);
+/// Constructor added for generic 1d-var under development in ufo
+  ControlVariable(const eckit::Configuration &, const State_ &, const ObsSpaces_ &);
   explicit ControlVariable(const ControlVariable &);
   ~ControlVariable();
 
@@ -61,86 +66,98 @@ class ControlVariable : public util::Printable,
   double norm() const;
 
 /// Get state control variable
-  State4D_ & state() {return state4d_;}
-  const State4D_ & state() const {return state4d_;}
+  State_ & state() {return state_;}
+  const State_ & state() const {return state_;}
 
 /// Get augmented model control variable
   ModelAux_ & modVar() {return modbias_;}
   const ModelAux_ & modVar() const {return modbias_;}
 
 /// Get augmented observation control variable
-  ObsAuxCtrl_ & obsVar() {return obsbias_;}
-  const ObsAuxCtrl_ & obsVar() const {return obsbias_;}
+  ObsAuxCtrls_ & obsVar() {return obsbias_;}
+  const ObsAuxCtrls_ & obsVar() const {return obsbias_;}
 
  private:
   ControlVariable & operator= (const ControlVariable &);  // No assignment
   void print(std::ostream &) const;
 
-  State4D_ state4d_;
-  ModelAux_ modbias_;  // not only for bias, better name?
-  ObsAuxCtrl_ obsbias_;  // not only for bias, better name?
+  State_ state_;
+  ModelAux_ modbias_;     // not only for bias, better name?
+  ObsAuxCtrls_ obsbias_;  // not only for bias, better name?
 };
 
 // =============================================================================
 
-template<typename MODEL>
-ControlVariable<MODEL>::ControlVariable(const eckit::Configuration & conf,
-                                        const Geometry_ & resol)
-  : state4d_(conf, resol),
-    modbias_(resol, conf.getSubConfiguration("ModelBias")),
-    obsbias_(conf.getSubConfiguration("ObsBias"))
+template<typename MODEL, typename OBS>
+ControlVariable<MODEL, OBS>::ControlVariable(const eckit::Configuration & conf,
+                                             const Geometry_ & resol, const ObsSpaces_ & odb)
+  : state_(resol, eckit::LocalConfiguration(conf, "background")),
+    modbias_(resol, conf.getSubConfiguration("model aux control")),
+    obsbias_(odb, conf)
+{
+  Log::trace() << "ControlVariable contructed" << std::endl;
+}
+
+// =============================================================================
+/// Constructor added for generic 1d-var under development in ufo
+template<typename MODEL, typename OBS>
+ControlVariable<MODEL, OBS>::ControlVariable(const eckit::Configuration & conf,
+                                             const State_ & statein, const ObsSpaces_ & odb)
+  : state_(statein),
+    modbias_(statein.geometry(), conf.getSubConfiguration("model aux control")),
+    obsbias_(odb, conf)
 {
   Log::trace() << "ControlVariable contructed" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-ControlVariable<MODEL>::ControlVariable(const ControlVariable & other)
-  : state4d_(other.state4d_), modbias_(other.modbias_), obsbias_(other.obsbias_)
+template<typename MODEL, typename OBS>
+ControlVariable<MODEL, OBS>::ControlVariable(const ControlVariable & other)
+  : state_(other.state_), modbias_(other.modbias_), obsbias_(other.obsbias_)
 {
   Log::trace() << "ControlVariable copied" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-ControlVariable<MODEL>::~ControlVariable() {
+template<typename MODEL, typename OBS>
+ControlVariable<MODEL, OBS>::~ControlVariable() {
   Log::trace() << "ControlVariable destructed" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void ControlVariable<MODEL>::read(const eckit::Configuration & config) {
-  state4d_.read(config);
+template<typename MODEL, typename OBS>
+void ControlVariable<MODEL, OBS>::read(const eckit::Configuration & config) {
+  state_.read(config);
   modbias_.read(config);
   obsbias_.read(config);
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void ControlVariable<MODEL>::write(const eckit::Configuration & config) const {
-  state4d_.write(config);
+template<typename MODEL, typename OBS>
+void ControlVariable<MODEL, OBS>::write(const eckit::Configuration & config) const {
+  state_.write(config);
   modbias_.write(config);
   obsbias_.write(config);
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void ControlVariable<MODEL>::print(std::ostream & outs) const {
-  outs << state4d_;
+template <typename MODEL, typename OBS>
+void ControlVariable<MODEL, OBS>::print(std::ostream & outs) const {
+  outs << state_;
   outs << modbias_;
   outs << obsbias_;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-double ControlVariable<MODEL>::norm() const {
-  double zz = state4d_.norm();
+template<typename MODEL, typename OBS>
+double ControlVariable<MODEL, OBS>::norm() const {
+  double zz = state_.norm();
   double zn = zz * zz;
   zz = modbias_.norm();
   zn += zz * zz;

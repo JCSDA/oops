@@ -1,9 +1,10 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ * (C) Copyright 2017-2019 UCAR.
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -13,11 +14,16 @@
 #include <fstream>
 #include <string>
 
-#include "util/Logger.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
-#include "util/abor1_cpp.h"
-#include "util/dot_product.h"
+#include "atlas/field.h"
+
+#include "eckit/exception/Exceptions.h"
+
+#include "oops/util/abor1_cpp.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
+#include "oops/util/stringFunctions.h"
 
 #include "lorenz95/FieldL95.h"
 #include "lorenz95/GomL95.h"
@@ -26,36 +32,39 @@
 #include "lorenz95/Resolution.h"
 #include "lorenz95/StateL95.h"
 
-using oops::Log;
+namespace oops {
+  class Variables;
+}
+namespace sf = util::stringfunctions;
 
 namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
 /// Constructor, destructor
 // -----------------------------------------------------------------------------
-IncrementL95::IncrementL95(const Resolution & resol, const NoVariables &,
+IncrementL95::IncrementL95(const Resolution & resol, const oops::Variables &,
                            const util::DateTime & vt)
   : fld_(resol), time_(vt)
 {
   fld_.zero();
-  Log::trace() << "IncrementL95::IncrementL95 created." << std::endl;
+  oops::Log::trace() << "IncrementL95::IncrementL95 created." << std::endl;
 }
 // -----------------------------------------------------------------------------
 IncrementL95::IncrementL95(const Resolution & resol, const IncrementL95 & dx)
   : fld_(resol), time_(dx.time_)
 {
   fld_ = dx.fld_;
-  Log::trace() << "IncrementL95::IncrementL95 created by interpolation." << std::endl;
+  oops::Log::trace() << "IncrementL95::IncrementL95 created by interpolation." << std::endl;
 }
 // -----------------------------------------------------------------------------
 IncrementL95::IncrementL95(const IncrementL95 & dx, const bool copy)
-  : fld_(dx.fld_), time_(dx.time_)
+  : fld_(dx.fld_, copy), time_(dx.time_)
 {
-  Log::trace() << "IncrementL95::IncrementL95 copy-created." << std::endl;
+  oops::Log::trace() << "IncrementL95::IncrementL95 copy-created." << std::endl;
 }
 // -----------------------------------------------------------------------------
 IncrementL95::~IncrementL95() {
-  Log::trace() << "IncrementL95::~IncrementL95 destructed" << std::endl;
+  oops::Log::trace() << "IncrementL95::~IncrementL95 destructed" << std::endl;
 }
 // -----------------------------------------------------------------------------
 /// Basic operators
@@ -98,6 +107,14 @@ void IncrementL95::zero(const util::DateTime & vt) {
   time_ = vt;
 }
 // -----------------------------------------------------------------------------
+void IncrementL95::ones() {
+  fld_.ones();
+}
+// -----------------------------------------------------------------------------
+void IncrementL95::dirac(const eckit::Configuration & config) {
+  fld_.dirac(config);
+}
+// -----------------------------------------------------------------------------
 void IncrementL95::axpy(const double & zz, const IncrementL95 & rhs,
                         const bool check) {
   ASSERT(!check || time_ == rhs.time_);
@@ -124,10 +141,11 @@ void IncrementL95::accumul(const double & zz, const StateL95 & xx) {
 /// Utilities
 // -----------------------------------------------------------------------------
 void IncrementL95::read(const eckit::Configuration & config) {
-  const std::string filename(config.getString("filename"));
-  Log::trace() << "IncrementL95::read opening " << filename << std::endl;
+  std::string filename(config.getString("filename"));
+  sf::swapNameMember(config, filename);
+  oops::Log::trace() << "IncrementL95::read opening " << filename << std::endl;
   std::ifstream fin(filename.c_str());
-  if (!fin.is_open()) ABORT("IncrementL95::read: Error opening file");
+  if (!fin.is_open()) ABORT("IncrementL95::read: Error opening file: " + filename);
 
   int resol;
   fin >> resol;
@@ -145,7 +163,7 @@ void IncrementL95::read(const eckit::Configuration & config) {
   fld_.read(fin);
 
   fin.close();
-  Log::trace() << "IncrementL95::read: file closed." << std::endl;
+  oops::Log::trace() << "IncrementL95::read: file closed." << std::endl;
 }
 // -----------------------------------------------------------------------------
 void IncrementL95::write(const eckit::Configuration & config) const {
@@ -158,10 +176,11 @@ void IncrementL95::write(const eckit::Configuration & config) const {
   filename += "."+antime.toString();
   const util::Duration step = time_ - antime;
   filename += "."+step.toString();
+  sf::swapNameMember(config, filename);
 
-  Log::trace() << "IncrementL95::write opening " << filename << std::endl;
+  oops::Log::trace() << "IncrementL95::write opening " << filename << std::endl;
   std::ofstream fout(filename.c_str());
-  if (!fout.is_open()) ABORT("IncrementL95::write: Error opening file");
+  if (!fout.is_open()) ABORT("IncrementL95::write: Error opening file: " + filename);
 
   fout << fld_.resol() << std::endl;
   fout << time_ << std::endl;
@@ -169,7 +188,7 @@ void IncrementL95::write(const eckit::Configuration & config) const {
   fout << std::endl;
 
   fout.close();
-  Log::trace() << "IncrementL95::write file closed." << std::endl;
+  oops::Log::trace() << "IncrementL95::write file closed." << std::endl;
 }
 // -----------------------------------------------------------------------------
 void IncrementL95::print(std::ostream & os) const {
@@ -177,14 +196,64 @@ void IncrementL95::print(std::ostream & os) const {
   os << std::endl << fld_;
 }
 // -----------------------------------------------------------------------------
-/// Interpolate to observation location
-// -----------------------------------------------------------------------------
-void IncrementL95::interpolateTL(const LocsL95 & locs, GomL95 & vals) const {
-  fld_.interp(locs, vals);
+oops::LocalIncrement IncrementL95::getLocal(const Iterator & i) const {
+  std::vector<std::string> vars;
+  vars.push_back("x");
+  std::vector<double> vals;
+  vals.push_back(fld_[i.index()]);
+  std::vector<int> varlens;
+  varlens.push_back(1);
+  return oops::LocalIncrement(oops::Variables(vars), vals, varlens);
 }
 // -----------------------------------------------------------------------------
-void IncrementL95::interpolateAD(const LocsL95 & locs, const GomL95 & vals) {
-  fld_.interpAD(locs, vals);
+void IncrementL95::setLocal(const oops::LocalIncrement & gp, const Iterator & i) {
+  std::vector<double> vals;
+  vals = gp.getVals();
+  fld_[i.index()] = vals[0];
+}
+// -----------------------------------------------------------------------------
+/// Convert to/from ATLAS fieldset
+// -----------------------------------------------------------------------------
+void IncrementL95::setAtlas(atlas::FieldSet *) const {
+  ABORT("FieldL95 setAtlas not implemented");
+}
+// -----------------------------------------------------------------------------
+void IncrementL95::toAtlas(atlas::FieldSet *) const {
+  ABORT("FieldL95 toAtlas not implemented");
+}
+// -----------------------------------------------------------------------------
+void IncrementL95::fromAtlas(atlas::FieldSet *) {
+  ABORT("FieldL95 fromAtlas not implemented");
+}
+// -----------------------------------------------------------------------------
+/// Serialize - deserialize
+// -----------------------------------------------------------------------------
+size_t IncrementL95::serialSize() const {
+  size_t nn = 3;
+  nn += fld_.serialSize();
+  nn += time_.serialSize();
+  return nn;
+}
+// -----------------------------------------------------------------------------
+void IncrementL95::serialize(std::vector<double> & vect) const {
+  vect.push_back(1000.0);
+  fld_.serialize(vect);
+  vect.push_back(2000.0);
+  time_.serialize(vect);
+  vect.push_back(3000.0);
+}
+// -----------------------------------------------------------------------------
+void IncrementL95::deserialize(const std::vector<double> & vect, size_t & index) {
+  size_t ii = index + this->serialSize();
+  ASSERT(vect.at(index) == 1000.0);
+  ++index;
+  fld_.deserialize(vect, index);
+  ASSERT(vect.at(index) == 2000.0);
+  ++index;
+  time_.deserialize(vect, index);
+  ASSERT(vect.at(index) == 3000.0);
+  ++index;
+  ASSERT(index == ii);
 }
 // -----------------------------------------------------------------------------
 

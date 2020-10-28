@@ -12,12 +12,12 @@
 #define LORENZ95_OBSBIAS_H_
 
 #include <cmath>
-#include <iostream>
 #include <string>
 #include <boost/noncopyable.hpp>
 
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
+#include "oops/base/Variables.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
 
 namespace eckit {
   class Configuration;
@@ -25,6 +25,7 @@ namespace eckit {
 
 namespace lorenz95 {
   class ObsBiasCorrection;
+  class ObsTableView;
 
 /// Class to handle observation bias parameters.
 
@@ -36,11 +37,12 @@ class ObsBias : public util::Printable,
  public:
   static const std::string classname() {return "lorenz95::ObsBias";}
 
-  explicit ObsBias(const eckit::Configuration &);
+  ObsBias(const ObsTableView &, const eckit::Configuration &);
   ObsBias(const ObsBias &, const bool);
   ~ObsBias() {}
 
   ObsBias & operator+=(const ObsBiasCorrection &);
+  ObsBias & operator=(const ObsBias &);
 
   const double & value() const {return bias_;}
   double & value() {return bias_;}
@@ -50,10 +52,16 @@ class ObsBias : public util::Printable,
   void write(const eckit::Configuration &) const {}
   double norm() const {return std::abs(bias_);}
 
+/// Other
+  const oops::Variables & requiredVars() const {return geovars_;}
+  const oops::Variables & requiredHdiagnostics() const {return hdiags_;}
+
  private:
   void print(std::ostream &) const;
   double bias_;
   bool active_;
+  const oops::Variables geovars_;
+  const oops::Variables hdiags_;
 };
 
 // -----------------------------------------------------------------------------

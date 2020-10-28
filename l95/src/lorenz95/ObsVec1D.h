@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -11,23 +11,18 @@
 #ifndef LORENZ95_OBSVEC1D_H_
 #define LORENZ95_OBSVEC1D_H_
 
+#include <Eigen/Dense>
 #include <ostream>
 #include <string>
 #include <vector>
 
-#include <boost/shared_ptr.hpp>
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
 
-#include "lorenz95/ObsTable.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
-
-namespace eckit {
-  class Configuration;
-}
+#include "lorenz95/ObsData1D.h"
 
 namespace lorenz95 {
-  class GomL95;
-  class ObsTable;
+  class ObsTableView;
 
 // -----------------------------------------------------------------------------
 /// Vector in observation space
@@ -40,9 +35,10 @@ class ObsVec1D : public util::Printable,
  public:
   static const std::string classname() {return "lorenz95::ObsVec1D";}
 
-  explicit ObsVec1D(const ObsTable &);
-  ObsVec1D(const ObsVec1D &, const bool copy = true);
-  ~ObsVec1D() {}
+  explicit ObsVec1D(const ObsTableView &, const std::string & name = "", const bool fail = true);
+  ObsVec1D(const ObsVec1D &);
+  ObsVec1D(const ObsTableView &, const ObsVec1D &);
+  ~ObsVec1D() = default;
 
   ObsVec1D & operator= (const ObsVec1D &);
   ObsVec1D & operator*= (const double &);
@@ -51,26 +47,30 @@ class ObsVec1D : public util::Printable,
   ObsVec1D & operator*= (const ObsVec1D &);
   ObsVec1D & operator/= (const ObsVec1D &);
 
+  Eigen::VectorXd  packEigen() const;
+  const double & operator[](const std::size_t ii) const {return data_.at(ii);}
+  double & operator[](const std::size_t ii) {return data_.at(ii);}
+
   void zero();
   void axpy(const double &, const ObsVec1D &);
   void invert();
   void random();
   double dot_product_with(const ObsVec1D &) const;
   double rms() const;
+  void mask(const ObsData1D<int> &);
 
-  unsigned int size() const {return data_.size();}
-  double & operator() (const unsigned int ii) {return data_[ii];}
-  const double & operator() (const unsigned int ii) const {return data_[ii];}
+  unsigned int nobs() const;
 
 // I/O
-  void read(const std::string &);
   void save(const std::string &) const;
+  void read(const std::string &);
 
  private:
   void print(std::ostream &) const;
 
-  const ObsTable & obsdb_;
+  const ObsTableView & obsdb_;
   std::vector<double> data_;
+  const double missing_;
 };
 //-----------------------------------------------------------------------------
 }  // namespace lorenz95

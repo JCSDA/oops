@@ -16,8 +16,8 @@
 #include <string>
 #include <boost/noncopyable.hpp>
 
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
 
 namespace eckit {
   class Configuration;
@@ -50,7 +50,6 @@ class ModelBias : public util::Printable,
   ModelBias & operator+=(const ModelBiasCorrection &);
 
   const double & bias() const {return bias_;}
-  double & bias() {return bias_;}
 
 /// I/O and diagnostics
   void read(const eckit::Configuration &) {}
@@ -65,6 +64,6 @@ class ModelBias : public util::Printable,
 
 // -----------------------------------------------------------------------------
 
-}  // namespace l95
+}  // namespace lorenz95
 
 #endif  // LORENZ95_MODELBIAS_H_

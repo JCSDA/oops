@@ -21,9 +21,9 @@
 #include "oops/assimilation/HBHtMatrix.h"
 #include "oops/assimilation/RinvMatrix.h"
 #include "oops/base/IdentityMatrix.h"
-#include "util/dot_product.h"
-#include "util/formats.h"
-#include "util/Logger.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/formats.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 
@@ -65,15 +65,16 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> class RPLanczosMinimizer : public DualMinimizer<MODEL> {
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef DualVector<MODEL>          Dual_;
-  typedef HBHtMatrix<MODEL>          HBHt_;
-  typedef RinvMatrix<MODEL>          Rinv_;
+template<typename MODEL, typename OBS> class RPLanczosMinimizer : public DualMinimizer<MODEL, OBS> {
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef DualVector<MODEL, OBS>          Dual_;
+  typedef HBHtMatrix<MODEL, OBS>          HBHt_;
+  typedef RinvMatrix<MODEL, OBS>          Rinv_;
 
  public:
   const std::string classname() const override {return "RPLanczosMinimizer";}
-  RPLanczosMinimizer(const eckit::Configuration &, const CostFct_ & J): DualMinimizer<MODEL>(J) {}
+  RPLanczosMinimizer(const eckit::Configuration &, const CostFct_ & J)
+    : DualMinimizer<MODEL, OBS>(J) {}
   ~RPLanczosMinimizer() {}
 
  private:
@@ -83,8 +84,8 @@ template<typename MODEL> class RPLanczosMinimizer : public DualMinimizer<MODEL> 
 
 // =============================================================================
 
-template<typename MODEL>
-double RPLanczosMinimizer<MODEL>::solve(Dual_ & vv, double & vvp, Dual_ & rr,
+template<typename MODEL, typename OBS>
+double RPLanczosMinimizer<MODEL, OBS>::solve(Dual_ & vv, double & vvp, Dual_ & rr,
                                         const HBHt_ & HBHt, const Rinv_ & Rinv,
                                         const int & maxiter, const double & tolerance,
                                         Dual_ & dy, const double & sigma) {
@@ -107,6 +108,11 @@ double RPLanczosMinimizer<MODEL>::solve(Dual_ & vv, double & vvp, Dual_ & rr,
   std::vector<Dual_> vVEC;  // required for re-orthogonalization
   std::vector<Dual_> tVEC;  // required for re-orthogonalization
   std::vector<Dual_> zVEC;  // required for solution
+  // reserve space to avoid extra copies
+  vVEC.reserve(maxiter+1);
+  tVEC.reserve(maxiter+1);
+  zVEC.reserve(maxiter+1);
+
   std::vector<double> vpVEC;
   std::vector<double> tpVEC;
   std::vector<double> zpVEC;
@@ -155,9 +161,9 @@ double RPLanczosMinimizer<MODEL>::solve(Dual_ & vv, double & vvp, Dual_ & rr,
   zpVEC.push_back(zzp);
   tpVEC.push_back(ttp);
 
-  int jiter;
+  int jiter = 0;
   Log::info() << std::endl;
-  for (jiter = 0; jiter < maxiter; ++jiter) {
+  while (jiter < maxiter) {
     Log::info() << "RPLanczos Starting Iteration " << jiter+1 << std::endl;
 
     // ww = (RinvHBHt + I) zz - beta * vold
@@ -231,6 +237,8 @@ double RPLanczosMinimizer<MODEL>::solve(Dual_ & vv, double & vvp, Dual_ & rr,
 
     Log::info() << "RPLanczos end of iteration " << jiter+1 << ". Norm reduction= "
                 << util::full_precision(normReduction) << std::endl << std::endl;
+
+    ++jiter;
 
     if (normReduction < tolerance) {
       Log::info() << "RPLanczos: Achieved required reduction in residual norm." << std::endl;

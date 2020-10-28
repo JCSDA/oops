@@ -1,0 +1,85 @@
+cost function:
+  obs perturbations seed: 4
+  cost type: 4D-Var
+  window begin: 2010-01-01T09:00:00Z
+  window length: PT6H
+  analysis variables: [x]
+  geometry:
+    nx: 40
+    ny: 20
+    depths: [4500.0, 5500.0]
+  model:
+    name: QG
+    tstep: PT1H
+  background:
+    date: 2010-01-01T09:00:00Z
+    filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT9H.nc
+  background error:
+    covariance model: QgError
+    horizontal_length_scale: 2.2e6
+    maximum_condition_number: 1.0e6
+    standard_deviation: 1.8e7
+    vertical_length_scale: 15000.0
+  observations:
+  - obs error:
+      covariance model: diagonal
+      random amplitude: 0.4
+    obs operator:
+      obs type: Stream
+    obs space:
+      obsdatain:
+        obsfile: Data/truth.obs3d.nc
+      obsdataout:
+        obsfile: Data/mem004.eda_3dfgat.obs3d.nc
+      obs type: Stream
+  - obs error:
+      covariance model: diagonal
+      random amplitude: 0.5
+    obs operator:
+      obs type: Wind
+    obs space:
+      obsdatain:
+        obsfile: Data/truth.obs3d.nc
+      obsdataout:
+        obsfile: Data/mem004.eda_3dfgat.obs3d.nc
+      obs type: Wind
+  - obs error:
+      covariance model: diagonal
+      random amplitude: 0.2
+    obs operator:
+      obs type: WSpeed
+    obs space:
+      obsdatain:
+        obsfile: Data/truth.obs3d.nc
+      obsdataout:
+        obsfile: Data/mem004.eda_3dfgat.obs3d.nc
+      obs type: WSpeed
+variational:
+  minimizer:
+    algorithm: DRIPCG
+  iterations:
+  - diagnostics:
+      departures: ombg
+    gradient norm reduction: 1.0e-10
+    linear model:
+      trajectory:
+        tstep: PT1H
+      tstep: PT6H
+      variable change: Identity
+      name: QgIdTLM
+    ninner: 10
+    geometry:
+      nx: 40
+      ny: 20
+      depths: [4500.0, 5500.0]
+    test: on
+    obs perturbations: true
+final:
+  diagnostics:
+    departures: oman
+output:
+  datadir: Data
+  exp: mem004.eda_3dfgat
+  first: PT3H
+  frequency: PT6H
+  type: an

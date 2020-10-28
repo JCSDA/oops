@@ -11,10 +11,10 @@
 #ifndef OOPS_ASSIMILATION_DRMINIMIZER_H_
 #define OOPS_ASSIMILATION_DRMINIMIZER_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/Configuration.h"
 #include "oops/assimilation/BMatrix.h"
@@ -23,9 +23,9 @@
 #include "oops/assimilation/HtRinvHMatrix.h"
 #include "oops/assimilation/Minimizer.h"
 
-#include "util/dot_product.h"
-#include "util/formats.h"
-#include "util/Logger.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/formats.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 
@@ -41,53 +41,49 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> class DRMinimizer : public Minimizer<MODEL> {
-  typedef BMatrix<MODEL>             Bmat_;
-  typedef CostFunction<MODEL>        CostFct_;
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef HtRinvHMatrix<MODEL>       HtRinvH_;
-  typedef Minimizer<MODEL>           Minimizer_;
+template<typename MODEL, typename OBS> class DRMinimizer : public Minimizer<MODEL, OBS> {
+  typedef BMatrix<MODEL, OBS>             Bmat_;
+  typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef HtRinvHMatrix<MODEL, OBS>       HtRinvH_;
+  typedef Minimizer<MODEL, OBS>           Minimizer_;
 
  public:
-  explicit DRMinimizer(const CostFct_ & J)
-   : Minimizer_(J), J_(J), gradJb_(0), costJ0Jb_(0) {}
+  explicit DRMinimizer(const CostFct_ & J): Minimizer_(J), J_(J), gradJb_(), costJ0Jb_(0) {}
   ~DRMinimizer() {}
-  virtual const std::string classname() const override =0;
+  const std::string classname() const override = 0;
 
  private:
   CtrlInc_ * doMinimize(const eckit::Configuration &) override;
   virtual double solve(CtrlInc_ &, CtrlInc_ &, CtrlInc_ &,
                        const Bmat_ &, const HtRinvH_ &,
-                       const double, const double, 
-                       const int, const double) =0;
+                       const double, const double,
+                       const int, const double) = 0;
 
   const CostFct_ & J_;
-  boost::scoped_ptr<CtrlInc_> gradJb_;
+  std::unique_ptr<CtrlInc_> gradJb_;
   std::vector<CtrlInc_> dxh_;
   double costJ0Jb_;
 };
 
 // =============================================================================
 
-template<typename MODEL>
-ControlIncrement<MODEL> * DRMinimizer<MODEL>::doMinimize(const eckit::Configuration & config) {
+template<typename MODEL, typename OBS>
+ControlIncrement<MODEL, OBS> *
+DRMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
   int ninner = config.getInt("ninner");
-  double gnreduc = config.getDouble("gradient_norm_reduction");
+  double gnreduc = config.getDouble("gradient norm reduction");
 
-  bool runOnlineAdjTest = false;
-  if (config.has("onlineDiagnostics")) {
-    const eckit::LocalConfiguration onlineDiag(config, "onlineDiagnostics");
-    runOnlineAdjTest = onlineDiag.getBool("onlineAdjTest");
-  }
+  bool runOnlineAdjTest = config.getBool("online diagnostics.online adj test", false);
 
-  if (gradJb_ == 0) {
-    gradJb_.reset(new CtrlInc_(J_.jb()));
-  } else {
+  if (gradJb_) {
     gradJb_.reset(new CtrlInc_(J_.jb().resolution(), *gradJb_));
+  } else {
+    gradJb_.reset(new CtrlInc_(J_.jb()));
   }
 
   Log::info() << std::endl;
-  Log::info() << classname() << ": max iter = " << ninner 
+  Log::info() << classname() << ": max iter = " << ninner
               <<  ", requested norm reduction = " << gnreduc << std::endl;
 
 // Define the matrices

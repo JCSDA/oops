@@ -24,9 +24,9 @@ namespace oops {
    *  method. This class defines objects that apply the \f$ B \f$ matrix.
    */
 
-template<typename MODEL> class BMatrix : private boost::noncopyable {
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef CostFunction<MODEL>        CostFct_;
+template<typename MODEL, typename OBS> class BMatrix : private boost::noncopyable {
+  typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
+  typedef CostFunction<MODEL, OBS>        CostFct_;
 
  public:
   explicit BMatrix(const CostFct_ & j): j_(j) {}

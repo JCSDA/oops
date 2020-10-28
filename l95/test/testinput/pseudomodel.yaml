@@ -1,0 +1,29 @@
+geometry:
+  resol: 40
+model:
+  name: PseudoModel
+  tstep: PT3H
+  state variables: ['x']
+  states:
+  - date: '2010-01-01T06:00:00Z'
+    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT6H
+  - date: '2010-01-01T09:00:00Z'
+    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT9H
+  - date: '2010-01-01T12:00:00Z'
+    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT12H
+  - date: '2010-01-01T15:00:00Z'
+    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT15H
+  - date: '2010-01-01T18:00:00Z'
+    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT18H
+  - date: '2010-01-01T21:00:00Z'
+    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT21H
+  - date: '2010-01-02T00:00:00Z'
+    filename: Data/truth.fc.2010-01-01T00:00:00Z.P1D
+model aux control: {}
+model test:
+  forecast length: PT21H
+  final norm: 8.021
+  tolerance: 0.00005
+initial condition:
+  date: '2010-01-01T03:00:00Z'
+  filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H

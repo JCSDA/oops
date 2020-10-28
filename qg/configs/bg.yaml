@@ -1,0 +1,2 @@
+date: '{{window_begin}}'
+filename: '$(experiment_dir)/{{current_cycle}}/$(experiment).bg.{{current_cycle}}.nc'

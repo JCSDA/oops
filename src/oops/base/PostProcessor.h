@@ -13,8 +13,7 @@
 
 #include <vector>
 
-#include <boost/foreach.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include "oops/base/PostBase.h"
 
@@ -30,6 +29,7 @@ namespace oops {
 template<typename FLDS>
 class PostProcessor {
   typedef PostBase<FLDS> PostBase_;
+
  public:
   PostProcessor() {}
   PostProcessor(const PostProcessor & pp): processors_(pp.processors_) {}
@@ -37,31 +37,36 @@ class PostProcessor {
 
   void enrollProcessor(PostBase_ * pp) {
     if (pp != 0) {
-      boost::shared_ptr<PostBase_> sp(pp);
+      std::shared_ptr<PostBase_> sp(pp);
       processors_.push_back(sp);
     }
   }
 
-  void enrollProcessor(boost::shared_ptr<PostBase_> pp) {
+  void enrollProcessor(std::shared_ptr<PostBase_> pp) {
     if (pp != 0) processors_.push_back(pp);
   }
 
   void initialize(const FLDS & xx, const util::DateTime & end,
                   const util::Duration & step) {
-    BOOST_FOREACH(boost::shared_ptr<PostBase_> jp, processors_)
+    for (auto & jp : processors_) {
       jp->initialize(xx, end, step);
+    }
   }
 
   void process(const FLDS & xx) {
-    BOOST_FOREACH(boost::shared_ptr<PostBase_> jp, processors_) jp->process(xx);
+    for (auto & jp : processors_) {
+      jp->process(xx);
+    }
   }
 
   void finalize(const FLDS & xx) {
-    BOOST_FOREACH(boost::shared_ptr<PostBase_> jp, processors_) jp->finalize(xx);
+    for (auto & jp : processors_) {
+      jp->finalize(xx);
+    }
   }
 
  private:
-  std::vector< boost::shared_ptr<PostBase_> > processors_;
+  std::vector< std::shared_ptr<PostBase_> > processors_;
   PostProcessor operator= (const PostProcessor &);
 };
 

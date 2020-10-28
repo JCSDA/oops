@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -12,38 +12,35 @@
 #define OOPS_ASSIMILATION_COSTFUNCTION_H_
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 #include <boost/noncopyable.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
-#include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/Logger.h"
+#include "eckit/mpi/Comm.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/ControlVariable.h"
 #include "oops/assimilation/CostJbState.h"
 #include "oops/assimilation/CostJbTotal.h"
-#include "oops/assimilation/CostTermBase.h"
 #include "oops/assimilation/CostJo.h"
+#include "oops/assimilation/CostTermBase.h"
 #include "oops/assimilation/DualVector.h"
+#include "oops/assimilation/JqTermTLAD.h"
 #include "oops/base/PostProcessor.h"
-#include "oops/base/PostProcessorTL.h"
-#include "oops/base/PostProcessorAD.h"
-#include "oops/base/TrajectorySaver.h"
+#include "oops/base/PostProcessorTLAD.h"
+#include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
-#include "oops/interface/LinearModel.h"
-#include "oops/interface/Model.h"
 #include "oops/interface/State.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
-#include "util/abor1_cpp.h"
-#include "util/dot_product.h"
+#include "oops/mpi/mpi.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
-  template<typename MODEL> class JqTerm;
 
 // -----------------------------------------------------------------------------
 
@@ -53,37 +50,35 @@ namespace oops {
  * of the variational data assimilation cost function.
  */
 
-template<typename MODEL> class CostFunction : private boost::noncopyable {
-  typedef ControlIncrement<MODEL>    CtrlInc_;
-  typedef ControlVariable<MODEL>     CtrlVar_;
-  typedef CostJbTotal<MODEL>         JbTotal_;
-  typedef CostTermBase<MODEL>        CostBase_;
-  typedef JqTerm<MODEL>              JqTerm_;
-  typedef Geometry<MODEL>            Geometry_;
-  typedef Model<MODEL>               Model_;
-  typedef LinearModel<MODEL>         LinearModel_;
-  typedef State<MODEL>               State_;
-  typedef Increment<MODEL>           Increment_;
+template<typename MODEL, typename OBS> class CostFunction : private boost::noncopyable {
+  typedef ControlIncrement<MODEL, OBS>  CtrlInc_;
+  typedef ControlVariable<MODEL, OBS>   CtrlVar_;
+  typedef CostJbTotal<MODEL, OBS>       JbTotal_;
+  typedef CostTermBase<MODEL, OBS>      CostBase_;
+  typedef JqTermTLAD<MODEL>             JqTermTLAD_;
+  typedef Geometry<MODEL>               Geometry_;
+  typedef State<MODEL>                  State_;
+  typedef Increment<MODEL>              Increment_;
 
  public:
-  CostFunction(const Geometry_ &, const Model_ &);
+  explicit CostFunction(const eckit::Configuration &);
   virtual ~CostFunction() {}
 
   double evaluate(const CtrlVar_ &,
                   const eckit::Configuration & config = eckit::LocalConfiguration(),
-                  PostProcessor<State_> post = PostProcessor<State_>() ) const;
+                  PostProcessor<State_> post = PostProcessor<State_>() );
   double linearize(const CtrlVar_ &, const eckit::Configuration &,
                    PostProcessor<State_> post = PostProcessor<State_>() );
 
-  virtual void runTLM(CtrlInc_ &, PostProcessorTL<Increment_> &,
+  virtual void runTLM(CtrlInc_ &, PostProcessorTLAD<MODEL> &,
                       PostProcessor<Increment_> post = PostProcessor<Increment_>(),
-                      const bool idModel = false) const =0;
-  virtual void runADJ(CtrlInc_ &, PostProcessorAD<Increment_> &,
+                      const bool idModel = false) const = 0;
+  virtual void runADJ(CtrlInc_ &, PostProcessorTLAD<MODEL> &,
                       PostProcessor<Increment_> post = PostProcessor<Increment_>(),
-                      const bool idModel = false) const =0;
-  virtual void zeroAD(CtrlInc_ &) const =0;
+                      const bool idModel = false) const = 0;
+  virtual void zeroAD(CtrlInc_ &) const = 0;
 
-  virtual void runNL(CtrlVar_ &, PostProcessor<State_>&) const =0;
+  virtual void runNL(CtrlVar_ &, PostProcessor<State_>&) const = 0;
 
   void addIncrement(CtrlVar_ &, const CtrlInc_ &,
                     PostProcessor<Increment_> post = PostProcessor<Increment_>() ) const;
@@ -97,67 +92,64 @@ template<typename MODEL> class CostFunction : private boost::noncopyable {
 /// Access terms of the cost function other than \f$ J_b\f$
   const CostBase_ & jterm(const unsigned ii) const {return jterms_[ii];}
   unsigned nterms() const {return jterms_.size();}
-  const double getCostJb() const {return costJb_;}
-  const double getCostJoJc() const {return costJoJc_;}
+  double getCostJb() const {return costJb_;}
+  double getCostJoJc() const {return costJoJc_;}
 
  protected:
   void setupTerms(const eckit::Configuration &);
-  const Model_ & getModel() const {return model_;}
-  const LinearModel_ & getTLM(const unsigned isub = 0) const {return tlm_[isub];}
+  void setupTerms(const eckit::Configuration &, const State_ &);  // generic 1d-var
+  const CtrlVar_ & background() const {return *xb_;}
 
  private:
-  virtual void addIncr(CtrlVar_ &, const CtrlInc_ &,
-                       PostProcessor<Increment_>&) const =0;
+  virtual void addIncr(CtrlVar_ &, const CtrlInc_ &, PostProcessor<Increment_>&) const = 0;
 
-  virtual CostJbState<MODEL>  * newJb(const eckit::Configuration &, const Geometry_ &, const CtrlVar_ &) const =0;
-  virtual CostJo<MODEL>       * newJo(const eckit::Configuration &) const =0;
-  virtual CostTermBase<MODEL> * newJc(const eckit::Configuration &, const Geometry_ &) const =0;
+  virtual CostJbState<MODEL>  * newJb(const eckit::Configuration &, const Geometry_ &,
+                                      const CtrlVar_ &) const = 0;
+  virtual CostJo<MODEL, OBS>       * newJo(const eckit::Configuration &) const = 0;
+  virtual CostTermBase<MODEL, OBS> * newJc(const eckit::Configuration &,
+                                           const Geometry_ &) const = 0;
+  virtual void doLinearize(const Geometry_ &, const eckit::Configuration &,
+                           const CtrlVar_ &, const CtrlVar_ &,
+                           PostProcessor<State_> &, PostProcessorTLAD<MODEL> &) = 0;
+  virtual const Geometry_ & geometry() const = 0;
 
 // Data members
-  const Geometry_ & resol_;
-  const Model_ & model_;
-  boost::scoped_ptr<const CtrlVar_> xb_;
-  boost::scoped_ptr<JbTotal_> jb_;
+  std::unique_ptr<const CtrlVar_> xb_;
+  std::unique_ptr<JbTotal_> jb_;
   boost::ptr_vector<CostBase_> jterms_;
-  boost::ptr_vector<LinearModel_> tlm_;
 
-  double costJb_;
-  double costJoJc_;
+  mutable double costJb_;
+  mutable double costJoJc_;
 };
 
 // -----------------------------------------------------------------------------
 
 /// Cost Function Factory
-template <typename MODEL>
+template <typename MODEL, typename OBS>
 class CostFactory {
-  typedef Geometry<MODEL>            Geometry_;
-  typedef Model<MODEL>               Model_;
  public:
-  static CostFunction<MODEL> * create(const eckit::Configuration &,
-                                      const Geometry_ &, const Model_ &);
-  virtual ~CostFactory() { getMakers().clear(); }
+  static CostFunction<MODEL, OBS> * create(const eckit::Configuration &, const eckit::mpi::Comm &);
+  virtual ~CostFactory() = default;
 
  protected:
   explicit CostFactory(const std::string &);
  private:
-  virtual CostFunction<MODEL> * make(const eckit::Configuration &,
-                                     const Geometry_ &, const Model_ &) =0;
-  static std::map < std::string, CostFactory<MODEL> * > & getMakers() {
-    static std::map < std::string, CostFactory<MODEL> * > makers_;
+  virtual CostFunction<MODEL, OBS> * make(const eckit::Configuration &,
+                                          const eckit::mpi::Comm &) = 0;
+  static std::map < std::string, CostFactory<MODEL, OBS> * > & getMakers() {
+    static std::map < std::string, CostFactory<MODEL, OBS> * > makers_;
     return makers_;
   }
 };
 
-template<class MODEL, class FCT>
-class CostMaker : public CostFactory<MODEL> {
-  typedef Geometry<MODEL>            Geometry_;
-  typedef Model<MODEL>               Model_;
+template<class MODEL, class OBS, class FCT>
+class CostMaker : public CostFactory<MODEL, OBS> {
  private:
-  virtual CostFunction<MODEL> * make(const eckit::Configuration & config,
-                                     const Geometry_ & resol, const Model_ & model)
-    {return new FCT(config, resol, model);}
+  CostFunction<MODEL, OBS> * make(const eckit::Configuration & config,
+                                  const eckit::mpi::Comm & comm) override
+    {return new FCT(config, comm);}
  public:
-  explicit CostMaker(const std::string & name) : CostFactory<MODEL>(name) {}
+  explicit CostMaker(const std::string & name) : CostFactory<MODEL, OBS>(name) {}
 };
 
 // =============================================================================
@@ -165,85 +157,107 @@ class CostMaker : public CostFactory<MODEL> {
 //  Factory
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-CostFactory<MODEL>::CostFactory(const std::string & name) {
+template <typename MODEL, typename OBS>
+CostFactory<MODEL, OBS>::CostFactory(const std::string & name) {
   if (getMakers().find(name) != getMakers().end()) {
-    Log::error() << name << " already registered in cost function factory." << std::endl;
-    ABORT("Element already registered in CostFactory.");
+    throw std::runtime_error(name + " already registered in cost function factory.");
   }
   getMakers()[name] = this;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-CostFunction<MODEL>* CostFactory<MODEL>::create(const eckit::Configuration & config,
-                                                const Geometry_ & resol, const Model_ & model) {
-  std::string id = config.getString("cost_type");
+template <typename MODEL, typename OBS>
+CostFunction<MODEL, OBS>* CostFactory<MODEL, OBS>::create(const eckit::Configuration & config,
+                                                          const eckit::mpi::Comm & comm) {
+  std::string id = config.getString("cost type");
   Log::trace() << "Variational Assimilation Type=" << id << std::endl;
-  typename std::map<std::string, CostFactory<MODEL>*>::iterator j = getMakers().find(id);
+  typename std::map<std::string, CostFactory<MODEL, OBS>*>::iterator j = getMakers().find(id);
   if (j == getMakers().end()) {
-    Log::error() << id << " does not exist in cost function factory." << std::endl;
-    ABORT("Element does not exist in CostFactory.");
+    throw std::runtime_error(id + " does not exist in cost function factory.");
   }
-  return (*j).second->make(config, resol, model);
+  Log::trace() << "CostFactory::create found cost function type" << std::endl;
+  return (*j).second->make(config, comm);
 }
 
 // -----------------------------------------------------------------------------
 //  Cost Function
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-CostFunction<MODEL>::CostFunction(const Geometry_ & resol, const Model_ & model)
-  : resol_(resol), model_(model), jb_(), jterms_(), tlm_()
-{
-  Log::trace() << "CostFunction:created" << std::endl;
-}
+template<typename MODEL, typename OBS>
+CostFunction<MODEL, OBS>::CostFunction(const eckit::Configuration & config)
+  : jb_(), jterms_()
+{}
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostFunction<MODEL>::setupTerms(const eckit::Configuration & config) {
-  Log::trace() << "CostFunction: setupTerms starting" << std::endl;
+template<typename MODEL, typename OBS>
+void CostFunction<MODEL, OBS>::setupTerms(const eckit::Configuration & config) {
+  Log::trace() << "CostFunction::setupTerms start" << std::endl;
 
 // Jo
-  std::vector<eckit::LocalConfiguration> jos;
-  config.get("Jo", jos);
-  for (size_t jj = 0; jj < jos.size(); ++jj) {
-    CostJo<MODEL> * jo = this->newJo(jos[jj]);
-    jterms_.push_back(jo);
-  }
-  Log::trace() << "CostFunction: setupTerms Jo added" << std::endl;
+  CostJo<MODEL, OBS> * jo = this->newJo(config);
+  jterms_.push_back(jo);
+  Log::trace() << "CostFunction::setupTerms Jo added" << std::endl;
 
 // Jb
-  const eckit::LocalConfiguration jbConf(config, "Jb");
-  xb_.reset(new CtrlVar_(eckit::LocalConfiguration(jbConf, "Background"), resol_));
-  jb_.reset(new JbTotal_(*xb_, this->newJb(jbConf, resol_, *xb_), jbConf, resol_));
-  Log::trace() << "CostFunction: setupTerms Jb added" << std::endl;
+  xb_.reset(new CtrlVar_(config, this->geometry(), jo->obspaces()));
+  jb_.reset(new JbTotal_(*xb_, this->newJb(config, this->geometry(), *xb_),
+                         config, this->geometry(), jo->obspaces()));
+  Log::trace() << "CostFunction::setupTerms Jb added" << std::endl;
 
 // Other constraints
   std::vector<eckit::LocalConfiguration> jcs;
-  config.get("Jc", jcs);
+  config.get("constraints", jcs);
   for (size_t jj = 0; jj < jcs.size(); ++jj) {
-    CostTermBase<MODEL> * jc = this->newJc(jcs[jj], resol_);
+    CostTermBase<MODEL, OBS> * jc = this->newJc(jcs[jj], this->geometry());
     jterms_.push_back(jc);
   }
-  Log::trace() << "CostFunction: setupTerms Jc added" << std::endl;
-  Log::trace() << "CostFunction: setupTerms done" << std::endl;
+  Log::trace() << "CostFunction::setupTerms done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+// This setup terms method has been written for the generic 1d-var which is
+// under development in UFO
+// -----------------------------------------------------------------------------
+template<typename MODEL, typename OBS>
+void CostFunction<MODEL, OBS>::setupTerms(const eckit::Configuration & config,
+                                          const State_ & statein) {
+  Log::trace() << "CostFunction::setupTerms start" << std::endl;
+
+// Jo
+  CostJo<MODEL, OBS> * jo = this->newJo(config);
+  jterms_.push_back(jo);
+  Log::trace() << "CostFunction::setupTerms Jo added" << std::endl;
+
+// Jb
+  xb_.reset(new CtrlVar_(config, statein, jo->obspaces()));
+  jb_.reset(new JbTotal_(*xb_, this->newJb(config, this->geometry(), *xb_),
+                         config, this->geometry(), jo->obspaces()));
+  Log::trace() << "CostFunction::setupTerms Jb added" << std::endl;
+
+// Other constraints
+  std::vector<eckit::LocalConfiguration> jcs;
+  config.get("constraints", jcs);
+  for (size_t jj = 0; jj < jcs.size(); ++jj) {
+    CostTermBase<MODEL, OBS> * jc = this->newJc(jcs[jj], this->geometry());
+    jterms_.push_back(jc);
+  }
+  Log::trace() << "CostFunction::setupTerms done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-double CostFunction<MODEL>::evaluate(const CtrlVar_ & fguess,
-                                     const eckit::Configuration & config,
-                                     PostProcessor<State_> post) const {
+template<typename MODEL, typename OBS>
+double CostFunction<MODEL, OBS>::evaluate(const CtrlVar_ & fguess,
+                                          const eckit::Configuration & config,
+                                          PostProcessor<State_> post) {
+  Log::trace() << "CostFunction::evaluate start" << std::endl;
 // Setup terms of cost function
   PostProcessor<State_> pp(post);
-  JqTerm_ * jq = jb_->initialize(fguess);
-  pp.enrollProcessor(jq);
+  jb_->initialize(fguess);
   for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
-    pp.enrollProcessor(jterms_[jj].initialize(fguess));
+    pp.enrollProcessor(jterms_[jj].initialize(fguess, config));
   }
 
 // Run NL model
@@ -251,82 +265,79 @@ double CostFunction<MODEL>::evaluate(const CtrlVar_ & fguess,
   this->runNL(mfguess, pp);
 
 // Cost function value
-  eckit::LocalConfiguration diagnostic;
-  if (config.has("diagnostics")) {
-    diagnostic = eckit::LocalConfiguration(config, "diagnostics");
-  }
-  double zzz = jb_->finalize(jq);
+  double zzz = 0.0;
+  costJb_ = jb_->finalize(mfguess);
+  zzz += costJb_;
+  costJoJc_ = 0.0;
   for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
-    zzz += jterms_[jj].finalize(diagnostic);
+    costJoJc_ += jterms_[jj].finalize();
   }
+  zzz += costJoJc_;
   Log::test() << "CostFunction: Nonlinear J = " << zzz << std::endl;
+  Log::trace() << "CostFunction::evaluate done" << std::endl;
   return zzz;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-double CostFunction<MODEL>::linearize(const CtrlVar_ & fguess,
-                                      const eckit::Configuration & innerConf,
-                                      PostProcessor<State_> post) {
-// Read inner loop configuration
-  const eckit::LocalConfiguration resConf(innerConf, "resolution");
-  const eckit::LocalConfiguration tlmConf(innerConf, "linearmodel");
-  eckit::LocalConfiguration diagnostic;
-  if (innerConf.has("diagnostics")) {
-    diagnostic = eckit::LocalConfiguration(innerConf, "diagnostics");
-  }
-  const Geometry_ lowres(resConf);
+template<typename MODEL, typename OBS>
+double CostFunction<MODEL, OBS>::linearize(const CtrlVar_ & fguess,
+                                           const eckit::Configuration & innerConf,
+                                           PostProcessor<State_> post) {
+  Log::trace() << "CostFunction::linearize start" << std::endl;
+// Inner loop resolution
+  const eckit::LocalConfiguration resConf(innerConf, "geometry");
+  const Geometry_ lowres(resConf, this->geometry().getComm(), this->geometry().timeComm());
 
-// Setup terms of cost function
-  PostProcessor<State_> pp(post);
-  JqTerm_ * jq = jb_->initializeTraj(fguess, lowres);
-  pp.enrollProcessor(jq);
+// Setup trajectory for terms of cost function
+  PostProcessorTLAD<MODEL> pptraj;
+  JqTermTLAD_ * jq = jb_->initializeTraj(fguess, lowres, innerConf);
+  pptraj.enrollProcessor(jq);
   for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
-    pp.enrollProcessor(jterms_[jj].initializeTraj(fguess, lowres, innerConf));
+    pptraj.enrollProcessor(jterms_[jj].initializeTraj(fguess, lowres, innerConf));
   }
 
-// Setup linear model (and trajectory)
-  tlm_.clear();
-  pp.enrollProcessor(new TrajectorySaver<MODEL>(fguess.state()[0], tlmConf, lowres, fguess.modVar(), tlm_));
+// Specific linearization if needed (including TLM)
+  this->doLinearize(lowres, innerConf, *xb_, fguess, post, pptraj);
 
 // Run NL model
-  CtrlVar_ mfguess(fguess);
-  this->runNL(mfguess, pp);
+  double zzz = this->evaluate(fguess, innerConf, post);
 
-// Cost function value
-  costJb_ = jb_->finalizeTraj(jq);
-  costJoJc_ = 0.0;
+// Finalize trajectory setup
+  jb_->finalizeTraj(jq);
   for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
-    costJoJc_ += jterms_[jj].finalizeTraj(diagnostic);
+    jterms_[jj].finalizeTraj();
   }
-  double costJ = costJb_ + costJoJc_;
-  Log::test() << "CostFunction: Nonlinear J = " << costJ << std::endl;
-  return costJ;
+
+  Log::trace() << "CostFunction::linearize done" << std::endl;
+  return zzz;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostFunction<MODEL>::computeGradientFG(CtrlInc_ & grad) const {
+template<typename MODEL, typename OBS>
+void CostFunction<MODEL, OBS>::computeGradientFG(CtrlInc_ & grad) const {
+  Log::trace() << "CostFunction::computeGradientFG start" << std::endl;
   PostProcessor<Increment_> pp;
-  PostProcessorAD<Increment_> costad;
+  PostProcessorTLAD<MODEL> costad;
   this->zeroAD(grad);
 
   for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
-    boost::shared_ptr<const GeneralizedDepartures> tmp(jterms_[jj].newGradientFG());
+    std::shared_ptr<const GeneralizedDepartures> tmp(jterms_[jj].newGradientFG());
     costad.enrollProcessor(jterms_[jj].setupAD(tmp, grad));
   }
 
   this->runADJ(grad, costad, pp);
+  Log::info() << "CostFunction::computeGradientFG: gradient:" << grad << std::endl;
+  Log::trace() << "CostFunction::computeGradientFG done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostFunction<MODEL>::addIncrement(CtrlVar_ & xx, const CtrlInc_ & dx,
-                                       PostProcessor<Increment_> post) const {
-  Log::info() << std::endl;
+template<typename MODEL, typename OBS>
+void CostFunction<MODEL, OBS>::addIncrement(CtrlVar_ & xx, const CtrlInc_ & dx,
+                                            PostProcessor<Increment_> post) const {
+  Log::trace() << "CostFunction::addIncrement start" << std::endl;
   Log::info() << "CostFunction::addIncrement: First guess:" << xx << std::endl;
   Log::info() << "CostFunction::addIncrement: Increment:" << dx << std::endl;
 
@@ -334,19 +345,20 @@ void CostFunction<MODEL>::addIncrement(CtrlVar_ & xx, const CtrlInc_ & dx,
   xx.modVar() += dx.modVar();
   this->addIncr(xx, dx, post);
 
-  Log::info() << "CostFunction::addIncrement: Analysis:" << xx << std::endl;
-  Log::test() << "CostFunction::addIncrement: Analysis norm: " << xx.norm() << std::endl;
-  Log::info() << std::endl;
+  Log::info() << "CostFunction::addIncrement: Analysis: " << xx << std::endl;
+  Log::test() << "CostFunction::addIncrement: Analysis: " << xx << std::endl;
+  Log::trace() << "CostFunction::addIncrement done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostFunction<MODEL>::resetLinearization() {
+template<typename MODEL, typename OBS>
+void CostFunction<MODEL, OBS>::resetLinearization() {
+  Log::trace() << "CostFunction::resetLinearization start" << std::endl;
   for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
     jterms_[jj].resetLinearization();
   }
-  tlm_.clear();
+  Log::trace() << "CostFunction::resetLinearization done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -11,133 +11,119 @@
 #ifndef OOPS_INTERFACE_OBSOPERATOR_H_
 #define OOPS_INTERFACE_OBSOPERATOR_H_
 
+#include <memory>
 #include <string>
 
-#include <boost/shared_ptr.hpp>
+#include <boost/noncopyable.hpp>
 
-#include "util/Logger.h"
-#include "oops/interface/ModelAtLocations.h"
+#include "oops/base/Variables.h"
+#include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
-#include "oops/interface/ObservationSpace.h"
+#include "oops/interface/ObsDiagnostics.h"
+#include "oops/interface/ObsSpace.h"
 #include "oops/interface/ObsVector.h"
-#include "oops/interface/Variables.h"
-#include "eckit/config/Configuration.h"
-#include "util/DateTime.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
-#include "util/Timer.h"
-
-namespace eckit {
-  class Configuration;
-}
+#include "oops/util/DateTime.h"
+#include "oops/util/Logger.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
+#include "oops/util/Timer.h"
 
 namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
+template <typename OBS>
 class ObsOperator : public util::Printable,
-                    private util::ObjectCounter<ObsOperator<MODEL> > {
-  typedef typename MODEL::ObsOperator           ObsOperator_;
-  typedef ModelAtLocations<MODEL>    ModelAtLocations_;
-  typedef ObsAuxControl<MODEL>       ObsAuxControl_;
-  typedef ObsVector<MODEL>           ObsVector_;
-  typedef ObservationSpace<MODEL>    ObsSpace_;
-  typedef Variables<MODEL>           Variables_;
+                    private boost::noncopyable,
+                    private util::ObjectCounter<ObsOperator<OBS> > {
+  typedef typename OBS::ObsOperator  ObsOperator_;
+  typedef GeoVaLs<OBS>               GeoVaLs_;
+  typedef ObsDiagnostics<OBS>        ObsDiags_;
+  typedef Locations<OBS>             Locations_;
+  typedef ObsAuxControl<OBS>         ObsAuxControl_;
+  typedef ObsVector<OBS>             ObsVector_;
+  typedef ObsSpace<OBS>              ObsSpace_;
 
  public:
   static const std::string classname() {return "oops::ObsOperator";}
 
   ObsOperator(const ObsSpace_ &, const eckit::Configuration &);
-  ObsOperator(const ObsOperator &);
   ~ObsOperator();
+
+/// Obs Operator
+  void simulateObs(const GeoVaLs_ &, ObsVector_ &, const ObsAuxControl_ &, ObsDiags_ &) const;
 
 /// Interfacing
   const ObsOperator_ & obsoperator() const {return *oper_;}
 
-/// Obs Operator
-  void obsEquiv(const ModelAtLocations_ &, ObsVector_ &, const ObsAuxControl_ &) const;
-
 /// Other
-  Variables_ variables() const;  // Required inputs variables from Model
-  void generateObsError(const eckit::Configuration &);
+  const Variables & requiredVars() const;  // Required input variables from Model
+  Locations_ locations(const util::DateTime &, const util::DateTime &) const;
 
  private:
-  ObsOperator & operator=(const ObsOperator &);
   void print(std::ostream &) const;
-  boost::shared_ptr<ObsOperator_> oper_;
+  std::unique_ptr<ObsOperator_> oper_;
 };
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-ObsOperator<MODEL>::ObsOperator(const ObsSpace_ & os, const eckit::Configuration & conf)
-  : oper_()
-{
-  Log::trace() << "ObsOperator<MODEL>::ObsOperator starting" << std::endl;
+template <typename OBS>
+ObsOperator<OBS>::ObsOperator(const ObsSpace_ & os,
+                                const eckit::Configuration & config) : oper_() {
+  Log::trace() << "ObsOperator<OBS>::ObsOperator starting" << std::endl;
   util::Timer timer(classname(), "ObsOperator");
-  oper_.reset(ObsOperator_::create(os.observationspace(), conf));
-  Log::trace() << "ObsOperator<MODEL>::ObsOperator done" << std::endl;
+  oper_.reset(new ObsOperator_(os.obsspace(), config));
+  Log::trace() << "ObsOperator<OBS>::ObsOperator done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-ObsOperator<MODEL>::ObsOperator(const ObsOperator & other) : oper_(other.oper_)
-{
-  Log::trace() << "ObsOperator<MODEL>::ObsOperator copied" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
-ObsOperator<MODEL>::~ObsOperator() {
-  Log::trace() << "ObsOperator<MODEL>::~ObsOperator starting" << std::endl;
+template <typename OBS>
+ObsOperator<OBS>::~ObsOperator() {
+  Log::trace() << "ObsOperator<OBS>::~ObsOperator starting" << std::endl;
   util::Timer timer(classname(), "~ObsOperator");
   oper_.reset();
-  Log::trace() << "ObsOperator<MODEL>::~ObsOperator done" << std::endl;
+  Log::trace() << "ObsOperator<OBS>::~ObsOperator done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void ObsOperator<MODEL>::obsEquiv(const ModelAtLocations_ & gom, ObsVector_ & yy,
-                                  const ObsAuxControl_ & aux) const {
-  Log::trace() << "ObsOperator<MODEL>::obsEquiv starting" << std::endl;
-  util::Timer timer(classname(), "ObsEquiv");
-  oper_->obsEquiv(gom.modelatlocations(), yy.obsvector(), aux.obsauxcontrol());
-  Log::trace() << "ObsOperator<MODEL>::obsEquiv done" << std::endl;
+template <typename OBS>
+void ObsOperator<OBS>::simulateObs(const GeoVaLs_ & gvals, ObsVector_ & yy,
+                                     const ObsAuxControl_ & aux, ObsDiags_ & ydiag) const {
+  Log::trace() << "ObsOperator<OBS>::simulateObs starting" << std::endl;
+  util::Timer timer(classname(), "simulateObs");
+  oper_->simulateObs(gvals.geovals(), yy.obsvector(), aux.obsauxcontrol(), ydiag.obsdiagnostics());
+  Log::trace() << "ObsOperator<OBS>::simulateObs done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-Variables<MODEL> ObsOperator<MODEL>::variables() const {
-  Log::trace() << "ObsOperator<MODEL>::variables starting" << std::endl;
-  util::Timer timer(classname(), "variables");
-  Variables<MODEL> var(oper_->variables());
-  Log::trace() << "ObsOperator<MODEL>::variables done" << std::endl;
-  return var;
+template <typename OBS>
+const Variables & ObsOperator<OBS>::requiredVars() const {
+  Log::trace() << "ObsOperator<OBS>::requiredVars starting" << std::endl;
+  util::Timer timer(classname(), "requiredVars");
+  return oper_->requiredVars();
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL>
-void ObsOperator<MODEL>::generateObsError(const eckit::Configuration & conf) {
-  Log::trace() << "ObsOperator<MODEL>::generateObsError starting" << std::endl;
-  util::Timer timer(classname(), "generateObsError");
-  oper_->generateObsError(conf);
-  Log::trace() << "ObsOperator<MODEL>::generateObsError done" << std::endl;
+template <typename OBS>
+Locations<OBS> ObsOperator<OBS>::locations(const util::DateTime & t1,
+                                               const util::DateTime & t2) const {
+  Log::trace() << "ObsOperator<OBS>::locations starting" << std::endl;
+  util::Timer timer(classname(), "locations");
+  return Locations_(oper_->locations(t1, t2));
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void ObsOperator<MODEL>::print(std::ostream & os) const {
-  Log::trace() << "ObsOperator<MODEL>::print starting" << std::endl;
+template<typename OBS>
+void ObsOperator<OBS>::print(std::ostream & os) const {
+  Log::trace() << "ObsOperator<OBS>::print starting" << std::endl;
   util::Timer timer(classname(), "print");
-//  os << *increment_;
-  Log::trace() << "ObsOperator<MODEL>::print done" << std::endl;
+  os << *oper_;
+  Log::trace() << "ObsOperator<OBS>::print done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

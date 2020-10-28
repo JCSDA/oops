@@ -13,34 +13,40 @@
 #include <iostream>
 #include <string>
 
-#include "util/Logger.h"
-#include "lorenz95/ObsBiasCorrection.h"
 #include "eckit/config/Configuration.h"
-
-
-using oops::Log;
+#include "lorenz95/ObsBiasCorrection.h"
+#include "oops/util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-ObsBias::ObsBias(const eckit::Configuration & conf) : bias_(0.0), active_(false)
+ObsBias::ObsBias(const ObsTableView &, const eckit::Configuration & conf)
+  : bias_(0.0), active_(false), geovars_(), hdiags_()
 {
-  Log::trace() << "ObsBias::ObsBias conf is:" << conf << std::endl;
-  if (conf.has("bias")) {
-    bias_ = conf.getDouble("bias");
-    active_ = true;
-    Log::info() << "ObsBias::ObsBias created, bias = " << bias_ << std::endl;
+  oops::Log::trace() << "ObsBias::ObsBias conf is:" << conf << std::endl;
+  if (conf.has("obs bias")) {
+    const eckit::LocalConfiguration biasconf(conf, "obs bias");
+    if (biasconf.has("bias")) {
+      bias_ = biasconf.getDouble("bias");
+      active_ = true;
+      oops::Log::info() << "ObsBias::ObsBias created, bias = " << bias_ << std::endl;
+    }
   }
 }
 // -----------------------------------------------------------------------------
 ObsBias::ObsBias(const ObsBias & other, const bool copy)
-  : bias_(0.0), active_(other.active_)
-{
+  : bias_(0.0), active_(other.active_),
+    geovars_(other.geovars_), hdiags_(other.hdiags_) {
   if (active_ && copy) bias_ = other.bias_;
 }
 // -----------------------------------------------------------------------------
 ObsBias & ObsBias::operator+=(const ObsBiasCorrection & dx) {
   if (active_) bias_ += dx.value();
+  return *this;
+}
+// -----------------------------------------------------------------------------
+ObsBias & ObsBias::operator=(const ObsBias & rhs) {
+  if (active_) bias_ = rhs.bias_;
   return *this;
 }
 // -----------------------------------------------------------------------------

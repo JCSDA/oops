@@ -1,4 +1,4 @@
-/*
+/* 
  * (C) Copyright 2009-2016 ECMWF.
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
@@ -11,11 +11,11 @@
 #ifndef OOPS_RUNS_RUN_H_
 #define OOPS_RUNS_RUN_H_
 
-#include <boost/scoped_ptr.hpp>
+#include <memory>
 
-#include "eckit/runtime/Main.h"
 #include "eckit/config/YAMLConfiguration.h"
-#include "util/Timer.h"
+#include "eckit/runtime/Main.h"
+#include "oops/util/Timer.h"
 
 namespace oops {
   class Application;
@@ -30,14 +30,14 @@ class Run : public eckit::Main {
  public:
   Run(int argc, char** argv);
   virtual ~Run();
-  void execute(const Application &);
+  int execute(const Application &);
 
  protected:
   const eckit::Configuration & config() const {return *config_;}
 
  private:
-  boost::scoped_ptr<const eckit::YAMLConfiguration> config_;
-  boost::scoped_ptr<util::Timer> timer_;
+  std::unique_ptr<const eckit::YAMLConfiguration> config_;
+  std::unique_ptr<util::Timer> timer_;
 };
 
 // -----------------------------------------------------------------------------

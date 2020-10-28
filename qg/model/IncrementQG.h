@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2017-2019 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -11,32 +12,44 @@
 #ifndef QG_MODEL_INCREMENTQG_H_
 #define QG_MODEL_INCREMENTQG_H_
 
+#include <memory>
 #include <ostream>
 #include <string>
+#include <vector>
 
-#include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
+#include "atlas/field.h"
 
-#include "model/FieldsQG.h"
-#include "model/GeometryQG.h"
+#include "eckit/config/LocalConfiguration.h"
+
 #include "oops/base/GeneralizedDepartures.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
-#include "util/dot_product.h"
+#include "oops/base/LocalIncrement.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/dot_product.h"
+#include "oops/util/Duration.h"
+#include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
+#include "oops/util/Serializable.h"
+
+#include "oops/qg/FieldsQG.h"
+#include "oops/qg/GeometryQG.h"
+#include "oops/qg/GeometryQGIterator.h"
 
 namespace eckit {
   class Configuration;
 }
 
+namespace oops {
+  class LocalIncrement;
+  class Variables;
+}
+
 namespace qg {
   class GomQG;
   class LocationsQG;
+  class GeometryQG;
   class ModelBiasIncrement;
   class ErrorCovarianceQG;
   class StateQG;
-  class VariablesQG;
 
 /// Increment Class: Difference between two states
 /*!
@@ -49,12 +62,13 @@ namespace qg {
 
 class IncrementQG : public oops::GeneralizedDepartures,
                     public util::Printable,
+                    public util::Serializable,
                     private util::ObjectCounter<IncrementQG> {
  public:
   static const std::string classname() {return "qg::IncrementQG";}
 
 /// Constructor, destructor
-  IncrementQG(const GeometryQG &, const VariablesQG &, const util::DateTime &);
+  IncrementQG(const GeometryQG &, const oops::Variables &, const util::DateTime &);
   IncrementQG(const GeometryQG &, const IncrementQG &);
   IncrementQG(const IncrementQG &, const bool);
   IncrementQG(const IncrementQG &);
@@ -64,6 +78,7 @@ class IncrementQG : public oops::GeneralizedDepartures,
   void diff(const StateQG &, const StateQG &);
   void zero();
   void zero(const util::DateTime &);
+  void ones();
   IncrementQG & operator =(const IncrementQG &);
   IncrementQG & operator+=(const IncrementQG &);
   IncrementQG & operator-=(const IncrementQG &);
@@ -72,10 +87,7 @@ class IncrementQG : public oops::GeneralizedDepartures,
   double dot_product_with(const IncrementQG &) const;
   void schur_product_with(const IncrementQG &);
   void random();
-
-/// Interpolate to observation location
-  void interpolateTL(const LocationsQG &, GomQG &) const;
-  void interpolateAD(const LocationsQG &, const GomQG &);
+  void dirac(const eckit::Configuration &);
 
 /// I/O and diagnostics
   void read(const eckit::Configuration &);
@@ -85,25 +97,34 @@ class IncrementQG : public oops::GeneralizedDepartures,
   util::DateTime & validTime() {return fields_->time();}
   void updateTime(const util::Duration & dt) {fields_->time() += dt;}
 
+/// ATLAS FieldSet
+  void setAtlas(atlas::FieldSet *) const;
+  void toAtlas(atlas::FieldSet *) const;
+  void fromAtlas(atlas::FieldSet *);
+
 /// Access to fields
   FieldsQG & fields() {return *fields_;}
   const FieldsQG & fields() const {return *fields_;}
 
-  boost::shared_ptr<const GeometryQG> geometry() const {
+  std::shared_ptr<const GeometryQG> geometry() const {
     return fields_->geometry();
   }
 
 /// Other
-  void activateModel();
-  void deactivateModel();
-
   void accumul(const double &, const StateQG &);
+  oops::LocalIncrement getLocal(const GeometryQGIterator &) const;
+  void setLocal(const oops::LocalIncrement &, const GeometryQGIterator &);
+
+/// Serialization
+  size_t serialSize() const override;
+  void serialize(std::vector<double> &) const override;
+  void deserialize(const std::vector<double> &, size_t &) override;
 
 /// Data
  private:
-  void print(std::ostream &) const;
-  boost::scoped_ptr<FieldsQG> fields_;
-  boost::scoped_ptr<FieldsQG> stash_;
+  void print(std::ostream &) const override;
+  const bool lbc_ = false;
+  std::unique_ptr<FieldsQG> fields_;
 };
 // -----------------------------------------------------------------------------
 

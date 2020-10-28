@@ -11,17 +11,17 @@
 #ifndef OOPS_ASSIMILATION_LBMINIMIZER_H_
 #define OOPS_ASSIMILATION_LBMINIMIZER_H_
 
+#include <memory>
 #include <string>
 
-#include <boost/scoped_ptr.hpp>
 
-#include "util/Logger.h"
+#include "eckit/config/Configuration.h"
 #include "oops/assimilation/BMatrix.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/LBHessianMatrix.h"
 #include "oops/assimilation/Minimizer.h"
-#include "eckit/config/Configuration.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 
@@ -35,49 +35,43 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> class LBMinimizer : public Minimizer<MODEL> {
-  typedef CostFunction<MODEL>     CostFct_;
-  typedef ControlIncrement<MODEL> CtrlInc_;
-  typedef BMatrix<MODEL>          Bmat_;
-  typedef LBHessianMatrix<MODEL>  LBHessianMatrix_;
-  typedef Minimizer<MODEL>        Minimizer_;
+template<typename MODEL, typename OBS> class LBMinimizer : public Minimizer<MODEL, OBS> {
+  typedef CostFunction<MODEL, OBS>     CostFct_;
+  typedef ControlIncrement<MODEL, OBS> CtrlInc_;
+  typedef BMatrix<MODEL, OBS>          Bmat_;
+  typedef LBHessianMatrix<MODEL, OBS>  LBHessianMatrix_;
+  typedef Minimizer<MODEL, OBS>        Minimizer_;
 
  public:
-  explicit LBMinimizer(const CostFct_ & J)
-   : Minimizer_(J), J_(J), gradJb_(0) {}
+  explicit LBMinimizer(const CostFct_ & J): Minimizer_(J), J_(J), gradJb_() {}
   ~LBMinimizer() {}
-  virtual const std::string classname() const override =0;
+  const std::string classname() const override = 0;
 
  private:
   CtrlInc_ * doMinimize(const eckit::Configuration &) override;
   virtual void solve(CtrlInc_ &, CtrlInc_ &,
-                     const LBHessianMatrix_ &, const int, const double) =0;
+                     const LBHessianMatrix_ &, const int, const double) = 0;
 
   const CostFct_ & J_;
-  boost::scoped_ptr<CtrlInc_> gradJb_;
+  std::unique_ptr<CtrlInc_> gradJb_;
 };
 
 // =============================================================================
 
-template<typename MODEL>
-ControlIncrement<MODEL> * LBMinimizer<MODEL>::doMinimize(const eckit::Configuration & config) {
+template<typename MODEL, typename OBS>
+ControlIncrement<MODEL, OBS> *
+LBMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
   int ninner = config.getInt("ninner");
-  double gnreduc = config.getDouble("gradient_norm_reduction");
+  double gnreduc = config.getDouble("gradient norm reduction");
 
-  bool runOnlineAdjTest = false;
-  if (config.has("onlineDiagnostics")) {
-    const eckit::LocalConfiguration onlineDiag(config, "onlineDiagnostics");
-    runOnlineAdjTest = onlineDiag.getBool("onlineAdjTest");
-  }
-
-  if (gradJb_ == 0) {
-    gradJb_.reset(new CtrlInc_(J_.jb()));
-  } else {
+  if (gradJb_) {
     gradJb_.reset(new CtrlInc_(J_.jb().resolution(), *gradJb_));
+  } else {
+    gradJb_.reset(new CtrlInc_(J_.jb()));
   }
 
   Log::info() << std::endl;
-  Log::info() << classname() << ": max iter = " << ninner 
+  Log::info() << classname() << ": max iter = " << ninner
               << ", requested norm reduction = " << gnreduc << std::endl;
 
 // Define the matrices

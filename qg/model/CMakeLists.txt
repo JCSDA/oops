@@ -1,15 +1,27 @@
 list( APPEND oops_qg_src_files
+AnalyticInit.cc
+AnalyticInit.h
+ChangeVarQG.cc
+ChangeVarQG.h
+ChangeVarTLADQG.cc
+ChangeVarTLADQG.h
 ErrorCovarianceQG.cc
 ErrorCovarianceQG.h
 FieldsQG.cc
 FieldsQG.h
 GeometryQG.cc
 GeometryQG.h
+GeometryQGIterator.cc
+GeometryQGIterator.h
+GetValuesQG.cc
+GetValuesQG.h
+GetValuesTLAD.cc
+GetValuesTLAD.h
 GomQG.cc
 GomQG.h
 IncrementQG.cc
 IncrementQG.h
-LinearObsOp.h
+LocationsQG.cc
 LocationsQG.h
 LocalizationMatrixQG.cc
 LocalizationMatrixQG.h
@@ -24,8 +36,16 @@ ObsBiasCovariance.cc
 ObsBiasCovariance.h
 ObsBiasIncrement.cc
 ObsBiasIncrement.h
-ObsHelpQG.cc
-ObsHelpQG.h
+ObsDataQG.h
+ObsDiagsQG.h
+ObsOpBaseQG.cc
+ObsOpBaseQG.h
+ObsOpBaseTLAD.cc
+ObsOpBaseTLAD.h
+ObsOperatorQG.cc
+ObsOperatorQG.h
+ObsOperatorTLAD.cc
+ObsOperatorTLAD.h
 ObsSpaceQG.cc
 ObsSpaceQG.h
 ObsStreamQG.cc
@@ -42,8 +62,8 @@ ObsWindQG.cc
 ObsWindQG.h
 ObsWindTLAD.cc
 ObsWindTLAD.h
-ObservationsQG.cc
-ObservationsQG.h
+QCmanager.cc
+QCmanager.h
 QgFortran.h
 QgTraits.h
 StateQG.cc
@@ -52,69 +72,73 @@ TlmIdQG.cc
 TlmIdQG.h
 TlmQG.cc
 TlmQG.h
-VariablesQG.cc
-VariablesQG.h
-advect_pv.f90
-advect_pv_ad.f90
-advect_pv_tl.f90
-c_qg_bmatrix.f90
-c_qg_model.F90
-c_qg_obs_data.F90
-calc_pv.f90
-calc_pv_ad.f90
-calc_pv_tl.f90
 fft_f.cc
 fft_f.h
 fft_mod.F90
-generate_locations.f90
-instantiateQgObsFactory.h
-invent_state.f90
-invert_pv.f90
-invert_pv_ad.f90
-invert_pv_tl.f90
-laplacian_2d.f90
-meridional_wind.f90
-meridional_wind_ad.f90
-meridional_wind_tl.f90
-propagate.f90
-pv_operator.f90
-pv_operator_ad.f90
-qg_configs.F90
-qg_constants.f90
-qg_covariance_mod.F90
-qg_fields.F90
+instantiateQgChangeVarFactory.h
+instantiateQgLocalizationFactory.h
+qg_advect_q_mod.F90
+qg_change_var_interface.F90
+qg_change_var_mod.F90
+qg_constants_mod.F90
+qg_convert_q_to_x_mod.F90
+qg_convert_x_to_q_mod.F90
+qg_convert_x_to_uv_mod.F90
+qg_differential_solver_mod.F90
+qg_error_covariance_interface.F90
+qg_error_covariance_mod.F90
 qg_fields_interface.F90
+qg_fields_mod.F90
+qg_geom_interface.F90
 qg_geom_mod.F90
-qg_goms_mod.F90
-qg_localization_matrix.f90
+qg_geom_iter_interface.F90
+qg_geom_iter_mod.F90
+qg_getvalues_interface.F90
+qg_getvalues_mod.F90
+qg_gom_interface.F90
+qg_gom_mod.F90
+qg_interp_mod.F90
+qg_locs_f.cc
+qg_locs_f.h
 qg_locs_mod.F90
-qg_obs_data.F90
-qg_obs_vectors.F90
-qg_obsoper_mod.F90
+qg_model_interface.F90
+qg_model_mod.F90
+qg_obsdb_interface.F90
+qg_obsdb_mod.F90
+qg_obsvec_interface.F90
+qg_obsvec_mod.F90
+qg_obsvec_random_f.h
+qg_obsvec_random_f.cc
+qg_projection_mod.F90
+qg_stream_interface.F90
 qg_stream_mod.F90
-qg_trajectories.F90
-qg_vars_mod.F90
+qg_tools_mod.F90
+qg_wind_interface.F90
 qg_wind_mod.F90
+qg_wspeed_interface.F90
 qg_wspeed_mod.F90
-random_f.cc
-random_f.h
-random_vectors_mod.F90
-solve_elliptic_system.f90
-solve_helmholz.f90
-zonal_wind.f90
-zonal_wind_ad.f90
-zonal_wind_tl.f90
 )
 
-if ( CMAKE_Fortran_COMPILER_ID MATCHES "Cray" )
-  set( cfdealloc C_F_NO_DEALLOC )
-endif()
-
 ecbuild_add_library( TARGET   qg
-                     DEFINITIONS ${cfdealloc}
                      SOURCES  ${oops_qg_src_files}
-                     LIBS     oops ${LAPACK_LIBRARIES}
+                     PUBLIC_LIBS     oops
+                     HEADER_DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/qg
                      INSTALL_HEADERS LISTED
-                     LINKER_LANGUAGE ${OOPS_LINKER_LANGUAGE}
-                    )
+                     LINKER_LANGUAGE CXX )
 
+#Configure include directory layout for build-tree to match install-tree
+set(QG_BUILD_DIR_INCLUDE_PATH ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/include)
+add_custom_target(qg_headers ALL COMMAND ${CMAKE_COMMAND} -E make_directory "${QG_BUILD_DIR_INCLUDE_PATH}/oops"
+                                    COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR} ${QG_BUILD_DIR_INCLUDE_PATH}/oops/qg)
+add_dependencies(qg qg_headers)
+target_include_directories(qg PUBLIC $<BUILD_INTERFACE:${QG_BUILD_DIR_INCLUDE_PATH}>
+                                         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
+                                         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../..>)
+
+#Fortran module output directory for build interface
+set(QG_MODULE_DIR module/${PROJECT_NAME}/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_Fortran_COMPILER_VERSION}/qg)
+set_target_properties(qg PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/${QG_MODULE_DIR})
+install(DIRECTORY ${CMAKE_BINARY_DIR}/${QG_MODULE_DIR}/ DESTINATION ${QG_MODULE_DIR})
+target_include_directories(qg INTERFACE
+                                $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/${QG_MODULE_DIR}>
+                                $<INSTALL_INTERFACE:${QG_MODULE_DIR}>)

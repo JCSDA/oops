@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -17,18 +17,18 @@
 #include <string>
 #include <vector>
 
-#include <boost/noncopyable.hpp>
+#include "eckit/mpi/Comm.h"
+#include "oops/base/ObsSpaceBase.h"
+#include "oops/base/Variables.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/ObjectCounter.h"
 
-#include "util/DateTime.h"
-#include "util/ObjectCounter.h"
-#include "util/Printable.h"
-
-// Forward declarations
 namespace eckit {
   class Configuration;
 }
 
 namespace lorenz95 {
+  class LocsL95;
   class ObsVec1D;
 
 /// A Simple Observation Data Handler
@@ -38,25 +38,31 @@ namespace lorenz95 {
  */
 
 // -----------------------------------------------------------------------------
-class ObsTable : public util::Printable,
-                 private boost::noncopyable,
+class ObsTable : public oops::ObsSpaceBase,
                  private util::ObjectCounter<ObsTable> {
  public:
   static const std::string classname() {return "lorenz95::ObsTable";}
 
-  ObsTable(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
+  ObsTable(const eckit::Configuration &, const eckit::mpi::Comm &,
+           const util::DateTime &, const util::DateTime &, const eckit::mpi::Comm &);
   ~ObsTable();
 
+  void putdb(const std::string &, const std::vector<int> &) const;
+  void putdb(const std::string &, const std::vector<float> &) const;
   void putdb(const std::string &, const std::vector<double> &) const;
+  void getdb(const std::string &, std::vector<int> &) const;
+  void getdb(const std::string &, std::vector<float> &) const;
   void getdb(const std::string &, std::vector<double> &) const;
 
-  std::vector<double> locations(const util::DateTime &, const util::DateTime &) const;
-  std::vector<int> timeSelect(const util::DateTime &, const util::DateTime &) const;
+  bool has(const std::string & col) const;
   void generateDistribution(const eckit::Configuration &);
+  void random(std::vector<double> &) const;
   void printJo(const ObsVec1D &, const ObsVec1D &);
   unsigned int nobs() const {return times_.size();}
-  const util::DateTime & windowStart() const {return winbgn_;}
-  const util::DateTime & windowEnd() const {return winend_;}
+  const std::vector<double> locations() const { return locations_; }
+  const std::vector<util::DateTime> times() const { return times_; }
+  const oops::Variables & obsvariables() const { return obsvars_; }
+  const std::string & obsname() const {return obsname_;}
 
  private:
   void print(std::ostream &) const;
@@ -70,8 +76,11 @@ class ObsTable : public util::Printable,
   std::vector<double> locations_;
   mutable std::map<std::string, std::vector<double> > data_;
 
+  const eckit::mpi::Comm & comm_;
+  const oops::Variables obsvars_;
   std::string nameIn_;
   std::string nameOut_;
+  const std::string obsname_ = "Lorenz 95";
 };
 // -----------------------------------------------------------------------------
 }  // namespace lorenz95

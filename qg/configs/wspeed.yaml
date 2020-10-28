@@ -1,0 +1,12 @@
+obs operator:
+  obs type: WSpeed
+obs space:
+  source: truth
+  obsdatain: 
+    obsfile: $(experiment_dir)/{{current_cycle}}/obs.wspeed.{{current_cycle}}.nc
+  obsdataout:
+    obsfile: $(experiment_dir)/{{current_cycle}}/obs.wspeed.$(experiment).{{current_cycle}}.nc
+  obs type: WSpeed
+obs error:
+  covariance model: diagonal
+filename: obs space.obsdatain.obsfile

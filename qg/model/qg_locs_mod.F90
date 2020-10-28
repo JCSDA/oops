@@ -1,92 +1,83 @@
 ! (C) Copyright 2009-2016 ECMWF.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
-! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
-! In applying this licence, ECMWF does not waive the privileges and immunities 
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
 ! granted to it by virtue of its status as an intergovernmental organisation nor
 ! does it submit to any jurisdiction.
 
-!> Fortran module handling observation locations
-
 module qg_locs_mod
 
+use atlas_module, only: atlas_field
 use iso_c_binding
-use qg_obs_vectors
 use kinds
+use datetime_mod
 
 implicit none
 private
-public :: qg_locs, qg_loc_setup
-public :: qg_locs_registry
-
+public :: qg_locs
 ! ------------------------------------------------------------------------------
+integer,parameter :: rseed = 1 !< Random seed (for reproducibility)
 
-!> Fortran derived type to hold observation locations
 type :: qg_locs
-  integer :: nloc
-  real(kind=kind_real), allocatable :: xyz(:,:)
+  type(c_ptr), private :: ptr
+contains
+procedure, public :: nlocs => locs_nlocs
+procedure, public :: lonlat => locs_lonlat
+procedure, public :: altitude => locs_altitude
+procedure, public :: times => locs_times
 end type qg_locs
 
-#define LISTED_TYPE qg_locs
+interface qg_locs
+   module procedure ctor_from_ptr
+end interface
 
-!> Linked list interface - defines registry_t type
-#include "linkedList_i.f"
-
-!> Global registry
-type(registry_t) :: qg_locs_registry
+#include "qg_locs_interface.f"
 
 ! ------------------------------------------------------------------------------
 contains
 ! ------------------------------------------------------------------------------
-!> Linked list implementation
-#include "linkedList_c.f"
+! Public
+! ------------------------------------------------------------------------------
+function ctor_from_ptr(ptr) result(this)
+  type(qg_locs)    :: this
+  type(c_ptr), intent(in) :: ptr
+
+  this%ptr = ptr
+end function ctor_from_ptr
 
 ! ------------------------------------------------------------------------------
-
-subroutine qg_loc_setup(self, lvec)
-implicit none
-type(qg_locs), intent(inout) :: self
-type(obs_vect), intent(in) :: lvec
-integer :: jc, jo
-
-self%nloc=lvec%nobs
-allocate(self%xyz(3,self%nloc))
-do jo=1,self%nloc
-  do jc=1,3
-    self%xyz(jc,jo)=lvec%values(jc,jo)
-  enddo
-enddo
-
-end subroutine qg_loc_setup
+function locs_nlocs(self)
+  class(qg_locs), intent(in) :: self  ! locations object
+  integer :: locs_nlocs
+  locs_nlocs = qg_locs_nlocs_c(self%ptr)
+end function
 
 ! ------------------------------------------------------------------------------
-
-subroutine c_qg_loc_delete(key) bind(c,name='qg_loc_delete_f90')
-
-implicit none
-integer(c_int), intent(inout) :: key
-type(qg_locs), pointer :: self
-
-call qg_locs_registry%get(key,self)
-deallocate(self%xyz)
-call qg_locs_registry%remove(key)
-
-end subroutine c_qg_loc_delete
+function locs_lonlat(self) result(field)
+  class(qg_locs), intent(in) :: self  ! locations object
+  type(atlas_Field) :: field
+  field = atlas_Field(qg_locs_lonlat_c(self%ptr))
+  call field%return()
+end function
 
 ! ------------------------------------------------------------------------------
-
-subroutine c_qg_loc_nobs(key, kobs) bind(c,name='qg_loc_nobs_f90')
-
-implicit none
-integer(c_int), intent(in) :: key
-integer(c_int), intent(inout) :: kobs
-type(qg_locs), pointer :: self
-
-call qg_locs_registry%get(key,self)
-kobs = self%nloc
-
-end subroutine c_qg_loc_nobs
+function locs_altitude(self) result(field)
+  class(qg_locs), intent(in) :: self  ! locations object
+  type(atlas_Field) :: field
+  field = atlas_Field(qg_locs_altitude_c(self%ptr))
+  call field%return()
+end function
 
 ! ------------------------------------------------------------------------------
+function locs_times(self, jj) result(dt)
+  class(qg_locs), intent(in) :: self  ! locations object
+  integer, intent(in) :: jj
+  type(datetime) :: dt
+  integer(c_size_t) :: idx
+  idx = jj - 1
+  call c_f_datetime(qg_locs_times_c(self%ptr, idx), dt)
+end function
 
+! ------------------------------------------------------------------------------
 end module qg_locs_mod

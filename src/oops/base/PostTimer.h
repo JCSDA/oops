@@ -11,14 +11,15 @@
 #ifndef OOPS_BASE_POSTTIMER_H_
 #define OOPS_BASE_POSTTIMER_H_
 
+#include <memory>
 #include <vector>
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "util/DateTime.h"
-#include "util/Duration.h"
+#include "oops/base/PostTimerParameters.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
 
 namespace oops {
 
@@ -32,23 +33,18 @@ namespace oops {
 class PostTimer : private boost::noncopyable {
  public:
   PostTimer();
-  explicit PostTimer(const util::Duration &);
   explicit PostTimer(const eckit::Configuration &);
-  PostTimer(const util::DateTime &, const eckit::Configuration &);
   PostTimer(const util::DateTime &, const util::DateTime &, const util::Duration &);
-  ~PostTimer() {}
 
-  void initialize(const util::DateTime &, const util::DateTime &,
-                  const util::Duration &);
+  void initialize(const util::DateTime &, const util::DateTime &);
   bool itIsTime(const util::DateTime &);
 
  private:
-  const eckit::LocalConfiguration conf_;
-  util::Duration freq_;
+  PostTimerParameters options_;
   util::DateTime bgn_;
   util::DateTime end_;
-  boost::scoped_ptr<util::DateTime> start_;
-  boost::scoped_ptr<util::DateTime> finish_;
+  std::unique_ptr<util::DateTime> start_;
+  std::unique_ptr<util::DateTime> finish_;
   std::vector<util::DateTime> pptimes_;
 };
 

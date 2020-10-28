@@ -6,124 +6,60 @@
 ! granted to it by virtue of its status as an intergovernmental organisation nor
 ! does it submit to any jurisdiction.
 
-!> Fortran module for streamfunction observations for the QG model
 module qg_stream_mod
 
-use iso_c_binding
-use config_mod
-use duration_mod
-use qg_obs_data
-use qg_obs_vectors
-use qg_obsoper_mod
-use qg_vars_mod
-use qg_locs_mod
-use qg_goms_mod
 use kinds
+use qg_gom_mod
+use qg_obsvec_mod
 
 implicit none
-private
 
+private
+public :: qg_stream_equiv,qg_stream_equiv_ad
 ! ------------------------------------------------------------------------------
 contains
 ! ------------------------------------------------------------------------------
-
-subroutine c_qg_stream_setup(c_key_self, c_conf) bind(c,name='qg_stream_setup_f90')
-implicit none
-integer(c_int), intent(inout) :: c_key_self
-type(c_ptr), intent(in)       :: c_conf
-
-type(qg_obsoper), pointer :: self
-character(len=1) :: svars(1) = (/"x"/)
-
-call qg_obsoper_registry%init()
-call qg_obsoper_registry%add(c_key_self)
-call qg_obsoper_registry%get(c_key_self, self)
-
-call qg_oper_setup(self, c_conf, svars, 1)
-
-end subroutine c_qg_stream_setup
-
+! Public
 ! ------------------------------------------------------------------------------
+!> Get equivalent for streamfunction (TL calls this subroutine too)
+subroutine qg_stream_equiv(gom,hofx,bias)
 
-subroutine c_qg_stream_delete(c_key_self) bind(c,name='qg_stream_delete_f90')
 implicit none
-integer(c_int), intent(inout) :: c_key_self
 
-type(qg_obsoper), pointer :: self
+! Passed variables
+type(qg_gom),intent(in) :: gom        !< GOM
+type(qg_obsvec),intent(inout) :: hofx !< Observation vector
+real(kind_real),intent(in) :: bias    !< Bias
 
-call qg_obsoper_registry%get(c_key_self, self)
-call qg_oper_delete(self)
-call qg_obsoper_registry%remove(c_key_self)
+! Local variables
+integer :: iobs
 
-end subroutine c_qg_stream_delete
-
-! ------------------------------------------------------------------------------
-
-subroutine qg_stream_equiv(c_key_gom, c_key_hofx, c_bias) &
- & bind(c,name='qg_stream_equiv_f90')
-implicit none
-integer(c_int), intent(in) :: c_key_gom
-integer(c_int), intent(in) :: c_key_hofx
-real(c_double), intent(in) :: c_bias
-type(qg_goms), pointer  :: gom
-type(obs_vect), pointer :: hofx
-integer :: io, jo
-
-call qg_goms_registry%get(c_key_gom, gom) 
-call qg_obs_vect_registry%get(c_key_hofx,hofx)
-
-do jo=1,gom%nobs
-  io=gom%indx(jo)
-  hofx%values(1,io)=gom%values(1,jo) + c_bias
+! Loop over observations
+do iobs=1,gom%nobs
+  hofx%values(1,iobs) = gom%values(1,iobs)+bias
 enddo
 
 end subroutine qg_stream_equiv
-
 ! ------------------------------------------------------------------------------
+!> Get equivalent for streamfunction - adjoint
+subroutine qg_stream_equiv_ad(gom,hofx,bias)
 
-subroutine qg_stream_equiv_tl(c_key_gom, c_key_hofx, c_bias) &
- & bind(c,name='qg_stream_equiv_tl_f90')
 implicit none
-integer(c_int), intent(in) :: c_key_gom
-integer(c_int), intent(in) :: c_key_hofx
-real(c_double), intent(in) :: c_bias
-type(qg_goms), pointer  :: gom
-type(obs_vect), pointer :: hofx
-integer :: io, jo
 
-call qg_goms_registry%get(c_key_gom, gom)
-call qg_obs_vect_registry%get(c_key_hofx,hofx)
+! Passed variables
+type(qg_gom),intent(inout) :: gom        !< GOM
+type(qg_obsvec),intent(in) :: hofx !< Observation vector
+real(kind_real),intent(inout) :: bias    !< Bias
 
-do jo=1,gom%nobs
-  io=gom%indx(jo)
-  hofx%values(1,io)=gom%values(1,jo) + c_bias
-enddo
+! Local variables
+integer :: iobs
 
-end subroutine qg_stream_equiv_tl
-
-! ------------------------------------------------------------------------------
-
-subroutine qg_stream_equiv_ad(c_key_gom, c_key_hofx, c_bias) &
- & bind(c,name='qg_stream_equiv_ad_f90')
-implicit none
-integer(c_int), intent(in) :: c_key_gom
-integer(c_int), intent(in) :: c_key_hofx
-real(c_double), intent(inout) :: c_bias
-type(qg_goms), pointer  :: gom
-type(obs_vect), pointer :: hofx
-integer :: io, jo
-
-call qg_goms_registry%get(c_key_gom, gom)
-call qg_obs_vect_registry%get(c_key_hofx,hofx)
-
-do jo=1,gom%nobs
-  io=gom%indx(jo)
-  gom%values(1,jo)=hofx%values(1,io)
-  c_bias = c_bias + hofx%values(1,io)
+! Loop over observations
+do iobs=1,gom%nobs
+  gom%values(1,iobs) = hofx%values(1,iobs)
+  bias = bias+hofx%values(1,iobs)
 enddo
 
 end subroutine qg_stream_equiv_ad
-
 ! ------------------------------------------------------------------------------
-
 end module qg_stream_mod

@@ -24,6 +24,9 @@ void rotmat(const double & a, const double & b,
   if (b == 0.0) {
     c = 1.0;
     s = 0.0;
+  } else if (a == 0.0) {
+    c = 0.0;
+    s = 1.0;
   } else if (std::abs(b) > std::abs(a)) {
       double temp = a/b;
       s = 1.0/sqrt(1.0 + temp*temp);
