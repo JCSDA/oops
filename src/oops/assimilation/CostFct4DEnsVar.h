@@ -108,7 +108,7 @@ CostFct4DEnsVar<MODEL, OBS>::CostFct4DEnsVar(const eckit::Configuration & config
   subWinLength_ = util::Duration(config.getString("subwindow"));
 
   nsubwin_ = windowLength.toSeconds() / subWinLength_.toSeconds() + 1;  // Not like WC
-  ASSERT((size_t)windowLength.toSeconds() == (size_t)subWinLength_.toSeconds() * (nsubwin_ - 1));
+  ASSERT(windowLength.toSeconds() == subWinLength_.toSeconds() * (int64_t)(nsubwin_ - 1));
 
   size_t ntasks = comm.size();
   ASSERT(ntasks % nsubwin_ == 0);
