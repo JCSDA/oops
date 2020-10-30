@@ -11,7 +11,7 @@
 ################################################################################
 
 cmake_minimum_required( VERSION 3.12 )
-project( oops LANGUAGES CXX Fortran )
+project( oops VERSION 1.0.0 LANGUAGES CXX Fortran )
 
 ## Ecbuild integration
 find_package( ecbuild 3.3.2 REQUIRED )
@@ -49,12 +49,12 @@ find_package( OpenMP COMPONENTS CXX Fortran )
 find_package( MPI REQUIRED COMPONENTS CXX Fortran )
 find_package( NetCDF REQUIRED COMPONENTS Fortran )
 find_package( Boost 1.64.0 REQUIRED)
-find_package( eckit 1.4.0 REQUIRED COMPONENTS MPI )
-find_package( fckit 0.6.3 REQUIRED )
+find_package( eckit 1.11.6 REQUIRED COMPONENTS MPI )
+find_package( fckit 0.7.0 REQUIRED )
 if(OpenMP_FOUND)
-    find_package( atlas 0.18.1 REQUIRED COMPONENTS OMP OMP_Fortran )
+    find_package( atlas 0.20.2 REQUIRED COMPONENTS OMP OMP_Fortran )
 else()
-    find_package( atlas 0.18.1 REQUIRED )
+    find_package( atlas 0.20.2 REQUIRED )
 endif()
 
 #Optional Dependencies
@@ -78,7 +78,7 @@ add_subdirectory( src )
 add_subdirectory( tools )
 
 if( ENABLE_OOPS_DOC )
-    add_subdirectory( Documents )
+    add_subdirectory( docs )
 endif()
 
 if( ENABLE_LORENZ95_MODEL )
