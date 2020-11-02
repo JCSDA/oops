@@ -89,16 +89,4 @@ std::set<int> parseIntSet(const std::string & str) {
 }
 
 // -----------------------------------------------------------------------------
-
-void splitVarGroup(const std::string & vargrp, std::string & var, std::string & grp) {
-  const size_t at = vargrp.find("@");
-  var = vargrp.substr(0, at);
-  if (at != std::string::npos) {
-    grp = vargrp.substr(at + 1, std::string::npos);
-    const size_t no_at = grp.find("@");
-    ASSERT(no_at == std::string::npos);
-  }
-}
-
-// -----------------------------------------------------------------------------
 }  // namespace oops

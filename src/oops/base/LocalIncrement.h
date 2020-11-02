@@ -28,10 +28,7 @@ class LocalIncrement: public util::Printable {
   void setVals(std::vector<double> &);
 
   /// Linear algebra operators
-  LocalIncrement & operator+=(const LocalIncrement &);
-  LocalIncrement & operator*=(const double &);
   LocalIncrement & operator*=(const std::vector<double> &);
-
 
  private:
   void print(std::ostream & os) const {
