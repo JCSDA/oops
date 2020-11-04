@@ -269,10 +269,7 @@ template <typename OBS> void testTangentLinear() {
     // create obsdatavector to hold diags
     oops::Variables diagvars;
     diagvars += ybias0.requiredHdiagnostics();
-    ObsDiags_ ydiag(Test_::obspace()[jj],
-                    hop.locations(Test_::obspace()[jj].windowStart(),
-                                  Test_::obspace()[jj].windowEnd()),
-                    diagvars);
+    ObsDiags_ ydiag(Test_::obspace()[jj], hop.locations(), diagvars);
 
     // y1 = hop(x0, ybias0)
     hop.simulateObs(x0, y1, ybias0, ydiag);
