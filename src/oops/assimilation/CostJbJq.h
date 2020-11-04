@@ -127,7 +127,7 @@ void CostJbJq<MODEL>::computeIncrement(const State_ & xb, const State_ & fg, con
                                        Increment_ & dx) const {
   Log::trace() << "CostJbJq::computeIncrement start" << std::endl;
   static int tag = 13579;
-  int mytime = commTime_.rank();
+  size_t mytime = commTime_.rank();
   State_ mxim1(fg);
 
 // Send values of M(x_i) at end of my subwindow to next subwindow

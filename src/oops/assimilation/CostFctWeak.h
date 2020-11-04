@@ -116,7 +116,7 @@ CostFctWeak<MODEL, OBS>::CostFctWeak(const eckit::Configuration & config,
   subWinLength_ = util::Duration(config.getString("subwindow"));
 
   nsubwin_ = windowLength.toSeconds() / subWinLength_.toSeconds();
-  ASSERT(windowLength.toSeconds() == subWinLength_.toSeconds()*nsubwin_);
+  ASSERT(windowLength.toSeconds() == subWinLength_.toSeconds()*(int64_t)nsubwin_);
 
   size_t ntasks = comm.size();
   ASSERT(ntasks % nsubwin_ == 0);
