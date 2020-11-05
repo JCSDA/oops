@@ -25,8 +25,8 @@ ecbuild_add_option( FEATURE OMP
                     DEFAULT ON
                     DESCRIPTION "Use OpenMP" )
 
-ecbuild_bundle( PROJECT fckit GIT "https://github.com/JCSDA/fckit.git" )
-ecbuild_bundle( PROJECT atlas GIT "https://github.com/JCSDA/atlas.git" )
-ecbuild_bundle( PROJECT oops GIT "https://github.com/JCSDA/oops.git" )
+ecbuild_bundle( PROJECT fckit GIT "https://github.com/JCSDA-internal/fckit.git" )
+ecbuild_bundle( PROJECT atlas GIT "https://github.com/JCSDA-internal/atlas.git" )
+ecbuild_bundle( PROJECT oops GIT "https://github.com/JCSDA-internal/oops.git" )
 
 ecbuild_bundle_finalize()
