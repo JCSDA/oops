@@ -81,12 +81,9 @@ ObsSpaces<OBS>::ObsSpaces(const eckit::Configuration & conf, const eckit::mpi::C
                           const eckit::mpi::Comm & time)
   : spaces_(0), wbgn_(bgn), wend_(end)
 {
-  const int seed_member = conf.getInt("obs perturbations seed", 0);
-  std::vector<eckit::LocalConfiguration> typeconfs;
-  conf.get("observations", typeconfs);
+  std::vector<eckit::LocalConfiguration> typeconfs = conf.getSubConfigurations();
   for (std::size_t jj = 0; jj < typeconfs.size(); ++jj) {
     eckit::LocalConfiguration obsconf(typeconfs[jj], "obs space");
-    obsconf.set("obs perturbations seed", seed_member);
     Log::debug() << "ObsSpaces::ObsSpaces : conf " << obsconf << std::endl;
     std::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsconf, comm, bgn, end, time));
     spaces_.push_back(tmp);
@@ -101,8 +98,7 @@ ObsSpaces<OBS>::ObsSpaces(const ObsSpaces<OBS> & obss, const eckit::geometry::Po
                           const eckit::Configuration & conf)
   : spaces_(0), wbgn_(obss.wbgn_), wend_(obss.wend_)
 {
-  std::vector<eckit::LocalConfiguration> typeconfs;
-  conf.get("observations", typeconfs);
+  std::vector<eckit::LocalConfiguration> typeconfs = conf.getSubConfigurations();
   for (std::size_t jj = 0; jj < obss.size(); ++jj) {
     eckit::LocalConfiguration locconf(typeconfs[jj], "obs error.localization");
     std::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obss[jj], center, locconf));

@@ -196,7 +196,8 @@ void CostFunction<MODEL, OBS>::setupTerms(const eckit::Configuration & config) {
   Log::trace() << "CostFunction::setupTerms start" << std::endl;
 
 // Jo
-  CostJo<MODEL, OBS> * jo = this->newJo(config);
+  eckit::LocalConfiguration obsconf(config, "observations");
+  CostJo<MODEL, OBS> * jo = this->newJo(obsconf);
   jterms_.push_back(jo);
   Log::trace() << "CostFunction::setupTerms Jo added" << std::endl;
 
@@ -226,7 +227,8 @@ void CostFunction<MODEL, OBS>::setupTerms(const eckit::Configuration & config,
   Log::trace() << "CostFunction::setupTerms start" << std::endl;
 
 // Jo
-  CostJo<MODEL, OBS> * jo = this->newJo(config);
+  eckit::LocalConfiguration obsconf(config, "observations");
+  CostJo<MODEL, OBS> * jo = this->newJo(obsconf);
   jterms_.push_back(jo);
   Log::trace() << "CostFunction::setupTerms Jo added" << std::endl;
 

@@ -61,12 +61,11 @@ class ObsAuxCovariances : public util::Printable,
 
 template<typename OBS>
 ObsAuxCovariances<OBS>::ObsAuxCovariances(const ObsSpaces_ & odb,
-                                            const eckit::Configuration & conf)
+                                          const eckit::Configuration & conf)
   : cov_(0), odb_(odb), conf_(conf)
 {
   Log::trace() << "ObsAuxCovariances<OBS>::ObsAuxCovariances starting" << std::endl;
-  std::vector<eckit::LocalConfiguration> obsconf;
-  conf.get("observations", obsconf);
+  std::vector<eckit::LocalConfiguration> obsconf = conf.getSubConfigurations();
   for (std::size_t jobs = 0; jobs < obsconf.size(); ++jobs) {
     cov_.push_back(
        std::unique_ptr<ObsAuxCovariance_>(new ObsAuxCovariance_(odb[jobs], obsconf[jobs])));

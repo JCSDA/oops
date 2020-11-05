@@ -92,7 +92,8 @@ template <typename MODEL, typename OBS> class HofX : public Application {
     post.enrollProcessor(new StateInfo<State_>("fc", prtConf));
 
 //  Setup observations
-    ObsSpaces_ obspace(fullConfig, this->getComm(), winbgn, winend);
+    const eckit::LocalConfiguration obsConfig(fullConfig, "observations");
+    ObsSpaces_ obspace(obsConfig, this->getComm(), winbgn, winend);
 
 //  Setup and run observer
     CalcHofX<MODEL, OBS> hofx(obspace, geometry, fullConfig);
@@ -107,7 +108,7 @@ template <typename MODEL, typename OBS> class HofX : public Application {
 //  as ObsValue if "hofx group name" == ObsValue.
     bool obspert = fullConfig.getBool("obs perturbations", false);
     if (obspert) {
-      ObsErrors_ matR(fullConfig, obspace);
+      ObsErrors_ matR(obsConfig, obspace);
       yobs.perturb(matR);
       Log::test() << "Perturbed H(x): " << std::endl << yobs << "End Perturbed H(x)" << std::endl;
     }

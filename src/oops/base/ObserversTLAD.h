@@ -98,8 +98,7 @@ ObserversTLAD<MODEL, OBS>::ObserversTLAD(const eckit::Configuration & config,
     hslot_(0), hslottraj_(0)
 {
   // setup observers
-  std::vector<eckit::LocalConfiguration> typeconf;
-  config.get("observations", typeconf);
+  std::vector<eckit::LocalConfiguration> typeconf = config.getSubConfigurations();
   for (std::size_t jobs = 0; jobs < obsdb.size(); ++jobs) {
     // Set LinearObsOperator section to ObsOperator section if not available
     if (!typeconf[jobs].has("linear obs operator")) {

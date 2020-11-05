@@ -78,7 +78,7 @@ template <typename MODEL, typename OBS>
 LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
                                         const Geometry_ & geometry,
                                         const eckit::Configuration & config, size_t nens)
-  : obsconf_(config), obspaces_(obspaces),
+  : obsconf_(config, "observations"), obspaces_(obspaces),
     hofx_(obspaces, geometry, config),
     omb_(obspaces_), Yb_(obspaces_, nens)
 {

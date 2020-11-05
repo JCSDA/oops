@@ -36,18 +36,19 @@ class ObsFilters : public util::Printable,
                    private boost::noncopyable {
   typedef GeoVaLs<OBS>            GeoVaLs_;
   typedef ObsDiagnostics<OBS>     ObsDiags_;
-  typedef ObsFilterBase<OBS>      ObsFilterBase_;
   typedef ObsSpace<OBS>           ObsSpace_;
   typedef ObsVector<OBS>          ObsVector_;
   typedef std::shared_ptr<ObsFilterBase<OBS> >  ObsFilterPtr_;
   template <typename DATA> using ObsDataPtr_ = std::shared_ptr<ObsDataVector<OBS, DATA> >;
 
  public:
+  /// Initialize all filters for \p obspace, from configuration, using
+  /// \p qcflags and \p obserr (observation error variances)
+  /// \p iteration argument indicates outer loop iteration in the variational
+  /// assimilation
   ObsFilters(const ObsSpace_ &, const eckit::Configuration &,
-             ObsDataPtr_<int> qcflags = ObsDataPtr_<int>(),
-             ObsDataPtr_<float> obserr = ObsDataPtr_<float>());
-  ObsFilters();
-  ~ObsFilters();
+             ObsDataPtr_<int> qcflags, ObsDataPtr_<float> obserr,
+             const int iteration = 0);
 
   void preProcess() const;
   void priorFilter(const GeoVaLs_ &) const;
@@ -57,7 +58,7 @@ class ObsFilters : public util::Printable,
   Variables requiredHdiagnostics() const {return diagvars_;}
 
  private:
-  void print(std::ostream &) const;
+  void print(std::ostream &) const override;
 
   std::vector<ObsFilterPtr_> filters_;
   Variables geovars_;
@@ -68,7 +69,8 @@ class ObsFilters : public util::Printable,
 
 template <typename OBS>
 ObsFilters<OBS>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration & conf,
-                              ObsDataPtr_<int> qcflags, ObsDataPtr_<float> obserr)
+                            ObsDataPtr_<int> qcflags, ObsDataPtr_<float> obserr,
+                            const int iteration)
   : filters_(), geovars_(), diagvars_() {
   Log::trace() << "ObsFilters::ObsFilters starting " << conf << std::endl;
 
@@ -85,13 +87,12 @@ ObsFilters<OBS>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration & c
 
 // Create the filters, only at 0-th iteration, or at iterations specified in "apply at iterations"
   for (std::size_t jj = 0; jj < confs.size(); ++jj) {
-    // Only create filters for the 0-th iteration
-    const int iter = conf.getInt("iteration");
-    bool apply = (iter == 0);
+    // Only create filters for the 0-th iteration by default
+    bool apply = (iteration == 0);
     // If "apply at iterations" is set, check if this is the right iteration
     if (confs[jj].has("apply at iterations")) {
       std::set<int> iters = parseIntSet(confs[jj].getString("apply at iterations"));
-      apply = contains(iters, iter);
+      apply = contains(iters, iteration);
     }
     if (apply) {
       ObsFilterPtr_ tmp(FilterFactory<OBS>::create(os, confs[jj], qcflags, obserr));
@@ -106,22 +107,10 @@ ObsFilters<OBS>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration & c
 
 // -----------------------------------------------------------------------------
 
-template <typename OBS>
-ObsFilters<OBS>::ObsFilters() : filters_(), geovars_(), diagvars_() {}
-
-// -----------------------------------------------------------------------------
-
-template <typename OBS>
-ObsFilters<OBS>::~ObsFilters() {
-  Log::trace() << "ObsFilters::~ObsFilters destructed" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
 template<typename OBS>
 void ObsFilters<OBS>::preProcess() const {
-  for (std::size_t jj = 0; jj < filters_.size(); ++jj) {
-    filters_.at(jj)->preProcess();
+  for (const auto & filter : filters_) {
+    filter->preProcess();
   }
 }
 
@@ -129,8 +118,8 @@ void ObsFilters<OBS>::preProcess() const {
 
 template<typename OBS>
 void ObsFilters<OBS>::priorFilter(const GeoVaLs_ & gv) const {
-  for (std::size_t jj = 0; jj < filters_.size(); ++jj) {
-    filters_.at(jj)->priorFilter(gv);
+  for (const auto & filter : filters_) {
+    filter->priorFilter(gv);
   }
 }
 
@@ -138,8 +127,8 @@ void ObsFilters<OBS>::priorFilter(const GeoVaLs_ & gv) const {
 
 template<typename OBS>
 void ObsFilters<OBS>::postFilter(const ObsVector_ & hofx, const ObsDiags_ & diags) const {
-  for (std::size_t jj = 0; jj < filters_.size(); ++jj) {
-    filters_.at(jj)->postFilter(hofx, diags);
+  for (const auto & filter : filters_) {
+    filter->postFilter(hofx, diags);
   }
 }
 
@@ -148,8 +137,8 @@ void ObsFilters<OBS>::postFilter(const ObsVector_ & hofx, const ObsDiags_ & diag
 template <typename OBS>
 void ObsFilters<OBS>::print(std::ostream & os) const {
   os << "ObsFilters: " << filters_.size() << " elements:" << std::endl;
-  for (std::size_t jj = 0; jj < filters_.size(); ++jj) {
-    os << *filters_.at(jj) << std::endl;
+  for (const auto & filter : filters_) {
+    os << *filter << std::endl;
   }
 }
 

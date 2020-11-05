@@ -57,7 +57,8 @@ template <typename MODEL, typename OBS> class HofXNoModel : public Application {
     Log::test() << "Initial state: " << xx[0] << std::endl;
 
 //  Setup observations
-    ObsSpaces_ obspace(fullConfig, this->getComm(), winbgn, winend);
+    const eckit::LocalConfiguration obsConfig(fullConfig, "observations");
+    ObsSpaces_ obspace(obsConfig, this->getComm(), winbgn, winend);
 
 //  Setup and run observer
     CalcHofX<MODEL, OBS> hofx(obspace, geometry, fullConfig);

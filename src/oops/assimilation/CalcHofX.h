@@ -86,7 +86,7 @@ class CalcHofX {
 template <typename MODEL, typename OBS>
 CalcHofX<MODEL, OBS>::CalcHofX(const ObsSpaces_ & obspaces, const Geometry_ & geometry,
                           const eckit::Configuration & config) :
-  obsconf_(config), obspaces_(obspaces), ybias_(obspaces_, obsconf_),
+  obsconf_(config, "observations"), obspaces_(obspaces), ybias_(obspaces_, obsconf_),
   geometry_(geometry), moderr_(geometry_, config.getSubConfiguration("model aux control")),
   winbgn_(config.getString("window begin")),
   winlen_(config.getString("window length")) {}

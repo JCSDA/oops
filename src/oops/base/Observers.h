@@ -45,7 +45,7 @@ class Observers : public PostBase<State<MODEL>> {
 
  public:
   Observers(const eckit::Configuration &, const ObsSpaces_ & obsdb, const ObsAuxCtrls_ &,
-            QCData_ &);
+            QCData_ &, const int iteration = 0);
   ~Observers() {}
 
   const Observations_ & hofx() {return yobs_;}
@@ -71,22 +71,18 @@ class Observers : public PostBase<State<MODEL>> {
 
 template <typename MODEL, typename OBS>
 Observers<MODEL, OBS>::Observers(const eckit::Configuration & conf, const ObsSpaces_ & obsdb,
-                                 const ObsAuxCtrls_ & ybias, QCData_ & qc)
+                                 const ObsAuxCtrls_ & ybias, QCData_ & qc, const int iteration)
   : PostBase<State_>(),
     obspace_(obsdb), yobs_(obsdb),
     winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()), hslot_(0), observers_(0)
 {
   Log::trace() << "Observers::Observers starting" << std::endl;
-
-  const int iterout = conf.getInt("iteration", 0);
-  std::vector<eckit::LocalConfiguration> typeconf;
-  conf.get("observations", typeconf);
+  std::vector<eckit::LocalConfiguration> typeconf = conf.getSubConfigurations();
   ASSERT(obsdb.size() == typeconf.size());
   observers_.reserve(obsdb.size());
   for (size_t jj = 0; jj < obsdb.size(); ++jj) {
-    typeconf[jj].set("iteration", iterout);
     observers_.emplace_back(new Observer_(typeconf[jj], obsdb[jj],
-                                ybias[jj], yobs_[jj], qc.qcFlags(jj), qc.obsErrors(jj)));
+                       ybias[jj], yobs_[jj], qc.qcFlags(jj), qc.obsErrors(jj), iteration));
   }
   Log::trace() << "Observers::Observers done" << std::endl;
 }

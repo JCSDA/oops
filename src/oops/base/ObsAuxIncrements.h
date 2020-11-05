@@ -89,8 +89,7 @@ template<typename OBS>
 ObsAuxIncrements<OBS>::ObsAuxIncrements(const ObsSpaces_ & odb, const eckit::Configuration & conf)
   : auxs_(0)
 {
-  std::vector<eckit::LocalConfiguration> obsconf;
-  conf.get("observations", obsconf);
+  std::vector<eckit::LocalConfiguration> obsconf = conf.getSubConfigurations();
   for (std::size_t jobs = 0; jobs < obsconf.size(); ++jobs) {
     auxs_.push_back(
       std::unique_ptr<ObsAuxIncrement_>(new ObsAuxIncrement_(odb[jobs], obsconf[jobs])));

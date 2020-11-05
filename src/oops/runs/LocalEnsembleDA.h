@@ -73,7 +73,8 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     const Geometry_ geometry(geometryConfig, this->getComm());
 
     // Setup observations
-    ObsSpaces_ obsdb(fullConfig, this->getComm(), winbgn, winend);
+    const eckit::LocalConfiguration obsConfig(fullConfig, "observations");
+    ObsSpaces_ obsdb(obsConfig, this->getComm(), winbgn, winend);
     Observations_ yobs(obsdb, "ObsValue");
 
     // Get background configurations

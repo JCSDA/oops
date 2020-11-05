@@ -52,8 +52,8 @@ class Observer : public util::Printable {
 
  public:
   Observer(const eckit::Configuration &, const ObsSpace_ &, const ObsAuxCtrl_ &,
-           ObsVector_ &, ObsDataPtr_<int> qcflags = ObsDataPtr_<int>(),
-           ObsDataPtr_<float> obserr = ObsDataPtr_<float>());
+           ObsVector_ &, ObsDataPtr_<int> qcflags, ObsDataPtr_<float> obserr,
+           const int iteration = 0);
   ~Observer();
 
   void doInitialize(const State_ &, const util::DateTime &, const util::DateTime &);
@@ -83,9 +83,10 @@ class Observer : public util::Printable {
 template <typename MODEL, typename OBS>
 Observer<MODEL, OBS>::Observer(const eckit::Configuration & conf, const ObsSpace_ & obsdb,
                           const ObsAuxCtrl_ & ybias, ObsVector_ & yobs,
-                          ObsDataPtr_<int> qcflags, ObsDataPtr_<float> obserr)
+                          ObsDataPtr_<int> qcflags, ObsDataPtr_<float> obserr,
+                          const int iteration)
   : hop_(obsdb, eckit::LocalConfiguration(conf, "obs operator")),
-    obsdb_(obsdb), yobs_(yobs), ybias_(ybias), filters_(obsdb, conf, qcflags, obserr),
+    obsdb_(obsdb), yobs_(yobs), ybias_(ybias), filters_(obsdb, conf, qcflags, obserr, iteration),
     locs_(hop_.locations())
 {
   Log::trace() << "Observer::Observer starting" << std::endl;

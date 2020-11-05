@@ -1,5 +1,4 @@
 cost function:
-  obs perturbations seed: 2
   cost type: 3D-Var
   window begin: 2010-01-01T09:00:00Z
   window length: PT6H
@@ -29,6 +28,7 @@ cost function:
       obsdataout:
         obsfile: Data/mem002.eda_3dvar.obs3d.nc
       obs type: Stream
+      obs perturbations seed: 2
   - obs error:
       covariance model: diagonal
       random amplitude: 0.5
@@ -40,6 +40,7 @@ cost function:
       obsdataout:
         obsfile: Data/mem002.eda_3dvar.obs3d.nc
       obs type: Wind
+      obs perturbations seed: 2
   - obs error:
       covariance model: diagonal
       random amplitude: 0.2
@@ -51,6 +52,7 @@ cost function:
       obsdataout:
         obsfile: Data/mem002.eda_3dvar.obs3d.nc
       obs type: WSpeed
+      obs perturbations seed: 2
 variational:
   minimizer:
     algorithm: DRIPCG
