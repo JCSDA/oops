@@ -31,11 +31,25 @@ variational:
     diagnostics:
       departures: ombg
     test: on
+    online diagnostics:
+      write increment: true
+    increment:
+      datadir: Data
+      date: 2010-01-02T00:00:00Z
+      exp: test.iter1
+      type: in
   - ninner: 10
     gradient norm reduction: 1e-10
     geometry:
       resol: 40
     test: on
+    online diagnostics:
+      write increment: true
+    increment:
+      datadir: Data
+      date: 2010-01-02T00:00:00Z
+      exp: test.iter2
+      type: in
 final:
   diagnostics:
     departures: oman

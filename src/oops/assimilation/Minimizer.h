@@ -59,6 +59,7 @@ template<typename MODEL, typename OBS> class Minimizer : private boost::noncopya
   void tlmApproxTest(const H_ &);
   void tlmTaylorTest(const H_ &);
 
+  void writeIncrement(const eckit::Configuration & config, const CtrlInc_ &);
   void tlmPropagTest(const eckit::Configuration & config, const CtrlInc_ &);
 
   const CostFct_ & J_;
@@ -79,6 +80,9 @@ Minimizer<MODEL, OBS>::minimize(const eckit::Configuration & config) {
   // Minimize
   ControlIncrement<MODEL, OBS> * dx = this->doMinimize(config);
 
+  // Write increment
+  this->writeIncrement(config, *dx);
+
   // TLM propagation test
   this->tlmPropagTest(config, *dx);
 
@@ -86,6 +90,33 @@ Minimizer<MODEL, OBS>::minimize(const eckit::Configuration & config) {
   outerIteration_++;
 
   return dx;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL, typename OBS>
+void Minimizer<MODEL, OBS>::writeIncrement(const eckit::Configuration & config,
+                                     const CtrlInc_ & dx) {
+// Write out the increment
+
+  if (config.has("online diagnostics")) {
+    const eckit::LocalConfiguration onlineDiag(config, "online diagnostics");
+    bool writeinc = onlineDiag.getBool("write increment", false);
+
+    if (writeinc) {
+      // print log
+      Log::info() << "Write Increment - starting: " << outerIteration_
+                  << std::endl << std::endl;
+
+      const eckit::LocalConfiguration incConf(config, "increment");
+
+      // write increment
+      dx.write(incConf);
+
+      // print log
+      Log::info() << std::endl << "Write Increment: done." << std::endl;
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
