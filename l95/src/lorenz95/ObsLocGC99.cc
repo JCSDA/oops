@@ -15,6 +15,7 @@
 
 #include "oops/generic/gc99.h"
 #include "oops/interface/ObsLocalization.h"
+#include "oops/util/missingValues.h"
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
@@ -31,16 +32,14 @@ ObsLocGC99::ObsLocGC99(const eckit::Configuration & config, const ObsTableView &
 
 // -----------------------------------------------------------------------------
 
-ObsLocGC99::~ObsLocGC99() {}
-
-// -----------------------------------------------------------------------------
-
 void ObsLocGC99::multiply(ObsVec1D & dy) const {
   const std::vector<double> & obsdist = obsdb_.obsdist();
-  double  gc;
+  double missing = util::missingValue(missing);
   for (unsigned int ii=0; ii < dy.nobs(); ++ii) {
-    gc = oops::gc99(obsdist[ii]/rscale_);
-    dy[ii] = dy[ii]*gc;
+    if (dy[ii] != missing) {
+      double gc = oops::gc99(obsdist[ii]/rscale_);
+      dy[ii] = dy[ii]*gc;
+    }
   }
 }
 

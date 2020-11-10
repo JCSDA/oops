@@ -31,11 +31,10 @@ class ObsLocGC99: public util::Printable {
   static const std::string classname() {return "lorenz95::ObsLocGC99";}
 
   ObsLocGC99(const eckit::Configuration &, const ObsTableView &);
-  ~ObsLocGC99();
   void multiply(ObsVec1D &) const;
 
  private:
-  void print(std::ostream &) const;
+  void print(std::ostream &) const override;
   const ObsTableView & obsdb_;
   const double rscale_;
 };
