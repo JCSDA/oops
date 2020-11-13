@@ -104,7 +104,6 @@ Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(
 
 Run::~Run() {
   LibOOPS::instance().finalise();  // Finalize MPI and logs
-    Log::trace() << "Oops::Run destructed" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

@@ -196,12 +196,10 @@ class ModelMaker : public ModelFactory<MODEL> {
 
 template <typename MODEL>
 ModelFactory<MODEL>::ModelFactory(const std::string & name) {
-  Log::trace() << "ModelFactory<MODEL>::ModelFactory starting" << std::endl;
   if (getMakers().find(name) != getMakers().end()) {
     throw std::runtime_error(name + " already registered in the model factory.");
   }
   getMakers()[name] = this;
-  Log::trace() << "ModelFactory<MODEL>::ModelFactory done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
