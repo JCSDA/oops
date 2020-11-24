@@ -1,0 +1,9 @@
+obs operator: 
+  obs type: Obs
+obs space:
+  source: truth
+  filetype: obt
+  obsdatain:  '$(current_dir)/input.obs.{{current_cycle}}.obt'
+  obsdataout: '$(current_dir)/$(experiment).obs.{{current_cycle}}.obt'
+obs error:
+  covariance model: diagonal

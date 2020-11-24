@@ -1,0 +1,7 @@
+datadir: '$(current_dir)'
+filename: '$(current_dir)/$(experiment).an.{{current_cycle}}'
+exp: $(experiment)
+##first: '{% $(window_length) - $(window_offset) %}'
+first: PT3H
+frequency: PT06H
+type: an

@@ -1,2 +1,0 @@
-date: '{{current_cycle}}'
-filename: $(experiment_dir)/{{current_cycle}}/$(experiment).fc.{{current_cycle}}.${step}.nc
