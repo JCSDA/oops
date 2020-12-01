@@ -42,11 +42,11 @@ class ObsFilters : public util::Printable,
   template <typename DATA> using ObsDataPtr_ = std::shared_ptr<ObsDataVector<OBS, DATA> >;
 
  public:
-  /// Initialize all filters for \p obspace, from configuration, using
+  /// Initialize all filters for \p obspace, from parameters, using
   /// \p qcflags and \p obserr (observation error variances)
   /// \p iteration argument indicates outer loop iteration in the variational
   /// assimilation
-  ObsFilters(const ObsSpace_ &, const eckit::Configuration &,
+  ObsFilters(const ObsSpace_ &, const std::vector<ObsFilterParametersWrapper<OBS>> &,
              ObsDataPtr_<int> qcflags, ObsDataPtr_<float> obserr,
              const int iteration = 0);
 
@@ -68,34 +68,34 @@ class ObsFilters : public util::Printable,
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-ObsFilters<OBS>::ObsFilters(const ObsSpace_ & os, const eckit::Configuration & conf,
+ObsFilters<OBS>::ObsFilters(const ObsSpace_ & os,
+                            const std::vector<ObsFilterParametersWrapper<OBS>> & filtersParams,
                             ObsDataPtr_<int> qcflags, ObsDataPtr_<float> obserr,
                             const int iteration)
   : filters_(), geovars_(), diagvars_() {
-  Log::trace() << "ObsFilters::ObsFilters starting " << conf << std::endl;
-
-// Get filters configuration
-  std::vector<eckit::LocalConfiguration> confs;
-  conf.get("obs filters", confs);
+  Log::trace() << "ObsFilters::ObsFilters starting:\n";
+  for (const ObsFilterParametersWrapper<OBS> &filterParams : filtersParams)
+    Log::trace() << "  " << filterParams << std::endl;
 
 // Prepare QC handling and statistics if any filters are present
-  if (confs.size() > 0) {
+  if (filtersParams.size() > 0) {
     eckit::LocalConfiguration preconf;
     preconf.set("filter", "QCmanager");
     filters_.push_back(FilterFactory<OBS>::create(os, preconf, qcflags, obserr));
   }
 
 // Create the filters, only at 0-th iteration, or at iterations specified in "apply at iterations"
-  for (std::size_t jj = 0; jj < confs.size(); ++jj) {
+  for (const ObsFilterParametersWrapper<OBS> &filterParams : filtersParams) {
     // Only create filters for the 0-th iteration by default
     bool apply = (iteration == 0);
     // If "apply at iterations" is set, check if this is the right iteration
-    if (confs[jj].has("apply at iterations")) {
-      std::set<int> iters = parseIntSet(confs[jj].getString("apply at iterations"));
+    if (filterParams.applyAtIterations.value() != boost::none) {
+      std::set<int> iters = parseIntSet(*filterParams.applyAtIterations.value());
       apply = contains(iters, iteration);
     }
     if (apply) {
-      ObsFilterPtr_ tmp(FilterFactory<OBS>::create(os, confs[jj], qcflags, obserr));
+      ObsFilterPtr_ tmp(FilterFactory<OBS>::create(os, filterParams.filterParameters,
+                                                   qcflags, obserr));
       geovars_ += tmp->requiredVars();
       diagvars_ += tmp->requiredHdiagnostics();
       filters_.push_back(tmp);

@@ -121,6 +121,7 @@ oops/base/Observers.h
 oops/base/ObserversTLAD.h
 oops/base/ObserverTLAD.h
 oops/base/ObsFilterBase.h
+oops/base/ObsFilterParametersBase.h
 oops/base/ObsFilters.h
 oops/base/ObsLocalizationBase.h
 oops/base/ObsSpaceBase.cc

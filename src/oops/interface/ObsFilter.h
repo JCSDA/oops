@@ -21,11 +21,28 @@
 #include "oops/interface/ObsVector.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/HasParameters_.h"
+#include "oops/util/parameters/ParametersOrConfiguration.h"
 
 namespace oops {
 
 // -----------------------------------------------------------------------------
 
+/// Note: implementations of this interface can opt to extract their settings either from
+/// a Configuration object or from a subclass of ObsFilterParametersBase.
+///
+/// In the former case, they should provide a constructor with the following signature:
+///
+///    ObsFilter(const ObsSpace_ &,  const eckit::Configuration &,
+///              ObsDataPtr_<int>, ObsDataPtr_<float>);
+///
+/// In the latter case, the implementer should first define a subclass of ObsFilterParametersBase
+/// holding the settings of the filter in question. The implementation of the ObsFilter interface
+/// should then typedef `Parameters_` to the name of that subclass and provide a constructor with
+/// the following signature:
+///
+///    ObsFilter(const ObsSpace_ &, const Parameters_ &,
+///              ObsDataPtr_<int>, ObsDataPtr_<float>);
 template <typename OBS, typename FILTER>
 class ObsFilter : public ObsFilterBase<OBS> {
   typedef GeoVaLs<OBS>             GeoVaLs_;
@@ -36,8 +53,14 @@ class ObsFilter : public ObsFilterBase<OBS> {
   template <typename DATA> using ObsDataVec_ = typename OBS::template ObsDataVector<DATA>;
 
  public:
+  /// Defined as FILTER::Parameters_ if FILTER defines a Parameters_ type; otherwise as
+  /// GenericObsFilterParameters
+  typedef TParameters_IfAvailableElseFallbackType_t<FILTER, GenericObsFilterParameters> Parameters_;
+
   static const std::string classname() {return "oops::ObsFilter";}
 
+  ObsFilter(const ObsSpace_ &, const Parameters_ &,
+            ObsDataPtr_<int>, ObsDataPtr_<float>);
   ObsFilter(const ObsSpace_ &, const eckit::Configuration &,
             ObsDataPtr_<int>, ObsDataPtr_<float>);
   ~ObsFilter();
@@ -53,7 +76,7 @@ class ObsFilter : public ObsFilterBase<OBS> {
   void print(std::ostream &) const override;
 
   ObsSpace_ obsdb_;
-  const eckit::LocalConfiguration conf_;
+  const std::unique_ptr<Parameters_> parameters_;
   std::unique_ptr<FILTER> ofilt_;
 };
 
@@ -61,9 +84,9 @@ class ObsFilter : public ObsFilterBase<OBS> {
 
 template <typename OBS, typename FILTER>
 ObsFilter<OBS, FILTER>::ObsFilter(const ObsSpace_ & os,
-                                    const eckit::Configuration & conf,
-                                    ObsDataPtr_<int> flags, ObsDataPtr_<float> obserr)
-  : obsdb_(os), conf_(conf), ofilt_()
+                                  const Parameters_ & parameters,
+                                  ObsDataPtr_<int> flags, ObsDataPtr_<float> obserr)
+  : obsdb_(os), parameters_(parameters.clone()), ofilt_()
 {
   Log::trace() << "ObsFilter<OBS, FILTER>::ObsFilter Configuration starting" << std::endl;
   util::Timer timer(classname(), "ObsFilter");
@@ -73,9 +96,20 @@ ObsFilter<OBS, FILTER>::ObsFilter(const ObsSpace_ & os,
   if (flags) qc = flags->obsdatavectorptr();
   if (obserr) oberr = obserr->obsdatavectorptr();
 
-  ofilt_.reset(new FILTER(obsdb_.obsspace(), conf, qc, oberr));
+  ofilt_.reset(new FILTER(obsdb_.obsspace(),
+                          parametersOrConfiguration<HasParameters_<FILTER>::value>(parameters),
+                          qc, oberr));
   Log::trace() << "ObsFilter<OBS, FILTER>::ObsFilter Configuration done" << std::endl;
 }
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS, typename FILTER>
+ObsFilter<OBS, FILTER>::ObsFilter(const ObsSpace_ & os,
+                                  const eckit::Configuration & conf,
+                                  ObsDataPtr_<int> flags, ObsDataPtr_<float> obserr)
+  : ObsFilter(os, validateAndDeserialize<Parameters_>(conf), flags, obserr)
+{}
 
 // -----------------------------------------------------------------------------
 
@@ -137,7 +171,7 @@ Variables ObsFilter<OBS, FILTER>::requiredHdiagnostics() const {
 
 template <typename OBS, typename FILTER>
 void ObsFilter<OBS, FILTER>::print(std::ostream & os) const {
-  os << "ObsFilter " << conf_;
+  os << "ObsFilter " << *parameters_;
 }
 
 // -----------------------------------------------------------------------------

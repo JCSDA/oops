@@ -11,11 +11,9 @@
 #include <memory>
 #include <ostream>
 
-#include "eckit/config/LocalConfiguration.h"
-
+#include "oops/base/ObsFilterParametersBase.h"
 #include "oops/base/Variables.h"
 #include "oops/util/parameters/OptionalParameter.h"
-#include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/RequiredParameter.h"
 #include "oops/util/Printable.h"
 
@@ -28,8 +26,8 @@ namespace lorenz95 {
 
 /// Parameters for L95 BackgroundCheck
 /// background check: all obs for which {|y-H(x)| < threshold} pass QC
-class BackgroundCheckParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(BackgroundCheckParameters, Parameters)
+class BackgroundCheckParameters : public oops::ObsFilterParametersBase {
+  OOPS_CONCRETE_PARAMETERS(BackgroundCheckParameters, ObsFilterParametersBase)
 
  public:
   /// threshold for background check
@@ -44,7 +42,9 @@ class BackgroundCheckParameters : public oops::Parameters {
 /// Simple background check: all obs for which {|y-H(x)| < threshold} pass QC
 class BackgroundCheck : public util::Printable {
  public:
-  BackgroundCheck(const ObsTableView &, const eckit::Configuration &,
+  typedef BackgroundCheckParameters Parameters_;
+
+  BackgroundCheck(const ObsTableView &, const Parameters_ &,
                   std::shared_ptr<ObsData1D<int> >, std::shared_ptr<ObsData1D<float> >);
 
   void preProcess() const {}
@@ -58,7 +58,7 @@ class BackgroundCheck : public util::Printable {
   void print(std::ostream & os) const;
 
   const ObsTableView & obsdb_;
-  BackgroundCheckParameters options_;
+  Parameters_ options_;
   std::shared_ptr<ObsData1D<int> > qcflags_;   // QC flags
   std::shared_ptr<ObsData1D<float> > obserr_;  // obs error stddev
   const oops::Variables novars_;

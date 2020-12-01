@@ -27,14 +27,29 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/Parameter.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 #include "oops/util/Printable.h"
 
 namespace oops {
 
-/// Computes observation equivalent for a single ObsType
+// -----------------------------------------------------------------------------
 
+/// \brief Parameters controlling an Observer.
+
+template <typename OBS>
+class ObserverParameters : public Parameters {
+  OOPS_CONCRETE_PARAMETERS(ObserverParameters, Parameters)
+
+ public:
+  oops::RequiredParameter<eckit::LocalConfiguration> obsOperator{"obs operator", this};
+  oops::Parameter<std::vector<ObsFilterParametersWrapper<OBS>>> obsFilters{"obs filters", {}, this};
+};
 
 // -----------------------------------------------------------------------------
+
+/// Computes observation equivalent for a single ObsType
 
 template <typename MODEL, typename OBS>
 class Observer : public util::Printable {
@@ -51,7 +66,7 @@ class Observer : public util::Printable {
   template <typename DATA> using ObsDataPtr_ = std::shared_ptr<ObsDataVector<OBS, DATA> >;
 
  public:
-  Observer(const eckit::Configuration &, const ObsSpace_ &, const ObsAuxCtrl_ &,
+  Observer(const ObserverParameters<OBS> &, const ObsSpace_ &, const ObsAuxCtrl_ &,
            ObsVector_ &, ObsDataPtr_<int> qcflags, ObsDataPtr_<float> obserr,
            const int iteration = 0);
   ~Observer();
@@ -81,12 +96,13 @@ class Observer : public util::Printable {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-Observer<MODEL, OBS>::Observer(const eckit::Configuration & conf, const ObsSpace_ & obsdb,
+Observer<MODEL, OBS>::Observer(const ObserverParameters<OBS> & params, const ObsSpace_ & obsdb,
                           const ObsAuxCtrl_ & ybias, ObsVector_ & yobs,
                           ObsDataPtr_<int> qcflags, ObsDataPtr_<float> obserr,
                           const int iteration)
-  : hop_(obsdb, eckit::LocalConfiguration(conf, "obs operator")),
-    obsdb_(obsdb), yobs_(yobs), ybias_(ybias), filters_(obsdb, conf, qcflags, obserr, iteration),
+  : hop_(obsdb, params.obsOperator),
+    obsdb_(obsdb), yobs_(yobs), ybias_(ybias),
+    filters_(obsdb, params.obsFilters, qcflags, obserr, iteration),
     locs_(hop_.locations())
 {
   Log::trace() << "Observer::Observer starting" << std::endl;

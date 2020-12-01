@@ -81,7 +81,16 @@ Observers<MODEL, OBS>::Observers(const eckit::Configuration & conf, const ObsSpa
   ASSERT(obsdb.size() == typeconf.size());
   observers_.reserve(obsdb.size());
   for (size_t jj = 0; jj < obsdb.size(); ++jj) {
-    observers_.emplace_back(new Observer_(typeconf[jj], obsdb[jj],
+    // typeconf[jj] contains not only options controlling the obs operator and filters (known to
+    // Observer) but also those controlling the obs space (unknown to it). So we can't call
+    // validateAndDeserialize() here, since "obs space" would be treated as an unrecognized
+    // keyword. In the long term the code constructing the Observers will probably need to split
+    // the contents of the "observations" vector into two vectors, one containing the "obs space"
+    // sections and the other the "obs operator" and "obs filters" sections, and pass the former to
+    // the constructor of ObsSpaces and the latter to the constructor of Observers.
+    ObserverParameters<OBS> observerParams;
+    observerParams.deserialize(typeconf[jj]);
+    observers_.emplace_back(new Observer_(observerParams, obsdb[jj],
                        ybias[jj], yobs_[jj], qc.qcFlags(jj), qc.obsErrors(jj), iteration));
   }
   Log::trace() << "Observers::Observers done" << std::endl;
