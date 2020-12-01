@@ -93,8 +93,14 @@ DRMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
 // Compute RHS (sum B^{-1} dx_{i}) + H^T R^{-1} d
 // dx_i = x_i - x_{i-1}; dx_1 = x_1 - x_b
   CtrlInc_ rhs(J_.jb());
-  J_.computeGradientFG(rhs);
-  J_.jb().addGradientFG(rhs, *gradJb_);
+  if (config.has("fsoi")) {
+    const eckit::LocalConfiguration FcSensitivityConfig(config, "fsoi.input forecast sensitivity");
+    rhs.read(FcSensitivityConfig);
+    Log::info() << classname() << " rhs has forecast sensitivity" << std::endl;
+  } else {
+    J_.computeGradientFG(rhs);
+    J_.jb().addGradientFG(rhs, *gradJb_);
+  }
   rhs *= -1.0;
   Log::info() << classname() << " rhs" << rhs << std::endl;
 

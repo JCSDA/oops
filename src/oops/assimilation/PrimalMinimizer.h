@@ -70,8 +70,14 @@ PrimalMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
 
 // Compute RHS
   CtrlInc_ rhs(J_.jb());
-  J_.computeGradientFG(rhs);
-  J_.jb().addGradientFG(rhs);
+  if (config.has("fsoi")) {
+    const eckit::LocalConfiguration FcSensitivityConfig(config, "fsoi.input forecast sensitivity");
+    rhs.read(FcSensitivityConfig);
+    Log::info() << classname() << " rhs has forecast sensitivity" << std::endl;
+  } else {
+    J_.computeGradientFG(rhs);
+    J_.jb().addGradientFG(rhs);
+  }
   rhs *= -1.0;
   Log::info() << classname() << " rhs" << rhs << std::endl;
 
