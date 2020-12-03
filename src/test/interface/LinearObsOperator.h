@@ -316,13 +316,13 @@ class LinearObsOperator : public oops::Test {
   void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts.emplace_back(CASE("interface/GeometryIterator/testConstructor")
+    ts.emplace_back(CASE("interface/LinearObsOperator/testConstructor")
       { testConstructor<OBS>(); });
-    ts.emplace_back(CASE("interface/GeometryIterator/testLinearity")
+    ts.emplace_back(CASE("interface/LinearObsOperator/testLinearity")
       { testLinearity<OBS>(); });
-    ts.emplace_back(CASE("interface/GeometryIterator/testTangentLinear")
+    ts.emplace_back(CASE("interface/LinearObsOperator/testTangentLinear")
       { testTangentLinear<OBS>(); });
-    ts.emplace_back(CASE("interface/GeometryIterator/testAdjoint")
+    ts.emplace_back(CASE("interface/LinearObsOperator/testAdjoint")
       { testAdjoint<OBS>(); });
   }
 

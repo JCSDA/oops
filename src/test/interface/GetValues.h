@@ -237,11 +237,11 @@ class GetValues : public oops::Test {
   void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts.emplace_back(CASE("interface/GeometryIterator/testGetValuesConstructor")
+    ts.emplace_back(CASE("interface/GetValues/testGetValuesConstructor")
       { testGetValuesConstructor<MODEL, OBS>(); });
-    ts.emplace_back(CASE("interface/GeometryIterator/testGetValuesMultiWindow")
+    ts.emplace_back(CASE("interface/GetValues/testGetValuesMultiWindow")
       { testGetValuesMultiWindow<MODEL, OBS>(); });
-    ts.emplace_back(CASE("interface/GeometryIterator/testGetValuesInterpolation")
+    ts.emplace_back(CASE("interface/GetValues/testGetValuesInterpolation")
       { testGetValuesInterpolation<MODEL, OBS>(); });
   }
 

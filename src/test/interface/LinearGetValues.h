@@ -315,15 +315,15 @@ class LinearGetValues : public oops::Test {
   void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts.emplace_back(CASE("interface/GeometryIterator/testLinearGetValuesConstructor")
+    ts.emplace_back(CASE("interface/LinearGetValues/testLinearGetValuesConstructor")
       { testLinearGetValuesConstructor<MODEL, OBS>(); });
-    ts.emplace_back(CASE("interface/GeometryIterator/testLinearGetValuesZeroPert")
+    ts.emplace_back(CASE("interface/LinearGetValues/testLinearGetValuesZeroPert")
       { testLinearGetValuesZeroPert<MODEL, OBS>(); });
-    ts.emplace_back(CASE("interface/GeometryIterator/testLinearGetValuesLinearity")
+    ts.emplace_back(CASE("interface/LinearGetValues/testLinearGetValuesLinearity")
       { testLinearGetValuesLinearity<MODEL, OBS>(); });
-    ts.emplace_back(CASE("interface/GeometryIterator/testLinearGetValuesLinearApproximation")
+    ts.emplace_back(CASE("interface/LinearGetValues/testLinearGetValuesLinearApproximation")
       { testLinearGetValuesLinearApproximation<MODEL, OBS>(); });
-    ts.emplace_back(CASE("interface/GeometryIterator/testLinearGetValuesAdjoint")
+    ts.emplace_back(CASE("interface/LinearGetValues/testLinearGetValuesAdjoint")
       { testLinearGetValuesAdjoint<MODEL, OBS>(); });
   }
 

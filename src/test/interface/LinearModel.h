@@ -365,17 +365,17 @@ class LinearModel : public oops::Test {
   void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts.emplace_back(CASE("interface/GeometryIterator/testLinearModelConstructor")
+    ts.emplace_back(CASE("interface/LinearModel/testLinearModelConstructor")
       { testLinearModelConstructor<MODEL>(); });
-    ts.emplace_back(CASE("interface/GeometryIterator/testLinearModelZeroLength")
+    ts.emplace_back(CASE("interface/LinearModel/testLinearModelZeroLength")
       { testLinearModelZeroLength<MODEL>(); });
-    ts.emplace_back(CASE("interface/GeometryIterator/testLinearModelZeroPert")
+    ts.emplace_back(CASE("interface/LinearModel/testLinearModelZeroPert")
       { testLinearModelZeroPert<MODEL>(); });
-    ts.emplace_back(CASE("interface/GeometryIterator/testLinearModelLinearity")
+    ts.emplace_back(CASE("interface/LinearModel/testLinearModelLinearity")
       { testLinearModelLinearity<MODEL>(); });
-    ts.emplace_back(CASE("interface/GeometryIterator/testLinearApproximation")
+    ts.emplace_back(CASE("interface/LinearModel/testLinearApproximation")
       { testLinearApproximation<MODEL>(); });
-    ts.emplace_back(CASE("interface/GeometryIterator/testLinearModelAdjoint")
+    ts.emplace_back(CASE("interface/LinearModel/testLinearModelAdjoint")
       { testLinearModelAdjoint<MODEL>(); });
   }
 
