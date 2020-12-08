@@ -9,4 +9,3 @@ obs space:
   obs type: Wind
 obs error:
   covariance model: diagonal
-filename: obs space.obsdatain.obsfile

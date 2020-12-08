@@ -1,0 +1,12 @@
+forecast length:
+  $(forecast_length)
+geometry:
+  $(GEOMETRY)
+initial condition:
+  $(AN_TEMPLATE)
+model:
+  $(MODEL)
+observations:
+  $(OBSERVATIONS)
+window begin: $(window begin)
+window length: $(window length)
