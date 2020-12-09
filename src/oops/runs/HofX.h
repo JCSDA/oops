@@ -12,12 +12,15 @@
 #ifndef OOPS_RUNS_HOFX_H_
 #define OOPS_RUNS_HOFX_H_
 
+#include <memory>
 #include <string>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 #include "oops/assimilation/CalcHofX.h"
+#include "oops/base/GetValuesPost.h"
 #include "oops/base/instantiateObsFilterFactory.h"
+#include "oops/base/ObsAuxControls.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
 #include "oops/base/ObsSpaces.h"
@@ -26,6 +29,7 @@
 #include "oops/generic/instantiateObsErrorFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Model.h"
+#include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
@@ -40,7 +44,10 @@ namespace oops {
 /// H(x) is perturbed. It is saved as "hofx" by default, or as specified "hofx group name"
 template <typename MODEL, typename OBS> class HofX : public Application {
   typedef Geometry<MODEL>            Geometry_;
+  typedef GetValuesPost<MODEL, OBS>  GetValuesPost_;
   typedef Model<MODEL>               Model_;
+  typedef ModelAuxControl<MODEL>     ModelAux_;
+  typedef ObsAuxControls<OBS>        ObsAux_;
   typedef Observations<OBS>          Observations_;
   typedef ObsErrors<OBS>             ObsErrors_;
   typedef ObsSpaces<OBS>             ObsSpaces_;
@@ -73,6 +80,7 @@ template <typename MODEL, typename OBS> class HofX : public Application {
 //  Setup initial state
     const eckit::LocalConfiguration initialConfig(fullConfig, "initial condition");
     State_ xx(geometry, initialConfig);
+    ModelAux_ moderr(geometry, initialConfig);
     const util::Duration flength(fullConfig.getString("forecast length"));
     Log::test() << "Initial state: " << xx << std::endl;
 
@@ -93,11 +101,20 @@ template <typename MODEL, typename OBS> class HofX : public Application {
 
 //  Setup observations
     const eckit::LocalConfiguration obsConfig(fullConfig, "observations");
-    ObsSpaces_ obspace(obsConfig, this->getComm(), winbgn, winend);
+    ObsSpaces_ obspaces(obsConfig, this->getComm(), winbgn, winend);
+    ObsAux_ obsaux(obspaces, obsConfig);
 
 //  Setup and run observer
-    CalcHofX<MODEL, OBS> hofx(obspace, geometry, fullConfig);
-    Observations_ yobs = hofx.compute(model, xx, post, flength);
+    CalcHofX<OBS> hofx(obspaces, obsConfig);
+    hofx.initialize(obsaux);
+
+//  run the model and compute H(x)
+    std::shared_ptr<GetValuesPost_>
+       getvals(new GetValuesPost_(obspaces, hofx.locations(), hofx.requiredVars()));
+    post.enrollProcessor(getvals);
+    model.forecast(xx, moderr, flength, post);
+
+    Observations_ yobs = hofx.compute(getvals->geovals());
     hofx.saveQcFlags("EffectiveQC");
     hofx.saveObsErrors("EffectiveError");
 
@@ -108,7 +125,7 @@ template <typename MODEL, typename OBS> class HofX : public Application {
 //  as ObsValue if "hofx group name" == ObsValue.
     bool obspert = fullConfig.getBool("obs perturbations", false);
     if (obspert) {
-      ObsErrors_ matR(obsConfig, obspace);
+      ObsErrors_ matR(obsConfig, obspaces);
       yobs.perturb(matR);
       Log::test() << "Perturbed H(x): " << std::endl << yobs << "End Perturbed H(x)" << std::endl;
     }

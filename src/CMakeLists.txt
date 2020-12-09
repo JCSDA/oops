@@ -92,6 +92,7 @@ oops/base/DolphChebyshev.h
 oops/base/EnsembleCovariance.h
 oops/base/GeneralizedDepartures.h
 oops/base/GeoVaLsWriter.h
+oops/base/GetValuesPost.h
 oops/base/LocalIncrement.cc
 oops/base/LocalIncrement.h
 oops/base/HybridCovariance.h
@@ -116,8 +117,6 @@ oops/base/ObsEnsemble.h
 oops/base/ObsErrorBase.h
 oops/base/ObsErrors.h
 oops/base/Observations.h
-oops/base/Observer.h
-oops/base/Observers.h
 oops/base/ObserversTLAD.h
 oops/base/ObserverTLAD.h
 oops/base/ObsFilterBase.h
@@ -136,7 +135,6 @@ oops/base/PostProcessorTLAD.h
 oops/base/PostTimer.cc
 oops/base/PostTimer.h
 oops/base/PostTimerParameters.h
-oops/base/QCData.h
 oops/base/StateEnsemble.h
 oops/base/StateEnsemble4D.h
 oops/base/StateInfo.h

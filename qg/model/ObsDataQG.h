@@ -43,6 +43,7 @@ class ObsDataQG : public util::Printable,
   void mask(const ObsDataQG<int>);
 
 // I/O
+  void read(const std::string &);
   void save(const std::string &) const;
 
  private:
@@ -74,6 +75,11 @@ void ObsDataQG<DATATYPE>::zero() {
 // -----------------------------------------------------------------------------
 template<typename DATATYPE>
 void ObsDataQG<DATATYPE>::mask(const ObsDataQG<int>) {
+}
+// -----------------------------------------------------------------------------
+template<typename DATATYPE>
+void ObsDataQG<DATATYPE>::read(const std::string & name) {
+  data_.read(name);
 }
 // -----------------------------------------------------------------------------
 template<typename DATATYPE>

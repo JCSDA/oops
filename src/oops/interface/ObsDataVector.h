@@ -49,6 +49,7 @@ class ObsDataVector : public util::Printable,
   unsigned int nobs() const {return data_->nobs();}
 
 // I/O
+  void read(const std::string &);
   void save(const std::string &) const;
 
  private:
@@ -115,6 +116,14 @@ void ObsDataVector<OBS, DATATYPE>::print(std::ostream & os) const {
   util::Timer timer(classname(), "print");
   os << *data_;
   Log::trace() << "ObsDataVector<OBS, DATATYPE>::print done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template <typename OBS, typename DATATYPE>
+void ObsDataVector<OBS, DATATYPE>::read(const std::string & name) {
+  Log::trace() << "ObsDataVector<OBS, DATATYPE>::read starting " << name << std::endl;
+  util::Timer timer(classname(), "read");
+  data_->read(name);
+  Log::trace() << "ObsDataVector<OBS, DATATYPE>::read done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename OBS, typename DATATYPE>

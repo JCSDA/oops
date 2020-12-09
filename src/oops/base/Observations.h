@@ -20,7 +20,6 @@
 #include "oops/base/Departures.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/ObsSpaces.h"
-#include "oops/base/QCData.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
@@ -38,7 +37,6 @@ template <typename OBS> class Observations : public util::Printable {
   typedef ObsErrors<OBS>           ObsErrors_;
   typedef ObsSpaces<OBS>           ObsSpaces_;
   typedef ObsVector<OBS>           ObsVector_;
-  typedef QCData<OBS>              QCData_;
 
  public:
 /// \brief create Observations for all obs (read from ObsSpace if name is specified)
@@ -73,9 +71,6 @@ template <typename OBS> class Observations : public util::Printable {
 
 /// Perturbations
   void perturb(const ObsErrors_ &);
-
-/// Mask out departures where the passed in qc flags are > 0
-  void mask(const QCData_ &);
 
  private:
   void print(std::ostream &) const;
@@ -197,13 +192,6 @@ size_t Observations<OBS>::nobs() const {
     nobs += obs_[jj].nobs();
   }
   return nobs;
-}
-// -----------------------------------------------------------------------------
-template<typename OBS>
-void Observations<OBS>::mask(const QCData_ & qc) {
-  for (size_t ii = 0; ii < obs_.size(); ++ii) {
-    obs_[ii].mask(*qc.qcFlags(ii));
-  }
 }
 // -----------------------------------------------------------------------------
 template <typename OBS>

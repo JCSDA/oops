@@ -20,6 +20,7 @@
 #include "oops/assimilation/State4D.h"
 #include "oops/base/Departures.h"
 #include "oops/base/DeparturesEnsemble.h"
+#include "oops/base/GetValuesPost.h"
 #include "oops/base/IncrementEnsemble4D.h"
 #include "oops/base/LocalIncrement.h"
 #include "oops/base/ObsEnsemble.h"
@@ -49,6 +50,7 @@ class GETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
   typedef DeparturesEnsemble<OBS>     DeparturesEnsemble_;
   typedef Geometry<MODEL>             Geometry_;
   typedef GeometryIterator<MODEL>     GeometryIterator_;
+  typedef GetValuesPost<MODEL, OBS>   GetValuesPost_;
   typedef IncrementEnsemble4D<MODEL>  IncrementEnsemble4D_;
   typedef ObsEnsemble<OBS>            ObsEnsemble_;
   typedef ObsErrors<OBS>              ObsErrors_;
@@ -137,7 +139,7 @@ GETKFSolver<MODEL, OBS>::GETKFSolver(ObsSpaces_ & obspaces, const Geometry_ & ge
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
 Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & ens_xx,
-                                           size_t iteration, bool readFromFile) {
+                                                       size_t iteration, bool readFromFile) {
   util::Timer timer(classname(), "computeHofX");
 
   // compute/read H(x) for the original ensemble members
@@ -171,7 +173,11 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
       for (size_t ieig = 0; ieig < neig_; ++ieig) {
         State4D_ tmpState = xx_mean;
         tmpState += Ztmp[ieig];
-        Observations_ tmpObs = this->hofx_.compute(tmpState);
+        GetValuesPost_ getvals(this->obspaces_, this->hofx_.locations(),
+                               this->hofx_.requiredVars());
+        getvals.fill(tmpState);
+        // compute H(x) on filled in geovals and run the filters
+        Observations_ tmpObs = this->hofx_.compute(getvals.geovals());
         HZb_[ii] = tmpObs - yb_mean;
         tmpObs.save("hofxm"+std::to_string(iteration)+"_"+std::to_string(ieig+1)+
                       "_"+std::to_string(iens+1));

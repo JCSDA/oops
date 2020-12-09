@@ -28,7 +28,6 @@
 #include "oops/interface/ObsVector.h"
 #include "oops/interface/State.h"
 #include "oops/util/DateTime.h"
-#include "oops/util/Duration.h"
 
 namespace oops {
 

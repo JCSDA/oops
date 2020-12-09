@@ -48,6 +48,7 @@ class ObsData1D : public util::Printable,
   const DATATYPE & operator[] (const size_t ii) const {return data_.at(ii);}
 
 // I/O
+  void read(const std::string &);
   void save(const std::string &) const;
 
  private:
@@ -93,6 +94,11 @@ void ObsData1D<DATATYPE>::mask(const ObsData1D<int> & mask) {
   for (size_t jj = 0; jj < data_.size(); ++jj) {
     if (mask[jj]) data_.at(jj) = missing;
   }
+}
+// -----------------------------------------------------------------------------
+template<typename DATATYPE>
+void ObsData1D<DATATYPE>::read(const std::string & name) {
+  obsdb_.getdb(name, data_);
 }
 // -----------------------------------------------------------------------------
 template<typename DATATYPE>

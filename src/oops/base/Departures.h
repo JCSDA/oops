@@ -14,12 +14,13 @@
 #include <Eigen/Dense>
 #include <cstddef>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/ObsSpaces.h"
-#include "oops/base/QCData.h"
+#include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
@@ -44,7 +45,8 @@ class Departures : public util::Printable,
                    public GeneralizedDepartures {
   typedef ObsSpaces<OBS>           ObsSpaces_;
   typedef ObsVector<OBS>           ObsVector_;
-  typedef QCData<OBS>              QCData_;
+  template <typename DATA> using ObsData_ = ObsDataVector<OBS, DATA>;
+  template <typename DATA> using ObsDataVec_ = std::vector<std::shared_ptr<ObsData_<DATA>>>;
 
  public:
 /// \brief create Departures for all obs (read from ObsSpace if name is specified)
@@ -74,7 +76,7 @@ class Departures : public util::Printable,
   size_t nobs() const;
 
 /// Mask out departures where the passed in qc flags are > 0
-  void mask(const QCData_ &);
+  void mask(ObsDataVec_<int>);
 
 /// Pack departures in an Eigen vector (excluding departures that are masked out)
   Eigen::VectorXd  packEigen() const;
@@ -204,9 +206,9 @@ size_t Departures<OBS>::nobs() const {
 }
 // -----------------------------------------------------------------------------
 template<typename OBS>
-void Departures<OBS>::mask(const QCData_ & qc) {
+void Departures<OBS>::mask(ObsDataVec_<int> qcflags) {
   for (size_t ii = 0; ii < dep_.size(); ++ii) {
-    dep_[ii].mask(*qc.qcFlags(ii));
+    dep_[ii].mask(*qcflags[ii]);
   }
 }
 // -----------------------------------------------------------------------------
