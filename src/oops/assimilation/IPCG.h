@@ -14,6 +14,7 @@
 #include <cmath>
 #include <vector>
 
+#include "oops/assimilation/MinimizerUtils.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/formats.h"
 #include "oops/util/Logger.h"
@@ -88,7 +89,7 @@ double IPCG(VECTOR & x, const VECTOR & b,
   // s = precond r
   precond.multiply(r, s);
 
-  double dotRr0  = dot_product(r, r);
+  double rnorm0  = sqrt(dot_product(r, r));
   double dotSr0  = dot_product(r, s);
   double normReduction = 1.0;
   double rdots_old = dotSr0;
@@ -143,9 +144,10 @@ double IPCG(VECTOR & x, const VECTOR & b,
     vVEC.push_back(v);
     zVEC.push_back(z);
 
-    normReduction = sqrt(dot_product(r, r)/dotRr0);
-    Log::info() << "IPCG end of iteration " << jiter+1 << ". Norm reduction= "
-                << util::full_precision(normReduction) << std::endl << std::endl;
+    double rnorm = sqrt(dot_product(r, r));
+    normReduction = rnorm/rnorm0;
+    Log::info() << "IPCG end of iteration " << jiter+1 << std::endl;
+    printNormReduction(jiter+1, rnorm, normReduction);
 
     if (normReduction < tolerance) {
       Log::info() << "IPCG: Achieved required reduction in residual norm." << std::endl;

@@ -15,6 +15,7 @@
 #include <iostream>
 #include <vector>
 
+#include "oops/assimilation/MinimizerUtils.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/formats.h"
 #include "oops/util/Logger.h"
@@ -146,8 +147,8 @@ double MINRES(VECTOR & x, const VECTOR & b,
 
     normReduction = phibar/ynrm2;
 
-    Log::info() << "MINRES end of iteration " << jiter+1 << ". PNorm reduction= "
-                << util::full_precision(normReduction) << std::endl << std::endl;
+    Log::info() << "MINRES end of iteration " << jiter+1 << std::endl;
+    printNormReduction(jiter+1, phibar, normReduction);
 
     if (normReduction <= tolerance) {
         Log::info() << "MINRES: Achieved required reduction in residual norm." << std::endl;

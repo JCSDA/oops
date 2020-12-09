@@ -20,6 +20,7 @@
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/DRMinimizer.h"
 #include "oops/assimilation/HtRinvHMatrix.h"
+#include "oops/assimilation/MinimizerUtils.h"
 #include "oops/assimilation/QNewtonLMP.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/formats.h"
@@ -125,7 +126,7 @@ double DRIPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_
   lmp_.multiply(rr, sh);
   B.multiply(sh, ss);
 
-  double dotRr0  = dot_product(rr, rr);
+  double rrnorm0 = sqrt(dot_product(rr, rr));
   double dotSr0  = dot_product(rr, ss);
   double normReduction = 1.0;
   double rdots = dotSr0;
@@ -188,16 +189,12 @@ double DRIPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_
 //  double rdotr = dot_product(rr, rr);
 //  Log::info() << "DRIPCGMinimizer rdots = " << rdots
 //              << ", sdots = " << sdots << ", rdotr = " << rdotr << std::endl;
-    normReduction = sqrt(dot_product(rr, rr)/dotRr0);
+    double rrnorm = sqrt(dot_product(rr, rr));
+    normReduction = rrnorm/rrnorm0;
 
-    Log::info() << "DRIPCG end of iteration " << jiter+1 << ". Norm reduction= "
-                << util::full_precision(normReduction) << std::endl
-                << "  Quadratic cost function: J   (" <<  jiter+1 << ") = "
-                << util::full_precision(costJ)         << std::endl
-                << "  Quadratic cost function: Jb  (" <<  jiter+1 << ") = "
-                << util::full_precision(costJb)        << std::endl
-                << "  Quadratic cost function: JoJc(" << jiter+1 << ") = "
-                << util::full_precision(costJoJc)      << std::endl << std::endl;
+    Log::info() << "DRIPCG end of iteration " << jiter+1 << std::endl;
+    printNormReduction(jiter+1, rrnorm, normReduction);
+    printQuadraticCostFunction(jiter+1, costJ, costJb, costJoJc);
 
     // Save the pairs for preconditioning
     lmp_.push(pp, ph, ap, rho);

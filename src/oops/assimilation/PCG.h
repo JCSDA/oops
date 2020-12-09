@@ -14,6 +14,7 @@
 #include <cmath>
 #include <vector>
 
+#include "oops/assimilation/MinimizerUtils.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/formats.h"
 #include "oops/util/Logger.h"
@@ -141,8 +142,8 @@ double PCG(VECTOR & x, const VECTOR & b,
 
     normReduction = sqrt(rdots/dotRr0);
 
-    Log::info() << "PCG end of iteration " << jiter+1 << ". Norm reduction= "
-                << util::full_precision(normReduction) << std::endl << std::endl;
+    Log::info() << "PCG end of iteration " << jiter+1 << std::endl;
+    printNormReduction(jiter+1, sqrt(rdots), normReduction);
 
     if (normReduction < tolerance) {
       Log::info() << "PCG: Achieved required reduction in residual norm." << std::endl;

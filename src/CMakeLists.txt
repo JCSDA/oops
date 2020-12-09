@@ -59,6 +59,8 @@ oops/assimilation/LETKFSolverParameters.h
 oops/assimilation/linsysteigen.h
 oops/assimilation/LocalEnsembleSolver.h
 oops/assimilation/Minimizer.h
+oops/assimilation/MinimizerUtils.cc
+oops/assimilation/MinimizerUtils.h
 oops/assimilation/MINRES.h
 oops/assimilation/MINRESMinimizer.h
 oops/assimilation/PCG.h

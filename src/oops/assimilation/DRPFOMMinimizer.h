@@ -22,6 +22,7 @@
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/DRMinimizer.h"
 #include "oops/assimilation/HtRinvHMatrix.h"
+#include "oops/assimilation/MinimizerUtils.h"
 #include "oops/assimilation/SpectralLMP.h"
 #include "oops/assimilation/UpHessSolve.h"
 #include "oops/util/dot_product.h"
@@ -231,15 +232,9 @@ double DRPFOMMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc
     double rznorm = beta*std::abs(ss[jiter]);
     normReduction = rznorm/beta0;
 
-    Log::info() << "DRPFOM end of iteration " << jiter+1 << std::endl
-                << "  Norm reduction ("               << std::setw(2) << jiter+1 << ") = "
-                  << util::full_precision(normReduction) << std::endl
-                << "  Quadratic cost function: J   (" << std::setw(2) << jiter+1 << ") = "
-                  << util::full_precision(costJ)         << std::endl
-                << "  Quadratic cost function: Jb  (" << std::setw(2) << jiter+1 << ") = "
-                  << util::full_precision(costJb)        << std::endl
-                << "  Quadratic cost function: JoJc(" << std::setw(2) << jiter+1 << ") = "
-                  << util::full_precision(costJoJc)      << std::endl << std::endl;
+    Log::info() << "DRPFOM end of iteration " << jiter+1 << std::endl;
+    printNormReduction(jiter+1, rznorm, normReduction);
+    printQuadraticCostFunction(jiter+1, costJ, costJb, costJoJc);
 
     if (normReduction < tolerance) {
       Log::info() << "DRPFOM: Achieved required reduction in residual norm." << std::endl;
