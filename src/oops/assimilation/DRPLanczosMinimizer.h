@@ -12,10 +12,9 @@
 #define OOPS_ASSIMILATION_DRPLANCZOSMINIMIZER_H_
 
 #include <cmath>
+#include <memory>
 #include <string>
 #include <vector>
-
-#include <boost/ptr_container/ptr_vector.hpp>
 
 #include "oops/assimilation/BMatrix.h"
 #include "oops/assimilation/ControlIncrement.h"
@@ -88,9 +87,9 @@ template<typename MODEL, typename OBS> class DRPLanczosMinimizer : public DRMini
 
   SpectralLMP<CtrlInc_> lmp_;
 
-  boost::ptr_vector<CtrlInc_> hvecs_;
-  boost::ptr_vector<CtrlInc_> vvecs_;
-  boost::ptr_vector<CtrlInc_> zvecs_;
+  std::vector<std::unique_ptr<CtrlInc_>> hvecs_;
+  std::vector<std::unique_ptr<CtrlInc_>> vvecs_;
+  std::vector<std::unique_ptr<CtrlInc_>> zvecs_;
   std::vector<double> alphas_;
   std::vector<double> betas_;
 };
@@ -142,11 +141,11 @@ double DRPLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, Ctr
   zz *= 1/beta;
 
   // hvecs[0] = pr_{1} --> required for solution
-  hvecs_.push_back(new CtrlInc_(pr));
+  hvecs_.emplace_back(std::unique_ptr<CtrlInc_>(new CtrlInc_(pr)));
   // zvecs[0] = z_{1} ---> for re-orthogonalization
-  zvecs_.push_back(new CtrlInc_(zz));
+  zvecs_.emplace_back(std::unique_ptr<CtrlInc_>(new CtrlInc_(zz)));
   // vvecs[0] = v_{1} ---> for re-orthogonalization
-  vvecs_.push_back(new CtrlInc_(vv));
+  vvecs_.emplace_back(std::unique_ptr<CtrlInc_>(new CtrlInc_(vv)));
 
   double normReduction = 1.0;
 
@@ -159,19 +158,19 @@ double DRPLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, Ctr
     vv += pr;
 
     if (jiter > 0) {
-      vv.axpy(-beta, vvecs_[jiter-1]);
+      vv.axpy(-beta, *vvecs_[jiter-1]);
     }
 
     // alpha_{i} = v_{i+1}^T z_{i}
     double alpha = dot_product(zz, vv);
 
     // v_{i+1} = v_{i+1} - alpha_{i} v_{i}
-    vv.axpy(-alpha, vvecs_[jiter]);  // vv = vv - alpha * v_j
+    vv.axpy(-alpha, *vvecs_[jiter]);  // vv = vv - alpha * v_j
 
     // Re-orthogonalization
     for (int jj = 0; jj < jiter; ++jj) {
-      double proj = dot_product(vv, zvecs_[jj]);
-      vv.axpy(-proj, vvecs_[jj]);
+      double proj = dot_product(vv, *zvecs_[jj]);
+      vv.axpy(-proj, *vvecs_[jj]);
     }
 
     // z_{i+1} = B LMP v_{i+1}
@@ -189,11 +188,11 @@ double DRPLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, Ctr
     zz *= 1/beta;
 
     // hvecs[i+1] =pr_{i+1}
-    hvecs_.push_back(new CtrlInc_(pr));
+    hvecs_.emplace_back(std::unique_ptr<CtrlInc_>(new CtrlInc_(pr)));
     // zvecs[i+1] = z_{i+1}
-    zvecs_.push_back(new CtrlInc_(zz));
+    zvecs_.emplace_back(std::unique_ptr<CtrlInc_>(new CtrlInc_(zz)));
     // vvecs[i+1] = v_{i+1}
-    vvecs_.push_back(new CtrlInc_(vv));
+    vvecs_.emplace_back(std::unique_ptr<CtrlInc_>(new CtrlInc_(vv)));
 
     alphas_.push_back(alpha);
 
@@ -202,7 +201,7 @@ double DRPLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, Ctr
       dd.push_back(beta0);
     } else {
       // Solve the tridiagonal system T_{i} s_{i} = beta0 * e_1
-      dd.push_back(beta0*dot_product(zvecs_[0], vv));
+      dd.push_back(beta0*dot_product(*zvecs_[0], vv));
       TriDiagSolve(alphas_, betas_, dd, ss);
     }
 
@@ -215,8 +214,8 @@ double DRPLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, Ctr
 
     double costJb = costJ0Jb;
     for (int jj = 0; jj < jiter+1; ++jj) {
-      costJ -= 0.5 * ss[jj] * dot_product(zvecs_[jj], rr);
-      costJb += 0.5 * ss[jj] * dot_product(vvecs_[jj], zvecs_[jj]) * ss[jj];
+      costJ -= 0.5 * ss[jj] * dot_product(*zvecs_[jj], rr);
+      costJb += 0.5 * ss[jj] * dot_product(*vvecs_[jj], *zvecs_[jj]) * ss[jj];
     }
     double costJoJc = costJ - costJb;
 
@@ -239,8 +238,8 @@ double DRPLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, Ctr
 
   // Calculate the solution (dxh = Binv dx)
   for (unsigned int jj = 0; jj < ss.size(); ++jj) {
-    dx.axpy(ss[jj], zvecs_[jj]);
-    dxh.axpy(ss[jj], hvecs_[jj]);
+    dx.axpy(ss[jj], *zvecs_[jj]);
+    dxh.axpy(ss[jj], *hvecs_[jj]);
   }
 
   return normReduction;

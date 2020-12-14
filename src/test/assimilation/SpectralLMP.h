@@ -8,10 +8,9 @@
 #ifndef TEST_ASSIMILATION_SPECTRALLMP_H_
 #define TEST_ASSIMILATION_SPECTRALLMP_H_
 
+#include <memory>
 #include <string>
 #include <vector>
-
-#include <boost/ptr_container/ptr_vector.hpp>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
@@ -33,22 +32,22 @@ namespace test {
     oops::SpectralLMP<Vector3D> spectralLMP(conf);
 
     // assign vectors following DRPLanczosMinimizer.h
-    boost::ptr_vector<Vector3D> hvecs;
-    boost::ptr_vector<Vector3D> vvecs;
-    boost::ptr_vector<Vector3D> zvecs;
+    std::vector<std::unique_ptr<Vector3D>> hvecs;
+    std::vector<std::unique_ptr<Vector3D>> vvecs;
+    std::vector<std::unique_ptr<Vector3D>> zvecs;
     std::vector<double> alphas;
     std::vector<double> betas;
 
     // Simple case
-    hvecs.push_back(new Vector3D(1, 1, 1));
-    hvecs.push_back(new Vector3D(1, 1, 1));
-    hvecs.push_back(new Vector3D(1, 1, 1));
-    vvecs.push_back(new Vector3D(1, 1, 1));
-    vvecs.push_back(new Vector3D(1, 1, 1));
-    vvecs.push_back(new Vector3D(1, 1, 1));
-    zvecs.push_back(new Vector3D(1, 1, 1));
-    zvecs.push_back(new Vector3D(1, 1, 1));
-    zvecs.push_back(new Vector3D(1, 1, 1));
+    hvecs.emplace_back(std::unique_ptr<Vector3D>(new Vector3D(1, 1, 1)));
+    hvecs.emplace_back(std::unique_ptr<Vector3D>(new Vector3D(1, 1, 1)));
+    hvecs.emplace_back(std::unique_ptr<Vector3D>(new Vector3D(1, 1, 1)));
+    vvecs.emplace_back(std::unique_ptr<Vector3D>(new Vector3D(1, 1, 1)));
+    vvecs.emplace_back(std::unique_ptr<Vector3D>(new Vector3D(1, 1, 1)));
+    vvecs.emplace_back(std::unique_ptr<Vector3D>(new Vector3D(1, 1, 1)));
+    zvecs.emplace_back(std::unique_ptr<Vector3D>(new Vector3D(1, 1, 1)));
+    zvecs.emplace_back(std::unique_ptr<Vector3D>(new Vector3D(1, 1, 1)));
+    zvecs.emplace_back(std::unique_ptr<Vector3D>(new Vector3D(1, 1, 1)));
 
     alphas.push_back(1.0);
     alphas.push_back(1.0);
@@ -68,15 +67,15 @@ namespace test {
     zvecs.clear();
     alphas.clear();
     betas.clear();
-    hvecs.push_back(new Vector3D(10, 1, -10));
-    hvecs.push_back(new Vector3D(1, 10, 100));
-    hvecs.push_back(new Vector3D(-5, 5, 20));
-    vvecs.push_back(new Vector3D(1, 3, 11));
-    vvecs.push_back(new Vector3D(-1, 2, 100));
-    vvecs.push_back(new Vector3D(6, 77, 7));
-    zvecs.push_back(new Vector3D(1, 10, 1));
-    zvecs.push_back(new Vector3D(1, 21, 21));
-    zvecs.push_back(new Vector3D(100, 3, 70));
+    hvecs.emplace_back(std::unique_ptr<Vector3D>(new Vector3D(10, 1, -10)));
+    hvecs.emplace_back(std::unique_ptr<Vector3D>(new Vector3D(1, 10, 100)));
+    hvecs.emplace_back(std::unique_ptr<Vector3D>(new Vector3D(-5, 5, 20)));
+    vvecs.emplace_back(std::unique_ptr<Vector3D>(new Vector3D(1, 3, 11)));
+    vvecs.emplace_back(std::unique_ptr<Vector3D>(new Vector3D(-1, 2, 100)));
+    vvecs.emplace_back(std::unique_ptr<Vector3D>(new Vector3D(6, 77, 7)));
+    zvecs.emplace_back(std::unique_ptr<Vector3D>(new Vector3D(1, 10, 1)));
+    zvecs.emplace_back(std::unique_ptr<Vector3D>(new Vector3D(1, 21, 21)));
+    zvecs.emplace_back(std::unique_ptr<Vector3D>(new Vector3D(100, 3, 70)));
 
     alphas.push_back(1000.0);
     alphas.push_back(33.0);

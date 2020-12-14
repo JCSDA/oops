@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -13,10 +13,10 @@
 
 #include <algorithm>
 #include <cmath>
+#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
-
-#include <boost/ptr_container/ptr_vector.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/TriDiagSpectrum.h"
@@ -52,8 +52,8 @@ template<typename VECTOR> class SpectralLMP {
   explicit SpectralLMP(const eckit::Configuration &);
   ~SpectralLMP() {}
 
-  void update(boost::ptr_vector<VECTOR> &, boost::ptr_vector<VECTOR> &,
-              boost::ptr_vector<VECTOR> &, std::vector<double> &, std::vector<double> &);
+  void update(std::vector<std::unique_ptr<VECTOR>> &, std::vector<std::unique_ptr<VECTOR>> &,
+              std::vector<std::unique_ptr<VECTOR>> &, std::vector<double> &, std::vector<double> &);
 
   void multiply(const VECTOR &, VECTOR &) const;
 
@@ -64,14 +64,14 @@ template<typename VECTOR> class SpectralLMP {
   int maxouter_;
   int update_;
 
-  boost::ptr_vector<VECTOR> X_;
-  boost::ptr_vector<VECTOR> U_;
+  std::vector<std::unique_ptr<VECTOR>> X_;
+  std::vector<std::unique_ptr<VECTOR>> U_;
   std::vector<double> eigvals_;
   std::vector<double> omega_;
 
   // For RitzPrecond
-  boost::ptr_vector<VECTOR> Y_;
-  boost::ptr_vector<VECTOR> S_;
+  std::vector<std::unique_ptr<VECTOR>> Y_;
+  std::vector<std::unique_ptr<VECTOR>> S_;
   std::vector<VECTOR> Zlast_;
   std::vector<VECTOR> Zhlast_;
   std::vector<unsigned> usedpairIndx_;
@@ -110,9 +110,9 @@ SpectralLMP<VECTOR>::SpectralLMP(const eckit::Configuration & conf)
 // -----------------------------------------------------------------------------
 
 template<typename VECTOR>
-void SpectralLMP<VECTOR>::update(boost::ptr_vector<VECTOR> & Zv,
-                                 boost::ptr_vector<VECTOR> & Zhl,
-                                 boost::ptr_vector<VECTOR> & Zl,
+void SpectralLMP<VECTOR>::update(std::vector<std::unique_ptr<VECTOR>> & Zv,
+                                 std::vector<std::unique_ptr<VECTOR>> & Zhl,
+                                 std::vector<std::unique_ptr<VECTOR>> & Zl,
                                  std::vector<double> & alphas,
                                  std::vector<double> & betas) {
 //  If useoldpairs = false, use only current information
@@ -205,25 +205,25 @@ void SpectralLMP<VECTOR>::update(boost::ptr_vector<VECTOR> & Zv,
       U_.erase(U_.begin(), U_.begin() + std::min(xsize, minsize));
     }
     for (unsigned jiter = 0; jiter < convIndx.size(); ++jiter) {
-      VECTOR * ww = new VECTOR(Zl[0], false);
+      std::unique_ptr<VECTOR> ww(new VECTOR(*Zl[0], false));
       for (unsigned iiter = 0; iiter < nvec-1; ++iiter) {
-        ww->axpy(evecs[convIndx[jiter]][iiter], Zl[iiter]);
+        ww->axpy(evecs[convIndx[jiter]][iiter], *Zl[iiter]);
       }
 //    Add new information
-      X_.push_back(ww);
+      X_.emplace_back(std::move(ww));
     }
     for (unsigned jiter = 0; jiter < convIndx.size(); ++jiter) {
-      VECTOR * ww = new VECTOR(Zl[0], false);
+      std::unique_ptr<VECTOR> ww(new VECTOR(*Zl[0], false));
       for (unsigned iiter = 0; iiter < nvec-1; ++iiter) {
-        ww->axpy(evecs[convIndx[jiter]][iiter], Zhl[iiter]);
+        ww->axpy(evecs[convIndx[jiter]][iiter], *Zhl[iiter]);
       }
 //    Add new information
-      U_.push_back(ww);
+      U_.emplace_back(std::move(ww));
     }
 
     if (RitzPrecond_) {
-      Zlast_.push_back(Zl[nvec-1]);
-      Zhlast_.push_back(Zhl[nvec-1]);
+      Zlast_.push_back(*Zl[nvec-1]);
+      Zhlast_.push_back(*Zhl[nvec-1]);
 
 //    Calculate the matrix Y = [U1*omega1, ..., Uk*omegak]
       Y_.clear();
@@ -232,12 +232,12 @@ void SpectralLMP<VECTOR>::update(boost::ptr_vector<VECTOR> & Zv,
       for (unsigned kiter = 0; kiter < usedpairIndx_.size(); ++kiter) {
         if (usedpairIndx_[kiter] != 0) {
           zcount.push_back(kiter);
-          VECTOR * ww = new VECTOR(Zl[0], false);
+          std::unique_ptr<VECTOR> ww(new VECTOR(*Zl[0], false));
           for (unsigned jiter = 0; jiter < usedpairIndx_[kiter]; ++jiter) {
-            ww->axpy(omega_[jiter + kk], U_[jiter + kk]);
+            ww->axpy(omega_[jiter + kk], *U_[jiter + kk]);
           }
           kk += usedpairIndx_[kiter];
-          Y_.push_back(ww);
+          Y_.emplace_back(std::move(ww));
         }
       }
 
@@ -246,12 +246,12 @@ void SpectralLMP<VECTOR>::update(boost::ptr_vector<VECTOR> & Zv,
       kk = 0;
       for (unsigned kiter = 0; kiter < usedpairIndx_.size(); ++kiter) {
         if (usedpairIndx_[kiter] != 0) {
-          VECTOR * ww = new VECTOR(Zl[0], false);
+          std::unique_ptr<VECTOR> ww(new VECTOR(*Zl[0], false));
           for (unsigned jiter = 0; jiter < usedpairIndx_[kiter]; ++jiter) {
-            ww->axpy(omega_[jiter + kk], X_[jiter + kk]);
+            ww->axpy(omega_[jiter + kk], *X_[jiter + kk]);
           }
           kk += usedpairIndx_[kiter];
-          S_.push_back(ww);
+          S_.emplace_back(std::move(ww));
         }
       }
     }
@@ -275,7 +275,7 @@ void SpectralLMP<VECTOR>::multiply(const VECTOR & a, VECTOR & b) const {
     double zeval = std::min(10.0, eigvals_[iiter]);
 //    double zeval = eigvals_[iiter];
     double zz = 1.0/zeval - 1.0;
-    b.axpy(zz*dot_product(a, X_[iiter]), U_[iiter]);
+    b.axpy(zz*dot_product(a, *X_[iiter]), *U_[iiter]);
   }
 
   if (RitzPrecond_ && eigvals_.size() != 0) {
@@ -283,14 +283,14 @@ void SpectralLMP<VECTOR>::multiply(const VECTOR & a, VECTOR & b) const {
     std::vector<double> sta;
     sta.clear();
     for (unsigned iiter = 0; iiter < S_.size(); ++iiter) {
-      sta.push_back(dot_product(S_[iiter], a));
+      sta.push_back(dot_product(*S_[iiter], a));
     }
 
 //  Yk (sta(k) - Zlast' a)
     for (unsigned kiter = 0; kiter < S_.size(); ++kiter) {
       for (unsigned iiter = 0; iiter < eigvals_.size(); ++iiter) {
         double wxap = sta[kiter] - dot_product(a, Zlast_[zcount[kiter]]);
-        b.axpy(wxap, Y_[kiter]);
+        b.axpy(wxap, *Y_[kiter]);
       }
     }
 
