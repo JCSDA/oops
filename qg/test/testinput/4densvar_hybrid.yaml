@@ -180,14 +180,14 @@ cost function:
           filename: Data/forecast.ens.10.2009-12-31T00:00:00Z.P1DT5H.nc
         - date: 2010-01-01T06:00:00Z
           filename: Data/forecast.ens.10.2009-12-31T00:00:00Z.P1DT6H.nc
-    ensemble weight: 0.707
+    ensemble weight: 0.5
     static:
       covariance model: QgError
       horizontal_length_scale: 2.2e6
       maximum_condition_number: 1.0e6
       standard_deviation: 1.8e7
       vertical_length_scale: 15000.0
-    static weight: 0.707
+    static weight: 0.5
   observations:
   - obs error:
       covariance model: diagonal

@@ -14,7 +14,7 @@ cost function:
       maximum_condition_number: 1.0e6
       standard_deviation: 1.8e7
       vertical_length_scale: 15000.0
-    static weight: 0.707
+    static weight: 0.5
     ensemble:
       date: 2010-01-01T12:00:00Z
       localization:
@@ -34,7 +34,7 @@ cost function:
         filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1DT12H.nc
       - date: 2010-01-01T12:00:00Z
         filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1DT12H.nc
-    ensemble weight: 0.707
+    ensemble weight: 0.5
   observations:
   - obs operator:
       obs type: Stream
