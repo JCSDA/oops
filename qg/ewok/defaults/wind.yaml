@@ -3,9 +3,10 @@ obs operator:
 obs space:
   source: truth
   obsdatain: 
-    obsfile: $(experiment_dir)/{{current_cycle}}/obs.wind.{{current_cycle}}.nc
+    obsfile: $(current_dir)/obs.wind.{{window_begin}}.nc
   obsdataout: 
-    obsfile: $(experiment_dir)/{{current_cycle}}/obs.wind.$(experiment).{{current_cycle}}.nc
+    obsfile: $(current_dir)/obs.wind.$(experiment).{{window_begin}}.nc
   obs type: Wind
 obs error:
   covariance model: diagonal
+r2d2_type: qg_wind

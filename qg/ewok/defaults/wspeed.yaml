@@ -3,9 +3,10 @@ obs operator:
 obs space:
   source: truth
   obsdatain: 
-    obsfile: $(experiment_dir)/{{current_cycle}}/obs.wspeed.{{current_cycle}}.nc
+    obsfile: $(current_dir)/obs.wspeed.{{window_begin}}.nc
   obsdataout:
-    obsfile: $(experiment_dir)/{{current_cycle}}/obs.wspeed.$(experiment).{{current_cycle}}.nc
+    obsfile: $(current_dir)/obs.wspeed.$(experiment).{{window_begin}}.nc
   obs type: WSpeed
 obs error:
   covariance model: diagonal
+r2d2_type: qg_wspeed

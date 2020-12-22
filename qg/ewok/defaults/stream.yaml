@@ -3,9 +3,10 @@ obs operator:
 obs space:
   source: truth
   obsdatain:  
-    obsfile: $(experiment_dir)/{{current_cycle}}/obs.stream.{{current_cycle}}.nc
+    obsfile: $(current_dir)/obs.stream.{{window_begin}}.nc
   obsdataout: 
-    obsfile: $(experiment_dir)/{{current_cycle}}/obs.stream.$(experiment).{{current_cycle}}.nc
+    obsfile: $(current_dir)/obs.stream.$(experiment).{{window_begin}}.nc
   obs type: Stream
 obs error:
   covariance model: diagonal
+r2d2_type: qg_stream
