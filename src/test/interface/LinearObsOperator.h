@@ -32,7 +32,7 @@
 namespace test {
 
 // -----------------------------------------------------------------------------
-
+/// \brief tests constructor and print method
 template <typename OBS> void testConstructor() {
   typedef ObsTestsFixture<OBS>  Test_;
   typedef oops::LinearObsOperator<OBS>  LinearObsOperator_;
@@ -43,12 +43,12 @@ template <typename OBS> void testConstructor() {
     std::string confname = "obs operator";
     if (conf.has("linear obs operator")) confname = "linear obs operator";
     eckit::LocalConfiguration linobsopconf(conf, confname);
-    std::unique_ptr<LinearObsOperator_> ov(
+    std::unique_ptr<LinearObsOperator_> linobsop(
       new LinearObsOperator_(Test_::obspace()[jj], linobsopconf));
-    EXPECT(ov.get());
-
-    ov.reset();
-    EXPECT(!ov.get());
+    EXPECT(linobsop.get());
+    oops::Log::test() << "Testing LinearObsOperator: " << *linobsop << std::endl;
+    linobsop.reset();
+    EXPECT(!linobsop.get());
   }
 }
 
@@ -197,7 +197,7 @@ template <typename OBS> void testAdjoint() {
     const double zz1 = dot_product(dx1, dx2) + dot_product(ybinc1, ybinc2);
     const double zz2 = dot_product(dy1, dy2);
 
-    oops::Log::info() << "Adjoint test result: (<x,HTy>-<Hx,y>)/<Hx,y> = "
+    oops::Log::test() << "Adjoint test result: (<x,HTy>-<Hx,y>)/<Hx,y> = "
                        << (zz1-zz2)/zz2 << std::endl;
 
     EXPECT(zz1 != zero);
@@ -295,7 +295,7 @@ template <typename OBS> void testTangentLinear() {
       y2 -= y3;
 
       double test_norm = y2.rms();
-      oops::Log::info() << "Iter:" << jter << " ||(h(x+alpha*dx)-h(x)-h'*(alpha*dx))||="
+      oops::Log::test() << "Iter:" << jter << " ||(h(x+alpha*dx)-h(x)-h'*(alpha*dx))||="
                         << test_norm << std::endl;
     }
     EXPECT(y2.rms() < tol);

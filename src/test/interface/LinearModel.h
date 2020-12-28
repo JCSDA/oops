@@ -149,11 +149,13 @@ template <typename MODEL> class LinearModelFixture : private boost::noncopyable 
 
 // =============================================================================
 
+/// \brief tests constructor, timeResolution() method and print method
 template <typename MODEL> void testLinearModelConstructor() {
   typedef LinearModelFixture<MODEL>   Test_;
 
   const util::Duration zero(0);
   EXPECT(Test_::tlm().timeResolution() > zero);
+  oops::Log::test() << "Testing LinearModel: " << Test_::tlm() << std::endl;
 }
 
 // -----------------------------------------------------------------------------

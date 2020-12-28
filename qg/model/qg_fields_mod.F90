@@ -123,7 +123,7 @@ endif
 call qg_fields_zero(self)
 
 end subroutine qg_fields_create
-
+! ------------------------------------------------------------------------------
 !> Create fields from geometry (x)
 subroutine qg_fields_create_default(self,geom,lbc)
 
@@ -164,16 +164,17 @@ call qg_fields_zero(self)
 end subroutine qg_fields_create_default
 ! ------------------------------------------------------------------------------
 !> Create fields from another one
-subroutine qg_fields_create_from_other(self,other)
+subroutine qg_fields_create_from_other(self,other,geom)
 
 implicit none
 
 ! Passed variables
-type(qg_fields),intent(inout) :: self !< Fields
-type(qg_fields),intent(in) :: other   !< Other fields
+type(qg_fields),intent(inout) :: self   !< Fields
+type(qg_fields),intent(in) :: other     !< Other fields
+type(qg_geom),target,intent(in) :: geom !< Geometry
 
 ! Associate geometry
-self%geom => other%geom
+self%geom => geom
 
 ! Copy attributes
 self%lq = other%lq

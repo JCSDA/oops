@@ -65,7 +65,7 @@ template <typename MODEL> class StateFixture : private boost::noncopyable {
 };
 
 // -----------------------------------------------------------------------------
-
+/// \brief tests constructors and print method
 template <typename MODEL> void testStateConstructors() {
   typedef StateFixture<MODEL>   Test_;
   typedef oops::State<MODEL>    State_;
@@ -79,6 +79,7 @@ template <typename MODEL> void testStateConstructors() {
   std::unique_ptr<State_> xx1(new State_(Test_::resol(), conf));
 
   EXPECT(xx1.get());
+  oops::Log::test() << "Printing State from yaml: " << *xx1 << std::endl;
   const double norm1 = xx1->norm();
   EXPECT(oops::is_close(norm1, norm, tol));
   EXPECT(xx1->validTime() == vt);
@@ -100,6 +101,7 @@ template <typename MODEL> void testStateConstructors() {
 // Test State(const Geometry_ &, const Variables &, const util::DateTime &) constructor
   oops::Variables vars(xx1->variables());
   State_ xx3(Test_::resol(), vars, vt);
+  oops::Log::test() << "Printing empty State: " << xx3 << std::endl;
   EXPECT(xx3.norm() == 0);
   EXPECT(xx3.validTime() == vt);
   EXPECT(xx3.variables() == vars);

@@ -28,7 +28,7 @@
 namespace test {
 
 // -----------------------------------------------------------------------------
-
+/// \brief tests constructor and print method
 template <typename OBS> void testConstructor() {
   typedef ObsTestsFixture<OBS>  Test_;
   typedef oops::ObsVector<OBS>  ObsVector_;
@@ -36,7 +36,7 @@ template <typename OBS> void testConstructor() {
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     std::unique_ptr<ObsVector_> ov(new ObsVector_(Test_::obspace()[jj]));
     EXPECT(ov.get());
-
+    oops::Log::test() << "Printing zero ObsVector: " << *ov << std::endl;
     ov.reset();
     EXPECT(!ov.get());
   }
@@ -52,6 +52,7 @@ template <typename OBS> void testCopyConstructor() {
     std::unique_ptr<ObsVector_> ov(new ObsVector_(Test_::obspace()[jj]));
 
     ov->random();
+    oops::Log::test() << "Printing random ObsVector: " << *ov << std::endl;
 
     std::unique_ptr<ObsVector_> other(new ObsVector_(*ov));
     EXPECT(other.get());

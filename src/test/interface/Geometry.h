@@ -31,6 +31,7 @@
 namespace test {
 
 // -----------------------------------------------------------------------------
+/// \brief Tests constructor and print method
 template <typename MODEL> void testConstructor() {
   typedef oops::Geometry<MODEL>        Geometry_;
 
@@ -38,7 +39,7 @@ template <typename MODEL> void testConstructor() {
                                                 oops::mpi::world(), oops::mpi::myself()));
 
   EXPECT(geom.get());
-
+  oops::Log::test() << "Testing geometry: " << *geom << std::endl;
   geom.reset();
   EXPECT(!geom.get());
 }

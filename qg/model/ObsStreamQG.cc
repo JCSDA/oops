@@ -48,7 +48,7 @@ std::unique_ptr<LocationsQG> ObsStreamQG::locations() const {
 // -----------------------------------------------------------------------------
 
 void ObsStreamQG::print(std::ostream & os) const {
-  os << "ObsStreamQG::print not implemented";
+  os << "QG Stream observation operator TL/AD";
 }
 
 // -----------------------------------------------------------------------------

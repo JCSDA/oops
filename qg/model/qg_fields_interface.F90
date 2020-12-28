@@ -57,26 +57,29 @@ call qg_fields_create(self,geom,vars,lbc)
 end subroutine qg_fields_create_c
 ! ------------------------------------------------------------------------------
 !> Create fields from another one
-subroutine qg_fields_create_from_other_c(c_key_self,c_key_other) bind(c,name='qg_fields_create_from_other_f90')
+subroutine qg_fields_create_from_other_c(c_key_self,c_key_other,c_key_geom) bind(c,name='qg_fields_create_from_other_f90')
 
 implicit none
 
 ! Passed variables
 integer(c_int),intent(inout) :: c_key_self  !< Fields
 integer(c_int),intent(in)    :: c_key_other !< Other fields
+integer(c_int),intent(in) :: c_key_geom     !< Geometry
 
 ! Local variables
 type(qg_fields),pointer :: self
 type(qg_fields),pointer :: other
+type(qg_geom),pointer :: geom
 
 ! Interface
 call qg_fields_registry%get(c_key_other,other)
 call qg_fields_registry%init()
 call qg_fields_registry%add(c_key_self)
 call qg_fields_registry%get(c_key_self,self)
+call qg_geom_registry%get(c_key_geom,geom)
 
 ! Call Fortran
-call qg_fields_create_from_other(self,other)
+call qg_fields_create_from_other(self,other,geom)
 
 end subroutine qg_fields_create_from_other_c
 ! ------------------------------------------------------------------------------

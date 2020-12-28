@@ -32,7 +32,7 @@
 namespace test {
 
 // -----------------------------------------------------------------------------
-
+/// \brief tests constructor and print method
 template <typename OBS> void testConstructor() {
   typedef ObsTestsFixture<OBS> Test_;
   typedef oops::ObsOperator<OBS>       ObsOperator_;
@@ -41,7 +41,7 @@ template <typename OBS> void testConstructor() {
     eckit::LocalConfiguration obsopconf(Test_::config(jj), "obs operator");
     std::unique_ptr<ObsOperator_> hop(new ObsOperator_(Test_::obspace()[jj], obsopconf));
     EXPECT(hop.get());
-
+    oops::Log::test() << "Testing ObsOperator: " << *hop << std::endl;
     hop.reset();
     EXPECT(!hop.get());
   }
@@ -98,7 +98,7 @@ template <typename OBS> void testSimulateObs() {
       ObsVector_ obsref(Test_::obspace()[jj], conf.getString("vector ref"));
       obsref -= hofx;
       const double zz = obsref.rms();
-      oops::Log::info() << "Vector difference between reference and computed: " << obsref;
+      oops::Log::test() << "Vector difference between reference and computed: " << obsref;
       EXPECT(zz < 100*tol);  //  change tol from percent to actual value.
                              //  tol used in is_close is relative
     } else if (conf.has("norm ref")) {
@@ -108,7 +108,7 @@ template <typename OBS> void testSimulateObs() {
       obsref -= hofx;
       obsref /= hofx;
       const double zz = obsref.rms();
-      oops::Log::info() << "Normalised vector difference between reference and computed: "
+      oops::Log::test() << "Normalised vector difference between reference and computed: "
                         << obsref;
       EXPECT(zz < 100*tol);  //  change tol from percent to actual value.
                              //  tol used in is_close is relative

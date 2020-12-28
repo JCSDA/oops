@@ -47,7 +47,7 @@ template <typename OBS> void testConstructor() {
     std::unique_ptr<Covar_> R(
       oops::ObsErrorFactory<OBS>::create(rconf, Test_::obspace()[jj]));
     EXPECT(R.get());
-
+    oops::Log::test() << "Testing ObsError: " << *R << std::endl;
     R.reset();
     EXPECT(!R.get());
   }

@@ -29,7 +29,7 @@
 namespace test {
 
 // -----------------------------------------------------------------------------
-
+/// \brief test constructor and print method
 template <typename OBS> void testConstructor() {
   typedef ObsTestsFixture<OBS>  Test_;
   typedef oops::ObsAuxControl<OBS>    ObsAux_;
@@ -37,7 +37,7 @@ template <typename OBS> void testConstructor() {
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     std::unique_ptr<ObsAux_> bias(new ObsAux_(Test_::obspace()[jj], Test_::config(jj)));
     EXPECT(bias.get());
-
+    oops::Log::test() << "Testing ObsAuxControl: " << *bias << std::endl;
     bias.reset();
     EXPECT(!bias.get());
   }

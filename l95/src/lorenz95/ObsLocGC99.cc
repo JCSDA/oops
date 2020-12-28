@@ -46,7 +46,7 @@ void ObsLocGC99::multiply(ObsVec1D & dy) const {
 // -----------------------------------------------------------------------------
 
 void ObsLocGC99::print(std::ostream & os) const {
-  os << "ObsLocGC99::print not implemented";
+  os << "Gaspari-Cohn localization with lengthscale=" << rscale_;
 }
 
 // -----------------------------------------------------------------------------

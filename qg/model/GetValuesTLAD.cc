@@ -47,7 +47,7 @@ void GetValuesTLAD::fillGeoVaLsAD(IncrementQG & inc, const util::DateTime & t1,
 }
 // -----------------------------------------------------------------------------
 void GetValuesTLAD::print(std::ostream & os) const {
-  os << "GetValuesTLAD " << std::endl;
+  os << "QG GetValues TL/AD";
 }
 // -----------------------------------------------------------------------------
 

@@ -73,7 +73,7 @@ void TlmIdQG::finalizeAD(IncrementQG & dx) const {
 }
 // -----------------------------------------------------------------------------
 void TlmIdQG::print(std::ostream & os) const {
-  os << "QG IdTLM" << std::endl;
+  os << "QG Identity TLM";
 }
 // -----------------------------------------------------------------------------
 }  // namespace qg

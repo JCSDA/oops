@@ -51,7 +51,7 @@ std::unique_ptr<LocsL95> ObservationL95::locations() const {
 // -----------------------------------------------------------------------------
 
 void ObservationL95::print(std::ostream & os) const {
-  os << "ObservationL95: Lorenz 95 Obs Operator";
+  os << "Lorenz 95: Identity obs operator";
 }
 
 // -----------------------------------------------------------------------------

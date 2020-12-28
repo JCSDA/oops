@@ -59,7 +59,7 @@ template <typename MODEL> void testBasic() {
   EXPECT(iter1 != iter2);
 
   // At least test that nothing fails on print
-  oops::Log::info() << "Geometry::begin " << iter1 << std::endl;
+  oops::Log::test() << "Geometry::begin " << iter1 << std::endl;
 }
 
 
@@ -85,12 +85,12 @@ template <typename MODEL> void testGetSetLocal() {
   Increment_ dx1(Test_::resol(), Test_::ctlvars(), Test_::time());
   dx1.random();
   EXPECT(dx1.norm() != 0.0);
-  oops::Log::info() << "Increment dx1 (random): " << dx1 << std::endl;
+  oops::Log::test() << "Increment dx1 (random): " << dx1 << std::endl;
   // zero out increment dx2
   Increment_ dx2(Test_::resol(), Test_::ctlvars(), Test_::time());
   dx2.zero();
   EXPECT(dx2.norm() == 0.0);
-  oops::Log::info() << "Increment dx2 (zero): " << dx2 << std::endl;
+  oops::Log::test() << "Increment dx2 (zero): " << dx2 << std::endl;
 
   for (GeometryIterator_ i = geom.begin(); i != geom.end(); ++i) {
     // get value for i-th gridpoint from dx1
@@ -99,7 +99,7 @@ template <typename MODEL> void testGetSetLocal() {
     // set this value for i-th gridpoint in dx2
     dx2.setLocal(gp, i);
   }
-  oops::Log::info() << "Increment dx2 after dx2=dx1 (at every point): " << dx2 << std::endl;
+  oops::Log::test() << "Increment dx2 after dx2=dx1 (at every point): " << dx2 << std::endl;
   EXPECT(dx2.norm() != 0.0);
   // compare two increments
   dx2 -= dx1;

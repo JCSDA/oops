@@ -105,14 +105,14 @@ template <typename MODEL, typename OBS> class GetValuesFixture : private boost::
 };
 
 // =================================================================================================
-
+/// \brief tests constructor and print method
 template <typename MODEL, typename OBS> void testGetValuesConstructor() {
   typedef GetValuesFixture<MODEL, OBS>  Test_;
   typedef oops::GetValues<MODEL, OBS>   GetValues_;
 
   std::unique_ptr<const GetValues_> GetValues(new GetValues_(Test_::resol(), Test_::locs()));
   EXPECT(GetValues.get());
-
+  oops::Log::test() << "Testing GetValues: " << *GetValues << std::endl;
   GetValues.reset();
   EXPECT(!GetValues.get());
 }

@@ -32,7 +32,7 @@
 namespace test {
 
 // -----------------------------------------------------------------------------
-
+/// \brief Tests test-constructor and print method
 template <typename OBS> void testConstructor() {
   typedef ObsTestsFixture<OBS>  Test_;
   typedef oops::GeoVaLs<OBS>    GeoVaLs_;
@@ -40,11 +40,11 @@ template <typename OBS> void testConstructor() {
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     eckit::LocalConfiguration gconf(Test_::config(jj), "geovals");
     oops::Variables geovars(gconf, "state variables");
-    std::unique_ptr<GeoVaLs_> ov(new GeoVaLs_(gconf, Test_::obspace()[jj], geovars));
-    EXPECT(ov.get());
-
-    ov.reset();
-    EXPECT(!ov.get());
+    std::unique_ptr<GeoVaLs_> geovals(new GeoVaLs_(gconf, Test_::obspace()[jj], geovars));
+    EXPECT(geovals.get());
+    oops::Log::test() << "Testing GeoVaLs: " << *geovals << std::endl;
+    geovals.reset();
+    EXPECT(!geovals.get());
   }
 }
 

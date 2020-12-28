@@ -44,7 +44,7 @@ void BackgroundCheck::postFilter(const ObsVec1D & hofx, const ObsDiags1D &) cons
 
 // -----------------------------------------------------------------------------
 void BackgroundCheck::print(std::ostream & os) const {
-  os << "L95 Background check with absolute threshold " << options_.threshold << std::endl;
+  os << "L95 Background check with absolute threshold " << options_.threshold;
 }
 
 }  // namespace lorenz95

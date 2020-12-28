@@ -58,14 +58,14 @@ template <typename MODEL> class ModelAuxControlFixture : private boost::noncopya
 };
 
 // -----------------------------------------------------------------------------
-
+/// \brief testing constructor and print method
 template <typename MODEL> void testConstructor() {
   typedef ModelAuxControlFixture<MODEL>   Test_;
   typedef oops::ModelAuxControl<MODEL>    ModelAux_;
 
   std::unique_ptr<ModelAux_> bias(new ModelAux_(Test_::resol(), Test_::config()));
   EXPECT(bias.get());
-
+  oops::Log::test() << "Testing ModelAuxControl: " << *bias << std::endl;
   bias.reset();
   EXPECT(!bias.get());
 }

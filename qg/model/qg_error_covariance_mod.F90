@@ -248,7 +248,7 @@ type(qg_fields),intent(inout) :: fld_out            !< Output field
 type(qg_fields) :: fld_tmp
 
 ! Initialization
-call qg_fields_create_from_other(fld_tmp,fld_in)
+call qg_fields_create_from_other(fld_tmp,fld_in,fld_in%geom)
 call qg_fields_copy(fld_tmp,fld_in)
 
 ! Apply covariance matrix
@@ -271,7 +271,7 @@ type(qg_fields),intent(inout) :: fld_out            !< Output field
 type(qg_fields) :: fld_tmp
 
 ! Initialize temporary field
-call qg_fields_create_from_other(fld_tmp,fld_out)
+call qg_fields_create_from_other(fld_tmp,fld_out,fld_out%geom)
 call qg_fields_random(fld_tmp)
 
 ! Apply square-root of the covariance matrix
@@ -404,7 +404,7 @@ integer :: ix
 type(qg_fields) :: fld_tmp
 
 ! Initialization
-call qg_fields_create_from_other(fld_tmp,fld_in)
+call qg_fields_create_from_other(fld_tmp,fld_in,fld_in%geom)
 call qg_fields_copy(fld_tmp,fld_in)
 
 ! Multiply by symmetric square-root of vertical correlation matrix
@@ -447,7 +447,7 @@ integer :: ix
 type(qg_fields) :: fld_tmp
 
 ! Initialization
-call qg_fields_create_from_other(fld_tmp,fld_in)
+call qg_fields_create_from_other(fld_tmp,fld_in,fld_in%geom)
 call qg_fields_copy(fld_tmp,fld_in)
 
 ! Multiply by standard deviation

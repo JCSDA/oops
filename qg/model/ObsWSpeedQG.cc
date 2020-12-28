@@ -49,7 +49,7 @@ std::unique_ptr<LocationsQG> ObsWSpeedQG::locations() const {
 // -----------------------------------------------------------------------------
 
 void ObsWSpeedQG::print(std::ostream & os) const {
-  os << "ObsWSpeedQG::print not implemented";
+  os << "QG wind speed observation operator TL/AD";
 }
 
 // -----------------------------------------------------------------------------

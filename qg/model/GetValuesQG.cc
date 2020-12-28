@@ -34,7 +34,7 @@ void GetValuesQG::fillGeoVaLs(const StateQG & state, const util::DateTime & t1,
 }
 // -----------------------------------------------------------------------------
 void GetValuesQG::print(std::ostream & os) const {
-  os << "GetValues" << std::endl;
+  os << "QG GetValues";
 }
 // -----------------------------------------------------------------------------
 

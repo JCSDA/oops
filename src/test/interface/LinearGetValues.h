@@ -131,7 +131,7 @@ template <typename MODEL, typename OBS> class LinearGetValuesFixture : private b
 };
 
 // =================================================================================================
-
+/// \brief tests constructor and print method
 template <typename MODEL, typename OBS> void testLinearGetValuesConstructor() {
   typedef LinearGetValuesFixture<MODEL, OBS>  Test_;
   typedef oops::LinearGetValues<MODEL, OBS>   LinearGetValues_;
@@ -139,7 +139,7 @@ template <typename MODEL, typename OBS> void testLinearGetValuesConstructor() {
   std::unique_ptr<const LinearGetValues_> lineargetvalues(new LinearGetValues_(Test_::resol(),
                                                                                Test_::locs()));
   EXPECT(lineargetvalues.get());
-
+  oops::Log::test() << "Testing LinearGetValues: " << *lineargetvalues << std::endl;
   lineargetvalues.reset();
   EXPECT(!lineargetvalues.get());
 }

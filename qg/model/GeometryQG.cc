@@ -110,7 +110,7 @@ void GeometryQG::print(std::ostream & os) const {
   qg_geom_info_f90(keyGeom_, nx, ny, nz, deltax, deltay);
   os << "Geometry:" << std::endl;
   os << "nx = " << nx << ", ny = " << ny << ", nz = " << nz << std::endl;
-  os << "deltax = " << deltax << ", deltay = " << deltay << std::endl;
+  os << "deltax = " << deltax << ", deltay = " << deltay;
 }
 // -----------------------------------------------------------------------------
 }  // namespace qg

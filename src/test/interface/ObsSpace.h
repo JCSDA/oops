@@ -29,11 +29,12 @@
 namespace test {
 
 // -----------------------------------------------------------------------------
-
+/// \brief tests constructor, window accessor methods and print
 template <typename OBS> void testConstructor() {
   typedef ObsTestsFixture<OBS> Test_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    oops::Log::test() << "Testing ObsSpace: " << Test_::obspace()[jj] << std::endl;
     EXPECT(Test_::obspace()[jj].windowStart() == Test_::tbgn());
     EXPECT(Test_::obspace()[jj].windowEnd() ==   Test_::tend());
   }

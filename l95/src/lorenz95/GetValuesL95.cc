@@ -49,7 +49,7 @@ void GetValuesL95::fillGeoVaLs(const StateL95 & state, const util::DateTime & t1
 }
 // -----------------------------------------------------------------------------
 void GetValuesL95::print(std::ostream & os) const {
-  os << " GetValues for L95" << std::endl;
+  os << "Nearest neighbor interpolation GetValues";
 }
 // -----------------------------------------------------------------------------
 

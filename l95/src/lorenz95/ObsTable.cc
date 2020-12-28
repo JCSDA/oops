@@ -351,7 +351,7 @@ void ObsTable::otWrite(const std::string & filename) const {
 
 void ObsTable::print(std::ostream & os) const {
   os << "ObsTable: assimilation window = " << winbgn_ << " to " << winend_ << std::endl;
-  os << "ObsTable: file in = " << nameIn_ << ", file out = " << nameOut_ << std::endl;
+  os << "ObsTable: file in = " << nameIn_ << ", file out = " << nameOut_;
 }
 
 // -----------------------------------------------------------------------------

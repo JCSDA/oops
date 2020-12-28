@@ -197,7 +197,8 @@ void ObsTableView::printJo(const ObsVec1D & x1, const ObsVec1D & x2) {
 // -----------------------------------------------------------------------------
 
 void ObsTableView::print(std::ostream & os) const {
-  os << "Local observation indices: " << localobs_ << std::endl;
+  os << *obstable_ << std::endl;
+  os << "Local observation indices: " << localobs_;
 }
 
 // -----------------------------------------------------------------------------

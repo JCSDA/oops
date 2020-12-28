@@ -206,7 +206,7 @@ int ObsSpaceQG::nobs() const {
 // -----------------------------------------------------------------------------
 
 void ObsSpaceQG::print(std::ostream & os) const {
-  os << "ObsSpace for " << obsname_ << ", " << this->nobs() << " obs" << std::endl;
+  os << "ObsSpace for " << obsname_ << ", " << this->nobs() << " obs";
 }
 
 // -----------------------------------------------------------------------------

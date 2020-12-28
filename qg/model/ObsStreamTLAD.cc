@@ -55,7 +55,7 @@ void ObsStreamTLAD::simulateObsAD(GomQG & gom, const ObsVecQG & ovec,
 // -----------------------------------------------------------------------------
 
 void ObsStreamTLAD::print(std::ostream & os) const {
-  os << "ObsStreamTLAD::print not implemented" << std::endl;
+  os << "QG Stream observation operator TL/AD";
 }
 
 // -----------------------------------------------------------------------------

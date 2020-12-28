@@ -64,7 +64,7 @@ void ModelBiasCovariance::randomize(ModelBiasCorrection & dx) const {
 // -----------------------------------------------------------------------------
 void ModelBiasCovariance::print(std::ostream & os) const {
   if (active_) {
-    os << "ModelBiasCovariance: variance = " << variance_ << std::endl;
+    os << "ModelBiasCovariance: variance = " << variance_;
   } else {
     os << "ModelBiasCovariance not active" << std::endl;
   }

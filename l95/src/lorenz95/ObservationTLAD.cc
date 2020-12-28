@@ -56,7 +56,7 @@ void ObservationTLAD::simulateObsAD(GomL95 & gom, const ObsVec1D & ovec,
 // -----------------------------------------------------------------------------
 
 void ObservationTLAD::print(std::ostream & os) const {
-  os << "ObservationTLAD: Lorenz 95 Linear Obs Operator";
+  os << "Lorenz 95: Identity linear obs operator";
 }
 
 // -----------------------------------------------------------------------------

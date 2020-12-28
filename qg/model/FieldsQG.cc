@@ -43,7 +43,7 @@ FieldsQG::FieldsQG(const GeometryQG & geom, const oops::Variables & vars,
 FieldsQG::FieldsQG(const FieldsQG & other, const bool copy)
   : geom_(other.geom_), vars_(other.vars_), lbc_(other.lbc_), time_(other.time_)
 {
-  qg_fields_create_from_other_f90(keyFlds_, other.keyFlds_);
+  qg_fields_create_from_other_f90(keyFlds_, other.keyFlds_, geom_->toFortran());
   if (copy) {
     qg_fields_copy_f90(keyFlds_, other.keyFlds_);
   }
@@ -52,7 +52,7 @@ FieldsQG::FieldsQG(const FieldsQG & other, const bool copy)
 FieldsQG::FieldsQG(const FieldsQG & other)
   : geom_(other.geom_), vars_(other.vars_), lbc_(other.lbc_), time_(other.time_)
 {
-  qg_fields_create_from_other_f90(keyFlds_, other.keyFlds_);
+  qg_fields_create_from_other_f90(keyFlds_, other.keyFlds_, geom_->toFortran());
   qg_fields_copy_f90(keyFlds_, other.keyFlds_);
 }
 // -----------------------------------------------------------------------------

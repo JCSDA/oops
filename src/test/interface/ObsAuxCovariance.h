@@ -28,17 +28,17 @@
 namespace test {
 
 // -----------------------------------------------------------------------------
-
+/// \brief testing constructor and print method
 template <typename OBS> void testConstructor() {
   typedef ObsTestsFixture<OBS>  Test_;
   typedef oops::ObsAuxCovariance<OBS>    Covariance_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    std::unique_ptr<Covariance_> bias(new Covariance_(Test_::obspace()[jj], Test_::config(jj)));
-    EXPECT(bias.get());
-
-    bias.reset();
-    EXPECT(!bias.get());
+    std::unique_ptr<Covariance_> cov(new Covariance_(Test_::obspace()[jj], Test_::config(jj)));
+    EXPECT(cov.get());
+    oops::Log::test() << "Testing ObsAuxCovariance: " << *cov << std::endl;
+    cov.reset();
+    EXPECT(!cov.get());
   }
 }
 

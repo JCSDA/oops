@@ -75,7 +75,7 @@ void GetValuesTLAD::fillGeoVaLsAD(IncrementL95 & inc, const util::DateTime & t1,
 }
 // -----------------------------------------------------------------------------
 void GetValuesTLAD::print(std::ostream & os) const {
-  os << " GetValuesTLAD for L95 " << std::endl;
+  os << "Nearest neighbor interpolation GetValues TL/AD ";
 }
 // -----------------------------------------------------------------------------
 

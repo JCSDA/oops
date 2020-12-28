@@ -58,16 +58,16 @@ template <typename MODEL> class ModelAuxCovarianceFixture : private boost::nonco
 };
 
 // -----------------------------------------------------------------------------
-
+/// \brief tests constructor and print method
 template <typename MODEL> void testConstructor() {
   typedef ModelAuxCovarianceFixture<MODEL>   Test_;
   typedef oops::ModelAuxCovariance<MODEL>    Covariance_;
 
-  std::unique_ptr<Covariance_> bias(new Covariance_(Test_::config(), Test_::resol()));
-  EXPECT(bias.get());
-
-  bias.reset();
-  EXPECT(!bias.get());
+  std::unique_ptr<Covariance_> cov(new Covariance_(Test_::config(), Test_::resol()));
+  EXPECT(cov.get());
+  oops::Log::test() << "Testing ModelAuxCovariance: " << *cov << std::endl;
+  cov.reset();
+  EXPECT(!cov.get());
 }
 
 // -----------------------------------------------------------------------------

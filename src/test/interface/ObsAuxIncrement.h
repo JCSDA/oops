@@ -62,13 +62,14 @@ template <typename OBS> class ObsAuxIncrementFixture : private boost::noncopyabl
 };
 
 // =============================================================================
-
+/// \brief test constructor and print method
 template <typename OBS> void testObsAuxIncrementConstructor() {
   typedef ObsTestsFixture<OBS>  Test_;
   typedef oops::ObsAuxIncrement<OBS>    AuxIncr_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     AuxIncr_ dx(Test_::obspace()[jj], Test_::config(jj));
+    oops::Log::test() << "Printing zero ObsAuxIncrement: " << dx << std::endl;
     EXPECT(dx.norm() == 0.0);
   }
 }
@@ -83,7 +84,7 @@ template <typename OBS> void testObsAuxIncrementCopyConstructor() {
     if (Test_::config(jj).has("obs bias")) {
       AuxIncr_ dx1(Test_::obspace()[jj], Test_::config(jj));
       ObsAuxIncrementFixture<OBS>::covariance(jj).randomize(dx1);
-
+      oops::Log::test() << "Printing random ObsAuxIncrement: " << dx1 << std::endl;
       AuxIncr_ dx2(dx1);
       EXPECT(dx2.norm() > 0.0);
       EXPECT(dx2.norm() == dx1.norm());

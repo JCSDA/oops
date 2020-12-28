@@ -49,7 +49,7 @@ std::unique_ptr<LocationsQG> ObsWindQG::locations() const {
 // -----------------------------------------------------------------------------
 
 void ObsWindQG::print(std::ostream & os) const {
-  os << "ObsWindQG::print not implemented";
+  os << "QG wind components (u and v) observation operator";
 }
 
 // -----------------------------------------------------------------------------

@@ -89,7 +89,7 @@ extern "C" {
 //  Fields
 // -----------------------------------------------------------------------------
   void qg_fields_create_f90(F90flds &, const F90geom &, const oops::Variables &, const bool &);
-  void qg_fields_create_from_other_f90(F90flds &, const F90flds &);
+  void qg_fields_create_from_other_f90(F90flds &, const F90flds &, const F90geom &);
   void qg_fields_delete_f90(F90flds &);
   void qg_fields_zero_f90(const F90flds &);
   void qg_fields_ones_f90(const F90flds &);

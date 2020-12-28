@@ -86,12 +86,13 @@ template <typename MODEL> class IncrementFixture : private boost::noncopyable {
 };
 
 // =============================================================================
-
+/// \brief tests Increment constructor and print method
 template <typename MODEL> void testIncrementConstructor() {
   typedef IncrementFixture<MODEL>   Test_;
   typedef oops::Increment<MODEL>    Increment_;
 
   Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
+  oops::Log::test() << "Printing zero increment: " << dx << std::endl;
 
   EXPECT(dx.norm() == 0.0);
 }
@@ -104,6 +105,8 @@ template <typename MODEL> void testIncrementCopyConstructor() {
 
   Increment_ dx1(Test_::resol(), Test_::ctlvars(), Test_::time());
   dx1.random();
+  oops::Log::test() << "Printing random increment: " << dx1 << std::endl;
+
   EXPECT(dx1.norm() > 0.0);
 
   Increment_ dx2(dx1);

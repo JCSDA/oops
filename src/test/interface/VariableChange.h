@@ -80,6 +80,7 @@ template <typename MODEL> void testVariableChangeInverse() {
     std::unique_ptr<VariableChange_> \
       changevar(VariableChangeFactory_::create(Test_::confs()[jj], Test_::resol()));
 
+    oops::Log::test() << "Testing VariableChange: " << *changevar << std::endl;
     // User specified tolerance for pass/fail
     const double tol = Test_::confs()[jj].getDouble("tolerance inverse");
 
@@ -112,7 +113,7 @@ template <typename MODEL> void testVariableChangeInverse() {
     const double xxnorm_tst =   xx.norm();
 
     // Print the input and final state
-    oops::Log::info() << "<xin>, <K^{-1}[K(xin)]>, (<xin>-<K^{-1}[K(xin)]<xin>)/>=" << xxnorm_ref <<
+    oops::Log::test() << "<xin>, <K^{-1}[K(xin)]>, (<xin>-<K^{-1}[K(xin)]<xin>)/>=" << xxnorm_ref <<
                       " " << xxnorm_tst << " " << (xxnorm_ref - xxnorm_tst)/xxnorm_ref <<std::endl;
 
     // Is result similar to the reference
