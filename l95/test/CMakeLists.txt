@@ -749,16 +749,16 @@ oops_add_test( TESTNAME getkf
 oops_add_test( TESTNAME hofx_for_getkf_nomodel
                MODELNAME l95
                YAMLNAME testinput/hofx_for_getkf_nomodel.yaml
-               EXENAME l95_letkf.x 
+               EXENAME l95_letkf.x
                CTOL 1e-3
-               TEST_DEPENDS letkf )
+               TEST_DEPENDS test_l95_letkf )
 
 oops_add_test( TESTNAME getkf_offline_hofx
                MODELNAME l95
                YAMLNAME testinput/getkf_offline_hofx.yaml
                EXENAME l95_letkf.x
                CTOL 1e-3
-               TEST_DEPENDS hofx_for_getkf_nomodel )
+               TEST_DEPENDS test_l95_hofx_for_getkf_nomodel )
 
 
 #####################################################################
