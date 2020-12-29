@@ -35,6 +35,11 @@ list( APPEND qg_testinput
   testinput/eda_3dfgat.yaml
   testinput/eda_3dvar_2.yaml
   testinput/eda_3dvar.yaml
+  testinput/eda_3dvar_block_1.yaml
+  testinput/eda_3dvar_block_2.yaml
+  testinput/eda_3dvar_block_3.yaml
+  testinput/eda_3dvar_block_4.yaml
+  testinput/eda_3dvar_block.yaml
   testinput/eda_4dvar_1.yaml
   testinput/eda_4dvar_2.yaml
   testinput/eda_4dvar_3.yaml
@@ -103,6 +108,7 @@ list( APPEND qg_testoutput
   testoutput/dirac_loc_4d.test
   testoutput/dirac_no_loc.test
 #  testoutput/eda_4dvar.test
+  testoutput/eda_3dvar_block.test
   testoutput/ens_forecast.test
   testoutput/ens_hofx.test
   testoutput/ens_recenter.test
@@ -701,6 +707,13 @@ ecbuild_add_test( TARGET test_qg_eda_4dvar
                   DEPENDS qg_eda.x
                   TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
 
+oops_add_test( TESTNAME eda_3dvar_block
+               MODELNAME qg
+               MPI    4
+               YAMLNAME testinput/eda_3dvar_block.yaml
+               EXENAME qg_eda.x
+               COMPARE
+               TEST_DEPENDS test_qg_make_obs_3d test_qg_gen_ens_pert_B )
 
 #####################################################################
 # state-related tests

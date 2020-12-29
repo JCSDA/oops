@@ -56,7 +56,7 @@ void gather(const eckit::mpi::Comm & comm, const std::vector<double> & send,
 // ------------------------------------------------------------------------------------------------
 
 void allGather(const eckit::mpi::Comm & comm,
-               const Eigen::VectorXd & sendbuf, std::vector<Eigen::VectorXd> & recvbuf) {
+               const Eigen::VectorXd & sendbuf, Eigen::MatrixXd & recvbuf) {
   const int ntasks = comm.size();
   int buf_size = sendbuf.size();
 
@@ -77,7 +77,7 @@ void allGather(const eckit::mpi::Comm & comm,
                              vbuf_total.begin() + (ii + 1) * buf_size);
     Eigen::VectorXd my_vect = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(vloc.data(),
                                                                             vloc.size());
-    recvbuf[ii] = my_vect;
+    recvbuf.col(ii) = my_vect;
   }
 }
 

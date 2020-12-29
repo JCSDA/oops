@@ -162,18 +162,23 @@ CASE("mpi/mpi/gatherDouble") {
 CASE("mpi/mpi/allGatherEigen") {
   const eckit::mpi::Comm &comm = oops::mpi::world();
   const size_t rank = comm.rank();
-  Eigen::VectorXd localEigen = rank * Eigen::VectorXd::Ones(5);
-  std::vector<Eigen::VectorXd> globalEigen = {Eigen::VectorXd::Zero(5), Eigen::VectorXd::Zero(5),
-                                             Eigen::VectorXd::Zero(5), Eigen::VectorXd::Zero(5)};
-  std::vector<Eigen::VectorXd> expectedEigen = {0*Eigen::VectorXd::Ones(5),
-                                                1*Eigen::VectorXd::Ones(5),
-                                                2*Eigen::VectorXd::Ones(5),
-                                                3*Eigen::VectorXd::Ones(5)};
+
+  Eigen::VectorXd localEigen = rank * Eigen::VectorXd::Ones(4);
+
+  Eigen::MatrixXd globalEigen(4, 4);
+  globalEigen << Eigen::VectorXd::Zero(4),
+                 Eigen::VectorXd::Zero(4),
+                 Eigen::VectorXd::Zero(4),
+                 Eigen::VectorXd::Zero(4);
+
+  Eigen::MatrixXd expectedEigen(4, 4);
+  expectedEigen << 0*Eigen::VectorXd::Ones(4),
+                   1*Eigen::VectorXd::Ones(4),
+                   2*Eigen::VectorXd::Ones(4),
+                   3*Eigen::VectorXd::Ones(4);
+
   oops::mpi::allGather(comm, localEigen, globalEigen);
-  EXPECT_EQUAL(expectedEigen[0], globalEigen[0]);
-  EXPECT_EQUAL(expectedEigen[1], globalEigen[1]);
-  EXPECT_EQUAL(expectedEigen[2], globalEigen[2]);
-  EXPECT_EQUAL(expectedEigen[3], globalEigen[3]);
+  EXPECT_EQUAL(expectedEigen, globalEigen);
 }
 // -----------------------------------------------------------------------------------------------
 

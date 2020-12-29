@@ -2,6 +2,7 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
 list( APPEND oops_src_files
 
+oops/assimilation/BlockBLanczosMinimizer.h
 oops/assimilation/BMatrix.h
 oops/assimilation/CalcHofX.h
 oops/assimilation/ControlIncrement.h
@@ -56,7 +57,6 @@ oops/assimilation/LBMinimizer.h
 oops/assimilation/LETKFSolver.h
 oops/assimilation/LETKFSolverGSI.h
 oops/assimilation/LETKFSolverParameters.h
-oops/assimilation/linsysteigen.h
 oops/assimilation/LocalEnsembleSolver.h
 oops/assimilation/Minimizer.h
 oops/assimilation/MinimizerUtils.cc

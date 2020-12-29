@@ -1,0 +1,17 @@
+Test     : CostJb   : Nonlinear Jb = 0
+Test     : CostJo   : Nonlinear Jo(Lorenz 95) = 1003.27, nobs = 120, Jo/n = 8.36061, err = 0.4
+Test     : CostFunction: Nonlinear J = 1003.27
+Test     : BlockBLanczosMinimizer: reduction in residual norm = 0.000587397
+Test     : CostFunction::addIncrement: Analysis:
+Test     :  Valid time: 2010-01-02T00:00:00Z
+Test     :  Min=6.77364, Max=9.00861, Average=8.0056
+Test     : CostJb   : Nonlinear Jb = 97.3394
+Test     : CostJo   : Nonlinear Jo(Lorenz 95) = 15.3786, nobs = 120, Jo/n = 0.128155, err = 0.4
+Test     : CostFunction: Nonlinear J = 112.718
+Test     : BlockBLanczosMinimizer: reduction in residual norm = 0.00319633
+Test     : CostFunction::addIncrement: Analysis:
+Test     :  Valid time: 2010-01-02T00:00:00Z
+Test     :  Min=6.77193, Max=9.00912, Average=8.00572
+Test     : CostJb   : Nonlinear Jb = 97.3419
+Test     : CostJo   : Nonlinear Jo(Lorenz 95) = 15.3755, nobs = 120, Jo/n = 0.128129, err = 0.4
+Test     : CostFunction: Nonlinear J = 112.717

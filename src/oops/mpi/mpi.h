@@ -17,6 +17,8 @@
 #include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
 
+#include "oops/util/Timer.h"
+
 namespace oops {
 namespace mpi {
 
@@ -35,6 +37,7 @@ const eckit::mpi::Comm & myself();
 template <typename SERIALIZABLE>
 void send(const eckit::mpi::Comm & comm, const SERIALIZABLE & sendobj,
           const int dest, const int tag) {
+  util::Timer timer("oops::mpi", "send");
   std::vector<double> sendbuf;
   sendobj.serialize(sendbuf);
   comm.send(sendbuf.data(), sendbuf.size(), dest, tag);
@@ -45,6 +48,7 @@ void send(const eckit::mpi::Comm & comm, const SERIALIZABLE & sendobj,
 template <typename SERIALIZABLE>
 void receive(const eckit::mpi::Comm & comm, SERIALIZABLE & recvobj,
              const int source, const int tag) {
+  util::Timer timer("oops::mpi", "receive");
   size_t sz = recvobj.serialSize();
   std::vector<double> recvbuf(sz);
   eckit::mpi::Status status = comm.receive(recvbuf.data(), sz, source, tag);
@@ -84,7 +88,7 @@ void gather(const eckit::mpi::Comm & comm, const std::vector<SERIALIZABLE> & sen
 // allGather for eigen vectors
 // ------------------------------------------------------------------------------------------------
 void allGather(const eckit::mpi::Comm & comm,
-               const Eigen::VectorXd &, std::vector<Eigen::VectorXd> &);
+               const Eigen::VectorXd &, Eigen::MatrixXd &);
 
 /// \brief A wrapper around the MPI *all gather* operation for serializable types.
 ///

@@ -45,6 +45,9 @@ list( APPEND l95_test_input
   testinput/eda.3dvar.3.yaml
   testinput/eda.3dvar.4.yaml
   testinput/eda.3dvar.yaml
+  testinput/eda.3dvar.block.1.yaml
+  testinput/eda.3dvar.block.2.yaml
+  testinput/eda.3dvar.block.yaml
   testinput/eda.4dvar.3.yaml
   testinput/eda.4dvar.yaml
   testinput/enshofx.1.yaml
@@ -135,6 +138,7 @@ list( APPEND l95_testoutput
   testoutput/diffstates.test
   testoutput/addincrement.test
   testoutput/addincrement_scaled.test
+  testoutput/eda_3dvar_block.test
   testoutput/enshofx.test
   testoutput/forecast.test
   testoutput/forecast_pseudomodel.test
@@ -692,6 +696,13 @@ ecbuild_add_test( TARGET test_l95_eda_4dvar
                   DEPENDS l95_eda.x
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
+oops_add_test( TESTNAME eda_3dvar_block
+               MPI 4
+               MODELNAME l95
+               YAMLNAME testinput/eda.3dvar.block.yaml
+               EXENAME l95_eda.x
+               COMPARE
+               TEST_DEPENDS test_l95_genenspert test_l95_makeobs3d )
 
 #####################################################################
 # state-related tests
