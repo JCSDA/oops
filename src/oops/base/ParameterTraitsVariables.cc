@@ -39,7 +39,7 @@ std::vector<std::string> getVariableNamesWithoutChannelSuffix(const Variables &v
   const char channelSeparator = '_';
   std::vector<std::string> uniqueBaseNames;
   std::map<std::string, ChannelSuffixes> channelsPerVariable;
-  for (const std::string name : variables.variables()) {
+  for (const std::string& name : variables.variables()) {
     const std::string::size_type separatorPosition = name.find_last_of(channelSeparator);
     if (separatorPosition == std::string::npos)
       throwException();  // no channel suffix
