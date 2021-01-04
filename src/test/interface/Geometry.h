@@ -17,14 +17,12 @@
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
-#include <boost/noncopyable.hpp>
-
-
 #include "eckit/config/Configuration.h"
 #include "eckit/testing/Test.h"
 #include "oops/interface/Geometry.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
+#include "oops/util/Logger.h"
 #include "test/interface/GeometryFixture.h"
 #include "test/TestEnvironment.h"
 
@@ -37,27 +35,10 @@ template <typename MODEL> void testConstructor() {
 
   std::unique_ptr<Geometry_> geom(new Geometry_(GeometryFixture<MODEL>::getParameters(),
                                                 oops::mpi::world(), oops::mpi::myself()));
-
   EXPECT(geom.get());
   oops::Log::test() << "Testing geometry: " << *geom << std::endl;
   geom.reset();
   EXPECT(!geom.get());
-}
-
-// -----------------------------------------------------------------------------
-template <typename MODEL> void testCopyConstructor() {
-  typedef oops::Geometry<MODEL>        Geometry_;
-  std::unique_ptr<Geometry_> geom(new Geometry_(GeometryFixture<MODEL>::getParameters(),
-                                                oops::mpi::world(), oops::mpi::myself()));
-
-
-  std::unique_ptr<Geometry_> other(new Geometry_(*geom));
-  EXPECT(other.get());
-
-  other.reset();
-  EXPECT(!other.get());
-
-  EXPECT(geom.get());
 }
 
 // -----------------------------------------------------------------------------
@@ -73,8 +54,6 @@ template <typename MODEL> class Geometry : public oops::Test {
 
     ts.emplace_back(CASE("interface/Geometry/testConstructor")
       { testConstructor<MODEL>(); });
-    ts.emplace_back(CASE("interface/Geometry/testCopyConstructor")
-      { testCopyConstructor<MODEL>(); });
   }
 
   void clear() const override {}

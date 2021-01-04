@@ -119,6 +119,30 @@ template <typename MODEL> void testStateConstructors() {
 }
 
 // -----------------------------------------------------------------------------
+/*! \brief Tests State::geometry() and Geometry copy constructors
+ */
+
+template <typename MODEL> void testStateGeometry() {
+  typedef StateFixture<MODEL>   Test_;
+  typedef oops::Geometry<MODEL> Geometry_;
+  typedef oops::State<MODEL>    State_;
+
+  const double norm = Test_::test().getDouble("norm file");
+  const double tol = Test_::test().getDouble("tolerance");
+  const util::DateTime vt(Test_::test().getString("date"));
+
+  const eckit::LocalConfiguration conf(Test_::test(), "statefile");
+  State_ xx1(Test_::resol(), conf);
+
+  // get geometry from xx1 and initialize xx2 (xx2 & xx1 should be the same)
+  const Geometry_ & geometry = xx1.geometry();
+  State_ xx2(geometry, conf);
+
+  const double norm2 = xx2.norm();
+  EXPECT(oops::is_close(norm2, norm, tol));
+}
+
+// -----------------------------------------------------------------------------
 
 /*! \brief Interpolation test
  *
@@ -306,6 +330,7 @@ class State : public oops::Test {
  public:
   State() {}
   virtual ~State() {}
+
  private:
   std::string testid() const override {return "test::State<" + MODEL::name() + ">";}
 
@@ -314,6 +339,8 @@ class State : public oops::Test {
 
     ts.emplace_back(CASE("interface/State/testStateConstructors")
       { testStateConstructors<MODEL>(); });
+    ts.emplace_back(CASE("interface/State/testStateGeometry")
+      { testStateGeometry<MODEL>(); });
     ts.emplace_back(CASE("interface/State/testStateAnalyticInitialCondition")
       { testStateAnalyticInitialCondition<MODEL>(); });
     ts.emplace_back(CASE("interface/State/testStateZeroAndAccumul")
