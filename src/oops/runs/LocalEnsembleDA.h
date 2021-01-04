@@ -138,7 +138,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
 
     // save the analysis mean
     State4D_ ana_mean = ens_xx.mean();   // calculate analysis mean
-    Log::info() << "Analysis mean :" << ana_mean << std::endl;
+    Log::test() << "Analysis mean :" << ana_mean << std::endl;
     eckit::LocalConfiguration outConfig(fullConfig, "output");
     outConfig.set("member", 0);
     ana_mean.write(outConfig);

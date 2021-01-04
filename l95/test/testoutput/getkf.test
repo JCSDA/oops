@@ -40,6 +40,9 @@ Test     : Lorenz 95 nobs= 120 Min=-1.48379, Max=2.74405, Average=0.2457
 Test     : Background mean :
 Test     :  Valid time: 2010-01-02T00:00:00Z
 Test     :  Min=5.25199, Max=9.50208, Average=7.76569
+Test     : Analysis mean :
+Test     :  Valid time: 2010-01-02T00:00:00Z
+Test     :  Min=6.73405, Max=9.18815, Average=7.98704
 Test     : H(x) for member 1:
 Test     : Lorenz 95 nobs= 120 Min=6.77434, Max=9.33536, Average=8.03454
 Test     : H(x) for member 2:

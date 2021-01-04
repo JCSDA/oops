@@ -14,38 +14,38 @@ Test     : Initial state for member 5:
 Test     :  Valid time: 2010-01-02T00:00:00Z
 Test     :  Min=3.17563, Max=10.8183, Average=7.60243
 Test     : H(x) for member 1:
-Test     : Lorenz 95 nobs= 120 Min=3.53609, Max=11.1974, Average=7.90978
+Test     : Lorenz 95 : No observations
 Test     : H(x) for member 2:
-Test     : Lorenz 95 nobs= 120 Min=3.77507, Max=11.1844, Average=7.75047
+Test     : Lorenz 95 : No observations
 Test     : H(x) for member 3:
-Test     : Lorenz 95 nobs= 120 Min=5.36882, Max=10.844, Average=7.80576
+Test     : Lorenz 95 : No observations
 Test     : H(x) for member 4:
-Test     : Lorenz 95 nobs= 120 Min=4.14639, Max=11.6734, Average=7.76001
+Test     : Lorenz 95 : No observations
 Test     : H(x) for member 5:
-Test     : Lorenz 95 nobs= 120 Min=3.17563, Max=10.8183, Average=7.60243
+Test     : Lorenz 95 : No observations
 Test     : H(x) ensemble background mean: 
-Test     : Lorenz 95 nobs= 120 Min=5.25199, Max=9.50208, Average=7.76569
+Test     : Lorenz 95 : No observations
 Test     : background y - H(x): 
-Test     : Lorenz 95 nobs= 120 Min=-1.48379, Max=2.74405, Average=0.2457
+Test     : Lorenz 95 : No observations
 Test     : Background mean :
 Test     :  Valid time: 2010-01-02T00:00:00Z
 Test     :  Min=5.25199, Max=9.50208, Average=7.76569
 Test     : Analysis mean :
 Test     :  Valid time: 2010-01-02T00:00:00Z
-Test     :  Min=6.73044, Max=9.19002, Average=7.98343
+Test     :  Min=5.25199, Max=9.50208, Average=7.76569
 Test     : H(x) for member 1:
-Test     : Lorenz 95 nobs= 120 Min=6.31712, Max=10.1291, Average=8.09238
+Test     : Lorenz 95 : No observations
 Test     : H(x) for member 2:
-Test     : Lorenz 95 nobs= 120 Min=5.62763, Max=9.94295, Average=7.96969
+Test     : Lorenz 95 : No observations
 Test     : H(x) for member 3:
-Test     : Lorenz 95 nobs= 120 Min=5.98634, Max=10.5924, Average=8.01273
+Test     : Lorenz 95 : No observations
 Test     : H(x) for member 4:
-Test     : Lorenz 95 nobs= 120 Min=4.57542, Max=11.5295, Average=7.98536
+Test     : Lorenz 95 : No observations
 Test     : H(x) for member 5:
-Test     : Lorenz 95 nobs= 120 Min=4.96477, Max=9.69106, Average=7.857
+Test     : Lorenz 95 : No observations
 Test     : H(x) ensemble analysis mean: 
-Test     : Lorenz 95 nobs= 120 Min=6.73044, Max=9.19002, Average=7.98343
+Test     : Lorenz 95 : No observations
 Test     : analysis y - H(x): 
-Test     : Lorenz 95 nobs= 120 Min=-0.3032, Max=0.441464, Average=0.0279604
-Test     : ombg RMS: 0.864096
-Test     : oman RMS: 0.149894
+Test     : Lorenz 95 : No observations
+Test     : ombg RMS: 0
+Test     : oman RMS: 0

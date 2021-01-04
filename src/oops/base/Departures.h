@@ -193,7 +193,9 @@ double Departures<OBS>::dot_product_with(const Departures & other) const {
 // -----------------------------------------------------------------------------
 template<typename OBS>
 double Departures<OBS>::rms() const {
-  return sqrt(dot_product_with(*this) / this->nobs());
+  double zz = 0.0;
+  if (nobs() > 0) zz = sqrt(dot_product_with(*this) / this->nobs());
+  return zz;
 }
 // -----------------------------------------------------------------------------
 template<typename OBS>

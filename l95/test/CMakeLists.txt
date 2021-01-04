@@ -67,6 +67,7 @@ list( APPEND l95_test_input
   testinput/identitymodel.yaml
   testinput/letkfGSI.yaml
   testinput/letkf.yaml
+  testinput/letkf_noobs.yaml
   testinput/letkf_qc.yaml
   testinput/interfaces.yaml
   testinput/linearmodelfactory.yaml
@@ -150,6 +151,7 @@ list( APPEND l95_testoutput
   testoutput/hofx.nomodel.test
   testoutput/hofx_for_getkf_nomodel.test
   testoutput/letkf.test
+  testoutput/letkf_noobs.test
   testoutput/letkf_qc.test
   testoutput/letkf_gsi.test
   testoutput/localhofx.test
@@ -736,6 +738,12 @@ oops_add_test( TESTNAME letkf
                YAMLNAME testinput/letkf.yaml
                EXENAME l95_letkf.x
                TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+
+oops_add_test( TESTNAME letkf_noobs
+               MODELNAME l95
+               YAMLNAME testinput/letkf_noobs.yaml
+               EXENAME l95_letkf.x
+               TEST_DEPENDS test_l95_forecast test_l95_genenspert )
 
 oops_add_test( TESTNAME letkf_qc
                MODELNAME l95
