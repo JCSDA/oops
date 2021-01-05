@@ -69,6 +69,7 @@ ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config, const eckit::mpi::Co
     ABORT("Underspecified observation files.");
   }
 
+  ref = ref + bgn.toString() + end.toString();
   otiter it = theObsFileRegister_.find(ref);
   if ( it == theObsFileRegister_.end() ) {
     // Open new file
