@@ -81,7 +81,7 @@ Increment4D<MODEL>::Increment4D(const Geometry_ & resol,
                                 const std::vector<util::DateTime> & timeslots)
   : incr4d_()
 {
-  for (int jtime = 0; jtime < timeslots.size(); ++jtime) {
+  for (size_t jtime = 0; jtime < timeslots.size(); ++jtime) {
     incr4d_.emplace_back(resol, vars, timeslots[jtime]);
   }
   Log::trace() << "Increment4D:Increment4D created." << std::endl;
