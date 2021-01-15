@@ -173,7 +173,7 @@ double FullGMRES(VECTOR & xx, const VECTOR & bb, const AMATRIX & A,
 
     normReduction = std::abs(ss[jiter+1])/znrm2;
     Log::info() << "FullGMRES end of iteration " << jiter+1 << std::endl;
-    printNormReduction(jiter+1, abs(ss[jiter+1]), normReduction);
+    printNormReduction(jiter+1, std::abs(ss[jiter+1]), normReduction);
 
     if (normReduction <= tolerance) {
       Log::info() << "FullGMRES: Achieved required reduction in presidual norm." << std::endl;
