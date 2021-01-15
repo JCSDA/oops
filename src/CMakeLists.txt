@@ -272,6 +272,8 @@ oops/util/liboops_f.h
 oops/util/liboops_mod.F90
 oops/util/LibOOPS.cc
 oops/util/LibOOPS.h
+oops/util/LocalEnvironment.cc
+oops/util/LocalEnvironment.h
 oops/util/Logger.h
 oops/util/missing_values_f.cc
 oops/util/missing_values_f.h
@@ -399,6 +401,7 @@ test/util/CompositePath.h
 test/util/MissingValues.h
 test/util/PropertiesOfNVectors.h
 test/util/stringFunctions.h
+test/util/LocalEnvironment.h
 )
 
 list (APPEND oops_fheader_files
@@ -627,6 +630,11 @@ ecbuild_add_test( TARGET  test_util_associativecontainers
 
 ecbuild_add_test( TARGET  test_util_propertiesofnvectors
                   SOURCES test/util/PropertiesOfNVectors.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_localenvironment
+                  SOURCES test/util/LocalEnvironment.cc
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 
