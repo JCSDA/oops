@@ -11,7 +11,9 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
+#include "eckit/config/Configuration.h"
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/CalcHofX.h"
 #include "oops/base/Departures.h"
@@ -25,6 +27,7 @@
 #include "oops/base/StateEnsemble4D.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
+#include "oops/util/ConfigFunctions.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Timer.h"
 
@@ -81,7 +84,8 @@ template <typename MODEL, typename OBS>
 LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
                                         const Geometry_ & geometry,
                                         const eckit::Configuration & config, size_t nens)
-  : obsconf_(config, "observations"), obspaces_(obspaces), obsaux_(obspaces_, obsconf_),
+  : obsconf_(config, "observations"),
+    obspaces_(obspaces), obsaux_(obspaces_, obsconf_),
     hofx_(obspaces, obsconf_), omb_(obspaces_), Yb_(obspaces_, nens)
 {
 }
@@ -113,7 +117,10 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(const StateEnsemb
     for (size_t jj = 0; jj < nens; ++jj) {
       hofx_.resetQc();
       // fill in geovals
-      GetValuesPost_ getvals(obspaces_, hofx_.locations(), hofx_.requiredVars());
+      std::vector<eckit::LocalConfiguration> getValuesConfig =
+        util::oopsconfigfunctions::vectoriseAndFilter(obsconf_, "get values");
+
+      GetValuesPost_ getvals(obspaces_, hofx_.locations(), hofx_.requiredVars(), getValuesConfig);
       getvals.fill(ens_xx[jj]);
       // compute H(x) on filled in geovals and run the filters
       obsens[jj] = hofx_.compute(getvals.geovals());

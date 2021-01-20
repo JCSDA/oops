@@ -31,6 +31,7 @@
 #include "oops/generic/VerticalLocEV.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
+#include "oops/util/ConfigFunctions.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Timer.h"
 
@@ -84,7 +85,6 @@ class GETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
 
  private:
   LETKFSolverParameters options_;
-
   // parameters
   size_t nens_;
   const Geometry_ & geometry_;
@@ -173,8 +173,12 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
       for (size_t ieig = 0; ieig < neig_; ++ieig) {
         State4D_ tmpState = xx_mean;
         tmpState += Ztmp[ieig];
+
+        std::vector<eckit::LocalConfiguration> getValuesConfig =
+          util::oopsconfigfunctions::vectoriseAndFilter(this->obsconf_, "get values");
+
         GetValuesPost_ getvals(this->obspaces_, this->hofx_.locations(),
-                               this->hofx_.requiredVars());
+                               this->hofx_.requiredVars(), getValuesConfig);
         getvals.fill(tmpState);
         // compute H(x) on filled in geovals and run the filters
         Observations_ tmpObs = this->hofx_.compute(getvals.geovals());

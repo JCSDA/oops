@@ -36,6 +36,7 @@
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
 #include "oops/mpi/mpi.h"
+#include "oops/util/ConfigFunctions.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
@@ -176,7 +177,12 @@ CostJo<MODEL, OBS>::initialize(const CtrlVar_ & xx, const eckit::Configuration &
 
   currentConf_.reset(new eckit::LocalConfiguration(conf));
   calchofx_.initialize(xx.obsVar(), currentConf_->getInt("iteration"));
-  getvals_.reset(new GetValuesPost_(obspace_, calchofx_.locations(), calchofx_.requiredVars()));
+
+  std::vector<eckit::LocalConfiguration> getValuesConfig =
+    util::oopsconfigfunctions::vectoriseAndFilter(obsconf_, "get values");
+
+  getvals_.reset(new GetValuesPost_(obspace_, calchofx_.locations(),
+                                    calchofx_.requiredVars(), getValuesConfig));
   Log::trace() << "CostJo::initialize done" << std::endl;
   return getvals_;
 }

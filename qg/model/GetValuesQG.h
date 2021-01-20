@@ -12,12 +12,18 @@
 #include <ostream>
 #include <string>
 
+#include "eckit/config/LocalConfiguration.h"
+
 #include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
 #include "oops/qg/LocationsQG.h"
 #include "oops/qg/QgFortran.h"
+
+namespace eckit {
+  class Configuration;
+}
 
 namespace qg {
   class GomQG;
@@ -32,7 +38,8 @@ class GetValuesQG : public util::Printable,
   static const std::string classname() {return "qg::GetValuesQG";}
 
 /// \brief saves all locations \p locs to use during filling GeoVaLs
-  GetValuesQG(const GeometryQG &, const LocationsQG & locs);
+  GetValuesQG(const GeometryQG &, const LocationsQG & locs,
+              const eckit::Configuration &);
   ~GetValuesQG() {}
 
 /// \brief fills in \p geovals for all observations in the timeframe (\p t1, \p t2],
@@ -43,6 +50,7 @@ class GetValuesQG : public util::Printable,
  private:
   void print(std::ostream &) const;
   LocationsQG locs_;
+  eckit::LocalConfiguration conf_;
 };
 // -----------------------------------------------------------------------------
 

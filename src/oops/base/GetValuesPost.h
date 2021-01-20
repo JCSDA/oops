@@ -29,6 +29,10 @@
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 
+namespace eckit {
+  class Configuration;
+}
+
 namespace oops {
 
 /// \brief Fills GeoVaLs with requested variables at requested locations:
@@ -50,7 +54,9 @@ class GetValuesPost : public PostBase<State<MODEL>> {
 
  public:
 /// \brief Saves Locations and Variables to be processed
-  GetValuesPost(const ObsSpaces_ &, const LocationsVec_ &, const VariablesVec_ &);
+  GetValuesPost(const ObsSpaces_ &,
+                const LocationsVec_ &, const VariablesVec_ &,
+                const std::vector<eckit::LocalConfiguration> &);
 
 /// \brief Returns geovals filled in during the model run
   const GeoVaLsVec_ & geovals() const {return geovals_;}
@@ -69,23 +75,25 @@ class GetValuesPost : public PostBase<State<MODEL>> {
   util::DateTime winend_;   /// End of assimilation window
   util::Duration hslot_;    /// Half time slot
 
+
   const LocationsVec_ & locations_;   /// locations of observations
   const VariablesVec_ & geovars_;     /// Variables needed from model
   GetValuesVec_ getvals_;             /// GetValues used to fill in GeoVaLs
   GeoVaLsVec_ geovals_;               /// GeoVaLs that are filled in
+  const std::vector<eckit::LocalConfiguration> getvalsconfs_;   /// configuration object
 };
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-GetValuesPost<MODEL, OBS>::GetValuesPost(const ObsSpaces_ & obsdb, const LocationsVec_ & locations,
-                                         const VariablesVec_ & vars)
+GetValuesPost<MODEL, OBS>::GetValuesPost(const ObsSpaces_ & obsdb,
+                                         const LocationsVec_ & locations,
+                                         const VariablesVec_ & vars,
+                                         const std::vector<eckit::LocalConfiguration> & confs)
   : PostBase<State_>(),
     winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()), hslot_(),
-    locations_(locations), geovars_(vars)
-{
-  Log::trace() << "GetValuesPost::GetValuesPost done" << std::endl;
-}
+    locations_(locations), geovars_(vars),
+    getvalsconfs_(confs) {}
 
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
@@ -111,13 +119,15 @@ void GetValuesPost<MODEL, OBS>::fill(const State4D_ & xx) {
 
 template <typename MODEL, typename OBS>
 void GetValuesPost<MODEL, OBS>::doInitialize(const State_ & xx, const util::DateTime & end,
-                                         const util::Duration & tstep) {
+                                             const util::Duration & tstep) {
   Log::trace() << "GetValuesPost::doInitialize start" << std::endl;
   hslot_ = tstep/2;
+
   for (size_t jj = 0; jj < locations_.size(); ++jj) {
-    getvals_.emplace_back(new GetValues_(xx.geometry(), *locations_[jj]));
+    getvals_.emplace_back(new GetValues_(xx.geometry(), *locations_[jj], getvalsconfs_[jj]));
     geovals_.emplace_back(new GeoVaLs_(*locations_[jj], geovars_[jj]));
   }
+
   Log::trace() << "GetValuesPost::doInitialize done" << std::endl;
 }
 

@@ -20,6 +20,8 @@ observations:
     obs type: Stream
   obs operator:
     obs type: Stream
+  get values:
+    interpolation type: default_1
 - obs space:
     obsdatain:
       obsfile: Data/truth.obs4d_12h.nc
@@ -28,6 +30,8 @@ observations:
     obs type: Wind
   obs operator:
     obs type: Wind
+  get values:
+    interpolation type: default_2
 - obs space:
     obsdatain:
       obsfile: Data/truth.obs4d_12h.nc
@@ -36,5 +40,7 @@ observations:
     obs type: WSpeed
   obs operator:
     obs type: WSpeed
+  get values:
+    interpolation type: default_3
 prints:
   frequency: PT3H

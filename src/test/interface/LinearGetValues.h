@@ -96,7 +96,10 @@ template <typename MODEL, typename OBS> class LinearGetValuesFixture : private b
     geovals_.reset(new GeoVaLs_(*locs_, *geovalvars_));
 
     // Nonlinear GetValues
-    getvalues_.reset(new GetValues_(*resol_, *locs_));
+    LocalConfig_ getvaluesConfig;
+    if (TestEnvironment::config().has("get values"))
+      getvaluesConfig = eckit::LocalConfiguration(TestEnvironment::config(), "get values");
+    getvalues_.reset(new GetValues_( *resol_, *locs_, getvaluesConfig));
 
     // State
     const LocalConfig_ stateConfig(TestEnvironment::config(), "background");

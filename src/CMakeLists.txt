@@ -241,6 +241,8 @@ oops/util/AssociativeContainers.h
 oops/util/CompareNVectors.h
 oops/util/CompositePath.cc
 oops/util/CompositePath.h
+oops/util/ConfigFunctions.cc
+oops/util/ConfigFunctions.h
 oops/util/dateFunctions.cc
 oops/util/dateFunctions.h
 oops/util/datetime_f.cc

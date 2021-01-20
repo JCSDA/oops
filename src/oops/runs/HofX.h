@@ -14,6 +14,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
@@ -33,6 +34,7 @@
 #include "oops/interface/State.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
+#include "oops/util/ConfigFunctions.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -109,8 +111,12 @@ template <typename MODEL, typename OBS> class HofX : public Application {
     hofx.initialize(obsaux);
 
 //  run the model and compute H(x)
+    std::vector<eckit::LocalConfiguration> getValuesConfig =
+      util::oopsconfigfunctions::vectoriseAndFilter(obsConfig, "get values");
+
     std::shared_ptr<GetValuesPost_>
-       getvals(new GetValuesPost_(obspaces, hofx.locations(), hofx.requiredVars()));
+      getvals(new GetValuesPost_(obspaces, hofx.locations(),
+                                 hofx.requiredVars(), getValuesConfig));
     post.enrollProcessor(getvals);
     model.forecast(xx, moderr, flength, post);
 

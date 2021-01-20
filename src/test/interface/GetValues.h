@@ -89,8 +89,10 @@ template <typename MODEL, typename OBS> class GetValuesFixture : private boost::
     geovals_.reset(new GeoVaLs_(*locs_, *geovalvars_));
 
     // GetValues
-    getvalues_.reset(new GetValues_(*resol_, *locs_));
-  }
+    LocalConfig_ getvaluesConfig;
+    if (TestEnvironment::config().has("get values"))
+      getvaluesConfig = eckit::LocalConfiguration(TestEnvironment::config(), "get values");
+    getvalues_.reset(new GetValues_( *resol_, *locs_, getvaluesConfig)); }
 
   ~GetValuesFixture<MODEL, OBS>() {}
 
@@ -110,7 +112,9 @@ template <typename MODEL, typename OBS> void testGetValuesConstructor() {
   typedef GetValuesFixture<MODEL, OBS>  Test_;
   typedef oops::GetValues<MODEL, OBS>   GetValues_;
 
-  std::unique_ptr<const GetValues_> GetValues(new GetValues_(Test_::resol(), Test_::locs()));
+  std::unique_ptr<const GetValues_>
+    GetValues(new GetValues_(Test_::resol(), Test_::locs(), TestEnvironment::config()));
+
   EXPECT(GetValues.get());
   oops::Log::test() << "Testing GetValues: " << *GetValues << std::endl;
   GetValues.reset();

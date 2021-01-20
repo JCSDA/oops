@@ -26,6 +26,7 @@
 #include "oops/interface/Locations.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
+#include "oops/util/ConfigFunctions.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -95,9 +96,13 @@ template <typename MODEL, typename OBS> class HofXNoModel : public Application {
     GeoVaLsVec_ geovals;
     const LocationsVec_ & locations = hofx.locations();
     const VariablesVec_ & vars = hofx.requiredVars();
-    // loop over all observation types
+
+    std::vector<eckit::LocalConfiguration> getValuesConfig =
+      util::oopsconfigfunctions::vectoriseAndFilter(obsConfig, "get values");
+
+     // loop over all observation types
     for (size_t jj = 0; jj < obspaces.size(); ++jj) {
-      GetValues_ getvals(geometry, *locations[jj]);
+      GetValues_ getvals(geometry, *locations[jj], getValuesConfig[jj]);
       // add GeoVaLs for this obs type
       geovals.emplace_back(new GeoVaLs_(*locations[jj], vars[jj]));
       // fill in by looping through 4D state
