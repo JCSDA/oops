@@ -52,7 +52,7 @@ template <typename MODEL>
 class Model : public util::Printable,
               private boost::noncopyable,
               private util::ObjectCounter<Model<MODEL> >  {
-  typedef ModelBase<MODEL>           ModelBase_;
+  typedef GenericModelBase<MODEL>    ModelBase_;
   typedef Geometry<MODEL>            Geometry_;
   typedef ModelAuxControl<MODEL>     ModelAux_;
   typedef State<MODEL>               State_;
@@ -150,7 +150,7 @@ template<typename MODEL>
 void Model<MODEL>::initialize(State_ & xx) const {
   Log::trace() << "Model<MODEL>::initialize starting" << std::endl;
   util::Timer timer(classname(), "initialize");
-  model_->initialize(xx.state());
+  model_->initialize(xx);
   Log::trace() << "Model<MODEL>::initialize done" << std::endl;
 }
 
@@ -160,7 +160,7 @@ template<typename MODEL>
 void Model<MODEL>::step(State_ & xx, const ModelAux_ & maux) const {
   Log::trace() << "Model<MODEL>::step starting" << std::endl;
   util::Timer timer(classname(), "step");
-  model_->step(xx.state(), maux.modelauxcontrol());
+  model_->step(xx, maux);
   Log::trace() << "Model<MODEL>::step done" << std::endl;
 }
 
@@ -170,7 +170,7 @@ template<typename MODEL>
 void Model<MODEL>::finalize(State_ & xx) const {
   Log::trace() << "Model<MODEL>::finalize starting" << std::endl;
   util::Timer timer(classname(), "finalize");
-  model_->finalize(xx.state());
+  model_->finalize(xx);
   Log::trace() << "Model<MODEL>::finalize done" << std::endl;
 }
 

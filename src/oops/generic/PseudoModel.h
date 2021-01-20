@@ -26,10 +26,10 @@ namespace oops {
 
 ///  Generic implementation of the pseudo model (steps through time by reading states)
 template <typename MODEL>
-class PseudoModel : public ModelBase<MODEL> {
-  typedef typename MODEL::Geometry          Geometry_;
-  typedef typename MODEL::ModelAuxControl   ModelAux_;
-  typedef typename MODEL::State             State_;
+class PseudoModel : public GenericModelBase<MODEL> {
+  typedef Geometry<MODEL>          Geometry_;
+  typedef ModelAuxControl<MODEL>   ModelAux_;
+  typedef State<MODEL>             State_;
 
  public:
   static const std::string classname() {return "oops::PseudoModel";}
