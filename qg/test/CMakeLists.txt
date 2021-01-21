@@ -24,7 +24,8 @@ list( APPEND qg_testinput
   testinput/dfi.yaml
   testinput/diffstates.yaml
   testinput/dirac_cov.yaml
-  testinput/dirac_hyb.yaml
+  testinput/dirac_hyb_field.yaml
+  testinput/dirac_hyb_value.yaml
   testinput/dirac_loc_3d.yaml
   testinput/dirac_loc_4d.yaml
   testinput/dirac_no_loc.yaml
@@ -74,7 +75,8 @@ list( APPEND qg_testinput
   testinput/static_b_init.yaml
   testinput/truth.yaml
   testinput/verticallocev.yaml
-  testinput/uniform_field.yaml
+  testinput/uniform_field_hybrid.yaml
+  testinput/uniform_field_inflation.yaml
 )
 
 list( APPEND qg_testoutput
@@ -103,7 +105,8 @@ list( APPEND qg_testoutput
   testoutput/dfi.test
   testoutput/diffstates.test
   testoutput/dirac_cov.test
-  testoutput/dirac_hyb.test
+  testoutput/dirac_hyb_field.test
+  testoutput/dirac_hyb_value.test
   testoutput/dirac_loc_3d.test
   testoutput/dirac_loc_4d.test
   testoutput/dirac_no_loc.test
@@ -127,7 +130,8 @@ list( APPEND qg_testoutput
   testoutput/rtpp.test
   testoutput/static_b_init.test
   testoutput/truth.test
-  testoutput/uniform_field.test
+  testoutput/uniform_field_hybrid.test
+  testoutput/uniform_field_inflation.test
 )
 
 # Create data directory for test input and symlink all files
@@ -450,10 +454,10 @@ oops_add_test( TESTNAME ens_recenter
                EXENAME  qg_ens_recenter.x
                TEST_DEPENDS test_qg_gen_ens_pert_B )
 
-oops_add_test( TESTNAME uniform_field
+oops_add_test( TESTNAME uniform_field_inflation
                MODELNAME qg
                OMP 2
-               YAMLNAME testinput/uniform_field.yaml
+               YAMLNAME testinput/uniform_field_inflation.yaml
                EXENAME qg_forecast.x )
 
 oops_add_test( TESTNAME ens_variance_inflation_field
@@ -461,7 +465,7 @@ oops_add_test( TESTNAME ens_variance_inflation_field
                OMP 2
                YAMLNAME testinput/ens_variance_inflation_field.yaml
                EXENAME  qg_ens_variance.x
-               TEST_DEPENDS test_qg_gen_ens_pert_B test_qg_uniform_field )
+               TEST_DEPENDS test_qg_gen_ens_pert_B test_qg_uniform_field_inflation )
 
 oops_add_test( TESTNAME ens_variance_inflation_value
                MODELNAME qg
@@ -513,12 +517,25 @@ oops_add_test( TESTNAME dirac_cov
                EXENAME  qg_dirac.x
                TEST_DEPENDS test_qg_forecast )
 
-oops_add_test( TESTNAME dirac_hyb
+oops_add_test( TESTNAME dirac_hyb_value
                MODELNAME qg
                OMP 2
-               YAMLNAME testinput/dirac_hyb.yaml
+               YAMLNAME testinput/dirac_hyb_value.yaml
                EXENAME  qg_dirac.x
                TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B )
+
+oops_add_test( TESTNAME uniform_field_hybrid
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/uniform_field_hybrid.yaml
+               EXENAME qg_forecast.x )
+
+oops_add_test( TESTNAME dirac_hyb_field
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/dirac_hyb_field.yaml
+               EXENAME  qg_dirac.x
+               TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_uniform_field_hybrid )
 
 oops_add_test( TESTNAME dirac_loc_3d
                MODELNAME qg

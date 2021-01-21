@@ -114,24 +114,23 @@ template <typename MODEL> class Dirac : public Application {
     Log::test() << "B * Increment: " << dxdirout << std::endl;
 
     //  Setup localization and ensemble configurations
-    eckit::LocalConfiguration locConfig;
-    eckit::LocalConfiguration ensConfig;
-    bool hasLoc(false);
+    std::vector<eckit::LocalConfiguration> locConfigs;
     if (covarConfig.has("localization")) {
-      locConfig = eckit::LocalConfiguration(covarConfig, "localization");
-      ensConfig = covarConfig;
-      hasLoc = true;
+      locConfigs.push_back(eckit::LocalConfiguration(covarConfig, "localization"));
     } else {
-      if (covarConfig.has("ensemble")) {
-        ensConfig = eckit::LocalConfiguration(covarConfig, "ensemble");
-        if (ensConfig.has("localization")) {
-          locConfig = eckit::LocalConfiguration(ensConfig, "localization");
-          hasLoc = true;
+      if (covarConfig.has("components")) {
+        std::vector<eckit::LocalConfiguration> confs;
+        covarConfig.get("components", confs);
+        for (const auto & conf : confs) {
+          const eckit::LocalConfiguration componentConf(conf, "covariance");
+          if (componentConf.has("localization")) {
+            locConfigs.push_back(eckit::LocalConfiguration(componentConf, "localization"));
+          }
         }
       }
     }
 
-    if (hasLoc) {
+    for (size_t jcomp = 0; jcomp < locConfigs.size(); ++jcomp) {
       // Apply localization to Dirac
 
       //  Setup Dirac
@@ -141,7 +140,7 @@ template <typename MODEL> class Dirac : public Application {
 
       //  Setup localization
       std::unique_ptr<Localization_> loc_ =
-              LocalizationFactory<MODEL>::create(resol, time, locConfig);
+              LocalizationFactory<MODEL>::create(resol, time, locConfigs[jcomp]);
 
       //  Apply localization
       loc_->localize(dxdir);
