@@ -7,4 +7,4 @@ forecasts:
 observations:
   $(OBSERVATIONS)
 window begin: '{{window_begin}}'
-window length: $(window length)
+window length: $(window_length)
