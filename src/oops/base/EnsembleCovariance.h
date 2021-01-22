@@ -53,6 +53,7 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL> {
 
   EnsemblePtr_ ens_;
   std::unique_ptr<Localization_> loc_;
+  int seed_ = 7;  // For reproducibility
 };
 
 // =============================================================================
@@ -80,6 +81,27 @@ EnsembleCovariance<MODEL>::~EnsembleCovariance() {
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
+void EnsembleCovariance<MODEL>::doRandomize(Increment_ & dx) const {
+  dx.zero();
+  if (loc_) {
+    // Localized covariance matrix
+    for (unsigned int ie = 0; ie < ens_->size(); ++ie) {
+      Increment_ tmp(dx);
+      loc_->randomize(tmp);
+      tmp.schur_product_with((*ens_)[ie]);
+      dx.axpy(1.0, tmp, false);
+    }
+  } else {
+    // Raw covariance matrix
+    util::NormalDistribution<double> normalDist(ens_->size(), 0.0, 1.0, seed_);
+    for (unsigned int ie = 0; ie < ens_->size(); ++ie) {
+      dx.axpy(normalDist[ie], (*ens_)[ie]);
+    }
+  }
+  dx *= 1.0/sqrt(static_cast<double>(ens_->size()-1));
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL>
 void EnsembleCovariance<MODEL>::doMultiply(const Increment_ & dxi, Increment_ & dxo) const {
   dxo.zero();
   for (unsigned int ie = 0; ie < ens_->size(); ++ie) {
@@ -87,7 +109,7 @@ void EnsembleCovariance<MODEL>::doMultiply(const Increment_ & dxi, Increment_ & 
       // Localized covariance matrix
       Increment_ dx(dxi);
       dx.schur_product_with((*ens_)[ie]);
-      loc_->localize(dx);
+      loc_->multiply(dx);
       dx.schur_product_with((*ens_)[ie]);
       dxo.axpy(1.0, dx, false);
     } else {
@@ -96,7 +118,7 @@ void EnsembleCovariance<MODEL>::doMultiply(const Increment_ & dxi, Increment_ & 
       dxo.axpy(wgt, (*ens_)[ie], false);
     }
   }
-  const double rk = 1.0/(static_cast<double>(ens_->size()) - 1.0);
+  const double rk = 1.0/static_cast<double>(ens_->size()-1);
   dxo *= rk;
 }
 // -----------------------------------------------------------------------------
@@ -105,11 +127,6 @@ void EnsembleCovariance<MODEL>::doInverseMultiply(const Increment_ & dxi, Increm
   IdentityMatrix<Increment_> Id;
   dxo.zero();
   GMRESR(dxo, dxi, *this, Id, 10, 1.0e-3);
-}
-// -----------------------------------------------------------------------------
-template<typename MODEL>
-void EnsembleCovariance<MODEL>::doRandomize(Increment_ &) const {
-  throw eckit::NotImplemented("EnsembleCovariance::doRandomize: Would it make sense?", Here());
 }
 // -----------------------------------------------------------------------------
 }  // namespace oops

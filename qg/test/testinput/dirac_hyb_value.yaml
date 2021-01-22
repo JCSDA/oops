@@ -64,3 +64,7 @@ output localization:
   date: 2010-01-01T12:00:00Z
   exp: dirac_qg_hyb_value_localization
   type: an
+output variance:
+  datadir: Data
+  exp: dirac_hyb_value_var
+  type: an

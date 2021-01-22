@@ -1,12 +1,18 @@
-Test     : Input Dirac increment: 
+Test     : Input Dirac increment:
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are not activated
 Test     :   Scaling=    0.1, Min=      0.0000, Max=     10.0000, RMS=      0.2500
-Test     : B * Increment: 
+Test     : B * Increment:
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are not activated
 Test     :   Scaling=  1e+14, Min=     -3.0667, Max=      4.4252, RMS=      1.0739
+Test     : Randomized variance:
+Test     :   Valid time: 2010-01-01T12:00:00Z
+Test     :   Resolution = 40, 20, 2
+Test     :   Variable = streamfunction
+Test     :   Boundary conditions are not activated
+Test     :   Scaling=  1e+14, Min=      0.0119, Max=     17.1590, RMS=      3.9892

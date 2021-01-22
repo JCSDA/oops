@@ -40,3 +40,7 @@ output B:
   date: 2010-01-01T12:00:00Z
   exp: dirac_no_loc_B
   type: an
+output variance:
+  datadir: Data
+  exp: dirac_no_loc_var
+  type: an

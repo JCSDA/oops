@@ -36,6 +36,7 @@
 #include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/RequiredPolymorphicParameter.h"
+#include "oops/util/Random.h"
 
 namespace util {
   class DateTime;
@@ -78,6 +79,7 @@ class ModelSpaceCovarianceBase {
   void randomize(Increment_ &) const;
   void multiply(const Increment_ &, Increment_ &) const;
   void inverseMultiply(const Increment_ &, Increment_ &) const;
+  void getVariance(Increment_ &) const;
 
  private:
   virtual void doRandomize(Increment_ &) const = 0;
@@ -85,6 +87,7 @@ class ModelSpaceCovarianceBase {
   virtual void doInverseMultiply(const Increment_ &, Increment_ &) const = 0;
 
   ChvarVec_ chvars_;
+  size_t randomizationSize_;
 };
 
 // =============================================================================
@@ -302,6 +305,7 @@ ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(
     chvars_.push_back(LinearVariableChangeFactory<MODEL>::create(
                         bg, fg, resol, variableChange.variableChangeParameters));
   }
+  randomizationSize_ = parameters.randomizationSize;
 }
 
 // -----------------------------------------------------------------------------
@@ -385,6 +389,29 @@ void ModelSpaceCovarianceBase<MODEL>::inverseMultiply(const Increment_ & dxi,
   } else {
     this->doInverseMultiply(dxi, dxo);
   }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+void ModelSpaceCovarianceBase<MODEL>::getVariance(Increment_ & variance) const {
+  Increment_ dx(variance);
+  Increment_ dxsq(variance);
+  Increment_ mean(variance);
+  mean.zero();
+  variance.zero();
+  for (int ie = 0; ie < randomizationSize_; ++ie) {
+    this->randomize(dx);
+    dx -= mean;
+    dxsq = dx;
+    dxsq.schur_product_with(dx);
+    double rk_var = static_cast<double>(ie)/static_cast<double>(ie+1);
+    double rk_mean = 1.0/static_cast<double>(ie+1);
+    variance.axpy(rk_var, dxsq, false);
+    mean.axpy(rk_mean, dx, false);
+  }
+  double rk_norm = 1.0/static_cast<double>(randomizationSize_-1);
+  variance *= rk_norm;
 }
 
 // -----------------------------------------------------------------------------

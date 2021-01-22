@@ -41,6 +41,7 @@ class LocalizationMatrixQG: public util::Printable,
   LocalizationMatrixQG(const GeometryQG &, const eckit::Configuration &);
   ~LocalizationMatrixQG();
 
+  void randomize(IncrementQG &) const;
   void multiply(IncrementQG &) const;
 
  private:

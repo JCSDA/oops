@@ -143,12 +143,27 @@ template <typename MODEL> class Dirac : public Application {
               LocalizationFactory<MODEL>::create(resol, time, locConfigs[jcomp]);
 
       //  Apply localization
-      loc_->localize(dxdir);
+      loc_->multiply(dxdir);
 
       //  Write increment
       const eckit::LocalConfiguration output_localization(fullConfig, "output localization");
       dxdir.write(output_localization);
       Log::test() << "Localized Increment: " << dxdir << std::endl;
+    }
+
+    if (fullConfig.has("output variance")) {
+      // Variance configuration
+      const eckit::LocalConfiguration output_variance(fullConfig, "output variance");
+
+      //  Setup variance
+      Increment_ variance(resol, vars, time);
+
+      // Get variance
+      B->getVariance(variance);
+
+      //  Write increment
+      variance.write(output_variance);
+      Log::test() << "Randomized variance: " << variance << std::endl;
     }
 
     return 0;

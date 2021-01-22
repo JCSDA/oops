@@ -42,20 +42,51 @@ class LocalizationBase : public util::Printable,
   LocalizationBase() = default;
   virtual ~LocalizationBase() = default;
 
-  /// default implementation of 4D localization (used in model-specific implementations)
-  virtual void localize(Increment_ &) const;
+  /// 4D localization with the same localization for time blocks
+  virtual void randomize(Increment_ &) const;
+  virtual void multiply(Increment_ &) const;
 
  protected:
-  virtual void multiply(Increment_ &) const = 0;
+  virtual void doRandomize(Increment_ &) const = 0;
+  virtual void doMultiply(Increment_ &) const = 0;
 
  private:
   virtual void print(std::ostream &) const = 0;
 };
 
 // -----------------------------------------------------------------------------
-/// Default implementation of 4D localization (used in model-specific implementations)
+/// Randomize
 template <typename MODEL>
-void LocalizationBase<MODEL>::localize(Increment_ & dx) const {
+void LocalizationBase<MODEL>::randomize(Increment_ & dx) const {
+  Log::trace() << "LocalizationBase<MODEL>::randomize starting" << std::endl;
+  const eckit::mpi::Comm & comm = dx.timeComm();
+  static int tag = 23456;
+  size_t nslots = comm.size();
+  int mytime = comm.rank();
+
+  if (mytime > 0) {
+    util::DateTime dt = dx.validTime();   // Save original time value
+    dx.zero();
+    oops::mpi::receive(comm, dx, 0, tag);
+    dx.updateTime(dt - dx.validTime());  // Set time back to original value
+  } else {
+    // Apply 3D localization
+    this->doRandomize(dx);
+
+    // Copy result to all timeslots
+    for (size_t jj = 1; jj < nslots; ++jj) {
+      oops::mpi::send(comm, dx, jj, tag);
+    }
+  }
+  ++tag;
+
+  Log::trace() << "LocalizationBase<MODEL>::randomize done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+/// Multiply
+template <typename MODEL>
+void LocalizationBase<MODEL>::multiply(Increment_ & dx) const {
   Log::trace() << "LocalizationBase<MODEL>::multiply starting" << std::endl;
   const eckit::mpi::Comm & comm = dx.timeComm();
   static int tag = 23456;
@@ -75,8 +106,10 @@ void LocalizationBase<MODEL>::localize(Increment_ & dx) const {
       oops::mpi::receive(comm, dxtmp, jj, tag);
       dx.axpy(1.0, dxtmp, false);
     }
+
     // Apply 3D localization
-    this->multiply(dx);
+    this->doMultiply(dx);
+
     // Copy result to all timeslots
     for (size_t jj = 1; jj < nslots; ++jj) {
       oops::mpi::send(comm, dx, jj, tag);
@@ -86,7 +119,6 @@ void LocalizationBase<MODEL>::localize(Increment_ & dx) const {
 
   Log::trace() << "LocalizationBase<MODEL>::multiply done" << std::endl;
 }
-
 
 // =============================================================================
 

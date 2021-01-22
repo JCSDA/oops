@@ -319,10 +319,14 @@ model:
 output B:
   datadir: Data
   date: 2010-01-01T00:00:00Z
-  exp: dirac_qg_loc_4d_B
+  exp: dirac_loc_4d_B
   type: an
 output localization:
   datadir: Data
   date: 2010-01-01T00:00:00Z
-  exp: dirac_qg_loc_4d_localization
+  exp: dirac_loc_4d_localization
+  type: an
+output variance:
+  datadir: Data
+  exp: dirac_loc_4d_var
   type: an

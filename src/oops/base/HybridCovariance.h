@@ -125,8 +125,21 @@ void HybridCovariance<MODEL>::doInverseMultiply(const Increment_ & dxi, Incremen
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-void HybridCovariance<MODEL>::doRandomize(Increment_ &) const {
-  throw eckit::NotImplemented("HybridCovariance::doRandomize: Would it make sense?", Here());
+void HybridCovariance<MODEL>::doRandomize(Increment_ & dx) const {
+  dx.zero();
+  Increment_ tmp(dx);
+  int valueIndex = 0;
+  for (size_t jcomp = 0; jcomp < Bcomponents_.size(); ++jcomp) {
+     Bcomponents_[jcomp]->randomize(tmp);
+     if (weightTypes_[jcomp] == "value") {
+        tmp *= std::sqrt(valueWeights_[valueIndex]);
+        valueIndex += 1;
+     }
+     if (weightTypes_[jcomp] == "increment") {
+        throw eckit::NotImplemented("HybridCovariance::doRandomize: no square-root", Here());
+     }
+     dx += tmp;
+  }
 }
 // -----------------------------------------------------------------------------
 }  // namespace oops

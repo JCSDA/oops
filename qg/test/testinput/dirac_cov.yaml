@@ -4,6 +4,7 @@ background error:
   maximum_condition_number: 1.0e6
   standard_deviation: 1.8e7
   vertical_length_scale: 15000.0
+  randomization size: 1000
 dirac:
   date: 2010-01-01T12:00:00Z
   ixdir: [20]
@@ -20,5 +21,9 @@ model:
   tstep: PT1H
 output B:
   datadir: Data
-  exp: dirac_qg_cov
+  exp: dirac_cov_B
+  type: an
+output variance:
+  datadir: Data
+  exp: dirac_cov_var
   type: an
