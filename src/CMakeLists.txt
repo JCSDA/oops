@@ -310,6 +310,8 @@ oops/util/Timer.h
 oops/util/TimerHelper.cc
 oops/util/TimerHelper.h
 oops/util/utilNamespaceDoc.h
+oops/util/wildcard.h
+oops/util/wildcard.cc
 
 oops/util/parameters/ConfigurationParameter.cc
 oops/util/parameters/ConfigurationParameter.h
@@ -637,6 +639,11 @@ ecbuild_add_test( TARGET  test_util_propertiesofnvectors
 
 ecbuild_add_test( TARGET  test_util_localenvironment
                   SOURCES test/util/LocalEnvironment.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_wildcard
+                  SOURCES test/util/wildcard.cc
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 
