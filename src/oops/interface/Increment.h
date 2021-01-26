@@ -598,7 +598,7 @@ void Increment<MODEL>::shift_forward(const util::DateTime & begin) {
 template<typename MODEL>
 void Increment<MODEL>::shift_backward(const util::DateTime & end) {
   Log::trace() << "Increment<MODEL>::Increment shift_backward starting" << std::endl;
-  static int tag = 753951;
+  static int tag = 30951;
   size_t mytime = timeComm_->rank();
 
 // Send values of dx_i at start of my subwindow to previous subwindow
