@@ -145,14 +145,14 @@ void ObsVecQG::read(const std::string & name) {
 }
 // -----------------------------------------------------------------------------
 void ObsVecQG::print(std::ostream & os) const {
-  double scaling, zmin, zmax, zavg;
-  qg_obsvec_stats_f90(keyOvec_, scaling, zmin, zmax, zavg);
+  double zmin, zmax, zavg;
+  qg_obsvec_stats_f90(keyOvec_, zmin, zmax, zavg);
   std::ios_base::fmtflags f(os.flags());
   os << obsdb_.obsname() << " nobs= " << nobs()
-     << " Scaling=" << std::setprecision(4) << std::setw(7) << scaling
-     << ", Min=" << std::fixed << std::setprecision(4) << std::setw(12) << zmin
-     << ", Max=" << std::fixed << std::setprecision(4) << std::setw(12) << zmax
-     << ", Average=" << std::fixed << std::setprecision(4) << std::setw(12) << zavg;
+     << std::scientific << std::setprecision(4)
+     << "  Min=" << std::setw(12) << zmin
+     << ", Max=" << std::setw(12) << zmax
+     << ", Average=" << std::setw(12) << zavg;
   os.flags(f);
 }
 // -----------------------------------------------------------------------------

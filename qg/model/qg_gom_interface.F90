@@ -328,14 +328,13 @@ call qg_gom_dotprod(gom1,gom2,prod)
 end subroutine qg_gom_dotprod_c
 ! ------------------------------------------------------------------------------
 !> Compute GOM statistics
-subroutine qg_gom_stats_c(c_key_self,kobs,scaling,pmin,pmax,prms) bind(c,name='qg_gom_stats_f90')
+subroutine qg_gom_stats_c(c_key_self,kobs,pmin,pmax,prms) bind(c,name='qg_gom_stats_f90')
 
 implicit none
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_self !< GOM
 integer(c_int),intent(inout) :: kobs    !< Number of observations
-real(c_double),intent(inout) :: scaling !< Scaling value
 real(c_double),intent(inout) :: pmin    !< Minimum value
 real(c_double),intent(inout) :: pmax    !< Maximum value
 real(c_double),intent(inout) :: prms    !< RMS
@@ -347,7 +346,7 @@ type(qg_gom),pointer :: self
 call qg_gom_registry%get(c_key_self,self)
 
 ! Call Fortran
-call qg_gom_stats(self,kobs,scaling,pmin,pmax,prms)
+call qg_gom_stats(self,kobs,pmin,pmax,prms)
 
 end subroutine qg_gom_stats_c
 ! ------------------------------------------------------------------------------

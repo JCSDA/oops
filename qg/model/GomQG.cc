@@ -108,15 +108,14 @@ void GomQG::write(const eckit::Configuration & config) const {
 }
 // -----------------------------------------------------------------------------
 void GomQG::print(std::ostream & os) const {
-  int nn;
-  double scaling, zmin, zmax, zrms;
-  qg_gom_stats_f90(keyGom_, nn, scaling, zmin, zmax, zrms);
+  int nobs;
+  double zmin, zmax, zrms;
+  qg_gom_stats_f90(keyGom_, nobs, zmin, zmax, zrms);
   std::ios_base::fmtflags f(os.flags());
-  os << " nobs= " << nn
-     << ", Scaling=" << std::setprecision(4) << std::setw(7) << scaling
-     << ", Min=" << std::fixed << std::setprecision(4) << std::setw(12) << zmin
-     << ", Max=" << std::fixed << std::setprecision(4) << std::setw(12) << zmax
-     << ", RMS=" << std::fixed << std::setprecision(4) << std::setw(12) << zrms;
+  os << " nobs= " << nobs << std::scientific << std::setprecision(4)
+     << "  Min=" << std::setw(12) << zmin
+     << ", Max=" << std::setw(12) << zmax
+     << ", RMS=" << std::setw(12) << zrms;
   os.flags(f);
 
   // If the min value across all variables is positive, then this may be an

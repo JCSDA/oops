@@ -488,7 +488,7 @@ implicit none
 ! Passed variables
 integer(c_int),intent(in) :: c_key_fld          !< Fields
 integer(c_int),intent(in) :: nb                 !< Number of boundaries
-real(c_double),intent(inout) :: pstat(4*(1+nb)) !< Statistics
+real(c_double),intent(inout) :: pstat(3*(1+nb)) !< Statistics
 
 ! Local variables
 type(qg_fields),pointer :: fld

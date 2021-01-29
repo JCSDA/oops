@@ -4,28 +4,28 @@ Test     : CostJo   : Nonlinear Jo(Wind) = 1663.07, nobs = 600, Jo/n = 2.77178, 
 Test     : CostJo   : Nonlinear Jo(WSpeed) = 163.034, nobs = 300, Jo/n = 0.543446, err = 12
 Test     : CostFunction: Nonlinear J = 12705.8
 Test     : BlockBLanczosMinimizer: reduction in residual norm = 0.0230185
-Test     : CostFunction::addIncrement: Analysis:
+Test     : CostFunction::addIncrement: Analysis: 
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -4.4863, Max=      1.0335, RMS=      1.7694
-Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
-Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
+Test     :   Min= -4.4863e+08, Max=  1.0335e+08, RMS=  1.7694e+08
+Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : CostJb   : Nonlinear Jb = 151.4
 Test     : CostJo   : Nonlinear Jo(Stream) = 688.6, nobs = 600, Jo/n = 1.148, err = 4e+06
 Test     : CostJo   : Nonlinear Jo(Wind) = 596.2, nobs = 600, Jo/n = 0.9936, err = 6
 Test     : CostJo   : Nonlinear Jo(WSpeed) = 91.81, nobs = 300, Jo/n = 0.306, err = 12
 Test     : CostFunction: Nonlinear J = 1528
 Test     : BlockBLanczosMinimizer: reduction in residual norm = 0.2453
-Test     : CostFunction::addIncrement: Analysis:
+Test     : CostFunction::addIncrement: Analysis: 
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -4.5389, Max=      1.0534, RMS=      1.7720
-Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
-Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
+Test     :   Min= -4.5389e+08, Max=  1.0534e+08, RMS=  1.7720e+08
+Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : CostJb   : Nonlinear Jb = 162.8
 Test     : CostJo   : Nonlinear Jo(Stream) = 620, nobs = 600, Jo/n = 1.033, err = 4e+06
 Test     : CostJo   : Nonlinear Jo(Wind) = 435.2, nobs = 600, Jo/n = 0.7254, err = 6

@@ -978,11 +978,11 @@ implicit none
 ! Passed variables
 type(qg_fields),intent(in) :: fld                !< Fields
 integer,intent(in) :: nb                         !< Number of boundaries
-real(kind_real),intent(inout) :: pstat(4*(1+nb)) !< Statistics
+real(kind_real),intent(inout) :: pstat(3*(1+nb)) !< Statistics
 
 ! Local variables
 integer :: jj,js,jvb
-real(kind_real) :: expo,stat(4,1+nb)
+real(kind_real) :: stat(3,1+nb)
 
 ! Check field
 call qg_fields_check(fld)
@@ -991,52 +991,25 @@ call qg_fields_check(fld)
 if ((fld%lbc.and.(nb/=2)).or.((.not.fld%lbc).and.(nb>0))) call abor1_ftn('qg_fields_gpnorm: error number of fields')
 
 ! 3d field
-stat(2,1) = minval(fld%gfld3d)
-stat(3,1) = maxval(fld%gfld3d)
-stat(4,1) = sqrt(sum(fld%gfld3d**2)/real(fld%geom%nx*fld%geom%ny*fld%geom%nz,kind_real))
-if (stat(4,1)>0.0) then
-  expo = aint(log(stat(4,1))/log(10.0_kind_real))
-  stat(1,1) = 10.0**expo
-else
-  stat(1,1) = 1.0
-endif
-stat(2:4,1) = stat(2:4,1)/stat(1,1)
+stat(1,1) = minval(fld%gfld3d)
+stat(2,1) = maxval(fld%gfld3d)
+stat(3,1) = sqrt(sum(fld%gfld3d**2)/real(fld%geom%nx*fld%geom%ny*fld%geom%nz,kind_real))
 
 ! Boundaries
 if (nb==2) then
   ! Streamfunction
-  stat(2,2) = min(minval(fld%x_north),minval(fld%x_south))
-  stat(3,2) = max(maxval(fld%x_north),maxval(fld%x_south))
-  stat(4,2) = sqrt(sum(fld%x_north**2+fld%x_south**2)/real(2*fld%geom%nz,kind_real))
-  if (stat(4,2)>0.0) then
-    expo = aint(log(stat(4,2))/log(10.0_kind_real))
-    stat(1,2) = 10.0**expo
-  else
-    stat(1,2) = 1.0
-  endif
-  stat(2:4,2) = stat(2:4,2)/stat(1,2)
+  stat(1,2) = min(minval(fld%x_north),minval(fld%x_south))
+  stat(2,2) = max(maxval(fld%x_north),maxval(fld%x_south))
+  stat(3,2) = sqrt(sum(fld%x_north**2+fld%x_south**2)/real(2*fld%geom%nz,kind_real))
 
   ! Potential vorticity
-  stat(2,3) = min(minval(fld%q_north),minval(fld%q_south))
-  stat(3,3) = max(maxval(fld%q_north),maxval(fld%q_south))
-  stat(4,3) = sqrt(sum(fld%q_north**2+fld%q_south**2)/real(2*fld%geom%nx*fld%geom%nz,kind_real))
-  if (stat(4,3)>0.0) then
-    expo = aint(log(stat(4,3))/log(10.0_kind_real))
-    stat(1,3) = 10.0**expo
-  else
-    stat(1,3) = 1.0
-  endif
-  stat(2:4,3) = stat(2:4,3)/stat(1,3)
+  stat(1,3) = min(minval(fld%q_north),minval(fld%q_south))
+  stat(2,3) = max(maxval(fld%q_north),maxval(fld%q_south))
+  stat(3,3) = sqrt(sum(fld%q_north**2+fld%q_south**2)/real(2*fld%geom%nx*fld%geom%nz,kind_real))
 endif
 
 ! Pack
-jj = 0
-do jvb=1,1+nb
-  do js=1,4
-    jj = jj+1
-    pstat(jj) = stat(js,jvb)
-  enddo
-enddo
+pstat = reshape(stat,(/3*(1+nb)/))
 
 end subroutine qg_fields_gpnorm
 ! ------------------------------------------------------------------------------

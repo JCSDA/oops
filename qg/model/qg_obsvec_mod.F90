@@ -327,58 +327,28 @@ enddo
 end subroutine qg_obsvec_dotprod
 ! ------------------------------------------------------------------------------
 !> Compute observation vector statistics
-subroutine qg_obsvec_stats(self,scaling,zmin,zmax,zavg)
+subroutine qg_obsvec_stats(self,zmin,zmax,zavg)
 
 implicit none
 
 ! Passed variables
 type(qg_obsvec),intent(in):: self        !< Observation vector
-real(kind_real),intent(inout) :: scaling !< Scaling
 real(kind_real),intent(inout) :: zmin    !< Minimum
 real(kind_real),intent(inout) :: zmax    !< Maximum
 real(kind_real),intent(inout) :: zavg    !< Average
 
-! Local variables
-integer :: jlev,jobs
-real(kind_real) :: expo
-
-if (self%nobs>0.and.self%nlev>0) then
+if (self%nobs*self%nlev>0) then
   ! Compute statistics
   if (.not.allocated(self%values)) call abor1_ftn('qg_obsvec_stats: obs vector not allocated')
-
-  ! Initialization
-  zmin = huge(1.0)
-  zmax = -huge(1.0)
-  zavg = 0.0
-
-  ! Loop over values
-  do jobs=1,self%nobs
-    do jlev=1,self%nlev
-      zmin = min(self%values(jlev,jobs),zmin)
-      zmax = max(self%values(jlev,jobs),zmax)
-      zavg = zavg+self%values(jlev,jobs)
-    enddo
-  enddo
-
-  ! Normalization
-  zavg = zavg/real(self%nlev*self%nobs,kind_real)
+  zmin = minval(self%values)
+  zmax = maxval(self%values)
+  zavg = sum(self%values)/real(self%nlev*self%nobs,kind_real)
 else
   ! Empty observation vector
   zmin = 0.0
   zmax = 0.0
   zavg = 0.0
 endif
-
-! Scaling
-if (abs(zavg)>0.0) then
-  expo = aint(log(abs(zavg))/log(10.0_kind_real))
-  scaling = 10.0**expo
-else
-  scaling = 1.0
-endif
-zmin = zmin/scaling
-zmax = zmax/scaling
-zavg = zavg/scaling
 
 end subroutine qg_obsvec_stats
 ! ------------------------------------------------------------------------------

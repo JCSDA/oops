@@ -364,39 +364,28 @@ enddo
 end subroutine qg_gom_dotprod
 ! ------------------------------------------------------------------------------
 !> Compute GOM stats
-subroutine qg_gom_stats(self,kobs,scaling,pmin,pmax,prms)
+subroutine qg_gom_stats(self,kobs,pmin,pmax,prms)
 
 implicit none
 
 ! Passed variables
 type(qg_gom),intent(inout) :: self       !< GOM
 integer,intent(inout) :: kobs            !< Number of observations
-real(kind_real),intent(inout) :: scaling !< Scaling value
 real(kind_real),intent(inout) :: pmin    !< Minimum value
 real(kind_real),intent(inout) :: pmax    !< Maximum value
 real(kind_real),intent(inout) :: prms    !< RMS
 
-! Local variables
-real(kind_real) :: expo,scalinginv,svalues(self%nv,self%nobs)
-character(len=1024) :: msg
-
-! Scaling
-if (maxval(abs(self%values))>0.0) then
-  expo = aint(log(maxval(abs(self%values)))/log(10.0_kind_real))-1
-  scaling = 10.0**expo
-else
-  scaling = 1.0
-endif
-scalinginv = 1.0/scaling
-
-! Scale values
-svalues = self%values*scalinginv
-
 ! Compute GOM stats
 kobs = self%nobs
-pmin = minval(svalues)
-pmax = maxval(svalues)
-prms = sqrt(sum(svalues**2)/real(self%nobs*self%nv,kind_real))
+if (self%nobs*self%nv>0) then
+  pmin = minval(self%values)
+  pmax = maxval(self%values)
+  prms = sqrt(sum(self%values**2)/real(self%nobs*self%nv,kind_real))
+else
+  pmin = 0.0
+  pmax = 0.0
+  prms = 0.0
+end if
 
 end subroutine qg_gom_stats
 ! ------------------------------------------------------------------------------

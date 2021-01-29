@@ -179,7 +179,7 @@ extern "C" {
   void qg_gom_divide_f90(const F90gom &, const F90gom &);
   void qg_gom_rms_f90(const F90gom &, double &);
   void qg_gom_dotprod_f90(const F90gom &, const F90gom &, double &);
-  void qg_gom_stats_f90(const F90gom &, int &, double &, double &, double &, double &);
+  void qg_gom_stats_f90(const F90gom &, int &, double &, double &, double &);
   void qg_gom_maxloc_f90(const F90gom &, double &, int &, int &);
   void qg_gom_read_file_f90(const F90gom &, const eckit::Configuration &);
   void qg_gom_write_file_f90(const F90gom &, const eckit::Configuration &);
@@ -235,7 +235,7 @@ extern "C" {
   void qg_obsvec_invert_f90(const F90ovec &);
   void qg_obsvec_random_f90(const ObsSpaceQG &, const F90ovec &);
   void qg_obsvec_dotprod_f90(const F90ovec &, const F90ovec &, double &);
-  void qg_obsvec_stats_f90(const F90ovec &, double &, double &, double &, double &);
+  void qg_obsvec_stats_f90(const F90ovec &, double &, double &, double &);
   void qg_obsvec_nobs_f90(const F90ovec &, int &);
   void qg_obsvec_getat_f90(const F90ovec &, const int &, double &);
 

@@ -10,9 +10,9 @@ Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -5.1660, Max=      1.0367, RMS=      1.8975
-Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
-Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
+Test     :   Min= -5.1660e+08, Max=  1.0367e+08, RMS=  1.8975e+08
+Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : CostJb   : Nonlinear Jb = 68.07
 Test     : CostJo   : Nonlinear Jo(Stream) = 393.1, nobs = 800, Jo/n = 0.4913, err = 4e+06
 Test     : CostJo   : Nonlinear Jo(Wind) = 134.1, nobs = 800, Jo/n = 0.1676, err = 6
@@ -25,9 +25,9 @@ Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -5.2297, Max=      1.0515, RMS=      1.9148
-Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
-Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
+Test     :   Min= -5.2297e+08, Max=  1.0515e+08, RMS=  1.9148e+08
+Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : CostJb   : Nonlinear Jb = 63.98
 Test     : CostJo   : Nonlinear Jo(Stream) = 121.9, nobs = 800, Jo/n = 0.1524, err = 4e+06
 Test     : CostJo   : Nonlinear Jo(Wind) = 84.01, nobs = 800, Jo/n = 0.105, err = 6

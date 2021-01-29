@@ -2,4 +2,4 @@ Test     :   Valid time: 2009-12-31T00:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction
 Test     :   Boundary conditions are not activated
-Test     :   Scaling=  1e+07, Min=     -4.5233, Max=      3.6083, RMS=      1.5609
+Test     :   Min= -4.5233e+07, Max=  3.6083e+07, RMS=  1.5609e+07

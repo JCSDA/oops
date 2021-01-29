@@ -337,13 +337,12 @@ call qg_obsvec_dotprod(obsvec1,obsvec2,zz)
 end subroutine qg_obsvec_dotprod_c
 ! ------------------------------------------------------------------------------
 !> Compute observation vector statistics
-subroutine qg_obsvec_stats_c(c_key_self,scaling,zmin,zmax,zavg) bind(c,name='qg_obsvec_stats_f90')
+subroutine qg_obsvec_stats_c(c_key_self,zmin,zmax,zavg) bind(c,name='qg_obsvec_stats_f90')
 
 implicit none
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_self !< Observation vector
-real(c_double),intent(inout) :: scaling !< Scaling
 real(c_double),intent(inout) :: zmin    !< Minimum
 real(c_double),intent(inout) :: zmax    !< Maximum
 real(c_double),intent(inout) :: zavg    !< Average
@@ -355,7 +354,7 @@ type(qg_obsvec),pointer :: self
 call qg_obsvec_registry%get(c_key_self,self)
 
 ! Call Fortran
-call qg_obsvec_stats(self,scaling,zmin,zmax,zavg)
+call qg_obsvec_stats(self,zmin,zmax,zavg)
 
 end subroutine qg_obsvec_stats_c
 ! ------------------------------------------------------------------------------

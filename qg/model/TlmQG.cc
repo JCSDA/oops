@@ -126,14 +126,14 @@ void TlmQG::print(std::ostream & os) const {
       } else {
         os << std::endl << "  Boundary conditions are not activated";
       }
-      std::vector<double> zstat(4*(1+nb));
+      std::vector<double> zstat(3*(1+nb));
       qg_fields_gpnorm_f90(jtra->second, nb, zstat[0]);
       for (int jj = 0; jj < 1+nb; ++jj) {
         std::ios_base::fmtflags f(os.flags());
-        os << std::endl << "  Scaling=" << std::setprecision(4) << std::setw(7) << zstat[4*jj]
-           << ", Min=" << std::fixed << std::setprecision(4) << std::setw(12) << zstat[4*jj+1]
-           << ", Max=" << std::fixed << std::setprecision(4) << std::setw(12) <<zstat[4*jj+2]
-           << ", RMS=" << std::fixed << std::setprecision(4) << std::setw(12) <<zstat[4*jj+3];
+        os << std::endl << std::scientific << std::setprecision(4)
+           << "  Min=" << std::setw(12) << zstat[3*jj]
+           << ", Max=" << std::setw(12) << zstat[3*jj+1]
+           << ", RMS=" << std::setw(12) << zstat[3*jj+2];
         os.flags(f);
       }
     }
