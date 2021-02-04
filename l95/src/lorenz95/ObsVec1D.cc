@@ -23,13 +23,11 @@
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
 ObsVec1D::ObsVec1D(const ObsTableView & ot,
-                   const std::string & name, const bool fail)
+                   const std::string & name)
   : obsdb_(ot), data_(ot.nobs()), missing_(util::missingValue(missing_))
 {
   for (double & val : data_) { val = 0.0; }
-  if (!name.empty()) {
-    if (fail || obsdb_.has(name)) obsdb_.getdb(name, data_);
-  }
+  if (!name.empty()) obsdb_.getdb(name, data_);
 }
 // -----------------------------------------------------------------------------
 ObsVec1D::ObsVec1D(const ObsVec1D & other)

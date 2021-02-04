@@ -45,7 +45,6 @@ class ObsTableView : public util::Printable,
                const eckit::Configuration &);
   ~ObsTableView();
 
-  bool has(const std::string &) const;
   void putdb(const std::string &, const std::vector<int> &) const;
   void putdb(const std::string &, const std::vector<float> &) const;
   void putdb(const std::string &, const std::vector<double> &) const;

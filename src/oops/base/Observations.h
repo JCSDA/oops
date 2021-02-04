@@ -89,7 +89,7 @@ Observations<OBS>::Observations(const ObsSpaces_ & obsdb,
 {
   obs_.reserve(obsdb.size());
   for (std::size_t jj = 0; jj < obsdb.size(); ++jj) {
-    obs_.emplace_back(obsdb[jj], name, true);
+    obs_.emplace_back(obsdb[jj], name);
   }
   Log::trace() << "Observations created" << std::endl;
 }

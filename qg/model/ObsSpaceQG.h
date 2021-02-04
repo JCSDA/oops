@@ -56,9 +56,6 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
   /// save data or metadata
   void putdb(const std::string &, const int &) const;
 
-  /// check if variable is in ObsSpace
-  bool has(const std::string & col) const;
-
   /// create locations for the whole time window
   std::unique_ptr<LocationsQG> locations() const;
 

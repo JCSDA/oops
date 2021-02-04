@@ -35,7 +35,7 @@ class ObsVec1D : public util::Printable,
  public:
   static const std::string classname() {return "lorenz95::ObsVec1D";}
 
-  explicit ObsVec1D(const ObsTableView &, const std::string & name = "", const bool fail = true);
+  explicit ObsVec1D(const ObsTableView &, const std::string & name = "");
   ObsVec1D(const ObsVec1D &);
   ObsVec1D(const ObsTableView &, const ObsVec1D &);
   ~ObsVec1D() = default;

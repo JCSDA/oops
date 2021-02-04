@@ -85,12 +85,6 @@ template <typename OBS> void testSimulateObs() {
     hop.simulateObs(gval, hofx, ybias, diags);
     hofx.save("hofx");
 
-    // apply bias correction if it is required
-    if (conf.has("obs bias")) {
-      const ObsVector_ bias(Test_::obspace()[jj], "ObsBias", false);
-      hofx += bias;
-    }
-
     const double tol = conf.getDouble("tolerance");
     if (conf.has("vector ref")) {
       // if reference h(x) is saved in file as a vector, read from file

@@ -208,8 +208,6 @@ extern "C" {
                               const F90ovec &);
   void qg_obsdb_put_f90(const F90odb &, const int &, const char *,
                         const int &, const char *, const F90ovec &);
-  void qg_obsdb_has_f90(const F90odb &, const int &, const char *,
-                        const int &, const char *, int &);
   void qg_obsdb_locations_f90(const F90odb &, const int &, const char *,
                               atlas::field::FieldSetImpl *, std::vector<util::DateTime> &);
   void qg_obsdb_generate_f90(const F90odb &, const int &, const char *,

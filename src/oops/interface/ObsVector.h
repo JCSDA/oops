@@ -45,7 +45,9 @@ class ObsVector : public util::Printable,
  public:
   static const std::string classname() {return "oops::ObsVector";}
 
-  explicit ObsVector(const ObsSpace<OBS> &, const std::string name = "", const bool fail = true);
+  /// Creates vector from \p obsspace. If \p name is specified, reads the
+  /// specified \p name variable from \p obsspace. Otherwise, zero vector is created.
+  explicit ObsVector(const ObsSpace<OBS> & obsspace, const std::string name = "");
   explicit ObsVector(const ObsVector &);
   ObsVector(const ObsSpace<OBS> &, const ObsVector &);
   ~ObsVector();
@@ -88,12 +90,12 @@ class ObsVector : public util::Printable,
 
 // -----------------------------------------------------------------------------
 template <typename OBS>
-ObsVector<OBS>::ObsVector(const ObsSpace<OBS> & os, const std::string name,
-                          const bool fail): data_(), commTime_(os.timeComm()) {
+ObsVector<OBS>::ObsVector(const ObsSpace<OBS> & os, const std::string name)
+  : data_(), commTime_(os.timeComm()) {
   Log::trace() << "ObsVector<OBS>::ObsVector starting " << name << std::endl;
   util::Timer timer(classname(), "ObsVector");
 
-  data_.reset(new ObsVector_(os.obsspace(), name, fail));
+  data_.reset(new ObsVector_(os.obsspace(), name));
 
   Log::trace() << "ObsVector<OBS>::ObsVector done" << std::endl;
 }

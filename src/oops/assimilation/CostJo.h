@@ -220,11 +220,6 @@ double CostJo<MODEL, OBS>::finalize() {
 
 // Compute departures
   Departures_ ydep(yeqv - yobs_);
-  Log::info() << "Jo Departures:" << std::endl << ydep << "End Jo Departures" << std::endl;
-
-// Apply bias correction
-  Departures_ bias(obspace_, "ObsBias", false);
-  ydep += bias;
   Log::info() << "Jo Bias Corrected Departures:" << std::endl << ydep
           << "End Jo Bias Corrected Departures" << std::endl;
 

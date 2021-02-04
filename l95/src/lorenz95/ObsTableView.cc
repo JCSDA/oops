@@ -60,13 +60,6 @@ ObsTableView::~ObsTableView() {
 
 // -----------------------------------------------------------------------------
 
-bool ObsTableView::has(const std::string & col) const {
-  oops::Log::trace() << "ObsTableView::has" << std::endl;
-  return obstable_->has(col);
-}
-
-// -----------------------------------------------------------------------------
-
 void ObsTableView::putdb(const std::string & col, const std::vector<int> & vec) const {
   int missing;
   std::vector<int> fullvec(obstable_->nobs(), util::missingValue(missing));

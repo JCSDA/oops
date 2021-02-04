@@ -49,9 +49,8 @@ class Departures : public util::Printable,
   template <typename DATA> using ObsDataVec_ = std::vector<std::shared_ptr<ObsData_<DATA>>>;
 
  public:
-/// \brief create Departures for all obs (read from ObsSpace if name is specified)
-  Departures(const ObsSpaces_ &,
-             const std::string & name = "", const bool failIfNameNotFound = true);
+/// \brief create Departures for all obs (read from ObsSpace if \p name is specified)
+  explicit Departures(const ObsSpaces_ &, const std::string & name = "");
 /// \brief create local Departures
   Departures(const ObsSpaces_ &, const Departures &);
 
@@ -95,11 +94,11 @@ class Departures : public util::Printable,
 
 template<typename OBS>
 Departures<OBS>::Departures(const ObsSpaces_ & obsdb,
-                            const std::string & name, const bool fail): dep_()
+                            const std::string & name): dep_()
 {
   dep_.reserve(obsdb.size());
   for (size_t jj = 0; jj < obsdb.size(); ++jj) {
-    dep_.emplace_back(obsdb[jj], name, fail);
+    dep_.emplace_back(obsdb[jj], name);
   }
   Log::trace() << "Departures created" << std::endl;
 }

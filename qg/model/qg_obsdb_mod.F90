@@ -30,7 +30,7 @@ implicit none
 private
 public :: qg_obsdb
 public :: qg_obsdb_registry
-public :: qg_obsdb_setup,qg_obsdb_delete,qg_obsdb_get,qg_obsdb_put,qg_obsdb_has,qg_obsdb_locations,qg_obsdb_generate,qg_obsdb_nobs
+public :: qg_obsdb_setup,qg_obsdb_delete,qg_obsdb_get,qg_obsdb_put,qg_obsdb_locations,qg_obsdb_generate,qg_obsdb_nobs
 ! ------------------------------------------------------------------------------
 integer,parameter :: rseed = 1 !< Random seed (for reproducibility)
 
@@ -274,34 +274,6 @@ do jobs=1,jgrp%nobs
 enddo
 
 end subroutine qg_obsdb_put
-! ------------------------------------------------------------------------------
-!> Test observation data existence
-subroutine qg_obsdb_has(self,grp,col,has)
-
-implicit none
-
-! Passed variables
-type(qg_obsdb),intent(in) :: self  !< Observation data
-character(len=*),intent(in) :: grp !< Group
-character(len=*),intent(in) :: col !< Column
-integer,intent(out) :: has         !< Test flag
-
-! Passed variables
-type(group_data),pointer :: jgrp
-type(column_data),pointer :: jcol
-
-! Initialization
-has = 0
-
-! Find observation group
-call qg_obsdb_find_group(self,grp,jgrp)
-if (associated(jgrp)) then
-  ! Find observation column
-  call qg_obsdb_find_column(jgrp,col,jcol)
-  if (associated(jcol)) has = 1
-endif
-
-end subroutine qg_obsdb_has
 ! ------------------------------------------------------------------------------
 !> Get locations from observation data
 subroutine qg_obsdb_locations(self,grp,fields,c_times)

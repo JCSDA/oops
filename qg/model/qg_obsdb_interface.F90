@@ -169,34 +169,6 @@ call qg_obsdb_put(self,trim(grp),trim(col),ovec)
 
 end subroutine qg_obsdb_put_c
 ! ------------------------------------------------------------------------------
-!> Test observation data existence
-subroutine qg_obsdb_has_c(c_key_self,lgrp,c_grp,lcol,c_col,c_has) bind(c,name='qg_obsdb_has_f90')
-
-implicit none
-
-! Passed variables
-integer(c_int),intent(in) :: c_key_self                  !< Observation data
-integer(c_int),intent(in) :: lgrp                        !< Group size
-character(kind=c_char,len=1),intent(in) :: c_grp(lgrp+1) !< Group name
-integer(c_int),intent(in) :: lcol                        !< Column size
-character(kind=c_char,len=1),intent(in) :: c_col(lcol+1) !< Column name
-integer(c_int),intent(out) :: c_has                      !< Test flag
-
-! Local variables
-type(qg_obsdb),pointer :: self
-character(len=lgrp) :: grp
-character(len=lcol) :: col
-
-! Interface
-call qg_obsdb_registry%get(c_key_self,self)
-call c_f_string(c_grp,grp)
-call c_f_string(c_col,col)
-
-! Call Fortran
-call qg_obsdb_has(self,trim(grp),trim(col),c_has)
-
-end subroutine qg_obsdb_has_c
-! ------------------------------------------------------------------------------
 !> Get locations from observation data
 subroutine qg_obsdb_locations_c(c_key_self,lgrp,c_grp,c_fields,c_times) bind(c,name='qg_obsdb_locations_f90')
 
