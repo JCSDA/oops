@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2018 UCAR
+ * (C) Copyright 2018-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -17,7 +17,7 @@
 #include <boost/noncopyable.hpp>
 
 #include "oops/base/VariableChangeParametersBase.h"
-#include "oops/base/Variables.h"
+#include "oops/interface/Geometry.h"
 #include "oops/interface/State.h"
 #include "oops/util/AssociativeContainers.h"
 #include "oops/util/parameters/ConfigurationParameter.h"
@@ -34,40 +34,68 @@ namespace oops {
 
 // -------------------------------------------------------------------------------------------------
 
-/// Base class for generic variable transform
+/// Base class for a variable transforms, defining the interfaces.
+/// Use this class as a base class for generic implementations,
+/// and VariableChangeBase as a base class for MODEL-specific implementations.
 ///
 /// Note: subclasses can opt to extract their settings either from a Configuration object or from a
 /// subclass of Parameters.
 ///
-/// In the former case, they should provide a constructor taking a const reference to an
-/// eckit::Configuration object. In the latter case, the implementer should first define a subclass
-/// of Parameters holding the settings of the variable change in question. The latter should
-/// then typedef `Parameters_` to the name of that subclass and provide a constructor taking a
-/// const reference to an instance of that subclass.
+/// In the former case, they should provide a constructor with the following signature:
+///
+///    VariableChange(const Geometry_ &, const eckit::Configuration &);
+///
+/// In the latter case, the implementer should first define a subclass of
+/// VariableChangeParametersBase holding the settings of the variable change in question.
+/// The implementation of the VariableChange interface should then typedef `Parameters_`
+/// to the name of that subclass and provide a constructor with the following signature:
+///
+///    VariableChange(const Geometry_ &, const Parameters_ &);
 template <typename MODEL>
-class VariableChangeBase : public util::Printable,
-                           private boost::noncopyable {
-  typedef State<MODEL>               State_;
+class GenericVariableChangeBase : public util::Printable,
+                                  private boost::noncopyable {
+  typedef State<MODEL>    State_;
 
  public:
-  explicit VariableChangeBase(const VariableChangeParametersBase &);
-  explicit VariableChangeBase(const eckit::Configuration &);
-  virtual ~VariableChangeBase() {}
+  GenericVariableChangeBase() = default;
+  virtual ~GenericVariableChangeBase() = default;
 
-  void setInputVariables(const Variables & vars) { varin_.reset(new Variables(vars)); }
-  void setOutputVariables(const Variables & vars) { varout_.reset(new Variables(vars)); }
-
-  virtual void changeVar(const State_ &, State_ &) const = 0;
-  virtual void changeVarInverse(const State_ &, State_ &) const = 0;
-
-  State_ changeVar(const State_ &) const;
-  State_ changeVarInverse(const State_ &) const;
+  /// change variables from state \p xin to \p xout
+  virtual void changeVar(const State_ & xin, State_ & xout) const = 0;
+  /// inverse of changeVar, change variables back from \p xout to \p xin
+  virtual void changeVarInverse(const State_ & xout, State_ & xin) const = 0;
 
  private:
+  /// Print, used for logging
   virtual void print(std::ostream &) const = 0;
-  std::unique_ptr<Variables> varin_;
-  std::unique_ptr<Variables> varout_;
 };
+
+/// \brief Base class for MODEL-specific implementations of VariableChange class.
+/// The complete interface that needs to be implemented is described in
+/// GenericVariableChangeBase. VariableChangeBase overrides GenericVariableChangeBase
+/// methods to pass MODEL-specific implementations of State to the MODEL-specific
+/// implementation of VariableChange.
+template <typename MODEL>
+class VariableChangeBase : public GenericVariableChangeBase<MODEL> {
+  typedef typename MODEL::State    State_;
+
+ public:
+  VariableChangeBase() = default;
+  virtual ~VariableChangeBase() = default;
+
+  /// Overrides for VariableChangeBase classes, passing MODEL-specific classes to the
+  /// MODEL-specific implementations of VariableChange
+  void changeVar(const State<MODEL> & xin, State<MODEL> & xout) const final
+    { this->changeVar(xin.state(), xout.state()); }
+  void changeVarInverse(const State<MODEL> & xout, State<MODEL> & xin) const final
+    { this->changeVarInverse(xout.state(), xin.state()); }
+
+  /// change variables from state \p xin to \p xout
+  virtual void changeVar(const State_ & xin, State_ & xout) const = 0;
+  /// inverse of changeVar, change variables back from \p xout to \p xin
+  virtual void changeVarInverse(const State_ & xout, State_ & xin) const = 0;
+};
+
 
 // =============================================================================
 
@@ -122,14 +150,8 @@ class VariableChangeFactory {
   /// parameters. \p parameters must be an instance of the subclass of
   /// VariableChangeParametersBase associated with that variable change type, otherwise an
   /// exception will be thrown.
-  static VariableChangeBase<MODEL> * create(const VariableChangeParametersBase &,
-                                            const Geometry_ &);
-
-  /// \brief Create and return a new variable change.
-  ///
-  /// Deprecated overload taking a Configuration instead of a VariableChangeParametersBase.
-  static VariableChangeBase<MODEL> * create(const eckit::Configuration &, const Geometry_ &);
-
+  static GenericVariableChangeBase<MODEL> * create(const Geometry_ &,
+                                                   const VariableChangeParametersBase &);
   /// \brief Create and return an instance of the subclass of VariableChangeParametersBase
   /// storing parameters of variable changes of the specified type.
   static std::unique_ptr<VariableChangeParametersBase> createParameters(const std::string &name);
@@ -147,8 +169,8 @@ class VariableChangeFactory {
   explicit VariableChangeFactory(const std::string &);
 
  private:
-  virtual VariableChangeBase<MODEL> * make(const VariableChangeParametersBase &,
-                                           const Geometry_ &) = 0;
+  virtual GenericVariableChangeBase<MODEL> * make(const Geometry_ &,
+                                                  const VariableChangeParametersBase &) = 0;
 
   virtual std::unique_ptr<VariableChangeParametersBase> makeParameters() const = 0;
 
@@ -161,6 +183,33 @@ class VariableChangeFactory {
 // -------------------------------------------------------------------------------------------------
 
 template<class MODEL, class T>
+class GenericVariableChangeMaker : public VariableChangeFactory<MODEL> {
+  /// Defined as T::Parameters_ if T defines a Parameters_ type; otherwise as
+  /// GenericVariableChangeParameters.
+  typedef TParameters_IfAvailableElseFallbackType_t<T, GenericVariableChangeParameters> Parameters_;
+
+  typedef Geometry<MODEL>   Geometry_;
+
+  GenericVariableChangeBase<MODEL> * make(const Geometry_ & resol,
+                                          const VariableChangeParametersBase & params) override {
+    const auto &stronglyTypedParams = dynamic_cast<const Parameters_&>(params);
+    return new T(resol,
+                 parametersOrConfiguration<HasParameters_<T>::value>(stronglyTypedParams));
+  }
+
+  std::unique_ptr<VariableChangeParametersBase> makeParameters() const override {
+    return boost::make_unique<Parameters_>();
+  }
+
+ public:
+  explicit GenericVariableChangeMaker(const std::string & name)
+    : VariableChangeFactory<MODEL>(name) {}
+};
+
+
+// -------------------------------------------------------------------------------------------------
+
+template<class MODEL, class T>
 class VariableChangeMaker : public VariableChangeFactory<MODEL> {
   /// Defined as T::Parameters_ if T defines a Parameters_ type; otherwise as
   /// GenericVariableChangeParameters.
@@ -168,10 +217,10 @@ class VariableChangeMaker : public VariableChangeFactory<MODEL> {
 
   typedef Geometry<MODEL>   Geometry_;
 
-  VariableChangeBase<MODEL> * make(const VariableChangeParametersBase & params,
-                                   const Geometry_ & resol) override {
+  VariableChangeBase<MODEL> * make(const Geometry_ & resol,
+                                   const VariableChangeParametersBase & params) override {
     const auto &stronglyTypedParams = dynamic_cast<const Parameters_&>(params);
-    return new T(resol,
+    return new T(resol.geometry(),
                  parametersOrConfiguration<HasParameters_<T>::value>(stronglyTypedParams));
   }
 
@@ -197,30 +246,20 @@ VariableChangeFactory<MODEL>::VariableChangeFactory(const std::string & name) {
 // -------------------------------------------------------------------------------------------------
 
 template <typename MODEL>
-VariableChangeBase<MODEL> * VariableChangeFactory<MODEL>::create(
-    const VariableChangeParametersBase & params, const Geometry_ & resol)
+GenericVariableChangeBase<MODEL> * VariableChangeFactory<MODEL>::create(
+    const Geometry_ & resol, const VariableChangeParametersBase & params)
 {
   Log::trace() << "VariableChangeBase<MODEL>::create starting" << std::endl;
 // Not good: should not create anything if no variable change required. YT
-  const std::string &id = params.variableChange.value().value();
+  const std::string &id = params.variableChange.value();
   typename std::map<std::string, VariableChangeFactory<MODEL>*>::iterator
     jerr = getMakers().find(id);
   if (jerr == getMakers().end()) {
     throw std::runtime_error(id + " does not exist in variable change factory.");
   }
-  VariableChangeBase<MODEL> * ptr = jerr->second->make(params, resol);
+  GenericVariableChangeBase<MODEL> * ptr = jerr->second->make(resol, params);
   Log::trace() << "VariableChangeBase<MODEL>::create done" << std::endl;
   return ptr;
-}
-
-// -------------------------------------------------------------------------------------------------
-
-template <typename MODEL>
-VariableChangeBase<MODEL> * VariableChangeFactory<MODEL>::create(const eckit::Configuration & conf,
-                                                                 const Geometry_ & resol) {
-  VariableChangeParametersWrapper<MODEL> parameters;
-  parameters.validateAndDeserialize(conf);
-  return create(parameters.variableChangeParameters, resol);
 }
 
 // -----------------------------------------------------------------------------
@@ -234,55 +273,6 @@ std::unique_ptr<VariableChangeParametersBase> VariableChangeFactory<MODEL>::crea
     throw std::runtime_error(name + " does not exist in VariableChangeFactory");
   }
   return it->second->makeParameters();
-}
-
-// =================================================================================================
-
-template<typename MODEL>
-VariableChangeBase<MODEL>::VariableChangeBase(const VariableChangeParametersBase & params)
-  : varin_(), varout_()
-{
-  if (params.inputVariables.value() != boost::none) {
-    varin_.reset(new Variables(*params.inputVariables.value()));
-    Log::trace() << "VariableChangeBase<MODEL>::VariableChangeBase input variables: "
-                 << *varin_ << std::endl;
-  }
-  if (params.outputVariables.value() != boost::none) {
-    varout_.reset(new Variables(*params.outputVariables.value()));
-    Log::trace() << "VariableChangeBase<MODEL>::VariableChangeBase output variables: "
-                 << *varout_ << std::endl;
-  }
-}
-
-// -------------------------------------------------------------------------------------------------
-
-template<typename MODEL>
-VariableChangeBase<MODEL>::VariableChangeBase(const eckit::Configuration & conf)
-  : VariableChangeBase(validateAndDeserialize<GenericVariableChangeParameters>(conf))
-{}
-
-// -------------------------------------------------------------------------------------------------
-
-template<typename MODEL>
-State<MODEL> VariableChangeBase<MODEL>::changeVar(const State_ & xin) const {
-  Log::trace() << "VariableChangeBase<MODEL>::changeVar starting" << std::endl;
-  ASSERT(varout_);
-  State_ xout(xin.geometry(), *varout_, xin.validTime());
-  this->changeVar(xin, xout);
-  Log::trace() << "VariableChangeBase<MODEL>::changeVar done" << std::endl;
-  return xout;
-}
-
-// -------------------------------------------------------------------------------------------------
-
-template<typename MODEL>
-State<MODEL> VariableChangeBase<MODEL>::changeVarInverse(const State_ & xin) const {
-  Log::trace() << "VariableChangeBase<MODEL>::changeVarInverse starting" << std::endl;
-  ASSERT(varin_);
-  State_ xout(xin.geometry(), *varin_, xin.validTime());
-  this->changeVarInverse(xin, xout);
-  Log::trace() << "VariableChangeBase<MODEL>::changeVarInverse done" << std::endl;
-  return xout;
 }
 
 // -------------------------------------------------------------------------------------------------

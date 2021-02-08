@@ -21,9 +21,8 @@
 namespace qg {
 
 void instantiateQgChangeVarFactory() {
-  static oops::VariableChangeMaker<qg::QgTraits,
-                                   oops::VariableChange<qg::QgTraits, qg::ChangeVarQG> >
-               makerChVarQG_("ChVarQG");
+  static oops::VariableChangeMaker<QgTraits, ChangeVarQG> makerchangevar_("ChVarQG");
+
   static oops::LinearVariableChangeMaker<qg::QgTraits,
                                    oops::LinearVariableChange<qg::QgTraits, qg::ChangeVarTLADQG> >
                makerChLinVarQG_("ChVarQG");

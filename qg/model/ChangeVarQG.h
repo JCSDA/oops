@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2017-2018  UCAR.
+ * (C) Copyright 2017-2021 UCAR.
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -11,9 +11,10 @@
 #include <ostream>
 #include <string>
 
-#include "oops/util/Printable.h"
+#include "oops/base/VariableChangeBase.h"
 
 #include "oops/qg/QgFortran.h"
+#include "oops/qg/QgTraits.h"
 
 // Forward declarations
 namespace eckit {
@@ -27,7 +28,7 @@ namespace qg {
 // -----------------------------------------------------------------------------
 /// QG change of variable
 
-class ChangeVarQG: public util::Printable {
+class ChangeVarQG: public oops::VariableChangeBase<QgTraits> {
  public:
   static const std::string classname() {return "qg::ChangeVarQG";}
 
@@ -35,8 +36,8 @@ class ChangeVarQG: public util::Printable {
   ~ChangeVarQG();
 
 /// Perform transforms
-  void changeVar(const StateQG &, StateQG &) const;
-  void changeVarInverse(const StateQG &, StateQG &) const;
+  void changeVar(const StateQG &, StateQG &) const override;
+  void changeVarInverse(const StateQG &, StateQG &) const override;
 
  private:
   void print(std::ostream &) const override;

@@ -73,7 +73,7 @@ class GenericModelBase : public util::Printable,
 };
 
 
-/// \brief Base class for MODEL-specific implementations of Model class
+/// \brief Base class for MODEL-specific implementations of Model class.
 /// The complete interface that needs to be implemented is described in GenericModelBase.
 /// ModelBase overrides GenericModelBase methods to pass MODEL-specific implementations
 /// of State and ModelAuxControl to the MODEL-specific implementation of Model.

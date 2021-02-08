@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -21,7 +22,7 @@ namespace oops {
 template <typename MODEL>
 void instantiateVariableChangeFactory() {
 // Nonlinear change of variables
-  static VariableChangeMaker<MODEL, IdVariableChange<MODEL> > makerId_("Identity");
+  static GenericVariableChangeMaker<MODEL, IdVariableChange<MODEL> > makerId_("Identity");
 
 // Linear change of variables
   static LinearVariableChangeMaker<MODEL, IdLinearVariableChange<MODEL> > makerIdLin_("Identity");

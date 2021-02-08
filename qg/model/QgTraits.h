@@ -14,7 +14,6 @@
 #include <string>
 
 #include "oops/qg/AnalyticInit.h"
-#include "oops/qg/ChangeVarQG.h"
 #include "oops/qg/ErrorCovarianceQG.h"
 #include "oops/qg/GeometryQG.h"
 #include "oops/qg/GeometryQGIterator.h"

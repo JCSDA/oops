@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2018  UCAR
+ * (C) Copyright 2018-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -20,10 +20,10 @@
 
 #include "eckit/config/Configuration.h"
 #include "eckit/testing/Test.h"
-#include "oops/base/VariableChangeBase.h"
 #include "oops/generic/instantiateVariableChangeFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/State.h"
+#include "oops/interface/VariableChange.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/Expect.h"
@@ -70,17 +70,15 @@ template <typename MODEL> class VariableChangeFixture : private boost::noncopyab
 
 template <typename MODEL> void testVariableChangeInverse() {
   typedef VariableChangeFixture<MODEL>   Test_;
-  typedef oops::State<MODEL>                   State_;
-  typedef oops::VariableChangeBase<MODEL>      VariableChange_;
-  typedef oops::VariableChangeFactory<MODEL>   VariableChangeFactory_;
+  typedef oops::State<MODEL>             State_;
+  typedef oops::VariableChange<MODEL>    VariableChange_;
 
   // Loop over all variable changes
   for (std::size_t jj = 0; jj < Test_::confs().size(); ++jj) {
     // Construct variable change
-    std::unique_ptr<VariableChange_> \
-      changevar(VariableChangeFactory_::create(Test_::confs()[jj], Test_::resol()));
+    VariableChange_ changevar(Test_::resol(), Test_::confs()[jj]);
 
-    oops::Log::test() << "Testing VariableChange: " << *changevar << std::endl;
+    oops::Log::test() << "Testing VariableChange: " << changevar << std::endl;
     // User specified tolerance for pass/fail
     const double tol = Test_::confs()[jj].getDouble("tolerance inverse");
 
@@ -99,13 +97,13 @@ template <typename MODEL> void testVariableChangeInverse() {
     if (inverseFirst) {
       oops::Variables varin(Test_::confs()[jj], "input variables");
       State_ xin(Test_::resol(), varin, xx.validTime());
-      changevar->changeVarInverse(xx, xin);
-      changevar->changeVar(xin, xx);
+      changevar.changeVarInverse(xx, xin);
+      changevar.changeVar(xin, xx);
     } else {
       oops::Variables varout(Test_::confs()[jj], "output variables");
       State_ xout(Test_::resol(), varout, xx.validTime());
-      changevar->changeVar(xx, xout);
-      changevar->changeVarInverse(xout, xx);
+      changevar.changeVar(xx, xout);
+      changevar.changeVarInverse(xout, xx);
     }
 
     // Compute norms of the result and reference

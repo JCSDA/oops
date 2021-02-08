@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2020-2021 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -25,13 +26,13 @@
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/StateInfo.h"
 #include "oops/base/TrajectorySaver.h"
-#include "oops/base/VariableChangeBase.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/LinearModel.h"
 #include "oops/interface/Model.h"
 #include "oops/interface/State.h"
+#include "oops/interface/VariableChange.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -56,7 +57,7 @@ template<typename MODEL, typename OBS> class CostFct4DVar : public CostFunction<
   typedef State<MODEL>                    State_;
   typedef Model<MODEL>                    Model_;
   typedef LinearModel<MODEL>              LinearModel_;
-  typedef VariableChangeBase<MODEL>       VarCha_;
+  typedef VariableChange<MODEL>           VarCha_;
   typedef LinearVariableChangeBase<MODEL> LinVarCha_;
 
  public:
@@ -93,7 +94,7 @@ template<typename MODEL, typename OBS> class CostFct4DVar : public CostFunction<
   Model_ model_;
   const Variables ctlvars_;
   std::shared_ptr<LinearModel_> tlm_;
-  std::unique_ptr<VarCha_> an2model_;
+  VarCha_ an2model_;
   std::unique_ptr<LinVarCha_> inc2model_;
 };
 
@@ -105,7 +106,8 @@ CostFct4DVar<MODEL, OBS>::CostFct4DVar(const eckit::Configuration & config,
   : CostFunction<MODEL, OBS>::CostFunction(config), comm_(comm),
     resol_(eckit::LocalConfiguration(config, "geometry"), comm),
     model_(resol_, eckit::LocalConfiguration(config, "model")),
-    ctlvars_(config, "analysis variables"), tlm_(), an2model_(), inc2model_()
+    ctlvars_(config, "analysis variables"), tlm_(), an2model_(resol_, config),
+    inc2model_()
 {
   Log::trace() << "CostFct4DVar:CostFct4DVar" << std::endl;
   windowLength_ = util::Duration(config.getString("window length"));
@@ -113,7 +115,6 @@ CostFct4DVar<MODEL, OBS>::CostFct4DVar(const eckit::Configuration & config,
   windowEnd_ = windowBegin_ + windowLength_;
   this->setupTerms(config);
   // ASSERT(ctlvars_ <= this->background().state().variables());
-  an2model_.reset(VariableChangeFactory<MODEL>::create(config, resol_));
   Log::trace() << "CostFct4DVar constructed" << std::endl;
 }
 
@@ -150,9 +151,9 @@ void CostFct4DVar<MODEL, OBS>::runNL(CtrlVar_ & xx, PostProcessor<State_> & post
   ASSERT(xx.state().validTime() == windowBegin_);
 
   State_ xm(xx.state().geometry(), model_.variables(), windowBegin_);
-  an2model_->changeVar(xx.state(), xm);
+  an2model_.changeVar(xx.state(), xm);
   model_.forecast(xm, xx.modVar(), windowLength_, post);
-  an2model_->changeVarInverse(xm, xx.state());
+  an2model_.changeVarInverse(xm, xx.state());
 
   ASSERT(xx.state().validTime() == windowEnd_);
 }
