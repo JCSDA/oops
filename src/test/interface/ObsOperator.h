@@ -26,10 +26,13 @@
 #include "oops/interface/ObsOperator.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/runs/Test.h"
+#include "oops/util/Expect.h"
 #include "test/interface/ObsTestsFixture.h"
 #include "test/TestEnvironment.h"
 
 namespace test {
+
+const char *expectConstructorToThrow = "expect constructor to throw exception with message";
 
 // -----------------------------------------------------------------------------
 /// \brief tests constructor and print method
@@ -39,11 +42,19 @@ template <typename OBS> void testConstructor() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     eckit::LocalConfiguration obsopconf(Test_::config(jj), "obs operator");
-    std::unique_ptr<ObsOperator_> hop(new ObsOperator_(Test_::obspace()[jj], obsopconf));
-    EXPECT(hop.get());
-    oops::Log::test() << "Testing ObsOperator: " << *hop << std::endl;
-    hop.reset();
-    EXPECT(!hop.get());
+
+    if (!Test_::config(jj).has(expectConstructorToThrow)) {
+      std::unique_ptr<ObsOperator_> hop(new ObsOperator_(Test_::obspace()[jj], obsopconf));
+      EXPECT(hop.get());
+      oops::Log::test() << "Testing ObsOperator: " << *hop << std::endl;
+      hop.reset();
+      EXPECT(!hop.get());
+    } else {
+      // The constructor is expected to throw an exception containing the specified string.
+      const std::string expectedMessage = Test_::config(jj).getString(expectConstructorToThrow);
+      EXPECT_THROWS_MSG(ObsOperator_(Test_::obspace()[jj], obsopconf),
+                        expectedMessage.c_str());
+    }
   }
 }
 
@@ -59,6 +70,9 @@ template <typename OBS> void testSimulateObs() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     const eckit::LocalConfiguration & conf = Test_::config(jj);
+    if (Test_::config(jj).has(expectConstructorToThrow))
+      continue;
+
     // initialize observation operator (set variables requested from the model,
     // variables simulated by the observation operator, other init)
     eckit::LocalConfiguration obsopconf(conf, "obs operator");
