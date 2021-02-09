@@ -38,6 +38,15 @@ template <typename OBS> void testConstructor() {
     std::unique_ptr<ObsAux_> bias(new ObsAux_(Test_::obspace()[jj], Test_::config(jj)));
     EXPECT(bias.get());
     oops::Log::test() << "Testing ObsAuxControl: " << *bias << std::endl;
+
+    // Not all configurations for interface tests specify "obs bias"; need to check
+    // whether "obs bias" section is available
+    if (Test_::config(jj).has("obs bias")) {
+      const double reference = Test_::config(jj).getDouble("obs bias.norm");
+      const double tolerance = Test_::config(jj).getDouble("obs bias.relative tolerance");
+      EXPECT(oops::is_close_relative(bias->norm(), reference, tolerance));
+    }
+
     bias.reset();
     EXPECT(!bias.get());
   }
