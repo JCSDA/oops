@@ -34,8 +34,6 @@ class ObsBiasIncrement : public util::Printable,
   ObsBiasIncrement();
   ObsBiasIncrement(const ObsSpaceQG &, const eckit::Configuration &);
   ObsBiasIncrement(const ObsBiasIncrement &, const bool copy = true);
-  ObsBiasIncrement(const ObsBiasIncrement &, const eckit::Configuration &);
-  ~ObsBiasIncrement() {}
 
 /// Linear algebra operators
   void diff(const ObsBias &, const ObsBias &);

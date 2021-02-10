@@ -45,7 +45,6 @@ class ObsAuxIncrement : public util::Printable,
 /// Constructor, destructor
   ObsAuxIncrement(const ObsSpace<OBS> &, const eckit::Configuration &);
   ObsAuxIncrement(const ObsAuxIncrement &, const bool copy = true);
-  ObsAuxIncrement(const ObsAuxIncrement &, const eckit::Configuration &);
   ~ObsAuxIncrement();
 
 /// Interfacing
@@ -108,16 +107,6 @@ ObsAuxIncrement<OBS>::ObsAuxIncrement(const ObsAuxIncrement & other,
   util::Timer timer(classname(), "ObsAuxIncrement");
   aux_.reset(new ObsAuxIncrement_(*other.aux_, copy));
   Log::trace() << "ObsAuxIncrement<OBS>::ObsAuxIncrement copy done" << std::endl;
-}
-// -----------------------------------------------------------------------------
-template<typename OBS>
-ObsAuxIncrement<OBS>::ObsAuxIncrement(const ObsAuxIncrement & other,
-                                        const eckit::Configuration & conf) : aux_()
-{
-  Log::trace() << "ObsAuxIncrement<OBS>::ObsAuxIncrement interpolated starting" << std::endl;
-  util::Timer timer(classname(), "ObsAuxIncrement");
-  aux_.reset(new ObsAuxIncrement_(*other.aux_, conf));
-  Log::trace() << "ObsAuxIncrement<OBS>::ObsAuxIncrement interpolated done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template<typename OBS>

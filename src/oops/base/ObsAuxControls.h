@@ -59,8 +59,9 @@ ObsAuxControls<OBS>::ObsAuxControls(const ObsSpaces_ & odb, const eckit::Configu
 {
   std::vector<eckit::LocalConfiguration> obsconf = conf.getSubConfigurations();
   for (std::size_t jobs = 0; jobs < obsconf.size(); ++jobs) {
+    eckit::LocalConfiguration obsauxconf = obsconf[jobs].getSubConfiguration("obs bias");
     auxs_.push_back(
-      std::unique_ptr<ObsAuxControl_>(new ObsAuxControl_(odb[jobs], obsconf[jobs])));
+      std::unique_ptr<ObsAuxControl_>(new ObsAuxControl_(odb[jobs], obsauxconf)));
   }
 }
 

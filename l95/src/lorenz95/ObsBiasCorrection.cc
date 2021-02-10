@@ -24,10 +24,7 @@ namespace lorenz95 {
 ObsBiasCorrection::ObsBiasCorrection(const ObsTableView &, const eckit::Configuration & conf)
   : bias_(0.0), active_(false)
 {
-  if (conf.has("obs bias error")) {
-    const eckit::LocalConfiguration covconf(conf, "obs bias error");
-    active_ = covconf.has("standard_deviation");
-  }
+  active_ = conf.has("standard_deviation");
   if (active_) {oops::Log::trace() << "ObsBiasCorrection::ObsBiasCorrection created." << std::endl;}
 }
 // -----------------------------------------------------------------------------

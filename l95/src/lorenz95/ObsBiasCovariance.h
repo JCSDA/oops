@@ -46,12 +46,10 @@ class ObsBiasCovariance : public util::Printable,
   void inverseMultiply(const ObsBiasCorrection &, ObsBiasCorrection &) const;
   void randomize(ObsBiasCorrection &) const;
 
-  const eckit::Configuration & config() const {return conf_;}
   bool active() const {return active_;}
 
  private:
   void print(std::ostream &) const;
-  const eckit::LocalConfiguration conf_;
   double variance_;
   bool active_;
 };

@@ -27,31 +27,27 @@
 namespace qg {
 // -----------------------------------------------------------------------------
 ObsBiasCovariance::ObsBiasCovariance(const ObsSpaceQG &, const eckit::Configuration & conf)
-  : conf_(conf), variance_(ObsBias::ntypes, 0.0)
+  : variance_(ObsBias::ntypes, 0.0)
 {
   std::vector<double> zz(4, 0.0);
-  if (conf.has("obs bias error")) {
-    const eckit::LocalConfiguration covconf(conf, "obs bias error");
-    if (covconf.has("stream")) zz[0] = covconf.getDouble("stream");
-    if (covconf.has("uwind"))  zz[1] = covconf.getDouble("uwind");
-    if (covconf.has("vwind"))  zz[2] = covconf.getDouble("vwind");
-    if (covconf.has("wspeed")) zz[3] = covconf.getDouble("wspeed");
-  }
-    std::string strn = "";
-    for (unsigned int jj = 0; jj < ObsBias::ntypes; ++jj) {
-      if (jj > 0) strn += ", ";
-      if (std::abs(zz[jj]) > 1.0e-8) {
-        variance_[jj] = zz[jj] * zz[jj];
-        std::ostringstream strs;
-        strs << variance_[jj];
-        strn += strs.str();
-      } else {
-        variance_[jj] = 0.0;
-        strn += "0.0";
-      }
+  if (conf.has("stream")) zz[0] = conf.getDouble("stream");
+  if (conf.has("uwind"))  zz[1] = conf.getDouble("uwind");
+  if (conf.has("vwind"))  zz[2] = conf.getDouble("vwind");
+  if (conf.has("wspeed")) zz[3] = conf.getDouble("wspeed");
+  std::string strn = "";
+  for (unsigned int jj = 0; jj < ObsBias::ntypes; ++jj) {
+    if (jj > 0) strn += ", ";
+    if (std::abs(zz[jj]) > 1.0e-8) {
+      variance_[jj] = zz[jj] * zz[jj];
+      std::ostringstream strs;
+      strs << variance_[jj];
+      strn += strs.str();
+    } else {
+      variance_[jj] = 0.0;
+      strn += "0.0";
     }
-    oops::Log::info() << "ObsBiasCovariance created, variances = " << strn << std::endl;
-//  }
+  }
+  oops::Log::info() << "ObsBiasCovariance created, variances = " << strn << std::endl;
 }
 // -----------------------------------------------------------------------------
 void ObsBiasCovariance::multiply(const ObsBiasIncrement & dxin,

@@ -50,8 +50,6 @@ class ObsAuxCovariance : public util::Printable,
   void inverseMultiply(const ObsAuxIncrement_ &, ObsAuxIncrement_ &) const;
   void randomize(ObsAuxIncrement_ &) const;
 
-  const eckit::Configuration & config() const {return cov_->config();}
-
  private:
   void print(std::ostream &) const;
   std::unique_ptr<ObsAuxCovariance_> cov_;

@@ -37,7 +37,6 @@ class ObsAuxIncrements : public util::Printable,
 /// Constructor, destructor
   ObsAuxIncrements(const ObsSpaces_ &, const eckit::Configuration &);
   ObsAuxIncrements(const ObsAuxIncrements &, const bool copy = true);
-  ObsAuxIncrements(const ObsAuxIncrements &, const eckit::Configuration &);
   ~ObsAuxIncrements();
 
 /// Access
@@ -91,8 +90,9 @@ ObsAuxIncrements<OBS>::ObsAuxIncrements(const ObsSpaces_ & odb, const eckit::Con
 {
   std::vector<eckit::LocalConfiguration> obsconf = conf.getSubConfigurations();
   for (std::size_t jobs = 0; jobs < obsconf.size(); ++jobs) {
+    eckit::LocalConfiguration obsauxconf = obsconf[jobs].getSubConfiguration("obs bias error");
     auxs_.push_back(
-      std::unique_ptr<ObsAuxIncrement_>(new ObsAuxIncrement_(odb[jobs], obsconf[jobs])));
+      std::unique_ptr<ObsAuxIncrement_>(new ObsAuxIncrement_(odb[jobs], obsauxconf)));
   }
 }
 // -----------------------------------------------------------------------------
@@ -106,19 +106,6 @@ ObsAuxIncrements<OBS>::ObsAuxIncrements(const ObsAuxIncrements & other, const bo
     auxs_[jobs].reset(new ObsAuxIncrement_(other[jobs], copy));
   }
   Log::trace() << "ObsAuxIncrements<OBS>::ObsAuxIncrements copy done" << std::endl;
-}
-// -----------------------------------------------------------------------------
-template<typename OBS>
-ObsAuxIncrements<OBS>::ObsAuxIncrements(const ObsAuxIncrements & other,
-                                        const eckit::Configuration & conf) : auxs_(other.size())
-{
-  Log::trace() << "ObsAuxIncrements<OBS>::ObsAuxIncrements interpolated starting" << std::endl;
-  std::vector<eckit::LocalConfiguration> obsconf;
-  ASSERT(size() == other.size());
-  for (std::size_t jobs = 0; jobs < other.size(); ++jobs) {
-    auxs_[jobs].reset(new ObsAuxIncrement_(other[jobs]));
-  }
-  Log::trace() << "ObsAuxIncrements<OBS>::ObsAuxIncrements interpolated done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template<typename OBS>

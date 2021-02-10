@@ -67,8 +67,9 @@ ObsAuxCovariances<OBS>::ObsAuxCovariances(const ObsSpaces_ & odb,
   Log::trace() << "ObsAuxCovariances<OBS>::ObsAuxCovariances starting" << std::endl;
   std::vector<eckit::LocalConfiguration> obsconf = conf.getSubConfigurations();
   for (std::size_t jobs = 0; jobs < obsconf.size(); ++jobs) {
+    eckit::LocalConfiguration obsauxconf = obsconf[jobs].getSubConfiguration("obs bias error");
     cov_.push_back(
-       std::unique_ptr<ObsAuxCovariance_>(new ObsAuxCovariance_(odb[jobs], obsconf[jobs])));
+       std::unique_ptr<ObsAuxCovariance_>(new ObsAuxCovariance_(odb[jobs], obsauxconf)));
   }
   Log::trace() << "ObsAuxCovariances<OBS>::ObsAuxCovariances done" << std::endl;
 }

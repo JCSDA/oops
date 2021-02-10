@@ -26,17 +26,13 @@ namespace qg {
 ObsBias::ObsBias(const ObsSpaceQG &, const eckit::Configuration & conf)
   : bias_(ntypes, 0.0), active_(false), geovars_(), hdiags_() {
   oops::Log::info() << "ObsBias: conf = " << conf << std::endl;
-  eckit::LocalConfiguration biasconf;
-  if (conf.has("obs bias")) {
-    conf.get("obs bias", biasconf);
-    active_ = biasconf.has("stream") || biasconf.has("uwind") ||
-              biasconf.has("vwind") || biasconf.has("wspeed");
-  }
+  active_ = conf.has("stream") || conf.has("uwind") ||
+            conf.has("vwind") || conf.has("wspeed");
   if (active_) {
-    if (biasconf.has("stream")) bias_[0] = biasconf.getDouble("stream");
-    if (biasconf.has("uwind"))  bias_[1] = biasconf.getDouble("uwind");
-    if (biasconf.has("vwind"))  bias_[2] = biasconf.getDouble("vwind");
-    if (biasconf.has("wspeed")) bias_[3] = biasconf.getDouble("wspeed");
+    if (conf.has("stream")) bias_[0] = conf.getDouble("stream");
+    if (conf.has("uwind"))  bias_[1] = conf.getDouble("uwind");
+    if (conf.has("vwind"))  bias_[2] = conf.getDouble("vwind");
+    if (conf.has("wspeed")) bias_[3] = conf.getDouble("wspeed");
     std::string strn = "";
     for (unsigned int jj = 0; jj < ObsBias::ntypes; ++jj) {
       if (jj > 0) strn += ", ";
