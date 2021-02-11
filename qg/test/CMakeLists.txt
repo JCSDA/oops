@@ -3,6 +3,7 @@ list( APPEND qg_testinput
   testinput/3dvar.yaml
   testinput/3dvar_change_var.yaml
   testinput/3dvar_hybrid.yaml
+  testinput/3dvar_hybrid_wo_jb_evaluation.yaml
   testinput/3dfgat.yaml
   testinput/4densvar.yaml
   testinput/4densvar_hybrid.yaml
@@ -84,6 +85,7 @@ list( APPEND qg_testoutput
   testoutput/3dvar.test
   testoutput/3dvar_change_var.test
   testoutput/3dvar_hybrid.test
+  testoutput/3dvar_hybrid_wo_jb_evaluation.test
   testoutput/3dfgat.test
   testoutput/4densvar.test
   testoutput/4densvar_hybrid.test
@@ -592,6 +594,13 @@ oops_add_test( TESTNAME 3dvar_hybrid
                MODELNAME qg
                OMP 2
                YAMLNAME testinput/3dvar_hybrid.yaml
+               EXENAME  qg_4dvar.x
+               TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_3d )
+
+oops_add_test( TESTNAME 3dvar_hybrid_wo_jb_evaluation
+               MODELNAME qg
+               OMP 2
+               YAMLNAME testinput/3dvar_hybrid_wo_jb_evaluation.yaml
                EXENAME  qg_4dvar.x
                TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_3d )
 

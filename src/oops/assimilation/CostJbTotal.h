@@ -110,6 +110,8 @@ template<typename MODEL, typename OBS> class CostJbTotal {
   std::unique_ptr<Geometry_> resol_;
   const util::DateTime windowBegin_;
   const util::DateTime windowEnd_;
+
+  bool jbEvaluation_;
 };
 
 // =============================================================================
@@ -124,6 +126,7 @@ CostJbTotal<MODEL, OBS>::CostJbTotal(const CtrlVar_ & xb, JbState_ * jb,
     windowBegin_(conf.getString("window begin")),
     windowEnd_(windowBegin_ + util::Duration(conf.getString("window length")))
 {
+  jbEvaluation_ = conf.getBool("jb evaluation", true);
   Log::trace() << "CostJbTotal contructed." << std::endl;
 }
 
@@ -155,7 +158,8 @@ double CostJbTotal<MODEL, OBS>::finalize(const CtrlVar_ & mx) const {
   Log::info() << "CostJb: FG-BG" << dx << std::endl;
 
 // Compute Jb value
-  double zjb = this->evaluate(dx);
+  double zjb = 0.0;
+  if (jbEvaluation_) zjb = this->evaluate(dx);
   Log::trace() << "CostJbTotal::finalize done" << std::endl;
   return zjb;
 }
