@@ -73,7 +73,7 @@ namespace oops {
   className &operator=(const className &) = default; \
   className &operator=(className &&) = default; \
  private: \
-  virtual className* cloneImpl() const { \
+  className* cloneImpl() const override { \
     return new className(*this); \
   } \
  public: \
