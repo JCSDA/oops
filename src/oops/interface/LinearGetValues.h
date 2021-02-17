@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 
+#include "eckit/config/Configuration.h"
+
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Increment.h"
@@ -42,7 +44,7 @@ class LinearGetValues : public util::Printable,
   static const std::string classname() {return "oops::LinearGetValues";}
 
 /// Constructor, destructor
-  LinearGetValues(const Geometry_ &, const Locations_ &);
+  LinearGetValues(const Geometry_ &, const Locations_ &, const eckit::Configuration &);
   virtual ~LinearGetValues();
 
 /// Interfacing
@@ -70,11 +72,13 @@ class LinearGetValues : public util::Printable,
 
 template<typename MODEL, typename OBS>
 LinearGetValues<MODEL, OBS>::LinearGetValues(const Geometry_ & resol,
-                                        const Locations_ & loc) : lingetvalues_()
-{
+                                        const Locations_ & loc,
+                                        const eckit::Configuration & linearGetValuesConf)
+     : lingetvalues_() {
   Log::trace() << "LinearGetValues<MODEL, OBS>::LinearGetValues starting" << std::endl;
   util::Timer timer(classname(), "LinearGetValues");
-  lingetvalues_.reset(new LinearGetValues_(resol.geometry(), loc.locations()));
+  lingetvalues_.reset(new LinearGetValues_(resol.geometry(), loc.locations(),
+                                           linearGetValuesConf));
   Log::trace() << "LinearGetValues<MODEL, OBS>::LinearGetValues done" << std::endl;
 }
 

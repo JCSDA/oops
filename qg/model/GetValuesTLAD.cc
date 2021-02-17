@@ -22,8 +22,12 @@ namespace qg {
 // -----------------------------------------------------------------------------
 /// Constructor, destructor
 // -----------------------------------------------------------------------------
-GetValuesTLAD::GetValuesTLAD(const GeometryQG & geom, const LocationsQG & locs)
-  : locs_(locs) {
+GetValuesTLAD::GetValuesTLAD(const GeometryQG & geom, const LocationsQG & locs,
+                             const eckit::Configuration & linearGetValuesConf)
+  : locs_(locs)
+{
+  oops::Log::trace() << "GetValuesTLAD create: linearGetValuesConf = " <<
+                        linearGetValuesConf << std::endl;
 }
 // -----------------------------------------------------------------------------
 void GetValuesTLAD::setTrajectory(const StateQG & state, const util::DateTime & t1,

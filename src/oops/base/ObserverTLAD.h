@@ -49,7 +49,7 @@ class ObserverTLAD {
   typedef State<MODEL>                 State_;
 
  public:
-  ObserverTLAD(const eckit::Configuration &,
+  ObserverTLAD(const eckit::Configuration & conf,
                const ObsSpace_ &, const ObsAuxCtrl_ &);
   ~ObserverTLAD() {}
 
@@ -71,6 +71,7 @@ class ObserverTLAD {
 // Obs operator
   ObsOperator_ hop_;
   LinearObsOperator_ hoptlad_;
+  eckit::LocalConfiguration linearGetValuesConf_;
 
   const ObsAuxCtrl_ & ybias_;
   Variables geovars_;
@@ -85,8 +86,16 @@ template <typename MODEL, typename OBS>
 ObserverTLAD<MODEL, OBS>::ObserverTLAD(const eckit::Configuration & config,
                                        const ObsSpace_ & obsdb,
                                        const ObsAuxCtrl_ & ybias)
-  : obsdb_(obsdb), hop_(obsdb, eckit::LocalConfiguration(config, "obs operator")),
-    hoptlad_(obsdb, eckit::LocalConfiguration(config, "linear obs operator")),
+  : obsdb_(obsdb),
+    hop_(obsdb, eckit::LocalConfiguration(config, "obs operator")),
+    hoptlad_(obsdb, config.has("linear obs operator") ?
+             eckit::LocalConfiguration(config, "linear obs operator") :
+             eckit::LocalConfiguration(config, "obs operator")),
+    linearGetValuesConf_(config.has("linear get values") ?
+                         eckit::LocalConfiguration(config, "linear get values") :
+                           (config.has("get values") ?
+                            eckit::LocalConfiguration(config, "get values") :
+                            eckit::LocalConfiguration(config, ""))),
     ybias_(ybias), geovars_(), locs_(hop_.locations()), lingetvals_(), gvals_()
 {
   geovars_ += hop_.requiredVars();
@@ -99,13 +108,14 @@ void ObserverTLAD<MODEL, OBS>::doInitializeTraj(const State_ & xx,
                                                 const util::DateTime & winbgn,
                                                 const util::DateTime & winend) {
   Log::trace() << "ObserverTLAD::doInitializeTraj start" << std::endl;
-  lingetvals_.reset(new LinearGetValues_(xx.geometry(), locs_));
+  lingetvals_.reset(new LinearGetValues_(xx.geometry(), locs_, linearGetValuesConf_));
   gvals_.reset(new GeoVaLs_(locs_, geovars_));
   Log::trace() << "ObserverTLAD::doInitializeTraj done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
-void ObserverTLAD<MODEL, OBS>::doProcessingTraj(const State_ & xx, const util::DateTime & t1,
+void ObserverTLAD<MODEL, OBS>::doProcessingTraj(const State_ & xx,
+                                                const util::DateTime & t1,
                                                 const util::DateTime & t2) {
   Log::trace() << "ObserverTLAD::doProcessingTraj start" << std::endl;
 // Call nonlinear getValues
@@ -131,7 +141,8 @@ void ObserverTLAD<MODEL, OBS>::doInitializeTL(const Increment_ & dx,
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
-void ObserverTLAD<MODEL, OBS>::doProcessingTL(const Increment_ & dx, const util::DateTime & t1,
+void ObserverTLAD<MODEL, OBS>::doProcessingTL(const Increment_ & dx,
+                                              const util::DateTime & t1,
                                               const util::DateTime & t2) {
   Log::trace() << "ObserverTLAD::doProcessingTL start" << std::endl;
 // Get increment variables at obs locations

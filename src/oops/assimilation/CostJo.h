@@ -179,7 +179,7 @@ CostJo<MODEL, OBS>::initialize(const CtrlVar_ & xx, const eckit::Configuration &
   calchofx_.initialize(xx.obsVar(), currentConf_->getInt("iteration"));
 
   std::vector<eckit::LocalConfiguration> getValuesConfig =
-    util::oopsconfigfunctions::vectoriseAndFilter(obsconf_, "get values");
+    util::vectoriseAndFilter(obsconf_, "get values");
 
   getvals_.reset(new GetValuesPost_(obspace_, calchofx_.locations(),
                                     calchofx_.requiredVars(), getValuesConfig));

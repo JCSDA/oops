@@ -118,7 +118,7 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(const StateEnsemb
       hofx_.resetQc();
       // fill in geovals
       std::vector<eckit::LocalConfiguration> getValuesConfig =
-        util::oopsconfigfunctions::vectoriseAndFilter(obsconf_, "get values");
+        util::vectoriseAndFilter(obsconf_, "get values");
 
       GetValuesPost_ getvals(obspaces_, hofx_.locations(), hofx_.requiredVars(), getValuesConfig);
       getvals.fill(ens_xx[jj]);

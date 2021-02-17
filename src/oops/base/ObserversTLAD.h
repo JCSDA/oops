@@ -88,7 +88,7 @@ class ObserversTLAD : public PostBaseTLAD<MODEL> {
 
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
-ObserversTLAD<MODEL, OBS>::ObserversTLAD(const eckit::Configuration & config,
+ObserversTLAD<MODEL, OBS>::ObserversTLAD(const eckit::Configuration & obsConfig,
                                   const ObsSpaces_ & obsdb,
                                   const ObsAuxCtrls_ & ybias)
   : PostBaseTLAD<MODEL>(obsdb.windowStart(), obsdb.windowEnd()),
@@ -98,13 +98,10 @@ ObserversTLAD<MODEL, OBS>::ObserversTLAD(const eckit::Configuration & config,
     hslot_(0), hslottraj_(0)
 {
   // setup observers
-  std::vector<eckit::LocalConfiguration> typeconf = config.getSubConfigurations();
+  std::vector<eckit::LocalConfiguration> typeconf = obsConfig.getSubConfigurations();
   for (std::size_t jobs = 0; jobs < obsdb.size(); ++jobs) {
-    // Set LinearObsOperator section to ObsOperator section if not available
-    if (!typeconf[jobs].has("linear obs operator")) {
-      typeconf[jobs].set("linear obs operator", typeconf[jobs].getSubConfiguration("obs operator"));
-    }
-    std::shared_ptr<ObserverTLAD_> tmp(new ObserverTLAD_(typeconf[jobs], obsdb[jobs], ybias[jobs]));
+    std::shared_ptr<ObserverTLAD_> tmp(new ObserverTLAD_(typeconf[jobs],
+                                                         obsdb[jobs], ybias[jobs]));
     observerstlad_.push_back(tmp);
   }
   Log::trace() << "ObserversTLAD::ObserversTLAD" << std::endl;

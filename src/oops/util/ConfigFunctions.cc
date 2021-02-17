@@ -10,24 +10,17 @@
 
 namespace util {
 
-  namespace oopsconfigfunctions {
-
-    std::vector<eckit::LocalConfiguration>
-       vectoriseAndFilter(const eckit::Configuration & config, const std::string & tag)
-    {
-      const std::vector<eckit::LocalConfiguration>
-        ObsConfigVec(config.getSubConfigurations());
-      std::vector<eckit::LocalConfiguration> filteredConfig;
-      for (auto conf : ObsConfigVec) {
-          eckit::LocalConfiguration tempConf;
-          if (conf.has(tag)) {
-            tempConf = eckit::LocalConfiguration(conf, tag);
-          }
-          filteredConfig.push_back(tempConf);
-      }
-      return filteredConfig;
+  std::vector<eckit::LocalConfiguration>
+    vectoriseAndFilter(const eckit::Configuration & config, const std::string & tag)
+  {
+    const std::vector<eckit::LocalConfiguration>
+      ObsConfigVec(config.getSubConfigurations());
+    std::vector<eckit::LocalConfiguration> filteredConfig;
+    for (const eckit::LocalConfiguration & conf : ObsConfigVec) {
+      eckit::LocalConfiguration tempConf = conf.getSubConfiguration(tag);
+      filteredConfig.push_back(tempConf);
     }
-
-  }  // namespace oopsconfigfunctions
+    return filteredConfig;
+  }
 
 }  // namespace util

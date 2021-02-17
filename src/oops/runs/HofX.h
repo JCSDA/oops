@@ -112,7 +112,7 @@ template <typename MODEL, typename OBS> class HofX : public Application {
 
 //  run the model and compute H(x)
     std::vector<eckit::LocalConfiguration> getValuesConfig =
-      util::oopsconfigfunctions::vectoriseAndFilter(obsConfig, "get values");
+      util::vectoriseAndFilter(obsConfig, "get values");
 
     std::shared_ptr<GetValuesPost_>
       getvals(new GetValuesPost_(obspaces, hofx.locations(),

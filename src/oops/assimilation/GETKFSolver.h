@@ -175,7 +175,7 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
         tmpState += Ztmp[ieig];
 
         std::vector<eckit::LocalConfiguration> getValuesConfig =
-          util::oopsconfigfunctions::vectoriseAndFilter(this->obsconf_, "get values");
+          util::vectoriseAndFilter(this->obsconf_, "get values");
 
         GetValuesPost_ getvals(this->obspaces_, this->hofx_.locations(),
                                this->hofx_.requiredVars(), getValuesConfig);

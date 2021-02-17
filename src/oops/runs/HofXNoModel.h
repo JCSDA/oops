@@ -98,7 +98,7 @@ template <typename MODEL, typename OBS> class HofXNoModel : public Application {
     const VariablesVec_ & vars = hofx.requiredVars();
 
     std::vector<eckit::LocalConfiguration> getValuesConfig =
-      util::oopsconfigfunctions::vectoriseAndFilter(obsConfig, "get values");
+      util::vectoriseAndFilter(obsConfig, "get values");
 
      // loop over all observation types
     for (size_t jj = 0; jj < obspaces.size(); ++jj) {

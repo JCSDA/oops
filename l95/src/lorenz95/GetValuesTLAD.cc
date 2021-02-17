@@ -25,7 +25,8 @@ namespace lorenz95 {
 /// Constructor, destructor
 // -----------------------------------------------------------------------------
 GetValuesTLAD::GetValuesTLAD(const Resolution & resol,
-                             const LocsL95 & locs)
+                             const LocsL95 & locs,
+                             const eckit::Configuration & linearGetValuesConf)
   : resolidx_(locs.size()), times_(locs.times())
 {
   // find indices of gridpoints nearest to all observations (resolidx_)

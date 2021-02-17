@@ -44,7 +44,7 @@ namespace test {
 // =================================================================================================
 
 template <typename MODEL, typename OBS> class LinearGetValuesFixture : private boost::noncopyable {
-  typedef eckit::LocalConfiguration           LocalConfig_;
+  typedef eckit::LocalConfiguration          LocalConfig_;
   typedef oops::GeoVaLs<OBS>                 GeoVaLs_;
   typedef oops::Geometry<MODEL>              Geometry_;
   typedef oops::GetValues<MODEL, OBS>        GetValues_;
@@ -110,7 +110,12 @@ template <typename MODEL, typename OBS> class LinearGetValuesFixture : private b
     time_.reset(new DateTime_(state_->validTime()));
 
     // LinearGetValues
-    lineargetvalues_.reset(new LinearGetValues_(*resol_, *locs_));
+    LocalConfig_ linearGetValuesConfig;
+    if (TestEnvironment::config().has("linear get values"))
+      linearGetValuesConfig =
+        eckit::LocalConfiguration(TestEnvironment::config(), "linear get values");
+    lineargetvalues_.reset(new LinearGetValues_(*resol_, *locs_,
+                                                linearGetValuesConfig));
 
     // Set trajectory
     GeoVaLs_ gvtraj(*locs_, *geovalvars_);
@@ -139,8 +144,15 @@ template <typename MODEL, typename OBS> void testLinearGetValuesConstructor() {
   typedef LinearGetValuesFixture<MODEL, OBS>  Test_;
   typedef oops::LinearGetValues<MODEL, OBS>   LinearGetValues_;
 
-  std::unique_ptr<const LinearGetValues_> lineargetvalues(new LinearGetValues_(Test_::resol(),
-                                                                               Test_::locs()));
+  eckit::LocalConfiguration linearGetValuesConfig;
+  if (TestEnvironment::config().has("linear get values"))
+    linearGetValuesConfig =
+      eckit::LocalConfiguration(TestEnvironment::config(), "linear get values");
+
+  std::unique_ptr<const LinearGetValues_>
+    lineargetvalues(new LinearGetValues_(Test_::resol(),
+                                         Test_::locs(),
+                                         linearGetValuesConfig));
   EXPECT(lineargetvalues.get());
   oops::Log::test() << "Testing LinearGetValues: " << *lineargetvalues << std::endl;
   lineargetvalues.reset();
