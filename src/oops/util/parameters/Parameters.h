@@ -35,7 +35,7 @@ namespace oops {
   className &operator=(const className &) = default; \
   className &operator=(className &&) = default; \
  private: \
-  virtual className* cloneImpl() const = 0; \
+  className* cloneImpl() const override = 0; \
  public: \
   std::unique_ptr<className> clone() const { \
     return std::unique_ptr<className>(cloneImpl()); \
