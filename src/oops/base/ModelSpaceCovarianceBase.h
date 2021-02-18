@@ -400,7 +400,7 @@ void ModelSpaceCovarianceBase<MODEL>::getVariance(Increment_ & variance) const {
   Increment_ mean(variance);
   mean.zero();
   variance.zero();
-  for (int ie = 0; ie < randomizationSize_; ++ie) {
+  for (size_t ie = 0; ie < randomizationSize_; ++ie) {
     this->randomize(dx);
     dx -= mean;
     dxsq = dx;

@@ -108,10 +108,6 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const eckit::Configuration & conf,
                                             const Geometry_ & resol, const Variables & vars)
   : vars_(vars), ensemblePerturbs_()
 {
-  // Get rank from config
-  std::vector<eckit::LocalConfiguration> memberConfig;
-  conf.get("members", memberConfig);
-
   // Check sizes and fill in timeslots
   util::DateTime tslot = xb.validTime();
 
