@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef OOPS_ASSIMILATION_BLOCKBLANCZOSMINIMIZER_H_
-#define OOPS_ASSIMILATION_BLOCKBLANCZOSMINIMIZER_H_
+#ifndef OOPS_ASSIMILATION_DRPBLOCKLANCZOSMINIMIZER_H_
+#define OOPS_ASSIMILATION_DRPBLOCKLANCZOSMINIMIZER_H_
 
 #include <Eigen/Dense>
 
@@ -33,7 +33,7 @@
 
 namespace oops {
 
-template<typename MODEL, typename OBS> class BlockBLanczosMinimizer :
+template<typename MODEL, typename OBS> class DRPBlockLanczosMinimizer :
          public DRMinimizer<MODEL, OBS> {
   typedef BMatrix<MODEL, OBS>              Bmat_;
   typedef CostFunction<MODEL, OBS>         CostFct_;
@@ -43,9 +43,9 @@ template<typename MODEL, typename OBS> class BlockBLanczosMinimizer :
   typedef Eigen::MatrixXd             eigenmat_;
 
  public:
-  const std::string classname() const override {return "BlockBLanczosMinimizer";}
-  BlockBLanczosMinimizer(const eckit::Configuration &, const CostFct_ &);
-  ~BlockBLanczosMinimizer() {}
+  const std::string classname() const override {return "DRPBlockLanczosMinimizer";}
+  DRPBlockLanczosMinimizer(const eckit::Configuration &, const CostFct_ &);
+  ~DRPBlockLanczosMinimizer() {}
 
  private:
   double solve(CtrlInc_ &, CtrlInc_ &, CtrlInc_ &, const Bmat_ &, const HtRinvH_ &, const double,
@@ -76,7 +76,7 @@ template<typename MODEL, typename OBS> class BlockBLanczosMinimizer :
 // MPI version (storage of partial Krylov base on each processor)
 
 template<typename MODEL, typename OBS>
-BlockBLanczosMinimizer<MODEL, OBS>::BlockBLanczosMinimizer(const eckit::Configuration & conf,
+DRPBlockLanczosMinimizer<MODEL, OBS>::DRPBlockLanczosMinimizer(const eckit::Configuration & conf,
                                                       const CostFct_ & J)
   : DRMinimizer<MODEL, OBS>(J), members_(conf.getInt("members")),
     ntasks_(oops::mpi::world().size()),
@@ -86,7 +86,7 @@ BlockBLanczosMinimizer<MODEL, OBS>::BlockBLanczosMinimizer(const eckit::Configur
 // -----------------------------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-double BlockBLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_ & rr,
+double DRPBlockLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_ & rr,
                                             const Bmat_ & B, const HtRinvH_ & HtRinvH,
                                             const double costJ0Jb, const double costJ0JoJc,
                                             const int maxiter, const double tolerance) {
@@ -110,6 +110,7 @@ double BlockBLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, C
   eigenmat_ alpha(members_, members_);
   eigenmat_ beta = zeromm;
   eigenmat_ beta0 = zeromm;
+  eigenmat_ SSLK;
 
   std::vector<eigenmat_> ALPHAS;  // store the diagonal blocks of the Arnoldi matrix
   std::vector<eigenmat_> BETAS;  // store the underdiagonal blocks of the Arnoldi matrix
@@ -120,6 +121,10 @@ double BlockBLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, C
   double norm_iiter = 0;
   double norm0 = 0;
   double normReduction = 1;
+  double normReductionIter = 1;
+
+  int iterTotal = maxiter;
+
   bool complexValues = false;
 
   eigenvec_ norm_red_loc(maxiter);
@@ -146,8 +151,8 @@ double BlockBLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, C
   Vbase.emplace_back(std::unique_ptr<CtrlInc_>(new CtrlInc_(vv)));
   Zbase.emplace_back(std::unique_ptr<CtrlInc_>(new CtrlInc_(zz)));
 
-  for (int iiter = 0; iiter < maxiter; ++iiter) {
-    Log::info() << "BlockBLanczos starting iteration " << iiter << " for rank: " << mymember_
+  for (int iiter = 0; iiter < maxiter && normReductionIter > tolerance; ++iiter) {
+    Log::info() << "BlockBLanczos starting iteration " << iiter+1 << " for rank: " << mymember_
                 << std::endl;
 
     // Hessian application: w_i = v_i + HtRinvH * B*v_i = v_i + HtRinvH * z_i
@@ -183,26 +188,20 @@ double BlockBLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, C
     norm_iiter = sqrt(temp.dot(ss_loc));
     normReduction = norm_iiter / norm0;
 
-    xh.zero();
-    xx.zero();
-
     const double costJ0 = costJ0Jb + costJ0JoJc;
     double costJ = costJ0;
     double costJb = 0;
     double costJoJc = 0;
 
-    eigenmat_ SSLK;
     for (int ll = 0; ll < iiter+1; ++ll) {
       SSLK = - (ss.block(ll*members_, 0, members_, members_));
-      apply_proj(xh, *Vbase[ll], SSLK, gestag, CommGeo, temp1);
-      apply_proj(xx, *Zbase[ll], SSLK, gestag, CommGeo, temp1);
       // Compute the quadratic cost function
       // J[du_{i}] = J[0] - 0.5 s_{i}^T Z_{i}^T r_{0}
       // Jb[du_{i}] = 0.5 s_{i}^T V_{i}^T Z_{i} s_{i}
       temp2.zero();
       apply_proj(temp2, *Zbase[ll], SSLK, gestag, CommGeo, temp1);
       costJ -= 0.5 * dot_product(temp2, rr);
-    }  // this loop can be moved outside the main loop when we don't need the diagnostics anymore
+    }
 
     Log::info() << "BlockBLanczos end of iteration " << iiter+1 << std::endl;
     printNormReduction(iiter+1, norm_iiter, normReduction);
@@ -210,13 +209,34 @@ double BlockBLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, C
 
     norm_red_loc[iiter] = normReduction;
     costj_loc[iiter] = costJ;
+
+    oops::mpi::world().allReduce(normReduction, normReductionIter, eckit::mpi::max());
+    if (normReductionIter < tolerance) {
+      Log::info() << "DRPBlockLanczos: Achieved required reduction in residual norm." << std::endl;
+      iterTotal = iiter+1;
+    }
   }  // main loop iiter
 
   oops::mpi::allGather(CommGeo, norm_red_loc, norm_red_all);
   oops::mpi::allGather(CommGeo, costj_loc, costj_all);
 
-  Log::info() << "Norm reduction for all members:\n" << norm_red_all << std::endl;
-  Log::info() << "Quadratic costJ for all members:\n" << costj_all << std::endl;
+  xh.zero();
+  xx.zero();
+
+  for (int ll = 0; ll < iterTotal; ++ll) {
+    SSLK = - (ss.block(ll*members_, 0, members_, members_));
+    apply_proj(xh, *Vbase[ll], SSLK, gestag, CommGeo, temp1);
+    apply_proj(xx, *Zbase[ll], SSLK, gestag, CommGeo, temp1);
+
+    Log::info() << "   Norm reduction all members (" << std::setw(2) << ll+1 << ") = "
+                << norm_red_all.block(ll, 0, 1, members_) << std::endl;
+    Log::info() << "   Quadratic cost function all members: J (" << std::setw(2) << ll+1 << ") = "
+                << costj_all.block(ll, 0, 1, members_) << std::endl;
+    Log::test() << "   Norm reduction all members (" << std::setw(2) << ll+1 << ") = "
+                << norm_red_all.block(ll, 0, 1, members_) << std::endl;
+    Log::test() << "   Quadratic cost function all members: J (" << std::setw(2) << ll+1 << ") = "
+                << costj_all.block(ll, 0, 1, members_) << std::endl;
+  }
 
   eckit::mpi::deleteComm(CommGeoName);
   return normReduction;
@@ -227,7 +247,7 @@ double BlockBLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, C
 // -----------------------------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-void BlockBLanczosMinimizer<MODEL, OBS>::get_proj(const CtrlInc_ & www,
+void DRPBlockLanczosMinimizer<MODEL, OBS>::get_proj(const CtrlInc_ & www,
                                              const CtrlInc_ & incr_tosend,
                                              eigenmat_ & alpha_mat, int & tag,
                                              const eckit::mpi::Comm & comm,
@@ -264,7 +284,7 @@ void BlockBLanczosMinimizer<MODEL, OBS>::get_proj(const CtrlInc_ & www,
 // -----------------------------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-void BlockBLanczosMinimizer<MODEL, OBS>::apply_proj(CtrlInc_ & incr_tochange,
+void DRPBlockLanczosMinimizer<MODEL, OBS>::apply_proj(CtrlInc_ & incr_tochange,
                                                const CtrlInc_ & incr_tosend,
                                                const eigenmat_ & alpha_mat, int & tag,
                                                const eckit::mpi::Comm & comm,
@@ -299,7 +319,7 @@ void BlockBLanczosMinimizer<MODEL, OBS>::apply_proj(CtrlInc_ & incr_tochange,
 // -----------------------------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-void BlockBLanczosMinimizer<MODEL, OBS>::mqrgs(CtrlInc_ & zzz, CtrlInc_ & vvv,
+void DRPBlockLanczosMinimizer<MODEL, OBS>::mqrgs(CtrlInc_ & zzz, CtrlInc_ & vvv,
                                          eigenmat_ & beta_mat, const CtrlInc_ & www,
                                          int & tag,
                                          const eckit::mpi::Comm & comm,
@@ -349,7 +369,7 @@ void BlockBLanczosMinimizer<MODEL, OBS>::mqrgs(CtrlInc_ & zzz, CtrlInc_ & vvv,
 // -----------------------------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-void BlockBLanczosMinimizer<MODEL, OBS>::HtRinvH0(const CtrlInc_ & z_loc, CtrlInc_ & w_out,
+void DRPBlockLanczosMinimizer<MODEL, OBS>::HtRinvH0(const CtrlInc_ & z_loc, CtrlInc_ & w_out,
                                              const HtRinvH_ & HtRinvH, int & tag,
                                              const eckit::mpi::Comm & comm, CtrlInc_ & z_other) {
 // send z_loc to task 0, process HtRinvH_0 * z_loc and send the result back to original task
@@ -381,4 +401,4 @@ void BlockBLanczosMinimizer<MODEL, OBS>::HtRinvH0(const CtrlInc_ & z_loc, CtrlIn
 
 }  // namespace oops
 
-#endif  // OOPS_ASSIMILATION_BLOCKBLANCZOSMINIMIZER_H_
+#endif  // OOPS_ASSIMILATION_DRPBLOCKLANCZOSMINIMIZER_H_

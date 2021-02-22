@@ -55,12 +55,12 @@ cost function:
       obs perturbations seed: 2
 variational:
   minimizer:
-    algorithm: BlockBLanczos
+    algorithm: DRPBlockLanczos
     members: 4
   iterations:
   - diagnostics:
       departures: ombg
-    gradient norm reduction: 1.0e-10
+    gradient norm reduction: 0.2
     ninner: 10
     geometry:
       nx: 20
@@ -70,7 +70,7 @@ variational:
     obs perturbations: true
   - diagnostics:
       departures: ombg
-    gradient norm reduction: 1.0e-10
+    gradient norm reduction: 0.2
     ninner: 10
     geometry:
       nx: 40

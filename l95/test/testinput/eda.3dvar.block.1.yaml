@@ -25,7 +25,7 @@ cost function:
     obs operator: {}
 variational:
   minimizer:
-    algorithm: BlockBLanczos
+    algorithm: DRPBlockLanczos
     members: 2
   iterations:
   - geometry:

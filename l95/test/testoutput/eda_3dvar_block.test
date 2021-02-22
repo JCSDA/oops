@@ -1,14 +1,54 @@
 Test     : CostJb   : Nonlinear Jb = 0
 Test     : CostJo   : Nonlinear Jo(Lorenz 95) = 1003.27, nobs = 120, Jo/n = 8.36061, err = 0.4
 Test     : CostFunction: Nonlinear J = 1003.27
-Test     : BlockBLanczosMinimizer: reduction in residual norm = 0.000587397
+Test     :    Norm reduction all members ( 1) = 0.226112 0.246079
+Test     :    Quadratic cost function all members: J ( 1) = 157.904 186.615
+Test     :    Norm reduction all members ( 2) = 0.0711168 0.0801927
+Test     :    Quadratic cost function all members: J ( 2) = 119.121  129.88
+Test     :    Norm reduction all members ( 3) = 0.0329696 0.0324763
+Test     :    Quadratic cost function all members: J ( 3) = 114.134 121.796
+Test     :    Norm reduction all members ( 4) = 0.0143961 0.0146658
+Test     :    Quadratic cost function all members: J ( 4) = 113.103 120.416
+Test     :    Norm reduction all members ( 5) = 0.00801082 0.00603926
+Test     :    Quadratic cost function all members: J ( 5) = 112.853 120.144
+Test     :    Norm reduction all members ( 6) = 0.00525854  0.0040795
+Test     :    Quadratic cost function all members: J ( 6) = 112.769 120.073
+Test     :    Norm reduction all members ( 7) = 0.00313676 0.00251749
+Test     :    Quadratic cost function all members: J ( 7) = 112.735 120.046
+Test     :    Norm reduction all members ( 8) = 0.00178513 0.00129232
+Test     :    Quadratic cost function all members: J ( 8) = 112.723 120.036
+Test     :    Norm reduction all members ( 9) = 0.000947141 0.000990084
+Test     :    Quadratic cost function all members: J ( 9) = 112.719 120.033
+Test     :    Norm reduction all members (10) = 0.000587397 0.000553939
+Test     :    Quadratic cost function all members: J (10) = 112.718 120.031
+Test     : DRPBlockLanczosMinimizer: reduction in residual norm = 0.000587397
 Test     : CostFunction::addIncrement: Analysis:
 Test     :  Valid time: 2010-01-02T00:00:00Z
 Test     :  Min=6.77364, Max=9.00861, Average=8.0056
 Test     : CostJb   : Nonlinear Jb = 97.3394
 Test     : CostJo   : Nonlinear Jo(Lorenz 95) = 15.3786, nobs = 120, Jo/n = 0.128155, err = 0.4
 Test     : CostFunction: Nonlinear J = 112.718
-Test     : BlockBLanczosMinimizer: reduction in residual norm = 0.00319633
+Test     :    Norm reduction all members ( 1) = 0.603209 0.531155
+Test     :    Quadratic cost function all members: J ( 1) = 112.718 120.031
+Test     :    Norm reduction all members ( 2) = 0.486549 0.413971
+Test     :    Quadratic cost function all members: J ( 2) = 112.718 120.031
+Test     :    Norm reduction all members ( 3) = 0.225252 0.225474
+Test     :    Quadratic cost function all members: J ( 3) = 112.717 120.031
+Test     :    Norm reduction all members ( 4) = 0.136703 0.150484
+Test     :    Quadratic cost function all members: J ( 4) = 112.717 120.031
+Test     :    Norm reduction all members ( 5) = 0.0844788 0.0897435
+Test     :    Quadratic cost function all members: J ( 5) = 112.717 120.031
+Test     :    Norm reduction all members ( 6) = 0.0543314 0.0522884
+Test     :    Quadratic cost function all members: J ( 6) = 112.717 120.031
+Test     :    Norm reduction all members ( 7) = 0.0325225 0.0286418
+Test     :    Quadratic cost function all members: J ( 7) = 112.717 120.031
+Test     :    Norm reduction all members ( 8) = 0.0177981 0.0162206
+Test     :    Quadratic cost function all members: J ( 8) = 112.717 120.031
+Test     :    Norm reduction all members ( 9) = 0.00868724 0.00777496
+Test     :    Quadratic cost function all members: J ( 9) = 112.717 120.031
+Test     :    Norm reduction all members (10) = 0.00319633 0.00372359
+Test     :    Quadratic cost function all members: J (10) = 112.717 120.031
+Test     : DRPBlockLanczosMinimizer: reduction in residual norm = 0.00319633
 Test     : CostFunction::addIncrement: Analysis:
 Test     :  Valid time: 2010-01-02T00:00:00Z
 Test     :  Min=6.77193, Max=9.00912, Average=8.00572

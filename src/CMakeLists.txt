@@ -2,7 +2,6 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
 list( APPEND oops_src_files
 
-oops/assimilation/BlockBLanczosMinimizer.h
 oops/assimilation/BMatrix.h
 oops/assimilation/CalcHofX.h
 oops/assimilation/ControlIncrement.h
@@ -23,6 +22,7 @@ oops/assimilation/CostTermBase.h
 oops/assimilation/DRGMRESRMinimizer.h
 oops/assimilation/DRIPCGMinimizer.h
 oops/assimilation/DRMinimizer.h
+oops/assimilation/DRPBlockLanczosMinimizer.h
 oops/assimilation/DRPCGMinimizer.h
 oops/assimilation/DRPFOMMinimizer.h
 oops/assimilation/DRPLanczosMinimizer.h
