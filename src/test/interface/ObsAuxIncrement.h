@@ -78,10 +78,10 @@ template <typename OBS> void testObsAuxIncrementConstructor() {
 }
 
 // -----------------------------------------------------------------------------
-
+/// Tests copy-constructor (with option of allocating, but not copying the data)
 template <typename OBS> void testObsAuxIncrementCopyConstructor() {
-  typedef ObsTestsFixture<OBS>  Test_;
-  typedef oops::ObsAuxIncrement<OBS>    AuxIncr_;
+  typedef ObsTestsFixture<OBS>        Test_;
+  typedef oops::ObsAuxIncrement<OBS>  AuxIncr_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     if (Test_::config(jj).has("obs bias error")) {
@@ -89,11 +89,15 @@ template <typename OBS> void testObsAuxIncrementCopyConstructor() {
       AuxIncr_ dx1(Test_::obspace()[jj], biasconf);
       ObsAuxIncrementFixture<OBS>::covariance(jj).randomize(dx1);
       oops::Log::test() << "Printing random ObsAuxIncrement: " << dx1 << std::endl;
+      /// Test that creating new increment without copying data works
+      AuxIncr_ dxempty(dx1, false);
+      EXPECT_EQUAL(dxempty.norm(), 0.0);
+      /// Test that creating new increment with copying data works
       AuxIncr_ dx2(dx1);
       EXPECT(dx2.norm() > 0.0);
       EXPECT(dx2.norm() == dx1.norm());
 
-//    Check that the copy is equal to the original
+      /// Test that the copy is equal to the original
       dx2 -= dx1;
       EXPECT(dx2.norm() == 0.0);
     }

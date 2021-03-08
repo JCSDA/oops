@@ -44,7 +44,9 @@ class ObsAuxIncrement : public util::Printable,
 
 /// Constructor, destructor
   ObsAuxIncrement(const ObsSpace<OBS> &, const eckit::Configuration &);
-  ObsAuxIncrement(const ObsAuxIncrement &, const bool copy = true);
+  /// Copies \p other if \p copy is true, otherwise creates zero increment
+  /// of the same size as \p other.
+  ObsAuxIncrement(const ObsAuxIncrement & other, const bool copy = true);
   ~ObsAuxIncrement();
 
 /// Interfacing
