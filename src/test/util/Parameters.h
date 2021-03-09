@@ -10,6 +10,7 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -24,6 +25,7 @@
 #include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/Variables.h"
 #include "oops/runs/Test.h"
+#include "oops/util/AnyOf.h"
 #include "oops/util/Expect.h"
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/ConfigurationParameter.h"
@@ -35,6 +37,7 @@
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/ParameterTraits.h"
+#include "oops/util/parameters/ParameterTraitsAnyOf.h"
 #include "oops/util/parameters/ParameterTraitsScalarOrMap.h"
 #include "oops/util/parameters/PolymorphicParameter.h"
 #include "oops/util/parameters/RequiredParameter.h"
@@ -92,6 +95,8 @@ class EmbeddedParameters : public oops::Parameters {
 class MyParametersBase : public oops::Parameters {
   OOPS_ABSTRACT_PARAMETERS(MyParametersBase, Parameters)
  public:
+  typedef util::AnyOf<std::string, std::vector<int>> AnyOf_;
+
   oops::Parameter<float> floatParameter{"float_parameter", 1.5f, this};
   oops::Parameter<int> intParameter{"int_parameter", 2, this};
   oops::Parameter<bool> boolParameter{"bool_parameter", true, this};
@@ -103,6 +108,11 @@ class MyParametersBase : public oops::Parameters {
   oops::Parameter<std::vector<int>> intParameters{"int_parameters", {}, this};
   oops::Parameter<std::vector<RangeParameters>> rangeParameters{"range_parameters", {}, this};
   oops::Parameter<oops::Variables> variablesParameter{"variables_parameter", {}, this};
+  oops::Parameter<std::set<int>> setIntParameter{"set_int_parameter", {}, this};
+  oops::Parameter<AnyOf_> anyOfParameter{
+    "any_of_parameter", AnyOf_(std::vector<int>({10, 20})), this};
+  oops::OptionalParameter<AnyOf_> optAnyOfParameter{"opt_any_of_parameter", this};
+  oops::OptionalParameter<void> optNullParameter{"opt_null_parameter", this};
   EmbeddedParameters embeddedParameters{this};
 };
 
@@ -428,6 +438,10 @@ void testDefaultValues() {
   EXPECT(params.intParameters.value().empty());
   EXPECT(params.rangeParameters.value().empty());
   EXPECT(params.variablesParameter.value() == oops::Variables());
+  EXPECT(params.setIntParameter.value() == std::set<int>());
+  EXPECT(params.anyOfParameter.value().as<std::vector<int>>() == std::vector<int>({10, 20}));
+  EXPECT(params.optAnyOfParameter.value() == boost::none);
+  EXPECT_NOT(params.optNullParameter.value());
   EXPECT(params.embeddedParameters.intParameter.value() == 3);
   EXPECT(params.embeddedParameters.optDateTimeParameter.value() == boost::none);
 
@@ -451,6 +465,10 @@ void testDefaultValues() {
   EXPECT(params.intParameters.value().empty());
   EXPECT(params.rangeParameters.value().empty());
   EXPECT(params.variablesParameter.value() == oops::Variables());
+  EXPECT(params.setIntParameter.value() == std::set<int>());
+  EXPECT(params.anyOfParameter.value().as<std::vector<int>>() == std::vector<int>({10, 20}));
+  EXPECT(params.optAnyOfParameter.value() == boost::none);
+  EXPECT_NOT(params.optNullParameter.value());
   EXPECT(params.embeddedParameters.intParameter.value() == 3);
   EXPECT(params.embeddedParameters.optDateTimeParameter.value() == boost::none);
 }
@@ -485,6 +503,12 @@ void testCorrectValues() {
   EXPECT(params.rangeParameters.value()[1].maxParameter == 12.0f);
   EXPECT(params.variablesParameter.value() ==
          oops::Variables({"u", "v"}, std::vector<int>({5, 6, 7})));
+  EXPECT(params.setIntParameter.value() == std::set<int>({2, 4, 5, 6, 8}));
+  EXPECT(params.anyOfParameter.value().as<std::string>() == "dog");
+  EXPECT(params.optAnyOfParameter.value() != boost::none);
+  EXPECT_EQUAL(params.optAnyOfParameter.value()->as<std::vector<int>>(),
+               std::vector<int>({1, 2, 3, 4}));
+  EXPECT(params.optNullParameter.value());
   EXPECT(params.embeddedParameters.intParameter.value() == 13);
   EXPECT(params.embeddedParameters.optDateTimeParameter.value() != boost::none);
   EXPECT_EQUAL(params.embeddedParameters.optDateTimeParameter.value().get(),
@@ -644,6 +668,39 @@ void testIncorrectValueOfRangeParameters() {
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::Exception);
 }
 
+void testIncorrectValueOfAnyOfParameter() {
+  {
+    // This YAML section sets any_of_parameter to a value that is neither a string nor a list of
+    // ints. This should be detected at the validation stage.
+    MyOptionalParameters params;
+    const eckit::LocalConfiguration conf(TestEnvironment::config(), "error_in_any_of_parameter");
+    if (validationSupported)
+      EXPECT_THROWS_MSG(params.validate(conf), "no subschema has succeeded");
+  }
+
+  {
+    // This YAML section sets any_of_parameter to a string, but the code attempts to load
+    // it as a vector of ints. This can be detected only in the call to the as() method.
+    MyOptionalAndRequiredParameters params;
+    const eckit::LocalConfiguration conf(TestEnvironment::config(), "full");
+    params.validate(conf);
+    params.deserialize(conf);
+    EXPECT_THROWS_MSG(params.anyOfParameter.value().as<std::vector<int>>(),
+                      "unexpected value type");
+  }
+
+  {
+    // This YAML section sets any_of_parameter to a vector of ints, but the code attempts to load
+    // it as a string. This can be detected only in the call to the as() method.
+    MyOptionalAndRequiredParameters params;
+    const eckit::LocalConfiguration conf(TestEnvironment::config(), "alternative");
+    params.validate(conf);
+    params.deserialize(conf);
+    EXPECT_THROWS_MSG(params.anyOfParameter.value().as<std::string>(),
+                      "unexpected value type");
+  }
+}
+
 void testMissingRequiredFloatParameter() {
   MyOptionalAndRequiredParameters params;
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
@@ -759,6 +816,47 @@ void testMapParametersSerialization() {
   doTestSerialization<MyMapParameters>(conf);
 }
 
+// Parameters storing std::set<int> objects
+
+void testSetIntParameters() {
+  {
+    MyOptionalParameters params;
+    const eckit::LocalConfiguration conf(TestEnvironment::config(),
+                                         "set_int_single_number");
+    EXPECT_NO_THROW(params.validate(conf));
+    params.deserialize(conf);
+    EXPECT(params.setIntParameter.value() == std::set<int>({5}));
+  }
+
+  {
+    MyOptionalParameters params;
+    const eckit::LocalConfiguration conf(TestEnvironment::config(),
+                                         "set_int_range");
+    EXPECT_NO_THROW(params.validate(conf));
+    params.deserialize(conf);
+    EXPECT(params.setIntParameter.value() == std::set<int>({3, 4, 5}));
+  }
+
+  {
+    MyOptionalParameters params;
+    const eckit::LocalConfiguration conf(TestEnvironment::config(),
+                                         "set_int_multiple_numbers_and_ranges");
+    EXPECT_NO_THROW(params.validate(conf));
+    params.deserialize(conf);
+    EXPECT(params.setIntParameter.value() == std::set<int>({3, 4, 5, 7, 10, 11, 13}));
+  }
+
+  {
+    MyOptionalParameters params;
+    const eckit::LocalConfiguration conf(TestEnvironment::config(),
+                                         "set_int_invalid_range");
+    // Note: this syntax error won't be detected at the validation stage, but only at the
+    // deserialization stage
+    EXPECT_THROWS_MSG(params.deserialize(conf),
+                      "isn't a list of comma-separated integers or ranges of integers");
+  }
+}
+
 // Parameters storing Variables objects
 
 void testVariablesDeserializationWithoutChannels() {
@@ -840,6 +938,11 @@ void expectMatchesFullConf(const MyOptionalAndRequiredParameters &params) {
   EXPECT_EQUAL(params.floatParameter, 3.5f);
   EXPECT_EQUAL(params.rangeParameter.value().minParameter, 7.0f);
   EXPECT_EQUAL(params.rangeParameters.value()[0].minParameter, 9.0f);
+  EXPECT_EQUAL(params.setIntParameter.value(), std::set<int>({2, 4, 5, 6, 8}));
+  EXPECT(params.optNullParameter.value());
+  EXPECT(params.optAnyOfParameter.value() != boost::none);
+  EXPECT_EQUAL(params.optAnyOfParameter.value()->as<std::vector<int>>(),
+               std::vector<int>({1, 2, 3, 4}));
   EXPECT(params.embeddedParameters.intParameter.value() == 13);
 }
 
@@ -847,6 +950,10 @@ void expectMatchesAlternativeConf(const MyOptionalAndRequiredParameters &params)
   EXPECT_EQUAL(params.floatParameter, 13.5f);
   EXPECT_EQUAL(params.rangeParameter.value().minParameter, 17.0f);
   EXPECT_EQUAL(params.rangeParameters.value()[0].minParameter, 19.0f);
+  EXPECT_EQUAL(params.setIntParameter.value(), std::set<int>({3}));
+  EXPECT(params.optNullParameter.value());
+  EXPECT(params.optAnyOfParameter.value() != boost::none);
+  EXPECT_EQUAL(params.optAnyOfParameter.value()->as<std::string>(), "cat");
   EXPECT(params.embeddedParameters.intParameter.value() == 23);
 }
 
@@ -1469,6 +1576,9 @@ class Parameters : public oops::Test {
     ts.emplace_back(CASE("util/Parameters/testIncorrectValueOfRangeParameters") {
                       testIncorrectValueOfRangeParameters();
                     });
+    ts.emplace_back(CASE("util/Parameters/testIncorrectValueOfAnyOfParameter") {
+                      testIncorrectValueOfAnyOfParameter();
+                    });
     ts.emplace_back(CASE("util/Parameters/testMissingRequiredFloatParameter") {
                       testMissingRequiredFloatParameter();
                     });
@@ -1513,6 +1623,10 @@ class Parameters : public oops::Test {
 
     ts.emplace_back(CASE("util/Parameters/mapParametersSerialization") {
                       testMapParametersSerialization();
+                    });
+
+    ts.emplace_back(CASE("util/Parameters/testSetIntParameters") {
+                      testSetIntParameters();
                     });
 
     ts.emplace_back(CASE("util/Parameters/testVariablesDeserializationWithoutChannels") {

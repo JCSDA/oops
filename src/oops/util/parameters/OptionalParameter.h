@@ -102,6 +102,62 @@ ObjectJsonSchema OptionalParameter<T>::jsonSchema() const {
   return schema;
 }
 
+
+/// \brief Specialisation for `void`.
+///
+/// OptionalParameter<void> represents YAML options that don't take any values -- only their
+/// presence matters. For example, the presence of the following option
+///
+///     is_defined:
+///
+/// or equivalently
+///
+///     is_defined: null
+///
+/// can be detected by declaring the following member variable of a Parameters subclass:
+///
+///     oops::OptionalParameter<void> isDefined{"is_defined", this};
+///
+/// After deserialization, `isDefined.value()` will return true if this option is present in the
+/// YAML file and false otherwise.
+template <>
+class OptionalParameter<void> : public ParameterBase {
+ public:
+  /// \brief Constructor.
+  ///
+  /// \param name
+  ///   Name of the key from which this parameter's value will be loaded when parameters are
+  ///   deserialized from a Configuration object. Similarly, name of the key to which this
+  ///   parameter's value will be saved when parameters are serialized to a Configuration object.
+  /// \param parent
+  ///   Pointer to the Parameters object representing the collection of options located at
+  ///   the same level of the configuration tree as \p name. A call to deserialize() or serialize()
+  ///   on that object will automatically trigger a call to deserialize() or serialize() on this
+  ///   parameter.
+  OptionalParameter(
+      const char *name, Parameters *parent)
+    : ParameterBase(parent), name_(name), value_(false)
+  {}
+
+  void deserialize(util::CompositePath &path, const eckit::Configuration &config) override;
+
+  void serialize(eckit::LocalConfiguration &config) const override;
+
+  ObjectJsonSchema jsonSchema() const override;
+
+  /// \brief True if this parameter was present in the deserialized Configuration object, false
+  /// otherwise.
+  bool value() const { return value_; }
+
+  /// \brief True if this parameter was present in the deserialized Configuration object, false
+  /// otherwise.
+  operator const bool &() const { return value_; }
+
+ private:
+  std::string name_;
+  bool value_;
+};
+
 }  // namespace oops
 
 #endif  // OOPS_UTIL_PARAMETERS_OPTIONALPARAMETER_H_

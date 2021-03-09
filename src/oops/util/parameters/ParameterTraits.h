@@ -440,6 +440,30 @@ struct ParameterTraits<std::map<Key, Value>, std::false_type> {
   }
 };
 
+/// \brief Specialization for set<int>.
+///
+/// This specialization handles conversion of std::set<int> to and from string-valued YAML options
+/// having the form of comma-separated lists of single integers or ranges of integers. Examples:
+///
+///     option_a: 1
+///     option_b: 10-15
+///     option_c: 8,10, 11-15, 1,3
+///
+/// \warning The current implementation can only handle non-negative integers.
+template <>
+struct ParameterTraits<std::set<int>, std::false_type> {
+  static boost::optional<std::set<int>> get(util::CompositePath &path,
+                                            const eckit::Configuration &config,
+                                            const std::string &name);
+
+  static void set(eckit::LocalConfiguration &config,
+                  const std::string &name,
+                  const std::set<int> &value);
+
+  static ObjectJsonSchema jsonSchema(const std::string &name);
+};
+
+
 // Note: to avoid coupling this file too tightly with headers defining a lot of disparate classes,
 // only specializations of ParameterTraits for commonly used types should be added here.
 // Specializations for types used less frequently should be defined in separate files (see

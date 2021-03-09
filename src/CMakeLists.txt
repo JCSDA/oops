@@ -237,6 +237,7 @@ oops/runs/Variational.h
 oops/util/abor1_cpp.cc
 oops/util/abor1_cpp.h
 oops/util/abor1_ftn.F90
+oops/util/AnyOf.h
 oops/util/AssociativeContainers.h
 oops/util/CompareNVectors.h
 oops/util/CompositePath.cc
@@ -309,6 +310,7 @@ oops/util/Timer.cc
 oops/util/Timer.h
 oops/util/TimerHelper.cc
 oops/util/TimerHelper.h
+oops/util/TypeTraits.h
 oops/util/utilNamespaceDoc.h
 oops/util/wildcard.h
 oops/util/wildcard.cc
@@ -323,6 +325,7 @@ oops/util/parameters/NumericConstraints.h
 oops/util/parameters/ObjectJsonSchema.cc
 oops/util/parameters/ObjectJsonSchema.h
 oops/util/parameters/OptionalParameter.h
+oops/util/parameters/OptionalParameter.cc
 oops/util/parameters/OptionalPolymorphicParameter.h
 oops/util/parameters/Parameter.h
 oops/util/parameters/ParameterBase.cc
@@ -331,7 +334,9 @@ oops/util/parameters/ParameterConstraint.h
 oops/util/parameters/Parameters.cc
 oops/util/parameters/Parameters.h
 oops/util/parameters/ParametersOrConfiguration.h
+oops/util/parameters/ParameterTraits.cc
 oops/util/parameters/ParameterTraits.h
+oops/util/parameters/ParameterTraitsAnyOf.h
 oops/util/parameters/ParameterTraitsScalarOrMap.h
 oops/util/parameters/PolymorphicParameter.h
 oops/util/parameters/PolymorphicParameterTraits.h
@@ -406,6 +411,7 @@ test/util/MissingValues.h
 test/util/PropertiesOfNVectors.h
 test/util/stringFunctions.h
 test/util/LocalEnvironment.h
+test/util/TypeTraits.h
 )
 
 list (APPEND oops_fheader_files
@@ -639,6 +645,11 @@ ecbuild_add_test( TARGET  test_util_propertiesofnvectors
 
 ecbuild_add_test( TARGET  test_util_localenvironment
                   SOURCES test/util/LocalEnvironment.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_typetraits
+                  SOURCES test/util/TypeTraits.cc
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 
