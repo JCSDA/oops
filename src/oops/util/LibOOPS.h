@@ -32,12 +32,13 @@ class LibOOPS : public eckit::system::Library {
 
   static LibOOPS& instance();
 
-  virtual eckit::Channel& infoChannel() const;
+  eckit::Channel& infoChannel() const;
   eckit::Channel& debugChannel() const override;
 
-  virtual eckit::Channel& traceChannel() const;
-  virtual eckit::Channel& statsChannel() const;
-  virtual eckit::Channel& testChannel() const;
+  eckit::Channel& traceChannel() const;
+  eckit::Channel& statsChannel() const;
+  eckit::Channel& testChannel() const;
+  eckit::Channel& timerChannel() const;
 
   void initialise();
   void teeOutput(const std::string &);
@@ -56,12 +57,14 @@ class LibOOPS : public eckit::system::Library {
   mutable std::unique_ptr<eckit::Channel> traceChannel_;
   mutable std::unique_ptr<eckit::Channel> statsChannel_;
   mutable std::unique_ptr<eckit::Channel> testChannel_;
+  mutable std::unique_ptr<eckit::Channel> timerChannel_;
 
   size_t rank_;
   bool debug_;
   std::string predebug_;
   bool trace_;
   std::string pretrace_;
+  bool enable_timer_channel_;
 };
 
 // -----------------------------------------------------------------------------

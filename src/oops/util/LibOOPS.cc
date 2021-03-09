@@ -95,6 +95,7 @@ void LibOOPS::initialise() {
     do_abortfpe = getEnv("OOPS_ABORTFPE", 1);
     trap_sigfpe(do_abortfpe);
   }
+  enable_timer_channel_ = getEnv("OOPS_TIMER", 0) > 0 && rank_ == 0;
 
 #ifdef ENABLE_GPTL
   do_profile = getEnv("OOPS_PROFILE", 0);
@@ -133,14 +134,13 @@ void LibOOPS::finalise(bool finaliseMPI) {
       }
     }
 #endif
-    // Make sure that these specialised channels that wrap eckit::Log::info() are
-    // destroyed before eckit::Log::info gets destroyed.
-    // Just in case someone still tries to log, we reset to empty channels.
-    infoChannel_.reset(new eckit::Channel());
     debugChannel_.reset(new eckit::Channel());
     traceChannel_.reset(new eckit::Channel());
     statsChannel_.reset(new eckit::Channel());
-    testChannel_. reset(new eckit::Channel());
+    testChannel_.reset(new eckit::Channel());
+    timerChannel_.reset(new eckit::Channel());
+    // Destroy info channel last after other channels have flushed all output
+    infoChannel_.reset(new eckit::Channel());
 
     if (finaliseMPI)
       eckit::mpi::finaliseAllComms();
@@ -189,6 +189,17 @@ eckit::Channel& LibOOPS::testChannel() const {
     testChannel_.reset(new eckit::Channel());
   }
   return *testChannel_;
+}
+
+eckit::Channel& LibOOPS::timerChannel() const {
+  if (timerChannel_) {return *timerChannel_;}
+  if (enable_timer_channel_) {
+    timerChannel_.reset(new eckit::Channel(
+      new eckit::PrefixTarget("OOPS_TIMER:", new eckit::OStreamTarget(eckit::Log::info()))));
+  } else {
+    timerChannel_.reset(new eckit::Channel());
+  }
+  return *timerChannel_;
 }
 
 eckit::Channel& LibOOPS::infoChannel() const {

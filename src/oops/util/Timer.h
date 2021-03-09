@@ -11,27 +11,37 @@
 #ifndef OOPS_UTIL_TIMER_H_
 #define OOPS_UTIL_TIMER_H_
 
-// #include <chrono>
-#include <sys/time.h>
-
+#include <chrono>
+#include <ostream>
 #include <string>
-
-#include <boost/noncopyable.hpp>
 
 namespace util {
 
 // -----------------------------------------------------------------------------
 
-class Timer : private boost::noncopyable {
+class Timer {
  public:
-  Timer(const std::string &, const std::string &);
+  using ClockT = std::chrono::steady_clock;  // Monotonic clock type
+  using TimeT = ClockT::time_point;
+
+  Timer(const std::string &class_name, const std::string &method_name);
   ~Timer();
 
- private:
-//  const std::chrono::time_point<std::chrono::system_clock> start_;
-  struct timeval start_;
-  const std::string class_;
-  const std::string method_;
+  Timer(const Timer&) = delete;  // Non-copyable
+
+ protected:
+  std::string name_;
+  TimeT start_;
+};
+
+class LoggingTimer : public Timer {
+ public:
+  LoggingTimer(const std::string &class_name, const std::string &method_name);
+  LoggingTimer(const std::string &class_name, const std::string &method_name, std::ostream &log);
+  ~LoggingTimer();
+
+ protected:
+  std::ostream& log_;
 };
 
 // -----------------------------------------------------------------------------

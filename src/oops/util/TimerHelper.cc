@@ -10,7 +10,7 @@
 
 #include "oops/util/TimerHelper.h"
 
-// #include <chrono>
+#include <cmath>
 #include <iomanip>
 #include <string>
 
@@ -51,12 +51,9 @@ void TimerHelper::stop() {
 // -----------------------------------------------------------------------------
 
 void TimerHelper::add(const std::string & name, const double dt) {
-//                      const std::chrono::duration<double> & dt) {
   if (getHelper().on_) {
     getHelper().timers_[name] += dt;
     getHelper().counts_[name] += 1;
-//    double secs = dt.count();
-//    getHelper().timers_[name] += secs;
   }
 }
 
@@ -73,21 +70,31 @@ TimerHelper::~TimerHelper() {}
 void TimerHelper::print(std::ostream & os) const {
   typedef std::map<std::string, double>::const_iterator cit;
 
-// Local timing statistics
-  os << " " << std::endl;
-  os << "---------------------------------------------------------------------" << std::endl;
-  os << "------------------------- Timing Statistics -------------------------" << std::endl;
-  os << "---------------------------------------------------------------------" << std::endl;
-  for (cit jt = timers_.begin(); jt != timers_.end(); ++jt) {
-    int icount = counts_.at(jt->first);
-    os << std::setw(52) << std::left << jt->first
-       << ": " << std::setw(12) << std::right << jt->second << " ms"
-       << "  " << std::setw(6) << icount
-       << "   " << std::setw(12) << std::right << jt->second/icount << " ms/call"
-       << std::endl;
+  {
+    // Local timing statistics
+    int table_width = 92;
+    os << " " << std::endl;
+    os << std::string(table_width, '-') << std::endl;
+    std::string title = " Timing Statistics ";
+    float title_half_width = (table_width-title.size())/2.;
+    os << std::string(std::floor(title_half_width), '-')
+       << title << std::string(std::ceil(title_half_width), '-') << std::endl
+       << std::string(table_width, '-') << std::endl
+       << std::setw(52) << std::left << "Name " << ": "
+       << std::setw(12) << std::right << "total (ms)"
+       << std::setw(8) << std::right << "count"
+       << std::setw(18) << std::right << "time/call (ms)" << std::endl;
+    for (cit jt = timers_.begin(); jt != timers_.end(); ++jt) {
+      int icount = counts_.at(jt->first);
+      os << std::setw(52) << std::left << jt->first
+         << ": " << std::setw(12) << std::right << std::fixed << std::setprecision(2) << jt->second
+         << std::setw(8) << icount
+         << std::setw(18) << std::right << std::fixed << std::setprecision(4) << jt->second/icount
+         << std::endl;
+    }
+    os << std::string(std::floor(title_half_width), '-')
+       << title << std::string(std::ceil(title_half_width), '-') << std::endl;
   }
-  os << "------------------------- Timing Statistics -------------------------" << std::endl;
-
 // For MPI applications, gather and print statistics across tasks
   size_t ntasks = oops::mpi::world().size();
   if (ntasks > 1) {
@@ -135,17 +142,21 @@ void TimerHelper::print(std::ostream & os) const {
         }
       }
 //    Print global statistics
-      os << " " << std::endl;
-      os << "---------------------------------------------------------------------" << std::endl;
-      os << "------------ Parallel Timing Statistics (" << std::setw(4) << ntasks
-                                     << std::setw(24) << " MPI tasks) ------------" << std::endl;
-      os << "---------------------------------------------------------------------" << std::endl;
-      os << std::setw(52) << std::left << " Name " << ": "
-         << std::setw(12) << std::right << "min. (ms)"
-         << std::setw(12) << std::right << "max. (ms)"
-         << std::setw(12) << std::right << "avg. (ms)"
+      int table_width = 114;
+      std::ostringstream title_s;
+      title_s << " Parallel Timing Statistics (" << std::setw(4) << ntasks << " MPI tasks) ";
+      std::string title = title_s.str();
+      float title_half_width = (table_width-title.size())/2.;
+      os << std::endl << std::string(table_width, '-') << std::endl
+         << std::string(std::floor(title_half_width), '-')
+         << title << std::string(std::ceil(title_half_width), '-') << std::endl
+         << std::string(table_width, '-') << std::endl
+         << std::setw(52) << std::left << "Name " << ": "
+         << std::setw(12) << std::right << "min (ms)"
+         << std::setw(12) << std::right << "max (ms)"
+         << std::setw(12) << std::right << "avg (ms)"
          << std::setw(12) << std::right << "% total"
-         << std::setw(12) << std::right << "imbalance" << " (%)"
+         << std::setw(12) << std::right << "imbal (%)"
          << std::endl;
       double total = stats["util::Timers::Total"][2]/ntasks;
       stats["util::Timers::measured"].fill(0.0);
@@ -169,7 +180,8 @@ void TimerHelper::print(std::ostream & os) const {
              << std::setw(12) << (jt->second[1] - jt->second[0]) / avg * 100.0
              << std::endl;
       }
-      os << "-------------------- Parallel Timing Statistics ---------------------" << std::endl;
+      os << std::string(std::floor(title_half_width), '-')
+         << title << std::string(std::ceil(title_half_width), '-') << std::endl;
     }
   }
 }

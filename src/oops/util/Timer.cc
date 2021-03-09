@@ -10,37 +10,70 @@
 
 #include "oops/util/Timer.h"
 
-#include <sys/time.h>
-// #include <chrono>
-#include <string>
-#include <boost/noncopyable.hpp>
+#include <iomanip>
+#include <ratio>
 
+#include "oops/util/Logger.h"
 #include "oops/util/TimerHelper.h"
 
 namespace util {
 
-// -----------------------------------------------------------------------------
-
-Timer::Timer(const std::string & cl, const std::string & met)
-    : class_(cl), method_(met) {
-//      start_(std::chrono::high_resolution_clock::now()) {
-  gettimeofday(&start_, NULL);
+namespace {  // Local global constants
+  // Width to print variable names
+  constexpr int METHOD_PRINT_WIDTH = 60;
 }
 
+/** InitTime
+ *
+ * A class to be static initialized that measures time deltas since program initialization
+ */
+class InitTime
+{
+ public:
+  InitTime() : init_t_(Timer::ClockT::now())
+  { }
+
+  double elapsed_sec(const Timer::TimeT &t) {
+    return std::chrono::duration<double>(t - init_t_).count();
+  }
+
+ private:
+  Timer::TimeT init_t_;
+};
+
+static InitTime init_time;  // static instance representing program static init time
+
 // -----------------------------------------------------------------------------
 
+Timer::Timer(const std::string & class_name, const std::string & method_name)
+    : name_(class_name + "::" + method_name), start_(ClockT::now())
+{ }
+
 Timer::~Timer() {
-//  end = std::chrono::high_resolution_clock::now();
-//  std::chrono::duration<double> dt(end-start_);
-  struct timeval end;
-  gettimeofday(&end, NULL);
+  std::chrono::duration<double, std::milli> dt = ClockT::now() - start_;  // elapsed millisecs
+  TimerHelper::add(name_, dt.count());
+}
 
-// get difference in milliseconds
-  double dt = (end.tv_sec-start_.tv_sec)*1000.0
-            + (end.tv_usec-start_.tv_usec)/1000.0;
-  std::string name = class_ + "::" + method_;
+LoggingTimer::LoggingTimer(const std::string & class_name, const std::string & method_name)
+    : LoggingTimer(class_name, method_name, oops::Log::timer())
+{ }
 
-  TimerHelper::add(name, dt);
+LoggingTimer::LoggingTimer(const std::string & class_name,
+                           const std::string & method_name, std::ostream& log)
+    : Timer(class_name, method_name), log_(log)
+{
+  double st = init_time.elapsed_sec(start_);
+  log_ << std::left << std::setw(METHOD_PRINT_WIDTH) << std::setfill('.') << name_
+       << " Start: " << std::fixed << std::setprecision(2) << st << std::endl;
+}
+
+LoggingTimer::~LoggingTimer()
+{
+  double st = init_time.elapsed_sec(start_);
+  double et = init_time.elapsed_sec(ClockT::now());
+  log_ << std::left << std::setw(METHOD_PRINT_WIDTH) << std::setfill('.') << name_
+       << ".. End: " << std::fixed << std::setprecision(2) << et
+       << " Elapsed: " << et-st << " sec" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
