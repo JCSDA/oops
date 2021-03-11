@@ -49,6 +49,12 @@ template <typename MODEL> class IncrementFixture : private boost::noncopyable {
   static const util::DateTime       & time()      {return *getInstance().time_;}
   static const double               & tolerance() {return getInstance().tolerance_;}
   static const eckit::Configuration & test()      {return *getInstance().test_;}
+  static void reset() {
+    getInstance().time_.reset();
+    getInstance().ctlvars_.reset();
+    getInstance().test_.reset();
+    getInstance().resol_.reset();
+  }
 
  private:
   static IncrementFixture<MODEL>& getInstance() {
@@ -445,7 +451,7 @@ template <typename MODEL>
 class Increment : public oops::Test {
  public:
   Increment() {}
-  virtual ~Increment() {}
+  virtual ~Increment() {IncrementFixture<MODEL>::reset();}
 
  private:
   std::string testid() const override {return "test::Increment<" + MODEL::name() + ">";}

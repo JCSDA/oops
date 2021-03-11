@@ -67,6 +67,20 @@ template <typename MODEL, typename OBS> class LinearGetValuesFixture : private b
   static const State_            & state()           {return *getInstance().state_;}
   static const Variables_        & statevars()       {return *getInstance().statevars_;}
   static const Variables_        & geovalvars()      {return *getInstance().geovalvars_;}
+  static void reset() {
+    getInstance().lineargetvalues_.reset();
+    getInstance().time_.reset();
+    getInstance().statevars_.reset();
+    getInstance().state_.reset();
+    getInstance().getvalues_.reset();
+    getInstance().geovals_.reset();
+    getInstance().timeend_.reset();
+    getInstance().timebeg_.reset();
+    getInstance().locs_.reset();
+    getInstance().geovalvars_.reset();
+    getInstance().resol_.reset();
+    getInstance().testconf_.reset();
+  }
 
  private:
   static LinearGetValuesFixture<MODEL, OBS>& getInstance() {
@@ -321,7 +335,7 @@ template <typename MODEL, typename OBS>
 class LinearGetValues : public oops::Test {
  public:
   LinearGetValues() {}
-  virtual ~LinearGetValues() {}
+  virtual ~LinearGetValues() {LinearGetValuesFixture<MODEL, OBS>::reset();}
 
  private:
   std::string testid() const override {return "test::LinearGetValues<" + MODEL::name() + ", "

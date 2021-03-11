@@ -51,6 +51,11 @@ template <typename MODEL> class LinearVariableChangeFixture : private boost::non
   static const State_      & xx()               {return *getInstance().xx_;}
   static const Geometry_   & resol()            {return *getInstance().resol_;}
   static const DateTime_   & time()             {return *getInstance().time_;}
+  static void reset() {
+    getInstance().time_.reset();
+    getInstance().xx_.reset();
+    getInstance().resol_.reset();
+  }
 
  private:
   static LinearVariableChangeFixture<MODEL>& getInstance() {
@@ -280,7 +285,7 @@ template <typename MODEL>
 class LinearVariableChange : public oops::Test {
  public:
   LinearVariableChange() {}
-  virtual ~LinearVariableChange() {}
+  virtual ~LinearVariableChange() {LinearVariableChangeFixture<MODEL>::reset();}
 
  private:
   std::string testid() const override {return "test::LinearVariableChange<" + MODEL::name() + ">";}

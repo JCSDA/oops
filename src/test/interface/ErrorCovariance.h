@@ -51,6 +51,13 @@ template <typename MODEL> class ErrorCovarianceFixture : private boost::noncopya
   static const oops::Variables & ctlvars()    {return *getInstance().ctlvars_;}
   static const util::DateTime  & time()       {return *getInstance().time_;}
   static const Covariance_     & covariance() {return *getInstance().B_;}
+  static void reset() {
+    getInstance().B_.reset();
+    getInstance().time_.reset();
+    getInstance().ctlvars_.reset();
+    getInstance().resol_.reset();
+    getInstance().test_.reset();
+  }
 
  private:
   static ErrorCovarianceFixture<MODEL>& getInstance() {
@@ -212,7 +219,7 @@ template <typename MODEL>
 class ErrorCovariance : public oops::Test  {
  public:
   ErrorCovariance() {}
-  virtual ~ErrorCovariance() {}
+  virtual ~ErrorCovariance() {ErrorCovarianceFixture<MODEL>::reset();}
 
  private:
   std::string testid() const override {return "test::ErrorCovariance<" + MODEL::name() + ">";}

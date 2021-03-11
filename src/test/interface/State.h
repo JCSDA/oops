@@ -44,6 +44,10 @@ template <typename MODEL> class StateFixture : private boost::noncopyable {
  public:
   static const eckit::Configuration & test()  {return *getInstance().test_;}
   static const Geometry_    & resol() {return *getInstance().resol_;}
+  static void reset() {
+    getInstance().resol_.reset();
+    getInstance().test_.reset();
+  }
 
  private:
   static StateFixture<MODEL>& getInstance() {
@@ -179,6 +183,7 @@ template <typename MODEL> void testStateAnalyticInitialCondition() {
 
   const eckit::LocalConfiguration confgen(Test_::test(), "state generate");
   const State_ xx(Test_::resol(), confgen);
+
   const double norm = Test_::test().getDouble("norm generated state");
   const double tol = Test_::test().getDouble("tolerance");
 
@@ -329,7 +334,7 @@ template <typename MODEL>
 class State : public oops::Test {
  public:
   State() {}
-  virtual ~State() {}
+  virtual ~State() {StateFixture<MODEL>::reset();}
 
  private:
   std::string testid() const override {return "test::State<" + MODEL::name() + ">";}

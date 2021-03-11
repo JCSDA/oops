@@ -60,6 +60,16 @@ template <typename MODEL, typename OBS> class GetValuesFixture : private boost::
   static const LocalConfig_      & testconf()        {return *getInstance().testconf_;}
   static const Locations_        & locs()            {return *getInstance().locs_;}
   static const Variables_        & geovalvars()      {return *getInstance().geovalvars_;}
+  static void reset() {
+    getInstance().getvalues_.reset();
+    getInstance().geovals_.reset();
+    getInstance().timeend_.reset();
+    getInstance().timebeg_.reset();
+    getInstance().locs_.reset();
+    getInstance().geovalvars_.reset();
+    getInstance().resol_.reset();
+    getInstance().testconf_.reset();
+  }
 
  private:
   static GetValuesFixture<MODEL, OBS>& getInstance() {
@@ -232,7 +242,7 @@ template <typename MODEL, typename OBS>
 class GetValues : public oops::Test {
  public:
   GetValues() {}
-  virtual ~GetValues() {}
+  virtual ~GetValues() {GetValuesFixture<MODEL, OBS>::reset();}
 
  private:
   std::string testid() const override {return "test::GetValues<" + MODEL::name() +

@@ -40,8 +40,10 @@ template <typename MODEL> class VariableChangeFixture : private boost::noncopyab
 
  public:
   static std::vector<eckit::LocalConfiguration> & confs() {return getInstance().confs_;}
-  static const State_          & xx()     {return *getInstance().xx_;}
   static const Geometry_       & resol()  {return *getInstance().resol_;}
+  static void reset() {
+    getInstance().resol_.reset();
+  }
 
  private:
   static VariableChangeFixture<MODEL>& getInstance() {
@@ -160,7 +162,7 @@ template <typename MODEL> void testVariableChangeFactoryGetMakerNames() {
 template <typename MODEL> class VariableChange : public oops::Test {
  public:
   VariableChange() {}
-  virtual ~VariableChange() {}
+  virtual ~VariableChange() {VariableChangeFixture<MODEL>::reset();}
  private:
   std::string testid() const override {return "test::VariableChange<" + MODEL::name() + ">";}
 
