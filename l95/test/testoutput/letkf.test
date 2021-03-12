@@ -33,6 +33,15 @@ Test     :  Min=5.25199, Max=9.50208, Average=7.76569
 Test     : Analysis mean :
 Test     :  Valid time: 2010-01-02T00:00:00Z
 Test     :  Min=6.73044, Max=9.19002, Average=7.98832
+Test     : Analysis mean increment :
+Test     :  Valid time: 2010-01-02T00:00:00Z
+Test     :  Min=-1.55316, Max=2.41362, Average=0.222628
+Test     : Forecast variance :
+Test     :  Valid time: 2010-01-02T00:00:00Z
+Test     :  Min=0.180053, Max=5.95179, Average=2.16311
+Test     : Analysis variance :
+Test     :  Valid time: 2010-01-02T00:00:00Z
+Test     :  Min=0.216453, Max=8.21437, Average=2.10118
 Test     : H(x) for member 1:
 Test     : Lorenz 95 nobs= 120 Min=6.31712, Max=10.1291, Average=8.09746
 Test     : H(x) for member 2:

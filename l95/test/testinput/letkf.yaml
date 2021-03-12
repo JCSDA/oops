@@ -30,6 +30,11 @@ observations:
   obs operator: {}
 
 driver:
+  save prior mean: true
+  save posterior mean: true
+  save posterior mean increment: true
+  save prior variance: true
+  save posterior variance: true
 
 local ensemble DA:
   solver: LETKF
@@ -43,3 +48,28 @@ output:
   date: *date
   exp: letkf.%{member}%
   type: an
+
+output increment:
+  datadir: Data
+  date: *date
+  exp: increment.%{member}%
+  type: an
+
+output mean prior:
+  datadir: Data
+  date: *date
+  exp: xbmean.%{member}%
+  type: an
+
+output variance prior:
+  datadir: Data
+  date: *date
+  exp: xbvar.%{member}%
+  type: an
+
+output variance posterior:
+  datadir: Data
+  date: *date
+  exp: xavar.%{member}%
+  type: an
+

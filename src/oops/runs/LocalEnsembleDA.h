@@ -24,6 +24,7 @@
 #include "oops/generic/instantiateObsErrorFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
+#include "oops/interface/Increment.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
@@ -39,6 +40,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
   typedef Geometry<MODEL>                  Geometry_;
   typedef GeometryIterator<MODEL>          GeometryIterator_;
   typedef IncrementEnsemble4D<MODEL>       IncrementEnsemble4D_;
+  typedef Increment<MODEL>                 Increment_;
   typedef LocalEnsembleSolver<MODEL, OBS>  LocalSolver_;
   typedef ObsSpaces<OBS>                   ObsSpaces_;
   typedef Observations<OBS>                Observations_;
@@ -79,6 +81,8 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
 
     // Get background configurations
     const eckit::LocalConfiguration bgConfig(fullConfig, "background");
+    // Get driver configuration
+    const eckit::LocalConfiguration driverConfig(fullConfig, "driver");
 
     // Read all ensemble members
     StateEnsemble4D_ ens_xx(geometry, bgConfig);
@@ -88,13 +92,13 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     // set up solver
     std::unique_ptr<LocalSolver_> solver =
          LocalEnsembleSolverFactory<MODEL, OBS>::create(obsdb, geometry, fullConfig, nens);
-    const eckit::LocalConfiguration driverConfig(fullConfig, "driver");
 
-
-    for (size_t jj = 0; jj < nens; ++jj) {
-      // TODO(Travis) change the way input file name is specified, make
-      //  more similar to how the output ens config is done
-      Log::test() << "Initial state for member " << jj+1 << ":" << ens_xx[jj] << std::endl;
+    // test prints for the prior ensemble
+    bool do_test_prints = driverConfig.getBool("do test prints", true);
+    if (do_test_prints) {
+      for (size_t jj = 0; jj < nens; ++jj) {
+        Log::test() << "Initial state for member " << jj+1 << ":" << ens_xx[jj] << std::endl;
+      }
     }
 
     // compute H(x)
@@ -112,11 +116,12 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
 
     // calculate background mean
     State4D_ bkg_mean = ens_xx.mean();
-    Log::test() << "Background mean :" << bkg_mean << std::endl;
+    if (do_test_prints) {
+      Log::test() << "Background mean :" << bkg_mean << std::endl;
+    }
 
     // calculate background ensemble perturbations
     IncrementEnsemble4D_ bkg_pert(ens_xx, bkg_mean, statevars);
-    // TODO(Travis) optionally save the background mean / standard deviation
 
     // initialize empty analysis perturbations
     IncrementEnsemble4D_ ana_pert(geometry, statevars, ens_xx[0].validTimes(), bkg_pert.size());
@@ -134,29 +139,77 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
       ens_xx[jj] += ana_pert[jj];
     }
 
-    // TODO(Travis) optionally save analysis standard deviation
-
-    // save the analysis mean
+    // save the posterior mean and ensemble first (since they are needed for the next cycle)
+    // save the posterior mean
     State4D_ ana_mean = ens_xx.mean();   // calculate analysis mean
-    Log::test() << "Analysis mean :" << ana_mean << std::endl;
-    eckit::LocalConfiguration outConfig(fullConfig, "output");
-    outConfig.set("member", 0);
-    ana_mean.write(outConfig);
-
-    // save the analysis ensemble
-    size_t mymember;
-    for (size_t jj=0; jj < nens; ++jj) {
-      mymember = jj+1;
+    if (do_test_prints) {
+      Log::test() << "Analysis mean :" << ana_mean << std::endl;
+    }
+    bool save_xamean = driverConfig.getBool("save posterior mean", false);
+    if (save_xamean) {
       eckit::LocalConfiguration outConfig(fullConfig, "output");
-      outConfig.set("member", mymember);
-      ens_xx[jj].write(outConfig);
+      outConfig.set("member", 0);
+      ana_mean.write(outConfig);
+    }
+
+    // save the posterior ensemble
+    bool save_ens = driverConfig.getBool("save posterior ensemble", true);
+    if (save_ens) {
+      size_t mymember;
+      for (size_t jj=0; jj < nens; ++jj) {
+        mymember = jj+1;
+        eckit::LocalConfiguration outConfig(fullConfig, "output");
+        outConfig.set("member", mymember);
+        ens_xx[jj].write(outConfig);
+      }
+    }
+
+    // below is the diagnostic output -----------------------------
+    // save the background mean
+    bool save_xbmean = driverConfig.getBool("save prior mean", false);
+    if (save_xbmean) {
+      eckit::LocalConfiguration outConfig(fullConfig, "output mean prior");
+      outConfig.set("member", 0);
+      bkg_mean.write(outConfig);
+    }
+
+    // save the analysis increment
+    bool save_mean_increment = driverConfig.getBool("save posterior mean increment", false);
+    if (save_mean_increment) {
+      eckit::LocalConfiguration outConfig(fullConfig, "output increment");
+      outConfig.set("member", 0);
+      for (size_t itime = 0; itime < ana_mean.size(); ++itime) {
+        Increment_ ana_increment(ana_pert[0][itime], false);
+        ana_increment.diff(ana_mean[itime], bkg_mean[itime]);
+        ana_increment.write(outConfig);
+        if (do_test_prints) {
+          Log::test() << "Analysis mean increment :" << ana_increment << std::endl;
+        }
+      }
+    }
+
+    // save the prior variance
+    bool save_variance = driverConfig.getBool("save prior variance", false);
+    if (save_variance) {
+      eckit::LocalConfiguration outConfig(fullConfig, "output variance prior");
+      outConfig.set("member", 0);
+      std::string strOut("Forecast variance :");
+      saveVariance(outConfig, bkg_pert, do_test_prints, strOut);
+    }
+
+    // save the posterior variance
+    save_variance = driverConfig.getBool("save posterior variance", false);
+    if (save_variance) {
+      eckit::LocalConfiguration outConfig(fullConfig, "output variance posterior");
+      outConfig.set("member", 0);
+      std::string strOut("Analysis variance :");
+      saveVariance(outConfig, ana_pert, do_test_prints, strOut);
     }
 
     // posterior observer
     // note: if H(X) is read from file, it might have used different time slots for observation
-    // then LETKF background/analysis perturbations.
+    // than LETKF background/analysis perturbations.
     // hence one might not expect that oman and omaf are comparable
-    // TODO(#926) make explicit separation of background and forecast states in yaml config
     bool do_posterior_observer = driverConfig.getBool("do posterior observer", true);
     if (do_posterior_observer) {
       Observations_ ya_mean = solver->computeHofX(ens_xx, 1, false);
@@ -180,6 +233,26 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
  private:
   std::string appname() const {
     return "oops::LocalEnsembleDA<" + MODEL::name() + ", " + OBS::name() + ">";
+  }
+
+  void saveVariance(const eckit::LocalConfiguration & outConfig, const IncrementEnsemble4D_ & perts,
+                    const bool do_test_prints, const std::string & strOut) const {
+    // save and optionaly print varaince of an IncrementEnsemble4D_ object
+    size_t nens = perts.size();
+    const double nc = 1.0/(static_cast<double>(nens) - 1.0);
+    for (size_t itime = 0; itime < perts[0].size(); ++itime) {
+      Increment_ var(perts[0][itime], false);
+      for (size_t iens = 0; iens < nens; ++iens) {
+        Increment_ tmp(perts[iens][itime], true);
+        tmp.schur_product_with(perts[iens][itime]);
+        var += tmp;
+      }
+      var *= nc;
+      var.write(outConfig);
+      if (do_test_prints) {
+        Log::test() << strOut << var << std::endl;
+      }
+    }
   }
 
 // -----------------------------------------------------------------------------
