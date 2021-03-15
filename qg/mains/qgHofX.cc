@@ -9,11 +9,11 @@
  */
 
 #include "model/QgTraits.h"
-#include "oops/runs/HofX.h"
+#include "oops/runs/HofX4D.h"
 #include "oops/runs/Run.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  oops::HofX<qg::QgTraits, qg::QgObsTraits> hofx;
+  oops::HofX4D<qg::QgTraits, qg::QgObsTraits> hofx;
   return run.execute(hofx);
 }

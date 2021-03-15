@@ -10,11 +10,11 @@
 
 #include "lorenz95/L95Traits.h"
 #include "oops/runs/EnsembleApplication.h"
-#include "oops/runs/HofX.h"
+#include "oops/runs/HofX4D.h"
 #include "oops/runs/Run.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  oops::EnsembleApplication<oops::HofX <lorenz95::L95Traits, lorenz95::L95ObsTraits> > enshofx;
+  oops::EnsembleApplication<oops::HofX4D <lorenz95::L95Traits, lorenz95::L95ObsTraits> > enshofx;
   return run.execute(enshofx);
 }

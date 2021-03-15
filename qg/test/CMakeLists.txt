@@ -413,7 +413,7 @@ oops_add_test( TESTNAME hofx3d
                MODELNAME qg
                OMP 2
                YAMLNAME testinput/hofx3d.yaml
-               EXENAME  qg_hofx_nomodel.x
+               EXENAME  qg_hofx3d.x
                TEST_DEPENDS test_qg_make_obs_4d_12h )
 
 

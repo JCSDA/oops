@@ -62,8 +62,8 @@ list( APPEND l95_test_input
   testinput/getkf.yaml
   testinput/getkf_offline_hofx.yaml
   testinput/hofx.yaml
-  testinput/hofx_nomodel.yaml
-  testinput/hofx_for_getkf_nomodel.yaml
+  testinput/hofx3d.yaml
+  testinput/hofx3d_for_getkf.yaml
   testinput/identitymodel.yaml
   testinput/letkfGSI.yaml
   testinput/letkf.yaml
@@ -148,8 +148,8 @@ list( APPEND l95_testoutput
   testoutput/getkf.test
   testoutput/getkf_offline_hofx.test
   testoutput/hofx.test
-  testoutput/hofx.nomodel.test
-  testoutput/hofx_for_getkf_nomodel.test
+  testoutput/hofx3d.test
+  testoutput/hofx3d_for_getkf.test
   testoutput/letkf.test
   testoutput/letkf_noobs.test
   testoutput/letkf_qc.test
@@ -447,10 +447,10 @@ oops_add_test( TESTNAME hofx
                EXENAME l95_hofx.x
                TEST_DEPENDS test_l95_truth test_l95_makeobs4d )
 
-oops_add_test( TESTNAME hofx.nomodel
+oops_add_test( TESTNAME hofx3d
                MODELNAME l95
-               YAMLNAME testinput/hofx_nomodel.yaml
-               EXENAME l95_hofx_nomodel.x
+               YAMLNAME testinput/hofx3d.yaml
+               EXENAME l95_hofx3d.x
                TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 #####################################################################
@@ -765,9 +765,9 @@ oops_add_test( TESTNAME getkf
                CTOL 1e-3
                TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
 
-oops_add_test( TESTNAME hofx_for_getkf_nomodel
+oops_add_test( TESTNAME hofx3d_for_getkf
                MODELNAME l95
-               YAMLNAME testinput/hofx_for_getkf_nomodel.yaml
+               YAMLNAME testinput/hofx3d_for_getkf.yaml
                EXENAME l95_letkf.x
                CTOL 1e-3
                TEST_DEPENDS test_l95_letkf )
@@ -777,7 +777,7 @@ oops_add_test( TESTNAME getkf_offline_hofx
                YAMLNAME testinput/getkf_offline_hofx.yaml
                EXENAME l95_letkf.x
                CTOL 1e-3
-               TEST_DEPENDS test_l95_hofx_for_getkf_nomodel )
+               TEST_DEPENDS test_l95_hofx3d_for_getkf )
 
 
 #####################################################################

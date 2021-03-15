@@ -224,8 +224,8 @@ oops/runs/EnsVariance.h
 oops/runs/ExternalDFI.h
 oops/runs/Forecast.h
 oops/runs/GenEnsPertB.h
-oops/runs/HofX.h
-oops/runs/HofXNoModel.h
+oops/runs/HofX3D.h
+oops/runs/HofX4D.h
 oops/runs/LocalEnsembleDA.h
 oops/runs/RTPP.h
 oops/runs/Run.cc

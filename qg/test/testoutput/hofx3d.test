@@ -1,12 +1,4 @@
-Test     : Initial state: 
-Test     :   Valid time: 2010-01-01T06:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -5.0526e+08, Max=  1.1159e+08, RMS=  1.8719e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
-Test     : Final state: 
+Test     : State: 
 Test     :   Valid time: 2010-01-01T06:00:00Z
 Test     :   Resolution = 40, 20, 2
 Test     :   Variable = streamfunction

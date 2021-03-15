@@ -9,8 +9,8 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef OOPS_RUNS_HOFX_H_
-#define OOPS_RUNS_HOFX_H_
+#ifndef OOPS_RUNS_HOFX4D_H_
+#define OOPS_RUNS_HOFX4D_H_
 
 #include <memory>
 #include <string>
@@ -44,7 +44,7 @@ namespace oops {
 /// Application runs model forecast from "initial condition" for the "forecast length"
 /// and computes H(x) on the run. If "obspert" is specified in the config, the resulting
 /// H(x) is perturbed. It is saved as "hofx" by default, or as specified "hofx group name"
-template <typename MODEL, typename OBS> class HofX : public Application {
+template <typename MODEL, typename OBS> class HofX4D : public Application {
   typedef Geometry<MODEL>            Geometry_;
   typedef GetValuesPost<MODEL, OBS>  GetValuesPost_;
   typedef Model<MODEL>               Model_;
@@ -57,12 +57,12 @@ template <typename MODEL, typename OBS> class HofX : public Application {
 
  public:
 // -----------------------------------------------------------------------------
-  explicit HofX(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {
+  explicit HofX4D(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {
     instantiateObsErrorFactory<OBS>();
     instantiateObsFilterFactory<OBS>();
   }
 // -----------------------------------------------------------------------------
-  virtual ~HofX() = default;
+  virtual ~HofX4D() = default;
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
 //  Setup observation window
@@ -149,11 +149,11 @@ template <typename MODEL, typename OBS> class HofX : public Application {
 // -----------------------------------------------------------------------------
  private:
   std::string appname() const {
-    return "oops::HofX<" + MODEL::name() + ", " + OBS::name() + ">";
+    return "oops::HofX4D<" + MODEL::name() + ", " + OBS::name() + ">";
   }
 // -----------------------------------------------------------------------------
 };
 
 }  // namespace oops
 
-#endif  // OOPS_RUNS_HOFX_H_
+#endif  // OOPS_RUNS_HOFX4D_H_

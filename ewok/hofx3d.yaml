@@ -1,8 +1,6 @@
-forecast length:
-  $(forecast_length)
 geometry:
   $(GEOMETRY)
-forecasts:
+state:
   $(BACKGROUND)
 observations:
   $(OBSERVATIONS)
