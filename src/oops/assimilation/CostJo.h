@@ -343,21 +343,27 @@ template<typename MODEL, typename OBS>
 double CostJo<MODEL, OBS>::printJo(const Departures_ & dy, const Departures_ & grad) const {
   Log::trace() << "CostJo::printJo start" << std::endl;
   obspace_.printJo(dy, grad);
+  std::vector<eckit::LocalConfiguration> typeconfs = obsconf_.getSubConfigurations();
 
   double zjo = 0.0;
   for (std::size_t jj = 0; jj < dy.size(); ++jj) {
     const double zz = 0.5 * dot_product(dy[jj], grad[jj]);
     const unsigned nobs = grad[jj].nobs();
-    if (nobs > 0) {
+    bool isPassive = typeconfs[jj].getBool("monitoring only", false);
+    if (nobs > 0 && !isPassive) {
       Log::test() << "CostJo   : Nonlinear Jo(" << obspace_[jj].obsname() << ") = "
                   << zz << ", nobs = " << nobs << ", Jo/n = " << zz/nobs
                   << ", err = " << (*Rmat_)[jj].getRMSE() << std::endl;
-    } else {
+    } else if (nobs <= 0 && !isPassive) {
       Log::test() << "CostJo   : Nonlinear Jo(" << obspace_[jj].obsname() << ") = "
                   << zz << " --- No Observations" << std::endl;
       Log::warning() << "CostJo: No Observations!!!" << std::endl;
+    } else if (nobs > 0 && isPassive) {
+      Log::test() << "Monitoring only: Nonlinear Jo(" << obspace_[jj].obsname() << ") = "
+                  << zz << ", nobs = " << nobs << ", Jo/n = " << zz/nobs
+                  << ", err = " << (*Rmat_)[jj].getRMSE() << std::endl;
     }
-    zjo += zz;
+    if (!isPassive) zjo += zz;
   }
 
   Log::trace() << "CostJo::printJo done" << std::endl;
