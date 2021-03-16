@@ -51,9 +51,6 @@ class ObsSpace : public util::Printable,
            const eckit::mpi::Comm & time = oops::mpi::myself());
   ObsSpace(const ObsSpace &, const eckit::geometry::Point2 &,
            const eckit::Configuration &);
-/// Constructor added for generic 1d-var under development in ufo
-  ObsSpace(const ObsSpace_ &, const eckit::geometry::Point2 &,
-           const eckit::Configuration &);
   explicit ObsSpace(const ObsSpace_ &);
   ~ObsSpace();
 
@@ -103,17 +100,6 @@ ObsSpace<OBS>::ObsSpace(const ObsSpace<OBS> & os,
   util::Timer timer(classname(), "ObsSpace");
   obsdb_.reset(new ObsSpace_(os.obsspace(), center, conf));
   Log::trace() << "ObsSpace<OBS>::ObsSpace (local) done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-/// Constructor added for generic 1d-var under development in ufo
-template <typename OBS>
-ObsSpace<OBS>::ObsSpace(const ObsSpace_ & os, const eckit::geometry::Point2 & center,
-                        const eckit::Configuration & conf): obsdb_(), time_(oops::mpi::myself()) {
-  Log::trace() << "ObsSpace<OBS>::ObsSpace (local) derived state starting" << std::endl;
-  util::Timer timer(classname(), "ObsSpace");
-  obsdb_.reset(new ObsSpace_(os, center, conf));
-  Log::trace() << "ObsSpace<OBS>::ObsSpace (local) derived state done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

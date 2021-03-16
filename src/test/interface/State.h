@@ -115,11 +115,6 @@ template <typename MODEL> void testStateConstructors() {
   EXPECT(oops::is_close(xx4.norm(), norm, tol));
   EXPECT(xx4.validTime() == vt);
   EXPECT(xx4.variables() == xx1->variables());
-
-// Test explicit State(const State_ &); constructor
-// needed for the 1dvar filter
-  State_ xx5(xx1->state());
-  EXPECT(xx5.variables() == xx1->variables());
 }
 
 // -----------------------------------------------------------------------------

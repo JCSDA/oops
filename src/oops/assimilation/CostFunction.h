@@ -97,7 +97,6 @@ template<typename MODEL, typename OBS> class CostFunction : private boost::nonco
 
  protected:
   void setupTerms(const eckit::Configuration &);
-  void setupTerms(const eckit::Configuration &, const State_ &);  // generic 1d-var
   const CtrlVar_ & background() const {return *xb_;}
 
  private:
@@ -203,37 +202,6 @@ void CostFunction<MODEL, OBS>::setupTerms(const eckit::Configuration & config) {
 
 // Jb
   xb_.reset(new CtrlVar_(config, this->geometry(), jo->obspaces()));
-  jb_.reset(new JbTotal_(*xb_, this->newJb(config, this->geometry(), *xb_),
-                         config, this->geometry(), jo->obspaces()));
-  Log::trace() << "CostFunction::setupTerms Jb added" << std::endl;
-
-// Other constraints
-  std::vector<eckit::LocalConfiguration> jcs;
-  config.get("constraints", jcs);
-  for (size_t jj = 0; jj < jcs.size(); ++jj) {
-    CostTermBase<MODEL, OBS> * jc = this->newJc(jcs[jj], this->geometry());
-    jterms_.push_back(jc);
-  }
-  Log::trace() << "CostFunction::setupTerms done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-// This setup terms method has been written for the generic 1d-var which is
-// under development in UFO
-// -----------------------------------------------------------------------------
-template<typename MODEL, typename OBS>
-void CostFunction<MODEL, OBS>::setupTerms(const eckit::Configuration & config,
-                                          const State_ & statein) {
-  Log::trace() << "CostFunction::setupTerms start" << std::endl;
-
-// Jo
-  eckit::LocalConfiguration obsconf(config, "observations");
-  CostJo<MODEL, OBS> * jo = this->newJo(obsconf);
-  jterms_.push_back(jo);
-  Log::trace() << "CostFunction::setupTerms Jo added" << std::endl;
-
-// Jb
-  xb_.reset(new CtrlVar_(config, statein, jo->obspaces()));
   jb_.reset(new JbTotal_(*xb_, this->newJb(config, this->geometry(), *xb_),
                          config, this->geometry(), jo->obspaces()));
   Log::trace() << "CostFunction::setupTerms Jb added" << std::endl;

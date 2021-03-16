@@ -49,8 +49,6 @@ class ObsSpaces : public util::Printable,
             const util::DateTime &, const util::DateTime &,
             const eckit::mpi::Comm & time = oops::mpi::myself());
   ObsSpaces(const ObsSpaces &, const eckit::geometry::Point2 &, const eckit::Configuration &);
-/// Constructor added for generic 1d-var under development in ufo
-  explicit ObsSpaces(const std::shared_ptr<ObsSpace_> &);
   ~ObsSpaces();
 
 /// Access
@@ -106,13 +104,6 @@ ObsSpaces<OBS>::ObsSpaces(const ObsSpaces<OBS> & obss, const eckit::geometry::Po
   }
   ASSERT(spaces_.size() == obss.size());
 }
-
-// -----------------------------------------------------------------------------
-/// Constructor added for generic 1d-var under development in ufo
-template <typename OBS>
-ObsSpaces<OBS>::ObsSpaces(const std::shared_ptr<ObsSpace_> & obss)
-  : spaces_(obss), wbgn_(obss->windowStart()), wend_(obss->windowEnd())
-{}
 
 // -----------------------------------------------------------------------------
 
