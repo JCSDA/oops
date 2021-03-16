@@ -27,9 +27,10 @@ namespace lorenz95 {
 ObsBiasCovariance::ObsBiasCovariance(const ObsTableView &, const eckit::Configuration & conf)
   : variance_(0.0), active_(false)
 {
-  if (conf.has("standard_deviation")) {
+  const eckit::LocalConfiguration covconf = conf.getSubConfiguration("covariance");
+  if (covconf.has("standard_deviation")) {
     active_ = true;
-    const double zz = conf.getDouble("standard_deviation");
+    const double zz = covconf.getDouble("standard_deviation");
     variance_ = zz * zz;
     ASSERT(variance_ > 0.0);
     oops::Log::info() << "ObsBiasCovariance variance = " << variance_ << std::endl;

@@ -111,8 +111,8 @@ observations:
     bias: 0.3
     norm: 0.3
     relative tolerance: 0.0
-  obs bias error:
-    standard_deviation: 0.5
+    covariance:
+      standard_deviation: 0.5
   rms ref: 8.3207407741318846
   tolerance: 1.0e-10
 

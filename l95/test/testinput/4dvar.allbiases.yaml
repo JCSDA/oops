@@ -30,8 +30,8 @@ cost function:
       covariance model: diagonal
     obs bias:
       bias: 0.0
-    obs bias error:
-      standard_deviation: 0.8
+      covariance:
+        standard_deviation: 0.8
   constraints:
   - jcdfi:
       filtered variables: [x]

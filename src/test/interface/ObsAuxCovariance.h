@@ -34,7 +34,7 @@ template <typename OBS> void testConstructor() {
   typedef oops::ObsAuxCovariance<OBS>    Covariance_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    eckit::LocalConfiguration biasconf = Test_::config(jj).getSubConfiguration("obs bias error");
+    eckit::LocalConfiguration biasconf = Test_::config(jj).getSubConfiguration("obs bias");
     std::unique_ptr<Covariance_> cov(new Covariance_(Test_::obspace()[jj], biasconf));
     EXPECT(cov.get());
     oops::Log::test() << "Testing ObsAuxCovariance: " << *cov << std::endl;

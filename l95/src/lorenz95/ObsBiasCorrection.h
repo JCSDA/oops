@@ -35,7 +35,6 @@ class ObsBiasCorrection : public util::Printable,
   ObsBiasCorrection();
   ObsBiasCorrection(const ObsTableView &, const eckit::Configuration &);
   ObsBiasCorrection(const ObsBiasCorrection &, const bool copy = true);
-  ObsBiasCorrection(const ObsBiasCorrection &, const eckit::Configuration &);
   ~ObsBiasCorrection() {}
 
 /// Linear algebra operators

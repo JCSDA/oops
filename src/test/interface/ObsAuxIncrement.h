@@ -51,9 +51,9 @@ template <typename OBS> class ObsAuxIncrementFixture : private boost::noncopyabl
 
   ObsAuxIncrementFixture<OBS>() {
     for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-      eckit::LocalConfiguration biascovconf =
-             Test_::config(jj).getSubConfiguration("obs bias error");
-      std::shared_ptr<Covariance_> tmp(new Covariance_(Test_::obspace()[jj], biascovconf));
+      eckit::LocalConfiguration biasconf =
+             Test_::config(jj).getSubConfiguration("obs bias");
+      std::shared_ptr<Covariance_> tmp(new Covariance_(Test_::obspace()[jj], biasconf));
       covar_.push_back(tmp);
     }
   }
@@ -70,7 +70,7 @@ template <typename OBS> void testObsAuxIncrementConstructor() {
   typedef oops::ObsAuxIncrement<OBS>    AuxIncr_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    eckit::LocalConfiguration biasconf = Test_::config(jj).getSubConfiguration("obs bias error");
+    eckit::LocalConfiguration biasconf = Test_::config(jj).getSubConfiguration("obs bias");
     AuxIncr_ dx(Test_::obspace()[jj], biasconf);
     oops::Log::test() << "Printing zero ObsAuxIncrement: " << dx << std::endl;
     EXPECT(dx.norm() == 0.0);
@@ -84,8 +84,8 @@ template <typename OBS> void testObsAuxIncrementCopyConstructor() {
   typedef oops::ObsAuxIncrement<OBS>  AuxIncr_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    if (Test_::config(jj).has("obs bias error")) {
-      eckit::LocalConfiguration biasconf = Test_::config(jj).getSubConfiguration("obs bias error");
+    if (Test_::config(jj).has("obs bias")) {
+      eckit::LocalConfiguration biasconf = Test_::config(jj).getSubConfiguration("obs bias");
       AuxIncr_ dx1(Test_::obspace()[jj], biasconf);
       ObsAuxIncrementFixture<OBS>::covariance(jj).randomize(dx1);
       oops::Log::test() << "Printing random ObsAuxIncrement: " << dx1 << std::endl;
@@ -112,8 +112,8 @@ template <typename OBS> void testObsAuxIncrementTriangle() {
   typedef oops::ObsAuxIncrement<OBS>    AuxIncr_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    if (Test_::config(jj).has("obs bias error")) {
-      eckit::LocalConfiguration biasconf = Test_::config(jj).getSubConfiguration("obs bias error");
+    if (Test_::config(jj).has("obs bias")) {
+      eckit::LocalConfiguration biasconf = Test_::config(jj).getSubConfiguration("obs bias");
       AuxIncr_ dx1(Test_::obspace()[jj], biasconf);
       AuxTest_::covariance(jj).randomize(dx1);
       AuxIncr_ dx2(Test_::obspace()[jj], biasconf);
@@ -143,7 +143,7 @@ template <typename OBS> void testObsAuxIncrementOpPlusEq() {
   typedef oops::ObsAuxIncrement<OBS>    AuxIncr_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    eckit::LocalConfiguration biasconf = Test_::config(jj).getSubConfiguration("obs bias error");
+    eckit::LocalConfiguration biasconf = Test_::config(jj).getSubConfiguration("obs bias");
     AuxIncr_ dx1(Test_::obspace()[jj], biasconf);
     AuxTest_::covariance(jj).randomize(dx1);
     AuxIncr_ dx2(dx1);
@@ -165,7 +165,7 @@ template <typename OBS> void testObsAuxIncrementDotProduct() {
   typedef oops::ObsAuxIncrement<OBS>    AuxIncr_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    eckit::LocalConfiguration biasconf = Test_::config(jj).getSubConfiguration("obs bias error");
+    eckit::LocalConfiguration biasconf = Test_::config(jj).getSubConfiguration("obs bias");
     AuxIncr_ dx1(Test_::obspace()[jj], biasconf);
     AuxTest_::covariance(jj).randomize(dx1);
     AuxIncr_ dx2(Test_::obspace()[jj], biasconf);
@@ -187,7 +187,7 @@ template <typename OBS> void testObsAuxIncrementZero() {
   typedef oops::ObsAuxIncrement<OBS>    AuxIncr_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    eckit::LocalConfiguration biasconf = Test_::config(jj).getSubConfiguration("obs bias error");
+    eckit::LocalConfiguration biasconf = Test_::config(jj).getSubConfiguration("obs bias");
     AuxIncr_ dx(Test_::obspace()[jj], biasconf);
     AuxTest_::covariance(jj).randomize(dx);
     EXPECT(dx.norm() > 0.0);
@@ -206,7 +206,7 @@ template <typename OBS> void testObsAuxIncrementAxpy() {
   typedef oops::ObsAuxIncrement<OBS>    AuxIncr_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    eckit::LocalConfiguration biasconf = Test_::config(jj).getSubConfiguration("obs bias error");
+    eckit::LocalConfiguration biasconf = Test_::config(jj).getSubConfiguration("obs bias");
     AuxIncr_ dx1(Test_::obspace()[jj], biasconf);
     AuxTest_::covariance(jj).randomize(dx1);
 

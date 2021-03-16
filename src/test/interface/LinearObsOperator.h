@@ -85,8 +85,7 @@ template <typename OBS> void testLinearity() {
     // initialize obs bias
     eckit::LocalConfiguration biasconf = conf.getSubConfiguration("obs bias");
     const ObsAuxCtrl_ ybias(Test_::obspace()[jj], biasconf);
-    eckit::LocalConfiguration biascovconf = conf.getSubConfiguration("obs bias error");
-    ObsAuxIncr_ ybinc(Test_::obspace()[jj], biascovconf);
+    ObsAuxIncr_ ybinc(Test_::obspace()[jj], biasconf);
 
     // read geovals from the file
     const eckit::LocalConfiguration gconf(conf, "geovals");
@@ -95,7 +94,7 @@ template <typename OBS> void testLinearity() {
     const GeoVaLs_ gval(gconf, Test_::obspace()[jj], hopvars);
 
      // initialize Obs. Bias Covariance
-    const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], biascovconf);
+    const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], biasconf);
 
     // set trajectory for TL/AD to be the geovals from the file
     hoptl.setTrajectory(gval, ybias);
@@ -161,13 +160,12 @@ template <typename OBS> void testAdjoint() {
     const double tol = conf.getDouble("linear obs operator test.tolerance AD");
     // initialize bias correction
     eckit::LocalConfiguration biasconf = conf.getSubConfiguration("obs bias");
-    eckit::LocalConfiguration biascovconf = conf.getSubConfiguration("obs bias error");
     const ObsAuxCtrl_ ybias(Test_::obspace()[jj], biasconf);
-    ObsAuxIncr_ ybinc1(Test_::obspace()[jj], biascovconf);  // TL
-    ObsAuxIncr_ ybinc2(Test_::obspace()[jj], biascovconf);  // AD
+    ObsAuxIncr_ ybinc1(Test_::obspace()[jj], biasconf);  // TL
+    ObsAuxIncr_ ybinc2(Test_::obspace()[jj], biasconf);  // AD
 
     // initialize Obs. Bias Covariance
-    const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], biascovconf);
+    const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], biasconf);
 
     // read geovals from the file
     eckit::LocalConfiguration gconf(conf, "geovals");
@@ -244,12 +242,11 @@ template <typename OBS> void testTangentLinear() {
 
     // initialize obs bias from file
     eckit::LocalConfiguration biasconf = conf.getSubConfiguration("obs bias");
-    eckit::LocalConfiguration biascovconf = conf.getSubConfiguration("obs bias error");
     const ObsAuxCtrl_ ybias0(Test_::obspace()[jj], biasconf);
     ObsAuxCtrl_ ybias(Test_::obspace()[jj], biasconf);
 
     // initialize Obs. Bias Covariance
-    const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], biascovconf);
+    const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], biasconf);
 
     // read geovals from the file
     const eckit::LocalConfiguration gconf(conf, "geovals");
@@ -277,7 +274,7 @@ template <typename OBS> void testTangentLinear() {
     // randomize dx and ybinc
     GeoVaLs_ dx(gconf, Test_::obspace()[jj], hoptl.requiredVars());
     dx.random();
-    ObsAuxIncr_ ybinc(Test_::obspace()[jj], biascovconf);
+    ObsAuxIncr_ ybinc(Test_::obspace()[jj], biasconf);
     Bobsbias.randomize(ybinc);
 
     // scale dx by x0

@@ -78,8 +78,8 @@ observations:
     stream: '-10.0'
     norm: 10.0
     relative tolerance: 0.0
-  obs bias error:
-    stream: '2.0e7'
+    covariance:
+      stream: '2.0e7'
   rms ref: 183502589.5028424
   tolerance: 1.0e-8
 - obs error:
@@ -104,8 +104,8 @@ observations:
     uwind: '10.0'
     norm: 10.0
     relative tolerance: 0.0
-  obs bias error:
-    uwind: '15.0'
+    covariance:
+      uwind: '15.0'
   rms ref: 39.644266100943696
   tolerance: 1.0e-8
 - obs error:

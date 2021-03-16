@@ -24,7 +24,8 @@ namespace lorenz95 {
 ObsBiasCorrection::ObsBiasCorrection(const ObsTableView &, const eckit::Configuration & conf)
   : bias_(0.0), active_(false)
 {
-  active_ = conf.has("standard_deviation");
+  const eckit::LocalConfiguration covconf = conf.getSubConfiguration("covariance");
+  active_ = covconf.has("standard_deviation");
   if (active_) {oops::Log::trace() << "ObsBiasCorrection::ObsBiasCorrection created." << std::endl;}
 }
 // -----------------------------------------------------------------------------
@@ -33,13 +34,6 @@ ObsBiasCorrection::ObsBiasCorrection(const ObsBiasCorrection & other,
   : bias_(0.0), active_(other.active_)
 {
   if (active_ && copy) bias_ = other.bias_;
-}
-// -----------------------------------------------------------------------------
-ObsBiasCorrection::ObsBiasCorrection(const ObsBiasCorrection & other,
-                                     const eckit::Configuration &)
-  : bias_(0.0), active_(other.active_)
-{
-  if (active_) bias_ = other.bias_;
 }
 // -----------------------------------------------------------------------------
 void ObsBiasCorrection::diff(const ObsBias & b1, const ObsBias & b2) {
