@@ -108,14 +108,17 @@ void ObsData1D<DATATYPE>::save(const std::string & name) const {
 // -----------------------------------------------------------------------------
 template<typename DATATYPE>
 void ObsData1D<DATATYPE>::print(std::ostream & os) const {
-  ASSERT(data_.size() > 0);
-  DATATYPE zmin = data_.at(0);
-  DATATYPE zmax = data_.at(0);
-  for (size_t jj = 0; jj < data_.size(); ++jj) {
-    if (data_.at(jj) < zmin) zmin = data_.at(jj);
-    if (data_.at(jj) > zmax) zmax = data_.at(jj);
+  if (data_.size() > 0) {
+    DATATYPE zmin = data_.at(0);
+    DATATYPE zmax = data_.at(0);
+    for (size_t jj = 0; jj < data_.size(); ++jj) {
+      if (data_.at(jj) < zmin) zmin = data_.at(jj);
+      if (data_.at(jj) > zmax) zmax = data_.at(jj);
+    }
+    os << "Lorenz 95 nobs= " << data_.size() << " Min=" << zmin << ", Max=" << zmax;
+  } else {
+    os << "Lorenz 95 nobs= " << data_.size() << " --- No observations";
   }
-  os << "Lorenz 95 nobs= " << data_.size() << " Min=" << zmin << ", Max=" << zmax;
 }
 // -----------------------------------------------------------------------------
 }  // namespace lorenz95

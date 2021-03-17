@@ -19,20 +19,17 @@
 #include "model/LocationsQG.h"
 #include "model/StateQG.h"
 
-
 namespace qg {
 
 // -----------------------------------------------------------------------------
 /// Constructor, destructor
 // -----------------------------------------------------------------------------
-GetValuesQG::GetValuesQG(const GeometryQG & geom, const LocationsQG & locs,
+GetValuesQG::GetValuesQG(const GeometryQG &, const LocationsQG & locs,
                          const eckit::Configuration & conf)
     : locs_(locs), conf_(conf)
 {
-  oops::Log::trace() << "GetValuesQG constructor with config "
-                     << conf_ << std::endl;
+  oops::Log::trace() << "GetValuesQG constructor with config " << conf_ << std::endl;
 }
-
 
 // -----------------------------------------------------------------------------
 /// Get state values at observation locations
@@ -40,20 +37,17 @@ GetValuesQG::GetValuesQG(const GeometryQG & geom, const LocationsQG & locs,
 void GetValuesQG::fillGeoVaLs(const StateQG & state, const util::DateTime & t1,
                               const util::DateTime & t2, GomQG & gom) const
 {
+  oops::Log::trace() << "GetValuesQG::fillGeoVaLs start" << std::endl;
   // the below call is an example if one wanted a different interpolation type
   const std::string interpType = conf_.getString("interpolation type", "default");
 
-  if (interpType == "default" ||
-      (interpType.compare(0, 8, "default_") == 0)) {
-    oops::Log::trace() << "GetValuesQG config = "
-                       << conf_ << std::endl;
-    qg_getvalues_interp_f90(locs_, state.fields().toFortran(),
-                            t1, t2, gom.toFortran());
+  if (interpType == "default" || (interpType.compare(0, 8, "default_") == 0)) {
+    qg_getvalues_interp_f90(locs_, state.fields().toFortran(), t1, t2, gom.toFortran());
   } else {
-    std::string err_message("interpolation type option " +
-                            interpType + " not supported");
+    std::string err_message("interpolation type option " + interpType + " not supported");
     throw eckit::BadValue(err_message, Here());
   }
+  oops::Log::trace() << "GetValuesQG::fillGeoVaLs done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

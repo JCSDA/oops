@@ -50,12 +50,11 @@ class GetValuesPost : public PostBase<State<MODEL>> {
   typedef std::vector<std::unique_ptr<GetValues_>>  GetValuesVec_;
   typedef std::vector<std::unique_ptr<GeoVaLs_>>    GeoVaLsVec_;
   typedef std::vector<std::unique_ptr<Locations_>>  LocationsVec_;
-  typedef std::vector<Variables> VariablesVec_;
 
  public:
 /// \brief Saves Locations and Variables to be processed
   GetValuesPost(const ObsSpaces_ &,
-                const LocationsVec_ &, const VariablesVec_ &,
+                const LocationsVec_ &, const std::vector<Variables> &,
                 const std::vector<eckit::LocalConfiguration> &);
 
 /// \brief Returns geovals filled in during the model run
@@ -75,9 +74,8 @@ class GetValuesPost : public PostBase<State<MODEL>> {
   util::DateTime winend_;   /// End of assimilation window
   util::Duration hslot_;    /// Half time slot
 
-
   const LocationsVec_ & locations_;   /// locations of observations
-  const VariablesVec_ & geovars_;     /// Variables needed from model
+  const std::vector<Variables> geovars_;       /// Variables needed from model
   GetValuesVec_ getvals_;             /// GetValues used to fill in GeoVaLs
   GeoVaLsVec_ geovals_;               /// GeoVaLs that are filled in
   const std::vector<eckit::LocalConfiguration> getvalsconfs_;   /// configuration object
@@ -88,16 +86,19 @@ class GetValuesPost : public PostBase<State<MODEL>> {
 template <typename MODEL, typename OBS>
 GetValuesPost<MODEL, OBS>::GetValuesPost(const ObsSpaces_ & obsdb,
                                          const LocationsVec_ & locations,
-                                         const VariablesVec_ & vars,
+                                         const std::vector<Variables> & vars,
                                          const std::vector<eckit::LocalConfiguration> & confs)
   : PostBase<State_>(),
     winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()), hslot_(),
-    locations_(locations), geovars_(vars),
-    getvalsconfs_(confs) {}
+    locations_(locations), geovars_(vars), getvalsconfs_(confs)
+{
+  Log::trace() << "GetValuesPost::GetValuesPost" << std::endl;
+}
 
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
 void GetValuesPost<MODEL, OBS>::fill(const State4D_ & xx) {
+  Log::trace() << "GetValuesPost::fill start" << std::endl;
   const size_t nstates = xx.size();
   util::Duration tstep = winend_ - winbgn_;   // for a single state
   // if using several states, compute the timestep and check that it's the same
@@ -113,6 +114,7 @@ void GetValuesPost<MODEL, OBS>::fill(const State4D_ & xx) {
   for (size_t ii = 0; ii < nstates; ++ii) {
     doProcessing(xx[ii]);
   }
+  Log::trace() << "GetValuesPost::fill done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

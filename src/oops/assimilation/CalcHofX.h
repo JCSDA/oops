@@ -144,7 +144,6 @@ void CalcHofX<OBS>::initialize(const ObsAuxCtrls_ & obsaux, const int iteration)
   std::vector<eckit::LocalConfiguration> obsconfs = obsconfig_.getSubConfigurations();
   ybias_ = &obsaux;
   filters_.clear();
-  geovars_.clear();
   for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
     CalcHofXParameters<OBS> observerParams;
     observerParams.deserialize(obsconfs[jj]);

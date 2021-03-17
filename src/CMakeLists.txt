@@ -119,6 +119,7 @@ oops/base/ObsEnsemble.h
 oops/base/ObsErrorBase.h
 oops/base/ObsErrors.h
 oops/base/Observations.h
+oops/base/Observers.h
 oops/base/ObserversTLAD.h
 oops/base/ObserverTLAD.h
 oops/base/ObsFilterBase.h

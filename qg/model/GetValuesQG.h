@@ -38,8 +38,7 @@ class GetValuesQG : public util::Printable,
   static const std::string classname() {return "qg::GetValuesQG";}
 
 /// \brief saves all locations \p locs to use during filling GeoVaLs
-  GetValuesQG(const GeometryQG &, const LocationsQG & locs,
-              const eckit::Configuration &);
+  GetValuesQG(const GeometryQG &, const LocationsQG & locs, const eckit::Configuration &);
   ~GetValuesQG() {}
 
 /// \brief fills in \p geovals for all observations in the timeframe (\p t1, \p t2],

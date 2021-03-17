@@ -18,12 +18,11 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
-#include "oops/assimilation/CalcHofX.h"
-#include "oops/base/GetValuesPost.h"
 #include "oops/base/instantiateObsFilterFactory.h"
 #include "oops/base/ObsAuxControls.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
+#include "oops/base/Observers.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
@@ -31,10 +30,10 @@
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Model.h"
 #include "oops/interface/ModelAuxControl.h"
+#include "oops/interface/ObsDataVector.h"
 #include "oops/interface/State.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
-#include "oops/util/ConfigFunctions.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -46,14 +45,15 @@ namespace oops {
 /// H(x) is perturbed. It is saved as "hofx" by default, or as specified "hofx group name"
 template <typename MODEL, typename OBS> class HofX4D : public Application {
   typedef Geometry<MODEL>            Geometry_;
-  typedef GetValuesPost<MODEL, OBS>  GetValuesPost_;
   typedef Model<MODEL>               Model_;
   typedef ModelAuxControl<MODEL>     ModelAux_;
   typedef ObsAuxControls<OBS>        ObsAux_;
   typedef Observations<OBS>          Observations_;
   typedef ObsErrors<OBS>             ObsErrors_;
+  typedef Observers<MODEL, OBS>      Observers_;
   typedef ObsSpaces<OBS>             ObsSpaces_;
   typedef State<MODEL>               State_;
+  typedef ObsDataVector<OBS, float>  ObsData_;
 
  public:
 // -----------------------------------------------------------------------------
@@ -107,22 +107,23 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
     ObsAux_ obsaux(obspaces, obsConfig);
 
 //  Setup and run observer
-    CalcHofX<OBS> hofx(obspaces, obsConfig);
-    hofx.initialize(obsaux);
+    Observers_ hofx(obspaces, obsConfig);
+
+    std::vector<std::shared_ptr<ObsData_>> obserrs;
+    for (size_t jj = 0; jj < obspaces.size(); ++jj) {
+      obserrs.emplace_back(std::make_shared<ObsData_>(obspaces[jj],
+                           obspaces[jj].obsvariables(), "ObsError"));
+    }
 
 //  run the model and compute H(x)
-    std::vector<eckit::LocalConfiguration> getValuesConfig =
-      util::vectoriseAndFilter(obsConfig, "get values");
-
-    std::shared_ptr<GetValuesPost_>
-      getvals(new GetValuesPost_(obspaces, hofx.locations(),
-                                 hofx.requiredVars(), getValuesConfig));
+    std::shared_ptr<PostBase<State<MODEL> > > getvals(hofx.initialize(obsaux, obserrs));
     post.enrollProcessor(getvals);
     model.forecast(xx, moderr, flength, post);
 
-    Observations_ yobs = hofx.compute(getvals->geovals());
-    hofx.saveQcFlags("EffectiveQC");
-    hofx.saveObsErrors("EffectiveError");
+    Observations_ yobs = hofx.finalize();
+    for (size_t jj = 0; jj < obserrs.size(); ++jj) {
+      obserrs[jj]->save("EffectiveError");  // Obs error covariance is looking for that for now
+    }
 
     Log::test() << "Final state: " << xx << std::endl;
     Log::test() << "H(x): " << std::endl << yobs << "End H(x)" << std::endl;

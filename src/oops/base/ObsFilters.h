@@ -63,6 +63,8 @@ class ObsFilters : public util::Printable,
   std::vector<ObsFilterPtr_> filters_;
   Variables geovars_;
   Variables diagvars_;
+  ObsDataPtr_<int> qcflags_;
+  ObsDataPtr_<float> obserr_;
 };
 
 // -----------------------------------------------------------------------------
@@ -72,7 +74,7 @@ ObsFilters<OBS>::ObsFilters(const ObsSpace_ & os,
                             const std::vector<ObsFilterParametersWrapper<OBS>> & filtersParams,
                             ObsDataPtr_<int> qcflags, ObsDataPtr_<float> obserr,
                             const int iteration)
-  : filters_(), geovars_(), diagvars_() {
+  : filters_(), geovars_(), diagvars_(), qcflags_(qcflags), obserr_(obserr) {
   Log::trace() << "ObsFilters::ObsFilters starting:\n";
   for (const ObsFilterParametersWrapper<OBS> &filterParams : filtersParams)
     Log::trace() << "  " << filterParams << std::endl;
@@ -81,7 +83,7 @@ ObsFilters<OBS>::ObsFilters(const ObsSpace_ & os,
   if (filtersParams.size() > 0) {
     eckit::LocalConfiguration preconf;
     preconf.set("filter", "QCmanager");
-    filters_.push_back(FilterFactory<OBS>::create(os, preconf, qcflags, obserr));
+    filters_.push_back(FilterFactory<OBS>::create(os, preconf, qcflags_, obserr_));
   }
 
 // Create the filters, only at 0-th iteration, or at iterations specified in "apply at iterations"
@@ -95,7 +97,7 @@ ObsFilters<OBS>::ObsFilters(const ObsSpace_ & os,
     }
     if (apply) {
       ObsFilterPtr_ tmp(FilterFactory<OBS>::create(os, filterParams.filterParameters,
-                                                   qcflags, obserr));
+                                                   qcflags_, obserr_));
       geovars_ += tmp->requiredVars();
       diagvars_ += tmp->requiredHdiagnostics();
       filters_.push_back(tmp);
@@ -130,6 +132,7 @@ void ObsFilters<OBS>::postFilter(const ObsVector_ & hofx, const ObsDiags_ & diag
   for (const auto & filter : filters_) {
     filter->postFilter(hofx, diags);
   }
+  obserr_->mask(*qcflags_);
 }
 
 // -----------------------------------------------------------------------------

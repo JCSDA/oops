@@ -19,14 +19,13 @@
 #include <boost/noncopyable.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "oops/assimilation/CalcHofX.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/ControlVariable.h"
 #include "oops/assimilation/CostTermBase.h"
 #include "oops/base/Departures.h"
-#include "oops/base/GetValuesPost.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
+#include "oops/base/Observers.h"
 #include "oops/base/ObserversTLAD.h"
 #include "oops/base/ObsFilters.h"
 #include "oops/base/ObsSpaces.h"
@@ -34,12 +33,11 @@
 #include "oops/base/PostBaseTLAD.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
+#include "oops/interface/ObsDataVector.h"
 #include "oops/interface/State.h"
 #include "oops/mpi/mpi.h"
-#include "oops/util/ConfigFunctions.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
-#include "oops/util/missingValues.h"
 
 namespace oops {
 
@@ -64,10 +62,10 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   typedef Increment<MODEL>              Increment_;
   typedef ObsErrors<OBS>                ObsErrors_;
   typedef ObsSpaces<OBS>                ObsSpaces_;
-  typedef GetValuesPost<MODEL, OBS>     GetValuesPost_;
-  typedef CalcHofX<OBS>   CalcHofX_;
+  typedef Observers<MODEL, OBS>         Observers_;
   typedef ObserversTLAD<MODEL, OBS>     ObserversTLAD_;
   typedef PostBaseTLAD<MODEL>           PostBaseTLAD_;
+  typedef ObsDataVector<OBS, float>     ObsData_;
 
  public:
   /// Construct \f$ J_o\f$ from \f$ R\f$ and \f$ y_{obs}\f$.
@@ -126,11 +124,10 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   /// Gradient at first guess : \f$ R^{-1} (H(x_{fg})-y_{obs}) \f$.
   std::unique_ptr<Departures_> gradFG_;
 
-  /// Postprocessor passed by \f$ J_o\f$ to the model during integration.
-  std::shared_ptr<GetValuesPost_> getvals_;
-
   /// Used for computing H(x) and running QC filters
-  CalcHofX_ calchofx_;
+  Observers_ observers_;
+
+  std::vector<std::shared_ptr<ObsData_> > obserrs_;  // Obs errors
 
   /// Linearized observation operators.
   std::shared_ptr<ObserversTLAD_> pobstlad_;
@@ -144,9 +141,15 @@ CostJo<MODEL, OBS>::CostJo(const eckit::Configuration & joConf, const eckit::mpi
                            const eckit::mpi::Comm & ctime)
   : obsconf_(joConf), obspace_(obsconf_, comm, winbgn, winend, ctime),
     yobs_(obspace_, "ObsValue"),
-    Rmat_(), currentConf_(), gradFG_(), getvals_(), calchofx_(obspace_, obsconf_),
+    Rmat_(), currentConf_(), gradFG_(), observers_(obspace_, obsconf_),
     pobstlad_()
 {
+  for (size_t jj = 0; jj < obspace_.size(); ++jj) {
+    /// Allocate and read initial obs error
+    obserrs_.emplace_back(std::make_shared<ObsData_>(obspace_[jj],
+                          obspace_[jj].obsvariables(), "ObsError"));
+  }
+
   Log::trace() << "CostJo::CostJo done" << std::endl;
 }
 
@@ -158,15 +161,13 @@ CostJo<MODEL, OBS>::initialize(const CtrlVar_ & xx, const eckit::Configuration &
   Log::trace() << "CostJo::initialize start" << std::endl;
 
   currentConf_.reset(new eckit::LocalConfiguration(conf));
-  calchofx_.initialize(xx.obsVar(), currentConf_->getInt("iteration"));
+  int iter = currentConf_->getInt("iteration");
 
-  std::vector<eckit::LocalConfiguration> getValuesConfig =
-    util::vectoriseAndFilter(obsconf_, "get values");
+  std::shared_ptr<PostBase<State<MODEL> > >
+    getvals(observers_.initialize(xx.obsVar(), obserrs_, iter));
 
-  getvals_.reset(new GetValuesPost_(obspace_, calchofx_.locations(),
-                                    calchofx_.requiredVars(), getValuesConfig));
   Log::trace() << "CostJo::initialize done" << std::endl;
-  return getvals_;
+  return getvals;
 }
 
 // -----------------------------------------------------------------------------
@@ -174,21 +175,20 @@ CostJo<MODEL, OBS>::initialize(const CtrlVar_ & xx, const eckit::Configuration &
 template<typename MODEL, typename OBS>
 double CostJo<MODEL, OBS>::finalize() {
   Log::trace() << "CostJo::finalize start" << std::endl;
-  Observations_ yeqv = calchofx_.compute(getvals_->geovals());
+  Observations_ yeqv = observers_.finalize();
   Log::info() << "Jo Observation Equivalent:" << std::endl << yeqv
               << "End Jo Observation Equivalent" << std::endl;
   const int iterout = currentConf_->getInt("iteration");
 
 // Sace current QC flags and obs error
   const std::string obsname = "hofx" + std::to_string(iterout);
-  const std::string qcname  = "EffectiveQC" + std::to_string(iterout);
-  const std::string errname = "EffectiveError" + std::to_string(iterout);
   yeqv.save(obsname);
 
-  calchofx_.maskObsErrors();
-  calchofx_.saveQcFlags(qcname);
-  calchofx_.saveObsErrors(errname);
-  calchofx_.saveObsErrors("EffectiveError");  // Obs error covariance is looking for that for now
+  const std::string errname = "EffectiveError" + std::to_string(iterout);
+  for (size_t jj = 0; jj < obserrs_.size(); ++jj) {
+    obserrs_[jj]->save(errname);
+    obserrs_[jj]->save("EffectiveError");  // Obs error covariance is looking for that for now
+  }
 
 // Set observation error covariance
   Rmat_.reset(new ObsErrors_(obsconf_, obspace_));
@@ -220,7 +220,6 @@ double CostJo<MODEL, OBS>::finalize() {
     ydep.save(depname);
   }
 
-  getvals_.reset();
   currentConf_.reset();
   Log::trace() << "CostJo::finalize done" << std::endl;
   return zjo;
