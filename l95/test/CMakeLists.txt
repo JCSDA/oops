@@ -737,6 +737,7 @@ oops_add_test( TESTNAME letkf
                MODELNAME l95
                YAMLNAME testinput/letkf.yaml
                EXENAME l95_letkf.x
+               OMP 2
                TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
 
 oops_add_test( TESTNAME letkf_noobs

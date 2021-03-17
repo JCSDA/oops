@@ -773,4 +773,5 @@ oops_add_test( TESTNAME letkf
                MODELNAME qg
                YAMLNAME testinput/letkf.yaml
                EXENAME  qg_letkf.x
+               OMP 2
                TEST_DEPENDS test_qg_make_obs_3d test_qg_gen_ens_pert_B )
