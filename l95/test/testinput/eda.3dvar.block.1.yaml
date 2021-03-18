@@ -27,6 +27,13 @@ variational:
   minimizer:
     algorithm: DRPBlockLanczos
     members: 2
+    online diagnostics:
+      write basis: true
+    krylov basis:
+      datadir: Data
+      date: 2010-01-01T00:00:00Z
+      exp: 3dvar.block.m1
+      type: krylov
   iterations:
   - geometry:
       resol: 40

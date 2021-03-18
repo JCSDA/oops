@@ -172,6 +172,11 @@ void IncrementL95::write(const eckit::Configuration & config) const {
   std::string type = config.getString("type");
   std::string filename = dir+"/"+exp+"."+type;
 
+  if (type == "krylov") {
+    std::string iter = config.getString("iteration");
+    filename += "."+iter;
+  }
+
   const util::DateTime antime(config.getString("date"));
   filename += "."+antime.toString();
   const util::Duration step = time_ - antime;

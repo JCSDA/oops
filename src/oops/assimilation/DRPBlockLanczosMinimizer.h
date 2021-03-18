@@ -39,8 +39,8 @@ template<typename MODEL, typename OBS> class DRPBlockLanczosMinimizer :
   typedef CostFunction<MODEL, OBS>         CostFct_;
   typedef ControlIncrement<MODEL, OBS>     CtrlInc_;
   typedef HtRinvHMatrix<MODEL, OBS>        HtRinvH_;
-  typedef Eigen::VectorXd             eigenvec_;
-  typedef Eigen::MatrixXd             eigenmat_;
+  typedef Eigen::VectorXd                  eigenvec_;
+  typedef Eigen::MatrixXd                  eigenmat_;
 
  public:
   const std::string classname() const override {return "DRPBlockLanczosMinimizer";}
@@ -61,12 +61,17 @@ template<typename MODEL, typename OBS> class DRPBlockLanczosMinimizer :
   void HtRinvH0(const CtrlInc_ &, CtrlInc_ &, const HtRinvH_ &, int &,
                 const eckit::mpi::Comm &, CtrlInc_ &);
 
+  // For MPI purposes
   const int members_;
   const int ntasks_;
   const int tasks_per_member_;
   const int global_task_;
   const int mymember_;
   const int local_task_;
+
+  // For diagnostics
+  eckit::LocalConfiguration diagConf_;
+  int outerLoop_;
 };
 
 // ===============================================================================================
@@ -81,7 +86,8 @@ DRPBlockLanczosMinimizer<MODEL, OBS>::DRPBlockLanczosMinimizer(const eckit::Conf
   : DRMinimizer<MODEL, OBS>(J), members_(conf.getInt("members")),
     ntasks_(oops::mpi::world().size()),
     tasks_per_member_(ntasks_/members_), global_task_(oops::mpi::world().rank()),
-    mymember_(global_task_ / tasks_per_member_), local_task_(global_task_%tasks_per_member_) {}
+    mymember_(global_task_ / tasks_per_member_), local_task_(global_task_%tasks_per_member_),
+    diagConf_(conf), outerLoop_(0) {}
 
 // -----------------------------------------------------------------------------------------------
 
@@ -227,6 +233,7 @@ double DRPBlockLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh,
     SSLK = - (ss.block(ll*members_, 0, members_, members_));
     apply_proj(xh, *Vbase[ll], SSLK, gestag, CommGeo, temp1);
     apply_proj(xx, *Zbase[ll], SSLK, gestag, CommGeo, temp1);
+    if (outerLoop_ == 0) writeKrylovBasis(diagConf_, *Zbase[ll], ll);
 
     Log::info() << "   Norm reduction all members (" << std::setw(2) << ll+1 << ") = "
                 << norm_red_all.block(ll, 0, 1, members_) << std::endl;
@@ -239,6 +246,7 @@ double DRPBlockLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh,
   }
 
   eckit::mpi::deleteComm(CommGeoName);
+  ++outerLoop_;
   return normReduction;
 }
 

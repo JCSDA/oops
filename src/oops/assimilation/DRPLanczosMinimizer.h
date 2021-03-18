@@ -92,15 +92,19 @@ template<typename MODEL, typename OBS> class DRPLanczosMinimizer : public DRMini
   std::vector<std::unique_ptr<CtrlInc_>> zvecs_;
   std::vector<double> alphas_;
   std::vector<double> betas_;
+
+  // For diagnostics
+  eckit::LocalConfiguration diagConf_;
+  int outerLoop_;
 };
 
 // =============================================================================
 
 template<typename MODEL, typename OBS>
 DRPLanczosMinimizer<MODEL, OBS>::DRPLanczosMinimizer(const eckit::Configuration & conf,
-                                                const CostFct_ & J)
-  : DRMinimizer<MODEL, OBS>(J), lmp_(conf),
-    hvecs_(), vvecs_(), zvecs_(), alphas_(), betas_() {}
+                                                     const CostFct_ & J)
+  : DRMinimizer<MODEL, OBS>(J), lmp_(conf), hvecs_(), vvecs_(), zvecs_(), alphas_(),
+    betas_(), diagConf_(conf), outerLoop_(0) {}
 
 // -----------------------------------------------------------------------------
 
@@ -240,8 +244,10 @@ double DRPLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, Ctr
   for (unsigned int jj = 0; jj < ss.size(); ++jj) {
     dx.axpy(ss[jj], *zvecs_[jj]);
     dxh.axpy(ss[jj], *hvecs_[jj]);
+    if (outerLoop_ == 0) writeKrylovBasis(diagConf_, *zvecs_[jj], jj);
   }
 
+  ++outerLoop_;
   return normReduction;
 }
 
