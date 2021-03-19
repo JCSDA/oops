@@ -17,6 +17,7 @@ set( _l95_srcs
         GomL95.h
         IncrementL95.cc
         IncrementL95.h
+        instantiateL95ChangeVarFactory.h
         instantiateLocalizationFactory.h
         Iterator.cc
         Iterator.h

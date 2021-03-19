@@ -10,30 +10,25 @@
 #include <ostream>
 #include <string>
 
-#include "eckit/config/Configuration.h"
-#include "model/GeometryQG.h"
-#include "model/StateQG.h"
-#include "oops/base/Variables.h"
 #include "oops/util/Logger.h"
+
+#include "model/QgFortran.h"
+#include "model/StateQG.h"
 
 namespace qg {
 // -----------------------------------------------------------------------------
-ChangeVarQG::ChangeVarQG(const GeometryQG & resol, const eckit::Configuration & conf) {
-  oops::Log::trace() << "ChangeVarQG::ChangeVarQG start" << std::endl;
-  const oops::Variables vars_in(conf, "input variables");
-  const oops::Variables vars_out(conf, "output variables");
-  qg_change_var_setup_f90(keyConfig_, vars_in, vars_out);
-  oops::Log::trace() << "ChangeVarQG::ChangeVarQG done" << std::endl;
-}
+ChangeVarQG::ChangeVarQG(const GeometryQG &, const eckit::Configuration &) {}
 // -----------------------------------------------------------------------------
 ChangeVarQG::~ChangeVarQG() {}
 // -----------------------------------------------------------------------------
 void ChangeVarQG::changeVar(const StateQG & xa, StateQG & xm) const {
-  qg_change_var_f90(keyConfig_, xa.fields().toFortran(), xm.fields().toFortran());
+  ASSERT(xa.variables().has("x") || xa.variables().has("q"));
+  qg_change_var_f90(xa.fields().toFortran(), xm.fields().toFortran());
 }
 // -----------------------------------------------------------------------------
 void ChangeVarQG::changeVarInverse(const StateQG & xm, StateQG & xa) const {
-  qg_change_var_inv_f90(keyConfig_, xm.fields().toFortran(), xa.fields().toFortran());
+  ASSERT(xm.variables().has("x") || xm.variables().has("q"));
+  qg_change_var_f90(xm.fields().toFortran(), xa.fields().toFortran());
 }
 // -----------------------------------------------------------------------------
 void ChangeVarQG::print(std::ostream & os) const {

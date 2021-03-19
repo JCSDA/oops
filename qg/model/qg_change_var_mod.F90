@@ -8,8 +8,10 @@
 
 module qg_change_var_mod
 
+use kinds
 use qg_convert_q_to_x_mod
 use qg_convert_x_to_q_mod
+use qg_convert_x_to_uv_mod
 use qg_fields_mod
 use oops_variables_mod
 
@@ -17,8 +19,9 @@ implicit none
 
 private
 public :: qg_change_var_config
-public :: qg_change_var_registry
-public :: qg_change_var_setup,qg_change_var,qg_change_var_inv,qg_change_var_ad,qg_change_var_inv_ad
+public :: qg_change_var_registry, qg_change_var_setup
+public :: qg_change_var_tl, qg_change_var_inv_tl, qg_change_var_ad, qg_change_var_inv_ad
+public :: qg_change_var
 ! ------------------------------------------------------------------------------
 type :: qg_change_var_config
   character(len=1024) :: varchange !< Variable change name
@@ -65,51 +68,74 @@ endif
 
 end subroutine qg_change_var_setup
 ! ------------------------------------------------------------------------------
+
 !> Change of variable
-subroutine qg_change_var(conf,fld_in,fld_out)
-
+subroutine qg_change_var(fld_in,fld_out)
 implicit none
-
-! Passed variables
-type(qg_change_var_config),intent(in) :: conf !< Variable change
 type(qg_fields),intent(in) :: fld_in          !< Input fields
 type(qg_fields),intent(inout) :: fld_out      !< Output fields
+real(kind_real), allocatable :: tmpu(:,:,:), tmpv(:,:,:), tmpx(:,:,:)
 
-! Check fields resolution
+! Checks
 call qg_fields_check_resolution(fld_in,fld_out)
+if (.not.allocated(fld_in%streamfct).and..not.allocated(fld_in%pv)) then
+  call abor1_ftn('qg_change_var: streamfct or pv input required')
+endif
 
-select case (trim(conf%varchange))
-case ('identity')
-  ! Copy fields
-  call qg_fields_copy(fld_out,fld_in)
-case ('x_to_q')
-  ! Check fields variables
-  if (fld_in%lq) call abor1_ftn('qg_change_var: wrong input fields variables for '//trim(conf%varchange))
-  if (.not.fld_out%lq) call abor1_ftn('qg_change_var: wrong output fields variables for '//trim(conf%varchange))
+call qg_fields_copy(fld_out,fld_in,.true.)
 
-  ! Conversion
-  call convert_x_to_q_tl(fld_in%geom,fld_in%gfld3d,fld_out%gfld3d)
+! Get streamfunction
+if (allocated(fld_out%streamfct)) then
+  if (allocated(fld_in%streamfct)) then
+    fld_out%streamfct = fld_in%streamfct
+    write(*,*)'qg_change_var: copied streamfct'
+  else
+    call convert_q_to_x(fld_in%geom, fld_in%pv, fld_in%x_north, fld_in%x_south, fld_out%streamfct)
+    write(*,*)'qg_change_var: converted pv to streamfct'
+  endif
+  fld_out%gfld3d = fld_out%streamfct
+endif
 
-  ! Copy boundary conditions
-  call qg_fields_copy(fld_out,fld_in,.true.)
-case ('q_to_x')
-  ! Check fields variables
-  if (.not.fld_in%lq) call abor1_ftn('qg_change_var: wrong input fields variables for '//trim(conf%varchange))
-  if (fld_out%lq) call abor1_ftn('qg_change_var: wrong output fields variables for '//trim(conf%varchange))
+! Get potential vorticity
+if (allocated(fld_out%pv)) then
+  if (allocated(fld_in%pv)) then
+    fld_out%pv = fld_in%pv
+    write(*,*)'qg_change_var: copied pv'
+  else
+    call convert_x_to_q(fld_in%geom, fld_in%streamfct, fld_in%x_north, fld_in%x_south, fld_out%pv)
+    write(*,*)'qg_change_var: converted streamfct to pv'
+  endif
+  if (fld_out%lq) fld_out%gfld3d = fld_out%pv
+endif
 
-  ! Conversion
-  call convert_q_to_x_tl(fld_in%geom,fld_in%gfld3d,fld_out%gfld3d)
-
-  ! Copy boundary conditions
-  call qg_fields_copy(fld_out,fld_in,.true.)
-case default
-  call abor1_ftn('qg_change_var: wrong variable change')
-end select
+! Get u and v
+if (allocated(fld_out%u) .or. allocated(fld_out%v)) then
+  allocate(tmpu(fld_in%geom%nx,fld_in%geom%ny,fld_in%geom%nz))
+  allocate(tmpv(fld_in%geom%nx,fld_in%geom%ny,fld_in%geom%nz))
+  if (allocated(fld_in%streamfct)) then
+    call convert_x_to_uv(fld_in%geom,fld_in%streamfct,fld_in%x_north,fld_in%x_south, tmpu,tmpv)
+    write(*,*)'qg_change_var: converted streamfct in to uv'
+  elseif (allocated(fld_out%streamfct)) then
+    call convert_x_to_uv(fld_out%geom,fld_out%streamfct,fld_out%x_north,fld_out%x_south, tmpu, tmpv)
+    write(*,*)'qg_change_var: converted streamfct out to uv'
+  else  ! fld_in has q if it did not have x
+    allocate(tmpx(fld_in%geom%nx,fld_in%geom%ny,fld_in%geom%nz))
+    call convert_q_to_x(fld_in%geom, fld_in%pv, fld_in%x_north, fld_in%x_south, tmpx)
+    call convert_x_to_uv(fld_in%geom, tmpx, fld_in%x_north, fld_in%x_south, tmpu, tmpv)
+    write(*,*)'qg_change_var: converted pv in to uv'
+    deallocate(tmpx)
+  endif
+  if (allocated(fld_out%u)) fld_out%u = tmpu
+  if (allocated(fld_out%v)) fld_out%v = tmpv
+  deallocate(tmpu)
+  deallocate(tmpv)
+endif
 
 end subroutine qg_change_var
+
 ! ------------------------------------------------------------------------------
-!> Change of variable - inverse
-subroutine qg_change_var_inv(conf,fld_in,fld_out)
+!> Change of variable
+subroutine qg_change_var_tl(conf,fld_in,fld_out)
 
 implicit none
 
@@ -127,8 +153,51 @@ case ('identity')
   call qg_fields_copy(fld_out,fld_in)
 case ('x_to_q')
   ! Check fields variables
-  if (.not.fld_in%lq) call abor1_ftn('qg_change_var_inv: wrong input fields variables for '//trim(conf%varchange))
-  if (fld_out%lq) call abor1_ftn('qg_change_var_inv: wrong output fields variables for '//trim(conf%varchange))
+  if (fld_in%lq) call abor1_ftn('qg_change_var_tl: wrong input fields variables for '//trim(conf%varchange))
+  if (.not.fld_out%lq) call abor1_ftn('qg_change_var_tl: wrong output fields variables for '//trim(conf%varchange))
+
+  ! Conversion
+  call convert_x_to_q_tl(fld_in%geom,fld_in%gfld3d,fld_out%gfld3d)
+
+  ! Copy boundary conditions
+  call qg_fields_copy(fld_out,fld_in,.true.)
+case ('q_to_x')
+  ! Check fields variables
+  if (.not.fld_in%lq) call abor1_ftn('qg_change_var_tl: wrong input fields variables for '//trim(conf%varchange))
+  if (fld_out%lq) call abor1_ftn('qg_change_var_tl: wrong output fields variables for '//trim(conf%varchange))
+
+  ! Conversion
+  call convert_q_to_x_tl(fld_in%geom,fld_in%gfld3d,fld_out%gfld3d)
+
+  ! Copy boundary conditions
+  call qg_fields_copy(fld_out,fld_in,.true.)
+case default
+  call abor1_ftn('qg_change_var_tl: wrong variable change')
+end select
+
+end subroutine qg_change_var_tl
+! ------------------------------------------------------------------------------
+!> Change of variable - inverse
+subroutine qg_change_var_inv_tl(conf,fld_in,fld_out)
+
+implicit none
+
+! Passed variables
+type(qg_change_var_config),intent(in) :: conf !< Variable change
+type(qg_fields),intent(in) :: fld_in          !< Input fields
+type(qg_fields),intent(inout) :: fld_out      !< Output fields
+
+! Check fields resolution
+call qg_fields_check_resolution(fld_in,fld_out)
+
+select case (trim(conf%varchange))
+case ('identity')
+  ! Copy fields
+  call qg_fields_copy(fld_out,fld_in)
+case ('x_to_q')
+  ! Check fields variables
+  if (.not.fld_in%lq) call abor1_ftn('qg_change_var_inv_tl: wrong input fields variables for '//trim(conf%varchange))
+  if (fld_out%lq) call abor1_ftn('qg_change_var_inv_tl: wrong output fields variables for '//trim(conf%varchange))
 
   ! Conversion
   call convert_q_to_x_tl(fld_in%geom,fld_in%gfld3d,fld_out%gfld3d)
@@ -137,8 +206,8 @@ case ('x_to_q')
   call qg_fields_copy(fld_out,fld_in,.true.)
 case ('q_to_x')
   ! Check fields variables
-  if (fld_in%lq) call abor1_ftn('qg_change_var_inv: wrong input fields variables for '//trim(conf%varchange))
-  if (.not.fld_out%lq) call abor1_ftn('qg_change_var_inv: wrong output fields variables for '//trim(conf%varchange))
+  if (fld_in%lq) call abor1_ftn('qg_change_var_inv_tl: wrong input fields variables for '//trim(conf%varchange))
+  if (.not.fld_out%lq) call abor1_ftn('qg_change_var_inv_tl: wrong output fields variables for '//trim(conf%varchange))
 
   ! Conversion
   call convert_x_to_q_tl(fld_in%geom,fld_in%gfld3d,fld_out%gfld3d)
@@ -146,10 +215,10 @@ case ('q_to_x')
   ! Copy boundary conditions
   call qg_fields_copy(fld_out,fld_in,.true.)
 case default
-  call abor1_ftn('qg_change_var_inv: wrong variable change')
+  call abor1_ftn('qg_change_var_inv_tl: wrong variable change')
 end select
 
-end subroutine qg_change_var_inv
+end subroutine qg_change_var_inv_tl
 ! ------------------------------------------------------------------------------
 !> Change of variable - adjoint
 subroutine qg_change_var_ad(conf,fld_in,fld_out)

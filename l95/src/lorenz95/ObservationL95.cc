@@ -26,7 +26,7 @@ namespace lorenz95 {
 // -----------------------------------------------------------------------------
 
 ObservationL95::ObservationL95(const ObsTableView & ot, const eckit::Configuration &)
-  : obsdb_(ot), inputs_()
+  : obsdb_(ot), inputs_(std::vector<std::string>{"x"})
 {}
 
 // -----------------------------------------------------------------------------

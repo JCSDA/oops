@@ -14,7 +14,7 @@ Test     :   Valid time: 2010-01-01T09:00:00Z
 Test     :   Resolution = 20, 10, 2
 Test     :   Variable = potential vorticity
 Test     :   Boundary conditions are activated
-Test     :   Min= -5.8900e-04, Max=  9.6046e-04, RMS=  3.5956e-04
+Test     :   Min= -5.8027e-04, Max=  5.4508e-04, RMS=  3.2514e-04
 Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
 Test     :   Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : Variable transform: QG change of variable
@@ -36,7 +36,7 @@ Test     :   Valid time: 2010-01-01T09:00:00Z
 Test     :   Resolution = 20, 10, 2
 Test     :   Variable = potential vorticity
 Test     :   Boundary conditions are activated
-Test     :   Min= -5.8900e-04, Max=  9.6046e-04, RMS=  3.5956e-04
+Test     :   Min= -5.8027e-04, Max=  5.4508e-04, RMS=  3.2514e-04
 Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
 Test     :   Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : Variable transform: QG change of variable
@@ -96,7 +96,7 @@ Test     :   Valid time: 2010-01-01T10:00:00Z
 Test     :   Resolution = 20, 10, 2
 Test     :   Variable = potential vorticity
 Test     :   Boundary conditions are activated
-Test     :   Min= -5.9340e-04, Max=  9.5651e-04, RMS=  3.5978e-04
+Test     :   Min= -5.7613e-04, Max=  5.4113e-04, RMS=  3.2534e-04
 Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
 Test     :   Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : Variable transform: QG change of variable
@@ -118,7 +118,7 @@ Test     :   Valid time: 2010-01-01T10:00:00Z
 Test     :   Resolution = 20, 10, 2
 Test     :   Variable = potential vorticity
 Test     :   Boundary conditions are activated
-Test     :   Min= -5.9340e-04, Max=  9.5651e-04, RMS=  3.5978e-04
+Test     :   Min= -5.7613e-04, Max=  5.4113e-04, RMS=  3.2534e-04
 Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
 Test     :   Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : Variable transform: QG change of variable

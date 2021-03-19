@@ -88,8 +88,7 @@ template <typename MODEL> void testVariableChangeInverse() {
     const eckit::LocalConfiguration initialConfig(Test_::confs()[jj], "state");
     State_ xx(Test_::resol(), initialConfig);
 
-    // Save copy of the initial state
-    State_ xref(xx);
+    const double xxnorm_ref = xx.norm();
 
     // Order, inverse first or not (default)
     // Note: switch input and output variables in configuration if true
@@ -100,16 +99,17 @@ template <typename MODEL> void testVariableChangeInverse() {
       oops::Variables varin(Test_::confs()[jj], "input variables");
       State_ xin(Test_::resol(), varin, xx.validTime());
       changevar.changeVarInverse(xx, xin);
+//      xx.zero();  Test for GEOS fails if uncommented
       changevar.changeVar(xin, xx);
     } else {
       oops::Variables varout(Test_::confs()[jj], "output variables");
       State_ xout(Test_::resol(), varout, xx.validTime());
       changevar.changeVar(xx, xout);
+//      xx.zero();  Test for GEOS fails if uncommented
       changevar.changeVarInverse(xout, xx);
     }
 
     // Compute norms of the result and reference
-    const double xxnorm_ref = xref.norm();
     const double xxnorm_tst =   xx.norm();
 
     // Print the input and final state

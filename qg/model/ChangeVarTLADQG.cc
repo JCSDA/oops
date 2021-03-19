@@ -31,12 +31,12 @@ ChangeVarTLADQG::ChangeVarTLADQG(const StateQG &, const StateQG &,
 ChangeVarTLADQG::~ChangeVarTLADQG() {}
 // -----------------------------------------------------------------------------
 void ChangeVarTLADQG::multiply(const IncrementQG & dxa, IncrementQG & dxm) const {
-  qg_change_var_f90(keyConfig_, dxa.fields().toFortran(), dxm.fields().toFortran());
+  qg_change_var_tl_f90(keyConfig_, dxa.fields().toFortran(), dxm.fields().toFortran());
   oops::Log::debug() << "ChangeVarTLADQG::multiply" << dxm << std::endl;
 }
 // -----------------------------------------------------------------------------
 void ChangeVarTLADQG::multiplyInverse(const IncrementQG & dxm, IncrementQG & dxa) const {
-  qg_change_var_inv_f90(keyConfig_, dxm.fields().toFortran(), dxa.fields().toFortran());
+  qg_change_var_inv_tl_f90(keyConfig_, dxm.fields().toFortran(), dxa.fields().toFortran());
   oops::Log::debug() << "ChangeVarTLADQG::multiplyInverse" << dxm << std::endl;
 }
 // -----------------------------------------------------------------------------

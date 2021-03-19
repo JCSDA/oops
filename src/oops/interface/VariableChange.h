@@ -48,11 +48,6 @@ class VariableChange : public util::Printable,
   const VariableChange & operator=(const VariableChange &) = delete;
   VariableChange & operator=(VariableChange &&) = default;
 
-  /// set input variables for variable transform
-  void setInputVariables(const Variables & vars) { varin_.reset(new Variables(vars)); }
-  /// set output variables for variable transform
-  void setOutputVariables(const Variables & vars) { varout_.reset(new Variables(vars)); }
-
   /// change variable from state \p xin to \p xout
   void changeVar(const State_ & xin, State_ & xout) const;
   /// inverse of changeVar, change variables back from \p xout to \p xin
@@ -82,13 +77,11 @@ VariableChange<MODEL>::VariableChange(const Geometry_ & geom,
   util::Timer timer(classname(), "VariableChange");
   if (params.inputVariables.value() != boost::none) {
     varin_.reset(new Variables(*params.inputVariables.value()));
-    Log::trace() << "VariableChange<MODEL>::VariableChange input variables: "
-                 << *varin_ << std::endl;
+    Log::debug() << "VariableChange::VariableChange input variables: " << *varin_ << std::endl;
   }
   if (params.outputVariables.value() != boost::none) {
     varout_.reset(new Variables(*params.outputVariables.value()));
-    Log::trace() << "VariableChange<MODEL>::VariableChange output variables: "
-                 << *varout_ << std::endl;
+    Log::debug() << "VariableChange::VariableChange output variables: " << *varout_ << std::endl;
   }
   chvar_.reset(VariableChangeFactory<MODEL>::create(geom, params));
   Log::trace() << "VariableChange<MODEL>::VariableChange done" << std::endl;

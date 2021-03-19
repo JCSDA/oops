@@ -13,7 +13,6 @@
 
 #include "oops/base/VariableChangeBase.h"
 
-#include "oops/qg/QgFortran.h"
 #include "oops/qg/QgTraits.h"
 
 // Forward declarations
@@ -41,9 +40,6 @@ class ChangeVarQG: public oops::VariableChangeBase<QgTraits> {
 
  private:
   void print(std::ostream &) const override;
-
-// Data
-  F90chvar keyConfig_;
 };
 // -----------------------------------------------------------------------------
 

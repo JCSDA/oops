@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef OOPS_RUNS_HOFX3D_H_
-#define OOPS_RUNS_HOFX3D_H_
+#ifndef OOPS_RUNS_HOFX3DSLOW_H_
+#define OOPS_RUNS_HOFX3DSLOW_H_
 
 #include <algorithm>
 #include <memory>
@@ -19,8 +19,6 @@
 #include "oops/base/Observations.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/Variables.h"
-#include "oops/generic/instantiateVariableChangeFactory.h"
-#include "oops/interface/ChangeVariables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/GetValues.h"
@@ -35,7 +33,7 @@
 
 namespace oops {
 
-template <typename MODEL, typename OBS> class HofX3D : public Application {
+template <typename MODEL, typename OBS> class HofX3Dslow : public Application {
   typedef CalcHofX<OBS>              CalcHofX_;
   typedef Geometry<MODEL>            Geometry_;
   typedef GeoVaLs<OBS>               GeoVaLs_;
@@ -45,7 +43,6 @@ template <typename MODEL, typename OBS> class HofX3D : public Application {
   typedef Observations<OBS>          Observations_;
   typedef ObsSpaces<OBS>             ObsSpaces_;
   typedef State<MODEL>               State_;
-  typedef ChangeVariables<MODEL>     ChangeVariables_;
 
   typedef std::vector<std::unique_ptr<GeoVaLs_>>    GeoVaLsVec_;
   typedef std::vector<std::unique_ptr<Locations_>>  LocationsVec_;
@@ -54,12 +51,11 @@ template <typename MODEL, typename OBS> class HofX3D : public Application {
 
  public:
 // -----------------------------------------------------------------------------
-  explicit HofX3D(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {
+  explicit HofX3Dslow(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {
     instantiateObsFilterFactory<OBS>();
-    instantiateVariableChangeFactory<MODEL>();
   }
 // -----------------------------------------------------------------------------
-  virtual ~HofX3D() {}
+  virtual ~HofX3Dslow() {}
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
     // Setup observation window
@@ -89,20 +85,6 @@ template <typename MODEL, typename OBS> class HofX3D : public Application {
     GeoVaLsVec_ geovals;
     const LocationsVec_ & locations = hofx.locations();
     const VariablesVec_ & vars = hofx.requiredVars();
-    Log::debug() << "HofX3D: Required hofx size = " << hofx.requiredVars().size() << std::endl;
-
-    Variables geovars;
-    Log::debug() << "HofX3D: Required vars size = " << vars.size() << std::endl;
-    for (size_t jj = 0; jj < vars.size(); ++jj) {
-      Log::debug() << "HofX3D: Required vars:" << vars[jj] << std::endl;
-      geovars += vars[jj];
-    }
-    Log::debug() << "HofX3D: Required variables:" << geovars << std::endl;
-    eckit::LocalConfiguration chvarconf;  // empty for now
-    ChangeVariables_ chvar(chvarconf, geometry, xx.variables(), geovars);
-
-    State_ zz(geometry, geovars, xx.validTime());
-    chvar.changeVar(xx, zz);
 
     std::vector<eckit::LocalConfiguration> getValuesConfig =
       util::vectoriseAndFilter(obsConfig, "get values");
@@ -111,7 +93,7 @@ template <typename MODEL, typename OBS> class HofX3D : public Application {
     for (size_t jj = 0; jj < obspaces.size(); ++jj) {
       GetValues_ getvals(geometry, *locations[jj], getValuesConfig[jj]);
       geovals.emplace_back(new GeoVaLs_(*locations[jj], vars[jj]));
-      getvals.fillGeoVaLs(zz, winbgn, winend, *geovals[jj]);
+      getvals.fillGeoVaLs(xx, winbgn, winend, *geovals[jj]);
     }
 
     // Compute H(x) on filled in geovals and run the filters
@@ -128,11 +110,11 @@ template <typename MODEL, typename OBS> class HofX3D : public Application {
 // -----------------------------------------------------------------------------
  private:
   std::string appname() const {
-    return "oops::HofX3D<" + MODEL::name() + ", " + OBS::name() + ">";
+    return "oops::HofX3Dslow<" + MODEL::name() + ", " + OBS::name() + ">";
   }
 // -----------------------------------------------------------------------------
 };
 
 }  // namespace oops
 
-#endif  // OOPS_RUNS_HOFX3D_H_
+#endif  // OOPS_RUNS_HOFX3DSLOW_H_

@@ -6,11 +6,13 @@
  */
 
 #include "model/QgTraits.h"
+#include "oops/qg/instantiateQgChangeVarFactory.h"
 #include "oops/runs/HofX3D.h"
 #include "oops/runs/Run.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
+  qg::instantiateQgChangeVarFactory();
   oops::HofX3D<qg::QgTraits, qg::QgObsTraits> hofx;
   return run.execute(hofx);
 }

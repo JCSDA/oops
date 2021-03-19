@@ -12,6 +12,7 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "eckit/config/Configuration.h"
 #include "lorenz95/ObsBiasCorrection.h"
@@ -21,7 +22,7 @@
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
 ObsBias::ObsBias(const ObsTableView &, const eckit::Configuration & conf)
-  : bias_(0.0), active_(false), geovars_(), hdiags_()
+  : bias_(0.0), active_(false), geovars_(std::vector<std::string>{"x"}), hdiags_()
 {
   oops::Log::trace() << "ObsBias::ObsBias conf is:" << conf << std::endl;
   if (conf.has("bias")) {

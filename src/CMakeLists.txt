@@ -181,6 +181,7 @@ oops/generic/unstructured_interpolation_mod.F90
 oops/generic/VerticalLocEV.h
 
 oops/interface/AnalyticInit.h
+oops/interface/ChangeVariables.h
 oops/interface/ErrorCovariance.h
 oops/interface/Geometry.h
 oops/interface/GeometryIterator.h
@@ -226,6 +227,7 @@ oops/runs/ExternalDFI.h
 oops/runs/Forecast.h
 oops/runs/GenEnsPertB.h
 oops/runs/HofX3D.h
+oops/runs/HofX3Dslow.h
 oops/runs/HofX4D.h
 oops/runs/LocalEnsembleDA.h
 oops/runs/RTPP.h

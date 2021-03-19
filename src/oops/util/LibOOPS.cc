@@ -80,6 +80,10 @@ LibOOPS& LibOOPS::instance() {
  * has been created.
  */
 void LibOOPS::initialise() {
+  std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+  Log::info() << "OOPS Starting "
+              << std::put_time(std::localtime(&now), "%F %T (UTC%z)") << std::endl;
+
   rank_ = oops::mpi::world().rank();
 
   const int it = getEnv("OOPS_TRACE", 0);
@@ -150,9 +154,14 @@ void LibOOPS::finalise(bool finaliseMPI) {
       }
     }
 #endif
+
     if ( rank_ == 0 ) {
       testReferenceInstance_.testReferenceFinalise(testStream_);
     }
+
+    std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    Log::info() << "OOPS Ending   "
+                << std::put_time(std::localtime(&now), "%F %T (UTC%z)") << std::endl;
 
     // Make sure that these specialised channels that wrap eckit::Log::info() are
     // destroyed before eckit::Log::info gets destroyed.

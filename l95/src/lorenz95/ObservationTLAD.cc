@@ -11,6 +11,7 @@
 #include "lorenz95/ObservationTLAD.h"
 
 #include <string>
+#include <vector>
 
 #include "eckit/config/Configuration.h"
 #include "lorenz95/GomL95.h"
@@ -24,7 +25,7 @@ namespace lorenz95 {
 // -----------------------------------------------------------------------------
 
 ObservationTLAD::ObservationTLAD(const ObsTableView &, const eckit::Configuration &)
-  : inputs_()
+  : inputs_(std::vector<std::string>{"x"})
 {}
 
 // -----------------------------------------------------------------------------

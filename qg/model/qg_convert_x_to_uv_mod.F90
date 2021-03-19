@@ -28,8 +28,8 @@ type(qg_geom),intent(in) :: geom                          !< Geometry
 real(kind_real),intent(in) :: x(geom%nx,geom%ny,geom%nz)  !< Streamfunction
 real(kind_real),intent(in) :: x_north(geom%nz)            !< Streamfunction on northern wall
 real(kind_real),intent(in) :: x_south(geom%nz)            !< Streamfunction on southern wall
-real(kind_real),intent(out) :: u(geom%nx,geom%ny,geom%nz) !< Zonal wind
-real(kind_real),intent(out) :: v(geom%nx,geom%ny,geom%nz) !< Meridional wind
+real(kind_real),intent(inout) :: u(geom%nx,geom%ny,geom%nz) !< Zonal wind
+real(kind_real),intent(inout) :: v(geom%nx,geom%ny,geom%nz) !< Meridional wind
 
 ! Local variables
 integer :: iz

@@ -69,8 +69,9 @@ extern "C" {
 //  Change of variable
 // -----------------------------------------------------------------------------
   void qg_change_var_setup_f90(F90chvar &, const oops::Variables &, const oops::Variables &);
-  void qg_change_var_f90(const F90chvar &, const F90flds &, const F90flds &);
-  void qg_change_var_inv_f90(const F90chvar &, const F90flds &, const F90flds &);
+  void qg_change_var_f90(const F90flds &, const F90flds &);
+  void qg_change_var_tl_f90(const F90chvar &, const F90flds &, const F90flds &);
+  void qg_change_var_inv_tl_f90(const F90chvar &, const F90flds &, const F90flds &);
   void qg_change_var_ad_f90(const F90chvar &, const F90flds &, const F90flds &);
   void qg_change_var_inv_ad_f90(const F90chvar &, const F90flds &, const F90flds &);
 

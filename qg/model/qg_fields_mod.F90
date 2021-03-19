@@ -52,7 +52,11 @@ type :: qg_fields
   type(qg_geom),pointer :: geom                !< Geometry
   logical :: lq                                !< PV as main variable (streamfunction if false)
   logical :: lbc                               !< Boundaries are present
-  real(kind_real),allocatable :: gfld3d(:,:,:) !< 3d field
+  real(kind_real),allocatable :: gfld3d(:,:,:) !< TEMPORARY: TO BE REMOVED
+  real(kind_real),allocatable :: streamfct(:,:,:)  !< Streamfunction
+  real(kind_real),allocatable :: pv(:,:,:)     !< PV
+  real(kind_real),allocatable :: u(:,:,:)      !< U wind
+  real(kind_real),allocatable :: v(:,:,:)      !< V wind
   real(kind_real),allocatable :: x_north(:)    !< Streamfunction on northern wall
   real(kind_real),allocatable :: x_south(:)    !< Streamfunction on southern wall
   real(kind_real),allocatable :: q_north(:,:)  !< PV on northern wall
@@ -91,24 +95,34 @@ character(len=1024) :: record
 ! Associate geometry
 self%geom => geom
 
-! Set variables
-if (vars%has('x') .and. vars%has('q')) then
-  call abor1_ftn('qg_fields_create: x and q cannot be set as fields together')
-elseif (vars%has('u') .or. vars%has('v')) then
-  call abor1_ftn('qg_fieldsçcreate: u and v cannot be set as fields')
-elseif (vars%has('x')) then
+!!! TEMPORARY: TO BE REMOVED !!!
+if (vars%has('x')) then
   self%lq = .false.
 elseif (vars%has('q')) then
   self%lq = .true.
 else
-  call abor1_ftn('qg_fields_create: x or q should be set as fields')
+  call abor1_ftn('qg_fields_create: fields must have x or q')
 endif
 
 ! Set boundaries
 self%lbc = lbc
 
-! Allocate 3d field
+!!! TEMPORARY: TO BE REMOVED !!!
 allocate(self%gfld3d(self%geom%nx,self%geom%ny,self%geom%nz))
+
+! Allocate 3d fields
+if (vars%has('x')) then
+  allocate(self%streamfct(self%geom%nx,self%geom%ny,self%geom%nz))
+endif
+if (vars%has('q')) then
+  allocate(self%pv(self%geom%nx,self%geom%ny,self%geom%nz))
+endif
+if (vars%has('u')) then
+  allocate(self%u(self%geom%nx,self%geom%ny,self%geom%nz))
+endif
+if (vars%has('v')) then
+  allocate(self%v(self%geom%nx,self%geom%ny,self%geom%nz))
+endif
 
 ! Allocate boundaries
 if (self%lbc) then
@@ -148,6 +162,7 @@ self%lbc = lbc
 
 ! Allocate 3d field
 allocate(self%gfld3d(self%geom%nx,self%geom%ny,self%geom%nz))
+allocate(self%streamfct(self%geom%nx,self%geom%ny,self%geom%nz))
 
 ! Allocate boundaries
 if (self%lbc) then
@@ -183,6 +198,20 @@ self%lbc = other%lbc
 ! Allocate 3d field
 allocate(self%gfld3d(self%geom%nx,self%geom%ny,self%geom%nz))
 
+! Allocate 3d fields
+if (allocated(other%streamfct)) then
+  allocate(self%streamfct(self%geom%nx,self%geom%ny,self%geom%nz))
+endif
+if (allocated(other%pv)) then
+  allocate(self%pv(self%geom%nx,self%geom%ny,self%geom%nz))
+endif
+if (allocated(other%u)) then
+  allocate(self%u(self%geom%nx,self%geom%ny,self%geom%nz))
+endif
+if (allocated(other%v)) then
+  allocate(self%v(self%geom%nx,self%geom%ny,self%geom%nz))
+endif
+
 ! Allocate boundaries
 if (self%lbc) then
   ! Allocation
@@ -207,6 +236,10 @@ type(qg_fields),intent(inout) :: self !< Fields
 
 ! Release memory
 if (allocated(self%gfld3d)) deallocate(self%gfld3d)
+if (allocated(self%streamfct)) deallocate(self%streamfct)
+if (allocated(self%pv)) deallocate(self%pv)
+if (allocated(self%u)) deallocate(self%u)
+if (allocated(self%v)) deallocate(self%v)
 if (allocated(self%x_north)) deallocate(self%x_north)
 if (allocated(self%x_south)) deallocate(self%x_south)
 if (allocated(self%q_north)) deallocate(self%q_north)
@@ -227,6 +260,10 @@ call qg_fields_check(self)
 
 ! Set fields to zero
 self%gfld3d = 0.0
+if (allocated(self%streamfct)) self%streamfct = 0.0
+if (allocated(self%pv)) self%pv = 0.0
+if (allocated(self%u)) self%u = 0.0
+if (allocated(self%v)) self%v = 0.0
 if (self%lbc) then
   self%x_north = 0.0
   self%x_south = 0.0
@@ -249,6 +286,10 @@ call qg_fields_check(self)
 
 ! Set fields to ones
 self%gfld3d = 1.0
+if (allocated(self%streamfct)) self%streamfct = 1.0
+if (allocated(self%pv)) self%pv = 1.0
+if (allocated(self%u)) self%u = 1.0
+if (allocated(self%v)) self%v = 1.0
 if (self%lbc) then
   self%x_north = 1.0
   self%x_south = 1.0
@@ -297,6 +338,7 @@ if (any(izdir<1).or.any(izdir>self%geom%nz)) call abor1_ftn('qg_fields_dirac: in
 ! Setup Diracs
 do idir=1,ndir
   self%gfld3d(ixdir(idir),iydir(idir),izdir(idir)) = 1.0
+  if (allocated(self%streamfct)) self%streamfct(ixdir(idir),iydir(idir),izdir(idir)) = 1.0
 end do
 
 end subroutine qg_fields_dirac
@@ -343,6 +385,10 @@ if (.not.lbconly) then
 
   ! Copy 3D field
   self%gfld3d = other%gfld3d
+  if (allocated(self%streamfct).and.allocated(other%streamfct)) self%streamfct = other%streamfct
+  if (allocated(self%pv).and.allocated(other%pv)) self%pv = other%pv
+  if (allocated(self%u).and.allocated(other%u)) self%u = other%u
+  if (allocated(self%v).and.allocated(other%v)) self%v = other%v
 end if
 
 if (self%lbc) then
@@ -376,6 +422,10 @@ call qg_fields_check_variables(self,rhs)
 
 ! Add field
 self%gfld3d = self%gfld3d+rhs%gfld3d
+if (allocated(self%streamfct).and.allocated(rhs%streamfct)) self%streamfct = self%streamfct + rhs%streamfct
+if (allocated(self%pv).and.allocated(rhs%pv)) self%pv = self%pv + rhs%pv
+if (allocated(self%u).and.allocated(rhs%u)) self%u = self%u + rhs%u
+if (allocated(self%v).and.allocated(rhs%v)) self%v = self%v + rhs%v
 if (self%lbc.and.rhs%lbc) then
   self%x_north = self%x_north+rhs%x_north
   self%x_south = self%x_south+rhs%x_south
@@ -400,6 +450,10 @@ call qg_fields_check_variables(self,rhs)
 
 ! Subtract field
 self%gfld3d = self%gfld3d-rhs%gfld3d
+if (allocated(self%streamfct).and.allocated(rhs%streamfct)) self%streamfct = self%streamfct - rhs%streamfct
+if (allocated(self%pv).and.allocated(rhs%pv)) self%pv = self%pv - rhs%pv
+if (allocated(self%u).and.allocated(rhs%u)) self%u = self%u - rhs%u
+if (allocated(self%v).and.allocated(rhs%v)) self%v = self%v - rhs%v
 if (self%lbc.and.rhs%lbc) then
   self%x_north = self%x_north-rhs%x_north
   self%x_south = self%x_south-rhs%x_south
@@ -423,6 +477,10 @@ call qg_fields_check(self)
 
 ! Multiply with a scalar
 self%gfld3d = zz*self%gfld3d
+if (allocated(self%streamfct)) self%streamfct = zz * self%streamfct
+if (allocated(self%pv)) self%pv = zz * self%pv
+if (allocated(self%u)) self%u = zz * self%u
+if (allocated(self%v)) self%v = zz * self%v
 if (self%lbc) then
   self%x_north = zz*self%x_north
   self%x_south = zz*self%x_south
@@ -448,6 +506,10 @@ call qg_fields_check_variables(self,rhs)
 
 ! Apply apxy
 self%gfld3d = self%gfld3d+zz*rhs%gfld3d
+if (allocated(self%streamfct).and.allocated(rhs%streamfct)) self%streamfct = self%streamfct + zz * rhs%streamfct
+if (allocated(self%pv).and.allocated(rhs%pv)) self%pv = self%pv + zz * rhs%pv
+if (allocated(self%u).and.allocated(rhs%u)) self%u = self%u + zz * rhs%u
+if (allocated(self%v).and.allocated(rhs%v)) self%v = self%v + zz * rhs%v
 if (self%lbc.and.rhs%lbc) then
   self%x_north = self%x_north+zz*rhs%x_north
   self%x_south = self%x_south+zz*rhs%x_south
@@ -472,6 +534,10 @@ call qg_fields_check_variables(self,rhs)
 
 ! Schur product
 self%gfld3d = self%gfld3d*rhs%gfld3d
+if (allocated(self%streamfct).and.allocated(rhs%streamfct)) self%streamfct = self%streamfct * rhs%streamfct
+if (allocated(self%pv).and.allocated(rhs%pv)) self%pv = self%pv * rhs%pv
+if (allocated(self%u).and.allocated(rhs%u)) self%u = self%u * rhs%u
+if (allocated(self%v).and.allocated(rhs%v)) self%v = self%v * rhs%v
 if (self%lbc.and.rhs%lbc) then
   self%x_north = self%x_north*rhs%x_north
   self%x_south = self%x_south*rhs%x_south
@@ -517,6 +583,10 @@ if (self%lq.eqv.rhs%lq) then
   if ((self%geom%nx==rhs%geom%nx).and.(self%geom%ny==rhs%geom%ny).and.(self%geom%nz==rhs%geom%nz)) then
     ! Same resolution
     self%gfld3d = self%gfld3d+rhs%gfld3d
+    if (allocated(self%streamfct).and.allocated(rhs%streamfct)) self%streamfct = self%streamfct + rhs%streamfct
+    if (allocated(self%pv).and.allocated(rhs%pv)) self%pv = self%pv + rhs%pv
+    if (allocated(self%u).and.allocated(rhs%u)) self%u = self%u + rhs%u
+    if (allocated(self%v).and.allocated(rhs%v)) self%v = self%v + rhs%v
   else
     ! Different resolutions
     call abor1_ftn('qg_fields_add_incr: not coded for low res increment yet')
@@ -549,6 +619,10 @@ if (lhs%lq.eqv.fld1%lq) then
   if ((fld1%geom%nx==lhs%geom%nx).and.(fld1%geom%ny==lhs%geom%ny).and.(fld1%geom%nz==lhs%geom%nz)) then
     ! Same resolution
     lhs%gfld3d = fld1%gfld3d-fld2%gfld3d
+    if (allocated(lhs%streamfct).and.allocated(fld1%streamfct)) lhs%streamfct = fld1%streamfct - fld2%streamfct
+    if (allocated(lhs%pv).and.allocated(fld1%pv)) lhs%pv = fld1%pv - fld2%pv
+    if (allocated(lhs%u).and.allocated(fld1%u)) lhs%u = fld1%u - fld2%u
+    if (allocated(lhs%v).and.allocated(fld1%v)) lhs%v = fld1%v - fld2%v
   else
     ! Different resolutions
     call abor1_ftn('qg_fields_diff_incr: not coded for low res increment yet')
@@ -625,6 +699,12 @@ if (fld%lq.eqv.rhs%lq) then
   endif
 else
   call abor1_ftn('qg_fields_change_resol: different variables')
+endif
+
+if (fld%lq) then
+  if (allocated(fld%pv)) fld%pv = fld%gfld3d
+else
+  if (allocated(fld%streamfct)) fld%streamfct = fld%gfld3d
 endif
 
 end subroutine qg_fields_change_resol
@@ -739,6 +819,12 @@ end if
 
 ! Check field
 call qg_fields_check(fld)
+
+if (fld%lq) then
+  if (allocated(fld%pv)) fld%pv = fld%gfld3d
+else
+  if (allocated(fld%streamfct)) fld%streamfct = fld%gfld3d
+endif
 
 end subroutine qg_fields_read_file
 ! ------------------------------------------------------------------------------
