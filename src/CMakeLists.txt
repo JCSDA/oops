@@ -309,8 +309,6 @@ oops/util/string_f_c_mod.F90
 oops/util/string_utils.F90
 oops/util/stringFunctions.cc
 oops/util/stringFunctions.h
-oops/util/TestReference.cc
-oops/util/TestReference.h
 oops/util/Timer.cc
 oops/util/Timer.h
 oops/util/TimerHelper.cc

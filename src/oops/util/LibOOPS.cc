@@ -13,16 +13,10 @@
 /// @date   December 2016
 
 #include <algorithm>
-#include <fstream>
 #include <iomanip>
-#include <iostream>
-#include <regex>
 #include <sstream>
 #include <string>
-#include <vector>
 
-#include "eckit/config/LocalConfiguration.h"
-#include "eckit/config/YAMLConfiguration.h"
 #include "eckit/log/Log.h"
 #include "eckit/log/OStreamTarget.h"
 #include "eckit/log/PrefixTarget.h"
@@ -31,7 +25,6 @@
 #include "oops/mpi/mpi.h"
 #include "oops/util/LibOOPS.h"
 #include "oops/util/Logger.h"
-#include "oops/util/TestReference.h"
 
 #ifdef ENABLE_GPTL
 #include <gptl.h>
@@ -75,7 +68,7 @@ LibOOPS& LibOOPS::instance() {
 }
 
 /** Initialization of MPI and dependent variables.
- * To be called in `main()` by constructor of `oops::Run`.  This method initializes MPI and
+ * To be called in `main()` by constructor of `oops::Run`.  This method initializes MPI and 
  * associated variables that must be initialized after static-init time, and only once `eckit::Main`
  * has been created.
  */
@@ -106,11 +99,6 @@ void LibOOPS::initialise() {
     do_abortfpe = getEnv("OOPS_ABORTFPE", 1);
     trap_sigfpe(do_abortfpe);
   }
-  // testStream_ is used by TestReference for comparing test output
-  // with a reference file
-  if ( rank_ == 0 ) {
-    testChannel().addStream(testStream_);
-  }
   enable_timer_channel_ = getEnv("OOPS_TIMER", 0) > 0 && rank_ == 0;
 
 #ifdef ENABLE_GPTL
@@ -129,10 +117,6 @@ void LibOOPS::teeOutput(const std::string & fileprefix) {
     teefile = teefile + "." + ss.str();
   }
   eckit::Log::addFile(teefile);
-}
-
-void LibOOPS::testReferenceInitialise(eckit::LocalConfiguration &testConf) {
-  testReferenceInstance_.Initialise(testConf);
 }
 
 /** Clears logs and finalises MPI (unless \p finaliseMPI is false).
@@ -154,11 +138,6 @@ void LibOOPS::finalise(bool finaliseMPI) {
       }
     }
 #endif
-
-    if ( rank_ == 0 ) {
-      testReferenceInstance_.testReferenceFinalise(testStream_);
-    }
-
     std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     Log::info() << "OOPS Ending   "
                 << std::put_time(std::localtime(&now), "%F %T (UTC%z)") << std::endl;
@@ -172,7 +151,6 @@ void LibOOPS::finalise(bool finaliseMPI) {
     statsChannel_.reset(new eckit::Channel());
     testChannel_.reset(new eckit::Channel());
     timerChannel_.reset(new eckit::Channel());
-
     // Destroy info channel last after other channels have flushed all output
     infoChannel_.reset(new eckit::Channel());
 
@@ -255,3 +233,4 @@ eckit::Channel& LibOOPS::debugChannel() const {
 // -----------------------------------------------------------------------------
 
 }  // namespace oops
+

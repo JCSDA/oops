@@ -630,12 +630,12 @@ oops_add_test( TESTNAME 4dsaddlepoint
                EXENAME l95_4dvar.x
                TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-#--------------------------------------------------------------------
-ecbuild_add_test( TARGET test_l95_4dvar.obsbias
-                  COMMAND l95_4dvar.x
-                  ARGS testinput/4dvar.obsbias.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobsbias )
-
+oops_add_test( TESTNAME 4dvar.obsbias
+               MODELNAME l95
+               YAMLNAME testinput/4dvar.obsbias.yaml
+               EXENAME l95_4dvar.x
+               COMPARE
+               TEST_DEPENDS test_l95_forecast test_l95_makeobsbias )
 #--------------------------------------------------------------------
 
 oops_add_test( TESTNAME 4dvar.allbiases

@@ -74,10 +74,3 @@ output:
   first: PT3H
   frequency: PT06H
   type: an
-test:
-  reference filename: testoutput/4dvar.obsbias.test
-  #  Optional:
-  float relative tolerance: 0.0
-  integer tolerance: 0
-  log output filename: testoutput/4dvar.obsbias.log.out
-  test output filename: testoutput/4dvar.obsbias.test.out

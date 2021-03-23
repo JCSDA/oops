@@ -16,15 +16,9 @@
 #define OOPS_UTIL_LIBOOPS_H_
 
 #include <memory>
-#include <sstream>
 #include <string>
-
-#include "eckit/config/YAMLConfiguration.h"
 #include "eckit/system/Library.h"
 #include "eckit/utils/Translator.h"
-
-#include "oops/util/TestReference.h"
-
 
 namespace oops {
 
@@ -48,9 +42,6 @@ class LibOOPS : public eckit::system::Library {
 
   void initialise();
   void teeOutput(const std::string &);
-
-  void testReferenceInitialise(eckit::LocalConfiguration &);
-
   void finalise(bool finaliseMPI = true);
 
  protected:
@@ -59,7 +50,6 @@ class LibOOPS : public eckit::system::Library {
   std::string version() const override;
 
   std::string gitsha1(unsigned int count) const override;
-
 
   mutable std::unique_ptr<eckit::Channel> infoChannel_;
   mutable std::unique_ptr<eckit::Channel> debugChannel_;
@@ -74,12 +64,6 @@ class LibOOPS : public eckit::system::Library {
   std::string predebug_;
   bool trace_;
   std::string pretrace_;
-
-  std::stringstream testStream_;
-  TestReference testReferenceInstance_;
-
- private:
-  friend class TestReference;
   bool enable_timer_channel_;
 };
 
