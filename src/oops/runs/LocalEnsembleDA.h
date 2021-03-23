@@ -69,29 +69,21 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     const util::DateTime winbgn(fullConfig.getString("window begin"));
     const util::Duration winlen(fullConfig.getString("window length"));
     const util::DateTime winend(winbgn + winlen);
-    const util::DateTime winhalf = winbgn + winlen/2;
     Log::info() << "Observation window from " << winbgn << " to " << winend << std::endl;
 
     // Setup geometry
     const eckit::LocalConfiguration geometryConfig(fullConfig, "geometry");
     const Geometry_ geometry(geometryConfig, this->getComm());
 
+    // Get observations configuration
+    eckit::LocalConfiguration obsConfig(fullConfig, "observations");
+    // Get driver configuration
+    const eckit::LocalConfiguration driverConfig(fullConfig, "driver");
+
     // if any of the obs. spaces uses Halo distribution it will need to know the geometry
     // of the local grid on this PE
-    eckit::LocalConfiguration obsConfig(fullConfig, "observations");
-    std::vector<double> patchCenter(2, 0.0);
-    double patchRadius = 0.0;
-    computePatchGeometry(geometry, patchCenter, patchRadius);
-
-    // update observations configs with information on patch center and radius
-    std::vector<eckit::LocalConfiguration> obsConfigs = obsConfig.getSubConfigurations();
-    for (auto & conf : obsConfigs) {
-      conf.set("obs space.center", patchCenter);
-      conf.set("obs space.radius", patchRadius);
-    }
-    eckit::LocalConfiguration tmp;
-    tmp.set("observations", obsConfigs);
-    obsConfig = tmp.getSubConfiguration("observations");
+    bool update_obsconfig = driverConfig.getBool("update obs config with geometry info", false);
+    if (update_obsconfig) updateConfigWithPatchGeometry(geometry, obsConfig);
 
     // Setup observations
     const eckit::mpi::Comm & time = oops::mpi::myself();
@@ -100,8 +92,6 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
 
     // Get background configurations
     const eckit::LocalConfiguration bgConfig(fullConfig, "background");
-    // Get driver configuration
-    const eckit::LocalConfiguration driverConfig(fullConfig, "driver");
 
     // Read all ensemble members
     StateEnsemble4D_ ens_xx(geometry, bgConfig);
@@ -253,8 +243,11 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     return "oops::LocalEnsembleDA<" + MODEL::name() + ", " + OBS::name() + ">";
   }
 
-  void computePatchGeometry(const Geometry_ & geometry, std::vector<double> & patchCenter,
-                            double & patchRadius) const {
+  void updateConfigWithPatchGeometry(const Geometry_ & geometry,
+                                     eckit::LocalConfiguration & obsConfig) const {
+    std::vector<double> patchCenter(2, 0.0);
+    double patchRadius = 0.0;
+
     // since Halo distribution is only implemented in ioda, we can assume that
     // x is lon and y is lat on Earth. then we need to compute average of x on a circle
     eckit::geometry::Point2 gptmp;
@@ -287,6 +280,16 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     }
     Log::debug() << "patch center=" << patchCenter
                  << " patch radius=" << patchRadius << std::endl;
+
+    // update observations configs with information on patch center and radius
+    std::vector<eckit::LocalConfiguration> obsConfigs = obsConfig.getSubConfigurations();
+    for (auto & conf : obsConfigs) {
+      conf.set("obs space.center", patchCenter);
+      conf.set("obs space.radius", patchRadius);
+    }
+    eckit::LocalConfiguration tmp;
+    tmp.set("observations", obsConfigs);
+    obsConfig = tmp.getSubConfiguration("observations");
   }
 
   void saveVariance(const eckit::LocalConfiguration & outConfig, const IncrementEnsemble4D_ & perts,
