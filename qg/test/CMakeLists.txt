@@ -21,6 +21,7 @@ list( APPEND qg_testinput
   testinput/addincrement.yaml
   testinput/addincrement_scaled.yaml
   testinput/analytic_forecast.yaml
+  testinput/convertincrement.yaml
   testinput/convertstate.yaml
   testinput/dfi.yaml
   testinput/diffstates.yaml
@@ -101,6 +102,7 @@ list( APPEND qg_testoutput
   testoutput/4dvar_rpcg.test
   testoutput/4dvar_saddlepoint.test
   testoutput/analytic_forecast.test
+  testoutput/convertincrement.test
   testoutput/convertstate.test
   testoutput/addincrement.test
   testoutput/addincrement_scaled.test
@@ -764,6 +766,12 @@ oops_add_test( TESTNAME addincrement_scaled
                EXENAME  qg_addincrement.x
                TEST_DEPENDS test_qg_diffstates )
 
+oops_add_test( TESTNAME convertincrement
+               MODELNAME qg
+               OMP    2
+               YAMLNAME testinput/convertincrement.yaml
+               EXENAME qg_convertincrement.x
+               TEST_DEPENDS test_qg_diffstates )
 
 #####################################################################
 # LETKF tests
