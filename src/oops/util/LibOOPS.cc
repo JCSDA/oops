@@ -68,7 +68,7 @@ LibOOPS& LibOOPS::instance() {
 }
 
 /** Initialization of MPI and dependent variables.
- * To be called in `main()` by constructor of `oops::Run`.  This method initializes MPI and 
+ * To be called in `main()` by constructor of `oops::Run`.  This method initializes MPI and
  * associated variables that must be initialized after static-init time, and only once `eckit::Main`
  * has been created.
  */
@@ -102,6 +102,12 @@ void LibOOPS::initialise() {
   }
   enable_timer_channel_ = getEnv("OOPS_TIMER", 0) > 0 && rank_ == 0;
 
+  // testStream_ is used by TestReference for comparing test output
+  // with a reference file
+  if ( rank_ == 0 ) {
+    testChannel().addStream(testStream_);
+  }
+
 #ifdef ENABLE_GPTL
   do_profile = getEnv("OOPS_PROFILE", 0);
 #endif
@@ -118,6 +124,10 @@ void LibOOPS::teeOutput(const std::string & fileprefix) {
     teefile = teefile + "." + ss.str();
   }
   eckit::Log::addFile(teefile);
+}
+
+void LibOOPS::testReferenceInitialise(const eckit::LocalConfiguration &testConf) {
+  testReference_.initialise(testConf);
 }
 
 /** Clears logs and finalises MPI (unless \p finaliseMPI is false).
@@ -139,6 +149,11 @@ void LibOOPS::finalise(bool finaliseMPI) {
       }
     }
 #endif
+
+    if ( rank_ == 0 ) {
+      testReference_.finalise(testStream_.str());
+    }
+
     std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     char nowstr[100];
     std::strftime(nowstr, sizeof(nowstr), "%F %T (UTC%z)", std::localtime(&now));
@@ -235,4 +250,3 @@ eckit::Channel& LibOOPS::debugChannel() const {
 // -----------------------------------------------------------------------------
 
 }  // namespace oops
-

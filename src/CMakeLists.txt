@@ -309,6 +309,8 @@ oops/util/string_f_c_mod.F90
 oops/util/string_utils.F90
 oops/util/stringFunctions.cc
 oops/util/stringFunctions.h
+oops/util/TestReference.cc
+oops/util/TestReference.h
 oops/util/Timer.cc
 oops/util/Timer.h
 oops/util/TimerHelper.cc
@@ -414,6 +416,7 @@ test/util/MissingValues.h
 test/util/PropertiesOfNVectors.h
 test/util/stringFunctions.h
 test/util/LocalEnvironment.h
+test/util/TestReference.h
 test/util/TypeTraits.h
 )
 
@@ -576,6 +579,11 @@ ecbuild_add_test( TARGET  test_util_compositepath
 
 ecbuild_add_test( TARGET  test_util_stringfunctions
                   SOURCES test/util/stringFunctions.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_testreference
+                  SOURCES test/util/TestReference.cc
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 

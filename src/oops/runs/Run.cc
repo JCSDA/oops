@@ -92,6 +92,10 @@ Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(
 // Read configuration
   config_.reset(new eckit::YAMLConfiguration(configfile));
 
+  // Configure TestReference with "test:" sub-config
+  if (config_->has("test"))
+    LibOOPS::instance().testReferenceInitialise(config_->getSubConfiguration("test"));
+
   Log::info() << "Configuration input file is: " << configfile << std::endl;
   Log::info() << "Full configuration is:"  << *config_ << std::endl;
 
