@@ -699,7 +699,7 @@ ecbuild_add_test( TARGET test_l95_eda_4dvar
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 oops_add_test( TESTNAME eda_3dvar_block
-               MPI 4
+               MPI 2
                MODELNAME l95
                YAMLNAME testinput/eda.3dvar.block.yaml
                EXENAME l95_eda.x
