@@ -49,13 +49,16 @@ class ObsVecQG : public util::Printable,
   ObsVecQG & operator/= (const ObsVecQG &);
   Eigen::VectorXd  packEigen() const;
 
+  /// set all values to zero
   void zero();
+  /// set all values to one
+  void ones();
   void axpy(const double &, const ObsVecQG &);
   void invert();
   void random();
   double dot_product_with(const ObsVecQG &) const;
   double rms() const;
-  void mask(const ObsDataQG<int> &) {}
+  void mask(const ObsDataQG<int> &);
 
   unsigned int nobs() const;
 

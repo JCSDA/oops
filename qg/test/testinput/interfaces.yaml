@@ -81,6 +81,7 @@ observations:
     covariance:
       stream: '2.0e7'
   rms ref: 183502589.5028424
+  reference nobs: 800
   tolerance: 1.0e-8
 - obs error:
     covariance model: diagonal
@@ -107,6 +108,7 @@ observations:
     covariance:
       uwind: '15.0'
   rms ref: 39.644266100943696
+  reference nobs: 800
   tolerance: 1.0e-8
 - obs error:
     covariance model: diagonal
@@ -127,6 +129,7 @@ observations:
     tolerance AD: 1.0e-10
     tolerance TL: 1.0e-6
   rms ref: 58.474969231121605
+  reference nobs: 400
   tolerance: 1.0e-8
 background:
   date: 2009-12-31T00:00:00Z

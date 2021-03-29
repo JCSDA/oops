@@ -1,5 +1,5 @@
 ! (C) Copyright 2009-2016 ECMWF.
-! (C) Copyright 2017-2019 UCAR.
+! (C) Copyright 2017-2021 UCAR.
 !
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -148,6 +148,46 @@ call qg_obsvec_registry%get(c_key_self,self)
 call qg_obsvec_zero(self)
 
 end subroutine qg_obsvec_zero_c
+! ------------------------------------------------------------------------------
+!> Set observation vector to ones
+subroutine qg_obsvec_ones_c(c_key_self) bind(c,name='qg_obsvec_ones_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_self !< Observation vector
+
+! Local variables
+type(qg_obsvec),pointer :: self
+
+! Interface
+call qg_obsvec_registry%get(c_key_self,self)
+
+! Call Fortran
+call qg_obsvec_ones(self)
+
+end subroutine qg_obsvec_ones_c
+! ------------------------------------------------------------------------------
+!> Mask self observation vector (set values to missing where mask is set)
+subroutine qg_obsvec_mask_c(c_key_self,c_key_mask) bind(c,name='qg_obsvec_mask_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_self  !< Observation vector
+integer(c_int),intent(in) :: c_key_mask  !< Mask
+
+! Local variables
+type(qg_obsvec),pointer :: self,mask
+
+! Interface
+call qg_obsvec_registry%get(c_key_self,self)
+call qg_obsvec_registry%get(c_key_mask,mask)
+
+! Call Fortran
+call qg_obsvec_mask(self,mask)
+
+end subroutine qg_obsvec_mask_c
 ! ------------------------------------------------------------------------------
 !> Multiply observation vector with a scalar
 subroutine qg_obsvec_mul_scal_c(c_key_self,zz) bind(c,name='qg_obsvec_mul_scal_f90')
@@ -379,15 +419,15 @@ call qg_obsvec_nobs(self,kobs)
 end subroutine qg_obsvec_nobs_c
 
 ! ------------------------------------------------------------------------------
-!> Get observation value at iob location
-subroutine qg_obsvec_getat_c(c_key_self,iob,val) bind(c,name='qg_obsvec_getat_f90')
+!> Get all non-masked out observation values
+subroutine qg_obsvec_get_c(c_key_self,vals,nvals) bind(c,name='qg_obsvec_get_f90')
 
 implicit none
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_self !< Observation vector
-integer(c_int),intent(in) :: iob     !< Observation index
-real(c_double),intent(out):: val    !< ob. value
+integer(c_int),intent(in) :: nvals      !< number of obs
+real(c_double),intent(out),dimension(nvals) :: vals  !< ob. values
 
 ! Local vector
 type(qg_obsvec),pointer :: self
@@ -396,9 +436,9 @@ type(qg_obsvec),pointer :: self
 call qg_obsvec_registry%get(c_key_self,self)
 
 ! Call Fortran
-call qg_obsvec_getat(self,iob,val)
+call qg_obsvec_get(self,vals,nvals)
 
-end subroutine qg_obsvec_getat_c
+end subroutine qg_obsvec_get_c
 
 ! ------------------------------------------------------------------------------
 end module qg_obsvec_interface

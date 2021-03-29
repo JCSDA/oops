@@ -52,6 +52,9 @@ class ObsVec1D : public util::Printable,
   double & operator[](const std::size_t ii) {return data_.at(ii);}
 
   void zero();
+  /// set all values to ones (for tests)
+  void ones();
+
   void axpy(const double &, const ObsVec1D &);
   void invert();
   void random();

@@ -225,6 +225,10 @@ extern "C" {
   void qg_obsvec_copy_f90(const F90ovec &, const F90ovec &);
   void qg_obsvec_copy_local_f90(const F90ovec &, const F90ovec &, const int &, const int *);
   void qg_obsvec_zero_f90(const F90ovec &);
+  void qg_obsvec_ones_f90(const F90ovec &);
+  /// set ObsVector (with key \p obsvector_key) values to missing values where
+  /// mask ObsVector (with key \p mask_key) values are set to 1
+  void qg_obsvec_mask_f90(const F90ovec & obsvector_key, const F90ovec & mask_key);
   void qg_obsvec_mul_scal_f90(const F90ovec &, const double &);
   void qg_obsvec_add_f90(const F90ovec &, const F90ovec &);
   void qg_obsvec_sub_f90(const F90ovec &, const F90ovec &);
@@ -236,7 +240,8 @@ extern "C" {
   void qg_obsvec_dotprod_f90(const F90ovec &, const F90ovec &, double &);
   void qg_obsvec_stats_f90(const F90ovec &, double &, double &, double &);
   void qg_obsvec_nobs_f90(const F90ovec &, int &);
-  void qg_obsvec_getat_f90(const F90ovec &, const int &, double &);
+  /// fill \p data (size \p nobs) with all non-masked out (non-missing) values
+  void qg_obsvec_get_f90(const F90ovec &, double * data, const int & nobs);
 
 // -----------------------------------------------------------------------------
 //  Streamfunction observations

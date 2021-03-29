@@ -46,6 +46,8 @@ class ObsDataQG : public util::Printable,
   void read(const std::string &);
   void save(const std::string &) const;
 
+  const int & toFortran() const {return data_.toFortran();}
+
  private:
   void print(std::ostream &) const;
 
@@ -74,7 +76,8 @@ void ObsDataQG<DATATYPE>::zero() {
 }
 // -----------------------------------------------------------------------------
 template<typename DATATYPE>
-void ObsDataQG<DATATYPE>::mask(const ObsDataQG<int>) {
+void ObsDataQG<DATATYPE>::mask(const ObsDataQG<int> mask) {
+  qg_obsvec_mask_f90(data_.toFortran(), mask.toFortran());
 }
 // -----------------------------------------------------------------------------
 template<typename DATATYPE>

@@ -64,22 +64,25 @@ class ObsVector : public util::Printable,
   ObsVector & operator*= (const ObsVector &);
   ObsVector & operator/= (const ObsVector &);
 
-/// Pack into an Eigen vector (excluding vector elements that are masked out)
+  /// Pack into an Eigen vector (excluding vector elements that are masked out)
   Eigen::VectorXd  packEigen() const;
 
   void zero();
+  /// Set this ObsVector to ones (used in tests)
+  void ones();
   void axpy(const double &, const ObsVector &);
   void invert();
   void random();
   double dot_product_with(const ObsVector &) const;
   double rms() const;
-/// Mask out elements of the vector where the passed in flags are > 0
+  /// Mask out elements of the vector where the passed in flags are > 0
   void mask(const ObsDataVector<OBS, int> &);
 
 // I/O
   void save(const std::string &) const;
   void read(const std::string &);
 
+  /// number of non-masked out observations
   unsigned int nobs() const;
 
  private:
@@ -206,6 +209,16 @@ void ObsVector<OBS>::zero() {
   data_->zero();
 
   Log::trace() << "ObsVector<OBS>::zero done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
+void ObsVector<OBS>::ones() {
+  Log::trace() << "ObsVector<OBS>::ones starting" << std::endl;
+  util::Timer timer(classname(), "ones");
+
+  data_->ones();
+
+  Log::trace() << "ObsVector<OBS>::ones done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename OBS>

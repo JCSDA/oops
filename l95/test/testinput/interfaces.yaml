@@ -114,6 +114,7 @@ observations:
     covariance:
       standard_deviation: 0.5
   rms ref: 8.3207407741318846
+  reference nobs: 160
   tolerance: 1.0e-10
 
 local obs space:

@@ -109,6 +109,10 @@ void ObsVec1D::zero() {
   for (double & val : data_) val = 0.0;
 }
 // -----------------------------------------------------------------------------
+void ObsVec1D::ones() {
+  for (double & val : data_) val = 1.0;
+}
+// -----------------------------------------------------------------------------
 void ObsVec1D::invert() {
   for (double & val : data_) {
     if (val != missing_) val = 1.0/val;
