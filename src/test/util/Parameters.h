@@ -103,6 +103,8 @@ class MyParametersBase : public oops::Parameters {
   oops::OptionalParameter<float> optFloatParameter{"opt_float_parameter", this};
   oops::OptionalParameter<util::DateTime> optDateTimeParameter{"opt_date_time_parameter", this};
   oops::OptionalParameter<util::Duration> optDurationParameter{"opt_duration_parameter", this};
+  oops::OptionalParameter<util::PartialDateTime> optPartialDateTimeParameter{
+    "opt_partialDT_parameter", this};
   oops::Parameter<Fruit> fruitParameter{"fruit_parameter", Fruit::ORANGE, this};
   oops::Parameter<RangeParameters> rangeParameter{"range_parameter", RangeParameters(), this};
   oops::Parameter<std::vector<int>> intParameters{"int_parameters", {}, this};
@@ -430,6 +432,7 @@ void testDefaultValues() {
   EXPECT(params.optFloatParameter.value() == boost::none);
   EXPECT(params.optDateTimeParameter.value() == boost::none);
   EXPECT(params.optDurationParameter.value() == boost::none);
+  EXPECT(params.optPartialDateTimeParameter.value() == boost::none);
   EXPECT_THROWS_AS(params.reqFloatParameter.value(), boost::bad_optional_access);
   EXPECT_THROWS_AS(params.reqDurationParameter.value(), boost::bad_optional_access);
   EXPECT(params.fruitParameter == Fruit::ORANGE);
@@ -456,6 +459,7 @@ void testDefaultValues() {
   EXPECT(params.optFloatParameter.value() == boost::none);
   EXPECT(params.optDateTimeParameter.value() == boost::none);
   EXPECT(params.optDurationParameter.value() == boost::none);
+  EXPECT(params.optPartialDateTimeParameter.value() == boost::none);
   EXPECT_EQUAL(params.reqFloatParameter, 3.0f);
   EXPECT_EQUAL(params.reqFloatParameter.value(), 3.0f);
   EXPECT_EQUAL(params.reqDurationParameter.value(), util::Duration("PT1H"));
@@ -489,6 +493,9 @@ void testCorrectValues() {
   EXPECT_EQUAL(params.optDateTimeParameter.value().get(), util::DateTime(2010, 2, 3, 4, 5, 6));
   EXPECT(params.optDurationParameter.value() != boost::none);
   EXPECT_EQUAL(params.optDurationParameter.value().get(), util::Duration("PT01H02M03S"));
+  EXPECT(params.optPartialDateTimeParameter.value() != boost::none);
+  EXPECT(params.optPartialDateTimeParameter.value().get() ==
+         util::PartialDateTime(2010, -1, 3, 4, 5, 6));
   EXPECT_EQUAL(params.reqFloatParameter, 6.0f);
   EXPECT_EQUAL(params.reqFloatParameter.value(), 6.0f);
   EXPECT_EQUAL(params.reqDurationParameter.value(), util::Duration("PT06H30M"));
@@ -618,6 +625,17 @@ void testIncorrectValueOfOptionalFloatParameter() {
     EXPECT_THROWS_MSG(params.validate(conf), "unexpected value type");
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::BadParameter);
 }
+
+
+void testIncorrectValueOfOptionalPartialDateTimeParameter() {
+  MyOptionalAndRequiredParameters params;
+  const eckit::LocalConfiguration conf(TestEnvironment::config(),
+                                       "error_in_opt_partialDT_parameter");
+  if (validationSupported)
+    EXPECT_THROWS_MSG(params.validate(conf), "ABCDEF is not a partial-date-time string");
+  EXPECT_THROWS_AS(params.deserialize(conf), eckit::BadParameter);
+}
+
 
 void testIncorrectValueOfOptionalDateTimeParameter() {
   MyOptionalAndRequiredParameters params;
@@ -1560,6 +1578,9 @@ class Parameters : public oops::Test {
                     });
     ts.emplace_back(CASE("util/Parameters/incorrectValueOfOptionalFloatParameter") {
                       testIncorrectValueOfOptionalFloatParameter();
+                    });
+    ts.emplace_back(CASE("util/Parameters/incorrectValueOfOptionalPartialDateTimeParameter") {
+                    testIncorrectValueOfOptionalPartialDateTimeParameter();
                     });
     ts.emplace_back(CASE("util/Parameters/incorrectValueOfOptionalDateTimeParameter") {
                       testIncorrectValueOfOptionalDateTimeParameter();

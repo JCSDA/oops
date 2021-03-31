@@ -12,6 +12,22 @@
 
 namespace {
 
+    int notset = -1;
+
+    CASE("test_toString_basic") {
+      util::PartialDateTime pdt(2011, 9, 16, 13, 55, 20);
+      std::string res = pdt.toString();
+      std::string tar = "2011-09-16T13:55:20Z";
+      EXPECT_EQUAL(res, tar);
+    }
+
+    CASE("test_toString_with_missing") {
+      util::PartialDateTime pdt(2011, 9, 16, 13, -1, 20);
+      std::string res = pdt.toString();
+      std::string tar = "2011-09-16T13:**:20Z";
+      EXPECT_EQUAL(res, tar);
+    }
+
     CASE("test_construction_int_arg") {
       util::PartialDateTime pdt(2011, 9, 16, 13, 55, 20);
       EXPECT(pdt.year() == 2011);
@@ -25,7 +41,6 @@ namespace {
 
     CASE("test_construction_default") {
       util::PartialDateTime pdt{};
-      int notset = 0;
       EXPECT(pdt.year() == notset);
       EXPECT(pdt.month() == notset);
       EXPECT(pdt.day() == notset);
@@ -46,16 +61,37 @@ namespace {
     }
 
 
+    CASE("test_construction_string_arg_unset") {
+      // Check we properly handle the case where the string contains unset components
+      // Note that any bit of a component results in it being considered unset.
+      util::PartialDateTime pdt("2011-09-1*T13:55:00Z");
+      EXPECT(pdt.year() == 2011);
+      EXPECT(pdt.month() == 9);
+      EXPECT(pdt.day() == notset);
+      EXPECT(pdt.hour() == 13);
+      EXPECT(pdt.minute() == 55);
+      EXPECT(pdt.second() == 0);
+
+      pdt = util::PartialDateTime("2011-09-*6T13:55:00Z");
+      EXPECT(pdt.year() == 2011);
+      EXPECT(pdt.month() == 9);
+      EXPECT(pdt.day() == notset);
+      EXPECT(pdt.hour() == 13);
+      EXPECT(pdt.minute() == 55);
+      EXPECT(pdt.second() == 0);
+    }
+
+
   CASE("test_gt_operator") {
     // We also perform an equivelent check with DateTime operator working with a
     // PartialDateTime.
     util::DateTime dt1(2011, 9, 16, 13, 55, 20);
 
-    util::PartialDateTime pdt1(0, 0, 0, 12);
-    util::PartialDateTime pdt2(0, 0, 0, 13);
-    util::PartialDateTime pdt3(0, 0, 0, 14);
-    util::PartialDateTime pdt4(2011, 0, 0, 14);
-    util::PartialDateTime pdt5(2010, 0, 0, 14);
+    util::PartialDateTime pdt1(notset, notset, notset, 12);
+    util::PartialDateTime pdt2(notset, notset, notset, 13);
+    util::PartialDateTime pdt3(notset, notset, notset, 14);
+    util::PartialDateTime pdt4(2011, notset, notset, 14);
+    util::PartialDateTime pdt5(2010, notset, notset, 14);
 
     EXPECT(!(pdt1 > dt1));
     EXPECT(!(dt1 < pdt1));
@@ -79,11 +115,11 @@ namespace {
     // PartialDateTime.
     util::DateTime dt1(2011, 9, 16, 13, 55, 20);
 
-    util::PartialDateTime pdt1(0, 0, 0, 12);
-    util::PartialDateTime pdt2(0, 0, 0, 13);
-    util::PartialDateTime pdt3(0, 0, 0, 14);
-    util::PartialDateTime pdt4(2011, 0, 0, 14);
-    util::PartialDateTime pdt5(2010, 0, 0, 14);
+    util::PartialDateTime pdt1(notset, notset, notset, 12);
+    util::PartialDateTime pdt2(notset, notset, notset, 13);
+    util::PartialDateTime pdt3(notset, notset, notset, 14);
+    util::PartialDateTime pdt4(2011, notset, notset, 14);
+    util::PartialDateTime pdt5(2010, notset, notset, 14);
 
     EXPECT(!(pdt1 >= dt1));
     EXPECT(!(dt1 <= pdt1));
@@ -107,11 +143,11 @@ namespace {
     // PartialDateTime.
     util::DateTime dt1(2011, 9, 16, 13, 55, 20);
 
-    util::PartialDateTime pdt1(0, 0, 0, 12);
-    util::PartialDateTime pdt2(0, 0, 0, 13);
-    util::PartialDateTime pdt3(0, 0, 0, 14);
-    util::PartialDateTime pdt4(2011, 0, 0, 14);
-    util::PartialDateTime pdt5(2010, 0, 0, 14);
+    util::PartialDateTime pdt1(notset, notset, notset, 12);
+    util::PartialDateTime pdt2(notset, notset, notset, 13);
+    util::PartialDateTime pdt3(notset, notset, notset, 14);
+    util::PartialDateTime pdt4(2011, notset, notset, 14);
+    util::PartialDateTime pdt5(2010, notset, notset, 14);
 
     EXPECT((pdt1 < dt1));
     EXPECT((dt1 > pdt1));
@@ -135,11 +171,11 @@ namespace {
     // PartialDateTime.
     util::DateTime dt1(2011, 9, 16, 13, 55, 20);
 
-    util::PartialDateTime pdt1(0, 0, 0, 12);
-    util::PartialDateTime pdt2(0, 0, 0, 13);
-    util::PartialDateTime pdt3(0, 0, 0, 14);
-    util::PartialDateTime pdt4(2011, 0, 0, 14);
-    util::PartialDateTime pdt5(2010, 0, 0, 14);
+    util::PartialDateTime pdt1(notset, notset, notset, 12);
+    util::PartialDateTime pdt2(notset, notset, notset, 13);
+    util::PartialDateTime pdt3(notset, notset, notset, 14);
+    util::PartialDateTime pdt4(2011, notset, notset, 14);
+    util::PartialDateTime pdt5(2010, notset, notset, 14);
 
     EXPECT((pdt1 <= dt1));
     EXPECT((dt1 >= pdt1));
@@ -163,8 +199,8 @@ namespace {
     // PartialDateTime.
     util::DateTime dt1(2011, 9, 16, 13, 55, 20);
 
-    util::PartialDateTime pdt1(0, 0, 0, 13);
-    util::PartialDateTime pdt2(0, 0, 0, 14);
+    util::PartialDateTime pdt1(notset, notset, notset, 13);
+    util::PartialDateTime pdt2(notset, notset, notset, 14);
 
     EXPECT(pdt1 == dt1);
     EXPECT(dt1 == pdt1);
@@ -179,8 +215,8 @@ namespace {
     // PartialDateTime.
     util::DateTime dt1(2011, 9, 16, 13, 55, 20);
 
-    util::PartialDateTime pdt1(0, 0, 0, 13);
-    util::PartialDateTime pdt2(0, 0, 0, 14);
+    util::PartialDateTime pdt1(notset, notset, notset, 13);
+    util::PartialDateTime pdt2(notset, notset, notset, 14);
 
     EXPECT(!(pdt1 != dt1));
     EXPECT(!(dt1 != pdt1));

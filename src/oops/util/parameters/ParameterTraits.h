@@ -30,6 +30,7 @@
 #include "oops/util/NamedEnumerator.h"
 #include "oops/util/parameters/ObjectJsonSchema.h"
 #include "oops/util/parameters/Parameters.h"
+#include "oops/util/PartialDateTime.h"
 #include "oops/util/stringFunctions.h"  // for join()
 
 namespace oops {
@@ -301,6 +302,33 @@ struct ParameterTraits<util::Duration> {
   static ObjectJsonSchema jsonSchema(const std::string &name) {
     return ObjectJsonSchema({{name, {{"type", "\"string\""},
                                      {"format", "\"duration\""}}}});
+  }
+};
+
+
+/// \brief Specialization for PartialDateTime objects.
+template <>
+struct ParameterTraits<util::PartialDateTime> {
+  static boost::optional<util::PartialDateTime> get(util::CompositePath &path,
+                                                    const eckit::Configuration &config,
+                                                    const std::string& name) {
+    std::string value;
+    if (config.get(name, value)) {
+      return util::PartialDateTime(value);
+    } else {
+      return boost::none;
+    }
+  }
+
+  static void set(eckit::LocalConfiguration &config,
+             const std::string &name,
+             const util::PartialDateTime &value) {
+    config.set(name, value.toString());
+  }
+
+  static ObjectJsonSchema jsonSchema(const std::string &name) {
+    return ObjectJsonSchema({{name, {{"type", "\"string\""},
+                                     {"format", "\"partial-date-time\""}}}});
   }
 };
 

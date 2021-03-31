@@ -16,6 +16,7 @@ full: # These parameters must be sorted alphabetically for the serialization tes
   opt_embedded_date_time_parameter: 2010-03-04T05:06:07Z
   opt_float_parameter: 5.5
   opt_null_parameter: null
+  opt_partialDT_parameter: "2010-**-03T04:05:06Z"
   range_parameter:
     max: 8.5
     min: 7
@@ -95,6 +96,10 @@ error_in_opt_date_time_parameter:
   req_duration_parameter: PT1H
 error_in_opt_duration_parameter:
   opt_duration_parameter: ABCDEF
+  req_float_parameter: 3
+  req_duration_parameter: PT1H
+error_in_opt_partialDT_parameter:
+  opt_partialDT_parameter: ABCDEF
   req_float_parameter: 3
   req_duration_parameter: PT1H
 error_in_fruit_parameter:
