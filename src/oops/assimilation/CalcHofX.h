@@ -23,6 +23,7 @@
 #include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsDiagnostics.h"
 #include "oops/interface/ObsOperator.h"
+#include "oops/interface/ObsVector.h"
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
@@ -53,6 +54,7 @@ class CalcHofX {
   typedef ObsFilters<OBS>            ObsFilters_;
   typedef ObsOperator<OBS>           ObsOperator_;
   typedef ObsSpaces<OBS>             ObsSpaces_;
+  typedef ObsVector<OBS>             ObsVector_;
   template <typename DATA> using ObsData_ = ObsDataVector<OBS, DATA>;
   template <typename DATA> using ObsDataVec_ = std::vector<std::shared_ptr<ObsData_<DATA>>>;
 
@@ -60,6 +62,7 @@ class CalcHofX {
   typedef std::vector<std::unique_ptr<Locations_>>     LocationsVec_;
   typedef std::vector<std::unique_ptr<ObsFilters_>>    ObsFiltersVec_;
   typedef std::vector<std::unique_ptr<ObsOperator_>>   ObsOperatorVec_;
+  typedef std::vector<std::shared_ptr<ObsVector_>>     ObsVectorVec_;
   typedef std::vector<Variables>                       VariablesVec_;
 
  public:
@@ -98,7 +101,7 @@ class CalcHofX {
   LocationsVec_        locations_;  // locations
   const ObsAuxCtrls_ * ybias_;      // Obs bias
   ObsDataVec_<int>     qcflags_;    // QC flags
-  ObsDataVec_<float>   obserrs_;    // Obs error variances (used in QC filters)
+  ObsVectorVec_        obserrs_;    // Obs error variances (used in QC filters)
   ObsFiltersVec_       filters_;    // QC filters
   VariablesVec_        geovars_;    // variables required from the model
 };
@@ -131,8 +134,7 @@ CalcHofX<OBS>::CalcHofX(const ObsSpaces_ & obspaces,
     qcflags_.emplace_back(std::make_shared<ObsData_<int>>(obspaces[jj],
                             obspaces[jj].obsvariables()));
     /// Allocate and read initial obs error
-    obserrs_.emplace_back(std::make_shared<ObsData_<float>>(obspaces[jj],
-                            obspaces[jj].obsvariables(), "ObsError"));
+    obserrs_.emplace_back(std::make_shared<ObsVector_>(obspaces[jj], "ObsError"));
   }
   Log::trace() << "CalcHofX<OBS> constructed" << std::endl;
 }
@@ -149,7 +151,7 @@ void CalcHofX<OBS>::initialize(const ObsAuxCtrls_ & obsaux, const int iteration)
     observerParams.deserialize(obsconfs[jj]);
     /// Set up QC filters and run preprocess
     filters_.emplace_back(new ObsFilters_(obspaces_[jj], observerParams.obsFilters,
-                                          qcflags_[jj], obserrs_[jj], iteration));
+                                          qcflags_[jj], *obserrs_[jj], iteration));
     filters_[jj]->preProcess();
 
     /// Set up variables requested from the model

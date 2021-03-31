@@ -16,6 +16,7 @@
 
 #include "eckit/config/Configuration.h"
 #include "eckit/exception/Exceptions.h"
+#include "lorenz95/ObsData1D.h"
 #include "lorenz95/ObsTableView.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
@@ -166,6 +167,18 @@ void ObsVec1D::mask(const ObsData1D<int> & mask) {
   for (size_t jj = 0; jj < data_.size(); ++jj) {
     if (mask[jj]) data_.at(jj) = missing_;
   }
+}
+// -----------------------------------------------------------------------------
+ObsVec1D & ObsVec1D::operator=(const ObsData1D<float> & rhs) {
+  const float fmiss = util::missingValue(fmiss);
+  for (size_t jj = 0; jj < data_.size(); ++jj) {
+    if (rhs[jj] == fmiss) {
+      data_.at(jj) = missing_;
+    } else {
+      data_.at(jj) = static_cast<double>(rhs[jj]);
+    }
+  }
+  return *this;
 }
 // -----------------------------------------------------------------------------
 void ObsVec1D::save(const std::string & name) const {

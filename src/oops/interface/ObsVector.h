@@ -17,7 +17,7 @@
 #include <ostream>
 #include <string>
 
-#include "oops/interface/ObsDataVector.h"
+#include "oops/interface/ObsDataVector_head.h"
 #include "oops/interface/ObsSpace.h"
 #include "oops/util/gatherPrint.h"
 #include "oops/util/Logger.h"
@@ -77,6 +77,7 @@ class ObsVector : public util::Printable,
   double rms() const;
   /// Mask out elements of the vector where the passed in flags are > 0
   void mask(const ObsDataVector<OBS, int> &);
+  ObsVector & operator =(const ObsDataVector<OBS, float> &);
 
 // I/O
   void save(const std::string &) const;
@@ -269,6 +270,15 @@ void ObsVector<OBS>::mask(const ObsDataVector<OBS, int> & qc) {
   util::Timer timer(classname(), "mask");
   data_->mask(qc.obsdatavector());
   Log::trace() << "ObsVector<OBS>::mask done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
+ObsVector<OBS> & ObsVector<OBS>::operator=(const ObsDataVector<OBS, float> & rhs) {
+  Log::trace() << "ObsVector<OBS>::operator= starting" << std::endl;
+  util::Timer timer(classname(), "operator=");
+  *data_ = rhs.obsdatavector();
+  Log::trace() << "ObsVector<OBS>::operator= done" << std::endl;
+  return *this;
 }
 // -----------------------------------------------------------------------------
 template <typename OBS>

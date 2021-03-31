@@ -35,6 +35,7 @@ class ObsDataQG : public util::Printable,
 
   ObsDataQG(const ObsSpaceQG &, const oops::Variables &, const std::string &);
   ObsDataQG(const ObsDataQG &);
+  explicit ObsDataQG(const ObsVecQG &);
   ~ObsDataQG() {}
 
   ObsDataQG & operator= (const ObsDataQG &);
@@ -47,6 +48,7 @@ class ObsDataQG : public util::Printable,
   void save(const std::string &) const;
 
   const int & toFortran() const {return data_.toFortran();}
+  const ObsVecQG & vect() const {return data_;}
 
  private:
   void print(std::ostream &) const;
@@ -62,6 +64,10 @@ ObsDataQG<DATATYPE>::ObsDataQG(const ObsSpaceQG & os, const oops::Variables & va
 // -----------------------------------------------------------------------------
 template<typename DATATYPE>
 ObsDataQG<DATATYPE>::ObsDataQG(const ObsDataQG & other): data_(other.data_) {
+}
+// -----------------------------------------------------------------------------
+template<typename DATATYPE>
+ObsDataQG<DATATYPE>::ObsDataQG(const ObsVecQG & other): data_(other) {
 }
 // -----------------------------------------------------------------------------
 template<typename DATATYPE>

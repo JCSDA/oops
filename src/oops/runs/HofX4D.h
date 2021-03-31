@@ -31,6 +31,7 @@
 #include "oops/interface/Model.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/ObsDataVector.h"
+#include "oops/interface/ObsVector.h"
 #include "oops/interface/State.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
@@ -52,6 +53,7 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
   typedef ObsErrors<OBS>             ObsErrors_;
   typedef Observers<MODEL, OBS>      Observers_;
   typedef ObsSpaces<OBS>             ObsSpaces_;
+  typedef ObsVector<OBS>             ObsVector_;
   typedef State<MODEL>               State_;
   typedef ObsDataVector<OBS, float>  ObsData_;
 
@@ -109,10 +111,9 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
 //  Setup and run observer
     Observers_ hofx(obspaces, obsConfig);
 
-    std::vector<std::shared_ptr<ObsData_>> obserrs;
+    std::vector<std::shared_ptr<ObsVector_>> obserrs;
     for (size_t jj = 0; jj < obspaces.size(); ++jj) {
-      obserrs.emplace_back(std::make_shared<ObsData_>(obspaces[jj],
-                           obspaces[jj].obsvariables(), "ObsError"));
+      obserrs.emplace_back(std::make_shared<ObsVector_>(obspaces[jj], "ObsError"));
     }
 
 //  run the model and compute H(x)

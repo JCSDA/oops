@@ -14,53 +14,20 @@
 
 #include "oops/base/Variables.h"
 #include "oops/interface/ObsSpace.h"
+#include "oops/interface/ObsVector.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Timer.h"
 
+#include "oops/interface/ObsDataVector_head.h"
+
 namespace oops {
-
-// -----------------------------------------------------------------------------
-
-template <typename OBS, typename DATATYPE>
-class ObsDataVector : public util::Printable,
-                      private util::ObjectCounter<ObsDataVector<OBS, DATATYPE> > {
-  typedef typename OBS::template ObsDataVector<DATATYPE>  ObsDataVec_;
-
- public:
-  static const std::string classname() {return "oops::ObsDataVector";}
-
-  ObsDataVector(const ObsSpace<OBS> &, const Variables &, const std::string name = "");
-  explicit ObsDataVector(const ObsDataVector &);
-  ~ObsDataVector();
-
-/// Interfacing
-  ObsDataVec_ & obsdatavector() {return *data_;}
-  const ObsDataVec_ & obsdatavector() const {return *data_;}
-
-  std::shared_ptr<ObsDataVec_> obsdatavectorptr() {return data_;}
-  std::shared_ptr<const ObsDataVec_> obsdatavectorptr() const {return data_;}
-
-  ObsDataVector & operator = (const ObsDataVector &);
-
-  void zero();
-  void mask(const ObsDataVector<OBS, int> &);
-  unsigned int nobs() const {return data_->nobs();}
-
-// I/O
-  void read(const std::string &);
-  void save(const std::string &) const;
-
- private:
-  void print(std::ostream &) const;
-  std::shared_ptr<ObsDataVec_> data_;
-};
 
 // -----------------------------------------------------------------------------
 template <typename OBS, typename DATATYPE>
 ObsDataVector<OBS, DATATYPE>::ObsDataVector(const ObsSpace<OBS> & os,
-                                              const Variables & vars, const std::string name)
+                                            const Variables & vars, const std::string name)
   : data_()
 {
   Log::trace() << "ObsDataVector<OBS, DATATYPE>::ObsDataVector starting" << std::endl;
@@ -74,6 +41,14 @@ ObsDataVector<OBS, DATATYPE>::ObsDataVector(const ObsDataVector & other): data_(
   Log::trace() << "ObsDataVector<OBS, DATATYPE>::ObsDataVector starting" << std::endl;
   util::Timer timer(classname(), "ObsDataVector");
   data_.reset(new ObsDataVec_(*other.data_));
+  Log::trace() << "ObsDataVector<OBS, DATATYPE>::ObsDataVector done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template <typename OBS, typename DATATYPE>
+ObsDataVector<OBS, DATATYPE>::ObsDataVector(ObsVector<OBS> & other): data_() {
+  Log::trace() << "ObsDataVector<OBS, DATATYPE>::ObsDataVector starting" << std::endl;
+  util::Timer timer(classname(), "ObsDataVector");
+  data_.reset(new ObsDataVec_(other.obsvector()));
   Log::trace() << "ObsDataVector<OBS, DATATYPE>::ObsDataVector done" << std::endl;
 }
 // -----------------------------------------------------------------------------

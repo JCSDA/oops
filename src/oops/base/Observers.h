@@ -24,6 +24,7 @@
 #include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsDiagnostics.h"
 #include "oops/interface/ObsOperator.h"
+#include "oops/interface/ObsVector.h"
 #include "oops/util/ConfigFunctions.h"
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/Parameter.h"
@@ -56,6 +57,7 @@ class Observers {
   typedef ObsFilters<OBS>            ObsFilters_;
   typedef ObsOperator<OBS>           ObsOperator_;
   typedef ObsSpaces<OBS>             ObsSpaces_;
+  typedef std::vector<std::shared_ptr<ObsVector<OBS>>>  ObsVectors_;
   template <typename DATA> using ObsData_ = ObsDataVector<OBS, DATA>;
   template <typename DATA> using ObsDataVec_ = std::vector<std::shared_ptr<ObsData_<DATA>>>;
 
@@ -72,7 +74,7 @@ class Observers {
 /// \brief Initializes variables, obs bias, obs filters (could be different for
 /// different iterations
   std::shared_ptr<PostBase<State<MODEL> > > initialize(const ObsAuxCtrls_ &,
-                                                       ObsDataVec_<float> &, const int iter = 0);
+                                                       ObsVectors_ &, const int iter = 0);
 
 /// \brief Computes H(x) from the filled in GeoVaLs
   Observations_ finalize();
@@ -114,7 +116,7 @@ Observers<MODEL, OBS>::Observers(const ObsSpaces_ & obspaces,
 
 template <typename MODEL, typename OBS>
 std::shared_ptr<PostBase<State<MODEL> > >
-Observers<MODEL, OBS>::initialize(const ObsAuxCtrls_ & obsaux, ObsDataVec_<float> & obserrs,
+Observers<MODEL, OBS>::initialize(const ObsAuxCtrls_ & obsaux, ObsVectors_ & obserrs,
                                   const int iter) {
   std::vector<eckit::LocalConfiguration> obsconfs = obsconfig_.getSubConfigurations();
   iterout_ = iter;
@@ -126,7 +128,7 @@ Observers<MODEL, OBS>::initialize(const ObsAuxCtrls_ & obsaux, ObsDataVec_<float
     observerParams.deserialize(obsconfs[jj]);
     /// Set up QC filters and run preprocess
     filters_.emplace_back(new ObsFilters_(obspaces_[jj], observerParams.obsFilters,
-                                          qcflags_[jj], obserrs[jj], iterout_));
+                                          qcflags_[jj], *obserrs[jj], iterout_));
     filters_[jj]->preProcess();
 
     /// Set up variables requested from the model

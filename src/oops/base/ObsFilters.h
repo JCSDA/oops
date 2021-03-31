@@ -39,7 +39,7 @@ class ObsFilters : public util::Printable,
   typedef ObsSpace<OBS>           ObsSpace_;
   typedef ObsVector<OBS>          ObsVector_;
   typedef std::shared_ptr<ObsFilterBase<OBS> >  ObsFilterPtr_;
-  template <typename DATA> using ObsDataPtr_ = std::shared_ptr<ObsDataVector<OBS, DATA> >;
+  typedef std::shared_ptr<ObsDataVector<OBS, int> >  ObsDataPtr_;
 
  public:
   /// Initialize all filters for \p obspace, from parameters, using
@@ -47,8 +47,7 @@ class ObsFilters : public util::Printable,
   /// \p iteration argument indicates outer loop iteration in the variational
   /// assimilation
   ObsFilters(const ObsSpace_ &, const std::vector<ObsFilterParametersWrapper<OBS>> &,
-             ObsDataPtr_<int> qcflags, ObsDataPtr_<float> obserr,
-             const int iteration = 0);
+             ObsDataPtr_ qcflags, ObsVector_ & obserr, const int iteration = 0);
 
   void preProcess() const;
   void priorFilter(const GeoVaLs_ &) const;
@@ -63,8 +62,9 @@ class ObsFilters : public util::Printable,
   std::vector<ObsFilterPtr_> filters_;
   Variables geovars_;
   Variables diagvars_;
-  ObsDataPtr_<int> qcflags_;
-  ObsDataPtr_<float> obserr_;
+  ObsDataPtr_ qcflags_;
+  ObsVector_ & obserr_;
+  std::shared_ptr<ObsDataVector<OBS, float> > obserrtmp_;
 };
 
 // -----------------------------------------------------------------------------
@@ -72,9 +72,9 @@ class ObsFilters : public util::Printable,
 template <typename OBS>
 ObsFilters<OBS>::ObsFilters(const ObsSpace_ & os,
                             const std::vector<ObsFilterParametersWrapper<OBS>> & filtersParams,
-                            ObsDataPtr_<int> qcflags, ObsDataPtr_<float> obserr,
-                            const int iteration)
-  : filters_(), geovars_(), diagvars_(), qcflags_(qcflags), obserr_(obserr) {
+                            ObsDataPtr_ qcflags, ObsVector_ & obserr, const int iteration)
+  : filters_(), geovars_(), diagvars_(), qcflags_(qcflags), obserr_(obserr),
+    obserrtmp_(new ObsDataVector<OBS, float>(obserr)) {
   Log::trace() << "ObsFilters::ObsFilters starting:\n";
   for (const ObsFilterParametersWrapper<OBS> &filterParams : filtersParams)
     Log::trace() << "  " << filterParams << std::endl;
@@ -83,7 +83,7 @@ ObsFilters<OBS>::ObsFilters(const ObsSpace_ & os,
   if (filtersParams.size() > 0) {
     eckit::LocalConfiguration preconf;
     preconf.set("filter", "QCmanager");
-    filters_.push_back(FilterFactory<OBS>::create(os, preconf, qcflags_, obserr_));
+    filters_.push_back(FilterFactory<OBS>::create(os, preconf, qcflags_, obserrtmp_));
   }
 
 // Create the filters, only at 0-th iteration, or at iterations specified in "apply at iterations"
@@ -97,7 +97,7 @@ ObsFilters<OBS>::ObsFilters(const ObsSpace_ & os,
     }
     if (apply) {
       ObsFilterPtr_ tmp(FilterFactory<OBS>::create(os, filterParams.filterParameters,
-                                                   qcflags_, obserr_));
+                                                   qcflags_, obserrtmp_));
       geovars_ += tmp->requiredVars();
       diagvars_ += tmp->requiredHdiagnostics();
       filters_.push_back(tmp);
@@ -114,6 +114,8 @@ void ObsFilters<OBS>::preProcess() const {
   for (const auto & filter : filters_) {
     filter->preProcess();
   }
+  obserrtmp_->mask(*qcflags_);
+  obserr_ = *obserrtmp_;
 }
 
 // -----------------------------------------------------------------------------
@@ -123,6 +125,8 @@ void ObsFilters<OBS>::priorFilter(const GeoVaLs_ & gv) const {
   for (const auto & filter : filters_) {
     filter->priorFilter(gv);
   }
+  obserrtmp_->mask(*qcflags_);
+  obserr_ = *obserrtmp_;
 }
 
 // -----------------------------------------------------------------------------
@@ -132,7 +136,8 @@ void ObsFilters<OBS>::postFilter(const ObsVector_ & hofx, const ObsDiags_ & diag
   for (const auto & filter : filters_) {
     filter->postFilter(hofx, diags);
   }
-  obserr_->mask(*qcflags_);
+  obserrtmp_->mask(*qcflags_);
+  obserr_ = *obserrtmp_;
 }
 
 // -----------------------------------------------------------------------------

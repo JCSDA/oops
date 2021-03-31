@@ -9,6 +9,7 @@
 #define LORENZ95_OBSDATA1D_H_
 
 #include <cmath>
+#include <limits>
 #include <ostream>
 #include <string>
 #include <vector>
@@ -22,6 +23,7 @@
 #include "oops/util/Printable.h"
 
 #include "lorenz95/ObsTableView.h"
+#include "lorenz95/ObsVec1D.h"
 
 namespace lorenz95 {
 
@@ -36,6 +38,7 @@ class ObsData1D : public util::Printable,
 
   ObsData1D(const ObsTableView &, const oops::Variables &, const std::string &);
   ObsData1D(const ObsData1D &);
+  explicit ObsData1D(const ObsVec1D &);
   ~ObsData1D() {}
 
   ObsData1D & operator= (const ObsData1D &);
@@ -75,6 +78,20 @@ ObsData1D<DATATYPE>::ObsData1D(const ObsData1D & other)
 {}
 // -----------------------------------------------------------------------------
 template<typename DATATYPE>
+ObsData1D<DATATYPE>::ObsData1D(const ObsVec1D & other)
+  : obsdb_(other.obsdb()), data_(other.size()) {
+  const DATATYPE missing = util::missingValue(missing);
+  const double dmiss = util::missingValue(dmiss);
+  for (size_t jj = 0; jj < data_.size(); ++jj) {
+    if (other[jj] == dmiss) {
+      data_.at(jj) = missing;
+    } else {
+      data_.at(jj) = static_cast<DATATYPE>(other[jj]);
+    }
+  }
+}
+// -----------------------------------------------------------------------------
+template<typename DATATYPE>
 ObsData1D<DATATYPE> & ObsData1D<DATATYPE>::operator= (const ObsData1D & rhs) {
   ASSERT(data_.size() == rhs.data_.size());
   data_ = rhs.data_;
@@ -108,16 +125,25 @@ void ObsData1D<DATATYPE>::save(const std::string & name) const {
 // -----------------------------------------------------------------------------
 template<typename DATATYPE>
 void ObsData1D<DATATYPE>::print(std::ostream & os) const {
-  if (data_.size() > 0) {
-    DATATYPE zmin = data_.at(0);
-    DATATYPE zmax = data_.at(0);
-    for (size_t jj = 0; jj < data_.size(); ++jj) {
-      if (data_.at(jj) < zmin) zmin = data_.at(jj);
-      if (data_.at(jj) > zmax) zmax = data_.at(jj);
+  DATATYPE missing = util::missingValue(missing);
+  DATATYPE zmin = std::numeric_limits<DATATYPE>::max();
+  DATATYPE zmax = std::numeric_limits<DATATYPE>::lowest();
+  DATATYPE zavg = 0.0;
+  size_t iobs = 0;
+  for (const DATATYPE & val : data_) {
+    if (val != missing) {
+      if (val < zmin) zmin = val;
+      if (val > zmax) zmax = val;
+      zavg += val;
+      ++iobs;
     }
-    os << "Lorenz 95 nobs= " << data_.size() << " Min=" << zmin << ", Max=" << zmax;
+  }
+  if (iobs > 0) {
+    zavg /= static_cast<DATATYPE>(iobs);
+    os << "Lorenz 95 nobs= " << iobs << " Min=" << zmin << ", Max=" << zmax
+       << ", Average=" << zavg;
   } else {
-    os << "Lorenz 95 nobs= " << data_.size() << " --- No observations";
+    os << "Lorenz 95 : No observations";
   }
 }
 // -----------------------------------------------------------------------------

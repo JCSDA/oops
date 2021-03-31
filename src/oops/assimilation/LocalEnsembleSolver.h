@@ -113,9 +113,9 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(const StateEnsemb
   } else {
     // compute and save H(x)
     Log::debug() << "Computing H(X) online" << std::endl;
-    hofx_.initialize(obsaux_, iteration);
     for (size_t jj = 0; jj < nens; ++jj) {
       hofx_.resetQc();
+      hofx_.initialize(obsaux_, iteration);
       // fill in geovals
       std::vector<eckit::LocalConfiguration> getValuesConfig =
         util::vectoriseAndFilter(obsconf_, "get values");

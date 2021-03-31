@@ -83,6 +83,11 @@ ObsVecQG & ObsVecQG::operator/= (const ObsVecQG & rhs) {
   return *this;
 }
 // -----------------------------------------------------------------------------
+ObsVecQG & ObsVecQG::operator=(const ObsDataQG<float> & rhs) {
+  *this = rhs.vect();
+  return *this;
+}
+// -----------------------------------------------------------------------------
 void ObsVecQG::zero() {
   qg_obsvec_zero_f90(keyOvec_);
 }

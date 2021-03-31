@@ -19,10 +19,9 @@
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
-#include "lorenz95/ObsData1D.h"
-
 namespace lorenz95 {
   class ObsTableView;
+  template <typename DATATYPE> class ObsData1D;
 
 // -----------------------------------------------------------------------------
 /// Vector in observation space
@@ -48,6 +47,7 @@ class ObsVec1D : public util::Printable,
   ObsVec1D & operator/= (const ObsVec1D &);
 
   Eigen::VectorXd  packEigen() const;
+  size_t size() const {return data_.size();}
   const double & operator[](const std::size_t ii) const {return data_.at(ii);}
   double & operator[](const std::size_t ii) {return data_.at(ii);}
 
@@ -61,8 +61,10 @@ class ObsVec1D : public util::Printable,
   double dot_product_with(const ObsVec1D &) const;
   double rms() const;
   void mask(const ObsData1D<int> &);
+  ObsVec1D & operator= (const ObsData1D<float> &);
 
   unsigned int nobs() const;
+  const ObsTableView & obsdb() const {return obsdb_;}
 
 // I/O
   void save(const std::string &) const;

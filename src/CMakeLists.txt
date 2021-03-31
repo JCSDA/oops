@@ -202,6 +202,7 @@ oops/interface/ObsAuxControl.h
 oops/interface/ObsAuxCovariance.h
 oops/interface/ObsAuxIncrement.h
 oops/interface/ObsDataVector.h
+oops/interface/ObsDataVector_head.h
 oops/interface/ObsDiagnostics.h
 oops/interface/ObsErrorCovariance.h
 oops/interface/ObsFilter.h
@@ -388,6 +389,7 @@ test/interface/ModelAuxIncrement.h
 test/interface/ObsAuxControl.h
 test/interface/ObsAuxCovariance.h
 test/interface/ObsAuxIncrement.h
+test/interface/ObsDataVector.h
 test/interface/ObsOperator.h
 test/interface/ObsSpace.h
 test/interface/ObsTestsFixture.h

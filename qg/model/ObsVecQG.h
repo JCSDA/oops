@@ -23,9 +23,7 @@
 
 namespace qg {
   class ObsSpaceQG;
-
-  template<typename DATATYPE>
-  class ObsDataQG;
+  template <typename DATATYPE> class ObsDataQG;
 
 // -----------------------------------------------------------------------------
 /// ObsVecQG class to handle vectors in observation space for QG model.
@@ -59,6 +57,7 @@ class ObsVecQG : public util::Printable,
   double dot_product_with(const ObsVecQG &) const;
   double rms() const;
   void mask(const ObsDataQG<int> &);
+  ObsVecQG & operator=(const ObsDataQG<float> &);
 
   unsigned int nobs() const;
 

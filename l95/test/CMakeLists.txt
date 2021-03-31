@@ -338,6 +338,12 @@ ecbuild_add_test( TARGET test_l95_obsvector
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
+ecbuild_add_test( TARGET test_l95_obsdatavector
+                  SOURCES executables/TestObsDataVector.cc
+                  ARGS "testinput/interfaces.yaml"
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth )
+
 ecbuild_add_test( TARGET test_l95_departures_ensemble
                   SOURCES executables/TestDeparturesEnsemble.cc
                   ARGS "testinput/interfaces.yaml"

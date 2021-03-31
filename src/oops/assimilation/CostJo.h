@@ -27,7 +27,6 @@
 #include "oops/base/Observations.h"
 #include "oops/base/Observers.h"
 #include "oops/base/ObserversTLAD.h"
-#include "oops/base/ObsFilters.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBase.h"
 #include "oops/base/PostBaseTLAD.h"
@@ -56,7 +55,6 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   typedef ControlIncrement<MODEL, OBS>  CtrlInc_;
   typedef Departures<OBS>               Departures_;
   typedef Observations<OBS>             Observations_;
-  typedef ObsFilters<OBS>               ObsFilters_;
   typedef Geometry<MODEL>               Geometry_;
   typedef State<MODEL>                  State_;
   typedef Increment<MODEL>              Increment_;
@@ -65,7 +63,7 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   typedef Observers<MODEL, OBS>         Observers_;
   typedef ObserversTLAD<MODEL, OBS>     ObserversTLAD_;
   typedef PostBaseTLAD<MODEL>           PostBaseTLAD_;
-  typedef ObsDataVector<OBS, float>     ObsData_;
+  typedef ObsVector<OBS>                ObsVector_;
 
  public:
   /// Construct \f$ J_o\f$ from \f$ R\f$ and \f$ y_{obs}\f$.
@@ -127,7 +125,7 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   /// Used for computing H(x) and running QC filters
   Observers_ observers_;
 
-  std::vector<std::shared_ptr<ObsData_> > obserrs_;  // Obs errors
+  std::vector<std::shared_ptr<ObsVector_> > obserrs_;  // Obs errors
 
   /// Linearized observation operators.
   std::shared_ptr<ObserversTLAD_> pobstlad_;
@@ -146,8 +144,7 @@ CostJo<MODEL, OBS>::CostJo(const eckit::Configuration & joConf, const eckit::mpi
 {
   for (size_t jj = 0; jj < obspace_.size(); ++jj) {
     /// Allocate and read initial obs error
-    obserrs_.emplace_back(std::make_shared<ObsData_>(obspace_[jj],
-                          obspace_[jj].obsvariables(), "ObsError"));
+    obserrs_.emplace_back(std::make_shared<ObsVector_>(obspace_[jj], "ObsError"));
   }
 
   Log::trace() << "CostJo::CostJo done" << std::endl;
