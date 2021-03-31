@@ -227,7 +227,7 @@ double CostFunction<MODEL, OBS>::evaluate(const CtrlVar_ & fguess,
   PostProcessor<State_> pp(post);
   jb_->initialize(fguess);
   for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
-    pp.enrollProcessor(jterms_[jj].initialize(fguess, config));
+    jterms_[jj].initialize(fguess, config, pp);
   }
 
 // Run NL model
@@ -261,10 +261,9 @@ double CostFunction<MODEL, OBS>::linearize(const CtrlVar_ & fguess,
 
 // Setup trajectory for terms of cost function
   PostProcessorTLAD<MODEL> pptraj;
-  JqTermTLAD_ * jq = jb_->initializeTraj(fguess, lowres, innerConf);
-  pptraj.enrollProcessor(jq);
+  jb_->initializeTraj(fguess, lowres, innerConf, pptraj);
   for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
-    pptraj.enrollProcessor(jterms_[jj].initializeTraj(fguess, lowres, innerConf));
+    jterms_[jj].initializeTraj(fguess, lowres, innerConf, pptraj);
   }
 
 // Specific linearization if needed (including TLM)
@@ -274,7 +273,7 @@ double CostFunction<MODEL, OBS>::linearize(const CtrlVar_ & fguess,
   double zzz = this->evaluate(fguess, innerConf, post);
 
 // Finalize trajectory setup
-  jb_->finalizeTraj(jq);
+  jb_->finalizeTraj();
   for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
     jterms_[jj].finalizeTraj();
   }
@@ -294,7 +293,7 @@ void CostFunction<MODEL, OBS>::computeGradientFG(CtrlInc_ & grad) const {
 
   for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
     std::shared_ptr<const GeneralizedDepartures> tmp(jterms_[jj].newGradientFG());
-    costad.enrollProcessor(jterms_[jj].setupAD(tmp, grad));
+    jterms_[jj].setupAD(tmp, grad, costad);
   }
 
   this->runADJ(grad, costad, pp);

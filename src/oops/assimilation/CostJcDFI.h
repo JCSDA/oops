@@ -19,8 +19,8 @@
 #include "oops/assimilation/ControlVariable.h"
 #include "oops/assimilation/CostTermBase.h"
 #include "oops/base/DolphChebyshev.h"
-#include "oops/base/PostBase.h"
-#include "oops/base/PostBaseTLAD.h"
+#include "oops/base/PostProcessor.h"
+#include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/Variables.h"
 #include "oops/base/WeightedDiff.h"
 #include "oops/base/WeightedDiffTLAD.h"
@@ -46,8 +46,9 @@ template<typename MODEL, typename OBS> class CostJcDFI : public CostTermBase<MOD
   typedef ControlVariable<MODEL, OBS>   CtrlVar_;
   typedef Geometry<MODEL>               Geometry_;
   typedef Increment<MODEL>              Increment_;
-  typedef PostBaseTLAD<MODEL>           PostBaseTLAD_;
   typedef State<MODEL>                  State_;
+  typedef PostProcessor<State_>         PostProc_;
+  typedef PostProcessorTLAD<MODEL>      PostProcTLAD_;
 
  public:
 /// Construct \f$ J_c\f$.
@@ -58,21 +59,20 @@ template<typename MODEL, typename OBS> class CostJcDFI : public CostTermBase<MOD
   virtual ~CostJcDFI() {}
 
 /// Initialize before nonlinear model integration.
-  std::shared_ptr<PostBase<State_> > initialize(const CtrlVar_ &,
-                                                const eckit::Configuration &) override;
-  std::shared_ptr<PostBaseTLAD<MODEL> > initializeTraj(const CtrlVar_ &, const Geometry_ &,
-                                                       const eckit::Configuration &) override;
+  void initialize(const CtrlVar_ &, const eckit::Configuration &, PostProc_ &) override;
+  void initializeTraj(const CtrlVar_ &, const Geometry_ &,
+                      const eckit::Configuration &, PostProcTLAD_ &) override;
 
 /// Finalize computation after nonlinear model integration.
   double finalize() override;
   void finalizeTraj() override;
 
 /// Initialize \f$ J_c\f$ before starting the TL run.
-  std::shared_ptr<PostBaseTLAD_> setupTL(const CtrlInc_ &) const override;
+  void setupTL(const CtrlInc_ &, PostProcTLAD_ &) const override;
 
 /// Initialize \f$ J_c\f$ before starting the AD run.
-  std::shared_ptr<PostBaseTLAD_> setupAD(
-           std::shared_ptr<const GeneralizedDepartures>, CtrlInc_ &) const override;
+  void setupAD(std::shared_ptr<const GeneralizedDepartures>,
+               CtrlInc_ &, PostProcTLAD_ &) const override;
 
 /// Multiply by \f$ C\f$ and \f$ C^{-1}\f$.
   std::unique_ptr<GeneralizedDepartures>
@@ -124,11 +124,11 @@ CostJcDFI<MODEL, OBS>::CostJcDFI(const eckit::Configuration & conf, const Geomet
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-std::shared_ptr<PostBase<State<MODEL> > >
-CostJcDFI<MODEL, OBS>::initialize(const CtrlVar_ &, const eckit::Configuration &) {
+void CostJcDFI<MODEL, OBS>::initialize(const CtrlVar_ &, const eckit::Configuration &,
+                                       PostProc_ & pp) {
   filter_.reset(new WeightedDiff<MODEL, Increment_, State_>(vars_, vt_, span_,
                                                             tstep_, resol_, *wfct_));
-  return filter_;
+  pp.enrollProcessor(filter_);
 }
 
 // -----------------------------------------------------------------------------
@@ -145,13 +145,13 @@ double CostJcDFI<MODEL, OBS>::finalize() {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-std::shared_ptr<PostBaseTLAD<MODEL> >
-CostJcDFI<MODEL, OBS>::initializeTraj(const CtrlVar_ &, const Geometry_ & tlres,
-                                      const eckit::Configuration & innerConf) {
+void CostJcDFI<MODEL, OBS>::initializeTraj(const CtrlVar_ &, const Geometry_ & tlres,
+                                           const eckit::Configuration & innerConf,
+                                           PostProcTLAD_ & pptraj) {
   tlres_.reset(new Geometry_(tlres));
   tlstep_ = util::Duration(innerConf.getString("linear model.tstep", tstep_.toString()));
   ftlad_.reset(new WeightedDiffTLAD<MODEL>(vars_, vt_, span_, tstep_, *tlres_, *wfct_));
-  return ftlad_;
+  pptraj.enrollProcessor(ftlad_);
 }
 
 // -----------------------------------------------------------------------------
@@ -180,21 +180,20 @@ std::unique_ptr<GeneralizedDepartures> CostJcDFI<MODEL, OBS>::newGradientFG() co
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-std::shared_ptr<PostBaseTLAD<MODEL> >
-CostJcDFI<MODEL, OBS>::setupTL(const CtrlInc_ &) const {
+void CostJcDFI<MODEL, OBS>::setupTL(const CtrlInc_ &, PostProcTLAD_ & pptl) const {
   ftlad_->setupTL(*tlres_);
-  return ftlad_;
+  pptl.enrollProcessor(ftlad_);
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-std::shared_ptr<PostBaseTLAD<MODEL> >
-CostJcDFI<MODEL, OBS>::setupAD(std::shared_ptr<const GeneralizedDepartures> pv, CtrlInc_ &) const {
+void CostJcDFI<MODEL, OBS>::setupAD(std::shared_ptr<const GeneralizedDepartures> pv,
+                                    CtrlInc_ &, PostProcTLAD_ & ppad) const {
   std::shared_ptr<const Increment_>
     dx = std::dynamic_pointer_cast<const Increment_>(pv);
   ftlad_->setupAD(dx);
-  return ftlad_;
+  ppad.enrollProcessor(ftlad_);
 }
 
 // -----------------------------------------------------------------------------

@@ -15,8 +15,8 @@
 
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/ControlVariable.h"
-#include "oops/base/PostBase.h"
-#include "oops/base/PostBaseTLAD.h"
+#include "oops/base/PostProcessor.h"
+#include "oops/base/PostProcessorTLAD.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
@@ -38,29 +38,29 @@ template<typename MODEL, typename OBS> class CostTermBase {
   typedef Geometry<MODEL>            Geometry_;
   typedef State<MODEL>               State_;
   typedef Increment<MODEL>           Increment_;
-  typedef std::shared_ptr<PostBase<State_> >    PostPtr_;
-  typedef std::shared_ptr<PostBaseTLAD<MODEL> > PostPtrTLAD_;
+  typedef PostProcessor<State_>      PostProc_;
+  typedef PostProcessorTLAD<MODEL>   PostProcTLAD_;
 
  public:
 /// Destructor
   virtual ~CostTermBase() {}
 
 /// Initialize before nonlinear model integration.
-  virtual PostPtr_ initialize(const ControlVariable<MODEL, OBS> &,
-                              const eckit::Configuration &) = 0;
-  virtual PostPtrTLAD_ initializeTraj(const ControlVariable<MODEL, OBS> &,
-                                      const Geometry_ &, const eckit::Configuration &) = 0;
+  virtual void initialize(const ControlVariable<MODEL, OBS> &, const eckit::Configuration &,
+                          PostProc_ &) = 0;
+  virtual void initializeTraj(const ControlVariable<MODEL, OBS> &, const Geometry_ &,
+                              const eckit::Configuration &, PostProcTLAD_ &) = 0;
 
 /// Finalize computation after nonlinear model integration.
   virtual double finalize() = 0;
   virtual void finalizeTraj() = 0;
 
 /// Initialize before starting the TL run.
-  virtual PostPtrTLAD_ setupTL(const ControlIncrement<MODEL, OBS> &) const = 0;
+  virtual void setupTL(const ControlIncrement<MODEL, OBS> &, PostProcTLAD_ &) const = 0;
 
 /// Initialize before starting the AD run.
-  virtual PostPtrTLAD_ setupAD(std::shared_ptr<const GeneralizedDepartures>,
-                               ControlIncrement<MODEL, OBS> &) const = 0;
+  virtual void setupAD(std::shared_ptr<const GeneralizedDepartures>,
+                       ControlIncrement<MODEL, OBS> &, PostProcTLAD_ &) const = 0;
 
 /// Multiply by covariance (or weight) matrix and its inverse.
   virtual std::unique_ptr<GeneralizedDepartures>

@@ -64,7 +64,7 @@ void HtRinvHMatrix<MODEL, OBS>::multiply(const CtrlInc_ & dx, CtrlInc_ & dz) con
 // Setup TL terms of cost function
   PostProcessorTLAD<MODEL> costtl;
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
-    costtl.enrollProcessor(j_.jterm(jj).setupTL(dx));
+    j_.jterm(jj).setupTL(dx, costtl);
   }
 
 // Run TLM
@@ -81,7 +81,7 @@ void HtRinvHMatrix<MODEL, OBS>::multiply(const CtrlInc_ & dx, CtrlInc_ & dz) con
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
     ww.append(costtl.releaseOutputFromTL(jj));
     zz.append(j_.jterm(jj).multiplyCoInv(*ww.getv(jj)));
-    costad.enrollProcessor(j_.jterm(jj).setupAD(zz.getv(jj), dz));
+    j_.jterm(jj).setupAD(zz.getv(jj), dz, costad);
   }
 
 // Run ADJ

@@ -43,7 +43,7 @@ template<typename MODEL, typename OBS> class HtMatrix : private boost::noncopyab
     PostProcessorTLAD<MODEL> cost;
     // Don't zero out dx here
     for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
-      cost.enrollProcessor(j_.jterm(jj).setupAD(dy.getv(jj), dx));
+      j_.jterm(jj).setupAD(dy.getv(jj), dx, cost);
     }
     j_.runADJ(dx, cost, post, idModel);
   }

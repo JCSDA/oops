@@ -38,13 +38,12 @@ template<typename MODEL, typename OBS> class HMatrix : private boost::noncopyabl
  public:
   explicit HMatrix(const CostFct_ & j): j_(j) {}
 
-  void multiply(CtrlInc_ & dx, DualVector<MODEL, OBS> & dy,
-                const bool idModel = false) const {
+  void multiply(CtrlInc_ & dx, DualVector<MODEL, OBS> & dy, const bool idModel = false) const {
     PostProcessor<Increment_> post;
     PostProcessorTLAD<MODEL> cost;
 
     for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
-      cost.enrollProcessor(j_.jterm(jj).setupTL(dx));
+      j_.jterm(jj).setupTL(dx, cost);
     }
 
     j_.runTLM(dx, cost, post, idModel);

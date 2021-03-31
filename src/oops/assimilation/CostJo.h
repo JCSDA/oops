@@ -29,7 +29,8 @@
 #include "oops/base/ObserversTLAD.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBase.h"
-#include "oops/base/PostBaseTLAD.h"
+#include "oops/base/PostProcessor.h"
+#include "oops/base/PostProcessorTLAD.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/ObsDataVector.h"
@@ -62,6 +63,8 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   typedef ObsSpaces<OBS>                ObsSpaces_;
   typedef Observers<MODEL, OBS>         Observers_;
   typedef ObserversTLAD<MODEL, OBS>     ObserversTLAD_;
+  typedef PostProcessor<State_>         PostProc_;
+  typedef PostProcessorTLAD<MODEL>      PostProcTLAD_;
   typedef PostBaseTLAD<MODEL>           PostBaseTLAD_;
   typedef ObsVector<OBS>                ObsVector_;
 
@@ -75,21 +78,19 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   virtual ~CostJo() {}
 
   /// Initialize \f$ J_o\f$ before starting the integration of the model.
-  std::shared_ptr<PostBase<State_> > initialize(const CtrlVar_ &,
-                                                const eckit::Configuration &) override;
-  std::shared_ptr<PostBaseTLAD_> initializeTraj(const CtrlVar_ &,
-                                                const Geometry_ &,
-                                                const eckit::Configuration &) override;
+  void initialize(const CtrlVar_ &, const eckit::Configuration &, PostProc_ &) override;
+  void initializeTraj(const CtrlVar_ &, const Geometry_ &,
+                      const eckit::Configuration &, PostProcTLAD_ &) override;
   /// Finalize \f$ J_o\f$ after the integration of the model.
   double finalize() override;
   void finalizeTraj() override;
 
   /// Initialize \f$ J_o\f$ before starting the TL run.
-  std::shared_ptr<PostBaseTLAD_> setupTL(const CtrlInc_ &) const override;
+  void setupTL(const CtrlInc_ &, PostProcTLAD_ &) const override;
 
   /// Initialize \f$ J_o\f$ before starting the AD run.
-  std::shared_ptr<PostBaseTLAD_> setupAD(
-           std::shared_ptr<const GeneralizedDepartures>, CtrlInc_ &) const override;
+  void setupAD(std::shared_ptr<const GeneralizedDepartures>,
+               CtrlInc_ &, PostProcTLAD_ &) const override;
 
   /// Multiply by \f$ R\f$ and \f$ R^{-1}\f$.
   std::unique_ptr<GeneralizedDepartures>
@@ -153,8 +154,8 @@ CostJo<MODEL, OBS>::CostJo(const eckit::Configuration & joConf, const eckit::mpi
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-std::shared_ptr<PostBase<State<MODEL> > >
-CostJo<MODEL, OBS>::initialize(const CtrlVar_ & xx, const eckit::Configuration & conf) {
+void CostJo<MODEL, OBS>::initialize(const CtrlVar_ & xx, const eckit::Configuration & conf,
+                                    PostProc_ & pp) {
   Log::trace() << "CostJo::initialize start" << std::endl;
 
   currentConf_.reset(new eckit::LocalConfiguration(conf));
@@ -163,8 +164,8 @@ CostJo<MODEL, OBS>::initialize(const CtrlVar_ & xx, const eckit::Configuration &
   std::shared_ptr<PostBase<State<MODEL> > >
     getvals(observers_.initialize(xx.obsVar(), obserrs_, iter));
 
+  pp.enrollProcessor(getvals);
   Log::trace() << "CostJo::initialize done" << std::endl;
-  return getvals;
 }
 
 // -----------------------------------------------------------------------------
@@ -225,13 +226,13 @@ double CostJo<MODEL, OBS>::finalize() {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-std::shared_ptr<PostBaseTLAD<MODEL> >
-CostJo<MODEL, OBS>::initializeTraj(const CtrlVar_ & xx, const Geometry_ &,
-                              const eckit::Configuration & conf) {
+void CostJo<MODEL, OBS>::initializeTraj(const CtrlVar_ & xx, const Geometry_ &,
+                                        const eckit::Configuration & conf,
+                                        PostProcTLAD_ & pptraj) {
   Log::trace() << "CostJo::initializeTraj start" << std::endl;
   pobstlad_.reset(new ObserversTLAD_(obsconf_, obspace_, xx.obsVar()));
+  pptraj.enrollProcessor(pobstlad_);
   Log::trace() << "CostJo::initializeTraj done" << std::endl;
-  return pobstlad_;
 }
 
 // -----------------------------------------------------------------------------
@@ -244,26 +245,25 @@ void CostJo<MODEL, OBS>::finalizeTraj() {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-std::shared_ptr<PostBaseTLAD<MODEL> > CostJo<MODEL, OBS>::setupTL(const CtrlInc_ & dx) const {
+void CostJo<MODEL, OBS>::setupTL(const CtrlInc_ & dx, PostProcTLAD_ & pptl) const {
   Log::trace() << "CostJo::setupTL start" << std::endl;
   ASSERT(pobstlad_);
   pobstlad_->setupTL(dx.obsVar());
+  pptl.enrollProcessor(pobstlad_);
   Log::trace() << "CostJo::setupTL done" << std::endl;
-  return pobstlad_;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-std::shared_ptr<PostBaseTLAD<MODEL> > CostJo<MODEL, OBS>::setupAD(
-                               std::shared_ptr<const GeneralizedDepartures> pv,
-                               CtrlInc_ & dx) const {
+void CostJo<MODEL, OBS>::setupAD(std::shared_ptr<const GeneralizedDepartures> pv,
+                                 CtrlInc_ & dx, PostProcTLAD_ & ppad) const {
   Log::trace() << "CostJo::setupAD start" << std::endl;
   ASSERT(pobstlad_);
   std::shared_ptr<const Departures_> dy = std::dynamic_pointer_cast<const Departures_>(pv);
   pobstlad_->setupAD(dy, dx.obsVar());
+  ppad.enrollProcessor(pobstlad_);
   Log::trace() << "CostJo::setupAD done" << std::endl;
-  return pobstlad_;
 }
 
 // -----------------------------------------------------------------------------

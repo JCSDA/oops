@@ -41,12 +41,9 @@ template<typename MODEL, typename OBS> class LBHessianMatrix : private boost::no
   void multiply(const CtrlInc_ & dx, CtrlInc_ & dz) const {
 //  Setup TL terms of cost function
     PostProcessorTLAD<MODEL> costtl;
-    JqTermTLAD_ * jqtl = j_.jb().initializeTL();
-    costtl.enrollProcessor(jqtl);
-    unsigned iq = 0;
-    if (jqtl) iq = 1;
+    unsigned iq = j_.jb().initializeTL(costtl);
     for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
-      costtl.enrollProcessor(j_.jterm(jj).setupTL(dx));
+      j_.jterm(jj).setupTL(dx, costtl);
     }
 
 //  Run TLM
@@ -62,17 +59,16 @@ template<typename MODEL, typename OBS> class LBHessianMatrix : private boost::no
 
 //  Jb
     CtrlInc_ tmp(j_.jb());
-    j_.jb().finalizeTL(jqtl, dx, dw);
+    j_.jb().finalizeTL(dx, dw);
     tmp = dw;
-    JqTermTLAD_ * jqad = j_.jb().initializeAD(dz, tmp);
-    costad.enrollProcessor(jqad);
+    j_.jb().initializeAD(dz, tmp, costad);
 
     j_.zeroAD(dw);
 //  Jo + Jc
     for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
       std::unique_ptr<GeneralizedDepartures> ww(costtl.releaseOutputFromTL(iq+jj));
       std::shared_ptr<GeneralizedDepartures> zz(j_.jterm(jj).multiplyCoInv(*ww));
-      costad.enrollProcessor(j_.jterm(jj).setupAD(zz, dw));
+      j_.jterm(jj).setupAD(zz, dw, costad);
     }
 
 //  Run ADJ
@@ -83,7 +79,7 @@ template<typename MODEL, typename OBS> class LBHessianMatrix : private boost::no
     j_.jb().multiplyB(dw, zz);
 
     dz += zz;
-    j_.jb().finalizeAD(jqad);
+    j_.jb().finalizeAD();
   }
 
  private:
