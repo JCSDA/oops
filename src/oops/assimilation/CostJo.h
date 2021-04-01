@@ -21,19 +21,17 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/ControlVariable.h"
+#include "oops/assimilation/CostJoType.h"
 #include "oops/assimilation/CostTermBase.h"
 #include "oops/base/Departures.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
-#include "oops/base/Observers.h"
 #include "oops/base/ObserversTLAD.h"
 #include "oops/base/ObsSpaces.h"
-#include "oops/base/PostBase.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
-#include "oops/interface/ObsDataVector.h"
 #include "oops/interface/State.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"
@@ -51,9 +49,10 @@ namespace oops {
  */
 
 template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL, OBS>,
-                                        private boost::noncopyable {
+                                                      private boost::noncopyable {
   typedef ControlVariable<MODEL, OBS>   CtrlVar_;
   typedef ControlIncrement<MODEL, OBS>  CtrlInc_;
+  typedef CostJoType<MODEL, OBS>        JoType_;
   typedef Departures<OBS>               Departures_;
   typedef Observations<OBS>             Observations_;
   typedef Geometry<MODEL>               Geometry_;
@@ -61,12 +60,9 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   typedef Increment<MODEL>              Increment_;
   typedef ObsErrors<OBS>                ObsErrors_;
   typedef ObsSpaces<OBS>                ObsSpaces_;
-  typedef Observers<MODEL, OBS>         Observers_;
   typedef ObserversTLAD<MODEL, OBS>     ObserversTLAD_;
   typedef PostProcessor<State_>         PostProc_;
   typedef PostProcessorTLAD<MODEL>      PostProcTLAD_;
-  typedef PostBaseTLAD<MODEL>           PostBaseTLAD_;
-  typedef ObsVector<OBS>                ObsVector_;
 
  public:
   /// Construct \f$ J_o\f$ from \f$ R\f$ and \f$ y_{obs}\f$.
@@ -107,26 +103,18 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   /// Reset obs operator trajectory.
   void resetLinearization() override;
 
-  /// Print Jo
-  double printJo(const Departures_ &, const Departures_ &) const;
-  const ObsSpaces_ & obspaces() const {return obspace_;}
+  /// Acessor...
+  const ObsSpaces_ & obspaces() const {return obspaces_;}
 
  private:
-  eckit::LocalConfiguration obsconf_;
-  ObsSpaces_ obspace_;
+  const eckit::LocalConfiguration obsconf_;
+  ObsSpaces_ obspaces_;
   Observations_ yobs_;
-  std::unique_ptr<ObsErrors_> Rmat_;
 
-  /// Configuration for current initialize/finalize pair
-  std::unique_ptr<eckit::LocalConfiguration> currentConf_;
+  std::vector<std::unique_ptr<JoType_>> jos_;
 
-  /// Gradient at first guess : \f$ R^{-1} (H(x_{fg})-y_{obs}) \f$.
+  /// Jo Gradient at first guess : \f$ R^{-1} (H(x_{fg})-y_{obs}) \f$.
   std::unique_ptr<Departures_> gradFG_;
-
-  /// Used for computing H(x) and running QC filters
-  Observers_ observers_;
-
-  std::vector<std::shared_ptr<ObsVector_> > obserrs_;  // Obs errors
 
   /// Linearized observation operators.
   std::shared_ptr<ObserversTLAD_> pobstlad_;
@@ -138,16 +126,14 @@ template<typename MODEL, typename OBS>
 CostJo<MODEL, OBS>::CostJo(const eckit::Configuration & joConf, const eckit::mpi::Comm & comm,
                            const util::DateTime & winbgn, const util::DateTime & winend,
                            const eckit::mpi::Comm & ctime)
-  : obsconf_(joConf), obspace_(obsconf_, comm, winbgn, winend, ctime),
-    yobs_(obspace_, "ObsValue"),
-    Rmat_(), currentConf_(), gradFG_(), observers_(obspace_, obsconf_),
-    pobstlad_()
+  : obsconf_(joConf), obspaces_(obsconf_, comm, winbgn, winend, ctime),
+    yobs_(obspaces_, "ObsValue"), jos_(), gradFG_()
 {
-  for (size_t jj = 0; jj < obspace_.size(); ++jj) {
-    /// Allocate and read initial obs error
-    obserrs_.emplace_back(std::make_shared<ObsVector_>(obspace_[jj], "ObsError"));
+  Log::trace() << "CostJo::CostJo start" << std::endl;
+  std::vector<eckit::LocalConfiguration> confs(obsconf_.getSubConfigurations());
+  for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
+    jos_.emplace_back(new JoType_(obspaces_[jj], confs[jj]));
   }
-
   Log::trace() << "CostJo::CostJo done" << std::endl;
 }
 
@@ -157,14 +143,12 @@ template<typename MODEL, typename OBS>
 void CostJo<MODEL, OBS>::initialize(const CtrlVar_ & xx, const eckit::Configuration & conf,
                                     PostProc_ & pp) {
   Log::trace() << "CostJo::initialize start" << std::endl;
+  gradFG_.reset();
 
-  currentConf_.reset(new eckit::LocalConfiguration(conf));
-  int iter = currentConf_->getInt("iteration");
+  for (size_t jj = 0; jj < jos_.size(); ++jj) {
+    pp.enrollProcessor(jos_[jj]->initialize(xx.state().geometry(), xx.obsVar()[jj], conf));
+  }
 
-  std::shared_ptr<PostBase<State<MODEL> > >
-    getvals(observers_.initialize(xx.obsVar(), obserrs_, iter));
-
-  pp.enrollProcessor(getvals);
   Log::trace() << "CostJo::initialize done" << std::endl;
 }
 
@@ -173,52 +157,35 @@ void CostJo<MODEL, OBS>::initialize(const CtrlVar_ & xx, const eckit::Configurat
 template<typename MODEL, typename OBS>
 double CostJo<MODEL, OBS>::finalize() {
   Log::trace() << "CostJo::finalize start" << std::endl;
-  Observations_ yeqv = observers_.finalize();
-  Log::info() << "Jo Observation Equivalent:" << std::endl << yeqv
-              << "End Jo Observation Equivalent" << std::endl;
-  const int iterout = currentConf_->getInt("iteration");
 
-// Sace current QC flags and obs error
-  const std::string obsname = "hofx" + std::to_string(iterout);
-  yeqv.save(obsname);
+  // Obs, simulated obs and departures (held here for nice prints and diagnostics)
+  Observations_ yeqv(obspaces_);
+  Departures_ ydep(obspaces_);
 
-  const std::string errname = "EffectiveError" + std::to_string(iterout);
-  for (size_t jj = 0; jj < obserrs_.size(); ++jj) {
-    obserrs_[jj]->save(errname);
-    obserrs_[jj]->save("EffectiveError");  // Obs error covariance is looking for that for now
+  // Gradient at first guess (to define inner loop rhs)
+  gradFG_.reset(new Departures_(obspaces_));
+
+  // Actual Jo computations
+  for (size_t jj = 0; jj < jos_.size(); ++jj) {
+    jos_[jj]->finalize(yobs_[jj], yeqv[jj], ydep[jj], (*gradFG_)[jj]);
   }
 
-// Set observation error covariance
-  Rmat_.reset(new ObsErrors_(obsconf_, obspace_));
+  // Print diagnostics
+  Log::info() << "Jo Observations:" << std::endl << yobs_
+              << "End Jo Observations" << std::endl;
 
-// Perturb observations according to obs error statistics
-  bool obspert = currentConf_->getBool("obs perturbations", false);
-  if (obspert) {
-    yobs_.perturb(*Rmat_);
-    Log::info() << "Perturbed observations: " << yobs_ << std::endl;
-  }
+  Log::info() << "Jo Observations Equivalent:" << std::endl << yeqv
+              << "End Jo Observations Equivalent" << std::endl;
 
-// Compute departures
-  Departures_ ydep(yeqv - yobs_);
   Log::info() << "Jo Bias Corrected Departures:" << std::endl << ydep
           << "End Jo Bias Corrected Departures" << std::endl;
 
-// Compute Jo
-  if (!gradFG_) {
-    gradFG_.reset(new Departures_(ydep));
-  } else {
-    *gradFG_ = ydep;
-  }
-  Rmat_->inverseMultiply(*gradFG_);
-
-  double zjo = this->printJo(ydep, *gradFG_);
-
-  if (currentConf_->has("diagnostics.departures")) {
-    const std::string depname = currentConf_->getString("diagnostics.departures");
-    ydep.save(depname);
+  // Print Jo table
+  double zjo = 0.0;
+  for (size_t jj = 0; jj < jos_.size(); ++jj) {
+    zjo += jos_[jj]->printJo(ydep[jj], (*gradFG_)[jj]);
   }
 
-  currentConf_.reset();
   Log::trace() << "CostJo::finalize done" << std::endl;
   return zjo;
 }
@@ -230,7 +197,7 @@ void CostJo<MODEL, OBS>::initializeTraj(const CtrlVar_ & xx, const Geometry_ &,
                                         const eckit::Configuration & conf,
                                         PostProcTLAD_ & pptraj) {
   Log::trace() << "CostJo::initializeTraj start" << std::endl;
-  pobstlad_.reset(new ObserversTLAD_(obsconf_, obspace_, xx.obsVar()));
+  pobstlad_.reset(new ObserversTLAD_(obsconf_, obspaces_, xx.obsVar()));
   pptraj.enrollProcessor(pobstlad_);
   Log::trace() << "CostJo::initializeTraj done" << std::endl;
 }
@@ -273,7 +240,9 @@ std::unique_ptr<GeneralizedDepartures>
 CostJo<MODEL, OBS>::multiplyCovar(const GeneralizedDepartures & v1) const {
   Log::trace() << "CostJo::multiplyCovar start" << std::endl;
   std::unique_ptr<Departures_> y1(new Departures_(dynamic_cast<const Departures_ &>(v1)));
-  Rmat_->multiply(*y1);
+  for (size_t jj = 0; jj < jos_.size(); ++jj) {
+    jos_[jj]->multiplyR((*y1)[jj]);
+  }
   return std::move(y1);
 }
 
@@ -284,7 +253,9 @@ std::unique_ptr<GeneralizedDepartures>
 CostJo<MODEL, OBS>::multiplyCoInv(const GeneralizedDepartures & v1) const {
   Log::trace() << "CostJo::multiplyCoInv start" << std::endl;
   std::unique_ptr<Departures_> y1(new Departures_(dynamic_cast<const Departures_ &>(v1)));
-  Rmat_->inverseMultiply(*y1);
+  for (size_t jj = 0; jj < jos_.size(); ++jj) {
+    jos_[jj]->inverseMultiplyR((*y1)[jj]);
+  }
   return std::move(y1);
 }
 
@@ -293,7 +264,7 @@ CostJo<MODEL, OBS>::multiplyCoInv(const GeneralizedDepartures & v1) const {
 template<typename MODEL, typename OBS>
 std::unique_ptr<GeneralizedDepartures> CostJo<MODEL, OBS>::newDualVector() const {
   Log::trace() << "CostJo::newDualVector start" << std::endl;
-  std::unique_ptr<Departures_> ydep(new Departures_(obspace_));
+  std::unique_ptr<Departures_> ydep(new Departures_(obspaces_));
   ydep->zero();
   Log::trace() << "CostJo::newDualVector done" << std::endl;
   return std::move(ydep);
@@ -313,39 +284,6 @@ void CostJo<MODEL, OBS>::resetLinearization() {
   Log::trace() << "CostJo::resetLinearization start" << std::endl;
   pobstlad_.reset();
   Log::trace() << "CostJo::resetLinearization done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL, typename OBS>
-double CostJo<MODEL, OBS>::printJo(const Departures_ & dy, const Departures_ & grad) const {
-  Log::trace() << "CostJo::printJo start" << std::endl;
-  obspace_.printJo(dy, grad);
-  std::vector<eckit::LocalConfiguration> typeconfs = obsconf_.getSubConfigurations();
-
-  double zjo = 0.0;
-  for (std::size_t jj = 0; jj < dy.size(); ++jj) {
-    const double zz = 0.5 * dot_product(dy[jj], grad[jj]);
-    const unsigned nobs = grad[jj].nobs();
-    bool isPassive = typeconfs[jj].getBool("monitoring only", false);
-    if (nobs > 0 && !isPassive) {
-      Log::test() << "CostJo   : Nonlinear Jo(" << obspace_[jj].obsname() << ") = "
-                  << zz << ", nobs = " << nobs << ", Jo/n = " << zz/nobs
-                  << ", err = " << (*Rmat_)[jj].getRMSE() << std::endl;
-    } else if (nobs <= 0 && !isPassive) {
-      Log::test() << "CostJo   : Nonlinear Jo(" << obspace_[jj].obsname() << ") = "
-                  << zz << " --- No Observations" << std::endl;
-      Log::warning() << "CostJo: No Observations!!!" << std::endl;
-    } else if (nobs > 0 && isPassive) {
-      Log::test() << "Monitoring only: Nonlinear Jo(" << obspace_[jj].obsname() << ") = "
-                  << zz << ", nobs = " << nobs << ", Jo/n = " << zz/nobs
-                  << ", err = " << (*Rmat_)[jj].getRMSE() << std::endl;
-    }
-    if (!isPassive) zjo += zz;
-  }
-
-  Log::trace() << "CostJo::printJo done" << std::endl;
-  return zjo;
 }
 
 // -----------------------------------------------------------------------------

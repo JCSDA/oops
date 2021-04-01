@@ -18,6 +18,7 @@ oops/assimilation/CostJbState.h
 oops/assimilation/CostJbTotal.h
 oops/assimilation/CostJcDFI.h
 oops/assimilation/CostJo.h
+oops/assimilation/CostJoType.h
 oops/assimilation/CostTermBase.h
 oops/assimilation/DRGMRESRMinimizer.h
 oops/assimilation/DRIPCGMinimizer.h
@@ -94,6 +95,7 @@ oops/base/DolphChebyshev.h
 oops/base/EnsembleCovariance.h
 oops/base/GeneralizedDepartures.h
 oops/base/GeoVaLsWriter.h
+oops/base/GetValuePost.h
 oops/base/GetValuesPost.h
 oops/base/LocalIncrement.cc
 oops/base/LocalIncrement.h
@@ -119,6 +121,7 @@ oops/base/ObsEnsemble.h
 oops/base/ObsErrorBase.h
 oops/base/ObsErrors.h
 oops/base/Observations.h
+oops/base/Observer.h
 oops/base/Observers.h
 oops/base/ObserversTLAD.h
 oops/base/ObserverTLAD.h
