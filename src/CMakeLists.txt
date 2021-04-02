@@ -96,6 +96,7 @@ oops/base/EnsembleCovariance.h
 oops/base/GeneralizedDepartures.h
 oops/base/GeoVaLsWriter.h
 oops/base/GetValuePost.h
+oops/base/GetValuePosts.h
 oops/base/GetValuesPost.h
 oops/base/LocalIncrement.cc
 oops/base/LocalIncrement.h

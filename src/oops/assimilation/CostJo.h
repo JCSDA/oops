@@ -24,6 +24,7 @@
 #include "oops/assimilation/CostJoType.h"
 #include "oops/assimilation/CostTermBase.h"
 #include "oops/base/Departures.h"
+#include "oops/base/GetValuePosts.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
 #include "oops/base/ObserversTLAD.h"
@@ -56,6 +57,7 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   typedef Departures<OBS>               Departures_;
   typedef Observations<OBS>             Observations_;
   typedef Geometry<MODEL>               Geometry_;
+  typedef GetValuePosts<MODEL, OBS>     GetValuePosts_;
   typedef State<MODEL>                  State_;
   typedef Increment<MODEL>              Increment_;
   typedef ObsErrors<OBS>                ObsErrors_;
@@ -103,7 +105,7 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   /// Reset obs operator trajectory.
   void resetLinearization() override;
 
-  /// Acessor...
+  /// Accessor...
   const ObsSpaces_ & obspaces() const {return obspaces_;}
 
  private:
@@ -130,6 +132,7 @@ CostJo<MODEL, OBS>::CostJo(const eckit::Configuration & joConf, const eckit::mpi
     yobs_(obspaces_, "ObsValue"), jos_(), gradFG_()
 {
   Log::trace() << "CostJo::CostJo start" << std::endl;
+  jos_.reserve(obspaces_.size());
   std::vector<eckit::LocalConfiguration> confs(obsconf_.getSubConfigurations());
   for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
     jos_.emplace_back(new JoType_(obspaces_[jj], confs[jj]));
@@ -145,9 +148,11 @@ void CostJo<MODEL, OBS>::initialize(const CtrlVar_ & xx, const eckit::Configurat
   Log::trace() << "CostJo::initialize start" << std::endl;
   gradFG_.reset();
 
+  std::shared_ptr<GetValuePosts_> getvals(new GetValuePosts_());
   for (size_t jj = 0; jj < jos_.size(); ++jj) {
-    pp.enrollProcessor(jos_[jj]->initialize(xx.state().geometry(), xx.obsVar()[jj], conf));
+    getvals->append(jos_[jj]->initialize(xx.state().geometry(), xx.obsVar()[jj], conf));
   }
+  pp.enrollProcessor(getvals);
 
   Log::trace() << "CostJo::initialize done" << std::endl;
 }

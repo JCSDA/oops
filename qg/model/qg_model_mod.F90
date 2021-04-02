@@ -109,6 +109,12 @@ else
   fld%gfld3d = x
 endif
 
+if (fld%lq) then
+  if (allocated(fld%pv)) fld%pv = fld%gfld3d
+else
+  if (allocated(fld%streamfct)) fld%streamfct = fld%gfld3d
+endif
+
 end subroutine qg_model_propagate
 ! ------------------------------------------------------------------------------
 !> Perform a timestep of the QG model - tangent linear

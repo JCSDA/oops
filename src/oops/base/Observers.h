@@ -14,6 +14,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 
+#include "oops/base/GetValuePosts.h"
 #include "oops/base/ObsAuxControls.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
@@ -33,6 +34,7 @@ namespace oops {
 template <typename MODEL, typename OBS>
 class Observers {
   typedef Geometry<MODEL>               Geometry_;
+  typedef GetValuePosts<MODEL, OBS>     GetValuePosts_;
   typedef ObsAuxControls<OBS>           ObsAuxCtrls_;
   typedef Observations<OBS>             Observations_;
   typedef Observer<MODEL, OBS>          Observer_;
@@ -54,15 +56,15 @@ class Observers {
 
  private:
   const ObsSpaces_ &                       obspaces_;   // ObsSpaces used in H(x)
+  std::vector<ObsVector_>                  obserrs_;
   std::vector<std::unique_ptr<Observer_>>  observers_;
-  std::vector<std::unique_ptr<ObsVector_>> obserrs_;
 };
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
 Observers<MODEL, OBS>::Observers(const ObsSpaces_ & obspaces, const eckit::Configuration & config)
-  : obspaces_(obspaces)
+  : obspaces_(obspaces), obserrs_(), observers_()
 {
   Log::trace() << "Observers<MODEL, OBS>::Observers start" << std::endl;
 
@@ -79,11 +81,14 @@ template <typename MODEL, typename OBS>
 void Observers<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrls_ & obsaux,
                                        PostProc_ & pp) {
   Log::trace() << "Observers<MODEL, OBS>::initialize start" << std::endl;
+  obserrs_.reserve(observers_.size());
 
+  std::shared_ptr<GetValuePosts_> getvals(new GetValuePosts_());
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
-    obserrs_.emplace_back(new ObsVector_(obspaces_[jj], "ObsError"));
-    pp.enrollProcessor(observers_[jj]->initialize(geom, obsaux[jj], *obserrs_[jj]));
+    obserrs_.emplace_back(obspaces_[jj], "ObsError");
+    getvals->append(observers_[jj]->initialize(geom, obsaux[jj], obserrs_[jj]));
   }
+  pp.enrollProcessor(getvals);
 
   Log::trace() << "Observers<MODEL, OBS>::initialize done" << std::endl;
 }
@@ -96,7 +101,7 @@ void Observers<MODEL, OBS>::finalize(Observations_ & yobs) {
 
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
     observers_[jj]->finalize(yobs[jj]);
-    obserrs_[jj]->save("EffectiveError");  // Obs error covariance is looking for that for now
+    obserrs_[jj].save("EffectiveError");  // Obs error covariance is looking for that for now
   }
   obserrs_.clear();
 

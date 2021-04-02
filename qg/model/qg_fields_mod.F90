@@ -1054,6 +1054,12 @@ endif
 ! Check field
 call qg_fields_check(fld)
 
+if (fld%lq) then
+  if (allocated(fld%pv)) fld%pv = fld%gfld3d
+else
+  if (allocated(fld%streamfct)) fld%streamfct = fld%gfld3d
+endif
+
 end subroutine qg_fields_analytic_init
 ! ------------------------------------------------------------------------------
 !> Fields statistics

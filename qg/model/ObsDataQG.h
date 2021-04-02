@@ -49,7 +49,6 @@ class ObsDataQG : public util::Printable,
 
   const int & toFortran() const {return data_.toFortran();}
   const ObsVecQG & vect() const {return data_;}
-
  private:
   void print(std::ostream &) const;
 

@@ -15,6 +15,7 @@
 #include <boost/noncopyable.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "oops/base/GetValuePost.h"
 #include "oops/base/ObsErrorBase.h"
 #include "oops/base/Observer.h"
 #include "oops/base/PostBase.h"
@@ -45,6 +46,7 @@ template<typename MODEL, typename OBS> class CostJoType : private boost::noncopy
   typedef ObsVector<OBS>                ObsVector_;
   typedef PostBase<State<MODEL>>        PostBase_;
   typedef State<MODEL>                  State_;
+  typedef std::shared_ptr<GetValuePost<MODEL, OBS>> GetValuePtr_;
 
  public:
   /// Construct \f$ J_o\f$ from \f$ R\f$ and \f$ y_{obs}\f$.
@@ -54,8 +56,7 @@ template<typename MODEL, typename OBS> class CostJoType : private boost::noncopy
   virtual ~CostJoType() {}
 
   /// Initialize \f$ J_o\f$ before starting the integration of the model.
-  std::shared_ptr<PostBase_> initialize(const Geometry_ &, const ObsAuxCtrl_ &,
-                                        const eckit::Configuration &);
+  GetValuePtr_ initialize(const Geometry_ &, const ObsAuxCtrl_ &, const eckit::Configuration &);
 
   /// Finalize \f$ J_o\f$ after the integration of the model.
   void finalize(ObsVector_ &, ObsVector_ &, ObsVector_ &, ObsVector_ &);
@@ -96,7 +97,7 @@ CostJoType<MODEL, OBS>::CostJoType(ObsSpace_ & obspace, const eckit::Configurati
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-std::shared_ptr<PostBase<State<MODEL> > >
+std::shared_ptr<GetValuePost<MODEL, OBS>>
 CostJoType<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrl_ & ybias,
                                    const eckit::Configuration & conf) {
   Log::trace() << "CostJoType::initialize start" << std::endl;
@@ -104,7 +105,7 @@ CostJoType<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrl_ & y
   currentConf_.reset(new eckit::LocalConfiguration(conf));
   iter_ = currentConf_->getInt("iteration");
 
-  std::shared_ptr<PostBase_> getvals = observer_.initialize(geom, ybias, obserr_, iter_);
+  GetValuePtr_ getvals = observer_.initialize(geom, ybias, obserr_, iter_);
 
   Log::trace() << "CostJoType::initialize done" << std::endl;
   return getvals;
@@ -134,14 +135,12 @@ void CostJoType<MODEL, OBS>::finalize(ObsVector_ & yobs, ObsVector_ & yeqv,
 
 // Perturb observations according to obs error statistics
   bool obspert = currentConf_->getBool("obs perturbations", false);
-  Log::debug() << "CostJoType::finalize obspert = " << obspert << std::endl;
   if (obspert) {
     ObsVector_ ypert(obspace_);
     Rmat_->randomize(ypert);
     yobs += ypert;
     Log::info() << "Perturbed observations: " << yobs << std::endl;
   }
-  Log::debug() << "CostJoType::finalize Observations: " << yobs << std::endl;
 
 // Compute departures and Jo gradient
   ydep = yeqv;
