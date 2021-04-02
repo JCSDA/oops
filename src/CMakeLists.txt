@@ -129,6 +129,7 @@ oops/base/ObsFilterBase.h
 oops/base/ObsFilterParametersBase.h
 oops/base/ObsFilters.h
 oops/base/ObsLocalizationBase.h
+oops/base/ObsLocalizations.h
 oops/base/ObsSpaceBase.cc
 oops/base/ObsSpaceBase.h
 oops/base/ObsSpaces.h
@@ -177,7 +178,6 @@ oops/generic/interpolatorunstrc_interface.F90
 oops/generic/InterpolatorUnstructured.h
 oops/generic/InterpolatorUnstructured.cc
 oops/generic/LinearModelId.h
-oops/generic/LocalObsErrorDiag.h
 oops/generic/ObsErrorDiag.h
 oops/generic/PseudoModel.h
 oops/generic/unstructured_interpolation_mod.F90
@@ -393,6 +393,7 @@ test/interface/ObsAuxControl.h
 test/interface/ObsAuxCovariance.h
 test/interface/ObsAuxIncrement.h
 test/interface/ObsDataVector.h
+test/interface/ObsLocalization.h
 test/interface/ObsOperator.h
 test/interface/ObsSpace.h
 test/interface/ObsTestsFixture.h

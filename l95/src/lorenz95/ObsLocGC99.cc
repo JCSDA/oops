@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -7,9 +7,11 @@
 
 #include "lorenz95/ObsLocGC99.h"
 
-#include "eckit/config/Configuration.h"
-#include "eckit/exception/Exceptions.h"
+#include <vector>
 
+#include "eckit/config/Configuration.h"
+
+#include "lorenz95/L95Traits.h"
 #include "lorenz95/ObsTableView.h"
 #include "lorenz95/ObsVec1D.h"
 
@@ -19,27 +21,24 @@
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
-static oops::ObsLocalizationMaker<L95ObsTraits,
-              oops::ObsLocalization<L95ObsTraits, ObsLocGC99>> makerGC_("Gaspari-Cohn");
+
+static oops::ObsLocalizationMaker<L95Traits, L95ObsTraits,
+              oops::ObsLocalization<L95Traits, L95ObsTraits, ObsLocGC99>> makerGC_("Gaspari-Cohn");
 
 // -----------------------------------------------------------------------------
 
 ObsLocGC99::ObsLocGC99(const eckit::Configuration & config, const ObsTableView & obsdb)
-  : obsdb_(obsdb),
-    rscale_(config.getDouble("lengthscale"))
+  : rscale_(config.getDouble("lengthscale")), obsdb_(obsdb)
 {
 }
 
 // -----------------------------------------------------------------------------
 
-void ObsLocGC99::multiply(ObsVec1D & dy) const {
+void ObsLocGC99::computeLocalization(const Iterator &, ObsVec1D & result) const {
   const std::vector<double> & obsdist = obsdb_.obsdist();
   double missing = util::missingValue(missing);
-  for (unsigned int ii=0; ii < dy.nobs(); ++ii) {
-    if (dy[ii] != missing) {
-      double gc = oops::gc99(obsdist[ii]/rscale_);
-      dy[ii] = dy[ii]*gc;
-    }
+  for (unsigned int ii=0; ii < obsdb_.nobs(); ++ii) {
+    result[ii] = oops::gc99(obsdist[ii]/rscale_);
   }
 }
 

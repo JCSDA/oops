@@ -35,7 +35,7 @@ class LETKFSolverGSI : public LETKFSolver<MODEL, OBS> {
 
   /// Computes weights
   void computeWeights(const Departures_ &, const DeparturesEnsemble_ &,
-                      const ObsErrors_ &);
+                      const Departures_ &) override;
 };
 
 // -----------------------------------------------------------------------------
@@ -52,7 +52,7 @@ LETKFSolverGSI<MODEL, OBS>::LETKFSolverGSI(ObsSpaces_ & obspaces, const Geometry
 template <typename MODEL, typename OBS>
 void LETKFSolverGSI<MODEL, OBS>::computeWeights(const Departures_ & dy,
                                                 const DeparturesEnsemble_ & Yb,
-                                                const ObsErrors_ & R) {
+                                                const Departures_ & R_invvar) {
   // compute transformation matrix, save in Wa_, wa_
   // uses GSI GETKF code
   const int nobsl = dy.nobs();
@@ -65,8 +65,8 @@ void LETKFSolverGSI<MODEL, OBS>::computeWeights(const Departures_ & dy,
   Eigen::MatrixXd eYb = Yb.packEigen();
   Eigen::MatrixXf eYb_f = eYb.cast<float>();
 
-  Eigen::MatrixXd eR = R.packInverseVarianceEigen();
-  Eigen::MatrixXf eR_f = eR.cast<float>();
+  Eigen::VectorXd eR = R_invvar.packEigen();
+  Eigen::VectorXf eR_f = eR.cast<float>();
 
   Eigen::MatrixXf Wa_f(this->nens_, this->nens_);
   Eigen::VectorXf wa_f(this->nens_);

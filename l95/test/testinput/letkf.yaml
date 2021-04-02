@@ -20,10 +20,10 @@ background:
 
 observations:
 - obs error:
-    covariance model: localized diagonal
-    localization:
-      localization method: Gaspari-Cohn
-      lengthscale: .1
+    covariance model: diagonal
+  obs localization:
+    localization method: Gaspari-Cohn
+    lengthscale: .1
   obs space:
     obsdatain:  Data/l95.truth3d.2010-01-02T00:00:00Z.obt
     obsdataout: Data/l95.letkf.2010-01-02T00:00:00Z.obt

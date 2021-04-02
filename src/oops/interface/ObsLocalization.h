@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2017-2020 UCAR
+ * (C) Copyright 2017-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -12,6 +12,7 @@
 #include <string>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "oops/base/LocalIncrement.h"
 #include "oops/base/ObsLocalizationBase.h"
 #include "oops/interface/ObsSpace.h"
 #include "oops/interface/ObsVector.h"
@@ -21,8 +22,9 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template <typename OBS, typename LOC>
-class ObsLocalization : public ObsLocalizationBase<OBS> {
+template <typename MODEL, typename OBS, typename LOC>
+class ObsLocalization : public ObsLocalizationBase<MODEL, OBS> {
+  typedef GeometryIterator<MODEL>  GeometryIterator_;
   typedef ObsSpace<OBS>            ObsSpace_;
   typedef ObsVector<OBS>           ObsVector_;
 
@@ -32,7 +34,7 @@ class ObsLocalization : public ObsLocalizationBase<OBS> {
   ObsLocalization(const eckit::Configuration &, const ObsSpace_ &);
   ~ObsLocalization();
 
-  void multiply(ObsVector_ &) const override;
+  void computeLocalization(const GeometryIterator_ &, ObsVector_ &) const override;
 
  private:
   void print(std::ostream &) const override;
@@ -42,43 +44,43 @@ class ObsLocalization : public ObsLocalizationBase<OBS> {
 
 // -----------------------------------------------------------------------------
 
-template <typename OBS, typename LOC>
-ObsLocalization<OBS, LOC>::ObsLocalization(const eckit::Configuration & conf,
-                                             const ObsSpace_ & os)
+template <typename MODEL, typename OBS, typename LOC>
+ObsLocalization<MODEL, OBS, LOC>::ObsLocalization(const eckit::Configuration & conf,
+                                                  const ObsSpace_ & obspace)
   : obsloc_()
 {
-  Log::trace() << "ObsLocalization<OBS, LOC>::ObsLocalization Configuration starting" <<
-                  std::endl;
+  Log::trace() << "ObsLocalization<MODEL, OBS, LOC>::ObsLocalization starting" << std::endl;
   util::Timer timer(classname(), "ObsLocalization");
-  obsloc_.reset(new LOC(conf, os.obsspace()));
-  Log::trace() << "ObsLocalization<OBS, LOC>::ObsLocalization Configuration done" << std::endl;
+  obsloc_.reset(new LOC(conf, obspace.obsspace()));
+  Log::trace() << "ObsLocalization<MODEL, OBS, LOC>::ObsLocalization done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename OBS, typename LOC>
-ObsLocalization<OBS, LOC>::~ObsLocalization() {
-  Log::trace() << "ObsLocalization<OBS, LOC>::~ObsLocalization starting" << std::endl;
+template <typename MODEL, typename OBS, typename LOC>
+ObsLocalization<MODEL, OBS, LOC>::~ObsLocalization() {
+  Log::trace() << "ObsLocalization<MODEL, OBS, LOC>::~ObsLocalization starting" << std::endl;
   util::Timer timer(classname(), "~ObsLocalization");
   obsloc_.reset();
-  Log::trace() << "ObsLocalization<OBS, LOC>::~ObsLocalization done" << std::endl;
+  Log::trace() << "ObsLocalization<MODEL, OBS, LOC>::~ObsLocalization done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename OBS, typename LOC>
-void ObsLocalization<OBS, LOC>::multiply(ObsVector_ & dy) const {
-  Log::trace() << "ObsLocalization<OBS, LOC>:: preProcess starting" << std::endl;
-  util::Timer timer(classname(), "preProcess");
-  obsloc_->multiply(dy.obsvector());
-  Log::trace() << "ObsLocalization<OBS, LOC>:: preProcess done" << std::endl;
+template <typename MODEL, typename OBS, typename LOC>
+void ObsLocalization<MODEL, OBS, LOC>::computeLocalization(const GeometryIterator_ & p,
+                                                           ObsVector_ & obsvector) const {
+  Log::trace() << "ObsLocalization<MODEL, OBS, LOC>:: computeLocalization starting" << std::endl;
+  util::Timer timer(classname(), "computeLocalization");
+  obsloc_->computeLocalization(p.geometryiter(), obsvector.obsvector());
+  Log::trace() << "ObsLocalization<MODEL, OBS, LOC>:: computeLocalization done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename OBS, typename LOC>
-void ObsLocalization<OBS, LOC>::print(std::ostream & os) const {
-  os << "ObsLocalization " << *obsloc_;
+template <typename MODEL, typename OBS, typename LOC>
+void ObsLocalization<MODEL, OBS, LOC>::print(std::ostream & os) const {
+  os << *obsloc_;
 }
 
 // -----------------------------------------------------------------------------

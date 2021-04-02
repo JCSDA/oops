@@ -113,6 +113,9 @@ observations:
     relative tolerance: 0.0
     covariance:
       standard_deviation: 0.5
+  obs localization:
+    lengthscale: 0.2
+    localization method: Gaspari-Cohn
   rms ref: 8.3207407741318846
   reference nobs: 160
   tolerance: 1.0e-10

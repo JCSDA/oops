@@ -66,6 +66,7 @@ class Departures : public util::Printable,
   Departures & operator*=(const Departures &);
   Departures & operator/=(const Departures &);
   void zero();
+  void ones();
   void random();
   void invert();
   void axpy(const double &, const Departures &);
@@ -157,6 +158,13 @@ template<typename OBS>
 void Departures<OBS>::zero() {
   for (size_t jj = 0; jj < dep_.size(); ++jj) {
     dep_[jj].zero();
+  }
+}
+// -----------------------------------------------------------------------------
+template<typename OBS>
+void Departures<OBS>::ones() {
+  for (auto & dep : dep_) {
+    dep.ones();
   }
 }
 // -----------------------------------------------------------------------------

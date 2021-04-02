@@ -98,7 +98,7 @@ ObsSpaces<OBS>::ObsSpaces(const ObsSpaces<OBS> & obss, const eckit::geometry::Po
 {
   std::vector<eckit::LocalConfiguration> typeconfs = conf.getSubConfigurations();
   for (std::size_t jj = 0; jj < obss.size(); ++jj) {
-    eckit::LocalConfiguration locconf(typeconfs[jj], "obs error.localization");
+    eckit::LocalConfiguration locconf(typeconfs[jj], "obs localization");
     std::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obss[jj], center, locconf));
     spaces_.push_back(tmp);
   }

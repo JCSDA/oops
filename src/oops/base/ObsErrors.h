@@ -11,7 +11,6 @@
 #ifndef OOPS_BASE_OBSERRORS_H_
 #define OOPS_BASE_OBSERRORS_H_
 
-#include <Eigen/Dense>
 #include <memory>
 #include <string>
 #include <vector>
@@ -34,7 +33,6 @@ class ObsErrors : public util::Printable,
   typedef Departures<OBS>          Departures_;
   typedef ObsErrorBase<OBS>        ObsError_;
   typedef ObsSpaces<OBS>           ObsSpaces_;
-  typedef ObsVector<OBS>           ObsVector_;
 
  public:
   static const std::string classname() {return "oops::ObsErrors";}
@@ -53,20 +51,20 @@ class ObsErrors : public util::Printable,
 /// Generate random perturbation
   void randomize(Departures_ &) const;
 
-/// Pack inverseVariance into an Eigen vector (excluding observations
-///  that are masked out)
-  Eigen::VectorXd packInverseVarianceEigen() const;
+  /// returns inverse of observation error variance
+  Departures_ inverseVariance() const;
 
  private:
   void print(std::ostream &) const;
   std::vector<std::unique_ptr<ObsError_> > err_;
+  const ObsSpaces_ & os_;
 };
 
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
 ObsErrors<OBS>::ObsErrors(const eckit::Configuration & config,
-                          const ObsSpaces_ & os) : err_() {
+                          const ObsSpaces_ & os) : err_(), os_(os) {
   std::vector<eckit::LocalConfiguration> obsconf = config.getSubConfigurations();
   for (size_t jj = 0; jj < os.size(); ++jj) {
     eckit::LocalConfiguration conf(obsconf[jj], "obs error");
@@ -104,24 +102,12 @@ void ObsErrors<OBS>::randomize(Departures_ & dy) const {
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-Eigen::VectorXd ObsErrors<OBS>::packInverseVarianceEigen() const {
-  // compute nobs accross all obs errors
-  unsigned int nobs = 0;
-  for (size_t iov = 0; iov < err_.size(); ++iov) {
-    const ObsVector_ & ov = err_[iov]->inverseVariance();
-    nobs += ov.nobs();
+Departures<OBS> ObsErrors<OBS>::inverseVariance() const {
+  Departures_ invvar(os_);
+  for (size_t jj = 0; jj < err_.size(); ++jj) {
+    invvar[jj] = err_[jj]->inverseVariance();
   }
-
-  // concatinate all inverseVariance into a 1d vector
-  Eigen::VectorXd vec(nobs);
-  unsigned int ii = 0;
-  for (size_t iov = 0; iov < err_.size(); ++iov) {
-    const ObsVector_ & ov = err_[iov]->inverseVariance();
-    vec.segment(ii, ov.nobs()) = ov.packEigen();
-    ii += ov.nobs();
-  }
-  ASSERT(ii == nobs);
-  return vec;
+  return invvar;
 }
 
 // -----------------------------------------------------------------------------
