@@ -29,17 +29,23 @@ BackgroundCheck::BackgroundCheck(const ObsTableView & obsdb, const Parameters_ &
 void BackgroundCheck::postFilter(const ObsVec1D & hofx, const ObsDiags1D &) const {
   std::vector<float> yobs;
   obsdb_.getdb("ObsValue", yobs);
+  size_t inflate = 0;
+  size_t ireject = 0;
   for (size_t jj = 0; jj < yobs.size(); ++jj) {
     if (std::abs(yobs[jj] - hofx[jj]) > options_.threshold) {
       // inflate obs error variance
       if (options_.inflation.value() != boost::none) {
         (*obserr_)[jj] *= *options_.inflation.value();
+        ++inflate;
       // or reject observation
       } else {
         (*qcflags_)[jj] = 1;
+        ++ireject;
       }
     }
   }
+  oops::Log::info() << "BackgroundCheck::postFilter rejected = " << ireject
+                    << ", inflated = " << inflate << std::endl;
 }
 
 // -----------------------------------------------------------------------------

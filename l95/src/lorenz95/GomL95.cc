@@ -132,28 +132,20 @@ void GomL95::write(const eckit::Configuration & conf) const {
 }
 // -----------------------------------------------------------------------------
 void GomL95::print(std::ostream & os) const {
-  double zmin = locval_[0];
-  double zmax = locval_[0];
-  size_t jmax = 0;
-  double zavg = 0.0;
-  for (size_t jj = 0; jj < size_; ++jj) {
-    if (locval_[jj] < zmin) zmin = locval_[jj];
-    if (locval_[jj] > zmax) {
-      zmax = locval_[jj];
-      jmax = jj;
+  if (size_ > 0) {
+    double zmin = locval_[0];
+    double zmax = locval_[0];
+    double zavg = 0.0;
+    for (size_t jj = 0; jj < size_; ++jj) {
+      if (locval_[jj] < zmin) zmin = locval_[jj];
+      if (locval_[jj] > zmax) zmax = locval_[jj];
+      zavg += locval_[jj];
     }
-    zavg += locval_[jj];
+    zavg /= size_;
+    os << size_ << "values,  Min=" << zmin << ", Max=" << zmax << ", Average=" << zavg;
+  } else {
+    os << " No observations";
   }
-  zavg /= size_;
-  os << size_ << "values,  Min=" << zmin << ", Max=" << zmax << ", Average=" << zavg;
-
-  // If the min value across all variables is positive, then this may be an
-  // error measurement.  If so, print the location where the maximum occurs
-  // to the debug stream, for use in debugging
-
-  if (zmin >= 0.0)
-    oops::Log::debug() << std::endl << "GomL95: Maximum Value = " << std::setprecision(4)
-                       << zmax << " at location = " << jmax << std::endl;
 }
 // -----------------------------------------------------------------------------
 
