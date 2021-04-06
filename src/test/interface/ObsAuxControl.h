@@ -36,15 +36,17 @@ template <typename OBS> void testConstructor() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     eckit::LocalConfiguration biasconf = Test_::config(jj).getSubConfiguration("obs bias");
-    std::unique_ptr<ObsAux_> bias(new ObsAux_(Test_::obspace()[jj], biasconf));
+    typename ObsAux_::Parameters_ biasparams;
+    biasparams.validateAndDeserialize(biasconf);
+    std::unique_ptr<ObsAux_> bias(new ObsAux_(Test_::obspace()[jj], biasparams));
     EXPECT(bias.get());
     oops::Log::test() << "Testing ObsAuxControl: " << *bias << std::endl;
 
     // Not all configurations for interface tests specify "obs bias"; need to check
     // whether "obs bias" section is available
     if (Test_::config(jj).has("obs bias")) {
-      const double reference = Test_::config(jj).getDouble("obs bias.norm");
-      const double tolerance = Test_::config(jj).getDouble("obs bias.relative tolerance");
+      const double reference = Test_::config(jj).getDouble("obs bias test.norm");
+      const double tolerance = Test_::config(jj).getDouble("obs bias test.relative tolerance");
       EXPECT(oops::is_close_relative(bias->norm(), reference, tolerance));
     }
 
@@ -61,7 +63,9 @@ template <typename OBS> void testCopyConstructor() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     eckit::LocalConfiguration biasconf = Test_::config(jj).getSubConfiguration("obs bias");
-    std::unique_ptr<ObsAux_> bias(new ObsAux_(Test_::obspace()[jj], biasconf));
+    typename ObsAux_::Parameters_ biasparams;
+    biasparams.validateAndDeserialize(biasconf);
+    std::unique_ptr<ObsAux_> bias(new ObsAux_(Test_::obspace()[jj], biasparams));
 
     std::unique_ptr<ObsAux_> other(new ObsAux_(*bias));
     EXPECT(other.get());

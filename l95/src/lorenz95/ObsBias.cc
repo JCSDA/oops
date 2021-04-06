@@ -21,12 +21,12 @@
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-ObsBias::ObsBias(const ObsTableView &, const eckit::Configuration & conf)
+ObsBias::ObsBias(const ObsTableView &, const Parameters_ & params)
   : bias_(0.0), active_(false), geovars_(std::vector<std::string>{"x"}), hdiags_()
 {
-  oops::Log::trace() << "ObsBias::ObsBias conf is:" << conf << std::endl;
-  if (conf.has("bias")) {
-    bias_ = conf.getDouble("bias");
+  oops::Log::trace() << "ObsBias::ObsBias conf is:" << params << std::endl;
+  if (params.bias.value() != boost::none) {
+    bias_ = *params.bias.value();
     active_ = true;
     oops::Log::info() << "ObsBias::ObsBias created, bias = " << bias_ << std::endl;
   }

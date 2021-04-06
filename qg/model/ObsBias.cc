@@ -23,16 +23,19 @@
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
-ObsBias::ObsBias(const ObsSpaceQG &, const eckit::Configuration & conf)
-  : bias_(ntypes, 0.0), active_(false), geovars_(), hdiags_() {
-  oops::Log::info() << "ObsBias: conf = " << conf << std::endl;
-  active_ = conf.has("stream") || conf.has("uwind") ||
-            conf.has("vwind") || conf.has("wspeed");
+ObsBias::ObsBias(const ObsSpaceQG &, const Parameters_ & params)
+  : active_(false), geovars_(), hdiags_() {
+  oops::Log::info() << "ObsBias: conf = " << params << std::endl;
+  bias_.fill(0.0);
+  active_ = params.stream.value() != boost::none ||
+            params.uwind.value() != boost::none ||
+            params.vwind.value() != boost::none ||
+            params.wspeed.value() != boost::none;
   if (active_) {
-    if (conf.has("stream")) bias_[0] = conf.getDouble("stream");
-    if (conf.has("uwind"))  bias_[1] = conf.getDouble("uwind");
-    if (conf.has("vwind"))  bias_[2] = conf.getDouble("vwind");
-    if (conf.has("wspeed")) bias_[3] = conf.getDouble("wspeed");
+    if (params.stream.value() != boost::none) bias_[0] = *params.stream.value();
+    if (params.uwind.value() != boost::none)  bias_[1] = *params.uwind.value();
+    if (params.vwind.value() != boost::none)  bias_[2] = *params.vwind.value();
+    if (params.wspeed.value() != boost::none) bias_[3] = *params.wspeed.value();
     std::string strn = "";
     for (unsigned int jj = 0; jj < ObsBias::ntypes; ++jj) {
       if (jj > 0) strn += ", ";
@@ -45,11 +48,13 @@ ObsBias::ObsBias(const ObsSpaceQG &, const eckit::Configuration & conf)
 }
 // -----------------------------------------------------------------------------
 ObsBias::ObsBias(const ObsBias & other, const bool copy)
-  : bias_(ntypes, 0.0), active_(other.active_),
+  : active_(other.active_),
     geovars_(other.geovars_), hdiags_(other.hdiags_)
 {
   if (active_ && copy) {
     for (unsigned int jj = 0; jj < ntypes; ++jj) bias_[jj] = other.bias_[jj];
+  } else {
+    bias_.fill(0.0);
   }
 }
 // -----------------------------------------------------------------------------

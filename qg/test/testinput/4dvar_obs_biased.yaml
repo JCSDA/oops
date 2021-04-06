@@ -33,7 +33,7 @@ cost function:
     obs bias:
       stream: 0.0
       covariance:
-        stream: '2.0e7'
+        stream: 2.0e7
   - obs error:
       covariance model: diagonal
     obs operator:
@@ -47,7 +47,7 @@ cost function:
     obs bias:
       uwind: 0.0
       covariance:
-        uwind: '15.0'
+        uwind: 15.0
   - obs error:
       covariance model: diagonal
     obs operator:

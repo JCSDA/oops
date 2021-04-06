@@ -109,10 +109,11 @@ observations:
     tolerance TL: '1.0e-14'
   obs bias:
     bias: 0.3
-    norm: 0.3
-    relative tolerance: 0.0
     covariance:
       standard_deviation: 0.5
+  obs bias test:
+    norm: 0.3
+    relative tolerance: 0.0
   obs localization:
     lengthscale: 0.2
     localization method: Gaspari-Cohn

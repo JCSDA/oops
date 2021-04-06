@@ -32,6 +32,7 @@ ModelQG.cc
 ModelQG.h
 ObsBias.cc
 ObsBias.h
+ObsBiasParameters.h
 ObsBiasCovariance.cc
 ObsBiasCovariance.h
 ObsBiasIncrement.cc

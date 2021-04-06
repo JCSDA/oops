@@ -21,11 +21,13 @@
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-ObsBiasCorrection::ObsBiasCorrection(const ObsTableView &, const eckit::Configuration & conf)
+ObsBiasCorrection::ObsBiasCorrection(const ObsTableView &, const Parameters_ & params)
   : bias_(0.0), active_(false)
 {
-  const eckit::LocalConfiguration covconf = conf.getSubConfiguration("covariance");
-  active_ = covconf.has("standard_deviation");
+  if (params.covariance.value() != boost::none &&
+      params.covariance.value()->standardDeviation.value() != boost::none) {
+    active_ = true;
+  }
   if (active_) {oops::Log::trace() << "ObsBiasCorrection::ObsBiasCorrection created." << std::endl;}
 }
 // -----------------------------------------------------------------------------

@@ -36,14 +36,16 @@ template <typename OBS>
 class ObsAuxIncrement : public util::Printable,
                         public util::Serializable,
                         private util::ObjectCounter<ObsAuxIncrement<OBS> > {
-  typedef typename OBS::ObsAuxIncrement     ObsAuxIncrement_;
-  typedef ObsAuxControl<OBS>       ObsAuxControl_;
+  typedef typename OBS::ObsAuxIncrement          ObsAuxIncrement_;
+  typedef ObsAuxControl<OBS>                     ObsAuxControl_;
 
  public:
+  typedef typename ObsAuxIncrement_::Parameters_ Parameters_;
+
   static const std::string classname() {return "oops::ObsAuxIncrement";}
 
 /// Constructor, destructor
-  ObsAuxIncrement(const ObsSpace<OBS> &, const eckit::Configuration &);
+  ObsAuxIncrement(const ObsSpace<OBS> &, const Parameters_ &);
   /// Copies \p other if \p copy is true, otherwise creates zero increment
   /// of the same size as \p other.
   ObsAuxIncrement(const ObsAuxIncrement & other, const bool copy = true);
@@ -93,11 +95,11 @@ ObsAuxControl<OBS> & operator+=(ObsAuxControl<OBS> & xx, const ObsAuxIncrement<O
 
 template<typename OBS>
 ObsAuxIncrement<OBS>::ObsAuxIncrement(const ObsSpace<OBS> & os,
-                                        const eckit::Configuration & conf) : aux_()
+                                        const Parameters_ & params) : aux_()
 {
   Log::trace() << "ObsAuxIncrement<OBS>::ObsAuxIncrement starting" << std::endl;
   util::Timer timer(classname(), "ObsAuxIncrement");
-  aux_.reset(new ObsAuxIncrement_(os.obsspace(), conf));
+  aux_.reset(new ObsAuxIncrement_(os.obsspace(), params));
   Log::trace() << "ObsAuxIncrement<OBS>::ObsAuxIncrement done" << std::endl;
 }
 // -----------------------------------------------------------------------------

@@ -24,13 +24,13 @@
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-ObsBiasCovariance::ObsBiasCovariance(const ObsTableView &, const eckit::Configuration & conf)
+ObsBiasCovariance::ObsBiasCovariance(const ObsTableView &, const Parameters_ & params)
   : variance_(0.0), active_(false)
 {
-  const eckit::LocalConfiguration covconf = conf.getSubConfiguration("covariance");
-  if (covconf.has("standard_deviation")) {
+  if (params.covariance.value() != boost::none &&
+      params.covariance.value()->standardDeviation.value() != boost::none) {
     active_ = true;
-    const double zz = covconf.getDouble("standard_deviation");
+    const double zz = *params.covariance.value()->standardDeviation.value();
     variance_ = zz * zz;
     ASSERT(variance_ > 0.0);
     oops::Log::info() << "ObsBiasCovariance variance = " << variance_ << std::endl;

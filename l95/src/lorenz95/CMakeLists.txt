@@ -40,6 +40,7 @@ set( _l95_srcs
         ObsBiasCorrection.h
         ObsBiasCovariance.cc
         ObsBiasCovariance.h
+        ObsBiasParameters.h
         ObsDiags1D.h
         ObsLocGC99.cc
         ObsLocGC99.h

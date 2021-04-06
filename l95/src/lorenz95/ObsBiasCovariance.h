@@ -15,7 +15,7 @@
 #include <string>
 #include <boost/noncopyable.hpp>
 
-#include "eckit/config/LocalConfiguration.h"
+#include "lorenz95/ObsBiasParameters.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
@@ -34,10 +34,12 @@ class ObsBiasCovariance : public util::Printable,
                           private boost::noncopyable,
                           private util::ObjectCounter<ObsBiasCovariance> {
  public:
+  typedef ObsBiasParameters Parameters_;
+
   static const std::string classname() {return "lorenz95::ObsBiasCovariance";}
 
 /// Constructor, destructor
-  ObsBiasCovariance(const ObsTableView &, const eckit::Configuration &);
+  ObsBiasCovariance(const ObsTableView &, const Parameters_ &);
   ~ObsBiasCovariance() {}
 
 /// Linear algebra operators

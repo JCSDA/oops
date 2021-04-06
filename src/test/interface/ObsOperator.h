@@ -80,7 +80,9 @@ template <typename OBS> void testSimulateObs() {
 
     // initialize bias correction
     eckit::LocalConfiguration biasconf = conf.getSubConfiguration("obs bias");
-    const ObsAuxCtrl_ ybias(Test_::obspace()[jj], biasconf);
+    typename ObsAuxCtrl_::Parameters_ biasparams;
+    biasparams.validateAndDeserialize(biasconf);
+    const ObsAuxCtrl_ ybias(Test_::obspace()[jj], biasparams);
 
     // read geovals from the file
     eckit::LocalConfiguration gconf(conf, "geovals");

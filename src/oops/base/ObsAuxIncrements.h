@@ -91,8 +91,10 @@ ObsAuxIncrements<OBS>::ObsAuxIncrements(const ObsSpaces_ & odb, const eckit::Con
   std::vector<eckit::LocalConfiguration> obsconf = conf.getSubConfigurations();
   for (std::size_t jobs = 0; jobs < obsconf.size(); ++jobs) {
     eckit::LocalConfiguration obsauxconf = obsconf[jobs].getSubConfiguration("obs bias");
+    typename ObsAuxIncrement_::Parameters_ obsauxparams;
+    obsauxparams.validateAndDeserialize(obsauxconf);
     auxs_.push_back(
-      std::unique_ptr<ObsAuxIncrement_>(new ObsAuxIncrement_(odb[jobs], obsauxconf)));
+      std::unique_ptr<ObsAuxIncrement_>(new ObsAuxIncrement_(odb[jobs], obsauxparams)));
   }
 }
 // -----------------------------------------------------------------------------
