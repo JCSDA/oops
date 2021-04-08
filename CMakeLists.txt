@@ -32,6 +32,8 @@ include( ${PROJECT_NAME}_compiler_flags )
 include( GNUInstallDirs )
 
 ## Dependencies
+find_package( jedicmake QUIET )  # Prefer find modules from jedi-cmake
+
 if( ENABLE_MKL )
     find_package( MKL )
 endif()
@@ -58,7 +60,6 @@ else()
 endif()
 
 #Optional Dependencies
-find_package( jedicmake QUIET )
 if( jedicmake_FOUND AND ENABLE_GPTL )
     find_package( GPTL )
     add_compile_definitions(ENABLE_GPTL)
