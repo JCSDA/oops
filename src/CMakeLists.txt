@@ -234,6 +234,7 @@ oops/runs/GenEnsPertB.h
 oops/runs/HofX3D.h
 oops/runs/HofX3Dslow.h
 oops/runs/HofX4D.h
+oops/runs/HofX4Dhack.h
 oops/runs/LocalEnsembleDA.h
 oops/runs/RTPP.h
 oops/runs/Run.cc

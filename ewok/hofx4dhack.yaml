@@ -1,0 +1,14 @@
+geometry:
+  $(GEOMETRY)
+states:
+  - $(BACKGROUND)
+  - $(BACKGROUND)
+  - $(BACKGROUND)
+  - $(BACKGROUND)
+  - $(BACKGROUND)
+  - $(BACKGROUND)
+  - $(BACKGROUND)
+observations:
+  $(OBSERVATIONS)
+window begin: '{{window_begin}}'
+window length: $(window_length)
