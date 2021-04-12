@@ -77,9 +77,14 @@ class GETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
                          IncrementEnsemble4D_ &) override;
 
  private:
-  /// Computes weights
-  void computeWeights(const Departures_ &, const DeparturesEnsemble_ &,
-                      const DeparturesEnsemble_ &, const Departures_ &);
+  /// Computes weights for ensemble update with local observations
+  /// \param[in] omb      Observation departures (nlocalobs)
+  /// \param[in] Yb       Ensemble perturbations for all the background memebers
+  ///                     (nens*neig, nlocalobs)
+  /// \param[in] YbOrig   Ensemble perturbations for the members to be updated (nens, nlocalobs)
+  /// \param[in] invvarR  Inverse of observation error variances (nlocalobs)
+  void computeWeights(const Eigen::VectorXd & omb, const Eigen::MatrixXd & Yb,
+                      const Eigen::MatrixXd & YbOrig, const Eigen::VectorXd & invvarR);
 
   /// Applies weights and adds posterior inflation
   void applyWeights(const IncrementEnsemble4D_ &, IncrementEnsemble4D_ &,
@@ -199,30 +204,22 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-void GETKFSolver<MODEL, OBS>::computeWeights(const Departures_ & dy,
-                                             const DeparturesEnsemble_ & Yb,
-                                             const DeparturesEnsemble_ & YbOrig,
-                                             const Departures_ & R_invvar) {
+void GETKFSolver<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
+                                             const Eigen::MatrixXd & Yb,
+                                             const Eigen::MatrixXd & YbOrig,
+                                             const Eigen::VectorXd & R_invvar) {
   // compute transformation matrix, save in Wa_, wa_
   // Yb(nobs,neig*nens), YbOrig(nobs,nens)
   // uses GSI GETKF code
   util::Timer timer(classname(), "computeWeights");
 
-  const int nobsl = dy.nobs();
+  const int nobsl = dy.size();
 
-  // cast oops objects to eigen<double> obejects
-  // then cast eigen<doble> to eigen<float>
-  Eigen::MatrixXd edy = dy.packEigen();
-  Eigen::MatrixXf edy_f = edy.cast<float>();
-
-  Eigen::MatrixXd eYb = Yb.packEigen();
-  Eigen::MatrixXf eYb_f = eYb.cast<float>();
-
-  Eigen::MatrixXd eYb2 = YbOrig.packEigen();
-  Eigen::MatrixXf eYb2_f = eYb2.cast<float>();
-
-  Eigen::MatrixXd eR = R_invvar.packEigen();
-  Eigen::MatrixXf eR_f = eR.cast<float>();
+  // cast eigen<double> to eigen<float>
+  Eigen::MatrixXf dy_f = dy.cast<float>();
+  Eigen::MatrixXf Yb_f = Yb.cast<float>();
+  Eigen::MatrixXf YbOrig_f = YbOrig.cast<float>();
+  Eigen::MatrixXf R_invvar_f = R_invvar.cast<float>();
 
   Eigen::MatrixXf Wa_f(this->nanal_, this->nens_);
   Eigen::VectorXf wa_f(this->nanal_);
@@ -231,9 +228,9 @@ void GETKFSolver<MODEL, OBS>::computeWeights(const Departures_ & dy,
   const int getkf_inflation = 0;
   const int denkf = 0;
   const int getkf = 1;
-  letkf_core_f90(nobsl, eYb_f.data(), eYb2_f.data(), edy_f.data(),
+  letkf_core_f90(nobsl, Yb_f.data(), YbOrig_f.data(), dy_f.data(),
                  wa_f.data(), Wa_f.data(),
-                 eR_f.data(), nanal_, neig_,
+                 R_invvar_f.data(), nanal_, neig_,
                  getkf_inflation, denkf, getkf);
   this->Wa_ = Wa_f.cast<double>();
   this->wa_ = wa_f.cast<double>();
@@ -334,8 +331,12 @@ void GETKFSolver<MODEL, OBS>::measurementUpdate(const IncrementEnsemble4D_ & bkg
     this->copyLocalIncrement(bkg_pert, i, ana_pert);
   } else {
     // if obs are present do normal KF update
+    Eigen::VectorXd local_omb_vec = local_omb.packEigen();
+    // get local Yb & HZ
     DeparturesEnsemble_ local_Yb(local_obs, this->Yb_);
+    Eigen::MatrixXd local_Yb_mat = local_Yb.packEigen();
     DeparturesEnsemble_ local_HZ(local_obs, HZb_);
+    Eigen::MatrixXd local_HZ_mat = local_HZ.packEigen();
     // create local obs errors
     ObsErrors_ local_R(this->obsconf_, local_obs);
     Departures_ invVarR = local_R.inverseVariance();
@@ -345,7 +346,9 @@ void GETKFSolver<MODEL, OBS>::measurementUpdate(const IncrementEnsemble4D_ & bkg
     locvector.ones();
     loc.computeLocalization(i, locvector);
     invVarR *= locvector;
-    computeWeights(local_omb, local_HZ, local_Yb, invVarR);
+    Eigen::VectorXd invVarR_vec = invVarR.packEigen();
+    // compute and apply weights
+    computeWeights(local_omb_vec, local_HZ_mat, local_Yb_mat, invVarR_vec);
     applyWeights(bkg_pert, ana_pert, i);
   }
 }

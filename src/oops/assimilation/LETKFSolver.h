@@ -63,9 +63,12 @@ class LETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
                          const GeometryIterator_ &, IncrementEnsemble4D_ &) override;
 
  protected:
-  /// Computes weights
-  virtual void computeWeights(const Departures_ &, const DeparturesEnsemble_ &,
-                              const Departures_ &);
+  /// Computes weights for ensemble update with local observations
+  /// \param[in] omb      Observation departures (nlocalobs)
+  /// \param[in] Yb       Ensemble perturbations (nens, nlocalobs)
+  /// \param[in] invvarR  Inverse of observation error variances (nlocalobs)
+  virtual void computeWeights(const Eigen::VectorXd & omb, const Eigen::MatrixXd & Yb,
+                              const Eigen::VectorXd & invvarR);
 
   /// Applies weights and adds posterior inflation
   virtual void applyWeights(const IncrementEnsemble4D_ &, IncrementEnsemble4D_ &,
@@ -141,7 +144,10 @@ void LETKFSolver<MODEL, OBS>::measurementUpdate(const IncrementEnsemble4D_ & bkg
     this->copyLocalIncrement(bkg_pert, i, ana_pert);
   } else {
     // if obs are present do normal KF update
+    Eigen::VectorXd local_omb_vec = local_omb.packEigen();
+    // create local Yb
     DeparturesEnsemble_ local_Yb(local_obs, this->Yb_);
+    Eigen::MatrixXd local_Yb_mat = local_Yb.packEigen();
     // create local obs errors
     ObsErrors_ local_R(this->obsconf_, local_obs);
     Departures_ invVarR = local_R.inverseVariance();
@@ -151,7 +157,10 @@ void LETKFSolver<MODEL, OBS>::measurementUpdate(const IncrementEnsemble4D_ & bkg
     locvector.ones();
     loc.computeLocalization(i, locvector);
     invVarR *= locvector;
-    computeWeights(local_omb, local_Yb, invVarR);
+    Eigen::VectorXd local_R_vec = invVarR.packEigen();
+
+    // compute and apply weights
+    computeWeights(local_omb_vec, local_Yb_mat, local_R_vec);
     applyWeights(bkg_pert, ana_pert, i);
   }
 }
@@ -159,9 +168,9 @@ void LETKFSolver<MODEL, OBS>::measurementUpdate(const IncrementEnsemble4D_ & bkg
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-void LETKFSolver<MODEL, OBS>::computeWeights(const Departures_ & dy_oops,
-                                             const DeparturesEnsemble_ & Yb_oops,
-                                             const Departures_ & R_invvar_oops ) {
+void LETKFSolver<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
+                                             const Eigen::MatrixXd & Yb,
+                                             const Eigen::VectorXd & diagInvR ) {
   // compute transformation matrix, save in Wa_, wa_
   // uses C++ eigen interface
   // implements LETKF from Hunt et al. 2007
@@ -169,12 +178,6 @@ void LETKFSolver<MODEL, OBS>::computeWeights(const Departures_ & dy_oops,
 
   const LETKFInflationParameters & inflopt = options_.infl;
 
-  // cast oops objects to eigen
-  Eigen::MatrixXd dy = dy_oops.packEigen();
-
-  Eigen::MatrixXd Yb = Yb_oops.packEigen();
-
-  Eigen::VectorXd diagInvR = R_invvar_oops.packEigen();
   // fill in the work matrix
   // work = Y^T R^-1 Y + (nens-1)/infl I
   double infl = inflopt.mult;

@@ -33,9 +33,12 @@ class LETKFSolverGSI : public LETKFSolver<MODEL, OBS> {
  public:
   LETKFSolverGSI(ObsSpaces_ &, const Geometry_ &, const eckit::Configuration &, size_t);
 
-  /// Computes weights
-  void computeWeights(const Departures_ &, const DeparturesEnsemble_ &,
-                      const Departures_ &) override;
+  /// Computes weights for ensemble update with local observations
+  /// \param[in] omb      Observation departures (nlocalobs)
+  /// \param[in] Yb       Ensemble perturbations (nens, nlocalobs)
+  /// \param[in] invvarR  Inverse of observation error variances (nlocalobs)
+  virtual void computeWeights(const Eigen::VectorXd & omb, const Eigen::MatrixXd & Yb,
+                              const Eigen::VectorXd & invvarR);
 };
 
 // -----------------------------------------------------------------------------
@@ -50,23 +53,17 @@ LETKFSolverGSI<MODEL, OBS>::LETKFSolverGSI(ObsSpaces_ & obspaces, const Geometry
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-void LETKFSolverGSI<MODEL, OBS>::computeWeights(const Departures_ & dy,
-                                                const DeparturesEnsemble_ & Yb,
-                                                const Departures_ & R_invvar) {
+void LETKFSolverGSI<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
+                                                const Eigen::MatrixXd & Yb,
+                                                const Eigen::VectorXd & R_invvar) {
   // compute transformation matrix, save in Wa_, wa_
   // uses GSI GETKF code
-  const int nobsl = dy.nobs();
+  const int nobsl = dy.size();
 
-  // cast oops objects to eigen<double> obejects
-  // then cast eigen<doble> to eigen<float>
-  Eigen::MatrixXd edy = dy.packEigen();
-  Eigen::MatrixXf edy_f = edy.cast<float>();
-
-  Eigen::MatrixXd eYb = Yb.packEigen();
-  Eigen::MatrixXf eYb_f = eYb.cast<float>();
-
-  Eigen::VectorXd eR = R_invvar.packEigen();
-  Eigen::VectorXf eR_f = eR.cast<float>();
+  // cast eigen<double> to eigen<float>
+  Eigen::VectorXf dy_f = dy.cast<float>();
+  Eigen::MatrixXf Yb_f = Yb.cast<float>();
+  Eigen::VectorXf R_invvar_f = R_invvar.cast<float>();
 
   Eigen::MatrixXf Wa_f(this->nens_, this->nens_);
   Eigen::VectorXf wa_f(this->nens_);
@@ -76,9 +73,9 @@ void LETKFSolverGSI<MODEL, OBS>::computeWeights(const Departures_ & dy,
   const int getkf_inflation = 0;
   const int denkf = 0;
   const int getkf = 0;
-  letkf_core_f90(nobsl, eYb_f.data(), eYb_f.data(), edy_f.data(),
+  letkf_core_f90(nobsl, Yb_f.data(), Yb_f.data(), dy_f.data(),
                  wa_f.data(), Wa_f.data(),
-                 eR_f.data(), this->nens_, neigv,
+                 R_invvar_f.data(), this->nens_, neigv,
                  getkf_inflation, denkf, getkf);
   this->Wa_ = Wa_f.cast<double>();
   this->wa_ = wa_f.cast<double>();
