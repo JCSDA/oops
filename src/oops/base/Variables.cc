@@ -67,12 +67,16 @@ Variables::Variables(const std::vector<std::string> & vars, const std::string & 
 
 // -----------------------------------------------------------------------------
 
-Variables::Variables(const std::vector<std::string> & vars, const std::vector<int> channels)
+Variables::Variables(const std::vector<std::string> & vars, const std::vector<int> & channels)
   : convention_(""), vars_(0), channels_(channels) {
   Log::trace() << "Variables::Variables start " << vars << " @ " << channels << std::endl;
-  for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
-    for (size_t jch = 0; jch < channels_.size(); ++jch) {
-      vars_.push_back(vars[jvar]+"_"+std::to_string(channels_[jch]));
+  if (channels.empty()) {
+    vars_ = vars;
+  } else {
+    for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
+      for (size_t jch = 0; jch < channels_.size(); ++jch) {
+        vars_.push_back(vars[jvar]+"_"+std::to_string(channels_[jch]));
+      }
     }
   }
   Log::trace() << "Variables::Variables done" << std::endl;
