@@ -228,21 +228,28 @@ double DRPBlockLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh,
 
   xh.zero();
   xx.zero();
+  eigenmat_ tmp_norm;
+  eigenmat_ tmp_costj;
+  Eigen::IOFormat HeavyFmt(-2, 0, ", ", ";\n");
+  Eigen::IOFormat TestFmt(-1, 0, ", ", ";\n");
+
 
   for (int ll = 0; ll < iterTotal; ++ll) {
     SSLK = - (ss.block(ll*members_, 0, members_, members_));
     apply_proj(xh, *Vbase[ll], SSLK, gestag, CommGeo, temp1);
     apply_proj(xx, *Zbase[ll], SSLK, gestag, CommGeo, temp1);
     if (outerLoop_ == 0) writeKrylovBasis(diagConf_, *Zbase[ll], ll);
+    tmp_norm = norm_red_all.block(ll, 0, 1, members_);
+    tmp_costj = costj_all.block(ll, 0, 1, members_);
 
     Log::info() << "   Norm reduction all members (" << std::setw(2) << ll+1 << ") = "
-                << norm_red_all.block(ll, 0, 1, members_) << std::endl;
+                << tmp_norm.format(HeavyFmt) << std::endl;
     Log::info() << "   Quadratic cost function all members: J (" << std::setw(2) << ll+1 << ") = "
-                << costj_all.block(ll, 0, 1, members_) << std::endl;
+                << tmp_costj.format(HeavyFmt) << std::endl;
     Log::test() << "   Norm reduction all members (" << std::setw(2) << ll+1 << ") = "
-                << norm_red_all.block(ll, 0, 1, members_) << std::endl;
+                << tmp_norm.format(TestFmt) << std::endl;
     Log::test() << "   Quadratic cost function all members: J (" << std::setw(2) << ll+1 << ") = "
-                << costj_all.block(ll, 0, 1, members_) << std::endl;
+                << tmp_costj.format(TestFmt) << std::endl;
   }
 
   eckit::mpi::deleteComm(CommGeoName);
