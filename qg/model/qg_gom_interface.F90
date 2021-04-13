@@ -28,34 +28,34 @@ subroutine qg_gom_setup_c(c_key_self,c_locs,c_vars) bind(c,name='qg_gom_setup_f9
 implicit none
 
 ! Passed variables
-integer(c_int),intent(inout) :: c_key_self  !< GOM
-type(c_ptr),value,intent(in) :: c_locs      !< Locations
-type(c_ptr),value,intent(in) :: c_vars      !< Variables
+integer(c_int),intent(inout) :: c_key_self !< GOM
+type(c_ptr),value,intent(in) :: c_locs     !< Locations
+type(c_ptr),value,intent(in) :: c_vars     !< Variables
 
 ! Local variables
 type(qg_gom),pointer :: self
 type(qg_locs) :: locs
-type(oops_variables) :: vars
 
 ! Interface
 call qg_gom_registry%init()
 call qg_gom_registry%add(c_key_self)
 call qg_gom_registry%get(c_key_self,self)
 locs = qg_locs(c_locs)
-vars = oops_variables(c_vars)
+self%vars = oops_variables(c_vars)
 
 ! Call Fortran
-call qg_gom_setup(self,locs%nlocs(),vars)
+call qg_gom_setup(self,locs%nlocs())
 
 end subroutine qg_gom_setup_c
 ! ------------------------------------------------------------------------------
-!> Create GOM
-subroutine qg_gom_create_c(c_key_self) bind(c,name='qg_gom_create_f90')
+!> Create GOM and do nothing
+subroutine qg_gom_create_c(c_key_self,c_vars) bind(c,name='qg_gom_create_f90')
 
 implicit none
 
 ! Passed variables
 integer(c_int),intent(inout) :: c_key_self !< GOM
+type(c_ptr),value,intent(in) :: c_vars     !< Variables
 
 ! Local variables
 type(qg_gom),pointer :: self
@@ -64,9 +64,7 @@ type(qg_gom),pointer :: self
 call qg_gom_registry%init()
 call qg_gom_registry%add(c_key_self)
 call qg_gom_registry%get(c_key_self,self)
-
-! Call Fortran
-call qg_gom_create(self)
+self%vars = oops_variables(c_vars)
 
 end subroutine qg_gom_create_c
 ! ------------------------------------------------------------------------------
@@ -80,7 +78,6 @@ integer(c_int),intent(inout) :: c_key_self !< GOM
 
 ! Local variables
 type(qg_gom),pointer :: self
-
 
 ! Interface
 call qg_gom_registry%get(c_key_self,self)
@@ -99,8 +96,8 @@ subroutine qg_gom_copy_c(c_key_self,c_key_other) bind(c,name='qg_gom_copy_f90')
 implicit none
 
 ! Passed variables
-integer(c_int),intent(in) :: c_key_self  !< GOM
-integer(c_int),intent(in) :: c_key_other !< Other GOM
+integer(c_int),intent(inout) :: c_key_self !< GOM
+integer(c_int),intent(in) :: c_key_other   !< Other GOM
 
 ! Local variables
 type(qg_gom),pointer :: self
@@ -173,13 +170,13 @@ call qg_gom_random(self)
 end subroutine qg_gom_random_c
 ! ------------------------------------------------------------------------------
 !> Multiply GOM with a scalar
-subroutine qg_gom_mult_c(c_key_self,zz) bind(c,name='qg_gom_mult_f90')
+subroutine qg_gom_mult_c(c_key_self,c_zz) bind(c,name='qg_gom_mult_f90')
 
 implicit none
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_self !< GOM
-real(c_double),intent(in) :: zz         !< Multiplier
+real(c_double),intent(in) :: c_zz       !< Multiplier
 
 ! Local variables
 type(qg_gom),pointer :: self
@@ -189,11 +186,7 @@ integer :: jo,jv
 call qg_gom_registry%get(c_key_self,self)
 
 ! Call Fortran
-do jo=1,self%nobs
-  do jv=1,self%nv
-    self%values(jv,jo) = zz * self%values(jv,jo)
-  enddo
-enddo
+call qg_gom_mult(self,c_zz)
 
 end subroutine qg_gom_mult_c
 ! ------------------------------------------------------------------------------
@@ -286,13 +279,13 @@ call qg_gom_divide(self,other)
 end subroutine qg_gom_divide_c
 ! ------------------------------------------------------------------------------
 !> Compute GOM RMS
-subroutine qg_gom_rms_c(c_key_self,rms) bind(c,name='qg_gom_rms_f90')
+subroutine qg_gom_rms_c(c_key_self,c_rms) bind(c,name='qg_gom_rms_f90')
 
 implicit none
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_self !< GOM
-real(c_double),intent(inout) :: rms     !< RMS
+real(c_double),intent(inout) :: c_rms   !< RMS
 
 ! Local variables
 type(qg_gom),pointer :: self
@@ -301,19 +294,19 @@ type(qg_gom),pointer :: self
 call qg_gom_registry%get(c_key_self,self)
 
 ! Call Fortran
-call qg_gom_rms(self,rms)
+call qg_gom_rms(self,c_rms)
 
 end subroutine qg_gom_rms_c
 ! ------------------------------------------------------------------------------
 !> GOM dot product
-subroutine qg_gom_dotprod_c(c_key_gom1,c_key_gom2,prod) bind(c,name='qg_gom_dotprod_f90')
+subroutine qg_gom_dotprod_c(c_key_gom1,c_key_gom2,c_prod) bind(c,name='qg_gom_dotprod_f90')
 
 implicit none
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_gom1 !< GOM 1
 integer(c_int),intent(in) :: c_key_gom2 !< GOM 2
-real(c_double),intent(inout) :: prod    !< Dot product
+real(c_double),intent(inout) :: c_prod  !< Dot product
 
 ! Local variables
 type(qg_gom),pointer :: gom1,gom2
@@ -323,21 +316,21 @@ call qg_gom_registry%get(c_key_gom1,gom1)
 call qg_gom_registry%get(c_key_gom2,gom2)
 
 ! Call Fortran
-call qg_gom_dotprod(gom1,gom2,prod)
+call qg_gom_dotprod(gom1,gom2,c_prod)
 
 end subroutine qg_gom_dotprod_c
 ! ------------------------------------------------------------------------------
 !> Compute GOM statistics
-subroutine qg_gom_stats_c(c_key_self,kobs,pmin,pmax,prms) bind(c,name='qg_gom_stats_f90')
+subroutine qg_gom_stats_c(c_key_self,c_kobs,c_pmin,c_pmax,c_prms) bind(c,name='qg_gom_stats_f90')
 
 implicit none
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_self !< GOM
-integer(c_int),intent(inout) :: kobs    !< Number of observations
-real(c_double),intent(inout) :: pmin    !< Minimum value
-real(c_double),intent(inout) :: pmax    !< Maximum value
-real(c_double),intent(inout) :: prms    !< RMS
+integer(c_int),intent(inout) :: c_kobs  !< Number of observations
+real(c_double),intent(inout) :: c_pmin  !< Minimum value
+real(c_double),intent(inout) :: c_pmax  !< Maximum value
+real(c_double),intent(inout) :: c_prms  !< RMS
 
 ! Local variables
 type(qg_gom),pointer :: self
@@ -346,29 +339,31 @@ type(qg_gom),pointer :: self
 call qg_gom_registry%get(c_key_self,self)
 
 ! Call Fortran
-call qg_gom_stats(self,kobs,pmin,pmax,prms)
+call qg_gom_stats(self,c_kobs,c_pmin,c_pmax,c_prms)
 
 end subroutine qg_gom_stats_c
 ! ------------------------------------------------------------------------------
 !> Find and locate GOM max. value
-subroutine qg_gom_maxloc_c(c_key_self,mxval,iloc,ivar) bind(c,name='qg_gom_maxloc_f90')
+subroutine qg_gom_maxloc_c(c_key_self,c_mxval,c_mxloc,c_mxvar) bind(c,name='qg_gom_maxloc_f90')
 
 implicit none
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_self !< GOM
-real(c_double),intent(inout) :: mxval   !< Maximum value
-integer(c_int),intent(inout) :: iloc    !< Location of maximum value
-integer(c_int),intent(inout) :: ivar    !< Variable with maximum value
+real(c_double),intent(inout) :: c_mxval !< Maximum value
+integer(c_int),intent(inout) :: c_mxloc !< Location of maximum value
+type(c_ptr),value,intent(in) :: c_mxvar !< Variable of maximum value
 
 ! Local variables
 type(qg_gom),pointer :: self
+type(oops_variables) :: mxvar
 
 ! Interface
 call qg_gom_registry%get(c_key_self,self)
+mxvar = oops_variables(c_mxvar)
 
 ! Call Fortran
-call qg_gom_maxloc(self,mxval,iloc,ivar)
+call qg_gom_maxloc(self,c_mxval,c_mxloc,mxvar)
 
 end subroutine qg_gom_maxloc_c
 ! ------------------------------------------------------------------------------
@@ -378,16 +373,16 @@ subroutine qg_gom_read_file_c(c_key_self,c_conf) bind(c,name='qg_gom_read_file_f
 implicit none
 
 ! Passed variables
-integer(c_int),intent(in) :: c_key_self !< GOM
-type(c_ptr),value,intent(in) :: c_conf  !< Configuration
+integer(c_int),intent(inout) :: c_key_self !< GOM
+type(c_ptr),value,intent(in) :: c_conf     !< Configuration
 
 ! Local variables
 type(fckit_configuration) :: f_conf
 type(qg_gom),pointer :: self
 
 ! Interface
-f_conf = fckit_configuration(c_conf)
 call qg_gom_registry%get(c_key_self,self)
+f_conf = fckit_configuration(c_conf)
 
 ! Call Fortran
 call qg_gom_read_file(self,f_conf)
@@ -423,7 +418,7 @@ implicit none
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_self !< GOM
-type(c_ptr),value,intent(in) :: c_locs !< Locations
+type(c_ptr),value,intent(in) :: c_locs  !< Locations
 type(c_ptr),value,intent(in) :: c_conf  !< Configuration
 
 ! Local variables

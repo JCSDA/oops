@@ -1,113 +1,83 @@
 Test     : Initial state for member 1:
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.7030e+08, Max=  9.3328e+07, RMS=  1.8437e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.7030e+08, Max=  9.3328e+07, RMS=  1.8437e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     :   Valid time: 2010-01-01T06:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.5492e+08, Max=  1.1027e+08, RMS=  1.7951e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.5492e+08, Max=  1.1027e+08, RMS=  1.7951e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.4224e+08, Max=  1.2418e+08, RMS=  1.7584e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.4224e+08, Max=  1.2418e+08, RMS=  1.7584e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : Initial state for member 2:
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.6931e+08, Max=  9.9327e+07, RMS=  1.7976e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.6931e+08, Max=  9.9327e+07, RMS=  1.7976e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     :   Valid time: 2010-01-01T06:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.5020e+08, Max=  9.8531e+07, RMS=  1.7427e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.5020e+08, Max=  9.8531e+07, RMS=  1.7427e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.3426e+08, Max=  9.8104e+07, RMS=  1.6992e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.3426e+08, Max=  9.8104e+07, RMS=  1.6992e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : Initial state for member 3:
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.9074e+08, Max=  1.0042e+08, RMS=  1.8589e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.9074e+08, Max=  1.0042e+08, RMS=  1.8589e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     :   Valid time: 2010-01-01T06:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.6561e+08, Max=  1.0048e+08, RMS=  1.8093e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.6561e+08, Max=  1.0048e+08, RMS=  1.8093e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.4601e+08, Max=  1.0169e+08, RMS=  1.7665e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.4601e+08, Max=  1.0169e+08, RMS=  1.7665e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : Initial state for member 4:
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.7276e+08, Max=  9.4808e+07, RMS=  1.7978e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.7276e+08, Max=  9.4808e+07, RMS=  1.7978e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     :   Valid time: 2010-01-01T06:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.5080e+08, Max=  9.8565e+07, RMS=  1.7375e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.5080e+08, Max=  9.8565e+07, RMS=  1.7375e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.3446e+08, Max=  1.0277e+08, RMS=  1.6981e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.3446e+08, Max=  1.0277e+08, RMS=  1.6981e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : Initial state for member 5:
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.7215e+08, Max=  9.9052e+07, RMS=  1.8304e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.7215e+08, Max=  9.9052e+07, RMS=  1.8304e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     :   Valid time: 2010-01-01T06:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.4705e+08, Max=  9.6271e+07, RMS=  1.7467e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.4705e+08, Max=  9.6271e+07, RMS=  1.7467e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.3100e+08, Max=  9.5883e+07, RMS=  1.6904e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.3100e+08, Max=  9.5883e+07, RMS=  1.6904e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : H(x) for member 1:
 Test     : Stream nobs= 300  Min= -5.4020e+08, Max=  8.6950e+07, Average= -1.2080e+08
 Test     : Wind nobs= 160  Min= -1.2372e+02, Max=  9.5123e+01, Average=  1.1752e+01
@@ -139,47 +109,35 @@ Test     : WSpeed nobs= 300  Min= -2.7821e+01, Max=  3.2298e+01, Average=  4.182
 Test     : Background mean :
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.7486e+08, Max=  9.6575e+07, RMS=  1.8216e+08
-Test     :   Min= -4.0032e+08, Max=  0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.7486e+08, Max=  9.6575e+07, RMS=  1.8216e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max=  0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     :   Valid time: 2010-01-01T06:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.5279e+08, Max=  9.3048e+07, RMS=  1.7609e+08
-Test     :   Min= -4.0032e+08, Max=  0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.5279e+08, Max=  9.3048e+07, RMS=  1.7609e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max=  0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.3566e+08, Max=  9.5381e+07, RMS=  1.7157e+08
-Test     :   Min= -4.0032e+08, Max=  0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.3566e+08, Max=  9.5381e+07, RMS=  1.7157e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max=  0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : Analysis mean :
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.9026e+08, Max=  9.5856e+07, RMS=  1.8792e+08
-Test     :   Min= -4.0032e+08, Max=  0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.9026e+08, Max=  9.5856e+07, RMS=  1.8792e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max=  0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     :   Valid time: 2010-01-01T06:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.6092e+08, Max=  9.1362e+07, RMS=  1.8251e+08
-Test     :   Min= -4.0032e+08, Max=  0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.6092e+08, Max=  9.1362e+07, RMS=  1.8251e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max=  0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.4655e+08, Max=  9.6366e+07, RMS=  1.7841e+08
-Test     :   Min= -4.0032e+08, Max=  0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.4655e+08, Max=  9.6366e+07, RMS=  1.7841e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max=  0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : H(x) for member 1:
 Test     : Stream nobs= 300  Min= -5.4486e+08, Max=  9.1832e+07, Average= -1.2800e+08
 Test     : Wind nobs= 160  Min= -9.6559e+01, Max=  1.0881e+02, Average=  1.1563e+01

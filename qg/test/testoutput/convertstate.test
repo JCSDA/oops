@@ -1,164 +1,132 @@
 Test     : Input state: 
 Test     :   Valid time: 2010-01-01T09:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.4304e+08, Max=  9.3153e+07, RMS=  1.7024e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.4304e+08, Max=  9.3153e+07, RMS=  1.7024e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : Variable transform: QG change of variable
 Test     : Variable change from: 1 variables: x
 Test     : Variable change to: 1 variables: q
 Test     : State after variable transform: 
 Test     :   Valid time: 2010-01-01T09:00:00Z
 Test     :   Resolution = 20, 10, 2
-Test     :   Variable = potential vorticity
-Test     :   Boundary conditions are activated
-Test     :   Min= -5.8027e-04, Max=  5.4508e-04, RMS=  3.2514e-04
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Potential vorticity    :  Min= -5.8027e-04, Max=  5.4508e-04, RMS=  3.2514e-04
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : Variable transform: QG change of variable
 Test     : Variable change from: 1 variables: q
 Test     : Variable change to: 1 variables: x
 Test     : State after variable transform: 
 Test     :   Valid time: 2010-01-01T09:00:00Z
 Test     :   Resolution = 20, 10, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.3180e+08, Max=  7.9749e+07, RMS=  1.6804e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.3180e+08, Max=  7.9749e+07, RMS=  1.6804e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : Variable transform: QG change of variable
 Test     : Variable change from: 1 variables: q
 Test     : Variable change to: 1 variables: x
 Test     : State after variable transform: 
 Test     :   Valid time: 2010-01-01T09:00:00Z
 Test     :   Resolution = 20, 10, 2
-Test     :   Variable = potential vorticity
-Test     :   Boundary conditions are activated
-Test     :   Min= -5.8027e-04, Max=  5.4508e-04, RMS=  3.2514e-04
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Potential vorticity    :  Min= -5.8027e-04, Max=  5.4508e-04, RMS=  3.2514e-04
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : Variable transform: QG change of variable
 Test     : Variable change from: 1 variables: x
 Test     : Variable change to: 1 variables: q
 Test     : State after variable transform: 
 Test     :   Valid time: 2010-01-01T09:00:00Z
 Test     :   Resolution = 20, 10, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.3180e+08, Max=  7.9749e+07, RMS=  1.6804e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.3180e+08, Max=  7.9749e+07, RMS=  1.6804e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : Variable transform: IdVariableChange
 Test     : Variable change from: 1 variables: x
 Test     : Variable change to: 1 variables: x
 Test     : State after variable transform: 
 Test     :   Valid time: 2010-01-01T09:00:00Z
 Test     :   Resolution = 20, 10, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.3180e+08, Max=  7.9749e+07, RMS=  1.6804e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.3180e+08, Max=  7.9749e+07, RMS=  1.6804e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : Variable transform: IdVariableChange
 Test     : Variable change from: 1 variables: x
 Test     : Variable change to: 1 variables: x
 Test     : State after variable transform: 
 Test     :   Valid time: 2010-01-01T09:00:00Z
 Test     :   Resolution = 20, 10, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.3180e+08, Max=  7.9749e+07, RMS=  1.6804e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.3180e+08, Max=  7.9749e+07, RMS=  1.6804e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : Output state: 
 Test     :   Valid time: 2010-01-01T09:00:00Z
 Test     :   Resolution = 20, 10, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.3180e+08, Max=  7.9749e+07, RMS=  1.6804e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.3180e+08, Max=  7.9749e+07, RMS=  1.6804e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : Input state: 
 Test     :   Valid time: 2010-01-01T10:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.3926e+08, Max=  9.3338e+07, RMS=  1.6950e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.3926e+08, Max=  9.3338e+07, RMS=  1.6950e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : Variable transform: QG change of variable
 Test     : Variable change from: 1 variables: x
 Test     : Variable change to: 1 variables: q
 Test     : State after variable transform: 
 Test     :   Valid time: 2010-01-01T10:00:00Z
 Test     :   Resolution = 20, 10, 2
-Test     :   Variable = potential vorticity
-Test     :   Boundary conditions are activated
-Test     :   Min= -5.7613e-04, Max=  5.4113e-04, RMS=  3.2534e-04
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Potential vorticity    :  Min= -5.7613e-04, Max=  5.4113e-04, RMS=  3.2534e-04
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : Variable transform: QG change of variable
 Test     : Variable change from: 1 variables: q
 Test     : Variable change to: 1 variables: x
 Test     : State after variable transform: 
 Test     :   Valid time: 2010-01-01T10:00:00Z
 Test     :   Resolution = 20, 10, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.2766e+08, Max=  8.0020e+07, RMS=  1.6726e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.2766e+08, Max=  8.0020e+07, RMS=  1.6726e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : Variable transform: QG change of variable
 Test     : Variable change from: 1 variables: q
 Test     : Variable change to: 1 variables: x
 Test     : State after variable transform: 
 Test     :   Valid time: 2010-01-01T10:00:00Z
 Test     :   Resolution = 20, 10, 2
-Test     :   Variable = potential vorticity
-Test     :   Boundary conditions are activated
-Test     :   Min= -5.7613e-04, Max=  5.4113e-04, RMS=  3.2534e-04
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Potential vorticity    :  Min= -5.7613e-04, Max=  5.4113e-04, RMS=  3.2534e-04
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : Variable transform: QG change of variable
 Test     : Variable change from: 1 variables: x
 Test     : Variable change to: 1 variables: q
 Test     : State after variable transform: 
 Test     :   Valid time: 2010-01-01T10:00:00Z
 Test     :   Resolution = 20, 10, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.2766e+08, Max=  8.0020e+07, RMS=  1.6726e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.2766e+08, Max=  8.0020e+07, RMS=  1.6726e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : Variable transform: IdVariableChange
 Test     : Variable change from: 1 variables: x
 Test     : Variable change to: 1 variables: x
 Test     : State after variable transform: 
 Test     :   Valid time: 2010-01-01T10:00:00Z
 Test     :   Resolution = 20, 10, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.2766e+08, Max=  8.0020e+07, RMS=  1.6726e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.2766e+08, Max=  8.0020e+07, RMS=  1.6726e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : Variable transform: IdVariableChange
 Test     : Variable change from: 1 variables: x
 Test     : Variable change to: 1 variables: x
 Test     : State after variable transform: 
 Test     :   Valid time: 2010-01-01T10:00:00Z
 Test     :   Resolution = 20, 10, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.2766e+08, Max=  8.0020e+07, RMS=  1.6726e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.2766e+08, Max=  8.0020e+07, RMS=  1.6726e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : Output state: 
 Test     :   Valid time: 2010-01-01T10:00:00Z
 Test     :   Resolution = 20, 10, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.2766e+08, Max=  8.0020e+07, RMS=  1.6726e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.2766e+08, Max=  8.0020e+07, RMS=  1.6726e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04

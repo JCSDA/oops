@@ -7,11 +7,9 @@ Test     : DRIPCGMinimizer: reduction in residual norm = 0.186377
 Test     : CostFunction::addIncrement: Analysis: 
 Test     :   Valid time: 2010-01-01T09:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.6444e+08, Max=  1.0829e+08, RMS=  1.7939e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.6444e+08, Max=  1.0829e+08, RMS=  1.7939e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : CostJb   : Nonlinear Jb = 79.13
 Test     : CostJo   : Nonlinear Jo(Stream) = 1596, nobs = 600, Jo/n = 2.66, err = 4e+06 (Monitoring only)
 Test     : CostJo   : Nonlinear Jo(Wind) = 159.4, nobs = 600, Jo/n = 0.2656, err = 6

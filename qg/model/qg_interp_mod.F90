@@ -25,15 +25,15 @@ public :: qg_interp_trilinear,qg_interp_trilinear_ad, &
 contains
 ! ------------------------------------------------------------------------------
 !> Trilinear interpolation
-subroutine qg_interp_trilinear(geom,lon,lat,z,gfld3d,val)
+subroutine qg_interp_trilinear(geom,lon,lat,z,field,val)
 
 ! Passed variables
-type(qg_geom),intent(in) :: geom                              !< Geometry
-real(kind_real),intent(in) :: lon                             !< Longitude
-real(kind_real),intent(in) :: lat                             !< Latitude
-real(kind_real),intent(in) :: z                               !< Altitude
-real(kind_real),intent(in) :: gfld3d(geom%nx,geom%ny,geom%nz) !< 3D Field
-real(kind_real),intent(out) :: val                            !< Value
+type(qg_geom),intent(in) :: geom                             !< Geometry
+real(kind_real),intent(in) :: lon                            !< Longitude
+real(kind_real),intent(in) :: lat                            !< Latitude
+real(kind_real),intent(in) :: z                              !< Altitude
+real(kind_real),intent(in) :: field(geom%nx,geom%ny,geom%nz) !< Field
+real(kind_real),intent(out) :: val                           !< Value
 
 ! Local variables
 integer :: jxm1,jxo,jxp1,jxp2
@@ -64,10 +64,10 @@ if (jyp1>geom%ny) then
 endif
 
 ! Interpolate along x
-oo = (1.0-ax)*gfld3d(jxo,jyo,jzo)+ax*gfld3d(jxp1,jyo,jzo)
-op1 = (1.0-ax)*gfld3d(jxo,jyo,jzp1)+ax*gfld3d(jxp1,jyo,jzp1)
-p1o = (1.0-ax)*gfld3d(jxo,jyp1,jzo)+ax*gfld3d(jxp1,jyp1,jzo)
-p1p1 = (1.0-ax)*gfld3d(jxo,jyp1,jzp1)+ax*gfld3d(jxp1,jyp1,jzp1)
+oo = (1.0-ax)*field(jxo,jyo,jzo)+ax*field(jxp1,jyo,jzo)
+op1 = (1.0-ax)*field(jxo,jyo,jzp1)+ax*field(jxp1,jyo,jzp1)
+p1o = (1.0-ax)*field(jxo,jyp1,jzo)+ax*field(jxp1,jyp1,jzo)
+p1p1 = (1.0-ax)*field(jxo,jyp1,jzp1)+ax*field(jxp1,jyp1,jzp1)
 
 ! Interpolate along y
 o = (1.0-ay)*oo+ay*p1o
@@ -79,15 +79,15 @@ val = (1.0-az)*o+az*p1
 end subroutine qg_interp_trilinear
 ! ------------------------------------------------------------------------------
 !> Interpolation - adjoint
-subroutine qg_interp_trilinear_ad(geom,lon,lat,z,val,gfld3d)
+subroutine qg_interp_trilinear_ad(geom,lon,lat,z,val,field)
 
 ! Passed variables
-type(qg_geom),intent(in) :: geom                                 !< Geometry
-real(kind_real),intent(in) :: lon                                !< Longitude
-real(kind_real),intent(in) :: lat                                !< Latitude
-real(kind_real),intent(in) :: z                                  !< Altitude
-real(kind_real),intent(in) :: val                                !< Value
-real(kind_real),intent(inout) :: gfld3d(geom%nx,geom%ny,geom%nz) !< 3D field
+type(qg_geom),intent(in) :: geom                                !< Geometry
+real(kind_real),intent(in) :: lon                               !< Longitude
+real(kind_real),intent(in) :: lat                               !< Latitude
+real(kind_real),intent(in) :: z                                 !< Altitude
+real(kind_real),intent(in) :: val                               !< Value
+real(kind_real),intent(inout) :: field(geom%nx,geom%ny,geom%nz) !< Field
 
 ! Local variables
 integer :: jxm1,jxo,jxp1,jxp2
@@ -128,14 +128,14 @@ op1 = (1.0-ay)*p1
 p1p1 = ay*p1
 
 ! Interpolate along x
-gfld3d(jxo,jyo,jzo) = gfld3d(jxo,jyo,jzo)+(1.0-ax)*oo
-gfld3d(jxp1,jyo,jzo) = gfld3d(jxp1,jyo,jzo)+ax*oo
-gfld3d(jxo,jyo,jzp1) = gfld3d(jxo,jyo,jzp1)+(1.0-ax)*op1
-gfld3d(jxp1,jyo,jzp1) = gfld3d(jxp1,jyo,jzp1)+ax*op1
-gfld3d(jxo,jyp1,jzo) = gfld3d(jxo,jyp1,jzo)+(1.0-ax)*p1o
-gfld3d(jxp1,jyp1,jzo) = gfld3d(jxp1,jyp1,jzo)+ax*p1o
-gfld3d(jxo,jyp1,jzp1) = gfld3d(jxo,jyp1,jzp1)+(1.0-ax)*p1p1
-gfld3d(jxp1,jyp1,jzp1) = gfld3d(jxp1,jyp1,jzp1)+ax*p1p1
+field(jxo,jyo,jzo) = field(jxo,jyo,jzo)+(1.0-ax)*oo
+field(jxp1,jyo,jzo) = field(jxp1,jyo,jzo)+ax*oo
+field(jxo,jyo,jzp1) = field(jxo,jyo,jzp1)+(1.0-ax)*op1
+field(jxp1,jyo,jzp1) = field(jxp1,jyo,jzp1)+ax*op1
+field(jxo,jyp1,jzo) = field(jxo,jyp1,jzo)+(1.0-ax)*p1o
+field(jxp1,jyp1,jzo) = field(jxp1,jyp1,jzo)+ax*p1o
+field(jxo,jyp1,jzp1) = field(jxo,jyp1,jzp1)+(1.0-ax)*p1p1
+field(jxp1,jyp1,jzp1) = field(jxp1,jyp1,jzp1)+ax*p1p1
 
 end subroutine qg_interp_trilinear_ad
 ! ------------------------------------------------------------------------------

@@ -111,31 +111,9 @@ void TlmQG::print(std::ostream & os) const {
   if (traj_.size() > 0) {
     os << "QG TLM Trajectory: times are:";
     for (trajICst jtra = traj_.begin(); jtra != traj_.end(); ++jtra) {
+      // Time
       os << "  " << jtra->first;
-      int nx, ny, nz, nb, lq, lbc;
-      qg_fields_sizes_f90(jtra->second, nx, ny, nz, nb);
-      qg_fields_vars_f90(jtra->second, lq, lbc);
-      os << std::endl << "  Resolution = " << nx << ", " << ny << ", " << nz;
-      if (lq == 1) {
-        os << std::endl << "  Variable = potential vorticity";
-      } else {
-        os << std::endl << "  Variable = streamfunction";
-      }
-      if (lbc == 1) {
-        os << std::endl << "  Boundary conditions are activated";
-      } else {
-        os << std::endl << "  Boundary conditions are not activated";
-      }
-      std::vector<double> zstat(3*(1+nb));
-      qg_fields_gpnorm_f90(jtra->second, nb, zstat[0]);
-      for (int jj = 0; jj < 1+nb; ++jj) {
-        std::ios_base::fmtflags f(os.flags());
-        os << std::endl << std::scientific << std::setprecision(4)
-           << "  Min=" << std::setw(12) << zstat[3*jj]
-           << ", Max=" << std::setw(12) << zstat[3*jj+1]
-           << ", RMS=" << std::setw(12) << zstat[3*jj+2];
-        os.flags(f);
-      }
+      os << "  " << jtra->second;
     }
   }
 }

@@ -22,14 +22,13 @@ use oops_variables_mod
 use qg_constants_mod
 use qg_convert_q_to_x_mod
 use qg_convert_x_to_q_mod
-use qg_convert_x_to_uv_mod
+use qg_convert_x_to_u_mod
+use qg_convert_x_to_v_mod
 use qg_geom_mod
 use qg_geom_iter_mod
-use qg_gom_mod
 use qg_interp_mod
 use qg_locs_mod
 use qg_tools_mod
-use oops_variables_mod
 use random_mod
 
 implicit none
@@ -37,30 +36,28 @@ implicit none
 private
 public :: qg_fields
 public :: qg_fields_registry
-public :: qg_fields_create,qg_fields_create_default,qg_fields_create_from_other,qg_fields_delete, &
+public :: qg_fields_create,qg_fields_create_from_other,qg_fields_delete, &
         & qg_fields_zero,qg_fields_ones,qg_fields_dirac,qg_fields_random, &
-        & qg_fields_copy,qg_fields_self_add,qg_fields_self_sub,qg_fields_self_mul,qg_fields_axpy,qg_fields_self_schur, &
-        & qg_fields_dot_prod,qg_fields_add_incr,qg_fields_diff_incr,qg_fields_change_resol,qg_fields_read_file, &
-        & qg_fields_write_file,qg_fields_analytic_init,qg_fields_gpnorm,qg_fields_rms,qg_fields_sizes,qg_fields_vars, &
-        & qg_fields_set_atlas,qg_fields_to_atlas, qg_fields_from_atlas, &
-        & qg_fields_getpoint,qg_fields_setpoint,qg_fields_serialize,qg_fields_deserialize, qg_fields_check, &
-        & qg_fields_check_resolution,qg_fields_check_variables
+        & qg_fields_copy,qg_fields_copy_lbc,qg_fields_self_add,qg_fields_self_sub,qg_fields_self_mul,qg_fields_axpy, &
+        & qg_fields_self_schur,qg_fields_dot_prod,qg_fields_add_incr,qg_fields_diff_incr,qg_fields_change_resol, &
+        & qg_fields_read_file,qg_fields_write_file,qg_fields_analytic_init,qg_fields_gpnorm,qg_fields_rms,qg_fields_sizes, &
+        & qg_fields_lbc,qg_fields_set_atlas,qg_fields_to_atlas,qg_fields_from_atlas, &
+        & qg_fields_getpoint,qg_fields_setpoint,qg_fields_serialize,qg_fields_deserialize, &
+        & qg_fields_complete,qg_fields_check,qg_fields_check_resolution
 ! ------------------------------------------------------------------------------
 integer,parameter :: rseed = 7 !< Random seed (for reproducibility)
 
 type :: qg_fields
   type(qg_geom),pointer :: geom                !< Geometry
-  logical :: lq                                !< PV as main variable (streamfunction if false)
   logical :: lbc                               !< Boundaries are present
-  real(kind_real),allocatable :: gfld3d(:,:,:) !< TEMPORARY: TO BE REMOVED
-  real(kind_real),allocatable :: streamfct(:,:,:)  !< Streamfunction
-  real(kind_real),allocatable :: pv(:,:,:)     !< PV
+  real(kind_real),allocatable :: x(:,:,:)      !< Streamfunction
+  real(kind_real),allocatable :: q(:,:,:)      !< Potential vorticity
   real(kind_real),allocatable :: u(:,:,:)      !< U wind
   real(kind_real),allocatable :: v(:,:,:)      !< V wind
   real(kind_real),allocatable :: x_north(:)    !< Streamfunction on northern wall
   real(kind_real),allocatable :: x_south(:)    !< Streamfunction on southern wall
-  real(kind_real),allocatable :: q_north(:,:)  !< PV on northern wall
-  real(kind_real),allocatable :: q_south(:,:)  !< PV on southern wall
+  real(kind_real),allocatable :: q_north(:,:)  !< q on northern wall
+  real(kind_real),allocatable :: q_south(:,:)  !< q on southern wall
 end type qg_fields
 
 #define LISTED_TYPE qg_fields
@@ -86,7 +83,7 @@ implicit none
 ! Passed variables
 type(qg_fields),intent(inout) :: self   !< Fields
 type(qg_geom),target,intent(in) :: geom !< Geometry
-type(oops_variables),intent(in) :: vars !< Variables
+type(oops_variables),intent(in) :: vars !< List of variables
 logical,intent(in) :: lbc               !< Boundaries flag
 
 ! Local variables
@@ -95,34 +92,14 @@ character(len=1024) :: record
 ! Associate geometry
 self%geom => geom
 
-!!! TEMPORARY: TO BE REMOVED !!!
-if (vars%has('x')) then
-  self%lq = .false.
-elseif (vars%has('q')) then
-  self%lq = .true.
-else
-  call abor1_ftn('qg_fields_create: fields must have x or q')
-endif
-
 ! Set boundaries
 self%lbc = lbc
 
-!!! TEMPORARY: TO BE REMOVED !!!
-allocate(self%gfld3d(self%geom%nx,self%geom%ny,self%geom%nz))
-
 ! Allocate 3d fields
-if (vars%has('x')) then
-  allocate(self%streamfct(self%geom%nx,self%geom%ny,self%geom%nz))
-endif
-if (vars%has('q')) then
-  allocate(self%pv(self%geom%nx,self%geom%ny,self%geom%nz))
-endif
-if (vars%has('u')) then
-  allocate(self%u(self%geom%nx,self%geom%ny,self%geom%nz))
-endif
-if (vars%has('v')) then
-  allocate(self%v(self%geom%nx,self%geom%ny,self%geom%nz))
-endif
+if (vars%has('x')) allocate(self%x(self%geom%nx,self%geom%ny,self%geom%nz))
+if (vars%has('q')) allocate(self%q(self%geom%nx,self%geom%ny,self%geom%nz))
+if (vars%has('u')) allocate(self%u(self%geom%nx,self%geom%ny,self%geom%nz))
+if (vars%has('v')) allocate(self%v(self%geom%nx,self%geom%ny,self%geom%nz))
 
 ! Allocate boundaries
 if (self%lbc) then
@@ -138,46 +115,6 @@ call qg_fields_zero(self)
 
 end subroutine qg_fields_create
 ! ------------------------------------------------------------------------------
-!> Create fields from geometry (x)
-subroutine qg_fields_create_default(self,geom,lbc)
-
-implicit none
-
-! Passed variables
-type(qg_fields),intent(inout) :: self   !< Fields
-type(qg_geom),target,intent(in) :: geom !< Geometry
-logical,intent(in) :: lbc               !< Boundaries flag
-
-! Local variables
-character(len=1024) :: record
-
-! Associate geometry
-self%geom => geom
-
-! Set variables
-self%lq = .false.
-
-! Set boundaries
-self%lbc = lbc
-
-! Allocate 3d field
-allocate(self%gfld3d(self%geom%nx,self%geom%ny,self%geom%nz))
-allocate(self%streamfct(self%geom%nx,self%geom%ny,self%geom%nz))
-
-! Allocate boundaries
-if (self%lbc) then
-  ! Allocation
-  allocate(self%x_north(self%geom%nz))
-  allocate(self%x_south(self%geom%nz))
-  allocate(self%q_north(self%geom%nx,self%geom%nz))
-  allocate(self%q_south(self%geom%nx,self%geom%nz))
-endif
-
-! Initialize
-call qg_fields_zero(self)
-
-end subroutine qg_fields_create_default
-! ------------------------------------------------------------------------------
 !> Create fields from another one
 subroutine qg_fields_create_from_other(self,other,geom)
 
@@ -192,25 +129,13 @@ type(qg_geom),target,intent(in) :: geom !< Geometry
 self%geom => geom
 
 ! Copy attributes
-self%lq = other%lq
 self%lbc = other%lbc
 
-! Allocate 3d field
-allocate(self%gfld3d(self%geom%nx,self%geom%ny,self%geom%nz))
-
 ! Allocate 3d fields
-if (allocated(other%streamfct)) then
-  allocate(self%streamfct(self%geom%nx,self%geom%ny,self%geom%nz))
-endif
-if (allocated(other%pv)) then
-  allocate(self%pv(self%geom%nx,self%geom%ny,self%geom%nz))
-endif
-if (allocated(other%u)) then
-  allocate(self%u(self%geom%nx,self%geom%ny,self%geom%nz))
-endif
-if (allocated(other%v)) then
-  allocate(self%v(self%geom%nx,self%geom%ny,self%geom%nz))
-endif
+if (allocated(other%x)) allocate(self%x(self%geom%nx,self%geom%ny,self%geom%nz))
+if (allocated(other%q)) allocate(self%q(self%geom%nx,self%geom%ny,self%geom%nz))
+if (allocated(other%u)) allocate(self%u(self%geom%nx,self%geom%ny,self%geom%nz))
+if (allocated(other%v)) allocate(self%v(self%geom%nx,self%geom%ny,self%geom%nz))
 
 ! Allocate boundaries
 if (self%lbc) then
@@ -235,9 +160,8 @@ implicit none
 type(qg_fields),intent(inout) :: self !< Fields
 
 ! Release memory
-if (allocated(self%gfld3d)) deallocate(self%gfld3d)
-if (allocated(self%streamfct)) deallocate(self%streamfct)
-if (allocated(self%pv)) deallocate(self%pv)
+if (allocated(self%x)) deallocate(self%x)
+if (allocated(self%q)) deallocate(self%q)
 if (allocated(self%u)) deallocate(self%u)
 if (allocated(self%v)) deallocate(self%v)
 if (allocated(self%x_north)) deallocate(self%x_north)
@@ -259,16 +183,15 @@ type(qg_fields),intent(inout) :: self
 call qg_fields_check(self)
 
 ! Set fields to zero
-self%gfld3d = 0.0
-if (allocated(self%streamfct)) self%streamfct = 0.0
-if (allocated(self%pv)) self%pv = 0.0
-if (allocated(self%u)) self%u = 0.0
-if (allocated(self%v)) self%v = 0.0
+if (allocated(self%x)) self%x = 0.0_kind_real
+if (allocated(self%q)) self%q = 0.0_kind_real
+if (allocated(self%u)) self%u = 0.0_kind_real
+if (allocated(self%v)) self%v = 0.0_kind_real
 if (self%lbc) then
-  self%x_north = 0.0
-  self%x_south = 0.0
-  self%q_north = 0.0
-  self%q_south = 0.0
+  self%x_north = 0.0_kind_real
+  self%x_south = 0.0_kind_real
+  self%q_north = 0.0_kind_real
+  self%q_south = 0.0_kind_real
 endif
 
 end subroutine qg_fields_zero
@@ -285,9 +208,8 @@ type(qg_fields),intent(inout) :: self
 call qg_fields_check(self)
 
 ! Set fields to ones
-self%gfld3d = 1.0
-if (allocated(self%streamfct)) self%streamfct = 1.0
-if (allocated(self%pv)) self%pv = 1.0
+if (allocated(self%x)) self%x = 1.0
+if (allocated(self%q)) self%q = 1.0
 if (allocated(self%u)) self%u = 1.0
 if (allocated(self%v)) self%v = 1.0
 if (self%lbc) then
@@ -311,6 +233,8 @@ type(fckit_configuration),intent(in) :: f_conf !< FCKIT configuration
 ! Local variables
 integer :: ndir,idir
 integer,allocatable :: ixdir(:),iydir(:),izdir(:)
+character(len=1) :: var
+character(len=:),allocatable :: str
 
 ! Check field
 call qg_fields_check(self)
@@ -329,6 +253,8 @@ allocate(izdir(ndir))
 call f_conf%get_or_die("ixdir",ixdir)
 call f_conf%get_or_die("iydir",iydir)
 call f_conf%get_or_die("izdir",izdir)
+call f_conf%get_or_die("var",str)
+var = str
 
 ! Check Diracs positions
 if (any(ixdir<1).or.any(ixdir>self%geom%nx)) call abor1_ftn('qg_fields_dirac: invalid ixdir')
@@ -336,60 +262,88 @@ if (any(iydir<1).or.any(iydir>self%geom%ny)) call abor1_ftn('qg_fields_dirac: in
 if (any(izdir<1).or.any(izdir>self%geom%nz)) call abor1_ftn('qg_fields_dirac: invalid izdir')
 
 ! Setup Diracs
+call qg_fields_zero(self)
 do idir=1,ndir
-  self%gfld3d(ixdir(idir),iydir(idir),izdir(idir)) = 1.0
-  if (allocated(self%streamfct)) self%streamfct(ixdir(idir),iydir(idir),izdir(idir)) = 1.0
-end do
+  select case (var)
+  case ('x')
+     if (.not.allocated(self%x)) call abor1_ftn('qg_fields_dirac: x should be allocated')
+     self%x(ixdir(idir),iydir(idir),izdir(idir)) = 1.0
+  case ('q')
+     if (.not.allocated(self%q)) call abor1_ftn('qg_fields_dirac: q should be allocated')
+     self%q(ixdir(idir),iydir(idir),izdir(idir)) = 1.0
+  case default
+     call abor1_ftn('qg_fields_dirac: wrong variable')
+  endselect
+enddo
+
+! Complete other fields
+call qg_fields_complete(self,var)
 
 end subroutine qg_fields_dirac
 ! ------------------------------------------------------------------------------
 !> Generate random fields
-subroutine qg_fields_random(self)
+subroutine qg_fields_random(self,var)
 
 implicit none
 
 ! Passed variables
 type(qg_fields),intent(inout) :: self !< Fields
+character(len=1),intent(in) :: var    !< Variable to randomize ('x' or 'q')
 
 ! Check field
 call qg_fields_check(self)
 
 ! Set at random value
-call normal_distribution(self%gfld3d,0.0_kind_real,1.0_kind_real,rseed)
+select case (var)
+case ('x')
+   if (.not.allocated(self%x)) call abor1_ftn('qg_fields_random: x should be allocated')
+   call normal_distribution(self%x,0.0_kind_real,1.0_kind_real,rseed)
+case ('q')
+   if (.not.allocated(self%q)) call abor1_ftn('qg_fields_random: q should be allocated')
+   call normal_distribution(self%q,0.0_kind_real,1.0_kind_real,rseed)
+case default
+  call abor1_ftn('qg_fields_random: wrong variable')
+endselect
+
+! Complete other fields
+call qg_fields_complete(self,var)
 
 end subroutine qg_fields_random
 ! ------------------------------------------------------------------------------
 !> Copy fields
-subroutine qg_fields_copy(self,other,bconly)
+subroutine qg_fields_copy(self,other)
 
 implicit none
 
 ! Passed variables
 type(qg_fields),intent(inout) :: self   !< Fields
 type(qg_fields),intent(in)    :: other  !< Other fields
-logical,intent(in),optional   :: bconly !< Boundary condition only flag
-
-! Local variables
-logical :: lbconly
-
-! Local flag
-lbconly = .false.
-if (present(bconly)) lbconly = bconly
 
 ! Check resolution
 call qg_fields_check_resolution(self,other)
 
-if (.not.lbconly) then
-  ! Check variables
-  call qg_fields_check_variables(self,other)
+! Copy 3D field
+if (allocated(self%x).and.allocated(other%x)) self%x = other%x
+if (allocated(self%q).and.allocated(other%q)) self%q = other%q
+if (allocated(self%u).and.allocated(other%u)) self%u = other%u
+if (allocated(self%v).and.allocated(other%v)) self%v = other%v
 
-  ! Copy 3D field
-  self%gfld3d = other%gfld3d
-  if (allocated(self%streamfct).and.allocated(other%streamfct)) self%streamfct = other%streamfct
-  if (allocated(self%pv).and.allocated(other%pv)) self%pv = other%pv
-  if (allocated(self%u).and.allocated(other%u)) self%u = other%u
-  if (allocated(self%v).and.allocated(other%v)) self%v = other%v
-end if
+! Copy LBC
+call qg_fields_copy_lbc(self,other)
+
+end subroutine qg_fields_copy
+! ------------------------------------------------------------------------------
+!> Copy fields LBC
+subroutine qg_fields_copy_lbc(self,other)
+
+implicit none
+
+! Passed variables
+type(qg_fields),intent(inout) :: self  !< Fields
+type(qg_fields),intent(in)    :: other !< Other fields
+
+! Check resolution
+call qg_fields_check_resolution(self,other)
 
 if (self%lbc) then
   if (other%lbc) then
@@ -398,14 +352,14 @@ if (self%lbc) then
     self%q_north = other%q_north
     self%q_south = other%q_south
   else
-    self%x_north = 0.0
-    self%x_south = 0.0
-    self%q_north = 0.0
-    self%q_south = 0.0
+    self%x_north = 0.0_kind_real
+    self%x_south = 0.0_kind_real
+    self%q_north = 0.0_kind_real
+    self%q_south = 0.0_kind_real
   endif
 endif
 
-end subroutine qg_fields_copy
+end subroutine qg_fields_copy_lbc
 ! ------------------------------------------------------------------------------
 !> Add fields
 subroutine qg_fields_self_add(self,rhs)
@@ -418,12 +372,10 @@ type(qg_fields),intent(in)    :: rhs  !< Right-hand side
 
 ! Check resolution
 call qg_fields_check_resolution(self,rhs)
-call qg_fields_check_variables(self,rhs)
 
 ! Add field
-self%gfld3d = self%gfld3d+rhs%gfld3d
-if (allocated(self%streamfct).and.allocated(rhs%streamfct)) self%streamfct = self%streamfct + rhs%streamfct
-if (allocated(self%pv).and.allocated(rhs%pv)) self%pv = self%pv + rhs%pv
+if (allocated(self%x).and.allocated(rhs%x)) self%x = self%x + rhs%x
+if (allocated(self%q).and.allocated(rhs%q)) self%q = self%q + rhs%q
 if (allocated(self%u).and.allocated(rhs%u)) self%u = self%u + rhs%u
 if (allocated(self%v).and.allocated(rhs%v)) self%v = self%v + rhs%v
 if (self%lbc.and.rhs%lbc) then
@@ -446,12 +398,10 @@ type(qg_fields),intent(in)    :: rhs  !< Right-hand side
 
 ! Check resolution
 call qg_fields_check_resolution(self,rhs)
-call qg_fields_check_variables(self,rhs)
 
 ! Subtract field
-self%gfld3d = self%gfld3d-rhs%gfld3d
-if (allocated(self%streamfct).and.allocated(rhs%streamfct)) self%streamfct = self%streamfct - rhs%streamfct
-if (allocated(self%pv).and.allocated(rhs%pv)) self%pv = self%pv - rhs%pv
+if (allocated(self%x).and.allocated(rhs%x)) self%x = self%x - rhs%x
+if (allocated(self%q).and.allocated(rhs%q)) self%q = self%q - rhs%q
 if (allocated(self%u).and.allocated(rhs%u)) self%u = self%u - rhs%u
 if (allocated(self%v).and.allocated(rhs%v)) self%v = self%v - rhs%v
 if (self%lbc.and.rhs%lbc) then
@@ -476,9 +426,8 @@ real(kind_real),intent(in) :: zz      !< Multiplier
 call qg_fields_check(self)
 
 ! Multiply with a scalar
-self%gfld3d = zz*self%gfld3d
-if (allocated(self%streamfct)) self%streamfct = zz * self%streamfct
-if (allocated(self%pv)) self%pv = zz * self%pv
+if (allocated(self%x)) self%x = zz * self%x
+if (allocated(self%q)) self%q = zz * self%q
 if (allocated(self%u)) self%u = zz * self%u
 if (allocated(self%v)) self%v = zz * self%v
 if (self%lbc) then
@@ -502,12 +451,10 @@ type(qg_fields),intent(in) :: rhs     !< Right-hand side
 
 ! Check resolution
 call qg_fields_check_resolution(self,rhs)
-call qg_fields_check_variables(self,rhs)
 
 ! Apply apxy
-self%gfld3d = self%gfld3d+zz*rhs%gfld3d
-if (allocated(self%streamfct).and.allocated(rhs%streamfct)) self%streamfct = self%streamfct + zz * rhs%streamfct
-if (allocated(self%pv).and.allocated(rhs%pv)) self%pv = self%pv + zz * rhs%pv
+if (allocated(self%x).and.allocated(rhs%x)) self%x = self%x + zz * rhs%x
+if (allocated(self%q).and.allocated(rhs%q)) self%q = self%q + zz * rhs%q
 if (allocated(self%u).and.allocated(rhs%u)) self%u = self%u + zz * rhs%u
 if (allocated(self%v).and.allocated(rhs%v)) self%v = self%v + zz * rhs%v
 if (self%lbc.and.rhs%lbc) then
@@ -530,12 +477,10 @@ type(qg_fields),intent(in)    :: rhs  !< Right-hand side
 
 ! Check resolution
 call qg_fields_check_resolution(self,rhs)
-call qg_fields_check_variables(self,rhs)
 
 ! Schur product
-self%gfld3d = self%gfld3d*rhs%gfld3d
-if (allocated(self%streamfct).and.allocated(rhs%streamfct)) self%streamfct = self%streamfct * rhs%streamfct
-if (allocated(self%pv).and.allocated(rhs%pv)) self%pv = self%pv * rhs%pv
+if (allocated(self%x).and.allocated(rhs%x)) self%x = self%x * rhs%x
+if (allocated(self%q).and.allocated(rhs%q)) self%q = self%q * rhs%q
 if (allocated(self%u).and.allocated(rhs%u)) self%u = self%u * rhs%u
 if (allocated(self%v).and.allocated(rhs%v)) self%v = self%v * rhs%v
 if (self%lbc.and.rhs%lbc) then
@@ -559,10 +504,13 @@ real(kind_real),intent(out) :: zprod !< Dot product
 
 ! Check resolution
 call qg_fields_check_resolution(fld1,fld2)
-call qg_fields_check_variables(fld1,fld2)
 
 ! Compute dot product
-zprod = sum(fld1%gfld3d*fld2%gfld3d)
+zprod = 0.0_kind_real
+if (allocated(fld1%x).and.allocated(fld2%x)) zprod = zprod+sum(fld1%x*fld2%x)
+if (allocated(fld1%q).and.allocated(fld2%q)) zprod = zprod+sum(fld1%q*fld2%q)
+if (allocated(fld1%u).and.allocated(fld2%u)) zprod = zprod+sum(fld1%u*fld2%u)
+if (allocated(fld1%v).and.allocated(fld2%v)) zprod = zprod+sum(fld1%v*fld2%v)
 
 end subroutine qg_fields_dot_prod
 ! ------------------------------------------------------------------------------
@@ -579,20 +527,15 @@ type(qg_fields),intent(in)    :: rhs  !< Right-hand side
 call qg_fields_check(self)
 call qg_fields_check(rhs)
 
-if (self%lq.eqv.rhs%lq) then
-  if ((self%geom%nx==rhs%geom%nx).and.(self%geom%ny==rhs%geom%ny).and.(self%geom%nz==rhs%geom%nz)) then
-    ! Same resolution
-    self%gfld3d = self%gfld3d+rhs%gfld3d
-    if (allocated(self%streamfct).and.allocated(rhs%streamfct)) self%streamfct = self%streamfct + rhs%streamfct
-    if (allocated(self%pv).and.allocated(rhs%pv)) self%pv = self%pv + rhs%pv
-    if (allocated(self%u).and.allocated(rhs%u)) self%u = self%u + rhs%u
-    if (allocated(self%v).and.allocated(rhs%v)) self%v = self%v + rhs%v
-  else
-    ! Different resolutions
-    call abor1_ftn('qg_fields_add_incr: not coded for low res increment yet')
-  endif
+if ((self%geom%nx==rhs%geom%nx).and.(self%geom%ny==rhs%geom%ny).and.(self%geom%nz==rhs%geom%nz)) then
+  ! Same resolution
+  if (allocated(self%x).and.allocated(rhs%x)) self%x = self%x + rhs%x
+  if (allocated(self%q).and.allocated(rhs%q)) self%q = self%q + rhs%q
+  if (allocated(self%u).and.allocated(rhs%u)) self%u = self%u + rhs%u
+  if (allocated(self%v).and.allocated(rhs%v)) self%v = self%v + rhs%v
 else
-  call abor1_ftn('qg_fields_add_incr: different variables')
+  ! Different resolutions
+  call abor1_ftn('qg_fields_add_incr: not coded for low res increment yet')
 endif
 
 end subroutine qg_fields_add_incr
@@ -609,26 +552,20 @@ type(qg_fields),intent(in) :: fld2   !< Second fields
 
 ! Check resolution
 call qg_fields_check_resolution(fld1,fld2)
-call qg_fields_check_variables(fld1,fld2)
 call qg_fields_check(lhs)
 
 ! Initialization
 call qg_fields_zero(lhs)
 
-if (lhs%lq.eqv.fld1%lq) then
-  if ((fld1%geom%nx==lhs%geom%nx).and.(fld1%geom%ny==lhs%geom%ny).and.(fld1%geom%nz==lhs%geom%nz)) then
-    ! Same resolution
-    lhs%gfld3d = fld1%gfld3d-fld2%gfld3d
-    if (allocated(lhs%streamfct).and.allocated(fld1%streamfct)) lhs%streamfct = fld1%streamfct - fld2%streamfct
-    if (allocated(lhs%pv).and.allocated(fld1%pv)) lhs%pv = fld1%pv - fld2%pv
-    if (allocated(lhs%u).and.allocated(fld1%u)) lhs%u = fld1%u - fld2%u
-    if (allocated(lhs%v).and.allocated(fld1%v)) lhs%v = fld1%v - fld2%v
-  else
-    ! Different resolutions
-    call abor1_ftn('qg_fields_diff_incr: not coded for low res increment yet')
-  endif
+if ((fld1%geom%nx==lhs%geom%nx).and.(fld1%geom%ny==lhs%geom%ny).and.(fld1%geom%nz==lhs%geom%nz)) then
+  ! Same resolution
+  if (allocated(lhs%x).and.allocated(fld1%x)) lhs%x = fld1%x - fld2%x
+  if (allocated(lhs%q).and.allocated(fld1%q)) lhs%q = fld1%q - fld2%q
+  if (allocated(lhs%u).and.allocated(fld1%u)) lhs%u = fld1%u - fld2%u
+  if (allocated(lhs%v).and.allocated(fld1%v)) lhs%v = fld1%v - fld2%v
 else
-  call abor1_ftn('qg_fields_diff_incr: different variables')
+  ! Different resolutions
+  call abor1_ftn('qg_fields_diff_incr: not coded for low res increment yet')
 endif
 
 end subroutine qg_fields_diff_incr
@@ -645,66 +582,67 @@ type(qg_fields),intent(in)    :: rhs !< Right-hand side
 integer :: ix,iy,iz
 real(kind_real), allocatable, dimension(:,:,:) :: q1, q2
 
-! Check fields
-call qg_fields_check(fld)
-call qg_fields_check(rhs)
-
-if (fld%lq.eqv.rhs%lq) then
-  if ((fld%geom%nx==rhs%geom%nx).and.(fld%geom%ny==rhs%geom%ny).and.(fld%geom%nz==rhs%geom%nz)) then
-    ! Same resolution
-    call qg_fields_copy(fld,rhs)
-  else
-    do ix = 1,fld%geom%nx
-      do iy = 1,fld%geom%ny
-        do iz = 1,fld%geom%nz
-          call qg_interp_trilinear( rhs%geom,fld%geom%lon(ix,iy),fld%geom%lat(ix,iy),fld%geom%z(iz), &
-                                    rhs%gfld3d,fld%gfld3d(ix,iy,iz) )
-        enddo
+if ((fld%geom%nx==rhs%geom%nx).and.(fld%geom%ny==rhs%geom%ny).and.(fld%geom%nz==rhs%geom%nz)) then
+  ! Same resolution
+   call qg_fields_copy(fld,rhs)
+else
+  ! Trilinear interpolation
+  do ix=1,fld%geom%nx
+    do iy=1,fld%geom%ny
+      do iz=1,fld%geom%nz
+        if (allocated(rhs%x).and.allocated(fld%x)) then
+          call qg_interp_trilinear(rhs%geom,fld%geom%lon(ix,iy),fld%geom%lat(ix,iy),fld%geom%z(iz), &
+                                   rhs%x,fld%x(ix,iy,iz))
+        endif
+        if (allocated(rhs%q).and.allocated(fld%q)) then
+          call qg_interp_trilinear(rhs%geom,fld%geom%lon(ix,iy),fld%geom%lat(ix,iy),fld%geom%z(iz), &
+                                   rhs%q,fld%q(ix,iy,iz))
+        endif
+        if (allocated(rhs%u).and.allocated(fld%u)) then
+          call qg_interp_trilinear(rhs%geom,fld%geom%lon(ix,iy),fld%geom%lat(ix,iy),fld%geom%z(iz), &
+                                   rhs%u,fld%u(ix,iy,iz))
+        endif
+        if (allocated(rhs%v).and.allocated(fld%v)) then
+          call qg_interp_trilinear(rhs%geom,fld%geom%lon(ix,iy),fld%geom%lat(ix,iy),fld%geom%z(iz), &
+                                   rhs%v,fld%v(ix,iy,iz))
+        endif
       enddo
     enddo
-    if (fld%lbc) then
-      if (rhs%lbc) then
-        allocate(q1(rhs%geom%nx,rhs%geom%ny,rhs%geom%nz))
-        allocate(q2(fld%geom%nx,fld%geom%ny,fld%geom%nz))
-        do iy = 1,rhs%geom%ny
-          q1(:,iy,:) = rhs%q_south
+  enddo
+
+  ! Deal with boundary conditions
+  if (fld%lbc) then
+    if (rhs%lbc) then
+      allocate(q1(rhs%geom%nx,rhs%geom%ny,rhs%geom%nz))
+      allocate(q2(fld%geom%nx,fld%geom%ny,fld%geom%nz))
+      do iy=1,rhs%geom%ny
+        q1(:,iy,:) = rhs%q_south
+      enddo
+      do ix=1,fld%geom%nx
+        do iz=1,fld%geom%nz
+          call qg_interp_trilinear(rhs%geom,fld%geom%lon(ix,1),fld%geom%lat(ix,1),fld%geom%z(iz),q1,q2(ix,1,iz) )
         enddo
-        do ix = 1,fld%geom%nx
-          do iz = 1,fld%geom%nz
-            call qg_interp_trilinear( rhs%geom,fld%geom%lon(ix,1),fld%geom%lat(ix,1),fld%geom%z(iz), &
-                                      q1,q2(ix,1,iz) )
-          enddo
+      enddo
+      fld%q_south = q2(:,1,:)
+      do iy=1,rhs%geom%ny
+        q1(:,iy,:) = rhs%q_north
+      enddo
+      do ix=1,fld%geom%nx
+        do iz=1,fld%geom%nz
+          call qg_interp_trilinear(rhs%geom,fld%geom%lon(ix,1),fld%geom%lat(ix,1),fld%geom%z(iz),q1,q2(ix,1,iz))
         enddo
-        fld%q_south = q2(:,1,:)
-        do iy = 1,rhs%geom%ny
-          q1(:,iy,:) = rhs%q_north
-        enddo
-        do ix = 1,fld%geom%nx
-          do iz = 1,fld%geom%nz
-            call qg_interp_trilinear( rhs%geom,fld%geom%lon(ix,1),fld%geom%lat(ix,1),fld%geom%z(iz), &
-                                      q1,q2(ix,1,iz) )
-          enddo
-        enddo
-        fld%q_north = q2(:,1,:)
-        deallocate(q1,q2)
-        fld%x_north = rhs%x_north
-        fld%x_south = rhs%x_south
-      else
-        fld%x_north = 0.0
-        fld%x_south = 0.0
-        fld%q_north = 0.0
-        fld%q_south = 0.0
-      endif
+      enddo
+      fld%q_north = q2(:,1,:)
+      deallocate(q1,q2)
+      fld%x_north = rhs%x_north
+      fld%x_south = rhs%x_south
+    else
+      fld%x_north = 0.0_kind_real
+      fld%x_south = 0.0_kind_real
+      fld%q_north = 0.0_kind_real
+      fld%q_south = 0.0_kind_real
     endif
   endif
-else
-  call abor1_ftn('qg_fields_change_resol: different variables')
-endif
-
-if (fld%lq) then
-  if (allocated(fld%pv)) fld%pv = fld%gfld3d
-else
-  if (allocated(fld%streamfct)) fld%streamfct = fld%gfld3d
 endif
 
 end subroutine qg_fields_change_resol
@@ -722,7 +660,7 @@ type(datetime),intent(inout) :: vdate          !< Date and time
 
 ! Local variables
 integer :: iread,nx,ny,nz,bc
-integer :: ncid,nx_id,ny_id,nz_id,gfld3d_id,x_north_id,x_south_id,q_north_id,q_south_id
+integer :: ncid,nx_id,ny_id,nz_id,x_id,q_id,u_id,v_id,x_north_id,x_south_id,q_north_id,q_south_id
 logical :: lbc
 character(len=20) :: sdate
 character(len=1024) :: record,filename
@@ -781,18 +719,17 @@ else
     lbc = .true.
   else
     call abor1_ftn('qg_fields_read_file: wrong bc value')
-  end if
+  endif
   call ncerr(nf90_get_att(ncid,nf90_global,'sdate',sdate))
 
   ! Test attributes consistency with the field
   if ((.not.lbc).and.fld%lbc) call abor1_ftn('qg_fields_read_file: LBC are missing in NetCDF file')
 
   ! Get variables ids
-  if (fld%lq) then
-    call ncerr(nf90_inq_varid(ncid,'q',gfld3d_id))
-  else
-    call ncerr(nf90_inq_varid(ncid,'x',gfld3d_id))
-  endif
+  if (allocated(fld%x)) call ncerr(nf90_inq_varid(ncid,'x',x_id))
+  if (allocated(fld%q)) call ncerr(nf90_inq_varid(ncid,'q',q_id))
+  if (allocated(fld%u)) call ncerr(nf90_inq_varid(ncid,'u',u_id))
+  if (allocated(fld%v)) call ncerr(nf90_inq_varid(ncid,'v',v_id))
   if (fld%lbc) then
     call ncerr(nf90_inq_varid(ncid,'x_north',x_north_id))
     call ncerr(nf90_inq_varid(ncid,'x_south',x_south_id))
@@ -801,7 +738,10 @@ else
   endif
 
   ! Get variables
-  call ncerr(nf90_get_var(ncid,gfld3d_id,fld%gfld3d))
+  if (allocated(fld%x)) call ncerr(nf90_get_var(ncid,x_id,fld%x))
+  if (allocated(fld%q)) call ncerr(nf90_get_var(ncid,q_id,fld%q))
+  if (allocated(fld%u)) call ncerr(nf90_get_var(ncid,u_id,fld%u))
+  if (allocated(fld%v)) call ncerr(nf90_get_var(ncid,v_id,fld%v))
   if (fld%lbc) then
     call ncerr(nf90_get_var(ncid,x_north_id,fld%x_north))
     call ncerr(nf90_get_var(ncid,x_south_id,fld%x_south))
@@ -815,16 +755,10 @@ else
   ! Set date
   call fckit_log%info('qg_fields_read_file: validity date is '//sdate)
   call datetime_set(sdate,vdate)
-end if
+endif
 
 ! Check field
 call qg_fields_check(fld)
-
-if (fld%lq) then
-  if (allocated(fld%pv)) fld%pv = fld%gfld3d
-else
-  if (allocated(fld%streamfct)) fld%streamfct = fld%gfld3d
-endif
 
 end subroutine qg_fields_read_file
 ! ------------------------------------------------------------------------------
@@ -842,42 +776,30 @@ type(datetime),intent(in) :: vdate             !< Date and time
 integer :: ncid,nx_id,ny_id,nz_id,lon_id,lat_id,z_id,area_id,heat_id,x_id,q_id,u_id,v_id
 integer :: x_north_id,x_south_id,q_north_id,q_south_id
 integer :: info
-real(kind_real) :: x(fld%geom%nx,fld%geom%ny,fld%geom%nz),q(fld%geom%nx,fld%geom%ny,fld%geom%nz)
-real(kind_real) :: u(fld%geom%nx,fld%geom%ny,fld%geom%nz),v(fld%geom%nx,fld%geom%ny,fld%geom%nz)
-logical :: lwx,lwq,lwuv,ismpi,mainpe
 character(len=20) :: sdate
 character(len=1024) :: filename
+type(oops_variables) :: vars
+type(qg_fields) :: fld_io
 
 ! Check field
 call qg_fields_check(fld)
 
-! Compute streamfunction and potential vorticity
-if (fld%lq) then
-  q = fld%gfld3d
-  lwq = .true.
-  if (fld%lbc) then
-    call convert_q_to_x(fld%geom,q,fld%x_north,fld%x_south,x)
-    lwx = .true.
-  else
-    lwx = .false.
-  endif
+! Get all variables
+vars = oops_variables()
+call vars%push_back('x')
+call vars%push_back('q')
+call vars%push_back('u')
+call vars%push_back('v')
+call qg_fields_create(fld_io,fld%geom,vars,.true.)
+call qg_fields_copy_lbc(fld_io,fld)
+if (allocated(fld%x)) then
+  fld_io%x = fld%x
+  call qg_fields_complete(fld_io,'x')
+elseif (allocated(fld%q)) then
+  fld_io%q = fld%q
+  call qg_fields_complete(fld_io,'q')
 else
-  x = fld%gfld3d
-  lwx = .true.
-  if (fld%lbc) then
-    call convert_x_to_q(fld%geom,x,fld%x_north,fld%x_south,q)
-    lwq = .true.
-  else
-    lwq = .false.
-  endif
-endif
-
-! Compute wind
-if (fld%lbc) then
-  call convert_x_to_uv(fld%geom,x,fld%x_north,fld%x_south,u,v)
-  lwuv = .true.
-else
-  lwuv = .false.
+  call abor1_ftn('qg_fields_write_file: x or q required')
 endif
 
 ! Set filename
@@ -900,7 +822,7 @@ if (fld%lbc) then
   call ncerr(nf90_put_att(ncid,nf90_global,'bc',1))
 else
   call ncerr(nf90_put_att(ncid,nf90_global,'bc',0))
-end if
+endif
 call ncerr(nf90_put_att(ncid,nf90_global,'sdate',sdate))
 
 ! Define variables
@@ -909,20 +831,14 @@ call ncerr(nf90_def_var(ncid,'lat',nf90_double,(/nx_id,ny_id/),lat_id))
 call ncerr(nf90_def_var(ncid,'z',nf90_double,(/nz_id/),z_id))
 call ncerr(nf90_def_var(ncid,'area',nf90_double,(/nx_id,ny_id/),area_id))
 call ncerr(nf90_def_var(ncid,'heat',nf90_double,(/nx_id,ny_id/),heat_id))
-if (lwx) then
-  call ncerr(nf90_def_var(ncid,'x',nf90_double,(/nx_id,ny_id,nz_id/),x_id))
-  call ncerr(nf90_put_att(ncid,x_id,'_FillValue',missing_value(1.0_kind_real)))
-endif
-if (lwq) then
-  call ncerr(nf90_def_var(ncid,'q',nf90_double,(/nx_id,ny_id,nz_id/),q_id))
-  call ncerr(nf90_put_att(ncid,q_id,'_FillValue',missing_value(1.0_kind_real)))
-endif
-if (lwuv) then
-  call ncerr(nf90_def_var(ncid,'u',nf90_double,(/nx_id,ny_id,nz_id/),u_id))
-  call ncerr(nf90_put_att(ncid,u_id,'_FillValue',missing_value(1.0_kind_real)))
-  call ncerr(nf90_def_var(ncid,'v',nf90_double,(/nx_id,ny_id,nz_id/),v_id))
-  call ncerr(nf90_put_att(ncid,v_id,'_FillValue',missing_value(1.0_kind_real)))
-endif
+call ncerr(nf90_def_var(ncid,'x',nf90_double,(/nx_id,ny_id,nz_id/),x_id))
+call ncerr(nf90_put_att(ncid,x_id,'_FillValue',missing_value(1.0_kind_real)))
+call ncerr(nf90_def_var(ncid,'q',nf90_double,(/nx_id,ny_id,nz_id/),q_id))
+call ncerr(nf90_put_att(ncid,q_id,'_FillValue',missing_value(1.0_kind_real)))
+call ncerr(nf90_def_var(ncid,'u',nf90_double,(/nx_id,ny_id,nz_id/),u_id))
+call ncerr(nf90_put_att(ncid,u_id,'_FillValue',missing_value(1.0_kind_real)))
+call ncerr(nf90_def_var(ncid,'v',nf90_double,(/nx_id,ny_id,nz_id/),v_id))
+call ncerr(nf90_put_att(ncid,v_id,'_FillValue',missing_value(1.0_kind_real)))
 if (fld%lbc) then
   call ncerr(nf90_def_var(ncid,'x_north',nf90_double,(/nz_id/),x_north_id))
   call ncerr(nf90_put_att(ncid,x_north_id,'_FillValue',missing_value(1.0_kind_real)))
@@ -932,7 +848,7 @@ if (fld%lbc) then
   call ncerr(nf90_put_att(ncid,q_north_id,'_FillValue',missing_value(1.0_kind_real)))
   call ncerr(nf90_def_var(ncid,'q_south',nf90_double,(/nx_id,nz_id/),q_south_id))
   call ncerr(nf90_put_att(ncid,q_south_id,'_FillValue',missing_value(1.0_kind_real)))
-end if
+endif
 
 ! End definitions
 call ncerr(nf90_enddef(ncid))
@@ -943,12 +859,10 @@ call ncerr(nf90_put_var(ncid,lat_id,fld%geom%lat))
 call ncerr(nf90_put_var(ncid,z_id,fld%geom%z))
 call ncerr(nf90_put_var(ncid,area_id,fld%geom%area))
 call ncerr(nf90_put_var(ncid,heat_id,fld%geom%heat))
-if (lwx) call ncerr(nf90_put_var(ncid,x_id,x))
-if (lwq) call ncerr(nf90_put_var(ncid,q_id,q))
-if (lwuv) then
-  call ncerr(nf90_put_var(ncid,u_id,u))
-  call ncerr(nf90_put_var(ncid,v_id,v))
-endif
+call ncerr(nf90_put_var(ncid,x_id,fld_io%x))
+call ncerr(nf90_put_var(ncid,q_id,fld_io%q))
+call ncerr(nf90_put_var(ncid,u_id,fld_io%u))
+call ncerr(nf90_put_var(ncid,v_id,fld_io%v))
 if (fld%lbc) then
   call ncerr(nf90_put_var(ncid,x_north_id,fld%x_north))
   call ncerr(nf90_put_var(ncid,x_south_id,fld%x_south))
@@ -958,6 +872,9 @@ endif
 
 ! Close NetCDF file
 call ncerr(nf90_close(ncid))
+
+! Release memory
+call vars%destruct()
 
 end subroutine qg_fields_write_file
 ! ------------------------------------------------------------------------------
@@ -1013,7 +930,7 @@ case ('baroclinic-instability')
     enddo
     call baroclinic_instability(0.0_kind_real,domain_meridional,fld%geom%z(iz),'x',fld%x_north(iz))
     call baroclinic_instability(0.0_kind_real,0.0_kind_real,fld%geom%z(iz),'x',fld%x_south(iz))
-  end do
+  enddo
 case ('large-vortices')
   ! Large vortices
   do iz=1,fld%geom%nz
@@ -1030,10 +947,10 @@ case ('uniform_field')
   call f_conf%get_or_die("uval",uval)
   x = uval
 case default
-  call abor1_ftn ('qg_fields_analytic_init: unknown initialization')
-end select
+  call abor1_ftn('qg_fields_analytic_init: unknown initialization')
+endselect
 
-! Compute PV
+! Compute q
 call convert_x_to_q(fld%geom,x,fld%x_north,fld%x_south,q)
 do iz=1,fld%geom%nz
   do ix=1,fld%geom%nx
@@ -1042,66 +959,85 @@ do iz=1,fld%geom%nz
   do ix=1,fld%geom%nx
     fld%q_north(ix,iz) = 2.0*q(ix,fld%geom%ny,iz)-q(ix,fld%geom%ny-1,iz)
   enddo
-end do
+enddo
 
-! Copy 3d field
-if (fld%lq) then
-  fld%gfld3d = q
+! Copy 3d field and ensure consistency
+if (allocated(x)) then
+  fld%x = x
+  call qg_fields_complete(fld,'x')
+elseif (allocated(q)) then
+  fld%q = q
+  call qg_fields_complete(fld,'q')
 else
-  fld%gfld3d = x
+  call abor1_ftn('qg_fields_analytic_init: x or q required')
 endif
 
 ! Check field
 call qg_fields_check(fld)
-
-if (fld%lq) then
-  if (allocated(fld%pv)) fld%pv = fld%gfld3d
-else
-  if (allocated(fld%streamfct)) fld%streamfct = fld%gfld3d
-endif
 
 end subroutine qg_fields_analytic_init
 ! ------------------------------------------------------------------------------
 !> Fields statistics
-subroutine qg_fields_gpnorm(fld,nb,pstat)
+subroutine qg_fields_gpnorm(fld,vpresent,vmin,vmax,vrms)
 
 implicit none
 
 ! Passed variables
-type(qg_fields),intent(in) :: fld                !< Fields
-integer,intent(in) :: nb                         !< Number of boundaries
-real(kind_real),intent(inout) :: pstat(3*(1+nb)) !< Statistics
-
-! Local variables
-integer :: jj,js,jvb
-real(kind_real) :: stat(3,1+nb)
+type(qg_fields),intent(in) :: fld        !< Fields
+integer,intent(inout) :: vpresent(6)     !< Variables presence flag
+real(kind_real),intent(inout) :: vmin(6) !< Variables minimum
+real(kind_real),intent(inout) :: vmax(6) !< Variables maximum
+real(kind_real),intent(inout) :: vrms(6) !< Variables RMS
 
 ! Check field
 call qg_fields_check(fld)
 
-! Check number of stats
-if ((fld%lbc.and.(nb/=2)).or.((.not.fld%lbc).and.(nb>0))) call abor1_ftn('qg_fields_gpnorm: error number of fields')
+! Initialization
+vpresent = 0
+vmin = 0.0_kind_real
+vmax = 0.0_kind_real
+vrms = 0.0_kind_real
 
-! 3d field
-stat(1,1) = minval(fld%gfld3d)
-stat(2,1) = maxval(fld%gfld3d)
-stat(3,1) = sqrt(sum(fld%gfld3d**2)/real(fld%geom%nx*fld%geom%ny*fld%geom%nz,kind_real))
-
-! Boundaries
-if (nb==2) then
-  ! Streamfunction
-  stat(1,2) = min(minval(fld%x_north),minval(fld%x_south))
-  stat(2,2) = max(maxval(fld%x_north),maxval(fld%x_south))
-  stat(3,2) = sqrt(sum(fld%x_north**2+fld%x_south**2)/real(2*fld%geom%nz,kind_real))
-
-  ! Potential vorticity
-  stat(1,3) = min(minval(fld%q_north),minval(fld%q_south))
-  stat(2,3) = max(maxval(fld%q_north),maxval(fld%q_south))
-  stat(3,3) = sqrt(sum(fld%q_north**2+fld%q_south**2)/real(2*fld%geom%nx*fld%geom%nz,kind_real))
+! 3d fields
+if (allocated(fld%x)) then
+  vpresent(1) = 1
+  vmin(1) = minval(fld%x)
+  vmax(1) = maxval(fld%x)
+  vrms(1) = sqrt(sum(fld%x**2)/real(fld%geom%nx*fld%geom%ny*fld%geom%nz,kind_real))
+endif
+if (allocated(fld%q)) then
+  vpresent(2) = 1
+  vmin(2) = minval(fld%q)
+  vmax(2) = maxval(fld%q)
+  vrms(2) = sqrt(sum(fld%q**2)/real(fld%geom%nx*fld%geom%ny*fld%geom%nz,kind_real))
+endif
+if (allocated(fld%u)) then
+  vpresent(3) = 1
+  vmin(3) = minval(fld%u)
+  vmax(3) = maxval(fld%u)
+  vrms(3) = sqrt(sum(fld%u**2)/real(fld%geom%nx*fld%geom%ny*fld%geom%nz,kind_real))
+endif
+if (allocated(fld%v)) then
+  vpresent(4) = 1
+  vmin(4) = minval(fld%v)
+  vmax(4) = maxval(fld%v)
+  vrms(4) = sqrt(sum(fld%v**2)/real(fld%geom%nx*fld%geom%ny*fld%geom%nz,kind_real))
 endif
 
-! Pack
-pstat = reshape(stat,(/3*(1+nb)/))
+! Boundaries
+if (fld%lbc) then
+  ! Streamfunction
+  vpresent(5) = 1
+  vmin(5) = min(minval(fld%x_north),minval(fld%x_south))
+  vmax(5) = max(maxval(fld%x_north),maxval(fld%x_south))
+  vrms(5) = sqrt(sum(fld%x_north**2+fld%x_south**2)/real(2*fld%geom%nz,kind_real))
+
+  ! Potential vorticity
+  vpresent(6) = 1
+  vmin(6) = min(minval(fld%q_north),minval(fld%q_south))
+  vmax(6) = max(maxval(fld%q_north),maxval(fld%q_south))
+  vrms(6) = sqrt(sum(fld%q_north**2+fld%q_south**2)/real(2*fld%geom%nx*fld%geom%nz,kind_real))
+endif
 
 end subroutine qg_fields_gpnorm
 ! ------------------------------------------------------------------------------
@@ -1116,28 +1052,45 @@ real(kind_real),intent(out) :: prms !< RMS
 
 ! Local variables
 integer :: norm
-real(kind_real) :: zz
 
 ! Check field
 call qg_fields_check(fld)
 
-! 3d field
-zz = sum(fld%gfld3d**2)
-norm = fld%geom%nx*fld%geom%ny*fld%geom%nz
+! Initialization
+prms = 0.0_kind_real
+norm = 0.0_kind_real
+
+! 3d fields
+if (allocated(fld%x)) then
+   prms = prms+sum(fld%x**2)
+   norm = norm+real(fld%geom%nx*fld%geom%ny*fld%geom%nz,kind_real)
+endif
+if (allocated(fld%q)) then
+   prms = prms+sum(fld%q**2)
+   norm = norm+real(fld%geom%nx*fld%geom%ny*fld%geom%nz,kind_real)
+endif
+if (allocated(fld%u)) then
+   prms = prms+sum(fld%u**2)
+   norm = norm+real(fld%geom%nx*fld%geom%ny*fld%geom%nz,kind_real)
+endif
+if (allocated(fld%v)) then
+   prms = prms+sum(fld%v**2)
+   norm = norm+real(fld%geom%nx*fld%geom%ny*fld%geom%nz,kind_real)
+endif
 
 ! Boundaries
 if (fld%lbc) then
-  zz = zz+sum(fld%x_north**2+fld%x_south**2)+sum(fld%q_north**2+fld%q_south**2)
-  norm = norm+2*(1+fld%geom%nx)*fld%geom%nz
-end if
+  prms = prms+sum(fld%x_north**2+fld%x_south**2)+sum(fld%q_north**2+fld%q_south**2)
+  norm = norm+real(2*(1+fld%geom%nx)*fld%geom%nz,kind_real)
+endif
 
-! Normalize
-prms = sqrt(zz/real(norm,kind_real))
+! Normalize and square-root
+prms = sqrt(prms/norm)
 
 end subroutine qg_fields_rms
 ! ------------------------------------------------------------------------------
 !> Get fields geometry
-subroutine qg_fields_sizes(fld,nx,ny,nz,nb)
+subroutine qg_fields_sizes(fld,nx,ny,nz)
 
 implicit none
 
@@ -1146,47 +1099,33 @@ type(qg_fields),intent(in) :: fld !< Fields
 integer,intent(out) :: nx         !< X size
 integer,intent(out) :: ny         !< Y size
 integer,intent(out) :: nz         !< Z size
-integer,intent(out) :: nb         !< Number of boundaries
 
 ! Copy sizes
 nx = fld%geom%nx
 ny = fld%geom%ny
 nz = fld%geom%nz
-if (fld%lbc) then
-  ! North and South boundaries
-  nb = 2
-else
-  ! No boundaries
-  nb = 0
-endif
 
 end subroutine qg_fields_sizes
 ! ------------------------------------------------------------------------------
-!> Get fields variables
-subroutine qg_fields_vars(fld,lq,lbc)
+!> Get LBC presence
+subroutine qg_fields_lbc(fld,lbc)
 
 implicit none
 
 ! Passed variables
 type(qg_fields),intent(in) :: fld !< Fields
-integer,intent(out) :: lq         !< Potential vorticity flag
-integer,intent(out) :: lbc        !< Boundaries flag
+integer,intent(out) :: lbc        !< LBC presence
 
-! Potential vorticity flag
-if (fld%lq) then
-  lq = 1
-else
-  lq = 0
-endif
+! Check field
+call qg_fields_check(fld)
 
-! Boundaries flag
 if (fld%lbc) then
   lbc = 1
 else
   lbc = 0
 endif
 
-end subroutine qg_fields_vars
+end subroutine qg_fields_lbc
 ! ------------------------------------------------------------------------------
 !> Set ATLAS field
 subroutine qg_fields_set_atlas(self,vars,afieldset)
@@ -1195,29 +1134,31 @@ implicit none
 
 ! Passed variables
 type(qg_fields),intent(in) :: self              !< Fields
-type(oops_variables),intent(in) :: vars         !< Variables
+type(oops_variables),intent(in) :: vars         !< List of variables
 type(atlas_fieldset),intent(inout) :: afieldset !< ATLAS fieldset
 
 ! Local variables
+integer :: jvar
 character(len=1024) :: fieldname
 type(atlas_field) :: afield
 
 ! Get or create field
-if (vars%has('x')) fieldname = 'x'
-if (vars%has('q')) fieldname = 'q'
-if (afieldset%has_field(trim(fieldname))) then
-  ! Get afield
-  afield = afieldset%field(trim(fieldname))
-else
-  ! Create field
-  afield = self%geom%afunctionspace%create_field(name=trim(fieldname),kind=atlas_real(kind_real),levels=self%geom%nz)
+do jvar=1,vars%nvars()
+   fieldname = vars%variable(jvar)
+   if (afieldset%has_field(trim(fieldname))) then
+     ! Get afield
+     afield = afieldset%field(trim(fieldname))
+   else
+     ! Create field
+     afield = self%geom%afunctionspace%create_field(name=trim(fieldname),kind=atlas_real(kind_real),levels=self%geom%nz)
 
-  ! Add field
-  call afieldset%add(afield)
-end if
+     ! Add field
+     call afieldset%add(afield)
+   endif
 
-! Release pointer
-call afield%final()
+   ! Release pointer
+   call afield%final()
+enddo
 
 end subroutine qg_fields_set_atlas
 ! ------------------------------------------------------------------------------
@@ -1228,61 +1169,55 @@ implicit none
 
 ! Passed variables
 type(qg_fields),intent(in) :: self              !< Fields
-type(oops_variables),intent(in) :: vars         !< Variables
+type(oops_variables),intent(in) :: vars         !< List of variables
 type(atlas_fieldset),intent(inout) :: afieldset !< ATLAS fieldset
 
 ! Local variables
-integer :: iv,ix,iy,iz,inode
-integer(kind_int),pointer :: int_ptr_1(:),int_ptr_2(:,:)
-real(kind_real) :: gfld3d(self%geom%nx,self%geom%ny,self%geom%nz)
-real(kind_real),pointer :: real_ptr_1(:),real_ptr_2(:,:)
+integer :: jvar,ix,iy,iz,inode
+real(kind_real),pointer :: ptr(:,:)
 character(len=1024) :: fieldname
 type(atlas_field) :: afield
 
 ! Get variable
-if (vars%has('x')) then
-  if (self%lq) then
-    call convert_q_to_x(self%geom,self%gfld3d,self%x_north,self%x_south,gfld3d)
-  else
-    gfld3d = self%gfld3d
-  end if
-end if
-if (vars%has('q')) then
-  if (self%lq) then
-    gfld3d = self%gfld3d
-  else
-    call convert_x_to_q(self%geom,self%gfld3d,self%x_north,self%x_south,gfld3d)
-  end if
-end if
+do jvar=1,vars%nvars()
+   fieldname = vars%variable(jvar)
+   if (afieldset%has_field(trim(fieldname))) then
+     ! Get afield
+     afield = afieldset%field(trim(fieldname))
+   else
+     ! Create field
+     afield = self%geom%afunctionspace%create_field(name=trim(fieldname),kind=atlas_real(kind_real),levels=self%geom%nz)
 
-! Get or create field
-if (vars%has('x')) fieldname = 'x'
-if (vars%has('q')) fieldname = 'q'
-if (afieldset%has_field(trim(fieldname))) then
-  ! Get afield
-  afield = afieldset%field(trim(fieldname))
-else
-  ! Create field
-  afield = self%geom%afunctionspace%create_field(name=trim(fieldname),kind=atlas_real(kind_real),levels=self%geom%nz)
+     ! Add field
+     call afieldset%add(afield)
+   endif
 
-  ! Add field
-  call afieldset%add(afield)
-end if
+   ! Copy field
+   call afield%data(ptr)
+   do iz=1,self%geom%nz
+     inode = 0
+     do iy=1,self%geom%ny
+       do ix=1,self%geom%nx
+         inode = inode+1
+         select case (trim(fieldname))
+         case ('x')
+           ptr(iz,inode) = self%x(ix,iy,iz)
+         case ('q')
+           ptr(iz,inode) = self%q(ix,iy,iz)
+         case ('u')
+           ptr(iz,inode) = self%u(ix,iy,iz)
+         case ('v')
+           ptr(iz,inode) = self%v(ix,iy,iz)
+         case default
+           call abor1_ftn('qg_fields_to_atlas: wrong variable')
+         endselect
+       enddo
+     enddo
+   enddo
 
-! Copy field
-call afield%data(real_ptr_2)
-do iz=1,self%geom%nz
-  inode = 0
-  do iy=1,self%geom%ny
-    do ix=1,self%geom%nx
-      inode = inode+1
-      real_ptr_2(iz,inode) = gfld3d(ix,iy,iz)
-    enddo
-  enddo
+   ! Release pointer
+   call afield%final()
 enddo
-
-! Release pointer
-call afield%final()
 
 end subroutine qg_fields_to_atlas
 ! ------------------------------------------------------------------------------
@@ -1293,52 +1228,47 @@ implicit none
 
 ! Passed variables
 type(qg_fields),intent(inout) :: self           !< Fields
-type(oops_variables),intent(in) :: vars         !< Variables
+type(oops_variables),intent(in) :: vars         !< List of variables
 type(atlas_fieldset),intent(inout) :: afieldset !< ATLAS fieldset
 
 ! Local variables
-integer :: ix,iy,iz,inode
-real(kind_real) :: gfld3d(self%geom%nx,self%geom%ny,self%geom%nz)
-real(kind_real),pointer :: real_ptr_1(:),real_ptr_2(:,:)
-character(len=1) :: cgrid
+integer :: jvar,ix,iy,iz,inode
+real(kind_real),pointer :: ptr(:,:)
 character(len=1024) :: fieldname
 type(atlas_field) :: afield
 
-! Get field
-if (vars%has('x')) fieldname = 'x'
-if (vars%has('q')) fieldname = 'q'
-afield = afieldset%field(trim(fieldname))
-
-! Copy field
-call afield%data(real_ptr_2)
-do iz=1,self%geom%nz
-  inode = 0
-  do iy=1,self%geom%ny
-    do ix=1,self%geom%nx
-      inode = inode+1
-      gfld3d(ix,iy,iz) = real_ptr_2(iz,inode)
-    enddo
-  enddo
-enddo
-
 ! Get variable
-if (vars%has('x')) then
-  if (self%lq) then
-    call convert_x_to_q(self%geom,gfld3d,self%x_north,self%x_south,self%gfld3d)
-  else
-    self%gfld3d = gfld3d
-  end if
-end if
-if (vars%has('q')) then
-  if (self%lq) then
-    self%gfld3d = gfld3d
-  else
-    call convert_x_to_q(self%geom,gfld3d,self%x_north,self%x_south,self%gfld3d)
-  end if
-end if
+do jvar=1,vars%nvars()
+   ! Get afield
+   fieldname = vars%variable(jvar)
+   afield = afieldset%field(trim(fieldname))
 
-! Release pointer
-call afield%final()
+   ! Copy field
+   call afield%data(ptr)
+   do iz=1,self%geom%nz
+     inode = 0
+     do iy=1,self%geom%ny
+       do ix=1,self%geom%nx
+         inode = inode+1
+         select case (trim(fieldname))
+         case ('x')
+           self%x(ix,iy,iz) = ptr(iz,inode)
+         case ('q')
+           self%q(ix,iy,iz) = ptr(iz,inode)
+         case ('u')
+           self%u(ix,iy,iz) = ptr(iz,inode)
+         case ('v')
+           self%v(ix,iy,iz) = ptr(iz,inode)
+         case default
+           call abor1_ftn('qg_fields_to_atlas: wrong variable')
+         endselect
+       enddo
+     enddo
+   enddo
+
+   ! Release pointer
+   call afield%final()
+enddo
 
 end subroutine qg_fields_from_atlas
 ! ------------------------------------------------------------------------------
@@ -1354,6 +1284,7 @@ integer,intent(in) :: nval                  !< Number of values
 real(kind_real),intent(inout) :: vals(nval) !< Values
 
 ! Local variables
+integer :: ii
 character(len=1024) :: record
 
 ! Check
@@ -1367,8 +1298,26 @@ if (fld%geom%nz/=nval) then
   call abor1_ftn(record)
 endif
 
+! Initialization
+ii = 0
+
 ! Get values
-vals = fld%gfld3d(iter%ilon,iter%ilat,:)
+if (allocated(fld%x)) then
+  vals(ii+1:ii+fld%geom%nz) = fld%x(iter%ilon,iter%ilat,:)
+  ii = ii+fld%geom%nz
+endif
+if (allocated(fld%q)) then
+  vals(ii+1:ii+fld%geom%nz) = fld%q(iter%ilon,iter%ilat,:)
+  ii = ii+fld%geom%nz
+endif
+if (allocated(fld%u)) then
+  vals(ii+1:ii+fld%geom%nz) = fld%u(iter%ilon,iter%ilat,:)
+  ii = ii+fld%geom%nz
+endif
+if (allocated(fld%v)) then
+  vals(ii+1:ii+fld%geom%nz) = fld%v(iter%ilon,iter%ilat,:)
+  ii = ii+fld%geom%nz
+endif
 
 end subroutine qg_fields_getpoint
 ! ------------------------------------------------------------------------------
@@ -1384,6 +1333,7 @@ integer,intent(in) :: nval               !< Number of values
 real(kind_real),intent(in) :: vals(nval) !< Values
 
 ! Local variables
+integer :: ii
 character(len=1024) :: record
 
 ! Check
@@ -1397,8 +1347,26 @@ if (fld%geom%nz/=nval) then
   call abor1_ftn(record)
 endif
 
-! Set values
-fld%gfld3d(iter%ilon,iter%ilat,:) = vals
+! Initialization
+ii = 0
+
+! Get values
+if (allocated(fld%x)) then
+  fld%x(iter%ilon,iter%ilat,:) = vals(ii+1:ii+fld%geom%nz)
+  ii = ii+fld%geom%nz
+endif
+if (allocated(fld%q)) then
+  fld%q(iter%ilon,iter%ilat,:) = vals(ii+1:ii+fld%geom%nz)
+  ii = ii+fld%geom%nz
+endif
+if (allocated(fld%u)) then
+  fld%u(iter%ilon,iter%ilat,:) = vals(ii+1:ii+fld%geom%nz)
+  ii = ii+fld%geom%nz
+endif
+if (allocated(fld%v)) then
+  fld%v(iter%ilon,iter%ilat,:) = vals(ii+1:ii+fld%geom%nz)
+  ii = ii+fld%geom%nz
+endif
 
 end subroutine qg_fields_setpoint
 ! ------------------------------------------------------------------------------
@@ -1419,11 +1387,25 @@ integer :: ix,iy,iz,ind
 ind = 0
 
 ! Copy
-do iz = 1,fld%geom%nz
-  do iy = 1,fld%geom%ny
-    do ix = 1,fld%geom%nx
-      ind = ind + 1
-      vect_fld(ind) = fld%gfld3d(ix,iy,iz)
+do iz=1,fld%geom%nz
+  do iy=1,fld%geom%ny
+    do ix=1,fld%geom%nx
+      if (allocated(fld%x)) then
+        ind = ind + 1
+        vect_fld(ind) = fld%x(ix,iy,iz)
+      endif
+      if (allocated(fld%q)) then
+        ind = ind + 1
+        vect_fld(ind) = fld%q(ix,iy,iz)
+      endif
+      if (allocated(fld%u)) then
+        ind = ind + 1
+        vect_fld(ind) = fld%u(ix,iy,iz)
+      endif
+      if (allocated(fld%v)) then
+        ind = ind + 1
+        vect_fld(ind) = fld%v(ix,iy,iz)
+      endif
     enddo
   enddo
 enddo
@@ -1461,11 +1443,25 @@ integer :: ix,iy,iz
 
 ! 3d field
 index = 1 + index
-do iz = 1,self%geom%nz
-  do iy = 1,self%geom%ny
-    do ix = 1,self%geom%nx
-      self%gfld3d(ix,iy,iz) = vect_fld(index)
-      index = index+1
+do iz=1,self%geom%nz
+  do iy=1,self%geom%ny
+    do ix=1,self%geom%nx
+      if (allocated(self%x)) then
+        self%x(ix,iy,iz) = vect_fld(index)
+        index = index+1
+      endif
+      if (allocated(self%q)) then
+        self%x(ix,iy,iz) = vect_fld(index)
+        index = index+1
+      endif
+      if (allocated(self%u)) then
+        self%x(ix,iy,iz) = vect_fld(index)
+        index = index+1
+      endif
+      if (allocated(self%v)) then
+        self%x(ix,iy,iz) = vect_fld(index)
+        index = index+1
+      endif
     enddo
   enddo
 enddo
@@ -1490,6 +1486,73 @@ index = index - 1
 
 end subroutine qg_fields_deserialize
 ! ------------------------------------------------------------------------------
+!> Complete missing fields consistently
+subroutine qg_fields_complete(self,var)
+
+implicit none
+
+! Passed variables
+type(qg_fields),intent(inout) :: self !< Fields
+character(len=1),intent(in) :: var    !< Reference variable ('x' or 'q')
+
+! Local variables
+real(kind_real) :: x(self%geom%nx,self%geom%ny,self%geom%nz)
+real(kind_real) :: q(self%geom%nx,self%geom%ny,self%geom%nz)
+real(kind_real) :: u(self%geom%nx,self%geom%ny,self%geom%nz)
+real(kind_real) :: v(self%geom%nx,self%geom%ny,self%geom%nz)
+
+select case (var)
+case ('x')
+  if (allocated(self%q)) then
+    if (self%lbc) then
+      call convert_x_to_q(self%geom,self%x,self%x_north,self%x_south,self%q)
+    else
+      call convert_x_to_q_tl(self%geom,self%x,self%q)
+    endif
+  endif
+  if (allocated(self%u)) then
+    if (self%lbc) then
+      call convert_x_to_u(self%geom,self%x,self%x_north,self%x_south,self%u)
+    else
+      call convert_x_to_u_tl(self%geom,self%x,self%u)
+    endif
+  endif
+  if (allocated(self%v)) then
+    if (self%lbc) then
+      call convert_x_to_v(self%geom,self%x,self%v)
+    else
+      call convert_x_to_v_tl(self%geom,self%x,self%v)
+    endif
+  endif
+case ('q')
+  if (allocated(self%x).or.allocated(self%u).or.allocated(self%v)) then
+    if (self%lbc) then
+      call convert_q_to_x(self%geom,self%q,self%x_north,self%x_south,x)
+    else
+      call convert_q_to_x_tl(self%geom,self%q,x)
+    endif
+    if (allocated(self%x)) self%x = x
+    if (allocated(self%u)) then
+      if (self%lbc) then
+        call convert_x_to_u(self%geom,self%x,self%x_north,self%x_south,self%u)
+      else
+        call convert_x_to_u_tl(self%geom,self%x,self%u)
+      endif
+    endif
+    if (allocated(self%v)) then
+      if (self%lbc) then
+        call convert_x_to_v(self%geom,self%x,self%v)
+      else
+        call convert_x_to_v_tl(self%geom,self%x,self%v)
+      endif
+    endif
+  endif
+case default
+  call abor1_ftn('qg_fields_complete: wrong variable')
+end select
+
+end subroutine qg_fields_complete
+! ------------------------------------------------------------------------------
 !> Check fields
 subroutine qg_fields_check(self)
 
@@ -1506,10 +1569,27 @@ character(len=1024) :: record
 bad = .false.
 
 ! Check 3d field
-bad = bad.or.(.not.allocated(self%gfld3d))
-bad = bad.or.(size(self%gfld3d,1)/=self%geom%nx)
-bad = bad.or.(size(self%gfld3d,2)/=self%geom%ny)
-bad = bad.or.(size(self%gfld3d,3)/=self%geom%nz)
+bad = bad.or.(.not.(allocated(self%x).or.allocated(self%q).or.allocated(self%u).or.allocated(self%v)))
+if (allocated(self%x)) then
+  bad = bad.or.(size(self%x,1)/=self%geom%nx)
+  bad = bad.or.(size(self%x,2)/=self%geom%ny)
+  bad = bad.or.(size(self%x,3)/=self%geom%nz)
+endif
+if (allocated(self%q)) then
+  bad = bad.or.(size(self%q,1)/=self%geom%nx)
+  bad = bad.or.(size(self%q,2)/=self%geom%ny)
+  bad = bad.or.(size(self%q,3)/=self%geom%nz)
+endif
+if (allocated(self%u)) then
+  bad = bad.or.(size(self%u,1)/=self%geom%nx)
+  bad = bad.or.(size(self%u,2)/=self%geom%ny)
+  bad = bad.or.(size(self%u,3)/=self%geom%nz)
+endif
+if (allocated(self%v)) then
+  bad = bad.or.(size(self%v,1)/=self%geom%nx)
+  bad = bad.or.(size(self%v,2)/=self%geom%ny)
+  bad = bad.or.(size(self%v,3)/=self%geom%nz)
+endif
 
 ! Check boundaries
 if (self%lbc) then
@@ -1534,8 +1614,22 @@ if (bad) then
   call fckit_log%info('qg_fields_check: field not consistent')
   write(record,*) '  nx,ny,nz,lbc = ',self%geom%nx,self%geom%ny,self%geom%nz,self%lbc
   call fckit_log%info(record)
-  write(record,*) '  shape(gfld3d) = ',shape(self%gfld3d)
-  call fckit_log%info(record)
+  if (allocated(self%x)) then
+    write(record,*) '  shape(x) = ',shape(self%x)
+    call fckit_log%info(record)
+  endif
+  if (allocated(self%q)) then
+    write(record,*) '  shape(q) = ',shape(self%q)
+    call fckit_log%info(record)
+  endif
+  if (allocated(self%u)) then
+    write(record,*) '  shape(u) = ',shape(self%u)
+    call fckit_log%info(record)
+  endif
+  if (allocated(self%v)) then
+    write(record,*) '  shape(v) = ',shape(self%v)
+    call fckit_log%info(record)
+  endif
   if (self%lbc) then
     write(record,*) '  shape(x_north) = ',shape(self%x_north)
     call fckit_log%info(record)
@@ -1575,29 +1669,5 @@ call qg_fields_check(fld1)
 call qg_fields_check(fld2)
 
 end subroutine qg_fields_check_resolution
-! ------------------------------------------------------------------------------
-!> Check fields variables
-subroutine qg_fields_check_variables(fld1,fld2)
-
-implicit none
-
-! Passed variables
-type(qg_fields),intent(in) :: fld1 !< First fields
-type(qg_fields),intent(in) :: fld2 !< Second fields
-
-! Local variables
-character(len=1024) :: record
-
-! Check fields consistency
-if (fld1%lq.neqv.fld2%lq) then
-  write(record,*) 'qg_fields_check_variables: variables inconsistency, ',fld1%lq,' and ',fld2%lq
-  call abor1_ftn(record)
-endif
-
-! Check fields independently
-call qg_fields_check(fld1)
-call qg_fields_check(fld2)
-
-end subroutine qg_fields_check_variables
 ! ------------------------------------------------------------------------------
 end module qg_fields_mod

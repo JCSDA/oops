@@ -1,264 +1,160 @@
 Test     : Input Dirac increment: 
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
+Test     :   Streamfunction         :  Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
 Test     :   Valid time: 2010-01-01T01:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
+Test     :   Streamfunction         :  Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
 Test     :   Valid time: 2010-01-01T02:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
+Test     :   Streamfunction         :  Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
 Test     :   Valid time: 2010-01-01T03:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
+Test     :   Streamfunction         :  Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
 Test     :   Valid time: 2010-01-01T04:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
+Test     :   Streamfunction         :  Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
 Test     :   Valid time: 2010-01-01T05:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
+Test     :   Streamfunction         :  Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
 Test     :   Valid time: 2010-01-01T06:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min=  0.0000e+00, Max=  1.0000e+00, RMS=  2.5000e-02
+Test     :   Streamfunction         :  Min=  0.0000e+00, Max=  1.0000e+00, RMS=  2.5000e-02
 Test     :   Valid time: 2010-01-01T07:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
+Test     :   Streamfunction         :  Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
 Test     :   Valid time: 2010-01-01T08:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
+Test     :   Streamfunction         :  Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
 Test     :   Valid time: 2010-01-01T09:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
+Test     :   Streamfunction         :  Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
 Test     :   Valid time: 2010-01-01T10:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
+Test     :   Streamfunction         :  Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
 Test     :   Valid time: 2010-01-01T11:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
+Test     :   Streamfunction         :  Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
+Test     :   Streamfunction         :  Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
 Test     : B * Increment: 
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min= -4.0432e+13, Max=  1.9692e+14, RMS=  2.2098e+13
+Test     :   Streamfunction         :  Min= -4.0432e+13, Max=  1.9692e+14, RMS=  2.2098e+13
 Test     :   Valid time: 2010-01-01T01:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min= -4.0552e+13, Max=  2.0894e+14, RMS=  2.2747e+13
+Test     :   Streamfunction         :  Min= -4.0552e+13, Max=  2.0894e+14, RMS=  2.2747e+13
 Test     :   Valid time: 2010-01-01T02:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min= -3.9769e+13, Max=  2.1965e+14, RMS=  2.3431e+13
+Test     :   Streamfunction         :  Min= -3.9769e+13, Max=  2.1965e+14, RMS=  2.3431e+13
 Test     :   Valid time: 2010-01-01T03:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min= -3.8287e+13, Max=  2.2877e+14, RMS=  2.4126e+13
+Test     :   Streamfunction         :  Min= -3.8287e+13, Max=  2.2877e+14, RMS=  2.4126e+13
 Test     :   Valid time: 2010-01-01T04:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min= -3.6244e+13, Max=  2.3634e+14, RMS=  2.4826e+13
+Test     :   Streamfunction         :  Min= -3.6244e+13, Max=  2.3634e+14, RMS=  2.4826e+13
 Test     :   Valid time: 2010-01-01T05:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min= -3.3760e+13, Max=  2.4250e+14, RMS=  2.5516e+13
+Test     :   Streamfunction         :  Min= -3.3760e+13, Max=  2.4250e+14, RMS=  2.5516e+13
 Test     :   Valid time: 2010-01-01T06:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min= -3.0971e+13, Max=  2.4747e+14, RMS=  2.6180e+13
+Test     :   Streamfunction         :  Min= -3.0971e+13, Max=  2.4747e+14, RMS=  2.6180e+13
 Test     :   Valid time: 2010-01-01T07:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min= -2.8061e+13, Max=  2.5136e+14, RMS=  2.6788e+13
+Test     :   Streamfunction         :  Min= -2.8061e+13, Max=  2.5136e+14, RMS=  2.6788e+13
 Test     :   Valid time: 2010-01-01T08:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min= -2.5144e+13, Max=  2.5423e+14, RMS=  2.7311e+13
+Test     :   Streamfunction         :  Min= -2.5144e+13, Max=  2.5423e+14, RMS=  2.7311e+13
 Test     :   Valid time: 2010-01-01T09:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min= -2.3979e+13, Max=  2.5615e+14, RMS=  2.7721e+13
+Test     :   Streamfunction         :  Min= -2.3979e+13, Max=  2.5615e+14, RMS=  2.7721e+13
 Test     :   Valid time: 2010-01-01T10:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min= -2.3448e+13, Max=  2.5735e+14, RMS=  2.8021e+13
+Test     :   Streamfunction         :  Min= -2.3448e+13, Max=  2.5735e+14, RMS=  2.8021e+13
 Test     :   Valid time: 2010-01-01T11:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min= -2.2850e+13, Max=  2.5807e+14, RMS=  2.8223e+13
+Test     :   Streamfunction         :  Min= -2.2850e+13, Max=  2.5807e+14, RMS=  2.8223e+13
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min= -2.2238e+13, Max=  2.5841e+14, RMS=  2.8326e+13
+Test     :   Streamfunction         :  Min= -2.2238e+13, Max=  2.5841e+14, RMS=  2.8326e+13
 Test     : Localized Increment: 
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
+Test     :   Streamfunction         :  Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
 Test     :   Valid time: 2010-01-01T01:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
+Test     :   Streamfunction         :  Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
 Test     :   Valid time: 2010-01-01T02:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
+Test     :   Streamfunction         :  Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
 Test     :   Valid time: 2010-01-01T03:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
+Test     :   Streamfunction         :  Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
 Test     :   Valid time: 2010-01-01T04:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
+Test     :   Streamfunction         :  Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
 Test     :   Valid time: 2010-01-01T05:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
+Test     :   Streamfunction         :  Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
 Test     :   Valid time: 2010-01-01T06:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
+Test     :   Streamfunction         :  Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
 Test     :   Valid time: 2010-01-01T07:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
+Test     :   Streamfunction         :  Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
 Test     :   Valid time: 2010-01-01T08:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
+Test     :   Streamfunction         :  Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
 Test     :   Valid time: 2010-01-01T09:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
+Test     :   Streamfunction         :  Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
 Test     :   Valid time: 2010-01-01T10:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
+Test     :   Streamfunction         :  Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
 Test     :   Valid time: 2010-01-01T11:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
+Test     :   Streamfunction         :  Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
+Test     :   Streamfunction         :  Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
 Test     : Randomized variance: 
 Test     :   Valid time: 2010-01-01T00:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min=  3.7303e+12, Max=  1.0538e+15, RMS=  2.4663e+14
+Test     :   Streamfunction         :  Min=  3.7303e+12, Max=  1.0538e+15, RMS=  2.4663e+14
 Test     :   Valid time: 2010-01-01T01:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min=  3.9097e+12, Max=  1.1299e+15, RMS=  2.5694e+14
+Test     :   Streamfunction         :  Min=  3.9097e+12, Max=  1.1299e+15, RMS=  2.5694e+14
 Test     :   Valid time: 2010-01-01T02:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min=  2.4068e+12, Max=  1.2020e+15, RMS=  2.6754e+14
+Test     :   Streamfunction         :  Min=  2.4068e+12, Max=  1.2020e+15, RMS=  2.6754e+14
 Test     :   Valid time: 2010-01-01T03:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min=  1.8149e+12, Max=  1.2679e+15, RMS=  2.7848e+14
+Test     :   Streamfunction         :  Min=  1.8149e+12, Max=  1.2679e+15, RMS=  2.7848e+14
 Test     :   Valid time: 2010-01-01T04:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min=  1.9945e+12, Max=  1.3266e+15, RMS=  2.8969e+14
+Test     :   Streamfunction         :  Min=  1.9945e+12, Max=  1.3266e+15, RMS=  2.8969e+14
 Test     :   Valid time: 2010-01-01T05:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min=  2.4492e+12, Max=  1.3767e+15, RMS=  3.0102e+14
+Test     :   Streamfunction         :  Min=  2.4492e+12, Max=  1.3767e+15, RMS=  3.0102e+14
 Test     :   Valid time: 2010-01-01T06:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min=  2.3155e+12, Max=  1.4163e+15, RMS=  3.1227e+14
+Test     :   Streamfunction         :  Min=  2.3155e+12, Max=  1.4163e+15, RMS=  3.1227e+14
 Test     :   Valid time: 2010-01-01T07:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min=  2.2409e+12, Max=  1.4568e+15, RMS=  3.2326e+14
+Test     :   Streamfunction         :  Min=  2.2409e+12, Max=  1.4568e+15, RMS=  3.2326e+14
 Test     :   Valid time: 2010-01-01T08:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min=  2.0067e+12, Max=  1.5122e+15, RMS=  3.3397e+14
+Test     :   Streamfunction         :  Min=  2.0067e+12, Max=  1.5122e+15, RMS=  3.3397e+14
 Test     :   Valid time: 2010-01-01T09:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min=  1.7114e+12, Max=  1.5718e+15, RMS=  3.4435e+14
+Test     :   Streamfunction         :  Min=  1.7114e+12, Max=  1.5718e+15, RMS=  3.4435e+14
 Test     :   Valid time: 2010-01-01T10:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min=  1.4554e+12, Max=  1.6333e+15, RMS=  3.5419e+14
+Test     :   Streamfunction         :  Min=  1.4554e+12, Max=  1.6333e+15, RMS=  3.5419e+14
 Test     :   Valid time: 2010-01-01T11:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min=  1.2259e+12, Max=  1.6944e+15, RMS=  3.6352e+14
+Test     :   Streamfunction         :  Min=  1.2259e+12, Max=  1.6944e+15, RMS=  3.6352e+14
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are not activated
-Test     :   Min=  1.0259e+12, Max=  1.7698e+15, RMS=  3.7255e+14
+Test     :   Streamfunction         :  Min=  1.0259e+12, Max=  1.7698e+15, RMS=  3.7255e+14

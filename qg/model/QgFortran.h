@@ -37,8 +37,6 @@ namespace qg {
   class LocationsQG;
   class ObsSpaceQG;
 
-// Change of variable key type
-typedef int F90chvar;
 // Geometry key type
 typedef int F90geom;
 // Geometry iterator key type
@@ -68,12 +66,9 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Change of variable
 // -----------------------------------------------------------------------------
-  void qg_change_var_setup_f90(F90chvar &, const oops::Variables &, const oops::Variables &);
   void qg_change_var_f90(const F90flds &, const F90flds &);
-  void qg_change_var_tl_f90(const F90chvar &, const F90flds &, const F90flds &);
-  void qg_change_var_inv_tl_f90(const F90chvar &, const F90flds &, const F90flds &);
-  void qg_change_var_ad_f90(const F90chvar &, const F90flds &, const F90flds &);
-  void qg_change_var_inv_ad_f90(const F90chvar &, const F90flds &, const F90flds &);
+  void qg_change_var_tl_f90(const F90flds &, const F90flds &);
+  void qg_change_var_ad_f90(const F90flds &, const F90flds &);
 
 // -----------------------------------------------------------------------------
 //  Error covariance
@@ -95,7 +90,7 @@ extern "C" {
   void qg_fields_zero_f90(const F90flds &);
   void qg_fields_ones_f90(const F90flds &);
   void qg_fields_dirac_f90(const F90flds &, const eckit::Configuration &);
-  void qg_fields_random_f90(const F90flds &);
+  void qg_fields_random_f90(const F90flds &, const oops::Variables &);
   void qg_fields_copy_f90(const F90flds &, const F90flds &);
   void qg_fields_self_add_f90(const F90flds &, const F90flds &);
   void qg_fields_self_sub_f90(const F90flds &, const F90flds &);
@@ -112,10 +107,10 @@ extern "C" {
                                 const util::DateTime &);
   void qg_fields_analytic_init_f90(const F90flds &, const eckit::Configuration &,
                                    util::DateTime &);
-  void qg_fields_gpnorm_f90(const F90flds &, const int &, double &);
+  void qg_fields_gpnorm_f90(const F90flds &, int[], double[], double[], double[]);
   void qg_fields_rms_f90(const F90flds &, double &);
-  void qg_fields_sizes_f90(const F90flds &, int &, int &, int &, int &);
-  void qg_fields_vars_f90(const F90flds &, int &, int &);
+  void qg_fields_sizes_f90(const F90flds &, int &, int &, int &);
+  void qg_fields_lbc_f90(const F90flds &, int &);
   void qg_fields_set_atlas_f90(const F90flds &, const oops::Variables &,
                                atlas::field::FieldSetImpl *);
   void qg_fields_to_atlas_f90(const F90flds &, const oops::Variables &,
@@ -167,7 +162,7 @@ extern "C" {
 //  Local Values (GOM)
 // -----------------------------------------------------------------------------
   void qg_gom_setup_f90(F90gom &, const LocationsQG &, const oops::Variables &);
-  void qg_gom_create_f90(F90gom &);
+  void qg_gom_create_f90(F90gom &, const oops::Variables &);
   void qg_gom_delete_f90(F90gom &);
   void qg_gom_copy_f90(const F90gom &, const F90gom &);
   void qg_gom_zero_f90(const F90gom &);
@@ -181,7 +176,7 @@ extern "C" {
   void qg_gom_rms_f90(const F90gom &, double &);
   void qg_gom_dotprod_f90(const F90gom &, const F90gom &, double &);
   void qg_gom_stats_f90(const F90gom &, int &, double &, double &, double &);
-  void qg_gom_maxloc_f90(const F90gom &, double &, int &, int &);
+  void qg_gom_maxloc_f90(const F90gom &, double &, int &, const oops::Variables &);
   void qg_gom_read_file_f90(const F90gom &, const eckit::Configuration &);
   void qg_gom_write_file_f90(const F90gom &, const eckit::Configuration &);
   void qg_gom_analytic_init_f90(const F90gom &, const LocationsQG &,

@@ -17,7 +17,8 @@ use qg_advect_q_mod
 use qg_constants_mod
 use qg_convert_q_to_x_mod
 use qg_convert_x_to_q_mod
-use qg_convert_x_to_uv_mod
+use qg_convert_x_to_u_mod
+use qg_convert_x_to_v_mod
 use qg_fields_mod
 use random_mod
 
@@ -82,38 +83,31 @@ type(qg_model_config),intent(in) :: conf !< Model configuration
 type(qg_fields),intent(inout) :: fld     !< State fields
 
 ! Local variables
-real(kind_real) :: x(fld%geom%nx,fld%geom%ny,fld%geom%nz),q(fld%geom%nx,fld%geom%ny,fld%geom%nz)
+real(kind_real) :: q(fld%geom%nx,fld%geom%ny,fld%geom%nz),qnew(fld%geom%nx,fld%geom%ny,fld%geom%nz)
 real(kind_real) :: u(fld%geom%nx,fld%geom%ny,fld%geom%nz),v(fld%geom%nx,fld%geom%ny,fld%geom%nz)
-real(kind_real) :: qnew(fld%geom%nx,fld%geom%ny,fld%geom%nz)
 
-! Initialize streamfunction and potential vorticity
-if (fld%lq) then
-  q = fld%gfld3d
-  call convert_q_to_x(fld%geom,q,fld%x_north,fld%x_south,x)
-else
-  x = fld%gfld3d
-  call convert_x_to_q(fld%geom,x,fld%x_north,fld%x_south,q)
-endif
+! Check input
+if (.not.allocated(fld%x)) call abor1_ftn('qg_model_propagate: x required')
+if (.not.allocated(fld%x_north)) call abor1_ftn('qg_model_propagate: x_north required')
+if (.not.allocated(fld%x_south)) call abor1_ftn('qg_model_propagate: x_south required')
+if (.not.allocated(fld%q_north)) call abor1_ftn('qg_model_propagate: q_north required')
+if (.not.allocated(fld%q_south)) call abor1_ftn('qg_model_propagate: q_south required')
 
-! Initialize wind
-call convert_x_to_uv(fld%geom,x,fld%x_north,fld%x_south,u,v)
+! Compute potential vorticity
+call convert_x_to_q(fld%geom,fld%x,fld%x_north,fld%x_south,q)
+
+! Compute wind
+call convert_x_to_u(fld%geom,fld%x,fld%x_north,fld%x_south,u)
+call convert_x_to_v(fld%geom,fld%x,v)
 
 ! Advect potential vorticity
 call advect_q(fld%geom,conf%dt,u,v,q,fld%q_north,fld%q_south,qnew)
 
-! Save streamfunction or potential vorticity
-if (fld%lq) then
-  fld%gfld3d = qnew
-else
-  call convert_q_to_x(fld%geom,qnew,fld%x_north,fld%x_south,x)
-  fld%gfld3d = x
-endif
+! Compute streamfunction
+call convert_q_to_x(fld%geom,qnew,fld%x_north,fld%x_south,fld%x)
 
-if (fld%lq) then
-  if (allocated(fld%pv)) fld%pv = fld%gfld3d
-else
-  if (allocated(fld%streamfct)) fld%streamfct = fld%gfld3d
-endif
+! Complete other fields
+call qg_fields_complete(fld,'x')
 
 end subroutine qg_model_propagate
 ! ------------------------------------------------------------------------------
@@ -128,50 +122,47 @@ type(qg_fields),intent(in) :: traj        !< Trajectory fields
 type(qg_fields),intent(inout) :: fld      !< Increment fields
 
 ! Local variables
-real(kind_real) :: x_traj(fld%geom%nx,fld%geom%ny,fld%geom%nz),q_traj(fld%geom%nx,fld%geom%ny,fld%geom%nz)
+real(kind_real) :: q_traj(fld%geom%nx,fld%geom%ny,fld%geom%nz)
 real(kind_real) :: u_traj(fld%geom%nx,fld%geom%ny,fld%geom%nz),v_traj(fld%geom%nx,fld%geom%ny,fld%geom%nz)
-real(kind_real) :: x(fld%geom%nx,fld%geom%ny,fld%geom%nz),q(fld%geom%nx,fld%geom%ny,fld%geom%nz)
+real(kind_real) :: q(fld%geom%nx,fld%geom%ny,fld%geom%nz),qnew(fld%geom%nx,fld%geom%ny,fld%geom%nz)
 real(kind_real) :: u(fld%geom%nx,fld%geom%ny,fld%geom%nz),v(fld%geom%nx,fld%geom%ny,fld%geom%nz)
-real(kind_real) :: qnew(fld%geom%nx,fld%geom%ny,fld%geom%nz)
 
 ! Trajectory
 
-! Initialize streamfunction and potential vorticity
-if (traj%lq) then
-  q_traj = traj%gfld3d
-  call convert_q_to_x(fld%geom,q_traj,traj%x_north,traj%x_south,x_traj)
-else
-  x_traj = traj%gfld3d
-  call convert_x_to_q(fld%geom,x_traj,traj%x_north,traj%x_south,q_traj)
-endif
+! Check input
+if (.not.allocated(traj%x)) call abor1_ftn('qg_model_propagate_tl: x trajectory required')
+if (.not.allocated(traj%x_north)) call abor1_ftn('qg_model_propagate_tl: x_north required')
+if (.not.allocated(traj%x_south)) call abor1_ftn('qg_model_propagate_tl: x_south required')
+if (.not.allocated(traj%q_north)) call abor1_ftn('qg_model_propagate_tl: q_north required')
+if (.not.allocated(traj%q_south)) call abor1_ftn('qg_model_propagate_tl: q_south required')
+
+! Compute potential vorticity
+call convert_x_to_q(traj%geom,traj%x,traj%x_north,traj%x_south,q_traj)
 
 ! Compute wind
-call convert_x_to_uv(fld%geom,x_traj,traj%x_north,traj%x_south,u_traj,v_traj)
+call convert_x_to_u(traj%geom,traj%x,traj%x_north,traj%x_south,u_traj)
+call convert_x_to_v(traj%geom,traj%x,v_traj)
 
 ! Perturbation
 
-! Initialize streamfunction and potential vorticity
-if (fld%lq) then
-  q = fld%gfld3d
-  call convert_q_to_x_tl(fld%geom,q,x)
-else
-  x = fld%gfld3d
-  call convert_x_to_q_tl(fld%geom,x,q)
-endif
+! Check input
+if (.not.allocated(fld%x)) call abor1_ftn('qg_model_propagate_tl: x perturbation required')
+
+! Compute potential vorticity
+call convert_x_to_q_tl(fld%geom,fld%x,q)
 
 ! Compute wind
-call convert_x_to_uv_tl(fld%geom,x,u,v)
+call convert_x_to_u_tl(fld%geom,fld%x,u)
+call convert_x_to_v_tl(fld%geom,fld%x,v)
 
-! Advect PV
+! Advect potential vorticity
 call advect_q_tl(fld%geom,conf%dt,u_traj,v_traj,q_traj,traj%q_north,traj%q_south,u,v,q,qnew)
 
-! Save streamfunction or potential vorticity
-if (fld%lq) then
-  fld%gfld3d = qnew
-else
-  call convert_q_to_x_tl(fld%geom,qnew,x)
-  fld%gfld3d = x
-endif
+! Compute streamfunction
+call convert_q_to_x_tl(fld%geom,qnew,fld%x)
+
+! Complete other fields
+call qg_fields_complete(fld,'x')
 
 end subroutine qg_model_propagate_tl
 ! ------------------------------------------------------------------------------
@@ -186,58 +177,56 @@ type(qg_fields),intent(in) :: traj        !< Trajectory fields
 type(qg_fields),intent(inout) :: fld      !< Increment fields
 
 ! Local variables
-real(kind_real) :: x_traj(fld%geom%nx,fld%geom%ny,fld%geom%nz),q_traj(fld%geom%nx,fld%geom%ny,fld%geom%nz)
+real(kind_real) :: q_traj(fld%geom%nx,fld%geom%ny,fld%geom%nz)
 real(kind_real) :: u_traj(fld%geom%nx,fld%geom%ny,fld%geom%nz),v_traj(fld%geom%nx,fld%geom%ny,fld%geom%nz)
-real(kind_real) :: x(fld%geom%nx,fld%geom%ny,fld%geom%nz),q(fld%geom%nx,fld%geom%ny,fld%geom%nz)
+real(kind_real) :: q(fld%geom%nx,fld%geom%ny,fld%geom%nz),qnew(fld%geom%nx,fld%geom%ny,fld%geom%nz)
 real(kind_real) :: u(fld%geom%nx,fld%geom%ny,fld%geom%nz),v(fld%geom%nx,fld%geom%ny,fld%geom%nz)
-real(kind_real) :: qnew(fld%geom%nx,fld%geom%ny,fld%geom%nz)
 
 ! Trajectory
 
-! Initialize streamfunction and potential vorticity
-if (traj%lq) then
-  q_traj = traj%gfld3d
-  call convert_q_to_x(fld%geom,q_traj,traj%x_north,traj%x_south,x_traj)
-else
-  x_traj = traj%gfld3d
-  call convert_x_to_q(fld%geom,x_traj,traj%x_north,traj%x_south,q_traj)
-endif
+! Check input
+if (.not.allocated(traj%x)) call abor1_ftn('qg_model_propagate_tl: x trajectory required')
+if (.not.allocated(traj%x_north)) call abor1_ftn('qg_model_propagate_tl: x_north required')
+if (.not.allocated(traj%x_south)) call abor1_ftn('qg_model_propagate_tl: x_south required')
+if (.not.allocated(traj%q_north)) call abor1_ftn('qg_model_propagate_tl: q_north required')
+if (.not.allocated(traj%q_south)) call abor1_ftn('qg_model_propagate_tl: q_south required')
+
+! Compute potential vorticity
+call convert_x_to_q(traj%geom,traj%x,traj%x_north,traj%x_south,q_traj)
 
 ! Compute wind
-call convert_x_to_uv(fld%geom,x_traj,traj%x_north,traj%x_south,u_traj,v_traj)
+call convert_x_to_u(traj%geom,traj%x,traj%x_north,traj%x_south,u_traj)
+call convert_x_to_v(traj%geom,traj%x,v_traj)
 
 ! Perturbation
 
+! Check input
+if (.not.allocated(fld%x)) call abor1_ftn('qg_model_propagate_tl: x perturbation required')
+
 ! Initialization
-x = 0.0
-q = 0.0
-u = 0.0
-v = 0.0
-qnew = 0.0
+u = 0.0_kind_real
+v = 0.0_kind_real
+q = 0.0_kind_real
+qnew = 0.0_kind_real
 
-! Save streamfunction or potential vorticity
-if (fld%lq) then
-  qnew = fld%gfld3d
-else
-  x = fld%gfld3d
-  call convert_q_to_x_ad(fld%geom,x,qnew)
-endif
+! Compute streamfunction
+call convert_q_to_x_ad(fld%geom,fld%x,qnew)
 
-! Advect PV
+! Advect potential vorticity
 call advect_q_ad(fld%geom,conf%dt,u_traj,v_traj,q_traj,traj%q_north,traj%q_south,qnew,u,v,q)
 
-! Compute wind
-x = 0.0
-call convert_x_to_uv_ad(fld%geom,u,v,x)
+! Initialize x
+fld%x = 0.0_kind_real
 
-! Initialize streamfunction and potential vorticity
-if (fld%lq) then
-  call convert_q_to_x_ad(fld%geom,x,q)
-  fld%gfld3d = q
-else
-  call convert_x_to_q_ad(fld%geom,q,x)
-  fld%gfld3d = x
-endif
+! Compute wind
+call convert_x_to_v_ad(fld%geom,v,fld%x)
+call convert_x_to_u_ad(fld%geom,u,fld%x)
+
+! Compute potential vorticity
+call convert_x_to_q_ad(fld%geom,q,fld%x)
+
+! Complete other fields
+call qg_fields_complete(fld,'x')
 
 end subroutine qg_model_propagate_ad
 ! ------------------------------------------------------------------------------

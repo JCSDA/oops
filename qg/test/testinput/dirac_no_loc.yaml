@@ -26,6 +26,7 @@ dirac:
   ixdir: [20]
   iydir: [10]
   izdir: [1]
+  var: x
 geometry:
   nx: 40
   ny: 20

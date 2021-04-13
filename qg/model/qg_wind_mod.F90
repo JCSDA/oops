@@ -37,7 +37,8 @@ integer :: iobs
 
 ! Loop over observations
 do iobs=1,gom%nobs
-  hofx%values(1:2,iobs) = gom%values(1:2,iobs)+bias
+  hofx%values(1,iobs) = gom%u(iobs)+bias(1)
+  hofx%values(2,iobs) = gom%v(iobs)+bias(2)
 enddo
 
 end subroutine qg_wind_equiv
@@ -57,7 +58,8 @@ integer :: iobs
 
 ! Loop over observations
 do iobs=1,gom%nobs
-  gom%values(1:2,iobs) = hofx%values(1:2,iobs)
+  gom%u(iobs) = hofx%values(1,iobs)
+  gom%v(iobs) = hofx%values(2,iobs)
   bias(1) = bias(1)+hofx%values(1,iobs)
   bias(2) = bias(2)+hofx%values(2,iobs)
 enddo

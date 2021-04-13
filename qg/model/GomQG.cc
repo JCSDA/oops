@@ -22,24 +22,29 @@
 namespace qg {
 
 // -----------------------------------------------------------------------------
-GomQG::GomQG(const LocationsQG & locs, const oops::Variables & var) {
+GomQG::GomQG(const LocationsQG & locs, const oops::Variables & vars):
+  vars_(vars)
+{
   // gom_setup just creates and allocates the GeoVaLs object without filling
   // in values
-  qg_gom_setup_f90(keyGom_, locs, var);
+  qg_gom_setup_f90(keyGom_, locs, vars_);
 }
 // -----------------------------------------------------------------------------
 /*! QG GeoVaLs Constructor with Config */
 
   GomQG::GomQG(const eckit::Configuration & config,
-               const ObsSpaceQG & ospace, const oops::Variables &)
+               const ObsSpaceQG & ospace, const oops::Variables & vars):
+  vars_(vars)
 {
-  qg_gom_create_f90(keyGom_);
+  qg_gom_create_f90(keyGom_, vars_);
   qg_gom_read_file_f90(keyGom_, config);
 }
 // -----------------------------------------------------------------------------
 // Copy constructor
-GomQG::GomQG(const GomQG & other) {
-  qg_gom_create_f90(keyGom_);
+GomQG::GomQG(const GomQG & other):
+  vars_(other.vars_)
+{
+  qg_gom_create_f90(keyGom_, vars_);
   qg_gom_copy_f90(keyGom_, other.keyGom_);
 }
 // -----------------------------------------------------------------------------
@@ -124,13 +129,14 @@ void GomQG::print(std::ostream & os) const {
 
   if (zmin >= 0.0) {
     double mxval;
-    int iloc, ivar;
+    int iloc;
+    oops::Variables maxvar;
 
-    qg_gom_maxloc_f90(keyGom_, mxval, iloc, ivar);
+    qg_gom_maxloc_f90(keyGom_, mxval, iloc, maxvar);
 
     oops::Log::debug() << "GomQG: Maximum Value = " << std::setprecision(4)
                        << mxval << " at location = " << iloc
-                       << " and variable = " << ivar << std::endl;
+                       << " and variable = " << maxvar << std::endl;
   }
 }
 // -----------------------------------------------------------------------------

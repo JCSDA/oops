@@ -42,7 +42,7 @@ if (abs(bias)>epsilon(bias)) call abor1_ftn ('qg_wspeed_equiv: bias not implemen
 
 ! Loop over observations
 do iobs=1,gom%nobs
-  hofx%values(1,iobs) = sqrt(gom%values(1,iobs)*gom%values(1,iobs)+gom%values(2,iobs)*gom%values(2,iobs))
+  hofx%values(1,iobs) = sqrt(gom%u(iobs)*gom%u(iobs)+gom%v(iobs)*gom%v(iobs))
 enddo
 
 end subroutine qg_wspeed_equiv
@@ -64,11 +64,11 @@ real(kind_real) :: zu,zv,zt
 
 ! Loop over observations
 do iobs=1,gom%nobs
-  zu = traj%values(1,iobs)
-  zv = traj%values(2,iobs)
+  zu = traj%u(iobs)
+  zv = traj%v(iobs)
   zt = sqrt(zu**2+zv**2)
   if (zt>epsilon(zt)) then
-    hofx%values(1,iobs) = (zu*gom%values(1,iobs)+zv*gom%values(2,iobs))/zt
+    hofx%values(1,iobs) = (zu*gom%u(iobs)+zv*gom%v(iobs))/zt
   else
     hofx%values(1,iobs) = 0.0
   endif
@@ -93,15 +93,15 @@ real(kind_real) :: zu,zv,zt
 
 ! Loop over observations
 do iobs=1,gom%nobs
-  zu = traj%values(1,iobs)
-  zv = traj%values(2,iobs)
+  zu = traj%u(iobs)
+  zv = traj%v(iobs)
   zt = sqrt(zu**2+zv**2)
   if (zt>epsilon(zt)) then
-    gom%values(1,iobs) = zu*hofx%values(1,iobs)/zt
-    gom%values(2,iobs) = zv*hofx%values(1,iobs)/zt
+    gom%u(iobs) = zu*hofx%values(1,iobs)/zt
+    gom%v(iobs) = zv*hofx%values(1,iobs)/zt
   else
-    gom%values(1,iobs) = 0.0
-    gom%values(2,iobs) = 0.0
+    gom%u(iobs) = 0.0
+    gom%v(iobs) = 0.0
   endif
 enddo
 
@@ -121,9 +121,9 @@ integer :: iobs
 
 ! Loop over observations
 do iobs=1,gom%nobs
-  traj%values(1,iobs) = gom%values(1,iobs)
-  traj%values(2,iobs) = gom%values(2,iobs)
-enddo
+  traj%u(iobs) = gom%u(iobs)
+  traj%v(iobs) = gom%v(iobs)
+end do
 
 end subroutine qg_wspeed_settraj
 ! ------------------------------------------------------------------------------

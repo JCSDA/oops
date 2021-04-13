@@ -7,11 +7,9 @@ Test     : DRIPCGMinimizer: reduction in residual norm = 0.0295408
 Test     : CostFunction::addIncrement: Analysis: 
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = potential vorticity
-Test     :   Boundary conditions are activated
-Test     :   Min= -7.1570e-04, Max=  6.3930e-04, RMS=  3.3441e-04
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Potential vorticity    :  Min= -7.1570e-04, Max=  6.3930e-04, RMS=  3.3441e-04
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : CostJb   : Nonlinear Jb = 56.44
 Test     : CostJo   : Nonlinear Jo(Stream) = 754.3, nobs = 600, Jo/n = 1.257, err = 4e+06
 Test     : CostJo   : Nonlinear Jo(Wind) = 464.9, nobs = 600, Jo/n = 0.7748, err = 6
@@ -21,11 +19,9 @@ Test     : DRIPCGMinimizer: reduction in residual norm = 0.2537
 Test     : CostFunction::addIncrement: Analysis: 
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = potential vorticity
-Test     :   Boundary conditions are activated
-Test     :   Min= -7.3088e-04, Max=  6.4855e-04, RMS=  3.3092e-04
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Potential vorticity    :  Min= -7.3088e-04, Max=  6.4855e-04, RMS=  3.3092e-04
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : CostJb   : Nonlinear Jb = 87.9
 Test     : CostJo   : Nonlinear Jo(Stream) = 514.7, nobs = 600, Jo/n = 0.8579, err = 4e+06
 Test     : CostJo   : Nonlinear Jo(Wind) = 316.9, nobs = 600, Jo/n = 0.5281, err = 6

@@ -10,14 +10,12 @@ Test     :    Quadratic cost function all members: J ( 2) = 3979.77 5093.07 2507
 Test     :    Norm reduction all members ( 3) =  0.158052  0.116268  0.185322 0.0977361
 Test     :    Quadratic cost function all members: J ( 3) = 3313.65 4119.31 2154.65 2990.07
 Test     : DRPBlockLanczosMinimizer: reduction in residual norm = 0.158052
-Test     : CostFunction::addIncrement: Analysis:
+Test     : CostFunction::addIncrement: Analysis: 
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.4961e+08, Max=  1.0918e+08, RMS=  1.7739e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.4961e+08, Max=  1.0918e+08, RMS=  1.7739e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : CostJb   : Nonlinear Jb = 31.4
 Test     : CostJo   : Nonlinear Jo(Stream) = 2150, nobs = 600, Jo/n = 3.584, err = 4e+06
 Test     : CostJo   : Nonlinear Jo(Wind) = 1104, nobs = 600, Jo/n = 1.84, err = 6
@@ -42,14 +40,12 @@ Test     :    Quadratic cost function all members: J ( 8) = 1447 1789 1136 1491
 Test     :    Norm reduction all members ( 9) = 0.1256 0.1218 0.1586 0.1376
 Test     :    Quadratic cost function all members: J ( 9) = 1403 1740 1113 1437
 Test     : DRPBlockLanczosMinimizer: reduction in residual norm = 0.1256
-Test     : CostFunction::addIncrement: Analysis:
+Test     : CostFunction::addIncrement: Analysis: 
 Test     :   Valid time: 2010-01-01T12:00:00Z
 Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Min= -4.6332e+08, Max=  1.0396e+08, RMS=  1.7698e+08
-Test     :   Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     :   Streamfunction         :  Min= -4.6332e+08, Max=  1.0396e+08, RMS=  1.7698e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Test     : CostJb   : Nonlinear Jb = 162.6
 Test     : CostJo   : Nonlinear Jo(Stream) = 563.7, nobs = 600, Jo/n = 0.9395, err = 4e+06
 Test     : CostJo   : Nonlinear Jo(Wind) = 490.7, nobs = 600, Jo/n = 0.8179, err = 6

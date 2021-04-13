@@ -15,6 +15,7 @@ use kinds
 use qg_error_covariance_mod
 use qg_fields_mod
 use qg_geom_mod
+use oops_variables_mod
 
 implicit none
 
@@ -72,48 +73,48 @@ call qg_error_covariance_registry%remove(c_key_self)
 end subroutine qg_error_covariance_delete_c
 ! ------------------------------------------------------------------------------
 !> Multiply by error covariance matrix
-subroutine qg_error_covariance_mult_c(c_key_conf,c_key_in,c_key_out) bind(c,name='qg_error_covariance_mult_f90')
+subroutine qg_error_covariance_mult_c(c_key_self,c_key_in,c_key_out) bind(c,name='qg_error_covariance_mult_f90')
 
 implicit none
 
 ! Passed variables
-integer(c_int),intent(in) :: c_key_conf  !< Error covariance configuration
+integer(c_int),intent(in) :: c_key_self  !< Error covariance configuration
 integer(c_int),intent(in) :: c_key_in    !< Input field
 integer(c_int),intent(in) :: c_key_out   !< Output field
 
 ! Local variables
-type(qg_error_covariance_config),pointer :: conf
+type(qg_error_covariance_config),pointer :: self
 type(qg_fields),pointer :: fld_in,fld_out
 
 ! Interface
-call qg_error_covariance_registry%get(c_key_conf,conf)
+call qg_error_covariance_registry%get(c_key_self,self)
 call qg_fields_registry%get(c_key_in,fld_in)
 call qg_fields_registry%get(c_key_out,fld_out)
 
 ! Call Fortran
-call qg_error_covariance_mult(conf,fld_in,fld_out)
+call qg_error_covariance_mult(self,fld_in,fld_out)
 
 end subroutine qg_error_covariance_mult_c
 ! ------------------------------------------------------------------------------
 !> Randomize error covariance
-subroutine qg_error_covariance_randomize_c(c_key_conf,c_key_out) bind(c,name='qg_error_covariance_randomize_f90')
+subroutine qg_error_covariance_randomize_c(c_key_self,c_key_out) bind(c,name='qg_error_covariance_randomize_f90')
 
 implicit none
 
 ! Passed variables
-integer(c_int),intent(in) :: c_key_conf !< Error covariance configuration
+integer(c_int),intent(in) :: c_key_self !< Error covariance configuration
 integer(c_int),intent(in) :: c_key_out  !< Output field
 
 ! Local variables
-type(qg_error_covariance_config),pointer :: conf
+type(qg_error_covariance_config),pointer :: self
 type(qg_fields),pointer :: fld_out
 
 ! Interface
-call qg_error_covariance_registry%get(c_key_conf,conf)
+call qg_error_covariance_registry%get(c_key_self,self)
 call qg_fields_registry%get(c_key_out,fld_out)
 
 ! Call Fortran
-call qg_error_covariance_randomize(conf,fld_out)
+call qg_error_covariance_randomize(self,fld_out)
 
 end subroutine qg_error_covariance_randomize_c
 ! ------------------------------------------------------------------------------

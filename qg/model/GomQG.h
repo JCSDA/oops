@@ -15,6 +15,8 @@
 #include <string>
 #include <vector>
 
+#include "oops/base/Variables.h"
+
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
@@ -62,6 +64,7 @@ class GomQG : public util::Printable,
  private:
   void print(std::ostream &) const;
   F90gom keyGom_;
+  oops::Variables vars_;
 };
 
 }  // namespace qg

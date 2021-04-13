@@ -41,17 +41,11 @@ class ModelQgParameters : public oops::ModelParametersBase {
   OOPS_CONCRETE_PARAMETERS(ModelQgParameters, ModelParametersBase)
 
  public:
-  /// Model option: using stream function or potential vorticity as variable
-  oops::Parameter<bool> use_vorticity{"use potential vorticity", false, this};
   /// Model time step
   oops::RequiredParameter<util::Duration> tstep{"tstep", this};
 
   oops::Variables variables() const {
-    if (use_vorticity) {
-      return oops::Variables({"q"});
-    } else {
-      return oops::Variables({"x"});
-    }
+  return oops::Variables({"x"});
   }
 };
 
