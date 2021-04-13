@@ -28,7 +28,6 @@ namespace oops {
 template <typename MODEL, typename OBS>
 class GetValuePosts : public PostBase<State<MODEL>> {
   typedef ChangeVariables<MODEL>    ChangeVariables_;
-  typedef GetValues<MODEL, OBS>     GetValues_;
   typedef State<MODEL>              State_;
   typedef std::shared_ptr<GetValuePost<MODEL, OBS>> GetValuePtr_;
 
@@ -79,6 +78,7 @@ void GetValuePosts<MODEL, OBS>::doInitialize(const State_ &, const util::DateTim
 template <typename MODEL, typename OBS>
 void GetValuePosts<MODEL, OBS>::doProcessing(const State_ & xx) {
   Log::trace() << "GetValuePosts::doProcessing start" << std::endl;
+//  Change of variables will go here
   for (GetValuePtr_ getval : getvals_) getval->process(xx);
   Log::trace() << "GetValuePosts::doProcessing done" << std::endl;
 }

@@ -29,7 +29,6 @@
 #include "oops/util/Duration.h"
 #include "oops/util/gatherPrint.h"
 #include "oops/util/ObjectCounter.h"
-#include "oops/util/Printable.h"
 #include "oops/util/Serializable.h"
 #include "oops/util/Timer.h"
 
@@ -41,7 +40,6 @@ namespace interface {
 /// Some fields that are present in a State may not be present in an Increment.
 template <typename MODEL>
 class Increment : public oops::GeneralizedDepartures,
-                  public util::Printable,
                   public util::Serializable,
                   private util::ObjectCounter<Increment<MODEL> > {
   typedef typename MODEL::Increment  Increment_;

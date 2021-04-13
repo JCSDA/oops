@@ -54,8 +54,8 @@ class WeightedDiffTLAD : public PostBaseTLAD<MODEL> {
   virtual ~WeightedDiffTLAD() {}
 
   Increment_ * releaseDiff() {return wdiff_.releaseDiff();}
-  std::unique_ptr<GeneralizedDepartures> releaseOutputFromTL() override;
   void setupTL(const Geometry_ &);
+  void finalTL(Increment_ &);
   void setupAD(std::shared_ptr<const Increment_>);
 
  private:
@@ -185,11 +185,12 @@ void WeightedDiffTLAD<MODEL>::doProcessingTL(const Increment_ & xx) {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-std::unique_ptr<GeneralizedDepartures> WeightedDiffTLAD<MODEL>::releaseOutputFromTL() {
-  Log::trace() << "WeightedDiffTLAD::releaseOutputFromTL" << std::endl;
+void WeightedDiffTLAD<MODEL>::finalTL(Increment_ & out) {
+  Log::trace() << "WeightedDiffTLAD::finalTL start" << std::endl;
   ASSERT(linit_);
   ASSERT(std::abs(sum_) < 1.0e-8);
-  return std::move(avg_);
+  out = *avg_;
+  Log::trace() << "WeightedDiffTLAD::finalTL done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

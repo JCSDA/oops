@@ -90,8 +90,8 @@ template<typename MODEL, typename OBS> class CostFunction : private boost::nonco
 /// Access \f$ J_b\f$
   const JbTotal_ & jb() const {return *jb_;}
 /// Access terms of the cost function other than \f$ J_b\f$
-  const CostBase_ & jterm(const unsigned ii) const {return jterms_[ii];}
-  unsigned nterms() const {return jterms_.size();}
+  const CostBase_ & jterm(const size_t ii) const {return jterms_[ii];}
+  size_t nterms() const {return jterms_.size();}
   double getCostJb() const {return costJb_;}
   double getCostJoJc() const {return costJoJc_;}
 
@@ -224,10 +224,10 @@ double CostFunction<MODEL, OBS>::evaluate(const CtrlVar_ & fguess,
                                           PostProcessor<State_> post) {
   Log::trace() << "CostFunction::evaluate start" << std::endl;
 // Setup terms of cost function
-  PostProcessor<State_> pp(post);
   jb_->initialize(fguess);
-  for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
-    jterms_[jj].initialize(fguess, config, pp);
+  PostProcessor<State_> pp(post);
+  for (size_t jj = 0; jj < jterms_.size(); ++jj) {
+    jterms_[jj].setPostProc(fguess, config, pp);
   }
 
 // Run NL model
@@ -239,8 +239,8 @@ double CostFunction<MODEL, OBS>::evaluate(const CtrlVar_ & fguess,
   costJb_ = jb_->finalize(mfguess);
   zzz += costJb_;
   costJoJc_ = 0.0;
-  for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
-    costJoJc_ += jterms_[jj].finalize();
+  for (size_t jj = 0; jj < jterms_.size(); ++jj) {
+    costJoJc_ += jterms_[jj].computeCost();
   }
   zzz += costJoJc_;
   Log::test() << "CostFunction: Nonlinear J = " << zzz << std::endl;
@@ -262,8 +262,8 @@ double CostFunction<MODEL, OBS>::linearize(const CtrlVar_ & fguess,
 // Setup trajectory for terms of cost function
   PostProcessorTLAD<MODEL> pptraj;
   jb_->initializeTraj(fguess, lowres, innerConf, pptraj);
-  for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
-    jterms_[jj].initializeTraj(fguess, lowres, innerConf, pptraj);
+  for (size_t jj = 0; jj < jterms_.size(); ++jj) {
+    jterms_[jj].setPostProcTraj(fguess, innerConf, lowres, pptraj);
   }
 
 // Specific linearization if needed (including TLM)
@@ -274,8 +274,8 @@ double CostFunction<MODEL, OBS>::linearize(const CtrlVar_ & fguess,
 
 // Finalize trajectory setup
   jb_->finalizeTraj();
-  for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
-    jterms_[jj].finalizeTraj();
+  for (size_t jj = 0; jj < jterms_.size(); ++jj) {
+    jterms_[jj].computeCostTraj();
   }
 
   Log::trace() << "CostFunction::linearize done" << std::endl;
@@ -291,12 +291,17 @@ void CostFunction<MODEL, OBS>::computeGradientFG(CtrlInc_ & grad) const {
   PostProcessorTLAD<MODEL> costad;
   this->zeroAD(grad);
 
-  for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
+  for (size_t jj = 0; jj < jterms_.size(); ++jj) {
     std::shared_ptr<const GeneralizedDepartures> tmp(jterms_[jj].newGradientFG());
-    jterms_[jj].setupAD(tmp, grad, costad);
+    jterms_[jj].computeCostAD(tmp, grad, costad);
   }
 
   this->runADJ(grad, costad, pp);
+
+  for (size_t jj = 0; jj < jterms_.size(); ++jj) {
+    jterms_[jj].setPostProcAD();
+  }
+
   Log::info() << "CostFunction::computeGradientFG: gradient:" << grad << std::endl;
   Log::trace() << "CostFunction::computeGradientFG done" << std::endl;
 }
@@ -324,7 +329,7 @@ void CostFunction<MODEL, OBS>::addIncrement(CtrlVar_ & xx, const CtrlInc_ & dx,
 template<typename MODEL, typename OBS>
 void CostFunction<MODEL, OBS>::resetLinearization() {
   Log::trace() << "CostFunction::resetLinearization start" << std::endl;
-  for (unsigned jj = 0; jj < jterms_.size(); ++jj) {
+  for (size_t jj = 0; jj < jterms_.size(); ++jj) {
     jterms_[jj].resetLinearization();
   }
   Log::trace() << "CostFunction::resetLinearization done" << std::endl;

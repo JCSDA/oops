@@ -39,7 +39,6 @@ class JqTermTLAD : public PostBaseTLAD<MODEL> {
   State_ & getMxi() const;
   void computeModelErrorTL(Increment_ &);
 
-  std::unique_ptr<GeneralizedDepartures> releaseOutputFromTL() override {return nullptr;}
   void setupAD(const Increment_ & dx);
 
  private:

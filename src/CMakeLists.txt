@@ -18,7 +18,6 @@ oops/assimilation/CostJbState.h
 oops/assimilation/CostJbTotal.h
 oops/assimilation/CostJcDFI.h
 oops/assimilation/CostJo.h
-oops/assimilation/CostJoType.h
 oops/assimilation/CostTermBase.h
 oops/assimilation/DRGMRESRMinimizer.h
 oops/assimilation/DRIPCGMinimizer.h
@@ -98,6 +97,8 @@ oops/base/GeoVaLsWriter.h
 oops/base/GetValuePost.h
 oops/base/GetValuePosts.h
 oops/base/GetValuesPost.h
+oops/base/GetValueTLAD.h
+oops/base/GetValueTLADs.h
 oops/base/LocalIncrement.cc
 oops/base/LocalIncrement.h
 oops/base/HybridCovariance.h

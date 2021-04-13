@@ -63,7 +63,7 @@ template<typename MODEL, typename OBS> class CostJbTotal {
   void finalizeTraj();
 
 /// Initialize before starting the TL run.
-  unsigned int initializeTL(PostProcTLAD_ &) const;
+  void initializeTL(PostProcTLAD_ &) const;
   void finalizeTL(const CtrlInc_ &, CtrlInc_ &) const;
 
 /// Initialize before starting the AD run.
@@ -269,14 +269,11 @@ void CostJbTotal<MODEL, OBS>::addGradientFG(CtrlInc_ & grad, CtrlInc_ & gradJb) 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-unsigned int CostJbTotal<MODEL, OBS>::initializeTL(PostProcTLAD_ & pptl) const {
+void CostJbTotal<MODEL, OBS>::initializeTL(PostProcTLAD_ & pptl) const {
   Log::trace() << "CostJbTotal::initializeTL start" << std::endl;
   jqtl_.reset(jb_->initializeJqTL());
-  unsigned int iq = 0;  // Hack...
-  if (jqtl_) iq = 1;    // Hack...
   pptl.enrollProcessor(jqtl_);
   Log::trace() << "CostJbTotal::initializeTL done" << std::endl;
-  return iq;   // Hack...
 }
 
 // -----------------------------------------------------------------------------

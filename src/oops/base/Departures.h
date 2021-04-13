@@ -24,7 +24,6 @@
 #include "oops/interface/ObsVector.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
-#include "oops/util/Printable.h"
 
 namespace oops {
 
@@ -41,8 +40,7 @@ template<typename OBS> class Observations;
 
 // -----------------------------------------------------------------------------
 template <typename OBS>
-class Departures : public util::Printable,
-                   public GeneralizedDepartures {
+class Departures : public GeneralizedDepartures {
   typedef ObsSpaces<OBS>           ObsSpaces_;
   typedef ObsVector<OBS>           ObsVector_;
   template <typename DATA> using ObsData_ = ObsDataVector<OBS, DATA>;

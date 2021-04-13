@@ -41,9 +41,8 @@ template<typename MODEL, typename OBS> class LBHessianMatrix : private boost::no
   void multiply(const CtrlInc_ & dx, CtrlInc_ & dz) const {
 //  Setup TL terms of cost function
     PostProcessorTLAD<MODEL> costtl;
-    unsigned iq = j_.jb().initializeTL(costtl);
     for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
-      j_.jterm(jj).setupTL(dx, costtl);
+      j_.jterm(jj).setPostProcTL(dx, costtl);
     }
 
 //  Run TLM
@@ -66,9 +65,10 @@ template<typename MODEL, typename OBS> class LBHessianMatrix : private boost::no
     j_.zeroAD(dw);
 //  Jo + Jc
     for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
-      std::unique_ptr<GeneralizedDepartures> ww(costtl.releaseOutputFromTL(iq+jj));
+      std::unique_ptr<GeneralizedDepartures> ww = j_.jterm(jj).newDualVector();
+      j_.jterm(jj).computeCostTL(dx, *ww);
       std::shared_ptr<GeneralizedDepartures> zz(j_.jterm(jj).multiplyCoInv(*ww));
-      j_.jterm(jj).setupAD(zz, dw, costad);
+      j_.jterm(jj).computeCostAD(zz, dw, costad);
     }
 
 //  Run ADJ
@@ -80,6 +80,9 @@ template<typename MODEL, typename OBS> class LBHessianMatrix : private boost::no
 
     dz += zz;
     j_.jb().finalizeAD();
+    for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
+      j_.jterm(jj).setPostProcAD();
+    }
   }
 
  private:

@@ -11,6 +11,9 @@
 #ifndef OOPS_ASSIMILATION_HESSIANMATRIX_H_
 #define OOPS_ASSIMILATION_HESSIANMATRIX_H_
 
+#include <memory>
+#include <utility>
+
 #include <boost/noncopyable.hpp>
 
 #include "oops/assimilation/ControlIncrement.h"
@@ -60,9 +63,8 @@ void HessianMatrix<MODEL, OBS>::multiply(const CtrlInc_ & dx, CtrlInc_ & dz) con
 
 // Setup TL terms of cost function
   PostProcessorTLAD<MODEL> costtl;
-  unsigned iq = j_.jb().initializeTL(costtl);
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
-    j_.jterm(jj).setupTL(dx, costtl);
+    j_.jterm(jj).setPostProcTL(dx, costtl);
   }
 
 // Run TLM
@@ -89,25 +91,29 @@ void HessianMatrix<MODEL, OBS>::multiply(const CtrlInc_ & dx, CtrlInc_ & dz) con
 
 // Jo + Jc
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
-    ww.append(costtl.releaseOutputFromTL(iq+jj));
-    zz.append(j_.jterm(jj).multiplyCoInv(*ww.getv(jj)));
-    j_.jterm(jj).setupAD(zz.getv(jj), dw, costad);
+    std::unique_ptr<GeneralizedDepartures> wtmp = j_.jterm(jj).newDualVector();
+    j_.jterm(jj).computeCostTL(dx, *wtmp);
+    zz.append(j_.jterm(jj).multiplyCoInv(*wtmp));
+    j_.jterm(jj).computeCostAD(zz.getv(jj), dw, costad);
+    if (test_) ww.append(std::move(wtmp));
   }
 
 // Run ADJ
   j_.runADJ(dw, costad);
   dz += dw;
   j_.jb().finalizeAD();
+  for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
+    j_.jterm(jj).setPostProcAD();
+  }
 
   if (test_) {
-     // <G dx, dy>, where dy = Rinv H dx
-     double adj_tst_fwd = dot_product(ww, zz);
-     // <dx, Gt dy> , where dy = Rinv H dx
-     double adj_tst_bwd = dot_product(dx, dw);
+    // <G dx, dy>, where dy = Rinv H dx
+    double adj_tst_fwd = dot_product(ww, zz);
+    // <dx, Gt dy> , where dy = Rinv H dx
+    double adj_tst_bwd = dot_product(dx, dw);
 
-     Log::info() << "Online adjoint test, iteration: " << iter_ << std::endl
-                 << util::PrintAdjTest(adj_tst_fwd, adj_tst_bwd, "G")
-                 << std::endl;
+    Log::info() << "Online adjoint test, iteration: " << iter_ << std::endl
+                << util::PrintAdjTest(adj_tst_fwd, adj_tst_bwd, "G") << std::endl;
   }
 }
 

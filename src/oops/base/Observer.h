@@ -65,7 +65,7 @@ class Observer {
 /// \brief Initializes variables, obs bias, obs filters (could be different for
 /// different iterations
   std::shared_ptr<GetValPost_> initialize(const Geometry_ &, const ObsAuxCtrl_ &,
-                                          ObsVector_ &, const int iter = 0);
+                                          ObsVector_ &, const int iter);
 
 /// \brief Computes H(x) from the filled in GeoVaLs
   void finalize(ObsVector_ &);
@@ -106,7 +106,7 @@ template <typename MODEL, typename OBS>
 std::shared_ptr<GetValuePost<MODEL, OBS>>
 Observer<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrl_ & ybias,
                                  ObsVector_ & obserr, const int iter) {
-// could pass state (or even geom) and obsbias instead of control var (easier for HofX?)
+  Log::trace() << "Observer<MODEL, OBS>::initialize start" << std::endl;
   iterout_ = iter;
   ybias_ = &ybias;
 
@@ -163,9 +163,10 @@ void Observer<MODEL, OBS>::finalize(ObsVector_ & yobsim) {
   /// Save flags (for diagnostics use)
   const std::string qcname  = "EffectiveQC" + std::to_string(iterout_);
   qcflags_->save(qcname);
+  Log::info() << "Observer::finalize QC = " << *qcflags_ << std::endl;
 
   initialized_ = false;
-  oops::Log::trace() << "Observer<MODEL, OBS>::finalize done" << std::endl;
+  Log::trace() << "Observer<MODEL, OBS>::finalize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

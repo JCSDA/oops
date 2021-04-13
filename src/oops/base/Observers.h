@@ -49,7 +49,7 @@ class Observers {
 
 /// \brief Initializes variables, obs bias, obs filters (could be different for
 /// different iterations
-  void initialize(const Geometry_ &, const ObsAuxCtrls_ &, PostProc_ &);
+  void initialize(const Geometry_ &, const ObsAuxCtrls_ &, PostProc_ &, const int iter = 0);
 
 /// \brief Computes H(x) from the filled in GeoVaLs
   void finalize(Observations_ &);
@@ -72,6 +72,7 @@ Observers<MODEL, OBS>::Observers(const ObsSpaces_ & obspaces, const eckit::Confi
   for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
     observers_.emplace_back(new Observer_(obspaces_[jj], obsconfs[jj]));
   }
+
   Log::trace() << "Observers<MODEL, OBS>::Observers done" << std::endl;
 }
 
@@ -79,14 +80,16 @@ Observers<MODEL, OBS>::Observers(const ObsSpaces_ & obspaces, const eckit::Confi
 
 template <typename MODEL, typename OBS>
 void Observers<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrls_ & obsaux,
-                                       PostProc_ & pp) {
+                                       PostProc_ & pp, const int iter) {
   Log::trace() << "Observers<MODEL, OBS>::initialize start" << std::endl;
   obserrs_.reserve(observers_.size());
+  std::string errname = "ObsError";
+  if (iter > 0) errname = "EffectiveError";
 
   std::shared_ptr<GetValuePosts_> getvals(new GetValuePosts_());
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
-    obserrs_.emplace_back(obspaces_[jj], "ObsError");
-    getvals->append(observers_[jj]->initialize(geom, obsaux[jj], obserrs_[jj]));
+    obserrs_.emplace_back(obspaces_[jj], errname);
+    getvals->append(observers_[jj]->initialize(geom, obsaux[jj], obserrs_[jj], iter));
   }
   pp.enrollProcessor(getvals);
 
@@ -102,6 +105,7 @@ void Observers<MODEL, OBS>::finalize(Observations_ & yobs) {
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
     observers_[jj]->finalize(yobs[jj]);
     obserrs_[jj].save("EffectiveError");  // Obs error covariance is looking for that for now
+    Log::info() << "Observers::finalize obs err = " << obserrs_[jj] << std::endl;
   }
   obserrs_.clear();
 

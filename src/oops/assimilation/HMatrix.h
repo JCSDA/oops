@@ -11,6 +11,9 @@
 #ifndef OOPS_ASSIMILATION_HMATRIX_H_
 #define OOPS_ASSIMILATION_HMATRIX_H_
 
+#include <memory>
+#include <utility>
+
 #include <boost/noncopyable.hpp>
 
 #include "oops/assimilation/ControlIncrement.h"
@@ -43,14 +46,16 @@ template<typename MODEL, typename OBS> class HMatrix : private boost::noncopyabl
     PostProcessorTLAD<MODEL> cost;
 
     for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
-      j_.jterm(jj).setupTL(dx, cost);
+      j_.jterm(jj).setPostProcTL(dx, cost);
     }
 
     j_.runTLM(dx, cost, post, idModel);
 
     dy.clear();
     for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
-      dy.append(cost.releaseOutputFromTL(jj));
+      std::unique_ptr<GeneralizedDepartures> dytmp(j_.jterm(jj).newDualVector());
+      j_.jterm(jj).computeCostTL(dx, *dytmp);
+      dy.append(std::move(dytmp));
     }
   }
 

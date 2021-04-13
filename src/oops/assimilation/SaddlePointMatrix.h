@@ -11,6 +11,9 @@
 #ifndef OOPS_ASSIMILATION_SADDLEPOINTMATRIX_H_
 #define OOPS_ASSIMILATION_SADDLEPOINTMATRIX_H_
 
+#include <memory>
+#include <utility>
+
 #include <boost/noncopyable.hpp>
 
 #include "oops/assimilation/ControlIncrement.h"
@@ -55,16 +58,19 @@ void SaddlePointMatrix<MODEL, OBS>::multiply(const SPVector_ & x, SPVector_ & z)
   z.dx(new CtrlInc_(j_.jb()));
   j_.jb().initializeAD(z.dx(), x.lambda().dx(), costad);
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
-    j_.jterm(jj).setupAD(x.lambda().getv(jj), ww, costad);
+    j_.jterm(jj).computeCostAD(x.lambda().getv(jj), ww, costad);
   }
   j_.runADJ(ww, costad);
   z.dx() += ww;
+  for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
+    j_.jterm(jj).setPostProcAD();
+  }
 
 // TLM block
   PostProcessorTLAD<MODEL> costtl;
   j_.jb().initializeTL(costtl);
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
-    j_.jterm(jj).setupTL(x.dx(), costtl);
+    j_.jterm(jj).setPostProcTL(x.dx(), costtl);
   }
   CtrlInc_ mdx(x.dx());
   j_.runTLM(mdx, costtl);
@@ -72,7 +78,9 @@ void SaddlePointMatrix<MODEL, OBS>::multiply(const SPVector_ & x, SPVector_ & z)
   z.lambda().dx(new CtrlInc_(j_.jb()));
   j_.jb().finalizeTL(x.dx(), z.lambda().dx());
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
-    z.lambda().append(costtl.releaseOutputFromTL(jj+1));
+    std::unique_ptr<GeneralizedDepartures> ztmp(j_.jterm(jj).newDualVector());
+    j_.jterm(jj).computeCostTL(x.dx(), *ztmp);
+    z.lambda().append(std::move(ztmp));
   }
 
 // Diagonal block

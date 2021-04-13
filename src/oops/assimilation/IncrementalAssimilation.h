@@ -49,7 +49,7 @@ int IncrementalAssimilation(ControlVariable<MODEL, OBS> & xx, CostFunction<MODEL
     iterconfs[jouter].set("iteration", static_cast<int>(jouter));
 //  Get configuration for current outer iteration
     Log::info() << "IncrementalAssimilation: Configuration for outer iteration "
-                << jouter << ":\n" << iterconfs[jouter];
+                << jouter << ":" << std::endl << iterconfs[jouter] << std::endl;
 
 //  Setup for the trajectory run
     PostProcessor<State_> post;
