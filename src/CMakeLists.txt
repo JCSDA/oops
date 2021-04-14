@@ -182,6 +182,8 @@ oops/generic/InterpolatorUnstructured.cc
 oops/generic/LinearModelId.h
 oops/generic/ObsErrorDiag.h
 oops/generic/PseudoModel.h
+oops/generic/soar.h
+oops/generic/soar.cc
 oops/generic/unstructured_interpolation_mod.F90
 oops/generic/VerticalLocEV.h
 
@@ -548,6 +550,10 @@ ecbuild_add_test( TARGET  test_util_parameters
 
 ecbuild_add_test( TARGET  test_generic_gc99
                   SOURCES test/generic/gc99.cc
+                  LIBS    oops eckit )
+
+ecbuild_add_test( TARGET  test_generic_soar
+                  SOURCES test/generic/soar.cc
                   LIBS    oops eckit )
 
 ecbuild_add_test( TARGET  test_util_isanypointinvolumeinterior
