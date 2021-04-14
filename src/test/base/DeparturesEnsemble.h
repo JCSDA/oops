@@ -38,7 +38,7 @@ template <typename OBS> void testDeparturesEnsemble() {
   // rms for each ensemble member computed using depatures.rms() method
   size_t myNens = 5;
   DeparturesEnsemble_ yens(Test_::obspace(), myNens);
-  size_t myNobs = yens[0].nobs();
+  size_t myNobs = yens[0].packEigenSize();
 
   std::vector<double> rms1(myNens);
   for (size_t ii=0; ii < myNens; ++ii) {

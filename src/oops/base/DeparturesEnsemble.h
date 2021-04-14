@@ -71,7 +71,7 @@ DeparturesEnsemble<OBS>::DeparturesEnsemble(const ObsSpaces_ & local,
 
 template<typename OBS>
 Eigen::MatrixXd DeparturesEnsemble<OBS>::packEigen() const {
-  std::size_t myNobs = ensemblePerturbs_[0].nobs();
+  std::size_t myNobs = ensemblePerturbs_[0].packEigenSize();
   std::size_t myNens = ensemblePerturbs_.size();
 
   Eigen::MatrixXd depEns(myNens, myNobs);

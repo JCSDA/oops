@@ -46,6 +46,7 @@ class ObsVecQG : public util::Printable,
   ObsVecQG & operator*= (const ObsVecQG &);
   ObsVecQG & operator/= (const ObsVecQG &);
   Eigen::VectorXd  packEigen() const;
+  size_t packEigenSize() const {return nobs();}
 
   /// set all values to zero
   void zero();

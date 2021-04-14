@@ -301,9 +301,9 @@ template <typename OBS> void testPackEigen() {
     double rms1 = ov1.rms();
 
     Eigen::VectorXd vec = ov1.packEigen();
-    EXPECT(vec.size() == ov1.nobs());
+    EXPECT(vec.size() == ov1.packEigenSize());
 
-    double rms2 = sqrt(vec.squaredNorm() / ov1.nobs());
+    double rms2 = sqrt(vec.squaredNorm() / vec.size());
     EXPECT(std::abs(rms1-rms2) < tolerance);
   }
 }

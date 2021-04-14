@@ -50,7 +50,8 @@ template <typename OBS> void testDepartures() {
 
   // check pack operator
   Eigen::VectorXd ypack = y.packEigen();
-  oops::Log::info() << "ypack: " << ypack << std::endl;
+  EXPECT_EQUAL(ypack.size(), y.packEigenSize());
+  oops::Log::test() << "ypack: " << ypack << std::endl;
   double rms = ypack.norm() / sqrt(ypack.size());
   oops::Log::test() << "rms(ypack)=" << rms << std::endl;
   oops::Log::test() << "y.rms()=" << ref_rms << std::endl;

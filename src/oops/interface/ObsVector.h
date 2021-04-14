@@ -48,7 +48,7 @@ class ObsVector : public util::Printable,
   /// Creates vector from \p obsspace. If \p name is specified, reads the
   /// specified \p name variable from \p obsspace. Otherwise, zero vector is created.
   explicit ObsVector(const ObsSpace<OBS> & obsspace, const std::string name = "");
-  explicit ObsVector(const ObsVector &);
+  ObsVector(const ObsVector &);
   ObsVector(const ObsSpace<OBS> &, const ObsVector &);
   ~ObsVector();
 
@@ -64,8 +64,12 @@ class ObsVector : public util::Printable,
   ObsVector & operator*= (const ObsVector &);
   ObsVector & operator/= (const ObsVector &);
 
-  /// Pack into an Eigen vector (excluding vector elements that are masked out)
+  /// Pack observations local to this MPI task into an Eigen vector
+  /// (excluding vector elements that are masked out)
   Eigen::VectorXd  packEigen() const;
+  /// Number of non-masked out observations local to this MPI task
+  /// (size of an Eigen vector returned by `packEigen`
+  size_t packEigenSize() const {return data_->packEigenSize();}
 
   void zero();
   /// Set this ObsVector to ones (used in tests)
@@ -83,7 +87,7 @@ class ObsVector : public util::Printable,
   void save(const std::string &) const;
   void read(const std::string &);
 
-  /// number of non-masked out observations
+  /// number of non-masked out observations (across all MPI tasks)
   unsigned int nobs() const;
 
  private:
@@ -335,7 +339,6 @@ Eigen::VectorXd  ObsVector<OBS>::packEigen() const {
   util::Timer timer(classname(), "packEigen");
 
   Eigen::VectorXd vec = data_->packEigen();
-  ASSERT(vec.size() == nobs());
 
   Log::trace() << "ObsVector<OBS>::packEigen done" << std::endl;
   return vec;

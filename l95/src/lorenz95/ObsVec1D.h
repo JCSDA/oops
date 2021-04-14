@@ -47,6 +47,8 @@ class ObsVec1D : public util::Printable,
   ObsVec1D & operator/= (const ObsVec1D &);
 
   Eigen::VectorXd  packEigen() const;
+  size_t packEigenSize() const {return nobs();}
+
   size_t size() const {return data_.size();}
   const double & operator[](const std::size_t ii) const {return data_.at(ii);}
   double & operator[](const std::size_t ii) {return data_.at(ii);}
