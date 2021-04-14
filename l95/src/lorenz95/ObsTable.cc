@@ -24,7 +24,6 @@
 #include "eckit/exception/Exceptions.h"
 
 #include "lorenz95/LocsL95.h"
-#include "lorenz95/ObsVec1D.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
@@ -229,12 +228,6 @@ void ObsTable::generateDistribution(const eckit::Configuration & config) {
 void ObsTable::random(std::vector<double> & data) const {
   util::NormalDistribution<double> x(data.size(), 0.0, 1.0, getSeed());
   for (size_t jj = 0; jj < data.size(); ++jj) data[jj] = x[jj];
-}
-
-// -----------------------------------------------------------------------------
-
-void ObsTable::printJo(const ObsVec1D & ydep, const ObsVec1D & grad) {
-  oops::Log::info() << "ObsTable::printJo not implemented" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

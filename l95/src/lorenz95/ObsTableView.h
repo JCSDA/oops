@@ -25,8 +25,6 @@
 
 namespace lorenz95 {
 
-class ObsVec1D;
-
 /// A Simple Observation Data Handler
 /*!
  *  ObsTableView defines a simple observation handler
@@ -56,7 +54,6 @@ class ObsTableView : public util::Printable,
   unsigned int nobs() const;
   void generateDistribution(const eckit::Configuration &);
   std::unique_ptr<LocsL95> locations() const;
-  void printJo(const ObsVec1D &, const ObsVec1D &);
 
   size_t index(const size_t ii) const {return localobs_[ii];}
   const std::string & obsname() const {return obstable_->obsname();}

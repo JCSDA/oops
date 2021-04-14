@@ -64,7 +64,6 @@ class ObsSpace : public util::Printable,
   const Variables & obsvariables() const;
 
 // Other
-  void printJo(const ObsVector_ &, const ObsVector_ &) const;
   const std::string & obsname() const {return obsdb_->obsname();}
 
   const eckit::mpi::Comm & timeComm() const {return time_;}
@@ -139,16 +138,6 @@ const Variables & ObsSpace<OBS>::obsvariables() const {
   Log::trace() << "ObsSpace<OBS>::obsvariables starting" << std::endl;
   util::Timer timer(classname(), "obsvariables");
   return obsdb_->obsvariables();
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename OBS>
-void ObsSpace<OBS>::printJo(const ObsVector_ & dy, const ObsVector_ & grad) const {
-  Log::trace() << "ObsSpace<OBS>::printJo starting" << std::endl;
-  util::Timer timer(classname(), "printJo");
-  obsdb_->printJo(dy.obsvector(), grad.obsvector());
-  Log::trace() << "ObsSpace<OBS>::printJo done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

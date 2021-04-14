@@ -26,8 +26,6 @@
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 
-#include "model/ObsVecQG.h"
-
 using atlas::array::make_view;
 
 namespace qg {
@@ -177,12 +175,6 @@ std::unique_ptr<LocationsQG> ObsSpaceQG::locations() const {
   std::vector<util::DateTime> times;
   qg_obsdb_locations_f90(key_, obsname_.size(), obsname_.c_str(), fields.get(), times);
   return std::unique_ptr<LocationsQG>(new LocationsQG(fields, std::move(times)));
-}
-
-// -----------------------------------------------------------------------------
-
-void ObsSpaceQG::printJo(const ObsVecQG & dy, const ObsVecQG & grad) const {
-  oops::Log::info() << "ObsSpaceQG::printJo not implemented" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

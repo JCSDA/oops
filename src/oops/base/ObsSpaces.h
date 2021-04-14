@@ -31,15 +31,11 @@
 #include "oops/util/Timer.h"
 
 namespace oops {
-  template <typename T>
-  class Departures;
 
 // -----------------------------------------------------------------------------
-
 template <typename OBS>
 class ObsSpaces : public util::Printable,
                   private util::ObjectCounter<ObsSpaces<OBS> > {
-  typedef Departures<OBS>         Departures_;
   typedef ObsSpace<OBS>           ObsSpace_;
 
  public:
@@ -59,9 +55,6 @@ class ObsSpaces : public util::Printable,
 /// Assimilation window
   const util::DateTime & windowStart() const {return wbgn_;}
   const util::DateTime & windowEnd() const {return wend_;}
-
-/// Other
-  void printJo(const Departures_ &, const Departures_ &) const;  // To be changed
 
  private:
   void print(std::ostream &) const;
@@ -116,15 +109,6 @@ template <typename OBS>
 void ObsSpaces<OBS>::print(std::ostream & os) const {
   for (std::size_t jj = 0; jj < spaces_.size(); ++jj) {
     os << *spaces_[jj];
-  }
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename OBS>
-void ObsSpaces<OBS>::printJo(const Departures_ & dy, const Departures_ & grad) const {
-  for (std::size_t jj = 0; jj < spaces_.size(); ++jj) {
-    spaces_[jj]->printJo(dy[jj], grad[jj]);
   }
 }
 

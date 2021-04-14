@@ -33,7 +33,6 @@ namespace eckit {
 }
 
 namespace qg {
-  class ObsVecQG;
 
 /// \brief ObsSpace for QG model
 //  \details ObsSpaceQG is created for each obs type. The underlying Fortran
@@ -58,8 +57,6 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
 
   /// create locations for the whole time window
   std::unique_ptr<LocationsQG> locations() const;
-
-  void printJo(const ObsVecQG &, const ObsVecQG &) const;
 
   /// return number of observations (unique locations)
   int nobs() const;

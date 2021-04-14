@@ -183,12 +183,6 @@ std::unique_ptr<LocsL95> ObsTableView::locations() const {
 
 // -----------------------------------------------------------------------------
 
-void ObsTableView::printJo(const ObsVec1D & x1, const ObsVec1D & x2) {
-  oops::Log::info() << "ObsTableView::printJo not implemented" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
 void ObsTableView::print(std::ostream & os) const {
   os << *obstable_ << std::endl;
   os << "Local observation indices: " << localobs_;
