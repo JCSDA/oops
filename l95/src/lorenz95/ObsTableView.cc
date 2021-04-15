@@ -16,6 +16,8 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/types/Types.h"
 
+#include "lorenz95/ObsIterator.h"
+
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
 
@@ -39,7 +41,7 @@ ObsTableView::ObsTableView(const ObsTableView & obstable,
                            const eckit::Configuration & conf)
   : obstable_(obstable.obstable_), localobs_(), obsdist_()
 {
-  std::vector<double> locations = obstable.obstable_->locations();
+  const std::vector<double> & locations = obstable.obstable_->locations();
   const double dist = conf.getDouble("lengthscale");
   for (unsigned int jj = 0; jj < obstable.nobs(); ++jj) {
     double curdist = std::abs(center[0] - locations[jj]);
@@ -167,8 +169,8 @@ void ObsTableView::generateDistribution(const eckit::Configuration & conf) {
 
 std::unique_ptr<LocsL95> ObsTableView::locations() const {
   // get times and locations from the obsspace
-  std::vector<util::DateTime> all_times = obstable_->times();
-  std::vector<double> all_locs = obstable_->locations();
+  const std::vector<util::DateTime> & all_times = obstable_->times();
+  const std::vector<double> & all_locs = obstable_->locations();
   // set up locations
   const unsigned int nobs = localobs_.size();
   std::vector<double> locs(nobs);
@@ -179,6 +181,29 @@ std::unique_ptr<LocsL95> ObsTableView::locations() const {
   }
   oops::Log::trace() << "ObsTableView::locations done" << std::endl;
   return std::unique_ptr<LocsL95>(new LocsL95(locs, times));
+}
+
+// -----------------------------------------------------------------------------
+ObsIterator ObsTableView::begin() const {
+  const std::vector<double> & all_locs = obstable_->locations();
+  // set up locations
+  const unsigned int nobs = localobs_.size();
+  std::vector<double> locs(nobs);
+  for (unsigned int i = 0; i < nobs; i++) {
+    locs[i] = all_locs[localobs_[i]];
+  }
+  return ObsIterator(locs, 0);
+}
+// -----------------------------------------------------------------------------
+ObsIterator ObsTableView::end() const {
+  const std::vector<double> & all_locs = obstable_->locations();
+  // set up locations
+  const unsigned int nobs = localobs_.size();
+  std::vector<double> locs(nobs);
+  for (unsigned int i = 0; i < nobs; i++) {
+    locs[i] = all_locs[localobs_[i]];
+  }
+  return ObsIterator(locs, locs.size());
 }
 
 // -----------------------------------------------------------------------------

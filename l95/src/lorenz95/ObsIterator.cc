@@ -1,37 +1,38 @@
 /*
- * (C) Copyright 2018 UCAR
+ * (C) Copyright 2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include "lorenz95/Iterator.h"
+#include "lorenz95/ObsIterator.h"
 #include <vector>
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
-Iterator::Iterator(const Resolution & res, const int & index): res_(res.npoints()), index_(index) {
+ObsIterator::ObsIterator(const std::vector<double> & locations, const int & index):
+  locations_(locations), index_(index) {
 }
 
 // -----------------------------------------------------------------------------
-bool Iterator::operator==(const Iterator & other) const {
-  return ((res_ == other.res_) && (index_ == other.index_));
+bool ObsIterator::operator==(const ObsIterator & other) const {
+  return ((index_ == other.index_) && (locations_ == other.locations_));
 }
 
 // -----------------------------------------------------------------------------
-bool Iterator::operator!=(const Iterator & other) const {
-  return ((res_ != other.res_) || (index_ != other.index_));
+bool ObsIterator::operator!=(const ObsIterator & other) const {
+  return ((index_ != other.index_) || (locations_ != other.locations_));
 }
 
 // -----------------------------------------------------------------------------
-eckit::geometry::Point2 Iterator::operator*() const {
-  return eckit::geometry::Point2(index_/static_cast<double>(res_), 0.0);
+eckit::geometry::Point2 ObsIterator::operator*() const {
+  return eckit::geometry::Point2(locations_[index_], 0.0);
 }
 
 // -----------------------------------------------------------------------------
-Iterator& Iterator::operator++() {
+ObsIterator& ObsIterator::operator++() {
   index_++;
   return *this;
 }

@@ -120,6 +120,12 @@ observations:
   rms ref: 8.3207407741318846
   reference nobs: 160
   tolerance: 1.0e-10
+  obs iterator test:
+    reference nlocs: 160
+    lon1: 0.0
+    lat1: 0.0
+    lon2: 0.05
+    lat2: 0.0
 
 local obs space:
   location:

@@ -31,8 +31,7 @@ class Iterator: public std::iterator<std::forward_iterator_tag,
  public:
   static const std::string classname() {return "lorenz95::Iterator";}
 
-  explicit Iterator(const Resolution & res, const int & index = 0);
-  ~Iterator();
+  Iterator(const Resolution & res, const int & index);
 
   bool operator==(const Iterator &) const;
   bool operator!=(const Iterator &) const;
@@ -42,7 +41,7 @@ class Iterator: public std::iterator<std::forward_iterator_tag,
   int index() const {return index_;}
 
  private:
-  void print(std::ostream & os) const {os << index_;}
+  void print(std::ostream & os) const override {os << index_;}
   const int res_;
   int index_;
 };

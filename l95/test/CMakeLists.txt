@@ -332,6 +332,12 @@ ecbuild_add_test( TARGET test_l95_localobsspace
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
+ecbuild_add_test( TARGET test_l95_obs_iterator
+                  SOURCES executables/TestObsIterator.cc
+                  ARGS "testinput/interfaces.yaml"
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth )
+
 ecbuild_add_test( TARGET test_l95_obslocalization
                   SOURCES executables/TestObsLocalization.cc
                   ARGS "testinput/interfaces.yaml"

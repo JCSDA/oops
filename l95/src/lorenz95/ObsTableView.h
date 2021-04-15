@@ -25,6 +25,8 @@
 
 namespace lorenz95 {
 
+class ObsIterator;
+
 /// A Simple Observation Data Handler
 /*!
  *  ObsTableView defines a simple observation handler
@@ -57,6 +59,11 @@ class ObsTableView : public util::Printable,
 
   size_t index(const size_t ii) const {return localobs_[ii];}
   const std::string & obsname() const {return obstable_->obsname();}
+
+  /// iterator to the first observation
+  ObsIterator begin() const;
+  /// iterator to the last observation
+  ObsIterator end() const;
 
   const util::DateTime & windowStart() const {return obstable_->windowStart();}
   const util::DateTime & windowEnd() const {return obstable_->windowEnd();}

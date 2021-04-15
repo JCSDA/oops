@@ -57,8 +57,8 @@ class ObsTable : public oops::ObsSpaceBase,
   void generateDistribution(const eckit::Configuration &);
   void random(std::vector<double> &) const;
   unsigned int nobs() const {return times_.size();}
-  const std::vector<double> locations() const { return locations_; }
-  const std::vector<util::DateTime> times() const { return times_; }
+  const std::vector<double> & locations() const { return locations_; }
+  const std::vector<util::DateTime> & times() const { return times_; }
   const oops::Variables & obsvariables() const { return obsvars_; }
   const std::string & obsname() const {return obsname_;}
 

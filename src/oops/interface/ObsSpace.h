@@ -18,6 +18,7 @@
 
 #include "eckit/geometry/Point2.h"
 #include "oops/base/Variables.h"
+#include "oops/interface/GeometryIterator.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
@@ -42,6 +43,7 @@ class ObsSpace : public util::Printable,
                  private util::ObjectCounter<ObsSpace<OBS> > {
   typedef typename OBS::ObsSpace  ObsSpace_;
   typedef ObsVector<OBS>          ObsVector_;
+  typedef GeometryIterator<OBS>   ObsIterator_;
 
  public:
   static const std::string classname() {return "oops::ObsSpace";}
@@ -65,6 +67,11 @@ class ObsSpace : public util::Printable,
 
 // Other
   const std::string & obsname() const {return obsdb_->obsname();}
+
+  /// Iterator to the first observation
+  ObsIterator_ begin() const;
+  /// Iterator to the past-the-end observation (after last)
+  ObsIterator_ end() const;
 
   const eckit::mpi::Comm & timeComm() const {return time_;}
 
@@ -138,6 +145,26 @@ const Variables & ObsSpace<OBS>::obsvariables() const {
   Log::trace() << "ObsSpace<OBS>::obsvariables starting" << std::endl;
   util::Timer timer(classname(), "obsvariables");
   return obsdb_->obsvariables();
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+GeometryIterator<OBS> ObsSpace<OBS>::begin() const {
+  Log::trace() << "ObsSpace<OBS>::begin starting" << std::endl;
+  util::Timer timer(classname(), "begin");
+  Log::trace() << "ObsSpace<OBS>::begin done" << std::endl;
+  return ObsIterator_(obsdb_->begin());
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+GeometryIterator<OBS> ObsSpace<OBS>::end() const {
+  Log::trace() << "ObsSpace<OBS>::end starting" << std::endl;
+  util::Timer timer(classname(), "end");
+  Log::trace() << "ObsSpace<OBS>::end done" << std::endl;
+  return ObsIterator_(obsdb_->end());
 }
 
 // -----------------------------------------------------------------------------

@@ -398,6 +398,7 @@ test/interface/ObsAuxControl.h
 test/interface/ObsAuxCovariance.h
 test/interface/ObsAuxIncrement.h
 test/interface/ObsDataVector.h
+test/interface/ObsIterator.h
 test/interface/ObsLocalization.h
 test/interface/ObsOperator.h
 test/interface/ObsSpace.h
