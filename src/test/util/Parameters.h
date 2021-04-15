@@ -396,11 +396,8 @@ void doTestSerialization(const eckit::Configuration &config) {
   // back into a configuration. The test verifies that the configuration objects produce the same
   // output when printed.
   //
-  // For this to work, parameter names in the YAML file must be ordered alphabetically; that's
-  // because the YAML parser creates configurations storing keys and values OrderedMapContent
-  // objects (preserving the order in which individual options were specified in the YAML file),
-  // but the LocalConfiguration::set() method stores keys and values in MapContent objects (with
-  // keys ordered alphabetically).
+  // For this to work, parameter names in the YAML file must be specified in the same order in which
+  // the corresponding Parameter objects are declared in the C++ class of which they are members.
 
   ParametersType params;
   EXPECT_NO_THROW(params.validate(config));
