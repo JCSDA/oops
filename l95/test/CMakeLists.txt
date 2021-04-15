@@ -326,12 +326,6 @@ ecbuild_add_test( TARGET test_l95_obsspace
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_localobsspace
-                  SOURCES executables/TestLocalObsSpace.cc
-                  ARGS "testinput/interfaces.yaml"
-                  LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
-
 ecbuild_add_test( TARGET test_l95_obs_iterator
                   SOURCES executables/TestObsIterator.cc
                   ARGS "testinput/interfaces.yaml"
@@ -352,18 +346,6 @@ ecbuild_add_test( TARGET test_l95_obsvector
 
 ecbuild_add_test( TARGET test_l95_obsdatavector
                   SOURCES executables/TestObsDataVector.cc
-                  ARGS "testinput/interfaces.yaml"
-                  LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
-
-ecbuild_add_test( TARGET test_l95_departures_ensemble
-                  SOURCES executables/TestDeparturesEnsemble.cc
-                  ARGS "testinput/interfaces.yaml"
-                  LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
-
-ecbuild_add_test( TARGET test_l95_departures
-                  SOURCES executables/TestDepartures.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )

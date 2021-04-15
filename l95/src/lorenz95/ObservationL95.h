@@ -18,7 +18,7 @@
 #include <boost/noncopyable.hpp>
 
 #include "lorenz95/ObservationTLAD.h"
-#include "lorenz95/ObsTableView.h"
+#include "lorenz95/ObsTable.h"
 
 #include "oops/base/Variables.h"
 #include "oops/util/ObjectCounter.h"
@@ -49,7 +49,7 @@ class ObservationL95 : public util::Printable,
  public:
   static const std::string classname() {return "lorenz95::ObservationL95";}
 
-  ObservationL95(const ObsTableView &, const eckit::Configuration &);
+  ObservationL95(const ObsTable &, const eckit::Configuration &);
   ~ObservationL95();
 
 // Obs Operators
@@ -59,11 +59,11 @@ class ObservationL95 : public util::Printable,
   const oops::Variables & requiredVars() const {return inputs_;}
   std::unique_ptr<LocsL95> locations() const;
 
-  const ObsTableView & table() const {return obsdb_;}
+  const ObsTable & table() const {return obsdb_;}
 
  private:
   void print(std::ostream &) const;
-  const ObsTableView & obsdb_;
+  const ObsTable & obsdb_;
   const oops::Variables inputs_;
 };
 

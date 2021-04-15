@@ -22,7 +22,7 @@
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
-#include "lorenz95/ObsTableView.h"
+#include "lorenz95/ObsTable.h"
 #include "lorenz95/ObsVec1D.h"
 
 namespace lorenz95 {
@@ -36,7 +36,7 @@ class ObsData1D : public util::Printable,
  public:
   static const std::string classname() {return "lorenz95::ObsData1D";}
 
-  ObsData1D(const ObsTableView &, const oops::Variables &, const std::string &);
+  ObsData1D(const ObsTable &, const oops::Variables &, const std::string &);
   ObsData1D(const ObsData1D &);
   explicit ObsData1D(const ObsVec1D &);
   ~ObsData1D() {}
@@ -57,14 +57,14 @@ class ObsData1D : public util::Printable,
  private:
   void print(std::ostream &) const;
 
-  const ObsTableView & obsdb_;
+  const ObsTable & obsdb_;
   std::vector<DATATYPE> data_;
 };
 
 //-----------------------------------------------------------------------------
 
 template<typename DATATYPE>
-ObsData1D<DATATYPE>::ObsData1D(const ObsTableView & ot, const oops::Variables &,
+ObsData1D<DATATYPE>::ObsData1D(const ObsTable & ot, const oops::Variables &,
                                const std::string & name)
   : obsdb_(ot), data_(ot.nobs())
 {

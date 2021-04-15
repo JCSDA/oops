@@ -21,6 +21,7 @@
 #include "oops/base/ObsLocalizationBase.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
+#include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
@@ -29,12 +30,19 @@
 
 namespace test {
 
-/// Tests that obs localization applied to a zero vector returns zero.
-/// Tests that obs localization applied to a vector of ones makes rms(obsvec) < 1
+/// \brief Tests ObsLocalization::computeLocalization method.
+/// \details Tests that for obs localization around specified in yaml Geometry points:
+/// 1. number of local obs matches reference ("reference local nobs")
+/// 2. obs localization applied to a vector of ones makes rms(obsvec) < 1 or
+///    doesn't change the vector (depending on the "localization reduces values" option)
+/// Reference gridpoints are specified in yaml as "reference gridpoints.lons" and
+/// "reference gridpoints.lats". They don't have to be exactly equal to the lon/lat
+/// of the Geometry gridpoints, but should be no further than 1.e-5 distance away.
 template <typename MODEL, typename OBS> void testObsLocalization() {
   typedef ObsTestsFixture<OBS>                   Test_;
   typedef oops::Geometry<MODEL>                  Geometry_;
   typedef oops::GeometryIterator<MODEL>          GeometryIterator_;
+  typedef oops::ObsDataVector<OBS, int>          ObsDataVector_;
   typedef oops::ObsLocalizationBase<MODEL, OBS>  ObsLocalization_;
   typedef oops::ObsSpace<OBS>                    ObsSpace_;
   typedef oops::ObsVector<OBS>                   ObsVector_;
@@ -44,41 +52,84 @@ template <typename MODEL, typename OBS> void testObsLocalization() {
 
   // loop over all obs spaces
   for (size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    const ObsSpace_ & obspace = Test_::obspace()[jj];
+    // initialize obs-space localization
     eckit::LocalConfiguration locconf(Test_::config(jj), "obs localization");
-    // variable used to check if localization is tested at least once below
-    bool tested = false;
+
+    // read reference local nobs values and reference gridpoints
+    const std::vector<double> lons = locconf.getDoubleVector("reference gridpoints.lons");
+    const std::vector<double> lats = locconf.getDoubleVector("reference gridpoints.lats");
+    const std::vector<size_t> nobs_local_ref = locconf.getUnsignedVector("reference local nobs");
+    ASSERT(lons.size() == lats.size());
+    ASSERT(lons.size() == nobs_local_ref.size());
+    ASSERT(lons.size() > 0);
+    std::vector<eckit::geometry::Point2> reference_points;
+    for (size_t jpoint = 0; jpoint < lons.size(); ++jpoint) {
+      reference_points.emplace_back(lons[jpoint], lats[jpoint]);
+    }
+    std::unique_ptr<ObsLocalization_> obsloc =
+                    oops::ObsLocalizationFactory<MODEL, OBS>::create(locconf, obspace);
+    oops::Log::test() << "Testing obs-space localization: " << *obsloc << std::endl;
+
+    ObsVector_ locvector(obspace);
+    ObsVector_ obsvector(obspace);
+    ObsDataVector_ outside(obspace, obspace.obsvariables());
+
+    size_t total_tested = 0;
+    std::vector<size_t> nobs_local(nobs_local_ref.size(), 0);
+    std::vector<double> locvector_rms(nobs_local_ref.size(), 0);
     // loop over geometry points
     for (GeometryIterator_ ii = geometry.begin(); ii != geometry.end(); ++ii) {
-      // initialize local observation space and a local obs vector
-      ObsSpace_ localobs(Test_::obspace()[jj], *ii, locconf);
-      ObsVector_ obsvector(localobs);
-      // only test if there are some observations in the local obs space
-      if (obsvector.nobs() > 0) {
-        tested = true;
-        // initialize obs-space localization
-        std::unique_ptr<ObsLocalization_> obsloc =
-                        oops::ObsLocalizationFactory<MODEL, OBS>::create(locconf, localobs);
-        oops::Log::test() << "Testing obs-space localization: " << *obsloc <<
-                             " at geometry iterator " << ii << std::endl;
-        // apply obs localization to a zero vector, check that result is zero
-        obsvector.zero();
-        EXPECT_EQUAL(obsvector.rms(), 0.0);
-        ObsVector_ locvector(localobs);
-        obsloc->computeLocalization(ii, locvector);
-        obsvector *= locvector;
-        EXPECT_EQUAL(obsvector.rms(), 0.0);
-        // apply localization to a vector of ones, check that rms(result) < 1
-        obsvector.ones();
-        EXPECT_EQUAL(obsvector.rms(), 1.0);
+      // debug print to help decide which points to specify for reference
+      // set OOPS_DEBUG environment variable to -1 to see prints from all MPI tasks
+      oops::Log::debug() << "Iterating over " << ii << ": " << *ii << std::endl;
+      // check if we need to test at this location (if there are any points in the
+      // reference point list within 1e-5 of this locationn)
+      const auto & it = std::find_if(reference_points.begin(), reference_points.end(),
+            [ii] (const eckit::geometry::Point2 & point) {return point.distance(*ii) < 1e-5;});
+      if (it != reference_points.end()) {
+        total_tested++;
+        size_t index = it - reference_points.begin();
         locvector.ones();
-        obsloc->computeLocalization(ii, locvector);
+        obsloc->computeLocalization(ii, outside, locvector);
+        oops::Log::test() << "Obs localization with geometry iterator: " << ii << ": "
+                          << *ii << std::endl;
+        oops::Log::test() << "Mask for obs outside of localization: " << outside << std::endl;
+        oops::Log::test() << "Localization values: " << locvector << std::endl;
+        locvector.mask(outside);
+        oops::Log::test() << "Local vector nobs and reference: " << locvector.nobs() << ", "
+                          << nobs_local[index] << std::endl;
+        // save number of local obs to be tested later
+        nobs_local[index] = locvector.nobs();
+
+        // apply localization to a vector of ones
+        obsvector.ones();
         obsvector *= locvector;
         oops::Log::test() << "Localization applied to local ObsVector of ones: " <<
                              obsvector << std::endl;
-        EXPECT(obsvector.rms() < 1.0);
+        // save localized vector rms to be tested later
+        locvector_rms[index] = obsvector.rms();
       }
     }
-    EXPECT(tested);
+    // gather number of tested observations, nobs_local and locvector_rms
+    // (only one MPI task owns one gridpoint)
+    Test_::comm().allReduceInPlace(total_tested, eckit::mpi::sum());
+    Test_::comm().allReduceInPlace(nobs_local.begin(), nobs_local.end(), eckit::mpi::sum());
+    Test_::comm().allReduceInPlace(locvector_rms.begin(), locvector_rms.end(), eckit::mpi::sum());
+    // check that we tested all gridpoints
+    EXPECT_EQUAL(total_tested, lons.size());
+    // Test that computed number of local obs is the same as reference
+    EXPECT_EQUAL(nobs_local_ref, nobs_local);
+    // check whether localization is expected to reduce obsvector.rms()
+    if (locconf.getBool("localization reduces values")) {
+      for (size_t jpoint = 0; jpoint < nobs_local.size(); ++jpoint) {
+        EXPECT(locvector_rms[jpoint] < 1.0);
+      }
+    } else {
+      for (size_t jpoint = 0; jpoint < nobs_local.size(); ++jpoint) {
+        EXPECT((nobs_local[jpoint] == 0) || (locvector_rms[jpoint] == 1.0));
+      }
+    }
   }
 }
 

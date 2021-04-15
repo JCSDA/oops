@@ -14,6 +14,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/LocalIncrement.h"
 #include "oops/base/ObsLocalizationBase.h"
+#include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsSpace.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/util/Logger.h"
@@ -26,6 +27,7 @@ template <typename MODEL, typename OBS, typename LOC>
 class ObsLocalization : public ObsLocalizationBase<MODEL, OBS> {
   typedef GeometryIterator<MODEL>  GeometryIterator_;
   typedef ObsSpace<OBS>            ObsSpace_;
+  typedef ObsDataVector<OBS, int>  ObsDataVector_;
   typedef ObsVector<OBS>           ObsVector_;
 
  public:
@@ -34,7 +36,8 @@ class ObsLocalization : public ObsLocalizationBase<MODEL, OBS> {
   ObsLocalization(const eckit::Configuration &, const ObsSpace_ &);
   ~ObsLocalization();
 
-  void computeLocalization(const GeometryIterator_ &, ObsVector_ &) const override;
+  void computeLocalization(const GeometryIterator_ &,
+                           ObsDataVector_ &, ObsVector_ &) const override;
 
  private:
   void print(std::ostream &) const override;
@@ -69,10 +72,10 @@ ObsLocalization<MODEL, OBS, LOC>::~ObsLocalization() {
 
 template <typename MODEL, typename OBS, typename LOC>
 void ObsLocalization<MODEL, OBS, LOC>::computeLocalization(const GeometryIterator_ & p,
-                                                           ObsVector_ & obsvector) const {
+                                       ObsDataVector_ & local, ObsVector_ & obsvector) const {
   Log::trace() << "ObsLocalization<MODEL, OBS, LOC>:: computeLocalization starting" << std::endl;
   util::Timer timer(classname(), "computeLocalization");
-  obsloc_->computeLocalization(p.geometryiter(), obsvector.obsvector());
+  obsloc_->computeLocalization(p.geometryiter(), local.obsdatavector(), obsvector.obsvector());
   Log::trace() << "ObsLocalization<MODEL, OBS, LOC>:: computeLocalization done" << std::endl;
 }
 

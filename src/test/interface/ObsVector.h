@@ -281,30 +281,13 @@ template <typename OBS> void testMask() {
     EXPECT_EQUAL(with_mask.nobs(), nobs_after_mask);
 
     /// test packEigen
-    Eigen::VectorXd with_mask_vec = with_mask.packEigen();
-    EXPECT(with_mask_vec.size() == with_mask.nobs());
-    if (with_mask.nobs() > 0) {
+    Eigen::VectorXd with_mask_vec = test.packEigen(mask);
+    EXPECT(with_mask_vec.size() == test.packEigenSize(mask));
+    if (with_mask_vec.size() > 0) {
       double rms1 = with_mask.rms();
       double rms2 = sqrt(with_mask_vec.squaredNorm() / with_mask_vec.size());
       EXPECT(std::abs(rms1-rms2) < tolerance);
     }
-  }
-}
-// -----------------------------------------------------------------------------
-template <typename OBS> void testPackEigen() {
-  typedef ObsTestsFixture<OBS>  Test_;
-  typedef oops::ObsVector<OBS>  ObsVector_;
-  const double tolerance = 1.0e-8;
-  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    ObsVector_ ov1(Test_::obspace()[jj]);
-    ov1.random();
-    double rms1 = ov1.rms();
-
-    Eigen::VectorXd vec = ov1.packEigen();
-    EXPECT(vec.size() == ov1.packEigenSize());
-
-    double rms2 = sqrt(vec.squaredNorm() / vec.size());
-    EXPECT(std::abs(rms1-rms2) < tolerance);
   }
 }
 // -----------------------------------------------------------------------------
@@ -335,8 +318,6 @@ class ObsVector : public oops::Test {
       { testReadWrite<OBS>(); });
     ts.emplace_back(CASE("interface/ObsVector/testMask")
       { testMask<OBS>(); });
-    ts.emplace_back(CASE("interface/ObsVector/testPackEigen")
-      { testPackEigen<OBS>(); });
   }
 
   void clear() const override {

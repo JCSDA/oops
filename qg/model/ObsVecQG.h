@@ -36,7 +36,6 @@ class ObsVecQG : public util::Printable,
   ObsVecQG(const ObsSpaceQG &,
            const std::string & name = "");
   ObsVecQG(const ObsVecQG &);
-  ObsVecQG(const ObsSpaceQG &, const ObsVecQG &);
   ~ObsVecQG();
 
   ObsVecQG & operator = (const ObsVecQG &);
@@ -45,11 +44,14 @@ class ObsVecQG : public util::Printable,
   ObsVecQG & operator-= (const ObsVecQG &);
   ObsVecQG & operator*= (const ObsVecQG &);
   ObsVecQG & operator/= (const ObsVecQG &);
-  Eigen::VectorXd  packEigen() const;
-  size_t packEigenSize() const {return nobs();}
+
+  Eigen::VectorXd  packEigen(const ObsDataQG<int> &) const;
+  size_t packEigenSize(const ObsDataQG<int> &) const;
 
   /// set all values to zero
   void zero();
+  /// set \p i-th value to zero
+  void zero(int i);
   /// set all values to one
   void ones();
   void axpy(const double &, const ObsVecQG &);

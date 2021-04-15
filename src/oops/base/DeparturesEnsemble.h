@@ -9,10 +9,12 @@
 #define OOPS_BASE_DEPARTURESENSEMBLE_H_
 
 #include <Eigen/Dense>
+#include <memory>
 #include <vector>
 
 #include "oops/base/Departures.h"
 #include "oops/base/ObsSpaces.h"
+#include "oops/interface/ObsDataVector.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
@@ -23,12 +25,12 @@ namespace oops {
 template<typename OBS> class DeparturesEnsemble {
   typedef Departures<OBS>          Departures_;
   typedef ObsSpaces<OBS>           ObsSpaces_;
+  template <typename DATA> using ObsData_ = ObsDataVector<OBS, DATA>;
+  template <typename DATA> using ObsDataVec_ = std::vector<std::shared_ptr<ObsData_<DATA>>>;
+
  public:
   /// Creates ensemble of empty Departures size \p nens
   DeparturesEnsemble(const ObsSpaces_ &, const size_t nens);
-  /// Creates ensemble of local Departures from full Departures \p other based on local
-  /// observations \p local
-  DeparturesEnsemble(const ObsSpaces_ & local, const DeparturesEnsemble & other);
 
   /// Accessors and size
   size_t size() const {return ensemblePerturbs_.size();}
@@ -36,7 +38,7 @@ template<typename OBS> class DeparturesEnsemble {
   const Departures_ & operator[](const size_t ii) const {return ensemblePerturbs_[ii];}
 
 /// pack ensemble of dep. as contiguous block of memory
-  Eigen::MatrixXd packEigen() const;
+  Eigen::MatrixXd packEigen(const ObsDataVec_<int> &) const;
 
  private:
   std::vector<Departures_> ensemblePerturbs_;   // ensemble perturbations
@@ -57,26 +59,13 @@ DeparturesEnsemble<OBS>::DeparturesEnsemble(const ObsSpaces_ & obsdb, const size
 // -----------------------------------------------------------------------------
 
 template<typename OBS>
-DeparturesEnsemble<OBS>::DeparturesEnsemble(const ObsSpaces_ & local,
-                                              const DeparturesEnsemble & other)
-      : ensemblePerturbs_() {
-  ensemblePerturbs_.reserve(other.size());
-  for (const auto & dep : other.ensemblePerturbs_) {
-    ensemblePerturbs_.emplace_back(local, dep);
-  }
-  Log::trace() << "Local DeparturesEnsemble created" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename OBS>
-Eigen::MatrixXd DeparturesEnsemble<OBS>::packEigen() const {
-  std::size_t myNobs = ensemblePerturbs_[0].packEigenSize();
+Eigen::MatrixXd DeparturesEnsemble<OBS>::packEigen(const ObsDataVec_<int> & mask) const {
+  std::size_t myNobs = ensemblePerturbs_[0].packEigenSize(mask);
   std::size_t myNens = ensemblePerturbs_.size();
 
   Eigen::MatrixXd depEns(myNens, myNobs);
   for (std::size_t iens = 0; iens < myNens; ++iens) {
-    depEns.row(iens) = ensemblePerturbs_[iens].packEigen();
+    depEns.row(iens) = ensemblePerturbs_[iens].packEigen(mask);
   }
   Log::trace() << "DeparturesEnsemble::packEigen() completed" << std::endl;
   return depEns;

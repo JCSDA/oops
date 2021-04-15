@@ -22,7 +22,9 @@
 #include "oops/base/IncrementEnsemble4D.h"
 #include "oops/base/ObsAuxControls.h"
 #include "oops/base/ObsEnsemble.h"
+#include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
+#include "oops/base/ObsLocalizations.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/StateEnsemble4D.h"
 #include "oops/interface/Geometry.h"
@@ -45,7 +47,9 @@ class LocalEnsembleSolver {
   typedef IncrementEnsemble4D<MODEL>  IncrementEnsemble4D_;
   typedef ObsAuxControls<OBS>         ObsAuxControls_;
   typedef ObsEnsemble<OBS>            ObsEnsemble_;
+  typedef ObsErrors<OBS>              ObsErrors_;
   typedef Observations<OBS>           Observations_;
+  typedef ObsLocalizations<MODEL, OBS> ObsLocalizations_;
   typedef ObsSpaces<OBS>              ObsSpaces_;
   typedef StateEnsemble4D<MODEL>      StateEnsemble4D_;
 
@@ -76,6 +80,9 @@ class LocalEnsembleSolver {
   CalcHofX_   hofx_;              // observer
   Departures_ omb_;               // obs - mean(H(x))
   DeparturesEnsemble_ Yb_;        // ensemble perturbations in the observation space
+  std::unique_ptr<ObsErrors_> R_;          ///< observation errors
+  std::unique_ptr<Departures_> invVarR_;   ///< inverse observation error variance
+  ObsLocalizations_ obsloc_;      ///< observation space localization
 };
 
 // -----------------------------------------------------------------------------
@@ -84,9 +91,9 @@ template <typename MODEL, typename OBS>
 LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
                                         const Geometry_ & geometry,
                                         const eckit::Configuration & config, size_t nens)
-  : obsconf_(config, "observations"),
-    obspaces_(obspaces), obsaux_(obspaces_, obsconf_),
-    hofx_(obspaces, obsconf_), omb_(obspaces_), Yb_(obspaces_, nens)
+  : obsconf_(config, "observations"), obspaces_(obspaces), obsaux_(obspaces_, obsconf_),
+    hofx_(obspaces, obsconf_), omb_(obspaces_), Yb_(obspaces_, nens),
+    obsloc_(obsconf_, obspaces_)
 {
 }
 
@@ -133,6 +140,10 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(const StateEnsemb
     hofx_.maskObsErrors();
     hofx_.saveObsErrors("EffectiveError");
   }
+  R_.reset(new ObsErrors_(obsconf_, obspaces_));
+  invVarR_.reset(new Departures_(R_->inverseVariance()));
+
+  invVarR_->mask(hofx_.qcflags());
 
   // calculate H(x) ensemble mean
   Observations_ yb_mean(obsens.mean());

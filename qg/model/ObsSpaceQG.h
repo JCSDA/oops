@@ -45,9 +45,6 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
   /// create full ObsSpace (read or generate data)
   ObsSpaceQG(const eckit::Configuration &, const eckit::mpi::Comm &,
              const util::DateTime &, const util::DateTime &, const eckit::mpi::Comm &);
-  /// create local ObsSpace
-  ObsSpaceQG(const ObsSpaceQG &, const eckit::geometry::Point2 &,
-             const eckit::Configuration &);
   ~ObsSpaceQG();
 
   /// read data or metadata
@@ -67,9 +64,6 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
   /// observation type
   const std::string & obsname() const {return obsname_;}
 
-  /// local observations indices
-  const std::vector<int> & localobs() const { return localobs_;}
-
   /// interface with Fortran
   const F90odb & toFortran() const {return key_;}
 
@@ -81,9 +75,6 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
   const util::DateTime winbgn_;      // window for the observations
   const util::DateTime winend_;
   oops::Variables obsvars_;          // variables simulated by ObsOperators
-  std::vector<int> localobs_;        // indices of local observations
-  bool isLocal_;                     // true if it's a local subset
-  const eckit::mpi::Comm & comm_;    // MPI communicator associated with ObsSpace
 
   // defines mapping for Fortran structures
   static std::map < std::string, F90odb > theObsFileRegister_;

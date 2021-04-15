@@ -19,7 +19,7 @@
 namespace lorenz95 {
   class GomL95;
   template <typename DATATYPE> class ObsData1D;
-  class ObsTableView;
+  class ObsTable;
   class ObsDiags1D;
   class ObsVec1D;
 
@@ -27,7 +27,7 @@ namespace lorenz95 {
 
 class QCmanager : public util::Printable {
  public:
-  QCmanager(const ObsTableView &, const eckit::Configuration &,
+  QCmanager(const ObsTable &, const eckit::Configuration &,
             std::shared_ptr<ObsData1D<int> >, std::shared_ptr<ObsData1D<float> >): novars_() {}
   ~QCmanager() {}
 

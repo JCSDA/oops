@@ -26,7 +26,7 @@ namespace eckit {
 
 namespace lorenz95 {
   class ObsBias;
-  class ObsTableView;
+  class ObsTable;
 
 // -----------------------------------------------------------------------------
 
@@ -37,7 +37,7 @@ class ObsBiasCorrection : public util::Printable,
 
 /// Constructor, destructor
   ObsBiasCorrection();
-  ObsBiasCorrection(const ObsTableView &, const Parameters_ &);
+  ObsBiasCorrection(const ObsTable &, const Parameters_ &);
   ObsBiasCorrection(const ObsBiasCorrection &, const bool copy = true);
   ~ObsBiasCorrection() {}
 

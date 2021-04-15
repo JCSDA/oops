@@ -267,12 +267,6 @@ ecbuild_add_test( TARGET test_qg_obsspace
                   LIBS    qg
                   TEST_DEPENDS test_qg_make_obs_4d_24h )
 
-ecbuild_add_test( TARGET test_qg_localobsspace
-                  SOURCES executables/TestLocalObsSpace.cc
-                  ARGS "testinput/interfaces.yaml"
-                  LIBS    qg
-                  TEST_DEPENDS test_qg_make_obs_4d_24h )
-
 ecbuild_add_test( TARGET test_qg_obs_vector
                   SOURCES executables/TestObsVector.cc
                   ARGS "testinput/interfaces.yaml"
@@ -281,18 +275,6 @@ ecbuild_add_test( TARGET test_qg_obs_vector
 
 ecbuild_add_test( TARGET test_qg_obsdatavector
                   SOURCES executables/TestObsDataVector.cc
-                  ARGS "testinput/interfaces.yaml"
-                  LIBS    qg
-                  TEST_DEPENDS test_qg_make_obs_4d_24h )
-
-ecbuild_add_test( TARGET test_qg_departures_ensemble
-                  SOURCES executables/TestDeparturesEnsemble.cc
-                  ARGS "testinput/interfaces.yaml"
-                  LIBS    qg
-                  TEST_DEPENDS test_qg_make_obs_4d_24h )
-
-ecbuild_add_test( TARGET test_qg_departures
-                  SOURCES executables/TestDepartures.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    qg
                   TEST_DEPENDS test_qg_make_obs_4d_24h )
@@ -329,6 +311,12 @@ ecbuild_add_test( TARGET  test_qg_obs_aux_increment
 
 ecbuild_add_test( TARGET  test_qg_obs_aux_covariance
                   SOURCES executables/TestObsAuxCovariance.cc
+                  ARGS    "testinput/interfaces.yaml"
+                  LIBS    qg
+                  TEST_DEPENDS test_qg_make_obs_4d_24h )
+
+ecbuild_add_test( TARGET  test_qg_obs_localization
+                  SOURCES executables/TestObsLocalization.cc
                   ARGS    "testinput/interfaces.yaml"
                   LIBS    qg
                   TEST_DEPENDS test_qg_make_obs_4d_24h )

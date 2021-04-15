@@ -21,7 +21,7 @@
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-ObsBiasCorrection::ObsBiasCorrection(const ObsTableView &, const Parameters_ & params)
+ObsBiasCorrection::ObsBiasCorrection(const ObsTable &, const Parameters_ & params)
   : bias_(0.0), active_(false)
 {
   if (params.covariance.value() != boost::none &&

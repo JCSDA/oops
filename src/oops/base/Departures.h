@@ -50,8 +50,6 @@ class Departures : public GeneralizedDepartures {
  public:
 /// \brief create Departures for all obs (read from ObsSpace if \p name is specified)
   explicit Departures(const ObsSpaces_ &, const std::string & name = "");
-/// \brief create local Departures
-  Departures(const ObsSpaces_ &, const Departures &);
 
 /// Access
   size_t size() const {return dep_.size();}
@@ -78,9 +76,9 @@ class Departures : public GeneralizedDepartures {
   void mask(ObsDataVec_<int>);
 
 /// Pack departures in an Eigen vector (excluding departures that are masked out)
-  Eigen::VectorXd  packEigen() const;
+  Eigen::VectorXd  packEigen(const ObsDataVec_<int> &) const;
 /// Size of departures packed into an Eigen vector
-  size_t packEigenSize() const;
+  size_t packEigenSize(const ObsDataVec_<int> &) const;
 
 /// Save departures values
   void save(const std::string &) const;
@@ -103,16 +101,6 @@ Departures<OBS>::Departures(const ObsSpaces_ & obsdb,
     dep_.emplace_back(obsdb[jj], name);
   }
   Log::trace() << "Departures created" << std::endl;
-}
-// -----------------------------------------------------------------------------
-template<typename OBS>
-Departures<OBS>::Departures(const ObsSpaces_ & obsdb,
-                            const Departures & other): dep_() {
-  dep_.reserve(obsdb.size());
-  for (size_t jj = 0; jj < other.dep_.size(); ++jj) {
-    dep_.emplace_back(obsdb[jj], other[jj]);
-  }
-  Log::trace() << "Local Departures created" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template<typename OBS>
@@ -223,27 +211,27 @@ void Departures<OBS>::mask(ObsDataVec_<int> qcflags) {
 }
 // -----------------------------------------------------------------------------
 template <typename OBS>
-Eigen::VectorXd Departures<OBS>::packEigen() const {
+Eigen::VectorXd Departures<OBS>::packEigen(const ObsDataVec_<int> & mask) const {
   std::vector<size_t> len(dep_.size());
   for (size_t idep = 0; idep < dep_.size(); ++idep) {
-    len[idep] = dep_[idep].packEigenSize();
+    len[idep] = dep_[idep].packEigenSize(*mask[idep]);
   }
   size_t all_len = std::accumulate(len.begin(), len.end(), 0);
 
   Eigen::VectorXd vec(all_len);
   size_t ii = 0;
   for (size_t idep = 0; idep < dep_.size(); ++idep) {
-    vec.segment(ii, len[idep]) = dep_[idep].packEigen();
+    vec.segment(ii, len[idep]) = dep_[idep].packEigen(*mask[idep]);
     ii += len[idep];
   }
   return vec;
 }
 // -----------------------------------------------------------------------------
 template <typename OBS>
-size_t Departures<OBS>::packEigenSize() const {
+size_t Departures<OBS>::packEigenSize(const ObsDataVec_<int> & mask) const {
   size_t len = 0;
   for (size_t idep = 0; idep < dep_.size(); ++idep) {
-    len += dep_[idep].packEigenSize();
+    len += dep_[idep].packEigenSize(*mask[idep]);
   }
   return len;
 }

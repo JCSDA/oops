@@ -28,7 +28,7 @@ namespace eckit {
 }
 
 namespace lorenz95 {
-  class LocsL95;
+  class ObsIterator;
 
 /// A Simple Observation Data Handler
 /*!
@@ -61,6 +61,11 @@ class ObsTable : public oops::ObsSpaceBase,
   const std::vector<util::DateTime> & times() const { return times_; }
   const oops::Variables & obsvariables() const { return obsvars_; }
   const std::string & obsname() const {return obsname_;}
+
+  /// iterator to the first observation
+  ObsIterator begin() const;
+  /// iterator to the observation past-the-last
+  ObsIterator end() const;
 
  private:
   void print(std::ostream &) const;

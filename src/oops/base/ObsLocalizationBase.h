@@ -15,6 +15,7 @@
 
 #include "eckit/config/Configuration.h"
 #include "oops/interface/GeometryIterator.h"
+#include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsSpace.h"
 #include "oops/util/Printable.h"
 
@@ -25,15 +26,18 @@ template<typename MODEL, typename OBS>
 class ObsLocalizationBase : public util::Printable,
                             private boost::noncopyable {
   typedef GeometryIterator<MODEL>   GeometryIterator_;
+  typedef ObsDataVector<OBS, int>   ObsDataVector_;
   typedef ObsVector<OBS>            ObsVector_;
  public:
   ObsLocalizationBase() = default;
   virtual ~ObsLocalizationBase() = default;
 
-  /// fill \p obsvector with observation-space localization between
-  /// observations and \p point in model-space
+  /// compute obs-space localization: fill \p obsvector with observation-space
+  /// localization values between observations and \p point in model-space, and
+  /// fill \p outside with flags on whether obs is local or not (1: outside of
+  /// localization, 0: inside of localization, local)
   virtual void computeLocalization(const GeometryIterator_ & point,
-                                   ObsVector_ & obsvector) const = 0;
+                                   ObsDataVector_ & flags, ObsVector_ & obsvector) const = 0;
 };
 
 // =============================================================================
@@ -85,19 +89,15 @@ template <typename MODEL, typename OBS>
 std::unique_ptr<ObsLocalizationBase<MODEL, OBS>> ObsLocalizationFactory<MODEL, OBS>::create(
                               const eckit::Configuration & conf, const ObsSpace_ & obspace) {
   Log::trace() << "ObsLocalizationBase<MODEL, OBS>::create starting" << std::endl;
-  if (conf.has("localization method")) {
-    const std::string id = conf.getString("localization method");
-    typename std::map<std::string, ObsLocalizationFactory<MODEL, OBS>*>::iterator
-      jloc = getMakers().find(id);
-    if (jloc == getMakers().end()) {
-      throw std::runtime_error(id + " does not exist in obs localization factory.");
-    }
-    std::unique_ptr<ObsLocalizationBase<MODEL, OBS>> ptr(jloc->second->make(conf, obspace));
-    Log::trace() << "ObsLocalizationBase<MODEL, OBS>::create done" << std::endl;
-    return ptr;
-  } else {
-    return nullptr;
+  const std::string id = conf.getString("localization method");
+  typename std::map<std::string, ObsLocalizationFactory<MODEL, OBS>*>::iterator
+    jloc = getMakers().find(id);
+  if (jloc == getMakers().end()) {
+    throw std::runtime_error(id + " does not exist in obs localization factory.");
   }
+  std::unique_ptr<ObsLocalizationBase<MODEL, OBS>> ptr(jloc->second->make(conf, obspace));
+  Log::trace() << "ObsLocalizationBase<MODEL, OBS>::create done" << std::endl;
+  return ptr;
 }
 
 // -----------------------------------------------------------------------------

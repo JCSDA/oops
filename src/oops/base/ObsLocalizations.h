@@ -31,15 +31,17 @@ class ObsLocalizations : public util::Printable,
   typedef Departures<OBS>          Observations_;
   typedef ObsLocalizationBase<MODEL, OBS> ObsLocalization_;
   typedef ObsSpaces<OBS>           ObsSpaces_;
+  typedef std::vector<std::shared_ptr<ObsDataVector<OBS, int>>> ObsDataVectors_;
 
  public:
   static const std::string classname() {return "oops::ObsLocalizations";}
 
   ObsLocalizations(const eckit::Configuration &, const ObsSpaces_ &);
 
-  /// fill \p obsvectors with observation-space localizations between
-  /// observations and \p point in model-space
-  void computeLocalization(const GeometryIterator_ & point, Observations_ & obsvectors) const;
+  /// schur-multiply \p obsvectors with observation-space localizations between
+  /// observations in \p obsspaces and \p point in model-space
+  void computeLocalization(const GeometryIterator_ & point,
+                           ObsDataVectors_ & local, Observations_ & obsvectors) const;
 
  private:
   void print(std::ostream &) const;
@@ -62,9 +64,9 @@ ObsLocalizations<MODEL, OBS>::ObsLocalizations(const eckit::Configuration & conf
 
 template <typename MODEL, typename OBS>
 void ObsLocalizations<MODEL, OBS>::computeLocalization(const GeometryIterator_ & point,
-                                                       Observations_ & obsvec) const {
-  for (size_t jj = 0; jj < local_.size(); ++jj) {
-    if (local_[jj]) local_[jj]->computeLocalization(point, obsvec[jj]);
+                            ObsDataVectors_ & local, Observations_ & obsvec) const {
+  for (size_t jj = 0; jj < obsvec.size(); ++jj) {
+    if (local_[jj]) local_[jj]->computeLocalization(point, *local[jj], obsvec[jj]);
   }
 }
 

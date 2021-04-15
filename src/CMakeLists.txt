@@ -388,7 +388,6 @@ test/interface/LinearGetValues.h
 test/interface/LinearModel.h
 test/interface/LinearObsOperator.h
 test/interface/LinearVariableChange.h
-test/interface/LocalObsSpace.h
 test/interface/Locations.h
 test/interface/Model.h
 test/interface/ModelAuxControl.h

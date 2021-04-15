@@ -40,7 +40,12 @@ class ObsDataQG : public util::Printable,
 
   ObsDataQG & operator= (const ObsDataQG &);
 
+  /// set all values to zero
   void zero();
+  /// set \p i-th value to zero
+  void zero(int i);
+  /// set all values to one
+  void ones();
   void mask(const ObsDataQG<int>);
 
 // I/O
@@ -78,6 +83,16 @@ ObsDataQG<DATATYPE> & ObsDataQG<DATATYPE>::operator= (const ObsDataQG & rhs) {
 template<typename DATATYPE>
 void ObsDataQG<DATATYPE>::zero() {
   data_.zero();
+}
+// -----------------------------------------------------------------------------
+template<typename DATATYPE>
+void ObsDataQG<DATATYPE>::zero(int i) {
+  data_.zero(i);
+}
+// -----------------------------------------------------------------------------
+template<typename DATATYPE>
+void ObsDataQG<DATATYPE>::ones() {
+  data_.ones();
 }
 // -----------------------------------------------------------------------------
 template<typename DATATYPE>

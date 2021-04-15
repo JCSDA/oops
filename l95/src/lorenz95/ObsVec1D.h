@@ -20,7 +20,7 @@
 #include "oops/util/Printable.h"
 
 namespace lorenz95 {
-  class ObsTableView;
+  class ObsTable;
   template <typename DATATYPE> class ObsData1D;
 
 // -----------------------------------------------------------------------------
@@ -34,9 +34,8 @@ class ObsVec1D : public util::Printable,
  public:
   static const std::string classname() {return "lorenz95::ObsVec1D";}
 
-  explicit ObsVec1D(const ObsTableView &, const std::string & name = "");
+  explicit ObsVec1D(const ObsTable &, const std::string & name = "");
   ObsVec1D(const ObsVec1D &);
-  ObsVec1D(const ObsTableView &, const ObsVec1D &);
   ~ObsVec1D() = default;
 
   ObsVec1D & operator= (const ObsVec1D &);
@@ -46,8 +45,8 @@ class ObsVec1D : public util::Printable,
   ObsVec1D & operator*= (const ObsVec1D &);
   ObsVec1D & operator/= (const ObsVec1D &);
 
-  Eigen::VectorXd  packEigen() const;
-  size_t packEigenSize() const {return nobs();}
+  Eigen::VectorXd  packEigen(const ObsData1D<int> &) const;
+  size_t packEigenSize(const ObsData1D<int> &) const;
 
   size_t size() const {return data_.size();}
   const double & operator[](const std::size_t ii) const {return data_.at(ii);}
@@ -66,7 +65,7 @@ class ObsVec1D : public util::Printable,
   ObsVec1D & operator= (const ObsData1D<float> &);
 
   unsigned int nobs() const;
-  const ObsTableView & obsdb() const {return obsdb_;}
+  const ObsTable & obsdb() const {return obsdb_;}
 
 // I/O
   void save(const std::string &) const;
@@ -75,7 +74,7 @@ class ObsVec1D : public util::Printable,
  private:
   void print(std::ostream &) const;
 
-  const ObsTableView & obsdb_;
+  const ObsTable & obsdb_;
   std::vector<double> data_;
   const double missing_;
 };

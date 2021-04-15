@@ -11,6 +11,7 @@
 
 #include <Eigen/Dense>
 #include <cfloat>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -26,6 +27,7 @@
 #include "oops/base/ObsSpaces.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
+#include "oops/interface/ObsDataVector.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Timer.h"
 
@@ -50,6 +52,7 @@ class LETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
   typedef GeometryIterator<MODEL>     GeometryIterator_;
   typedef IncrementEnsemble4D<MODEL>  IncrementEnsemble4D_;
   typedef ObsErrors<OBS>              ObsErrors_;
+  typedef ObsDataVector<OBS, int>     ObsDataVector_;
   typedef ObsLocalizations<MODEL, OBS> ObsLocalizations_;
   typedef ObsSpaces<OBS>              ObsSpaces_;
 
@@ -135,32 +138,31 @@ void LETKFSolver<MODEL, OBS>::measurementUpdate(const IncrementEnsemble4D_ & bkg
   util::Timer timer(classname(), "measurementUpdate");
 
   // create the local subset of observations
-  ObsSpaces_ local_obs(this->obspaces_, *i, this->obsconf_);
-  Departures_ local_omb(local_obs, this->omb_);
+  Departures_ locvector(this->obspaces_);
+  std::vector<std::shared_ptr<ObsDataVector_>> outside;
+  for (size_t jj = 0; jj < this->obspaces_.size(); ++jj) {
+    outside.push_back(std::make_shared<ObsDataVector_>(this->obspaces_[jj],
+            this->obspaces_[jj].obsvariables()));
+  }
+  locvector.ones();
+  this->obsloc_.computeLocalization(i, outside, locvector);
+  locvector.mask(this->hofx_.qcflags());
+  Eigen::VectorXd local_omb_vec = this->omb_.packEigen(outside);
 
-  if (local_omb.nobs() == 0) {
+  if (local_omb_vec.size() == 0) {
     // no obs. so no need to update Wa_ and wa_
     // ana_pert[i]=bkg_pert[i]
     this->copyLocalIncrement(bkg_pert, i, ana_pert);
   } else {
     // if obs are present do normal KF update
-    Eigen::VectorXd local_omb_vec = local_omb.packEigen();
     // create local Yb
-    DeparturesEnsemble_ local_Yb(local_obs, this->Yb_);
-    Eigen::MatrixXd local_Yb_mat = local_Yb.packEigen();
+    Eigen::MatrixXd local_Yb_mat = this->Yb_.packEigen(outside);
     // create local obs errors
-    ObsErrors_ local_R(this->obsconf_, local_obs);
-    Departures_ invVarR = local_R.inverseVariance();
+    Eigen::VectorXd local_invVarR_vec = this->invVarR_->packEigen(outside);
     // and apply localization
-    ObsLocalizations_ loc(this->obsconf_, local_obs);
-    Departures_ locvector(local_obs);
-    locvector.ones();
-    loc.computeLocalization(i, locvector);
-    invVarR *= locvector;
-    Eigen::VectorXd local_R_vec = invVarR.packEigen();
-
-    // compute and apply weights
-    computeWeights(local_omb_vec, local_Yb_mat, local_R_vec);
+    Eigen::VectorXd localization = locvector.packEigen(outside);
+    local_invVarR_vec.array() *= localization.array();
+    computeWeights(local_omb_vec, local_Yb_mat, local_invVarR_vec);
     applyWeights(bkg_pert, ana_pert, i);
   }
 }

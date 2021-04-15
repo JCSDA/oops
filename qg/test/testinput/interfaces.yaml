@@ -10,14 +10,6 @@ geometry:
   nx: 40
   ny: 20
   depths: [4500.0, 5500.0]
-local obs space:
-  location:
-    lon: -10
-    lat: 10
-  localization:
-    lengthscale: 4e6
-  reference nobs: 172
-  variable name: ObsValue
 linear model:
   trajectory:
     tstep: PT1H
@@ -84,6 +76,14 @@ observations:
   rms ref: 183502589.5028424
   reference nobs: 800
   tolerance: 1.0e-8
+  obs localization:
+    localization method: Heaviside
+    lengthscale: 0.0
+    reference local nobs: [0]
+    reference gridpoints:
+      lons: [-175.5]
+      lats: [5.623]
+    localization reduces values: false
 - obs error:
     covariance model: diagonal
   geovals:
@@ -112,6 +112,14 @@ observations:
   rms ref: 39.644266100943696
   reference nobs: 800
   tolerance: 1.0e-8
+  obs localization:
+    localization method: Heaviside
+    lengthscale: 1.e8
+    reference local nobs: [800]
+    reference gridpoints:
+      lons: [-175.5]
+      lats: [5.623]
+    localization reduces values: false
 - obs error:
     covariance model: diagonal
   geovals:
@@ -133,6 +141,15 @@ observations:
   rms ref: 58.474969231121605
   reference nobs: 400
   tolerance: 1.0e-8
+  obs localization:
+    localization method: Heaviside
+    lengthscale: 5.e6
+    reference local nobs: [48]
+    reference gridpoints:
+      lons: [-175.5]
+      lats: [5.623]
+    localization reduces values: false
+
 background:
   date: 2009-12-31T00:00:00Z
   filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc

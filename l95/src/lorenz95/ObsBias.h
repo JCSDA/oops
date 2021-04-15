@@ -23,7 +23,7 @@
 
 namespace lorenz95 {
   class ObsBiasCorrection;
-  class ObsTableView;
+  class ObsTable;
 
 /// Class to handle observation bias parameters.
 
@@ -37,7 +37,7 @@ class ObsBias : public util::Printable,
 
   static const std::string classname() {return "lorenz95::ObsBias";}
 
-  ObsBias(const ObsTableView &, const Parameters_ &);
+  ObsBias(const ObsTable &, const Parameters_ &);
   ObsBias(const ObsBias &, const bool);
   ~ObsBias() {}
 

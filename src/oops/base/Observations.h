@@ -41,8 +41,6 @@ template <typename OBS> class Observations : public util::Printable {
  public:
 /// \brief create Observations for all obs (read from ObsSpace if name is specified)
   explicit Observations(const ObsSpaces_ &, const std::string & name = "");
-/// \brief create local Observations
-  Observations(const ObsSpaces_ &, const Observations &);
 
 /// destructor and copy/move constructor/assignments
   ~Observations() = default;
@@ -92,16 +90,6 @@ Observations<OBS>::Observations(const ObsSpaces_ & obsdb,
     obs_.emplace_back(obsdb[jj], name);
   }
   Log::trace() << "Observations created" << std::endl;
-}
-// -----------------------------------------------------------------------------
-template <typename OBS>
-Observations<OBS>::Observations(const ObsSpaces_ & obsdb,
-                                const Observations & other): obsdb_(obsdb), obs_() {
-  obs_.reserve(obsdb.size());
-  for (std::size_t jj = 0; jj < other.size(); ++jj) {
-    obs_.emplace_back(obsdb[jj], other[jj]);
-  }
-  Log::trace() << "Local observations created" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename OBS>

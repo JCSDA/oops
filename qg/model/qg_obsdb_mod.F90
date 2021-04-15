@@ -153,7 +153,7 @@ enddo
 end subroutine qg_obsdb_delete
 ! ------------------------------------------------------------------------------
 !> Get observation data
-subroutine qg_obsdb_get(self,grp,col,ovec,local,idx)
+subroutine qg_obsdb_get(self,grp,col,ovec)
 
 implicit none
 
@@ -162,8 +162,6 @@ type(qg_obsdb),intent(in) :: self     !< Observation data
 character(len=*),intent(in) :: grp    !< Group
 character(len=*),intent(in) :: col    !< Column
 type(qg_obsvec),intent(inout) :: ovec !< Observation vector
-logical,intent(in) :: local           !< whether local subsetting is to be done
-integer,intent(in),optional :: idx(:) !< subset of indices to get
 
 ! Local variables
 type(group_data),pointer :: jgrp
@@ -193,31 +191,14 @@ if (.not.associated(jcol)) call abor1_ftn('qg_obsdb_get: obs column not found')
 ! Get observation data
 if (allocated(ovec%values)) deallocate(ovec%values)
 ovec%nlev = jcol%nlev
-if (local) then
-  ! if local subset, but desired subset is zero length, return empty vector.
-  if ( .not. present(idx)) then
-    ovec%nobs = 0
-  else
-    ovec%nobs = size(idx)
-  endif
-
-  ! get only a subset of the obs
-  allocate(ovec%values(ovec%nlev,ovec%nobs))
-  do jobs=1,ovec%nobs
-    do jlev=1,jcol%nlev
-      ovec%values(jlev,jobs) = jcol%values(jlev,idx(jobs)+1)
-    enddo
+! get all the obs
+ovec%nobs = jgrp%nobs
+allocate(ovec%values(ovec%nlev,ovec%nobs))
+do jobs=1,jgrp%nobs
+  do jlev=1,jcol%nlev
+    ovec%values(jlev,jobs) = jcol%values(jlev,jobs)
   enddo
-else
-  ! get all the obs
-  ovec%nobs = jgrp%nobs
-  allocate(ovec%values(ovec%nlev,ovec%nobs))
-  do jobs=1,jgrp%nobs
-    do jlev=1,jcol%nlev
-      ovec%values(jlev,jobs) = jcol%values(jlev,jobs)
-    enddo
-  enddo
-end if
+enddo
 
 end subroutine qg_obsdb_get
 ! ------------------------------------------------------------------------------
@@ -458,8 +439,6 @@ do igrp=1,self%ngrp
   ! Get dimensions
   call ncerr(nf90_inquire_dimension(ncid,nobs_id,len=nobsfile))
   call ncerr(nf90_inquire_dimension(ncid,ncol_id,len=ncol))
-  write(record,*) 'qg_obsdb_read: reading ',nobsfile,' ',jgrp%grpname,' observations'
-  call fckit_log%info(record)
 
   ! Get variables ids
   call ncerr(nf90_inq_varid(ncid,'times_'//igrpchar,times_id))
@@ -485,8 +464,6 @@ do igrp=1,self%ngrp
       inwindow(iobs) = .false.
     endif
   end do
-  write(record,*) 'qg_obsdb_read: keeping ',jgrp%nobs,' ',jgrp%grpname,' observations'
-  call fckit_log%info(record)
 
   allocate(jgrp%times(jgrp%nobs))
   jobs=0
@@ -497,8 +474,6 @@ do igrp=1,self%ngrp
     endif
   end do
   deallocate(alltimes)
-  write(record,*) 'qg_obsdb_read: ',jgrp%grpname,' after times ',jgrp%nobs
-  call fckit_log%info(record)
 
   ! Loop over columns
   do icol=1,ncol
@@ -514,8 +489,6 @@ do igrp=1,self%ngrp
     ! Get variables
     call ncerr(nf90_get_var(ncid,nlev_id,jcol%nlev,(/icol/)))
     call ncerr(nf90_get_var(ncid,colname_id,jcol%colname,(/1,icol/),(/50,1/)))
-  write(record,*) 'qg_obsdb_read: ',jgrp%grpname,' after get var ',jgrp%nobs
-  call fckit_log%info(record)
 
     ! Allocation
     allocate(readbuf(jcol%nlev,nobsfile))
@@ -523,8 +496,6 @@ do igrp=1,self%ngrp
 
     ! Get values
     call ncerr(nf90_get_var(ncid,values_id,readbuf(1:jcol%nlev,:),(/1,icol,1/),(/jcol%nlev,1,nobsfile/)))
-  write(record,*) 'qg_obsdb_read: ',jgrp%grpname,' after get values ',jgrp%nobs
-  call fckit_log%info(record)
 
     jobs = 0
     do iobs=1,nobsfile
@@ -534,16 +505,10 @@ do igrp=1,self%ngrp
       endif
     enddo
     deallocate(readbuf)
-  write(record,*) 'qg_obsdb_read: ',jgrp%grpname,' after readbuf ',jgrp%nobs, jobs
-  call fckit_log%info(record)
   enddo
   deallocate(inwindow)
-  write(record,*) 'qg_obsdb_read: ',jgrp%grpname,' done ',jgrp%nobs
-  call fckit_log%info(record)
 enddo
 
-  write(record,*) 'qg_obsdb_read: closing file'
-  call fckit_log%info(record)
 ! Close NetCDF file
 call ncerr(nf90_close(ncid))
 

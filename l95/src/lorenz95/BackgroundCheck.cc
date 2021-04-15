@@ -19,7 +19,7 @@ static oops::FilterMaker<L95ObsTraits,
        oops::ObsFilter<L95ObsTraits, BackgroundCheck> > makerBackgroundCheck_("Background Check");
 
 // -----------------------------------------------------------------------------
-BackgroundCheck::BackgroundCheck(const ObsTableView & obsdb, const Parameters_ & parameters,
+BackgroundCheck::BackgroundCheck(const ObsTable & obsdb, const Parameters_ & parameters,
            std::shared_ptr<ObsData1D<int> > qcflags, std::shared_ptr<ObsData1D<float> > obserr)
   : obsdb_(obsdb), options_(parameters), qcflags_(qcflags), obserr_(obserr), novars_()
 {

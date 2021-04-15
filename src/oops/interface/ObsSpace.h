@@ -51,9 +51,6 @@ class ObsSpace : public util::Printable,
   ObsSpace(const eckit::Configuration &, const eckit::mpi::Comm &,
            const util::DateTime &, const util::DateTime &,
            const eckit::mpi::Comm & time = oops::mpi::myself());
-  ObsSpace(const ObsSpace &, const eckit::geometry::Point2 &,
-           const eckit::Configuration &);
-  explicit ObsSpace(const ObsSpace_ &);
   ~ObsSpace();
 
 /// Interfacing
@@ -93,28 +90,6 @@ ObsSpace<OBS>::ObsSpace(const eckit::Configuration & conf,
   Log::trace() << "ObsSpace<OBS>::ObsSpace starting" << std::endl;
   util::Timer timer(classname(), "ObsSpace");
   obsdb_.reset(new ObsSpace_(conf, comm, bgn, end, time));
-  Log::trace() << "ObsSpace<OBS>::ObsSpace done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename OBS>
-ObsSpace<OBS>::ObsSpace(const ObsSpace<OBS> & os,
-                        const eckit::geometry::Point2 & center,
-                        const eckit::Configuration & conf) : obsdb_(), time_(oops::mpi::myself()) {
-  Log::trace() << "ObsSpace<OBS>::ObsSpace (local) starting" << std::endl;
-  util::Timer timer(classname(), "ObsSpace");
-  obsdb_.reset(new ObsSpace_(os.obsspace(), center, conf));
-  Log::trace() << "ObsSpace<OBS>::ObsSpace (local) done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename OBS>
-ObsSpace<OBS>::ObsSpace(const ObsSpace_ & other) : obsdb_(), time_(other.time_) {
-  Log::trace() << "ObsSpace<OBS>::ObsSpace starting" << std::endl;
-  util::Timer timer(classname(), "ObsSpace");
-  obsdb_ = other.obsdb_;
   Log::trace() << "ObsSpace<OBS>::ObsSpace done" << std::endl;
 }
 

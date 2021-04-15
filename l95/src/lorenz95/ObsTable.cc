@@ -23,7 +23,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 
-#include "lorenz95/LocsL95.h"
+#include "lorenz95/ObsIterator.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
@@ -340,6 +340,14 @@ void ObsTable::otWrite(const std::string & filename) const {
   oops::Log::trace() << "ObsTable::otWrite done" << std::endl;
 }
 
+// -----------------------------------------------------------------------------
+ObsIterator ObsTable::begin() const {
+  return ObsIterator(locations_, 0);
+}
+// -----------------------------------------------------------------------------
+ObsIterator ObsTable::end() const {
+  return ObsIterator(locations_, locations_.size());
+}
 // -----------------------------------------------------------------------------
 
 void ObsTable::print(std::ostream & os) const {

@@ -21,7 +21,7 @@
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-ObsBias::ObsBias(const ObsTableView &, const Parameters_ & params)
+ObsBias::ObsBias(const ObsTable &, const Parameters_ & params)
   : bias_(0.0), active_(false), geovars_(std::vector<std::string>{"x"}), hdiags_()
 {
   oops::Log::trace() << "ObsBias::ObsBias conf is:" << params << std::endl;

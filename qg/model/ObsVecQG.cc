@@ -36,14 +36,6 @@ ObsVecQG::ObsVecQG(const ObsVecQG & other)
   qg_obsvec_copy_f90(keyOvec_, other.keyOvec_);
 }
 // -----------------------------------------------------------------------------
-ObsVecQG::ObsVecQG(const ObsSpaceQG & obsdb, const ObsVecQG & other)
-  : obsdb_(obsdb), keyOvec_(0)
-{
-  qg_obsvec_setup_f90(keyOvec_, obsdb.obsvariables().size(), obsdb.nobs());
-  qg_obsvec_copy_local_f90(keyOvec_, other.keyOvec_, obsdb.localobs().size(),
-                           obsdb.localobs().data());
-}
-// -----------------------------------------------------------------------------
 ObsVecQG::~ObsVecQG() {
   qg_obsvec_delete_f90(keyOvec_);
 }
@@ -92,6 +84,10 @@ void ObsVecQG::zero() {
   qg_obsvec_zero_f90(keyOvec_);
 }
 // -----------------------------------------------------------------------------
+void ObsVecQG::zero(int ii) {
+  qg_obsvec_zero_ith_f90(keyOvec_, ii);
+}
+// -----------------------------------------------------------------------------
 void ObsVecQG::ones() {
   qg_obsvec_ones_f90(keyOvec_);
 }
@@ -135,10 +131,16 @@ void ObsVecQG::save(const std::string & name) const {
   obsdb_.putdb(name, keyOvec_);
 }
 // -----------------------------------------------------------------------------
-Eigen::VectorXd ObsVecQG::packEigen() const {
-  Eigen::VectorXd vec(nobs());
-  qg_obsvec_get_f90(keyOvec_, vec.data(), vec.size());
+Eigen::VectorXd ObsVecQG::packEigen(const ObsDataQG<int> & mask) const {
+  Eigen::VectorXd vec(packEigenSize(mask));
+  qg_obsvec_get_withmask_f90(keyOvec_, mask.toFortran(), vec.data(), vec.size());
   return vec;
+}
+// -----------------------------------------------------------------------------
+size_t ObsVecQG::packEigenSize(const ObsDataQG<int> & mask) const {
+  int nobs;
+  qg_obsvec_nobs_withmask_f90(keyOvec_, mask.toFortran(), nobs);
+  return nobs;
 }
 // -----------------------------------------------------------------------------
 void ObsVecQG::read(const std::string & name) {

@@ -44,7 +44,6 @@ class ObsSpaces : public util::Printable,
   ObsSpaces(const eckit::Configuration &, const eckit::mpi::Comm &,
             const util::DateTime &, const util::DateTime &,
             const eckit::mpi::Comm & time = oops::mpi::myself());
-  ObsSpaces(const ObsSpaces &, const eckit::geometry::Point2 &, const eckit::Configuration &);
   ~ObsSpaces();
 
 /// Access
@@ -80,22 +79,6 @@ ObsSpaces<OBS>::ObsSpaces(const eckit::Configuration & conf, const eckit::mpi::C
     spaces_.push_back(tmp);
   }
   ASSERT(spaces_.size() >0);
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename OBS>
-ObsSpaces<OBS>::ObsSpaces(const ObsSpaces<OBS> & obss, const eckit::geometry::Point2 & center,
-                          const eckit::Configuration & conf)
-  : spaces_(0), wbgn_(obss.wbgn_), wend_(obss.wend_)
-{
-  std::vector<eckit::LocalConfiguration> typeconfs = conf.getSubConfigurations();
-  for (std::size_t jj = 0; jj < obss.size(); ++jj) {
-    eckit::LocalConfiguration locconf(typeconfs[jj], "obs localization");
-    std::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obss[jj], center, locconf));
-    spaces_.push_back(tmp);
-  }
-  ASSERT(spaces_.size() == obss.size());
 }
 
 // -----------------------------------------------------------------------------

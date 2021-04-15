@@ -199,9 +199,6 @@ extern "C" {
   void qg_obsdb_delete_f90(F90odb &);
   void qg_obsdb_get_f90(const F90odb &, const int &, const char *,
                         const int &, const char *, const F90ovec &);
-  void qg_obsdb_get_local_f90(const F90odb &, const int &, const char *,
-                              const int &, const char *, const int &, const int *,
-                              const F90ovec &);
   void qg_obsdb_put_f90(const F90odb &, const int &, const char *,
                         const int &, const char *, const F90ovec &);
   void qg_obsdb_locations_f90(const F90odb &, const int &, const char *,
@@ -218,8 +215,8 @@ extern "C" {
   void qg_obsvec_clone_f90(F90ovec &, const F90ovec &);
   void qg_obsvec_delete_f90(F90ovec &);
   void qg_obsvec_copy_f90(const F90ovec &, const F90ovec &);
-  void qg_obsvec_copy_local_f90(const F90ovec &, const F90ovec &, const int &, const int *);
   void qg_obsvec_zero_f90(const F90ovec &);
+  void qg_obsvec_zero_ith_f90(const F90ovec &, const int &);
   void qg_obsvec_ones_f90(const F90ovec &);
   /// set ObsVector (with key \p obsvector_key) values to missing values where
   /// mask ObsVector (with key \p mask_key) values are set to 1
@@ -236,7 +233,10 @@ extern "C" {
   void qg_obsvec_stats_f90(const F90ovec &, double &, double &, double &);
   void qg_obsvec_nobs_f90(const F90ovec &, int &);
   /// fill \p data (size \p nobs) with all non-masked out (non-missing) values
-  void qg_obsvec_get_f90(const F90ovec &, double * data, const int & nobs);
+  void qg_obsvec_get_withmask_f90(const F90ovec &, const F90ovec & mask_key,
+                                  double * data, const int & nobs);
+  void qg_obsvec_nobs_withmask_f90(const F90ovec &, const F90ovec & mask_key, int &);
+
 
 // -----------------------------------------------------------------------------
 //  Streamfunction observations

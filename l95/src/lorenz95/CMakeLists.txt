@@ -48,8 +48,6 @@ set( _l95_srcs
         ObsLocGC99.h
         ObsTable.cc
         ObsTable.h
-        ObsTableView.cc
-        ObsTableView.h
         ObsVec1D.cc
         ObsVec1D.h
         ObsData1D.h

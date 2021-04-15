@@ -20,7 +20,7 @@
 namespace lorenz95 {
   class GomL95;
   template <typename DATATYPE> class ObsData1D;
-  class ObsTableView;
+  class ObsTable;
   class ObsDiags1D;
   class ObsVec1D;
 
@@ -44,7 +44,7 @@ class BackgroundCheck : public util::Printable {
  public:
   typedef BackgroundCheckParameters Parameters_;
 
-  BackgroundCheck(const ObsTableView &, const Parameters_ &,
+  BackgroundCheck(const ObsTable &, const Parameters_ &,
                   std::shared_ptr<ObsData1D<int> >, std::shared_ptr<ObsData1D<float> >);
 
   void preProcess() const {}
@@ -57,7 +57,7 @@ class BackgroundCheck : public util::Printable {
  private:
   void print(std::ostream & os) const;
 
-  const ObsTableView & obsdb_;
+  const ObsTable & obsdb_;
   Parameters_ options_;
   std::shared_ptr<ObsData1D<int> > qcflags_;   // QC flags
   std::shared_ptr<ObsData1D<float> > obserr_;  // obs error stddev
