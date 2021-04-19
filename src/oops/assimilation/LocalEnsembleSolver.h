@@ -138,7 +138,7 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(const StateEnsemb
     // TODO(someone) combine qc flags from all ensemble members
     hofx_.saveQcFlags("EffectiveQC");
     hofx_.maskObsErrors();
-    hofx_.saveObsErrors("EffectiveError");
+    hofx_.saveObsErrors("ObsError");
   }
   R_.reset(new ObsErrors_(obsconf_, obspaces_));
   invVarR_.reset(new Departures_(R_->inverseVariance()));

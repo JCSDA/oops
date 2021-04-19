@@ -45,6 +45,18 @@ class ObsErrorBase : public util::Printable,
 /// Generate random perturbation in \p dy
   virtual void randomize(ObsVector_ & dy) const = 0;
 
+/// Save obs errors
+  virtual void save(const std::string &) const = 0;
+
+/// Return obs error std. dev. The non-const method means caller can modify values,
+/// this is used by obs filters. In this case update() should be called to ensure
+/// the matrix stays consistent.
+  virtual ObsVector_ & obserrors() = 0;
+  virtual const ObsVector_ & obserrors() const = 0;
+
+/// Update when obs errors standard deviations have been modified
+  virtual void update() = 0;
+
 /// Return inverseVariance
   virtual const ObsVector_ & inverseVariance() const = 0;
 
@@ -77,8 +89,7 @@ class ObsErrorFactory {
 template<class OBS, class T>
 class ObsErrorMaker : public ObsErrorFactory<OBS> {
   typedef ObsSpace<OBS> ObsSpace_;
-  virtual ObsErrorBase<OBS> * make(const eckit::Configuration & conf,
-                                     const ObsSpace_ & obs)
+  virtual ObsErrorBase<OBS> * make(const eckit::Configuration & conf, const ObsSpace_ & obs)
     { return new T(conf, obs); }
  public:
   explicit ObsErrorMaker(const std::string & name) : ObsErrorFactory<OBS>(name) {}
@@ -100,7 +111,7 @@ template <typename OBS>
 std::unique_ptr<ObsErrorBase<OBS>>
 ObsErrorFactory<OBS>::create(const eckit::Configuration & conf, const ObsSpace_ & obs) {
   Log::trace() << "ObsErrorBase<OBS>::create starting" << std::endl;
-  const std::string id = conf.getString("covariance model");
+  const std::string id = conf.getString("covariance model", "diagonal");
   typename std::map<std::string, ObsErrorFactory<OBS>*>::iterator
     jerr = getMakers().find(id);
   if (jerr == getMakers().end()) {

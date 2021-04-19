@@ -41,6 +41,7 @@ class ObsErrors : public util::Printable,
 
 /// Accessor and size
   size_t size() const {return err_.size();}
+  ObsError_ & operator[](const size_t ii) {return *err_.at(ii);}
   const ObsError_ & operator[](const size_t ii) const {return *err_.at(ii);}
 
 /// Multiply a Departure by \f$R\f$
@@ -67,7 +68,7 @@ ObsErrors<OBS>::ObsErrors(const eckit::Configuration & config,
                           const ObsSpaces_ & os) : err_(), os_(os) {
   std::vector<eckit::LocalConfiguration> obsconf = config.getSubConfigurations();
   for (size_t jj = 0; jj < os.size(); ++jj) {
-    eckit::LocalConfiguration conf(obsconf[jj], "obs error");
+    eckit::LocalConfiguration conf = obsconf[jj].getSubConfiguration("obs error");
     err_.emplace_back(ObsErrorFactory<OBS>::create(conf, os[jj]));
   }
 }
@@ -114,7 +115,7 @@ Departures<OBS> ObsErrors<OBS>::inverseVariance() const {
 
 template<typename OBS>
 void ObsErrors<OBS>::print(std::ostream & os) const {
-  for (size_t jj = 0; jj < err_.size(); ++jj) os << *err_[jj];
+  for (size_t jj = 0; jj < err_.size(); ++jj) os << *err_[jj] << std::endl;
 }
 
 // -----------------------------------------------------------------------------

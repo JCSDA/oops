@@ -12,6 +12,7 @@
 #define OOPS_GENERIC_OBSERRORDIAG_H_
 
 #include <sstream>
+#include <string>
 
 #include "eckit/config/Configuration.h"
 #include "oops/base/ObsErrorBase.h"
@@ -41,6 +42,9 @@ class ObsErrorDiag : public ObsErrorBase<OBS> {
  public:
   ObsErrorDiag(const eckit::Configuration &, const ObsSpace_ &);
 
+/// Update after obs errors potentially changed
+  void update() override;
+
 /// Multiply a Departure by \f$R\f$
   void multiply(ObsVector_ &) const override;
 
@@ -50,8 +54,15 @@ class ObsErrorDiag : public ObsErrorBase<OBS> {
 /// Generate random perturbation
   void randomize(ObsVector_ &) const override;
 
-/// Get mean error for Jo table
+/// Save obs errors
+  void save(const std::string &) const override;
+
+/// Get mean std deviation of errors for Jo table
   double getRMSE() const override {return stddev_.rms();}
+
+/// Get obs errors std deviation
+  ObsVector_ & obserrors() override {return stddev_;}
+  const ObsVector_ & obserrors() const override {return stddev_;}
 
 /// Return inverseVariance
   const ObsVector_ & inverseVariance() const override {return inverseVariance_;}
@@ -69,13 +80,21 @@ class ObsErrorDiag : public ObsErrorBase<OBS> {
 
 template<typename OBS>
 ObsErrorDiag<OBS>::ObsErrorDiag(const eckit::Configuration & conf, const ObsSpace_ & obsgeom)
-  : stddev_(obsgeom, "EffectiveError"), inverseVariance_(obsgeom)
+  : stddev_(obsgeom, "ObsError"), inverseVariance_(obsgeom)
 {
   options_.deserialize(conf);
+  this->update();
+  Log::trace() << "ObsErrorDiag:ObsErrorDiag constructed nobs = " << stddev_.nobs() << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename OBS>
+void ObsErrorDiag<OBS>::update() {
   inverseVariance_ = stddev_;
   inverseVariance_ *= stddev_;
   inverseVariance_.invert();
-  Log::trace() << "ObsErrorDiag:ObsErrorDiag constructed nobs = " << stddev_.nobs() << std::endl;
+  Log::info() << "ObsErrorDiag covariance updated " << stddev_.nobs() << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -104,9 +123,15 @@ void ObsErrorDiag<OBS>::randomize(ObsVector_ & dy) const {
 // -----------------------------------------------------------------------------
 
 template<typename OBS>
+void ObsErrorDiag<OBS>::save(const std::string & name) const {
+  stddev_.save(name);
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename OBS>
 void ObsErrorDiag<OBS>::print(std::ostream & os) const {
-  os << "Diagonal observation error covariance, inverse variances: "
-     << inverseVariance_ << std::endl;
+  os << "Diagonal observation error covariance" << std::endl << stddev_;
 }
 
 // -----------------------------------------------------------------------------

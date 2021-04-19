@@ -101,10 +101,11 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
     const eckit::LocalConfiguration obsConfig(fullConfig, "observations");
     ObsSpaces_ obspaces(obsConfig, this->getComm(), winbgn, winend);
     ObsAux_ obsaux(obspaces, obsConfig);
+    ObsErrors_ Rmat(obsConfig, obspaces);
 
 //  Setup and initialize observer
     Observers_ hofx(obspaces, obsConfig);
-    hofx.initialize(geometry, obsaux, post);
+    hofx.initialize(geometry, obsaux, Rmat, post);
 
 //  run the model and compute H(x)
     model.forecast(xx, moderr, flength, post);
@@ -119,18 +120,13 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
 //  as ObsValue if "hofx group name" == ObsValue.
     bool obspert = fullConfig.getBool("obs perturbations", false);
     if (obspert) {
-      ObsErrors_ matR(obsConfig, obspaces);
-      yobs.perturb(matR);
+      yobs.perturb(Rmat);
       Log::test() << "Perturbed H(x): " << std::endl << yobs << "End Perturbed H(x)" << std::endl;
     }
 
-//  Save H(x) either as observations (if "make obs" == true) or as "hofx"
+//  Save H(x) as observations (if "make obs" == true)
     const bool makeobs = fullConfig.getBool("make obs", false);
-    if (makeobs) {
-      yobs.save("ObsValue");
-    } else {
-      yobs.save("hofx");
-    }
+    if (makeobs) yobs.save("ObsValue");
 
     return 0;
   }
