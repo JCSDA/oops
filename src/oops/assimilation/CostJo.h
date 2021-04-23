@@ -175,8 +175,14 @@ double CostJo<MODEL, OBS>::computeCost() {
     Log::info() << "Perturbed observations: " << yobs_ << std::endl;
   }
 
-  // Gradient at first guess (to define inner loop rhs)
+  // Compute observations departures and save to output file
   Departures_ ydep(yeqv - yobs_);
+  if (currentConf_->has("diagnostics.departures")) {
+    const std::string depname = currentConf_->getString("diagnostics.departures");
+    ydep.save(depname);
+  }
+
+  // Gradient at first guess (to define inner loop rhs)
   gradFG_.reset(new Departures_(ydep));
   Rmat_.inverseMultiply(*gradFG_);
 
