@@ -629,7 +629,7 @@ void testIncorrectValueOfOptionalPartialDateTimeParameter() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(),
                                        "error_in_opt_partialDT_parameter");
   if (validationSupported)
-    EXPECT_THROWS_MSG(params.validate(conf), "ABCDEF is not a partial-date-time string");
+    EXPECT_THROWS_MSG(params.validate(conf), "YAML validation failed.");
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::BadParameter);
 }
 

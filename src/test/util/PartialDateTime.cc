@@ -12,74 +12,85 @@
 
 namespace {
 
-    int notset = -1;
+  int notset = -1;
 
-    CASE("test_toString_basic") {
-      util::PartialDateTime pdt(2011, 9, 16, 13, 55, 20);
-      std::string res = pdt.toString();
-      std::string tar = "2011-09-16T13:55:20Z";
-      EXPECT_EQUAL(res, tar);
-    }
+  CASE("test_toString_basic") {
+    util::PartialDateTime pdt(2011, 9, 16, 13, 55, 20);
+    std::string res = pdt.toString();
+    std::string tar = "2011-09-16T13:55:20Z";
+    EXPECT_EQUAL(res, tar);
+  }
 
-    CASE("test_toString_with_missing") {
-      util::PartialDateTime pdt(2011, 9, 16, 13, -1, 20);
-      std::string res = pdt.toString();
-      std::string tar = "2011-09-16T13:**:20Z";
-      EXPECT_EQUAL(res, tar);
-    }
+  CASE("test_toString_with_missing") {
+    util::PartialDateTime pdt(2011, 9, 16, 13, -1, 20);
+    std::string res = pdt.toString();
+    std::string tar = "2011-09-16T13:**:20Z";
+    EXPECT_EQUAL(res, tar);
+  }
 
-    CASE("test_construction_int_arg") {
-      util::PartialDateTime pdt(2011, 9, 16, 13, 55, 20);
-      EXPECT(pdt.year() == 2011);
-      EXPECT(pdt.month() == 9);
-      EXPECT(pdt.day() == 16);
-      EXPECT(pdt.hour() == 13);
-      EXPECT(pdt.minute() == 55);
-      EXPECT(pdt.second() == 20);
-    }
-
-
-    CASE("test_construction_default") {
-      util::PartialDateTime pdt{};
-      EXPECT(pdt.year() == notset);
-      EXPECT(pdt.month() == notset);
-      EXPECT(pdt.day() == notset);
-      EXPECT(pdt.hour() == notset);
-      EXPECT(pdt.minute() == notset);
-      EXPECT(pdt.second() == notset);
-    }
+  CASE("test_construction_int_arg") {
+    util::PartialDateTime pdt(2011, 9, 16, 13, 55, 20);
+    EXPECT(pdt.year() == 2011);
+    EXPECT(pdt.month() == 9);
+    EXPECT(pdt.day() == 16);
+    EXPECT(pdt.hour() == 13);
+    EXPECT(pdt.minute() == 55);
+    EXPECT(pdt.second() == 20);
+  }
 
 
-    CASE("test_construction_string_arg") {
-      util::PartialDateTime pdt("2011-09-16T13:55:20Z");
-      EXPECT(pdt.year() == 2011);
-      EXPECT(pdt.month() == 9);
-      EXPECT(pdt.day() == 16);
-      EXPECT(pdt.hour() == 13);
-      EXPECT(pdt.minute() == 55);
-      EXPECT(pdt.second() == 20);
-    }
+  CASE("test_construction_default") {
+    util::PartialDateTime pdt{};
+    EXPECT(pdt.year() == notset);
+    EXPECT(pdt.month() == notset);
+    EXPECT(pdt.day() == notset);
+    EXPECT(pdt.hour() == notset);
+    EXPECT(pdt.minute() == notset);
+    EXPECT(pdt.second() == notset);
+  }
 
 
-    CASE("test_construction_string_arg_unset") {
-      // Check we properly handle the case where the string contains unset components
-      // Note that any bit of a component results in it being considered unset.
-      util::PartialDateTime pdt("2011-09-1*T13:55:00Z");
-      EXPECT(pdt.year() == 2011);
-      EXPECT(pdt.month() == 9);
-      EXPECT(pdt.day() == notset);
-      EXPECT(pdt.hour() == 13);
-      EXPECT(pdt.minute() == 55);
-      EXPECT(pdt.second() == 0);
+  CASE("test_construction_string_arg") {
+    util::PartialDateTime pdt("2011-09-16T13:55:20Z");
+    EXPECT(pdt.year() == 2011);
+    EXPECT(pdt.month() == 9);
+    EXPECT(pdt.day() == 16);
+    EXPECT(pdt.hour() == 13);
+    EXPECT(pdt.minute() == 55);
+    EXPECT(pdt.second() == 20);
+  }
 
-      pdt = util::PartialDateTime("2011-09-*6T13:55:00Z");
-      EXPECT(pdt.year() == 2011);
-      EXPECT(pdt.month() == 9);
-      EXPECT(pdt.day() == notset);
-      EXPECT(pdt.hour() == 13);
-      EXPECT(pdt.minute() == 55);
-      EXPECT(pdt.second() == 0);
-    }
+
+  CASE("test_construction_string_arg_unset") {
+    // Check we properly handle the case where the string contains unset components
+    // Note that any bit of a component results in it being considered unset.
+    util::PartialDateTime pdt("2011-09-**T13:55:00Z");
+    EXPECT(pdt.year() == 2011);
+    EXPECT(pdt.month() == 9);
+    EXPECT(pdt.day() == notset);
+    EXPECT(pdt.hour() == 13);
+    EXPECT(pdt.minute() == 55);
+    EXPECT(pdt.second() == 0);
+
+    pdt = util::PartialDateTime("2011-09-**T13:55:00Z");
+    EXPECT(pdt.year() == 2011);
+    EXPECT(pdt.month() == 9);
+    EXPECT(pdt.day() == notset);
+    EXPECT(pdt.hour() == 13);
+    EXPECT(pdt.minute() == 55);
+    EXPECT(pdt.second() == 0);
+  }
+
+
+  CASE("test_construction_string_bad_format") {
+    // Check that we sanity check badly formatted strings
+
+    // Defining a partially missing component
+    EXPECT_THROWS(util::PartialDateTime("2011-09-*0T13:55:00Z"));
+
+    // Wrong length
+    EXPECT_THROWS(util::PartialDateTime("2011-09-01T13:55:00Z2"));
+  }
 
 
   CASE("test_gt_operator") {

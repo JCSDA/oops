@@ -6,7 +6,9 @@
  */
 #include "oops/util/PartialDateTime.h"
 
+#include <algorithm>  // std::replace
 #include <iomanip>
+#include <regex>
 
 #include "eckit/exception/Exceptions.h"
 #include "oops/util/dateFunctions.h"
@@ -37,37 +39,30 @@ PartialDateTime::PartialDateTime(std::string const &datetime_string) {
   // Derive an ordinary datetime string
   std::string alt_datetime_string = datetime_string;
 
-  // Determine if stringUnset_ is present and for which component(s).
-  if (datetime_string.size() != 20)
-    throw eckit::BadParameter("Partial date-time string '" + datetime_string +
-                              "' is of unexpected length");
+  // Determine suitability of string format
+  std::string expression = R"(^([0-9]{4}|\*{4})-([0-9]{2}|\*{2})-([0-9]{2}|\*{2}))"
+                           R"(T([0-9]{2}|\*{2}):([0-9]{2}|\*{2}):([0-9]{2}|\*{2})Z$)";
+  static const std::regex regex(expression);
+  std::smatch matches;
+  if (!std::regex_match(datetime_string, matches, regex))
+      throw eckit::BadParameter("Partial date-time string '" + datetime_string +
+                                "' is not of the expected format '" + expression + "'");
 
+  // Determine which components are missing.
+  std::array<size_t, 6> component_index = {0, 5, 8, 11, 14, 17};
   std::array<bool, 6> populatedvalues = {true, true, true, true, true, true};
-  bool isSet;
-  for (size_t ind=0; ind < datetime_string.size(); ind++) {
-    isSet = datetime_string[ind] != stringUnset_;
-    if (!isSet) alt_datetime_string[ind] = '0';  // Replace * with 0
-    if (ind <= 3) {
-      populatedvalues[0] &= isSet;
-    } else if (ind >= 5 && ind <= 6) {
-      populatedvalues[1] &= isSet;
-    } else if (ind >= 8 && ind <= 9) {
-      populatedvalues[2] &= isSet;
-    } else if (ind >= 11 && ind <= 12) {
-      populatedvalues[3] &= isSet;
-    } else if (ind >= 14 && ind <= 15) {
-      populatedvalues[4] &= isSet;
-    } else if (ind >= 17 && ind <= 18) {
-      populatedvalues[5] &= isSet;
-    }
-  }
+  for (size_t ind=0; ind < component_index.size(); ind++)
+      populatedvalues[ind] = datetime_string[component_index[ind]] != stringUnset_;
+
+  // Replace these with '0' so that we can determine the year, month, etc.
+  std::replace(alt_datetime_string.begin(), alt_datetime_string.end(), char{stringUnset_}, '0');
+
   util::datefunctions::stringToYYYYMMDDhhmmss(alt_datetime_string, year, month, day,
                                               hour, minute, second);
   // Replace with unset values
   partialdt_ = {year, month, day, hour, minute, second};
-  for (size_t ind=0; ind < partialdt_.size(); ind++) {
+  for (size_t ind=0; ind < partialdt_.size(); ind++)
     if (!populatedvalues[ind]) partialdt_[ind] = intUnset_;
-  }
 }
 
 

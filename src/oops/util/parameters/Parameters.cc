@@ -97,17 +97,6 @@ void checkStringFormat(const std::string &format, const std::string &value) {
     if (!std::regex_match(value, matches, regex)) {
       throw std::invalid_argument(value + " is not a duration string.");
     }
-
-  } else if (format == "partial-date-time") {
-    // Matches ISO 8601 representations of datetimes but additionally supporting the asterix
-    // character to denote partial definition.
-    static const std::regex regex(
-        "^[0-9*]{4}-[0-9*]{2}-[0-9*]{2}T[0-9*]{2}:[0-9*]{2}:[0-9*]{2}Z$");
-    std::smatch matches;
-    if (!std::regex_match(value, matches, regex)) {
-      throw std::invalid_argument(value + " is not a partial-date-time string.");
-    }
-
   } else {
     nlohmann::json_schema::default_string_format_check(format, value);
   }

@@ -327,8 +327,10 @@ struct ParameterTraits<util::PartialDateTime> {
   }
 
   static ObjectJsonSchema jsonSchema(const std::string &name) {
+    std::string expression = R"("^([0-9]{4}|\\*{4})-([0-9]{2}|\\*{2})-([0-9]{2}|\\*{2}))"
+                             R"(T([0-9]{2}|\\*{2}):([0-9]{2}|\\*{2}):([0-9]{2}|\\*{2})Z$")";
     return ObjectJsonSchema({{name, {{"type", "\"string\""},
-                                     {"format", "\"partial-date-time\""}}}});
+                                     {"pattern", expression}}}});
   }
 };
 
