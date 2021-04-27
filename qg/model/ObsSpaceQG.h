@@ -26,6 +26,7 @@
 #include "oops/util/DateTime.h"
 
 #include "oops/qg/LocationsQG.h"
+#include "oops/qg/ObsIteratorQG.h"
 #include "oops/qg/QgFortran.h"
 
 namespace eckit {
@@ -33,6 +34,7 @@ namespace eckit {
 }
 
 namespace qg {
+  class ObsIteratorQG;
 
 /// \brief ObsSpace for QG model
 //  \details ObsSpaceQG is created for each obs type. The underlying Fortran
@@ -63,6 +65,11 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
 
   /// observation type
   const std::string & obsname() const {return obsname_;}
+
+  /// iterator to the first observation
+  ObsIteratorQG begin() const;
+  /// iterator to the observation past-the-last
+  ObsIteratorQG end() const;
 
   /// interface with Fortran
   const F90odb & toFortran() const {return key_;}

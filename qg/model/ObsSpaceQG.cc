@@ -148,6 +148,16 @@ int ObsSpaceQG::nobs() const {
 }
 // -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
+ObsIteratorQG ObsSpaceQG::begin() const {
+  return ObsIteratorQG(*this->locations(), 0);
+}
+// -----------------------------------------------------------------------------
+ObsIteratorQG ObsSpaceQG::end() const {
+  return ObsIteratorQG(*this->locations(), this->nobs());
+}
+// -----------------------------------------------------------------------------
+
 void ObsSpaceQG::print(std::ostream & os) const {
   os << "ObsSpace for " << obsname_ << ", " << this->nobs() << " obs";
 }

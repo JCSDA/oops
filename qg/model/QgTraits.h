@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -30,6 +30,7 @@
 #include "oops/qg/ObsBiasIncrement.h"
 #include "oops/qg/ObsDataQG.h"
 #include "oops/qg/ObsDiagsQG.h"
+#include "oops/qg/ObsIteratorQG.h"
 #include "oops/qg/ObsOperatorQG.h"
 #include "oops/qg/ObsOperatorTLAD.h"
 #include "oops/qg/ObsSpaceQG.h"
@@ -67,6 +68,7 @@ struct QgObsTraits {
   typedef qg::ObsOperatorQG         ObsOperator;
   typedef qg::ObsOperatorTLAD       LinearObsOperator;
   template <typename DATATYPE> using ObsDataVector = qg::ObsDataQG<DATATYPE>;
+  typedef qg::ObsIteratorQG         GeometryIterator;
 
   typedef qg::ObsBias               ObsAuxControl;
   typedef qg::ObsBiasIncrement      ObsAuxIncrement;

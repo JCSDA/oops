@@ -44,6 +44,8 @@ template <typename OBS> void testBasic() {
   typedef ObsTestsFixture<OBS>          Test_;
 
   for (size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    const double tol = Test_::config(jj).getDouble("obs iterator test.tolerance");
+
     // Initialize two iterators (begin and end), test equality
     ObsIterator_ iter1 = Test_::obspace()[jj].begin();
     EXPECT(iter1 == Test_::obspace()[jj].begin());
@@ -70,14 +72,14 @@ template <typename OBS> void testBasic() {
     double lon1 = Test_::config(jj).getDouble("obs iterator test.lon1");
     double lat1 = Test_::config(jj).getDouble("obs iterator test.lat1");
     const eckit::geometry::Point2 point1(lon1, lat1);
-    EXPECT_EQUAL(*iter1, point1);
+    EXPECT((*iter1).distance(point1) <= tol);
 
     // test that the point after begin() is the same as reference
     ++iter1;
     double lon2 = Test_::config(jj).getDouble("obs iterator test.lon2");
     double lat2 = Test_::config(jj).getDouble("obs iterator test.lat2");
     const eckit::geometry::Point2 point2(lon2, lat2);
-    EXPECT_EQUAL(*iter1, point2);
+    EXPECT((*iter1).distance(point2) <= tol);
   }
 }
 

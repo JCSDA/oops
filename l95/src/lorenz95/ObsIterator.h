@@ -27,7 +27,7 @@ class ObsIterator: public std::iterator<std::forward_iterator_tag,
  public:
   static const std::string classname() {return "lorenz95::ObsIterator";}
 
-  ObsIterator(const std::vector<double> & locations, const int & index);
+  ObsIterator(const std::vector<double> & locations, int index);
 
   bool operator==(const ObsIterator &) const;
   bool operator!=(const ObsIterator &) const;

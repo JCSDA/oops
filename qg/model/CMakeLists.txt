@@ -39,6 +39,8 @@ ObsBiasIncrement.cc
 ObsBiasIncrement.h
 ObsDataQG.h
 ObsDiagsQG.h
+ObsIteratorQG.cc
+ObsIteratorQG.h
 ObsLocQG.cc
 ObsLocQG.h
 ObsOpBaseQG.cc
