@@ -12,12 +12,18 @@
 
 #include <Eigen/Dense>
 
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
 
 #include "oops/util/Timer.h"
+
+namespace util {
+class DateTime;
+}  // namespace util
 
 namespace oops {
 namespace mpi {
@@ -90,6 +96,8 @@ void gather(const eckit::mpi::Comm & comm, const std::vector<SERIALIZABLE> & sen
 void allGather(const eckit::mpi::Comm & comm,
                const Eigen::VectorXd &, Eigen::MatrixXd &);
 
+// ------------------------------------------------------------------------------------------------
+
 /// \brief A wrapper around the MPI *all gather* operation for serializable types.
 ///
 /// The *all gather* operation gathers data from all tasks and delivers the combined data to all
@@ -121,6 +129,57 @@ void allGathervUsingSerialize(const eckit::mpi::Comm &comm, CIter first, CIter l
   for (Iter it = recvbuf; numDeserializedDoubles != buffer.buffer.size(); ++it)
     it->deserialize(buffer.buffer, numDeserializedDoubles);
 }
+
+// ------------------------------------------------------------------------------------------------
+
+// The following functions simplify the allGatherv operation on vectors (reducing it to a single
+// function call).
+
+// ------------------------------------------------------------------------------------------------
+
+/// \brief Perform the MPI *all gather* operation on a vector of "plain old data".
+///
+/// This operation gathers data from all tasks and delivers the combined data to all tasks.
+///
+/// \tparam T must be a type for which there exists a specialization of eckit::mpi::Data::Type.
+///
+/// \param[in] comm
+///   Communicator.
+/// \param[inout] x
+///   On input, data owned by this task that need to be delivered to all other tasks. On output,
+///   combined data received from all tasks (concatenated in the order of increasing task ranks).
+template <typename T>
+void allGatherv(const eckit::mpi::Comm & comm, std::vector<T> &x) {
+    eckit::mpi::Buffer<T> buffer(comm.size());
+    comm.allGatherv(x.begin(), x.end(), buffer);
+    x = std::move(buffer.buffer);
+}
+
+// ------------------------------------------------------------------------------------------------
+
+/// \brief Perform the MPI *all gather* operation on a vector of DateTime objects.
+///
+/// This operation gathers data from all tasks and delivers the combined data to all tasks.
+///
+/// \param[in] comm
+///   Communicator.
+/// \param[inout] x
+///   On input, data owned by this task that need to be delivered to all other tasks. On output,
+///   combined data received from all tasks (concatenated in the order of increasing task ranks).
+void allGatherv(const eckit::mpi::Comm & comm, std::vector<util::DateTime> &x);
+
+// ------------------------------------------------------------------------------------------------
+
+/// \brief Perform the MPI *all gather* operation on a vector of DateTime objects.
+///
+/// This operation gathers data from all tasks and delivers the combined data to all tasks.
+///
+/// \param[in] comm
+///   Communicator.
+/// \param[inout] x
+///   On input, data owned by this task that need to be delivered to all other tasks. On output,
+///   combined data received from all tasks (concatenated in the order of increasing task ranks).
+void allGatherv(const eckit::mpi::Comm & comm, std::vector<std::string> &x);
 
 // ------------------------------------------------------------------------------------------------
 

@@ -34,11 +34,52 @@ namespace eckit
 
 namespace test {
 
+// -----------------------------------------------------------------------------------------------
 class TestParameters : public oops::Parameters {
   OOPS_CONCRETE_PARAMETERS(TestParameters, Parameters)
  public:
-  oops::RequiredParameter<std::vector<util::DateTime>> values{"values", this};
+  oops::RequiredParameter<std::vector<util::DateTime>> datetime{"datetime", this};
+  oops::RequiredParameter<std::vector<int>> int_{"int", this};
+  oops::RequiredParameter<std::vector<std::string>> string{"string", this};
 };
+
+// -----------------------------------------------------------------------------------------------
+template <typename T>
+const std::vector<T> & getTestData(const TestParameters &params);
+
+template <>
+const std::vector<util::DateTime> & getTestData(const TestParameters &params) {
+  return params.datetime;
+}
+
+template <>
+const std::vector<int> & getTestData(const TestParameters &params) {
+  return params.int_;
+}
+
+template <>
+const std::vector<std::string> & getTestData(const TestParameters &params) {
+  return params.string;
+}
+
+// -----------------------------------------------------------------------------------------------
+template <typename T>
+void testAllGatherv() {
+  const eckit::Configuration &conf = TestEnvironment::config();
+  const eckit::mpi::Comm &comm = oops::mpi::world();
+
+  TestParameters localParams;
+  const size_t rank = comm.rank();
+  localParams.deserialize(conf.getSubConfiguration("local" + std::to_string(rank)));
+  std::vector<T> values = getTestData<T>(localParams);
+
+  TestParameters globalParams;
+  globalParams.deserialize(conf.getSubConfiguration("global"));
+  const std::vector<T> &expectedResult = getTestData<T>(globalParams);
+
+  oops::mpi::allGatherv(comm, values);
+  EXPECT_EQUAL(values, expectedResult);
+}
 
 // -----------------------------------------------------------------------------------------------
 CASE("mpi/mpi/defaultCommunicators") {
@@ -58,11 +99,11 @@ CASE("mpi/mpi/allGathervUsingSerialize") {
   TestParameters localParams;
   const size_t rank = comm.rank();
   localParams.deserialize(conf.getSubConfiguration("local" + std::to_string(rank)));
-  const std::vector<util::DateTime> &localValues = localParams.values;
+  const std::vector<util::DateTime> &localValues = localParams.datetime;
 
   TestParameters globalParams;
   globalParams.deserialize(conf.getSubConfiguration("global"));
-  const std::vector<util::DateTime> &expectedGlobalValues = globalParams.values;
+  const std::vector<util::DateTime> &expectedGlobalValues = globalParams.datetime;
 
   size_t numGlobalValues;
   comm.allReduce(localValues.size(), numGlobalValues, eckit::mpi::Operation::SUM);
@@ -71,6 +112,18 @@ CASE("mpi/mpi/allGathervUsingSerialize") {
   oops::mpi::allGathervUsingSerialize(comm, localValues.begin(), localValues.end(),
                                       globalValues.begin());
   EXPECT_EQUAL(globalValues, expectedGlobalValues);
+}
+// -----------------------------------------------------------------------------------------------
+CASE("mpi/mpi/allGathervInt") {
+  testAllGatherv<int>();
+}
+// -----------------------------------------------------------------------------------------------
+CASE("mpi/mpi/allGathervDateTime") {
+  testAllGatherv<util::DateTime>();
+}
+// -----------------------------------------------------------------------------------------------
+CASE("mpi/mpi/allGathervInt") {
+  testAllGatherv<std::string>();
 }
 // -----------------------------------------------------------------------------------------------
 CASE("mpi/mpi/SendReceive") {
@@ -103,11 +156,11 @@ CASE("mpi/mpi/gatherSerializable") {
   TestParameters localParams;
   const size_t rank = comm.rank();
   localParams.deserialize(conf.getSubConfiguration("local" + std::to_string(rank)));
-  const std::vector<util::DateTime> &localValues = localParams.values;
+  const std::vector<util::DateTime> &localValues = localParams.datetime;
 
   TestParameters globalParams;
   globalParams.deserialize(conf.getSubConfiguration("global"));
-  const std::vector<util::DateTime> &expectedGlobalValues = globalParams.values;
+  const std::vector<util::DateTime> &expectedGlobalValues = globalParams.datetime;
 
   size_t numGlobalValues;
   comm.allReduce(localValues.size(), numGlobalValues, eckit::mpi::Operation::SUM);
