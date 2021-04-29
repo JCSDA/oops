@@ -17,3 +17,6 @@ output:
   type: fc
 prints:
   frequency: PT3H
+
+test:
+  reference filename: testoutput/truth.test

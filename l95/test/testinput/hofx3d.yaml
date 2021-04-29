@@ -10,3 +10,6 @@ observations:
     obsdatain:  Data/l95.truth3d.2010-01-02T00:00:00Z.obt
     obsdataout: Data/l95.hofx.2010-01-02T00:00:00Z.obt
   obs operator: {}
+
+test:
+  reference filename: testoutput/hofx3d.test

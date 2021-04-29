@@ -58,3 +58,6 @@ output:
   exp: test
   frequency: PT6H
   type: an
+
+test:
+  reference filename: testoutput/3dvar.test

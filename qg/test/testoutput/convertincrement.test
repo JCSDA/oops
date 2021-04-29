@@ -1,30 +1,30 @@
-Test     : Input increment: 
-Test     :   Valid time: 2010-01-01T12:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Streamfunction         :  Min= -1.8428e+07, Max=  5.7484e+07, RMS=  8.4307e+06
-Test     : Trajectory state: 
-Test     :   Valid time: 2010-01-01T12:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Streamfunction         :  Min= -4.4593e+08, Max=  1.0320e+08, RMS=  1.7642e+08
-Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
-Test     : Increment after variable transform: 
-Test     :   Valid time: 2010-01-01T12:00:00Z
-Test     :   Resolution = 20, 10, 2
-Test     :   Potential vorticity    :  Min= -1.7247e-04, Max=  5.3114e-05, RMS=  2.0353e-05
-Test     : Increment after variable transform: 
-Test     :   Valid time: 2010-01-01T12:00:00Z
-Test     :   Resolution = 20, 10, 2
-Test     :   Streamfunction         :  Min= -1.4944e+07, Max=  5.5077e+07, RMS=  7.4251e+06
-Test     : Increment after variable transform: 
-Test     :   Valid time: 2010-01-01T12:00:00Z
-Test     :   Resolution = 20, 10, 2
-Test     :   Streamfunction         :  Min= -1.4944e+07, Max=  5.5077e+07, RMS=  7.4251e+06
-Test     : Increment after variable transform: 
-Test     :   Valid time: 2010-01-01T12:00:00Z
-Test     :   Resolution = 20, 10, 2
-Test     :   Streamfunction         :  Min= -1.4944e+07, Max=  5.5077e+07, RMS=  7.4251e+06
-Test     : Output increment: 
-Test     :   Valid time: 2010-01-01T12:00:00Z
-Test     :   Resolution = 20, 10, 2
-Test     :   Streamfunction         :  Min= -1.4944e+07, Max=  5.5077e+07, RMS=  7.4251e+06
+Input increment: 
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -1.8428e+07, Max=  5.7484e+07, RMS=  8.4307e+06
+Trajectory state: 
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -4.4593e+08, Max=  1.0320e+08, RMS=  1.7642e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Increment after variable transform: 
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 20, 10, 2
+  Potential vorticity    :  Min= -1.7247e-04, Max=  5.3114e-05, RMS=  2.0353e-05
+Increment after variable transform: 
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 20, 10, 2
+  Streamfunction         :  Min= -1.4944e+07, Max=  5.5077e+07, RMS=  7.4251e+06
+Increment after variable transform: 
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 20, 10, 2
+  Streamfunction         :  Min= -1.4944e+07, Max=  5.5077e+07, RMS=  7.4251e+06
+Increment after variable transform: 
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 20, 10, 2
+  Streamfunction         :  Min= -1.4944e+07, Max=  5.5077e+07, RMS=  7.4251e+06
+Output increment: 
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 20, 10, 2
+  Streamfunction         :  Min= -1.4944e+07, Max=  5.5077e+07, RMS=  7.4251e+06

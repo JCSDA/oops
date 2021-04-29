@@ -1,24 +1,24 @@
-Test     : CostJb   : Nonlinear Jb = 0
-Test     : CostJo   : Nonlinear Jo(Lorenz 95) = 294.698, nobs = 160, Jo/n = 1.84186, err = 0.4
-Test     : CostJcDFI: Nonlinear Jc = 0.338917
-Test     : CostFunction: Nonlinear J = 295.037
-Test     : DRPLanczosMinimizer: reduction in residual norm = 9.41823e-05
-Test     : CostFunction::addIncrement: Analysis: 
-Test     :  Valid time: 2010-01-01T03:00:00Z
-Test     :  Min=7.66146, Max=8.65431, Average=7.99961
-Test     : ModelBias = 0.351503
-Test     : ObsBias = 0.5881
-Test     : CostJb   : Nonlinear Jb = 2.37634
-Test     : CostJo   : Nonlinear Jo(Lorenz 95) = 0.820597, nobs = 160, Jo/n = 0.00512873, err = 0.4
-Test     : CostJcDFI: Nonlinear Jc = 0.365469
-Test     : CostFunction: Nonlinear J = 3.5624
-Test     : DRPLanczosMinimizer: reduction in residual norm = 0.012503
-Test     : CostFunction::addIncrement: Analysis: 
-Test     :  Valid time: 2010-01-01T03:00:00Z
-Test     :  Min=7.66624, Max=8.66691, Average=7.99865
-Test     : ModelBias = 0.276465
-Test     : ObsBias = 0.590795
-Test     : CostJb   : Nonlinear Jb = 2.44253
-Test     : CostJo   : Nonlinear Jo(Lorenz 95) = 0.525164, nobs = 160, Jo/n = 0.00328227, err = 0.4
-Test     : CostJcDFI: Nonlinear Jc = 0.360309
-Test     : CostFunction: Nonlinear J = 3.328
+CostJb   : Nonlinear Jb = 0
+CostJo   : Nonlinear Jo(Lorenz 95) = 294.698, nobs = 160, Jo/n = 1.84186, err = 0.4
+CostJcDFI: Nonlinear Jc = 0.338917
+CostFunction: Nonlinear J = 295.037
+DRPLanczosMinimizer: reduction in residual norm = 9.41823e-05
+CostFunction::addIncrement: Analysis: 
+ Valid time: 2010-01-01T03:00:00Z
+ Min=7.66146, Max=8.65431, Average=7.99961
+ModelBias = 0.351503
+ObsBias = 0.5881
+CostJb   : Nonlinear Jb = 2.37634
+CostJo   : Nonlinear Jo(Lorenz 95) = 0.820597, nobs = 160, Jo/n = 0.00512873, err = 0.4
+CostJcDFI: Nonlinear Jc = 0.365469
+CostFunction: Nonlinear J = 3.5624
+DRPLanczosMinimizer: reduction in residual norm = 0.012503
+CostFunction::addIncrement: Analysis: 
+ Valid time: 2010-01-01T03:00:00Z
+ Min=7.66624, Max=8.66691, Average=7.99865
+ModelBias = 0.276465
+ObsBias = 0.590795
+CostJb   : Nonlinear Jb = 2.44253
+CostJo   : Nonlinear Jo(Lorenz 95) = 0.525164, nobs = 160, Jo/n = 0.00328227, err = 0.4
+CostJcDFI: Nonlinear Jc = 0.360309
+CostFunction: Nonlinear J = 3.328

@@ -14,3 +14,6 @@ output:
   date: '2010-01-02T00:00:00Z'
   exp: addinc
   type: an
+
+test:
+  reference filename: testoutput/addincrement.test

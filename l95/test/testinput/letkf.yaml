@@ -73,3 +73,5 @@ output variance posterior:
   exp: xavar.%{member}%
   type: an
 
+test:
+  reference filename: testoutput/letkf.test

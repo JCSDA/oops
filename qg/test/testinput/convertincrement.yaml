@@ -35,3 +35,6 @@ increments:
   trajectory:
     date: '2010-01-01T12:00:00Z'
     filename: Data/mem002.eda_3dvar.an.2010-01-01T12:00:00Z.nc
+
+test:
+  reference filename: testoutput/convertincrement.test

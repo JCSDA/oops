@@ -19,3 +19,6 @@ geometry:
   ny: 20
   depths: [4500.0, 5500.0]
   heating: false
+
+test:
+  reference filename: testoutput/uniform_field_inflation.test

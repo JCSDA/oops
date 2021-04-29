@@ -60,3 +60,6 @@ output variance:
   datadir: Data
   exp: dirac_loc_3d_var
   type: an
+
+test:
+  reference filename: testoutput/dirac_loc_3d.test

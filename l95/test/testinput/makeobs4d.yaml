@@ -23,3 +23,6 @@ observations:
   - filter: GOMsaver
     filename: Data/l95.gom
 make obs: true
+
+test:
+  reference filename: testoutput/makeobs4d.test

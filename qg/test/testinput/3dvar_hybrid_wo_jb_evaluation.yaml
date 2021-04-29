@@ -105,3 +105,6 @@ output:
   exp: 3dvar
   frequency: PT6H
   type: an
+
+test:
+  reference filename: testoutput/3dvar_hybrid_wo_jb_evaluation.test

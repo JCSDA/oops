@@ -45,3 +45,6 @@ output:
   date: *date
   exp: letkf.%{member}%
   type: an
+
+test:
+  reference filename: testoutput/letkf_qc.test

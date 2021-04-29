@@ -28,7 +28,7 @@ observations:
     obsdatain:  Data/l95.truth3d.2010-01-02T00:00:00Z.obt
   obs operator: {}
 
-driver: 
+driver:
 
 local ensemble DA:
   solver: GETKF
@@ -46,3 +46,7 @@ output:
   date: *date
   exp: getkf.%{member}%
   type: an
+
+test:
+  reference filename: testoutput/getkf.test
+  float relative tolerance: 1e-3

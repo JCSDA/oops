@@ -28,3 +28,6 @@ output variance:
   datadir: Data
   exp: dirac_cov_var
   type: an
+
+test:
+  reference filename: testoutput/dirac_cov.test

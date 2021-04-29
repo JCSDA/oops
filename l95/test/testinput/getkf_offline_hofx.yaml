@@ -28,7 +28,7 @@ observations:
     obsdatain:  Data/l95.getkf.2010-01-02T00:00:00Z.obt
   obs operator: {}
 
-driver: 
+driver:
   read HX from disk: true
   do posterior observer: false
 
@@ -48,3 +48,7 @@ output:
   date: *date
   exp: getkf.%{member}%
   type: an
+
+test:
+  reference filename: testoutput/getkf_offline_hofx.test
+  float relative tolerance: 1e-3

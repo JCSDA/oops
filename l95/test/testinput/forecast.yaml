@@ -14,3 +14,6 @@ output:
   exp: test
   frequency: PT1H30M
   type: fc
+
+test:
+  reference filename: testoutput/forecast.test

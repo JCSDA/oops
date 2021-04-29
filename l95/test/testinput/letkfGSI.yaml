@@ -43,3 +43,8 @@ output:
   date: *date
   exp: letkf_gsi.%{member}%
   type: an
+
+
+test:
+  reference filename: testoutput/letkf_gsi.test
+  float relative tolerance: 1e-4

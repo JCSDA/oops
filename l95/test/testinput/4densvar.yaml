@@ -261,3 +261,6 @@ output:
   first: PT3H
   frequency: PT6H
   type: an
+
+test:
+  reference filename: testoutput/4densvar.test

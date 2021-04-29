@@ -37,3 +37,6 @@ observations:
     obs type: WSpeed
 prints:
   frequency: PT3H
+
+test:
+  reference filename: testoutput/hofx3d.test

@@ -59,7 +59,7 @@ cost function:
   - obs error:
       covariance model: diagonal
     obs operator:
-      obs type: Stream  
+      obs type: Stream
     obs space:
       obsdatain:
         obsfile: Data/truth.obs4d_24h.nc
@@ -69,7 +69,7 @@ cost function:
   - obs error:
       covariance model: diagonal
     obs operator:
-      obs type: Wind  
+      obs type: Wind
     obs space:
       obsdatain:
         obsfile: Data/truth.obs4d_24h.nc
@@ -85,7 +85,7 @@ cost function:
         obsfile: Data/truth.obs4d_24h.nc
       obsdataout:
         obsfile: Data/4dvar_drplanczos_hybrid.obs4d_24h.nc
-      obs type: WSpeed  
+      obs type: WSpeed
   constraints:
   - jcdfi:
       filtered variables: [x]
@@ -137,3 +137,6 @@ output:
   first: PT0S
   frequency: PT6H
   type: an
+
+test:
+  reference filename: testoutput/4dvar_drplanczos_hybrid.test

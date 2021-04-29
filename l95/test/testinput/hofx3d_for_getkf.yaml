@@ -29,7 +29,7 @@ observations:
     obsdataout: Data/l95.getkf.2010-01-02T00:00:00Z.obt
   obs operator: {}
 
-driver: 
+driver:
   run as observer only: true
 
 local ensemble DA:
@@ -48,3 +48,7 @@ output:
   date: *date
   exp: getkf.%{member}%
   type: an
+
+test:
+  reference filename: testoutput/hofx3d_for_getkf.test
+  float relative tolerance: 1e-3

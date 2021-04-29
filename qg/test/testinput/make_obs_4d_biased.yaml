@@ -55,3 +55,6 @@ observations:
 make obs: true
 prints:
   frequency: PT3H
+
+test:
+  reference filename: testoutput/make_obs_4d_biased.test

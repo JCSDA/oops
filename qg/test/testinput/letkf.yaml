@@ -108,3 +108,6 @@ output:
     date: *date_end
     exp: letkf.end.%{member}%
     type: an
+
+test:
+  reference filename: testoutput/letkf.test

@@ -21,3 +21,6 @@ output:
   exp: rtpp.%{member}%
   type: an
 factor: 0.5
+
+test:
+  reference filename: testoutput/rtpp.test

@@ -1,3 +1,4 @@
-Test     :   Valid time: 2009-12-31T00:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Streamfunction         :  Min= -4.5233e+07, Max=  3.6083e+07, RMS=  1.5609e+07
+
+  Valid time: 2009-12-31T00:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -4.5233e+07, Max=  3.6083e+07, RMS=  1.5609e+07

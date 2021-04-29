@@ -50,3 +50,6 @@ observations:
     interpolation type: default_c
 prints:
   frequency: PT3H
+
+test:
+  reference filename: testoutput/hofx.test

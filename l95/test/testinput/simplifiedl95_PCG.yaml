@@ -44,3 +44,7 @@ output:
   exp: simplifiedl95
   frequency: PT1H
   type: an
+
+test:
+  reference filename: testoutput/simplifiedl95_PCG.test
+  float relative tolerance: 1e-8

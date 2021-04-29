@@ -1,4 +1,5 @@
-Test     : Variance: 
-Test     :   Valid time: 2010-01-01T00:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Streamfunction         :  Min=  4.7139e+11, Max=  1.5009e+15, RMS=  2.8630e+14
+Variance: 
+
+  Valid time: 2010-01-01T00:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=  4.7139e+11, Max=  1.5009e+15, RMS=  2.8630e+14

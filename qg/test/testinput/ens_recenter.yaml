@@ -26,3 +26,6 @@ recentered output:
   exp: recenter
   type: ens
   date: 2010-01-01T00:00:00Z
+
+test:
+  reference filename: testoutput/ens_recenter.test

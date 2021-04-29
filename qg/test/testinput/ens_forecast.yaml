@@ -1,3 +1,6 @@
 files:
   - "testinput/ens_forecast_1.yaml"
   - "testinput/ens_forecast_2.yaml"
+
+test:
+  reference filename: testoutput/ens_forecast.test

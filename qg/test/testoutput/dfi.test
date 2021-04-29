@@ -1,18 +1,18 @@
-Test     : Initial state: 
-Test     :   Valid time: 2010-01-01T00:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Streamfunction         :  Min= -4.6781e+08, Max=  9.6458e+07, RMS=  1.7904e+08
-Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
-Test     : Filtered state: 
-Test     :   Valid time: 2010-01-01T06:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Streamfunction         :  Min= -4.5184e+08, Max=  9.3196e+07, RMS=  1.7271e+08
-Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max=  0.0000e+00, RMS=  2.0632e+08
-Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
-Test     : Final state: 
-Test     :   Valid time: 2010-01-08T00:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Streamfunction         :  Min= -3.9403e+08, Max=  1.7285e+08, RMS=  1.5325e+08
-Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max=  0.0000e+00, RMS=  2.0632e+08
-Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Initial state: 
+  Valid time: 2010-01-01T00:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -4.6781e+08, Max=  9.6458e+07, RMS=  1.7904e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Filtered state: 
+  Valid time: 2010-01-01T06:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -4.5184e+08, Max=  9.3196e+07, RMS=  1.7271e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max=  0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Final state: 
+  Valid time: 2010-01-08T00:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -3.9403e+08, Max=  1.7285e+08, RMS=  1.5325e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max=  0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04

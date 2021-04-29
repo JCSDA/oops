@@ -1,17 +1,17 @@
-Test     : CostJb   : Nonlinear Jb = 0
-Test     : CostJo   : Nonlinear Jo(Stream) = 7671.34, nobs = 600, Jo/n = 12.7856, err = 4e+06 (Monitoring only)
-Test     : CostJo   : Nonlinear Jo(Wind) = 1038.28, nobs = 600, Jo/n = 1.73047, err = 6
-Test     : CostJo   : Nonlinear Jo(WSpeed) = 139.319, nobs = 300, Jo/n = 0.464395, err = 12
-Test     : CostFunction: Nonlinear J = 1177.6
-Test     : DRIPCGMinimizer: reduction in residual norm = 0.186377
-Test     : CostFunction::addIncrement: Analysis: 
-Test     :   Valid time: 2010-01-01T09:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Streamfunction         :  Min= -4.6444e+08, Max=  1.0829e+08, RMS=  1.7939e+08
-Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
-Test     : CostJb   : Nonlinear Jb = 79.13
-Test     : CostJo   : Nonlinear Jo(Stream) = 1596, nobs = 600, Jo/n = 2.66, err = 4e+06 (Monitoring only)
-Test     : CostJo   : Nonlinear Jo(Wind) = 159.4, nobs = 600, Jo/n = 0.2656, err = 6
-Test     : CostJo   : Nonlinear Jo(WSpeed) = 34.27, nobs = 300, Jo/n = 0.1142, err = 12
-Test     : CostFunction: Nonlinear J = 272.8
+CostJb   : Nonlinear Jb = 0
+CostJo   : Nonlinear Jo(Stream) = 7671.34, nobs = 600, Jo/n = 12.7856, err = 4e+06 (Monitoring only)
+CostJo   : Nonlinear Jo(Wind) = 1038.28, nobs = 600, Jo/n = 1.73047, err = 6
+CostJo   : Nonlinear Jo(WSpeed) = 139.319, nobs = 300, Jo/n = 0.464395, err = 12
+CostFunction: Nonlinear J = 1177.6
+DRIPCGMinimizer: reduction in residual norm = 0.186377
+CostFunction::addIncrement: Analysis: 
+  Valid time: 2010-01-01T09:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -4.6444e+08, Max=  1.0829e+08, RMS=  1.7939e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+CostJb   : Nonlinear Jb = 79.13
+CostJo   : Nonlinear Jo(Stream) = 1596, nobs = 600, Jo/n = 2.66, err = 4e+06 (Monitoring only)
+CostJo   : Nonlinear Jo(Wind) = 159.4, nobs = 600, Jo/n = 0.2656, err = 6
+CostJo   : Nonlinear Jo(WSpeed) = 34.27, nobs = 300, Jo/n = 0.1142, err = 12
+CostFunction: Nonlinear J = 272.8

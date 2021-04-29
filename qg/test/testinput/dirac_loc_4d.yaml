@@ -331,3 +331,6 @@ output variance:
   datadir: Data
   exp: dirac_loc_4d_var
   type: an
+
+test:
+  reference filename: testoutput/dirac_loc_4d.test

@@ -33,7 +33,7 @@ background error:
     weight:
       date: 2010-01-01T00:00:00Z
       filename: Data/uniform_field_hybrid.fc.2010-01-01T00:00:00Z.PT0S.nc
-  - covariance: 
+  - covariance:
       covariance model: QgError
       horizontal_length_scale: 2.2e6
       maximum_condition_number: 1.0e6
@@ -67,3 +67,6 @@ output localization:
   date: 2010-01-01T12:00:00Z
   exp: dirac_qg_hyb_field_localization
   type: an
+
+test:
+  reference filename: testoutput/dirac_hyb_field.test

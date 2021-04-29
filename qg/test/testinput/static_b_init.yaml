@@ -12,3 +12,6 @@ background:
   filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
   date: 2009-12-31T00:00:00Z
 analysis variables: [x]
+
+test:
+  reference filename: testoutput/static_b_init.test

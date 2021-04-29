@@ -22,3 +22,6 @@ geometry:
   nx: 40
   ny: 20
   depths: [4500.0, 5500.0]
+
+test:
+  reference filename: testoutput/dfi.test

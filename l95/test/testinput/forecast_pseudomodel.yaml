@@ -27,3 +27,6 @@ output:
   type: pseudofc
 geometry:
   resol: 40
+
+test:
+  reference filename: testoutput/forecast_pseudomodel.test

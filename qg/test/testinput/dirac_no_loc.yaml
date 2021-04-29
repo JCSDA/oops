@@ -45,3 +45,6 @@ output variance:
   datadir: Data
   exp: dirac_no_loc_var
   type: an
+
+test:
+  reference filename: testoutput/dirac_no_loc.test

@@ -32,7 +32,7 @@ background error:
         filename: Data/forecast.ens.10.2009-12-31T00:00:00Z.P1DT12H.nc
     weight:
       value: 0.5
-  - covariance: 
+  - covariance:
       covariance model: QgError
       horizontal_length_scale: 2.2e6
       maximum_condition_number: 1.0e6
@@ -69,3 +69,6 @@ output variance:
   datadir: Data
   exp: dirac_hyb_value_var
   type: an
+
+test:
+  reference filename: testoutput/dirac_hyb_value.test
