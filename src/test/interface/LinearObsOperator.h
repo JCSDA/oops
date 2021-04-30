@@ -25,11 +25,14 @@
 #include "oops/interface/ObsOperator.h"
 #include "oops/runs/Test.h"
 #include "oops/util/dot_product.h"
+#include "oops/util/Expect.h"
 #include "oops/util/Logger.h"
 #include "test/interface/ObsTestsFixture.h"
 #include "test/TestEnvironment.h"
 
 namespace test {
+
+const char *expectConstructorToThrow = "expect constructor to throw exception with message";
 
 // -----------------------------------------------------------------------------
 /// \brief tests constructor and print method
@@ -43,12 +46,20 @@ template <typename OBS> void testConstructor() {
     std::string confname = "obs operator";
     if (conf.has("linear obs operator")) confname = "linear obs operator";
     eckit::LocalConfiguration linobsopconf(conf, confname);
-    std::unique_ptr<LinearObsOperator_> linobsop(
-      new LinearObsOperator_(Test_::obspace()[jj], linobsopconf));
-    EXPECT(linobsop.get());
-    oops::Log::test() << "Testing LinearObsOperator: " << *linobsop << std::endl;
-    linobsop.reset();
-    EXPECT(!linobsop.get());
+
+    if (!Test_::config(jj).has(expectConstructorToThrow)) {
+      std::unique_ptr<LinearObsOperator_> linobsop(
+        new LinearObsOperator_(Test_::obspace()[jj], linobsopconf));
+      EXPECT(linobsop.get());
+      oops::Log::test() << "Testing LinearObsOperator: " << *linobsop << std::endl;
+      linobsop.reset();
+      EXPECT(!linobsop.get());
+    } else {
+      // The constructor is expected to throw an exception containing the specified string.
+      const std::string expectedMessage = Test_::config(jj).getString(expectConstructorToThrow);
+      EXPECT_THROWS_MSG(LinearObsOperator_(Test_::obspace()[jj], linobsopconf),
+                        expectedMessage.c_str());
+    }
   }
 }
 
@@ -70,6 +81,9 @@ template <typename OBS> void testLinearity() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     const eckit::LocalConfiguration & conf = Test_::config(jj);
+    if (conf.has(expectConstructorToThrow))
+      continue;
+
     // initialize observation operator (set variables requested from the model,
     // variables simulated by the observation operator, other init)
     eckit::LocalConfiguration obsopconf(conf, "obs operator");
@@ -147,6 +161,9 @@ template <typename OBS> void testAdjoint() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     const eckit::LocalConfiguration & conf = Test_::config(jj);
+    if (conf.has(expectConstructorToThrow))
+      continue;
+
     // initialize observation operator (set variables requested from the model,
     // variables simulated by the observation operator, other init)
     eckit::LocalConfiguration obsopconf(conf, "obs operator");
@@ -228,6 +245,9 @@ template <typename OBS> void testTangentLinear() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     const eckit::LocalConfiguration & conf = Test_::config(jj);
+    if (conf.has(expectConstructorToThrow))
+      continue;
+
     // initialize observation operator (set variables requested from the model,
     // variables simulated by the observation operator, other init)
     eckit::LocalConfiguration obsopconf(conf, "obs operator");

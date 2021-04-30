@@ -70,7 +70,7 @@ template <typename OBS> void testSimulateObs() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     const eckit::LocalConfiguration & conf = Test_::config(jj);
-    if (Test_::config(jj).has(expectConstructorToThrow))
+    if (conf.has(expectConstructorToThrow))
       continue;
 
     // initialize observation operator (set variables requested from the model,
