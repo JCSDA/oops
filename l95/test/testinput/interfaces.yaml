@@ -123,7 +123,7 @@ observations:
       lats:               [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     localization reduces values: true
   rms ref: 8.3207407741318846
-  reference nobs: 160
+  reference global nobs: 160
   tolerance: 1.0e-10
   obs iterator test:
     tolerance: 0.0

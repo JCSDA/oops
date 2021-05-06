@@ -162,7 +162,8 @@ template <typename OBS> void testReadWrite() {
   }
 }
 // -----------------------------------------------------------------------------
-/// \brief Tests ObsVector::mask method.
+/// \brief Tests ObsVector::mask, ObsVector::packEigen and
+///        ObsVector::packEigenSize methods.
 /// \details Tests that:
 /// - mask of all zeros (nothing to mask) applied to ObsVector doesn't change
 ///   its size and content;
@@ -170,13 +171,15 @@ template <typename OBS> void testReadWrite() {
 ///   from the file applied to ObsVector changes its size.
 /// - linear algebra operations with ObsVector that were masked out produce
 ///   ObsVectors that have the same number of obs masked out.
+/// - size returned by packEigenSize is consistent with size of Eigen Vector
+///   returned by packEigen, and is the same as reference value for each MPI
+///   task.
 template <typename OBS> void testMask() {
   typedef ObsTestsFixture<OBS>           Test_;
   typedef oops::ObsDataVector<OBS, int>  ObsDataVector_;
   typedef oops::ObsSpace<OBS>            ObsSpace_;
   typedef oops::ObsVector<OBS>           ObsVector_;
 
-  const double tolerance = 1.0e-8;
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     const ObsSpace_ & obspace = Test_::obspace()[jj];
 
@@ -184,7 +187,7 @@ template <typename OBS> void testMask() {
     reference.random();
     oops::Log::test() << "ObsVector before masking: " << reference << std::endl;
 
-    const size_t nobs_all = Test_::config(jj).getInt("reference nobs");
+    const size_t nobs_all = Test_::config(jj).getInt("reference global nobs");
     EXPECT_EQUAL(reference.nobs(), nobs_all);
     EXPECT(nobs_all > 0);
 
@@ -200,18 +203,23 @@ template <typename OBS> void testMask() {
 
     /// apply non-empty mask, check number of observations
     std::string maskvarname;
-    size_t nobs_after_mask;
+    /// by default (else statement below), apply mask that masks out everything
+    size_t nobs_after_mask = 0;
+    std::vector<size_t> nobs_after_mask_local(Test_::comm().size(), 0);
     /// if mask variable is available, apply mask from file and read reference number of masked obs
     if (Test_::config(jj).has("mask variable")) {
       maskvarname = Test_::config(jj).getString("mask variable");
-      nobs_after_mask = Test_::config(jj).getInt("reference masked nobs");
+      nobs_after_mask = Test_::config(jj).getUnsigned("reference global masked nobs");
+      nobs_after_mask_local = Test_::config(jj).getUnsignedVector("reference local masked nobs");
+      // check that specified mask masks out something
       EXPECT_NOT_EQUAL(nobs_after_mask, nobs_all);
+      // check that "reference local masked nobs" are defined for all MPI tasks
+      EXPECT_EQUAL(Test_::comm().size(), nobs_after_mask_local.size());
     /// if mask variable is unavailable, apply mask with all ones
     } else {
       // Hack for mask with ones: use ObsVector set to ones, write to ObsSpace,
       // then read as ObsDataVector.
       maskvarname = "set_mask";
-      nobs_after_mask = 0;
       ObsVector_ tmp(obspace);
       tmp.ones();
       tmp.save(maskvarname);
@@ -281,13 +289,15 @@ template <typename OBS> void testMask() {
     EXPECT_EQUAL(with_mask.nobs(), nobs_after_mask);
 
     /// test packEigen
+    test.random();
     Eigen::VectorXd with_mask_vec = test.packEigen(mask);
-    EXPECT(with_mask_vec.size() == test.packEigenSize(mask));
-    if (with_mask_vec.size() > 0) {
-      double rms1 = with_mask.rms();
-      double rms2 = sqrt(with_mask_vec.squaredNorm() / with_mask_vec.size());
-      EXPECT(std::abs(rms1-rms2) < tolerance);
-    }
+    // check that the size of returned Eigen Vector is consistent with size
+    // returned by packEigenSize()
+    EXPECT_EQUAL(with_mask_vec.size(), test.packEigenSize(mask));
+    oops::Log::debug() << "Local number of masked observations is: " <<
+                          with_mask_vec.size() << std::endl;
+    // check that the size is consistent with reference for this MPI task
+    EXPECT_EQUAL(with_mask_vec.size(), nobs_after_mask_local[Test_::comm().rank()]);
   }
 }
 // -----------------------------------------------------------------------------
