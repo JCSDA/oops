@@ -8,6 +8,7 @@
 #ifndef TEST_INTERFACE_OBSLOCALIZATION_H_
 #define TEST_INTERFACE_OBSLOCALIZATION_H_
 
+#include <cmath>
 #include <memory>
 #include <string>
 #include <vector>
@@ -82,7 +83,10 @@ template <typename MODEL, typename OBS> void testObsLocalization() {
     for (GeometryIterator_ ii = geometry.begin(); ii != geometry.end(); ++ii) {
       // debug print to help decide which points to specify for reference
       // set OOPS_DEBUG environment variable to -1 to see prints from all MPI tasks
-      oops::Log::debug() << "Iterating over " << ii << ": " << *ii << std::endl;
+      if (locconf.getBool("print iterator", false)) {
+        oops::Log::debug() << "Iterating over " << std::setprecision(9) << ii << ": "
+                         << *ii << std::endl;
+      }
       // check if we need to test at this location (if there are any points in the
       // reference point list within 1e-5 of this locationn)
       const auto & it = std::find_if(reference_points.begin(), reference_points.end(),
@@ -98,7 +102,10 @@ template <typename MODEL, typename OBS> void testObsLocalization() {
         oops::Log::test() << "Localization values: " << locvector << std::endl;
         locvector.mask(outside);
         oops::Log::test() << "Local vector nobs and reference: " << locvector.nobs() << ", "
-                          << nobs_local[index] << std::endl;
+                          << nobs_local_ref[index] << std::endl;
+        oops::Log::debug() << "Local vector stats lat,lon,nobs,rms: " <<  *ii << ", "
+                           << locvector.nobs() << ", " << locvector.rms() << std::endl;
+
         // save number of local obs to be tested later
         nobs_local[index] = locvector.nobs();
 
@@ -120,14 +127,14 @@ template <typename MODEL, typename OBS> void testObsLocalization() {
     EXPECT_EQUAL(total_tested, lons.size());
     // Test that computed number of local obs is the same as reference
     EXPECT_EQUAL(nobs_local_ref, nobs_local);
-    // check whether localization is expected to reduce obsvector.rms()
-    if (locconf.getBool("localization reduces values")) {
-      for (size_t jpoint = 0; jpoint < nobs_local.size(); ++jpoint) {
-        EXPECT(locvector_rms[jpoint] < 1.0);
-      }
-    } else {
-      for (size_t jpoint = 0; jpoint < nobs_local.size(); ++jpoint) {
-        EXPECT((nobs_local[jpoint] == 0) || (locvector_rms[jpoint] == 1.0));
+    // check value of the rms is close to reference
+    const std::vector<double> ref_locvector_rms = locconf.getDoubleVector("reference rms");
+    ASSERT(lons.size() == ref_locvector_rms.size());
+    oops::Log::debug() << "reference RMS" << ref_locvector_rms << std::endl;
+    oops::Log::debug() << "computed RMS" << locvector_rms << std::endl;
+    for (size_t jpoint = 0; jpoint < nobs_local.size(); ++jpoint) {
+      if (nobs_local[jpoint] > 0) {
+        EXPECT(std::abs(locvector_rms[jpoint]-ref_locvector_rms[jpoint]) < 1.e-5);
       }
     }
   }

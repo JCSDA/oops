@@ -83,7 +83,7 @@ observations:
     reference gridpoints:
       lons: [-175.5]
       lats: [5.623]
-    localization reduces values: false
+    reference rms: [0]
   obs iterator test:
     tolerance: 1.0e-6
     reference nlocs: 800
@@ -126,7 +126,7 @@ observations:
     reference gridpoints:
       lons: [-175.5]
       lats: [5.623]
-    localization reduces values: false
+    reference rms: [1]
   obs iterator test:
     tolerance: 1.0e-6
     reference nlocs: 400
@@ -162,7 +162,7 @@ observations:
     reference gridpoints:
       lons: [-175.5]
       lats: [5.623]
-    localization reduces values: false
+    reference rms: [1]  
   obs iterator test:
     tolerance: 1.0e-6
     reference nlocs: 400
