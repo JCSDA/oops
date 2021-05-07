@@ -37,49 +37,25 @@ phases:
       - echo "CODEBUILD_GIT_BRANCH=${CODEBUILD_GIT_BRANCH}"
       - echo "CODEBUILD_SOURCE_VERSION=${CODEBUILD_SOURCE_VERSION}"
 
-      - echo MPI setup for Docker
-      - mkdir -p /var/run/sshd
-      - ssh-keygen -A 
-      - sed -i 's/#PermitRootLogin yes/PermitRootLogin yes/g' /etc/ssh/sshd_config
-      - sed -i 's/#RSAAuthentication yes/RSAAuthentication yes/g' /etc/ssh/sshd_config
-      - sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/g' /etc/ssh/sshd_config
-
-      - groupadd jcsda -g 9999
-      - useradd jcsdauser
-      - mkdir -p /jcsda /build_container
-      - chown -R jcsdauser:jcsda /build_container  /usr/local
-      - chmod 6755 /jcsda /build_container /usr/local
-
-      - mkdir /jcsda/.ssh ; echo "StrictHostKeyChecking no" > /jcsda/.ssh/config
-      - mkdir -p /jcsda/.openmpi
-      - mkdir -p /jcsda/oops-bundle
-      - mkdir -p /home/jcsdauser/.openmpi
-        
-      - cp CI/default-mca-params.conf /home/jcsdauser/.openmpi/mca-params.conf
-      - cat /home/jcsdauser/.openmpi/mca-params.conf
-      - chown -R jcsdauser:jcsda /jcsda/
-
-      - su - jcsdauser -c "ssh-keygen -f /jcsda/.ssh/id_rsa -t rsa -N ''
-        && chmod 600 /jcsda/.ssh/config
-        && chmod 700 /jcsda/.ssh
-        && cp /jcsda/.ssh/id_rsa.pub /jcsda/.ssh/authorized_keys
-        && echo MPI setup for Docker done"
-
   pre_build:
     commands:
       - echo Executing pre_build phase
+      - mkdir -p /jcsda/oops-bundle
 
       - git lfs install
-      - cp ~/.gitconfig /home/jcsdauser/
-      - cp CI/CMakeLists.txt /jcsda/oops-bundle
-
+      - cp ~/.gitconfig /home/jedi/
       - cd CI
-        
+
       - if [ "$CODEBUILD_GIT_BRANCH" = "develop" ];
         then export CODEBUILD_GIT_BRANCH_FORK="release-stable";
         else export CODEBUILD_GIT_BRANCH_FORK=${CODEBUILD_GIT_BRANCH};
         echo "CODEBUILD_GIT_BRANCH_FORK=${CODEBUILD_GIT_BRANCH_FORK}";
         fi
+
+      # Upload branch name and commit sha as CodeBuild artifact to S3
+      - mkdir /jcsda/artifacts
+      - echo ${CODEBUILD_GIT_BRANCH} > /jcsda/artifacts/branch_name.txt
+      - echo ${CODEBUILD_RESOLVED_SOURCE_VERSION} > /jcsda/artifacts/commit_sha.txt
 
       # oops
       - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/oops $CODEBUILD_GIT_BRANCH oops /jcsda/oops-bundle develop
@@ -88,24 +64,41 @@ phases:
       # atlas
       - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/atlas $CODEBUILD_GIT_BRANCH_FORK atlas /jcsda/oops-bundle release-stable
 
-      - cd /jcsda/oops-bundle
-      - ls
- 
+
+      # move CMakeLists.txt from oops/CI to bundle directory
+      - cp CMakeLists.txt /jcsda/oops-bundle/CMakeLists.txt
+
+      # cdash upload setup
+      - mkdir /jcsda/oops-bundle/cmake
+      - cp cmake/CTestCustom.ctest.in /jcsda/oops-bundle/cmake/
+      - cp cmake/cdash-integration.cmake /jcsda/oops-bundle/cmake/
+      - cp cmake/CTestConfig.cmake /jcsda/oops-bundle/
+
   build:
+    on-failure: CONTINUE
     commands:
       - echo Executing build phase
-      - su - jcsdauser -c "cd /build_container 
+      - export BUILD_STATUS="0"
+      - echo $BUILD_STATUS
+      - echo $CODEBUILD_BUILD_SUCCEEDING
+
+      # configure and build
+      - su - jedi -c "cd /home/jedi
         && ls
         && export FC=mpifort
         && export CC=mpicc
         && export CXX=mpicxx
-        &&  cmake -DCMAKE_MODULE_PATH=/usr/local/share/ecbuild/cmake/ -DCMAKE_BUILD_TYPE=Debug -DENABLE_GPROF=ON -DCMAKE_CXX_COMPILER=$(which g++) -DCMAKE_C_COMPILER=$(which gcc) -DCMAKE_Fortran_COMPILER=$(which gfortran) /jcsda/oops-bundle/
-        && cd oops
-        && make -j4"
+        && ecbuild -Wno-dev -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCDASH_OVERRIDE_GIT_BRANCH=$CODEBUILD_GIT_BRANCH -DCTEST_UPDATE_VERSION_ONLY=FALSE /jcsda/oops-bundle/"
 
-      - export BUILD_STATUS="0"
-      - echo $BUILD_STATUS
-      - echo $CODEBUILD_BUILD_SUCCEEDING
+      - su - jedi -c "cd /home/jedi/oops
+        && export FC=mpifort
+        && export CC=mpicc
+        && export CXX=mpicxx
+        && cp ../DartConfiguration.tcl .
+        && sed -i 's/oops-bundle/oops-bundle\/oops/' DartConfiguration.tcl
+        && sed -i 's/jedi/jedi\/oops/' DartConfiguration.tcl
+        && cat DartConfiguration.tcl
+        && make -j4"
 
       - if [ "$CODEBUILD_BUILD_SUCCEEDING" = "1" ];
         then export BUILD_STATUS="1";
@@ -113,26 +106,44 @@ phases:
         fi
       - echo $BUILD_STATUS
 
-      - su - jcsdauser -c "cd /build_container 
-        && ls
+      # run ctest and upload to cdash
+      - su - jedi -c "cd /home/jedi/oops
         && export FC=mpifort
         && export CC=mpicc
         && export CXX=mpicxx
-        && cd oops
-        && ctest"
- 
+        && ctest -C RelWithDebInfo -D ExperimentalTest -E test_qg_4dvar_saddlepoint"
+
+    finally:
+       - su - jedi -c "cd /home/jedi/oops
+        && export FC=mpifort
+        && export CC=mpicc
+        && export CXX=mpicxx
+        && ctest -C RelWithDebInfo -D ExperimentalSubmit -M Continuous -- --track Continuous --group Continuous"
+
   post_build:
     commands:
       - echo Executing post_build phase
       - echo $CODEBUILD_BUILD_SUCCEEDING
-      - if [ "$BUILD_STATUS" = "1" ] && [ "$CODEBUILD_BUILD_SUCCEEDING" = "0" ];
-        then echo "Build passed, rerun failed tests";
-        su - jcsdauser -c "cd /build_container/oops
-        && ctest -VV --rerun-failed";
+      - echo $BUILD_STATUS
+
+      # upload find cdash url and upload it as CodeBuild artifact to S3
+      - if [ "$BUILD_STATUS" = "1" ];
+        then echo "Build & tests passed, find cdash url";
+        bash /jcsda/oops-bundle/oops/CI/cdash-url.sh /home/jedi/oops/Testing;
+        url=$(bash /jcsda/oops-bundle/oops/CI/cdash-url.sh /home/jedi/oops/Testing);
+        echo $url;
+        echo ${url} > /jcsda/artifacts/cdash-url.txt;
+        cat /jcsda/artifacts/cdash-url.txt;
         else echo "Build failed";
         fi
+
       - echo 'Connect to CodeCov'
-      - cd /build_container/oops
+      - cd /home/jedi/oops
       - pwd
       - ls
       - bash /jcsda/oops-bundle/oops/CI/codecov_script_$org_name.sh
+
+artifacts:
+  files:
+    - '/jcsda/artifacts/*'
+  name: oops-gnu-url

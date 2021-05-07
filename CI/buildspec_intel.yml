@@ -2,6 +2,7 @@ version: 0.2
 
 env:
   shell: bash
+  git-credential-helper: yes
   parameter-store:
     GIT_USER: "/CodeBuild/Git_USER"
     GIT_PASS: "/CodeBuild/Git_PASS"
@@ -46,6 +47,11 @@ phases:
         echo "CODEBUILD_GIT_BRANCH_FORK=${CODEBUILD_GIT_BRANCH_FORK}";
         fi
 
+      # Upload branch name and commit sha as CodeBuild artifact to S3
+      - mkdir -p /jcsda/artifacts
+      - echo ${CODEBUILD_GIT_BRANCH} > /jcsda/artifacts/branch_name.txt
+      - echo ${CODEBUILD_RESOLVED_SOURCE_VERSION} > /jcsda/artifacts/commit_sha.txt
+
       - cd CI
       - . /etc/profile.d/intel.sh
 
@@ -57,29 +63,49 @@ phases:
       - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/atlas $CODEBUILD_GIT_BRANCH_FORK atlas /jcsda/oops-bundle release-stable
 
       # move CMakeLists.txt from oops/CI to bundle directory
-      - cp CMakeLists.txt /jcsda/oops-bundle
+      - cp CMakeLists.txt /jcsda/oops-bundle/CMakeLists.txt
+
+      # cdash upload setup
+      - mkdir /jcsda/oops-bundle/cmake
+      - cp cmake/CTestCustom.ctest.in /jcsda/oops-bundle/cmake/
+      - cp cmake/cdash-integration.cmake /jcsda/oops-bundle/cmake/
+      - cp cmake/CTestConfig.cmake /jcsda/oops-bundle/
+
       - chmod 777 -R /jcsda/oops-bundle
 
       - cd /jcsda/oops-bundle
       - ls
+      - ls -ln /jcsda/oops-bundle/oops/CI
 
   build:
+    on-failure: CONTINUE
     commands:
       - echo Executing build phase
-      ## cannot source /etc/bash.bashrc so copy what's there for jscdauser
+      - export BUILD_STATUS="0"
+      - echo $BUILD_STATUS
+      - echo $CODEBUILD_BUILD_SUCCEEDING
+
+      # configure and build
       - su - jedi -c "export CC=mpiicc
         && export FC=mpiifort
         && export CXX=mpiicpc
         && export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
         && export PATH=/usr/local/lib:$PATH
         && cd /home/jedi
-        && ecbuild /jcsda/oops-bundle/
-        && cd /home/jedi/oops
-        && make -j2"
+        && ecbuild -Wno-dev -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCDASH_OVERRIDE_GIT_BRANCH=$CODEBUILD_GIT_BRANCH -DCTEST_UPDATE_VERSION_ONLY=FALSE /jcsda/oops-bundle/"
 
-      - export BUILD_STATUS="0"
-      - echo $BUILD_STATUS
-      - echo $CODEBUILD_BUILD_SUCCEEDING
+      - su - jedi -c "export CC=mpiicc
+        && export FC=mpiifort
+        && export CXX=mpiicpc
+        && export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+        && export PATH=/usr/local/lib:$PATH
+        && cd /home/jedi/oops
+        && ls -ln /home/jedi/oops
+        && cp ../DartConfiguration.tcl .
+        && sed -i 's/oops-bundle/oops-bundle\/oops/' DartConfiguration.tcl
+        && sed -i 's/jedi/jedi\/oops/' DartConfiguration.tcl
+        && cat DartConfiguration.tcl
+        && make -j4"
 
       - if [ "$CODEBUILD_BUILD_SUCCEEDING" = "1" ];
         then export BUILD_STATUS="1";
@@ -87,27 +113,42 @@ phases:
         fi
       - echo $BUILD_STATUS
 
+      # run ctest and upload to cdash
       - su - jedi -c "export CC=mpiicc
         && export FC=mpiifort
         && export CXX=mpiicpc
         && export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
         && export PATH=/usr/local/lib:$PATH
         && cd /home/jedi/oops
-        && ctest -E test_qg_4dvar_saddlepoint"
+        && ctest -C RelWithDebInfo -D ExperimentalTest -E test_qg_4dvar_saddlepoint"
+
+    finally:
+      - su - jedi -c "export CC=mpiicc
+        && export FC=mpiifort
+        && export CXX=mpiicpc
+        && export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+        && export PATH=/usr/local/lib:$PATH
+        && cd /home/jedi/oops
+        && ctest -C RelWithDebInfo -D ExperimentalSubmit -M Continuous -- --track Continuous --group Continuous"
 
   post_build:
     commands:
       - echo Executing post_build phase
       - echo $CODEBUILD_BUILD_SUCCEEDING
 
-      - if [ "$BUILD_STATUS" = "1" ] && [ "$CODEBUILD_BUILD_SUCCEEDING" = "0" ];
-        then echo "Build passed, rerun failed tests";
-        su - jedi -c "export CC=mpiicc
-        && export FC=mpiifort
-        && export CXX=mpiicpc
-        && export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-        && export PATH=/usr/local/lib:$PATH
-        && cd /home/jedi/oops
-        && ctest -VV --rerun-failed";
+      # upload find cdash url and upload it as CodeBuild artifact to S3
+
+      - if [ "$BUILD_STATUS" = "1" ];
+        then echo "Build & tests passed, find cdash url";
+        bash /jcsda/oops-bundle/oops/CI/cdash-url.sh /home/jedi/oops/Testing;
+        url=$(bash /jcsda/oops-bundle/oops/CI/cdash-url.sh /home/jedi/oops/Testing);
+        echo $url;
+        echo ${url} > /jcsda/artifacts/cdash-url.txt;
+        cat /jcsda/artifacts/cdash-url.txt;
         else echo "Build failed";
         fi
+
+artifacts:
+  files:
+    - '/jcsda/artifacts/*'
+  name: oops-intel-url
