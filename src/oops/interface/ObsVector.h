@@ -21,6 +21,7 @@
 #include "oops/interface/ObsSpace.h"
 #include "oops/util/gatherPrint.h"
 #include "oops/util/Logger.h"
+#include "oops/util/MemoryCounter.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Timer.h"
@@ -101,6 +102,7 @@ ObsVector<OBS>::ObsVector(const ObsSpace<OBS> & os, const std::string name)
   : data_(), commTime_(os.timeComm()) {
   Log::trace() << "ObsVector<OBS>::ObsVector starting " << name << std::endl;
   util::Timer timer(classname(), "ObsVector");
+  util::MemoryCounter mem(classname());
 
   data_.reset(new ObsVector_(os.obsspace(), name));
 
@@ -111,6 +113,7 @@ template <typename OBS>
 ObsVector<OBS>::ObsVector(const ObsVector & other): data_(), commTime_(other.commTime_) {
   Log::trace() << "ObsVector<OBS>::ObsVector starting" << std::endl;
   util::Timer timer(classname(), "ObsVector");
+  util::MemoryCounter mem(classname());
 
   data_.reset(new ObsVector_(*other.data_));
 

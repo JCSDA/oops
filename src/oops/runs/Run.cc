@@ -19,6 +19,7 @@
 #include "oops/runs/Application.h"
 #include "oops/util/LibOOPS.h"
 #include "oops/util/Logger.h"
+#include "oops/util/MemoryHelper.h"
 #include "oops/util/ObjectCountHelper.h"
 #include "oops/util/TimerHelper.h"
 
@@ -100,8 +101,9 @@ Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(
   Log::info() << "Full configuration is:"  << *config_ << std::endl;
 
 // Start measuring performance
-  util::ObjectCountHelper::start();
+  util::MemoryHelper::start();
   util::TimerHelper::start();
+  util::ObjectCountHelper::start();
 }
 
 // -----------------------------------------------------------------------------
@@ -138,6 +140,7 @@ int Run::execute(const Application & app) {
 // Performance diagnostics
   util::ObjectCountHelper::stop();
   util::TimerHelper::stop();
+  util::MemoryHelper::stop();
 
   Log::info() << "Run: Finishing " << app << " with status = " << status << std::endl;
   return status;

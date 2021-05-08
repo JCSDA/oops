@@ -26,6 +26,7 @@
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
 #include "oops/util/Logger.h"
+#include "oops/util/MemoryCounter.h"
 
 namespace oops {
 
@@ -67,6 +68,7 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Var
   : ModelSpaceCovarianceBase<MODEL>(xb, fg, resol, conf), ens_(), loc_()
 {
   Log::trace() << "EnsembleCovariance::EnsembleCovariance start" << std::endl;
+  util::MemoryCounter mem("oops::EnsembleCovariance");
   ens_.reset(new Ensemble_(conf, xb, fg, resol, vars));
   if (conf.has("localization")) {
     const eckit::LocalConfiguration confloc(conf, "localization");

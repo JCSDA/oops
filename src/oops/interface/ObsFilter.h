@@ -75,7 +75,7 @@ class ObsFilter : public ObsFilterBase<OBS> {
  private:
   void print(std::ostream &) const override;
 
-  ObsSpace_ obsdb_;
+  const ObsSpace_ & obsdb_;
   const std::unique_ptr<Parameters_> parameters_;
   std::unique_ptr<FILTER> ofilt_;
 };

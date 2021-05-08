@@ -21,6 +21,7 @@
 #include "oops/interface/GeometryIterator.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/Logger.h"
+#include "oops/util/MemoryCounter.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Timer.h"
@@ -34,7 +35,6 @@ namespace util {
 }
 
 namespace oops {
-  template <typename T> class ObsVector;
 
 // -----------------------------------------------------------------------------
 
@@ -42,7 +42,6 @@ template <typename OBS>
 class ObsSpace : public util::Printable,
                  private util::ObjectCounter<ObsSpace<OBS> > {
   typedef typename OBS::ObsSpace  ObsSpace_;
-  typedef ObsVector<OBS>          ObsVector_;
   typedef GeometryIterator<OBS>   ObsIterator_;
 
  public:
@@ -52,6 +51,8 @@ class ObsSpace : public util::Printable,
            const util::DateTime &, const util::DateTime &,
            const eckit::mpi::Comm & time = oops::mpi::myself());
   ~ObsSpace();
+
+  ObsSpace(const ObsSpace &) = delete;
 
 /// Interfacing
   ObsSpace_ & obsspace() const {return *obsdb_;}  // const problem? YT
@@ -75,7 +76,7 @@ class ObsSpace : public util::Printable,
  private:
   void print(std::ostream &) const;
 
-  std::shared_ptr<ObsSpace_> obsdb_;
+  std::unique_ptr<ObsSpace_> obsdb_;
   const eckit::mpi::Comm & time_;
 };
 
@@ -89,6 +90,7 @@ ObsSpace<OBS>::ObsSpace(const eckit::Configuration & conf,
                         const eckit::mpi::Comm & time) : obsdb_(), time_(time) {
   Log::trace() << "ObsSpace<OBS>::ObsSpace starting" << std::endl;
   util::Timer timer(classname(), "ObsSpace");
+  util::MemoryCounter mem(classname());
   obsdb_.reset(new ObsSpace_(conf, comm, bgn, end, time));
   Log::trace() << "ObsSpace<OBS>::ObsSpace done" << std::endl;
 }

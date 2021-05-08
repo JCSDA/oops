@@ -22,6 +22,7 @@
 #include "oops/interface/Geometry.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/gatherPrint.h"
+#include "oops/util/MemoryCounter.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Serializable.h"
@@ -89,6 +90,7 @@ State<MODEL>::State(const Geometry_ & resol, const Variables & vars,
 {
   Log::trace() << "State<MODEL>::State starting" << std::endl;
   util::Timer timer(classname(), "State");
+  util::MemoryCounter mem(classname());
   state_.reset(new State_(resol.geometry(), vars, time));
   Log::trace() << "State<MODEL>::State done" << std::endl;
 }
@@ -101,6 +103,7 @@ State<MODEL>::State(const Geometry_ & resol, const eckit::Configuration & conf)
 {
   Log::trace() << "State<MODEL>::State read starting" << std::endl;
   util::Timer timer(classname(), "State");
+  util::MemoryCounter mem(classname());
 
   eckit::LocalConfiguration myconf;
   if (conf.has("states")) {
@@ -126,6 +129,7 @@ State<MODEL>::State(const Geometry_ & resol, const State & other)
 {
   Log::trace() << "State<MODEL>::State interpolated starting" << std::endl;
   util::Timer timer(classname(), "State");
+  util::MemoryCounter mem(classname());
   state_.reset(new State_(resol.geometry(), *other.state_));
   Log::trace() << "State<MODEL>::State interpolated done" << std::endl;
 }
@@ -137,6 +141,7 @@ State<MODEL>::State(const State & other) : state_(), commTime_(other.commTime_)
 {
   Log::trace() << "State<MODEL>::State starting copy" << std::endl;
   util::Timer timer(classname(), "State");
+  util::MemoryCounter mem(classname());
   state_.reset(new State_(*other.state_));
   Log::trace() << "State<MODEL>::State copy done" << std::endl;
 }

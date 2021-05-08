@@ -22,6 +22,7 @@
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
 #include "oops/util/Logger.h"
+#include "oops/util/MemoryCounter.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Timer.h"
@@ -87,6 +88,7 @@ ErrorCovariance<MODEL>::ErrorCovariance(const Geometry_ & resol, const Variables
 {
   Log::trace() << "ErrorCovariance<MODEL>::ErrorCovariance starting" << std::endl;
   util::Timer timer(classname(), "ErrorCovariance");
+  util::MemoryCounter mem(classname());
   covariance_.reset(new Covariance_(resol.geometry(), vars,
                                     parametersOrConfiguration<HasParameters_<Covariance_>::value>(
                                       parameters),

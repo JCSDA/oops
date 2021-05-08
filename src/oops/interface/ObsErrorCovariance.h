@@ -14,10 +14,10 @@
 #include <memory>
 #include <string>
 
-
 #include "oops/base/ObsErrorBase.h"
 #include "oops/interface/ObsSpace.h"
 #include "oops/interface/ObsVector.h"
+#include "oops/util/MemoryCounter.h"
 
 namespace eckit {
   class Configuration;
@@ -66,6 +66,7 @@ ObsErrorCovariance<OBS, OBSERR>::ObsErrorCovariance(const eckit::Configuration &
                                                       const Variables & obsvar) : covar_() {
   Log::trace() << "ObsErrorCovariance<OBS, OBSERR>::ObsErrorCovariance starting" << std::endl;
   util::Timer timer(classname(), "ObsErrorCovariance");
+  util::MemoryCounter mem(classname());
   covar_.reset(new OBSERR(conf, obsdb, obsvar));
   Log::trace() << "ObsErrorCovariance<OBS, OBSERR>::ObsErrorCovariance done" << std::endl;
 }

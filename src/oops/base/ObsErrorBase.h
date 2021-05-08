@@ -19,6 +19,7 @@
 #include "eckit/config/Configuration.h"
 
 #include "oops/interface/ObsSpace.h"
+#include "oops/interface/ObsVector.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
