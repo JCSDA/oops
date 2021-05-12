@@ -6,29 +6,59 @@ include(CMakeFindDependencyMacro)
 set(oops_qg_FOUND @ENABLE_QG_MODEL@) #COMPONENT qg
 set(oops_lorenz95_FOUND @ENABLE_LORENZ95_MODEL@) #COMPONENT lorenz95
 
-if( @MKL_FOUND@ )
-    find_dependency( MKL REQUIRED )
-    set( LAPACK_LIBRARIES ${MKL_LIBRARIES} )
-else()
-    find_dependency( LAPACK REQUIRED )
+if(@jedicmake_FOUND@ AND NOT jedicmake_FOUND)
+    find_dependency(jedicmake REQUIRED)
 endif()
 
-find_dependency( Eigen3 REQUIRED NO_MODULE HINTS
-    $ENV{Eigen3_ROOT} $ENV{EIGEN3_ROOT} $ENV{Eigen_ROOT} $ENV{EIGEN_ROOT}
-    $ENV{Eigen3_PATH} $ENV{EIGEN3_PATH} $ENV{Eigen_PATH} $ENV{EIGEN_PATH} )
-
-if(@OpenMP_FOUND@)
-    find_package( OpenMP REQUIRED COMPONENTS CXX Fortran )
+if((@LAPACK_FOUND@ AND NOT LAPACK_FOUND) OR (@MKL_FOUND@ AND NOT MKL_FOUND))
+    if( @MKL_FOUND@ )
+        find_dependency( MKL REQUIRED )
+        set( LAPACK_LIBRARIES ${MKL_LIBRARIES} )
+    else()
+        find_dependency( LAPACK REQUIRED )
+    endif()
 endif()
-find_package( MPI REQUIRED COMPONENTS CXX Fortran )
-find_package( NetCDF REQUIRED COMPONENTS Fortran )
-find_dependency( Boost REQUIRED )
-find_package( eckit REQUIRED COMPONENTS MPI )
-find_dependency( fckit REQUIRED )
-if(@OpenMP_FOUND@)
-    find_package( atlas REQUIRED COMPONENTS OMP OMP_Fortran )
-else()
-    find_dependency( atlas REQUIRED )
+
+if(NOT Eigen3_FOUND)
+    find_dependency( Eigen3 REQUIRED NO_MODULE HINTS @EIGEN3_ROOT_DIR@ )
+endif()
+
+if(NOT (OpenMP_CXX_FOUND AND OpenMP_Fortran_FOUND))
+    if(@OpenMP_FOUND@)
+        find_dependency( OpenMP REQUIRED COMPONENTS CXX Fortran )
+    endif()
+endif()
+
+if(NOT (MPI_CXX_FOUND AND MPI_Fortran_FOUND))
+    find_dependency( MPI REQUIRED COMPONENTS CXX Fortran )
+endif()
+
+if(NOT NetCDF_Fortran_FOUND)
+    find_dependency( NetCDF REQUIRED COMPONENTS Fortran )
+endif()
+
+if(NOT Boost_FOUND)
+    find_dependency( Boost REQUIRED )
+endif()
+
+if(NOT eckit_FOUND)
+    find_dependency( eckit REQUIRED COMPONENTS MPI )
+endif()
+
+if(NOT fckit_FOUND)
+    find_dependency( fckit REQUIRED )
+endif()
+
+if(NOT atlas_FOUND)
+    if(@OpenMP_FOUND@)
+        find_dependency( atlas REQUIRED COMPONENTS OMP OMP_Fortran )
+    else()
+        find_dependency( atlas REQUIRED )
+    endif()
+endif()
+
+if(@ENABLE_GPTL@ AND NOT GPTL_FOUND)
+    find_dependency( GPTL REQUIRED )
 endif()
 
 #Export Fortran compiler version for checking module compatibility
