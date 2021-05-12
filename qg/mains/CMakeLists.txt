@@ -88,6 +88,11 @@ ecbuild_add_executable( TARGET  qg_ens_recenter.x
                         LIBS    qg
                       )
 
+ecbuild_add_executable( TARGET  qg_hybridgain.x
+                        SOURCES qgHybridGain.cc
+                        LIBS    qg
+                      )
+
 ecbuild_add_executable( TARGET  qg_rtpp.x
                         SOURCES qgRTPP.cc
                         LIBS    qg
