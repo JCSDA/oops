@@ -1,6 +1,7 @@
 
 list( APPEND l95_test_input
   testinput/3dvar.yaml
+  testinput/3dvar_4fsoi_pcg.yaml
   testinput/3dvar_noobs.yaml
   testinput/3dvar_qc.yaml
   testinput/3dvar_qc_obserr.yaml
@@ -57,6 +58,7 @@ list( APPEND l95_test_input
   testinput/forecast.yaml
   testinput/forecast_pseudomodel.yaml
   testinput/forecast_identitymodel.yaml
+  testinput/fsoi_3dvar_pcg.yaml
   testinput/genenspert.yaml
   testinput/getkf.yaml
   testinput/getkf_offline_hofx.yaml
@@ -105,6 +107,7 @@ list( APPEND l95_test_data
 
 list( APPEND l95_testoutput
   testoutput/3dvar.test
+  testoutput/3dvar_4fsoi_pcg.test
   testoutput/3dvar_noobs.test
   testoutput/3dvar_qc.test
   testoutput/3dvar_qc_obserr.test
@@ -143,6 +146,7 @@ list( APPEND l95_testoutput
   testoutput/forecast.test
   testoutput/forecast_pseudomodel.test
   testoutput/forecast_identitymodel.test
+  testoutput/fsoi_3dvar_pcg.test
   testoutput/genenspert.test
   testoutput/getkf.test
   testoutput/getkf_offline_hofx.test
@@ -655,6 +659,21 @@ ecbuild_add_test( TARGET test_l95_eda_3dvar_block
                   COMMAND l95_eda.x
                   ARGS testinput/eda.3dvar.block.yaml
                   TEST_DEPENDS test_l95_genenspert test_l95_makeobs3d )
+
+#####################################################################
+# FSOI tests
+#####################################################################
+
+ecbuild_add_test( TARGET test_l95_3dvar_4fsoi_pcg
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/3dvar_4fsoi_pcg.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
+
+ecbuild_add_test( TARGET test_l95_fsoi_3dvar_pcg
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/fsoi_3dvar_pcg.yaml
+                  TEST_DEPENDS test_l95_3dvar_4fsoi_pcg )
+
 #####################################################################
 # state-related tests
 #####################################################################
