@@ -69,6 +69,7 @@ oops/assimilation/PLanczos.h
 oops/assimilation/PLanczosMinimizer.h
 oops/assimilation/PrimalMinimizer.h
 oops/assimilation/QNewtonLMP.h
+oops/assimilation/RinvHMatrix.h
 oops/assimilation/RinvMatrix.h
 oops/assimilation/rotmat.h
 oops/assimilation/RPCGMinimizer.h
