@@ -14,7 +14,6 @@
 #include "eckit/geometry/Point2.h"
 #include "eckit/geometry/Sphere.h"
 
-#include "oops/interface/ObsLocalization.h"
 #include "oops/util/Logger.h"
 
 #include "model/GeometryQGIterator.h"
@@ -26,8 +25,7 @@ using atlas::array::make_view;
 
 namespace qg {
 
-static oops::ObsLocalizationMaker<QgTraits, QgObsTraits,
-              oops::ObsLocalization<QgTraits, QgObsTraits, ObsLocQG>> makerObsLoc_("Heaviside");
+static oops::ObsLocalizationMaker<QgTraits, QgObsTraits, ObsLocQG> makerObsLoc_("Heaviside");
 
 // -----------------------------------------------------------------------------
 

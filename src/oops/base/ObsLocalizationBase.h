@@ -21,16 +21,30 @@
 
 namespace oops {
 
-/// Base class for observation-space localization
+/// Base class for observation-space localization.
+/// Defines the interfaces for observation space localization.
+/// Use this class as a base class for OBS- and MODEL-specific implementations.
 template<typename MODEL, typename OBS>
 class ObsLocalizationBase : public util::Printable,
-                            private boost::noncopyable {
-  typedef GeometryIterator<MODEL>   GeometryIterator_;
-  typedef ObsDataVector<OBS, int>   ObsDataVector_;
-  typedef ObsVector<OBS>            ObsVector_;
+                                   private boost::noncopyable {
+  typedef typename MODEL::GeometryIterator          GeometryIterator_;
+  typedef typename OBS::ObsVector                   ObsVector_;
+  typedef typename OBS::template ObsDataVector<int> ObsDataVector_;
  public:
   ObsLocalizationBase() = default;
   virtual ~ObsLocalizationBase() = default;
+
+  /// compute obs-space localization: fill \p obsvector with observation-space
+  /// localization values between observations and \p point in model-space, and
+  /// fill \p outside with flags on whether obs is local or not (1: outside of
+  /// localization, 0: inside of localization, local)
+  /// Method used in oops. Calls `computeLocalization` abstract method, and
+  /// passes OBS- and MODEL-specific classes to the OBS- and MODEL-specific
+  /// implementations of ObsLocalization.
+  void computeLocalization(const GeometryIterator<MODEL> & point,
+             ObsDataVector<OBS, int> & flags, ObsVector<OBS> & obsvector) const {
+    computeLocalization(point.geometryiter(), flags.obsdatavector(), obsvector.obsvector());
+  }
 
   /// compute obs-space localization: fill \p obsvector with observation-space
   /// localization values between observations and \p point in model-space, and
@@ -67,7 +81,7 @@ class ObsLocalizationMaker : public ObsLocalizationFactory<MODEL, OBS> {
   typedef ObsSpace<OBS>  ObsSpace_;
   virtual ObsLocalizationBase<MODEL, OBS> * make(const eckit::Configuration & conf,
                                                  const ObsSpace_ & obspace)
-    { return new T(conf, obspace); }
+    { return new T(conf, obspace.obsspace()); }
  public:
   explicit ObsLocalizationMaker(const std::string & name) :
     ObsLocalizationFactory<MODEL, OBS>(name) {}

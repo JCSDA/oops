@@ -20,13 +20,11 @@
 #include "lorenz95/ObsVec1D.h"
 
 #include "oops/generic/gc99.h"
-#include "oops/interface/ObsLocalization.h"
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 
-static oops::ObsLocalizationMaker<L95Traits, L95ObsTraits,
-              oops::ObsLocalization<L95Traits, L95ObsTraits, ObsLocGC99>> makerGC_("Gaspari-Cohn");
+static oops::ObsLocalizationMaker<L95Traits, L95ObsTraits, ObsLocGC99> makerGC_("Gaspari-Cohn");
 
 // -----------------------------------------------------------------------------
 

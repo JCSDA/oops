@@ -10,11 +10,10 @@
 
 #include <ostream>
 
-#include "atlas/field.h"
-
-#include "oops/util/Printable.h"
+#include "oops/base/ObsLocalizationBase.h"
 
 #include "oops/qg/ObsDataQG.h"
+#include "oops/qg/QgTraits.h"
 
 namespace eckit {
   class Configuration;
@@ -27,11 +26,11 @@ namespace qg {
 
 /// \brief Observation-space localization for QG model (Heaviside function
 /// with prescribed lengthscale).
-class ObsLocQG : public util::Printable {
+class ObsLocQG : public oops::ObsLocalizationBase<QgTraits, QgObsTraits> {
  public:
   ObsLocQG(const eckit::Configuration &, const ObsSpaceQG &);
 
-  void computeLocalization(const GeometryQGIterator &, ObsDataQG<int> &, ObsVecQG &) const;
+  void computeLocalization(const GeometryQGIterator &, ObsDataQG<int> &, ObsVecQG &) const override;
 
  private:
   void print(std::ostream &) const override;
