@@ -234,6 +234,20 @@ CASE("mpi/mpi/allGatherEigen") {
   EXPECT_EQUAL(expectedEigen, globalEigen);
 }
 // -----------------------------------------------------------------------------------------------
+CASE("mpi/mpi/exclusiveScan") {
+  const eckit::mpi::Comm &comm = oops::mpi::world();
+  const size_t rank = comm.rank();
+  const size_t size = comm.size();
+
+  size_t expectedResult = 0;
+  for (size_t lowerRank = 0; lowerRank < rank; ++lowerRank)
+    expectedResult += lowerRank;
+
+  size_t result = rank;
+  oops::mpi::exclusiveScan(comm, result);
+  EXPECT_EQUAL(result, expectedResult);
+}
+// -----------------------------------------------------------------------------------------------
 
 class Mpi : public oops::Test {
  private:

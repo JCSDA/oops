@@ -10,6 +10,7 @@
 
 #include "oops/mpi/mpi.h"
 
+#include <numeric>  // for accumulate()
 #include <string>
 #include <utility>
 
@@ -169,6 +170,16 @@ void allGatherv(const eckit::mpi::Comm & comm, std::vector<std::string> &x) {
     encodedX = {};
 
     x = decodeStrings(charBuffer.buffer, lengthBuffer.buffer);
+}
+
+// ------------------------------------------------------------------------------------------------
+
+void exclusiveScan(const eckit::mpi::Comm &comm, size_t &x) {
+  // Could be done with MPI_Exscan, but there's no wrapper for it in eckit::mpi.
+
+  std::vector<size_t> xs(comm.size());
+  comm.allGather(x, xs.begin(), xs.end());
+  x = std::accumulate(xs.begin(), xs.begin() + comm.rank(), 0);
 }
 
 }  // namespace mpi

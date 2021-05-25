@@ -183,5 +183,11 @@ void allGatherv(const eckit::mpi::Comm & comm, std::vector<std::string> &x);
 
 // ------------------------------------------------------------------------------------------------
 
+/// \brief Perform the exclusive scan operation.
+///
+/// On output, `x` is set to the sum of the values of `x` passed to this function
+/// on all ranks lower than the calling rank (and to 0 on rank 0).
+void exclusiveScan(const eckit::mpi::Comm &comm, size_t &x);
+
 }  // namespace mpi
 }  // namespace oops
