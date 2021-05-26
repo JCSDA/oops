@@ -48,8 +48,8 @@ class ObserverTLAD {
   ObserverTLAD(const ObsSpace_ &, const eckit::Configuration &);
   ~ObserverTLAD() {}
 
-  std::shared_ptr<GetValTLAD_> initializeTraj(const Geometry_ &);
-  void finalizeTraj(const ObsAuxCtrl_ &);
+  std::shared_ptr<GetValTLAD_> initializeTraj(const Geometry_ &, const ObsAuxCtrl_ &);
+  void finalizeTraj();
 
   std::shared_ptr<GetValTLAD_> initializeTL();
   void finalizeTL(const ObsAuxIncr_ &, ObsVector_ &);
@@ -65,6 +65,7 @@ class ObserverTLAD {
   std::unique_ptr<Locations_>   locations_;  // locations
   util::DateTime winbgn_;                    // Begining of assimilation window
   util::DateTime winend_;                    // End of assimilation window
+  const ObsAuxCtrl_ *           ybias_;
   bool init_;
 };
 
@@ -75,17 +76,19 @@ ObserverTLAD<MODEL, OBS>::ObserverTLAD(const ObsSpace_ & obsdb, const eckit::Con
     hoptlad_(obspace_, conf.has("linear obs operator") ?
                          eckit::LocalConfiguration(conf, "linear obs operator") :
                          eckit::LocalConfiguration(conf, "obs operator")),
-    getvals_(), locations_(), winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()), init_(false)
+    getvals_(), locations_(), winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()),
+    ybias_(nullptr), init_(false)
 {
   Log::trace() << "ObserverTLAD::ObserverTLAD" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
 std::shared_ptr<GetValueTLAD<MODEL, OBS>>
-ObserverTLAD<MODEL, OBS>::initializeTraj(const Geometry_ & geom) {
+ObserverTLAD<MODEL, OBS>::initializeTraj(const Geometry_ & geom, const ObsAuxCtrl_ & ybias) {
   Log::trace() << "ObserverTLAD::initializeTraj start" << std::endl;
+  ybias_ = &ybias;
 
-//  hop is only needed to get locations
+//  hop is only needed to get locations and requiredVars
   ObsOperator_ hop(obspace_, eckit::LocalConfiguration(obsconfig_, "obs operator"));
   locations_.reset(new Locations_(hop.locations()));
 
@@ -95,8 +98,13 @@ ObserverTLAD<MODEL, OBS>::initializeTraj(const Geometry_ & geom) {
                             eckit::LocalConfiguration(obsconfig_, "get values") :
                             eckit::LocalConfiguration(obsconfig_, "")));
 
+// Set up variables that will be requested from the model
+  Variables geovars;
+  geovars += hop.requiredVars();
+  geovars += ybias_->requiredVars();
+
   getvals_.reset(new GetValTLAD_(gvconf, geom, winbgn_, winend_,
-                                 *locations_, hop.requiredVars(), hoptlad_.requiredVars()));
+                                 *locations_, geovars, hoptlad_.requiredVars()));
 
   init_ = true;
   Log::trace() << "ObserverTLAD::initializeTraj done" << std::endl;
@@ -104,7 +112,7 @@ ObserverTLAD<MODEL, OBS>::initializeTraj(const Geometry_ & geom) {
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
-void ObserverTLAD<MODEL, OBS>::finalizeTraj(const ObsAuxCtrl_ & ybias) {
+void ObserverTLAD<MODEL, OBS>::finalizeTraj() {
   Log::trace() << "ObserverTLAD::finalizeTraj start" << std::endl;
   ASSERT(init_);
 
@@ -112,7 +120,7 @@ void ObserverTLAD<MODEL, OBS>::finalizeTraj(const ObsAuxCtrl_ & ybias) {
   std::unique_ptr<GeoVaLs_> geovals = getvals_->finalize();
 
   /// Set linearization trajectory for H(x)
-  hoptlad_.setTrajectory(*geovals, ybias);
+  hoptlad_.setTrajectory(*geovals, *ybias_);
 
   init_ = false;
   Log::trace() << "ObserverTLAD::finalizeTraj done" << std::endl;

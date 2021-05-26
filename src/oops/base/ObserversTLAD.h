@@ -60,7 +60,6 @@ class ObserversTLAD {
 
  private:
   std::vector<std::unique_ptr<ObserverTLAD_>>  observers_;
-  const ObsAuxCtrls_ * ybias_;
   util::DateTime winbgn_;
   util::DateTime winend_;
 };
@@ -69,7 +68,7 @@ class ObserversTLAD {
 template <typename MODEL, typename OBS>
 ObserversTLAD<MODEL, OBS>::ObserversTLAD(const ObsSpaces_ & obspaces,
                                          const eckit::Configuration & obsConfig)
-  : observers_(), ybias_(nullptr), winbgn_(obspaces.windowStart()), winend_(obspaces.windowEnd())
+  : observers_(), winbgn_(obspaces.windowStart()), winend_(obspaces.windowEnd())
 {
   Log::trace() << "ObserversTLAD<MODEL, OBS>::ObserversTLAD start" << std::endl;
   std::vector<eckit::LocalConfiguration> obsconfs = obsConfig.getSubConfigurations();
@@ -86,10 +85,9 @@ template <typename MODEL, typename OBS>
 void ObserversTLAD<MODEL, OBS>::initializeTraj(const Geometry_ & geom, const ObsAuxCtrls_ & ybias,
                                                PostProcTLAD_ & pp) {
   Log::trace() << "ObserversTLAD<MODEL, OBS>::initializeTraj start" << std::endl;
-  ybias_ = &ybias;
   std::shared_ptr<GetValueTLADs_> getvals(new GetValueTLADs_(winbgn_, winend_));
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
-    if (observers_[jj]) getvals->append(observers_[jj]->initializeTraj(geom));
+    if (observers_[jj]) getvals->append(observers_[jj]->initializeTraj(geom, ybias[jj]));
   }
   pp.enrollProcessor(getvals);
   Log::trace() << "ObserversTLAD<MODEL, OBS>::initializeTraj done" << std::endl;
@@ -99,7 +97,7 @@ template <typename MODEL, typename OBS>
 void ObserversTLAD<MODEL, OBS>::finalizeTraj() {
   Log::trace() << "ObserversTLAD<MODEL, OBS>::finalizeTraj start" << std::endl;
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
-    if (observers_[jj]) observers_[jj]->finalizeTraj((*ybias_)[jj]);
+    if (observers_[jj]) observers_[jj]->finalizeTraj();
   }
   Log::trace() << "ObserversTLAD<MODEL, OBS>::finalizeTraj done" << std::endl;
 }
