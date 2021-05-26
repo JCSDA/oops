@@ -125,11 +125,12 @@ PrimalMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
       Log::info() << "Online FSOI increment test: " << std::endl
                   << util::PrintAdjTest(adj_tst_fwd, adj_tst_bwd, "K") << std::endl;
 
-      bool passed = oops::is_close_absolute(adj_tst_fwd, adj_tst_bwd, 1.0e-5);
+      double fsoi_inctest_tolerance = config.getDouble("fsoi.increment test tolerance", 1.0e-5);
+      bool passed = oops::is_close_absolute(adj_tst_fwd, adj_tst_bwd, fsoi_inctest_tolerance);
       if (passed) {
-        Log::test() << "Into tolerance FSOI increment test." << std::endl;
+        Log::test() << "FSOI increment test within tolerance." << std::endl;
       } else {
-        Log::test() << "Out of tolerance FSOI increment test." << std::endl;
+        Log::test() << "FSOI increment test fails tolerance bound." << std::endl;
       }
     }
 

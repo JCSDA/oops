@@ -17,12 +17,12 @@ cost function:
   - obs operator: {}
     obs space:
       obsdatain:  Data/l95.truth3d.2010-01-02T00:00:00Z.obt
-      obsdataout: Data/l95.fsoi_3dvar_pcg.2010-01-02T00:00:00Z.obt
+      obsdataout: Data/l95.fsoi_3dvar_dripcg.2010-01-02T00:00:00Z.obt
     obs error:
       covariance model: diagonal
 variational:
   minimizer:
-    algorithm: PCG
+    algorithm: DRIPCG
   iterations:
   - ninner: 20
     gradient norm reduction: 1e-10
@@ -36,15 +36,15 @@ variational:
       increment test tolerance: 1.0e-6
       input forecast sensitivity:
         date: 2010-01-02T00:00:00Z
-        filename: Data/3dvar_4fsoi_pcg.iter1.in.2010-01-02T00:00:00Z.PT0S
+        filename: Data/3dvar_4fsoi_dripcg.iter1.in.2010-01-02T00:00:00Z.PT0S
 final:
   diagnostics:
     departures: oman
 output:
   datadir: Data
-  exp: l95.fsoi_3dvar_pcg
+  exp: l95.fsoi_3dvar_dripcg
   frequency: PT6H
   type: an
 
 test:
-  reference filename: testoutput/fsoi_3dvar_pcg.test
+  reference filename: testoutput/fsoi_3dvar_dripcg.test
