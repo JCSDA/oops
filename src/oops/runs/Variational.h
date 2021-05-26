@@ -38,6 +38,7 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/printRunStats.h"
 
 namespace oops {
 
@@ -64,6 +65,7 @@ template <typename MODEL, typename OBS> class Variational : public Application {
 /// The background is constructed inside the cost function because its valid
 /// time within the assimilation window can be different (3D-Var vs. 4D-Var),
 /// it can be 3D or 4D (strong vs weak constraint), etc...
+    util::printRunStats("Variational start");
 
 //  Setup cost function
     eckit::LocalConfiguration cfConf(fullConfig, "cost function");
@@ -99,6 +101,7 @@ template <typename MODEL, typename OBS> class Variational : public Application {
 //  Save ObsAux
     xx.obsVar().write(cfConf);
 
+    util::printRunStats("Variational end");
     return 0;
   }
 // -----------------------------------------------------------------------------

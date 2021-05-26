@@ -12,10 +12,13 @@
 #define OOPS_BASE_ENSEMBLECOVARIANCE_H_
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
+#include "eckit/system/ResourceUsage.h"
+
 #include "oops/assimilation/GMRESR.h"
 #include "oops/base/IdentityMatrix.h"
 #include "oops/base/IncrementEnsemble.h"
@@ -26,7 +29,7 @@
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
 #include "oops/util/Logger.h"
-#include "oops/util/MemoryCounter.h"
+#include "oops/util/ObjectCounter.h"
 
 namespace oops {
 
@@ -34,7 +37,8 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL> {
+class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL>,
+                           private util::ObjectCounter<EnsembleCovariance<MODEL>> {
   typedef Geometry<MODEL>                           Geometry_;
   typedef Increment<MODEL>                          Increment_;
   typedef LocalizationBase<MODEL>                   Localization_;
@@ -43,6 +47,8 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL> {
   typedef std::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
 
  public:
+  static const std::string classname() {return "oops::EnsembleCovariance";}
+
   EnsembleCovariance(const Geometry_ &, const Variables &,
                      const eckit::Configuration &, const State_ &, const State_ &);
   ~EnsembleCovariance();
@@ -68,12 +74,14 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Var
   : ModelSpaceCovarianceBase<MODEL>(xb, fg, resol, conf), ens_(), loc_()
 {
   Log::trace() << "EnsembleCovariance::EnsembleCovariance start" << std::endl;
-  util::MemoryCounter mem("oops::EnsembleCovariance");
+  size_t init = eckit::system::ResourceUsage().maxResidentSetSize();
   ens_.reset(new Ensemble_(conf, xb, fg, resol, vars));
   if (conf.has("localization")) {
     const eckit::LocalConfiguration confloc(conf, "localization");
     loc_ = LocalizationFactory<MODEL>::create(resol, xb.validTime(), confloc);
   }
+  size_t current = eckit::system::ResourceUsage().maxResidentSetSize();
+  this->setObjectSize(current - init);
   Log::trace() << "EnsembleCovariance::EnsembleCovariance done" << std::endl;
 }
 // -----------------------------------------------------------------------------

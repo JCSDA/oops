@@ -95,21 +95,23 @@ ObsAuxControl<OBS> & operator+=(ObsAuxControl<OBS> & xx, const ObsAuxIncrement<O
 
 template<typename OBS>
 ObsAuxIncrement<OBS>::ObsAuxIncrement(const ObsSpace<OBS> & os,
-                                        const Parameters_ & params) : aux_()
+                                      const Parameters_ & params) : aux_()
 {
   Log::trace() << "ObsAuxIncrement<OBS>::ObsAuxIncrement starting" << std::endl;
   util::Timer timer(classname(), "ObsAuxIncrement");
   aux_.reset(new ObsAuxIncrement_(os.obsspace(), params));
+  this->setObjectSize(aux_->serialSize()*sizeof(double));
   Log::trace() << "ObsAuxIncrement<OBS>::ObsAuxIncrement done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template<typename OBS>
 ObsAuxIncrement<OBS>::ObsAuxIncrement(const ObsAuxIncrement & other,
-                                        const bool copy) : aux_()
+                                      const bool copy) : aux_()
 {
   Log::trace() << "ObsAuxIncrement<OBS>::ObsAuxIncrement copy starting" << std::endl;
   util::Timer timer(classname(), "ObsAuxIncrement");
   aux_.reset(new ObsAuxIncrement_(*other.aux_, copy));
+  this->setObjectSize(aux_->serialSize()*sizeof(double));
   Log::trace() << "ObsAuxIncrement<OBS>::ObsAuxIncrement copy done" << std::endl;
 }
 // -----------------------------------------------------------------------------

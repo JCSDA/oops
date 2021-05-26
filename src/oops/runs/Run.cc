@@ -19,8 +19,8 @@
 #include "oops/runs/Application.h"
 #include "oops/util/LibOOPS.h"
 #include "oops/util/Logger.h"
-#include "oops/util/MemoryHelper.h"
 #include "oops/util/ObjectCountHelper.h"
+#include "oops/util/printRunStats.h"
 #include "oops/util/TimerHelper.h"
 
 #ifdef ENABLE_GPTL
@@ -101,7 +101,6 @@ Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(
   Log::info() << "Full configuration is:"  << *config_ << std::endl;
 
 // Start measuring performance
-  util::MemoryHelper::start();
   util::TimerHelper::start();
   util::ObjectCountHelper::start();
 }
@@ -115,6 +114,7 @@ Run::~Run() {
 // -----------------------------------------------------------------------------
 
 int Run::execute(const Application & app) {
+  util::printRunStats("Run start", true);
   int status = 1;
   Log::info() << "Run: Starting " << app << std::endl;
   try {
@@ -135,12 +135,12 @@ int Run::execute(const Application & app) {
     status = 1;
     Log::error() << "Unknown exception: " << app << " terminating..." << std::endl;
   }
-  Log::info() << "Run: Finishing " << app << std::endl;
+  Log::info() << std::endl << "Run: Finishing " << app << std::endl;
 
 // Performance diagnostics
   util::ObjectCountHelper::stop();
   util::TimerHelper::stop();
-  util::MemoryHelper::stop();
+  util::printRunStats("Run end", true);
 
   Log::info() << "Run: Finishing " << app << " with status = " << status << std::endl;
   return status;

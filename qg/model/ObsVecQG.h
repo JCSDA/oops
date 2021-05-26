@@ -47,6 +47,7 @@ class ObsVecQG : public util::Printable,
 
   Eigen::VectorXd  packEigen(const ObsDataQG<int> &) const;
   size_t packEigenSize(const ObsDataQG<int> &) const;
+  size_t size() const;
 
   /// set all values to zero
   void zero();

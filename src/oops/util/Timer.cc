@@ -23,6 +23,8 @@ namespace {  // Local global constants
   constexpr int METHOD_PRINT_WIDTH = 60;
 }
 
+// -----------------------------------------------------------------------------
+
 /** InitTime
  *
  * A class to be static initialized that measures time deltas since program initialization
@@ -49,14 +51,20 @@ Timer::Timer(const std::string & class_name, const std::string & method_name)
     : name_(class_name + "::" + method_name), start_(ClockT::now())
 { }
 
+// -----------------------------------------------------------------------------
+
 Timer::~Timer() {
   std::chrono::duration<double, std::milli> dt = ClockT::now() - start_;  // elapsed millisecs
   TimerHelper::add(name_, dt.count());
 }
 
+// -----------------------------------------------------------------------------
+
 LoggingTimer::LoggingTimer(const std::string & class_name, const std::string & method_name)
     : LoggingTimer(class_name, method_name, oops::Log::timer())
 { }
+
+// -----------------------------------------------------------------------------
 
 LoggingTimer::LoggingTimer(const std::string & class_name,
                            const std::string & method_name, std::ostream& log)
@@ -67,6 +75,8 @@ LoggingTimer::LoggingTimer(const std::string & class_name,
        << " Start: " << std::fixed << std::setprecision(2) << st << std::endl;
 }
 
+// -----------------------------------------------------------------------------
+
 LoggingTimer::~LoggingTimer()
 {
   double st = init_time.elapsed_sec(start_);
@@ -74,6 +84,12 @@ LoggingTimer::~LoggingTimer()
   log_ << std::left << std::setw(METHOD_PRINT_WIDTH) << std::setfill('.') << name_
        << ".. End: " << std::fixed << std::setprecision(2) << et
        << " Elapsed: " << et-st << " sec" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+double timeStamp() {
+  return init_time.elapsed_sec(Timer::ClockT::now());
 }
 
 // -----------------------------------------------------------------------------

@@ -25,6 +25,7 @@
 #include "oops/util/dot_product.h"
 #include "oops/util/formats.h"
 #include "oops/util/Logger.h"
+#include "oops/util/printRunStats.h"
 
 namespace oops {
 
@@ -103,6 +104,7 @@ double DRIPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_
                                     const Bmat_ & B, const HtRinvH_ & HtRinvH,
                                     const double costJ0Jb, const double costJ0JoJc,
                                     const int maxiter, const double tolerance) {
+  util::printRunStats("DRIPCG start");
   CtrlInc_ ap(xh);
   CtrlInc_ pp(xh);
   CtrlInc_ ph(xh);
@@ -139,6 +141,7 @@ double DRIPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_
   Log::info() << std::endl;
   for (int jiter = 0; jiter < maxiter; ++jiter) {
     Log::info() << " DRIPCG Starting Iteration " << jiter+1 << std::endl;
+    util::printRunStats("DRIPCG iteration " + std::to_string(jiter+1));
 
     if (jiter == 0) {
       pp = ss;
@@ -212,6 +215,7 @@ double DRIPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_
 // Generate the (second-level) Limited Memory Preconditioner
   lmp_.update(B);
 
+  util::printRunStats("DRIPCG end");
   return normReduction;
 }
 

@@ -290,10 +290,6 @@ oops/util/LibOOPS.h
 oops/util/LocalEnvironment.cc
 oops/util/LocalEnvironment.h
 oops/util/Logger.h
-oops/util/MemoryCounter.cc
-oops/util/MemoryCounter.h
-oops/util/MemoryHelper.cc
-oops/util/MemoryHelper.h
 oops/util/missing_values_f.cc
 oops/util/missing_values_f.h
 oops/util/missing_values_mod.F90
@@ -306,6 +302,8 @@ oops/util/ObjectCountHelper.cc
 oops/util/ObjectCountHelper.h
 oops/util/Printable.h
 oops/util/PrintAdjTest.h
+oops/util/printRunStats.cc
+oops/util/printRunStats.h
 oops/util/PropertiesOfNVectors.h
 oops/util/random_f.cc
 oops/util/random_f.h

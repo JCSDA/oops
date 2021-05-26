@@ -232,6 +232,7 @@ extern "C" {
   void qg_obsvec_dotprod_f90(const F90ovec &, const F90ovec &, double &);
   void qg_obsvec_stats_f90(const F90ovec &, double &, double &, double &);
   void qg_obsvec_nobs_f90(const F90ovec &, int &);
+  void qg_obsvec_size_f90(const F90ovec &, int &);
   /// fill \p data (size \p nobs) with all non-masked out (non-missing) values
   void qg_obsvec_get_withmask_f90(const F90ovec &, const F90ovec & mask_key,
                                   double * data, const int & nobs);

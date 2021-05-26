@@ -34,6 +34,8 @@ class Timer {
   TimeT start_;
 };
 
+// -----------------------------------------------------------------------------
+
 class LoggingTimer : public Timer {
  public:
   LoggingTimer(const std::string &class_name, const std::string &method_name);
@@ -43,6 +45,10 @@ class LoggingTimer : public Timer {
  protected:
   std::ostream& log_;
 };
+
+// -----------------------------------------------------------------------------
+
+double timeStamp();
 
 // -----------------------------------------------------------------------------
 

@@ -21,8 +21,9 @@ public :: qg_obsvec
 public :: qg_obsvec_registry
 public :: qg_obsvec_setup,qg_obsvec_clone,qg_obsvec_delete,qg_obsvec_copy,qg_obsvec_zero, &
         & qg_obsvec_zero_ith, qg_obsvec_ones, qg_obsvec_mask, qg_obsvec_mul_scal,qg_obsvec_add, &
-        & qg_obsvec_sub,qg_obsvec_mul,qg_obsvec_div,qg_obsvec_axpy,qg_obsvec_invert,qg_obsvec_random,qg_obsvec_dotprod, &
-        & qg_obsvec_stats,qg_obsvec_nobs,qg_obsvec_nobs_withmask,qg_obsvec_get_withmask
+        & qg_obsvec_sub,qg_obsvec_mul,qg_obsvec_div,qg_obsvec_axpy,qg_obsvec_invert, &
+        & qg_obsvec_random,qg_obsvec_dotprod,qg_obsvec_stats, &
+        & qg_obsvec_size,qg_obsvec_nobs,qg_obsvec_nobs_withmask,qg_obsvec_get_withmask
 ! ------------------------------------------------------------------------------
 interface
   subroutine qg_obsvec_random_i(odb,nn,zz) bind(c,name='qg_obsvec_random_f')
@@ -400,6 +401,16 @@ else
 endif
 
 end subroutine qg_obsvec_stats
+
+! ------------------------------------------------------------------------------
+!> Get observation vector size
+subroutine qg_obsvec_size(self,kobs)
+implicit none
+type(qg_obsvec),intent(in) :: self !< Observation vector
+integer,intent(inout) :: kobs      !< Observation vector size
+kobs = size(self%values) + 2
+end subroutine qg_obsvec_size
+
 ! ------------------------------------------------------------------------------
 !> Get observation vector size
 subroutine qg_obsvec_nobs(self,kobs)

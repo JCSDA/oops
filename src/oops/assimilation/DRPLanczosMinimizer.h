@@ -27,6 +27,7 @@
 #include "oops/util/dot_product.h"
 #include "oops/util/formats.h"
 #include "oops/util/Logger.h"
+#include "oops/util/printRunStats.h"
 
 namespace oops {
 
@@ -113,6 +114,7 @@ double DRPLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, Ctr
                                         const Bmat_ & B, const HtRinvH_ & HtRinvH,
                                         const double costJ0Jb, const double costJ0JoJc,
                                         const int maxiter, const double tolerance) {
+  util::printRunStats("DRPLanczos start");
   // dx   increment
   // dxh  B^{-1} dx
   // rr   (sum B^{-1} dx_i^{b} +) G^T H^{-1} d
@@ -156,6 +158,7 @@ double DRPLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, Ctr
   Log::info() << std::endl;
   for (int jiter = 0; jiter < maxiter; ++jiter) {
     Log::info() << "DRPLanczos Starting Iteration " << jiter+1 << std::endl;
+    util::printRunStats("DRPLanczos iteration " + std::to_string(jiter+1));
 
     // v_{i+1} = ( pr_{i} + H^T R^{-1} H z_{i} ) - beta * v_{i-1}
     HtRinvH.multiply(zz, vv);
@@ -248,6 +251,7 @@ double DRPLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, Ctr
   }
 
   ++outerLoop_;
+  util::printRunStats("DRPLanczos end");
   return normReduction;
 }
 

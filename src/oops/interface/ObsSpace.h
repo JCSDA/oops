@@ -17,11 +17,12 @@
 #include <string>
 
 #include "eckit/geometry/Point2.h"
+#include "eckit/system/ResourceUsage.h"
+
 #include "oops/base/Variables.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/Logger.h"
-#include "oops/util/MemoryCounter.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Timer.h"
@@ -90,8 +91,10 @@ ObsSpace<OBS>::ObsSpace(const eckit::Configuration & conf,
                         const eckit::mpi::Comm & time) : obsdb_(), time_(time) {
   Log::trace() << "ObsSpace<OBS>::ObsSpace starting" << std::endl;
   util::Timer timer(classname(), "ObsSpace");
-  util::MemoryCounter mem(classname());
+  size_t init = eckit::system::ResourceUsage().maxResidentSetSize();
   obsdb_.reset(new ObsSpace_(conf, comm, bgn, end, time));
+  size_t current = eckit::system::ResourceUsage().maxResidentSetSize();
+  this->setObjectSize(current - init);
   Log::trace() << "ObsSpace<OBS>::ObsSpace done" << std::endl;
 }
 

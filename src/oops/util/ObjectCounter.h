@@ -13,6 +13,8 @@
 
 #include <memory>
 
+#include "eckit/exception/Exceptions.h"
+
 #include "oops/util/ObjectCountHelper.h"
 
 namespace util {
@@ -22,17 +24,26 @@ namespace util {
 template<typename T>
 class ObjectCounter {
  public:
-  ObjectCounter(): count_(ObjectCountHelper::create(T::classname()))
+  ObjectCounter(): count_(ObjectCountHelper::create(T::classname())), bytes_(0)
     {count_->oneMore();}
 
-  ObjectCounter(const ObjectCounter & other) : count_(other.count_)
+  ObjectCounter(const ObjectCounter & other) : count_(other.count_), bytes_(0)
     {count_->oneMore();}
 
   ~ObjectCounter()
-    {count_->oneLess();}
+    {count_->oneLess(bytes_);}
+
+ protected:
+// Optionally set object size (in bytes)
+  void setObjectSize(const size_t & bytes) {
+    ASSERT(bytes_ == 0);  // can only be set once
+    bytes_ = bytes;
+    count_->setSize(bytes_);
+  }
 
  private:
   std::shared_ptr<ObjectCountHelper> count_;
+  size_t bytes_;
 };
 
 // -----------------------------------------------------------------------------

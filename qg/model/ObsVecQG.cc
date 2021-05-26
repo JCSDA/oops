@@ -22,8 +22,7 @@
 
 namespace qg {
 // -----------------------------------------------------------------------------
-ObsVecQG::ObsVecQG(const ObsSpaceQG & obsdb,
-                   const std::string & name)
+ObsVecQG::ObsVecQG(const ObsSpaceQG & obsdb, const std::string & name)
   : obsdb_(obsdb), keyOvec_(0)
 {
   qg_obsvec_setup_f90(keyOvec_, obsdb.obsvariables().size(), obsdb.nobs());
@@ -167,6 +166,13 @@ unsigned int ObsVecQG::nobs() const {
   int iobs;
   qg_obsvec_nobs_f90(keyOvec_, iobs);
   unsigned int nobs(iobs);
+  return nobs;
+}
+// -----------------------------------------------------------------------------
+size_t ObsVecQG::size() const {
+  int iobs;
+  qg_obsvec_size_f90(keyOvec_, iobs);
+  size_t nobs(iobs);
   return nobs;
 }
 // -----------------------------------------------------------------------------

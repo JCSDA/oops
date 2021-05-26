@@ -28,7 +28,6 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/gatherPrint.h"
-#include "oops/util/MemoryCounter.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Serializable.h"
 #include "oops/util/Timer.h"
@@ -143,8 +142,8 @@ Increment<MODEL>::Increment(const Geometry_ & resol, const Variables & vars,
 {
   Log::trace() << "Increment<MODEL>::Increment starting" << std::endl;
   util::Timer timer(classname(), "Increment");
-  util::MemoryCounter mem(classname());
   increment_.reset(new Increment_(resol.geometry(), vars, time));
+  this->setObjectSize(increment_->serialSize()*sizeof(double));
   Log::trace() << "Increment<MODEL>::Increment done" << std::endl;
 }
 
@@ -156,8 +155,8 @@ Increment<MODEL>::Increment(const Geometry_ & resol, const Increment & other)
 {
   Log::trace() << "Increment<MODEL>::Increment starting" << std::endl;
   util::Timer timer(classname(), "Increment");
-  util::MemoryCounter mem(classname());
   increment_.reset(new Increment_(resol.geometry(), *other.increment_));
+  this->setObjectSize(increment_->serialSize()*sizeof(double));
   Log::trace() << "Increment<MODEL>::Increment done" << std::endl;
 }
 
@@ -169,8 +168,8 @@ Increment<MODEL>::Increment(const Increment & other, const bool copy)
 {
   Log::trace() << "Increment<MODEL>::Increment copy starting" << std::endl;
   util::Timer timer(classname(), "Increment");
-  util::MemoryCounter mem(classname());
   increment_.reset(new Increment_(*other.increment_, copy));
+  this->setObjectSize(increment_->serialSize()*sizeof(double));
   Log::trace() << "Increment<MODEL>::Increment copy done" << std::endl;
 }
 

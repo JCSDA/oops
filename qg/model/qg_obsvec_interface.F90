@@ -395,7 +395,7 @@ call qg_obsvec_stats(self,zmin,zmax,zavg)
 
 end subroutine qg_obsvec_stats_c
 ! ------------------------------------------------------------------------------
-!> Get observation vector size
+!> Get number of observations (not missing)
 subroutine qg_obsvec_nobs_c(c_key_self,kobs) bind(c,name='qg_obsvec_nobs_f90')
 
 implicit none
@@ -414,6 +414,26 @@ call qg_obsvec_registry%get(c_key_self,self)
 call qg_obsvec_nobs(self,kobs)
 
 end subroutine qg_obsvec_nobs_c
+! ------------------------------------------------------------------------------
+!> Get observation vector size
+subroutine qg_obsvec_size_c(c_key_self,kobs) bind(c,name='qg_obsvec_size_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_self !< Observation vector
+integer(c_int),intent(inout) :: kobs    !< Observation vector size
+
+! Local vector
+type(qg_obsvec),pointer :: self
+
+! Interface
+call qg_obsvec_registry%get(c_key_self,self)
+
+! Call Fortran
+call qg_obsvec_size(self,kobs)
+
+end subroutine qg_obsvec_size_c
 ! ------------------------------------------------------------------------------
 !> Get observation vector size (only non-masked observations)
 subroutine qg_obsvec_nobs_withmask_c(c_key_self,c_key_mask,kobs) bind(c,name='qg_obsvec_nobs_withmask_f90')

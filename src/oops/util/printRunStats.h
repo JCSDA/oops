@@ -13,19 +13,9 @@ namespace util {
 
 // -----------------------------------------------------------------------------
 
-class MemoryCounter {
- public:
-  explicit MemoryCounter(const std::string &);
-  ~MemoryCounter();
-
-  MemoryCounter(const MemoryCounter&) = delete;
-
- private:
-  std::string name_;
-  size_t rss_;
-};
+// Print runtime and memory statistics (only for task 0 by default)
+void printRunStats(const std::string &, const bool alltasks = false);
 
 // -----------------------------------------------------------------------------
 
 }  // namespace util
-
