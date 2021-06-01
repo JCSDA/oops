@@ -20,8 +20,6 @@ set( ENABLE_MPI ON CACHE BOOL "Compile with MPI" )
 
 ecbuild_bundle_initialize()
 
-ecbuild_bundle( PROJECT fckit GIT "https://github.com/jcsda-internal/fckit.git" )
-ecbuild_bundle( PROJECT atlas GIT "https://github.com/jcsda-internal/atlas.git" )
 ecbuild_bundle( PROJECT oops  GIT "https://github.com/jcsda-internal/oops.git" )
 
 ecbuild_bundle_finalize()

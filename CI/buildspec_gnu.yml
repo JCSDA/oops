@@ -59,11 +59,6 @@ phases:
 
       # oops
       - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/oops $CODEBUILD_GIT_BRANCH oops /jcsda/oops-bundle develop
-      # fckit
-      - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/fckit $CODEBUILD_GIT_BRANCH_FORK fckit /jcsda/oops-bundle release-stable
-      # atlas
-      - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/atlas $CODEBUILD_GIT_BRANCH_FORK atlas /jcsda/oops-bundle release-stable
-
 
       # move CMakeLists.txt from oops/CI to bundle directory
       - cp CMakeLists.txt /jcsda/oops-bundle/CMakeLists.txt
