@@ -2,11 +2,13 @@ hybrid weights:
   control: 0.2
   ensemble: 0.8
 
+hybrid type: average analysis
+
 control:
   date: 2010-01-01T00:00:00Z
   filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1D.nc
 
-ensemble mean:
+ensemble mean posterior:
   date: 2010-01-01T00:00:00Z
   filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1D.nc
 
@@ -34,4 +36,4 @@ recentered output:
   date: 2010-01-01T00:00:00Z
 
 test:
-  reference filename: testoutput/hybridgain.test
+  reference filename: testoutput/hybridgain_analysis.test

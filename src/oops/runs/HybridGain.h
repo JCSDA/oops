@@ -20,6 +20,7 @@
 #include "oops/interface/State.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
+#include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 
 namespace oops {
@@ -44,38 +45,72 @@ template <typename MODEL> class HybridGain : public Application {
     double alphaControl = fullConfig.getDouble("hybrid weights.control");
     double alphaEnsemble = fullConfig.getDouble("hybrid weights.ensemble");
 
+    // Read hybrid type
+    std::string hybridType = fullConfig.getString("hybrid type", "average analysis");
+
     // Get control state
     const eckit::LocalConfiguration bkgConfig(fullConfig, "control");
-    State_ x_control(resol, bkgConfig);
-    Log::test() << "Control prior: " << std::endl << x_control << std::endl;
-    const Variables vars = x_control.variables();
+    State_ xaControl(resol, bkgConfig);
+    Log::test() << "Control: " << std::endl << xaControl << std::endl;
+    const Variables vars = xaControl.variables();
 
-    // Get ens mean
-    const eckit::LocalConfiguration emeanConfig(fullConfig, "ensemble mean");
-    State_ x_emean(resol, emeanConfig);
-    Log::test() << "Ensemble mean: " << std::endl << x_emean << std::endl;
+    // Get posterior ens mean
+    const eckit::LocalConfiguration emeanConfig(fullConfig, "ensemble mean posterior");
+    State_ xaEmeanPost(resol, emeanConfig);
+    Log::test() << "Ensemble mean posterior: " << std::endl << xaEmeanPost << std::endl;
+
+    // Compute new center
+    State_ xNewCenter(resol, vars, xaControl.validTime());
+    if (hybridType == "average analysis") {
+        // using average of analysis (following Bonavita)
+        // xa_hybrid = a1*xa1 + a2*xa2
+        // a1+a2 have to equal to 1
+
+        ASSERT(alphaControl + alphaEnsemble == 1.0);
+        xNewCenter.zero();
+        xNewCenter.accumul(alphaControl, xaControl);
+        xNewCenter.accumul(alphaEnsemble, xaEmeanPost);
+    } else if (hybridType == "average increment") {
+        // using average of analysis incerments (following Whitaker)
+        // xa_hybrid = xf_prior + a1*xinc1 + a2*xinc2
+        // Note: a1+a2 no longer need to add to one
+
+        // Get  prior ens mean
+        const eckit::LocalConfiguration emeanConfigPrior(fullConfig, "ensemble mean prior");
+        State_ xfEmeanPrior(resol, emeanConfig);
+        Log::test() << "Ensemble mean prior: " << std::endl << xfEmeanPrior << std::endl;
+        // compute ensemble mean increment
+        Increment_ pertEns(resol, vars, xaControl.validTime());
+        pertEns.diff(xaEmeanPost, xfEmeanPrior);
+        pertEns *= alphaEnsemble;
+        // compute control increment
+        Increment_ pertControl(resol, vars, xaControl.validTime());
+        pertControl.diff(xaControl, xfEmeanPrior);
+        pertControl *= alphaControl;
+        // compute hybrid posterior
+        xNewCenter = xfEmeanPrior;
+        xNewCenter += pertEns;
+        xNewCenter += pertControl;
+    } else {
+      ABORT("Unknown hybrid gain type: " + hybridType);
+    }
+    // Output new center
+    eckit::LocalConfiguration centerOut(fullConfig, "recentered output");
+    centerOut.set("member", static_cast<int>(0) );
+    xNewCenter.write(centerOut);
+    Log::test() << "new center : " << xNewCenter << std::endl;
 
     // Get ensemble configuration
     std::vector<eckit::LocalConfiguration> ensConfig;
     fullConfig.get("ensemble", ensConfig);
     unsigned nens = ensConfig.size();
 
-    // Compute new center and save
-    State_ x_new_center(resol, vars, x_control.validTime());
-    x_new_center.zero();
-    x_new_center.accumul(alphaControl, x_control);
-    x_new_center.accumul(alphaEnsemble, x_emean);
-    eckit::LocalConfiguration centerOut(fullConfig, "recentered output");
-    centerOut.set("member", static_cast<int>(0) );
-    x_new_center.write(centerOut);
-    Log::test() << "new center : " << x_new_center << std::endl;
-
-    // Recenter ensemble around new centr and save
+    // Recenter ensemble around new center and save
     for (unsigned jj = 0; jj < nens; ++jj) {
       State_ x(resol, ensConfig[jj]);
       Increment_ pert(resol, vars, x.validTime());
-      pert.diff(x, x_emean);
-      x = x_new_center;
+      pert.diff(x, xaEmeanPost);
+      x = xNewCenter;
       x += pert;
 
       // Save recentered member

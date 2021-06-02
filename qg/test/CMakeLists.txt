@@ -65,7 +65,8 @@ list( APPEND qg_testinput
   testinput/getvalues.yaml
   testinput/hofx.yaml
   testinput/hofx3d.yaml
-  testinput/hybridgain.yaml
+  testinput/hybridgain_analysis.yaml
+  testinput/hybridgain_increment.yaml
   testinput/interfaces.yaml
   testinput/letkf.yaml
   testinput/lineargetvalues.yaml
@@ -125,7 +126,8 @@ list( APPEND qg_testoutput
   testoutput/gen_ens_pert_B.test
   testoutput/hofx.test
   testoutput/hofx3d.test
-  testoutput/hybridgain.test
+  testoutput/hybridgain_analysis.test
+  testoutput/hybridgain_increment.test
   testoutput/letkf.test
   testoutput/make_obs_3d.test
   testoutput/make_obs_4d_12h.test
@@ -445,9 +447,15 @@ ecbuild_add_test( TARGET test_qg_ens_recenter
                   COMMAND  qg_ens_recenter.x
                   TEST_DEPENDS test_qg_gen_ens_pert_B )
 
-ecbuild_add_test( TARGET test_qg_hybridgain
+ecbuild_add_test( TARGET test_qg_hybridgain_analysis
                   OMP 2
-                  ARGS testinput/hybridgain.yaml
+                  ARGS testinput/hybridgain_analysis.yaml
+                  COMMAND  qg_hybridgain.x
+                  TEST_DEPENDS test_qg_gen_ens_pert_B )
+
+ecbuild_add_test( TARGET test_qg_hybridgain_increment
+                  OMP 2
+                  ARGS testinput/hybridgain_increment.yaml
                   COMMAND  qg_hybridgain.x
                   TEST_DEPENDS test_qg_gen_ens_pert_B )
 
