@@ -176,6 +176,7 @@ template <typename MODEL, typename OBS> class HofX4Dhack : public Application {
     Log::test() << "H(x): " << std::endl << yobs << "End H(x)" << std::endl;
     Log::info() << "H(x): " << std::endl << yobs << "End H(x)" << std::endl;
     yobs.save("hofx");
+    obspaces.save();
 
     return 0;
   }

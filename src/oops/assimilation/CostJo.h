@@ -73,7 +73,7 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
          const eckit::mpi::Comm & ctime = oops::mpi::myself());
 
   /// Destructor
-  virtual ~CostJo() {}
+  virtual ~CostJo();
 
   /// Initialize \f$ J_o\f$ before starting the integration of the model.
   void setPostProc(const CtrlVar_ &, const eckit::Configuration &, PostProc_ &) override;
@@ -140,6 +140,14 @@ CostJo<MODEL, OBS>::CostJo(const eckit::Configuration & joConf, const eckit::mpi
     gradFG_(), obstlad_(), currentConf_()
 {
   Log::trace() << "CostJo::CostJo" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL, typename OBS>
+CostJo<MODEL, OBS>::~CostJo() {
+  obspaces_.save();
+  Log::trace() << "CostJo::~CostJo" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

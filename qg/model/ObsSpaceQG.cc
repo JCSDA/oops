@@ -109,7 +109,11 @@ ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config, const eckit::mpi::Co
 
 // -----------------------------------------------------------------------------
 
-ObsSpaceQG::~ObsSpaceQG() {
+ObsSpaceQG::~ObsSpaceQG() {}
+
+// -----------------------------------------------------------------------------
+
+void ObsSpaceQG::save() const {
   ASSERT(theObsFileCount_ > 0);
   theObsFileCount_--;
   if (theObsFileCount_ == 0) {

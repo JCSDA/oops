@@ -46,6 +46,9 @@ class ObsSpaces : public util::Printable,
             const eckit::mpi::Comm & time = oops::mpi::myself());
   ~ObsSpaces();
 
+/// Save files
+  void save() const;
+
 /// Access
   std::size_t size() const {return spaces_.size();}
   ObsSpace_ & operator[](const std::size_t ii) {return *spaces_.at(ii);}
@@ -85,6 +88,15 @@ ObsSpaces<OBS>::ObsSpaces(const eckit::Configuration & conf, const eckit::mpi::C
 
 template <typename OBS>
 ObsSpaces<OBS>::~ObsSpaces() {}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+void ObsSpaces<OBS>::save() const {
+  for (std::size_t jj = 0; jj < spaces_.size(); ++jj) {
+    spaces_[jj]->save();
+  }
+}
 
 // -----------------------------------------------------------------------------
 

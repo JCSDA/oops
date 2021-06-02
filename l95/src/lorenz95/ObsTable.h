@@ -46,6 +46,8 @@ class ObsTable : public oops::ObsSpaceBase,
            const util::DateTime &, const util::DateTime &, const eckit::mpi::Comm &);
   ~ObsTable();
 
+  void save() const;
+
   void putdb(const std::string &, const std::vector<int> &) const;
   void putdb(const std::string &, const std::vector<float> &) const;
   void putdb(const std::string &, const std::vector<double> &) const;

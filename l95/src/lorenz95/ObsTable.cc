@@ -67,10 +67,13 @@ ObsTable::ObsTable(const eckit::Configuration & config, const eckit::mpi::Comm &
 // -----------------------------------------------------------------------------
 
 ObsTable::~ObsTable() {
-  if (!nameOut_.empty()) {
-    otWrite(nameOut_);
-  }
   oops::Log::trace() << "ObsTable::ObsTable destructed" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsTable::save() const {
+  if (!nameOut_.empty()) otWrite(nameOut_);
 }
 
 // -----------------------------------------------------------------------------

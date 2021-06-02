@@ -74,6 +74,9 @@ class ObsSpace : public util::Printable,
 
   const eckit::mpi::Comm & timeComm() const {return time_;}
 
+// Save to file
+  void save() const;
+
  private:
   void print(std::ostream &) const;
 
@@ -111,6 +114,16 @@ ObsSpace<OBS>::~ObsSpace() {
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
+void ObsSpace<OBS>::save() const {
+  Log::trace() << "ObsSpace<OBS>::save starting" << std::endl;
+  util::Timer timer(classname(), "save");
+  obsdb_->save();
+  Log::trace() << "ObsSpace<OBS>::save done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
 void ObsSpace<OBS>::print(std::ostream & os) const {
   Log::trace() << "ObsSpace<OBS>::print starting" << std::endl;
   util::Timer timer(classname(), "print");
@@ -119,7 +132,7 @@ void ObsSpace<OBS>::print(std::ostream & os) const {
 }
 
 // -----------------------------------------------------------------------------
-//
+
 template <typename OBS>
 const Variables & ObsSpace<OBS>::obsvariables() const {
   Log::trace() << "ObsSpace<OBS>::obsvariables starting" << std::endl;

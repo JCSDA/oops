@@ -120,7 +120,10 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
 
     // quit early if running in observer-only mode
     bool observerOnly = driverConfig.getBool("run as observer only", false);
-    if (observerOnly) {return 0;}
+    if (observerOnly) {
+      obsdb.save();
+      return 0;
+    }
 
     // calculate background mean
     State4D_ bkg_mean = ens_xx.mean();
@@ -232,6 +235,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
       Log::test() << "ombg RMS: " << ombg.rms() << std::endl
                 << "oman RMS: " << oman.rms() << std::endl;
     }
+    obsdb.save();
 
     return 0;
   }

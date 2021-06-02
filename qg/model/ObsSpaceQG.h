@@ -49,6 +49,9 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
              const util::DateTime &, const util::DateTime &, const eckit::mpi::Comm &);
   ~ObsSpaceQG();
 
+  /// save and close file
+  void save() const;
+
   /// read data or metadata
   void getdb(const std::string &, int &) const;
   /// save data or metadata
@@ -77,7 +80,7 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
  private:
   void print(std::ostream &) const;
 
-  F90odb key_;                       // pointer to Fortran structure
+  mutable F90odb key_;               // pointer to Fortran structure
   const std::string obsname_;        // corresponds with obstype
   const util::DateTime winbgn_;      // window for the observations
   const util::DateTime winend_;

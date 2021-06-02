@@ -127,6 +127,7 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
 //  Save H(x) as observations (if "make obs" == true)
     const bool makeobs = fullConfig.getBool("make obs", false);
     if (makeobs) yobs.save("ObsValue");
+    obspaces.save();
 
     return 0;
   }

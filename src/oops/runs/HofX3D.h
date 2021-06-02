@@ -122,6 +122,7 @@ template <typename MODEL, typename OBS> class HofX3D : public Application {
     // Save H(x)
     Log::test() << "H(x): " << std::endl << yobs << "End H(x)" << std::endl;
     yobs.save("hofx");
+    obspaces.save();
 
     return 0;
   }
