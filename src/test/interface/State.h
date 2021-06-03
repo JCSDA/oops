@@ -225,7 +225,7 @@ template <typename MODEL> void testStateZeroAndAccumul() {
   // Ensure that a non-zero state, when acted on with accumul, is not equal to the result
   State_ zz(Test_::resol(), conf);
   zz.accumul(3.0, yy);
-  EXPECT_NOT(oops::is_close(zz.norm(), yy.norm(), tol, oops::TestVerbosity::SILENT));
+  EXPECT_NOT(oops::is_close(zz.norm(), yy.norm(), tol, 0, oops::TestVerbosity::SILENT));
 }
 
 /*! \brief validTime and updateTime tests
@@ -319,7 +319,7 @@ template <typename MODEL> void testStateReadWrite() {
     EXPECT(oops::is_close(yy.norm(), normout, tol));
 
     // Check modified state norm is not equal to the initial norm
-    EXPECT_NOT(oops::is_close(norm, normout, tol, oops::TestVerbosity::SILENT));
+    EXPECT_NOT(oops::is_close(norm, normout, tol, 0, oops::TestVerbosity::SILENT));
   }
 }
 

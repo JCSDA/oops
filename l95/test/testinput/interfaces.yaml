@@ -105,7 +105,7 @@ observations:
   obs operator: {}
   linear obs operator test:
     coef TL: '0.1'
-    tolerance AD: '1.0e-16'
+    tolerance AD: '1.0e-15'
     tolerance TL: '1.0e-14'
   obs bias:
     bias: 0.3
