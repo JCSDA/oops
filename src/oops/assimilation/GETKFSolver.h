@@ -184,6 +184,9 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
         State4D_ tmpState = xx_mean;
         tmpState += Ztmp[ieig];
 
+        this->hofx_.resetQc();
+        this->hofx_.initialize(this->obsaux_, iteration);
+
         std::vector<eckit::LocalConfiguration> getValuesConfig =
           util::vectoriseAndFilter(this->obsconf_, "get values");
 
@@ -201,6 +204,7 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
       }
     }
   }
+  this->hofx_.readQcFlags("EffectiveQC");
   return yb_mean;
 }
 
@@ -219,10 +223,10 @@ void GETKFSolver<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
   const int nobsl = dy.size();
 
   // cast eigen<double> to eigen<float>
-  Eigen::MatrixXf dy_f = dy.cast<float>();
+  Eigen::VectorXf dy_f = dy.cast<float>();
   Eigen::MatrixXf Yb_f = Yb.cast<float>();
   Eigen::MatrixXf YbOrig_f = YbOrig.cast<float>();
-  Eigen::MatrixXf R_invvar_f = R_invvar.cast<float>();
+  Eigen::VectorXf R_invvar_f = R_invvar.cast<float>();
 
   Eigen::MatrixXf Wa_f(this->nanal_, this->nens_);
   Eigen::VectorXf wa_f(this->nanal_);
