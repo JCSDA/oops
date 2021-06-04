@@ -16,7 +16,7 @@ list( APPEND qg_testinput
   testinput/4dvar_ipcg.yaml
   testinput/4dvar_obs_biased.yaml
   testinput/4dvar_rpcg.yaml
-  testinput/4dvar_saddlepoint.yaml
+  #testinput/4dvar_saddlepoint.yaml
   testinput/addincrement.yaml
   testinput/addincrement_scaled.yaml
   testinput/analytic_forecast.yaml
@@ -100,7 +100,7 @@ list( APPEND qg_testoutput
   testoutput/4dvar_ipcg.test
   testoutput/4dvar_obs_biased.test
   testoutput/4dvar_rpcg.test
-  testoutput/4dvar_saddlepoint.test
+  #testoutput/4dvar_saddlepoint.test
   testoutput/analytic_forecast.test
   testoutput/convertincrement.test
   testoutput/convertstate.test
@@ -663,11 +663,11 @@ ecbuild_add_test( TARGET test_qg_4dvar_rpcg
                   COMMAND  qg_4dvar.x
                   TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
 
-ecbuild_add_test( TARGET test_qg_4dvar_saddlepoint
-                  MPI 2
-                  ARGS testinput/4dvar_saddlepoint.yaml
-                  COMMAND  qg_4dvar.x
-                  TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
+#ecbuild_add_test( TARGET test_qg_4dvar_saddlepoint
+#                  MPI 2
+#                  ARGS testinput/4dvar_saddlepoint.yaml
+#                  COMMAND  qg_4dvar.x
+#                  TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
 
 #####################################################################
 # EDA tests
