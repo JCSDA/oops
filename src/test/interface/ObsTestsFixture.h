@@ -41,6 +41,7 @@ class ObsTestsFixture : private boost::noncopyable {
   static const eckit::mpi::Comm & comm()   {return getInstance().comm_;}
 
   static void reset() {
+    obspace().save();
     getInstance().ospaces_.reset();
     getInstance().tend_.reset();
     getInstance().tbgn_.reset();
