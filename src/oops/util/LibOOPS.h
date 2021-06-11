@@ -16,9 +16,13 @@
 #define OOPS_UTIL_LIBOOPS_H_
 
 #include <memory>
+#include <sstream>
 #include <string>
+
 #include "eckit/system/Library.h"
 #include "eckit/utils/Translator.h"
+
+#include "oops/util/TestReference.h"
 
 namespace oops {
 
@@ -32,14 +36,16 @@ class LibOOPS : public eckit::system::Library {
 
   static LibOOPS& instance();
 
-  virtual eckit::Channel& infoChannel() const;
+  eckit::Channel& infoChannel() const;
   eckit::Channel& debugChannel() const override;
 
-  virtual eckit::Channel& traceChannel() const;
-  virtual eckit::Channel& statsChannel() const;
-  virtual eckit::Channel& testChannel() const;
+  eckit::Channel& traceChannel() const;
+  eckit::Channel& statsChannel() const;
+  eckit::Channel& testChannel() const;
+  eckit::Channel& timerChannel() const;
 
   void initialise();
+  void testReferenceInitialise(const eckit::LocalConfiguration &);
   void teeOutput(const std::string &);
   void finalise(bool finaliseMPI = true);
 
@@ -56,12 +62,20 @@ class LibOOPS : public eckit::system::Library {
   mutable std::unique_ptr<eckit::Channel> traceChannel_;
   mutable std::unique_ptr<eckit::Channel> statsChannel_;
   mutable std::unique_ptr<eckit::Channel> testChannel_;
+  mutable std::unique_ptr<eckit::Channel> timerChannel_;
 
   size_t rank_;
   bool debug_;
   std::string predebug_;
   bool trace_;
   std::string pretrace_;
+
+  // TestReferece associated member variables
+  std::stringstream testStream_;
+  TestReference testReference_;
+
+ private:
+  bool enable_timer_channel_;
 };
 
 // -----------------------------------------------------------------------------

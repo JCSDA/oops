@@ -93,7 +93,6 @@ void checkStringFormat(const std::string &format, const std::string &value) {
     // PT1H30M (a duration of 1 h and 30 min), P1YT1S (a duration of 1 year and 1 s)
     static const std::regex regex(
           R"(^P(?!$)(\d+Y)?(\d+M)?(\d+W)?(\d+D)?(T(?=\d+[HMS])(\d+H)?(\d+M)?(\d+S)?)?$)");
-
     std::smatch matches;
     if (!std::regex_match(value, matches, regex)) {
       throw std::invalid_argument(value + " is not a duration string.");

@@ -44,8 +44,10 @@ class Resolution : public util::Printable {
   typedef ResolutionParameters Parameters_;
 
   Resolution(const ResolutionParameters & parameters, const eckit::mpi::Comm & comm)
-              : resol_(parameters.resol), comm_(comm) {}
-  explicit Resolution(const int resol): resol_(resol), comm_(oops::mpi::myself()) {}
+              : resol_(parameters.resol), comm_(comm)
+    {ASSERT(comm_.size() == 1);}
+  explicit Resolution(const int resol): resol_(resol), comm_(oops::mpi::myself())
+    {ASSERT(comm_.size() == 1);}
 
   int npoints() const {return resol_;}
 

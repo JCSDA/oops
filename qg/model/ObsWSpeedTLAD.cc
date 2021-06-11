@@ -61,7 +61,7 @@ void ObsWSpeedTLAD::simulateObsAD(GomQG & gom, const ObsVecQG & ovec,
 // -----------------------------------------------------------------------------
 
 void ObsWSpeedTLAD::print(std::ostream & os) const {
-  os << "ObsStreamTLAD::print not implemented" << std::endl;
+  os << "QG wind speed observation operator TL/AD";
 }
 
 // -----------------------------------------------------------------------------

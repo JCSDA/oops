@@ -8,6 +8,7 @@
 #ifndef TEST_UTIL_FLOATCOMPARE_H_
 #define TEST_UTIL_FLOATCOMPARE_H_
 
+#include <cmath>
 #include <limits>
 #include <map>
 #include <string>
@@ -27,27 +28,42 @@ void testIsRelativeDifferenceAtMost(oops::TestVerbosity verbosity)
 {
   const T nan = std::numeric_limits<T>::quiet_NaN();
   const T inf = std::numeric_limits<T>::infinity();
+  const float a = 2.1f;
 
   // Positive numbers
-  EXPECT(oops::is_close_relative(T(2.0), T(4.0), T(0.5), verbosity));
-  EXPECT(oops::is_close_relative(T(4.0), T(2.0), T(0.5), verbosity));
-  EXPECT_NOT(oops::is_close_relative(T(2.0), T(4.0), T(0.49), verbosity));
-  EXPECT_NOT(oops::is_close_relative(T(4.0), T(2.0), T(0.49), verbosity));
+  EXPECT(oops::is_close_relative(T(2.0), T(4.0), T(0.5), 0, verbosity));
+  EXPECT(oops::is_close_relative(T(4.0), T(2.0), T(0.5), 0, verbosity));
+  EXPECT_NOT(oops::is_close_relative(T(2.0), T(4.0), T(0.49), 0, verbosity));
+  EXPECT_NOT(oops::is_close_relative(T(4.0), T(2.0), T(0.49), 0, verbosity));
 
   // Negative numbers
-  EXPECT(oops::is_close_relative(T(-2.0), T(-4.0), T(0.5), verbosity));
-  EXPECT(oops::is_close_relative(T(-4.0), T(-2.0), T(0.5), verbosity));
-  EXPECT_NOT(oops::is_close_relative(T(-2.0), T(-4.0), T(0.49), verbosity));
-  EXPECT_NOT(oops::is_close_relative(T(-4.0), T(-2.0), T(0.49), verbosity));
+  EXPECT(oops::is_close_relative(T(-2.0), T(-4.0), T(0.5), 0, verbosity));
+  EXPECT(oops::is_close_relative(T(-4.0), T(-2.0), T(0.5), 0, verbosity));
+  EXPECT_NOT(oops::is_close_relative(T(-2.0), T(-4.0), T(0.49), 0, verbosity));
+  EXPECT_NOT(oops::is_close_relative(T(-4.0), T(-2.0), T(0.49), 0, verbosity));
+
+  // Test max_ulps_diff
+  EXPECT(oops::is_close_relative(1.12450087f, 1.12450135f, 1e-8f, 10, verbosity));
+  EXPECT(oops::is_close_relative(a,
+                                 std::nextafterf(
+                                   std::nextafterf(
+                                     std::nextafterf(a, 1.f), 1.f), 1.f),
+                                 1e-7f, 3, verbosity));
+  EXPECT_NOT(oops::is_close_relative(1.12450087f, 1.12450135f, 1e-8f, 0, verbosity));
+  EXPECT_NOT(oops::is_close_relative(a,
+                                     std::nextafterf(
+                                       std::nextafterf(
+                                         std::nextafterf(a, 1.f), 1.f), 1.f),
+                                     1e-7f, 2, verbosity));
 
   // NaNs
-  EXPECT_NOT(oops::is_close_relative(nan, T(1.0), T(0.1), verbosity));
-  EXPECT_NOT(oops::is_close_relative(T(1.0), nan, T(0.1), verbosity));
-  EXPECT_NOT(oops::is_close_relative(nan, nan, T(0.1), verbosity));
+  EXPECT_NOT(oops::is_close_relative(nan, T(1.0), T(0.1), 0, verbosity));
+  EXPECT_NOT(oops::is_close_relative(T(1.0), nan, T(0.1), 0, verbosity));
+  EXPECT_NOT(oops::is_close_relative(nan, nan, T(0.1), 0, verbosity));
 
   // Infinities
-  EXPECT_NOT(oops::is_close_relative(inf, T(1.0), T(0.1), verbosity));
-  EXPECT_NOT(oops::is_close_relative(T(1.0), inf, T(0.1), verbosity));
+  EXPECT_NOT(oops::is_close_relative(inf, T(1.0), T(0.1), 0, verbosity));
+  EXPECT_NOT(oops::is_close_relative(T(1.0), inf, T(0.1), 0, verbosity));
 }
 
 template <typename T>
@@ -74,27 +90,42 @@ void testIsAbsoluteDifferenceAtMost(oops::TestVerbosity verbosity)
 {
   const T nan = std::numeric_limits<T>::quiet_NaN();
   const T inf = std::numeric_limits<T>::infinity();
+  const float a = 2.1f;
 
   // Positive numbers
-  EXPECT(oops::is_close_absolute(T(2.0), T(4.0), T(2.0), verbosity));
-  EXPECT(oops::is_close_absolute(T(4.0), T(2.0), T(2.0), verbosity));
-  EXPECT_NOT(oops::is_close_absolute(T(2.0), T(4.0), T(1.99), verbosity));
-  EXPECT_NOT(oops::is_close_absolute(T(4.0), T(2.0), T(1.99), verbosity));
+  EXPECT(oops::is_close_absolute(T(2.0), T(4.0), T(2.0), 0, verbosity));
+  EXPECT(oops::is_close_absolute(T(4.0), T(2.0), T(2.0), 0, verbosity));
+  EXPECT_NOT(oops::is_close_absolute(T(2.0), T(4.0), T(1.99), 0, verbosity));
+  EXPECT_NOT(oops::is_close_absolute(T(4.0), T(2.0), T(1.99), 0, verbosity));
 
   // Negative numbers
-  EXPECT(oops::is_close_absolute(T(-2.0), T(-4.0), T(2.0), verbosity));
-  EXPECT(oops::is_close_absolute(T(-4.0), T(-2.0), T(2.0), verbosity));
-  EXPECT_NOT(oops::is_close_absolute(T(-2.0), T(-4.0), T(1.99), verbosity));
-  EXPECT_NOT(oops::is_close_absolute(T(-4.0), T(-2.0), T(1.99), verbosity));
+  EXPECT(oops::is_close_absolute(T(-2.0), T(-4.0), T(2.0), 0, verbosity));
+  EXPECT(oops::is_close_absolute(T(-4.0), T(-2.0), T(2.0), 0, verbosity));
+  EXPECT_NOT(oops::is_close_absolute(T(-2.0), T(-4.0), T(1.99), 0, verbosity));
+  EXPECT_NOT(oops::is_close_absolute(T(-4.0), T(-2.0), T(1.99), 0, verbosity));
+
+  // Test max_ulps_diff
+  EXPECT(oops::is_close_absolute(1.12450087f, 1.12450135f, 1e-8f, 10, verbosity));
+  EXPECT(oops::is_close_absolute(a,
+                                 std::nextafterf(
+                                   std::nextafterf(
+                                     std::nextafterf(a, 1.f), 1.f), 1.f),
+                                 1e-7f, 3, verbosity));
+  EXPECT_NOT(oops::is_close_absolute(1.12450087f, 1.12450135f, 1e-8f, 0, verbosity));
+  EXPECT_NOT(oops::is_close_absolute(a,
+                                     std::nextafterf(
+                                       std::nextafterf(
+                                         std::nextafterf(a, 1.f), 1.f), 1.f),
+                                     1e-7f, 2, verbosity));
 
   // NaNs
-  EXPECT_NOT(oops::is_close_absolute(nan, T(1.0), T(0.1), verbosity));
-  EXPECT_NOT(oops::is_close_absolute(T(1.0), nan, T(0.1), verbosity));
-  EXPECT_NOT(oops::is_close_absolute(nan, nan, T(0.1), verbosity));
+  EXPECT_NOT(oops::is_close_absolute(nan, T(1.0), T(0.1), 0, verbosity));
+  EXPECT_NOT(oops::is_close_absolute(T(1.0), nan, T(0.1), 0, verbosity));
+  EXPECT_NOT(oops::is_close_absolute(nan, nan, T(0.1), 0, verbosity));
 
   // Infinities
-  EXPECT_NOT(oops::is_close_absolute(inf, T(1.0), T(0.1), verbosity));
-  EXPECT_NOT(oops::is_close_absolute(T(1.0), inf, T(0.1), verbosity));
+  EXPECT_NOT(oops::is_close_absolute(inf, T(1.0), T(0.1), 0, verbosity));
+  EXPECT_NOT(oops::is_close_absolute(T(1.0), inf, T(0.1), 0, verbosity));
 }
 
 template <typename T>
@@ -121,23 +152,24 @@ void testAreAllRelativeDifferencesAtMost(oops::TestVerbosity verbosity)
 {
   // Same lengths
   EXPECT(oops::are_all_close_relative(
-           std::vector<T>{}, std::vector<T>{}, T(0.5), verbosity));
+           std::vector<T>{}, std::vector<T>{}, T(0.5), 0, verbosity));
   EXPECT(oops::are_all_close_relative(
-           std::vector<T>{T(2.0)}, std::vector<T>{T(4.0)}, T(0.5), verbosity));
+           std::vector<T>{T(2.0)}, std::vector<T>{T(4.0)}, T(0.5), 0, verbosity));
   EXPECT(oops::are_all_close_relative(
-           std::vector<T>{T(2.0), T(-2.0)}, std::vector<T>{T(4.0), T(-4.0)}, T(0.5), verbosity));
+           std::vector<T>{T(2.0), T(-2.0)}, std::vector<T>{T(4.0), T(-4.0)}, T(0.5), 0,
+           verbosity));
   EXPECT_NOT(oops::are_all_close_relative(
                std::vector<T>{T(1.0), T(-2.0)}, std::vector<T>{T(4.0), T(-4.0)},
-               T(0.5), verbosity));
+               T(0.5), 0, verbosity));
   EXPECT_NOT(oops::are_all_close_relative(
                std::vector<T>{T(2.0), T(-1.0)}, std::vector<T>{T(4.0), T(-4.0)},
-               T(0.5), verbosity));
+               T(0.5), 0, verbosity));
 
   // Different lengths
   EXPECT_NOT(oops::are_all_close_relative(
-           std::vector<T>{}, std::vector<T>{1.0}, T(0.5), verbosity));
+           std::vector<T>{}, std::vector<T>{1.0}, T(0.5), 0, verbosity));
   EXPECT_NOT(oops::are_all_close_relative(
-           std::vector<T>{1.0}, std::vector<T>{}, T(0.5), verbosity));
+           std::vector<T>{1.0}, std::vector<T>{}, T(0.5), 0, verbosity));
 }
 
 template <typename T>
@@ -164,23 +196,24 @@ void testAreAllAbsoluteDifferencesAtMost(oops::TestVerbosity verbosity)
 {
   // Same lengths
   EXPECT(oops::are_all_close_absolute(
-           std::vector<T>{}, std::vector<T>{}, T(2.0), verbosity));
+           std::vector<T>{}, std::vector<T>{}, T(2.0), 0, verbosity));
   EXPECT(oops::are_all_close_absolute(
-           std::vector<T>{T(2.0)}, std::vector<T>{T(4.0)}, T(2.0), verbosity));
+           std::vector<T>{T(2.0)}, std::vector<T>{T(4.0)}, T(2.0), 0, verbosity));
   EXPECT(oops::are_all_close_absolute(
-           std::vector<T>{T(2.0), T(-2.0)}, std::vector<T>{T(4.0), T(-4.0)}, T(2.0), verbosity));
+           std::vector<T>{T(2.0), T(-2.0)}, std::vector<T>{T(4.0), T(-4.0)}, T(2.0),
+           0, verbosity));
   EXPECT_NOT(oops::are_all_close_absolute(
                std::vector<T>{T(1.0), T(-2.0)}, std::vector<T>{T(4.0), T(-4.0)},
-               T(2.0), verbosity));
+               T(2.0), 0, verbosity));
   EXPECT_NOT(oops::are_all_close_absolute(
                std::vector<T>{T(2.0), T(-1.0)}, std::vector<T>{T(4.0), T(-4.0)},
-               T(2.0), verbosity));
+               T(2.0), 0, verbosity));
 
   // Different lengths
   EXPECT_NOT(oops::are_all_close_absolute(
-           std::vector<T>{}, std::vector<T>{1.0}, T(2.0), verbosity));
+           std::vector<T>{}, std::vector<T>{1.0}, T(2.0), 0, verbosity));
   EXPECT_NOT(oops::are_all_close_absolute(
-           std::vector<T>{1.0}, std::vector<T>{}, T(2.0), verbosity));
+           std::vector<T>{1.0}, std::vector<T>{}, T(2.0), 0, verbosity));
 }
 
 template <typename T>

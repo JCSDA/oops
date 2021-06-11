@@ -12,10 +12,18 @@
 
 #include <Eigen/Dense>
 
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
+
+#include "oops/util/Timer.h"
+
+namespace util {
+class DateTime;
+}  // namespace util
 
 namespace oops {
 namespace mpi {
@@ -35,6 +43,7 @@ const eckit::mpi::Comm & myself();
 template <typename SERIALIZABLE>
 void send(const eckit::mpi::Comm & comm, const SERIALIZABLE & sendobj,
           const int dest, const int tag) {
+  util::Timer timer("oops::mpi", "send");
   std::vector<double> sendbuf;
   sendobj.serialize(sendbuf);
   comm.send(sendbuf.data(), sendbuf.size(), dest, tag);
@@ -45,6 +54,7 @@ void send(const eckit::mpi::Comm & comm, const SERIALIZABLE & sendobj,
 template <typename SERIALIZABLE>
 void receive(const eckit::mpi::Comm & comm, SERIALIZABLE & recvobj,
              const int source, const int tag) {
+  util::Timer timer("oops::mpi", "receive");
   size_t sz = recvobj.serialSize();
   std::vector<double> recvbuf(sz);
   eckit::mpi::Status status = comm.receive(recvbuf.data(), sz, source, tag);
@@ -84,7 +94,9 @@ void gather(const eckit::mpi::Comm & comm, const std::vector<SERIALIZABLE> & sen
 // allGather for eigen vectors
 // ------------------------------------------------------------------------------------------------
 void allGather(const eckit::mpi::Comm & comm,
-               const Eigen::VectorXd &, std::vector<Eigen::VectorXd> &);
+               const Eigen::VectorXd &, Eigen::MatrixXd &);
+
+// ------------------------------------------------------------------------------------------------
 
 /// \brief A wrapper around the MPI *all gather* operation for serializable types.
 ///
@@ -119,6 +131,63 @@ void allGathervUsingSerialize(const eckit::mpi::Comm &comm, CIter first, CIter l
 }
 
 // ------------------------------------------------------------------------------------------------
+
+// The following functions simplify the allGatherv operation on vectors (reducing it to a single
+// function call).
+
+// ------------------------------------------------------------------------------------------------
+
+/// \brief Perform the MPI *all gather* operation on a vector of "plain old data".
+///
+/// This operation gathers data from all tasks and delivers the combined data to all tasks.
+///
+/// \tparam T must be a type for which there exists a specialization of eckit::mpi::Data::Type.
+///
+/// \param[in] comm
+///   Communicator.
+/// \param[inout] x
+///   On input, data owned by this task that need to be delivered to all other tasks. On output,
+///   combined data received from all tasks (concatenated in the order of increasing task ranks).
+template <typename T>
+void allGatherv(const eckit::mpi::Comm & comm, std::vector<T> &x) {
+    eckit::mpi::Buffer<T> buffer(comm.size());
+    comm.allGatherv(x.begin(), x.end(), buffer);
+    x = std::move(buffer.buffer);
+}
+
+// ------------------------------------------------------------------------------------------------
+
+/// \brief Perform the MPI *all gather* operation on a vector of DateTime objects.
+///
+/// This operation gathers data from all tasks and delivers the combined data to all tasks.
+///
+/// \param[in] comm
+///   Communicator.
+/// \param[inout] x
+///   On input, data owned by this task that need to be delivered to all other tasks. On output,
+///   combined data received from all tasks (concatenated in the order of increasing task ranks).
+void allGatherv(const eckit::mpi::Comm & comm, std::vector<util::DateTime> &x);
+
+// ------------------------------------------------------------------------------------------------
+
+/// \brief Perform the MPI *all gather* operation on a vector of DateTime objects.
+///
+/// This operation gathers data from all tasks and delivers the combined data to all tasks.
+///
+/// \param[in] comm
+///   Communicator.
+/// \param[inout] x
+///   On input, data owned by this task that need to be delivered to all other tasks. On output,
+///   combined data received from all tasks (concatenated in the order of increasing task ranks).
+void allGatherv(const eckit::mpi::Comm & comm, std::vector<std::string> &x);
+
+// ------------------------------------------------------------------------------------------------
+
+/// \brief Perform the exclusive scan operation.
+///
+/// On output, `x` is set to the sum of the values of `x` passed to this function
+/// on all ranks lower than the calling rank (and to 0 on rank 0).
+void exclusiveScan(const eckit::mpi::Comm &comm, size_t &x);
 
 }  // namespace mpi
 }  // namespace oops

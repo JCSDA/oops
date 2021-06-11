@@ -39,7 +39,6 @@ class JqTermTLAD : public PostBaseTLAD<MODEL> {
   State_ & getMxi() const;
   void computeModelErrorTL(Increment_ &);
 
-  std::unique_ptr<GeneralizedDepartures> releaseOutputFromTL() override {return nullptr;}
   void setupAD(const Increment_ & dx);
 
  private:
@@ -130,7 +129,9 @@ State<MODEL> & JqTermTLAD<MODEL>::getMxi() const {
 template <typename MODEL>
 void JqTermTLAD<MODEL>::doFinalizeTL(const Increment_ & dx) {
   Log::trace() << "JqTermTLAD::doFinalizeTL start" << std::endl;
-  int mytime = commTime_.rank();
+  Log::debug() << "JqTermTLAD::doFinalizeTL MPI size " << commTime_.size() << std::endl;
+  Log::debug() << "JqTermTLAD::doFinalizeTL MPI rank " << commTime_.rank() << std::endl;
+  size_t mytime = commTime_.rank();
   if (mytime + 1 < commTime_.size()) oops::mpi::send(commTime_, dx, mytime+1, 2468);
   Log::trace() << "JqTermTLAD::doFinalizeTL done" << std::endl;
 }
@@ -141,7 +142,9 @@ template <typename MODEL>
 void JqTermTLAD<MODEL>::computeModelErrorTL(Increment_ & dx) {
   Log::trace() << "JqTermTLAD::computeModelErrorTL start" << std::endl;
 // Compute x_i - M(x_{i-1})
-  int mytime = commTime_.rank();
+  Log::debug() << "JqTermTLAD::computeModelErrorTL MPI size " << commTime_.size() << std::endl;
+  Log::debug() << "JqTermTLAD::computeModelErrorTL MPI rank " << commTime_.rank() << std::endl;
+  size_t mytime = commTime_.rank();
   if (mytime > 0) {
     Increment_ mxim1(dx, false);
     oops::mpi::receive(commTime_, mxim1, mytime-1, 2468);
@@ -156,7 +159,7 @@ void JqTermTLAD<MODEL>::computeModelErrorTL(Increment_ & dx) {
 template <typename MODEL>
 void JqTermTLAD<MODEL>::setupAD(const Increment_ & dx) {
   Log::trace() << "JqTermTLAD::setupAD start" << std::endl;
-  int mytime = commTime_.rank();
+  size_t mytime = commTime_.rank();
   if (mytime > 0) oops::mpi::send(commTime_, dx, mytime-1, 8642);
   Log::trace() << "JqTermTLAD::setupAD done" << std::endl;
 }
@@ -167,7 +170,7 @@ template <typename MODEL>
 void JqTermTLAD<MODEL>::doFirstAD(Increment_ & dx, const util::DateTime &,
                                   const util::Duration &) {
   Log::trace() << "JqTermTLAD::doFirstAD start" << std::endl;
-  int mytime = commTime_.rank();
+  size_t mytime = commTime_.rank();
   if (mytime + 1 < commTime_.size()) {
     Increment_ xip1(dx, false);
     oops::mpi::receive(commTime_, xip1, mytime+1, 8642);

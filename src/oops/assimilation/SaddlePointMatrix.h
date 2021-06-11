@@ -11,6 +11,9 @@
 #ifndef OOPS_ASSIMILATION_SADDLEPOINTMATRIX_H_
 #define OOPS_ASSIMILATION_SADDLEPOINTMATRIX_H_
 
+#include <memory>
+#include <utility>
+
 #include <boost/noncopyable.hpp>
 
 #include "oops/assimilation/ControlIncrement.h"
@@ -20,7 +23,6 @@
 #include "oops/base/PostProcessorTLAD.h"
 
 namespace oops {
-  template<typename MODEL> class JqTermTLAD;
 
 /// The Saddle-point matrix.
 /*!
@@ -33,7 +35,6 @@ class SaddlePointMatrix : private boost::noncopyable {
   typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
   typedef CostFunction<MODEL, OBS>        CostFct_;
   typedef SaddlePointVector<MODEL, OBS>   SPVector_;
-  typedef JqTermTLAD<MODEL>          JqTermTLAD_;
 
  public:
   explicit SaddlePointMatrix(const CostFct_ & j): j_(j) {}
@@ -46,8 +47,7 @@ class SaddlePointMatrix : private boost::noncopyable {
 // =============================================================================
 
 template<typename MODEL, typename OBS>
-void SaddlePointMatrix<MODEL, OBS>::multiply(const SPVector_ & x,
-                                        SPVector_ & z) const {
+void SaddlePointMatrix<MODEL, OBS>::multiply(const SPVector_ & x, SPVector_ & z) const {
   CtrlInc_ ww(j_.jb());
 
 // The three blocks below could be done in parallel
@@ -56,28 +56,31 @@ void SaddlePointMatrix<MODEL, OBS>::multiply(const SPVector_ & x,
   PostProcessorTLAD<MODEL> costad;
   j_.zeroAD(ww);
   z.dx(new CtrlInc_(j_.jb()));
-  JqTermTLAD_ * jqad = j_.jb().initializeAD(z.dx(), x.lambda().dx());
-  costad.enrollProcessor(jqad);
+  j_.jb().initializeAD(z.dx(), x.lambda().dx(), costad);
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
-    costad.enrollProcessor(j_.jterm(jj).setupAD(x.lambda().getv(jj), ww));
+    j_.jterm(jj).computeCostAD(x.lambda().getv(jj), ww, costad);
   }
   j_.runADJ(ww, costad);
   z.dx() += ww;
+  for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
+    j_.jterm(jj).setPostProcAD();
+  }
 
 // TLM block
   PostProcessorTLAD<MODEL> costtl;
-  JqTermTLAD_ * jqtl = j_.jb().initializeTL();
-  costtl.enrollProcessor(jqtl);
+  j_.jb().initializeTL(costtl);
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
-    costtl.enrollProcessor(j_.jterm(jj).setupTL(x.dx()));
+    j_.jterm(jj).setPostProcTL(x.dx(), costtl);
   }
   CtrlInc_ mdx(x.dx());
   j_.runTLM(mdx, costtl);
   z.lambda().clear();
   z.lambda().dx(new CtrlInc_(j_.jb()));
-  j_.jb().finalizeTL(jqtl, x.dx(), z.lambda().dx());
+  j_.jb().finalizeTL(x.dx(), z.lambda().dx());
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
-    z.lambda().append(costtl.releaseOutputFromTL(jj+1));
+    std::unique_ptr<GeneralizedDepartures> ztmp(j_.jterm(jj).newDualVector());
+    j_.jterm(jj).computeCostTL(x.dx(), *ztmp);
+    z.lambda().append(std::move(ztmp));
   }
 
 // Diagonal block

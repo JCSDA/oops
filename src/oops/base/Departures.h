@@ -14,16 +14,17 @@
 #include <Eigen/Dense>
 #include <cstddef>
 #include <iostream>
+#include <memory>
+#include <numeric>
 #include <string>
 #include <vector>
 
 #include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/ObsSpaces.h"
-#include "oops/base/QCData.h"
+#include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
-#include "oops/util/Printable.h"
 
 namespace oops {
 
@@ -40,18 +41,15 @@ template<typename OBS> class Observations;
 
 // -----------------------------------------------------------------------------
 template <typename OBS>
-class Departures : public util::Printable,
-                   public GeneralizedDepartures {
+class Departures : public GeneralizedDepartures {
   typedef ObsSpaces<OBS>           ObsSpaces_;
   typedef ObsVector<OBS>           ObsVector_;
-  typedef QCData<OBS>              QCData_;
+  template <typename DATA> using ObsData_ = ObsDataVector<OBS, DATA>;
+  template <typename DATA> using ObsDataVec_ = std::vector<std::shared_ptr<ObsData_<DATA>>>;
 
  public:
-/// \brief create Departures for all obs (read from ObsSpace if name is specified)
-  Departures(const ObsSpaces_ &,
-             const std::string & name = "", const bool failIfNameNotFound = true);
-/// \brief create local Departures
-  Departures(const ObsSpaces_ &, const Departures &);
+/// \brief create Departures for all obs (read from ObsSpace if \p name is specified)
+  explicit Departures(const ObsSpaces_ &, const std::string & name = "");
 
 /// Access
   size_t size() const {return dep_.size();}
@@ -65,6 +63,7 @@ class Departures : public util::Printable,
   Departures & operator*=(const Departures &);
   Departures & operator/=(const Departures &);
   void zero();
+  void ones();
   void random();
   void invert();
   void axpy(const double &, const Departures &);
@@ -74,10 +73,12 @@ class Departures : public util::Printable,
   size_t nobs() const;
 
 /// Mask out departures where the passed in qc flags are > 0
-  void mask(const QCData_ &);
+  void mask(ObsDataVec_<int>);
 
 /// Pack departures in an Eigen vector (excluding departures that are masked out)
-  Eigen::VectorXd  packEigen() const;
+  Eigen::VectorXd  packEigen(const ObsDataVec_<int> &) const;
+/// Size of departures packed into an Eigen vector
+  size_t packEigenSize(const ObsDataVec_<int> &) const;
 
 /// Save departures values
   void save(const std::string &) const;
@@ -93,23 +94,13 @@ class Departures : public util::Printable,
 
 template<typename OBS>
 Departures<OBS>::Departures(const ObsSpaces_ & obsdb,
-                            const std::string & name, const bool fail): dep_()
+                            const std::string & name): dep_()
 {
   dep_.reserve(obsdb.size());
   for (size_t jj = 0; jj < obsdb.size(); ++jj) {
-    dep_.emplace_back(obsdb[jj], name, fail);
+    dep_.emplace_back(obsdb[jj], name);
   }
   Log::trace() << "Departures created" << std::endl;
-}
-// -----------------------------------------------------------------------------
-template<typename OBS>
-Departures<OBS>::Departures(const ObsSpaces_ & obsdb,
-                            const Departures & other): dep_() {
-  dep_.reserve(obsdb.size());
-  for (size_t jj = 0; jj < other.dep_.size(); ++jj) {
-    dep_.emplace_back(obsdb[jj], other[jj]);
-  }
-  Log::trace() << "Local Departures created" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template<typename OBS>
@@ -160,6 +151,13 @@ void Departures<OBS>::zero() {
 }
 // -----------------------------------------------------------------------------
 template<typename OBS>
+void Departures<OBS>::ones() {
+  for (auto & dep : dep_) {
+    dep.ones();
+  }
+}
+// -----------------------------------------------------------------------------
+template<typename OBS>
 void Departures<OBS>::random() {
   for (size_t jj = 0; jj < dep_.size(); ++jj) {
     dep_[jj].random();
@@ -191,7 +189,9 @@ double Departures<OBS>::dot_product_with(const Departures & other) const {
 // -----------------------------------------------------------------------------
 template<typename OBS>
 double Departures<OBS>::rms() const {
-  return sqrt(dot_product_with(*this) / this->nobs());
+  double zz = 0.0;
+  if (nobs() > 0) zz = sqrt(dot_product_with(*this) / this->nobs());
+  return zz;
 }
 // -----------------------------------------------------------------------------
 template<typename OBS>
@@ -204,22 +204,36 @@ size_t Departures<OBS>::nobs() const {
 }
 // -----------------------------------------------------------------------------
 template<typename OBS>
-void Departures<OBS>::mask(const QCData_ & qc) {
+void Departures<OBS>::mask(ObsDataVec_<int> qcflags) {
   for (size_t ii = 0; ii < dep_.size(); ++ii) {
-    dep_[ii].mask(*qc.qcFlags(ii));
+    dep_[ii].mask(*qcflags[ii]);
   }
 }
 // -----------------------------------------------------------------------------
 template <typename OBS>
-Eigen::VectorXd Departures<OBS>::packEigen() const {
-  Eigen::VectorXd vec(nobs());
+Eigen::VectorXd Departures<OBS>::packEigen(const ObsDataVec_<int> & mask) const {
+  std::vector<size_t> len(dep_.size());
+  for (size_t idep = 0; idep < dep_.size(); ++idep) {
+    len[idep] = dep_[idep].packEigenSize(*mask[idep]);
+  }
+  size_t all_len = std::accumulate(len.begin(), len.end(), 0);
+
+  Eigen::VectorXd vec(all_len);
   size_t ii = 0;
   for (size_t idep = 0; idep < dep_.size(); ++idep) {
-    vec.segment(ii, dep_[idep].nobs()) = dep_[idep].packEigen();
-    ii += dep_[idep].nobs();
+    vec.segment(ii, len[idep]) = dep_[idep].packEigen(*mask[idep]);
+    ii += len[idep];
   }
-  ASSERT(ii == nobs());
   return vec;
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
+size_t Departures<OBS>::packEigenSize(const ObsDataVec_<int> & mask) const {
+  size_t len = 0;
+  for (size_t idep = 0; idep < dep_.size(); ++idep) {
+    len += dep_[idep].packEigenSize(*mask[idep]);
+  }
+  return len;
 }
 // -----------------------------------------------------------------------------
 template <typename OBS>

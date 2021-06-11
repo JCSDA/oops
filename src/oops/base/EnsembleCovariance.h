@@ -12,10 +12,13 @@
 #define OOPS_BASE_ENSEMBLECOVARIANCE_H_
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
+#include "eckit/system/ResourceUsage.h"
+
 #include "oops/assimilation/GMRESR.h"
 #include "oops/base/IdentityMatrix.h"
 #include "oops/base/IncrementEnsemble.h"
@@ -26,6 +29,7 @@
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
 #include "oops/util/Logger.h"
+#include "oops/util/ObjectCounter.h"
 
 namespace oops {
 
@@ -33,7 +37,8 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 template <typename MODEL>
-class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL> {
+class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL>,
+                           private util::ObjectCounter<EnsembleCovariance<MODEL>> {
   typedef Geometry<MODEL>                           Geometry_;
   typedef Increment<MODEL>                          Increment_;
   typedef LocalizationBase<MODEL>                   Localization_;
@@ -42,6 +47,8 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL> {
   typedef std::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
 
  public:
+  static const std::string classname() {return "oops::EnsembleCovariance";}
+
   EnsembleCovariance(const Geometry_ &, const Variables &,
                      const eckit::Configuration &, const State_ &, const State_ &);
   ~EnsembleCovariance();
@@ -53,6 +60,7 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL> {
 
   EnsemblePtr_ ens_;
   std::unique_ptr<Localization_> loc_;
+  int seed_ = 7;  // For reproducibility
 };
 
 // =============================================================================
@@ -66,17 +74,41 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Var
   : ModelSpaceCovarianceBase<MODEL>(xb, fg, resol, conf), ens_(), loc_()
 {
   Log::trace() << "EnsembleCovariance::EnsembleCovariance start" << std::endl;
+  size_t init = eckit::system::ResourceUsage().maxResidentSetSize();
   ens_.reset(new Ensemble_(conf, xb, fg, resol, vars));
   if (conf.has("localization")) {
     const eckit::LocalConfiguration confloc(conf, "localization");
     loc_ = LocalizationFactory<MODEL>::create(resol, xb.validTime(), confloc);
   }
+  size_t current = eckit::system::ResourceUsage().maxResidentSetSize();
+  this->setObjectSize(current - init);
   Log::trace() << "EnsembleCovariance::EnsembleCovariance done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 EnsembleCovariance<MODEL>::~EnsembleCovariance() {
   Log::trace() << "EnsembleCovariance destructed." << std::endl;
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+void EnsembleCovariance<MODEL>::doRandomize(Increment_ & dx) const {
+  dx.zero();
+  if (loc_) {
+    // Localized covariance matrix
+    for (unsigned int ie = 0; ie < ens_->size(); ++ie) {
+      Increment_ tmp(dx);
+      loc_->randomize(tmp);
+      tmp.schur_product_with((*ens_)[ie]);
+      dx.axpy(1.0, tmp, false);
+    }
+  } else {
+    // Raw covariance matrix
+    util::NormalDistribution<double> normalDist(ens_->size(), 0.0, 1.0, seed_);
+    for (unsigned int ie = 0; ie < ens_->size(); ++ie) {
+      dx.axpy(normalDist[ie], (*ens_)[ie]);
+    }
+  }
+  dx *= 1.0/sqrt(static_cast<double>(ens_->size()-1));
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
@@ -87,7 +119,7 @@ void EnsembleCovariance<MODEL>::doMultiply(const Increment_ & dxi, Increment_ & 
       // Localized covariance matrix
       Increment_ dx(dxi);
       dx.schur_product_with((*ens_)[ie]);
-      loc_->localize(dx);
+      loc_->multiply(dx);
       dx.schur_product_with((*ens_)[ie]);
       dxo.axpy(1.0, dx, false);
     } else {
@@ -96,7 +128,7 @@ void EnsembleCovariance<MODEL>::doMultiply(const Increment_ & dxi, Increment_ & 
       dxo.axpy(wgt, (*ens_)[ie], false);
     }
   }
-  const double rk = 1.0/(static_cast<double>(ens_->size()) - 1.0);
+  const double rk = 1.0/static_cast<double>(ens_->size()-1);
   dxo *= rk;
 }
 // -----------------------------------------------------------------------------
@@ -105,11 +137,6 @@ void EnsembleCovariance<MODEL>::doInverseMultiply(const Increment_ & dxi, Increm
   IdentityMatrix<Increment_> Id;
   dxo.zero();
   GMRESR(dxo, dxi, *this, Id, 10, 1.0e-3);
-}
-// -----------------------------------------------------------------------------
-template<typename MODEL>
-void EnsembleCovariance<MODEL>::doRandomize(Increment_ &) const {
-  throw eckit::NotImplemented("EnsembleCovariance::doRandomize: Would it make sense?", Here());
 }
 // -----------------------------------------------------------------------------
 }  // namespace oops

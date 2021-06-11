@@ -1,0 +1,11 @@
+CostJb   : Nonlinear Jb = 0
+CostJo   : Nonlinear Jo(Lorenz 95) = 114.535, nobs = 120, Jo/n = 0.954461, err = 0.4
+CostFunction: Nonlinear J = 114.535
+DRIPCGMinimizer: reduction in residual norm = 4.49681e-10
+FSOI increment test within tolerance.
+CostFunction::addIncrement: Analysis: 
+ Valid time: 2010-01-02T00:00:00Z
+ Min=6.65953, Max=9.39191, Average=7.97085
+CostJb   : Nonlinear Jb = 0
+CostJo   : Nonlinear Jo(Lorenz 95) = 114.535, nobs = 120, Jo/n = 0.954461, err = 0.4
+CostFunction: Nonlinear J = 114.535

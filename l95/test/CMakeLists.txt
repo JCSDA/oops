@@ -1,7 +1,9 @@
-include ( oops_add_test )
 
 list( APPEND l95_test_input
   testinput/3dvar.yaml
+  testinput/3dvar_4fsoi_dripcg.yaml
+  testinput/3dvar_4fsoi_pcg.yaml
+  testinput/3dvar_noobs.yaml
   testinput/3dvar_qc.yaml
   testinput/3dvar_qc_obserr.yaml
   testinput/3dvar_qc_iterations.yaml
@@ -44,6 +46,9 @@ list( APPEND l95_test_input
   testinput/eda.3dvar.3.yaml
   testinput/eda.3dvar.4.yaml
   testinput/eda.3dvar.yaml
+  testinput/eda.3dvar.block.1.yaml
+  testinput/eda.3dvar.block.2.yaml
+  testinput/eda.3dvar.block.yaml
   testinput/eda.4dvar.3.yaml
   testinput/eda.4dvar.yaml
   testinput/enshofx.1.yaml
@@ -54,15 +59,19 @@ list( APPEND l95_test_input
   testinput/forecast.yaml
   testinput/forecast_pseudomodel.yaml
   testinput/forecast_identitymodel.yaml
+  testinput/fsoi_3dvar_dripcg.yaml
+  testinput/fsoi_3dvar_pcg.yaml
   testinput/genenspert.yaml
   testinput/getkf.yaml
   testinput/getkf_offline_hofx.yaml
   testinput/hofx.yaml
-  testinput/hofx_nomodel.yaml
-  testinput/hofx_for_getkf_nomodel.yaml
+  testinput/hofx3d.yaml
+  testinput/hofx3d_for_getkf.yaml
   testinput/identitymodel.yaml
   testinput/letkfGSI.yaml
   testinput/letkf.yaml
+  testinput/letkf_noobs.yaml
+  testinput/letkf_qc.yaml
   testinput/interfaces.yaml
   testinput/linearmodelfactory.yaml
   testinput/makeobs3d.yaml
@@ -95,10 +104,14 @@ list( APPEND l95_test_data
   truth.2010-01-02T00:00:00Z.obt
   simplifiedl95.fc
   simplifiedl95.truth.obt
+  noobs.obt
 )
 
 list( APPEND l95_testoutput
   testoutput/3dvar.test
+  testoutput/3dvar_4fsoi_dripcg.test
+  testoutput/3dvar_4fsoi_pcg.test
+  testoutput/3dvar_noobs.test
   testoutput/3dvar_qc.test
   testoutput/3dvar_qc_obserr.test
   testoutput/3dvar_qc_iterations.test
@@ -131,17 +144,22 @@ list( APPEND l95_testoutput
   testoutput/diffstates.test
   testoutput/addincrement.test
   testoutput/addincrement_scaled.test
+  testoutput/eda_3dvar_block.test
   testoutput/enshofx.test
   testoutput/forecast.test
   testoutput/forecast_pseudomodel.test
   testoutput/forecast_identitymodel.test
+  testoutput/fsoi_3dvar_dripcg.test
+  testoutput/fsoi_3dvar_pcg.test
   testoutput/genenspert.test
   testoutput/getkf.test
   testoutput/getkf_offline_hofx.test
   testoutput/hofx.test
-  testoutput/hofx.nomodel.test
-  testoutput/hofx_for_getkf_nomodel.test
+  testoutput/hofx3d.test
+  testoutput/hofx3d_for_getkf.test
   testoutput/letkf.test
+  testoutput/letkf_noobs.test
+  testoutput/letkf_qc.test
   testoutput/letkf_gsi.test
   testoutput/localhofx.test
   testoutput/makeobs3d.test
@@ -203,16 +221,14 @@ ecbuild_add_resources( TARGET   l95_test_scripts
 # truth and makeobs4d are required for interface tests
 #####################################################################
 
-oops_add_test( TESTNAME truth
-               MODELNAME l95
-               YAMLNAME testinput/truth.yaml
-               EXENAME  l95_forecast.x )
+ecbuild_add_test( TARGET test_l95_truth
+                  COMMAND  l95_forecast.x
+                  ARGS testinput/truth.yaml )
 
-oops_add_test( TESTNAME makeobs4d
-               MODELNAME l95
-               YAMLNAME testinput/makeobs4d.yaml
-               EXENAME l95_hofx.x
-               TEST_DEPENDS test_l95_truth )
+ecbuild_add_test( TARGET test_l95_makeobs4d
+                  COMMAND l95_hofx.x
+                  ARGS testinput/makeobs4d.yaml
+                  TEST_DEPENDS test_l95_truth )
 
 
 #####################################################################
@@ -315,8 +331,14 @@ ecbuild_add_test( TARGET test_l95_obsspace
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_localobsspace
-                  SOURCES executables/TestLocalObsSpace.cc
+ecbuild_add_test( TARGET test_l95_obs_iterator
+                  SOURCES executables/TestObsIterator.cc
+                  ARGS "testinput/interfaces.yaml"
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth )
+
+ecbuild_add_test( TARGET test_l95_obslocalization
+                  SOURCES executables/TestObsLocalization.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
@@ -327,14 +349,8 @@ ecbuild_add_test( TARGET test_l95_obsvector
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_departures_ensemble
-                  SOURCES executables/TestDeparturesEnsemble.cc
-                  ARGS "testinput/interfaces.yaml"
-                  LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
-
-ecbuild_add_test( TARGET test_l95_departures
-                  SOURCES executables/TestDepartures.cc
+ecbuild_add_test( TARGET test_l95_obsdatavector
+                  SOURCES executables/TestObsDataVector.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
@@ -381,80 +397,68 @@ ecbuild_add_test( TARGET test_l95_localization
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
-
 #####################################################################
 # forecast-related tests
 #####################################################################
 
-oops_add_test( TESTNAME forecast
-               MODELNAME l95
-               YAMLNAME testinput/forecast.yaml
-               EXENAME l95_forecast.x )
+ecbuild_add_test( TARGET test_l95_forecast
+                  COMMAND l95_forecast.x
+                  ARGS testinput/forecast.yaml )
 
-oops_add_test( TESTNAME forecast_pseudomodel
-               MODELNAME l95
-               YAMLNAME testinput/forecast_pseudomodel.yaml
-               EXENAME l95_forecast.x )
+ecbuild_add_test( TARGET test_l95_forecast_pseudomodel
+                  COMMAND l95_forecast.x
+                  ARGS testinput/forecast_pseudomodel.yaml )
 
-oops_add_test( TESTNAME forecast_identitymodel
-               MODELNAME l95
-               YAMLNAME testinput/forecast_identitymodel.yaml
-               EXENAME l95_forecast.x )
-
+ecbuild_add_test( TARGET test_l95_forecast_identitymodel
+                  COMMAND l95_forecast.x
+                  ARGS testinput/forecast_identitymodel.yaml )
 
 #####################################################################
 # obs-related tests
 #####################################################################
 
-oops_add_test( TESTNAME makeobs3d
-               MODELNAME l95
-               YAMLNAME testinput/makeobs3d.yaml
-               EXENAME l95_hofx.x
-               TEST_DEPENDS test_l95_truth )
+ecbuild_add_test( TARGET test_l95_makeobs3d
+                  COMMAND l95_hofx.x
+                  ARGS testinput/makeobs3d.yaml
+                  TEST_DEPENDS test_l95_truth )
 
-oops_add_test( TESTNAME makeobsbias
-               MODELNAME l95
-               YAMLNAME testinput/makeobsbias.yaml
-               EXENAME l95_hofx.x
-               TEST_DEPENDS test_l95_truth )
+ecbuild_add_test( TARGET test_l95_makeobsbias
+                  COMMAND l95_hofx.x
+                  ARGS testinput/makeobsbias.yaml
+                  TEST_DEPENDS test_l95_truth )
 
-oops_add_test( TESTNAME makeobs4d12h
-               MODELNAME l95
-               YAMLNAME testinput/makeobs4d12h.yaml
-               EXENAME l95_hofx.x
-               TEST_DEPENDS test_l95_truth )
+ecbuild_add_test( TARGET test_l95_makeobs4d12h
+                  COMMAND l95_hofx.x
+                  ARGS testinput/makeobs4d12h.yaml
+                  TEST_DEPENDS test_l95_truth )
 
-oops_add_test( TESTNAME makeobspert
-               MODELNAME l95
-               YAMLNAME testinput/makeobspert.yaml
-               EXENAME l95_hofx.x
-               TEST_DEPENDS test_l95_truth )
+ecbuild_add_test( TARGET test_l95_makeobspert
+                  COMMAND l95_hofx.x
+                  ARGS testinput/makeobspert.yaml
+                  TEST_DEPENDS test_l95_truth )
 
-oops_add_test( TESTNAME hofx
-               MODELNAME l95
-               YAMLNAME testinput/hofx.yaml
-               EXENAME l95_hofx.x
-               TEST_DEPENDS test_l95_truth test_l95_makeobs4d )
+ecbuild_add_test( TARGET test_l95_hofx
+                  COMMAND l95_hofx.x
+                  ARGS testinput/hofx.yaml
+                  TEST_DEPENDS test_l95_truth test_l95_makeobs4d )
 
-oops_add_test( TESTNAME hofx.nomodel
-               MODELNAME l95
-               YAMLNAME testinput/hofx_nomodel.yaml
-               EXENAME l95_hofx_nomodel.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+ecbuild_add_test( TARGET test_l95_hofx3d
+                  COMMAND l95_hofx3d.x
+                  ARGS testinput/hofx3d.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 #####################################################################
 # ensemble-related tests
 #####################################################################
 
-oops_add_test( TESTNAME genenspert
-               MODELNAME l95
-               YAMLNAME testinput/genenspert.yaml
-               EXENAME l95_genpert.x )
+ecbuild_add_test( TARGET test_l95_genenspert
+                  COMMAND l95_genpert.x
+                  ARGS testinput/genenspert.yaml )
 
 ecbuild_add_test( TARGET test_l95_enshofx
                   MPI 4
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_enshofx.x
-                  ARGS testinput/enshofx.yaml testoutput/enshofx.log.out
+                  COMMAND l95_enshofx.x
+                  ARGS testinput/enshofx.yaml
                   DEPENDS l95_enshofx.x
                   TEST_DEPENDS test_l95_genenspert test_l95_makeobs4d )
 
@@ -463,198 +467,171 @@ ecbuild_add_test( TARGET test_l95_enshofx
 # 3d variational tests
 #####################################################################
 
-oops_add_test( TESTNAME 3dvar
-               MODELNAME l95
-               YAMLNAME testinput/3dvar.yaml
-               EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
+ecbuild_add_test( TARGET test_l95_3dvar
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/3dvar.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
 
-oops_add_test( TESTNAME 3dvar_qc
-               MODELNAME l95
-               YAMLNAME testinput/3dvar_qc.yaml
-               EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
+#ecbuild_add_test( TESTNAME 3dvar_noobs
+#                  COMMAND l95_4dvar.x
+#                  ARGS testinput/3dvar_noobs.yaml
+#                  TEST_DEPENDS test_l95_forecast )
 
-oops_add_test( TESTNAME 3dvar_qc_obserr
-               MODELNAME l95
-               YAMLNAME testinput/3dvar_qc_obserr.yaml
-               EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
+ecbuild_add_test( TARGET test_l95_3dvar_qc
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/3dvar_qc.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
 
-oops_add_test( TESTNAME 3dvar_qc_iterations
-               MODELNAME l95
-               YAMLNAME testinput/3dvar_qc_iterations.yaml
-               EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
+ecbuild_add_test( TARGET test_l95_3dvar_qc_obserr
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/3dvar_qc_obserr.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
 
-oops_add_test( TESTNAME 3dfgat
-               MODELNAME l95
-               YAMLNAME testinput/3dfgat.yaml
-               EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
+ecbuild_add_test( TARGET test_l95_3dvar_qc_iterations
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/3dvar_qc_iterations.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
+
+ecbuild_add_test( TARGET test_l95_3dfgat
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/3dfgat.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
 
 
 #####################################################################
 # 4d variational tests
 #####################################################################
 
-oops_add_test( TESTNAME 4dvar.drgmresr
-               MODELNAME l95
-               YAMLNAME testinput/4dvar.drgmresr.yaml
-               EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+ecbuild_add_test( TARGET test_l95_4dvar.drgmresr
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/4dvar.drgmresr.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-oops_add_test( TESTNAME 4dvar.dripcg
-               MODELNAME l95
-               YAMLNAME testinput/4dvar.dripcg.yaml
-               EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+ecbuild_add_test( TARGET test_l95_4dvar.dripcg
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/4dvar.dripcg.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-oops_add_test( TESTNAME 4dvar.dripcgqn
-               MODELNAME l95
-               YAMLNAME testinput/4dvar.dripcgqn.yaml
-               EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+ecbuild_add_test( TARGET test_l95_4dvar.dripcgqn
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/4dvar.dripcgqn.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-oops_add_test( TESTNAME 4dvar.drpcg
-               MODELNAME l95
-               YAMLNAME testinput/4dvar.drpcg.yaml
-               EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+ecbuild_add_test( TARGET test_l95_4dvar.drpcg
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/4dvar.drpcg.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-oops_add_test( TESTNAME 4dvar.drpcgqn
-               MODELNAME l95
-               YAMLNAME testinput/4dvar.drpcgqn.yaml
-               EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+ecbuild_add_test( TARGET test_l95_4dvar.drpcgqn
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/4dvar.drpcgqn.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-oops_add_test( TESTNAME 4dvar.drplanczos
-               MODELNAME l95
-               YAMLNAME testinput/4dvar.drplanczos.yaml
-               EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+ecbuild_add_test( TARGET test_l95_4dvar.drplanczos
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/4dvar.drplanczos.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-oops_add_test( TESTNAME 4dvar.drplanclmp
-               MODELNAME l95
-               YAMLNAME testinput/4dvar.drplanclmp.yaml
-               EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+ecbuild_add_test( TARGET test_l95_4dvar.drplanclmp
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/4dvar.drplanclmp.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-oops_add_test( TESTNAME 4dvar.fgmres
-               MODELNAME l95
-               YAMLNAME testinput/4dvar.fgmres.yaml
-               EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+ecbuild_add_test( TARGET test_l95_4dvar.fgmres
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/4dvar.fgmres.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-oops_add_test( TESTNAME 4dvar.gmresr
-               MODELNAME l95
-               YAMLNAME testinput/4dvar.gmresr.yaml
-               EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+ecbuild_add_test( TARGET test_l95_4dvar.gmresr
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/4dvar.gmresr.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-oops_add_test( TESTNAME 4dvar.ipcg
-               MODELNAME l95
-               YAMLNAME testinput/4dvar.ipcg.yaml
-               EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+ecbuild_add_test( TARGET test_l95_4dvar.ipcg
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/4dvar.ipcg.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-oops_add_test( TESTNAME 4dvar.lbgmresr
-               MODELNAME l95
-               YAMLNAME testinput/4dvar.lbgmresr.yaml
-               EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+ecbuild_add_test( TARGET test_l95_4dvar.lbgmresr
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/4dvar.lbgmresr.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-oops_add_test( TESTNAME 4dvar.pcg
-               MODELNAME l95
-               YAMLNAME testinput/4dvar.pcg.yaml
-               EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+ecbuild_add_test( TARGET test_l95_4dvar.pcg
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/4dvar.pcg.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-oops_add_test( TESTNAME 4dvar.planczos
-               MODELNAME l95
-               YAMLNAME testinput/4dvar.planczos.yaml
-               EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+ecbuild_add_test( TARGET test_l95_4dvar.planczos
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/4dvar.planczos.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-oops_add_test( TESTNAME 4dvar.rpcg
-               MODELNAME l95
-               YAMLNAME testinput/4dvar.rpcg.yaml
-               EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+ecbuild_add_test( TARGET test_l95_4dvar.rpcg
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/4dvar.rpcg.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-oops_add_test( TESTNAME 4dvar.rplanczos
-               MODELNAME l95
-               YAMLNAME testinput/4dvar.rplanczos.yaml
-               EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+ecbuild_add_test( TARGET test_l95_4dvar.rplanczos
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/4dvar.rplanczos.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-oops_add_test( TESTNAME 4dvar.minres
-               MODELNAME l95
-               YAMLNAME testinput/4dvar.minres.yaml
-               EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+ecbuild_add_test( TARGET test_l95_4dvar.minres
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/4dvar.minres.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-oops_add_test( TESTNAME 4dvar.modbias
-               MODELNAME l95
-               YAMLNAME testinput/4dvar.modbias.yaml
-               EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+ecbuild_add_test( TARGET test_l95_4dvar.modbias
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/4dvar.modbias.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-#oops_add_test( TESTNAME 4dforcing
-#               MODELNAME l95
-#               YAMLNAME testinput/4dforcing.yaml
-#               EXENAME l95_4dvar.x
-#               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+#ecbuild_add_test( TARGET test_l95_4dforcing
+#                  COMMAND l95_4dvar.x
+#                  ARGS testinput/4dforcing.yaml
+#                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-oops_add_test( TESTNAME 4dsaddlepoint
-               MPI 2
-               MODELNAME l95
-               YAMLNAME testinput/4dsaddlepoint.yaml
-               EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+ecbuild_add_test( TARGET test_l95_4dsaddlepoint
+                  COMMAND l95_4dvar.x
+                  MPI 2
+                  ARGS testinput/4dsaddlepoint.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-oops_add_test( TESTNAME 4dvar.obsbias
-               MODELNAME l95
-               YAMLNAME testinput/4dvar.obsbias.yaml
-               EXENAME l95_4dvar.x
-               COMPARE
-               TEST_DEPENDS test_l95_forecast test_l95_makeobsbias )
+ecbuild_add_test( TARGET test_l95_4dvar.obsbias
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/4dvar.obsbias.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobsbias )
+
 #--------------------------------------------------------------------
 
-oops_add_test( TESTNAME 4dvar.allbiases
-               MODELNAME l95
-               YAMLNAME testinput/4dvar.allbiases.yaml
-               EXENAME l95_4dvar.x
-               COMPARE
-               TEST_DEPENDS test_l95_forecast test_l95_makeobsbias )
+ecbuild_add_test( TARGET test_l95_4dvar.allbiases
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/4dvar.allbiases.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobsbias )
 #--------------------------------------------------------------------
 
-oops_add_test( TESTNAME 4dvar.alpha
-               MODELNAME l95
-               YAMLNAME testinput/4dvar.alpha.yaml
-               EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d test_l95_genenspert )
+ecbuild_add_test( TARGET test_l95_4dvar.alpha
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/4dvar.alpha.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d test_l95_genenspert )
 
-oops_add_test( TESTNAME 4dvar.hybrid
-               MODELNAME l95
-               YAMLNAME testinput/4dvar.hybrid.yaml
-               EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d test_l95_genenspert )
+ecbuild_add_test( TARGET test_l95_4dvar.hybrid
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/4dvar.hybrid.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d test_l95_genenspert )
 
-oops_add_test( TESTNAME 4densvar
-               MPI 9
-               MODELNAME l95
-               YAMLNAME testinput/4densvar.yaml
-               EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d12h test_l95_genenspert )
+ecbuild_add_test( TARGET test_l95_4densvar
+                  COMMAND l95_4dvar.x
+                  MPI 9
+                  ARGS testinput/4densvar.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d12h test_l95_genenspert )
 
-oops_add_test( TESTNAME 4densvar.hybrid
-               MPI 9
-               MODELNAME l95
-               YAMLNAME testinput/4densvar.hybrid.yaml
-               EXENAME l95_4dvar.x
-               TEST_DEPENDS test_l95_forecast test_l95_makeobs4d test_l95_genenspert )
-
+ecbuild_add_test( TARGET test_l95_4densvar.hybrid
+                  COMMAND l95_4dvar.x
+                  MPI 9
+                  ARGS testinput/4densvar.hybrid.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d test_l95_genenspert )
 
 #####################################################################
 # EDA tests
@@ -662,86 +639,114 @@ oops_add_test( TESTNAME 4densvar.hybrid
 
 ecbuild_add_test( TARGET test_l95_eda_3dfgat
                   MPI 4
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_eda.x
+                  COMMAND l95_eda.x
                   ARGS testinput/eda.3dfgat.yaml
                   DEPENDS l95_eda.x
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
 
 ecbuild_add_test( TARGET test_l95_eda_3dvar
                   MPI 4
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_eda.x
+                  COMMAND l95_eda.x
                   ARGS testinput/eda.3dvar.yaml
                   DEPENDS l95_eda.x
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
 
 ecbuild_add_test( TARGET test_l95_eda_4dvar
                   MPI 1
-                  COMMAND ${CMAKE_BINARY_DIR}/bin/l95_eda.x
+                  COMMAND l95_eda.x
                   ARGS testinput/eda.4dvar.yaml
                   DEPENDS l95_eda.x
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
+ecbuild_add_test( TARGET test_l95_eda_3dvar_block
+                  MPI 2
+                  COMMAND l95_eda.x
+                  ARGS testinput/eda.3dvar.block.yaml
+                  TEST_DEPENDS test_l95_genenspert test_l95_makeobs3d )
+
+#####################################################################
+# FSOI tests
+#####################################################################
+
+ecbuild_add_test( TARGET test_l95_3dvar_4fsoi_pcg
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/3dvar_4fsoi_pcg.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
+
+ecbuild_add_test( TARGET test_l95_fsoi_3dvar_pcg
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/fsoi_3dvar_pcg.yaml
+                  TEST_DEPENDS test_l95_3dvar_4fsoi_pcg )
+
+ecbuild_add_test( TARGET test_l95_3dvar_4fsoi_dripcg
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/3dvar_4fsoi_dripcg.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
+
+ecbuild_add_test( TARGET test_l95_fsoi_3dvar_dripcg
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/fsoi_3dvar_dripcg.yaml
+                  TEST_DEPENDS test_l95_3dvar_4fsoi_dripcg )
 
 #####################################################################
 # state-related tests
 #####################################################################
 
-oops_add_test( TESTNAME diffstates
-               MODELNAME l95
-               YAMLNAME testinput/diffstates.yaml
-               EXENAME l95_diffstates.x
-               TEST_DEPENDS test_l95_eda_3dvar test_l95_eda_4dvar )
+ecbuild_add_test( TARGET test_l95_diffstates
+                  COMMAND l95_diffstates.x
+                  ARGS testinput/diffstates.yaml
+                  TEST_DEPENDS test_l95_eda_3dvar test_l95_eda_4dvar )
 
-oops_add_test( TESTNAME addincrement
-               MODELNAME l95
-               YAMLNAME testinput/addincrement.yaml
-               EXENAME l95_addincrement.x
-               TEST_DEPENDS test_l95_diffstates )
+ecbuild_add_test( TARGET test_l95_addincrement
+                  COMMAND l95_addincrement.x
+                  ARGS testinput/addincrement.yaml
+                  TEST_DEPENDS test_l95_diffstates )
 
-oops_add_test( TESTNAME addincrement_scaled
-               MODELNAME l95
-               YAMLNAME testinput/addincrement_scaled.yaml
-               EXENAME l95_addincrement.x
-               TEST_DEPENDS test_l95_diffstates )
+ecbuild_add_test( TARGET test_l95_addincrement_scaled
+                  COMMAND l95_addincrement.x
+                  ARGS testinput/addincrement_scaled.yaml
+                  TEST_DEPENDS test_l95_diffstates )
 
 
 #####################################################################
 # LETKF tests
 #####################################################################
 
-oops_add_test( TESTNAME letkf
-               MODELNAME l95
-               YAMLNAME testinput/letkf.yaml
-               EXENAME l95_letkf.x
-               TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+ecbuild_add_test( TARGET test_l95_letkf
+                  COMMAND l95_letkf.x
+                  ARGS testinput/letkf.yaml
+                  OMP 2
+                  TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
 
-oops_add_test( TESTNAME letkf_gsi
-               MODELNAME l95
-               YAMLNAME testinput/letkfGSI.yaml
-               EXENAME l95_letkf.x
-               CTOL 1e-4
-               TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+ecbuild_add_test( TARGET test_l95_letkf_noobs
+                  COMMAND l95_letkf.x
+                  ARGS testinput/letkf_noobs.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_genenspert )
 
-oops_add_test( TESTNAME getkf
-               MODELNAME l95
-               YAMLNAME testinput/getkf.yaml
-               EXENAME l95_letkf.x
-               CTOL 1e-3
-               TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+ecbuild_add_test( TARGET test_l95_letkf_qc
+                  COMMAND l95_letkf.x
+                  ARGS testinput/letkf_qc.yaml
+                  TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
 
-oops_add_test( TESTNAME hofx_for_getkf_nomodel
-               MODELNAME l95
-               YAMLNAME testinput/hofx_for_getkf_nomodel.yaml
-               EXENAME l95_letkf.x 
-               CTOL 1e-3
-               TEST_DEPENDS letkf )
+ecbuild_add_test( TARGET test_l95_letkf_gsi
+                  COMMAND l95_letkf.x
+                  ARGS testinput/letkfGSI.yaml
+                  TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
 
-oops_add_test( TESTNAME getkf_offline_hofx
-               MODELNAME l95
-               YAMLNAME testinput/getkf_offline_hofx.yaml
-               EXENAME l95_letkf.x
-               CTOL 1e-3
-               TEST_DEPENDS hofx_for_getkf_nomodel )
+ecbuild_add_test( TARGET test_l95_getkf
+                  COMMAND l95_letkf.x
+                  ARGS testinput/getkf.yaml
+                  TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+
+ecbuild_add_test( TARGET test_l95_hofx3d_for_getkf
+                  COMMAND l95_letkf.x
+                  ARGS testinput/hofx3d_for_getkf.yaml
+                  TEST_DEPENDS test_l95_letkf )
+
+ecbuild_add_test( TARGET test_l95_getkf_offline_hofx
+                  COMMAND l95_letkf.x
+                  ARGS testinput/getkf_offline_hofx.yaml
+                  TEST_DEPENDS test_l95_hofx3d_for_getkf )
 
 
 #####################################################################
@@ -757,86 +762,59 @@ ecbuild_add_test( TARGET test_l95_linearmodelfactory
 # tests with simplified L95
 #####################################################################
 
-oops_add_test( TESTNAME simplifiedl95_DRGMRESR
-               MODELNAME l95
-               YAMLNAME testinput/simplifiedl95_DRGMRESR.yaml
-               CTOL 1e-8
-               EXENAME l95_4dvar.x )
+ecbuild_add_test( TARGET test_l95_simplifiedl95_DRGMRESR
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/simplifiedl95_DRGMRESR.yaml )
 
-oops_add_test( TESTNAME simplifiedl95_DRIPCG
-               MODELNAME l95
-               YAMLNAME testinput/simplifiedl95_DRIPCG.yaml
-               CTOL 1e-8
-               EXENAME l95_4dvar.x )
+ecbuild_add_test( TARGET test_l95_simplifiedl95_DRIPCG
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/simplifiedl95_DRIPCG.yaml )
 
-oops_add_test( TESTNAME simplifiedl95_DRPCG
-               MODELNAME l95
-               YAMLNAME testinput/simplifiedl95_DRPCG.yaml
-               CTOL 1e-8
-               EXENAME l95_4dvar.x )
 
-oops_add_test( TESTNAME simplifiedl95_DRPFOM
-               MODELNAME l95
-               YAMLNAME testinput/simplifiedl95_DRPFOM.yaml
-               CTOL 1e-8
-               EXENAME l95_4dvar.x )
+ecbuild_add_test( TARGET test_l95_simplifiedl95_DRPCG
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/simplifiedl95_DRPCG.yaml )
 
-oops_add_test( TESTNAME simplifiedl95_DRPLanczos
-               MODELNAME l95
-               YAMLNAME testinput/simplifiedl95_DRPLanczos.yaml
-               CTOL 1e-8
-               EXENAME l95_4dvar.x )
+ecbuild_add_test( TARGET test_l95_simplifiedl95_DRPFOM
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/simplifiedl95_DRPFOM.yaml )
 
-oops_add_test( TESTNAME simplifiedl95_FGMRES
-               MODELNAME l95
-               YAMLNAME testinput/simplifiedl95_FGMRES.yaml
-               CTOL 1e-8
-               EXENAME l95_4dvar.x )
+ecbuild_add_test( TARGET simplifiedl95_DRPLanczos
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/simplifiedl95_DRPLanczos.yaml )
 
-oops_add_test( TESTNAME simplifiedl95_GMRESR
-               MODELNAME l95
-               YAMLNAME testinput/simplifiedl95_GMRESR.yaml
-               CTOL 1e-8
-               EXENAME l95_4dvar.x )
+ecbuild_add_test( TARGET simplifiedl95_FGMRES
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/simplifiedl95_FGMRES.yaml )
 
-oops_add_test( TESTNAME simplifiedl95_IPCG
-               MODELNAME l95
-               YAMLNAME testinput/simplifiedl95_IPCG.yaml
-               CTOL 1e-8
-               EXENAME l95_4dvar.x )
+ecbuild_add_test( TARGET simplifiedl95_GMRESR
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/simplifiedl95_GMRESR.yaml )
 
-oops_add_test( TESTNAME simplifiedl95_LBGMRESR
-               MODELNAME l95
-               YAMLNAME testinput/simplifiedl95_LBGMRESR.yaml
-               CTOL 1e-8
-               EXENAME l95_4dvar.x )
+ecbuild_add_test( TARGET simplifiedl95_IPCG
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/simplifiedl95_IPCG.yaml )
 
-oops_add_test( TESTNAME simplifiedl95_MINRES
-               MODELNAME l95
-               YAMLNAME testinput/simplifiedl95_MINRES.yaml
-               CTOL 1e-8
-               EXENAME l95_4dvar.x )
+ecbuild_add_test( TARGET simplifiedl95_LBGMRESR
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/simplifiedl95_LBGMRESR.yaml )
 
-oops_add_test( TESTNAME simplifiedl95_PCG
-               MODELNAME l95
-               YAMLNAME testinput/simplifiedl95_PCG.yaml
-               CTOL 1e-8
-               EXENAME l95_4dvar.x )
+ecbuild_add_test( TARGET simplifiedl95_MINRES
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/simplifiedl95_MINRES.yaml )
 
-oops_add_test( TESTNAME simplifiedl95_PLanczos
-               MODELNAME l95
-               YAMLNAME testinput/simplifiedl95_PLanczos.yaml
-               CTOL 1e-8
-               EXENAME l95_4dvar.x )
+ecbuild_add_test( TARGET simplifiedl95_PCG
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/simplifiedl95_PCG.yaml )
 
-oops_add_test( TESTNAME simplifiedl95_RPCG
-               MODELNAME l95
-               YAMLNAME testinput/simplifiedl95_RPCG.yaml
-               CTOL 1e-8
-               EXENAME l95_4dvar.x )
+ecbuild_add_test( TARGET simplifiedl95_PLanczos
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/simplifiedl95_PLanczos.yaml )
 
-oops_add_test( TESTNAME simplifiedl95_RPLanczos
-               MODELNAME l95
-               YAMLNAME testinput/simplifiedl95_RPLanczos.yaml
-               CTOL 1e-8
-               EXENAME l95_4dvar.x )
+ecbuild_add_test( TARGET  simplifiedl95_RPCG
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/simplifiedl95_RPCG.yaml )
+
+ecbuild_add_test( TARGET simplifiedl95_RPLanczos
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/simplifiedl95_RPLanczos.yaml )

@@ -23,6 +23,7 @@
 #include "oops/base/StateInfo.h"
 #include "oops/interface/State.h"
 #include "oops/util/Logger.h"
+#include "oops/util/printRunStats.h"
 
 namespace oops {
 
@@ -32,6 +33,8 @@ int IncrementalAssimilation(ControlVariable<MODEL, OBS> & xx, CostFunction<MODEL
   typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
   typedef Minimizer<MODEL, OBS>           Minimizer_;
   typedef State<MODEL>                    State_;
+
+  util::printRunStats("IncrementalAssimilation start");
 
 // Setup outer loop
   std::vector<eckit::LocalConfiguration> iterconfs;
@@ -49,7 +52,8 @@ int IncrementalAssimilation(ControlVariable<MODEL, OBS> & xx, CostFunction<MODEL
     iterconfs[jouter].set("iteration", static_cast<int>(jouter));
 //  Get configuration for current outer iteration
     Log::info() << "IncrementalAssimilation: Configuration for outer iteration "
-                << jouter << ":\n" << iterconfs[jouter];
+                << jouter << ":" << std::endl << iterconfs[jouter] << std::endl;
+    util::printRunStats("IncrementalAssimilation iteration " + std::to_string(jouter));
 
 //  Setup for the trajectory run
     PostProcessor<State_> post;
@@ -60,6 +64,7 @@ int IncrementalAssimilation(ControlVariable<MODEL, OBS> & xx, CostFunction<MODEL
 
 //  Setup quadratic problem
     J.linearize(xx, iterconfs[jouter], post);
+    util::printRunStats("IncrementalAssimilation linearize " + std::to_string(jouter));
 
 //  Minimization
     std::unique_ptr<CtrlInc_> dx(minim->minimize(iterconfs[jouter]));
@@ -70,6 +75,7 @@ int IncrementalAssimilation(ControlVariable<MODEL, OBS> & xx, CostFunction<MODEL
 //  Clean-up trajectory, etc...
     J.resetLinearization();
   }
+  util::printRunStats("IncrementalAssimilation end");
   return nouter;
 }
 

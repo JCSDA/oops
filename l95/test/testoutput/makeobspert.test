@@ -1,12 +1,12 @@
-Test     : Initial state: 
-Test     :  Valid time: 2010-01-01T03:00:00Z
-Test     :  Min=7.80572, Max=8.97101, Average=8.02427
-Test     : Final state: 
-Test     :  Valid time: 2010-01-02T03:00:00Z
-Test     :  Min=6.56213, Max=9.58572, Average=8.00692
-Test     : H(x): 
-Test     : Lorenz 95 nobs= 160 Min=6.55895, Max=9.58572, Average=8.01323
-Test     : End H(x)
-Test     : Perturbed H(x): 
-Test     : Lorenz 95 nobs= 160 Min=6.26715, Max=9.41343, Average=8.04793
-Test     : End Perturbed H(x)
+Initial state: 
+ Valid time: 2010-01-01T03:00:00Z
+ Min=7.80572, Max=8.97101, Average=8.02427
+Final state: 
+ Valid time: 2010-01-02T03:00:00Z
+ Min=6.56213, Max=9.58572, Average=8.00692
+H(x): 
+Lorenz 95 nobs= 160 Min=6.55895, Max=9.58572, Average=8.01323
+End H(x)
+Perturbed H(x): 
+Lorenz 95 nobs= 160 Min=6.26715, Max=9.41343, Average=8.04793
+End Perturbed H(x)

@@ -1,5 +1,4 @@
 cost function:
-  obs perturbations seed: 1
   cost type: 4D-Var
   window begin: 2010-01-01T09:00:00Z
   window length: PT6H
@@ -32,6 +31,11 @@ cost function:
       obsdataout:
         obsfile: Data/mem001.eda_3dfgat.obs3d.nc
       obs type: Stream
+      obs perturbations seed: 1
+    get values:
+      interpolation type: default_1
+    linear get values:
+      interpolation type: default_a
   - obs error:
       covariance model: diagonal
       random amplitude: 0.5
@@ -43,6 +47,9 @@ cost function:
       obsdataout:
         obsfile: Data/mem001.eda_3dfgat.obs3d.nc
       obs type: Wind
+      obs perturbations seed: 1
+    get values:
+      interpolation type: default_2
   - obs error:
       covariance model: diagonal
       random amplitude: 0.2
@@ -54,6 +61,9 @@ cost function:
       obsdataout:
         obsfile: Data/mem001.eda_3dfgat.obs3d.nc
       obs type: WSpeed
+      obs perturbations seed: 1
+    get values:
+      interpolation type: default_3
 variational:
   minimizer:
     algorithm: DRIPCG

@@ -11,6 +11,9 @@
 #ifndef OOPS_ASSIMILATION_HESSIANMATRIX_H_
 #define OOPS_ASSIMILATION_HESSIANMATRIX_H_
 
+#include <memory>
+#include <utility>
+
 #include <boost/noncopyable.hpp>
 
 #include "oops/assimilation/ControlIncrement.h"
@@ -34,8 +37,7 @@ template<typename MODEL, typename OBS> class HessianMatrix : private boost::nonc
   typedef JqTermTLAD<MODEL>               JqTermTLAD_;
 
  public:
-  explicit HessianMatrix(const CostFct_ & j,
-                         const bool test = false);
+  explicit HessianMatrix(const CostFct_ & j, const bool test = false);
 
   void multiply(const CtrlInc_ & dx, CtrlInc_ & dz) const;
 
@@ -61,12 +63,8 @@ void HessianMatrix<MODEL, OBS>::multiply(const CtrlInc_ & dx, CtrlInc_ & dz) con
 
 // Setup TL terms of cost function
   PostProcessorTLAD<MODEL> costtl;
-  JqTermTLAD_ * jqtl = j_.jb().initializeTL();
-  costtl.enrollProcessor(jqtl);
-  unsigned iq = 0;
-  if (jqtl) iq = 1;
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
-    costtl.enrollProcessor(j_.jterm(jj).setupTL(dx));
+    j_.jterm(jj).setPostProcTL(dx, costtl);
   }
 
 // Run TLM
@@ -82,10 +80,9 @@ void HessianMatrix<MODEL, OBS>::multiply(const CtrlInc_ & dx, CtrlInc_ & dz) con
 
 // Jb
   CtrlInc_ tmp(j_.jb());
-  j_.jb().finalizeTL(jqtl, dx, dw);
+  j_.jb().finalizeTL(dx, dw);
   j_.jb().multiplyBinv(dw, tmp);
-  JqTermTLAD_ * jqad = j_.jb().initializeAD(dz, tmp);
-  costad.enrollProcessor(jqad);
+  j_.jb().initializeAD(dz, tmp, costad);
 
   j_.zeroAD(dw);
 
@@ -94,25 +91,29 @@ void HessianMatrix<MODEL, OBS>::multiply(const CtrlInc_ & dx, CtrlInc_ & dz) con
 
 // Jo + Jc
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
-    ww.append(costtl.releaseOutputFromTL(iq+jj));
-    zz.append(j_.jterm(jj).multiplyCoInv(*ww.getv(jj)));
-    costad.enrollProcessor(j_.jterm(jj).setupAD(zz.getv(jj), dw));
+    std::unique_ptr<GeneralizedDepartures> wtmp = j_.jterm(jj).newDualVector();
+    j_.jterm(jj).computeCostTL(dx, *wtmp);
+    zz.append(j_.jterm(jj).multiplyCoInv(*wtmp));
+    j_.jterm(jj).computeCostAD(zz.getv(jj), dw, costad);
+    if (test_) ww.append(std::move(wtmp));
   }
 
 // Run ADJ
   j_.runADJ(dw, costad);
   dz += dw;
-  j_.jb().finalizeAD(jqad);
+  j_.jb().finalizeAD();
+  for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
+    j_.jterm(jj).setPostProcAD();
+  }
 
   if (test_) {
-     // <G dx, dy>, where dy = Rinv H dx
-     double adj_tst_fwd = dot_product(ww, zz);
-     // <dx, Gt dy> , where dy = Rinv H dx
-     double adj_tst_bwd = dot_product(dx, dw);
+    // <G dx, dy>, where dy = Rinv H dx
+    double adj_tst_fwd = dot_product(ww, zz);
+    // <dx, Gt dy> , where dy = Rinv H dx
+    double adj_tst_bwd = dot_product(dx, dw);
 
-     Log::info() << "Online adjoint test, iteration: " << iter_ << std::endl
-                 << util::PrintAdjTest(adj_tst_fwd, adj_tst_bwd, "G")
-                 << std::endl;
+    Log::info() << "Online adjoint test, iteration: " << iter_ << std::endl
+                << util::PrintAdjTest(adj_tst_fwd, adj_tst_bwd, "G") << std::endl;
   }
 }
 

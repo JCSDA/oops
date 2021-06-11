@@ -21,6 +21,7 @@
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/DRMinimizer.h"
 #include "oops/assimilation/HtRinvHMatrix.h"
+#include "oops/assimilation/MinimizerUtils.h"
 #include "oops/assimilation/QNewtonLMP.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/formats.h"
@@ -215,15 +216,9 @@ double DRPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_
     // r_{i+1}^T z_{i+1} / r_{0}^T z_{0}
     normReduction = sqrt(rdots/dotRr0);
 
-    Log::info() << "DRPCG end of iteration " << jiter+1 << std::endl
-                << "  Norm reduction ("               << std::setw(2) << jiter+1 << ") = "
-                  << util::full_precision(normReduction) << std::endl
-                << "  Quadratic cost function: J   (" << std::setw(2) << jiter+1 << ") = "
-                  << util::full_precision(costJ)         << std::endl
-                << "  Quadratic cost function: Jb  (" << std::setw(2) << jiter+1 << ") = "
-                  << util::full_precision(costJb)        << std::endl
-                << "  Quadratic cost function: JoJc(" << std::setw(2) << jiter+1 << ") = "
-                  << util::full_precision(costJoJc)      << std::endl << std::endl;
+    Log::info() << "DRPCG end of iteration " << jiter+1 << std::endl;
+    printNormReduction(jiter+1, sqrt(rdots), normReduction);
+    printQuadraticCostFunction(jiter+1, costJ, costJb, costJoJc);
 
     // Save the pairs for preconditioning
     lmp_.push(pp, hh, qq, rho);

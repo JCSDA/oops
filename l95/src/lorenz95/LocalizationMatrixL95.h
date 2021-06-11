@@ -37,6 +37,7 @@ class LocalizationMatrixL95: public util::Printable,
   static const std::string classname() {return "lorenz95::LocalizationMatrixL95";}
 
   LocalizationMatrixL95(const Resolution &, const eckit::Configuration &);
+  void randomize(IncrementL95 &) const;
   void multiply(IncrementL95 &) const;
 
  private:

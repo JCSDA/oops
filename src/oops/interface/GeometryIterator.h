@@ -25,12 +25,12 @@
 namespace oops {
 
 // -----------------------------------------------------------------------------
-template<typename MODEL>
+template<typename TRAIT>
 class GeometryIterator: public std::iterator<std::forward_iterator_tag,
                                              eckit::geometry::Point2>,
                         public util::Printable,
-                        private util::ObjectCounter<GeometryIterator<MODEL>> {
-  typedef typename MODEL::GeometryIterator GeometryIterator_;
+                        private util::ObjectCounter<GeometryIterator<TRAIT>> {
+  typedef typename TRAIT::GeometryIterator GeometryIterator_;
 
  public:
   static const std::string classname() {return "oops::GeometryIterator";}
@@ -55,88 +55,88 @@ class GeometryIterator: public std::iterator<std::forward_iterator_tag,
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-GeometryIterator<MODEL>::GeometryIterator(const GeometryIterator& other) {
-  Log::trace() << "GeometryIterator<MODEL>::GeometryIterator starting" << std::endl;
+template<typename TRAIT>
+GeometryIterator<TRAIT>::GeometryIterator(const GeometryIterator& other) {
+  Log::trace() << "GeometryIterator<TRAIT>::GeometryIterator starting" << std::endl;
   util::Timer timer(classname(), "GeometryIterator");
   geometryiter_.reset(new GeometryIterator_(other.geometryiter()));
-  Log::trace() << "GeometryIterator<MODEL>::GeometryIterator done" << std::endl;
+  Log::trace() << "GeometryIterator<TRAIT>::GeometryIterator done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-GeometryIterator<MODEL>::GeometryIterator(const GeometryIterator_& iter) {
-  Log::trace() << "GeometryIterator<MODEL>::GeometryIterator starting" << std::endl;
+template<typename TRAIT>
+GeometryIterator<TRAIT>::GeometryIterator(const GeometryIterator_& iter) {
+  Log::trace() << "GeometryIterator<TRAIT>::GeometryIterator starting" << std::endl;
   util::Timer timer(classname(), "GeometryIterator");
   geometryiter_.reset(new GeometryIterator_(iter));
-  Log::trace() << "GeometryIterator<MODEL>::GeometryIterator done" << std::endl;
+  Log::trace() << "GeometryIterator<TRAIT>::GeometryIterator done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-GeometryIterator<MODEL>::~GeometryIterator() {
-  Log::trace() << "GeometryIterator<MODEL>::~GeometryIterator starting" << std::endl;
+template<typename TRAIT>
+GeometryIterator<TRAIT>::~GeometryIterator() {
+  Log::trace() << "GeometryIterator<TRAIT>::~GeometryIterator starting" << std::endl;
   util::Timer timer(classname(), "~GeometryIterator");
   geometryiter_.reset();
-  Log::trace() << "GeometryIterator<MODEL>::~GeometryIterator done" << std::endl;
+  Log::trace() << "GeometryIterator<TRAIT>::~GeometryIterator done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-bool GeometryIterator<MODEL>::operator==(const GeometryIterator& other) {
-  Log::trace() << "GeometryIterator<MODEL>::operator== starting" << std::endl;
+template<typename TRAIT>
+bool GeometryIterator<TRAIT>::operator==(const GeometryIterator& other) {
+  Log::trace() << "GeometryIterator<TRAIT>::operator== starting" << std::endl;
   util::Timer timer(classname(), "operator==");
   bool equals = (*geometryiter_ == other.geometryiter());
-  Log::trace() << "GeometryIterator<MODEL>::operator== done" << std::endl;
+  Log::trace() << "GeometryIterator<TRAIT>::operator== done" << std::endl;
   return equals;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-bool GeometryIterator<MODEL>::operator!=(const GeometryIterator& other) {
-  Log::trace() << "GeometryIterator<MODEL>::operator!= starting" << std::endl;
+template<typename TRAIT>
+bool GeometryIterator<TRAIT>::operator!=(const GeometryIterator& other) {
+  Log::trace() << "GeometryIterator<TRAIT>::operator!= starting" << std::endl;
   util::Timer timer(classname(), "operator!=");
   bool notequals = (*geometryiter_ != other.geometryiter());
-  Log::trace() << "GeometryIterator<MODEL>::operator!= done" << std::endl;
+  Log::trace() << "GeometryIterator<TRAIT>::operator!= done" << std::endl;
   return notequals;
 }
 
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-eckit::geometry::Point2 GeometryIterator<MODEL>::operator*() const {
-  Log::trace() << "GeometryIterator<MODEL>::operator* starting" << std::endl;
+template<typename TRAIT>
+eckit::geometry::Point2 GeometryIterator<TRAIT>::operator*() const {
+  Log::trace() << "GeometryIterator<TRAIT>::operator* starting" << std::endl;
   util::Timer timer(classname(), "operator*");
   eckit::geometry::Point2 loc = *(*geometryiter_);
-  Log::trace() << "GeometryIterator<MODEL>::operator* done" << std::endl;
+  Log::trace() << "GeometryIterator<TRAIT>::operator* done" << std::endl;
   return loc;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-GeometryIterator<MODEL> GeometryIterator<MODEL>::operator++() {
-  Log::trace() << "GeometryIterator<MODEL>::operator++ starting" << std::endl;
+template<typename TRAIT>
+GeometryIterator<TRAIT> GeometryIterator<TRAIT>::operator++() {
+  Log::trace() << "GeometryIterator<TRAIT>::operator++ starting" << std::endl;
   util::Timer timer(classname(), "operator++");
   ++(*geometryiter_);
-  Log::trace() << "GeometryIterator<MODEL>::operator++ done" << std::endl;
+  Log::trace() << "GeometryIterator<TRAIT>::operator++ done" << std::endl;
   return *this;
 }
 
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void GeometryIterator<MODEL>::print(std::ostream & os) const {
-  Log::trace() << "GeometryIterator<MODEL>::print starting" << std::endl;
+template<typename TRAIT>
+void GeometryIterator<TRAIT>::print(std::ostream & os) const {
+  Log::trace() << "GeometryIterator<TRAIT>::print starting" << std::endl;
   util::Timer timer(classname(), "print");
   os << *geometryiter_;
-  Log::trace() << "GeometryIterator<MODEL>::print done" << std::endl;
+  Log::trace() << "GeometryIterator<TRAIT>::print done" << std::endl;
 }
 
 

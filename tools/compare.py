@@ -30,9 +30,9 @@ import sys
 # and compares them one by one
 def line_diff(line1,line2,lnum,ftol,idif):
 
-  #Split line by whitespace
-  sline1 = re.split('\s+', line1)
-  sline2 = re.split('\s+', line2)
+  #Split line by whitespace or '='
+  sline1 = re.split('\s+|=', line1)
+  sline2 = re.split('\s+|=', line2)
 
   lineerror = 0
 

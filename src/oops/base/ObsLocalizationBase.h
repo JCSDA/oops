@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -11,67 +11,86 @@
 #include <map>
 #include <memory>
 #include <string>
-#include <vector>
 #include <boost/noncopyable.hpp>
 
 #include "eckit/config/Configuration.h"
+#include "oops/interface/GeometryIterator.h"
+#include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsSpace.h"
-#include "oops/interface/ObsVector.h"
 #include "oops/util/Printable.h"
 
 namespace oops {
 
-// -----------------------------------------------------------------------------
-/// Base class for generic localizations
-
-template<typename OBS>
+/// Base class for observation-space localization.
+/// Defines the interfaces for observation space localization.
+/// Use this class as a base class for OBS- and MODEL-specific implementations.
+template<typename MODEL, typename OBS>
 class ObsLocalizationBase : public util::Printable,
-                            private boost::noncopyable {
-  typedef ObsVector<OBS> ObsVector_;
+                                   private boost::noncopyable {
+  typedef typename MODEL::GeometryIterator          GeometryIterator_;
+  typedef typename OBS::ObsVector                   ObsVector_;
+  typedef typename OBS::template ObsDataVector<int> ObsDataVector_;
  public:
-  ObsLocalizationBase() {}
-  virtual ~ObsLocalizationBase() {}
+  ObsLocalizationBase() = default;
+  virtual ~ObsLocalizationBase() = default;
 
-  virtual void multiply(ObsVector_ &) const = 0;
+  /// compute obs-space localization: fill \p obsvector with observation-space
+  /// localization values between observations and \p point in model-space, and
+  /// fill \p outside with flags on whether obs is local or not (1: outside of
+  /// localization, 0: inside of localization, local)
+  /// Method used in oops. Calls `computeLocalization` abstract method, and
+  /// passes OBS- and MODEL-specific classes to the OBS- and MODEL-specific
+  /// implementations of ObsLocalization.
+  void computeLocalization(const GeometryIterator<MODEL> & point,
+             ObsDataVector<OBS, int> & flags, ObsVector<OBS> & obsvector) const {
+    computeLocalization(point.geometryiter(), flags.obsdatavector(), obsvector.obsvector());
+  }
+
+  /// compute obs-space localization: fill \p obsvector with observation-space
+  /// localization values between observations and \p point in model-space, and
+  /// fill \p outside with flags on whether obs is local or not (1: outside of
+  /// localization, 0: inside of localization, local)
+  virtual void computeLocalization(const GeometryIterator_ & point,
+                                   ObsDataVector_ & flags, ObsVector_ & obsvector) const = 0;
 };
 
 // =============================================================================
 
-/// ObsLocalizationFactory Factory
-template <typename OBS>
+/// ObsLocalization Factory
+template <typename MODEL, typename OBS>
 class ObsLocalizationFactory {
-  typedef ObsSpace<OBS>                         ObsSpace_;
+  typedef ObsSpace<OBS>  ObsSpace_;
  public:
-  static std::unique_ptr<ObsLocalizationBase<OBS>> create(const eckit::Configuration &,
-                                                            const ObsSpace_ &);
+  static std::unique_ptr<ObsLocalizationBase<MODEL, OBS>> create(const eckit::Configuration &,
+                                                                 const ObsSpace_ &);
  protected:
   explicit ObsLocalizationFactory(const std::string &);
  private:
-  virtual ObsLocalizationBase<OBS> * make(const eckit::Configuration &,
-                                            const ObsSpace_ &) = 0;
-  static std::map < std::string, ObsLocalizationFactory<OBS> * > & getMakers() {
-    static std::map < std::string, ObsLocalizationFactory<OBS> * > makers_;
+  virtual ObsLocalizationBase<MODEL, OBS> * make(const eckit::Configuration &,
+                                                 const ObsSpace_ &) = 0;
+  static std::map < std::string, ObsLocalizationFactory<MODEL, OBS> * > & getMakers() {
+    static std::map < std::string, ObsLocalizationFactory<MODEL, OBS> * > makers_;
     return makers_;
   }
 };
 
 // -----------------------------------------------------------------------------
 
-template<class OBS, class T>
-class ObsLocalizationMaker : public ObsLocalizationFactory<OBS> {
-  typedef ObsSpace<OBS>                         ObsSpace_;
-  virtual ObsLocalizationBase<OBS> * make(const eckit::Configuration & conf,
-                                            const ObsSpace_ & obsspace)
-    { return new T(conf, obsspace); }
+template<class MODEL, class OBS, class T>
+class ObsLocalizationMaker : public ObsLocalizationFactory<MODEL, OBS> {
+  typedef ObsSpace<OBS>  ObsSpace_;
+  virtual ObsLocalizationBase<MODEL, OBS> * make(const eckit::Configuration & conf,
+                                                 const ObsSpace_ & obspace)
+    { return new T(conf, obspace.obsspace()); }
  public:
   explicit ObsLocalizationMaker(const std::string & name) :
-    ObsLocalizationFactory<OBS>(name) {}
+    ObsLocalizationFactory<MODEL, OBS>(name) {}
 };
 
 // -----------------------------------------------------------------------------
 
-template <typename OBS>
-ObsLocalizationFactory<OBS>::ObsLocalizationFactory(const std::string & name) {
+template <typename MODEL, typename OBS>
+ObsLocalizationFactory<MODEL, OBS>::ObsLocalizationFactory(const std::string & name) {
   if (getMakers().find(name) != getMakers().end()) {
     throw std::runtime_error(name + " already registered in obs localization factory.");
   }
@@ -80,18 +99,18 @@ ObsLocalizationFactory<OBS>::ObsLocalizationFactory(const std::string & name) {
 
 // -----------------------------------------------------------------------------
 
-template <typename OBS>
-std::unique_ptr<ObsLocalizationBase<OBS>> ObsLocalizationFactory<OBS>::create(
-                              const eckit::Configuration & conf, const ObsSpace_ & obsspace) {
-  Log::trace() << "ObsLocalizationBase<OBS>::create starting" << std::endl;
+template <typename MODEL, typename OBS>
+std::unique_ptr<ObsLocalizationBase<MODEL, OBS>> ObsLocalizationFactory<MODEL, OBS>::create(
+                              const eckit::Configuration & conf, const ObsSpace_ & obspace) {
+  Log::trace() << "ObsLocalizationBase<MODEL, OBS>::create starting" << std::endl;
   const std::string id = conf.getString("localization method");
-  typename std::map<std::string, ObsLocalizationFactory<OBS>*>::iterator
+  typename std::map<std::string, ObsLocalizationFactory<MODEL, OBS>*>::iterator
     jloc = getMakers().find(id);
   if (jloc == getMakers().end()) {
     throw std::runtime_error(id + " does not exist in obs localization factory.");
   }
-  std::unique_ptr<ObsLocalizationBase<OBS>> ptr(jloc->second->make(conf, obsspace));
-  Log::trace() << "ObsLocalizationBase<OBS>::create done" << std::endl;
+  std::unique_ptr<ObsLocalizationBase<MODEL, OBS>> ptr(jloc->second->make(conf, obspace));
+  Log::trace() << "ObsLocalizationBase<MODEL, OBS>::create done" << std::endl;
   return ptr;
 }
 

@@ -31,7 +31,8 @@
 #include "lorenz95/ObsDiags1D.h"
 #include "lorenz95/ObservationL95.h"
 #include "lorenz95/ObservationTLAD.h"
-#include "lorenz95/ObsTableView.h"
+#include "lorenz95/ObsIterator.h"
+#include "lorenz95/ObsTable.h"
 #include "lorenz95/ObsVec1D.h"
 #include "lorenz95/Resolution.h"
 #include "lorenz95/StateL95.h"
@@ -61,9 +62,10 @@ struct L95Traits {
 struct L95ObsTraits {
   static std::string name() {return "Lorenz 95 Obs";}
 
-  typedef lorenz95::ObsTableView           ObsSpace;
+  typedef lorenz95::ObsTable               ObsSpace;
   typedef lorenz95::ObsVec1D               ObsVector;
   template <typename DATATYPE> using ObsDataVector = lorenz95::ObsData1D<DATATYPE>;
+  typedef lorenz95::ObsIterator            GeometryIterator;
 
   typedef lorenz95::ObservationL95         ObsOperator;
   typedef lorenz95::ObservationTLAD        LinearObsOperator;

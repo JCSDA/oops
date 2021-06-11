@@ -17,6 +17,7 @@
 #include "oops/base/ObsSpaces.h"
 #include "oops/interface/ObsAuxIncrement.h"
 #include "oops/util/Logger.h"
+#include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Serializable.h"
 
@@ -26,7 +27,8 @@ namespace oops {
 
 template <typename OBS>
 class ObsAuxIncrements : public util::Printable,
-                         public util::Serializable {
+                         public util::Serializable,
+                         private util::ObjectCounter<ObsAuxIncrements<OBS> > {
   typedef ObsAuxIncrement<OBS>     ObsAuxIncrement_;
   typedef ObsAuxControls<OBS>      ObsAuxControls_;
   typedef ObsSpaces<OBS>           ObsSpaces_;
@@ -37,7 +39,6 @@ class ObsAuxIncrements : public util::Printable,
 /// Constructor, destructor
   ObsAuxIncrements(const ObsSpaces_ &, const eckit::Configuration &);
   ObsAuxIncrements(const ObsAuxIncrements &, const bool copy = true);
-  ObsAuxIncrements(const ObsAuxIncrements &, const eckit::Configuration &);
   ~ObsAuxIncrements();
 
 /// Access
@@ -89,12 +90,19 @@ template<typename OBS>
 ObsAuxIncrements<OBS>::ObsAuxIncrements(const ObsSpaces_ & odb, const eckit::Configuration & conf)
   : auxs_(0)
 {
-  std::vector<eckit::LocalConfiguration> obsconf;
-  conf.get("observations", obsconf);
+  Log::trace() << "ObsAuxIncrements<OBS>::ObsAuxIncrements starting" << std::endl;
+  size_t bytes = 0;
+  std::vector<eckit::LocalConfiguration> obsconf = conf.getSubConfigurations();
   for (std::size_t jobs = 0; jobs < obsconf.size(); ++jobs) {
+    eckit::LocalConfiguration obsauxconf = obsconf[jobs].getSubConfiguration("obs bias");
+    typename ObsAuxIncrement_::Parameters_ obsauxparams;
+    obsauxparams.validateAndDeserialize(obsauxconf);
     auxs_.push_back(
-      std::unique_ptr<ObsAuxIncrement_>(new ObsAuxIncrement_(odb[jobs], obsconf[jobs])));
+      std::unique_ptr<ObsAuxIncrement_>(new ObsAuxIncrement_(odb[jobs], obsauxparams)));
+    bytes += auxs_[jobs]->serialSize();
   }
+  this->setObjectSize(bytes*sizeof(double));
+  Log::trace() << "ObsAuxIncrements<OBS>::ObsAuxIncrements done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template<typename OBS>
@@ -102,24 +110,14 @@ ObsAuxIncrements<OBS>::ObsAuxIncrements(const ObsAuxIncrements & other, const bo
   : auxs_(other.size())
 {
   Log::trace() << "ObsAuxIncrements<OBS>::ObsAuxIncrements copy starting" << std::endl;
+  size_t bytes = 0;
   ASSERT(size() == other.size());
   for (std::size_t jobs = 0; jobs < other.size(); ++jobs) {
     auxs_[jobs].reset(new ObsAuxIncrement_(other[jobs], copy));
+    bytes += auxs_[jobs]->serialSize();
   }
+  this->setObjectSize(bytes*sizeof(double));
   Log::trace() << "ObsAuxIncrements<OBS>::ObsAuxIncrements copy done" << std::endl;
-}
-// -----------------------------------------------------------------------------
-template<typename OBS>
-ObsAuxIncrements<OBS>::ObsAuxIncrements(const ObsAuxIncrements & other,
-                                        const eckit::Configuration & conf) : auxs_(other.size())
-{
-  Log::trace() << "ObsAuxIncrements<OBS>::ObsAuxIncrements interpolated starting" << std::endl;
-  std::vector<eckit::LocalConfiguration> obsconf;
-  ASSERT(size() == other.size());
-  for (std::size_t jobs = 0; jobs < other.size(); ++jobs) {
-    auxs_[jobs].reset(new ObsAuxIncrement_(other[jobs]));
-  }
-  Log::trace() << "ObsAuxIncrements<OBS>::ObsAuxIncrements interpolated done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template<typename OBS>

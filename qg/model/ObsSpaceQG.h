@@ -26,6 +26,7 @@
 #include "oops/util/DateTime.h"
 
 #include "oops/qg/LocationsQG.h"
+#include "oops/qg/ObsIteratorQG.h"
 #include "oops/qg/QgFortran.h"
 
 namespace eckit {
@@ -33,7 +34,7 @@ namespace eckit {
 }
 
 namespace qg {
-  class ObsVecQG;
+  class ObsIteratorQG;
 
 /// \brief ObsSpace for QG model
 //  \details ObsSpaceQG is created for each obs type. The underlying Fortran
@@ -46,24 +47,18 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
   /// create full ObsSpace (read or generate data)
   ObsSpaceQG(const eckit::Configuration &, const eckit::mpi::Comm &,
              const util::DateTime &, const util::DateTime &, const eckit::mpi::Comm &);
-  /// create local ObsSpace
-  ObsSpaceQG(const ObsSpaceQG &, const eckit::geometry::Point2 &,
-             const eckit::Configuration &);
   ~ObsSpaceQG();
+
+  /// save and close file
+  void save() const;
 
   /// read data or metadata
   void getdb(const std::string &, int &) const;
   /// save data or metadata
   void putdb(const std::string &, const int &) const;
 
-  /// check if variable is in ObsSpace
-  bool has(const std::string & col) const;
-
-  /// create locations between times (\p t1, \p t2]
-  std::unique_ptr<LocationsQG> locations(const util::DateTime & t1,
-                                         const util::DateTime & t2) const;
-
-  void printJo(const ObsVecQG &, const ObsVecQG &) const;
+  /// create locations for the whole time window
+  std::unique_ptr<LocationsQG> locations() const;
 
   /// return number of observations (unique locations)
   int nobs() const;
@@ -74,8 +69,10 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
   /// observation type
   const std::string & obsname() const {return obsname_;}
 
-  /// local observations indices
-  const std::vector<int> & localobs() const { return localobs_;}
+  /// iterator to the first observation
+  ObsIteratorQG begin() const;
+  /// iterator to the observation past-the-last
+  ObsIteratorQG end() const;
 
   /// interface with Fortran
   const F90odb & toFortran() const {return key_;}
@@ -83,14 +80,11 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
  private:
   void print(std::ostream &) const;
 
-  F90odb key_;                       // pointer to Fortran structure
+  mutable F90odb key_;               // pointer to Fortran structure
   const std::string obsname_;        // corresponds with obstype
   const util::DateTime winbgn_;      // window for the observations
   const util::DateTime winend_;
   oops::Variables obsvars_;          // variables simulated by ObsOperators
-  std::vector<int> localobs_;        // indices of local observations
-  bool isLocal_;                     // true if it's a local subset
-  const eckit::mpi::Comm & comm_;    // MPI communicator associated with ObsSpace
 
   // defines mapping for Fortran structures
   static std::map < std::string, F90odb > theObsFileRegister_;

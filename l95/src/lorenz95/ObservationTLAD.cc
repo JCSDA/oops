@@ -11,6 +11,7 @@
 #include "lorenz95/ObservationTLAD.h"
 
 #include <string>
+#include <vector>
 
 #include "eckit/config/Configuration.h"
 #include "lorenz95/GomL95.h"
@@ -23,8 +24,8 @@
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
 
-ObservationTLAD::ObservationTLAD(const ObsTableView &, const eckit::Configuration &)
-  : inputs_()
+ObservationTLAD::ObservationTLAD(const ObsTable &, const eckit::Configuration &)
+  : inputs_(std::vector<std::string>{"x"})
 {}
 
 // -----------------------------------------------------------------------------
@@ -56,7 +57,7 @@ void ObservationTLAD::simulateObsAD(GomL95 & gom, const ObsVec1D & ovec,
 // -----------------------------------------------------------------------------
 
 void ObservationTLAD::print(std::ostream & os) const {
-  os << "ObservationTLAD: Lorenz 95 Linear Obs Operator";
+  os << "Lorenz 95: Identity linear obs operator";
 }
 
 // -----------------------------------------------------------------------------

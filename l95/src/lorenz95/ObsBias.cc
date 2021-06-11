@@ -12,6 +12,7 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "eckit/config/Configuration.h"
 #include "lorenz95/ObsBiasCorrection.h"
@@ -20,17 +21,14 @@
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-ObsBias::ObsBias(const ObsTableView &, const eckit::Configuration & conf)
-  : bias_(0.0), active_(false), geovars_(), hdiags_()
+ObsBias::ObsBias(const ObsTable &, const Parameters_ & params)
+  : bias_(0.0), active_(false), geovars_(std::vector<std::string>{"x"}), hdiags_()
 {
-  oops::Log::trace() << "ObsBias::ObsBias conf is:" << conf << std::endl;
-  if (conf.has("obs bias")) {
-    const eckit::LocalConfiguration biasconf(conf, "obs bias");
-    if (biasconf.has("bias")) {
-      bias_ = biasconf.getDouble("bias");
-      active_ = true;
-      oops::Log::info() << "ObsBias::ObsBias created, bias = " << bias_ << std::endl;
-    }
+  oops::Log::trace() << "ObsBias::ObsBias conf is:" << params << std::endl;
+  if (params.bias.value() != boost::none) {
+    bias_ = *params.bias.value();
+    active_ = true;
+    oops::Log::info() << "ObsBias::ObsBias created, bias = " << bias_ << std::endl;
   }
 }
 // -----------------------------------------------------------------------------

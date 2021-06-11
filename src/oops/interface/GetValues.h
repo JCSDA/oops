@@ -13,6 +13,7 @@
 
 
 #include "eckit/config/Configuration.h"
+#include "eckit/config/LocalConfiguration.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Locations.h"
@@ -40,7 +41,7 @@ class GetValues : public util::Printable,
   static const std::string classname() {return "oops::GetValues";}
 
 /// Constructor, destructor
-  GetValues(const Geometry_ &, const Locations_ &);
+  GetValues(const Geometry_ &, const Locations_ &, const eckit::Configuration &);
   ~GetValues();
 
 /// Interfacing
@@ -59,13 +60,16 @@ class GetValues : public util::Printable,
 // =============================================================================
 
 template<typename MODEL, typename OBS>
-GetValues<MODEL, OBS>::GetValues(const Geometry_ & resol, const Locations_ & locs) : getvalues_()
+GetValues<MODEL, OBS>::GetValues(const Geometry_ & resol, const Locations_ & locs,
+                                 const eckit::Configuration & conf)
+    :getvalues_()
 {
   Log::trace() << "GetValues<MODEL, OBS>::GetValues starting" << std::endl;
   util::Timer timer(classname(), "GetValues");
-  getvalues_.reset(new GetValues_(resol.geometry(), locs.locations()));
+  getvalues_.reset(new GetValues_(resol.geometry(), locs.locations(), conf));
   Log::trace() << "GetValues<MODEL, OBS>::GetValues done" << std::endl;
 }
+
 
 // -----------------------------------------------------------------------------
 

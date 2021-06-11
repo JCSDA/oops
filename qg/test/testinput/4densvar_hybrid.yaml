@@ -22,172 +22,176 @@ cost function:
       filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT6H.nc
   background error:
     covariance model: hybrid
-    ensemble:
-      localization:
-        horizontal_length_scale: 2.0e6
-        localization method: QG
+    components:
+    - covariance:
+        covariance model: ensemble
+        localization:
+          horizontal_length_scale: 2.0e6
+          localization method: QG
+          maximum_condition_number: 1.0e6
+          standard_deviation: 1.0
+          vertical_length_scale: 3694.0
+        members:
+        - states:
+          - date: 2010-01-01T00:00:00Z
+            filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1D.nc
+          - date: 2010-01-01T01:00:00Z
+            filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1DT1H.nc
+          - date: 2010-01-01T02:00:00Z
+            filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1DT2H.nc
+          - date: 2010-01-01T03:00:00Z
+            filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1DT3H.nc
+          - date: 2010-01-01T04:00:00Z
+            filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1DT4H.nc
+          - date: 2010-01-01T05:00:00Z
+            filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1DT5H.nc
+          - date: 2010-01-01T06:00:00Z
+            filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1DT6H.nc
+        - states:
+          - date: 2010-01-01T00:00:00Z
+            filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1D.nc
+          - date: 2010-01-01T01:00:00Z
+            filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1DT1H.nc
+          - date: 2010-01-01T02:00:00Z
+            filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1DT2H.nc
+          - date: 2010-01-01T03:00:00Z
+            filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1DT3H.nc
+          - date: 2010-01-01T04:00:00Z
+            filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1DT4H.nc
+          - date: 2010-01-01T05:00:00Z
+            filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1DT5H.nc
+          - date: 2010-01-01T06:00:00Z
+            filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1DT6H.nc
+        - states:
+          - date: 2010-01-01T00:00:00Z
+            filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1D.nc
+          - date: 2010-01-01T01:00:00Z
+            filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1DT1H.nc
+          - date: 2010-01-01T02:00:00Z
+            filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1DT2H.nc
+          - date: 2010-01-01T03:00:00Z
+            filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1DT3H.nc
+          - date: 2010-01-01T04:00:00Z
+            filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1DT4H.nc
+          - date: 2010-01-01T05:00:00Z
+            filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1DT5H.nc
+          - date: 2010-01-01T06:00:00Z
+            filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1DT6H.nc
+        - states:
+          - date: 2010-01-01T00:00:00Z
+            filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1D.nc
+          - date: 2010-01-01T01:00:00Z
+            filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1DT1H.nc
+          - date: 2010-01-01T02:00:00Z
+            filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1DT2H.nc
+          - date: 2010-01-01T03:00:00Z
+            filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1DT3H.nc
+          - date: 2010-01-01T04:00:00Z
+            filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1DT4H.nc
+          - date: 2010-01-01T05:00:00Z
+            filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1DT5H.nc
+          - date: 2010-01-01T06:00:00Z
+            filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1DT6H.nc
+        - states:
+          - date: 2010-01-01T00:00:00Z
+            filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1D.nc
+          - date: 2010-01-01T01:00:00Z
+            filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1DT1H.nc
+          - date: 2010-01-01T02:00:00Z
+            filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1DT2H.nc
+          - date: 2010-01-01T03:00:00Z
+            filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1DT3H.nc
+          - date: 2010-01-01T04:00:00Z
+            filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1DT4H.nc
+          - date: 2010-01-01T05:00:00Z
+            filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1DT5H.nc
+          - date: 2010-01-01T06:00:00Z
+            filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1DT6H.nc
+        - states:
+          - date: 2010-01-01T00:00:00Z
+            filename: Data/forecast.ens.6.2009-12-31T00:00:00Z.P1D.nc
+          - date: 2010-01-01T01:00:00Z
+            filename: Data/forecast.ens.6.2009-12-31T00:00:00Z.P1DT1H.nc
+          - date: 2010-01-01T02:00:00Z
+            filename: Data/forecast.ens.6.2009-12-31T00:00:00Z.P1DT2H.nc
+          - date: 2010-01-01T03:00:00Z
+            filename: Data/forecast.ens.6.2009-12-31T00:00:00Z.P1DT3H.nc
+          - date: 2010-01-01T04:00:00Z
+            filename: Data/forecast.ens.6.2009-12-31T00:00:00Z.P1DT4H.nc
+          - date: 2010-01-01T05:00:00Z
+            filename: Data/forecast.ens.6.2009-12-31T00:00:00Z.P1DT5H.nc
+          - date: 2010-01-01T06:00:00Z
+            filename: Data/forecast.ens.6.2009-12-31T00:00:00Z.P1DT6H.nc
+        - states:
+          - date: 2010-01-01T00:00:00Z
+            filename: Data/forecast.ens.7.2009-12-31T00:00:00Z.P1D.nc
+          - date: 2010-01-01T01:00:00Z
+            filename: Data/forecast.ens.7.2009-12-31T00:00:00Z.P1DT1H.nc
+          - date: 2010-01-01T02:00:00Z
+            filename: Data/forecast.ens.7.2009-12-31T00:00:00Z.P1DT2H.nc
+          - date: 2010-01-01T03:00:00Z
+            filename: Data/forecast.ens.7.2009-12-31T00:00:00Z.P1DT3H.nc
+          - date: 2010-01-01T04:00:00Z
+            filename: Data/forecast.ens.7.2009-12-31T00:00:00Z.P1DT4H.nc
+          - date: 2010-01-01T05:00:00Z
+            filename: Data/forecast.ens.7.2009-12-31T00:00:00Z.P1DT5H.nc
+          - date: 2010-01-01T06:00:00Z
+            filename: Data/forecast.ens.7.2009-12-31T00:00:00Z.P1DT6H.nc
+        - states:
+          - date: 2010-01-01T00:00:00Z
+            filename: Data/forecast.ens.8.2009-12-31T00:00:00Z.P1D.nc
+          - date: 2010-01-01T01:00:00Z
+            filename: Data/forecast.ens.8.2009-12-31T00:00:00Z.P1DT1H.nc
+          - date: 2010-01-01T02:00:00Z
+            filename: Data/forecast.ens.8.2009-12-31T00:00:00Z.P1DT2H.nc
+          - date: 2010-01-01T03:00:00Z
+            filename: Data/forecast.ens.8.2009-12-31T00:00:00Z.P1DT3H.nc
+          - date: 2010-01-01T04:00:00Z
+            filename: Data/forecast.ens.8.2009-12-31T00:00:00Z.P1DT4H.nc
+          - date: 2010-01-01T05:00:00Z
+            filename: Data/forecast.ens.8.2009-12-31T00:00:00Z.P1DT5H.nc
+          - date: 2010-01-01T06:00:00Z
+            filename: Data/forecast.ens.8.2009-12-31T00:00:00Z.P1DT6H.nc
+        - states:
+          - date: 2010-01-01T00:00:00Z
+            filename: Data/forecast.ens.9.2009-12-31T00:00:00Z.P1D.nc
+          - date: 2010-01-01T01:00:00Z
+            filename: Data/forecast.ens.9.2009-12-31T00:00:00Z.P1DT1H.nc
+          - date: 2010-01-01T02:00:00Z
+            filename: Data/forecast.ens.9.2009-12-31T00:00:00Z.P1DT2H.nc
+          - date: 2010-01-01T03:00:00Z
+            filename: Data/forecast.ens.9.2009-12-31T00:00:00Z.P1DT3H.nc
+          - date: 2010-01-01T04:00:00Z
+            filename: Data/forecast.ens.9.2009-12-31T00:00:00Z.P1DT4H.nc
+          - date: 2010-01-01T05:00:00Z
+            filename: Data/forecast.ens.9.2009-12-31T00:00:00Z.P1DT5H.nc
+          - date: 2010-01-01T06:00:00Z
+            filename: Data/forecast.ens.9.2009-12-31T00:00:00Z.P1DT6H.nc
+        - states:
+          - date: 2010-01-01T00:00:00Z
+            filename: Data/forecast.ens.10.2009-12-31T00:00:00Z.P1D.nc
+          - date: 2010-01-01T01:00:00Z
+            filename: Data/forecast.ens.10.2009-12-31T00:00:00Z.P1DT1H.nc
+          - date: 2010-01-01T02:00:00Z
+            filename: Data/forecast.ens.10.2009-12-31T00:00:00Z.P1DT2H.nc
+          - date: 2010-01-01T03:00:00Z
+            filename: Data/forecast.ens.10.2009-12-31T00:00:00Z.P1DT3H.nc
+          - date: 2010-01-01T04:00:00Z
+            filename: Data/forecast.ens.10.2009-12-31T00:00:00Z.P1DT4H.nc
+          - date: 2010-01-01T05:00:00Z
+            filename: Data/forecast.ens.10.2009-12-31T00:00:00Z.P1DT5H.nc
+          - date: 2010-01-01T06:00:00Z
+            filename: Data/forecast.ens.10.2009-12-31T00:00:00Z.P1DT6H.nc
+      weight:
+        value: 0.5
+    - covariance:
+        covariance model: QgError
+        horizontal_length_scale: 2.2e6
         maximum_condition_number: 1.0e6
-        standard_deviation: 1.0
-        vertical_length_scale: 3694.0
-      members:
-      - states:
-        - date: 2010-01-01T00:00:00Z
-          filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1D.nc
-        - date: 2010-01-01T01:00:00Z
-          filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1DT1H.nc
-        - date: 2010-01-01T02:00:00Z
-          filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1DT2H.nc
-        - date: 2010-01-01T03:00:00Z
-          filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1DT3H.nc
-        - date: 2010-01-01T04:00:00Z
-          filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1DT4H.nc
-        - date: 2010-01-01T05:00:00Z
-          filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1DT5H.nc
-        - date: 2010-01-01T06:00:00Z
-          filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1DT6H.nc
-      - states:
-        - date: 2010-01-01T00:00:00Z
-          filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1D.nc
-        - date: 2010-01-01T01:00:00Z
-          filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1DT1H.nc
-        - date: 2010-01-01T02:00:00Z
-          filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1DT2H.nc
-        - date: 2010-01-01T03:00:00Z
-          filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1DT3H.nc
-        - date: 2010-01-01T04:00:00Z
-          filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1DT4H.nc
-        - date: 2010-01-01T05:00:00Z
-          filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1DT5H.nc
-        - date: 2010-01-01T06:00:00Z
-          filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1DT6H.nc
-      - states:
-        - date: 2010-01-01T00:00:00Z
-          filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1D.nc
-        - date: 2010-01-01T01:00:00Z
-          filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1DT1H.nc
-        - date: 2010-01-01T02:00:00Z
-          filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1DT2H.nc
-        - date: 2010-01-01T03:00:00Z
-          filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1DT3H.nc
-        - date: 2010-01-01T04:00:00Z
-          filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1DT4H.nc
-        - date: 2010-01-01T05:00:00Z
-          filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1DT5H.nc
-        - date: 2010-01-01T06:00:00Z
-          filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1DT6H.nc
-      - states:
-        - date: 2010-01-01T00:00:00Z
-          filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1D.nc
-        - date: 2010-01-01T01:00:00Z
-          filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1DT1H.nc
-        - date: 2010-01-01T02:00:00Z
-          filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1DT2H.nc
-        - date: 2010-01-01T03:00:00Z
-          filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1DT3H.nc
-        - date: 2010-01-01T04:00:00Z
-          filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1DT4H.nc
-        - date: 2010-01-01T05:00:00Z
-          filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1DT5H.nc
-        - date: 2010-01-01T06:00:00Z
-          filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1DT6H.nc
-      - states:
-        - date: 2010-01-01T00:00:00Z
-          filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1D.nc
-        - date: 2010-01-01T01:00:00Z
-          filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1DT1H.nc
-        - date: 2010-01-01T02:00:00Z
-          filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1DT2H.nc
-        - date: 2010-01-01T03:00:00Z
-          filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1DT3H.nc
-        - date: 2010-01-01T04:00:00Z
-          filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1DT4H.nc
-        - date: 2010-01-01T05:00:00Z
-          filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1DT5H.nc
-        - date: 2010-01-01T06:00:00Z
-          filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1DT6H.nc
-      - states:
-        - date: 2010-01-01T00:00:00Z
-          filename: Data/forecast.ens.6.2009-12-31T00:00:00Z.P1D.nc
-        - date: 2010-01-01T01:00:00Z
-          filename: Data/forecast.ens.6.2009-12-31T00:00:00Z.P1DT1H.nc
-        - date: 2010-01-01T02:00:00Z
-          filename: Data/forecast.ens.6.2009-12-31T00:00:00Z.P1DT2H.nc
-        - date: 2010-01-01T03:00:00Z
-          filename: Data/forecast.ens.6.2009-12-31T00:00:00Z.P1DT3H.nc
-        - date: 2010-01-01T04:00:00Z
-          filename: Data/forecast.ens.6.2009-12-31T00:00:00Z.P1DT4H.nc
-        - date: 2010-01-01T05:00:00Z
-          filename: Data/forecast.ens.6.2009-12-31T00:00:00Z.P1DT5H.nc
-        - date: 2010-01-01T06:00:00Z
-          filename: Data/forecast.ens.6.2009-12-31T00:00:00Z.P1DT6H.nc
-      - states:
-        - date: 2010-01-01T00:00:00Z
-          filename: Data/forecast.ens.7.2009-12-31T00:00:00Z.P1D.nc
-        - date: 2010-01-01T01:00:00Z
-          filename: Data/forecast.ens.7.2009-12-31T00:00:00Z.P1DT1H.nc
-        - date: 2010-01-01T02:00:00Z
-          filename: Data/forecast.ens.7.2009-12-31T00:00:00Z.P1DT2H.nc
-        - date: 2010-01-01T03:00:00Z
-          filename: Data/forecast.ens.7.2009-12-31T00:00:00Z.P1DT3H.nc
-        - date: 2010-01-01T04:00:00Z
-          filename: Data/forecast.ens.7.2009-12-31T00:00:00Z.P1DT4H.nc
-        - date: 2010-01-01T05:00:00Z
-          filename: Data/forecast.ens.7.2009-12-31T00:00:00Z.P1DT5H.nc
-        - date: 2010-01-01T06:00:00Z
-          filename: Data/forecast.ens.7.2009-12-31T00:00:00Z.P1DT6H.nc
-      - states:
-        - date: 2010-01-01T00:00:00Z
-          filename: Data/forecast.ens.8.2009-12-31T00:00:00Z.P1D.nc
-        - date: 2010-01-01T01:00:00Z
-          filename: Data/forecast.ens.8.2009-12-31T00:00:00Z.P1DT1H.nc
-        - date: 2010-01-01T02:00:00Z
-          filename: Data/forecast.ens.8.2009-12-31T00:00:00Z.P1DT2H.nc
-        - date: 2010-01-01T03:00:00Z
-          filename: Data/forecast.ens.8.2009-12-31T00:00:00Z.P1DT3H.nc
-        - date: 2010-01-01T04:00:00Z
-          filename: Data/forecast.ens.8.2009-12-31T00:00:00Z.P1DT4H.nc
-        - date: 2010-01-01T05:00:00Z
-          filename: Data/forecast.ens.8.2009-12-31T00:00:00Z.P1DT5H.nc
-        - date: 2010-01-01T06:00:00Z
-          filename: Data/forecast.ens.8.2009-12-31T00:00:00Z.P1DT6H.nc
-      - states:
-        - date: 2010-01-01T00:00:00Z
-          filename: Data/forecast.ens.9.2009-12-31T00:00:00Z.P1D.nc
-        - date: 2010-01-01T01:00:00Z
-          filename: Data/forecast.ens.9.2009-12-31T00:00:00Z.P1DT1H.nc
-        - date: 2010-01-01T02:00:00Z
-          filename: Data/forecast.ens.9.2009-12-31T00:00:00Z.P1DT2H.nc
-        - date: 2010-01-01T03:00:00Z
-          filename: Data/forecast.ens.9.2009-12-31T00:00:00Z.P1DT3H.nc
-        - date: 2010-01-01T04:00:00Z
-          filename: Data/forecast.ens.9.2009-12-31T00:00:00Z.P1DT4H.nc
-        - date: 2010-01-01T05:00:00Z
-          filename: Data/forecast.ens.9.2009-12-31T00:00:00Z.P1DT5H.nc
-        - date: 2010-01-01T06:00:00Z
-          filename: Data/forecast.ens.9.2009-12-31T00:00:00Z.P1DT6H.nc
-      - states:
-        - date: 2010-01-01T00:00:00Z
-          filename: Data/forecast.ens.10.2009-12-31T00:00:00Z.P1D.nc
-        - date: 2010-01-01T01:00:00Z
-          filename: Data/forecast.ens.10.2009-12-31T00:00:00Z.P1DT1H.nc
-        - date: 2010-01-01T02:00:00Z
-          filename: Data/forecast.ens.10.2009-12-31T00:00:00Z.P1DT2H.nc
-        - date: 2010-01-01T03:00:00Z
-          filename: Data/forecast.ens.10.2009-12-31T00:00:00Z.P1DT3H.nc
-        - date: 2010-01-01T04:00:00Z
-          filename: Data/forecast.ens.10.2009-12-31T00:00:00Z.P1DT4H.nc
-        - date: 2010-01-01T05:00:00Z
-          filename: Data/forecast.ens.10.2009-12-31T00:00:00Z.P1DT5H.nc
-        - date: 2010-01-01T06:00:00Z
-          filename: Data/forecast.ens.10.2009-12-31T00:00:00Z.P1DT6H.nc
-    ensemble weight: 0.707
-    static:
-      covariance model: QgError
-      horizontal_length_scale: 2.2e6
-      maximum_condition_number: 1.0e6
-      standard_deviation: 1.8e7
-      vertical_length_scale: 15000.0
-    static weight: 0.707
+        standard_deviation: 1.8e7
+        vertical_length_scale: 15000.0
+      weight:
+        value: 0.5
   observations:
   - obs error:
       covariance model: diagonal
@@ -254,3 +258,6 @@ output:
   first: PT0S
   frequency: PT6H
   type: an
+
+test:
+  reference filename: testoutput/4densvar_hybrid.test

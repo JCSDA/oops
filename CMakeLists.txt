@@ -11,7 +11,7 @@
 ################################################################################
 
 cmake_minimum_required( VERSION 3.12 )
-project( oops VERSION 1.0.0 LANGUAGES CXX Fortran )
+project( oops VERSION 1.1.0 LANGUAGES CXX Fortran )
 
 ## Ecbuild integration
 find_package( ecbuild 3.3.2 REQUIRED )
@@ -32,6 +32,8 @@ include( ${PROJECT_NAME}_compiler_flags )
 include( GNUInstallDirs )
 
 ## Dependencies
+find_package( jedicmake QUIET )  # Prefer find modules from jedi-cmake
+
 if( ENABLE_MKL )
     find_package( MKL )
 endif()
@@ -46,7 +48,7 @@ find_package( Eigen3 REQUIRED NO_MODULE HINTS
     $ENV{Eigen3_PATH} $ENV{EIGEN3_PATH} $ENV{Eigen_PATH} $ENV{EIGEN_PATH})
 
 find_package( OpenMP COMPONENTS CXX Fortran )
-find_package( MPI REQUIRED COMPONENTS CXX Fortran )
+find_package( MPI REQUIRED COMPONENTS C CXX Fortran )
 find_package( NetCDF REQUIRED COMPONENTS Fortran )
 find_package( Boost 1.64.0 REQUIRED)
 find_package( eckit 1.11.6 REQUIRED COMPONENTS MPI )
@@ -58,7 +60,6 @@ else()
 endif()
 
 #Optional Dependencies
-find_package( jedicmake QUIET )
 if( jedicmake_FOUND AND ENABLE_GPTL )
     find_package( GPTL )
     add_compile_definitions(ENABLE_GPTL)

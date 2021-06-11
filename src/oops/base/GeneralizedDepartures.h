@@ -11,6 +11,8 @@
 #ifndef OOPS_BASE_GENERALIZEDDEPARTURES_H_
 #define OOPS_BASE_GENERALIZEDDEPARTURES_H_
 
+#include "oops/util/Printable.h"
+
 namespace oops {
 
 /// Abstract base class for quantities
@@ -19,10 +21,12 @@ namespace oops {
  *  measured by the cost function to gather them in a DualVector object.
  */
 
-class GeneralizedDepartures {
+class GeneralizedDepartures : public util::Printable {
  public:
   GeneralizedDepartures() {}
   virtual ~GeneralizedDepartures() {}
+ private:
+  void print(std::ostream &) const = 0;
 };
 
 }  // namespace oops

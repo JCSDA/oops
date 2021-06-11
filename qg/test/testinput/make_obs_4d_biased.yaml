@@ -25,7 +25,7 @@ observations:
       obs_error: 4.0e6
       obs_period: PT3H
   obs bias:
-    stream: '-1.0e7'
+    stream: -1.0e7
 - obs operator:
     obs type: Wind
   obs space:
@@ -39,7 +39,7 @@ observations:
       obs_error: 6.0
       obs_period: PT6H
   obs bias:
-    uwind: '10.0'
+    uwind: 10.0
 - obs operator:
     obs type: WSpeed
   obs space:
@@ -55,3 +55,6 @@ observations:
 make obs: true
 prints:
   frequency: PT3H
+
+test:
+  reference filename: testoutput/make_obs_4d_biased.test

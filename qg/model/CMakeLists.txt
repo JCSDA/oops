@@ -32,12 +32,17 @@ ModelQG.cc
 ModelQG.h
 ObsBias.cc
 ObsBias.h
+ObsBiasParameters.h
 ObsBiasCovariance.cc
 ObsBiasCovariance.h
 ObsBiasIncrement.cc
 ObsBiasIncrement.h
 ObsDataQG.h
 ObsDiagsQG.h
+ObsIteratorQG.cc
+ObsIteratorQG.h
+ObsLocQG.cc
+ObsLocQG.h
 ObsOpBaseQG.cc
 ObsOpBaseQG.h
 ObsOpBaseTLAD.cc
@@ -83,7 +88,8 @@ qg_change_var_mod.F90
 qg_constants_mod.F90
 qg_convert_q_to_x_mod.F90
 qg_convert_x_to_q_mod.F90
-qg_convert_x_to_uv_mod.F90
+qg_convert_x_to_u_mod.F90
+qg_convert_x_to_v_mod.F90
 qg_differential_solver_mod.F90
 qg_error_covariance_interface.F90
 qg_error_covariance_mod.F90

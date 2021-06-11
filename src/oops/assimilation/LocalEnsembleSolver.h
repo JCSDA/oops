@@ -11,19 +11,25 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
+#include "eckit/config/Configuration.h"
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/CalcHofX.h"
 #include "oops/base/Departures.h"
 #include "oops/base/DeparturesEnsemble.h"
+#include "oops/base/GetValuesPost.h"
 #include "oops/base/IncrementEnsemble4D.h"
+#include "oops/base/ObsAuxControls.h"
 #include "oops/base/ObsEnsemble.h"
+#include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
+#include "oops/base/ObsLocalizations.h"
 #include "oops/base/ObsSpaces.h"
-#include "oops/base/QCData.h"
 #include "oops/base/StateEnsemble4D.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
+#include "oops/util/ConfigFunctions.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Timer.h"
 
@@ -32,16 +38,19 @@ namespace oops {
 /// \brief Base class for LETKF-type solvers
 template <typename MODEL, typename OBS>
 class LocalEnsembleSolver {
-  typedef CalcHofX<MODEL, OBS>        CalcHofX_;
+  typedef CalcHofX<OBS>               CalcHofX_;
   typedef Departures<OBS>             Departures_;
   typedef DeparturesEnsemble<OBS>     DeparturesEnsemble_;
   typedef Geometry<MODEL>             Geometry_;
   typedef GeometryIterator<MODEL>     GeometryIterator_;
+  typedef GetValuesPost<MODEL, OBS>   GetValuesPost_;
   typedef IncrementEnsemble4D<MODEL>  IncrementEnsemble4D_;
+  typedef ObsAuxControls<OBS>         ObsAuxControls_;
   typedef ObsEnsemble<OBS>            ObsEnsemble_;
+  typedef ObsErrors<OBS>              ObsErrors_;
   typedef Observations<OBS>           Observations_;
+  typedef ObsLocalizations<MODEL, OBS> ObsLocalizations_;
   typedef ObsSpaces<OBS>              ObsSpaces_;
-  typedef QCData<OBS>                 QCData_;
   typedef StateEnsemble4D<MODEL>      StateEnsemble4D_;
 
  public:
@@ -66,10 +75,14 @@ class LocalEnsembleSolver {
 
  protected:
   const eckit::LocalConfiguration obsconf_;  // configuration for observations
-  const ObsSpaces_ & obspaces_;  // ObsSpaces
-  CalcHofX_   hofx_;             // observer
-  Departures_ omb_;              // obs - mean(H(x))
-  DeparturesEnsemble_ Yb_;       // ensemble perturbations in the observation space
+  const ObsSpaces_ & obspaces_;   // ObsSpaces
+  const ObsAuxControls_ obsaux_;  // Obs bias
+  CalcHofX_   hofx_;              // observer
+  Departures_ omb_;               // obs - mean(H(x))
+  DeparturesEnsemble_ Yb_;        // ensemble perturbations in the observation space
+  std::unique_ptr<ObsErrors_> R_;          ///< observation errors
+  std::unique_ptr<Departures_> invVarR_;   ///< inverse observation error variance
+  ObsLocalizations_ obsloc_;      ///< observation space localization
 };
 
 // -----------------------------------------------------------------------------
@@ -78,9 +91,9 @@ template <typename MODEL, typename OBS>
 LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
                                         const Geometry_ & geometry,
                                         const eckit::Configuration & config, size_t nens)
-  : obsconf_(config), obspaces_(obspaces),
-    hofx_(obspaces, geometry, config),
-    omb_(obspaces_), Yb_(obspaces_, nens)
+  : obsconf_(config, "observations"), obspaces_(obspaces), obsaux_(obspaces_, obsconf_),
+    hofx_(obspaces, obsconf_), omb_(obspaces_), Yb_(obspaces_, nens),
+    obsloc_(obsconf_, obspaces_)
 {
 }
 
@@ -95,7 +108,6 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(const StateEnsemb
 
   const size_t nens = ens_xx.size();
   ObsEnsemble_ obsens(obspaces_, nens);
-  std::shared_ptr<QCData_> qc;
 
   if (readFromDisk) {
     // read hofx from disk
@@ -104,23 +116,34 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(const StateEnsemb
       obsens[jj].read("hofx"+std::to_string(iteration)+"_"+std::to_string(jj+1));
       Log::test() << "H(x) for member " << jj+1 << ":" << std::endl << obsens[jj] << std::endl;
     }
-    qc.reset(new QCData_(obspaces_, "EffectiveQC", "EffectiveError"));
-
+    hofx_.readQcFlags("EffectiveQC");
   } else {
     // compute and save H(x)
     Log::debug() << "Computing H(X) online" << std::endl;
     for (size_t jj = 0; jj < nens; ++jj) {
-      obsens[jj] = hofx_.compute(ens_xx[jj]);
+      hofx_.resetQc();
+      hofx_.initialize(obsaux_, iteration);
+      // fill in geovals
+      std::vector<eckit::LocalConfiguration> getValuesConfig =
+        util::vectoriseAndFilter(obsconf_, "get values");
+
+      GetValuesPost_ getvals(obspaces_, hofx_.locations(), hofx_.requiredVars(), getValuesConfig);
+      getvals.fill(ens_xx[jj]);
+      // compute H(x) on filled in geovals and run the filters
+      obsens[jj] = hofx_.compute(getvals.geovals());
       Log::test() << "H(x) for member " << jj+1 << ":" << std::endl << obsens[jj] << std::endl;
       obsens[jj].save("hofx"+std::to_string(iteration)+"_"+std::to_string(jj+1));
     }
     // QC flags and Obs errors are set to that of the last ensemble member
     // TODO(someone) combine qc flags from all ensemble members
-    qc = hofx_.qc();
     hofx_.saveQcFlags("EffectiveQC");
-    hofx_.maskObsErrors(*qc);
-    hofx_.saveObsErrors("EffectiveError");
+    hofx_.maskObsErrors();
+    hofx_.saveObsErrors("ObsError");
   }
+  R_.reset(new ObsErrors_(obsconf_, obspaces_));
+  invVarR_.reset(new Departures_(R_->inverseVariance()));
+
+  invVarR_->mask(hofx_.qcflags());
 
   // calculate H(x) ensemble mean
   Observations_ yb_mean(obsens.mean());
@@ -128,13 +151,13 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(const StateEnsemb
   // calculate H(x) ensemble perturbations
   for (size_t iens = 0; iens < nens; ++iens) {
     Yb_[iens] = obsens[iens] - yb_mean;
-    Yb_[iens].mask(*qc);
+    Yb_[iens].mask(hofx_.qcflags());
   }
 
   // calculate obs departures and mask with qc flag
   Observations_ yobs(obspaces_, "ObsValue");
   omb_ = yobs - yb_mean;
-  omb_.mask(*qc);
+  omb_.mask(hofx_.qcflags());
 
   // return mean H(x)
   return yb_mean;

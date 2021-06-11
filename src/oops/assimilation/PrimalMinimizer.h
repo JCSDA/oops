@@ -11,6 +11,7 @@
 #ifndef OOPS_ASSIMILATION_PRIMALMINIMIZER_H_
 #define OOPS_ASSIMILATION_PRIMALMINIMIZER_H_
 
+#include <memory>
 #include <string>
 
 #include "eckit/config/Configuration.h"
@@ -18,7 +19,11 @@
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/Minimizer.h"
+#include "oops/assimilation/RinvHMatrix.h"
+#include "oops/util/FloatCompare.h"
 #include "oops/util/Logger.h"
+
+#include "oops/assimilation/DualVector.h"
 
 namespace oops {
 
@@ -36,6 +41,7 @@ template<typename MODEL, typename OBS> class PrimalMinimizer : public Minimizer<
   typedef BMatrix<MODEL, OBS>             Bmat_;
   typedef HessianMatrix<MODEL, OBS>       Hessian_;
   typedef Minimizer<MODEL, OBS>           Minimizer_;
+  typedef RinvHMatrix<MODEL, OBS>         RinvH_;
 
  public:
   explicit PrimalMinimizer(const CostFct_ & J): Minimizer_(J), J_(J) {}
@@ -70,8 +76,14 @@ PrimalMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
 
 // Compute RHS
   CtrlInc_ rhs(J_.jb());
-  J_.computeGradientFG(rhs);
-  J_.jb().addGradientFG(rhs);
+  if (config.has("fsoi")) {
+    const eckit::LocalConfiguration FcSensitivityConfig(config, "fsoi.input forecast sensitivity");
+    rhs.read(FcSensitivityConfig);
+    Log::info() << classname() << " rhs has forecast sensitivity" << std::endl;
+  } else {
+    J_.computeGradientFG(rhs);
+    J_.jb().addGradientFG(rhs);
+  }
   rhs *= -1.0;
   Log::info() << classname() << " rhs" << rhs << std::endl;
 
@@ -83,6 +95,48 @@ PrimalMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
 
   Log::test() << classname() << ": reduction in residual norm = " << reduc << std::endl;
   Log::info() << classname() << " output" << *dx << std::endl;
+
+  if (config.has("fsoi")) {
+    Log::info() << classname() << " Entering Observation Sensitivity Calculation" << std::endl;
+
+    // Multiply result of solver by RinvH to get observation sensitivity (ys)
+    DualVector<MODEL, OBS> ys;
+    const RinvH_ RinvH(J_);
+    RinvH.multiply(*dx, ys);
+
+    // Write out observation sensitivity
+    const std::string osensname = "ObsSensitivity";
+    ys.saveDep(osensname);
+
+    bool runFSOIincTest = config.getBool("fsoi.increment test", false);
+    if (runFSOIincTest) {
+      // Get departures
+      DualVector<MODEL, OBS> dp;
+      for (unsigned jj = 0; jj < J_.nterms(); ++jj) {
+        std::unique_ptr<GeneralizedDepartures> ww(J_.jterm(jj).newGradientFG());
+        dp.append(J_.jterm(jj).multiplyCovar(*ww));
+      }
+
+      // <K dp,  dx>, where dx = K dp
+      double adj_tst_fwd = dot_product(rhs, rhs);
+      // <dp, Kt dx>, where K = Hessian Ht Rinv; dp=departures
+      double adj_tst_bwd = dot_product(ys, dp);
+
+      Log::info() << "Online FSOI increment test: " << std::endl
+                  << util::PrintAdjTest(adj_tst_fwd, adj_tst_bwd, "K") << std::endl;
+
+      double fsoi_inctest_tolerance = config.getDouble("fsoi.increment test tolerance", 1.0e-5);
+      bool passed = oops::is_close_absolute(adj_tst_fwd, adj_tst_bwd, fsoi_inctest_tolerance);
+      if (passed) {
+        Log::test() << "FSOI increment test within tolerance." << std::endl;
+      } else {
+        Log::test() << "FSOI increment test fails tolerance bound." << std::endl;
+      }
+    }
+
+    // Make sure not to update state in FSOI mode
+    dx->zero();
+  }
 
   return dx;
 }

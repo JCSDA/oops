@@ -11,6 +11,9 @@
 #ifndef OOPS_ASSIMILATION_HBHTMATRIX_H_
 #define OOPS_ASSIMILATION_HBHTMATRIX_H_
 
+#include <memory>
+#include <utility>
+
 #include <boost/noncopyable.hpp>
 
 #include "oops/assimilation/ControlIncrement.h"
@@ -35,8 +38,7 @@ template<typename MODEL, typename OBS> class HBHtMatrix : private boost::noncopy
   typedef DualVector<MODEL, OBS>          Dual_;
 
  public:
-  explicit HBHtMatrix(const CostFct_ & j,
-                      const bool test = false);
+  explicit HBHtMatrix(const CostFct_ & j, const bool test = false);
 
   void multiply(const Dual_ & dy, Dual_ & dz) const;
 
@@ -49,8 +51,7 @@ template<typename MODEL, typename OBS> class HBHtMatrix : private boost::noncopy
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-HBHtMatrix<MODEL, OBS>::HBHtMatrix(const CostFct_ & j,
-                              const bool test)
+HBHtMatrix<MODEL, OBS>::HBHtMatrix(const CostFct_ & j, const bool test)
   : j_(j), test_(test), iter_(0)
 {}
 
@@ -66,9 +67,12 @@ void HBHtMatrix<MODEL, OBS>::multiply(const Dual_ & dy, Dual_ & dz) const {
   j_.zeroAD(ww);
   PostProcessorTLAD<MODEL> costad;
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
-    costad.enrollProcessor(j_.jterm(jj).setupAD(dy.getv(jj), ww));
+    j_.jterm(jj).computeCostAD(dy.getv(jj), ww, costad);
   }
   j_.runADJ(ww, costad);
+  for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
+    j_.jterm(jj).setPostProcAD();
+  }
 
 // Multiply by B
   CtrlInc_ zz(j_.jb());
@@ -77,26 +81,29 @@ void HBHtMatrix<MODEL, OBS>::multiply(const Dual_ & dy, Dual_ & dz) const {
 // Run TLM
   PostProcessorTLAD<MODEL> costtl;
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
-    costtl.enrollProcessor(j_.jterm(jj).setupTL(zz));
+    j_.jterm(jj).setPostProcTL(zz, costtl);
   }
+
   CtrlInc_ mzz(zz);
   j_.runTLM(mzz, costtl);
 
 // Get TLM outputs
   dz.clear();
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
-    dz.append(costtl.releaseOutputFromTL(jj));
+    std::unique_ptr<GeneralizedDepartures> ztmp = j_.jterm(jj).newDualVector();
+    j_.jterm(jj).computeCostTL(zz, *ztmp);
+    dz.append(std::move(ztmp));
   }
 
+// Tests
   if (test_) {
-     // <G dx, dy >, where dx = B Gt dy
-     double adj_tst_fwd = dot_product(dz, dy);
-     // <  dx, Gt dy>, where dx = B Gt dy
-     double adj_tst_bwd = dot_product(zz, ww);
+    // <G dx, dy >, where dx = B Gt dy
+    double adj_tst_fwd = dot_product(dz, dy);
+    // <  dx, Gt dy>, where dx = B Gt dy
+    double adj_tst_bwd = dot_product(zz, ww);
 
-     Log::info() << "Online adjoint test, iteration: " << iter_ << std::endl
-                 << util::PrintAdjTest(adj_tst_fwd, adj_tst_bwd, "G")
-                 << std::endl;
+    Log::info() << "Online adjoint test, iteration: " << iter_ << std::endl
+                << util::PrintAdjTest(adj_tst_fwd, adj_tst_bwd, "G") << std::endl;
   }
 }
 

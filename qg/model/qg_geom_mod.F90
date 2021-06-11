@@ -1,8 +1,8 @@
 ! (C) Copyright 2009-2016 ECMWF.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
-! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
-! In applying this licence, ECMWF does not waive the privileges and immunities 
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
 ! granted to it by virtue of its status as an intergovernmental organisation nor
 ! does it submit to any jurisdiction.
 
@@ -72,6 +72,7 @@ integer,allocatable :: ipiv(:),ipivsave(:)
 real(kind_real) :: mapfac,distx,disty,f
 real(kind_real),allocatable :: real_array(:),depths(:),wi(:),vl(:,:),work(:)
 real(kind_real),allocatable :: fsave(:,:),vrlu(:,:),vrlusave(:,:)
+real(kind_real) :: norm
 character(len=1024) :: record
 logical :: htype
 character(len=:),allocatable :: str
@@ -154,14 +155,15 @@ do iz=1,self%nz
 enddo
 
 ! Compute eigendecomposition of ff
-fsave = self%f
+norm=maxval(abs(self%f)) ! normalization for numerical stability
+fsave = self%f / norm
 allocate(work(1))
 call dgeev('V','V',self%nz,fsave,self%nz,self%f_d,wi,vl,self%nz,self%f_p,self%nz,work,-1,info)
 if (info/=0) call abor1_ftn('error in dgeev, first pass')
 lwork = int(work(1))
 deallocate(work)
 allocate(work(lwork))
-fsave = self%f
+fsave = self%f / norm
 call dgeev('V','V',self%nz,fsave,self%nz,self%f_d,wi,vl,self%nz,self%f_p,self%nz,work,lwork,info)
 if (info/=0) call abor1_ftn('error in dgeev, second pass')
 deallocate(work)
@@ -184,12 +186,17 @@ call dgetri(self%nz,self%f_pinv,self%nz,ipivsave,work,lwork,info)
 if (info/=0) call abor1_ftn('error in dgetri, second pass')
 deallocate(work)
 
+! re-apply normalization after eigendecomposition
+self%f_d = self%f_d * norm
+self%f_p = self%f_p * norm
+self%f_pinv = self%f_pinv / norm
+
 ! Beta coefficient
 do iy=1,self%ny
   self%bet(iy) = real(iy-(self%ny+1)/2,kind_real)*self%deltay*bet0
 enddo
 
-! Set heating term 
+! Set heating term
 call f_conf%get_or_die("heating",htype)
 if (.not. htype) then
   ! No heating term

@@ -78,7 +78,7 @@ class Geometry : public util::Printable,
 
   /// Iterator to the first gridpoint of Geometry (only used in LocalEnsembleDA)
   GeometryIterator_ begin() const;
-  /// Iterator to the last gridpoint fo Geometry (only used in LocalEnsembleDA)
+  /// Iterator to the past-the-end gridpoint of Geometry (only used in LocalEnsembleDA)
   GeometryIterator_ end()   const;
   /// Values of vertical coordinate in units specified by string (only used in GETKF)
   std::vector<double> verticalCoord(std::string &) const;

@@ -27,6 +27,10 @@ cost function:
       obsdataout:
         obsfile: Data/3dvar.obs3d.nc
       obs type: Stream
+    get values:
+      interpolation type: default_1
+    linear get values:
+      interpolation type: default_a
   - obs error:
       covariance model: diagonal
     obs operator:
@@ -37,6 +41,10 @@ cost function:
       obsdataout:
         obsfile: Data/3dvar.obs3d.nc
       obs type: Wind
+    get values:
+      interpolation type: default_2
+    linear get values:
+      interpolation type: default_b
   - obs error:
       covariance model: diagonal
     obs operator:
@@ -47,6 +55,10 @@ cost function:
       obsdataout:
         obsfile: Data/3dvar.obs3d.nc
       obs type: WSpeed
+    get values:
+      interpolation type: default_3
+    linear get values:
+      interpolation type: default_c
 variational:
   minimizer:
     algorithm: DRIPCG
@@ -60,6 +72,13 @@ variational:
       ny: 10
       depths: [4500.0, 5500.0]
     test: on
+    online diagnostics:
+      write increment: true
+    increment:
+      datadir: Data
+      date: 2010-01-01T12:00:00Z
+      exp: 3dvar.iter1
+      type: in
   - diagnostics:
       departures: ombg
     gradient norm reduction: 1.0e-10
@@ -69,6 +88,14 @@ variational:
       ny: 20
       depths: [4500.0, 5500.0]
     test: on
+    online diagnostics:
+      write increment: true
+    increment:
+      datadir: Data
+      date: 2010-01-01T12:00:00Z
+      exp: 3dvar.iter2
+      type: in
+      analysis variables: [x]
 final:
   diagnostics:
     departures: oman
@@ -77,3 +104,6 @@ output:
   exp: 3dvar
   frequency: PT6H
   type: an
+
+test:
+  reference filename: testoutput/3dvar.test

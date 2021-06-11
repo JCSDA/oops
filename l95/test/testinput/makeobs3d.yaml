@@ -21,3 +21,6 @@ observations:
       obs_frequency: PT1H30M
     obsdataout: Data/l95.truth3d.2010-01-02T00:00:00Z.obt
 make obs: true
+
+test:
+  reference filename: testoutput/makeobs3d.test

@@ -20,6 +20,7 @@
 #include "oops/assimilation/CostJbState.h"
 #include "oops/base/ObsAuxCovariances.h"
 #include "oops/base/ObsSpaces.h"
+#include "oops/base/PostProcessorTLAD.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxCovariance.h"
 #include "oops/interface/State.h"
@@ -42,6 +43,7 @@ template<typename MODEL, typename OBS> class CostJbTotal {
   typedef ModelAuxCovariance<MODEL>     ModelAuxCovar_;
   typedef ObsAuxCovariances<OBS>        ObsAuxCovars_;
   typedef ObsSpaces<OBS>                ObsSpaces_;
+  typedef PostProcessorTLAD<MODEL>      PostProcTLAD_;
 
  public:
 /// Construct \f$ J_b\f$.
@@ -53,20 +55,20 @@ template<typename MODEL, typename OBS> class CostJbTotal {
 
 /// Initialize before nonlinear model integration.
   void initialize(const CtrlVar_ &) const;
-  JqTermTLAD_ * initializeTraj(const CtrlVar_ &, const Geometry_ &,
-                               const eckit::Configuration &);
+  void initializeTraj(const CtrlVar_ &, const Geometry_ &,
+                      const eckit::Configuration &, PostProcTLAD_ &);
 
 /// Finalize computation after nonlinear model integration.
   double finalize(const CtrlVar_ &) const;
-  void finalizeTraj(JqTermTLAD_ *);
+  void finalizeTraj();
 
 /// Initialize before starting the TL run.
-  JqTermTLAD_ * initializeTL() const;
-  void finalizeTL(JqTermTLAD_ *, const CtrlInc_ &, CtrlInc_ &) const;
+  void initializeTL(PostProcTLAD_ &) const;
+  void finalizeTL(const CtrlInc_ &, CtrlInc_ &) const;
 
 /// Initialize before starting the AD run.
-  JqTermTLAD_ * initializeAD(CtrlInc_ &, const CtrlInc_ &) const;
-  void finalizeAD(JqTermTLAD_ *) const;
+  void initializeAD(CtrlInc_ &, const CtrlInc_ &, PostProcTLAD_ &) const;
+  void finalizeAD() const;
 
 /// Multiply by covariance matrix and its inverse.
   void multiplyB(const CtrlInc_ &, CtrlInc_ &) const;
@@ -110,6 +112,11 @@ template<typename MODEL, typename OBS> class CostJbTotal {
   std::unique_ptr<Geometry_> resol_;
   const util::DateTime windowBegin_;
   const util::DateTime windowEnd_;
+
+  bool jbEvaluation_;
+  std::shared_ptr<JqTermTLAD_> jqtraj_;
+  mutable std::shared_ptr<JqTermTLAD_> jqtl_;
+  mutable std::shared_ptr<JqTermTLAD_> jqad_;
 };
 
 // =============================================================================
@@ -120,10 +127,12 @@ CostJbTotal<MODEL, OBS>::CostJbTotal(const CtrlVar_ & xb, JbState_ * jb,
                                      const Geometry_ & resol, const ObsSpaces_ & odb)
   : xb_(xb), jb_(jb),
     jbModBias_(conf.getSubConfiguration("model aux error"), resol),
-    jbObsBias_(odb, conf), dxFG_(), resol_(),
+    jbObsBias_(odb, conf.getSubConfiguration("observations")), dxFG_(), resol_(),
     windowBegin_(conf.getString("window begin")),
-    windowEnd_(windowBegin_ + util::Duration(conf.getString("window length")))
+    windowEnd_(windowBegin_ + util::Duration(conf.getString("window length"))),
+    jqtraj_()
 {
+  jbEvaluation_ = conf.getBool("jb evaluation", true);
   Log::trace() << "CostJbTotal contructed." << std::endl;
 }
 
@@ -155,7 +164,8 @@ double CostJbTotal<MODEL, OBS>::finalize(const CtrlVar_ & mx) const {
   Log::info() << "CostJb: FG-BG" << dx << std::endl;
 
 // Compute Jb value
-  double zjb = this->evaluate(dx);
+  double zjb = 0.0;
+  if (jbEvaluation_) zjb = this->evaluate(dx);
   Log::trace() << "CostJbTotal::finalize done" << std::endl;
   return zjb;
 }
@@ -163,9 +173,9 @@ double CostJbTotal<MODEL, OBS>::finalize(const CtrlVar_ & mx) const {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-JqTermTLAD<MODEL> * CostJbTotal<MODEL, OBS>::initializeTraj(const CtrlVar_ & fg,
-                                                            const Geometry_ & resol,
-                                                            const eckit::Configuration & inner) {
+void CostJbTotal<MODEL, OBS>::initializeTraj(const CtrlVar_ & fg, const Geometry_ & resol,
+                                             const eckit::Configuration & inner,
+                                             PostProcTLAD_ & pptraj) {
   Log::trace() << "CostJbTotal::initializeTraj start" << std::endl;
   fg_ = &fg;
   resol_.reset(new Geometry_(resol));
@@ -174,16 +184,16 @@ JqTermTLAD<MODEL> * CostJbTotal<MODEL, OBS>::initializeTraj(const CtrlVar_ & fg,
   jbModBias_.linearize(fg.modVar(), *resol_);
   jbObsBias_.linearize(fg.obsVar(), inner);
 
-  JqTermTLAD_ * jqlin = jb_->initializeJqTLAD();
+  jqtraj_.reset(jb_->initializeJqTLAD());
+  pptraj.enrollProcessor(jqtraj_);
 
   Log::trace() << "CostJbTotal::initializeTraj done" << std::endl;
-  return jqlin;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-void CostJbTotal<MODEL, OBS>::finalizeTraj(JqTermTLAD_ * jqlin) {
+void CostJbTotal<MODEL, OBS>::finalizeTraj() {
   Log::trace() << "CostJbTotal::finalizeTraj start" << std::endl;
   ASSERT(fg_);
 // Compute and save first guess increment.
@@ -191,7 +201,7 @@ void CostJbTotal<MODEL, OBS>::finalizeTraj(JqTermTLAD_ * jqlin) {
 
 // Compute x_0 - x_b for Jb (and Jq is present)
   const State_ * mx = &fg_->state();
-  if (jqlin) mx = &jqlin->getMxi();
+  if (jqtraj_) mx = &jqtraj_->getMxi();
   jb_->computeIncrement(xb_.state(), fg_->state(), *mx, dxFG_->state());
 
 // Model and Obs biases
@@ -200,6 +210,7 @@ void CostJbTotal<MODEL, OBS>::finalizeTraj(JqTermTLAD_ * jqlin) {
 
 // Print increment
   Log::info() << "CostJb: FG-BG" << *dxFG_ << std::endl;
+  jqtraj_.reset();
   Log::trace() << "CostJbTotal::finalizeTraj done" << std::endl;
 }
 
@@ -258,42 +269,43 @@ void CostJbTotal<MODEL, OBS>::addGradientFG(CtrlInc_ & grad, CtrlInc_ & gradJb) 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-JqTermTLAD<MODEL> * CostJbTotal<MODEL, OBS>::initializeTL() const {
+void CostJbTotal<MODEL, OBS>::initializeTL(PostProcTLAD_ & pptl) const {
   Log::trace() << "CostJbTotal::initializeTL start" << std::endl;
-  JqTermTLAD_ * jqtl = jb_->initializeJqTL();
+  jqtl_.reset(jb_->initializeJqTL());
+  pptl.enrollProcessor(jqtl_);
   Log::trace() << "CostJbTotal::initializeTL done" << std::endl;
-  return jqtl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-void CostJbTotal<MODEL, OBS>::finalizeTL(JqTermTLAD_ * jqtl, const CtrlInc_ & bgns,
-                                         CtrlInc_ & dx) const {
+void CostJbTotal<MODEL, OBS>::finalizeTL(const CtrlInc_ & bgns, CtrlInc_ & dx) const {
   Log::trace() << "CostJbTotal::finalizeTL start" << std::endl;
   dx = bgns;
-  if (jqtl) jqtl->computeModelErrorTL(dx.state());
+  if (jqtl_) jqtl_->computeModelErrorTL(dx.state());
+  jqtl_.reset();
   Log::trace() << "CostJbTotal::finalizeTL done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-JqTermTLAD<MODEL> * CostJbTotal<MODEL, OBS>::initializeAD(CtrlInc_ & bgns,
-                                                          const CtrlInc_ & dx) const {
+void CostJbTotal<MODEL, OBS>::initializeAD(CtrlInc_ & bgns, const CtrlInc_ & dx,
+                                           PostProcTLAD_ & ppad) const {
   Log::trace() << "CostJbTotal::initializeAD start" << std::endl;
-  JqTermTLAD_ * jqad = jb_->initializeJqAD(dx.state());
+  jqad_.reset(jb_->initializeJqAD(dx.state()));
   bgns += dx;
+  ppad.enrollProcessor(jqad_);
   Log::trace() << "CostJbTotal::initializeAD done" << std::endl;
-  return jqad;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-void CostJbTotal<MODEL, OBS>::finalizeAD(JqTermTLAD_ * jqad) const {
+void CostJbTotal<MODEL, OBS>::finalizeAD() const {
   Log::trace() << "CostJbTotal::finalizeAD start" << std::endl;
-  if (jqad) jqad->clear();
+  if (jqad_) jqad_->clear();
+  jqad_.reset();
   Log::trace() << "CostJbTotal::finalizeAD done" << std::endl;
 }
 

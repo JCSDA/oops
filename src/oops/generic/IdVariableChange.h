@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2017-2018  UCAR.
+ * (C) Copyright 2017-2021 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -27,15 +27,13 @@ namespace oops {
 /// No change of variable
 
 template <typename MODEL>
-class IdVariableChange : public VariableChangeBase<MODEL> {
+class IdVariableChange : public GenericVariableChangeBase<MODEL> {
   typedef Geometry<MODEL>            Geometry_;
   typedef State<MODEL>               State_;
  public:
   static const std::string classname() {return "oops::IdVariableChange";}
 
-  IdVariableChange(const Geometry_ &, const eckit::Configuration & conf)
-    : VariableChangeBase<MODEL>(conf) {}
-  virtual ~IdVariableChange() {}
+  IdVariableChange(const Geometry_ &, const eckit::Configuration &) {}
 
 /// Perform identity change of variable
   void changeVar(const State_ & x1, State_ & x2) const override {x2 = x1;}

@@ -16,10 +16,6 @@ Iterator::Iterator(const Resolution & res, const int & index): res_(res.npoints(
 }
 
 // -----------------------------------------------------------------------------
-Iterator::~Iterator() {
-}
-
-// -----------------------------------------------------------------------------
 bool Iterator::operator==(const Iterator & other) const {
   return ((res_ == other.res_) && (index_ == other.index_));
 }

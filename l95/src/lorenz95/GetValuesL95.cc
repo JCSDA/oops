@@ -23,10 +23,12 @@ namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
 GetValuesL95::GetValuesL95(const Resolution & resol,
-                           const LocsL95 & locs)
-  : resolidx_(locs.size()), times_(locs.times())
+                           const LocsL95 & locs,
+                           const eckit::Configuration & conf)
+  :  resolidx_(locs.size()), times_(locs.times())
 {
   // find indices of gridpoints nearest to all observations (resolidx_)
+
   const int npoints = resol.npoints();
   const double dres = static_cast<double>(npoints);
   for (size_t jobs = 0; jobs < locs.size(); ++jobs) {
@@ -49,7 +51,7 @@ void GetValuesL95::fillGeoVaLs(const StateL95 & state, const util::DateTime & t1
 }
 // -----------------------------------------------------------------------------
 void GetValuesL95::print(std::ostream & os) const {
-  os << " GetValues for L95" << std::endl;
+  os << "Nearest neighbor interpolation GetValues";
 }
 // -----------------------------------------------------------------------------
 

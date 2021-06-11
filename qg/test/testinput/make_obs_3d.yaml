@@ -49,3 +49,6 @@ observations:
       obs_error: 12.0
       obs_period: PT2H
 make obs: true
+
+test:
+  reference filename: testoutput/make_obs_3d.test

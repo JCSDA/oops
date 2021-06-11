@@ -34,14 +34,16 @@ template <typename OBS>
 class ObsAuxCovariance : public util::Printable,
                          private boost::noncopyable,
                          private util::ObjectCounter<ObsAuxCovariance<OBS> > {
-  typedef typename OBS::ObsAuxCovariance    ObsAuxCovariance_;
-  typedef ObsAuxControl<OBS>       ObsAuxControl_;
-  typedef ObsAuxIncrement<OBS>     ObsAuxIncrement_;
+  typedef typename OBS::ObsAuxCovariance          ObsAuxCovariance_;
+  typedef ObsAuxControl<OBS>                      ObsAuxControl_;
+  typedef ObsAuxIncrement<OBS>                    ObsAuxIncrement_;
 
  public:
+  typedef typename ObsAuxCovariance_::Parameters_ Parameters_;
+
   static const std::string classname() {return "oops::ObsAuxCovariance";}
 
-  ObsAuxCovariance(const ObsSpace<OBS> &, const eckit::Configuration &);
+  ObsAuxCovariance(const ObsSpace<OBS> &, const Parameters_ &);
   ~ObsAuxCovariance();
 
 /// Operators
@@ -49,8 +51,6 @@ class ObsAuxCovariance : public util::Printable,
   void multiply(const ObsAuxIncrement_ &, ObsAuxIncrement_ &) const;
   void inverseMultiply(const ObsAuxIncrement_ &, ObsAuxIncrement_ &) const;
   void randomize(ObsAuxIncrement_ &) const;
-
-  const eckit::Configuration & config() const {return cov_->config();}
 
  private:
   void print(std::ostream &) const;
@@ -61,11 +61,11 @@ class ObsAuxCovariance : public util::Printable,
 
 template<typename OBS>
 ObsAuxCovariance<OBS>::ObsAuxCovariance(const ObsSpace<OBS> & os,
-                                          const eckit::Configuration & conf) : cov_()
+                                          const Parameters_ & params) : cov_()
 {
   Log::trace() << "ObsAuxCovariance<OBS>::ObsAuxCovariance starting" << std::endl;
   util::Timer timer(classname(), "ObsAuxCovariance");
-  cov_.reset(new ObsAuxCovariance_(os.obsspace(), conf));
+  cov_.reset(new ObsAuxCovariance_(os.obsspace(), params));
   Log::trace() << "ObsAuxCovariance<OBS>::ObsAuxCovariance done" << std::endl;
 }
 

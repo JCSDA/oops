@@ -28,19 +28,20 @@
 namespace test {
 
 // -----------------------------------------------------------------------------
-
+/// \brief testing constructor and print method
 template <typename OBS> void testConstructor() {
   typedef ObsTestsFixture<OBS>  Test_;
   typedef oops::ObsAuxCovariance<OBS>    Covariance_;
 
-  std::vector<eckit::LocalConfiguration> oconf;
-  TestEnvironment::config().get("observations", oconf);
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    std::unique_ptr<Covariance_> bias(new Covariance_(Test_::obspace()[jj], oconf[jj]));
-    EXPECT(bias.get());
-
-    bias.reset();
-    EXPECT(!bias.get());
+    eckit::LocalConfiguration biasconf = Test_::config(jj).getSubConfiguration("obs bias");
+    typename Covariance_::Parameters_ biasparams;
+    biasparams.validateAndDeserialize(biasconf);
+    std::unique_ptr<Covariance_> cov(new Covariance_(Test_::obspace()[jj], biasparams));
+    EXPECT(cov.get());
+    oops::Log::test() << "Testing ObsAuxCovariance: " << *cov << std::endl;
+    cov.reset();
+    EXPECT(!cov.get());
   }
 }
 

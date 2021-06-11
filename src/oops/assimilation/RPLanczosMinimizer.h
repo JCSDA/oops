@@ -19,6 +19,7 @@
 #include "oops/assimilation/DualMinimizer.h"
 #include "oops/assimilation/DualVector.h"
 #include "oops/assimilation/HBHtMatrix.h"
+#include "oops/assimilation/MinimizerUtils.h"
 #include "oops/assimilation/RinvMatrix.h"
 #include "oops/base/IdentityMatrix.h"
 #include "oops/util/dot_product.h"
@@ -235,8 +236,8 @@ double RPLanczosMinimizer<MODEL, OBS>::solve(Dual_ & vv, double & vvp, Dual_ & r
 
     betas.push_back(beta);
 
-    Log::info() << "RPLanczos end of iteration " << jiter+1 << ". Norm reduction= "
-                << util::full_precision(normReduction) << std::endl << std::endl;
+    Log::info() << "RPLanczos end of iteration " << jiter+1 << std::endl;
+    printNormReduction(jiter+1, rznorm, normReduction);
 
     ++jiter;
 

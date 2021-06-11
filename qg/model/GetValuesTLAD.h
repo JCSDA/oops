@@ -12,6 +12,8 @@
 #include <ostream>
 #include <string>
 
+#include "eckit/config/Configuration.h"
+
 #include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -33,7 +35,8 @@ class GetValuesTLAD : public util::Printable,
   static const std::string classname() {return "qg::GetValuesTLAD";}
 
 /// \brief saves all locations \p locs to use during filling GeoVaLs
-  GetValuesTLAD(const GeometryQG &, const LocationsQG & locs);
+  GetValuesTLAD(const GeometryQG &, const LocationsQG & locs,
+                const eckit::Configuration &);
   ~GetValuesTLAD() {}
 
   /// \brief fills in \p geovals for all observations in the timeframe (\p t1, \p t2],

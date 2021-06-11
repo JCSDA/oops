@@ -91,11 +91,6 @@ class PostProcessorTLAD {
     }
   }
 
-/// Get TL dual space output
-  std::unique_ptr<GeneralizedDepartures> releaseOutputFromTL(unsigned int ii) {
-    return processors_[ii]->releaseOutputFromTL();
-  }
-
 /// Adjoint methods
   void initializeAD(Increment_ & dx, const util::DateTime & bgn,
                     const util::Duration & step) {

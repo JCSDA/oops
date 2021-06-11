@@ -29,16 +29,26 @@
 namespace test {
 
 // -----------------------------------------------------------------------------
-
+/// \brief test constructor and print method
 template <typename OBS> void testConstructor() {
   typedef ObsTestsFixture<OBS>  Test_;
   typedef oops::ObsAuxControl<OBS>    ObsAux_;
 
-  std::vector<eckit::LocalConfiguration> oconf;
-  TestEnvironment::config().get("observations", oconf);
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    std::unique_ptr<ObsAux_> bias(new ObsAux_(Test_::obspace()[jj], oconf[jj]));
+    eckit::LocalConfiguration biasconf = Test_::config(jj).getSubConfiguration("obs bias");
+    typename ObsAux_::Parameters_ biasparams;
+    biasparams.validateAndDeserialize(biasconf);
+    std::unique_ptr<ObsAux_> bias(new ObsAux_(Test_::obspace()[jj], biasparams));
     EXPECT(bias.get());
+    oops::Log::test() << "Testing ObsAuxControl: " << *bias << std::endl;
+
+    // Not all configurations for interface tests specify "obs bias"; need to check
+    // whether "obs bias" section is available
+    if (Test_::config(jj).has("obs bias")) {
+      const double reference = Test_::config(jj).getDouble("obs bias test.norm");
+      const double tolerance = Test_::config(jj).getDouble("obs bias test.relative tolerance");
+      EXPECT(oops::is_close_relative(bias->norm(), reference, tolerance));
+    }
 
     bias.reset();
     EXPECT(!bias.get());
@@ -51,10 +61,11 @@ template <typename OBS> void testCopyConstructor() {
   typedef ObsTestsFixture<OBS>  Test_;
   typedef oops::ObsAuxControl<OBS>    ObsAux_;
 
-  std::vector<eckit::LocalConfiguration> oconf;
-  TestEnvironment::config().get("observations", oconf);
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    std::unique_ptr<ObsAux_> bias(new ObsAux_(Test_::obspace()[jj], oconf[jj]));
+    eckit::LocalConfiguration biasconf = Test_::config(jj).getSubConfiguration("obs bias");
+    typename ObsAux_::Parameters_ biasparams;
+    biasparams.validateAndDeserialize(biasconf);
+    std::unique_ptr<ObsAux_> bias(new ObsAux_(Test_::obspace()[jj], biasparams));
 
     std::unique_ptr<ObsAux_> other(new ObsAux_(*bias));
     EXPECT(other.get());

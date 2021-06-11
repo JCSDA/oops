@@ -11,22 +11,6 @@
 
 namespace oops {
 
-  LocalIncrement & LocalIncrement::operator +=(const LocalIncrement & rhs) {
-    ASSERT(vars_ == rhs.vars_ && varlens_ == rhs.varlens_);
-    ASSERT(vals_.size() == rhs.vals_.size());
-    for (unsigned i=0; i < vals_.size(); ++i) {
-      vals_[i] += rhs.vals_[i];
-    }
-    return *this;
-  }
-
-  LocalIncrement & LocalIncrement::operator *=(const double & zz) {
-    for (unsigned i=0; i < vals_.size(); ++i) {
-      vals_[i] *= zz;
-    }
-    return *this;
-  }
-
   LocalIncrement & LocalIncrement::operator *=(const std::vector<double> & rhs) {
     ASSERT(vals_.size() == rhs.size());
     for (unsigned i=0; i < vals_.size(); ++i) {

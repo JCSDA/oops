@@ -10,9 +10,11 @@
 
 #include "model/FieldsQG.h"
 
+#include <algorithm>
 #include <cmath>
 #include <iomanip>
 #include <map>
+#include <numeric>
 #include <string>
 #include <vector>
 
@@ -43,7 +45,7 @@ FieldsQG::FieldsQG(const GeometryQG & geom, const oops::Variables & vars,
 FieldsQG::FieldsQG(const FieldsQG & other, const bool copy)
   : geom_(other.geom_), vars_(other.vars_), lbc_(other.lbc_), time_(other.time_)
 {
-  qg_fields_create_from_other_f90(keyFlds_, other.keyFlds_);
+  qg_fields_create_from_other_f90(keyFlds_, other.keyFlds_, geom_->toFortran());
   if (copy) {
     qg_fields_copy_f90(keyFlds_, other.keyFlds_);
   }
@@ -52,7 +54,7 @@ FieldsQG::FieldsQG(const FieldsQG & other, const bool copy)
 FieldsQG::FieldsQG(const FieldsQG & other)
   : geom_(other.geom_), vars_(other.vars_), lbc_(other.lbc_), time_(other.time_)
 {
-  qg_fields_create_from_other_f90(keyFlds_, other.keyFlds_);
+  qg_fields_create_from_other_f90(keyFlds_, other.keyFlds_, geom_->toFortran());
   qg_fields_copy_f90(keyFlds_, other.keyFlds_);
 }
 // -----------------------------------------------------------------------------
@@ -124,7 +126,7 @@ void FieldsQG::schur_product_with(const FieldsQG & dx) {
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::random() {
-  qg_fields_random_f90(keyFlds_);
+  qg_fields_random_f90(keyFlds_, vars_);
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::dirac(const eckit::Configuration & config) {
@@ -177,46 +179,55 @@ double FieldsQG::norm() const {
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::print(std::ostream & os) const {
-  int nx, ny, nz, nb, lq, lbc;
-  qg_fields_sizes_f90(keyFlds_, nx, ny, nz, nb);
-  qg_fields_vars_f90(keyFlds_, lq, lbc);
+  // Resolution
+  int nx, ny, nz;
+  qg_fields_sizes_f90(keyFlds_, nx, ny, nz);
   os << std::endl << "  Resolution = " << nx << ", " << ny << ", " << nz;
-  if (lq == 1) {
-    os << std::endl << "  Variable = potential vorticity";
-  } else {
-    os << std::endl << "  Variable = streamfunction";
-  }
-  if (lbc == 1) {
-    os << std::endl << "  Boundary conditions are activated";
-  } else {
-    os << std::endl << "  Boundary conditions are not activated";
-  }
-  std::vector<double> zstat(4*(1+nb));
-  qg_fields_gpnorm_f90(keyFlds_, nb, zstat[0]);
-  for (int jj = 0; jj < 1+nb; ++jj) {
-    std::ios_base::fmtflags f(os.flags());
-    os << std::endl << "  Scaling=" << std::setprecision(4) << std::setw(7) << zstat[4*jj]
-       << ", Min=" << std::fixed << std::setprecision(4) << std::setw(12) << zstat[4*jj+1]
-       << ", Max=" << std::fixed << std::setprecision(4) << std::setw(12) <<zstat[4*jj+2]
-       << ", RMS=" << std::fixed << std::setprecision(4) << std::setw(12) <<zstat[4*jj+3];
-    os.flags(f);
+
+  // Min, max, RMS of fields
+  std::vector<std::string> var{"Streamfunction         :",
+                               "Potential vorticity    :",
+                               "U-wind                 :",
+                               "V-wind                 :",
+                               "Streamfunction LBC     :",
+                               "Potential vorticity LBC:"};
+  std::vector<int> vpresent(6);
+  std::vector<double> vmin(6);
+  std::vector<double> vmax(6);
+  std::vector<double> vrms(6);
+  qg_fields_gpnorm_f90(keyFlds_, vpresent.data(), vmin.data(), vmax.data(), vrms.data());
+  for (int jj = 0; jj < 6; ++jj) {
+    if (vpresent[jj] == 1) {
+      std::ios_base::fmtflags f(os.flags());
+      os << std::endl << "  " << var[jj] << std::scientific << std::setprecision(4)
+       << "  Min=" << std::setw(12) << vmin[jj]
+       << ", Max=" << std::setw(12) << vmax[jj]
+       << ", RMS=" << std::setw(12) << vrms[jj];
+      os.flags(f);
+    }
   }
 }
 // -----------------------------------------------------------------------------
 bool FieldsQG::isForModel(const bool & nonlinear) const {
-  int nx, ny, nz, nb;
-  qg_fields_sizes_f90(keyFlds_, nx, ny, nz, nb);
   bool ok = true;
-  if (nonlinear) ok = (nb == 2);
+  if (nonlinear) {
+    int lbc;
+    qg_fields_lbc_f90(keyFlds_, lbc);
+    ok = (lbc == 1);
+  }
   return ok;
 }
 // -----------------------------------------------------------------------------
 oops::LocalIncrement FieldsQG::getLocal(const GeometryQGIterator & iter) const {
-  int nx, ny, nz, nb;
-  qg_fields_sizes_f90(keyFlds_, nx, ny, nz, nb);
-  std::vector<int> varlens(1, nz);
-  std::vector<double> values(nz);
-  qg_fields_getpoint_f90(keyFlds_, iter.toFortran(), nz, values[0]);
+  int nx, ny, nz;
+  qg_fields_sizes_f90(keyFlds_, nx, ny, nz);
+  std::vector<int> varlens(vars_.size());
+  for (unsigned int ii = 0; ii < vars_.size(); ii++) {
+    varlens[ii] = nz;
+  }
+  int lenvalues = std::accumulate(varlens.begin(), varlens.end(), 0);
+  std::vector<double> values(lenvalues);
+  qg_fields_getpoint_f90(keyFlds_, iter.toFortran(), values.size(), values[0]);
   return oops::LocalIncrement(vars_, values, varlens);
 }
 // -----------------------------------------------------------------------------
@@ -227,9 +238,13 @@ void FieldsQG::setLocal(const oops::LocalIncrement & x, const GeometryQGIterator
 // -----------------------------------------------------------------------------
 size_t FieldsQG::serialSize() const {
   size_t nn = 0;
-  int nx, ny, nz, nb;
-  qg_fields_sizes_f90(keyFlds_, nx, ny, nz, nb);
-  nn += nx * ny * nz + nb * (nx + 1) * nz;
+  int nx, ny, nz, lbc;
+  qg_fields_sizes_f90(keyFlds_, nx, ny, nz);
+  qg_fields_lbc_f90(keyFlds_, lbc);
+  nn += nx * ny * nz;
+  if (lbc == 1) {
+    nn += + 2 * (nx + 1) * nz;
+  }
   nn += time_.serialSize();
   return nn;
 }

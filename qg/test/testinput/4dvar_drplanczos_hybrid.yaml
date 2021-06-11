@@ -15,47 +15,51 @@ cost function:
     filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D.nc
   background error:
     covariance model: hybrid
-    ensemble:
-      localization:
-        horizontal_length_scale: 4.0e6
-        localization method: QG
+    components:
+    - covariance:
+        covariance model: ensemble
+        localization:
+          horizontal_length_scale: 4.0e6
+          localization method: QG
+          maximum_condition_number: 1.0e6
+          standard_deviation: 1.0
+          vertical_length_scale: 30000.0
+        members:
+        - date: 2010-01-01T00:00:00Z
+          filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1D.nc
+        - date: 2010-01-01T00:00:00Z
+          filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1D.nc
+        - date: 2010-01-01T00:00:00Z
+          filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1D.nc
+        - date: 2010-01-01T00:00:00Z
+          filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1D.nc
+        - date: 2010-01-01T00:00:00Z
+          filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1D.nc
+        - date: 2010-01-01T00:00:00Z
+          filename: Data/forecast.ens.6.2009-12-31T00:00:00Z.P1D.nc
+        - date: 2010-01-01T00:00:00Z
+          filename: Data/forecast.ens.7.2009-12-31T00:00:00Z.P1D.nc
+        - date: 2010-01-01T00:00:00Z
+          filename: Data/forecast.ens.8.2009-12-31T00:00:00Z.P1D.nc
+        - date: 2010-01-01T00:00:00Z
+          filename: Data/forecast.ens.9.2009-12-31T00:00:00Z.P1D.nc
+        - date: 2010-01-01T00:00:00Z
+          filename: Data/forecast.ens.10.2009-12-31T00:00:00Z.P1D.nc
+      weight:
+        value: 0.5
+    - covariance:
+        covariance model: QgError
+        horizontal_length_scale: 2.2e6
         maximum_condition_number: 1.0e6
-        standard_deviation: 1.0
-        vertical_length_scale: 30000.0
-      members:
-      - date: 2010-01-01T00:00:00Z
-        filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1D.nc
-      - date: 2010-01-01T00:00:00Z
-        filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1D.nc
-      - date: 2010-01-01T00:00:00Z
-        filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1D.nc
-      - date: 2010-01-01T00:00:00Z
-        filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1D.nc
-      - date: 2010-01-01T00:00:00Z
-        filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1D.nc
-      - date: 2010-01-01T00:00:00Z
-        filename: Data/forecast.ens.6.2009-12-31T00:00:00Z.P1D.nc
-      - date: 2010-01-01T00:00:00Z
-        filename: Data/forecast.ens.7.2009-12-31T00:00:00Z.P1D.nc
-      - date: 2010-01-01T00:00:00Z
-        filename: Data/forecast.ens.8.2009-12-31T00:00:00Z.P1D.nc
-      - date: 2010-01-01T00:00:00Z
-        filename: Data/forecast.ens.9.2009-12-31T00:00:00Z.P1D.nc
-      - date: 2010-01-01T00:00:00Z
-        filename: Data/forecast.ens.10.2009-12-31T00:00:00Z.P1D.nc
-    ensemble weight: 0.707
-    static:
-      covariance model: QgError
-      horizontal_length_scale: 2.2e6
-      maximum_condition_number: 1.0e6
-      standard_deviation: 1.8e7
-      vertical_length_scale: 15000.0
-    static weight: 0.707
+        standard_deviation: 1.8e7
+        vertical_length_scale: 15000.0
+      weight:
+        value: 0.5
   observations:
   - obs error:
       covariance model: diagonal
     obs operator:
-      obs type: Stream  
+      obs type: Stream
     obs space:
       obsdatain:
         obsfile: Data/truth.obs4d_24h.nc
@@ -65,7 +69,7 @@ cost function:
   - obs error:
       covariance model: diagonal
     obs operator:
-      obs type: Wind  
+      obs type: Wind
     obs space:
       obsdatain:
         obsfile: Data/truth.obs4d_24h.nc
@@ -81,7 +85,7 @@ cost function:
         obsfile: Data/truth.obs4d_24h.nc
       obsdataout:
         obsfile: Data/4dvar_drplanczos_hybrid.obs4d_24h.nc
-      obs type: WSpeed  
+      obs type: WSpeed
   constraints:
   - jcdfi:
       filtered variables: [x]
@@ -133,3 +137,6 @@ output:
   first: PT0S
   frequency: PT6H
   type: an
+
+test:
+  reference filename: testoutput/4dvar_drplanczos_hybrid.test

@@ -36,7 +36,8 @@ class Localization : public LocalizationBase<MODEL> {
   Localization(const Geometry_ &, const util::DateTime &, const eckit::Configuration &);
   ~Localization();
 
-  void multiply(Increment_ &) const override;
+  void doRandomize(Increment_ &) const override;
+  void doMultiply(Increment_ &) const override;
 
  private:
   void print(std::ostream &) const override;
@@ -69,11 +70,21 @@ Localization<MODEL, LOC>::~Localization() {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename LOC>
-void Localization<MODEL, LOC>::multiply(Increment_ & dx) const {
-  Log::trace() << "Localization<MODEL>::multiply starting" << std::endl;
-  util::Timer timer(classname(), "multiply");
+void Localization<MODEL, LOC>::doRandomize(Increment_ & dx) const {
+  Log::trace() << "Localization<MODEL>::doRandomize starting" << std::endl;
+  util::Timer timer(classname(), "doRandomize");
+  loc_->randomize(dx.increment());
+  Log::trace() << "Localization<MODEL>::doRandomize done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename LOC>
+void Localization<MODEL, LOC>::doMultiply(Increment_ & dx) const {
+  Log::trace() << "Localization<MODEL>::doMultiply starting" << std::endl;
+  util::Timer timer(classname(), "doMultiply");
   loc_->multiply(dx.increment());
-  Log::trace() << "Localization<MODEL>::multiply done" << std::endl;
+  Log::trace() << "Localization<MODEL>::doMultiply done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

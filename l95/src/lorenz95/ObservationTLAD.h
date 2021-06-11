@@ -16,7 +16,7 @@
 
 #include <boost/noncopyable.hpp>
 
-#include "lorenz95/ObsTableView.h"
+#include "lorenz95/ObsTable.h"
 
 #include "oops/base/Variables.h"
 #include "oops/util/ObjectCounter.h"
@@ -46,7 +46,7 @@ class ObservationTLAD : public util::Printable,
  public:
   static const std::string classname() {return "lorenz95::ObservationTLAD";}
 
-  ObservationTLAD(const ObsTableView &, const eckit::Configuration &);
+  ObservationTLAD(const ObsTable &, const eckit::Configuration &);
 
 // Obs Operators
   void setTrajectory(const GomL95 &, const ObsBias &);

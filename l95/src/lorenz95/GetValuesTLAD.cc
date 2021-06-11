@@ -25,7 +25,8 @@ namespace lorenz95 {
 /// Constructor, destructor
 // -----------------------------------------------------------------------------
 GetValuesTLAD::GetValuesTLAD(const Resolution & resol,
-                             const LocsL95 & locs)
+                             const LocsL95 & locs,
+                             const eckit::Configuration & linearGetValuesConf)
   : resolidx_(locs.size()), times_(locs.times())
 {
   // find indices of gridpoints nearest to all observations (resolidx_)
@@ -75,7 +76,7 @@ void GetValuesTLAD::fillGeoVaLsAD(IncrementL95 & inc, const util::DateTime & t1,
 }
 // -----------------------------------------------------------------------------
 void GetValuesTLAD::print(std::ostream & os) const {
-  os << " GetValuesTLAD for L95 " << std::endl;
+  os << "Nearest neighbor interpolation GetValues TL/AD ";
 }
 // -----------------------------------------------------------------------------
 

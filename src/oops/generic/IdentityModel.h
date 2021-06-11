@@ -33,10 +33,10 @@ class IdentityModelParameters : public ModelParametersBase {
 
 /// Generic implementation of identity model
 template <typename MODEL>
-class IdentityModel : public ModelBase<MODEL> {
-  typedef typename MODEL::Geometry          Geometry_;
-  typedef typename MODEL::ModelAuxControl   ModelAux_;
-  typedef typename MODEL::State             State_;
+class IdentityModel : public GenericModelBase<MODEL> {
+  typedef Geometry<MODEL>          Geometry_;
+  typedef ModelAuxControl<MODEL>   ModelAux_;
+  typedef State<MODEL>             State_;
 
  public:
   typedef IdentityModelParameters           Parameters_;

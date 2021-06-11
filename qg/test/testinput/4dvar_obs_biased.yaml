@@ -32,8 +32,8 @@ cost function:
       obs type: Stream
     obs bias:
       stream: 0.0
-    obs bias error:
-      stream: '2.0e7'
+      covariance:
+        stream: 2.0e7
   - obs error:
       covariance model: diagonal
     obs operator:
@@ -46,8 +46,8 @@ cost function:
       obs type: Wind
     obs bias:
       uwind: 0.0
-    obs bias error:
-      uwind: '15.0'
+      covariance:
+        uwind: 15.0
   - obs error:
       covariance model: diagonal
     obs operator:
@@ -107,3 +107,6 @@ output:
   first: PT0S
   frequency: PT6H
   type: an
+
+test:
+  reference filename: testoutput/4dvar_obs_biased.test

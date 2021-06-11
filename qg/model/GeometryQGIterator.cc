@@ -70,7 +70,7 @@ GeometryQGIterator& GeometryQGIterator::operator++() {
 // -----------------------------------------------------------------------------
 
 void GeometryQGIterator::print(std::ostream & os) const {
-  os << "GeometryQGIterator, key: " <<  keyIter_ << std::endl;
+  os << "GeometryQGIterator, key: " <<  keyIter_;
 }
 
 // -----------------------------------------------------------------------------

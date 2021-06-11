@@ -21,3 +21,6 @@ output:
   exp: test
   frequency: PT1H30M
   type: ens
+
+test:
+  reference filename: testoutput/genenspert.test

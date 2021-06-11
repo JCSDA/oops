@@ -31,15 +31,11 @@
 #include "oops/util/Timer.h"
 
 namespace oops {
-  template <typename T>
-  class Departures;
 
 // -----------------------------------------------------------------------------
-
 template <typename OBS>
 class ObsSpaces : public util::Printable,
                   private util::ObjectCounter<ObsSpaces<OBS> > {
-  typedef Departures<OBS>         Departures_;
   typedef ObsSpace<OBS>           ObsSpace_;
 
  public:
@@ -48,10 +44,10 @@ class ObsSpaces : public util::Printable,
   ObsSpaces(const eckit::Configuration &, const eckit::mpi::Comm &,
             const util::DateTime &, const util::DateTime &,
             const eckit::mpi::Comm & time = oops::mpi::myself());
-  ObsSpaces(const ObsSpaces &, const eckit::geometry::Point2 &, const eckit::Configuration &);
-/// Constructor added for generic 1d-var under development in ufo
-  explicit ObsSpaces(const std::shared_ptr<ObsSpace_> &);
   ~ObsSpaces();
+
+/// Save files
+  void save() const;
 
 /// Access
   std::size_t size() const {return spaces_.size();}
@@ -61,9 +57,6 @@ class ObsSpaces : public util::Printable,
 /// Assimilation window
   const util::DateTime & windowStart() const {return wbgn_;}
   const util::DateTime & windowEnd() const {return wend_;}
-
-/// Other
-  void printJo(const Departures_ &, const Departures_ &) const;  // To be changed
 
  private:
   void print(std::ostream &) const;
@@ -81,12 +74,9 @@ ObsSpaces<OBS>::ObsSpaces(const eckit::Configuration & conf, const eckit::mpi::C
                           const eckit::mpi::Comm & time)
   : spaces_(0), wbgn_(bgn), wend_(end)
 {
-  const int seed_member = conf.getInt("obs perturbations seed", 0);
-  std::vector<eckit::LocalConfiguration> typeconfs;
-  conf.get("observations", typeconfs);
+  std::vector<eckit::LocalConfiguration> typeconfs = conf.getSubConfigurations();
   for (std::size_t jj = 0; jj < typeconfs.size(); ++jj) {
     eckit::LocalConfiguration obsconf(typeconfs[jj], "obs space");
-    obsconf.set("obs perturbations seed", seed_member);
     Log::debug() << "ObsSpaces::ObsSpaces : conf " << obsconf << std::endl;
     std::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsconf, comm, bgn, end, time));
     spaces_.push_back(tmp);
@@ -97,31 +87,16 @@ ObsSpaces<OBS>::ObsSpaces(const eckit::Configuration & conf, const eckit::mpi::C
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-ObsSpaces<OBS>::ObsSpaces(const ObsSpaces<OBS> & obss, const eckit::geometry::Point2 & center,
-                          const eckit::Configuration & conf)
-  : spaces_(0), wbgn_(obss.wbgn_), wend_(obss.wend_)
-{
-  std::vector<eckit::LocalConfiguration> typeconfs;
-  conf.get("observations", typeconfs);
-  for (std::size_t jj = 0; jj < obss.size(); ++jj) {
-    eckit::LocalConfiguration locconf(typeconfs[jj], "obs error.localization");
-    std::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obss[jj], center, locconf));
-    spaces_.push_back(tmp);
-  }
-  ASSERT(spaces_.size() == obss.size());
-}
-
-// -----------------------------------------------------------------------------
-/// Constructor added for generic 1d-var under development in ufo
-template <typename OBS>
-ObsSpaces<OBS>::ObsSpaces(const std::shared_ptr<ObsSpace_> & obss)
-  : spaces_(obss), wbgn_(obss->windowStart()), wend_(obss->windowEnd())
-{}
-
-// -----------------------------------------------------------------------------
-
-template <typename OBS>
 ObsSpaces<OBS>::~ObsSpaces() {}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+void ObsSpaces<OBS>::save() const {
+  for (std::size_t jj = 0; jj < spaces_.size(); ++jj) {
+    spaces_[jj]->save();
+  }
+}
 
 // -----------------------------------------------------------------------------
 
@@ -129,15 +104,6 @@ template <typename OBS>
 void ObsSpaces<OBS>::print(std::ostream & os) const {
   for (std::size_t jj = 0; jj < spaces_.size(); ++jj) {
     os << *spaces_[jj];
-  }
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename OBS>
-void ObsSpaces<OBS>::printJo(const Departures_ & dy, const Departures_ & grad) const {
-  for (std::size_t jj = 0; jj < spaces_.size(); ++jj) {
-    spaces_[jj]->printJo(dy[jj], grad[jj]);
   }
 }
 

@@ -26,6 +26,7 @@ dirac:
   ixdir: [20]
   iydir: [10]
   izdir: [1]
+  var: x
 geometry:
   nx: 40
   ny: 20
@@ -40,3 +41,10 @@ output B:
   date: 2010-01-01T12:00:00Z
   exp: dirac_no_loc_B
   type: an
+output variance:
+  datadir: Data
+  exp: dirac_no_loc_var
+  type: an
+
+test:
+  reference filename: testoutput/dirac_no_loc.test

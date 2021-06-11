@@ -100,22 +100,21 @@ subroutine qg_wspeed_gettraj_c(c_nobs,c_vars,c_key_traj) bind(c,name='qg_wspeed_
 implicit none
 
 ! Passed variables
-integer(c_int),intent(in) :: c_nobs              !< Number of observations
-type(c_ptr),value,intent(in) :: c_vars           !< Variables
-integer(c_int),intent(inout) :: c_key_traj       !< GOM trajectory
+integer(c_int),intent(in) :: c_nobs        !< Number of observations
+type(c_ptr),value,intent(in) :: c_vars     !< Variables
+integer(c_int),intent(inout) :: c_key_traj !< GOM trajectory
 
 ! Local variables
-type(oops_variables) :: vars
 type(qg_gom),pointer :: traj
 
 ! Interface
 call qg_gom_registry%init()
 call qg_gom_registry%add(c_key_traj)
 call qg_gom_registry%get(c_key_traj,traj)
-vars = oops_variables(c_vars)
+traj%vars = oops_variables(c_vars)
 
 ! Call Fortran
-call qg_gom_setup(traj,c_nobs,vars)
+call qg_gom_setup(traj,c_nobs)
 
 end subroutine qg_wspeed_gettraj_c
 ! ------------------------------------------------------------------------------

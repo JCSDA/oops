@@ -24,6 +24,24 @@ namespace eckit {
 
 namespace oops {
 
+/// \brief This macro may be invoked at the top of the declaration of an abstract subclass of
+/// Parameters instead of OOPS_ABSTRACT_PARAMETERS() if the definition of the (non-copy and
+/// non-move) constructors needs to be customized. See OOPS_ABSTRACT_PARAMETERS() for more
+/// information.
+#define OOPS_ABSTRACT_PARAMETERS_ENABLE_COPY_AND_MOVE(className, baseClassName) \
+ protected: \
+  className(const className &other) : className() { *this = other; } \
+  className(className &&other) : className() { *this = std::move(other); } \
+  className &operator=(const className &) = default; \
+  className &operator=(className &&) = default; \
+ private: \
+  className* cloneImpl() const override = 0; \
+ public: \
+  std::unique_ptr<className> clone() const { \
+    return std::unique_ptr<className>(cloneImpl()); \
+  } \
+ private:
+
 /// \brief This macro needs to be invoked at the top of the declaration of each abstract subclass
 /// of Parameters, with \p className set to the name of the class being declared and \p
 /// baseClassName set to the name of the class from which it (directly) inherits.
@@ -34,16 +52,30 @@ namespace oops {
 /// * the abstract subclass provides a clone() method;
 /// * the abstract subclass cannot be instantiated (the constructors are protected);
 /// * the assignment operators are protected to prevent slicing.
+///
+/// If you need to customize the definition of the (non-copy and non-move) constructors, call
+/// `OOPS_ABSTRACT_PARAMETERS_ENABLE_COPY_AND_MOVE(className, baseClassName)` instead of this macro
+/// and define the constructors on your own.
 #define OOPS_ABSTRACT_PARAMETERS(className, baseClassName) \
  protected: \
   className() : baseClassName() {} \
   explicit className(Parameters* parent) : baseClassName(parent) {} \
+  OOPS_ABSTRACT_PARAMETERS_ENABLE_COPY_AND_MOVE(className, baseClassName)
+
+/// \brief This macro may be invoked at the top of the declaration of a concrete subclass of
+/// Parameters instead of OOPS_CONCRETE_PARAMETERS() if the definition of the (non-copy and
+/// non-move) constructors needs to be customized. See OOPS_CONCRETE_PARAMETERS() for more
+/// information.
+#define OOPS_CONCRETE_PARAMETERS_ENABLE_COPY_AND_MOVE(className, baseClassName) \
+ public: \
   className(const className &other) : className() { *this = other; } \
   className(className &&other) : className() { *this = std::move(other); } \
   className &operator=(const className &) = default; \
   className &operator=(className &&) = default; \
  private: \
-  virtual className* cloneImpl() const = 0; \
+  className* cloneImpl() const override { \
+    return new className(*this); \
+  } \
  public: \
   std::unique_ptr<className> clone() const { \
     return std::unique_ptr<className>(cloneImpl()); \
@@ -62,23 +94,15 @@ namespace oops {
 /// * the children_ vector is set up correctly (for example, after copy construction it contains
 ///   pointers to members the new Parameters instance rather than the instance that was copied);
 /// * the concrete subclass provides a clone() method.
+///
+/// If you need to customize the definition of the (non-copy and non-move) constructors, call
+/// `OOPS_CONCRETE_PARAMETERS_ENABLE_COPY_AND_MOVE(className, baseClassName)` instead of this macro
+/// and define the constructors on your own.
 #define OOPS_CONCRETE_PARAMETERS(className, baseClassName) \
  public: \
   className() : baseClassName() {} \
   explicit className(oops::Parameters* parent) : baseClassName(parent) {} \
-  className(const className &other) : className() { *this = other; } \
-  className(className &&other) : className() { *this = std::move(other); } \
-  className &operator=(const className &) = default; \
-  className &operator=(className &&) = default; \
- private: \
-  virtual className* cloneImpl() const { \
-    return new className(*this); \
-  } \
- public: \
-  std::unique_ptr<className> clone() const { \
-    return std::unique_ptr<className>(cloneImpl()); \
-  } \
- private:
+  OOPS_CONCRETE_PARAMETERS_ENABLE_COPY_AND_MOVE(className, baseClassName)
 
 /// \brief Abstract base class for collections of parameters located at the same level of the
 /// parameter hierarchy.

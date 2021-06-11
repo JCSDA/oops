@@ -122,7 +122,7 @@ template<typename MODEL>
     size_t nlevs = vCoord.size();
 
     // compute vertical correlations and eigen vectors
-    Eigen::MatrixXd cov(nlevs, nlevs);
+    Eigen::MatrixXd cov = Eigen::MatrixXd::Zero(nlevs, nlevs);
     for (size_t jj=0; jj < nlevs; ++jj) {
       for (size_t ii=jj; ii < nlevs; ++ii) {
         cov(ii, jj) = oops::gc99(std::abs(vCoord[jj]-vCoord[ii])/options_.VertLocDist);

@@ -26,8 +26,6 @@
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 
-#include "model/ObsVecQG.h"
-
 using atlas::array::make_view;
 
 namespace qg {
@@ -42,7 +40,7 @@ ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config, const eckit::mpi::Co
                        const util::DateTime & bgn, const util::DateTime & end,
                        const eckit::mpi::Comm & timeComm)
   : oops::ObsSpaceBase(config, comm, bgn, end), obsname_(config.getString("obs type")),
-    winbgn_(bgn), winend_(end), obsvars_(), isLocal_(false), comm_(comm)
+    winbgn_(bgn), winend_(end), obsvars_()
 {
   typedef std::map< std::string, F90odb >::iterator otiter;
 
@@ -69,6 +67,7 @@ ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config, const eckit::mpi::Co
     ABORT("Underspecified observation files.");
   }
 
+  ref = ref + bgn.toString() + end.toString();
   otiter it = theObsFileRegister_.find(ref);
   if ( it == theObsFileRegister_.end() ) {
     // Open new file
@@ -110,105 +109,61 @@ ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config, const eckit::mpi::Co
 
 // -----------------------------------------------------------------------------
 
-ObsSpaceQG::ObsSpaceQG(const ObsSpaceQG & obsdb,
-                       const eckit::geometry::Point2 & refPoint,
-                       const eckit::Configuration & conf)
-  : oops::ObsSpaceBase(eckit::LocalConfiguration(), obsdb.comm_,
-                       obsdb.windowStart(), obsdb.windowEnd()),
-    key_(obsdb.key_), obsname_(obsdb.obsname_),
-    winbgn_(obsdb.winbgn_), winend_(obsdb.winend_), obsvars_(obsdb.obsvars_),
-    localobs_(), isLocal_(true), comm_(obsdb.comm_)
-{
-  oops::Log::trace() << "ObsSpaceQG for LocalObs starting" << std::endl;
-  const double dist = conf.getDouble("lengthscale");
-
-  // get locations of all obs
-  std::unique_ptr<LocationsQG> locs = locations(winbgn_, winend_);
-
-  atlas::Field field_lonlat = locs->lonlat();
-  auto lonlat = make_view<double, 2>(field_lonlat);
-
-  for (int jj = 0; jj < locs->size(); ++jj) {
-    eckit::geometry::Point2 obsPoint(lonlat(jj, 0), lonlat(jj, 1));
-    double localDist = eckit::geometry::Sphere::distance(6.371e6, refPoint, obsPoint);
-    if (localDist < dist) localobs_.push_back(jj);
-  }
-
-  oops::Log::trace() << "ObsSpaceQG for LocalObs done" << std::endl;
-}
+ObsSpaceQG::~ObsSpaceQG() {}
 
 // -----------------------------------------------------------------------------
 
-ObsSpaceQG::~ObsSpaceQG() {
-  if ( !isLocal_ ) {
-    ASSERT(theObsFileCount_ > 0);
-    theObsFileCount_--;
-    if (theObsFileCount_ == 0) {
-      theObsFileRegister_.clear();
-      qg_obsdb_delete_f90(key_);
-    }
+void ObsSpaceQG::save() const {
+  ASSERT(theObsFileCount_ > 0);
+  theObsFileCount_--;
+  if (theObsFileCount_ == 0) {
+    theObsFileRegister_.clear();
+    qg_obsdb_delete_f90(key_);
   }
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsSpaceQG::getdb(const std::string & col, int & keyData) const {
-  if ( isLocal_ ) {
-    qg_obsdb_get_local_f90(key_, obsname_.size(), obsname_.c_str(), col.size(),
-                         col.c_str(), localobs_.size(), localobs_.data(), keyData);
-  } else {
-    qg_obsdb_get_f90(key_, obsname_.size(), obsname_.c_str(), col.size(), col.c_str(), keyData);
-  }
+  qg_obsdb_get_f90(key_, obsname_.size(), obsname_.c_str(), col.size(), col.c_str(), keyData);
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsSpaceQG::putdb(const std::string & col, const int & keyData) const {
-  // not implemented for local ObsSpace
-  ASSERT(isLocal_ == false);
   qg_obsdb_put_f90(key_, obsname_.size(), obsname_.c_str(), col.size(), col.c_str(), keyData);
 }
 
 // -----------------------------------------------------------------------------
 
-bool ObsSpaceQG::has(const std::string & col) const {
-  int ii;
-  qg_obsdb_has_f90(key_, obsname_.size(), obsname_.c_str(), col.size(), col.c_str(), ii);
-  return ii;
-}
-
-// -----------------------------------------------------------------------------
-
-std::unique_ptr<LocationsQG> ObsSpaceQG::locations(const util::DateTime & t1,
-                             const util::DateTime & t2) const {
+std::unique_ptr<LocationsQG> ObsSpaceQG::locations() const {
   atlas::FieldSet fields;
   std::vector<util::DateTime> times;
-  qg_obsdb_locations_f90(key_, obsname_.size(), obsname_.c_str(), t1, t2,
-                         fields.get(), times);
+  qg_obsdb_locations_f90(key_, obsname_.size(), obsname_.c_str(), fields.get(), times);
   return std::unique_ptr<LocationsQG>(new LocationsQG(fields, std::move(times)));
 }
 
 // -----------------------------------------------------------------------------
 
-void ObsSpaceQG::printJo(const ObsVecQG & dy, const ObsVecQG & grad) const {
-  oops::Log::info() << "ObsSpaceQG::printJo not implemented" << std::endl;
+int ObsSpaceQG::nobs() const {
+  int iobs;
+  qg_obsdb_nobs_f90(key_, obsname_.size(), obsname_.c_str(), iobs);
+  return iobs;
 }
-
 // -----------------------------------------------------------------------------
 
-int ObsSpaceQG::nobs() const {
-  if ( isLocal_ ) {
-    return localobs_.size();
-  } else {
-    int iobs;
-    qg_obsdb_nobs_f90(key_, obsname_.size(), obsname_.c_str(), iobs);
-    return iobs;
-  }
+// -----------------------------------------------------------------------------
+ObsIteratorQG ObsSpaceQG::begin() const {
+  return ObsIteratorQG(*this->locations(), 0);
+}
+// -----------------------------------------------------------------------------
+ObsIteratorQG ObsSpaceQG::end() const {
+  return ObsIteratorQG(*this->locations(), this->nobs());
 }
 // -----------------------------------------------------------------------------
 
 void ObsSpaceQG::print(std::ostream & os) const {
-  os << "ObsSpace for " << obsname_ << ", " << this->nobs() << " obs" << std::endl;
+  os << "ObsSpace for " << obsname_ << ", " << this->nobs() << " obs";
 }
 
 // -----------------------------------------------------------------------------

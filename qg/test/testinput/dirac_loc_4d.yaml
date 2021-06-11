@@ -282,6 +282,7 @@ dirac:
   ixdir: [20]
   iydir: [10]
   izdir: [1]
+  var: x
 geometry:
   nx: 40
   ny: 20
@@ -319,10 +320,17 @@ model:
 output B:
   datadir: Data
   date: 2010-01-01T00:00:00Z
-  exp: dirac_qg_loc_4d_B
+  exp: dirac_loc_4d_B
   type: an
 output localization:
   datadir: Data
   date: 2010-01-01T00:00:00Z
-  exp: dirac_qg_loc_4d_localization
+  exp: dirac_loc_4d_localization
   type: an
+output variance:
+  datadir: Data
+  exp: dirac_loc_4d_var
+  type: an
+
+test:
+  reference filename: testoutput/dirac_loc_4d.test

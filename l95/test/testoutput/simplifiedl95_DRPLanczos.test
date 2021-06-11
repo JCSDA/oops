@@ -1,10 +1,10 @@
-Test     : CostJb   : Nonlinear Jb = 0
-Test     : CostJo   : Nonlinear Jo(Lorenz 95) = 28, nobs = 3, Jo/n = 9.33333, err = 1
-Test     : CostFunction: Nonlinear J = 28
-Test     : DRPLanczosMinimizer: reduction in residual norm = 0
-Test     : CostFunction::addIncrement: Analysis:
-Test     :  Valid time: 2010-01-01T00:30:00Z
-Test     :  Min=4, Max=6, Average=5
-Test     : CostJb   : Nonlinear Jb = 7
-Test     : CostJo   : Nonlinear Jo(Lorenz 95) = 7, nobs = 3, Jo/n = 2.33333, err = 1
-Test     : CostFunction: Nonlinear J = 14
+CostJb   : Nonlinear Jb = 0
+CostJo   : Nonlinear Jo(Lorenz 95) = 114, nobs = 4, Jo/n = 28.5, err = 1
+CostFunction: Nonlinear J = 114
+DRPLanczosMinimizer: reduction in residual norm = 1.68831e-16
+CostFunction::addIncrement: Analysis: 
+ Valid time: 2010-01-01T00:30:00Z
+ Min=-3, Max=5, Average=1.25
+CostJb   : Nonlinear Jb = 28.5
+CostJo   : Nonlinear Jo(Lorenz 95) = 28.5, nobs = 4, Jo/n = 7.125, err = 1
+CostFunction: Nonlinear J = 57

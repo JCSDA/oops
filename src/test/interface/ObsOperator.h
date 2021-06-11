@@ -26,27 +26,35 @@
 #include "oops/interface/ObsOperator.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/runs/Test.h"
+#include "oops/util/Expect.h"
 #include "test/interface/ObsTestsFixture.h"
 #include "test/TestEnvironment.h"
 
 namespace test {
 
-// -----------------------------------------------------------------------------
+const char *expectConstructorToThrow = "expect constructor to throw exception with message";
 
+// -----------------------------------------------------------------------------
+/// \brief tests constructor and print method
 template <typename OBS> void testConstructor() {
   typedef ObsTestsFixture<OBS> Test_;
   typedef oops::ObsOperator<OBS>       ObsOperator_;
 
-  std::vector<eckit::LocalConfiguration> conf;
-  TestEnvironment::config().get("observations", conf);
-
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    eckit::LocalConfiguration obsopconf(conf[jj], "obs operator");
-    std::unique_ptr<ObsOperator_> hop(new ObsOperator_(Test_::obspace()[jj], obsopconf));
-    EXPECT(hop.get());
+    eckit::LocalConfiguration obsopconf(Test_::config(jj), "obs operator");
 
-    hop.reset();
-    EXPECT(!hop.get());
+    if (!Test_::config(jj).has(expectConstructorToThrow)) {
+      std::unique_ptr<ObsOperator_> hop(new ObsOperator_(Test_::obspace()[jj], obsopconf));
+      EXPECT(hop.get());
+      oops::Log::test() << "Testing ObsOperator: " << *hop << std::endl;
+      hop.reset();
+      EXPECT(!hop.get());
+    } else {
+      // The constructor is expected to throw an exception containing the specified string.
+      const std::string expectedMessage = Test_::config(jj).getString(expectConstructorToThrow);
+      EXPECT_THROWS_MSG(ObsOperator_(Test_::obspace()[jj], obsopconf),
+                        expectedMessage.c_str());
+    }
   }
 }
 
@@ -60,20 +68,24 @@ template <typename OBS> void testSimulateObs() {
   typedef oops::ObsOperator<OBS>       ObsOperator_;
   typedef oops::ObsVector<OBS>         ObsVector_;
 
-  std::vector<eckit::LocalConfiguration> conf;
-  TestEnvironment::config().get("observations", conf);
-
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    const eckit::LocalConfiguration & conf = Test_::config(jj);
+    if (conf.has(expectConstructorToThrow))
+      continue;
+
     // initialize observation operator (set variables requested from the model,
     // variables simulated by the observation operator, other init)
-    eckit::LocalConfiguration obsopconf(conf[jj], "obs operator");
+    eckit::LocalConfiguration obsopconf(conf, "obs operator");
     ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
 
     // initialize bias correction
-    const ObsAuxCtrl_ ybias(Test_::obspace()[jj], conf[jj]);
+    eckit::LocalConfiguration biasconf = conf.getSubConfiguration("obs bias");
+    typename ObsAuxCtrl_::Parameters_ biasparams;
+    biasparams.validateAndDeserialize(biasconf);
+    const ObsAuxCtrl_ ybias(Test_::obspace()[jj], biasparams);
 
     // read geovals from the file
-    eckit::LocalConfiguration gconf(conf[jj], "geovals");
+    eckit::LocalConfiguration gconf(conf, "geovals");
     oops::Variables hopvars = hop.requiredVars();
     hopvars += ybias.requiredVars();
     const GeoVaLs_ gval(gconf, Test_::obspace()[jj], hopvars);
@@ -84,46 +96,37 @@ template <typename OBS> void testSimulateObs() {
     // create diagnostics to hold HofX diags
     oops::Variables diagvars;
     diagvars += ybias.requiredHdiagnostics();
-    ObsDiags_ diags(Test_::obspace()[jj],
-                    hop.locations(Test_::obspace()[jj].windowStart(),
-                                  Test_::obspace()[jj].windowEnd()),
-                    diagvars);
+    ObsDiags_ diags(Test_::obspace()[jj], hop.locations(), diagvars);
 
     // call H(x), save result in the output file as @hofx
     hop.simulateObs(gval, hofx, ybias, diags);
     hofx.save("hofx");
 
-    // apply bias correction if it is required
-    if (conf[jj].has("obs bias")) {
-      const ObsVector_ bias(Test_::obspace()[jj], "ObsBias", false);
-      hofx += bias;
-    }
-
-    const double tol = conf[jj].getDouble("tolerance");
-    if (conf[jj].has("vector ref")) {
+    const double tol = conf.getDouble("tolerance");
+    if (conf.has("vector ref")) {
       // if reference h(x) is saved in file as a vector, read from file
       // and compare the norm of difference to zero
-      ObsVector_ obsref(Test_::obspace()[jj], conf[jj].getString("vector ref"));
+      ObsVector_ obsref(Test_::obspace()[jj], conf.getString("vector ref"));
       obsref -= hofx;
       const double zz = obsref.rms();
-      oops::Log::info() << "Vector difference between reference and computed: " << obsref;
+      oops::Log::test() << "Vector difference between reference and computed: " << obsref;
       EXPECT(zz < 100*tol);  //  change tol from percent to actual value.
                              //  tol used in is_close is relative
-    } else if (conf[jj].has("norm ref")) {
+    } else if (conf.has("norm ref")) {
       // if reference h(x) is saved in file as a vector, read from file
       // and compare the difference, normalised by the reference values to zero
-      ObsVector_ obsref(Test_::obspace()[jj], conf[jj].getString("norm ref"));
+      ObsVector_ obsref(Test_::obspace()[jj], conf.getString("norm ref"));
       obsref -= hofx;
       obsref /= hofx;
       const double zz = obsref.rms();
-      oops::Log::info() << "Normalised vector difference between reference and computed: "
+      oops::Log::test() << "Normalised vector difference between reference and computed: "
                         << obsref;
       EXPECT(zz < 100*tol);  //  change tol from percent to actual value.
                              //  tol used in is_close is relative
     } else {
       // else compare h(x) norm to the norm from the config
       const double zz = hofx.rms();
-      const double xx = conf[jj].getDouble("rms ref");
+      const double xx = conf.getDouble("rms ref");
 
       oops::Log::debug() << "zz: " << std::fixed << std::setprecision(8) << zz << std::endl;
       oops::Log::debug() << "xx: " << std::fixed << std::setprecision(8) << xx << std::endl;

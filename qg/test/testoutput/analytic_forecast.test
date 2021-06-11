@@ -1,16 +1,12 @@
-Test     : Initial state: 
-Test     :   Valid time: 2010-01-01T00:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -4.1289, Max=      4.1289, RMS=      1.5614
-Test     :   Scaling=     10, Min=     -3.6309, Max=      0.0000, RMS=      1.8839
-Test     :   Scaling= 0.0001, Min=     -0.7365, Max=      0.8080, RMS=      0.7516
-Test     : Final state: 
-Test     :   Valid time: 2010-01-05T00:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -4.2065, Max=      4.2065, RMS=      1.8324
-Test     :   Scaling=     10, Min=     -3.6309, Max=      0.0000, RMS=      1.8839
-Test     :   Scaling= 0.0001, Min=     -0.7365, Max=      0.8080, RMS=      0.7516
+Initial state: 
+  Valid time: 2010-01-01T00:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -4.1289e+08, Max=  4.1289e+08, RMS=  1.5614e+08
+  Streamfunction LBC     :  Min= -3.6309e+01, Max=  0.0000e+00, RMS=  1.8839e+01
+  Potential vorticity LBC:  Min= -7.3653e-05, Max=  8.0801e-05, RMS=  7.5159e-05
+Final state: 
+  Valid time: 2010-01-05T00:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -4.2065e+08, Max=  4.2065e+08, RMS=  1.8324e+08
+  Streamfunction LBC     :  Min= -3.6309e+01, Max=  0.0000e+00, RMS=  1.8839e+01
+  Potential vorticity LBC:  Min= -7.3653e-05, Max=  8.0801e-05, RMS=  7.5159e-05

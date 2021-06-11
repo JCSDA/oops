@@ -44,7 +44,7 @@ namespace test {
 // =================================================================================================
 
 template <typename MODEL, typename OBS> class LinearGetValuesFixture : private boost::noncopyable {
-  typedef eckit::LocalConfiguration           LocalConfig_;
+  typedef eckit::LocalConfiguration          LocalConfig_;
   typedef oops::GeoVaLs<OBS>                 GeoVaLs_;
   typedef oops::Geometry<MODEL>              Geometry_;
   typedef oops::GetValues<MODEL, OBS>        GetValues_;
@@ -67,6 +67,20 @@ template <typename MODEL, typename OBS> class LinearGetValuesFixture : private b
   static const State_            & state()           {return *getInstance().state_;}
   static const Variables_        & statevars()       {return *getInstance().statevars_;}
   static const Variables_        & geovalvars()      {return *getInstance().geovalvars_;}
+  static void reset() {
+    getInstance().lineargetvalues_.reset();
+    getInstance().time_.reset();
+    getInstance().statevars_.reset();
+    getInstance().state_.reset();
+    getInstance().getvalues_.reset();
+    getInstance().geovals_.reset();
+    getInstance().timeend_.reset();
+    getInstance().timebeg_.reset();
+    getInstance().locs_.reset();
+    getInstance().geovalvars_.reset();
+    getInstance().resol_.reset();
+    getInstance().testconf_.reset();
+  }
 
  private:
   static LinearGetValuesFixture<MODEL, OBS>& getInstance() {
@@ -96,7 +110,10 @@ template <typename MODEL, typename OBS> class LinearGetValuesFixture : private b
     geovals_.reset(new GeoVaLs_(*locs_, *geovalvars_));
 
     // Nonlinear GetValues
-    getvalues_.reset(new GetValues_(*resol_, *locs_));
+    LocalConfig_ getvaluesConfig;
+    if (TestEnvironment::config().has("get values"))
+      getvaluesConfig = eckit::LocalConfiguration(TestEnvironment::config(), "get values");
+    getvalues_.reset(new GetValues_( *resol_, *locs_, getvaluesConfig));
 
     // State
     const LocalConfig_ stateConfig(TestEnvironment::config(), "background");
@@ -107,7 +124,12 @@ template <typename MODEL, typename OBS> class LinearGetValuesFixture : private b
     time_.reset(new DateTime_(state_->validTime()));
 
     // LinearGetValues
-    lineargetvalues_.reset(new LinearGetValues_(*resol_, *locs_));
+    LocalConfig_ linearGetValuesConfig;
+    if (TestEnvironment::config().has("linear get values"))
+      linearGetValuesConfig =
+        eckit::LocalConfiguration(TestEnvironment::config(), "linear get values");
+    lineargetvalues_.reset(new LinearGetValues_(*resol_, *locs_,
+                                                linearGetValuesConfig));
 
     // Set trajectory
     GeoVaLs_ gvtraj(*locs_, *geovalvars_);
@@ -131,15 +153,22 @@ template <typename MODEL, typename OBS> class LinearGetValuesFixture : private b
 };
 
 // =================================================================================================
-
+/// \brief tests constructor and print method
 template <typename MODEL, typename OBS> void testLinearGetValuesConstructor() {
   typedef LinearGetValuesFixture<MODEL, OBS>  Test_;
   typedef oops::LinearGetValues<MODEL, OBS>   LinearGetValues_;
 
-  std::unique_ptr<const LinearGetValues_> lineargetvalues(new LinearGetValues_(Test_::resol(),
-                                                                               Test_::locs()));
-  EXPECT(lineargetvalues.get());
+  eckit::LocalConfiguration linearGetValuesConfig;
+  if (TestEnvironment::config().has("linear get values"))
+    linearGetValuesConfig =
+      eckit::LocalConfiguration(TestEnvironment::config(), "linear get values");
 
+  std::unique_ptr<const LinearGetValues_>
+    lineargetvalues(new LinearGetValues_(Test_::resol(),
+                                         Test_::locs(),
+                                         linearGetValuesConfig));
+  EXPECT(lineargetvalues.get());
+  oops::Log::test() << "Testing LinearGetValues: " << *lineargetvalues << std::endl;
   lineargetvalues.reset();
   EXPECT(!lineargetvalues.get());
 }
@@ -306,7 +335,7 @@ template <typename MODEL, typename OBS>
 class LinearGetValues : public oops::Test {
  public:
   LinearGetValues() {}
-  virtual ~LinearGetValues() {}
+  virtual ~LinearGetValues() {LinearGetValuesFixture<MODEL, OBS>::reset();}
 
  private:
   std::string testid() const override {return "test::LinearGetValues<" + MODEL::name() + ", "
@@ -315,15 +344,15 @@ class LinearGetValues : public oops::Test {
   void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts.emplace_back(CASE("interface/GeometryIterator/testLinearGetValuesConstructor")
+    ts.emplace_back(CASE("interface/LinearGetValues/testLinearGetValuesConstructor")
       { testLinearGetValuesConstructor<MODEL, OBS>(); });
-    ts.emplace_back(CASE("interface/GeometryIterator/testLinearGetValuesZeroPert")
+    ts.emplace_back(CASE("interface/LinearGetValues/testLinearGetValuesZeroPert")
       { testLinearGetValuesZeroPert<MODEL, OBS>(); });
-    ts.emplace_back(CASE("interface/GeometryIterator/testLinearGetValuesLinearity")
+    ts.emplace_back(CASE("interface/LinearGetValues/testLinearGetValuesLinearity")
       { testLinearGetValuesLinearity<MODEL, OBS>(); });
-    ts.emplace_back(CASE("interface/GeometryIterator/testLinearGetValuesLinearApproximation")
+    ts.emplace_back(CASE("interface/LinearGetValues/testLinearGetValuesLinearApproximation")
       { testLinearGetValuesLinearApproximation<MODEL, OBS>(); });
-    ts.emplace_back(CASE("interface/GeometryIterator/testLinearGetValuesAdjoint")
+    ts.emplace_back(CASE("interface/LinearGetValues/testLinearGetValuesAdjoint")
       { testLinearGetValuesAdjoint<MODEL, OBS>(); });
   }
 

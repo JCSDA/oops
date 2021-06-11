@@ -23,7 +23,6 @@
 #include "lorenz95/Iterator.h"
 #include "lorenz95/Resolution.h"
 
-#include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/LocalIncrement.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -56,7 +55,6 @@ namespace lorenz95 {
 // -----------------------------------------------------------------------------
 class IncrementL95 : public util::Printable,
                      public util::Serializable,
-                     public oops::GeneralizedDepartures,
                      private util::ObjectCounter<IncrementL95> {
  public:
   static const std::string classname() {return "lorenz95::IncrementL95";}

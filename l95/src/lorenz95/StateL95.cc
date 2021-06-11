@@ -144,6 +144,11 @@ void StateL95::write(const eckit::Configuration & config) const {
     filename += "."+time_.toString();
   }
 
+  if (type == "krylov") {
+    std::string iter = config.getString("iteration");
+    filename += "."+iter+"."+time_.toString();
+  }
+
   sf::swapNameMember(config, filename);
 
   oops::Log::trace() << "StateL95::write opening " << filename << std::endl;

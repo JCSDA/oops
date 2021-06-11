@@ -15,6 +15,8 @@
 #include <iostream>
 #include <vector>
 
+#include "lorenz95/ObsBiasParameters.h"
+
 #include "oops/util/Printable.h"
 #include "oops/util/Serializable.h"
 
@@ -24,18 +26,19 @@ namespace eckit {
 
 namespace lorenz95 {
   class ObsBias;
-  class ObsTableView;
+  class ObsTable;
 
 // -----------------------------------------------------------------------------
 
 class ObsBiasCorrection : public util::Printable,
                           public util::Serializable {
  public:
+  typedef ObsBiasParameters Parameters_;
+
 /// Constructor, destructor
   ObsBiasCorrection();
-  ObsBiasCorrection(const ObsTableView &, const eckit::Configuration &);
+  ObsBiasCorrection(const ObsTable &, const Parameters_ &);
   ObsBiasCorrection(const ObsBiasCorrection &, const bool copy = true);
-  ObsBiasCorrection(const ObsBiasCorrection &, const eckit::Configuration &);
   ~ObsBiasCorrection() {}
 
 /// Linear algebra operators

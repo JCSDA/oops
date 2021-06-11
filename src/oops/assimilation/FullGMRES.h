@@ -15,6 +15,7 @@
 #include <iostream>
 #include <vector>
 
+#include "oops/assimilation/MinimizerUtils.h"
 #include "oops/assimilation/rotmat.h"
 #include "oops/assimilation/UpTriSolve.h"
 #include "oops/util/dot_product.h"
@@ -171,8 +172,8 @@ double FullGMRES(VECTOR & xx, const VECTOR & bb, const AMATRIX & A,
     ss[jiter] = temp;
 
     normReduction = std::abs(ss[jiter+1])/znrm2;
-    Log::info() << "FullGMRES end of iteration " << jiter+1 << ". PNorm reduction= "
-                << util::full_precision(normReduction) << std::endl << std::endl;
+    Log::info() << "FullGMRES end of iteration " << jiter+1 << std::endl;
+    printNormReduction(jiter+1, std::abs(ss[jiter+1]), normReduction);
 
     if (normReduction <= tolerance) {
       Log::info() << "FullGMRES: Achieved required reduction in presidual norm." << std::endl;

@@ -17,7 +17,10 @@
 #include <string>
 
 #include "eckit/geometry/Point2.h"
+#include "eckit/system/ResourceUsage.h"
+
 #include "oops/base/Variables.h"
+#include "oops/interface/GeometryIterator.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
@@ -33,7 +36,6 @@ namespace util {
 }
 
 namespace oops {
-  template <typename T> class ObsVector;
 
 // -----------------------------------------------------------------------------
 
@@ -41,7 +43,7 @@ template <typename OBS>
 class ObsSpace : public util::Printable,
                  private util::ObjectCounter<ObsSpace<OBS> > {
   typedef typename OBS::ObsSpace  ObsSpace_;
-  typedef ObsVector<OBS>          ObsVector_;
+  typedef GeometryIterator<OBS>   ObsIterator_;
 
  public:
   static const std::string classname() {return "oops::ObsSpace";}
@@ -49,13 +51,9 @@ class ObsSpace : public util::Printable,
   ObsSpace(const eckit::Configuration &, const eckit::mpi::Comm &,
            const util::DateTime &, const util::DateTime &,
            const eckit::mpi::Comm & time = oops::mpi::myself());
-  ObsSpace(const ObsSpace &, const eckit::geometry::Point2 &,
-           const eckit::Configuration &);
-/// Constructor added for generic 1d-var under development in ufo
-  ObsSpace(const ObsSpace_ &, const eckit::geometry::Point2 &,
-           const eckit::Configuration &);
-  explicit ObsSpace(const ObsSpace_ &);
   ~ObsSpace();
+
+  ObsSpace(const ObsSpace &) = delete;
 
 /// Interfacing
   ObsSpace_ & obsspace() const {return *obsdb_;}  // const problem? YT
@@ -67,15 +65,22 @@ class ObsSpace : public util::Printable,
   const Variables & obsvariables() const;
 
 // Other
-  void printJo(const ObsVector_ &, const ObsVector_ &) const;
   const std::string & obsname() const {return obsdb_->obsname();}
 
+  /// Iterator to the first observation
+  ObsIterator_ begin() const;
+  /// Iterator to the past-the-end observation (after last)
+  ObsIterator_ end() const;
+
   const eckit::mpi::Comm & timeComm() const {return time_;}
+
+// Save to file
+  void save() const;
 
  private:
   void print(std::ostream &) const;
 
-  std::shared_ptr<ObsSpace_> obsdb_;
+  std::unique_ptr<ObsSpace_> obsdb_;
   const eckit::mpi::Comm & time_;
 };
 
@@ -89,40 +94,10 @@ ObsSpace<OBS>::ObsSpace(const eckit::Configuration & conf,
                         const eckit::mpi::Comm & time) : obsdb_(), time_(time) {
   Log::trace() << "ObsSpace<OBS>::ObsSpace starting" << std::endl;
   util::Timer timer(classname(), "ObsSpace");
+  size_t init = eckit::system::ResourceUsage().maxResidentSetSize();
   obsdb_.reset(new ObsSpace_(conf, comm, bgn, end, time));
-  Log::trace() << "ObsSpace<OBS>::ObsSpace done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename OBS>
-ObsSpace<OBS>::ObsSpace(const ObsSpace<OBS> & os,
-                        const eckit::geometry::Point2 & center,
-                        const eckit::Configuration & conf) : obsdb_(), time_(oops::mpi::myself()) {
-  Log::trace() << "ObsSpace<OBS>::ObsSpace (local) starting" << std::endl;
-  util::Timer timer(classname(), "ObsSpace");
-  obsdb_.reset(new ObsSpace_(os.obsspace(), center, conf));
-  Log::trace() << "ObsSpace<OBS>::ObsSpace (local) done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-/// Constructor added for generic 1d-var under development in ufo
-template <typename OBS>
-ObsSpace<OBS>::ObsSpace(const ObsSpace_ & os, const eckit::geometry::Point2 & center,
-                        const eckit::Configuration & conf): obsdb_(), time_(oops::mpi::myself()) {
-  Log::trace() << "ObsSpace<OBS>::ObsSpace (local) derived state starting" << std::endl;
-  util::Timer timer(classname(), "ObsSpace");
-  obsdb_.reset(new ObsSpace_(os, center, conf));
-  Log::trace() << "ObsSpace<OBS>::ObsSpace (local) derived state done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename OBS>
-ObsSpace<OBS>::ObsSpace(const ObsSpace_ & other) : obsdb_(), time_(other.time_) {
-  Log::trace() << "ObsSpace<OBS>::ObsSpace starting" << std::endl;
-  util::Timer timer(classname(), "ObsSpace");
-  obsdb_ = other.obsdb_;
+  size_t current = eckit::system::ResourceUsage().maxResidentSetSize();
+  this->setObjectSize(current - init);
   Log::trace() << "ObsSpace<OBS>::ObsSpace done" << std::endl;
 }
 
@@ -139,6 +114,16 @@ ObsSpace<OBS>::~ObsSpace() {
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
+void ObsSpace<OBS>::save() const {
+  Log::trace() << "ObsSpace<OBS>::save starting" << std::endl;
+  util::Timer timer(classname(), "save");
+  obsdb_->save();
+  Log::trace() << "ObsSpace<OBS>::save done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
 void ObsSpace<OBS>::print(std::ostream & os) const {
   Log::trace() << "ObsSpace<OBS>::print starting" << std::endl;
   util::Timer timer(classname(), "print");
@@ -147,7 +132,7 @@ void ObsSpace<OBS>::print(std::ostream & os) const {
 }
 
 // -----------------------------------------------------------------------------
-//
+
 template <typename OBS>
 const Variables & ObsSpace<OBS>::obsvariables() const {
   Log::trace() << "ObsSpace<OBS>::obsvariables starting" << std::endl;
@@ -158,11 +143,21 @@ const Variables & ObsSpace<OBS>::obsvariables() const {
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-void ObsSpace<OBS>::printJo(const ObsVector_ & dy, const ObsVector_ & grad) const {
-  Log::trace() << "ObsSpace<OBS>::printJo starting" << std::endl;
-  util::Timer timer(classname(), "printJo");
-  obsdb_->printJo(dy.obsvector(), grad.obsvector());
-  Log::trace() << "ObsSpace<OBS>::printJo done" << std::endl;
+GeometryIterator<OBS> ObsSpace<OBS>::begin() const {
+  Log::trace() << "ObsSpace<OBS>::begin starting" << std::endl;
+  util::Timer timer(classname(), "begin");
+  Log::trace() << "ObsSpace<OBS>::begin done" << std::endl;
+  return ObsIterator_(obsdb_->begin());
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+GeometryIterator<OBS> ObsSpace<OBS>::end() const {
+  Log::trace() << "ObsSpace<OBS>::end starting" << std::endl;
+  util::Timer timer(classname(), "end");
+  Log::trace() << "ObsSpace<OBS>::end done" << std::endl;
+  return ObsIterator_(obsdb_->end());
 }
 
 // -----------------------------------------------------------------------------

@@ -13,3 +13,6 @@ output:
   date: '2010-01-02T00:00:00Z'
   exp: difst
   type: in
+
+test:
+  reference filename: testoutput/diffstates.test

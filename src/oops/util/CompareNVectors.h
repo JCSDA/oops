@@ -8,6 +8,7 @@
 #ifndef OOPS_UTIL_COMPARENVECTORS_H_
 #define OOPS_UTIL_COMPARENVECTORS_H_
 
+#include <stddef.h>
 #include <vector>
 
 namespace oops {

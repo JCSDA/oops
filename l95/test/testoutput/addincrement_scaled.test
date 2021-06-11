@@ -1,12 +1,12 @@
-Test     : State: 
-Test     :  Valid time: 2010-01-02T00:00:00Z
-Test     :  Min=6.5867, Max=9.28852, Average=8.00062
-Test     : Increment: 
-Test     :  Valid time: 2010-01-02T00:00:00Z
-Test     :  Min=-0.226841, Max=0.17469, Average=0.0151963
-Test     : Scaled the increment: 
-Test     :  Valid time: 2010-01-02T00:00:00Z
-Test     :  Min=-0.113421, Max=0.0873452, Average=0.00759817
-Test     : State plus increment: 
-Test     :  Valid time: 2010-01-02T00:00:00Z
-Test     :  Min=6.6707, Max=9.1751, Average=8.00822
+State: 
+ Valid time: 2010-01-02T00:00:00Z
+ Min=6.5867, Max=9.28852, Average=8.00062
+Increment: 
+ Valid time: 2010-01-02T00:00:00Z
+ Min=-0.226841, Max=0.17469, Average=0.0151963
+Scaled the increment: 
+ Valid time: 2010-01-02T00:00:00Z
+ Min=-0.113421, Max=0.0873452, Average=0.00759817
+State plus increment: 
+ Valid time: 2010-01-02T00:00:00Z
+ Min=6.6707, Max=9.1751, Average=8.00822

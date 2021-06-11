@@ -16,20 +16,19 @@
 
 #include "eckit/config/Configuration.h"
 #include "eckit/exception/Exceptions.h"
-#include "lorenz95/ObsTableView.h"
+#include "lorenz95/ObsData1D.h"
+#include "lorenz95/ObsTable.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
 
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-ObsVec1D::ObsVec1D(const ObsTableView & ot,
-                   const std::string & name, const bool fail)
+ObsVec1D::ObsVec1D(const ObsTable & ot,
+                   const std::string & name)
   : obsdb_(ot), data_(ot.nobs()), missing_(util::missingValue(missing_))
 {
   for (double & val : data_) { val = 0.0; }
-  if (!name.empty()) {
-    if (fail || obsdb_.has(name)) obsdb_.getdb(name, data_);
-  }
+  if (!name.empty()) obsdb_.getdb(name, data_);
 }
 // -----------------------------------------------------------------------------
 ObsVec1D::ObsVec1D(const ObsVec1D & other)
@@ -44,13 +43,6 @@ ObsVec1D & ObsVec1D::operator= (const ObsVec1D & rhs) {
   return *this;
 }
 
-// -----------------------------------------------------------------------------
-ObsVec1D::ObsVec1D(const ObsTableView & ot, const ObsVec1D & other)
-  : obsdb_(ot), data_(ot.nobs()), missing_(util::missingValue(missing_)) {
-  for (size_t ii = 0; ii < ot.nobs(); ++ii) {
-    data_[ii] = other[ot.index(ii)];
-  }
-}
 // -----------------------------------------------------------------------------
 ObsVec1D & ObsVec1D::operator*= (const double & zz) {
   for (double & val : data_) {
@@ -111,6 +103,10 @@ void ObsVec1D::zero() {
   for (double & val : data_) val = 0.0;
 }
 // -----------------------------------------------------------------------------
+void ObsVec1D::ones() {
+  for (double & val : data_) val = 1.0;
+}
+// -----------------------------------------------------------------------------
 void ObsVec1D::invert() {
   for (double & val : data_) {
     if (val != missing_) val = 1.0/val;
@@ -166,20 +162,41 @@ void ObsVec1D::mask(const ObsData1D<int> & mask) {
   }
 }
 // -----------------------------------------------------------------------------
+ObsVec1D & ObsVec1D::operator=(const ObsData1D<float> & rhs) {
+  const float fmiss = util::missingValue(fmiss);
+  for (size_t jj = 0; jj < data_.size(); ++jj) {
+    if (rhs[jj] == fmiss) {
+      data_.at(jj) = missing_;
+    } else {
+      data_.at(jj) = static_cast<double>(rhs[jj]);
+    }
+  }
+  return *this;
+}
+// -----------------------------------------------------------------------------
 void ObsVec1D::save(const std::string & name) const {
   obsdb_.putdb(name, data_);
 }
 // -----------------------------------------------------------------------------
-Eigen::VectorXd ObsVec1D::packEigen() const {
-  Eigen::VectorXd vec(nobs());
+Eigen::VectorXd ObsVec1D::packEigen(const ObsData1D<int> & mask) const {
+  Eigen::VectorXd vec(packEigenSize(mask));
   size_t ii = 0;
-  for (const double & val : data_) {
-    if (val != missing_) {
-      vec(ii++) = val;
+  for (size_t jj = 0; jj < data_.size(); ++jj) {
+    if ((data_[jj] != missing_) && (mask[jj] == 0)) {
+      vec(ii++) = data_[jj];
     }
   }
-  ASSERT(ii == nobs());
   return vec;
+}
+// -----------------------------------------------------------------------------
+size_t ObsVec1D::packEigenSize(const ObsData1D<int> & mask) const {
+  size_t ii = 0;
+  for (size_t jj = 0; jj < data_.size(); ++jj) {
+    if ((data_[jj] != missing_) && (mask[jj] == 0)) {
+      ii++;
+    }
+  }
+  return ii;
 }
 // -----------------------------------------------------------------------------
 void ObsVec1D::read(const std::string & name) {

@@ -51,6 +51,13 @@ template <typename MODEL> class ErrorCovarianceFixture : private boost::noncopya
   static const oops::Variables & ctlvars()    {return *getInstance().ctlvars_;}
   static const util::DateTime  & time()       {return *getInstance().time_;}
   static const Covariance_     & covariance() {return *getInstance().B_;}
+  static void reset() {
+    getInstance().B_.reset();
+    getInstance().time_.reset();
+    getInstance().ctlvars_.reset();
+    getInstance().resol_.reset();
+    getInstance().test_.reset();
+  }
 
  private:
   static ErrorCovarianceFixture<MODEL>& getInstance() {
@@ -97,7 +104,7 @@ template <typename MODEL> void testErrorCovarianceZero() {
   Increment_ dx2(Test_::resol(), Test_::ctlvars(), Test_::time());
 
   Test_::covariance().randomize(dx2);
-  oops::Log::info() << "dx2.norm()=" << dx2.norm() << std::endl;
+  oops::Log::test() << "dx2.norm()=" << dx2.norm() << std::endl;
 
   EXPECT(dx1.norm() == 0.0);
   EXPECT(dx2.norm() > 0.0);
@@ -108,7 +115,7 @@ template <typename MODEL> void testErrorCovarianceZero() {
   const bool testinverse = Test_::test().getBool("testinverse", true);
   if (testinverse)
     {
-      oops::Log::info() << "Doing zero test for inverse" << std::endl;
+      oops::Log::test() << "Doing zero test for inverse" << std::endl;
       dx1.zero();
       Test_::covariance().randomize(dx2);
       EXPECT(dx1.norm() == 0.0);
@@ -116,7 +123,7 @@ template <typename MODEL> void testErrorCovarianceZero() {
       Test_::covariance().inverseMultiply(dx1, dx2);
       EXPECT(dx2.norm() == 0.0);
     } else {
-      oops::Log::info() << "Not doing zero test for inverse" << std::endl;
+      oops::Log::test() << "Not doing zero test for inverse" << std::endl;
     }
 }
 
@@ -166,9 +173,9 @@ template <typename MODEL> void testErrorCovarianceSym() {
   Test_::covariance().multiply(dy, Bdy);
   const double zz1 = dot_product(dx, Bdy);
   const double zz2 = dot_product(Bdx, dy);
-  oops::Log::info() << "<dx,Bdy>-<Bdx,dy>/<dx,Bdy>="
+  oops::Log::test() << "<dx,Bdy>-<Bdx,dy>/<dx,Bdy>="
                     <<  (zz1-zz2)/zz1 << std::endl;
-  oops::Log::info() << "<dx,Bdy>-<Bdx,dy>/<Bdx,dy>="
+  oops::Log::test() << "<dx,Bdy>-<Bdx,dy>/<Bdx,dy>="
                     <<  (zz1-zz2)/zz2 << std::endl;
   const double tol = Test_::test().getDouble("tolerance");
   EXPECT(oops::is_close(zz1, zz2, tol));
@@ -212,7 +219,7 @@ template <typename MODEL>
 class ErrorCovariance : public oops::Test  {
  public:
   ErrorCovariance() {}
-  virtual ~ErrorCovariance() {}
+  virtual ~ErrorCovariance() {ErrorCovarianceFixture<MODEL>::reset();}
 
  private:
   std::string testid() const override {return "test::ErrorCovariance<" + MODEL::name() + ">";}

@@ -14,6 +14,7 @@
 #include <cmath>
 #include <vector>
 
+#include "oops/assimilation/MinimizerUtils.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/formats.h"
 #include "oops/util/Logger.h"
@@ -113,8 +114,8 @@ double GMRESR(VECTOR & xx, const VECTOR & bb,
 
       rrnorm = sqrt(dot_product(rr, rr));
       normReduction = rrnorm/rrnorm0;
-      Log::info() << "GMRESR end of iteration " << jiter+1 << ". Norm reduction= "
-                  << util::full_precision(normReduction) << std::endl << std::endl;
+      Log::info() << "GMRESR end of iteration " << jiter+1 << std::endl;
+      printNormReduction(jiter+1, rrnorm, normReduction);
 
       if (normReduction < tolerance) {
         Log::info() << "GMRESR: Achieved required reduction in residual norm." << std::endl;

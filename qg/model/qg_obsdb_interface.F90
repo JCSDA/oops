@@ -103,41 +103,9 @@ call c_f_string(c_col,col)
 call qg_obsvec_registry%get(c_key_ovec,ovec)
 
 ! Call Fortran
-call qg_obsdb_get(self,trim(grp),trim(col),ovec,.false.)
+call qg_obsdb_get(self,trim(grp),trim(col),ovec)
 
 end subroutine qg_obsdb_get_c
-! ------------------------------------------------------------------------------
-!> Get observations data for a local subset
-subroutine qg_obsdb_get_local_c(c_key_self,lgrp,c_grp,lcol,c_col,c_idxsize,c_idx,&
-                                c_key_ovec) bind(c,name='qg_obsdb_get_local_f90')
-implicit none
-
-! Passed variables
-integer(c_int),intent(in) :: c_key_self                  !< Observation data
-integer(c_int),intent(in) :: lgrp                        !< Group size
-character(kind=c_char,len=1),intent(in) :: c_grp(lgrp+1) !< Group name
-integer(c_int),intent(in) :: lcol                        !< Column size
-character(kind=c_char,len=1),intent(in) :: c_col(lcol+1) !< Column name
-integer(c_int),intent(in) :: c_key_ovec                  !< Observation vector
-integer(c_int),intent(in) :: c_idxsize                   !< size of local obs index vector
-integer(c_int),intent(in) :: c_idx(c_idxsize)            !< Index vector for local obs
-
-! Local variables
-type(qg_obsdb),pointer :: self
-type(qg_obsvec),pointer :: ovec
-character(len=lgrp) :: grp
-character(len=lcol) :: col
-
-! Interface
-call qg_obsdb_registry%get(c_key_self,self)
-call c_f_string(c_grp,grp)
-call c_f_string(c_col,col)
-call qg_obsvec_registry%get(c_key_ovec,ovec)
-
-! Call Fortran
-call qg_obsdb_get(self,trim(grp),trim(col),ovec,.true.,c_idx)
-
-end subroutine qg_obsdb_get_local_c
 ! ------------------------------------------------------------------------------
 !> Put observation data
 subroutine qg_obsdb_put_c(c_key_self,lgrp,c_grp,lcol,c_col,c_key_ovec) bind(c,name='qg_obsdb_put_f90')
@@ -169,36 +137,8 @@ call qg_obsdb_put(self,trim(grp),trim(col),ovec)
 
 end subroutine qg_obsdb_put_c
 ! ------------------------------------------------------------------------------
-!> Test observation data existence
-subroutine qg_obsdb_has_c(c_key_self,lgrp,c_grp,lcol,c_col,c_has) bind(c,name='qg_obsdb_has_f90')
-
-implicit none
-
-! Passed variables
-integer(c_int),intent(in) :: c_key_self                  !< Observation data
-integer(c_int),intent(in) :: lgrp                        !< Group size
-character(kind=c_char,len=1),intent(in) :: c_grp(lgrp+1) !< Group name
-integer(c_int),intent(in) :: lcol                        !< Column size
-character(kind=c_char,len=1),intent(in) :: c_col(lcol+1) !< Column name
-integer(c_int),intent(out) :: c_has                      !< Test flag
-
-! Local variables
-type(qg_obsdb),pointer :: self
-character(len=lgrp) :: grp
-character(len=lcol) :: col
-
-! Interface
-call qg_obsdb_registry%get(c_key_self,self)
-call c_f_string(c_grp,grp)
-call c_f_string(c_col,col)
-
-! Call Fortran
-call qg_obsdb_has(self,trim(grp),trim(col),c_has)
-
-end subroutine qg_obsdb_has_c
-! ------------------------------------------------------------------------------
 !> Get locations from observation data
-subroutine qg_obsdb_locations_c(c_key_self,lgrp,c_grp,c_t1,c_t2,c_fields,c_times) bind(c,name='qg_obsdb_locations_f90')
+subroutine qg_obsdb_locations_c(c_key_self,lgrp,c_grp,c_fields,c_times) bind(c,name='qg_obsdb_locations_f90')
 
 implicit none
 
@@ -206,26 +146,21 @@ implicit none
 integer(c_int),intent(in) :: c_key_self                  !< Observation data
 integer(c_int),intent(in) :: lgrp                        !< Group size
 character(kind=c_char,len=1),intent(in) :: c_grp(lgrp+1) !< Group name
-type(c_ptr),value,intent(in) :: c_t1                     !< Time 1
-type(c_ptr),value,intent(in) :: c_t2                     !< Time 2
 type(c_ptr), intent(in), value :: c_fields               !< Locations fieldset
 type(c_ptr), intent(in), value :: c_times                !< times
 
 ! Local variables
 type(qg_obsdb),pointer :: self
 character(len=lgrp) :: grp
-type(datetime) :: t1,t2
 type(atlas_fieldset) :: fields
 
 ! Interface
 call qg_obsdb_registry%get(c_key_self,self)
 call c_f_string(c_grp,grp)
-call c_f_datetime(c_t1,t1)
-call c_f_datetime(c_t2,t2)
 fields = atlas_fieldset(c_fields)
 
 ! Call Fortran
-call qg_obsdb_locations(self,grp,t1,t2,fields,c_times)
+call qg_obsdb_locations(self,grp,fields,c_times)
 
 call fields%final()
 

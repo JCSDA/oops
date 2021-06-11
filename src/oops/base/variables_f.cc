@@ -17,6 +17,18 @@
 namespace oops {
 
 // -----------------------------------------------------------------------------
+oops::Variables* variables_empty_ctor_f() {
+  oops::Variables* vars = new oops::Variables();
+  return vars;
+}
+
+// -----------------------------------------------------------------------------
+void variables_destruct_f(oops::Variables * vars) {
+  ASSERT(vars != nullptr);
+  delete vars;
+}
+
+// -----------------------------------------------------------------------------
 void variables_push_back_f(oops::Variables & vars, const char * vname) {
   vars.push_back(std::string(vname));
 }

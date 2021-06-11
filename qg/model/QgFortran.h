@@ -37,8 +37,6 @@ namespace qg {
   class LocationsQG;
   class ObsSpaceQG;
 
-// Change of variable key type
-typedef int F90chvar;
 // Geometry key type
 typedef int F90geom;
 // Geometry iterator key type
@@ -68,11 +66,9 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Change of variable
 // -----------------------------------------------------------------------------
-  void qg_change_var_setup_f90(F90chvar &, const oops::Variables &, const oops::Variables &);
-  void qg_change_var_f90(const F90chvar &, const F90flds &, const F90flds &);
-  void qg_change_var_inv_f90(const F90chvar &, const F90flds &, const F90flds &);
-  void qg_change_var_ad_f90(const F90chvar &, const F90flds &, const F90flds &);
-  void qg_change_var_inv_ad_f90(const F90chvar &, const F90flds &, const F90flds &);
+  void qg_change_var_f90(const F90flds &, const F90flds &);
+  void qg_change_var_tl_f90(const F90flds &, const F90flds &);
+  void qg_change_var_ad_f90(const F90flds &, const F90flds &);
 
 // -----------------------------------------------------------------------------
 //  Error covariance
@@ -89,12 +85,12 @@ extern "C" {
 //  Fields
 // -----------------------------------------------------------------------------
   void qg_fields_create_f90(F90flds &, const F90geom &, const oops::Variables &, const bool &);
-  void qg_fields_create_from_other_f90(F90flds &, const F90flds &);
+  void qg_fields_create_from_other_f90(F90flds &, const F90flds &, const F90geom &);
   void qg_fields_delete_f90(F90flds &);
   void qg_fields_zero_f90(const F90flds &);
   void qg_fields_ones_f90(const F90flds &);
   void qg_fields_dirac_f90(const F90flds &, const eckit::Configuration &);
-  void qg_fields_random_f90(const F90flds &);
+  void qg_fields_random_f90(const F90flds &, const oops::Variables &);
   void qg_fields_copy_f90(const F90flds &, const F90flds &);
   void qg_fields_self_add_f90(const F90flds &, const F90flds &);
   void qg_fields_self_sub_f90(const F90flds &, const F90flds &);
@@ -111,10 +107,10 @@ extern "C" {
                                 const util::DateTime &);
   void qg_fields_analytic_init_f90(const F90flds &, const eckit::Configuration &,
                                    util::DateTime &);
-  void qg_fields_gpnorm_f90(const F90flds &, const int &, double &);
+  void qg_fields_gpnorm_f90(const F90flds &, int[], double[], double[], double[]);
   void qg_fields_rms_f90(const F90flds &, double &);
-  void qg_fields_sizes_f90(const F90flds &, int &, int &, int &, int &);
-  void qg_fields_vars_f90(const F90flds &, int &, int &);
+  void qg_fields_sizes_f90(const F90flds &, int &, int &, int &);
+  void qg_fields_lbc_f90(const F90flds &, int &);
   void qg_fields_set_atlas_f90(const F90flds &, const oops::Variables &,
                                atlas::field::FieldSetImpl *);
   void qg_fields_to_atlas_f90(const F90flds &, const oops::Variables &,
@@ -166,7 +162,7 @@ extern "C" {
 //  Local Values (GOM)
 // -----------------------------------------------------------------------------
   void qg_gom_setup_f90(F90gom &, const LocationsQG &, const oops::Variables &);
-  void qg_gom_create_f90(F90gom &);
+  void qg_gom_create_f90(F90gom &, const oops::Variables &);
   void qg_gom_delete_f90(F90gom &);
   void qg_gom_copy_f90(const F90gom &, const F90gom &);
   void qg_gom_zero_f90(const F90gom &);
@@ -179,8 +175,8 @@ extern "C" {
   void qg_gom_divide_f90(const F90gom &, const F90gom &);
   void qg_gom_rms_f90(const F90gom &, double &);
   void qg_gom_dotprod_f90(const F90gom &, const F90gom &, double &);
-  void qg_gom_stats_f90(const F90gom &, int &, double &, double &, double &, double &);
-  void qg_gom_maxloc_f90(const F90gom &, double &, int &, int &);
+  void qg_gom_stats_f90(const F90gom &, int &, double &, double &, double &);
+  void qg_gom_maxloc_f90(const F90gom &, double &, int &, const oops::Variables &);
   void qg_gom_read_file_f90(const F90gom &, const eckit::Configuration &);
   void qg_gom_write_file_f90(const F90gom &, const eckit::Configuration &);
   void qg_gom_analytic_init_f90(const F90gom &, const LocationsQG &,
@@ -203,15 +199,9 @@ extern "C" {
   void qg_obsdb_delete_f90(F90odb &);
   void qg_obsdb_get_f90(const F90odb &, const int &, const char *,
                         const int &, const char *, const F90ovec &);
-  void qg_obsdb_get_local_f90(const F90odb &, const int &, const char *,
-                              const int &, const char *, const int &, const int *,
-                              const F90ovec &);
   void qg_obsdb_put_f90(const F90odb &, const int &, const char *,
                         const int &, const char *, const F90ovec &);
-  void qg_obsdb_has_f90(const F90odb &, const int &, const char *,
-                        const int &, const char *, int &);
   void qg_obsdb_locations_f90(const F90odb &, const int &, const char *,
-                              const util::DateTime &, const util::DateTime &,
                               atlas::field::FieldSetImpl *, std::vector<util::DateTime> &);
   void qg_obsdb_generate_f90(const F90odb &, const int &, const char *,
                              const eckit::Configuration &, const util::DateTime &,
@@ -225,8 +215,12 @@ extern "C" {
   void qg_obsvec_clone_f90(F90ovec &, const F90ovec &);
   void qg_obsvec_delete_f90(F90ovec &);
   void qg_obsvec_copy_f90(const F90ovec &, const F90ovec &);
-  void qg_obsvec_copy_local_f90(const F90ovec &, const F90ovec &, const int &, const int *);
   void qg_obsvec_zero_f90(const F90ovec &);
+  void qg_obsvec_zero_ith_f90(const F90ovec &, const int &);
+  void qg_obsvec_ones_f90(const F90ovec &);
+  /// set ObsVector (with key \p obsvector_key) values to missing values where
+  /// mask ObsVector (with key \p mask_key) values are set to 1
+  void qg_obsvec_mask_f90(const F90ovec & obsvector_key, const F90ovec & mask_key);
   void qg_obsvec_mul_scal_f90(const F90ovec &, const double &);
   void qg_obsvec_add_f90(const F90ovec &, const F90ovec &);
   void qg_obsvec_sub_f90(const F90ovec &, const F90ovec &);
@@ -236,9 +230,14 @@ extern "C" {
   void qg_obsvec_invert_f90(const F90ovec &);
   void qg_obsvec_random_f90(const ObsSpaceQG &, const F90ovec &);
   void qg_obsvec_dotprod_f90(const F90ovec &, const F90ovec &, double &);
-  void qg_obsvec_stats_f90(const F90ovec &, double &, double &, double &, double &);
+  void qg_obsvec_stats_f90(const F90ovec &, double &, double &, double &);
   void qg_obsvec_nobs_f90(const F90ovec &, int &);
-  void qg_obsvec_getat_f90(const F90ovec &, const int &, double &);
+  void qg_obsvec_size_f90(const F90ovec &, int &);
+  /// fill \p data (size \p nobs) with all non-masked out (non-missing) values
+  void qg_obsvec_get_withmask_f90(const F90ovec &, const F90ovec & mask_key,
+                                  double * data, const int & nobs);
+  void qg_obsvec_nobs_withmask_f90(const F90ovec &, const F90ovec & mask_key, int &);
+
 
 // -----------------------------------------------------------------------------
 //  Streamfunction observations

@@ -10,6 +10,22 @@
 interface
 !-------------------------------------------------------------------------------
 
+type(c_ptr) function c_variables_empty_ctor() bind(C, name='variables_empty_ctor_f')
+  use, intrinsic :: iso_c_binding
+  implicit none
+end function c_variables_empty_ctor
+
+!-------------------------------------------------------------------------------
+
+subroutine c_variables_destruct(vars) bind(C, name='variables_destruct_f')
+  use, intrinsic :: iso_c_binding
+  implicit none
+
+  type(c_ptr), value :: vars
+end subroutine c_variables_destruct
+
+!-------------------------------------------------------------------------------
+
 subroutine c_variables_push_back(vars, str) bind(C, name='variables_push_back_f')
   use, intrinsic :: iso_c_binding
   implicit none

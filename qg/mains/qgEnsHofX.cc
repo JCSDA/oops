@@ -10,11 +10,11 @@
 
 #include "model/QgTraits.h"
 #include "oops/runs/EnsembleApplication.h"
-#include "oops/runs/HofX.h"
+#include "oops/runs/HofX4D.h"
 #include "oops/runs/Run.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  oops::EnsembleApplication< oops::HofX<qg::QgTraits, qg::QgObsTraits> > enshofx;
+  oops::EnsembleApplication< oops::HofX4D<qg::QgTraits, qg::QgObsTraits> > enshofx;
   return run.execute(enshofx);
 }

@@ -21,36 +21,39 @@ namespace util {
 
 // -----------------------------------------------------------------------------
 
-std::map<std::string, std::shared_ptr<ObjectCountHelper> > * ObjectCountHelper::counters_ = 0;
+std::map<std::string, std::shared_ptr<ObjectCountHelper> > ObjectCountHelper::counters_;
 
 // -----------------------------------------------------------------------------
 
 void ObjectCountHelper::start() {
-  ASSERT(!counters_);
-  counters_ = new std::map < std::string, std::shared_ptr<ObjectCountHelper> >();
-  ASSERT(counters_);
   oops::Log::stats() << "ObjectCountHelper started." << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 void ObjectCountHelper::stop() {
-  ASSERT(counters_);
   typedef std::map<std::string, std::shared_ptr<ObjectCountHelper> >::iterator it;
   oops::Log::stats() << " " << std::endl;
   oops::Log::stats() << "----------------------------------------------------------------------"
-                     << std::endl;
+                     << "------------" << std::endl;
   oops::Log::stats() << "--------------------------- Object counts ----------------------------"
-                     << std::endl;
+                     << "------------" << std::endl;
   oops::Log::stats() << "----------------------------------------------------------------------"
+                     << "------------" << std::endl;
+  oops::Log::stats() << std::setw(34) << std::left << " "
+                     << std::setw(8) << std::right << "Total"
+                     << std::setw(9) << std::right << "Simult."
+                     << std::setw(7) << std::right << "Remain"
+                     << std::setw(12) << std::right << "Avg (Mb)"
+                     << std::setw(12) << std::right << "HWM (Mb)"
                      << std::endl;
-  for (it jc = counters_->begin(); jc != counters_->end(); ++jc) {
+  for (it jc = counters_.begin(); jc != counters_.end(); ++jc) {
     oops::Log::stats() << std::setw(32) << std::left << jc->first
                        << ": " << *(jc->second) << std::endl;
   }
   oops::Log::stats() << "----------------------------- Object counts --------------------------"
-                     << std::endl;
-  counters_->clear();
+                     << "------------" << std::endl;
+  counters_.clear();
 }
 
 // -----------------------------------------------------------------------------
@@ -58,10 +61,10 @@ void ObjectCountHelper::stop() {
 std::shared_ptr<ObjectCountHelper> ObjectCountHelper::create(const std::string & cname) {
   std::shared_ptr<ObjectCountHelper> pcount;
   typedef std::map<std::string, std::shared_ptr<ObjectCountHelper> >::iterator it;
-  it jj = counters_->find(cname);
-  if (jj == counters_->end()) {
+  it jj = counters_.find(cname);
+  if (jj == counters_.end()) {
     pcount.reset(new ObjectCountHelper(cname));
-    (*counters_)[cname] = pcount;
+    counters_[cname] = pcount;
   } else {
     pcount = jj->second;
   }
@@ -71,7 +74,7 @@ std::shared_ptr<ObjectCountHelper> ObjectCountHelper::create(const std::string &
 // -----------------------------------------------------------------------------
 
 ObjectCountHelper::ObjectCountHelper(const std::string & cname)
-    : current_(0), created_(0), max_(0) {}
+    : current_(0), created_(0), max_(0), bytes_(0), maxbytes_(0), totbytes_(0) {}
 
 // -----------------------------------------------------------------------------
 
@@ -87,16 +90,35 @@ void ObjectCountHelper::oneMore() {
 
 // -----------------------------------------------------------------------------
 
-void ObjectCountHelper::oneLess() {
+void ObjectCountHelper::oneLess(const size_t & bytes) {
   --current_;
+  bytes_ -= bytes;
+}
+
+// -----------------------------------------------------------------------------
+
+void ObjectCountHelper::setSize(const size_t & bytes) {
+  bytes_ += bytes;
+  maxbytes_ = std::max(maxbytes_, bytes_);
+  totbytes_ += bytes;
 }
 
 // -----------------------------------------------------------------------------
 
 void ObjectCountHelper::print(std::ostream & out) const {
-  out << "simultaneous = " << std::setw(5) << std::right << max_
-      << ", total = " << std::setw(6) << std::right << created_;
-  if (current_ > 0) out << ", not destructed = " << std::setw(5) << std::right << current_;
+  out << std::setw(8) << std::right << created_
+      << std::setw(8) << std::right << max_;
+  if (current_ > 0) {
+    out << std::setw(8) << std::right << current_;
+  } else {
+    out << std::setw(8) << " ";
+  }
+  if (maxbytes_ > 0) {
+    double size = static_cast<double>(totbytes_) / static_cast<double>(created_) / 1.e+6;
+    out << std::setw(12) << std::right << std::fixed << std::setprecision(2) << size;
+    double hwm = static_cast<double>(maxbytes_) / 1.e+6;
+    out << std::setw(12) << std::right << std::fixed << std::setprecision(2) << hwm;
+  }
 }
 
 // -----------------------------------------------------------------------------

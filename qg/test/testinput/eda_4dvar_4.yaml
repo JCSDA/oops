@@ -1,5 +1,4 @@
 cost function:
-  obs perturbations seed: 4
   cost type: 4D-Var
   window begin: 2010-01-01T00:00:00Z
   window length: P1D
@@ -29,6 +28,7 @@ cost function:
         obsfile: Data/truth.obs4d_24h.nc
       obsdataout:
         obsfile: Data/mem004.eda_4dvar.obs4d_24h.nc
+      obs perturbations seed: 4
     obs error:
       covariance model: diagonal
       random amplitude: 0.4
@@ -40,6 +40,7 @@ cost function:
         obsfile: Data/truth.obs4d_24h.nc
       obsdataout:
         obsfile: Data/mem004.eda_4dvar.obs4d_24h.nc
+      obs perturbations seed: 4
     obs error:
       covariance model: diagonal
       random amplitude: 0.5
@@ -51,6 +52,7 @@ cost function:
         obsfile: Data/truth.obs4d_24h.nc
       obsdataout:
         obsfile: Data/mem004.eda_4dvar.obs4d_24h.nc
+      obs perturbations seed: 4
     obs error:
       covariance model: diagonal
       random amplitude: 0.2

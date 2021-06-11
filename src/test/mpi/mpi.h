@@ -34,11 +34,52 @@ namespace eckit
 
 namespace test {
 
+// -----------------------------------------------------------------------------------------------
 class TestParameters : public oops::Parameters {
   OOPS_CONCRETE_PARAMETERS(TestParameters, Parameters)
  public:
-  oops::RequiredParameter<std::vector<util::DateTime>> values{"values", this};
+  oops::RequiredParameter<std::vector<util::DateTime>> datetime{"datetime", this};
+  oops::RequiredParameter<std::vector<int>> int_{"int", this};
+  oops::RequiredParameter<std::vector<std::string>> string{"string", this};
 };
+
+// -----------------------------------------------------------------------------------------------
+template <typename T>
+const std::vector<T> & getTestData(const TestParameters &params);
+
+template <>
+const std::vector<util::DateTime> & getTestData(const TestParameters &params) {
+  return params.datetime;
+}
+
+template <>
+const std::vector<int> & getTestData(const TestParameters &params) {
+  return params.int_;
+}
+
+template <>
+const std::vector<std::string> & getTestData(const TestParameters &params) {
+  return params.string;
+}
+
+// -----------------------------------------------------------------------------------------------
+template <typename T>
+void testAllGatherv() {
+  const eckit::Configuration &conf = TestEnvironment::config();
+  const eckit::mpi::Comm &comm = oops::mpi::world();
+
+  TestParameters localParams;
+  const size_t rank = comm.rank();
+  localParams.deserialize(conf.getSubConfiguration("local" + std::to_string(rank)));
+  std::vector<T> values = getTestData<T>(localParams);
+
+  TestParameters globalParams;
+  globalParams.deserialize(conf.getSubConfiguration("global"));
+  const std::vector<T> &expectedResult = getTestData<T>(globalParams);
+
+  oops::mpi::allGatherv(comm, values);
+  EXPECT_EQUAL(values, expectedResult);
+}
 
 // -----------------------------------------------------------------------------------------------
 CASE("mpi/mpi/defaultCommunicators") {
@@ -58,11 +99,11 @@ CASE("mpi/mpi/allGathervUsingSerialize") {
   TestParameters localParams;
   const size_t rank = comm.rank();
   localParams.deserialize(conf.getSubConfiguration("local" + std::to_string(rank)));
-  const std::vector<util::DateTime> &localValues = localParams.values;
+  const std::vector<util::DateTime> &localValues = localParams.datetime;
 
   TestParameters globalParams;
   globalParams.deserialize(conf.getSubConfiguration("global"));
-  const std::vector<util::DateTime> &expectedGlobalValues = globalParams.values;
+  const std::vector<util::DateTime> &expectedGlobalValues = globalParams.datetime;
 
   size_t numGlobalValues;
   comm.allReduce(localValues.size(), numGlobalValues, eckit::mpi::Operation::SUM);
@@ -71,6 +112,18 @@ CASE("mpi/mpi/allGathervUsingSerialize") {
   oops::mpi::allGathervUsingSerialize(comm, localValues.begin(), localValues.end(),
                                       globalValues.begin());
   EXPECT_EQUAL(globalValues, expectedGlobalValues);
+}
+// -----------------------------------------------------------------------------------------------
+CASE("mpi/mpi/allGathervInt") {
+  testAllGatherv<int>();
+}
+// -----------------------------------------------------------------------------------------------
+CASE("mpi/mpi/allGathervDateTime") {
+  testAllGatherv<util::DateTime>();
+}
+// -----------------------------------------------------------------------------------------------
+CASE("mpi/mpi/allGathervInt") {
+  testAllGatherv<std::string>();
 }
 // -----------------------------------------------------------------------------------------------
 CASE("mpi/mpi/SendReceive") {
@@ -103,11 +156,11 @@ CASE("mpi/mpi/gatherSerializable") {
   TestParameters localParams;
   const size_t rank = comm.rank();
   localParams.deserialize(conf.getSubConfiguration("local" + std::to_string(rank)));
-  const std::vector<util::DateTime> &localValues = localParams.values;
+  const std::vector<util::DateTime> &localValues = localParams.datetime;
 
   TestParameters globalParams;
   globalParams.deserialize(conf.getSubConfiguration("global"));
-  const std::vector<util::DateTime> &expectedGlobalValues = globalParams.values;
+  const std::vector<util::DateTime> &expectedGlobalValues = globalParams.datetime;
 
   size_t numGlobalValues;
   comm.allReduce(localValues.size(), numGlobalValues, eckit::mpi::Operation::SUM);
@@ -115,13 +168,13 @@ CASE("mpi/mpi/gatherSerializable") {
   std::vector<util::DateTime> globalValues(numGlobalValues);
 
   util::DateTime zeroDate("0001-01-01T00:00:00Z");
-  for (int ii = 0; ii < numGlobalValues; ++ii) {
+  for (size_t ii = 0; ii < numGlobalValues; ++ii) {
     globalValues[ii] = zeroDate;
   }
 
   std::vector<util::DateTime> zeroValues = globalValues;
 
-  int root_gather = conf.getInt("root for gathering", 0);
+  size_t root_gather = conf.getInt("root for gathering", 0);
 
   oops::mpi::gather(comm, localValues, globalValues, root_gather);
   if (rank == root_gather) {
@@ -148,7 +201,7 @@ CASE("mpi/mpi/gatherDouble") {
   std::vector<double> globalDouble(numGlobalDouble, 0.0);
   std::vector<double> zerosDouble = globalDouble;
 
-  int root_gather = conf.getInt("root for gathering", 0);
+  size_t root_gather = conf.getInt("root for gathering", 0);
 
   oops::mpi::gather(comm, localDouble, globalDouble, root_gather);
 
@@ -162,18 +215,37 @@ CASE("mpi/mpi/gatherDouble") {
 CASE("mpi/mpi/allGatherEigen") {
   const eckit::mpi::Comm &comm = oops::mpi::world();
   const size_t rank = comm.rank();
-  Eigen::VectorXd localEigen = rank * Eigen::VectorXd::Ones(5);
-  std::vector<Eigen::VectorXd> globalEigen = {Eigen::VectorXd::Zero(5), Eigen::VectorXd::Zero(5),
-                                             Eigen::VectorXd::Zero(5), Eigen::VectorXd::Zero(5)};
-  std::vector<Eigen::VectorXd> expectedEigen = {0*Eigen::VectorXd::Ones(5),
-                                                1*Eigen::VectorXd::Ones(5),
-                                                2*Eigen::VectorXd::Ones(5),
-                                                3*Eigen::VectorXd::Ones(5)};
+
+  Eigen::VectorXd localEigen = rank * Eigen::VectorXd::Ones(4);
+
+  Eigen::MatrixXd globalEigen(4, 4);
+  globalEigen << Eigen::VectorXd::Zero(4),
+                 Eigen::VectorXd::Zero(4),
+                 Eigen::VectorXd::Zero(4),
+                 Eigen::VectorXd::Zero(4);
+
+  Eigen::MatrixXd expectedEigen(4, 4);
+  expectedEigen << 0*Eigen::VectorXd::Ones(4),
+                   1*Eigen::VectorXd::Ones(4),
+                   2*Eigen::VectorXd::Ones(4),
+                   3*Eigen::VectorXd::Ones(4);
+
   oops::mpi::allGather(comm, localEigen, globalEigen);
-  EXPECT_EQUAL(expectedEigen[0], globalEigen[0]);
-  EXPECT_EQUAL(expectedEigen[1], globalEigen[1]);
-  EXPECT_EQUAL(expectedEigen[2], globalEigen[2]);
-  EXPECT_EQUAL(expectedEigen[3], globalEigen[3]);
+  EXPECT_EQUAL(expectedEigen, globalEigen);
+}
+// -----------------------------------------------------------------------------------------------
+CASE("mpi/mpi/exclusiveScan") {
+  const eckit::mpi::Comm &comm = oops::mpi::world();
+  const size_t rank = comm.rank();
+  const size_t size = comm.size();
+
+  size_t expectedResult = 0;
+  for (size_t lowerRank = 0; lowerRank < rank; ++lowerRank)
+    expectedResult += lowerRank;
+
+  size_t result = rank;
+  oops::mpi::exclusiveScan(comm, result);
+  EXPECT_EQUAL(result, expectedResult);
 }
 // -----------------------------------------------------------------------------------------------
 

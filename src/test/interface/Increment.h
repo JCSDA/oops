@@ -49,6 +49,12 @@ template <typename MODEL> class IncrementFixture : private boost::noncopyable {
   static const util::DateTime       & time()      {return *getInstance().time_;}
   static const double               & tolerance() {return getInstance().tolerance_;}
   static const eckit::Configuration & test()      {return *getInstance().test_;}
+  static void reset() {
+    getInstance().time_.reset();
+    getInstance().ctlvars_.reset();
+    getInstance().test_.reset();
+    getInstance().resol_.reset();
+  }
 
  private:
   static IncrementFixture<MODEL>& getInstance() {
@@ -86,12 +92,13 @@ template <typename MODEL> class IncrementFixture : private boost::noncopyable {
 };
 
 // =============================================================================
-
+/// \brief tests Increment constructor and print method
 template <typename MODEL> void testIncrementConstructor() {
   typedef IncrementFixture<MODEL>   Test_;
   typedef oops::Increment<MODEL>    Increment_;
 
   Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
+  oops::Log::test() << "Printing zero increment: " << dx << std::endl;
 
   EXPECT(dx.norm() == 0.0);
 }
@@ -104,6 +111,8 @@ template <typename MODEL> void testIncrementCopyConstructor() {
 
   Increment_ dx1(Test_::resol(), Test_::ctlvars(), Test_::time());
   dx1.random();
+  oops::Log::test() << "Printing random increment: " << dx1 << std::endl;
+
   EXPECT(dx1.norm() > 0.0);
 
   Increment_ dx2(dx1);
@@ -442,7 +451,7 @@ template <typename MODEL>
 class Increment : public oops::Test {
  public:
   Increment() {}
-  virtual ~Increment() {}
+  virtual ~Increment() {IncrementFixture<MODEL>::reset();}
 
  private:
   std::string testid() const override {return "test::Increment<" + MODEL::name() + ">";}

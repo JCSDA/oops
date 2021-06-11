@@ -25,32 +25,41 @@
 #include "oops/interface/ObsOperator.h"
 #include "oops/runs/Test.h"
 #include "oops/util/dot_product.h"
+#include "oops/util/Expect.h"
 #include "oops/util/Logger.h"
 #include "test/interface/ObsTestsFixture.h"
 #include "test/TestEnvironment.h"
 
 namespace test {
 
-// -----------------------------------------------------------------------------
+const char *expectConstructorToThrow = "expect constructor to throw exception with message";
 
+// -----------------------------------------------------------------------------
+/// \brief tests constructor and print method
 template <typename OBS> void testConstructor() {
   typedef ObsTestsFixture<OBS>  Test_;
   typedef oops::LinearObsOperator<OBS>  LinearObsOperator_;
 
-  std::vector<eckit::LocalConfiguration> conf;
-  TestEnvironment::config().get("observations", conf);
-
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    const eckit::LocalConfiguration & conf = Test_::config(jj);
     // Use ObsOperator section of yaml unless LinearObsOperator is specified
     std::string confname = "obs operator";
-    if (conf[jj].has("linear obs operator")) confname = "linear obs operator";
-    eckit::LocalConfiguration linobsopconf(conf[jj], confname);
-    std::unique_ptr<LinearObsOperator_> ov(
-      new LinearObsOperator_(Test_::obspace()[jj], linobsopconf));
-    EXPECT(ov.get());
+    if (conf.has("linear obs operator")) confname = "linear obs operator";
+    eckit::LocalConfiguration linobsopconf(conf, confname);
 
-    ov.reset();
-    EXPECT(!ov.get());
+    if (!Test_::config(jj).has(expectConstructorToThrow)) {
+      std::unique_ptr<LinearObsOperator_> linobsop(
+        new LinearObsOperator_(Test_::obspace()[jj], linobsopconf));
+      EXPECT(linobsop.get());
+      oops::Log::test() << "Testing LinearObsOperator: " << *linobsop << std::endl;
+      linobsop.reset();
+      EXPECT(!linobsop.get());
+    } else {
+      // The constructor is expected to throw an exception containing the specified string.
+      const std::string expectedMessage = Test_::config(jj).getString(expectConstructorToThrow);
+      EXPECT_THROWS_MSG(LinearObsOperator_(Test_::obspace()[jj], linobsopconf),
+                        expectedMessage.c_str());
+    }
   }
 }
 
@@ -69,34 +78,39 @@ template <typename OBS> void testLinearity() {
   const double zero = 0.0;
   const double coef = 3.14;
   const double tol = 1.0e-11;
-  std::vector<eckit::LocalConfiguration> conf;
-  TestEnvironment::config().get("observations", conf);
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    const eckit::LocalConfiguration & conf = Test_::config(jj);
+    if (conf.has(expectConstructorToThrow))
+      continue;
+
     // initialize observation operator (set variables requested from the model,
     // variables simulated by the observation operator, other init)
-    eckit::LocalConfiguration obsopconf(conf[jj], "obs operator");
+    eckit::LocalConfiguration obsopconf(conf, "obs operator");
     ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
     // initialize TL/AD observation operator (set model variables for Jacobian),
     // other init)
     // Use ObsOperator section of yaml unless LinearObsOperator is specified
     std::string confname = "obs operator";
-    if (conf[jj].has("linear obs operator")) confname = "linear obs operator";
-    eckit::LocalConfiguration linobsopconf(conf[jj], confname);
+    if (conf.has("linear obs operator")) confname = "linear obs operator";
+    eckit::LocalConfiguration linobsopconf(conf, confname);
     LinearObsOperator_ hoptl(Test_::obspace()[jj], linobsopconf);
 
     // initialize obs bias
-    const ObsAuxCtrl_ ybias(Test_::obspace()[jj], conf[jj]);
-    ObsAuxIncr_ ybinc(Test_::obspace()[jj], conf[jj]);
+    eckit::LocalConfiguration biasconf = conf.getSubConfiguration("obs bias");
+    typename ObsAuxCtrl_::Parameters_ biasparams;
+    biasparams.validateAndDeserialize(biasconf);
+    const ObsAuxCtrl_ ybias(Test_::obspace()[jj], biasparams);
+    ObsAuxIncr_ ybinc(Test_::obspace()[jj], biasparams);
 
     // read geovals from the file
-    const eckit::LocalConfiguration gconf(conf[jj], "geovals");
+    const eckit::LocalConfiguration gconf(conf, "geovals");
     oops::Variables hopvars = hop.requiredVars();
     hopvars += ybias.requiredVars();
     const GeoVaLs_ gval(gconf, Test_::obspace()[jj], hopvars);
 
      // initialize Obs. Bias Covariance
-    const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], conf[jj]);
+    const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], biasparams);
 
     // set trajectory for TL/AD to be the geovals from the file
     hoptl.setTrajectory(gval, ybias);
@@ -144,33 +158,38 @@ template <typename OBS> void testAdjoint() {
   typedef oops::ObsVector<OBS>         ObsVector_;
 
   const double zero = 0.0;
-  std::vector<eckit::LocalConfiguration> conf;
-  TestEnvironment::config().get("observations", conf);
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    const eckit::LocalConfiguration & conf = Test_::config(jj);
+    if (conf.has(expectConstructorToThrow))
+      continue;
+
     // initialize observation operator (set variables requested from the model,
     // variables simulated by the observation operator, other init)
-    eckit::LocalConfiguration obsopconf(conf[jj], "obs operator");
+    eckit::LocalConfiguration obsopconf(conf, "obs operator");
     ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
     // initialize TL/AD observation operator (set model variables for Jacobian),
     // other init)
     // Use ObsOperator section of yaml unless LinearObsOperator is specified
     std::string confname = "obs operator";
-    if (conf[jj].has("linear obs operator")) confname = "linear obs operator";
-    eckit::LocalConfiguration linobsopconf(conf[jj], confname);
+    if (conf.has("linear obs operator")) confname = "linear obs operator";
+    eckit::LocalConfiguration linobsopconf(conf, confname);
     LinearObsOperator_ hoptl(Test_::obspace()[jj], linobsopconf);
 
-    const double tol = conf[jj].getDouble("linear obs operator test.tolerance AD");
+    const double tol = conf.getDouble("linear obs operator test.tolerance AD");
     // initialize bias correction
-    const ObsAuxCtrl_ ybias(Test_::obspace()[jj], conf[jj]);
-    ObsAuxIncr_ ybinc1(Test_::obspace()[jj], conf[jj]);  // TL
-    ObsAuxIncr_ ybinc2(Test_::obspace()[jj], conf[jj]);  // AD
+    eckit::LocalConfiguration biasconf = conf.getSubConfiguration("obs bias");
+    typename ObsAuxCtrl_::Parameters_ biasparams;
+    biasparams.validateAndDeserialize(biasconf);
+    const ObsAuxCtrl_ ybias(Test_::obspace()[jj], biasparams);
+    ObsAuxIncr_ ybinc1(Test_::obspace()[jj], biasparams);  // TL
+    ObsAuxIncr_ ybinc2(Test_::obspace()[jj], biasparams);  // AD
 
     // initialize Obs. Bias Covariance
-    const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], conf[jj]);
+    const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], biasparams);
 
     // read geovals from the file
-    eckit::LocalConfiguration gconf(conf[jj], "geovals");
+    eckit::LocalConfiguration gconf(conf, "geovals");
     oops::Variables hopvars = hop.requiredVars();
     hopvars += ybias.requiredVars();
     const GeoVaLs_ gval(gconf, Test_::obspace()[jj], hopvars);
@@ -201,7 +220,7 @@ template <typename OBS> void testAdjoint() {
     const double zz1 = dot_product(dx1, dx2) + dot_product(ybinc1, ybinc2);
     const double zz2 = dot_product(dy1, dy2);
 
-    oops::Log::info() << "Adjoint test result: (<x,HTy>-<Hx,y>)/<Hx,y> = "
+    oops::Log::test() << "Adjoint test result: (<x,HTy>-<Hx,y>)/<Hx,y> = "
                        << (zz1-zz2)/zz2 << std::endl;
 
     EXPECT(zz1 != zero);
@@ -224,35 +243,39 @@ template <typename OBS> void testTangentLinear() {
   typedef oops::ObsOperator<OBS>       ObsOperator_;
   typedef oops::ObsVector<OBS>         ObsVector_;
 
-  std::vector<eckit::LocalConfiguration> conf;
-  TestEnvironment::config().get("observations", conf);
-
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    const eckit::LocalConfiguration & conf = Test_::config(jj);
+    if (conf.has(expectConstructorToThrow))
+      continue;
+
     // initialize observation operator (set variables requested from the model,
     // variables simulated by the observation operator, other init)
-    eckit::LocalConfiguration obsopconf(conf[jj], "obs operator");
+    eckit::LocalConfiguration obsopconf(conf, "obs operator");
     ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
     // initialize TL/AD observation operator (set model variables for Jacobian),
     // other init)
     // Use ObsOperator section of yaml unless LinearObsOperator is specified
     std::string confname = "obs operator";
-    if (conf[jj].has("linear obs operator")) confname = "linear obs operator";
-    eckit::LocalConfiguration linobsopconf(conf[jj], confname);
+    if (conf.has("linear obs operator")) confname = "linear obs operator";
+    eckit::LocalConfiguration linobsopconf(conf, confname);
     LinearObsOperator_ hoptl(Test_::obspace()[jj], linobsopconf);
 
-    const double tol = conf[jj].getDouble("linear obs operator test.tolerance TL");
-    const double alpha = conf[jj].getDouble("linear obs operator test.coef TL", 0.1);
-    const int iter = conf[jj].getInt("linear obs operator test.iterations TL", 1);
+    const double tol = conf.getDouble("linear obs operator test.tolerance TL");
+    const double alpha = conf.getDouble("linear obs operator test.coef TL", 0.1);
+    const int iter = conf.getInt("linear obs operator test.iterations TL", 1);
 
     // initialize obs bias from file
-    const ObsAuxCtrl_ ybias0(Test_::obspace()[jj], conf[jj]);
-    ObsAuxCtrl_ ybias(Test_::obspace()[jj], conf[jj]);
+    eckit::LocalConfiguration biasconf = conf.getSubConfiguration("obs bias");
+    typename ObsAuxCtrl_::Parameters_ biasparams;
+    biasparams.validateAndDeserialize(biasconf);
+    const ObsAuxCtrl_ ybias0(Test_::obspace()[jj], biasparams);
+    ObsAuxCtrl_ ybias(Test_::obspace()[jj], biasparams);
 
     // initialize Obs. Bias Covariance
-    const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], conf[jj]);
+    const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], biasparams);
 
     // read geovals from the file
-    const eckit::LocalConfiguration gconf(conf[jj], "geovals");
+    const eckit::LocalConfiguration gconf(conf, "geovals");
     oops::Variables hopvars = hop.requiredVars();
     hopvars += ybias0.requiredVars();
     const GeoVaLs_ x0(gconf, Test_::obspace()[jj], hopvars);
@@ -269,10 +292,7 @@ template <typename OBS> void testTangentLinear() {
     // create obsdatavector to hold diags
     oops::Variables diagvars;
     diagvars += ybias0.requiredHdiagnostics();
-    ObsDiags_ ydiag(Test_::obspace()[jj],
-                    hop.locations(Test_::obspace()[jj].windowStart(),
-                                  Test_::obspace()[jj].windowEnd()),
-                    diagvars);
+    ObsDiags_ ydiag(Test_::obspace()[jj], hop.locations(), diagvars);
 
     // y1 = hop(x0, ybias0)
     hop.simulateObs(x0, y1, ybias0, ydiag);
@@ -280,7 +300,7 @@ template <typename OBS> void testTangentLinear() {
     // randomize dx and ybinc
     GeoVaLs_ dx(gconf, Test_::obspace()[jj], hoptl.requiredVars());
     dx.random();
-    ObsAuxIncr_ ybinc(Test_::obspace()[jj], conf[jj]);
+    ObsAuxIncr_ ybinc(Test_::obspace()[jj], biasparams);
     Bobsbias.randomize(ybinc);
 
     // scale dx by x0
@@ -304,7 +324,7 @@ template <typename OBS> void testTangentLinear() {
       y2 -= y3;
 
       double test_norm = y2.rms();
-      oops::Log::info() << "Iter:" << jter << " ||(h(x+alpha*dx)-h(x)-h'*(alpha*dx))||="
+      oops::Log::test() << "Iter:" << jter << " ||(h(x+alpha*dx)-h(x)-h'*(alpha*dx))||="
                         << test_norm << std::endl;
     }
     EXPECT(y2.rms() < tol);
@@ -325,13 +345,13 @@ class LinearObsOperator : public oops::Test {
   void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts.emplace_back(CASE("interface/GeometryIterator/testConstructor")
+    ts.emplace_back(CASE("interface/LinearObsOperator/testConstructor")
       { testConstructor<OBS>(); });
-    ts.emplace_back(CASE("interface/GeometryIterator/testLinearity")
+    ts.emplace_back(CASE("interface/LinearObsOperator/testLinearity")
       { testLinearity<OBS>(); });
-    ts.emplace_back(CASE("interface/GeometryIterator/testTangentLinear")
+    ts.emplace_back(CASE("interface/LinearObsOperator/testTangentLinear")
       { testTangentLinear<OBS>(); });
-    ts.emplace_back(CASE("interface/GeometryIterator/testAdjoint")
+    ts.emplace_back(CASE("interface/LinearObsOperator/testAdjoint")
       { testAdjoint<OBS>(); });
   }
 

@@ -3,3 +3,6 @@ files:
 - "testinput/eda_4dvar_2.yaml"
 - "testinput/eda_4dvar_3.yaml"
 - "testinput/eda_4dvar_4.yaml"
+
+test:
+  reference filename: testoutput/eda_4dvar.test

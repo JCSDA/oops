@@ -47,3 +47,6 @@ states:
     datadir: Data
     exp: convert
     type: fc
+
+test:
+  reference filename: testoutput/convertstate.test

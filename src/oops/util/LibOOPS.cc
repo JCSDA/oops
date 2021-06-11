@@ -68,11 +68,16 @@ LibOOPS& LibOOPS::instance() {
 }
 
 /** Initialization of MPI and dependent variables.
- * To be called in `main()` by constructor of `oops::Run`.  This method initializes MPI and 
+ * To be called in `main()` by constructor of `oops::Run`.  This method initializes MPI and
  * associated variables that must be initialized after static-init time, and only once `eckit::Main`
  * has been created.
  */
 void LibOOPS::initialise() {
+  std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+  char nowstr[100];
+  std::strftime(nowstr, sizeof(nowstr), "%F %T (UTC%z)", std::localtime(&now));
+  Log::info() << "OOPS Starting " << nowstr << std::endl;
+
   rank_ = oops::mpi::world().rank();
 
   const int it = getEnv("OOPS_TRACE", 0);
@@ -95,6 +100,13 @@ void LibOOPS::initialise() {
     do_abortfpe = getEnv("OOPS_ABORTFPE", 1);
     trap_sigfpe(do_abortfpe);
   }
+  enable_timer_channel_ = getEnv("OOPS_TIMER", 0) > 0 && rank_ == 0;
+
+  // testStream_ is used by TestReference for comparing test output
+  // with a reference file
+  if ( rank_ == 0 ) {
+    testChannel().addStream(testStream_);
+  }
 
 #ifdef ENABLE_GPTL
   do_profile = getEnv("OOPS_PROFILE", 0);
@@ -112,6 +124,10 @@ void LibOOPS::teeOutput(const std::string & fileprefix) {
     teefile = teefile + "." + ss.str();
   }
   eckit::Log::addFile(teefile);
+}
+
+void LibOOPS::testReferenceInitialise(const eckit::LocalConfiguration &testConf) {
+  testReference_.initialise(testConf);
 }
 
 /** Clears logs and finalises MPI (unless \p finaliseMPI is false).
@@ -133,14 +149,27 @@ void LibOOPS::finalise(bool finaliseMPI) {
       }
     }
 #endif
+
+    if ( rank_ == 0 ) {
+      testReference_.finalise(testStream_.str());
+    }
+
+    std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    char nowstr[100];
+    std::strftime(nowstr, sizeof(nowstr), "%F %T (UTC%z)", std::localtime(&now));
+    Log::info() << "OOPS Ending   " << nowstr << std::endl;
+
     // Make sure that these specialised channels that wrap eckit::Log::info() are
     // destroyed before eckit::Log::info gets destroyed.
     // Just in case someone still tries to log, we reset to empty channels.
-    infoChannel_.reset(new eckit::Channel());
+
     debugChannel_.reset(new eckit::Channel());
     traceChannel_.reset(new eckit::Channel());
     statsChannel_.reset(new eckit::Channel());
-    testChannel_. reset(new eckit::Channel());
+    testChannel_.reset(new eckit::Channel());
+    timerChannel_.reset(new eckit::Channel());
+    // Destroy info channel last after other channels have flushed all output
+    infoChannel_.reset(new eckit::Channel());
 
     if (finaliseMPI)
       eckit::mpi::finaliseAllComms();
@@ -191,6 +220,17 @@ eckit::Channel& LibOOPS::testChannel() const {
   return *testChannel_;
 }
 
+eckit::Channel& LibOOPS::timerChannel() const {
+  if (timerChannel_) {return *timerChannel_;}
+  if (enable_timer_channel_) {
+    timerChannel_.reset(new eckit::Channel(
+      new eckit::PrefixTarget("OOPS_TIMER:", new eckit::OStreamTarget(eckit::Log::info()))));
+  } else {
+    timerChannel_.reset(new eckit::Channel());
+  }
+  return *timerChannel_;
+}
+
 eckit::Channel& LibOOPS::infoChannel() const {
   if (rank_ == 0) {return eckit::Log::info();}
   if (!infoChannel_) infoChannel_.reset(new eckit::Channel());
@@ -210,4 +250,3 @@ eckit::Channel& LibOOPS::debugChannel() const {
 // -----------------------------------------------------------------------------
 
 }  // namespace oops
-

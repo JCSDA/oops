@@ -53,6 +53,12 @@ template<typename MODEL> class IncrementEnsemble {
   IncrementEnsemble(const StateEnsemble_ & ens, const State_ & mean, const Variables & vars);
   IncrementEnsemble(const eckit::Configuration &, const State_ &, const State_ &,
                     const Geometry_ &, const Variables &);
+  /// \brief construct ensemble of perturbations by reading them from disk
+  IncrementEnsemble(const Geometry_ &, const Variables &, const eckit::Configuration &);
+  /// \brief construct ensemble of perturbations by reading two state ensembles (one member at a
+  //         time) and taking the  difference of each set of pairs
+  IncrementEnsemble(const Geometry_ &, const Variables &, const eckit::Configuration &,
+                    const eckit::Configuration &);
 
   /// Accessors
   size_t size() const {return ensemblePerturbs_.size();}
@@ -108,10 +114,6 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const eckit::Configuration & conf,
                                             const Geometry_ & resol, const Variables & vars)
   : vars_(vars), ensemblePerturbs_()
 {
-  // Get rank from config
-  std::vector<eckit::LocalConfiguration> memberConfig;
-  conf.get("members", memberConfig);
-
   // Check sizes and fill in timeslots
   util::DateTime tslot = xb.validTime();
 
@@ -160,6 +162,62 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const eckit::Configuration & conf,
     ensemblePerturbs_.emplace_back(std::move(dx));
   }
   Log::trace() << "IncrementEnsemble:contructor done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+IncrementEnsemble<MODEL>::IncrementEnsemble(const Geometry_ & resol, const Variables & vars,
+                                            const eckit::Configuration & config)
+  : vars_(vars), ensemblePerturbs_()
+{
+  std::vector<eckit::LocalConfiguration> memberConfig;
+  config.get("members", memberConfig);
+
+  // Datetime for ensemble
+  util::DateTime tslot = util::DateTime(config.getString("date"));
+
+  // Reserve memory to hold ensemble
+  ensemblePerturbs_.reserve(memberConfig.size());
+
+  // Loop over all ensemble members
+  for (size_t jj = 0; jj < memberConfig.size(); ++jj) {
+    Increment_ dx(resol, vars_, tslot);
+    dx.read(memberConfig[jj]);
+    ensemblePerturbs_.emplace_back(std::move(dx));
+  }
+  Log::trace() << "IncrementEnsemble:contructor (by reading increment ensemble) done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+IncrementEnsemble<MODEL>::IncrementEnsemble(const Geometry_ & resol, const Variables & vars,
+                                            const eckit::Configuration & configBase,
+                                            const eckit::Configuration & configPert)
+  : vars_(vars), ensemblePerturbs_()
+{
+  std::vector<eckit::LocalConfiguration> memberConfigBase;
+  configBase.get("members", memberConfigBase);
+
+  std::vector<eckit::LocalConfiguration> memberConfigPert;
+  configPert.get("members", memberConfigPert);
+
+  // Ensure input ensembles are of the same size
+  ASSERT(memberConfigBase.size() == memberConfigPert.size());
+
+  // Reserve memory to hold ensemble
+  ensemblePerturbs_.reserve(memberConfigBase.size());
+
+  // Loop over all ensemble members
+  for (size_t jj = 0; jj < memberConfigBase.size(); ++jj) {
+    State_ xBase(resol, memberConfigBase[jj]);
+    State_ xPert(resol, memberConfigPert[jj]);
+    Increment_ dx(resol, vars_, xBase.validTime());
+    dx.diff(xBase, xPert);
+    ensemblePerturbs_.emplace_back(std::move(dx));
+  }
+  Log::trace() << "IncrementEnsemble:contructor (by diffing state ensembles) done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

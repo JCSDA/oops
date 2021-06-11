@@ -145,9 +145,9 @@ class Random : public oops::Test {
   virtual ~Random() {}
 
  private:
-  std::string testid() const {return "test::Random";}
+  std::string testid() const override {return "test::Random";}
 
-  void register_tests() const {
+  void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("util/Random/testCppRandom")

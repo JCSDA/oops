@@ -13,12 +13,11 @@ use datetime_mod
 use fckit_configuration_module, only: fckit_configuration
 use iso_c_binding
 use kinds
+use oops_variables_mod
 use qg_fields_mod
 use qg_geom_mod
 use qg_geom_iter_mod
-use qg_gom_mod
 use qg_locs_mod
-use oops_variables_mod
 
 implicit none
 
@@ -57,26 +56,29 @@ call qg_fields_create(self,geom,vars,lbc)
 end subroutine qg_fields_create_c
 ! ------------------------------------------------------------------------------
 !> Create fields from another one
-subroutine qg_fields_create_from_other_c(c_key_self,c_key_other) bind(c,name='qg_fields_create_from_other_f90')
+subroutine qg_fields_create_from_other_c(c_key_self,c_key_other,c_key_geom) bind(c,name='qg_fields_create_from_other_f90')
 
 implicit none
 
 ! Passed variables
 integer(c_int),intent(inout) :: c_key_self  !< Fields
 integer(c_int),intent(in)    :: c_key_other !< Other fields
+integer(c_int),intent(in) :: c_key_geom     !< Geometry
 
 ! Local variables
 type(qg_fields),pointer :: self
 type(qg_fields),pointer :: other
+type(qg_geom),pointer :: geom
 
 ! Interface
 call qg_fields_registry%get(c_key_other,other)
 call qg_fields_registry%init()
 call qg_fields_registry%add(c_key_self)
 call qg_fields_registry%get(c_key_self,self)
+call qg_geom_registry%get(c_key_geom,geom)
 
 ! Call Fortran
-call qg_fields_create_from_other(self,other)
+call qg_fields_create_from_other(self,other,geom)
 
 end subroutine qg_fields_create_from_other_c
 ! ------------------------------------------------------------------------------
@@ -163,21 +165,30 @@ call qg_fields_dirac(self,f_conf)
 end subroutine qg_fields_dirac_c
 ! ------------------------------------------------------------------------------
 !> Generate random fields
-subroutine qg_fields_random_c(c_key_self) bind(c,name='qg_fields_random_f90')
+subroutine qg_fields_random_c(c_key_self,c_vars) bind(c,name='qg_fields_random_f90')
 
 implicit none
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_self !< Fields
+type(c_ptr),value,intent(in) :: c_vars  !< List of variables
 
 ! Local variables
 type(qg_fields),pointer :: self
+type(oops_variables) :: vars
 
 ! Interface
 call qg_fields_registry%get(c_key_self,self)
+vars = oops_variables(c_vars)
 
 ! Call Fortran
-call qg_fields_random(self)
+if (vars%has('x')) then
+  call qg_fields_random(self,'x')
+elseif (vars%has('q')) then
+  call qg_fields_random(self,'q')
+else
+  call abor1_ftn('qg_fields_random_c: x or q required in output field')
+endif
 
 end subroutine qg_fields_random_c
 ! ------------------------------------------------------------------------------
@@ -478,14 +489,16 @@ call c_f_datetime(c_dt,fdate)
 end subroutine qg_fields_analytic_init_c
 ! ------------------------------------------------------------------------------
 !> Fields statistics
-subroutine qg_fields_gpnorm_c(c_key_fld,nb,pstat) bind(c,name='qg_fields_gpnorm_f90')
+subroutine qg_fields_gpnorm_c(c_key_fld,vpresent,vmin,vmax,vrms) bind(c,name='qg_fields_gpnorm_f90')
 
 implicit none
 
 ! Passed variables
-integer(c_int),intent(in) :: c_key_fld          !< Fields
-integer(c_int),intent(in) :: nb                 !< Number of boundaries
-real(c_double),intent(inout) :: pstat(4*(1+nb)) !< Statistics
+integer(c_int),intent(in) :: c_key_fld      !< Fields
+integer(c_int),intent(inout) :: vpresent(6) !< Variables presence flag
+real(c_double),intent(inout) :: vmin(6)     !< Variables minimum
+real(c_double),intent(inout) :: vmax(6)     !< Variables maximum
+real(c_double),intent(inout) :: vrms(6)     !< Variables RMS
 
 ! Local variables
 type(qg_fields),pointer :: fld
@@ -494,7 +507,7 @@ type(qg_fields),pointer :: fld
 call qg_fields_registry%get(c_key_fld,fld)
 
 ! Call Fortran
-call qg_fields_gpnorm(fld,nb,pstat)
+call qg_fields_gpnorm(fld,vpresent,vmin,vmax,vrms)
 
 end subroutine qg_fields_gpnorm_c
 ! ------------------------------------------------------------------------------
@@ -519,7 +532,7 @@ call qg_fields_rms(fld,prms)
 end subroutine qg_fields_rms_c
 ! ------------------------------------------------------------------------------
 !> Get fields geometry
-subroutine qg_fields_sizes_c(c_key_fld,c_nx,c_ny,c_nz,c_nb) bind(c,name='qg_fields_sizes_f90')
+subroutine qg_fields_sizes_c(c_key_fld,c_nx,c_ny,c_nz) bind(c,name='qg_fields_sizes_f90')
 
 implicit none
 
@@ -528,7 +541,6 @@ integer(c_int),intent(in) :: c_key_fld !< Fields
 integer(c_int),intent(inout) :: c_nx   !< X size
 integer(c_int),intent(inout) :: c_ny   !< Y size
 integer(c_int),intent(inout) :: c_nz   !< Z size
-integer(c_int),intent(inout) :: c_nb   !< Number of boundaries
 
 ! Local variables
 type(qg_fields),pointer :: fld
@@ -537,19 +549,18 @@ type(qg_fields),pointer :: fld
 call qg_fields_registry%get(c_key_fld,fld)
 
 ! Call Fortran
-call qg_fields_sizes(fld,c_nx,c_ny,c_nz,c_nb)
+call qg_fields_sizes(fld,c_nx,c_ny,c_nz)
 
 end subroutine qg_fields_sizes_c
 ! ------------------------------------------------------------------------------
-!> Get fields variables
-subroutine qg_fields_vars_c(c_key_fld,c_lq,c_lbc) bind(c,name='qg_fields_vars_f90')
+!> Get fields geometry
+subroutine qg_fields_lbc_c(c_key_fld,c_lbc) bind(c,name='qg_fields_lbc_f90')
 
 implicit none
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_fld !< Fields
-integer(c_int),intent(inout) :: c_lq   !< Potential vorticity flag
-integer(c_int),intent(inout) :: c_lbc  !< Boundaries flag
+integer(c_int),intent(inout) :: c_lbc  !< LBC presence
 
 ! Local variables
 type(qg_fields),pointer :: fld
@@ -558,9 +569,9 @@ type(qg_fields),pointer :: fld
 call qg_fields_registry%get(c_key_fld,fld)
 
 ! Call Fortran
-call qg_fields_vars(fld,c_lq,c_lbc)
+call qg_fields_lbc(fld,c_lbc)
 
-end subroutine qg_fields_vars_c
+end subroutine qg_fields_lbc_c
 ! ------------------------------------------------------------------------------
 !> Create ATLAS fields
 subroutine qg_fields_set_atlas_c(c_key_fld,c_vars,c_afieldset) bind (c,name='qg_fields_set_atlas_f90')

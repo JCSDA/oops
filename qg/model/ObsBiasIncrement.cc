@@ -23,15 +23,15 @@
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
-ObsBiasIncrement::ObsBiasIncrement(const ObsSpaceQG &, const eckit::Configuration & conf)
+ObsBiasIncrement::ObsBiasIncrement(const ObsSpaceQG &, const Parameters_ & params)
   : bias_(ObsBias::ntypes, 0.0), active_(ObsBias::ntypes, false)
 {
-  if (conf.has("obs bias error")) {
-    const eckit::LocalConfiguration covconf(conf, "obs bias error");
-    active_[0] = covconf.has("stream");
-    active_[1] = covconf.has("uwind");
-    active_[2] = covconf.has("vwind");
-    active_[3] = covconf.has("wspeed");
+  if (params.covariance.value() != boost::none) {
+    const ObsBiasCovarianceParameters& covparams = *params.covariance.value();
+    active_[0] = (covparams.stream.value() != boost::none);
+    active_[1] = (covparams.uwind.value() != boost::none);
+    active_[2] = (covparams.vwind.value() != boost::none);
+    active_[3] = (covparams.wspeed.value() != boost::none);
   }
   bool on = false;
   std::string strn = "";
@@ -54,14 +54,6 @@ ObsBiasIncrement::ObsBiasIncrement(const ObsBiasIncrement & other,
   if (copy) {
     for (unsigned int jj = 0; jj < ObsBias::ntypes; ++jj) bias_[jj] = other.bias_[jj];
   }
-  this->makePassive();
-}
-// -----------------------------------------------------------------------------
-ObsBiasIncrement::ObsBiasIncrement(const ObsBiasIncrement & other,
-                                   const eckit::Configuration &)
-  : bias_(ObsBias::ntypes, 0.0), active_(other.active_)
-{
-  for (unsigned int jj = 0; jj < ObsBias::ntypes; ++jj) bias_[jj] = other.bias_[jj];
   this->makePassive();
 }
 // -----------------------------------------------------------------------------

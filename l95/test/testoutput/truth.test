@@ -1,6 +1,6 @@
-Test     : Initial state: 
-Test     :  Valid time: 2010-01-01T00:00:00Z
-Test     :  Min=8, Max=9, Average=8.025
-Test     : Final state: 
-Test     :  Valid time: 2010-01-02T00:00:00Z
-Test     :  Min=6.55895, Max=9.27812, Average=8.01149
+Initial state: 
+ Valid time: 2010-01-01T00:00:00Z
+ Min=8, Max=9, Average=8.025
+Final state: 
+ Valid time: 2010-01-02T00:00:00Z
+ Min=6.55895, Max=9.27812, Average=8.01149

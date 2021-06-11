@@ -15,8 +15,8 @@
 
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/ControlVariable.h"
-#include "oops/base/PostBase.h"
-#include "oops/base/PostBaseTLAD.h"
+#include "oops/base/PostProcessor.h"
+#include "oops/base/PostProcessorTLAD.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
@@ -31,36 +31,46 @@ namespace oops {
 
 /// Base Class for Cost Function Terms
 /*!
- * Abstract base class for the terms of the cost function.
+ * Abstract base class for the terms of the cost function (other than Jb).
  */
 
 template<typename MODEL, typename OBS> class CostTermBase {
   typedef Geometry<MODEL>            Geometry_;
   typedef State<MODEL>               State_;
   typedef Increment<MODEL>           Increment_;
-  typedef std::shared_ptr<PostBase<State_> >    PostPtr_;
-  typedef std::shared_ptr<PostBaseTLAD<MODEL> > PostPtrTLAD_;
+  typedef PostProcessor<State_>      PostProc_;
+  typedef PostProcessorTLAD<MODEL>   PostProcTLAD_;
 
  public:
 /// Destructor
   virtual ~CostTermBase() {}
 
-/// Initialize before nonlinear model integration.
-  virtual PostPtr_ initialize(const ControlVariable<MODEL, OBS> &,
-                              const eckit::Configuration &) = 0;
-  virtual PostPtrTLAD_ initializeTraj(const ControlVariable<MODEL, OBS> &,
-                                      const Geometry_ &, const eckit::Configuration &) = 0;
+/// Initialize and set post-processors to collect data during nonlinear model integration
+  virtual void setPostProc(const ControlVariable<MODEL, OBS> &, const eckit::Configuration &,
+                           PostProc_ &) = 0;
+/// Finish computation of cost function term after nonlinear model integration
+  virtual double computeCost() = 0;
 
-/// Finalize computation after nonlinear model integration.
-  virtual double finalize() = 0;
-  virtual void finalizeTraj() = 0;
+/// Set post-processors for nonlinear model integration and save linearisation trajectory
+  virtual void setPostProcTraj(const ControlVariable<MODEL, OBS> &, const eckit::Configuration &,
+                               const Geometry_ &, PostProcTLAD_ &) = 0;
+/// Finish cost computation and trajectory handling after nonlinear model integration
+  virtual void computeCostTraj() = 0;
 
-/// Initialize before starting the TL run.
-  virtual PostPtrTLAD_ setupTL(const ControlIncrement<MODEL, OBS> &) const = 0;
+/// Initialize and set TL post-processors to collect data during TL model integration
+  virtual void setPostProcTL(const ControlIncrement<MODEL, OBS> &, PostProcTLAD_ &) const = 0;
+/// Finish cost computation after TL model integration
+  virtual void computeCostTL(const ControlIncrement<MODEL, OBS> &,
+                             GeneralizedDepartures &) const = 0;
 
-/// Initialize before starting the AD run.
-  virtual PostPtrTLAD_ setupAD(std::shared_ptr<const GeneralizedDepartures>,
-                               ControlIncrement<MODEL, OBS> &) const = 0;
+/// Adjoint of computeCostTL (initialize and set post-processors adjoint to force AD model)
+// Going by the book, computeCostAD should have the same arguments as computeCostTL (with
+// swapped constness). PostProcTLAD is added because it is the way forcing is passed to the
+// model (adjoint operations are called in reverse order so computeCostAD will come first).
+  virtual void computeCostAD(std::shared_ptr<const GeneralizedDepartures>,
+                             ControlIncrement<MODEL, OBS> &, PostProcTLAD_ &) const = 0;
+/// Adjoint ot setPostProcTL (clean-up)
+  virtual void setPostProcAD() const = 0;
 
 /// Multiply by covariance (or weight) matrix and its inverse.
   virtual std::unique_ptr<GeneralizedDepartures>

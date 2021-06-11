@@ -35,16 +35,25 @@ class ObsDataQG : public util::Printable,
 
   ObsDataQG(const ObsSpaceQG &, const oops::Variables &, const std::string &);
   ObsDataQG(const ObsDataQG &);
+  explicit ObsDataQG(const ObsVecQG &);
   ~ObsDataQG() {}
 
   ObsDataQG & operator= (const ObsDataQG &);
 
+  /// set all values to zero
   void zero();
+  /// set \p i-th value to zero
+  void zero(int i);
+  /// set all values to one
+  void ones();
   void mask(const ObsDataQG<int>);
 
 // I/O
+  void read(const std::string &);
   void save(const std::string &) const;
 
+  const int & toFortran() const {return data_.toFortran();}
+  const ObsVecQG & vect() const {return data_;}
  private:
   void print(std::ostream &) const;
 
@@ -62,6 +71,10 @@ ObsDataQG<DATATYPE>::ObsDataQG(const ObsDataQG & other): data_(other.data_) {
 }
 // -----------------------------------------------------------------------------
 template<typename DATATYPE>
+ObsDataQG<DATATYPE>::ObsDataQG(const ObsVecQG & other): data_(other) {
+}
+// -----------------------------------------------------------------------------
+template<typename DATATYPE>
 ObsDataQG<DATATYPE> & ObsDataQG<DATATYPE>::operator= (const ObsDataQG & rhs) {
   data_ = rhs.data_;
   return *this;
@@ -73,7 +86,23 @@ void ObsDataQG<DATATYPE>::zero() {
 }
 // -----------------------------------------------------------------------------
 template<typename DATATYPE>
-void ObsDataQG<DATATYPE>::mask(const ObsDataQG<int>) {
+void ObsDataQG<DATATYPE>::zero(int i) {
+  data_.zero(i);
+}
+// -----------------------------------------------------------------------------
+template<typename DATATYPE>
+void ObsDataQG<DATATYPE>::ones() {
+  data_.ones();
+}
+// -----------------------------------------------------------------------------
+template<typename DATATYPE>
+void ObsDataQG<DATATYPE>::mask(const ObsDataQG<int> mask) {
+  qg_obsvec_mask_f90(data_.toFortran(), mask.toFortran());
+}
+// -----------------------------------------------------------------------------
+template<typename DATATYPE>
+void ObsDataQG<DATATYPE>::read(const std::string & name) {
+  data_.read(name);
 }
 // -----------------------------------------------------------------------------
 template<typename DATATYPE>

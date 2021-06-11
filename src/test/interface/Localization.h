@@ -65,6 +65,8 @@ template <typename MODEL> class LocalizationFixture : private boost::noncopyable
 //  Setup the localization matrix
     const eckit::LocalConfiguration conf(TestEnvironment::config(), "localization");
     local_ = oops::LocalizationFactory<MODEL>::create(*resol_, *time_, conf);
+
+    oops::Log::test() << "Testing localization: " << *local_ << std::endl;
   }
 
   ~LocalizationFixture<MODEL>() {}
@@ -77,6 +79,18 @@ template <typename MODEL> class LocalizationFixture : private boost::noncopyable
 
 // -----------------------------------------------------------------------------
 
+template <typename MODEL> void testLocalizationRandomize() {
+  typedef LocalizationFixture<MODEL> Test_;
+  typedef oops::Increment<MODEL>     Increment_;
+
+  Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
+
+  Test_::localization().randomize(dx);
+  EXPECT(dx.norm() > 0.0);
+}
+
+// -----------------------------------------------------------------------------
+
 template <typename MODEL> void testLocalizationZero() {
   typedef LocalizationFixture<MODEL> Test_;
   typedef oops::Increment<MODEL>     Increment_;
@@ -84,7 +98,7 @@ template <typename MODEL> void testLocalizationZero() {
   Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
 
   EXPECT(dx.norm() == 0.0);
-  Test_::localization().localize(dx);
+  Test_::localization().multiply(dx);
   EXPECT(dx.norm() == 0.0);
 }
 
@@ -98,7 +112,7 @@ template <typename MODEL> void testLocalizationMultiply() {
   dx.random();
 
   EXPECT(dx.norm() > 0.0);
-  Test_::localization().localize(dx);
+  Test_::localization().multiply(dx);
   EXPECT(dx.norm() > 0.0);
 }
 
@@ -114,6 +128,8 @@ template <typename MODEL> class Localization : public oops::Test {
   void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
+    ts.emplace_back(CASE("interface/Localization/testLocalizationRandomize")
+      { testLocalizationRandomize<MODEL>(); });
     ts.emplace_back(CASE("interface/Localization/testLocalizationZero")
       { testLocalizationZero<MODEL>(); });
     ts.emplace_back(CASE("interface/Localization/testLocalizationMultiply")

@@ -16,9 +16,9 @@
 
 #include <vector>
 
-#include "oops/assimilation/linsysteigen.h"  // for solving small full linear systems.
 #include "oops/mpi/mpi.h"
 #include "oops/util/dot_product.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 
@@ -74,6 +74,9 @@ void blockTriDiagSolve(const std::vector<Eigen::MatrixXd> & alphas,
   Eigen::VectorXcd eivals = TT.eigenvalues();
   Eigen::MatrixXd eivalsImag = eivals.imag();
   complexValues = (eivalsImag.array() != 0.0).any();
+  if (complexValues) {
+    throw eckit::BadValue("T matrix has complex values.");
+  }
 }
 
 

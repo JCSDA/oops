@@ -27,6 +27,10 @@ LocalizationMatrixQG::~LocalizationMatrixQG() {
   qg_error_covariance_delete_f90(keyLocal_);
 }
 // -----------------------------------------------------------------------------
+void LocalizationMatrixQG::randomize(IncrementQG & dx) const {
+  qg_error_covariance_randomize_f90(keyLocal_, dx.fields().toFortran());
+}
+// -----------------------------------------------------------------------------
 void LocalizationMatrixQG::multiply(IncrementQG & dx) const {
   IncrementQG dxtmp(dx);
   qg_error_covariance_mult_f90(keyLocal_, dxtmp.fields().toFortran(), dx.fields().toFortran());

@@ -17,6 +17,8 @@ type oops_variables
 private
   type(c_ptr) :: ptr
 contains
+  procedure, public :: destruct
+
   procedure, private :: push_back_string
   procedure, private :: push_back_vector
 
@@ -31,6 +33,7 @@ end type
 
 interface oops_variables
   module procedure ctor_from_ptr
+  module procedure empty_ctor
 end interface
 
 private
@@ -42,6 +45,8 @@ contains
 !-------------------------------------------------------------------------------
 
 function ctor_from_ptr(ptr) result(this)
+  use iso_c_binding, only: c_ptr
+  implicit none
   type(oops_variables)    :: this
   type(c_ptr), intent(in) :: ptr
 
@@ -50,8 +55,27 @@ end function ctor_from_ptr
 
 !-------------------------------------------------------------------------------
 
+function empty_ctor() result(this)
+  type(oops_variables) :: this
+
+  this%ptr = c_variables_empty_ctor()
+end function empty_ctor
+
+!-------------------------------------------------------------------------------
+
+subroutine destruct(this)
+  use iso_c_binding, only: c_null_ptr
+  implicit none
+  class(oops_variables), intent(inout) :: this
+
+  call c_variables_destruct(this%ptr)
+  this%ptr = c_null_ptr
+end subroutine destruct
+
+!-------------------------------------------------------------------------------
+
 subroutine push_back_string(this, varname)
-  use iso_c_binding, only: c_ptr, c_char
+  use iso_c_binding, only: c_char
   use string_f_c_mod
   implicit none
   class(oops_variables), intent(in)  :: this
@@ -68,7 +92,7 @@ end subroutine push_back_string
 !-------------------------------------------------------------------------------
 
 subroutine push_back_vector(this, varnames)
-  use iso_c_binding, only: c_ptr, c_char
+  use iso_c_binding, only: c_char
   use string_f_c_mod
   implicit none
   class(oops_variables), intent(in)  :: this
@@ -97,7 +121,7 @@ end function nvars
 !-------------------------------------------------------------------------------
 
 function variable(this, jj) result(varname)
-  use iso_c_binding, only: c_ptr, c_char, c_size_t
+  use iso_c_binding, only: c_char, c_size_t
   use string_f_c_mod
   implicit none
 

@@ -32,17 +32,21 @@ class ObjectCountHelper : public util::Printable,
 
   ~ObjectCountHelper();
   void oneMore();
-  void oneLess();
+  void oneLess(const size_t &);
+  void setSize(const size_t &);
 
  private:
-  static std::map< std::string, std::shared_ptr<ObjectCountHelper> > * counters_;
+  static std::map< std::string, std::shared_ptr<ObjectCountHelper> > counters_;
 
   explicit ObjectCountHelper(const std::string &);
   void print(std::ostream &) const;
 
-  unsigned int current_;
-  unsigned int created_;
-  unsigned int max_;
+  size_t current_;
+  size_t created_;
+  size_t max_;
+  size_t bytes_;
+  size_t maxbytes_;
+  size_t totbytes_;
 };
 
 // -----------------------------------------------------------------------------

@@ -1,68 +1,102 @@
-Test     : Initial state for member 1:
-Test     :  Valid time: 2010-01-02T00:00:00Z
-Test     :  Min=3.53609, Max=11.1974, Average=7.90978
-Test     : Initial state for member 2:
-Test     :  Valid time: 2010-01-02T00:00:00Z
-Test     :  Min=3.77507, Max=11.1844, Average=7.75047
-Test     : Initial state for member 3:
-Test     :  Valid time: 2010-01-02T00:00:00Z
-Test     :  Min=5.36882, Max=10.844, Average=7.80576
-Test     : Initial state for member 4:
-Test     :  Valid time: 2010-01-02T00:00:00Z
-Test     :  Min=4.14639, Max=11.6734, Average=7.76001
-Test     : Initial state for member 5:
-Test     :  Valid time: 2010-01-02T00:00:00Z
-Test     :  Min=3.17563, Max=10.8183, Average=7.60243
-Test     : H(x) for member 1:
-Test     : Lorenz 95 nobs= 120 Min=3.53609, Max=11.1974, Average=7.90978
-Test     : H(x) for member 2:
-Test     : Lorenz 95 nobs= 120 Min=3.77507, Max=11.1844, Average=7.75047
-Test     : H(x) for member 3:
-Test     : Lorenz 95 nobs= 120 Min=5.36882, Max=10.844, Average=7.80576
-Test     : H(x) for member 4:
-Test     : Lorenz 95 nobs= 120 Min=4.14639, Max=11.6734, Average=7.76001
-Test     : H(x) for member 5:
-Test     : Lorenz 95 nobs= 120 Min=3.17563, Max=10.8183, Average=7.60243
-Test     : H(Zx) - ymean for member 1 eig 1 :
-Test     : Lorenz 95 nobs= 120 Min=-1.98234, Max=2.72035, Average=0.144087
-Test     : H(Zx) - ymean for member 2 eig 1 :
-Test     : Lorenz 95 nobs= 120 Min=-2.99197, Max=2.48196, Average=-0.0152161
-Test     : H(Zx) - ymean for member 3 eig 1 :
-Test     : Lorenz 95 nobs= 120 Min=-2.26382, Max=3.22819, Average=0.0400705
-Test     : H(Zx) - ymean for member 4 eig 1 :
-Test     : Lorenz 95 nobs= 120 Min=-3.42628, Max=3.04792, Average=-0.00567841
-Test     : H(Zx) - ymean for member 5 eig 1 :
-Test     : Lorenz 95 nobs= 120 Min=-3.79871, Max=2.34903, Average=-0.163263
-Test     : H(x) ensemble background mean: 
-Test     : Lorenz 95 nobs= 120 Min=5.25199, Max=9.50208, Average=7.76569
-Test     : background y - H(x): 
-Test     : Lorenz 95 nobs= 120 Min=-1.48379, Max=2.74405, Average=0.2457
-Test     : Background mean :
-Test     :  Valid time: 2010-01-02T00:00:00Z
-Test     :  Min=5.25199, Max=9.50208, Average=7.76569
-Test     : H(x) for member 1:
-Test     : Lorenz 95 nobs= 120 Min=6.77434, Max=9.33536, Average=8.03454
-Test     : H(x) for member 2:
-Test     : Lorenz 95 nobs= 120 Min=6.03404, Max=9.36204, Average=7.98875
-Test     : H(x) for member 3:
-Test     : Lorenz 95 nobs= 120 Min=6.25955, Max=9.88003, Average=8.00061
-Test     : H(x) for member 4:
-Test     : Lorenz 95 nobs= 120 Min=5.4671, Max=10.7046, Average=7.99636
-Test     : H(x) for member 5:
-Test     : Lorenz 95 nobs= 120 Min=5.91405, Max=9.12249, Average=7.91495
-Test     : H(Zx) - ymean for member 1 eig 1 :
-Test     : Lorenz 95 nobs= 120 Min=-0.897846, Max=1.3052, Average=0.0475003
-Test     : H(Zx) - ymean for member 2 eig 1 :
-Test     : Lorenz 95 nobs= 120 Min=-1.76882, Max=1.36093, Average=0.00170744
-Test     : H(Zx) - ymean for member 3 eig 1 :
-Test     : Lorenz 95 nobs= 120 Min=-1.23029, Max=1.80876, Average=0.0135681
-Test     : H(Zx) - ymean for member 4 eig 1 :
-Test     : Lorenz 95 nobs= 120 Min=-1.76957, Max=2.06616, Average=0.00931763
-Test     : H(Zx) - ymean for member 5 eig 1 :
-Test     : Lorenz 95 nobs= 120 Min=-2.0385, Max=1.22627, Average=-0.0720935
-Test     : H(x) ensemble analysis mean: 
-Test     : Lorenz 95 nobs= 120 Min=6.73405, Max=9.18815, Average=7.98704
-Test     : analysis y - H(x): 
-Test     : Lorenz 95 nobs= 120 Min=-0.272405, Max=0.44415, Average=0.0243479
-Test     : ombg RMS: 0.864096
-Test     : oman RMS: 0.149029
+Initial state for member 1:
+ Valid time: 2010-01-02T00:00:00Z
+ Min=3.53609, Max=11.1974, Average=7.90978
+
+Initial state for member 2:
+ Valid time: 2010-01-02T00:00:00Z
+ Min=3.77507, Max=11.1844, Average=7.75047
+
+Initial state for member 3:
+ Valid time: 2010-01-02T00:00:00Z
+ Min=5.36882, Max=10.844, Average=7.80576
+
+Initial state for member 4:
+ Valid time: 2010-01-02T00:00:00Z
+ Min=4.14639, Max=11.6734, Average=7.76001
+
+Initial state for member 5:
+ Valid time: 2010-01-02T00:00:00Z
+ Min=3.17563, Max=10.8183, Average=7.60243
+
+H(x) for member 1:
+Lorenz 95 nobs= 120 Min=3.53609, Max=11.1974, Average=7.90978
+
+H(x) for member 2:
+Lorenz 95 nobs= 120 Min=3.77507, Max=11.1844, Average=7.75047
+
+H(x) for member 3:
+Lorenz 95 nobs= 120 Min=5.36882, Max=10.844, Average=7.80576
+
+H(x) for member 4:
+Lorenz 95 nobs= 120 Min=4.14639, Max=11.6734, Average=7.76001
+
+H(x) for member 5:
+Lorenz 95 nobs= 120 Min=3.17563, Max=10.8183, Average=7.60243
+
+H(Zx) - ymean for member 1 eig 1 :
+Lorenz 95 nobs= 120 Min=-1.98234, Max=2.72035, Average=0.144087
+
+H(Zx) - ymean for member 2 eig 1 :
+Lorenz 95 nobs= 120 Min=-2.99197, Max=2.48196, Average=-0.0152161
+
+H(Zx) - ymean for member 3 eig 1 :
+Lorenz 95 nobs= 120 Min=-2.26382, Max=3.22819, Average=0.0400705
+
+H(Zx) - ymean for member 4 eig 1 :
+Lorenz 95 nobs= 120 Min=-3.42628, Max=3.04792, Average=-0.00567841
+
+H(Zx) - ymean for member 5 eig 1 :
+Lorenz 95 nobs= 120 Min=-3.79871, Max=2.34903, Average=-0.163263
+
+H(x) ensemble background mean: 
+Lorenz 95 nobs= 120 Min=5.25199, Max=9.50208, Average=7.76569
+
+background y - H(x): 
+Lorenz 95 nobs= 120 Min=-1.48379, Max=2.74405, Average=0.2457
+
+Background mean :
+ Valid time: 2010-01-02T00:00:00Z
+ Min=5.25199, Max=9.50208, Average=7.76569
+
+Analysis mean :
+ Valid time: 2010-01-02T00:00:00Z
+ Min=6.73405, Max=9.18815, Average=7.98704
+
+H(x) for member 1:
+Lorenz 95 nobs= 120 Min=6.77434, Max=9.33537, Average=8.03454
+
+H(x) for member 2:
+Lorenz 95 nobs= 120 Min=6.03404, Max=9.36204, Average=7.98875
+
+H(x) for member 3:
+Lorenz 95 nobs= 120 Min=6.25955, Max=9.88003, Average=8.00061
+
+H(x) for member 4:
+Lorenz 95 nobs= 120 Min=5.4671, Max=10.7046, Average=7.99636
+
+H(x) for member 5:
+Lorenz 95 nobs= 120 Min=5.91405, Max=9.12249, Average=7.91495
+
+H(Zx) - ymean for member 1 eig 1 :
+Lorenz 95 nobs= 120 Min=-0.89785, Max=1.3052, Average=0.0475003
+
+H(Zx) - ymean for member 2 eig 1 :
+Lorenz 95 nobs= 120 Min=-1.76882, Max=1.36094, Average=0.00170603
+
+H(Zx) - ymean for member 3 eig 1 :
+Lorenz 95 nobs= 120 Min=-1.23029, Max=1.80876, Average=0.0135676
+
+H(Zx) - ymean for member 4 eig 1 :
+Lorenz 95 nobs= 120 Min=-1.76957, Max=2.06616, Average=0.00931818
+
+H(Zx) - ymean for member 5 eig 1 :
+Lorenz 95 nobs= 120 Min=-2.0385, Max=1.22627, Average=-0.0720921
+
+H(x) ensemble analysis mean: 
+Lorenz 95 nobs= 120 Min=6.73405, Max=9.18815, Average=7.98704
+
+analysis y - H(x): 
+Lorenz 95 nobs= 120 Min=-0.272405, Max=0.444146, Average=0.0243478
+
+ombg RMS: 0.864096
+oman RMS: 0.149028

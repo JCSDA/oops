@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -9,35 +9,38 @@
 #define LORENZ95_OBSLOCGC99_H_
 
 #include <ostream>
-#include <string>
-#include <vector>
-#include <boost/noncopyable.hpp>
 
 #include "eckit/config/Configuration.h"
-#include "oops/util/DateTime.h"
-#include "oops/util/Printable.h"
+#include "oops/base/ObsLocalizationBase.h"
 
 #include "lorenz95/L95Traits.h"
+#include "lorenz95/ObsData1D.h"
 
 // Forward declarations
 namespace lorenz95 {
+  class Iterator;
+  class ObsTable;
   class ObsVec1D;
 
-/// ObsLocalization matrix for Lorenz 95 model.
-
-// -----------------------------------------------------------------------------
-class ObsLocGC99: public util::Printable {
+/// Observation space localization for Lorenz 95 model (Gaspari-Cohn)
+class ObsLocGC99: public oops::ObsLocalizationBase<L95Traits, L95ObsTraits> {
  public:
-  static const std::string classname() {return "lorenz95::ObsLocGC99";}
+  ObsLocGC99(const eckit::Configuration &, const ObsTable &);
 
-  ObsLocGC99(const eckit::Configuration &, const ObsTableView &);
-  ~ObsLocGC99();
-  void multiply(ObsVec1D &) const;
+  /// compute localization and save localization values in \p obsvector and
+  /// localization flags (1: outside of localization; 0: inside localization area)
+  /// in \p outside
+  void computeLocalization(const Iterator &, ObsData1D<int> & outside,
+                           ObsVec1D & obsvector) const override;
 
  private:
-  void print(std::ostream &) const;
-  const ObsTableView & obsdb_;
+  void print(std::ostream &) const override;
+
+  /// Gaspari-Cohn localization distance (localization goes to zero at rscale_)
   const double rscale_;
+
+  /// ObsSpace associated with the observations
+  const ObsTable & obsdb_;
 };
 // -----------------------------------------------------------------------------
 }  // namespace lorenz95

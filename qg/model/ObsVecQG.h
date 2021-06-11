@@ -23,9 +23,7 @@
 
 namespace qg {
   class ObsSpaceQG;
-
-  template<typename DATATYPE>
-  class ObsDataQG;
+  template <typename DATATYPE> class ObsDataQG;
 
 // -----------------------------------------------------------------------------
 /// ObsVecQG class to handle vectors in observation space for QG model.
@@ -36,9 +34,8 @@ class ObsVecQG : public util::Printable,
   static const std::string classname() {return "qg::ObsVecQG";}
 
   ObsVecQG(const ObsSpaceQG &,
-           const std::string & name = "", const bool fail = true);
+           const std::string & name = "");
   ObsVecQG(const ObsVecQG &);
-  ObsVecQG(const ObsSpaceQG &, const ObsVecQG &);
   ~ObsVecQG();
 
   ObsVecQG & operator = (const ObsVecQG &);
@@ -47,15 +44,24 @@ class ObsVecQG : public util::Printable,
   ObsVecQG & operator-= (const ObsVecQG &);
   ObsVecQG & operator*= (const ObsVecQG &);
   ObsVecQG & operator/= (const ObsVecQG &);
-  Eigen::VectorXd  packEigen() const;
 
+  Eigen::VectorXd  packEigen(const ObsDataQG<int> &) const;
+  size_t packEigenSize(const ObsDataQG<int> &) const;
+  size_t size() const;
+
+  /// set all values to zero
   void zero();
+  /// set \p i-th value to zero
+  void zero(int i);
+  /// set all values to one
+  void ones();
   void axpy(const double &, const ObsVecQG &);
   void invert();
   void random();
   double dot_product_with(const ObsVecQG &) const;
   double rms() const;
-  void mask(const ObsDataQG<int> &) {}
+  void mask(const ObsDataQG<int> &);
+  ObsVecQG & operator=(const ObsDataQG<float> &);
 
   unsigned int nobs() const;
 

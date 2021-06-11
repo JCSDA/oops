@@ -28,8 +28,7 @@ namespace eckit {
 }
 
 namespace lorenz95 {
-  class LocsL95;
-  class ObsVec1D;
+  class ObsIterator;
 
 /// A Simple Observation Data Handler
 /*!
@@ -47,6 +46,8 @@ class ObsTable : public oops::ObsSpaceBase,
            const util::DateTime &, const util::DateTime &, const eckit::mpi::Comm &);
   ~ObsTable();
 
+  void save() const;
+
   void putdb(const std::string &, const std::vector<int> &) const;
   void putdb(const std::string &, const std::vector<float> &) const;
   void putdb(const std::string &, const std::vector<double> &) const;
@@ -57,12 +58,16 @@ class ObsTable : public oops::ObsSpaceBase,
   bool has(const std::string & col) const;
   void generateDistribution(const eckit::Configuration &);
   void random(std::vector<double> &) const;
-  void printJo(const ObsVec1D &, const ObsVec1D &);
   unsigned int nobs() const {return times_.size();}
-  const std::vector<double> locations() const { return locations_; }
-  const std::vector<util::DateTime> times() const { return times_; }
+  const std::vector<double> & locations() const { return locations_; }
+  const std::vector<util::DateTime> & times() const { return times_; }
   const oops::Variables & obsvariables() const { return obsvars_; }
   const std::string & obsname() const {return obsname_;}
+
+  /// iterator to the first observation
+  ObsIterator begin() const;
+  /// iterator to the observation past-the-last
+  ObsIterator end() const;
 
  private:
   void print(std::ostream &) const;

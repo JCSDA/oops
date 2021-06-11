@@ -11,6 +11,7 @@
 
 #include <Eigen/Dense>
 #include <cfloat>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -22,9 +23,11 @@
 #include "oops/base/IncrementEnsemble4D.h"
 #include "oops/base/LocalIncrement.h"
 #include "oops/base/ObsErrors.h"
+#include "oops/base/ObsLocalizations.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
+#include "oops/interface/ObsDataVector.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Timer.h"
 
@@ -49,6 +52,8 @@ class LETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
   typedef GeometryIterator<MODEL>     GeometryIterator_;
   typedef IncrementEnsemble4D<MODEL>  IncrementEnsemble4D_;
   typedef ObsErrors<OBS>              ObsErrors_;
+  typedef ObsDataVector<OBS, int>     ObsDataVector_;
+  typedef ObsLocalizations<MODEL, OBS> ObsLocalizations_;
   typedef ObsSpaces<OBS>              ObsSpaces_;
 
  public:
@@ -61,9 +66,12 @@ class LETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
                          const GeometryIterator_ &, IncrementEnsemble4D_ &) override;
 
  protected:
-  /// Computes weights
-  virtual void computeWeights(const Departures_ &, const DeparturesEnsemble_ &,
-                              const ObsErrors_ &);
+  /// Computes weights for ensemble update with local observations
+  /// \param[in] omb      Observation departures (nlocalobs)
+  /// \param[in] Yb       Ensemble perturbations (nens, nlocalobs)
+  /// \param[in] invvarR  Inverse of observation error variances (nlocalobs)
+  virtual void computeWeights(const Eigen::VectorXd & omb, const Eigen::MatrixXd & Yb,
+                              const Eigen::VectorXd & invvarR);
 
   /// Applies weights and adds posterior inflation
   virtual void applyWeights(const IncrementEnsemble4D_ &, IncrementEnsemble4D_ &,
@@ -130,19 +138,31 @@ void LETKFSolver<MODEL, OBS>::measurementUpdate(const IncrementEnsemble4D_ & bkg
   util::Timer timer(classname(), "measurementUpdate");
 
   // create the local subset of observations
-  ObsSpaces_ local_obs(this->obspaces_, *i, this->obsconf_);
-  Departures_ local_omb(local_obs, this->omb_);
+  Departures_ locvector(this->obspaces_);
+  std::vector<std::shared_ptr<ObsDataVector_>> outside;
+  for (size_t jj = 0; jj < this->obspaces_.size(); ++jj) {
+    outside.push_back(std::make_shared<ObsDataVector_>(this->obspaces_[jj],
+            this->obspaces_[jj].obsvariables()));
+  }
+  locvector.ones();
+  this->obsloc_.computeLocalization(i, outside, locvector);
+  locvector.mask(this->hofx_.qcflags());
+  Eigen::VectorXd local_omb_vec = this->omb_.packEigen(outside);
 
-  if (local_omb.nobs() == 0) {
+  if (local_omb_vec.size() == 0) {
     // no obs. so no need to update Wa_ and wa_
     // ana_pert[i]=bkg_pert[i]
     this->copyLocalIncrement(bkg_pert, i, ana_pert);
   } else {
     // if obs are present do normal KF update
-    DeparturesEnsemble_ local_Yb(local_obs, this->Yb_);
+    // create local Yb
+    Eigen::MatrixXd local_Yb_mat = this->Yb_.packEigen(outside);
     // create local obs errors
-    ObsErrors_ local_R(this->obsconf_, local_obs);
-    computeWeights(local_omb, local_Yb, local_R);
+    Eigen::VectorXd local_invVarR_vec = this->invVarR_->packEigen(outside);
+    // and apply localization
+    Eigen::VectorXd localization = locvector.packEigen(outside);
+    local_invVarR_vec.array() *= localization.array();
+    computeWeights(local_omb_vec, local_Yb_mat, local_invVarR_vec);
     applyWeights(bkg_pert, ana_pert, i);
   }
 }
@@ -150,21 +170,15 @@ void LETKFSolver<MODEL, OBS>::measurementUpdate(const IncrementEnsemble4D_ & bkg
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-void LETKFSolver<MODEL, OBS>::computeWeights(const Departures_ & dy_oops,
-                                             const DeparturesEnsemble_ & Yb_oops,
-                                             const ObsErrors_ & R_oops) {
+void LETKFSolver<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
+                                             const Eigen::MatrixXd & Yb,
+                                             const Eigen::VectorXd & diagInvR ) {
   // compute transformation matrix, save in Wa_, wa_
   // uses C++ eigen interface
   // implements LETKF from Hunt et al. 2007
   util::Timer timer(classname(), "computeWeights");
 
   const LETKFInflationParameters & inflopt = options_.infl;
-
-  // cast oops objects to eigen
-  Eigen::MatrixXd dy = dy_oops.packEigen();
-
-  Eigen::MatrixXd Yb = Yb_oops.packEigen();
-  Eigen::MatrixXd diagInvR = R_oops.packInverseVarianceEigen();
 
   // fill in the work matrix
   // work = Y^T R^-1 Y + (nens-1)/infl I
@@ -208,6 +222,7 @@ void LETKFSolver<MODEL, OBS>::applyWeights(const IncrementEnsemble4D_ & bkg_pert
   for (size_t itime=0; itime < bkg_pert[0].size(); ++itime) {
     // make grid point forecast pert ensemble array
     Eigen::MatrixXd Xb(ngp, nens_);
+    // #pragma omp parallel for
     for (size_t iens=0; iens < nens_; ++iens) {
       LocalIncrement gp = bkg_pert[iens][itime].getLocal(i);
       std::vector<double> tmp = gp.getVals();
@@ -248,6 +263,7 @@ void LETKFSolver<MODEL, OBS>::applyWeights(const IncrementEnsemble4D_ & bkg_pert
     }
 
     // assign Xa to ana_pert
+    // #pragma omp parallel for private(tmp1)
     for (size_t iens=0; iens < nens_; ++iens) {
       for (size_t iv=0; iv < ngp; ++iv) {
         tmp1[iv] = Xa(iv, iens)+xa(iv);   // if Xa = Xb*Wa;

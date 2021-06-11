@@ -16,6 +16,8 @@
 
 #include <boost/noncopyable.hpp>
 
+#include "eckit/system/ResourceUsage.h"
+
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
@@ -87,10 +89,13 @@ ErrorCovariance<MODEL>::ErrorCovariance(const Geometry_ & resol, const Variables
 {
   Log::trace() << "ErrorCovariance<MODEL>::ErrorCovariance starting" << std::endl;
   util::Timer timer(classname(), "ErrorCovariance");
+  size_t init = eckit::system::ResourceUsage().maxResidentSetSize();
   covariance_.reset(new Covariance_(resol.geometry(), vars,
                                     parametersOrConfiguration<HasParameters_<Covariance_>::value>(
                                       parameters),
                                     xb.state(), fg.state()));
+  size_t current = eckit::system::ResourceUsage().maxResidentSetSize();
+  this->setObjectSize(current - init);
   Log::trace() << "ErrorCovariance<MODEL>::ErrorCovariance done" << std::endl;
 }
 

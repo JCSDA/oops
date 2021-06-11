@@ -39,11 +39,8 @@ namespace test {
 template <typename OBS> class ObsAuxIncrementFixture : private boost::noncopyable {
   typedef ObsTestsFixture<OBS>  Test_;
   typedef oops::ObsAuxCovariance<OBS> Covariance_;
-  typedef oops::ObsAuxControl<OBS>    ObsAux_;
-  typedef oops::ObsAuxIncrement<OBS>  AuxIncr_;
 
  public:
-  static const eckit::Configuration & config(const size_t ii) {return getInstance().conf_.at(ii);}
   static const Covariance_    & covariance(const size_t ii) {return *getInstance().covar_.at(ii);}
 
  private:
@@ -53,72 +50,60 @@ template <typename OBS> class ObsAuxIncrementFixture : private boost::noncopyabl
   }
 
   ObsAuxIncrementFixture<OBS>() {
-    TestEnvironment::config().get("observations", conf_);
     for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-      std::shared_ptr<Covariance_> tmp(new Covariance_(Test_::obspace()[jj], conf_[jj]));
+      eckit::LocalConfiguration biasconf =
+             Test_::config(jj).getSubConfiguration("obs bias");
+      typename Covariance_::Parameters_ biasparams;
+      biasparams.validateAndDeserialize(biasconf);
+      std::shared_ptr<Covariance_> tmp(new Covariance_(Test_::obspace()[jj], biasparams));
       covar_.push_back(tmp);
     }
   }
 
   ~ObsAuxIncrementFixture<OBS>() {}
 
-  std::vector<eckit::LocalConfiguration> conf_;
   std::vector<std::shared_ptr<Covariance_> > covar_;
 };
 
 // =============================================================================
-
+/// \brief test constructor and print method
 template <typename OBS> void testObsAuxIncrementConstructor() {
   typedef ObsTestsFixture<OBS>  Test_;
-  typedef ObsAuxIncrementFixture<OBS>   AuxTest_;
   typedef oops::ObsAuxIncrement<OBS>    AuxIncr_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    AuxIncr_ dx(Test_::obspace()[jj], AuxTest_::config(jj));
+    eckit::LocalConfiguration biasconf = Test_::config(jj).getSubConfiguration("obs bias");
+    typename AuxIncr_::Parameters_ biasparams;
+    biasparams.validateAndDeserialize(biasconf);
+    AuxIncr_ dx(Test_::obspace()[jj], biasparams);
+    oops::Log::test() << "Printing zero ObsAuxIncrement: " << dx << std::endl;
     EXPECT(dx.norm() == 0.0);
   }
 }
 
 // -----------------------------------------------------------------------------
-
+/// Tests copy-constructor (with option of allocating, but not copying the data)
 template <typename OBS> void testObsAuxIncrementCopyConstructor() {
-  typedef ObsTestsFixture<OBS>  Test_;
-  typedef ObsAuxIncrementFixture<OBS>   AuxTest_;
-  typedef oops::ObsAuxIncrement<OBS>    AuxIncr_;
+  typedef ObsTestsFixture<OBS>        Test_;
+  typedef oops::ObsAuxIncrement<OBS>  AuxIncr_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    if (AuxTest_::config(jj).has("obs bias")) {
-      AuxIncr_ dx1(Test_::obspace()[jj], AuxTest_::config(jj));
+    if (Test_::config(jj).has("obs bias")) {
+      eckit::LocalConfiguration biasconf = Test_::config(jj).getSubConfiguration("obs bias");
+      typename AuxIncr_::Parameters_ biasparams;
+      biasparams.validateAndDeserialize(biasconf);
+      AuxIncr_ dx1(Test_::obspace()[jj], biasparams);
       ObsAuxIncrementFixture<OBS>::covariance(jj).randomize(dx1);
-
+      oops::Log::test() << "Printing random ObsAuxIncrement: " << dx1 << std::endl;
+      /// Test that creating new increment without copying data works
+      AuxIncr_ dxempty(dx1, false);
+      EXPECT_EQUAL(dxempty.norm(), 0.0);
+      /// Test that creating new increment with copying data works
       AuxIncr_ dx2(dx1);
       EXPECT(dx2.norm() > 0.0);
       EXPECT(dx2.norm() == dx1.norm());
 
-//    Check that the copy is equal to the original
-      dx2 -= dx1;
-      EXPECT(dx2.norm() == 0.0);
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename OBS> void testObsAuxIncrementChangeRes() {
-  typedef ObsTestsFixture<OBS>  Test_;
-  typedef ObsAuxIncrementFixture<OBS>   AuxTest_;
-  typedef oops::ObsAuxIncrement<OBS>    AuxIncr_;
-
-  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    if (AuxTest_::config(jj).has("obs bias")) {
-      AuxIncr_ dx1(Test_::obspace()[jj], AuxTest_::config(jj));
-      ObsAuxIncrementFixture<OBS>::covariance(jj).randomize(dx1);
-
-      AuxIncr_ dx2(dx1, AuxTest_::config(jj));
-      EXPECT(dx2.norm() > 0.0);
-      EXPECT(dx2.norm() == dx1.norm());
-
-//    Check that the copy is equal to the original
+      /// Test that the copy is equal to the original
       dx2 -= dx1;
       EXPECT(dx2.norm() == 0.0);
     }
@@ -133,10 +118,13 @@ template <typename OBS> void testObsAuxIncrementTriangle() {
   typedef oops::ObsAuxIncrement<OBS>    AuxIncr_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    if (AuxTest_::config(jj).has("obs bias")) {
-      AuxIncr_ dx1(Test_::obspace()[jj], AuxTest_::config(jj));
-      ObsAuxIncrementFixture<OBS>::covariance(jj).randomize(dx1);
-      AuxIncr_ dx2(Test_::obspace()[jj], AuxTest_::config(jj));
+    if (Test_::config(jj).has("obs bias")) {
+      eckit::LocalConfiguration biasconf = Test_::config(jj).getSubConfiguration("obs bias");
+      typename AuxIncr_::Parameters_ biasparams;
+      biasparams.validateAndDeserialize(biasconf);
+      AuxIncr_ dx1(Test_::obspace()[jj], biasparams);
+      AuxTest_::covariance(jj).randomize(dx1);
+      AuxIncr_ dx2(Test_::obspace()[jj], biasparams);
       ObsAuxIncrementFixture<OBS>::covariance(jj).randomize(dx2);
 
 //    test triangle inequality
@@ -163,8 +151,11 @@ template <typename OBS> void testObsAuxIncrementOpPlusEq() {
   typedef oops::ObsAuxIncrement<OBS>    AuxIncr_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    AuxIncr_ dx1(Test_::obspace()[jj], AuxTest_::config(jj));
-    ObsAuxIncrementFixture<OBS>::covariance(jj).randomize(dx1);
+    eckit::LocalConfiguration biasconf = Test_::config(jj).getSubConfiguration("obs bias");
+    typename AuxIncr_::Parameters_ biasparams;
+    biasparams.validateAndDeserialize(biasconf);
+    AuxIncr_ dx1(Test_::obspace()[jj], biasparams);
+    AuxTest_::covariance(jj).randomize(dx1);
     AuxIncr_ dx2(dx1);
 
 //  test *= and +=
@@ -184,10 +175,13 @@ template <typename OBS> void testObsAuxIncrementDotProduct() {
   typedef oops::ObsAuxIncrement<OBS>    AuxIncr_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    AuxIncr_ dx1(Test_::obspace()[jj], AuxTest_::config(jj));
-    ObsAuxIncrementFixture<OBS>::covariance(jj).randomize(dx1);
-    AuxIncr_ dx2(Test_::obspace()[jj], AuxTest_::config(jj));
-    ObsAuxIncrementFixture<OBS>::covariance(jj).randomize(dx2);
+    eckit::LocalConfiguration biasconf = Test_::config(jj).getSubConfiguration("obs bias");
+    typename AuxIncr_::Parameters_ biasparams;
+    biasparams.validateAndDeserialize(biasconf);
+    AuxIncr_ dx1(Test_::obspace()[jj], biasparams);
+    AuxTest_::covariance(jj).randomize(dx1);
+    AuxIncr_ dx2(Test_::obspace()[jj], biasparams);
+    AuxTest_::covariance(jj).randomize(dx2);
 
 //  test symmetry of dot product
     double zz1 = dot_product(dx1, dx2);
@@ -205,8 +199,11 @@ template <typename OBS> void testObsAuxIncrementZero() {
   typedef oops::ObsAuxIncrement<OBS>    AuxIncr_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    AuxIncr_ dx(Test_::obspace()[jj], AuxTest_::config(jj));
-    ObsAuxIncrementFixture<OBS>::covariance(jj).randomize(dx);
+    eckit::LocalConfiguration biasconf = Test_::config(jj).getSubConfiguration("obs bias");
+    typename AuxIncr_::Parameters_ biasparams;
+    biasparams.validateAndDeserialize(biasconf);
+    AuxIncr_ dx(Test_::obspace()[jj], biasparams);
+    AuxTest_::covariance(jj).randomize(dx);
     EXPECT(dx.norm() > 0.0);
 
 //  test zero
@@ -223,8 +220,11 @@ template <typename OBS> void testObsAuxIncrementAxpy() {
   typedef oops::ObsAuxIncrement<OBS>    AuxIncr_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    AuxIncr_ dx1(Test_::obspace()[jj], AuxTest_::config(jj));
-    ObsAuxIncrementFixture<OBS>::covariance(jj).randomize(dx1);
+    eckit::LocalConfiguration biasconf = Test_::config(jj).getSubConfiguration("obs bias");
+    typename AuxIncr_::Parameters_ biasparams;
+    biasparams.validateAndDeserialize(biasconf);
+    AuxIncr_ dx1(Test_::obspace()[jj], biasparams);
+    AuxTest_::covariance(jj).randomize(dx1);
 
 //  test axpy
     AuxIncr_ dx2(dx1);
@@ -258,8 +258,6 @@ class ObsAuxIncrement : public oops::Test {
       { testObsAuxIncrementConstructor<OBS>(); });
     ts.emplace_back(CASE("interface/ObsAuxIncrement/testObsAuxIncrementCopyConstructor")
       { testObsAuxIncrementCopyConstructor<OBS>(); });
-    ts.emplace_back(CASE("interface/ObsAuxIncrement/testObsAuxIncrementChangeRes")
-      { testObsAuxIncrementChangeRes<OBS>(); });
     ts.emplace_back(CASE("interface/ObsAuxIncrement/testObsAuxIncrementTriangle")
       { testObsAuxIncrementTriangle<OBS>(); });
     ts.emplace_back(CASE("interface/ObsAuxIncrement/testObsAuxIncrementOpPlusEq")

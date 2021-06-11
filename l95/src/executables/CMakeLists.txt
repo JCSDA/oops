@@ -30,8 +30,8 @@ ecbuild_add_executable( TARGET  l95_hofx.x
                         SOURCES HofX.cc
                         LIBS    lorenz95 )
 
-ecbuild_add_executable( TARGET  l95_hofx_nomodel.x
-                        SOURCES HofXNoModel.cc
+ecbuild_add_executable( TARGET  l95_hofx3d.x
+                        SOURCES HofX3D.cc
                         LIBS    lorenz95 )
 
 ecbuild_add_executable( TARGET  l95_enshofx.x

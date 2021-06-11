@@ -72,13 +72,13 @@ template <typename MODEL> class ModelAuxIncrementFixture : private boost::noncop
 };
 
 // =============================================================================
-
+/// \brief tests constructor and print method
 template <typename MODEL> void testModelAuxIncrementConstructor() {
   typedef ModelAuxIncrementFixture<MODEL>   Test_;
   typedef oops::ModelAuxIncrement<MODEL>    AuxIncr_;
 
   AuxIncr_ dx(Test_::resol(), Test_::config());
-
+  oops::Log::test() << "Testing ModelAuxIncrement: " << dx << std::endl;
   EXPECT(dx.norm() == 0.0);
 }
 

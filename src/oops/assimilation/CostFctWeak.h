@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2020-2021 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -15,6 +16,8 @@
 #include <memory>
 #include <string>
 
+#include <boost/make_unique.hpp>
+
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/CostJbJq.h"
@@ -26,13 +29,13 @@
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/StateInfo.h"
 #include "oops/base/TrajectorySaver.h"
-#include "oops/base/VariableChangeBase.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/LinearModel.h"
 #include "oops/interface/Model.h"
 #include "oops/interface/State.h"
+#include "oops/interface/VariableChange.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -56,7 +59,7 @@ template<typename MODEL, typename OBS> class CostFctWeak : public CostFunction<M
   typedef State<MODEL>                    State_;
   typedef Model<MODEL>                    Model_;
   typedef LinearModel<MODEL>              LinearModel_;
-  typedef VariableChangeBase<MODEL>       VarCha_;
+  typedef VariableChange<MODEL>           VarCha_;
   typedef LinearVariableChangeBase<MODEL> LinVarCha_;
 
  public:
@@ -116,7 +119,7 @@ CostFctWeak<MODEL, OBS>::CostFctWeak(const eckit::Configuration & config,
   subWinLength_ = util::Duration(config.getString("subwindow"));
 
   nsubwin_ = windowLength.toSeconds() / subWinLength_.toSeconds();
-  ASSERT(windowLength.toSeconds() == subWinLength_.toSeconds()*nsubwin_);
+  ASSERT(windowLength.toSeconds() == subWinLength_.toSeconds()*(int64_t)nsubwin_);
 
   size_t ntasks = comm.size();
   ASSERT(ntasks % nsubwin_ == 0);
@@ -146,7 +149,7 @@ CostFctWeak<MODEL, OBS>::CostFctWeak(const eckit::Configuration & config,
   model_.reset(new Model_(*resol_, eckit::LocalConfiguration(config, "model")));
   this->setupTerms(config);
 
-  an2model_.reset(VariableChangeFactory<MODEL>::create(config, *resol_));
+  an2model_ = boost::make_unique<VarCha_>(*resol_, config);
 
   Log::trace() << "CostFctWeak constructed" << std::endl;
 }

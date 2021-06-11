@@ -20,3 +20,6 @@ observations:
       obs_frequency: PT1H30M
   obs operator: {}
 make obs: true
+
+test:
+  reference filename: testoutput/makeobs4d12h.test

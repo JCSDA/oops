@@ -186,8 +186,8 @@ void TLML95::tendenciesAD(FieldL95 & xx, double & bias,
 #endif
 // -----------------------------------------------------------------------------
 void TLML95::print(std::ostream & os) const {
-  os << "TLML95: resol = " << resol_ << ", tstep = " << tstep_;
-  os << "L95 Model Trajectory, nstep=" << traj_.size() << "\n";
+  os << "TLML95: resol = " << resol_ << ", tstep = " << tstep_ << std::endl;
+  os << "L95 Model Trajectory, nstep=" << traj_.size() << std::endl;
   typedef std::map< util::DateTime, ModelTrajectory * >::const_iterator trajICst;
   if (traj_.size() > 0) {
     os << "L95 Model Trajectory: times are:";

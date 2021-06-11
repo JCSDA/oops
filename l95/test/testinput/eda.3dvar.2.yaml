@@ -1,5 +1,4 @@
 cost function:
-  obs perturbations seed: 2
   cost type: 3D-Var
   window begin: 2010-01-01T21:00:00Z
   window length: PT6H
@@ -21,6 +20,7 @@ cost function:
     obs space:
       obsdatain:  Data/l95.truth3d.2010-01-02T00:00:00Z.obt
       obsdataout: Data/mem002.eda.3dvar.2010-01-02T00:00:00Z.obt
+      obs perturbations seed: 2
     obs operator: {}
 variational:
   minimizer:

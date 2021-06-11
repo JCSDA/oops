@@ -24,7 +24,6 @@
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-
 LocalizationMatrixL95::LocalizationMatrixL95(const Resolution & resol,
                                              const eckit::Configuration & config)
   : resol_(resol.npoints()),
@@ -47,9 +46,19 @@ LocalizationMatrixL95::LocalizationMatrixL95(const Resolution & resol,
     coefs_[jj] = std::real(four[jj]);
   }
 }
-
 // -----------------------------------------------------------------------------
-
+void LocalizationMatrixL95::randomize(IncrementL95 & dx) const {
+  dx.random();
+  unsigned int size = resol_/2+1;
+  Eigen::FFT<double> fft;
+  std::vector<std::complex<double> > four(size);
+  fft.fwd(four, dx.asVector());
+  for (unsigned int jj = 0; jj < size; ++jj) {
+    four[jj] *= std::sqrt(coefs_[jj]);
+  }
+  fft.inv(dx.asVector(), four);
+}
+// -----------------------------------------------------------------------------
 void LocalizationMatrixL95::multiply(IncrementL95 & dx) const {
   unsigned int size = resol_/2+1;
   Eigen::FFT<double> fft;
@@ -60,13 +69,10 @@ void LocalizationMatrixL95::multiply(IncrementL95 & dx) const {
   }
   fft.inv(dx.asVector(), four);
 }
-
 // -----------------------------------------------------------------------------
-
 void LocalizationMatrixL95::print(std::ostream & os) const {
-  os << "LocalizationMatrixL95::print not implemented";
+  os << "Localization with Gaussian, lengthscale = " << 1.0/rscale_;
 }
-
 // -----------------------------------------------------------------------------
 
 }  // namespace lorenz95

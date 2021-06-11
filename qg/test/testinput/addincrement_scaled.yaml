@@ -19,3 +19,6 @@ output:
   date: '2010-01-01T12:00:00Z'
   exp: addinc_scaled
   type: an
+
+test:
+  reference filename: testoutput/addincrement_scaled.test

@@ -22,6 +22,7 @@ oops/assimilation/CostTermBase.h
 oops/assimilation/DRGMRESRMinimizer.h
 oops/assimilation/DRIPCGMinimizer.h
 oops/assimilation/DRMinimizer.h
+oops/assimilation/DRPBlockLanczosMinimizer.h
 oops/assimilation/DRPCGMinimizer.h
 oops/assimilation/DRPFOMMinimizer.h
 oops/assimilation/DRPLanczosMinimizer.h
@@ -56,9 +57,10 @@ oops/assimilation/LBMinimizer.h
 oops/assimilation/LETKFSolver.h
 oops/assimilation/LETKFSolverGSI.h
 oops/assimilation/LETKFSolverParameters.h
-oops/assimilation/linsysteigen.h
 oops/assimilation/LocalEnsembleSolver.h
 oops/assimilation/Minimizer.h
+oops/assimilation/MinimizerUtils.cc
+oops/assimilation/MinimizerUtils.h
 oops/assimilation/MINRES.h
 oops/assimilation/MINRESMinimizer.h
 oops/assimilation/PCG.h
@@ -67,6 +69,7 @@ oops/assimilation/PLanczos.h
 oops/assimilation/PLanczosMinimizer.h
 oops/assimilation/PrimalMinimizer.h
 oops/assimilation/QNewtonLMP.h
+oops/assimilation/RinvHMatrix.h
 oops/assimilation/RinvMatrix.h
 oops/assimilation/rotmat.h
 oops/assimilation/RPCGMinimizer.h
@@ -92,6 +95,11 @@ oops/base/DolphChebyshev.h
 oops/base/EnsembleCovariance.h
 oops/base/GeneralizedDepartures.h
 oops/base/GeoVaLsWriter.h
+oops/base/GetValuePost.h
+oops/base/GetValuePosts.h
+oops/base/GetValuesPost.h
+oops/base/GetValueTLAD.h
+oops/base/GetValueTLADs.h
 oops/base/LocalIncrement.cc
 oops/base/LocalIncrement.h
 oops/base/HybridCovariance.h
@@ -121,8 +129,10 @@ oops/base/Observers.h
 oops/base/ObserversTLAD.h
 oops/base/ObserverTLAD.h
 oops/base/ObsFilterBase.h
+oops/base/ObsFilterParametersBase.h
 oops/base/ObsFilters.h
 oops/base/ObsLocalizationBase.h
+oops/base/ObsLocalizations.h
 oops/base/ObsSpaceBase.cc
 oops/base/ObsSpaceBase.h
 oops/base/ObsSpaces.h
@@ -135,7 +145,6 @@ oops/base/PostProcessorTLAD.h
 oops/base/PostTimer.cc
 oops/base/PostTimer.h
 oops/base/PostTimerParameters.h
-oops/base/QCData.h
 oops/base/StateEnsemble.h
 oops/base/StateEnsemble4D.h
 oops/base/StateInfo.h
@@ -172,13 +181,15 @@ oops/generic/interpolatorunstrc_interface.F90
 oops/generic/InterpolatorUnstructured.h
 oops/generic/InterpolatorUnstructured.cc
 oops/generic/LinearModelId.h
-oops/generic/LocalObsErrorDiag.h
 oops/generic/ObsErrorDiag.h
 oops/generic/PseudoModel.h
+oops/generic/soar.h
+oops/generic/soar.cc
 oops/generic/unstructured_interpolation_mod.F90
 oops/generic/VerticalLocEV.h
 
 oops/interface/AnalyticInit.h
+oops/interface/ChangeVariables.h
 oops/interface/ErrorCovariance.h
 oops/interface/Geometry.h
 oops/interface/GeometryIterator.h
@@ -199,6 +210,7 @@ oops/interface/ObsAuxControl.h
 oops/interface/ObsAuxCovariance.h
 oops/interface/ObsAuxIncrement.h
 oops/interface/ObsDataVector.h
+oops/interface/ObsDataVector_head.h
 oops/interface/ObsDiagnostics.h
 oops/interface/ObsErrorCovariance.h
 oops/interface/ObsFilter.h
@@ -223,8 +235,10 @@ oops/runs/EnsVariance.h
 oops/runs/ExternalDFI.h
 oops/runs/Forecast.h
 oops/runs/GenEnsPertB.h
-oops/runs/HofX.h
-oops/runs/HofXNoModel.h
+oops/runs/HofX3D.h
+oops/runs/HofX4D.h
+oops/runs/HofX4Dhack.h
+oops/runs/HybridGain.h
 oops/runs/LocalEnsembleDA.h
 oops/runs/RTPP.h
 oops/runs/Run.cc
@@ -236,10 +250,13 @@ oops/runs/Variational.h
 oops/util/abor1_cpp.cc
 oops/util/abor1_cpp.h
 oops/util/abor1_ftn.F90
+oops/util/AnyOf.h
 oops/util/AssociativeContainers.h
 oops/util/CompareNVectors.h
 oops/util/CompositePath.cc
 oops/util/CompositePath.h
+oops/util/ConfigFunctions.cc
+oops/util/ConfigFunctions.h
 oops/util/dateFunctions.cc
 oops/util/dateFunctions.h
 oops/util/datetime_f.cc
@@ -271,19 +288,23 @@ oops/util/liboops_f.h
 oops/util/liboops_mod.F90
 oops/util/LibOOPS.cc
 oops/util/LibOOPS.h
+oops/util/LocalEnvironment.cc
+oops/util/LocalEnvironment.h
 oops/util/Logger.h
 oops/util/missing_values_f.cc
 oops/util/missing_values_f.h
 oops/util/missing_values_mod.F90
-oops/util/netcdf_utils_mod.f90
 oops/util/missingValues.cc
 oops/util/missingValues.h
 oops/util/NamedEnumerator.h
+oops/util/netcdf_utils_mod.f90
 oops/util/ObjectCounter.h
 oops/util/ObjectCountHelper.cc
 oops/util/ObjectCountHelper.h
 oops/util/Printable.h
 oops/util/PrintAdjTest.h
+oops/util/printRunStats.cc
+oops/util/printRunStats.h
 oops/util/PropertiesOfNVectors.h
 oops/util/random_f.cc
 oops/util/random_f.h
@@ -300,11 +321,16 @@ oops/util/string_f_c_mod.F90
 oops/util/string_utils.F90
 oops/util/stringFunctions.cc
 oops/util/stringFunctions.h
+oops/util/TestReference.cc
+oops/util/TestReference.h
 oops/util/Timer.cc
 oops/util/Timer.h
 oops/util/TimerHelper.cc
 oops/util/TimerHelper.h
+oops/util/TypeTraits.h
 oops/util/utilNamespaceDoc.h
+oops/util/wildcard.h
+oops/util/wildcard.cc
 
 oops/util/parameters/ConfigurationParameter.cc
 oops/util/parameters/ConfigurationParameter.h
@@ -316,6 +342,7 @@ oops/util/parameters/NumericConstraints.h
 oops/util/parameters/ObjectJsonSchema.cc
 oops/util/parameters/ObjectJsonSchema.h
 oops/util/parameters/OptionalParameter.h
+oops/util/parameters/OptionalParameter.cc
 oops/util/parameters/OptionalPolymorphicParameter.h
 oops/util/parameters/Parameter.h
 oops/util/parameters/ParameterBase.cc
@@ -324,7 +351,9 @@ oops/util/parameters/ParameterConstraint.h
 oops/util/parameters/Parameters.cc
 oops/util/parameters/Parameters.h
 oops/util/parameters/ParametersOrConfiguration.h
+oops/util/parameters/ParameterTraits.cc
 oops/util/parameters/ParameterTraits.h
+oops/util/parameters/ParameterTraitsAnyOf.h
 oops/util/parameters/ParameterTraitsScalarOrMap.h
 oops/util/parameters/PolymorphicParameter.h
 oops/util/parameters/PolymorphicParameterTraits.h
@@ -362,7 +391,6 @@ test/interface/LinearGetValues.h
 test/interface/LinearModel.h
 test/interface/LinearObsOperator.h
 test/interface/LinearVariableChange.h
-test/interface/LocalObsSpace.h
 test/interface/Locations.h
 test/interface/Model.h
 test/interface/ModelAuxControl.h
@@ -371,6 +399,9 @@ test/interface/ModelAuxIncrement.h
 test/interface/ObsAuxControl.h
 test/interface/ObsAuxCovariance.h
 test/interface/ObsAuxIncrement.h
+test/interface/ObsDataVector.h
+test/interface/ObsIterator.h
+test/interface/ObsLocalization.h
 test/interface/ObsOperator.h
 test/interface/ObsSpace.h
 test/interface/ObsTestsFixture.h
@@ -398,6 +429,9 @@ test/util/CompositePath.h
 test/util/MissingValues.h
 test/util/PropertiesOfNVectors.h
 test/util/stringFunctions.h
+test/util/LocalEnvironment.h
+test/util/TestReference.h
+test/util/TypeTraits.h
 )
 
 list (APPEND oops_fheader_files
@@ -422,6 +456,7 @@ list( APPEND oops_test_input
   test/testinput/unstructured_interpolation.yaml
   test/testinput/variables.yaml
   test/testinput/parameters.yaml
+  test/testinput/parameters_older_eckit.yaml
   test/testinput/empty.yaml
   test/testinput/mpi.yaml
   test/testinput/spectrallmp.yaml
@@ -430,39 +465,8 @@ file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test/testinput)
 CREATE_SYMLINK( ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${oops_test_input} )
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test/testoutput)
 
-function(generate_fortran_bindings output filename)
-
-  set( options "" )
-  set( single_value_args OUTPUT MODULE )
-  set( multi_value_args "" )
-  cmake_parse_arguments( _PAR "${options}" "${single_value_args}" "${multi_value_args}"  ${_FIRST_ARG} ${ARGN} )
-
-  get_filename_component(base ${filename} NAME_WE)
-  set(base_abs ${CMAKE_CURRENT_SOURCE_DIR}/${base})
-  set(outfile ${CMAKE_CURRENT_BINARY_DIR}/${base}_c_binding.f90)
-
-  if( _PAR_OUTPUT )
-    set(outfile ${_PAR_OUTPUT})
-  endif()
-  set(${output} ${${output}} ${outfile} PARENT_SCOPE)
-
-  if( _PAR_MODULE )
-    add_custom_command(
-        OUTPUT ${outfile}
-        COMMAND python ${PROJECT_SOURCE_DIR}/tools/c2f.py ${CMAKE_CURRENT_SOURCE_DIR}/${filename} -o ${outfile} -m ${_PAR_MODULE}
-        DEPENDS ${filename} )
-  else()
-    add_custom_command(
-        OUTPUT ${outfile}
-        COMMAND python ${PROJECT_SOURCE_DIR}/tools/c2f.py ${CMAKE_CURRENT_SOURCE_DIR}/${filename} -o ${outfile}
-        DEPENDS ${filename} )
-  endif()
-  set_source_files_properties(${outfile} PROPERTIES GENERATED TRUE)
-endfunction()
-
 ecbuild_add_library( TARGET     ${PROJECT_NAME}
-                     SOURCES    ${FORTRAN_BINDINGS}
-                                ${oops_src_files}
+                     SOURCES    ${oops_src_files}
                      INSTALL_HEADERS LISTED
                      HEADER_DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
                      LINKER_LANGUAGE CXX )
@@ -543,13 +547,25 @@ ecbuild_add_test( TARGET  test_util_pushstringvector
                   ARGS    "test/testinput/pushstringvector.yaml"
                   LIBS    oops )
 
-ecbuild_add_test( TARGET  test_util_parameters
-                  SOURCES test/base/Parameters.cc
-                  ARGS    "test/testinput/parameters.yaml"
-                  LIBS    oops )
+if (eckit_VERSION VERSION_GREATER_EQUAL 1.16)
+  ecbuild_add_test( TARGET  test_util_parameters
+                    SOURCES test/base/Parameters.cc
+                    ARGS    "test/testinput/parameters.yaml"
+                    LIBS    oops )
+else()
+  # Due to changes in eckit 1.16 a different input file is required.
+  ecbuild_add_test( TARGET  test_util_parameters
+                    SOURCES test/base/Parameters.cc
+                    ARGS    "test/testinput/parameters_older_eckit.yaml"
+                    LIBS    oops )
+endif()
 
 ecbuild_add_test( TARGET  test_generic_gc99
                   SOURCES test/generic/gc99.cc
+                  LIBS    oops eckit )
+
+ecbuild_add_test( TARGET  test_generic_soar
+                  SOURCES test/generic/soar.cc
                   LIBS    oops eckit )
 
 ecbuild_add_test( TARGET  test_util_isanypointinvolumeinterior
@@ -593,6 +609,11 @@ ecbuild_add_test( TARGET  test_util_stringfunctions
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 
+ecbuild_add_test( TARGET  test_util_testreference
+                  SOURCES test/util/TestReference.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
 ecbuild_add_test( TARGET  test_mpi_mpi
                   MPI     4
                   SOURCES test/mpi/mpi.cc
@@ -626,6 +647,21 @@ ecbuild_add_test( TARGET  test_util_associativecontainers
 
 ecbuild_add_test( TARGET  test_util_propertiesofnvectors
                   SOURCES test/util/PropertiesOfNVectors.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_localenvironment
+                  SOURCES test/util/LocalEnvironment.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_typetraits
+                  SOURCES test/util/TypeTraits.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_wildcard
+                  SOURCES test/util/wildcard.cc
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 

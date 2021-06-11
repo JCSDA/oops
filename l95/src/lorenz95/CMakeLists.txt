@@ -17,6 +17,7 @@ set( _l95_srcs
         GomL95.h
         IncrementL95.cc
         IncrementL95.h
+        instantiateL95ChangeVarFactory.h
         instantiateLocalizationFactory.h
         Iterator.cc
         Iterator.h
@@ -39,13 +40,14 @@ set( _l95_srcs
         ObsBiasCorrection.h
         ObsBiasCovariance.cc
         ObsBiasCovariance.h
+        ObsBiasParameters.h
         ObsDiags1D.h
+        ObsIterator.cc
+        ObsIterator.h
         ObsLocGC99.cc
         ObsLocGC99.h
         ObsTable.cc
         ObsTable.h
-        ObsTableView.cc
-        ObsTableView.h
         ObsVec1D.cc
         ObsVec1D.h
         ObsData1D.h

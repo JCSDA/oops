@@ -1,0 +1,72 @@
+Initial state for member 1:
+ Valid time: 2010-01-02T00:00:00Z
+ Min=3.53609, Max=11.1974, Average=7.90978
+
+Initial state for member 2:
+ Valid time: 2010-01-02T00:00:00Z
+ Min=3.77507, Max=11.1844, Average=7.75047
+
+Initial state for member 3:
+ Valid time: 2010-01-02T00:00:00Z
+ Min=5.36882, Max=10.844, Average=7.80576
+
+Initial state for member 4:
+ Valid time: 2010-01-02T00:00:00Z
+ Min=4.14639, Max=11.6734, Average=7.76001
+
+Initial state for member 5:
+ Valid time: 2010-01-02T00:00:00Z
+ Min=3.17563, Max=10.8183, Average=7.60243
+
+H(x) for member 1:
+Lorenz 95 : No observations
+
+H(x) for member 2:
+Lorenz 95 : No observations
+
+H(x) for member 3:
+Lorenz 95 : No observations
+
+H(x) for member 4:
+Lorenz 95 : No observations
+
+H(x) for member 5:
+Lorenz 95 : No observations
+
+H(x) ensemble background mean: 
+Lorenz 95 : No observations
+
+background y - H(x): 
+Lorenz 95 : No observations
+
+Background mean :
+ Valid time: 2010-01-02T00:00:00Z
+ Min=5.25199, Max=9.50208, Average=7.76569
+
+Analysis mean :
+ Valid time: 2010-01-02T00:00:00Z
+ Min=5.25199, Max=9.50208, Average=7.76569
+
+H(x) for member 1:
+Lorenz 95 : No observations
+
+H(x) for member 2:
+Lorenz 95 : No observations
+
+H(x) for member 3:
+Lorenz 95 : No observations
+
+H(x) for member 4:
+Lorenz 95 : No observations
+
+H(x) for member 5:
+Lorenz 95 : No observations
+
+H(x) ensemble analysis mean: 
+Lorenz 95 : No observations
+
+analysis y - H(x): 
+Lorenz 95 : No observations
+
+ombg RMS: 0
+oman RMS: 0

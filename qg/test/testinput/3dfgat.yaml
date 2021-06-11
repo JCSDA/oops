@@ -20,7 +20,8 @@ cost function:
     standard_deviation: 1.8e7
     vertical_length_scale: 15000.0
   observations:
-  - obs error:
+  - monitoring only: true
+    obs error:
       covariance model: diagonal
     obs operator:
       obs type: Stream
@@ -79,3 +80,6 @@ output:
   first: PT3H
   frequency: PT6H
   type: an
+
+test:
+  reference filename: testoutput/3dfgat.test

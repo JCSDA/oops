@@ -1,6 +1,6 @@
 /*
  * (C) Copyright 2017-2018  UCAR.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
@@ -46,7 +46,7 @@ class IdLinearVariableChange : public LinearVariableChangeBase<MODEL> {
   void multiplyInverseAD(const Increment_ & dx1, Increment_ & dx2) const override {dx2 = dx1;}
 
  private:
-  void print(std::ostream &) const override {}
+  void print(std::ostream & os) const override {os << "IdVariableChange";}
 };
 
 // -----------------------------------------------------------------------------

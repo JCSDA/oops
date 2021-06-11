@@ -15,6 +15,9 @@ ftol=$6
 idif=$7
 mpicmd=$8
 
+# remove existing run file
+rm testoutput/${runfile}
+
 # Run Test
 cmd="${mpicmd} ${exename} ${yamlname} testoutput/${runfile}"
 echo ${cmd}

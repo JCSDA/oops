@@ -24,19 +24,27 @@ namespace util {
 
 class PartialDateTime {
  private:
-  static int const unset_ = 0;
+  std::string datetime_string_;
+  static char const stringUnset_ = '*';
+  static int const intUnset_ = -1;
   std::array<int, 6> partialdt_;
-  std::array<bool, 6> populatedvalues_;
 
  public:
-  // sets the date given YYYY,MM,DD,hh,mm,ss
-  PartialDateTime(int year = unset_, int month = unset_, int day = unset_,
-                  int hour = unset_, int minute = unset_, int second = unset_);
+  // \brief Sets the date given YYYY,MM,DD,hh,mm,ss
+  PartialDateTime(int year = intUnset_, int month = intUnset_, int day = intUnset_,
+                  int hour = intUnset_, int minute = intUnset_, int second = intUnset_);
 
-  // sets the date given a string
+  // \brief Sets the date given a string
+  // \brief String must represent an extended ISO 8601 format, where an asterisk is interpreted
+  // as those components which are to be ignored by the comparison operators.
   explicit PartialDateTime(std::string const &datetime_string);
 
+  // \brief Generate extended ISO 8601 string representation for this PartialDateTime
+  std::string toString() const {return datetime_string_;}
+
   // Comparison operators
+  bool operator==(const PartialDateTime &) const;
+  bool operator!=(const PartialDateTime &) const;
   bool operator==(const util::DateTime &) const;
   bool operator!=(const util::DateTime &) const;
   bool operator<(const util::DateTime &) const;
@@ -56,6 +64,10 @@ class PartialDateTime {
   int hour() const;
   int minute() const;
   int second() const;
+
+ private:
+  // \brief Used for creating a PartialDateTime string
+  std::string padNumber(const int num, const int width) const;
 };
 
 

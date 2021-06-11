@@ -26,68 +26,38 @@
 #include "oops/runs/Test.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
+#include "test/interface/ObsTestsFixture.h"
 #include "test/TestEnvironment.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
-
-template <typename OBS>
-class GeoVaLsFixture : private boost::noncopyable {
-  typedef oops::ObsSpaces<OBS>  ObsSpaces_;
-
- public:
-  static ObsSpaces_         & obspace() {return *getInstance().ospaces_;}
-  static eckit::LocalConfiguration conf(const size_t ii) {return getInstance().confs_[ii];}
-  static void reset() {getInstance().ospaces_.reset();}
-
- private:
-  static GeoVaLsFixture<OBS>& getInstance() {
-    static GeoVaLsFixture<OBS> theGeoVaLsFixture;
-    return theGeoVaLsFixture;
-  }
-
-  GeoVaLsFixture(): ospaces_() {
-    const util::DateTime tbgn(TestEnvironment::config().getString("window begin"));
-    const util::DateTime tend(TestEnvironment::config().getString("window end"));
-
-    ospaces_.reset(new ObsSpaces_(TestEnvironment::config(), oops::mpi::world(), tbgn, tend));
-    TestEnvironment::config().get("observations", confs_);
-  }
-
-  ~GeoVaLsFixture() {}
-
-  std::unique_ptr<ObsSpaces_> ospaces_;
-  std::vector<eckit::LocalConfiguration> confs_;
-};
-
-// -----------------------------------------------------------------------------
-
+/// \brief Tests test-constructor and print method
 template <typename OBS> void testConstructor() {
-  typedef GeoVaLsFixture<OBS>   Test_;
+  typedef ObsTestsFixture<OBS>  Test_;
   typedef oops::GeoVaLs<OBS>    GeoVaLs_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    eckit::LocalConfiguration gconf(Test_::conf(jj), "geovals");
+    eckit::LocalConfiguration gconf(Test_::config(jj), "geovals");
     oops::Variables geovars(gconf, "state variables");
-    std::unique_ptr<GeoVaLs_> ov(new GeoVaLs_(gconf, Test_::obspace()[jj], geovars));
-    EXPECT(ov.get());
-
-    ov.reset();
-    EXPECT(!ov.get());
+    std::unique_ptr<GeoVaLs_> geovals(new GeoVaLs_(gconf, Test_::obspace()[jj], geovars));
+    EXPECT(geovals.get());
+    oops::Log::test() << "Testing GeoVaLs: " << *geovals << std::endl;
+    geovals.reset();
+    EXPECT(!geovals.get());
   }
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename OBS> void testUtils() {
-  typedef GeoVaLsFixture<OBS>   Test_;
+  typedef ObsTestsFixture<OBS>  Test_;
   typedef oops::GeoVaLs<OBS>    GeoVaLs_;
 
   const double tol = 1e-6;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    eckit::LocalConfiguration gconf(Test_::conf(jj), "geovals");
+    eckit::LocalConfiguration gconf(Test_::config(jj), "geovals");
     oops::Variables geovars(gconf, "state variables");
     GeoVaLs_ gval(gconf, Test_::obspace()[jj], geovars);
 
@@ -158,12 +128,12 @@ template <typename OBS> void testUtils() {
 // -----------------------------------------------------------------------------
 
 template <typename OBS> void testRead() {
-  typedef GeoVaLsFixture<OBS> Test_;
-  typedef oops::GeoVaLs<OBS>  GeoVaLs_;
+  typedef ObsTestsFixture<OBS> Test_;
+  typedef oops::GeoVaLs<OBS>   GeoVaLs_;
 
   const double tol = 1.0e-9;
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    eckit::LocalConfiguration gconf(Test_::conf(jj), "geovals");
+    eckit::LocalConfiguration gconf(Test_::config(jj), "geovals");
     oops::Variables geovars(gconf, "state variables");
     GeoVaLs_ gval(gconf, Test_::obspace()[jj], geovars);
 
@@ -181,7 +151,7 @@ template <typename OBS> void testRead() {
 
 template <typename OBS>
 class GeoVaLs : public oops::Test {
-  typedef GeoVaLsFixture<OBS> Test_;
+  typedef ObsTestsFixture<OBS> Test_;
  public:
   GeoVaLs() {}
   virtual ~GeoVaLs() {}

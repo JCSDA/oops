@@ -44,9 +44,6 @@ class ChangeVarTLADQG: public util::Printable {
 
  private:
   void print(std::ostream &) const override;
-
-// Data
-  F90chvar keyConfig_;
 };
 // -----------------------------------------------------------------------------
 

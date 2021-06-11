@@ -14,10 +14,10 @@ use fft_mod
 use iso_c_binding
 use kinds
 !$ use omp_lib
+use oops_variables_mod
 use qg_constants_mod
 use qg_fields_mod
 use qg_geom_mod
-use oops_variables_mod
 use random_mod
 
 implicit none
@@ -29,6 +29,9 @@ public :: qg_error_covariance_setup,qg_error_covariance_delete,qg_error_covarian
         & qg_error_covariance_randomize
 ! ------------------------------------------------------------------------------
 type :: qg_error_covariance_config
+  integer :: nx                                      !< Number of points in the zonal direction
+  integer :: ny                                      !< Number of points in the meridional direction
+  integer :: nz                                      !< Number of vertical levels
   real(kind_real) :: sigma                           !< Standard deviation
   real(kind_real),allocatable :: sqrt_zonal(:)       !< Spectral weights for the spectral of the zonal correlation matrix
   real(kind_real),allocatable :: sqrt_merid(:,:)     !< Square-root of the meridional correlation matrix
@@ -73,6 +76,7 @@ real(kind_real),allocatable :: evalsz(:),workz(:),evectsz(:,:),revalsz(:)
 real(kind_real),allocatable :: norm(:,:)
 character(len=160) :: record
 type(qg_fields) :: fld_in,fld_out
+type(oops_variables) :: vars
 
 ! Get parameters
 call f_conf%get_or_die("standard_deviation",self%sigma)
@@ -86,6 +90,11 @@ if (mod(geom%nx,2)/=0) then
   call fckit_log%error(record)
   call abor1_ftn('qg_error_covariance_setup: odd number of zonal grid points')
 endif
+
+! Copy grid size
+self%nx = geom%nx
+self%ny = geom%ny
+self%nz = geom%nz
 
 ! Allocation
 allocate(self%sqrt_merid(geom%ny,geom%ny))
@@ -189,15 +198,17 @@ do jz=1,geom%nz
 enddo
 
 ! Compute normalization factor
-call qg_fields_create_default(fld_in,geom,.false.)
-call qg_fields_create_default(fld_out,geom,.false.)
+vars = oops_variables()
+call vars%push_back('x')
+call qg_fields_create(fld_in,geom,vars,.false.)
+call qg_fields_create(fld_out,geom,vars,.false.)
 self%norm = 1.0
 do iz=1,geom%nz
   do iy=1,geom%ny
     call qg_fields_zero(fld_in)
-    fld_in%gfld3d(1,iy,iz) = 1.0
+    fld_in%x(1,iy,iz) = 1.0
     call qg_error_covariance_mult(self,fld_in,fld_out)
-    norm(iy,iz) = 1.0/sqrt(fld_out%gfld3d(1,iy,iz))
+    norm(iy,iz) = 1.0/sqrt(fld_out%x(1,iy,iz))
   end do
 end do
 self%norm = norm*self%sigma
@@ -213,6 +224,7 @@ deallocate(workz)
 deallocate(revalsz)
 deallocate(evectsz)
 deallocate(evalsz)
+call vars%destruct()
 call qg_fields_delete(fld_in)
 call qg_fields_delete(fld_out)
 
@@ -235,12 +247,12 @@ deallocate(self%norm)
 end subroutine qg_error_covariance_delete
 ! ------------------------------------------------------------------------------
 !> Multiply by error covariance matrix
-subroutine qg_error_covariance_mult(conf,fld_in,fld_out)
+subroutine qg_error_covariance_mult(self,fld_in,fld_out)
 
 implicit none
 
 ! Passed variables
-type(qg_error_covariance_config),intent(in) :: conf !< Error covariance configuration
+type(qg_error_covariance_config),intent(in) :: self !< Error covariance configuration
 type(qg_fields),intent(in) :: fld_in                !< Input field
 type(qg_fields),intent(inout) :: fld_out            !< Output field
 
@@ -248,98 +260,96 @@ type(qg_fields),intent(inout) :: fld_out            !< Output field
 type(qg_fields) :: fld_tmp
 
 ! Initialization
-call qg_fields_create_from_other(fld_tmp,fld_in)
+call qg_fields_create_from_other(fld_tmp,fld_in,fld_in%geom)
 call qg_fields_copy(fld_tmp,fld_in)
 
 ! Apply covariance matrix
-call qg_error_covariance_sqrt_mult_ad(conf,fld_tmp,fld_out)
+call qg_error_covariance_sqrt_mult_ad(self,fld_tmp,fld_out)
 call qg_fields_copy(fld_tmp,fld_out)
-call qg_error_covariance_sqrt_mult(conf,fld_tmp,fld_out)
+call qg_error_covariance_sqrt_mult(self,fld_tmp,fld_out)
 
 end subroutine qg_error_covariance_mult
 ! ------------------------------------------------------------------------------
 !> Randomize error covariance
-subroutine qg_error_covariance_randomize(conf,fld_out)
+subroutine qg_error_covariance_randomize(self,fld_out)
 
 implicit none
 
 ! Passed variables
-type(qg_error_covariance_config),intent(in) :: conf !< Error covariance configuration
+type(qg_error_covariance_config),intent(in) :: self !< Error covariance configuration
 type(qg_fields),intent(inout) :: fld_out            !< Output field
 
 ! Local variables
 type(qg_fields) :: fld_tmp
 
 ! Initialize temporary field
-call qg_fields_create_from_other(fld_tmp,fld_out)
-call qg_fields_random(fld_tmp)
+call qg_fields_create_from_other(fld_tmp,fld_out,fld_out%geom)
+call qg_fields_random(fld_tmp,'x')
 
 ! Apply square-root of the covariance matrix
-call qg_error_covariance_sqrt_mult(conf,fld_tmp,fld_out)
+call qg_error_covariance_sqrt_mult(self,fld_tmp,fld_out)
 
 end subroutine qg_error_covariance_randomize
 ! ------------------------------------------------------------------------------
 ! Private
 ! ------------------------------------------------------------------------------
 !> Multiply by error covariance matrix square-root, zonal part
-subroutine qg_error_covariance_sqrt_mult_zonal(conf,fld_in,fld_out)
+subroutine qg_error_covariance_sqrt_mult_zonal(self,fld)
 
 implicit none
 
 ! Passed variables
-type(qg_error_covariance_config),intent(in) :: conf !< Error covariance configuration
-type(qg_fields),intent(in) :: fld_in                !< Input field
-type(qg_fields),intent(inout) :: fld_out            !< Output field
+type(qg_error_covariance_config),intent(in) :: self           !< Error covariance configuration
+real(kind_real),intent(inout) :: fld(self%nx,self%ny,self%nz) !< Field
 
 ! Local variables
 integer :: iy,iz,m,iri
-real(kind_real) :: zfour(fld_in%geom%nx+2)
+real(kind_real) :: zfour(self%nx+2)
 
-do iz=1,fld_in%geom%nz
-  do iy=1,fld_in%geom%ny
-    call fft_fwd(fld_in%geom%nx,fld_in%gfld3d(:,iy,iz),zfour)
+do iz=1,self%nz
+  do iy=1,self%ny
+    call fft_fwd(self%nx,fld(:,iy,iz),zfour)
     !$omp parallel do schedule(static) private(m,iri)
-    do m=0,fld_in%geom%nx/2
+    do m=0,self%nx/2
       do iri=1,2
-        zfour(2*m+iri) = zfour(2*m+iri)*conf%sqrt_zonal(m)
+        zfour(2*m+iri) = zfour(2*m+iri)*self%sqrt_zonal(m)
       enddo
     enddo
     !$omp end parallel do
-    call fft_inv(fld_in%geom%nx,zfour,fld_out%gfld3d(:,iy,iz))
+    call fft_inv(self%nx,zfour,fld(:,iy,iz))
   enddo
 enddo
 
 end subroutine qg_error_covariance_sqrt_mult_zonal
 ! ------------------------------------------------------------------------------
 !> Multiply by error covariance matrix square-root - meridional part
-subroutine qg_error_covariance_sqrt_mult_meridional(conf,fld_in,fld_out)
+subroutine qg_error_covariance_sqrt_mult_meridional(self,fld)
 
 implicit none
 
 ! Passed variables
-type(qg_error_covariance_config),intent(in) :: conf !< Error covariance configuration
-type(qg_fields),intent(in) :: fld_in                !< Input field
-type(qg_fields),intent(inout) :: fld_out            !< Output field
+type(qg_error_covariance_config),intent(in) :: self           !< Error covariance configuration
+real(kind_real),intent(inout) :: fld(self%nx,self%ny,self%nz) !< Field
 
 ! Local variables
 integer :: ix,iz
 real(kind_real),allocatable :: arr_in(:),arr_out(:)
 
 !$omp parallel do schedule(static) private(iz,ix) firstprivate(arr_in,arr_out)
-do iz=1,fld_in%geom%nz
-  do ix=1,fld_in%geom%nx
+do iz=1,self%nz
+  do ix=1,self%nx
     ! Allocation
-    allocate(arr_in(fld_in%geom%ny))
-    allocate(arr_out(fld_in%geom%ny))
+    allocate(arr_in(self%ny))
+    allocate(arr_out(self%ny))
 
     ! Initialize
-    arr_in = fld_in%gfld3d(ix,:,iz)
+    arr_in = fld(ix,:,iz)
 
     ! Apply transform
-    call dsymv('L',fld_in%geom%ny,1.0_kind_real,conf%sqrt_merid,fld_in%geom%ny,arr_in,1,0.0_kind_real,arr_out,1)
+    call dsymv('L',self%ny,1.0_kind_real,self%sqrt_merid,self%ny,arr_in,1,0.0_kind_real,arr_out,1)
 
     ! Copy
-    fld_out%gfld3d(ix,:,iz) = arr_out
+    fld(ix,:,iz) = arr_out
 
     ! Release memory
     deallocate(arr_in)
@@ -351,34 +361,33 @@ enddo
 end subroutine qg_error_covariance_sqrt_mult_meridional
 ! ------------------------------------------------------------------------------
 !> Multiply by error covariance matrix square-root - vertical part
-subroutine qg_error_covariance_sqrt_mult_vertical(conf,fld_in,fld_out)
+subroutine qg_error_covariance_sqrt_mult_vertical(self,fld)
 
 implicit none
 
 ! Passed variables
-type(qg_error_covariance_config),intent(in) :: conf !< Error covariance configuration
-type(qg_fields),intent(in) :: fld_in                !< Input field
-type(qg_fields),intent(inout) :: fld_out            !< Output field
+type(qg_error_covariance_config),intent(in) :: self           !< Error covariance configuration
+real(kind_real),intent(inout) :: fld(self%nx,self%ny,self%nz) !< Field
 
 ! Local variables
 integer :: ix,iy
 real(kind_real),allocatable :: arr_in(:),arr_out(:)
 
 !$omp parallel do schedule(static) private(iy,ix) firstprivate(arr_in,arr_out)
-do iy=1,fld_in%geom%ny
-  do ix=1,fld_in%geom%nx
+do iy=1,self%ny
+  do ix=1,self%nx
     ! Allocation
-    allocate(arr_in(fld_in%geom%nz))
-    allocate(arr_out(fld_in%geom%nz))
+    allocate(arr_in(self%nz))
+    allocate(arr_out(self%nz))
 
     ! Initialize
-    arr_in = fld_in%gfld3d(ix,iy,:)
+    arr_in = fld(ix,iy,:)
 
     ! Apply transform
-    call dsymv('L',fld_in%geom%nz,1.0_kind_real,conf%sqrt_vert,fld_in%geom%nz,arr_in,1,0.0_kind_real,arr_out,1)
+    call dsymv('L',self%nz,1.0_kind_real,self%sqrt_vert,self%nz,arr_in,1,0.0_kind_real,arr_out,1)
 
     ! Copy
-    fld_out%gfld3d(ix,iy,:) = arr_out
+    fld(ix,iy,:) = arr_out
 
     ! Release memory
     deallocate(arr_in)
@@ -390,88 +399,84 @@ enddo
 end subroutine qg_error_covariance_sqrt_mult_vertical
 ! ------------------------------------------------------------------------------
 !> Multiply by error covariance matrix square-root
-subroutine qg_error_covariance_sqrt_mult(conf,fld_in,fld_out)
+subroutine qg_error_covariance_sqrt_mult(self,fld_in,fld_out)
 
 implicit none
 
 ! Passed variables
-type(qg_error_covariance_config),intent(in) :: conf !< Error covariance configuration
+type(qg_error_covariance_config),intent(in) :: self !< Error covariance configuration
 type(qg_fields),intent(in) :: fld_in                !< Input field
 type(qg_fields),intent(inout) :: fld_out            !< Output field
 
 ! Local variables
 integer :: ix
-type(qg_fields) :: fld_tmp
 
-! Initialization
-call qg_fields_create_from_other(fld_tmp,fld_in)
-call qg_fields_copy(fld_tmp,fld_in)
+! Check input/output
+if (.not.allocated(fld_in%x)) call abor1_ftn("qg_error_covariance_sqrt_mult: x required as input")
+if (.not.allocated(fld_out%x)) call abor1_ftn("qg_error_covariance_sqrt_mult: x required as output")
+
+! Copy field
+call qg_fields_copy(fld_out,fld_in)
 
 ! Multiply by symmetric square-root of vertical correlation matrix
-call qg_error_covariance_sqrt_mult_vertical(conf,fld_tmp,fld_out)
-call qg_fields_copy(fld_tmp,fld_out)
+call qg_error_covariance_sqrt_mult_vertical(self,fld_out%x)
 
 ! Multiply by square-root of meridional correlation matrix
-call qg_error_covariance_sqrt_mult_meridional(conf,fld_tmp,fld_out)
-call qg_fields_copy(fld_tmp,fld_out)
+call qg_error_covariance_sqrt_mult_meridional(self,fld_out%x)
 
 ! Multiply by square-root of zonal correlation matrix
-call qg_error_covariance_sqrt_mult_zonal(conf,fld_tmp,fld_out)
-call qg_fields_copy(fld_tmp,fld_out)
+call qg_error_covariance_sqrt_mult_zonal(self,fld_out%x)
 
 ! Multiply by normalization factor
 !$omp parallel do schedule(static) private(ix)
-do ix=1,fld_in%geom%nx
-  fld_out%gfld3d(ix,:,:) = fld_tmp%gfld3d(ix,:,:)*conf%norm
+do ix=1,fld_out%geom%nx
+  fld_out%x(ix,:,:) = fld_out%x(ix,:,:)*self%norm
 end do
 !$omp end parallel do
-call qg_fields_copy(fld_tmp,fld_out)
 
 ! Multiply by standard deviation
-fld_out%gfld3d = fld_tmp%gfld3d*conf%sigma
+fld_out%x = fld_out%x*self%sigma
 
 end subroutine qg_error_covariance_sqrt_mult
 ! ------------------------------------------------------------------------------
 !> Multiply by error covariance matrix square-root - adjoint
-subroutine qg_error_covariance_sqrt_mult_ad(conf,fld_in,fld_out)
+subroutine qg_error_covariance_sqrt_mult_ad(self,fld_in,fld_out)
 
 implicit none
 
 ! Passed variables
-type(qg_error_covariance_config),intent(in) :: conf !< Error covariance configuration
+type(qg_error_covariance_config),intent(in) :: self !< Error covariance configuration
 type(qg_fields),intent(in) :: fld_in                !< Input field
 type(qg_fields),intent(inout) :: fld_out            !< Output field
 
 ! Local variables
 integer :: ix
-type(qg_fields) :: fld_tmp
 
-! Initialization
-call qg_fields_create_from_other(fld_tmp,fld_in)
-call qg_fields_copy(fld_tmp,fld_in)
+! Check input/output
+if (.not.allocated(fld_in%x)) call abor1_ftn("qg_error_covariance_sqrt_mult: x required as input")
+if (.not.allocated(fld_out%x)) call abor1_ftn("qg_error_covariance_sqrt_mult: x required as output")
+
+! Copy field
+call qg_fields_copy(fld_out,fld_in)
 
 ! Multiply by standard deviation
-fld_out%gfld3d = fld_tmp%gfld3d*conf%sigma
-call qg_fields_copy(fld_tmp,fld_out)
+fld_out%x = fld_out%x*self%sigma
 
 ! Multiply by normalization factor
 !$omp parallel do schedule(static) private(ix)
-do ix=1,fld_in%geom%nx
-  fld_out%gfld3d(ix,:,:) = fld_tmp%gfld3d(ix,:,:)*conf%norm
+do ix=1,fld_out%geom%nx
+  fld_out%x(ix,:,:) = fld_out%x(ix,:,:)*self%norm
 end do
 !$omp end parallel do
-call qg_fields_copy(fld_tmp,fld_out)
 
 ! Multiply by square-root of zonal correlation matrix
-call qg_error_covariance_sqrt_mult_zonal(conf,fld_tmp,fld_out)
-call qg_fields_copy(fld_tmp,fld_out)
+call qg_error_covariance_sqrt_mult_zonal(self,fld_out%x)
 
 ! Multiply by square-root of meridional correlation matrix
-call qg_error_covariance_sqrt_mult_meridional(conf,fld_tmp,fld_out)
-call qg_fields_copy(fld_tmp,fld_out)
+call qg_error_covariance_sqrt_mult_meridional(self,fld_out%x)
 
 ! Multiply by symmetric square-root of vertical correlation matrix
-call qg_error_covariance_sqrt_mult_vertical(conf,fld_tmp,fld_out)
+call qg_error_covariance_sqrt_mult_vertical(self,fld_out%x)
 
 end subroutine qg_error_covariance_sqrt_mult_ad
 ! ------------------------------------------------------------------------------

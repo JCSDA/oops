@@ -3,10 +3,10 @@ list( APPEND qg_testinput
   testinput/3dvar.yaml
   testinput/3dvar_change_var.yaml
   testinput/3dvar_hybrid.yaml
+  testinput/3dvar_hybrid_wo_jb_evaluation.yaml
   testinput/3dfgat.yaml
   testinput/4densvar.yaml
   testinput/4densvar_hybrid.yaml
-  testinput/4dvar_change_var.yaml
   testinput/4dvar_dripcg.yaml
   testinput/4dvar_drpcg_lmp.yaml
   testinput/4dvar_drpfom.yaml
@@ -16,15 +16,17 @@ list( APPEND qg_testinput
   testinput/4dvar_ipcg.yaml
   testinput/4dvar_obs_biased.yaml
   testinput/4dvar_rpcg.yaml
-  testinput/4dvar_saddlepoint.yaml
+  #testinput/4dvar_saddlepoint.yaml
   testinput/addincrement.yaml
   testinput/addincrement_scaled.yaml
   testinput/analytic_forecast.yaml
+  testinput/convertincrement.yaml
   testinput/convertstate.yaml
   testinput/dfi.yaml
   testinput/diffstates.yaml
   testinput/dirac_cov.yaml
-  testinput/dirac_hyb.yaml
+  testinput/dirac_hyb_field.yaml
+  testinput/dirac_hyb_value.yaml
   testinput/dirac_loc_3d.yaml
   testinput/dirac_loc_4d.yaml
   testinput/dirac_no_loc.yaml
@@ -35,6 +37,11 @@ list( APPEND qg_testinput
   testinput/eda_3dfgat.yaml
   testinput/eda_3dvar_2.yaml
   testinput/eda_3dvar.yaml
+  testinput/eda_3dvar_block_1.yaml
+  testinput/eda_3dvar_block_2.yaml
+  testinput/eda_3dvar_block_3.yaml
+  testinput/eda_3dvar_block_4.yaml
+  testinput/eda_3dvar_block.yaml
   testinput/eda_4dvar_1.yaml
   testinput/eda_4dvar_2.yaml
   testinput/eda_4dvar_3.yaml
@@ -58,6 +65,8 @@ list( APPEND qg_testinput
   testinput/getvalues.yaml
   testinput/hofx.yaml
   testinput/hofx3d.yaml
+  testinput/hybridgain_analysis.yaml
+  testinput/hybridgain_increment.yaml
   testinput/interfaces.yaml
   testinput/letkf.yaml
   testinput/lineargetvalues.yaml
@@ -69,7 +78,8 @@ list( APPEND qg_testinput
   testinput/static_b_init.yaml
   testinput/truth.yaml
   testinput/verticallocev.yaml
-  testinput/uniform_field.yaml
+  testinput/uniform_field_hybrid.yaml
+  testinput/uniform_field_inflation.yaml
 )
 
 list( APPEND qg_testoutput
@@ -77,10 +87,10 @@ list( APPEND qg_testoutput
   testoutput/3dvar.test
   testoutput/3dvar_change_var.test
   testoutput/3dvar_hybrid.test
+  testoutput/3dvar_hybrid_wo_jb_evaluation.test
   testoutput/3dfgat.test
   testoutput/4densvar.test
   testoutput/4densvar_hybrid.test
-  testoutput/4dvar_change_var.test
   testoutput/4dvar_dripcg.test
   testoutput/4dvar_drpcg_lmp.test
   testoutput/4dvar_drpfom.test
@@ -90,19 +100,22 @@ list( APPEND qg_testoutput
   testoutput/4dvar_ipcg.test
   testoutput/4dvar_obs_biased.test
   testoutput/4dvar_rpcg.test
-  testoutput/4dvar_saddlepoint.test
+  #testoutput/4dvar_saddlepoint.test
   testoutput/analytic_forecast.test
+  testoutput/convertincrement.test
   testoutput/convertstate.test
   testoutput/addincrement.test
   testoutput/addincrement_scaled.test
   testoutput/dfi.test
   testoutput/diffstates.test
   testoutput/dirac_cov.test
-  testoutput/dirac_hyb.test
+  testoutput/dirac_hyb_field.test
+  testoutput/dirac_hyb_value.test
   testoutput/dirac_loc_3d.test
   testoutput/dirac_loc_4d.test
   testoutput/dirac_no_loc.test
-#  testoutput/eda_4dvar.test
+  testoutput/eda_4dvar.test
+  testoutput/eda_3dvar_block.test
   testoutput/ens_forecast.test
   testoutput/ens_hofx.test
   testoutput/ens_recenter.test
@@ -113,6 +126,8 @@ list( APPEND qg_testoutput
   testoutput/gen_ens_pert_B.test
   testoutput/hofx.test
   testoutput/hofx3d.test
+  testoutput/hybridgain_analysis.test
+  testoutput/hybridgain_increment.test
   testoutput/letkf.test
   testoutput/make_obs_3d.test
   testoutput/make_obs_4d_12h.test
@@ -121,7 +136,8 @@ list( APPEND qg_testoutput
   testoutput/rtpp.test
   testoutput/static_b_init.test
   testoutput/truth.test
-  testoutput/uniform_field.test
+  testoutput/uniform_field_hybrid.test
+  testoutput/uniform_field_inflation.test
 )
 
 # Create data directory for test input and symlink all files
@@ -152,18 +168,16 @@ file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Data)
 # truth and make_obs_4d_24h are required for interface tests
 #####################################################################
 
-oops_add_test( TESTNAME truth
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/truth.yaml
-               EXENAME qg_forecast.x )
+ecbuild_add_test( TARGET test_qg_truth
+                  OMP 2
+                  ARGS testinput/truth.yaml
+                  COMMAND qg_forecast.x )
 
-oops_add_test( TESTNAME make_obs_4d_24h
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/make_obs_4d_24h.yaml
-               EXENAME  qg_hofx.x
-               TEST_DEPENDS test_qg_truth )
+ecbuild_add_test( TARGET test_qg_make_obs_4d_24h
+                  OMP 2
+                  ARGS testinput/make_obs_4d_24h.yaml
+                  COMMAND  qg_hofx.x
+                  TEST_DEPENDS test_qg_truth )
 
 
 #####################################################################
@@ -255,26 +269,14 @@ ecbuild_add_test( TARGET test_qg_obsspace
                   LIBS    qg
                   TEST_DEPENDS test_qg_make_obs_4d_24h )
 
-ecbuild_add_test( TARGET test_qg_localobsspace
-                  SOURCES executables/TestLocalObsSpace.cc
-                  ARGS "testinput/interfaces.yaml"
-                  LIBS    qg
-                  TEST_DEPENDS test_qg_make_obs_4d_24h )
-
 ecbuild_add_test( TARGET test_qg_obs_vector
                   SOURCES executables/TestObsVector.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    qg
                   TEST_DEPENDS test_qg_make_obs_4d_24h )
 
-ecbuild_add_test( TARGET test_qg_departures_ensemble
-                  SOURCES executables/TestDeparturesEnsemble.cc
-                  ARGS "testinput/interfaces.yaml"
-                  LIBS    qg
-                  TEST_DEPENDS test_qg_make_obs_4d_24h )
-
-ecbuild_add_test( TARGET test_qg_departures
-                  SOURCES executables/TestDepartures.cc
+ecbuild_add_test( TARGET test_qg_obsdatavector
+                  SOURCES executables/TestObsDataVector.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS    qg
                   TEST_DEPENDS test_qg_make_obs_4d_24h )
@@ -315,6 +317,18 @@ ecbuild_add_test( TARGET  test_qg_obs_aux_covariance
                   LIBS    qg
                   TEST_DEPENDS test_qg_make_obs_4d_24h )
 
+ecbuild_add_test( TARGET  test_qg_obs_iterator
+                  SOURCES executables/TestObsIterator.cc
+                  ARGS    "testinput/interfaces.yaml"
+                  LIBS    qg
+                  TEST_DEPENDS test_qg_make_obs_4d_24h )
+
+ecbuild_add_test( TARGET  test_qg_obs_localization
+                  SOURCES executables/TestObsLocalization.cc
+                  ARGS    "testinput/interfaces.yaml"
+                  LIBS    qg
+                  TEST_DEPENDS test_qg_make_obs_4d_24h )
+
 ecbuild_add_test( TARGET  test_qg_localization
                   SOURCES executables/TestLocalization.cc
                   ARGS    "testinput/interfaces.yaml"
@@ -351,70 +365,61 @@ ecbuild_add_test( TARGET  test_qg_lineargetvalues
 # forecast-related tests
 #####################################################################
 
-oops_add_test( TESTNAME analytic_forecast
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/analytic_forecast.yaml
-               EXENAME  qg_forecast.x )
+ecbuild_add_test( TARGET test_qg_analytic_forecast
+                  OMP 2
+                  ARGS testinput/analytic_forecast.yaml
+                  COMMAND  qg_forecast.x )
 
-oops_add_test( TESTNAME forecast
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/forecast.yaml
-               EXENAME  qg_forecast.x
-               TEST_DEPENDS test_qg_truth )
+ecbuild_add_test( TARGET test_qg_forecast
+                  OMP 2
+                  ARGS testinput/forecast.yaml
+                  COMMAND  qg_forecast.x
+                  TEST_DEPENDS test_qg_truth )
 
 
 #####################################################################
 # obs-related tests
 #####################################################################
 
-oops_add_test( TESTNAME make_obs_3d
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/make_obs_3d.yaml
-               EXENAME  qg_hofx.x
-               TEST_DEPENDS test_qg_truth )
+ecbuild_add_test( TARGET test_qg_make_obs_3d
+                  OMP 2
+                  ARGS testinput/make_obs_3d.yaml
+                  COMMAND  qg_hofx.x
+                  TEST_DEPENDS test_qg_truth )
 
-oops_add_test( TESTNAME make_obs_4d_12h
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/make_obs_4d_12h.yaml
-               EXENAME  qg_hofx.x
-               TEST_DEPENDS test_qg_truth )
+ecbuild_add_test( TARGET test_qg_make_obs_4d_12h
+                  OMP 2
+                  ARGS testinput/make_obs_4d_12h.yaml
+                  COMMAND  qg_hofx.x
+                  TEST_DEPENDS test_qg_truth )
 
-oops_add_test( TESTNAME make_obs_4d_biased
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/make_obs_4d_biased.yaml
-               EXENAME  qg_hofx.x
-               TEST_DEPENDS test_qg_truth )
+ecbuild_add_test( TARGET test_qg_make_obs_4d_biased
+                  OMP 2
+                  ARGS testinput/make_obs_4d_biased.yaml
+                  COMMAND  qg_hofx.x
+                  TEST_DEPENDS test_qg_truth )
 
-oops_add_test( TESTNAME hofx
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/hofx.yaml
-               EXENAME  qg_hofx.x
-               TEST_DEPENDS test_qg_make_obs_4d_12h )
+ecbuild_add_test( TARGET test_qg_hofx
+                  OMP 2
+                  ARGS testinput/hofx.yaml
+                  COMMAND  qg_hofx.x
+                  TEST_DEPENDS test_qg_make_obs_4d_12h )
 
-oops_add_test( TESTNAME hofx3d
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/hofx3d.yaml
-               EXENAME  qg_hofx_nomodel.x
-               TEST_DEPENDS test_qg_make_obs_4d_12h )
-
+ecbuild_add_test( TARGET test_qg_hofx3d
+                  OMP 2
+                  ARGS testinput/hofx3d.yaml
+                  COMMAND  qg_hofx3d.x
+                  TEST_DEPENDS test_qg_make_obs_4d_12h )
 
 #####################################################################
 # ensemble-related tests
 #####################################################################
 
-oops_add_test( TESTNAME gen_ens_pert_B
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/gen_ens_pert_B.yaml
-               EXENAME  qg_gen_ens_pert_B.x
-               TEST_DEPENDS test_qg_truth )
+ecbuild_add_test( TARGET test_qg_gen_ens_pert_B
+                  OMP 2
+                  ARGS testinput/gen_ens_pert_B.yaml
+                  COMMAND  qg_gen_ens_pert_B.x
+                  TEST_DEPENDS test_qg_truth )
 
 ecbuild_add_test( TARGET test_qg_ens_forecast
                   MPI    2
@@ -430,251 +435,239 @@ ecbuild_add_test( TARGET test_qg_ens_hofx
                   DEPENDS qg_ens_hofx.x
                   TEST_DEPENDS test_qg_gen_ens_pert_B test_qg_make_obs_4d_12h )
 
-oops_add_test( TESTNAME ens_variance
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/ens_variance.yaml
-               EXENAME  qg_ens_variance.x
-               TEST_DEPENDS test_qg_gen_ens_pert_B )
+ecbuild_add_test( TARGET test_qg_ens_variance
+                  OMP 2
+                  ARGS testinput/ens_variance.yaml
+                  COMMAND  qg_ens_variance.x
+                  TEST_DEPENDS test_qg_gen_ens_pert_B )
 
-oops_add_test( TESTNAME ens_recenter
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/ens_recenter.yaml
-               EXENAME  qg_ens_recenter.x
-               TEST_DEPENDS test_qg_gen_ens_pert_B )
+ecbuild_add_test( TARGET test_qg_ens_recenter
+                  OMP 2
+                  ARGS testinput/ens_recenter.yaml
+                  COMMAND  qg_ens_recenter.x
+                  TEST_DEPENDS test_qg_gen_ens_pert_B )
 
-oops_add_test( TESTNAME uniform_field
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/uniform_field.yaml
-               EXENAME qg_forecast.x )
+ecbuild_add_test( TARGET test_qg_hybridgain_analysis
+                  OMP 2
+                  ARGS testinput/hybridgain_analysis.yaml
+                  COMMAND  qg_hybridgain.x
+                  TEST_DEPENDS test_qg_gen_ens_pert_B )
 
-oops_add_test( TESTNAME ens_variance_inflation_field
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/ens_variance_inflation_field.yaml
-               EXENAME  qg_ens_variance.x
-               TEST_DEPENDS test_qg_gen_ens_pert_B test_qg_uniform_field )
+ecbuild_add_test( TARGET test_qg_hybridgain_increment
+                  OMP 2
+                  ARGS testinput/hybridgain_increment.yaml
+                  COMMAND  qg_hybridgain.x
+                  TEST_DEPENDS test_qg_gen_ens_pert_B )
 
-oops_add_test( TESTNAME ens_variance_inflation_value
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/ens_variance_inflation_value.yaml
-               EXENAME  qg_ens_variance.x
-               TEST_DEPENDS test_qg_gen_ens_pert_B )
+ecbuild_add_test( TARGET test_qg_uniform_field_inflation
+                  OMP 2
+                  ARGS testinput/uniform_field_inflation.yaml
+                  COMMAND qg_forecast.x )
 
-oops_add_test( TESTNAME rtpp
-               MODELNAME qg
-               YAMLNAME testinput/rtpp.yaml
-               EXENAME  qg_rtpp.x
-               TEST_DEPENDS test_qg_gen_ens_pert_B )
+ecbuild_add_test( TARGET test_qg_ens_variance_inflation_field
+                  OMP 2
+                  ARGS testinput/ens_variance_inflation_field.yaml
+                  COMMAND  qg_ens_variance.x
+                  TEST_DEPENDS test_qg_gen_ens_pert_B test_qg_uniform_field_inflation )
+
+ecbuild_add_test( TARGET test_qg_ens_variance_inflation_value
+                  OMP 2
+                  ARGS testinput/ens_variance_inflation_value.yaml
+                  COMMAND  qg_ens_variance.x
+                  TEST_DEPENDS test_qg_gen_ens_pert_B )
+
+ecbuild_add_test( TARGET test_qg_rtpp
+                  ARGS testinput/rtpp.yaml
+                  COMMAND  qg_rtpp.x
+                  TEST_DEPENDS test_qg_gen_ens_pert_B )
 
 #####################################################################
 # other tests
 #####################################################################
 
-oops_add_test( TESTNAME static_b_init
-               MODELNAME qg
-               MPI 1
-               OMP 2
-               YAMLNAME testinput/static_b_init.yaml
-               EXENAME  qg_staticbinit.x
-               TEST_DEPENDS test_qg_truth )
+ecbuild_add_test( TARGET test_qg_static_b_init
+                  MPI 1
+                  OMP 2
+                  ARGS testinput/static_b_init.yaml
+                  COMMAND  qg_staticbinit.x
+                  TEST_DEPENDS test_qg_truth )
 
-oops_add_test( TESTNAME dfi
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/dfi.yaml
-               EXENAME  qg_dfi.x
-               TEST_DEPENDS test_qg_forecast )
+ecbuild_add_test( TARGET test_qg_dfi
+                  OMP 2
+                  ARGS testinput/dfi.yaml
+                  COMMAND  qg_dfi.x
+                  TEST_DEPENDS test_qg_forecast )
 
-oops_add_test( TESTNAME convertstate
-               MODELNAME qg
-               OMP    2
-               YAMLNAME testinput/convertstate.yaml
-               EXENAME qg_convertstate.x
-               TEST_DEPENDS test_qg_forecast )
+ecbuild_add_test( TARGET test_qg_convertstate
+                  OMP    2
+                  ARGS testinput/convertstate.yaml
+                  COMMAND qg_convertstate.x
+                  TEST_DEPENDS test_qg_forecast )
 
 #####################################################################
 # QG dirac tests
 #####################################################################
 
-oops_add_test( TESTNAME dirac_cov
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/dirac_cov.yaml
-               EXENAME  qg_dirac.x
-               TEST_DEPENDS test_qg_forecast )
+ecbuild_add_test( TARGET test_qg_dirac_cov
+                  OMP 2
+                  ARGS testinput/dirac_cov.yaml
+                  COMMAND  qg_dirac.x
+                  TEST_DEPENDS test_qg_forecast )
 
-oops_add_test( TESTNAME dirac_hyb
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/dirac_hyb.yaml
-               EXENAME  qg_dirac.x
-               TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B )
+ecbuild_add_test( TARGET test_qg_dirac_hyb_value
+                  OMP 2
+                  ARGS testinput/dirac_hyb_value.yaml
+                  COMMAND  qg_dirac.x
+                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B )
 
-oops_add_test( TESTNAME dirac_loc_3d
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/dirac_loc_3d.yaml
-               EXENAME  qg_dirac.x
-               TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B )
+ecbuild_add_test( TARGET test_qg_uniform_field_hybrid
+                  OMP 2
+                  ARGS testinput/uniform_field_hybrid.yaml
+                  COMMAND qg_forecast.x )
 
-oops_add_test( TESTNAME dirac_loc_4d
-               MODELNAME qg
-               OMP 2
-               MPI 13
-               YAMLNAME testinput/dirac_loc_4d.yaml
-               EXENAME  qg_dirac.x
-               TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B )
+ecbuild_add_test( TARGET test_qg_dirac_hyb_field
+                  OMP 2
+                  ARGS testinput/dirac_hyb_field.yaml
+                  COMMAND  qg_dirac.x
+                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_uniform_field_hybrid )
 
-oops_add_test( TESTNAME dirac_no_loc
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/dirac_no_loc.yaml
-               EXENAME  qg_dirac.x
-               TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B )
+ecbuild_add_test( TARGET test_qg_dirac_loc_3d
+                  OMP 2
+                  ARGS testinput/dirac_loc_3d.yaml
+                  COMMAND  qg_dirac.x
+                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B )
+
+ecbuild_add_test( TARGET test_qg_dirac_loc_4d
+                  OMP 2
+                  MPI 13
+                  ARGS testinput/dirac_loc_4d.yaml
+                  COMMAND  qg_dirac.x
+                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B )
+
+ecbuild_add_test( TARGET test_qg_dirac_no_loc
+                  OMP 2
+                  ARGS testinput/dirac_no_loc.yaml
+                  COMMAND  qg_dirac.x
+                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B )
 
 
 #####################################################################
 # 3d variational tests
 #####################################################################
 
-oops_add_test( TESTNAME 3densvar
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/3densvar.yaml
-               EXENAME  qg_4dvar.x
-               TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_3d )
+ecbuild_add_test( TARGET test_qg_3densvar
+                  OMP 2
+                  ARGS testinput/3densvar.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_3d )
 
-oops_add_test( TESTNAME 3dvar
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/3dvar.yaml
-               EXENAME  qg_4dvar.x
-               TEST_DEPENDS test_qg_forecast test_qg_make_obs_3d )
-
-oops_add_test( TESTNAME 3dvar_change_var
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/3dvar_change_var.yaml
-               EXENAME  qg_4dvar.x
-               TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_3d
-               COMPARE)
+ecbuild_add_test( TARGET test_qg_3dvar
+                  OMP 2
+                  ARGS testinput/3dvar.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_make_obs_3d )
 
 #--------------------------------------------------------------------
 
-oops_add_test( TESTNAME 3dvar_hybrid
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/3dvar_hybrid.yaml
-               EXENAME  qg_4dvar.x
-               TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_3d )
+ecbuild_add_test( TARGET test_qg_3dvar_change_var
+                  OMP 2
+                  ARGS testinput/3dvar_change_var.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_make_obs_3d )
 
-oops_add_test( TESTNAME 3dfgat
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/3dfgat.yaml
-               EXENAME  qg_4dvar.x
-               TEST_DEPENDS test_qg_forecast test_qg_make_obs_3d )
+ecbuild_add_test( TARGET test_qg_3dvar_hybrid
+                  OMP 2
+                  ARGS testinput/3dvar_hybrid.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_3d )
+
+ecbuild_add_test( TARGET test_qg_3dvar_hybrid_wo_jb_evaluation
+                  OMP 2
+                  ARGS testinput/3dvar_hybrid_wo_jb_evaluation.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_3d )
+
+ecbuild_add_test( TARGET test_qg_3dfgat
+                  OMP 2
+                  ARGS testinput/3dfgat.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_make_obs_3d )
 
 #####################################################################
 # 4d variational tests
 #####################################################################
 
-oops_add_test( TESTNAME 4densvar
-               MODELNAME qg
-               MPI 7
-               YAMLNAME testinput/4densvar.yaml
-               EXENAME  qg_4dvar.x
-               TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_4d_12h )
+ecbuild_add_test( TARGET test_qg_4densvar
+                  MPI 7
+                  ARGS testinput/4densvar.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_4d_12h )
 
-oops_add_test( TESTNAME 4densvar_hybrid
-               MODELNAME qg
-               MPI 7
-               YAMLNAME testinput/4densvar_hybrid.yaml
-               EXENAME  qg_4dvar.x
-               TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_4d_12h )
+ecbuild_add_test( TARGET test_qg_4densvar_hybrid
+                  MPI 7
+                  ARGS testinput/4densvar_hybrid.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_4d_12h )
 
-oops_add_test( TESTNAME 4dvar_change_var
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/4dvar_change_var.yaml
-               EXENAME  qg_4dvar.x
-               TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
+ecbuild_add_test( TARGET test_qg_4dvar_dripcg
+                  OMP 2
+                  ARGS testinput/4dvar_dripcg.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
 
-oops_add_test( TESTNAME 4dvar_dripcg
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/4dvar_dripcg.yaml
-               EXENAME  qg_4dvar.x
-               TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
+ecbuild_add_test( TARGET test_qg_4dvar_drpcg_lmp
+                  OMP 2
+                  ARGS testinput/4dvar_drpcg_lmp.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
 
-oops_add_test( TESTNAME 4dvar_drpcg_lmp
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/4dvar_drpcg_lmp.yaml
-               EXENAME  qg_4dvar.x
-               TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
+ecbuild_add_test( TARGET test_qg_4dvar_drpfom
+                  OMP 2
+                  ARGS testinput/4dvar_drpfom.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
 
-oops_add_test( TESTNAME 4dvar_drpfom
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/4dvar_drpfom.yaml
-               EXENAME  qg_4dvar.x
-               TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
+ecbuild_add_test( TARGET test_qg_4dvar_drplanczos
+                  OMP 2
+                  ARGS testinput/4dvar_drplanczos.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
 
-oops_add_test( TESTNAME 4dvar_drplanczos
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/4dvar_drplanczos.yaml
-               EXENAME  qg_4dvar.x
-               TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
+ecbuild_add_test( TARGET test_qg_4dvar_drplanczos_hybrid
+                  OMP 2
+                  ARGS testinput/4dvar_drplanczos_hybrid.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_4d_24h )
 
-oops_add_test( TESTNAME 4dvar_drplanczos_hybrid
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/4dvar_drplanczos_hybrid.yaml
-               EXENAME  qg_4dvar.x
-               TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_4d_24h )
+#ecbuild_add_test( TARGET test_qg_4dvar_forcing
+#                  OMP 2
+#                  ARGS testinput/4dvar_forcing.yaml
+#                  COMMAND  qg_4dvar.x
+#                  TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
 
-#oops_add_test( TESTNAME 4dvar_forcing
-#               MODELNAME qg
-#               OMP 2
-#               YAMLNAME testinput/4dvar_forcing.yaml
-#               EXENAME  qg_4dvar.x
-#               TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
+ecbuild_add_test( TARGET test_qg_4dvar_ipcg
+                  OMP 2
+                  ARGS testinput/4dvar_ipcg.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
 
-oops_add_test( TESTNAME 4dvar_ipcg
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/4dvar_ipcg.yaml
-               EXENAME  qg_4dvar.x
-               TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
+ecbuild_add_test( TARGET test_qg_4dvar_obs_biased
+                  OMP 2
+                  ARGS testinput/4dvar_obs_biased.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_biased )
 
-oops_add_test( TESTNAME 4dvar_obs_biased
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/4dvar_obs_biased.yaml
-               EXENAME  qg_4dvar.x
-               TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_biased )
+ecbuild_add_test( TARGET test_qg_4dvar_rpcg
+                  OMP 2
+                  ARGS testinput/4dvar_rpcg.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
 
-oops_add_test( TESTNAME 4dvar_rpcg
-               MODELNAME qg
-               OMP 2
-               YAMLNAME testinput/4dvar_rpcg.yaml
-               EXENAME  qg_4dvar.x
-               TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
-
-oops_add_test( TESTNAME 4dvar_saddlepoint
-               MODELNAME qg
-               MPI 2
-               YAMLNAME testinput/4dvar_saddlepoint.yaml
-               EXENAME  qg_4dvar.x
-               TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h
-               CTOL 0.0000000001 )
-
+#ecbuild_add_test( TARGET test_qg_4dvar_saddlepoint
+#                  MPI 2
+#                  ARGS testinput/4dvar_saddlepoint.yaml
+#                  COMMAND  qg_4dvar.x
+#                  TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
 
 #####################################################################
 # EDA tests
@@ -701,37 +694,44 @@ ecbuild_add_test( TARGET test_qg_eda_4dvar
                   DEPENDS qg_eda.x
                   TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
 
+ecbuild_add_test( TARGET test_qg_eda_3dvar_block
+                  MPI    4
+                  ARGS testinput/eda_3dvar_block.yaml
+                  COMMAND qg_eda.x
+                  TEST_DEPENDS test_qg_make_obs_3d test_qg_gen_ens_pert_B )
 
 #####################################################################
 # state-related tests
 #####################################################################
 
-oops_add_test( TESTNAME diffstates
-               MODELNAME qg
-               YAMLNAME testinput/diffstates.yaml
-               EXENAME  qg_diffstates.x
-               TEST_DEPENDS test_qg_eda_3dvar test_qg_eda_4dvar
-               DEPENDS qg_eda.x )
+ecbuild_add_test( TARGET test_qg_diffstates
+                  ARGS testinput/diffstates.yaml
+                  COMMAND  qg_diffstates.x
+                  TEST_DEPENDS test_qg_eda_3dvar test_qg_eda_4dvar
+                  DEPENDS qg_eda.x )
 
-oops_add_test( TESTNAME addincrement
-               MODELNAME qg
-               YAMLNAME testinput/addincrement.yaml
-               EXENAME  qg_addincrement.x
-               TEST_DEPENDS test_qg_diffstates )
+ecbuild_add_test( TARGET test_qg_addincrement
+                  ARGS testinput/addincrement.yaml
+                  COMMAND  qg_addincrement.x
+                  TEST_DEPENDS test_qg_diffstates )
 
-oops_add_test( TESTNAME addincrement_scaled
-               MODELNAME qg
-               YAMLNAME testinput/addincrement_scaled.yaml
-               EXENAME  qg_addincrement.x
-               TEST_DEPENDS test_qg_diffstates )
+ecbuild_add_test( TARGET test_qg_addincrement_scaled
+                  ARGS testinput/addincrement_scaled.yaml
+                  COMMAND  qg_addincrement.x
+                  TEST_DEPENDS test_qg_diffstates )
 
+ecbuild_add_test( TARGET test_qg_convertincrement
+                  OMP    2
+                  ARGS testinput/convertincrement.yaml
+                  COMMAND qg_convertincrement.x
+                  TEST_DEPENDS test_qg_diffstates )
 
 #####################################################################
 # LETKF tests
 #####################################################################
 
-oops_add_test( TESTNAME letkf
-               MODELNAME qg
-               YAMLNAME testinput/letkf.yaml
-               EXENAME  qg_letkf.x
-               TEST_DEPENDS test_qg_make_obs_3d test_qg_gen_ens_pert_B )
+ecbuild_add_test( TARGET test_qg_letkf
+                  ARGS testinput/letkf.yaml
+                  COMMAND  qg_letkf.x
+                  OMP 2
+                  TEST_DEPENDS test_qg_make_obs_3d test_qg_gen_ens_pert_B )

@@ -33,8 +33,8 @@ ecbuild_add_executable( TARGET  qg_hofx.x
                         LIBS    qg
                       )
 
-ecbuild_add_executable( TARGET  qg_hofx_nomodel.x
-                        SOURCES qgHofXNoModel.cc
+ecbuild_add_executable( TARGET  qg_hofx3d.x
+                        SOURCES qgHofX3D.cc
                         LIBS    qg
                       )
 
@@ -68,6 +68,11 @@ ecbuild_add_executable( TARGET  qg_convertstate.x
                         LIBS    qg
                       )
 
+ecbuild_add_executable( TARGET  qg_convertincrement.x
+                        SOURCES qgConvertIncrement.cc
+                        LIBS    qg
+                      )
+
 ecbuild_add_executable( TARGET  qg_ens_variance.x
                         SOURCES qgEnsVariance.cc
                         LIBS    qg
@@ -80,6 +85,11 @@ ecbuild_add_executable( TARGET  qg_letkf.x
 
 ecbuild_add_executable( TARGET  qg_ens_recenter.x
                         SOURCES qgEnsRecenter.cc
+                        LIBS    qg
+                      )
+
+ecbuild_add_executable( TARGET  qg_hybridgain.x
+                        SOURCES qgHybridGain.cc
                         LIBS    qg
                       )
 

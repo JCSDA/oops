@@ -37,6 +37,7 @@ class ModelSpaceCovarianceParametersBase : public Parameters {
 
   Parameter<std::vector<LinearVariableChangeParametersWrapper<MODEL>>> variableChanges{
     "variable changes", {}, this};
+  Parameter<size_t> randomizationSize{"randomization size", 50, this};
 };
 
 }  // namespace oops

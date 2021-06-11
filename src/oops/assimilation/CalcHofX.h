@@ -13,167 +13,228 @@
 
 #include "eckit/config/LocalConfiguration.h"
 
-#include "oops/assimilation/State4D.h"
 #include "oops/base/ObsAuxControls.h"
 #include "oops/base/Observations.h"
-#include "oops/base/Observers.h"
+#include "oops/base/ObsFilters.h"
 #include "oops/base/ObsSpaces.h"
-#include "oops/base/PostProcessor.h"
-#include "oops/base/QCData.h"
-#include "oops/base/StateInfo.h"
-#include "oops/interface/Geometry.h"
-#include "oops/interface/Model.h"
-#include "oops/interface/ModelAuxControl.h"
-#include "oops/interface/State.h"
-#include "oops/util/Duration.h"
+#include "oops/base/Variables.h"
+#include "oops/interface/GeoVaLs.h"
+#include "oops/interface/Locations.h"
+#include "oops/interface/ObsDataVector.h"
+#include "oops/interface/ObsDiagnostics.h"
+#include "oops/interface/ObsOperator.h"
+#include "oops/interface/ObsVector.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/Parameter.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
 
-// -----------------------------------------------------------------------------
-
-/// \brief Computes observation operator (while running model, or with State4D)
-
-template <typename MODEL, typename OBS>
-class CalcHofX {
-  typedef Geometry<MODEL>            Geometry_;
-  typedef Model<MODEL>               Model_;
-  typedef ModelAuxControl<MODEL>     ModelAux_;
-  typedef ObsAuxControls<OBS>        ObsAuxCtrls_;
-  typedef Observations<OBS>          Observations_;
-  typedef ObsSpaces<OBS>             ObsSpaces_;
-  typedef State<MODEL>               State_;
-  typedef State4D<MODEL>             State4D_;
-  typedef PostProcessor<State_>      PostProcessor_;
-  typedef QCData<OBS>                QCData_;
-  template <typename DATA> using ObsData_ = ObsDataVector<OBS, DATA>;
+template <typename OBS>
+class CalcHofXParameters : public Parameters {
+  OOPS_CONCRETE_PARAMETERS(CalcHofXParameters, Parameters)
 
  public:
-/// \brief Initializes Observers
-  CalcHofX(const ObsSpaces_ &, const Geometry_ &, const eckit::Configuration &);
-
-/// \brief Computes 4D H(x) (running the model)
-  const Observations_ & compute(const Model_ &, State_ &, PostProcessor_ &, const util::Duration &);
-/// \brief Computes 4D H(x) (using State4D)
-  const Observations_ & compute(const State4D_ &);
-
-/// \brief saves QC flags to ObsSpaces
-  void saveQcFlags(const std::string &) const;
-/// \brief saves obs error variances (modified in QC) to ObsSpaces
-  void saveObsErrors(const std::string &) const;
-/// Mask out the obs errors where the passed in qc flags are > 0
-  void maskObsErrors(const QCData_ &);
-
-  std::shared_ptr<QCData_> qc() const {return qc_;}
-
- private:
-/// \brief helper method to initialize qc flags and observer
-  void initObserver();
-
-  const eckit::LocalConfiguration obsconf_;  // configuration for observer
-  const ObsSpaces_ & obspaces_;              // ObsSpaces used in H(x)
-  ObsAuxCtrls_       ybias_;                 // obs bias
-  const Geometry_ &  geometry_;              // Model Geometry
-  ModelAux_          moderr_;                // model bias
-  const util::DateTime winbgn_;              // window for assimilation
-  const util::Duration winlen_;
-  std::shared_ptr<QCData_> qc_;              // QC-related (flags and obserrors)
-  std::shared_ptr<Observers<MODEL, OBS> > pobs_;  // Observer
+  oops::RequiredParameter<eckit::LocalConfiguration> obsOperator{"obs operator", this};
+  oops::Parameter<std::vector<ObsFilterParametersWrapper<OBS>>> obsFilters{"obs filters", {}, this};
 };
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL, typename OBS>
-CalcHofX<MODEL, OBS>::CalcHofX(const ObsSpaces_ & obspaces, const Geometry_ & geometry,
-                          const eckit::Configuration & config) :
-  obsconf_(config), obspaces_(obspaces), ybias_(obspaces_, obsconf_),
-  geometry_(geometry), moderr_(geometry_, config.getSubConfiguration("model aux control")),
-  winbgn_(config.getString("window begin")),
-  winlen_(config.getString("window length")) {}
+/// \brief Computes observation operator (from GeoVaLs), applies bias correction
+///        and runs QC filters
+template <typename OBS>
+class CalcHofX {
+  typedef GeoVaLs<OBS>               GeoVaLs_;
+  typedef Locations<OBS>             Locations_;
+  typedef ObsAuxControls<OBS>        ObsAuxCtrls_;
+  typedef ObsDiagnostics<OBS>        ObsDiags_;
+  typedef Observations<OBS>          Observations_;
+  typedef ObsFilters<OBS>            ObsFilters_;
+  typedef ObsOperator<OBS>           ObsOperator_;
+  typedef ObsSpaces<OBS>             ObsSpaces_;
+  typedef ObsVector<OBS>             ObsVector_;
+  template <typename DATA> using ObsData_ = ObsDataVector<OBS, DATA>;
+  template <typename DATA> using ObsDataVec_ = std::vector<std::shared_ptr<ObsData_<DATA>>>;
+
+  typedef std::vector<std::unique_ptr<GeoVaLs_>>       GeoVaLsVec_;
+  typedef std::vector<std::unique_ptr<Locations_>>     LocationsVec_;
+  typedef std::vector<std::unique_ptr<ObsFilters_>>    ObsFiltersVec_;
+  typedef std::vector<std::unique_ptr<ObsOperator_>>   ObsOperatorVec_;
+  typedef std::vector<std::shared_ptr<ObsVector_>>     ObsVectorVec_;
+  typedef std::vector<Variables>                       VariablesVec_;
+
+ public:
+/// \brief Initializes ObsOperators, Locations, and QC data
+  CalcHofX(const ObsSpaces_ &, const eckit::Configuration &);
+
+/// \brief Initializes variables, obs bias, obs filters (could be different for
+/// different iterations
+  void initialize(const ObsAuxCtrls_ &, const int iteration = 0);
+
+/// \brief Computes H(x) from the filled in GeoVaLs
+  Observations_ compute(const GeoVaLsVec_ &);
+
+/// \brief accessor to the locations
+  const LocationsVec_ & locations() const { return locations_; }
+/// \brief accessor to variables required from the model
+  const VariablesVec_ & requiredVars() const { return geovars_; }
+/// \brief accessor to QC flags
+  const ObsDataVec_<int> & qcflags() const { return qcflags_; }
+
+/// \brief read QC flags from \p qcname variable from file
+  void readQcFlags(const std::string & qcname);
+/// \brief reset QC flags and ObsErrors
+  void resetQc();
+/// \brief save QC flags to ObsSpaces
+  void saveQcFlags(const std::string &) const;
+/// \brief save obs error variances (modified in QC) to ObsSpaces
+  void saveObsErrors(const std::string &) const;
+/// \brief mask obs errors with QC flags
+  void maskObsErrors();
+
+ private:
+  eckit::LocalConfiguration obsconfig_;
+  const ObsSpaces_ &   obspaces_;   // ObsSpaces used in H(x)
+  ObsOperatorVec_      obsops_;     // Obs operators
+  LocationsVec_        locations_;  // locations
+  const ObsAuxCtrls_ * ybias_;      // Obs bias
+  ObsDataVec_<int>     qcflags_;    // QC flags
+  ObsVectorVec_        obserrs_;    // Obs error variances (used in QC filters)
+  ObsFiltersVec_       filters_;    // QC filters
+  VariablesVec_        geovars_;    // variables required from the model
+};
 
 // -----------------------------------------------------------------------------
-template <typename MODEL, typename OBS>
-void CalcHofX<MODEL, OBS>::initObserver() {
-  qc_.reset(new QCData_(obspaces_));
-//  Setup Observers
-  pobs_.reset(new Observers<MODEL, OBS>(obsconf_, obspaces_, ybias_, *qc_));
-}
 
-// -----------------------------------------------------------------------------
-
-template <typename MODEL, typename OBS>
-const Observations<OBS> & CalcHofX<MODEL, OBS>::compute(const Model_ & model, State_ & xx,
-                                 PostProcessor_ & post, const util::Duration & length) {
-  oops::Log::trace() << "CalcHofX<MODEL, OBS>::compute (model) start" << std::endl;
-
-  this->initObserver();
-//  run the model and compute H(x)
-  post.enrollProcessor(pobs_);
-  model.forecast(xx, moderr_, length, post);
-
-  oops::Log::trace() << "CalcHofX<MODEL, OBS>::compute (model) done" << std::endl;
-  return pobs_->hofx();
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL, typename OBS>
-const Observations<OBS> & CalcHofX<MODEL, OBS>::compute(const State4D_ & xx) {
-  oops::Log::trace() << "CalcHofX<MODEL, OBS>::compute (state4D) start" << std::endl;
-
-  this->initObserver();
-  size_t nstates = xx.size();
-  util::DateTime winend = winbgn_ + winlen_;
-  util::Duration tstep = winlen_;   // for a single state
-  // if using several states, compute the timestep and check that it's the same
-  // for all states
-  if (nstates > 1) {
-    tstep = xx[1].validTime() - xx[0].validTime();
-    for (size_t ii = 1; ii < xx.size(); ++ii) {
-      ASSERT(tstep == (xx[ii].validTime() - xx[ii-1].validTime()));
-    }
-  }
-  // check that initial and last states have valid times
-  ASSERT(xx[0].validTime() <= (winbgn_ + tstep/2));
-  ASSERT(xx[nstates-1].validTime() >= (winend - tstep/2));
-
-  // run Observer looping through all the states
-  pobs_->initialize(xx[0], winend, tstep);
-  for (size_t ii = 0; ii < xx.size(); ++ii) {
-    pobs_->process(xx[ii]);
-  }
-  pobs_->finalize(xx[nstates-1]);
-
-  oops::Log::trace() << "CalcHofX<MODEL, OBS>::compute (state4D) done" << std::endl;
-  return pobs_->hofx();
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL, typename OBS>
-void CalcHofX<MODEL, OBS>::saveQcFlags(const std::string & name) const {
+template <typename OBS>
+CalcHofX<OBS>::CalcHofX(const ObsSpaces_ & obspaces,
+                        const eckit::Configuration & config) :
+  obsconfig_(config), obspaces_(obspaces), obsops_(), locations_(),
+  ybias_(nullptr), qcflags_(), obserrs_(), filters_(),
+  geovars_(obspaces_.size())
+{
+  std::vector<eckit::LocalConfiguration> obsconfs = config.getSubConfigurations();
   for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
-    qc_->qcFlags(jj)->save(name);
+    // obsconfs[jj] contains not only options controlling the obs operator and filters (known to
+    // CalcHofX) but also those controlling the obs space (unknown to it). So we can't call
+    // validateAndDeserialize() here, since "obs space" would be treated as an unrecognized
+    // keyword. In the long term the code constructing the CalcHofX will probably need to split
+    // the contents of the "observations" vector into two vectors, one containing the "obs space"
+    // sections and the other the "obs operator" and "obs filters" sections, and pass the former to
+    // the constructor of ObsSpaces and the latter to the constructor of CalcHofX.
+    CalcHofXParameters<OBS> observerParams;
+    observerParams.deserialize(obsconfs[jj]);
+    /// Set up observation operators
+    obsops_.emplace_back(new ObsOperator_(obspaces_[jj], observerParams.obsOperator));
+    locations_.emplace_back(new Locations_(obsops_[jj]->locations()));
+
+    /// Allocate QC flags
+    qcflags_.emplace_back(std::make_shared<ObsData_<int>>(obspaces[jj],
+                            obspaces[jj].obsvariables()));
+    /// Allocate and read initial obs error
+    obserrs_.emplace_back(std::make_shared<ObsVector_>(obspaces[jj], "ObsError"));
+  }
+  Log::trace() << "CalcHofX<OBS> constructed" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+void CalcHofX<OBS>::initialize(const ObsAuxCtrls_ & obsaux, const int iteration) {
+  std::vector<eckit::LocalConfiguration> obsconfs = obsconfig_.getSubConfigurations();
+  ybias_ = &obsaux;
+  filters_.clear();
+  for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
+    CalcHofXParameters<OBS> observerParams;
+    observerParams.deserialize(obsconfs[jj]);
+    /// Set up QC filters and run preprocess
+    filters_.emplace_back(new ObsFilters_(obspaces_[jj], observerParams.obsFilters,
+                                          qcflags_[jj], *obserrs_[jj], iteration));
+    filters_[jj]->preProcess();
+
+    /// Set up variables requested from the model
+    geovars_[jj] += obsops_[jj]->requiredVars();
+    geovars_[jj] += (*ybias_)[jj].requiredVars();
+    geovars_[jj] += filters_[jj]->requiredVars();
+  }
+  Log::trace() << "CalcHofX<OBS>::initialize done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+Observations<OBS> CalcHofX<OBS>::compute(const GeoVaLsVec_ & geovals) {
+  oops::Log::trace() << "CalcHofX<OBS>::compute start" << std::endl;
+
+  Observations<OBS> yobs(obspaces_);
+  for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
+    /// call prior filters
+    filters_[jj]->priorFilter(*geovals[jj]);
+    /// compute H(x)
+    oops::Variables vars;
+    vars += filters_[jj]->requiredHdiagnostics();
+    vars += (*ybias_)[jj].requiredHdiagnostics();
+    ObsDiags_ ydiags(obspaces_[jj], *locations_[jj], vars);
+    obsops_[jj]->simulateObs(*geovals[jj], yobs[jj], (*ybias_)[jj], ydiags);
+    /// call posterior filters
+    filters_[jj]->postFilter(yobs[jj], ydiags);
+  }
+  oops::Log::trace() << "CalcHofX<OBS>::compute done" << std::endl;
+  return yobs;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+void CalcHofX<OBS>::readQcFlags(const std::string & qcname) {
+  for (const auto & qcflag : qcflags_) {
+    qcflag->read(qcname);
   }
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL, typename OBS>
-void CalcHofX<MODEL, OBS>::saveObsErrors(const std::string & name) const {
-  for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
-    qc_->obsErrors(jj)->save(name);
+template <typename OBS>
+void CalcHofX<OBS>::resetQc() {
+  for (const auto & qcflag : qcflags_) {
+    qcflag->zero();
+  }
+  for (const auto & obserr : obserrs_) {
+    obserr->read("ObsError");
   }
 }
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL, typename OBS>
-void CalcHofX<MODEL, OBS>::maskObsErrors(const QCData_ & qcMask) {
-  for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
-    qc_->obsErrors(jj)->mask(*qcMask.qcFlags(jj));
+template <typename OBS>
+void CalcHofX<OBS>::saveQcFlags(const std::string & name) const {
+  for (const auto & qcflag : qcflags_) {
+    qcflag->save(name);
   }
 }
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+void CalcHofX<OBS>::saveObsErrors(const std::string & name) const {
+  for (const auto & obserr : obserrs_) {
+    obserr->save(name);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+void CalcHofX<OBS>::maskObsErrors() {
+  for (size_t jj = 0; jj < obserrs_.size(); ++jj) {
+    obserrs_[jj]->mask(*qcflags_[jj]);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
 }  // namespace oops
 
 #endif  // OOPS_ASSIMILATION_CALCHOFX_H_

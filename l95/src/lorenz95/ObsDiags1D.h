@@ -14,7 +14,7 @@
 #include "oops/base/Variables.h"
 #include "oops/util/Printable.h"
 
-#include "lorenz95/ObsTableView.h"
+#include "lorenz95/ObsTable.h"
 
 namespace lorenz95 {
   class LocsL95;
@@ -23,7 +23,7 @@ namespace lorenz95 {
 
 class ObsDiags1D : public util::Printable {
  public:
-  ObsDiags1D(const ObsTableView &, const LocsL95 &, const oops::Variables &) {}
+  ObsDiags1D(const ObsTable &, const LocsL95 &, const oops::Variables &) {}
   ~ObsDiags1D() {}
 
 // I/O

@@ -23,8 +23,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 
-#include "lorenz95/LocsL95.h"
-#include "lorenz95/ObsVec1D.h"
+#include "lorenz95/ObsIterator.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
@@ -68,10 +67,13 @@ ObsTable::ObsTable(const eckit::Configuration & config, const eckit::mpi::Comm &
 // -----------------------------------------------------------------------------
 
 ObsTable::~ObsTable() {
-  if (!nameOut_.empty()) {
-    otWrite(nameOut_);
-  }
   oops::Log::trace() << "ObsTable::ObsTable destructed" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsTable::save() const {
+  if (!nameOut_.empty()) otWrite(nameOut_);
 }
 
 // -----------------------------------------------------------------------------
@@ -232,12 +234,6 @@ void ObsTable::random(std::vector<double> & data) const {
 }
 
 // -----------------------------------------------------------------------------
-
-void ObsTable::printJo(const ObsVec1D & ydep, const ObsVec1D & grad) {
-  oops::Log::info() << "ObsTable::printJo not implemented" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
 //  ObsTable Private Methods
 // -----------------------------------------------------------------------------
 
@@ -348,10 +344,18 @@ void ObsTable::otWrite(const std::string & filename) const {
 }
 
 // -----------------------------------------------------------------------------
+ObsIterator ObsTable::begin() const {
+  return ObsIterator(locations_, 0);
+}
+// -----------------------------------------------------------------------------
+ObsIterator ObsTable::end() const {
+  return ObsIterator(locations_, locations_.size());
+}
+// -----------------------------------------------------------------------------
 
 void ObsTable::print(std::ostream & os) const {
   os << "ObsTable: assimilation window = " << winbgn_ << " to " << winend_ << std::endl;
-  os << "ObsTable: file in = " << nameIn_ << ", file out = " << nameOut_ << std::endl;
+  os << "ObsTable: file in = " << nameIn_ << ", file out = " << nameOut_;
 }
 
 // -----------------------------------------------------------------------------

@@ -21,7 +21,6 @@
 
 #include "eckit/config/LocalConfiguration.h"
 
-#include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/LocalIncrement.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
@@ -60,8 +59,7 @@ namespace qg {
 
 // -----------------------------------------------------------------------------
 
-class IncrementQG : public oops::GeneralizedDepartures,
-                    public util::Printable,
+class IncrementQG : public util::Printable,
                     public util::Serializable,
                     private util::ObjectCounter<IncrementQG> {
  public:

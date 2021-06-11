@@ -20,6 +20,10 @@ observations:
     obs type: Stream
   obs operator:
     obs type: Stream
+  get values:
+    interpolation type: default_1
+  linear get values:
+    interpolation type: default_a
 - obs space:
     obsdatain:
       obsfile: Data/truth.obs4d_12h.nc
@@ -28,6 +32,10 @@ observations:
     obs type: Wind
   obs operator:
     obs type: Wind
+  get values:
+    interpolation type: default_2
+  linear get values:
+    interpolation type: default_b
 - obs space:
     obsdatain:
       obsfile: Data/truth.obs4d_12h.nc
@@ -36,5 +44,12 @@ observations:
     obs type: WSpeed
   obs operator:
     obs type: WSpeed
+  get values:
+    interpolation type: default_3
+  linear get values:
+    interpolation type: default_c
 prints:
   frequency: PT3H
+
+test:
+  reference filename: testoutput/hofx.test

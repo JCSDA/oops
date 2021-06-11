@@ -92,7 +92,7 @@ DualMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
   for (unsigned jj = 0; jj < J_.nterms(); ++jj) {
     vv.append(J_.jterm(jj).newDualVector());
   }
-  double vvp;
+  double vvp = 0.0;
 
 // Get R^{-1} d
   Dual_ rr;

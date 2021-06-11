@@ -42,7 +42,7 @@ character(len=2*length) :: genfilename
 
 ! Local variables
 integer :: lenfn
-character(len=length) :: fdbdir,expver,typ,validitydate,referencedate,sstep,mmb
+character(len=length) :: fdbdir,expver,typ,validitydate,referencedate,sstep,mmb,iter
 character(len=2*length) :: prefix
 character(len=:),allocatable :: str
 
@@ -87,6 +87,14 @@ if ((typ=='an').or.(typ=='in')) then
   call datetime_to_string(vdate,validitydate)
   lenfn = lenfn+1+len_trim(validitydate)
   genfilename = trim(prefix)//'.'//trim(validitydate)//'.nc'
+endif
+
+if (typ=='krylov') then
+  call f_conf%get_or_die("iteration",str)
+  iter = str
+  call datetime_to_string(vdate,validitydate)
+  lenfn = lenfn+1+len_trim(iter)+1+len_trim(validitydate)
+  genfilename = trim(prefix)//'.'// trim(iter)//'.'//trim(validitydate)//'.nc'
 endif
 
 ! Check filename length

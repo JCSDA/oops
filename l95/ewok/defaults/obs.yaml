@@ -1,0 +1,11 @@
+obs operator: 
+  obs type: Obs
+obs space:
+  source: truth
+  filetype: obt
+  obsdatain:  '$(current_dir)/input.obs.{{window_begin}}.obt'
+  obsdataout: '$(current_dir)/$(experiment).obs.{{window_begin}}.obt'
+obs error:
+  covariance model: diagonal
+r2d2_type: l95_obs
+

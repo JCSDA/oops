@@ -41,15 +41,14 @@ void ObsStreamQG::simulateObs(const GomQG & gom, ObsVecQG & ovec,
 
 // -----------------------------------------------------------------------------
 
-std::unique_ptr<LocationsQG> ObsStreamQG::locations(const util::DateTime & t1,
-                             const util::DateTime & t2) const {
-  return obsdb_.locations(t1, t2);
+std::unique_ptr<LocationsQG> ObsStreamQG::locations() const {
+  return obsdb_.locations();
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsStreamQG::print(std::ostream & os) const {
-  os << "ObsStreamQG::print not implemented";
+  os << "QG Stream observation operator TL/AD";
 }
 
 // -----------------------------------------------------------------------------

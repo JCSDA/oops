@@ -44,6 +44,10 @@ template <typename MODEL> class StateFixture : private boost::noncopyable {
  public:
   static const eckit::Configuration & test()  {return *getInstance().test_;}
   static const Geometry_    & resol() {return *getInstance().resol_;}
+  static void reset() {
+    getInstance().resol_.reset();
+    getInstance().test_.reset();
+  }
 
  private:
   static StateFixture<MODEL>& getInstance() {
@@ -65,7 +69,7 @@ template <typename MODEL> class StateFixture : private boost::noncopyable {
 };
 
 // -----------------------------------------------------------------------------
-
+/// \brief tests constructors and print method
 template <typename MODEL> void testStateConstructors() {
   typedef StateFixture<MODEL>   Test_;
   typedef oops::State<MODEL>    State_;
@@ -79,6 +83,7 @@ template <typename MODEL> void testStateConstructors() {
   std::unique_ptr<State_> xx1(new State_(Test_::resol(), conf));
 
   EXPECT(xx1.get());
+  oops::Log::test() << "Printing State from yaml: " << *xx1 << std::endl;
   const double norm1 = xx1->norm();
   EXPECT(oops::is_close(norm1, norm, tol));
   EXPECT(xx1->validTime() == vt);
@@ -100,6 +105,7 @@ template <typename MODEL> void testStateConstructors() {
 // Test State(const Geometry_ &, const Variables &, const util::DateTime &) constructor
   oops::Variables vars(xx1->variables());
   State_ xx3(Test_::resol(), vars, vt);
+  oops::Log::test() << "Printing empty State: " << xx3 << std::endl;
   EXPECT(xx3.norm() == 0);
   EXPECT(xx3.validTime() == vt);
   EXPECT(xx3.variables() == vars);
@@ -109,11 +115,30 @@ template <typename MODEL> void testStateConstructors() {
   EXPECT(oops::is_close(xx4.norm(), norm, tol));
   EXPECT(xx4.validTime() == vt);
   EXPECT(xx4.variables() == xx1->variables());
+}
 
-// Test explicit State(const State_ &); constructor
-// needed for the 1dvar filter
-  State_ xx5(xx1->state());
-  EXPECT(xx5.variables() == xx1->variables());
+// -----------------------------------------------------------------------------
+/*! \brief Tests State::geometry() and Geometry copy constructors
+ */
+
+template <typename MODEL> void testStateGeometry() {
+  typedef StateFixture<MODEL>   Test_;
+  typedef oops::Geometry<MODEL> Geometry_;
+  typedef oops::State<MODEL>    State_;
+
+  const double norm = Test_::test().getDouble("norm file");
+  const double tol = Test_::test().getDouble("tolerance");
+  const util::DateTime vt(Test_::test().getString("date"));
+
+  const eckit::LocalConfiguration conf(Test_::test(), "statefile");
+  State_ xx1(Test_::resol(), conf);
+
+  // get geometry from xx1 and initialize xx2 (xx2 & xx1 should be the same)
+  const Geometry_ & geometry = xx1.geometry();
+  State_ xx2(geometry, conf);
+
+  const double norm2 = xx2.norm();
+  EXPECT(oops::is_close(norm2, norm, tol));
 }
 
 // -----------------------------------------------------------------------------
@@ -153,6 +178,7 @@ template <typename MODEL> void testStateAnalyticInitialCondition() {
 
   const eckit::LocalConfiguration confgen(Test_::test(), "state generate");
   const State_ xx(Test_::resol(), confgen);
+
   const double norm = Test_::test().getDouble("norm generated state");
   const double tol = Test_::test().getDouble("tolerance");
 
@@ -199,7 +225,7 @@ template <typename MODEL> void testStateZeroAndAccumul() {
   // Ensure that a non-zero state, when acted on with accumul, is not equal to the result
   State_ zz(Test_::resol(), conf);
   zz.accumul(3.0, yy);
-  EXPECT_NOT(oops::is_close(zz.norm(), yy.norm(), tol, oops::TestVerbosity::SILENT));
+  EXPECT_NOT(oops::is_close(zz.norm(), yy.norm(), tol, 0, oops::TestVerbosity::SILENT));
 }
 
 /*! \brief validTime and updateTime tests
@@ -293,7 +319,7 @@ template <typename MODEL> void testStateReadWrite() {
     EXPECT(oops::is_close(yy.norm(), normout, tol));
 
     // Check modified state norm is not equal to the initial norm
-    EXPECT_NOT(oops::is_close(norm, normout, tol, oops::TestVerbosity::SILENT));
+    EXPECT_NOT(oops::is_close(norm, normout, tol, 0, oops::TestVerbosity::SILENT));
   }
 }
 
@@ -303,7 +329,8 @@ template <typename MODEL>
 class State : public oops::Test {
  public:
   State() {}
-  virtual ~State() {}
+  virtual ~State() {StateFixture<MODEL>::reset();}
+
  private:
   std::string testid() const override {return "test::State<" + MODEL::name() + ">";}
 
@@ -312,6 +339,8 @@ class State : public oops::Test {
 
     ts.emplace_back(CASE("interface/State/testStateConstructors")
       { testStateConstructors<MODEL>(); });
+    ts.emplace_back(CASE("interface/State/testStateGeometry")
+      { testStateGeometry<MODEL>(); });
     ts.emplace_back(CASE("interface/State/testStateAnalyticInitialCondition")
       { testStateAnalyticInitialCondition<MODEL>(); });
     ts.emplace_back(CASE("interface/State/testStateZeroAndAccumul")

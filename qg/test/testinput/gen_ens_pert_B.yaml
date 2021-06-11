@@ -24,3 +24,6 @@ geometry:
   ny: 20
   depths: [4500.0, 5500.0]
 perturbed variables: [x]
+
+test:
+  reference filename: testoutput/gen_ens_pert_B.test

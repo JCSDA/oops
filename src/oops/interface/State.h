@@ -48,7 +48,6 @@ class State : public util::Printable,
   State(const Geometry_ &, const eckit::Configuration &);
   State(const Geometry_ &, const State &);
   State(const State &);
-  explicit State(const State_ &);
   ~State();
   State & operator=(const State &);  // Is that used anywhere?
 
@@ -91,6 +90,7 @@ State<MODEL>::State(const Geometry_ & resol, const Variables & vars,
   Log::trace() << "State<MODEL>::State starting" << std::endl;
   util::Timer timer(classname(), "State");
   state_.reset(new State_(resol.geometry(), vars, time));
+  this->setObjectSize(state_->serialSize()*sizeof(double));
   Log::trace() << "State<MODEL>::State done" << std::endl;
 }
 
@@ -116,6 +116,7 @@ State<MODEL>::State(const Geometry_ & resol, const eckit::Configuration & conf)
   }
 
   state_.reset(new State_(resol.geometry(), myconf));
+  this->setObjectSize(state_->serialSize()*sizeof(double));
   Log::trace() << "State<MODEL>::State read done" << std::endl;
 }
 
@@ -128,6 +129,7 @@ State<MODEL>::State(const Geometry_ & resol, const State & other)
   Log::trace() << "State<MODEL>::State interpolated starting" << std::endl;
   util::Timer timer(classname(), "State");
   state_.reset(new State_(resol.geometry(), *other.state_));
+  this->setObjectSize(state_->serialSize()*sizeof(double));
   Log::trace() << "State<MODEL>::State interpolated done" << std::endl;
 }
 
@@ -139,19 +141,8 @@ State<MODEL>::State(const State & other) : state_(), commTime_(other.commTime_)
   Log::trace() << "State<MODEL>::State starting copy" << std::endl;
   util::Timer timer(classname(), "State");
   state_.reset(new State_(*other.state_));
+  this->setObjectSize(state_->serialSize()*sizeof(double));
   Log::trace() << "State<MODEL>::State copy done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-State<MODEL>::State(const State_ & target) : state_(), commTime_(oops::mpi::myself())
-{
-  Log::trace() << "State<MODEL>::State starting copy from derived state" << std::endl;
-  util::Timer timer(classname(), "State");
-  Log::warning() << "State<MODEL>::State creating State from derived state" << std::endl;
-  state_.reset(new State_(target));
-  Log::trace() << "State<MODEL>::State copy from derived state done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

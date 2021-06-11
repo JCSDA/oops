@@ -32,6 +32,13 @@ cost function:
 variational:
   minimizer:
     algorithm: DRPLanczos
+    online diagnostics:
+      write basis: true
+    krylov basis:
+      datadir: Data
+      date: 2010-01-01T12:00:00Z
+      exp: 4dvar.drplanczos
+      type: krylov
   iterations:
   - ninner: 10
     gradient norm reduction: 1.0e-10
@@ -70,3 +77,6 @@ output:
   first: PT3H
   frequency: PT06H
   type: an
+
+test:
+  reference filename: testoutput/4dvar.drplanczos.test

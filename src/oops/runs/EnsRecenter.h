@@ -44,6 +44,12 @@ template <typename MODEL> class EnsRecenter : public Application {
     const eckit::LocalConfiguration bkgConfig(fullConfig, "center");
     State_ x_center(resol, bkgConfig);
 
+    // Optionally zero the center
+    bool zeroCenter = fullConfig.getBool("zero center", false);
+    if (zeroCenter) {
+      x_center.zero();
+    }
+
     // Get ensemble configuration
     std::vector<eckit::LocalConfiguration> ensConfig;
     fullConfig.get("ensemble", ensConfig);
@@ -62,6 +68,12 @@ template <typename MODEL> class EnsRecenter : public Application {
     }
     Log::test() << "Ensemble mean: " << std::endl << ensmean << std::endl;
 
+    // Optionally write the mean out
+    if (fullConfig.has("ensemble mean output")) {
+      eckit::LocalConfiguration meanout(fullConfig, "ensemble mean output");
+      ensmean.write(meanout);
+    }
+
     // Setup variables
     const Variables vars(fullConfig, "recenter variables");
 
@@ -79,6 +91,7 @@ template <typename MODEL> class EnsRecenter : public Application {
       x.write(recenterout);
       Log::test() << "Recentered member " << jj << " : " << x << std::endl;
     }
+
     return 0;
   }
   // -----------------------------------------------------------------------------

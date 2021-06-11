@@ -72,3 +72,6 @@ output:
   first: PT3H
   frequency: PT06H
   type: an
+
+test:
+  reference filename: testoutput/4dvar.drplanclmp.test

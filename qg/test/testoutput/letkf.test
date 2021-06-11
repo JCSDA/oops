@@ -1,190 +1,205 @@
-Test     : Initial state for member 1:
-Test     :   Valid time: 2010-01-01T00:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -4.7030, Max=      0.9333, RMS=      1.8437
-Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
-Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
-Test     :   Valid time: 2010-01-01T06:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -4.5492, Max=      1.1027, RMS=      1.7951
-Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
-Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
-Test     :   Valid time: 2010-01-01T12:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -4.4224, Max=      1.2418, RMS=      1.7584
-Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
-Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
-Test     : Initial state for member 2:
-Test     :   Valid time: 2010-01-01T00:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -4.6931, Max=      0.9933, RMS=      1.7976
-Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
-Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
-Test     :   Valid time: 2010-01-01T06:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -4.5020, Max=      0.9853, RMS=      1.7427
-Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
-Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
-Test     :   Valid time: 2010-01-01T12:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -4.3426, Max=      0.9810, RMS=      1.6992
-Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
-Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
-Test     : Initial state for member 3:
-Test     :   Valid time: 2010-01-01T00:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -4.9074, Max=      1.0042, RMS=      1.8589
-Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
-Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
-Test     :   Valid time: 2010-01-01T06:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -4.6561, Max=      1.0048, RMS=      1.8093
-Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
-Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
-Test     :   Valid time: 2010-01-01T12:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -4.4601, Max=      1.0169, RMS=      1.7665
-Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
-Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
-Test     : Initial state for member 4:
-Test     :   Valid time: 2010-01-01T00:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -4.7276, Max=      0.9481, RMS=      1.7978
-Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
-Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
-Test     :   Valid time: 2010-01-01T06:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -4.5080, Max=      0.9857, RMS=      1.7375
-Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
-Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
-Test     :   Valid time: 2010-01-01T12:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -4.3446, Max=      1.0277, RMS=      1.6981
-Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
-Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
-Test     : Initial state for member 5:
-Test     :   Valid time: 2010-01-01T00:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -4.7215, Max=      0.9905, RMS=      1.8304
-Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
-Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
-Test     :   Valid time: 2010-01-01T06:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -4.4705, Max=      0.9627, RMS=      1.7467
-Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
-Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
-Test     :   Valid time: 2010-01-01T12:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -4.3100, Max=      0.9588, RMS=      1.6904
-Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
-Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
-Test     : H(x) for member 1:
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4020, Max=      0.8695, Average=     -1.2080
-Test     : Wind nobs= 160 Scaling=     10, Min=    -12.3724, Max=      9.5123, Average=      1.1752
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.1600, Max=     12.6346, Average=      4.6914
-Test     : H(x) for member 2:
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.3042, Max=      0.8908, Average=     -1.2262
-Test     : Wind nobs= 160 Scaling=     10, Min=    -10.5436, Max=      9.4639, Average=      1.1232
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.3163, Max=     14.4618, Average=      4.6283
-Test     : H(x) for member 3:
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4203, Max=      0.8474, Average=     -1.2861
-Test     : Wind nobs= 160 Scaling=     10, Min=     -7.8772, Max=      9.9178, Average=      1.2338
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.4582, Max=     12.6672, Average=      4.5105
-Test     : H(x) for member 4:
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.3782, Max=      0.8705, Average=     -1.2265
-Test     : Wind nobs= 160 Scaling=     10, Min=     -9.7651, Max=     10.6205, Average=      1.1342
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.0348, Max=     13.0207, Average=      4.6108
-Test     : H(x) for member 5:
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.2606, Max=      0.7697, Average=     -1.2415
-Test     : Wind nobs= 160 Scaling=     10, Min=     -6.4074, Max=      9.9153, Average=      1.3381
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.5641, Max=     12.1559, Average=      4.4377
-Test     : H(x) ensemble background mean: 
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.3531, Max=      0.8496, Average=     -1.2376
-Test     : Wind nobs= 160 Scaling=     10, Min=     -9.3325, Max=      9.8546, Average=      1.2009
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.6109, Max=     12.9881, Average=      4.5757
-Test     : background y - H(x): 
-Test     : Stream nobs= 300 Scaling=  1e+06, Min=    -42.1833, Max=     37.8450, Average=     -8.2739
-Test     : Wind nobs= 160 Scaling=      1, Min=    -37.8979, Max=     19.0936, Average=     -1.4507
-Test     : WSpeed nobs= 300 Scaling=      1, Min=    -27.8210, Max=     32.2979, Average=      4.1823
-Test     : Background mean :
-Test     :   Valid time: 2010-01-01T00:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -4.7486, Max=      0.9657, RMS=      1.8216
-Test     :   Scaling=  1e+08, Min=     -4.0032, Max=      0.0000, RMS=      2.0632
-Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
-Test     :   Valid time: 2010-01-01T06:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -4.5279, Max=      0.9305, RMS=      1.7609
-Test     :   Scaling=  1e+08, Min=     -4.0032, Max=      0.0000, RMS=      2.0632
-Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
-Test     :   Valid time: 2010-01-01T12:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -4.3566, Max=      0.9538, RMS=      1.7157
-Test     :   Scaling=  1e+08, Min=     -4.0032, Max=      0.0000, RMS=      2.0632
-Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
-Test     : H(x) for member 1:
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4486, Max=      0.9183, Average=     -1.2800
-Test     : Wind nobs= 160 Scaling=     10, Min=     -9.6559, Max=     10.8809, Average=      1.1563
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.3355, Max=     12.1541, Average=      4.6685
-Test     : H(x) for member 2:
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.3983, Max=      0.9307, Average=     -1.2890
-Test     : Wind nobs= 160 Scaling=     10, Min=     -8.3423, Max=     10.7805, Average=      1.1252
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.5873, Max=     13.0865, Average=      4.6272
-Test     : H(x) for member 3:
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4582, Max=      0.9037, Average=     -1.3205
-Test     : Wind nobs= 160 Scaling=     10, Min=     -9.1028, Max=     11.1267, Average=      1.1876
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.5230, Max=     12.2001, Average=      4.6677
-Test     : H(x) for member 4:
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4362, Max=      0.9177, Average=     -1.2892
-Test     : Wind nobs= 160 Scaling=     10, Min=     -8.4658, Max=     11.8730, Average=      1.1356
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.1949, Max=     12.3519, Average=      4.6564
-Test     : H(x) for member 5:
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.3753, Max=      0.8596, Average=     -1.2972
-Test     : Wind nobs= 160 Scaling=     10, Min=     -8.3380, Max=     11.2014, Average=      1.2450
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.7960, Max=     11.8936, Average=      4.5836
-Test     : H(x) ensemble analysis mean: 
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.4233, Max=      0.9060, Average=     -1.2952
-Test     : Wind nobs= 160 Scaling=     10, Min=     -8.5660, Max=     11.1725, Average=      1.1699
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.8757, Max=     12.3372, Average=      4.6407
-Test     : analysis y - H(x): 
-Test     : Stream nobs= 300 Scaling=  1e+06, Min=    -33.2617, Max=     25.8983, Average=     -2.5176
-Test     : Wind nobs= 160 Scaling=      1, Min=    -31.2169, Max=     22.3790, Average=     -1.1411
-Test     : WSpeed nobs= 300 Scaling=      1, Min=    -27.3667, Max=     44.2157, Average=      3.5329
-Test     : ombg RMS: 1.105e+07
-Test     : oman RMS: 6.689e+06
+Initial state for member 1:
+  Valid time: 2010-01-01T00:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -4.7030e+08, Max=  9.3328e+07, RMS=  1.8437e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+
+  Valid time: 2010-01-01T06:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -4.5492e+08, Max=  1.1027e+08, RMS=  1.7951e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -4.4224e+08, Max=  1.2418e+08, RMS=  1.7584e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+
+Initial state for member 2:
+  Valid time: 2010-01-01T00:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -4.6931e+08, Max=  9.9327e+07, RMS=  1.7976e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+
+  Valid time: 2010-01-01T06:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -4.5020e+08, Max=  9.8531e+07, RMS=  1.7427e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -4.3426e+08, Max=  9.8104e+07, RMS=  1.6992e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+
+Initial state for member 3:
+  Valid time: 2010-01-01T00:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -4.9074e+08, Max=  1.0042e+08, RMS=  1.8589e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+
+  Valid time: 2010-01-01T06:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -4.6561e+08, Max=  1.0048e+08, RMS=  1.8093e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -4.4601e+08, Max=  1.0169e+08, RMS=  1.7665e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+
+Initial state for member 4:
+  Valid time: 2010-01-01T00:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -4.7276e+08, Max=  9.4808e+07, RMS=  1.7978e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+
+  Valid time: 2010-01-01T06:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -4.5080e+08, Max=  9.8565e+07, RMS=  1.7375e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -4.3446e+08, Max=  1.0277e+08, RMS=  1.6981e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+
+Initial state for member 5:
+  Valid time: 2010-01-01T00:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -4.7215e+08, Max=  9.9052e+07, RMS=  1.8304e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+
+  Valid time: 2010-01-01T06:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -4.4705e+08, Max=  9.6271e+07, RMS=  1.7467e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -4.3100e+08, Max=  9.5883e+07, RMS=  1.6904e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+
+H(x) for member 1:
+Stream nobs= 300  Min= -5.4020e+08, Max=  8.6950e+07, Average= -1.2080e+08
+Wind nobs= 160  Min= -1.2372e+02, Max=  9.5123e+01, Average=  1.1752e+01
+WSpeed nobs= 300  Min=  1.5996e+00, Max=  1.2635e+02, Average=  4.6914e+01
+
+H(x) for member 2:
+Stream nobs= 300  Min= -5.3042e+08, Max=  8.9085e+07, Average= -1.2262e+08
+Wind nobs= 160  Min= -1.0544e+02, Max=  9.4639e+01, Average=  1.1232e+01
+WSpeed nobs= 300  Min=  3.1631e+00, Max=  1.4462e+02, Average=  4.6283e+01
+
+H(x) for member 3:
+Stream nobs= 300  Min= -5.4203e+08, Max=  8.4745e+07, Average= -1.2861e+08
+Wind nobs= 160  Min= -7.8772e+01, Max=  9.9178e+01, Average=  1.2338e+01
+WSpeed nobs= 300  Min=  4.5818e+00, Max=  1.2667e+02, Average=  4.5105e+01
+
+H(x) for member 4:
+Stream nobs= 300  Min= -5.3782e+08, Max=  8.7050e+07, Average= -1.2265e+08
+Wind nobs= 160  Min= -9.7651e+01, Max=  1.0620e+02, Average=  1.1342e+01
+WSpeed nobs= 300  Min=  3.4839e-01, Max=  1.3021e+02, Average=  4.6108e+01
+
+H(x) for member 5:
+Stream nobs= 300  Min= -5.2606e+08, Max=  7.6970e+07, Average= -1.2415e+08
+Wind nobs= 160  Min= -6.4074e+01, Max=  9.9153e+01, Average=  1.3381e+01
+WSpeed nobs= 300  Min=  5.6407e+00, Max=  1.2156e+02, Average=  4.4377e+01
+
+H(x) ensemble background mean: 
+Stream nobs= 300  Min= -5.3531e+08, Max=  8.4960e+07, Average= -1.2376e+08
+Wind nobs= 160  Min= -9.3325e+01, Max=  9.8546e+01, Average=  1.2009e+01
+WSpeed nobs= 300  Min=  6.1089e+00, Max=  1.2988e+02, Average=  4.5757e+01
+
+background y - H(x): 
+Stream nobs= 300  Min= -4.2183e+07, Max=  3.7845e+07, Average= -8.2739e+06
+Wind nobs= 160  Min= -3.7898e+01, Max=  1.9094e+01, Average= -1.4507e+00
+WSpeed nobs= 300  Min= -2.7821e+01, Max=  3.2298e+01, Average=  4.1823e+00
+
+Background mean :
+  Valid time: 2010-01-01T00:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -4.7486e+08, Max=  9.6575e+07, RMS=  1.8216e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max=  0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+
+  Valid time: 2010-01-01T06:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -4.5279e+08, Max=  9.3048e+07, RMS=  1.7609e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max=  0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -4.3566e+08, Max=  9.5381e+07, RMS=  1.7157e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max=  0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+
+Analysis mean :
+  Valid time: 2010-01-01T00:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -4.9026e+08, Max=  9.5856e+07, RMS=  1.8792e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max=  0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+
+  Valid time: 2010-01-01T06:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -4.6092e+08, Max=  9.1362e+07, RMS=  1.8251e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max=  0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -4.4655e+08, Max=  9.6366e+07, RMS=  1.7841e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max=  0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+
+H(x) for member 1:
+Stream nobs= 300  Min= -5.4486e+08, Max=  9.1832e+07, Average= -1.2800e+08
+Wind nobs= 160  Min= -9.6559e+01, Max=  1.0881e+02, Average=  1.1563e+01
+WSpeed nobs= 300  Min=  3.3554e+00, Max=  1.2154e+02, Average=  4.6685e+01
+
+H(x) for member 2:
+Stream nobs= 300  Min= -5.3983e+08, Max=  9.3072e+07, Average= -1.2890e+08
+Wind nobs= 160  Min= -8.3423e+01, Max=  1.0781e+02, Average=  1.1252e+01
+WSpeed nobs= 300  Min=  5.8725e+00, Max=  1.3087e+02, Average=  4.6272e+01
+
+H(x) for member 3:
+Stream nobs= 300  Min= -5.4582e+08, Max=  9.0372e+07, Average= -1.3205e+08
+Wind nobs= 160  Min= -9.1028e+01, Max=  1.1127e+02, Average=  1.1876e+01
+WSpeed nobs= 300  Min=  5.2300e+00, Max=  1.2200e+02, Average=  4.6677e+01
+
+H(x) for member 4:
+Stream nobs= 300  Min= -5.4362e+08, Max=  9.1775e+07, Average= -1.2892e+08
+Wind nobs= 160  Min= -8.4658e+01, Max=  1.1873e+02, Average=  1.1356e+01
+WSpeed nobs= 300  Min=  1.9489e+00, Max=  1.2352e+02, Average=  4.6564e+01
+
+H(x) for member 5:
+Stream nobs= 300  Min= -5.3753e+08, Max=  8.5962e+07, Average= -1.2972e+08
+Wind nobs= 160  Min= -8.3380e+01, Max=  1.1201e+02, Average=  1.2450e+01
+WSpeed nobs= 300  Min=  7.9598e+00, Max=  1.1894e+02, Average=  4.5836e+01
+
+H(x) ensemble analysis mean: 
+Stream nobs= 300  Min= -5.4233e+08, Max=  9.0602e+07, Average= -1.2952e+08
+Wind nobs= 160  Min= -8.5660e+01, Max=  1.1173e+02, Average=  1.1699e+01
+WSpeed nobs= 300  Min=  8.7572e+00, Max=  1.2337e+02, Average=  4.6407e+01
+
+analysis y - H(x): 
+Stream nobs= 300  Min= -3.3262e+07, Max=  2.5898e+07, Average= -2.5176e+06
+Wind nobs= 160  Min= -3.1217e+01, Max=  2.2379e+01, Average= -1.1411e+00
+WSpeed nobs= 300  Min= -2.7367e+01, Max=  4.4216e+01, Average=  3.5329e+00
+
+ombg RMS: 1.105e+07
+oman RMS: 6.689e+06

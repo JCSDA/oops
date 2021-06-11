@@ -1,5 +1,5 @@
 ! (C) Copyright 2009-2016 ECMWF.
-! (C) Copyright 2017-2019 UCAR.
+! (C) Copyright 2017-2021 UCAR.
 !
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -107,29 +107,6 @@ call qg_obsvec_copy(self,other)
 
 end subroutine qg_obsvec_copy_c
 ! ------------------------------------------------------------------------------
-!> Copy a local subset of the observation vector
-subroutine qg_obsvec_copy_local_c(c_key_self,c_key_other, c_idxsize,c_idx) bind(c,name='qg_obsvec_copy_local_f90')
-
-implicit none
-
-! Passed variables
-integer(c_int),intent(in) :: c_key_self  !< Observation vector
-integer(c_int),intent(in) :: c_key_other !< Other observation vector
-integer(c_int),intent(in) :: c_idxsize
-integer(c_int),intent(in) :: c_idx(c_idxsize)
-
-! Local variables
-type(qg_obsvec),pointer :: self,other
-
-! Interface
-call qg_obsvec_registry%get(c_key_self,self)
-call qg_obsvec_registry%get(c_key_other,other)
-
-! Call Fortran
-call qg_obsvec_copy_local(self,other,c_idx)
-
-end subroutine qg_obsvec_copy_local_c
-! ------------------------------------------------------------------------------
 !> Set observation vector to zero
 subroutine qg_obsvec_zero_c(c_key_self) bind(c,name='qg_obsvec_zero_f90')
 
@@ -148,6 +125,66 @@ call qg_obsvec_registry%get(c_key_self,self)
 call qg_obsvec_zero(self)
 
 end subroutine qg_obsvec_zero_c
+! ------------------------------------------------------------------------------
+!> Set i-th value of the observation vector to zero
+subroutine qg_obsvec_zero_ith_c(c_key_self, i) bind(c,name='qg_obsvec_zero_ith_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_self !< Observation vector
+integer(c_int),intent(in) :: i          !< index of value to be set to zero
+! Local variables
+type(qg_obsvec),pointer :: self
+
+! Interface
+call qg_obsvec_registry%get(c_key_self,self)
+
+! Call Fortran
+! increase index by 1 (C indices start with 0; Fortran indices start with 1)
+call qg_obsvec_zero_ith(self, i+1)
+
+end subroutine qg_obsvec_zero_ith_c
+! ------------------------------------------------------------------------------
+!> Set observation vector to ones
+subroutine qg_obsvec_ones_c(c_key_self) bind(c,name='qg_obsvec_ones_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_self !< Observation vector
+
+! Local variables
+type(qg_obsvec),pointer :: self
+
+! Interface
+call qg_obsvec_registry%get(c_key_self,self)
+
+! Call Fortran
+call qg_obsvec_ones(self)
+
+end subroutine qg_obsvec_ones_c
+! ------------------------------------------------------------------------------
+!> Mask self observation vector (set values to missing where mask is set)
+subroutine qg_obsvec_mask_c(c_key_self,c_key_mask) bind(c,name='qg_obsvec_mask_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_self  !< Observation vector
+integer(c_int),intent(in) :: c_key_mask  !< Mask
+
+! Local variables
+type(qg_obsvec),pointer :: self,mask
+
+! Interface
+call qg_obsvec_registry%get(c_key_self,self)
+call qg_obsvec_registry%get(c_key_mask,mask)
+
+! Call Fortran
+call qg_obsvec_mask(self,mask)
+
+end subroutine qg_obsvec_mask_c
 ! ------------------------------------------------------------------------------
 !> Multiply observation vector with a scalar
 subroutine qg_obsvec_mul_scal_c(c_key_self,zz) bind(c,name='qg_obsvec_mul_scal_f90')
@@ -337,13 +374,12 @@ call qg_obsvec_dotprod(obsvec1,obsvec2,zz)
 end subroutine qg_obsvec_dotprod_c
 ! ------------------------------------------------------------------------------
 !> Compute observation vector statistics
-subroutine qg_obsvec_stats_c(c_key_self,scaling,zmin,zmax,zavg) bind(c,name='qg_obsvec_stats_f90')
+subroutine qg_obsvec_stats_c(c_key_self,zmin,zmax,zavg) bind(c,name='qg_obsvec_stats_f90')
 
 implicit none
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_self !< Observation vector
-real(c_double),intent(inout) :: scaling !< Scaling
 real(c_double),intent(inout) :: zmin    !< Minimum
 real(c_double),intent(inout) :: zmax    !< Maximum
 real(c_double),intent(inout) :: zavg    !< Average
@@ -355,11 +391,11 @@ type(qg_obsvec),pointer :: self
 call qg_obsvec_registry%get(c_key_self,self)
 
 ! Call Fortran
-call qg_obsvec_stats(self,scaling,zmin,zmax,zavg)
+call qg_obsvec_stats(self,zmin,zmax,zavg)
 
 end subroutine qg_obsvec_stats_c
 ! ------------------------------------------------------------------------------
-!> Get observation vector size
+!> Get number of observations (not missing)
 subroutine qg_obsvec_nobs_c(c_key_self,kobs) bind(c,name='qg_obsvec_nobs_f90')
 
 implicit none
@@ -378,17 +414,15 @@ call qg_obsvec_registry%get(c_key_self,self)
 call qg_obsvec_nobs(self,kobs)
 
 end subroutine qg_obsvec_nobs_c
-
 ! ------------------------------------------------------------------------------
-!> Get observation value at iob location
-subroutine qg_obsvec_getat_c(c_key_self,iob,val) bind(c,name='qg_obsvec_getat_f90')
+!> Get observation vector size
+subroutine qg_obsvec_size_c(c_key_self,kobs) bind(c,name='qg_obsvec_size_f90')
 
 implicit none
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_self !< Observation vector
-integer(c_int),intent(in) :: iob     !< Observation index
-real(c_double),intent(out):: val    !< ob. value
+integer(c_int),intent(inout) :: kobs    !< Observation vector size
 
 ! Local vector
 type(qg_obsvec),pointer :: self
@@ -397,9 +431,55 @@ type(qg_obsvec),pointer :: self
 call qg_obsvec_registry%get(c_key_self,self)
 
 ! Call Fortran
-call qg_obsvec_getat(self,iob,val)
+call qg_obsvec_size(self,kobs)
 
-end subroutine qg_obsvec_getat_c
+end subroutine qg_obsvec_size_c
+! ------------------------------------------------------------------------------
+!> Get observation vector size (only non-masked observations)
+subroutine qg_obsvec_nobs_withmask_c(c_key_self,c_key_mask,kobs) bind(c,name='qg_obsvec_nobs_withmask_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_self !< Observation vector
+integer(c_int),intent(in) :: c_key_mask !< Mask
+integer(c_int),intent(inout) :: kobs    !< Observation vector size
+
+! Local vector
+type(qg_obsvec),pointer :: self, mask
+
+! Interface
+call qg_obsvec_registry%get(c_key_self,self)
+call qg_obsvec_registry%get(c_key_mask,mask)
+
+! Call Fortran
+call qg_obsvec_nobs_withmask(self,mask,kobs)
+
+end subroutine qg_obsvec_nobs_withmask_c
+
+! ------------------------------------------------------------------------------
+!> Get all non-masked out observation values
+subroutine qg_obsvec_get_withmask_c(c_key_self,c_key_mask,vals,nvals) bind(c,name='qg_obsvec_get_withmask_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_self !< Observation vector
+integer(c_int),intent(in) :: c_key_mask !< Mask
+integer(c_int),intent(in) :: nvals      !< number of obs
+real(c_double),intent(out),dimension(nvals) :: vals  !< ob. values
+
+! Local vector
+type(qg_obsvec),pointer :: self, mask
+
+! Interface
+call qg_obsvec_registry%get(c_key_self,self)
+call qg_obsvec_registry%get(c_key_mask,mask)
+
+! Call Fortran
+call qg_obsvec_get_withmask(self,mask,vals,nvals)
+
+end subroutine qg_obsvec_get_withmask_c
 
 ! ------------------------------------------------------------------------------
 end module qg_obsvec_interface

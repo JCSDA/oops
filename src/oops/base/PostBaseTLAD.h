@@ -79,9 +79,6 @@ class PostBaseTLAD : private boost::noncopyable {
     this->doFinalizeTL(dx);
   }
 
-/// Return TL dual space output
-  virtual std::unique_ptr<GeneralizedDepartures> releaseOutputFromTL() = 0;
-
 /// Adjoint methods
   void initializeAD(Increment_ & dx, const util::DateTime & bgn,
                     const util::Duration & step) {

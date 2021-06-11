@@ -30,6 +30,7 @@
 #include "oops/util/NamedEnumerator.h"
 #include "oops/util/parameters/ObjectJsonSchema.h"
 #include "oops/util/parameters/Parameters.h"
+#include "oops/util/PartialDateTime.h"
 #include "oops/util/stringFunctions.h"  // for join()
 
 namespace oops {
@@ -304,6 +305,35 @@ struct ParameterTraits<util::Duration> {
   }
 };
 
+
+/// \brief Specialization for PartialDateTime objects.
+template <>
+struct ParameterTraits<util::PartialDateTime> {
+  static boost::optional<util::PartialDateTime> get(util::CompositePath &path,
+                                                    const eckit::Configuration &config,
+                                                    const std::string& name) {
+    std::string value;
+    if (config.get(name, value)) {
+      return util::PartialDateTime(value);
+    } else {
+      return boost::none;
+    }
+  }
+
+  static void set(eckit::LocalConfiguration &config,
+             const std::string &name,
+             const util::PartialDateTime &value) {
+    config.set(name, value.toString());
+  }
+
+  static ObjectJsonSchema jsonSchema(const std::string &name) {
+    std::string expression = R"("^([0-9]{4}|\\*{4})-([0-9]{2}|\\*{2})-([0-9]{2}|\\*{2}))"
+                             R"(T([0-9]{2}|\\*{2}):([0-9]{2}|\\*{2}):([0-9]{2}|\\*{2})Z$")";
+    return ObjectJsonSchema({{name, {{"type", "\"string\""},
+                                     {"pattern", expression}}}});
+  }
+};
+
 /// \brief Specialization for vectors.
 template <typename Value>
 struct ParameterTraits<std::vector<Value>, std::false_type> {
@@ -439,6 +469,30 @@ struct ParameterTraits<std::map<Key, Value>, std::false_type> {
                                      {"patternProperties", patternProperties.str()}}}});
   }
 };
+
+/// \brief Specialization for set<int>.
+///
+/// This specialization handles conversion of std::set<int> to and from string-valued YAML options
+/// having the form of comma-separated lists of single integers or ranges of integers. Examples:
+///
+///     option_a: 1
+///     option_b: 10-15
+///     option_c: 8,10, 11-15, 1,3
+///
+/// \warning The current implementation can only handle non-negative integers.
+template <>
+struct ParameterTraits<std::set<int>, std::false_type> {
+  static boost::optional<std::set<int>> get(util::CompositePath &path,
+                                            const eckit::Configuration &config,
+                                            const std::string &name);
+
+  static void set(eckit::LocalConfiguration &config,
+                  const std::string &name,
+                  const std::set<int> &value);
+
+  static ObjectJsonSchema jsonSchema(const std::string &name);
+};
+
 
 // Note: to avoid coupling this file too tightly with headers defining a lot of disparate classes,
 // only specializations of ParameterTraits for commonly used types should be added here.

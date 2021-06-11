@@ -36,7 +36,7 @@ integer :: iobs
 
 ! Loop over observations
 do iobs=1,gom%nobs
-  hofx%values(1,iobs) = gom%values(1,iobs)+bias
+  hofx%values(1,iobs) = gom%x(iobs)+bias
 enddo
 
 end subroutine qg_stream_equiv
@@ -47,16 +47,16 @@ subroutine qg_stream_equiv_ad(gom,hofx,bias)
 implicit none
 
 ! Passed variables
-type(qg_gom),intent(inout) :: gom        !< GOM
-type(qg_obsvec),intent(in) :: hofx !< Observation vector
-real(kind_real),intent(inout) :: bias    !< Bias
+type(qg_gom),intent(inout) :: gom     !< GOM
+type(qg_obsvec),intent(in) :: hofx    !< Observation vector
+real(kind_real),intent(inout) :: bias !< Bias
 
 ! Local variables
 integer :: iobs
 
 ! Loop over observations
 do iobs=1,gom%nobs
-  gom%values(1,iobs) = hofx%values(1,iobs)
+  gom%x(iobs) = hofx%values(1,iobs)
   bias = bias+hofx%values(1,iobs)
 enddo
 

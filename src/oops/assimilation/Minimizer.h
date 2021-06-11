@@ -22,6 +22,7 @@
 #include "oops/assimilation/DualVector.h"
 #include "oops/assimilation/HMatrix.h"
 #include "oops/assimilation/HtMatrix.h"
+#include "oops/assimilation/MinimizerUtils.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
 #include "oops/util/dot_product.h"
@@ -78,6 +79,9 @@ Minimizer<MODEL, OBS>::minimize(const eckit::Configuration & config) {
 
   // Minimize
   ControlIncrement<MODEL, OBS> * dx = this->doMinimize(config);
+
+  // Write increment
+  writeIncrement(config, *dx, outerIteration_);
 
   // TLM propagation test
   this->tlmPropagTest(config, *dx);

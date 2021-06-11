@@ -56,8 +56,9 @@ observations:
     obs type: Stream
   obs error:
     covariance model: diagonal
-    localization:
-      lengthscale: 5e6
+  obs localization:
+    localization method: Heaviside
+    lengthscale: 5e6
 - obs operator:
     obs type: Wind
   obs space:
@@ -68,8 +69,9 @@ observations:
     obs type: Wind
   obs error:
     covariance model: diagonal
-    localization:
-      lengthscale: 5e6
+  obs localization:
+    localization method: Heaviside
+    lengthscale: 5e6
 - obs operator:
     obs type: WSpeed
   obs space:
@@ -80,8 +82,9 @@ observations:
     obs type: WSpeed
   obs error:
     covariance model: diagonal
-    localization:
-      lengthscale: 5e6
+  obs localization:
+    localization method: Heaviside
+    lengthscale: 5e6
 
 driver:
 
@@ -105,3 +108,6 @@ output:
     date: *date_end
     exp: letkf.end.%{member}%
     type: an
+
+test:
+  reference filename: testoutput/letkf.test

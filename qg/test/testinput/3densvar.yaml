@@ -44,7 +44,7 @@ cost function:
   - obs error:
       covariance model: diagonal
     obs operator:
-      obs type: Stream  
+      obs type: Stream
     obs space:
       obsdatain:
         obsfile: Data/truth.obs3d.nc
@@ -54,7 +54,7 @@ cost function:
   - obs error:
       covariance model: diagonal
     obs operator:
-      obs type: Wind  
+      obs type: Wind
     obs space:
       obsdatain:
         obsfile: Data/truth.obs3d.nc
@@ -64,7 +64,7 @@ cost function:
   - obs error:
       covariance model: diagonal
     obs operator:
-      obs type: WSpeed  
+      obs type: WSpeed
     obs space:
       obsdatain:
         obsfile: Data/truth.obs3d.nc
@@ -101,3 +101,6 @@ output:
   exp: 3densvar
   frequency: PT6H
   type: an
+
+test:
+  reference filename: testoutput/3densvar.test

@@ -7,7 +7,7 @@ cost function:
   window begin: 2010-01-01T00:00:00Z
   window length: PT1H
   geometry:
-    resol: 3
+    resol: 4
   analysis variables: [x]
   background:
     date: 2010-01-01T00:30:00Z
@@ -32,7 +32,7 @@ variational:
   - ninner: 10
     gradient norm reduction: 1e-10
     geometry:
-      resol: 3
+      resol: 4
     diagnostics:
       departures: ombg
     test: on
@@ -44,3 +44,7 @@ output:
   exp: simplifiedl95
   frequency: PT1H
   type: an
+
+test:
+  reference filename: testoutput/simplifiedl95_MINRES.test
+  float relative tolerance: 1e-8

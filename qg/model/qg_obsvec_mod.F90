@@ -11,6 +11,7 @@ module qg_obsvec_mod
 
 use iso_c_binding
 use kinds
+use missing_values_mod
 use random_mod
 
 implicit none
@@ -18,9 +19,11 @@ implicit none
 private
 public :: qg_obsvec
 public :: qg_obsvec_registry
-public :: qg_obsvec_setup,qg_obsvec_clone,qg_obsvec_delete,qg_obsvec_copy,qg_obsvec_zero,qg_obsvec_mul_scal,qg_obsvec_add, &
-        & qg_obsvec_sub,qg_obsvec_mul,qg_obsvec_div,qg_obsvec_axpy,qg_obsvec_invert,qg_obsvec_random,qg_obsvec_dotprod, &
-        & qg_obsvec_stats,qg_obsvec_nobs,qg_obsvec_copy_local,qg_obsvec_getat
+public :: qg_obsvec_setup,qg_obsvec_clone,qg_obsvec_delete,qg_obsvec_copy,qg_obsvec_zero, &
+        & qg_obsvec_zero_ith, qg_obsvec_ones, qg_obsvec_mask, qg_obsvec_mul_scal,qg_obsvec_add, &
+        & qg_obsvec_sub,qg_obsvec_mul,qg_obsvec_div,qg_obsvec_axpy,qg_obsvec_invert, &
+        & qg_obsvec_random,qg_obsvec_dotprod,qg_obsvec_stats, &
+        & qg_obsvec_size,qg_obsvec_nobs,qg_obsvec_nobs_withmask,qg_obsvec_get_withmask
 ! ------------------------------------------------------------------------------
 interface
   subroutine qg_obsvec_random_i(odb,nn,zz) bind(c,name='qg_obsvec_random_f')
@@ -36,6 +39,7 @@ type qg_obsvec
   integer :: nobs = 0                        !< Number of observations
   integer :: nlev = 0                        !< Number of levels
   real(kind_real),allocatable :: values(:,:) !< Values
+  real(kind_real) :: missing                 !< Missing value
 end type qg_obsvec
 
 #define LISTED_TYPE qg_obsvec
@@ -75,6 +79,7 @@ allocate(self%values(self%nlev,self%nobs))
 
 ! Initialization
 self%values = 0.0_kind_real
+self%missing = missing_value(self%missing)
 
 end subroutine qg_obsvec_setup
 ! ------------------------------------------------------------------------------
@@ -90,6 +95,7 @@ type(qg_obsvec),intent(in) :: other   !< Other observation vector
 ! Set sizes
 self%nlev = other%nlev
 self%nobs = other%nobs
+self%missing = other%missing
 
 ! Allocation
 allocate(self%values(self%nlev,self%nobs))
@@ -125,6 +131,7 @@ if ((other%nlev/=self%nlev).or.(other%nobs/=self%nobs)) then
   ! Set sizes
   self%nlev = other%nlev
   self%nobs = other%nobs
+  self%missing = other%missing
 
   ! Allocation
   allocate(self%values(self%nlev,self%nobs))
@@ -134,38 +141,6 @@ endif
 self%values = other%values
 
 end subroutine qg_obsvec_copy
-! ------------------------------------------------------------------------------
-!> Copy a local subset of the observation vector
-subroutine qg_obsvec_copy_local(self,other,idx)
-
-implicit none
-
-! Passed variables
-type(qg_obsvec),intent(inout) :: self !< Observation vector
-type(qg_obsvec),intent(in) :: other   !< Other observation vector
-integer,intent(in) :: idx(:)
-
-! local variables
-integer :: i
-
-if ((other%nlev/=self%nlev).or.(size(idx)/=self%nobs)) then
-  ! Release memory
-  deallocate(self%values)
-
-  ! Set sizes
-  self%nlev = other%nlev
-  self%nobs = size(idx)
-
-  ! Allocation
-  allocate(self%values(self%nlev,self%nobs))
-endif
-
-! Copy data
-do i = 1,self%nobs
-  self%values(:,i) = other%values(:,idx(i)+1)
-enddo
-
-end subroutine qg_obsvec_copy_local
 ! ------------------------------------------------------------------------------
 !> Set observation vector to zero
 subroutine qg_obsvec_zero(self)
@@ -180,6 +155,48 @@ self%values = 0.0
 
 end subroutine qg_obsvec_zero
 ! ------------------------------------------------------------------------------
+!> Set i-th value of observation vector to zero
+subroutine qg_obsvec_zero_ith(self, i)
+
+implicit none
+
+! Passed variables
+type(qg_obsvec),intent(inout) :: self !< Observation vector
+integer, intent(in) :: i
+
+! Set observation vector to zero
+self%values(:,i) = 0.0
+
+end subroutine qg_obsvec_zero_ith
+! ------------------------------------------------------------------------------
+!> Set observation vector to ones
+subroutine qg_obsvec_ones(self)
+
+implicit none
+
+! Passed variables
+type(qg_obsvec),intent(inout) :: self !< Observation vector
+
+! Set observation vector to ones
+self%values = 1.0
+
+end subroutine qg_obsvec_ones
+! ------------------------------------------------------------------------------
+!> Mask observation vector (set values to missing values where mask == 1)
+subroutine qg_obsvec_mask(self,mask)
+implicit none
+
+! Passed variables
+type(qg_obsvec),intent(inout) :: self !< Observation vector
+type(qg_obsvec),intent(in) :: mask    !< mask
+
+if ((self%nobs/=mask%nobs).or.(self%nlev/=mask%nlev)) call abor1_ftn('qg_obsvec_mask: inconsistent sizes')
+
+where(mask%values == 1) self%values = self%missing
+
+end subroutine qg_obsvec_mask
+
+! ------------------------------------------------------------------------------
 !> Multiply observation vector with a scalar
 subroutine qg_obsvec_mul_scal(self,zz)
 
@@ -190,7 +207,7 @@ type(qg_obsvec),intent(inout) :: self !< Observation vector
 real(kind_real),intent(in) :: zz      !< Multiplier
 
 ! Multiply observation vector with a scalar
-self%values = zz*self%values
+where(self%values /= self%missing) self%values = zz*self%values
 
 end subroutine qg_obsvec_mul_scal
 ! ------------------------------------------------------------------------------
@@ -203,8 +220,14 @@ implicit none
 type(qg_obsvec),intent(inout) :: self !< Observation vector
 type(qg_obsvec),intent(in) :: other   !< Other observation vector
 
+if ((self%nobs/=other%nobs).or.(self%nlev/=other%nlev)) call abor1_ftn('qg_obsvec_add: inconsistent sizes')
+
 ! Add observation vector
-self%values = self%values+other%values
+where(self%values /= self%missing .and. other%values /= other%missing)
+  self%values = self%values+other%values
+elsewhere
+  self%values = self%missing
+endwhere
 
 end subroutine qg_obsvec_add
 ! ------------------------------------------------------------------------------
@@ -217,8 +240,14 @@ implicit none
 type(qg_obsvec),intent(inout) :: self !< Observation vector
 type(qg_obsvec),intent(in) :: other   !< Other observation vector
 
+if ((self%nobs/=other%nobs).or.(self%nlev/=other%nlev)) call abor1_ftn('qg_obsvec_sub: inconsistent sizes')
+
 ! Subtract observation vector
-self%values = self%values-other%values
+where(self%values /= self%missing .and. other%values /= other%missing)
+  self%values = self%values-other%values
+elsewhere
+  self%values = self%missing
+endwhere
 
 end subroutine qg_obsvec_sub
 ! ------------------------------------------------------------------------------
@@ -231,8 +260,14 @@ implicit none
 type(qg_obsvec),intent(inout) :: self !< Observation vector
 type(qg_obsvec),intent(in) :: other   !< Other observation vector
 
+if ((self%nobs/=other%nobs).or.(self%nlev/=other%nlev)) call abor1_ftn('qg_obsvec_mul: inconsistent sizes')
+
 ! Multiply observation vector
-self%values = self%values*other%values
+where(self%values /= self%missing .and. other%values /= other%missing)
+  self%values = self%values*other%values
+elsewhere
+  self%values = self%missing
+endwhere
 
 end subroutine qg_obsvec_mul
 ! ------------------------------------------------------------------------------
@@ -245,8 +280,14 @@ implicit none
 type(qg_obsvec),intent(inout) :: self !< Observation vector
 type(qg_obsvec),intent(in) :: other   !< Other observation vector
 
+if ((self%nobs/=other%nobs).or.(self%nlev/=other%nlev)) call abor1_ftn('qg_obsvec_div: inconsistent sizes')
+
 ! Divide observation vector
-self%values = self%values/other%values
+where(self%values /= self%missing .and. other%values /= other%missing)
+  self%values = self%values/other%values
+elsewhere
+  self%values = self%missing
+endwhere
 
 end subroutine qg_obsvec_div
 ! ------------------------------------------------------------------------------
@@ -260,8 +301,14 @@ type(qg_obsvec),intent(inout) :: self !< Observation vector
 real(kind_real),intent(in) :: zz      !< Multiplier
 type(qg_obsvec),intent(in) :: other   !< Other observation vector
 
+if ((self%nobs/=other%nobs).or.(self%nlev/=other%nlev)) call abor1_ftn('qg_obsvec_axpy: inconsistent sizes')
+
 ! Apply axpy on observation vector
-self%values = self%values+zz*other%values
+where(self%values /= self%missing .and. other%values /= other%missing)
+  self%values = self%values+zz*other%values
+elsewhere
+  self%values = self%missing
+endwhere
 
 end subroutine qg_obsvec_axpy
 ! ------------------------------------------------------------------------------
@@ -274,7 +321,7 @@ implicit none
 type(qg_obsvec),intent(inout) :: self !< Observation vector
 
 ! Invert observation vector
-self%values = 1.0/self%values
+where(self%values /= self%missing) self%values = 1.0/self%values
 
 end subroutine qg_obsvec_invert
 ! ------------------------------------------------------------------------------
@@ -320,48 +367,32 @@ zz = 0.0
 ! Loop over values
 do jobs=1,obsvec1%nobs
   do jlev=1,obsvec1%nlev
-    zz = zz+obsvec1%values(jlev,jobs)*obsvec2%values(jlev,jobs)
+    if (obsvec1%values(jlev, jobs) /= obsvec1%missing .and. &
+        obsvec2%values(jlev, jobs) /= obsvec2%missing)      &
+      zz = zz+obsvec1%values(jlev,jobs)*obsvec2%values(jlev,jobs)
   enddo
 enddo
 
 end subroutine qg_obsvec_dotprod
 ! ------------------------------------------------------------------------------
 !> Compute observation vector statistics
-subroutine qg_obsvec_stats(self,scaling,zmin,zmax,zavg)
+subroutine qg_obsvec_stats(self,zmin,zmax,zavg)
 
 implicit none
 
 ! Passed variables
 type(qg_obsvec),intent(in):: self        !< Observation vector
-real(kind_real),intent(inout) :: scaling !< Scaling
 real(kind_real),intent(inout) :: zmin    !< Minimum
 real(kind_real),intent(inout) :: zmax    !< Maximum
 real(kind_real),intent(inout) :: zavg    !< Average
 
-! Local variables
-integer :: jlev,jobs
-real(kind_real) :: expo
-
-if (self%nobs>0.and.self%nlev>0) then
+if (self%nobs*self%nlev>0) then
   ! Compute statistics
   if (.not.allocated(self%values)) call abor1_ftn('qg_obsvec_stats: obs vector not allocated')
-
-  ! Initialization
-  zmin = huge(1.0)
-  zmax = -huge(1.0)
-  zavg = 0.0
-
-  ! Loop over values
-  do jobs=1,self%nobs
-    do jlev=1,self%nlev
-      zmin = min(self%values(jlev,jobs),zmin)
-      zmax = max(self%values(jlev,jobs),zmax)
-      zavg = zavg+self%values(jlev,jobs)
-    enddo
-  enddo
-
-  ! Normalization
-  zavg = zavg/real(self%nlev*self%nobs,kind_real)
+  zmin = minval(self%values, mask = (self%values /= self%missing))
+  zmax = maxval(self%values, mask = (self%values /= self%missing))
+  zavg = sum(self%values, mask = (self%values /= self%missing)) /    &
+         count(mask = (self%values /= self%missing))
 else
   ! Empty observation vector
   zmin = 0.0
@@ -369,18 +400,17 @@ else
   zavg = 0.0
 endif
 
-! Scaling
-if (abs(zavg)>0.0) then
-  expo = aint(log(abs(zavg))/log(10.0_kind_real))
-  scaling = 10.0**expo
-else
-  scaling = 1.0
-endif
-zmin = zmin/scaling
-zmax = zmax/scaling
-zavg = zavg/scaling
-
 end subroutine qg_obsvec_stats
+
+! ------------------------------------------------------------------------------
+!> Get observation vector size
+subroutine qg_obsvec_size(self,kobs)
+implicit none
+type(qg_obsvec),intent(in) :: self !< Observation vector
+integer,intent(inout) :: kobs      !< Observation vector size
+kobs = size(self%values) + 2
+end subroutine qg_obsvec_size
+
 ! ------------------------------------------------------------------------------
 !> Get observation vector size
 subroutine qg_obsvec_nobs(self,kobs)
@@ -392,32 +422,53 @@ type(qg_obsvec),intent(in) :: self !< Observation vector
 integer,intent(inout) :: kobs      !< Observation vector size
 
 ! Get observation vector size
-kobs = self%nobs*self%nlev
+kobs = count(mask = (self%values /= self%missing))
 
 end subroutine qg_obsvec_nobs
 
 ! ------------------------------------------------------------------------------
-!> Get value from observation vector at location (iob)
-subroutine qg_obsvec_getat(self,iob,val)
+!> Get observation vector size (only non-masked observations)
+subroutine qg_obsvec_nobs_withmask(self,obsmask,kobs)
+
+implicit none
+
+! Passed variables
+type(qg_obsvec),intent(in) :: self    !< Observation vector
+type(qg_obsvec),intent(in) :: obsmask !< mask
+integer,intent(inout) :: kobs         !< Observation vector size
+
+! Get observation vector size
+kobs = count(mask = (self%values /= self%missing) .and. (obsmask%values == 0))
+
+end subroutine qg_obsvec_nobs_withmask
+
+! ------------------------------------------------------------------------------
+!> Get non-missing values from observation vector into vals array
+subroutine qg_obsvec_get_withmask(self,obsmask,vals,nvals)
 
 implicit none
 
 ! Passed variables
 type(qg_obsvec),intent(in) :: self !< Observation vector
-integer,intent(in) :: iob          !< index into observation vector
-real(kind_real), intent(out) :: val!< returned value
+type(qg_obsvec),intent(in) :: obsmask !< mask
+integer,intent(in) :: nvals        !< Number of non-missing values
+real(kind_real), dimension(nvals), intent(out) :: vals!< returned value
 
-integer :: i1, i2
+integer :: jobs, jlev, jval
 
-i1 = iob / self%nobs + 1
-i2 = iob - self%nobs*(i1-1) + 1
-! Retrieve obs. value from vector
+jval = 1
+! Loop over values
+do jobs=1,self%nobs
+  do jlev=1,self%nlev
+    if ((self%values(jlev, jobs) /= self%missing) .and. (obsmask%values(jlev, jobs) == 0)) then
+      if (jval > nvals) call abor1_ftn('qg_obsvec_get: inconsistent vector size')
+      vals(jval) = self%values(jlev, jobs)
+      jval = jval + 1
+    endif
+  enddo
+enddo
 
-if (i1>self%nlev .or. i2>self%nobs) call abor1_ftn ('qg_obsvec_getat: index is out of bounds')
-
-val = self%values(i1,i2)
-
-end subroutine qg_obsvec_getat
+end subroutine qg_obsvec_get_withmask
 
 ! ------------------------------------------------------------------------------
 end module qg_obsvec_mod

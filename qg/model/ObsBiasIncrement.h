@@ -14,6 +14,7 @@
 #include <iostream>
 #include <vector>
 
+#include "model/ObsBiasParameters.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Serializable.h"
 
@@ -30,12 +31,12 @@ namespace qg {
 class ObsBiasIncrement : public util::Printable,
                          public util::Serializable {
  public:
+  typedef ObsBiasParameters Parameters_;
+
 /// Constructor, destructor
   ObsBiasIncrement();
-  ObsBiasIncrement(const ObsSpaceQG &, const eckit::Configuration &);
+  ObsBiasIncrement(const ObsSpaceQG &, const Parameters_ &);
   ObsBiasIncrement(const ObsBiasIncrement &, const bool copy = true);
-  ObsBiasIncrement(const ObsBiasIncrement &, const eckit::Configuration &);
-  ~ObsBiasIncrement() {}
 
 /// Linear algebra operators
   void diff(const ObsBias &, const ObsBias &);

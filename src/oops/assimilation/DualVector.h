@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -12,6 +12,7 @@
 #define OOPS_ASSIMILATION_DUALVECTOR_H_
 
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -58,6 +59,8 @@ template<typename MODEL, typename OBS> class DualVector {
   void zero();
   void axpy(const double, const DualVector &);
   double dot_product_with(const DualVector &) const;
+
+  void saveDep(const std::string &) const;
 
 // Clear everything
   void clear();
@@ -244,6 +247,13 @@ bool DualVector<MODEL, OBS>::compatible(const DualVector & other) const {
              && (dxjo_.size() == other.dxjo_.size())
              && (dxjc_.size() == other.dxjc_.size());
   return lcheck;
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL, typename OBS>
+void DualVector<MODEL, OBS>::saveDep(const std::string & name) const {
+  for (unsigned jj = 0; jj < dxjo_.size(); ++jj) {
+    dxjo_[jj]->save(name);
+  }
 }
 // -----------------------------------------------------------------------------
 }  // namespace oops

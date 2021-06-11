@@ -1,36 +1,32 @@
-Test     : CostJb   : Nonlinear Jb = 0
-Test     : CostJo   : Nonlinear Jo(Stream) = 11062.1, nobs = 800, Jo/n = 13.8277, err = 4e+06
-Test     : CostJo   : Nonlinear Jo(Wind) = 1356.83, nobs = 800, Jo/n = 1.69604, err = 6
-Test     : CostJo   : Nonlinear Jo(WSpeed) = 179.84, nobs = 400, Jo/n = 0.4496, err = 12
-Test     : CostJcDFI: Nonlinear Jc = 57.9613
-Test     : CostFunction: Nonlinear J = 12656.8
-Test     : DRPLanczosMinimizer: reduction in residual norm = 0.0147078
-Test     : CostFunction::addIncrement: Analysis: 
-Test     :   Valid time: 2010-01-01T00:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -5.1729, Max=      1.0492, RMS=      1.8898
-Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
-Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
-Test     : CostJb   : Nonlinear Jb = 30.17
-Test     : CostJo   : Nonlinear Jo(Stream) = 557.1, nobs = 800, Jo/n = 0.6964, err = 4e+06
-Test     : CostJo   : Nonlinear Jo(Wind) = 146, nobs = 800, Jo/n = 0.1825, err = 6
-Test     : CostJo   : Nonlinear Jo(WSpeed) = 28.32, nobs = 400, Jo/n = 0.0708, err = 12
-Test     : CostJcDFI: Nonlinear Jc = 64.67
-Test     : CostFunction: Nonlinear J = 826.2
-Test     : DRPLanczosMinimizer: reduction in residual norm = 0.1135
-Test     : CostFunction::addIncrement: Analysis: 
-Test     :   Valid time: 2010-01-01T00:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -5.2206, Max=      1.0535, RMS=      1.9038
-Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
-Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
-Test     : CostJb   : Nonlinear Jb = 28.23
-Test     : CostJo   : Nonlinear Jo(Stream) = 87.26, nobs = 800, Jo/n = 0.1091, err = 4e+06
-Test     : CostJo   : Nonlinear Jo(Wind) = 62.57, nobs = 800, Jo/n = 0.07821, err = 6
-Test     : CostJo   : Nonlinear Jo(WSpeed) = 10.29, nobs = 400, Jo/n = 0.02572, err = 12
-Test     : CostJcDFI: Nonlinear Jc = 67.15
-Test     : CostFunction: Nonlinear J = 255.5
+CostJb   : Nonlinear Jb = 0
+CostJo   : Nonlinear Jo(Stream) = 11062.1, nobs = 800, Jo/n = 13.8277, err = 4e+06
+CostJo   : Nonlinear Jo(Wind) = 1356.83, nobs = 800, Jo/n = 1.69604, err = 6
+CostJo   : Nonlinear Jo(WSpeed) = 179.84, nobs = 400, Jo/n = 0.4496, err = 12
+CostJcDFI: Nonlinear Jc = 57.9613
+CostFunction: Nonlinear J = 12656.8
+DRPLanczosMinimizer: reduction in residual norm = 0.0142818
+CostFunction::addIncrement: Analysis: 
+  Valid time: 2010-01-01T00:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -5.1710e+08, Max=  1.0488e+08, RMS=  1.8894e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+CostJb   : Nonlinear Jb = 41.74
+CostJo   : Nonlinear Jo(Stream) = 542.1, nobs = 800, Jo/n = 0.6776, err = 4e+06
+CostJo   : Nonlinear Jo(Wind) = 144.3, nobs = 800, Jo/n = 0.1804, err = 6
+CostJo   : Nonlinear Jo(WSpeed) = 27.98, nobs = 400, Jo/n = 0.06996, err = 12
+CostJcDFI: Nonlinear Jc = 64.52
+CostFunction: Nonlinear J = 820.7
+DRPLanczosMinimizer: reduction in residual norm = 0.1142
+CostFunction::addIncrement: Analysis: 
+  Valid time: 2010-01-01T00:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -5.2175e+08, Max=  1.0535e+08, RMS=  1.9034e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+CostJb   : Nonlinear Jb = 39.05
+CostJo   : Nonlinear Jo(Stream) = 86.94, nobs = 800, Jo/n = 0.1087, err = 4e+06
+CostJo   : Nonlinear Jo(Wind) = 62.92, nobs = 800, Jo/n = 0.07865, err = 6
+CostJo   : Nonlinear Jo(WSpeed) = 10.27, nobs = 400, Jo/n = 0.02567, err = 12
+CostJcDFI: Nonlinear Jc = 67.21
+CostFunction: Nonlinear J = 266.4

@@ -20,6 +20,7 @@
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/DRMinimizer.h"
 #include "oops/assimilation/HtRinvHMatrix.h"
+#include "oops/assimilation/MinimizerUtils.h"
 #include "oops/base/IdentityMatrix.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/formats.h"
@@ -104,7 +105,7 @@ double DRGMRESRMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlIn
   CtrlInc_ zz(xh);
   CtrlInc_ zh(xh);
 
-  double dotRr0  = dot_product(rr, rr);
+  double rrnorm0  = sqrt(dot_product(rr, rr));
   double normReduction = 1.0;
 
   Log::info() << std::endl;
@@ -136,9 +137,10 @@ double DRGMRESRMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlIn
     xh.axpy(cdotr, uh[jiter]);
     rr.axpy(-cdotr, c[jiter]);
 
-    normReduction = sqrt(dot_product(rr, rr)/dotRr0);
-    Log::info() << "DRGMRESR end of iteration " << jiter+1 << ". Norm reduction= "
-                << util::full_precision(normReduction) << std::endl << std::endl;
+    double rrnorm = sqrt(dot_product(rr, rr));
+    normReduction = rrnorm/rrnorm0;
+    Log::info() << "DRGMRESR end of iteration " << jiter+1 << std::endl;
+    printNormReduction(jiter+1, rrnorm, normReduction);
 
     if (normReduction < tolerance) {
       Log::info() << "DRGMRESR: Achieved required reduction in residual norm." << std::endl;

@@ -12,21 +12,22 @@
 #define OOPS_ASSIMILATION_DRPLANCZOSMINIMIZER_H_
 
 #include <cmath>
+#include <memory>
 #include <string>
 #include <vector>
-
-#include <boost/ptr_container/ptr_vector.hpp>
 
 #include "oops/assimilation/BMatrix.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/DRMinimizer.h"
 #include "oops/assimilation/HtRinvHMatrix.h"
+#include "oops/assimilation/MinimizerUtils.h"
 #include "oops/assimilation/SpectralLMP.h"
 #include "oops/assimilation/TriDiagSolve.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/formats.h"
 #include "oops/util/Logger.h"
+#include "oops/util/printRunStats.h"
 
 namespace oops {
 
@@ -87,20 +88,24 @@ template<typename MODEL, typename OBS> class DRPLanczosMinimizer : public DRMini
 
   SpectralLMP<CtrlInc_> lmp_;
 
-  boost::ptr_vector<CtrlInc_> hvecs_;
-  boost::ptr_vector<CtrlInc_> vvecs_;
-  boost::ptr_vector<CtrlInc_> zvecs_;
+  std::vector<std::unique_ptr<CtrlInc_>> hvecs_;
+  std::vector<std::unique_ptr<CtrlInc_>> vvecs_;
+  std::vector<std::unique_ptr<CtrlInc_>> zvecs_;
   std::vector<double> alphas_;
   std::vector<double> betas_;
+
+  // For diagnostics
+  eckit::LocalConfiguration diagConf_;
+  int outerLoop_;
 };
 
 // =============================================================================
 
 template<typename MODEL, typename OBS>
 DRPLanczosMinimizer<MODEL, OBS>::DRPLanczosMinimizer(const eckit::Configuration & conf,
-                                                const CostFct_ & J)
-  : DRMinimizer<MODEL, OBS>(J), lmp_(conf),
-    hvecs_(), vvecs_(), zvecs_(), alphas_(), betas_() {}
+                                                     const CostFct_ & J)
+  : DRMinimizer<MODEL, OBS>(J), lmp_(conf), hvecs_(), vvecs_(), zvecs_(), alphas_(),
+    betas_(), diagConf_(conf), outerLoop_(0) {}
 
 // -----------------------------------------------------------------------------
 
@@ -109,6 +114,7 @@ double DRPLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, Ctr
                                         const Bmat_ & B, const HtRinvH_ & HtRinvH,
                                         const double costJ0Jb, const double costJ0JoJc,
                                         const int maxiter, const double tolerance) {
+  util::printRunStats("DRPLanczos start");
   // dx   increment
   // dxh  B^{-1} dx
   // rr   (sum B^{-1} dx_i^{b} +) G^T H^{-1} d
@@ -141,36 +147,37 @@ double DRPLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, Ctr
   zz *= 1/beta;
 
   // hvecs[0] = pr_{1} --> required for solution
-  hvecs_.push_back(new CtrlInc_(pr));
+  hvecs_.emplace_back(std::unique_ptr<CtrlInc_>(new CtrlInc_(pr)));
   // zvecs[0] = z_{1} ---> for re-orthogonalization
-  zvecs_.push_back(new CtrlInc_(zz));
+  zvecs_.emplace_back(std::unique_ptr<CtrlInc_>(new CtrlInc_(zz)));
   // vvecs[0] = v_{1} ---> for re-orthogonalization
-  vvecs_.push_back(new CtrlInc_(vv));
+  vvecs_.emplace_back(std::unique_ptr<CtrlInc_>(new CtrlInc_(vv)));
 
   double normReduction = 1.0;
 
   Log::info() << std::endl;
   for (int jiter = 0; jiter < maxiter; ++jiter) {
     Log::info() << "DRPLanczos Starting Iteration " << jiter+1 << std::endl;
+    util::printRunStats("DRPLanczos iteration " + std::to_string(jiter+1));
 
     // v_{i+1} = ( pr_{i} + H^T R^{-1} H z_{i} ) - beta * v_{i-1}
     HtRinvH.multiply(zz, vv);
     vv += pr;
 
     if (jiter > 0) {
-      vv.axpy(-beta, vvecs_[jiter-1]);
+      vv.axpy(-beta, *vvecs_[jiter-1]);
     }
 
     // alpha_{i} = v_{i+1}^T z_{i}
     double alpha = dot_product(zz, vv);
 
     // v_{i+1} = v_{i+1} - alpha_{i} v_{i}
-    vv.axpy(-alpha, vvecs_[jiter]);  // vv = vv - alpha * v_j
+    vv.axpy(-alpha, *vvecs_[jiter]);  // vv = vv - alpha * v_j
 
     // Re-orthogonalization
     for (int jj = 0; jj < jiter; ++jj) {
-      double proj = dot_product(vv, zvecs_[jj]);
-      vv.axpy(-proj, vvecs_[jj]);
+      double proj = dot_product(vv, *zvecs_[jj]);
+      vv.axpy(-proj, *vvecs_[jj]);
     }
 
     // z_{i+1} = B LMP v_{i+1}
@@ -188,11 +195,11 @@ double DRPLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, Ctr
     zz *= 1/beta;
 
     // hvecs[i+1] =pr_{i+1}
-    hvecs_.push_back(new CtrlInc_(pr));
+    hvecs_.emplace_back(std::unique_ptr<CtrlInc_>(new CtrlInc_(pr)));
     // zvecs[i+1] = z_{i+1}
-    zvecs_.push_back(new CtrlInc_(zz));
+    zvecs_.emplace_back(std::unique_ptr<CtrlInc_>(new CtrlInc_(zz)));
     // vvecs[i+1] = v_{i+1}
-    vvecs_.push_back(new CtrlInc_(vv));
+    vvecs_.emplace_back(std::unique_ptr<CtrlInc_>(new CtrlInc_(vv)));
 
     alphas_.push_back(alpha);
 
@@ -201,7 +208,7 @@ double DRPLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, Ctr
       dd.push_back(beta0);
     } else {
       // Solve the tridiagonal system T_{i} s_{i} = beta0 * e_1
-      dd.push_back(beta0*dot_product(zvecs_[0], vv));
+      dd.push_back(beta0*dot_product(*zvecs_[0], vv));
       TriDiagSolve(alphas_, betas_, dd, ss);
     }
 
@@ -214,8 +221,8 @@ double DRPLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, Ctr
 
     double costJb = costJ0Jb;
     for (int jj = 0; jj < jiter+1; ++jj) {
-      costJ -= 0.5 * ss[jj] * dot_product(zvecs_[jj], rr);
-      costJb += 0.5 * ss[jj] * dot_product(vvecs_[jj], zvecs_[jj]) * ss[jj];
+      costJ -= 0.5 * ss[jj] * dot_product(*zvecs_[jj], rr);
+      costJb += 0.5 * ss[jj] * dot_product(*vvecs_[jj], *zvecs_[jj]) * ss[jj];
     }
     double costJoJc = costJ - costJb;
 
@@ -223,15 +230,9 @@ double DRPLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, Ctr
     double rznorm = beta*std::abs(ss[jiter]);
     normReduction = rznorm/beta0;
 
-    Log::info() << "DRPLanczos end of iteration " << jiter+1 << std::endl
-                << "  Norm reduction ("               << std::setw(2) << jiter+1 << ") = "
-                  << util::full_precision(normReduction) << std::endl
-                << "  Quadratic cost function: J   (" << std::setw(2) << jiter+1 << ") = "
-                  << util::full_precision(costJ)         << std::endl
-                << "  Quadratic cost function: Jb  (" << std::setw(2) << jiter+1 << ") = "
-                  << util::full_precision(costJb)        << std::endl
-                << "  Quadratic cost function: JoJc(" << std::setw(2) << jiter+1 << ") = "
-                  << util::full_precision(costJoJc)      << std::endl << std::endl;
+    Log::info() << "DRPLanczos end of iteration " << jiter+1 << std::endl;
+    printNormReduction(jiter+1, rznorm, normReduction);
+    printQuadraticCostFunction(jiter+1, costJ, costJb, costJoJc);
 
     if (normReduction < tolerance) {
       Log::info() << "DRPLanczos: Achieved required reduction in residual norm." << std::endl;
@@ -244,10 +245,13 @@ double DRPLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, Ctr
 
   // Calculate the solution (dxh = Binv dx)
   for (unsigned int jj = 0; jj < ss.size(); ++jj) {
-    dx.axpy(ss[jj], zvecs_[jj]);
-    dxh.axpy(ss[jj], hvecs_[jj]);
+    dx.axpy(ss[jj], *zvecs_[jj]);
+    dxh.axpy(ss[jj], *hvecs_[jj]);
+    if (outerLoop_ == 0) writeKrylovBasis(diagConf_, *zvecs_[jj], jj);
   }
 
+  ++outerLoop_;
+  util::printRunStats("DRPLanczos end");
   return normReduction;
 }
 

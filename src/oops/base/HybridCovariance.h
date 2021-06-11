@@ -12,6 +12,9 @@
 #define OOPS_BASE_HYBRIDCOVARIANCE_H_
 
 #include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
@@ -47,10 +50,10 @@ class HybridCovariance : public ModelSpaceCovarianceBase<MODEL> {
   void doMultiply(const Increment_ &, Increment_ &) const override;
   void doInverseMultiply(const Increment_ &, Increment_ &) const override;
 
-  std::unique_ptr< ModelSpaceCovarianceBase<MODEL> > static_;
-  std::unique_ptr< EnsembleCovariance<MODEL> >  ensemble_;
-  double ensWeight_;
-  double staWeight_;
+  std::vector< std::unique_ptr< ModelSpaceCovarianceBase<MODEL> > > Bcomponents_;
+  std::vector< std::string > weightTypes_;
+  std::vector< double > valueWeights_;
+  std::vector< Increment_ > incrementWeights_;
 };
 
 // =============================================================================
@@ -61,17 +64,31 @@ template<typename MODEL>
 HybridCovariance<MODEL>::HybridCovariance(const Geometry_ & resol, const Variables & vars,
                                           const eckit::Configuration & config,
                                           const State_ & xb, const State_ & fg)
-  : ModelSpaceCovarianceBase<MODEL>(xb, fg, resol, config),
-    static_(CovarianceFactory<MODEL>::create(
-              eckit::LocalConfiguration(config, "static"), resol, vars, xb, fg))
+  : ModelSpaceCovarianceBase<MODEL>(xb, fg, resol, config)
 {
-  const eckit::LocalConfiguration ensConf(config, "ensemble");
-  ensemble_.reset(new EnsembleCovariance<MODEL>(resol,  vars, ensConf, xb, fg));
+  std::vector<eckit::LocalConfiguration> confs;
+  config.get("components", confs);
+  for (const auto & conf : confs) {
+    // B component
+    const eckit::LocalConfiguration covarConf(conf, "covariance");
+    std::unique_ptr< ModelSpaceCovarianceBase<MODEL> > B(
+        CovarianceFactory<MODEL>::create(covarConf, resol, vars, xb, fg));
+    Bcomponents_.push_back(std::move(B));
 
-  ensWeight_ = config.getDouble("ensemble weight");
-  ASSERT(ensWeight_ > 0.0);
-  staWeight_ = config.getDouble("static weight");
-  ASSERT(staWeight_ > 0.0);
+    // Weight
+    const eckit::LocalConfiguration weightConf(conf, "weight");
+    if (weightConf.has("value")) {
+      // Scalar weight provided in the configuration
+      weightTypes_.push_back("value");
+      valueWeights_.push_back(weightConf.getDouble("value"));
+    } else {
+      // 3D weight read from a file
+      weightTypes_.push_back("increment");
+      Increment_ weight(resol, vars, xb.validTime());
+      weight.read(weightConf);
+      incrementWeights_.push_back(weight);
+    }
+  }
   Log::trace() << "HybridCovariance created." << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -82,11 +99,22 @@ HybridCovariance<MODEL>::~HybridCovariance() {
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 void HybridCovariance<MODEL>::doMultiply(const Increment_ & dxi, Increment_ & dxo) const {
-  static_->multiply(dxi, dxo);
-  dxo *= staWeight_;
+  dxo.zero();
   Increment_ tmp(dxo);
-  ensemble_->multiply(dxi, tmp);
-  dxo.axpy(ensWeight_, tmp);
+  int valueIndex = 0;
+  int incrementIndex = 0;
+  for (size_t jcomp = 0; jcomp < Bcomponents_.size(); ++jcomp) {
+     Bcomponents_[jcomp]->multiply(dxi, tmp);
+     if (weightTypes_[jcomp] == "value") {
+        tmp *= valueWeights_[valueIndex];
+        valueIndex += 1;
+     }
+     if (weightTypes_[jcomp] == "increment") {
+        tmp.schur_product_with(incrementWeights_[incrementIndex]);
+        incrementIndex += 1;
+     }
+     dxo += tmp;
+  }
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
@@ -97,8 +125,21 @@ void HybridCovariance<MODEL>::doInverseMultiply(const Increment_ & dxi, Incremen
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-void HybridCovariance<MODEL>::doRandomize(Increment_ &) const {
-  throw eckit::NotImplemented("HybridCovariance::doRandomize: Would it make sense?", Here());
+void HybridCovariance<MODEL>::doRandomize(Increment_ & dx) const {
+  dx.zero();
+  Increment_ tmp(dx);
+  int valueIndex = 0;
+  for (size_t jcomp = 0; jcomp < Bcomponents_.size(); ++jcomp) {
+     Bcomponents_[jcomp]->randomize(tmp);
+     if (weightTypes_[jcomp] == "value") {
+        tmp *= std::sqrt(valueWeights_[valueIndex]);
+        valueIndex += 1;
+     }
+     if (weightTypes_[jcomp] == "increment") {
+        throw eckit::NotImplemented("HybridCovariance::doRandomize: no square-root", Here());
+     }
+     dx += tmp;
+  }
 }
 // -----------------------------------------------------------------------------
 }  // namespace oops

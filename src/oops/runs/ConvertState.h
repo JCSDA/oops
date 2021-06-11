@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2018 UCAR
+ * (C) Copyright 2018-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -13,10 +13,10 @@
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "oops/base/VariableChangeBase.h"
 #include "oops/generic/instantiateVariableChangeFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/State.h"
+#include "oops/interface/VariableChange.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
@@ -28,8 +28,7 @@ namespace oops {
 template <typename MODEL> class ConvertState : public Application {
   typedef Geometry<MODEL>              Geometry_;
   typedef State<MODEL>                 State_;
-  typedef VariableChangeBase<MODEL>    VariableChange_;
-  typedef VariableChangeFactory<MODEL> VariableChangeFactory_;
+  typedef VariableChange<MODEL>    VariableChange_;
 
  public:
 // -------------------------------------------------------------------------------------------------
@@ -48,13 +47,13 @@ template <typename MODEL> class ConvertState : public Application {
     const Geometry_ resol2(outputResolConfig, this->getComm());
 
 //  Variable transform(s)
-    std::vector<std::unique_ptr<VariableChange_>> chvars;
+    std::vector<VariableChange_> chvars;
     std::vector<bool> inverse;
 
     std::vector<eckit::LocalConfiguration> chvarconfs;
     fullConfig.get("variable changes", chvarconfs);
     for (size_t cv = 0; cv < chvarconfs.size(); ++cv) {
-      chvars.emplace_back(VariableChangeFactory_::create(chvarconfs[cv], resol2));
+      chvars.emplace_back(resol2, chvarconfs[cv]);
       inverse.push_back(chvarconfs[cv].getBool("do inverse", false));
     }
 
@@ -79,13 +78,14 @@ template <typename MODEL> class ConvertState : public Application {
 //    Variable transform(s)
       for (size_t cv = 0; cv < chvars.size(); ++cv) {
         if (!inverse[cv]) {
-          State_ xchvarout = chvars[cv]->changeVar(*xx);
+          State_ xchvarout = chvars[cv].changeVar(*xx);
           xx.reset(new State_(xchvarout));
         } else {
-          State_ xchvarout = chvars[cv]->changeVarInverse(*xx);
+          State_ xchvarout = chvars[cv].changeVarInverse(*xx);
           xx.reset(new State_(xchvarout));
         }
-        Log::test() << "State after " << *chvars[cv] << " transform: " << *xx << std::endl;
+        Log::test() << "Variable transform: " << chvars[cv] << std::endl;
+        Log::test() << "State after variable transform: " << *xx << std::endl;
       }
 
 //    Write state

@@ -1,29 +1,38 @@
 minimal:
   req_float_parameter: 3
   req_duration_parameter: PT1H
-full: # These parameters must be sorted alphabetically for the serialization test.
-  bool_parameter: false
-  channels: 5,6,7 # used by the parameter storing a Variables object
-  embedded_int_parameter: 13
+full:
+  # These parameters must be specified in the order the corresponding
+  # Parameter objects are declared in the C++ file; otherwise the
+  # serialization test, which isn't very sophisticated and simply relies
+  # on a string comparison, will fail.
   float_parameter: 3.5
-  fruit_parameter: apple
   int_parameter: 4
-  int_parameters: [1, 2]
+  bool_parameter: false
+  opt_float_parameter: 5.5
   opt_date_time_parameter: 2010-02-03T04:05:06Z
   opt_duration_parameter: PT1H2M3S
-  opt_embedded_date_time_parameter: 2010-03-04T05:06:07Z
-  opt_float_parameter: 5.5
+  opt_partialDT_parameter: "2010-**-03T04:05:06Z"
+  fruit_parameter: apple
   range_parameter:
-    max: 8.5
     min: 7
+    max: 8.5
+  int_parameters: [1, 2]
   range_parameters:
-    - max: 10
-      min: 9
-    - max: 12
-      min: 11
-  req_duration_parameter: PT6H30M
-  req_float_parameter: 6
+    - min: 9
+      max: 10
+    - min: 11
+      max: 12
   variables_parameter: [u, v]
+  channels: 5,6,7 # used by the parameter storing a Variables object
+  set_int_parameter: 2,4,5,6,8
+  any_of_parameter: dog
+  opt_any_of_parameter: [1, 2, 3, 4]
+  opt_null_parameter: null
+  embedded_int_parameter: 13
+  opt_embedded_date_time_parameter: 2010-03-04T05:06:07Z
+  req_float_parameter: 6
+  req_duration_parameter: PT6H30M
 alternative:
   float_parameter: 13.5
   int_parameter: 14
@@ -45,6 +54,10 @@ alternative:
       max: 112
   embedded_int_parameter: 23
   opt_embedded_date_time_parameter: 2010-03-14T05:06:17Z
+  set_int_parameter: 3
+  any_of_parameter: [1, 3, 5]
+  opt_any_of_parameter: cat
+  opt_null_parameter:
 misspelled_float:
   float_parometer: 3.5
 misspelled_int:
@@ -89,6 +102,10 @@ error_in_opt_duration_parameter:
   opt_duration_parameter: ABCDEF
   req_float_parameter: 3
   req_duration_parameter: PT1H
+error_in_opt_partialDT_parameter:
+  opt_partialDT_parameter: ABCDEF
+  req_float_parameter: 3
+  req_duration_parameter: PT1H
 error_in_fruit_parameter:
   fruit_parameter: ABCDEF
   req_float_parameter: 3
@@ -101,6 +118,12 @@ error_in_range_parameters:
   range_parameters: ABCDEF
   req_float_parameter: 3
   req_duration_parameter: PT1H
+error_in_set_int_parameter:
+  set_int_parameter: 1-
+  req_float_parameter: 3
+  req_duration_parameter: PT1H
+error_in_any_of_parameter:
+  any_of_parameter: [abc, def]
 missing_req_float_parameter:
   req_duration_parameter: PT1H
 missing_req_duration_parameter:
@@ -136,13 +159,17 @@ map_parameter_yaml_style_unquoted_keys:
     night: PT10H
   float_or_int_to_float_map_2: 3.5
   duration_or_string_to_duration_map_2: PT12H
-map_parameter_json_style_quoted_keys: # These parameters must be sorted alphabetically for the serialization test.
-  duration_or_string_to_duration_map_1: { "day": PT14H, "night": PT10H }
-  duration_or_string_to_duration_map_2: PT12H
-  float_or_int_to_float_map_1: { "6": 2.5, "8": 4 }
-  float_or_int_to_float_map_2: 3.5
+map_parameter_json_style_quoted_keys:
+  # These parameters must be specified in the order the corresponding
+  # Parameter objects are declared in the C++ file; otherwise the
+  # serialization test, which isn't very sophisticated and simply relies
+  # on a string comparison, will fail.
   int_to_float_map: { "5": 1.5, "7": 3 }
   string_to_duration_map: { "day": PT16H, "night": PT8H }
+  float_or_int_to_float_map_1: { "6": 2.5, "8": 4 }
+  duration_or_string_to_duration_map_1: { "day": PT14H, "night": PT10H }
+  float_or_int_to_float_map_2: 3.5
+  duration_or_string_to_duration_map_2: PT12H
 map_parameter_json_style_unquoted_keys:
   int_to_float_map: { 5: 1.5, 7: 3 }
   string_to_duration_map: { day: PT16H, night: PT8H }
@@ -150,25 +177,37 @@ map_parameter_json_style_unquoted_keys:
   duration_or_string_to_duration_map_1: { day: PT14H, night: PT10H }
   float_or_int_to_float_map_2: 3.5
   duration_or_string_to_duration_map_2: PT12H
+set_int_single_number:
+  set_int_parameter: 5
+set_int_range:
+  set_int_parameter: 3-5
+set_int_multiple_numbers_and_ranges:
+  set_int_parameter: 13,3-5,7, 10-11
+set_int_invalid_range:
+  set_int_parameter: 13,3-x
 variables_without_channels:
   # The filter variables are not ordered alphabetically: this is by design, to test if their
   # order is preserved during serialization.
   filter_variables: [air_temperature, air_pressure]
   operator_variables: [relative_humidity]
 variables_with_channels:
-  channels: 5,6,7
   filter_variables: [air_temperature, air_pressure]
+  channels: 5,6,7
   operator_variables: [relative_humidity]
-device: # These parameters must be sorted alphabetically for the serialization test.
-  device_with_default:
-    paper_format: A3
-    type: printer
-  optional_device:
-    paper_format: Letter
-    type: printer
+device:
+  # These parameters must be specified in the order the corresponding
+  # Parameter objects are declared in the C++ file; otherwise the
+  # serialization test, which isn't very sophisticated and simply relies
+  # on a string comparison, will fail.
   required_device:
-    diameter: 30
     type: screen
+    diameter: 30
+  device_with_default:
+    type: printer
+    paper_format: A3
+  optional_device:
+    type: printer
+    paper_format: Letter
 alternative_device:
   optional_device:
     type: screen

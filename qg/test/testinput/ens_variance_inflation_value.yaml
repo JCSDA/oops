@@ -24,3 +24,6 @@ variance output:
   exp: variance_inflation_value
   type: fc
   date: 2010-01-01T00:00:00Z
+
+test:
+  reference filename: testoutput/ens_variance_inflation_value.test

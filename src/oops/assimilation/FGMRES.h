@@ -15,6 +15,7 @@
 #include <iostream>
 #include <vector>
 
+#include "oops/assimilation/MinimizerUtils.h"
 #include "oops/assimilation/rotmat.h"
 #include "oops/assimilation/UpTriSolve.h"
 #include "oops/util/dot_product.h"
@@ -170,8 +171,8 @@ double FGMRES(VECTOR & x, const VECTOR & b,
     }
 
     normReduction = std::abs(s[jiter+1])/bnrm2;
-    Log::info() << "FGMRES end of iteration " << jiter+1 << ". PNorm reduction= "
-                << util::full_precision(normReduction) << std::endl << std::endl;
+    Log::info() << "FGMRES end of iteration " << jiter+1 << std::endl;
+    printNormReduction(jiter+1, std::abs(s[jiter+1]), normReduction);
 
     if (normReduction <= tolerance) {
         Log::info() << "FGMRES: Achieved required reduction in residual norm." << std::endl;

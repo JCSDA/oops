@@ -15,8 +15,8 @@
 namespace oops {
 
 template <typename MODEL> void instantiateModelFactory() {
-  static ModelMaker<MODEL, IdentityModel<MODEL> > makerIdentityModel_("Identity");
-  static ModelMaker<MODEL, PseudoModel<MODEL> > makerPseudoModel_("PseudoModel");
+  static GenericModelMaker<MODEL, IdentityModel<MODEL> > makerIdentityModel_("Identity");
+  static GenericModelMaker<MODEL, PseudoModel<MODEL> > makerPseudoModel_("PseudoModel");
 }
 
 }  // namespace oops

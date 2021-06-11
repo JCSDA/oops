@@ -1,21 +1,17 @@
-Test     : Initial state: 
-Test     :   Valid time: 2010-01-01T00:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -5.1807, Max=      1.0739, RMS=      1.9152
-Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
-Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
-Test     : Final state: 
-Test     :   Valid time: 2010-01-01T12:00:00Z
-Test     :   Resolution = 40, 20, 2
-Test     :   Variable = streamfunction
-Test     :   Boundary conditions are activated
-Test     :   Scaling=  1e+08, Min=     -4.5859, Max=      1.0654, RMS=      1.7877
-Test     :   Scaling=  1e+08, Min=     -4.0032, Max=     -0.0000, RMS=      2.0632
-Test     :   Scaling=  0.001, Min=     -0.6729, Max=      0.5790, RMS=      0.4464
-Test     : H(x): 
-Test     : Stream nobs= 300 Scaling=  1e+08, Min=     -5.6944, Max=      0.9062, Average=     -1.3204
-Test     : Wind nobs= 160 Scaling=     10, Min=     -8.3586, Max=     10.6728, Average=      1.0558
-Test     : WSpeed nobs= 300 Scaling=     10, Min=      0.8136, Max=     14.5219, Average=      4.9940
-Test     : End H(x)
+Initial state: 
+  Valid time: 2010-01-01T00:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -5.1807e+08, Max=  1.0739e+08, RMS=  1.9152e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Final state: 
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min= -4.5859e+08, Max=  1.0654e+08, RMS=  1.7877e+08
+  Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+H(x): 
+Stream nobs= 300  Min= -5.6944e+08, Max=  9.0622e+07, Average= -1.3204e+08
+Wind nobs= 160  Min= -8.3586e+01, Max=  1.0673e+02, Average=  1.0558e+01
+WSpeed nobs= 300  Min=  8.1358e+00, Max=  1.4522e+02, Average=  4.9940e+01
+End H(x)

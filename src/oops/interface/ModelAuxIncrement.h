@@ -100,6 +100,7 @@ ModelAuxIncrement<MODEL>::ModelAuxIncrement(const Geometry_ & resol,
   Log::trace() << "ModelAuxIncrement<MODEL>::ModelAuxIncrement starting" << std::endl;
   util::Timer timer(classname(), "ModelAuxIncrement");
   aux_.reset(new ModelAuxIncrement_(resol.geometry(), conf));
+  this->setObjectSize(aux_->serialSize()*sizeof(double));
   Log::trace() << "ModelAuxIncrement<MODEL>::ModelAuxIncrement done" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -110,6 +111,7 @@ ModelAuxIncrement<MODEL>::ModelAuxIncrement(const ModelAuxIncrement & other,
   Log::trace() << "ModelAuxIncrement<MODEL>::ModelAuxIncrement copy starting" << std::endl;
   util::Timer timer(classname(), "ModelAuxIncrement");
   aux_.reset(new ModelAuxIncrement_(*other.aux_, copy));
+  this->setObjectSize(aux_->serialSize()*sizeof(double));
   Log::trace() << "ModelAuxIncrement<MODEL>::ModelAuxIncrement copy done" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -120,6 +122,7 @@ ModelAuxIncrement<MODEL>::ModelAuxIncrement(const ModelAuxIncrement & other,
   Log::trace() << "ModelAuxIncrement<MODEL>::ModelAuxIncrement interpolated starting" << std::endl;
   util::Timer timer(classname(), "ModelAuxIncrement");
   aux_.reset(new ModelAuxIncrement_(*other.aux_, conf));
+  this->setObjectSize(aux_->serialSize()*sizeof(double));
   Log::trace() << "ModelAuxIncrement<MODEL>::ModelAuxIncrement interpolated done" << std::endl;
 }
 // -----------------------------------------------------------------------------

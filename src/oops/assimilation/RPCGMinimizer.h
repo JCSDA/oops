@@ -18,6 +18,7 @@
 #include "oops/assimilation/DualMinimizer.h"
 #include "oops/assimilation/DualVector.h"
 #include "oops/assimilation/HBHtMatrix.h"
+#include "oops/assimilation/MinimizerUtils.h"
 #include "oops/assimilation/RinvMatrix.h"
 #include "oops/base/IdentityMatrix.h"
 #include "oops/util/dot_product.h"
@@ -230,8 +231,8 @@ double RPCGMinimizer<MODEL, OBS>::solve(Dual_ & vv, double & vvp, Dual_ & rr,
 
     normReduction = sqrt(dotwr/dotw0r0);
 
-    Log::info() << "RPCG end of iteration " << jiter+1 << ". Norm reduction= "
-                << util::full_precision(normReduction) << std::endl << std::endl;
+    Log::info() << "RPCG end of iteration " << jiter+1 << std::endl;
+    printNormReduction(jiter+1, sqrt(dotwr), normReduction);
 
     if (normReduction < tolerance) {
       Log::info() << "RPCG: Achieved required reduction in residual norm." << std::endl;

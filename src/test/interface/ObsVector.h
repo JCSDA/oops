@@ -19,6 +19,7 @@
 
 #include "eckit/testing/Test.h"
 #include "oops/base/Variables.h"
+#include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/runs/Test.h"
 #include "oops/util/dot_product.h"
@@ -28,7 +29,7 @@
 namespace test {
 
 // -----------------------------------------------------------------------------
-
+/// \brief tests constructor and print method
 template <typename OBS> void testConstructor() {
   typedef ObsTestsFixture<OBS>  Test_;
   typedef oops::ObsVector<OBS>  ObsVector_;
@@ -36,7 +37,7 @@ template <typename OBS> void testConstructor() {
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     std::unique_ptr<ObsVector_> ov(new ObsVector_(Test_::obspace()[jj]));
     EXPECT(ov.get());
-
+    oops::Log::test() << "Printing zero ObsVector: " << *ov << std::endl;
     ov.reset();
     EXPECT(!ov.get());
   }
@@ -52,6 +53,7 @@ template <typename OBS> void testCopyConstructor() {
     std::unique_ptr<ObsVector_> ov(new ObsVector_(Test_::obspace()[jj]));
 
     ov->random();
+    oops::Log::test() << "Printing random ObsVector: " << *ov << std::endl;
 
     std::unique_ptr<ObsVector_> other(new ObsVector_(*ov));
     EXPECT(other.get());
@@ -69,7 +71,11 @@ template <typename OBS> void testCopyConstructor() {
 }
 
 // -----------------------------------------------------------------------------
-
+/// Test that:
+/// - dot_product of a random vector with self is non-zero
+/// - dot_product of a random vector with a zero vector is zero
+/// - dot_product of a zero vector with self is zero
+/// - dot_product of a vector of ones with self is equal to nobs
 template <typename OBS> void testNotZero() {
   typedef ObsTestsFixture<OBS>  Test_;
   typedef oops::ObsVector<OBS>  ObsVector_;
@@ -87,6 +93,11 @@ template <typename OBS> void testNotZero() {
 
     EXPECT(dot_product(ov2, ov1) == zero);
     EXPECT(dot_product(ov2, ov2) == zero);
+
+    ObsVector_ ov3(ov1);
+    ov3.ones();
+
+    EXPECT(dot_product(ov3, ov3) == ov3.nobs());
   }
 }
 // -----------------------------------------------------------------------------
@@ -151,20 +162,142 @@ template <typename OBS> void testReadWrite() {
   }
 }
 // -----------------------------------------------------------------------------
-template <typename OBS> void testPackEigen() {
-  typedef ObsTestsFixture<OBS>  Test_;
-  typedef oops::ObsVector<OBS>  ObsVector_;
-  const double tolerance = 1.0e-8;
+/// \brief Tests ObsVector::mask, ObsVector::packEigen and
+///        ObsVector::packEigenSize methods.
+/// \details Tests that:
+/// - mask of all zeros (nothing to mask) applied to ObsVector doesn't change
+///   its size and content;
+/// - mask of either all ones (if "mask variable" isn't specified in yaml), or
+///   from the file applied to ObsVector changes its size.
+/// - linear algebra operations with ObsVector that were masked out produce
+///   ObsVectors that have the same number of obs masked out.
+/// - size returned by packEigenSize is consistent with size of Eigen Vector
+///   returned by packEigen, and is the same as reference value for each MPI
+///   task.
+template <typename OBS> void testMask() {
+  typedef ObsTestsFixture<OBS>           Test_;
+  typedef oops::ObsDataVector<OBS, int>  ObsDataVector_;
+  typedef oops::ObsSpace<OBS>            ObsSpace_;
+  typedef oops::ObsVector<OBS>           ObsVector_;
+
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    ObsVector_ ov1(Test_::obspace()[jj]);
-    ov1.random();
-    double rms1 = ov1.rms();
+    const ObsSpace_ & obspace = Test_::obspace()[jj];
 
-    Eigen::VectorXd vec = ov1.packEigen();
-    EXPECT(vec.size() == ov1.nobs());
+    ObsVector_ reference(obspace);
+    reference.random();
+    oops::Log::test() << "ObsVector before masking: " << reference << std::endl;
 
-    double rms2 = sqrt(vec.squaredNorm() / ov1.nobs());
-    EXPECT(std::abs(rms1-rms2) < tolerance);
+    const size_t nobs_all = Test_::config(jj).getInt("reference global nobs");
+    EXPECT_EQUAL(reference.nobs(), nobs_all);
+    EXPECT(nobs_all > 0);
+
+    /// apply empty mask, check that vector is the same
+    ObsDataVector_ unsetmask(obspace, obspace.obsvariables());
+    unsetmask.zero();
+    ObsVector_ with_unsetmask(reference);
+    with_unsetmask.mask(unsetmask);
+    oops::Log::test() << "ObsVector masked with all-zero-mask: " << with_unsetmask << std::endl;
+    EXPECT_EQUAL(with_unsetmask.nobs(), nobs_all);
+    with_unsetmask -= reference;
+    EXPECT_EQUAL(with_unsetmask.rms(), 0.0);
+
+    /// apply non-empty mask, check number of observations
+    std::string maskvarname;
+    /// by default (else statement below), apply mask that masks out everything
+    size_t nobs_after_mask = 0;
+    std::vector<size_t> nobs_after_mask_local(Test_::comm().size(), 0);
+    /// if mask variable is available, apply mask from file and read reference number of masked obs
+    if (Test_::config(jj).has("mask variable")) {
+      maskvarname = Test_::config(jj).getString("mask variable");
+      nobs_after_mask = Test_::config(jj).getUnsigned("reference global masked nobs");
+      nobs_after_mask_local = Test_::config(jj).getUnsignedVector("reference local masked nobs");
+      // check that specified mask masks out something
+      EXPECT_NOT_EQUAL(nobs_after_mask, nobs_all);
+      // check that "reference local masked nobs" are defined for all MPI tasks
+      EXPECT_EQUAL(Test_::comm().size(), nobs_after_mask_local.size());
+    /// if mask variable is unavailable, apply mask with all ones
+    } else {
+      // Hack for mask with ones: use ObsVector set to ones, write to ObsSpace,
+      // then read as ObsDataVector.
+      maskvarname = "set_mask";
+      ObsVector_ tmp(obspace);
+      tmp.ones();
+      tmp.save(maskvarname);
+    }
+    ObsDataVector_ mask(obspace, obspace.obsvariables(), maskvarname);
+    ObsVector_ with_mask(reference);
+    with_mask.mask(mask);
+    oops::Log::test() << "ObsVector masked with " << maskvarname << " mask: " <<
+                         with_mask << std::endl;
+    EXPECT_EQUAL(with_mask.nobs(), nobs_after_mask);
+
+    /// Test that various linear algebra operations with masked out ObsVector
+    /// produce masked out ObsVector
+    /// Test invert()
+    ObsVector_ test(with_mask);
+    test.invert();
+    EXPECT_EQUAL(test.nobs(), nobs_after_mask);
+
+    /// Test *=(float)
+    test *= 2.0;
+    EXPECT_EQUAL(test.nobs(), nobs_after_mask);
+
+    /// Test +=(ObsVector)
+    test.random();
+    EXPECT_EQUAL(test.nobs(), nobs_all);
+    test += with_mask;
+    EXPECT_EQUAL(test.nobs(), nobs_after_mask);
+    test.random();
+    EXPECT_EQUAL(test.nobs(), nobs_all);
+    with_mask += test;
+    EXPECT_EQUAL(with_mask.nobs(), nobs_after_mask);
+
+    /// Test -=(ObsVector)
+    EXPECT_EQUAL(test.nobs(), nobs_all);
+    test -= with_mask;
+    EXPECT_EQUAL(test.nobs(), nobs_after_mask);
+    test.random();
+    EXPECT_EQUAL(test.nobs(), nobs_all);
+    with_mask -= test;
+    EXPECT_EQUAL(with_mask.nobs(), nobs_after_mask);
+
+    /// Test *=(ObsVector)
+    EXPECT_EQUAL(test.nobs(), nobs_all);
+    test *= with_mask;
+    EXPECT_EQUAL(test.nobs(), nobs_after_mask);
+    test.random();
+    EXPECT_EQUAL(test.nobs(), nobs_all);
+    with_mask *= test;
+    EXPECT_EQUAL(with_mask.nobs(), nobs_after_mask);
+
+    /// Test /=(ObsVector)
+    EXPECT_EQUAL(test.nobs(), nobs_all);
+    test /= with_mask;
+    EXPECT_EQUAL(test.nobs(), nobs_after_mask);
+    test.random();
+    EXPECT_EQUAL(test.nobs(), nobs_all);
+    with_mask /= test;
+    EXPECT_EQUAL(with_mask.nobs(), nobs_after_mask);
+
+    /// Test axpy
+    EXPECT_EQUAL(test.nobs(), nobs_all);
+    test.axpy(2.0, with_mask);
+    EXPECT_EQUAL(test.nobs(), nobs_after_mask);
+    test.random();
+    EXPECT_EQUAL(test.nobs(), nobs_all);
+    with_mask.axpy(2.0, test);
+    EXPECT_EQUAL(with_mask.nobs(), nobs_after_mask);
+
+    /// test packEigen
+    test.random();
+    Eigen::VectorXd with_mask_vec = test.packEigen(mask);
+    // check that the size of returned Eigen Vector is consistent with size
+    // returned by packEigenSize()
+    EXPECT_EQUAL(with_mask_vec.size(), test.packEigenSize(mask));
+    oops::Log::debug() << "Local number of masked observations is: " <<
+                          with_mask_vec.size() << std::endl;
+    // check that the size is consistent with reference for this MPI task
+    EXPECT_EQUAL(with_mask_vec.size(), nobs_after_mask_local[Test_::comm().rank()]);
   }
 }
 // -----------------------------------------------------------------------------
@@ -193,8 +326,8 @@ class ObsVector : public oops::Test {
       { testLinearAlgebra<OBS>(); });
     ts.emplace_back(CASE("interface/ObsVector/testReadWrite")
       { testReadWrite<OBS>(); });
-    ts.emplace_back(CASE("interface/ObsVector/testPackEigen")
-      { testPackEigen<OBS>(); });
+    ts.emplace_back(CASE("interface/ObsVector/testMask")
+      { testMask<OBS>(); });
   }
 
   void clear() const override {

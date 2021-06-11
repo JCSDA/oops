@@ -30,11 +30,12 @@ type(qg_geom),intent(in) :: geom                          !< Geometry
 real(kind_real),intent(in) :: x(geom%nx,geom%ny,geom%nz)  !< Streamfunction
 real(kind_real),intent(in) :: x_north(geom%nz)            !< Streamfunction on northern wall
 real(kind_real),intent(in) :: x_south(geom%nz)            !< Streamfunction on southern wall
-real(kind_real),intent(out) :: q(geom%nx,geom%ny,geom%nz) !< Potential vorticity
+real(kind_real),intent(inout) :: q(geom%nx,geom%ny,geom%nz) !< Potential vorticity
 
 ! Local variables
 integer :: ix,iy,iz
 real(kind_real) :: del2x(geom%nx,geom%ny,geom%nz) 
+real(kind_real) :: zz
 
 ! Laplacian of the streamfunction
 call laplacian_2d(geom,x,del2x)
@@ -51,10 +52,11 @@ end do
 !$omp end parallel do
 
 ! Add the contribution from the boundaries
+zz = 1.0 / (geom%deltay * geom%deltay)
 !$omp parallel do schedule(static) private(iz)
 do iz=1,geom%nz
-  q(:,1,iz) = q(:,1,iz)+x_south(iz)/geom%deltay**2
-  q(:,geom%ny,iz) = q(:,geom%ny,iz)+x_north(iz)/geom%deltay**2
+  q(:,1,iz) = q(:,1,iz)+x_south(iz)*zz
+  q(:,geom%ny,iz) = q(:,geom%ny,iz)+x_north(iz)*zz
 enddo
 !$omp end parallel do
 
@@ -76,7 +78,7 @@ implicit none
 ! Passed variables
 type(qg_geom),intent(in) :: geom                          !< Geometry
 real(kind_real),intent(in) :: x(geom%nx,geom%ny,geom%nz)  !< Streamfunction
-real(kind_real),intent(out) :: q(geom%nx,geom%ny,geom%nz) !< Potential vorticity
+real(kind_real),intent(inout) :: q(geom%nx,geom%ny,geom%nz) !< Potential vorticity
 
 ! Local variables
 integer :: ix,iy,iz

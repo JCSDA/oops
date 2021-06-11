@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2018  UCAR
+ * (C) Copyright 2018-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -20,10 +20,10 @@
 
 #include "eckit/config/Configuration.h"
 #include "eckit/testing/Test.h"
-#include "oops/base/VariableChangeBase.h"
 #include "oops/generic/instantiateVariableChangeFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/State.h"
+#include "oops/interface/VariableChange.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/Expect.h"
@@ -40,8 +40,10 @@ template <typename MODEL> class VariableChangeFixture : private boost::noncopyab
 
  public:
   static std::vector<eckit::LocalConfiguration> & confs() {return getInstance().confs_;}
-  static const State_          & xx()     {return *getInstance().xx_;}
   static const Geometry_       & resol()  {return *getInstance().resol_;}
+  static void reset() {
+    getInstance().resol_.reset();
+  }
 
  private:
   static VariableChangeFixture<MODEL>& getInstance() {
@@ -70,16 +72,15 @@ template <typename MODEL> class VariableChangeFixture : private boost::noncopyab
 
 template <typename MODEL> void testVariableChangeInverse() {
   typedef VariableChangeFixture<MODEL>   Test_;
-  typedef oops::State<MODEL>                   State_;
-  typedef oops::VariableChangeBase<MODEL>      VariableChange_;
-  typedef oops::VariableChangeFactory<MODEL>   VariableChangeFactory_;
+  typedef oops::State<MODEL>             State_;
+  typedef oops::VariableChange<MODEL>    VariableChange_;
 
   // Loop over all variable changes
   for (std::size_t jj = 0; jj < Test_::confs().size(); ++jj) {
     // Construct variable change
-    std::unique_ptr<VariableChange_> \
-      changevar(VariableChangeFactory_::create(Test_::confs()[jj], Test_::resol()));
+    VariableChange_ changevar(Test_::resol(), Test_::confs()[jj]);
 
+    oops::Log::test() << "Testing VariableChange: " << changevar << std::endl;
     // User specified tolerance for pass/fail
     const double tol = Test_::confs()[jj].getDouble("tolerance inverse");
 
@@ -87,8 +88,7 @@ template <typename MODEL> void testVariableChangeInverse() {
     const eckit::LocalConfiguration initialConfig(Test_::confs()[jj], "state");
     State_ xx(Test_::resol(), initialConfig);
 
-    // Save copy of the initial state
-    State_ xref(xx);
+    const double xxnorm_ref = xx.norm();
 
     // Order, inverse first or not (default)
     // Note: switch input and output variables in configuration if true
@@ -98,21 +98,22 @@ template <typename MODEL> void testVariableChangeInverse() {
     if (inverseFirst) {
       oops::Variables varin(Test_::confs()[jj], "input variables");
       State_ xin(Test_::resol(), varin, xx.validTime());
-      changevar->changeVarInverse(xx, xin);
-      changevar->changeVar(xin, xx);
+      changevar.changeVarInverse(xx, xin);
+//      xx.zero();  Test for GEOS fails if uncommented
+      changevar.changeVar(xin, xx);
     } else {
       oops::Variables varout(Test_::confs()[jj], "output variables");
       State_ xout(Test_::resol(), varout, xx.validTime());
-      changevar->changeVar(xx, xout);
-      changevar->changeVarInverse(xout, xx);
+      changevar.changeVar(xx, xout);
+//      xx.zero();  Test for GEOS fails if uncommented
+      changevar.changeVarInverse(xout, xx);
     }
 
     // Compute norms of the result and reference
-    const double xxnorm_ref = xref.norm();
     const double xxnorm_tst =   xx.norm();
 
     // Print the input and final state
-    oops::Log::info() << "<xin>, <K^{-1}[K(xin)]>, (<xin>-<K^{-1}[K(xin)]<xin>)/>=" << xxnorm_ref <<
+    oops::Log::test() << "<xin>, <K^{-1}[K(xin)]>, (<xin>-<K^{-1}[K(xin)]<xin>)/>=" << xxnorm_ref <<
                       " " << xxnorm_tst << " " << (xxnorm_ref - xxnorm_tst)/xxnorm_ref <<std::endl;
 
     // Is result similar to the reference
@@ -161,7 +162,7 @@ template <typename MODEL> void testVariableChangeFactoryGetMakerNames() {
 template <typename MODEL> class VariableChange : public oops::Test {
  public:
   VariableChange() {}
-  virtual ~VariableChange() {}
+  virtual ~VariableChange() {VariableChangeFixture<MODEL>::reset();}
  private:
   std::string testid() const override {return "test::VariableChange<" + MODEL::name() + ">";}
 

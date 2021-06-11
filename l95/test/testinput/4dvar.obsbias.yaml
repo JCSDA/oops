@@ -26,8 +26,8 @@ cost function:
       covariance model: diagonal
     obs bias:
       bias: 0.0
-    obs bias error:
-      standard_deviation: 0.8
+      covariance:
+        standard_deviation: 0.8
   constraints:
   - jcdfi:
       filtered variables: [x]
@@ -74,3 +74,9 @@ output:
   first: PT3H
   frequency: PT06H
   type: an
+test:
+  reference filename: testoutput/4dvar.obsbias.test
+  float relative tolerance: 0.0
+  integer tolerance: 0
+  log output filename: testoutput/4dvar.obsbias.log.out
+  test output filename: testoutput/4dvar.obsbias.test.out

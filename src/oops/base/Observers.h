@@ -1,135 +1,109 @@
 /*
- * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2020 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
- * In applying this licence, ECMWF does not waive the privileges and immunities
- * granted to it by virtue of its status as an intergovernmental organisation nor
- * does it submit to any jurisdiction.
  */
 
 #ifndef OOPS_BASE_OBSERVERS_H_
 #define OOPS_BASE_OBSERVERS_H_
 
-#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "eckit/config/LocalConfiguration.h"
+
+#include "oops/base/GetValuePosts.h"
 #include "oops/base/ObsAuxControls.h"
+#include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
 #include "oops/base/ObsSpaces.h"
-#include "oops/base/PostBase.h"
-#include "oops/base/QCData.h"
+#include "oops/base/PostProcessor.h"
+#include "oops/interface/Geometry.h"
+#include "oops/interface/ObsVector.h"
 #include "oops/interface/State.h"
-#include "oops/util/DateTime.h"
-#include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
 
-/// Computes observation equivalent during model run.
-
 // -----------------------------------------------------------------------------
 
+/// \brief Computes observation operator (from GeoVaLs), applies bias correction
+///        and runs QC filters
 template <typename MODEL, typename OBS>
-class Observers : public PostBase<State<MODEL>> {
-  typedef GeoVaLs<OBS>             GeoVaLs_;
-  typedef ObsAuxControls<OBS>      ObsAuxCtrls_;
-  typedef Observations<OBS>        Observations_;
-  typedef Observer<MODEL, OBS>     Observer_;
-  typedef ObsSpaces<OBS>           ObsSpaces_;
-  typedef QCData<OBS>              QCData_;
-  typedef State<MODEL>               State_;
+class Observers {
+  typedef Geometry<MODEL>               Geometry_;
+  typedef GetValuePosts<MODEL, OBS>     GetValuePosts_;
+  typedef ObsAuxControls<OBS>           ObsAuxCtrls_;
+  typedef ObsErrors<OBS>                ObsErrors_;
+  typedef Observations<OBS>             Observations_;
+  typedef Observer<MODEL, OBS>          Observer_;
+  typedef ObsSpaces<OBS>                ObsSpaces_;
+  typedef ObsVector<OBS>                ObsVector_;
+  typedef State<MODEL>                  State_;
+  typedef PostProcessor<State_>         PostProc_;
 
  public:
-  Observers(const eckit::Configuration &, const ObsSpaces_ & obsdb, const ObsAuxCtrls_ &,
-            QCData_ &);
-  ~Observers() {}
+/// \brief Initializes ObsOperators, Locations, and QC data
+  Observers(const ObsSpaces_ &, const eckit::Configuration &);
 
-  const Observations_ & hofx() {return yobs_;}
+/// \brief Initializes variables, obs bias, obs filters (could be different for
+/// different iterations
+  void initialize(const Geometry_ &, const ObsAuxCtrls_ &, ObsErrors_ &,
+                  PostProc_ &, const int iter = -1);
+
+/// \brief Computes H(x) from the filled in GeoVaLs
+  void finalize(Observations_ &);
 
  private:
-// Methods
-  void doInitialize(const State_ &, const util::DateTime &, const util::Duration &) override;
-  void doProcessing(const State_ &) override;
-  void doFinalize(const State_ &) override;
-
-// Data
-  ObsSpaces_ obspace_;
-  Observations_ yobs_;
-
-  util::DateTime winbgn_;   //!< Begining of assimilation window
-  util::DateTime winend_;   //!< End of assimilation window
-  util::Duration hslot_;    //!< Half time slot
-
-  std::vector<std::shared_ptr<Observer_>> observers_;
+  std::vector<std::unique_ptr<Observer_>>  observers_;
 };
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-Observers<MODEL, OBS>::Observers(const eckit::Configuration & conf, const ObsSpaces_ & obsdb,
-                                 const ObsAuxCtrls_ & ybias, QCData_ & qc)
-  : PostBase<State_>(),
-    obspace_(obsdb), yobs_(obsdb),
-    winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()), hslot_(0), observers_(0)
+Observers<MODEL, OBS>::Observers(const ObsSpaces_ & obspaces, const eckit::Configuration & config)
+  : observers_()
 {
-  Log::trace() << "Observers::Observers starting" << std::endl;
+  Log::trace() << "Observers<MODEL, OBS>::Observers start" << std::endl;
 
-  const int iterout = conf.getInt("iteration", 0);
-  std::vector<eckit::LocalConfiguration> typeconf;
-  conf.get("observations", typeconf);
-  ASSERT(obsdb.size() == typeconf.size());
-  observers_.reserve(obsdb.size());
-  for (size_t jj = 0; jj < obsdb.size(); ++jj) {
-    typeconf[jj].set("iteration", iterout);
-    observers_.emplace_back(new Observer_(typeconf[jj], obsdb[jj],
-                                ybias[jj], yobs_[jj], qc.qcFlags(jj), qc.obsErrors(jj)));
+  std::vector<eckit::LocalConfiguration> obsconfs = config.getSubConfigurations();
+  for (size_t jj = 0; jj < obspaces.size(); ++jj) {
+    observers_.emplace_back(new Observer_(obspaces[jj], obsconfs[jj]));
   }
-  Log::trace() << "Observers::Observers done" << std::endl;
+
+  Log::trace() << "Observers<MODEL, OBS>::Observers done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-void Observers<MODEL, OBS>::doInitialize(const State_ & xx, const util::DateTime & end,
-                                         const util::Duration & tstep) {
-  Log::trace() << "Observers::doInitialize start" << std::endl;
-  const util::DateTime bgn(xx.validTime());
-  hslot_ = tstep/2;
+void Observers<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrls_ & obsaux,
+                                       ObsErrors_ & Rmat, PostProc_ & pp, const int iter) {
+  Log::trace() << "Observers<MODEL, OBS>::initialize start" << std::endl;
 
+  std::shared_ptr<GetValuePosts_> getvals(new GetValuePosts_());
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
-    observers_[jj]->doInitialize(xx, winbgn_, winend_);
+    getvals->append(observers_[jj]->initialize(geom, obsaux[jj], Rmat[jj], iter));
   }
-  Log::trace() << "Observers::doInitialize done" << std::endl;
+  pp.enrollProcessor(getvals);
+
+  Log::trace() << "Observers<MODEL, OBS>::initialize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-void Observers<MODEL, OBS>::doProcessing(const State_ & xx) {
-  Log::trace() << "Observers::doProcessing start" << std::endl;
-  util::DateTime t1 = std::max(xx.validTime()-hslot_, winbgn_);
-  util::DateTime t2 = std::min(xx.validTime()+hslot_, winend_);
+void Observers<MODEL, OBS>::finalize(Observations_ & yobs) {
+  oops::Log::trace() << "Observers<MODEL, OBS>::finalize start" << std::endl;
 
-// Get state variables at obs locations
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
-    observers_[jj]->doProcessing(xx, t1, t2);
+    observers_[jj]->finalize(yobs[jj]);
   }
-  Log::trace() << "Observers::doProcessing done" << std::endl;
-}
 
-// -----------------------------------------------------------------------------
-
-template <typename MODEL, typename OBS>
-void Observers<MODEL, OBS>::doFinalize(const State_ &) {
-  Log::trace() << "Observers::doFinalize start" << std::endl;
-  for (size_t jj = 0; jj < observers_.size(); ++jj) {
-    observers_[jj]->doFinalize();
-  }
-  Log::trace() << "Observers::doFinalize done" << std::endl;
+  oops::Log::trace() << "Observers<MODEL, OBS>::finalize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

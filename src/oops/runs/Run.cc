@@ -20,6 +20,7 @@
 #include "oops/util/LibOOPS.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCountHelper.h"
+#include "oops/util/printRunStats.h"
 #include "oops/util/TimerHelper.h"
 
 #ifdef ENABLE_GPTL
@@ -92,24 +93,28 @@ Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(
 // Read configuration
   config_.reset(new eckit::YAMLConfiguration(configfile));
 
+  // Configure TestReference with "test:" sub-config
+  if (config_->has("test"))
+    LibOOPS::instance().testReferenceInitialise(config_->getSubConfiguration("test"));
+
   Log::info() << "Configuration input file is: " << configfile << std::endl;
   Log::info() << "Full configuration is:"  << *config_ << std::endl;
 
 // Start measuring performance
-  util::ObjectCountHelper::start();
   util::TimerHelper::start();
+  util::ObjectCountHelper::start();
 }
 
 // -----------------------------------------------------------------------------
 
 Run::~Run() {
   LibOOPS::instance().finalise();  // Finalize MPI and logs
-    Log::trace() << "Oops::Run destructed" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 int Run::execute(const Application & app) {
+  util::printRunStats("Run start", true);
   int status = 1;
   Log::info() << "Run: Starting " << app << std::endl;
   try {
@@ -130,11 +135,12 @@ int Run::execute(const Application & app) {
     status = 1;
     Log::error() << "Unknown exception: " << app << " terminating..." << std::endl;
   }
-  Log::info() << "Run: Finishing " << app << std::endl;
+  Log::info() << std::endl << "Run: Finishing " << app << std::endl;
 
 // Performance diagnostics
   util::ObjectCountHelper::stop();
   util::TimerHelper::stop();
+  util::printRunStats("Run end", true);
 
   Log::info() << "Run: Finishing " << app << " with status = " << status << std::endl;
   return status;

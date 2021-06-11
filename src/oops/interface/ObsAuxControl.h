@@ -21,10 +21,6 @@
 #include "oops/util/Printable.h"
 #include "oops/util/Timer.h"
 
-namespace eckit {
-  class Configuration;
-}
-
 namespace oops {
   class Variables;
 
@@ -33,12 +29,14 @@ namespace oops {
 template <typename OBS>
 class ObsAuxControl : public util::Printable,
                       private util::ObjectCounter<ObsAuxControl<OBS> > {
-  typedef typename OBS::ObsAuxControl        ObsAuxControl_;
+  typedef typename OBS::ObsAuxControl          ObsAuxControl_;
 
  public:
+  typedef typename ObsAuxControl_::Parameters_ Parameters_;
+
   static const std::string classname() {return "oops::ObsAuxControl";}
 
-  ObsAuxControl(const ObsSpace<OBS> &, const eckit::Configuration &);
+  ObsAuxControl(const ObsSpace<OBS> &, const Parameters_ &params);
   explicit ObsAuxControl(const ObsAuxControl &, const bool copy = true);
   ~ObsAuxControl();
 
@@ -47,8 +45,8 @@ class ObsAuxControl : public util::Printable,
   ObsAuxControl_ & obsauxcontrol() {return *aux_;}
 
 /// I/O and diagnostics
-  void read(const eckit::Configuration &);
-  void write(const eckit::Configuration &) const;
+  void read(const Parameters_ &);
+  void write(const Parameters_ &) const;
   double norm() const;
 
 /// Other
@@ -67,11 +65,11 @@ class ObsAuxControl : public util::Printable,
 
 template<typename OBS>
 ObsAuxControl<OBS>::ObsAuxControl(const ObsSpace<OBS> & os,
-                                    const eckit::Configuration & conf) : aux_()
+                                    const Parameters_ & params) : aux_()
 {
   Log::trace() << "ObsAuxControl<OBS>::ObsAuxControl starting" << std::endl;
   util::Timer timer(classname(), "ObsAuxControl");
-  aux_.reset(new ObsAuxControl_(os.obsspace(), conf));
+  aux_.reset(new ObsAuxControl_(os.obsspace(), params));
   Log::trace() << "ObsAuxControl<OBS>::ObsAuxControl done" << std::endl;
 }
 
@@ -99,20 +97,20 @@ ObsAuxControl<OBS>::~ObsAuxControl() {
 // -----------------------------------------------------------------------------
 
 template<typename OBS>
-void ObsAuxControl<OBS>::read(const eckit::Configuration & conf) {
+void ObsAuxControl<OBS>::read(const Parameters_ & params) {
   Log::trace() << "ObsAuxControl<OBS>::read starting" << std::endl;
   util::Timer timer(classname(), "read");
-  aux_->read(conf);
+  aux_->read(params);
   Log::trace() << "ObsAuxControl<OBS>::read done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename OBS>
-void ObsAuxControl<OBS>::write(const eckit::Configuration & conf) const {
+void ObsAuxControl<OBS>::write(const Parameters_ & params) const {
   Log::trace() << "ObsAuxControl<OBS>::write starting" << std::endl;
   util::Timer timer(classname(), "write");
-  aux_->write(conf);
+  aux_->write(params);
   Log::trace() << "ObsAuxControl<OBS>::write done" << std::endl;
 }
 

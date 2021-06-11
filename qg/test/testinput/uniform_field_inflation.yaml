@@ -1,0 +1,24 @@
+forecast length: PT0S
+initial condition:
+  analytic_init: uniform_field
+  date: 2010-01-01T00:00:00Z
+  uval: 2.0
+model:
+  name: QG
+  tstep: PT10M
+output:
+  datadir: Data
+  date: 2010-01-01T00:00:00Z
+  exp: uniform_field_inflation
+  frequency: PT12H
+  type: fc
+prints:
+  frequency: PT3H
+geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+  heating: false
+
+test:
+  reference filename: testoutput/uniform_field_inflation.test

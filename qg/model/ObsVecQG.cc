@@ -1,6 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * (C) Copyright 2017-2019 UCAR.
+ * (C) Copyright 2017-2021 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -13,6 +13,7 @@
 
 #include "oops/util/Logger.h"
 
+#include "model/ObsDataQG.h"
 #include "model/ObsSpaceQG.h"
 #include "model/ObsVecQG.h"
 #include "model/QgFortran.h"
@@ -21,14 +22,11 @@
 
 namespace qg {
 // -----------------------------------------------------------------------------
-ObsVecQG::ObsVecQG(const ObsSpaceQG & obsdb,
-                   const std::string & name, const bool fail)
+ObsVecQG::ObsVecQG(const ObsSpaceQG & obsdb, const std::string & name)
   : obsdb_(obsdb), keyOvec_(0)
 {
   qg_obsvec_setup_f90(keyOvec_, obsdb.obsvariables().size(), obsdb.nobs());
-  if (!name.empty()) {
-    if (fail || obsdb_.has(name)) obsdb_.getdb(name, keyOvec_);
-  }
+  if (!name.empty()) obsdb_.getdb(name, keyOvec_);
 }
 // -----------------------------------------------------------------------------
 ObsVecQG::ObsVecQG(const ObsVecQG & other)
@@ -37,20 +35,11 @@ ObsVecQG::ObsVecQG(const ObsVecQG & other)
   qg_obsvec_copy_f90(keyOvec_, other.keyOvec_);
 }
 // -----------------------------------------------------------------------------
-ObsVecQG::ObsVecQG(const ObsSpaceQG & obsdb, const ObsVecQG & other)
-  : obsdb_(obsdb), keyOvec_(0)
-{
-  qg_obsvec_setup_f90(keyOvec_, obsdb.obsvariables().size(), obsdb.nobs());
-  qg_obsvec_copy_local_f90(keyOvec_, other.keyOvec_, obsdb.localobs().size(),
-                           obsdb.localobs().data());
-}
-// -----------------------------------------------------------------------------
 ObsVecQG::~ObsVecQG() {
   qg_obsvec_delete_f90(keyOvec_);
 }
 // -----------------------------------------------------------------------------
 ObsVecQG & ObsVecQG::operator= (const ObsVecQG & rhs) {
-  ASSERT(nobs() == rhs.nobs());
   const int keyOvecRhs = rhs.keyOvec_;
   qg_obsvec_copy_f90(keyOvec_, keyOvecRhs);
   return *this;
@@ -62,30 +51,31 @@ ObsVecQG & ObsVecQG::operator*= (const double & zz) {
 }
 // -----------------------------------------------------------------------------
 ObsVecQG & ObsVecQG::operator+= (const ObsVecQG & rhs) {
-  ASSERT(nobs() == rhs.nobs());
   const int keyOvecRhs = rhs.keyOvec_;
   qg_obsvec_add_f90(keyOvec_, keyOvecRhs);
   return *this;
 }
 // -----------------------------------------------------------------------------
 ObsVecQG & ObsVecQG::operator-= (const ObsVecQG & rhs) {
-  ASSERT(nobs() == rhs.nobs());
   const int keyOvecRhs = rhs.keyOvec_;
   qg_obsvec_sub_f90(keyOvec_, keyOvecRhs);
   return *this;
 }
 // -----------------------------------------------------------------------------
 ObsVecQG & ObsVecQG::operator*= (const ObsVecQG & rhs) {
-  ASSERT(nobs() == rhs.nobs());
   const int keyOvecRhs = rhs.keyOvec_;
   qg_obsvec_mul_f90(keyOvec_, keyOvecRhs);
   return *this;
 }
 // -----------------------------------------------------------------------------
 ObsVecQG & ObsVecQG::operator/= (const ObsVecQG & rhs) {
-  ASSERT(nobs() == rhs.nobs());
   const int keyOvecRhs = rhs.keyOvec_;
   qg_obsvec_div_f90(keyOvec_, keyOvecRhs);
+  return *this;
+}
+// -----------------------------------------------------------------------------
+ObsVecQG & ObsVecQG::operator=(const ObsDataQG<float> & rhs) {
+  *this = rhs.vect();
   return *this;
 }
 // -----------------------------------------------------------------------------
@@ -93,8 +83,15 @@ void ObsVecQG::zero() {
   qg_obsvec_zero_f90(keyOvec_);
 }
 // -----------------------------------------------------------------------------
+void ObsVecQG::zero(int ii) {
+  qg_obsvec_zero_ith_f90(keyOvec_, ii);
+}
+// -----------------------------------------------------------------------------
+void ObsVecQG::ones() {
+  qg_obsvec_ones_f90(keyOvec_);
+}
+// -----------------------------------------------------------------------------
 void ObsVecQG::axpy(const double & zz, const ObsVecQG & rhs) {
-  ASSERT(nobs() == rhs.nobs());
   const int keyOvecRhs = rhs.keyOvec_;
   qg_obsvec_axpy_f90(keyOvec_, zz, keyOvecRhs);
 }
@@ -108,7 +105,6 @@ void ObsVecQG::random() {
 }
 // -----------------------------------------------------------------------------
 double ObsVecQG::dot_product_with(const ObsVecQG & other) const {
-  ASSERT(nobs() == other.nobs());
   const int keyOvecOther = other.keyOvec_;
   double zz;
   qg_obsvec_dotprod_f90(keyOvec_, keyOvecOther, zz);
@@ -126,18 +122,24 @@ double ObsVecQG::rms() const {
   return zz;
 }
 // -----------------------------------------------------------------------------
+void ObsVecQG::mask(const ObsDataQG<int> & mask) {
+  qg_obsvec_mask_f90(keyOvec_, mask.toFortran());
+}
+// -----------------------------------------------------------------------------
 void ObsVecQG::save(const std::string & name) const {
   obsdb_.putdb(name, keyOvec_);
 }
 // -----------------------------------------------------------------------------
-Eigen::VectorXd ObsVecQG::packEigen() const {
-  Eigen::VectorXd vec(nobs());
-  double val;
-  for (unsigned int ii = 0; ii < nobs(); ++ii) {
-    qg_obsvec_getat_f90(keyOvec_, ii, val);
-    vec(ii) = val;
-  }
+Eigen::VectorXd ObsVecQG::packEigen(const ObsDataQG<int> & mask) const {
+  Eigen::VectorXd vec(packEigenSize(mask));
+  qg_obsvec_get_withmask_f90(keyOvec_, mask.toFortran(), vec.data(), vec.size());
   return vec;
+}
+// -----------------------------------------------------------------------------
+size_t ObsVecQG::packEigenSize(const ObsDataQG<int> & mask) const {
+  int nobs;
+  qg_obsvec_nobs_withmask_f90(keyOvec_, mask.toFortran(), nobs);
+  return nobs;
 }
 // -----------------------------------------------------------------------------
 void ObsVecQG::read(const std::string & name) {
@@ -145,21 +147,32 @@ void ObsVecQG::read(const std::string & name) {
 }
 // -----------------------------------------------------------------------------
 void ObsVecQG::print(std::ostream & os) const {
-  double scaling, zmin, zmax, zavg;
-  qg_obsvec_stats_f90(keyOvec_, scaling, zmin, zmax, zavg);
-  std::ios_base::fmtflags f(os.flags());
-  os << obsdb_.obsname() << " nobs= " << nobs()
-     << " Scaling=" << std::setprecision(4) << std::setw(7) << scaling
-     << ", Min=" << std::fixed << std::setprecision(4) << std::setw(12) << zmin
-     << ", Max=" << std::fixed << std::setprecision(4) << std::setw(12) << zmax
-     << ", Average=" << std::fixed << std::setprecision(4) << std::setw(12) << zavg;
-  os.flags(f);
+  if (nobs() == 0) {
+    os << obsdb_.obsname() << " no observations.";
+  } else {
+    double zmin, zmax, zavg;
+    qg_obsvec_stats_f90(keyOvec_, zmin, zmax, zavg);
+    std::ios_base::fmtflags f(os.flags());
+    os << obsdb_.obsname() << " nobs= " << nobs()
+       << std::scientific << std::setprecision(4)
+       << "  Min=" << std::setw(12) << zmin
+       << ", Max=" << std::setw(12) << zmax
+       << ", Average=" << std::setw(12) << zavg;
+    os.flags(f);
+  }
 }
 // -----------------------------------------------------------------------------
 unsigned int ObsVecQG::nobs() const {
   int iobs;
   qg_obsvec_nobs_f90(keyOvec_, iobs);
   unsigned int nobs(iobs);
+  return nobs;
+}
+// -----------------------------------------------------------------------------
+size_t ObsVecQG::size() const {
+  int iobs;
+  qg_obsvec_size_f90(keyOvec_, iobs);
+  size_t nobs(iobs);
   return nobs;
 }
 // -----------------------------------------------------------------------------

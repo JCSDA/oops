@@ -16,6 +16,10 @@
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
+namespace eckit {
+  class Configuration;
+}
+
 namespace lorenz95 {
   class GomL95;
   class LocsL95;
@@ -30,7 +34,7 @@ class GetValuesL95 : public util::Printable,
   static const std::string classname() {return "lorenz95::GetValuesL95";}
 
   /// \brief computes indices resolidx_ of nearest gridpoints for all locations \p locs
-  GetValuesL95(const Resolution &, const LocsL95 & locs);
+  GetValuesL95(const Resolution &, const LocsL95 & locs, const eckit::Configuration &);
 
   /// \brief fills in \p geovals for all observations in the timeframe (\p t1, \p t2],
   /// \p geovals are equal to the value of \p state at the nearest gridpoint

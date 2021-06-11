@@ -121,6 +121,7 @@ ControlIncrement<MODEL, OBS>::ControlIncrement(const JbTotal_ & jb)
     obsbias_(jb.jbObsBias().obspaces(), jb.jbObsBias().config()),
     windowBegin_(jb.windowBegin()), windowEnd_(jb.windowEnd())
 {
+  this->setObjectSize(this->serialSize()*sizeof(double));
   Log::trace() << "ControlIncrement:ControlIncrement created." << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -129,6 +130,7 @@ ControlIncrement<MODEL, OBS>::ControlIncrement(const ControlIncrement & other, c
   : increment_(other.increment_, copy), modbias_(other.modbias_, copy),
     obsbias_(other.obsbias_, copy), windowBegin_(other.windowBegin_), windowEnd_(other.windowEnd_)
 {
+  this->setObjectSize(this->serialSize()*sizeof(double));
   Log::trace() << "ControlIncrement:ControlIncrement copied." << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -138,6 +140,7 @@ ControlIncrement<MODEL, OBS>::ControlIncrement(const ControlIncrement & other,
   : increment_(other.increment_, tlConf), modbias_(other.modbias_, tlConf),
     obsbias_(other.obsbias_, tlConf), windowBegin_(other.windowBegin_), windowEnd_(other.windowEnd_)
 {
+  this->setObjectSize(this->serialSize()*sizeof(double));
   Log::trace() << "ControlIncrement:ControlIncrement copied." << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -147,6 +150,7 @@ ControlIncrement<MODEL, OBS>::ControlIncrement(const Geometry_ & geom,
   : increment_(geom, other.increment_), modbias_(other.modbias_, true),
     obsbias_(other.obsbias_, true), windowBegin_(other.windowBegin_), windowEnd_(other.windowEnd_)
 {
+  this->setObjectSize(this->serialSize()*sizeof(double));
   Log::trace() << "ControlIncrement:ControlIncrement copied." << std::endl;
 }
 // -----------------------------------------------------------------------------

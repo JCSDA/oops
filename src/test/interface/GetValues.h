@@ -60,6 +60,16 @@ template <typename MODEL, typename OBS> class GetValuesFixture : private boost::
   static const LocalConfig_      & testconf()        {return *getInstance().testconf_;}
   static const Locations_        & locs()            {return *getInstance().locs_;}
   static const Variables_        & geovalvars()      {return *getInstance().geovalvars_;}
+  static void reset() {
+    getInstance().getvalues_.reset();
+    getInstance().geovals_.reset();
+    getInstance().timeend_.reset();
+    getInstance().timebeg_.reset();
+    getInstance().locs_.reset();
+    getInstance().geovalvars_.reset();
+    getInstance().resol_.reset();
+    getInstance().testconf_.reset();
+  }
 
  private:
   static GetValuesFixture<MODEL, OBS>& getInstance() {
@@ -89,8 +99,10 @@ template <typename MODEL, typename OBS> class GetValuesFixture : private boost::
     geovals_.reset(new GeoVaLs_(*locs_, *geovalvars_));
 
     // GetValues
-    getvalues_.reset(new GetValues_(*resol_, *locs_));
-  }
+    LocalConfig_ getvaluesConfig;
+    if (TestEnvironment::config().has("get values"))
+      getvaluesConfig = eckit::LocalConfiguration(TestEnvironment::config(), "get values");
+    getvalues_.reset(new GetValues_( *resol_, *locs_, getvaluesConfig)); }
 
   ~GetValuesFixture<MODEL, OBS>() {}
 
@@ -105,14 +117,16 @@ template <typename MODEL, typename OBS> class GetValuesFixture : private boost::
 };
 
 // =================================================================================================
-
+/// \brief tests constructor and print method
 template <typename MODEL, typename OBS> void testGetValuesConstructor() {
   typedef GetValuesFixture<MODEL, OBS>  Test_;
   typedef oops::GetValues<MODEL, OBS>   GetValues_;
 
-  std::unique_ptr<const GetValues_> GetValues(new GetValues_(Test_::resol(), Test_::locs()));
-  EXPECT(GetValues.get());
+  std::unique_ptr<const GetValues_>
+    GetValues(new GetValues_(Test_::resol(), Test_::locs(), TestEnvironment::config()));
 
+  EXPECT(GetValues.get());
+  oops::Log::test() << "Testing GetValues: " << *GetValues << std::endl;
   GetValues.reset();
   EXPECT(!GetValues.get());
 }
@@ -228,7 +242,7 @@ template <typename MODEL, typename OBS>
 class GetValues : public oops::Test {
  public:
   GetValues() {}
-  virtual ~GetValues() {}
+  virtual ~GetValues() {GetValuesFixture<MODEL, OBS>::reset();}
 
  private:
   std::string testid() const override {return "test::GetValues<" + MODEL::name() +
@@ -237,11 +251,11 @@ class GetValues : public oops::Test {
   void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts.emplace_back(CASE("interface/GeometryIterator/testGetValuesConstructor")
+    ts.emplace_back(CASE("interface/GetValues/testGetValuesConstructor")
       { testGetValuesConstructor<MODEL, OBS>(); });
-    ts.emplace_back(CASE("interface/GeometryIterator/testGetValuesMultiWindow")
+    ts.emplace_back(CASE("interface/GetValues/testGetValuesMultiWindow")
       { testGetValuesMultiWindow<MODEL, OBS>(); });
-    ts.emplace_back(CASE("interface/GeometryIterator/testGetValuesInterpolation")
+    ts.emplace_back(CASE("interface/GetValues/testGetValuesInterpolation")
       { testGetValuesInterpolation<MODEL, OBS>(); });
   }
 

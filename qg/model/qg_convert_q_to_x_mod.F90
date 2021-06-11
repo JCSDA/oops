@@ -30,11 +30,12 @@ type(qg_geom),intent(in) :: geom                          !< Geometry
 real(kind_real),intent(in) :: q(geom%nx,geom%ny,geom%nz)  !< Potential vorticity
 real(kind_real),intent(in) :: x_north(geom%nz)            !< Streamfunction on northern wall
 real(kind_real),intent(in) :: x_south(geom%nz)            !< Streamfunction on southern wall
-real(kind_real),intent(out) :: x(geom%nx,geom%ny,geom%nz) !< Streamfunction
+real(kind_real),intent(inout) :: x(geom%nx,geom%ny,geom%nz) !< Streamfunction
 
 ! Local variables
 integer :: ix,iy,iz
 real(kind_real) :: q_nobc(geom%nx,geom%ny,geom%nz),pinv_q(geom%nx,geom%ny,geom%nz),pinv_x(geom%nx,geom%ny,geom%nz)
+real(kind_real) :: zz
 
 ! Subtract the beta term and the heating term
 !$omp parallel do schedule(static) private(iy)
@@ -45,10 +46,11 @@ enddo
 !$omp end parallel do
 
 ! Subtract the contribution from the boundaries
+zz = 1.0 / (geom%deltay * geom%deltay)
 !$omp parallel do schedule(static) private(iz)
 do iz=1,geom%nz
-  q_nobc(:,1,iz) = q_nobc(:,1,iz)-x_south(iz)/geom%deltay**2
-  q_nobc(:,geom%ny,iz) = q_nobc(:,geom%ny,iz)-x_north(iz)/geom%deltay**2
+  q_nobc(:,1,iz) = q_nobc(:,1,iz)-x_south(iz)*zz
+  q_nobc(:,geom%ny,iz) = q_nobc(:,geom%ny,iz)-x_north(iz)*zz
 enddo
 !$omp end parallel do
 
@@ -89,7 +91,7 @@ implicit none
 ! Passed variables
 type(qg_geom),intent(in) :: geom                          !< Geometry
 real(kind_real),intent(in) :: q(geom%nx,geom%ny,geom%nz)  !< Potential vorticity
-real(kind_real),intent(out) :: x(geom%nx,geom%ny,geom%nz) !< Streamfunction
+real(kind_real),intent(inout) :: x(geom%nx,geom%ny,geom%nz) !< Streamfunction
 
 ! Local variables
 integer :: ix,iy,iz

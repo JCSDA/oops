@@ -18,7 +18,7 @@
 
 #include "eckit/config/Configuration.h"
 #include "lorenz95/LocsL95.h"
-#include "lorenz95/ObsTableView.h"
+#include "lorenz95/ObsTable.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Random.h"
@@ -39,7 +39,7 @@ GomL95::GomL95(const LocsL95 & locs, const oops::Variables &)
 // -----------------------------------------------------------------------------
 /*! Constructor with Configuration */
 GomL95::GomL95(const eckit::Configuration & conf,
-               const ObsTableView &, const oops::Variables &)
+               const ObsTable &, const oops::Variables &)
   : size_(0), locval_()
 {
   this->read(conf);
@@ -132,28 +132,20 @@ void GomL95::write(const eckit::Configuration & conf) const {
 }
 // -----------------------------------------------------------------------------
 void GomL95::print(std::ostream & os) const {
-  double zmin = locval_[0];
-  double zmax = locval_[0];
-  size_t jmax = 0;
-  double zavg = 0.0;
-  for (size_t jj = 0; jj < size_; ++jj) {
-    if (locval_[jj] < zmin) zmin = locval_[jj];
-    if (locval_[jj] > zmax) {
-      zmax = locval_[jj];
-      jmax = jj;
+  if (size_ > 0) {
+    double zmin = locval_[0];
+    double zmax = locval_[0];
+    double zavg = 0.0;
+    for (size_t jj = 0; jj < size_; ++jj) {
+      if (locval_[jj] < zmin) zmin = locval_[jj];
+      if (locval_[jj] > zmax) zmax = locval_[jj];
+      zavg += locval_[jj];
     }
-    zavg += locval_[jj];
+    zavg /= size_;
+    os << size_ << "values,  Min=" << zmin << ", Max=" << zmax << ", Average=" << zavg;
+  } else {
+    os << " No observations";
   }
-  zavg /= size_;
-  os << size_ << "values,  Min=" << zmin << ", Max=" << zmax << ", Average=" << zavg;
-
-  // If the min value across all variables is positive, then this may be an
-  // error measurement.  If so, print the location where the maximum occurs
-  // to the debug stream, for use in debugging
-
-  if (zmin >= 0.0)
-    oops::Log::debug() << std::endl << "GomL95: Maximum Value = " << std::setprecision(4)
-                       << zmax << " at location = " << jmax << std::endl;
 }
 // -----------------------------------------------------------------------------
 

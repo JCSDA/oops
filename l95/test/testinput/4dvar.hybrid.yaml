@@ -14,40 +14,43 @@ cost function:
     filename: Data/test.fc.2010-01-01T00:00:00Z.PT3H
   background error:
     covariance model: hybrid
-    ensemble:
-      covariance model: ensemble
-      date: '2010-01-01T03:00:00Z'
-      localization:
+    components:
+    - covariance:
+        covariance model: ensemble
+        date: '2010-01-01T03:00:00Z'
+        localization:
+          length_scale: 1.0
+          localization method: L95
+        members:
+        - date: '2010-01-01T03:00:00Z'
+          filename: Data/test.ens.1.2010-01-01T00:00:00Z.PT3H
+        - date: '2010-01-01T03:00:00Z'
+          filename: Data/test.ens.2.2010-01-01T00:00:00Z.PT3H
+        - date: '2010-01-01T03:00:00Z'
+          filename: Data/test.ens.3.2010-01-01T00:00:00Z.PT3H
+        - date: '2010-01-01T03:00:00Z'
+          filename: Data/test.ens.4.2010-01-01T00:00:00Z.PT3H
+        - date: '2010-01-01T03:00:00Z'
+          filename: Data/test.ens.5.2010-01-01T00:00:00Z.PT3H
+        - date: '2010-01-01T03:00:00Z'
+          filename: Data/test.ens.6.2010-01-01T00:00:00Z.PT3H
+        - date: '2010-01-01T03:00:00Z'
+          filename: Data/test.ens.7.2010-01-01T00:00:00Z.PT3H
+        - date: '2010-01-01T03:00:00Z'
+          filename: Data/test.ens.8.2010-01-01T00:00:00Z.PT3H
+        - date: '2010-01-01T03:00:00Z'
+          filename: Data/test.ens.9.2010-01-01T00:00:00Z.PT3H
+        - date: '2010-01-01T03:00:00Z'
+          filename: Data/test.ens.10.2010-01-01T00:00:00Z.PT3H
+      weight:
+        value: 0.4
+    - covariance:
+        covariance model: L95Error
+        date: '2010-01-01T03:00:00Z'
         length_scale: 1.0
-        localization method: L95
-      members:
-      - date: '2010-01-01T03:00:00Z'
-        filename: Data/test.ens.1.2010-01-01T00:00:00Z.PT3H
-      - date: '2010-01-01T03:00:00Z'
-        filename: Data/test.ens.2.2010-01-01T00:00:00Z.PT3H
-      - date: '2010-01-01T03:00:00Z'
-        filename: Data/test.ens.3.2010-01-01T00:00:00Z.PT3H
-      - date: '2010-01-01T03:00:00Z'
-        filename: Data/test.ens.4.2010-01-01T00:00:00Z.PT3H
-      - date: '2010-01-01T03:00:00Z'
-        filename: Data/test.ens.5.2010-01-01T00:00:00Z.PT3H
-      - date: '2010-01-01T03:00:00Z'
-        filename: Data/test.ens.6.2010-01-01T00:00:00Z.PT3H
-      - date: '2010-01-01T03:00:00Z'
-        filename: Data/test.ens.7.2010-01-01T00:00:00Z.PT3H
-      - date: '2010-01-01T03:00:00Z'
-        filename: Data/test.ens.8.2010-01-01T00:00:00Z.PT3H
-      - date: '2010-01-01T03:00:00Z'
-        filename: Data/test.ens.9.2010-01-01T00:00:00Z.PT3H
-      - date: '2010-01-01T03:00:00Z'
-        filename: Data/test.ens.10.2010-01-01T00:00:00Z.PT3H
-    ensemble weight: '0.4'
-    static:
-      covariance model: L95Error
-      date: '2010-01-01T03:00:00Z'
-      length_scale: 1.0
-      standard_deviation: 0.6
-    static weight: '0.6'
+        standard_deviation: 0.6
+      weight:
+        value: 0.6
   observations:
   - obs error:
       covariance model: diagonal
@@ -96,3 +99,6 @@ output:
   first: PT3H
   frequency: PT06H
   type: an
+
+test:
+  reference filename: testoutput/4dvar.hybrid.test

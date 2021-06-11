@@ -14,6 +14,7 @@
 #include <cmath>
 #include <vector>
 
+#include "oops/assimilation/MinimizerUtils.h"
 #include "oops/assimilation/TriDiagSolve.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/formats.h"
@@ -164,8 +165,8 @@ double PLanczos(VECTOR & xx, const VECTOR & bb,
 
     betas.push_back(beta);
 
-    Log::info() << "PLanczos end of iteration " << jiter+1 << ". Norm reduction= "
-                << util::full_precision(normReduction) << std::endl << std::endl;
+    Log::info() << "PLanczos end of iteration " << jiter+1 << std::endl;
+    printNormReduction(jiter+1, rznorm, normReduction);
 
     ++jiter;
 

@@ -11,6 +11,9 @@
 #ifndef OOPS_ASSIMILATION_HTRINVHMATRIX_H_
 #define OOPS_ASSIMILATION_HTRINVHMATRIX_H_
 
+#include <memory>
+#include <utility>
+
 #include <boost/noncopyable.hpp>
 
 #include "oops/assimilation/ControlIncrement.h"
@@ -64,7 +67,7 @@ void HtRinvHMatrix<MODEL, OBS>::multiply(const CtrlInc_ & dx, CtrlInc_ & dz) con
 // Setup TL terms of cost function
   PostProcessorTLAD<MODEL> costtl;
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
-    costtl.enrollProcessor(j_.jterm(jj).setupTL(dx));
+    j_.jterm(jj).setPostProcTL(dx, costtl);
   }
 
 // Run TLM
@@ -79,23 +82,28 @@ void HtRinvHMatrix<MODEL, OBS>::multiply(const CtrlInc_ & dx, CtrlInc_ & dz) con
   DualVector<MODEL, OBS> zz;
 
   for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
-    ww.append(costtl.releaseOutputFromTL(jj));
-    zz.append(j_.jterm(jj).multiplyCoInv(*ww.getv(jj)));
-    costad.enrollProcessor(j_.jterm(jj).setupAD(zz.getv(jj), dz));
+    std::unique_ptr<GeneralizedDepartures> wtmp(j_.jterm(jj).newDualVector());
+    j_.jterm(jj).computeCostTL(dx, *wtmp);
+    zz.append(j_.jterm(jj).multiplyCoInv(*wtmp));
+    j_.jterm(jj).computeCostAD(zz.getv(jj), dz, costad);
+    if (test_) ww.append(std::move(wtmp));
   }
 
 // Run ADJ
   j_.runADJ(dz, costad);
 
-  if (test_) {
-     // <G dx, dy>, where dy = Rinv H dx
-     double adj_tst_fwd = dot_product(ww, zz);
-     // <dx, Gt dy> , where dy = Rinv H dx
-     double adj_tst_bwd = dot_product(dx, dz);
+  for (unsigned jj = 0; jj < j_.nterms(); ++jj) {
+    j_.jterm(jj).setPostProcAD();
+  }
 
-     Log::info() << "Online adjoint test, iteration: " << iter_ << std::endl
-                 << util::PrintAdjTest(adj_tst_fwd, adj_tst_bwd, "G")
-                 << std::endl;
+  if (test_) {
+    // <G dx, dy>, where dy = Rinv H dx
+    double adj_tst_fwd = dot_product(ww, zz);
+    // <dx, Gt dy> , where dy = Rinv H dx
+    double adj_tst_bwd = dot_product(dx, dz);
+
+    Log::info() << "Online adjoint test, iteration: " << iter_ << std::endl
+                << util::PrintAdjTest(adj_tst_fwd, adj_tst_bwd, "G") << std::endl;
   }
 }
 

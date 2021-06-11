@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -12,16 +12,16 @@
 #define OOPS_ASSIMILATION_DRPFOMMINIMIZER_H_
 
 #include <cmath>
+#include <memory>
 #include <string>
 #include <vector>
-
-#include <boost/ptr_container/ptr_vector.hpp>
 
 #include "oops/assimilation/BMatrix.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/DRMinimizer.h"
 #include "oops/assimilation/HtRinvHMatrix.h"
+#include "oops/assimilation/MinimizerUtils.h"
 #include "oops/assimilation/SpectralLMP.h"
 #include "oops/assimilation/UpHessSolve.h"
 #include "oops/util/dot_product.h"
@@ -82,9 +82,9 @@ template<typename MODEL, typename OBS> class DRPFOMMinimizer : public DRMinimize
   SpectralLMP<CtrlInc_> lmp_;
   // !!!!! Needs to be generalized for Hessenberg Matrix.
 
-  boost::ptr_vector<CtrlInc_> hvecs_;
-  boost::ptr_vector<CtrlInc_> vvecs_;
-  boost::ptr_vector<CtrlInc_> zvecs_;
+  std::vector<std::unique_ptr<CtrlInc_>> hvecs_;
+  std::vector<std::unique_ptr<CtrlInc_>> vvecs_;
+  std::vector<std::unique_ptr<CtrlInc_>> zvecs_;
   std::vector<double> alphas_;
   std::vector<double> betas_;
 };
@@ -143,11 +143,11 @@ double DRPFOMMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc
   zz *= 1/beta;
 
   // hvecs[0] = pr_{1} --> required for solution
-  hvecs_.push_back(new CtrlInc_(pr));
+  hvecs_.emplace_back(std::unique_ptr<CtrlInc_>(new CtrlInc_(pr)));
   // zvecs[0] = z_{1} ---> for re-orthogonalization
-  zvecs_.push_back(new CtrlInc_(zz));
+  zvecs_.emplace_back(std::unique_ptr<CtrlInc_>(new CtrlInc_(zz)));
   // vvecs[0] = v_{1} ---> for re-orthogonalization
-  vvecs_.push_back(new CtrlInc_(vv));
+  vvecs_.emplace_back(std::unique_ptr<CtrlInc_>(new CtrlInc_(vv)));
 
   // Initialiaze (maxiter + 1) by maxiter matrix H
   Hess.resize(maxiter);
@@ -169,8 +169,8 @@ double DRPFOMMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc
     vv += pr;
     // Arnoldi Process
     for (int jj = 0; jj <= jiter; ++jj) {
-      Hess[jiter][jj] = dot_product(zvecs_[jj], vv);
-      vv.axpy(-Hess[jiter][jj], vvecs_[jj]);
+      Hess[jiter][jj] = dot_product(*zvecs_[jj], vv);
+      vv.axpy(-Hess[jiter][jj], *vvecs_[jj]);
     }
 
     // z_{i+1} = B LMP v_{i+1}
@@ -191,18 +191,18 @@ double DRPFOMMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc
     zz *= 1/beta;
 
     // hvecs[i+1] =pr_{i+1}
-    hvecs_.push_back(new CtrlInc_(pr));
+    hvecs_.emplace_back(std::unique_ptr<CtrlInc_>(new CtrlInc_(pr)));
     // zvecs[i+1] = z_{i+1}
-    zvecs_.push_back(new CtrlInc_(zz));
+    zvecs_.emplace_back(std::unique_ptr<CtrlInc_>(new CtrlInc_(zz)));
     // vvecs[i+1] = v_{i+1}
-    vvecs_.push_back(new CtrlInc_(vv));
+    vvecs_.emplace_back(std::unique_ptr<CtrlInc_>(new CtrlInc_(vv)));
 
     if (jiter == 0) {
        ss.push_back(beta0/Hess[0][0]);
        dd.push_back(beta0);
      } else {
        // Solve the upper Hessenberg system H_{i} s_{i} = beta0 * e_1
-       dd.push_back(beta0*dot_product(zvecs_[0], vv));
+       dd.push_back(beta0*dot_product(*zvecs_[0], vv));
        UpHess = Hess;
        UpHess.resize(jiter+1);
        for (int ii = 0; ii <= jiter; ii++) {
@@ -222,8 +222,8 @@ double DRPFOMMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc
     double costJ = costJ0;
     double costJb = costJ0Jb;
     for (int jj = 0; jj < jiter+1; ++jj) {
-      costJ -= 0.5 * ss[jj] * dot_product(zvecs_[jj], rr);
-      costJb += 0.5 * ss[jj] * dot_product(vvecs_[jj], zvecs_[jj]) * ss[jj];
+      costJ -= 0.5 * ss[jj] * dot_product(*zvecs_[jj], rr);
+      costJb += 0.5 * ss[jj] * dot_product(*vvecs_[jj], *zvecs_[jj]) * ss[jj];
     }
     double costJoJc = costJ - costJb;
 
@@ -231,15 +231,9 @@ double DRPFOMMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc
     double rznorm = beta*std::abs(ss[jiter]);
     normReduction = rznorm/beta0;
 
-    Log::info() << "DRPFOM end of iteration " << jiter+1 << std::endl
-                << "  Norm reduction ("               << std::setw(2) << jiter+1 << ") = "
-                  << util::full_precision(normReduction) << std::endl
-                << "  Quadratic cost function: J   (" << std::setw(2) << jiter+1 << ") = "
-                  << util::full_precision(costJ)         << std::endl
-                << "  Quadratic cost function: Jb  (" << std::setw(2) << jiter+1 << ") = "
-                  << util::full_precision(costJb)        << std::endl
-                << "  Quadratic cost function: JoJc(" << std::setw(2) << jiter+1 << ") = "
-                  << util::full_precision(costJoJc)      << std::endl << std::endl;
+    Log::info() << "DRPFOM end of iteration " << jiter+1 << std::endl;
+    printNormReduction(jiter+1, rznorm, normReduction);
+    printQuadraticCostFunction(jiter+1, costJ, costJb, costJoJc);
 
     if (normReduction < tolerance) {
       Log::info() << "DRPFOM: Achieved required reduction in residual norm." << std::endl;
@@ -249,8 +243,8 @@ double DRPFOMMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc
 
   // Calculate the solution (dxh = Binv dx)
   for (unsigned int jj = 0; jj < ss.size(); ++jj) {
-    dx.axpy(ss[jj], zvecs_[jj]);
-    dxh.axpy(ss[jj], hvecs_[jj]);
+    dx.axpy(ss[jj], *zvecs_[jj]);
+    dxh.axpy(ss[jj], *hvecs_[jj]);
   }
 
   return normReduction;

@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2020 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -11,13 +12,11 @@
 #ifndef OOPS_ASSIMILATION_STATE4D_H_
 #define OOPS_ASSIMILATION_STATE4D_H_
 
-#include <cmath>
 #include <ostream>
 #include <string>
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "eckit/exception/Exceptions.h"
 
 #include "oops/interface/Geometry.h"
 #include "oops/interface/State.h"
@@ -26,12 +25,7 @@
 
 namespace oops {
 
-/// Four dimensional state
-/*!
- *  The 4D state is mostly used as part of the VDA control variable.
- */
-
-// -----------------------------------------------------------------------------
+/// Four dimensional state (vector of 3D States)
 template<typename MODEL> class State4D : public util::Printable {
   typedef Geometry<MODEL>            Geometry_;
   typedef State<MODEL>               State_;
@@ -39,17 +33,13 @@ template<typename MODEL> class State4D : public util::Printable {
  public:
   static const std::string classname() {return "State4D";}
 
-/// The arguments define the number of sub-windows and the resolution
+  /// The arguments define all states in 4D and their resolution
   State4D(const Geometry_ &, const eckit::Configuration &);
-  explicit State4D(const State_ &);
 
-/// I/O and diagnostics
-  void read(const eckit::Configuration &);
+  /// I/O
   void write(const eckit::Configuration &) const;
-  double norm() const;
 
-/// Get model space control variable
-  bool checkStatesNumber(const unsigned int nn) const {return state4d_.size() == nn;}
+  /// Get 3D model state
   size_t size() const {return state4d_.size();}
   State_ & operator[](const int ii) {return state4d_[ii];}
   const State_ & operator[](const int ii) const {return state4d_[ii];}
@@ -58,7 +48,7 @@ template<typename MODEL> class State4D : public util::Printable {
   const Variables & variables() const {return state4d_[0].variables();}
   const std::vector<util::DateTime> validTimes() const;
 
-/// Accumulator
+  /// Accumulator
   void zero();
   void accumul(const double &, const State4D &);
 
@@ -89,36 +79,6 @@ State4D<MODEL>::State4D(const Geometry_ & resol, const eckit::Configuration & co
     ASSERT(state4d_[jj].variables() == state4d_[0].variables());
   }
   Log::trace() << "State4D constructed." << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-State4D<MODEL>::State4D(const State_ & state3d) {
-  state4d_.emplace_back(state3d);
-  Log::trace() << "State4D constructed." << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void State4D<MODEL>::read(const eckit::Configuration & config) {
-  // 4D state
-  if (config.has("states")) {
-    std::vector<eckit::LocalConfiguration> confs;
-    config.get("states", confs);
-    ASSERT(state4d_.size() == confs.size());
-    for (size_t jj = 0; jj < state4d_.size(); ++jj) {
-      state4d_[jj].read(confs[jj]);;
-    }
-  } else {
-  // 3D state
-    ASSERT(state4d_.size() == 1);
-    state4d_[0].read(config);
-  }
-  for (size_t jj = 1; jj < state4d_.size(); ++jj) {
-    ASSERT(state4d_[jj].variables() == state4d_[0].variables());
-  }
 }
 
 // -----------------------------------------------------------------------------
@@ -183,18 +143,6 @@ void State4D<MODEL>::print(std::ostream & outs) const {
   for (const State_ & state : state4d_) {
     outs << state << std::endl;
   }
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-double State4D<MODEL>::norm() const {
-  double zn = 0.0;
-  for (const State_ & state : state4d_) {
-    double zz = state.norm();
-    zn += zz * zz;
-  }
-  return sqrt(zn);
 }
 
 // -----------------------------------------------------------------------------

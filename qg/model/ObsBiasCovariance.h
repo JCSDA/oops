@@ -11,14 +11,15 @@
 #ifndef QG_MODEL_OBSBIASCOVARIANCE_H_
 #define QG_MODEL_OBSBIASCOVARIANCE_H_
 
+#include <array>
 #include <ostream>
 #include <string>
-#include <vector>
 #include <boost/noncopyable.hpp>
 
-#include "eckit/config/LocalConfiguration.h"
-
+#include "model/ObsBias.h"
+#include "model/ObsBiasParameters.h"
 #include "oops/util/ObjectCounter.h"
+#include "oops/util/parameters/GenericParameters.h"
 #include "oops/util/Printable.h"
 
 namespace qg {
@@ -32,10 +33,12 @@ class ObsBiasCovariance : public util::Printable,
                           private boost::noncopyable,
                           private util::ObjectCounter<ObsBiasCovariance> {
  public:
+  typedef ObsBiasParameters Parameters_;
+
   static const std::string classname() {return "qg::ObsBiasCovariance";}
 
 /// Constructor, destructor
-  ObsBiasCovariance(const ObsSpaceQG &, const eckit::Configuration &);
+  ObsBiasCovariance(const ObsSpaceQG &, const Parameters_ &);
   ~ObsBiasCovariance() {}
 
 /// Linear algebra operators
@@ -44,13 +47,11 @@ class ObsBiasCovariance : public util::Printable,
   void inverseMultiply(const ObsBiasIncrement &, ObsBiasIncrement &) const;
   void randomize(ObsBiasIncrement &) const;
 
-  const eckit::Configuration & config() const {return conf_;}
   bool active(const unsigned int ii) const {return variance_[ii] > 0.0;}
 
  private:
   void print(std::ostream &) const;
-  const eckit::LocalConfiguration conf_;
-  std::vector<double> variance_;
+  std::array<double, ObsBias::ntypes> variance_;
 };
 
 // -----------------------------------------------------------------------------

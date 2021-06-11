@@ -62,7 +62,7 @@ int ModelQG::saveTrajectory(StateQG & xx, const ModelBias &) const {
   ASSERT(xx.fields().isForModel(true));
   int ftraj = 0;
   oops::Log::debug() << "ModelQG::saveTrajectory fields in" << xx.fields() << std::endl;
-  qg_fields_create_from_other_f90(ftraj, xx.fields().toFortran());
+  qg_fields_create_from_other_f90(ftraj, xx.fields().toFortran(), geom_.toFortran());
   qg_fields_copy_f90(ftraj, xx.fields().toFortran());
   ASSERT(ftraj != 0);
   oops::Log::debug() << "ModelQG::saveTrajectory fields out" << xx.fields() << std::endl;

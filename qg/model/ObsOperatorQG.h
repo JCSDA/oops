@@ -24,10 +24,6 @@ namespace eckit {
   class Configuration;
 }
 
-namespace util {
-  class DateTime;
-}
-
 namespace qg {
   class GomQG;
   class LocationsQG;
@@ -50,7 +46,7 @@ class ObsOperatorQG : public util::Printable,
 
 /// Other
   const oops::Variables & requiredVars() const;  // Required input requiredVars from Model
-  std::unique_ptr<LocationsQG> locations(const util::DateTime &, const util::DateTime &) const;
+  std::unique_ptr<LocationsQG> locations() const;
 
  private:
   void print(std::ostream &) const;

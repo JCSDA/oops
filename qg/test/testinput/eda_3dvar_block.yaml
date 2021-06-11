@@ -1,0 +1,8 @@
+files:
+- "testinput/eda_3dvar_block_1.yaml"
+- "testinput/eda_3dvar_block_2.yaml"
+- "testinput/eda_3dvar_block_3.yaml"
+- "testinput/eda_3dvar_block_4.yaml"
+
+test:
+  reference filename: testoutput/eda_3dvar_block.test

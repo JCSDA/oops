@@ -163,10 +163,13 @@ where (rrloc < eps) rrloc = eps
 rrloc = sqrt(rrloc)
 normfact = sqrt(real((nanals/neigv)-1,r_kind))
 ! normalize so dot product is covariance
+
+!$OMP PARALLEL DO PRIVATE(nanal) shared(hxens, nobsl, rrloc, normfact)
 do nanal=1,nanals
    hxens(nanal,1:nobsl) = hxens(nanal,1:nobsl) * &
    rrloc(1:nobsl)/normfact
 end do
+!$OMP END PARALLEL DO
 
 ! compute eigenvectors/eigenvalues of HZ^T HZ (left SV)
 ! (in Bishop paper HZ is nobsl, nanals, here is it nanals, nobsl)
@@ -195,6 +198,8 @@ end if
 if (ierr .ne. 0) print *,'warning: dsyev* failed, ierr=',ierr
 deallocate(work1,iwork,work3) ! no longer needed
 gamma_inv = 0.0_r_kind
+
+!$OMP PARALLEL DO PRIVATE(nanal)
 do nanal=1,nanals
    if (evals(nanal) > eps) then
        gamma_inv(nanal) = 1./evals(nanal)
@@ -202,15 +207,19 @@ do nanal=1,nanals
        evals(nanal) = 0.0_r_kind
    endif
 enddo
+!$OMP END PARALLEL DO
+
 ! gammapI used in calculation of posterior cov in ensemble space
 gammapI = evals+1.0
 deallocate(evals)
 
 ! create HZ^T R**-1/2 
 allocate(shxens(nanals,nobsl))
+!$OMP PARALLEL DO PRIVATE(nanal)
 do nanal=1,nanals
    shxens(nanal,1:nobsl) = hxens(nanal,1:nobsl) * rrloc(1:nobsl)
 end do
+!$OMP END PARALLEL DO
 deallocate(rrloc)
 
 ! compute factor to multiply with model space ensemble perturbations
@@ -219,10 +228,12 @@ deallocate(rrloc)
 ! in Bishop paper (eqs 10-12).
 
 allocate(swork3(nanals,nanals),swork2(nanals,nanals),pa(nanals,nanals))
+!$OMP PARALLEL DO PRIVATE(nanal)
 do nanal=1,nanals
    swork3(nanal,:) = evecs(nanal,:)/gammapI
    swork2(nanal,:) = evecs(nanal,:)
 enddo
+!$OMP END PARALLEL DO
 
 ! pa = C (Gamma + I)**-1 C^T (analysis error cov in ensemble space)
 !pa = matmul(swork3,transpose(swork2))
@@ -232,14 +243,18 @@ call sgemm('n','t',nanals,nanals,nanals,1.e0,swork3,nanals,swork2,&
 ! (nanals, nobsl) x (nobsl,) = (nanals,)
 ! in Bishop paper HZ is nobsl, nanals, here is it nanals, nobsl
 allocate(swork1(nanals))
+!$OMP PARALLEL DO PRIVATE(nanal)
 do nanal=1,nanals
    swork1(nanal) = sum(shxens(nanal,:)*dep(:))
 end do
+!$OMP END PARALLEL DO
 ! wts_ensmean = C (Gamma + I)**-1 C^T (HZ)^ T R**-1/2 (y - HXmean)
 ! (nanals, nanals) x (nanals,) = (nanals,)
+!$OMP PARALLEL DO PRIVATE(nanal)
 do nanal=1,nanals
    wts_ensmean(nanal) = sum(pa(nanal,:)*swork1(:))/normfact
 end do
+!$OMP END PARALLEL DO
 
 !if (.not. denkf .and. getkf_inflation) then
 !   allocate(paens(nanals,nanals))
@@ -262,10 +277,12 @@ if (denkf) then
    pa = 0.5*pa
 else
    gammapI = sqrt(1.0/gammapI)
+!$OMP PARALLEL DO PRIVATE(nanal)
    do nanal=1,nanals
       swork3(nanal,:) = &
       evecs(nanal,:)*(1.-gammapI(:))*gamma_inv(:)
    enddo
+!$OMP END PARALLEL DO
    ! swork2 still contains eigenvectors, over-write pa
    ! pa = C [ (I - (Gamma+I)**-1/2)*Gamma**-1 ] C^T
    !pa = matmul(swork3,transpose(swork2))
@@ -308,9 +325,11 @@ endif
 ! (nanals, nanals) x (nanals, nanals)
 deallocate(shxens,pa)
 gammapI = sqrt(1.0/gammapI)
+!$OMP PARALLEL DO PRIVATE(nanal)
 do nanal=1,nanals
    swork3(nanal,:) = evecs(nanal,:)*gammapI
 enddo
+!$OMP END PARALLEL DO
 ! swork2 already contains evecs
 ! wts_ensperts = 
 ! C (Gamma + I)**-1/2 C^T (square root of analysis error cov in ensemble space)
