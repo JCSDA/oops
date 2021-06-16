@@ -11,7 +11,7 @@
 ################################################################################
 
 cmake_minimum_required( VERSION 3.12 )
-project( oops VERSION 1.0.0 LANGUAGES CXX Fortran )
+project( oops VERSION 1.1.0 LANGUAGES CXX Fortran )
 
 ## Ecbuild integration
 find_package( ecbuild 3.3.2 REQUIRED )
