@@ -47,7 +47,7 @@ cost function:
       obsdatain:
         obsfile: Data/truth.obs3d.nc
       obsdataout:
-        obsfile: Data/3dvar_hybrid.obs3d.nc
+        obsfile: Data/3dvar_hybrid.obs3d.nojb_eval.nc
       obs type: Stream
     obs error:
       covariance model: diagonal
@@ -57,7 +57,7 @@ cost function:
       obsdatain:
         obsfile: Data/truth.obs3d.nc
       obsdataout:
-        obsfile: Data/3dvar_hybrid.obs3d.nc
+        obsfile: Data/3dvar_hybrid.obs3d.nojb_eval.nc
       obs type: Wind
     obs error:
       covariance model: diagonal
@@ -67,7 +67,7 @@ cost function:
       obsdatain:
         obsfile: Data/truth.obs3d.nc
       obsdataout:
-        obsfile: Data/3dvar_hybrid.obs3d.nc
+        obsfile: Data/3dvar_hybrid.obs3d.nojb_eval.nc
       obs type: WSpeed
     obs error:
       covariance model: diagonal
@@ -102,7 +102,7 @@ final:
     departures: oman
 output:
   datadir: Data
-  exp: 3dvar
+  exp: 3dvar_nojb_eval
   frequency: PT6H
   type: an
 
