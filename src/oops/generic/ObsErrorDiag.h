@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2021 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -43,7 +44,7 @@ class ObsErrorDiag : public ObsErrorBase<OBS> {
   ObsErrorDiag(const eckit::Configuration &, const ObsSpace_ &);
 
 /// Update after obs errors potentially changed
-  void update() override;
+  void update(const ObsVector_ &) override;
 
 /// Multiply a Departure by \f$R\f$
   void multiply(ObsVector_ &) const override;
@@ -61,18 +62,15 @@ class ObsErrorDiag : public ObsErrorBase<OBS> {
   double getRMSE() const override {return stddev_.rms();}
 
 /// Get obs errors std deviation
-  ObsVector_ & obserrors() override {return stddev_;}
-  const ObsVector_ & obserrors() const override {return stddev_;}
+  ObsVector_ obserrors() const override {return stddev_;}
 
-/// Return inverseVariance
-  const ObsVector_ & inverseVariance() const override {return inverseVariance_;}
-
- protected:
-  ObsVector_ stddev_;
-  ObsVector_ inverseVariance_;
+/// Get inverseVariance
+  ObsVector_ inverseVariance() const override {return inverseVariance_;}
 
  private:
   void print(std::ostream &) const override;
+  ObsVector_ stddev_;
+  ObsVector_ inverseVariance_;
   ObsErrorDiagParameters options_;
 };
 
@@ -83,14 +81,17 @@ ObsErrorDiag<OBS>::ObsErrorDiag(const eckit::Configuration & conf, const ObsSpac
   : stddev_(obsgeom, "ObsError"), inverseVariance_(obsgeom)
 {
   options_.deserialize(conf);
-  this->update();
+  inverseVariance_ = stddev_;
+  inverseVariance_ *= stddev_;
+  inverseVariance_.invert();
   Log::trace() << "ObsErrorDiag:ObsErrorDiag constructed nobs = " << stddev_.nobs() << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename OBS>
-void ObsErrorDiag<OBS>::update() {
+void ObsErrorDiag<OBS>::update(const ObsVector_ & obserr) {
+  stddev_ = obserr;
   inverseVariance_ = stddev_;
   inverseVariance_ *= stddev_;
   inverseVariance_.invert();

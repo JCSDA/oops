@@ -81,6 +81,7 @@ class Observer {
   const ObsAuxCtrl_ *           ybias_;      // Obs bias
   ObsError_ *                   Rmat_;       // Obs error covariance
   std::unique_ptr<ObsFilters_>  filters_;    // QC filters
+  std::unique_ptr<ObsVector_>   obserr_;     // Obs error std dev
   std::shared_ptr<GetValPost_>  getvals_;    // Postproc passed to the model during integration.
   std::shared_ptr<ObsDataInt_>  qcflags_;    // QC flags (should not be a pointer)
   int                           iterout_;    // Outer iteration
@@ -115,13 +116,14 @@ Observer<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrl_ & ybi
   iterout_ = iter;
   ybias_ = &ybias;
   Rmat_ = &R;
+  obserr_.reset(new ObsVector_(Rmat_->obserrors()));
 
 // Set up QC filters and run preprocess
   int iterfilt = std::max(iter, 0);
   ObserverParameters<OBS> observerParams;
   observerParams.deserialize(obsconfig_);
   filters_.reset(new ObsFilters_(obspace_, observerParams.obsFilters,
-                                 qcflags_, Rmat_->obserrors(), iterfilt));
+                                 qcflags_, *obserr_, iterfilt));
   filters_->preProcess();
 
   locations_.reset(new Locations_(obsop_->locations()));
@@ -169,7 +171,7 @@ void Observer<MODEL, OBS>::finalize(ObsVector_ & yobsim) {
   filters_->postFilter(yobsim, ydiags);
 
   // Update R with obs errors that filters might have updated
-  Rmat_->update();
+  Rmat_->update(*obserr_);
 
   // Save current obs, obs error estimates and QC flags (for diagnostics use only)
   std::string siter = "";

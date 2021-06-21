@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -78,7 +78,7 @@ template <typename OBS> void testMultiplies() {
 
     // create random vector dy and its copies dy1, dy2
     ObsVector_ dy(Test_::obspace()[jj]);
-    dy.random();
+    R->randomize(dy);
     ObsVector_ dy1(dy);
     ObsVector_ dy2(dy);
     oops::Log::info() << "Random vector dy: " << dy << std::endl;

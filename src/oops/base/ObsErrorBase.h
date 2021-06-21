@@ -49,20 +49,21 @@ class ObsErrorBase : public util::Printable,
 /// Save obs errors
   virtual void save(const std::string &) const = 0;
 
-/// Return obs error std. dev. The non-const method means caller can modify values,
-/// this is used by obs filters. In this case update() should be called to ensure
-/// the matrix stays consistent.
-  virtual ObsVector_ & obserrors() = 0;
-  virtual const ObsVector_ & obserrors() const = 0;
+/// Return a copy of obs error std. dev. This ObsVector_ is then modified by the filters and
+/// update() should be called to ensure the matrix stays consistent.
+  virtual ObsVector_ obserrors() const = 0;
 
 /// Update when obs errors standard deviations have been modified
-  virtual void update() = 0;
+  virtual void update(const ObsVector_ &) = 0;
 
 /// Return inverseVariance
-  virtual const ObsVector_ & inverseVariance() const = 0;
+  virtual ObsVector_ inverseVariance() const = 0;
 
 /// Get mean error for Jo table
   virtual double getRMSE() const = 0;
+
+ private:
+  virtual void print(std::ostream &) const = 0;
 };
 
 // =============================================================================
@@ -73,7 +74,7 @@ class ObsErrorFactory {
   typedef ObsSpace<OBS> ObsSpace_;
  public:
   static std::unique_ptr<ObsErrorBase<OBS> > create(const eckit::Configuration &,
-                                                      const ObsSpace_ &);
+                                                    const ObsSpace_ &);
   virtual ~ObsErrorFactory() = default;
  protected:
   explicit ObsErrorFactory(const std::string &);
@@ -113,6 +114,7 @@ std::unique_ptr<ObsErrorBase<OBS>>
 ObsErrorFactory<OBS>::create(const eckit::Configuration & conf, const ObsSpace_ & obs) {
   Log::trace() << "ObsErrorBase<OBS>::create starting" << std::endl;
   const std::string id = conf.getString("covariance model", "diagonal");
+  Log::trace() << "ObsError matrix type is: " << id << std::endl;
   typename std::map<std::string, ObsErrorFactory<OBS>*>::iterator
     jerr = getMakers().find(id);
   if (jerr == getMakers().end()) {
