@@ -175,7 +175,7 @@ select case (wtype)
             index2 = self%interp_i(kk,n)
             dist = ageometry%distance(lons_in_glo(index1),lats_in_glo(index1),&
                                       lons_in_glo(index2),lats_in_glo(index2))
-            wprod = wprod * dist
+            wprod = wprod * max(dist, 1e-10)
           endif
         enddo
         bw(jj) = 1.0_kind_real / wprod
