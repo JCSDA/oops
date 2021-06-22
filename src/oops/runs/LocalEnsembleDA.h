@@ -144,6 +144,10 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     }
     Log::info() << "Local solver completed." << std::endl;
 
+    // wait all tasks to finish their solution, so the timing for functions below reports
+    // time which truly used (not from mpi_wait(), as all tasks need to sync before write).
+    oops::mpi::world().barrier();
+
     // calculate final analysis states
     for (size_t jj = 0; jj < nens; ++jj) {
       ens_xx[jj] = bkg_mean;
