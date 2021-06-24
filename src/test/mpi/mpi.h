@@ -237,7 +237,6 @@ CASE("mpi/mpi/allGatherEigen") {
 CASE("mpi/mpi/exclusiveScan") {
   const eckit::mpi::Comm &comm = oops::mpi::world();
   const size_t rank = comm.rank();
-  const size_t size = comm.size();
 
   size_t expectedResult = 0;
   for (size_t lowerRank = 0; lowerRank < rank; ++lowerRank)

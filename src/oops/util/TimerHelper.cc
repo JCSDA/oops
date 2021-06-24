@@ -14,7 +14,7 @@
 #include <iomanip>
 #include <string>
 
-#include "eckit/io/ResizableBuffer.h"
+#include "eckit/io/Buffer.h"
 #include "eckit/mpi/Comm.h"
 #include "eckit/serialisation/ResizableMemoryStream.h"
 
@@ -101,7 +101,7 @@ void TimerHelper::print(std::ostream & os) const {
     int tag = 1234;
 //  Tasks send their numbers to task 0
     if (oops::mpi::world().rank() > 0) {
-      eckit::ResizableBuffer bufr(8000);
+      eckit::Buffer bufr(8000);
       eckit::ResizableMemoryStream sstr(bufr);
       sstr << timers_.size();
       for (cit jt = timers_.begin(); jt != timers_.end(); ++jt) {
@@ -118,7 +118,7 @@ void TimerHelper::print(std::ostream & os) const {
       for (size_t from = 1; from < ntasks; ++from) {
         eckit::mpi::Status st = oops::mpi::world().probe(from, tag);
         size_t size = oops::mpi::world().getCount<char>(st);
-        eckit::ResizableBuffer bufr(size);
+        eckit::Buffer bufr(size);
         bufr.zero();
 
         oops::mpi::world().receive(static_cast<char*>(bufr.data()), bufr.size(), from, tag);
