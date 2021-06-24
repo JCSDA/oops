@@ -67,6 +67,8 @@ template <typename MODEL, typename OBS> class LinearGetValuesFixture : private b
   static const State_            & state()           {return *getInstance().state_;}
   static const Variables_        & statevars()       {return *getInstance().statevars_;}
   static const Variables_        & geovalvars()      {return *getInstance().geovalvars_;}
+  static const std::vector<size_t> & geovalvarsizes() {return getInstance().geovalvarsizes_;}
+
   static void reset() {
     getInstance().lineargetvalues_.reset();
     getInstance().time_.reset();
@@ -97,6 +99,7 @@ template <typename MODEL, typename OBS> class LinearGetValuesFixture : private b
 
     // Variables
     geovalvars_.reset(new Variables_(TestEnvironment::config(), "state variables"));
+    geovalvarsizes_ = resol_->variableSizes(*geovalvars_);
 
     // Locations
     const LocalConfig_ locsConfig(TestEnvironment::config(), "locations");
@@ -107,7 +110,7 @@ template <typename MODEL, typename OBS> class LinearGetValuesFixture : private b
     timeend_.reset(new DateTime_(locsConfig.getString("window end")));
 
     // GeoVaLs
-    geovals_.reset(new GeoVaLs_(*locs_, *geovalvars_));
+    geovals_.reset(new GeoVaLs_(*locs_, *geovalvars_, geovalvarsizes_));
 
     // Nonlinear GetValues
     LocalConfig_ getvaluesConfig;
@@ -132,7 +135,7 @@ template <typename MODEL, typename OBS> class LinearGetValuesFixture : private b
                                                 linearGetValuesConfig));
 
     // Set trajectory
-    GeoVaLs_ gvtraj(*locs_, *geovalvars_);
+    GeoVaLs_ gvtraj(*locs_, *geovalvars_, geovalvarsizes_);
     lineargetvalues_->setTrajectory(*state_, *timebeg_, *timeend_, gvtraj);
   }
 
@@ -150,6 +153,7 @@ template <typename MODEL, typename OBS> class LinearGetValuesFixture : private b
   std::unique_ptr<const State_>           state_;
   std::unique_ptr<const Variables_>       statevars_;
   std::unique_ptr<const Variables_>       geovalvars_;
+  std::vector<size_t>                     geovalvarsizes_;
 };
 
 // =================================================================================================
@@ -183,7 +187,7 @@ template <typename MODEL, typename OBS> void testLinearGetValuesZeroPert() {
   Increment_ dx(Test_::resol(), Test_::statevars(), Test_::time());
   dx.zero();
 
-  GeoVaLs_ gv(Test_::locs(), Test_::geovalvars());
+  GeoVaLs_ gv(Test_::locs(), Test_::geovalvars(), Test_::geovalvarsizes());
 
   EXPECT(dx.norm() == 0.0);
 
@@ -214,8 +218,8 @@ template <typename MODEL, typename OBS> void testLinearGetValuesLinearity() {
   EXPECT(dx1.norm() > 0.0);
   EXPECT(dx2.norm() > 0.0);
 
-  GeoVaLs_ gv1(Test_::locs(), Test_::geovalvars());
-  GeoVaLs_ gv2(Test_::locs(), Test_::geovalvars());
+  GeoVaLs_ gv1(Test_::locs(), Test_::geovalvars(), Test_::geovalvarsizes());
+  GeoVaLs_ gv2(Test_::locs(), Test_::geovalvars(), Test_::geovalvarsizes());
 
   // Compute geovals
   Test_::lineargetvalues().fillGeoVaLsTL(dx1, Test_::timebeg(), Test_::timeend(), gv1);
@@ -243,7 +247,7 @@ template <typename MODEL, typename OBS> void testLinearGetValuesLinearApproximat
 
   // Compute nonlinear geovals
   State_ xx0(Test_::state());
-  GeoVaLs_ gv0(Test_::locs(), Test_::geovalvars());
+  GeoVaLs_ gv0(Test_::locs(), Test_::geovalvars(), Test_::geovalvarsizes());
   Test_::getvalues().fillGeoVaLs(xx0, Test_::timebeg(), Test_::timeend(), gv0);
 
   // Run tangent linear
@@ -254,8 +258,8 @@ template <typename MODEL, typename OBS> void testLinearGetValuesLinearApproximat
   for (unsigned int jtest = 0; jtest < ntest; ++jtest) {
     Increment_ dxx(dx0);
     State_ xx(xx0);
-    GeoVaLs_  gv(Test_::locs(), Test_::geovalvars());
-    GeoVaLs_ dgv(Test_::locs(), Test_::geovalvars());
+    GeoVaLs_  gv(Test_::locs(), Test_::geovalvars(), Test_::geovalvarsizes());
+    GeoVaLs_ dgv(Test_::locs(), Test_::geovalvars(), Test_::geovalvarsizes());
     dxx *= zz;
     xx += dxx;
 
@@ -302,7 +306,7 @@ template <typename MODEL, typename OBS> void testLinearGetValuesAdjoint() {
   Increment_ dx_in(Test_::resol(), Test_::statevars(), Test_::time());
   Increment_ dx_ou(Test_::resol(), Test_::statevars(), Test_::time());
 
-  GeoVaLs_ gv_ou(Test_::locs(), Test_::geovalvars());
+  GeoVaLs_ gv_ou(Test_::locs(), Test_::geovalvars(), Test_::geovalvarsizes());
 
   // Tangent linear
   dx_in.random();

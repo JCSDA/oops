@@ -30,7 +30,7 @@ class Variables;
 namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
-GomL95::GomL95(const LocsL95 & locs, const oops::Variables &)
+GomL95::GomL95(const LocsL95 & locs, const oops::Variables &, const std::vector<size_t> &)
   : size_(locs.size()), locval_(size_)
 {
   oops::Log::trace() << "GomL95::GomL95 starting " << std::endl;

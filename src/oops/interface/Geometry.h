@@ -19,6 +19,7 @@
 #include "atlas/field.h"
 #include "atlas/functionspace.h"
 
+#include "oops/base/Variables.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/Logger.h"
@@ -82,6 +83,12 @@ class Geometry : public util::Printable,
   GeometryIterator_ end()   const;
   /// Values of vertical coordinate in units specified by string (only used in GETKF)
   std::vector<double> verticalCoord(std::string &) const;
+
+  /// Returns number of values required to store each of the passed model variables
+  /// \p vars at a single location (e.g. number of vertical levels).
+  /// The returned vector should be the same size as \p vars and contain number of
+  /// levels required for i-th variable in the i-th position.
+  std::vector<size_t> variableSizes(const Variables &) const;
 
   /// Accessor to the geometry communicator
   const eckit::mpi::Comm & getComm() const {return geom_->getComm();}
@@ -153,6 +160,17 @@ std::vector<double> Geometry<MODEL>::verticalCoord(std::string & str) const {
   util::Timer timer(classname(), "verticalCoord");
   Log::trace() << "Geometry<MODEL>::verticalCoord done" << std::endl;
   return geom_->verticalCoord(str);
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+std::vector<size_t> Geometry<MODEL>::variableSizes(const Variables & vars) const {
+  Log::trace() << "Geometry<MODEL>::variableSizes starting" << std::endl;
+  util::Timer timer(classname(), "variableSizes");
+  std::vector<size_t> sizes = geom_->variableSizes(vars);
+  Log::trace() << "Geometry<MODEL>::variableSizes done" << std::endl;
+  return sizes;
 }
 
 // -----------------------------------------------------------------------------

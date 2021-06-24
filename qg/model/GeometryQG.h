@@ -30,6 +30,10 @@
 #include "oops/qg/GeometryQGIterator.h"
 #include "oops/qg/QgFortran.h"
 
+namespace oops {
+  class Variables;
+}
+
 namespace qg {
 
 class GeometryQgParameters : public oops::Parameters {
@@ -69,6 +73,8 @@ class GeometryQG : public util::Printable,
   const eckit::mpi::Comm & getComm() const {return comm_;}
   atlas::FunctionSpace * atlasFunctionSpace() const {return atlasFunctionSpace_.get();}
   atlas::FieldSet * atlasFieldSet() const {return atlasFieldSet_.get();}
+
+  std::vector<size_t> variableSizes(const oops::Variables & vars) const;
 
  private:
   GeometryQG & operator=(const GeometryQG &);

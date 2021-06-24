@@ -127,7 +127,8 @@ void GetValuesPost<MODEL, OBS>::doInitialize(const State_ & xx, const util::Date
 
   for (size_t jj = 0; jj < locations_.size(); ++jj) {
     getvals_.emplace_back(new GetValues_(xx.geometry(), *locations_[jj], getvalsconfs_[jj]));
-    geovals_.emplace_back(new GeoVaLs_(*locations_[jj], geovars_[jj]));
+    geovals_.emplace_back(new GeoVaLs_(*locations_[jj], geovars_[jj],
+                                       xx.geometry().variableSizes(geovars_[jj])));
   }
 
   Log::trace() << "GetValuesPost::doInitialize done" << std::endl;

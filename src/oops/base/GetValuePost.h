@@ -65,6 +65,8 @@ class GetValuePost {
   const Variables geovars_;            /// Variables needed from model
   GetValues_ getvals_;                 /// GetValues used to fill in GeoVaLs
   std::unique_ptr<GeoVaLs_> geovals_;  /// GeoVaLs that are filled in
+  std::vector<size_t> sizes_;          /// Sizes (e.g. number of vertical levels)
+                                       /// for all Variables in GeoVaLs
   bool initialized_;
 };
 
@@ -75,7 +77,8 @@ GetValuePost<MODEL, OBS>::GetValuePost(const eckit::Configuration & conf, const 
                                        const util::DateTime & bgn, const util::DateTime & end,
                                        const Locations_ & locations, const Variables & vars)
   : winbgn_(bgn), winend_(end), hslot_(), locations_(locations), geovars_(vars),
-    getvals_(geom, locations_, conf), geovals_(), initialized_(false)
+    getvals_(geom, locations_, conf), geovals_(), sizes_(geom.variableSizes(geovars_)),
+    initialized_(false)
 {
   Log::trace() << "GetValuePost::GetValuePost" << std::endl;
 }
@@ -86,7 +89,7 @@ template <typename MODEL, typename OBS>
 void GetValuePost<MODEL, OBS>::initialize(const util::Duration & tstep) {
   Log::trace() << "GetValuePost::doInitialize start" << std::endl;
   hslot_ = tstep/2;
-  geovals_.reset(new GeoVaLs_(locations_, geovars_));
+  geovals_.reset(new GeoVaLs_(locations_, geovars_, sizes_));
   initialized_ = true;
   Log::trace() << "GetValuePost::doInitialize done" << std::endl;
 }

@@ -17,6 +17,7 @@
 
 #include "eckit/config/Configuration.h"
 #include "lorenz95/Iterator.h"
+#include "oops/base/Variables.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/RequiredParameter.h"
@@ -54,6 +55,7 @@ class Resolution : public util::Printable {
   Iterator begin() const;
   Iterator end() const;
   std::vector<double> verticalCoord(std::string &) const;
+  std::vector<size_t> variableSizes(const oops::Variables &) const;
   const eckit::mpi::Comm & getComm() const {return comm_;}
 
  private:

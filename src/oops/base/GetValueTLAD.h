@@ -77,11 +77,15 @@ class GetValueTLAD {
   util::DateTime winend_;   /// End of assimilation window
   util::Duration hslot_;    /// Half time slot
 
-  const Locations_ & locations_;       /// locations of observations
-  const Variables geovars_;            /// Variables needed from model
-  const Variables linvars_;            /// Variables needed from linear model
-  GetValues_ getvals_;                 /// GetValues used to fill in GeoVaLs
-  std::unique_ptr<GeoVaLs_> geovals_;  /// GeoVaLs that are filled in
+  const Locations_ & locations_;             /// locations of observations
+  const Variables geovars_;                  /// Variables needed from model
+  const std::vector<size_t> geovars_sizes_;  /// Sizes (e.g. number of vertical levels)
+                                             /// for all geovars_ variables
+  const Variables linvars_;                  /// Variables needed from linear model
+  const std::vector<size_t> linvars_sizes_;  /// Sizes (e.g. number of vertical levels)
+                                             /// for all linvars_ variables
+  GetValues_ getvals_;                       /// GetValues used to fill in GeoVaLs
+  std::unique_ptr<GeoVaLs_> geovals_;        /// GeoVaLs that are filled in
   std::unique_ptr<const GeoVaLs_> gvalsad_;  /// Input GeoVaLs for adjoint forcing
 };
 
@@ -92,7 +96,9 @@ GetValueTLAD<MODEL, OBS>::GetValueTLAD(const eckit::Configuration & conf, const 
                                        const util::DateTime & bgn, const util::DateTime & end,
                                        const Locations_ & locations,
                                        const Variables & vars, const Variables & varl)
-  : winbgn_(bgn), winend_(end), hslot_(), locations_(locations), geovars_(vars), linvars_(varl),
+  : winbgn_(bgn), winend_(end), hslot_(), locations_(locations),
+    geovars_(vars), geovars_sizes_(geom.variableSizes(geovars_)),
+    linvars_(varl), linvars_sizes_(geom.variableSizes(linvars_)),
     getvals_(geom, locations_, conf), geovals_(), gvalsad_(nullptr)
 {
   Log::trace() << "GetValueTLAD::GetValueTLAD" << std::endl;
@@ -104,7 +110,7 @@ template <typename MODEL, typename OBS>
 void GetValueTLAD<MODEL, OBS>::initializeTraj(const util::Duration & tstep) {
   Log::trace() << "GetValueTLAD::initializeTraj start" << std::endl;
   hslot_ = tstep/2;
-  geovals_.reset(new GeoVaLs_(locations_, geovars_));
+  geovals_.reset(new GeoVaLs_(locations_, geovars_, geovars_sizes_));
   Log::trace() << "GetValueTLAD::initializeTraj done" << std::endl;
 }
 
@@ -128,7 +134,7 @@ template <typename MODEL, typename OBS>
 void GetValueTLAD<MODEL, OBS>::initializeTL(const util::Duration & tstep) {
   Log::trace() << "GetValueTLAD::initializeTL start" << std::endl;
   hslot_ = tstep/2;
-  geovals_.reset(new GeoVaLs_(locations_, linvars_));
+  geovals_.reset(new GeoVaLs_(locations_, linvars_, linvars_sizes_));
   Log::trace() << "GetValueTLAD::initializeTL done" << std::endl;
 }
 

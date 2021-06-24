@@ -163,7 +163,8 @@ template <typename MODEL, typename OBS> class HofX4Dhack : public Application {
      // loop over all observation types
     for (size_t jj = 0; jj < obspaces.size(); ++jj) {
       GetValues_ getvals(geometry, *locations[jj], getValuesConfig[jj]);
-      geovals.emplace_back(new GeoVaLs_(*locations[jj], vars[jj]));
+      geovals.emplace_back(new GeoVaLs_(*locations[jj], vars[jj],
+                                        geometry.variableSizes(vars[jj])));
       getvals.fillGeoVaLs(zz, subWinBegin, subWinEnd, *geovals[jj]);
     }
 

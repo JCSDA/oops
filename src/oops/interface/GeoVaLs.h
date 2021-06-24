@@ -13,6 +13,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include <boost/noncopyable.hpp>
 
@@ -37,7 +38,10 @@ class GeoVaLs : public util::Printable,
  public:
   static const std::string classname() {return "oops::GeoVaLs";}
 
-  GeoVaLs(const Locations_ &, const Variables &);
+  /// Allocate GeoVaLs for \p locs locations, to be filled with \p vars variables.
+  /// Sizes of GeoVaLs for i-th variable at a single location are defined by
+  /// i-th value of \p sizes.
+  GeoVaLs(const Locations_ & locs, const Variables &, const std::vector<size_t> & sizes);
   GeoVaLs(const eckit::Configuration &, const ObsSpace_ &, const Variables &);
   GeoVaLs(const GeoVaLs &);
 
@@ -69,10 +73,11 @@ class GeoVaLs : public util::Printable,
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-GeoVaLs<OBS>::GeoVaLs(const Locations_ & locs, const Variables & vars) : gvals_() {
+GeoVaLs<OBS>::GeoVaLs(const Locations_ & locs, const Variables & vars,
+                      const std::vector<size_t> & sizes) : gvals_() {
   Log::trace() << "GeoVaLs<OBS>::GeoVaLs starting" << std::endl;
   util::Timer timer(classname(), "GeoVaLs");
-  gvals_.reset(new GeoVaLs_(locs.locations(), vars));
+  gvals_.reset(new GeoVaLs_(locs.locations(), vars, sizes));
   Log::trace() << "GeoVaLs<OBS>::GeoVaLs done" << std::endl;
 }
 
