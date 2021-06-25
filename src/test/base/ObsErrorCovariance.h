@@ -97,6 +97,48 @@ template <typename OBS> void testMultiplies() {
   }
 }
 
+// -----------------------------------------------------------------------------
+/// Tests that the methods obserrors(), inverseVariance update() and save()
+/// do what is expected.
+template <typename OBS> void testAccessors() {
+  typedef ObsTestsFixture<OBS>     Test_;
+  typedef oops::ObsErrorBase<OBS>  Covar_;
+  typedef oops::ObsVector<OBS>     ObsVector_;
+
+  oops::instantiateObsErrorFactory<OBS>();
+
+  std::vector<eckit::LocalConfiguration> conf;
+  TestEnvironment::config().get("observations", conf);
+
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    ObsVector_ obserr(Test_::obspace()[jj], "ObsError");
+    obserr.save("EffectiveError");
+
+    const eckit::LocalConfiguration rconf(conf[jj], "obs error");
+    std::unique_ptr<Covar_> R(
+      oops::ObsErrorFactory<OBS>::create(rconf, Test_::obspace()[jj]));
+
+    ObsVector_ dy(R->obserrors());
+    oops::Log::info() << "ObsError: " << dy << std::endl;
+    EXPECT(oops::is_close(dy.rms(), obserr.rms(), 1.e-10));
+
+    ObsVector_ dy1(R->inverseVariance());
+    oops::Log::info() << "inverseVariance: " << dy1 << std::endl;
+    dy *= dy;
+    dy.invert();
+    EXPECT(oops::is_close(dy.rms(), dy1.rms(), 1.e-10));
+
+    dy.ones();
+    R->update(dy);
+    oops::Log::info() << "R filled with ones: " << R->obserrors() << std::endl;
+    EXPECT(oops::is_close(R->obserrors().rms(), R->inverseVariance().rms(), 1.e-10));
+    EXPECT(oops::is_close(R->obserrors().rms(), dy.rms(), 1.e-10));
+
+    R->save("Ones");
+    ObsVector_ testOnes(Test_::obspace()[jj], "Ones");
+    EXPECT(oops::is_close(dy.rms(), testOnes.rms(), 1.e-10));
+  }
+}
 
 // -----------------------------------------------------------------------------
 
@@ -116,6 +158,8 @@ class ObsErrorCovariance : public oops::Test {
       { testConstructor<OBS>(); });
     ts.emplace_back(CASE("interface/ObsErrorCovariance/testMultiplies")
       { testMultiplies<OBS>(); });
+    ts.emplace_back(CASE("interface/ObsErrorCovariance/testAccessors")
+      { testAccessors<OBS>(); });
   }
 
   void clear() const override {
