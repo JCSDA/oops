@@ -33,6 +33,7 @@
 namespace test {
 
 const char *expectConstructorToThrow = "expect constructor to throw exception with message";
+const char *expectSimulateObsToThrow = "expect simulateObs to throw exception with message";
 
 // -----------------------------------------------------------------------------
 /// \brief tests constructor and print method
@@ -99,7 +100,17 @@ template <typename OBS> void testSimulateObs() {
     ObsDiags_ diags(Test_::obspace()[jj], hop.locations(), diagvars);
 
     // call H(x), save result in the output file as @hofx
-    hop.simulateObs(gval, hofx, ybias, diags);
+    if (Test_::config(jj).has(expectSimulateObsToThrow)) {
+      // The simulateObs method is expected to throw an exception
+      // containing the specified string.
+      const std::string expectedMessage =
+        Test_::config(jj).getString(expectSimulateObsToThrow);
+      EXPECT_THROWS_MSG(hop.simulateObs(gval, hofx, ybias, diags),
+                        expectedMessage.c_str());
+      continue;
+    } else {
+      hop.simulateObs(gval, hofx, ybias, diags);
+    }
     hofx.save("hofx");
 
     const double tol = conf.getDouble("tolerance");
