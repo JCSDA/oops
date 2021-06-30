@@ -8,8 +8,8 @@
 #ifndef OOPS_BASE_INSTANTIATEOBSFILTERFACTORY_H_
 #define OOPS_BASE_INSTANTIATEOBSFILTERFACTORY_H_
 
-#include "oops/base/GeoVaLsWriter.h"
 #include "oops/base/ObsFilterBase.h"
+#include "oops/generic/GeoVaLsWriter.h"
 
 namespace oops {
 

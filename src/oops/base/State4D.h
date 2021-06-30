@@ -9,8 +9,8 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef OOPS_ASSIMILATION_STATE4D_H_
-#define OOPS_ASSIMILATION_STATE4D_H_
+#ifndef OOPS_BASE_STATE4D_H_
+#define OOPS_BASE_STATE4D_H_
 
 #include <ostream>
 #include <string>
@@ -149,4 +149,4 @@ void State4D<MODEL>::print(std::ostream & outs) const {
 
 }  // namespace oops
 
-#endif  // OOPS_ASSIMILATION_STATE4D_H_
+#endif  // OOPS_BASE_STATE4D_H_

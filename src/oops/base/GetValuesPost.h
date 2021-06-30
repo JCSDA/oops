@@ -17,9 +17,9 @@
 #include <string>
 #include <vector>
 
-#include "oops/assimilation/State4D.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBase.h"
+#include "oops/base/State4D.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/GetValues.h"

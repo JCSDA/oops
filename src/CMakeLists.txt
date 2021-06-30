@@ -43,7 +43,6 @@ oops/assimilation/HessianMatrix.h
 oops/assimilation/HMatrix.h
 oops/assimilation/HtMatrix.h
 oops/assimilation/HtRinvHMatrix.h
-oops/assimilation/Increment4D.h
 oops/assimilation/IncrementalAssimilation.h
 oops/assimilation/instantiateCostFactory.h
 oops/assimilation/instantiateLocalEnsembleSolverFactory.h
@@ -80,7 +79,6 @@ oops/assimilation/SaddlePointMinimizer.h
 oops/assimilation/SaddlePointPrecondMatrix.h
 oops/assimilation/SaddlePointVector.h
 oops/assimilation/SpectralLMP.h
-oops/assimilation/State4D.h
 oops/assimilation/TriDiagSolve.h
 oops/assimilation/TriDiagSpectrum.h
 oops/assimilation/UpHessSolve.h
@@ -94,7 +92,6 @@ oops/base/DolphChebyshev.cc
 oops/base/DolphChebyshev.h
 oops/base/EnsembleCovariance.h
 oops/base/GeneralizedDepartures.h
-oops/base/GeoVaLsWriter.h
 oops/base/GetValuePost.h
 oops/base/GetValuePosts.h
 oops/base/GetValuesPost.h
@@ -104,6 +101,7 @@ oops/base/LocalIncrement.cc
 oops/base/LocalIncrement.h
 oops/base/HybridCovariance.h
 oops/base/IdentityMatrix.h
+oops/base/Increment4D.h
 oops/base/IncrementEnsemble.h
 oops/base/IncrementEnsemble4D.h
 oops/base/InterpolatorBase.h
@@ -145,6 +143,7 @@ oops/base/PostProcessorTLAD.h
 oops/base/PostTimer.cc
 oops/base/PostTimer.h
 oops/base/PostTimerParameters.h
+oops/base/State4D.h
 oops/base/StateEnsemble.h
 oops/base/StateEnsemble4D.h
 oops/base/StateInfo.h
@@ -167,6 +166,7 @@ oops/contrib/dcmip_initial_conditions_test_4_v3.f90
 
 oops/generic/gc99.h
 oops/generic/gc99.cc
+oops/generic/GeoVaLsWriter.h
 oops/generic/IdentityModel.h
 oops/generic/IdLinearVariableChange.h
 oops/generic/IdVariableChange.h
