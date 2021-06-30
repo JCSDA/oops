@@ -23,7 +23,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
-#include "oops/assimilation/Increment4D.h"
+#include "oops/base/Increment4D.h"
 #include "oops/base/IncrementEnsemble4D.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/VerticalLocEV.h"

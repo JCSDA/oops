@@ -16,8 +16,8 @@
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "oops/assimilation/Increment4D.h"
-#include "oops/assimilation/State4D.h"
+#include "oops/base/Increment4D.h"
+#include "oops/base/State4D.h"
 #include "oops/base/StateEnsemble4D.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"

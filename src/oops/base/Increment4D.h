@@ -8,8 +8,8 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef OOPS_ASSIMILATION_INCREMENT4D_H_
-#define OOPS_ASSIMILATION_INCREMENT4D_H_
+#ifndef OOPS_BASE_INCREMENT4D_H_
+#define OOPS_BASE_INCREMENT4D_H_
 
 #include <ostream>
 #include <string>
@@ -17,7 +17,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 
-#include "oops/assimilation/State4D.h"
+#include "oops/base/State4D.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -140,4 +140,4 @@ void Increment4D<MODEL>::schur_product_with(const Increment4D & x2) {
 // -----------------------------------------------------------------------------
 }  // namespace oops
 
-#endif  // OOPS_ASSIMILATION_INCREMENT4D_H_
+#endif  // OOPS_BASE_INCREMENT4D_H_

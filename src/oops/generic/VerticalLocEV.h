@@ -15,7 +15,7 @@
 
 #include "eckit/config/Configuration.h"
 
-#include "oops/assimilation/Increment4D.h"
+#include "oops/base/Increment4D.h"
 #include "oops/base/IncrementEnsemble4D.h"
 #include "oops/base/LocalIncrement.h"
 #include "oops/generic/gc99.h"

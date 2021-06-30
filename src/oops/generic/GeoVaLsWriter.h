@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef OOPS_BASE_GEOVALSWRITER_H_
-#define OOPS_BASE_GEOVALSWRITER_H_
+#ifndef OOPS_GENERIC_GEOVALSWRITER_H_
+#define OOPS_GENERIC_GEOVALSWRITER_H_
 
 #include <memory>
 
@@ -69,4 +69,4 @@ void GeoVaLsWriter<OBS>::print(std::ostream & os) const {
 
 }  // namespace oops
 
-#endif  // OOPS_BASE_GEOVALSWRITER_H_
+#endif  // OOPS_GENERIC_GEOVALSWRITER_H_
