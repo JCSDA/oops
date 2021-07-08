@@ -7,6 +7,8 @@ set( _l95_srcs
         ErrorCovarianceL95.h
         FieldL95.cc
         FieldL95.h
+        FinalCheck.cc
+        FinalCheck.h
         GetValuesL95.cc
         GetValuesL95.h
         GetValuesTLAD.cc

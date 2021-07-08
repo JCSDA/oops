@@ -9,6 +9,8 @@ ErrorCovarianceQG.cc
 ErrorCovarianceQG.h
 FieldsQG.cc
 FieldsQG.h
+FinalCheck.cc
+FinalCheck.h
 GeometryQG.cc
 GeometryQG.h
 GeometryQGIterator.cc

@@ -115,7 +115,7 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
  private:
   const eckit::LocalConfiguration obsconf_;
   ObsSpaces_ obspaces_;
-  Observations_ yobs_;
+  std::unique_ptr<Observations_> yobs_;
   ObsErrors_ Rmat_;
   Observers_ observers_;
 
@@ -136,7 +136,7 @@ CostJo<MODEL, OBS>::CostJo(const eckit::Configuration & joConf, const eckit::mpi
                            const util::DateTime & winbgn, const util::DateTime & winend,
                            const eckit::mpi::Comm & ctime)
   : obsconf_(joConf), obspaces_(obsconf_, comm, winbgn, winend, ctime),
-    yobs_(obspaces_, "ObsValue"), Rmat_(obsconf_, obspaces_), observers_(obspaces_, joConf),
+    Rmat_(obsconf_, obspaces_), observers_(obspaces_, joConf),
     gradFG_(), obstlad_(), currentConf_()
 {
   Log::trace() << "CostJo::CostJo" << std::endl;
@@ -173,18 +173,20 @@ double CostJo<MODEL, OBS>::computeCost() {
   Log::trace() << "CostJo::computeCost start" << std::endl;
 
   // Obs, simulated obs and departures (held here for nice prints and diagnostics)
+  if (!yobs_)
+    yobs_.reset(new Observations_(obspaces_, "ObsValue"));
   Observations_ yeqv(obspaces_);
   observers_.finalize(yeqv);
 
   // Perturb observations according to obs error statistics
   bool obspert = currentConf_->getBool("obs perturbations", false);
   if (obspert) {
-    yobs_.perturb(Rmat_);
-    Log::info() << "Perturbed observations: " << yobs_ << std::endl;
+    yobs_->perturb(Rmat_);
+    Log::info() << "Perturbed observations: " << *yobs_ << std::endl;
   }
 
   // Compute observations departures and save to output file
-  Departures_ ydep(yeqv - yobs_);
+  Departures_ ydep(yeqv - *yobs_);
   if (currentConf_->has("diagnostics.departures")) {
     const std::string depname = currentConf_->getString("diagnostics.departures");
     ydep.save(depname);
@@ -195,7 +197,7 @@ double CostJo<MODEL, OBS>::computeCost() {
   Rmat_.inverseMultiply(*gradFG_);
 
   // Print diagnostics
-  Log::info() << "Jo Observations:" << std::endl << yobs_
+  Log::info() << "Jo Observations:" << std::endl << *yobs_
           << "End Jo Observations"  << std::endl;
 
   Log::info() << "Jo Observations Equivalent:" << std::endl << yeqv

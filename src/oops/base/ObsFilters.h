@@ -104,6 +104,13 @@ ObsFilters<OBS>::ObsFilters(const ObsSpace_ & os,
     }
   }
 
+// Create the final filter run at the end of the pipeline
+  if (filtersParams.size() > 0) {
+    eckit::LocalConfiguration preconf;
+    preconf.set("filter", "Final Check");
+    filters_.push_back(FilterFactory<OBS>::create(os, preconf, qcflags_, obserrtmp_));
+  }
+
   Log::trace() << "ObsFilters::ObsFilters done" << std::endl;
 }
 
