@@ -33,6 +33,10 @@
 namespace test {
 
 const char *expectConstructorToThrow = "expect constructor to throw exception with message";
+const char *expectSetTrajectoryToThrow = "expect setTrajectory to throw exception with message";
+const char *expectSimulateObsToThrow = "expect simulateObs to throw exception with message";
+const char *expectSimulateObsTLToThrow = "expect simulateObsTL to throw exception with message";
+const char *expectSimulateObsADToThrow = "expect simulateObsAD to throw exception with message";
 
 // -----------------------------------------------------------------------------
 /// \brief tests constructor and print method
@@ -81,7 +85,10 @@ template <typename OBS> void testLinearity() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     const eckit::LocalConfiguration & conf = Test_::config(jj);
-    if (conf.has(expectConstructorToThrow))
+    if (conf.has(expectConstructorToThrow) ||
+        conf.has(expectSetTrajectoryToThrow) ||
+        conf.has(expectSimulateObsToThrow) ||
+        conf.has(expectSimulateObsTLToThrow))
       continue;
 
     // initialize observation operator (set variables requested from the model,
@@ -161,7 +168,11 @@ template <typename OBS> void testAdjoint() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     const eckit::LocalConfiguration & conf = Test_::config(jj);
-    if (conf.has(expectConstructorToThrow))
+    if (conf.has(expectConstructorToThrow) ||
+        conf.has(expectSetTrajectoryToThrow) ||
+        conf.has(expectSimulateObsToThrow) ||
+        conf.has(expectSimulateObsTLToThrow) ||
+        conf.has(expectSimulateObsADToThrow))
       continue;
 
     // initialize observation operator (set variables requested from the model,
@@ -245,7 +256,10 @@ template <typename OBS> void testTangentLinear() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     const eckit::LocalConfiguration & conf = Test_::config(jj);
-    if (conf.has(expectConstructorToThrow))
+    if (conf.has(expectConstructorToThrow) ||
+        conf.has(expectSetTrajectoryToThrow) ||
+        conf.has(expectSimulateObsToThrow) ||
+        conf.has(expectSimulateObsTLToThrow))
       continue;
 
     // initialize observation operator (set variables requested from the model,
@@ -333,12 +347,95 @@ template <typename OBS> void testTangentLinear() {
 
 // -----------------------------------------------------------------------------
 
+template <typename OBS> void testException() {
+  typedef ObsTestsFixture<OBS> Test_;
+  typedef oops::GeoVaLs<OBS>           GeoVaLs_;
+  typedef oops::ObsOperator<OBS>       ObsOperator_;
+  typedef oops::LinearObsOperator<OBS> LinearObsOperator_;
+  typedef oops::ObsAuxControl<OBS>     ObsAuxCtrl_;
+  typedef oops::ObsAuxIncrement<OBS>   ObsAuxIncr_;
+  typedef oops::ObsAuxCovariance<OBS>  ObsAuxCov_;
+  typedef oops::ObsVector<OBS>         ObsVector_;
+
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    const eckit::LocalConfiguration & conf = Test_::config(jj);
+    if (conf.has(expectConstructorToThrow))
+      continue;
+
+    // Set up objects prior to throwing exceptions.
+    eckit::LocalConfiguration obsopconf(conf, "obs operator");
+    ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
+    std::string confname = "obs operator";
+    if (conf.has("linear obs operator")) confname = "linear obs operator";
+    eckit::LocalConfiguration linobsopconf(conf, confname);
+    LinearObsOperator_ hoptl(Test_::obspace()[jj], linobsopconf);
+    eckit::LocalConfiguration biasconf = conf.getSubConfiguration("obs bias");
+    typename ObsAuxCtrl_::Parameters_ biasparams;
+    biasparams.validateAndDeserialize(biasconf);
+    const ObsAuxCtrl_ ybias(Test_::obspace()[jj], biasparams);
+    ObsAuxIncr_ ybinc(Test_::obspace()[jj], biasparams);
+    const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], biasparams);
+    eckit::LocalConfiguration gconf(conf, "geovals");
+    oops::Variables hopvars = hop.requiredVars();
+    hopvars += ybias.requiredVars();
+    const GeoVaLs_ gval(gconf, Test_::obspace()[jj], hopvars);
+    oops::Variables diagvars;
+    diagvars += ybias.requiredHdiagnostics();
+
+    if (Test_::config(jj).has(expectSetTrajectoryToThrow)) {
+      // The setTrajectory method is expected to throw an exception
+      // containing the specified string.
+      const std::string expectedMessage =
+        Test_::config(jj).getString(expectSetTrajectoryToThrow);
+      EXPECT_THROWS_MSG(hoptl.setTrajectory(gval, ybias),
+                        expectedMessage.c_str());
+      // Do not continue further because setTrajectory must be run
+      // before simulateObsTL and simulateObsAD.
+      continue;
+    }
+
+    if (Test_::config(jj).has(expectSimulateObsTLToThrow)) {
+      hoptl.setTrajectory(gval, ybias);
+      ObsVector_ dy1(Test_::obspace()[jj]);
+      GeoVaLs_ dx1(gconf, Test_::obspace()[jj], hoptl.requiredVars());
+      dx1.random();
+      Bobsbias.randomize(ybinc);
+      // The simulateObsTL method is expected to throw an exception
+      // containing the specified string.
+      const std::string expectedMessage =
+        Test_::config(jj).getString(expectSimulateObsTLToThrow);
+      EXPECT_THROWS_MSG(hoptl.simulateObsTL(dx1, dy1, ybinc),
+                        expectedMessage.c_str());
+    }
+
+    if (Test_::config(jj).has(expectSimulateObsADToThrow)) {
+      hoptl.setTrajectory(gval, ybias);
+      ObsVector_ dy2(Test_::obspace()[jj]);
+      GeoVaLs_ dx2(gconf, Test_::obspace()[jj], hoptl.requiredVars());
+      Bobsbias.randomize(ybinc);
+      dy2.random();
+      dx2.zero();
+      ybinc.zero();
+      // The simulateObsAD method is expected to throw an exception
+      // containing the specified string.
+      const std::string expectedMessage =
+        Test_::config(jj).getString(expectSimulateObsADToThrow);
+      EXPECT_THROWS_MSG(hoptl.simulateObsAD(dx2, dy2, ybinc),
+                        expectedMessage.c_str());
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+
 template <typename OBS>
 class LinearObsOperator : public oops::Test {
   typedef ObsTestsFixture<OBS> Test_;
+
  public:
   LinearObsOperator() {}
   virtual ~LinearObsOperator() {}
+
  private:
   std::string testid() const override {return "test::LinearObsOperator<" + OBS::name() + ">";}
 
@@ -353,6 +450,8 @@ class LinearObsOperator : public oops::Test {
       { testTangentLinear<OBS>(); });
     ts.emplace_back(CASE("interface/LinearObsOperator/testAdjoint")
       { testAdjoint<OBS>(); });
+    ts.emplace_back(CASE("interface/LinearObsOperator/testException")
+      { testException<OBS>(); });
   }
 
   void clear() const override {
