@@ -41,6 +41,10 @@ class ObserverParameters : public Parameters {
  public:
   oops::RequiredParameter<eckit::LocalConfiguration> obsOperator{"obs operator", this};
   oops::Parameter<std::vector<ObsFilterParametersWrapper<OBS>>> obsFilters{"obs filters", {}, this};
+  oops::Parameter<eckit::LocalConfiguration> getValues{
+    "get values", eckit::LocalConfiguration(), this};
+  oops::Parameter<eckit::LocalConfiguration> linearGetValues{
+    "linear get values", eckit::LocalConfiguration(), this};
 };
 
 // -----------------------------------------------------------------------------
@@ -56,6 +60,7 @@ class Observer {
   typedef ObsDataVector<OBS, int>      ObsDataInt_;
   typedef ObsDiagnostics<OBS>          ObsDiags_;
   typedef ObsErrorBase<OBS>            ObsError_;
+  typedef ObserverParameters<OBS>      Parameters_;
   typedef ObsFilters<OBS>              ObsFilters_;
   typedef ObsOperator<OBS>             ObsOperator_;
   typedef ObsSpace<OBS>                ObsSpace_;
@@ -63,7 +68,7 @@ class Observer {
 
  public:
 /// \brief Initializes ObsOperators, Locations, and QC data
-  Observer(const ObsSpace_ &, const eckit::Configuration &);
+  Observer(const ObsSpace_ &, const Parameters_ &);
 
 /// \brief Initializes variables, obs bias, obs filters (could be different for
 /// different iterations
@@ -74,7 +79,7 @@ class Observer {
   void finalize(ObsVector_ &);
 
  private:
-  eckit::LocalConfiguration     obsconfig_;
+  Parameters_                   parameters_;
   const ObsSpace_ &             obspace_;    // ObsSpace used in H(x)
   std::unique_ptr<ObsOperator_> obsop_;      // Obs operator
   std::unique_ptr<Locations_>   locations_;  // locations
@@ -91,15 +96,13 @@ class Observer {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-Observer<MODEL, OBS>::Observer(const ObsSpace_ & obspace, const eckit::Configuration & config)
-  : obsconfig_(config), obspace_(obspace), obsop_(), locations_(),
+Observer<MODEL, OBS>::Observer(const ObsSpace_ & obspace, const Parameters_ & params)
+  : parameters_(params), obspace_(obspace), obsop_(), locations_(),
     ybias_(nullptr), filters_(), qcflags_(), iterout_(-1), initialized_(false)
 {
   Log::trace() << "Observer::Observer start" << std::endl;
-  ObserverParameters<OBS> observerParams;
-  observerParams.deserialize(config);
   /// Set up observation operators
-  obsop_.reset(new ObsOperator_(obspace_, observerParams.obsOperator));
+  obsop_.reset(new ObsOperator_(obspace_, parameters_.obsOperator));
   qcflags_.reset(new ObsDataInt_(obspace_, obspace_.obsvariables()));
 
   Log::trace() << "Observer::Observer done" << std::endl;
@@ -120,9 +123,7 @@ Observer<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrl_ & ybi
 
 // Set up QC filters and run preprocess
   int iterfilt = std::max(iter, 0);
-  ObserverParameters<OBS> observerParams;
-  observerParams.deserialize(obsconfig_);
-  filters_.reset(new ObsFilters_(obspace_, observerParams.obsFilters,
+  filters_.reset(new ObsFilters_(obspace_, parameters_.obsFilters,
                                  qcflags_, *obserr_, iterfilt));
   filters_->preProcess();
 
@@ -134,10 +135,8 @@ Observer<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrl_ & ybi
   geovars += ybias_->requiredVars();
   geovars += filters_->requiredVars();
 
-  eckit::LocalConfiguration gvconf = obsconfig_.getSubConfiguration("get values");
-
 // Set up GetValues
-  getvals_.reset(new GetValPost_(gvconf, geom, obspace_.windowStart(),
+  getvals_.reset(new GetValPost_(parameters_.getValues, geom, obspace_.windowStart(),
                                  obspace_.windowEnd(), *locations_, geovars));
 
   initialized_ = true;

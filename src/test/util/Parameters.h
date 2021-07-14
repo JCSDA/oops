@@ -1541,6 +1541,17 @@ void testValidateAndDeserialize() {
     if (validationSupported)
       EXPECT_THROWS(oops::validateAndDeserialize<MyOptionalParameters>(conf));
   }
+
+
+  {
+    std::vector<eckit::LocalConfiguration> confs =
+        TestEnvironment::config().getSubConfigurations("full.range_parameters");
+    std::vector<RangeParameters> ranges = oops::validateAndDeserialize<RangeParameters>(confs);
+    EXPECT_EQUAL(ranges[0].minParameter, 9);
+    EXPECT_EQUAL(ranges[0].maxParameter, 10);
+    EXPECT_EQUAL(ranges[1].minParameter, 11);
+    EXPECT_EQUAL(ranges[1].maxParameter, 12);
+  }
 }
 
 // HasParameters_

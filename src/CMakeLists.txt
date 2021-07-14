@@ -250,6 +250,7 @@ oops/runs/Variational.h
 oops/util/abor1_cpp.cc
 oops/util/abor1_cpp.h
 oops/util/abor1_ftn.F90
+oops/util/algorithms.h
 oops/util/AnyOf.h
 oops/util/AssociativeContainers.h
 oops/util/CompareNVectors.h
@@ -432,6 +433,7 @@ test/util/stringFunctions.h
 test/util/LocalEnvironment.h
 test/util/TestReference.h
 test/util/TypeTraits.h
+test/util/algorithms.h
 )
 
 list (APPEND oops_fheader_files
@@ -628,6 +630,11 @@ ecbuild_add_test( TARGET  test_oops_atlas_interpolation_interface
 ecbuild_add_test( TARGET  test_oops_unstructured_interpolation
                   SOURCES test/generic/InterpolationInterface.cc
                   ARGS    "test/testinput/unstructured_interpolation.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_algorithms
+                  SOURCES test/util/algorithms.cc
+                  ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 
 ecbuild_add_test( TARGET  test_util_comparenvectors
