@@ -12,6 +12,7 @@
 #include <cfloat>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
@@ -20,13 +21,10 @@
 #include "oops/assimilation/LocalEnsembleSolver.h"
 #include "oops/base/Departures.h"
 #include "oops/base/DeparturesEnsemble.h"
-#include "oops/base/GetValuesPost.h"
 #include "oops/base/IncrementEnsemble4D.h"
 #include "oops/base/LocalIncrement.h"
 #include "oops/base/ObsEnsemble.h"
-#include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
-#include "oops/base/ObsLocalizations.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/State4D.h"
 #include "oops/base/StateEnsemble4D.h"
@@ -54,13 +52,10 @@ class GETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
   typedef DeparturesEnsemble<OBS>     DeparturesEnsemble_;
   typedef Geometry<MODEL>             Geometry_;
   typedef GeometryIterator<MODEL>     GeometryIterator_;
-  typedef GetValuesPost<MODEL, OBS>   GetValuesPost_;
   typedef IncrementEnsemble4D<MODEL>  IncrementEnsemble4D_;
   typedef ObsDataVector<OBS, int>     ObsDataVector_;
   typedef ObsEnsemble<OBS>            ObsEnsemble_;
-  typedef ObsErrors<OBS>              ObsErrors_;
   typedef Observations<OBS>           Observations_;
-  typedef ObsLocalizations<MODEL, OBS>  ObsLocalizations_;
   typedef ObsSpaces<OBS>              ObsSpaces_;
   typedef State4D<MODEL>              State4D_;
   typedef StateEnsemble4D<MODEL>      StateEnsemble4D_;
@@ -183,18 +178,8 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
       for (size_t ieig = 0; ieig < neig_; ++ieig) {
         State4D_ tmpState = xx_mean;
         tmpState += Ztmp[ieig];
-
-        this->hofx_.resetQc();
-        this->hofx_.initialize(this->obsaux_, iteration);
-
-        std::vector<eckit::LocalConfiguration> getValuesConfig =
-          util::vectoriseAndFilter(this->obsconf_, "get values");
-
-        GetValuesPost_ getvals(this->obspaces_, this->hofx_.locations(),
-                               this->hofx_.requiredVars(), getValuesConfig);
-        getvals.fill(tmpState);
-        // compute H(x) on filled in geovals and run the filters
-        Observations_ tmpObs = this->hofx_.compute(getvals.geovals());
+        Observations_ tmpObs(this->obspaces_);
+        this->computeHofX4D(tmpState, tmpObs);
         HZb_[ii] = tmpObs - yb_mean;
         tmpObs.save("hofxm"+std::to_string(iteration)+"_"+std::to_string(ieig+1)+
                       "_"+std::to_string(iens+1));
@@ -204,7 +189,7 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
       }
     }
   }
-  this->hofx_.readQcFlags("EffectiveQC");
+  this->readQC("EffectiveQC");
   return yb_mean;
 }
 
@@ -228,8 +213,8 @@ void GETKFSolver<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
   Eigen::MatrixXf YbOrig_f = YbOrig.cast<float>();
   Eigen::VectorXf R_invvar_f = R_invvar.cast<float>();
 
-  Eigen::MatrixXf Wa_f(this->nanal_, this->nens_);
-  Eigen::VectorXf wa_f(this->nanal_);
+  Eigen::MatrixXf Wa_f(nanal_, this->nens_);
+  Eigen::VectorXf wa_f(nanal_);
 
   // call into GSI interface to compute Wa and wa
   const int getkf_inflation = 0;
@@ -336,8 +321,8 @@ void GETKFSolver<MODEL, OBS>::measurementUpdate(const IncrementEnsemble4D_ & bkg
             this->obspaces_[jj].obsvariables()));
   }
   locvector.ones();
-  this->obsloc_.computeLocalization(i, outside, locvector);
-  locvector.mask(this->hofx_.qcflags());
+  this->obsloc().computeLocalization(i, outside, locvector);
+  locvector.mask(this->qcflags());
   Eigen::VectorXd local_omb_vec = this->omb_.packEigen(outside);
 
   if (local_omb_vec.size() == 0) {

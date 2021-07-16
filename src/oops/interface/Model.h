@@ -11,6 +11,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 
 #include <boost/noncopyable.hpp>
 
@@ -62,6 +63,8 @@ class Model : public util::Printable,
 
   Model(const Geometry_ &, const ModelParametersBase &);
   Model(const Geometry_ &, const eckit::Configuration &);
+
+  explicit Model(std::unique_ptr<ModelBase_>);
   virtual ~Model();
 
   /// \brief Run the forecast from state \p xx for \p len time, with \p post postprocessors
@@ -108,6 +111,15 @@ template<typename MODEL>
 Model<MODEL>::Model(const Geometry_ & resol, const eckit::Configuration & conf)
   : Model(resol, validateAndDeserialize<ModelParametersWrapper<MODEL>>(conf).modelParameters)
 {}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+Model<MODEL>::Model(std::unique_ptr<ModelBase_> model)
+  : model_(std::move(model))
+{
+  Log::trace() << "Model<MODEL>::Model created" << std::endl;
+}
 
 // -----------------------------------------------------------------------------
 

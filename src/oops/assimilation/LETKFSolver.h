@@ -145,8 +145,8 @@ void LETKFSolver<MODEL, OBS>::measurementUpdate(const IncrementEnsemble4D_ & bkg
             this->obspaces_[jj].obsvariables()));
   }
   locvector.ones();
-  this->obsloc_.computeLocalization(i, outside, locvector);
-  locvector.mask(this->hofx_.qcflags());
+  this->obsloc().computeLocalization(i, outside, locvector);
+  locvector.mask(this->qcflags());
   Eigen::VectorXd local_omb_vec = this->omb_.packEigen(outside);
 
   if (local_omb_vec.size() == 0) {

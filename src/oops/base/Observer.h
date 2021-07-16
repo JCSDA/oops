@@ -77,6 +77,7 @@ class Observer {
 
 /// \brief Computes H(x) from the filled in GeoVaLs
   void finalize(ObsVector_ &);
+  void finalize(ObsVector_ &, std::shared_ptr<ObsDataInt_> &);
 
  private:
   Parameters_                   parameters_;
@@ -187,6 +188,43 @@ void Observer<MODEL, OBS>::finalize(ObsVector_ & yobsim) {
   initialized_ = false;
   Log::trace() << "Observer<MODEL, OBS>::finalize done" << std::endl;
 }
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename OBS>
+void Observer<MODEL, OBS>::finalize(ObsVector_ & yobsim, std::shared_ptr<ObsDataInt_> & qc) {
+  oops::Log::trace() << "Observer<MODEL, OBS>::finalize start" << std::endl;
+  ASSERT(initialized_);
+
+  // GetValues releases GeoVaLs, Observer takes ownership
+  std::unique_ptr<GeoVaLs_> geovals = getvals_->releaseGeoVaLs();
+
+  /// Call prior filters
+  filters_->priorFilter(*geovals);
+
+  /// Setup diagnostics
+  Variables vars;
+  vars += filters_->requiredHdiagnostics();
+  vars += ybias_->requiredHdiagnostics();
+  ObsDiags_ ydiags(obspace_, *locations_, vars);
+
+  /// Compute H(x)
+  obsop_->simulateObs(*geovals, yobsim, *ybias_, ydiags);
+
+  /// Call posterior filters
+  filters_->postFilter(yobsim, ydiags);
+
+  // Update R with obs errors that filters might have updated
+  Rmat_->update(*obserr_);
+
+  qc = qcflags_;
+
+  Log::info() << "Observer::finalize QC = " << *qcflags_ << std::endl;
+
+  initialized_ = false;
+  Log::trace() << "Observer<MODEL, OBS>::finalize done" << std::endl;
+}
+
 
 // -----------------------------------------------------------------------------
 

@@ -52,6 +52,9 @@ class ObsErrors : public util::Printable,
 /// Generate random perturbation
   void randomize(Departures_ &) const;
 
+/// Save obs errors
+  void save(const std::string &) const;
+
   /// returns inverse of observation error variance
   Departures_ inverseVariance() const;
 
@@ -97,6 +100,15 @@ template <typename OBS>
 void ObsErrors<OBS>::randomize(Departures_ & dy) const {
   for (size_t jj = 0; jj < err_.size(); ++jj) {
     err_[jj]->randomize(dy[jj]);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+void ObsErrors<OBS>::save(const std::string & name) const {
+  for (const auto & err : err_) {
+    err->save(name);
   }
 }
 

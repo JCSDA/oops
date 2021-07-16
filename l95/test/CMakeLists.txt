@@ -80,6 +80,7 @@ list( APPEND l95_test_input
   testinput/makeobsbias.yaml
   testinput/makeobspert.yaml
   testinput/pseudomodel.yaml
+  testinput/pseudomodel_state4d.yaml
   testinput/truth.yaml
   testinput/simplifiedl95_DRGMRESR.yaml
   testinput/simplifiedl95_DRIPCG.yaml
@@ -280,6 +281,12 @@ ecbuild_add_test( TARGET test_l95_model
 ecbuild_add_test( TARGET test_l95_pseudomodel
                   SOURCES executables/TestModel.cc
                   ARGS "testinput/pseudomodel.yaml"
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth )
+
+ecbuild_add_test( TARGET test_l95_pseudomodel_state4d
+                  SOURCES executables/TestPseudoModelState4D.cc
+                  ARGS "testinput/pseudomodel_state4d.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 

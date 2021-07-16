@@ -45,6 +45,8 @@ class Observers {
   typedef ObsVector<OBS>                ObsVector_;
   typedef State<MODEL>                  State_;
   typedef PostProcessor<State_>         PostProc_;
+  template <typename DATA> using ObsData_ = ObsDataVector<OBS, DATA>;
+  template <typename DATA> using ObsDataVec_ = std::vector<std::shared_ptr<ObsData_<DATA>>>;
 
  public:
 /// \brief Initializes ObsOperators, Locations, and QC data
@@ -58,6 +60,7 @@ class Observers {
 
 /// \brief Computes H(x) from the filled in GeoVaLs
   void finalize(Observations_ &);
+  void finalize(Observations_ &, ObsDataVec_<int> &);
 
  private:
   static std::vector<ObserverParameters_> convertToParameters(const eckit::Configuration &config);
@@ -114,6 +117,19 @@ void Observers<MODEL, OBS>::finalize(Observations_ & yobs) {
 
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
     observers_[jj]->finalize(yobs[jj]);
+  }
+
+  oops::Log::trace() << "Observers<MODEL, OBS>::finalize done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename OBS>
+void Observers<MODEL, OBS>::finalize(Observations_ & yobs, ObsDataVec_<int> & qc) {
+  oops::Log::trace() << "Observers<MODEL, OBS>::finalize start" << std::endl;
+
+  for (size_t jj = 0; jj < observers_.size(); ++jj) {
+    observers_[jj]->finalize(yobs[jj], qc[jj]);
   }
 
   oops::Log::trace() << "Observers<MODEL, OBS>::finalize done" << std::endl;

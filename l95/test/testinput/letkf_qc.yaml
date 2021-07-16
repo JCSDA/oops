@@ -48,3 +48,5 @@ output:
 
 test:
   reference filename: testoutput/letkf_qc.test
+  log output filename: testoutput/letkf_qc.log.out
+  test output filename: testoutput/letkf_qc.test.out

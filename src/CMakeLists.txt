@@ -183,6 +183,7 @@ oops/generic/InterpolatorUnstructured.cc
 oops/generic/LinearModelId.h
 oops/generic/ObsErrorDiag.h
 oops/generic/PseudoModel.h
+oops/generic/PseudoModelState4D.h
 oops/generic/soar.h
 oops/generic/soar.cc
 oops/generic/unstructured_interpolation_mod.F90
@@ -413,6 +414,7 @@ test/interface/VariableChange.h
 test/mpi/mpi.h
 
 test/generic/InterpolationInterface.h
+test/generic/PseudoModelState4D.h
 test/generic/VerticalLocEV.h
 
 test/util/Fortran.h
