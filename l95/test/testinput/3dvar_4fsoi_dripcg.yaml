@@ -33,11 +33,11 @@ variational:
     test: on
     online diagnostics:
       write increment: true
-    increment:
-      datadir: Data
-      date: 2010-01-02T00:00:00Z
-      exp: 3dvar_4fsoi_dripcg.iter1
-      type: in
+      increment:
+        datadir: Data
+        date: 2010-01-02T00:00:00Z
+        exp: 3dvar_4fsoi_dripcg.iter1
+        type: in
 final:
   diagnostics:
     departures: oman

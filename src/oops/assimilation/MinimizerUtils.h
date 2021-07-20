@@ -8,11 +8,14 @@
 #ifndef OOPS_ASSIMILATION_MINIMIZERUTILS_H_
 #define OOPS_ASSIMILATION_MINIMIZERUTILS_H_
 
+#include <memory>
 #include <vector>
 
 #include "eckit/config/Configuration.h"
 
 #include "oops/assimilation/ControlIncrement.h"
+#include "oops/assimilation/HtRinvHMatrix.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 
@@ -39,7 +42,7 @@ void writeIncrement(const eckit::Configuration & config,
       // print log
       Log::info() << "Write Increment - starting: " << loop << std::endl << std::endl;
 
-      const eckit::LocalConfiguration incConf(config, "increment");
+      const eckit::LocalConfiguration incConf(onlineDiag, "increment");
 
       // write increment
       dx.write(incConf);
@@ -65,7 +68,7 @@ void writeKrylovBasis(const eckit::Configuration & config,
       // print log
       Log::info() << "Write Krylov Basis: starting: " << loop << std::endl;
 
-      eckit::LocalConfiguration basisConf(config, "krylov basis");
+      eckit::LocalConfiguration basisConf(diagConf, "krylov basis");
       basisConf.set("iteration", loop);
 
       // write increment
@@ -76,6 +79,67 @@ void writeKrylovBasis(const eckit::Configuration & config,
     }
   }
 }
+
+//-------------------------------------------------------------------------------------------------
+template<typename MODEL, typename OBS>
+void writeEigenvectors(const eckit::Configuration & diagConf,
+                       const std::vector<double> & diag,
+                       const std::vector<double> & sub,
+                       const std::vector<double> & rhs,
+                       std::vector<std::unique_ptr<ControlIncrement<MODEL, OBS>>> & zvecs,
+                       std::vector<std::unique_ptr<ControlIncrement<MODEL, OBS>>> & hvecs,
+                       const HtRinvHMatrix<MODEL, OBS> & HtRinvH,
+                       ControlIncrement<MODEL, OBS> & temp,
+                       ControlIncrement<MODEL, OBS> & eigenv,
+                       ControlIncrement<MODEL, OBS> & eigenz) {
+  if (diagConf.has("online diagnostics")) {
+    int maxEigen = diagConf.getInt("online diagnostics.max eigenvectors", 0);
+
+    const double nn = rhs.size();
+    Eigen::MatrixXd TT = Eigen::MatrixXd::Zero(nn, nn);
+
+    for (int ii = 0; ii < nn; ++ii) {
+      TT(ii, ii) = diag[ii];
+      if (ii > 0) TT(ii-1, ii) = sub[ii-1];
+      if (ii < nn - 1) TT(ii+1, ii) = sub[ii];
+    }
+
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> soluce(TT);
+    Eigen::MatrixXd eigenvecT = soluce.eigenvectors().real();
+    Eigen::VectorXd eigenvalT = soluce.eigenvalues().real();
+
+    // Compute the eigenvectors (y = Zx)
+    for (int ii = 0; ii < maxEigen && ii < nn; ++ii) {
+      eigenz.zero();
+      eigenv.zero();
+      for (unsigned int jj = 0; jj < nn; ++jj) {
+        temp.zero();
+        temp = *zvecs[jj];
+        temp *= eigenvecT(jj, nn - 1 - ii);
+        eigenz += temp;
+        temp.zero();
+        temp = *hvecs[jj];
+        temp *= eigenvecT(jj, nn - 1 - ii);
+        eigenv += temp;
+      }
+      // Save the eigenvector
+      eckit::LocalConfiguration basisConf(diagConf, "online diagnostics.eigenvector");
+      basisConf.set("iteration", ii);
+      eigenz.write(basisConf);
+
+      // Verification that eigenz is an eigenvector:
+      // A.eigenv = eigenv + HtRinvH.Beigenv = eigenv + HtRinvH.eigenz = lambda eigenv
+      temp.zero();
+      HtRinvH.multiply(eigenz, temp);
+      temp += eigenv;
+      eigenv *= eigenvalT(nn - 1 - ii);
+      temp -= eigenv;
+      Log::test() << "Eigenvalue " << ii+1 << " : " << eigenvalT(nn - 1 - ii) << std::endl;
+      Log::test() << "Norm A*y-lambda*y = " << dot_product(temp, temp) << std::endl;
+    }  // end for()
+  }  // end if()
+}
+
 // -----------------------------------------------------------------------------
 
 }  // namespace oops

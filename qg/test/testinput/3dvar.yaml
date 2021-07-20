@@ -74,11 +74,11 @@ variational:
     test: on
     online diagnostics:
       write increment: true
-    increment:
-      datadir: Data
-      date: 2010-01-01T12:00:00Z
-      exp: 3dvar.iter1
-      type: in
+      increment:
+        datadir: Data
+        date: 2010-01-01T12:00:00Z
+        exp: 3dvar.iter1
+        type: in
   - diagnostics:
       departures: ombg
     gradient norm reduction: 1.0e-10
@@ -90,12 +90,12 @@ variational:
     test: on
     online diagnostics:
       write increment: true
-    increment:
-      datadir: Data
-      date: 2010-01-01T12:00:00Z
-      exp: 3dvar.iter2
-      type: in
-      analysis variables: [x]
+      increment:
+        datadir: Data
+        date: 2010-01-01T12:00:00Z
+        exp: 3dvar.iter2
+        type: in
+        analysis variables: [x]
 final:
   diagnostics:
     departures: oman
