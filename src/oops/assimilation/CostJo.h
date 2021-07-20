@@ -159,9 +159,8 @@ void CostJo<MODEL, OBS>::setPostProc(const CtrlVar_ & xx, const eckit::Configura
   gradFG_.reset();
 
   currentConf_.reset(new eckit::LocalConfiguration(conf));
-  const int iterout = currentConf_->getInt("iteration");
 
-  observers_.initialize(xx.state().geometry(), xx.obsVar(), Rmat_, pp, iterout);
+  observers_.initialize(xx.state().geometry(), xx.obsVar(), Rmat_, pp, conf);
 
   Log::trace() << "CostJo::setPostProc done" << std::endl;
 }

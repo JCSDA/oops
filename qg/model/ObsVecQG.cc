@@ -83,8 +83,8 @@ void ObsVecQG::zero() {
   qg_obsvec_zero_f90(keyOvec_);
 }
 // -----------------------------------------------------------------------------
-void ObsVecQG::zero(int ii) {
-  qg_obsvec_zero_ith_f90(keyOvec_, ii);
+void ObsVecQG::setToMissing(int ii) {
+  qg_obsvec_settomissing_ith_f90(keyOvec_, ii);
 }
 // -----------------------------------------------------------------------------
 void ObsVecQG::ones() {
@@ -126,17 +126,21 @@ void ObsVecQG::mask(const ObsDataQG<int> & mask) {
   qg_obsvec_mask_f90(keyOvec_, mask.toFortran());
 }
 // -----------------------------------------------------------------------------
+void ObsVecQG::mask(const ObsVecQG & mask) {
+  qg_obsvec_mask_with_missing_f90(keyOvec_, mask.toFortran());
+}
+// -----------------------------------------------------------------------------
 void ObsVecQG::save(const std::string & name) const {
   obsdb_.putdb(name, keyOvec_);
 }
 // -----------------------------------------------------------------------------
-Eigen::VectorXd ObsVecQG::packEigen(const ObsDataQG<int> & mask) const {
+Eigen::VectorXd ObsVecQG::packEigen(const ObsVecQG & mask) const {
   Eigen::VectorXd vec(packEigenSize(mask));
   qg_obsvec_get_withmask_f90(keyOvec_, mask.toFortran(), vec.data(), vec.size());
   return vec;
 }
 // -----------------------------------------------------------------------------
-size_t ObsVecQG::packEigenSize(const ObsDataQG<int> & mask) const {
+size_t ObsVecQG::packEigenSize(const ObsVecQG & mask) const {
   int nobs;
   qg_obsvec_nobs_withmask_f90(keyOvec_, mask.toFortran(), nobs);
   return nobs;

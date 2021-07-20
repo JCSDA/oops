@@ -22,7 +22,6 @@
 #include "oops/base/ObsLocalizationBase.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
-#include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
@@ -43,7 +42,6 @@ template <typename MODEL, typename OBS> void testObsLocalization() {
   typedef ObsTestsFixture<OBS>                   Test_;
   typedef oops::Geometry<MODEL>                  Geometry_;
   typedef oops::GeometryIterator<MODEL>          GeometryIterator_;
-  typedef oops::ObsDataVector<OBS, int>          ObsDataVector_;
   typedef oops::ObsLocalizationBase<MODEL, OBS>  ObsLocalization_;
   typedef oops::ObsSpace<OBS>                    ObsSpace_;
   typedef oops::ObsVector<OBS>                   ObsVector_;
@@ -74,7 +72,6 @@ template <typename MODEL, typename OBS> void testObsLocalization() {
 
     ObsVector_ locvector(obspace);
     ObsVector_ obsvector(obspace);
-    ObsDataVector_ outside(obspace, obspace.obsvariables());
 
     size_t total_tested = 0;
     std::vector<size_t> nobs_local(nobs_local_ref.size(), 0);
@@ -95,12 +92,10 @@ template <typename MODEL, typename OBS> void testObsLocalization() {
         total_tested++;
         size_t index = it - reference_points.begin();
         locvector.ones();
-        obsloc->computeLocalization(ii, outside, locvector);
+        obsloc->computeLocalization(ii, locvector);
         oops::Log::test() << "Obs localization with geometry iterator: " << ii << ": "
                           << *ii << std::endl;
-        oops::Log::test() << "Mask for obs outside of localization: " << outside << std::endl;
         oops::Log::test() << "Localization values: " << locvector << std::endl;
-        locvector.mask(outside);
         oops::Log::test() << "Local vector nobs and reference: " << locvector.nobs() << ", "
                           << nobs_local_ref[index] << std::endl;
         oops::Log::debug() << "Local vector stats lat,lon,nobs,rms: " <<  *ii << ", "

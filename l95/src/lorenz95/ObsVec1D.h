@@ -45,8 +45,8 @@ class ObsVec1D : public util::Printable,
   ObsVec1D & operator*= (const ObsVec1D &);
   ObsVec1D & operator/= (const ObsVec1D &);
 
-  Eigen::VectorXd  packEigen(const ObsData1D<int> &) const;
-  size_t packEigenSize(const ObsData1D<int> &) const;
+  Eigen::VectorXd packEigen(const ObsVec1D &) const;
+  size_t packEigenSize(const ObsVec1D &) const;
 
   size_t size() const {return data_.size();}
   const double & operator[](const std::size_t ii) const {return data_.at(ii);}
@@ -62,6 +62,7 @@ class ObsVec1D : public util::Printable,
   double dot_product_with(const ObsVec1D &) const;
   double rms() const;
   void mask(const ObsData1D<int> &);
+  void mask(const ObsVec1D &);
   ObsVec1D & operator= (const ObsData1D<float> &);
 
   unsigned int nobs() const;
@@ -70,6 +71,8 @@ class ObsVec1D : public util::Printable,
 // I/O
   void save(const std::string &) const;
   void read(const std::string &);
+
+  const double & missing() const {return missing_;}
 
  private:
   void print(std::ostream &) const;

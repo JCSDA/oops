@@ -64,11 +64,11 @@ class ObsVector : public util::Printable,
   ObsVector & operator/= (const ObsVector &);
 
   /// Pack observations local to this MPI task into an Eigen vector
-  /// (excluding vector elements that are masked out and where \p mask != 0)
-  Eigen::VectorXd  packEigen(const ObsDataVector<OBS, int> & mask) const;
+  /// (excluding vector elements that are masked out: where \p mask is a missing value)
+  Eigen::VectorXd packEigen(const ObsVector & mask) const;
   /// Number of non-masked out observations local to this MPI task
   /// (size of an Eigen vector returned by `packEigen`)
-  size_t packEigenSize(const ObsDataVector<OBS, int> & mask) const;
+  size_t packEigenSize(const ObsVector & mask) const;
 
   void zero();
   /// Set this ObsVector to ones (used in tests)
@@ -78,8 +78,10 @@ class ObsVector : public util::Printable,
   void random();
   double dot_product_with(const ObsVector &) const;
   double rms() const;
-  /// Mask out elements of the vector where the passed in flags are > 0
-  void mask(const ObsDataVector<OBS, int> &);
+  /// Mask out elements of the vector where \p mask is > 0
+  void mask(const ObsDataVector<OBS, int> & mask);
+  /// Mask out elements of the vector where \p mask is a missing value
+  void mask(const ObsVector & mask);
   ObsVector & operator =(const ObsDataVector<OBS, float> &);
 
 // I/O
@@ -260,6 +262,14 @@ void ObsVector<OBS>::mask(const ObsDataVector<OBS, int> & qc) {
 }
 // -----------------------------------------------------------------------------
 template <typename OBS>
+void ObsVector<OBS>::mask(const ObsVector & mask) {
+  Log::trace() << "ObsVector<OBS>::mask(ObsVector) starting" << std::endl;
+  util::Timer timer(classname(), "mask(ObsVector)");
+  data_->mask(mask.obsvector());
+  Log::trace() << "ObsVector<OBS>::mask(ObsVector) done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
 ObsVector<OBS> & ObsVector<OBS>::operator=(const ObsDataVector<OBS, float> & rhs) {
   Log::trace() << "ObsVector<OBS>::operator= starting" << std::endl;
   util::Timer timer(classname(), "operator=");
@@ -317,22 +327,22 @@ void ObsVector<OBS>::save(const std::string & name) const {
 }
 // -----------------------------------------------------------------------------
 template <typename OBS>
-Eigen::VectorXd  ObsVector<OBS>::packEigen(const ObsDataVector<OBS, int> & mask) const {
+Eigen::VectorXd  ObsVector<OBS>::packEigen(const ObsVector & mask) const {
   Log::trace() << "ObsVector<OBS>::packEigen starting " << std::endl;
   util::Timer timer(classname(), "packEigen");
 
-  Eigen::VectorXd vec = data_->packEigen(mask.obsdatavector());
+  Eigen::VectorXd vec = data_->packEigen(mask.obsvector());
 
   Log::trace() << "ObsVector<OBS>::packEigen done" << std::endl;
   return vec;
 }
 // -----------------------------------------------------------------------------
 template <typename OBS>
-size_t ObsVector<OBS>::packEigenSize(const ObsDataVector<OBS, int> & mask) const {
+size_t ObsVector<OBS>::packEigenSize(const ObsVector & mask) const {
   Log::trace() << "ObsVector<OBS>::packEigenSize starting " << std::endl;
   util::Timer timer(classname(), "packEigenSize");
 
-  size_t len = data_->packEigenSize(mask.obsdatavector());
+  size_t len = data_->packEigenSize(mask.obsvector());
 
   Log::trace() << "ObsVector<OBS>::packEigen done" << std::endl;
   return len;

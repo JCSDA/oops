@@ -31,7 +31,6 @@
 #include "oops/generic/VerticalLocEV.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
-#include "oops/interface/ObsDataVector.h"
 #include "oops/util/ConfigFunctions.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Timer.h"
@@ -53,7 +52,6 @@ class GETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
   typedef Geometry<MODEL>             Geometry_;
   typedef GeometryIterator<MODEL>     GeometryIterator_;
   typedef IncrementEnsemble4D<MODEL>  IncrementEnsemble4D_;
-  typedef ObsDataVector<OBS, int>     ObsDataVector_;
   typedef ObsEnsemble<OBS>            ObsEnsemble_;
   typedef Observations<OBS>           Observations_;
   typedef ObsSpaces<OBS>              ObsSpaces_;
@@ -179,7 +177,11 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
         State4D_ tmpState = xx_mean;
         tmpState += Ztmp[ieig];
         Observations_ tmpObs(this->obspaces_);
-        this->computeHofX4D(tmpState, tmpObs);
+        eckit::LocalConfiguration config;
+        config.set("save hofx", false);
+        config.set("save qc", false);
+        config.set("save obs errors", false);
+        this->computeHofX4D(config, tmpState, tmpObs);
         HZb_[ii] = tmpObs - yb_mean;
         tmpObs.save("hofxm"+std::to_string(iteration)+"_"+std::to_string(ieig+1)+
                       "_"+std::to_string(iens+1));
@@ -189,7 +191,6 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
       }
     }
   }
-  this->readQC("EffectiveQC");
   return yb_mean;
 }
 
@@ -315,15 +316,10 @@ void GETKFSolver<MODEL, OBS>::measurementUpdate(const IncrementEnsemble4D_ & bkg
 
   // create the local subset of observations
   Departures_ locvector(this->obspaces_);
-  std::vector<std::shared_ptr<ObsDataVector_>> outside;
-  for (size_t jj = 0; jj < this->obspaces_.size(); ++jj) {
-    outside.push_back(std::make_shared<ObsDataVector_>(this->obspaces_[jj],
-            this->obspaces_[jj].obsvariables()));
-  }
   locvector.ones();
-  this->obsloc().computeLocalization(i, outside, locvector);
-  locvector.mask(this->qcflags());
-  Eigen::VectorXd local_omb_vec = this->omb_.packEigen(outside);
+  this->obsloc().computeLocalization(i, locvector);
+  locvector.mask(*(this->invVarR_));
+  Eigen::VectorXd local_omb_vec = this->omb_.packEigen(locvector);
 
   if (local_omb_vec.size() == 0) {
     // no obs. so no need to update Wa_ and wa_
@@ -332,12 +328,12 @@ void GETKFSolver<MODEL, OBS>::measurementUpdate(const IncrementEnsemble4D_ & bkg
   } else {
     // if obs are present do normal KF update
     // get local Yb & HZ
-    Eigen::MatrixXd local_Yb_mat = this->Yb_.packEigen(outside);
-    Eigen::MatrixXd local_HZ_mat = this->HZb_.packEigen(outside);
+    Eigen::MatrixXd local_Yb_mat = this->Yb_.packEigen(locvector);
+    Eigen::MatrixXd local_HZ_mat = this->HZb_.packEigen(locvector);
     // create local obs errors
-    Eigen::VectorXd local_invVarR_vec = this->invVarR_->packEigen(outside);
+    Eigen::VectorXd local_invVarR_vec = this->invVarR_->packEigen(locvector);
     // and apply localization
-    Eigen::VectorXd localization = locvector.packEigen(outside);
+    Eigen::VectorXd localization = locvector.packEigen(locvector);
     local_invVarR_vec.array() *= localization.array();
     computeWeights(local_omb_vec, local_HZ_mat, local_Yb_mat, local_invVarR_vec);
     applyWeights(bkg_pert, ana_pert, i);

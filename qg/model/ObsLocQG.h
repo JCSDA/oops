@@ -12,7 +12,6 @@
 
 #include "oops/base/ObsLocalizationBase.h"
 
-#include "oops/qg/ObsDataQG.h"
 #include "oops/qg/QgTraits.h"
 
 namespace eckit {
@@ -30,7 +29,7 @@ class ObsLocQG : public oops::ObsLocalizationBase<QgTraits, QgObsTraits> {
  public:
   ObsLocQG(const eckit::Configuration &, const ObsSpaceQG &);
 
-  void computeLocalization(const GeometryQGIterator &, ObsDataQG<int> &, ObsVecQG &) const override;
+  void computeLocalization(const GeometryQGIterator &, ObsVecQG &) const override;
 
  private:
   void print(std::ostream &) const override;

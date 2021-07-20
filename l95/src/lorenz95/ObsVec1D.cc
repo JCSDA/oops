@@ -162,6 +162,12 @@ void ObsVec1D::mask(const ObsData1D<int> & mask) {
   }
 }
 // -----------------------------------------------------------------------------
+void ObsVec1D::mask(const ObsVec1D & mask) {
+  for (size_t jj = 0; jj < data_.size(); ++jj) {
+    if (mask[jj] == missing_) data_.at(jj) = missing_;
+  }
+}
+// -----------------------------------------------------------------------------
 ObsVec1D & ObsVec1D::operator=(const ObsData1D<float> & rhs) {
   const float fmiss = util::missingValue(float());
   for (size_t jj = 0; jj < data_.size(); ++jj) {
@@ -178,21 +184,21 @@ void ObsVec1D::save(const std::string & name) const {
   obsdb_.putdb(name, data_);
 }
 // -----------------------------------------------------------------------------
-Eigen::VectorXd ObsVec1D::packEigen(const ObsData1D<int> & mask) const {
+Eigen::VectorXd ObsVec1D::packEigen(const ObsVec1D & mask) const {
   Eigen::VectorXd vec(packEigenSize(mask));
   size_t ii = 0;
   for (size_t jj = 0; jj < data_.size(); ++jj) {
-    if ((data_[jj] != missing_) && (mask[jj] == 0)) {
+    if ((data_[jj] != missing_) && (mask[jj] != missing_)) {
       vec(ii++) = data_[jj];
     }
   }
   return vec;
 }
 // -----------------------------------------------------------------------------
-size_t ObsVec1D::packEigenSize(const ObsData1D<int> & mask) const {
+size_t ObsVec1D::packEigenSize(const ObsVec1D & mask) const {
   size_t ii = 0;
   for (size_t jj = 0; jj < data_.size(); ++jj) {
-    if ((data_[jj] != missing_) && (mask[jj] == 0)) {
+    if ((data_[jj] != missing_) && (mask[jj] != missing_)) {
       ii++;
     }
   }

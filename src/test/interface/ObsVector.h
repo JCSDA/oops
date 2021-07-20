@@ -289,11 +289,16 @@ template <typename OBS> void testMask() {
     EXPECT_EQUAL(with_mask.nobs(), nobs_after_mask);
 
     /// test packEigen
+    // create maskvec ObsVector - mask with missing values
+    ObsVector_ maskvec = test;
+    maskvec.ones();
+    maskvec.mask(mask);
+    // randomize the vector, and call packEigen with maskvec
     test.random();
-    Eigen::VectorXd with_mask_vec = test.packEigen(mask);
+    Eigen::VectorXd with_mask_vec = test.packEigen(maskvec);
     // check that the size of returned Eigen Vector is consistent with size
     // returned by packEigenSize()
-    EXPECT_EQUAL(with_mask_vec.size(), test.packEigenSize(mask));
+    EXPECT_EQUAL(with_mask_vec.size(), test.packEigenSize(maskvec));
     oops::Log::debug() << "Local number of masked observations is: " <<
                           with_mask_vec.size() << std::endl;
     // check that the size is consistent with reference for this MPI task

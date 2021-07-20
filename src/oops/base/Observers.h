@@ -56,11 +56,10 @@ class Observers {
 /// \brief Initializes variables, obs bias, obs filters (could be different for
 /// different iterations
   void initialize(const Geometry_ &, const ObsAuxCtrls_ &, ObsErrors_ &,
-                  PostProc_ &, const int iter = -1);
+                  PostProc_ &, const eckit::Configuration & = eckit::LocalConfiguration());
 
 /// \brief Computes H(x) from the filled in GeoVaLs
   void finalize(Observations_ &);
-  void finalize(Observations_ &, ObsDataVec_<int> &);
 
  private:
   static std::vector<ObserverParameters_> convertToParameters(const eckit::Configuration &config);
@@ -97,12 +96,13 @@ Observers<MODEL, OBS>::Observers(const ObsSpaces_ & obspaces, const eckit::Confi
 
 template <typename MODEL, typename OBS>
 void Observers<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrls_ & obsaux,
-                                       ObsErrors_ & Rmat, PostProc_ & pp, const int iter) {
+                                       ObsErrors_ & Rmat, PostProc_ & pp,
+                                       const eckit::Configuration & conf) {
   Log::trace() << "Observers<MODEL, OBS>::initialize start" << std::endl;
 
   std::shared_ptr<GetValuePosts_> getvals(new GetValuePosts_());
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
-    getvals->append(observers_[jj]->initialize(geom, obsaux[jj], Rmat[jj], iter));
+    getvals->append(observers_[jj]->initialize(geom, obsaux[jj], Rmat[jj], conf));
   }
   pp.enrollProcessor(getvals);
 
@@ -117,19 +117,6 @@ void Observers<MODEL, OBS>::finalize(Observations_ & yobs) {
 
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
     observers_[jj]->finalize(yobs[jj]);
-  }
-
-  oops::Log::trace() << "Observers<MODEL, OBS>::finalize done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL, typename OBS>
-void Observers<MODEL, OBS>::finalize(Observations_ & yobs, ObsDataVec_<int> & qc) {
-  oops::Log::trace() << "Observers<MODEL, OBS>::finalize start" << std::endl;
-
-  for (size_t jj = 0; jj < observers_.size(); ++jj) {
-    observers_[jj]->finalize(yobs[jj], qc[jj]);
   }
 
   oops::Log::trace() << "Observers<MODEL, OBS>::finalize done" << std::endl;

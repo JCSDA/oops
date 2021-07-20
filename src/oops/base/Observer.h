@@ -73,11 +73,10 @@ class Observer {
 /// \brief Initializes variables, obs bias, obs filters (could be different for
 /// different iterations
   std::shared_ptr<GetValPost_> initialize(const Geometry_ &, const ObsAuxCtrl_ &,
-                                          ObsError_ &, const int iter);
+                                          ObsError_ &, const eckit::Configuration &);
 
 /// \brief Computes H(x) from the filled in GeoVaLs
   void finalize(ObsVector_ &);
-  void finalize(ObsVector_ &, std::shared_ptr<ObsDataInt_> &);
 
  private:
   Parameters_                   parameters_;
@@ -90,8 +89,8 @@ class Observer {
   std::unique_ptr<ObsVector_>   obserr_;     // Obs error std dev
   std::shared_ptr<GetValPost_>  getvals_;    // Postproc passed to the model during integration.
   std::shared_ptr<ObsDataInt_>  qcflags_;    // QC flags (should not be a pointer)
-  int                           iterout_;    // Outer iteration
   bool                          initialized_;
+  std::unique_ptr<eckit::LocalConfiguration> iterconf_;
 };
 
 // -----------------------------------------------------------------------------
@@ -99,7 +98,7 @@ class Observer {
 template <typename MODEL, typename OBS>
 Observer<MODEL, OBS>::Observer(const ObsSpace_ & obspace, const Parameters_ & params)
   : parameters_(params), obspace_(obspace), obsop_(), locations_(),
-    ybias_(nullptr), filters_(), qcflags_(), iterout_(-1), initialized_(false)
+    ybias_(nullptr), filters_(), qcflags_(), initialized_(false)
 {
   Log::trace() << "Observer::Observer start" << std::endl;
   /// Set up observation operators
@@ -114,16 +113,16 @@ Observer<MODEL, OBS>::Observer(const ObsSpace_ & obspace, const Parameters_ & pa
 template <typename MODEL, typename OBS>
 std::shared_ptr<GetValuePost<MODEL, OBS>>
 Observer<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrl_ & ybias,
-                                 ObsError_ & R, const int iter) {
+                                 ObsError_ & R, const eckit::Configuration & conf) {
   Log::trace() << "Observer<MODEL, OBS>::initialize start" << std::endl;
 // Save information for finalize
-  iterout_ = iter;
+  iterconf_.reset(new eckit::LocalConfiguration(conf));
   ybias_ = &ybias;
   Rmat_ = &R;
   obserr_.reset(new ObsVector_(Rmat_->obserrors()));
 
 // Set up QC filters and run preprocess
-  int iterfilt = std::max(iter, 0);
+  const int iterfilt = iterconf_->getInt("iteration", 0);
   filters_.reset(new ObsFilters_(obspace_, parameters_.obsFilters,
                                  qcflags_, *obserr_, iterfilt));
   filters_->preProcess();
@@ -175,56 +174,26 @@ void Observer<MODEL, OBS>::finalize(ObsVector_ & yobsim) {
 
   // Save current obs, obs error estimates and QC flags (for diagnostics use only)
   std::string siter = "";
-  if (iterout_ >= 0) siter = std::to_string(iterout_);
-  const std::string qcname  = "EffectiveQC" + siter;
-  qcflags_->save(qcname);
-  const std::string obsname = "hofx" + siter;
-  yobsim.save(obsname);
-  const std::string errname = "EffectiveError" + siter;
-  Rmat_->save(errname);
+  if (iterconf_->has("iteration")) siter = iterconf_->getString("iteration");
+
+  if (iterconf_->getBool("save qc", true)) {
+    const std::string qcname  = "EffectiveQC" + siter;
+    qcflags_->save(qcname);
+  }
+  if (iterconf_->getBool("save hofx", true)) {
+    const std::string obsname = "hofx" + siter;
+    yobsim.save(obsname);
+  }
+  if (iterconf_->getBool("save obs errors", true)) {
+    const std::string errname = "EffectiveError" + siter;
+    Rmat_->save(errname);
+  }
 
   Log::info() << "Observer::finalize QC = " << *qcflags_ << std::endl;
 
   initialized_ = false;
   Log::trace() << "Observer<MODEL, OBS>::finalize done" << std::endl;
 }
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL, typename OBS>
-void Observer<MODEL, OBS>::finalize(ObsVector_ & yobsim, std::shared_ptr<ObsDataInt_> & qc) {
-  oops::Log::trace() << "Observer<MODEL, OBS>::finalize start" << std::endl;
-  ASSERT(initialized_);
-
-  // GetValues releases GeoVaLs, Observer takes ownership
-  std::unique_ptr<GeoVaLs_> geovals = getvals_->releaseGeoVaLs();
-
-  /// Call prior filters
-  filters_->priorFilter(*geovals);
-
-  /// Setup diagnostics
-  Variables vars;
-  vars += filters_->requiredHdiagnostics();
-  vars += ybias_->requiredHdiagnostics();
-  ObsDiags_ ydiags(obspace_, *locations_, vars);
-
-  /// Compute H(x)
-  obsop_->simulateObs(*geovals, yobsim, *ybias_, ydiags);
-
-  /// Call posterior filters
-  filters_->postFilter(yobsim, ydiags);
-
-  // Update R with obs errors that filters might have updated
-  Rmat_->update(*obserr_);
-
-  qc = qcflags_;
-
-  Log::info() << "Observer::finalize QC = " << *qcflags_ << std::endl;
-
-  initialized_ = false;
-  Log::trace() << "Observer<MODEL, OBS>::finalize done" << std::endl;
-}
-
 
 // -----------------------------------------------------------------------------
 

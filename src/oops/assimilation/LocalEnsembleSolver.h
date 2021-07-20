@@ -84,14 +84,8 @@ class LocalEnsembleSolver {
                                   const GeometryIterator_ & i, IncrementEnsemble4D_ & an) const;
 
   /// compute H(x) based on 4D state \p xx and put the result into \p yy. Also sets up
-  /// R_ and qcflags_ based on the QC filters run during H(x)
-  void computeHofX4D(const State4D_ &, Observations_ &);
-  /// saves current values of QC flags as \p name
-  void saveCurrentQC(const std::string & name);
-  /// reads QC from file as \p name
-  void readQC(const std::string & name);
-  /// accessor to QC flags
-  const ObsDataVec_ & qcflags() const {return qcflags_;}
+  /// R_ based on the QC filters run during H(x)
+  void computeHofX4D(const eckit::Configuration &, const State4D_ &, Observations_ &);
   /// accessor to obs localizations
   const ObsLocalizations_ & obsloc() const {return obsloc_;}
 
@@ -107,7 +101,6 @@ class LocalEnsembleSolver {
 
  private:
   const eckit::LocalConfiguration obsconf_;  // configuration for observations
-  ObsDataVec_ qcflags_;           ///< QC flags; set in computeHofX method
   ObsLocalizations_ obsloc_;      ///< observation space localization
 };
 
@@ -118,14 +111,15 @@ LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
                                         const Geometry_ & geometry,
                                         const eckit::Configuration & config, size_t nens)
   : geometry_(geometry), obspaces_(obspaces), omb_(obspaces_), Yb_(obspaces_, nens),
-    obsconf_(config, "observations"), qcflags_(obspaces_.size()), obsloc_(obsconf_, obspaces_)
+    obsconf_(config, "observations"), obsloc_(obsconf_, obspaces_)
 {
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-void LocalEnsembleSolver<MODEL, OBS>::computeHofX4D(const State4D_ & xx, Observations_ & yy) {
+void LocalEnsembleSolver<MODEL, OBS>::computeHofX4D(const eckit::Configuration & config,
+                                                    const State4D_ & xx, Observations_ & yy) {
   // compute forecast length from State4D times
   const std::vector<util::DateTime> times = xx.validTimes();
   const util::Duration flength = times[times.size()-1] - times[0];
@@ -147,32 +141,9 @@ void LocalEnsembleSolver<MODEL, OBS>::computeHofX4D(const State4D_ & xx, Observa
   PostProcessor<State_> post;
   Observers_ hofx(obspaces_, obsconf_);
 
-  hofx.initialize(geometry_, obsaux, *R_, post);
+  hofx.initialize(geometry_, obsaux, *R_, post, config);
   model.forecast(init_xx, moderr, flength, post);
-  hofx.finalize(yy, qcflags_);
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL, typename OBS>
-void LocalEnsembleSolver<MODEL, OBS>::readQC(const std::string & name) {
-  for (size_t jobs = 0; jobs < qcflags_.size(); ++jobs) {
-    if (qcflags_[jobs] != nullptr) {
-      qcflags_[jobs]->read(name);
-    } else {
-      qcflags_[jobs] = std::make_shared<ObsData_>(obspaces_[jobs],
-                            obspaces_[jobs].obsvariables(), name);
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL, typename OBS>
-void LocalEnsembleSolver<MODEL, OBS>::saveCurrentQC(const std::string & name) {
-  for (auto & qc : qcflags_) {
-    qc->save(name);
-  }
+  hofx.finalize(yy);
 }
 
 // -----------------------------------------------------------------------------
@@ -195,18 +166,22 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(const StateEnsemb
       Log::test() << "H(x) for member " << jj+1 << ":" << std::endl << obsens[jj] << std::endl;
     }
     R_.reset(new ObsErrors_(obsconf_, obspaces_));
-    readQC("EffectiveQC");
   } else {
     // compute and save H(x)
     Log::debug() << "Computing H(X) online" << std::endl;
     for (size_t jj = 0; jj < nens; ++jj) {
-      computeHofX4D(ens_xx[jj], obsens[jj]);
+      eckit::LocalConfiguration config;
+      // never save H(x) (saved explicitly below), save EffectiveQC and EffectiveError
+      // only for the last member
+      config.set("save hofx", false);
+      config.set("save qc", (jj == nens-1));
+      config.set("save obs errors", (jj == nens-1));
+      computeHofX4D(config, ens_xx[jj], obsens[jj]);
       Log::test() << "H(x) for member " << jj+1 << ":" << std::endl << obsens[jj] << std::endl;
       obsens[jj].save("hofx"+std::to_string(iteration)+"_"+std::to_string(jj+1));
     }
     // QC flags and Obs errors are set to that of the last ensemble member
     // TODO(someone) combine qc flags from all ensemble members
-    saveCurrentQC("EffectiveQC");
     R_->save("ObsError");
   }
   // set inverse variances
@@ -218,13 +193,13 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(const StateEnsemb
   // calculate H(x) ensemble perturbations
   for (size_t iens = 0; iens < nens; ++iens) {
     Yb_[iens] = obsens[iens] - yb_mean;
-    Yb_[iens].mask(qcflags_);
+    Yb_[iens].mask(*invVarR_);
   }
 
   // calculate obs departures and mask with qc flag
   Observations_ yobs(obspaces_, "ObsValue");
   omb_ = yobs - yb_mean;
-  omb_.mask(qcflags_);
+  omb_.mask(*invVarR_);
 
   // return mean H(x)
   return yb_mean;

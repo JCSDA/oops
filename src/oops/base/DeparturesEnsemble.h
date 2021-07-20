@@ -38,7 +38,7 @@ template<typename OBS> class DeparturesEnsemble {
   const Departures_ & operator[](const size_t ii) const {return ensemblePerturbs_[ii];}
 
 /// pack ensemble of dep. as contiguous block of memory
-  Eigen::MatrixXd packEigen(const ObsDataVec_<int> &) const;
+  Eigen::MatrixXd packEigen(const Departures_ &) const;
 
  private:
   std::vector<Departures_> ensemblePerturbs_;   // ensemble perturbations
@@ -59,7 +59,7 @@ DeparturesEnsemble<OBS>::DeparturesEnsemble(const ObsSpaces_ & obsdb, const size
 // -----------------------------------------------------------------------------
 
 template<typename OBS>
-Eigen::MatrixXd DeparturesEnsemble<OBS>::packEigen(const ObsDataVec_<int> & mask) const {
+Eigen::MatrixXd DeparturesEnsemble<OBS>::packEigen(const Departures_ & mask) const {
   std::size_t myNobs = ensemblePerturbs_[0].packEigenSize(mask);
   std::size_t myNens = ensemblePerturbs_.size();
 

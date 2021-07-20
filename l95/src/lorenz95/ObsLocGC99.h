@@ -14,7 +14,6 @@
 #include "oops/base/ObsLocalizationBase.h"
 
 #include "lorenz95/L95Traits.h"
-#include "lorenz95/ObsData1D.h"
 
 // Forward declarations
 namespace lorenz95 {
@@ -27,11 +26,9 @@ class ObsLocGC99: public oops::ObsLocalizationBase<L95Traits, L95ObsTraits> {
  public:
   ObsLocGC99(const eckit::Configuration &, const ObsTable &);
 
-  /// compute localization and save localization values in \p obsvector and
-  /// localization flags (1: outside of localization; 0: inside localization area)
-  /// in \p outside
-  void computeLocalization(const Iterator &, ObsData1D<int> & outside,
-                           ObsVec1D & obsvector) const override;
+  /// compute localization and save localization values in \p locfactor
+  /// (missing value is for obs outside of localization)
+  void computeLocalization(const Iterator &, ObsVec1D & locfactor) const override;
 
  private:
   void print(std::ostream &) const override;

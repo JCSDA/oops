@@ -20,9 +20,9 @@ private
 public :: qg_obsvec
 public :: qg_obsvec_registry
 public :: qg_obsvec_setup,qg_obsvec_clone,qg_obsvec_delete,qg_obsvec_copy,qg_obsvec_zero, &
-        & qg_obsvec_zero_ith, qg_obsvec_ones, qg_obsvec_mask, qg_obsvec_mul_scal,qg_obsvec_add, &
-        & qg_obsvec_sub,qg_obsvec_mul,qg_obsvec_div,qg_obsvec_axpy,qg_obsvec_invert, &
-        & qg_obsvec_random,qg_obsvec_dotprod,qg_obsvec_stats, &
+        & qg_obsvec_settomissing_ith,qg_obsvec_ones,qg_obsvec_mask,qg_obsvec_mask_with_missing, &
+        & qg_obsvec_mul_scal,qg_obsvec_add,qg_obsvec_sub,qg_obsvec_mul,qg_obsvec_div, &
+        & qg_obsvec_axpy,qg_obsvec_invert,qg_obsvec_random,qg_obsvec_dotprod,qg_obsvec_stats, &
         & qg_obsvec_size,qg_obsvec_nobs,qg_obsvec_nobs_withmask,qg_obsvec_get_withmask
 ! ------------------------------------------------------------------------------
 interface
@@ -155,8 +155,8 @@ self%values = 0.0
 
 end subroutine qg_obsvec_zero
 ! ------------------------------------------------------------------------------
-!> Set i-th value of observation vector to zero
-subroutine qg_obsvec_zero_ith(self, i)
+!> Set i-th value of observation vector to missing value
+subroutine qg_obsvec_settomissing_ith(self, i)
 
 implicit none
 
@@ -165,9 +165,9 @@ type(qg_obsvec),intent(inout) :: self !< Observation vector
 integer, intent(in) :: i
 
 ! Set observation vector to zero
-self%values(:,i) = 0.0
+self%values(:,i) = self%missing
 
-end subroutine qg_obsvec_zero_ith
+end subroutine qg_obsvec_settomissing_ith
 ! ------------------------------------------------------------------------------
 !> Set observation vector to ones
 subroutine qg_obsvec_ones(self)
@@ -195,7 +195,20 @@ if ((self%nobs/=mask%nobs).or.(self%nlev/=mask%nlev)) call abor1_ftn('qg_obsvec_
 where(mask%values == 1) self%values = self%missing
 
 end subroutine qg_obsvec_mask
+! ------------------------------------------------------------------------------
+!> Mask observation vector (set values to missing values where mask == missing value)
+subroutine qg_obsvec_mask_with_missing(self,mask)
+implicit none
 
+! Passed variables
+type(qg_obsvec),intent(inout) :: self !< Observation vector
+type(qg_obsvec),intent(in) :: mask    !< mask
+
+if ((self%nobs/=mask%nobs).or.(self%nlev/=mask%nlev)) call abor1_ftn('qg_obsvec_mask: inconsistent sizes')
+
+where(mask%values == mask%missing) self%values = self%missing
+
+end subroutine qg_obsvec_mask_with_missing
 ! ------------------------------------------------------------------------------
 !> Multiply observation vector with a scalar
 subroutine qg_obsvec_mul_scal(self,zz)
@@ -438,7 +451,8 @@ type(qg_obsvec),intent(in) :: obsmask !< mask
 integer,intent(inout) :: kobs         !< Observation vector size
 
 ! Get observation vector size
-kobs = count(mask = (self%values /= self%missing) .and. (obsmask%values == 0))
+kobs = count(mask = (self%values /= self%missing) .and.     &
+                    (obsmask%values /= obsmask%missing))
 
 end subroutine qg_obsvec_nobs_withmask
 
@@ -460,7 +474,8 @@ jval = 1
 ! Loop over values
 do jobs=1,self%nobs
   do jlev=1,self%nlev
-    if ((self%values(jlev, jobs) /= self%missing) .and. (obsmask%values(jlev, jobs) == 0)) then
+    if ((self%values(jlev, jobs) /= self%missing) .and.           &
+        (obsmask%values(jlev, jobs) /= obsmask%missing)) then
       if (jval > nvals) call abor1_ftn('qg_obsvec_get: inconsistent vector size')
       vals(jval) = self%values(jlev, jobs)
       jval = jval + 1
