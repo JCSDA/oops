@@ -16,8 +16,8 @@
 #include <memory>
 
 #include "oops/base/GeneralizedDepartures.h"
+#include "oops/base/Increment.h"
 #include "oops/base/PostBaseTLAD.h"
-#include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
 
 namespace oops {

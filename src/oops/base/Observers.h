@@ -14,6 +14,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 
+#include "oops/base/Geometry.h"
 #include "oops/base/GetValuePosts.h"
 #include "oops/base/ObsAuxControls.h"
 #include "oops/base/ObsErrors.h"
@@ -21,7 +22,6 @@
 #include "oops/base/Observer.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
-#include "oops/interface/Geometry.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/interface/State.h"
 #include "oops/util/Logger.h"

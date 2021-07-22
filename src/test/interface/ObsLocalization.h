@@ -19,8 +19,8 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
+#include "oops/base/Geometry.h"
 #include "oops/base/ObsLocalizationBase.h"
-#include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/interface/ObsVector.h"
 #include "oops/mpi/mpi.h"

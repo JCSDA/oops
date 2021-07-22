@@ -18,10 +18,9 @@
 
 #include <boost/noncopyable.hpp>
 
-#include "oops/interface/Geometry.h"
-#include "oops/interface/Increment.h"
+#include "oops/base/Geometry.h"
+#include "oops/base/Increment.h"
 #include "oops/mpi/mpi.h"
-#include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
 

@@ -15,11 +15,11 @@
 
 #include "eckit/config/Configuration.h"
 
+#include "oops/base/Geometry.h"
 #include "oops/base/Increment4D.h"
 #include "oops/base/IncrementEnsemble4D.h"
 #include "oops/base/LocalIncrement.h"
 #include "oops/generic/gc99.h"
-#include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"

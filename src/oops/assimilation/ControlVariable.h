@@ -16,10 +16,10 @@
 #include <string>
 
 #include "eckit/config/Configuration.h"
+#include "oops/base/Geometry.h"
 #include "oops/base/ObsAuxControls.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
 #include "oops/util/ObjectCounter.h"

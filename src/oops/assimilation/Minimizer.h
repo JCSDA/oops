@@ -23,7 +23,6 @@
 #include "oops/assimilation/HMatrix.h"
 #include "oops/assimilation/HtMatrix.h"
 #include "oops/assimilation/MinimizerUtils.h"
-#include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/formats.h"

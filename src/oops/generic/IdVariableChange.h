@@ -11,8 +11,8 @@
 #include <ostream>
 #include <string>
 
+#include "oops/base/Geometry.h"
 #include "oops/base/VariableChangeBase.h"
-#include "oops/interface/Geometry.h"
 #include "oops/interface/State.h"
 #include "oops/util/Printable.h"
 

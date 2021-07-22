@@ -15,8 +15,8 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
+#include "oops/base/Geometry.h"
 #include "oops/base/GetValueTLAD.h"
-#include "oops/interface/Geometry.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/LinearObsOperator.h"
 #include "oops/interface/Locations.h"

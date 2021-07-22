@@ -14,10 +14,10 @@
 #include <string>
 #include <vector>
 
+#include "oops/base/Geometry.h"
+#include "oops/base/Increment.h"
 #include "oops/base/LinearModelBase.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/Geometry.h"
-#include "oops/interface/Increment.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/ModelAuxIncrement.h"
 #include "oops/interface/State.h"

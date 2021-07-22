@@ -18,9 +18,9 @@
 #include <string>
 
 #include "eckit/config/Configuration.h"
+#include "oops/base/Geometry.h"
+#include "oops/base/Increment.h"
 #include "oops/base/LocalizationBase.h"
-#include "oops/interface/Geometry.h"
-#include "oops/interface/Increment.h"
 
 namespace oops {
 

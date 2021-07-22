@@ -14,7 +14,7 @@
 
 #include "eckit/config/Configuration.h"
 #include "eckit/config/LocalConfiguration.h"
-#include "oops/interface/Geometry.h"
+#include "oops/base/Geometry.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Locations.h"
 #include "oops/interface/State.h"

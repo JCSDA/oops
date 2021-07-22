@@ -17,10 +17,10 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
+#include "oops/base/Geometry.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State4D.h"
 #include "oops/generic/PseudoModelState4D.h"
-#include "oops/interface/Geometry.h"
 #include "oops/interface/Model.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"

@@ -26,6 +26,8 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
+#include "oops/base/Geometry.h"
+#include "oops/base/Increment.h"
 #include "oops/base/instantiateCovarFactory.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/PostProcessor.h"
@@ -33,8 +35,6 @@
 #include "oops/base/TrajectorySaver.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/instantiateTlmFactory.h"
-#include "oops/interface/Geometry.h"
-#include "oops/interface/Increment.h"
 #include "oops/interface/LinearModel.h"
 #include "oops/interface/Model.h"
 #include "oops/interface/ModelAuxControl.h"

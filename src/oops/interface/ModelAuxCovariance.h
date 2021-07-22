@@ -18,7 +18,7 @@
 #include <boost/noncopyable.hpp>
 
 #include "eckit/config/Configuration.h"
-#include "oops/interface/Geometry.h"
+#include "oops/base/Geometry.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/ModelAuxIncrement.h"
 #include "oops/util/Logger.h"

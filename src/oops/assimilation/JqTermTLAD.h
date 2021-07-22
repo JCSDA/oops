@@ -14,8 +14,8 @@
 #include <memory>
 #include <vector>
 
+#include "oops/base/Increment.h"
 #include "oops/base/PostBaseTLAD.h"
-#include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"

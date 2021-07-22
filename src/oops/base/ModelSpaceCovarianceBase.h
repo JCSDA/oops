@@ -23,11 +23,11 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
+#include "oops/base/Geometry.h"
+#include "oops/base/Increment.h"
 #include "oops/base/LinearVariableChangeBase.h"
 #include "oops/base/ModelSpaceCovarianceParametersBase.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/Geometry.h"
-#include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
 #include "oops/util/AssociativeContainers.h"
 #include "oops/util/Logger.h"

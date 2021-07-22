@@ -16,11 +16,11 @@
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "oops/base/Geometry.h"
 #include "oops/base/Increment4D.h"
 #include "oops/base/State4D.h"
 #include "oops/base/StateEnsemble4D.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/Geometry.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 

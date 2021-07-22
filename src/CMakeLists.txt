@@ -92,6 +92,7 @@ oops/base/DolphChebyshev.cc
 oops/base/DolphChebyshev.h
 oops/base/EnsembleCovariance.h
 oops/base/GeneralizedDepartures.h
+oops/base/Geometry.h
 oops/base/GetValuePost.h
 oops/base/GetValuePosts.h
 oops/base/GetValuesPost.h
@@ -101,6 +102,7 @@ oops/base/LocalIncrement.cc
 oops/base/LocalIncrement.h
 oops/base/HybridCovariance.h
 oops/base/IdentityMatrix.h
+oops/base/Increment.h
 oops/base/Increment4D.h
 oops/base/IncrementEnsemble.h
 oops/base/IncrementEnsemble4D.h

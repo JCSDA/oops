@@ -14,9 +14,9 @@
 
 #include "eckit/config/Configuration.h"
 
-#include "oops/interface/Geometry.h"
+#include "oops/base/Geometry.h"
+#include "oops/base/Increment.h"
 #include "oops/interface/GeoVaLs.h"
-#include "oops/interface/Increment.h"
 #include "oops/interface/Locations.h"
 #include "oops/interface/State.h"
 #include "oops/util/DateTime.h"

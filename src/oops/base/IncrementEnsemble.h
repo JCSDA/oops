@@ -20,11 +20,11 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Accumulator.h"
+#include "oops/base/Geometry.h"
+#include "oops/base/Increment.h"
 #include "oops/base/LinearVariableChangeBase.h"
 #include "oops/base/StateEnsemble.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/Geometry.h"
-#include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"

@@ -18,10 +18,10 @@
 
 #include "eckit/exception/Exceptions.h"
 
+#include "oops/base/Geometry.h"
+#include "oops/base/Increment.h"
 #include "oops/base/LinearVariableChangeParametersBase.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/Geometry.h"
-#include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
 #include "oops/util/AssociativeContainers.h"
 #include "oops/util/parameters/ConfigurationParameter.h"

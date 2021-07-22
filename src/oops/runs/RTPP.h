@@ -12,11 +12,9 @@
 #include <string>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "oops/base/Increment4D.h"
-#include "oops/base/State4D.h"
+#include "oops/base/Geometry.h"
+#include "oops/base/Increment.h"
 #include "oops/base/StateEnsemble.h"
-#include "oops/interface/Geometry.h"
-#include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"

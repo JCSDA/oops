@@ -14,9 +14,6 @@
 #include <memory>
 #include <boost/noncopyable.hpp>
 
-#include "oops/interface/Geometry.h"
-#include "oops/interface/Increment.h"
-
 namespace util {
   class Duration;
 }
@@ -24,6 +21,7 @@ namespace util {
 namespace oops {
 
 // Forward declaration
+  template<typename MODEL> class Geometry;
   template<typename MODEL> class Increment;
   template<typename MODEL> class State;
   template<typename MODEL> class JqTermTLAD;

@@ -23,6 +23,7 @@
 #include "oops/assimilation/ControlVariable.h"
 #include "oops/assimilation/CostTermBase.h"
 #include "oops/base/Departures.h"
+#include "oops/base/Geometry.h"
 #include "oops/base/GetValuePosts.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
@@ -31,8 +32,6 @@
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
-#include "oops/interface/Geometry.h"
-#include "oops/interface/Increment.h"
 #include "oops/interface/State.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"
@@ -58,7 +57,6 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   typedef Geometry<MODEL>               Geometry_;
   typedef GetValuePosts<MODEL, OBS>     GetValuePosts_;
   typedef State<MODEL>                  State_;
-  typedef Increment<MODEL>              Increment_;
   typedef ObsErrors<OBS>                ObsErrors_;
   typedef ObsSpaces<OBS>                ObsSpaces_;
   typedef Observers<MODEL, OBS>         Observers_;

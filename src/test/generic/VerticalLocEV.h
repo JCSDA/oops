@@ -23,11 +23,12 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
+#include "oops/base/Geometry.h"
+#include "oops/base/Increment.h"
 #include "oops/base/Increment4D.h"
 #include "oops/base/IncrementEnsemble4D.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/VerticalLocEV.h"
-#include "oops/interface/Geometry.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"

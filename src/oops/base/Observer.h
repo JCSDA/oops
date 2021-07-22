@@ -14,11 +14,11 @@
 
 #include "eckit/config/LocalConfiguration.h"
 
+#include "oops/base/Geometry.h"
 #include "oops/base/GetValuePost.h"
 #include "oops/base/ObsErrorBase.h"
 #include "oops/base/ObsFilters.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/Geometry.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Locations.h"
 #include "oops/interface/ObsAuxControl.h"

@@ -19,8 +19,8 @@
 #include <boost/make_unique.hpp>
 #include <boost/noncopyable.hpp>
 
-#include "oops/interface/Geometry.h"
-#include "oops/interface/Increment.h"
+#include "oops/base/Geometry.h"
+#include "oops/base/Increment.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/ModelAuxIncrement.h"
 #include "oops/interface/State.h"

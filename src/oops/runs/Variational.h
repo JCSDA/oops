@@ -23,28 +23,22 @@
 #include "oops/assimilation/instantiateMinFactory.h"
 #include "oops/base/instantiateCovarFactory.h"
 #include "oops/base/instantiateObsFilterFactory.h"
-#include "oops/base/Observations.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
 #include "oops/base/StateWriter.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
 #include "oops/generic/instantiateTlmFactory.h"
 #include "oops/generic/instantiateVariableChangeFactory.h"
-#include "oops/interface/Geometry.h"
-#include "oops/interface/Model.h"
 #include "oops/interface/State.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
-#include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 #include "oops/util/printRunStats.h"
 
 namespace oops {
 
 template <typename MODEL, typename OBS> class Variational : public Application {
-  typedef Geometry<MODEL>            Geometry_;
-  typedef Model<MODEL>               Model_;
   typedef State<MODEL>               State_;
 
  public:

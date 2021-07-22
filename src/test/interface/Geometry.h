@@ -19,7 +19,7 @@
 
 #include "eckit/config/Configuration.h"
 #include "eckit/testing/Test.h"
-#include "oops/interface/Geometry.h"
+#include "oops/base/Geometry.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/Logger.h"

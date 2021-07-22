@@ -10,10 +10,10 @@
 
 #include <string>
 
+#include "oops/base/Geometry.h"
 #include "oops/base/ModelBase.h"
 #include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
 #include "oops/util/Duration.h"

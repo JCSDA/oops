@@ -17,10 +17,10 @@
 
 #include "eckit/config/LocalConfiguration.h"
 
+#include "oops/base/Geometry.h"
+#include "oops/base/Increment.h"
 #include "oops/base/State4D.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/Geometry.h"
-#include "oops/interface/Increment.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"

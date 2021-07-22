@@ -17,6 +17,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
+#include "oops/base/Geometry.h"
 #include "oops/base/instantiateObsFilterFactory.h"
 #include "oops/base/ObsAuxControls.h"
 #include "oops/base/ObsErrors.h"
@@ -26,7 +27,6 @@
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateInfo.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
-#include "oops/interface/Geometry.h"
 #include "oops/interface/Model.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"

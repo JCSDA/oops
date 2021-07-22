@@ -20,10 +20,10 @@
 #include "eckit/config/Configuration.h"
 #include "eckit/testing/Test.h"
 
+#include "oops/base/Geometry.h"
+#include "oops/base/Increment.h"
 #include "oops/base/LocalIncrement.h"
-#include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
-#include "oops/interface/Increment.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 

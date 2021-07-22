@@ -14,11 +14,11 @@
 #include <utility>
 #include <vector>
 
+#include "oops/base/Geometry.h"
+#include "oops/base/Increment.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/Geometry.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/GetValues.h"
-#include "oops/interface/Increment.h"
 #include "oops/interface/LinearGetValues.h"
 #include "oops/interface/Locations.h"
 #include "oops/interface/State.h"

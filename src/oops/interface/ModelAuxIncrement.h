@@ -16,8 +16,7 @@
 #include <string>
 #include <vector>
 
-
-#include "oops/interface/Geometry.h"
+#include "oops/base/Geometry.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
