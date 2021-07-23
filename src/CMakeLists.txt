@@ -114,7 +114,7 @@ oops/base/LinearModelBase.h
 oops/base/LinearVariableChangeBase.h
 oops/base/LinearVariableChangeParametersBase.h
 oops/base/LocalizationBase.h
-oops/base/ModelBase.h
+oops/base/Model.h
 oops/base/ModelSpaceCovarianceBase.h
 oops/base/ModelSpaceCovarianceParametersBase.h
 oops/base/ObsAuxControls.h
@@ -183,6 +183,7 @@ oops/generic/interpolatorunstrc_interface.F90
 oops/generic/InterpolatorUnstructured.h
 oops/generic/InterpolatorUnstructured.cc
 oops/generic/LinearModelId.h
+oops/generic/ModelBase.h
 oops/generic/ObsErrorDiag.h
 oops/generic/PseudoModel.h
 oops/generic/PseudoModelState4D.h
@@ -205,10 +206,10 @@ oops/interface/LinearObsOperator.h
 oops/interface/LinearVariableChange.h
 oops/interface/Localization.h
 oops/interface/Locations.h
-oops/interface/Model.h
 oops/interface/ModelAuxControl.h
 oops/interface/ModelAuxCovariance.h
 oops/interface/ModelAuxIncrement.h
+oops/interface/ModelBase.h
 oops/interface/ObsAuxControl.h
 oops/interface/ObsAuxCovariance.h
 oops/interface/ObsAuxIncrement.h

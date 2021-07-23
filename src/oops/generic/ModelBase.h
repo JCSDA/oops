@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef OOPS_BASE_MODELBASE_H_
-#define OOPS_BASE_MODELBASE_H_
+#ifndef OOPS_GENERIC_MODELBASE_H_
+#define OOPS_GENERIC_MODELBASE_H_
 
 #include <map>
 #include <memory>
@@ -38,21 +38,35 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-/// \brief Base class for the forecasting model.
-/// Defines the interfaces for a forecast model.
+/// \brief Base class for generic implementations of the forecasting models.
 /// Use this class as a base class for generic implementations,
-/// and ModelBase as a base calss for MODEL-specific implementations.
+/// and interface::ModelBase as a base class for MODEL-specific implementations.
+///
+/// Note: implementations of this interface can opt to extract their settings either from
+/// a Configuration object or from a subclass of ModelParametersBase.
+///
+/// In the former case, they should provide a constructor with the following signature:
+///
+///    ModelBase(const Geometry_ &, const eckit::Configuration &);
+///
+/// In the latter case, the implementer should first define a subclass of ModelParametersBase
+/// holding the settings of the model in question. The implementation of the ModelBase interface
+/// should then typedef `Parameters_` to the name of that subclass and provide a constructor with
+/// the following signature:
+///
+///    ModelBase(const Geometry_ &, const Parameters_ &);
+///
 template <typename MODEL>
-class GenericModelBase : public util::Printable,
-                         private boost::noncopyable {
+class ModelBase : public util::Printable,
+                  private boost::noncopyable {
   typedef ModelAuxControl<MODEL>   ModelAux_;
   typedef State<MODEL>             State_;
 
  public:
-  static const std::string classname() {return "oops::GenericModelBase";}
+  static const std::string classname() {return "oops::ModelBase";}
 
-  GenericModelBase() = default;
-  virtual ~GenericModelBase() = default;
+  ModelBase() = default;
+  virtual ~ModelBase() = default;
 
   /// \brief Forecast initialization, called before every forecast run
   virtual void initialize(State_ &) const = 0;
@@ -71,40 +85,6 @@ class GenericModelBase : public util::Printable,
   /// \brief Print; used for logging
   virtual void print(std::ostream &) const = 0;
 };
-
-
-/// \brief Base class for MODEL-specific implementations of Model class.
-/// The complete interface that needs to be implemented is described in GenericModelBase.
-/// ModelBase overrides GenericModelBase methods to pass MODEL-specific implementations
-/// of State and ModelAuxControl to the MODEL-specific implementation of Model.
-template <typename MODEL>
-class ModelBase : public GenericModelBase<MODEL> {
-  typedef typename MODEL::ModelAuxControl   ModelAux_;
-  typedef typename MODEL::State             State_;
-
- public:
-  static const std::string classname() {return "oops::ModelBase";}
-
-  ModelBase() = default;
-  virtual ~ModelBase() = default;
-
-  /// Overrides for ModelBase classes, passing MODEL-specific classes to the
-  /// MODEL-specific implementations of Model
-  void initialize(State<MODEL> & xx) const final
-       { this->initialize(xx.state()); }
-  void step(State<MODEL> & xx, const ModelAuxControl<MODEL> & modelaux) const final
-       { this->step(xx.state(), modelaux.modelauxcontrol()); }
-  void finalize(State<MODEL> & xx) const final
-       { this->finalize(xx.state()); }
-
-  /// \brief Forecast initialization, called before every forecast run
-  virtual void initialize(State_ &) const = 0;
-  /// \brief Forecast "step", called during forecast run; updates state to the next time
-  virtual void step(State_ &, const ModelAux_ &) const = 0;
-  /// \brief Forecast finalization; called after each forecast run
-  virtual void finalize(State_ &) const = 0;
-};
-
 
 // =============================================================================
 
@@ -172,8 +152,8 @@ class ModelFactory {
   /// The model's type is determined by the \c name attribute of \p parameters.
   /// \p parameters must be an instance of the subclass of ModelParametersBase
   /// associated with that model type, otherwise an exception will be thrown.
-  static GenericModelBase<MODEL> * create(const Geometry_ &,
-                                          const ModelParametersBase & parameters);
+  static ModelBase<MODEL> * create(const Geometry_ &,
+                                   const ModelParametersBase & parameters);
 
   /// \brief Create and return an instance of the subclass of ModelParametersBase
   /// storing parameters of models of the specified type.
@@ -191,7 +171,7 @@ class ModelFactory {
   explicit ModelFactory(const std::string & name);
 
  private:
-  virtual GenericModelBase<MODEL> * make(const Geometry_ &, const ModelParametersBase &) = 0;
+  virtual ModelBase<MODEL> * make(const Geometry_ &, const ModelParametersBase &) = 0;
 
   virtual std::unique_ptr<ModelParametersBase> makeParameters() const = 0;
 
@@ -204,36 +184,7 @@ class ModelFactory {
 // -----------------------------------------------------------------------------
 
 /// \brief A subclass of ModelFactory able to create instances of T (a concrete subclass of
-/// GenericModelBase<MODEL>). Passes Geometry<MODEL> to the generic implementation of Model.
-template<class MODEL, class T>
-class GenericModelMaker : public ModelFactory<MODEL> {
- private:
-  /// Defined as T::Parameters_ if T defines a Parameters_ type; otherwise as
-  /// GenericModelParameters.
-  typedef TParameters_IfAvailableElseFallbackType_t<T, GenericModelParameters> Parameters_;
-
- public:
-  typedef Geometry<MODEL>   Geometry_;
-
-  explicit GenericModelMaker(const std::string & name) : ModelFactory<MODEL>(name) {}
-
-  GenericModelBase<MODEL> * make(const Geometry_ & geom,
-                                 const ModelParametersBase & parameters) override {
-    Log::trace() << "ModelBase<MODEL>::make starting" << std::endl;
-    const auto &stronglyTypedParameters = dynamic_cast<const Parameters_&>(parameters);
-    return new T(geom,
-                 parametersOrConfiguration<HasParameters_<T>::value>(stronglyTypedParameters));
-  }
-
-  std::unique_ptr<ModelParametersBase> makeParameters() const override {
-    return boost::make_unique<Parameters_>();
-  }
-};
-
-// -----------------------------------------------------------------------------
-
-/// \brief A subclass of ModelFactory able to create instances of T (a concrete subclass of
-/// ModelBase<MODEL>). Passes MODEL::Geometry to the MODEL-specific implementation of Model.
+/// ModelBase<MODEL>). Passes Geometry<MODEL> to the constructor of T.
 template<class MODEL, class T>
 class ModelMaker : public ModelFactory<MODEL> {
  private:
@@ -246,10 +197,11 @@ class ModelMaker : public ModelFactory<MODEL> {
 
   explicit ModelMaker(const std::string & name) : ModelFactory<MODEL>(name) {}
 
-  ModelBase<MODEL> * make(const Geometry_ & geom, const ModelParametersBase & parameters) override {
+  ModelBase<MODEL> * make(const Geometry_ & geom,
+                          const ModelParametersBase & parameters) override {
     Log::trace() << "ModelBase<MODEL>::make starting" << std::endl;
     const auto &stronglyTypedParameters = dynamic_cast<const Parameters_&>(parameters);
-    return new T(geom.geometry(),
+    return new T(geom,
                  parametersOrConfiguration<HasParameters_<T>::value>(stronglyTypedParameters));
   }
 
@@ -257,7 +209,6 @@ class ModelMaker : public ModelFactory<MODEL> {
     return boost::make_unique<Parameters_>();
   }
 };
-
 
 // -----------------------------------------------------------------------------
 
@@ -272,7 +223,7 @@ ModelFactory<MODEL>::ModelFactory(const std::string & name) {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-GenericModelBase<MODEL> * ModelFactory<MODEL>::create(const Geometry_ & geom,
+ModelBase<MODEL> * ModelFactory<MODEL>::create(const Geometry_ & geom,
                                                const ModelParametersBase & parameters) {
   Log::trace() << "ModelFactory<MODEL>::create starting" << std::endl;
   const std::string &id = parameters.name.value().value();
@@ -281,7 +232,7 @@ GenericModelBase<MODEL> * ModelFactory<MODEL>::create(const Geometry_ & geom,
   if (jerr == getMakers().end()) {
     throw std::runtime_error(id + " does not exist in the model factory");
   }
-  GenericModelBase<MODEL> * ptr = jerr->second->make(geom, parameters);
+  ModelBase<MODEL> * ptr = jerr->second->make(geom, parameters);
   Log::trace() << "ModelFactory<MODEL>::create done" << std::endl;
   return ptr;
 }
@@ -303,4 +254,4 @@ std::unique_ptr<ModelParametersBase> ModelFactory<MODEL>::createParameters(
 
 }  // namespace oops
 
-#endif  // OOPS_BASE_MODELBASE_H_
+#endif  // OOPS_GENERIC_MODELBASE_H_

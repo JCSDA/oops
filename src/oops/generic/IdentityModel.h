@@ -11,9 +11,9 @@
 #include <string>
 
 #include "oops/base/Geometry.h"
-#include "oops/base/ModelBase.h"
 #include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/Variables.h"
+#include "oops/generic/ModelBase.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
 #include "oops/util/Duration.h"
@@ -33,7 +33,7 @@ class IdentityModelParameters : public ModelParametersBase {
 
 /// Generic implementation of identity model
 template <typename MODEL>
-class IdentityModel : public GenericModelBase<MODEL> {
+class IdentityModel : public ModelBase<MODEL> {
   typedef Geometry<MODEL>          Geometry_;
   typedef ModelAuxControl<MODEL>   ModelAux_;
   typedef State<MODEL>             State_;

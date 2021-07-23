@@ -18,10 +18,10 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "oops/base/Geometry.h"
+#include "oops/base/Model.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State4D.h"
 #include "oops/generic/PseudoModelState4D.h"
-#include "oops/interface/Model.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
 #include "oops/mpi/mpi.h"
@@ -39,7 +39,7 @@ template <typename MODEL> void testPseudoModelState4D() {
   typedef oops::ModelAuxControl<MODEL> ModelAux_;
   typedef oops::State<MODEL>           State_;
   typedef oops::State4D<MODEL>         State4D_;
-  typedef oops::GenericModelBase<MODEL>   ModelBase_;
+  typedef oops::ModelBase<MODEL>       ModelBase_;
   typedef oops::PseudoModelState4D<MODEL> PseudoModelState4D_;
 
   // Setup geometry, model bias, and initial conditions

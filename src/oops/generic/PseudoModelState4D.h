@@ -12,8 +12,8 @@
 #include <vector>
 
 #include "oops/base/Geometry.h"
-#include "oops/base/ModelBase.h"
 #include "oops/base/State4D.h"
+#include "oops/generic/ModelBase.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
 #include "oops/util/Duration.h"
@@ -28,7 +28,7 @@ namespace oops {
 /// Generic implementation of the pseudo model initialized with 4D State
 /// (steps through time by stepping through states in 4D state)
 template <typename MODEL>
-class PseudoModelState4D : public GenericModelBase<MODEL> {
+class PseudoModelState4D : public ModelBase<MODEL> {
   typedef Geometry<MODEL>          Geometry_;
   typedef ModelAuxControl<MODEL>   ModelAux_;
   typedef State<MODEL>             State_;

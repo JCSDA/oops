@@ -15,8 +15,8 @@
 #include <string>
 
 #include "eckit/config/Configuration.h"
-#include "oops/base/ModelBase.h"
 #include "oops/base/Variables.h"
+#include "oops/interface/ModelBase.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
@@ -47,7 +47,7 @@ class ModelL95Parameters : public oops::ModelParametersBase {
 
 // -----------------------------------------------------------------------------
 
-class ModelL95 : public oops::ModelBase<L95Traits>,
+class ModelL95 : public oops::interface::ModelBase<L95Traits>,
                  private util::ObjectCounter<ModelL95> {
  public:
   typedef ModelL95Parameters Parameters_;

@@ -16,9 +16,9 @@
 #include <string>
 #include <vector>
 
-#include "oops/base/ModelBase.h"
 #include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/Variables.h"
+#include "oops/interface/ModelBase.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/parameters/Parameter.h"
@@ -56,7 +56,7 @@ class ModelQgParameters : public oops::ModelParametersBase {
  *  QG nonlinear model definition and configuration parameters.
  */
 
-class ModelQG: public oops::ModelBase<QgTraits>,
+class ModelQG: public oops::interface::ModelBase<QgTraits>,
                private util::ObjectCounter<ModelQG> {
  public:
   typedef ModelQgParameters Parameters_;

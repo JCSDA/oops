@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "oops/base/Geometry.h"
-#include "oops/base/ModelBase.h"
+#include "oops/generic/ModelBase.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
 #include "oops/util/Duration.h"
@@ -26,7 +26,7 @@ namespace oops {
 
 ///  Generic implementation of the pseudo model (steps through time by reading states)
 template <typename MODEL>
-class PseudoModel : public GenericModelBase<MODEL> {
+class PseudoModel : public ModelBase<MODEL> {
   typedef Geometry<MODEL>          Geometry_;
   typedef ModelAuxControl<MODEL>   ModelAux_;
   typedef State<MODEL>             State_;
