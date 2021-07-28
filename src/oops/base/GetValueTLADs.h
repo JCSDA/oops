@@ -14,7 +14,7 @@
 #include "oops/base/GetValueTLAD.h"
 #include "oops/base/Increment.h"
 #include "oops/base/PostBaseTLAD.h"
-#include "oops/interface/State.h"
+#include "oops/base/State.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 

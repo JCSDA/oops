@@ -14,7 +14,7 @@
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
 #include "oops/base/LinearVariableChangeBase.h"
-#include "oops/interface/State.h"
+#include "oops/base/State.h"
 #include "oops/util/Printable.h"
 
 // Forward declarations

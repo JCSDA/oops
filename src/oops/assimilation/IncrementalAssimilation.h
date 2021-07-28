@@ -20,8 +20,8 @@
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/Minimizer.h"
 #include "oops/base/PostProcessor.h"
+#include "oops/base/State.h"
 #include "oops/base/StateInfo.h"
-#include "oops/interface/State.h"
 #include "oops/util/Logger.h"
 #include "oops/util/printRunStats.h"
 

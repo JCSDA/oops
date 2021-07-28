@@ -13,10 +13,10 @@
 
 #include <boost/make_unique.hpp>
 
+#include "oops/base/State.h"
 #include "oops/generic/ModelBase.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxControl.h"
-#include "oops/interface/State.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
@@ -57,11 +57,11 @@ class ModelBase : public oops::ModelBase<MODEL> {
 
   /// Overrides for oops::ModelBase classes, passing MODEL-specific classes to the
   /// MODEL-specific implementations of Model
-  void initialize(State<MODEL> & xx) const final
+  void initialize(oops::State<MODEL> & xx) const final
        { this->initialize(xx.state()); }
-  void step(State<MODEL> & xx, const ModelAuxControl<MODEL> & modelaux) const final
+  void step(oops::State<MODEL> & xx, const ModelAuxControl<MODEL> & modelaux) const final
        { this->step(xx.state(), modelaux.modelauxcontrol()); }
-  void finalize(State<MODEL> & xx) const final
+  void finalize(oops::State<MODEL> & xx) const final
        { this->finalize(xx.state()); }
 
   /// \brief Forecast initialization, called before every forecast run

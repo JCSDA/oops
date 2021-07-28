@@ -145,6 +145,7 @@ oops/base/PostProcessorTLAD.h
 oops/base/PostTimer.cc
 oops/base/PostTimer.h
 oops/base/PostTimerParameters.h
+oops/base/State.h
 oops/base/State4D.h
 oops/base/StateEnsemble.h
 oops/base/StateEnsemble4D.h

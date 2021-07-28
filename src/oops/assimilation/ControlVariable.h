@@ -19,9 +19,9 @@
 #include "oops/base/Geometry.h"
 #include "oops/base/ObsAuxControls.h"
 #include "oops/base/ObsSpaces.h"
+#include "oops/base/State.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/ModelAuxControl.h"
-#include "oops/interface/State.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 

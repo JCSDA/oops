@@ -17,8 +17,8 @@
 #include <boost/noncopyable.hpp>
 
 #include "oops/base/Geometry.h"
+#include "oops/base/State.h"
 #include "oops/base/VariableChangeParametersBase.h"
-#include "oops/interface/State.h"
 #include "oops/util/AssociativeContainers.h"
 #include "oops/util/parameters/ConfigurationParameter.h"
 #include "oops/util/parameters/HasParameters_.h"

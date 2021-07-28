@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -21,9 +21,9 @@
 #include "oops/base/LinearModelBase.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
+#include "oops/base/State.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/ModelAuxIncrement.h"
-#include "oops/interface/State.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
@@ -38,10 +38,10 @@ namespace oops {
 
 /// Encapsulates the linear forecast model.
 /*!
- *  This class provides the operations associated with the LinearModel. It wraps 
- *  the actual linear model which can be a model specific one or a generic one 
- *  (identity). The interface for the linear model comprises two levels (LinearModel  
- *  and LinearModelBase) because we want run time polymorphism. 
+ *  This class provides the operations associated with the LinearModel. It wraps
+ *  the actual linear model which can be a model specific one or a generic one
+ *  (identity). The interface for the linear model comprises two levels (LinearModel
+ *  and LinearModelBase) because we want run time polymorphism.
  *
  *  Note: implementations of this interface can opt to extract their settings either from
  *  a Configuration object or from a subclass of LinearModelParametersBase.

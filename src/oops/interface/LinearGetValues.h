@@ -16,9 +16,9 @@
 
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
+#include "oops/base/State.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Locations.h"
-#include "oops/interface/State.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"

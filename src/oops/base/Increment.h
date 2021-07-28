@@ -15,9 +15,9 @@
 #include "atlas/field.h"
 
 #include "oops/base/Geometry.h"
+#include "oops/base/State.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Increment.h"
-#include "oops/interface/State.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/gatherPrint.h"
@@ -29,7 +29,7 @@ namespace oops {
 /// \brief Increment class used in oops
 ///
 /// \details
-/// Adds extra methods that do not need to be implemented in the implementations:
+/// Adds extra methods that do not need to be implemented in the model implementations:
 /// - timeComm()  (accessor to the MPI communicator in time - collection of processes
 ///                holding the data needed to represent the state in a particular region
 ///                of space X_i and throughout the whole time interval for which DA is done)

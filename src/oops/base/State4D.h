@@ -19,7 +19,7 @@
 #include "eckit/config/LocalConfiguration.h"
 
 #include "oops/base/Geometry.h"
-#include "oops/interface/State.h"
+#include "oops/base/State.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
 

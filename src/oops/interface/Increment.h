@@ -21,9 +21,9 @@
 #include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/LocalIncrement.h"
+#include "oops/base/State.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/GeometryIterator.h"
-#include "oops/interface/State.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
@@ -43,7 +43,7 @@ class Increment : public oops::GeneralizedDepartures,
   typedef typename MODEL::Increment  Increment_;
   typedef oops::Geometry<MODEL>      Geometry_;
   typedef GeometryIterator<MODEL>    GeometryIterator_;
-  typedef State<MODEL>               State_;
+  typedef oops::State<MODEL>         State_;
 
  public:
   static const std::string classname() {return "oops::Increment";}
@@ -451,7 +451,6 @@ void Increment<MODEL>::deserialize(const std::vector<double> & vect, size_t & cu
 
 // -----------------------------------------------------------------------------
 
-
 template<typename MODEL>
 void Increment<MODEL>::print(std::ostream & os) const {
   Log::trace() << "Increment<MODEL>::print starting" << std::endl;
@@ -459,6 +458,8 @@ void Increment<MODEL>::print(std::ostream & os) const {
   os << *increment_;
   Log::trace() << "Increment<MODEL>::print done" << std::endl;
 }
+
+// -----------------------------------------------------------------------------
 
 }  // namespace interface
 

@@ -21,9 +21,9 @@
 
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
+#include "oops/base/State.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/ModelAuxIncrement.h"
-#include "oops/interface/State.h"
 #include "oops/util/AssociativeContainers.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"

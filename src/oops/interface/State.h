@@ -1,6 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * (C) Copyright 2017-2019 UCAR.
+ * (C) Copyright 2017-2021 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -29,6 +29,8 @@
 
 namespace oops {
 
+namespace interface {
+
 /// Encapsulates the model state
 
 // -----------------------------------------------------------------------------
@@ -37,55 +39,67 @@ template <typename MODEL>
 class State : public util::Printable,
               public util::Serializable,
               private util::ObjectCounter<State<MODEL> > {
-  typedef typename MODEL::State      State_;
-  typedef Geometry<MODEL>            Geometry_;
+  typedef typename MODEL::State            State_;
+  typedef oops::Geometry<MODEL>            Geometry_;
 
  public:
   static const std::string classname() {return "oops::State";}
 
-/// Constructor, destructor
-  State(const Geometry_ &, const Variables &, const util::DateTime &);
-  State(const Geometry_ &, const eckit::Configuration &);
-  State(const Geometry_ &, const State &);
+  /// Constructor for specified \p resol, with \p vars, valid at \p time
+  State(const Geometry_ & resol, const Variables & vars, const util::DateTime & time);
+  /// Constructor for specified \p resol and files read from \p conf
+  State(const Geometry_ & resol, const eckit::Configuration & conf);
+  /// Copies \p other State, changing its resolution to \p geometry
+  State(const Geometry_ & resol, const State & other);
+  /// Copy constructor
   State(const State &);
+  /// Destructor (defined explicitly for timing and tracing)
   ~State();
-  State & operator=(const State &);  // Is that used anywhere?
+  /// Assignment operator
+  State & operator =(const State &);
 
-/// Interfacing
+  /// Accessor
   State_ & state() {return *state_;}
+  /// const accessor
   const State_ & state() const {return *state_;}
 
-/// Time
+  /// Accessor to the time of this State
   const util::DateTime validTime() const {return state_->validTime();}
+  /// Update this State's valid time by \p dt
   void updateTime(const util::Duration & dt) {state_->updateTime(dt);}
 
-/// I/O and diagnostics
+  /// Read this State from file
   void read(const eckit::Configuration &);
+  /// Write this State out to file
   void write(const eckit::Configuration &) const;
-  double norm() const;  // Only for tests
+  /// Norm (used in tests)
+  double norm() const;
+
+  /// Accessor to geometry associated with this State
   Geometry_ geometry() const;
+  /// Accessor to variables associated with this State
   const Variables & variables() const;
 
-/// Accumulator
+  /// Zero out this State
   void zero();
-  void accumul(const double &, const State &);
+  /// Accumulate (add \p w * \p x to the state)
+  void accumul(const double & w, const State & x);
 
-/// Serialize and deserialize
+  /// Serialize and deserialize (used in 4DEnVar, weak-constraint 4DVar and Block-Lanczos minimizer)
   size_t serialSize() const override;
   void serialize(std::vector<double> &) const override;
   void deserialize(const std::vector<double> &, size_t &) override;
 
  private:
-  void print(std::ostream &) const override;
   std::unique_ptr<State_> state_;
-  const eckit::mpi::Comm & commTime_;
+  void print(std::ostream &) const override;
 };
 
 // =============================================================================
 
 template<typename MODEL>
 State<MODEL>::State(const Geometry_ & resol, const Variables & vars,
-                    const util::DateTime & time) : state_(), commTime_(resol.timeComm())
+                    const util::DateTime & time) : state_()
 {
   Log::trace() << "State<MODEL>::State starting" << std::endl;
   util::Timer timer(classname(), "State");
@@ -98,7 +112,7 @@ State<MODEL>::State(const Geometry_ & resol, const Variables & vars,
 
 template<typename MODEL>
 State<MODEL>::State(const Geometry_ & resol, const eckit::Configuration & conf)
-  : state_(), commTime_(resol.timeComm())
+  : state_()
 {
   Log::trace() << "State<MODEL>::State read starting" << std::endl;
   util::Timer timer(classname(), "State");
@@ -124,7 +138,7 @@ State<MODEL>::State(const Geometry_ & resol, const eckit::Configuration & conf)
 
 template<typename MODEL>
 State<MODEL>::State(const Geometry_ & resol, const State & other)
-  : state_(), commTime_(resol.timeComm())
+  : state_()
 {
   Log::trace() << "State<MODEL>::State interpolated starting" << std::endl;
   util::Timer timer(classname(), "State");
@@ -136,7 +150,7 @@ State<MODEL>::State(const Geometry_ & resol, const State & other)
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-State<MODEL>::State(const State & other) : state_(), commTime_(other.commTime_)
+State<MODEL>::State(const State & other) : state_()
 {
   Log::trace() << "State<MODEL>::State starting copy" << std::endl;
   util::Timer timer(classname(), "State");
@@ -193,9 +207,6 @@ double State<MODEL>::norm() const {
   Log::trace() << "State<MODEL>::norm starting" << std::endl;
   util::Timer timer(classname(), "norm");
   double zz = state_->norm();
-  zz *= zz;
-  commTime_.allReduceInPlace(zz, eckit::mpi::Operation::SUM);
-  zz = sqrt(zz);
   Log::trace() << "State<MODEL>::norm done" << std::endl;
   return zz;
 }
@@ -203,10 +214,10 @@ double State<MODEL>::norm() const {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-Geometry<MODEL> State<MODEL>::geometry() const {
+oops::Geometry<MODEL> State<MODEL>::geometry() const {
   Log::trace() << "State<MODEL>::geometry starting" << std::endl;
   util::Timer timer(classname(), "geometry");
-  Geometry<MODEL> geom(state_->geometry());
+  oops::Geometry<MODEL> geom(state_->geometry());
   Log::trace() << "State<MODEL>::geometry done" << std::endl;
   return geom;
 }
@@ -255,11 +266,7 @@ template<typename MODEL>
 void State<MODEL>::print(std::ostream & os) const {
   Log::trace() << "State<MODEL>::print starting" << std::endl;
   util::Timer timer(classname(), "print");
-  if (commTime_.size() > 1) {
-    gatherPrint(os, *state_, commTime_);
-  } else {
-    os << *state_;
-  }
+  os << *state_;
   Log::trace() << "State<MODEL>::print done" << std::endl;
 }
 
@@ -284,6 +291,8 @@ void State<MODEL>::accumul(const double & zz, const State & xx) {
 }
 
 // -----------------------------------------------------------------------------
+
+}  // namespace interface
 
 }  // namespace oops
 

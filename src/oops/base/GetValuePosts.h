@@ -16,8 +16,8 @@
 
 #include "oops/base/GetValuePost.h"
 #include "oops/base/PostBase.h"
+#include "oops/base/State.h"
 #include "oops/interface/ChangeVariables.h"
-#include "oops/interface/State.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
