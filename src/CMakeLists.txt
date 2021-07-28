@@ -121,7 +121,7 @@ oops/base/ObsAuxControls.h
 oops/base/ObsAuxCovariances.h
 oops/base/ObsAuxIncrements.h
 oops/base/ObsEnsemble.h
-oops/base/ObsErrorBase.h
+oops/base/ObsError.h
 oops/base/ObsErrors.h
 oops/base/Observations.h
 oops/base/Observer.h
@@ -185,6 +185,7 @@ oops/generic/InterpolatorUnstructured.cc
 oops/generic/LinearModelId.h
 oops/generic/ModelBase.h
 oops/generic/ObsErrorDiag.h
+oops/generic/ObsErrorBase.h
 oops/generic/PseudoModel.h
 oops/generic/PseudoModelState4D.h
 oops/generic/soar.h
@@ -216,7 +217,7 @@ oops/interface/ObsAuxIncrement.h
 oops/interface/ObsDataVector.h
 oops/interface/ObsDataVector_head.h
 oops/interface/ObsDiagnostics.h
-oops/interface/ObsErrorCovariance.h
+oops/interface/ObsErrorBase.h
 oops/interface/ObsFilter.h
 oops/interface/ObsLocalization.h
 oops/interface/ObsOperator.h
@@ -485,7 +486,7 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/oops/util/linkedList_i.f
 target_sources( ${PROJECT_NAME} PRIVATE ${oops_test_src_files})
 install( DIRECTORY test DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/oops FILES_MATCHING PATTERN "*.h")
 
-target_compile_features( ${PROJECT_NAME} PUBLIC cxx_std_11 )
+target_compile_features( ${PROJECT_NAME} PUBLIC cxx_std_14 )
 if(OpenMP_FOUND)
     target_link_libraries( ${PROJECT_NAME} PUBLIC OpenMP::OpenMP_Fortran OpenMP::OpenMP_CXX )
 endif()

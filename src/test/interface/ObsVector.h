@@ -13,6 +13,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
@@ -67,6 +68,29 @@ template <typename OBS> void testCopyConstructor() {
     EXPECT(!other.get());
 
     EXPECT(ov.get());
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+/// Test the constructor taking a std::unique_ptr<OBS::ObsVector>.
+template <typename OBS> void testWrappingConstructor() {
+  typedef ObsTestsFixture<OBS>  Test_;
+  typedef oops::ObsVector<OBS>  ObsVector_;
+
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    ObsVector_ ov(Test_::obspace()[jj]);
+
+    ov.random();
+    oops::Log::test() << "Printing random ObsVector: " << ov << std::endl;
+
+    ObsVector_ other(std::make_unique<typename OBS::ObsVector_>(ov->obsvector()),
+                     Test_::obspace()[jj]);
+
+    const double ov2 = dot_product(ov, ov);
+    const double other2 = dot_product(other, other);
+
+    EXPECT(ov2 == other2);
   }
 }
 

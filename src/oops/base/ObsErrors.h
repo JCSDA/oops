@@ -18,7 +18,7 @@
 #include <boost/noncopyable.hpp>
 
 #include "oops/base/Departures.h"
-#include "oops/base/ObsErrorBase.h"
+#include "oops/base/ObsError.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
@@ -26,12 +26,12 @@
 namespace oops {
 
 // -----------------------------------------------------------------------------
-/// \biref Container for ObsErrors for all observation types that are used in DA
+/// \brief Container for ObsErrors for all observation types that are used in DA
 template <typename OBS>
 class ObsErrors : public util::Printable,
                   private boost::noncopyable {
   typedef Departures<OBS>          Departures_;
-  typedef ObsErrorBase<OBS>        ObsError_;
+  typedef ObsError<OBS>            ObsError_;
   typedef ObsSpaces<OBS>           ObsSpaces_;
 
  public:
@@ -41,8 +41,8 @@ class ObsErrors : public util::Printable,
 
 /// Accessor and size
   size_t size() const {return err_.size();}
-  ObsError_ & operator[](const size_t ii) {return *err_.at(ii);}
-  const ObsError_ & operator[](const size_t ii) const {return *err_.at(ii);}
+  ObsError_ & operator[](const size_t ii) {return err_.at(ii);}
+  const ObsError_ & operator[](const size_t ii) const {return err_.at(ii);}
 
 /// Multiply a Departure by \f$R\f$
   void multiply(Departures_ &) const;
@@ -59,8 +59,8 @@ class ObsErrors : public util::Printable,
   Departures_ inverseVariance() const;
 
  private:
-  void print(std::ostream &) const;
-  std::vector<std::unique_ptr<ObsError_> > err_;
+  void print(std::ostream &) const override;
+  std::vector<ObsError_> err_;
   const ObsSpaces_ & os_;
 };
 
@@ -72,7 +72,7 @@ ObsErrors<OBS>::ObsErrors(const eckit::Configuration & config,
   std::vector<eckit::LocalConfiguration> obsconf = config.getSubConfigurations();
   for (size_t jj = 0; jj < os.size(); ++jj) {
     eckit::LocalConfiguration conf = obsconf[jj].getSubConfiguration("obs error");
-    err_.emplace_back(ObsErrorFactory<OBS>::create(conf, os[jj]));
+    err_.emplace_back(conf, os[jj]);
   }
 }
 
@@ -81,7 +81,7 @@ ObsErrors<OBS>::ObsErrors(const eckit::Configuration & config,
 template <typename OBS>
 void ObsErrors<OBS>::multiply(Departures_ & dy) const {
   for (size_t jj = 0; jj < err_.size(); ++jj) {
-    err_[jj]->multiply(dy[jj]);
+    err_[jj].multiply(dy[jj]);
   }
 }
 
@@ -90,7 +90,7 @@ void ObsErrors<OBS>::multiply(Departures_ & dy) const {
 template <typename OBS>
 void ObsErrors<OBS>::inverseMultiply(Departures_ & dy) const {
   for (size_t jj = 0; jj < err_.size(); ++jj) {
-    err_[jj]->inverseMultiply(dy[jj]);
+    err_[jj].inverseMultiply(dy[jj]);
   }
 }
 
@@ -99,7 +99,7 @@ void ObsErrors<OBS>::inverseMultiply(Departures_ & dy) const {
 template <typename OBS>
 void ObsErrors<OBS>::randomize(Departures_ & dy) const {
   for (size_t jj = 0; jj < err_.size(); ++jj) {
-    err_[jj]->randomize(dy[jj]);
+    err_[jj].randomize(dy[jj]);
   }
 }
 
@@ -108,7 +108,7 @@ void ObsErrors<OBS>::randomize(Departures_ & dy) const {
 template <typename OBS>
 void ObsErrors<OBS>::save(const std::string & name) const {
   for (const auto & err : err_) {
-    err->save(name);
+    err.save(name);
   }
 }
 
@@ -118,7 +118,7 @@ template <typename OBS>
 Departures<OBS> ObsErrors<OBS>::inverseVariance() const {
   Departures_ invvar(os_);
   for (size_t jj = 0; jj < err_.size(); ++jj) {
-    invvar[jj] = err_[jj]->inverseVariance();
+    invvar[jj] = err_[jj].inverseVariance();
   }
   return invvar;
 }
@@ -127,7 +127,7 @@ Departures<OBS> ObsErrors<OBS>::inverseVariance() const {
 
 template<typename OBS>
 void ObsErrors<OBS>::print(std::ostream & os) const {
-  for (size_t jj = 0; jj < err_.size(); ++jj) os << *err_[jj] << std::endl;
+  for (size_t jj = 0; jj < err_.size(); ++jj) os << err_[jj] << std::endl;
 }
 
 // -----------------------------------------------------------------------------

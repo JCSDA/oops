@@ -16,6 +16,7 @@
 #include <memory>
 #include <ostream>
 #include <string>
+#include <utility>
 
 #include "oops/interface/ObsDataVector_head.h"
 #include "oops/interface/ObsSpace.h"
@@ -48,6 +49,13 @@ class ObsVector : public util::Printable,
   /// Creates vector from \p obsspace. If \p name is specified, reads the
   /// specified \p name variable from \p obsspace. Otherwise, zero vector is created.
   explicit ObsVector(const ObsSpace<OBS> & obsspace, const std::string name = "");
+
+  /// Wraps an existing ObsVector_.
+  ///
+  /// \param obsvector  The vector to wrap.
+  /// \param timeComm   Time communicator.
+  ObsVector(std::unique_ptr<ObsVector_> obsvector, const eckit::mpi::Comm &timeComm);
+
   ObsVector(const ObsVector &);
   ~ObsVector();
 
@@ -104,6 +112,15 @@ ObsVector<OBS>::ObsVector(const ObsSpace<OBS> & os, const std::string name)
   Log::trace() << "ObsVector<OBS>::ObsVector starting " << name << std::endl;
   util::Timer timer(classname(), "ObsVector");
   data_.reset(new ObsVector_(os.obsspace(), name));
+  this->setObjectSize(data_->size() * sizeof(double));
+  Log::trace() << "ObsVector<OBS>::ObsVector done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
+ObsVector<OBS>::ObsVector(std::unique_ptr<ObsVector_> obsvector, const eckit::mpi::Comm &timeComm)
+  : data_(std::move(obsvector)), commTime_(timeComm) {
+  Log::trace() << "ObsVector<OBS>::ObsVector starting " << std::endl;
+  util::Timer timer(classname(), "ObsVector");
   this->setObjectSize(data_->size() * sizeof(double));
   Log::trace() << "ObsVector<OBS>::ObsVector done" << std::endl;
 }

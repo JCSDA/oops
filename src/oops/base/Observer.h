@@ -16,7 +16,7 @@
 
 #include "oops/base/Geometry.h"
 #include "oops/base/GetValuePost.h"
-#include "oops/base/ObsErrorBase.h"
+#include "oops/base/ObsError.h"
 #include "oops/base/ObsFilters.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
@@ -59,7 +59,7 @@ class Observer {
   typedef ObsAuxControl<OBS>           ObsAuxCtrl_;
   typedef ObsDataVector<OBS, int>      ObsDataInt_;
   typedef ObsDiagnostics<OBS>          ObsDiags_;
-  typedef ObsErrorBase<OBS>            ObsError_;
+  typedef ObsError<OBS>                ObsError_;
   typedef ObserverParameters<OBS>      Parameters_;
   typedef ObsFilters<OBS>              ObsFilters_;
   typedef ObsOperator<OBS>             ObsOperator_;
