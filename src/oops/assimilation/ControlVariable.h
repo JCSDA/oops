@@ -134,8 +134,8 @@ void ControlVariable<MODEL, OBS>::write(const eckit::Configuration & config) con
 
 template <typename MODEL, typename OBS>
 void ControlVariable<MODEL, OBS>::print(std::ostream & outs) const {
-  outs << state_;
-  outs << modbias_;
+  outs << state_ << std::endl;
+  outs << modbias_ << std::endl;
   outs << obsbias_;
 }
 

@@ -96,7 +96,7 @@ void ObsBias::print(std::ostream & os) const {
       strs << bias_[jj];
       strn += strs.str();
     }
-    os << std::endl << "ObsBias = " << strn;
+    os << "ObsBias = " << strn;
   }
 }
 // -----------------------------------------------------------------------------

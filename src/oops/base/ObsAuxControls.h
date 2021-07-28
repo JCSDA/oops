@@ -156,7 +156,9 @@ double ObsAuxControls<OBS>::norm() const {
 
 template<typename OBS>
 void ObsAuxControls<OBS>::print(std::ostream & os) const {
-  for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) os << *auxs_[jobs];
+  for (const auto & aux : auxs_) {
+    os << *aux << std::endl;
+  }
 }
 
 // -----------------------------------------------------------------------------
