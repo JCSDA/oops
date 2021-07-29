@@ -22,7 +22,6 @@
 #include "oops/interface/ObsAuxIncrement.h"
 #include "oops/interface/ObsSpace.h"
 #include "oops/interface/ObsVector.h"
-#include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -31,7 +30,8 @@
 namespace oops {
 
 // -----------------------------------------------------------------------------
-
+/// \brief MODEL-agnostic part of tangent-linear and adjoint of the nonlinear
+/// observation (forward) operator ObsOperator.
 template <typename OBS>
 class LinearObsOperator : public util::Printable,
                           private boost::noncopyable,
@@ -46,22 +46,50 @@ class LinearObsOperator : public util::Printable,
  public:
   static const std::string classname() {return "oops::LinearObsOperator";}
 
-  LinearObsOperator(const ObsSpace_ &, const eckit::Configuration &);
+  /// Set up TL and AD of observation operator for the \p obsspace observations, with
+  /// parameters defined in \p config.
+  LinearObsOperator(const ObsSpace_ & obsspace, const eckit::Configuration & config);
   ~LinearObsOperator();
 
-/// Interfacing
-  const LinearObsOper_ & linearobsoperator() const {return *oper_;}
+  /// Sets up the trajectory for future calls of simulateObsTL or simulateObsAD.
+  /// The implementations could e.g. save the trajectory \p x0, or compute and save the Jacobian
+  /// of observation operator around \p x0.
+  /// Always called before simulateObsTL or simulateObsAD.
+  /// \param[in]  x0       trajectory for linearization of obs operator, State interpolated
+  ///                      to observations locations (defined by ObsOperator::locations())
+  /// \param[in]  obsaux   additional obs operator input, used in the minimization
+  ///                      in Variational DA, e.g. bias correction coefficients or obs operator
+  ///                      parameters.
+  void setTrajectory(const GeoVaLs_ & x0, const ObsAuxControl_ & obsaux);
 
-/// Obs Operators
-  void setTrajectory(const GeoVaLs_ &, const ObsAuxControl_ &);
-  void simulateObsTL(const GeoVaLs_ &, ObsVector_ &, const ObsAuxIncrement_ &) const;
-  void simulateObsAD(GeoVaLs_ &, const ObsVector_ &, ObsAuxIncrement_ &) const;
+  /// Apply tangent-linear of the observation operator linearized around the trajectory that was
+  /// passed to setTrajectory method (which is always called before simulateObsTL).
+  /// \param[in]  dx       input to the TL obs operator, Increment interpolated to observations
+  ///                      locations.
+  /// \param[out] dy       output of the TL obs operator.
+  /// \param[in]  dobsaux: additional input to the TL obs operator, e.g. perturbation to bias
+  ///                      coefficients or obs operator parameters.
+  void simulateObsTL(const GeoVaLs_ & dx, ObsVector_ & dy, const ObsAuxIncrement_ & dobsaux) const;
+  /// Apply adjoint of the observation operator linearized around the trajectory that was
+  /// passed to setTrajectory method (which is always called before simulateObsAD).
+  /// \param[out] dx       output of the AD obs operator, Increment interpolated to observations
+  ///                      locations.
+  /// \param[in]  dy       input of the AD obs operator, perturbation to the ObsVector.
+  /// \param[out] dobsaux  additional output of the AD obs operator, e.g. perturbation to bias
+  ///                      coefficients or obs operator parameters.
+  void simulateObsAD(GeoVaLs_ & dx, const ObsVector_ & dy, ObsAuxIncrement_ & dobsaux) const;
 
-/// Other
-  const Variables & requiredVars() const;  // Required inputs variables from LinearModel
+  /// Variables required from the model Increment to compute TL or AD of the obs operator.
+  /// These variables will be provided in GeoVaLs passed to simulateObsTL and simulateObsAD.
+  /// Note: these Variables may be different from variables returned by ObsOperator::requiredVars(),
+  /// which will be provided in GeoVaLs passed to setTrajectory.
+  const Variables & requiredVars() const;
 
  private:
+  /// Print, used for logging
   void print(std::ostream &) const;
+
+  /// Pointer to the implementation of LinearObsOperator
   std::unique_ptr<LinearObsOper_> oper_;
 };
 

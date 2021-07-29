@@ -30,7 +30,11 @@
 namespace oops {
 
 // -----------------------------------------------------------------------------
-
+/// \brief MODEL-agnostic part of nonlinear observation (forward) operator.
+/// The full nonlinear observation operator from State x to ObsVector is:
+/// ObsOperator ( GetValues (State) )
+/// ObsOperator uses GeoVaLs (result of GetValues(State) - model State at
+/// observations locations) as input data to compute forward operator.
 template <typename OBS>
 class ObsOperator : public util::Printable,
                     private boost::noncopyable,
@@ -46,21 +50,33 @@ class ObsOperator : public util::Printable,
  public:
   static const std::string classname() {return "oops::ObsOperator";}
 
-  ObsOperator(const ObsSpace_ &, const eckit::Configuration &);
+  /// Set up observation operator for the \p obsspace observations, with
+  /// parameters defined in \p config
+  ObsOperator(const ObsSpace_ & obsspace, const eckit::Configuration & config);
   ~ObsOperator();
 
-/// Obs Operator
-  void simulateObs(const GeoVaLs_ &, ObsVector_ &, const ObsAuxControl_ &, ObsDiags_ &) const;
+  /// Compute forward operator \p y = ObsOperator (\p x).
+  /// \param[in]  x        obs operator input, State interpolated to observations locations.
+  /// \param[out] y        result of computing obs operator on \p x.
+  /// \param[in]  obsaux   additional input for computing H(x), used in the minimization
+  ///                      in Variational DA, e.g. bias correction coefficients or obs operator
+  ///                      parameters.
+  /// \param[out] obsdiags   additional diagnostics output from computing obs operator that is not
+  ///                        used in the assimilation, and can be used by ObsFilters.
+  void simulateObs(const GeoVaLs_ & x_int, ObsVector_ & y, const ObsAuxControl_ & obsaux,
+                   ObsDiags_ & obsdiags) const;
 
-/// Interfacing
-  const ObsOperator_ & obsoperator() const {return *oper_;}
-
-/// Other
-  const Variables & requiredVars() const;  // Required input variables from Model
+  /// Variables required from the model State to compute obs operator. These variables
+  /// will be provided in GeoVaLs passed to simulateObs.
+  const Variables & requiredVars() const;
+  /// Locations used for computing GeoVaLs that will be passed to simulateObs.
   Locations_ locations() const;
 
  private:
+  /// Print, used for logging
   void print(std::ostream &) const;
+
+  /// Pointer to the implementation of ObsOperator
   std::unique_ptr<ObsOperator_> oper_;
 };
 
