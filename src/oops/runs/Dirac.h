@@ -37,7 +37,7 @@ template <typename MODEL> class Dirac : public Application {
   typedef Geometry<MODEL>                           Geometry_;
   typedef Increment<MODEL>                          Increment_;
   typedef State<MODEL>                              State_;
-  typedef LocalizationBase<MODEL>                   Localization_;
+  typedef Localization<MODEL>                       Localization_;
   typedef IncrementEnsemble<MODEL>                  Ensemble_;
   typedef std::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
 
@@ -139,11 +139,10 @@ template <typename MODEL> class Dirac : public Application {
       dxdir.dirac(diracConfig);
 
       //  Setup localization
-      std::unique_ptr<Localization_> loc_ =
-              LocalizationFactory<MODEL>::create(resol, time, locConfigs[jcomp]);
+      Localization_ loc_(resol, locConfigs[jcomp]);
 
       //  Apply localization
-      loc_->multiply(dxdir);
+      loc_.multiply(dxdir);
 
       //  Write increment
       const eckit::LocalConfiguration output_localization(fullConfig, "output localization");

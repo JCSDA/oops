@@ -18,8 +18,7 @@
 
 #include "eckit/config/Configuration.h"
 
-#include "oops/util/ObjectCounter.h"
-#include "oops/util/Printable.h"
+#include "oops/interface/LocalizationBase.h"
 
 #include "oops/qg/GeometryQG.h"
 #include "oops/qg/QgFortran.h"
@@ -33,16 +32,15 @@ namespace qg {
 /// Localization matrix for QG model.
 
 // -----------------------------------------------------------------------------
-class LocalizationMatrixQG: public util::Printable,
-                            private util::ObjectCounter<LocalizationMatrixQG> {
+class LocalizationMatrixQG: public oops::interface::LocalizationBase<qg::QgTraits> {
  public:
   static const std::string classname() {return "qg::LocalizationMatrixQG";}
 
   LocalizationMatrixQG(const GeometryQG &, const eckit::Configuration &);
   ~LocalizationMatrixQG();
 
-  void randomize(IncrementQG &) const;
-  void multiply(IncrementQG &) const;
+  void randomize(IncrementQG &) const override;
+  void multiply(IncrementQG &) const override;
 
  private:
   void print(std::ostream &) const override;

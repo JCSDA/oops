@@ -24,7 +24,7 @@
 #include "oops/base/IdentityMatrix.h"
 #include "oops/base/Increment.h"
 #include "oops/base/IncrementEnsemble.h"
-#include "oops/base/LocalizationBase.h"
+#include "oops/base/Localization.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
@@ -41,7 +41,7 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL>,
                            private util::ObjectCounter<EnsembleCovariance<MODEL>> {
   typedef Geometry<MODEL>                           Geometry_;
   typedef Increment<MODEL>                          Increment_;
-  typedef LocalizationBase<MODEL>                   Localization_;
+  typedef Localization<MODEL>                       Localization_;
   typedef State<MODEL>                              State_;
   typedef IncrementEnsemble<MODEL>                  Ensemble_;
   typedef std::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
@@ -78,7 +78,7 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Var
   ens_.reset(new Ensemble_(conf, xb, fg, resol, vars));
   if (conf.has("localization")) {
     const eckit::LocalConfiguration confloc(conf, "localization");
-    loc_ = LocalizationFactory<MODEL>::create(resol, xb.validTime(), confloc);
+    loc_.reset(new Localization_(resol, confloc));
   }
   size_t current = eckit::system::ResourceUsage().maxResidentSetSize();
   this->setObjectSize(current - init);
