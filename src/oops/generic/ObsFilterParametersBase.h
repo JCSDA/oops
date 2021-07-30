@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef OOPS_BASE_OBSFILTERPARAMETERSBASE_H_
-#define OOPS_BASE_OBSFILTERPARAMETERSBASE_H_
+#ifndef OOPS_GENERIC_OBSFILTERPARAMETERSBASE_H_
+#define OOPS_GENERIC_OBSFILTERPARAMETERSBASE_H_
 
 #include <string>
 
@@ -31,4 +31,4 @@ class ObsFilterParametersBase : public Parameters {
 
 }  // namespace oops
 
-#endif  // OOPS_BASE_OBSFILTERPARAMETERSBASE_H_
+#endif  // OOPS_GENERIC_OBSFILTERPARAMETERSBASE_H_

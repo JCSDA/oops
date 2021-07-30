@@ -15,7 +15,7 @@
 #include <boost/noncopyable.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "oops/base/ObsFilterBase.h"
+#include "oops/base/ObsFilter.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsDataVector.h"
@@ -38,7 +38,7 @@ class ObsFilters : public util::Printable,
   typedef ObsDiagnostics<OBS>     ObsDiags_;
   typedef ObsSpace<OBS>           ObsSpace_;
   typedef ObsVector<OBS>          ObsVector_;
-  typedef std::shared_ptr<ObsFilterBase<OBS> >  ObsFilterPtr_;
+  typedef ObsFilter<OBS>          ObsFilter_;
   typedef std::shared_ptr<ObsDataVector<OBS, int> >  ObsDataPtr_;
 
  public:
@@ -49,9 +49,9 @@ class ObsFilters : public util::Printable,
   ObsFilters(const ObsSpace_ &, const std::vector<ObsFilterParametersWrapper<OBS>> &,
              ObsDataPtr_ qcflags, ObsVector_ & obserr, const int iteration = 0);
 
-  void preProcess() const;
-  void priorFilter(const GeoVaLs_ &) const;
-  void postFilter(const ObsVector_ &, const ObsDiags_ &) const;
+  void preProcess();
+  void priorFilter(const GeoVaLs_ &);
+  void postFilter(const ObsVector_ &, const ObsDiags_ &);
 
   Variables requiredVars() const {return geovars_;}
   Variables requiredHdiagnostics() const {return diagvars_;}
@@ -59,7 +59,7 @@ class ObsFilters : public util::Printable,
  private:
   void print(std::ostream &) const override;
 
-  std::vector<ObsFilterPtr_> filters_;
+  std::vector<ObsFilter_> filters_;
   Variables geovars_;
   Variables diagvars_;
   ObsDataPtr_ qcflags_;
@@ -81,9 +81,11 @@ ObsFilters<OBS>::ObsFilters(const ObsSpace_ & os,
 
 // Prepare QC handling and statistics if any filters are present
   if (filtersParams.size() > 0) {
-    eckit::LocalConfiguration preconf;
-    preconf.set("filter", "QCmanager");
-    filters_.push_back(FilterFactory<OBS>::create(os, preconf, qcflags_, obserrtmp_));
+    eckit::LocalConfiguration conf;
+    conf.set("filter", "QCmanager");
+    ObsFilterParametersWrapper<OBS> filterParams;
+    filterParams.validateAndDeserialize(conf);
+    filters_.emplace_back(os, filterParams.filterParameters, qcflags_, obserrtmp_);
   }
 
 // Create the filters, only at 0-th iteration, or at iterations specified in "apply at iterations"
@@ -96,19 +98,19 @@ ObsFilters<OBS>::ObsFilters(const ObsSpace_ & os,
       apply = contains(iters, iteration);
     }
     if (apply) {
-      ObsFilterPtr_ tmp(FilterFactory<OBS>::create(os, filterParams.filterParameters,
-                                                   qcflags_, obserrtmp_));
-      geovars_ += tmp->requiredVars();
-      diagvars_ += tmp->requiredHdiagnostics();
-      filters_.push_back(tmp);
+      filters_.emplace_back(os, filterParams.filterParameters, qcflags_, obserrtmp_);
+      geovars_ += filters_.back().requiredVars();
+      diagvars_ += filters_.back().requiredHdiagnostics();
     }
   }
 
 // Create the final filter run at the end of the pipeline
   if (filtersParams.size() > 0) {
-    eckit::LocalConfiguration preconf;
-    preconf.set("filter", "Final Check");
-    filters_.push_back(FilterFactory<OBS>::create(os, preconf, qcflags_, obserrtmp_));
+    eckit::LocalConfiguration conf;
+    conf.set("filter", "Final Check");
+    ObsFilterParametersWrapper<OBS> filterParams;
+    filterParams.validateAndDeserialize(conf);
+    filters_.emplace_back(os, filterParams.filterParameters, qcflags_, obserrtmp_);
   }
 
   Log::trace() << "ObsFilters::ObsFilters done" << std::endl;
@@ -117,9 +119,9 @@ ObsFilters<OBS>::ObsFilters(const ObsSpace_ & os,
 // -----------------------------------------------------------------------------
 
 template<typename OBS>
-void ObsFilters<OBS>::preProcess() const {
-  for (const auto & filter : filters_) {
-    filter->preProcess();
+void ObsFilters<OBS>::preProcess() {
+  for (ObsFilter_ & filter : filters_) {
+    filter.preProcess();
   }
   obserrtmp_->mask(*qcflags_);
   obserr_ = *obserrtmp_;
@@ -128,9 +130,9 @@ void ObsFilters<OBS>::preProcess() const {
 // -----------------------------------------------------------------------------
 
 template<typename OBS>
-void ObsFilters<OBS>::priorFilter(const GeoVaLs_ & gv) const {
-  for (const auto & filter : filters_) {
-    filter->priorFilter(gv);
+void ObsFilters<OBS>::priorFilter(const GeoVaLs_ & gv) {
+  for (ObsFilter_ & filter : filters_) {
+    filter.priorFilter(gv);
   }
   obserrtmp_->mask(*qcflags_);
   obserr_ = *obserrtmp_;
@@ -139,9 +141,9 @@ void ObsFilters<OBS>::priorFilter(const GeoVaLs_ & gv) const {
 // -----------------------------------------------------------------------------
 
 template<typename OBS>
-void ObsFilters<OBS>::postFilter(const ObsVector_ & hofx, const ObsDiags_ & diags) const {
-  for (const auto & filter : filters_) {
-    filter->postFilter(hofx, diags);
+void ObsFilters<OBS>::postFilter(const ObsVector_ & hofx, const ObsDiags_ & diags) {
+  for (ObsFilter_ & filter : filters_) {
+    filter.postFilter(hofx, diags);
   }
   obserrtmp_->mask(*qcflags_);
   obserr_ = *obserrtmp_;
@@ -152,8 +154,8 @@ void ObsFilters<OBS>::postFilter(const ObsVector_ & hofx, const ObsDiags_ & diag
 template <typename OBS>
 void ObsFilters<OBS>::print(std::ostream & os) const {
   os << "ObsFilters: " << filters_.size() << " elements:" << std::endl;
-  for (const auto & filter : filters_) {
-    os << *filter << std::endl;
+  for (const ObsFilter_ & filter : filters_) {
+    os << filter << std::endl;
   }
 }
 

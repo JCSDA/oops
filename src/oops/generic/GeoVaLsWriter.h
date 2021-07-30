@@ -11,8 +11,8 @@
 #include <memory>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "oops/base/ObsFilterBase.h"
 #include "oops/base/Variables.h"
+#include "oops/generic/ObsFilterBase.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsDiagnostics.h"
@@ -38,15 +38,15 @@ class GeoVaLsWriter : public ObsFilterBase<OBS> {
                 ObsDataPtr_<int>, ObsDataPtr_<float>): conf_(conf), novars_() {}
   ~GeoVaLsWriter() {}
 
-  void preProcess() const override {}
+  void preProcess() override {}
 
-  void priorFilter(const GeoVaLs_ & gv) const override {
+  void priorFilter(const GeoVaLs_ & gv) override {
     const double zz = sqrt(dot_product(gv, gv));
     Log::info() << "GeoVaLsWriter norm = " << zz << std::endl;
     gv.write(conf_);
   }
 
-  void postFilter(const ObsVector_ &, const ObsDiags_ &) const override {}
+  void postFilter(const ObsVector_ &, const ObsDiags_ &) override {}
 
   Variables requiredVars() const override {return novars_;};
   Variables requiredHdiagnostics() const override {return novars_;};

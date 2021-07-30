@@ -7,16 +7,8 @@
 
 #include "model/QCmanager.h"
 
-#include <string>
-
-#include "model/ObsDataQG.h"
-#include "model/ObsSpaceQG.h"
-#include "model/QgTraits.h"
-#include "oops/interface/ObsFilter.h"
-
 namespace qg {
 // -----------------------------------------------------------------------------
-static oops::FilterMaker<QgObsTraits,
-       oops::ObsFilter<QgObsTraits, QCmanager> > makerPreChk_("QCmanager");
+static oops::interface::FilterMaker<QgObsTraits, QCmanager> makerPreChk_("QCmanager");
 // -----------------------------------------------------------------------------
 }  // namespace qg

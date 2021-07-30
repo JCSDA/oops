@@ -128,8 +128,7 @@ oops/base/Observer.h
 oops/base/Observers.h
 oops/base/ObserversTLAD.h
 oops/base/ObserverTLAD.h
-oops/base/ObsFilterBase.h
-oops/base/ObsFilterParametersBase.h
+oops/base/ObsFilter.h
 oops/base/ObsFilters.h
 oops/base/ObsLocalizationBase.h
 oops/base/ObsLocalizations.h
@@ -188,6 +187,8 @@ oops/generic/LocalizationBase.h
 oops/generic/ModelBase.h
 oops/generic/ObsErrorDiag.h
 oops/generic/ObsErrorBase.h
+oops/generic/ObsFilterBase.h
+oops/generic/ObsFilterParametersBase.h
 oops/generic/PseudoModel.h
 oops/generic/PseudoModelState4D.h
 oops/generic/soar.h
@@ -220,7 +221,7 @@ oops/interface/ObsDataVector.h
 oops/interface/ObsDataVector_head.h
 oops/interface/ObsDiagnostics.h
 oops/interface/ObsErrorBase.h
-oops/interface/ObsFilter.h
+oops/interface/ObsFilterBase.h
 oops/interface/ObsLocalization.h
 oops/interface/ObsOperator.h
 oops/interface/ObsSpace.h

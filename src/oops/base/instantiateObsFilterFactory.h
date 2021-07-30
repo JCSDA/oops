@@ -8,13 +8,13 @@
 #ifndef OOPS_BASE_INSTANTIATEOBSFILTERFACTORY_H_
 #define OOPS_BASE_INSTANTIATEOBSFILTERFACTORY_H_
 
-#include "oops/base/ObsFilterBase.h"
 #include "oops/generic/GeoVaLsWriter.h"
+#include "oops/generic/ObsFilterBase.h"
 
 namespace oops {
 
 template <typename OBS> void instantiateObsFilterFactory() {
-  static FilterMaker<OBS, GeoVaLsWriter<OBS> >   makerGVWriter_("GOMsaver");
+  static FilterMaker<OBS, GeoVaLsWriter<OBS>> makerGVWriter_("GOMsaver");
 }
 
 }  // namespace oops

@@ -10,13 +10,12 @@
 #include <vector>
 
 #include "lorenz95/L95Traits.h"
-#include "oops/interface/ObsFilter.h"
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-static oops::FilterMaker<L95ObsTraits,
-       oops::ObsFilter<L95ObsTraits, BackgroundCheck> > makerBackgroundCheck_("Background Check");
+static oops::interface::FilterMaker<L95ObsTraits, BackgroundCheck> makerBackgroundCheck_(
+    "Background Check");
 
 // -----------------------------------------------------------------------------
 BackgroundCheck::BackgroundCheck(const ObsTable & obsdb, const Parameters_ & parameters,
@@ -26,7 +25,7 @@ BackgroundCheck::BackgroundCheck(const ObsTable & obsdb, const Parameters_ & par
 }
 
 // -----------------------------------------------------------------------------
-void BackgroundCheck::postFilter(const ObsVec1D & hofx, const ObsDiags1D &) const {
+void BackgroundCheck::postFilter(const ObsVec1D & hofx, const ObsDiags1D &) {
   std::vector<float> yobs;
   obsdb_.getdb("ObsValue", yobs);
   size_t inflate = 0;

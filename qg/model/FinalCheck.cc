@@ -7,16 +7,8 @@
 
 #include "model/FinalCheck.h"
 
-#include <string>
-
-#include "model/ObsDataQG.h"
-#include "model/ObsSpaceQG.h"
-#include "model/QgTraits.h"
-#include "oops/interface/ObsFilter.h"
-
 namespace qg {
 // -----------------------------------------------------------------------------
-static oops::FilterMaker<QgObsTraits,
-       oops::ObsFilter<QgObsTraits, FinalCheck> > makerPreChk_("Final Check");
+static oops::interface::FilterMaker<QgObsTraits, FinalCheck> makerPreChk_("Final Check");
 // -----------------------------------------------------------------------------
 }  // namespace qg

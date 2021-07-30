@@ -5,25 +5,20 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef OOPS_BASE_OBSFILTERBASE_H_
-#define OOPS_BASE_OBSFILTERBASE_H_
+#ifndef OOPS_GENERIC_OBSFILTERBASE_H_
+#define OOPS_GENERIC_OBSFILTERBASE_H_
 
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include <boost/make_unique.hpp>
 #include <boost/noncopyable.hpp>
 
-#include "oops/base/ObsFilterParametersBase.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/GeoVaLs.h"
-#include "oops/interface/ObsDataVector.h"
-#include "oops/interface/ObsDiagnostics.h"
-#include "oops/interface/ObsSpace.h"
-#include "oops/interface/ObsVector.h"
+#include "oops/generic/ObsFilterParametersBase.h"
 #include "oops/util/AssociativeContainers.h"
+#include "oops/util/Logger.h"
 #include "oops/util/parameters/ConfigurationParameter.h"
 #include "oops/util/parameters/HasParameters_.h"
 #include "oops/util/parameters/OptionalParameter.h"
@@ -34,9 +29,33 @@
 
 namespace oops {
 
-/// Base class for QC filters applied to observations
-// -----------------------------------------------------------------------------
+template <typename OBS> class GeoVaLs;
+template <typename OBS> class ObsDiagnostics;
+template <typename OBS> class ObsSpace;
+template <typename OBS> class ObsVector;
+template <typename OBS, typename DATA> class ObsDataVector;
 
+
+/// \brief Base class for generic implementations of filters processing observations.
+///
+/// Use this class as a base class for generic implementations
+/// and interface::ObsFilterBase as a base class for OBS-specific implementations.
+///
+/// Note: implementations of this interface can opt to extract their settings either from
+/// a Configuration object or from a subclass of ObsFilterParametersBase.
+///
+/// In the former case, they should provide a constructor with the following signature:
+///
+///    ObsFilter(const ObsSpace_ &, const eckit::Configuration &,
+///              ObsDataPtr_<int>, ObsDataPtr_<float>);
+///
+/// In the latter case, the implementer should first define a subclass of ObsFilterParametersBase
+/// holding the settings of the filter in question. The implementation of the ObsFilter interface
+/// should then typedef `Parameters_` to the name of that subclass and provide a constructor with
+/// the following signature:
+///
+///    ObsFilter(const ObsSpace_ &, const Parameters_ &,
+///              ObsDataPtr_<int>, ObsDataPtr_<float>);
 template <typename OBS>
 class ObsFilterBase : public util::Printable,
                       private boost::noncopyable {
@@ -48,15 +67,28 @@ class ObsFilterBase : public util::Printable,
   ObsFilterBase() {}
   virtual ~ObsFilterBase() {}
 
-  virtual void preProcess() const = 0;
-  virtual void priorFilter(const GeoVaLs_ &) const = 0;
-  virtual void postFilter(const ObsVector_ &, const ObsDiags_ &) const = 0;
+  /// \brief Perform any observation processing steps that do not require access to GeoVaLs or
+  /// outputs produced by the observation operator.
+  virtual void preProcess() = 0;
 
+  /// \brief Perform any observation processing steps that require access to GeoVaLs, but not to
+  /// outputs produced by the observation operator.
+  virtual void priorFilter(const GeoVaLs_ &gv) = 0;
+
+  /// \brief Perform any observation processing steps that require access to
+  /// outputs produced by the observation operator.
+  ///
+  /// \param ov
+  ///   Model equivalents produced by the observation operator.
+  /// \param dv
+  ///   Observation diagnostics produced by the observation operator.
+  virtual void postFilter(const ObsVector_ &ov, const ObsDiags_ &dv) = 0;
+
+  /// \brief Return the list of GeoVaLs required by this filter.
   virtual Variables requiredVars() const = 0;
-  virtual Variables requiredHdiagnostics() const = 0;
 
- private:
-  virtual void print(std::ostream &) const = 0;
+  /// \brief Return the list of observation diagnostics required by this filter.
+  virtual Variables requiredHdiagnostics() const = 0;
 };
 
 // =============================================================================
@@ -102,7 +134,7 @@ class ObsFilterParametersWrapper : public Parameters {
 
 // =============================================================================
 
-/// ObsFilter Factory
+/// ObsFilter factory
 template <typename OBS>
 class FilterFactory {
   typedef ObsSpace<OBS>    ObsSpace_;
@@ -111,19 +143,11 @@ class FilterFactory {
  public:
   /// \brief Create and return a new observation filter.
   ///
-  /// The type of the filter is determined by the `Filter` attribute of \p parameters. \p params
+  /// The type of the filter is determined by the `filter` attribute of \p params. \p params
   /// must be an instance of the subclass of ObsFilterParametersBase associated with that filter,
   /// otherwise an exception will be thrown.
-  static std::shared_ptr<ObsFilterBase<OBS>> create(const ObsSpace_ &,
+  static std::unique_ptr<ObsFilterBase<OBS>> create(const ObsSpace_ &,
                                                     const ObsFilterParametersBase & params,
-                                                    ObsDataPtr_<int> flags = ObsDataPtr_<int>(),
-                                               ObsDataPtr_<float> obserr = ObsDataPtr_<float>());
-
-  /// \brief Create and return a new observation filter.
-  ///
-  /// Deprecated overload taking a Configuration instead of an ObsFilterParametersBase.
-  static std::shared_ptr<ObsFilterBase<OBS>> create(const ObsSpace_ &,
-                                                    const eckit::Configuration &,
                                                     ObsDataPtr_<int> flags = ObsDataPtr_<int>(),
                                                ObsDataPtr_<float> obserr = ObsDataPtr_<float>());
 
@@ -145,8 +169,9 @@ class FilterFactory {
   explicit FilterFactory(const std::string &name);
 
  private:
-  virtual ObsFilterBase<OBS> * make(const ObsSpace_ &, const ObsFilterParametersBase &,
-                                    ObsDataPtr_<int> &, ObsDataPtr_<float> &) = 0;
+  virtual std::unique_ptr<ObsFilterBase<OBS>> make(const ObsSpace_ &,
+                                                   const ObsFilterParametersBase &,
+                                                   ObsDataPtr_<int> &, ObsDataPtr_<float> &) = 0;
 
   virtual std::unique_ptr<ObsFilterParametersBase> makeParameters() const = 0;
 
@@ -167,17 +192,19 @@ class FilterMaker : public FilterFactory<OBS> {
   typedef ObsSpace<OBS>    ObsSpace_;
   template <typename DATA> using ObsDataPtr_ = std::shared_ptr<ObsDataVector<OBS, DATA> >;
 
-  ObsFilterBase<OBS> * make(const ObsSpace_ & os, const ObsFilterParametersBase & params,
-                            ObsDataPtr_<int> & flags, ObsDataPtr_<float> & obserr) override {
+  std::unique_ptr<ObsFilterBase<OBS>> make(const ObsSpace_ & os,
+                                           const ObsFilterParametersBase & params,
+                                           ObsDataPtr_<int> & flags,
+                                           ObsDataPtr_<float> & obserr) override {
         const auto &stronglyTypedParams = dynamic_cast<const Parameters_&>(params);
-        return new T(os,
+        return std::make_unique<T>(os,
                      parametersOrConfiguration<HasParameters_<T>::value>(stronglyTypedParams),
                      flags,
                      obserr);
   }
 
   std::unique_ptr<ObsFilterParametersBase> makeParameters() const override {
-    return boost::make_unique<Parameters_>();
+    return std::make_unique<Parameters_>();
   }
 
  public:
@@ -197,7 +224,7 @@ FilterFactory<OBS>::FilterFactory(const std::string & name) {
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-std::shared_ptr<ObsFilterBase<OBS>>
+std::unique_ptr<ObsFilterBase<OBS>>
 FilterFactory<OBS>::create(const ObsSpace_ & os, const ObsFilterParametersBase & params,
                            ObsDataPtr_<int> flags, ObsDataPtr_<float> obserr) {
   Log::trace() << "FilterFactory<OBS>::create starting" << std::endl;
@@ -213,20 +240,9 @@ FilterFactory<OBS>::create(const ObsSpace_ & os, const ObsFilterParametersBase &
     }
     throw std::runtime_error(id + " does not exist in obs filter factory.");
   }
-  std::shared_ptr<ObsFilterBase<OBS>> ptr(jloc->second->make(os, params, flags, obserr));
+  std::unique_ptr<ObsFilterBase<OBS>> ptr(jloc->second->make(os, params, flags, obserr));
   Log::trace() << "FilterFactory<OBS>::create done" << std::endl;
   return ptr;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename OBS>
-std::shared_ptr<ObsFilterBase<OBS>>
-FilterFactory<OBS>::create(const ObsSpace_ & os, const eckit::Configuration & conf,
-                           ObsDataPtr_<int> flags, ObsDataPtr_<float> obserr) {
-  ObsFilterParametersWrapper<OBS> parameters;
-  parameters.validateAndDeserialize(conf);
-  return create(os, parameters.filterParameters, flags, obserr);
 }
 
 // -----------------------------------------------------------------------------
@@ -246,4 +262,4 @@ FilterFactory<OBS>::createParameters(const std::string &name) {
 
 }  // namespace oops
 
-#endif  // OOPS_BASE_OBSFILTERBASE_H_
+#endif  // OOPS_GENERIC_OBSFILTERBASE_H_

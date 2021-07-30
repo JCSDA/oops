@@ -11,11 +11,13 @@
 #include <memory>
 #include <ostream>
 
-#include "oops/base/ObsFilterParametersBase.h"
+#include "lorenz95/L95Traits.h"
+
 #include "oops/base/Variables.h"
+#include "oops/generic/ObsFilterParametersBase.h"
+#include "oops/interface/ObsFilterBase.h"
 #include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/RequiredParameter.h"
-#include "oops/util/Printable.h"
 
 namespace lorenz95 {
   class GomL95;
@@ -40,22 +42,22 @@ class BackgroundCheckParameters : public oops::ObsFilterParametersBase {
 };
 
 /// Simple background check: all obs for which {|y-H(x)| < threshold} pass QC
-class BackgroundCheck : public util::Printable {
+class BackgroundCheck : public oops::interface::ObsFilterBase<L95ObsTraits> {
  public:
   typedef BackgroundCheckParameters Parameters_;
 
   BackgroundCheck(const ObsTable &, const Parameters_ &,
                   std::shared_ptr<ObsData1D<int> >, std::shared_ptr<ObsData1D<float> >);
 
-  void preProcess() const {}
-  void priorFilter(const GomL95 &) const {}
-  void postFilter(const ObsVec1D &, const ObsDiags1D &) const;
+  void preProcess() override {}
+  void priorFilter(const GomL95 &) override {}
+  void postFilter(const ObsVec1D &, const ObsDiags1D &) override;
 
-  oops::Variables requiredVars() const {return novars_;}
-  oops::Variables requiredHdiagnostics() const {return novars_;}
+  oops::Variables requiredVars() const override {return novars_;}
+  oops::Variables requiredHdiagnostics() const override {return novars_;}
 
  private:
-  void print(std::ostream & os) const;
+  void print(std::ostream & os) const override;
 
   const ObsTable & obsdb_;
   Parameters_ options_;

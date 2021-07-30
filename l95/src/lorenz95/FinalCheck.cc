@@ -10,13 +10,11 @@
 #include <string>
 
 #include "lorenz95/L95Traits.h"
-#include "oops/interface/ObsFilter.h"
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-static oops::FilterMaker<L95ObsTraits,
-       oops::ObsFilter<L95ObsTraits, FinalCheck> > makerQCm_("Final Check");
+static oops::interface::FilterMaker<L95ObsTraits, FinalCheck> makerQCm_("Final Check");
 // -----------------------------------------------------------------------------
 }  // namespace lorenz95
 
