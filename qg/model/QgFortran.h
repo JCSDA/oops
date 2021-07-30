@@ -119,9 +119,9 @@ extern "C" {
                                 atlas::field::FieldSetImpl *);
   void qg_fields_getpoint_f90(const F90flds&, const F90iter&, const int &, double &);
   void qg_fields_setpoint_f90(const F90flds&, const F90iter&, const int &, const double &);
-  void qg_fields_serialize_f90(const F90flds &, const std::size_t &, double[]);
-  void qg_fields_deserialize_f90(const F90flds &, const std::size_t &, const double[],
-                                 const std::size_t &);
+  void qg_fields_serialize_f90(const F90flds &, const int &, double[]);
+  void qg_fields_deserialize_f90(const F90flds &, const int &, const double[], int &);
+
 // -----------------------------------------------------------------------------
 //  GetValues
 // -----------------------------------------------------------------------------
