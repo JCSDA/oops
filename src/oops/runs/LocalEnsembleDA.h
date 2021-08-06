@@ -26,6 +26,7 @@
 #include "oops/base/State4D.h"
 #include "oops/base/StateEnsemble4D.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
+#include "oops/generic/instantiateVariableChangeFactory.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
@@ -56,6 +57,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     instantiateLocalEnsembleSolverFactory<MODEL, OBS>();
     instantiateObsErrorFactory<OBS>();
     instantiateObsFilterFactory<OBS>();
+    instantiateVariableChangeFactory<MODEL>();
   }
 
 // -----------------------------------------------------------------------------
