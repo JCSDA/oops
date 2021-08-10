@@ -1,5 +1,5 @@
-datadir: '$(current_dir)'
-filename: '$(current_dir)/$(experiment).an.{{current_cycle}}'
+datadir: $(run_dir)
+filename: '$(run_dir)/$(experiment).an.{{current_cycle}}'
 exp: $(experiment)
 ##first: '{% $(window_length) - $(window_offset) %}'
 first: PT3H

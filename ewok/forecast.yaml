@@ -1,9 +1,9 @@
-forecast length: $(forecast_length)
+forecast length: ${forecast_length}
 initial condition:
-  $(FC_INPUT)
+  ${FC_INPUT}
 geometry:
-  $(GEOMETRY)
+  ${GEOMETRY}
 model:
-  $(MODEL)
+  ${MODEL}
 output:
-  $(FC_OUTPUT)
+  ${FC_OUTPUT}
