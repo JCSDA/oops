@@ -507,6 +507,12 @@ if ( GPTL_FOUND )
 	target_link_libraries( ${PROJECT_NAME} PUBLIC GPTL::GPTL )
 endif()
 
+# Stack traces on floating point exceptions
+include( backtrace_deps )
+
+target_link_libraries( ${PROJECT_NAME} PUBLIC ${OOPS_STACKTRACE_${OOPS_STACKTRACE_PROVIDER}_LIBS} )
+target_compile_definitions( ${PROJECT_NAME} PRIVATE ${OOPS_STACKTRACE_${OOPS_STACKTRACE_PROVIDER}_DEFS} )
+
 #Configure include directory layout for build-tree to match install-tree
 set(OOPS_BUILD_DIR_INCLUDE_PATH ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/include)
 add_custom_target(oops_test_headers ALL COMMAND ${CMAKE_COMMAND} -E make_directory ${OOPS_BUILD_DIR_INCLUDE_PATH}/oops
@@ -548,6 +554,11 @@ ecbuild_add_test( TARGET  test_base_posttimer
                   SOURCES test/base/PostTimer.cc
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops eckit)
+
+ecbuild_add_test( TARGET  test_util_signal_trap
+                  SOURCES test/util/signal_trap.cc
+                  LIBS    oops)
+set_property( TEST test_util_signal_trap PROPERTY WILL_FAIL TRUE )
 
 ecbuild_add_test( TARGET  test_util_random
                   SOURCES test/base/Random.cc
