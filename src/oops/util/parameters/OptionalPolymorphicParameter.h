@@ -49,11 +49,29 @@ class OptionalPolymorphicParameter : public ParameterBase {
   ///   on that object will automatically trigger a call to deserialize() or serialize() on this
   ///   parameter.
   explicit OptionalPolymorphicParameter(const char *name, Parameters *parent)
-    : ParameterBase(parent), name_(name)
+    : OptionalPolymorphicParameter(name, "", parent)
+  {}
+
+  /// \brief Constructor.
+  ///
+  /// \param name
+  ///   Name of the configuration key whose value determines the concrete subclass of `PARAMETERS`
+  ///   created during deserialization.
+  /// \param description
+  ///   Long description of this parameter.
+  /// \param parent
+  ///   Pointer to the Parameters object representing the collection of options located at
+  ///   the same level of the configuration tree as `name`. A call to deserialize() or serialize()
+  ///   on that object will automatically trigger a call to deserialize() or serialize() on this
+  ///   parameter.
+  explicit OptionalPolymorphicParameter(const char *name, const char * description,
+                                        Parameters *parent)
+    : ParameterBase(parent), name_(name), description_(description)
   {}
 
   OptionalPolymorphicParameter(const OptionalPolymorphicParameter &other)
-    : name_(other.name_), id_(other.id_), value_(other.value_ ? other.value_->clone() : nullptr)
+    : name_(other.name_), description_(other.description_), id_(other.id_),
+      value_(other.value_ ? other.value_->clone() : nullptr)
   {}
 
   OptionalPolymorphicParameter(OptionalPolymorphicParameter &&other) = default;
@@ -88,6 +106,7 @@ class OptionalPolymorphicParameter : public ParameterBase {
   typedef PolymorphicParameterTraits<PARAMETERS, FACTORY> Traits;
 
   std::string name_;
+  std::string description_;
   boost::optional<std::string> id_;
   std::unique_ptr<PARAMETERS> value_;
 };
@@ -113,7 +132,11 @@ void OptionalPolymorphicParameter<PARAMETERS, FACTORY>::serialize(
 
 template <typename PARAMETERS, typename FACTORY>
 ObjectJsonSchema OptionalPolymorphicParameter<PARAMETERS, FACTORY>::jsonSchema() const {
-  return Traits::jsonSchema(name_);
+  ObjectJsonSchema schema = Traits::jsonSchema(name_);
+  if (description_ != "") {
+    schema.extendPropertySchema(name_, {{"description", "\"" + description_ + "\""}});
+  }
+  return schema;
 }
 
 }  // namespace oops

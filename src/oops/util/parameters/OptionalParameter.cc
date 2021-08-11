@@ -52,7 +52,11 @@ void OptionalParameter<void>::serialize(eckit::LocalConfiguration &config) const
 }
 
 ObjectJsonSchema OptionalParameter<void>::jsonSchema() const {
-  return ObjectJsonSchema({{name_, {{"type", "\"null\""}}}});
+  ObjectJsonSchema schema = ObjectJsonSchema({{name_, {{"type", "\"null\""}}}});
+  if (description_ != "") {
+    schema.extendPropertySchema(name_, {{"description", "\"" + description_ + "\""}});
+  }
+  return schema;
 }
 
 }  // namespace oops

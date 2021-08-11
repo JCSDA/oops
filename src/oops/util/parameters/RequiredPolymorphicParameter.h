@@ -106,11 +106,29 @@ class RequiredPolymorphicParameter : public ParameterBase {
   ///   on that object will automatically trigger a call to deserialize() or serialize() on this
   ///   parameter.
   explicit RequiredPolymorphicParameter(const char *name, Parameters *parent)
-    : ParameterBase(parent), name_(name)
+    : RequiredPolymorphicParameter(name, "", parent)
+  {}
+
+  /// \brief Constructor.
+  ///
+  /// \param name
+  ///   Name of the configuration key whose value determines the concrete subclass of `PARAMETERS`
+  ///   created during deserialization.
+  /// \param description
+  ///   Long description of this parameter.
+  /// \param parent
+  ///   Pointer to the Parameters object representing the collection of options located at
+  ///   the same level of the configuration tree as `name`. A call to deserialize() or serialize()
+  ///   on that object will automatically trigger a call to deserialize() or serialize() on this
+  ///   parameter.
+  explicit RequiredPolymorphicParameter(const char *name, const char *description,
+                                        Parameters *parent)
+    : ParameterBase(parent), name_(name), description_(description)
   {}
 
   RequiredPolymorphicParameter(const RequiredPolymorphicParameter &other)
-    : name_(other.name_), id_(other.id_), value_(other.value_ ? other.value_->clone() : nullptr)
+    : name_(other.name_), description_(other.description_), id_(other.id_),
+      value_(other.value_ ? other.value_->clone() : nullptr)
   {}
 
   RequiredPolymorphicParameter(RequiredPolymorphicParameter &&other) = default;
@@ -159,6 +177,7 @@ class RequiredPolymorphicParameter : public ParameterBase {
   typedef PolymorphicParameterTraits<PARAMETERS, FACTORY> Traits;
 
   std::string name_;
+  std::string description_;
   std::string id_;
   std::unique_ptr<PARAMETERS> value_;
 };
@@ -186,6 +205,9 @@ void RequiredPolymorphicParameter<PARAMETERS, FACTORY>::serialize(
 template <typename PARAMETERS, typename FACTORY>
 ObjectJsonSchema RequiredPolymorphicParameter<PARAMETERS, FACTORY>::jsonSchema() const {
   ObjectJsonSchema schema = Traits::jsonSchema(name_);
+  if (description_ != "") {
+    schema.extendPropertySchema(name_, {{"description", "\"" + description_ + "\""}});
+  }
   schema.require(name_);
   return schema;
 }

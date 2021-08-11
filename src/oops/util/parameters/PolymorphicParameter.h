@@ -49,10 +49,30 @@ class PolymorphicParameter : public ParameterBase {
   ///   Pointer to the Parameters object representing the collection of options located at
   ///   the same level of the configuration tree as `name`. A call to deserialize() on that object
   ///   will automatically trigger a call to deserialize() on the newly created object.
-  PolymorphicParameter(const char *name, const char* defaultId, Parameters *parent);
+  PolymorphicParameter(const char *name, const char* defaultId, Parameters *parent)
+    : PolymorphicParameter(name, "", defaultId, parent)
+  {}
+
+  /// \brief Constructor.
+  ///
+  /// \param name
+  ///   Name of the configuration key whose value determines the concrete subclass of `PARAMETERS`
+  ///   created during deserialization.
+  /// \param description
+  ///   Long description of this parameter.
+  /// \param defaultId
+  ///   Identifier of the concrete subclass of `PARAMETERS` to be created if the above key is not
+  ///   present.
+  /// \param parent
+  ///   Pointer to the Parameters object representing the collection of options located at
+  ///   the same level of the configuration tree as `name`. A call to deserialize() on that object
+  ///   will automatically trigger a call to deserialize() on the newly created object.
+  PolymorphicParameter(const char *name, const char *description, const char* defaultId,
+                       Parameters *parent);
 
   PolymorphicParameter(const PolymorphicParameter &other)
-    : name_(other.name_), id_(other.id_), value_(other.value_ ? other.value_->clone() : nullptr)
+    : name_(other.name_), description_(other.description_), id_(other.id_),
+      value_(other.value_ ? other.value_->clone() : nullptr)
   {}
 
   PolymorphicParameter(PolymorphicParameter &&other) = default;
@@ -86,15 +106,17 @@ class PolymorphicParameter : public ParameterBase {
   typedef PolymorphicParameterTraits<PARAMETERS, FACTORY> Traits;
 
   std::string name_;
+  std::string description_;
   std::string id_;
   std::unique_ptr<PARAMETERS> value_;
 };
 
 template <typename PARAMETERS, typename FACTORY>
 PolymorphicParameter<PARAMETERS, FACTORY>::PolymorphicParameter(const char *name,
+                                                                const char *description,
                                                                 const char* defaultId,
                                                                 Parameters *parent)
-  : ParameterBase(parent), name_(name) {
+  : ParameterBase(parent), name_(name), description_(description) {
   util::CompositePath path;
   eckit::LocalConfiguration config;
   config.set(name, defaultId);
@@ -120,7 +142,11 @@ void PolymorphicParameter<PARAMETERS, FACTORY>::serialize(eckit::LocalConfigurat
 
 template <typename PARAMETERS, typename FACTORY>
 ObjectJsonSchema PolymorphicParameter<PARAMETERS, FACTORY>::jsonSchema() const {
-  return Traits::jsonSchema(name_);
+  ObjectJsonSchema schema = Traits::jsonSchema(name_);
+  if (description_ != "") {
+    schema.extendPropertySchema(name_, {{"description", "\"" + description_ + "\""}});
+  }
+  return schema;
 }
 
 }  // namespace oops

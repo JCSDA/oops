@@ -58,7 +58,33 @@ class Parameter : public ParameterBase {
   ///   deserialization.
   Parameter(const char *name, const T& defaultValue, Parameters *parent,
             std::vector<std::shared_ptr<const ParameterConstraint<T>>> constraints = {})
-    : ParameterBase(parent), name_(name), value_(defaultValue), constraints_(std::move(constraints))
+    : Parameter(name, "", defaultValue, parent, constraints)
+  {}
+
+  /// \brief Constructor.
+  ///
+  /// \param name
+  ///   Name of the key from which this parameter's value will be loaded when parameters are
+  ///   deserialized from a Configuration object. Similarly, name of the key to which this
+  ///   parameter's value will be saved when parameters are serialized to a Configuration object.
+  /// \param description
+  ///   Long description of this parameter.
+  /// \param defaultValue
+  ///   Default value of the parameter, used if the Configuration object from which parameters are
+  ///   deserialized doesn't contain a key with name \p name.
+  /// \param parent
+  ///   Pointer to the Parameters object representing the collection of options located at
+  ///   the same level of the configuration tree as \p name. A call to deserialize() or serialize()
+  ///   on that object will automatically trigger a call to deserialize() or serialize() on this
+  ///   parameter.
+  /// \param constraints
+  ///   Zero or more constraints that must be satisfied by the value of this parameter loaded from
+  ///   a Configuration object; if that's not the case, an exception will be thrown during
+  ///   deserialization.
+  Parameter(const char *name, const char *description, const T& defaultValue, Parameters *parent,
+            std::vector<std::shared_ptr<const ParameterConstraint<T>>> constraints = {})
+    : ParameterBase(parent), name_(name), description_(description), value_(defaultValue),
+      constraints_(std::move(constraints))
   {}
 
   void deserialize(util::CompositePath &path, const eckit::Configuration &config) override;
@@ -75,6 +101,7 @@ class Parameter : public ParameterBase {
 
  private:
   std::string name_;
+  std::string description_;
   T value_;
   std::vector<std::shared_ptr<const ParameterConstraint<T>>> constraints_;
 };
@@ -99,6 +126,9 @@ void Parameter<T>::serialize(eckit::LocalConfiguration &config) const {
 template <typename T>
 ObjectJsonSchema Parameter<T>::jsonSchema() const {
   ObjectJsonSchema schema = ParameterTraits<T>::jsonSchema(name_);
+  if (description_ != "") {
+    schema.extendPropertySchema(name_, {{"description", "\"" + description_ + "\""}});
+  }
   for (const std::shared_ptr<const ParameterConstraint<T>> &constraint : constraints_) {
     PropertyJsonSchema constraintSchema = constraint->jsonSchema();
     schema.extendPropertySchema(name_, std::move(constraintSchema));
