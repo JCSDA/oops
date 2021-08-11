@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -28,6 +28,15 @@ namespace eckit {
 namespace oops {
 
 // -----------------------------------------------------------------------------
+/// \brief Auxiliary state related to model (could be e.g. model bias), not used at the moment.
+/// \details
+/// This class is used to manipulate parameters of the model that can be estimated in the
+/// assimilation. This includes model bias but could be used for other parameters.
+/// This is sometimes referred to as augmented state or augmented control variable in the
+/// literature.
+/// This class calls the model's implementation of ModelAuxControl.
+
+// -----------------------------------------------------------------------------
 
 template <typename MODEL>
 class ModelAuxControl : public util::Printable,
@@ -38,18 +47,26 @@ class ModelAuxControl : public util::Printable,
  public:
   static const std::string classname() {return "oops::ModelAuxControl";}
 
-  ModelAuxControl(const Geometry_ &, const eckit::Configuration &);
-  ModelAuxControl(const Geometry_ &, const ModelAuxControl &);
+  /// Constructor for specified \p resol and \p conf
+  ModelAuxControl(const Geometry_ & resol, const eckit::Configuration & conf);
+  /// Copies \p other ModelAuxControl, changing its resolution to \p resol
+  ModelAuxControl(const Geometry_ & resol, const ModelAuxControl & other);
+  /// Creates ModelAuxControl with the same structure as \p other.
+  /// Copies \p other if \p copy is true, otherwise creates zero ModelAuxControl
   explicit ModelAuxControl(const ModelAuxControl &, const bool copy = true);
+  /// Destructor (defined explicitly for timing and tracing)
   ~ModelAuxControl();
 
-/// Interfacing
+  /// const Accessor
   const ModelAuxControl_ & modelauxcontrol() const {return *aux_;}
+  /// Accessor
   ModelAuxControl_ & modelauxcontrol() {return *aux_;}
 
-/// I/O and diagnostics
+  /// Read this ModelAuxControl from file
   void read(const eckit::Configuration &);
+  /// Write this ModelAuxControl out to file
   void write(const eckit::Configuration &) const;
+  /// Norm (used in tests)
   double norm() const;
 
  private:
