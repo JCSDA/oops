@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -22,6 +22,7 @@
 
 #include "model/GeometryQG.h"
 #include "model/IncrementQG.h"
+#include "model/ModelBias.h"
 #include "model/ModelBiasIncrement.h"
 #include "model/ModelQG.h"
 #include "model/QgFortran.h"
@@ -30,7 +31,7 @@
 
 namespace qg {
 // -----------------------------------------------------------------------------
-static oops::LinearModelMaker<QgTraits, TlmQG> makerQGTLM_("QgTLM");
+static oops::interface::LinearModelMaker<QgTraits, TlmQG> makerQGTLM_("QgTLM");
 // -----------------------------------------------------------------------------
 TlmQG::TlmQG(const GeometryQG & resol, const eckit::Configuration & tlConf)
   : keyConfig_(0), tstep_(), resol_(resol), traj_(),

@@ -27,8 +27,8 @@
 #include "oops/base/State.h"
 #include "oops/base/StateInfo.h"
 #include "oops/base/StateWriter.h"
+#include "oops/generic/instantiateLinearModelFactory.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
-#include "oops/generic/instantiateTlmFactory.h"
 #include "oops/generic/instantiateVariableChangeFactory.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
@@ -49,7 +49,7 @@ template <typename MODEL, typename OBS> class Variational : public Application {
     instantiateMinFactory<MODEL, OBS>();
     instantiateObsErrorFactory<OBS>();
     instantiateObsFilterFactory<OBS>();
-    instantiateTlmFactory<MODEL>();
+    instantiateLinearModelFactory<MODEL>();
     instantiateVariableChangeFactory<MODEL>();
   }
 // -----------------------------------------------------------------------------

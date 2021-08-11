@@ -15,9 +15,9 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Geometry.h"
+#include "oops/base/LinearModel.h"
 #include "oops/base/PostBase.h"
 #include "oops/base/State.h"
-#include "oops/interface/LinearModel.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"

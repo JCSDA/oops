@@ -69,11 +69,9 @@ variational:
       ny: 20
       depths: [4500.0, 5500.0]
     linear model:
-      name: QgIdTLM
-      trajectory:
-        tstep: PT1H
+      name: Identity
       tstep: PT6H
-      tlm variables: ["x"]
+      increment variables: ["x"]
       variable change: Identity
     diagnostics:
       departures: ombg

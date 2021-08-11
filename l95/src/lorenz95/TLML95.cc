@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -31,7 +31,7 @@
 
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-static oops::LinearModelMaker<L95Traits, TLML95> makerTLML95_("L95TLM");
+static oops::interface::LinearModelMaker<L95Traits, TLML95> makerTLML95_("L95TLM");
 // -----------------------------------------------------------------------------
 TLML95::TLML95(const Resolution & resol, const Parameters_ & params)
   : resol_(resol), tstep_(params.tstep),

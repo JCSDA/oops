@@ -75,8 +75,6 @@ QgFortran.h
 QgTraits.h
 StateQG.cc
 StateQG.h
-TlmIdQG.cc
-TlmIdQG.h
 TlmQG.cc
 TlmQG.h
 fft_f.cc

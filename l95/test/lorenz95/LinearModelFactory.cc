@@ -11,7 +11,7 @@
 #include "eckit/testing/Test.h"
 #include "lorenz95/L95Traits.h"
 #include "lorenz95/LocsL95.h"
-#include "oops/interface/LinearModel.h"
+#include "oops/generic/LinearModelBase.h"
 #include "oops/runs/Run.h"
 #include "oops/runs/Test.h"
 #include "oops/util/Expect.h"
@@ -31,7 +31,7 @@ CASE("test_linearmodelparameterswrapper_invalid_name") {
   if (oops::Parameters::isValidationSupported())
     EXPECT_THROWS_MSG(parameters.validate(config), "unrecognized enum value");
   EXPECT_THROWS_MSG(parameters.deserialize(config),
-                    "does not exist in the tangent linear model factory");
+                    "does not exist in the linear model factory");
 }
 
 CASE("test_linearmodelfactory") {
