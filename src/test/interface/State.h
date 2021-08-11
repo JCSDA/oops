@@ -85,6 +85,7 @@ template <typename MODEL> void testStateConstructors() {
   EXPECT(xx1.get());
   oops::Log::test() << "Printing State from yaml: " << *xx1 << std::endl;
   const double norm1 = xx1->norm();
+  EXPECT(norm1 != 0);
   EXPECT(oops::is_close(norm1, norm, tol));
   EXPECT(xx1->validTime() == vt);
 
