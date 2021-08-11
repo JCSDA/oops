@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -29,6 +29,11 @@
 namespace oops {
 
 // -----------------------------------------------------------------------------
+/// \brief Auxiliary error covariance related to observations, templated on <OBS>
+/// \details
+/// This is currently only used for bias correction coefficient error covariances.
+/// This class calls the <OBS> implementation of ObsAuxCovariance.
+// -----------------------------------------------------------------------------
 
 template <typename OBS>
 class ObsAuxCovariance : public util::Printable,
@@ -43,13 +48,18 @@ class ObsAuxCovariance : public util::Printable,
 
   static const std::string classname() {return "oops::ObsAuxCovariance";}
 
-  ObsAuxCovariance(const ObsSpace<OBS> &, const Parameters_ &);
+  /// Constructor for specified ObsSpace \p os and \p params
+  ObsAuxCovariance(const ObsSpace<OBS> & os, const Parameters_ & params);
+  /// Destructor (defined explicitly for timing and tracing)
   ~ObsAuxCovariance();
 
-/// Operators
+  /// linearize operator
   void linearize(const ObsAuxControl_ &, const eckit::Configuration &);
+  /// Sets the second parameter to the first multiplied by the covariance matrix.
   void multiply(const ObsAuxIncrement_ &, ObsAuxIncrement_ &) const;
+  /// Sets the second parameter to the first multiplied by the inverse covariance matrix.
   void inverseMultiply(const ObsAuxIncrement_ &, ObsAuxIncrement_ &) const;
+  /// randomize the values in the ObsAuxIncrement
   void randomize(ObsAuxIncrement_ &) const;
 
  private:

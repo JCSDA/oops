@@ -24,6 +24,8 @@
 namespace oops {
 
 // -----------------------------------------------------------------------------
+/// \brief Holds a vector of ObsAuxIncrement
+// -----------------------------------------------------------------------------
 
 template <typename OBS>
 class ObsAuxIncrements : public util::Printable,
