@@ -24,7 +24,7 @@
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
 
-ObservationTLAD::ObservationTLAD(const ObsTable &, const eckit::Configuration &)
+ObservationTLAD::ObservationTLAD(const ObsTable &, const Parameters_ &)
   : inputs_(std::vector<std::string>{"x"})
 {}
 

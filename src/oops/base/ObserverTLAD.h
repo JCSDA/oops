@@ -75,9 +75,11 @@ class ObserverTLAD {
 template <typename MODEL, typename OBS>
 ObserverTLAD<MODEL, OBS>::ObserverTLAD(const ObsSpace_ & obsdb, const eckit::Configuration & conf)
   : obsconfig_(conf), obspace_(obsdb),
-    hoptlad_(obspace_, conf.has("linear obs operator") ?
+    hoptlad_(obspace_,
+             validateAndDeserialize<typename LinearObsOperator_::Parameters_>(
+               conf.has("linear obs operator") ?
                          eckit::LocalConfiguration(conf, "linear obs operator") :
-                         eckit::LocalConfiguration(conf, "obs operator")),
+                         eckit::LocalConfiguration(conf, "obs operator"))),
     getvals_(), locations_(), winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()),
     ybias_(nullptr), init_(false)
 {
@@ -91,7 +93,9 @@ ObserverTLAD<MODEL, OBS>::initializeTraj(const Geometry_ & geom, const ObsAuxCtr
   ybias_ = &ybias;
 
 //  hop is only needed to get locations and requiredVars
-  ObsOperator_ hop(obspace_, eckit::LocalConfiguration(obsconfig_, "obs operator"));
+  ObsOperator_ hop(obspace_,
+                   validateAndDeserialize<typename ObsOperator_::Parameters_>(
+                     eckit::LocalConfiguration(obsconfig_, "obs operator")));
   locations_.reset(new Locations_(hop.locations()));
   linvars_sizes_ = geom.variableSizes(hoptlad_.requiredVars());
   eckit::LocalConfiguration gvconf(obsconfig_.has("linear get values") ?

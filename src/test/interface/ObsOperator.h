@@ -40,12 +40,15 @@ const char *expectSimulateObsToThrow = "expect simulateObs to throw exception wi
 template <typename OBS> void testConstructor() {
   typedef ObsTestsFixture<OBS> Test_;
   typedef oops::ObsOperator<OBS>       ObsOperator_;
+  typedef typename ObsOperator_::Parameters_ ObsOperatorParameters_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     eckit::LocalConfiguration obsopconf(Test_::config(jj), "obs operator");
+    ObsOperatorParameters_ obsopparams;
+    obsopparams.validateAndDeserialize(obsopconf);
 
     if (!Test_::config(jj).has(expectConstructorToThrow)) {
-      std::unique_ptr<ObsOperator_> hop(new ObsOperator_(Test_::obspace()[jj], obsopconf));
+      std::unique_ptr<ObsOperator_> hop(new ObsOperator_(Test_::obspace()[jj], obsopparams));
       EXPECT(hop.get());
       oops::Log::test() << "Testing ObsOperator: " << *hop << std::endl;
       hop.reset();
@@ -53,7 +56,7 @@ template <typename OBS> void testConstructor() {
     } else {
       // The constructor is expected to throw an exception containing the specified string.
       const std::string expectedMessage = Test_::config(jj).getString(expectConstructorToThrow);
-      EXPECT_THROWS_MSG(ObsOperator_(Test_::obspace()[jj], obsopconf),
+      EXPECT_THROWS_MSG(ObsOperator_(Test_::obspace()[jj], obsopparams),
                         expectedMessage.c_str());
     }
   }
@@ -67,6 +70,7 @@ template <typename OBS> void testSimulateObs() {
   typedef oops::ObsDiagnostics<OBS>    ObsDiags_;
   typedef oops::ObsAuxControl<OBS>     ObsAuxCtrl_;
   typedef oops::ObsOperator<OBS>       ObsOperator_;
+  typedef typename ObsOperator_::Parameters_ ObsOperatorParameters_;
   typedef oops::ObsVector<OBS>         ObsVector_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
@@ -77,7 +81,9 @@ template <typename OBS> void testSimulateObs() {
     // initialize observation operator (set variables requested from the model,
     // variables simulated by the observation operator, other init)
     eckit::LocalConfiguration obsopconf(conf, "obs operator");
-    ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
+    ObsOperatorParameters_ obsopparams;
+    obsopparams.validateAndDeserialize(obsopconf);
+    ObsOperator_ hop(Test_::obspace()[jj], obsopparams);
 
     // initialize bias correction
     eckit::LocalConfiguration biasconf = conf.getSubConfiguration("obs bias");

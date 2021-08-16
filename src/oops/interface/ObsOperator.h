@@ -35,6 +35,12 @@ namespace oops {
 /// ObsOperator ( GetValues (State) )
 /// ObsOperator uses GeoVaLs (result of GetValues(State) - model State at
 /// observations locations) as input data to compute forward operator.
+///
+/// Note: each implementation should typedef `Parameters_` to the name of a subclass of
+/// oops::Parameters holding its configuration settings and provide a constructor with the
+/// following signature:
+///
+///     ObsOperator(const OBS::ObsSpace &, const Parameters_ &);
 template <typename OBS>
 class ObsOperator : public util::Printable,
                     private boost::noncopyable,
@@ -48,11 +54,14 @@ class ObsOperator : public util::Printable,
   typedef ObsSpace<OBS>              ObsSpace_;
 
  public:
+  /// A subclass of oops::Parameters holding the configuration settings of the operator.
+  typedef typename ObsOperator_::Parameters_ Parameters_;
+
   static const std::string classname() {return "oops::ObsOperator";}
 
   /// Set up observation operator for the \p obsspace observations, with
-  /// parameters defined in \p config
-  ObsOperator(const ObsSpace_ & obsspace, const eckit::Configuration & config);
+  /// parameters defined in \p parameters
+  ObsOperator(const ObsSpace_ & obsspace, const Parameters_ & parameters);
   ~ObsOperator();
 
   /// Compute forward operator \p y = ObsOperator (\p x).
@@ -84,10 +93,10 @@ class ObsOperator : public util::Printable,
 
 template <typename OBS>
 ObsOperator<OBS>::ObsOperator(const ObsSpace_ & os,
-                                const eckit::Configuration & config) : oper_() {
+                              const Parameters_ & parameters) : oper_() {
   Log::trace() << "ObsOperator<OBS>::ObsOperator starting" << std::endl;
   util::Timer timer(classname(), "ObsOperator");
-  oper_.reset(new ObsOperator_(os.obsspace(), config));
+  oper_.reset(new ObsOperator_(os.obsspace(), parameters));
   Log::trace() << "ObsOperator<OBS>::ObsOperator done" << std::endl;
 }
 

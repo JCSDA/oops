@@ -49,6 +49,7 @@ ObsOpBaseQG.cc
 ObsOpBaseQG.h
 ObsOpBaseTLAD.cc
 ObsOpBaseTLAD.h
+ObsOperatorParameters.h
 ObsOperatorQG.cc
 ObsOperatorQG.h
 ObsOperatorTLAD.cc

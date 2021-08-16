@@ -43,6 +43,7 @@ const char *expectSimulateObsADToThrow = "expect simulateObsAD to throw exceptio
 template <typename OBS> void testConstructor() {
   typedef ObsTestsFixture<OBS>  Test_;
   typedef oops::LinearObsOperator<OBS>  LinearObsOperator_;
+  typedef typename LinearObsOperator_::Parameters_ LinearObsOperatorParameters_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     const eckit::LocalConfiguration & conf = Test_::config(jj);
@@ -50,10 +51,12 @@ template <typename OBS> void testConstructor() {
     std::string confname = "obs operator";
     if (conf.has("linear obs operator")) confname = "linear obs operator";
     eckit::LocalConfiguration linobsopconf(conf, confname);
+    LinearObsOperatorParameters_ linobsopparams;
+    linobsopparams.validateAndDeserialize(linobsopconf);
 
     if (!Test_::config(jj).has(expectConstructorToThrow)) {
       std::unique_ptr<LinearObsOperator_> linobsop(
-        new LinearObsOperator_(Test_::obspace()[jj], linobsopconf));
+        new LinearObsOperator_(Test_::obspace()[jj], linobsopparams));
       EXPECT(linobsop.get());
       oops::Log::test() << "Testing LinearObsOperator: " << *linobsop << std::endl;
       linobsop.reset();
@@ -61,7 +64,7 @@ template <typename OBS> void testConstructor() {
     } else {
       // The constructor is expected to throw an exception containing the specified string.
       const std::string expectedMessage = Test_::config(jj).getString(expectConstructorToThrow);
-      EXPECT_THROWS_MSG(LinearObsOperator_(Test_::obspace()[jj], linobsopconf),
+      EXPECT_THROWS_MSG(LinearObsOperator_(Test_::obspace()[jj], linobsopparams),
                         expectedMessage.c_str());
     }
   }
@@ -76,7 +79,9 @@ template <typename OBS> void testLinearity() {
   typedef oops::ObsAuxIncrement<OBS>   ObsAuxIncr_;
   typedef oops::ObsAuxCovariance<OBS>  ObsAuxCov_;
   typedef oops::ObsOperator<OBS>       ObsOperator_;
+  typedef typename ObsOperator_::Parameters_ ObsOperatorParameters_;
   typedef oops::LinearObsOperator<OBS> LinearObsOperator_;
+  typedef typename LinearObsOperator_::Parameters_ LinearObsOperatorParameters_;
   typedef oops::ObsVector<OBS>         ObsVector_;
 
   const double zero = 0.0;
@@ -94,14 +99,18 @@ template <typename OBS> void testLinearity() {
     // initialize observation operator (set variables requested from the model,
     // variables simulated by the observation operator, other init)
     eckit::LocalConfiguration obsopconf(conf, "obs operator");
-    ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
+    ObsOperatorParameters_ obsopparams;
+    obsopparams.validateAndDeserialize(obsopconf);
+    ObsOperator_ hop(Test_::obspace()[jj], obsopparams);
     // initialize TL/AD observation operator (set model variables for Jacobian),
     // other init)
     // Use ObsOperator section of yaml unless LinearObsOperator is specified
     std::string confname = "obs operator";
     if (conf.has("linear obs operator")) confname = "linear obs operator";
     eckit::LocalConfiguration linobsopconf(conf, confname);
-    LinearObsOperator_ hoptl(Test_::obspace()[jj], linobsopconf);
+    LinearObsOperatorParameters_ linobsopparams;
+    linobsopparams.validateAndDeserialize(linobsopconf);
+    LinearObsOperator_ hoptl(Test_::obspace()[jj], linobsopparams);
 
     // initialize obs bias
     eckit::LocalConfiguration biasconf = conf.getSubConfiguration("obs bias");
@@ -158,7 +167,9 @@ template <typename OBS> void testAdjoint() {
   typedef ObsTestsFixture<OBS> Test_;
   typedef oops::GeoVaLs<OBS>           GeoVaLs_;
   typedef oops::ObsOperator<OBS>       ObsOperator_;
+  typedef typename ObsOperator_::Parameters_ ObsOperatorParameters_;
   typedef oops::LinearObsOperator<OBS> LinearObsOperator_;
+  typedef typename LinearObsOperator_::Parameters_ LinearObsOperatorParameters_;
   typedef oops::ObsAuxControl<OBS>     ObsAuxCtrl_;
   typedef oops::ObsAuxIncrement<OBS>   ObsAuxIncr_;
   typedef oops::ObsAuxCovariance<OBS>  ObsAuxCov_;
@@ -178,14 +189,18 @@ template <typename OBS> void testAdjoint() {
     // initialize observation operator (set variables requested from the model,
     // variables simulated by the observation operator, other init)
     eckit::LocalConfiguration obsopconf(conf, "obs operator");
-    ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
+    ObsOperatorParameters_ obsopparams;
+    obsopparams.validateAndDeserialize(obsopconf);
+    ObsOperator_ hop(Test_::obspace()[jj], obsopparams);
     // initialize TL/AD observation operator (set model variables for Jacobian),
     // other init)
     // Use ObsOperator section of yaml unless LinearObsOperator is specified
     std::string confname = "obs operator";
     if (conf.has("linear obs operator")) confname = "linear obs operator";
     eckit::LocalConfiguration linobsopconf(conf, confname);
-    LinearObsOperator_ hoptl(Test_::obspace()[jj], linobsopconf);
+    LinearObsOperatorParameters_ linobsopparams;
+    linobsopparams.validateAndDeserialize(linobsopconf);
+    LinearObsOperator_ hoptl(Test_::obspace()[jj], linobsopparams);
 
     const double tol = conf.getDouble("linear obs operator test.tolerance AD");
     // initialize bias correction
@@ -250,8 +265,10 @@ template <typename OBS> void testTangentLinear() {
   typedef oops::ObsAuxControl<OBS>     ObsAuxCtrl_;
   typedef oops::ObsAuxIncrement<OBS>   ObsAuxIncr_;
   typedef oops::ObsAuxCovariance<OBS>  ObsAuxCov_;
-  typedef oops::LinearObsOperator<OBS> LinearObsOperator_;
   typedef oops::ObsOperator<OBS>       ObsOperator_;
+  typedef typename ObsOperator_::Parameters_ ObsOperatorParameters_;
+  typedef oops::LinearObsOperator<OBS> LinearObsOperator_;
+  typedef typename LinearObsOperator_::Parameters_ LinearObsOperatorParameters_;
   typedef oops::ObsVector<OBS>         ObsVector_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
@@ -265,14 +282,18 @@ template <typename OBS> void testTangentLinear() {
     // initialize observation operator (set variables requested from the model,
     // variables simulated by the observation operator, other init)
     eckit::LocalConfiguration obsopconf(conf, "obs operator");
-    ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
+    ObsOperatorParameters_ obsopparams;
+    obsopparams.validateAndDeserialize(obsopconf);
+    ObsOperator_ hop(Test_::obspace()[jj], obsopparams);
     // initialize TL/AD observation operator (set model variables for Jacobian),
     // other init)
     // Use ObsOperator section of yaml unless LinearObsOperator is specified
     std::string confname = "obs operator";
     if (conf.has("linear obs operator")) confname = "linear obs operator";
     eckit::LocalConfiguration linobsopconf(conf, confname);
-    LinearObsOperator_ hoptl(Test_::obspace()[jj], linobsopconf);
+    LinearObsOperatorParameters_ linobsopparams;
+    linobsopparams.validateAndDeserialize(linobsopconf);
+    LinearObsOperator_ hoptl(Test_::obspace()[jj], linobsopparams);
 
     const double tol = conf.getDouble("linear obs operator test.tolerance TL");
     const double alpha = conf.getDouble("linear obs operator test.coef TL", 0.1);
@@ -351,7 +372,9 @@ template <typename OBS> void testException() {
   typedef ObsTestsFixture<OBS> Test_;
   typedef oops::GeoVaLs<OBS>           GeoVaLs_;
   typedef oops::ObsOperator<OBS>       ObsOperator_;
+  typedef typename ObsOperator_::Parameters_ ObsOperatorParameters_;
   typedef oops::LinearObsOperator<OBS> LinearObsOperator_;
+  typedef typename LinearObsOperator_::Parameters_ LinearObsOperatorParameters_;
   typedef oops::ObsAuxControl<OBS>     ObsAuxCtrl_;
   typedef oops::ObsAuxIncrement<OBS>   ObsAuxIncr_;
   typedef oops::ObsAuxCovariance<OBS>  ObsAuxCov_;
@@ -364,11 +387,15 @@ template <typename OBS> void testException() {
 
     // Set up objects prior to throwing exceptions.
     eckit::LocalConfiguration obsopconf(conf, "obs operator");
-    ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
+    ObsOperatorParameters_ obsopparams;
+    obsopparams.validateAndDeserialize(obsopconf);
+    ObsOperator_ hop(Test_::obspace()[jj], obsopparams);
     std::string confname = "obs operator";
     if (conf.has("linear obs operator")) confname = "linear obs operator";
     eckit::LocalConfiguration linobsopconf(conf, confname);
-    LinearObsOperator_ hoptl(Test_::obspace()[jj], linobsopconf);
+    LinearObsOperatorParameters_ linobsopparams;
+    linobsopparams.validateAndDeserialize(linobsopconf);
+    LinearObsOperator_ hoptl(Test_::obspace()[jj], linobsopparams);
     eckit::LocalConfiguration biasconf = conf.getSubConfiguration("obs bias");
     typename ObsAuxCtrl_::Parameters_ biasparams;
     biasparams.validateAndDeserialize(biasconf);

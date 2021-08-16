@@ -32,6 +32,12 @@ namespace oops {
 // -----------------------------------------------------------------------------
 /// \brief MODEL-agnostic part of tangent-linear and adjoint of the nonlinear
 /// observation (forward) operator ObsOperator.
+///
+/// Note: each implementation should typedef `Parameters_` to the name of a subclass of
+/// oops::Parameters holding its configuration settings and provide a constructor with the
+/// following signature:
+///
+///     LinearObsOperator(const OBS::ObsSpace &, const Parameters_ &);
 template <typename OBS>
 class LinearObsOperator : public util::Printable,
                           private boost::noncopyable,
@@ -44,11 +50,14 @@ class LinearObsOperator : public util::Printable,
   typedef ObsVector<OBS>           ObsVector_;
 
  public:
+  /// A subclass of oops::Parameters holding the configuration settings of the operator.
+  typedef typename LinearObsOper_::Parameters_ Parameters_;
+
   static const std::string classname() {return "oops::LinearObsOperator";}
 
   /// Set up TL and AD of observation operator for the \p obsspace observations, with
-  /// parameters defined in \p config.
-  LinearObsOperator(const ObsSpace_ & obsspace, const eckit::Configuration & config);
+  /// parameters defined in \p parameters.
+  LinearObsOperator(const ObsSpace_ & obsspace, const Parameters_ & parameters);
   ~LinearObsOperator();
 
   /// Sets up the trajectory for future calls of simulateObsTL or simulateObsAD.
@@ -97,10 +106,10 @@ class LinearObsOperator : public util::Printable,
 
 template <typename OBS>
 LinearObsOperator<OBS>::LinearObsOperator(const ObsSpace_ & os,
-                                            const eckit::Configuration & config): oper_() {
+                                          const Parameters_ & parameters): oper_() {
   Log::trace() << "LinearObsOperator<OBS>::LinearObsOperator starting" << std::endl;
   util::Timer timer(classname(), "LinearObsOperator");
-  oper_.reset(new LinearObsOper_(os.obsspace(), config));
+  oper_.reset(new LinearObsOper_(os.obsspace(), parameters));
   Log::trace() << "LinearObsOperator<OBS>::LinearObsOperator done" << std::endl;
 }
 

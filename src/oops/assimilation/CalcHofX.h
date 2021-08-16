@@ -35,8 +35,10 @@ template <typename OBS>
 class CalcHofXParameters : public Parameters {
   OOPS_CONCRETE_PARAMETERS(CalcHofXParameters, Parameters)
 
+  typedef typename OBS::ObsOperator::Parameters_ ObsOperatorParameters_;
+
  public:
-  oops::RequiredParameter<eckit::LocalConfiguration> obsOperator{"obs operator", this};
+  oops::RequiredParameter<ObsOperatorParameters_> obsOperator{"obs operator", this};
   oops::Parameter<std::vector<ObsFilterParametersWrapper<OBS>>> obsFilters{"obs filters", {}, this};
 };
 

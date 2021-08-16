@@ -16,14 +16,12 @@
 
 #include <boost/noncopyable.hpp>
 
+#include "model/ObsOperatorParameters.h"
+
 #include "oops/base/Variables.h"
 #include "oops/util/Printable.h"
 
 // Forward declarations
-namespace eckit {
-  class Configuration;
-}
-
 namespace qg {
   class GomQG;
   class LocationsQG;
@@ -38,7 +36,9 @@ namespace qg {
 class ObsOperatorQG : public util::Printable,
                       private boost::noncopyable {
  public:
-  ObsOperatorQG(const ObsSpaceQG &, const eckit::Configuration &);
+  typedef ObservationParameters Parameters_;
+
+  ObsOperatorQG(const ObsSpaceQG &, const Parameters_ &);
   ~ObsOperatorQG();
 
 /// Obs Operator
