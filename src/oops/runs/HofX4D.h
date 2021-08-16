@@ -53,9 +53,10 @@ class ObsTypeParameters : public oops::Parameters {
 
  public:
   typedef typename ObsAuxControl<OBS>::Parameters_ ObsAuxControlParameters_;
+  typedef typename ObsSpace<OBS>::Parameters_ ObsSpaceParameters_;
 
   /// Options used to configure the observation space.
-  oops::RequiredParameter<eckit::LocalConfiguration> obsSpace{"obs space", this};
+  oops::RequiredParameter<ObsSpaceParameters_> obsSpace{"obs space", this};
 
   /// Options used to configure the observation operator, observation filters and GetValues.
   ObserverParameters<OBS> observer{this};
@@ -132,6 +133,7 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
   typedef HofX4DParameters<MODEL, OBS> HofX4DParameters_;
   typedef typename ObsAuxControl<OBS>::Parameters_ ObsAuxControlParameters_;
   typedef ObserverParameters<OBS> ObserverParameters_;
+  typedef typename ObsSpace<OBS>::Parameters_ ObsSpaceParameters_;
   typedef ObsTypeParameters<OBS> ObsTypeParameters_;
 
  public:
@@ -183,7 +185,10 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
 //  Setup observations
 
     const eckit::LocalConfiguration obsConfig(fullConfig, "observations");
-    ObsSpaces_ obspaces(obsConfig, this->getComm(), winbgn, winend);
+    const std::vector<ObsSpaceParameters_> obsspaceParams = util::transformVector(
+          params.observations.value(),
+          [](const ObsTypeParameters_ & obsTypeParams) { return obsTypeParams.obsSpace.value(); });
+    ObsSpaces_ obspaces(obsspaceParams, this->getComm(), winbgn, winend);
 
     const std::vector<ObsAuxControlParameters_> obsauxParams = util::transformVector(
           params.observations.value(),

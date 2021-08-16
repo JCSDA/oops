@@ -39,27 +39,24 @@ namespace sf = util::stringfunctions;
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
 
-ObsTable::ObsTable(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
+ObsTable::ObsTable(const Parameters_ & params, const eckit::mpi::Comm & comm,
                    const util::DateTime & bgn, const util::DateTime & end,
                    const eckit::mpi::Comm & timeComm)
-  : oops::ObsSpaceBase(config, comm, bgn, end), winbgn_(bgn), winend_(end), comm_(timeComm),
+  : oops::ObsSpaceBase(params, comm, bgn, end), winbgn_(bgn), winend_(end), comm_(timeComm),
     obsvars_()
 {
   oops::Log::trace() << "ObsTable::ObsTable starting" << std::endl;
-  nameIn_.clear();
-  nameOut_.clear();
-  if (config.has("obsdatain")) {
-    nameIn_ = config.getString("obsdatain");
+  if (params.obsdatain.value() != boost::none) {
+    nameIn_ = *params.obsdatain.value();
     otOpen(nameIn_);
   }
   //  Generate locations etc... if required
-  if (config.has("generate")) {
-    const eckit::LocalConfiguration gconf(config, "generate");
-    generateDistribution(gconf);
+  if (params.generate.value() != boost::none) {
+    generateDistribution(*params.generate.value());
   }
-  if (config.has("obsdataout")) {
-    nameOut_ = config.getString("obsdataout");
-    sf::swapNameMember(config, nameOut_);
+  if (params.obsdataout.value() != boost::none) {
+    nameOut_ = *params.obsdataout.value();
+    sf::swapNameMember(params.toConfiguration(), nameOut_);
   }
   oops::Log::trace() << "ObsTable::ObsTable created nobs = " << nobs() << std::endl;
 }
@@ -176,15 +173,15 @@ void ObsTable::getdb(const std::string & col, std::vector<double> & vec) const {
 
 // -----------------------------------------------------------------------------
 
-void ObsTable::generateDistribution(const eckit::Configuration & config) {
+void ObsTable::generateDistribution(const ObsGenerateParameters & params) {
   oops::Log::trace() << "ObsTable::generateDistribution starting" << std::endl;
 
-  util::Duration first(config.getString("begin"));
+  const util::Duration &first = params.begin;
   util::Duration last(winend_-winbgn_);
-  if (config.has("end")) {
-    last = util::Duration(config.getString("end"));
+  if (params.end.value() != boost::none) {
+    last = *params.end.value();
   }
-  util::Duration freq(config.getString("obs_frequency"));
+  const util::Duration &freq = params.obsFrequency;
 
   int nobstimes = 0;
   util::Duration step(first);
@@ -193,7 +190,7 @@ void ObsTable::generateDistribution(const eckit::Configuration & config) {
     step += freq;
   }
 
-  const unsigned int nobs_locations = config.getInt("obs_density");
+  const unsigned int nobs_locations = params.obsDensity;
   const unsigned int nobs = nobs_locations*nobstimes;
   double dx = 1.0/static_cast<double>(nobs_locations);
 
@@ -216,7 +213,7 @@ void ObsTable::generateDistribution(const eckit::Configuration & config) {
   ASSERT(iobs == nobs);
 
 // Generate obs error
-  const double err = config.getDouble("obs_error");
+  const double err = params.obsError;
   std::vector<double> obserr(nobs);
   for (unsigned int jj = 0; jj < nobs; ++jj) {
     obserr[jj] = err;

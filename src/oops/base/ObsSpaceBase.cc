@@ -20,7 +20,7 @@ namespace oops {
 int ObsSpaceBase::instances_ = 0;
 // -----------------------------------------------------------------------------
 
-ObsSpaceBase::ObsSpaceBase(const eckit::Configuration & conf, const eckit::mpi::Comm & comm,
+ObsSpaceBase::ObsSpaceBase(const ObsSpaceParametersBase & params, const eckit::mpi::Comm & comm,
                            const util::DateTime & bgn, const util::DateTime & end)
   : winbgn_(bgn), winend_(end), instance_(++instances_) {
 //
@@ -33,7 +33,7 @@ ObsSpaceBase::ObsSpaceBase(const eckit::Configuration & conf, const eckit::mpi::
   seed_ = dt.toSeconds();
 
   // Won't repeat if more seconds between analysis cycles than members in EDA
-  seed_ += conf.getInt("obs perturbations seed", 0);
+  seed_ += params.obsPerturbationsSeed;
 
 //             31622400 seconds max in 1 year
 //          12197962800 seed at this step for 2010-01-01T03:00:00Z

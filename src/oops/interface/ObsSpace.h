@@ -42,13 +42,15 @@ namespace oops {
 template <typename OBS>
 class ObsSpace : public util::Printable,
                  private util::ObjectCounter<ObsSpace<OBS> > {
-  typedef typename OBS::ObsSpace  ObsSpace_;
-  typedef GeometryIterator<OBS>   ObsIterator_;
+  typedef typename OBS::ObsSpace          ObsSpace_;
+  typedef GeometryIterator<OBS>           ObsIterator_;
 
  public:
+  typedef typename ObsSpace_::Parameters_ Parameters_;
+
   static const std::string classname() {return "oops::ObsSpace";}
 
-  ObsSpace(const eckit::Configuration &, const eckit::mpi::Comm &,
+  ObsSpace(const Parameters_ &, const eckit::mpi::Comm &,
            const util::DateTime &, const util::DateTime &,
            const eckit::mpi::Comm & time = oops::mpi::myself());
   ~ObsSpace();
@@ -87,7 +89,7 @@ class ObsSpace : public util::Printable,
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-ObsSpace<OBS>::ObsSpace(const eckit::Configuration & conf,
+ObsSpace<OBS>::ObsSpace(const Parameters_ & params,
                         const eckit::mpi::Comm & comm,
                         const util::DateTime & bgn,
                         const util::DateTime & end,
@@ -95,7 +97,7 @@ ObsSpace<OBS>::ObsSpace(const eckit::Configuration & conf,
   Log::trace() << "ObsSpace<OBS>::ObsSpace starting" << std::endl;
   util::Timer timer(classname(), "ObsSpace");
   size_t init = eckit::system::ResourceUsage().maxResidentSetSize();
-  obsdb_.reset(new ObsSpace_(conf, comm, bgn, end, time));
+  obsdb_.reset(new ObsSpace_(params, comm, bgn, end, time));
   size_t current = eckit::system::ResourceUsage().maxResidentSetSize();
   this->setObjectSize(current - init);
   Log::trace() << "ObsSpace<OBS>::ObsSpace done" << std::endl;
