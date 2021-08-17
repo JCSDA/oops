@@ -64,7 +64,7 @@ def line_diff(line1,line2,lnum,ftol,idif):
         found=found+1
         flt1a = reflte.findall(flt1[0])
         flt2a = reflte.findall(flt2[0])
-        rdiff = abs(float(flt1a[0])-float(flt2a[0]))/(float(flt1a[0])+1.0e-6)
+        rdiff = abs(float(flt1a[0])-float(flt2a[0]))/(abs(float(flt1a[0]))+1.0e-6)
         if (not rdiff <= ftol):
           lineerror=lineerror+1
           print("Float mismatch at line "+str(lnum)+": "+\
@@ -97,7 +97,7 @@ def line_diff(line1,line2,lnum,ftol,idif):
         found=found+1
         flt1a = reflte.findall(flt1[0])
         int2a = reinte.findall(int2[0])
-        rdiff = abs(float(flt1a[0])-float(int2a[0]))/(float(flt1a[0])+1.0e-6)
+        rdiff = abs(float(flt1a[0])-float(int2a[0]))/(abs(float(flt1a[0]))+1.0e-6)
         if (not rdiff <= ftol):
           lineerror=lineerror+1
           print("Float mismatch at line "+str(lnum)+": "+\
@@ -108,14 +108,14 @@ def line_diff(line1,line2,lnum,ftol,idif):
         found=found+1
         int1a = reinte.findall(int1[0])
         flt2a = reflte.findall(flt2[0])
-        rdiff = abs(float(int1a[0])-float(flt2a[0]))/(float(int1a[0])+1.0e-6)
+        rdiff = abs(float(int1a[0])-float(flt2a[0]))/(abs(float(int1a[0]))+1.0e-6)
         if (not rdiff <= ftol):
           lineerror=lineerror+1
           print("Float mismatch at line "+str(lnum)+": "+\
                 int1a[0]," not equal to ",flt2a[0]," with max relative difference ", ftol,\
                 " Actual relative difference = ",rdiff)
 
-      #Exit with error if check has failed      
+      #Exit with error if check has failed
       if found == 0:
         if sline1[n] != sline2[n]:
           print("In looping through line elements did not match either non numeric, float, date or integer. Error at line "\
