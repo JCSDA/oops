@@ -70,10 +70,13 @@ class ObsOperator : public util::Printable,
   /// \param[in]  obsaux   additional input for computing H(x), used in the minimization
   ///                      in Variational DA, e.g. bias correction coefficients or obs operator
   ///                      parameters.
+  /// \param[out] obsbias  bias correction of the departure between \p y and the observed values;
+  ///                      when \p obsbias is non-zero, it is added to \p y within the obs
+  ///                      operator
   /// \param[out] obsdiags   additional diagnostics output from computing obs operator that is not
   ///                        used in the assimilation, and can be used by ObsFilters.
   void simulateObs(const GeoVaLs_ & x_int, ObsVector_ & y, const ObsAuxControl_ & obsaux,
-                   ObsDiags_ & obsdiags) const;
+                   ObsVector_ & obsbias, ObsDiags_ & obsdiags) const;
 
   /// Variables required from the model State to compute obs operator. These variables
   /// will be provided in GeoVaLs passed to simulateObs.
@@ -114,10 +117,12 @@ ObsOperator<OBS>::~ObsOperator() {
 
 template <typename OBS>
 void ObsOperator<OBS>::simulateObs(const GeoVaLs_ & gvals, ObsVector_ & yy,
-                                     const ObsAuxControl_ & aux, ObsDiags_ & ydiag) const {
+                                     const ObsAuxControl_ & aux, ObsVector_ & ybias,
+                                     ObsDiags_ & ydiag) const {
   Log::trace() << "ObsOperator<OBS>::simulateObs starting" << std::endl;
   util::Timer timer(classname(), "simulateObs");
-  oper_->simulateObs(gvals.geovals(), yy.obsvector(), aux.obsauxcontrol(), ydiag.obsdiagnostics());
+  oper_->simulateObs(gvals.geovals(), yy.obsvector(), aux.obsauxcontrol(), ybias.obsvector(),
+                     ydiag.obsdiagnostics());
   Log::trace() << "ObsOperator<OBS>::simulateObs done" << std::endl;
 }
 

@@ -42,7 +42,7 @@ class ObsOperatorQG : public util::Printable,
   ~ObsOperatorQG();
 
 /// Obs Operator
-  void simulateObs(const GomQG &, ObsVecQG &, const ObsBias &, ObsDiagsQG &) const;
+  void simulateObs(const GomQG &, ObsVecQG &, const ObsBias &, ObsVecQG &, ObsDiagsQG &) const;
 
 /// Other
   const oops::Variables & requiredVars() const;  // Required input requiredVars from Model

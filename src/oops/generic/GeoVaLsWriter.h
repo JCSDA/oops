@@ -46,7 +46,7 @@ class GeoVaLsWriter : public ObsFilterBase<OBS> {
     gv.write(conf_);
   }
 
-  void postFilter(const ObsVector_ &, const ObsDiags_ &) override {}
+  void postFilter(const ObsVector_ &, const ObsVector_ &, const ObsDiags_ &) override {}
 
   Variables requiredVars() const override {return novars_;};
   Variables requiredHdiagnostics() const override {return novars_;};

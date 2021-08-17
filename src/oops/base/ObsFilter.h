@@ -79,9 +79,11 @@ class ObsFilter : public util::Printable,
   ///
   /// \param ov
   ///   Model equivalents produced by the observation operator.
+  /// \param bv
+  ///   Bias of departure produced by the observation operator.
   /// \param dv
   ///   Observation diagnostics produced by the observation operator.
-  void postFilter(const ObsVector_ &ov, const ObsDiags_ &dv);
+  void postFilter(const ObsVector_ &ov, const ObsVector_ &bv, const ObsDiags_ &dv);
 
   /// \brief Return the list of GeoVaLs required by this filter.
   Variables requiredVars() const;
@@ -141,10 +143,11 @@ void ObsFilter<OBS>::priorFilter(const GeoVaLs_ & gv) {
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-void ObsFilter<OBS>::postFilter(const ObsVector_ & ov, const ObsDiags_ & dv) {
+void ObsFilter<OBS>::postFilter(const ObsVector_ & ov, const ObsVector_ & bv,
+                                const ObsDiags_ & dv) {
   Log::trace() << "ObsFilter<OBS>::postFilter starting" << std::endl;
   util::Timer timer(classname(), "postFilter");
-  ofilt_->postFilter(ov, dv);
+  ofilt_->postFilter(ov, bv, dv);
   Log::trace() << "ObsFilter<OBS>::postFilter done" << std::endl;
 }
 

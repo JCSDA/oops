@@ -85,7 +85,7 @@ class Observer {
   const ObsSpace_ &             obspace_;    // ObsSpace used in H(x)
   std::unique_ptr<ObsOperator_> obsop_;      // Obs operator
   std::unique_ptr<Locations_>   locations_;  // locations
-  const ObsAuxCtrl_ *           ybias_;      // Obs bias
+  const ObsAuxCtrl_ *           biascoeff_;  // bias coefficients
   ObsError_ *                   Rmat_;       // Obs error covariance
   std::unique_ptr<ObsFilters_>  filters_;    // QC filters
   std::unique_ptr<ObsVector_>   obserr_;     // Obs error std dev
@@ -100,7 +100,7 @@ class Observer {
 template <typename MODEL, typename OBS>
 Observer<MODEL, OBS>::Observer(const ObsSpace_ & obspace, const Parameters_ & params)
   : parameters_(params), obspace_(obspace), obsop_(), locations_(),
-    ybias_(nullptr), filters_(), qcflags_(), initialized_(false)
+    biascoeff_(nullptr), filters_(), qcflags_(), initialized_(false)
 {
   Log::trace() << "Observer::Observer start" << std::endl;
   /// Set up observation operators
@@ -114,12 +114,12 @@ Observer<MODEL, OBS>::Observer(const ObsSpace_ & obspace, const Parameters_ & pa
 
 template <typename MODEL, typename OBS>
 std::shared_ptr<GetValuePost<MODEL, OBS>>
-Observer<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrl_ & ybias,
+Observer<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrl_ & biascoeff,
                                  ObsError_ & R, const eckit::Configuration & conf) {
   Log::trace() << "Observer<MODEL, OBS>::initialize start" << std::endl;
 // Save information for finalize
   iterconf_.reset(new eckit::LocalConfiguration(conf));
-  ybias_ = &ybias;
+  biascoeff_ = &biascoeff;
   Rmat_ = &R;
   obserr_.reset(new ObsVector_(Rmat_->obserrors()));
 
@@ -134,7 +134,7 @@ Observer<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrl_ & ybi
 // Set up variables that will be requested from the model
   Variables geovars;
   geovars += obsop_->requiredVars();
-  geovars += ybias_->requiredVars();
+  geovars += biascoeff_->requiredVars();
   geovars += filters_->requiredVars();
 
 // Set up GetValues
@@ -162,14 +162,18 @@ void Observer<MODEL, OBS>::finalize(ObsVector_ & yobsim) {
   /// Setup diagnostics
   Variables vars;
   vars += filters_->requiredHdiagnostics();
-  vars += ybias_->requiredHdiagnostics();
+  vars += biascoeff_->requiredHdiagnostics();
   ObsDiags_ ydiags(obspace_, *locations_, vars);
 
+  // Setup bias vector
+  ObsVector_ ybias(obspace_);
+  ybias.zero();
+
   /// Compute H(x)
-  obsop_->simulateObs(*geovals, yobsim, *ybias_, ydiags);
+  obsop_->simulateObs(*geovals, yobsim, *biascoeff_, ybias, ydiags);
 
   /// Call posterior filters
-  filters_->postFilter(yobsim, ydiags);
+  filters_->postFilter(yobsim, ybias, ydiags);
 
   // Update R with obs errors that filters might have updated
   Rmat_->update(*obserr_);
@@ -189,6 +193,10 @@ void Observer<MODEL, OBS>::finalize(ObsVector_ & yobsim) {
   if (iterconf_->getBool("save obs errors", true)) {
     const std::string errname = "EffectiveError" + siter;
     Rmat_->save(errname);
+  }
+  if (iterconf_->getBool("save obs bias", true)) {
+    const std::string biasname  = "ObsBias" + siter;
+    ybias.save(biasname);
   }
 
   Log::info() << "Observer::finalize QC = " << *qcflags_ << std::endl;

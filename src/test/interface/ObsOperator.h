@@ -100,6 +100,10 @@ template <typename OBS> void testSimulateObs() {
     // create obsvector to hold H(x)
     ObsVector_ hofx(Test_::obspace()[jj]);
 
+    // create obsvector to hold bias
+    ObsVector_ bias(Test_::obspace()[jj]);
+    bias.zero();
+
     // create diagnostics to hold HofX diags
     oops::Variables diagvars;
     diagvars += ybias.requiredHdiagnostics();
@@ -111,11 +115,11 @@ template <typename OBS> void testSimulateObs() {
       // containing the specified string.
       const std::string expectedMessage =
         Test_::config(jj).getString(expectSimulateObsToThrow);
-      EXPECT_THROWS_MSG(hop.simulateObs(gval, hofx, ybias, diags),
+      EXPECT_THROWS_MSG(hop.simulateObs(gval, hofx, ybias, bias, diags),
                         expectedMessage.c_str());
       continue;
     } else {
-      hop.simulateObs(gval, hofx, ybias, diags);
+      hop.simulateObs(gval, hofx, ybias, bias, diags);
     }
     hofx.save("hofx");
 

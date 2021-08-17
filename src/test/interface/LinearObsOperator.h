@@ -323,6 +323,8 @@ template <typename OBS> void testTangentLinear() {
     ObsVector_ y1(Test_::obspace()[jj]);
     ObsVector_ y2(Test_::obspace()[jj]);
     ObsVector_ y3(Test_::obspace()[jj]);
+    ObsVector_ bias(Test_::obspace()[jj]);
+    bias.zero();
 
     // create obsdatavector to hold diags
     oops::Variables diagvars;
@@ -330,7 +332,7 @@ template <typename OBS> void testTangentLinear() {
     ObsDiags_ ydiag(Test_::obspace()[jj], hop.locations(), diagvars);
 
     // y1 = hop(x0, ybias0)
-    hop.simulateObs(x0, y1, ybias0, ydiag);
+    hop.simulateObs(x0, y1, ybias0, bias, ydiag);
 
     // randomize dx and ybinc
     GeoVaLs_ dx(gconf, Test_::obspace()[jj], hoptl.requiredVars());
@@ -350,9 +352,10 @@ template <typename OBS> void testTangentLinear() {
       ybinc *= alpha;
       ybias = ybias0;
       ybias += ybinc;
+      bias.zero();
 
       // y2 = hop(x0+alpha*dx, ybias0+alpha*ybinc)
-      hop.simulateObs(x, y2, ybias, ydiag);
+      hop.simulateObs(x, y2, ybias, bias, ydiag);
       y2 -= y1;
       // y3 = hoptl(alpha*dx, alpha*ybinc)
       hoptl.simulateObsTL(dx, y3, ybinc);

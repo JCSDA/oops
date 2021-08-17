@@ -55,7 +55,7 @@ class ObservationL95 : public util::Printable,
   ~ObservationL95();
 
 // Obs Operators
-  void simulateObs(const GomL95 &, ObsVec1D &, const ObsBias &, ObsDiags1D &) const;
+  void simulateObs(const GomL95 &, ObsVec1D &, const ObsBias &, ObsVec1D &, ObsDiags1D &) const;
 
 // Other
   const oops::Variables & requiredVars() const {return inputs_;}

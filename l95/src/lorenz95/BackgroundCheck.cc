@@ -25,7 +25,7 @@ BackgroundCheck::BackgroundCheck(const ObsTable & obsdb, const Parameters_ & par
 }
 
 // -----------------------------------------------------------------------------
-void BackgroundCheck::postFilter(const ObsVec1D & hofx, const ObsDiags1D &) {
+void BackgroundCheck::postFilter(const ObsVec1D & hofx, const ObsVec1D &, const ObsDiags1D &) {
   std::vector<float> yobs;
   obsdb_.getdb("ObsValue", yobs);
   size_t inflate = 0;

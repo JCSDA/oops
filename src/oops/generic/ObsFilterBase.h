@@ -80,9 +80,11 @@ class ObsFilterBase : public util::Printable,
   ///
   /// \param ov
   ///   Model equivalents produced by the observation operator.
+  /// \param bv
+  ///   Bias of departure produced by the observation operator.
   /// \param dv
   ///   Observation diagnostics produced by the observation operator.
-  virtual void postFilter(const ObsVector_ &ov, const ObsDiags_ &dv) = 0;
+  virtual void postFilter(const ObsVector_ &ov, const ObsVector_ &bv, const ObsDiags_ &dv) = 0;
 
   /// \brief Return the list of GeoVaLs required by this filter.
   virtual Variables requiredVars() const = 0;

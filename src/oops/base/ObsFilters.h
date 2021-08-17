@@ -51,7 +51,7 @@ class ObsFilters : public util::Printable,
 
   void preProcess();
   void priorFilter(const GeoVaLs_ &);
-  void postFilter(const ObsVector_ &, const ObsDiags_ &);
+  void postFilter(const ObsVector_ &, const ObsVector_ &, const ObsDiags_ &);
 
   Variables requiredVars() const {return geovars_;}
   Variables requiredHdiagnostics() const {return diagvars_;}
@@ -141,9 +141,10 @@ void ObsFilters<OBS>::priorFilter(const GeoVaLs_ & gv) {
 // -----------------------------------------------------------------------------
 
 template<typename OBS>
-void ObsFilters<OBS>::postFilter(const ObsVector_ & hofx, const ObsDiags_ & diags) {
+void ObsFilters<OBS>::postFilter(const ObsVector_ & hofx, const ObsVector_ & bias,
+                                 const ObsDiags_ & diags) {
   for (ObsFilter_ & filter : filters_) {
-    filter.postFilter(hofx, diags);
+    filter.postFilter(hofx, bias, diags);
   }
   obserrtmp_->mask(*qcflags_);
   obserr_ = *obserrtmp_;

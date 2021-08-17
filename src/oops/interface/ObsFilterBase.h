@@ -46,12 +46,10 @@ namespace interface {
 ///              ObsDataPtr_<int>, ObsDataPtr_<float>);
 template <typename OBS>
 class ObsFilterBase : public oops::ObsFilterBase<OBS> {
-  typedef typename OBS::GeoVaLs             GeoVaLs_;
-  typedef typename OBS::ObsDiagnostics      ObsDiags_;
-  typedef typename OBS::ObsSpace            ObsSpace_;
-  typedef typename OBS::ObsVector           ObsVector_;
-  template <typename DATA> using ObsDataPtr_ = std::shared_ptr<ObsDataVector<OBS, DATA> >;
-  template <typename DATA> using ObsDataVec_ = typename OBS::template ObsDataVector<DATA>;
+  typedef typename OBS::GeoVaLs                        GeoVaLs_;
+  typedef typename OBS::ObsDiagnostics                 ObsDiags_;
+  typedef typename OBS::ObsSpace                       ObsSpace_;
+  typedef typename OBS::ObsVector                      ObsVector_;
 
  public:
   // Overrides of oops::ObsFilterBase methods, converting between oops interface classes and
@@ -61,8 +59,9 @@ class ObsFilterBase : public oops::ObsFilterBase<OBS> {
     this->priorFilter(gv.geovals());
   }
 
-  void postFilter(const ObsVector<OBS> &ov, const ObsDiagnostics<OBS> &dv) final {
-    this->postFilter(ov.obsvector(), dv.obsdiagnostics());
+  void postFilter(const ObsVector<OBS> &ov, const ObsVector<OBS> &bv,
+                  const ObsDiagnostics<OBS> &dv) final {
+    this->postFilter(ov.obsvector(), bv.obsvector(), dv.obsdiagnostics());
   }
 
   // The methods below need to be overridden in subclasses (along with preProcess(), requiredVars()
@@ -78,9 +77,11 @@ class ObsFilterBase : public oops::ObsFilterBase<OBS> {
   ///
   /// \param ov
   ///   Model equivalents produced by the observation operator.
+  /// \param bias
+  ///   Bias of departure produced by the observation operator.
   /// \param dv
   ///   Observation diagnostics produced by the observation operator.
-  virtual void postFilter(const ObsVector_ &ov, const ObsDiags_ &dv) = 0;
+  virtual void postFilter(const ObsVector_ &ov, const ObsVector_ &bv, const ObsDiags_ &dv) = 0;
 };
 
 // -----------------------------------------------------------------------------
