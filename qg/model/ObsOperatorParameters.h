@@ -11,11 +11,6 @@
 #include "oops/util/parameters/ConfigurationParameter.h"
 #include "oops/util/parameters/Parameters.h"
 
-// Forward declarations
-namespace eckit {
-  class Configuration;
-}
-
 namespace qg {
 
 /// Parameters controlling the observation operator for the QG model.

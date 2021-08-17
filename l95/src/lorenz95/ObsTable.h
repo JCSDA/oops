@@ -26,10 +26,6 @@
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/RequiredParameter.h"
 
-namespace eckit {
-  class Configuration;
-}
-
 namespace lorenz95 {
   class ObsIterator;
 
@@ -48,7 +44,7 @@ class ObsGenerateParameters : public oops::Parameters {
 };
 
 // -----------------------------------------------------------------------------
-/// \brief Configuration parameters for the QG model's ObsSpace.
+/// \brief Configuration parameters for the L95 model's ObsSpace.
 class ObsTableParameters : public oops::ObsSpaceParametersBase {
   OOPS_CONCRETE_PARAMETERS(ObsTableParameters, ObsSpaceParametersBase)
 
