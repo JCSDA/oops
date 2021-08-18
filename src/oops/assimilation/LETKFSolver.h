@@ -53,11 +53,13 @@ class LETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
   typedef ObsErrors<OBS>              ObsErrors_;
   typedef ObsLocalizations<MODEL, OBS> ObsLocalizations_;
   typedef ObsSpaces<OBS>              ObsSpaces_;
+  typedef State4D<MODEL>              State4D_;
 
  public:
   static const std::string classname() {return "oops::LETKFSolver";}
 
-  LETKFSolver(ObsSpaces_ &, const Geometry_ &, const eckit::Configuration &, size_t);
+  LETKFSolver(ObsSpaces_ &, const Geometry_ &, const eckit::Configuration &, size_t,
+              const State4D_ &);
 
   /// KF update + posterior inflation at a grid point location (GeometryIterator_)
   void measurementUpdate(const IncrementEnsemble4D_ &,
@@ -91,8 +93,10 @@ class LETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
 
 template <typename MODEL, typename OBS>
 LETKFSolver<MODEL, OBS>::LETKFSolver(ObsSpaces_ & obspaces, const Geometry_ & geometry,
-                                     const eckit::Configuration & config, size_t nens)
-  : LocalEnsembleSolver<MODEL, OBS>(obspaces, geometry, config, nens), nens_(nens)
+                                     const eckit::Configuration & config, size_t nens,
+                                     const State4D_ & xbmean)
+  : LocalEnsembleSolver<MODEL, OBS>(obspaces, geometry, config, nens, xbmean),
+    nens_(nens)
 {
   options_.deserialize(config);
   const LETKFInflationParameters & inflopt = options_.infl;

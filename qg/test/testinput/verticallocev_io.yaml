@@ -14,11 +14,9 @@ vertical localization:
   lengthscale: 3
   lengthscale units: levels
   fraction of retained variance: 0.5
-  write eigen vectors: true
-  list of eigen vectors to write:
-    datadir: Data
-    date: *date
-    exp: verticalEVs.%{member}%
-    type: an
+  read eigen vectors: true
+  list of eigen vectors to read:
+   - filename: Data/verticalEVs.001.an.2009-12-31T00:00:00Z.nc
+   - filename: Data/verticalEVs.002.an.2009-12-31T00:00:00Z.nc
  
 expected neig: 2 

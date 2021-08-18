@@ -79,6 +79,7 @@ list( APPEND qg_testinput
   testinput/static_b_init.yaml
   testinput/truth.yaml
   testinput/verticallocev.yaml
+  testinput/verticallocev_io.yaml
   testinput/uniform_field_hybrid.yaml
   testinput/uniform_field_inflation.yaml
 )
@@ -236,6 +237,12 @@ ecbuild_add_test( TARGET  test_qg_error_covariance
 ecbuild_add_test( TARGET  test_qg_verticallocev
                   SOURCES executables/TestVerticalLocEV.cc
                   ARGS    "testinput/verticallocev.yaml"
+                  LIBS    qg
+                  TEST_DEPENDS test_qg_truth )
+
+ecbuild_add_test( TARGET  test_qg_verticallocev_io
+                  SOURCES executables/TestVerticalLocEV.cc
+                  ARGS    "testinput/verticallocev_io.yaml"
                   LIBS    qg
                   TEST_DEPENDS test_qg_truth )
 

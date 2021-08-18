@@ -95,14 +95,16 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     // Get background configurations
     const eckit::LocalConfiguration bgConfig(fullConfig, "background");
 
-    // Read all ensemble members
+    // Read all ensemble members and compute the mean
     StateEnsemble4D_ ens_xx(geometry, bgConfig);
     const size_t nens = ens_xx.size();
     const Variables statevars = ens_xx.variables();
+    State4D_ bkg_mean = ens_xx.mean();
 
     // set up solver
     std::unique_ptr<LocalSolver_> solver =
-         LocalEnsembleSolverFactory<MODEL, OBS>::create(obsdb, geometry, fullConfig, nens);
+         LocalEnsembleSolverFactory<MODEL, OBS>::create(obsdb, geometry, fullConfig,
+                                                        nens, bkg_mean);
     // test prints for the prior ensemble
     bool do_test_prints = driverConfig.getBool("do test prints", true);
     if (do_test_prints) {
@@ -127,8 +129,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
       return 0;
     }
 
-    // calculate background mean
-    State4D_ bkg_mean = ens_xx.mean();
+    // print background mean
     if (do_test_prints) {
       Log::test() << "Background mean :" << bkg_mean << std::endl;
     }

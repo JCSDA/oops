@@ -54,9 +54,9 @@ class LocalEnsembleSolver {
   typedef Observations<OBS>           Observations_;
   typedef ObsLocalizations<MODEL, OBS> ObsLocalizations_;
   typedef ObsSpaces<OBS>              ObsSpaces_;
+  typedef State4D<MODEL>              State4D_;
   typedef StateEnsemble4D<MODEL>      StateEnsemble4D_;
   typedef PseudoModelState4D<MODEL>   PseudoModel_;
-  typedef State4D<MODEL>              State4D_;
   typedef State<MODEL>                State_;
   typedef Model<MODEL>                Model_;
   typedef ModelAuxControl<MODEL>      ModelAux_;
@@ -68,7 +68,7 @@ class LocalEnsembleSolver {
 
   /// initialize solver with \p obspaces, \p geometry, full \p config and \p nens ensemble size
   LocalEnsembleSolver(ObsSpaces_ & obspaces, const Geometry_ & geometry,
-                      const eckit::Configuration & config, size_t nens);
+                      const eckit::Configuration & config, size_t nens, const State4D_ & xbmean);
   virtual ~LocalEnsembleSolver() = default;
 
   /// computes ensemble H(\p xx), returns mean H(\p xx), saves as hofx \p iteration
@@ -109,11 +109,10 @@ class LocalEnsembleSolver {
 template <typename MODEL, typename OBS>
 LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
                                         const Geometry_ & geometry,
-                                        const eckit::Configuration & config, size_t nens)
+                                        const eckit::Configuration & config, size_t nens,
+                                        const State4D_ & xbmean)
   : geometry_(geometry), obspaces_(obspaces), omb_(obspaces_), Yb_(obspaces_, nens),
-    obsconf_(config, "observations"), obsloc_(obsconf_, obspaces_)
-{
-}
+    obsconf_(config, "observations"), obsloc_(obsconf_, obspaces_) {}
 
 // -----------------------------------------------------------------------------
 
@@ -247,16 +246,18 @@ template <typename MODEL, typename OBS>
 class LocalEnsembleSolverFactory {
   typedef Geometry<MODEL>           Geometry_;
   typedef ObsSpaces<OBS>            ObsSpaces_;
+  typedef State4D<MODEL>            State4D_;
  public:
   static std::unique_ptr<LocalEnsembleSolver<MODEL, OBS>> create(ObsSpaces_ &, const Geometry_ &,
                                                         const eckit::Configuration &,
-                                                        size_t);
+                                                        size_t, const State4D_ &);
   virtual ~LocalEnsembleSolverFactory() = default;
  protected:
   explicit LocalEnsembleSolverFactory(const std::string &);
  private:
   virtual LocalEnsembleSolver<MODEL, OBS> * make(ObsSpaces_ &, const Geometry_ &,
-                                        const eckit::Configuration &, size_t) = 0;
+                                        const eckit::Configuration &, size_t,
+                                        const State4D_ &) = 0;
   static std::map < std::string, LocalEnsembleSolverFactory<MODEL, OBS> * > & getMakers() {
     static std::map < std::string, LocalEnsembleSolverFactory<MODEL, OBS> * > makers_;
     return makers_;
@@ -269,10 +270,12 @@ template<class MODEL, class OBS, class T>
 class LocalEnsembleSolverMaker : public LocalEnsembleSolverFactory<MODEL, OBS> {
   typedef Geometry<MODEL>           Geometry_;
   typedef ObsSpaces<OBS>            ObsSpaces_;
+  typedef State4D<MODEL>            State4D_;
 
   virtual LocalEnsembleSolver<MODEL, OBS> * make(ObsSpaces_ & obspaces, const Geometry_ & geometry,
-                                        const eckit::Configuration & conf, size_t nens)
-    { return new T(obspaces, geometry, conf, nens); }
+                                        const eckit::Configuration & conf, size_t nens,
+                                        const State4D_ & xbmean)
+    { return new T(obspaces, geometry, conf, nens, xbmean); }
  public:
   explicit LocalEnsembleSolverMaker(const std::string & name)
     : LocalEnsembleSolverFactory<MODEL, OBS>(name) {}
@@ -293,7 +296,8 @@ LocalEnsembleSolverFactory<MODEL, OBS>::LocalEnsembleSolverFactory(const std::st
 template <typename MODEL, typename OBS>
 std::unique_ptr<LocalEnsembleSolver<MODEL, OBS>>
 LocalEnsembleSolverFactory<MODEL, OBS>::create(ObsSpaces_ & obspaces, const Geometry_ & geometry,
-                                  const eckit::Configuration & conf, size_t nens) {
+                                  const eckit::Configuration & conf, size_t nens,
+                                  const State4D_ & xbmean) {
   Log::trace() << "LocalEnsembleSolver<MODEL, OBS>::create starting" << std::endl;
   const std::string id = conf.getString("local ensemble DA.solver");
   typename std::map<std::string, LocalEnsembleSolverFactory<MODEL, OBS>*>::iterator
@@ -308,7 +312,7 @@ LocalEnsembleSolverFactory<MODEL, OBS>::create(ObsSpaces_ & obspaces, const Geom
     throw std::runtime_error(id + " does not exist in local ensemble solver factory.");
   }
   std::unique_ptr<LocalEnsembleSolver<MODEL, OBS>>
-    ptr(jloc->second->make(obspaces, geometry, conf, nens));
+    ptr(jloc->second->make(obspaces, geometry, conf, nens, xbmean));
   Log::trace() << "LocalEnsembleSolver<MODEL, OBS>::create done" << std::endl;
   return ptr;
 }

@@ -57,6 +57,8 @@ template<typename MODEL> class IncrementEnsemble {
   IncrementEnsemble(const Geometry_ &, const Variables &, const eckit::Configuration &,
                     const eckit::Configuration &);
 
+  void write(const eckit::Configuration &) const;
+
   /// Accessors
   size_t size() const {return ensemblePerturbs_.size();}
   Increment_ & operator[](const int ii) {return ensemblePerturbs_[ii];}
@@ -196,6 +198,18 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const Geometry_ & resol, const Varia
     ensemblePerturbs_.emplace_back(std::move(dx));
   }
   Log::trace() << "IncrementEnsemble:contructor (by diffing state ensembles) done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void IncrementEnsemble<MODEL>::write(const eckit::Configuration & config) const
+{
+  eckit::LocalConfiguration outConfig(config);
+  for (size_t ii=0; ii < size(); ++ii) {
+    outConfig.set("member", ii+1);
+    ensemblePerturbs_[ii].write(outConfig);
+  }
 }
 
 // -----------------------------------------------------------------------------

@@ -64,7 +64,8 @@ class GETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
 
   /// Constructor (allocates Wa, wa, HZb_,
   /// saves options from the config, computes VerticalLocEV_)
-  GETKFSolver(ObsSpaces_ &, const Geometry_ &, const eckit::Configuration &, size_t);
+  GETKFSolver(ObsSpaces_ &, const Geometry_ &, const eckit::Configuration &, size_t,
+              const State4D_ &);
 
   Observations_ computeHofX(const StateEnsemble4D_ &, size_t, bool) override;
 
@@ -105,10 +106,11 @@ class GETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
 
 template <typename MODEL, typename OBS>
 GETKFSolver<MODEL, OBS>::GETKFSolver(ObsSpaces_ & obspaces, const Geometry_ & geometry,
-                                const eckit::Configuration & config, size_t nens)
-  : LocalEnsembleSolver<MODEL, OBS>(obspaces, geometry, config, nens),
+                                const eckit::Configuration & config, size_t nens,
+                                const State4D_ & xbmean)
+  : LocalEnsembleSolver<MODEL, OBS>(obspaces, geometry, config, nens, xbmean),
     nens_(nens), geometry_(geometry),
-    vertloc_(geometry_, config.getSubConfiguration("local ensemble DA.vertical localization")),
+    vertloc_(config.getSubConfiguration("local ensemble DA.vertical localization"), xbmean[0]),
     neig_(vertloc_.neig()), nanal_(neig_*nens_), HZb_(obspaces, nanal_)
 {
   options_.deserialize(config);
