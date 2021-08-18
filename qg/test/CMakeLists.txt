@@ -2,6 +2,7 @@ list( APPEND qg_testinput
   testinput/3densvar.yaml
   testinput/3dvar.yaml
   testinput/3dvar_change_var.yaml
+  testinput/3dvar_full_inverse.yaml
   testinput/3dvar_hybrid.yaml
   testinput/3dvar_hybrid_wo_jb_evaluation.yaml
   testinput/3dfgat.yaml
@@ -572,6 +573,12 @@ ecbuild_add_test( TARGET test_qg_3dvar
 ecbuild_add_test( TARGET test_qg_3dvar_change_var
                   OMP 2
                   ARGS testinput/3dvar_change_var.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_make_obs_3d )
+
+ecbuild_add_test( TARGET test_qg_3dvar_full_inverse
+                  OMP 2
+                  ARGS testinput/3dvar_full_inverse.yaml
                   COMMAND  qg_4dvar.x
                   TEST_DEPENDS test_qg_forecast test_qg_make_obs_3d )
 

@@ -38,6 +38,9 @@ class ModelSpaceCovarianceParametersBase : public Parameters {
   Parameter<std::vector<LinearVariableChangeParametersWrapper<MODEL>>> variableChanges{
     "variable changes", {}, this};
   Parameter<size_t> randomizationSize{"randomization size", 50, this};
+  Parameter<bool> fullInverse{"full inverse", false, this};
+  Parameter<int> fullInverseIterations{"full inverse iterations", 10, this};
+  Parameter<double> fullInverseAccuracy{"full inverse accuracy", 1.0e-3, this};
 };
 
 }  // namespace oops

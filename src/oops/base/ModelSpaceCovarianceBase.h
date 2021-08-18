@@ -23,7 +23,9 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
+#include "oops/assimilation/GMRESR.h"
 #include "oops/base/Geometry.h"
+#include "oops/base/IdentityMatrix.h"
 #include "oops/base/Increment.h"
 #include "oops/base/LinearVariableChangeBase.h"
 #include "oops/base/ModelSpaceCovarianceParametersBase.h"
@@ -88,6 +90,9 @@ class ModelSpaceCovarianceBase {
 
   ChvarVec_ chvars_;
   size_t randomizationSize_;
+  bool fullInverse_;
+  int fullInverseIterations_;
+  double fullInverseAccuracy_;
 };
 
 // =============================================================================
@@ -306,6 +311,9 @@ ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(
                         bg, fg, resol, variableChange.variableChangeParameters));
   }
   randomizationSize_ = parameters.randomizationSize;
+  fullInverse_ = parameters.fullInverse;
+  fullInverseIterations_ = parameters.fullInverseIterations;
+  fullInverseAccuracy_ = parameters.fullInverseAccuracy;
 }
 
 // -----------------------------------------------------------------------------
@@ -368,26 +376,33 @@ void ModelSpaceCovarianceBase<MODEL>::multiply(const Increment_ & dxi,
 template <typename MODEL>
 void ModelSpaceCovarianceBase<MODEL>::inverseMultiply(const Increment_ & dxi,
                                                       Increment_ & dxo) const {
-  if (chvars_.size()) {
-    // K_1^{-1} K_2^{-1} .. K_N^{-1}
-    std::unique_ptr<Increment_> dxchvarin(new Increment_(dxi));
-    for (ircst_ it = chvars_.rbegin(); it != chvars_.rend(); ++it) {
-      Increment_ dxchvarout = it->multiplyInverse(*dxchvarin);
-      dxchvarin.reset(new Increment_(dxchvarout));
-    }
-    Increment_ dxchvarout(*dxchvarin, false);
-
-    this->doInverseMultiply(*dxchvarin, dxchvarout);
-
-    // K_N^T^{-1} K_N-1^T^{-1} ... K_1^T^{-1}
-    dxchvarin.reset(new Increment_(dxchvarout));
-    for (icst_ it = chvars_.begin(); it != chvars_.end(); ++it) {
-      Increment_ dxchvarout = it->multiplyInverseAD(*dxchvarin);
-      dxchvarin.reset(new Increment_(dxchvarout));
-    }
-    dxo = *dxchvarin;
+  if (fullInverse_) {
+    // Approximate full inverse using GMRESR
+    IdentityMatrix<Increment_> Id;
+    dxo.zero();
+    GMRESR(dxo, dxi, *this, Id, fullInverseIterations_, fullInverseAccuracy_);
   } else {
-    this->doInverseMultiply(dxi, dxo);
+    if (chvars_.size()) {
+      // K_1^{-1} K_2^{-1} .. K_N^{-1}
+      std::unique_ptr<Increment_> dxchvarin(new Increment_(dxi));
+      for (ircst_ it = chvars_.rbegin(); it != chvars_.rend(); ++it) {
+        Increment_ dxchvarout = it->multiplyInverse(*dxchvarin);
+        dxchvarin.reset(new Increment_(dxchvarout));
+      }
+      Increment_ dxchvarout(*dxchvarin, false);
+
+      this->doInverseMultiply(*dxchvarin, dxchvarout);
+
+      // K_N^T^{-1} K_N-1^T^{-1} ... K_1^T^{-1}
+      dxchvarin.reset(new Increment_(dxchvarout));
+      for (icst_ it = chvars_.begin(); it != chvars_.end(); ++it) {
+        Increment_ dxchvarout = it->multiplyInverseAD(*dxchvarin);
+        dxchvarin.reset(new Increment_(dxchvarout));
+      }
+      dxo = *dxchvarin;
+    } else {
+      this->doInverseMultiply(dxi, dxo);
+    }
   }
 }
 
