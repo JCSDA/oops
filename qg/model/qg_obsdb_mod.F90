@@ -395,7 +395,7 @@ type(datetime),intent(in) :: winend  !< End of window
 
 ! Local variables
 integer,parameter :: ngrpmax = 3
-integer,parameter :: ncolmax = 6
+integer,parameter :: ncolmax = 7
 integer :: grp_ids(ngrpmax),igrp,nobs_in_grp,iobs,jobs,ncol,col_ids(ncolmax),icol,nlev_id,values_id
 integer :: ncid,nobs_id,times_id
 type(group_data),pointer :: jgrp
