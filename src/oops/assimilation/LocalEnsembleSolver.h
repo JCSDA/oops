@@ -169,19 +169,39 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(const StateEnsemb
   } else {
     // compute and save H(x)
     Log::debug() << "Computing H(X) online" << std::endl;
+
+    // save QC filters and ob errors to be used for all other members
+    // do not save H(X) (saved explicitly below)
+    eckit::LocalConfiguration config;
+
+    // save hofx means that hofx will be written out into ObsSpace;
+    // if run computeHofX4D several times with save hofx on,
+    // the hofx will be overwritten,
+    // unless each time specifying iteration differently in the passed config.
+    config.set("save hofx", false);
+    config.set("save qc", false);
+    config.set("save obs errors", false);
+    config.set("iteration", std::to_string(iteration));
+
     for (size_t jj = 0; jj < nens; ++jj) {
-      eckit::LocalConfiguration config;
-      // never save H(x) (saved explicitly below), save EffectiveQC and EffectiveError
-      // only for the last member
-      config.set("save hofx", false);
-      config.set("save qc", (jj == nens-1));
-      config.set("save obs errors", (jj == nens-1));
       computeHofX4D(config, ens_xx[jj], obsens[jj]);
       Log::test() << "H(x) for member " << jj+1 << ":" << std::endl << obsens[jj] << std::endl;
       obsens[jj].save("hofx"+std::to_string(iteration)+"_"+std::to_string(jj+1));
     }
-    // QC flags and Obs errors are set to that of the last ensemble member
-    // TODO(someone) combine qc flags from all ensemble members
+
+    // Compute H(mean(Xb))
+    State4D_ xx_mean = ens_xx.mean();
+    Observations_ y_mean_xb(obspaces_);
+
+    // set QC for the mean
+    config.set("save qc", true);
+    config.set("save obs errors", true);
+
+    computeHofX4D(config, xx_mean, y_mean_xb);
+
+    y_mean_xb.save("hofx_y_mean_xb"+std::to_string(iteration));
+
+    // QC flags and Obs errors are set to that of the H(mean(Xb))
     R_->save("ObsError");
   }
   // set inverse variances
