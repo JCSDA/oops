@@ -184,6 +184,7 @@ void Increment<MODEL>::shift_backward(const util::DateTime & end) {
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 void Increment<MODEL>::toAtlas() {
+  interface::Increment<MODEL>::setAtlas(&atlasFieldSet_);
   interface::Increment<MODEL>::toAtlas(&atlasFieldSet_);
   this->increment_.reset();
 }

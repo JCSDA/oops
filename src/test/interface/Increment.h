@@ -22,6 +22,7 @@
 
 #include <boost/noncopyable.hpp>
 
+#include "atlas/field.h"
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "oops/base/Geometry.h"
@@ -48,6 +49,7 @@ template <typename MODEL> class IncrementFixture : private boost::noncopyable {
   static const oops::Variables      & ctlvars()   {return *getInstance().ctlvars_;}
   static const util::DateTime       & time()      {return *getInstance().time_;}
   static const double               & tolerance() {return getInstance().tolerance_;}
+  static const int                  & skipAtlas() {return getInstance().skipAtlas_;}
   static const eckit::Configuration & test()      {return *getInstance().test_;}
   static void reset() {
     getInstance().time_.reset();
@@ -78,6 +80,7 @@ template <typename MODEL> class IncrementFixture : private boost::noncopyable {
         "Warning: Increment norm tolerance greater than 1e-8 "
         "may not be suitable for certain solvers." <<
         std::endl; }
+    skipAtlas_ = test_->getInt("skip atlas", 0);
   }
 
   ~IncrementFixture<MODEL>() {}
@@ -86,6 +89,7 @@ template <typename MODEL> class IncrementFixture : private boost::noncopyable {
   std::unique_ptr<oops::Variables> ctlvars_;
   std::unique_ptr<const eckit::LocalConfiguration> test_;
   double                           tolerance_;
+  int                              skipAtlas_;
   std::unique_ptr<util::DateTime>  time_;
   std::unique_ptr<bool> skipAccumTest_;
   std::unique_ptr<bool> skipDiffTest_;
@@ -352,6 +356,31 @@ template <typename MODEL> void testIncrementSerialize() {
 
 // -----------------------------------------------------------------------------
 
+template <typename MODEL> void testIncrementAtlas() {
+  typedef IncrementFixture<MODEL>   Test_;
+  typedef oops::Increment<MODEL>    Increment_;
+
+  if (Test_::skipAtlas() == 0) {
+  // Create random increment and copy it
+    Increment_ dx1(Test_::resol(), Test_::ctlvars(), Test_::time());
+    dx1.random();
+    Increment_ dx2(dx1);
+
+  // Create ATLAS fieldset
+    std::unique_ptr<atlas::FieldSet> atlasFieldSet(new atlas::FieldSet());
+
+  // Test setAtlas-toAtlas-fromAtlas
+    dx1.setAtlas(atlasFieldSet.get());
+    dx1.toAtlas(atlasFieldSet.get());
+    dx1.zero();
+    dx1.fromAtlas(atlasFieldSet.get());
+    dx2 -= dx1;
+    EXPECT(dx2.norm() == 0.0);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
 template <typename MODEL> void testIncrementDiff() {
   typedef IncrementFixture<MODEL>   Test_;
   typedef oops::Increment<MODEL>    Increment_;
@@ -487,6 +516,8 @@ class Increment : public oops::Test {
       { testIncrementSchur<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementSerialize")
       { testIncrementSerialize<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/testIncrementAtlas")
+      { testIncrementAtlas<MODEL>(); });
   }
 
   void clear() const override {}

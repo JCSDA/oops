@@ -110,7 +110,17 @@ class Increment : public oops::GeneralizedDepartures,
   /// Accessor to geometry associated with this Increment
   Geometry_ geometry() const;
 
-  /// ATLAS FieldSet (used in SABER)
+  /// ATLAS FieldSet interface (used to communicate data with SABER)
+  /// For models that are not using ATLAS fields for their own Increment data:
+  /// - "setAtlas" allocates the ATLAS fields based on the variables present in the Increment.
+  /// - "toAtlas" allocates the ATLAS fields if necessary and copies Increment data into ATLAS
+  ///   fields.
+  /// - "fromAtlas" copies ATLAS fields data into the Increment.
+  /// For models that are using ATLAS fields for their own Incerment data
+  /// - "setAtlas" copies ATLAS fields pointers from the Increment to the ATLAS fieldset.
+  /// - "toAtlas" copies data if ATLAS fields pointers in the Increment and the ATLAS fieldset are
+  ///   different, and does nothing if pointers are the same.
+  /// - "fromAtlas" does nothing.
   void setAtlas(atlas::FieldSet *) const;
   void toAtlas(atlas::FieldSet *) const;
   void fromAtlas(atlas::FieldSet *);
