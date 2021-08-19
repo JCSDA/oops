@@ -20,7 +20,9 @@
 #include "oops/base/Departures.h"
 #include "oops/base/ObsError.h"
 #include "oops/base/ObsSpaces.h"
+#include "oops/util/ConfigFunctions.h"  // for vectoriseAndFilter
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/Parameters.h"
 #include "oops/util/Printable.h"
 
 namespace oops {
@@ -30,13 +32,15 @@ namespace oops {
 template <typename OBS>
 class ObsErrors : public util::Printable,
                   private boost::noncopyable {
-  typedef Departures<OBS>          Departures_;
-  typedef ObsError<OBS>            ObsError_;
-  typedef ObsSpaces<OBS>           ObsSpaces_;
+  typedef Departures<OBS>                Departures_;
+  typedef ObsError<OBS>                  ObsError_;
+  typedef ObsErrorParametersWrapper<OBS> Parameters_;
+  typedef ObsSpaces<OBS>                 ObsSpaces_;
 
  public:
   static const std::string classname() {return "oops::ObsErrors";}
 
+  ObsErrors(const std::vector<Parameters_> &, const ObsSpaces_ &);
   ObsErrors(const eckit::Configuration &, const ObsSpaces_ &);
 
 /// Accessor and size
@@ -67,14 +71,27 @@ class ObsErrors : public util::Printable,
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-ObsErrors<OBS>::ObsErrors(const eckit::Configuration & config,
+ObsErrors<OBS>::ObsErrors(const std::vector<Parameters_> & params,
                           const ObsSpaces_ & os) : err_(), os_(os) {
-  std::vector<eckit::LocalConfiguration> obsconf = config.getSubConfigurations();
+  ASSERT(params.empty() || params.size() == os.size());
+  const Parameters_ defaultParam;
+
+  err_.reserve(os.size());
   for (size_t jj = 0; jj < os.size(); ++jj) {
-    eckit::LocalConfiguration conf = obsconf[jj].getSubConfiguration("obs error");
-    err_.emplace_back(conf, os[jj]);
+    const Parameters_ & param = params.empty() ? defaultParam : params[jj];
+    err_.emplace_back(param.obsErrorParameters, os_[jj]);
   }
 }
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+ObsErrors<OBS>::ObsErrors(const eckit::Configuration & config,
+                          const ObsSpaces_ & os) :
+  ObsErrors(  // Split config into subconfigurations, extract the "obs error" section from each
+              // of them, then validate and deserialize that section into a Parameters_ object
+            validateAndDeserialize<Parameters_>(util::vectoriseAndFilter(config, "obs error")), os)
+{}
 
 // -----------------------------------------------------------------------------
 

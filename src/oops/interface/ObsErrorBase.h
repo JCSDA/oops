@@ -33,12 +33,14 @@ namespace interface {
 /// interface::ObsErrorBase overrides oops::ObsErrorBase methods to pass OBS-specific
 /// implementations of ObsVector to OBS-specific implementations of ObsError.
 ///
-/// Note: subclasses need to provide a constructor with the following signature:
+/// Note: each subclass should typedef `Parameters_` to the name of a subclass of
+/// ObsErrorParametersBase holding its configuration settings and provide a constructor with the
+/// following signature:
 ///
-///     ObsErrorBase(const eckit::Configuration &config, OBS::ObsSpace &obsspace,
+///     ObsErrorBase(const Parameters_ &params, OBS::ObsSpace &obsspace,
 ///                  const eckit::mpi::Comm &timeComm);
 ///
-/// and pass \c timeComm to the constructor of this class.
+/// This constructor should pass \c timeComm to the constructor of this class.
 template <typename OBS>
 class ObsErrorBase : public oops::ObsErrorBase<OBS> {
   typedef typename OBS::ObsSpace  ObsSpace_;
@@ -112,13 +114,19 @@ class ObsErrorMaker : public ObsErrorFactory<OBS> {
   typedef oops::ObsErrorBase<OBS>    ObsErrorBase_;
   typedef oops::ObsErrorFactory<OBS> ObsErrorFactory_;
   typedef oops::ObsSpace<OBS>        ObsSpace_;
+  typedef typename T::Parameters_    Parameters_;
 
   explicit ObsErrorMaker(const std::string & name) : ObsErrorFactory_(name) {}
 
  private:
-  std::unique_ptr<ObsErrorBase_> make(const eckit::Configuration & conf,
+  std::unique_ptr<ObsErrorBase_> make(const ObsErrorParametersBase & parameters,
                                       const ObsSpace_ & obsspace) override {
-    return std::make_unique<T>(conf, obsspace.obsspace(), obsspace.timeComm());
+    const auto &stronglyTypedParameters = dynamic_cast<const Parameters_&>(parameters);
+    return std::make_unique<T>(stronglyTypedParameters, obsspace.obsspace(), obsspace.timeComm());
+  }
+
+  std::unique_ptr<ObsErrorParametersBase> makeParameters() const override {
+    return std::make_unique<Parameters_>();
   }
 };
 

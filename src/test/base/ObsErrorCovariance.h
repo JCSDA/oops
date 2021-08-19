@@ -30,8 +30,9 @@ namespace test {
 // -----------------------------------------------------------------------------
 /// Tests creation and destruction of ObsErrorCovariances
 template <typename OBS> void testConstructor() {
-  typedef ObsTestsFixture<OBS>     Test_;
-  typedef oops::ObsError<OBS>      Covar_;
+  typedef ObsTestsFixture<OBS>                 Test_;
+  typedef oops::ObsError<OBS>                  Covar_;
+  typedef oops::ObsErrorParametersWrapper<OBS> Parameters_;
 
   oops::instantiateObsErrorFactory<OBS>();
 
@@ -40,7 +41,10 @@ template <typename OBS> void testConstructor() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     const eckit::LocalConfiguration rconf(conf[jj], "obs error");
-    std::unique_ptr<Covar_> R = std::make_unique<Covar_>(rconf, Test_::obspace()[jj]);
+    Parameters_ rparams;
+    rparams.validateAndDeserialize(rconf);
+    std::unique_ptr<Covar_> R = std::make_unique<Covar_>(rparams.obsErrorParameters,
+                                                         Test_::obspace()[jj]);
     EXPECT(R.get());
     oops::Log::test() << "Testing ObsError: " << *R << std::endl;
     R.reset();
@@ -51,9 +55,10 @@ template <typename OBS> void testConstructor() {
 // -----------------------------------------------------------------------------
 /// Tests that \f$R*R^{-1}*dy = dy\f$ and \f$R^{-1}*R*dy = dy\f$
 template <typename OBS> void testMultiplies() {
-  typedef ObsTestsFixture<OBS>     Test_;
-  typedef oops::ObsError<OBS>      Covar_;
-  typedef oops::ObsVector<OBS>     ObsVector_;
+  typedef ObsTestsFixture<OBS>                 Test_;
+  typedef oops::ObsError<OBS>                  Covar_;
+  typedef oops::ObsErrorParametersWrapper<OBS> Parameters_;
+  typedef oops::ObsVector<OBS>                 ObsVector_;
 
   oops::instantiateObsErrorFactory<OBS>();
 
@@ -64,7 +69,9 @@ template <typename OBS> void testMultiplies() {
     ObsVector_ obserr(Test_::obspace()[jj], "ObsError");
 
     const eckit::LocalConfiguration rconf(conf[jj], "obs error");
-    Covar_ R(rconf, Test_::obspace()[jj]);
+    Parameters_ rparams;
+    rparams.validateAndDeserialize(rconf);
+    Covar_ R(rparams.obsErrorParameters, Test_::obspace()[jj]);
 
     // RMSE should be equal to the rms that was read from the file
     EXPECT(oops::is_close(R.getRMSE(), obserr.rms(), 1.e-10));
@@ -96,9 +103,10 @@ template <typename OBS> void testMultiplies() {
 /// Tests that the methods obserrors(), inverseVariance update() and save()
 /// do what is expected.
 template <typename OBS> void testAccessors() {
-  typedef ObsTestsFixture<OBS>     Test_;
-  typedef oops::ObsError<OBS>      Covar_;
-  typedef oops::ObsVector<OBS>     ObsVector_;
+  typedef ObsTestsFixture<OBS>                 Test_;
+  typedef oops::ObsError<OBS>                  Covar_;
+  typedef oops::ObsErrorParametersWrapper<OBS> Parameters_;
+  typedef oops::ObsVector<OBS>                 ObsVector_;
 
   oops::instantiateObsErrorFactory<OBS>();
 
@@ -109,7 +117,9 @@ template <typename OBS> void testAccessors() {
     ObsVector_ obserr(Test_::obspace()[jj], "ObsError");
 
     const eckit::LocalConfiguration rconf(conf[jj], "obs error");
-    Covar_ R(rconf, Test_::obspace()[jj]);
+    Parameters_ rparams;
+    rparams.validateAndDeserialize(rconf);
+    Covar_ R(rparams.obsErrorParameters, Test_::obspace()[jj]);
 
     ObsVector_ dy(R.obserrors());
     oops::Log::test() << "ObsError: " << dy << std::endl;

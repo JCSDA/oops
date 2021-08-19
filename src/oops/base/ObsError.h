@@ -34,7 +34,7 @@ class ObsError : public util::Printable,
  public:
   static const std::string classname() {return "oops::ObsError";}
 
-  ObsError(const eckit::Configuration & config, const ObsSpace_ & os);
+  ObsError(const ObsErrorParametersBase & params, const ObsSpace_ & os);
   ~ObsError() override;
   ObsError(const ObsError &) = delete;
   ObsError(ObsError &&) = default;
@@ -75,13 +75,13 @@ class ObsError : public util::Printable,
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-ObsError<OBS>::ObsError(const eckit::Configuration & config, const ObsSpace_ & os) {
+ObsError<OBS>::ObsError(const ObsErrorParametersBase & params, const ObsSpace_ & os) {
   Log::trace() << "ObsError<OBS>::ObsError starting" << std::endl;
 
   util::Timer timer(classname(), "ObsErrors");
   size_t init = eckit::system::ResourceUsage().maxResidentSetSize();
 
-  err_ = ObsErrorFactory<OBS>::create(config, os);
+  err_ = ObsErrorFactory<OBS>::create(params, os);
 
   size_t current = eckit::system::ResourceUsage().maxResidentSetSize();
   this->setObjectSize(current - init);

@@ -26,8 +26,8 @@
 namespace oops {
 
 /// \brief Parameters for diagonal obs errors
-class ObsErrorDiagParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(ObsErrorDiagParameters, Parameters)
+class ObsErrorDiagParameters : public ObsErrorParametersBase {
+  OOPS_CONCRETE_PARAMETERS(ObsErrorDiagParameters, ObsErrorParametersBase)
  public:
   /// perturbation amplitude multiplier
   Parameter<double> pert{"random amplitude", 1.0, this};
@@ -41,7 +41,11 @@ class ObsErrorDiag : public ObsErrorBase<OBS> {
   typedef ObsVector<OBS>             ObsVector_;
 
  public:
-  ObsErrorDiag(const eckit::Configuration &, const ObsSpace_ &);
+  /// The type of parameters passed to the constructor.
+  /// This typedef is used by the ObsErrorFactory.
+  typedef ObsErrorDiagParameters Parameters_;
+
+  ObsErrorDiag(const Parameters_ &, const ObsSpace_ &);
 
 /// Update after obs errors potentially changed
   void update(const ObsVector_ &) override;
@@ -71,16 +75,15 @@ class ObsErrorDiag : public ObsErrorBase<OBS> {
   void print(std::ostream &) const override;
   ObsVector_ stddev_;
   ObsVector_ inverseVariance_;
-  ObsErrorDiagParameters options_;
+  Parameters_ options_;
 };
 
 // =============================================================================
 
 template<typename OBS>
-ObsErrorDiag<OBS>::ObsErrorDiag(const eckit::Configuration & conf, const ObsSpace_ & obsgeom)
-  : stddev_(obsgeom, "ObsError"), inverseVariance_(obsgeom)
+ObsErrorDiag<OBS>::ObsErrorDiag(const ObsErrorDiagParameters & options, const ObsSpace_ & obsgeom)
+  : stddev_(obsgeom, "ObsError"), inverseVariance_(obsgeom), options_(options)
 {
-  options_.deserialize(conf);
   inverseVariance_ = stddev_;
   inverseVariance_ *= stddev_;
   inverseVariance_.invert();

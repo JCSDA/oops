@@ -53,6 +53,7 @@ class ObsTypeParameters : public oops::Parameters {
 
  public:
   typedef typename ObsAuxControl<OBS>::Parameters_ ObsAuxControlParameters_;
+  typedef ObsErrorParametersWrapper<OBS> ObsErrorParameters_;
   typedef typename ObsSpace<OBS>::Parameters_ ObsSpaceParameters_;
 
   /// Options used to configure the observation space.
@@ -61,9 +62,8 @@ class ObsTypeParameters : public oops::Parameters {
   /// Options used to configure the observation operator, observation filters and GetValues.
   ObserverParameters<OBS> observer{this};
 
-  /// Options used to configure the observation error model.
-  oops::Parameter<eckit::LocalConfiguration> obsError{
-    "obs error", eckit::LocalConfiguration(), this};
+  /// Options used to configure the observation error covariance matrix model.
+  oops::Parameter<ObsErrorParameters_> obsError{"obs error", {}, this};
 
   /// Options used to configure bias correction.
   oops::Parameter<ObsAuxControlParameters_> obsBias{"obs bias", {}, this};
@@ -132,6 +132,7 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
 
   typedef HofX4DParameters<MODEL, OBS> HofX4DParameters_;
   typedef typename ObsAuxControl<OBS>::Parameters_ ObsAuxControlParameters_;
+  typedef ObsErrorParametersWrapper<OBS> ObsErrorParameters_;
   typedef ObserverParameters<OBS> ObserverParameters_;
   typedef typename ObsSpace<OBS>::Parameters_ ObsSpaceParameters_;
   typedef ObsTypeParameters<OBS> ObsTypeParameters_;
@@ -195,7 +196,10 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
           [](const ObsTypeParameters_ & obsTypeParams) { return obsTypeParams.obsBias.value(); });
     ObsAux_ obsaux(obspaces, obsauxParams);
 
-    ObsErrors_ Rmat(obsConfig, obspaces);
+    const std::vector<ObsErrorParameters_> obsErrorParams = util::transformVector(
+          params.observations.value(),
+          [](const ObsTypeParameters_ & obsTypeParams) { return obsTypeParams.obsError.value(); });
+    ObsErrors_ Rmat(obsErrorParams, obspaces);
 
 //  Setup and initialize observer
     std::vector<ObserverParameters_> observerParams = util::transformVector(
