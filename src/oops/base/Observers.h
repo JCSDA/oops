@@ -21,9 +21,9 @@
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
 #include "oops/base/ObsSpaces.h"
+#include "oops/base/ObsVector.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State.h"
-#include "oops/interface/ObsVector.h"
 #include "oops/util/Logger.h"
 
 namespace oops {

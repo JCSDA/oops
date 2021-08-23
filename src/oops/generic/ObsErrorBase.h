@@ -19,8 +19,8 @@
 #include <boost/noncopyable.hpp>
 #include "eckit/config/Configuration.h"
 
+#include "oops/base/ObsVector.h"
 #include "oops/interface/ObsSpace.h"
-#include "oops/interface/ObsVector.h"
 #include "oops/util/AssociativeContainers.h"
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/Parameter.h"

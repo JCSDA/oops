@@ -19,9 +19,9 @@
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include "eckit/testing/Test.h"
+#include "oops/base/ObsVector.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/ObsDataVector.h"
-#include "oops/interface/ObsVector.h"
 #include "oops/runs/Test.h"
 #include "oops/util/dot_product.h"
 #include "test/interface/ObsTestsFixture.h"

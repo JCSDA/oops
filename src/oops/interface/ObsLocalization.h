@@ -14,8 +14,8 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/LocalIncrement.h"
 #include "oops/base/ObsLocalizationBase.h"
+#include "oops/base/ObsVector.h"
 #include "oops/interface/ObsSpace.h"
-#include "oops/interface/ObsVector.h"
 #include "oops/util/Logger.h"
 
 namespace oops {

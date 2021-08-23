@@ -11,12 +11,12 @@
 #include <memory>
 #include <string>
 
+#include "oops/base/ObsVector.h"
 #include "oops/generic/ObsFilterBase.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsDiagnostics.h"
 #include "oops/interface/ObsSpace.h"
-#include "oops/interface/ObsVector.h"
 
 namespace oops {
 
@@ -59,7 +59,7 @@ class ObsFilterBase : public oops::ObsFilterBase<OBS> {
     this->priorFilter(gv.geovals());
   }
 
-  void postFilter(const ObsVector<OBS> &ov, const ObsVector<OBS> &bv,
+  void postFilter(const oops::ObsVector<OBS> &ov, const oops::ObsVector<OBS> &bv,
                   const ObsDiagnostics<OBS> &dv) final {
     this->postFilter(ov.obsvector(), bv.obsvector(), dv.obsdiagnostics());
   }

@@ -21,8 +21,8 @@
 
 #include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/ObsSpaces.h"
+#include "oops/base/ObsVector.h"
 #include "oops/interface/ObsDataVector.h"
-#include "oops/interface/ObsVector.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
 

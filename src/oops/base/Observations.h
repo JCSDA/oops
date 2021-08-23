@@ -20,7 +20,7 @@
 #include "oops/base/Departures.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/ObsSpaces.h"
-#include "oops/interface/ObsVector.h"
+#include "oops/base/ObsVector.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
 

@@ -11,13 +11,13 @@
 #include <memory>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "oops/base/ObsVector.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/ObsFilterBase.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsDiagnostics.h"
 #include "oops/interface/ObsSpace.h"
-#include "oops/interface/ObsVector.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
 

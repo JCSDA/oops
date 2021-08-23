@@ -12,9 +12,9 @@
 #include <ostream>
 #include <string>
 
+#include "oops/base/ObsVector.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/ObsSpace.h"
-#include "oops/interface/ObsVector.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"

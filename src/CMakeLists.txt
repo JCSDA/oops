@@ -135,6 +135,7 @@ oops/base/ObsLocalizations.h
 oops/base/ObsSpaceBase.cc
 oops/base/ObsSpaceBase.h
 oops/base/ObsSpaces.h
+oops/base/ObsVector.h
 oops/base/ParameterTraitsVariables.cc
 oops/base/ParameterTraitsVariables.h
 oops/base/PostBase.h

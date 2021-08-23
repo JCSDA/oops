@@ -14,9 +14,9 @@
 #include <boost/noncopyable.hpp>
 
 #include "eckit/config/Configuration.h"
+#include "oops/base/ObsVector.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/interface/ObsSpace.h"
-#include "oops/interface/ObsVector.h"
 #include "oops/util/Printable.h"
 
 namespace oops {

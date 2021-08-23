@@ -16,9 +16,9 @@
 #include <string>
 
 #include "eckit/config/Configuration.h"
+#include "oops/base/ObsVector.h"
 #include "oops/generic/ObsErrorBase.h"
 #include "oops/interface/ObsSpace.h"
-#include "oops/interface/ObsVector.h"
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"

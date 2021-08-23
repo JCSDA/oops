@@ -16,12 +16,12 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/ObsFilter.h"
+#include "oops/base/ObsVector.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsDiagnostics.h"
 #include "oops/interface/ObsSpace.h"
-#include "oops/interface/ObsVector.h"
 #include "oops/util/IntSetParser.h"
 #include "oops/util/Printable.h"
 

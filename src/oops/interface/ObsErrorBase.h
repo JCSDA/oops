@@ -13,9 +13,9 @@
 
 #include "eckit/system/ResourceUsage.h"
 
+#include "oops/base/ObsVector.h"
 #include "oops/generic/ObsErrorBase.h"
 #include "oops/interface/ObsSpace.h"
-#include "oops/interface/ObsVector.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
@@ -53,28 +53,28 @@ class ObsErrorBase : public oops::ObsErrorBase<OBS> {
   // Overrides of oops::ObsErrorBase methods, converting between oops interface classes and
   // OBS-specific classes operated upon by OBS-specific implementations of the ObsError interface.
 
-  void multiply(ObsVector<OBS> &dy) const final {
+  void multiply(oops::ObsVector<OBS> &dy) const final {
     this->multiply(dy.obsvector());
   }
 
-  void inverseMultiply(ObsVector<OBS> &dy) const final {
+  void inverseMultiply(oops::ObsVector<OBS> &dy) const final {
     this->inverseMultiply(dy.obsvector());
   }
 
-  void randomize(ObsVector<OBS> &dy) const final {
+  void randomize(oops::ObsVector<OBS> &dy) const final {
     this->randomize(dy.obsvector());
   }
 
-  ObsVector<OBS> obserrors() const final {
-    return ObsVector<OBS>(this->getObsErrors(), timeComm_);
+  oops::ObsVector<OBS> obserrors() const final {
+    return oops::ObsVector<OBS>(this->getObsErrors(), timeComm_);
   }
 
-  void update(const ObsVector<OBS> &dy) final {
+  void update(const oops::ObsVector<OBS> &dy) final {
     this->update(dy.obsvector());
   }
 
-  ObsVector<OBS> inverseVariance() const final {
-    return ObsVector<OBS>(this->getInverseVariance(), timeComm_);
+  oops::ObsVector<OBS> inverseVariance() const final {
+    return oops::ObsVector<OBS>(this->getInverseVariance(), timeComm_);
   }
 
   // The methods below need to be overridden in subclasses (along with save(), getRMSE() and

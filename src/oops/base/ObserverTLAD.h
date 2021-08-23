@@ -17,6 +17,7 @@
 #include "eckit/config/Configuration.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/GetValueTLAD.h"
+#include "oops/base/ObsVector.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/LinearObsOperator.h"
 #include "oops/interface/Locations.h"
@@ -24,7 +25,6 @@
 #include "oops/interface/ObsAuxIncrement.h"
 #include "oops/interface/ObsOperator.h"
 #include "oops/interface/ObsSpace.h"
-#include "oops/interface/ObsVector.h"
 #include "oops/util/DateTime.h"
 
 namespace oops {

@@ -19,8 +19,8 @@
 
 #include "eckit/testing/Test.h"
 #include "oops/base/ObsError.h"
+#include "oops/base/ObsVector.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
-#include "oops/interface/ObsVector.h"
 #include "oops/runs/Test.h"
 #include "test/interface/ObsTestsFixture.h"
 #include "test/TestEnvironment.h"

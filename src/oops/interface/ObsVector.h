@@ -36,6 +36,10 @@ namespace util {
 
 namespace oops {
 
+namespace interface {
+
+// -----------------------------------------------------------------------------
+/// \brief Holds observation vector (e.g. vector of observation values, or of computed H(x))
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
@@ -51,25 +55,28 @@ class ObsVector : public util::Printable,
   explicit ObsVector(const ObsSpace<OBS> & obsspace, const std::string name = "");
 
   /// Wraps an existing ObsVector_.
-  ///
+  /// This wrapping constructor doesn't need to be implemented in an ObsVector implementation.
   /// \param obsvector  The vector to wrap.
-  /// \param timeComm   Time communicator.
-  ObsVector(std::unique_ptr<ObsVector_> obsvector, const eckit::mpi::Comm &timeComm);
-
+  explicit ObsVector(std::unique_ptr<ObsVector_> obsvector);
+  /// Copy constructor
   ObsVector(const ObsVector &);
+  /// Destructor (defined explicitly for timing and tracing)
   ~ObsVector();
 
-/// Interfacing
+  /// Accessor
   ObsVector_ & obsvector() {return *data_;}
+  /// Const accessor
   const ObsVector_ & obsvector() const {return *data_;}
 
-// Linear algebra
+  /// Linear algebra operators
   ObsVector & operator = (const ObsVector &);
   ObsVector & operator*= (const double &);
   ObsVector & operator+= (const ObsVector &);
   ObsVector & operator-= (const ObsVector &);
   ObsVector & operator*= (const ObsVector &);
   ObsVector & operator/= (const ObsVector &);
+  /// Add \p zz * \p rhs to the ObsVector.
+  void axpy(const double & zz, const ObsVector & rhs);
 
   /// Pack observations local to this MPI task into an Eigen vector
   /// (excluding vector elements that are masked out: where \p mask is a missing value)
@@ -78,37 +85,43 @@ class ObsVector : public util::Printable,
   /// (size of an Eigen vector returned by `packEigen`)
   size_t packEigenSize(const ObsVector & mask) const;
 
+  /// Zero out this ObsVector
   void zero();
   /// Set this ObsVector to ones (used in tests)
   void ones();
-  void axpy(const double &, const ObsVector &);
+  /// Set each value in this ObsVector to its inverse
   void invert();
+  /// Set each value in this ObsVector to a random value
   void random();
-  double dot_product_with(const ObsVector &) const;
+
+  /// Return the dot product between this ObsVector and another one \p other
+  double dot_product_with(const ObsVector & other) const;
+  /// Return this ObsVector rms
   double rms() const;
   /// Mask out elements of the vector where \p mask is > 0
   void mask(const ObsDataVector<OBS, int> & mask);
   /// Mask out elements of the vector where \p mask is a missing value
   void mask(const ObsVector & mask);
-  ObsVector & operator =(const ObsDataVector<OBS, float> &);
+  /// Assignment operator from \p rhs ObsDataVector<OBS, float>
+  ObsVector & operator =(const ObsDataVector<OBS, float> & rhs);
 
-// I/O
+  /// Save this ObsVector as group \p name in the ObsSpace
   void save(const std::string &) const;
+  /// Fill ObsVector with data with group \p name from the associated ObsSpace
   void read(const std::string &);
 
-  /// number of non-masked out observations (across all MPI tasks)
+  /// Number of non-masked out observations (across all MPI tasks)
   unsigned int nobs() const;
 
  private:
   void print(std::ostream &) const;
   std::unique_ptr<ObsVector_> data_;
-  const eckit::mpi::Comm & commTime_;
 };
 
 // -----------------------------------------------------------------------------
 template <typename OBS>
 ObsVector<OBS>::ObsVector(const ObsSpace<OBS> & os, const std::string name)
-  : data_(), commTime_(os.timeComm()) {
+  : data_() {
   Log::trace() << "ObsVector<OBS>::ObsVector starting " << name << std::endl;
   util::Timer timer(classname(), "ObsVector");
   data_.reset(new ObsVector_(os.obsspace(), name));
@@ -117,8 +130,8 @@ ObsVector<OBS>::ObsVector(const ObsSpace<OBS> & os, const std::string name)
 }
 // -----------------------------------------------------------------------------
 template <typename OBS>
-ObsVector<OBS>::ObsVector(std::unique_ptr<ObsVector_> obsvector, const eckit::mpi::Comm &timeComm)
-  : data_(std::move(obsvector)), commTime_(timeComm) {
+ObsVector<OBS>::ObsVector(std::unique_ptr<ObsVector_> obsvector)
+  : data_(std::move(obsvector)) {
   Log::trace() << "ObsVector<OBS>::ObsVector starting " << std::endl;
   util::Timer timer(classname(), "ObsVector");
   this->setObjectSize(data_->size() * sizeof(double));
@@ -126,7 +139,7 @@ ObsVector<OBS>::ObsVector(std::unique_ptr<ObsVector_> obsvector, const eckit::mp
 }
 // -----------------------------------------------------------------------------
 template <typename OBS>
-ObsVector<OBS>::ObsVector(const ObsVector & other): data_(), commTime_(other.commTime_) {
+ObsVector<OBS>::ObsVector(const ObsVector & other): data_() {
   Log::trace() << "ObsVector<OBS>::ObsVector starting" << std::endl;
   util::Timer timer(classname(), "ObsVector");
   data_.reset(new ObsVector_(*other.data_));
@@ -264,7 +277,6 @@ double ObsVector<OBS>::dot_product_with(const ObsVector & other) const {
   util::Timer timer(classname(), "dot_product");
 
   double zz = data_->dot_product_with(*other.data_);
-  commTime_.allReduceInPlace(zz, eckit::mpi::Operation::SUM);
 
   Log::trace() << "ObsVector<OBS>::dot_product done" << std::endl;
   return zz;
@@ -300,15 +312,7 @@ double ObsVector<OBS>::rms() const {
   Log::trace() << "ObsVector<OBS>::rms starting" << std::endl;
   util::Timer timer(classname(), "rms");
 
-  double zz = 0.0;
-  size_t ntot = this->nobs();
-  if (ntot > 0) {
-    zz = data_->rms();
-    double zzz = zz * zz * static_cast<double>(data_->nobs());
-    commTime_.allReduceInPlace(zzz, eckit::mpi::Operation::SUM);
-    zzz /= static_cast<double>(ntot);
-    zz = std::sqrt(zzz);
-  }
+  double zz = data_->rms();
 
   Log::trace() << "ObsVector<OBS>::rms done" << std::endl;
   return zz;
@@ -317,7 +321,6 @@ double ObsVector<OBS>::rms() const {
 template <typename OBS>
 unsigned int ObsVector<OBS>::nobs() const {
   int nobs = data_->nobs();
-  commTime_.allReduceInPlace(nobs, eckit::mpi::Operation::SUM);
   return nobs;
 }
 // -----------------------------------------------------------------------------
@@ -325,11 +328,7 @@ template <typename OBS>
 void ObsVector<OBS>::print(std::ostream & os) const {
   Log::trace() << "ObsVector<OBS>::print starting" << std::endl;
   util::Timer timer(classname(), "print");
-  if (commTime_.size() > 1) {
-    gatherPrint(os, *data_, commTime_);
-  } else {
-    os << *data_;
-  }
+  os << *data_;
   Log::trace() << "ObsVector<OBS>::print done" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -375,6 +374,8 @@ void ObsVector<OBS>::read(const std::string & name) {
   Log::trace() << "ObsVector<OBS>::read done" << std::endl;
 }
 // -----------------------------------------------------------------------------
+
+}  // namespace interface
 
 }  // namespace oops
 
