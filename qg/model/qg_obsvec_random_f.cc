@@ -14,7 +14,7 @@ namespace qg {
 // -----------------------------------------------------------------------------
 
 void qg_obsvec_random_f(const ObsSpaceQG & odb, const int & nn, double * xx) {
-  static util::NormalDistribution<double> dist(nn, 0.0, 1.0, odb.getSeed());
+  util::NormalDistribution<double> dist(nn, 0.0, 1.0, odb.getSeed());
   for (int jj = 0; jj < nn; ++jj) xx[jj] = dist[jj];
 }
 

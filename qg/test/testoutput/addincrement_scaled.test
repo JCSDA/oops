@@ -1,20 +1,20 @@
 State: 
   Valid time: 2010-01-01T12:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -4.4593e+08, Max=  1.0320e+08, RMS=  1.7642e+08
+  Streamfunction         :  Min= -4.4552e+08, Max=  1.0419e+08, RMS=  1.7642e+08
   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
 Increment: 
   Valid time: 2010-01-01T12:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -1.8428e+07, Max=  5.7484e+07, RMS=  8.4307e+06
+  Streamfunction         :  Min= -1.7328e+07, Max=  5.7430e+07, RMS=  8.4654e+06
 Scaled the increment: 
   Valid time: 2010-01-01T12:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -9.2140e+06, Max=  2.8742e+07, RMS=  4.2153e+06
+  Streamfunction         :  Min= -8.6638e+06, Max=  2.8715e+07, RMS=  4.2327e+06
 State plus increment: 
   Valid time: 2010-01-01T12:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -4.5411e+08, Max=  1.0285e+08, RMS=  1.7552e+08
+  Streamfunction         :  Min= -4.5311e+08, Max=  1.0473e+08, RMS=  1.7554e+08
   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
