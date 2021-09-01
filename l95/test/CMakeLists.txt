@@ -20,6 +20,7 @@ list( APPEND l95_test_input
   testinput/4dvar.drpcgqn.yaml
   testinput/4dvar.drplanczos.yaml
   testinput/4dvar.drplanclmp.yaml
+  testinput/4dvar.drplzero.yaml
   testinput/4dvar.fgmres.yaml
   testinput/4dvar.gmresr.yaml
   testinput/4dvar.hybrid.yaml
@@ -129,6 +130,7 @@ list( APPEND l95_testoutput
   testoutput/4dvar.drpcgqn.test
   testoutput/4dvar.drplanclmp.test
   testoutput/4dvar.drplanczos.test
+  testoutput/4dvar.drplzero.test
   testoutput/4dvar.fgmres.test
   testoutput/4dvar.gmresr.test
   testoutput/4dvar.hybrid.test
@@ -479,10 +481,10 @@ ecbuild_add_test( TARGET test_l95_3dvar
                   ARGS testinput/3dvar.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
 
-#ecbuild_add_test( TESTNAME 3dvar_noobs
-#                  COMMAND l95_4dvar.x
-#                  ARGS testinput/3dvar_noobs.yaml
-#                  TEST_DEPENDS test_l95_forecast )
+ecbuild_add_test( TARGET test_3dvar_noobs
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/3dvar_noobs.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
 
 ecbuild_add_test( TARGET test_l95_3dvar_qc
                   COMMAND l95_4dvar.x
@@ -509,89 +511,94 @@ ecbuild_add_test( TARGET test_l95_3dfgat
 # 4d variational tests
 #####################################################################
 
-ecbuild_add_test( TARGET test_l95_4dvar.drgmresr
+ecbuild_add_test( TARGET test_l95_4dvar_drgmresr
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar.drgmresr.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar.dripcg
+ecbuild_add_test( TARGET test_l95_4dvar_dripcg
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar.dripcg.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar.dripcgqn
+ecbuild_add_test( TARGET test_l95_4dvar_dripcgqn
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar.dripcgqn.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar.drpcg
+ecbuild_add_test( TARGET test_l95_4dvar_drpcg
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar.drpcg.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar.drpcgqn
+ecbuild_add_test( TARGET test_l95_4dvar_drpcgqn
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar.drpcgqn.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar.drplanczos
+ecbuild_add_test( TARGET test_l95_4dvar_drplanczos
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar.drplanczos.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar.drplanclmp
+ecbuild_add_test( TARGET test_l95_4dvar_drplanclmp
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar.drplanclmp.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar.fgmres
+ecbuild_add_test( TARGET test_l95_4dvar_fgmres
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar.fgmres.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar.gmresr
+ecbuild_add_test( TARGET test_l95_4dvar_gmresr
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar.gmresr.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar.ipcg
+ecbuild_add_test( TARGET test_l95_4dvar_ipcg
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar.ipcg.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar.lbgmresr
+ecbuild_add_test( TARGET test_l95_4dvar_lbgmresr
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar.lbgmresr.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar.pcg
+ecbuild_add_test( TARGET test_l95_4dvar_pcg
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar.pcg.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar.planczos
+ecbuild_add_test( TARGET test_l95_4dvar_planczos
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar.planczos.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar.rpcg
+ecbuild_add_test( TARGET test_l95_4dvar_rpcg
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar.rpcg.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar.rplanczos
+ecbuild_add_test( TARGET test_l95_4dvar_rplanczos
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar.rplanczos.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar.minres
+ecbuild_add_test( TARGET test_l95_4dvar_minres
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar.minres.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar.modbias
+ecbuild_add_test( TARGET test_l95_4dvar_modbias
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar.modbias.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+
+ecbuild_add_test( TARGET test_l95_4dvar_drplzero
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/4dvar.drplzero.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 #ecbuild_add_test( TARGET test_l95_4dforcing
@@ -605,25 +612,22 @@ ecbuild_add_test( TARGET test_l95_4dsaddlepoint
                   ARGS testinput/4dsaddlepoint.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar.obsbias
+ecbuild_add_test( TARGET test_l95_4dvar_obsbias
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar.obsbias.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobsbias )
 
-#--------------------------------------------------------------------
-
-ecbuild_add_test( TARGET test_l95_4dvar.allbiases
+ecbuild_add_test( TARGET test_l95_4dvar_allbiases
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar.allbiases.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobsbias )
-#--------------------------------------------------------------------
 
-ecbuild_add_test( TARGET test_l95_4dvar.alpha
+ecbuild_add_test( TARGET test_l95_4dvar_alpha
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar.alpha.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d test_l95_genenspert )
 
-ecbuild_add_test( TARGET test_l95_4dvar.hybrid
+ecbuild_add_test( TARGET test_l95_4dvar_hybrid
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar.hybrid.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d test_l95_genenspert )
@@ -634,7 +638,7 @@ ecbuild_add_test( TARGET test_l95_4densvar
                   ARGS testinput/4densvar.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d12h test_l95_genenspert )
 
-ecbuild_add_test( TARGET test_l95_4densvar.hybrid
+ecbuild_add_test( TARGET test_l95_4densvar_hybrid
                   COMMAND l95_4dvar.x
                   MPI 9
                   ARGS testinput/4densvar.hybrid.yaml

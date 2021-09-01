@@ -11,9 +11,9 @@
 #ifndef OOPS_ASSIMILATION_DUALMINIMIZER_H_
 #define OOPS_ASSIMILATION_DUALMINIMIZER_H_
 
+#include <limits>
 #include <memory>
 #include <string>
-
 
 #include "eckit/config/Configuration.h"
 #include "oops/assimilation/BMatrix.h"
@@ -87,6 +87,8 @@ DualMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
   const HMatrix<MODEL, OBS> H(J_);
   const HtMatrix<MODEL, OBS> Ht(J_);
 
+  CtrlInc_ * dx = new CtrlInc_(J_.jb());
+
 // Define minimisation starting point in dual space
   Dual_ vv;
   for (unsigned jj = 0; jj < J_.nterms(); ++jj) {
@@ -100,6 +102,15 @@ DualMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
     rr.append(J_.jterm(jj).newGradientFG());
   }
   rr *= -1.0;
+
+// Check for zero gradient (for example if no obs)
+  const double rnorm = dot_product(rr, rr);
+  const double epsilon = config.getDouble("epsilon", std::numeric_limits<double>::epsilon());
+  Log::info() << "Initial RHS squared norm = " << rnorm << std::endl;
+  if (rnorm < epsilon) {
+    Log::info() << "RHS smaller than " << epsilon << ", returning." << std::endl;
+    return dx;
+  }
 
 // Update rr if initial dx in model space is not a zero vector
 // rr = rr - Rinv H dx0
@@ -127,7 +138,6 @@ DualMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
   Ht.multiply(vv, dh);
   dh.axpy(-vvp, g0);
 
-  CtrlInc_ * dx = new CtrlInc_(J_.jb());
   B.multiply(dh, *dx);    // BHtaug vvaug
 
   Log::info() << classname() << ": Estimated Final Jb = "
