@@ -781,7 +781,6 @@ ecbuild_add_test( TARGET test_l95_simplifiedl95_DRIPCG
                   COMMAND l95_4dvar.x
                   ARGS testinput/simplifiedl95_DRIPCG.yaml )
 
-
 ecbuild_add_test( TARGET test_l95_simplifiedl95_DRPCG
                   COMMAND l95_4dvar.x
                   ARGS testinput/simplifiedl95_DRPCG.yaml )
@@ -790,42 +789,42 @@ ecbuild_add_test( TARGET test_l95_simplifiedl95_DRPFOM
                   COMMAND l95_4dvar.x
                   ARGS testinput/simplifiedl95_DRPFOM.yaml )
 
-ecbuild_add_test( TARGET simplifiedl95_DRPLanczos
+ecbuild_add_test( TARGET test_l95_simplifiedl95_DRPLanczos
                   COMMAND l95_4dvar.x
                   ARGS testinput/simplifiedl95_DRPLanczos.yaml )
 
-ecbuild_add_test( TARGET simplifiedl95_FGMRES
+ecbuild_add_test( TARGET test_l95_simplifiedl95_FGMRES
                   COMMAND l95_4dvar.x
                   ARGS testinput/simplifiedl95_FGMRES.yaml )
 
-ecbuild_add_test( TARGET simplifiedl95_GMRESR
+ecbuild_add_test( TARGET test_l95_simplifiedl95_GMRESR
                   COMMAND l95_4dvar.x
                   ARGS testinput/simplifiedl95_GMRESR.yaml )
 
-ecbuild_add_test( TARGET simplifiedl95_IPCG
+ecbuild_add_test( TARGET test_l95_simplifiedl95_IPCG
                   COMMAND l95_4dvar.x
                   ARGS testinput/simplifiedl95_IPCG.yaml )
 
-ecbuild_add_test( TARGET simplifiedl95_LBGMRESR
+ecbuild_add_test( TARGET test_l95_simplifiedl95_LBGMRESR
                   COMMAND l95_4dvar.x
                   ARGS testinput/simplifiedl95_LBGMRESR.yaml )
 
-ecbuild_add_test( TARGET simplifiedl95_MINRES
+ecbuild_add_test( TARGET test_l95_simplifiedl95_MINRES
                   COMMAND l95_4dvar.x
                   ARGS testinput/simplifiedl95_MINRES.yaml )
 
-ecbuild_add_test( TARGET simplifiedl95_PCG
+ecbuild_add_test( TARGET test_l95_simplifiedl95_PCG
                   COMMAND l95_4dvar.x
                   ARGS testinput/simplifiedl95_PCG.yaml )
 
-ecbuild_add_test( TARGET simplifiedl95_PLanczos
+ecbuild_add_test( TARGET test_l95_simplifiedl95_PLanczos
                   COMMAND l95_4dvar.x
                   ARGS testinput/simplifiedl95_PLanczos.yaml )
 
-ecbuild_add_test( TARGET  simplifiedl95_RPCG
+ecbuild_add_test( TARGET test_l95_simplifiedl95_RPCG
                   COMMAND l95_4dvar.x
                   ARGS testinput/simplifiedl95_RPCG.yaml )
 
-ecbuild_add_test( TARGET simplifiedl95_RPLanczos
+ecbuild_add_test( TARGET test_l95_simplifiedl95_RPLanczos
                   COMMAND l95_4dvar.x
                   ARGS testinput/simplifiedl95_RPLanczos.yaml )
