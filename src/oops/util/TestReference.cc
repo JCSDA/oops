@@ -251,7 +251,9 @@ TestReferenceFloatMismatchError::TestReferenceFloatMismatchError(int line_num,
      << std::scientific
      << "Test Val : " << test_val << "\n"
      << "Ref  Val : " << ref_val << "\n"
-     << "Delta    : " << std::abs(test_val-ref_val) << "\n"
+     << "Rel Delta    : "
+     << std::abs((ref_val - test_val)/(0.5 * (ref_val + test_val)))
+     << "\n"
      << "Tolerance: " << tolerance << "\n"
      << "Test Line: '" << test_line << "'\n"
      << "Ref Line : '" << ref_line << "'";
