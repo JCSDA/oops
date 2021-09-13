@@ -77,13 +77,15 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     const eckit::LocalConfiguration geometryConfig(fullConfig, "geometry");
     const Geometry_ geometry(geometryConfig, this->getComm());
 
+    oops::Log::debug() << "fullConfig: " << fullConfig << std::endl;
+
     // Get observations configuration
     eckit::LocalConfiguration obsConfig(fullConfig, "observations");
-    // Get driver configuration
-    const eckit::LocalConfiguration driverConfig(fullConfig, "driver");
 
+    // Get driver configuration
     // if any of the obs. spaces uses Halo distribution it will need to know the geometry
     // of the local grid on this PE
+    const eckit::LocalConfiguration driverConfig(fullConfig, "driver");
     bool update_obsconfig = driverConfig.getBool("update obs config with geometry info", false);
     if (update_obsconfig) updateConfigWithPatchGeometry(geometry, obsConfig);
 
@@ -105,6 +107,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     std::unique_ptr<LocalSolver_> solver =
          LocalEnsembleSolverFactory<MODEL, OBS>::create(obsdb, geometry, fullConfig,
                                                         nens, bkg_mean);
+
     // test prints for the prior ensemble
     bool do_test_prints = driverConfig.getBool("do test prints", true);
     if (do_test_prints) {
@@ -254,53 +257,93 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     return "oops::LocalEnsembleDA<" + MODEL::name() + ", " + OBS::name() + ">";
   }
 
-  void updateConfigWithPatchGeometry(const Geometry_ & geometry,
-                                     eckit::LocalConfiguration & obsConfig) const {
-    std::vector<double> patchCenter(2, 0.0);
-    double patchRadius = 0.0;
-
-    // since Halo distribution is only implemented in ioda, we can assume that
-    // x is lon and y is lat on Earth. then we need to compute average of x on a circle
+  void calculate_patchCenter(const Geometry_ & geometry, std::vector<double> & patchCenter) const {
     eckit::geometry::Point2 gptmp;
-    const double radius_earth = 6.371e6;
     const double deg2rad = 3.14159265/180.0;
 
-    // compute patch center
-    double sinXmean = 0;
-    double cosXmean = 0;
-    double ymean = 0;
+    // compute patch center.
+    // Convert from spherical lat-lon coordinates to Cartesian x,y,z coordinate frame
+    // Calculate the mean xyz position,
+    // and then convert this mean position back to spherical lat-lon,
+    // and use this mean lat-lon as patch center.
+    double alat = 0.0;
+    double alon = 0.0;
+    double xmean = 0.0;
+    double ymean = 0.0;
+    double zmean = 0.0;
     int n = 0;
     for (GeometryIterator_ i = geometry.begin(); i != geometry.end(); ++i) {
       gptmp = *i;
-      cosXmean += cos(gptmp.x()*deg2rad);
-      sinXmean += sin(gptmp.x()*deg2rad);
-      ymean += gptmp.y();
+      alat = gptmp.y();
+      alon = gptmp.x()*deg2rad;
+      alat = gptmp.y()*deg2rad;
+      xmean += cos(alat)*cos(alon);
+      ymean += cos(alat)*sin(alon);
+      zmean += sin(alat);
       ++n;
     }
-    cosXmean = cosXmean/static_cast<double>(n);
-    sinXmean = sinXmean/static_cast<double>(n);
-    patchCenter[0] = atan2(sinXmean, cosXmean)/deg2rad;
-    patchCenter[1] = ymean/static_cast<double>(n);
+    xmean = xmean/static_cast<double>(n);
+    ymean = ymean/static_cast<double>(n);
+    zmean = zmean/static_cast<double>(n);
+
+    double rmean = sqrt(xmean*xmean + ymean*ymean);
+    patchCenter[0] = atan2(ymean, xmean)/deg2rad;
+    patchCenter[1] = atan2(zmean, rmean)/deg2rad;
+  }
+
+  void updateConfigWithPatchGeometry(const Geometry_ & geometry,
+                                     eckit::LocalConfiguration & obsConfig) const {
+    Log::debug() << "updateConfigWithPatchGeometry..." << std::endl;
+
+    std::vector<double> patchCenter(2, 0.0);
+    double patchRadius = 0.0;
+
+    eckit::geometry::Point2 gptmp;
+    const double radius_earth = 6.371e6;
+
+    // Calculate region's patch center.
+    calculate_patchCenter(geometry, patchCenter);
 
     // compute radius
     eckit::geometry::Point2 center(patchCenter[0], patchCenter[1]);
-    patchRadius = 0;
     for (GeometryIterator_ i = geometry.begin(); i != geometry.end(); ++i) {
       double dist = eckit::geometry::Sphere::distance(radius_earth, center, *i);
       patchRadius = fmax(patchRadius, dist);
     }
+
     Log::debug() << "patch center=" << patchCenter
                  << " patch radius=" << patchRadius << std::endl;
 
     // update observations configs with information on patch center and radius
     std::vector<eckit::LocalConfiguration> obsConfigs = obsConfig.getSubConfigurations();
-    for (auto & conf : obsConfigs) {
-      conf.set("obs space.center", patchCenter);
-      conf.set("obs space.radius", patchRadius);
+
+    if (obsConfigs.size() > 0) {
+      for (auto & conf : obsConfigs) {
+        // assign radius that is a sum of the patch and localization radii
+        double lengthscale = conf.getDouble("obs localization.lengthscale", 0.0);
+        Log::debug() << "lengthscale=" << lengthscale << std::endl;
+
+        double extendRadius = patchRadius + lengthscale;
+        Log::debug() << "patch radius + lengthscale=" << extendRadius << std::endl;
+
+        conf.set("obs space.center", patchCenter);
+        conf.set("obs space.radius", extendRadius);
+      }
+
+      eckit::LocalConfiguration tmp;
+      tmp.set("observations", obsConfigs);
+      obsConfig = tmp.getSubConfiguration("observations");
+    } else {
+      // assign radius that is a sum of the patch and localization radii
+      double lengthscale = obsConfig.getDouble("obs space.obs localization.lengthscale", 0.0);
+      Log::debug() << "lengthscale=" << lengthscale << std::endl;
+
+      patchRadius += lengthscale;
+      Log::debug() << "patch radius + lengthscale=" << patchRadius << std::endl;
+
+      obsConfig.set("obs space.center", patchCenter);
+      obsConfig.set("obs space.radius", patchRadius);
     }
-    eckit::LocalConfiguration tmp;
-    tmp.set("observations", obsConfigs);
-    obsConfig = tmp.getSubConfiguration("observations");
   }
 
   void saveVariance(const eckit::LocalConfiguration & outConfig, const IncrementEnsemble4D_ & perts,
