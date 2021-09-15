@@ -11,7 +11,7 @@ output:
   date: 2010-01-01T00:00:00Z
   exp: uniform_field_inflation
   frequency: PT12H
-  type: fc
+  type: diag
 prints:
   frequency: PT3H
 geometry:

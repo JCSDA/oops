@@ -16,7 +16,7 @@ vertical localization:
   fraction of retained variance: 0.5
   read eigen vectors: true
   list of eigen vectors to read:
-   - filename: Data/verticalEVs.001.an.2009-12-31T00:00:00Z.nc
-   - filename: Data/verticalEVs.002.an.2009-12-31T00:00:00Z.nc
+   - filename: Data/verticalEVs.000001.diag.2009-12-31T00:00:00Z.nc
+   - filename: Data/verticalEVs.000002.diag.2009-12-31T00:00:00Z.nc
  
 expected neig: 2 

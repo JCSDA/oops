@@ -19,6 +19,6 @@ vertical localization:
     datadir: Data
     date: *date
     exp: verticalEVs.%{member}%
-    type: an
+    type: diag
  
 expected neig: 2 

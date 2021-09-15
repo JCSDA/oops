@@ -16,7 +16,7 @@ ensemble:
     filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1D.nc
   inflation field:
     date: 2010-01-01T00:00:00Z
-    filename: Data/uniform_field_inflation.fc.2010-01-01T00:00:00Z.PT0S.nc
+    filename: Data/uniform_field_inflation.diag.2010-01-01T00:00:00Z.nc
 geometry:
   nx: 40
   ny: 20
@@ -24,7 +24,7 @@ geometry:
 variance output:
   datadir: Data
   exp: variance_inflation_field
-  type: fc
+  type: diag
   date: 2010-01-01T00:00:00Z
 
 test:

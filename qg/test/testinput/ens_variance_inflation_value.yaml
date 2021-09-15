@@ -22,7 +22,7 @@ geometry:
 variance output:
   datadir: Data
   exp: variance_inflation_value
-  type: fc
+  type: diag
   date: 2010-01-01T00:00:00Z
 
 test:
