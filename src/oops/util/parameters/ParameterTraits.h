@@ -9,6 +9,8 @@
 #define OOPS_UTIL_PARAMETERS_PARAMETERTRAITS_H_
 
 #include <cstdint>
+#include <iomanip>
+#include <limits>
 #include <map>
 #include <memory>
 #include <set>
@@ -163,6 +165,14 @@ struct EnumParameterTraits {
     return ObjectJsonSchema({{name, {{"enum", enumSchema}}}});
   }
 
+  static std::string valueAsJson(const EnumType &value) {
+    for (util::NamedEnumerator<EnumType> namedValue : Helper::namedValues)
+      if (value == namedValue.value) {
+        return quotedName(namedValue);
+      }
+    return "";
+  }
+
  private:
   static std::string quotedName(util::NamedEnumerator<EnumType> namedValue) {
     std::string result = "\"";
@@ -177,6 +187,8 @@ struct IntegerParameterTraits : public GenericParameterTraits<T> {
   static ObjectJsonSchema jsonSchema(const std::string &name) {
     return ObjectJsonSchema({{name, {{"type", "\"integer\""}}}});
   }
+
+  static std::string valueAsJson(const T &value);
 };
 
 template <>
@@ -190,6 +202,8 @@ struct FloatingPointParameterTraits : public GenericParameterTraits<T> {
   static ObjectJsonSchema jsonSchema(const std::string &name) {
     return ObjectJsonSchema({{name, {{"type", "\"number\""}}}});
   }
+
+  static std::string valueAsJson(const T &value);
 };
 
 template <>
@@ -203,6 +217,8 @@ struct ParameterTraits<bool, std::false_type> : public GenericParameterTraits<bo
   static ObjectJsonSchema jsonSchema(const std::string &name) {
     return ObjectJsonSchema({{name, {{"type", "\"boolean\""}}}});
   }
+
+  static std::string valueAsJson(const bool &value);
 };
 
 template <>
@@ -211,6 +227,8 @@ struct ParameterTraits<std::string, std::false_type> :
   static ObjectJsonSchema jsonSchema(const std::string &name) {
     return ObjectJsonSchema({{name, {{"type", R"(["string", "number"])"}}}});
   }
+
+  static std::string valueAsJson(const std::string &value);
 };
 
 template <>
@@ -277,6 +295,8 @@ struct ParameterTraits<util::DateTime> {
     return ObjectJsonSchema({{name, {{"type", "\"string\""},
                                      {"format", "\"date-time\""}}}});
   }
+
+  static std::string valueAsJson(const util::DateTime &value);
 };
 
 /// \brief Specialization for Duration objects.
@@ -303,6 +323,8 @@ struct ParameterTraits<util::Duration> {
     return ObjectJsonSchema({{name, {{"type", "\"string\""},
                                      {"format", "\"duration\""}}}});
   }
+
+  static std::string valueAsJson(const util::Duration &value);
 };
 
 
@@ -332,6 +354,8 @@ struct ParameterTraits<util::PartialDateTime> {
     return ObjectJsonSchema({{name, {{"type", "\"string\""},
                                      {"pattern", expression}}}});
   }
+
+  static std::string valueAsJson(const util::PartialDateTime &value);
 };
 
 /// \brief Specialization for vectors.
@@ -491,6 +515,8 @@ struct ParameterTraits<std::set<int>, std::false_type> {
                   const std::set<int> &value);
 
   static ObjectJsonSchema jsonSchema(const std::string &name);
+
+  static std::string valueAsJson(const std::set<int> &value);
 };
 
 

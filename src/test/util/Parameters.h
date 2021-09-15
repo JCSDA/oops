@@ -26,6 +26,8 @@
 #include "oops/base/Variables.h"
 #include "oops/runs/Test.h"
 #include "oops/util/AnyOf.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
 #include "oops/util/Expect.h"
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/ConfigurationParameter.h"
@@ -43,6 +45,7 @@
 #include "oops/util/parameters/PropertyJsonSchema.h"
 #include "oops/util/parameters/RequiredParameter.h"
 #include "oops/util/parameters/RequiredPolymorphicParameter.h"
+#include "oops/util/PartialDateTime.h"
 
 namespace test {
 
@@ -219,6 +222,14 @@ class OptionalDeviceParameters : public oops::Parameters {
    device{"type", this};
 };
 
+class AllDeviceParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(AllDeviceParameters, Parameters)
+ public:
+  oops::RequiredParameter<RequiredDeviceParameters> requiredDevice{"required_device", this};
+  oops::Parameter<DeviceParametersWithDefault> deviceWithDefault{"device_with_default", {}, this};
+  oops::Parameter<OptionalDeviceParameters> optionalDevice{"optional_device", {}, this};
+};
+
 // Class required by tests checking JSON schema description
 
 class DescriptiveParameters : public oops::Parameters {
@@ -236,12 +247,31 @@ class DescriptiveParameters : public oops::Parameters {
    deviceThree{"type", "Device 003", this};
 };
 
-class AllDeviceParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(AllDeviceParameters, Parameters)
+// Class required by tests checking JSON schema default value
+
+
+class MyParametersWithDefaultValues : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(MyParametersWithDefaultValues, Parameters)
  public:
-  oops::RequiredParameter<RequiredDeviceParameters> requiredDevice{"required_device", this};
-  oops::Parameter<DeviceParametersWithDefault> deviceWithDefault{"device_with_default", {}, this};
-  oops::Parameter<OptionalDeviceParameters> optionalDevice{"optional_device", {}, this};
+  oops::Parameter<float> floatParameter{"float_parameter", 1.5f, this};
+  oops::Parameter<int> intParameter{"int_parameter", 2, this};
+  oops::Parameter<bool> boolParameter{"bool_parameter", true, this};
+  oops::Parameter<Fruit> fruitParameter{"fruit_parameter", Fruit::ORANGE, this};
+  oops::Parameter<std::set<int>> setIntParameter{"set_int_parameter", {1, 3, 5}, this};
+  oops::Parameter<util::DateTime> dateTimeParameter{
+    "date_time_parameter", util::DateTime(2021, 12, 25, 0, 0, 0), this};
+  oops::Parameter<util::Duration> durationParameter{
+    "duration_parameter", util::Duration("P1D"), this};
+  oops::Parameter<util::PartialDateTime> partDateTimeParameter{
+    "part_date_time_parameter", util::PartialDateTime(2021, -1, 25, 0, 0, 0), this};
+  oops::Parameter<oops::Variables> variablesParameter{
+    "variables_parameter",
+    oops::Variables(
+      std::vector<std::string>({"air_temperature", "air_pressure"}),
+      std::vector<int>({5, 6, 7})),
+    this};
+  oops::PolymorphicParameter<DeviceTypeDependentParameters, DeviceFactory>
+    deviceOne{"type", "screen", this};
 };
 
 // Classes used to test parameter constraints
@@ -926,6 +956,58 @@ void testDescriptiveParameters() {
   const std::string deviceThreePropStr = oops::toString(
     ojsDeviceThree.properties().at("type"));
   EXPECT(deviceThreePropStr.find("Device 003") != std::string::npos);
+}
+
+// Parameters with JSON schema default values
+
+void testParametersWithDefaultValues() {
+  const MyParametersWithDefaultValues params;
+
+  const oops::ObjectJsonSchema floatOjs = params.floatParameter.jsonSchema();
+  const std::string floatOjsStr = oops::toString(floatOjs.properties().at("float_parameter"));
+  EXPECT(floatOjsStr.find("\"default\": 1.500000000e+00") != std::string::npos);
+
+  const oops::ObjectJsonSchema intOjs = params.intParameter.jsonSchema();
+  const std::string intOjsStr = oops::toString(intOjs.properties().at("int_parameter"));
+  EXPECT(intOjsStr.find("\"default\": 2") != std::string::npos);
+
+  const oops::ObjectJsonSchema boolOjs = params.boolParameter.jsonSchema();
+  const std::string boolOjsStr = oops::toString(boolOjs.properties().at("bool_parameter"));
+  EXPECT(boolOjsStr.find("\"default\": true") != std::string::npos);
+
+  const oops::ObjectJsonSchema fruitOjs = params.fruitParameter.jsonSchema();
+  const std::string fruitOjsStr = oops::toString(fruitOjs.properties().at("fruit_parameter"));
+  EXPECT(fruitOjsStr.find("\"default\": \"orange\"") != std::string::npos);
+
+  const oops::ObjectJsonSchema setIntOjs = params.setIntParameter.jsonSchema();
+  const std::string setIntOjsStr = oops::toString(setIntOjs.properties().at("set_int_parameter"));
+  EXPECT(setIntOjsStr.find("\"default\": [1, 3, 5]") != std::string::npos);
+
+  const oops::ObjectJsonSchema dateTimeOjs = params.dateTimeParameter.jsonSchema();
+  const std::string dateTimeOjsStr = oops::toString(
+    dateTimeOjs.properties().at("date_time_parameter"));
+  EXPECT(dateTimeOjsStr.find("\"default\": \"2021-12-25T00:00:00Z\"") != std::string::npos);
+
+  const oops::ObjectJsonSchema durationOjs = params.durationParameter.jsonSchema();
+  const std::string durationOjsStr = oops::toString(
+    durationOjs.properties().at("duration_parameter"));
+  EXPECT(durationOjsStr.find("\"default\": \"P1D\"") != std::string::npos);
+
+  const oops::ObjectJsonSchema partDateTimeOjs = params.partDateTimeParameter.jsonSchema();
+  const std::string partDateTimeOjsStr = oops::toString(
+    partDateTimeOjs.properties().at("part_date_time_parameter"));
+  EXPECT(partDateTimeOjsStr.find("\"default\": \"2021-**-25T00:00:00Z\"") != std::string::npos);
+
+  const oops::ObjectJsonSchema variablesOjs = params.variablesParameter.jsonSchema();
+  const std::string variablesOjsStr = oops::toString(
+    variablesOjs.properties().at("variables_parameter"));
+  EXPECT(variablesOjsStr.find("\"default\": [\"air_temperature\", \"air_pressure\"]")
+         != std::string::npos);
+
+  const oops::ObjectJsonSchema polyOjs = params.deviceOne.jsonSchema();
+  const std::string polyOjsStr = oops::toString(
+    polyOjs.properties().at("type"));
+  EXPECT(polyOjsStr.find("\"default\": \"screen\"") != std::string::npos);
 }
 
 // Parameters storing Variables objects
@@ -1716,6 +1798,10 @@ class Parameters : public oops::Test {
 
     ts.emplace_back(CASE("util/Parameters/testDescriptiveParameters") {
                       testDescriptiveParameters();
+                    });
+
+    ts.emplace_back(CASE("util/Parameters/testParametersWithDefaultValues") {
+                      testParametersWithDefaultValues();
                     });
 
     ts.emplace_back(CASE("util/Parameters/testVariablesDeserializationWithoutChannels") {

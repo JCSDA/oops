@@ -64,4 +64,15 @@ std::vector<std::string> getVariableNamesWithoutChannelSuffix(const Variables &v
   return uniqueBaseNames;
 }
 
+std::string ParameterTraits<Variables>::valueAsJson(const Variables &value) {
+  const std::vector<std::string> varNames = getVariableNamesWithoutChannelSuffix(value);
+  if (varNames.empty()) {
+    return "[]";
+  }
+  return "["
+    + util::stringfunctions::join(
+      ", ", varNames.begin(), varNames.end(), [](std::string s) { return "\"" + s + "\""; })
+    + "]";
+}
+
 }  // namespace oops
