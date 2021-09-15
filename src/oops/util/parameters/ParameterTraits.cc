@@ -45,7 +45,7 @@ class LocalConfigurationEx : public eckit::LocalConfiguration {
 // Specialization for IntegerParameterTraits
 template std::string IntegerParameterTraits<int>::valueAsJson(const int &value);
 
-template std::string IntegerParameterTraits<uint64_t>::valueAsJson(const uint64_t &value);
+template std::string IntegerParameterTraits<size_t>::valueAsJson(const size_t &value);
 
 template <typename T>
 std::string IntegerParameterTraits<T>::valueAsJson(const T &value) {
