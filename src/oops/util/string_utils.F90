@@ -29,12 +29,12 @@ type(fckit_configuration), intent(in)        :: f_conf
 character(len=:), allocatable, intent(inout) :: str
 
 character(len=:), allocatable :: str2, member_folder
-character(len=6) :: mymember_str
+character(len=3) :: mymember_str
 integer :: mymember, member_index
 
 if ( f_conf%has("member") ) then
   call f_conf%get_or_die("member", mymember)
-  write(mymember_str,'(I0.6)') mymember
+  write(mymember_str,'(I0.3)') mymember
   member_folder = "%{member}%"
   member_index = index(str, member_folder)
   if ( member_index>0 ) then
