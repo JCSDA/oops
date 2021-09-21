@@ -51,10 +51,10 @@ type(duration) :: step
 
 ! Get configuration parameters
 call f_conf%get_or_die("datadir",str)
-call swap_name_member(f_conf, str)
+call swap_name_member(f_conf, str, 6)
 fdbdir = str
 call f_conf%get_or_die("exp",str)
-call swap_name_member(f_conf, str)
+call swap_name_member(f_conf, str, 6)
 expver = str
 call f_conf%get_or_die("type",str)
 typ = str

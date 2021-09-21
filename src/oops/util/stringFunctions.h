@@ -14,7 +14,7 @@
 namespace util {
   namespace stringfunctions {
 
-    void swapNameMember(const eckit::Configuration &, std::string &);
+    void swapNameMember(const eckit::Configuration &, std::string &, int ndigits = 3);
 
     /// \brief Convert sequence elements to strings and join them using a delimiter.
     ///

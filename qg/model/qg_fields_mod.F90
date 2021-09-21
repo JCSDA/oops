@@ -691,7 +691,7 @@ else
 
   ! Get filename
   call f_conf%get_or_die("filename",str)
-  call swap_name_member(f_conf, str)
+  call swap_name_member(f_conf, str, 6)
   filename = str
   call fckit_log%info('qg_fields_read_file: opening '//trim(filename))
 

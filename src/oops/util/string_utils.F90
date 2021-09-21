@@ -22,23 +22,32 @@ public swap_name_member, replace_string
 contains
 
 ! --------------------------------------------------------------------------------------------------
-!> Changes the string '%{member}%' to 'mem{i}'
+!> Changes the string '%{member}%' to '{iii}'
 
-subroutine swap_name_member(f_conf, str)
+subroutine swap_name_member(f_conf, str, ndigits)
 type(fckit_configuration), intent(in)        :: f_conf
 character(len=:), allocatable, intent(inout) :: str
+integer, optional, intent(in)                :: ndigits
 
 character(len=:), allocatable :: str2, member_folder
-character(len=3) :: mymember_str
-integer :: mymember, member_index
+character(len=6)  :: my_fmt
+character(len=10) :: mymember_str
+integer :: mymember, member_index, ldigits
 
+ldigits = 3
+if (present(ndigits)) ldigits = ndigits
+if (ldigits < 1 .or. ldigits > 9) call abor1_ftn('ndigits must be >1 and <=9')
+
+write(my_fmt, '(a, i0, a)') '(I0.', ldigits, ')'
 if ( f_conf%has("member") ) then
   call f_conf%get_or_die("member", mymember)
-  write(mymember_str,'(I0.3)') mymember
+  write(mymember_str,my_fmt) mymember
+
   member_folder = "%{member}%"
   member_index = index(str, member_folder)
+
   if ( member_index>0 ) then
-    str2 = str(1:member_index-1) // mymember_str // &
+    str2 = str(1:member_index-1) // trim(mymember_str) // &
       str(member_index+len(member_folder):len(str))
     deallocate(str)
     str=str2
