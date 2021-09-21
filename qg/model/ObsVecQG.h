@@ -45,14 +45,14 @@ class ObsVecQG : public util::Printable,
   ObsVecQG & operator*= (const ObsVecQG &);
   ObsVecQG & operator/= (const ObsVecQG &);
 
-  Eigen::VectorXd  packEigen(const ObsDataQG<int> &) const;
-  size_t packEigenSize(const ObsDataQG<int> &) const;
+  Eigen::VectorXd packEigen(const ObsVecQG &) const;
+  size_t packEigenSize(const ObsVecQG &) const;
   size_t size() const;
 
   /// set all values to zero
   void zero();
-  /// set \p i-th value to zero
-  void zero(int i);
+  /// set \p i-th value to missing value
+  void setToMissing(int i);
   /// set all values to one
   void ones();
   void axpy(const double &, const ObsVecQG &);
@@ -61,6 +61,7 @@ class ObsVecQG : public util::Printable,
   double dot_product_with(const ObsVecQG &) const;
   double rms() const;
   void mask(const ObsDataQG<int> &);
+  void mask(const ObsVecQG &);
   ObsVecQG & operator=(const ObsDataQG<float> &);
 
   unsigned int nobs() const;

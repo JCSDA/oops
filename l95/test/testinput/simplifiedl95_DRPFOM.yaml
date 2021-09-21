@@ -24,7 +24,7 @@ cost function:
       obsdataout: Data/simplifiedl95.obt
     obs error:
       covariance model: diagonal
-      standard_deviation: 1.0
+      random amplitude: 1.0
 variational:
   minimizer:
     algorithm: DRPFOM

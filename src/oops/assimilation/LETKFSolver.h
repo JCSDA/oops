@@ -20,14 +20,13 @@
 #include "oops/assimilation/LocalEnsembleSolver.h"
 #include "oops/base/Departures.h"
 #include "oops/base/DeparturesEnsemble.h"
+#include "oops/base/Geometry.h"
 #include "oops/base/IncrementEnsemble4D.h"
 #include "oops/base/LocalIncrement.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/ObsLocalizations.h"
 #include "oops/base/ObsSpaces.h"
-#include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
-#include "oops/interface/ObsDataVector.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Timer.h"
 
@@ -52,14 +51,15 @@ class LETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
   typedef GeometryIterator<MODEL>     GeometryIterator_;
   typedef IncrementEnsemble4D<MODEL>  IncrementEnsemble4D_;
   typedef ObsErrors<OBS>              ObsErrors_;
-  typedef ObsDataVector<OBS, int>     ObsDataVector_;
   typedef ObsLocalizations<MODEL, OBS> ObsLocalizations_;
   typedef ObsSpaces<OBS>              ObsSpaces_;
+  typedef State4D<MODEL>              State4D_;
 
  public:
   static const std::string classname() {return "oops::LETKFSolver";}
 
-  LETKFSolver(ObsSpaces_ &, const Geometry_ &, const eckit::Configuration &, size_t);
+  LETKFSolver(ObsSpaces_ &, const Geometry_ &, const eckit::Configuration &, size_t,
+              const State4D_ &);
 
   /// KF update + posterior inflation at a grid point location (GeometryIterator_)
   void measurementUpdate(const IncrementEnsemble4D_ &,
@@ -93,8 +93,10 @@ class LETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
 
 template <typename MODEL, typename OBS>
 LETKFSolver<MODEL, OBS>::LETKFSolver(ObsSpaces_ & obspaces, const Geometry_ & geometry,
-                                     const eckit::Configuration & config, size_t nens)
-  : LocalEnsembleSolver<MODEL, OBS>(obspaces, geometry, config, nens), nens_(nens)
+                                     const eckit::Configuration & config, size_t nens,
+                                     const State4D_ & xbmean)
+  : LocalEnsembleSolver<MODEL, OBS>(obspaces, geometry, config, nens, xbmean),
+    nens_(nens)
 {
   options_.deserialize(config);
   const LETKFInflationParameters & inflopt = options_.infl;
@@ -139,15 +141,10 @@ void LETKFSolver<MODEL, OBS>::measurementUpdate(const IncrementEnsemble4D_ & bkg
 
   // create the local subset of observations
   Departures_ locvector(this->obspaces_);
-  std::vector<std::shared_ptr<ObsDataVector_>> outside;
-  for (size_t jj = 0; jj < this->obspaces_.size(); ++jj) {
-    outside.push_back(std::make_shared<ObsDataVector_>(this->obspaces_[jj],
-            this->obspaces_[jj].obsvariables()));
-  }
   locvector.ones();
-  this->obsloc_.computeLocalization(i, outside, locvector);
-  locvector.mask(this->hofx_.qcflags());
-  Eigen::VectorXd local_omb_vec = this->omb_.packEigen(outside);
+  this->obsloc().computeLocalization(i, locvector);
+  locvector.mask(*(this->invVarR_));
+  Eigen::VectorXd local_omb_vec = this->omb_.packEigen(locvector);
 
   if (local_omb_vec.size() == 0) {
     // no obs. so no need to update Wa_ and wa_
@@ -156,11 +153,11 @@ void LETKFSolver<MODEL, OBS>::measurementUpdate(const IncrementEnsemble4D_ & bkg
   } else {
     // if obs are present do normal KF update
     // create local Yb
-    Eigen::MatrixXd local_Yb_mat = this->Yb_.packEigen(outside);
+    Eigen::MatrixXd local_Yb_mat = this->Yb_.packEigen(locvector);
     // create local obs errors
-    Eigen::VectorXd local_invVarR_vec = this->invVarR_->packEigen(outside);
+    Eigen::VectorXd local_invVarR_vec = this->invVarR_->packEigen(locvector);
     // and apply localization
-    Eigen::VectorXd localization = locvector.packEigen(outside);
+    Eigen::VectorXd localization = locvector.packEigen(locvector);
     local_invVarR_vec.array() *= localization.array();
     computeWeights(local_omb_vec, local_Yb_mat, local_invVarR_vec);
     applyWeights(bkg_pert, ana_pert, i);

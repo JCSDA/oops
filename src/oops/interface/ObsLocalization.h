@@ -14,9 +14,8 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/LocalIncrement.h"
 #include "oops/base/ObsLocalizationBase.h"
-#include "oops/interface/ObsDataVector.h"
+#include "oops/base/ObsVector.h"
 #include "oops/interface/ObsSpace.h"
-#include "oops/interface/ObsVector.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
@@ -31,7 +30,6 @@ class ObsLocalization : public util::Printable,
   typedef ObsLocalizationBase<MODEL, OBS>  ObsLocBase_;
   typedef GeometryIterator<MODEL>  GeometryIterator_;
   typedef ObsSpace<OBS>            ObsSpace_;
-  typedef ObsDataVector<OBS, int>  ObsDataVector_;
   typedef ObsVector<OBS>           ObsVector_;
 
  public:
@@ -40,12 +38,11 @@ class ObsLocalization : public util::Printable,
   ObsLocalization(const eckit::Configuration &, const ObsSpace_ &);
   ~ObsLocalization();
 
-  /// compute obs-space localization: fill \p obsvector with observation-space
-  /// localization values between observations and \p point in model-space, and
-  /// fill \p outside with flags on whether obs is local or not (1: outside of
-  /// localization, 0: inside of localization, local)
+  /// compute obs-space localization: fill \p locfactor with observation-space
+  /// localization values between observations and \p point in model-space.
+  /// Set \p locfactor to missing value for observations that are not local.
   void computeLocalization(const GeometryIterator_ & point,
-                           ObsDataVector_ & outside, ObsVector_ & obsvector) const override;
+                           ObsVector_ & locfactor) const override;
 
  private:
   void print(std::ostream &) const override;
@@ -80,10 +77,10 @@ ObsLocalization<MODEL, OBS>::~ObsLocalization() {
 
 template <typename MODEL, typename OBS>
 void ObsLocalization<MODEL, OBS>::computeLocalization(const GeometryIterator_ & p,
-                                  ObsDataVector_ & local, ObsVector_ & obsvector) const {
+                                                      ObsVector_ & locfactor) const {
   Log::trace() << "ObsLocalization<MODEL, OBS>:: computeLocalization starting" << std::endl;
   util::Timer timer(classname(), "computeLocalization");
-  obsloc_->computeLocalization(p, local, obsvector);
+  obsloc_->computeLocalization(p, locfactor);
   Log::trace() << "ObsLocalization<MODEL, OBS>:: computeLocalization done" << std::endl;
 }
 

@@ -11,10 +11,10 @@
 #ifndef OOPS_ASSIMILATION_DRMINIMIZER_H_
 #define OOPS_ASSIMILATION_DRMINIMIZER_H_
 
+#include <limits>
 #include <memory>
 #include <string>
 #include <vector>
-
 
 #include "eckit/config/Configuration.h"
 #include "oops/assimilation/BMatrix.h"
@@ -93,6 +93,12 @@ DRMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
   const Bmat_    B(J_);
   const HtRinvH_ HtRinvH(J_, runOnlineAdjTest);
 
+// Define minimisation starting point
+  // dx
+  CtrlInc_ * dx = new CtrlInc_(J_.jb());
+  // dxh = B^{-1} dx
+  CtrlInc_ dxh(J_.jb());
+
 // Compute RHS (sum B^{-1} dx_{i}) + H^T R^{-1} d
 // dx_i = x_i - x_{i-1}; dx_1 = x_1 - x_b
   CtrlInc_ rhs(J_.jb());
@@ -110,11 +116,14 @@ DRMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
   rhs *= -1.0;
   Log::info() << classname() << " rhs" << rhs << std::endl;
 
-// Define minimisation starting point
-  // dx
-  CtrlInc_ * dx = new CtrlInc_(J_.jb());
-  // dxh = B^{-1} dx
-  CtrlInc_ dxh(J_.jb());
+// Check for zero gradient (for example if no obs)
+  const double gnorm = dot_product(rhs, rhs);
+  const double epsilon = config.getDouble("epsilon", std::numeric_limits<double>::epsilon());
+  Log::info() << "Initial RHS squared norm = " << gnorm << std::endl;
+  if (gnorm < epsilon) {
+    Log::info() << "RHS smaller than " << epsilon << ", returning." << std::endl;
+    return dx;
+  }
 
 // Set J[0] = 0.5 (x_i - x_b)^T B^{-1} (x_i - x_b) + 0.5 d^T R^{-1} d
   const double costJ0Jb = costJ0Jb_;

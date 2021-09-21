@@ -211,6 +211,22 @@ ParametersType validateAndDeserialize(const eckit::Configuration &config) {
   return parameters;
 }
 
+/// \brief Deserialize configurations \p configs into new instances of \c ParametersType
+/// after validating them against the JSON schema defined by \c ParametersType.
+///
+/// If \p configs are not top-level configurations loaded from YAML files, then paths to nodes
+/// of the YAML tree included in any error messages will be incomplete.
+///
+/// \tparam ParametersType A concrete subclass of Parameters.
+template <typename ParametersType>
+std::vector<ParametersType> validateAndDeserialize(
+    const std::vector<eckit::LocalConfiguration> &configs) {
+  std::vector<ParametersType> parameters(configs.size());
+  for (size_t i = 0; i < configs.size(); ++i)
+    parameters[i].validateAndDeserialize(configs[i]);
+  return parameters;
+}
+
 }  // namespace oops
 
 #endif  // OOPS_UTIL_PARAMETERS_PARAMETERS_H_

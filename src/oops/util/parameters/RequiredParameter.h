@@ -53,7 +53,31 @@ class RequiredParameter : public ParameterBase {
   explicit RequiredParameter(
       const char *name, Parameters *parent,
       std::vector<std::shared_ptr<const ParameterConstraint<T>>> constraints = {})
-    : ParameterBase(parent), name_(name), constraints_(std::move(constraints))
+    : RequiredParameter(name, "", parent, constraints)
+  {}
+
+  /// \brief Constructor.
+  ///
+  /// \param name
+  ///   Name of the key from which this parameter's value will be loaded when parameters are
+  ///   deserialized from a Configuration object. Similarly, name of the key to which this
+  ///   parameter's value will be saved when parameters are serialized to a Configuration object.
+  /// \param description
+  ///   Long description of this parameter.
+  /// \param parent
+  ///   Pointer to the Parameters object representing the collection of options located at
+  ///   the same level of the configuration tree as \p name. A call to deserialize() or serialize()
+  ///   on that object will automatically trigger a call to deserialize() or serialize() on this
+  ///   parameter.
+  /// \param constraints
+  ///   Zero or more constraints that must be satisfied by the value of this parameter loaded from
+  ///   a Configuration object; if that's not the case, an exception will be thrown during
+  ///   deserialization.
+  explicit RequiredParameter(
+      const char *name, const char *description, Parameters *parent,
+      std::vector<std::shared_ptr<const ParameterConstraint<T>>> constraints = {})
+    : ParameterBase(parent), name_(name), description_(description),
+      constraints_(std::move(constraints))
   {}
 
   /// \brief Load the value of this parameter from \p config.
@@ -78,6 +102,7 @@ class RequiredParameter : public ParameterBase {
 
  private:
   std::string name_;
+  std::string description_;
   // The value is stored in a boost::optional object because T may not be
   // default-constructible.
   boost::optional<T> value_;
@@ -106,6 +131,9 @@ void RequiredParameter<T>::serialize(eckit::LocalConfiguration &config) const {
 template <typename T>
 ObjectJsonSchema RequiredParameter<T>::jsonSchema() const {
   ObjectJsonSchema schema = ParameterTraits<T>::jsonSchema(name_);
+  if (description_ != "") {
+    schema.extendPropertySchema(name_, {{"description", "\"" + description_ + "\""}});
+  }
   schema.require(name_);
   for (const std::shared_ptr<const ParameterConstraint<T>> &constraint : constraints_) {
     PropertyJsonSchema constraintSchema = constraint->jsonSchema();

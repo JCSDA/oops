@@ -16,8 +16,7 @@
 #include <string>
 #include <vector>
 
-
-#include "oops/interface/Geometry.h"
+#include "oops/base/Geometry.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
@@ -32,44 +31,58 @@ namespace eckit {
 namespace oops {
 
 // -----------------------------------------------------------------------------
+/// \brief Auxiliary Increment related to model, not used at the moment.
+/// \details
+/// This class calls the model's implementation of ModelAuxIncrement.
+// -----------------------------------------------------------------------------
 
 template <typename MODEL>
 class ModelAuxIncrement : public util::Printable,
                           public util::Serializable,
                           private util::ObjectCounter<ModelAuxIncrement<MODEL> > {
   typedef typename MODEL::ModelAuxIncrement     ModelAuxIncrement_;
-  typedef Geometry<MODEL>            Geometry_;
+  typedef Geometry<MODEL>             Geometry_;
   typedef ModelAuxControl<MODEL>      ModelAuxControl_;
 
  public:
   static const std::string classname() {return "oops::ModelAuxIncrement";}
 
-/// Constructor, destructor
-  ModelAuxIncrement(const Geometry_ &, const eckit::Configuration &);
-  explicit ModelAuxIncrement(const ModelAuxIncrement &, const bool copy = true);
-  ModelAuxIncrement(const ModelAuxIncrement &, const eckit::Configuration &);
+  /// Constructor for specified \p resol and \p conf
+  ModelAuxIncrement(const Geometry_ & resol, const eckit::Configuration & conf);
+  /// Copies \p other ModelAuxIncrement if \p copy is true,
+  /// otherwise creates zero ModelAuxIncrement with same variables and geometry
+  explicit ModelAuxIncrement(const ModelAuxIncrement & other, const bool copy = true);
+  /// Copies \p other ModelAuxIncrement, reading extra information from \p conf
+  ModelAuxIncrement(const ModelAuxIncrement & other, const eckit::Configuration & conf);
+  /// Destructor (defined explicitly for timing and tracing)
   ~ModelAuxIncrement();
 
-/// Interfacing
+  /// const Accessor
   const ModelAuxIncrement_ & modelauxincrement() const {return *aux_;}
+  /// Accessor
   ModelAuxIncrement_ & modelauxincrement() {return *aux_;}
 
-/// Linear algebra operators
+  /// Sets this ModelAuxIncrement to the difference between two ModelAuxControl objects
   void diff(const ModelAuxControl_ &, const ModelAuxControl_ &);
+  /// Zero out this ModelAuxIncrement
   void zero();
+  /// Linear algebra operators
   ModelAuxIncrement & operator=(const ModelAuxIncrement &);
   ModelAuxIncrement & operator+=(const ModelAuxIncrement &);
   ModelAuxIncrement & operator-=(const ModelAuxIncrement &);
   ModelAuxIncrement & operator*=(const double &);
   void axpy(const double &, const ModelAuxIncrement &);
-  double dot_product_with(const ModelAuxIncrement &) const;
+  /// dot product with the \p other ModelAuxIncrement
+  double dot_product_with(const ModelAuxIncrement & other) const;
 
-/// I/O and diagnostics
+  /// Read this ModelAuxIncrement from file
   void read(const eckit::Configuration &);
+  /// Write this ModelAuxIncrement out to file
   void write(const eckit::Configuration &) const;
+  /// Norm (used in tests)
   double norm() const;
 
-/// Serialize and deserialize
+  /// Serialize and deserialize (used in 4DEnVar, weak-constraint 4DVar and Block-Lanczos minimizer)
   size_t serialSize() const override;
   void serialize(std::vector<double> &) const override;
   void deserialize(const std::vector<double> &, size_t &) override;

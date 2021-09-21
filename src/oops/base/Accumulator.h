@@ -11,8 +11,8 @@
 #ifndef OOPS_BASE_ACCUMULATOR_H_
 #define OOPS_BASE_ACCUMULATOR_H_
 
+#include "oops/base/Geometry.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/Geometry.h"
 #include "oops/util/DateTime.h"
 
 namespace oops {

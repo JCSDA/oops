@@ -3,7 +3,17 @@ CostJo   : Nonlinear Jo(Stream) = 7671.34, nobs = 600, Jo/n = 12.7856, err = 4e+
 CostJo   : Nonlinear Jo(Wind) = 1038.28, nobs = 600, Jo/n = 1.73047, err = 6
 CostJo   : Nonlinear Jo(WSpeed) = 139.319, nobs = 300, Jo/n = 0.464395, err = 12
 CostFunction: Nonlinear J = 1177.6
-DRIPCGMinimizer: reduction in residual norm = 0.186377
+Eigenvalue 1 : 177.38
+Norm eigenvector = 1.3618e+16
+Eigenvalue 2 : 160.727
+Norm eigenvector = 1.49979e+16
+Eigenvalue 3 : 108.802
+Norm eigenvector = 1.22906e+16
+Eigenvalue 4 : 94.006
+Norm eigenvector = 1.44667e+16
+Eigenvalue 5 : 84.3602
+Norm eigenvector = 1.14219e+16
+DRPLanczosMinimizer: reduction in residual norm = 0.0712486
 CostFunction::addIncrement: Analysis: 
   Valid time: 2010-01-01T09:00:00Z
   Resolution = 40, 20, 2

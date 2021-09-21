@@ -11,10 +11,10 @@
 #include <string>
 #include <vector>
 
-#include "oops/base/ModelBase.h"
-#include "oops/interface/Geometry.h"
+#include "oops/base/Geometry.h"
+#include "oops/base/State.h"
+#include "oops/generic/ModelBase.h"
 #include "oops/interface/ModelAuxControl.h"
-#include "oops/interface/State.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 
@@ -26,7 +26,7 @@ namespace oops {
 
 ///  Generic implementation of the pseudo model (steps through time by reading states)
 template <typename MODEL>
-class PseudoModel : public GenericModelBase<MODEL> {
+class PseudoModel : public ModelBase<MODEL> {
   typedef Geometry<MODEL>          Geometry_;
   typedef ModelAuxControl<MODEL>   ModelAux_;
   typedef State<MODEL>             State_;
@@ -50,7 +50,7 @@ class PseudoModel : public GenericModelBase<MODEL> {
   const oops::Variables & variables() const override {return vars_;}
 
  private:
-  void print(std::ostream &) const override {}
+  void print(std::ostream &) const override;
   const util::Duration tstep_;
   const oops::Variables vars_;
   std::vector<eckit::LocalConfiguration> confs_;
@@ -93,6 +93,11 @@ void PseudoModel<MODEL>::finalize(State_ & xx) const {
 }
 
 // -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void PseudoModel<MODEL>::print(std::ostream & os) const {
+  os << "Pseudo model reading states from files with " << tstep_ << " time resolution";
+}
 
 }  // namespace oops
 

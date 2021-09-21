@@ -12,9 +12,9 @@
 #include <string>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "oops/base/Geometry.h"
+#include "oops/base/State.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/Geometry.h"
-#include "oops/interface/State.h"
 #include "oops/interface/VariableChange.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"

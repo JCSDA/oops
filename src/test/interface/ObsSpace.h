@@ -21,8 +21,8 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
+#include "oops/base/ObsVector.h"
 #include "oops/interface/ObsSpace.h"
-#include "oops/interface/ObsVector.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -47,17 +47,20 @@ template <typename OBS> void testConstructor() {
 /// \brief tests that ObsSpaces created on subwindows have the same number obs as
 ///        ObsSpaces created on the whole window
 template <typename OBS> void testSubwindows() {
-  typedef ObsTestsFixture<OBS> Test_;
-  typedef oops::ObsSpace<OBS>  ObsSpace_;
-  typedef oops::ObsVector<OBS> ObsVector_;
+  typedef ObsTestsFixture<OBS>   Test_;
+  typedef oops::ObsSpace<OBS>    ObsSpace_;
+  typedef typename ObsSpace_::Parameters_ ObsSpaceParameters_;
+  typedef oops::ObsVector<OBS>   ObsVector_;
 
   util::DateTime tmid = Test_::tbgn() + (Test_::tend()-Test_::tbgn())/2;
   oops::Log::test() << "Testing subwindows: " << Test_::tbgn() << " to " << tmid << " and "
                                               << tmid << " to " << Test_::tend() << std::endl;
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     eckit::LocalConfiguration obsconfig(Test_::config(jj), "obs space");
-    ObsSpace_ obspace1(obsconfig, oops::mpi::world(), Test_::tbgn(), tmid);
-    ObsSpace_ obspace2(obsconfig, oops::mpi::world(), tmid, Test_::tend());
+    ObsSpaceParameters_ obsparams;
+    obsparams.validateAndDeserialize(obsconfig);
+    ObsSpace_ obspace1(obsparams, oops::mpi::world(), Test_::tbgn(), tmid);
+    ObsSpace_ obspace2(obsparams, oops::mpi::world(), tmid, Test_::tend());
 
     /// Create ObsVectors for each of the ObsSpaces, to compare nobs
     ObsVector_ ovec(Test_::obspace()[jj]);

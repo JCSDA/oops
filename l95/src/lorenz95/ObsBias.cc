@@ -49,7 +49,7 @@ ObsBias & ObsBias::operator=(const ObsBias & rhs) {
 }
 // -----------------------------------------------------------------------------
 void ObsBias::print(std::ostream & os) const {
-  if (active_) {os << std::endl << "ObsBias = " << bias_;}
+  if (active_) {os << "ObsBias = " << bias_;}
 }
 // -----------------------------------------------------------------------------
 }  // namespace lorenz95

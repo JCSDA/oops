@@ -16,9 +16,9 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
+#include "oops/base/ObsVector.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/ObsDataVector.h"
-#include "oops/interface/ObsVector.h"
 #include "oops/runs/Test.h"
 #include "oops/util/dot_product.h"
 #include "test/interface/ObsTestsFixture.h"

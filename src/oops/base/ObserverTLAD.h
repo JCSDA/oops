@@ -15,8 +15,9 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
+#include "oops/base/Geometry.h"
 #include "oops/base/GetValueTLAD.h"
-#include "oops/interface/Geometry.h"
+#include "oops/base/ObsVector.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/LinearObsOperator.h"
 #include "oops/interface/Locations.h"
@@ -24,7 +25,6 @@
 #include "oops/interface/ObsAuxIncrement.h"
 #include "oops/interface/ObsOperator.h"
 #include "oops/interface/ObsSpace.h"
-#include "oops/interface/ObsVector.h"
 #include "oops/util/DateTime.h"
 
 namespace oops {
@@ -62,6 +62,8 @@ class ObserverTLAD {
   const ObsSpace_ &             obspace_;    // ObsSpace used in H(x)
   LinearObsOperator_            hoptlad_;    // Linear obs operator
   std::shared_ptr<GetValTLAD_>  getvals_;    // Postproc passed to the model during integration
+  std::vector<size_t>  linvars_sizes_;       // Sizes of variables requested from model for
+                                             // TL/AD (e.g. number of vertical levels)
   std::unique_ptr<Locations_>   locations_;  // locations
   util::DateTime winbgn_;                    // Begining of assimilation window
   util::DateTime winend_;                    // End of assimilation window
@@ -73,9 +75,11 @@ class ObserverTLAD {
 template <typename MODEL, typename OBS>
 ObserverTLAD<MODEL, OBS>::ObserverTLAD(const ObsSpace_ & obsdb, const eckit::Configuration & conf)
   : obsconfig_(conf), obspace_(obsdb),
-    hoptlad_(obspace_, conf.has("linear obs operator") ?
+    hoptlad_(obspace_,
+             validateAndDeserialize<typename LinearObsOperator_::Parameters_>(
+               conf.has("linear obs operator") ?
                          eckit::LocalConfiguration(conf, "linear obs operator") :
-                         eckit::LocalConfiguration(conf, "obs operator")),
+                         eckit::LocalConfiguration(conf, "obs operator"))),
     getvals_(), locations_(), winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()),
     ybias_(nullptr), init_(false)
 {
@@ -89,9 +93,11 @@ ObserverTLAD<MODEL, OBS>::initializeTraj(const Geometry_ & geom, const ObsAuxCtr
   ybias_ = &ybias;
 
 //  hop is only needed to get locations and requiredVars
-  ObsOperator_ hop(obspace_, eckit::LocalConfiguration(obsconfig_, "obs operator"));
+  ObsOperator_ hop(obspace_,
+                   validateAndDeserialize<typename ObsOperator_::Parameters_>(
+                     eckit::LocalConfiguration(obsconfig_, "obs operator")));
   locations_.reset(new Locations_(hop.locations()));
-
+  linvars_sizes_ = geom.variableSizes(hoptlad_.requiredVars());
   eckit::LocalConfiguration gvconf(obsconfig_.has("linear get values") ?
                          eckit::LocalConfiguration(obsconfig_, "linear get values") :
                            (obsconfig_.has("get values") ?
@@ -151,7 +157,8 @@ ObserverTLAD<MODEL, OBS>::initializeAD(const ObsVector_ & ydepad, ObsAuxIncr_ & 
   Log::trace() << "ObserverTLAD::initializeAD start" << std::endl;
 
   // Compute adjoint of H(x)
-  std::unique_ptr<GeoVaLs_> geovals(new GeoVaLs_(*locations_, hoptlad_.requiredVars()));
+  std::unique_ptr<GeoVaLs_> geovals(new GeoVaLs_(*locations_, hoptlad_.requiredVars(),
+                                                 linvars_sizes_));
   hoptlad_.simulateObsAD(*geovals, ydepad, ybiasad);
 
   // GetValues get GeoVaLs and takes ownership

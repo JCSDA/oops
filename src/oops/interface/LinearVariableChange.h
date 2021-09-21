@@ -13,11 +13,11 @@
 
 #include <boost/noncopyable.hpp>
 
+#include "oops/base/Geometry.h"
+#include "oops/base/Increment.h"
 #include "oops/base/LinearVariableChangeBase.h"
+#include "oops/base/State.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/Geometry.h"
-#include "oops/interface/Increment.h"
-#include "oops/interface/State.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"

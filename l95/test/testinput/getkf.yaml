@@ -49,4 +49,4 @@ output:
 
 test:
   reference filename: testoutput/getkf.test
-  float relative tolerance: 1e-3
+  float relative tolerance: 1.5e-3

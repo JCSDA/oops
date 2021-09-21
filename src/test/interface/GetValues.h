@@ -24,13 +24,13 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
+#include "oops/base/Geometry.h"
+#include "oops/base/State.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/AnalyticInit.h"
-#include "oops/interface/Geometry.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/GetValues.h"
 #include "oops/interface/Locations.h"
-#include "oops/interface/State.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
@@ -60,6 +60,7 @@ template <typename MODEL, typename OBS> class GetValuesFixture : private boost::
   static const LocalConfig_      & testconf()        {return *getInstance().testconf_;}
   static const Locations_        & locs()            {return *getInstance().locs_;}
   static const Variables_        & geovalvars()      {return *getInstance().geovalvars_;}
+  static const std::vector<size_t> & geovalvarsizes() {return getInstance().geovalvarsizes_;}
   static void reset() {
     getInstance().getvalues_.reset();
     getInstance().geovals_.reset();
@@ -86,6 +87,7 @@ template <typename MODEL, typename OBS> class GetValuesFixture : private boost::
 
     // Variables
     geovalvars_.reset(new Variables_(TestEnvironment::config(), "state variables"));
+    geovalvarsizes_ = resol_->variableSizes(*geovalvars_);
 
     // Locations
     const LocalConfig_ locsConfig(TestEnvironment::config(), "locations");
@@ -96,7 +98,7 @@ template <typename MODEL, typename OBS> class GetValuesFixture : private boost::
     timeend_.reset(new DateTime_(locsConfig.getString("window end")));
 
     // GeoVaLs
-    geovals_.reset(new GeoVaLs_(*locs_, *geovalvars_));
+    geovals_.reset(new GeoVaLs_(*locs_, *geovalvars_, geovalvarsizes_));
 
     // GetValues
     LocalConfig_ getvaluesConfig;
@@ -114,6 +116,7 @@ template <typename MODEL, typename OBS> class GetValuesFixture : private boost::
   std::unique_ptr<const LocalConfig_>     testconf_;
   std::unique_ptr<const Locations_>       locs_;
   std::unique_ptr<const Variables_>       geovalvars_;
+  std::vector<size_t>                     geovalvarsizes_;
 };
 
 // =================================================================================================
@@ -146,8 +149,8 @@ template <typename MODEL, typename OBS> void testGetValuesMultiWindow() {
 
   EXPECT(xx.norm() > 0.0);
 
-  GeoVaLs_ gv1(Test_::locs(), Test_::geovalvars());
-  GeoVaLs_ gv2(Test_::locs(), Test_::geovalvars());
+  GeoVaLs_ gv1(Test_::locs(), Test_::geovalvars(), Test_::geovalvarsizes());
+  GeoVaLs_ gv2(Test_::locs(), Test_::geovalvars(), Test_::geovalvarsizes());
 
   // Compute all geovals together
   Test_::getvalues().fillGeoVaLs(xx, Test_::timebeg(), Test_::timeend(), gv1);
@@ -209,7 +212,7 @@ template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
   double interp_tol = Test_::testconf().getDouble("interpolation tolerance");
 
   // Ceate a GeoVaLs object from locs and vars
-  GeoVaLs_ gval(Test_::locs(), Test_::geovalvars());
+  GeoVaLs_ gval(Test_::locs(), Test_::geovalvars(), Test_::geovalvarsizes());
 
   EXPECT(xx.norm() > 0.0);
 

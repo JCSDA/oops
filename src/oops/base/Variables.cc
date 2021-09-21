@@ -35,8 +35,7 @@ Variables::Variables(const eckit::Configuration & conf, const std::string & name
   : convention_(""), vars_(0), channels_(0) {
   Log::trace() << "Variables::Variables start " << conf << std::endl;
   std::vector<std::string> vars;
-  conf.get(name, vars);
-  if (vars.size() == 0) {
+  if (!conf.get(name, vars)) {
     Log::error() << name << " not found in " << conf << std::endl;
     throw eckit::BadParameter("Undefined variable: '" + name + "'");
   }

@@ -6,18 +6,19 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef OOPS_INTERFACE_MODEL_H_
-#define OOPS_INTERFACE_MODEL_H_
+#ifndef OOPS_BASE_MODEL_H_
+#define OOPS_BASE_MODEL_H_
 
 #include <memory>
 #include <string>
+#include <utility>
 
 #include <boost/noncopyable.hpp>
 
-#include "oops/base/ModelBase.h"
-#include "oops/interface/Geometry.h"
+#include "oops/base/Geometry.h"
+#include "oops/base/State.h"
+#include "oops/generic/ModelBase.h"
 #include "oops/interface/ModelAuxControl.h"
-#include "oops/interface/State.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
@@ -29,30 +30,20 @@ namespace eckit {
 
 namespace oops {
 
-/// \brief Encapsulates the nonlinear forecast model
-/// Note: to see methods that need to be implemented in the forecast model implementation,
-/// see ModelBase class.
+/// \brief Abstract nonlinear forecast model used by high level algorithms and applications.
 ///
-/// Note: implementations of this interface can opt to extract their settings either from
-/// a Configuration object or from a subclass of ModelParametersBase.
+/// Note: to see methods that need to be implemented in a generic forecast model
+/// implementation, see ModelBase class in generic/ModelBase.h. To see methods that need
+/// to be implemented in a MODEL-specific forecast model implementation, see
+/// interface::ModelBase class in interface/ModelBase.h.
 ///
-/// In the former case, they should provide a constructor with the following signature:
-///
-///    Model(const Geometry_ &, const eckit::Configuration &);
-///
-/// In the latter case, the implementer should first define a subclass of ModelParametersBase
-/// holding the settings of the model in question. The implementation of the Model interface
-/// should then typedef `Parameters_` to the name of that subclass and provide a constructor with
-/// the following signature:
-///
-///    Model(const Geometry_ &, const Parameters_ &);
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
 class Model : public util::Printable,
               private boost::noncopyable,
               private util::ObjectCounter<Model<MODEL> >  {
-  typedef GenericModelBase<MODEL>    ModelBase_;
+  typedef ModelBase<MODEL>           ModelBase_;
   typedef Geometry<MODEL>            Geometry_;
   typedef ModelAuxControl<MODEL>     ModelAux_;
   typedef State<MODEL>               State_;
@@ -62,6 +53,7 @@ class Model : public util::Printable,
 
   Model(const Geometry_ &, const ModelParametersBase &);
   Model(const Geometry_ &, const eckit::Configuration &);
+  explicit Model(std::unique_ptr<ModelBase_>);
   virtual ~Model();
 
   /// \brief Run the forecast from state \p xx for \p len time, with \p post postprocessors
@@ -108,6 +100,15 @@ template<typename MODEL>
 Model<MODEL>::Model(const Geometry_ & resol, const eckit::Configuration & conf)
   : Model(resol, validateAndDeserialize<ModelParametersWrapper<MODEL>>(conf).modelParameters)
 {}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+Model<MODEL>::Model(std::unique_ptr<ModelBase_> model)
+  : model_(std::move(model))
+{
+  Log::trace() << "Model<MODEL>::Model created" << std::endl;
+}
 
 // -----------------------------------------------------------------------------
 
@@ -188,4 +189,4 @@ void Model<MODEL>::print(std::ostream & os) const {
 
 }  // namespace oops
 
-#endif  // OOPS_INTERFACE_MODEL_H_
+#endif  // OOPS_BASE_MODEL_H_

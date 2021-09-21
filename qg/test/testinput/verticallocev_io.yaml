@@ -1,0 +1,22 @@
+geometry:
+  nx: 40
+  ny: 20
+  depths: [4500, 5500, 6500, 7500, 8500, 9500]   # note: these are only for the test (specifying 6 levels),
+                                                 # and have not been scientifically validated
+test date: &date 2009-12-31T00:00:00Z
+
+increment test:
+  date: 2009-12-31T00:00:00Z
+
+inc variables: [x]
+vertical localization:
+  nlevels: 6
+  lengthscale: 3
+  lengthscale units: levels
+  fraction of retained variance: 0.5
+  read eigen vectors: true
+  list of eigen vectors to read:
+   - filename: Data/verticalEVs.001.an.2009-12-31T00:00:00Z.nc
+   - filename: Data/verticalEVs.002.an.2009-12-31T00:00:00Z.nc
+ 
+expected neig: 2 

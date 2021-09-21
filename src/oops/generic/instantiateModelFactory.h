@@ -8,15 +8,15 @@
 #ifndef OOPS_GENERIC_INSTANTIATEMODELFACTORY_H_
 #define OOPS_GENERIC_INSTANTIATEMODELFACTORY_H_
 
-#include "oops/base/ModelBase.h"
 #include "oops/generic/IdentityModel.h"
+#include "oops/generic/ModelBase.h"
 #include "oops/generic/PseudoModel.h"
 
 namespace oops {
 
 template <typename MODEL> void instantiateModelFactory() {
-  static GenericModelMaker<MODEL, IdentityModel<MODEL> > makerIdentityModel_("Identity");
-  static GenericModelMaker<MODEL, PseudoModel<MODEL> > makerPseudoModel_("PseudoModel");
+  static ModelMaker<MODEL, IdentityModel<MODEL> > makerIdentityModel_("Identity");
+  static ModelMaker<MODEL, PseudoModel<MODEL> > makerPseudoModel_("PseudoModel");
 }
 
 }  // namespace oops

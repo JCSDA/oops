@@ -16,17 +16,18 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/instantiateLocalEnsembleSolverFactory.h"
 #include "oops/assimilation/LocalEnsembleSolver.h"
-#include "oops/assimilation/State4D.h"
 #include "oops/base/Departures.h"
+#include "oops/base/Geometry.h"
+#include "oops/base/Increment.h"
 #include "oops/base/IncrementEnsemble4D.h"
 #include "oops/base/instantiateObsFilterFactory.h"
 #include "oops/base/Observations.h"
 #include "oops/base/ObsSpaces.h"
+#include "oops/base/State4D.h"
 #include "oops/base/StateEnsemble4D.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
-#include "oops/interface/Geometry.h"
+#include "oops/generic/instantiateVariableChangeFactory.h"
 #include "oops/interface/GeometryIterator.h"
-#include "oops/interface/Increment.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
@@ -56,6 +57,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     instantiateLocalEnsembleSolverFactory<MODEL, OBS>();
     instantiateObsErrorFactory<OBS>();
     instantiateObsFilterFactory<OBS>();
+    instantiateVariableChangeFactory<MODEL>();
   }
 
 // -----------------------------------------------------------------------------
@@ -93,14 +95,16 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     // Get background configurations
     const eckit::LocalConfiguration bgConfig(fullConfig, "background");
 
-    // Read all ensemble members
+    // Read all ensemble members and compute the mean
     StateEnsemble4D_ ens_xx(geometry, bgConfig);
     const size_t nens = ens_xx.size();
     const Variables statevars = ens_xx.variables();
+    State4D_ bkg_mean = ens_xx.mean();
 
     // set up solver
     std::unique_ptr<LocalSolver_> solver =
-         LocalEnsembleSolverFactory<MODEL, OBS>::create(obsdb, geometry, fullConfig, nens);
+         LocalEnsembleSolverFactory<MODEL, OBS>::create(obsdb, geometry, fullConfig,
+                                                        nens, bkg_mean);
     // test prints for the prior ensemble
     bool do_test_prints = driverConfig.getBool("do test prints", true);
     if (do_test_prints) {
@@ -125,8 +129,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
       return 0;
     }
 
-    // calculate background mean
-    State4D_ bkg_mean = ens_xx.mean();
+    // print background mean
     if (do_test_prints) {
       Log::test() << "Background mean :" << bkg_mean << std::endl;
     }
@@ -143,6 +146,10 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
       solver->measurementUpdate(bkg_pert, i, ana_pert);
     }
     Log::info() << "Local solver completed." << std::endl;
+
+    // wait all tasks to finish their solution, so the timing for functions below reports
+    // time which truly used (not from mpi_wait(), as all tasks need to sync before write).
+    oops::mpi::world().barrier();
 
     // calculate final analysis states
     for (size_t jj = 0; jj < nens; ++jj) {

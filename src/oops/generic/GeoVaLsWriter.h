@@ -5,19 +5,19 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef OOPS_BASE_GEOVALSWRITER_H_
-#define OOPS_BASE_GEOVALSWRITER_H_
+#ifndef OOPS_GENERIC_GEOVALSWRITER_H_
+#define OOPS_GENERIC_GEOVALSWRITER_H_
 
 #include <memory>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "oops/base/ObsFilterBase.h"
+#include "oops/base/ObsVector.h"
 #include "oops/base/Variables.h"
+#include "oops/generic/ObsFilterBase.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsDiagnostics.h"
 #include "oops/interface/ObsSpace.h"
-#include "oops/interface/ObsVector.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
 
@@ -38,15 +38,15 @@ class GeoVaLsWriter : public ObsFilterBase<OBS> {
                 ObsDataPtr_<int>, ObsDataPtr_<float>): conf_(conf), novars_() {}
   ~GeoVaLsWriter() {}
 
-  void preProcess() const override {}
+  void preProcess() override {}
 
-  void priorFilter(const GeoVaLs_ & gv) const override {
+  void priorFilter(const GeoVaLs_ & gv) override {
     const double zz = sqrt(dot_product(gv, gv));
     Log::info() << "GeoVaLsWriter norm = " << zz << std::endl;
     gv.write(conf_);
   }
 
-  void postFilter(const ObsVector_ &, const ObsDiags_ &) const override {}
+  void postFilter(const ObsVector_ &, const ObsVector_ &, const ObsDiags_ &) override {}
 
   Variables requiredVars() const override {return novars_;};
   Variables requiredHdiagnostics() const override {return novars_;};
@@ -69,4 +69,4 @@ void GeoVaLsWriter<OBS>::print(std::ostream & os) const {
 
 }  // namespace oops
 
-#endif  // OOPS_BASE_GEOVALSWRITER_H_
+#endif  // OOPS_GENERIC_GEOVALSWRITER_H_

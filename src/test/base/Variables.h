@@ -52,10 +52,18 @@ void testConstructor() {
     EXPECT(other->channels() == channels);
   }
 
+  {
+    const std::vector<std::string> varnames{};
+    const std::vector<int> channels{};
+    oops::Variables other(TestEnvironment::config(), "empty variables");
+    EXPECT(other.variables() == varnames);
+    EXPECT(other.channels() == channels);
+  }
+
   vars.reset();
   EXPECT(!vars.get());
 
-  // Test bad construction from eckit::Configuration
+  // Test construction from an eckit::Configuration entry that does not exist
   EXPECT_THROWS_AS(auto bad_vars = oops::Variables(TestEnvironment::config(), "FOO"),
                    eckit::BadParameter);
 }

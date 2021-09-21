@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2021 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -15,9 +16,9 @@
 #include <string>
 
 #include "eckit/config/Configuration.h"
-#include "oops/base/ObsErrorBase.h"
+#include "oops/base/ObsVector.h"
+#include "oops/generic/ObsErrorBase.h"
 #include "oops/interface/ObsSpace.h"
-#include "oops/interface/ObsVector.h"
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
@@ -25,8 +26,8 @@
 namespace oops {
 
 /// \brief Parameters for diagonal obs errors
-class ObsErrorDiagParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(ObsErrorDiagParameters, Parameters)
+class ObsErrorDiagParameters : public ObsErrorParametersBase {
+  OOPS_CONCRETE_PARAMETERS(ObsErrorDiagParameters, ObsErrorParametersBase)
  public:
   /// perturbation amplitude multiplier
   Parameter<double> pert{"random amplitude", 1.0, this};
@@ -40,10 +41,14 @@ class ObsErrorDiag : public ObsErrorBase<OBS> {
   typedef ObsVector<OBS>             ObsVector_;
 
  public:
-  ObsErrorDiag(const eckit::Configuration &, const ObsSpace_ &);
+  /// The type of parameters passed to the constructor.
+  /// This typedef is used by the ObsErrorFactory.
+  typedef ObsErrorDiagParameters Parameters_;
+
+  ObsErrorDiag(const Parameters_ &, const ObsSpace_ &);
 
 /// Update after obs errors potentially changed
-  void update() override;
+  void update(const ObsVector_ &) override;
 
 /// Multiply a Departure by \f$R\f$
   void multiply(ObsVector_ &) const override;
@@ -61,36 +66,35 @@ class ObsErrorDiag : public ObsErrorBase<OBS> {
   double getRMSE() const override {return stddev_.rms();}
 
 /// Get obs errors std deviation
-  ObsVector_ & obserrors() override {return stddev_;}
-  const ObsVector_ & obserrors() const override {return stddev_;}
+  ObsVector_ obserrors() const override {return stddev_;}
 
-/// Return inverseVariance
-  const ObsVector_ & inverseVariance() const override {return inverseVariance_;}
-
- protected:
-  ObsVector_ stddev_;
-  ObsVector_ inverseVariance_;
+/// Get inverseVariance
+  ObsVector_ inverseVariance() const override {return inverseVariance_;}
 
  private:
   void print(std::ostream &) const override;
-  ObsErrorDiagParameters options_;
+  ObsVector_ stddev_;
+  ObsVector_ inverseVariance_;
+  Parameters_ options_;
 };
 
 // =============================================================================
 
 template<typename OBS>
-ObsErrorDiag<OBS>::ObsErrorDiag(const eckit::Configuration & conf, const ObsSpace_ & obsgeom)
-  : stddev_(obsgeom, "ObsError"), inverseVariance_(obsgeom)
+ObsErrorDiag<OBS>::ObsErrorDiag(const ObsErrorDiagParameters & options, const ObsSpace_ & obsgeom)
+  : stddev_(obsgeom, "ObsError"), inverseVariance_(obsgeom), options_(options)
 {
-  options_.deserialize(conf);
-  this->update();
+  inverseVariance_ = stddev_;
+  inverseVariance_ *= stddev_;
+  inverseVariance_.invert();
   Log::trace() << "ObsErrorDiag:ObsErrorDiag constructed nobs = " << stddev_.nobs() << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename OBS>
-void ObsErrorDiag<OBS>::update() {
+void ObsErrorDiag<OBS>::update(const ObsVector_ & obserr) {
+  stddev_ = obserr;
   inverseVariance_ = stddev_;
   inverseVariance_ *= stddev_;
   inverseVariance_.invert();

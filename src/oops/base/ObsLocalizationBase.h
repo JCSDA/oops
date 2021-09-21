@@ -14,8 +14,8 @@
 #include <boost/noncopyable.hpp>
 
 #include "eckit/config/Configuration.h"
+#include "oops/base/ObsVector.h"
 #include "oops/interface/GeometryIterator.h"
-#include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsSpace.h"
 #include "oops/util/Printable.h"
 
@@ -29,29 +29,26 @@ class ObsLocalizationBase : public util::Printable,
                                    private boost::noncopyable {
   typedef typename MODEL::GeometryIterator          GeometryIterator_;
   typedef typename OBS::ObsVector                   ObsVector_;
-  typedef typename OBS::template ObsDataVector<int> ObsDataVector_;
  public:
   ObsLocalizationBase() = default;
   virtual ~ObsLocalizationBase() = default;
 
-  /// compute obs-space localization: fill \p obsvector with observation-space
-  /// localization values between observations and \p point in model-space, and
-  /// fill \p outside with flags on whether obs is local or not (1: outside of
-  /// localization, 0: inside of localization, local)
+  /// compute obs-space localization: fill \p locfactor with observation-space
+  /// localization values between observations and \p point in model-space.
+  /// Set \p locfactor to missing value for observations that are not local.
   /// Method used in oops. Calls `computeLocalization` abstract method, and
   /// passes OBS- and MODEL-specific classes to the OBS- and MODEL-specific
   /// implementations of ObsLocalization.
   void computeLocalization(const GeometryIterator<MODEL> & point,
-             ObsDataVector<OBS, int> & flags, ObsVector<OBS> & obsvector) const {
-    computeLocalization(point.geometryiter(), flags.obsdatavector(), obsvector.obsvector());
+                           ObsVector<OBS> & locfactor) const {
+    computeLocalization(point.geometryiter(), locfactor.obsvector());
   }
 
-  /// compute obs-space localization: fill \p obsvector with observation-space
-  /// localization values between observations and \p point in model-space, and
-  /// fill \p outside with flags on whether obs is local or not (1: outside of
-  /// localization, 0: inside of localization, local)
+  /// compute obs-space localization: fill \p locfactor with observation-space
+  /// localization values between observations and \p point in model-space.
+  /// Set \p locfactor to missing value for observations that are not local.
   virtual void computeLocalization(const GeometryIterator_ & point,
-                                   ObsDataVector_ & flags, ObsVector_ & obsvector) const = 0;
+                                   ObsVector_ & locfactor) const = 0;
 };
 
 // =============================================================================

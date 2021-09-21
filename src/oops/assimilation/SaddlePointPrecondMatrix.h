@@ -18,7 +18,6 @@
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/DualVector.h"
 #include "oops/assimilation/SaddlePointVector.h"
-#include "oops/interface/Increment.h"
 
 namespace oops {
 

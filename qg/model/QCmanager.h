@@ -13,7 +13,10 @@
 
 #include "eckit/config/LocalConfiguration.h"
 
+#include "model/QgTraits.h"
+
 #include "oops/base/Variables.h"
+#include "oops/interface/ObsFilterBase.h"
 #include "oops/util/Printable.h"
 
 namespace qg {
@@ -23,21 +26,21 @@ namespace qg {
   class ObsSpaceQG;
   class ObsVecQG;
 
-class QCmanager : public util::Printable {
+class QCmanager : public oops::interface::ObsFilterBase<QgObsTraits> {
  public:
   QCmanager(const ObsSpaceQG &, const eckit::Configuration &,
             std::shared_ptr<ObsDataQG<int> >, std::shared_ptr<ObsDataQG<float> >): novars_() {}
   ~QCmanager() {}
 
-  void preProcess() const {}
-  void priorFilter(const GomQG &) const {}
-  void postFilter(const ObsVecQG &, const ObsDiagsQG &) const {}
+  void preProcess() override {}
+  void priorFilter(const GomQG &) override {}
+  void postFilter(const ObsVecQG &, const ObsVecQG &, const ObsDiagsQG &) override {}
 
-  oops::Variables requiredVars() const {return novars_;}
-  oops::Variables requiredHdiagnostics() const {return novars_;}
+  oops::Variables requiredVars() const override {return novars_;}
+  oops::Variables requiredHdiagnostics() const override {return novars_;}
 
  private:
-  void print(std::ostream &) const {}
+  void print(std::ostream &) const override {}
   const oops::Variables novars_;
 };
 

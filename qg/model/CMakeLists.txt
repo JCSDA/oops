@@ -9,6 +9,8 @@ ErrorCovarianceQG.cc
 ErrorCovarianceQG.h
 FieldsQG.cc
 FieldsQG.h
+FinalCheck.cc
+FinalCheck.h
 GeometryQG.cc
 GeometryQG.h
 GeometryQGIterator.cc
@@ -47,6 +49,7 @@ ObsOpBaseQG.cc
 ObsOpBaseQG.h
 ObsOpBaseTLAD.cc
 ObsOpBaseTLAD.h
+ObsOperatorParameters.h
 ObsOperatorQG.cc
 ObsOperatorQG.h
 ObsOperatorTLAD.cc
@@ -73,8 +76,6 @@ QgFortran.h
 QgTraits.h
 StateQG.cc
 StateQG.h
-TlmIdQG.cc
-TlmIdQG.h
 TlmQG.cc
 TlmQG.h
 fft_f.cc

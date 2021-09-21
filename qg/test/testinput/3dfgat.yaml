@@ -53,7 +53,14 @@ cost function:
       obs type: WSpeed
 variational:
   minimizer:
-    algorithm: DRIPCG
+    algorithm: DRPLanczos
+    online diagnostics:
+      max eigenvectors: 5
+      eigenvector:
+        datadir: Data
+        date: 2010-01-01T12:00:00Z
+        exp: 3dfgat.eigenvecs
+        type: krylov
   iterations:
   - ninner: 10
     gradient norm reduction: 1.0e-10
@@ -62,11 +69,9 @@ variational:
       ny: 20
       depths: [4500.0, 5500.0]
     linear model:
-      name: QgIdTLM
-      trajectory:
-        tstep: PT1H
+      name: Identity
       tstep: PT6H
-      tlm variables: ["x"]
+      increment variables: ["x"]
       variable change: Identity
     diagnostics:
       departures: ombg

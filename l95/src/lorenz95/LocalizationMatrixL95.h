@@ -18,9 +18,8 @@
 #include <boost/noncopyable.hpp>
 
 #include "eckit/config/Configuration.h"
+#include "oops/interface/LocalizationBase.h"
 #include "oops/util/DateTime.h"
-#include "oops/util/ObjectCounter.h"
-#include "oops/util/Printable.h"
 
 #include "lorenz95/L95Traits.h"
 
@@ -31,14 +30,13 @@ namespace lorenz95 {
 /// Localization matrix for Lorenz 95 model.
 
 // -----------------------------------------------------------------------------
-class LocalizationMatrixL95: public util::Printable,
-                             private util::ObjectCounter<LocalizationMatrixL95> {
+class LocalizationMatrixL95: public oops::interface::LocalizationBase<lorenz95::L95Traits> {
  public:
   static const std::string classname() {return "lorenz95::LocalizationMatrixL95";}
 
   LocalizationMatrixL95(const Resolution &, const eckit::Configuration &);
-  void randomize(IncrementL95 &) const;
-  void multiply(IncrementL95 &) const;
+  void randomize(IncrementL95 &) const override;
+  void multiply(IncrementL95 &) const override;
 
  private:
   void print(std::ostream &) const override;

@@ -42,6 +42,7 @@ test date: '2010-01-01T03:00:00Z'
 
 increment test:
   date: '2010-01-01T03:00:00Z'
+  skip atlas: 1
 
 model:
   f: 8.0

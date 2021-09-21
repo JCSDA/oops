@@ -40,6 +40,7 @@
 #include "oops/util/parameters/ParameterTraitsAnyOf.h"
 #include "oops/util/parameters/ParameterTraitsScalarOrMap.h"
 #include "oops/util/parameters/PolymorphicParameter.h"
+#include "oops/util/parameters/PropertyJsonSchema.h"
 #include "oops/util/parameters/RequiredParameter.h"
 #include "oops/util/parameters/RequiredPolymorphicParameter.h"
 
@@ -216,6 +217,23 @@ class OptionalDeviceParameters : public oops::Parameters {
  public:
   oops::OptionalPolymorphicParameter<DeviceTypeDependentParameters, DeviceFactory>
    device{"type", this};
+};
+
+// Class required by tests checking JSON schema description
+
+class DescriptiveParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(DescriptiveParameters, Parameters)
+ public:
+  oops::Parameter<std::string> target{"target", "Normal target to greet", "world", this};
+  oops::RequiredParameter<std::string> vipTarget{"vip_target", "VIP target to greet", this};
+  oops::OptionalParameter<std::string> optTarget{"opt_target", "Optional target to greet", this};
+  oops::OptionalParameter<void> voptTarget{"vopt_target", "Optional target to void", this};
+  oops::PolymorphicParameter<DeviceTypeDependentParameters, DeviceFactory>
+    deviceOne{"type", "Device 001", "screen", this};
+  oops::RequiredPolymorphicParameter<DeviceTypeDependentParameters, DeviceFactory>
+    deviceTwo{"type", "Device 002", this};
+  oops::OptionalPolymorphicParameter<DeviceTypeDependentParameters, DeviceFactory>
+   deviceThree{"type", "Device 003", this};
 };
 
 class AllDeviceParameters : public oops::Parameters {
@@ -870,6 +888,44 @@ void testSetIntParameters() {
     EXPECT_THROWS_MSG(params.deserialize(conf),
                       "isn't a list of comma-separated integers or ranges of integers");
   }
+}
+
+// Parameters with descriptions
+
+void testDescriptiveParameters() {
+  const DescriptiveParameters params;
+
+  const oops::ObjectJsonSchema ojsTarget = params.target.jsonSchema();
+  const std::string targetPropStr = oops::toString(ojsTarget.properties().at("target"));
+  EXPECT(targetPropStr.find("Normal target to greet") != std::string::npos);
+
+  const oops::ObjectJsonSchema ojsVipTarget = params.vipTarget.jsonSchema();
+  const std::string vipTargetPropStr = oops::toString(ojsVipTarget.properties().at("vip_target"));
+  EXPECT(vipTargetPropStr.find("VIP target to greet") != std::string::npos);
+
+  const oops::ObjectJsonSchema ojsOptTarget = params.optTarget.jsonSchema();
+  const std::string optTargetPropStr = oops::toString(ojsOptTarget.properties().at("opt_target"));
+  EXPECT(optTargetPropStr.find("Optional target to greet") != std::string::npos);
+
+  const oops::ObjectJsonSchema ojsVOptTarget = params.voptTarget.jsonSchema();
+  const std::string voptTargetPropStr = oops::toString(
+    ojsVOptTarget.properties().at("vopt_target"));
+  EXPECT(voptTargetPropStr.find("Optional target to void") != std::string::npos);
+
+  const oops::ObjectJsonSchema ojsDeviceOne = params.deviceOne.jsonSchema();
+  const std::string deviceOnePropStr = oops::toString(
+    ojsDeviceOne.properties().at("type"));
+  EXPECT(deviceOnePropStr.find("Device 001") != std::string::npos);
+
+  const oops::ObjectJsonSchema ojsDeviceTwo = params.deviceTwo.jsonSchema();
+  const std::string deviceTwoPropStr = oops::toString(
+    ojsDeviceTwo.properties().at("type"));
+  EXPECT(deviceTwoPropStr.find("Device 002") != std::string::npos);
+
+  const oops::ObjectJsonSchema ojsDeviceThree = params.deviceThree.jsonSchema();
+  const std::string deviceThreePropStr = oops::toString(
+    ojsDeviceThree.properties().at("type"));
+  EXPECT(deviceThreePropStr.find("Device 003") != std::string::npos);
 }
 
 // Parameters storing Variables objects
@@ -1541,6 +1597,17 @@ void testValidateAndDeserialize() {
     if (validationSupported)
       EXPECT_THROWS(oops::validateAndDeserialize<MyOptionalParameters>(conf));
   }
+
+
+  {
+    std::vector<eckit::LocalConfiguration> confs =
+        TestEnvironment::config().getSubConfigurations("full.range_parameters");
+    std::vector<RangeParameters> ranges = oops::validateAndDeserialize<RangeParameters>(confs);
+    EXPECT_EQUAL(ranges[0].minParameter, 9);
+    EXPECT_EQUAL(ranges[0].maxParameter, 10);
+    EXPECT_EQUAL(ranges[1].minParameter, 11);
+    EXPECT_EQUAL(ranges[1].maxParameter, 12);
+  }
 }
 
 // HasParameters_
@@ -1645,6 +1712,10 @@ class Parameters : public oops::Test {
 
     ts.emplace_back(CASE("util/Parameters/testSetIntParameters") {
                       testSetIntParameters();
+                    });
+
+    ts.emplace_back(CASE("util/Parameters/testDescriptiveParameters") {
+                      testDescriptiveParameters();
                     });
 
     ts.emplace_back(CASE("util/Parameters/testVariablesDeserializationWithoutChannels") {

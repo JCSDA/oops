@@ -16,12 +16,12 @@
 #include <string>
 
 #include "eckit/config/Configuration.h"
+#include "oops/base/Geometry.h"
 #include "oops/base/ObsAuxControls.h"
 #include "oops/base/ObsSpaces.h"
+#include "oops/base/State.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/Geometry.h"
 #include "oops/interface/ModelAuxControl.h"
-#include "oops/interface/State.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
@@ -134,8 +134,8 @@ void ControlVariable<MODEL, OBS>::write(const eckit::Configuration & config) con
 
 template <typename MODEL, typename OBS>
 void ControlVariable<MODEL, OBS>::print(std::ostream & outs) const {
-  outs << state_;
-  outs << modbias_;
+  outs << state_ << std::endl;
+  outs << modbias_ << std::endl;
   outs << obsbias_;
 }
 

@@ -19,10 +19,10 @@
 
 #include "oops/base/Accumulator.h"
 #include "oops/base/DolphChebyshev.h"
+#include "oops/base/Geometry.h"
 #include "oops/base/PostBase.h"
 #include "oops/base/Variables.h"
 #include "oops/base/WeightingFct.h"
-#include "oops/interface/Geometry.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 

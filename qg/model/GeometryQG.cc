@@ -15,6 +15,7 @@
 #include "atlas/grid.h"
 #include "atlas/util/Config.h"
 
+#include "oops/base/Variables.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 
@@ -101,7 +102,13 @@ std::vector<double> GeometryQG::verticalCoord(std::string & vcUnits) const {
   oops::Log::debug() << "QG vert coord: " << vc << std::endl;
   return vc;
 }
-
+// -------------------------------------------------------------------------------------------------
+std::vector<size_t> GeometryQG::variableSizes(const oops::Variables & vars) const {
+  // Note: in qg we always do trilinear interpolation, so GeoVaLs are always
+  // size 1.
+  std::vector<size_t> sizes(vars.size(), 1);
+  return sizes;
+}
 // -----------------------------------------------------------------------------
 void GeometryQG::print(std::ostream & os) const {
   int nx;

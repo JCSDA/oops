@@ -22,19 +22,19 @@
 
 #include <boost/noncopyable.hpp>
 
+#include "atlas/field.h"
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
+#include "oops/base/Geometry.h"
+#include "oops/base/Increment.h"
+#include "oops/base/State.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/Geometry.h"
-#include "oops/interface/Increment.h"
-#include "oops/interface/State.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
 #include "test/TestEnvironment.h"
-
 
 namespace test {
 
@@ -48,6 +48,7 @@ template <typename MODEL> class IncrementFixture : private boost::noncopyable {
   static const oops::Variables      & ctlvars()   {return *getInstance().ctlvars_;}
   static const util::DateTime       & time()      {return *getInstance().time_;}
   static const double               & tolerance() {return getInstance().tolerance_;}
+  static const int                  & skipAtlas() {return getInstance().skipAtlas_;}
   static const eckit::Configuration & test()      {return *getInstance().test_;}
   static void reset() {
     getInstance().time_.reset();
@@ -78,6 +79,7 @@ template <typename MODEL> class IncrementFixture : private boost::noncopyable {
         "Warning: Increment norm tolerance greater than 1e-8 "
         "may not be suitable for certain solvers." <<
         std::endl; }
+    skipAtlas_ = test_->getInt("skip atlas", 0);
   }
 
   ~IncrementFixture<MODEL>() {}
@@ -86,6 +88,7 @@ template <typename MODEL> class IncrementFixture : private boost::noncopyable {
   std::unique_ptr<oops::Variables> ctlvars_;
   std::unique_ptr<const eckit::LocalConfiguration> test_;
   double                           tolerance_;
+  int                              skipAtlas_;
   std::unique_ptr<util::DateTime>  time_;
   std::unique_ptr<bool> skipAccumTest_;
   std::unique_ptr<bool> skipDiffTest_;
@@ -352,6 +355,57 @@ template <typename MODEL> void testIncrementSerialize() {
 
 // -----------------------------------------------------------------------------
 
+template <typename MODEL> void testIncrementAtlas() {
+  typedef IncrementFixture<MODEL>   Test_;
+  typedef oops::Increment<MODEL>    Increment_;
+
+  if (Test_::skipAtlas() == 0) {
+  // Create random increment
+    Increment_ dx1(Test_::resol(), Test_::ctlvars(), Test_::time());
+    dx1.random();
+    std::unique_ptr<atlas::FieldSet> atlasFieldSet1(new atlas::FieldSet());
+    dx1.setAtlas(atlasFieldSet1.get());
+    dx1.toAtlas(atlasFieldSet1.get());
+
+  // Create zero increment
+    Increment_ dx2(Test_::resol(), Test_::ctlvars(), Test_::time());
+    dx2.zero();
+    std::unique_ptr<atlas::FieldSet> atlasFieldSet2(new atlas::FieldSet());
+    dx2.setAtlas(atlasFieldSet2.get());
+
+  // Copy ATLAS fieldset content
+    for ( atlas::FieldSet::const_iterator field1 = atlasFieldSet1->cbegin();
+          field1 != atlasFieldSet1->cend(); ++field1 ) {
+      atlas::Field field2 = atlasFieldSet2->field(field1->name());
+      if (field1->rank() == 1) {
+        auto array1 = atlas::array::make_view<double, 1>(*field1);
+        auto array2 = atlas::array::make_view<double, 1>(field2);
+        for (int i1 = 0; i1 < array1.shape(0); ++i1) {
+          array2(i1) = array1(i1);
+        }
+      }
+      if (field1->rank() == 2) {
+        auto array1 = atlas::array::make_view<double, 2>(*field1);
+        auto array2 = atlas::array::make_view<double, 2>(field2);
+        for (int i1 = 0; i1 < array1.shape(0); ++i1) {
+          for (int i2 = 0; i2 < array1.shape(1); ++i2) {
+            array2(i1, i2) = array1(i1, i2);
+          }
+        }
+      }
+    }
+
+  // Copy back to increment
+    dx2.fromAtlas(atlasFieldSet2.get());
+
+  // Check increment difference
+    dx2 -= dx1;
+    EXPECT(dx2.norm() == 0.0);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
 template <typename MODEL> void testIncrementDiff() {
   typedef IncrementFixture<MODEL>   Test_;
   typedef oops::Increment<MODEL>    Increment_;
@@ -487,6 +541,8 @@ class Increment : public oops::Test {
       { testIncrementSchur<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementSerialize")
       { testIncrementSerialize<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/testIncrementAtlas")
+      { testIncrementAtlas<MODEL>(); });
   }
 
   void clear() const override {}

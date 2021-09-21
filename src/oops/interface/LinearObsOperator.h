@@ -16,13 +16,12 @@
 
 #include <boost/noncopyable.hpp>
 
+#include "oops/base/ObsVector.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsAuxIncrement.h"
 #include "oops/interface/ObsSpace.h"
-#include "oops/interface/ObsVector.h"
-#include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -31,7 +30,14 @@
 namespace oops {
 
 // -----------------------------------------------------------------------------
-
+/// \brief MODEL-agnostic part of tangent-linear and adjoint of the nonlinear
+/// observation (forward) operator ObsOperator.
+///
+/// Note: each implementation should typedef `Parameters_` to the name of a subclass of
+/// oops::Parameters holding its configuration settings and provide a constructor with the
+/// following signature:
+///
+///     LinearObsOperator(const OBS::ObsSpace &, const Parameters_ &);
 template <typename OBS>
 class LinearObsOperator : public util::Printable,
                           private boost::noncopyable,
@@ -44,24 +50,55 @@ class LinearObsOperator : public util::Printable,
   typedef ObsVector<OBS>           ObsVector_;
 
  public:
+  /// A subclass of oops::Parameters holding the configuration settings of the operator.
+  typedef typename LinearObsOper_::Parameters_ Parameters_;
+
   static const std::string classname() {return "oops::LinearObsOperator";}
 
-  LinearObsOperator(const ObsSpace_ &, const eckit::Configuration &);
+  /// Set up TL and AD of observation operator for the \p obsspace observations, with
+  /// parameters defined in \p parameters.
+  LinearObsOperator(const ObsSpace_ & obsspace, const Parameters_ & parameters);
   ~LinearObsOperator();
 
-/// Interfacing
-  const LinearObsOper_ & linearobsoperator() const {return *oper_;}
+  /// Sets up the trajectory for future calls of simulateObsTL or simulateObsAD.
+  /// The implementations could e.g. save the trajectory \p x0, or compute and save the Jacobian
+  /// of observation operator around \p x0.
+  /// Always called before simulateObsTL or simulateObsAD.
+  /// \param[in]  x0       trajectory for linearization of obs operator, State interpolated
+  ///                      to observations locations (defined by ObsOperator::locations())
+  /// \param[in]  obsaux   additional obs operator input, used in the minimization
+  ///                      in Variational DA, e.g. bias correction coefficients or obs operator
+  ///                      parameters.
+  void setTrajectory(const GeoVaLs_ & x0, const ObsAuxControl_ & obsaux);
 
-/// Obs Operators
-  void setTrajectory(const GeoVaLs_ &, const ObsAuxControl_ &);
-  void simulateObsTL(const GeoVaLs_ &, ObsVector_ &, const ObsAuxIncrement_ &) const;
-  void simulateObsAD(GeoVaLs_ &, const ObsVector_ &, ObsAuxIncrement_ &) const;
+  /// Apply tangent-linear of the observation operator linearized around the trajectory that was
+  /// passed to setTrajectory method (which is always called before simulateObsTL).
+  /// \param[in]  dx       input to the TL obs operator, Increment interpolated to observations
+  ///                      locations.
+  /// \param[out] dy       output of the TL obs operator.
+  /// \param[in]  dobsaux: additional input to the TL obs operator, e.g. perturbation to bias
+  ///                      coefficients or obs operator parameters.
+  void simulateObsTL(const GeoVaLs_ & dx, ObsVector_ & dy, const ObsAuxIncrement_ & dobsaux) const;
+  /// Apply adjoint of the observation operator linearized around the trajectory that was
+  /// passed to setTrajectory method (which is always called before simulateObsAD).
+  /// \param[out] dx       output of the AD obs operator, Increment interpolated to observations
+  ///                      locations.
+  /// \param[in]  dy       input of the AD obs operator, perturbation to the ObsVector.
+  /// \param[out] dobsaux  additional output of the AD obs operator, e.g. perturbation to bias
+  ///                      coefficients or obs operator parameters.
+  void simulateObsAD(GeoVaLs_ & dx, const ObsVector_ & dy, ObsAuxIncrement_ & dobsaux) const;
 
-/// Other
-  const Variables & requiredVars() const;  // Required inputs variables from LinearModel
+  /// Variables required from the model Increment to compute TL or AD of the obs operator.
+  /// These variables will be provided in GeoVaLs passed to simulateObsTL and simulateObsAD.
+  /// Note: these Variables may be different from variables returned by ObsOperator::requiredVars(),
+  /// which will be provided in GeoVaLs passed to setTrajectory.
+  const Variables & requiredVars() const;
 
  private:
+  /// Print, used for logging
   void print(std::ostream &) const;
+
+  /// Pointer to the implementation of LinearObsOperator
   std::unique_ptr<LinearObsOper_> oper_;
 };
 
@@ -69,10 +106,10 @@ class LinearObsOperator : public util::Printable,
 
 template <typename OBS>
 LinearObsOperator<OBS>::LinearObsOperator(const ObsSpace_ & os,
-                                            const eckit::Configuration & config): oper_() {
+                                          const Parameters_ & parameters): oper_() {
   Log::trace() << "LinearObsOperator<OBS>::LinearObsOperator starting" << std::endl;
   util::Timer timer(classname(), "LinearObsOperator");
-  oper_.reset(new LinearObsOper_(os.obsspace(), config));
+  oper_.reset(new LinearObsOper_(os.obsspace(), parameters));
   Log::trace() << "LinearObsOperator<OBS>::LinearObsOperator done" << std::endl;
 }
 

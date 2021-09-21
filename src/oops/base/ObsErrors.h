@@ -18,31 +18,35 @@
 #include <boost/noncopyable.hpp>
 
 #include "oops/base/Departures.h"
-#include "oops/base/ObsErrorBase.h"
+#include "oops/base/ObsError.h"
 #include "oops/base/ObsSpaces.h"
+#include "oops/util/ConfigFunctions.h"  // for vectoriseAndFilter
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/Parameters.h"
 #include "oops/util/Printable.h"
 
 namespace oops {
 
 // -----------------------------------------------------------------------------
-/// \biref Container for ObsErrors for all observation types that are used in DA
+/// \brief Container for ObsErrors for all observation types that are used in DA
 template <typename OBS>
 class ObsErrors : public util::Printable,
                   private boost::noncopyable {
-  typedef Departures<OBS>          Departures_;
-  typedef ObsErrorBase<OBS>        ObsError_;
-  typedef ObsSpaces<OBS>           ObsSpaces_;
+  typedef Departures<OBS>                Departures_;
+  typedef ObsError<OBS>                  ObsError_;
+  typedef ObsErrorParametersWrapper<OBS> Parameters_;
+  typedef ObsSpaces<OBS>                 ObsSpaces_;
 
  public:
   static const std::string classname() {return "oops::ObsErrors";}
 
+  ObsErrors(const std::vector<Parameters_> &, const ObsSpaces_ &);
   ObsErrors(const eckit::Configuration &, const ObsSpaces_ &);
 
 /// Accessor and size
   size_t size() const {return err_.size();}
-  ObsError_ & operator[](const size_t ii) {return *err_.at(ii);}
-  const ObsError_ & operator[](const size_t ii) const {return *err_.at(ii);}
+  ObsError_ & operator[](const size_t ii) {return err_.at(ii);}
+  const ObsError_ & operator[](const size_t ii) const {return err_.at(ii);}
 
 /// Multiply a Departure by \f$R\f$
   void multiply(Departures_ &) const;
@@ -52,33 +56,49 @@ class ObsErrors : public util::Printable,
 /// Generate random perturbation
   void randomize(Departures_ &) const;
 
+/// Save obs errors
+  void save(const std::string &) const;
+
   /// returns inverse of observation error variance
   Departures_ inverseVariance() const;
 
  private:
-  void print(std::ostream &) const;
-  std::vector<std::unique_ptr<ObsError_> > err_;
+  void print(std::ostream &) const override;
+  std::vector<ObsError_> err_;
   const ObsSpaces_ & os_;
 };
 
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-ObsErrors<OBS>::ObsErrors(const eckit::Configuration & config,
+ObsErrors<OBS>::ObsErrors(const std::vector<Parameters_> & params,
                           const ObsSpaces_ & os) : err_(), os_(os) {
-  std::vector<eckit::LocalConfiguration> obsconf = config.getSubConfigurations();
+  ASSERT(params.empty() || params.size() == os.size());
+  const Parameters_ defaultParam;
+
+  err_.reserve(os.size());
   for (size_t jj = 0; jj < os.size(); ++jj) {
-    eckit::LocalConfiguration conf = obsconf[jj].getSubConfiguration("obs error");
-    err_.emplace_back(ObsErrorFactory<OBS>::create(conf, os[jj]));
+    const Parameters_ & param = params.empty() ? defaultParam : params[jj];
+    err_.emplace_back(param.obsErrorParameters, os_[jj]);
   }
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
+ObsErrors<OBS>::ObsErrors(const eckit::Configuration & config,
+                          const ObsSpaces_ & os) :
+  ObsErrors(  // Split config into subconfigurations, extract the "obs error" section from each
+              // of them, then validate and deserialize that section into a Parameters_ object
+            validateAndDeserialize<Parameters_>(util::vectoriseAndFilter(config, "obs error")), os)
+{}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
 void ObsErrors<OBS>::multiply(Departures_ & dy) const {
   for (size_t jj = 0; jj < err_.size(); ++jj) {
-    err_[jj]->multiply(dy[jj]);
+    err_[jj].multiply(dy[jj]);
   }
 }
 
@@ -87,7 +107,7 @@ void ObsErrors<OBS>::multiply(Departures_ & dy) const {
 template <typename OBS>
 void ObsErrors<OBS>::inverseMultiply(Departures_ & dy) const {
   for (size_t jj = 0; jj < err_.size(); ++jj) {
-    err_[jj]->inverseMultiply(dy[jj]);
+    err_[jj].inverseMultiply(dy[jj]);
   }
 }
 
@@ -96,7 +116,16 @@ void ObsErrors<OBS>::inverseMultiply(Departures_ & dy) const {
 template <typename OBS>
 void ObsErrors<OBS>::randomize(Departures_ & dy) const {
   for (size_t jj = 0; jj < err_.size(); ++jj) {
-    err_[jj]->randomize(dy[jj]);
+    err_[jj].randomize(dy[jj]);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+void ObsErrors<OBS>::save(const std::string & name) const {
+  for (const auto & err : err_) {
+    err.save(name);
   }
 }
 
@@ -106,7 +135,7 @@ template <typename OBS>
 Departures<OBS> ObsErrors<OBS>::inverseVariance() const {
   Departures_ invvar(os_);
   for (size_t jj = 0; jj < err_.size(); ++jj) {
-    invvar[jj] = err_[jj]->inverseVariance();
+    invvar[jj] = err_[jj].inverseVariance();
   }
   return invvar;
 }
@@ -115,7 +144,7 @@ Departures<OBS> ObsErrors<OBS>::inverseVariance() const {
 
 template<typename OBS>
 void ObsErrors<OBS>::print(std::ostream & os) const {
-  for (size_t jj = 0; jj < err_.size(); ++jj) os << *err_[jj] << std::endl;
+  for (size_t jj = 0; jj < err_.size(); ++jj) os << err_[jj] << std::endl;
 }
 
 // -----------------------------------------------------------------------------

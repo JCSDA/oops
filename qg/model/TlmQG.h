@@ -17,8 +17,8 @@
 
 #include <boost/noncopyable.hpp>
 
-#include "oops/base/LinearModelBase.h"
 #include "oops/base/Variables.h"
+#include "oops/interface/LinearModelBase.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -39,7 +39,7 @@ namespace qg {
  *  QG linear model definition and configuration parameters.
  */
 
-class TlmQG: public oops::LinearModelBase<QgTraits>,
+class TlmQG: public oops::interface::LinearModelBase<QgTraits>,
              private util::ObjectCounter<TlmQG> {
  public:
   static const std::string classname() {return "qg::TlmQG";}
@@ -47,16 +47,17 @@ class TlmQG: public oops::LinearModelBase<QgTraits>,
   TlmQG(const GeometryQG &, const eckit::Configuration &);
   ~TlmQG();
 
-/// Model trajectory computation
+  /// Prepare model integration
+  void initializeTL(IncrementQG &) const override;
+  void initializeAD(IncrementQG &) const override;
+
+  /// Model integration
+  void stepTL(IncrementQG &, const ModelBiasIncrement &) const override;
+  void stepAD(IncrementQG &, ModelBiasIncrement &) const override;
   void setTrajectory(const StateQG &, StateQG &, const ModelBias &) override;
 
-/// Run TLM and its adjoint
-  void initializeTL(IncrementQG &) const override;
-  void stepTL(IncrementQG &, const ModelBiasIncrement &) const override;
+  /// Finish model integration
   void finalizeTL(IncrementQG &) const override;
-
-  void initializeAD(IncrementQG &) const override;
-  void stepAD(IncrementQG &, ModelBiasIncrement &) const override;
   void finalizeAD(IncrementQG &) const override;
 
 /// Other utilities

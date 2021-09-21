@@ -13,9 +13,9 @@
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "oops/base/Geometry.h"
+#include "oops/base/State.h"
 #include "oops/generic/instantiateVariableChangeFactory.h"
-#include "oops/interface/Geometry.h"
-#include "oops/interface/State.h"
 #include "oops/interface/VariableChange.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"

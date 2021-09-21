@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2019 UCAR
+ * (C) Copyright 2019-2021 UCAR
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -12,13 +12,18 @@
 #include <cfenv>       // feenableexcept
 #endif
 
-#include <execinfo.h>  // backtrace*
 #include <cerrno>      // strerror(errno)
 #include <csignal>     // sigaction, siginfo_t
-#include <cstdlib>     // abort
 #include <cstring>     // strerror
 #include <iostream>    // cout, cerr
-#include "oops/util/Logger.h"  // required for oops::Log
+
+// The behavior of boost::stacktrace is controlled by preprocessor macros. See
+// https://www.boost.org/doc/libs/1_76_0/doc/html/stacktrace/configuration_and_build.html
+// for details. The correct libs and macros are set using CMake (in backtrace_deps.cmake).
+#include <boost/stacktrace.hpp>  // boost stacktraces
+
+#include "oops/util/abor1_cpp.h"  // ABORT macro
+#include "oops/util/Logger.h"     // required for oops::Log
 
 void trap_sigfpe(const int);                    // user function traps SIGFPE
 void sigfpe_handler(int, siginfo_t *, void *);  // called when relevant SIGFPE occurs
@@ -62,12 +67,6 @@ void trap_sigfpe(const int abortflg)
 // This is the signal handler invoked when SIGFPE encountered
 // Arguments "sig" and "ucontext" are required but unused here
 void sigfpe_handler(int sig, siginfo_t *info, void *ucontext) {
-  static const int maxfuncs = 50;  // gather no more than this many functions in the backtrace
-  void *stack[maxfuncs];           // call stack
-  char **stacknames;               // backtrace function names
-  size_t nfuncs;                   // number of functions returned by backtrace
-  size_t n;                        // iterator over nfuncs
-
   //  myrank = eckit::mpi::comm().rank();
   LOGIT_STDERR << "Caught SIGFPE: ";
 
@@ -96,12 +95,8 @@ void sigfpe_handler(int sig, siginfo_t *info, void *ucontext) {
   }
 
   if (do_abort) {
-    nfuncs = backtrace(stack, maxfuncs);                // number of functions in the backtrace
-    stacknames = backtrace_symbols(&stack[0], nfuncs);  // generate the backtrace names from symbols
-    // Loop through the callstack, printing the backtrace
-    for (n = 0; n < nfuncs; ++n) {
-      LOGIT_STDERR << stacknames[n] << std::endl;
-    }
-    abort();                                            // exit
+    LOGIT_STDERR << boost::stacktrace::stacktrace() << std::endl;
+    ABORT("A SIGFPE was encountered. If available, see frame #2 in the stacktrace for details.");
   }
 }
+

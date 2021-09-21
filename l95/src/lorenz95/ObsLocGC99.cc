@@ -35,18 +35,16 @@ ObsLocGC99::ObsLocGC99(const eckit::Configuration & config, const ObsTable & obs
 
 // -----------------------------------------------------------------------------
 
-void ObsLocGC99::computeLocalization(const Iterator & iterator, ObsData1D<int> & outside,
-                                     ObsVec1D & result) const {
+void ObsLocGC99::computeLocalization(const Iterator & iterator, ObsVec1D & locfactor) const {
   std::vector<double> locations = obsdb_.locations();
   eckit::geometry::Point2 center = *iterator;
   for (unsigned int ii=0; ii < obsdb_.nobs(); ++ii) {
     double curdist = std::abs(center[0] - locations[ii]);
     curdist = std::min(curdist, 1.-curdist);
     if (curdist >= rscale_) {
-      outside[ii] = 1;
+      locfactor[ii] = locfactor.missing();
     } else {
-      outside[ii] = 0;
-      result[ii] = oops::gc99(curdist/rscale_);
+      locfactor[ii] = oops::gc99(curdist/rscale_);
     }
   }
 }

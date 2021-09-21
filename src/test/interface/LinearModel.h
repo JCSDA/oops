@@ -26,20 +26,20 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
+#include "oops/base/Geometry.h"
+#include "oops/base/Increment.h"
 #include "oops/base/instantiateCovarFactory.h"
+#include "oops/base/LinearModel.h"
+#include "oops/base/Model.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
+#include "oops/base/State.h"
 #include "oops/base/TrajectorySaver.h"
 #include "oops/base/Variables.h"
-#include "oops/generic/instantiateTlmFactory.h"
-#include "oops/interface/Geometry.h"
-#include "oops/interface/Increment.h"
-#include "oops/interface/LinearModel.h"
-#include "oops/interface/Model.h"
+#include "oops/generic/instantiateLinearModelFactory.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/ModelAuxIncrement.h"
-#include "oops/interface/State.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
@@ -123,7 +123,7 @@ template <typename MODEL> class LinearModelFixture : private boost::noncopyable 
     tlConf_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "linear model"));
 
 //  Setup trajectory for TL and AD
-    oops::instantiateTlmFactory<MODEL>();
+    oops::instantiateLinearModelFactory<MODEL>();
     oops::PostProcessor<State_> post;
     oops::PostProcessorTLAD<MODEL> pptraj;
     tlm_.reset(new LinearModel_(*resol_, *tlConf_));

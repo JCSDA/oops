@@ -12,7 +12,7 @@
 #include <string>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "oops/interface/Geometry.h"
+#include "oops/base/Geometry.h"
 #include "oops/util/parameters/IgnoreOtherParameters.h"
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/RequiredParameter.h"

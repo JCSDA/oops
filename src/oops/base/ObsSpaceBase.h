@@ -16,6 +16,8 @@
 #include "eckit/mpi/Comm.h"
 
 #include "oops/util/DateTime.h"
+#include "oops/util/parameters/Parameter.h"
+#include "oops/util/parameters/Parameters.h"
 #include "oops/util/Printable.h"
 
 namespace eckit {
@@ -24,13 +26,27 @@ namespace eckit {
 
 namespace oops {
 
+/// \brief Base class for configuration parameters of observation spaces.
+class ObsSpaceParametersBase : public oops::Parameters {
+  OOPS_ABSTRACT_PARAMETERS(ObsSpaceParametersBase, Parameters)
+
+ public:
+  /// \brief An integer added to the seed used to initialize the random number generator
+  /// producing observation perturbations (if these are requested).
+  ///
+  /// The seed is a sum of this integer and terms derived from the position of the assimilation
+  /// window, the ensemble member index and the number of ObsSpaceBase instances created so far
+  /// during the lifetime of the program.
+  oops::Parameter<int> obsPerturbationsSeed{"obs perturbations seed", 0, this};
+};
+
 // -----------------------------------------------------------------------------
 /// Base class for observation spaces.
 
 class ObsSpaceBase : public util::Printable,
                      private boost::noncopyable {
  public:
-  ObsSpaceBase(const eckit::Configuration &, const eckit::mpi::Comm &,
+  ObsSpaceBase(const ObsSpaceParametersBase &, const eckit::mpi::Comm &,
                const util::DateTime &, const util::DateTime &);
 
   virtual ~ObsSpaceBase() {}

@@ -23,9 +23,9 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
+#include "oops/base/Geometry.h"
+#include "oops/base/State.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/Geometry.h"
-#include "oops/interface/State.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
@@ -85,6 +85,7 @@ template <typename MODEL> void testStateConstructors() {
   EXPECT(xx1.get());
   oops::Log::test() << "Printing State from yaml: " << *xx1 << std::endl;
   const double norm1 = xx1->norm();
+  EXPECT(norm1 != 0);
   EXPECT(oops::is_close(norm1, norm, tol));
   EXPECT(xx1->validTime() == vt);
 

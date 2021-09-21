@@ -13,14 +13,15 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include "eckit/testing/Test.h"
+#include "oops/base/ObsVector.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/ObsDataVector.h"
-#include "oops/interface/ObsVector.h"
 #include "oops/runs/Test.h"
 #include "oops/util/dot_product.h"
 #include "test/interface/ObsTestsFixture.h"
@@ -67,6 +68,29 @@ template <typename OBS> void testCopyConstructor() {
     EXPECT(!other.get());
 
     EXPECT(ov.get());
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+/// Test the constructor taking a std::unique_ptr<OBS::ObsVector>.
+template <typename OBS> void testWrappingConstructor() {
+  typedef ObsTestsFixture<OBS>  Test_;
+  typedef oops::ObsVector<OBS>  ObsVector_;
+
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    ObsVector_ ov(Test_::obspace()[jj]);
+
+    ov.random();
+    oops::Log::test() << "Printing random ObsVector: " << ov << std::endl;
+
+    ObsVector_ other(std::make_unique<typename OBS::ObsVector_>(ov->obsvector()),
+                     Test_::obspace()[jj]);
+
+    const double ov2 = dot_product(ov, ov);
+    const double other2 = dot_product(other, other);
+
+    EXPECT(ov2 == other2);
   }
 }
 
@@ -289,11 +313,16 @@ template <typename OBS> void testMask() {
     EXPECT_EQUAL(with_mask.nobs(), nobs_after_mask);
 
     /// test packEigen
+    // create maskvec ObsVector - mask with missing values
+    ObsVector_ maskvec = test;
+    maskvec.ones();
+    maskvec.mask(mask);
+    // randomize the vector, and call packEigen with maskvec
     test.random();
-    Eigen::VectorXd with_mask_vec = test.packEigen(mask);
+    Eigen::VectorXd with_mask_vec = test.packEigen(maskvec);
     // check that the size of returned Eigen Vector is consistent with size
     // returned by packEigenSize()
-    EXPECT_EQUAL(with_mask_vec.size(), test.packEigenSize(mask));
+    EXPECT_EQUAL(with_mask_vec.size(), test.packEigenSize(maskvec));
     oops::Log::debug() << "Local number of masked observations is: " <<
                           with_mask_vec.size() << std::endl;
     // check that the size is consistent with reference for this MPI task

@@ -18,9 +18,9 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
+#include "oops/base/Geometry.h"
+#include "oops/base/Increment.h"
 #include "oops/base/ObsAuxIncrements.h"
-#include "oops/interface/Geometry.h"
-#include "oops/interface/Increment.h"
 #include "oops/interface/ModelAuxIncrement.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"

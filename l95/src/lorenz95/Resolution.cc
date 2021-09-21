@@ -27,6 +27,11 @@ std::vector<double> Resolution::verticalCoord(std::string & vcUnits) const {
   std::vector<double> vc(1, 1.0);
   return vc;
 }
+// -------------------------------------------------------------------------------------------------
+std::vector<size_t> Resolution::variableSizes(const oops::Variables & vars) const {
+  std::vector<size_t> sizes(vars.size(), 1);
+  return sizes;
+}
 
 // -----------------------------------------------------------------------------
 

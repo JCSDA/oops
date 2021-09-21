@@ -24,8 +24,8 @@ namespace qg {
 
 // -----------------------------------------------------------------------------
 
-ObsOperatorQG::ObsOperatorQG(const ObsSpaceQG & os, const eckit::Configuration & conf)
-  : oper_(ObsOpFactory::create(os, conf))
+ObsOperatorQG::ObsOperatorQG(const ObsSpaceQG & os, const Parameters_ & params)
+  : oper_(ObsOpFactory::create(os, params.config))
 {}
 
 // -----------------------------------------------------------------------------
@@ -35,7 +35,7 @@ ObsOperatorQG::~ObsOperatorQG() {}
 // -----------------------------------------------------------------------------
 
 void ObsOperatorQG::simulateObs(const GomQG & gvals, ObsVecQG & yy, const ObsBias & bias,
-                                ObsDiagsQG &) const {
+                                ObsVecQG &, ObsDiagsQG &) const {
   oper_->simulateObs(gvals, yy, bias);
 }
 

@@ -237,26 +237,25 @@ void FieldsQG::setLocal(const oops::LocalIncrement & x, const GeometryQGIterator
 }
 // -----------------------------------------------------------------------------
 size_t FieldsQG::serialSize() const {
-  size_t nn = 0;
   int nx, ny, nz, lbc;
   qg_fields_sizes_f90(keyFlds_, nx, ny, nz);
   qg_fields_lbc_f90(keyFlds_, lbc);
-  nn += nx * ny * nz;
+  size_t nn = nx * ny * nz;
   if (lbc == 1) {
-    nn += + 2 * (nx + 1) * nz;
+    nn += 2 * (nx + 1) * nz;
   }
   nn += time_.serialSize();
   return nn;
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::serialize(std::vector<double> & vect)  const {
-  int size_fld = this->serialSize() - 2;
+  size_t size_fld = this->serialSize() - time_.serialSize();
 
   // Allocate space for fld, xb and qb
   std::vector<double> v_fld(size_fld, 0);
 
   // Serialize the field
-  qg_fields_serialize_f90(keyFlds_, size_fld, v_fld.data());
+  qg_fields_serialize_f90(keyFlds_, static_cast<int>(size_fld), v_fld.data());
   vect.insert(vect.end(), v_fld.begin(), v_fld.end());
 
   // Serialize the date and time
@@ -264,7 +263,9 @@ void FieldsQG::serialize(std::vector<double> & vect)  const {
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::deserialize(const std::vector<double> & vect, size_t & index) {
-  qg_fields_deserialize_f90(keyFlds_, vect.size(), vect.data(), index);
+  int indexInt = static_cast<int>(index);
+  qg_fields_deserialize_f90(keyFlds_, static_cast<int>(vect.size()), vect.data(), indexInt);
+  index = static_cast<size_t>(indexInt);
   time_.deserialize(vect, index);
 }
 // -----------------------------------------------------------------------------

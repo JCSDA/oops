@@ -17,17 +17,17 @@
 #include "eckit/exception/Exceptions.h"
 
 #include "oops/assimilation/CalcHofX.h"
+#include "oops/base/Geometry.h"
 #include "oops/base/instantiateObsFilterFactory.h"
 #include "oops/base/Observations.h"
 #include "oops/base/ObsSpaces.h"
+#include "oops/base/State.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/instantiateVariableChangeFactory.h"
 #include "oops/interface/ChangeVariables.h"
-#include "oops/interface/Geometry.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/GetValues.h"
 #include "oops/interface/Locations.h"
-#include "oops/interface/State.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/ConfigFunctions.h"
@@ -163,7 +163,8 @@ template <typename MODEL, typename OBS> class HofX4Dhack : public Application {
      // loop over all observation types
     for (size_t jj = 0; jj < obspaces.size(); ++jj) {
       GetValues_ getvals(geometry, *locations[jj], getValuesConfig[jj]);
-      geovals.emplace_back(new GeoVaLs_(*locations[jj], vars[jj]));
+      geovals.emplace_back(new GeoVaLs_(*locations[jj], vars[jj],
+                                        geometry.variableSizes(vars[jj])));
       getvals.fillGeoVaLs(zz, subWinBegin, subWinEnd, *geovals[jj]);
     }
 

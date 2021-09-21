@@ -31,6 +31,11 @@ namespace eckit {
 namespace oops {
 
 // -----------------------------------------------------------------------------
+/// \brief Auxiliary increment related to observations, templated on <OBS>
+/// \details
+/// This is currently only used for bias correction coefficient increments.
+/// This class calls the <OBS> implementation of ObsAuxIncrement.
+// -----------------------------------------------------------------------------
 
 template <typename OBS>
 class ObsAuxIncrement : public util::Printable,
@@ -44,33 +49,40 @@ class ObsAuxIncrement : public util::Printable,
 
   static const std::string classname() {return "oops::ObsAuxIncrement";}
 
-/// Constructor, destructor
-  ObsAuxIncrement(const ObsSpace<OBS> &, const Parameters_ &);
-  /// Copies \p other if \p copy is true, otherwise creates zero increment
+  /// Constructor for specified ObsSpace \p os and \p params
+  ObsAuxIncrement(const ObsSpace<OBS> & os, const Parameters_ & params);
+  /// Copies \p other if \p copy is true, otherwise creates zero ObsAuxIncrement
   /// of the same size as \p other.
   ObsAuxIncrement(const ObsAuxIncrement & other, const bool copy = true);
+  /// Destructor (defined explicitly for timing and tracing)
   ~ObsAuxIncrement();
 
-/// Interfacing
+  /// const Accessor
   const ObsAuxIncrement_ & obsauxincrement() const {return *aux_;}
+  /// Accessor
   ObsAuxIncrement_ & obsauxincrement() {return *aux_;}
 
-/// Linear algebra operators
+  /// Sets this ObsAuxIncrement to the difference between two ObsAuxControl objects
   void diff(const ObsAuxControl_ &, const ObsAuxControl_ &);
+  /// Zero out this ObsAuxIncrement
   void zero();
+  /// Linear algebra operators
   ObsAuxIncrement & operator=(const ObsAuxIncrement &);
   ObsAuxIncrement & operator+=(const ObsAuxIncrement &);
   ObsAuxIncrement & operator-=(const ObsAuxIncrement &);
   ObsAuxIncrement & operator*=(const double &);
   void axpy(const double &, const ObsAuxIncrement &);
-  double dot_product_with(const ObsAuxIncrement &) const;
+  /// dot product with \p dx ObsAuxIncrement
+  double dot_product_with(const ObsAuxIncrement & dx) const;
 
-/// I/O and diagnostics
+  /// Read this ObsAuxIncrement from file
   void read(const eckit::Configuration &);
+  /// Write this ObsAuxIncrement out to file
   void write(const eckit::Configuration &) const;
+  /// Norm (used in tests)
   double norm() const;
 
-/// Serialize and deserialize
+  /// Serialize and deserialize (used in 4DEnVar, weak-constraint 4DVar and Block-Lanczos minimizer)
   size_t serialSize() const override;
   void serialize(std::vector<double> &) const override;
   void deserialize(const std::vector<double> &, size_t &) override;

@@ -394,13 +394,13 @@ type(datetime),intent(in) :: winbgn  !< Start of window
 type(datetime),intent(in) :: winend  !< End of window
 
 ! Local variables
-integer :: igrp,icol,iobs,ncol,nobsfile,jobs
-integer :: ncid,grpname_id,ngrp_id,nobs_id,ncol_id,times_id,nlev_id,colname_id,values_id
+integer,parameter :: ngrpmax = 3
+integer,parameter :: ncolmax = 7
+integer :: grp_ids(ngrpmax),igrp,nobs_in_grp,iobs,jobs,ncol,col_ids(ncolmax),icol,nlev_id,values_id
+integer :: ncid,nobs_id,times_id
 type(group_data),pointer :: jgrp
 type(column_data),pointer :: jcol
-character(len=6) :: igrpchar
 character(len=50) :: stime
-character(len=1024) :: record
 logical, allocatable :: inwindow(:)
 type(datetime) :: tobs
 type(datetime), allocatable :: alltimes(:)
@@ -409,14 +409,8 @@ real(kind_real),allocatable :: readbuf(:,:)
 ! Open NetCDF file
 call ncerr(nf90_open(trim(self%filein),nf90_nowrite,ncid))
 
-! Get dimensions ids
-call ncerr(nf90_inq_dimid(ncid,'ngrp',ngrp_id))
-
-! Get dimensions
-call ncerr(nf90_inquire_dimension(ncid,ngrp_id,len=self%ngrp))
-
-! Get variables ids
-call ncerr(nf90_inq_varid(ncid,'grpname',grpname_id))
+! Get groups ids
+call ncerr(nf90_inq_grps(ncid,self%ngrp,grp_ids))
 
 do igrp=1,self%ngrp
   ! Allocation
@@ -427,53 +421,51 @@ do igrp=1,self%ngrp
     allocate(jgrp%next)
     jgrp => jgrp%next
   endif
-  write(igrpchar,'(i6.6)') igrp
 
-  ! Get variables
-  call ncerr(nf90_get_var(ncid,grpname_id,jgrp%grpname,(/1,igrp/),(/50,1/)))
+  ! Get group name
+  call ncerr(nf90_inq_grpname(grp_ids(igrp),jgrp%grpname))
 
-  ! Get dimensions ids
-  call ncerr(nf90_inq_dimid(ncid,'nobs_'//igrpchar,nobs_id))
-  call ncerr(nf90_inq_dimid(ncid,'ncol_'//igrpchar,ncol_id))
+  ! Get dimension id
+  call ncerr(nf90_inq_dimid(grp_ids(igrp),'nobs',nobs_id))
 
-  ! Get dimensions
-  call ncerr(nf90_inquire_dimension(ncid,nobs_id,len=nobsfile))
-  call ncerr(nf90_inquire_dimension(ncid,ncol_id,len=ncol))
+  ! Get dimension
+  call ncerr(nf90_inquire_dimension(grp_ids(igrp),nobs_id,len=nobs_in_grp))
 
-  ! Get variables ids
-  call ncerr(nf90_inq_varid(ncid,'times_'//igrpchar,times_id))
-  call ncerr(nf90_inq_varid(ncid,'nlev_'//igrpchar,nlev_id))
-  call ncerr(nf90_inq_varid(ncid,'colname_'//igrpchar,colname_id))
-  call ncerr(nf90_inq_varid(ncid,'values_'//igrpchar,values_id))
+  ! Get variable id
+  call ncerr(nf90_inq_varid(grp_ids(igrp),'times',times_id))
 
   ! Allocation
-  allocate(inwindow(nobsfile))
-  allocate(alltimes(nobsfile))
+  allocate(inwindow(nobs_in_grp))
+  allocate(alltimes(nobs_in_grp))
 
   ! Read in times
-  call ncerr(nf90_get_var(ncid,grpname_id,jgrp%grpname,(/1,igrp/),(/50,1/)))
   jgrp%nobs = 0
-  do iobs=1,nobsfile
-    call ncerr(nf90_get_var(ncid,times_id,stime,(/1,iobs/),(/50,1/)))
+  do iobs=1,nobs_in_grp
+    call ncerr(nf90_get_var(grp_ids(igrp),times_id,stime,(/1,iobs/),(/50,1/)))
     call datetime_create(stime,tobs)
-    if (tobs > winbgn .and. tobs <= winend) then
+    if ((tobs > winbgn).and.(tobs <= winend)) then
       inwindow(iobs) = .true.
       alltimes(iobs) = tobs
-      jgrp%nobs = jgrp%nobs + 1
+      jgrp%nobs = jgrp%nobs+1
     else
       inwindow(iobs) = .false.
     endif
-  end do
+  enddo
 
+  ! Allocation
   allocate(jgrp%times(jgrp%nobs))
+
+  ! Copy times
   jobs=0
-  do iobs=1,nobsfile
+  do iobs=1,nobs_in_grp
     if (inwindow(iobs)) then
-      jobs = jobs + 1
+      jobs = jobs+1
       jgrp%times(jobs) = alltimes(iobs)
     endif
   end do
-  deallocate(alltimes)
+
+  ! Count columns
+  call ncerr(nf90_inq_grps(grp_ids(igrp),ncol,col_ids))
 
   ! Loop over columns
   do icol=1,ncol
@@ -486,26 +478,40 @@ do igrp=1,self%ngrp
       jcol => jcol%next
     endif
 
-    ! Get variables
-    call ncerr(nf90_get_var(ncid,nlev_id,jcol%nlev,(/icol/)))
-    call ncerr(nf90_get_var(ncid,colname_id,jcol%colname,(/1,icol/),(/50,1/)))
+    ! Get column name
+    call ncerr(nf90_inq_grpname(col_ids(icol),jcol%colname))
+
+    ! Get dimension id
+    call ncerr(nf90_inq_dimid(col_ids(icol),'nlev',nlev_id))
+
+    ! Get dimension
+    call ncerr(nf90_inquire_dimension(col_ids(icol),nlev_id,len=jcol%nlev))
+
+    ! Get variable id
+    call ncerr(nf90_inq_varid(col_ids(icol),'values',values_id))
 
     ! Allocation
-    allocate(readbuf(jcol%nlev,nobsfile))
+    allocate(readbuf(jcol%nlev,nobs_in_grp))
     allocate(jcol%values(jcol%nlev,jgrp%nobs))
 
     ! Get values
-    call ncerr(nf90_get_var(ncid,values_id,readbuf(1:jcol%nlev,:),(/1,icol,1/),(/jcol%nlev,1,nobsfile/)))
+    call ncerr(nf90_get_var(col_ids(icol),values_id,readbuf(1:jcol%nlev,:),(/1,1/),(/jcol%nlev,nobs_in_grp/)))
 
+    ! Copy values
     jobs = 0
-    do iobs=1,nobsfile
+    do iobs=1,nobs_in_grp
       if (inwindow(iobs)) then
-        jobs = jobs + 1
+        jobs = jobs+1
         jcol%values(:,jobs) = readbuf(:,iobs)
       endif
     enddo
+
+    ! Release memory
     deallocate(readbuf)
   enddo
+
+  ! Release memory
+  deallocate(alltimes)
   deallocate(inwindow)
 enddo
 
@@ -523,82 +529,57 @@ implicit none
 type(qg_obsdb),intent(in) :: self !< Observation data
 
 ! Local variables
-integer :: igrp,icol,iobs,ncol,nlevmax
-integer :: ncid,nstrmax_id,grpname_id,ngrp_id,nobs_id,ncol_id,nlevmax_id,times_id,nlev_id,colname_id,values_id
+integer :: iobs
+integer :: ncid,nstrmax_id,grp_id,nobs_id,times_id,col_id,nlev_id,values_id
 type(group_data),pointer :: jgrp
 type(column_data),pointer :: jcol
-character(len=6) :: igrpchar
 character(len=50) :: stime
 
 ! Create NetCDF file
-call ncerr(nf90_create(trim(self%fileout),or(nf90_clobber,nf90_64bit_offset),ncid))
+call ncerr(nf90_create(trim(self%fileout),or(nf90_clobber,nf90_netcdf4),ncid))
 
 ! Define dimensions
 call ncerr(nf90_def_dim(ncid,'nstrmax',50,nstrmax_id))
-call ncerr(nf90_def_dim(ncid,'ngrp',self%ngrp,ngrp_id))
-
-! Define variable
-call ncerr(nf90_def_var(ncid,'grpname',nf90_char,(/nstrmax_id,ngrp_id/),grpname_id))
-
-! End definitions
-call ncerr(nf90_enddef(ncid))
 
 ! Loop over groups
-igrp = 0
 jgrp => self%grphead
 do while (associated(jgrp))
-  igrp = igrp+1
   if (jgrp%nobs > 0) then
-    write(igrpchar,'(i6.6)') igrp
-    ! Enter definitions mode
-    call ncerr(nf90_redef(ncid))
+    ! Create group
+    call ncerr(nf90_def_grp(ncid,jgrp%grpname,grp_id))
 
-    ! Compute dimensions
-    ncol = 0
-    nlevmax = 0
-    jcol => jgrp%colhead
-    do while (associated(jcol))
-      ncol = ncol+1
-      nlevmax = max(jcol%nlev,nlevmax)
-      jcol => jcol%next
-    enddo
-
-    ! Define dimensions
-    call ncerr(nf90_def_dim(ncid,'nobs_'//igrpchar,jgrp%nobs,nobs_id))
-    call ncerr(nf90_def_dim(ncid,'ncol_'//igrpchar,ncol,ncol_id))
-    call ncerr(nf90_def_dim(ncid,'nlevmax_'//igrpchar,nlevmax,nlevmax_id))
+    ! Define dimension
+    call ncerr(nf90_def_dim(grp_id,'nobs',jgrp%nobs,nobs_id))
 
     ! Define variable
-    call ncerr(nf90_def_var(ncid,'times_'//igrpchar,nf90_char,(/nstrmax_id,nobs_id/),times_id))
-    call ncerr(nf90_def_var(ncid,'nlev_'//igrpchar,nf90_int,(/ncol_id/),nlev_id))
-    call ncerr(nf90_def_var(ncid,'colname_'//igrpchar,nf90_char,(/nstrmax_id,ncol_id/),colname_id))
-    call ncerr(nf90_def_var(ncid,'values_'//igrpchar,nf90_double,(/nlevmax_id,ncol_id,nobs_id/),values_id))
+    call ncerr(nf90_def_var(grp_id,'times',nf90_char,(/nstrmax_id,nobs_id/),times_id))
 
-    ! End definitions
-    call ncerr(nf90_enddef(ncid))
-
-    ! Put variables
-    call ncerr(nf90_put_var(ncid,grpname_id,jgrp%grpname,(/1,igrp/),(/50,1/)))
+    ! Put variable
     do iobs=1,jgrp%nobs
       call datetime_to_string(jgrp%times(iobs),stime)
-      call ncerr(nf90_put_var(ncid,times_id,stime,(/1,iobs/),(/50,1/)))
+      call ncerr(nf90_put_var(grp_id,times_id,stime,(/1,iobs/),(/50,1/)))
     end do
 
     ! Loop over columns
-    icol = 0
     jcol => jgrp%colhead
     do while (associated(jcol))
-      icol = icol+1
+      ! Create subgroup
+      call ncerr(nf90_def_grp(grp_id,jcol%colname,col_id))
 
-      ! Put variables
-      call ncerr(nf90_put_var(ncid,nlev_id,jcol%nlev,(/icol/)))
-      call ncerr(nf90_put_var(ncid,colname_id,jcol%colname,(/1,icol/),(/50,1/)))
-      call ncerr(nf90_put_var(ncid,values_id,jcol%values(1:jcol%nlev,:),(/1,icol,1/),(/jcol%nlev,1,jgrp%nobs/)))
+      ! Define dimension
+      call ncerr(nf90_def_dim(col_id,'nlev',jcol%nlev,nlev_id))
+
+      ! Define variable
+      call ncerr(nf90_def_var(col_id,'values',nf90_double,(/nlev_id,nobs_id/),values_id))
+
+      ! Put variable
+      call ncerr(nf90_put_var(col_id,values_id,jcol%values(1:jcol%nlev,:),(/1,1/),(/jcol%nlev,jgrp%nobs/)))
 
       ! Update
       jcol => jcol%next
     enddo
   endif
+
   ! Update
   jgrp=>jgrp%next
 end do

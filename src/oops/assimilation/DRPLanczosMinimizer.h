@@ -11,6 +11,8 @@
 #ifndef OOPS_ASSIMILATION_DRPLANCZOSMINIMIZER_H_
 #define OOPS_ASSIMILATION_DRPLANCZOSMINIMIZER_H_
 
+#include <Eigen/Dense>
+
 #include <cmath>
 #include <memory>
 #include <string>
@@ -96,7 +98,6 @@ template<typename MODEL, typename OBS> class DRPLanczosMinimizer : public DRMini
 
   // For diagnostics
   eckit::LocalConfiguration diagConf_;
-  int outerLoop_;
 };
 
 // =============================================================================
@@ -105,7 +106,7 @@ template<typename MODEL, typename OBS>
 DRPLanczosMinimizer<MODEL, OBS>::DRPLanczosMinimizer(const eckit::Configuration & conf,
                                                      const CostFct_ & J)
   : DRMinimizer<MODEL, OBS>(J), lmp_(conf), hvecs_(), vvecs_(), zvecs_(), alphas_(),
-    betas_(), diagConf_(conf), outerLoop_(0) {}
+    betas_(), diagConf_(conf) {}
 
 // -----------------------------------------------------------------------------
 
@@ -247,10 +248,11 @@ double DRPLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, Ctr
   for (unsigned int jj = 0; jj < ss.size(); ++jj) {
     dx.axpy(ss[jj], *zvecs_[jj]);
     dxh.axpy(ss[jj], *hvecs_[jj]);
-    if (outerLoop_ == 0) writeKrylovBasis(diagConf_, *zvecs_[jj], jj);
   }
 
-  ++outerLoop_;
+  // Compute and save the eigenvectors
+  writeEigenvectors(diagConf_, alphas_, betas_, dd, zvecs_, hvecs_, HtRinvH, pr, vv, zz);
+
   util::printRunStats("DRPLanczos end");
   return normReduction;
 }

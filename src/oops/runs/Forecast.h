@@ -14,13 +14,13 @@
 #include <string>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "oops/base/Geometry.h"
+#include "oops/base/Model.h"
 #include "oops/base/PostProcessor.h"
+#include "oops/base/State.h"
 #include "oops/base/StateInfo.h"
 #include "oops/base/StateWriter.h"
-#include "oops/interface/Geometry.h"
-#include "oops/interface/Model.h"
 #include "oops/interface/ModelAuxControl.h"
-#include "oops/interface/State.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"

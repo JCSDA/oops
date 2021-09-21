@@ -20,12 +20,12 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Accumulator.h"
+#include "oops/base/Geometry.h"
+#include "oops/base/Increment.h"
 #include "oops/base/LinearVariableChangeBase.h"
+#include "oops/base/State.h"
 #include "oops/base/StateEnsemble.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/Geometry.h"
-#include "oops/interface/Increment.h"
-#include "oops/interface/State.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 
@@ -48,9 +48,6 @@ template<typename MODEL> class IncrementEnsemble {
   /// Constructor
   IncrementEnsemble(const Geometry_ & resol, const Variables & vars,
                     const util::DateTime &, const int rank);
-  /// \brief construct ensemble of perturbations as \p ens - \p mean; holding
-  //         \p vars variables
-  IncrementEnsemble(const StateEnsemble_ & ens, const State_ & mean, const Variables & vars);
   IncrementEnsemble(const eckit::Configuration &, const State_ &, const State_ &,
                     const Geometry_ &, const Variables &);
   /// \brief construct ensemble of perturbations by reading them from disk
@@ -60,6 +57,8 @@ template<typename MODEL> class IncrementEnsemble {
   IncrementEnsemble(const Geometry_ &, const Variables &, const eckit::Configuration &,
                     const eckit::Configuration &);
 
+  void write(const eckit::Configuration &) const;
+
   /// Accessors
   size_t size() const {return ensemblePerturbs_.size();}
   Increment_ & operator[](const int ii) {return ensemblePerturbs_[ii];}
@@ -67,10 +66,6 @@ template<typename MODEL> class IncrementEnsemble {
 
   /// Control variables
   const Variables & controlVariables() const {return vars_;}
-
-  /// Release / reset
-  void releaseMember();
-  void appendMember(const Increment_ &);
 
  private:
   const Variables vars_;
@@ -89,21 +84,6 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const Geometry_ & resol, const Varia
     ensemblePerturbs_.emplace_back(resol, vars_, tslot);
   }
   Log::trace() << "IncrementEnsemble:contructor done" << std::endl;
-}
-
-// ====================================================================================
-
-template<typename MODEL>
-IncrementEnsemble<MODEL>::IncrementEnsemble(const StateEnsemble_ & ensemble,
-                                            const State_ & mean, const Variables & vars)
-  : vars_(vars), ensemblePerturbs_()
-{
-  ensemblePerturbs_.reserve(ensemble.size());
-  for (size_t ii = 0; ii < ensemble.size(); ++ii) {
-    ensemblePerturbs_.emplace_back(ensemble[ii].geometry(), vars, ensemble[ii].validTime());
-    ensemblePerturbs_[ii].diff(ensemble[ii], mean);
-  }
-  Log::trace() << "IncrementEnsemble:contructor(StateEnsemble) done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -223,15 +203,13 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const Geometry_ & resol, const Varia
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void IncrementEnsemble<MODEL>::releaseMember() {
-  ensemblePerturbs_.erase(ensemblePerturbs_.begin());
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void IncrementEnsemble<MODEL>::appendMember(const Increment_ & dx) {
-  ensemblePerturbs_.emplace_back(dx);
+void IncrementEnsemble<MODEL>::write(const eckit::Configuration & config) const
+{
+  eckit::LocalConfiguration outConfig(config);
+  for (size_t ii=0; ii < size(); ++ii) {
+    outConfig.set("member", ii+1);
+    ensemblePerturbs_[ii].write(outConfig);
+  }
 }
 
 // -----------------------------------------------------------------------------

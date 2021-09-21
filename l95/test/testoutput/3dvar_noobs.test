@@ -1,17 +1,21 @@
-Test     : CostJb   : Nonlinear Jb = 0
-Test     : CostJo   : Nonlinear Jo(Lorenz 95) = 0 --- No Observations
-Test     : CostFunction: Nonlinear J = 0
-Test     : DRIPCGMinimizer: reduction in residual norm = 1
-Test     : CostFunction::addIncrement: Analysis: 
-Test     :  Valid time: 2010-01-02T00:00:00Z
-Test     :  Min=6.65953, Max=9.39191, Average=7.97085
-Test     : CostJb   : Nonlinear Jb = 0
-Test     : CostJo   : Nonlinear Jo(Lorenz 95) = 0 --- No Observations
-Test     : CostFunction: Nonlinear J = 0
-Test     : DRIPCGMinimizer: reduction in residual norm = 1
-Test     : CostFunction::addIncrement: Analysis: 
-Test     :  Valid time: 2010-01-02T00:00:00Z
-Test     :  Min=6.65953, Max=9.39191, Average=7.97085
-Test     : CostJb   : Nonlinear Jb = 0
-Test     : CostJo   : Nonlinear Jo(Lorenz 95) = 0 --- No Observations
-Test     : CostFunction: Nonlinear J = 0
+CostJb   : Nonlinear Jb = 0
+CostJo   : Nonlinear Jo(Lorenz 95) = 0 --- No Observations
+CostFunction: Nonlinear J = 0
+CostFunction::addIncrement: Analysis: 
+ Valid time: 2010-01-02T00:00:00Z
+ Min=6.65953, Max=9.39191, Average=7.97085
+
+
+
+CostJb   : Nonlinear Jb = 0
+CostJo   : Nonlinear Jo(Lorenz 95) = 0 --- No Observations
+CostFunction: Nonlinear J = 0
+CostFunction::addIncrement: Analysis: 
+ Valid time: 2010-01-02T00:00:00Z
+ Min=6.65953, Max=9.39191, Average=7.97085
+
+
+
+CostJb   : Nonlinear Jb = 0
+CostJo   : Nonlinear Jo(Lorenz 95) = 0 --- No Observations
+CostFunction: Nonlinear J = 0

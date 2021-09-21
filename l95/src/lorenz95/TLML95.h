@@ -17,8 +17,8 @@
 
 #include <boost/noncopyable.hpp>
 
-#include "oops/base/LinearModelBase.h"
 #include "oops/base/Variables.h"
+#include "oops/interface/LinearModelBase.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -55,7 +55,7 @@ class TLML95Parameters : public oops::LinearModelParametersBase {
 // -----------------------------------------------------------------------------
 /// Lorenz 95 linear model definition.
 
-class TLML95: public oops::LinearModelBase<L95Traits>,
+class TLML95: public oops::interface::LinearModelBase<L95Traits>,
               private util::ObjectCounter<TLML95> {
  public:
   typedef TLML95Parameters Parameters_;

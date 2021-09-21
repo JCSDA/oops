@@ -26,7 +26,7 @@
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
 
-ObservationL95::ObservationL95(const ObsTable & ot, const eckit::Configuration &)
+ObservationL95::ObservationL95(const ObsTable & ot, const Parameters_ &)
   : obsdb_(ot), inputs_(std::vector<std::string>{"x"})
 {}
 
@@ -37,7 +37,7 @@ ObservationL95::~ObservationL95() {}
 // -----------------------------------------------------------------------------
 
 void ObservationL95::simulateObs(const GomL95 & gom, ObsVec1D & ovec,
-                                 const ObsBias & bias, ObsDiags1D &) const {
+                                 const ObsBias & bias, ObsVec1D &, ObsDiags1D &) const {
   for (size_t jj = 0; jj < gom.size(); ++jj) {
     ovec[jj] = gom[jj] + bias.value();
   }

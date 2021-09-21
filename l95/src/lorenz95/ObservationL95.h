@@ -47,13 +47,15 @@ class ObservationL95 : public util::Printable,
                        private boost::noncopyable,
                        private util::ObjectCounter<ObservationL95> {
  public:
+  typedef ObservationL95Parameters Parameters_;
+
   static const std::string classname() {return "lorenz95::ObservationL95";}
 
-  ObservationL95(const ObsTable &, const eckit::Configuration &);
+  ObservationL95(const ObsTable &, const Parameters_ &);
   ~ObservationL95();
 
 // Obs Operators
-  void simulateObs(const GomL95 &, ObsVec1D &, const ObsBias &, ObsDiags1D &) const;
+  void simulateObs(const GomL95 &, ObsVec1D &, const ObsBias &, ObsVec1D &, ObsDiags1D &) const;
 
 // Other
   const oops::Variables & requiredVars() const {return inputs_;}

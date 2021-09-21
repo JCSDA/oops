@@ -21,8 +21,8 @@
 
 #include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/ObsSpaces.h"
+#include "oops/base/ObsVector.h"
 #include "oops/interface/ObsDataVector.h"
-#include "oops/interface/ObsVector.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
 
@@ -74,11 +74,13 @@ class Departures : public GeneralizedDepartures {
 
 /// Mask out departures where the passed in qc flags are > 0
   void mask(ObsDataVec_<int>);
+/// Mask out departures where \p  mask has missing values
+  void mask(const Departures & mask);
 
 /// Pack departures in an Eigen vector (excluding departures that are masked out)
-  Eigen::VectorXd  packEigen(const ObsDataVec_<int> &) const;
+  Eigen::VectorXd packEigen(const Departures &) const;
 /// Size of departures packed into an Eigen vector
-  size_t packEigenSize(const ObsDataVec_<int> &) const;
+  size_t packEigenSize(const Departures &) const;
 
 /// Save departures values
   void save(const std::string &) const;
@@ -210,28 +212,35 @@ void Departures<OBS>::mask(ObsDataVec_<int> qcflags) {
   }
 }
 // -----------------------------------------------------------------------------
+template<typename OBS>
+void Departures<OBS>::mask(const Departures & mask) {
+  for (size_t ii = 0; ii < dep_.size(); ++ii) {
+    dep_[ii].mask(mask[ii]);
+  }
+}
+// -----------------------------------------------------------------------------
 template <typename OBS>
-Eigen::VectorXd Departures<OBS>::packEigen(const ObsDataVec_<int> & mask) const {
+Eigen::VectorXd Departures<OBS>::packEigen(const Departures & mask) const {
   std::vector<size_t> len(dep_.size());
   for (size_t idep = 0; idep < dep_.size(); ++idep) {
-    len[idep] = dep_[idep].packEigenSize(*mask[idep]);
+    len[idep] = dep_[idep].packEigenSize(mask[idep]);
   }
   size_t all_len = std::accumulate(len.begin(), len.end(), 0);
 
   Eigen::VectorXd vec(all_len);
   size_t ii = 0;
   for (size_t idep = 0; idep < dep_.size(); ++idep) {
-    vec.segment(ii, len[idep]) = dep_[idep].packEigen(*mask[idep]);
+    vec.segment(ii, len[idep]) = dep_[idep].packEigen(mask[idep]);
     ii += len[idep];
   }
   return vec;
 }
 // -----------------------------------------------------------------------------
 template <typename OBS>
-size_t Departures<OBS>::packEigenSize(const ObsDataVec_<int> & mask) const {
+size_t Departures<OBS>::packEigenSize(const Departures & mask) const {
   size_t len = 0;
   for (size_t idep = 0; idep < dep_.size(); ++idep) {
-    len += dep_[idep].packEigenSize(*mask[idep]);
+    len += dep_[idep].packEigenSize(mask[idep]);
   }
   return len;
 }

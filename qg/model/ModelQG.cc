@@ -24,7 +24,7 @@
 
 namespace qg {
 // -----------------------------------------------------------------------------
-static oops::ModelMaker<QgTraits, ModelQG> makermodel_("QG");
+static oops::interface::ModelMaker<QgTraits, ModelQG> makermodel_("QG");
 // -----------------------------------------------------------------------------
 ModelQG::ModelQG(const GeometryQG & resol, const ModelQgParameters & params)
   : keyConfig_(0), params_(params), geom_(resol),

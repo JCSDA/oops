@@ -17,14 +17,15 @@
 #include <string>
 #include <vector>
 
-#include "oops/assimilation/State4D.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostBase.h"
+#include "oops/base/State.h"
+#include "oops/base/State4D.h"
 #include "oops/base/Variables.h"
+#include "oops/interface/ChangeVariables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/GetValues.h"
 #include "oops/interface/Locations.h"
-#include "oops/interface/State.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -40,6 +41,7 @@ namespace oops {
 /// - as a method fill() on State4D
 template <typename MODEL, typename OBS>
 class GetValuesPost : public PostBase<State<MODEL>> {
+  typedef ChangeVariables<MODEL>    ChangeVariables_;
   typedef GeoVaLs<OBS>              GeoVaLs_;
   typedef Locations<OBS>            Locations_;
   typedef ObsSpaces<OBS>            ObsSpaces_;
@@ -127,7 +129,8 @@ void GetValuesPost<MODEL, OBS>::doInitialize(const State_ & xx, const util::Date
 
   for (size_t jj = 0; jj < locations_.size(); ++jj) {
     getvals_.emplace_back(new GetValues_(xx.geometry(), *locations_[jj], getvalsconfs_[jj]));
-    geovals_.emplace_back(new GeoVaLs_(*locations_[jj], geovars_[jj]));
+    geovals_.emplace_back(new GeoVaLs_(*locations_[jj], geovars_[jj],
+                                       xx.geometry().variableSizes(geovars_[jj])));
   }
 
   Log::trace() << "GetValuesPost::doInitialize done" << std::endl;
@@ -141,9 +144,16 @@ void GetValuesPost<MODEL, OBS>::doProcessing(const State_ & xx) {
   util::DateTime t1 = std::max(xx.validTime()-hslot_, winbgn_);
   util::DateTime t2 = std::min(xx.validTime()+hslot_, winend_);
 
+  eckit::LocalConfiguration chvarconf;  // empty for now
+  Variables gvars;
+  for (size_t jj = 0; jj < getvals_.size(); ++jj) gvars += geovars_[jj];
+  ChangeVariables_ chvar(chvarconf, xx.geometry(), xx.variables(), gvars);
+  State_ zz(xx.geometry(), gvars, xx.validTime());
+  chvar.changeVar(xx, zz);
+
 // Get state variables at obs locations
   for (size_t jj = 0; jj < getvals_.size(); ++jj) {
-    getvals_[jj]->fillGeoVaLs(xx, t1, t2, *geovals_[jj]);
+    getvals_[jj]->fillGeoVaLs(zz, t1, t2, *geovals_[jj]);
   }
   Log::trace() << "GetValuesPost::doProcessing done" << std::endl;
 }

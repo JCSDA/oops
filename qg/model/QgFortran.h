@@ -119,9 +119,9 @@ extern "C" {
                                 atlas::field::FieldSetImpl *);
   void qg_fields_getpoint_f90(const F90flds&, const F90iter&, const int &, double &);
   void qg_fields_setpoint_f90(const F90flds&, const F90iter&, const int &, const double &);
-  void qg_fields_serialize_f90(const F90flds &, const std::size_t &, double[]);
-  void qg_fields_deserialize_f90(const F90flds &, const std::size_t &, const double[],
-                                 const std::size_t &);
+  void qg_fields_serialize_f90(const F90flds &, const int &, double[]);
+  void qg_fields_deserialize_f90(const F90flds &, const int &, const double[], int &);
+
 // -----------------------------------------------------------------------------
 //  GetValues
 // -----------------------------------------------------------------------------
@@ -216,11 +216,15 @@ extern "C" {
   void qg_obsvec_delete_f90(F90ovec &);
   void qg_obsvec_copy_f90(const F90ovec &, const F90ovec &);
   void qg_obsvec_zero_f90(const F90ovec &);
-  void qg_obsvec_zero_ith_f90(const F90ovec &, const int &);
+  void qg_obsvec_settomissing_ith_f90(const F90ovec &, const int &);
   void qg_obsvec_ones_f90(const F90ovec &);
   /// set ObsVector (with key \p obsvector_key) values to missing values where
   /// mask ObsVector (with key \p mask_key) values are set to 1
   void qg_obsvec_mask_f90(const F90ovec & obsvector_key, const F90ovec & mask_key);
+  /// set ObsVector (with key \p obsvector_key) values to missing values where
+  /// mask ObsVector (with key \p mask_key) values are set to missing value
+  void qg_obsvec_mask_with_missing_f90(const F90ovec & obsvector_key,
+                                       const F90ovec & mask_key);
   void qg_obsvec_mul_scal_f90(const F90ovec &, const double &);
   void qg_obsvec_add_f90(const F90ovec &, const F90ovec &);
   void qg_obsvec_sub_f90(const F90ovec &, const F90ovec &);

@@ -23,11 +23,11 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
+#include "oops/base/Geometry.h"
+#include "oops/base/Increment.h"
 #include "oops/base/IncrementEnsemble.h"
-#include "oops/base/LocalizationBase.h"
+#include "oops/base/Localization.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/Geometry.h"
-#include "oops/interface/Increment.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
@@ -38,7 +38,7 @@ namespace test {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL> class LocalizationFixture : private boost::noncopyable {
-  typedef oops::LocalizationBase<MODEL>                 Localization_;
+  typedef oops::Localization<MODEL>                     Localization_;
   typedef oops::Geometry<MODEL>                         Geometry_;
   typedef oops::IncrementEnsemble<MODEL>                Ensemble_;
 
@@ -64,7 +64,7 @@ template <typename MODEL> class LocalizationFixture : private boost::noncopyable
 
 //  Setup the localization matrix
     const eckit::LocalConfiguration conf(TestEnvironment::config(), "localization");
-    local_ = oops::LocalizationFactory<MODEL>::create(*resol_, *time_, conf);
+    local_.reset(new Localization_(*resol_, conf));
 
     oops::Log::test() << "Testing localization: " << *local_ << std::endl;
   }

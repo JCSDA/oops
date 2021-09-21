@@ -1,36 +1,36 @@
 cost function:
-  cost type: $(cost_function)
+  cost type: ${cost_function}
   window begin: '{{window_begin}}'
-  window length: $(window_length)
+  window length: ${window_length}
   geometry:
-    $(GEOMETRY)
+    ${GEOMETRY}
   model:
-    $(MODEL)
-  analysis variables: $(an_variables)
+    ${MODEL}
+  analysis variables: ${an_variables}
   background:
-    $(BACKGROUND)
+    ${BACKGROUND}
   background error:
-    $(BACKGROUND_ERROR)
+    ${BACKGROUND_ERROR}
   observations:
-    $(OBSERVATIONS)
+    ${OBSERVATIONS}
   constraints:
-  - $(JC)
+  - ${JC}
 variational:
   minimizer:
-    $(MINIMIZER)
+    ${MINIMIZER}
   iterations:
-  - ninner: $(ninner)
-    gradient norm reduction: $(reduc)
+  - ninner: ${ninner}
+    gradient norm reduction: ${reduc}
     geometry:
-      $(GEOMETRY)
+      ${GEOMETRY}
     linear model:
-      $(LINEAR_MODEL)
+      ${LINEAR_MODEL}
     diagnostics:
-      departures: $(diag)
+      departures: ${diag}
 final:
   diagnostics:
     departures: oman
   prints:
     frequency: PT3H
 output:
-  $(AN_OUTPUT)
+  ${AN_OUTPUT}

@@ -45,28 +45,28 @@ Background mean :
 
 Analysis mean :
  Valid time: 2010-01-02T00:00:00Z
- Min=6.73044, Max=9.19002, Average=7.98752
+ Min=6.73044, Max=9.19002, Average=7.98832
 
 H(x) for member 1:
-Lorenz 95 nobs= 120 Min=6.31712, Max=10.1291, Average=8.09272
+Lorenz 95 nobs= 120 Min=6.31712, Max=10.1291, Average=8.09746
 
 H(x) for member 2:
-Lorenz 95 nobs= 120 Min=5.62563, Max=9.94295, Average=7.97729
+Lorenz 95 nobs= 120 Min=5.53728, Max=9.94295, Average=7.97522
 
 H(x) for member 3:
-Lorenz 95 nobs= 120 Min=5.98634, Max=10.5924, Average=8.01934
+Lorenz 95 nobs= 120 Min=5.98634, Max=10.5924, Average=8.01708
 
 H(x) for member 4:
-Lorenz 95 nobs= 120 Min=4.57542, Max=11.5295, Average=7.98859
+Lorenz 95 nobs= 120 Min=4.57542, Max=11.5295, Average=7.98557
 
 H(x) for member 5:
-Lorenz 95 nobs= 120 Min=4.72238, Max=9.79569, Average=7.85967
+Lorenz 95 nobs= 120 Min=5.01152, Max=9.81763, Average=7.86627
 
 H(x) ensemble analysis mean: 
-Lorenz 95 nobs= 120 Min=6.73044, Max=9.19002, Average=7.98752
+Lorenz 95 nobs= 120 Min=6.73044, Max=9.19002, Average=7.98832
 
 analysis y - H(x): 
-Lorenz 95 nobs= 120 Min=-0.265703, Max=0.441464, Average=0.0238667
+Lorenz 95 nobs= 120 Min=-0.265703, Max=0.441464, Average=0.0230717
 
 ombg RMS: 0.864096
-oman RMS: 0.14948
+oman RMS: 0.146322

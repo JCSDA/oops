@@ -43,7 +43,6 @@ oops/assimilation/HessianMatrix.h
 oops/assimilation/HMatrix.h
 oops/assimilation/HtMatrix.h
 oops/assimilation/HtRinvHMatrix.h
-oops/assimilation/Increment4D.h
 oops/assimilation/IncrementalAssimilation.h
 oops/assimilation/instantiateCostFactory.h
 oops/assimilation/instantiateLocalEnsembleSolverFactory.h
@@ -80,7 +79,6 @@ oops/assimilation/SaddlePointMinimizer.h
 oops/assimilation/SaddlePointPrecondMatrix.h
 oops/assimilation/SaddlePointVector.h
 oops/assimilation/SpectralLMP.h
-oops/assimilation/State4D.h
 oops/assimilation/TriDiagSolve.h
 oops/assimilation/TriDiagSpectrum.h
 oops/assimilation/UpHessSolve.h
@@ -94,7 +92,7 @@ oops/base/DolphChebyshev.cc
 oops/base/DolphChebyshev.h
 oops/base/EnsembleCovariance.h
 oops/base/GeneralizedDepartures.h
-oops/base/GeoVaLsWriter.h
+oops/base/Geometry.h
 oops/base/GetValuePost.h
 oops/base/GetValuePosts.h
 oops/base/GetValuesPost.h
@@ -104,38 +102,40 @@ oops/base/LocalIncrement.cc
 oops/base/LocalIncrement.h
 oops/base/HybridCovariance.h
 oops/base/IdentityMatrix.h
+oops/base/Increment.h
+oops/base/Increment4D.h
 oops/base/IncrementEnsemble.h
 oops/base/IncrementEnsemble4D.h
 oops/base/InterpolatorBase.h
 oops/base/InterpolatorBase.cc
 oops/base/instantiateCovarFactory.h
 oops/base/instantiateObsFilterFactory.h
-oops/base/LinearModelBase.h
+oops/base/LinearModel.h
 oops/base/LinearVariableChangeBase.h
 oops/base/LinearVariableChangeParametersBase.h
-oops/base/LocalizationBase.h
-oops/base/ModelBase.h
+oops/base/Localization.h
+oops/base/Model.h
 oops/base/ModelSpaceCovarianceBase.h
 oops/base/ModelSpaceCovarianceParametersBase.h
 oops/base/ObsAuxControls.h
 oops/base/ObsAuxCovariances.h
 oops/base/ObsAuxIncrements.h
 oops/base/ObsEnsemble.h
-oops/base/ObsErrorBase.h
+oops/base/ObsError.h
 oops/base/ObsErrors.h
 oops/base/Observations.h
 oops/base/Observer.h
 oops/base/Observers.h
 oops/base/ObserversTLAD.h
 oops/base/ObserverTLAD.h
-oops/base/ObsFilterBase.h
-oops/base/ObsFilterParametersBase.h
+oops/base/ObsFilter.h
 oops/base/ObsFilters.h
 oops/base/ObsLocalizationBase.h
 oops/base/ObsLocalizations.h
 oops/base/ObsSpaceBase.cc
 oops/base/ObsSpaceBase.h
 oops/base/ObsSpaces.h
+oops/base/ObsVector.h
 oops/base/ParameterTraitsVariables.cc
 oops/base/ParameterTraitsVariables.h
 oops/base/PostBase.h
@@ -145,6 +145,8 @@ oops/base/PostProcessorTLAD.h
 oops/base/PostTimer.cc
 oops/base/PostTimer.h
 oops/base/PostTimerParameters.h
+oops/base/State.h
+oops/base/State4D.h
 oops/base/StateEnsemble.h
 oops/base/StateEnsemble4D.h
 oops/base/StateInfo.h
@@ -167,12 +169,14 @@ oops/contrib/dcmip_initial_conditions_test_4_v3.f90
 
 oops/generic/gc99.h
 oops/generic/gc99.cc
+oops/generic/GeoVaLsWriter.h
+oops/generic/IdentityLinearModel.h
 oops/generic/IdentityModel.h
 oops/generic/IdLinearVariableChange.h
 oops/generic/IdVariableChange.h
+oops/generic/instantiateLinearModelFactory.h
 oops/generic/instantiateModelFactory.h
 oops/generic/instantiateObsErrorFactory.h
-oops/generic/instantiateTlmFactory.h
 oops/generic/instantiateVariableChangeFactory.h
 oops/generic/InterpolatorAtlas.h
 oops/generic/InterpolatorAtlas.cc
@@ -180,9 +184,15 @@ oops/generic/interpolatorunstrc_f.h
 oops/generic/interpolatorunstrc_interface.F90
 oops/generic/InterpolatorUnstructured.h
 oops/generic/InterpolatorUnstructured.cc
-oops/generic/LinearModelId.h
+oops/generic/LinearModelBase.h
+oops/generic/LocalizationBase.h
+oops/generic/ModelBase.h
 oops/generic/ObsErrorDiag.h
+oops/generic/ObsErrorBase.h
+oops/generic/ObsFilterBase.h
+oops/generic/ObsFilterParametersBase.h
 oops/generic/PseudoModel.h
+oops/generic/PseudoModelState4D.h
 oops/generic/soar.h
 oops/generic/soar.cc
 oops/generic/unstructured_interpolation_mod.F90
@@ -197,23 +207,23 @@ oops/interface/GeoVaLs.h
 oops/interface/GetValues.h
 oops/interface/Increment.h
 oops/interface/LinearGetValues.h
-oops/interface/LinearModel.h
+oops/interface/LinearModelBase.h
 oops/interface/LinearObsOperator.h
 oops/interface/LinearVariableChange.h
-oops/interface/Localization.h
+oops/interface/LocalizationBase.h
 oops/interface/Locations.h
-oops/interface/Model.h
 oops/interface/ModelAuxControl.h
 oops/interface/ModelAuxCovariance.h
 oops/interface/ModelAuxIncrement.h
+oops/interface/ModelBase.h
 oops/interface/ObsAuxControl.h
 oops/interface/ObsAuxCovariance.h
 oops/interface/ObsAuxIncrement.h
 oops/interface/ObsDataVector.h
 oops/interface/ObsDataVector_head.h
 oops/interface/ObsDiagnostics.h
-oops/interface/ObsErrorCovariance.h
-oops/interface/ObsFilter.h
+oops/interface/ObsErrorBase.h
+oops/interface/ObsFilterBase.h
 oops/interface/ObsLocalization.h
 oops/interface/ObsOperator.h
 oops/interface/ObsSpace.h
@@ -250,6 +260,7 @@ oops/runs/Variational.h
 oops/util/abor1_cpp.cc
 oops/util/abor1_cpp.h
 oops/util/abor1_ftn.F90
+oops/util/algorithms.h
 oops/util/AnyOf.h
 oops/util/AssociativeContainers.h
 oops/util/CompareNVectors.h
@@ -412,6 +423,7 @@ test/interface/VariableChange.h
 test/mpi/mpi.h
 
 test/generic/InterpolationInterface.h
+test/generic/PseudoModelState4D.h
 test/generic/VerticalLocEV.h
 
 test/util/Fortran.h
@@ -432,6 +444,7 @@ test/util/stringFunctions.h
 test/util/LocalEnvironment.h
 test/util/TestReference.h
 test/util/TypeTraits.h
+test/util/algorithms.h
 )
 
 list (APPEND oops_fheader_files
@@ -478,7 +491,7 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/oops/util/linkedList_i.f
 target_sources( ${PROJECT_NAME} PRIVATE ${oops_test_src_files})
 install( DIRECTORY test DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/oops FILES_MATCHING PATTERN "*.h")
 
-target_compile_features( ${PROJECT_NAME} PUBLIC cxx_std_11 )
+target_compile_features( ${PROJECT_NAME} PUBLIC cxx_std_14 )
 if(OpenMP_FOUND)
     target_link_libraries( ${PROJECT_NAME} PUBLIC OpenMP::OpenMP_Fortran OpenMP::OpenMP_CXX )
 endif()
@@ -494,6 +507,12 @@ target_link_libraries( ${PROJECT_NAME} PUBLIC Boost::boost )
 if ( GPTL_FOUND )
 	target_link_libraries( ${PROJECT_NAME} PUBLIC GPTL::GPTL )
 endif()
+
+# Stack traces on floating point exceptions
+include( backtrace_deps )
+
+target_link_libraries( ${PROJECT_NAME} PUBLIC ${OOPS_STACKTRACE_${OOPS_STACKTRACE_PROVIDER}_LIBS} )
+target_compile_definitions( ${PROJECT_NAME} PRIVATE ${OOPS_STACKTRACE_${OOPS_STACKTRACE_PROVIDER}_DEFS} )
 
 #Configure include directory layout for build-tree to match install-tree
 set(OOPS_BUILD_DIR_INCLUDE_PATH ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/include)
@@ -536,6 +555,11 @@ ecbuild_add_test( TARGET  test_base_posttimer
                   SOURCES test/base/PostTimer.cc
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops eckit)
+
+ecbuild_add_test( TARGET  test_util_signal_trap
+                  SOURCES test/util/signal_trap.cc
+                  LIBS    oops)
+set_property( TEST test_util_signal_trap PROPERTY WILL_FAIL TRUE )
 
 ecbuild_add_test( TARGET  test_util_random
                   SOURCES test/base/Random.cc
@@ -628,6 +652,11 @@ ecbuild_add_test( TARGET  test_oops_atlas_interpolation_interface
 ecbuild_add_test( TARGET  test_oops_unstructured_interpolation
                   SOURCES test/generic/InterpolationInterface.cc
                   ARGS    "test/testinput/unstructured_interpolation.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_algorithms
+                  SOURCES test/util/algorithms.cc
+                  ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 
 ecbuild_add_test( TARGET  test_util_comparenvectors

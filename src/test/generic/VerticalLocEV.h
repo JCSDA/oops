@@ -23,11 +23,12 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
-#include "oops/assimilation/Increment4D.h"
+#include "oops/base/Geometry.h"
+#include "oops/base/Increment.h"
+#include "oops/base/Increment4D.h"
 #include "oops/base/IncrementEnsemble4D.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/VerticalLocEV.h"
-#include "oops/interface/Geometry.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
@@ -44,10 +45,15 @@ template <typename MODEL> void testVerticalLocEV() {
   typedef oops::VerticalLocEV<MODEL>      VerticalLocEV_;
   typedef oops::Increment4D<MODEL>        Increment4D_;
   typedef oops::IncrementEnsemble4D<MODEL>        IncrementEnsemble_;
+  typedef oops::State<MODEL>              State_;
 
   const Geometry_ & geometry = Test_::resol();
   eckit::LocalConfiguration vertlocconf(TestEnvironment::config(), "vertical localization");
-  VerticalLocEV_ vertloc(geometry, vertlocconf);
+
+  // make an empty state vector to be used to intitialize VerticalLocEV_
+  State_ x(Test_::resol(), Test_::ctlvars(), Test_::time());
+
+  VerticalLocEV_ vertloc(vertlocconf, x);
   oops::Log::test() << "Number of eigenvalues used in VerticalLoc: " << vertloc.neig() << std::endl;
 
   //--- check for expected number of eigen modes
@@ -94,10 +100,12 @@ template <typename MODEL> void testVerticalLocEV() {
   // check the orthogonality condition
   double n0 = incEns[0][0].dot_product_with(incEns[0][0]);
   oops::Log::debug() << "dot product 0: " <<  n0 << std::endl;
+  // check that eigen vectors are not zeros
   EXPECT(n0 > 0);
   double tol = 2*n0*DBL_EPSILON;
   oops::Log::debug() << "tolerance :" << tol << std::endl;
 
+  // check that eig[ieig>0] are orthogonal to eig[0]
   for (int i = 1; i < neig; ++i) {
     double n = incEns[0][0].dot_product_with(incEns[i][0]);
     oops::Log::debug() << "dot product " << i << ": " <<  n << std::endl;
@@ -112,6 +120,7 @@ template <typename MODEL> void testVerticalLocEV() {
   Eigen::MatrixXd modInc = vertloc.modulateIncrement(incEns2, geometry.begin(), 0);
   Eigen::MatrixXd modIncInner = modInc.transpose()*modInc;
   oops::Log::debug() << "modInc'*modInc" << modIncInner << std::endl;
+  // modIncInner should be a diagonal matrix
   for (int i = 1; i < neig; ++i) {
     EXPECT(modIncInner(0, i) < modIncInner(0, 0)*DBL_EPSILON);
   }

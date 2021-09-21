@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -18,7 +18,7 @@
 #include <boost/noncopyable.hpp>
 
 #include "eckit/config/Configuration.h"
-#include "oops/interface/Geometry.h"
+#include "oops/base/Geometry.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/ModelAuxIncrement.h"
 #include "oops/util/Logger.h"
@@ -29,28 +29,38 @@
 namespace oops {
 
 // -----------------------------------------------------------------------------
+/// \brief Auxiliary Error Covariance related to model, not used at the moment.
+/// \details
+/// This class calls the model's implementation of ModelAuxCovariance.
+// -----------------------------------------------------------------------------
 
 template <typename MODEL>
 class ModelAuxCovariance : public util::Printable,
                            private boost::noncopyable,
                            private util::ObjectCounter<ModelAuxCovariance<MODEL> > {
   typedef typename MODEL::ModelAuxCovariance    ModelAuxCovariance_;
-  typedef Geometry<MODEL>            Geometry_;
+  typedef Geometry<MODEL>             Geometry_;
   typedef ModelAuxControl<MODEL>      ModelAuxControl_;
-  typedef ModelAuxIncrement<MODEL>   ModelAuxIncrement_;
+  typedef ModelAuxIncrement<MODEL>    ModelAuxIncrement_;
 
  public:
   static const std::string classname() {return "oops::ModelAuxCovariance";}
 
-  ModelAuxCovariance(const eckit::Configuration &, const Geometry_ &);
+  /// Constructor for specified \p conf and \p resol
+  ModelAuxCovariance(const eckit::Configuration & conf, const Geometry_ & resol);
+  /// Destructor (defined explicitly for timing and tracing)
   ~ModelAuxCovariance();
 
-/// Operators
+  /// linearize operator
   void linearize(const ModelAuxControl_ &, const Geometry_ &);
+  /// Sets the second parameter to the first multiplied by the covariance matrix.
   void multiply(const ModelAuxIncrement_ &, ModelAuxIncrement_ &) const;
+  /// Sets the second parameter to the first multiplied by the inverse covariance matrix.
   void inverseMultiply(const ModelAuxIncrement_ &, ModelAuxIncrement_ &) const;
+  /// randomize the values in the ModelAuxIncrement
   void randomize(ModelAuxIncrement_ &) const;
 
+  /// Accessor to the configuration associated with the ModelAuxIncrement
   const eckit::Configuration & config() const {return cov_->config();}
 
  private:

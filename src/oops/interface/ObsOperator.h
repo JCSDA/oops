@@ -16,12 +16,12 @@
 
 #include <boost/noncopyable.hpp>
 
+#include "oops/base/ObsVector.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsDiagnostics.h"
 #include "oops/interface/ObsSpace.h"
-#include "oops/interface/ObsVector.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -30,7 +30,17 @@
 namespace oops {
 
 // -----------------------------------------------------------------------------
-
+/// \brief MODEL-agnostic part of nonlinear observation (forward) operator.
+/// The full nonlinear observation operator from State x to ObsVector is:
+/// ObsOperator ( GetValues (State) )
+/// ObsOperator uses GeoVaLs (result of GetValues(State) - model State at
+/// observations locations) as input data to compute forward operator.
+///
+/// Note: each implementation should typedef `Parameters_` to the name of a subclass of
+/// oops::Parameters holding its configuration settings and provide a constructor with the
+/// following signature:
+///
+///     ObsOperator(const OBS::ObsSpace &, const Parameters_ &);
 template <typename OBS>
 class ObsOperator : public util::Printable,
                     private boost::noncopyable,
@@ -44,23 +54,41 @@ class ObsOperator : public util::Printable,
   typedef ObsSpace<OBS>              ObsSpace_;
 
  public:
+  /// A subclass of oops::Parameters holding the configuration settings of the operator.
+  typedef typename ObsOperator_::Parameters_ Parameters_;
+
   static const std::string classname() {return "oops::ObsOperator";}
 
-  ObsOperator(const ObsSpace_ &, const eckit::Configuration &);
+  /// Set up observation operator for the \p obsspace observations, with
+  /// parameters defined in \p parameters
+  ObsOperator(const ObsSpace_ & obsspace, const Parameters_ & parameters);
   ~ObsOperator();
 
-/// Obs Operator
-  void simulateObs(const GeoVaLs_ &, ObsVector_ &, const ObsAuxControl_ &, ObsDiags_ &) const;
+  /// Compute forward operator \p y = ObsOperator (\p x).
+  /// \param[in]  x        obs operator input, State interpolated to observations locations.
+  /// \param[out] y        result of computing obs operator on \p x.
+  /// \param[in]  obsaux   additional input for computing H(x), used in the minimization
+  ///                      in Variational DA, e.g. bias correction coefficients or obs operator
+  ///                      parameters.
+  /// \param[out] obsbias  bias correction of the departure between \p y and the observed values;
+  ///                      when \p obsbias is non-zero, it is added to \p y within the obs
+  ///                      operator
+  /// \param[out] obsdiags   additional diagnostics output from computing obs operator that is not
+  ///                        used in the assimilation, and can be used by ObsFilters.
+  void simulateObs(const GeoVaLs_ & x_int, ObsVector_ & y, const ObsAuxControl_ & obsaux,
+                   ObsVector_ & obsbias, ObsDiags_ & obsdiags) const;
 
-/// Interfacing
-  const ObsOperator_ & obsoperator() const {return *oper_;}
-
-/// Other
-  const Variables & requiredVars() const;  // Required input variables from Model
+  /// Variables required from the model State to compute obs operator. These variables
+  /// will be provided in GeoVaLs passed to simulateObs.
+  const Variables & requiredVars() const;
+  /// Locations used for computing GeoVaLs that will be passed to simulateObs.
   Locations_ locations() const;
 
  private:
+  /// Print, used for logging
   void print(std::ostream &) const;
+
+  /// Pointer to the implementation of ObsOperator
   std::unique_ptr<ObsOperator_> oper_;
 };
 
@@ -68,10 +96,10 @@ class ObsOperator : public util::Printable,
 
 template <typename OBS>
 ObsOperator<OBS>::ObsOperator(const ObsSpace_ & os,
-                                const eckit::Configuration & config) : oper_() {
+                              const Parameters_ & parameters) : oper_() {
   Log::trace() << "ObsOperator<OBS>::ObsOperator starting" << std::endl;
   util::Timer timer(classname(), "ObsOperator");
-  oper_.reset(new ObsOperator_(os.obsspace(), config));
+  oper_.reset(new ObsOperator_(os.obsspace(), parameters));
   Log::trace() << "ObsOperator<OBS>::ObsOperator done" << std::endl;
 }
 
@@ -89,10 +117,12 @@ ObsOperator<OBS>::~ObsOperator() {
 
 template <typename OBS>
 void ObsOperator<OBS>::simulateObs(const GeoVaLs_ & gvals, ObsVector_ & yy,
-                                     const ObsAuxControl_ & aux, ObsDiags_ & ydiag) const {
+                                     const ObsAuxControl_ & aux, ObsVector_ & ybias,
+                                     ObsDiags_ & ydiag) const {
   Log::trace() << "ObsOperator<OBS>::simulateObs starting" << std::endl;
   util::Timer timer(classname(), "simulateObs");
-  oper_->simulateObs(gvals.geovals(), yy.obsvector(), aux.obsauxcontrol(), ydiag.obsdiagnostics());
+  oper_->simulateObs(gvals.geovals(), yy.obsvector(), aux.obsauxcontrol(), ybias.obsvector(),
+                     ydiag.obsdiagnostics());
   Log::trace() << "ObsOperator<OBS>::simulateObs done" << std::endl;
 }
 

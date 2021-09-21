@@ -18,13 +18,13 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
+#include "oops/base/ObsVector.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsDiagnostics.h"
 #include "oops/interface/ObsOperator.h"
-#include "oops/interface/ObsVector.h"
 #include "oops/runs/Test.h"
 #include "oops/util/Expect.h"
 #include "test/interface/ObsTestsFixture.h"
@@ -33,18 +33,22 @@
 namespace test {
 
 const char *expectConstructorToThrow = "expect constructor to throw exception with message";
+const char *expectSimulateObsToThrow = "expect simulateObs to throw exception with message";
 
 // -----------------------------------------------------------------------------
 /// \brief tests constructor and print method
 template <typename OBS> void testConstructor() {
   typedef ObsTestsFixture<OBS> Test_;
   typedef oops::ObsOperator<OBS>       ObsOperator_;
+  typedef typename ObsOperator_::Parameters_ ObsOperatorParameters_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     eckit::LocalConfiguration obsopconf(Test_::config(jj), "obs operator");
+    ObsOperatorParameters_ obsopparams;
+    obsopparams.validateAndDeserialize(obsopconf);
 
     if (!Test_::config(jj).has(expectConstructorToThrow)) {
-      std::unique_ptr<ObsOperator_> hop(new ObsOperator_(Test_::obspace()[jj], obsopconf));
+      std::unique_ptr<ObsOperator_> hop(new ObsOperator_(Test_::obspace()[jj], obsopparams));
       EXPECT(hop.get());
       oops::Log::test() << "Testing ObsOperator: " << *hop << std::endl;
       hop.reset();
@@ -52,7 +56,7 @@ template <typename OBS> void testConstructor() {
     } else {
       // The constructor is expected to throw an exception containing the specified string.
       const std::string expectedMessage = Test_::config(jj).getString(expectConstructorToThrow);
-      EXPECT_THROWS_MSG(ObsOperator_(Test_::obspace()[jj], obsopconf),
+      EXPECT_THROWS_MSG(ObsOperator_(Test_::obspace()[jj], obsopparams),
                         expectedMessage.c_str());
     }
   }
@@ -66,6 +70,7 @@ template <typename OBS> void testSimulateObs() {
   typedef oops::ObsDiagnostics<OBS>    ObsDiags_;
   typedef oops::ObsAuxControl<OBS>     ObsAuxCtrl_;
   typedef oops::ObsOperator<OBS>       ObsOperator_;
+  typedef typename ObsOperator_::Parameters_ ObsOperatorParameters_;
   typedef oops::ObsVector<OBS>         ObsVector_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
@@ -76,7 +81,9 @@ template <typename OBS> void testSimulateObs() {
     // initialize observation operator (set variables requested from the model,
     // variables simulated by the observation operator, other init)
     eckit::LocalConfiguration obsopconf(conf, "obs operator");
-    ObsOperator_ hop(Test_::obspace()[jj], obsopconf);
+    ObsOperatorParameters_ obsopparams;
+    obsopparams.validateAndDeserialize(obsopconf);
+    ObsOperator_ hop(Test_::obspace()[jj], obsopparams);
 
     // initialize bias correction
     eckit::LocalConfiguration biasconf = conf.getSubConfiguration("obs bias");
@@ -93,13 +100,27 @@ template <typename OBS> void testSimulateObs() {
     // create obsvector to hold H(x)
     ObsVector_ hofx(Test_::obspace()[jj]);
 
+    // create obsvector to hold bias
+    ObsVector_ bias(Test_::obspace()[jj]);
+    bias.zero();
+
     // create diagnostics to hold HofX diags
     oops::Variables diagvars;
     diagvars += ybias.requiredHdiagnostics();
     ObsDiags_ diags(Test_::obspace()[jj], hop.locations(), diagvars);
 
     // call H(x), save result in the output file as @hofx
-    hop.simulateObs(gval, hofx, ybias, diags);
+    if (Test_::config(jj).has(expectSimulateObsToThrow)) {
+      // The simulateObs method is expected to throw an exception
+      // containing the specified string.
+      const std::string expectedMessage =
+        Test_::config(jj).getString(expectSimulateObsToThrow);
+      EXPECT_THROWS_MSG(hop.simulateObs(gval, hofx, ybias, bias, diags),
+                        expectedMessage.c_str());
+      continue;
+    } else {
+      hop.simulateObs(gval, hofx, ybias, bias, diags);
+    }
     hofx.save("hofx");
 
     const double tol = conf.getDouble("tolerance");

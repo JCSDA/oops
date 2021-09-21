@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -20,14 +20,14 @@
 #include "eckit/system/ResourceUsage.h"
 
 #include "oops/assimilation/GMRESR.h"
+#include "oops/base/Geometry.h"
 #include "oops/base/IdentityMatrix.h"
+#include "oops/base/Increment.h"
 #include "oops/base/IncrementEnsemble.h"
-#include "oops/base/LocalizationBase.h"
+#include "oops/base/Localization.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
+#include "oops/base/State.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/Geometry.h"
-#include "oops/interface/Increment.h"
-#include "oops/interface/State.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 
@@ -41,7 +41,7 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL>,
                            private util::ObjectCounter<EnsembleCovariance<MODEL>> {
   typedef Geometry<MODEL>                           Geometry_;
   typedef Increment<MODEL>                          Increment_;
-  typedef LocalizationBase<MODEL>                   Localization_;
+  typedef Localization<MODEL>                       Localization_;
   typedef State<MODEL>                              State_;
   typedef IncrementEnsemble<MODEL>                  Ensemble_;
   typedef std::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
@@ -78,7 +78,7 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Var
   ens_.reset(new Ensemble_(conf, xb, fg, resol, vars));
   if (conf.has("localization")) {
     const eckit::LocalConfiguration confloc(conf, "localization");
-    loc_ = LocalizationFactory<MODEL>::create(resol, xb.validTime(), confloc);
+    loc_.reset(new Localization_(resol, confloc));
   }
   size_t current = eckit::system::ResourceUsage().maxResidentSetSize();
   this->setObjectSize(current - init);

@@ -1,0 +1,111 @@
+cost function:
+  cost type: 3D-Var
+  window begin: 2010-01-01T09:00:00Z
+  window length: PT6H
+  analysis variables: [x]
+  geometry:
+    nx: 40
+    ny: 20
+    depths: [4500.0, 5500.0]
+  background:
+    date: 2010-01-01T12:00:00Z
+    filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H.nc
+  background error:
+    covariance model: QgError
+    horizontal_length_scale: 2.2e6
+    maximum_condition_number: 1.0e6
+    standard_deviation: 1.8e7
+    vertical_length_scale: 15000.0
+    full inverse: true
+    full inverse iterations: 20
+  observations:
+  - obs error:
+      covariance model: diagonal
+    obs operator:
+      obs type: Stream
+    obs space:
+      obsdatain:
+        obsfile: Data/truth.obs3d.nc
+      obsdataout:
+        obsfile: Data/3dvar_full_inverse.obs3d.nc
+      obs type: Stream
+    get values:
+      interpolation type: default_1
+    linear get values:
+      interpolation type: default_a
+  - obs error:
+      covariance model: diagonal
+    obs operator:
+      obs type: Wind
+    obs space:
+      obsdatain:
+        obsfile: Data/truth.obs3d.nc
+      obsdataout:
+        obsfile: Data/3dvar_full_inverse.obs3d.nc
+      obs type: Wind
+    get values:
+      interpolation type: default_2
+    linear get values:
+      interpolation type: default_b
+  - obs error:
+      covariance model: diagonal
+    obs operator:
+      obs type: WSpeed
+    obs space:
+      obsdatain:
+        obsfile: Data/truth.obs3d.nc
+      obsdataout:
+        obsfile: Data/3dvar_full_inverse.obs3d.nc
+      obs type: WSpeed
+    get values:
+      interpolation type: default_3
+    linear get values:
+      interpolation type: default_c
+variational:
+  minimizer:
+    algorithm: DRIPCG
+  iterations:
+  - diagnostics:
+      departures: ombg
+    gradient norm reduction: 1.0e-10
+    ninner: 10
+    geometry:
+      nx: 20
+      ny: 10
+      depths: [4500.0, 5500.0]
+    test: on
+    online diagnostics:
+      write increment: true
+      increment:
+        datadir: Data
+        date: 2010-01-01T12:00:00Z
+        exp: 3dvar_full_inverse.iter1
+        type: in
+  - diagnostics:
+      departures: ombg
+    gradient norm reduction: 1.0e-10
+    ninner: 10
+    geometry:
+      nx: 40
+      ny: 20
+      depths: [4500.0, 5500.0]
+    test: on
+    online diagnostics:
+      write increment: true
+      increment:
+        datadir: Data
+        date: 2010-01-01T12:00:00Z
+        exp: 3dvar_full_inverse.iter2
+        type: in
+        analysis variables: [x]
+final:
+  diagnostics:
+    departures: oman
+output:
+  datadir: Data
+  exp: 3dvar_full_inverse
+  frequency: PT6H
+  type: an
+
+test:
+  reference filename: testoutput/3dvar.test

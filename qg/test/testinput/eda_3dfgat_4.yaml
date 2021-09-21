@@ -64,11 +64,10 @@ variational:
       departures: ombg
     gradient norm reduction: 1.0e-10
     linear model:
-      trajectory:
-        tstep: PT1H
       tstep: PT6H
       variable change: Identity
-      name: QgIdTLM
+      name: Identity
+      increment variables: ["x"]
     ninner: 10
     geometry:
       nx: 40

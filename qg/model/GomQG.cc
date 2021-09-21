@@ -22,7 +22,8 @@
 namespace qg {
 
 // -----------------------------------------------------------------------------
-GomQG::GomQG(const LocationsQG & locs, const oops::Variables & vars):
+GomQG::GomQG(const LocationsQG & locs, const oops::Variables & vars,
+             const std::vector<size_t> & sizes):
   vars_(vars)
 {
   // gom_setup just creates and allocates the GeoVaLs object without filling

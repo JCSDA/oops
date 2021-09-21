@@ -21,7 +21,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
-#include "oops/interface/Geometry.h"
+#include "oops/base/Geometry.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"

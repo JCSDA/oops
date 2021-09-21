@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -15,11 +15,10 @@
 
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/ControlVariable.h"
+#include "oops/base/Geometry.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
-#include "oops/interface/Geometry.h"
-#include "oops/interface/Increment.h"
-#include "oops/interface/State.h"
+#include "oops/base/State.h"
 
 namespace eckit {
   class Configuration;
@@ -37,7 +36,6 @@ namespace oops {
 template<typename MODEL, typename OBS> class CostTermBase {
   typedef Geometry<MODEL>            Geometry_;
   typedef State<MODEL>               State_;
-  typedef Increment<MODEL>           Increment_;
   typedef PostProcessor<State_>      PostProc_;
   typedef PostProcessorTLAD<MODEL>   PostProcTLAD_;
 

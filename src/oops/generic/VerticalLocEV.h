@@ -10,17 +10,20 @@
 
 #include <Eigen/Dense>
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "eckit/config/Configuration.h"
 
-#include "oops/assimilation/Increment4D.h"
+#include "oops/base/Geometry.h"
+#include "oops/base/Increment4D.h"
+#include "oops/base/IncrementEnsemble.h"
 #include "oops/base/IncrementEnsemble4D.h"
 #include "oops/base/LocalIncrement.h"
 #include "oops/generic/gc99.h"
-#include "oops/interface/Geometry.h"
 #include "oops/interface/GeometryIterator.h"
+#include "oops/interface/Increment.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/parameters/Parameter.h"
@@ -51,6 +54,10 @@ class VerticalLocalizationParameters : public Parameters {
   RequiredParameter<double> VertLocDist{"lengthscale", this};
   // localization distance at which Gaspari-Cohn = 0
   RequiredParameter<std::string> VertLocUnits{"lengthscale units", this};
+  // write eigen vectors to disk
+  Parameter<bool> writeEVs{"write eigen vectors", false, this};
+  // read eigen vectors from disk
+  Parameter<bool> readEVs{"read eigen vectors", false, this};
 };
 
 // ----------------------------------------------------------------------------
@@ -59,13 +66,16 @@ class VerticalLocEV: public util::Printable,
                      private util::ObjectCounter<VerticalLocEV<MODEL>> {
   typedef Geometry<MODEL>            Geometry_;
   typedef GeometryIterator<MODEL>    GeometryIterator_;
+  typedef Increment<MODEL>           Increment_;
   typedef Increment4D<MODEL>         Increment4D_;
+  typedef IncrementEnsemble<MODEL>   IncrementEnsemble_;
   typedef IncrementEnsemble4D<MODEL> IncrementEnsemble4D_;
+  typedef State<MODEL>               State_;
 
  public:
   static const std::string classname() {return "oops::VerticalLocEV";}
 
-  VerticalLocEV(const Geometry_ & , const eckit::Configuration &);
+  VerticalLocEV(const eckit::Configuration &, const State_ &);
 
 // modulate an increment
   void modulateIncrement(const Increment4D_ &, IncrementEnsemble4D_ &) const;
@@ -92,25 +102,89 @@ class VerticalLocEV: public util::Printable,
   std::vector<double> replicateEigenVector(const oops::Variables &,
                                            size_t) const;
 
+// populate 3D increment array of eigen vectors
+  void populateIncrementEnsembleWithEVs(const Variables &);
+// IO for eigen vectors
+  void writeEVsToDisk(const eckit::Configuration &) const;
+  void readEVsFromDisk(const Geometry_ &, const Variables &, const util::DateTime &,
+                       const eckit::Configuration &);
+
  private:
   void print(std::ostream &) const {}
   VerticalLocalizationParameters options_;
   Eigen::MatrixXd Evecs_;
   Eigen::VectorXd Evals_;
   size_t neig_;
+  std::unique_ptr<IncrementEnsemble_> sqrtVertLoc_;
+  // if true store EVs as explicit 3D fields
+  // TODO(frolovsa) depriciate 1D storage in the future
+  // once we see no issues with always using 3D
+  bool EVsStoredAs3D_ = true;  // if true store EVs as explicit 3D fields
 };
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-  VerticalLocEV<MODEL>::VerticalLocEV(const Geometry_ & geom,
-                               const eckit::Configuration & conf) {
+  VerticalLocEV<MODEL>::VerticalLocEV(const eckit::Configuration & conf,
+                               const State_ & x): sqrtVertLoc_() {
     // read vertical localization configuration
     options_.deserialize(conf);
 
-    // compute vertical corrleation matrix fo nLevs
-    Eigen::MatrixXd cov = computeCorrMatrix(geom);
-    // compute truncated correlation matrix
-    computeCorrMatrixEvec(cov);
-    neig_ = truncateEvecs();
+    if (options_.readEVs) {
+      oops::Log::info() << "Reading precomputed vertical localization EVs from disk" << std::endl;
+      readEVsFromDisk(x.geometry(), x.variables(), x.validTime(), conf);
+      neig_ = sqrtVertLoc_->size();
+    } else {
+      oops::Log::info() << "Computing vertical localization EVs from scratch" << std::endl;
+      // compute vertical corrleation matrix fo nLevs
+      Eigen::MatrixXd cov = computeCorrMatrix(x.geometry());
+      // compute truncated correlation matrix
+      computeCorrMatrixEvec(cov);
+      neig_ = truncateEvecs();
+      // convert EVs to 3D if needed
+      if (EVsStoredAs3D_) {
+        sqrtVertLoc_ = boost::make_unique<IncrementEnsemble_>
+                        (x.geometry(), x.variables(), x.validTime(), neig_);
+        populateIncrementEnsembleWithEVs(x.variables());
+      }
+    }
+
+    if (options_.writeEVs) { writeEVsToDisk(conf); }
+  }
+
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+  void VerticalLocEV<MODEL>::populateIncrementEnsembleWithEVs(const Variables & vars) {
+    const Geometry_ & geom = (*sqrtVertLoc_)[0].geometry();
+    for (size_t ieig=0; ieig < neig_; ++ieig) {
+      std::vector<double> EvecRepl = replicateEigenVector(vars, ieig);
+      (*sqrtVertLoc_)[ieig].ones();
+      for (GeometryIterator_ gpi = geom.begin(); gpi != geom.end(); ++gpi) {
+        oops::LocalIncrement gp = (*sqrtVertLoc_)[ieig].getLocal(gpi);
+        gp *= EvecRepl;
+        (*sqrtVertLoc_)[ieig].setLocal(gp, gpi);
+      }
+    }
+  }
+
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+  void VerticalLocEV<MODEL>::writeEVsToDisk(const eckit::Configuration & config) const {
+    eckit::LocalConfiguration outConfig(config, "list of eigen vectors to write");
+    sqrtVertLoc_->write(outConfig);
+  }
+
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+  void VerticalLocEV<MODEL>::readEVsFromDisk(const Geometry_ & geom, const Variables & vars,
+                                             const util::DateTime & tslot,
+                                             const eckit::Configuration & config) {
+    std::vector<eckit::LocalConfiguration> memberConfig;
+    config.get("list of eigen vectors to read", memberConfig);
+    sqrtVertLoc_ = boost::make_unique<IncrementEnsemble_>(geom, vars, tslot, memberConfig.size());
+
+    // Loop over all ensemble members
+    for (size_t jj = 0; jj < memberConfig.size(); ++jj) {
+      (*sqrtVertLoc_)[jj].read(memberConfig[jj]);
+    }
   }
 
 // -------------------------------------------------------------------------------------------------
@@ -200,6 +274,10 @@ template<typename MODEL>
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 bool VerticalLocEV<MODEL>::testTruncateEvecs(const Geometry_ & geom) {
+  // only do this test if we are computing EVs from scratch
+  // if reading from disk return true
+  if (options_.readEVs) {return true;}
+
   // make reference solution
   Eigen::MatrixXd cov = computeCorrMatrix(geom);
   // only the lower traingle of cov is stored
@@ -239,14 +317,19 @@ void VerticalLocEV<MODEL>::modulateIncrement(const Increment4D_ & incr,
   oops::Variables vars = incr[0].variables();
 
   for (size_t ieig=0; ieig < neig_; ++ieig) {
-    std::vector<double> EvecRepl = replicateEigenVector(vars, ieig);
     // modulate an increment
     for (size_t itime=0; itime < incr.size(); ++itime) {
-      const Geometry_ & geom = incr[itime].geometry();
-      for (GeometryIterator_ gpi = geom.begin(); gpi != geom.end(); ++gpi) {
-        oops::LocalIncrement gp = incr[itime].getLocal(gpi);
-        gp *= EvecRepl;
-        incrsOut[ieig][itime].setLocal(gp, gpi);
+      if (EVsStoredAs3D_) {  // if EVs stored as 3D use oops operation for schur_product
+        incrsOut[ieig][itime] = (*sqrtVertLoc_)[ieig];
+        incrsOut[ieig][itime].schur_product_with(incr[itime]);
+      } else {  // if EV is only available as a 1D column use grid eterator
+        std::vector<double> EvecRepl = replicateEigenVector(vars, ieig);
+        const Geometry_ & geom = incr[itime].geometry();
+        for (GeometryIterator_ gpi = geom.begin(); gpi != geom.end(); ++gpi) {
+          oops::LocalIncrement gp = incr[itime].getLocal(gpi);
+          gp *= EvecRepl;
+          incrsOut[ieig][itime].setLocal(gp, gpi);
+        }
       }
     }
   }
@@ -261,17 +344,27 @@ Eigen::MatrixXd VerticalLocEV<MODEL>::modulateIncrement(
   // modulate an increment at grid point
 
   oops::Variables vars = incrs[0][0].variables();
-  size_t nv = Evecs_.rows()*vars.size();
+  size_t nv = 0;
+  std::vector<double> EvecRepl;
+  if (EVsStoredAs3D_) {
+    nv = (*sqrtVertLoc_)[0].getLocal(gi).getVals().size();
+  } else {
+    EvecRepl = replicateEigenVector(vars, 0);
+    nv = EvecRepl.size();
+  }
   size_t nens = incrs.size();
   Eigen::MatrixXd Z(nv, neig_*nens);
   std::vector<double> etmp2(nv);
 
   size_t ii = 0;
   for (size_t iens=0; iens < nens; ++iens) {
-    oops::LocalIncrement gp = incrs[iens][itime].getLocal(gi);
-    etmp2 = gp.getVals();
+    etmp2 =  incrs[iens][itime].getLocal(gi).getVals();
     for (size_t ieig=0; ieig < neig_; ++ieig) {
-      std::vector<double> EvecRepl = replicateEigenVector(vars, ieig);
+      if (EVsStoredAs3D_) {
+        EvecRepl = (*sqrtVertLoc_)[ieig].getLocal(gi).getVals();
+      } else {
+        EvecRepl = replicateEigenVector(vars, ieig);
+      }
       // modulate and assign
       for (size_t iv=0; iv < nv; ++iv) {
          Z(iv, ii) = EvecRepl[iv]*etmp2[iv];
@@ -281,6 +374,8 @@ Eigen::MatrixXd VerticalLocEV<MODEL>::modulateIncrement(
   }
   return Z;
 }
+
+// -----------------------------------------------------------------------------
 template<typename MODEL>
 std::vector<double> VerticalLocEV<MODEL>::replicateEigenVector(
                         const oops::Variables & v, size_t ieig) const {

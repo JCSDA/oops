@@ -80,8 +80,8 @@ ObsData1D<DATATYPE>::ObsData1D(const ObsData1D & other)
 template<typename DATATYPE>
 ObsData1D<DATATYPE>::ObsData1D(const ObsVec1D & other)
   : obsdb_(other.obsdb()), data_(other.size()) {
-  const DATATYPE missing = util::missingValue(missing);
-  const double dmiss = util::missingValue(dmiss);
+  const DATATYPE missing = util::missingValue(DATATYPE());
+  const double dmiss = util::missingValue(double());
   for (size_t jj = 0; jj < data_.size(); ++jj) {
     if (other[jj] == dmiss) {
       data_.at(jj) = missing;
@@ -107,7 +107,7 @@ void ObsData1D<DATATYPE>::zero() {
 // -----------------------------------------------------------------------------
 template<typename DATATYPE>
 void ObsData1D<DATATYPE>::mask(const ObsData1D<int> & mask) {
-  DATATYPE missing = util::missingValue(missing);
+  DATATYPE missing = util::missingValue(DATATYPE());
   for (size_t jj = 0; jj < data_.size(); ++jj) {
     if (mask[jj]) data_.at(jj) = missing;
   }
@@ -125,7 +125,7 @@ void ObsData1D<DATATYPE>::save(const std::string & name) const {
 // -----------------------------------------------------------------------------
 template<typename DATATYPE>
 void ObsData1D<DATATYPE>::print(std::ostream & os) const {
-  DATATYPE missing = util::missingValue(missing);
+  DATATYPE missing = util::missingValue(DATATYPE());
   DATATYPE zmin = std::numeric_limits<DATATYPE>::max();
   DATATYPE zmax = std::numeric_limits<DATATYPE>::lowest();
   DATATYPE zavg = 0.0;

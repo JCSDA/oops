@@ -16,6 +16,7 @@
 #include <memory>
 #include <ostream>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
@@ -24,9 +25,11 @@
 
 #include "oops/interface/ObsSpace.h"
 #include "oops/mpi/mpi.h"
+#include "oops/util/ConfigFunctions.h"  // for vectoriseAndFilter
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
+#include "oops/util/parameters/Parameters.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Timer.h"
 
@@ -36,11 +39,16 @@ namespace oops {
 template <typename OBS>
 class ObsSpaces : public util::Printable,
                   private util::ObjectCounter<ObsSpaces<OBS> > {
-  typedef ObsSpace<OBS>           ObsSpace_;
+  typedef ObsSpace<OBS>                   ObsSpace_;
 
  public:
+  typedef typename ObsSpace_::Parameters_ Parameters_;
+
   static const std::string classname() {return "oops::ObsSpaces";}
 
+  ObsSpaces(const std::vector<Parameters_> &, const eckit::mpi::Comm &,
+            const util::DateTime &, const util::DateTime &,
+            const eckit::mpi::Comm & time = oops::mpi::myself());
   ObsSpaces(const eckit::Configuration &, const eckit::mpi::Comm &,
             const util::DateTime &, const util::DateTime &,
             const eckit::mpi::Comm & time = oops::mpi::myself());
@@ -69,20 +77,31 @@ class ObsSpaces : public util::Printable,
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-ObsSpaces<OBS>::ObsSpaces(const eckit::Configuration & conf, const eckit::mpi::Comm & comm,
+ObsSpaces<OBS>::ObsSpaces(const std::vector<Parameters_> & params, const eckit::mpi::Comm & comm,
                           const util::DateTime & bgn, const util::DateTime & end,
                           const eckit::mpi::Comm & time)
   : spaces_(0), wbgn_(bgn), wend_(end)
 {
-  std::vector<eckit::LocalConfiguration> typeconfs = conf.getSubConfigurations();
-  for (std::size_t jj = 0; jj < typeconfs.size(); ++jj) {
-    eckit::LocalConfiguration obsconf(typeconfs[jj], "obs space");
-    Log::debug() << "ObsSpaces::ObsSpaces : conf " << obsconf << std::endl;
-    std::shared_ptr<ObsSpace_> tmp(new ObsSpace_(obsconf, comm, bgn, end, time));
-    spaces_.push_back(tmp);
+  spaces_.reserve(params.size());
+  for (const Parameters_ & param : params) {
+    Log::debug() << "ObsSpaces::ObsSpaces : conf " << param << std::endl;
+    auto tmp = std::make_shared<ObsSpace_>(param, comm, bgn, end, time);
+    spaces_.push_back(std::move(tmp));
   }
   ASSERT(spaces_.size() >0);
 }
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+ObsSpaces<OBS>::ObsSpaces(const eckit::Configuration & conf, const eckit::mpi::Comm & comm,
+                          const util::DateTime & bgn, const util::DateTime & end,
+                          const eckit::mpi::Comm & time)
+  : ObsSpaces(  // Split conf into subconfigurations, extract the "obs space" section from each
+                // of them, then validate and deserialize that section into a Parameters_ object
+              validateAndDeserialize<Parameters_>(util::vectoriseAndFilter(conf, "obs space")),
+              comm, bgn, end, time)
+{}
 
 // -----------------------------------------------------------------------------
 

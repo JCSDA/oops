@@ -1145,19 +1145,16 @@ type(atlas_field) :: afield
 ! Get or create field
 do jvar=1,vars%nvars()
    fieldname = vars%variable(jvar)
-   if (afieldset%has_field(trim(fieldname))) then
-     ! Get afield
-     afield = afieldset%field(trim(fieldname))
-   else
+   if (.not.afieldset%has_field(trim(fieldname))) then
      ! Create field
      afield = self%geom%afunctionspace%create_field(name=trim(fieldname),kind=atlas_real(kind_real),levels=self%geom%nz)
 
      ! Add field
      call afieldset%add(afield)
-   endif
 
-   ! Release pointer
-   call afield%final()
+     ! Release pointer
+     call afield%final()
+   endif
 enddo
 
 end subroutine qg_fields_set_atlas

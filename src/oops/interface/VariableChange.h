@@ -11,11 +11,11 @@
 #include <memory>
 #include <string>
 
+#include "oops/base/Geometry.h"
+#include "oops/base/State.h"
 #include "oops/base/VariableChangeBase.h"
 #include "oops/base/VariableChangeParametersBase.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/Geometry.h"
-#include "oops/interface/State.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"

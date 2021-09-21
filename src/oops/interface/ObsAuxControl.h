@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -25,6 +25,11 @@ namespace oops {
   class Variables;
 
 // -----------------------------------------------------------------------------
+/// \brief Auxiliary state related to observations, templated on <OBS>
+/// \details
+/// This is currently only used for bias correction coefficients, but can be used for other cases.
+/// This class calls the <OBS> implementation of ObsAuxControl.
+// -----------------------------------------------------------------------------
 
 template <typename OBS>
 class ObsAuxControl : public util::Printable,
@@ -36,25 +41,33 @@ class ObsAuxControl : public util::Printable,
 
   static const std::string classname() {return "oops::ObsAuxControl";}
 
-  ObsAuxControl(const ObsSpace<OBS> &, const Parameters_ &params);
+  /// Constructor for specified ObsSpace \p os and \p params
+  ObsAuxControl(const ObsSpace<OBS> & os, const Parameters_ & params);
+  /// Creates ObsAuxControl with the same structure as \p other.
+  /// Copies \p other if \p copy is true, otherwise creates zero ObsAuxControl
   explicit ObsAuxControl(const ObsAuxControl &, const bool copy = true);
+  /// Destructor (defined explicitly for timing and tracing)
   ~ObsAuxControl();
 
-/// Interfacing
+  /// const Accessor
   const ObsAuxControl_ & obsauxcontrol() const {return *aux_;}
+  /// Accessor
   ObsAuxControl_ & obsauxcontrol() {return *aux_;}
 
-/// I/O and diagnostics
+  /// Read this ObsAuxControl from file
   void read(const Parameters_ &);
+  /// Write this ObsAuxControl out to file
   void write(const Parameters_ &) const;
+  /// Norm (used in tests)
   double norm() const;
 
-/// Other
+  /// Return required inputs variables from Model
   const Variables & requiredVars() const;
+  /// Return required observations diagnostics
   const Variables & requiredHdiagnostics() const;
 
-/// Operator
-  ObsAuxControl & operator=(const ObsAuxControl &);
+  /// Assign operator from other ObsAuxControl \p rhs
+  ObsAuxControl & operator=(const ObsAuxControl & rhs);
 
  private:
   void print(std::ostream &) const;

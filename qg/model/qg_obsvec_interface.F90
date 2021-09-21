@@ -126,14 +126,14 @@ call qg_obsvec_zero(self)
 
 end subroutine qg_obsvec_zero_c
 ! ------------------------------------------------------------------------------
-!> Set i-th value of the observation vector to zero
-subroutine qg_obsvec_zero_ith_c(c_key_self, i) bind(c,name='qg_obsvec_zero_ith_f90')
+!> Set i-th value of the observation vector to missing value
+subroutine qg_obsvec_settomissing_ith_c(c_key_self, i) bind(c,name='qg_obsvec_settomissing_ith_f90')
 
 implicit none
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_self !< Observation vector
-integer(c_int),intent(in) :: i          !< index of value to be set to zero
+integer(c_int),intent(in) :: i          !< index of value to be set to missing value
 ! Local variables
 type(qg_obsvec),pointer :: self
 
@@ -142,9 +142,9 @@ call qg_obsvec_registry%get(c_key_self,self)
 
 ! Call Fortran
 ! increase index by 1 (C indices start with 0; Fortran indices start with 1)
-call qg_obsvec_zero_ith(self, i+1)
+call qg_obsvec_settomissing_ith(self, i+1)
 
-end subroutine qg_obsvec_zero_ith_c
+end subroutine qg_obsvec_settomissing_ith_c
 ! ------------------------------------------------------------------------------
 !> Set observation vector to ones
 subroutine qg_obsvec_ones_c(c_key_self) bind(c,name='qg_obsvec_ones_f90')
@@ -185,6 +185,27 @@ call qg_obsvec_registry%get(c_key_mask,mask)
 call qg_obsvec_mask(self,mask)
 
 end subroutine qg_obsvec_mask_c
+! ------------------------------------------------------------------------------
+!> Mask self observation vector (set values to missing where mask is a missing value)
+subroutine qg_obsvec_mask_with_missing_c(c_key_self,c_key_mask) bind(c,name='qg_obsvec_mask_with_missing_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_self  !< Observation vector
+integer(c_int),intent(in) :: c_key_mask  !< Mask
+
+! Local variables
+type(qg_obsvec),pointer :: self,mask
+
+! Interface
+call qg_obsvec_registry%get(c_key_self,self)
+call qg_obsvec_registry%get(c_key_mask,mask)
+
+! Call Fortran
+call qg_obsvec_mask_with_missing(self,mask)
+
+end subroutine qg_obsvec_mask_with_missing_c
 ! ------------------------------------------------------------------------------
 !> Multiply observation vector with a scalar
 subroutine qg_obsvec_mul_scal_c(c_key_self,zz) bind(c,name='qg_obsvec_mul_scal_f90')

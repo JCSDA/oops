@@ -1,9 +1,9 @@
 geometry:
-  $(GEOMETRY)
+  ${GEOMETRY}
 state:
   '{{BACKGROUND}}'
 observations:
-  $(OBSERVATIONS)
+  ${OBSERVATIONS}
 window begin: '{{window_begin}}'
-window length: $(window_length)
+window length: ${window_length}
 

@@ -3,7 +3,7 @@ geometry:
   ny: 20
   depths: [4500, 5500, 6500, 7500, 8500, 9500]   # note: these are only for the test (specifying 6 levels),
                                                  # and have not been scientifically validated
-test date: 2009-12-31T00:00:00Z
+test date: &date 2009-12-31T00:00:00Z
 
 increment test:
   date: 2009-12-31T00:00:00Z
@@ -14,4 +14,11 @@ vertical localization:
   lengthscale: 3
   lengthscale units: levels
   fraction of retained variance: 0.5
+  write eigen vectors: true
+  list of eigen vectors to write:
+    datadir: Data
+    date: *date
+    exp: verticalEVs.%{member}%
+    type: an
+ 
 expected neig: 2 

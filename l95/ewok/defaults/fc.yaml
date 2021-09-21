@@ -1,2 +1,2 @@
 date: '{{current_cycle}}'
-filename: $(current_dir)/$(experiment).fc.{{current_cycle}}.$(step)
+filename: $(run_dir)/$(experiment).fc.{{current_cycle}}.$(step)

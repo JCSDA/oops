@@ -22,27 +22,55 @@
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
-
-namespace eckit {
-  class Configuration;
-}
+#include "oops/util/parameters/OptionalParameter.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 
 namespace lorenz95 {
   class ObsIterator;
 
+// -----------------------------------------------------------------------------
+/// Options controlling generation of artificial observations.
+class ObsGenerateParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(ObsGenerateParameters, Parameters)
+
+ public:
+  oops::RequiredParameter<util::Duration> begin{"begin", this};
+  oops::OptionalParameter<util::Duration> end{"end", this};
+  oops::RequiredParameter<util::Duration> obsFrequency{"obs_frequency", this};
+  /// Number of observations to generate in each time slot.
+  oops::RequiredParameter<int> obsDensity{"obs_density", this};
+  oops::RequiredParameter<double> obsError{"obs_error", this};
+};
+
+// -----------------------------------------------------------------------------
+/// \brief Configuration parameters for the L95 model's ObsSpace.
+class ObsTableParameters : public oops::ObsSpaceParametersBase {
+  OOPS_CONCRETE_PARAMETERS(ObsTableParameters, ObsSpaceParametersBase)
+
+ public:
+  /// File from which to load observations.
+  oops::OptionalParameter<std::string> obsdatain{"obsdatain", this};
+  /// File to which to save observations and analysis.
+  oops::OptionalParameter<std::string> obsdataout{"obsdataout", this};
+  /// Options controlling generation of artificial observations.
+  oops::OptionalParameter<ObsGenerateParameters> generate{"generate", this};
+};
+
+// -----------------------------------------------------------------------------
 /// A Simple Observation Data Handler
 /*!
  *  ObsTable defines a simple observation handler
  *  that mimicks the interfaces required from ODB.
  */
-
-// -----------------------------------------------------------------------------
 class ObsTable : public oops::ObsSpaceBase,
                  private util::ObjectCounter<ObsTable> {
  public:
   static const std::string classname() {return "lorenz95::ObsTable";}
 
-  ObsTable(const eckit::Configuration &, const eckit::mpi::Comm &,
+  typedef ObsTableParameters Parameters_;
+
+  ObsTable(const Parameters_ &, const eckit::mpi::Comm &,
            const util::DateTime &, const util::DateTime &, const eckit::mpi::Comm &);
   ~ObsTable();
 
@@ -56,7 +84,7 @@ class ObsTable : public oops::ObsSpaceBase,
   void getdb(const std::string &, std::vector<double> &) const;
 
   bool has(const std::string & col) const;
-  void generateDistribution(const eckit::Configuration &);
+  void generateDistribution(const ObsGenerateParameters & params);
   void random(std::vector<double> &) const;
   unsigned int nobs() const {return times_.size();}
   const std::vector<double> & locations() const { return locations_; }

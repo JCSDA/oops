@@ -715,7 +715,6 @@ call qg_fields_registry%get(c_key_fld,fld)
 ! Call Fortran
 call qg_fields_serialize(fld,c_vsize,c_vect_fld)
 
-
 end subroutine qg_fields_serialize_c
 ! ------------------------------------------------------------------------------
 !> Deserialize fields

@@ -8,12 +8,14 @@
  * does it submit to any jurisdiction.
  */
 
+#include "lorenz95/instantiateL95ChangeVarFactory.h"
 #include "lorenz95/L95Traits.h"
 #include "oops/runs/HofX4D.h"
 #include "oops/runs/Run.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
+  lorenz95::instantiateL95ChangeVarFactory();
   oops::HofX4D<lorenz95::L95Traits, lorenz95::L95ObsTraits> hofx;
   return run.execute(hofx);
 }

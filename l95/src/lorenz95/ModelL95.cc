@@ -24,7 +24,7 @@
 namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
-static oops::ModelMaker<L95Traits, ModelL95> makermodel_("L95");
+static oops::interface::ModelMaker<L95Traits, ModelL95> makermodel_("L95");
 
 // -----------------------------------------------------------------------------
 

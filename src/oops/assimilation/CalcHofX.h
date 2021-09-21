@@ -17,13 +17,13 @@
 #include "oops/base/Observations.h"
 #include "oops/base/ObsFilters.h"
 #include "oops/base/ObsSpaces.h"
+#include "oops/base/ObsVector.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Locations.h"
 #include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsDiagnostics.h"
 #include "oops/interface/ObsOperator.h"
-#include "oops/interface/ObsVector.h"
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
@@ -35,8 +35,10 @@ template <typename OBS>
 class CalcHofXParameters : public Parameters {
   OOPS_CONCRETE_PARAMETERS(CalcHofXParameters, Parameters)
 
+  typedef typename OBS::ObsOperator::Parameters_ ObsOperatorParameters_;
+
  public:
-  oops::RequiredParameter<eckit::LocalConfiguration> obsOperator{"obs operator", this};
+  oops::RequiredParameter<ObsOperatorParameters_> obsOperator{"obs operator", this};
   oops::Parameter<std::vector<ObsFilterParametersWrapper<OBS>>> obsFilters{"obs filters", {}, this};
 };
 
@@ -99,7 +101,7 @@ class CalcHofX {
   const ObsSpaces_ &   obspaces_;   // ObsSpaces used in H(x)
   ObsOperatorVec_      obsops_;     // Obs operators
   LocationsVec_        locations_;  // locations
-  const ObsAuxCtrls_ * ybias_;      // Obs bias
+  const ObsAuxCtrls_ * biascoeff_;  // bias coefficients
   ObsDataVec_<int>     qcflags_;    // QC flags
   ObsVectorVec_        obserrs_;    // Obs error variances (used in QC filters)
   ObsFiltersVec_       filters_;    // QC filters
@@ -112,7 +114,7 @@ template <typename OBS>
 CalcHofX<OBS>::CalcHofX(const ObsSpaces_ & obspaces,
                         const eckit::Configuration & config) :
   obsconfig_(config), obspaces_(obspaces), obsops_(), locations_(),
-  ybias_(nullptr), qcflags_(), obserrs_(), filters_(),
+  biascoeff_(nullptr), qcflags_(), obserrs_(), filters_(),
   geovars_(obspaces_.size())
 {
   std::vector<eckit::LocalConfiguration> obsconfs = config.getSubConfigurations();
@@ -144,7 +146,7 @@ CalcHofX<OBS>::CalcHofX(const ObsSpaces_ & obspaces,
 template <typename OBS>
 void CalcHofX<OBS>::initialize(const ObsAuxCtrls_ & obsaux, const int iteration) {
   std::vector<eckit::LocalConfiguration> obsconfs = obsconfig_.getSubConfigurations();
-  ybias_ = &obsaux;
+  biascoeff_ = &obsaux;
   filters_.clear();
   for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
     CalcHofXParameters<OBS> observerParams;
@@ -156,7 +158,7 @@ void CalcHofX<OBS>::initialize(const ObsAuxCtrls_ & obsaux, const int iteration)
 
     /// Set up variables requested from the model
     geovars_[jj] += obsops_[jj]->requiredVars();
-    geovars_[jj] += (*ybias_)[jj].requiredVars();
+    geovars_[jj] += (*biascoeff_)[jj].requiredVars();
     geovars_[jj] += filters_[jj]->requiredVars();
   }
   Log::trace() << "CalcHofX<OBS>::initialize done" << std::endl;
@@ -169,17 +171,19 @@ Observations<OBS> CalcHofX<OBS>::compute(const GeoVaLsVec_ & geovals) {
   oops::Log::trace() << "CalcHofX<OBS>::compute start" << std::endl;
 
   Observations<OBS> yobs(obspaces_);
+  Observations<OBS> ybias(obspaces_);
+  ybias.zero();
   for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
     /// call prior filters
     filters_[jj]->priorFilter(*geovals[jj]);
     /// compute H(x)
     oops::Variables vars;
     vars += filters_[jj]->requiredHdiagnostics();
-    vars += (*ybias_)[jj].requiredHdiagnostics();
+    vars += (*biascoeff_)[jj].requiredHdiagnostics();
     ObsDiags_ ydiags(obspaces_[jj], *locations_[jj], vars);
-    obsops_[jj]->simulateObs(*geovals[jj], yobs[jj], (*ybias_)[jj], ydiags);
+    obsops_[jj]->simulateObs(*geovals[jj], yobs[jj], (*biascoeff_)[jj], ybias[jj], ydiags);
     /// call posterior filters
-    filters_[jj]->postFilter(yobs[jj], ydiags);
+    filters_[jj]->postFilter(yobs[jj], ybias[jj], ydiags);
   }
   oops::Log::trace() << "CalcHofX<OBS>::compute done" << std::endl;
   return yobs;

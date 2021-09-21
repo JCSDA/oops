@@ -16,8 +16,8 @@
 
 #include "oops/base/GetValuePost.h"
 #include "oops/base/PostBase.h"
+#include "oops/base/State.h"
 #include "oops/interface/ChangeVariables.h"
-#include "oops/interface/State.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -45,12 +45,13 @@ class GetValuePosts : public PostBase<State<MODEL>> {
 
 // Data
   std::vector<GetValuePtr_> getvals_;
+  Variables geovars_;
 };
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-GetValuePosts<MODEL, OBS>::GetValuePosts() : PostBase<State_>(), getvals_() {
+GetValuePosts<MODEL, OBS>::GetValuePosts() : PostBase<State_>(), getvals_(), geovars_() {
   Log::trace() << "GetValuePosts::GetValuePosts" << std::endl;
 }
 
@@ -60,6 +61,7 @@ template <typename MODEL, typename OBS>
 void GetValuePosts<MODEL, OBS>::append(GetValuePtr_ getval) {
   Log::trace() << "GetValuePosts::append start" << std::endl;
   getvals_.push_back(getval);
+  geovars_ += getval->requiredVariables();
   Log::trace() << "GetValuePosts::append done" << std::endl;
 }
 
@@ -78,8 +80,13 @@ void GetValuePosts<MODEL, OBS>::doInitialize(const State_ &, const util::DateTim
 template <typename MODEL, typename OBS>
 void GetValuePosts<MODEL, OBS>::doProcessing(const State_ & xx) {
   Log::trace() << "GetValuePosts::doProcessing start" << std::endl;
-//  Change of variables will go here
-  for (GetValuePtr_ getval : getvals_) getval->process(xx);
+
+  eckit::LocalConfiguration chvarconf;  // empty for now
+  ChangeVariables_ chvar(chvarconf, xx.geometry(), xx.variables(), geovars_);
+  State_ zz(xx.geometry(), geovars_, xx.validTime());
+  chvar.changeVar(xx, zz);
+
+  for (GetValuePtr_ getval : getvals_) getval->process(zz);
   Log::trace() << "GetValuePosts::doProcessing done" << std::endl;
 }
 

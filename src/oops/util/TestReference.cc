@@ -108,11 +108,18 @@ void TestReference::compare(const std::string & test,
 
   while (std::getline(refStream, refLine)) {
     lineCounter++;
-    std::getline(testStream, testLine);
 
-    // Check that a corresponding test line exists
-    if (testStream.fail()) {
-      throw TestReferenceMissingTestLineError(lineCounter, refLine);
+    // If reference line is empty, go to the next line
+    if (refLine.empty()) continue;
+
+    testLine = "";
+    // Find non-empty line in the test output
+    while (testLine.empty()) {
+      std::getline(testStream, testLine);
+      // Check that a corresponding test line exists
+      if (testStream.fail()) {
+        throw TestReferenceMissingTestLineError(lineCounter, refLine);
+      }
     }
 
     // Remove test prefix from refLine if present
@@ -152,8 +159,12 @@ void TestReference::compare(const std::string & test,
   }
 
   // Check there are no more remaining test lines to process
-  std::getline(testStream, testLine);
-  if (!testStream.fail()) {
+  testLine = "";
+  // Read until either reach end of file or find non-empty line in the test output
+  while (testLine.empty() && (!testStream.fail())) {
+    std::getline(testStream, testLine);
+  }
+  if (!testLine.empty()) {
     throw TestReferenceMissingReferenceLineError(lineCounter, testLine);
   }
 }

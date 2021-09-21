@@ -12,9 +12,9 @@
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "oops/interface/Geometry.h"
-#include "oops/interface/Increment.h"
-#include "oops/interface/State.h"
+#include "oops/base/Geometry.h"
+#include "oops/base/Increment.h"
+#include "oops/base/State.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
