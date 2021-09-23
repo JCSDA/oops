@@ -97,6 +97,12 @@ struct ParameterTraits<util::ScalarOrMap<Key, Value>, std::false_type>
 
     return ObjectJsonSchema({{name, {{"oneOf", oneOf.str()}}}});
   }
+
+  static ObjectJsonSchema jsonSchema(const std::string &name,
+                                     const util::ScalarOrMap<Key, Value> &defaultValue)
+  {
+    return jsonSchema(name);
+  }
 };
 }  // namespace oops
 

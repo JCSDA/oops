@@ -99,7 +99,7 @@ call fckit_log%info('qg_obsdb_setup: file in = '//trim(fin))
 ! Output file
 if (f_conf%has("obsdataout")) then
   call f_conf%get_or_die("obsdataout.obsfile",str)
-  call swap_name_member(f_conf, str)
+  call swap_name_member(f_conf, str, 6)
 
   fout = str
   call fckit_log%info('qg_obsdb_setup: file out = '//trim(fout))

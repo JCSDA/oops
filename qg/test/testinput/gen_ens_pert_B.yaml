@@ -4,6 +4,7 @@ background error:
   maximum_condition_number: 1.0e6
   standard_deviation: 8.0e6
   vertical_length_scale: 2787.0
+  randomization_seed: 7
 forecast length: P1DT12H
 initial condition:
   date: 2009-12-31T00:00:00Z

@@ -12,6 +12,9 @@
 
 namespace util {
 
+template <typename...>
+using void_t = void;
+
 /// A type trait whose `value` member is set to true if and only if the first type in the list of
 /// template parameters (`T`) is the same as any of the following types.
 template <typename T, typename Head, typename... Tail>

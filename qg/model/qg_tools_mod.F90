@@ -51,10 +51,10 @@ type(duration) :: step
 
 ! Get configuration parameters
 call f_conf%get_or_die("datadir",str)
-call swap_name_member(f_conf, str)
+call swap_name_member(f_conf, str, 6)
 fdbdir = str
 call f_conf%get_or_die("exp",str)
-call swap_name_member(f_conf, str)
+call swap_name_member(f_conf, str, 6)
 expver = str
 call f_conf%get_or_die("type",str)
 typ = str
@@ -82,8 +82,8 @@ if ((typ=='fc').or.(typ=='ens')) then
   genfilename = trim(prefix)//'.'//trim(referencedate)//'.'// trim(sstep)//'.nc'
 endif
 
-! Analysis or increment case
-if ((typ=='an').or.(typ=='in')) then
+! Analysis, diagnostic or increment case
+if ((typ=='an').or.(typ=='diag').or.(typ=='in')) then
   call datetime_to_string(vdate,validitydate)
   lenfn = lenfn+1+len_trim(validitydate)
   genfilename = trim(prefix)//'.'//trim(validitydate)//'.nc'

@@ -34,6 +34,7 @@ use random_mod
 implicit none
 
 private
+public :: rseed
 public :: qg_fields
 public :: qg_fields_registry
 public :: qg_fields_create,qg_fields_create_from_other,qg_fields_delete, &
@@ -282,25 +283,33 @@ call qg_fields_complete(self,var)
 end subroutine qg_fields_dirac
 ! ------------------------------------------------------------------------------
 !> Generate random fields
-subroutine qg_fields_random(self,var)
+subroutine qg_fields_random(self,var,seed)
 
 implicit none
 
 ! Passed variables
 type(qg_fields),intent(inout) :: self !< Fields
 character(len=1),intent(in) :: var    !< Variable to randomize ('x' or 'q')
+integer,intent(in),optional :: seed   !< Optional seed
+
+! Local variables
+integer :: lseed
 
 ! Check field
 call qg_fields_check(self)
+
+! Local seed
+lseed = rseed
+if (present(seed)) lseed = seed
 
 ! Set at random value
 select case (var)
 case ('x')
    if (.not.allocated(self%x)) call abor1_ftn('qg_fields_random: x should be allocated')
-   call normal_distribution(self%x,0.0_kind_real,1.0_kind_real,rseed)
+   call normal_distribution(self%x,0.0_kind_real,1.0_kind_real,lseed)
 case ('q')
    if (.not.allocated(self%q)) call abor1_ftn('qg_fields_random: q should be allocated')
-   call normal_distribution(self%q,0.0_kind_real,1.0_kind_real,rseed)
+   call normal_distribution(self%q,0.0_kind_real,1.0_kind_real,lseed)
 case default
   call abor1_ftn('qg_fields_random: wrong variable')
 endselect
@@ -682,7 +691,7 @@ else
 
   ! Get filename
   call f_conf%get_or_die("filename",str)
-  call swap_name_member(f_conf, str)
+  call swap_name_member(f_conf, str, 6)
   filename = str
   call fckit_log%info('qg_fields_read_file: opening '//trim(filename))
 
@@ -776,10 +785,15 @@ type(datetime),intent(in) :: vdate             !< Date and time
 integer :: ncid,nx_id,ny_id,nz_id,lon_id,lat_id,z_id,area_id,heat_id,x_id,q_id,u_id,v_id
 integer :: x_north_id,x_south_id,q_north_id,q_south_id
 integer :: info
+character(len=:),allocatable :: str
 character(len=20) :: sdate
-character(len=1024) :: filename
+character(len=1024) :: typ,filename
 type(oops_variables) :: vars
 type(qg_fields) :: fld_io
+
+! Get output type
+call f_conf%get_or_die("type",str)
+typ = str
 
 ! Check field
 call qg_fields_check(fld)
@@ -792,14 +806,39 @@ call vars%push_back('u')
 call vars%push_back('v')
 call qg_fields_create(fld_io,fld%geom,vars,.true.)
 call qg_fields_copy_lbc(fld_io,fld)
-if (allocated(fld%x)) then
-  fld_io%x = fld%x
-  call qg_fields_complete(fld_io,'x')
-elseif (allocated(fld%q)) then
-  fld_io%q = fld%q
-  call qg_fields_complete(fld_io,'q')
+if (trim(typ)=='diag') then
+  ! Diagnostic file: don't complete fields
+  if (allocated(fld%x)) then
+    fld_io%x = fld%x
+  else
+    fld_io%x = missing_value(1.0_kind_real)
+  endif
+  if (allocated(fld%q)) then
+    fld_io%q = fld%q
+  else
+    fld_io%q = missing_value(1.0_kind_real)
+  endif
+  if (allocated(fld%u)) then
+    fld_io%u = fld%u
+  else
+    fld_io%u = missing_value(1.0_kind_real)
+  endif
+  if (allocated(fld%v)) then
+    fld_io%v = fld%v
+  else
+    fld_io%v = missing_value(1.0_kind_real)
+  endif
 else
-  call abor1_ftn('qg_fields_write_file: x or q required')
+  ! Usual file: complete fields
+  if (allocated(fld%x)) then
+    fld_io%x = fld%x
+    call qg_fields_complete(fld_io,'x')
+  elseif (allocated(fld%q)) then
+    fld_io%q = fld%q
+    call qg_fields_complete(fld_io,'q')
+  else
+    call abor1_ftn('qg_fields_write_file: x or q required')
+  endif
 endif
 
 ! Set filename

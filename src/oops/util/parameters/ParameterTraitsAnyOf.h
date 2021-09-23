@@ -53,6 +53,12 @@ struct ParameterTraits<util::AnyOf<Types...>, std::false_type> {
         ']';
     return ObjectJsonSchema({{name, {{"anyOf", std::move(anyOfSchema)}}}});
   }
+
+  static ObjectJsonSchema jsonSchema(const std::string &name,
+                                     const util::AnyOf<Types...> &defaultValue)
+  {
+    return jsonSchema(name);
+  }
 };
 
 }  // namespace oops

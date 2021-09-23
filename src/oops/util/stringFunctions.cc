@@ -20,11 +20,11 @@ namespace util {
 namespace stringfunctions {
 
 // -----------------------------------------------------------------------------
-void swapNameMember(const eckit::Configuration & conf, std::string & filename) {
+void swapNameMember(const eckit::Configuration & conf, std::string & filename, int ndigits) {
   if (conf.has("member")) {
     const int mymember = conf.getInt("member");
     std::ostringstream mm;
-    mm << std::setw(3) << std::setfill('0') << mymember;
+    mm << std::setw(ndigits) << std::setfill('0') << mymember;
     // Construct the output file name
     std::string str_member = "%{member}%";
     std::size_t member_index = filename.find(str_member);

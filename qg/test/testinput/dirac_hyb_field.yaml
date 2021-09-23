@@ -32,7 +32,7 @@ background error:
         filename: Data/forecast.ens.10.2009-12-31T00:00:00Z.P1DT12H.nc
     weight:
       date: 2010-01-01T00:00:00Z
-      filename: Data/uniform_field_hybrid.fc.2010-01-01T00:00:00Z.PT0S.nc
+      filename: Data/uniform_field_hybrid.diag.2010-01-01T00:00:00Z.nc
   - covariance:
       covariance model: QgError
       horizontal_length_scale: 2.2e6
@@ -41,7 +41,7 @@ background error:
       vertical_length_scale: 15000.0
     weight:
       date: 2010-01-01T00:00:00Z
-      filename: Data/uniform_field_hybrid.fc.2010-01-01T00:00:00Z.PT0S.nc
+      filename: Data/uniform_field_hybrid.diag.2010-01-01T00:00:00Z.nc
 dirac:
   date: 2010-01-01T12:00:00Z
   ixdir: [20]

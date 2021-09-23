@@ -67,6 +67,8 @@ struct ParameterTraits<Variables> {
     return ObjectJsonSchema({{name, nameSchema.properties().at("")},
                              {"channels", {{"type", "[\"string\", \"integer\"]"}}}});
   }
+
+  static std::string valueAsJson(const Variables &value);
 };
 
 }  // namespace oops

@@ -108,6 +108,7 @@ class PolymorphicParameter : public ParameterBase {
   std::string name_;
   std::string description_;
   std::string id_;
+  std::string defaultId_;
   std::unique_ptr<PARAMETERS> value_;
 };
 
@@ -116,7 +117,7 @@ PolymorphicParameter<PARAMETERS, FACTORY>::PolymorphicParameter(const char *name
                                                                 const char *description,
                                                                 const char* defaultId,
                                                                 Parameters *parent)
-  : ParameterBase(parent), name_(name), description_(description) {
+  : ParameterBase(parent), name_(name), description_(description), defaultId_(defaultId) {
   util::CompositePath path;
   eckit::LocalConfiguration config;
   config.set(name, defaultId);
@@ -146,6 +147,7 @@ ObjectJsonSchema PolymorphicParameter<PARAMETERS, FACTORY>::jsonSchema() const {
   if (description_ != "") {
     schema.extendPropertySchema(name_, {{"description", "\"" + description_ + "\""}});
   }
+  schema.extendPropertySchema(name_, {{"default", "\"" + defaultId_ + "\""}});
   return schema;
 }
 

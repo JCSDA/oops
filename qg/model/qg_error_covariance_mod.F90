@@ -37,6 +37,7 @@ type :: qg_error_covariance_config
   real(kind_real),allocatable :: sqrt_merid(:,:)     !< Square-root of the meridional correlation matrix
   real(kind_real),allocatable :: sqrt_vert(:,:)      !< Square-root of the meridional correlation matrix
   real(kind_real),allocatable :: norm(:,:)           !< Normalization factor
+  integer :: seed                                    !< Randomization seed
 end type qg_error_covariance_config
 
 real(kind_real),parameter :: eps_ad = 1.0e-10 !< Epsilon value for adjoint tests
@@ -83,6 +84,11 @@ call f_conf%get_or_die("standard_deviation",self%sigma)
 call f_conf%get_or_die("horizontal_length_scale",horizontal_length_scale)
 call f_conf%get_or_die("vertical_length_scale",vertical_length_scale)
 call f_conf%get_or_die("maximum_condition_number",condition_number)
+if (f_conf%has("randomization_seed")) then
+   call f_conf%get_or_die("randomization_seed",self%seed)
+else
+   self%seed = rseed
+end if
 
 ! Check nx
 if (mod(geom%nx,2)/=0) then
@@ -284,7 +290,7 @@ type(qg_fields) :: fld_tmp
 
 ! Initialize temporary field
 call qg_fields_create_from_other(fld_tmp,fld_out,fld_out%geom)
-call qg_fields_random(fld_tmp,'x')
+call qg_fields_random(fld_tmp,'x',self%seed)
 
 ! Apply square-root of the covariance matrix
 call qg_error_covariance_sqrt_mult(self,fld_tmp,fld_out)

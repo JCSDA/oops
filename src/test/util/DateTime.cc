@@ -32,6 +32,24 @@ namespace {
 
 // -----------------------------------------------------------------------------
 
+  CASE("test_construct_from_ymdhms") {
+    std::string s1("2011-09-16T13:55:20Z");
+    util::DateTime d1(2011, 9, 16, 13, 55, 20);
+    std::string s2(d1.toString());
+    EXPECT(s2 == s1);
+  }
+
+// -----------------------------------------------------------------------------
+
+  CASE("test_construct_from_YYYYMMDD_hhmmss") {
+    std::string s1("2011-09-16T13:55:20Z");
+    util::DateTime d1(20110916, 135520);
+    std::string s2(d1.toString());
+    EXPECT(s2 == s1);
+  }
+
+// -----------------------------------------------------------------------------
+
 //  This method is now private. Can we test private methods?
 
 //  CASE("test_set_from_string") {
@@ -57,6 +75,19 @@ namespace {
   CASE("test_uninitialized_date") {
     util::DateTime d1;
     EXPECT_THROWS_AS(d1.toString(), eckit::BadValue);
+  }
+
+// -----------------------------------------------------------------------------
+
+  CASE("test_to_YYYYMMDD_hhmmss") {
+    int date1 = 20200108;
+    int time1 = 32745;
+    util::DateTime d1(date1, time1);
+    int date2;
+    int time2;
+    d1.toYYYYMMDDhhmmss(date2, time2);
+    EXPECT(date2 == date1);
+    EXPECT(time2 == time1);
   }
 
 // -----------------------------------------------------------------------------

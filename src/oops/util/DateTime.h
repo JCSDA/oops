@@ -50,15 +50,23 @@ class DateTime : public util::Serializable {
   DateTime(const int &, const int &, const int &,
            const int &, const int &, const int &);
 
+  /// sets the date given two integers: YYYYMMDD, hhmmss
+  DateTime(const int YYYYMMDD, const int hhmmss);
+
 // -- Destructor
   ~DateTime();
 
 // -- Methods
 
-  /// Convert the time to ISO 8601 format: YYYY-MM-DDThh:mm:ssZ
+  /// Convert the datetime to ISO 8601 format: YYYY-MM-DDThh:mm:ssZ
   std::string toString() const;
+
+  // Convert the datetime to set of integers, year, month, day, hour, minute, second
   void toYYYYMMDDhhmmss(int & year, int & month, int & day,
                         int & hour, int & minute, int & second) const;
+
+  // Convert the datetime to two integers: YYYYMMDD and hhmmss
+  void toYYYYMMDDhhmmss(int & YYYYMMDD, int & hhmmss) const;
 
   // Operators to add/subtract a Duration to/from a DateTime
   DateTime& operator+=(const Duration &);
