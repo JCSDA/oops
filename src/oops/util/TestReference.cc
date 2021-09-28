@@ -34,6 +34,7 @@ namespace oops {
  */
 namespace {
 
+// -----------------------------------------------------------------------------
   /** Determine if string is a valid integer representation
    */
   bool is_integer_repr(const std::string &s)
@@ -48,6 +49,7 @@ namespace {
     return std::all_of(begin, s.end(), [](unsigned char c){return std::isdigit(c);} );
   }
 
+// -----------------------------------------------------------------------------
   /** Return a vector of all non-overlapping substrings that can be parsed as valid numbers
    */
   std::vector<std::string> parse_numbers(const std::string &s)
@@ -76,30 +78,54 @@ namespace {
 }  // anonymous namespace
 
 // -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 void TestReference::initialise(const eckit::LocalConfiguration &conf)
 {
   initCheck_ = true;
   refFile_ = conf.getString("reference filename");
   oops::Log::info() << "[TestReference] Comparing to reference file: " << refFile_ << std::endl;
+
   tolFloat_ = conf.getFloat("float relative tolerance", 0.0);
+  relativeTol_ = true;
+  if (conf.has("float absolute tolerance")) {
+    tolFloat_ = conf.getFloat("float absolute tolerance");
+    relativeTol_ = false;
+    if (conf.has("float relative tolerance")) {
+      oops::Log::warning() << "Both relative and absolute tolerances are specified, "
+                           << "absolute tolerance will be used." << std::endl;
+    }
+  }
+
   tolInt_ = conf.getInt("integer tolerance", 0);
+
   if (conf.has("log output filename")) {
     outputFile_ = conf.getString("log output filename");
     LibOOPS::instance().teeOutput(outputFile_);
     oops::Log::info() << "[TestReference] Saving Log output to: " << outputFile_ << std::endl;
   }
+
   if (conf.has("test output filename")) {
     testFile_ = conf.getString("test output filename");
     oops::Log::info() << "[TestReference] Saving Test output to: " << testFile_ << std::endl;
   }
 }
 
+// -----------------------------------------------------------------------------
 
 void TestReference::compare(const std::string & test,
                             const std::string & ref,
-                            FloatT tolFloat, IntT tolInt)
+                            FloatT tolFloat,
+                            bool relativeTol,
+                            IntT tolInt)
 {
+  oops::Log::debug() << "[TestReference] Comparing with ";
+  if (relativeTol) {
+    oops::Log::debug() << "relative tolerance = " << tolFloat << std::endl;
+  } else {
+    oops::Log::debug() << "absolute tolerance = " << tolFloat << std::endl;
+  }
+
   int lineCounter = 0;
   std::string testPrefix = "Test     : ";  // Test prefix string to remove
   std::stringstream testStream(test);
@@ -129,7 +155,7 @@ void TestReference::compare(const std::string & test,
 
     if (refLine == testLine) continue;
 
-    // strings don't match - parse all numbers in the test and reference strings
+    // If strings don't match - parse all numbers in the test and reference strings
     auto refNums = parse_numbers(refLine);
     auto testNums = parse_numbers(testLine);
 
@@ -146,14 +172,22 @@ void TestReference::compare(const std::string & test,
         auto test_int = stol(testNums[i]);
         if (std::abs(ref_int - test_int) > tolInt)
           throw TestReferenceIntegerMismatchError(lineCounter, test_int,
-            ref_int, tolInt, testLine, refLine);
+            ref_int, std::abs(ref_int - test_int), tolInt, testLine, refLine);
       } else {
         FloatT ref_float = stod(refNums[i]);
         FloatT test_float = stod(testNums[i]);
-        FloatT rel_diff = std::abs((ref_float - test_float)/(0.5 * (ref_float + test_float)));
-        if (rel_diff > tolFloat)
-          throw TestReferenceFloatMismatchError(lineCounter, test_float,
-            ref_float, tolFloat, testLine, refLine);
+        FloatT diff = std::abs(ref_float - test_float);
+
+        if (relativeTol) {
+          if (diff / std::abs(0.5 * (ref_float + test_float)) > tolFloat)
+            throw TestReferenceFloatMismatchError(lineCounter, test_float,
+              ref_float, diff / std::abs(0.5 * (ref_float + test_float)), tolFloat,
+              testLine, refLine);
+        } else {
+          if (diff > tolFloat)
+            throw TestReferenceFloatMismatchError(lineCounter, test_float,
+              ref_float, diff, tolFloat, testLine, refLine);
+        }
       }
     }
   }
@@ -169,6 +203,7 @@ void TestReference::compare(const std::string & test,
   }
 }
 
+// -----------------------------------------------------------------------------
 
 void TestReference::finalise(const std::string & testStr)
 {
@@ -188,9 +223,11 @@ void TestReference::finalise(const std::string & testStr)
     testFileOut.close();
   }
 
-  compare(testStr, refStr, tolFloat_, tolInt_);
+  compare(testStr, refStr, tolFloat_, relativeTol_, tolInt_);
+  oops::Log::info() << "[TestReference] Comparison is done" << std::endl;
 }
 
+// -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 
 TestReferenceMissingReferenceLineError::TestReferenceMissingReferenceLineError(int line_num,
@@ -202,6 +239,7 @@ TestReferenceMissingReferenceLineError::TestReferenceMissingReferenceLineError(i
   what_ = os.str();
 }
 
+// -----------------------------------------------------------------------------
 
 TestReferenceMissingTestLineError::TestReferenceMissingTestLineError(int line_num,
   const std::string &ref_line)
@@ -212,6 +250,7 @@ TestReferenceMissingTestLineError::TestReferenceMissingTestLineError(int line_nu
   what_ = os.str();
 }
 
+// -----------------------------------------------------------------------------
 
 TestReferenceTextMismatchError::TestReferenceTextMismatchError(int line_num,
   const std::string &test_line, const std::string &ref_line)
@@ -222,9 +261,10 @@ TestReferenceTextMismatchError::TestReferenceTextMismatchError(int line_num,
   what_ = os.str();
 }
 
+// -----------------------------------------------------------------------------
 
 TestReferenceIntegerMismatchError::TestReferenceIntegerMismatchError(int line_num,
-                                  NumT test_val, NumT ref_val, NumT tolerance,
+                                  NumT test_val, NumT ref_val, NumT diff, NumT tolerance,
                                   const std::string &test_line,
                                   const std::string &ref_line)
 {
@@ -232,16 +272,17 @@ TestReferenceIntegerMismatchError::TestReferenceIntegerMismatchError(int line_nu
   os << "Test reference Integer mismatch @ Line:" << line_num << "\n"
      << "Test Val : " << test_val << "\n"
      << "Ref  Val : " << ref_val << "\n"
-     << "Delta    : " << std::abs(test_val-ref_val) << "\n"
+     << "Delta    : " << diff << "\n"
      << "Tolerance: " << tolerance << "\n"
      << "Test Line: '" << test_line << "'\n"
      << "Ref Line : '" << ref_line << "'";
   what_ = os.str();
 }
 
+// -----------------------------------------------------------------------------
 
 TestReferenceFloatMismatchError::TestReferenceFloatMismatchError(int line_num,
-                                  NumT test_val, NumT ref_val, NumT tolerance,
+                                  NumT test_val, NumT ref_val, NumT diff, NumT tolerance,
                                   const std::string &test_line,
                                   const std::string &ref_line)
 {
@@ -251,8 +292,8 @@ TestReferenceFloatMismatchError::TestReferenceFloatMismatchError(int line_num,
      << std::scientific
      << "Test Val : " << test_val << "\n"
      << "Ref  Val : " << ref_val << "\n"
-     << "Rel Delta    : "
-     << std::abs((ref_val - test_val)/(0.5 * (ref_val + test_val)))
+     << "Delta    : "
+     << diff
      << "\n"
      << "Tolerance: " << tolerance << "\n"
      << "Test Line: '" << test_line << "'\n"
