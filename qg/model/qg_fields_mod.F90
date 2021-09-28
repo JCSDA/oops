@@ -936,8 +936,8 @@ character(len=20) :: sdate
 character(len=:),allocatable :: str
 
 ! Check configuration
-if (f_conf%has("analytic_init")) then
-  call f_conf%get_or_die("analytic_init",str)
+if (f_conf%has("analytic init.method")) then
+  call f_conf%get_or_die("analytic init.method",str)
   ic = str
 else
   ic = 'baroclinic-instability'

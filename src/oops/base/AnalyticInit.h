@@ -1,17 +1,17 @@
 /*
- * (C) Copyright 2020-2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef OOPS_INTERFACE_ANALYTICINIT_H_
-#define OOPS_INTERFACE_ANALYTICINIT_H_
+#ifndef OOPS_BASE_ANALYTICINIT_H_
+#define OOPS_BASE_ANALYTICINIT_H_
 
 #include <memory>
 #include <string>
 
-#include "eckit/config/Configuration.h"
+#include "oops/generic/AnalyticInitBase.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/Locations.h"
 #include "oops/util/ObjectCounter.h"
@@ -22,15 +22,15 @@ namespace oops {
 /// \brief Initializes GeoVaLs with analytic formula
 template <typename OBS>
 class AnalyticInit : private util::ObjectCounter<AnalyticInit<OBS> > {
-  typedef typename OBS::AnalyticInit  AnalyticInit_;
+  typedef AnalyticInitBase<OBS>       AnalyticInit_;
   typedef GeoVaLs<OBS>                GeoVaLs_;
   typedef Locations<OBS>              Locations_;
 
  public:
   static const std::string classname() {return "oops::AnalyticInit";}
 
-  /// constructor (parameters from config)
-  explicit AnalyticInit(const eckit::Configuration &);
+  /// constructor (parameters)
+  explicit AnalyticInit(const AnalyticInitParametersBase &);
 
   /// destructor and copy/move constructors/assignments
   ~AnalyticInit();
@@ -46,13 +46,13 @@ class AnalyticInit : private util::ObjectCounter<AnalyticInit<OBS> > {
   std::unique_ptr<AnalyticInit_> analytic_;
 };
 
-// =============================================================================
+// -----------------------------------------------------------------------------
 
 template<typename OBS>
-AnalyticInit<OBS>::AnalyticInit(const eckit::Configuration & conf) {
+AnalyticInit<OBS>::AnalyticInit(const AnalyticInitParametersBase & params) {
   Log::trace() << "AnalyticInit<OBS>::AnalyticInit starting" << std::endl;
   util::Timer timer(classname(), "AnalyticInit");
-  analytic_.reset(new AnalyticInit_(conf));
+  analytic_ = AnalyticInitFactory<OBS>::create(params);
   Log::trace() << "AnalyticInit<OBS>::AnalyticInit done" << std::endl;
 }
 
@@ -67,31 +67,12 @@ AnalyticInit<OBS>::~AnalyticInit() {
 }
 
 // -----------------------------------------------------------------------------
-/*! \brief GeoVaLs Analytic Initialization
- *
- * \details **AnalyticInit()** was introduced in May, 2018 (initially as a GeoVaLs
- * constructor) for use with the interpolation test.  The interpolation test
- * requires an initialization of a GeoVaLs object based on the same analytic
- * formulae used for the State initialization (see test::TestStateInterpolation()
- * for further information).  This in turn requires information about the
- * vertical profile in addition to the latitude and longitude positional
- * information in the Locations object.  Currently, this information
- * about the vertical profile is obtained from an existing GeoVaLs object
- * (passed as *gvals*) that represents the output of the State::interpolate()
- * method.  The state.state generate section of the configuration file is
- * also passed to this constructor to provide further information required
- * for the analytic initialization.
- *
- * \date May, 2018: created as a constructor (M. Miesch, JCSDA)
- * \date June, 2018: moved to a method (M. Miesch, JCSDA)
- *
- * \sa test::TestStateInterpolation()
- */
+
 template<typename OBS>
 void AnalyticInit<OBS>::fillGeoVaLs(const Locations_ & locs, GeoVaLs_ & gvals) const {
   Log::trace() << "AnalyticInit<OBS>::fillGeoVaLs starting" << std::endl;
   util::Timer timer(classname(), "fillGeoVaLs");
-  analytic_->fillGeoVaLs(locs.locations(), gvals.geovals());
+  analytic_->fillGeoVaLs(locs, gvals);
   Log::trace() << "AnalyticInit<OBS>::fillGeoVaLs done" << std::endl;
 }
 
@@ -99,4 +80,4 @@ void AnalyticInit<OBS>::fillGeoVaLs(const Locations_ & locs, GeoVaLs_ & gvals) c
 
 }  // namespace oops
 
-#endif  // OOPS_INTERFACE_ANALYTICINIT_H_
+#endif  // OOPS_BASE_ANALYTICINIT_H_

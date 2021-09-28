@@ -1,6 +1,7 @@
 forecast length: PT0S
 initial condition:
-  analytic_init: uniform_field
+  analytic init:
+    method: uniform_field
   date: 2010-01-01T00:00:00Z
   uval: 2.0
 model:

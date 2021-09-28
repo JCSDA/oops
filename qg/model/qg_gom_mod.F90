@@ -622,7 +622,7 @@ call z_field%data(z)
 if (.not.self%lalloc) call abor1_ftn('qg_gom_analytic init: gom not allocated')
 
 ! Get analytic configuration
-call f_conf%get_or_die("analytic_init",str)
+call f_conf%get_or_die("method",str)
 ic = str
 call fckit_log%info('qg_gom_analytic_init: ic = '//trim(ic))
 do iloc=1,locs%nlocs()

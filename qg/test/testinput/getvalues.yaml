@@ -1,6 +1,7 @@
 getvalues test:
   state generate:
-    analytic_init: large-vortices
+    analytic init:
+      method: large-vortices
     date: 2009-12-31T00:00:00Z
     state variables: [x]
   interpolation tolerance: 1.5e-2

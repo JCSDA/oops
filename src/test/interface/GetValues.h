@@ -24,10 +24,10 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
+#include "oops/base/AnalyticInit.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/AnalyticInit.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/GetValues.h"
 #include "oops/interface/Locations.h"
@@ -202,6 +202,7 @@ template <typename MODEL, typename OBS> void testGetValuesMultiWindow() {
 template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
   typedef GetValuesFixture<MODEL, OBS>    Test_;
   typedef oops::AnalyticInit<OBS>         AnalyticInit_;
+  typedef oops::AnalyticInitParametersWrapper<OBS> Parameters_;
   typedef oops::State<MODEL>              State_;
   typedef oops::GeoVaLs<OBS>              GeoVaLs_;
 
@@ -225,7 +226,10 @@ template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
   // Now create another GeoVaLs object that contains the exact analytic solutions.
   GeoVaLs_ ref(gval);
 
-  AnalyticInit_ init(confgen);
+  const eckit::LocalConfiguration analyticConf(confgen, "analytic init");
+  Parameters_ anparams;
+  anparams.validateAndDeserialize(analyticConf);
+  AnalyticInit_ init(anparams.analyticInitParameters);
   init.fillGeoVaLs(Test_::locs(), ref);
 
   EXPECT(ref.rms() > 0.0);

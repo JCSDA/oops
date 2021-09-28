@@ -77,6 +77,10 @@ getvalues test:
     date: '2010-01-01T03:00:00Z'
     mean: 8.0
     sinus: 2.0
+    analytic init:
+      method: sinus
+      mean: 8.0
+      sinus: 2.0
   interpolation tolerance: 1.e-14
 state variables: [x]
 locations:

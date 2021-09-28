@@ -85,6 +85,7 @@ oops/assimilation/UpHessSolve.h
 oops/assimilation/UpTriSolve.h
 
 oops/base/Accumulator.h
+oops/base/AnalyticInit.h
 oops/base/Departures.h
 oops/base/DeparturesEnsemble.h
 oops/base/DiagonalMatrix.h
@@ -167,6 +168,7 @@ oops/base/WeightingFct.h
 oops/contrib/dcmip_initial_conditions_test_1_2_3_v5.f90
 oops/contrib/dcmip_initial_conditions_test_4_v3.f90
 
+oops/generic/AnalyticInitBase.h
 oops/generic/gc99.h
 oops/generic/gc99.cc
 oops/generic/GeoVaLsWriter.h
@@ -198,7 +200,7 @@ oops/generic/soar.cc
 oops/generic/unstructured_interpolation_mod.F90
 oops/generic/VerticalLocEV.h
 
-oops/interface/AnalyticInit.h
+oops/interface/AnalyticInitBase.h
 oops/interface/ChangeVariables.h
 oops/interface/ErrorCovariance.h
 oops/interface/Geometry.h

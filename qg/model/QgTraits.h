@@ -13,7 +13,6 @@
 
 #include <string>
 
-#include "oops/qg/AnalyticInit.h"
 #include "oops/qg/ErrorCovarianceQG.h"
 #include "oops/qg/GeometryQG.h"
 #include "oops/qg/GeometryQGIterator.h"
@@ -78,7 +77,6 @@ struct QgObsTraits {
 
   typedef qg::GomQG                 GeoVaLs;
   typedef qg::LocationsQG           Locations;
-  typedef qg::AnalyticInit          AnalyticInit;
 };
 
 }  // namespace qg

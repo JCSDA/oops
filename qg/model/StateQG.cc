@@ -51,7 +51,7 @@ StateQG::StateQG(const GeometryQG & resol, const eckit::Configuration & file)
   if (file.has("state variables")) vars = oops::Variables(file, "state variables");
   oops::Log::trace() << "StateQG::StateQG variables: " << vars << std::endl;
   fields_.reset(new FieldsQG(resol, vars, 1, util::DateTime()));
-  if (file.has("analytic_init")) {
+  if (file.has("analytic init")) {
     fields_->analytic_init(file);
   } else if (file.has("read_from_file")) {
     const int read_from_file = file.getInt("read_from_file");
