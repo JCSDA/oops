@@ -182,6 +182,8 @@ Observations<OBS> CalcHofX<OBS>::compute(const GeoVaLsVec_ & geovals) {
     vars += (*biascoeff_)[jj].requiredHdiagnostics();
     ObsDiags_ ydiags(obspaces_[jj], *locations_[jj], vars);
     obsops_[jj]->simulateObs(*geovals[jj], yobs[jj], (*biascoeff_)[jj], ybias[jj], ydiags);
+    /// save bc
+    ybias[jj].save("ObsBias");
     /// call posterior filters
     filters_[jj]->postFilter(yobs[jj], ybias[jj], ydiags);
   }
