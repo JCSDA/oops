@@ -122,6 +122,7 @@ template <typename OBS> void testSimulateObs() {
       hop.simulateObs(gval, hofx, ybias, bias, diags);
     }
     hofx.save("hofx");
+    bias.save("ObsBias");
 
     const double tol = conf.getDouble("tolerance");
     if (conf.has("vector ref")) {

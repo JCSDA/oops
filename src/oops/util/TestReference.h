@@ -27,7 +27,7 @@ class TestReference {
   void initialise(const eckit::LocalConfiguration &conf);
 
   static void compare(const std::string &test, const std::string &ref,
-                      FloatT tolFloat, IntT tolInt);
+                      FloatT tolFloat, bool relativeTol, IntT tolInt);
 
  private:
   bool initCheck_ = false;
@@ -37,6 +37,7 @@ class TestReference {
   std::string testFile_;
   FloatT tolFloat_;
   IntT tolInt_;
+  bool relativeTol_;
 };
 
 // Base class for all TestReference errors
@@ -80,7 +81,7 @@ class TestReferenceIntegerMismatchError : public TestReferenceError {
  public:
   using NumT = TestReference::IntT;
     TestReferenceIntegerMismatchError(int line_num,
-          NumT test_val, NumT ref_val, NumT tolerance,
+          NumT test_val, NumT ref_val, NumT diff,  NumT tolerance,
           const std::string &test_line, const std::string &ref_line);
 };
 
@@ -89,7 +90,7 @@ class TestReferenceFloatMismatchError : public TestReferenceError {
  public:
     using NumT = TestReference::FloatT;
     TestReferenceFloatMismatchError(int line_num,
-          NumT test_val, NumT ref_val, NumT tolerance,
+          NumT test_val, NumT ref_val, NumT diff, NumT tolerance,
           const std::string &test_line, const std::string &ref_line);
 };
 
