@@ -30,17 +30,8 @@ namespace eckit {
   class Configuration;
 }
 
-namespace oops {
-  class Variables;
-}
-
 namespace lorenz95 {
-  class GomL95;
   class IncrementL95;
-  class LocsL95;
-  class ModelBias;
-  class ModelL95;
-  class ModelTrajectory;
 
 /// L95 model state
 /*!

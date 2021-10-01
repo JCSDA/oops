@@ -20,10 +20,8 @@
 #include "atlas/field.h"
 
 #include "lorenz95/FieldL95.h"
-#include "lorenz95/Iterator.h"
 #include "lorenz95/Resolution.h"
 
-#include "oops/base/LocalIncrement.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
@@ -40,9 +38,7 @@ namespace oops {
 }
 
 namespace lorenz95 {
-  class GomL95;
-  class LocsL95;
-  class ModelBiasCorrection;
+  class Iterator;
   class StateL95;
 
 /// Increment Class: Difference between two states

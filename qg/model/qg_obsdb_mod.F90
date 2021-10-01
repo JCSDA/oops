@@ -186,7 +186,10 @@ endif
 
 ! Find observation column
 call qg_obsdb_find_column(jgrp,col,jcol)
-if (.not.associated(jcol)) call abor1_ftn('qg_obsdb_get: obs column not found')
+if (.not.associated(jcol)) then
+  call fckit_log%error('qg_obsdb_get: cannot find '//trim(col))
+  call abor1_ftn('qg_obsdb_get: obs column not found')
+endif
 
 ! Get observation data
 if (allocated(ovec%values)) deallocate(ovec%values)

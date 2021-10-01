@@ -18,6 +18,7 @@
 
 #include "eckit/exception/Exceptions.h"
 
+#include "oops/base/LocalIncrement.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
@@ -27,6 +28,7 @@
 
 #include "lorenz95/FieldL95.h"
 #include "lorenz95/GomL95.h"
+#include "lorenz95/Iterator.h"
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/ModelBiasCorrection.h"
 #include "lorenz95/Resolution.h"

@@ -17,7 +17,6 @@
 #include "eckit/mpi/Comm.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
-#include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
