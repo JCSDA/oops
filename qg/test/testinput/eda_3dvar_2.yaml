@@ -67,6 +67,7 @@ variational:
       depths: [4500.0, 5500.0]
     test: on
     obs perturbations: true
+    save perturbed obs: false
   - diagnostics:
       departures: ombg
     gradient norm reduction: 1.0e-10

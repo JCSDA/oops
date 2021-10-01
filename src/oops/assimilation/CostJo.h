@@ -175,11 +175,13 @@ double CostJo<MODEL, OBS>::computeCost() {
   Observations_ yeqv(obspaces_);
   observers_.finalize(yeqv);
 
-  // Perturb observations according to obs error statistics
+  // Perturb observations according to obs error statistics and save to output file
   bool obspert = currentConf_->getBool("obs perturbations", false);
   if (obspert) {
     yobs_->perturb(Rmat_);
     Log::info() << "Perturbed observations: " << *yobs_ << std::endl;
+    bool saveobspert = currentConf_->getBool("save perturbed obs", true);
+    if (saveobspert) yobs_->save("EffectiveObsValue");
   }
 
   // Compute observations departures and save to output file
