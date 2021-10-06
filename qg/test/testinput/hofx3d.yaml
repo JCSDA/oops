@@ -7,9 +7,6 @@ geometry:
 state:
   date: 2010-01-01T06:00:00Z
   filename: Data/truth.fc.2009-12-15T00:00:00Z.P17DT6H.nc
-model:
-  name: QG
-  tstep: PT1H
 observations:
 - obs space:
     obsdatain:
@@ -35,8 +32,6 @@ observations:
     obs type: WSpeed
   obs operator:
     obs type: WSpeed
-prints:
-  frequency: PT3H
 
 test:
   reference filename: testoutput/hofx3d.test

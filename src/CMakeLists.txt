@@ -3,7 +3,6 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 list( APPEND oops_src_files
 
 oops/assimilation/BMatrix.h
-oops/assimilation/CalcHofX.h
 oops/assimilation/ControlIncrement.h
 oops/assimilation/ControlVariable.h
 oops/assimilation/CostFct3DVar.h
@@ -96,7 +95,6 @@ oops/base/GeneralizedDepartures.h
 oops/base/Geometry.h
 oops/base/GetValuePost.h
 oops/base/GetValuePosts.h
-oops/base/GetValuesPost.h
 oops/base/GetValueTLAD.h
 oops/base/GetValueTLADs.h
 oops/base/LocalIncrement.cc
@@ -136,6 +134,7 @@ oops/base/ObsLocalizations.h
 oops/base/ObsSpaceBase.cc
 oops/base/ObsSpaceBase.h
 oops/base/ObsSpaces.h
+oops/base/ObsTypeParameters.h
 oops/base/ObsVector.h
 oops/base/ParameterTraitsVariables.cc
 oops/base/ParameterTraitsVariables.h
@@ -249,7 +248,6 @@ oops/runs/Forecast.h
 oops/runs/GenEnsPertB.h
 oops/runs/HofX3D.h
 oops/runs/HofX4D.h
-oops/runs/HofX4Dhack.h
 oops/runs/HybridGain.h
 oops/runs/LocalEnsembleDA.h
 oops/runs/RTPP.h
