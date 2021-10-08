@@ -17,7 +17,6 @@
 
 #include "oops/base/InterpolatorBase.h"
 #include "oops/mpi/mpi.h"
-#include "oops/util/abor1_cpp.h"
 #include "oops/util/ObjectCounter.h"
 
 namespace oops {
@@ -29,14 +28,14 @@ namespace oops {
  */
 
 class InterpolatorUnstructured : public InterpolatorBase,
-                          private util::ObjectCounter<InterpolatorUnstructured> {
+                                 private util::ObjectCounter<InterpolatorUnstructured> {
  public:
   static const std::string classname() {return "oops::InterpolatorUnstructured";}
 
   InterpolatorUnstructured(const eckit::Configuration &, const atlas::FunctionSpace &,
-                    const atlas::FunctionSpace &,
-                    const atlas::field::FieldSetImpl * = nullptr,
-                    const eckit::mpi::Comm & = oops::mpi::world());
+                           const atlas::FunctionSpace &,
+                           const atlas::field::FieldSetImpl * = nullptr,
+                           const eckit::mpi::Comm & = oops::mpi::world());
   ~InterpolatorUnstructured();
 
   void apply(const atlas::Field &, atlas::Field &) override;

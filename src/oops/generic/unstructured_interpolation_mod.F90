@@ -88,7 +88,7 @@ real(kind=kind_real), allocatable :: bw(:)
 ! wtype options
 ! -------------
 ! 1. (none)     No weights needed
-! 2. (distance) Distance to nearest neighbours
+! 2. (distance) Inverse of distance to nearest neighbours
 ! 3. (barycent) Barycentric weights
 
 ! Allocate self type
@@ -160,7 +160,13 @@ select case (wtype)
     self%interp_w = 0.0_kind_real
 
   case ('distance')
-    self%interp_w = nn_dist
+    do n = 1,ngrid_out
+      bsw = 0.0_kind_real
+      do jj = 1,nn
+        bsw = bsw + nn_dist(jj,n)
+      enddo
+      self%interp_w(:,n) = nn_dist(:,n) / bsw
+    enddo
 
   case ('barycent')
     allocate(bw(self%nn))

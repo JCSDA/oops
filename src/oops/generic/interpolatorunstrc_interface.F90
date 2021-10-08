@@ -78,16 +78,14 @@ if (read_from_file) then
 
 else
 
+  us_interp_type = 'barycent'
   if (f_config%has("us_interp_type")) then
       call f_config%get_or_die("interpolation_type", us_interp_type)
-  else
-      us_interp_type = 'barycent'
   endif
 
+  nnearest = 4
   if (f_config%has("nnearest")) then
       call f_config%get_or_die("nnearest", nnearest)
-  else
-      nnearest = 4
   endif
 
   ! For now copy the atlas fields into an unstructured grid

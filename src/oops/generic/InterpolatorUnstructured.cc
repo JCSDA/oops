@@ -18,23 +18,21 @@
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 
-using atlas::option::name;
-using atlas::option::levels;
-
 namespace oops {
 
 static InterpolatorMaker<InterpolatorUnstructured> makerUNSTR_("unstructured");
 
 // -----------------------------------------------------------------------------
 InterpolatorUnstructured::InterpolatorUnstructured(const eckit::Configuration & config,
-                   const atlas::FunctionSpace & fspace1,
-                   const atlas::FunctionSpace & fspace2,
-                   const atlas::field::FieldSetImpl * masks,
-                   const eckit::mpi::Comm & comm) :
-                   in_fspace_(&fspace1), out_fspace_(&fspace2) {
+                                                   const atlas::FunctionSpace & fspace1,
+                                                   const atlas::FunctionSpace & fspace2,
+                                                   const atlas::field::FieldSetImpl * masks,
+                                                   const eckit::mpi::Comm & comm)
+  : in_fspace_(&fspace1), out_fspace_(&fspace2)
+{
   // mask have not yet been implemented for unstructured interpolation
   unstrc_create_f90(keyUnstructuredInterpolator_, &comm,
-                  fspace1.lonlat().get(), fspace2.lonlat().get(), config);
+                    fspace1.lonlat().get(), fspace2.lonlat().get(), config);
 }
 
 // -----------------------------------------------------------------------------
@@ -45,33 +43,28 @@ int InterpolatorUnstructured::write(const eckit::Configuration & config) {
 
 // -----------------------------------------------------------------------------
 InterpolatorUnstructured::~InterpolatorUnstructured() {
-    unstrc_delete_f90(keyUnstructuredInterpolator_);
+  unstrc_delete_f90(keyUnstructuredInterpolator_);
 }
 // -----------------------------------------------------------------------------
-void InterpolatorUnstructured::apply(const atlas::Field & infield,
-                              atlas::Field & outfield) {
-      unstrc_apply_f90(keyUnstructuredInterpolator_, infield.get(),
-                                                     outfield.get());
+void InterpolatorUnstructured::apply(const atlas::Field & infield, atlas::Field & outfield) {
+  unstrc_apply_f90(keyUnstructuredInterpolator_, infield.get(), outfield.get());
 }
 
 // -----------------------------------------------------------------------------
 void InterpolatorUnstructured::apply_ad(const atlas::Field & field_grid2,
-                              atlas::Field & field_grid1) {
-      unstrc_apply_ad_f90(keyUnstructuredInterpolator_, field_grid2.get(),
-                                                        field_grid1.get());
+                                        atlas::Field & field_grid1) {
+  unstrc_apply_ad_f90(keyUnstructuredInterpolator_, field_grid2.get(), field_grid1.get());
 }
 
 // -----------------------------------------------------------------------------
 void InterpolatorUnstructured::apply(const atlas::FieldSet & infields,
-                              atlas::FieldSet & outfields) {
+                                     atlas::FieldSet & outfields) {
   // Allocate space for the output fields if the caller has not already done so
   for (int ifield = 0; ifield < infields.size(); ++ifield) {
     std::string fname = infields.field(ifield).name();
     if (!outfields.has_field(fname)) {
-      oops::Log::info() << "Allocating output fields for Unstructured Interpolation" << std::endl;
-
-      atlas::Field outfield = out_fspace_->createField<double>(name(fname) |
-                              levels(infields.field(ifield).levels()));
+      atlas::Field outfield = out_fspace_->createField<double>(atlas::option::name(fname) |
+                              atlas::option::levels(infields.field(ifield).levels()));
       outfields.add(outfield);
     }
     this->apply(infields.field(fname), outfields.field(fname));
@@ -80,16 +73,13 @@ void InterpolatorUnstructured::apply(const atlas::FieldSet & infields,
 
 // -----------------------------------------------------------------------------
 void InterpolatorUnstructured::apply_ad(const atlas::FieldSet & fields_grid2,
-                              atlas::FieldSet & fields_grid1) {
+                                        atlas::FieldSet & fields_grid1) {
   // Allocate space for the output fields if the caller has not already done so
   for (int ifield = 0; ifield < fields_grid2.size(); ++ifield) {
     std::string fname = fields_grid2.field(ifield).name();
     if (!fields_grid1.has_field(fname)) {
-      oops::Log::info() <<
-        "Allocating output fields for Unstructured Interpolation Adjoint" << std::endl;
-
-      atlas::Field field1 = in_fspace_->createField<double>(name(fname) |
-                            levels(fields_grid2.field(ifield).levels()));
+      atlas::Field field1 = in_fspace_->createField<double>(atlas::option::name(fname) |
+                            atlas::option::levels(fields_grid2.field(ifield).levels()));
       fields_grid1.add(field1);
     }
     this->apply_ad(fields_grid2.field(fname), fields_grid1.field(fname));
