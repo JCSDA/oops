@@ -31,10 +31,9 @@ namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
 GomL95::GomL95(const LocsL95 & locs, const oops::Variables &, const std::vector<size_t> &)
-  : size_(locs.size()), locval_(size_)
+  : size_(locs.size()), locval_(size_, 0.0)
 {
-  oops::Log::trace() << "GomL95::GomL95 starting " << std::endl;
-  for (size_t jj = 0; jj < size_; ++jj) locval_[jj] = locs[jj];
+  oops::Log::trace() << "GomL95::GomL95 done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 /*! Constructor with Configuration */
