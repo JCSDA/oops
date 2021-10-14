@@ -243,10 +243,7 @@ void GETKFSolver<MODEL, OBS>::applyWeights(const IncrementEnsemble4D_ & bkg_pert
   const LETKFInflationParameters & inflopt = options_.infl;
 
   // allocate tmp arrays
-  LocalIncrement gptmpl = bkg_pert[0][0].getLocal(i);
-  std::vector<double> tmp = gptmpl.getVals();
-  size_t ngp = tmp.size();
-  Eigen::MatrixXd Xb(ngp, nens_);
+  Eigen::MatrixXd Xb;
 
   // loop through analysis times and ens. members
   for (unsigned itime=0; itime < bkg_pert[0].size(); ++itime) {
@@ -260,14 +257,7 @@ void GETKFSolver<MODEL, OBS>::applyWeights(const IncrementEnsemble4D_ & bkg_pert
 
     // compute non-modulated Xb for RTPP and RTPS
     if (inflopt.dortpp() || inflopt.dortps()) {
-      Xb.resize(ngp, nens_);
-      for (size_t iens=0; iens < nens_; ++iens) {
-        LocalIncrement gp = bkg_pert[iens][itime].getLocal(i);
-        std::vector<double> tmp1 = gp.getVals();
-        for (size_t iv=0; iv < ngp; ++iv) {
-          Xb(iv, iens) = tmp1[iv];
-        }
-      }
+      bkg_pert.packEigen(Xb, i, itime);
     }
 
     // RTPP inflation
@@ -298,13 +288,8 @@ void GETKFSolver<MODEL, OBS>::applyWeights(const IncrementEnsemble4D_ & bkg_pert
     }
 
     // assign Xa_ to ana_pert
-    for (size_t iens=0; iens < nens_; ++iens) {
-      for (size_t iv=0; iv < ngp; ++iv) {
-        tmp[iv] = Xa(iv, iens)+xa(iv);
-      }
-      gptmpl.setVals(tmp);
-      ana_pert[iens][itime].setLocal(gptmpl, i);
-    }
+    Xa = Xa.colwise() + xa;
+    ana_pert.setEigen(Xa, i, itime);
   }
 }
 

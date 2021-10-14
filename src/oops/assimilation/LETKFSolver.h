@@ -211,22 +211,11 @@ void LETKFSolver<MODEL, OBS>::applyWeights(const IncrementEnsemble4D_ & bkg_pert
 
   const LETKFInflationParameters & inflopt = options_.infl;
 
-  LocalIncrement gptmpl = bkg_pert[0][0].getLocal(i);
-  std::vector<double> tmp1 = gptmpl.getVals();
-  size_t ngp = tmp1.size();
-
   // loop through analysis times and ens. members
   for (size_t itime=0; itime < bkg_pert[0].size(); ++itime) {
     // make grid point forecast pert ensemble array
-    Eigen::MatrixXd Xb(ngp, nens_);
-    // #pragma omp parallel for
-    for (size_t iens=0; iens < nens_; ++iens) {
-      LocalIncrement gp = bkg_pert[iens][itime].getLocal(i);
-      std::vector<double> tmp = gp.getVals();
-      for (size_t iv=0; iv < ngp; ++iv) {
-        Xb(iv, iens) = tmp[iv];
-      }
-    }
+    Eigen::MatrixXd Xb;
+    bkg_pert.packEigen(Xb, i, itime);
 
     // postmulptiply
     Eigen::VectorXd xa = Xb*wa_;   // ensemble mean update
@@ -260,14 +249,8 @@ void LETKFSolver<MODEL, OBS>::applyWeights(const IncrementEnsemble4D_ & bkg_pert
     }
 
     // assign Xa to ana_pert
-    // #pragma omp parallel for private(tmp1)
-    for (size_t iens=0; iens < nens_; ++iens) {
-      for (size_t iv=0; iv < ngp; ++iv) {
-        tmp1[iv] = Xa(iv, iens)+xa(iv);   // if Xa = Xb*Wa;
-      }
-      gptmpl.setVals(tmp1);
-      ana_pert[iens][itime].setLocal(gptmpl, i);
-    }
+    Xa = Xa.colwise() + xa;
+    ana_pert.setEigen(Xa, i, itime);
   }
 }
 

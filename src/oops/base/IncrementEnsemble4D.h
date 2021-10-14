@@ -12,15 +12,18 @@
 #ifndef OOPS_BASE_INCREMENTENSEMBLE4D_H_
 #define OOPS_BASE_INCREMENTENSEMBLE4D_H_
 
+#include <Eigen/Dense>
 #include <string>
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment4D.h"
+#include "oops/base/LocalIncrement.h"
 #include "oops/base/State4D.h"
 #include "oops/base/StateEnsemble4D.h"
 #include "oops/base/Variables.h"
+#include "oops/interface/GeometryIterator.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 
@@ -31,6 +34,7 @@ namespace oops {
 /// \brief Ensemble of 4D increments
 template<typename MODEL> class IncrementEnsemble4D {
   typedef Geometry<MODEL>            Geometry_;
+  typedef GeometryIterator<MODEL>    GeometryIterator_;
   typedef State4D<MODEL>             State4D_;
   typedef StateEnsemble4D<MODEL>     StateEnsemble4D_;
   typedef Increment4D<MODEL>         Increment4D_;
@@ -50,6 +54,10 @@ template<typename MODEL> class IncrementEnsemble4D {
   size_t size() const {return ensemblePerturbs_.size();}
   Increment4D_ & operator[](const size_t ii) {return ensemblePerturbs_[ii];}
   const Increment4D_ & operator[](const size_t ii) const {return ensemblePerturbs_[ii];}
+
+  /// Eigen interface
+  void packEigen(Eigen::MatrixXd &, const GeometryIterator_ &, const size_t &) const;
+  void setEigen(const Eigen::MatrixXd &, const GeometryIterator_ &, const size_t &);
 
  private:
   std::vector<Increment4D_> ensemblePerturbs_;
@@ -87,6 +95,45 @@ IncrementEnsemble4D<MODEL>::IncrementEnsemble4D(const StateEnsemble4D_ & ensembl
 }
 
 // -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void IncrementEnsemble4D<MODEL>::packEigen(Eigen::MatrixXd & X,
+                                         const GeometryIterator_ & gi,
+                                         const size_t & itime) const
+{
+  size_t ngp = ensemblePerturbs_[0][itime].getLocal(gi).getVals().size();
+  size_t nens = ensemblePerturbs_.size();
+  X.resize(ngp, nens);
+  for (size_t iens=0; iens < nens; ++iens) {
+    LocalIncrement gp = ensemblePerturbs_[iens][itime].getLocal(gi);
+    std::vector<double> tmp1 = gp.getVals();
+    for (size_t iv=0; iv < ngp; ++iv) {
+      X(iv, iens) = tmp1[iv];
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void IncrementEnsemble4D<MODEL>::setEigen(const Eigen::MatrixXd & X,
+                                        const GeometryIterator_ & gi,
+                                        const size_t & itime)
+{
+  size_t ngp = ensemblePerturbs_[0][itime].getLocal(gi).getVals().size();
+  size_t nens = ensemblePerturbs_.size();
+
+  LocalIncrement gptmp = ensemblePerturbs_[0][itime].getLocal(gi);
+  std::vector<double> tmp = gptmp.getVals();
+
+  for (size_t iens=0; iens < nens; ++iens) {
+    for (size_t iv=0; iv < ngp; ++iv) {
+      tmp[iv] = X(iv, iens);
+    }
+    gptmp.setVals(tmp);
+    ensemblePerturbs_[iens][itime].setLocal(gptmp, gi);
+  }
+}
 
 }  // namespace oops
 
