@@ -1,5 +1,5 @@
 ---
-name: "Parameters Sprint: Refactoring an oops application"
+name: "Sprint: Refactor Application"
 about: Use this template to create a new issue for the sprint
 title: "Parameter implementation for (application):"
 labels: 'Sprint'

@@ -1,5 +1,5 @@
 ---
-name: "Parameters Sprint: Refactoring a class in ufo or model interface repository"
+name: "Sprint: Refactor Class"
 about: Use this template to create a new issue for the sprint
 title: "Parameter implementation for (repo/class):"
 labels: 'Sprint'
