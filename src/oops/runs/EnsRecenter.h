@@ -12,22 +12,66 @@
 #include <string>
 #include <vector>
 
-
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
+#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
+#include "oops/util/parameters/OptionalParameter.h"
+#include "oops/util/parameters/Parameter.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
+
+/// \brief Top-level options taken by the EnsRecenter application.
+template <typename MODEL>
+class EnsRecenterParameters : public Parameters {
+  OOPS_CONCRETE_PARAMETERS(EnsRecenterParameters, Parameters)
+
+  typedef Geometry<MODEL> Geometry_;
+  typedef State<MODEL> State_;
+
+ public:
+  typedef typename Geometry_::Parameters_   GeometryParameters_;
+  typedef typename State_::Parameters_      StateParameters_;
+  typedef typename State_::WriteParameters_ StateWriteParameters_;
+
+  /// Geometry parameters.
+  RequiredParameter<GeometryParameters_> geometry{"geometry", this};
+
+  /// Central state parameters.
+  RequiredParameter<StateParameters_> center{"center", this};
+
+  /// Parameter controlling whether the center should be zeroed out
+  Parameter<bool> zeroCenter{"zero center", false, this};
+
+  /// Parameters describing ensemble states to be recentered
+  RequiredParameter<std::vector<StateParameters_>> ensemble{"ensemble", this};
+
+  /// Variables to be recentered
+  RequiredParameter<oops::Variables> recenterVars{"recenter variables", this};
+
+  /// Parameters for ensemble mean output
+  OptionalParameter<StateWriteParameters_> ensmeanOutput{"ensemble mean output", this};
+
+  /// Parameters for recentered ensemble output
+  RequiredParameter<StateWriteParameters_> recenteredOutput{"recentered output", this};
+
+  /// Parameters used by regression tests comparing results produced by the application against
+  /// known good outputs.
+  Parameter<eckit::LocalConfiguration> test{"test", eckit::LocalConfiguration(), this};
+};
 
 template <typename MODEL> class EnsRecenter : public Application {
   typedef Geometry<MODEL>   Geometry_;
   typedef Increment<MODEL>  Increment_;
   typedef State<MODEL>      State_;
+  typedef typename State_::WriteParameters_ StateWriteParameters_;
 
  public:
   // -----------------------------------------------------------------------------
@@ -36,59 +80,52 @@ template <typename MODEL> class EnsRecenter : public Application {
   virtual ~EnsRecenter() {}
   // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
+    // Deserialize parameters
+    EnsRecenterParameters<MODEL> params;
+    params.validateAndDeserialize(fullConfig);
+
     // Setup Geometry
-    const eckit::LocalConfiguration resolConfig(fullConfig, "geometry");
-    const Geometry_ resol(resolConfig, this->getComm());
+    const Geometry_ resol(params.geometry.value(), this->getComm());
 
     // Get central state
-    const eckit::LocalConfiguration bkgConfig(fullConfig, "center");
-    State_ x_center(resol, bkgConfig);
+    State_ x_center(resol, params.center.value());
 
     // Optionally zero the center
-    bool zeroCenter = fullConfig.getBool("zero center", false);
-    if (zeroCenter) {
+    if (params.zeroCenter) {
       x_center.zero();
     }
 
-    // Get ensemble configuration
-    std::vector<eckit::LocalConfiguration> ensConfig;
-    fullConfig.get("ensemble", ensConfig);
-
     // Get ensemble size
-    unsigned nm = ensConfig.size();
+    unsigned nm = params.ensemble.value().size();
 
     // Compute ensemble mean
     State_ ensmean(x_center);
     ensmean.zero();
     const double rk = 1.0/(static_cast<double>(nm));
     for (unsigned jj = 0; jj < nm; ++jj) {
-      State_ x(resol, ensConfig[jj]);
+      State_ x(resol, params.ensemble.value()[jj]);
       ensmean.accumul(rk, x);
       Log::test() << "Original member " << jj << " : " << x << std::endl;
     }
     Log::test() << "Ensemble mean: " << std::endl << ensmean << std::endl;
 
     // Optionally write the mean out
-    if (fullConfig.has("ensemble mean output")) {
-      eckit::LocalConfiguration meanout(fullConfig, "ensemble mean output");
-      ensmean.write(meanout);
+    if (params.ensmeanOutput.value() != boost::none) {
+      ensmean.write(*params.ensmeanOutput.value());
     }
-
-    // Setup variables
-    const Variables vars(fullConfig, "recenter variables");
 
     // Recenter ensemble around central and save
     for (unsigned jj = 0; jj < nm; ++jj) {
-      State_ x(resol, ensConfig[jj]);
-      Increment_ pert(resol, vars, x.validTime());
+      State_ x(resol, params.ensemble.value()[jj]);
+      Increment_ pert(resol, params.recenterVars, x.validTime());
       pert.diff(x, ensmean);
       x = x_center;
       x += pert;
 
       // Save recentered member
-      eckit::LocalConfiguration recenterout(fullConfig, "recentered output");
-      recenterout.set("member", static_cast<int>(jj+1) );
-      x.write(recenterout);
+      StateWriteParameters_ recenteredOutput = params.recenteredOutput;
+      recenteredOutput.setMember(jj+1);
+      x.write(recenteredOutput);
       Log::test() << "Recentered member " << jj << " : " << x << std::endl;
     }
 

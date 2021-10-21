@@ -40,7 +40,7 @@ class Geometry : public interface::Geometry<MODEL> {
   /// Constructor from Parameters and mpi communicators: \p geometry for spatial distribution
   /// (handled by the implementation) and \p time for distribution in time (handled by oops)
   Geometry(const Parameters_ &, const eckit::mpi::Comm & geometry,
-           const eckit::mpi::Comm & time);
+           const eckit::mpi::Comm & time = oops::mpi::myself());
   /// Constructor from Configuration and mpi communicators: \p geometry for spatial distribution
   /// (handled by the implementation) and \p time for distribution in time (handled by oops)
   Geometry(const eckit::Configuration &, const eckit::mpi::Comm & geometry,
