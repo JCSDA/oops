@@ -113,8 +113,8 @@ void IncrementL95::ones() {
   fld_.ones();
 }
 // -----------------------------------------------------------------------------
-void IncrementL95::dirac(const eckit::Configuration & config) {
-  fld_.dirac(config);
+void IncrementL95::dirac(const DiracParameters_ & params) {
+  fld_.dirac(params);
 }
 // -----------------------------------------------------------------------------
 void IncrementL95::axpy(const double & zz, const IncrementL95 & rhs,
@@ -142,9 +142,9 @@ void IncrementL95::accumul(const double & zz, const StateL95 & xx) {
 // -----------------------------------------------------------------------------
 /// Utilities
 // -----------------------------------------------------------------------------
-void IncrementL95::read(const eckit::Configuration & config) {
-  std::string filename(config.getString("filename"));
-  sf::swapNameMember(config, filename);
+void IncrementL95::read(const ReadParameters_ & params) {
+  std::string filename(params.filename);
+  sf::swapNameMember(params.member, filename);
   oops::Log::trace() << "IncrementL95::read opening " << filename << std::endl;
   std::ifstream fin(filename.c_str());
   if (!fin.is_open()) ABORT("IncrementL95::read: Error opening file: " + filename);
@@ -156,7 +156,7 @@ void IncrementL95::read(const eckit::Configuration & config) {
   std::string stime;
   fin >> stime;
   const util::DateTime tt(stime);
-  const util::DateTime tc(config.getString("date"));
+  const util::DateTime tc(params.date);
   if (tc != tt) {
     ABORT("IncrementL95::read: date and data file inconsistent.");
   }
@@ -168,22 +168,27 @@ void IncrementL95::read(const eckit::Configuration & config) {
   oops::Log::trace() << "IncrementL95::read: file closed." << std::endl;
 }
 // -----------------------------------------------------------------------------
-void IncrementL95::write(const eckit::Configuration & config) const {
-  std::string dir = config.getString("datadir");
-  std::string exp = config.getString("exp");
-  std::string type = config.getString("type");
+void IncrementL95::write(const WriteParameters_ & params) const {
+  const std::string &dir = params.datadir;
+  const std::string &exp = params.exp;
+  const std::string &type = params.type;
   std::string filename = dir+"/"+exp+"."+type;
 
   if (type == "krylov") {
-    std::string iter = config.getString("iteration");
-    filename += "."+iter;
+    if (params.iteration.value() == boost::none)
+      throw eckit::BadValue("'iteration' was not set in the parameters passed to write() "
+                            "even though 'type' was set to '" + type + "'", Here());
+    const int &iter = *params.iteration.value();
+    filename += "."+std::to_string(iter);
   }
 
-  const util::DateTime antime(config.getString("date"));
+  if (params.date.value() == boost::none)
+    throw eckit::BadValue("'date' was not set in the parameters passed to write()", Here());
+  const util::DateTime &antime = *params.date.value();
   filename += "."+antime.toString();
   const util::Duration step = time_ - antime;
   filename += "."+step.toString();
-  sf::swapNameMember(config, filename);
+  sf::swapNameMember(params.member, filename);
 
   oops::Log::trace() << "IncrementL95::write opening " << filename << std::endl;
   std::ofstream fout(filename.c_str());

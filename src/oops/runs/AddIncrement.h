@@ -14,7 +14,9 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
+#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/State.h"
+#include "oops/base/Variables.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
@@ -22,6 +24,28 @@
 #include "oops/util/Logger.h"
 
 namespace oops {
+
+template <typename MODEL>
+class IncrementParameters : public Parameters {
+  OOPS_CONCRETE_PARAMETERS(IncrementParameters, Parameters)
+  typedef Increment<MODEL> Increment_;
+
+ public:
+  typedef typename Increment_::ReadParameters_ IncrementReadParameters_;
+
+  // Constructor declared for convenience; it can be removed once top-level parameters
+  // for the AddIncrement application are defined.
+  IncrementParameters(const eckit::Configuration &conf, const std::string &path) {
+    validateAndDeserialize(eckit::LocalConfiguration(conf, path));
+  }
+
+  /// List of variables to add.
+  Parameter<Variables> addedVariables{"added variables", {}, this};
+  /// Parameters to pass to Increment::read().
+  IncrementReadParameters_ read{this};
+  /// Scaling factor for the increment.
+  OptionalParameter<double> scalingFactor{"scaling factor", this};
+};
 
 template <typename MODEL> class AddIncrement : public Application {
   typedef Geometry<MODEL>  Geometry_;
@@ -48,17 +72,14 @@ template <typename MODEL> class AddIncrement : public Application {
     Log::test() << "State: " << xx << std::endl;
 
 //  Read increment
-    const eckit::LocalConfiguration incConf(fullConfig, "increment");
-    std::vector<std::string> incvv;
-    incConf.get("added variables", incvv);
-    oops::Variables incVars(incvv);
-    Increment_ dx(incResol, incVars, xx.validTime());
-    dx.read(incConf);
+    IncrementParameters<MODEL> incParams(fullConfig, "increment");
+    Increment_ dx(incResol, incParams.addedVariables, xx.validTime());
+    dx.read(incParams.read);
     Log::test() << "Increment: " << dx << std::endl;
 
 //  Scale increment
-    if (incConf.has("scaling factor")) {
-      dx *= incConf.getDouble("scaling factor");
+    if (incParams.scalingFactor.value() != boost::none) {
+      dx *= *incParams.scalingFactor.value();
       Log::test() << "Scaled the increment: " << dx << std::endl;
     }
 

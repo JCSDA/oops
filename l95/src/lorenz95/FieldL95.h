@@ -17,21 +17,28 @@
 
 #include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Serializable.h"
 
-// Forward declarations
-namespace eckit {
-  class Configuration;
-}
-
 namespace lorenz95 {
+// Forward declarations
   class LocsL95;
   class GomL95;
   class Resolution;
 
 // -----------------------------------------------------------------------------
+/// \brief Parameters passed to the FieldL95::dirac() method.
+class FieldL95DiracParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(FieldL95DiracParameters, Parameters)
 
+ public:
+  /// \brief Indices of grid nodes where the field is to be set to 1. It will be set to 0
+  /// everywhere else.
+  oops::RequiredParameter<std::vector<int>> ixdir{"ixdir", this};
+};
+
+// -----------------------------------------------------------------------------
 /// \brief Parameters accepted by FieldL95::generate().
 class Field95GenerateParameters : public oops::Parameters {
   OOPS_CONCRETE_PARAMETERS(Field95GenerateParameters, Parameters)
@@ -60,7 +67,7 @@ class FieldL95 : public util::Printable,
 /// Linear algebra
   void zero();
   void ones();
-  void dirac(const eckit::Configuration &);
+  void dirac(const FieldL95DiracParameters &);
   FieldL95 & operator=(const FieldL95 &);
   FieldL95 & operator+=(const FieldL95 &);
   FieldL95 & operator-=(const FieldL95 &);

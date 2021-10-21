@@ -23,10 +23,16 @@
 #include "oops/base/LocalIncrement.h"
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
+#include "oops/base/WriteParametersBase.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
+#include "oops/util/parameters/GenericParameters.h"
+#include "oops/util/parameters/HasDiracParameters_.h"
+#include "oops/util/parameters/HasReadParameters_.h"
+#include "oops/util/parameters/HasWriteParameters_.h"
+#include "oops/util/parameters/ParametersOrConfiguration.h"
 #include "oops/util/Serializable.h"
 #include "oops/util/Timer.h"
 
@@ -36,6 +42,28 @@ namespace interface {
 
 /// Increment: Difference between two model states.
 /// Some fields that are present in a State may not be present in an Increment.
+///
+/// Note: implementations of this interface can opt to extract their settings either from
+/// a Configuration object or from a subclass of Parameters.
+///
+/// In the former case, they should provide dirac(), read() and write() methods with the
+/// following signatures:
+///
+///     void dirac(const eckit::Configuration &);
+///     void read(const eckit::Configuration &);
+///     void write(const eckit::Configuration &) const;
+///
+/// In the latter case, the implementer should first define two subclasses of Parameters, holding
+/// the settings needed by the dirac() and read() methods, and a subclass of WriteParametersBase,
+/// holding the settings needed by the write() method.
+/// The implementation of the Increment interface should then typedef `DiracParameters_`,
+/// `ReadParameters_` and `WriteParameters_` to the names of these subclasses and provide dirac(),
+/// read() and write() methods with the following signatures:
+///
+///     void dirac(const DiracParameters_ &);
+///     void read(const ReadParameters_ &);
+///     void write(const WriteParameters_ &) const;
+
 template <typename MODEL>
 class Increment : public oops::GeneralizedDepartures,
                   public util::Serializable,
@@ -46,6 +74,19 @@ class Increment : public oops::GeneralizedDepartures,
   typedef oops::State<MODEL>         State_;
 
  public:
+  /// Set to Increment_::DiracParameters_ if Increment_ provides a type called DiracParameters_ and
+  /// to GenericParameters (a thin wrapper of an eckit::LocalConfiguration object) if not.
+  typedef TDiracParameters_IfAvailableElseFallbackType_t<Increment_, GenericParameters>
+    DiracParameters_;
+  /// Set to Increment_::ReadParameters_ if Increment_ provides a type called ReadParameters_ and
+  /// to GenericParameters (a thin wrapper of an eckit::LocalConfiguration object) if not.
+  typedef TReadParameters_IfAvailableElseFallbackType_t<Increment_, GenericParameters>
+    ReadParameters_;
+  /// Set to Increment_::WriteParameters_ if Increment_ provides a type called WriteParameters_ and
+  /// to GenericParameters (a thin wrapper of an eckit::LocalConfiguration object) if not.
+  typedef TWriteParameters_IfAvailableElseFallbackType_t<Increment_, GenericWriteParameters>
+    WriteParameters_;
+
   static const std::string classname() {return "oops::Increment";}
 
   /// Constructor for specified \p geometry, with \p variables, valid on \p date
@@ -74,6 +115,8 @@ class Increment : public oops::GeneralizedDepartures,
   /// Set this Increment to ones (used in tests)
   void ones();
   /// Set Increment according to the configuration (used in Dirac application)
+  void dirac(const DiracParameters_ &);
+  /// Set Increment according to the configuration (used in Dirac application)
   void dirac(const eckit::Configuration &);
 
   /// Assignment operator
@@ -96,7 +139,11 @@ class Increment : public oops::GeneralizedDepartures,
   void accumul(const double & w, const State_ & x);
 
   /// Read this Increment from file
+  void read(const ReadParameters_ &);
+  /// Read this Increment from file
   void read(const eckit::Configuration &);
+  /// Write this Increment out to file
+  void write(const WriteParameters_ &) const;
   /// Write this Increment out to file
   void write(const eckit::Configuration &) const;
   /// Norm (used in tests)
@@ -235,11 +282,20 @@ void Increment<MODEL>::ones() {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void Increment<MODEL>::dirac(const eckit::Configuration & config) {
+void Increment<MODEL>::dirac(const DiracParameters_ & parameters) {
   Log::trace() << "Increment<MODEL>::dirac starting" << std::endl;
   util::Timer timer(classname(), "dirac");
-  increment_->dirac(config);
+  increment_->dirac(parametersOrConfiguration<HasDiracParameters_<Increment_>::value>(parameters));
   Log::trace() << "Increment<MODEL>::dirac done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::dirac(const eckit::Configuration & config) {
+  DiracParameters_ parameters;
+  parameters.validateAndDeserialize(config);
+  dirac(parameters);
 }
 
 // -----------------------------------------------------------------------------
@@ -361,21 +417,39 @@ void Increment<MODEL>::setLocal(const LocalIncrement & gp,
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void Increment<MODEL>::read(const eckit::Configuration & conf) {
+void Increment<MODEL>::read(const ReadParameters_ & parameters) {
   Log::trace() << "Increment<MODEL>::read starting" << std::endl;
   util::Timer timer(classname(), "read");
-  increment_->read(conf);
+  increment_->read(parametersOrConfiguration<HasReadParameters_<Increment_>::value>(parameters));
   Log::trace() << "Increment<MODEL>::read done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void Increment<MODEL>::write(const eckit::Configuration & conf) const {
+void Increment<MODEL>::read(const eckit::Configuration & config) {
+  ReadParameters_ parameters;
+  parameters.validateAndDeserialize(config);
+  read(parameters);
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::write(const WriteParameters_ & parameters) const {
   Log::trace() << "Increment<MODEL>::write starting" << std::endl;
   util::Timer timer(classname(), "write");
-  increment_->write(conf);
+  increment_->write(parametersOrConfiguration<HasWriteParameters_<Increment_>::value>(parameters));
   Log::trace() << "Increment<MODEL>::write done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::write(const eckit::Configuration & config) const {
+  WriteParameters_ parameters;
+  parameters.validateAndDeserialize(config);
+  write(parameters);
 }
 
 // -----------------------------------------------------------------------------
