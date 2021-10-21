@@ -21,13 +21,51 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
+
+// -----------------------------------------------------------------------------
+
+/// \brief Top-level options taken by the DiffStates application.
+template <typename MODEL>
+class DiffStatesParameters : public Parameters {
+  OOPS_CONCRETE_PARAMETERS(DiffStatesParameters, Parameters)
+
+ public:
+  typedef typename Geometry<MODEL>::Parameters_ GeometryParameters_;
+  typedef typename State<MODEL>::Parameters_ StateParameters_;
+  typedef typename Increment<MODEL>::WriteParameters_ IncrementWriteParameters_;
+
+  /// State geometry parameters.
+  RequiredParameter<GeometryParameters_> stateGeometryConf{"state geometry", this};
+
+  /// Increment geometry parameters.
+  RequiredParameter<GeometryParameters_> incGeometryConf{"increment geometry", this};
+
+  /// First state parameters.
+  RequiredParameter<StateParameters_> stateConf1{"state1", this};
+
+  /// Second state parameters (to take away from the first).
+  RequiredParameter<StateParameters_> stateConf2{"state2", this};
+
+  /// Output increment parameters.
+  RequiredParameter<IncrementWriteParameters_> outputConfig{"output", this};
+
+  /// Parameters used by regression tests comparing results produced by the application against
+  /// known good outputs.
+  Parameter<eckit::LocalConfiguration> test{"test", eckit::LocalConfiguration(), this};
+};
+
+// -----------------------------------------------------------------------------
 
 template <typename MODEL> class DiffStates : public Application {
   typedef Geometry<MODEL>  Geometry_;
   typedef State<MODEL>     State_;
   typedef Increment<MODEL> Increment_;
+
+  typedef DiffStatesParameters<MODEL> DiffStatesParameters_;
 
  public:
 // -----------------------------------------------------------------------------
@@ -36,33 +74,31 @@ template <typename MODEL> class DiffStates : public Application {
   virtual ~DiffStates() {}
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
-//  Setup resolution
-    const eckit::LocalConfiguration stateResolConf(fullConfig, "state geometry");
-    const Geometry_ stateResol(stateResolConf, this->getComm());
+//  Deserialize parameters
+    DiffStatesParameters_ params;
+    params.validateAndDeserialize(fullConfig);
 
-    const eckit::LocalConfiguration incResolConf(fullConfig, "increment geometry");
-    const Geometry_ incResol(incResolConf, this->getComm());
+//  Setup resolutions
+    const Geometry_ stateGeometry(params.stateGeometryConf, this->getComm(), oops::mpi::myself());
+    const Geometry_ incGeometry(params.incGeometryConf, this->getComm(), oops::mpi::myself());
 
 //  Read first state
-    const eckit::LocalConfiguration stateConf1(fullConfig, "state1");
-    State_ xx1(stateResol, stateConf1);
+    State_ xx1(stateGeometry, params.stateConf1);
     Log::test() << "Input state 1: " << xx1 << std::endl;
 
 //  Read second state (to take away from the first)
-    const eckit::LocalConfiguration stateConf2(fullConfig, "state2");
-    State_ xx2(stateResol, stateConf2);
+    State_ xx2(stateGeometry, params.stateConf2);
     Log::test() << "Input state 2: " << xx2 << std::endl;
 
 //  Assertions on two states
     ASSERT(xx1.validTime() == xx2.validTime());
 
 //  Create increment
-    Increment_ dx(incResol, xx1.variables(), xx1.validTime());
+    Increment_ dx(incGeometry, xx1.variables(), xx1.validTime());
     dx.diff(xx1, xx2);
 
 //  Write increment
-    const eckit::LocalConfiguration outputConfig(fullConfig, "output");
-    dx.write(outputConfig);
+    dx.write(params.outputConfig);
 
     Log::test() << "Output increment: " << dx << std::endl;
 
