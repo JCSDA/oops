@@ -22,13 +22,65 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/OptionalParameter.h"
+#include "oops/util/parameters/Parameter.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
 
+// -------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
+
+template <typename MODEL> class ConvertStateStatesParameters : public Parameters {
+  OOPS_CONCRETE_PARAMETERS(ConvertStateStatesParameters, Parameters)
+  typedef State<MODEL> State_;
+
+ public:
+  typedef typename State_::Parameters_      StateParameters_;
+  typedef typename State_::WriteParameters_ WriteParameters_;
+
+  RequiredParameter<StateParameters_> input{"input", this};
+  RequiredParameter<WriteParameters_> output{"output", this};
+};
+
+// -------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
+
+/// Options taken by the ConvertState application.
+template <typename MODEL> class ConvertStateParameters : public Parameters {
+  OOPS_CONCRETE_PARAMETERS(ConvertStateParameters, Parameters)
+  typedef Geometry<MODEL> Geometry_;
+
+ public:
+  typedef typename Geometry_::Parameters_ GeometryParameters_;
+
+  /// Input Geometry parameters.
+  RequiredParameter<GeometryParameters_> inputGeometry{"input geometry", this};
+
+  /// Output Geometry parameters.
+  RequiredParameter<GeometryParameters_> outputGeometry{"output geometry", this};
+
+  /// Variable changes
+  OptionalParameter<std::vector<eckit::LocalConfiguration>> varChanges{"variable changes", this};
+
+  /// States to be converted
+  RequiredParameter<std::vector<ConvertStateStatesParameters<MODEL>>> states{"states", this};
+
+  /// Parameters used by regression tests comparing results produced by the application against
+  /// known good outputs.
+  Parameter<eckit::LocalConfiguration> test{"test", eckit::LocalConfiguration(), this};
+};
+
+// -------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
+
 template <typename MODEL> class ConvertState : public Application {
-  typedef Geometry<MODEL>              Geometry_;
-  typedef State<MODEL>                 State_;
-  typedef VariableChange<MODEL>    VariableChange_;
+  typedef Geometry<MODEL>               Geometry_;
+  typedef State<MODEL>                  State_;
+  typedef VariableChange<MODEL>         VariableChange_;
+  typedef ConvertStateParameters<MODEL> ConvertStateParameters_;
+  typedef ConvertStateStatesParameters<MODEL> ConvertStateStatesParameters_;
 
  public:
 // -------------------------------------------------------------------------------------------------
@@ -39,37 +91,38 @@ template <typename MODEL> class ConvertState : public Application {
   virtual ~ConvertState() {}
 // -------------------------------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
-//  Setup resolution for intput and output
-    const eckit::LocalConfiguration inputResolConfig(fullConfig, "input geometry");
-    const Geometry_ resol1(inputResolConfig, this->getComm());
+//  Deserialize parameters
+    ConvertStateParameters_ params;
+    params.validateAndDeserialize(fullConfig);
 
-    const eckit::LocalConfiguration outputResolConfig(fullConfig, "output geometry");
-    const Geometry_ resol2(outputResolConfig, this->getComm());
+//  Setup resolution for input and output
+    const Geometry_ resol1(params.inputGeometry, this->getComm(), oops::mpi::myself());
+    const Geometry_ resol2(params.outputGeometry, this->getComm(), oops::mpi::myself());
 
 //  Variable transform(s)
     std::vector<VariableChange_> chvars;
     std::vector<bool> inverse;
 
-    std::vector<eckit::LocalConfiguration> chvarconfs;
-    fullConfig.get("variable changes", chvarconfs);
-    for (size_t cv = 0; cv < chvarconfs.size(); ++cv) {
-      chvars.emplace_back(resol2, chvarconfs[cv]);
-      inverse.push_back(chvarconfs[cv].getBool("do inverse", false));
+    if (params.varChanges.value() != boost::none) {
+      for (size_t cv = 0; cv < params.varChanges.value()->size(); ++cv) {
+        chvars.emplace_back(resol2, (*params.varChanges.value())[cv]);
+        inverse.push_back((*params.varChanges.value())[cv].getBool("do inverse", false));
+      }
     }
 
 //  List of input and output states
-    std::vector<eckit::LocalConfiguration> statesConf;
-    fullConfig.get("states", statesConf);
-    int nstates = statesConf.size();
+    const int nstates = params.states.value().size();
 
 //  Loop over states
     for (int jm = 0; jm < nstates; ++jm) {
+//    Read current state parameters
+      const ConvertStateStatesParameters_ stateParams = params.states.value()[jm];
+
 //    Print output
       Log::info() << "Converting state " << jm+1 << " of " << nstates << std::endl;
 
 //    Read state
-      const eckit::LocalConfiguration inputConfig(statesConf[jm], "input");
-      State_ xxi(resol1, inputConfig);
+      State_ xxi(resol1, stateParams.input.value());
       Log::test() << "Input state: " << xxi << std::endl;
 
 //    Copy and change resolution
@@ -89,8 +142,7 @@ template <typename MODEL> class ConvertState : public Application {
       }
 
 //    Write state
-      const eckit::LocalConfiguration outputConfig(statesConf[jm], "output");
-      xx->write(outputConfig);
+      xx->write(stateParams.output.value());
 
       Log::test() << "Output state: " << *xx << std::endl;
     }
