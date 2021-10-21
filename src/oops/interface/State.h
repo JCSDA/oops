@@ -23,6 +23,11 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/gatherPrint.h"
 #include "oops/util/ObjectCounter.h"
+#include "oops/util/parameters/GenericParameters.h"
+#include "oops/util/parameters/HasParameters_.h"
+#include "oops/util/parameters/HasWriteParameters_.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/ParametersOrConfiguration.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Serializable.h"
 #include "oops/util/Timer.h"
@@ -31,8 +36,28 @@ namespace oops {
 
 namespace interface {
 
-/// Encapsulates the model state
-
+/// \brief Encapsulates the model state.
+///
+/// Note: implementations of this interface can opt to extract their settings either from
+/// a Configuration object or from a subclass of Parameters.
+///
+/// In the former case, they should provide a constructor and read()/write() methods with the
+/// following signatures:
+///
+///    State(const Geometry_ &, const eckit::Configuration &);
+///    void read(const eckit::Configuration &);
+///    void write(const eckit::Configuration &) const;
+///
+/// In the latter case, the implementer should first define (a) a subclass of Parameters holding
+/// the settings needed by the constructor and the read() method and (b) a subclass of
+/// WriteParametersBase holding the settings needed by the write() method. The implementation of
+/// the State interface should then typedef `Parameters_` and `WriteParameters_` to the names of
+/// these subclasses and provide a constructor and read()/write() method with the following
+/// signatures:
+///
+///    State(const Geometry_ &, const Parameters_ &);
+///    void read(const Parameters_ &);
+///    void write(const WriteParameters_ &) const;
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
@@ -43,11 +68,24 @@ class State : public util::Printable,
   typedef oops::Geometry<MODEL>            Geometry_;
 
  public:
+  /// Set to State_::Parameters_ if State_ provides a type called Parameters_ and to
+  /// GenericParameters (a thin wrapper of an eckit::LocalConfiguration object) if not.
+  typedef TParameters_IfAvailableElseFallbackType_t<State_, GenericParameters> Parameters_;
+
+  /// Set to State_::WriteParameters_ if State_ provides a type called WriteParameters_ and to
+  /// GenericWriteParameters (a thin wrapper of an eckit::LocalConfiguration object) if not.
+  typedef TWriteParameters_IfAvailableElseFallbackType_t<State_, GenericWriteParameters>
+    WriteParameters_;
+
   static const std::string classname() {return "oops::State";}
 
   /// Constructor for specified \p resol, with \p vars, valid at \p time
   State(const Geometry_ & resol, const Variables & vars, const util::DateTime & time);
-  /// Constructor for specified \p resol and files read from \p conf
+  /// Constructor for specified \p resol and parameters \p params specifying e.g. a file to read
+  /// or an analytic state to generate
+  State(const Geometry_ & resol, const Parameters_ & params);
+  /// Constructor for specified \p resol and parameters \p params specifying e.g. a file to read
+  /// or an analytic state to generate
   State(const Geometry_ & resol, const eckit::Configuration & conf);
   /// Copies \p other State, changing its resolution to \p geometry
   State(const Geometry_ & resol, const State & other);
@@ -69,8 +107,10 @@ class State : public util::Printable,
   void updateTime(const util::Duration & dt) {state_->updateTime(dt);}
 
   /// Read this State from file
+  void read(const Parameters_ &);
   void read(const eckit::Configuration &);
   /// Write this State out to file
+  void write(const WriteParameters_ &) const;
   void write(const eckit::Configuration &) const;
   /// Norm (used in tests)
   double norm() const;
@@ -111,25 +151,15 @@ State<MODEL>::State(const Geometry_ & resol, const Variables & vars,
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-State<MODEL>::State(const Geometry_ & resol, const eckit::Configuration & conf)
-  : state_()
+State<MODEL>::State(const Geometry_ & resol,
+                    const Parameters_ & params) : state_()
 {
   Log::trace() << "State<MODEL>::State read starting" << std::endl;
   util::Timer timer(classname(), "State");
 
-  eckit::LocalConfiguration myconf;
-  if (conf.has("states")) {
-//  Parallel 4D state:
-    std::vector<eckit::LocalConfiguration> confs;
-    conf.get("states", confs);
-    ASSERT(confs.size() == resol.timeComm().size());
-    myconf = confs[resol.timeComm().rank()];
-  } else {
-//  3D state:
-    myconf = eckit::LocalConfiguration(conf);
-  }
-
-  state_.reset(new State_(resol.geometry(), myconf));
+  state_.reset(new State_(
+                 resol.geometry(),
+                 parametersOrConfiguration<HasParameters_<State_>::value>(params)));
   this->setObjectSize(state_->serialSize()*sizeof(double));
   Log::trace() << "State<MODEL>::State read done" << std::endl;
 }
@@ -183,21 +213,49 @@ State<MODEL> & State<MODEL>::operator=(const State & rhs) {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void State<MODEL>::read(const eckit::Configuration & conf) {
+void State<MODEL>::read(const Parameters_ & parameters) {
   Log::trace() << "State<MODEL>::read starting" << std::endl;
   util::Timer timer(classname(), "read");
-  state_->read(conf);
+  state_->read(parametersOrConfiguration<HasParameters_<State_>::value>(parameters));
   Log::trace() << "State<MODEL>::read done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void State<MODEL>::write(const eckit::Configuration & conf) const {
+void State<MODEL>::read(const eckit::Configuration & conf) {
+  // It would be possible to implement this function so as to avoid creating a short-lived
+  // GenericParameters object if State_::read() takes an eckit::Configuration rather than a
+  // subclass of Parameters. But for simplicity we don't do that for now, instead delegating work
+  // to the other read() overload. In any case, reading a model state is likely to be much more
+  // time-consuming than constructing a GenericParameters object.
+  Parameters_ parameters;
+  parameters.validateAndDeserialize(conf);
+  read(parameters);
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void State<MODEL>::write(const WriteParameters_ & parameters) const {
   Log::trace() << "State<MODEL>::write starting" << std::endl;
   util::Timer timer(classname(), "write");
-  state_->write(conf);
+  state_->write(parametersOrConfiguration<HasWriteParameters_<State_>::value>(parameters));
   Log::trace() << "State<MODEL>::write done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void State<MODEL>::write(const eckit::Configuration & conf) const {
+  // It would be possible to implement this function so as to avoid creating a short-lived
+  // GenericParameters object if State_::write() takes an eckit::Configuration rather than a
+  // subclass of Parameters. But for simplicity we don't do that for now, instead delegating work
+  // to the other write() overload. In any case, writing a model state is likely to be much more
+  // time-consuming than constructing a GenericParameters object.
+  WriteParameters_ parameters;
+  parameters.validateAndDeserialize(conf);
+  write(parameters);
 }
 
 // -----------------------------------------------------------------------------

@@ -31,6 +31,7 @@ std::vector<ConditionalObjectJsonSchema> cartesianProduct(
       ConditionalObjectJsonSchema combinedSchema = schemaA;
       combinedSchema.if_.combineWith(schemaB.if_);
       combinedSchema.then.combineWith(schemaB.then);
+      combinedSchema.else_.combineWith(schemaB.else_);
       result.push_back(std::move(combinedSchema));
     }
   return result;
@@ -83,6 +84,14 @@ ObjectJsonSchema::ObjectJsonSchema(const std::string &selector,
     ObjectJsonSchema &then = keyAndSchema.second;
     allOf_.push_back(ConditionalObjectJsonSchema(std::move(if_), std::move(then)));
   }
+}
+
+ObjectJsonSchema::ObjectJsonSchema(std::vector<ConditionalObjectJsonSchema> allOf)
+  : allOf_(allOf)
+{}
+
+bool ObjectJsonSchema::empty() const {
+  return properties_.empty() && required_.empty() && allOf_.empty();
 }
 
 std::string ObjectJsonSchema::toString(bool /*includeSchemaKeyword*/) const {
@@ -187,9 +196,16 @@ std::string ObjectJsonSchema::allOfToString() const {
           eckit::AutoIndent indent(channel);
           channel << R"("if": )";
           channel << conditionalSchema.if_.toString();
-          channel << ",\n";
-          channel << R"("then": )";
-          channel << conditionalSchema.then.toString();
+          if (!conditionalSchema.then.empty()) {
+            channel << ",\n";
+            channel << R"("then": )";
+            channel << conditionalSchema.then.toString();
+          }
+          if (!conditionalSchema.else_.empty()) {
+            channel << ",\n";
+            channel << R"("else": )";
+            channel << conditionalSchema.else_.toString();
+          }
         }
         channel << "\n}";
         needsCommaAndNewline = true;
@@ -256,9 +272,16 @@ void ObjectJsonSchema::combineAllOfWith(const ObjectJsonSchema& other) {
   // Note: this object's properties, required and additionalProperties member variables have
   // already been combined with those of the other schema.
   for (ConditionalObjectJsonSchema &conditionalSchema : allOf_) {
-    conditionalSchema.then.combinePropertiesWith(*this);
-    conditionalSchema.then.combineRequiredWith(*this);
-    conditionalSchema.then.combineAdditionalPropertiesWith(*this);
+    if (!conditionalSchema.then.empty()) {
+      conditionalSchema.then.combinePropertiesWith(*this);
+      conditionalSchema.then.combineRequiredWith(*this);
+      conditionalSchema.then.combineAdditionalPropertiesWith(*this);
+    }
+    if (!conditionalSchema.else_.empty()) {
+      conditionalSchema.else_.combinePropertiesWith(*this);
+      conditionalSchema.else_.combineRequiredWith(*this);
+      conditionalSchema.else_.combineAdditionalPropertiesWith(*this);
+    }
   }
 }
 
@@ -271,8 +294,12 @@ void ObjectJsonSchema::extendPropertySchema(const std::string &property,
 
 void ObjectJsonSchema::require(const std::string &property) {
   required_.insert(property);
-  for (ConditionalObjectJsonSchema &conditionalSchema : allOf_)
-    conditionalSchema.then.required_.insert(property);
+  for (ConditionalObjectJsonSchema &conditionalSchema : allOf_) {
+    if (!conditionalSchema.then.empty())
+      conditionalSchema.then.required_.insert(property);
+    if (!conditionalSchema.else_.empty())
+      conditionalSchema.else_.required_.insert(property);
+  }
 }
 
 }  // namespace oops

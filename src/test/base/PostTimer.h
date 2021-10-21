@@ -77,8 +77,8 @@ void testConfCtor() {
   const util::Duration step("PT1H");
 
   eckit::LocalConfiguration test1;
-  // create a timer with empty config (should be equiv to default ctor)
-  oops::PostTimer timer1(test1);
+  // create a timer with empty parameters (should be equiv to default ctor)
+  oops::PostTimer timer1(oops::validateAndDeserialize<oops::PostTimerParameters>(test1));
   timer1.initialize(winbgn, winend);
   // any time between winbgn & winend should be fine
   EXPECT(timer1.itIsTime(winbgn));
@@ -91,7 +91,7 @@ void testConfCtor() {
   const std::string freq = (step/2).toString();
   test1.set("frequency", freq);
   // create a timer, set frequency = step/2 through config
-  oops::PostTimer timer2(test1);
+  oops::PostTimer timer2(oops::validateAndDeserialize<oops::PostTimerParameters>(test1));
   // init with winbgn->winend window
   timer2.initialize(winbgn, winend);
   // any time between winbgn & winend with step/2 should be fine
@@ -107,7 +107,7 @@ void testConfCtor() {
   const std::string first = step.toString();
   test2.set("first", first);
   // create a timer, set first = step through config
-  oops::PostTimer timer3(test2);
+  oops::PostTimer timer3(oops::validateAndDeserialize<oops::PostTimerParameters>(test2));
   // init with winbgn->winend window
   timer3.initialize(winbgn, winend);
   // any time between winbgn+step & winend should be fine
@@ -124,7 +124,7 @@ void testConfCtor() {
                                  "2020-01-01T08:00:00Z"};
   test3.set("steps", steps);
   // create a timer, set predefined steps
-  oops::PostTimer timer4(test3);
+  oops::PostTimer timer4(oops::validateAndDeserialize<oops::PostTimerParameters>(test3));
   // init with winbgn->winend window
   timer4.initialize(winbgn, winend);
   // only steps specified above should work

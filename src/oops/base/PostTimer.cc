@@ -26,9 +26,8 @@ namespace oops {
 PostTimer::PostTimer()
   : options_(), bgn_(), end_(), start_(), finish_() {}
 // -----------------------------------------------------------------------------
-PostTimer::PostTimer(const eckit::Configuration & conf)
-  : options_(), bgn_(), end_(), start_(), finish_() {
-  options_.deserialize(conf);
+PostTimer::PostTimer(const PostTimerParameters & parameters)
+  : options_(parameters), bgn_(), end_(), start_(), finish_() {
 }
 // -----------------------------------------------------------------------------
 PostTimer::PostTimer(const util::DateTime & start, const util::DateTime & finish,

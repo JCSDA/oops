@@ -2,7 +2,7 @@ Test     : CostJb   : Nonlinear Jb = 0
 Test     : CostJo   : Nonlinear Jo(Lorenz 95) = 114, nobs = 4, Jo/n = 28.5, err = 1
 Test     : CostFunction: Nonlinear J = 114
 Test     : DRPCGMinimizer: reduction in residual norm = 5.88211e-17
-Test     : CostFunction::addIncrement: Analysis:
+Test     : CostFunction::addIncrement: Analysis: 
 Test     :  Valid time: 2010-01-01T00:30:00Z
 Test     :  Min=-3, Max=5, Average=1.25
 Test     : CostJb   : Nonlinear Jb = 28.5

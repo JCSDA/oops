@@ -12,8 +12,8 @@
 #include <string>
 #include <vector>
 
+#include "oops/base/StateParametersND.h"
 #include "oops/interface/State.h"
-
 
 namespace oops {
 
@@ -34,10 +34,35 @@ class State : public interface::State<MODEL> {
   typedef Geometry<MODEL>                    Geometry_;
 
  public:
+  typedef typename interface::State<MODEL>::Parameters_ Parameters_;
+  typedef typename interface::State<MODEL>::WriteParameters_ WriteParameters_;
+
+  /// Configuration options of either a single 3D model state  or a set of 3D states valid at
+  /// different times, each used by a different member of the MPI communicator in time.
+  typedef StateParametersND<MODEL> ParametersND_;
+
   /// Constructor for specified \p resol, with \p vars, valid at \p time
   State(const Geometry_ & resol, const Variables & vars, const util::DateTime & time);
-  /// Constructor for specified \p resol and files read from \p conf
+
+  /// Constructor for specified \p resol and parameters \p params
+  ///
+  /// \param params
+  ///   Parameters of either a single 3D state or a set of 3D states with different validity times,
+  ///   to be used by different members of the MPI communicator in time
+  State(const Geometry_ & resol, const ParametersND_ & params);
+
+  /// Constructor for specified \p resol and configuration \p conf
+  ///
+  /// \param conf
+  ///   Configuration of either a single 3D state or a set of 3D states with different validity
+  ///   times, to be used by different members of the MPI communicator in time
   State(const Geometry_ & resol, const eckit::Configuration & conf);
+
+  /// Constructor for specified \p resol and parameters \p params
+  ///
+  /// \param params
+  ///   Parameters of a single 3D state
+  State(const Geometry_ & resol, const Parameters_ & params);
   /// Copies \p other State, changing its resolution to \p geometry
   State(const Geometry_ & resol, const State & other);
 
@@ -60,8 +85,23 @@ State<MODEL>::State(const Geometry_ & resol, const Variables & vars,
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
+State<MODEL>::State(const Geometry_ & resol, const ParametersND_ & paramsND) :
+  // The call to at() will return the parameters of the 3D state to be used by the current MPI rank
+  State(resol, paramsND.at(resol.timeComm()))
+{}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+State<MODEL>::State(const Geometry_ & resol, const Parameters_ & params) :
+  interface::State<MODEL>(resol, params), commTime_(&resol.timeComm())
+{}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
 State<MODEL>::State(const Geometry_ & resol, const eckit::Configuration & conf) :
-  interface::State<MODEL>(resol, conf), commTime_(&resol.timeComm())
+  State(resol, validateAndDeserialize<ParametersND_>(conf))
 {}
 
 // -----------------------------------------------------------------------------

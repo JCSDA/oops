@@ -33,7 +33,7 @@ namespace oops {
 class PostTimer : private boost::noncopyable {
  public:
   PostTimer();
-  explicit PostTimer(const eckit::Configuration &);
+  explicit PostTimer(const PostTimerParameters &);
   PostTimer(const util::DateTime &, const util::DateTime &, const util::Duration &);
 
   void initialize(const util::DateTime &, const util::DateTime &);

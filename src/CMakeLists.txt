@@ -150,8 +150,11 @@ oops/base/State4D.h
 oops/base/StateEnsemble.h
 oops/base/StateEnsemble4D.h
 oops/base/StateInfo.h
+oops/base/StateParametersND.h
 oops/base/StateWriter.h
 oops/base/TrajectorySaver.h
+oops/base/WriteParametersBase.cc
+oops/base/WriteParametersBase.h
 oops/base/VariableChangeBase.h
 oops/base/VariableChangeParametersBase.h
 oops/base/variables_f.cc
@@ -347,6 +350,7 @@ oops/util/parameters/ConfigurationParameter.cc
 oops/util/parameters/ConfigurationParameter.h
 oops/util/parameters/GenericParameters.h
 oops/util/parameters/HasParameters_.h
+oops/util/parameters/HasWriteParameters_.h
 oops/util/parameters/IgnoreOtherParameters.cc
 oops/util/parameters/IgnoreOtherParameters.h
 oops/util/parameters/NumericConstraints.h

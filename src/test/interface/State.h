@@ -31,19 +31,92 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/IgnoreOtherParameters.h"
+#include "oops/util/parameters/OptionalParameter.h"
+#include "oops/util/parameters/Parameter.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 #include "test/TestEnvironment.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> class StateFixture : private boost::noncopyable {
-  typedef oops::Geometry<MODEL>       Geometry_;
-  typedef oops::State<MODEL>          State_;
+/// Options used by testStateReadWrite().
+template <typename MODEL>
+class StateFileOutParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(StateFileOutParameters, Parameters)
 
  public:
-  static const eckit::Configuration & test()  {return *getInstance().test_;}
-  static const Geometry_    & resol() {return *getInstance().resol_;}
+  typedef oops::State<MODEL>                State_;
+  typedef oops::StateParametersND<MODEL>    StateParametersND_;
+  typedef typename State_::WriteParameters_ StateWriteParameters_;
+
+  /// Options used by the code writing the state to a file.
+  StateWriteParameters_ write{this};
+  /// Options used by the code reading the state back in.
+  StateParametersND_ read{this};
+};
+
+// -----------------------------------------------------------------------------
+
+/// Configuration of the state test.
+template <typename MODEL>
+class StateTestParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(StateTestParameters, Parameters)
+
+ public:
+  typedef oops::State<MODEL>                 State_;
+  typedef StateFileOutParameters<MODEL>      StateFileOutParameters_;
+  typedef typename State_::Parameters_       StateParameters_;
+
+  /// Relative tolerance of norm comparisons.
+  oops::RequiredParameter<double> tolerance{"tolerance", this};
+  /// Validity time for states loaded from a file and generated on the fly.
+  oops::RequiredParameter<util::DateTime> date{"date", this};
+
+  /// Configuration of the state loaded from a file.
+  oops::RequiredParameter<StateParameters_> statefile{"statefile", this};
+  /// Expected norm of the state loaded from a file.
+  oops::RequiredParameter<double> normFile{"norm file", this};
+
+  /// Configuration of the state generated on the fly.
+  oops::OptionalParameter<eckit::LocalConfiguration> stateGenerate{"state generate", this};
+  /// Expected norm of the state generated on the fly.
+  ///
+  /// This option must be present if `state generate` is.
+  oops::OptionalParameter<double> normGeneratedState{"norm generated state", this};
+
+  oops::OptionalParameter<StateFileOutParameters_> statefileout{"statefileout", this};
+};
+
+// -----------------------------------------------------------------------------
+
+/// Top-level test parameters.
+template <typename MODEL>
+class TestParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(TestParameters, Parameters)
+
+  typedef oops::Geometry<MODEL>           Geometry_;
+  typedef typename Geometry_::Parameters_ GeometryParameters_;
+  typedef StateTestParameters<MODEL>      StateTestParameters_;
+
+ public:
+  oops::RequiredParameter<StateTestParameters_> stateTest{"state test", this};
+  oops::RequiredParameter<GeometryParameters_> geometry{"geometry", this};
+  // The YAML file may also contain options used by other tests; don't treat them as errors.
+  oops::IgnoreOtherParameters ignore{this};
+};
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL> class StateFixture : private boost::noncopyable {
+ public:
+  typedef oops::Geometry<MODEL>      Geometry_;
+  typedef StateTestParameters<MODEL> StateTestParameters_;
+
+  static const StateTestParameters_ & test()  {return *getInstance().test_;}
+  static const Geometry_            & resol() {return *getInstance().resol_;}
   static void reset() {
     getInstance().resol_.reset();
     getInstance().test_.reset();
@@ -56,16 +129,18 @@ template <typename MODEL> class StateFixture : private boost::noncopyable {
   }
 
   StateFixture<MODEL>() {
-    test_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "state test"));
+    TestParameters<MODEL> parameters;
+    parameters.validateAndDeserialize(TestEnvironment::config());
 
-    const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "geometry");
-    resol_.reset(new Geometry_(resolConfig, oops::mpi::world()));
+    test_ = std::make_unique<StateTestParameters_>(parameters.stateTest);
+    resol_ = std::make_unique<Geometry_>(parameters.geometry,
+                                         oops::mpi::world(), oops::mpi::myself());
   }
 
   ~StateFixture<MODEL>() {}
 
-  std::unique_ptr<const eckit::LocalConfiguration>  test_;
-  std::unique_ptr<Geometry_>     resol_;
+  std::unique_ptr<StateTestParameters_> test_;
+  std::unique_ptr<Geometry_>            resol_;
 };
 
 // -----------------------------------------------------------------------------
@@ -74,13 +149,12 @@ template <typename MODEL> void testStateConstructors() {
   typedef StateFixture<MODEL>   Test_;
   typedef oops::State<MODEL>    State_;
 
-  const double norm = Test_::test().getDouble("norm file");
-  const double tol = Test_::test().getDouble("tolerance");
-  const util::DateTime vt(Test_::test().getString("date"));
+  const double norm = Test_::test().normFile;
+  const double tol = Test_::test().tolerance;
+  const util::DateTime vt(Test_::test().date);
 
 // Test main constructor
-  const eckit::LocalConfiguration conf(Test_::test(), "statefile");
-  std::unique_ptr<State_> xx1(new State_(Test_::resol(), conf));
+  std::unique_ptr<State_> xx1(new State_(Test_::resol(), Test_::test().statefile));
 
   EXPECT(xx1.get());
   oops::Log::test() << "Printing State from yaml: " << *xx1 << std::endl;
@@ -127,16 +201,15 @@ template <typename MODEL> void testStateGeometry() {
   typedef oops::Geometry<MODEL> Geometry_;
   typedef oops::State<MODEL>    State_;
 
-  const double norm = Test_::test().getDouble("norm file");
-  const double tol = Test_::test().getDouble("tolerance");
-  const util::DateTime vt(Test_::test().getString("date"));
+  const double norm = Test_::test().normFile;
+  const double tol = Test_::test().tolerance;
+  const util::DateTime vt(Test_::test().date);
 
-  const eckit::LocalConfiguration conf(Test_::test(), "statefile");
-  State_ xx1(Test_::resol(), conf);
+  State_ xx1(Test_::resol(), Test_::test().statefile);
 
   // get geometry from xx1 and initialize xx2 (xx2 & xx1 should be the same)
   const Geometry_ & geometry = xx1.geometry();
-  State_ xx2(geometry, conf);
+  State_ xx2(geometry, Test_::test().statefile);
 
   const double norm2 = xx2.norm();
   EXPECT(oops::is_close(norm2, norm, tol));
@@ -172,16 +245,16 @@ template <typename MODEL> void testStateAnalyticInitialCondition() {
   // from the "geometry" and "state test.state generate" sections of
   // the config file and checks its norm
 
-  if (!Test_::test().has("state generate")) {
+  if (Test_::test().stateGenerate.value() == boost::none ||
+      Test_::test().normGeneratedState.value() == boost::none) {
     oops::Log::warning() << "Bypassing Analytical Initial Condition Test";
     return;
   }
 
-  const eckit::LocalConfiguration confgen(Test_::test(), "state generate");
-  const State_ xx(Test_::resol(), confgen);
+  const State_ xx(Test_::resol(), *Test_::test().stateGenerate.value());
 
-  const double norm = Test_::test().getDouble("norm generated state");
-  const double tol = Test_::test().getDouble("tolerance");
+  const double norm = *Test_::test().normGeneratedState.value();
+  const double tol = Test_::test().tolerance;
 
   oops::Log::debug() << "xx.norm(): " << std::fixed << std::setprecision(8) << xx.norm()
                      << std::endl;
@@ -206,16 +279,15 @@ template <typename MODEL> void testStateZeroAndAccumul() {
   typedef StateFixture<MODEL>    Test_;
   typedef oops::State<MODEL>     State_;
 
-  const eckit::LocalConfiguration conf(Test_::test(), "statefile");
-  State_ xx(Test_::resol(), conf);
-  const double tol = Test_::test().getDouble("tolerance");
+  State_ xx(Test_::resol(), Test_::test().statefile);
+  const double tol = Test_::test().tolerance;
 
   // Set state xx to zero
   xx.zero();
   EXPECT(xx.norm() == 0.0);
 
   // Set state xx to various multiples of yy
-  const State_ yy(Test_::resol(), conf);
+  const State_ yy(Test_::resol(), Test_::test().statefile);
   const std::vector<double> mults {3.0, 0.0, -3.0};
   for (const auto & mult : mults) {
     xx.zero();
@@ -224,7 +296,7 @@ template <typename MODEL> void testStateZeroAndAccumul() {
   }
 
   // Ensure that a non-zero state, when acted on with accumul, is not equal to the result
-  State_ zz(Test_::resol(), conf);
+  State_ zz(Test_::resol(), Test_::test().statefile);
   zz.accumul(3.0, yy);
   EXPECT_NOT(oops::is_close(zz.norm(), yy.norm(), tol, 0, oops::TestVerbosity::SILENT));
 }
@@ -245,8 +317,7 @@ template <typename MODEL> void testStateDateTime() {
   typedef oops::State<MODEL>     State_;
 
   // Configuration to read initial state
-  const eckit::LocalConfiguration conf(Test_::test(), "statefile");
-  State_ xx(Test_::resol(), conf);
+  State_ xx(Test_::resol(), Test_::test().statefile);
 
   // Update the time by two lots of one hour
   const util::Duration onehour(3600);
@@ -254,7 +325,7 @@ template <typename MODEL> void testStateDateTime() {
   xx.updateTime(onehour);
 
   // Create another state
-  State_ yy(Test_::resol(), conf);
+  State_ yy(Test_::resol(), Test_::test().statefile);
 
   // Update the time of the second state by two hours
   const util::Duration twohours(7200);
@@ -279,13 +350,12 @@ template <typename MODEL> void testStateDateTime() {
  */
 
 template <typename MODEL> void testStateReadWrite() {
-  typedef StateFixture<MODEL>    Test_;
-  typedef oops::State<MODEL>     State_;
+  typedef StateFixture<MODEL>          Test_;
+  typedef oops::State<MODEL>           State_;
 
   // Configuration to read initial state
-  const eckit::LocalConfiguration conf(Test_::test(), "statefile");
-  State_ xx(Test_::resol(), conf);
-  const double tol = Test_::test().getDouble("tolerance");
+  State_ xx(Test_::resol(), Test_::test().statefile);
+  const double tol = Test_::test().tolerance;
 
   // Determine initial state norm
   const double norm = xx.norm();
@@ -294,12 +364,12 @@ template <typename MODEL> void testStateReadWrite() {
   xx.zero();
 
   // Read input file
-  xx.read(conf);
+  xx.read(Test_::test().statefile);
 
   // Check norm has its initial value
   EXPECT(xx.norm() == norm);
 
-  if (Test_::test().has("statefileout")) {
+  if (Test_::test().statefileout.value() != boost::none) {
     // Modify state
     const double mult = 2.0;
     xx.accumul(mult, xx);
@@ -307,14 +377,11 @@ template <typename MODEL> void testStateReadWrite() {
     // Determine modified state norm
     const double normout = xx.norm();
 
-    // Configuration to read and write output state
-    const eckit::LocalConfiguration confout(Test_::test(), "statefileout");
-
     // Write modified state to output file
-    xx.write(confout);
+    xx.write(Test_::test().statefileout.value()->write);
 
-    // Read modifed state from output file
-    State_ yy(Test_::resol(), confout);
+    // Read modified state from output file
+    State_ yy(Test_::resol(), Test_::test().statefileout.value()->read);
 
     // Check modified state norm has its expected value
     EXPECT(oops::is_close(yy.norm(), normout, tol));

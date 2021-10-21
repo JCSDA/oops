@@ -15,6 +15,7 @@
 
 #include "eckit/config/Configuration.h"
 #include "oops/base/PostTimer.h"
+#include "oops/base/PostTimerParameters.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 
@@ -34,7 +35,7 @@ template <typename FLDS> class PostBase : private boost::noncopyable {
  public:
 /// Constructors and basic operators
   PostBase() : timer_() {}
-  explicit PostBase(const eckit::Configuration & conf) : timer_(conf) {}
+  explicit PostBase(const PostTimerParameters & timerParams) : timer_(timerParams) {}
   PostBase(const util::DateTime & start, const util::DateTime & finish,
            const util::Duration & freq = util::Duration(0))
     : timer_(start, finish, freq) {}

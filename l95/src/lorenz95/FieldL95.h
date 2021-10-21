@@ -15,6 +15,8 @@
 #include <string>
 #include <vector>
 
+#include "oops/util/parameters/OptionalParameter.h"
+#include "oops/util/parameters/Parameters.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Serializable.h"
 
@@ -27,6 +29,20 @@ namespace lorenz95 {
   class LocsL95;
   class GomL95;
   class Resolution;
+
+// -----------------------------------------------------------------------------
+
+/// \brief Parameters accepted by FieldL95::generate().
+class Field95GenerateParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(Field95GenerateParameters, Parameters)
+
+ public:
+  oops::OptionalParameter<double> mean{"mean", this};
+  oops::OptionalParameter<double> sinus{"sinus", this};
+  oops::OptionalParameter<int> dirac{"dirac", this};
+  /// Currently unused, but included for compatibility with AnalyticInitParameters.
+  oops::OptionalParameter<std::string> method{"method", this};
+};
 
 // -----------------------------------------------------------------------------
 /// Class to represent fields for the L95 model
@@ -54,7 +70,7 @@ class FieldL95 : public util::Printable,
   double dot_product_with(const FieldL95 &) const;
   void schur(const FieldL95 &);
   void random();
-  void generate(const eckit::Configuration &);
+  void generate(const Field95GenerateParameters &);
 
 /// Utilities
   void read(std::ifstream &);

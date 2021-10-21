@@ -44,8 +44,12 @@ template <typename MODEL, typename OBS>
 class HofX3DParameters : public Parameters {
   OOPS_CONCRETE_PARAMETERS(HofX3DParameters, Parameters)
 
+  typedef Geometry<MODEL> Geometry_;
+  typedef State<MODEL> State_;
+
  public:
-  typedef typename Geometry<MODEL>::Parameters_ GeometryParameters_;
+  typedef typename Geometry_::Parameters_ GeometryParameters_;
+  typedef typename State_::Parameters_ StateParameters_;
 
   /// Only observations taken at times lying in the (`window begin`, `window begin` + `window
   /// length`] interval will be included in observation spaces.
@@ -69,7 +73,7 @@ class HofX3DParameters : public Parameters {
   Parameter<eckit::LocalConfiguration> test{"test", eckit::LocalConfiguration(), this};
 
   /// Initial state parameters.
-  RequiredParameter<eckit::LocalConfiguration> initialCondition{"state", this};
+  RequiredParameter<StateParameters_> initialCondition{"state", this};
 };
 
 // -----------------------------------------------------------------------------

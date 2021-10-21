@@ -33,8 +33,9 @@ state test:
     filename: Data/out.fc.2010-01-01T03:00:00Z.PT0S
   state generate:
     date: '2010-01-01T03:00:00Z'
-    mean: 8.0
-    sinus: 2.0
+    analytic init:
+      mean: 8.0
+      sinus: 2.0
   norm generated state: 8.12403840464
 
 inc variables: [x]
@@ -75,8 +76,6 @@ linear model test:
 getvalues test:
   state generate:
     date: '2010-01-01T03:00:00Z'
-    mean: 8.0
-    sinus: 2.0
     analytic init:
       method: sinus
       mean: 8.0

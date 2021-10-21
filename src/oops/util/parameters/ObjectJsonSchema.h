@@ -51,6 +51,10 @@ class ObjectJsonSchema {
   ObjectJsonSchema(const std::string &selector,
                    std::map<std::string, ObjectJsonSchema> variants);
 
+  /// \brief Create a JSON schema representing a logical conjunction of a number of conditional
+  /// JSON schemas.
+  explicit ObjectJsonSchema(std::vector<ConditionalObjectJsonSchema> allOf);
+
   /// \brief Map of property names to JSON schemas used to validate these properties.
   const std::map<std::string, PropertyJsonSchema> &properties() const { return properties_; }
 
@@ -63,6 +67,9 @@ class ObjectJsonSchema {
 
   /// \brief Extra JSON schemas to which a valid JSON node must conform.
   const std::vector<ConditionalObjectJsonSchema> &allOf() const { return allOf_; }
+
+  /// \brief Return true if this is an empty (trivial) schema.
+  bool empty() const;
 
   /// \brief Return a string containing the JSON schema represented by this object.
   ///
@@ -131,14 +138,21 @@ class ObjectJsonSchema {
 /// A JSON node conforms to this schema if either
 /// - it conforms to the schema defined by the \c if_ member variable and to that defined by the
 ///   \c then member variable, or
-/// - it does not conform to the schema defined by the \c if_ member variable.
+/// - it does not conform to the schema defined by the \c if_ member, but it conforms to the schema
+///   defined by the \c else_ member.
 struct ConditionalObjectJsonSchema {
-  ConditionalObjectJsonSchema(ObjectJsonSchema ifSchema, ObjectJsonSchema thenSchema)
-    : if_(std::move(ifSchema)), then(std::move(thenSchema))
+  ConditionalObjectJsonSchema() = default;
+
+  /// Note: omitting \p elseSchema leads to a schema with a trivial \c else schema (matching
+  /// everything).
+  ConditionalObjectJsonSchema(ObjectJsonSchema ifSchema, ObjectJsonSchema thenSchema,
+                              ObjectJsonSchema elseSchema = ObjectJsonSchema())
+    : if_(std::move(ifSchema)), then(std::move(thenSchema)), else_(std::move(elseSchema))
   {}
 
   ObjectJsonSchema if_;
   ObjectJsonSchema then;
+  ObjectJsonSchema else_;
 };
 
 }  // namespace oops

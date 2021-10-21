@@ -51,9 +51,13 @@ template <typename MODEL, typename OBS>
 class HofX4DParameters : public Parameters {
   OOPS_CONCRETE_PARAMETERS(HofX4DParameters, Parameters)
 
+  typedef Geometry<MODEL> Geometry_;
+  typedef State<MODEL> State_;
+
  public:
-  typedef typename Geometry<MODEL>::Parameters_ GeometryParameters_;
+  typedef typename Geometry_::Parameters_ GeometryParameters_;
   typedef ModelParametersWrapper<MODEL> ModelParameters_;
+  typedef typename State_::Parameters_ StateParameters_;
 
   /// Only observations taken at times lying in the (`window begin`, `window begin` + `window
   /// length`] interval will be included in observation spaces.
@@ -67,7 +71,7 @@ class HofX4DParameters : public Parameters {
   RequiredParameter<GeometryParameters_> geometry{"geometry", this};
 
   /// Options passed to the object writing out forecast fields.
-  Parameter<eckit::LocalConfiguration> prints{"prints", eckit::LocalConfiguration(), this};
+  Parameter<PostTimerParameters> prints{"prints", {}, this};
 
   /// Whether to perturb the H(x) vector before saving.
   Parameter<bool> obsPerturbations{"obs perturbations", false, this};
@@ -80,13 +84,17 @@ class HofX4DParameters : public Parameters {
   Parameter<eckit::LocalConfiguration> test{"test", eckit::LocalConfiguration(), this};
 
   /// Forecast length.
-  oops::RequiredParameter<util::Duration> forecastLength{"forecast length", this};
+  RequiredParameter<util::Duration> forecastLength{"forecast length", this};
 
   /// Model parameters.
-  oops::RequiredParameter<ModelParameters_> model{"model", this};
+  RequiredParameter<ModelParameters_> model{"model", this};
 
   /// Initial state parameters.
-  oops::RequiredParameter<eckit::LocalConfiguration> initialCondition{"initial condition", this};
+  RequiredParameter<StateParameters_> initialCondition{"initial condition", this};
+
+  /// Augmented model state.
+  Parameter<eckit::LocalConfiguration> modelAuxControl{
+    "model aux control", eckit::LocalConfiguration(), this};
 };
 
 // -----------------------------------------------------------------------------
@@ -128,7 +136,7 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
     Log::info() << "Observation window from " << winbgn << " to " << winend << std::endl;
 
 //  Setup geometry
-    const Geometry_ geometry(params.geometry, this->getComm(), oops::mpi::myself());
+    const Geometry_ geometry(params.geometry, this->getComm(), mpi::myself());
 
 //  Setup initial state
     State_ xx(geometry, params.initialCondition);
@@ -156,7 +164,7 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
 
 //  Setup Model
     const Model_ model(geometry, params.model.value().modelParameters);
-    ModelAux_ moderr(geometry, params.initialCondition);
+    ModelAux_ moderr(geometry, params.modelAuxControl);
 
     post.enrollProcessor(new StateInfo<State_>("fc", params.prints));
 
