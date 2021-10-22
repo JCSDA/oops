@@ -33,24 +33,59 @@ class IncrementParameters : public Parameters {
  public:
   typedef typename Increment_::ReadParameters_ IncrementReadParameters_;
 
-  // Constructor declared for convenience; it can be removed once top-level parameters
-  // for the AddIncrement application are defined.
-  IncrementParameters(const eckit::Configuration &conf, const std::string &path) {
-    validateAndDeserialize(eckit::LocalConfiguration(conf, path));
-  }
-
-  /// List of variables to add.
-  Parameter<Variables> addedVariables{"added variables", {}, this};
   /// Parameters to pass to Increment::read().
   IncrementReadParameters_ read{this};
-  /// Scaling factor for the increment.
-  OptionalParameter<double> scalingFactor{"scaling factor", this};
+
+  Parameter<Variables> addedVariables{
+    "added variables", "List of variables to add", {}, this};
+  OptionalParameter<double> scalingFactor{
+    "scaling factor", "Scaling factor for the increment", this};
 };
 
+/// YAML options taken by the AddIncrement application.
+template <typename MODEL>
+class AddIncrementParameters : public Parameters {
+  OOPS_CONCRETE_PARAMETERS(AddIncrementParameters, Parameters)
+  typedef Geometry<MODEL> Geometry_;
+  typedef Increment<MODEL> Increment_;
+  typedef State<MODEL> State_;
+
+ public:
+  typedef typename Geometry_::Parameters_ GeometryParameters_;
+  typedef IncrementParameters<MODEL> IncrementParameters_;
+  typedef typename State_::Parameters_ StateParameters_;
+  typedef typename State_::WriteParameters_ StateWriteParameters_;
+
+  RequiredParameter<GeometryParameters_> stateGeometry{
+    "state geometry", "State resolution", this};
+  RequiredParameter<GeometryParameters_> incrementGeometry{
+    "increment geometry", "Increment resolution", this};
+
+  RequiredParameter<StateParameters_> state{
+    "state", "State to be incremented", this};
+  RequiredParameter<IncrementParameters_> increment{
+    "increment", "Increment to add to state", this};
+
+  RequiredParameter<StateWriteParameters_> output{
+    "output", "Where to write the output", this};
+
+  Parameter<eckit::LocalConfiguration> test{
+    "test",
+    "Parameters used by regression tests comparing results produced by the application against "
+    "known good outputs",
+    eckit::LocalConfiguration(), this};
+};
+
+/// Application that adds an increment to a state and writes the sum to a file.
+///
+/// The increment may optionally be multiplied by a scaling factor and have a different resolution
+/// than the state.
 template <typename MODEL> class AddIncrement : public Application {
+  typedef AddIncrementParameters<MODEL> AddIncrementParameters_;
   typedef Geometry<MODEL>  Geometry_;
   typedef State<MODEL>     State_;
   typedef Increment<MODEL> Increment_;
+  typedef IncrementParameters<MODEL> IncrementParameters_;
 
  public:
 // -----------------------------------------------------------------------------
@@ -59,20 +94,21 @@ template <typename MODEL> class AddIncrement : public Application {
   virtual ~AddIncrement() {}
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
-//  Setup resolution
-    const eckit::LocalConfiguration stateResolConf(fullConfig, "state geometry");
-    const Geometry_ stateResol(stateResolConf, this->getComm());
+//  Load input configuration options
+    AddIncrementParameters_ params;
+    params.validateAndDeserialize(fullConfig);
 
-    const eckit::LocalConfiguration incResolConf(fullConfig, "increment geometry");
-    const Geometry_ incResol(incResolConf, this->getComm());
+//  Setup resolution
+    const Geometry_ stateResol(params.stateGeometry, this->getComm(), mpi::myself());
+
+    const Geometry_ incResol(params.incrementGeometry, this->getComm(), mpi::myself());
 
 //  Read state
-    const eckit::LocalConfiguration stateConf(fullConfig, "state");
-    State_ xx(stateResol, stateConf);
+    State_ xx(stateResol, params.state);
     Log::test() << "State: " << xx << std::endl;
 
 //  Read increment
-    IncrementParameters<MODEL> incParams(fullConfig, "increment");
+    const IncrementParameters_ &incParams = params.increment;
     Increment_ dx(incResol, incParams.addedVariables, xx.validTime());
     dx.read(incParams.read);
     Log::test() << "Increment: " << dx << std::endl;
@@ -90,8 +126,7 @@ template <typename MODEL> class AddIncrement : public Application {
     xx += dx;
 
 //  Write state
-    const eckit::LocalConfiguration outputConfig(fullConfig, "output");
-    xx.write(outputConfig);
+    xx.write(params.output);
 
     Log::test() << "State plus increment: " << xx << std::endl;
 
