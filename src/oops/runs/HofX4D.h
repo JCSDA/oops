@@ -48,8 +48,8 @@ namespace oops {
 
 /// \brief Top-level options taken by the HofX4D application.
 template <typename MODEL, typename OBS>
-class HofX4DParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(HofX4DParameters, Parameters)
+class HofX4DParameters : public ApplicationParameters {
+  OOPS_CONCRETE_PARAMETERS(HofX4DParameters, ApplicationParameters)
 
   typedef Geometry<MODEL> Geometry_;
   typedef State<MODEL> State_;
@@ -78,10 +78,6 @@ class HofX4DParameters : public Parameters {
 
   /// Whether to save the H(x) vector as ObsValues.
   Parameter<bool> makeObs{"make obs", false, this};
-
-  /// Parameters used by regression tests comparing results produced by the application against
-  /// known good outputs.
-  Parameter<eckit::LocalConfiguration> test{"test", eckit::LocalConfiguration(), this};
 
   /// Forecast length.
   RequiredParameter<util::Duration> forecastLength{"forecast length", this};

@@ -44,8 +44,8 @@ class IncrementParameters : public Parameters {
 
 /// YAML options taken by the AddIncrement application.
 template <typename MODEL>
-class AddIncrementParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(AddIncrementParameters, Parameters)
+class AddIncrementParameters : public ApplicationParameters {
+  OOPS_CONCRETE_PARAMETERS(AddIncrementParameters, ApplicationParameters)
   typedef Geometry<MODEL> Geometry_;
   typedef Increment<MODEL> Increment_;
   typedef State<MODEL> State_;
@@ -68,12 +68,6 @@ class AddIncrementParameters : public Parameters {
 
   RequiredParameter<StateWriteParameters_> output{
     "output", "Where to write the output", this};
-
-  Parameter<eckit::LocalConfiguration> test{
-    "test",
-    "Parameters used by regression tests comparing results produced by the application against "
-    "known good outputs",
-    eckit::LocalConfiguration(), this};
 };
 
 /// Application that adds an increment to a state and writes the sum to a file.

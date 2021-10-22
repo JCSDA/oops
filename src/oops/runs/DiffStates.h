@@ -30,8 +30,8 @@ namespace oops {
 
 /// \brief Top-level options taken by the DiffStates application.
 template <typename MODEL>
-class DiffStatesParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(DiffStatesParameters, Parameters)
+class DiffStatesParameters : public ApplicationParameters {
+  OOPS_CONCRETE_PARAMETERS(DiffStatesParameters, ApplicationParameters)
 
  public:
   typedef typename Geometry<MODEL>::Parameters_ GeometryParameters_;
@@ -52,10 +52,6 @@ class DiffStatesParameters : public Parameters {
 
   /// Output increment parameters.
   RequiredParameter<IncrementWriteParameters_> outputConfig{"output", this};
-
-  /// Parameters used by regression tests comparing results produced by the application against
-  /// known good outputs.
-  Parameter<eckit::LocalConfiguration> test{"test", eckit::LocalConfiguration(), this};
 };
 
 // -----------------------------------------------------------------------------

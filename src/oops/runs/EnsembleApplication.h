@@ -28,16 +28,12 @@ namespace oops {
 
 /// \brief Top-level options taken by the EnsembleApplication application.
 template <typename APP>
-class EnsembleApplicationParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(EnsembleApplicationParameters, Parameters)
+class EnsembleApplicationParameters : public ApplicationParameters {
+  OOPS_CONCRETE_PARAMETERS(EnsembleApplicationParameters, ApplicationParameters)
 
  public:
   /// Parameters containing a list of YAML files for each ensemble member to be processed.
   RequiredParameter<std::vector<std::string>> files{"files", this};
-
-  /// Parameters used by regression tests comparing results produced by the application against
-  /// known good outputs.
-  Parameter<eckit::LocalConfiguration> test{"test", eckit::LocalConfiguration(), this};
 };
 
 // -----------------------------------------------------------------------------

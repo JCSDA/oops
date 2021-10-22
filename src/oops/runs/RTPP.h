@@ -27,8 +27,8 @@
 namespace oops {
 
 /// Options taken by the RTPP application.
-template <typename MODEL> class RTPPParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(RTPPParameters, Parameters);
+template <typename MODEL> class RTPPParameters : public ApplicationParameters {
+  OOPS_CONCRETE_PARAMETERS(RTPPParameters, ApplicationParameters);
 
   typedef Geometry<MODEL> Geometry_;
   typedef State<MODEL> State_;
@@ -47,7 +47,6 @@ template <typename MODEL> class RTPPParameters : public Parameters {
   OptionalParameter<Variables> analysisVariables{"analysis variables", this};
   RequiredParameter<StateWriteParameters_> output{
       "output", "analysis mean and ensemble members output", this};
-  OptionalParameter<eckit::LocalConfiguration> test{"test", this};
 };
 
 /// \brief Application for relaxation to prior perturbation (RTPP) inflation

@@ -37,8 +37,8 @@
 namespace oops {
 
 /// Options taken by the GenEnsPertB application.
-template <typename MODEL> class GenEnsPertBParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(GenEnsPertBParameters, Parameters)
+template <typename MODEL> class GenEnsPertBParameters : public ApplicationParameters {
+  OOPS_CONCRETE_PARAMETERS(GenEnsPertBParameters, ApplicationParameters)
 
  public:
   typedef ModelSpaceCovarianceParametersWrapper<MODEL> CovarianceParameters_;
@@ -75,10 +75,6 @@ template <typename MODEL> class GenEnsPertBParameters : public Parameters {
 
   /// Where to write the output.
   RequiredParameter<StateWriterParameters_> output{"output", this};
-
-  /// Parameters used by regression tests comparing results produced by the application against
-  /// known good outputs.
-  Parameter<eckit::LocalConfiguration> test{"test", eckit::LocalConfiguration(), this};
 };
 
 // -----------------------------------------------------------------------------

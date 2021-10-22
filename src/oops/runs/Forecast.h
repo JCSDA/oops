@@ -34,8 +34,8 @@
 namespace oops {
 
 /// Options taken by the Forecast application.
-template <typename MODEL> class ForecastParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(ForecastParameters, Parameters);
+template <typename MODEL> class ForecastParameters : public ApplicationParameters {
+  OOPS_CONCRETE_PARAMETERS(ForecastParameters, ApplicationParameters);
 
  public:
   typedef typename Geometry<MODEL>::Parameters_                 GeometryParameters_;
@@ -65,10 +65,6 @@ template <typename MODEL> class ForecastParameters : public Parameters {
 
   /// Options passed to the object writing out forecast fields.
   Parameter<PostTimerParameters> prints{"prints", {}, this};
-
-  /// Parameters used by regression tests comparing results produced by the application against
-  /// known good outputs.
-  Parameter<eckit::LocalConfiguration> test{"test", eckit::LocalConfiguration(), this};
 };
 
 // -----------------------------------------------------------------------------

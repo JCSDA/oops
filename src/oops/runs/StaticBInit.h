@@ -27,8 +27,8 @@
 namespace oops {
 
 /// Options taken by the StaticBInit application.
-template <typename MODEL> class StaticBInitParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(StaticBInitParameters, Parameters);
+template <typename MODEL> class StaticBInitParameters : public ApplicationParameters {
+  OOPS_CONCRETE_PARAMETERS(StaticBInitParameters, ApplicationParameters);
 
  public:
   typedef ModelSpaceCovarianceParametersWrapper<MODEL> CovarianceParameters_;
@@ -46,10 +46,6 @@ template <typename MODEL> class StaticBInitParameters : public Parameters {
 
   /// Background error covariance model.
   RequiredParameter<CovarianceParameters_> backgroundError{"background error", this};
-
-  /// Parameters used by regression tests comparing results produced by the application against
-  /// known good outputs.
-  Parameter<eckit::LocalConfiguration> test{"test", eckit::LocalConfiguration(), this};
 };
 
 // -----------------------------------------------------------------------------

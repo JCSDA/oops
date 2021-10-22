@@ -30,8 +30,8 @@ namespace oops {
 
 /// \brief Top-level options taken by the EnsRecenter application.
 template <typename MODEL>
-class EnsRecenterParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(EnsRecenterParameters, Parameters)
+class EnsRecenterParameters : public ApplicationParameters {
+  OOPS_CONCRETE_PARAMETERS(EnsRecenterParameters, ApplicationParameters)
 
   typedef Geometry<MODEL> Geometry_;
   typedef State<MODEL> State_;
@@ -61,10 +61,6 @@ class EnsRecenterParameters : public Parameters {
 
   /// Parameters for recentered ensemble output
   RequiredParameter<StateWriteParameters_> recenteredOutput{"recentered output", this};
-
-  /// Parameters used by regression tests comparing results produced by the application against
-  /// known good outputs.
-  Parameter<eckit::LocalConfiguration> test{"test", eckit::LocalConfiguration(), this};
 };
 
 template <typename MODEL> class EnsRecenter : public Application {

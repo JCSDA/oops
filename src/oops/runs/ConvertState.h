@@ -48,8 +48,8 @@ template <typename MODEL> class ConvertStateStatesParameters : public Parameters
 // -------------------------------------------------------------------------------------------------
 
 /// Options taken by the ConvertState application.
-template <typename MODEL> class ConvertStateParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(ConvertStateParameters, Parameters)
+template <typename MODEL> class ConvertStateParameters : public ApplicationParameters {
+  OOPS_CONCRETE_PARAMETERS(ConvertStateParameters, ApplicationParameters)
   typedef Geometry<MODEL> Geometry_;
 
  public:
@@ -66,10 +66,6 @@ template <typename MODEL> class ConvertStateParameters : public Parameters {
 
   /// States to be converted
   RequiredParameter<std::vector<ConvertStateStatesParameters<MODEL>>> states{"states", this};
-
-  /// Parameters used by regression tests comparing results produced by the application against
-  /// known good outputs.
-  Parameter<eckit::LocalConfiguration> test{"test", eckit::LocalConfiguration(), this};
 };
 
 // -------------------------------------------------------------------------------------------------
