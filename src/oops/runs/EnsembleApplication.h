@@ -18,11 +18,34 @@
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/Parameter.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
 
+// -----------------------------------------------------------------------------
+
+/// \brief Top-level options taken by the EnsembleApplication application.
+template <typename APP>
+class EnsembleApplicationParameters : public Parameters {
+  OOPS_CONCRETE_PARAMETERS(EnsembleApplicationParameters, Parameters)
+
+ public:
+  /// Parameters containing a list of YAML files for each ensemble member to be processed.
+  RequiredParameter<std::vector<std::string>> files{"files", this};
+
+  /// Parameters used by regression tests comparing results produced by the application against
+  /// known good outputs.
+  Parameter<eckit::LocalConfiguration> test{"test", eckit::LocalConfiguration(), this};
+};
+
+// -----------------------------------------------------------------------------
+
 template <typename APP>
 class EnsembleApplication : public Application {
+  typedef EnsembleApplicationParameters<APP> EnsembleApplicationParameters_;
+
  public:
 // -----------------------------------------------------------------------------
   explicit EnsembleApplication(const eckit::mpi::Comm & comm = oops::mpi::world()) :
@@ -31,13 +54,17 @@ class EnsembleApplication : public Application {
   virtual ~EnsembleApplication() {}
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
-  // Get the list of yaml files
-    std::vector<std::string> listConf;
-    fullConfig.get("files", listConf);
-    Log::info() << "EnsembleApplication yaml files:" << listConf << std::endl;
+//  Deserialize parameters
+    EnsembleApplicationParameters_ params;
+    params.validateAndDeserialize(fullConfig);
 
-  // Get the MPI partition
-    const int nmembers = listConf.size();
+//  Get the list of YAML files
+    const std::vector<std::string> &files = params.files.value();
+
+    Log::info() << "EnsembleApplication YAML files:" << files << std::endl;
+
+//  Get the MPI partition
+    const int nmembers = files.size();
     const int ntasks = this->getComm().size();
     const int mytask = this->getComm().rank();
     const int tasks_per_member = ntasks / nmembers;
@@ -49,13 +76,13 @@ class EnsembleApplication : public Application {
 
     ASSERT(ntasks%nmembers == 0);
 
-  // Create  the communicator for each member, named comm_member_{i}:
+//  Create the communicator for each member, named comm_member_{i}:
     std::string commNameStr = "comm_member_" + std::to_string(mymember);
     char const *commName = commNameStr.c_str();
     eckit::mpi::Comm & commMember = this->getComm().split(mymember, commName);
 
-  // Each member uses a different configuration:
-    eckit::PathName confPath = listConf[mymember-1];
+//  Each member uses a different configuration:
+    eckit::PathName confPath = files[mymember-1];
     eckit::YAMLConfiguration memberConf(confPath);
 
     Log::debug() << "EnsembleApplication config for member " << mymember << ": "
