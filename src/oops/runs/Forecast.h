@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2017-2021 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -26,14 +27,60 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/Parameter.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
 
+/// Options taken by the Forecast application.
+template <typename MODEL> class ForecastParameters : public Parameters {
+  OOPS_CONCRETE_PARAMETERS(ForecastParameters, Parameters);
+
+ public:
+  typedef typename Geometry<MODEL>::Parameters_                 GeometryParameters_;
+  typedef ModelParametersWrapper<MODEL>                         ModelParameters_;
+  typedef State<MODEL>                                          State_;
+  typedef typename StateParametersND<MODEL>::StateParameters3D_ StateParameters_;
+  typedef StateWriterParameters<State_>                         StateWriterParameters_;
+
+  /// Geometry parameters.
+  RequiredParameter<GeometryParameters_> geometry{"geometry", this};
+
+  /// Model parameters.
+  RequiredParameter<ModelParameters_> model{"model", this};
+
+  /// Initial state parameters.
+  RequiredParameter<StateParameters_> initialCondition{"initial condition", this};
+
+  /// Augmented model state.
+  Parameter<eckit::LocalConfiguration> modelAuxControl{
+    "model aux control", eckit::LocalConfiguration(), this};
+
+  /// Forecast length.
+  RequiredParameter<util::Duration> forecastLength{"forecast length", this};
+
+  /// Where to write the output.
+  RequiredParameter<StateWriterParameters_> output{"output", this};
+
+  /// Options passed to the object writing out forecast fields.
+  Parameter<PostTimerParameters> prints{"prints", {}, this};
+
+  /// Parameters used by regression tests comparing results produced by the application against
+  /// known good outputs.
+  Parameter<eckit::LocalConfiguration> test{"test", eckit::LocalConfiguration(), this};
+};
+
+// -----------------------------------------------------------------------------
+
+/// Application that runs a forecast from a model and initial condition
 template <typename MODEL> class Forecast : public Application {
-  typedef Geometry<MODEL>            Geometry_;
-  typedef Model<MODEL>               Model_;
-  typedef ModelAuxControl<MODEL>      ModelAux_;
-  typedef State<MODEL>               State_;
+  typedef Geometry<MODEL>           Geometry_;
+  typedef Model<MODEL>              Model_;
+  typedef ModelAuxControl<MODEL>    ModelAux_;
+  typedef State<MODEL>              State_;
+
+  typedef ForecastParameters<MODEL> ForecastParameters_;
 
  public:
 // -----------------------------------------------------------------------------
@@ -42,39 +89,33 @@ template <typename MODEL> class Forecast : public Application {
   virtual ~Forecast() {}
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
+//  Deserialize parameters
+    ForecastParameters_ params;
+    params.validateAndDeserialize(fullConfig);
+
 //  Setup resolution
-    const eckit::LocalConfiguration resolConfig(fullConfig, "geometry");
-    const Geometry_ resol(resolConfig, this->getComm());
+    const Geometry_ resol(params.geometry, this->getComm(), oops::mpi::myself());
 
 //  Setup Model
-    const eckit::LocalConfiguration modelConfig(fullConfig, "model");
-    const Model_ model(resol, modelConfig);
+    const Model_ model(resol, params.model.value().modelParameters);
 
 //  Setup initial state
-    const eckit::LocalConfiguration initialConfig(fullConfig, "initial condition");
-    State_ xx(resol, initialConfig);
+    State_ xx(resol, params.initialCondition);
     Log::test() << "Initial state: " << xx << std::endl;
 
 //  Setup augmented state
-    const ModelAux_ moderr(resol, fullConfig.getSubConfiguration("model aux control"));
+    const ModelAux_ moderr(resol, params.modelAuxControl);
 
 //  Setup times
-    const util::Duration fclength(fullConfig.getString("forecast length"));
+    const util::Duration fclength = params.forecastLength;
     const util::DateTime bgndate(xx.validTime());
     const util::DateTime enddate(bgndate + fclength);
     Log::info() << "Running forecast from " << bgndate << " to " << enddate << std::endl;
 
 //  Setup forecast outputs
     PostProcessor<State_> post;
-
-    eckit::LocalConfiguration prtConfig;
-    if (fullConfig.has("prints")) {
-      prtConfig = eckit::LocalConfiguration(fullConfig, "prints");
-    }
-    post.enrollProcessor(new StateInfo<State_>("fc", prtConfig));
-
-    const eckit::LocalConfiguration outConfig(fullConfig, "output");
-    post.enrollProcessor(new StateWriter<State_>(outConfig));
+    post.enrollProcessor(new StateInfo<State_>("fc", params.prints));
+    post.enrollProcessor(new StateWriter<State_>(params.output));
 
 //  Run forecast
     model.forecast(xx, moderr, fclength, post);
