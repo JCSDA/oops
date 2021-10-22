@@ -27,6 +27,8 @@ struct ConditionalObjectJsonSchema;
 /// the structure of JEDI configuration files (e.g. oneOf, anyOf) are omitted.
 class ObjectJsonSchema {
  public:
+  typedef std::map<std::string, PropertyJsonSchema> PropertyJsonSchemas;
+
   /// \brief Create a JSON schema describing a node expected to contain certain properties ("keys").
   ///
   /// \param properties
@@ -36,7 +38,7 @@ class ObjectJsonSchema {
   /// \param additionalProperties
   ///   True if a valid node may have properties other than those listed in \p properties,
   ///   false otherwise.
-  explicit ObjectJsonSchema(std::map<std::string, PropertyJsonSchema> properties = {},
+  explicit ObjectJsonSchema(PropertyJsonSchemas properties = {},
                             std::set<std::string> required = {},
                             bool additionalProperties = false);
 
@@ -56,7 +58,11 @@ class ObjectJsonSchema {
   explicit ObjectJsonSchema(std::vector<ConditionalObjectJsonSchema> allOf);
 
   /// \brief Map of property names to JSON schemas used to validate these properties.
-  const std::map<std::string, PropertyJsonSchema> &properties() const { return properties_; }
+  const PropertyJsonSchemas &properties() const { return properties_; }
+
+  /// \brief Map of regular expressions to JSON schemas used to validate properties with names
+  /// matching those expressions.
+  const PropertyJsonSchemas &patternProperties() const { return patternProperties_; }
 
   /// \brief Names of properties that must be present in a valid JSON node.
   const std::set<std::string> &required() const { return required_; }
@@ -107,23 +113,40 @@ class ObjectJsonSchema {
   /// ignored if the property schema already contains that key.
   void extendPropertySchema(const std::string &property, const PropertyJsonSchema &schema);
 
+  /// \brief Add the key-value pairs from \p schema into the schema used to validate properties
+  /// matching the regular expression \p property.
+  ///
+  /// Pre-existing key-value pairs take precedence, i.e. a key-value pair in \p schema will be
+  /// ignored if the property schema already contains that key.
+  void extendPatternPropertySchema(const std::string &property, const PropertyJsonSchema &schema);
+
   /// \brief Mark property \p property as required.
   void require(const std::string &property);
 
  private:
   std::string propertiesToString() const;
+  std::string patternPropertiesToString() const;
   std::string requiredToString() const;
   std::string additionalPropertiesToString() const;
   std::string allOfToString() const;
 
+  static std::string propertyJsonSchemasToString(const PropertyJsonSchemas &properties);
+
   void combinePropertiesWith(const ObjectJsonSchema& other);
+  void combinePatternPropertiesWith(const ObjectJsonSchema& other);
   void combineRequiredWith(const ObjectJsonSchema& other);
   void combineAdditionalPropertiesWith(const ObjectJsonSchema& other);
   void combineAllOfWith(const ObjectJsonSchema& other);
 
+  static void combinePropertyJsonSchemasWith(PropertyJsonSchemas &properties,
+                                             const PropertyJsonSchemas& otherProperties);
+
  private:
   /// \brief Maps property names to JSON schemas used to validate these properties.
-  std::map<std::string, PropertyJsonSchema> properties_;
+  PropertyJsonSchemas properties_;
+  /// \brief Maps regular expressions to JSON schemas used to validate properties whose names match
+  /// those regular expressions.
+  PropertyJsonSchemas patternProperties_;
   /// \brief Names of properties that must be present in a valid JSON node.
   std::set<std::string> required_;
   /// \brief True if a valid JSON node may have properties other than those listed in

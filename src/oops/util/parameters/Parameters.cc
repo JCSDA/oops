@@ -185,6 +185,11 @@ ObjectJsonSchema Parameters::jsonSchema() const {
     ObjectJsonSchema childSchema = child->jsonSchema();
     schema.combineWith(childSchema);
   }
+
+  // Allow keys starting with an underscore to be set to arbitrary values. Such keys are useful
+  // for defining anchors reused in multiple places in a YAML file.
+  schema.extendPatternPropertySchema("^_", PropertyJsonSchema());
+
   return schema;
 }
 

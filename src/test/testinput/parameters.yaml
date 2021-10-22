@@ -86,6 +86,19 @@ misspelled_nesting_param:
   ronge_parameter:
     min: 7
     max: 8.5
+underscores:
+  # Parameters whose names start with underscores can be set to arbitrary values
+  _: xyz
+  _hidden:
+    int: 125
+    string: abc
+  range_parameter:
+    min: 7
+    max: 10
+    _: xyz
+    _hidden:
+      int: 125
+      string: abc
 error_in_float_parameter:
   float_parameter: ABCDEF
   req_float_parameter: 3

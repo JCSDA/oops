@@ -625,6 +625,13 @@ void misspelledParameterNames() {
                       "additional properties are not allowed");
 }
 
+void initialUnderscores() {
+  // Parameters whose names start with underscores can be set to arbitrary values
+  MyOptionalParameters params;
+  const::eckit::LocalConfiguration conf(TestEnvironment::config(), "underscores");
+  EXPECT_NO_THROW(params.validate(conf));
+}
+
 void testSerialization() {
   MyOptionalAndRequiredParameters params;
   const eckit::LocalConfiguration fullConf(TestEnvironment::config(), "full");
@@ -1718,6 +1725,9 @@ class Parameters : public oops::Test {
                     });
     ts.emplace_back(CASE("util/Parameters/misspelledParameterNames") {
                       misspelledParameterNames();
+                    });
+    ts.emplace_back(CASE("util/Parameters/initialUnderscores") {
+                      initialUnderscores();
                     });
     ts.emplace_back(CASE("util/Parameters/incorrectValueOfFloatParameter") {
                       testIncorrectValueOfFloatParameter();
