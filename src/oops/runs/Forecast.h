@@ -90,7 +90,7 @@ template <typename MODEL> class Forecast : public Application {
     params.validateAndDeserialize(fullConfig);
 
 //  Setup resolution
-    const Geometry_ resol(params.geometry, this->getComm(), oops::mpi::myself());
+    const Geometry_ resol(params.geometry, this->getComm());
 
 //  Setup Model
     const Model_ model(resol, params.model.value().modelParameters);

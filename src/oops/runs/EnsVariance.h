@@ -71,7 +71,7 @@ template <typename MODEL> class EnsVariance : public Application {
     params.validateAndDeserialize(fullConfig);
 
 //  Setup Geometry
-    const Geometry_ resol(params.resolConfig, this->getComm(), oops::mpi::myself());
+    const Geometry_ resol(params.resolConfig, this->getComm());
 
 //  Setup background
     State_ xx(resol, params.bkgConfig);

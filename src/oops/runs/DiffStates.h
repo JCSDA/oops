@@ -75,8 +75,8 @@ template <typename MODEL> class DiffStates : public Application {
     params.validateAndDeserialize(fullConfig);
 
 //  Setup resolutions
-    const Geometry_ stateGeometry(params.stateGeometryConf, this->getComm(), oops::mpi::myself());
-    const Geometry_ incGeometry(params.incGeometryConf, this->getComm(), oops::mpi::myself());
+    const Geometry_ stateGeometry(params.stateGeometryConf, this->getComm());
+    const Geometry_ incGeometry(params.incGeometryConf, this->getComm());
 
 //  Read first state
     State_ xx1(stateGeometry, params.stateConf1);

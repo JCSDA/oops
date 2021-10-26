@@ -74,7 +74,7 @@ template <typename MODEL> class StaticBInit : public Application {
     params.validateAndDeserialize(fullConfig);
 
     //  Setup resolution
-    const Geometry_ resol(params.geometry, this->getComm(), oops::mpi::myself());
+    const Geometry_ resol(params.geometry, this->getComm());
 
     //  Setup variables
     const Variables &vars = params.analysisVariables;

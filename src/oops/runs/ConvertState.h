@@ -92,8 +92,8 @@ template <typename MODEL> class ConvertState : public Application {
     params.validateAndDeserialize(fullConfig);
 
 //  Setup resolution for input and output
-    const Geometry_ resol1(params.inputGeometry, this->getComm(), oops::mpi::myself());
-    const Geometry_ resol2(params.outputGeometry, this->getComm(), oops::mpi::myself());
+    const Geometry_ resol1(params.inputGeometry, this->getComm());
+    const Geometry_ resol2(params.outputGeometry, this->getComm());
 
 //  Variable transform(s)
     std::vector<VariableChange_> chvars;

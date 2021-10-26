@@ -93,9 +93,9 @@ template <typename MODEL> class AddIncrement : public Application {
     params.validateAndDeserialize(fullConfig);
 
 //  Setup resolution
-    const Geometry_ stateResol(params.stateGeometry, this->getComm(), mpi::myself());
+    const Geometry_ stateResol(params.stateGeometry, this->getComm());
 
-    const Geometry_ incResol(params.incrementGeometry, this->getComm(), mpi::myself());
+    const Geometry_ incResol(params.incrementGeometry, this->getComm());
 
 //  Read state
     State_ xx(stateResol, params.state);
