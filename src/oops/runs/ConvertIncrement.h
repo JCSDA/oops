@@ -23,8 +23,50 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
+
+/// Options describing each increment read by the ConvertIncrement application.
+template <typename MODEL> class IncrementParameters : public Parameters {
+  OOPS_CONCRETE_PARAMETERS(IncrementParameters, Parameters);
+
+ public:
+  typedef typename Increment<MODEL>::ReadParameters_  ReadParameters_;
+  typedef typename Increment<MODEL>::WriteParameters_ WriteParameters_;
+  typedef typename State<MODEL>::Parameters_          StateParameters_;
+
+  RequiredParameter<util::DateTime> date{"date", this};
+  RequiredParameter<oops::Variables> inputVariables{"input variables", this};
+  RequiredParameter<ReadParameters_> input{"input", this};
+  RequiredParameter<WriteParameters_> output{"output", this};
+  RequiredParameter<StateParameters_> trajectory{"trajectory", this};
+};
+
+/// Top-level options taken by the ConvertIncrement application.
+template <typename MODEL> class ConvertIncrementParameters : public ApplicationParameters {
+  OOPS_CONCRETE_PARAMETERS(ConvertIncrementParameters, ApplicationParameters);
+
+ public:
+  typedef typename Geometry<MODEL>::Parameters_ GeometryParameters_;
+  typedef IncrementParameters<MODEL>            IncrementParameters_;
+
+  /// Input geometry parameters.
+  RequiredParameter<GeometryParameters_> inputGeometry{"input geometry", this};
+
+  /// Output geometry parameters.
+  RequiredParameter<GeometryParameters_> outputGeometry{"output geometry", this};
+
+  /// List of linear variable changes.
+  RequiredParameter<std::vector<eckit::LocalConfiguration>> linearVarChanges{
+      "linear variable changes", this};
+
+  /// List of increments.
+  RequiredParameter<std::vector<IncrementParameters_>> increments{"increments", this};
+};
+
+// -----------------------------------------------------------------------------
 
 template <typename MODEL> class ConvertIncrement : public Application {
   typedef Geometry<MODEL>                    Geometry_;
@@ -32,6 +74,12 @@ template <typename MODEL> class ConvertIncrement : public Application {
   typedef State<MODEL>                       State_;
   typedef LinearVariableChangeBase<MODEL>    LinearVariableChange_;
   typedef LinearVariableChangeFactory<MODEL> LinearVariableChangeFactory_;
+
+  typedef typename Increment<MODEL>::ReadParameters_  ReadParameters_;
+  typedef typename Increment<MODEL>::WriteParameters_ WriteParameters_;
+  typedef IncrementParameters<MODEL>                  IncrementParameters_;
+
+  typedef ConvertIncrementParameters<MODEL>  Parameters_;
 
  public:
 // -------------------------------------------------------------------------------------------------
@@ -43,44 +91,43 @@ template <typename MODEL> class ConvertIncrement : public Application {
   virtual ~ConvertIncrement() {}
 // -------------------------------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
-//  Setup resolution for intput and output
-    const eckit::LocalConfiguration inputResolConfig(fullConfig, "input geometry");
-    const Geometry_ resol1(inputResolConfig, this->getComm());
+//  Deserialize parameters
+    Parameters_ params;
+    params.validateAndDeserialize(fullConfig);
 
-    const eckit::LocalConfiguration outputResolConfig(fullConfig, "output geometry");
-    const Geometry_ resol2(outputResolConfig, this->getComm());
+//  Setup resolution for intput and output
+    const Geometry_ resol1(params.inputGeometry, this->getComm());
+    const Geometry_ resol2(params.outputGeometry, this->getComm());
 
 //  Variable transform(s)
     std::vector<bool> inverse;
     std::vector<bool> adjoint;
 
-    std::vector<eckit::LocalConfiguration> chvarconfs;
-    fullConfig.get("linear variable changes", chvarconfs);
+    const std::vector<eckit::LocalConfiguration>& chvarconfs = params.linearVarChanges;
     for (size_t cv = 0; cv < chvarconfs.size(); ++cv) {
       inverse.push_back(chvarconfs[cv].getBool("do inverse", false));
       adjoint.push_back(chvarconfs[cv].getBool("do adjoint", false));
     }
 
 //  List of input and output increments
-    std::vector<eckit::LocalConfiguration> incrementsConf;
-    fullConfig.get("increments", incrementsConf);
-    int nincrements = incrementsConf.size();
+    const std::vector<IncrementParameters_>& incrementParams = params.increments;
+    const int nincrements = incrementParams.size();
 
 //  Loop over increments
     for (int jm = 0; jm < nincrements; ++jm) {
 //    Print output
       Log::info() << "Converting increment " << jm+1 << " of " << nincrements << std::endl;
 
-//    Datetime for incrmement
-      const util::DateTime incdatetime(incrementsConf[jm].getString("date"));
+//    Datetime for increment
+      const util::DateTime incdatetime = incrementParams[jm].date;
 
 //    Variables for input increment
-      const Variables incvars(incrementsConf[jm], "input variables");
+      const Variables incvars = incrementParams[jm].inputVariables;
 
 //    Read input
-      const eckit::LocalConfiguration inputConfig(incrementsConf[jm], "input");
+      const ReadParameters_ inputParams = incrementParams[jm].input;
       Increment_ dxi(resol1, incvars, incdatetime);
-      dxi.read(inputConfig);
+      dxi.read(inputParams);
       Log::test() << "Input increment: " << dxi << std::endl;
 
 //    Copy and change resolution
@@ -93,8 +140,7 @@ template <typename MODEL> class ConvertIncrement : public Application {
       for (size_t cv = 0; cv < chvarconfs.size(); ++cv) {
         // Read trajectory
         if (cv == 0) {
-          const eckit::LocalConfiguration trajConfig(incrementsConf[jm], "trajectory");
-          xtraj.reset(new State_(resol1, trajConfig));
+          xtraj.reset(new State_(resol1, incrementParams[jm].trajectory));
           ASSERT(xtraj->validTime() == dx->validTime());  // Check time is consistent
           Log::test() << "Trajectory state: " << *xtraj << std::endl;
         }
@@ -114,8 +160,8 @@ template <typename MODEL> class ConvertIncrement : public Application {
       }
 
 //    Write state
-      const eckit::LocalConfiguration outputConfig(incrementsConf[jm], "output");
-      dx->write(outputConfig);
+      const WriteParameters_ outputParams = incrementParams[jm].output;
+      dx->write(outputParams);
 
       Log::test() << "Output increment: " << *dx << std::endl;
     }
