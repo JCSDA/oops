@@ -75,9 +75,9 @@ template <typename MODEL> class HybridGain : public Application {
         // xa_hybrid = xf_prior + a1*xinc1 + a2*xinc2
         // Note: a1+a2 no longer need to add to one
 
-        // Get  prior ens mean
+        // Get prior ens mean
         const eckit::LocalConfiguration emeanConfigPrior(fullConfig, "ensemble mean prior");
-        State_ xfEmeanPrior(resol, emeanConfig);
+        State_ xfEmeanPrior(resol, emeanConfigPrior);
         Log::test() << "Ensemble mean prior: " << std::endl << xfEmeanPrior << std::endl;
         // compute ensemble mean increment
         Increment_ pertEns(resol, vars, xaControl.validTime());
