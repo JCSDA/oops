@@ -52,6 +52,10 @@ void trap_sigfpe(const int abortflg)
     LOGIT_STDERR << "Call to feenableexcept returned" << ret << std::endl;
 #endif
 
+#ifdef __PGI
+  ret = fedisableexcept(FE_OVERFLOW);
+#endif
+
   sig_action.sa_flags = SA_SIGINFO;          // handler specified in sa_sigaction
   sig_action.sa_sigaction = sigfpe_handler;  // function name
   sigemptyset(&sig_action.sa_mask);          // initialize mask
