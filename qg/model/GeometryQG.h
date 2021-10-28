@@ -73,6 +73,7 @@ class GeometryQG : public util::Printable,
   const eckit::mpi::Comm & getComm() const {return comm_;}
   atlas::FunctionSpace * atlasFunctionSpace() const {return atlasFunctionSpace_.get();}
   atlas::FieldSet * atlasFieldSet() const {return atlasFieldSet_.get();}
+  size_t levels() const {return levs_;}
 
   std::vector<size_t> variableSizes(const oops::Variables & vars) const;
 
@@ -83,6 +84,7 @@ class GeometryQG : public util::Printable,
   const eckit::mpi::Comm & comm_;
   std::unique_ptr<atlas::functionspace::PointCloud> atlasFunctionSpace_;
   std::unique_ptr<atlas::FieldSet> atlasFieldSet_;
+  size_t levs_;
 };
 // -----------------------------------------------------------------------------
 

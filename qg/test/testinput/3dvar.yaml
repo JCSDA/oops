@@ -27,10 +27,6 @@ cost function:
       obsdataout:
         obsfile: Data/3dvar.obs3d.nc
       obs type: Stream
-    get values:
-      interpolation type: default_1
-    linear get values:
-      interpolation type: default_a
   - obs error:
       covariance model: diagonal
     obs operator:
@@ -41,10 +37,6 @@ cost function:
       obsdataout:
         obsfile: Data/3dvar.obs3d.nc
       obs type: Wind
-    get values:
-      interpolation type: default_2
-    linear get values:
-      interpolation type: default_b
   - obs error:
       covariance model: diagonal
     obs operator:
@@ -55,10 +47,6 @@ cost function:
       obsdataout:
         obsfile: Data/3dvar.obs3d.nc
       obs type: WSpeed
-    get values:
-      interpolation type: default_3
-    linear get values:
-      interpolation type: default_c
 variational:
   minimizer:
     algorithm: DRIPCG

@@ -1244,6 +1244,8 @@ do jvar=1,vars%nvars()
            ptr(iz,inode) = self%u(ix,iy,iz)
          case ('v')
            ptr(iz,inode) = self%v(ix,iy,iz)
+         case ('z')
+           ptr(iz,inode) = self%geom%z(iz)
          case default
            call abor1_ftn('qg_fields_to_atlas: wrong variable')
          endselect
@@ -1295,8 +1297,10 @@ do jvar=1,vars%nvars()
            self%u(ix,iy,iz) = ptr(iz,inode)
          case ('v')
            self%v(ix,iy,iz) = ptr(iz,inode)
+         case ('z')
+           ! do nothing
          case default
-           call abor1_ftn('qg_fields_to_atlas: wrong variable')
+           call abor1_ftn('qg_fields_from_atlas: wrong variable')
          endselect
        enddo
      enddo

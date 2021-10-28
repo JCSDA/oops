@@ -17,6 +17,7 @@
 #include "model/ObsSpaceQG.h"
 #include "model/QgFortran.h"
 #include "oops/base/Variables.h"
+#include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 
 namespace qg {
@@ -24,28 +25,28 @@ namespace qg {
 // -----------------------------------------------------------------------------
 GomQG::GomQG(const LocationsQG & locs, const oops::Variables & vars,
              const std::vector<size_t> & sizes):
-  vars_(vars)
+  vars_(vars), locs_(&locs), levs_(sizes[0])
 {
-  // gom_setup just creates and allocates the GeoVaLs object without filling
-  // in values
-  qg_gom_setup_f90(keyGom_, locs, vars_);
+// All variables have same levels
+  for (size_t jj = 1; jj < sizes.size(); ++jj) ASSERT(sizes[jj] == levs_);
+  qg_gom_setup_f90(keyGom_, locs, vars_, levs_);
 }
 // -----------------------------------------------------------------------------
 /*! QG GeoVaLs Constructor with Config */
 
-  GomQG::GomQG(const eckit::Configuration & config,
-               const ObsSpaceQG & ospace, const oops::Variables & vars):
-  vars_(vars)
+GomQG::GomQG(const eckit::Configuration & config,
+             const ObsSpaceQG & ospace, const oops::Variables & vars):
+  vars_(vars), locs_(nullptr)
 {
-  qg_gom_create_f90(keyGom_, vars_);
-  qg_gom_read_file_f90(keyGom_, config);
+  qg_gom_create_f90(keyGom_);
+  qg_gom_read_file_f90(keyGom_, vars_, config);
 }
 // -----------------------------------------------------------------------------
 // Copy constructor
 GomQG::GomQG(const GomQG & other):
-  vars_(other.vars_)
+  vars_(other.vars_), locs_(other.locs_), levs_(other.levs_)
 {
-  qg_gom_create_f90(keyGom_, vars_);
+  qg_gom_create_f90(keyGom_);
   qg_gom_copy_f90(keyGom_, other.keyGom_);
 }
 // -----------------------------------------------------------------------------
@@ -106,7 +107,7 @@ double GomQG::dot_product_with(const GomQG & other) const {
 }
 // -----------------------------------------------------------------------------
 void GomQG::read(const eckit::Configuration & config) {
-  qg_gom_read_file_f90(keyGom_, config);
+  qg_gom_read_file_f90(keyGom_, vars_, config);
 }
 // -----------------------------------------------------------------------------
 void GomQG::write(const eckit::Configuration & config) const {

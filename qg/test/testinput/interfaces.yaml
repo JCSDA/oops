@@ -53,7 +53,7 @@ observations:
   geovals:
     filename: Data/truth.obs4d_24h.stream.gom
     state variables: [x]
-    norm: 5190236838.6347504
+    norm: 6817614730.9630165
   obs space:
     obsdatain:
       obsfile: Data/truth.obs4d_24h.nc
@@ -96,7 +96,7 @@ observations:
   geovals:
     filename: Data/truth.obs4d_24h.wind.gom
     state variables: [u, v]
-    norm: 1016.3608615365378
+    norm: 1440.9708190018748
   obs space:
     obsdatain:
       obsfile: Data/truth.obs4d_24h.nc
@@ -139,7 +139,7 @@ observations:
   geovals:
     filename: Data/truth.obs4d_24h.wspeed.gom
     state variables: [u, v]
-    norm: 1169.499384622432
+    norm: 1471.5548038687134
   obs space:
     obsdatain:
       obsfile: Data/truth.obs4d_24h.nc

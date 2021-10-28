@@ -42,15 +42,13 @@ type(qg_gom),intent(inout) :: gom      !< Interpolated values
 
 ! Local variables
 integer :: jloc
-real(kind_real), pointer :: lonlat(:,:), z(:)
-type(atlas_field) :: lonlat_field, z_field
+real(kind_real), pointer :: lonlat(:,:)
+type(atlas_field) :: lonlat_field
 type(qg_fields) :: fld_gom
 
 ! Get locations
 lonlat_field = locs%lonlat()
 call lonlat_field%data(lonlat)
-z_field = locs%altitude()
-call z_field%data(z)
 
 ! Check field
 call qg_fields_check(fld)
@@ -67,21 +65,21 @@ do jloc=1,locs%nlocs()
   ! Check if current obs is in this time frame (t1,t2]
   if (t1 < locs%times(jloc) .and. locs%times(jloc) <= t2) then
     ! Interpolate variables
-    if (gom%vars%has('x')) call qg_interp_trilinear(fld%geom,lonlat(1,jloc),lonlat(2,jloc), &
-    &                                               z(jloc),fld_gom%x,gom%x(jloc))
-    if (gom%vars%has('q')) call qg_interp_trilinear(fld%geom,lonlat(1,jloc),lonlat(2,jloc), &
-    &                                               z(jloc),fld_gom%q,gom%q(jloc))
-    if (gom%vars%has('u')) call qg_interp_trilinear(fld%geom,lonlat(1,jloc),lonlat(2,jloc), &
-    &                                               z(jloc),fld_gom%u,gom%u(jloc))
-    if (gom%vars%has('v')) call qg_interp_trilinear(fld%geom,lonlat(1,jloc),lonlat(2,jloc), &
-    &                                               z(jloc),fld_gom%v,gom%v(jloc))
+    if (gom%vars%has('x')) call qg_interp_bilinear(fld%geom,lonlat(1,jloc),lonlat(2,jloc), &
+                                                 & fld_gom%x,gom%x(:,jloc))
+    if (gom%vars%has('q')) call qg_interp_bilinear(fld%geom,lonlat(1,jloc),lonlat(2,jloc), &
+                                                 & fld_gom%q,gom%q(:,jloc))
+    if (gom%vars%has('u')) call qg_interp_bilinear(fld%geom,lonlat(1,jloc),lonlat(2,jloc), &
+                                                 & fld_gom%u,gom%u(:,jloc))
+    if (gom%vars%has('v')) call qg_interp_bilinear(fld%geom,lonlat(1,jloc),lonlat(2,jloc), &
+                                                 & fld_gom%v,gom%v(:,jloc))
+    if (gom%vars%has('z')) gom%z(:,jloc) = fld%geom%z(:)
   endif
 enddo
 !$omp end parallel do
 
 ! Release memory
 call lonlat_field%final()
-call z_field%final()
 
 end subroutine qg_getvalues_interp
 ! ------------------------------------------------------------------------------
@@ -98,15 +96,13 @@ type(qg_gom),intent(inout) :: gom      !< Interpolated values
 
 ! Local variables
 integer :: jloc
-real(kind_real), pointer :: lonlat(:,:), z(:)
-type(atlas_field) :: lonlat_field, z_field
+real(kind_real), pointer :: lonlat(:,:)
+type(atlas_field) :: lonlat_field
 type(qg_fields) :: fld_gom
 
 ! Get locations
 lonlat_field = locs%lonlat()
 call lonlat_field%data(lonlat)
-z_field = locs%altitude()
-call z_field%data(z)
 
 ! Check field
 call qg_fields_check(fld)
@@ -122,21 +118,21 @@ do jloc=1,locs%nlocs()
   ! Check if current obs is in this time frame (t1,t2]
   if (t1 < locs%times(jloc) .and. locs%times(jloc) <= t2) then
     ! Interpolate variables
-    if (gom%vars%has('x')) call qg_interp_trilinear(fld%geom,lonlat(1,jloc),lonlat(2,jloc), &
-    &                                               z(jloc),fld_gom%x,gom%x(jloc))
-    if (gom%vars%has('q')) call qg_interp_trilinear(fld%geom,lonlat(1,jloc),lonlat(2,jloc), &
-    &                                               z(jloc),fld_gom%q,gom%q(jloc))
-    if (gom%vars%has('u')) call qg_interp_trilinear(fld%geom,lonlat(1,jloc),lonlat(2,jloc), &
-    &                                               z(jloc),fld_gom%u,gom%u(jloc))
-    if (gom%vars%has('v')) call qg_interp_trilinear(fld%geom,lonlat(1,jloc),lonlat(2,jloc), &
-    &                                               z(jloc),fld_gom%v,gom%v(jloc))
+    if (gom%vars%has('x')) call qg_interp_bilinear(fld%geom,lonlat(1,jloc),lonlat(2,jloc), &
+                                                 & fld_gom%x,gom%x(:,jloc))
+    if (gom%vars%has('q')) call qg_interp_bilinear(fld%geom,lonlat(1,jloc),lonlat(2,jloc), &
+                                                 & fld_gom%q,gom%q(:,jloc))
+    if (gom%vars%has('u')) call qg_interp_bilinear(fld%geom,lonlat(1,jloc),lonlat(2,jloc), &
+                                                 & fld_gom%u,gom%u(:,jloc))
+    if (gom%vars%has('v')) call qg_interp_bilinear(fld%geom,lonlat(1,jloc),lonlat(2,jloc), &
+                                                 & fld_gom%v,gom%v(:,jloc))
+    if (gom%vars%has('z')) gom%z(:,jloc) = fld%geom%z(:)
   endif
 enddo
 !$omp end parallel do
 
 ! Release memory
 call lonlat_field%final()
-call z_field%final()
 
 end subroutine qg_getvalues_interp_tl
 ! ------------------------------------------------------------------------------
@@ -154,15 +150,13 @@ type(qg_gom),intent(in) :: gom         !< Interpolated values
 ! Local variables
 integer :: jloc
 real(kind_real),allocatable :: x(:,:,:),q(:,:,:),u(:,:,:),v(:,:,:)
-real(kind_real), pointer :: lonlat(:,:), z(:)
-type(atlas_field) :: lonlat_field, z_field
+real(kind_real), pointer :: lonlat(:,:)
+type(atlas_field) :: lonlat_field
 type(qg_fields) :: fld_gom,fld_tmp
 
 ! Get locations
 lonlat_field = locs%lonlat()
 call lonlat_field%data(lonlat)
-z_field = locs%altitude()
-call z_field%data(z)
 
 ! Check field
 call qg_fields_check(fld)
@@ -177,14 +171,14 @@ do jloc=locs%nlocs(),1,-1
   ! Check if current obs is in this time frame (t1,t2]
   if (t1 < locs%times(jloc) .and. locs%times(jloc) <= t2) then
     ! Interpolate variables
-    if (gom%vars%has('x')) call qg_interp_trilinear_ad(fld%geom,lonlat(1,jloc),lonlat(2,jloc), &
-    &                                                  z(jloc),gom%x(jloc),fld_gom%x)
-    if (gom%vars%has('q')) call qg_interp_trilinear_ad(fld%geom,lonlat(1,jloc),lonlat(2,jloc), &
-    &                                                  z(jloc),gom%q(jloc),fld_gom%q)
-    if (gom%vars%has('u')) call qg_interp_trilinear_ad(fld%geom,lonlat(1,jloc),lonlat(2,jloc), &
-    &                                                  z(jloc),gom%u(jloc),fld_gom%u)
-    if (gom%vars%has('v')) call qg_interp_trilinear_ad(fld%geom,lonlat(1,jloc),lonlat(2,jloc), &
-    &                                                  z(jloc),gom%v(jloc),fld_gom%v)
+    if (gom%vars%has('x')) call qg_interp_bilinear_ad(fld%geom,lonlat(1,jloc),lonlat(2,jloc), &
+                                                    & gom%x(:,jloc),fld_gom%x)
+    if (gom%vars%has('q')) call qg_interp_bilinear_ad(fld%geom,lonlat(1,jloc),lonlat(2,jloc), &
+                                                    & gom%q(:,jloc),fld_gom%q)
+    if (gom%vars%has('u')) call qg_interp_bilinear_ad(fld%geom,lonlat(1,jloc),lonlat(2,jloc), &
+                                                    & gom%u(:,jloc),fld_gom%u)
+    if (gom%vars%has('v')) call qg_interp_bilinear_ad(fld%geom,lonlat(1,jloc),lonlat(2,jloc), &
+                                                    & gom%v(:,jloc),fld_gom%v)
   endif
 enddo
 
@@ -195,7 +189,6 @@ call qg_fields_self_add(fld,fld_tmp)
 
 ! Release memory
 call lonlat_field%final()
-call z_field%final()
 
 end subroutine qg_getvalues_interp_ad
 ! ------------------------------------------------------------------------------

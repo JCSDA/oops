@@ -28,7 +28,7 @@ static ObsOpMaker<ObsWSpeedQG> makerWSpeed_("WSpeed");
 // -----------------------------------------------------------------------------
 
 ObsWSpeedQG::ObsWSpeedQG(const ObsSpaceQG & odb, const eckit::Configuration & config)
-  : obsdb_(odb), varin_(std::vector<std::string>{"u", "v"})
+  : obsdb_(odb), varin_(std::vector<std::string>{"u", "v", "z"})
 {
   oops::Log::trace() << "ObsWSpeedQG created." << std::endl;
 }
@@ -37,7 +37,7 @@ ObsWSpeedQG::ObsWSpeedQG(const ObsSpaceQG & odb, const eckit::Configuration & co
 
 void ObsWSpeedQG::simulateObs(const GomQG & gom, ObsVecQG & ovec,
                               const ObsBias & bias) const {
-  qg_wspeed_equiv_f90(gom.toFortran(), ovec.toFortran(), bias.wspd());
+  qg_wspeed_equiv_f90(obsdb_.toFortran(), gom.toFortran(), ovec.toFortran(), bias.wspd());
 }
 
 // -----------------------------------------------------------------------------

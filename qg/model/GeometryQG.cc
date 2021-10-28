@@ -26,9 +26,17 @@
 namespace qg {
 // -----------------------------------------------------------------------------
 GeometryQG::GeometryQG(const GeometryQgParameters & params,
-                       const eckit::mpi::Comm & comm) : comm_(comm) {
+                       const eckit::mpi::Comm & comm) : comm_(comm), levs_(0) {
   ASSERT(comm_.size() == 1);
   qg_geom_setup_f90(keyGeom_, params.toConfiguration());
+
+  int nx = 0;
+  int ny = 0;
+  int nz;
+  double deltax;
+  double deltay;
+  qg_geom_info_f90(keyGeom_, nx, ny, nz, deltax, deltay);
+  levs_ = nz;
 
   // Set ATLAS lon/lat field
   atlasFieldSet_.reset(new atlas::FieldSet());
@@ -46,7 +54,7 @@ GeometryQG::GeometryQG(const GeometryQgParameters & params,
   qg_geom_fill_atlas_fieldset_f90(keyGeom_, atlasFieldSet_->get());
 }
 // -----------------------------------------------------------------------------
-GeometryQG::GeometryQG(const GeometryQG & other) : comm_(other.comm_) {
+GeometryQG::GeometryQG(const GeometryQG & other) : comm_(other.comm_), levs_(other.levs_) {
   ASSERT(comm_.size() == 1);
   qg_geom_clone_f90(keyGeom_, other.keyGeom_);
 
@@ -104,9 +112,7 @@ std::vector<double> GeometryQG::verticalCoord(std::string & vcUnits) const {
 }
 // -------------------------------------------------------------------------------------------------
 std::vector<size_t> GeometryQG::variableSizes(const oops::Variables & vars) const {
-  // Note: in qg we always do trilinear interpolation, so GeoVaLs are always
-  // size 1.
-  std::vector<size_t> sizes(vars.size(), 1);
+  std::vector<size_t> sizes(vars.size(), levs_);
   return sizes;
 }
 // -----------------------------------------------------------------------------

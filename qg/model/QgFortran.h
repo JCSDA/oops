@@ -55,6 +55,8 @@ typedef int F90ovec;
 typedef int F90odb;
 // Localization matrix
 typedef int F90lclz;
+// trajectory for wind speed
+typedef int F90traj;
 
 /// Interface to Fortran QG model
 /*!
@@ -161,8 +163,8 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Local Values (GOM)
 // -----------------------------------------------------------------------------
-  void qg_gom_setup_f90(F90gom &, const LocationsQG &, const oops::Variables &);
-  void qg_gom_create_f90(F90gom &, const oops::Variables &);
+  void qg_gom_setup_f90(F90gom &, const LocationsQG &, const oops::Variables &, int &);
+  void qg_gom_create_f90(F90gom &);
   void qg_gom_delete_f90(F90gom &);
   void qg_gom_copy_f90(const F90gom &, const F90gom &);
   void qg_gom_zero_f90(const F90gom &);
@@ -177,7 +179,7 @@ extern "C" {
   void qg_gom_dotprod_f90(const F90gom &, const F90gom &, double &);
   void qg_gom_stats_f90(const F90gom &, int &, double &, double &, double &);
   void qg_gom_maxloc_f90(const F90gom &, double &, int &, const oops::Variables &);
-  void qg_gom_read_file_f90(const F90gom &, const eckit::Configuration &);
+  void qg_gom_read_file_f90(const F90gom &, const oops::Variables &, const eckit::Configuration &);
   void qg_gom_write_file_f90(const F90gom &, const eckit::Configuration &);
   void qg_gom_analytic_init_f90(const F90gom &, const LocationsQG &,
                                 const eckit::Configuration &);
@@ -246,26 +248,27 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Streamfunction observations
 // -----------------------------------------------------------------------------
-  void qg_stream_equiv_f90(const F90gom &, const F90ovec &, const double &);
-  void qg_stream_equiv_tl_f90(const F90gom &, const F90ovec &, const double &);
-  void qg_stream_equiv_ad_f90(const F90gom &, const F90ovec &, double &);
+  void qg_stream_equiv_f90(const F90odb &, const F90gom &, const F90ovec &, const double &);
+  void qg_stream_equiv_tl_f90(const F90odb &, const F90gom &, const F90ovec &, const double &);
+  void qg_stream_equiv_ad_f90(const F90odb &, const F90gom &, const F90ovec &, double &);
 
 // -----------------------------------------------------------------------------
 //  Wind observations
 // -----------------------------------------------------------------------------
-  void qg_wind_equiv_f90(const F90gom &, const F90ovec &, const double &);
-  void qg_wind_equiv_tl_f90(const F90gom &, const F90ovec &, const double &);
-  void qg_wind_equiv_ad_f90(const F90gom &, const F90ovec &, double &);
+  void qg_wind_equiv_f90(const F90odb &, const F90gom &, const F90ovec &, const double &);
+  void qg_wind_equiv_tl_f90(const F90odb &, const F90gom &, const F90ovec &, const double &);
+  void qg_wind_equiv_ad_f90(const F90odb &, const F90gom &, const F90ovec &, double &);
 
 // -----------------------------------------------------------------------------
 //  Wind speed observations
 // -----------------------------------------------------------------------------
-  void qg_wspeed_equiv_f90(const F90gom &, const F90ovec &, const double &);
-  void qg_wspeed_equiv_tl_f90(const F90gom &, const F90ovec &, const F90gom &, const double &);
-  void qg_wspeed_equiv_ad_f90(const F90gom &, const F90ovec &, const F90gom &, double &);
-  void qg_wspeed_gettraj_f90(const int &, const oops::Variables &, const F90gom &);
-  void qg_wspeed_settraj_f90(const F90gom &, const F90gom &);
-
+  void qg_wspeed_equiv_f90(const F90odb &, const F90gom &, const F90ovec &, const double &);
+  void qg_wspeed_equiv_tl_f90(const F90odb &, const F90gom &, const F90ovec &, const F90traj &,
+                              const double &);
+  void qg_wspeed_equiv_ad_f90(const F90odb &, const F90gom &, const F90ovec &, const F90traj &,
+                              double &);
+  void qg_wspeed_alloctraj_f90(const int &, const F90traj &);
+  void qg_wspeed_settraj_f90(const F90odb &, const F90gom &, const F90traj &);
 }
 
 }  // namespace qg

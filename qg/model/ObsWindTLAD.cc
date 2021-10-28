@@ -28,8 +28,8 @@ namespace qg {
 static ObsOpTLADMaker<ObsWindTLAD> makerWindTL_("Wind");
 // -----------------------------------------------------------------------------
 
-ObsWindTLAD::ObsWindTLAD(const ObsSpaceQG &, const eckit::Configuration & config)
-  : varin_(std::vector<std::string>{"u", "v"})
+ObsWindTLAD::ObsWindTLAD(const ObsSpaceQG & odb, const eckit::Configuration & config)
+  : obsdb_(odb), varin_(std::vector<std::string>{"u", "v", "z"})
 {
   oops::Log::trace() << "ObsWindTLAD created" << std::endl;
 }
@@ -42,14 +42,14 @@ void ObsWindTLAD::setTrajectory(const GomQG &, const ObsBias &) {}
 
 void ObsWindTLAD::simulateObsTL(const GomQG & gom, ObsVecQG & ovec,
                                 const ObsBiasIncrement & bias) const {
-  qg_wind_equiv_tl_f90(gom.toFortran(), ovec.toFortran(), bias.wind());
+  qg_wind_equiv_tl_f90(obsdb_.toFortran(), gom.toFortran(), ovec.toFortran(), bias.wind());
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsWindTLAD::simulateObsAD(GomQG & gom, const ObsVecQG & ovec,
                                 ObsBiasIncrement & bias) const {
-  qg_wind_equiv_ad_f90(gom.toFortran(), ovec.toFortran(), bias.wind());
+  qg_wind_equiv_ad_f90(obsdb_.toFortran(), gom.toFortran(), ovec.toFortran(), bias.wind());
 }
 
 // -----------------------------------------------------------------------------

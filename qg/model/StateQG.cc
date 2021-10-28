@@ -149,5 +149,6 @@ void StateQG::zero() {
 void StateQG::accumul(const double & zz, const StateQG & xx) {
   fields_->axpy(zz, *xx.fields_);
 }
+// -----------------------------------------------------------------------------
 
 }  // namespace qg

@@ -65,6 +65,8 @@ class GomQG : public util::Printable,
   void print(std::ostream &) const;
   F90gom keyGom_;
   oops::Variables vars_;
+  const LocationsQG * locs_;
+  int levs_;
 };
 
 }  // namespace qg

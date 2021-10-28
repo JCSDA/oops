@@ -10,54 +10,75 @@ module qg_stream_mod
 
 use kinds
 use qg_gom_mod
+use qg_interp_mod
+use qg_obsdb_mod
 use qg_obsvec_mod
 
 implicit none
 
 private
 public :: qg_stream_equiv,qg_stream_equiv_ad
+
+real(kind_real), allocatable :: zsave(:)
+
 ! ------------------------------------------------------------------------------
 contains
 ! ------------------------------------------------------------------------------
 ! Public
 ! ------------------------------------------------------------------------------
 !> Get equivalent for streamfunction (TL calls this subroutine too)
-subroutine qg_stream_equiv(gom,hofx,bias)
+subroutine qg_stream_equiv(obsdb,gom,hofx,bias)
 
 implicit none
 
 ! Passed variables
+type(qg_obsdb),intent(in) :: obsdb
 type(qg_gom),intent(in) :: gom        !< GOM
 type(qg_obsvec),intent(inout) :: hofx !< Observation vector
 real(kind_real),intent(in) :: bias    !< Bias
 
 ! Local variables
 integer :: iobs
+real(kind_real) :: val
+type(qg_obsvec) :: zobs
+
+call qg_obsdb_get(obsdb, 'Stream', 'Location', zobs)
+
+if (.not.allocated(zsave)) allocate(zsave(gom%levs))
 
 ! Loop over observations
 do iobs=1,gom%nobs
-  hofx%values(1,iobs) = gom%x(iobs)+bias
+  zsave(:) = gom%z(:,iobs)
+  call qg_vert_interp(gom%levs,gom%z(:,iobs),zobs%values(3,iobs),gom%x(:,iobs),val)
+  hofx%values(1,iobs) = val + bias
 enddo
 
 end subroutine qg_stream_equiv
 ! ------------------------------------------------------------------------------
 !> Get equivalent for streamfunction - adjoint
-subroutine qg_stream_equiv_ad(gom,hofx,bias)
+subroutine qg_stream_equiv_ad(obsdb,gom,hofx,bias)
 
 implicit none
 
 ! Passed variables
+type(qg_obsdb),intent(in) :: obsdb
 type(qg_gom),intent(inout) :: gom     !< GOM
 type(qg_obsvec),intent(in) :: hofx    !< Observation vector
 real(kind_real),intent(inout) :: bias !< Bias
 
 ! Local variables
 integer :: iobs
+real(kind_real) :: val
+type(qg_obsvec) :: zobs
+
+call qg_obsdb_get(obsdb, 'Stream', 'Location', zobs)
+gom%x(:,:) = 0.0_kind_real
 
 ! Loop over observations
 do iobs=1,gom%nobs
-  gom%x(iobs) = hofx%values(1,iobs)
   bias = bias+hofx%values(1,iobs)
+  val = hofx%values(1,iobs)
+  call qg_vert_interp_ad(gom%levs,zsave(:)     ,zobs%values(3,iobs),gom%x(:,iobs),val)
 enddo
 
 end subroutine qg_stream_equiv_ad
