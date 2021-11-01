@@ -13,6 +13,7 @@
 
 #include <map>
 #include <memory>
+#include <regex>
 #include <string>
 #include <vector>
 
@@ -83,12 +84,16 @@ class ModelSpaceCovarianceBase {
   void inverseMultiply(const Increment_ &, Increment_ &) const;
   void getVariance(Increment_ &) const;
 
+  const std::string covarianceModel() const {return covarianceModel_;}
+  const size_t randomizationSize() const {return randomizationSize_;}
+
  private:
   virtual void doRandomize(Increment_ &) const = 0;
   virtual void doMultiply(const Increment_ &, Increment_ &) const = 0;
   virtual void doInverseMultiply(const Increment_ &, Increment_ &) const = 0;
 
   ChvarVec_ chvars_;
+  std::string covarianceModel_;
   size_t randomizationSize_;
   bool fullInverse_;
   int fullInverseIterations_;
@@ -310,6 +315,13 @@ ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(
     chvars_.push_back(LinearVariableChangeFactory<MODEL>::create(
                         bg, fg, resol, variableChange.variableChangeParameters));
   }
+
+  const boost::optional<std::string> &covarianceModel = parameters.covarianceModel.value();
+  if (covarianceModel == boost::none) {
+     covarianceModel_ = "none";
+  } else {
+     covarianceModel_ = *covarianceModel;
+  }
   randomizationSize_ = parameters.randomizationSize;
   fullInverse_ = parameters.fullInverse;
   fullInverseIterations_ = parameters.fullInverseIterations;
@@ -404,29 +416,6 @@ void ModelSpaceCovarianceBase<MODEL>::inverseMultiply(const Increment_ & dxi,
       this->doInverseMultiply(dxi, dxo);
     }
   }
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
-void ModelSpaceCovarianceBase<MODEL>::getVariance(Increment_ & variance) const {
-  Increment_ dx(variance);
-  Increment_ dxsq(variance);
-  Increment_ mean(variance);
-  mean.zero();
-  variance.zero();
-  for (size_t ie = 0; ie < randomizationSize_; ++ie) {
-    this->randomize(dx);
-    dx -= mean;
-    dxsq = dx;
-    dxsq.schur_product_with(dx);
-    double rk_var = static_cast<double>(ie)/static_cast<double>(ie+1);
-    double rk_mean = 1.0/static_cast<double>(ie+1);
-    variance.axpy(rk_var, dxsq, false);
-    mean.axpy(rk_mean, dx, false);
-  }
-  double rk_norm = 1.0/static_cast<double>(randomizationSize_-1);
-  variance *= rk_norm;
 }
 
 // -----------------------------------------------------------------------------

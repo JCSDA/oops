@@ -53,22 +53,15 @@ geometry:
 initial condition:
   date: 2010-01-01T12:00:00Z
   filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H.nc
-model:
-  tstep: PT1H
-output B:
+output dirac:
   datadir: Data
-  date: 2010-01-01T12:00:00Z
-  exp: dirac_qg_hyb_value_B
-  type: an
-output localization:
-  datadir: Data
-  date: 2010-01-01T12:00:00Z
-  exp: dirac_qg_hyb_value_localization
+  exp: dirac_qg_hyb_value_%id%
   type: an
 output variance:
   datadir: Data
-  exp: dirac_hyb_value_var
+  exp: dirac_qg_hyb_value_var
   type: an
 
 test:
   reference filename: testoutput/dirac_hyb_value.test
+  test output filename: testoutput/dirac_hyb_value.log.out

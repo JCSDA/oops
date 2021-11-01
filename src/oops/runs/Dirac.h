@@ -27,19 +27,62 @@
 #include "oops/base/Variables.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
+#include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/OptionalParameter.h"
+#include "oops/util/parameters/Parameter.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
 
+// -----------------------------------------------------------------------------
+
+/// \brief Top-level options taken by the Dirac application.
+template <typename MODEL> class DiracParameters : public ApplicationParameters {
+  OOPS_CONCRETE_PARAMETERS(DiracParameters, ApplicationParameters)
+
+ public:
+  typedef ModelSpaceCovarianceParametersWrapper<MODEL> CovarianceParameters_;
+  typedef typename Geometry<MODEL>::Parameters_        GeometryParameters_;
+  typedef typename State<MODEL>::Parameters_           StateParameters_;
+  typedef StateParametersND<MODEL>                     StateParametersND_;
+
+  /// Geometry parameters.
+  RequiredParameter<GeometryParameters_> geometry{"geometry", this};
+
+  /// Initial state parameters.
+  RequiredParameter<StateParametersND_> initialCondition{"initial condition", this};
+
+  /// Background error covariance model.
+  RequiredParameter<CovarianceParameters_> backgroundError{"background error", this};
+
+  /// Dirac location/variables parameters.
+  RequiredParameter<eckit::LocalConfiguration> dirac{"dirac", this};
+
+  /// Where to write the output(s) of Dirac tests
+  RequiredParameter<eckit::LocalConfiguration> outputDirac{"output dirac", this};
+
+  /// Where to write the output of randomized variance.
+  OptionalParameter<eckit::LocalConfiguration> outputVariance{"output variance", this};
+};
+
+// -----------------------------------------------------------------------------
+
 template <typename MODEL> class Dirac : public Application {
+  typedef ModelSpaceCovarianceBase<MODEL>           CovarianceBase_;
+  typedef CovarianceFactory<MODEL>                  CovarianceFactory_;
+  typedef ModelSpaceCovarianceParametersBase<MODEL> CovarianceParametersBase_;
   typedef Geometry<MODEL>                           Geometry_;
   typedef Increment<MODEL>                          Increment_;
   typedef State<MODEL>                              State_;
   typedef Localization<MODEL>                       Localization_;
   typedef IncrementEnsemble<MODEL>                  Ensemble_;
   typedef std::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
+
+  typedef DiracParameters<MODEL>                    DiracParameters_;
 
  public:
 // -----------------------------------------------------------------------------
@@ -50,11 +93,17 @@ template <typename MODEL> class Dirac : public Application {
   virtual ~Dirac() {}
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const {
+//  Deserialize parameters
+    DiracParameters_ params;
+    params.validateAndDeserialize(fullConfig);
+
+//  Define number of subwindows
     const eckit::LocalConfiguration backgroundConfig(fullConfig, "initial condition");
     std::vector<eckit::LocalConfiguration> confs;
     backgroundConfig.get("states", confs);
     size_t nslots = confs.size();
 
+//  Define space and time communicators
     const eckit::mpi::Comm * commSpace = &this->getComm();
     const eckit::mpi::Comm * commTime = &oops::mpi::myself();
     if (nslots > 1) {
@@ -78,90 +127,61 @@ template <typename MODEL> class Dirac : public Application {
       ASSERT(commTime->size() == nslots);
     }
 
-    //  Setup resolution
-    const eckit::LocalConfiguration resolConfig(fullConfig, "geometry");
-    const Geometry_ resol(resolConfig, *commSpace, *commTime);
+//  Setup resolution
+    const Geometry_ resol(params.geometry, *commSpace, *commTime);
 
-    // Setup background state
-    State_ xx(resol, backgroundConfig);
+//  Setup initial state
+    const State_ xx(resol, params.initialCondition);
 
-    //  Setup variables
+//  Setup variables
     const Variables vars = xx.variables();
 
-    //  Setup time
+//  Setup time
     util::DateTime time = xx.validTime();
 
-    // Apply B to Dirac
-    const eckit::LocalConfiguration covarConfig(fullConfig, "background error");
+//  Setup Dirac field
+    Increment_ dxi(resol, vars, time);
+    dxi.dirac(params.dirac);
+    Log::test() << "Input Dirac increment: " << dxi << std::endl;
 
-    //  Covariance
-    std::unique_ptr<ModelSpaceCovarianceBase<MODEL>> B(CovarianceFactory<MODEL>::create(
-      covarConfig, resol, vars, xx, xx));
+//  Go recursively through the covariance configuration
+    const CovarianceParametersBase_ &covarParams =
+        params.backgroundError.value().covarianceParameters;
+    eckit::LocalConfiguration covarConf(covarParams.toConfiguration());
+    dirac(covarConf, params.outputDirac.value(), resol, xx, dxi);
 
-    //  Setup Dirac
-    Increment_ dxdirin(resol, vars, time);
-    Increment_ dxdirout(resol, vars, time);
-    const eckit::LocalConfiguration diracConfig(fullConfig, "dirac");
-    dxdirin.dirac(diracConfig);
-    Log::test() << "Input Dirac increment: " << dxdirin << std::endl;
-
-    //  Apply 3D B matrix to Dirac increment
-    B->multiply(dxdirin, dxdirout);
-
-    //  Write increment
-    const eckit::LocalConfiguration output_B(fullConfig, "output B");
-    dxdirout.write(output_B);
-    Log::test() << "B * Increment: " << dxdirout << std::endl;
-
-    //  Setup localization and ensemble configurations
-    std::vector<eckit::LocalConfiguration> locConfigs;
-    if (covarConfig.has("localization")) {
-      locConfigs.push_back(eckit::LocalConfiguration(covarConfig, "localization"));
-    } else {
-      if (covarConfig.has("components")) {
-        std::vector<eckit::LocalConfiguration> confs;
-        covarConfig.get("components", confs);
-        for (const auto & conf : confs) {
-          const eckit::LocalConfiguration componentConf(conf, "covariance");
-          if (componentConf.has("localization")) {
-            locConfigs.push_back(eckit::LocalConfiguration(componentConf, "localization"));
-          }
-        }
-      }
-    }
-
-    for (size_t jcomp = 0; jcomp < locConfigs.size(); ++jcomp) {
-      // Apply localization to Dirac
-
-      //  Setup Dirac
-      Increment_ dxdir(resol, vars, time);
-      const eckit::LocalConfiguration diracConfig(fullConfig, "dirac");
-      dxdir.dirac(diracConfig);
-
-      //  Setup localization
-      Localization_ loc_(resol, locConfigs[jcomp]);
-
-      //  Apply localization
-      loc_.multiply(dxdir);
-
-      //  Write increment
-      const eckit::LocalConfiguration output_localization(fullConfig, "output localization");
-      dxdir.write(output_localization);
-      Log::test() << "Localized Increment: " << dxdir << std::endl;
-    }
-
-    if (fullConfig.has("output variance")) {
-      // Variance configuration
-      const eckit::LocalConfiguration output_variance(fullConfig, "output variance");
-
-      //  Setup variance
+//  Variance randomization
+    const boost::optional<eckit::LocalConfiguration> &outputVariance =
+        params.outputVariance.value();
+    if (outputVariance != boost::none) {
+      // Setup variance
+      Increment_ dx(resol, vars, time);
+      Increment_ dxsq(resol, vars, time);
+      Increment_ mean(resol, vars, time);
       Increment_ variance(resol, vars, time);
+      mean.zero();
+      variance.zero();
 
-      // Get variance
-      B->getVariance(variance);
+      // Covariance
+      std::unique_ptr<CovarianceBase_> Bmat(CovarianceFactory_::create(
+          covarConf, resol, vars, xx, xx));
 
-      //  Write increment
-      variance.write(output_variance);
+      // Randomization
+      for (size_t ie = 0; ie < Bmat->randomizationSize(); ++ie) {
+        Bmat->randomize(dx);
+        dx -= mean;
+        dxsq = dx;
+        dxsq.schur_product_with(dx);
+        double rk_var = static_cast<double>(ie)/static_cast<double>(ie+1);
+        double rk_mean = 1.0/static_cast<double>(ie+1);
+        variance.axpy(rk_var, dxsq, false);
+        mean.axpy(rk_mean, dx, false);
+      }
+      double rk_norm = 1.0/static_cast<double>(Bmat->randomizationSize()-1);
+      variance *= rk_norm;
+
+      // Write increment
+      variance.write(*(params.outputVariance.value()));
       Log::test() << "Randomized variance: " << variance << std::endl;
     }
 
@@ -171,6 +191,101 @@ template <typename MODEL> class Dirac : public Application {
  private:
   std::string appname() const {
     return "oops::Dirac<" + MODEL::name() + ">";
+  }
+
+  void dirac(const eckit::LocalConfiguration & covarConfig,
+             const eckit::LocalConfiguration & outputConfig,
+             const Geometry_ & resol, const State_ & xx,
+             const Increment_ & dxi) const {
+    // Define output increment
+    Increment_ dxo(dxi, false);
+
+    // Covariance
+    std::unique_ptr<CovarianceBase_> Bmat(CovarianceFactory_::create(
+        covarConfig, resol, xx.variables(), xx, xx));
+
+    // Multiply
+    Bmat->multiply(dxi, dxo);
+
+    // Copy configuration
+    eckit::LocalConfiguration outputBConf(outputConfig);
+
+    // Update configuration ID
+    std::string id(outputBConf.getString("id", ""));
+    if (id != "") id.append("_");
+    id.append(Bmat->covarianceModel());
+    outputBConf.set("id", id);
+
+    // Loop over keys to replace %id% with the ID
+    std::vector<std::string> keys(outputBConf.keys());
+    for (size_t jj = 0; jj < keys.size(); ++jj) {
+       // Get configuration key/value
+       std::string key(keys[jj]);
+       std::string value(outputBConf.getString(key));
+
+       // Check if a configuration value contains the pattern %id%
+       if (value.find("%id%") != std::string::npos) {
+          // Update the configuration value
+          value = std::regex_replace(value, std::regex("%id%"), id);
+          outputBConf.set(key, value);
+       }
+    }
+
+    // Write output increment
+    dxo.write(outputBConf);
+    Log::test() << "Covariance(" << id << ") * Increment: " << dxo << std::endl;
+
+    // Look for hybrid or ensemble covariance models
+    const std::string covarianceModel(covarConfig.getString("covariance model"));
+    if (covarianceModel == "hybrid") {
+      std::vector<eckit::LocalConfiguration> confs;
+      covarConfig.get("components", confs);
+      for (const auto & conf : confs) {
+        const eckit::LocalConfiguration componentConfig(conf, "covariance");
+        dirac(componentConfig, outputBConf, resol, xx, dxi);
+      }
+    }
+    if (covarianceModel == "ensemble" && covarConfig.has("localization")) {
+      // Localization configuration
+      eckit::LocalConfiguration locConfig(covarConfig.getSubConfiguration("localization"));
+
+      // Define output increment
+      Increment_ dxo(dxi);
+
+      // Setup localization
+      Localization_ Lmat(resol, locConfig);
+
+      // Apply localization
+      Lmat.multiply(dxo);
+
+      // Copy configuration
+      eckit::LocalConfiguration outputLConf(outputConfig);
+
+      // Update configuration ID
+      std::string id(outputLConf.getString("id", ""));
+      if (id != "") id.append("_");
+      id.append(Bmat->covarianceModel());
+      outputLConf.set("id", id);
+
+      // Loop over keys to replace %id% with the ID
+      std::vector<std::string> keys(outputLConf.keys());
+      for (size_t jj = 0; jj < keys.size(); ++jj) {
+        // Get configuration key/value
+        std::string key(keys[jj]);
+        std::string value(outputLConf.getString(key));
+
+        // Check if a configuration value contains the pattern %id%
+        if (value.find("%id%") != std::string::npos) {
+          // Update the configuration value
+          value = std::regex_replace(value, std::regex("%id%"), id);
+          outputLConf.set(key, value);
+        }
+      }
+
+      // Write output increment
+      dxo.write(outputLConf);
+      Log::test() << "Localization(" << id << ") * Increment: " << dxo << std::endl;
+    }
   }
 // -----------------------------------------------------------------------------
 };

@@ -40,21 +40,9 @@ geometry:
 initial condition:
   date: 2010-01-01T12:00:00Z
   filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H.nc
-model:
-  tstep: PT1H
-output B:
+output dirac:
   datadir: Data
-  date: 2010-01-01T12:00:00Z
-  exp: dirac_loc_3d_B
-  type: an
-output localization:
-  datadir: Data
-  date: 2010-01-01T00:00:00Z
-  exp: dirac_loc_3d_localization
-  type: an
-output variance:
-  datadir: Data
-  exp: dirac_loc_3d_var
+  exp: dirac_loc_3d_%id%
   type: an
 output variance:
   datadir: Data
@@ -63,3 +51,4 @@ output variance:
 
 test:
   reference filename: testoutput/dirac_loc_3d.test
+  test output filename: testoutput/dirac_loc_3d.log.out
