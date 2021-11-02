@@ -148,7 +148,8 @@ template <typename MODEL> class Dirac : public Application {
     const CovarianceParametersBase_ &covarParams =
         params.backgroundError.value().covarianceParameters;
     eckit::LocalConfiguration covarConf(covarParams.toConfiguration());
-    dirac(covarConf, params.outputDirac.value(), resol, xx, dxi);
+    std::string id;
+    dirac(covarConf, params.outputDirac.value(), id, resol, xx, dxi);
 
 //  Variance randomization
     const boost::optional<eckit::LocalConfiguration> &outputVariance =
@@ -195,8 +196,10 @@ template <typename MODEL> class Dirac : public Application {
 
   void dirac(const eckit::LocalConfiguration & covarConfig,
              const eckit::LocalConfiguration & outputConfig,
+             std::string & id,
              const Geometry_ & resol, const State_ & xx,
              const Increment_ & dxi) const {
+    Log::debug() << "Input ID is " << id << std::endl;
     // Define output increment
     Increment_ dxo(dxi, false);
 
@@ -210,13 +213,11 @@ template <typename MODEL> class Dirac : public Application {
     // Copy configuration
     eckit::LocalConfiguration outputBConf(outputConfig);
 
-    // Update configuration ID
-    std::string id(outputBConf.getString("id", ""));
+    // Update ID
     if (id != "") id.append("_");
     id.append(Bmat->covarianceModel());
-    outputBConf.set("id", id);
 
-    // Loop over keys to replace %id% with the ID
+    // Loop over keys to replace %id% with id
     std::vector<std::string> keys(outputBConf.keys());
     for (size_t jj = 0; jj < keys.size(); ++jj) {
        // Get configuration key/value
@@ -241,8 +242,9 @@ template <typename MODEL> class Dirac : public Application {
       std::vector<eckit::LocalConfiguration> confs;
       covarConfig.get("components", confs);
       for (const auto & conf : confs) {
+        std::string idC(id);
         const eckit::LocalConfiguration componentConfig(conf, "covariance");
-        dirac(componentConfig, outputBConf, resol, xx, dxi);
+        dirac(componentConfig, outputConfig, idC, resol, xx, dxi);
       }
     }
     if (covarianceModel == "ensemble" && covarConfig.has("localization")) {
@@ -261,13 +263,11 @@ template <typename MODEL> class Dirac : public Application {
       // Copy configuration
       eckit::LocalConfiguration outputLConf(outputConfig);
 
-      // Update configuration ID
-      std::string id(outputLConf.getString("id", ""));
-      if (id != "") id.append("_");
-      id.append(Bmat->covarianceModel());
-      outputLConf.set("id", id);
+      // Update ID
+      std::string idL(id);
+      idL.append("_localization");
 
-      // Loop over keys to replace %id% with the ID
+      // Loop over keys to replace %id% with idL
       std::vector<std::string> keys(outputLConf.keys());
       for (size_t jj = 0; jj < keys.size(); ++jj) {
         // Get configuration key/value
@@ -277,7 +277,7 @@ template <typename MODEL> class Dirac : public Application {
         // Check if a configuration value contains the pattern %id%
         if (value.find("%id%") != std::string::npos) {
           // Update the configuration value
-          value = std::regex_replace(value, std::regex("%id%"), id);
+          value = std::regex_replace(value, std::regex("%id%"), idL);
           outputLConf.set(key, value);
         }
       }
