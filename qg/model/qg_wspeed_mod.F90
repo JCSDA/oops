@@ -11,6 +11,7 @@ module qg_wspeed_mod
 
 use kinds
 use iso_c_binding
+use missing_values_mod
 use qg_gom_mod
 use qg_interp_mod
 use qg_obsdb_mod
@@ -168,19 +169,21 @@ type(wspeed_traj), intent(inout) :: traj
 
 ! Local variables
 integer :: iobs
-real(kind_real) :: valu, valv
+real(kind_real) :: zz
 type(qg_obsvec) :: zobs
 
 call qg_obsdb_get(obsdb, 'WSpeed', 'Location', zobs)
 
 ! Loop over observations
 do iobs=1,gom%nobs
-  call qg_vert_interp(gom%levs,gom%z(:,iobs),zobs%values(3,iobs),gom%u(:,iobs),valu)
-  call qg_vert_interp(gom%levs,gom%z(:,iobs),zobs%values(3,iobs),gom%v(:,iobs),valv)
-  traj%u(iobs) = valu
-  traj%v(iobs) = valv
+  call qg_vert_interp(gom%levs,gom%z(:,iobs),zobs%values(3,iobs),gom%u(:,iobs),traj%u(iobs))
+  call qg_vert_interp(gom%levs,gom%z(:,iobs),zobs%values(3,iobs),gom%v(:,iobs),traj%v(iobs))
 end do
-traj%zsave(:)=gom%z(:,1)
+if (gom%nobs > 0) then
+  traj%zsave(:)=gom%z(:,1)
+else
+  traj%zsave(:)=missing_value(zz)
+endif
 
 end subroutine qg_wspeed_settraj
 ! ------------------------------------------------------------------------------
