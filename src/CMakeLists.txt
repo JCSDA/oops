@@ -171,6 +171,12 @@ oops/contrib/dcmip_initial_conditions_test_1_2_3_v5.f90
 oops/contrib/dcmip_initial_conditions_test_4_v3.f90
 
 oops/generic/AnalyticInitBase.h
+oops/generic/fft_gpoint2spectral_f.F90
+oops/generic/fft_init_f.F90
+oops/generic/fft_interface_f.h
+oops/generic/fft_multiple_f.F90
+oops/generic/fft_pass_proc_f.F90
+oops/generic/fft_spectral2gpoint_f.F90
 oops/generic/gc99.h
 oops/generic/gc99.cc
 oops/generic/GeoVaLsWriter.h
@@ -428,6 +434,8 @@ test/interface/VariableChange.h
 
 test/mpi/mpi.h
 
+test/generic/fft_multiple.cc
+test/generic/fft_multiple.h
 test/generic/InterpolationInterface.h
 test/generic/PseudoModelState4D.h
 test/generic/VerticalLocEV.h
@@ -479,10 +487,16 @@ list( APPEND oops_test_input
   test/testinput/empty.yaml
   test/testinput/mpi.yaml
   test/testinput/spectrallmp.yaml
+  test/testinput/fft_multiple.yaml
+)
+# oops test output files
+list( APPEND oops_test_output
+  test/testoutput/fft_multiple.test
 )
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test/testinput)
 CREATE_SYMLINK( ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${oops_test_input} )
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test/testoutput)
+CREATE_SYMLINK( ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} ${oops_test_output} )
 
 ecbuild_add_library( TARGET     ${PROJECT_NAME}
                      SOURCES    ${oops_src_files}
@@ -658,6 +672,11 @@ ecbuild_add_test( TARGET  test_oops_atlas_interpolation_interface
 ecbuild_add_test( TARGET  test_oops_unstructured_interpolation
                   SOURCES test/generic/InterpolationInterface.cc
                   ARGS    "test/testinput/unstructured_interpolation.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_fft_multiple
+                  SOURCES test/generic/fft_multiple.cc
+                  ARGS    "test/testinput/fft_multiple.yaml"
                   LIBS    oops )
 
 ecbuild_add_test( TARGET  test_util_algorithms
