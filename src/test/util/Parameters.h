@@ -98,6 +98,7 @@ class EmbeddedParameters : public oops::Parameters {
 
 class MyParametersBase : public oops::Parameters {
   OOPS_ABSTRACT_PARAMETERS(MyParametersBase, Parameters)
+
  public:
   typedef util::AnyOf<std::string, std::vector<int>> AnyOf_;
 
@@ -112,6 +113,8 @@ class MyParametersBase : public oops::Parameters {
   oops::Parameter<Fruit> fruitParameter{"fruit_parameter", Fruit::ORANGE, this};
   oops::Parameter<RangeParameters> rangeParameter{"range_parameter", RangeParameters(), this};
   oops::Parameter<std::vector<int>> intParameters{"int_parameters", {}, this};
+  oops::Parameter<std::pair<int, std::string>> pairParameters{"pair_parameters",
+                                                              {10, "apples up on top"}, this};
   oops::Parameter<std::vector<RangeParameters>> rangeParameters{"range_parameters", {}, this};
   oops::Parameter<oops::Variables> variablesParameter{"variables_parameter", {}, this};
   oops::Parameter<std::set<int>> setIntParameter{"set_int_parameter", {}, this};
@@ -484,6 +487,8 @@ void testDefaultValues() {
   EXPECT(params.rangeParameter.value().minParameter == 0.0f);
   EXPECT(params.rangeParameter.value().maxParameter == 0.0f);
   EXPECT(params.intParameters.value().empty());
+  EXPECT(params.pairParameters.value().first == 10);
+  EXPECT(params.pairParameters.value().second == "apples up on top");
   EXPECT(params.rangeParameters.value().empty());
   EXPECT(params.variablesParameter.value() == oops::Variables());
   EXPECT(params.setIntParameter.value() == std::set<int>());
@@ -512,6 +517,8 @@ void testDefaultValues() {
   EXPECT(params.rangeParameter.value().minParameter == 0.0f);
   EXPECT(params.rangeParameter.value().maxParameter == 0.0f);
   EXPECT(params.intParameters.value().empty());
+  EXPECT(params.pairParameters.value().first == 10);
+  EXPECT(params.pairParameters.value().second == "apples up on top");
   EXPECT(params.rangeParameters.value().empty());
   EXPECT(params.variablesParameter.value() == oops::Variables());
   EXPECT(params.setIntParameter.value() == std::set<int>());
@@ -548,6 +555,8 @@ void testCorrectValues() {
   EXPECT(params.rangeParameter.value().minParameter == 7.0f);
   EXPECT(params.rangeParameter.value().maxParameter == 8.5f);
   EXPECT(params.intParameters.value() == std::vector<int>({1, 2}));
+  EXPECT(params.pairParameters.value().first == 5);
+  EXPECT(params.pairParameters.value().second == "oranges");
   EXPECT(params.rangeParameters.value().size() == 2);
   EXPECT(params.rangeParameters.value()[0].minParameter == 9.0f);
   EXPECT(params.rangeParameters.value()[0].maxParameter == 10.0f);
@@ -728,6 +737,42 @@ void testIncorrectValueOfIntParameters() {
     EXPECT_THROWS_MSG(params.validate(conf), "unexpected value type");
   EXPECT_THROWS_AS(params.deserialize(conf), eckit::Exception);
 }
+
+void testIncorrectValueOfPairParameters() {
+  {
+    MyOptionalAndRequiredParameters params;
+    const eckit::LocalConfiguration conf(TestEnvironment::config(),
+                                         "error_in_pair_parameters_singlevalue");
+    if (validationSupported)
+      EXPECT_THROWS_MSG(params.validate(conf), "unexpected value type");
+    EXPECT_THROWS_AS(params.deserialize(conf), eckit::Exception);
+  }
+  {
+    MyOptionalAndRequiredParameters params;
+    const eckit::LocalConfiguration conf(TestEnvironment::config(),
+                                         "error_in_pair_parameters_toofew");
+    if (validationSupported)
+      EXPECT_THROWS_MSG(params.validate(conf), "array has too few items");
+    EXPECT_THROWS_AS(params.deserialize(conf), eckit::Exception);
+  }
+  {
+    MyOptionalAndRequiredParameters params;
+    const eckit::LocalConfiguration conf(TestEnvironment::config(),
+                                         "error_in_pair_parameters_wrongtypes");
+    if (validationSupported)
+      EXPECT_THROWS_MSG(params.validate(conf), "unexpected value type");
+    params.deserialize(conf);
+  }
+  {
+    MyOptionalAndRequiredParameters params;
+    const eckit::LocalConfiguration conf(TestEnvironment::config(),
+                                         "error_in_pair_parameters_toomany");
+    if (validationSupported)
+      EXPECT_THROWS_MSG(params.validate(conf), "array has too many items");
+    EXPECT_THROWS_AS(params.deserialize(conf), eckit::Exception);
+  }
+}
+
 
 void testIncorrectValueOfRangeParameters() {
   MyOptionalAndRequiredParameters params;
@@ -1749,6 +1794,9 @@ class Parameters : public oops::Test {
                     });
     ts.emplace_back(CASE("util/Parameters/testIncorrectValueOfIntParameters") {
                       testIncorrectValueOfIntParameters();
+                    });
+    ts.emplace_back(CASE("util/Parameters/testIncorrectValueOfPairParameters") {
+                      testIncorrectValueOfPairParameters();
                     });
     ts.emplace_back(CASE("util/Parameters/testIncorrectValueOfRangeParameters") {
                       testIncorrectValueOfRangeParameters();

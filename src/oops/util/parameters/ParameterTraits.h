@@ -405,6 +405,73 @@ struct ParameterTraits<std::vector<Value>, std::false_type> {
   }
 };
 
+/// \brief Specialization for pairs (specified as a two-element list)
+template <typename Value1, typename Value2>
+struct ParameterTraits<std::pair<Value1, Value2>, std::false_type> {
+  static boost::optional<std::pair<Value1, Value2>> get(util::CompositePath &path,
+                                                        const eckit::Configuration &config,
+                                                        const std::string &name) {
+    boost::optional<std::pair<Value1, Value2>> result;
+
+    if (!config.has(name))
+      return result;
+
+    const std::vector<eckit::LocalConfiguration> subConfigs = config.getSubConfigurations(name);
+    if (subConfigs.size() != 2) {
+      throw eckit::Exception(path.path() + " has to have exactly two entries for key '" +
+                             name + "'", Here());
+    }
+    util::PathComponent component(path, name);
+    std::string separator{config.separator()};
+    boost::optional<Value1> value1 = ParameterTraits<Value1>::get(path, subConfigs[0], separator);
+    boost::optional<Value2> value2 = ParameterTraits<Value2>::get(path, subConfigs[1], separator);
+    if (value1 && value2) {
+      result = std::pair<Value1, Value2>(std::move(*value1), std::move(*value2));
+    }
+    return result;
+  }
+
+  static void set(eckit::LocalConfiguration &config,
+                  const std::string &name,
+                  const std::pair<Value1, Value2> &values) {
+    std::vector<eckit::LocalConfiguration> subConfigs;
+    subConfigs.reserve(2);
+
+    eckit::LocalConfiguration temp;
+    const std::string dummyName = "a";
+    ParameterTraits<Value1>::set(temp, dummyName, values.first);
+    subConfigs.push_back(temp.getSubConfiguration(dummyName));
+    ParameterTraits<Value2>::set(temp, dummyName, values.second);
+    subConfigs.push_back(temp.getSubConfiguration(dummyName));
+
+    config.set(name, subConfigs);
+  }
+
+  static ObjectJsonSchema jsonSchema(const std::string &name) {
+    std::stringstream items;
+    {
+      eckit::Channel ch;
+      ch.setStream(items);
+      ch << "[\n";
+      {
+        eckit::AutoIndent indent(ch);
+        ObjectJsonSchema item1Schema = ParameterTraits<Value1>::jsonSchema("");
+        ch << toString(item1Schema.properties().at(""));
+        ch << ",\n";
+        ObjectJsonSchema item2Schema = ParameterTraits<Value2>::jsonSchema("");
+        ch << toString(item2Schema.properties().at(""));
+        ch << '\n';
+      }
+      ch << "]";
+    }
+
+    return ObjectJsonSchema({{name, {{"type", "\"array\""},
+                                     {"items", items.str()},
+                                     {"minItems", "2"},
+                                     {"maxItems", "2"}}}});
+  }
+};
+
 /// \brief Specialization for maps.
 ///
 /// \note Owing to a bug in the eckit YAML parser, maps need to be written in the JSON style,
