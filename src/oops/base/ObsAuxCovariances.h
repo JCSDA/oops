@@ -52,6 +52,9 @@ class ObsAuxCovariances : public util::Printable,
   const eckit::LocalConfiguration & config() const {return conf_;}
   const ObsSpaces_ & obspaces() const {return odb_;}
 
+/// I/O and diagnostics
+  void write(const eckit::Configuration &) const;
+
  private:
   void print(std::ostream &) const;
   std::vector<std::unique_ptr<ObsAuxCovariance_> > cov_;
@@ -138,6 +141,22 @@ void ObsAuxCovariances<OBS>::randomize(ObsAuxIncrements_ & dx) const {
     cov_[jobs]->randomize(dx[jobs]);
   }
   Log::trace() << "ObsAuxCovariances<OBS>::randomize done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename OBS>
+void ObsAuxCovariances<OBS>::write(const eckit::Configuration & conf) const {
+  Log::trace() << "ObsAuxCovariances<OBS>::write starting" << std::endl;
+  std::vector<eckit::LocalConfiguration> obsconfs = conf.getSubConfigurations("");
+  ASSERT(obsconfs.size() == cov_.size());
+  for (std::size_t jobs = 0; jobs < cov_.size(); ++jobs) {
+    eckit::LocalConfiguration obsauxconf = obsconfs[jobs].getSubConfiguration("obs bias");
+    typename ObsAuxCovariance_::Parameters_ params;
+    params.validateAndDeserialize(obsauxconf);
+    if (params.covariance.value() != boost::none) cov_[jobs]->write(params);
+  }
+  Log::trace() << "ObsAuxCovariances<OBS>::write done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

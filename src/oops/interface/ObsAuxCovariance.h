@@ -62,6 +62,9 @@ class ObsAuxCovariance : public util::Printable,
   /// randomize the values in the ObsAuxIncrement
   void randomize(ObsAuxIncrement_ &) const;
 
+  /// Write this ObsAuxCovariance out to file
+  void write(const Parameters_ &) const;
+
  private:
   void print(std::ostream &) const;
   std::unique_ptr<ObsAuxCovariance_> cov_;
@@ -129,6 +132,16 @@ void ObsAuxCovariance<OBS>::randomize(ObsAuxIncrement_ & dx) const {
   util::Timer timer(classname(), "randomize");
   cov_->randomize(dx.obsauxincrement());
   Log::trace() << "ObsAuxCovariance<OBS>::randomize done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename OBS>
+void ObsAuxCovariance<OBS>::write(const Parameters_ & params) const {
+  Log::trace() << "ObsAuxCovariance<OBS>::write starting" << std::endl;
+  util::Timer timer(classname(), "write");
+  cov_->write(params);
+  Log::trace() << "ObsAuxCovariance<OBS>::write done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

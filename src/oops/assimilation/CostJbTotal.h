@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2021 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -51,7 +52,7 @@ template<typename MODEL, typename OBS> class CostJbTotal {
               const Geometry_ &, const ObsSpaces_ & odb);
 
 /// Destructor
-  ~CostJbTotal() {}
+  ~CostJbTotal();
 
 /// Initialize before nonlinear model integration.
   void initialize(const CtrlVar_ &) const;
@@ -139,6 +140,16 @@ CostJbTotal<MODEL, OBS>::CostJbTotal(const CtrlVar_ & xb, JbState_ * jb,
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
+CostJbTotal<MODEL, OBS>::~CostJbTotal() {
+  Log::trace() << "CostJbTotal::~CostJbTotal start" << std::endl;
+  // Write out obs bias covariance
+  jbObsBias_.write(jbObsBias_.config());
+  Log::trace() << "CostJbTotal::~CostJbTotal done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL, typename OBS>
 void CostJbTotal<MODEL, OBS>::initialize(const CtrlVar_ & fg) const {
   Log::trace() << "CostJbTotal::initialize start" << std::endl;
   fg_ = &fg;
@@ -166,6 +177,7 @@ double CostJbTotal<MODEL, OBS>::finalize(const CtrlVar_ & mx) const {
 // Compute Jb value
   double zjb = 0.0;
   if (jbEvaluation_) zjb = this->evaluate(dx);
+
   Log::trace() << "CostJbTotal::finalize done" << std::endl;
   return zjb;
 }
