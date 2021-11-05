@@ -50,6 +50,11 @@ list( APPEND l95_test_input
   testinput/eda.3dvar.block.1.yaml
   testinput/eda.3dvar.block.2.yaml
   testinput/eda.3dvar.block.yaml
+  testinput/eda.3dvar.zeromeanpert.1.yaml
+  testinput/eda.3dvar.zeromeanpert.2.yaml
+  testinput/eda.3dvar.zeromeanpert.3.yaml
+  testinput/eda.3dvar.zeromeanpert.4.yaml
+  testinput/eda.3dvar.zeromeanpert.yaml
   testinput/eda.4dvar.3.yaml
   testinput/eda.4dvar.yaml
   testinput/enshofx.1.yaml
@@ -80,6 +85,7 @@ list( APPEND l95_test_input
   testinput/makeobs4d12h.yaml
   testinput/makeobsbias.yaml
   testinput/makeobspert.yaml
+  testinput/obserrordiagparameters.yaml
   testinput/pseudomodel.yaml
   testinput/pseudomodel_state4d.yaml
   testinput/truth.yaml
@@ -680,6 +686,19 @@ ecbuild_add_test( TARGET test_l95_eda_3dvar_block
                   ARGS testinput/eda.3dvar.block.yaml
                   TEST_DEPENDS test_l95_genenspert test_l95_makeobs3d )
 
+ecbuild_add_test( TARGET test_l95_eda_3dvar_zeromeanpert
+                  MPI 4
+                  COMMAND l95_eda.x
+                  ARGS testinput/eda.3dvar.zeromeanpert.yaml
+                  DEPENDS l95_eda.x
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
+
+ecbuild_add_test( TARGET test_l95_eda_3dvar_zeromeanpert_compare
+                  SOURCES lorenz95/ObsErrorDiagZeroMeanPerturbations.cc
+                  ARGS testinput/eda.3dvar.zeromeanpert.yaml
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_eda_3dvar_zeromeanpert )
+
 #####################################################################
 # FSOI tests
 #####################################################################
@@ -772,6 +791,11 @@ ecbuild_add_test( TARGET test_l95_getkf_offline_hofx
 ecbuild_add_test( TARGET test_l95_linearmodelfactory
                   SOURCES lorenz95/LinearModelFactory.cc
                   ARGS "testinput/linearmodelfactory.yaml"
+                  LIBS lorenz95 )
+
+ecbuild_add_test( TARGET test_l95_obserrordiagparameters
+                  SOURCES lorenz95/ObsErrorDiagParameters.cc
+                  ARGS "testinput/obserrordiagparameters.yaml"
                   LIBS lorenz95 )
 
 #####################################################################

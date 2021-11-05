@@ -198,6 +198,7 @@ oops/generic/LinearModelBase.h
 oops/generic/LocalizationBase.h
 oops/generic/ModelBase.h
 oops/generic/ObsErrorDiag.h
+oops/generic/ObsErrorDiag.cc
 oops/generic/ObsErrorBase.h
 oops/generic/ObsFilterBase.h
 oops/generic/ObsFilterParametersBase.h
