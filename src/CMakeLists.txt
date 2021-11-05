@@ -264,6 +264,7 @@ oops/runs/RTPP.h
 oops/runs/Run.cc
 oops/runs/Run.h
 oops/runs/StaticBInit.h
+oops/runs/SqrtOfVertLoc.h
 oops/runs/Test.h
 oops/runs/Variational.h
 

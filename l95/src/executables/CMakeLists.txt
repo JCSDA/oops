@@ -10,6 +10,10 @@ ecbuild_add_executable( TARGET  l95_genpert.x
                         LIBS    lorenz95 )
 oops_output_json_schema( l95_genpert.x )
 
+ecbuild_add_executable( TARGET  l95_sqrtofvertloc.x
+                        SOURCES SqrtOfVertLoc.cc
+                        LIBS    lorenz95 )
+
 ecbuild_add_executable( TARGET  l95_4dvar.x
                         SOURCES Main4dvar.cc
                         LIBS    lorenz95 )

@@ -185,6 +185,8 @@ template<typename MODEL>
     for (size_t jj = 0; jj < memberConfig.size(); ++jj) {
       (*sqrtVertLoc_)[jj].read(memberConfig[jj]);
     }
+    // TODO(frolovsa) check that correlation matrix has 1 on the diagnoal.
+    // If not, assume that fewer vectors were read and renormalize
   }
 
 // -------------------------------------------------------------------------------------------------

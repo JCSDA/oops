@@ -97,6 +97,7 @@ list( APPEND l95_test_input
   testinput/simplifiedl95_PLanczos.yaml
   testinput/simplifiedl95_RPCG.yaml
   testinput/simplifiedl95_RPLanczos.yaml
+  testinput/sqrtvertloc.yaml
 )
 
 list( APPEND l95_test_data
@@ -186,6 +187,7 @@ list( APPEND l95_testoutput
   testoutput/simplifiedl95_PLanczos.test
   testoutput/simplifiedl95_RPCG.test
   testoutput/simplifiedl95_RPLanczos.test
+  testoutput/sqrtvertloc.test
 )
 
 
@@ -471,6 +473,9 @@ ecbuild_add_test( TARGET test_l95_enshofx
                   DEPENDS l95_enshofx.x
                   TEST_DEPENDS test_l95_genenspert test_l95_makeobs4d )
 
+ecbuild_add_test( TARGET test_l95_sqrtvertloc
+                  COMMAND l95_sqrtofvertloc.x
+                  ARGS testinput/sqrtvertloc.yaml )
 
 #####################################################################
 # 3d variational tests

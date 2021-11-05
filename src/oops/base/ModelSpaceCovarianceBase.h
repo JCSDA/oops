@@ -11,6 +11,7 @@
 #ifndef OOPS_BASE_MODELSPACECOVARIANCEBASE_H_
 #define OOPS_BASE_MODELSPACECOVARIANCEBASE_H_
 
+#include <algorithm>
 #include <map>
 #include <memory>
 #include <regex>
@@ -28,10 +29,12 @@
 #include "oops/base/Geometry.h"
 #include "oops/base/IdentityMatrix.h"
 #include "oops/base/Increment.h"
+#include "oops/base/IncrementEnsemble.h"
 #include "oops/base/LinearVariableChangeBase.h"
 #include "oops/base/ModelSpaceCovarianceParametersBase.h"
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
+#include "oops/interface/GeometryIterator.h"
 #include "oops/util/AssociativeContainers.h"
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/ConfigurationParameter.h"
@@ -64,8 +67,10 @@ namespace oops {
 template <typename MODEL>
 class ModelSpaceCovarianceBase {
   typedef Geometry<MODEL>                                       Geometry_;
+  typedef GeometryIterator<MODEL>                               GeometryIterator_;
   typedef State<MODEL>                                          State_;
   typedef Increment<MODEL>                                      Increment_;
+  typedef IncrementEnsemble<MODEL>                              IncrementEnsemble_;
   typedef LinearVariableChangeBase<MODEL>                       LinearVariableChangeBase_;
   typedef typename boost::ptr_vector<LinearVariableChangeBase_> ChvarVec_;
   typedef typename ChvarVec_::iterator iter_;
@@ -85,7 +90,7 @@ class ModelSpaceCovarianceBase {
   void getVariance(Increment_ &) const;
 
   const std::string covarianceModel() const {return covarianceModel_;}
-  const size_t randomizationSize() const {return randomizationSize_;}
+  size_t randomizationSize() const {return randomizationSize_;}
 
  private:
   virtual void doRandomize(Increment_ &) const = 0;
@@ -98,6 +103,7 @@ class ModelSpaceCovarianceBase {
   bool fullInverse_;
   int fullInverseIterations_;
   double fullInverseAccuracy_;
+  const Geometry_  & geom_;
 };
 
 // =============================================================================
@@ -309,7 +315,7 @@ template <typename MODEL>
 ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(
     const State_ & bg, const State_ & fg,
     const Geometry_ & resol,
-    const ModelSpaceCovarianceParametersBase<MODEL> & parameters) {
+    const ModelSpaceCovarianceParametersBase<MODEL> & parameters) : geom_(resol) {
   for (const LinearVariableChangeParametersWrapper<MODEL> &variableChange :
        parameters.variableChanges.value()) {
     chvars_.push_back(LinearVariableChangeFactory<MODEL>::create(
@@ -416,6 +422,29 @@ void ModelSpaceCovarianceBase<MODEL>::inverseMultiply(const Increment_ & dxi,
       this->doInverseMultiply(dxi, dxo);
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+void ModelSpaceCovarianceBase<MODEL>::getVariance(Increment_ & variance) const {
+  Increment_ dx(variance);
+  Increment_ dxsq(variance);
+  Increment_ mean(variance);
+  mean.zero();
+  variance.zero();
+  for (size_t ie = 0; ie < randomizationSize_; ++ie) {
+    this->randomize(dx);
+    dx -= mean;
+    dxsq = dx;
+    dxsq.schur_product_with(dx);
+    double rk_var = static_cast<double>(ie)/static_cast<double>(ie+1);
+    double rk_mean = 1.0/static_cast<double>(ie+1);
+    variance.axpy(rk_var, dxsq, false);
+    mean.axpy(rk_mean, dx, false);
+  }
+  double rk_norm = 1.0/static_cast<double>(randomizationSize_-1);
+  variance *= rk_norm;
 }
 
 // -----------------------------------------------------------------------------
