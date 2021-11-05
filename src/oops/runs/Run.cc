@@ -118,7 +118,15 @@ int Run::execute(const Application & app) {
   int status = 1;
   Log::info() << "Run: Starting " << app << std::endl;
   try {
-    status = app.execute(*config_);
+    if (!config_->empty()
+        && config_->keys().size() == 1
+        && config_->has("output_json_schema_path")
+    ) {
+      app.outputSchema(config_->getString("output_json_schema_path"));
+      status = 0;
+    } else {
+      status = app.execute(*config_);
+    }
   }
   catch(const eckit::Exception & e) {
     status = 1;

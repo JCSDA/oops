@@ -88,6 +88,11 @@ class EnsembleApplication : public Application {
     return ensapp.execute(memberConf);
   }
 // -----------------------------------------------------------------------------
+  void outputSchema(const std::string & outputPath) const override {
+    EnsembleApplicationParameters_ params;
+    params.outputSchema(outputPath);
+  }
+// -----------------------------------------------------------------------------
  private:
   std::string appname() const {
     return "oops::EnsembleApplication<>";

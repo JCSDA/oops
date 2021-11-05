@@ -189,6 +189,11 @@ template <typename MODEL> class Dirac : public Application {
     return 0;
   }
 // -----------------------------------------------------------------------------
+  void outputSchema(const std::string & outputPath) const override {
+    DiracParameters_ params;
+    params.outputSchema(outputPath);
+  }
+// -----------------------------------------------------------------------------
  private:
   std::string appname() const {
     return "oops::Dirac<" + MODEL::name() + ">";

@@ -96,6 +96,11 @@ template <typename MODEL> class StaticBInit : public Application {
     return 0;
   }
   // -----------------------------------------------------------------------------
+  void outputSchema(const std::string & outputPath) const override {
+    StaticBInitParameters_ params;
+    params.outputSchema(outputPath);
+  }
+  // -----------------------------------------------------------------------------
  private:
   std::string appname() const {
     return "oops::StaticBInit<" + MODEL::name() + ">";

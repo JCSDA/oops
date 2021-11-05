@@ -101,6 +101,11 @@ template <typename MODEL> class DiffStates : public Application {
     return 0;
   }
 // -----------------------------------------------------------------------------
+  void outputSchema(const std::string & outputPath) const override {
+    DiffStatesParameters_ params;
+    params.outputSchema(outputPath);
+  }
+// -----------------------------------------------------------------------------
  private:
   std::string appname() const {
     return "oops::DiffStates<" + MODEL::name() + ">";

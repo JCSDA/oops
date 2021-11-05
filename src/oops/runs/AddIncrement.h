@@ -127,6 +127,11 @@ template <typename MODEL> class AddIncrement : public Application {
     return 0;
   }
 // -----------------------------------------------------------------------------
+  void outputSchema(const std::string & outputPath) const override {
+    AddIncrementParameters_ params;
+    params.outputSchema(outputPath);
+  }
+// -----------------------------------------------------------------------------
  private:
   std::string appname() const {
     return "oops::AddIncrement<" + MODEL::name() + ">";

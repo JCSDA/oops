@@ -167,6 +167,11 @@ template <typename MODEL> class ConvertIncrement : public Application {
     }
     return 0;
   }
+// -----------------------------------------------------------------------------
+  void outputSchema(const std::string & outputPath) const override {
+    Parameters_ params;
+    params.outputSchema(outputPath);
+  }
 // -------------------------------------------------------------------------------------------------
  private:
   std::string appname() const {

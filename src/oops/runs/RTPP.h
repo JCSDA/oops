@@ -69,8 +69,8 @@ template <typename MODEL> class RTPP : public Application {
 // -----------------------------------------------------------------------------
 
   int execute(const eckit::Configuration & fullConfig) const {
-    // Deserialize parameters
     RTPPParameters<MODEL> params;
+
     params.validateAndDeserialize(fullConfig);
 
     // Setup geometry
@@ -140,6 +140,13 @@ template <typename MODEL> class RTPP : public Application {
     }
 
     return 0;
+  }
+
+// -----------------------------------------------------------------------------
+
+  void outputSchema(const std::string & outputPath) const override {
+    RTPPParameters<MODEL> params;
+    params.outputSchema(outputPath);
   }
 
 // -----------------------------------------------------------------------------

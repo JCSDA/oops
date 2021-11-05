@@ -73,6 +73,9 @@ class ApplicationParameters : public Parameters {
   /// Long term, it would be more ideal to define the test Parameter at a level where it will
   /// directly control the reading of the test data.
   OptionalParameter<ApplicationTestParameters> test{"test", this};
+
+  /// Output JSON Schema to a file specified by first argument.
+  void outputSchema(const std::string & outputPath) const;
 };
 
 // -----------------------------------------------------------------------------
@@ -82,6 +85,9 @@ class Application : public util::Printable {
   explicit Application(const eckit::mpi::Comm & comm) : comm_(comm) {}
   virtual ~Application() {}
   virtual int execute(const eckit::Configuration &) const = 0;
+
+  /// This method aborts. Sub-class should override to output JSON schema.
+  virtual void outputSchema(const std::string & outputPath) const;
 
  protected:
   const eckit::mpi::Comm& getComm() const {return comm_;}

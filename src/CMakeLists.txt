@@ -245,6 +245,7 @@ oops/mpi/mpi.cc
 oops/mpi/mpi.h
 
 oops/runs/AddIncrement.h
+oops/runs/Application.cc
 oops/runs/Application.h
 oops/runs/ConvertState.h
 oops/runs/DiffStates.h

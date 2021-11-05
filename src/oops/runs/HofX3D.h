@@ -156,6 +156,11 @@ template <typename MODEL, typename OBS> class HofX3D : public Application {
     return 0;
   }
 // -----------------------------------------------------------------------------
+  void outputSchema(const std::string & outputPath) const override {
+    HofX3DParameters_ params;
+    params.outputSchema(outputPath);
+  }
+// -----------------------------------------------------------------------------
  private:
   std::string appname() const {
     return "oops::HofX3D<" + MODEL::name() + ", " + OBS::name() + ">";

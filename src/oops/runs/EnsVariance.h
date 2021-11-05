@@ -108,6 +108,11 @@ template <typename MODEL> class EnsVariance : public Application {
     return 0;
   }
   // -----------------------------------------------------------------------------
+  void outputSchema(const std::string & outputPath) const override {
+    EnsVarianceParameters_ params;
+    params.outputSchema(outputPath);
+  }
+  // -----------------------------------------------------------------------------
  private:
   std::string appname() const {
     return "oops::EnsVariance<" + MODEL::name() + ">";

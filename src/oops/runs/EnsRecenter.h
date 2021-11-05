@@ -128,6 +128,11 @@ template <typename MODEL> class EnsRecenter : public Application {
     return 0;
   }
   // -----------------------------------------------------------------------------
+  void outputSchema(const std::string & outputPath) const override {
+    EnsRecenterParameters<MODEL> params;
+    params.outputSchema(outputPath);
+  }
+  // -----------------------------------------------------------------------------
  private:
   std::string appname() const {
     return "oops::EnsRecenter<" + MODEL::name() + ">";

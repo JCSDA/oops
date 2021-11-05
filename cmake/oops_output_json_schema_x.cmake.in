@@ -1,0 +1,8 @@
+# (C) Copyright 2020 Met Office UK
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+
+execute_process( COMMAND "@CMAKE_BINARY_DIR@/@CMAKE_INSTALL_BINDIR@/@APP@"
+                         "@JSON_SCHEMA_GENERATOR_INPUT_DIR@/@APP@.yaml"
+                 OUTPUT_QUIET )

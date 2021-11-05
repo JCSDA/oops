@@ -121,6 +121,11 @@ template <typename MODEL> class Forecast : public Application {
     return 0;
   }
 // -----------------------------------------------------------------------------
+  void outputSchema(const std::string & outputPath) const override {
+    ForecastParameters_ params;
+    params.outputSchema(outputPath);
+  }
+// -----------------------------------------------------------------------------
  private:
   std::string appname() const {
     return "oops::Forecast<" + MODEL::name() + ">";

@@ -190,6 +190,11 @@ template <typename MODEL> class HybridGain : public Application {
     return 0;
   }
   // -----------------------------------------------------------------------------
+  void outputSchema(const std::string & outputPath) const override {
+    HybridGainParameters_ params;
+    params.outputSchema(outputPath);
+  }
+  // -----------------------------------------------------------------------------
  private:
   std::string appname() const {
     return "oops::HybridGain<" + MODEL::name() + ">";

@@ -159,6 +159,11 @@ template <typename MODEL> class GenEnsPertB : public Application {
     return 0;
   }
 // -----------------------------------------------------------------------------
+  void outputSchema(const std::string & outputPath) const override {
+    GenEnsPertBParameters_ params;
+    params.outputSchema(outputPath);
+  }
+// -----------------------------------------------------------------------------
  private:
   std::string appname() const {
     return "oops::GenEnsPertB<" + MODEL::name() + ">";

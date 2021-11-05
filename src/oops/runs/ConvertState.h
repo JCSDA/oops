@@ -144,6 +144,11 @@ template <typename MODEL> class ConvertState : public Application {
     }
     return 0;
   }
+// -----------------------------------------------------------------------------
+  void outputSchema(const std::string & outputPath) const override {
+    ConvertStateParameters_ params;
+    params.outputSchema(outputPath);
+  }
 // -------------------------------------------------------------------------------------------------
  private:
   std::string appname() const {
