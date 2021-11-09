@@ -120,7 +120,7 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
 // -----------------------------------------------------------------------------
   virtual ~HofX4D() = default;
 // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const {
+  int execute(const eckit::Configuration & fullConfig) const override {
 //  Deserialize parameters
     HofX4DParameters_ params;
     params.validateAndDeserialize(fullConfig);
@@ -192,7 +192,7 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
   }
 // -----------------------------------------------------------------------------
  private:
-  std::string appname() const {
+  std::string appname() const override {
     return "oops::HofX4D<" + MODEL::name() + ", " + OBS::name() + ">";
   }
 // -----------------------------------------------------------------------------

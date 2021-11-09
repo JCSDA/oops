@@ -96,7 +96,7 @@ template <typename MODEL, typename OBS> class HofX3D : public Application {
 // -----------------------------------------------------------------------------
   virtual ~HofX3D() = default;
 // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const {
+  int execute(const eckit::Configuration & fullConfig) const override {
 //  Deserialize parameters
     HofX3DParameters_ params;
     params.validateAndDeserialize(fullConfig);
@@ -162,7 +162,7 @@ template <typename MODEL, typename OBS> class HofX3D : public Application {
   }
 // -----------------------------------------------------------------------------
  private:
-  std::string appname() const {
+  std::string appname() const override {
     return "oops::HofX3D<" + MODEL::name() + ", " + OBS::name() + ">";
   }
 // -----------------------------------------------------------------------------

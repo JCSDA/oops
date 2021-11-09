@@ -100,7 +100,7 @@ template <typename MODEL> class GenEnsPertB : public Application {
 // -----------------------------------------------------------------------------
   virtual ~GenEnsPertB() {}
 // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const {
+  int execute(const eckit::Configuration & fullConfig) const override {
 //  Deserialize parameters
     GenEnsPertBParameters_ params;
     params.validateAndDeserialize(fullConfig);
@@ -165,7 +165,7 @@ template <typename MODEL> class GenEnsPertB : public Application {
   }
 // -----------------------------------------------------------------------------
  private:
-  std::string appname() const {
+  std::string appname() const override {
     return "oops::GenEnsPertB<" + MODEL::name() + ">";
   }
 // -----------------------------------------------------------------------------

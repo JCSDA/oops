@@ -75,7 +75,7 @@ template <typename MODEL> class EnsRecenter : public Application {
   // -----------------------------------------------------------------------------
   virtual ~EnsRecenter() {}
   // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const {
+  int execute(const eckit::Configuration & fullConfig) const override {
     // Deserialize parameters
     EnsRecenterParameters<MODEL> params;
     params.validateAndDeserialize(fullConfig);
@@ -134,7 +134,7 @@ template <typename MODEL> class EnsRecenter : public Application {
   }
   // -----------------------------------------------------------------------------
  private:
-  std::string appname() const {
+  std::string appname() const override {
     return "oops::EnsRecenter<" + MODEL::name() + ">";
   }
   // -----------------------------------------------------------------------------

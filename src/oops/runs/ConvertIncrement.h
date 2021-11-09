@@ -90,7 +90,7 @@ template <typename MODEL> class ConvertIncrement : public Application {
 // -------------------------------------------------------------------------------------------------
   virtual ~ConvertIncrement() {}
 // -------------------------------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const {
+  int execute(const eckit::Configuration & fullConfig) const override {
 //  Deserialize parameters
     Parameters_ params;
     params.validateAndDeserialize(fullConfig);
@@ -174,7 +174,7 @@ template <typename MODEL> class ConvertIncrement : public Application {
   }
 // -------------------------------------------------------------------------------------------------
  private:
-  std::string appname() const {
+  std::string appname() const override {
     return "oops::ConvertIncrement<" + MODEL::name() + ">";
   }
 // -------------------------------------------------------------------------------------------------

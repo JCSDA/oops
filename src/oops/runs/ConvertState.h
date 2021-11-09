@@ -86,7 +86,7 @@ template <typename MODEL> class ConvertState : public Application {
 // -------------------------------------------------------------------------------------------------
   virtual ~ConvertState() {}
 // -------------------------------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const {
+  int execute(const eckit::Configuration & fullConfig) const override {
 //  Deserialize parameters
     ConvertStateParameters_ params;
     params.validateAndDeserialize(fullConfig);
@@ -151,7 +151,7 @@ template <typename MODEL> class ConvertState : public Application {
   }
 // -------------------------------------------------------------------------------------------------
  private:
-  std::string appname() const {
+  std::string appname() const override {
     return "oops::ConvertState<" + MODEL::name() + ">";
   }
 // -------------------------------------------------------------------------------------------------

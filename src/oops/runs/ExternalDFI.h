@@ -45,7 +45,7 @@ template <typename MODEL> class ExternalDFI : public Application {
 // -----------------------------------------------------------------------------
   virtual ~ExternalDFI() {}
 // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const {
+  int execute(const eckit::Configuration & fullConfig) const override {
 //  Setup resolution
     const eckit::LocalConfiguration resolConfig(fullConfig, "geometry");
     const Geometry_ resol(resolConfig, this->getComm());
@@ -109,7 +109,7 @@ template <typename MODEL> class ExternalDFI : public Application {
   }
 // -----------------------------------------------------------------------------
  private:
-  std::string appname() const {
+  std::string appname() const override {
     return "oops::ExternalDFI<" + MODEL::name() + ">";
   }
 // -----------------------------------------------------------------------------

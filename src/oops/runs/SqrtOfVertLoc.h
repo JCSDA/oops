@@ -55,7 +55,7 @@ template <typename MODEL> class SqrtOfVertLoc : public Application {
 // -----------------------------------------------------------------------------
   virtual ~SqrtOfVertLoc() {}
 // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const {
+  int execute(const eckit::Configuration & fullConfig) const override {
 //  truncation tolerence
     const double TruncationTollerance = fullConfig.getDouble("truncation tolerence", 1.0);
 
@@ -117,7 +117,7 @@ template <typename MODEL> class SqrtOfVertLoc : public Application {
   }
 // -----------------------------------------------------------------------------
  private:
-  std::string appname() const {
+  std::string appname() const override {
     return "oops::SqrtOfVertLoc<" + MODEL::name() + ">";
   }
 

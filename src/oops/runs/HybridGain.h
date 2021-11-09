@@ -89,7 +89,7 @@ template <typename MODEL> class HybridGain : public Application {
   // -----------------------------------------------------------------------------
   virtual ~HybridGain() {}
   // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const {
+  int execute(const eckit::Configuration & fullConfig) const override {
     // Deserialize parameters
     HybridGainParameters_ params;
     params.validateAndDeserialize(fullConfig);
@@ -196,7 +196,7 @@ template <typename MODEL> class HybridGain : public Application {
   }
   // -----------------------------------------------------------------------------
  private:
-  std::string appname() const {
+  std::string appname() const override {
     return "oops::HybridGain<" + MODEL::name() + ">";
   }
   // -----------------------------------------------------------------------------

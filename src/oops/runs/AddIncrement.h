@@ -87,7 +87,7 @@ template <typename MODEL> class AddIncrement : public Application {
 // -----------------------------------------------------------------------------
   virtual ~AddIncrement() {}
 // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const {
+  int execute(const eckit::Configuration & fullConfig) const override {
 //  Load input configuration options
     AddIncrementParameters_ params;
     params.validateAndDeserialize(fullConfig);
@@ -133,7 +133,7 @@ template <typename MODEL> class AddIncrement : public Application {
   }
 // -----------------------------------------------------------------------------
  private:
-  std::string appname() const {
+  std::string appname() const override {
     return "oops::AddIncrement<" + MODEL::name() + ">";
   }
 // -----------------------------------------------------------------------------

@@ -68,7 +68,7 @@ template <typename MODEL> class RTPP : public Application {
 
 // -----------------------------------------------------------------------------
 
-  int execute(const eckit::Configuration & fullConfig) const {
+  int execute(const eckit::Configuration & fullConfig) const override {
     RTPPParameters<MODEL> params;
 
     params.validateAndDeserialize(fullConfig);
@@ -152,7 +152,7 @@ template <typename MODEL> class RTPP : public Application {
 // -----------------------------------------------------------------------------
 
  private:
-  std::string appname() const {
+  std::string appname() const override {
     return "oops::RTPP<" + MODEL::name() + ">";
   }
 

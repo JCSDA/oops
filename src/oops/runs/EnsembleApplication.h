@@ -49,7 +49,7 @@ class EnsembleApplication : public Application {
 // -----------------------------------------------------------------------------
   virtual ~EnsembleApplication() {}
 // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const {
+  int execute(const eckit::Configuration & fullConfig) const override {
 //  Deserialize parameters
     EnsembleApplicationParameters_ params;
     params.validateAndDeserialize(fullConfig);
@@ -94,7 +94,7 @@ class EnsembleApplication : public Application {
   }
 // -----------------------------------------------------------------------------
  private:
-  std::string appname() const {
+  std::string appname() const override {
     return "oops::EnsembleApplication<>";
   }
 // -----------------------------------------------------------------------------

@@ -55,7 +55,7 @@ template <typename MODEL, typename OBS> class Variational : public Application {
 // -----------------------------------------------------------------------------
   virtual ~Variational() {}
 // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const {
+  int execute(const eckit::Configuration & fullConfig) const override {
 /// The background is constructed inside the cost function because its valid
 /// time within the assimilation window can be different (3D-Var vs. 4D-Var),
 /// it can be 3D or 4D (strong vs weak constraint), etc...
@@ -100,7 +100,7 @@ template <typename MODEL, typename OBS> class Variational : public Application {
   }
 // -----------------------------------------------------------------------------
  private:
-  std::string appname() const {
+  std::string appname() const override {
     return "oops::Variational<" + MODEL::name() + ", " + OBS::name() + ">";
   }
 // -----------------------------------------------------------------------------

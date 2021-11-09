@@ -66,7 +66,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
 
 // -----------------------------------------------------------------------------
 
-  int execute(const eckit::Configuration & fullConfig) const {
+  int execute(const eckit::Configuration & fullConfig) const override {
     //  Setup observation window
     const util::DateTime winbgn(fullConfig.getString("window begin"));
     const util::Duration winlen(fullConfig.getString("window length"));
@@ -253,7 +253,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
 // -----------------------------------------------------------------------------
 
  private:
-  std::string appname() const {
+  std::string appname() const override {
     return "oops::LocalEnsembleDA<" + MODEL::name() + ", " + OBS::name() + ">";
   }
 

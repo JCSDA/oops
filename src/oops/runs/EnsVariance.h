@@ -65,7 +65,7 @@ template <typename MODEL> class EnsVariance : public Application {
   // -----------------------------------------------------------------------------
   virtual ~EnsVariance() {}
   // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const {
+  int execute(const eckit::Configuration & fullConfig) const override {
 //  Deserialize parameters
     EnsVarianceParameters_ params;
     params.validateAndDeserialize(fullConfig);
@@ -114,7 +114,7 @@ template <typename MODEL> class EnsVariance : public Application {
   }
   // -----------------------------------------------------------------------------
  private:
-  std::string appname() const {
+  std::string appname() const override {
     return "oops::EnsVariance<" + MODEL::name() + ">";
   }
   // -----------------------------------------------------------------------------

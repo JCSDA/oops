@@ -92,7 +92,7 @@ template <typename MODEL> class Dirac : public Application {
 // -----------------------------------------------------------------------------
   virtual ~Dirac() {}
 // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const {
+  int execute(const eckit::Configuration & fullConfig) const override {
 //  Deserialize parameters
     DiracParameters_ params;
     params.validateAndDeserialize(fullConfig);
@@ -195,7 +195,7 @@ template <typename MODEL> class Dirac : public Application {
   }
 // -----------------------------------------------------------------------------
  private:
-  std::string appname() const {
+  std::string appname() const override {
     return "oops::Dirac<" + MODEL::name() + ">";
   }
 

@@ -69,7 +69,7 @@ template <typename MODEL> class DiffStates : public Application {
 // -----------------------------------------------------------------------------
   virtual ~DiffStates() {}
 // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const {
+  int execute(const eckit::Configuration & fullConfig) const override {
 //  Deserialize parameters
     DiffStatesParameters_ params;
     params.validateAndDeserialize(fullConfig);
@@ -107,7 +107,7 @@ template <typename MODEL> class DiffStates : public Application {
   }
 // -----------------------------------------------------------------------------
  private:
-  std::string appname() const {
+  std::string appname() const override {
     return "oops::DiffStates<" + MODEL::name() + ">";
   }
 // -----------------------------------------------------------------------------

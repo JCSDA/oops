@@ -84,7 +84,7 @@ template <typename MODEL> class Forecast : public Application {
 // -----------------------------------------------------------------------------
   virtual ~Forecast() {}
 // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const {
+  int execute(const eckit::Configuration & fullConfig) const override {
 //  Deserialize parameters
     ForecastParameters_ params;
     params.validateAndDeserialize(fullConfig);
@@ -127,7 +127,7 @@ template <typename MODEL> class Forecast : public Application {
   }
 // -----------------------------------------------------------------------------
  private:
-  std::string appname() const {
+  std::string appname() const override {
     return "oops::Forecast<" + MODEL::name() + ">";
   }
 // -----------------------------------------------------------------------------
