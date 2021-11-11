@@ -11,6 +11,7 @@
 #include <iostream>
 #include <set>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "eckit/config/Configuration.h"
@@ -95,10 +96,14 @@ Variables & Variables::operator+=(const Variables & rhs) {
   // revisit late, should we add channels this way ?
   channels_.insert(channels_.end(), rhs.channels_.begin(), rhs.channels_.end());
   // remove duplicated variables and channels
-  std::sort(vars_.begin(), vars_.end());
-  vars_.erase(std::unique(vars_.begin(), vars_.end() ), vars_.end());
-  std::sort(channels_.begin(), channels_.end());
-  channels_.erase(std::unique(channels_.begin(), channels_.end() ), channels_.end());
+  std::unordered_set<std::string> svars;
+  auto mvar = std::stable_partition(vars_.begin(), vars_.end(),
+        [&svars](std::string const &var) {return svars.insert(var).second;});
+  vars_.erase(mvar, vars_.end());
+  std::unordered_set<int> schannels;
+  auto mchannel = std::stable_partition(channels_.begin(), channels_.end(),
+        [&schannels](int const &channel) {return schannels.insert(channel).second;});
+  channels_.erase(mchannel, channels_.end());
   return *this;
 }
 
@@ -147,6 +152,13 @@ size_t Variables::find(const std::string & var) const {
 
 void Variables::push_back(const std::string & vname) {
   vars_.push_back(vname);
+}
+
+// -----------------------------------------------------------------------------
+
+void Variables::sort() {
+  std::sort(vars_.begin(), vars_.end());
+  std::sort(channels_.begin(), channels_.end());
 }
 
 // -----------------------------------------------------------------------------

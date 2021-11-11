@@ -45,6 +45,7 @@ class Variables : public util::Printable {
   const std::vector<std::string> & variables() const {return vars_;}
   const std::vector<int> & channels() const {return channels_;}
   void push_back(const std::string &);
+  void sort();
 
  private:
   void print(std::ostream &) const;
