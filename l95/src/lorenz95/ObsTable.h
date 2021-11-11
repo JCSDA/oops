@@ -35,8 +35,6 @@ class ObsGenerateParameters : public oops::Parameters {
   OOPS_CONCRETE_PARAMETERS(ObsGenerateParameters, Parameters)
 
  public:
-  oops::RequiredParameter<util::Duration> begin{"begin", this};
-  oops::OptionalParameter<util::Duration> end{"end", this};
   oops::RequiredParameter<util::Duration> obsFrequency{"obs_frequency", this};
   /// Number of observations to generate in each time slot.
   oops::RequiredParameter<int> obsDensity{"obs_density", this};
