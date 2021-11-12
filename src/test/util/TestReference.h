@@ -23,7 +23,7 @@ CASE("util/TestReference") {
   std::string test4 = "-99-+EE-++44E0\n";  // Parsed as {"-99", "+44E0"}
   std::string test5 = "0.123456789";
 
-  std::string good_ref1 = "Line 1: 123456789\n";
+  std::string good_ref1 = "   Line 1: 123456789\t\n";
   std::string good_ref2 = "Line 1: 123456789\nLine 2: 9.9987643212e-2\n\n";
   std::string good_ref4 = "-9.90000E1-+EE-+44\n";
   std::string good_ref5 = "0.1234567885";

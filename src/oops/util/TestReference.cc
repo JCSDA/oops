@@ -75,6 +75,17 @@ namespace {
     return numbers;
   }
 
+// -----------------------------------------------------------------------------
+  /** Trim a string (remove leading and trailing whitespaces)
+   */
+  std::string trim(const std::string& line)
+  {
+    const char* whitespace = " \t\v\r\n";
+    const auto start = line.find_first_not_of(whitespace);
+    const auto end = line.find_last_not_of(whitespace);
+    return start == end ? std::string() : line.substr(start, end - start + 1);
+  }
+
 }  // anonymous namespace
 
 // -----------------------------------------------------------------------------
@@ -153,7 +164,7 @@ void TestReference::compare(const std::string & test,
       refLine.erase(0, testPrefix.size());
     }
 
-    if (refLine == testLine) continue;
+    if (trim(refLine) == trim(testLine)) continue;
 
     // If strings don't match - parse all numbers in the test and reference strings
     auto refNums = parse_numbers(refLine);

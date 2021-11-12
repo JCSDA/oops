@@ -1,9 +1,9 @@
-Initial state: 
+Initial state:
  Valid time: 2010-01-01T00:00:00Z
  Min=7, Max=8, Average=7.975
-Final state: 
+Final state:
  Valid time: 2010-01-03T00:00:00Z
  Min=3.26487, Max=12.3145, Average=7.82855
-H(x): 
+H(x):
 Lorenz 95 nobs= 160 Min=6.34504, Max=9.44115, Average=7.97687
 End H(x)
