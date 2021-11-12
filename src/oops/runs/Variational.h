@@ -63,8 +63,10 @@ template <typename MODEL, typename OBS> class Variational : public Application {
 
 //  Setup cost function
     eckit::LocalConfiguration cfConf(fullConfig, "cost function");
+    CostFunctionParametersWrapper<MODEL, OBS> cfParams;
+    cfParams.validateAndDeserialize(cfConf);
     std::unique_ptr<CostFunction<MODEL, OBS>>
-      J(CostFactory<MODEL, OBS>::create(cfConf, this->getComm()));
+      J(CostFactory<MODEL, OBS>::create(cfParams.costTypeParameters, this->getComm()));
     Log::trace() << "Variational: cost function has been set up" << std::endl;
 
 //  Initialize first guess from background

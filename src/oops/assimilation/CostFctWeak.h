@@ -33,15 +33,40 @@
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/State.h"
 #include "oops/base/StateInfo.h"
+#include "oops/base/StateParametersND.h"
 #include "oops/base/TrajectorySaver.h"
 #include "oops/base/Variables.h"
+#include "oops/generic/ModelBase.h"
 #include "oops/interface/VariableChange.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
+
+/// Parameters for the Weak cost function
+template <typename MODEL>
+class CostFctWeakParameters : public CostFunctionParametersBase<MODEL> {
+  OOPS_CONCRETE_PARAMETERS(CostFctWeakParameters, CostFunctionParametersBase<MODEL>)
+
+ public:
+  typedef ModelParametersWrapper<MODEL> ModelParameters_;
+  typedef StateParameters4D<MODEL>      StateParameters4D_;
+
+  RequiredParameter<ModelParameters_> model{"model", "model", this};
+  RequiredParameter<util::Duration> subwindow{"subwindow", "length of assimilation subwindows",
+      this};
+
+  // options for Jb term
+  RequiredParameter<StateParameters4D_> background{"background", "background state(s)", this};
+  // Currently `ModelSpaceCovarianceParametersWrapper` doesn't support multiple covariances for
+  // multiple models, so read this as a config.
+  RequiredParameter<eckit::LocalConfiguration> backgroundError{"background error",
+      "background error(s)", this};
+};
 
 /// Weak Constraint 4D-Var Cost Function
 /*!
@@ -63,7 +88,9 @@ template<typename MODEL, typename OBS> class CostFctWeak : public CostFunction<M
   typedef LinearVariableChangeBase<MODEL> LinVarCha_;
 
  public:
-  CostFctWeak(const eckit::Configuration &, const eckit::mpi::Comm &);
+  typedef CostFctWeakParameters<MODEL>    Parameters_;
+
+  CostFctWeak(const Parameters_ &, const eckit::mpi::Comm &);
   ~CostFctWeak() {}
 
   void runTLM(CtrlInc_ &, PostProcessorTLAD<MODEL> &,
@@ -108,15 +135,15 @@ template<typename MODEL, typename OBS> class CostFctWeak : public CostFunction<M
 // =============================================================================
 
 template<typename MODEL, typename OBS>
-CostFctWeak<MODEL, OBS>::CostFctWeak(const eckit::Configuration & config,
+CostFctWeak<MODEL, OBS>::CostFctWeak(const Parameters_ & params,
                                      const eckit::mpi::Comm & comm)
-  : CostFunction<MODEL, OBS>::CostFunction(config), resol_(), model_(),
-    ctlvars_(config, "analysis variables"), tlm_(), an2model_(), inc2model_(),
+  : CostFunction<MODEL, OBS>::CostFunction(), resol_(), model_(),
+    ctlvars_(params.analysisVariables), tlm_(), an2model_(), inc2model_(),
     commSpace_(nullptr), commTime_(nullptr)
 {
-  util::Duration windowLength(config.getString("window length"));
-  util::DateTime windowBegin(config.getString("window begin"));
-  subWinLength_ = util::Duration(config.getString("subwindow"));
+  const util::Duration windowLength = params.windowLength;
+  const util::DateTime windowBegin = params.windowBegin;
+  subWinLength_ = params.subwindow;
 
   nsubwin_ = windowLength.toSeconds() / subWinLength_.toSeconds();
   ASSERT(windowLength.toSeconds() == subWinLength_.toSeconds()*(int64_t)nsubwin_);
@@ -144,12 +171,11 @@ CostFctWeak<MODEL, OBS>::CostFctWeak(const eckit::Configuration & config,
   ASSERT(commTime_->size() == nsubwin_);
 
 // Now can setup the rest
-  resol_.reset(new Geometry_(eckit::LocalConfiguration(config, "geometry"),
-                             *commSpace_, *commTime_));
-  model_.reset(new Model_(*resol_, eckit::LocalConfiguration(config, "model")));
-  this->setupTerms(config);
+  resol_.reset(new Geometry_(params.geometry, *commSpace_, *commTime_));
+  model_.reset(new Model_(*resol_, params.model.value().modelParameters));
+  this->setupTerms(params.toConfiguration());
 
-  an2model_ = boost::make_unique<VarCha_>(*resol_, config);
+  an2model_ = boost::make_unique<VarCha_>(*resol_, params.toConfiguration());
 
   Log::trace() << "CostFctWeak constructed" << std::endl;
 }

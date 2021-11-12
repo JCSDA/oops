@@ -26,18 +26,43 @@
 #include "oops/base/LinearModel.h"
 #include "oops/base/LinearVariableChangeBase.h"
 #include "oops/base/Model.h"
+#include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/State.h"
 #include "oops/base/StateInfo.h"
 #include "oops/base/TrajectorySaver.h"
 #include "oops/base/Variables.h"
+#include "oops/generic/ModelBase.h"
 #include "oops/interface/VariableChange.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/OptionalParameter.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
+
+/// Parameters for the 4D-Var cost function
+template <typename MODEL>
+class CostFct4DVarParameters : public CostFunctionParametersBase<MODEL> {
+  OOPS_CONCRETE_PARAMETERS(CostFct4DVarParameters, CostFunctionParametersBase<MODEL>)
+
+ public:
+  typedef typename State<MODEL>::Parameters_           StateParameters_;
+  typedef ModelParametersWrapper<MODEL>                ModelParameters_;
+  typedef ModelSpaceCovarianceParametersWrapper<MODEL> CovarianceParameters_;
+
+  RequiredParameter<ModelParameters_> model{"model", "model", this};
+
+  // options for Jb term
+  RequiredParameter<StateParameters_> background{"background", "background state", this};
+  RequiredParameter<CovarianceParameters_> backgroundError{"background error", "background error",
+      this};
+  OptionalParameter<eckit::LocalConfiguration> modelAuxControl{"model aux control", this};
+  OptionalParameter<eckit::LocalConfiguration> modelAuxError{"model aux error", this};
+};
 
 /// Strong Constraint 4D-Var Cost Function
 /*!
@@ -61,7 +86,9 @@ template<typename MODEL, typename OBS> class CostFct4DVar : public CostFunction<
   typedef LinearVariableChangeBase<MODEL> LinVarCha_;
 
  public:
-  CostFct4DVar(const eckit::Configuration &, const eckit::mpi::Comm &);
+  typedef CostFct4DVarParameters<MODEL>   Parameters_;
+
+  CostFct4DVar(const Parameters_ &, const eckit::mpi::Comm &);
   ~CostFct4DVar() {}
 
   void runTLM(CtrlInc_ &, PostProcessorTLAD<MODEL> &,
@@ -101,19 +128,20 @@ template<typename MODEL, typename OBS> class CostFct4DVar : public CostFunction<
 // =============================================================================
 
 template<typename MODEL, typename OBS>
-CostFct4DVar<MODEL, OBS>::CostFct4DVar(const eckit::Configuration & config,
+CostFct4DVar<MODEL, OBS>::CostFct4DVar(const Parameters_ & params,
                                        const eckit::mpi::Comm & comm)
-  : CostFunction<MODEL, OBS>::CostFunction(config), comm_(comm),
-    resol_(eckit::LocalConfiguration(config, "geometry"), comm),
-    model_(resol_, eckit::LocalConfiguration(config, "model")),
-    ctlvars_(config, "analysis variables"), tlm_(), an2model_(resol_, config),
+  : CostFunction<MODEL, OBS>::CostFunction(), comm_(comm),
+    resol_(params.geometry, comm),
+    model_(resol_, params.model.value().modelParameters),
+    ctlvars_(params.analysisVariables), tlm_(),
+    an2model_(resol_, params.toConfiguration()),
     inc2model_()
 {
   Log::trace() << "CostFct4DVar:CostFct4DVar" << std::endl;
-  windowLength_ = util::Duration(config.getString("window length"));
-  windowBegin_ = util::DateTime(config.getString("window begin"));
+  windowLength_ = params.windowLength;
+  windowBegin_ = params.windowBegin;
   windowEnd_ = windowBegin_ + windowLength_;
-  this->setupTerms(config);
+  this->setupTerms(params.toConfiguration());
   // ASSERT(ctlvars_ <= this->background().state().variables());
   Log::trace() << "CostFct4DVar constructed" << std::endl;
 }

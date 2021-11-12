@@ -24,17 +24,39 @@
 #include "oops/assimilation/CostTermBase.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
+#include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/State.h"
 #include "oops/base/StateInfo.h"
+#include "oops/base/StateParametersND.h"
 #include "oops/base/TrajectorySaver.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
+
+/// Parameters for the 4D-Ens-Var cost function
+template <typename MODEL>
+class CostFct4DEnsVarParameters : public CostFunctionParametersBase<MODEL> {
+  OOPS_CONCRETE_PARAMETERS(CostFct4DEnsVarParameters, CostFunctionParametersBase<MODEL>)
+
+ public:
+  typedef StateParameters4D<MODEL>                     StateParameters4D_;
+  typedef ModelSpaceCovarianceParametersWrapper<MODEL> CovarianceParameters_;
+
+  RequiredParameter<util::Duration> subwindow{"subwindow", "length of assimilation subwindows",
+      this};
+
+  // options for Jb term
+  RequiredParameter<StateParameters4D_> background{"background", "background state(s)", this};
+  RequiredParameter<CovarianceParameters_> backgroundError{"background error",
+      "background error(s)", this};
+};
 
 /// 4D-Ens-Var Cost Function
 /*!
@@ -56,7 +78,9 @@ template<typename MODEL, typename OBS> class CostFct4DEnsVar : public CostFuncti
   typedef State<MODEL>                    State_;
 
  public:
-  CostFct4DEnsVar(const eckit::Configuration &, const eckit::mpi::Comm &);
+  typedef CostFct4DEnsVarParameters<MODEL> Parameters_;
+
+  CostFct4DEnsVar(const Parameters_ &, const eckit::mpi::Comm &);
   ~CostFct4DEnsVar() {}
 
   void runTLM(CtrlInc_ &, PostProcessorTLAD<MODEL> &,
@@ -96,16 +120,16 @@ template<typename MODEL, typename OBS> class CostFct4DEnsVar : public CostFuncti
 // =============================================================================
 
 template<typename MODEL, typename OBS>
-CostFct4DEnsVar<MODEL, OBS>::CostFct4DEnsVar(const eckit::Configuration & config,
+CostFct4DEnsVar<MODEL, OBS>::CostFct4DEnsVar(const Parameters_ & params,
                                              const eckit::mpi::Comm & comm)
-  : CostFunction<MODEL, OBS>::CostFunction(config),
-    resol_(), ctlvars_(config, "analysis variables")
+  : CostFunction<MODEL, OBS>::CostFunction(),
+    resol_(), ctlvars_(params.analysisVariables)
 {
   Log::trace() << "CostFct4DEnsVar::CostFct4DEnsVar start" << std::endl;
-  util::Duration windowLength(config.getString("window length"));
-  util::DateTime windowBegin(config.getString("window begin"));
-  util::DateTime windowEnd = windowBegin + windowLength;
-  subWinLength_ = util::Duration(config.getString("subwindow"));
+  const util::Duration windowLength = params.windowLength;
+  const util::DateTime windowBegin = params.windowBegin;
+  const util::DateTime windowEnd = windowBegin + windowLength;
+  subWinLength_ = params.subwindow;
 
   nsubwin_ = windowLength.toSeconds() / subWinLength_.toSeconds() + 1;  // Not like WC
   ASSERT(windowLength.toSeconds() == subWinLength_.toSeconds() * (int64_t)(nsubwin_ - 1));
@@ -138,10 +162,9 @@ CostFct4DEnsVar<MODEL, OBS>::CostFct4DEnsVar(const eckit::Configuration & config
   ASSERT(commTime_->size() == nsubwin_);
 
 // Now can setup the rest
-  resol_.reset(new Geometry_(eckit::LocalConfiguration(config, "geometry"),
-                             *commSpace_, *commTime_));
+  resol_.reset(new Geometry_(params.geometry, *commSpace_, *commTime_));
 
-  this->setupTerms(config);
+  this->setupTerms(params.toConfiguration());
 
   Log::trace() << "CostFct4DEnsVar::CostFct4DEnsVar done" << std::endl;
 }
