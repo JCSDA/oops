@@ -51,10 +51,9 @@ class ObserverTLAD {
   std::shared_ptr<GetValTLAD_> initializeTraj(const Geometry_ &, const ObsAuxCtrl_ &);
   void finalizeTraj();
 
-  std::shared_ptr<GetValTLAD_> initializeTL();
   void finalizeTL(const ObsAuxIncr_ &, ObsVector_ &);
 
-  std::shared_ptr<GetValTLAD_> initializeAD(const ObsVector_ &, ObsAuxIncr_ &);
+  void initializeAD(const ObsVector_ &, ObsAuxIncr_ &);
   void finalizeAD();
 
  private:
@@ -123,7 +122,7 @@ void ObserverTLAD<MODEL, OBS>::finalizeTraj() {
   ASSERT(init_);
 
   // GetValues releases GeoVaLs, Observer takes ownership
-  std::unique_ptr<GeoVaLs_> geovals = getvals_->finalize();
+  std::unique_ptr<GeoVaLs_> geovals = getvals_->finalizeTraj();
 
   /// Set linearization trajectory for H(x)
   hoptlad_.setTrajectory(*geovals, *ybias_);
@@ -133,17 +132,11 @@ void ObserverTLAD<MODEL, OBS>::finalizeTraj() {
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
-std::shared_ptr<GetValueTLAD<MODEL, OBS>> ObserverTLAD<MODEL, OBS>::initializeTL() {
-  Log::trace() << "ObserverTLAD::initializeTL" << std::endl;
-  return getvals_;
-}
-// -----------------------------------------------------------------------------
-template <typename MODEL, typename OBS>
 void ObserverTLAD<MODEL, OBS>::finalizeTL(const ObsAuxIncr_ & ybiastl, ObsVector_ & ydeptl) {
   Log::trace() << "ObserverTLAD::finalizeTL start" << std::endl;
 
   // GetValues releases GeoVaLs, Observer takes ownership
-  std::unique_ptr<GeoVaLs_> geovals = getvals_->finalize();
+  std::unique_ptr<GeoVaLs_> geovals = getvals_->finalizeTL();
 
   // Compute linear H(x)
   hoptlad_.simulateObsTL(*geovals, ydeptl, ybiastl);
@@ -152,8 +145,7 @@ void ObserverTLAD<MODEL, OBS>::finalizeTL(const ObsAuxIncr_ & ybiastl, ObsVector
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
-std::shared_ptr<GetValueTLAD<MODEL, OBS>>
-ObserverTLAD<MODEL, OBS>::initializeAD(const ObsVector_ & ydepad, ObsAuxIncr_ & ybiasad) {
+void ObserverTLAD<MODEL, OBS>::initializeAD(const ObsVector_ & ydepad, ObsAuxIncr_ & ybiasad) {
   Log::trace() << "ObserverTLAD::initializeAD start" << std::endl;
 
   // Compute adjoint of H(x)
@@ -165,7 +157,6 @@ ObserverTLAD<MODEL, OBS>::initializeAD(const ObsVector_ & ydepad, ObsAuxIncr_ & 
   getvals_->setAD(geovals);
 
   Log::trace() << "ObserverTLAD::initializeAD done" << std::endl;
-  return getvals_;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>

@@ -52,16 +52,15 @@ class GetValueTLAD {
                const util::DateTime &, const util::DateTime &,
                const Locations_ &, const Variables &, const Variables &);
 
-/// Same finalize is used for traj and TL
-  std::unique_ptr<GeoVaLs_> finalize();
-
 /// Linearization trajectory
   void initializeTraj(const util::Duration &);
   void processTraj(const State_ &);
+  std::unique_ptr<GeoVaLs_> finalizeTraj();
 
 /// TL
   void initializeTL(const util::Duration &);
   void processTL(const Increment_ &);
+  std::unique_ptr<GeoVaLs_> finalizeTL();
 
 /// AD
   void setAD(std::unique_ptr<GeoVaLs_> &);
@@ -71,6 +70,7 @@ class GetValueTLAD {
 
 /// Variables that will be required from the State
   const Variables & requiredVariables() const {return geovars_;}
+  const Variables & linearVariables() const {return linvars_;}
 
  private:
   util::DateTime winbgn_;   /// Begining of assimilation window
@@ -86,6 +86,7 @@ class GetValueTLAD {
                                              /// for all linvars_ variables
   GetValues_ getvals_;                       /// GetValues used to fill in GeoVaLs
   std::unique_ptr<GeoVaLs_> geovals_;        /// GeoVaLs that are filled in
+  std::unique_ptr<GeoVaLs_> gvalstl_;        /// GeoVaLs for TL
   std::unique_ptr<const GeoVaLs_> gvalsad_;  /// Input GeoVaLs for adjoint forcing
 };
 
@@ -99,7 +100,7 @@ GetValueTLAD<MODEL, OBS>::GetValueTLAD(const eckit::Configuration & conf, const 
   : winbgn_(bgn), winend_(end), hslot_(), locations_(locations),
     geovars_(vars), geovars_sizes_(geom.variableSizes(geovars_)),
     linvars_(varl), linvars_sizes_(geom.variableSizes(linvars_)),
-    getvals_(geom, locations_, conf), geovals_(), gvalsad_(nullptr)
+    getvals_(geom, locations_, conf), geovals_(), gvalstl_(), gvalsad_()
 {
   Log::trace() << "GetValueTLAD::GetValueTLAD" << std::endl;
 }
@@ -131,10 +132,20 @@ void GetValueTLAD<MODEL, OBS>::processTraj(const State_ & xx) {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
+std::unique_ptr<GeoVaLs<OBS>> GetValueTLAD<MODEL, OBS>::finalizeTraj() {
+  Log::trace() << "GetValueTLAD::finalizeTraj" << std::endl;
+  ASSERT(geovals_);
+  // Release ownership of GeoVaLs
+  return std::move(geovals_);
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename OBS>
 void GetValueTLAD<MODEL, OBS>::initializeTL(const util::Duration & tstep) {
   Log::trace() << "GetValueTLAD::initializeTL start" << std::endl;
   hslot_ = tstep/2;
-  geovals_.reset(new GeoVaLs_(locations_, linvars_, linvars_sizes_));
+  gvalstl_.reset(new GeoVaLs_(locations_, linvars_, linvars_sizes_));
   Log::trace() << "GetValueTLAD::initializeTL done" << std::endl;
 }
 
@@ -143,22 +154,23 @@ void GetValueTLAD<MODEL, OBS>::initializeTL(const util::Duration & tstep) {
 template <typename MODEL, typename OBS>
 void GetValueTLAD<MODEL, OBS>::processTL(const Increment_ & dx) {
   Log::trace() << "GetValueTLAD::processTL start" << std::endl;
-  ASSERT(geovals_);
+  ASSERT(gvalstl_);
   util::DateTime t1 = std::max(dx.validTime()-hslot_, winbgn_);
   util::DateTime t2 = std::min(dx.validTime()+hslot_, winend_);
 
 // Get state variables at obs locations
-  getvals_.fillGeoVaLsTL(dx, t1, t2, *geovals_);
+  getvals_.fillGeoVaLsTL(dx, t1, t2, *gvalstl_);
   Log::trace() << "GetValueTLAD::processTL done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-std::unique_ptr<GeoVaLs<OBS>> GetValueTLAD<MODEL, OBS>::finalize() {
-  Log::trace() << "GetValueTLAD::finalize" << std::endl;
+std::unique_ptr<GeoVaLs<OBS>> GetValueTLAD<MODEL, OBS>::finalizeTL() {
+  Log::trace() << "GetValueTLAD::finalizeTL" << std::endl;
+  ASSERT(gvalstl_);
   // Release ownership of GeoVaLs
-  return std::move(geovals_);
+  return std::move(gvalstl_);
 }
 
 // -----------------------------------------------------------------------------

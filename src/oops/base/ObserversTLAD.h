@@ -60,6 +60,7 @@ class ObserversTLAD {
 
  private:
   std::vector<std::unique_ptr<ObserverTLAD_>>  observers_;
+  std::shared_ptr<GetValueTLADs_> getvals_;
   util::DateTime winbgn_;
   util::DateTime winend_;
 };
@@ -85,11 +86,11 @@ template <typename MODEL, typename OBS>
 void ObserversTLAD<MODEL, OBS>::initializeTraj(const Geometry_ & geom, const ObsAuxCtrls_ & ybias,
                                                PostProcTLAD_ & pp) {
   Log::trace() << "ObserversTLAD<MODEL, OBS>::initializeTraj start" << std::endl;
-  std::shared_ptr<GetValueTLADs_> getvals(new GetValueTLADs_(winbgn_, winend_));
+  getvals_.reset(new GetValueTLADs_(winbgn_, winend_));
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
-    if (observers_[jj]) getvals->append(observers_[jj]->initializeTraj(geom, ybias[jj]));
+    if (observers_[jj]) getvals_->append(observers_[jj]->initializeTraj(geom, ybias[jj]));
   }
-  pp.enrollProcessor(getvals);
+  pp.enrollProcessor(getvals_);
   Log::trace() << "ObserversTLAD<MODEL, OBS>::initializeTraj done" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -105,11 +106,7 @@ void ObserversTLAD<MODEL, OBS>::finalizeTraj() {
 template <typename MODEL, typename OBS>
 void ObserversTLAD<MODEL, OBS>::initializeTL(PostProcTLAD_ & pp) {
   Log::trace() << "ObserversTLAD<MODEL, OBS>::initializeTL start" << std::endl;
-  std::shared_ptr<GetValueTLADs_> getvals(new GetValueTLADs_(winbgn_, winend_));
-  for (size_t jj = 0; jj < observers_.size(); ++jj) {
-    if (observers_[jj]) getvals->append(observers_[jj]->initializeTL());
-  }
-  pp.enrollProcessor(getvals);
+  pp.enrollProcessor(getvals_);
   Log::trace() << "ObserversTLAD<MODEL, OBS>::initializeTL done" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -126,11 +123,10 @@ template <typename MODEL, typename OBS>
 void ObserversTLAD<MODEL, OBS>::initializeAD(const Departures_ & dy, ObsAuxIncrs_ & ybias,
                                              PostProcTLAD_ & pp) {
   Log::trace() << "ObserversTLAD<MODEL, OBS>::initializeAD start" << std::endl;
-  std::shared_ptr<GetValueTLADs_> getvals(new GetValueTLADs_(winbgn_, winend_));
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
-    if (observers_[jj]) getvals->append(observers_[jj]->initializeAD(dy[jj], ybias[jj]));
+    if (observers_[jj]) observers_[jj]->initializeAD(dy[jj], ybias[jj]);
   }
-  pp.enrollProcessor(getvals);
+  pp.enrollProcessor(getvals_);
   Log::trace() << "ObserversTLAD<MODEL, OBS>::initializeAD done" << std::endl;
 }
 // -----------------------------------------------------------------------------

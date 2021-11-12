@@ -10,13 +10,18 @@
 
 #include "lorenz95/L95Traits.h"
 #include "oops/base/VariableChangeBase.h"
+#include "oops/generic/IdLinearVariableChange.h"
 #include "oops/generic/IdVariableChange.h"
+#include "oops/interface/LinearVariableChange.h"
 
 namespace lorenz95 {
 
 void instantiateL95ChangeVarFactory() {
   static oops::GenericVariableChangeMaker<L95Traits, oops::IdVariableChange<L95Traits> >
            makerL95_("default");
+
+  static oops::LinearVariableChangeMaker<L95Traits, oops::IdLinearVariableChange<L95Traits> >
+           makerL95LinVarDef_("default");
 }
 
 }  // namespace lorenz95

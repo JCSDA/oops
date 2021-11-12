@@ -2,7 +2,7 @@ geometry:
   nx: 40
   ny: 20
   depths: [4500.0, 5500.0]
-state variables: [u, v]
+state variables: [x]
 linear getvalues test:
   tolerance linearity: 1.0e-11
   iterations TL: 10
