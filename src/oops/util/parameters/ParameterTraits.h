@@ -63,6 +63,16 @@ namespace oops {
 /// /// the YAML node from which option \p name is loaded.
 /// static ObjectJsonSchema jsonSchema(const std::string &name);
 /// \endcode
+///
+/// Optionally, the following member function may also be provided:
+///
+/// \code
+/// /// \brief Return a JSON representation of a value of type \c T.
+/// static std::string valueAsJson(const T &value);
+/// \endcode
+///
+/// If this member function is available, default values of parameters holding values of type \c T
+/// can be embedded in JSON schemas.
 template <typename T,
           typename IsTDerivedFromParameters =
           typename std::integral_constant<bool,
