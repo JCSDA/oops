@@ -84,7 +84,7 @@ ObsFilters<OBS>::ObsFilters(const ObsSpace_ & os,
     eckit::LocalConfiguration conf;
     conf.set("filter", "QCmanager");
     ObsFilterParametersWrapper<OBS> filterParams;
-    filterParams.validateAndDeserialize(conf);
+    filterParams.deserialize(conf);
     filters_.emplace_back(os, filterParams.filterParameters, qcflags_, obserrtmp_);
   }
 
@@ -109,7 +109,7 @@ ObsFilters<OBS>::ObsFilters(const ObsSpace_ & os,
     eckit::LocalConfiguration conf;
     conf.set("filter", "Final Check");
     ObsFilterParametersWrapper<OBS> filterParams;
-    filterParams.validateAndDeserialize(conf);
+    filterParams.deserialize(conf);
     filters_.emplace_back(os, filterParams.filterParameters, qcflags_, obserrtmp_);
   }
 
