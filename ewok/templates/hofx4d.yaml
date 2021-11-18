@@ -1,9 +1,11 @@
-geometry:
-  $(GEOMETRY)
-states:
-  '{{BACKGROUND}}'
-observations:
-  $(OBSERVATIONS)
 window begin: '{{window_begin}}'
 window length: $(window_length)
-
+forecast length: $(window_length)
+geometry:
+  $(GEOMETRY)
+initial condition:
+  $(BACKGROUND)
+model:
+  $(MODEL)
+observations:
+  $(OBSERVATIONS)

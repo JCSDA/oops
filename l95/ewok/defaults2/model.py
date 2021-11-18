@@ -25,6 +25,18 @@ def r2d2_obsfile(conf, date):
     return r2d2file
 
 
+def fb_file(conf):
+    fbfile = conf['obsdataout']
+    return fbfile
+
+
+def r2d2_fbfile(conf, date):
+    sdate = ewok.jediformat(date)
+    r2d2keys = ['l95', 'fb', sdate, 'obt']
+    r2d2file = '.'.join(r2d2keys)
+    return r2d2file
+
+
 def r2d2_anfile(conf, date):
     sdate = ewok.jediformat(date)
     r2d2keys = [conf['exp'], conf['type'], sdate, 'l95']
