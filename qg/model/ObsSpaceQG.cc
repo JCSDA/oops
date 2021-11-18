@@ -109,17 +109,19 @@ ObsSpaceQG::ObsSpaceQG(const Parameters_ & params, const eckit::mpi::Comm & comm
 
 // -----------------------------------------------------------------------------
 
-ObsSpaceQG::~ObsSpaceQG() {}
-
-// -----------------------------------------------------------------------------
-
-void ObsSpaceQG::save() const {
+ObsSpaceQG::~ObsSpaceQG() {
   ASSERT(theObsFileCount_ > 0);
   theObsFileCount_--;
   if (theObsFileCount_ == 0) {
     theObsFileRegister_.clear();
     qg_obsdb_delete_f90(key_);
   }
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsSpaceQG::save() const {
+  qg_obsdb_save_f90(key_);
 }
 
 // -----------------------------------------------------------------------------

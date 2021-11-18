@@ -199,6 +199,7 @@ extern "C" {
   void qg_obsdb_setup_f90(F90odb &, const eckit::Configuration &,
                           const util::DateTime &, const util::DateTime &);
   void qg_obsdb_delete_f90(F90odb &);
+  void qg_obsdb_save_f90(const F90odb &);
   void qg_obsdb_get_f90(const F90odb &, const int &, const char *,
                         const int &, const char *, const F90ovec &);
   void qg_obsdb_put_f90(const F90odb &, const int &, const char *,

@@ -77,6 +77,23 @@ call qg_obsdb_registry%remove(c_key_self)
 
 end subroutine qg_obsdb_delete_c
 ! ------------------------------------------------------------------------------
+!> Save observation data
+subroutine qg_obsdb_save_c(c_key_self) bind(c,name='qg_obsdb_save_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(inout) :: c_key_self !< Observation data
+
+! Local variables
+type(qg_obsdb),pointer :: self
+
+! Interface
+call qg_obsdb_registry%get(c_key_self,self)
+call qg_obsdb_save(self)
+
+end subroutine qg_obsdb_save_c
+! ------------------------------------------------------------------------------
 !> Get observation data
 subroutine qg_obsdb_get_c(c_key_self,lgrp,c_grp,lcol,c_col,c_key_ovec) bind(c,name='qg_obsdb_get_f90')
 

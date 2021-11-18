@@ -30,7 +30,7 @@ implicit none
 private
 public :: qg_obsdb
 public :: qg_obsdb_registry
-public :: qg_obsdb_setup,qg_obsdb_delete,qg_obsdb_get,qg_obsdb_put,qg_obsdb_locations,qg_obsdb_generate,qg_obsdb_nobs
+public :: qg_obsdb_setup,qg_obsdb_delete,qg_obsdb_save,qg_obsdb_get,qg_obsdb_put,qg_obsdb_locations,qg_obsdb_generate,qg_obsdb_nobs
 ! ------------------------------------------------------------------------------
 integer,parameter :: rseed = 1 !< Random seed (for reproducibility)
 
@@ -130,9 +130,6 @@ type(group_data),pointer :: jgrp
 type(column_data),pointer :: jcol
 integer :: jobs
 
-! Write observation data
-if (self%fileout/='') call qg_obsdb_write(self)
-
 ! Release memory
 do while (associated(self%grphead))
   jgrp => self%grphead
@@ -151,6 +148,15 @@ do while (associated(self%grphead))
 enddo
 
 end subroutine qg_obsdb_delete
+! ------------------------------------------------------------------------------
+!> Delete observation data
+subroutine qg_obsdb_save(self)
+implicit none
+type(qg_obsdb),intent(in) :: self !< Observation data
+
+if (self%fileout/='') call qg_obsdb_write(self)
+
+end subroutine qg_obsdb_save
 ! ------------------------------------------------------------------------------
 !> Get observation data
 subroutine qg_obsdb_get(self,grp,col,ovec)
