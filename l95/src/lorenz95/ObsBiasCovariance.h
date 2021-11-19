@@ -11,11 +11,13 @@
 #ifndef LORENZ95_OBSBIASCOVARIANCE_H_
 #define LORENZ95_OBSBIASCOVARIANCE_H_
 
+#include <memory>
 #include <ostream>
 #include <string>
 #include <boost/noncopyable.hpp>
 
 #include "lorenz95/ObsBiasParameters.h"
+#include "lorenz95/ObsBiasPreconditioner.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
@@ -47,10 +49,10 @@ class ObsBiasCovariance : public util::Printable,
   void multiply(const ObsBiasCorrection &, ObsBiasCorrection &) const;
   void inverseMultiply(const ObsBiasCorrection &, ObsBiasCorrection &) const;
   void randomize(ObsBiasCorrection &) const;
+  std::unique_ptr<ObsBiasPreconditioner> preconditioner() const;
 
-/// I/O and diagnostics
+  /// I/O and diagnostics
   void write(const Parameters_ &) const {}
-
   bool active() const {return active_;}
 
  private:
@@ -60,7 +62,6 @@ class ObsBiasCovariance : public util::Printable,
 };
 
 // -----------------------------------------------------------------------------
-
 }  // namespace lorenz95
 
 #endif  // LORENZ95_OBSBIASCOVARIANCE_H_

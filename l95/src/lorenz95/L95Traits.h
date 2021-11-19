@@ -26,6 +26,7 @@
 #include "lorenz95/ObsBias.h"
 #include "lorenz95/ObsBiasCorrection.h"
 #include "lorenz95/ObsBiasCovariance.h"
+#include "lorenz95/ObsBiasPreconditioner.h"
 #include "lorenz95/ObsData1D.h"
 #include "lorenz95/ObsDiags1D.h"
 #include "lorenz95/ObservationL95.h"
@@ -71,6 +72,7 @@ struct L95ObsTraits {
   typedef lorenz95::ObsBias                ObsAuxControl;
   typedef lorenz95::ObsBiasCorrection      ObsAuxIncrement;
   typedef lorenz95::ObsBiasCovariance      ObsAuxCovariance;
+  typedef lorenz95::ObsBiasPreconditioner  ObsAuxPreconditioner;
   typedef lorenz95::ObsDiags1D             ObsDiagnostics;
 
   typedef lorenz95::GomL95                 GeoVaLs;

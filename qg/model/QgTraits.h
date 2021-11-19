@@ -27,6 +27,7 @@
 #include "oops/qg/ObsBias.h"
 #include "oops/qg/ObsBiasCovariance.h"
 #include "oops/qg/ObsBiasIncrement.h"
+#include "oops/qg/ObsBiasPreconditioner.h"
 #include "oops/qg/ObsDataQG.h"
 #include "oops/qg/ObsDiagsQG.h"
 #include "oops/qg/ObsIteratorQG.h"
@@ -72,6 +73,7 @@ struct QgObsTraits {
   typedef qg::ObsBias               ObsAuxControl;
   typedef qg::ObsBiasIncrement      ObsAuxIncrement;
   typedef qg::ObsBiasCovariance     ObsAuxCovariance;
+  typedef qg::ObsBiasPreconditioner ObsAuxPreconditioner;
 
   typedef qg::ObsDiagsQG            ObsDiagnostics;
 

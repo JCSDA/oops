@@ -66,6 +66,10 @@ void ObsBiasCovariance::randomize(ObsBiasCorrection & dx) const {
   }
 }
 // -----------------------------------------------------------------------------
+std::unique_ptr<ObsBiasPreconditioner> ObsBiasCovariance::preconditioner() const {
+  return std::make_unique<ObsBiasPreconditioner> (variance_);
+}
+// -----------------------------------------------------------------------------
 void ObsBiasCovariance::print(std::ostream & os) const {
   if (active_) {
     os << "ObsBiasCovariance: variance = " << variance_;

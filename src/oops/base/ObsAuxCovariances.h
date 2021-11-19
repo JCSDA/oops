@@ -11,6 +11,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <boost/noncopyable.hpp>
@@ -18,8 +19,10 @@
 #include "eckit/config/Configuration.h"
 #include "oops/base/ObsAuxControls.h"
 #include "oops/base/ObsAuxIncrements.h"
+#include "oops/base/ObsAuxPreconditioners.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/interface/ObsAuxCovariance.h"
+#include "oops/interface/ObsAuxPreconditioner.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
 
@@ -32,10 +35,11 @@ namespace oops {
 template <typename OBS>
 class ObsAuxCovariances : public util::Printable,
                           private boost::noncopyable {
-  typedef ObsAuxCovariance<OBS>    ObsAuxCovariance_;
-  typedef ObsAuxControls<OBS>      ObsAuxControls_;
-  typedef ObsAuxIncrements<OBS>    ObsAuxIncrements_;
-  typedef ObsSpaces<OBS>           ObsSpaces_;
+  typedef ObsAuxCovariance<OBS>         ObsAuxCovariance_;
+  typedef ObsAuxControls<OBS>           ObsAuxControls_;
+  typedef ObsAuxIncrements<OBS>         ObsAuxIncrements_;
+  typedef ObsSpaces<OBS>                ObsSpaces_;
+  typedef ObsAuxPreconditioners<OBS>    ObsAuxPreconditioners_;
 
  public:
   static const std::string classname() {return "oops::ObsAuxCovariances";}
@@ -48,6 +52,8 @@ class ObsAuxCovariances : public util::Printable,
   void multiply(const ObsAuxIncrements_ &, ObsAuxIncrements_ &) const;
   void inverseMultiply(const ObsAuxIncrements_ &, ObsAuxIncrements_ &) const;
   void randomize(ObsAuxIncrements_ &) const;
+  /// return preconditioner
+  ObsAuxPreconditioners_ preconditioner() const;
 
   const eckit::LocalConfiguration & config() const {return conf_;}
   const ObsSpaces_ & obspaces() const {return odb_;}
@@ -141,6 +147,18 @@ void ObsAuxCovariances<OBS>::randomize(ObsAuxIncrements_ & dx) const {
     cov_[jobs]->randomize(dx[jobs]);
   }
   Log::trace() << "ObsAuxCovariances<OBS>::randomize done" << std::endl;
+}
+
+
+// -----------------------------------------------------------------------------
+template<typename OBS>
+ObsAuxPreconditioners<OBS> ObsAuxCovariances<OBS>::preconditioner() const {
+    Log::trace() << "ObsAuxCovariance<OBS>::preconditioner" << std::endl;
+    std::vector<ObsAuxPreconditioner<OBS>> Preconds;
+    for (std::size_t jobs = 0; jobs < cov_.size(); ++jobs) {
+      Preconds.push_back(cov_[jobs]->preconditioner());
+    }
+    return ObsAuxPreconditioners_ (std::move(Preconds));
 }
 
 // -----------------------------------------------------------------------------

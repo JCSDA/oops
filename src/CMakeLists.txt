@@ -3,6 +3,7 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 list( APPEND oops_src_files
 
 oops/assimilation/BMatrix.h
+oops/assimilation/CMatrix.h
 oops/assimilation/ControlIncrement.h
 oops/assimilation/ControlVariable.h
 oops/assimilation/CostFct3DVar.h
@@ -65,6 +66,7 @@ oops/assimilation/PCG.h
 oops/assimilation/PCGMinimizer.h
 oops/assimilation/PLanczos.h
 oops/assimilation/PLanczosMinimizer.h
+oops/assimilation/PMatrix.h
 oops/assimilation/PrimalMinimizer.h
 oops/assimilation/QNewtonLMP.h
 oops/assimilation/RinvHMatrix.h
@@ -82,7 +84,6 @@ oops/assimilation/TriDiagSolve.h
 oops/assimilation/TriDiagSpectrum.h
 oops/assimilation/UpHessSolve.h
 oops/assimilation/UpTriSolve.h
-
 oops/base/Accumulator.h
 oops/base/AnalyticInit.h
 oops/base/Departures.h
@@ -119,6 +120,7 @@ oops/base/ModelSpaceCovarianceParametersBase.h
 oops/base/ObsAuxControls.h
 oops/base/ObsAuxCovariances.h
 oops/base/ObsAuxIncrements.h
+oops/base/ObsAuxPreconditioners.h
 oops/base/ObsEnsemble.h
 oops/base/ObsError.h
 oops/base/ObsErrors.h
@@ -230,6 +232,7 @@ oops/interface/ModelBase.h
 oops/interface/ObsAuxControl.h
 oops/interface/ObsAuxCovariance.h
 oops/interface/ObsAuxIncrement.h
+oops/interface/ObsAuxPreconditioner.h
 oops/interface/ObsDataVector.h
 oops/interface/ObsDataVector_head.h
 oops/interface/ObsDiagnostics.h

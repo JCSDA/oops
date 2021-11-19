@@ -13,13 +13,16 @@
 #include <array>
 #include <cmath>
 #include <iostream>
+#include <memory>
 #include <random>
 #include <sstream>
 #include <string>
 
 #include "model/ObsBiasIncrement.h"
+#include "model/ObsBiasPreconditioner.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Random.h"
+
 
 // -----------------------------------------------------------------------------
 namespace qg {
@@ -83,6 +86,12 @@ void ObsBiasCovariance::randomize(ObsBiasIncrement & dx) const {
     }
   }
 }
+
+// -----------------------------------------------------------------------------
+std::unique_ptr<ObsBiasPreconditioner> ObsBiasCovariance::preconditioner() const {
+  return std::make_unique<ObsBiasPreconditioner> (variance_);
+}
+
 // -----------------------------------------------------------------------------
 void ObsBiasCovariance::print(std::ostream & os) const {
   os << "ObsBiasCovariance::print not implemented";

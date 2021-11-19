@@ -43,6 +43,8 @@ set( _l95_srcs
         ObsBiasCovariance.cc
         ObsBiasCovariance.h
         ObsBiasParameters.h
+        ObsBiasPreconditioner.cc
+        ObsBiasPreconditioner.h
         ObsDiags1D.h
         ObsIterator.cc
         ObsIterator.h

@@ -12,10 +12,12 @@
 #define OOPS_ASSIMILATION_DRIPCGMINIMIZER_H_
 
 #include <cmath>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "oops/assimilation/BMatrix.h"
+#include "oops/assimilation/CMatrix.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/DRMinimizer.h"
@@ -77,6 +79,7 @@ template<typename MODEL, typename OBS> class DRIPCGMinimizer : public DRMinimize
   typedef CostFunction<MODEL, OBS>        CostFct_;
   typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
   typedef HtRinvHMatrix<MODEL, OBS>       HtRinvH_;
+  typedef CMatrix<MODEL, OBS>             Cmat_;
 
  public:
   const std::string classname() const override {return "DRIPCGMinimizer";}
@@ -86,8 +89,7 @@ template<typename MODEL, typename OBS> class DRIPCGMinimizer : public DRMinimize
  private:
   double solve(CtrlInc_ &, CtrlInc_ &, CtrlInc_ &, const Bmat_ &, const HtRinvH_ &,
                const double, const double, const int, const double) override;
-
-  QNewtonLMP<CtrlInc_, Bmat_> lmp_;
+  QNewtonLMP<CtrlInc_, Bmat_, Cmat_> lmp_;
 };
 
 // =============================================================================
@@ -124,6 +126,9 @@ double DRIPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_
   const double costJ0 = costJ0Jb + costJ0JoJc;
 
   r0 = rr;
+
+  // Set ObsBias part of the preconditioner
+  lmp_.updateObsBias(std::make_unique<Cmat_>(B.obsAuxCovariance()));
 
   lmp_.multiply(rr, sh);
   B.multiply(sh, ss);

@@ -12,11 +12,13 @@
 #define OOPS_ASSIMILATION_DRPCGMINIMIZER_H_
 
 #include <cmath>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "eckit/config/Configuration.h"
 #include "oops/assimilation/BMatrix.h"
+#include "oops/assimilation/CMatrix.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/DRMinimizer.h"
@@ -81,6 +83,7 @@ template<typename MODEL, typename OBS> class DRPCGMinimizer : public DRMinimizer
   typedef CostFunction<MODEL, OBS>        CostFct_;
   typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
   typedef HtRinvHMatrix<MODEL, OBS>       HtRinvH_;
+  typedef CMatrix<MODEL, OBS>             Cmat_;
 
  public:
   const std::string classname() const override {return "DRPCGMinimizer";}
@@ -90,8 +93,7 @@ template<typename MODEL, typename OBS> class DRPCGMinimizer : public DRMinimizer
  private:
   double solve(CtrlInc_ &, CtrlInc_ &, CtrlInc_ &, const Bmat_ &, const HtRinvH_ &,
                const double, const double, const int, const double) override;
-
-  QNewtonLMP<CtrlInc_, Bmat_> lmp_;
+  QNewtonLMP<CtrlInc_, Bmat_, Cmat_> lmp_;
 };
 
 // =============================================================================
@@ -137,6 +139,9 @@ double DRPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_
 
   // r_{0}^T r_{0}
   Log::info() << "normr0 " << dot_product(rr, rr) << std::endl;
+
+  // Set ObsBias part of the preconditioner
+  lmp_.updateObsBias(std::make_unique<Cmat_>(B.obsAuxCovariance()));
 
   // z_{0} = B LMP r_{0}
   lmp_.multiply(rr, pr);

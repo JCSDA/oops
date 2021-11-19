@@ -15,6 +15,7 @@
 
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
+#include "oops/base/ObsAuxCovariances.h"
 
 namespace oops {
 
@@ -27,6 +28,7 @@ namespace oops {
 template<typename MODEL, typename OBS> class BMatrix : private boost::noncopyable {
   typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
   typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef ObsAuxCovariances<OBS>          ObsAuxCovars_;
 
  public:
   explicit BMatrix(const CostFct_ & j): j_(j) {}
@@ -34,10 +36,12 @@ template<typename MODEL, typename OBS> class BMatrix : private boost::noncopyabl
     j_.jb().multiplyB(x, bx);
   }
 
+  /// Return ObsBias block of control variable error covariances
+  const ObsAuxCovars_ & obsAuxCovariance() const {return j_.jb().jbObsBias();}
+
  private:
   CostFct_ const & j_;
 };
-
 }  // namespace oops
 
 #endif  // OOPS_ASSIMILATION_BMATRIX_H_

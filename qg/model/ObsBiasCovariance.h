@@ -12,12 +12,14 @@
 #define QG_MODEL_OBSBIASCOVARIANCE_H_
 
 #include <array>
+#include <memory>
 #include <ostream>
 #include <string>
 #include <boost/noncopyable.hpp>
 
 #include "model/ObsBias.h"
 #include "model/ObsBiasParameters.h"
+#include "model/ObsBiasPreconditioner.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/parameters/GenericParameters.h"
 #include "oops/util/Printable.h"
@@ -47,10 +49,13 @@ class ObsBiasCovariance : public util::Printable,
   void inverseMultiply(const ObsBiasIncrement &, ObsBiasIncrement &) const;
   void randomize(ObsBiasIncrement &) const;
 
+  std::unique_ptr<ObsBiasPreconditioner> preconditioner() const;
+
 /// I/O and diagnostics
   void write(const Parameters_ &) const {}
-
   bool active(const unsigned int ii) const {return variance_[ii] > 0.0;}
+
+
 
  private:
   void print(std::ostream &) const;
