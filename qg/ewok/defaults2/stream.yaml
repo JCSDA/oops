@@ -5,7 +5,7 @@ obs space:
   obsdatain:
     obsfile: $(expdir)/{{current_cycle}}/obs.stream.{{current_cycle}}.nc
   obsdataout:
-    obsfile: $(expdir)/{{current_cycle}}/obs.stream.$(experiment).{{current_cycle}}.nc
+    obsfile: $(expdir)/{{current_cycle}}/obs.stream.$(expid).{{current_cycle}}.nc
   obs type: Stream
 obs error:
   covariance model: diagonal

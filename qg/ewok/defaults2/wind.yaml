@@ -5,7 +5,7 @@ obs space:
   obsdatain:
     obsfile: $(expdir)/{{current_cycle}}/obs.wind.{{current_cycle}}.nc
   obsdataout:
-    obsfile: $(expdir)/{{current_cycle}}/obs.wind.$(experiment).{{current_cycle}}.nc
+    obsfile: $(expdir)/{{current_cycle}}/obs.wind.$(expid).{{current_cycle}}.nc
   obs type: Wind
 obs error:
   covariance model: diagonal

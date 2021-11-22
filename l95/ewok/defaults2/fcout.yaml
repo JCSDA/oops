@@ -1,5 +1,5 @@
 datadir: '$(expdir)/{{current_cycle}}'
 date: '{{current_cycle}}'
-exp: $(experiment)
+exp: $(expid)
 frequency: $(forecast_output_frequency)
 type: fc

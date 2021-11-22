@@ -2,6 +2,6 @@ obs operator: {}
 obs space:
   _source: truth
   obsdatain:  '$(expdir)/{{current_cycle}}/input.obs.{{current_cycle}}.obt'
-  obsdataout: '$(expdir)/{{current_cycle}}/$(experiment).obs.{{current_cycle}}.obt'
+  obsdataout: '$(expdir)/{{current_cycle}}/$(expid).obs.{{current_cycle}}.obt'
 obs error:
   covariance model: diagonal

@@ -1,2 +1,2 @@
 date: '{{analysis_time}}'
-filename: '$(expdir)/{{current_cycle}}/$(experiment).bg.{{current_cycle}}.l95'
+filename: '$(expdir)/{{current_cycle}}/$(expid).bg.{{current_cycle}}.l95'
