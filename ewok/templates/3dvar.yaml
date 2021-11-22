@@ -9,8 +9,6 @@ cost function:
     $(BACKGROUND)
   background error:
     $(BACKGROUND_ERROR)
-  observations:
-    $(OBSERVATIONS)
 variational:
   minimizer:
     $(MINIMIZER)

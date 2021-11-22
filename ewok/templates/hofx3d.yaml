@@ -4,5 +4,3 @@ geometry:
   $(GEOMETRY)
 state:
   $(BACKGROUND)
-observations:
-  $(OBSERVATIONS)

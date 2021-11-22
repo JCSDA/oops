@@ -1,11 +1,7 @@
 obs operator:
   obs type: Stream
 obs space:
-  _source: truth
-  obsdatain:
-    obsfile: $(expdir)/{{current_cycle}}/obs.stream.{{current_cycle}}.nc
-  obsdataout:
-    obsfile: $(expdir)/{{current_cycle}}/obs.stream.$(expid).{{current_cycle}}.nc
   obs type: Stream
+  _source: truth
 obs error:
   covariance model: diagonal
