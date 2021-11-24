@@ -2,7 +2,7 @@ geometry:
   resol: 40
 initial condition:
   date: '2010-01-01T03:00:00Z'
-  filename: Data/test.ens.4.2010-01-01T00:00:00Z.PT3H
+  filename: Data/test.ens.4.2010-01-01T00:00:00Z.PT3H.l95
 model:
   f: 8.0
   name: L95

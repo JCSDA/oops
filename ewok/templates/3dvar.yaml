@@ -9,6 +9,8 @@ cost function:
     $(BACKGROUND)
   background error:
     $(BACKGROUND_ERROR)
+  observations:
+    $(OBS)
 variational:
   minimizer:
     $(MINIMIZER)
@@ -25,4 +27,5 @@ final:
   prints:
     frequency: PT3H
 output:
-  $(AN_OUTPUT)
+  type: an
+  exp: $(expid)

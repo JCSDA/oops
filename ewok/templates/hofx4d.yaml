@@ -7,3 +7,5 @@ initial condition:
   $(BACKGROUND)
 model:
   $(MODEL)
+observations:
+  $(OBS)

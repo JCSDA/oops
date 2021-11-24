@@ -189,6 +189,7 @@ void IncrementL95::write(const WriteParameters_ & params) const {
   const util::Duration step = time_ - antime;
   filename += "."+step.toString();
   sf::swapNameMember(params.member, filename);
+  filename += ".l95";
 
   oops::Log::trace() << "IncrementL95::write opening " << filename << std::endl;
   std::ofstream fout(filename.c_str());

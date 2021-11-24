@@ -1,4 +1,0 @@
-datadir: '$(expdir)/{{current_cycle}}'
-exp: $(expid)
-frequency: PT06H
-type: an

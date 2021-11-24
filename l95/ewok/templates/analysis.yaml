@@ -1,0 +1,2 @@
+date: $(andatetime)
+filename: $(expid).an.$(andatetime).l95

@@ -111,6 +111,7 @@ template <typename MODEL> class Forecast : public Application {
 //  Setup forecast outputs
     PostProcessor<State_> post;
     post.enrollProcessor(new StateInfo<State_>("fc", params.prints));
+//    params.output.date = bgndate;     DATE SHOULD BE SET HERE, NOT IN YAML
     post.enrollProcessor(new StateWriter<State_>(params.output));
 
 //  Run forecast

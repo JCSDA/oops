@@ -4,10 +4,10 @@ increment geometry:
   resol: 40
 state:
   date: '2010-01-02T00:00:00Z'
-  filename: Data/mem003.eda.4dvar.an.2010-01-02T00:00:00Z
+  filename: Data/mem003.eda.4dvar.an.2010-01-02T00:00:00Z.l95
 increment:
   date: '2010-01-02T00:00:00Z'
-  filename: Data/difst.in.2010-01-02T00:00:00Z.PT0S
+  filename: Data/difst.in.2010-01-02T00:00:00Z.PT0S.l95
   added variables: [x]
   scaling factor: 0.5
 output:

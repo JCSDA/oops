@@ -50,9 +50,13 @@ type(datetime) :: rdate
 type(duration) :: step
 
 ! Get configuration parameters
-call f_conf%get_or_die("datadir",str)
-call swap_name_member(f_conf, str, 6)
-fdbdir = str
+if (f_conf%has("datadir")) then
+  call f_conf%get_or_die("datadir",str)
+  call swap_name_member(f_conf, str, 6)
+  fdbdir = str
+else
+  fdbdir = "."
+endif
 call f_conf%get_or_die("exp",str)
 call swap_name_member(f_conf, str, 6)
 expver = str

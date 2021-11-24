@@ -6,38 +6,38 @@ model:
   state variables: ['x']
   states:
   - date: '2010-01-01T06:00:00Z'
-    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT6H
+    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT6H.l95
   - date: '2010-01-01T09:00:00Z'
-    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT9H
+    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT9H.l95
   - date: '2010-01-01T12:00:00Z'
-    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT12H
+    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT12H.l95
   - date: '2010-01-01T15:00:00Z'
-    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT15H
+    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT15H.l95
   - date: '2010-01-01T18:00:00Z'
-    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT18H
+    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT18H.l95
   - date: '2010-01-01T21:00:00Z'
-    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT21H
+    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT21H.l95
   - date: '2010-01-02T00:00:00Z'
-    filename: Data/truth.fc.2010-01-01T00:00:00Z.P1D
+    filename: Data/truth.fc.2010-01-01T00:00:00Z.P1D.l95
 model aux control: {}
 initial condition:
   date: '2010-01-01T03:00:00Z'
-  filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H
+  filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H.l95
 pseudo model with 4D state:
   states:
   - date: '2010-01-01T03:00:00Z'
-    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H
+    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H.l95
   - date: '2010-01-01T06:00:00Z'
-    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT6H
+    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT6H.l95
   - date: '2010-01-01T09:00:00Z'
-    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT9H
+    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT9H.l95
   - date: '2010-01-01T12:00:00Z'
-    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT12H
+    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT12H.l95
   - date: '2010-01-01T15:00:00Z'
-    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT15H
+    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT15H.l95
   - date: '2010-01-01T18:00:00Z'
-    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT18H
+    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT18H.l95
   - date: '2010-01-01T21:00:00Z'
-    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT21H
+    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT21H.l95
   - date: '2010-01-02T00:00:00Z'
-    filename: Data/truth.fc.2010-01-01T00:00:00Z.P1D
+    filename: Data/truth.fc.2010-01-01T00:00:00Z.P1D.l95

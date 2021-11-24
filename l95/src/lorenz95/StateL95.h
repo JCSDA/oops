@@ -26,6 +26,7 @@
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/parameters/OptionalParameter.h"
+#include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/RequiredParameter.h"
 #include "oops/util/Printable.h"
@@ -62,7 +63,7 @@ class StateL95WriteParameters : public oops::WriteParametersBase {
   OOPS_CONCRETE_PARAMETERS(StateL95WriteParameters, WriteParametersBase)
 
  public:
-  oops::RequiredParameter<std::string> datadir{"datadir", this};
+  oops::Parameter<std::string> datadir{"datadir", ".", this};
   oops::RequiredParameter<std::string> exp{"exp", this};
   oops::RequiredParameter<std::string> type{"type", this};
 };

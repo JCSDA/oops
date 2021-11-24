@@ -11,4 +11,4 @@ model test:
   tolerance: 0.00005
 initial condition:
   date: '2010-01-01T03:00:00Z'
-  filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H
+  filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H.l95

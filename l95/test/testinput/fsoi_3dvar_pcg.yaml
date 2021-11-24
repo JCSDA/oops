@@ -7,7 +7,7 @@ cost function:
   analysis variables: [x]
   background:
     date: 2010-01-02T00:00:00Z
-    filename: Data/test.fc.2010-01-01T00:00:00Z.P1D
+    filename: Data/test.fc.2010-01-01T00:00:00Z.P1D.l95
   background error:
     covariance model: L95Error
     date: 2010-01-02T00:00:00Z
@@ -36,7 +36,7 @@ variational:
       increment test tolerance: 1.0e-6
       input forecast sensitivity:
         date: 2010-01-02T00:00:00Z
-        filename: Data/3dvar_4fsoi_pcg.iter1.in.2010-01-02T00:00:00Z.PT0S
+        filename: Data/3dvar_4fsoi_pcg.iter1.in.2010-01-02T00:00:00Z.PT0S.l95
 final:
   diagnostics:
     departures: oman

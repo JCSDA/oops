@@ -11,7 +11,7 @@ background error:
 analysis variables: [x]
 background:
   date: '2010-01-01T03:00:00Z'
-  filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H
+  filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H.l95
 
 localization:
   length_scale: 1.0
@@ -24,13 +24,13 @@ state test:
   date: '2010-01-01T03:00:00Z'
   statefile:
     date: '2010-01-01T03:00:00Z'
-    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H
+    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H.l95
   statefileout:
     datadir: Data
     exp: out
     type: fc
     date: '2010-01-01T03:00:00Z'
-    filename: Data/out.fc.2010-01-01T03:00:00Z.PT0S
+    filename: Data/out.fc.2010-01-01T03:00:00Z.PT0S.l95
   state generate:
     date: '2010-01-01T03:00:00Z'
     analytic init:
@@ -59,7 +59,7 @@ model test:
   tolerance: 0.00005
 initial condition:
   date: '2010-01-01T03:00:00Z'
-  filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H
+  filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H.l95
 
 linear model:
   trajectory:

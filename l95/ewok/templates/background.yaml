@@ -1,0 +1,2 @@
+date: $(bgdatetime)
+filename: $(expid).bg.$(bgdatetime).l95

@@ -7,7 +7,7 @@ cost function:
   analysis variables: [x]
   background:
     date: 2010-01-02T00:00:00Z
-    filename: Data/test.ens.2.2010-01-01T00:00:00Z.P1D
+    filename: Data/test.ens.2.2010-01-01T00:00:00Z.P1D.l95
   background error:
     covariance model: L95Error
     date: 2010-01-02T00:00:00Z

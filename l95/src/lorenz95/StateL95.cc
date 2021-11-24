@@ -158,6 +158,8 @@ void StateL95::write(const WriteParameters_ & parameters) const {
     filename += "."+std::to_string(iter)+"."+time_.toString();
   }
 
+  filename += ".l95";
+
   sf::swapNameMember(parameters.member.value(), filename);
 
   oops::Log::trace() << "StateL95::write opening " << filename << std::endl;
