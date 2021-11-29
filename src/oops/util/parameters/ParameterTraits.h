@@ -207,6 +207,9 @@ struct ParameterTraits<int, std::false_type> : public IntegerParameterTraits<int
 template <>
 struct ParameterTraits<size_t, std::false_type> : public IntegerParameterTraits<size_t> {};
 
+template <>
+struct ParameterTraits<int64_t, std::false_type> : public IntegerParameterTraits<int64_t> {};
+
 template <typename T>
 struct FloatingPointParameterTraits : public GenericParameterTraits<T> {
   static ObjectJsonSchema jsonSchema(const std::string &name) {
