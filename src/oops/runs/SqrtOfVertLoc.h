@@ -106,12 +106,15 @@ template <typename MODEL> class SqrtOfVertLoc : public Application {
     }
 
 //  Output columns of sqrt(B)
+    const bool printTestForEachMember = fullConfig.getDouble("print test for each member", true);
     for (int jm = 0; jm < truncatedNeig; ++jm) {
       eckit::LocalConfiguration outConfig(fullConfig, "output");
       outConfig.set("member", jm+1);
       perts[jm].schur_product_with(sumOfSquares);  //  Scale eigen vectors
       perts[jm].write(outConfig);
-      Log::test() << "Columns of sqrt(B) " << jm << perts[jm] << std::endl;
+      if (printTestForEachMember) {
+        Log::test() << "Columns of sqrt(B) " << jm << perts[jm] << std::endl;
+      }
     }
     return 0;
   }
@@ -201,7 +204,9 @@ template <typename MODEL> class SqrtOfVertLoc : public Application {
         perts.setEigen(Z, i);
 
         // increment the eigen spectrum accumulator
-        averageEigenSpectrum += Evals/Evals.sum();
+        for (size_t ii=0; ii < std::min(averageEigenSpectrum.size(), Evals.size()); ++ii) {
+          averageEigenSpectrum(ii) += Evals(ii)/Evals.sum();
+        }
         ++numberOfPointsOnThisPE;
       }  // end if norm > 0
     }  // end GeometryIterator_ loop
