@@ -44,18 +44,18 @@ namespace test {
 
 /// Options used by testStateReadWrite().
 template <typename MODEL>
-class StateFileOutParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(StateFileOutParameters, Parameters)
+class StateWriteReadParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(StateWriteReadParameters, Parameters)
 
  public:
   typedef oops::State<MODEL>                State_;
-  typedef oops::StateParametersND<MODEL>    StateParametersND_;
+  typedef typename State_::Parameters_      StateParameters_;
   typedef typename State_::WriteParameters_ StateWriteParameters_;
 
   /// Options used by the code writing the state to a file.
-  StateWriteParameters_ write{this};
+  oops::RequiredParameter<StateWriteParameters_> write{"state write", this};
   /// Options used by the code reading the state back in.
-  StateParametersND_ read{this};
+  oops::RequiredParameter<StateParameters_> read{"state read", this};
 };
 
 // -----------------------------------------------------------------------------
@@ -67,7 +67,7 @@ class StateTestParameters : public oops::Parameters {
 
  public:
   typedef oops::State<MODEL>                 State_;
-  typedef StateFileOutParameters<MODEL>      StateFileOutParameters_;
+  typedef StateWriteReadParameters<MODEL>    StateWriteReadParameters_;
   typedef typename State_::Parameters_       StateParameters_;
 
   /// Relative tolerance of norm comparisons.
@@ -87,7 +87,7 @@ class StateTestParameters : public oops::Parameters {
   /// This option must be present if `state generate` is.
   oops::OptionalParameter<double> normGeneratedState{"norm generated state", this};
 
-  oops::OptionalParameter<StateFileOutParameters_> statefileout{"statefileout", this};
+  oops::OptionalParameter<StateWriteReadParameters_> writeReadTest{"write then read test", this};
 };
 
 // -----------------------------------------------------------------------------
@@ -369,7 +369,7 @@ template <typename MODEL> void testStateReadWrite() {
   // Check norm has its initial value
   EXPECT(xx.norm() == norm);
 
-  if (Test_::test().statefileout.value() != boost::none) {
+  if (Test_::test().writeReadTest.value() != boost::none) {
     // Modify state
     const double mult = 2.0;
     xx.accumul(mult, xx);
@@ -378,10 +378,10 @@ template <typename MODEL> void testStateReadWrite() {
     const double normout = xx.norm();
 
     // Write modified state to output file
-    xx.write(Test_::test().statefileout.value()->write);
+    xx.write(Test_::test().writeReadTest.value()->write);
 
     // Read modified state from output file
-    State_ yy(Test_::resol(), Test_::test().statefileout.value()->read);
+    State_ yy(Test_::resol(), Test_::test().writeReadTest.value()->read);
 
     // Check modified state norm has its expected value
     EXPECT(oops::is_close(yy.norm(), normout, tol));
