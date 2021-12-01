@@ -30,10 +30,10 @@ namespace mpi {
 
 // ------------------------------------------------------------------------------------------------
 
-/// Default communicator with all MPI tasks (ie MPI_COMM_WORLD)
+/// Communicator with all MPI tasks (ie MPI_COMM_WORLD)
 const eckit::mpi::Comm & world();
 
-/// Default communicator with each MPI task by itself
+/// Communicator with each MPI task by itself
 const eckit::mpi::Comm & myself();
 
 // ------------------------------------------------------------------------------------------------
