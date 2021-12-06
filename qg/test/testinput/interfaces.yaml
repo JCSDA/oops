@@ -83,6 +83,7 @@ observations:
     reference gridpoints:
       lons: [-175.5]
       lats: [5.623]
+      depths: [0.0]
     reference rms: [0]
   obs iterator test:
     tolerance: 1.0e-6
@@ -126,6 +127,7 @@ observations:
     reference gridpoints:
       lons: [-175.5]
       lats: [5.623]
+      depths: [0.0]
     reference rms: [1]
   obs iterator test:
     tolerance: 1.0e-6
@@ -162,6 +164,7 @@ observations:
     reference gridpoints:
       lons: [-175.5]
       lats: [5.623]
+      depths: [0.0]
     reference rms: [1]  
   obs iterator test:
     tolerance: 1.0e-6

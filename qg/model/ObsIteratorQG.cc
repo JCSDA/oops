@@ -34,9 +34,9 @@ bool ObsIteratorQG::operator!=(const ObsIteratorQG & other) const {
 }
 
 // -----------------------------------------------------------------------------
-eckit::geometry::Point2 ObsIteratorQG::operator*() const {
+eckit::geometry::Point3 ObsIteratorQG::operator*() const {
   auto lonlat = atlas::array::make_view<double, 2>(locslonlat_);
-  return eckit::geometry::Point2(lonlat(index_, 0), lonlat(index_, 1));
+  return eckit::geometry::Point3(lonlat(index_, 0), lonlat(index_, 1), 0.0);
 }
 
 // -----------------------------------------------------------------------------

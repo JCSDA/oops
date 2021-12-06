@@ -71,14 +71,15 @@ template <typename OBS> void testBasic() {
     // test that the begin() point is the same as reference
     double lon1 = Test_::config(jj).getDouble("obs iterator test.lon1");
     double lat1 = Test_::config(jj).getDouble("obs iterator test.lat1");
-    const eckit::geometry::Point2 point1(lon1, lat1);
+    const eckit::geometry::Point3 point1(lon1, lat1, 0.0);
+
     EXPECT((*iter1).distance(point1) <= tol);
 
     // test that the point after begin() is the same as reference
     ++iter1;
     double lon2 = Test_::config(jj).getDouble("obs iterator test.lon2");
     double lat2 = Test_::config(jj).getDouble("obs iterator test.lat2");
-    const eckit::geometry::Point2 point2(lon2, lat2);
+    const eckit::geometry::Point3 point2(lon2, lat2, 0.0);
     EXPECT((*iter1).distance(point2) <= tol);
   }
 }

@@ -258,7 +258,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
   }
 
   void calculate_patchCenter(const Geometry_ & geometry, std::vector<double> & patchCenter) const {
-    eckit::geometry::Point2 gptmp;
+    eckit::geometry::Point3 gptmp3;
     const double deg2rad = 3.14159265/180.0;
 
     // compute patch center.
@@ -273,10 +273,9 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     double zmean = 0.0;
     int n = 0;
     for (GeometryIterator_ i = geometry.begin(); i != geometry.end(); ++i) {
-      gptmp = *i;
-      alat = gptmp.y();
-      alon = gptmp.x()*deg2rad;
-      alat = gptmp.y()*deg2rad;
+      gptmp3 = *i;
+      alon = gptmp3[0]*deg2rad;
+      alat = gptmp3[1]*deg2rad;
       xmean += cos(alat)*cos(alon);
       ymean += cos(alat)*sin(alon);
       zmean += sin(alat);
@@ -307,7 +306,9 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     // compute radius
     eckit::geometry::Point2 center(patchCenter[0], patchCenter[1]);
     for (GeometryIterator_ i = geometry.begin(); i != geometry.end(); ++i) {
-      double dist = eckit::geometry::Sphere::distance(radius_earth, center, *i);
+      gptmp[0] = (*i)[0];
+      gptmp[1] = (*i)[1];
+      double dist = eckit::geometry::Sphere::distance(radius_earth, center, gptmp);
       patchRadius = fmax(patchRadius, dist);
     }
 

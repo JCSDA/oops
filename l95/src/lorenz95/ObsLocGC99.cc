@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
-#include "eckit/geometry/Point2.h"
+#include "eckit/geometry/Point3.h"
 
 #include "lorenz95/Iterator.h"
 #include "lorenz95/L95Traits.h"
@@ -37,7 +37,7 @@ ObsLocGC99::ObsLocGC99(const eckit::Configuration & config, const ObsTable & obs
 
 void ObsLocGC99::computeLocalization(const Iterator & iterator, ObsVec1D & locfactor) const {
   std::vector<double> locations = obsdb_.locations();
-  eckit::geometry::Point2 center = *iterator;
+  eckit::geometry::Point3 center = *iterator;
   for (unsigned int ii=0; ii < obsdb_.nobs(); ++ii) {
     double curdist = std::abs(center[0] - locations[ii]);
     curdist = std::min(curdist, 1.-curdist);

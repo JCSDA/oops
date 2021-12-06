@@ -84,7 +84,7 @@ GeometryQGIterator GeometryQG::begin() const {
 GeometryQGIterator GeometryQG::end() const {
   int nx = 0;
   int ny = 0;
-  int nz;
+  int nz = 1;
   double deltax;
   double deltay;
   qg_geom_info_f90(keyGeom_, nx, ny, nz, deltax, deltay);
@@ -95,7 +95,7 @@ std::vector<double> GeometryQG::verticalCoord(std::string & vcUnits) const {
   // returns vertical coordinate in untis of vcUnits
   int nx = 0;
   int ny = 0;
-  int nz;
+  int nz = 1;
   double deltax;
   double deltay;
   qg_geom_info_f90(keyGeom_, nx, ny, nz, deltax, deltay);

@@ -27,8 +27,8 @@ bool ObsIterator::operator!=(const ObsIterator & other) const {
 }
 
 // -----------------------------------------------------------------------------
-eckit::geometry::Point2 ObsIterator::operator*() const {
-  return eckit::geometry::Point2(locations_[index_], 0.0);
+eckit::geometry::Point3 ObsIterator::operator*() const {
+  return eckit::geometry::Point3(locations_[index_], 0.0, 0.0);
 }
 
 // -----------------------------------------------------------------------------

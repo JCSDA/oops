@@ -18,7 +18,6 @@
 #include <string>
 #include <vector>
 
-#include "eckit/geometry/Point2.h"
 #include "eckit/mpi/Comm.h"
 
 #include "oops/base/ObsSpaceBase.h"

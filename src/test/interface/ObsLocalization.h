@@ -58,13 +58,15 @@ template <typename MODEL, typename OBS> void testObsLocalization() {
     // read reference local nobs values and reference gridpoints
     const std::vector<double> lons = locconf.getDoubleVector("reference gridpoints.lons");
     const std::vector<double> lats = locconf.getDoubleVector("reference gridpoints.lats");
+    const std::vector<double> depths = locconf.getDoubleVector("reference gridpoints.depths");
     const std::vector<size_t> nobs_local_ref = locconf.getUnsignedVector("reference local nobs");
     ASSERT(lons.size() == lats.size());
+    ASSERT(lons.size() == depths.size());
     ASSERT(lons.size() == nobs_local_ref.size());
     ASSERT(lons.size() > 0);
-    std::vector<eckit::geometry::Point2> reference_points;
+    std::vector<eckit::geometry::Point3> reference_points;
     for (size_t jpoint = 0; jpoint < lons.size(); ++jpoint) {
-      reference_points.emplace_back(lons[jpoint], lats[jpoint]);
+      reference_points.emplace_back(lons[jpoint], lats[jpoint], depths[jpoint]);
     }
     std::unique_ptr<ObsLocalization_> obsloc =
                     oops::ObsLocalizationFactory<MODEL, OBS>::create(locconf, obspace);
@@ -87,8 +89,9 @@ template <typename MODEL, typename OBS> void testObsLocalization() {
       // check if we need to test at this location (if there are any points in the
       // reference point list within 1e-5 of this locationn)
       const auto & it = std::find_if(reference_points.begin(), reference_points.end(),
-            [ii] (const eckit::geometry::Point2 & point) {return point.distance(*ii) < 1e-5;});
-      if (it != reference_points.end()) {
+            [ii] (const eckit::geometry::Point3 & point) {return point.distance(*ii) < 1e-5;});
+      // if iterator it within the bounds of the reference array, go ahead with further testing
+      if ( it != reference_points.end() ) {
         total_tested++;
         size_t index = it - reference_points.begin();
         locvector.ones();
