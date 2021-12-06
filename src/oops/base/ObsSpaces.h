@@ -27,6 +27,7 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
+#include "oops/util/parameters/Parameters.h"
 #include "oops/util/Printable.h"
 
 namespace oops {
