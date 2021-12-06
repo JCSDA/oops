@@ -8,15 +8,15 @@ geometry:
 background:
   members:
   - date: &date 2010-01-02T00:00:00Z
-    filename: Data/test.ens.1.2010-01-01T00:00:00Z.P1D.l95
+    filename: Data/forecast.ens.1.2010-01-01T00:00:00Z.P1D.l95
   - date: *date
-    filename: Data/test.ens.2.2010-01-01T00:00:00Z.P1D.l95
+    filename: Data/forecast.ens.2.2010-01-01T00:00:00Z.P1D.l95
   - date: *date
-    filename: Data/test.ens.3.2010-01-01T00:00:00Z.P1D.l95
+    filename: Data/forecast.ens.3.2010-01-01T00:00:00Z.P1D.l95
   - date: *date
-    filename: Data/test.ens.4.2010-01-01T00:00:00Z.P1D.l95
+    filename: Data/forecast.ens.4.2010-01-01T00:00:00Z.P1D.l95
   - date: *date
-    filename: Data/test.ens.5.2010-01-01T00:00:00Z.P1D.l95
+    filename: Data/forecast.ens.5.2010-01-01T00:00:00Z.P1D.l95
 
 observations:
 - obs error:

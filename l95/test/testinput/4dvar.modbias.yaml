@@ -11,7 +11,7 @@ cost function:
   analysis variables: [x]
   background:
     date: 2010-01-01T03:00:00Z
-    filename: Data/test.fc.2010-01-01T00:00:00Z.PT3H.l95
+    filename: Data/forecast.fc.2010-01-01T00:00:00Z.PT3H.l95
   background error:
     covariance model: L95Error
     date: 2010-01-01T03:00:00Z
@@ -25,8 +25,8 @@ cost function:
   - obs error:
       covariance model: diagonal
     obs space:
-      obsdatain:  Data/l95.truth4d.2010-01-02T00:00:00Z.obt
-      obsdataout: Data/l95.4dvar.modbias.2010-01-02T00:00:00Z.obt
+      obsdatain:  Data/truth4d.2010-01-02T00:00:00Z.obt
+      obsdataout: Data/4dvar.modbias.2010-01-02T00:00:00Z.obt
     obs operator: {}
   constraints:
   - jcdfi:
@@ -70,7 +70,7 @@ final:
     frequency: PT1H30M
 output:
   datadir: Data
-  exp: test
+  exp: 4dvar.modbias
   first: PT3H
   frequency: PT06H
   type: an

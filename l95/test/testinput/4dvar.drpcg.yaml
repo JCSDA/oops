@@ -1,6 +1,6 @@
 cost function:
   cost type: 4D-Var
-  window begin: '2010-01-01T03:00:00Z'
+  window begin: 2010-01-01T03:00:00Z
   window length: P1D
   geometry:
     resol: 40
@@ -10,24 +10,24 @@ cost function:
     tstep: PT1H30M
   analysis variables: [x]
   background:
-    date: '2010-01-01T03:00:00Z'
-    filename: Data/test.fc.2010-01-01T00:00:00Z.PT3H.l95
+    date: 2010-01-01T03:00:00Z
+    filename: Data/forecast.fc.2010-01-01T00:00:00Z.PT3H.l95
   background error:
     covariance model: L95Error
-    date: '2010-01-01T03:00:00Z'
+    date: 2010-01-01T03:00:00Z
     length_scale: 1.0
     standard_deviation: 0.6
   observations:
   - obs error:
       covariance model: diagonal
     obs space:
-      obsdatain:  Data/l95.truth4d.2010-01-02T00:00:00Z.obt
-      obsdataout: Data/l95.4dvar.drpcg.2010-01-02T00:00:00Z.obt
+      obsdatain:  Data/truth4d.2010-01-02T00:00:00Z.obt
+      obsdataout: Data/4dvar.drpcg.2010-01-02T00:00:00Z.obt
     obs operator: {}
   constraints:
   - jcdfi:
       filtered variables: [x]
-      alpha: '100.0'
+      alpha: 100.0
       cutoff: PT3H
 variational:
   minimizer:
@@ -43,10 +43,10 @@ variational:
       tstep: PT1H30M
       variable change: Identity
       name: L95TLM
-    ninner: '10'
+    ninner: 10
     geometry:
       resol: 40
-    test: 'on'
+    test: on
   - gradient norm reduction: 1e-10
     linear model:
       trajectory:
@@ -55,10 +55,10 @@ variational:
       tstep: PT1H30M
       variable change: Identity
       name: L95TLM
-    ninner: '10'
+    ninner: 10
     geometry:
       resol: 40
-    test: 'on'
+    test: on
 final:
   diagnostics:
     departures: oman
@@ -66,7 +66,7 @@ final:
     frequency: PT1H30M
 output:
   datadir: Data
-  exp: test
+  exp: 4dvar.drpcg
   first: PT3H
   frequency: PT06H
   type: an

@@ -4,11 +4,11 @@ geometry:
   resol: 40
 state:
   date: 2010-01-02T00:00:00Z
-  filename: Data/test.fc.2010-01-01T00:00:00Z.P1D.l95
+  filename: Data/forecast.fc.2010-01-01T00:00:00Z.P1D.l95
 observations:
 - obs space:
-    obsdatain:  Data/l95.truth3d.2010-01-02T00:00:00Z.obt
-    obsdataout: Data/l95.hofx.2010-01-02T00:00:00Z.obt
+    obsdatain:  Data/truth3d.2010-01-02T00:00:00Z.obt
+    obsdataout: Data/hofx.2010-01-02T00:00:00Z.obt
   obs operator: {}
 
 test:

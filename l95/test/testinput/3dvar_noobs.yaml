@@ -7,7 +7,7 @@ cost function:
   analysis variables: [x]
   background:
     date: 2010-01-02T00:00:00Z
-    filename: Data/test.fc.2010-01-01T00:00:00Z.P1D.l95
+    filename: Data/forecast.fc.2010-01-01T00:00:00Z.P1D.l95
   background error:
     covariance model: L95Error
     date: 2010-01-02T00:00:00Z
@@ -40,7 +40,7 @@ final:
     departures: oman
 output:
   datadir: Data
-  exp: test
+  exp: 3dvar_noobs
   frequency: PT6H
   type: an
 

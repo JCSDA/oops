@@ -12,7 +12,7 @@ state test:
       filename: ../../qg/test/Data/truth.fc.2009-12-15T00:00:00Z.P17D.nc
     Lorenz 95:
       date: 2010-01-01T00:00:00Z
-      filename: ../../l95/test/Data/test.an.2010-01-01T00:00:00Z.l95
+      filename: ../../l95/test/Data/forecast.an.2010-01-01T00:00:00Z.l95
   write then read test:
     state write:
       QG:

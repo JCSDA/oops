@@ -107,11 +107,11 @@ list( APPEND l95_test_input
 )
 
 list( APPEND l95_test_data
-  test.an.2010-01-01T00:00:00Z.l95
+  forecast.an.2010-01-01T00:00:00Z.l95
   truth.an.2010-01-01T00:00:00Z.l95
   truth.fc.2010-01-01T00:00:00Z.PT3H.l95
   truth.2010-01-02T00:00:00Z.obt
-  simplifiedl95.fc
+  simplifiedl95.fc.l95
   simplifiedl95.truth.obt
   noobs.obt
 )

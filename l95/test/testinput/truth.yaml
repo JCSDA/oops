@@ -6,11 +6,11 @@ model:
   tstep: PT1H30M
 forecast length: P1D
 initial condition:
-  date: '2010-01-01T00:00:00Z'
+  date: 2010-01-01T00:00:00Z
   filename: Data/truth.an.2010-01-01T00:00:00Z.l95
 output:
   datadir: Data
-  date: '2010-01-01T00:00:00Z'
+  date: 2010-01-01T00:00:00Z
   exp: truth
   frequency: PT3H
   type: fc

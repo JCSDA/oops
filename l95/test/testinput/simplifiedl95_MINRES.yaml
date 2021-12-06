@@ -1,7 +1,3 @@
-#
-#=== Simplified L95 test for MINRES minimizer ===#
-#
-
 cost function:
   cost type: 3D-Var
   window begin: 2010-01-01T00:00:00Z
@@ -11,7 +7,7 @@ cost function:
   analysis variables: [x]
   background:
     date: 2010-01-01T00:30:00Z
-    filename: Data/simplifiedl95.fc
+    filename: Data/simplifiedl95.fc.l95
   background error:
     covariance model: L95Error
     date: 2010-01-01T00:00:00Z
@@ -41,7 +37,7 @@ final:
     departures: oman
 output:
   datadir: Data
-  exp: simplifiedl95
+  exp: simplifiedl95_MINRES
   frequency: PT1H
   type: an
 

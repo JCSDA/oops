@@ -1,5 +1,5 @@
 files:
-  - "testinput/enshofx.1.yaml"
-  - "testinput/enshofx.2.yaml"
-  - "testinput/enshofx.3.yaml"
-  - "testinput/enshofx.4.yaml"
+  - testinput/enshofx.1.yaml
+  - testinput/enshofx.2.yaml
+  - testinput/enshofx.3.yaml
+  - testinput/enshofx.4.yaml

@@ -11,7 +11,7 @@ cost function:
   analysis variables: [x]
   background:
     date: 2010-01-01T03:00:00Z
-    filename: Data/test.fc.2010-01-01T00:00:00Z.PT3H.l95
+    filename: Data/forecast.fc.2010-01-01T00:00:00Z.PT3H.l95
   background error:
     covariance model: L95Error
     date: 2010-01-01T03:00:00Z
@@ -20,8 +20,8 @@ cost function:
   observations:
   - obs operator: {}
     obs space:
-      obsdatain:  Data/l95.truth4d.2010-01-02T00:00:00Z.obt
-      obsdataout: Data/l95.4dvar.drplanczos.2010-01-02T00:00:00Z.obt
+      obsdatain:  Data/truth4d.2010-01-02T00:00:00Z.obt
+      obsdataout: Data/4dvar.drplzero.2010-01-02T00:00:00Z.obt
     monitoring only: true
     obs error:
       covariance model: diagonal
@@ -33,7 +33,7 @@ variational:
       krylov basis:
         datadir: Data
         date: 2010-01-01T12:00:00Z
-        exp: 4dvar.drplanczos
+        exp: 4dvar.drplzero
         type: krylov
   iterations:
   - ninner: 10
@@ -69,7 +69,7 @@ final:
     frequency: PT1H30M
 output:
   datadir: Data
-  exp: test
+  exp: 4dvar.drplzero
   first: PT3H
   frequency: PT06H
   type: an

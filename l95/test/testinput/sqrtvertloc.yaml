@@ -8,7 +8,7 @@ background error:
   standard_deviation: 0.6
 background:
   date: 2010-01-01T00:00:00Z
-  filename: Data/test.an.2010-01-01T00:00:00Z.l95
+  filename: Data/forecast.an.2010-01-01T00:00:00Z.l95
 max neig output: 5
 number of random samples: 10
 truncation tolerence: .95

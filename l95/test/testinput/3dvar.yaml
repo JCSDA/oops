@@ -7,7 +7,7 @@ cost function:
   analysis variables: [x]
   background:
     date: 2010-01-02T00:00:00Z
-    filename: Data/test.fc.2010-01-01T00:00:00Z.P1D.l95
+    filename: Data/forecast.fc.2010-01-01T00:00:00Z.P1D.l95
   background error:
     covariance model: L95Error
     date: 2010-01-02T00:00:00Z
@@ -16,8 +16,8 @@ cost function:
   observations:
   - obs operator: {}
     obs space:
-      obsdatain:  Data/l95.truth3d.2010-01-02T00:00:00Z.obt
-      obsdataout: Data/l95.3dvar.2010-01-02T00:00:00Z.obt
+      obsdatain:  Data/truth3d.2010-01-02T00:00:00Z.obt
+      obsdataout: Data/3dvar.2010-01-02T00:00:00Z.obt
     obs error:
       covariance model: diagonal
 variational:
@@ -36,7 +36,7 @@ variational:
       increment:
         datadir: Data
         date: 2010-01-02T00:00:00Z
-        exp: test.iter1
+        exp: 3dvar.iter1
         type: in
   - ninner: 10
     gradient norm reduction: 1e-10
@@ -48,14 +48,14 @@ variational:
       increment:
         datadir: Data
         date: 2010-01-02T00:00:00Z
-        exp: test.iter2
+        exp: 3dvar.iter2
         type: in
 final:
   diagnostics:
     departures: oman
 output:
   datadir: Data
-  exp: test
+  exp: 3dvar
   frequency: PT6H
   type: an
 
