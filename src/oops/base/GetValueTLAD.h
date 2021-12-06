@@ -19,7 +19,6 @@
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
-#include "oops/interface/GetValues.h"
 #include "oops/interface/LinearGetValues.h"
 #include "oops/interface/Locations.h"
 #include "oops/util/DateTime.h"

@@ -23,7 +23,6 @@
 #include "oops/base/LocalIncrement.h"
 #include "oops/generic/gc99.h"
 #include "oops/interface/GeometryIterator.h"
-#include "oops/interface/Increment.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/parameters/Parameter.h"
@@ -66,7 +65,6 @@ class VerticalLocEV: public util::Printable,
                      private util::ObjectCounter<VerticalLocEV<MODEL>> {
   typedef Geometry<MODEL>            Geometry_;
   typedef GeometryIterator<MODEL>    GeometryIterator_;
-  typedef Increment<MODEL>           Increment_;
   typedef Increment4D<MODEL>         Increment4D_;
   typedef IncrementEnsemble<MODEL>   IncrementEnsemble_;
   typedef IncrementEnsemble4D<MODEL> IncrementEnsemble4D_;

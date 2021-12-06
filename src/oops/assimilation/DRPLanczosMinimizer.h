@@ -27,7 +27,6 @@
 #include "oops/assimilation/SpectralLMP.h"
 #include "oops/assimilation/TriDiagSolve.h"
 #include "oops/util/dot_product.h"
-#include "oops/util/formats.h"
 #include "oops/util/Logger.h"
 #include "oops/util/printRunStats.h"
 

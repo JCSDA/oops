@@ -28,8 +28,6 @@
 
 namespace oops {
 
-template<typename OBS> class Observations;
-
 /// Difference between two observation vectors.
 /*!
  * A departure is the difference between two observations.

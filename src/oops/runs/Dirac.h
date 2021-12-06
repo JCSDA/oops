@@ -29,7 +29,6 @@
 #include "oops/runs/Application.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
-#include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/Parameter.h"

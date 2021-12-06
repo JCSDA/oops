@@ -15,7 +15,6 @@
 #include <memory>
 #include <string>
 
-#include "eckit/config/LocalConfiguration.h"
 #include "eckit/mpi/Comm.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/CostJb4D.h"
@@ -28,7 +27,6 @@
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/State.h"
-#include "oops/base/StateInfo.h"
 #include "oops/base/StateParametersND.h"
 #include "oops/base/TrajectorySaver.h"
 #include "oops/base/Variables.h"

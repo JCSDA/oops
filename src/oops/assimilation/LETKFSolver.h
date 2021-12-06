@@ -15,20 +15,17 @@
 #include <string>
 #include <vector>
 
-#include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/LETKFSolverParameters.h"
 #include "oops/assimilation/LocalEnsembleSolver.h"
 #include "oops/base/Departures.h"
 #include "oops/base/DeparturesEnsemble.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/IncrementEnsemble4D.h"
-#include "oops/base/LocalIncrement.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/ObsLocalizations.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/util/Logger.h"
-#include "oops/util/Timer.h"
 
 namespace oops {
 

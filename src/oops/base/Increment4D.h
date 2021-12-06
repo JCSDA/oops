@@ -15,8 +15,6 @@
 #include <string>
 #include <vector>
 
-#include "eckit/config/LocalConfiguration.h"
-
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
 #include "oops/base/State4D.h"

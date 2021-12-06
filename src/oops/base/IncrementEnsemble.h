@@ -20,7 +20,6 @@
 #include <boost/ptr_container/ptr_vector.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "oops/base/Accumulator.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
 #include "oops/base/LinearVariableChangeBase.h"

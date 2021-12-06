@@ -19,10 +19,6 @@
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 
-namespace eckit {
-  class Configuration;
-}
-
 namespace oops {
 
 /// Generic implementation of the pseudo model initialized with 4D State

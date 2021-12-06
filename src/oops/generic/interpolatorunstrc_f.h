@@ -9,12 +9,12 @@
 
 #include "atlas/field.h"
 
-#include "eckit/config/Configuration.h"
-#include "eckit/mpi/Comm.h"
-
 // Forward declarations
 namespace eckit {
   class Configuration;
+  namespace mpi {
+    class Comm;
+  }
 }
 
 namespace oops {

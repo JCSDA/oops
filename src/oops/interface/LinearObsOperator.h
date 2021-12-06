@@ -17,7 +17,6 @@
 #include <boost/noncopyable.hpp>
 
 #include "oops/base/ObsVector.h"
-#include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsAuxIncrement.h"
@@ -28,6 +27,8 @@
 #include "oops/util/Timer.h"
 
 namespace oops {
+
+class Variables;
 
 // -----------------------------------------------------------------------------
 /// \brief MODEL-agnostic part of tangent-linear and adjoint of the nonlinear

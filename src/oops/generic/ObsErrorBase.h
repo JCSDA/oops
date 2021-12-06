@@ -17,7 +17,6 @@
 #include <vector>
 
 #include <boost/noncopyable.hpp>
-#include "eckit/config/Configuration.h"
 
 #include "oops/base/ObsVector.h"
 #include "oops/interface/ObsSpace.h"

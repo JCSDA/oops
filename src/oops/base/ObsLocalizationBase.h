@@ -62,6 +62,7 @@ class ObsLocalizationFactory {
                                                                  const ObsSpace_ &);
  protected:
   explicit ObsLocalizationFactory(const std::string &);
+  virtual ~ObsLocalizationFactory() = default;
  private:
   virtual ObsLocalizationBase<MODEL, OBS> * make(const eckit::Configuration &,
                                                  const ObsSpace_ &) = 0;

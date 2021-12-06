@@ -12,13 +12,11 @@
 #include <cfloat>
 #include <vector>
 
-#include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/gletkfInterface.h"
 #include "oops/assimilation/LETKFSolver.h"
 #include "oops/base/Departures.h"
 #include "oops/base/DeparturesEnsemble.h"
 #include "oops/base/ObsErrors.h"
-#include "oops/util/Logger.h"
 
 namespace oops {
 

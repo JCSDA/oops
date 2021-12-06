@@ -21,7 +21,6 @@
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
-#include "oops/util/dot_product.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 

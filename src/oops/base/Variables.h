@@ -12,9 +12,11 @@
 #include <string>
 #include <vector>
 
-
-#include "eckit/config/LocalConfiguration.h"
 #include "oops/util/Printable.h"
+
+namespace eckit {
+  class Configuration;
+}
 
 namespace oops {
 

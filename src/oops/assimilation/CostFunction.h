@@ -22,12 +22,9 @@
 #include "eckit/mpi/Comm.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/ControlVariable.h"
-#include "oops/assimilation/CostJbState.h"
 #include "oops/assimilation/CostJbTotal.h"
 #include "oops/assimilation/CostJo.h"
 #include "oops/assimilation/CostTermBase.h"
-#include "oops/assimilation/DualVector.h"
-#include "oops/assimilation/JqTermTLAD.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
 #include "oops/base/ParameterTraitsVariables.h"
@@ -37,7 +34,6 @@
 #include "oops/base/Variables.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"
-#include "oops/util/dot_product.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/ConfigurationParameter.h"
@@ -50,8 +46,8 @@
 namespace oops {
 
 // Forward decl
-template <typename MODEL, typename OBS>
-class CostFactory;
+template <typename MODEL, typename OBS> class CostFactory;
+template <typename MODEL> class CostJbState;
 
 // -----------------------------------------------------------------------------
 
@@ -119,7 +115,6 @@ template<typename MODEL, typename OBS> class CostFunction : private boost::nonco
   typedef ControlVariable<MODEL, OBS>   CtrlVar_;
   typedef CostJbTotal<MODEL, OBS>       JbTotal_;
   typedef CostTermBase<MODEL, OBS>      CostBase_;
-  typedef JqTermTLAD<MODEL>             JqTermTLAD_;
   typedef Geometry<MODEL>               Geometry_;
   typedef State<MODEL>                  State_;
   typedef Increment<MODEL>              Increment_;

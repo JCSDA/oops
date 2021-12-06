@@ -13,13 +13,13 @@
 
 #include <boost/noncopyable.hpp>
 
-#include "eckit/config/Configuration.h"
 #include "oops/base/PostTimer.h"
-#include "oops/base/PostTimerParameters.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 
 namespace oops {
+
+class PostTimerParameters;
 
 // -----------------------------------------------------------------------------
 

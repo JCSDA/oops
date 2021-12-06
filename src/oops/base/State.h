@@ -14,6 +14,7 @@
 
 #include "oops/base/StateParametersND.h"
 #include "oops/interface/State.h"
+#include "oops/util/gatherPrint.h"
 
 namespace oops {
 

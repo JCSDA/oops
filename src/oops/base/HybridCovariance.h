@@ -25,7 +25,6 @@
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
-#include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 
 namespace oops {

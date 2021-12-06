@@ -18,7 +18,6 @@
 
 #include "eckit/config/Configuration.h"
 #include "oops/base/Departures.h"
-#include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/GetValueTLADs.h"
 #include "oops/base/ObsAuxControls.h"
@@ -27,7 +26,6 @@
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/util/DateTime.h"
-#include "oops/util/Duration.h"
 
 namespace oops {
 

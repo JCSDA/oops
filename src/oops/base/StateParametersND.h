@@ -20,7 +20,6 @@
 #include "oops/util/parameters/GenericParameters.h"
 #include "oops/util/parameters/HasParameters_.h"
 #include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/ParameterTraits.h"
 #include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {

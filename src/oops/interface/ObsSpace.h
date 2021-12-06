@@ -16,10 +16,8 @@
 #include <ostream>
 #include <string>
 
-#include "eckit/geometry/Point2.h"
 #include "eckit/system/ResourceUsage.h"
 
-#include "oops/base/Variables.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/Logger.h"
@@ -27,15 +25,13 @@
 #include "oops/util/Printable.h"
 #include "oops/util/Timer.h"
 
-namespace eckit {
-  class Configuration;
-}
-
 namespace util {
   class DateTime;
 }
 
 namespace oops {
+
+class Variables;
 
 // -----------------------------------------------------------------------------
 

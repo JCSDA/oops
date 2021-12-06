@@ -23,7 +23,6 @@
 #include "oops/base/DeparturesEnsemble.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/IncrementEnsemble4D.h"
-#include "oops/base/LocalIncrement.h"
 #include "oops/base/ObsEnsemble.h"
 #include "oops/base/Observations.h"
 #include "oops/base/ObsSpaces.h"

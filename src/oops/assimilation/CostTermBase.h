@@ -13,8 +13,6 @@
 
 #include <memory>
 
-#include "oops/assimilation/ControlIncrement.h"
-#include "oops/assimilation/ControlVariable.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
@@ -25,6 +23,9 @@ namespace eckit {
 }
 
 namespace oops {
+
+template <typename MODEL, typename OBS> class ControlIncrement;
+template <typename MODEL, typename OBS> class ControlVariable;
 
 // -----------------------------------------------------------------------------
 

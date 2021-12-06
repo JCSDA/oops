@@ -21,8 +21,6 @@
 #include "oops/base/ObsError.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/util/ConfigFunctions.h"  // for vectoriseAndFilter
-#include "oops/util/Logger.h"
-#include "oops/util/parameters/Parameters.h"
 #include "oops/util/Printable.h"
 
 namespace oops {

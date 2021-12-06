@@ -17,7 +17,6 @@
 #include "oops/base/Departures.h"
 #include "oops/base/ObsLocalizationBase.h"
 #include "oops/base/ObsSpaces.h"
-#include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
 
 namespace oops {

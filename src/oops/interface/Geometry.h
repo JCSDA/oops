@@ -21,13 +21,10 @@
 
 #include "oops/base/Variables.h"
 #include "oops/interface/GeometryIterator.h"
-#include "oops/mpi/mpi.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
-#include "oops/util/parameters/ConfigurationParameter.h"
 #include "oops/util/parameters/GenericParameters.h"
 #include "oops/util/parameters/HasParameters_.h"
-#include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/ParametersOrConfiguration.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Timer.h"

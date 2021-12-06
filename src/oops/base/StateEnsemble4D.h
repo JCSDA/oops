@@ -15,10 +15,11 @@
 #include "oops/base/Accumulator.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/State4D.h"
-#include "oops/base/Variables.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
+
+class Variables;
 
 // -----------------------------------------------------------------------------
 

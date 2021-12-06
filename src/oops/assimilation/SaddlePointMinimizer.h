@@ -21,7 +21,6 @@
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/DualVector.h"
-#include "oops/assimilation/FullGMRES.h"
 #include "oops/assimilation/GMRESR.h"
 #include "oops/assimilation/Minimizer.h"
 // Eigen #include "oops/assimilation/SaddlePointLMPMatrix.h"

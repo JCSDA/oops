@@ -18,10 +18,8 @@
 
 #include "eckit/config/Configuration.h"
 #include "oops/base/Geometry.h"
-#include "oops/base/PostProcessor.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
-#include "oops/util/gatherPrint.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/parameters/GenericParameters.h"
 #include "oops/util/parameters/HasParameters_.h"

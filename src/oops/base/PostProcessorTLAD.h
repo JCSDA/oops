@@ -15,7 +15,6 @@
 
 #include <memory>
 
-#include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/Increment.h"
 #include "oops/base/PostBaseTLAD.h"
 #include "oops/base/State.h"

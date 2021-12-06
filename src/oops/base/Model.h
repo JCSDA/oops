@@ -16,6 +16,7 @@
 #include <boost/noncopyable.hpp>
 
 #include "oops/base/Geometry.h"
+#include "oops/base/PostProcessor.h"
 #include "oops/base/State.h"
 #include "oops/generic/ModelBase.h"
 #include "oops/interface/ModelAuxControl.h"

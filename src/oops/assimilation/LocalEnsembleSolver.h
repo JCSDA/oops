@@ -33,9 +33,7 @@
 #include "oops/generic/PseudoModelState4D.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/interface/ModelAuxControl.h"
-#include "oops/util/ConfigFunctions.h"
 #include "oops/util/Logger.h"
-#include "oops/util/Timer.h"
 
 namespace oops {
 

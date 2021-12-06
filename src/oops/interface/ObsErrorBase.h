@@ -11,17 +11,9 @@
 #include <memory>
 #include <string>
 
-#include "eckit/system/ResourceUsage.h"
-
 #include "oops/base/ObsVector.h"
 #include "oops/generic/ObsErrorBase.h"
 #include "oops/interface/ObsSpace.h"
-#include "oops/util/ObjectCounter.h"
-#include "oops/util/Printable.h"
-
-namespace eckit {
-  class Configuration;
-}
 
 namespace oops {
 

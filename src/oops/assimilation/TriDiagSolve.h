@@ -16,10 +16,6 @@
 
 #include <vector>
 
-#include "oops/mpi/mpi.h"
-#include "oops/util/dot_product.h"
-#include "oops/util/Logger.h"
-
 namespace oops {
 
 void TriDiagSolve(const std::vector<double> & diag, const std::vector<double> & sub,

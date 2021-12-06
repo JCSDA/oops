@@ -12,7 +12,6 @@
 #include <string>
 
 #include <boost/noncopyable.hpp>
-#include "eckit/config/Configuration.h"
 
 #include "oops/base/ObsVector.h"
 #include "oops/generic/ObsErrorBase.h"

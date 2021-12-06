@@ -14,7 +14,6 @@
 #include "oops/base/Variables.h"
 #include "oops/util/CompositePath.h"
 #include "oops/util/parameters/ParameterTraits.h"
-#include "oops/util/stringFunctions.h"
 
 /// \file ParameterTraitsVariables.h
 /// This file needs to be included before any uses of (Required/Optional)Parameter<Variables>.

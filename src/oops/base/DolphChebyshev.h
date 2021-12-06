@@ -14,11 +14,14 @@
 #include <map>
 
 #include "oops/base/WeightingFct.h"
-#include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 
 namespace eckit {
   class Configuration;
+}
+
+namespace util {
+  class DateTime;
 }
 
 namespace oops {

@@ -13,9 +13,8 @@
 
 #include <map>
 
-#include "oops/util/DateTime.h"
-
 namespace util {
+  class DateTime;
   class Duration;
 }
 

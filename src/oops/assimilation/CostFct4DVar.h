@@ -20,7 +20,6 @@
 #include "oops/assimilation/CostJb3D.h"
 #include "oops/assimilation/CostJcDFI.h"
 #include "oops/assimilation/CostJo.h"
-#include "oops/assimilation/CostTermBase.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
 #include "oops/base/LinearModel.h"
@@ -30,7 +29,6 @@
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/State.h"
-#include "oops/base/StateInfo.h"
 #include "oops/base/TrajectorySaver.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/ModelBase.h"
@@ -43,6 +41,8 @@
 #include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
+
+template <typename MODEL, typename OBS> class CostTermBase;
 
 /// Parameters for the 4D-Var cost function
 template <typename MODEL>

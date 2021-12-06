@@ -24,10 +24,6 @@
 #include "oops/util/parameters/ParametersOrConfiguration.h"
 #include "oops/util/parameters/RequiredParameter.h"
 
-namespace eckit {
-  class Configuration;
-}
-
 namespace oops {
 
 /// Configuration options taken by the pseudo model.

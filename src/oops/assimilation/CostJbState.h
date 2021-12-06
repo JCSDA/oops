@@ -14,10 +14,6 @@
 #include <memory>
 #include <boost/noncopyable.hpp>
 
-namespace util {
-  class Duration;
-}
-
 namespace oops {
 
 // Forward declaration

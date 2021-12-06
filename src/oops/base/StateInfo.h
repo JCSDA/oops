@@ -13,10 +13,12 @@
 
 #include <string>
 
-#include "eckit/config/Configuration.h"
 #include "oops/base/PostBase.h"
-#include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
+
+namespace eckit {
+  class Configuration;
+}
 
 namespace oops {
 

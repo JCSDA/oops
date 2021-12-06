@@ -15,11 +15,11 @@
 #include <utility>
 
 #include "oops/interface/ObsVector.h"
-
-#include "oops/interface/ObsSpace.h"
 #include "oops/util/gatherPrint.h"
 
 namespace oops {
+
+template<typename OBS> class ObsSpace;
 
 // -----------------------------------------------------------------------------
 /// \brief ObsVector class used in oops; subclass of interface class interface::ObsVector.

@@ -15,7 +15,6 @@
 #include <limits>
 #include <memory>
 
-#include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/ControlVariable.h"
 #include "oops/assimilation/CostJbState.h"

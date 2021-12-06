@@ -17,6 +17,7 @@
 #include <string>
 
 #include "oops/interface/Geometry.h"
+#include "oops/mpi/mpi.h"
 
 namespace eckit {
   class Configuration;

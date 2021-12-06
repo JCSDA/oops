@@ -16,10 +16,12 @@
 
 #include <boost/noncopyable.hpp>
 
-#include "eckit/config/LocalConfiguration.h"
 #include "oops/base/PostTimerParameters.h"
 #include "oops/util/DateTime.h"
-#include "oops/util/Duration.h"
+
+namespace util {
+  class Duration;
+}
 
 namespace oops {
 

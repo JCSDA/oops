@@ -14,11 +14,14 @@
 #include "atlas/field.h"
 #include "atlas/functionspace.h"
 #include "atlas/interpolation.h"
-#include "eckit/config/Configuration.h"
 #include "eckit/exception/Exceptions.h"
 
 #include "oops/base/InterpolatorBase.h"
 #include "oops/util/ObjectCounter.h"
+
+namespace eckit {
+  class Configuration;
+}
 
 namespace oops {
 

@@ -13,7 +13,6 @@
 
 
 #include "eckit/config/Configuration.h"
-#include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/State.h"
 #include "oops/interface/GeoVaLs.h"
