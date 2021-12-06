@@ -6,3 +6,5 @@
 nx: 40
 ny: 20
 depths: [4500.0, 5500.0]
+_resol_name: '40x20'
+
