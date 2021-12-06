@@ -172,6 +172,13 @@ oops/base/WeightingFct.h
 oops/contrib/dcmip_initial_conditions_test_1_2_3_v5.f90
 oops/contrib/dcmip_initial_conditions_test_4_v3.f90
 
+oops/coupled/AuxCoupledModel.h
+oops/coupled/GeometryCoupled.h
+oops/coupled/ModelCoupled.h
+oops/coupled/StateCoupled.h
+oops/coupled/TraitCoupled.h
+oops/coupled/instantiateCoupledFactory.h
+
 oops/generic/AnalyticInitBase.h
 oops/generic/fft_gpoint2spectral_f.F90
 oops/generic/fft_init_f.F90

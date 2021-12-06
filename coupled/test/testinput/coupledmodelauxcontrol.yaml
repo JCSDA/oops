@@ -1,0 +1,12 @@
+geometry:   # coupled geometry (QG and L95)
+  QG:
+    nx: 40
+    ny: 20
+    depths: [4500.0, 5500.0]
+  Lorenz 95:
+    resol: 40
+model aux control: # coupled model bias (QG and L95)
+  QG:
+    {}                  # not implemented in QG
+  Lorenz 95:
+    bias: 0.2           # L95 model bias

@@ -87,6 +87,9 @@ if( ENABLE_LORENZ95_MODEL )
 endif()
 if( ENABLE_QG_MODEL )
   add_subdirectory( qg )
+  if( ENABLE_LORENZ95_MODEL )
+    add_subdirectory( coupled )
+  endif()
 endif()
 
 ## Package Config
