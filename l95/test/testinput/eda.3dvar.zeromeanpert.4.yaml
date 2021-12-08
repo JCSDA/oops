@@ -21,8 +21,10 @@ cost function:
       member: 4
       number of members: 4
     obs space:
-      obsdatain:  Data/truth3d.2010-01-02T00:00:00Z.obt
-      obsdataout: Data/mem004.eda.3dvar.zeromeanpert.2010-01-02T00:00:00Z.obt
+      obsdatain:
+        obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+      obsdataout:
+        obsfile: Data/mem004.eda.3dvar.zeromeanpert.2010-01-02T00:00:00Z.obt
       # Note: the same seed must be used for all members for the zero-mean perturbations option to work
       obs perturbations seed: 1
     obs operator: {}

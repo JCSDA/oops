@@ -24,8 +24,10 @@ cost function:
   observations:
   - obs operator: {}
     obs space:
-      obsdatain: Data/biased.2010-01-02T00:00:00Z.obt
-      obsdataout: Data/4dvar.allbiases.2010-01-02T00:00:00Z.obt
+      obsdatain:
+        obsfile: Data/biased.2010-01-02T00:00:00Z.obt
+      obsdataout:
+        obsfile: Data/4dvar.allbiases.2010-01-02T00:00:00Z.obt
     obs error:
       covariance model: diagonal
     obs bias:

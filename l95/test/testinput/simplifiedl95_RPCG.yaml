@@ -16,8 +16,10 @@ cost function:
   observations:
   - obs operator: {}
     obs space:
-      obsdatain:  Data/simplifiedl95.truth.obt
-      obsdataout: Data/simplifiedl95.obt
+      obsdatain:
+        obsfile: Data/simplifiedl95.truth.obt
+      obsdataout:
+        obsfile: Data/simplifiedl95.obt
     obs error:
       covariance model: diagonal
       random amplitude: 1.0

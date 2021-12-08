@@ -30,6 +30,15 @@ namespace lorenz95 {
   class ObsIterator;
 
 // -----------------------------------------------------------------------------
+/// Contents of the `obsdatain` or `obsdataout` YAML section.
+class ObsDataParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(ObsDataParameters, Parameters)
+
+ public:
+  /// File path.
+  oops::RequiredParameter<std::string> obsfile{"obsfile", this};
+};
+// -----------------------------------------------------------------------------
 /// Options controlling generation of artificial observations.
 class ObsGenerateParameters : public oops::Parameters {
   OOPS_CONCRETE_PARAMETERS(ObsGenerateParameters, Parameters)
@@ -48,9 +57,9 @@ class ObsTableParameters : public oops::ObsSpaceParametersBase {
 
  public:
   /// File from which to load observations.
-  oops::OptionalParameter<std::string> obsdatain{"obsdatain", this};
+  oops::OptionalParameter<ObsDataParameters> obsdatain{"obsdatain", this};
   /// File to which to save observations and analysis.
-  oops::OptionalParameter<std::string> obsdataout{"obsdataout", this};
+  oops::OptionalParameter<ObsDataParameters> obsdataout{"obsdataout", this};
   /// Options controlling generation of artificial observations.
   oops::OptionalParameter<ObsGenerateParameters> generate{"generate", this};
 };

@@ -7,8 +7,10 @@ state:
   filename: Data/forecast.fc.2010-01-01T00:00:00Z.P1D.l95
 observations:
 - obs space:
-    obsdatain:  Data/truth3d.2010-01-02T00:00:00Z.obt
-    obsdataout: Data/hofx.2010-01-02T00:00:00Z.obt
+    obsdatain:
+      obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+    obsdataout:
+      obsfile: Data/hofx.2010-01-02T00:00:00Z.obt
   obs operator: {}
 
 test:

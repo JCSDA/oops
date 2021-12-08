@@ -16,7 +16,8 @@ cost function:
   observations:
   - obs operator: {}
     obs space:
-      obsdatain:  Data/noobs.obt
+      obsdatain:
+        obsfile: Data/noobs.obt
     obs error:
       covariance model: diagonal
 variational:

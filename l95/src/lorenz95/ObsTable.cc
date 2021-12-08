@@ -47,7 +47,7 @@ ObsTable::ObsTable(const Parameters_ & params, const eckit::mpi::Comm & comm,
 {
   oops::Log::trace() << "ObsTable::ObsTable starting" << std::endl;
   if (params.obsdatain.value() != boost::none) {
-    nameIn_ = *params.obsdatain.value();
+    nameIn_ = params.obsdatain.value()->obsfile;
     otOpen(nameIn_);
   }
   //  Generate locations etc... if required
@@ -55,7 +55,7 @@ ObsTable::ObsTable(const Parameters_ & params, const eckit::mpi::Comm & comm,
     generateDistribution(*params.generate.value());
   }
   if (params.obsdataout.value() != boost::none) {
-    nameOut_ = *params.obsdataout.value();
+    nameOut_ = params.obsdataout.value()->obsfile;
     sf::swapNameMember(params.toConfiguration(), nameOut_);
   }
   oops::Log::trace() << "ObsTable::ObsTable created nobs = " << nobs() << std::endl;

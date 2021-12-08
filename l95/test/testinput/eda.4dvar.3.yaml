@@ -20,8 +20,10 @@ cost function:
   observations:
   - obs operator: {}
     obs space:
-      obsdatain:  Data/truth4d.2010-01-02T00:00:00Z.obt
-      obsdataout: Data/mem003.eda.4dvar.2010-01-02T00:00:00Z.obt
+      obsdatain:
+        obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
+      obsdataout:
+        obsfile: Data/mem003.eda.4dvar.2010-01-02T00:00:00Z.obt
       obs perturbations seed: 3
     obs error:
       covariance model: diagonal

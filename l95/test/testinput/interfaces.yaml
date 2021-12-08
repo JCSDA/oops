@@ -107,8 +107,10 @@ observations:
     state variables: [x]
     norm: 101.4587929124312
   obs space:
-    obsdatain:  Data/truth.2010-01-02T00:00:00Z.obt
-    obsdataout: Data/forecast.2010-01-02T00:00:00Z.obt
+    obsdatain:
+      obsfile: Data/truth.2010-01-02T00:00:00Z.obt
+    obsdataout:
+      obsfile: Data/forecast.2010-01-02T00:00:00Z.obt
   obs operator: {}
   linear obs operator test:
     coef TL: 0.1

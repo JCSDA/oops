@@ -18,7 +18,8 @@ observations:
       obs_density: 40
       obs_error: 0.4
       obs_frequency: PT1H30M
-    obsdataout: Data/truth3d.2010-01-02T00:00:00Z.obt
+    obsdataout:
+        obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
 make obs: true
 
 test:

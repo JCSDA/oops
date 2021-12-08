@@ -20,8 +20,10 @@ cost function:
   observations:
   - obs operator: {}
     obs space:
-      obsdatain:  Data/truth4d.2010-01-02T00:00:00Z.obt
-      obsdataout: Data/4dvar.drplanclmp.2010-01-02T00:00:00Z.obt
+      obsdatain:
+        obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
+      obsdataout:
+        obsfile: Data/4dvar.drplanclmp.2010-01-02T00:00:00Z.obt
     obs error:
       covariance model: diagonal
   constraints:

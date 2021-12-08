@@ -21,8 +21,10 @@ cost function:
   - obs error:
       covariance model: diagonal
     obs space:
-      obsdatain:  Data/truth4d.2010-01-02T00:00:00Z.obt
-      obsdataout: Data/4dvar.minres.2010-01-02T00:00:00Z.obt
+      obsdatain:
+        obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
+      obsdataout:
+        obsfile: Data/4dvar.minres.2010-01-02T00:00:00Z.obt
     obs operator: {}
   constraints:
   - jcdfi:

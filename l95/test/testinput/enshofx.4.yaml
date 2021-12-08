@@ -12,6 +12,8 @@ window begin: 2010-01-01T03:00:00Z
 window length: P1D
 observations:
 - obs space:
-    obsdatain:  Data/truth4d.2010-01-02T00:00:00Z.obt
-    obsdataout: Data/mem004.enshofx.2010-01-02T00:00:00Z.obt
+    obsdatain:
+      obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
+    obsdataout:
+      obsfile: Data/mem004.enshofx.2010-01-02T00:00:00Z.obt
   obs operator: {}

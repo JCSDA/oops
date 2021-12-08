@@ -52,7 +52,7 @@ CASE("test_obserrordiag_zeromeanpert") {
     randomAmplitude = obsErrorConf.getDouble("random amplitude");
 
     eckit::LocalConfiguration obsSpaceConf;
-    obsSpaceConf.set("obsdatain", obsConfs[0].getString("obs space.obsdataout"));
+    obsSpaceConf.set("obsdatain.obsfile", obsConfs[0].getString("obs space.obsdataout.obsfile"));
     lorenz95::ObsTableParameters obsSpaceParams;
     obsSpaceParams.deserialize(obsSpaceConf);
 
