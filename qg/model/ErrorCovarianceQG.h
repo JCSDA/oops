@@ -15,11 +15,10 @@
 #include <string>
 #include <boost/noncopyable.hpp>
 
-#include "eckit/config/Configuration.h"
-
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
+#include "oops/qg/ErrorCovarianceParameters.h"
 #include "oops/qg/GeometryQG.h"
 #include "oops/qg/QgFortran.h"
 
@@ -39,10 +38,11 @@ class ErrorCovarianceQG : public util::Printable,
                           private boost::noncopyable,
                           private util::ObjectCounter<ErrorCovarianceQG> {
  public:
+  typedef ErrorCovarianceParameters Parameters_;
   static const std::string classname() {return "qg::ErrorCovarianceQG";}
 
   ErrorCovarianceQG(const GeometryQG &, const oops::Variables &,
-                    const eckit::Configuration &, const StateQG &, const StateQG &);
+                    const Parameters_ &, const StateQG &, const StateQG &);
   ~ErrorCovarianceQG();
 
   void multiply(const IncrementQG &, IncrementQG &) const;
