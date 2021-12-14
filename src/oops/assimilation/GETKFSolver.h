@@ -251,8 +251,10 @@ void GETKFSolver<MODEL, OBS>::applyWeights(const IncrementEnsemble4D_ & bkg_pert
     Xb = vertloc_.modulateIncrement(bkg_pert, i, itime);
 
     // postmulptiply
-    Eigen::VectorXd xa = Xb*wa_;  // ensemble mean update
-    Eigen::MatrixXd Xa = Xb*Wa_;  // ensemble perturbation update
+    Eigen::VectorXd xa = Xb*wa_;       // ensemble mean update
+    Eigen::MatrixXd Xa = Xb + Xb*Wa_;  // ensemble perturbation update
+                                       // Eq (10) from Lei 2018.
+                                       // (-) sign is accounted for in the Wa_ computation
 
     // compute non-modulated Xb for RTPP and RTPS
     if (inflopt.dortpp() || inflopt.dortps()) {
