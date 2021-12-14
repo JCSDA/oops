@@ -16,7 +16,6 @@
 #include <iomanip>
 #include <limits>
 
-#include "eckit/config/Configuration.h"
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/ObsTable.h"
 #include "oops/util/abor1_cpp.h"
@@ -37,11 +36,11 @@ GomL95::GomL95(const LocsL95 & locs, const oops::Variables &, const std::vector<
 }
 // -----------------------------------------------------------------------------
 /*! Constructor with Configuration */
-GomL95::GomL95(const eckit::Configuration & conf,
+GomL95::GomL95(const Parameters_ & params,
                const ObsTable &, const oops::Variables &)
   : size_(0), locval_()
 {
-  this->read(conf);
+  this->read(params);
 }
 // -----------------------------------------------------------------------------
 GomL95 & GomL95::operator*=(const double & zz) {
@@ -94,8 +93,8 @@ double GomL95::dot_product_with(const GomL95 & gom) const {
   return zz;
 }
 // -----------------------------------------------------------------------------
-void GomL95::read(const eckit::Configuration & conf) {
-  const std::string filename(conf.getString("filename"));
+void GomL95::read(const Parameters_ & params) {
+  const std::string & filename = params.filename;
   oops::Log::trace() << "GomL95::read opening " << filename << std::endl;
   std::ifstream fin(filename.c_str());
   if (!fin.is_open()) ABORT("GomL95::read: Error opening file: " + filename);
@@ -114,8 +113,8 @@ void GomL95::read(const eckit::Configuration & conf) {
   oops::Log::trace() << "GomL95::read: file closed." << std::endl;
 }
 // -----------------------------------------------------------------------------
-void GomL95::write(const eckit::Configuration & conf) const {
-  const std::string filename(conf.getString("filename"));
+void GomL95::write(const Parameters_ & params) const {
+  const std::string & filename = params.filename;
   oops::Log::trace() << "GomL95::write opening " << filename << std::endl;
   std::ofstream fout(filename.c_str());
   if (!fout.is_open()) ABORT("GomL95::write: Error opening file: " + filename);

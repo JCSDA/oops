@@ -75,6 +75,7 @@ template <typename OBS> void testConstructor() {
 template <typename OBS> void testLinearity() {
   typedef ObsTestsFixture<OBS>         Test_;
   typedef oops::GeoVaLs<OBS>           GeoVaLs_;
+  typedef typename GeoVaLs_::Parameters_ GeoVaLsParameters_;
   typedef oops::ObsAuxControl<OBS>     ObsAuxCtrl_;
   typedef oops::ObsAuxIncrement<OBS>   ObsAuxIncr_;
   typedef oops::ObsAuxCovariance<OBS>  ObsAuxCov_;
@@ -121,9 +122,12 @@ template <typename OBS> void testLinearity() {
 
     // read geovals from the file
     const eckit::LocalConfiguration gconf(conf, "geovals");
+    GeoVaLsParameters_ geovalsparams;
+    geovalsparams.validateAndDeserialize(gconf);
     oops::Variables hopvars = hop.requiredVars();
     hopvars += ybias.requiredVars();
-    const GeoVaLs_ gval(gconf, Test_::obspace()[jj], hopvars);
+
+    const GeoVaLs_ gval(geovalsparams, Test_::obspace()[jj], hopvars);
 
      // initialize Obs. Bias Covariance
     const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], biasparams);
@@ -135,7 +139,7 @@ template <typename OBS> void testLinearity() {
     ObsVector_ dy1(Test_::obspace()[jj]);
 
     // create geovals
-    GeoVaLs_ dx(gconf, Test_::obspace()[jj], hoptl.requiredVars());
+    GeoVaLs_ dx(geovalsparams, Test_::obspace()[jj], hoptl.requiredVars());
 
     // test rms(H * (dx, ybinc)) = 0, when dx = 0
     dx.zero();
@@ -166,6 +170,7 @@ template <typename OBS> void testLinearity() {
 template <typename OBS> void testAdjoint() {
   typedef ObsTestsFixture<OBS> Test_;
   typedef oops::GeoVaLs<OBS>           GeoVaLs_;
+  typedef typename GeoVaLs_::Parameters_ GeoVaLsParameters_;
   typedef oops::ObsOperator<OBS>       ObsOperator_;
   typedef typename ObsOperator_::Parameters_ ObsOperatorParameters_;
   typedef oops::LinearObsOperator<OBS> LinearObsOperator_;
@@ -216,17 +221,19 @@ template <typename OBS> void testAdjoint() {
 
     // read geovals from the file
     eckit::LocalConfiguration gconf(conf, "geovals");
+    GeoVaLsParameters_ geovalsparams;
+    geovalsparams.validateAndDeserialize(gconf);
     oops::Variables hopvars = hop.requiredVars();
     hopvars += ybias.requiredVars();
-    const GeoVaLs_ gval(gconf, Test_::obspace()[jj], hopvars);
+    const GeoVaLs_ gval(geovalsparams, Test_::obspace()[jj], hopvars);
 
     // set TL/AD trajectory to the geovals from the file
     hoptl.setTrajectory(gval, ybias);
 
     ObsVector_ dy1(Test_::obspace()[jj]);
     ObsVector_ dy2(Test_::obspace()[jj]);
-    GeoVaLs_ dx1(gconf, Test_::obspace()[jj], hoptl.requiredVars());
-    GeoVaLs_ dx2(gconf, Test_::obspace()[jj], hoptl.requiredVars());
+    GeoVaLs_ dx1(geovalsparams, Test_::obspace()[jj], hoptl.requiredVars());
+    GeoVaLs_ dx2(geovalsparams, Test_::obspace()[jj], hoptl.requiredVars());
 
     // calculate dy1 = H (dx1, ybinc1) (with random dx1, and random ybinc1)
     dx1.random();
@@ -261,6 +268,7 @@ template <typename OBS> void testTangentLinear() {
   // Test  ||(hop(x+alpha*dx)-hop(x)) - hoptl(alpha*dx)|| < tol
   typedef ObsTestsFixture<OBS>         Test_;
   typedef oops::GeoVaLs<OBS>           GeoVaLs_;
+  typedef typename GeoVaLs_::Parameters_ GeoVaLsParameters_;
   typedef oops::ObsDiagnostics<OBS>    ObsDiags_;
   typedef oops::ObsAuxControl<OBS>     ObsAuxCtrl_;
   typedef oops::ObsAuxIncrement<OBS>   ObsAuxIncr_;
@@ -311,10 +319,12 @@ template <typename OBS> void testTangentLinear() {
 
     // read geovals from the file
     const eckit::LocalConfiguration gconf(conf, "geovals");
+    GeoVaLsParameters_ geovalsparams;
+    geovalsparams.validateAndDeserialize(gconf);
     oops::Variables hopvars = hop.requiredVars();
     hopvars += ybias0.requiredVars();
-    const GeoVaLs_ x0(gconf, Test_::obspace()[jj], hopvars);
-    GeoVaLs_ x(gconf, Test_::obspace()[jj], hopvars);
+    const GeoVaLs_ x0(geovalsparams, Test_::obspace()[jj], hopvars);
+    GeoVaLs_ x(geovalsparams, Test_::obspace()[jj], hopvars);
 
     // set TL trajectory to the geovals and the bias coeff. from the files
     hoptl.setTrajectory(x0, ybias0);
@@ -335,7 +345,7 @@ template <typename OBS> void testTangentLinear() {
     hop.simulateObs(x0, y1, ybias0, bias, ydiag);
 
     // randomize dx and ybinc
-    GeoVaLs_ dx(gconf, Test_::obspace()[jj], hoptl.requiredVars());
+    GeoVaLs_ dx(geovalsparams, Test_::obspace()[jj], hoptl.requiredVars());
     dx.random();
     ObsAuxIncr_ ybinc(Test_::obspace()[jj], biasparams);
     Bobsbias.randomize(ybinc);
@@ -374,6 +384,7 @@ template <typename OBS> void testTangentLinear() {
 template <typename OBS> void testException() {
   typedef ObsTestsFixture<OBS> Test_;
   typedef oops::GeoVaLs<OBS>           GeoVaLs_;
+  typedef typename GeoVaLs_::Parameters_ GeoVaLsParameters_;
   typedef oops::ObsOperator<OBS>       ObsOperator_;
   typedef typename ObsOperator_::Parameters_ ObsOperatorParameters_;
   typedef oops::LinearObsOperator<OBS> LinearObsOperator_;
@@ -406,9 +417,11 @@ template <typename OBS> void testException() {
     ObsAuxIncr_ ybinc(Test_::obspace()[jj], biasparams);
     const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], biasparams);
     eckit::LocalConfiguration gconf(conf, "geovals");
+    GeoVaLsParameters_ geovalsparams;
+    geovalsparams.validateAndDeserialize(gconf);
     oops::Variables hopvars = hop.requiredVars();
     hopvars += ybias.requiredVars();
-    const GeoVaLs_ gval(gconf, Test_::obspace()[jj], hopvars);
+    const GeoVaLs_ gval(geovalsparams, Test_::obspace()[jj], hopvars);
     oops::Variables diagvars;
     diagvars += ybias.requiredHdiagnostics();
 
@@ -427,7 +440,7 @@ template <typename OBS> void testException() {
     if (Test_::config(jj).has(expectSimulateObsTLToThrow)) {
       hoptl.setTrajectory(gval, ybias);
       ObsVector_ dy1(Test_::obspace()[jj]);
-      GeoVaLs_ dx1(gconf, Test_::obspace()[jj], hoptl.requiredVars());
+      GeoVaLs_ dx1(geovalsparams, Test_::obspace()[jj], hoptl.requiredVars());
       dx1.random();
       Bobsbias.randomize(ybinc);
       // The simulateObsTL method is expected to throw an exception
@@ -441,7 +454,7 @@ template <typename OBS> void testException() {
     if (Test_::config(jj).has(expectSimulateObsADToThrow)) {
       hoptl.setTrajectory(gval, ybias);
       ObsVector_ dy2(Test_::obspace()[jj]);
-      GeoVaLs_ dx2(gconf, Test_::obspace()[jj], hoptl.requiredVars());
+      GeoVaLs_ dx2(geovalsparams, Test_::obspace()[jj], hoptl.requiredVars());
       Bobsbias.randomize(ybinc);
       dy2.random();
       dx2.zero();

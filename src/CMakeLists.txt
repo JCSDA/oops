@@ -367,6 +367,7 @@ oops/util/wildcard.cc
 
 oops/util/parameters/ConfigurationParameter.cc
 oops/util/parameters/ConfigurationParameter.h
+oops/util/parameters/EmptyParameters.h
 oops/util/parameters/GenericParameters.h
 oops/util/parameters/HasDiracParameters_.h
 oops/util/parameters/HasParameters_.h

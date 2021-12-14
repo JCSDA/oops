@@ -104,6 +104,7 @@ observations:
     covariance model: diagonal
   geovals:
     filename: Data/gom.l95
+  geovals test:
     state variables: [x]
     norm: 101.4587929124312
   obs space:

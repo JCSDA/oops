@@ -12,7 +12,6 @@
 
 #include <iomanip>
 
-#include "eckit/config/Configuration.h"
 #include "model/LocationsQG.h"
 #include "model/ObsSpaceQG.h"
 #include "model/QgFortran.h"
@@ -34,12 +33,12 @@ GomQG::GomQG(const LocationsQG & locs, const oops::Variables & vars,
 // -----------------------------------------------------------------------------
 /*! QG GeoVaLs Constructor with Config */
 
-GomQG::GomQG(const eckit::Configuration & config,
+GomQG::GomQG(const Parameters_ & params,
              const ObsSpaceQG & ospace, const oops::Variables & vars):
   vars_(vars), locs_(nullptr)
 {
   qg_gom_create_f90(keyGom_);
-  qg_gom_read_file_f90(keyGom_, vars_, config);
+  qg_gom_read_file_f90(keyGom_, vars_, params.toConfiguration());
 }
 // -----------------------------------------------------------------------------
 // Copy constructor
@@ -106,12 +105,12 @@ double GomQG::dot_product_with(const GomQG & other) const {
   return zz;
 }
 // -----------------------------------------------------------------------------
-void GomQG::read(const eckit::Configuration & config) {
-  qg_gom_read_file_f90(keyGom_, vars_, config);
+void GomQG::read(const Parameters_ & params) {
+  qg_gom_read_file_f90(keyGom_, vars_, params.toConfiguration());
 }
 // -----------------------------------------------------------------------------
-void GomQG::write(const eckit::Configuration & config) const {
-  qg_gom_write_file_f90(keyGom_, config);
+void GomQG::write(const Parameters_ & params) const {
+  qg_gom_write_file_f90(keyGom_, params.toConfiguration());
 }
 // -----------------------------------------------------------------------------
 void GomQG::print(std::ostream & os) const {

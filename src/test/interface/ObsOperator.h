@@ -67,6 +67,7 @@ template <typename OBS> void testConstructor() {
 template <typename OBS> void testSimulateObs() {
   typedef ObsTestsFixture<OBS> Test_;
   typedef oops::GeoVaLs<OBS>           GeoVaLs_;
+  typedef typename GeoVaLs_::Parameters_ GeoVaLsParameters_;
   typedef oops::ObsDiagnostics<OBS>    ObsDiags_;
   typedef oops::ObsAuxControl<OBS>     ObsAuxCtrl_;
   typedef oops::ObsOperator<OBS>       ObsOperator_;
@@ -93,9 +94,11 @@ template <typename OBS> void testSimulateObs() {
 
     // read geovals from the file
     eckit::LocalConfiguration gconf(conf, "geovals");
+    GeoVaLsParameters_ geovalsparams;
+    geovalsparams.validateAndDeserialize(gconf);
     oops::Variables hopvars = hop.requiredVars();
     hopvars += ybias.requiredVars();
-    const GeoVaLs_ gval(gconf, Test_::obspace()[jj], hopvars);
+    const GeoVaLs_ gval(geovalsparams, Test_::obspace()[jj], hopvars);
 
     // create obsvector to hold H(x)
     ObsVector_ hofx(Test_::obspace()[jj]);

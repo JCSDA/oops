@@ -52,6 +52,7 @@ observations:
     covariance model: diagonal
   geovals:
     filename: Data/truth.obs4d_24h.stream.gom
+  geovals test:
     state variables: [x]
     norm: 6817614730.9630165
   obs space:
@@ -96,6 +97,7 @@ observations:
     covariance model: diagonal
   geovals:
     filename: Data/truth.obs4d_24h.wind.gom
+  geovals test:
     state variables: [u, v]
     norm: 1440.9708190018748
   obs space:
@@ -140,6 +142,7 @@ observations:
     covariance model: diagonal
   geovals:
     filename: Data/truth.obs4d_24h.wspeed.gom
+  geovals test:
     state variables: [u, v]
     norm: 1471.5548038687134
   obs space:
