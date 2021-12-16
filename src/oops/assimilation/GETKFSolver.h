@@ -242,28 +242,27 @@ void GETKFSolver<MODEL, OBS>::applyWeights(const IncrementEnsemble4D_ & bkg_pert
   const LETKFInflationParameters & inflopt = options_.infl;
 
   // allocate tmp arrays
-  Eigen::MatrixXd Xb;
+  Eigen::MatrixXd XbModulated;  // modulated perturbations
+  Eigen::MatrixXd XbOriginal;   // original perturbations
 
   // loop through analysis times and ens. members
   for (unsigned itime=0; itime < bkg_pert[0].size(); ++itime) {
     // cast bkg_pert ensemble at grid point i as an Eigen matrix Xb
     // modulates Xb
-    Xb = vertloc_.modulateIncrement(bkg_pert, i, itime);
+    XbModulated = vertloc_.modulateIncrement(bkg_pert, i, itime);
+    // original Xb
+    bkg_pert.packEigen(XbOriginal, i, itime);
 
     // postmulptiply
-    Eigen::VectorXd xa = Xb*wa_;       // ensemble mean update
-    Eigen::MatrixXd Xa = Xb + Xb*Wa_;  // ensemble perturbation update
-                                       // Eq (10) from Lei 2018.
-                                       // (-) sign is accounted for in the Wa_ computation
-
-    // compute non-modulated Xb for RTPP and RTPS
-    if (inflopt.dortpp() || inflopt.dortps()) {
-      bkg_pert.packEigen(Xb, i, itime);
-    }
+    // ensemble mean update
+    Eigen::VectorXd xa = XbModulated*wa_;
+    // ensemble perturbation update
+    // Eq (10) from Lei 2018. (-) sign is accounted for in the Wa_ computation
+    Eigen::MatrixXd Xa = XbOriginal + XbModulated*Wa_;
 
     // RTPP inflation
     if (inflopt.dortpp()) {
-      Xa = (1-inflopt.rtpp)*Xa+inflopt.rtpp*Xb;
+      Xa = (1-inflopt.rtpp)*Xa+inflopt.rtpp*XbOriginal;
     }
 
     // RTPS inflation
@@ -275,7 +274,7 @@ void GETKFSolver<MODEL, OBS>::applyWeights(const IncrementEnsemble4D_ & bkg_pert
       asprd = (asprd < eps).select(eps, asprd);  // avoid nan overflow for vars with no spread
 
       // prior spread
-      Eigen::ArrayXd fsprd = Xb.array().square().rowwise().sum()/(nens_-1);
+      Eigen::ArrayXd fsprd = XbOriginal.array().square().rowwise().sum()/(nens_-1);
       fsprd = fsprd.sqrt();
       fsprd = (fsprd < eps).select(eps, fsprd);
 
