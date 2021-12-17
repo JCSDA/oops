@@ -33,7 +33,6 @@ namespace oops {
 /// - timeComm()  (accessor to the MPI communicator in time - collection of processes
 ///                holding the data needed to represent the state in a particular region
 ///                of space X_i and throughout the whole time interval for which DA is done)
-/// - variables() (accessor to variables in this Increment)
 /// - shift_forward
 /// - shift_backward
 /// - toAtlas, atlas
@@ -58,8 +57,6 @@ class Increment : public interface::Increment<MODEL> {
 
   /// Accessor to the time communicator
   const eckit::mpi::Comm & timeComm() const {return *timeComm_;}
-  /// Accessor to Variables stored in this increment
-  const Variables & variables() const {return variables_;}
 
   /// Shift forward in time by \p dt
   void shift_forward(const util::DateTime & dt);
@@ -82,7 +79,6 @@ class Increment : public interface::Increment<MODEL> {
  private:
   void print(std::ostream &) const override;
 
-  Variables variables_;                /// Variables stored in this Increment
   const eckit::mpi::Comm * timeComm_;  /// pointer to the MPI communicator in time
   atlas::FieldSet atlasFieldSet_;      /// Atlas fields associated with this Increment
 };
@@ -92,7 +88,7 @@ class Increment : public interface::Increment<MODEL> {
 template <typename MODEL>
 Increment<MODEL>::Increment(const Geometry_ & geometry, const Variables & variables,
                             const util::DateTime & date):
-  interface::Increment<MODEL>(geometry, variables, date), variables_(variables),
+  interface::Increment<MODEL>(geometry, variables, date),
   timeComm_(&geometry.timeComm())
 {}
 
@@ -100,7 +96,7 @@ Increment<MODEL>::Increment(const Geometry_ & geometry, const Variables & variab
 
 template <typename MODEL>
 Increment<MODEL>::Increment(const Geometry_ & geometry, const Increment & other):
-  interface::Increment<MODEL>(geometry, other), variables_(other.variables_),
+  interface::Increment<MODEL>(geometry, other),
   timeComm_(other.timeComm_)
 {}
 
@@ -108,7 +104,7 @@ Increment<MODEL>::Increment(const Geometry_ & geometry, const Increment & other)
 
 template <typename MODEL>
 Increment<MODEL>::Increment(const Increment & other, const bool copy):
-  interface::Increment<MODEL>(other, copy), variables_(other.variables_),
+  interface::Increment<MODEL>(other, copy),
   timeComm_(other.timeComm_)
 {}
 

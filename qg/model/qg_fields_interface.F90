@@ -165,30 +165,21 @@ call qg_fields_dirac(self,f_conf)
 end subroutine qg_fields_dirac_c
 ! ------------------------------------------------------------------------------
 !> Generate random fields
-subroutine qg_fields_random_c(c_key_self,c_vars) bind(c,name='qg_fields_random_f90')
+subroutine qg_fields_random_c(c_key_self) bind(c,name='qg_fields_random_f90')
 
 implicit none
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_self !< Fields
-type(c_ptr),value,intent(in) :: c_vars  !< List of variables
 
 ! Local variables
 type(qg_fields),pointer :: self
-type(oops_variables) :: vars
 
 ! Interface
 call qg_fields_registry%get(c_key_self,self)
-vars = oops_variables(c_vars)
 
 ! Call Fortran
-if (vars%has('x')) then
-  call qg_fields_random(self,'x')
-elseif (vars%has('q')) then
-  call qg_fields_random(self,'q')
-else
-  call abor1_ftn('qg_fields_random_c: x or q required in output field')
-endif
+call qg_fields_random(self)
 
 end subroutine qg_fields_random_c
 ! ------------------------------------------------------------------------------

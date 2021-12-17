@@ -30,7 +30,6 @@
 #include "oops/base/State.h"
 #include "oops/base/StateInfo.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
-#include "oops/generic/instantiateVariableChangeFactory.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
@@ -114,7 +113,6 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
   explicit HofX4D(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {
     instantiateObsErrorFactory<OBS>();
     instantiateObsFilterFactory<OBS>();
-    instantiateVariableChangeFactory<MODEL>();
   }
 // -----------------------------------------------------------------------------
   virtual ~HofX4D() = default;

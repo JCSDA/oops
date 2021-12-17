@@ -58,15 +58,15 @@ contains
 !> Linked list implementation
 #include "oops/util/linkedList_c.f"
 ! ------------------------------------------------------------------------------
-!> Setup change of variables setup
-subroutine qg_change_var_setup(conf,fld_in,fld_out,ad)
+!> Setup change of variables
+subroutine qg_change_var_setup(conf,fld,vars,ad)
 
 implicit none
 
 ! Passed variables
 type(qg_change_var_config),intent(inout) :: conf !< Variable change
-type(qg_fields),intent(in) :: fld_in             !< Input field
-type(qg_fields),intent(in) :: fld_out            !< Output field
+type(qg_fields),intent(inout) :: fld             !< field
+type(oops_variables),intent(in) :: vars          !< Output variables
 logical,intent(in),optional :: ad                !< Adjoint flag
 
 ! Local variables
@@ -76,27 +76,26 @@ logical :: lad
 lad = .false.
 if (present(ad)) lad = ad
 
-! Check what is allocated in fields
 if (lad) then
   ! Adjoint case
-  conf%x_in = allocated(fld_out%x)
-  conf%q_in = allocated(fld_out%q)
-  conf%u_in = allocated(fld_out%u)
-  conf%v_in = allocated(fld_out%v)
-  conf%x_out = allocated(fld_in%x)
-  conf%q_out = allocated(fld_in%q)
-  conf%u_out = allocated(fld_in%u)
-  conf%v_out = allocated(fld_in%v)
+  conf%x_in = vars%has('x')
+  conf%q_in = vars%has('q')
+  conf%u_in = vars%has('u')
+  conf%v_in = vars%has('v')
+  conf%x_out = fld%vars%has('x')
+  conf%q_out = fld%vars%has('q')
+  conf%u_out = fld%vars%has('u')
+  conf%v_out = fld%vars%has('v')
 else
   ! Normal case
-  conf%x_in = allocated(fld_in%x)
-  conf%q_in = allocated(fld_in%q)
-  conf%u_in = allocated(fld_in%u)
-  conf%v_in = allocated(fld_in%v)
-  conf%x_out = allocated(fld_out%x)
-  conf%q_out = allocated(fld_out%q)
-  conf%u_out = allocated(fld_out%u)
-  conf%v_out = allocated(fld_out%v)
+  conf%x_in = fld%vars%has('x')
+  conf%q_in = fld%vars%has('q')
+  conf%u_in = fld%vars%has('u')
+  conf%v_in = fld%vars%has('v')
+  conf%x_out = vars%has('x')
+  conf%q_out = vars%has('q')
+  conf%u_out = vars%has('u')
+  conf%v_out = vars%has('v')
 endif
 
 ! Check input/output consistency
@@ -129,172 +128,127 @@ if (conf%v_out) then
   endif
 endif
 
+! Allocation and initialization
+if (lad) then
+  ! Adjoint case
+  if (conf%q_to_x) then
+    if (.not. allocated(fld%q)) then
+        allocate(fld%q(fld%geom%nx,fld%geom%ny,fld%geom%nz))
+        fld%q = 0.0_kind_real
+    endif
+  endif
+  if (conf%x_to_q.or.conf%x_to_v.or.conf%x_to_u) then
+    if (.not. allocated(fld%x)) then
+        allocate(fld%x(fld%geom%nx,fld%geom%ny,fld%geom%nz))
+        fld%x = 0.0_kind_real
+    endif
+  endif
+else
+  ! Normal case
+  if (conf%q_to_x) then
+    if (.not. allocated(fld%x)) allocate(fld%x(fld%geom%nx,fld%geom%ny,fld%geom%nz))
+    fld%x = 0.0_kind_real
+  endif
+  if (conf%x_to_q) then
+    if (.not. allocated(fld%q)) allocate(fld%q(fld%geom%nx,fld%geom%ny,fld%geom%nz))
+    fld%q = 0.0_kind_real
+  endif
+  if (conf%x_to_v) then
+    if (.not. allocated(fld%v)) allocate(fld%v(fld%geom%nx,fld%geom%ny,fld%geom%nz))
+    fld%v = 0.0_kind_real
+  endif
+  if (conf%x_to_u) then
+    if (.not. allocated(fld%u)) allocate(fld%u(fld%geom%nx,fld%geom%ny,fld%geom%nz))
+    fld%u = 0.0_kind_real
+  endif
+endif
+
 end subroutine qg_change_var_setup
+
 ! ------------------------------------------------------------------------------
-!> Get variables
-subroutine qg_change_var_get(conf,fld,x,q,u,v)
+!> Free memory and reset fld%vars
+subroutine qg_change_var_cleanup(fld,vars)
 
 implicit none
 
 ! Passed variables
-type(qg_change_var_config),intent(in) :: conf                         !< Variable change
-type(qg_fields),intent(in) :: fld                                     !< Fields
-real(kind_real),intent(out) :: x(fld%geom%nx,fld%geom%ny,fld%geom%nz) !< Streamfunction
-real(kind_real),intent(out) :: q(fld%geom%nx,fld%geom%ny,fld%geom%nz) !< Potential vorticity
-real(kind_real),intent(out) :: u(fld%geom%nx,fld%geom%ny,fld%geom%nz) !< Zonal wind
-real(kind_real),intent(out) :: v(fld%geom%nx,fld%geom%ny,fld%geom%nz) !< Meridional wind
+type(qg_fields),intent(inout) :: fld             !< field
+type(oops_variables),intent(in) :: vars          !< Output variables
 
-if (allocated(fld%x)) then
-  x = fld%x
-else
-  x = 0.0_kind_real
-endif
-if (allocated(fld%q)) then
-  q = fld%q
-else
-  q = 0.0_kind_real
-endif
-if (allocated(fld%u)) then
-  u = fld%u
-else
-  u = 0.0_kind_real
-endif
-if (allocated(fld%v)) then
-  v = fld%v
-else
-  v = 0.0_kind_real
-endif
+! Release memory
+if (fld%vars%has('x') .and. .not.vars%has('x')) deallocate(fld%x)
+if (fld%vars%has('q') .and. .not.vars%has('q')) deallocate(fld%q)
+if (fld%vars%has('u') .and. .not.vars%has('u')) deallocate(fld%u)
+if (fld%vars%has('v') .and. .not.vars%has('v')) deallocate(fld%v)
 
-end subroutine qg_change_var_get
-! ------------------------------------------------------------------------------
-!> Set variables
-subroutine qg_change_var_set(conf,fld,x,q,u,v)
+! Reset variables
+call fld%vars%destruct()
+fld%vars = oops_variables(vars)
 
-implicit none
+end subroutine qg_change_var_cleanup
 
-! Passed variables
-type(qg_change_var_config),intent(in) :: conf                        !< Variable change
-type(qg_fields),intent(inout) :: fld                                 !< Fields
-real(kind_real),intent(in) :: x(fld%geom%nx,fld%geom%ny,fld%geom%nz) !< Streamfunction
-real(kind_real),intent(in) :: q(fld%geom%nx,fld%geom%ny,fld%geom%nz) !< Potential vorticity
-real(kind_real),intent(in) :: u(fld%geom%nx,fld%geom%ny,fld%geom%nz) !< Zonal wind
-real(kind_real),intent(in) :: v(fld%geom%nx,fld%geom%ny,fld%geom%nz) !< Meridional wind
-
-if (allocated(fld%x)) fld%x = x
-if (allocated(fld%q)) fld%q = q
-if (allocated(fld%u)) fld%u = u
-if (allocated(fld%v)) fld%v = v
-
-end subroutine qg_change_var_set
 ! ------------------------------------------------------------------------------
 !> Change of variable
-subroutine qg_change_var(fld_in,fld_out)
-
+subroutine qg_change_var(fld,vars)
 implicit none
+type(qg_fields),intent(inout) :: fld     !< Fields to be transformed
+type(oops_variables),intent(in) :: vars  !< Output variables
 
-! Passed variables
-type(qg_fields),intent(in) :: fld_in     !< Input fields
-type(qg_fields),intent(inout) :: fld_out !< Output fields
-
-! Local variables
-real(kind_real) :: x(fld_in%geom%nx,fld_in%geom%ny,fld_in%geom%nz),q(fld_in%geom%nx,fld_in%geom%ny,fld_in%geom%nz)
-real(kind_real) :: u(fld_in%geom%nx,fld_in%geom%ny,fld_in%geom%nz),v(fld_in%geom%nx,fld_in%geom%ny,fld_in%geom%nz)
 type(qg_change_var_config) :: conf
 
-! Check resolution
-call qg_fields_check_resolution(fld_in,fld_out)
-
-! Copy boundary conditions
-call qg_fields_copy_lbc(fld_out,fld_in)
-
 ! Define change of variable configuration
-call qg_change_var_setup(conf,fld_in,fld_out)
-
-! Get x, q, u and v
-call qg_change_var_get(conf,fld_in,x,q,u,v)
+call qg_change_var_setup(conf, fld, vars)
 
 ! Conversions
-if (conf%x_to_q) call convert_x_to_q(fld_in%geom,x,fld_in%x_north,fld_in%x_south,q)
-if (conf%q_to_x) call convert_q_to_x(fld_in%geom,q,fld_in%x_north,fld_in%x_south,x)
-if (conf%x_to_u) call convert_x_to_u(fld_in%geom,x,fld_in%x_north,fld_in%x_south,u)
-if (conf%x_to_v) call convert_x_to_v(fld_in%geom,x,v)
+if (conf%x_to_q) call convert_x_to_q(fld%geom, fld%x, fld%x_north, fld%x_south, fld%q)
+if (conf%q_to_x) call convert_q_to_x(fld%geom, fld%q, fld%x_north, fld%x_south, fld%x)
+if (conf%x_to_u) call convert_x_to_u(fld%geom, fld%x, fld%x_north, fld%x_south, fld%u)
+if (conf%x_to_v) call convert_x_to_v(fld%geom, fld%x, fld%v)
 
-! Set x, q, u and v
-call qg_change_var_set(conf,fld_out,x,q,u,v)
+call qg_change_var_cleanup(fld, vars)
 
 end subroutine qg_change_var
+
 ! ------------------------------------------------------------------------------
 !> Change of variable
-subroutine qg_change_var_tl(fld_in,fld_out)
-
+subroutine qg_change_var_tl(fld,vars)
 implicit none
+type(qg_fields),intent(inout) :: fld     !< Fields to be transformed
+type(oops_variables),intent(in) :: vars  !< Output variables
 
-! Passed variables
-type(qg_fields),intent(in) :: fld_in     !< Input fields
-type(qg_fields),intent(inout) :: fld_out !< Output fields
-
-! Local variables
-real(kind_real) :: x(fld_in%geom%nx,fld_in%geom%ny,fld_in%geom%nz),q(fld_in%geom%nx,fld_in%geom%ny,fld_in%geom%nz)
-real(kind_real) :: u(fld_in%geom%nx,fld_in%geom%ny,fld_in%geom%nz),v(fld_in%geom%nx,fld_in%geom%ny,fld_in%geom%nz)
 type(qg_change_var_config) :: conf
 
-! Check resolution
-call qg_fields_check_resolution(fld_in,fld_out)
-
-! Copy boundary conditions
-call qg_fields_copy_lbc(fld_out,fld_in)
-
 ! Define change of variable configuration
-call qg_change_var_setup(conf,fld_in,fld_out)
-
-! Get x, q, u and v
-call qg_change_var_get(conf,fld_in,x,q,u,v)
+call qg_change_var_setup(conf, fld, vars)
 
 ! Conversions
-if (conf%x_to_q) call convert_x_to_q_tl(fld_in%geom,x,q)
-if (conf%q_to_x) call convert_q_to_x_tl(fld_in%geom,q,x)
-if (conf%x_to_u) call convert_x_to_u_tl(fld_in%geom,x,u)
-if (conf%x_to_v) call convert_x_to_v_tl(fld_in%geom,x,v)
+if (conf%x_to_q) call convert_x_to_q_tl(fld%geom, fld%x, fld%q)
+if (conf%q_to_x) call convert_q_to_x_tl(fld%geom, fld%q, fld%x)
+if (conf%x_to_u) call convert_x_to_u_tl(fld%geom, fld%x, fld%u)
+if (conf%x_to_v) call convert_x_to_v_tl(fld%geom, fld%x, fld%v)
 
-! Set x, q, u and v
-call qg_change_var_set(conf,fld_out,x,q,u,v)
+call qg_change_var_cleanup(fld, vars)
 
 end subroutine qg_change_var_tl
 ! ------------------------------------------------------------------------------
 !> Change of variable - adjoint
-subroutine qg_change_var_ad(fld_in,fld_out)
-
+subroutine qg_change_var_ad(fld,vars)
 implicit none
+type(qg_fields),intent(inout) :: fld     !< Fields to be transformed
+type(oops_variables),intent(in) :: vars  !< Output variables
 
-! Passed variables
-type(qg_fields),intent(in) :: fld_in     !< Input fields
-type(qg_fields),intent(inout) :: fld_out !< Output fields
-
-! Local variables
-real(kind_real) :: x(fld_in%geom%nx,fld_in%geom%ny,fld_in%geom%nz),q(fld_in%geom%nx,fld_in%geom%ny,fld_in%geom%nz)
-real(kind_real) :: u(fld_in%geom%nx,fld_in%geom%ny,fld_in%geom%nz),v(fld_in%geom%nx,fld_in%geom%ny,fld_in%geom%nz)
 type(qg_change_var_config) :: conf
 
-! Checks
-call qg_fields_check_resolution(fld_in,fld_out)
-
-! Copy boundary conditions
-call qg_fields_copy_lbc(fld_out,fld_in)
-
 ! Define change of variable configuration
-call qg_change_var_setup(conf,fld_in,fld_out,.true.)
-
-! Get x, q, u and v
-call qg_change_var_get(conf,fld_in,x,q,u,v)
+call qg_change_var_setup(conf, fld, vars, .true.)
 
 ! Conversions
-if (conf%x_to_v) call convert_x_to_v_ad(fld_in%geom,v,x)
-if (conf%x_to_u) call convert_x_to_u_ad(fld_in%geom,u,x)
-if (conf%q_to_x) call convert_q_to_x_ad(fld_in%geom,x,q)
-if (conf%x_to_q) call convert_x_to_q_ad(fld_in%geom,q,x)
+if (conf%x_to_v) call convert_x_to_v_ad(fld%geom, fld%v, fld%x)
+if (conf%x_to_u) call convert_x_to_u_ad(fld%geom, fld%u, fld%x)
+if (conf%q_to_x) call convert_q_to_x_ad(fld%geom, fld%x, fld%q)
+if (conf%x_to_q) call convert_x_to_q_ad(fld%geom, fld%q, fld%x)
 
-! Set x, q, u and v
-call qg_change_var_set(conf,fld_out,x,q,u,v)
+call qg_change_var_cleanup(fld, vars)
 
 end subroutine qg_change_var_ad
 ! ------------------------------------------------------------------------------

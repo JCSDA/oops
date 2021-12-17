@@ -50,6 +50,7 @@ integer,parameter :: rseed = 7 !< Random seed (for reproducibility)
 
 type :: qg_fields
   type(qg_geom),pointer :: geom                !< Geometry
+  type(oops_variables) :: vars                 !< List of variables
   logical :: lbc                               !< Boundaries are present
   real(kind_real),allocatable :: x(:,:,:)      !< Streamfunction
   real(kind_real),allocatable :: q(:,:,:)      !< Potential vorticity
@@ -93,14 +94,17 @@ character(len=1024) :: record
 ! Associate geometry
 self%geom => geom
 
+! Set variables
+self%vars = oops_variables(vars)
+
 ! Set boundaries
 self%lbc = lbc
 
 ! Allocate 3d fields
-if (vars%has('x')) allocate(self%x(self%geom%nx,self%geom%ny,self%geom%nz))
-if (vars%has('q')) allocate(self%q(self%geom%nx,self%geom%ny,self%geom%nz))
-if (vars%has('u')) allocate(self%u(self%geom%nx,self%geom%ny,self%geom%nz))
-if (vars%has('v')) allocate(self%v(self%geom%nx,self%geom%ny,self%geom%nz))
+if (self%vars%has('x')) allocate(self%x(self%geom%nx,self%geom%ny,self%geom%nz))
+if (self%vars%has('q')) allocate(self%q(self%geom%nx,self%geom%ny,self%geom%nz))
+if (self%vars%has('u')) allocate(self%u(self%geom%nx,self%geom%ny,self%geom%nz))
+if (self%vars%has('v')) allocate(self%v(self%geom%nx,self%geom%ny,self%geom%nz))
 
 ! Allocate boundaries
 if (self%lbc) then
@@ -128,6 +132,9 @@ type(qg_geom),target,intent(in) :: geom !< Geometry
 
 ! Associate geometry
 self%geom => geom
+
+! Copy variables
+self%vars = oops_variables(other%vars)
 
 ! Copy attributes
 self%lbc = other%lbc
@@ -161,6 +168,7 @@ implicit none
 type(qg_fields),intent(inout) :: self !< Fields
 
 ! Release memory
+call self%vars%destruct()
 if (allocated(self%x)) deallocate(self%x)
 if (allocated(self%q)) deallocate(self%q)
 if (allocated(self%u)) deallocate(self%u)
@@ -283,13 +291,15 @@ call qg_fields_complete(self,var)
 end subroutine qg_fields_dirac
 ! ------------------------------------------------------------------------------
 !> Generate random fields
-subroutine qg_fields_random(self,var,seed)
+subroutine qg_fields_random(self, seed)
 
 implicit none
 
 ! Passed variables
 type(qg_fields),intent(inout) :: self !< Fields
-character(len=1),intent(in) :: var    !< Variable to randomize ('x' or 'q')
+
+! Local variables
+logical :: allocate_x
 integer,intent(in),optional :: seed   !< Optional seed
 
 ! Local variables
@@ -302,20 +312,18 @@ call qg_fields_check(self)
 lseed = rseed
 if (present(seed)) lseed = seed
 
+! Allocation
+allocate_x = .not.allocated(self%x)
+if (allocate_x) allocate(self%x(self%geom%nx,self%geom%ny,self%geom%nz))
+
 ! Set at random value
-select case (var)
-case ('x')
-   if (.not.allocated(self%x)) call abor1_ftn('qg_fields_random: x should be allocated')
-   call normal_distribution(self%x,0.0_kind_real,1.0_kind_real,lseed)
-case ('q')
-   if (.not.allocated(self%q)) call abor1_ftn('qg_fields_random: q should be allocated')
-   call normal_distribution(self%q,0.0_kind_real,1.0_kind_real,lseed)
-case default
-  call abor1_ftn('qg_fields_random: wrong variable')
-endselect
+call normal_distribution(self%x,0.0_kind_real,1.0_kind_real,lseed)
 
 ! Complete other fields
-call qg_fields_complete(self,var)
+call qg_fields_complete(self,'x')
+
+! Release memory
+if (allocate_x) deallocate(self%x)
 
 end subroutine qg_fields_random
 ! ------------------------------------------------------------------------------
@@ -1605,11 +1613,8 @@ type(qg_fields),intent(in) :: self !< Fields
 logical :: bad
 character(len=1024) :: record
 
-! Initialization
-bad = .false.
-
 ! Check 3d field
-bad = bad.or.(.not.(allocated(self%x).or.allocated(self%q).or.allocated(self%u).or.allocated(self%v)))
+bad = .not.(allocated(self%x).or.allocated(self%q).or.allocated(self%u).or.allocated(self%v))
 if (allocated(self%x)) then
   bad = bad.or.(size(self%x,1)/=self%geom%nx)
   bad = bad.or.(size(self%x,2)/=self%geom%ny)

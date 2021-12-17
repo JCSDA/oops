@@ -6,20 +6,9 @@ output geometry:
   nx: 20
   ny: 10
   depths: [4500.0, 5500.0]
-linear variable changes:
-  - variable change: ChVarQG
-    input variables: [x]
-    output variables: [q]
-  - variable change: ChVarQG
-    input variables: [q]
-    output variables: [x]
-  - variable change: Identity
-    input variables: [x]
-    output variables: [x]
-  - variable change: Identity
-    input variables: [x]
-    output variables: [x]
-    do inverse: true
+linear variable change:
+  input variables: [x]
+  output variables: [q]
 increments:
 - date: '2010-01-01T12:00:00Z'
   input variables: [x]

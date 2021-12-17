@@ -29,7 +29,6 @@
 #include "oops/base/StateWriter.h"
 #include "oops/generic/instantiateLinearModelFactory.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
-#include "oops/generic/instantiateVariableChangeFactory.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
@@ -50,7 +49,6 @@ template <typename MODEL, typename OBS> class Variational : public Application {
     instantiateObsErrorFactory<OBS>();
     instantiateObsFilterFactory<OBS>();
     instantiateLinearModelFactory<MODEL>();
-    instantiateVariableChangeFactory<MODEL>();
   }
 // -----------------------------------------------------------------------------
   virtual ~Variational() {}

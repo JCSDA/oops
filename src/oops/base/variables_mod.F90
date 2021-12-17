@@ -1,5 +1,5 @@
 !
-! (C) Copyright 2019 UCAR
+! (C) Copyright 2019-2021 UCAR
 !
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -34,6 +34,7 @@ end type
 interface oops_variables
   module procedure ctor_from_ptr
   module procedure empty_ctor
+  module procedure copy_ctor
 end interface
 
 private
@@ -60,6 +61,20 @@ function empty_ctor() result(this)
 
   this%ptr = c_variables_empty_ctor()
 end function empty_ctor
+
+!-------------------------------------------------------------------------------
+
+function copy_ctor(other) result(this)
+  type(oops_variables) :: this
+  type(oops_variables), intent(in) :: other
+  integer :: jj
+
+  this%ptr = c_variables_empty_ctor()
+  do jj = 1, other%nvars()
+     call this%push_back(other%variable(jj))
+  enddo
+
+end function copy_ctor
 
 !-------------------------------------------------------------------------------
 

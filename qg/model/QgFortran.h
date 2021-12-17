@@ -68,9 +68,9 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Change of variable
 // -----------------------------------------------------------------------------
-  void qg_change_var_f90(const F90flds &, const F90flds &);
-  void qg_change_var_tl_f90(const F90flds &, const F90flds &);
-  void qg_change_var_ad_f90(const F90flds &, const F90flds &);
+  void qg_change_var_f90(const F90flds &, const oops::Variables &);
+  void qg_change_var_tl_f90(const F90flds &, const oops::Variables &);
+  void qg_change_var_ad_f90(const F90flds &, const oops::Variables &);
 
 // -----------------------------------------------------------------------------
 //  Error covariance
@@ -92,7 +92,7 @@ extern "C" {
   void qg_fields_zero_f90(const F90flds &);
   void qg_fields_ones_f90(const F90flds &);
   void qg_fields_dirac_f90(const F90flds &, const eckit::Configuration &);
-  void qg_fields_random_f90(const F90flds &, const oops::Variables &);
+  void qg_fields_random_f90(const F90flds &);
   void qg_fields_copy_f90(const F90flds &, const F90flds &);
   void qg_fields_self_add_f90(const F90flds &, const F90flds &);
   void qg_fields_self_sub_f90(const F90flds &, const F90flds &);
@@ -128,6 +128,9 @@ extern "C" {
 //  GetValues
 // -----------------------------------------------------------------------------
   void qg_getvalues_interp_f90(const LocationsQG &, const F90flds &,
+                               const util::DateTime &,
+                               const util::DateTime &, const F90gom &);
+  void qg_getvalues_interp_traj_f90(const LocationsQG &, const F90flds &,
                                const util::DateTime &,
                                const util::DateTime &, const F90gom &);
   void qg_getvalues_interp_tl_f90(const LocationsQG &, const F90flds &,

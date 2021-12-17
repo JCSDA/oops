@@ -23,20 +23,21 @@
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
 #include "oops/base/LinearModel.h"
-#include "oops/base/LinearVariableChangeBase.h"
 #include "oops/base/Model.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/State.h"
 #include "oops/base/TrajectorySaver.h"
+#include "oops/base/VariableChangeParametersBase.h"
 #include "oops/base/Variables.h"
-#include "oops/generic/ModelBase.h"
+#include "oops/interface/LinearVariableChange.h"
 #include "oops/interface/VariableChange.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/OptionalParameter.h"
+#include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/RequiredParameter.h"
 
@@ -55,6 +56,9 @@ class CostFct4DVarParameters : public CostFunctionParametersBase<MODEL> {
   typedef ModelSpaceCovarianceParametersWrapper<MODEL> CovarianceParameters_;
 
   RequiredParameter<ModelParameters_> model{"model", "model", this};
+
+  // Variable Change
+  OptionalParameter<eckit::LocalConfiguration> variableChange{"variable change", this};
 
   // options for Jb term
   RequiredParameter<StateParameters_> background{"background", "background state", this};
@@ -83,7 +87,7 @@ template<typename MODEL, typename OBS> class CostFct4DVar : public CostFunction<
   typedef Model<MODEL>                    Model_;
   typedef LinearModel<MODEL>              LinearModel_;
   typedef VariableChange<MODEL>           VarCha_;
-  typedef LinearVariableChangeBase<MODEL> LinVarCha_;
+  typedef LinearVariableChange<MODEL>     LinVarCha_;
 
  public:
   typedef CostFct4DVarParameters<MODEL>   Parameters_;
@@ -134,7 +138,9 @@ CostFct4DVar<MODEL, OBS>::CostFct4DVar(const Parameters_ & params,
     resol_(params.geometry, comm),
     model_(resol_, params.model.value().modelParameters),
     ctlvars_(params.analysisVariables), tlm_(),
-    an2model_(resol_, params.toConfiguration()),
+    an2model_(params.variableChange.value() != boost::none ?
+              *params.variableChange.value() :
+              eckit::LocalConfiguration(), resol_),
     inc2model_()
 {
   Log::trace() << "CostFct4DVar:CostFct4DVar" << std::endl;
@@ -178,11 +184,10 @@ template <typename MODEL, typename OBS>
 void CostFct4DVar<MODEL, OBS>::runNL(CtrlVar_ & xx, PostProcessor<State_> & post) const {
   ASSERT(xx.state().validTime() == windowBegin_);
 
-  State_ xm(xx.state().geometry(), model_.variables(), windowBegin_);
-  an2model_.changeVar(xx.state(), xm);
-  model_.forecast(xm, xx.modVar(), windowLength_, post);
-  an2model_.changeVarInverse(xm, xx.state());
-
+  Variables anvars(xx.state().variables());
+  an2model_.changeVar(xx.state(), model_.variables());
+  model_.forecast(xx.state(), xx.modVar(), windowLength_, post);
+  an2model_.changeVarInverse(xx.state(), anvars);
   ASSERT(xx.state().validTime() == windowEnd_);
 }
 
@@ -195,15 +200,17 @@ void CostFct4DVar<MODEL, OBS>::doLinearize(const Geometry_ & resol,
                                            PostProcessor<State_> & pp,
                                            PostProcessorTLAD<MODEL> & pptraj) {
   Log::trace() << "CostFct4DVar::doLinearize start" << std::endl;
-  eckit::LocalConfiguration conf(innerConf, "linear model");
-// Setup linear model (and trajectory)
-  tlm_.reset(new LinearModel_(resol, conf));
-  pp.enrollProcessor(new TrajectorySaver<MODEL>(conf, resol, fg.modVar(), tlm_, pptraj));
+  eckit::LocalConfiguration lmConf(innerConf, "linear model");
+  // Setup linear model (and trajectory)
+  tlm_.reset(new LinearModel_(resol, lmConf));
+  pp.enrollProcessor(new TrajectorySaver<MODEL>(lmConf, resol, fg.modVar(), tlm_, pptraj));
 
-// Setup change of variables
-  inc2model_.reset(LinearVariableChangeFactory<MODEL>::create(bg.state(), fg.state(),
-                                                              resol, conf));
-  inc2model_->setInputVariables(ctlvars_);
+  // Create variable change
+  inc2model_.reset(new LinVarCha_(resol, innerConf.getSubConfiguration("linear variable change")));
+
+  // Trajectory for linear variable change
+  inc2model_->setTrajectory(bg.state(), fg.state());
+
   Log::trace() << "CostFct4DVar::doLinearize done" << std::endl;
 }
 
@@ -214,16 +221,16 @@ void CostFct4DVar<MODEL, OBS>::runTLM(CtrlInc_ & dx,
                                       PostProcessorTLAD<MODEL> & cost,
                                       PostProcessor<Increment_> post,
                                       const bool idModel) const {
-  inc2model_->setOutputVariables(tlm_->variables());
-
+  Log::trace() << "CostFct4DVar::runTLM starting" << std::endl;
   ASSERT(dx.state().validTime() == windowBegin_);
 
-  Increment_ dxmodel(dx.state().geometry(), tlm_->variables(), windowBegin_);
-  inc2model_->multiply(dx.state(), dxmodel);
-  tlm_->forecastTL(dxmodel, dx.modVar(), windowLength_, post, cost, idModel);
-  inc2model_->multiplyInverse(dxmodel, dx.state());
+  Variables incvars = dx.state().variables();
 
+  inc2model_->multiply(dx.state(), tlm_->variables());
+  tlm_->forecastTL(dx.state(), dx.modVar(), windowLength_, post, cost, idModel);
+  inc2model_->multiplyInverse(dx.state(), incvars);
   ASSERT(dx.state().validTime() == windowEnd_);
+  Log::trace() << "CostFct4DVar::runTLM done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -242,15 +249,16 @@ void CostFct4DVar<MODEL, OBS>::runADJ(CtrlInc_ & dx,
                                       PostProcessorTLAD<MODEL> & cost,
                                       PostProcessor<Increment_> post,
                                       const bool idModel) const {
+  Log::trace() << "CostFct4DVar::runADJ starting" << std::endl;
   ASSERT(dx.state().validTime() == windowEnd_);
 
-  Increment_ dxmodel(dx.state().geometry(), tlm_->variables(), windowEnd_);
-  inc2model_->setOutputVariables(tlm_->variables());
-  inc2model_->multiplyInverseAD(dx.state(), dxmodel);
-  tlm_->forecastAD(dxmodel, dx.modVar(), windowLength_, post, cost, idModel);
-  inc2model_->multiplyAD(dxmodel, dx.state());
+  Variables incvars = dx.state().variables();
+  inc2model_->multiplyInverseAD(dx.state(), tlm_->variables());
+  tlm_->forecastAD(dx.state(), dx.modVar(), windowLength_, post, cost, idModel);
+  inc2model_->multiplyAD(dx.state(), incvars);
 
   ASSERT(dx.state().validTime() == windowBegin_);
+  Log::trace() << "CostFct4DVar::runADJ done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

@@ -29,12 +29,10 @@
 #include "oops/base/Geometry.h"
 #include "oops/base/IdentityMatrix.h"
 #include "oops/base/Increment.h"
-#include "oops/base/IncrementEnsemble.h"
-#include "oops/base/LinearVariableChangeBase.h"
 #include "oops/base/ModelSpaceCovarianceParametersBase.h"
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/GeometryIterator.h"
+#include "oops/interface/LinearVariableChange.h"
 #include "oops/util/AssociativeContainers.h"
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/ConfigurationParameter.h"
@@ -70,12 +68,7 @@ class ModelSpaceCovarianceBase {
   typedef GeometryIterator<MODEL>                               GeometryIterator_;
   typedef State<MODEL>                                          State_;
   typedef Increment<MODEL>                                      Increment_;
-  typedef IncrementEnsemble<MODEL>                              IncrementEnsemble_;
-  typedef LinearVariableChangeBase<MODEL>                       LinearVariableChangeBase_;
-  typedef typename boost::ptr_vector<LinearVariableChangeBase_> ChvarVec_;
-  typedef typename ChvarVec_::iterator iter_;
-  typedef typename ChvarVec_::const_iterator icst_;
-  typedef typename ChvarVec_::const_reverse_iterator ircst_;
+  typedef LinearVariableChange<MODEL>                           LinearVariableChange_;
 
  public:
   ModelSpaceCovarianceBase(const State_ &, const State_ &,
@@ -92,18 +85,21 @@ class ModelSpaceCovarianceBase {
   const std::string covarianceModel() const {return covarianceModel_;}
   size_t randomizationSize() const {return randomizationSize_;}
 
+ protected:
+  std::unique_ptr<Variables> BVars_;
+
  private:
   virtual void doRandomize(Increment_ &) const = 0;
   virtual void doMultiply(const Increment_ &, Increment_ &) const = 0;
   virtual void doInverseMultiply(const Increment_ &, Increment_ &) const = 0;
 
-  ChvarVec_ chvars_;
   std::string covarianceModel_;
   size_t randomizationSize_;
-  bool fullInverse_;
+  bool fullInverse_ = false;
   int fullInverseIterations_;
   double fullInverseAccuracy_;
-  const Geometry_  & geom_;
+  std::unique_ptr<LinearVariableChange_> linVarChg_;
+  std::unique_ptr<Variables> anaVars_;
 };
 
 // =============================================================================
@@ -262,21 +258,10 @@ ModelSpaceCovarianceBase<MODEL>* CovarianceFactory<MODEL>::create(
     }
     throw std::runtime_error(id + " does not exist in covariance factory.");
   }
-  Variables vars_in(vars);
-  Variables vars_out;
-  for (const LinearVariableChangeParametersWrapper<MODEL> &variableChange :
-       boost::adaptors::reverse(parameters.variableChanges.value())) {
-    const LinearVariableChangeParametersBase &variableChangeParameters =
-      variableChange.variableChangeParameters;
-    if (variableChangeParameters.inputVariables.value() != boost::none &&
-        variableChangeParameters.outputVariables.value() != boost::none) {
-      vars_out = *variableChangeParameters.outputVariables.value();
-      if (!(vars_in == vars_out)) {
-        Log::error() << "Input variables:  " << vars_in << std::endl;
-        Log::error() << "Output variables: " << vars_out << std::endl;
-        throw eckit::BadParameter("Sequence of variable changes is not consistent");
-      }
-      vars_in = *variableChangeParameters.inputVariables.value();
+  Variables vars_in{vars};
+  if (parameters.variableChange.value() != boost::none) {
+    if (parameters.variableChange.value()->inputVariables.value() != boost::none) {
+        vars_in = *(parameters.variableChange.value()->inputVariables.value());
     }
   }
   return (*jcov).second->make(parameters, resol, vars_in, xb, fg);
@@ -315,23 +300,32 @@ template <typename MODEL>
 ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(
     const State_ & bg, const State_ & fg,
     const Geometry_ & resol,
-    const ModelSpaceCovarianceParametersBase<MODEL> & parameters) : geom_(resol) {
-  for (const LinearVariableChangeParametersWrapper<MODEL> &variableChange :
-       parameters.variableChanges.value()) {
-    chvars_.push_back(LinearVariableChangeFactory<MODEL>::create(
-                        bg, fg, resol, variableChange.variableChangeParameters));
-  }
+    const ModelSpaceCovarianceParametersBase<MODEL> & parameters) {
 
-  const boost::optional<std::string> &covarianceModel = parameters.covarianceModel.value();
-  if (covarianceModel == boost::none) {
-     covarianceModel_ = "none";
-  } else {
-     covarianceModel_ = *covarianceModel;
-  }
-  randomizationSize_ = parameters.randomizationSize;
-  fullInverse_ = parameters.fullInverse;
-  fullInverseIterations_ = parameters.fullInverseIterations;
-  fullInverseAccuracy_ = parameters.fullInverseAccuracy;
+    const boost::optional<std::string> &covarianceModel = parameters.covarianceModel.value();
+    if (covarianceModel == boost::none) {
+        covarianceModel_ = "none";
+    } else {
+        covarianceModel_ = *covarianceModel;
+    }
+    randomizationSize_ = parameters.randomizationSize;
+    fullInverse_ = parameters.fullInverse;
+    fullInverseIterations_ = parameters.fullInverseIterations;
+    fullInverseAccuracy_ = parameters.fullInverseAccuracy;
+    const boost::optional<typename LinearVariableChange<MODEL>::Parameters_> &variableChangeParms =
+        parameters.variableChange;
+    if (variableChangeParms != boost::none) {
+        linVarChg_.reset(new LinearVariableChange_(resol, *variableChangeParms));
+        linVarChg_->setTrajectory(bg, fg);
+        const boost::optional<Variables> &inputVars = variableChangeParms->inputVariables;
+        if (inputVars != boost::none) {
+            BVars_.reset(new Variables(*inputVars));
+        }
+        const boost::optional<Variables> &outputVars = variableChangeParms->outputVariables;
+        if (outputVars != boost::none) {
+            anaVars_.reset(new Variables(*outputVars));
+        }
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -349,16 +343,13 @@ ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(
 
 template <typename MODEL>
 void ModelSpaceCovarianceBase<MODEL>::randomize(Increment_ & dx) const {
+  Log::trace() << "ModelSpaceCovarianceBase<MODEL>::randomize starting " << std::endl;
   // TODO(notguillaume): Generalize to non-square change of variable
-  if (chvars_.size()) {
-    this->doRandomize(dx);   // dx = C^1/2 dx
-    // K_N K_N-1 ... K_1
-    for (icst_ it = chvars_.begin(); it != chvars_.end(); ++it) {
-      dx = it->multiply(dx);  // dx = K_i dx
-    }
-  } else {
-    this->doRandomize(dx);
+  this->doRandomize(dx);
+  if (linVarChg_) {
+    linVarChg_->multiply(dx, *anaVars_);
   }
+  Log::trace() << "ModelSpaceCovarianceBase<MODEL>::randomize done " << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -366,27 +357,27 @@ void ModelSpaceCovarianceBase<MODEL>::randomize(Increment_ & dx) const {
 template <typename MODEL>
 void ModelSpaceCovarianceBase<MODEL>::multiply(const Increment_ & dxi,
                                                Increment_ & dxo) const {
-  if (chvars_.size()) {
-    // K_1^T K_2^T .. K_N^T
-    std::unique_ptr<Increment_> dxchvarin(new Increment_(dxi));
-    for (ircst_ it = chvars_.rbegin(); it != chvars_.rend(); ++it) {
-      Increment_ dxchvarout = it->multiplyAD(*dxchvarin);
-      dxchvarin.reset(new Increment_(dxchvarout));
-    }
-    Increment_ dxchvarout(*dxchvarin, false);
+  Log::trace() << "ModelSpaceCovarianceBase<MODEL>::multiply starting " << std::endl;
+  if (linVarChg_) {
+    // Copy input increment and apply adjoint variable change (to control variables)
+    Increment_ dxiTemp(dxi);
+    linVarChg_->multiplyAD(dxiTemp, *BVars_);
 
-    this->doMultiply(*dxchvarin, dxchvarout);
+    // Create temporary output increment
+    Increment_ dxoTemp(dxiTemp, false);
 
-    // K_N K_N-1 ... K_1
-    dxchvarin.reset(new Increment_(dxchvarout));
-    for (icst_ it = chvars_.begin(); it != chvars_.end(); ++it) {
-      Increment_ dxchvarout = it->multiply(*dxchvarin);
-      dxchvarin.reset(new Increment_(dxchvarout));
-    }
-    dxo = *dxchvarin;
+    // Apply background error model
+    this->doMultiply(dxiTemp, dxoTemp);
+
+    // Apply control to analysis/model variable change
+    linVarChg_->multiply(dxoTemp, *anaVars_);
+
+    // Copy to output increment
+    dxo = dxoTemp;
   } else {
     this->doMultiply(dxi, dxo);
   }
+  Log::trace() << "ModelSpaceCovarianceBase<MODEL>::multiply done " << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -394,34 +385,34 @@ void ModelSpaceCovarianceBase<MODEL>::multiply(const Increment_ & dxi,
 template <typename MODEL>
 void ModelSpaceCovarianceBase<MODEL>::inverseMultiply(const Increment_ & dxi,
                                                       Increment_ & dxo) const {
+  Log::trace() << "ModelSpaceCovarianceBase<MODEL>::inverseMultiply starting " << std::endl;
   if (fullInverse_) {
     // Approximate full inverse using GMRESR
     IdentityMatrix<Increment_> Id;
     dxo.zero();
     GMRESR(dxo, dxi, *this, Id, fullInverseIterations_, fullInverseAccuracy_);
   } else {
-    if (chvars_.size()) {
-      // K_1^{-1} K_2^{-1} .. K_N^{-1}
-      std::unique_ptr<Increment_> dxchvarin(new Increment_(dxi));
-      for (ircst_ it = chvars_.rbegin(); it != chvars_.rend(); ++it) {
-        Increment_ dxchvarout = it->multiplyInverse(*dxchvarin);
-        dxchvarin.reset(new Increment_(dxchvarout));
-      }
-      Increment_ dxchvarout(*dxchvarin, false);
+    if (linVarChg_) {
+      // Copy input increment and apply inverse variable change (K^{-1})
+      Increment_ dxiTemp(dxi);
+      linVarChg_->multiplyInverse(dxiTemp, *BVars_);
 
-      this->doInverseMultiply(*dxchvarin, dxchvarout);
+      // Create temporary output increment
+      Increment_ dxoTemp(dxiTemp, false);
 
-      // K_N^T^{-1} K_N-1^T^{-1} ... K_1^T^{-1}
-      dxchvarin.reset(new Increment_(dxchvarout));
-      for (icst_ it = chvars_.begin(); it != chvars_.end(); ++it) {
-        Increment_ dxchvarout = it->multiplyInverseAD(*dxchvarin);
-        dxchvarin.reset(new Increment_(dxchvarout));
-      }
-      dxo = *dxchvarin;
+      // Apply background error model
+      this->doInverseMultiply(dxiTemp, dxoTemp);
+
+      // Apply adjoint inverse variable change (K^T^{-1})
+      linVarChg_->multiplyInverseAD(dxoTemp, *anaVars_);
+
+      // Copy to output increment
+      dxo = dxoTemp;
     } else {
       this->doInverseMultiply(dxi, dxo);
     }
   }
+  Log::trace() << "ModelSpaceCovarianceBase<MODEL>::inverseMultiply done " << std::endl;
 }
 
 // -----------------------------------------------------------------------------

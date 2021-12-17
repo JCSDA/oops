@@ -23,7 +23,6 @@
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
-#include "oops/generic/instantiateVariableChangeFactory.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
@@ -89,7 +88,6 @@ template <typename MODEL, typename OBS> class HofX3D : public Application {
   explicit HofX3D(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {
     instantiateObsErrorFactory<OBS>();
     instantiateObsFilterFactory<OBS>();
-    instantiateVariableChangeFactory<MODEL>();
   }
 // -----------------------------------------------------------------------------
   virtual ~HofX3D() = default;

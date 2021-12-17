@@ -1,4 +1,4 @@
-! (C) Copyright 2020 UCAR
+! (C) Copyright 2020-2021 UCAR
 !
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -22,7 +22,6 @@ implicit none
 
 private
 public :: qg_getvalues_interp, qg_getvalues_interp_tl, qg_getvalues_interp_ad
-
 ! ------------------------------------------------------------------------------
 contains
 ! ------------------------------------------------------------------------------
@@ -44,7 +43,7 @@ integer :: jloc
 real(kind_real), pointer :: lonlat(:,:)
 type(atlas_field) :: lonlat_field
 
-! Get locations
+! get locations
 lonlat_field = locs%lonlat()
 call lonlat_field%data(lonlat)
 
@@ -69,7 +68,6 @@ do jloc=1,locs%nlocs()
 enddo
 !$omp end parallel do
 
-! Release memory
 call lonlat_field%final()
 
 end subroutine qg_getvalues_interp
@@ -90,7 +88,7 @@ integer :: jloc
 real(kind_real), pointer :: lonlat(:,:)
 type(atlas_field) :: lonlat_field
 
-! Get locations
+! get locations
 lonlat_field = locs%lonlat()
 call lonlat_field%data(lonlat)
 
@@ -115,10 +113,10 @@ do jloc=1,locs%nlocs()
 enddo
 !$omp end parallel do
 
-! Release memory
 call lonlat_field%final()
 
 end subroutine qg_getvalues_interp_tl
+
 ! ------------------------------------------------------------------------------
 !> Interpolation from fields - adjoint
 subroutine qg_getvalues_interp_ad(locs,fld,t1,t2,gom)

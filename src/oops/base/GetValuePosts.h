@@ -17,7 +17,7 @@
 #include "oops/base/GetValuePost.h"
 #include "oops/base/PostBase.h"
 #include "oops/base/State.h"
-#include "oops/interface/ChangeVariables.h"
+#include "oops/interface/VariableChange.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -27,7 +27,7 @@ namespace oops {
 /// \brief Fills GeoVaLs with requested variables at requested locations during model run
 template <typename MODEL, typename OBS>
 class GetValuePosts : public PostBase<State<MODEL>> {
-  typedef ChangeVariables<MODEL>    ChangeVariables_;
+  typedef VariableChange<MODEL>     VariableChange_;
   typedef State<MODEL>              State_;
   typedef std::shared_ptr<GetValuePost<MODEL, OBS>> GetValuePtr_;
 
@@ -81,12 +81,14 @@ template <typename MODEL, typename OBS>
 void GetValuePosts<MODEL, OBS>::doProcessing(const State_ & xx) {
   Log::trace() << "GetValuePosts::doProcessing start" << std::endl;
 
-  eckit::LocalConfiguration chvarconf;  // empty for now
-  ChangeVariables_ chvar(chvarconf, xx.geometry(), xx.variables(), geovars_);
-  State_ zz(xx.geometry(), geovars_, xx.validTime());
-  chvar.changeVar(xx, zz);
+  eckit::LocalConfiguration chvarconf;
+  VariableChange_ chvar(chvarconf, xx.geometry());
+
+  State_ zz(xx);
+  chvar.changeVar(zz, geovars_);
 
   for (GetValuePtr_ getval : getvals_) getval->process(zz);
+
   Log::trace() << "GetValuePosts::doProcessing done" << std::endl;
 }
 

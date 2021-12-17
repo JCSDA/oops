@@ -111,7 +111,6 @@ oops/base/InterpolatorBase.cc
 oops/base/instantiateCovarFactory.h
 oops/base/instantiateObsFilterFactory.h
 oops/base/LinearModel.h
-oops/base/LinearVariableChangeBase.h
 oops/base/LinearVariableChangeParametersBase.h
 oops/base/Localization.h
 oops/base/Model.h
@@ -157,7 +156,6 @@ oops/base/StateWriter.h
 oops/base/TrajectorySaver.h
 oops/base/WriteParametersBase.cc
 oops/base/WriteParametersBase.h
-oops/base/VariableChangeBase.h
 oops/base/VariableChangeParametersBase.h
 oops/base/variables_f.cc
 oops/base/variables_f.h
@@ -191,12 +189,9 @@ oops/generic/gc99.cc
 oops/generic/GeoVaLsWriter.h
 oops/generic/IdentityLinearModel.h
 oops/generic/IdentityModel.h
-oops/generic/IdLinearVariableChange.h
-oops/generic/IdVariableChange.h
 oops/generic/instantiateLinearModelFactory.h
 oops/generic/instantiateModelFactory.h
 oops/generic/instantiateObsErrorFactory.h
-oops/generic/instantiateVariableChangeFactory.h
 oops/generic/InterpolatorAtlas.h
 oops/generic/InterpolatorAtlas.cc
 oops/generic/interpolatorunstrc_f.h
@@ -219,7 +214,6 @@ oops/generic/unstructured_interpolation_mod.F90
 oops/generic/VerticalLocEV.h
 
 oops/interface/AnalyticInitBase.h
-oops/interface/ChangeVariables.h
 oops/interface/ErrorCovariance.h
 oops/interface/Geometry.h
 oops/interface/GeometryIterator.h

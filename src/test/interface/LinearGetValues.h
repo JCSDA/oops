@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -32,6 +32,7 @@
 #include "oops/interface/GetValues.h"
 #include "oops/interface/LinearGetValues.h"
 #include "oops/interface/Locations.h"
+#include "oops/interface/VariableChange.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
@@ -238,6 +239,7 @@ template <typename MODEL, typename OBS> void testLinearGetValuesLinearity() {
 
 template <typename MODEL, typename OBS> void testLinearGetValuesLinearApproximation() {
   typedef LinearGetValuesFixture<MODEL, OBS>  Test_;
+  typedef oops::VariableChange<MODEL>         VariableChange_;
   typedef oops::GeoVaLs<OBS>                  GeoVaLs_;
   typedef oops::Increment<MODEL>              Increment_;
   typedef oops::State<MODEL>                  State_;
@@ -247,6 +249,11 @@ template <typename MODEL, typename OBS> void testLinearGetValuesLinearApproximat
 
   // Compute nonlinear geovals
   State_ xx0(Test_::state());
+
+  eckit::LocalConfiguration chvarconf;  // empty for now
+  VariableChange_ chvar(chvarconf, Test_::resol());
+  chvar.changeVar(xx0, Test_::geovalvars());
+
   GeoVaLs_ gv0(Test_::locs(), Test_::geovalvars(), Test_::geovalvarsizes());
   Test_::getvalues().fillGeoVaLs(xx0, Test_::timebeg(), Test_::timeend(), gv0);
 
@@ -257,13 +264,14 @@ template <typename MODEL, typename OBS> void testLinearGetValuesLinearApproximat
   std::vector<double> errors;
   for (unsigned int jtest = 0; jtest < ntest; ++jtest) {
     Increment_ dxx(dx0);
-    State_ xx(xx0);
+    State_ xx(Test_::state());
     GeoVaLs_  gv(Test_::locs(), Test_::geovalvars(), Test_::geovalvarsizes());
     GeoVaLs_ dgv(Test_::locs(), Test_::geovalvars(), Test_::geovalvarsizes());
     dxx *= zz;
     xx += dxx;
 
     // Nonlinear
+    chvar.changeVar(xx, Test_::geovalvars());
     Test_::getvalues().fillGeoVaLs(xx, Test_::timebeg(), Test_::timeend(), gv);
 
     // Tangent linear

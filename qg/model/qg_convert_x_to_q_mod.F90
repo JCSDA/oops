@@ -1,8 +1,8 @@
 ! (C) Copyright 2009-2016 ECMWF.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
-! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
-! In applying this licence, ECMWF does not waive the privileges and immunities 
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
 ! granted to it by virtue of its status as an intergovernmental organisation nor
 ! does it submit to any jurisdiction.
 
@@ -34,7 +34,7 @@ real(kind_real),intent(inout) :: q(geom%nx,geom%ny,geom%nz) !< Potential vortici
 
 ! Local variables
 integer :: ix,iy,iz
-real(kind_real) :: del2x(geom%nx,geom%ny,geom%nz) 
+real(kind_real) :: del2x(geom%nx,geom%ny,geom%nz)
 real(kind_real) :: zz
 
 ! Laplacian of the streamfunction
@@ -82,7 +82,7 @@ real(kind_real),intent(inout) :: q(geom%nx,geom%ny,geom%nz) !< Potential vortici
 
 ! Local variables
 integer :: ix,iy,iz
-real(kind_real) :: del2x(geom%nx,geom%ny,geom%nz) 
+real(kind_real) :: del2x(geom%nx,geom%ny,geom%nz)
 
 ! Laplacian of the streamfunction
 call laplacian_2d(geom,x,del2x)
@@ -116,7 +116,7 @@ real(kind_real),intent(inout) :: x(geom%nx,geom%ny,geom%nz) !< Streamfunction
 
 ! Local variables
 integer :: ix,iy,iz
-real(kind_real) :: del2x(geom%nx,geom%ny,geom%nz) 
+real(kind_real) :: del2x(geom%nx,geom%ny,geom%nz)
 
 ! Add the beta term and the heating term (=> AD of this is identity)
 

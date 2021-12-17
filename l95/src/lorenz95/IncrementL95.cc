@@ -44,23 +44,23 @@ namespace lorenz95 {
 // -----------------------------------------------------------------------------
 /// Constructor, destructor
 // -----------------------------------------------------------------------------
-IncrementL95::IncrementL95(const Resolution & resol, const oops::Variables &,
+IncrementL95::IncrementL95(const Resolution & resol, const oops::Variables & vars,
                            const util::DateTime & vt)
-  : fld_(resol), time_(vt)
+  : fld_(resol), time_(vt), vars_(vars)
 {
   fld_.zero();
   oops::Log::trace() << "IncrementL95::IncrementL95 created." << std::endl;
 }
 // -----------------------------------------------------------------------------
 IncrementL95::IncrementL95(const Resolution & resol, const IncrementL95 & dx)
-  : fld_(resol), time_(dx.time_)
+  : fld_(resol), time_(dx.time_), vars_(dx.variables())
 {
   fld_ = dx.fld_;
   oops::Log::trace() << "IncrementL95::IncrementL95 created by interpolation." << std::endl;
 }
 // -----------------------------------------------------------------------------
 IncrementL95::IncrementL95(const IncrementL95 & dx, const bool copy)
-  : fld_(dx.fld_, copy), time_(dx.time_)
+  : fld_(dx.fld_, copy), time_(dx.time_), vars_(dx.variables())
 {
   oops::Log::trace() << "IncrementL95::IncrementL95 copy-created." << std::endl;
 }

@@ -12,6 +12,7 @@
 
 #include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/Variables.h"
+#include "oops/util/parameters/ConfigurationParameter.h"
 #include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/Parameters.h"
 
@@ -21,19 +22,24 @@ namespace oops {
 class LinearVariableChangeParametersBase : public Parameters {
   OOPS_ABSTRACT_PARAMETERS(LinearVariableChangeParametersBase, Parameters)
  public:
-  /// \brief Variable change type.
-  ///
-  /// \note This parameter is marked as optional because it is only required in certain
-  /// circumstances (e.g. when variable change parameters are deserialized into a
-  /// LinearVariableChangeParametersWrapper and used by LinearVariableChangeFactory to instantiate
-  /// a tangent linear variable change whose type is determined at runtime), but not others (e.g.
-  /// in tests written with a particular variable change in mind).
-  /// LinearVariableChangeParametersWrapper will throw an exception if this parameter is not
-  /// provided.
-  OptionalParameter<std::string> variableChange{"variable change", this};
-
   OptionalParameter<Variables> inputVariables{"input variables", this};
   OptionalParameter<Variables> outputVariables{"output variables", this};
+};
+
+/// \brief A subclass of LinearVariableChangeParametersBase storing the values of all options in a
+/// single Configuration object.
+///
+/// This object can be accessed by calling the value() method of the \p config member variable.
+///
+/// The ConfigurationParameter class does not perform any parameter validation; models using
+/// GenericLinearVariableChangeParameters should therefore ideally be refactored, replacing this
+/// class with a dedicated subclass of LinearVariableChangeParametersBase storing each parameter in
+/// a separate (Optional/Required)Parameter object.
+class GenericLinearVariableChangeParameters : public LinearVariableChangeParametersBase {
+  OOPS_CONCRETE_PARAMETERS(GenericLinearVariableChangeParameters,
+                           LinearVariableChangeParametersBase)
+ public:
+  ConfigurationParameter config{this};
 };
 
 }  // namespace oops

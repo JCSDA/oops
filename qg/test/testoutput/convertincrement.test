@@ -8,23 +8,7 @@ Trajectory state:
   Streamfunction         :  Min= -4.4552e+08, Max=  1.0419e+08, RMS=  1.7642e+08
   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
-Increment after variable transform: 
-  Valid time: 2010-01-01T12:00:00Z
-  Resolution = 20, 10, 2
-  Potential vorticity    :  Min= -1.7458e-04, Max=  5.2972e-05, RMS=  2.0556e-05
-Increment after variable transform: 
-  Valid time: 2010-01-01T12:00:00Z
-  Resolution = 20, 10, 2
-  Streamfunction         :  Min= -1.4229e+07, Max=  5.4972e+07, RMS=  7.4712e+06
-Increment after variable transform: 
-  Valid time: 2010-01-01T12:00:00Z
-  Resolution = 20, 10, 2
-  Streamfunction         :  Min= -1.4229e+07, Max=  5.4972e+07, RMS=  7.4712e+06
-Increment after variable transform: 
-  Valid time: 2010-01-01T12:00:00Z
-  Resolution = 20, 10, 2
-  Streamfunction         :  Min= -1.4229e+07, Max=  5.4972e+07, RMS=  7.4712e+06
 Output increment: 
   Valid time: 2010-01-01T12:00:00Z
   Resolution = 20, 10, 2
-  Streamfunction         :  Min= -1.4229e+07, Max=  5.4972e+07, RMS=  7.4712e+06
+  Potential vorticity    :  Min= -1.7458e-04, Max=  5.2972e-05, RMS=  2.0556e-05

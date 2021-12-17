@@ -15,9 +15,8 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
-#include "oops/base/LinearVariableChangeBase.h"
 #include "oops/base/State.h"
-#include "oops/generic/instantiateVariableChangeFactory.h"
+#include "oops/interface/LinearVariableChange.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
@@ -57,9 +56,8 @@ template <typename MODEL> class ConvertIncrementParameters : public ApplicationP
   /// Output geometry parameters.
   RequiredParameter<GeometryParameters_> outputGeometry{"output geometry", this};
 
-  /// List of linear variable changes.
-  RequiredParameter<std::vector<eckit::LocalConfiguration>> linearVarChanges{
-      "linear variable changes", this};
+  /// Linear variable change.
+  RequiredParameter<eckit::LocalConfiguration> linearVarChange{"linear variable change", this};
 
   /// List of increments.
   RequiredParameter<std::vector<IncrementParameters_>> increments{"increments", this};
@@ -71,8 +69,7 @@ template <typename MODEL> class ConvertIncrement : public Application {
   typedef Geometry<MODEL>                    Geometry_;
   typedef Increment<MODEL>                   Increment_;
   typedef State<MODEL>                       State_;
-  typedef LinearVariableChangeBase<MODEL>    LinearVariableChange_;
-  typedef LinearVariableChangeFactory<MODEL> LinearVariableChangeFactory_;
+  typedef LinearVariableChange<MODEL>        LinearVariableChange_;
 
   typedef typename Increment<MODEL>::ReadParameters_  ReadParameters_;
   typedef typename Increment<MODEL>::WriteParameters_ WriteParameters_;
@@ -82,10 +79,8 @@ template <typename MODEL> class ConvertIncrement : public Application {
 
  public:
 // -------------------------------------------------------------------------------------------------
-  explicit ConvertIncrement(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm)
-  {
-    instantiateVariableChangeFactory<MODEL>();
-  }
+  explicit ConvertIncrement(const eckit::mpi::Comm & comm = oops::mpi::world())
+    : Application(comm) {}
 // -------------------------------------------------------------------------------------------------
   virtual ~ConvertIncrement() {}
 // -------------------------------------------------------------------------------------------------
@@ -98,14 +93,13 @@ template <typename MODEL> class ConvertIncrement : public Application {
     const Geometry_ resol1(params.inputGeometry, this->getComm());
     const Geometry_ resol2(params.outputGeometry, this->getComm());
 
-//  Variable transform(s)
-    std::vector<bool> inverse;
-    std::vector<bool> adjoint;
-
-    const std::vector<eckit::LocalConfiguration>& chvarconfs = params.linearVarChanges;
-    for (size_t cv = 0; cv < chvarconfs.size(); ++cv) {
-      inverse.push_back(chvarconfs[cv].getBool("do inverse", false));
-      adjoint.push_back(chvarconfs[cv].getBool("do adjoint", false));
+    // Setup change of variable
+    std::unique_ptr<LinearVariableChange_> lvc;
+    oops::Variables varout;
+    eckit::LocalConfiguration chvarconf = params.linearVarChange.value();
+    if (chvarconf.has("output variables")) {
+        lvc.reset(new LinearVariableChange_(resol2, chvarconf));
+        varout = oops::Variables(chvarconf, "output variables");
     }
 
 //  List of input and output increments
@@ -130,39 +124,24 @@ template <typename MODEL> class ConvertIncrement : public Application {
       Log::test() << "Input increment: " << dxi << std::endl;
 
 //    Copy and change resolution
-      std::unique_ptr<Increment_> dx(new Increment_(resol2, dxi));  // Pointer that can be reset
+      Increment_ dx(resol2, dxi);
 
-//    Trajectory state for linear variable transform
-      std::unique_ptr<State_> xtraj;  // Pointer that can be reset
+//    Variable transform
+      if (lvc) {
+        State_ xTrajBg(resol1, incrementParams[jm].trajectory);
+        ASSERT(xTrajBg.validTime() == dx.validTime());  // Check time is consistent
+        Log::test() << "Trajectory state: " << xTrajBg << std::endl;
 
-//    Variable transform(s)
-      for (size_t cv = 0; cv < chvarconfs.size(); ++cv) {
-        // Read trajectory
-        if (cv == 0) {
-          xtraj.reset(new State_(resol1, incrementParams[jm].trajectory));
-          ASSERT(xtraj->validTime() == dx->validTime());  // Check time is consistent
-          Log::test() << "Trajectory state: " << *xtraj << std::endl;
-        }
-
-        // Create variable change
-        std::unique_ptr<LinearVariableChange_> lvc;
-        lvc.reset(LinearVariableChangeFactory_::create(*xtraj, *xtraj, resol2, chvarconfs[cv]));
-
-        // Print info
-        Log::info() << "Variable transform " << cv+1 << " of " << chvarconfs.size() << ": "
-                    << *lvc << std::endl;
-
-        Increment_ xchvarout = lvc->multiply(*dx);
-        dx.reset(new Increment_(xchvarout));
-
-        Log::test() << "Increment after variable transform: " << *dx << std::endl;
+          // Create variable change
+        lvc->setTrajectory(xTrajBg);
+        lvc->multiply(dx, varout);
       }
 
 //    Write state
       const WriteParameters_ outputParams = incrementParams[jm].output;
-      dx->write(outputParams);
+      dx.write(outputParams);
 
-      Log::test() << "Output increment: " << *dx << std::endl;
+      Log::test() << "Output increment: " << dx << std::endl;
     }
     return 0;
   }

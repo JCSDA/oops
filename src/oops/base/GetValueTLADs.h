@@ -15,10 +15,10 @@
 
 #include "oops/base/GetValueTLAD.h"
 #include "oops/base/Increment.h"
-#include "oops/base/LinearVariableChangeBase.h"
 #include "oops/base/PostBaseTLAD.h"
 #include "oops/base/State.h"
-#include "oops/interface/ChangeVariables.h"
+#include "oops/interface/LinearVariableChange.h"
+#include "oops/interface/VariableChange.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 
@@ -28,11 +28,11 @@ namespace oops {
 
 template <typename MODEL, typename OBS>
 class GetValueTLADs : public PostBaseTLAD<MODEL> {
-  typedef ChangeVariables<MODEL>           ChangeVar_;
+  typedef VariableChange<MODEL>            VariableChange_;
   typedef Increment<MODEL>                 Increment_;
   typedef State<MODEL>                     State_;
   typedef std::shared_ptr<GetValueTLAD<MODEL, OBS>> GetValPtr_;
-  typedef std::unique_ptr<LinearVariableChangeBase<MODEL>> CVarPtr_;
+  typedef std::unique_ptr<LinearVariableChange<MODEL>> CVarPtr_;
 
  public:
   GetValueTLADs(const util::DateTime &, const util::DateTime &);
@@ -90,15 +90,15 @@ void GetValueTLADs<MODEL, OBS>::doProcessingTraj(const State_ & xx) {
   Log::trace() << "GetValueTLADs::doProcessingTraj start" << std::endl;
 
   eckit::LocalConfiguration chvarconf;
-  chvarconf.set("variable change", "default");
 
-  ChangeVar_ chvar(chvarconf, xx.geometry(), xx.variables(), geovars_);
-  State_ zz(xx.geometry(), geovars_, xx.validTime());
-  chvar.changeVar(xx, zz);
+  VariableChange_ chvar(chvarconf, xx.geometry());
+  State_ zz(xx);
+  chvar.changeVar(zz, geovars_);
 
   for (GetValPtr_ getval : getvals_) getval->processTraj(zz);
 
-  CVarPtr_ cvtlad(LinearVariableChangeFactory<MODEL>::create(xx, xx, xx.geometry(), chvarconf));
+  CVarPtr_ cvtlad(new LinearVariableChange<MODEL>(xx.geometry(), chvarconf));
+  cvtlad->setTrajectory(xx);
   chvartlad_[xx.validTime()] = std::move(cvtlad);
 
   Log::trace() << "GetValueTLADs::doProcessingTraj done" << std::endl;
@@ -118,8 +118,8 @@ void GetValueTLADs<MODEL, OBS>::doProcessingTL(const Increment_ & dx) {
   const util::DateTime now = dx.validTime();
   ASSERT(chvartlad_.find(now) != chvartlad_.end());
 
-  Increment_ dz(dx.geometry(), linvars_, dx.validTime());
-  chvartlad_[now]->multiply(dx, dz);
+  Increment_ dz(dx);
+  chvartlad_[now]->multiply(dz, linvars_);
 
   for (GetValPtr_ getval : getvals_) getval->processTL(dz);
   Log::trace() << "GetValueTLADs::doProcessingTL done" << std::endl;
@@ -149,10 +149,8 @@ void GetValueTLADs<MODEL, OBS>::doProcessingAD(Increment_ & dx) {
     dz += tmpz;
   }
 
-  Increment_ tmpx(dx);
-  tmpx.zero();
-  chvartlad_[now]->multiplyAD(dz, tmpx);
-  dx += tmpx;
+  chvartlad_[now]->multiplyAD(dz, dx.variables());
+  dx += dz;
 
   Log::trace() << "GetValueTLADs::doProcessingAD done" << std::endl;
 }

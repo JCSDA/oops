@@ -17,13 +17,15 @@ set( _l95_srcs
         GomL95.h
         GomL95.cc
         GomL95.h
+        IdChangeVariable.h
+        IdChangeVarTLADL95.h
         IncrementL95.cc
         IncrementL95.h
-        instantiateL95ChangeVarFactory.h
         instantiateLocalizationFactory.h
         Iterator.cc
         Iterator.h
         L95Traits.h
+        L95TraitsFwd.h
         LocsL95.cc
         LocsL95.h
         ModelBias.cc

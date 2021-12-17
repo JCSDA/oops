@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2019-2020 UCAR.
+ * (C) Copyright 2019-2021 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -26,7 +26,6 @@
 #include "oops/base/State4D.h"
 #include "oops/base/StateEnsemble4D.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
-#include "oops/generic/instantiateVariableChangeFactory.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
@@ -57,7 +56,6 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     instantiateLocalEnsembleSolverFactory<MODEL, OBS>();
     instantiateObsErrorFactory<OBS>();
     instantiateObsFilterFactory<OBS>();
-    instantiateVariableChangeFactory<MODEL>();
   }
 
 // -----------------------------------------------------------------------------

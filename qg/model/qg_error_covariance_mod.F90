@@ -290,7 +290,7 @@ type(qg_fields) :: fld_tmp
 
 ! Initialize temporary field
 call qg_fields_create_from_other(fld_tmp,fld_out,fld_out%geom)
-call qg_fields_random(fld_tmp,'x',self%seed)
+call qg_fields_random(fld_tmp,self%seed)
 
 ! Apply square-root of the covariance matrix
 call qg_error_covariance_sqrt_mult(self,fld_tmp,fld_out)

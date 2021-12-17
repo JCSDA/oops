@@ -8,7 +8,6 @@
  * does it submit to any jurisdiction.
  */
 
-#include "lorenz95/instantiateL95ChangeVarFactory.h"
 #include "lorenz95/instantiateLocalizationFactory.h"
 #include "lorenz95/L95Traits.h"
 #include "oops/runs/Run.h"
@@ -16,7 +15,6 @@
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  lorenz95::instantiateL95ChangeVarFactory();
   lorenz95::instantiateLocalizationFactory();
   oops::Variational<lorenz95::L95Traits, lorenz95::L95ObsTraits> var;
   return run.execute(var);

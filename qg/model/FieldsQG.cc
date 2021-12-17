@@ -126,7 +126,7 @@ void FieldsQG::schur_product_with(const FieldsQG & dx) {
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::random() {
-  qg_fields_random_f90(keyFlds_, vars_);
+  qg_fields_random_f90(keyFlds_);
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::dirac(const eckit::Configuration & config) {

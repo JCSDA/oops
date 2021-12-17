@@ -88,6 +88,7 @@ list( APPEND qg_testoutput
   testoutput/3densvar.test
   testoutput/3dvar.test
   testoutput/3dvar_change_var.test
+  testoutput/3dvar_full_inverse.test
   testoutput/3dvar_hybrid.test
   testoutput/3dvar_hybrid_wo_jb_evaluation.test
   testoutput/3dfgat.test

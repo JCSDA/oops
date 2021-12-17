@@ -11,14 +11,19 @@
 #ifndef LORENZ95_L95TRAITS_H_
 #define LORENZ95_L95TRAITS_H_
 
-#include <string>
+// The L95Traits and L95ObsTraits classes are defined in L95TraitsFwd.h, which, however,
+// contains only forward declarations of the lorenz95 implementations of oops interfaces.
+// This file includes headers in which all these implementations are defined.
 
 #include "lorenz95/ErrorCovarianceL95.h"
 #include "lorenz95/GetValuesL95.h"
 #include "lorenz95/GetValuesTLAD.h"
 #include "lorenz95/GomL95.h"
+#include "lorenz95/IdChangeVariable.h"
+#include "lorenz95/IdChangeVarTLADL95.h"
 #include "lorenz95/IncrementL95.h"
 #include "lorenz95/Iterator.h"
+#include "lorenz95/L95TraitsFwd.h"
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/ModelBias.h"
 #include "lorenz95/ModelBiasCorrection.h"
@@ -36,49 +41,5 @@
 #include "lorenz95/ObsVec1D.h"
 #include "lorenz95/Resolution.h"
 #include "lorenz95/StateL95.h"
-
-namespace lorenz95 {
-
-struct L95Traits {
-  static std::string name() {return "Lorenz 95";}
-  static std::string nameCovar() {return "L95Error";}
-  static std::string nameCovar4D() {return "L95Error";}
-
-  typedef lorenz95::Resolution             Geometry;
-  typedef lorenz95::Iterator               GeometryIterator;
-
-  typedef lorenz95::StateL95               State;
-  typedef lorenz95::IncrementL95           Increment;
-  typedef lorenz95::ErrorCovarianceL95     Covariance;
-
-  typedef lorenz95::GetValuesL95           GetValues;
-  typedef lorenz95::GetValuesTLAD          LinearGetValues;
-
-  typedef lorenz95::ModelBias              ModelAuxControl;
-  typedef lorenz95::ModelBiasCorrection    ModelAuxIncrement;
-  typedef lorenz95::ModelBiasCovariance    ModelAuxCovariance;
-};
-
-struct L95ObsTraits {
-  static std::string name() {return "Lorenz 95 Obs";}
-
-  typedef lorenz95::ObsTable               ObsSpace;
-  typedef lorenz95::ObsVec1D               ObsVector;
-  template <typename DATATYPE> using ObsDataVector = lorenz95::ObsData1D<DATATYPE>;
-  typedef lorenz95::ObsIterator            GeometryIterator;
-
-  typedef lorenz95::ObservationL95         ObsOperator;
-  typedef lorenz95::ObservationTLAD        LinearObsOperator;
-  typedef lorenz95::ObsBias                ObsAuxControl;
-  typedef lorenz95::ObsBiasCorrection      ObsAuxIncrement;
-  typedef lorenz95::ObsBiasCovariance      ObsAuxCovariance;
-  typedef lorenz95::ObsBiasPreconditioner  ObsAuxPreconditioner;
-  typedef lorenz95::ObsDiags1D             ObsDiagnostics;
-
-  typedef lorenz95::GomL95                 GeoVaLs;
-  typedef lorenz95::LocsL95                Locations;
-};
-
-}  // namespace lorenz95
 
 #endif  // LORENZ95_L95TRAITS_H_

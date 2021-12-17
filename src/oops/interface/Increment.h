@@ -107,6 +107,8 @@ class Increment : public oops::GeneralizedDepartures,
   const util::DateTime validTime() const {return increment_->validTime();}
   /// Updates this Increment's valid time by \p dt (used in PseudoModel)
   void updateTime(const util::Duration & dt) {increment_->updateTime(dt);}
+  /// Accessor to variables associated with this Increment
+  const Variables & variables() const {return increment_->variables();}
 
   /// Zero out this Increment
   void zero();

@@ -139,6 +139,7 @@ class IncrementL95 : public util::Printable,
   }
   std::vector<double> & asVector() {return fld_.asVector();}
   const std::vector<double> & asVector() const {return fld_.asVector();}
+  const oops::Variables & variables() const {return vars_;}
 
   void accumul(const double &, const StateL95 &);
 
@@ -151,6 +152,7 @@ class IncrementL95 : public util::Printable,
   void print(std::ostream &) const override;
   FieldL95 fld_;
   util::DateTime time_;
+  oops::Variables vars_;
 };
 
 // -----------------------------------------------------------------------------

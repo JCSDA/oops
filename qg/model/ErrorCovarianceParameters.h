@@ -9,12 +9,13 @@
 #define QG_MODEL_ERRORCOVARIANCEPARAMETERS_H_
 
 #include "oops/base/ModelSpaceCovarianceParametersBase.h"
+#include "oops/qg/ChangeVarTLADQG.h"
+#include "oops/qg/QgTraitsFwd.h"
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/RequiredParameter.h"
 
 namespace qg {
-  class QgTraits;
 // -----------------------------------------------------------------------------
 /// \brief Parameters passed to the ErrorCovarianceParameters class.
 

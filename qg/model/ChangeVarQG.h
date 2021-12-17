@@ -1,6 +1,6 @@
 /*
  * (C) Copyright 2017-2021 UCAR.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
@@ -11,32 +11,36 @@
 #include <ostream>
 #include <string>
 
-#include "oops/base/VariableChangeBase.h"
-
-#include "oops/qg/QgTraits.h"
+#include "oops/qg/GeometryQG.h"
+#include "oops/util/Printable.h"
+#include "ChangeVarQGParameters.h"
 
 // Forward declarations
 namespace eckit {
   class Configuration;
 }
 
+namespace oops {
+  class Variables;
+}
+
 namespace qg {
-  class GeometryQG;
   class StateQG;
 
 // -----------------------------------------------------------------------------
 /// QG change of variable
 
-class ChangeVarQG: public oops::VariableChangeBase<QgTraits> {
+class ChangeVarQG : public util::Printable {
  public:
+  typedef ChangeVarQGParameters Parameters_;
   static const std::string classname() {return "qg::ChangeVarQG";}
 
-  ChangeVarQG(const GeometryQG &, const eckit::Configuration &);
+  ChangeVarQG(const Parameters_ &, const GeometryQG &);
   ~ChangeVarQG();
 
 /// Perform transforms
-  void changeVar(const StateQG &, StateQG &) const override;
-  void changeVarInverse(const StateQG &, StateQG &) const override;
+  void changeVar(StateQG &, const oops::Variables &) const;
+  void changeVarInverse(StateQG &, const oops::Variables &) const;
 
  private:
   void print(std::ostream &) const override;

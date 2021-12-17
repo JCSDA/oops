@@ -21,14 +21,14 @@ linear model test:
   tolerance AD: 1.0e-12
   tolerance TL: 1.0e-6
 linear variable change tests:
-- input variables:  [x]
-  output variables: [q]
-  variable change: ChVarQG
+- linear variable change:
+    input variables:  [x]
+    output variables: [q]
   test inverse: 1
   tolerance inverse: 1.0e-8
-- input variables:  [q]
-  output variables: [x]
-  variable change: ChVarQG
+- linear variable change:
+    input variables:  [q]
+    output variables: [x]
   test inverse: 1
   tolerance inverse: 1.0e-8
 localization:
@@ -205,34 +205,34 @@ state test:
   tolerance: 1.0e-08
 test date: 2009-12-31T00:00:00Z
 variable change tests:
-- input variables: [x]
-  output variables: [q]
-  variable change: ChVarQG
+- variable change:
+    input variables: [x]
+    output variables: [q]
   state:
     date: 2009-12-31T00:00:00Z
     filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
   tolerance inverse: 1.0e-8
-- input variables: [q]
-  output variables: [x]
-  variable change: ChVarQG
-  state:
-    date: 2009-12-31T00:00:00Z
-    filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
-    state variables: [q]
-  tolerance inverse: 1.0e-8
-- input variables: [x]
-  output variables: [q]
-  inverse first: true
-  variable change: ChVarQG
+- variable change:
+    input variables: [q]
+    output variables: [x]
   state:
     date: 2009-12-31T00:00:00Z
     filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
     state variables: [q]
   tolerance inverse: 1.0e-8
-- input variables: [q]
-  output variables: [x]
+- variable change:
+    input variables: [x]
+    output variables: [q]
   inverse first: true
-  variable change: ChVarQG
+  state:
+    date: 2009-12-31T00:00:00Z
+    filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
+    state variables: [q]
+  tolerance inverse: 1.0e-8
+- variable change:
+    input variables: [q]
+    output variables: [x]
+  inverse first: true
   state:
     date: 2009-12-31T00:00:00Z
     filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc

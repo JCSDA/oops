@@ -1,6 +1,6 @@
 /*
- * (C) Copyright 2017-2018  UCAR.
- * 
+ * (C) Copyright 2017-2021  UCAR.
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
@@ -10,23 +10,21 @@
 #include <ostream>
 #include <string>
 
-#include "oops/util/Logger.h"
-
 #include "model/QgFortran.h"
 #include "model/StateQG.h"
 
 namespace qg {
 // -----------------------------------------------------------------------------
-ChangeVarQG::ChangeVarQG(const GeometryQG &, const eckit::Configuration &) {}
+ChangeVarQG::ChangeVarQG(const Parameters_ & params, const GeometryQG & geom) {}
 // -----------------------------------------------------------------------------
 ChangeVarQG::~ChangeVarQG() {}
 // -----------------------------------------------------------------------------
-void ChangeVarQG::changeVar(const StateQG & xa, StateQG & xm) const {
-  qg_change_var_f90(xa.fields().toFortran(), xm.fields().toFortran());
+void ChangeVarQG::changeVar(StateQG & xx, const oops::Variables & vars) const {
+  qg_change_var_f90(xx.fields().toFortran(), vars);
 }
 // -----------------------------------------------------------------------------
-void ChangeVarQG::changeVarInverse(const StateQG & xm, StateQG & xa) const {
-  qg_change_var_f90(xm.fields().toFortran(), xa.fields().toFortran());
+void ChangeVarQG::changeVarInverse(StateQG & xx, const oops::Variables & vars) const {
+  qg_change_var_f90(xx.fields().toFortran(), vars);
 }
 // -----------------------------------------------------------------------------
 void ChangeVarQG::print(std::ostream & os) const {
@@ -34,5 +32,3 @@ void ChangeVarQG::print(std::ostream & os) const {
 }
 // -----------------------------------------------------------------------------
 }  // namespace qg
-
-

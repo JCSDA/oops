@@ -22,12 +22,12 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
-#include "oops/base/LinearVariableChangeBase.h"
 #include "oops/base/LocalIncrement.h"
 #include "oops/base/State.h"
 #include "oops/base/StateEnsemble.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/GeometryIterator.h"
+#include "oops/interface/LinearVariableChange.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 
@@ -35,17 +35,14 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-/// \brief Ensemble of inrements
+/// \brief Ensemble of increments
 template<typename MODEL> class IncrementEnsemble {
-  typedef Geometry<MODEL>            Geometry_;
+  typedef Geometry<MODEL>              Geometry_;
   typedef GeometryIterator<MODEL>    GeometryIterator_;
-  typedef Increment<MODEL>           Increment_;
-  typedef LinearVariableChangeBase<MODEL>  LinearVariableChangeBase_;
-  typedef State<MODEL>               State_;
-  typedef StateEnsemble<MODEL>       StateEnsemble_;
-
-  typedef typename boost::ptr_vector<LinearVariableChangeBase_> ChvarVec_;
-  typedef typename ChvarVec_::const_reverse_iterator ircst_;
+  typedef Increment<MODEL>             Increment_;
+  typedef LinearVariableChange<MODEL>  LinearVariableChange_;
+  typedef State<MODEL>                 State_;
+  typedef StateEnsemble<MODEL>         StateEnsemble_;
 
  public:
   /// Constructor
@@ -100,6 +97,7 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const eckit::Configuration & conf,
                                             const Geometry_ & resol, const Variables & vars)
   : vars_(vars), ensemblePerturbs_()
 {
+  Log::trace() << "IncrementEnsemble:contructor start" << std::endl;
   // Check sizes and fill in timeslots
   util::DateTime tslot = xb.validTime();
 
@@ -115,11 +113,13 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const eckit::Configuration & conf,
   double inflationValue = conf.getDouble("inflation value", 1.0);
 
   // Setup change of variable
-  ChvarVec_ chvars;
-  std::vector<eckit::LocalConfiguration> chvarconfs;
-  conf.get("variable changes", chvarconfs);
-  for (const auto & conf : chvarconfs) {
-    chvars.push_back(LinearVariableChangeFactory<MODEL>::create(xb, fg, resol, conf));
+  std::unique_ptr<eckit::LocalConfiguration> chvarconf;
+  std::unique_ptr<LinearVariableChange_> linvarchg;
+  bool hasLinVarChg;
+  if ((hasLinVarChg = conf.has("linear variable change"))) {
+    chvarconf.reset(new eckit::LocalConfiguration(conf, "linear variable change"));
+    linvarchg.reset(new LinearVariableChange_(resol, *chvarconf));
+    linvarchg->setTrajectory(xb, fg);
   }
   // TODO(Benjamin): one change of variable for each timeslot
 
@@ -139,10 +139,9 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const eckit::Configuration & conf,
     }
     dx *= inflationValue;
 
-    // Apply inverse of the linear balance operator
-    // K_1^{-1} K_2^{-1} .. K_N^{-1}
-    for (ircst_ it = chvars.rbegin(); it != chvars.rend(); ++it) {
-      dx = it->multiplyInverse(dx);
+    if (hasLinVarChg) {
+      oops::Variables varin(*chvarconf, "input variables");
+      linvarchg->multiplyInverse(dx, varin);
     }
 
     ensemblePerturbs_.emplace_back(std::move(dx));

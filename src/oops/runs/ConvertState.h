@@ -15,7 +15,6 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/State.h"
-#include "oops/generic/instantiateVariableChangeFactory.h"
 #include "oops/interface/VariableChange.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
@@ -60,7 +59,7 @@ template <typename MODEL> class ConvertStateParameters : public ApplicationParam
   RequiredParameter<GeometryParameters_> outputGeometry{"output geometry", this};
 
   /// Variable changes
-  OptionalParameter<std::vector<eckit::LocalConfiguration>> varChanges{"variable changes", this};
+  OptionalParameter<eckit::LocalConfiguration> varChange{"variable change", this};
 
   /// States to be converted
   RequiredParameter<std::vector<ConvertStateStatesParameters<MODEL>>> states{"states", this};
@@ -78,9 +77,7 @@ template <typename MODEL> class ConvertState : public Application {
 
  public:
 // -------------------------------------------------------------------------------------------------
-  explicit ConvertState(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {
-    instantiateVariableChangeFactory<MODEL>();
-  }
+  explicit ConvertState(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {}
 // -------------------------------------------------------------------------------------------------
   virtual ~ConvertState() {}
 // -------------------------------------------------------------------------------------------------
@@ -93,15 +90,17 @@ template <typename MODEL> class ConvertState : public Application {
     const Geometry_ resol1(params.inputGeometry, this->getComm());
     const Geometry_ resol2(params.outputGeometry, this->getComm());
 
-//  Variable transform(s)
-    std::vector<VariableChange_> chvars;
-    std::vector<bool> inverse;
-
-    if (params.varChanges.value() != boost::none) {
-      for (size_t cv = 0; cv < params.varChanges.value()->size(); ++cv) {
-        chvars.emplace_back(resol2, (*params.varChanges.value())[cv]);
-        inverse.push_back((*params.varChanges.value())[cv].getBool("do inverse", false));
-      }
+    // Setup change of variable
+    std::unique_ptr<VariableChange_> vc;
+    oops::Variables varout;
+    bool inverse = false;
+    if (params.varChange.value() != boost::none) {
+        eckit::LocalConfiguration chvarconf = *params.varChange.value();
+        if (chvarconf.has("output variables")) {
+            vc.reset(new VariableChange_(chvarconf, resol2));
+            varout = oops::Variables(chvarconf, "output variables");
+            inverse = chvarconf.getBool("do inverse", false);
+        }
     }
 
 //  List of input and output states
@@ -120,25 +119,27 @@ template <typename MODEL> class ConvertState : public Application {
       Log::test() << "Input state: " << xxi << std::endl;
 
 //    Copy and change resolution
-      std::unique_ptr<State_> xx(new State_(resol2, xxi));  // Pointer that can be reset after chvar
+      State_ xx(resol2, xxi);
 
 //    Variable transform(s)
-      for (size_t cv = 0; cv < chvars.size(); ++cv) {
-        if (!inverse[cv]) {
-          State_ xchvarout = chvars[cv].changeVar(*xx);
-          xx.reset(new State_(xchvarout));
+      if (vc) {
+          // Create variable change
+        oops::Variables varin = xx.variables();
+        if (inverse) {
+            vc->changeVarInverse(xx, varout);
         } else {
-          State_ xchvarout = chvars[cv].changeVarInverse(*xx);
-          xx.reset(new State_(xchvarout));
+            vc->changeVar(xx, varout);
         }
-        Log::test() << "Variable transform: " << chvars[cv] << std::endl;
-        Log::test() << "State after variable transform: " << *xx << std::endl;
+        Log::test() << "Variable transform: " << *vc << std::endl;
+        Log::test() << "Variable change from: " << varin << std::endl;
+        Log::test() << "Variable change to: " << varout << std::endl;
+        Log::test() << "State after variable transform: " << xx << std::endl;
       }
 
 //    Write state
-      xx->write(stateParams.output.value());
+      xx.write(stateParams.output.value());
 
-      Log::test() << "Output state: " << *xx << std::endl;
+      Log::test() << "Output state: " << xx << std::endl;
     }
     return 0;
   }

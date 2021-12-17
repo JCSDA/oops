@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -31,6 +31,7 @@
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/GetValues.h"
 #include "oops/interface/Locations.h"
+#include "oops/interface/VariableChange.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
@@ -138,8 +139,9 @@ template <typename MODEL, typename OBS> void testGetValuesConstructor() {
 
 template <typename MODEL, typename OBS> void testGetValuesMultiWindow() {
   typedef GetValuesFixture<MODEL, OBS>    Test_;
+  typedef oops::VariableChange<MODEL>     VariableChange_;
   typedef oops::GeoVaLs<OBS>              GeoVaLs_;
-  typedef oops::State<MODEL>         State_;
+  typedef oops::State<MODEL>              State_;
 
   const util::Duration windowlength = Test_::timeend() - Test_::timebeg();
   const util::DateTime timemid = Test_::timebeg() + windowlength/2;
@@ -147,17 +149,21 @@ template <typename MODEL, typename OBS> void testGetValuesMultiWindow() {
   const eckit::LocalConfiguration confgen(Test_::testconf(), "state generate");
   const State_ xx(Test_::resol(), confgen);
 
-  EXPECT(xx.norm() > 0.0);
+  eckit::LocalConfiguration chvarconf;  // empty for now
+  VariableChange_ chvar(chvarconf, Test_::resol());
+  State_ zz(xx);
+  chvar.changeVar(zz, Test_::geovalvars());
+  EXPECT(zz.norm() > 0.0);
 
   GeoVaLs_ gv1(Test_::locs(), Test_::geovalvars(), Test_::geovalvarsizes());
   GeoVaLs_ gv2(Test_::locs(), Test_::geovalvars(), Test_::geovalvarsizes());
 
   // Compute all geovals together
-  Test_::getvalues().fillGeoVaLs(xx, Test_::timebeg(), Test_::timeend(), gv1);
+  Test_::getvalues().fillGeoVaLs(zz, Test_::timebeg(), Test_::timeend(), gv1);
 
   // Compute all geovals as two subwindows
-  Test_::getvalues().fillGeoVaLs(xx, Test_::timebeg(), timemid, gv2);
-  Test_::getvalues().fillGeoVaLs(xx, timemid, Test_::timeend(), gv2);
+  Test_::getvalues().fillGeoVaLs(zz, Test_::timebeg(), timemid, gv2);
+  Test_::getvalues().fillGeoVaLs(zz, timemid, Test_::timeend(), gv2);
 
   EXPECT(gv1.rms() > 0.0);
   EXPECT(gv2.rms() > 0.0);
@@ -202,6 +208,7 @@ template <typename MODEL, typename OBS> void testGetValuesMultiWindow() {
 template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
   typedef GetValuesFixture<MODEL, OBS>    Test_;
   typedef oops::AnalyticInit<OBS>         AnalyticInit_;
+  typedef oops::VariableChange<MODEL>     VariableChange_;
   typedef oops::AnalyticInitParametersWrapper<OBS> Parameters_;
   typedef oops::State<MODEL>              State_;
   typedef oops::GeoVaLs<OBS>              GeoVaLs_;
@@ -209,16 +216,21 @@ template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
   const eckit::LocalConfiguration confgen(Test_::testconf(), "state generate");
   const State_ xx(Test_::resol(), confgen);
 
+  eckit::LocalConfiguration chvarconf;  // empty for now
+  VariableChange_ chvar(chvarconf, Test_::resol());
+  State_ zz(xx);
+  chvar.changeVar(zz, Test_::geovalvars());
+
   // Interpolation tolerance
   double interp_tol = Test_::testconf().getDouble("interpolation tolerance");
 
   // Ceate a GeoVaLs object from locs and vars
   GeoVaLs_ gval(Test_::locs(), Test_::geovalvars(), Test_::geovalvarsizes());
 
-  EXPECT(xx.norm() > 0.0);
+  EXPECT(zz.norm() > 0.0);
 
   // Execute the interpolation
-  Test_::getvalues().fillGeoVaLs(xx, Test_::timebeg(), Test_::timeend(), gval);
+  Test_::getvalues().fillGeoVaLs(zz, Test_::timebeg(), Test_::timeend(), gval);
 
   EXPECT(gval.rms() > 0.0);
   oops::Log::debug() << "RMS GeoVaLs: " << gval.rms() << std::endl;
