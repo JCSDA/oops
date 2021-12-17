@@ -67,7 +67,7 @@ template<typename VECTOR, typename BMATRIX, typename CMATRIX> class QNewtonLMP {
   std::vector<VECTOR> BAP_;
   std::vector<double> rhos_;
   std::vector<unsigned> usedpairIndx_;
-  std::unique_ptr<CMATRIX> Cmat_;
+  std::unique_ptr<CMATRIX> Cmatrix_;
 
   std::vector<VECTOR> savedP_;
   std::vector<VECTOR> savedPh_;
@@ -126,7 +126,7 @@ void QNewtonLMP<VECTOR, BMATRIX, CMATRIX>::push(const VECTOR & p, const VECTOR &
 template<typename VECTOR, typename BMATRIX, typename CMATRIX>
 void QNewtonLMP<VECTOR, BMATRIX, CMATRIX>::updateObsBias(std::unique_ptr<CMATRIX> Cmat) {
   // Save the preconditioner
-  Cmat_ = std::move(Cmat);
+  Cmatrix_ = std::move(Cmat);
 }
 
 // -----------------------------------------------------------------------------
@@ -216,6 +216,10 @@ void QNewtonLMP<VECTOR, BMATRIX, CMATRIX>::update(const BMATRIX & Bmat) {
 // -----------------------------------------------------------------------------
 template<typename VECTOR, typename BMATRIX, typename CMATRIX>
 void QNewtonLMP<VECTOR, BMATRIX, CMATRIX>::multiply(const VECTOR & a, VECTOR & b) const {
+  if (!Cmatrix_) {
+    oops::Log::error() << "The VarBC preconditioner matrix is not defined" << std::endl;
+    throw eckit::UserError("The VarBC preconditioner matrix is not defined", Here());
+  }
   b = a;
   const unsigned nvec = P_.size();
   std::vector<double> etas;
@@ -229,7 +233,7 @@ void QNewtonLMP<VECTOR, BMATRIX, CMATRIX>::multiply(const VECTOR & a, VECTOR & b
     }
   }
 // For VarBC the obsbias section of the increment is multiplied by the preconditioner
-  Cmat_->multiply(b, b);
+  Cmatrix_->multiply(b, b);
   if (nvec != 0) {
   // Scale b for improved preconditiong of state section of increment.
     b *= dot_product(AP_[nvec-1], AP_[nvec-1])/dot_product(AP_[nvec-1], Ph_[nvec-1]);
@@ -245,6 +249,10 @@ void QNewtonLMP<VECTOR, BMATRIX, CMATRIX>::multiply(const VECTOR & a, VECTOR & b
 // -----------------------------------------------------------------------------
 template<typename VECTOR, typename BMATRIX, typename CMATRIX>
 void QNewtonLMP<VECTOR, BMATRIX, CMATRIX>::tmultiply(const VECTOR & a, VECTOR & b) const {
+  if (!Cmatrix_) {
+    oops::Log::error() << "The VarBC preconditioner matrix is not defined" << std::endl;
+    throw eckit::UserError("The VarBC preconditioner matrix is not defined", Here());
+  }
   b = a;
   const unsigned nvec = P_.size();
   std::vector<double> etas;
@@ -260,7 +268,7 @@ void QNewtonLMP<VECTOR, BMATRIX, CMATRIX>::tmultiply(const VECTOR & a, VECTOR & 
 // For VarBC the obsbias section of the increment is multiplied by the transpose
 // of the preconditioner. Note because the preconditioner is curently diagonal
 // P^t*b = P*b so we just multiply by the preconditioner.
-  Cmat_->multiply(b, b);
+  Cmatrix_->multiply(b, b);
   if (nvec != 0) {
   // Scale b for improved preconditiong of state section of increment.
     b *= dot_product(AP_[nvec-1], AP_[nvec-1])/dot_product(AP_[nvec-1], Ph_[nvec-1]);

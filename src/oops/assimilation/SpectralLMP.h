@@ -47,10 +47,13 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template<typename VECTOR> class SpectralLMP {
+template<typename VECTOR, typename CMATRIX> class SpectralLMP {
  public:
   explicit SpectralLMP(const eckit::Configuration &);
   ~SpectralLMP() {}
+
+  /// Set ObsBias part of the preconditioner to \p Cmat.
+  void updateObsBias(std::unique_ptr<CMATRIX> Cmat);
 
   void update(std::vector<std::unique_ptr<VECTOR>> &, std::vector<std::unique_ptr<VECTOR>> &,
               std::vector<std::unique_ptr<VECTOR>> &, std::vector<double> &, std::vector<double> &);
@@ -76,12 +79,15 @@ template<typename VECTOR> class SpectralLMP {
   std::vector<VECTOR> Zhlast_;
   std::vector<unsigned> usedpairIndx_;
   std::vector<unsigned> zcount;
+
+  // For VarBC preconditioning
+  std::unique_ptr<CMATRIX> Cmatrix_;
 };
 
 // =============================================================================
 
-template<typename VECTOR>
-SpectralLMP<VECTOR>::SpectralLMP(const eckit::Configuration & conf)
+template<typename VECTOR, typename CMATRIX>
+SpectralLMP<VECTOR, CMATRIX>::SpectralLMP(const eckit::Configuration & conf)
   : maxpairs_(0), useoldpairs_(false), RitzPrecond_(false), maxouter_(0), update_(0)
 {
   maxouter_ = conf.getInt("nouter");
@@ -109,8 +115,16 @@ SpectralLMP<VECTOR>::SpectralLMP(const eckit::Configuration & conf)
 
 // -----------------------------------------------------------------------------
 
-template<typename VECTOR>
-void SpectralLMP<VECTOR>::update(std::vector<std::unique_ptr<VECTOR>> & Zv,
+template<typename VECTOR, typename CMATRIX>
+void SpectralLMP<VECTOR, CMATRIX>::updateObsBias(std::unique_ptr<CMATRIX> Cmat) {
+  // Save the preconditioner
+  Cmatrix_ = std::move(Cmat);
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename VECTOR, typename CMATRIX>
+void SpectralLMP<VECTOR, CMATRIX>::update(std::vector<std::unique_ptr<VECTOR>> & Zv,
                                  std::vector<std::unique_ptr<VECTOR>> & Zhl,
                                  std::vector<std::unique_ptr<VECTOR>> & Zl,
                                  std::vector<double> & alphas,
@@ -267,9 +281,15 @@ void SpectralLMP<VECTOR>::update(std::vector<std::unique_ptr<VECTOR>> & Zv,
 
 // -----------------------------------------------------------------------------
 
-template<typename VECTOR>
-void SpectralLMP<VECTOR>::multiply(const VECTOR & a, VECTOR & b) const {
+template<typename VECTOR, typename CMATRIX>
+void SpectralLMP<VECTOR, CMATRIX>::multiply(const VECTOR & a, VECTOR & b) const {
   b = a;  // P_0 = I
+  // For VarBC the obsbias section of the increment is multiplied by the preconditioner
+  if (!Cmatrix_) {
+    oops::Log::error() << "The VarBC preconditioner matrix is not defined" << std::endl;
+    throw eckit::UserError("The VarBC preconditioner matrix is not defined", Here());
+  }
+  Cmatrix_->multiply(a, b);
 
   for (unsigned iiter = 0; iiter < eigvals_.size(); ++iiter) {
     double zeval = std::min(10.0, eigvals_[iiter]);
