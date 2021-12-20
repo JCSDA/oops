@@ -5,7 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include "lorenz95/ObsLocGC99.h"
+#include "lorenz95/ObsLocBoxCar.h"
 
 #include <algorithm>
 #include <cmath>
@@ -19,23 +19,21 @@
 #include "lorenz95/ObsTable.h"
 #include "lorenz95/ObsVec1D.h"
 
-#include "oops/generic/gc99.h"
-
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 
-static oops::ObsLocalizationMaker<L95Traits, L95ObsTraits, ObsLocGC99> makerGC_("Gaspari-Cohn");
+static oops::ObsLocalizationMaker<L95Traits, L95ObsTraits, ObsLocBoxCar> makerGC_("Box Car");
 
 // -----------------------------------------------------------------------------
 
-ObsLocGC99::ObsLocGC99(const eckit::Configuration & config, const ObsTable & obsdb)
+ObsLocBoxCar::ObsLocBoxCar(const eckit::Configuration & config, const ObsTable & obsdb)
   : rscale_(config.getDouble("lengthscale")), obsdb_(obsdb)
 {
 }
 
 // -----------------------------------------------------------------------------
 
-void ObsLocGC99::computeLocalization(const Iterator & iterator, ObsVec1D & locfactor) const {
+void ObsLocBoxCar::computeLocalization(const Iterator & iterator, ObsVec1D & locfactor) const {
   std::vector<double> locations = obsdb_.locations();
   eckit::geometry::Point3 center = *iterator;
   for (unsigned int ii=0; ii < obsdb_.nobs(); ++ii) {
@@ -44,15 +42,15 @@ void ObsLocGC99::computeLocalization(const Iterator & iterator, ObsVec1D & locfa
     if (curdist >= rscale_) {
       locfactor[ii] = locfactor.missing();
     } else {
-      locfactor[ii] *= oops::gc99(curdist/rscale_);
+      locfactor[ii] *= 1.0;
     }
   }
 }
 
 // -----------------------------------------------------------------------------
 
-void ObsLocGC99::print(std::ostream & os) const {
-  os << "Gaspari-Cohn localization with lengthscale=" << rscale_;
+void ObsLocBoxCar::print(std::ostream & os) const {
+  os << "Box Car localization with lengthscale=" << rscale_;
 }
 
 // -----------------------------------------------------------------------------

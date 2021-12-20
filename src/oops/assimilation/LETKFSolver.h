@@ -95,6 +95,7 @@ LETKFSolver<MODEL, OBS>::LETKFSolver(ObsSpaces_ & obspaces, const Geometry_ & ge
   : LocalEnsembleSolver<MODEL, OBS>(obspaces, geometry, config, nens, xbmean),
     nens_(nens)
 {
+  Log::trace() << "LETKFSolver<MODEL, OBS>::create starting" << std::endl;
   options_.deserialize(config);
   const LETKFInflationParameters & inflopt = options_.infl;
 
@@ -126,6 +127,7 @@ LETKFSolver<MODEL, OBS>::LETKFSolver(ObsSpaces_ & obspaces, const Geometry_ & ge
   // pre-allocate eigen sovler matrices
   eival_.resize(nens_);
   eivec_.resize(nens_, nens_);
+  Log::trace() << "LETKFSolver<MODEL, OBS>::create done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

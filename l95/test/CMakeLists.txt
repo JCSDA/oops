@@ -360,6 +360,12 @@ ecbuild_add_test( TARGET test_l95_obslocalization
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
+ecbuild_add_test( TARGET test_l95_obslocalizations
+                  SOURCES executables/TestObsLocalizations.cc
+                  ARGS "testinput/interfaces.yaml"
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth )
+
 ecbuild_add_test( TARGET test_l95_obsvector
                   SOURCES executables/TestObsVector.cc
                   ARGS "testinput/interfaces.yaml"

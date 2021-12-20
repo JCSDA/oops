@@ -33,8 +33,10 @@ class ObsLocalizationBase : public util::Printable,
   ObsLocalizationBase() = default;
   virtual ~ObsLocalizationBase() = default;
 
-  /// compute obs-space localization: fill \p locfactor with observation-space
+  /// compute obs-space localization: update \p locfactor with observation-space
   /// localization values between observations and \p point in model-space.
+  /// update means that locfactor values that are passed in are multiplied by the
+  /// locfactor computed inside of this function
   /// Set \p locfactor to missing value for observations that are not local.
   /// Method used in oops. Calls `computeLocalization` abstract method, and
   /// passes OBS- and MODEL-specific classes to the OBS- and MODEL-specific
@@ -44,7 +46,7 @@ class ObsLocalizationBase : public util::Printable,
     computeLocalization(point.geometryiter(), locfactor.obsvector());
   }
 
-  /// compute obs-space localization: fill \p locfactor with observation-space
+  /// compute obs-space localization: update \p locfactor with observation-space
   /// localization values between observations and \p point in model-space.
   /// Set \p locfactor to missing value for observations that are not local.
   virtual void computeLocalization(const GeometryIterator_ & point,

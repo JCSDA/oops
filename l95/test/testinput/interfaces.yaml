@@ -124,15 +124,23 @@ observations:
   obs bias test:
     norm: 0.3
     relative tolerance: 0.0
-  obs localization:
+  obs localizations:
+  - localization method: Gaspari-Cohn
     lengthscale: 0.19
-    localization method: Gaspari-Cohn
     reference local nobs: [56, 64, 56, 64, 56, 64, 56, 64, 56, 64]
     reference gridpoints:
       lons:               [ 0, 0.025, 0.05, 0.075, 0.1, 0.875, 0.9, 0.925, 0.95, 0.975 ]
       lats:               [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
       depths:              [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    reference rms: [0.52443,0.489544,0.52443,0.489544,0.52443,0.489544,0.52443,0.489544,0.52443,0.489544] 
+    reference rms: [0.52443,0.489544,0.52443,0.489544,0.52443,0.489544,0.52443,0.489544,0.52443,0.489544]
+  - localization method: Box Car
+    lengthscale: 0.19
+    reference local nobs: [56, 64, 56, 64, 56, 64, 56, 64, 56, 64]
+    reference gridpoints:
+      lons:               [ 0, 0.025, 0.05, 0.075, 0.1, 0.875, 0.9, 0.925, 0.95, 0.975 ]
+      lats:               [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+      depths:              [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    reference rms: [1.0, 1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
   rms ref: 8.3207407741318846
   reference global nobs: 160
   tolerance: 1.0e-10
@@ -143,3 +151,13 @@ observations:
     lat1: 0.0
     lon2: 0.05
     lat2: 0.0
+
+observation localizations reference:
+  gridpoints:
+    lons:               [ 0, 0.025, 0.05, 0.075, 0.1, 0.875, 0.9, 0.925, 0.95, 0.975 ]
+    lats:               [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    depths:              [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  local nobs: [56, 64, 56, 64, 56, 64, 56, 64, 56, 64]
+  rms: [0.52443,0.489544,0.52443,0.489544,0.52443,0.489544,0.52443,0.489544,0.52443,0.489544] 
+
+

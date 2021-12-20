@@ -29,6 +29,8 @@ class ObsLocQG : public oops::ObsLocalizationBase<QgTraits, QgObsTraits> {
  public:
   ObsLocQG(const eckit::Configuration &, const ObsSpaceQG &);
 
+  /// compute localization and update localization values in \p locfactor
+  /// (missing value is for obs outside of localization)
   void computeLocalization(const GeometryQGIterator &, ObsVecQG &) const override;
 
  private:

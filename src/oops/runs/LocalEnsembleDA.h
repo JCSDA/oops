@@ -8,6 +8,7 @@
 #ifndef OOPS_RUNS_LOCALENSEMBLEDA_H_
 #define OOPS_RUNS_LOCALENSEMBLEDA_H_
 
+#include <algorithm>
 #include <cmath>
 #include <memory>
 #include <string>
@@ -319,10 +320,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     if (obsConfigs.size() > 0) {
       for (auto & conf : obsConfigs) {
         // assign radius that is a sum of the patch and localization radii
-        double lengthscale = conf.getDouble("obs localization.lengthscale", 0.0);
-        Log::debug() << "lengthscale=" << lengthscale << std::endl;
-
-        double extendRadius = patchRadius + lengthscale;
+        double extendRadius = patchRadius + getMaximumLocalizationScale(conf);
         Log::debug() << "patch radius + lengthscale=" << extendRadius << std::endl;
 
         conf.set("obs space.center", patchCenter);
@@ -334,14 +332,12 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
       obsConfig = tmp.getSubConfiguration("observations");
     } else {
       // assign radius that is a sum of the patch and localization radii
-      double lengthscale = obsConfig.getDouble("obs space.obs localization.lengthscale", 0.0);
-      Log::debug() << "lengthscale=" << lengthscale << std::endl;
-
-      patchRadius += lengthscale;
-      Log::debug() << "patch radius + lengthscale=" << patchRadius << std::endl;
+      eckit::LocalConfiguration tmpObsConf(obsConfig, "obs space");
+      double extendRadius = patchRadius + getMaximumLocalizationScale(tmpObsConf);
+      Log::debug() << "patch radius + lengthscale=" << extendRadius << std::endl;
 
       obsConfig.set("obs space.center", patchCenter);
-      obsConfig.set("obs space.radius", patchRadius);
+      obsConfig.set("obs space.radius", extendRadius);
     }
   }
 
@@ -364,6 +360,20 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
       }
     }
   }
+
+double getMaximumLocalizationScale(const eckit::LocalConfiguration & conf) const {
+    // from a list of obsLocalizations, return the largest lengthscale
+    std::vector<eckit::LocalConfiguration> obsLocConfigs =
+                        conf.getSubConfigurations("obs localizations");
+
+    double maxLengthScale = 0.0;
+    for (size_t oli = 0; oli < obsLocConfigs.size(); ++oli) {
+      maxLengthScale = std::max(maxLengthScale,
+          obsLocConfigs[oli].getDouble("lengthscale", 0.0));
+    }
+    Log::debug() << "lengthscale=" << maxLengthScale << std::endl;
+    return maxLengthScale;
+}
 
 // -----------------------------------------------------------------------------
 };

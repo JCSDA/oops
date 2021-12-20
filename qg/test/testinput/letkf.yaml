@@ -56,8 +56,8 @@ observations:
     obs type: Stream
   obs error:
     covariance model: diagonal
-  obs localization:
-    localization method: Heaviside
+  obs localizations:
+  - localization method: Heaviside
     lengthscale: 5e6
 - obs operator:
     obs type: Wind
@@ -69,8 +69,8 @@ observations:
     obs type: Wind
   obs error:
     covariance model: diagonal
-  obs localization:
-    localization method: Heaviside
+  obs localizations:
+  - localization method: Heaviside
     lengthscale: 5e6
 - obs operator:
     obs type: WSpeed
@@ -82,8 +82,8 @@ observations:
     obs type: WSpeed
   obs error:
     covariance model: diagonal
-  obs localization:
-    localization method: Heaviside
+  obs localizations:
+  - localization method: Heaviside
     lengthscale: 5e6
 
 driver:

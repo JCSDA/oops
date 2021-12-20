@@ -45,12 +45,13 @@ void ObsLocQG::computeLocalization(const GeometryQGIterator & p,
   eckit::geometry::Point3 refPoint = *p;
   eckit::geometry::Point2 refPoint2(refPoint[0], refPoint[1]);
 
-  local.ones();
   for (int jj = 0; jj < locs->size(); ++jj) {
     eckit::geometry::Point2 obsPoint(lonlat(jj, 0), lonlat(jj, 1));
     double localDist = eckit::geometry::Sphere::distance(6.371e6, refPoint2, obsPoint);
     if (localDist > lengthscale_) {
       local.setToMissing(jj);
+    } else {
+      local *= 1.0;
     }
   }
 }

@@ -409,6 +409,7 @@ test/assimilation/Vector3D.h
 
 test/base/Fortran.h
 test/base/ObsErrorCovariance.h
+test/base/ObsLocalizations.h
 test/base/variables.F90
 
 test/interface/ErrorCovariance.h

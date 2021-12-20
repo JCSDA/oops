@@ -77,8 +77,8 @@ observations:
   rms ref: 183502589.5028424
   reference global nobs: 800
   tolerance: 1.0e-8
-  obs localization:
-    localization method: Heaviside
+  obs localizations:
+  - localization method: Heaviside
     lengthscale: 0.0
     reference local nobs: [0]
     reference gridpoints:
@@ -122,8 +122,8 @@ observations:
   rms ref: 39.644266100943696
   reference global nobs: 800
   tolerance: 1.0e-8
-  obs localization:
-    localization method: Heaviside
+  obs localizations:
+  - localization method: Heaviside
     lengthscale: 1.e8
     reference local nobs: [800]
     reference gridpoints:
@@ -160,8 +160,8 @@ observations:
   rms ref: 58.474969231121605
   reference global nobs: 400
   tolerance: 1.0e-8
-  obs localization:
-    localization method: Heaviside
+  obs localizations:
+  - localization method: Heaviside
     lengthscale: 5.e6
     reference local nobs: [48]
     reference gridpoints:

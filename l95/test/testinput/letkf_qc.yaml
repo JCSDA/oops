@@ -21,8 +21,8 @@ background:
 observations:
 - obs error:
     covariance model: diagonal
-  obs localization:
-    localization method: Gaspari-Cohn
+  obs localizations:
+  - localization method: Gaspari-Cohn
     lengthscale: .1
   obs space:
     obsdatain:

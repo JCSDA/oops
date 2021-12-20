@@ -36,7 +36,7 @@ class ObsLocalization : public util::Printable,
   ObsLocalization(const eckit::Configuration &, const ObsSpace_ &);
   ~ObsLocalization();
 
-  /// compute obs-space localization: fill \p locfactor with observation-space
+  /// compute obs-space localization: update \p locfactor with observation-space
   /// localization values between observations and \p point in model-space.
   /// Set \p locfactor to missing value for observations that are not local.
   void computeLocalization(const GeometryIterator_ & point,

@@ -52,6 +52,8 @@ set( _l95_srcs
         ObsIterator.h
         ObsLocGC99.cc
         ObsLocGC99.h
+        ObsLocBoxCar.cc
+        ObsLocBoxCar.h
         ObsTable.cc
         ObsTable.h
         ObsVec1D.cc
