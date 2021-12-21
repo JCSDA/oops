@@ -11,7 +11,7 @@ echo "This is QG showing off"
 
 cd $WORKDIR
 
-$EXEC $1 2> stderr.$$.log 1> stdout.$$.log
+$MPICMD $JEDIEXEC $1 2> stderr.$$.log 1> stdout.$$.log
 
 cat stdout.$$.log
 
