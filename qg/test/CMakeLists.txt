@@ -211,12 +211,6 @@ ecbuild_add_test( TARGET  test_qg_state
                   LIBS    qg
                   TEST_DEPENDS test_qg_truth )
 
-ecbuild_add_test( TARGET  test_qg_model_aux
-                  SOURCES executables/TestModelAuxControl.cc
-                  ARGS    "testinput/interfaces.yaml"
-                  LIBS    qg
-                  TEST_DEPENDS test_qg_truth )
-
 ecbuild_add_test( TARGET  test_qg_model
                   SOURCES executables/TestModel.cc
                   ARGS    "testinput/interfaces.yaml"

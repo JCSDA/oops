@@ -18,6 +18,10 @@
 #include "oops/base/Geometry.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
+#include "oops/util/parameters/GenericParameters.h"
+#include "oops/util/parameters/HasParameters_.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/ParametersOrConfiguration.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Timer.h"
 
@@ -38,6 +42,19 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
+/// Note: implementations of this interface can opt to extract their settings either from
+/// a Configuration object or from a subclass of Parameters.
+///
+/// In the former case, they should provide a constructor with the following signature:
+///
+///    ModelAuxControl(const Geometry_ &, const eckit::Configuration &);
+///
+/// In the latter case, the implementer should first define a subclass of Parameters holding the
+/// settings of the model bias in question. The implementation of the ModelAuxControl interface
+/// should then typedef `Parameters_` to the name of that subclass and provide a constructor with
+/// the following signature:
+///
+///    ModelAuxControl(const Geometry_ &, const Parameters_ &);
 template <typename MODEL>
 class ModelAuxControl : public util::Printable,
                         private util::ObjectCounter<ModelAuxControl<MODEL> > {
@@ -45,10 +62,15 @@ class ModelAuxControl : public util::Printable,
   typedef Geometry<MODEL>            Geometry_;
 
  public:
+  /// Set to ModelAuxControl_::Parameters_ if ModelAuxControl_ provides a type called Parameters_
+  /// and to GenericParameters (a thin wrapper of an eckit::LocalConfiguration object) if not.
+  typedef TParameters_IfAvailableElseFallbackType_t<ModelAuxControl_, GenericParameters>
+    Parameters_;
+
   static const std::string classname() {return "oops::ModelAuxControl";}
 
-  /// Constructor for specified \p resol and \p conf
-  ModelAuxControl(const Geometry_ & resol, const eckit::Configuration & conf);
+  ModelAuxControl(const Geometry_ &, const Parameters_ &);
+  ModelAuxControl(const Geometry_ &, const eckit::Configuration &);
   /// Copies \p other ModelAuxControl, changing its resolution to \p resol
   ModelAuxControl(const Geometry_ & resol, const ModelAuxControl & other);
   /// Creates ModelAuxControl with the same structure as \p other.
@@ -79,13 +101,23 @@ class ModelAuxControl : public util::Printable,
 
 template<typename MODEL>
 ModelAuxControl<MODEL>::ModelAuxControl(const Geometry_ & resol,
-                                        const eckit::Configuration & conf) : aux_()
+                                        const Parameters_ & parameters) : aux_()
 {
   Log::trace() << "ModelAuxControl<MODEL>::ModelAuxControl starting" << std::endl;
   util::Timer timer(classname(), "ModelAuxControl");
-  aux_.reset(new ModelAuxControl_(resol.geometry(), conf));
+  aux_.reset(new ModelAuxControl_(
+               resol.geometry(),
+               parametersOrConfiguration<HasParameters_<ModelAuxControl_>::value>(parameters)));
   Log::trace() << "ModelAuxControl<MODEL>::ModelAuxControl done" << std::endl;
 }
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+ModelAuxControl<MODEL>::ModelAuxControl(const Geometry_ & resol,
+                                        const eckit::Configuration & conf)
+  : ModelAuxControl(resol, validateAndDeserialize<Parameters_>(conf))
+{}
 
 // -----------------------------------------------------------------------------
 
