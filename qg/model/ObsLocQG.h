@@ -11,23 +11,31 @@
 #include <ostream>
 
 #include "oops/base/ObsLocalizationBase.h"
+#include "oops/util/parameters/RequiredParameter.h"
 
 #include "oops/qg/QgTraits.h"
-
-namespace eckit {
-  class Configuration;
-}
 
 namespace qg {
   class GeometryQGIterator;
   class ObsSpaceQG;
   class ObsVecQG;
 
+/// \brief Parameters controlling obs-space localization.
+class ObsLocParameters : public oops::ObsLocalizationParametersBase {
+  OOPS_CONCRETE_PARAMETERS(ObsLocParameters, oops::ObsLocalizationParametersBase)
+
+ public:
+  oops::RequiredParameter<double> lengthscale{"lengthscale",
+        "Localization distance (distance where localization goes to zero)", this};
+};
+
 /// \brief Observation-space localization for QG model (Heaviside function
 /// with prescribed lengthscale).
 class ObsLocQG : public oops::ObsLocalizationBase<QgTraits, QgObsTraits> {
  public:
-  ObsLocQG(const eckit::Configuration &, const ObsSpaceQG &);
+  typedef ObsLocParameters Parameters_;
+
+  ObsLocQG(const Parameters_ &, const ObsSpaceQG &);
 
   /// compute localization and update localization values in \p locfactor
   /// (missing value is for obs outside of localization)

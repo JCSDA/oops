@@ -131,6 +131,7 @@ oops/base/ObserverTLAD.h
 oops/base/ObsFilter.h
 oops/base/ObsFilters.h
 oops/base/ObsLocalizationBase.h
+oops/base/ObsLocalizationParametersBase.h
 oops/base/ObsLocalizations.h
 oops/base/ObsSpaceBase.cc
 oops/base/ObsSpaceBase.h
@@ -239,7 +240,6 @@ oops/interface/ObsDataVector_head.h
 oops/interface/ObsDiagnostics.h
 oops/interface/ObsErrorBase.h
 oops/interface/ObsFilterBase.h
-oops/interface/ObsLocalization.h
 oops/interface/ObsOperator.h
 oops/interface/ObsSpace.h
 oops/interface/ObsVector.h

@@ -86,6 +86,7 @@ list( APPEND l95_test_input
   testinput/makeobsbias.yaml
   testinput/makeobspert.yaml
   testinput/obserrordiagparameters.yaml
+  testinput/obslocalizations.yaml
   testinput/pseudomodel.yaml
   testinput/pseudomodel_state4d.yaml
   testinput/truth.yaml
@@ -362,7 +363,7 @@ ecbuild_add_test( TARGET test_l95_obslocalization
 
 ecbuild_add_test( TARGET test_l95_obslocalizations
                   SOURCES executables/TestObsLocalizations.cc
-                  ARGS "testinput/interfaces.yaml"
+                  ARGS "testinput/obslocalizations.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 

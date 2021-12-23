@@ -10,13 +10,13 @@
 
 #include <ostream>
 
-#include "eckit/config/Configuration.h"
 #include "oops/base/ObsLocalizationBase.h"
 
 #include "lorenz95/L95Traits.h"
+#include "lorenz95/ObsLocParameters.h"
 
-// Forward declarations
 namespace lorenz95 {
+// Forward declarations
   class Iterator;
   class ObsTable;
   class ObsVec1D;
@@ -24,9 +24,11 @@ namespace lorenz95 {
 /// Observation space localization for Lorenz 95 model (Gaspari-Cohn)
 class ObsLocGC99: public oops::ObsLocalizationBase<L95Traits, L95ObsTraits> {
  public:
-  ObsLocGC99(const eckit::Configuration &, const ObsTable &);
+  typedef ObsLocParameters Parameters_;
 
-  /// compute localization and save localization values in \p locfactor
+  ObsLocGC99(const Parameters_ &, const ObsTable &);
+
+  /// compute localization and update localization values in \p locfactor
   /// (missing value is for obs outside of localization)
   void computeLocalization(const Iterator &, ObsVec1D & locfactor) const override;
 

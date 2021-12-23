@@ -11,7 +11,6 @@
 #include <cmath>
 #include <vector>
 
-#include "eckit/config/Configuration.h"
 #include "eckit/geometry/Point3.h"
 
 #include "lorenz95/Iterator.h"
@@ -26,8 +25,8 @@ static oops::ObsLocalizationMaker<L95Traits, L95ObsTraits, ObsLocBoxCar> makerGC
 
 // -----------------------------------------------------------------------------
 
-ObsLocBoxCar::ObsLocBoxCar(const eckit::Configuration & config, const ObsTable & obsdb)
-  : rscale_(config.getDouble("lengthscale")), obsdb_(obsdb)
+ObsLocBoxCar::ObsLocBoxCar(const Parameters_ & params, const ObsTable & obsdb)
+  : rscale_(params.lengthscale), obsdb_(obsdb)
 {
 }
 
