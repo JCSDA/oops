@@ -47,6 +47,8 @@ template std::string IntegerParameterTraits<int>::valueAsJson(const int &value);
 
 template std::string IntegerParameterTraits<size_t>::valueAsJson(const size_t &value);
 
+template std::string IntegerParameterTraits<int64_t>::valueAsJson(const int64_t &value);
+
 template <typename T>
 std::string IntegerParameterTraits<T>::valueAsJson(const T &value) {
   return std::to_string(value);
