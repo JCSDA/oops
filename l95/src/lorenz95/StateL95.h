@@ -64,8 +64,6 @@ class StateL95WriteParameters : public oops::WriteParametersBase {
 
  public:
   oops::Parameter<std::string> datadir{"datadir", ".", this};
-  oops::RequiredParameter<std::string> exp{"exp", this};
-  oops::RequiredParameter<std::string> type{"type", this};
 };
 
 /// L95 model state

@@ -8,6 +8,8 @@
 #ifndef OOPS_BASE_WRITEPARAMETERSBASE_H_
 #define OOPS_BASE_WRITEPARAMETERSBASE_H_
 
+#include <string>
+
 #include "oops/util/parameters/ConfigurationParameter.h"
 #include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/Parameters.h"
@@ -31,6 +33,12 @@ class WriteParametersBase : public Parameters {
   /// Set the Krylov solver iteration to \p it.
   void setIteration(int it);
 
+  /// Type
+  OptionalParameter<std::string> type{"type", this};
+
+  /// Experiment id
+  OptionalParameter<std::string> exp{"exp", this};
+
   /// Ensemble member index.
   OptionalParameter<int> member{"member", this};
 
@@ -39,6 +47,9 @@ class WriteParametersBase : public Parameters {
 
   /// Krylov solver iteration.
   OptionalParameter<int> iteration{"iteration", this};
+
+  /// Prefix for filenames
+  OptionalParameter<std::string> prefix{"prefix", this};
 };
 
 // -----------------------------------------------------------------------------

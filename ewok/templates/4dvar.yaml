@@ -38,5 +38,4 @@ final:
   prints:
     frequency: PT3H
 output:
-  type: an
-  exp: $(expid)
+  $(ANOUT)

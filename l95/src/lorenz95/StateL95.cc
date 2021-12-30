@@ -124,31 +124,8 @@ void StateL95::read(const Parameters_ & parameters) {
 // -----------------------------------------------------------------------------
 void StateL95::write(const WriteParameters_ & parameters) const {
   const std::string &dir = parameters.datadir;
-  const std::string &exp = parameters.exp;
-  const std::string &type = parameters.type;
-  std::string filename = dir+"/"+exp+"."+type;
-
-  if (type == "ens") {
-    if (parameters.member.value() == boost::none)
-      throw eckit::BadValue("'member' was not set in the parameters passed to write() "
-                            "even though 'type' was set to '" + type + "'", Here());
-    const int &memb = *parameters.member.value();
-    filename += "."+std::to_string(memb);
-  }
-
-  if (type == "fc" || type == "ens") {
-    if (parameters.date.value() == boost::none)
-      throw eckit::BadValue("'date' was not set in the parameters passed to write() "
-                            "even though 'type' was set to '" + type + "'", Here());
-    const util::DateTime &antime = *parameters.date.value();
-    filename += "."+antime.toString();
-    const util::Duration step = time_ - antime;
-    filename += "."+step.toString();
-  }
-
-  if (type == "an") {
-    filename += "."+time_.toString();
-  }
+  const std::string &type = *parameters.type.value();
+  std::string filename = dir+"/"+*parameters.prefix.value();
 
   if (type == "krylov") {
     if (parameters.iteration.value() == boost::none)

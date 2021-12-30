@@ -70,6 +70,10 @@ class State : public interface::State<MODEL> {
   /// Norm (used in tests)
   double norm() const;
 
+  /// Write
+  void write(const eckit::Configuration &) const;
+  void write(const WriteParameters_ &) const;
+
  private:
   const eckit::mpi::Comm * commTime_;  /// pointer to the MPI communicator in time
   void print(std::ostream &) const override;
@@ -121,6 +125,51 @@ double State<MODEL>::norm() const {
   commTime_->allReduceInPlace(zz, eckit::mpi::Operation::SUM);
   zz = sqrt(zz);
   return zz;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void State<MODEL>::write(const eckit::Configuration & conf) const {
+  if (conf.has("type") && conf.has("exp") && !conf.has("prefix")) {
+    const std::string type = conf.getString("type");
+    std::string prefix = conf.getString("exp") + "." + type;
+
+    if (type == "ens") {
+      if (!conf.has("member"))
+        throw eckit::BadValue("'member' was not set in the parameters passed to write() "
+                              "even though 'type' was set to '" + type + "'", Here());
+      prefix += "." + std::to_string(conf.getInt("member"));
+    }
+
+    if (type == "fc" || type == "ens") {
+      if (!conf.has("date"))
+        throw eckit::BadValue("'date' was not set in the parameters passed to write() "
+                              "even though 'type' was set to '" + type + "'", Here());
+      const util::DateTime antime(conf.getString("date"));
+      prefix += "." + antime.toString();
+      const util::Duration step = this->validTime() - antime;
+      prefix += "." + step.toString();
+    }
+
+    if (type == "an") {
+      prefix += "." + this->validTime().toString();
+    }
+
+    eckit::LocalConfiguration preconf(conf);
+    preconf.set("prefix", prefix);
+    interface::State<MODEL>::write(preconf);
+  } else {
+    interface::State<MODEL>::write(conf);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void State<MODEL>::write(const WriteParameters_ & params) const {
+  eckit::LocalConfiguration conf = params.toConfiguration();
+  this->write(conf);
 }
 
 // -----------------------------------------------------------------------------
