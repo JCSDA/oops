@@ -15,7 +15,6 @@
 #include <string>
 #include <vector>
 
-#include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/instantiateObsFilterFactory.h"
@@ -51,11 +50,13 @@ class HofX4DParameters : public ApplicationParameters {
 
   typedef Geometry<MODEL> Geometry_;
   typedef State<MODEL> State_;
+  typedef ModelAuxControl<MODEL>     ModelAux_;
 
  public:
   typedef typename Geometry_::Parameters_ GeometryParameters_;
   typedef ModelParametersWrapper<MODEL> ModelParameters_;
   typedef typename State_::Parameters_ StateParameters_;
+  typedef typename ModelAux_::Parameters_ ModelAuxParameters_;
 
   /// Only observations taken at times lying in the (`window begin`, `window begin` + `window
   /// length`] interval will be included in observation spaces.
@@ -87,8 +88,7 @@ class HofX4DParameters : public ApplicationParameters {
   RequiredParameter<StateParameters_> initialCondition{"initial condition", this};
 
   /// Augmented model state.
-  Parameter<eckit::LocalConfiguration> modelAuxControl{
-    "model aux control", eckit::LocalConfiguration(), this};
+  Parameter<ModelAuxParameters_> modelAuxControl{"model aux control", {}, this};
 };
 
 // -----------------------------------------------------------------------------

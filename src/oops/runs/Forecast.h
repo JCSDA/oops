@@ -14,7 +14,6 @@
 
 #include <string>
 
-#include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Model.h"
 #include "oops/base/PostProcessor.h"
@@ -38,11 +37,13 @@ template <typename MODEL> class ForecastParameters : public ApplicationParameter
   OOPS_CONCRETE_PARAMETERS(ForecastParameters, ApplicationParameters);
 
  public:
-  typedef typename Geometry<MODEL>::Parameters_                 GeometryParameters_;
-  typedef ModelParametersWrapper<MODEL>                         ModelParameters_;
-  typedef State<MODEL>                                          State_;
-  typedef typename StateParametersND<MODEL>::StateParameters3D_ StateParameters_;
-  typedef StateWriterParameters<State_>                         StateWriterParameters_;
+  typedef typename Geometry<MODEL>::Parameters_  GeometryParameters_;
+  typedef ModelParametersWrapper<MODEL>          ModelParameters_;
+  typedef State<MODEL>                           State_;
+  typedef typename State_::Parameters_           StateParameters_;
+  typedef StateWriterParameters<State_>          StateWriterParameters_;
+  typedef ModelAuxControl<MODEL>                 ModelAux_;
+  typedef typename ModelAux_::Parameters_        ModelAuxParameters_;
 
   /// Geometry parameters.
   RequiredParameter<GeometryParameters_> geometry{"geometry", this};
@@ -54,8 +55,7 @@ template <typename MODEL> class ForecastParameters : public ApplicationParameter
   RequiredParameter<StateParameters_> initialCondition{"initial condition", this};
 
   /// Augmented model state.
-  Parameter<eckit::LocalConfiguration> modelAuxControl{
-    "model aux control", eckit::LocalConfiguration(), this};
+  Parameter<ModelAuxParameters_> modelAuxControl{"model aux control", {}, this};
 
   /// Forecast length.
   RequiredParameter<util::Duration> forecastLength{"forecast length", this};

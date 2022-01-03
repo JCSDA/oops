@@ -15,8 +15,6 @@
 #include <sstream>
 #include <string>
 
-
-#include "eckit/config/Configuration.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
 #include "oops/base/instantiateCovarFactory.h"
@@ -45,8 +43,10 @@ template <typename MODEL> class GenEnsPertBParameters : public ApplicationParame
   typedef typename Geometry<MODEL>::Parameters_        GeometryParameters_;
   typedef ModelParametersWrapper<MODEL>                ModelParameters_;
   typedef State<MODEL>                                 State_;
-  typedef StateParametersND<MODEL>                     StateParametersND_;
+  typedef typename State_::Parameters_                 StateParameters_;
   typedef StateWriterParameters<State_>                StateWriterParameters_;
+  typedef ModelAuxControl<MODEL>                       ModelAux_;
+  typedef typename ModelAux_::Parameters_              ModelAuxParameters_;
 
   /// Geometry parameters.
   RequiredParameter<GeometryParameters_> geometry{"geometry", this};
@@ -55,11 +55,10 @@ template <typename MODEL> class GenEnsPertBParameters : public ApplicationParame
   RequiredParameter<ModelParameters_> model{"model", this};
 
   /// Initial state parameters.
-  RequiredParameter<StateParametersND_> initialCondition{"initial condition", this};
+  RequiredParameter<StateParameters_> initialCondition{"initial condition", this};
 
   /// Augmented model state.
-  Parameter<eckit::LocalConfiguration> modelAuxControl{
-    "model aux control", eckit::LocalConfiguration(), this};
+  Parameter<ModelAuxParameters_> modelAuxControl{"model aux control", {}, this};
 
   /// Forecast length.
   RequiredParameter<util::Duration> forecastLength{"forecast length", this};
