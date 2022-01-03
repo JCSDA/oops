@@ -33,6 +33,18 @@
 
 namespace oops {
 
+/// Parameters describing generic ensemble covariances.
+template <typename MODEL>
+class EnsembleCovarianceParameters : public ModelSpaceCovarianceParametersBase<MODEL> {
+  OOPS_CONCRETE_PARAMETERS(EnsembleCovarianceParameters,
+                           ModelSpaceCovarianceParametersBase<MODEL>)
+ public:
+  /// Parameters for ensemble of increments used in the covariances.
+  IncrementEnsembleFromStatesParameters<MODEL> ensemble{this};
+  oops::OptionalParameter<eckit::LocalConfiguration> localization{"localization",
+                         "localization applied to ensemble covariances", this};
+};
+
 /// Generic ensemble based model space error covariance.
 
 // -----------------------------------------------------------------------------
@@ -47,10 +59,12 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL>,
   typedef std::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
 
  public:
+  typedef EnsembleCovarianceParameters<MODEL> Parameters_;
+
   static const std::string classname() {return "oops::EnsembleCovariance";}
 
   EnsembleCovariance(const Geometry_ &, const Variables &,
-                     const eckit::Configuration &, const State_ &, const State_ &);
+                     const Parameters_ &, const State_ &, const State_ &);
   ~EnsembleCovariance();
 
  private:
@@ -69,16 +83,15 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL>,
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Variables & vars,
-                                              const eckit::Configuration & conf,
+                                              const Parameters_ & params,
                                               const State_ & xb, const State_ & fg)
-  : ModelSpaceCovarianceBase<MODEL>(xb, fg, resol, conf), ens_(), loc_()
+  : ModelSpaceCovarianceBase<MODEL>(xb, fg, resol, params), ens_(), loc_()
 {
   Log::trace() << "EnsembleCovariance::EnsembleCovariance start" << std::endl;
   size_t init = eckit::system::ResourceUsage().maxResidentSetSize();
-  ens_.reset(new Ensemble_(conf, xb, fg, resol, vars));
-  if (conf.has("localization")) {
-    const eckit::LocalConfiguration confloc(conf, "localization");
-    loc_.reset(new Localization_(resol, confloc));
+  ens_.reset(new Ensemble_(params.ensemble, xb, fg, resol, vars));
+  if (params.localization.value() != boost::none) {
+    loc_.reset(new Localization_(resol, *params.localization.value()));
   }
   size_t current = eckit::system::ResourceUsage().maxResidentSetSize();
   this->setObjectSize(current - init);

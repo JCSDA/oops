@@ -27,6 +27,18 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
+template <typename MODEL>
+class EnsembleParameters : public Parameters {
+  OOPS_CONCRETE_PARAMETERS(EnsembleParameters, Parameters)
+
+ public:
+  typedef IncrementEnsembleFromStatesParameters<MODEL> IncrementEnsembleParameters_;
+
+  /// Ensemble parameters.
+  IncrementEnsembleParameters_ ensemble{this};
+};
+
+
 /// \brief Top-level options taken by the EnsVariance application.
 template <typename MODEL>
 class EnsVarianceParameters : public ApplicationParameters {
@@ -36,6 +48,7 @@ class EnsVarianceParameters : public ApplicationParameters {
   typedef typename Geometry<MODEL>::Parameters_ GeometryParameters_;
   typedef typename State<MODEL>::Parameters_ StateParameters_;
   typedef typename Increment<MODEL>::WriteParameters_ IncrementWriteParameters_;
+  typedef EnsembleParameters<MODEL> EnsembleParameters_;
 
   /// Geometry parameters.
   RequiredParameter<GeometryParameters_> resolConfig{"geometry", this};
@@ -44,7 +57,7 @@ class EnsVarianceParameters : public ApplicationParameters {
   RequiredParameter<StateParameters_> bkgConfig{"background", this};
 
   /// Ensemble parameters.
-  RequiredParameter<eckit::LocalConfiguration> ensembleConfig{"ensemble", this};
+  RequiredParameter<EnsembleParameters_> ensembleConfig{"ensemble", this};
 
   /// Output increment parameters.
   RequiredParameter<IncrementWriteParameters_> outputConfig{"variance output", this};
@@ -78,9 +91,7 @@ template <typename MODEL> class EnsVariance : public Application {
 
 //  Compute transformed ensemble perturbations
 //         ens_k = K^-1 dx_k
-    const eckit::LocalConfiguration ensConfig = params.ensembleConfig;
-    Variables vars(ensConfig, "output variables");
-    Ensemble_ ens_k(ensConfig, xx, xx, resol, vars);
+    Ensemble_ ens_k(params.ensembleConfig.value().ensemble, xx, xx, resol, xx.variables());
 
 //  Get ensemble size
     unsigned nm = ens_k.size();

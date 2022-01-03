@@ -19,7 +19,6 @@ cost function:
         value: 0.5
     - covariance:
         covariance model: ensemble
-        date: 2010-01-01T12:00:00Z
         localization:
           horizontal_length_scale: 4.0e6
           localization method: QG

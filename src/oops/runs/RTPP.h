@@ -11,7 +11,6 @@
 #include <memory>
 #include <string>
 
-#include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
 #include "oops/base/ParameterTraitsVariables.h"
@@ -35,13 +34,13 @@ template <typename MODEL> class RTPPParameters : public ApplicationParameters {
 
  public:
   typedef typename Geometry<MODEL>::Parameters_ GeometryParameters_;
-  typedef typename State_::WriteParameters_ StateWriteParameters_;
-
+  typedef typename State_::WriteParameters_     StateWriteParameters_;
+  typedef StateEnsembleParameters<MODEL>        StateEnsembleParameters_;
   RequiredParameter<GeometryParameters_> geometry{
       "geometry", "Geometry parameters", this};
-  RequiredParameter<eckit::LocalConfiguration> background{
+  RequiredParameter<StateEnsembleParameters_> background{
       "background", "Background ensemble states", this};
-  RequiredParameter<eckit::LocalConfiguration> analysis{
+  RequiredParameter<StateEnsembleParameters_> analysis{
       "analysis", "Analysis ensemble states", this};
   RequiredParameter<float> factor{"factor", "Perturbation factor", this};
   OptionalParameter<Variables> analysisVariables{"analysis variables", this};
@@ -76,14 +75,11 @@ template <typename MODEL> class RTPP : public Application {
     // Setup geometry
     const Geometry_ geometry(params.geometry, this->getComm(), oops::mpi::myself());
 
-    // Get configurations
-    const eckit::LocalConfiguration bgConfig = params.background.value();
-    const eckit::LocalConfiguration anConfig = params.analysis.value();
     const float factor = params.factor.value();
 
     // Read all ensemble members
-    StateEnsemble_ bgens(geometry, bgConfig);
-    StateEnsemble_ anens(geometry, anConfig);
+    StateEnsemble_ bgens(geometry, params.background);
+    StateEnsemble_ anens(geometry, params.analysis);
     const size_t nens = bgens.size();
     ASSERT(nens == anens.size());
 

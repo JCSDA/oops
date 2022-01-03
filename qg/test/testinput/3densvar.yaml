@@ -12,7 +12,6 @@ cost function:
     filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H.nc
   background error:
     covariance model: ensemble
-    date: 2010-01-01T12:00:00Z
     localization:
       horizontal_length_scale: 2.0e6
       localization method: QG

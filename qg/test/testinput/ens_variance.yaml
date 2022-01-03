@@ -3,7 +3,6 @@ background:
   filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1D.nc
   state variables: [x,q]
 ensemble:
-  output variables: [x,q]
   members:
   - date: 2010-01-01T00:00:00Z
     filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1D.nc

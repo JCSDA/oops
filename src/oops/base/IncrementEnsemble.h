@@ -30,10 +30,31 @@
 #include "oops/interface/LinearVariableChange.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/OptionalParameter.h"
+#include "oops/util/parameters/Parameter.h"
+#include "oops/util/parameters/Parameters.h"
 
 namespace oops {
 
 // -----------------------------------------------------------------------------
+/// Parameters for the ensemble of increments generated from ensemble of states
+/// with specified inflation and linear variable changes.
+template <typename MODEL>
+class IncrementEnsembleFromStatesParameters : public Parameters {
+  OOPS_CONCRETE_PARAMETERS(IncrementEnsembleFromStatesParameters, Parameters)
+
+  typedef typename Increment<MODEL>::ReadParameters_ IncrementReadParameters_;
+  typedef typename LinearVariableChange<MODEL>::Parameters_ LinearVarChangeParameters_;
+ public:
+  OptionalParameter<IncrementReadParameters_> inflationField{"inflation field",
+                   "inflation field (as increment in model space)", this};
+  Parameter<double> inflationValue{"inflation value", "inflation value (scalar)",
+                    1.0, this};
+  OptionalParameter<LinearVarChangeParameters_> linVarChange{"linear variable change",
+                   "linear variable changes applied to the increments", this};
+  StateEnsembleParameters<MODEL> states{this};
+};
+
 
 /// \brief Ensemble of increments
 template<typename MODEL> class IncrementEnsemble {
@@ -43,12 +64,13 @@ template<typename MODEL> class IncrementEnsemble {
   typedef LinearVariableChange<MODEL>  LinearVariableChange_;
   typedef State<MODEL>                 State_;
   typedef StateEnsemble<MODEL>         StateEnsemble_;
+  typedef IncrementEnsembleFromStatesParameters<MODEL> IncrementEnsembleFromStatesParameters_;
 
  public:
   /// Constructor
   IncrementEnsemble(const Geometry_ & resol, const Variables & vars,
                     const util::DateTime &, const int rank);
-  IncrementEnsemble(const eckit::Configuration &, const State_ &, const State_ &,
+  IncrementEnsemble(const IncrementEnsembleFromStatesParameters_ &, const State_ &, const State_ &,
                     const Geometry_ &, const Variables &);
   /// \brief construct ensemble of perturbations by reading them from disk
   IncrementEnsemble(const Geometry_ &, const Variables &, const eckit::Configuration &);
@@ -92,7 +114,7 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const Geometry_ & resol, const Varia
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-IncrementEnsemble<MODEL>::IncrementEnsemble(const eckit::Configuration & conf,
+IncrementEnsemble<MODEL>::IncrementEnsemble(const IncrementEnsembleFromStatesParameters_ & params,
                                             const State_ & xb, const State_ & fg,
                                             const Geometry_ & resol, const Variables & vars)
   : vars_(vars), ensemblePerturbs_()
@@ -103,28 +125,24 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const eckit::Configuration & conf,
 
   // Read inflation field
   std::unique_ptr<Increment_> inflationField;
-  if (conf.has("inflation field")) {
-    const eckit::LocalConfiguration inflationConfig(conf, "inflation field");
+  if (params.inflationField.value() != boost::none) {
     inflationField.reset(new Increment_(resol, vars, tslot));
-    inflationField->read(inflationConfig);
+    inflationField->read(*params.inflationField.value());
   }
 
   // Get inflation value
-  double inflationValue = conf.getDouble("inflation value", 1.0);
+  const double inflationValue = params.inflationValue;
 
   // Setup change of variable
-  std::unique_ptr<eckit::LocalConfiguration> chvarconf;
   std::unique_ptr<LinearVariableChange_> linvarchg;
-  bool hasLinVarChg;
-  if ((hasLinVarChg = conf.has("linear variable change"))) {
-    chvarconf.reset(new eckit::LocalConfiguration(conf, "linear variable change"));
-    linvarchg.reset(new LinearVariableChange_(resol, *chvarconf));
+  if (params.linVarChange.value() != boost::none) {
+    linvarchg.reset(new LinearVariableChange_(resol, *params.linVarChange.value()));
     linvarchg->setTrajectory(xb, fg);
   }
   // TODO(Benjamin): one change of variable for each timeslot
 
   // Read ensemble
-  StateEnsemble_ ensemble(resol, conf);
+  StateEnsemble_ ensemble(resol, params.states);
   State_ bgmean = ensemble.mean();
 
   ensemblePerturbs_.reserve(ensemble.size());
@@ -134,13 +152,14 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const eckit::Configuration & conf,
     dx.diff(ensemble[ie], bgmean);
 
     // Apply inflation
-    if (conf.has("inflation field")) {
+    if (params.inflationField.value() != boost::none) {
       dx.schur_product_with(*inflationField);
     }
     dx *= inflationValue;
 
-    if (hasLinVarChg) {
-      oops::Variables varin(*chvarconf, "input variables");
+    if (params.linVarChange.value() != boost::none) {
+      const auto & linvar = *params.linVarChange.value();
+      oops::Variables varin = *linvar.inputVariables.value();
       linvarchg->multiplyInverse(dx, varin);
     }
 

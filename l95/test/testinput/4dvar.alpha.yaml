@@ -14,7 +14,6 @@ cost function:
     filename: Data/forecast.fc.2010-01-01T00:00:00Z.PT3H.l95
   background error:
     covariance model: ensemble
-    date: 2010-01-01T03:00:00Z
     localization:
       length_scale: 1.0
       localization method: L95

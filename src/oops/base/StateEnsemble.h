@@ -11,26 +11,39 @@
 #include <utility>
 #include <vector>
 
-#include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Accumulator.h"
-#include "oops/base/Geometry.h"
 #include "oops/base/State.h"
+#include "oops/base/StateParametersND.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
 
+template<typename MODEL> class Geometry;
 class Variables;
 
 // -----------------------------------------------------------------------------
+/// Parameters for the ensemble of states.
+template <typename MODEL>
+class StateEnsembleParameters : public Parameters {
+  OOPS_CONCRETE_PARAMETERS(StateEnsembleParameters, Parameters)
+
+  typedef StateParametersND<MODEL> Parameters_;
+ public:
+  RequiredParameter<std::vector<Parameters_>> states{"members",
+                   "members of the state ensemble", this};
+};
 
 /// \brief Ensemble of states
 template<typename MODEL> class StateEnsemble {
   typedef Geometry<MODEL>      Geometry_;
   typedef State<MODEL>         State_;
+  typedef StateEnsembleParameters<MODEL> StateEnsembleParameters_;
 
  public:
   /// Create ensemble of states
-  StateEnsemble(const Geometry_ &, const eckit::Configuration &);
+  StateEnsemble(const Geometry_ &, const StateEnsembleParameters_ &);
 
   /// calculate ensemble mean
   State_ mean() const;
@@ -51,14 +64,13 @@ template<typename MODEL> class StateEnsemble {
 
 template<typename MODEL>
 StateEnsemble<MODEL>::StateEnsemble(const Geometry_ & resol,
-                                    const eckit::Configuration & config)
+                                    const StateEnsembleParameters_ & params)
   : states_() {
-  std::vector<eckit::LocalConfiguration> memberConfig;
-  config.get("members", memberConfig);
-  states_.reserve(memberConfig.size());
+  const size_t nens = params.states.value().size();
+  states_.reserve(nens);
   // Loop over all ensemble members
-  for (size_t jj = 0; jj < memberConfig.size(); ++jj) {
-    states_.emplace_back(State_(resol, memberConfig[jj]));
+  for (size_t jj = 0; jj < nens; ++jj) {
+    states_.emplace_back(State_(resol, params.states.value()[jj]));
   }
   Log::trace() << "StateEnsemble:contructor done" << std::endl;
 }
