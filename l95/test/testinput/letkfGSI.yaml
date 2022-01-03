@@ -31,8 +31,6 @@ observations:
       obsfile: Data/letkf_gsi.2010-01-02T00:00:00Z.obt
   obs operator: {}
 
-driver:
-
 local ensemble DA:
   solver: GSI LETKF
   inflation:

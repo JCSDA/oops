@@ -29,8 +29,6 @@ observations:
       obsfile: Data/noobs.obt
   obs operator: {}
 
-driver:
-
 local ensemble DA:
   solver: LETKF
   inflation:

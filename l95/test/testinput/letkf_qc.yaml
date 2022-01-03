@@ -32,8 +32,6 @@ observations:
   - filter: Background Check
     threshold: 3.0
 
-driver:
-
 local ensemble DA:
   solver: LETKF
   inflation:

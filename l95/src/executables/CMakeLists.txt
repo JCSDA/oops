@@ -32,12 +32,12 @@ oops_output_json_schema( l95_addincrement.x )
 ecbuild_add_executable( TARGET  l95_eda.x
                         SOURCES EDA.cc
                         LIBS    lorenz95 )
-# TODO: oops_output_json_schema( l95_eda.x )
+oops_output_json_schema( l95_eda.x )
 
 ecbuild_add_executable( TARGET  l95_letkf.x
                         SOURCES LETKF.cc
                         LIBS    lorenz95)
-# TODO: oops_output_json_schema( l95_letkf.x )
+oops_output_json_schema( l95_letkf.x )
 
 ecbuild_add_executable( TARGET  l95_hofx.x
                         SOURCES HofX.cc

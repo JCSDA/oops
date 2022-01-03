@@ -100,7 +100,7 @@ ecbuild_add_executable( TARGET  qg_letkf.x
                         SOURCES qgLETKF.cc
                         LIBS    qg
                       )
-# TODO: oops_output_json_schema( qg_letkf.x )
+oops_output_json_schema( qg_letkf.x )
 
 ecbuild_add_executable( TARGET  qg_ens_recenter.x
                         SOURCES qgEnsRecenter.cc
