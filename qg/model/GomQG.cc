@@ -27,7 +27,7 @@ GomQG::GomQG(const LocationsQG & locs, const oops::Variables & vars,
   vars_(vars), locs_(&locs), levs_(sizes[0])
 {
 // All variables have same levels
-  for (size_t jj = 1; jj < sizes.size(); ++jj) ASSERT(sizes[jj] == levs_);
+  for (size_t jj = 1; jj < sizes.size(); ++jj) ASSERT(sizes[jj] == static_cast<size_t>(levs_));
   qg_gom_setup_f90(keyGom_, locs, vars_, levs_);
 }
 // -----------------------------------------------------------------------------
