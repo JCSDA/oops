@@ -20,6 +20,10 @@
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
+#include "oops/util/parameters/GenericParameters.h"
+#include "oops/util/parameters/HasParameters_.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/ParametersOrConfiguration.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Serializable.h"
 #include "oops/util/Timer.h"
@@ -36,6 +40,24 @@ namespace oops {
 /// This class calls the model's implementation of ModelAuxIncrement.
 // -----------------------------------------------------------------------------
 
+/// Note: implementations of this interface can opt to extract their settings either from
+/// a Configuration object or from a subclass of Parameters.
+///
+/// In the former case, they should provide constructors with the following signatures:
+///
+///    ModelAuxIncrement(const Geometry_ &, const eckit::Configuration &);
+///    ModelAuxIncrement(const ModelAuxIncrement &, const eckit::Configuration &);
+///
+/// In the latter case, the implementer should first define a subclass of Parameters holding the
+/// settings of the ModelAuxIncrement implementation in question. That implementation should then
+/// typedef `Parameters_` to the name of that subclass and provide constructors with the following
+/// signatures:
+///
+///    ModelAuxIncrement(const Geometry_ &, const Parameters_ &);
+///    ModelAuxIncrement(const ModelAuxIncrement &, const Parameters_ &);
+///
+/// The implementations of the ModelAuxIncrement and ModelAuxCovariance interfaces for the same
+/// MODEL should use the same Parameters subclass.
 template <typename MODEL>
 class ModelAuxIncrement : public util::Printable,
                           public util::Serializable,
@@ -45,15 +67,23 @@ class ModelAuxIncrement : public util::Printable,
   typedef ModelAuxControl<MODEL>      ModelAuxControl_;
 
  public:
+  /// Set to ModelAuxIncrement_::Parameters_ if ModelAuxIncrement_ provides a type called
+  /// Parameters_ and to GenericParameters (a thin wrapper of an eckit::LocalConfiguration object)
+  /// if not.
+  typedef TParameters_IfAvailableElseFallbackType_t<ModelAuxIncrement_, GenericParameters>
+    Parameters_;
+
   static const std::string classname() {return "oops::ModelAuxIncrement";}
 
   /// Constructor for specified \p resol and \p conf
   ModelAuxIncrement(const Geometry_ & resol, const eckit::Configuration & conf);
+  ModelAuxIncrement(const Geometry_ &, const Parameters_ &);
   /// Copies \p other ModelAuxIncrement if \p copy is true,
   /// otherwise creates zero ModelAuxIncrement with same variables and geometry
   explicit ModelAuxIncrement(const ModelAuxIncrement & other, const bool copy = true);
   /// Copies \p other ModelAuxIncrement, reading extra information from \p conf
   ModelAuxIncrement(const ModelAuxIncrement & other, const eckit::Configuration & conf);
+  ModelAuxIncrement(const ModelAuxIncrement &, const Parameters_ &);
   /// Destructor (defined explicitly for timing and tracing)
   ~ModelAuxIncrement();
 
@@ -108,14 +138,22 @@ ModelAuxControl<MODEL> & operator+=(ModelAuxControl<MODEL> & xx,
 
 template<typename MODEL>
 ModelAuxIncrement<MODEL>::ModelAuxIncrement(const Geometry_ & resol,
-                                            const eckit::Configuration & conf) : aux_()
+                                            const Parameters_ & parameters) : aux_()
 {
   Log::trace() << "ModelAuxIncrement<MODEL>::ModelAuxIncrement starting" << std::endl;
   util::Timer timer(classname(), "ModelAuxIncrement");
-  aux_.reset(new ModelAuxIncrement_(resol.geometry(), conf));
+  aux_.reset(new ModelAuxIncrement_(
+               resol.geometry(),
+               parametersOrConfiguration<HasParameters_<ModelAuxIncrement_>::value>(parameters)));
   this->setObjectSize(aux_->serialSize()*sizeof(double));
   Log::trace() << "ModelAuxIncrement<MODEL>::ModelAuxIncrement done" << std::endl;
 }
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+ModelAuxIncrement<MODEL>::ModelAuxIncrement(const Geometry_ & resol,
+                                            const eckit::Configuration & conf)
+  : ModelAuxIncrement(resol, validateAndDeserialize<Parameters_>(conf))
+{}
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 ModelAuxIncrement<MODEL>::ModelAuxIncrement(const ModelAuxIncrement & other,
@@ -130,14 +168,22 @@ ModelAuxIncrement<MODEL>::ModelAuxIncrement(const ModelAuxIncrement & other,
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 ModelAuxIncrement<MODEL>::ModelAuxIncrement(const ModelAuxIncrement & other,
-                                            const eckit::Configuration & conf) : aux_()
+                                            const Parameters_ & parameters) : aux_()
 {
   Log::trace() << "ModelAuxIncrement<MODEL>::ModelAuxIncrement interpolated starting" << std::endl;
   util::Timer timer(classname(), "ModelAuxIncrement");
-  aux_.reset(new ModelAuxIncrement_(*other.aux_, conf));
+  aux_.reset(new ModelAuxIncrement_(
+               *other.aux_,
+               parametersOrConfiguration<HasParameters_<ModelAuxIncrement_>::value>(parameters)));
   this->setObjectSize(aux_->serialSize()*sizeof(double));
   Log::trace() << "ModelAuxIncrement<MODEL>::ModelAuxIncrement interpolated done" << std::endl;
 }
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+ModelAuxIncrement<MODEL>::ModelAuxIncrement(const ModelAuxIncrement & other,
+                                            const eckit::Configuration & conf)
+  : ModelAuxIncrement(other, validateAndDeserialize<Parameters_>(conf))
+{}
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 ModelAuxIncrement<MODEL>::~ModelAuxIncrement() {

@@ -41,8 +41,8 @@ locations: {}
 model:
   name: QG
   tstep: PT1H
-model aux control: null
-model aux error: null
+model aux control: {}
+model aux error: {}
 model test:
   forecast length: PT24H
   final norm: 170792839.48101598

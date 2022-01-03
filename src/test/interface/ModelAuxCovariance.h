@@ -25,17 +25,41 @@
 #include "oops/interface/ModelAuxCovariance.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
+#include "oops/util/parameters/IgnoreOtherParameters.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 #include "test/TestEnvironment.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
+/// \brief Parameters loaded from the input YAML file and used by this test.
+template <typename MODEL>
+class TestParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(TestParameters, Parameters)
+
+ public:
+  typedef typename oops::Geometry<MODEL>::Parameters_ GeometryParameters_;
+  typedef typename oops::ModelAuxCovariance<MODEL>::Parameters_ ModelAuxCovarianceParameters_;
+
+  /// \brief Group of parameters controlling the tested model's geometry.
+  oops::RequiredParameter<GeometryParameters_> geometry{"geometry", this};
+  /// \brief Group of parameters controlling the tested implementation of the ModelAuxCovariance
+  /// interface.
+  oops::RequiredParameter<ModelAuxCovarianceParameters_> modelAuxError{"model aux error", this};
+  /// \brief Don't treat the presence of other parameter groups as an error (this makes it
+  /// possible to reuse a single YAML file in tests of implementations of multiple oops interfaces).
+  oops::IgnoreOtherParameters ignoreOthers{this};
+};
+
+// -----------------------------------------------------------------------------
 template <typename MODEL> class ModelAuxCovarianceFixture : private boost::noncopyable {
   typedef oops::Geometry<MODEL>           Geometry_;
   typedef oops::ModelAuxCovariance<MODEL> Covariance_;
+  typedef TestParameters<MODEL>           TestParameters_;
 
  public:
-  static const eckit::Configuration & config() {return *getInstance().conf_;}
+  static const typename Covariance_::Parameters_ & parameters() {return getInstance().parameters_;}
   static const Geometry_    & resol()  {return *getInstance().resol_;}
 
  private:
@@ -45,15 +69,17 @@ template <typename MODEL> class ModelAuxCovarianceFixture : private boost::nonco
   }
 
   ModelAuxCovarianceFixture() {
-    conf_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "model aux error"));
+    TestParameters_ parameters;
+    parameters.validateAndDeserialize(TestEnvironment::config());
 
-    const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "geometry");
-    resol_.reset(new Geometry_(resolConfig, oops::mpi::world()));
+    parameters_ = parameters.modelAuxError;
+
+    resol_.reset(new Geometry_(parameters.geometry, oops::mpi::world()));
   }
 
   ~ModelAuxCovarianceFixture() {}
 
-  std::unique_ptr<const eckit::LocalConfiguration>  conf_;
+  typename Covariance_::Parameters_ parameters_;
   std::unique_ptr<Geometry_>     resol_;
 };
 
@@ -63,7 +89,7 @@ template <typename MODEL> void testConstructor() {
   typedef ModelAuxCovarianceFixture<MODEL>   Test_;
   typedef oops::ModelAuxCovariance<MODEL>    Covariance_;
 
-  std::unique_ptr<Covariance_> cov(new Covariance_(Test_::config(), Test_::resol()));
+  std::unique_ptr<Covariance_> cov(new Covariance_(Test_::parameters(), Test_::resol()));
   EXPECT(cov.get());
   oops::Log::test() << "Testing ModelAuxCovariance: " << *cov << std::endl;
   cov.reset();

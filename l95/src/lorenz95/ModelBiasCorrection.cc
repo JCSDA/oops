@@ -21,8 +21,8 @@
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-ModelBiasCorrection::ModelBiasCorrection(const Resolution &, const eckit::Configuration & conf)
-  : bias_(0.0), active_(conf.has("standard_deviation"))
+ModelBiasCorrection::ModelBiasCorrection(const Resolution &, const Parameters_ & parameters)
+  : bias_(0.0), active_(parameters.standardDeviation.value() != boost::none)
 {
   if (active_) {
     oops::Log::trace() << "ModelBiasCorrection::ModelBiasCorrection created." << std::endl;
@@ -37,7 +37,7 @@ ModelBiasCorrection::ModelBiasCorrection(const ModelBiasCorrection & other,
 }
 // -----------------------------------------------------------------------------
 ModelBiasCorrection::ModelBiasCorrection(const ModelBiasCorrection & other,
-                                         const eckit::Configuration &)
+                                         const Parameters_ &)
   : bias_(0.0), active_(other.active_)
 {
   if (active_) bias_ = other.bias_;

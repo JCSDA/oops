@@ -24,12 +24,12 @@
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-ModelBiasCovariance::ModelBiasCovariance(const eckit::Configuration & conf, const Resolution &)
-  : conf_(conf), variance_(0.0), active_(false)
+ModelBiasCovariance::ModelBiasCovariance(const Parameters_ & parameters, const Resolution &)
+  : parameters_(parameters), variance_(0.0), active_(false)
 {
-  if (conf_.has("standard_deviation")) {
+  if (parameters.standardDeviation.value() != boost::none) {
     active_ = true;
-    const double zz = conf_.getDouble("standard_deviation");
+    const double zz = *parameters.standardDeviation.value();
     variance_ = zz * zz;
     ASSERT(variance_ > 0.0);
     oops::Log::info() << "ModelBiasCovariance variance = " << variance_ << std::endl;

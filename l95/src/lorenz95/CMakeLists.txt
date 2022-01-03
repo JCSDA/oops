@@ -34,6 +34,7 @@ set( _l95_srcs
         ModelBiasCorrection.h
         ModelBiasCovariance.cc
         ModelBiasCovariance.h
+        ModelBiasCovarianceParameters.h
         ModelL95.h
         ModelL95.cc
         ModelTrajectory.cc
