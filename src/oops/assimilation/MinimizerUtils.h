@@ -115,11 +115,11 @@ void writeEigenvectors(const eckit::Configuration & diagConf,
       for (unsigned int jj = 0; jj < nn; ++jj) {
         temp.zero();
         temp = *zvecs[jj];
-        temp *= eigenvecT(jj, nn - 1 - ii);
+        temp *= eigenvecT.coeff(jj, nn - 1 - ii);
         eigenz += temp;
         temp.zero();
         temp = *hvecs[jj];
-        temp *= eigenvecT(jj, nn - 1 - ii);
+        temp *= eigenvecT.coeff(jj, nn - 1 - ii);
         eigenv += temp;
       }
       // Save the eigenvector
@@ -132,12 +132,12 @@ void writeEigenvectors(const eckit::Configuration & diagConf,
       temp.zero();
       HtRinvH.multiply(eigenz, temp);
       temp += eigenv;
-      eigenv *= eigenvalT(nn - 1 - ii);
+      eigenv *= eigenvalT.coeff(nn - 1 - ii);
       temp -= eigenv;
-      Log::info() << "Eigenvalue " << ii+1 << " : " << eigenvalT(nn - 1 - ii) << std::endl;
+      Log::info() << "Eigenvalue " << ii+1 << " : " << eigenvalT.coeff(nn - 1 - ii) << std::endl;
       Log::info() << "Norm A*y-lambda*y = " << dot_product(temp, temp) << std::endl;
 
-      Log::test() << "Eigenvalue " << ii+1 << " : " << eigenvalT(nn - 1 - ii) << std::endl;
+      Log::test() << "Eigenvalue " << ii+1 << " : " << eigenvalT.coeff(nn - 1 - ii) << std::endl;
       Log::test() << "Norm eigenvector = " << dot_product(eigenz, eigenz) << std::endl;
     }  // end for()
   }  // end if()
