@@ -52,4 +52,3 @@ void gatherPrint(std::ostream & os, const T & obj, const eckit::mpi::Comm & comm
 // -----------------------------------------------------------------------------
 
 }  // namespace util
-

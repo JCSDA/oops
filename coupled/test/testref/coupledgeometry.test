@@ -1,0 +1,7 @@
+Test     : Testing geometry: 
+Test     : GeometryCoupled: QG
+Test     : Geometry:
+Test     : nx = 40, ny = 20, nz = 2
+Test     : deltax = 1.00079e+06, deltay = 476567
+Test     : GeometryCoupled: Lorenz 95
+Test     : 40
