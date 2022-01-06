@@ -240,6 +240,7 @@ template <typename MODEL, typename OBS> void testLinearGetValuesLinearity() {
 template <typename MODEL, typename OBS> void testLinearGetValuesLinearApproximation() {
   typedef LinearGetValuesFixture<MODEL, OBS>  Test_;
   typedef oops::VariableChange<MODEL>         VariableChange_;
+  typedef typename VariableChange_::Parameters_ VariableChangeParameters_;
   typedef oops::GeoVaLs<OBS>                  GeoVaLs_;
   typedef oops::Increment<MODEL>              Increment_;
   typedef oops::State<MODEL>                  State_;
@@ -251,7 +252,9 @@ template <typename MODEL, typename OBS> void testLinearGetValuesLinearApproximat
   State_ xx0(Test_::state());
 
   eckit::LocalConfiguration chvarconf;  // empty for now
-  VariableChange_ chvar(chvarconf, Test_::resol());
+  VariableChangeParameters_ params;
+  params.validateAndDeserialize(chvarconf);
+  VariableChange_ chvar(params, Test_::resol());
   chvar.changeVar(xx0, Test_::geovalvars());
 
   GeoVaLs_ gv0(Test_::locs(), Test_::geovalvars(), Test_::geovalvarsizes());

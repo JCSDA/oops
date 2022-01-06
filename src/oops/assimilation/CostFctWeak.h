@@ -54,13 +54,14 @@ class CostFctWeakParameters : public CostFunctionParametersBase<MODEL> {
  public:
   typedef ModelParametersWrapper<MODEL> ModelParameters_;
   typedef StateParameters4D<MODEL>      StateParameters4D_;
+  typedef typename VariableChange<MODEL>::Parameters_  VariableChangeParameters_;
 
   RequiredParameter<ModelParameters_> model{"model", "model", this};
   RequiredParameter<util::Duration> subwindow{"subwindow", "length of assimilation subwindows",
       this};
 
-  // Variable Change
-  OptionalParameter<eckit::LocalConfiguration> variableChange{"variable change", this};
+  Parameter<VariableChangeParameters_> variableChange{"variable change",
+           "variable change from B matrix variables to model variables", {}, this};
 
   // options for Jb term
   RequiredParameter<StateParameters4D_> background{"background", "background state(s)", this};
@@ -175,9 +176,7 @@ CostFctWeak<MODEL, OBS>::CostFctWeak(const Parameters_ & params,
 // Now can setup the rest
   resol_.reset(new Geometry_(params.geometry, *commSpace_, *commTime_));
   model_.reset(new Model_(*resol_, params.model.value().modelParameters));
-  an2model_.reset(new VarCha_(params.variableChange.value() != boost::none ?
-                              *params.variableChange.value() : eckit::LocalConfiguration(),
-                              *resol_));
+  an2model_.reset(new VarCha_(params.variableChange, *resol_));
   this->setupTerms(params.toConfiguration());
 
   Log::trace() << "CostFctWeak constructed" << std::endl;

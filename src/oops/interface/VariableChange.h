@@ -11,10 +11,7 @@
 #include <memory>
 #include <string>
 
-#include "eckit/config/Configuration.h"
-
 #include "oops/base/State.h"
-#include "oops/base/VariableChangeParametersBase.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -23,13 +20,13 @@
 namespace oops {
 
 // -----------------------------------------------------------------------------
-/// \brief MODEL-agnostic part of the nonlinear variable change
+/// \brief Nonlinear variable change
 ///
 /// Note: each implementation should typedef `Parameters_` to the name of a subclass
 /// of oops::VariableChangeParametersBase holding its configuration settings and provide a
 /// constructor with the following signature:
 ///
-///     VariableChange(const Parameters_ &);
+///     VariableChange(const Parameters_ &, const Geometry_);
 template <typename MODEL>
 class VariableChange : public util::Printable,
                        private util::ObjectCounter<VariableChange<MODEL> >  {
@@ -38,17 +35,11 @@ class VariableChange : public util::Printable,
   typedef State<MODEL>                   State_;
 
  public:
-  /// A subclass of oops::VariableChangeParametersBase holding the configuration settings of the
-  /// variable change
-  /// Defined as VariableChange_::Parameters_ if VariableChange_ defines a Parameters_
-  /// type; otherwise as GenericVariableChangeParameters.
-  typedef TParameters_IfAvailableElseFallbackType_t<VariableChange_,
-                                        GenericVariableChangeParameters> Parameters_;
+  typedef typename VariableChange_::Parameters_ Parameters_;
 
   static const std::string classname() {return "oops::VariableChange";}
 
   VariableChange(const Parameters_ &, const Geometry_ &);
-  VariableChange(const eckit::Configuration &, const Geometry_ &);
   virtual ~VariableChange();
   VariableChange(const VariableChange &) = delete;
   VariableChange(VariableChange &&) = default;
@@ -65,12 +56,6 @@ class VariableChange : public util::Printable,
 
   std::unique_ptr<VariableChange_> chvar_;  // pointer to the VariableChange implementation
 };
-
-// =============================================================================
-
-template<typename MODEL>
-VariableChange<MODEL>::VariableChange(const eckit::Configuration & conf, const Geometry_ & geometry)
-  :  VariableChange(validateAndDeserialize<Parameters_>(conf), geometry) {}
 
 // -----------------------------------------------------------------------------
 

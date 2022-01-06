@@ -140,6 +140,7 @@ template <typename MODEL, typename OBS> void testGetValuesConstructor() {
 template <typename MODEL, typename OBS> void testGetValuesMultiWindow() {
   typedef GetValuesFixture<MODEL, OBS>    Test_;
   typedef oops::VariableChange<MODEL>     VariableChange_;
+  typedef typename VariableChange_::Parameters_ VariableChangeParameters_;
   typedef oops::GeoVaLs<OBS>              GeoVaLs_;
   typedef oops::State<MODEL>              State_;
 
@@ -150,7 +151,9 @@ template <typename MODEL, typename OBS> void testGetValuesMultiWindow() {
   const State_ xx(Test_::resol(), confgen);
 
   eckit::LocalConfiguration chvarconf;  // empty for now
-  VariableChange_ chvar(chvarconf, Test_::resol());
+  VariableChangeParameters_ params;
+  params.validateAndDeserialize(chvarconf);
+  VariableChange_ chvar(params, Test_::resol());
   State_ zz(xx);
   chvar.changeVar(zz, Test_::geovalvars());
   EXPECT(zz.norm() > 0.0);
@@ -209,6 +212,7 @@ template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
   typedef GetValuesFixture<MODEL, OBS>    Test_;
   typedef oops::AnalyticInit<OBS>         AnalyticInit_;
   typedef oops::VariableChange<MODEL>     VariableChange_;
+  typedef typename VariableChange_::Parameters_ VariableChangeParameters_;
   typedef oops::AnalyticInitParametersWrapper<OBS> Parameters_;
   typedef oops::State<MODEL>              State_;
   typedef oops::GeoVaLs<OBS>              GeoVaLs_;
@@ -217,7 +221,9 @@ template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
   const State_ xx(Test_::resol(), confgen);
 
   eckit::LocalConfiguration chvarconf;  // empty for now
-  VariableChange_ chvar(chvarconf, Test_::resol());
+  VariableChangeParameters_ params;
+  params.validateAndDeserialize(chvarconf);
+  VariableChange_ chvar(params, Test_::resol());
   State_ zz(xx);
   chvar.changeVar(zz, Test_::geovalvars());
 

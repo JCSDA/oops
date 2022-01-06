@@ -29,7 +29,6 @@
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/State.h"
 #include "oops/base/TrajectorySaver.h"
-#include "oops/base/VariableChangeParametersBase.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/LinearVariableChange.h"
 #include "oops/interface/VariableChange.h"
@@ -52,13 +51,15 @@ class CostFct4DVarParameters : public CostFunctionParametersBase<MODEL> {
 
  public:
   typedef typename State<MODEL>::Parameters_           StateParameters_;
+  typedef typename VariableChange<MODEL>::Parameters_  VariableChangeParameters_;
   typedef ModelParametersWrapper<MODEL>                ModelParameters_;
   typedef ModelSpaceCovarianceParametersWrapper<MODEL> CovarianceParameters_;
 
   RequiredParameter<ModelParameters_> model{"model", "model", this};
 
   // Variable Change
-  OptionalParameter<eckit::LocalConfiguration> variableChange{"variable change", this};
+  Parameter<VariableChangeParameters_> variableChange{"variable change",
+           "variable change from B matrix variables to model variables", {}, this};
 
   // options for Jb term
   RequiredParameter<StateParameters_> background{"background", "background state", this};
@@ -138,9 +139,7 @@ CostFct4DVar<MODEL, OBS>::CostFct4DVar(const Parameters_ & params,
     resol_(params.geometry, comm),
     model_(resol_, params.model.value().modelParameters),
     ctlvars_(params.analysisVariables), tlm_(),
-    an2model_(params.variableChange.value() != boost::none ?
-              *params.variableChange.value() :
-              eckit::LocalConfiguration(), resol_),
+    an2model_(params.variableChange, resol_),
     inc2model_()
 {
   Log::trace() << "CostFct4DVar:CostFct4DVar" << std::endl;

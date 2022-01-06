@@ -41,6 +41,19 @@ template <typename MODEL> class ConvertStateStatesParameters : public Parameters
   RequiredParameter<WriteParameters_> output{"output", this};
 };
 
+/// Options controlling variable change in the ConvertState application.
+template <typename MODEL> class VarChangeParameters : public Parameters {
+  OOPS_CONCRETE_PARAMETERS(VarChangeParameters, Parameters)
+  typedef typename VariableChange<MODEL>::Parameters_ VariableChangeParameters_;
+
+ public:
+  // parameters for variable change.
+  VariableChangeParameters_ varChange{this};
+  Parameter<bool> doInverse{"do inverse",
+                            "apply inverse variable change instead of variable change",
+                            false, this};
+};
+
 // -------------------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------------------
 
@@ -58,8 +71,8 @@ template <typename MODEL> class ConvertStateParameters : public ApplicationParam
   /// Output Geometry parameters.
   RequiredParameter<GeometryParameters_> outputGeometry{"output geometry", this};
 
-  /// Variable changes
-  OptionalParameter<eckit::LocalConfiguration> varChange{"variable change", this};
+  /// Variable change parameters (and option to do inverse).
+  OptionalParameter<VarChangeParameters<MODEL>> varChange{"variable change", this};
 
   /// States to be converted
   RequiredParameter<std::vector<ConvertStateStatesParameters<MODEL>>> states{"states", this};
@@ -95,12 +108,12 @@ template <typename MODEL> class ConvertState : public Application {
     oops::Variables varout;
     bool inverse = false;
     if (params.varChange.value() != boost::none) {
-        eckit::LocalConfiguration chvarconf = *params.varChange.value();
-        if (chvarconf.has("output variables")) {
-            vc.reset(new VariableChange_(chvarconf, resol2));
-            varout = oops::Variables(chvarconf, "output variables");
-            inverse = chvarconf.getBool("do inverse", false);
-        }
+       const auto & varchangeparams = *params.varChange.value();
+       if (varchangeparams.varChange.outputVariables.value() != boost::none) {
+          vc.reset(new VariableChange_(varchangeparams.varChange, resol2));
+          varout = *varchangeparams.varChange.outputVariables.value();
+          inverse = varchangeparams.doInverse;
+       }
     }
 
 //  List of input and output states
@@ -126,9 +139,9 @@ template <typename MODEL> class ConvertState : public Application {
           // Create variable change
         oops::Variables varin = xx.variables();
         if (inverse) {
-            vc->changeVarInverse(xx, varout);
+          vc->changeVarInverse(xx, varout);
         } else {
-            vc->changeVar(xx, varout);
+          vc->changeVar(xx, varout);
         }
         Log::test() << "Variable transform: " << *vc << std::endl;
         Log::test() << "Variable change from: " << varin << std::endl;

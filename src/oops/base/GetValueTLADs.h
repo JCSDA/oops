@@ -29,6 +29,7 @@ namespace oops {
 template <typename MODEL, typename OBS>
 class GetValueTLADs : public PostBaseTLAD<MODEL> {
   typedef VariableChange<MODEL>            VariableChange_;
+  typedef typename VariableChange_::Parameters_ VariableChangeParameters_;
   typedef Increment<MODEL>                 Increment_;
   typedef State<MODEL>                     State_;
   typedef std::shared_ptr<GetValueTLAD<MODEL, OBS>> GetValPtr_;
@@ -90,8 +91,10 @@ void GetValueTLADs<MODEL, OBS>::doProcessingTraj(const State_ & xx) {
   Log::trace() << "GetValueTLADs::doProcessingTraj start" << std::endl;
 
   eckit::LocalConfiguration chvarconf;
+  VariableChangeParameters_ params;
+  params.validateAndDeserialize(chvarconf);
+  VariableChange_ chvar(params, xx.geometry());
 
-  VariableChange_ chvar(chvarconf, xx.geometry());
   State_ zz(xx);
   chvar.changeVar(zz, geovars_);
 

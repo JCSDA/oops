@@ -28,6 +28,7 @@ namespace oops {
 template <typename MODEL, typename OBS>
 class GetValuePosts : public PostBase<State<MODEL>> {
   typedef VariableChange<MODEL>     VariableChange_;
+  typedef typename VariableChange_::Parameters_ VariableChangeParameters_;
   typedef State<MODEL>              State_;
   typedef std::shared_ptr<GetValuePost<MODEL, OBS>> GetValuePtr_;
 
@@ -82,7 +83,9 @@ void GetValuePosts<MODEL, OBS>::doProcessing(const State_ & xx) {
   Log::trace() << "GetValuePosts::doProcessing start" << std::endl;
 
   eckit::LocalConfiguration chvarconf;
-  VariableChange_ chvar(chvarconf, xx.geometry());
+  VariableChangeParameters_ params;
+  params.validateAndDeserialize(chvarconf);
+  VariableChange_ chvar(params, xx.geometry());
 
   State_ zz(xx);
   chvar.changeVar(zz, geovars_);
