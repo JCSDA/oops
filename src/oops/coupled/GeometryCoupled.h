@@ -9,6 +9,7 @@
 
 #include <memory>
 #include <ostream>
+#include <tuple>
 #include <utility>
 
 #include "eckit/mpi/Comm.h"
@@ -21,18 +22,20 @@
 namespace oops {
 
 // -----------------------------------------------------------------------------
-
 /// Parameters for Geometry describing a coupled model geometry
-template <typename MODEL1, typename MODEL2>
+template<class... MODELs>
 class GeometryCoupledParameters : public Parameters {
   OOPS_CONCRETE_PARAMETERS(GeometryCoupledParameters, Parameters)
 
-  typedef typename Geometry<MODEL1>::Parameters_ Parameters1_;
-  typedef typename Geometry<MODEL2>::Parameters_ Parameters2_;
+  /// Type of tuples stored in the GeometryCoupledParameters
+  using RequiredParametersTupleT =
+        std::tuple<RequiredParameter<typename Geometry<MODELs>::Parameters_>...>;
+  /// Tuple that can be passed to the Parameter ctor
+  using RequiredParameterInit = std::tuple<const char *, Parameters *>;
+
  public:
-  /// Parameters for Geometry of MODEL1 and Geometry of MODEL2
-  RequiredParameter<Parameters1_> geometry1{MODEL1::name().c_str(), this};
-  RequiredParameter<Parameters2_> geometry2{MODEL2::name().c_str(), this};
+  /// Tuple of all Geometry Parameters.
+  RequiredParametersTupleT geometries{RequiredParameterInit(MODELs::name().c_str(), this) ... };
 };
 
 // -----------------------------------------------------------------------------
@@ -67,8 +70,8 @@ GeometryCoupled<MODEL1, MODEL2>::GeometryCoupled(const Parameters_ & params,
                                                  const eckit::mpi::Comm & comm)
   : geom1_(), geom2_(), comm_(comm)
 {
-  geom1_ = std::make_shared<Geometry<MODEL1>>(params.geometry1, comm);
-  geom2_ = std::make_shared<Geometry<MODEL2>>(params.geometry2, comm);
+  geom1_ = std::make_shared<Geometry<MODEL1>>(std::get<0>(params.geometries), comm);
+  geom2_ = std::make_shared<Geometry<MODEL2>>(std::get<1>(params.geometries), comm);
 }
 
 // -----------------------------------------------------------------------------
