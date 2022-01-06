@@ -26,11 +26,14 @@
 #include "oops/interface/ObsOperator.h"
 #include "oops/interface/ObsSpace.h"
 #include "oops/util/DateTime.h"
+#include "oops/util/parameters/OptionalParameter.h"
+#include "oops/util/parameters/Parameter.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
 
 /// Computes observation equivalent TL and AD to/from increments.
-
 template <typename MODEL, typename OBS>
 class ObserverTLAD {
   typedef Geometry<MODEL>              Geometry_;
@@ -43,9 +46,10 @@ class ObserverTLAD {
   typedef ObsOperator<OBS>             ObsOperator_;
   typedef ObsSpace<OBS>                ObsSpace_;
   typedef ObsVector<OBS>               ObsVector_;
+  typedef ObserverParameters<OBS>      Parameters_;
 
  public:
-  ObserverTLAD(const ObsSpace_ &, const eckit::Configuration &);
+  ObserverTLAD(const ObsSpace_ &, const Parameters_ &);
   ~ObserverTLAD() {}
 
   std::shared_ptr<GetValTLAD_> initializeTraj(const Geometry_ &, const ObsAuxCtrl_ &);
@@ -57,7 +61,7 @@ class ObserverTLAD {
   void finalizeAD();
 
  private:
-  eckit::LocalConfiguration     obsconfig_;
+  Parameters_                   parameters_;
   const ObsSpace_ &             obspace_;    // ObsSpace used in H(x)
   LinearObsOperator_            hoptlad_;    // Linear obs operator
   std::shared_ptr<GetValTLAD_>  getvals_;    // Postproc passed to the model during integration
@@ -72,13 +76,18 @@ class ObserverTLAD {
 
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
-ObserverTLAD<MODEL, OBS>::ObserverTLAD(const ObsSpace_ & obsdb, const eckit::Configuration & conf)
-  : obsconfig_(conf), obspace_(obsdb),
+ObserverTLAD<MODEL, OBS>::ObserverTLAD(const ObsSpace_ & obsdb, const Parameters_ & params)
+  : parameters_(params), obspace_(obsdb),
     hoptlad_(obspace_,
-             validateAndDeserialize<typename LinearObsOperator_::Parameters_>(
-               conf.has("linear obs operator") ?
-                         eckit::LocalConfiguration(conf, "linear obs operator") :
-                         eckit::LocalConfiguration(conf, "obs operator"))),
+             params.linearObsOperator.value() != boost::none ?
+               params.linearObsOperator.value().value() :
+               // Hack: when "linear obs operator" is not specified in the input file, reinterpret
+               //       the entry for "obs operator" as a linear obs operator option. In the long
+               //       term, we need a design that either,
+               //       - allows constructing LinearObsOperator from either set of Parameters, or
+               //       - merges the two sets of Parameters so this switch can be removed
+               validateAndDeserialize<typename LinearObsOperator_::Parameters_>(
+                   params.obsOperator.value().toConfiguration())),
     getvals_(), locations_(), winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()),
     ybias_(nullptr), init_(false)
 {
@@ -92,16 +101,12 @@ ObserverTLAD<MODEL, OBS>::initializeTraj(const Geometry_ & geom, const ObsAuxCtr
   ybias_ = &ybias;
 
 //  hop is only needed to get locations and requiredVars
-  ObsOperator_ hop(obspace_,
-                   validateAndDeserialize<typename ObsOperator_::Parameters_>(
-                     eckit::LocalConfiguration(obsconfig_, "obs operator")));
+  ObsOperator_ hop(obspace_, parameters_.obsOperator);
   locations_.reset(new Locations_(hop.locations()));
   linvars_sizes_ = geom.variableSizes(hoptlad_.requiredVars());
-  eckit::LocalConfiguration gvconf(obsconfig_.has("linear get values") ?
-                         eckit::LocalConfiguration(obsconfig_, "linear get values") :
-                           (obsconfig_.has("get values") ?
-                            eckit::LocalConfiguration(obsconfig_, "get values") :
-                            eckit::LocalConfiguration(obsconfig_, "")));
+  eckit::LocalConfiguration gvconf(
+      parameters_.linearGetValues.value() != boost::none ?
+        parameters_.linearGetValues.value().value() : parameters_.getValues.value());
 
 // Set up variables that will be requested from the model
   Variables geovars;

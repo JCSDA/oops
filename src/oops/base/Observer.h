@@ -39,14 +39,22 @@ class ObserverParameters : public Parameters {
   OOPS_CONCRETE_PARAMETERS(ObserverParameters, Parameters)
 
   typedef typename OBS::ObsOperator::Parameters_ ObsOperatorParameters_;
+  typedef typename OBS::LinearObsOperator::Parameters_ LinearObsOperatorParameters_;
 
  public:
   oops::RequiredParameter<ObsOperatorParameters_> obsOperator{"obs operator", this};
   oops::Parameter<std::vector<ObsFilterParametersWrapper<OBS>>> obsFilters{"obs filters", {}, this};
   oops::Parameter<eckit::LocalConfiguration> getValues{
     "get values", eckit::LocalConfiguration(), this};
-  oops::Parameter<eckit::LocalConfiguration> linearGetValues{
-    "linear get values", eckit::LocalConfiguration(), this};
+
+  // Options used by ObserverTLAD. In the current design there is some overlap between the options
+  // used by Observer and ObserverTLAD, so for now we include these options in ObserverParameters
+  // to simplify the transition to Parameters. Ultimately, it will likely be a cleaner design to
+  // separate out the options into ObserverParameters and ObserverTLADParameters.
+  oops::Parameter<bool> monitoringOnly{"monitoring only", false, this};
+  oops::OptionalParameter<LinearObsOperatorParameters_> linearObsOperator{"linear obs operator",
+      this};
+  oops::OptionalParameter<eckit::LocalConfiguration> linearGetValues{"linear get values", this};
 };
 
 // -----------------------------------------------------------------------------

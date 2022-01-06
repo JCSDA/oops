@@ -15,6 +15,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include <boost/make_unique.hpp>
 
@@ -47,9 +48,11 @@ namespace oops {
 template <typename MODEL, typename OBS> class CostTermBase;
 
 /// Parameters for the Weak cost function
-template <typename MODEL>
-class CostFctWeakParameters : public CostFunctionParametersBase<MODEL> {
-  OOPS_CONCRETE_PARAMETERS(CostFctWeakParameters, CostFunctionParametersBase<MODEL>)
+template <typename MODEL, typename OBS>
+class CostFctWeakParameters : public CostFunctionParametersBase<MODEL, OBS> {
+  // This typedef prevents the macro below from choking on the 2 args of the templated type
+  typedef CostFunctionParametersBase<MODEL, OBS> CostFuntionParametersBase_;
+  OOPS_CONCRETE_PARAMETERS(CostFctWeakParameters, CostFuntionParametersBase_);
 
  public:
   typedef ModelParametersWrapper<MODEL> ModelParameters_;
@@ -91,7 +94,7 @@ template<typename MODEL, typename OBS> class CostFctWeak : public CostFunction<M
   typedef LinearVariableChange<MODEL>     LinVarCha_;
 
  public:
-  typedef CostFctWeakParameters<MODEL>    Parameters_;
+  typedef CostFctWeakParameters<MODEL, OBS> Parameters_;
 
   CostFctWeak(const Parameters_ &, const eckit::mpi::Comm &);
   ~CostFctWeak() {}
@@ -113,7 +116,7 @@ template<typename MODEL, typename OBS> class CostFctWeak : public CostFunction<M
 
   CostJbJq<MODEL>     * newJb(const eckit::Configuration &, const Geometry_ &,
                               const CtrlVar_ &) const override;
-  CostJo<MODEL, OBS>       * newJo(const eckit::Configuration &) const override;
+  CostJo<MODEL, OBS>       * newJo(const std::vector<ObsTypeParameters<OBS>> &) const override;
   CostTermBase<MODEL, OBS> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
   void doLinearize(const Geometry_ &, const eckit::Configuration &,
                    const CtrlVar_ &, const CtrlVar_ &,
@@ -194,8 +197,9 @@ CostJbJq<MODEL> * CostFctWeak<MODEL, OBS>::newJb(const eckit::Configuration & jb
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-CostJo<MODEL, OBS> * CostFctWeak<MODEL, OBS>::newJo(const eckit::Configuration & joConf) const {
-  return new CostJo<MODEL, OBS>(joConf, *commSpace_,
+CostJo<MODEL, OBS> * CostFctWeak<MODEL, OBS>::newJo(
+    const std::vector<ObsTypeParameters<OBS>> & joParams) const {
+  return new CostJo<MODEL, OBS>(joParams, *commSpace_,
                                 subWinBegin_, subWinEnd_, *commTime_);
 }
 

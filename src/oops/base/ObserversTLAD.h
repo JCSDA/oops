@@ -45,7 +45,7 @@ class ObserversTLAD {
   typedef PostProcessorTLAD<MODEL>    PostProcTLAD_;
 
  public:
-  ObserversTLAD(const ObsSpaces_ &, const eckit::Configuration &);
+  ObserversTLAD(const ObsSpaces_ &, const std::vector<ObserverParameters<OBS>> &);
 
   void initializeTraj(const Geometry_ &, const ObsAuxCtrls_ &, PostProcTLAD_ &);
   void finalizeTraj();
@@ -66,15 +66,14 @@ class ObserversTLAD {
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
 ObserversTLAD<MODEL, OBS>::ObserversTLAD(const ObsSpaces_ & obspaces,
-                                         const eckit::Configuration & obsConfig)
+                                         const std::vector<ObserverParameters<OBS>> & obsParams)
   : observers_(), winbgn_(obspaces.windowStart()), winend_(obspaces.windowEnd())
 {
   Log::trace() << "ObserversTLAD<MODEL, OBS>::ObserversTLAD start" << std::endl;
-  std::vector<eckit::LocalConfiguration> obsconfs = obsConfig.getSubConfigurations();
   for (size_t jj = 0; jj < obspaces.size(); ++jj) {
-    bool passive = obsconfs[jj].getBool("monitoring only", false);
+    const bool passive = obsParams[jj].monitoringOnly;
     std::unique_ptr<ObserverTLAD_> tmp;
-    if (!passive) tmp.reset(new ObserverTLAD_(obspaces[jj], obsconfs[jj]));
+    if (!passive) tmp.reset(new ObserverTLAD_(obspaces[jj], obsParams[jj]));
     observers_.push_back(std::move(tmp));
   }
   Log::trace() << "ObserversTLAD<MODEL, OBS>::ObserversTLAD done" << std::endl;

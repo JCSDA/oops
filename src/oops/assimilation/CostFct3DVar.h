@@ -12,6 +12,7 @@
 #define OOPS_ASSIMILATION_COSTFCT3DVAR_H_
 
 #include <memory>
+#include <vector>
 
 #include "eckit/config/Configuration.h"
 #include "eckit/mpi/Comm.h"
@@ -37,9 +38,11 @@
 namespace oops {
 
 /// Parameters for the 3D-Var cost function
-template <typename MODEL>
-class CostFct3DVarParameters : public CostFunctionParametersBase<MODEL> {
-  OOPS_CONCRETE_PARAMETERS(CostFct3DVarParameters, CostFunctionParametersBase<MODEL>)
+template <typename MODEL, typename OBS>
+class CostFct3DVarParameters : public CostFunctionParametersBase<MODEL, OBS> {
+  // This typedef prevents the macro below from choking on the 2 args of the templated type
+  typedef CostFunctionParametersBase<MODEL, OBS> CostFuntionParametersBase_;
+  OOPS_CONCRETE_PARAMETERS(CostFct3DVarParameters, CostFuntionParametersBase_);
 
  public:
   typedef typename State<MODEL>::Parameters_           StateParameters_;
@@ -69,7 +72,7 @@ template<typename MODEL, typename OBS> class CostFct3DVar : public CostFunction<
   typedef State<MODEL>                    State_;
 
  public:
-  typedef CostFct3DVarParameters<MODEL>   Parameters_;
+  typedef CostFct3DVarParameters<MODEL, OBS> Parameters_;
 
   CostFct3DVar(const Parameters_ &, const eckit::mpi::Comm &);
   virtual ~CostFct3DVar() {}
@@ -87,7 +90,7 @@ template<typename MODEL, typename OBS> class CostFct3DVar : public CostFunction<
 
   CostJb3D<MODEL>     * newJb(const eckit::Configuration &, const Geometry_ &,
                               const CtrlVar_ &) const override;
-  CostJo<MODEL, OBS>       * newJo(const eckit::Configuration &) const override;
+  CostJo<MODEL, OBS>       * newJo(const std::vector<ObsTypeParameters<OBS>> &) const override;
   CostTermBase<MODEL, OBS> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
   void doLinearize(const Geometry_ &, const eckit::Configuration &,
                    const CtrlVar_ &, const CtrlVar_ &,
@@ -138,9 +141,10 @@ CostJb3D<MODEL> * CostFct3DVar<MODEL, OBS>::newJb(const eckit::Configuration & j
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-CostJo<MODEL, OBS> * CostFct3DVar<MODEL, OBS>::newJo(const eckit::Configuration & joConf) const {
+CostJo<MODEL, OBS> * CostFct3DVar<MODEL, OBS>::newJo(
+    const std::vector<ObsTypeParameters<OBS>> & joParams) const {
   Log::trace() << "CostFct3DVar::newJo" << std::endl;
-  return new CostJo<MODEL, OBS>(joConf, comm_, windowBegin_, windowEnd_);
+  return new CostJo<MODEL, OBS>(joParams, comm_, windowBegin_, windowEnd_);
 }
 
 // -----------------------------------------------------------------------------
