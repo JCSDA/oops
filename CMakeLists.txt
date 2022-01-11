@@ -74,6 +74,17 @@ endif()
 find_package(nlohmann_json QUIET)
 find_package(nlohmann_json_schema_validator QUIET)
 
+# JSON schema file generation logic
+include( oops_output_json_schema )
+install(
+  FILES
+    "cmake/oops_output_json_schema.cmake"
+    "cmake/oops_output_json_schema.yaml.in"
+    "cmake/oops_output_json_schema_x.cmake.in"
+  DESTINATION
+    "${INSTALL_CMAKE_DIR}"
+)
+
 ## Sources
 add_subdirectory( src )
 add_subdirectory( tools )

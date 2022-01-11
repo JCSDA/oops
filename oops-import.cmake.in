@@ -61,6 +61,11 @@ if(@ENABLE_GPTL@ AND NOT GPTL_FOUND)
     find_dependency( GPTL REQUIRED )
 endif()
 
+if (NOT nlohmann_json_FOUND OR NOT nlohmann_json_schema_validator_FOUND)
+    find_dependency( nlohmann_json QUIET )
+    find_dependency( nlohmann_json_schema_validator QUIET )
+endif()
+
 #Export Fortran compiler version for checking module compatibility
 set(@PROJECT_NAME@_MODULES_Fortran_COMPILER_ID @CMAKE_Fortran_COMPILER_ID@)
 set(@PROJECT_NAME@_MODULES_Fortran_COMPILER_VERSION @CMAKE_Fortran_COMPILER_VERSION@)
