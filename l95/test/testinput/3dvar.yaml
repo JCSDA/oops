@@ -58,7 +58,7 @@ final:
 output:
   datadir: Data
   exp: 3dvar
-  frequency: PT6H
+  steps: ["2010-01-02T00:00:00Z"]
   type: an
 
 test:

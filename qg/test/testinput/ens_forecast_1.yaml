@@ -9,7 +9,8 @@ output:
   datadir: Data
   date: 2009-12-31T00:00:00Z
   exp: mem001.ensforecast
-  frequency: PT1H
+  steps: ["2009-12-31T01:00:00Z", "2009-12-31T04:00:00Z",
+          "2010-01-01T10:00:00Z", "2010-01-01T11:00:00Z"]
   type: fc
 prints:
   frequency: PT3H
