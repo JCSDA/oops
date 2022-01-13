@@ -61,6 +61,11 @@ class GeometryCoupled : public util::Printable {
   const Geometry<MODEL1> & geometry1() const {ASSERT(geom1_); return *geom1_;}
   const Geometry<MODEL2> & geometry2() const {ASSERT(geom2_); return *geom2_;}
 
+  /// Accessors to model information
+  const int & modelNumber() const {return mymodel_;}
+  const int & localRank() const {return myrank_;}
+  const bool & isParallel() const {return parallel_;}
+
  private:
   void print(std::ostream & os) const override;
 
@@ -69,6 +74,7 @@ class GeometryCoupled : public util::Printable {
   const eckit::mpi::Comm & comm_;
   bool parallel_;
   int myrank_;
+  int mymodel_;
 };
 
 // -----------------------------------------------------------------------------
@@ -83,18 +89,18 @@ GeometryCoupled<MODEL1, MODEL2>::GeometryCoupled(const Parameters_ & params,
     const int mytask = comm.rank();
     const int ntasks = comm.size();
     const int tasks_per_model = ntasks / 2;
-    const int mymodel = mytask / tasks_per_model + 1;
+    mymodel_ = mytask / tasks_per_model + 1;
 
     //  Create the communicator for each model, named comm_model_{model name}
     // The first half of the MPI tasks will go to MODEL1, and the second half to MODEL2
     std::string commNameStr;
-    if (mymodel == 1) commNameStr = "comm_model_" + MODEL1::name();
-    if (mymodel == 2) commNameStr = "comm_model_" + MODEL2::name();
+    if (mymodel_ == 1) commNameStr = "comm_model_" + MODEL1::name();
+    if (mymodel_ == 2) commNameStr = "comm_model_" + MODEL2::name();
     char const *commName = commNameStr.c_str();
-    eckit::mpi::Comm & commModel = comm.split(mymodel, commName);
-    if (mymodel == 1)
+    eckit::mpi::Comm & commModel = comm.split(mymodel_, commName);
+    if (mymodel_ == 1)
       geom1_ = std::make_shared<Geometry<MODEL1>>(std::get<0>(params.geometries), commModel);
-    if (mymodel == 2)
+    if (mymodel_ == 2)
       geom2_ = std::make_shared<Geometry<MODEL2>>(std::get<1>(params.geometries), commModel);
     myrank_ = commModel.rank();
   } else {

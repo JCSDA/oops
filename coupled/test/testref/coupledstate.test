@@ -1,0 +1,20 @@
+Test     : Printing State from yaml: 
+Test     : StateCoupled: QG
+Test     :   Valid time: 2010-01-01T00:00:00Z
+Test     :   Resolution = 40, 20, 2
+Test     :   Streamfunction         :  Min= -5.1807e+08, Max=  1.0739e+08, RMS=  1.9152e+08
+Test     :   Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
+Test     :   Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+Test     : StateCoupled: Lorenz 95
+Test     :  Valid time: 2010-01-01T00:00:00Z
+Test     :  Min=7, Max=8, Average=7.975
+Test     : Printing empty State: 
+Test     : StateCoupled: QG
+Test     :   Valid time: 2010-01-01T00:00:00Z
+Test     :   Resolution = 40, 20, 2
+Test     :   Streamfunction         :  Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
+Test     :   Streamfunction LBC     :  Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
+Test     :   Potential vorticity LBC:  Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
+Test     : StateCoupled: Lorenz 95
+Test     :  Valid time: 2010-01-01T00:00:00Z
+Test     :  Min=0, Max=0, Average=0
