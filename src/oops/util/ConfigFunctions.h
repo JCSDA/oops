@@ -26,9 +26,22 @@ namespace util {
   ///        vector of LocalConfigurations.
   ///        If they don't exist an empty configuration is copied in the vector element.
   std::vector<eckit::LocalConfiguration>
-    vectoriseAndFilter(const eckit::Configuration &config, const std::string & tag);
+    vectoriseAndFilter(const eckit::Configuration & config, const std::string & tag);
 
+  /// \brief Check if the configuration is a vector of configurations
+  bool isVector(const eckit::Configuration & config);
 
+  /// \brief Check if the configuration is a subconfiguration
+  bool isSubConfig(const eckit::Configuration & config);
+
+  /// \brief Check if the configuration is a final pair
+  bool isFinal(const eckit::Configuration & config);
+
+  /// \brief Seek and replace a pattern with a value, recursively
+  void seekAndReplace(eckit::LocalConfiguration & config, const std::string & pattern,
+                      const std::string & value);
+  void seekAndReplace(eckit::LocalConfiguration & config, const std::string & pattern,
+                      const size_t & count, const size_t & zpad);
 }  // namespace util
 
 #endif  // OOPS_UTIL_CONFIGFUNCTIONS_H_

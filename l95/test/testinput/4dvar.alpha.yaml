@@ -17,27 +17,12 @@ cost function:
     localization:
       length_scale: 1.0
       localization method: L95
-    members:
-    - date: 2010-01-01T03:00:00Z
-      filename: Data/forecast.ens.1.2010-01-01T00:00:00Z.PT3H.l95
-    - date: 2010-01-01T03:00:00Z
-      filename: Data/forecast.ens.2.2010-01-01T00:00:00Z.PT3H.l95
-    - date: 2010-01-01T03:00:00Z
-      filename: Data/forecast.ens.3.2010-01-01T00:00:00Z.PT3H.l95
-    - date: 2010-01-01T03:00:00Z
-      filename: Data/forecast.ens.4.2010-01-01T00:00:00Z.PT3H.l95
-    - date: 2010-01-01T03:00:00Z
-      filename: Data/forecast.ens.5.2010-01-01T00:00:00Z.PT3H.l95
-    - date: 2010-01-01T03:00:00Z
-      filename: Data/forecast.ens.6.2010-01-01T00:00:00Z.PT3H.l95
-    - date: 2010-01-01T03:00:00Z
-      filename: Data/forecast.ens.7.2010-01-01T00:00:00Z.PT3H.l95
-    - date: 2010-01-01T03:00:00Z
-      filename: Data/forecast.ens.8.2010-01-01T00:00:00Z.PT3H.l95
-    - date: 2010-01-01T03:00:00Z
-      filename: Data/forecast.ens.9.2010-01-01T00:00:00Z.PT3H.l95
-    - date: 2010-01-01T03:00:00Z
-      filename: Data/forecast.ens.10.2010-01-01T00:00:00Z.PT3H.l95
+    members from template:
+      template:
+        date: 2010-01-01T03:00:00Z
+        filename: Data/forecast.ens.%mem%.2010-01-01T00:00:00Z.PT3H.l95
+      pattern: %mem%
+      nmembers: 10
   observations:
   - obs error:
       covariance model: diagonal

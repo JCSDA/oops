@@ -28,6 +28,7 @@
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/abor1_cpp.h"
+#include "oops/util/ConfigFunctions.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/OptionalParameter.h"
@@ -221,20 +222,9 @@ template <typename MODEL> class Dirac : public Application {
     if (id != "") id.append("_");
     id.append(Bmat->covarianceModel());
 
-    // Loop over keys to replace %id% with id
-    std::vector<std::string> keys(outputBConf.keys());
-    for (size_t jj = 0; jj < keys.size(); ++jj) {
-       // Get configuration key/value
-       std::string key(keys[jj]);
-       std::string value(outputBConf.getString(key));
-
-       // Check if a configuration value contains the pattern %id%
-       if (value.find("%id%") != std::string::npos) {
-          // Update the configuration value
-          value = std::regex_replace(value, std::regex("%id%"), id);
-          outputBConf.set(key, value);
-       }
-    }
+    // Seek and replace %id% with id, recursively
+    const std::string pattern("%id%");
+    util::seekAndReplace(outputBConf, pattern, id);
 
     // Write output increment
     dxo.write(outputBConf);
@@ -271,20 +261,9 @@ template <typename MODEL> class Dirac : public Application {
       std::string idL(id);
       idL.append("_localization");
 
-      // Loop over keys to replace %id% with idL
-      std::vector<std::string> keys(outputLConf.keys());
-      for (size_t jj = 0; jj < keys.size(); ++jj) {
-        // Get configuration key/value
-        std::string key(keys[jj]);
-        std::string value(outputLConf.getString(key));
-
-        // Check if a configuration value contains the pattern %id%
-        if (value.find("%id%") != std::string::npos) {
-          // Update the configuration value
-          value = std::regex_replace(value, std::regex("%id%"), idL);
-          outputLConf.set(key, value);
-        }
-      }
+      // Seek and replace %id% with id, recursively
+      const std::string pattern("%id%");
+      util::seekAndReplace(outputLConf, pattern, idL);
 
       // Write output increment
       dxo.write(outputLConf);

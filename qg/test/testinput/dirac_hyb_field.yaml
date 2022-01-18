@@ -9,27 +9,12 @@ background error:
         maximum_condition_number: 1.0e6
         standard_deviation: 1.0
         vertical_length_scale: 30000.0
-      members:
-      - date: 2010-01-01T12:00:00Z
-        filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1DT12H.nc
-      - date: 2010-01-01T12:00:00Z
-        filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1DT12H.nc
-      - date: 2010-01-01T12:00:00Z
-        filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1DT12H.nc
-      - date: 2010-01-01T12:00:00Z
-        filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1DT12H.nc
-      - date: 2010-01-01T12:00:00Z
-        filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1DT12H.nc
-      - date: 2010-01-01T12:00:00Z
-        filename: Data/forecast.ens.6.2009-12-31T00:00:00Z.P1DT12H.nc
-      - date: 2010-01-01T12:00:00Z
-        filename: Data/forecast.ens.7.2009-12-31T00:00:00Z.P1DT12H.nc
-      - date: 2010-01-01T12:00:00Z
-        filename: Data/forecast.ens.8.2009-12-31T00:00:00Z.P1DT12H.nc
-      - date: 2010-01-01T12:00:00Z
-        filename: Data/forecast.ens.9.2009-12-31T00:00:00Z.P1DT12H.nc
-      - date: 2010-01-01T12:00:00Z
-        filename: Data/forecast.ens.10.2009-12-31T00:00:00Z.P1DT12H.nc
+      members from template:
+        template:
+          date: 2010-01-01T12:00:00Z
+          filename: Data/forecast.ens.%mem%.2009-12-31T00:00:00Z.P1DT12H.nc
+        pattern: %mem%
+        nmembers: 10
     weight:
       date: 2010-01-01T00:00:00Z
       filename: Data/uniform_field_hybrid.diag.2010-01-01T00:00:00Z.nc

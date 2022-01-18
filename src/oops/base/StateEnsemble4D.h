@@ -8,6 +8,7 @@
 #ifndef OOPS_BASE_STATEENSEMBLE4D_H_
 #define OOPS_BASE_STATEENSEMBLE4D_H_
 
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -15,6 +16,8 @@
 #include "oops/base/Accumulator.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/State4D.h"
+#include "oops/util/abor1_cpp.h"
+#include "oops/util/ConfigFunctions.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
@@ -53,12 +56,56 @@ template<typename MODEL>
 StateEnsemble4D<MODEL>::StateEnsemble4D(const Geometry_ & resol,
                                         const eckit::Configuration & config)
   : states_() {
-  std::vector<eckit::LocalConfiguration> memberConfig;
-  config.get("members", memberConfig);
-  states_.reserve(memberConfig.size());
+  // Abort if both "members" and "members from template" are specified
+  if (config.has("members") && config.has("members from template"))
+    ABORT("StateEnsemble4D:constructor: both members and members from template are specified");
+
+  std::vector<eckit::LocalConfiguration> membersConfig;
+  if (config.has("members")) {
+    // Explicit members
+    config.get("members", membersConfig);
+  } else if (config.has("members from template")) {
+    // Templated members
+    eckit::LocalConfiguration templateConfig;
+    config.get("members from template", templateConfig);
+    eckit::LocalConfiguration membersTemplate;
+    templateConfig.get("template", membersTemplate);
+    std::string pattern;
+    templateConfig.get("pattern", pattern);
+    int ne;
+    templateConfig.get("nmembers", ne);
+    int start = 1;
+    if (templateConfig.has("start")) {
+      templateConfig.get("start", start);
+    }
+    std::vector<int> except;
+    if (templateConfig.has("except")) {
+      templateConfig.get("except", except);
+    }
+    int zpad = 0;
+    if (templateConfig.has("zero padding")) {
+      templateConfig.get("zero padding", zpad);
+    }
+    int count = start;
+    for (int ie=0; ie < ne; ++ie) {
+      while (std::count(except.begin(), except.end(), count)) {
+        count += 1;
+      }
+      eckit::LocalConfiguration memberConfig(membersTemplate);
+      util::seekAndReplace(memberConfig, pattern, count, zpad);
+      membersConfig.push_back(memberConfig);
+      count += 1;
+    }
+  } else {
+    ABORT("StateEnsemble4D: ensemble not specified");
+  }
+
+  // Reserve memory to hold ensemble
+  states_.reserve(membersConfig.size());
+
   // Loop over all ensemble members
-  for (size_t jj = 0; jj < memberConfig.size(); ++jj) {
-    states_.emplace_back(State4D_(resol, memberConfig[jj]));
+  for (size_t jj = 0; jj < membersConfig.size(); ++jj) {
+    states_.emplace_back(State4D_(resol, membersConfig[jj]));
   }
   Log::trace() << "StateEnsemble4D:contructor done" << std::endl;
 }

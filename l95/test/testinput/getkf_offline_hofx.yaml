@@ -6,17 +6,12 @@ geometry:
 
 # use 3D for middle of the window
 background:
-  members:
-  - date: &date 2010-01-02T00:00:00Z
-    filename: Data/forecast.ens.1.2010-01-01T00:00:00Z.P1D.l95
-  - date: *date
-    filename: Data/forecast.ens.2.2010-01-01T00:00:00Z.P1D.l95
-  - date: *date
-    filename: Data/forecast.ens.3.2010-01-01T00:00:00Z.P1D.l95
-  - date: *date
-    filename: Data/forecast.ens.4.2010-01-01T00:00:00Z.P1D.l95
-  - date: *date
-    filename: Data/forecast.ens.5.2010-01-01T00:00:00Z.P1D.l95
+  members from template:
+    template:
+      date: &date 2010-01-02T00:00:00Z
+      filename: Data/forecast.ens.%mem%.2010-01-01T00:00:00Z.P1D.l95
+    pattern: %mem%
+    nmembers: 5
 
 observations:
 - obs error:
