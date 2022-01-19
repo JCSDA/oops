@@ -223,8 +223,7 @@ template <typename MODEL> class Dirac : public Application {
     id.append(Bmat->covarianceModel());
 
     // Seek and replace %id% with id, recursively
-    const std::string pattern("%id%");
-    util::seekAndReplace(outputBConf, pattern, id);
+    util::seekAndReplace(outputBConf, "%id%", id);
 
     // Write output increment
     dxo.write(outputBConf);
@@ -262,8 +261,7 @@ template <typename MODEL> class Dirac : public Application {
       idL.append("_localization");
 
       // Seek and replace %id% with id, recursively
-      const std::string pattern("%id%");
-      util::seekAndReplace(outputLConf, pattern, idL);
+      util::seekAndReplace(outputLConf, "%id%", idL);
 
       // Write output increment
       dxo.write(outputLConf);

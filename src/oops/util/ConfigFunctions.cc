@@ -105,7 +105,7 @@ namespace util {
               // Check if the substring contains the pattern
               if (subStrings[kk].find(pattern) != std::string::npos) {
                 // Update the substring
-                subStrings[kk] = std::regex_replace(subStrings[kk], std::regex("%mem%"), value_out);
+                subStrings[kk] = std::regex_replace(subStrings[kk], std::regex(pattern), value_out);
               }
             }
 
@@ -124,7 +124,7 @@ namespace util {
           // Check if the value contains the pattern
           if (value.find(pattern) != std::string::npos) {
             // Update the value
-            value = std::regex_replace(value, std::regex("%mem%"), value_out);
+            value = std::regex_replace(value, std::regex(pattern), value_out);
 
             // Reset the value
             config.set(keys[jj], value);
