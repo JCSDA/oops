@@ -187,6 +187,7 @@ oops/generic/fft_pass_proc_f.F90
 oops/generic/fft_spectral2gpoint_f.F90
 oops/generic/gc99.h
 oops/generic/gc99.cc
+oops/generic/gc99_mod.F90
 oops/generic/GeoVaLsWriter.h
 oops/generic/IdentityLinearModel.h
 oops/generic/IdentityModel.h

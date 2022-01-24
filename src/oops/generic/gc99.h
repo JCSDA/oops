@@ -10,7 +10,9 @@
 
 namespace oops {
 
-double gc99(const double & distnorm);
+extern "C" {
+  double gc99(const double &);
+}
 
 }  // namespace oops
 #endif  // OOPS_GENERIC_GC99_H_
