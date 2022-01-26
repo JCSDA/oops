@@ -142,7 +142,7 @@ template <typename MODEL> class Dirac : public Application {
 //  Setup Dirac field
     Increment_ dxi(resol, vars, time);
     dxi.dirac(params.dirac);
-    Log::test() << "Input Dirac increment: " << dxi << std::endl;
+    Log::test() << "Input Dirac increment:" << dxi << std::endl;
 
 //  Go recursively through the covariance configuration
     const CovarianceParametersBase_ &covarParams =
@@ -227,17 +227,19 @@ template <typename MODEL> class Dirac : public Application {
 
     // Write output increment
     dxo.write(outputBConf);
-    Log::test() << "Covariance(" << id << ") * Increment: " << dxo << std::endl;
+    Log::test() << "Covariance(" << id << ") * Increment:" << dxo << std::endl;
 
     // Look for hybrid or ensemble covariance models
     const std::string covarianceModel(covarConfig.getString("covariance model"));
     if (covarianceModel == "hybrid") {
       std::vector<eckit::LocalConfiguration> confs;
       covarConfig.get("components", confs);
+      size_t componentIndex(1);
       for (const auto & conf : confs) {
-        std::string idC(id);
+        std::string idC(id + std::to_string(componentIndex));
         const eckit::LocalConfiguration componentConfig(conf, "covariance");
         dirac(componentConfig, outputConfig, idC, resol, xx, dxi);
+        ++componentIndex;
       }
     }
     if (covarianceModel == "ensemble" && covarConfig.has("localization")) {
@@ -265,7 +267,7 @@ template <typename MODEL> class Dirac : public Application {
 
       // Write output increment
       dxo.write(outputLConf);
-      Log::test() << "Localization(" << id << ") * Increment: " << dxo << std::endl;
+      Log::test() << "Localization(" << id << ") * Increment:" << dxo << std::endl;
     }
   }
 // -----------------------------------------------------------------------------
