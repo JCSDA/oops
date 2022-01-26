@@ -13,6 +13,8 @@
 cmake_minimum_required( VERSION 3.12 )
 project( oops VERSION 1.2.0 LANGUAGES CXX Fortran )
 
+option(OPENMP "Build oops with OpenMP support" ON)
+
 ## Ecbuild integration
 find_package( ecbuild 3.3.2 REQUIRED )
 include( ecbuild_system NO_POLICY_SCOPE )
@@ -47,7 +49,9 @@ find_package( Eigen3 REQUIRED NO_MODULE HINTS
     $ENV{Eigen3_ROOT} $ENV{EIGEN3_ROOT} $ENV{Eigen_ROOT} $ENV{EIGEN_ROOT}
     $ENV{Eigen3_PATH} $ENV{EIGEN3_PATH} $ENV{Eigen_PATH} $ENV{EIGEN_PATH})
 
-find_package( OpenMP COMPONENTS CXX Fortran )
+if(OPENMP)
+  find_package( OpenMP REQUIRED COMPONENTS CXX Fortran )
+endif()
 find_package( MPI REQUIRED COMPONENTS C CXX Fortran )
 find_package( NetCDF REQUIRED COMPONENTS Fortran )
 find_package( Boost 1.64.0 REQUIRED)
