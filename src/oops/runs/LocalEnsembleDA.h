@@ -235,9 +235,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
 
     // run the solver at each gridpoint
     Log::info() << "Beginning core local solver..." << std::endl;
-    for (GeometryIterator_ i = geometry.begin(); i != geometry.end(); ++i) {
-      solver->measurementUpdate(bkg_pert, i, ana_pert);
-    }
+    solver->measurementUpdate(bkg_pert, ana_pert);
     Log::info() << "Local solver completed." << std::endl;
 
     // wait all tasks to finish their solution, so the timing for functions below reports

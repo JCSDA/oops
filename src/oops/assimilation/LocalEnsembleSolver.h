@@ -76,6 +76,9 @@ class LocalEnsembleSolver {
   virtual Observations_ computeHofX(const StateEnsemble4D_ & xx, size_t iteration,
                       bool readFromDisk);
 
+  /// update background ensemble \p bg to analysis ensemble \p for all points on this PE
+  virtual void measurementUpdate(const IncrementEnsemble4D_ & bg, IncrementEnsemble4D_ & an);
+
   /// update background ensemble \p bg to analysis ensemble \p an at a grid point location \p i
   virtual void measurementUpdate(const IncrementEnsemble4D_ & bg,
                                  const GeometryIterator_ & i, IncrementEnsemble4D_ & an) = 0;
@@ -140,6 +143,15 @@ LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
   }
 }
 
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename OBS>
+void LocalEnsembleSolver<MODEL, OBS>::measurementUpdate
+        (const IncrementEnsemble4D_ & bg, IncrementEnsemble4D_ & an) {
+    for (GeometryIterator_ i = geometry_.begin(); i != geometry_.end(); ++i) {
+      measurementUpdate(bg, i, an);
+    }
+}
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
