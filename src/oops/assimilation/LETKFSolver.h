@@ -15,7 +15,6 @@
 #include <string>
 #include <vector>
 
-#include "oops/assimilation/LETKFSolverParameters.h"
 #include "oops/assimilation/LocalEnsembleSolver.h"
 #include "oops/base/Departures.h"
 #include "oops/base/DeparturesEnsemble.h"
@@ -74,8 +73,6 @@ class LETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
   virtual void applyWeights(const IncrementEnsemble4D_ &, IncrementEnsemble4D_ &,
                             const GeometryIterator_ &);
 
-  LETKFSolverParameters options_;
-
   Eigen::MatrixXd Wa_;  // transformation matrix for ens. perts. Xa=Xf*Wa
   Eigen::VectorXd wa_;  // transformation matrix for ens. mean xa=xf*wa
 
@@ -96,29 +93,7 @@ LETKFSolver<MODEL, OBS>::LETKFSolver(ObsSpaces_ & obspaces, const Geometry_ & ge
     nens_(nens)
 {
   Log::trace() << "LETKFSolver<MODEL, OBS>::create starting" << std::endl;
-  options_.deserialize(config);
-  const LETKFInflationParameters & inflopt = options_.infl;
-
   Log::info() << "Using EIGEN implementation of LETKF" << std::endl;
-
-  Log::info() << "Multiplicative inflation multCoeff=" <<
-                 inflopt.mult << std::endl;
-
-  if (inflopt.dortpp()) {
-      Log::info() << "RTPP inflation will be applied with rtppCoeff=" <<
-                    inflopt.rtpp << std::endl;
-  } else {
-      Log::info() << "RTPP inflation is not applied rtppCoeff is out of bounds (0,1], rtppCoeff="
-                  << inflopt.rtpp << std::endl;
-  }
-
-  if (inflopt.dortps()) {
-    Log::info() << "RTPS inflation will be applied with rtpsCoeff=" <<
-                    inflopt.rtps << std::endl;
-  } else {
-    Log::info() << "RTPS inflation is not applied rtpsCoeff is out of bounds (0,1], rtpsCoeff="
-                << inflopt.rtps << std::endl;
-  }
 
   // pre-allocate transformation matrices
   Wa_.resize(nens_, nens_);
@@ -174,7 +149,7 @@ void LETKFSolver<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
   // implements LETKF from Hunt et al. 2007
   util::Timer timer(classname(), "computeWeights");
 
-  const LETKFInflationParameters & inflopt = options_.infl;
+  const LocalEnsembleSolverInflationParameters & inflopt = this->options_.infl;
 
   // fill in the work matrix
   // work = Y^T R^-1 Y + (nens-1)/infl I
@@ -208,8 +183,6 @@ void LETKFSolver<MODEL, OBS>::applyWeights(const IncrementEnsemble4D_ & bkg_pert
   // applies Wa_, wa_
   util::Timer timer(classname(), "applyWeights");
 
-  const LETKFInflationParameters & inflopt = options_.infl;
-
   // loop through analysis times and ens. members
   for (size_t itime=0; itime < bkg_pert[0].size(); ++itime) {
     // make grid point forecast pert ensemble array
@@ -220,32 +193,8 @@ void LETKFSolver<MODEL, OBS>::applyWeights(const IncrementEnsemble4D_ & bkg_pert
     Eigen::VectorXd xa = Xb*wa_;   // ensemble mean update
     Eigen::MatrixXd Xa = Xb*Wa_;   // ensemble perturbation update
 
-    // RTPP inflation
-    if (inflopt.dortpp()) {
-      Xa = (1-inflopt.rtpp)*Xa+inflopt.rtpp*Xb;
-    }
-
-    // RTPS inflation
-    double eps = DBL_EPSILON;
-    if (inflopt.dortps()) {
-      // posterior spread
-      Eigen::ArrayXd asprd = Xa.array().square().rowwise().sum()/(nens_-1);
-      asprd = asprd.sqrt();
-      asprd = (asprd < eps).select(eps, asprd);  // avoid nan overflow for vars with no spread
-
-      // prior spread
-      Eigen::ArrayXd fsprd = Xb.array().square().rowwise().sum()/(nens_-1);
-      fsprd = fsprd.sqrt();
-      fsprd = (fsprd < eps).select(eps, fsprd);
-
-      // rtps inflation factor
-      Eigen::ArrayXd rtpsInfl = inflopt.rtps*((fsprd-asprd)/asprd) + 1;
-      rtpsInfl = (rtpsInfl < inflopt.rtpsInflMin()).select(inflopt.rtpsInflMin(), rtpsInfl);
-      rtpsInfl = (rtpsInfl > inflopt.rtpsInflMax()).select(inflopt.rtpsInflMax(), rtpsInfl);
-
-      // inlfate perturbation matrix
-      Xa.array().colwise() *= rtpsInfl;
-    }
+    // posterior inflation if rtps and rttp coefficients belong to (0,1]
+    this->posteriorInflation(Xb, Xa);
 
     // assign Xa to ana_pert
     Xa = Xa.colwise() + xa;

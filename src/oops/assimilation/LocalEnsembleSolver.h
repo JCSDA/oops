@@ -8,6 +8,8 @@
 #ifndef OOPS_ASSIMILATION_LOCALENSEMBLESOLVER_H_
 #define OOPS_ASSIMILATION_LOCALENSEMBLESOLVER_H_
 
+#include <Eigen/Dense>
+#include <cfloat>
 #include <map>
 #include <memory>
 #include <string>
@@ -16,6 +18,7 @@
 
 #include "eckit/config/Configuration.h"
 #include "eckit/config/LocalConfiguration.h"
+#include "oops/assimilation/LocalEnsembleSolverParameters.h"
 #include "oops/base/Departures.h"
 #include "oops/base/DeparturesEnsemble.h"
 #include "oops/base/Geometry.h"
@@ -81,6 +84,9 @@ class LocalEnsembleSolver {
   virtual void copyLocalIncrement(const IncrementEnsemble4D_ & bg,
                                   const GeometryIterator_ & i, IncrementEnsemble4D_ & an) const;
 
+  /// apply posterior inflation to a local ensemble
+  void posteriorInflation(const Eigen::MatrixXd & Xb, Eigen::MatrixXd & Xa) const;
+
   /// compute H(x) based on 4D state \p xx and put the result into \p yy. Also sets up
   /// R_ based on the QC filters run during H(x)
   void computeHofX4D(const eckit::Configuration &, const State4D_ &, Observations_ &);
@@ -96,6 +102,7 @@ class LocalEnsembleSolver {
   std::unique_ptr<ObsErrors_>   R_;        ///< observation errors, set in computeHofX method
   std::unique_ptr<Departures_> invVarR_;   ///< inverse observation error variance; set in
                                            ///  computeHofX method
+  LocalEnsembleSolverParameters options_;
 
  private:
   const eckit::LocalConfiguration obsconf_;  // configuration for observations
@@ -110,7 +117,28 @@ LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
                                         const eckit::Configuration & config, size_t nens,
                                         const State4D_ & xbmean)
   : geometry_(geometry), obspaces_(obspaces), omb_(obspaces_), Yb_(obspaces_, nens),
-    obsconf_(config, "observations"), obsloc_(obsconf_, obspaces_) {}
+    obsconf_(config, "observations"), obsloc_(obsconf_, obspaces_) {
+  // initialize and print options
+  options_.deserialize(config);
+  const LocalEnsembleSolverInflationParameters & inflopt = this->options_.infl;
+
+  Log::info() << "Multiplicative inflation will be applied with multCoeff=" <<
+                 inflopt.mult << std::endl;
+  if (inflopt.doRtpp()) {
+      Log::info() << "RTPP inflation will be applied with rtppCoeff=" <<
+                    inflopt.rtpp << std::endl;
+  } else {
+      Log::info() << "RTPP inflation is not applied rtppCoeff is out of bounds (0,1], rtppCoeff="
+                  << inflopt.rtpp << std::endl;
+  }
+  if (inflopt.doRtps()) {
+    Log::info() << "RTPS inflation will be applied with rtpsCoeff=" <<
+                    inflopt.rtps << std::endl;
+  } else {
+    Log::info() << "RTPS inflation is not applied rtpsCoeff is out of bounds (0,1], rtpsCoeff="
+                << inflopt.rtps << std::endl;
+  }
+}
 
 // -----------------------------------------------------------------------------
 
@@ -235,6 +263,42 @@ void LocalEnsembleSolver<MODEL, OBS>::copyLocalIncrement(const IncrementEnsemble
       ana_pert[iens][itime].setLocal(gp, i);
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename OBS>
+void LocalEnsembleSolver<MODEL, OBS>::posteriorInflation(
+                                  const Eigen::MatrixXd & Xb, Eigen::MatrixXd & Xa) const {
+    const size_t nens = Xa.cols();
+    const LocalEnsembleSolverInflationParameters & inflopt = options_.infl;
+
+    // RTPP inflation
+    if (inflopt.doRtpp()) {
+      Xa = (1-inflopt.rtpp)*Xa+inflopt.rtpp*Xb;
+    }
+
+    // RTPS inflation
+    const double eps = DBL_EPSILON;
+    if (inflopt.doRtps()) {
+      // posterior spread
+      Eigen::ArrayXd asprd = Xa.array().square().rowwise().sum()/(nens-1);
+      asprd = asprd.sqrt();
+      asprd = (asprd < eps).select(eps, asprd);  // avoid nan overflow for vars with no spread
+
+      // prior spread
+      Eigen::ArrayXd fsprd = Xb.array().square().rowwise().sum()/(nens-1);
+      fsprd = fsprd.sqrt();
+      fsprd = (fsprd < eps).select(eps, fsprd);
+
+      // rtps inflation factor
+      Eigen::ArrayXd rtpsInfl = inflopt.rtps*((fsprd-asprd)/asprd) + 1;
+      rtpsInfl = (rtpsInfl < inflopt.rtpsInflMin()).select(inflopt.rtpsInflMin(), rtpsInfl);
+      rtpsInfl = (rtpsInfl > inflopt.rtpsInflMax()).select(inflopt.rtpsInflMax(), rtpsInfl);
+
+      // inflate perturbation matrix
+      Xa.array().colwise() *= rtpsInfl;
+    }
 }
 
 // =============================================================================
