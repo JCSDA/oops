@@ -181,6 +181,8 @@ void GETKFSolver<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
   // Yb(nobs,neig*nens), YbOrig(nobs,nens)
   // uses GSI GETKF code
   util::Timer timer(classname(), "computeWeights");
+  const LocalEnsembleSolverInflationParameters & inflopt = this->options_.infl;
+  const float infl = inflopt.mult;
 
   const int nobsl = dy.size();
 
@@ -200,7 +202,7 @@ void GETKFSolver<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
   letkf_core_f90(nobsl, Yb_f.data(), YbOrig_f.data(), dy_f.data(),
                  wa_f.data(), Wa_f.data(),
                  R_invvar_f.data(), nanal_, neig_,
-                 getkf_inflation, denkf, getkf);
+                 getkf_inflation, denkf, getkf, infl);
   this->Wa_ = Wa_f.cast<double>();
   this->wa_ = wa_f.cast<double>();
 }

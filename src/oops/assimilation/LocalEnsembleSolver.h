@@ -36,6 +36,7 @@
 #include "oops/generic/PseudoModelState4D.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/interface/ModelAuxControl.h"
+#include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
@@ -124,7 +125,6 @@ LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
   // initialize and print options
   options_.deserialize(config);
   const LocalEnsembleSolverInflationParameters & inflopt = this->options_.infl;
-
   Log::info() << "Multiplicative inflation will be applied with multCoeff=" <<
                  inflopt.mult << std::endl;
   if (inflopt.doRtpp()) {

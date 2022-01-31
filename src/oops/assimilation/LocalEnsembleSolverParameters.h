@@ -8,6 +8,7 @@
 #ifndef OOPS_ASSIMILATION_LOCALENSEMBLESOLVERPARAMETERS_H_
 #define OOPS_ASSIMILATION_LOCALENSEMBLESOLVERPARAMETERS_H_
 
+#include "oops/util/parameters/NumericConstraints.h"
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
 
@@ -18,8 +19,10 @@ class LocalEnsembleSolverInflationParameters : public Parameters {
   OOPS_CONCRETE_PARAMETERS(LocalEnsembleSolverInflationParameters, Parameters)
 
  public:
-  // multiplicative prior inflation Pf'=mult*Pf
-  Parameter<double> mult{"mult", 1.0, this};
+  // multiplicative prior inflation Pf=mult*Pf
+  oops::Parameter<double> mult{"mult",
+                               "multiplicative prior inflation coeff. (0, inf]",
+                               1.0, this, {oops::exclusiveMinConstraint(0.0)}};
 
   // RTPP: Relaxation to prior perturbation.
   // delta_xa'(iens)=rtppCoeff*delta_xb'(iens)+(1-rtppCoeff)*delta_xa'(iens)
@@ -28,7 +31,9 @@ class LocalEnsembleSolverInflationParameters : public Parameters {
   // Kalman Filter for convective-scale data assim-imilation:
   // Impact of initial estimate and observations.
   // Mon. Wea. Rev., 132, 1238-1253.
-  Parameter<double> rtpp{"rtpp", 0.0, this};
+  Parameter<double> rtpp{"rtpp",
+                         "Relaxation to prior perturbation coeff. (0, 1]",
+                         0.0, this};
   bool doRtpp() const { return rtpp > 0.0 && rtpp <= 1.0; }
 
   // Relaxation to prior spread
@@ -36,7 +41,9 @@ class LocalEnsembleSolverInflationParameters : public Parameters {
   //      *{ rtps*( std(Xb(i_grid,:))-std(Xa(i_grid,:)) )/std(Xa(i_grid,:)) + 1 }
   // where i_grid is the index of grid point
   // std is ensemble standard deviation for prior (Xb) and posterior (Xa)
-  Parameter<double> rtps{"rtps", 0.0, this};
+  Parameter<double> rtps{"rtps",
+                         "Relaxation to prior spread coeff. (0, 1]",
+                         0.0, this};
   bool doRtps() const { return rtps > 0.0 && rtps <= 1.0; }
 
   // rtpsInflMin and rtpsInflMax are min and max perturbation inflation

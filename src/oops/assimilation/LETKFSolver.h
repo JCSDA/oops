@@ -153,7 +153,7 @@ void LETKFSolver<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
 
   // fill in the work matrix
   // work = Y^T R^-1 Y + (nens-1)/infl I
-  double infl = inflopt.mult;
+  const double infl = inflopt.mult;
   Eigen::MatrixXd work = Yb*(diagInvR.asDiagonal()*Yb.transpose());
   work.diagonal() += Eigen::VectorXd::Constant(nens_, (nens_-1)/infl);
 

@@ -179,7 +179,6 @@ list( APPEND l95_testoutput
   testoutput/letkf.test
   testoutput/letkf_noobs.test
   testoutput/letkf_qc.test
-  testoutput/letkf_gsi.test
   testoutput/localhofx.test
   testoutput/makeobs3d.test
   testoutput/makeobs4d.test

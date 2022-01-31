@@ -17,8 +17,8 @@ observations:
 - obs error:
     covariance model: diagonal
   obs localizations:
-  - localization method: Gaspari-Cohn
-    lengthscale: .1
+    - localization method: Gaspari-Cohn
+      lengthscale: .1
   obs space:
     obsdatain:
       obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
@@ -26,12 +26,19 @@ observations:
       obsfile: Data/letkf_gsi.2010-01-02T00:00:00Z.obt
   obs operator: {}
 
+driver:
+  save prior mean: true
+  save posterior mean: true
+  save posterior mean increment: true
+  save prior variance: true
+  save posterior variance: true
+
 local ensemble DA:
   solver: GSI LETKF
   inflation:
     rtps: 0.5
     rtpp: 0.5
-    mult: 1.0
+    mult: 1.1
 
 output:
   datadir: Data
@@ -39,7 +46,30 @@ output:
   exp: letkf_gsi.%{member}%
   type: an
 
+output increment:
+  datadir: Data
+  date: *date
+  exp: letkf_gsi.increment.%{member}%
+  type: an
+
+output mean prior:
+  datadir: Data
+  date: *date
+  exp: letkf_gsi.xbmean.%{member}%
+  type: an
+
+output variance prior:
+  datadir: Data
+  date: *date
+  exp: letkf_gsi.xbvar.%{member}%
+  type: an
+
+output variance posterior:
+  datadir: Data
+  date: *date
+  exp: letkf_gsi.xavar.%{member}%
+  type: an
 
 test:
-  reference filename: testoutput/letkf_gsi.test
+  reference filename: testoutput/letkf.test
   float relative tolerance: 1e-4
