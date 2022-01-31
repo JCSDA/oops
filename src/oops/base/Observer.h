@@ -43,7 +43,8 @@ class ObserverParameters : public Parameters {
 
  public:
   oops::RequiredParameter<ObsOperatorParameters_> obsOperator{"obs operator", this};
-  oops::Parameter<std::vector<ObsFilterParametersWrapper<OBS>>> obsFilters{"obs filters", {}, this};
+  // Options used to configure filters.
+  ObsFiltersParameters<OBS> filtersParameters{this};
   oops::Parameter<eckit::LocalConfiguration> getValues{
     "get values", eckit::LocalConfiguration(), this};
 
@@ -131,14 +132,13 @@ Observer<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrl_ & bia
   Rmat_ = &R;
   obserr_.reset(new ObsVector_(Rmat_->obserrors()));
 
-// Set up QC filters and run preprocess
+  // Set up QC filters and run preprocess
   const int iterfilt = iterconf_->getInt("iteration", 0);
-  filters_.reset(new ObsFilters_(obspace_, parameters_.obsFilters,
+  filters_.reset(new ObsFilters_(obspace_,
+                                 parameters_.filtersParameters,
                                  qcflags_, *obserr_, iterfilt));
   filters_->preProcess();
-
   locations_.reset(new Locations_(obsop_->locations()));
-
 // Set up variables that will be requested from the model
   Variables geovars;
   geovars += obsop_->requiredVars();
@@ -181,7 +181,7 @@ void Observer<MODEL, OBS>::finalize(ObsVector_ & yobsim) {
   obsop_->simulateObs(*geovals, yobsim, *biascoeff_, ybias, ydiags);
 
   /// Call posterior filters
-  filters_->postFilter(yobsim, ybias, ydiags);
+  filters_->postFilter(*geovals, yobsim, ybias, ydiags);
 
   // Update R with obs errors that filters might have updated
   Rmat_->update(*obserr_);

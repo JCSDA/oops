@@ -76,8 +76,12 @@ set( _l95_srcs
         LocalizationMatrixL95.cc
         LocalizationMatrixL95.h )
 
+set( _l95_test_srcs
+  ../../test/lorenz95/FilterStageCheck.cc
+  ../../test/lorenz95/FilterStageCheck.h )
+
 ecbuild_add_library( TARGET lorenz95
-                     SOURCES ${_l95_srcs}
+                     SOURCES ${_l95_srcs} ${_l95_test_srcs}
                      PUBLIC_LIBS oops
                      INSTALL_HEADERS LISTED
                      HEADER_DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/l95

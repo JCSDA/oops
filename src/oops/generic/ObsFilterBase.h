@@ -35,6 +35,17 @@ template <typename OBS> class ObsSpace;
 template <typename OBS> class ObsVector;
 template <typename OBS, typename DATA> class ObsDataVector;
 
+/// \brief Stage at which to run a filter.
+///
+/// AUTO indicates that the stage will be determined automatially based on the data requested
+/// by the filter.
+/// PRE, PRIOR and POST indicate that the filter will be run at the relevant stage
+/// but a check will be performed to ensure that all of the data structures required by the filter
+/// are present.
+enum class FilterStage {AUTO,
+                        PRE,
+                        PRIOR,
+                        POST};
 
 /// \brief Base class for generic implementations of filters processing observations.
 ///
@@ -75,16 +86,24 @@ class ObsFilterBase : public util::Printable,
   /// outputs produced by the observation operator.
   virtual void priorFilter(const GeoVaLs_ &gv) = 0;
 
-  /// \brief Perform any observation processing steps that require access to
+  /// \brief Perform any observation processing steps that require access to both GeoVaLs and
   /// outputs produced by the observation operator.
   ///
+  /// \param gv
+  ///   GeoVaLs.
   /// \param ov
   ///   Model equivalents produced by the observation operator.
   /// \param bv
   ///   Bias of departure produced by the observation operator.
   /// \param dv
   ///   Observation diagnostics produced by the observation operator.
-  virtual void postFilter(const ObsVector_ &ov, const ObsVector_ &bv, const ObsDiags_ &dv) = 0;
+  virtual void postFilter(const GeoVaLs_ & gv,
+                          const ObsVector_ &ov,
+                          const ObsVector_ &bv,
+                          const ObsDiags_ &dv) = 0;
+
+  /// \brief Check the required filter data are present prior to running this filter.
+  virtual void checkFilterData(const FilterStage filterStage) = 0;
 
   /// \brief Return the list of GeoVaLs required by this filter.
   virtual Variables requiredVars() const = 0;

@@ -5,6 +5,10 @@ list( APPEND l95_test_input
   testinput/3dvar_4fsoi_pcg.yaml
   testinput/3dvar_noobs.yaml
   testinput/3dvar_qc.yaml
+  testinput/3dvar_qc_filter_ordering_pre.yaml
+  testinput/3dvar_qc_filter_ordering_prepriorpost.yaml
+  testinput/3dvar_qc_filter_ordering_prior.yaml
+  testinput/3dvar_qc_filter_ordering_post.yaml
   testinput/3dvar_qc_obserr.yaml
   testinput/3dvar_qc_iterations.yaml
   testinput/3dfgat.yaml
@@ -123,6 +127,10 @@ list( APPEND l95_testoutput
   testoutput/3dvar_4fsoi_pcg.test
   testoutput/3dvar_noobs.test
   testoutput/3dvar_qc.test
+  testoutput/3dvar_qc_filter_ordering_pre.test
+  testoutput/3dvar_qc_filter_ordering_prepriorpost.test
+  testoutput/3dvar_qc_filter_ordering_prior.test
+  testoutput/3dvar_qc_filter_ordering_post.test
   testoutput/3dvar_qc_obserr.test
   testoutput/3dvar_qc_iterations.test
   testoutput/3dfgat.test
@@ -507,6 +515,26 @@ ecbuild_add_test( TARGET test_3dvar_noobs
 ecbuild_add_test( TARGET test_l95_3dvar_qc
                   COMMAND l95_4dvar.x
                   ARGS testinput/3dvar_qc.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
+
+ecbuild_add_test( TARGET test_l95_3dvar_qc_filter_ordering_pre
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/3dvar_qc_filter_ordering_pre.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
+
+ecbuild_add_test( TARGET test_l95_3dvar_qc_filter_ordering_prepriorpost
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/3dvar_qc_filter_ordering_prepriorpost.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
+
+ecbuild_add_test( TARGET test_l95_3dvar_qc_filter_ordering_prior
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/3dvar_qc_filter_ordering_prior.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
+
+ecbuild_add_test( TARGET test_l95_3dvar_qc_filter_ordering_post
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/3dvar_qc_filter_ordering_post.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
 
 ecbuild_add_test( TARGET test_l95_3dvar_qc_obserr

@@ -1,0 +1,54 @@
+cost function:
+  cost type: 3D-Var
+  window begin: 2010-01-01T21:00:00Z
+  window length: PT6H
+  geometry:
+    resol: 40
+  analysis variables: [x]
+  background:
+    date: 2010-01-02T00:00:00Z
+    filename: Data/forecast.fc.2010-01-01T00:00:00Z.P1D.l95
+  background error:
+    covariance model: L95Error
+    date: 2010-01-02T00:00:00Z
+    length_scale: 1.0
+    standard_deviation: 0.6
+  observations:
+  - obs operator: {}
+    obs space:
+      obsdatain:
+        obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+      obsdataout:
+        obsfile: Data/3dvar_qc_filter_ordering_prior.2010-01-02T00:00:00Z.obt
+    obs error:
+      covariance model: diagonal
+    obs prior filters:
+    - filter: Filter Stage Check
+
+variational:
+  minimizer:
+    algorithm: DRIPCG
+  iterations:
+  - ninner: 10
+    gradient norm reduction: 1e-10
+    geometry:
+      resol: 40
+    diagnostics:
+      departures: ombg
+    test: on
+  - ninner: 10
+    gradient norm reduction: 1e-10
+    geometry:
+      resol: 40
+    test: on
+final:
+  diagnostics:
+    departures: oman
+output:
+  datadir: Data
+  exp: 3dvar_qc_filter_ordering_prior
+  frequency: PT6H
+  type: an
+
+test:
+  reference filename: testoutput/3dvar_qc_filter_ordering_prior.test

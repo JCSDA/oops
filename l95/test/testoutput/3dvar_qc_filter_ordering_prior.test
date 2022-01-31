@@ -1,0 +1,17 @@
+CostJb   : Nonlinear Jb = 0
+CostJo   : Nonlinear Jo(Lorenz 95) = 79.4302, nobs = 80, Jo/n = 0.992877, err = 0.4
+CostFunction: Nonlinear J = 79.4302
+DRIPCGMinimizer: reduction in residual norm = 0.000382085
+CostFunction::addIncrement: Analysis: 
+ Valid time: 2010-01-02T00:00:00Z
+ Min=6.80948, Max=9.05517, Average=8.00718
+CostJb   : Nonlinear Jb = 11.2046
+CostJo   : Nonlinear Jo(Lorenz 95) = 3.1065, nobs = 80, Jo/n = 0.0388312, err = 0.4
+CostFunction: Nonlinear J = 14.3111
+DRIPCGMinimizer: reduction in residual norm = 0.00205643
+CostFunction::addIncrement: Analysis: 
+ Valid time: 2010-01-02T00:00:00Z
+ Min=6.80946, Max=9.05521, Average=8.00721
+CostJb   : Nonlinear Jb = 11.2046
+CostJo   : Nonlinear Jo(Lorenz 95) = 3.10647, nobs = 80, Jo/n = 0.0388309, err = 0.4
+CostFunction: Nonlinear J = 14.311

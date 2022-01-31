@@ -147,6 +147,12 @@ std::vector<ObserverParameters<OBS>> Observers<MODEL, OBS>::convertToParameters(
     std::vector<eckit::LocalConfiguration> filterConfigs;
     if (subconfig.get("obs filters", filterConfigs))
       observerConfig.set("obs filters", filterConfigs);
+    if (subconfig.get("obs pre filters", filterConfigs))
+      observerConfig.set("obs pre filters", filterConfigs);
+    if (subconfig.get("obs prior filters", filterConfigs))
+      observerConfig.set("obs prior filters", filterConfigs);
+    if (subconfig.get("obs post filters", filterConfigs))
+      observerConfig.set("obs post filters", filterConfigs);
     eckit::LocalConfiguration getValuesConfig;
     if (subconfig.get("get values", getValuesConfig))
       observerConfig.set("get values", getValuesConfig);
