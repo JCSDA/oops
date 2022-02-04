@@ -92,6 +92,7 @@ oops/base/DiagonalMatrix.h
 oops/base/DolphChebyshev.cc
 oops/base/DolphChebyshev.h
 oops/base/EnsembleCovariance.h
+oops/base/ForecastParameters.h
 oops/base/GeneralizedDepartures.h
 oops/base/Geometry.h
 oops/base/GetValuePost.h
@@ -232,6 +233,7 @@ oops/interface/ModelAuxControl.h
 oops/interface/ModelAuxCovariance.h
 oops/interface/ModelAuxIncrement.h
 oops/interface/ModelBase.h
+oops/interface/NormGradient.h
 oops/interface/ObsAuxControl.h
 oops/interface/ObsAuxCovariance.h
 oops/interface/ObsAuxIncrement.h
@@ -251,6 +253,7 @@ oops/mpi/mpi.cc
 oops/mpi/mpi.h
 
 oops/runs/AddIncrement.h
+oops/runs/AdjointForecast.h
 oops/runs/Application.cc
 oops/runs/Application.h
 oops/runs/ConvertState.h

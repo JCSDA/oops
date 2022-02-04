@@ -1,6 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * (C) Copyright 2017-2021 UCAR.
+ * (C) Copyright 2017-2022 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -14,6 +14,7 @@
 
 #include <string>
 
+#include "oops/base/ForecastParameters.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Model.h"
 #include "oops/base/PostProcessor.h"
@@ -33,50 +34,25 @@
 namespace oops {
 
 /// Options taken by the Forecast application.
-template <typename MODEL> class ForecastParameters : public ApplicationParameters {
-  OOPS_CONCRETE_PARAMETERS(ForecastParameters, ApplicationParameters);
+template <typename MODEL> class ForecastAppParameters : public ApplicationParameters {
+  OOPS_CONCRETE_PARAMETERS(ForecastAppParameters, ApplicationParameters);
 
  public:
-  typedef typename Geometry<MODEL>::Parameters_  GeometryParameters_;
-  typedef ModelParametersWrapper<MODEL>          ModelParameters_;
-  typedef State<MODEL>                           State_;
-  typedef typename State_::Parameters_           StateParameters_;
-  typedef StateWriterParameters<State_>          StateWriterParameters_;
-  typedef ModelAuxControl<MODEL>                 ModelAux_;
-  typedef typename ModelAux_::Parameters_        ModelAuxParameters_;
+  typedef ForecastParameters<MODEL> ForecastParameters_;
 
-  /// Geometry parameters.
-  RequiredParameter<GeometryParameters_> geometry{"geometry", this};
-
-  /// Model parameters.
-  RequiredParameter<ModelParameters_> model{"model", this};
-
-  /// Initial state parameters.
-  RequiredParameter<StateParameters_> initialCondition{"initial condition", this};
-
-  /// Augmented model state.
-  Parameter<ModelAuxParameters_> modelAuxControl{"model aux control", {}, this};
-
-  /// Forecast length.
-  RequiredParameter<util::Duration> forecastLength{"forecast length", this};
-
-  /// Where to write the output.
-  RequiredParameter<StateWriterParameters_> output{"output", this};
-
-  /// Options passed to the object writing out forecast fields.
-  Parameter<PostTimerParameters> prints{"prints", {}, this};
+  /// Forecast parameters.
+  ForecastParameters_ fcstConf{this};
 };
 
 // -----------------------------------------------------------------------------
 
 /// Application that runs a forecast from a model and initial condition
 template <typename MODEL> class Forecast : public Application {
-  typedef Geometry<MODEL>           Geometry_;
-  typedef Model<MODEL>              Model_;
-  typedef ModelAuxControl<MODEL>    ModelAux_;
-  typedef State<MODEL>              State_;
-
-  typedef ForecastParameters<MODEL> ForecastParameters_;
+  typedef Geometry<MODEL>              Geometry_;
+  typedef Model<MODEL>                 Model_;
+  typedef ModelAuxControl<MODEL>       ModelAux_;
+  typedef State<MODEL>                 State_;
+  typedef ForecastAppParameters<MODEL> ForecastAppParameters_;
 
  public:
 // -----------------------------------------------------------------------------
@@ -86,33 +62,33 @@ template <typename MODEL> class Forecast : public Application {
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const override {
 //  Deserialize parameters
-    ForecastParameters_ params;
+    ForecastAppParameters_ params;
     params.validateAndDeserialize(fullConfig);
 
 //  Setup resolution
-    const Geometry_ resol(params.geometry, this->getComm());
+    const Geometry_ resol(params.fcstConf.geometry, this->getComm());
 
 //  Setup Model
-    const Model_ model(resol, params.model.value().modelParameters);
+    const Model_ model(resol, params.fcstConf.model.value().modelParameters);
 
 //  Setup initial state
-    State_ xx(resol, params.initialCondition);
+    State_ xx(resol, params.fcstConf.initialCondition);
     Log::test() << "Initial state: " << xx << std::endl;
 
 //  Setup augmented state
-    const ModelAux_ moderr(resol, params.modelAuxControl);
+    const ModelAux_ moderr(resol, params.fcstConf.modelAuxControl);
 
 //  Setup times
-    const util::Duration fclength = params.forecastLength;
+    const util::Duration fclength = params.fcstConf.forecastLength;
     const util::DateTime bgndate(xx.validTime());
     const util::DateTime enddate(bgndate + fclength);
     Log::info() << "Running forecast from " << bgndate << " to " << enddate << std::endl;
 
 //  Setup forecast outputs
     PostProcessor<State_> post;
-    post.enrollProcessor(new StateInfo<State_>("fc", params.prints));
+    post.enrollProcessor(new StateInfo<State_>("fc", params.fcstConf.prints));
 //    params.output.date = bgndate;     DATE SHOULD BE SET HERE, NOT IN YAML
-    post.enrollProcessor(new StateWriter<State_>(params.output));
+    post.enrollProcessor(new StateWriter<State_>(params.fcstConf.output));
 
 //  Run forecast
     model.forecast(xx, moderr, fclength, post);
@@ -123,7 +99,7 @@ template <typename MODEL> class Forecast : public Application {
   }
 // -----------------------------------------------------------------------------
   void outputSchema(const std::string & outputPath) const override {
-    ForecastParameters_ params;
+    ForecastAppParameters_ params;
     params.outputSchema(outputPath);
   }
 // -----------------------------------------------------------------------------

@@ -40,6 +40,7 @@ list( APPEND l95_test_input
   testinput/4dvar.allbiases.yaml
   testinput/addincrement.yaml
   testinput/addincrement_scaled.yaml
+  testinput/adjointforecast.yaml
   testinput/diffstates.yaml
   testinput/eda.3dfgat.1.yaml
   testinput/eda.3dfgat.2.yaml
@@ -78,11 +79,11 @@ list( APPEND l95_test_input
   testinput/hofx3d.yaml
   testinput/hofx3d_for_getkf.yaml
   testinput/identitymodel.yaml
+  testinput/interfaces.yaml
   testinput/letkfGSI.yaml
   testinput/letkf.yaml
   testinput/letkf_noobs.yaml
   testinput/letkf_qc.yaml
-  testinput/interfaces.yaml
   testinput/linearmodelfactory.yaml
   testinput/makeobs3d.yaml
   testinput/makeobs4d.yaml
@@ -163,6 +164,7 @@ list( APPEND l95_testoutput
   testoutput/diffstates.test
   testoutput/addincrement.test
   testoutput/addincrement_scaled.test
+  testoutput/adjointforecast.test
   testoutput/eda_3dvar_block.test
   testoutput/enshofx.test
   testoutput/forecast.test
@@ -179,7 +181,7 @@ list( APPEND l95_testoutput
   testoutput/letkf.test
   testoutput/letkf_noobs.test
   testoutput/letkf_qc.test
-  testoutput/localhofx.test
+  testoutput/letkf_gsi.test
   testoutput/makeobs3d.test
   testoutput/makeobs4d.test
   testoutput/makeobs4d12h.test
@@ -891,3 +893,13 @@ ecbuild_add_test( TARGET test_l95_simplifiedl95_RPCG
 ecbuild_add_test( TARGET test_l95_simplifiedl95_RPLanczos
                   COMMAND l95_4dvar.x
                   ARGS testinput/simplifiedl95_RPLanczos.yaml )
+
+#####################################################################
+# Adjoint Forecast
+#####################################################################
+
+ecbuild_add_test( TARGET test_l95_adjointforecast
+                  COMMAND l95_adjointforecast.x
+                  ARGS testinput/adjointforecast.yaml
+                  TEST_DEPENDS test_l95_truth )
+

@@ -31,6 +31,8 @@ class ModelBias;
 class ModelBiasCorrection;
 class ModelBiasCovariance;
 
+class NormGradientL95;
+
 class ObsTable;
 class ObsVec1D;
 template <typename DATATYPE> class ObsData1D;
@@ -63,6 +65,8 @@ struct L95Traits {
   typedef lorenz95::GetValuesTLAD          LinearGetValues;
   typedef lorenz95::IdChangeVariable       VariableChange;
   typedef lorenz95::IdChangeVarTLADL95     LinearVariableChange;
+
+  typedef lorenz95::NormGradientL95        NormGradient;
 
   typedef lorenz95::ModelBias              ModelAuxControl;
   typedef lorenz95::ModelBiasCorrection    ModelAuxIncrement;

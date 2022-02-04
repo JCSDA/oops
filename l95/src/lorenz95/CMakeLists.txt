@@ -39,6 +39,7 @@ set( _l95_srcs
         ModelL95.cc
         ModelTrajectory.cc
         ModelTrajectory.h
+        NormGradientL95.h
         ObsBias.cc
         ObsBias.h
         ObsBiasCorrection.cc

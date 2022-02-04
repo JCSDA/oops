@@ -1,0 +1,15 @@
+Initial state: 
+ Valid time: 2010-01-01T00:00:00Z
+ Min=8, Max=9, Average=8.025
+Forecast state: 
+ Valid time: 2010-01-02T00:00:00Z
+ Min=6.49007, Max=9.19198, Average=7.93906
+Verifying state: 
+ Valid time: 2010-01-02T00:00:00Z
+ Min=6.55895, Max=9.27812, Average=8.01149
+Created perturbation from states diff: 
+ Valid time: 2010-01-02T00:00:00Z
+ Min=-0.0861325, Max=-0.0565031, Average=-0.0724286
+Final increment state: 
+ Valid time: 2010-01-01T00:00:00Z
+ Min=-0.110871, Max=-0.00420879, Average=-0.0597059
