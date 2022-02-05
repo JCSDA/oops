@@ -78,6 +78,10 @@ class HofX4DParameters : public ApplicationParameters {
   /// Whether to save the H(x) vector as ObsValues.
   Parameter<bool> makeObs{"make obs", false, this};
 
+  /// Window shift
+  /// Shift window backwards by 1s to include observations exactly at the beginning of the window.
+  Parameter<bool> shifting{"window shift", false, this};
+
   /// Forecast length.
   RequiredParameter<util::Duration> forecastLength{"forecast length", this};
 
@@ -124,7 +128,12 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
 
 //  Setup observation window
     const util::Duration winlen = params.windowLength;
-    const util::DateTime winbgn = params.windowBegin;
+    // window is shifted so that observations in the window
+    // obs_time >= winbgn && obs_time < winend are included.
+    // This is ensured by a time-shift at the lowest time-resolution of 1 second.
+    const util::Duration winshift = params.shifting ?
+          util::Duration("PT1S") : util::Duration("PT0S");
+    const util::DateTime winbgn = params.windowBegin.value() - winshift;
     const util::DateTime winend(winbgn + winlen);
     Log::info() << "Observation window from " << winbgn << " to " << winend << std::endl;
 
@@ -137,11 +146,13 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
 
 //  Check that window specified for forecast is at least the same as obs window
     const util::Duration fclength = params.forecastLength;
-    if (winbgn < xx.validTime() || winend > xx.validTime() + fclength) {
-      Log::error() << "Observation window can not be outside of forecast window." << std::endl;
-      Log::error() << "Obs window: " << winbgn << " to " << winend << std::endl;
-      Log::error() << "Forecast runs from: " << xx.validTime() << " for " << fclength << std::endl;
-      throw eckit::BadValue("Observation window can not be outside of forecast window.");
+
+    if (winbgn  + winshift < xx.validTime() || winend + winshift > xx.validTime() + fclength) {
+        Log::error() << "Observation window can not be outside of forecast window." << std::endl;
+        Log::error() << "Obs window: " << winbgn << " to " << winend << std::endl;
+        Log::error() << "Forecast runs from: " << xx.validTime() << " for " <<
+                        fclength << std::endl;
+        throw eckit::BadValue("Observation window can not be outside of forecast window.");
     }
 
 //  Setup observations
