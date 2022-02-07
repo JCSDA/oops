@@ -62,7 +62,7 @@ template<typename MODEL>
 HybridCovariance<MODEL>::HybridCovariance(const Geometry_ & resol, const Variables & vars,
                                           const eckit::Configuration & config,
                                           const State_ & xb, const State_ & fg)
-  : ModelSpaceCovarianceBase<MODEL>(xb, fg, resol, config)
+  : ModelSpaceCovarianceBase<MODEL>(resol, config, xb, fg)
 {
   std::vector<eckit::LocalConfiguration> confs;
   config.get("components", confs);
@@ -70,7 +70,7 @@ HybridCovariance<MODEL>::HybridCovariance(const Geometry_ & resol, const Variabl
     // B component
     const eckit::LocalConfiguration covarConf(conf, "covariance");
     std::unique_ptr< ModelSpaceCovarianceBase<MODEL> > B(
-        CovarianceFactory<MODEL>::create(covarConf, resol, vars, xb, fg));
+        CovarianceFactory<MODEL>::create(resol, vars, covarConf, xb, fg));
     Bcomponents_.push_back(std::move(B));
 
     // Weight

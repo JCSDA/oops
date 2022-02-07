@@ -106,7 +106,7 @@ CostJb4D<MODEL>::CostJb4D(const eckit::Configuration & config, const eckit::mpi:
 template<typename MODEL>
 void CostJb4D<MODEL>::linearize(const State_ & fg, const Geometry_ & lowres) {
   resol_.reset(new Geometry_(lowres));
-  B_.reset(CovarianceFactory<MODEL>::create(conf_, lowres, ctlvars_, xb_, fg));
+  B_.reset(CovarianceFactory<MODEL>::create(lowres, ctlvars_, conf_, xb_, fg));
 }
 
 // -----------------------------------------------------------------------------

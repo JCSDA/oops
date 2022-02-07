@@ -85,7 +85,7 @@ template<typename MODEL>
 ErrorCovariance<MODEL>::ErrorCovariance(const Geometry_ & resol, const Variables & vars,
                                         const Parameters_ & parameters,
                                         const State_ & xb, const State_ & fg)
-  : ModelSpaceCovarianceBase<MODEL>(xb, fg, resol, parameters), covariance_()
+  : ModelSpaceCovarianceBase<MODEL>(resol, parameters, xb, fg), covariance_()
 {
   Log::trace() << "ErrorCovariance<MODEL>::ErrorCovariance starting" << std::endl;
   util::Timer timer(classname(), "ErrorCovariance");

@@ -84,7 +84,7 @@ template <typename MODEL> class StaticBInit : public Application {
     const CovarianceParametersBase_ &covarParams =
         params.backgroundError.value().covarianceParameters;
     const std::unique_ptr<CovarianceBase_> Bmat(CovarianceFactory_::create(
-                                                    covarParams, resol, vars, xx, xx));
+                                                    resol, vars, covarParams, xx, xx));
 
     //  Randomize B matrix
     Increment_ dx(resol, vars, xx.validTime());

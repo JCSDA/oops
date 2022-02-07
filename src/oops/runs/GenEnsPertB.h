@@ -130,7 +130,7 @@ template <typename MODEL> class GenEnsPertB : public Application {
     const CovarianceParametersBase_ &covarParams =
         params.backgroundError.value().covarianceParameters;
     std::unique_ptr<CovarianceBase_> Bmat(CovarianceFactory_::create(
-                                            covarParams, resol, vars, xx, xx));
+                                            resol, vars, covarParams, xx, xx));
 
 //  Generate perturbed states
     Increment_ dx(resol, vars, bgndate);

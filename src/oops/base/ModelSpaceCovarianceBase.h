@@ -71,10 +71,14 @@ class ModelSpaceCovarianceBase {
   typedef LinearVariableChange<MODEL>                           LinearVariableChange_;
 
  public:
-  ModelSpaceCovarianceBase(const State_ &, const State_ &,
-                           const Geometry_ &, const ModelSpaceCovarianceParametersBase<MODEL> &);
-  ModelSpaceCovarianceBase(const State_ &, const State_ &,
-                           const Geometry_ &, const eckit::Configuration &);
+  ModelSpaceCovarianceBase(const Geometry_ &,
+                           const ModelSpaceCovarianceParametersBase<MODEL> &,
+                           const State_ &,
+                           const State_ &);
+  ModelSpaceCovarianceBase(const Geometry_ &,
+                           const eckit::Configuration &,
+                           const State_ &,
+                           const State_ &);
   virtual ~ModelSpaceCovarianceBase() {}
 
   void randomize(Increment_ &) const;
@@ -148,8 +152,8 @@ class ModelSpaceCovarianceParametersWrapper : public Parameters {
 /// Covariance Factory
 template <typename MODEL>
 class CovarianceFactory {
-  typedef Geometry<MODEL>            Geometry_;
-  typedef State<MODEL>               State_;
+  typedef Geometry<MODEL> Geometry_;
+  typedef State<MODEL>    State_;
 
  public:
   /// \brief Create and return a new covariance model.
@@ -157,16 +161,20 @@ class CovarianceFactory {
   /// The covariance model is determined by the \c covarianceModel attribute of \p parameters.
   /// \p parameters must be an instance of the subclass of ModelSpaceCovarianceParametersBase
   /// associated with that covariance model, otherwise an exception will be thrown.
-  static ModelSpaceCovarianceBase<MODEL> * create(const ModelSpaceCovarianceParametersBase<MODEL> &,
-                                                  const Geometry_ &, const Variables &,
-                                                  const State_ &, const State_ &);
+  static ModelSpaceCovarianceBase<MODEL> * create(const Geometry_ &,
+                                                  const Variables &,
+                                                  const ModelSpaceCovarianceParametersBase<MODEL> &,
+                                                  const State_ &,
+                                                  const State_ &);
 
   /// \brief Create and return a new covariance model.
   ///
   /// Deprecated overload taking a Configuration instead of a ModelSpaceCovarianceParametersBase.
-  static ModelSpaceCovarianceBase<MODEL> * create(const eckit::Configuration &,
-                                                  const Geometry_ &, const Variables &,
-                                                  const State_ &, const State_ &);
+  static ModelSpaceCovarianceBase<MODEL> * create(const Geometry_ &,
+                                                  const Variables &,
+                                                  const eckit::Configuration &,
+                                                  const State_ &,
+                                                  const State_ &);
 
   /// \brief Create and return an instance of the subclass of ModelSpaceCovarianceParametersBase
   /// storing parameters of the specified covariance model.
@@ -186,8 +194,8 @@ class CovarianceFactory {
   explicit CovarianceFactory(const std::string &name);
 
  private:
-  virtual ModelSpaceCovarianceBase<MODEL> * make(const ModelSpaceCovarianceParametersBase<MODEL> &,
-                                                 const Geometry_ &, const Variables &,
+  virtual ModelSpaceCovarianceBase<MODEL> * make(const Geometry_ &, const Variables &,
+                                                 const ModelSpaceCovarianceParametersBase<MODEL> &,
                                                  const State_ &, const State_ &) = 0;
 
   virtual std::unique_ptr<ModelSpaceCovarianceParametersBase<MODEL>> makeParameters() const = 0;
@@ -207,13 +215,15 @@ class CovarMaker : public CovarianceFactory<MODEL> {
   typedef TParameters_IfAvailableElseFallbackType_t<
     COVAR, GenericModelSpaceCovarianceParameters<MODEL>> Parameters_;
 
-  typedef Geometry<MODEL>            Geometry_;
-  typedef State<MODEL>               State_;
+  typedef Geometry<MODEL> Geometry_;
+  typedef State<MODEL>    State_;
 
   ModelSpaceCovarianceBase<MODEL> * make(
+      const Geometry_ & resol,
+      const Variables & vars,
       const ModelSpaceCovarianceParametersBase<MODEL> & params,
-      const Geometry_ & resol, const Variables & vars,
-      const State_ & xb, const State_ & fg) override {
+      const State_ & xb,
+      const State_ & fg) override {
     const auto &stronglyTypedParams = dynamic_cast<const Parameters_&>(params);
     return new COVAR(resol, vars,
                      parametersOrConfiguration<HasParameters_<COVAR>::value>(stronglyTypedParams),
@@ -242,10 +252,11 @@ CovarianceFactory<MODEL>::CovarianceFactory(const std::string & name) {
 
 template <typename MODEL>
 ModelSpaceCovarianceBase<MODEL>* CovarianceFactory<MODEL>::create(
-    const ModelSpaceCovarianceParametersBase<MODEL> & parameters,
     const Geometry_ & resol,
     const Variables & vars,
-    const State_ & xb, const State_ & fg) {
+    const ModelSpaceCovarianceParametersBase<MODEL> & parameters,
+    const State_ & xb,
+    const State_ & fg) {
   const std::string id = parameters.covarianceModel.value().value();
   Log::trace() << "ModelSpaceCovarianceBase type = " << id << std::endl;
   typename std::map<std::string, CovarianceFactory<MODEL>*>::iterator jcov = getMakers().find(id);
@@ -264,20 +275,21 @@ ModelSpaceCovarianceBase<MODEL>* CovarianceFactory<MODEL>::create(
         vars_in = *(parameters.variableChange.value()->inputVariables.value());
     }
   }
-  return (*jcov).second->make(parameters, resol, vars_in, xb, fg);
+  return (*jcov).second->make(resol, vars_in, parameters, xb, fg);
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
 ModelSpaceCovarianceBase<MODEL>* CovarianceFactory<MODEL>::create(
-    const eckit::Configuration & conf,
     const Geometry_ & resol,
     const Variables & vars,
-    const State_ & xb, const State_ & fg) {
+    const eckit::Configuration & conf,
+    const State_ & xb,
+    const State_ & fg) {
   ModelSpaceCovarianceParametersWrapper<MODEL> parameters;
   parameters.validateAndDeserialize(conf);
-  return create(parameters.covarianceParameters, resol, vars, xb, fg);
+  return create(resol, vars, parameters.covarianceParameters, xb, fg);
 }
 
 // -----------------------------------------------------------------------------
@@ -298,9 +310,10 @@ std::unique_ptr<ModelSpaceCovarianceParametersBase<MODEL>>
 
 template <typename MODEL>
 ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(
-    const State_ & bg, const State_ & fg,
     const Geometry_ & resol,
-    const ModelSpaceCovarianceParametersBase<MODEL> & parameters) {
+    const ModelSpaceCovarianceParametersBase<MODEL> & parameters,
+    const State_ & xb,
+    const State_ & fg) {
 
     const boost::optional<std::string> &covarianceModel = parameters.covarianceModel.value();
     if (covarianceModel == boost::none) {
@@ -316,7 +329,7 @@ ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(
         parameters.variableChange;
     if (variableChangeParms != boost::none) {
         linVarChg_.reset(new LinearVariableChange_(resol, *variableChangeParms));
-        linVarChg_->setTrajectory(bg, fg);
+        linVarChg_->setTrajectory(xb, fg);
         const boost::optional<Variables> &inputVars = variableChangeParms->inputVariables;
         if (inputVars != boost::none) {
             BVars_.reset(new Variables(*inputVars));
@@ -332,11 +345,12 @@ ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(
 
 template <typename MODEL>
 ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(
-    const State_ & bg, const State_ & fg,
     const Geometry_ & resol,
-    const eckit::Configuration & conf)
+    const eckit::Configuration & conf,
+    const State_ & xb,
+    const State_ & fg)
   : ModelSpaceCovarianceBase(
-      bg, fg, resol, validateAndDeserialize<GenericModelSpaceCovarianceParameters<MODEL>>(conf))
+      resol, validateAndDeserialize<GenericModelSpaceCovarianceParameters<MODEL>>(conf), xb, fg)
 {}
 
 // -----------------------------------------------------------------------------

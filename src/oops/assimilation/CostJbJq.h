@@ -114,7 +114,7 @@ void CostJbJq<MODEL>::linearize(const State_ & fg, const Geometry_ & lowres) {
   ASSERT(confs.size() == lowres.timeComm().size());
   eckit::LocalConfiguration myconf = confs[lowres.timeComm().rank()];
 
-  B_.reset(CovarianceFactory<MODEL>::create(myconf, lowres, ctlvars_, xb_, fg));
+  B_.reset(CovarianceFactory<MODEL>::create(lowres, ctlvars_, myconf, xb_, fg));
   Log::trace() << "CostJbJq::linearize done" << std::endl;
 }
 

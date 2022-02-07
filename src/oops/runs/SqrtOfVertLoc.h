@@ -72,7 +72,7 @@ template <typename MODEL> class SqrtOfVertLoc : public Application {
 //  Setup B matrix
     const eckit::LocalConfiguration covar(fullConfig, "background error");
     std::unique_ptr< ModelSpaceCovarianceBase<MODEL> >
-      Bmat(CovarianceFactory<MODEL>::create(covar, geometry, vars, xx, xx));
+      Bmat(CovarianceFactory<MODEL>::create(geometry, vars, covar, xx, xx));
 
 //  Retreave vertical eigen vectors from B
     const size_t samples = fullConfig.getInt("number of random samples");

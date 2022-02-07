@@ -111,7 +111,7 @@ CostJb3D<MODEL>::CostJb3D(const eckit::Configuration & config, const Geometry_ &
 template<typename MODEL>
 void CostJb3D<MODEL>::linearize(const State_ & fg, const Geometry_ & lowres) {
   resol_.reset(new Geometry_(lowres));
-  B_.reset(CovarianceFactory<MODEL>::create(conf_, lowres, controlvars_, xb_, fg));
+  B_.reset(CovarianceFactory<MODEL>::create(lowres, controlvars_, conf_, xb_, fg));
 }
 
 // -----------------------------------------------------------------------------

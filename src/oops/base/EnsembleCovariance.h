@@ -85,7 +85,7 @@ template<typename MODEL>
 EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Variables & vars,
                                               const Parameters_ & params,
                                               const State_ & xb, const State_ & fg)
-  : ModelSpaceCovarianceBase<MODEL>(xb, fg, resol, params), ens_(), loc_()
+  : ModelSpaceCovarianceBase<MODEL>(resol, params, xb, fg), ens_(), loc_()
 {
   Log::trace() << "EnsembleCovariance::EnsembleCovariance start" << std::endl;
   size_t init = eckit::system::ResourceUsage().maxResidentSetSize();

@@ -165,7 +165,7 @@ template <typename MODEL> class Dirac : public Application {
 
       // Covariance
       std::unique_ptr<CovarianceBase_> Bmat(CovarianceFactory_::create(
-          covarConf, resol, vars, xx, xx));
+          resol, vars, covarConf, xx, xx));
 
       // Randomization
       for (size_t ie = 0; ie < Bmat->randomizationSize(); ++ie) {
@@ -210,7 +210,7 @@ template <typename MODEL> class Dirac : public Application {
 
     // Covariance
     std::unique_ptr<CovarianceBase_> Bmat(CovarianceFactory_::create(
-        covarConfig, resol, xx.variables(), xx, xx));
+        resol, xx.variables(), covarConfig, xx, xx));
 
     // Multiply
     Bmat->multiply(dxi, dxo);

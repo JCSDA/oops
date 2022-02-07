@@ -117,7 +117,7 @@ template <typename MODEL> class LinearModelFixture : private boost::noncopyable 
 //  Create a covariance matrix
     oops::instantiateCovarFactory<MODEL>();
     const eckit::LocalConfiguration covar(TestEnvironment::config(), "background error");
-    B_.reset(oops::CovarianceFactory<MODEL>::create(covar, *resol_, *ctlvars_, *xref_, *xref_));
+    B_.reset(oops::CovarianceFactory<MODEL>::create(*resol_, *ctlvars_, covar, *xref_, *xref_));
 
 //  Linear model configuration
     tlConf_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "linear model"));
