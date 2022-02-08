@@ -290,7 +290,7 @@ void CostFunction<MODEL, OBS>::setupTerms(const eckit::Configuration & config) {
   std::vector<eckit::LocalConfiguration> obsconfs = obsconf.getSubConfigurations();
   std::vector<ObsTypeParameters<OBS>> joparams(obsconfs.size());
   for (size_t i = 0; i < obsconfs.size(); ++i) {
-    joparams[i].validateAndDeserialize(obsconfs[i]);
+    joparams[i].deserialize(obsconfs[i]);
   }
   CostJo<MODEL, OBS> * jo = this->newJo(joparams);
   jterms_.push_back(jo);

@@ -160,7 +160,7 @@ std::vector<ObserverParameters<OBS>> Observers<MODEL, OBS>::convertToParameters(
     if (subconfig.get("linear get values", linearGetValuesConfig))
       observerConfig.set("linear get values", linearGetValuesConfig);
 
-    parameters[i].validateAndDeserialize(observerConfig);
+    parameters[i].deserialize(observerConfig);
   }
 
   oops::Log::trace() << "Observers<MODEL, OBS>::convertToParameters start" << std::endl;
