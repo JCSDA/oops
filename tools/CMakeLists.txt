@@ -10,7 +10,6 @@ list( APPEND tool_files
     plot/qg_cost.py
     plot/qg_fields.py
     plot/qg_obs.py
-    run_time_test.py
     test_wrapper.sh
 )
 

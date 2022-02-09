@@ -188,7 +188,6 @@ list( APPEND l95_testoutput
   testoutput/makeobsbias.test
   testoutput/makeobspert.test
   testoutput/truth.test
-  testoutput/CTestCostData.txt.test
   testoutput/simplifiedl95_DRGMRESR.test
   testoutput/simplifiedl95_DRIPCG.test
   testoutput/simplifiedl95_DRPCG.test
