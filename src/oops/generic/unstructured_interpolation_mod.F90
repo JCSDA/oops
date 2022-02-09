@@ -160,13 +160,16 @@ select case (wtype)
     self%interp_w = 0.0_kind_real
 
   case ('distance')
+    allocate(bw(self%nn))
     do n = 1,ngrid_out
       bsw = 0.0_kind_real
       do jj = 1,nn
-        bsw = bsw + nn_dist(jj,n)
+        bw(jj) = 1.0_kind_real / nn_dist(jj,n)
+        bsw = bsw + bw(jj)
       enddo
-      self%interp_w(:,n) = nn_dist(:,n) / bsw
+      self%interp_w(:,n) = bw(:) / bsw
     enddo
+    deallocate(bw)
 
   case ('barycent')
     allocate(bw(self%nn))
