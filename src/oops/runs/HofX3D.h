@@ -157,6 +157,11 @@ template <typename MODEL, typename OBS> class HofX3D : public Application {
     params.outputSchema(outputPath);
   }
 // -----------------------------------------------------------------------------
+  void validateConfig(const eckit::Configuration & fullConfig) const override {
+    HofX3DParameters_ params;
+    params.validate(fullConfig);
+  }
+// -----------------------------------------------------------------------------
  private:
   std::string appname() const override {
     return "oops::HofX3D<" + MODEL::name() + ", " + OBS::name() + ">";

@@ -150,6 +150,11 @@ template <typename MODEL> class ConvertIncrement : public Application {
     Parameters_ params;
     params.outputSchema(outputPath);
   }
+// -----------------------------------------------------------------------------
+  void validateConfig(const eckit::Configuration & fullConfig) const override {
+    Parameters_ params;
+    params.validate(fullConfig);
+  }
 // -------------------------------------------------------------------------------------------------
  private:
   std::string appname() const override {

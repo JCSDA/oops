@@ -54,7 +54,7 @@ if(OPENMP)
 endif()
 find_package( MPI REQUIRED COMPONENTS C CXX Fortran )
 find_package( NetCDF REQUIRED COMPONENTS Fortran )
-find_package( Boost 1.64.0 REQUIRED)
+find_package( Boost 1.64.0 REQUIRED )
 find_package( eckit 1.11.6 REQUIRED COMPONENTS MPI )
 find_package( fckit 0.7.0 REQUIRED )
 if(OpenMP_FOUND)
@@ -83,7 +83,6 @@ include( oops_output_json_schema )
 install(
   FILES
     "cmake/oops_output_json_schema.cmake"
-    "cmake/oops_output_json_schema.yaml.in"
     "cmake/oops_output_json_schema_x.cmake.in"
   DESTINATION
     "${INSTALL_CMAKE_DIR}"

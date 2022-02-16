@@ -123,6 +123,11 @@ template <typename MODEL> class EnsVariance : public Application {
     EnsVarianceParameters_ params;
     params.outputSchema(outputPath);
   }
+// -----------------------------------------------------------------------------
+  void validateConfig(const eckit::Configuration & fullConfig) const override {
+    EnsVarianceParameters_ params;
+    params.validate(fullConfig);
+  }
   // -----------------------------------------------------------------------------
  private:
   std::string appname() const override {

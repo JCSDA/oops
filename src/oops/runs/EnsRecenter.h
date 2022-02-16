@@ -131,6 +131,11 @@ template <typename MODEL> class EnsRecenter : public Application {
     EnsRecenterParameters<MODEL> params;
     params.outputSchema(outputPath);
   }
+// -----------------------------------------------------------------------------
+  void validateConfig(const eckit::Configuration & fullConfig) const override {
+    EnsRecenterParameters<MODEL> params;
+    params.validate(fullConfig);
+  }
   // -----------------------------------------------------------------------------
  private:
   std::string appname() const override {

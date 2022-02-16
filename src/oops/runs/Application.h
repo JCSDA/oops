@@ -88,6 +88,8 @@ class Application : public util::Printable {
 
   /// This method aborts. Sub-class should override to output JSON schema.
   virtual void outputSchema(const std::string & outputPath) const;
+  /// This method aborts. Sub-class should override to perform schema validation only
+  virtual void validateConfig(const eckit::Configuration & fullConfig) const;
 
  protected:
   const eckit::mpi::Comm& getComm() const {return comm_;}

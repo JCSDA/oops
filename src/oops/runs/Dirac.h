@@ -194,6 +194,11 @@ template <typename MODEL> class Dirac : public Application {
     params.outputSchema(outputPath);
   }
 // -----------------------------------------------------------------------------
+  void validateConfig(const eckit::Configuration & fullConfig) const override {
+    DiracParameters_ params;
+    params.validate(fullConfig);
+  }
+// -----------------------------------------------------------------------------
  private:
   std::string appname() const override {
     return "oops::Dirac<" + MODEL::name() + ">";

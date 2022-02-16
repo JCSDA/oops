@@ -22,13 +22,10 @@ if(nlohmann_json_FOUND AND nlohmann_json_schema_validator_FOUND)
     file( MAKE_DIRECTORY ${JSON_SCHEMA_GENERATOR_INPUT_DIR} )
 
     set( JSON_SCHEMA_PATH "${JSON_SCHEMA_DIR}/${APP}.schema.json" ) # used by configure_file below
-    configure_file( "${OOPS_JSON_SCHEMA_CMAKE_DIR}/oops_output_json_schema.yaml.in"
-                    "${JSON_SCHEMA_GENERATOR_INPUT_DIR}/${APP}.yaml" )
     configure_file( "${OOPS_JSON_SCHEMA_CMAKE_DIR}/oops_output_json_schema_x.cmake.in"
                     "${JSON_SCHEMA_GENERATOR_INPUT_DIR}/${APP}.cmake" )
     add_custom_command( OUTPUT "${JSON_SCHEMA_DIR}/${APP}.schema.json"
                         DEPENDS "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/${APP}"
-                                "${JSON_SCHEMA_GENERATOR_INPUT_DIR}/${APP}.yaml"
                                 "${JSON_SCHEMA_GENERATOR_INPUT_DIR}/${APP}.cmake"
                         COMMAND "${CMAKE_COMMAND}"
                                 -P "${JSON_SCHEMA_GENERATOR_INPUT_DIR}/${APP}.cmake" )

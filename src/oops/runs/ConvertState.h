@@ -161,6 +161,11 @@ template <typename MODEL> class ConvertState : public Application {
     ConvertStateParameters_ params;
     params.outputSchema(outputPath);
   }
+// -----------------------------------------------------------------------------
+  void validateConfig(const eckit::Configuration & fullConfig) const override {
+    ConvertStateParameters_ params;
+    params.validate(fullConfig);
+  }
 // -------------------------------------------------------------------------------------------------
  private:
   std::string appname() const override {

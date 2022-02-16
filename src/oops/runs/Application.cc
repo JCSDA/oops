@@ -28,6 +28,11 @@ void Application::outputSchema(const std::string & outputPath) const {
   ABORT(appname() + "::outputSchema not implemented");
 }
 
+/// This method aborts. Sub-class should override to perform schema validation only.
+void Application::validateConfig(const eckit::Configuration & fullConfig) const {
+  ABORT(appname() + "::validateConfig not implemented");
+}
+
 // -----------------------------------------------------------------------------
 
 }  // namespace oops

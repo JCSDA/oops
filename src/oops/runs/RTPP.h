@@ -147,6 +147,13 @@ template <typename MODEL> class RTPP : public Application {
 
 // -----------------------------------------------------------------------------
 
+  void validateConfig(const eckit::Configuration & fullConfig) const override {
+    RTPPParameters<MODEL> params;
+    params.validate(fullConfig);
+  }
+
+// -----------------------------------------------------------------------------
+
  private:
   std::string appname() const override {
     return "oops::RTPP<" + MODEL::name() + ">";

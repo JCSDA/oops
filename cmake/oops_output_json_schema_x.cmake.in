@@ -4,5 +4,5 @@
 # which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 
 execute_process( COMMAND "@CMAKE_BINARY_DIR@/@CMAKE_INSTALL_BINDIR@/@APP@"
-                         "@JSON_SCHEMA_GENERATOR_INPUT_DIR@/@APP@.yaml"
+                         "--output-json-schema=@JSON_SCHEMA_PATH@"
                  OUTPUT_QUIET )

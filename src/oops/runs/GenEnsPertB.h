@@ -163,6 +163,11 @@ template <typename MODEL> class GenEnsPertB : public Application {
     params.outputSchema(outputPath);
   }
 // -----------------------------------------------------------------------------
+  void validateConfig(const eckit::Configuration & fullConfig) const override {
+    GenEnsPertBParameters_ params;
+    params.validate(fullConfig);
+  }
+// -----------------------------------------------------------------------------
  private:
   std::string appname() const override {
     return "oops::GenEnsPertB<" + MODEL::name() + ">";

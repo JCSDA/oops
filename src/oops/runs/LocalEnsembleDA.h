@@ -484,6 +484,11 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     LocalEnsembleDAParameters_ params;
     params.outputSchema(outputPath);
   }
+// -----------------------------------------------------------------------------
+  void validateConfig(const eckit::Configuration & fullConfig) const override {
+    LocalEnsembleDAParameters_ params;
+    params.validate(fullConfig);
+  }
 
 // -----------------------------------------------------------------------------
 };

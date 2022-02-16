@@ -501,6 +501,7 @@ list( APPEND oops_test_input
   test/testinput/mpi.yaml
   test/testinput/spectrallmp.yaml
   test/testinput/fft_multiple.yaml
+  test/testinput/hello.yaml
 )
 # oops test output files
 list( APPEND oops_test_output
@@ -578,6 +579,103 @@ ecbuild_add_test( TARGET oops_coding_norms
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/${PROJECT_NAME}_cpplint.py
                   ARGS --quiet --recursive ${CMAKE_CURRENT_SOURCE_DIR} )
+
+ecbuild_add_executable(
+  TARGET  test_oops_base_dummy_run
+  SOURCES test/base/DummyRun.cc
+  LIBS oops
+)
+
+ecbuild_add_test(
+  TARGET  test_oops_base_dummy_run_one
+  COMMAND test_oops_base_dummy_run
+  ARGS    "test/testinput/hello.yaml"
+  DEPENDS test_oops_base_dummy_run
+)
+set_tests_properties(test_oops_base_dummy_run_one PROPERTIES
+  PASS_REGULAR_EXPRESSION "hello earth"
+)
+
+ecbuild_add_test(
+  TARGET  test_oops_base_dummy_run_validate_zero
+  COMMAND test_oops_base_dummy_run
+  ARGS    "--validate-only" "test/testinput/hello.yaml"
+  DEPENDS test_oops_base_dummy_run
+)
+set_tests_properties(test_oops_base_dummy_run_validate_zero PROPERTIES
+  PASS_REGULAR_EXPRESSION "Configuration OK"
+)
+
+if (${nlohmann_json_FOUND} AND ${nlohmann_json_schema_validator_FOUND})
+  ecbuild_add_test(
+    TARGET  test_oops_base_dummy_run_validate_one
+    COMMAND test_oops_base_dummy_run
+    ARGS    "--validate-only" "test/testinput/empty.yaml"
+    DEPENDS test_oops_base_dummy_run
+  )
+  set_tests_properties(test_oops_base_dummy_run_validate_one PROPERTIES
+    WILL_FAIL true
+  )
+endif()
+
+ecbuild_add_test(
+  TARGET  test_oops_base_dummy_run_bad_arg_zero
+  COMMAND test_oops_base_dummy_run
+  DEPENDS test_oops_base_dummy_run
+)
+set_tests_properties(test_oops_base_dummy_run_bad_arg_zero PROPERTIES
+  WILL_FAIL true
+)
+
+ecbuild_add_test(
+  TARGET  test_oops_base_dummy_run_bad_arg_one
+  COMMAND test_oops_base_dummy_run
+                  ARGS    "--validate-only"
+  DEPENDS test_oops_base_dummy_run
+)
+set_tests_properties(test_oops_base_dummy_run_bad_arg_one PROPERTIES
+  WILL_FAIL true
+)
+
+ecbuild_add_test(
+  TARGET  test_oops_base_dummy_run_bad_arg_two
+  COMMAND test_oops_base_dummy_run
+  ARGS    "--output-json-schema=x" "test/testinput/hello.yaml"
+  DEPENDS test_oops_base_dummy_run
+)
+set_tests_properties(test_oops_base_dummy_run_bad_arg_two PROPERTIES
+  WILL_FAIL true
+)
+
+ecbuild_add_test(
+  TARGET  test_oops_base_dummy_run_bad_arg_three
+  COMMAND test_oops_base_dummy_run
+  ARGS    "--validate-only" "test/testinput/hello.yaml" "out"
+  DEPENDS test_oops_base_dummy_run
+)
+set_tests_properties(test_oops_base_dummy_run_bad_arg_three PROPERTIES
+  WILL_FAIL true
+)
+
+ecbuild_add_test(
+  TARGET  test_oops_base_dummy_run_help
+  COMMAND test_oops_base_dummy_run
+  ARGS    "--help"
+  DEPENDS test_oops_base_dummy_run
+)
+set_tests_properties(test_oops_base_dummy_run_help PROPERTIES
+  PASS_REGULAR_EXPRESSION "Usages:"
+)
+
+ecbuild_add_test(
+  TARGET  test_oops_base_dummy_run_h
+  COMMAND test_oops_base_dummy_run
+  ARGS    "-h"
+  DEPENDS test_oops_base_dummy_run
+)
+set_tests_properties(test_oops_base_dummy_run_h PROPERTIES
+  PASS_REGULAR_EXPRESSION "Usages:"
+)
 
 ecbuild_add_test( TARGET  test_oops_base_variables
                   SOURCES test/base/Variables.cc
