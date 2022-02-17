@@ -99,6 +99,7 @@ class LinearObsOperator : public util::Printable,
   /// Print, used for logging
   void print(std::ostream &) const;
 
+  const std::string name_;
   /// Pointer to the implementation of LinearObsOperator
   std::unique_ptr<LinearObsOper_> oper_;
 };
@@ -106,10 +107,11 @@ class LinearObsOperator : public util::Printable,
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-LinearObsOperator<OBS>::LinearObsOperator(const ObsSpace_ & os,
-                                          const Parameters_ & parameters): oper_() {
+LinearObsOperator<OBS>::LinearObsOperator(const ObsSpace_ & os, const Parameters_ & parameters)
+  : name_("oops::LinearObsOper::"+os.obsname()), oper_()
+{
   Log::trace() << "LinearObsOperator<OBS>::LinearObsOperator starting" << std::endl;
-  util::Timer timer(classname(), "LinearObsOperator");
+  util::Timer timer(name_, "LinearObsOperator");
   oper_.reset(new LinearObsOper_(os.obsspace(), parameters));
   Log::trace() << "LinearObsOperator<OBS>::LinearObsOperator done" << std::endl;
 }
@@ -119,7 +121,7 @@ LinearObsOperator<OBS>::LinearObsOperator(const ObsSpace_ & os,
 template <typename OBS>
 LinearObsOperator<OBS>::~LinearObsOperator() {
   Log::trace() << "LinearObsOperator<OBS>::~LinearObsOperator starting" << std::endl;
-  util::Timer timer(classname(), "~LinearObsOperator");
+  util::Timer timer(name_, "~LinearObsOperator");
   oper_.reset();
   Log::trace() << "LinearObsOperator<OBS>::~LinearObsOperator done" << std::endl;
 }
@@ -129,7 +131,7 @@ LinearObsOperator<OBS>::~LinearObsOperator() {
 template <typename OBS>
 void LinearObsOperator<OBS>::setTrajectory(const GeoVaLs_ & gvals, const ObsAuxControl_ & aux) {
   Log::trace() << "LinearObsOperator<OBS>::setTrajectory starting" << std::endl;
-  util::Timer timer(classname(), "setTrajectory");
+  util::Timer timer(name_, "setTrajectory");
   oper_->setTrajectory(gvals.geovals(), aux.obsauxcontrol());
   Log::trace() << "LinearObsOperator<OBS>::setTrajectory done" << std::endl;
 }
@@ -140,7 +142,7 @@ template <typename OBS>
 void LinearObsOperator<OBS>::simulateObsTL(const GeoVaLs_ & gvals, ObsVector_ & yy,
                                              const ObsAuxIncrement_ & aux) const {
   Log::trace() << "LinearObsOperator<OBS>::simulateObsTL starting" << std::endl;
-  util::Timer timer(classname(), "simulateObsTL");
+  util::Timer timer(name_, "simulateObsTL");
   oper_->simulateObsTL(gvals.geovals(), yy.obsvector(), aux.obsauxincrement());
   Log::trace() << "LinearObsOperator<OBS>::simulateObsTL done" << std::endl;
 }
@@ -151,7 +153,7 @@ template <typename OBS>
 void LinearObsOperator<OBS>::simulateObsAD(GeoVaLs_ & gvals, const ObsVector_ & yy,
                                              ObsAuxIncrement_ & aux) const {
   Log::trace() << "LinearObsOperator<OBS>::simulateObsAD starting" << std::endl;
-  util::Timer timer(classname(), "simulateObsAD");
+  util::Timer timer(name_, "simulateObsAD");
   oper_->simulateObsAD(gvals.geovals(), yy.obsvector(), aux.obsauxincrement());
   Log::trace() << "LinearObsOperator<OBS>::simulateObsAD done" << std::endl;
 }
@@ -161,7 +163,7 @@ void LinearObsOperator<OBS>::simulateObsAD(GeoVaLs_ & gvals, const ObsVector_ & 
 template <typename OBS>
 const Variables & LinearObsOperator<OBS>::requiredVars() const {
   Log::trace() << "LinearObsOperator<OBS>::requiredVars starting" << std::endl;
-  util::Timer timer(classname(), "requiredVars");
+  util::Timer timer(name_, "requiredVars");
   return oper_->requiredVars();
 }
 
@@ -170,7 +172,7 @@ const Variables & LinearObsOperator<OBS>::requiredVars() const {
 template<typename OBS>
 void LinearObsOperator<OBS>::print(std::ostream & os) const {
   Log::trace() << "LinearObsOperator<OBS>::print starting" << std::endl;
-  util::Timer timer(classname(), "print");
+  util::Timer timer(name_, "print");
   os << *oper_;
   Log::trace() << "LinearObsOperator<OBS>::print done" << std::endl;
 }

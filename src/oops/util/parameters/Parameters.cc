@@ -16,6 +16,7 @@
 #include "oops/util/parameters/ObjectJsonSchema.h"
 #include "oops/util/parameters/ParameterBase.h"
 #include "oops/util/parameters/Parameters.h"
+#include "oops/util/Timer.h"
 
 #ifdef OOPS_HAVE_NLOHMANN_JSON_SCHEMA_VALIDATOR
 #include <regex>
@@ -116,6 +117,7 @@ void Parameters::registerChild(ParameterBase &parameter) {
 }
 
 void Parameters::deserialize(const eckit::Configuration &config) {
+  util::Timer timer("oops::Parameters", "deserialize");
   util::CompositePath path;
   deserialize(path, config);
 }
@@ -126,6 +128,7 @@ void Parameters::deserialize(util::CompositePath &path, const eckit::Configurati
 }
 
 void Parameters::serialize(eckit::LocalConfiguration &config) const {
+  util::Timer timer("oops::Parameters", "serialize");
   for (const ParameterBase* child : children_) {
     child->serialize(config);
   }
@@ -139,6 +142,7 @@ eckit::LocalConfiguration Parameters::toConfiguration() const {
 
 void Parameters::validate(const eckit::Configuration &config) {
 #ifdef OOPS_HAVE_NLOHMANN_JSON_SCHEMA_VALIDATOR
+  util::Timer timer("oops::Parameters", "validate");
   std::string strSchema = jsonSchema().toString(true /*includeSchemaKeyword?*/);
   nlohmann::json jsonSchema = nlohmann::json::parse(strSchema);
 

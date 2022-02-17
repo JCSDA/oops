@@ -26,6 +26,7 @@
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
 #include "oops/util/Logger.h"
+#include "oops/util/Timer.h"
 
 namespace oops {
 
@@ -64,6 +65,8 @@ HybridCovariance<MODEL>::HybridCovariance(const Geometry_ & resol, const Variabl
                                           const State_ & xb, const State_ & fg)
   : ModelSpaceCovarianceBase<MODEL>(resol, config, xb, fg)
 {
+  Log::trace() << "HybridCovariance::HybridCovariance start" << std::endl;
+  util::Timer timer("oops::Covariance", "HybridCovariance");
   std::vector<eckit::LocalConfiguration> confs;
   config.get("components", confs);
   for (const auto & conf : confs) {
@@ -87,7 +90,7 @@ HybridCovariance<MODEL>::HybridCovariance(const Geometry_ & resol, const Variabl
       incrementWeights_.push_back(weight);
     }
   }
-  Log::trace() << "HybridCovariance created." << std::endl;
+  Log::trace() << "HybridCovariance::HybridCovariance done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>

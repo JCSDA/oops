@@ -30,6 +30,7 @@
 #include "oops/base/Variables.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
+#include "oops/util/Timer.h"
 
 namespace oops {
 
@@ -88,6 +89,7 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Var
   : ModelSpaceCovarianceBase<MODEL>(resol, params, xb, fg), ens_(), loc_()
 {
   Log::trace() << "EnsembleCovariance::EnsembleCovariance start" << std::endl;
+  util::Timer timer("oops::Covariance", "EnsembleCovariance");
   size_t init = eckit::system::ResourceUsage().maxResidentSetSize();
   ens_.reset(new Ensemble_(params.ensemble, xb, fg, resol, vars));
   if (params.localization.value() != boost::none) {

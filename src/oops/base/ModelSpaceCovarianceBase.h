@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2021-2022 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -41,6 +42,7 @@
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/RequiredPolymorphicParameter.h"
 #include "oops/util/Random.h"
+#include "oops/util/Timer.h"
 
 namespace util {
   class DateTime;
@@ -104,6 +106,7 @@ class ModelSpaceCovarianceBase {
   double fullInverseAccuracy_;
   std::unique_ptr<LinearVariableChange_> linVarChg_;
   std::unique_ptr<Variables> anaVars_;
+  std::string timername_;
 };
 
 // =============================================================================
@@ -309,46 +312,45 @@ std::unique_ptr<ModelSpaceCovarianceParametersBase<MODEL>>
 // =============================================================================
 
 template <typename MODEL>
-ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(
-    const Geometry_ & resol,
-    const ModelSpaceCovarianceParametersBase<MODEL> & parameters,
-    const State_ & xb,
-    const State_ & fg) {
-
-    const boost::optional<std::string> &covarianceModel = parameters.covarianceModel.value();
-    if (covarianceModel == boost::none) {
-        covarianceModel_ = "none";
-    } else {
-        covarianceModel_ = *covarianceModel;
-    }
-    randomizationSize_ = parameters.randomizationSize;
-    fullInverse_ = parameters.fullInverse;
-    fullInverseIterations_ = parameters.fullInverseIterations;
-    fullInverseAccuracy_ = parameters.fullInverseAccuracy;
-    const boost::optional<typename LinearVariableChange<MODEL>::Parameters_> &variableChangeParms =
-        parameters.variableChange;
-    if (variableChangeParms != boost::none) {
-        linVarChg_.reset(new LinearVariableChange_(resol, *variableChangeParms));
-        linVarChg_->setTrajectory(xb, fg);
-        const boost::optional<Variables> &inputVars = variableChangeParms->inputVariables;
-        if (inputVars != boost::none) {
-            BVars_.reset(new Variables(*inputVars));
-        }
-        const boost::optional<Variables> &outputVars = variableChangeParms->outputVariables;
-        if (outputVars != boost::none) {
-            anaVars_.reset(new Variables(*outputVars));
-        }
-    }
+ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(const Geometry_ & resol,
+                     const ModelSpaceCovarianceParametersBase<MODEL> & parameters,
+                                                          const State_ & xb, const State_ & fg) {
+  Log::trace() << "ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase starting" << std::endl;
+  const boost::optional<std::string> &covarianceModel = parameters.covarianceModel.value();
+  if (covarianceModel == boost::none) {
+    covarianceModel_ = "none";
+  } else {
+    covarianceModel_ = *covarianceModel;
+  }
+  timername_ = "oops::Covariance::" + covarianceModel_;
+  util::Timer timer(timername_, "Constructor");
+  randomizationSize_ = parameters.randomizationSize;
+  fullInverse_ = parameters.fullInverse;
+  fullInverseIterations_ = parameters.fullInverseIterations;
+  fullInverseAccuracy_ = parameters.fullInverseAccuracy;
+  const boost::optional<typename LinearVariableChange<MODEL>::Parameters_> &variableChangeParms =
+      parameters.variableChange;
+  if (variableChangeParms != boost::none) {
+      linVarChg_.reset(new LinearVariableChange_(resol, *variableChangeParms));
+      linVarChg_->setTrajectory(xb, fg);
+      const boost::optional<Variables> &inputVars = variableChangeParms->inputVariables;
+      if (inputVars != boost::none) {
+          BVars_.reset(new Variables(*inputVars));
+      }
+      const boost::optional<Variables> &outputVars = variableChangeParms->outputVariables;
+      if (outputVars != boost::none) {
+          anaVars_.reset(new Variables(*outputVars));
+      }
+  }
+  Log::trace() << "ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(
-    const Geometry_ & resol,
-    const eckit::Configuration & conf,
-    const State_ & xb,
-    const State_ & fg)
+ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(const Geometry_ & resol,
+                                                          const eckit::Configuration & conf,
+                                                          const State_ & xb, const State_ & fg)
   : ModelSpaceCovarianceBase(
       resol, validateAndDeserialize<GenericModelSpaceCovarianceParameters<MODEL>>(conf), xb, fg)
 {}
@@ -357,13 +359,14 @@ ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(
 
 template <typename MODEL>
 void ModelSpaceCovarianceBase<MODEL>::randomize(Increment_ & dx) const {
-  Log::trace() << "ModelSpaceCovarianceBase<MODEL>::randomize starting " << std::endl;
+  Log::trace() << "ModelSpaceCovarianceBase<MODEL>::randomize starting" << std::endl;
+  util::Timer timer(timername_, "randomize");
   // TODO(notguillaume): Generalize to non-square change of variable
   this->doRandomize(dx);
   if (linVarChg_) {
     linVarChg_->multiply(dx, *anaVars_);
   }
-  Log::trace() << "ModelSpaceCovarianceBase<MODEL>::randomize done " << std::endl;
+  Log::trace() << "ModelSpaceCovarianceBase<MODEL>::randomize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -371,7 +374,8 @@ void ModelSpaceCovarianceBase<MODEL>::randomize(Increment_ & dx) const {
 template <typename MODEL>
 void ModelSpaceCovarianceBase<MODEL>::multiply(const Increment_ & dxi,
                                                Increment_ & dxo) const {
-  Log::trace() << "ModelSpaceCovarianceBase<MODEL>::multiply starting " << std::endl;
+  Log::trace() << "ModelSpaceCovarianceBase<MODEL>::multiply starting" << std::endl;
+  util::Timer timer(timername_, "multiply");
   if (linVarChg_) {
     // Copy input increment and apply adjoint variable change (to control variables)
     Increment_ dxiTemp(dxi);
@@ -391,7 +395,7 @@ void ModelSpaceCovarianceBase<MODEL>::multiply(const Increment_ & dxi,
   } else {
     this->doMultiply(dxi, dxo);
   }
-  Log::trace() << "ModelSpaceCovarianceBase<MODEL>::multiply done " << std::endl;
+  Log::trace() << "ModelSpaceCovarianceBase<MODEL>::multiply done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -399,7 +403,8 @@ void ModelSpaceCovarianceBase<MODEL>::multiply(const Increment_ & dxi,
 template <typename MODEL>
 void ModelSpaceCovarianceBase<MODEL>::inverseMultiply(const Increment_ & dxi,
                                                       Increment_ & dxo) const {
-  Log::trace() << "ModelSpaceCovarianceBase<MODEL>::inverseMultiply starting " << std::endl;
+  Log::trace() << "ModelSpaceCovarianceBase<MODEL>::inverseMultiply starting" << std::endl;
+  util::Timer timer(timername_, "inverseMultiply");
   if (fullInverse_) {
     // Approximate full inverse using GMRESR
     IdentityMatrix<Increment_> Id;
@@ -426,13 +431,15 @@ void ModelSpaceCovarianceBase<MODEL>::inverseMultiply(const Increment_ & dxi,
       this->doInverseMultiply(dxi, dxo);
     }
   }
-  Log::trace() << "ModelSpaceCovarianceBase<MODEL>::inverseMultiply done " << std::endl;
+  Log::trace() << "ModelSpaceCovarianceBase<MODEL>::inverseMultiply done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
 void ModelSpaceCovarianceBase<MODEL>::getVariance(Increment_ & variance) const {
+  Log::trace() << "ModelSpaceCovarianceBase<MODEL>::getVariance starting" << std::endl;
+  util::Timer timer(timername_, "getVariance");
   Increment_ dx(variance);
   Increment_ dxsq(variance);
   Increment_ mean(variance);
@@ -450,6 +457,7 @@ void ModelSpaceCovarianceBase<MODEL>::getVariance(Increment_ & variance) const {
   }
   double rk_norm = 1.0/static_cast<double>(randomizationSize_-1);
   variance *= rk_norm;
+  Log::trace() << "ModelSpaceCovarianceBase<MODEL>::getVariance done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
