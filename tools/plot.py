@@ -29,8 +29,10 @@ parser_l95_cost.add_argument("filepath", type=str, help="File path")
 parser_l95_cost.add_argument("--output", help="Output file path")
 
 # L95 fields arguments
-parser_l95_fields.add_argument("filepath", help="File path")
-parser_l95_fields.add_argument("basefilepath", nargs="?", help="Base file path", default=None)
+parser_l95_fields.add_argument("filepath", help="Analysis file path")
+parser_l95_fields.add_argument("-bg", "--bgfilepath", help="Background file path", default=None)
+parser_l95_fields.add_argument("-t",  "--truthfilepath", help="Truth file path", default=None)
+parser_l95_fields.add_argument("-o",  "--obsfilepath",  help="Obs file path", default=None)
 parser_l95_fields.add_argument("--output", help="Output file path")
 
 # -----------------------------------------------------------------------------
