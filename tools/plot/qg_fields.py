@@ -64,7 +64,21 @@ def func(args):
                  fields_u.append(netCDF4.Dataset(filepath).variables["u"][:])
                  fields_v.append(netCDF4.Dataset(filepath).variables["v"][:])
 
-        if not args.basefilepath is None:
+        # Plotted fields vector
+        fields_plot = []
+        if args.plotwind:
+            fields_u_plot = []
+            fields_v_plot = []
+
+        if args.basefilepath is None:
+            for field in fields:
+               fields_plot.append(field)
+            if args.plotwind:
+                for field_u in fields_u:
+                    fields_u_plot.append(field_u)
+                for field_v in fields_v:
+                    fields_v_plot.append(field_v)
+        else:
             # Check file extension
             if not args.basefilepath.endswith(".nc"):
                 print("   Error: basefilepath extension should be .nc")
@@ -78,15 +92,15 @@ def func(args):
 
             # Compute increments
             for field in fields:
-                field = field-field_base
+                fields_plot.append(field-field_base)
             if args.plotwind:
                 for field_u in fields_u:
-                    field_u = field_u-field_u_base
+                    fields_u_plot.append(field_u-field_u_base)
                 for field_v in fields_v:
-                    field_v = field_v-field_v_base
+                    fields_v_plot.append(field_v-field_v_base)
 
         # Get geometry
-        nz, ny, nx = fields[0].shape
+        nz, ny, nx = fields_plot[0].shape
         levels = list(range(nz))
         z_coord = netCDF4.Dataset(filepaths[0]).variables["z"][:]
         dx = domain_zonal / nx # zonal grid cell in km
@@ -101,7 +115,7 @@ def func(args):
         clevels = []
         for level in levels:
             vmax = 0.0
-            for field in fields:
+            for field in fields_plot:
                 vmax = max(vmax, np.max(np.abs(field[level])))
             clevels.append(np.linspace(-vmax, vmax, 30))
 
@@ -133,12 +147,12 @@ def func(args):
             # Loop over levels
             for level, ax in zip(levels, axs[::-1]):
                 # Plot variable
-                im = ax.contourf(xx, yy, fields[iplot][level], cmap="plasma", levels=clevels[level])
+                im = ax.contourf(xx, yy, fields_plot[iplot][level], cmap="plasma", levels=clevels[level])
 
                 if args.plotwind:
                     # Plot wind field
                     ax.quiver(xx[::dy_quiver, ::dx_quiver], yy[::dy_quiver, ::dx_quiver],
-                                  fields_u[iplot][level, ::dy_quiver, ::dx_quiver], fields_v[iplot][level, ::dy_quiver, ::dx_quiver],
+                                  fields_u_plot[iplot][level, ::dy_quiver, ::dx_quiver], fields_v_plot[iplot][level, ::dy_quiver, ::dx_quiver],
                                   scale=scale, scale_units="inches")
 
                 # Set plot formatting
