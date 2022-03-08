@@ -427,8 +427,8 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
         double extendRadius = patchRadius + getMaximumLocalizationScale(conf);
         Log::debug() << "patch radius + lengthscale=" << extendRadius << std::endl;
 
-        conf.set("obs space.center", patchCenter);
-        conf.set("obs space.radius", extendRadius);
+        conf.set("obs space.distribution.center", patchCenter);
+        conf.set("obs space.distribution.radius", extendRadius);
       }
 
       eckit::LocalConfiguration tmp;
@@ -440,8 +440,8 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
       double extendRadius = patchRadius + getMaximumLocalizationScale(tmpObsConf);
       Log::debug() << "patch radius + lengthscale=" << extendRadius << std::endl;
 
-      obsConfig.set("obs space.center", patchCenter);
-      obsConfig.set("obs space.radius", extendRadius);
+      obsConfig.set("obs space.distribution.center", patchCenter);
+      obsConfig.set("obs space.distribution.radius", extendRadius);
     }
   }
 
