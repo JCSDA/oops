@@ -87,6 +87,17 @@ variational:
 final:
   diagnostics:
     departures: oman
+  increment:
+    geometry:
+      nx: 40
+      ny: 20
+      depths: [4500.0, 5500.0]
+    output:
+      datadir: Data
+      date: 2010-01-01T12:00:00Z
+      exp: 3dvar.increment
+      type: in
+      analysis variables: [x]
 output:
   datadir: Data
   exp: 3dvar

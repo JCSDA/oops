@@ -21,6 +21,8 @@
 #include "oops/assimilation/IncrementalAssimilation.h"
 #include "oops/assimilation/instantiateCostFactory.h"
 #include "oops/assimilation/instantiateMinFactory.h"
+#include "oops/base/Geometry.h"
+#include "oops/base/Increment.h"
 #include "oops/base/instantiateCovarFactory.h"
 #include "oops/base/instantiateObsFilterFactory.h"
 #include "oops/base/PostProcessor.h"
@@ -80,11 +82,29 @@ template <typename MODEL, typename OBS> class Variational : public Application {
 //  Save analysis and final diagnostics
     PostProcessor<State_> post;
     const util::DateTime winbgn(cfConf.getString("window begin"));
-    const eckit::LocalConfiguration outConfig(fullConfig, "output");
-    post.enrollProcessor(new StateWriter<State_>(outConfig));
+    if (fullConfig.has("output")) {
+      const eckit::LocalConfiguration outConfig(fullConfig, "output");
+      post.enrollProcessor(new StateWriter<State_>(outConfig));
+    }
 
     eckit::LocalConfiguration finalConfig(fullConfig, "final");
     finalConfig.set("iteration", iouter);
+
+//  Save increment if desired
+    if (finalConfig.has("increment")) {
+      const eckit::LocalConfiguration incConfig(finalConfig, "increment");
+      Log::trace() << "Variational: writing analysis increment" << std::endl;
+      ControlVariable<MODEL, OBS> x_b(J->jb().getBackground());
+      const eckit::LocalConfiguration incGeomConfig(incConfig, "geometry");
+      Geometry<MODEL> incGeom(incGeomConfig,
+                              xx.state().geometry().getComm(),
+                              xx.state().geometry().timeComm());
+      Increment<MODEL> dx(incGeom, xx.state().variables(), xx.state().validTime());
+      dx.diff(xx.state(), x_b.state());
+      const eckit::LocalConfiguration incOutConfig(incConfig, "output");
+      dx.write(incOutConfig);
+    }
+
     if (finalConfig.has("prints")) {
       const eckit::LocalConfiguration prtConfig(finalConfig, "prints");
       post.enrollProcessor(new StateInfo<State_>("final", prtConfig));
