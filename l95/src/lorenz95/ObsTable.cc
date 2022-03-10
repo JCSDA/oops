@@ -200,6 +200,8 @@ void ObsTable::generateDistribution(const ObsGenerateParameters & params) {
   while (now <= winend_) {
     for (unsigned int jobs = 0; jobs < nobs_locations; ++jobs) {
       double xpos = jobs*dx;
+      // For single obs case ensure the obs is in the middle
+      if (nobs_locations == 1) xpos = 0.5;
       times_[iobs] = now;
       locations_[iobs] = xpos;
       ++iobs;
