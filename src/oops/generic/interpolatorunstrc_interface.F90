@@ -150,20 +150,40 @@ type(c_ptr), intent(in), value :: c_outfield !< output field
 ! Local variables
 type(unstrc_interp), pointer :: unstrc_int
 type(atlas_field) :: infield, outfield
-real(kind_real), pointer :: fin(:,:), fout(:,:)
-integer :: jlev
+real(kind_real), pointer :: fin_r1(:), fout_r1(:)
+real(kind_real), pointer :: fin_r2(:,:), fout_r2(:,:)
+integer :: jlev, jlev1, jlev2
 
 call unstrc_interp_registry%get(c_key_unstrc, unstrc_int)
 
 infield = atlas_field(c_infield)
 outfield = atlas_field(c_outfield)
 
-call infield%data(fin)
-call outfield%data(fout)
+jlev1 = infield%levels()
+jlev2 = outfield%levels()
 
-do jlev = 1, infield%levels()
-   call unstrc_int%apply(fin(jlev,:), fout(jlev,:))
-enddo
+if (jlev1 .ne. jlev2) call abor1_ftn("interpolator_unstrc_interface.unstrc_apply_c: number"// &
+                                     " of levels for the two fields does not match.")
+
+if (jlev1 == 0) then
+
+  call infield%data(fin_r1)
+  call outfield%data(fout_r1)
+
+  call unstrc_int%apply(fin_r1, fout_r1)
+
+else
+
+  call infield%data(fin_r2)
+  call outfield%data(fout_r2)
+
+  do jlev = 1, jlev1
+     call unstrc_int%apply(fin_r2(jlev,:), fout_r2(jlev,:))
+  enddo
+
+endif
+
+
 
 ! free up pointers and arrays
 call infield%final()
@@ -186,20 +206,38 @@ type(c_ptr), intent(in), value :: c_field1  !< output field
 ! Local variables
 type(unstrc_interp), pointer :: unstrc_int
 type(atlas_field) :: field_grid2, field_grid1
-real(kind_real), pointer :: f2(:,:), f1(:,:)
-integer :: jlev
+real(kind_real), pointer :: f2_r1(:),   f1_r1(:)
+real(kind_real), pointer :: f2_r2(:,:), f1_r2(:,:)
+integer :: jlev, jlev1, jlev2
 
 call unstrc_interp_registry%get(c_key_unstrc, unstrc_int)
 
 field_grid2 = atlas_field(c_field2)
 field_grid1 = atlas_field(c_field1)
 
-call field_grid2%data(f2)
-call field_grid1%data(f1)
+jlev1 = field_grid1%levels()
+jlev2 = field_grid2%levels()
 
-do jlev = 1, field_grid2%levels()
-   call unstrc_int%apply_ad(f1(jlev,:), f2(jlev,:))
-enddo
+if (jlev1 .ne. jlev2) call abor1_ftn("interpolator_unstrc_interface.unstrc_apply_ad_c: number"// &
+                                     " of levels for the two fields does not match.")
+
+if (jlev1 == 0) then
+
+  call field_grid1%data(f1_r1)
+  call field_grid2%data(f2_r1)
+
+  call unstrc_int%apply_ad(f1_r1, f2_r1)
+
+else
+
+  call field_grid1%data(f1_r2)
+  call field_grid2%data(f2_r2)
+
+  do jlev = 1, jlev1
+     call unstrc_int%apply_ad(f1_r2(jlev,:), f2_r2(jlev,:))
+  enddo
+
+endif
 
 ! free up pointers
 call field_grid2%final()
