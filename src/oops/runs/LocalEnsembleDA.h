@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2019-2021 UCAR.
+ * (C) Copyright 2019-2022 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -37,6 +37,7 @@
 
 namespace oops {
 
+// -----------------------------------------------------------------------------
 /// \brief Options controlling output and observer for LocalEnsembleDA application.
 class LocalEnsembleDADriverParameters : public Parameters {
   OOPS_CONCRETE_PARAMETERS(LocalEnsembleDADriverParameters, Parameters)
@@ -77,6 +78,7 @@ class LocalEnsembleDADriverParameters : public Parameters {
                   true, this};
 };
 
+// -----------------------------------------------------------------------------
 /// \brief Top-level options taken by the LocalEnsembleDA application.
 template <typename MODEL>
 class LocalEnsembleDAParameters : public ApplicationParameters {
@@ -133,6 +135,7 @@ class LocalEnsembleDAParameters : public ApplicationParameters {
          "parameters for posterior variance output", this};
 };
 
+// -----------------------------------------------------------------------------
 /// \brief Application for local ensemble data assimilation
 template <typename MODEL, typename OBS> class LocalEnsembleDA : public Application {
   typedef Departures<OBS>                  Departures_;
@@ -423,25 +426,16 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
 
     if (obsConfigs.size() > 0) {
       for (auto & conf : obsConfigs) {
-        // assign radius that is a sum of the patch and localization radii
-        double extendRadius = patchRadius + getMaximumLocalizationScale(conf);
-        Log::debug() << "patch radius + lengthscale=" << extendRadius << std::endl;
-
         conf.set("obs space.distribution.center", patchCenter);
-        conf.set("obs space.distribution.radius", extendRadius);
+        conf.set("obs space.distribution.radius", patchRadius);
       }
 
       eckit::LocalConfiguration tmp;
       tmp.set("observations", obsConfigs);
       obsConfig = tmp.getSubConfiguration("observations");
     } else {
-      // assign radius that is a sum of the patch and localization radii
-      eckit::LocalConfiguration tmpObsConf(obsConfig, "obs space");
-      double extendRadius = patchRadius + getMaximumLocalizationScale(tmpObsConf);
-      Log::debug() << "patch radius + lengthscale=" << extendRadius << std::endl;
-
       obsConfig.set("obs space.distribution.center", patchCenter);
-      obsConfig.set("obs space.distribution.radius", extendRadius);
+      obsConfig.set("obs space.distribution.radius", patchRadius);
     }
   }
 
@@ -463,20 +457,6 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
         Log::test() << strOut << var << std::endl;
       }
     }
-  }
-
-  double getMaximumLocalizationScale(const eckit::LocalConfiguration & conf) const {
-    // from a list of obsLocalizations, return the largest lengthscale
-    std::vector<eckit::LocalConfiguration> obsLocConfigs =
-                        conf.getSubConfigurations("obs localizations");
-
-    double maxLengthScale = 0.0;
-    for (size_t oli = 0; oli < obsLocConfigs.size(); ++oli) {
-      maxLengthScale = std::max(maxLengthScale,
-          obsLocConfigs[oli].getDouble("lengthscale", 0.0));
-    }
-    Log::debug() << "lengthscale=" << maxLengthScale << std::endl;
-    return maxLengthScale;
   }
 
 // -----------------------------------------------------------------------------
