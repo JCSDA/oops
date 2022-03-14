@@ -23,6 +23,7 @@ parser_l95 = subparser_model.add_parser("l95", help="L95 parser")
 subparser_diagnostic_l95 = parser_l95.add_subparsers(help="L95 diagnostic help", required=True, dest="diagnostic")
 parser_l95_cost = subparser_diagnostic_l95.add_parser("cost", help="L95 cost parser")
 parser_l95_fields = subparser_diagnostic_l95.add_parser("fields", help="L95 fields parser")
+parser_l95_errors = subparser_diagnostic_l95.add_parser("errors", help="L95 errors parser")
 
 # L95 cost arguments
 parser_l95_cost.add_argument("filepath", type=str, help="File path")
@@ -34,6 +35,13 @@ parser_l95_fields.add_argument("-bg", "--bgfilepath", help="Background file path
 parser_l95_fields.add_argument("-t",  "--truthfilepath", help="Truth file path", default=None)
 parser_l95_fields.add_argument("-o",  "--obsfilepath",  help="Obs file path", default=None)
 parser_l95_fields.add_argument("--output", help="Output file path")
+
+# L95 errors arguments
+parser_l95_errors.add_argument("filepath", help="Analysis file path")
+parser_l95_errors.add_argument("truthfilepath", help="Truth file path")
+parser_l95_errors.add_argument("-bg", "--bgfilepath", help="Background file path", default=None)
+parser_l95_errors.add_argument("--output", help="Output file path")
+
 
 # -----------------------------------------------------------------------------
 # QG model sub-parsers --------------------------------------------------------
