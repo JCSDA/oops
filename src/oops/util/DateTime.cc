@@ -148,6 +148,21 @@ void DateTime::toYYYYMMDDhhmmss(int & YYYYMMDD, int & hhmmss) const {
 
 // -----------------------------------------------------------------------------
 
+int64_t DateTime::secondsSinceJan1() const {
+  int year;
+  int month;
+  int day;
+  int hour;
+  int minute;
+  int second;
+  toYYYYMMDDhhmmss(year, month, day, hour, minute, second);
+
+  const util::Duration dt_since_jan1 = *this - DateTime(year, 1, 1, 0, 0, 0);
+  return dt_since_jan1.toSeconds();
+}
+
+// -----------------------------------------------------------------------------
+
 void DateTime::addSeconds(const int64_t &seconds) {
   failIfUnset();
 

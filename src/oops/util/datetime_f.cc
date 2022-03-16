@@ -61,6 +61,12 @@ void datetime_to_yyyymmddhhmmss_f(const util::DateTime *dt,
 
 // -----------------------------------------------------------------------------
 
+int64_t datetime_seconds_since_jan1_f(const util::DateTime *dt) {
+  return dt->secondsSinceJan1();
+}
+
+// -----------------------------------------------------------------------------
+
 void datetime_getints_f(const util::DateTime * dt, int64_t & date, int & time) {
   int yy, mm, dd, hh, nn, ss;
   dt->toYYYYMMDDhhmmss(yy, mm, dd, hh, nn, ss);

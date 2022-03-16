@@ -68,6 +68,15 @@ class DateTime : public util::Serializable {
   // Convert the datetime to two integers: YYYYMMDD and hhmmss
   void toYYYYMMDDhhmmss(int & YYYYMMDD, int & hhmmss) const;
 
+  // Convert the datetime to seconds since Jan 1 of the year
+  //
+  // Performance note: this method is not optimized for large numbers of calls in the same year,
+  // because each invocation computes anew the DateTime for Jan 1 00:00:00 of the year. This should
+  // not be a problem for computing secondsSinceJan1 O(once per obs space), but could become a
+  // problem for applications that compute secondsSinceJan1 O(once per obs). In that use case, it
+  // may be helpful to precompute the Jan 1 DateTime.
+  int64_t secondsSinceJan1() const;
+
   // Operators to add/subtract a Duration to/from a DateTime
   DateTime& operator+=(const Duration &);
   DateTime& operator-=(const Duration &);

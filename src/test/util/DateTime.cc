@@ -92,6 +92,19 @@ namespace {
 
 // -----------------------------------------------------------------------------
 
+  CASE("test_seconds_since_jan1") {
+    const int date = 20200518;
+    const int time = 32745;
+    const util::DateTime datetime(date, time);
+    const int seconds_since_jan1 = datetime.secondsSinceJan1();
+    // Below, the number 138 comes from the number of elapsed days before May 18th,
+    // which was the 139th day of 2020
+    const int expected = 45 + 27 * 60 + 3 * 3600 + 138 * 86400;
+    EXPECT(seconds_since_jan1 == expected);
+  }
+
+// -----------------------------------------------------------------------------
+
   CASE("test_operators") {
      util::DateTime d1(2011, 9, 16, 13, 55, 20);
      util::DateTime d2(2011, 9, 16, 13, 55, 21);
