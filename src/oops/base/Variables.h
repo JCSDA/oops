@@ -1,8 +1,8 @@
 /*
  * (C) Copyright 2017-2018 UCAR
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
 #ifndef OOPS_BASE_VARIABLES_H_
@@ -35,6 +35,8 @@ class Variables : public util::Printable {
 
   Variables(const Variables &);
   Variables & operator+=(const Variables &);
+  Variables & operator-=(const Variables &);
+  Variables & operator-=(const std::string &);
 
   size_t size() const {return vars_.size();}
   const std::string & operator[](const size_t kk) const {return vars_.at(kk);}

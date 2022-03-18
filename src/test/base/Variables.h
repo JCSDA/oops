@@ -107,6 +107,39 @@ void testFortranInterface() {
 
 // -----------------------------------------------------------------------------
 
+void testArithmeticOperators() {
+  std::vector<std::string> varsStartStr{"var1", "var2", "var3"};
+  std::vector<std::string> varsFinalStr{"var1", "var2"};
+  std::vector<std::string> varsAddRemStr{"var3"};
+
+  // Check on removing other Variables object
+  oops::Variables varsStartRemoveVars(varsStartStr);
+  oops::Variables varsFinalRemoveVars(varsFinalStr);
+  oops::Variables varsRemove(varsAddRemStr);
+  varsStartRemoveVars -= varsRemove;
+  EXPECT(varsStartRemoveVars == varsFinalRemoveVars);
+
+  // Check on removing other string
+  oops::Variables varsStartRemoveStr(varsStartStr);
+  oops::Variables varsFinalRemoveStr(varsFinalStr);
+  varsStartRemoveStr -= "var3";
+  EXPECT(varsStartRemoveStr == varsFinalRemoveStr);
+
+  // Check on adding other Variables object
+  oops::Variables varsStartAddVars(varsFinalStr);
+  oops::Variables varsFinalAddVars(varsStartStr);
+  oops::Variables varsAdd(varsAddRemStr);
+  varsStartAddVars += varsAdd;
+  EXPECT(varsStartAddVars == varsFinalAddVars);
+
+  // Check we get exception if we subtract vars with channels
+  oops::Variables varsStartChnnl(varsStartStr);
+  oops::Variables varsWithChannels{varsAddRemStr, std::vector<int>{1}};
+  EXPECT_THROWS_AS(varsStartChnnl -= varsWithChannels, eckit::NotImplemented);
+}
+
+// -----------------------------------------------------------------------------
+
 class Variables : public oops::Test {
  public:
   Variables() {}
@@ -123,6 +156,8 @@ class Variables : public oops::Test {
       { testCopyConstructor(); });
     ts.emplace_back(CASE("Variables/testFortranInterface")
       { testFortranInterface(); });
+    ts.emplace_back(CASE("Variables/testArithmeticOperators")
+      { testArithmeticOperators(); });
   }
 
   void clear() const override {}

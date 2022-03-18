@@ -109,6 +109,27 @@ Variables & Variables::operator+=(const Variables & rhs) {
 
 // -----------------------------------------------------------------------------
 
+Variables & Variables::operator-=(const Variables & rhs) {
+  ASSERT(convention_ == rhs.convention_);
+  if (!rhs.channels().empty()) {
+    throw eckit::NotImplemented(
+        "Variables::operator-= not implemented for rhs objects with channels", Here());
+  }
+  for (auto & var : rhs.vars_) {
+    vars_.erase(std::remove(vars_.begin(), vars_.end(), var), vars_.end());
+  }
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+Variables & Variables::operator-=(const std::string & var) {
+  vars_.erase(std::remove(vars_.begin(), vars_.end(), var), vars_.end());
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
 bool Variables::operator==(const Variables & rhs) const {
   return convention_ == rhs.convention_
     && vars_ == rhs.vars_
