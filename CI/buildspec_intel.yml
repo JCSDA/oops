@@ -55,6 +55,10 @@ phases:
       - cd CI
       - . /etc/profile.d/intel.sh
 
+      # read cdash url from s3
+      - wget https://ci-test-cdash-url.s3.amazonaws.com/cdash_url.txt
+      - CDASH_URL=$(cat cdash_url.txt)
+
       # oops
       - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/oops $CODEBUILD_GIT_BRANCH oops /jcsda/oops-bundle develop
 
@@ -66,6 +70,8 @@ phases:
       - cp cmake/CTestCustom.ctest.in /jcsda/oops-bundle/cmake/
       - cp cmake/cdash-integration.cmake /jcsda/oops-bundle/cmake/
       - cp cmake/CTestConfig.cmake /jcsda/oops-bundle/
+      - sed -i "s@CDASH_URL@$CDASH_URL@g" /jcsda/oops-bundle/CTestConfig.cmake
+
 
       - chmod 777 -R /jcsda/oops-bundle
 
@@ -136,8 +142,7 @@ phases:
 
       - if [ "$BUILD_STATUS" = "1" ];
         then echo "Build & tests passed, find cdash url";
-        bash /jcsda/oops-bundle/oops/CI/cdash-url.sh /home/jedi/oops/Testing;
-        url=$(bash /jcsda/oops-bundle/oops/CI/cdash-url.sh /home/jedi/oops/Testing);
+        url=$(bash /jcsda/oops-bundle/oops/CI/cdash-url.sh /home/jedi/oops/Testing $CDASH_URL);
         echo $url;
         echo ${url} > /jcsda/artifacts/cdash-url.txt;
         cat /jcsda/artifacts/cdash-url.txt;
