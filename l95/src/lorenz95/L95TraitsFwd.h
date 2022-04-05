@@ -21,9 +21,8 @@ class Iterator;
 class StateL95;
 class IncrementL95;
 class ErrorCovarianceL95;
+class InterpolatorL95;
 
-class GetValuesL95;
-class GetValuesTLAD;
 class IdChangeVariable;
 class IdChangeVarTLADL95;
 
@@ -60,9 +59,8 @@ struct L95Traits {
   typedef lorenz95::StateL95               State;
   typedef lorenz95::IncrementL95           Increment;
   typedef lorenz95::ErrorCovarianceL95     Covariance;
+  typedef lorenz95::InterpolatorL95        LocalInterpolator;
 
-  typedef lorenz95::GetValuesL95           GetValues;
-  typedef lorenz95::GetValuesTLAD          LinearGetValues;
   typedef lorenz95::IdChangeVariable       VariableChange;
   typedef lorenz95::IdChangeVarTLADL95     LinearVariableChange;
 

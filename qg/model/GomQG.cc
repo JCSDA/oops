@@ -24,11 +24,12 @@ namespace qg {
 // -----------------------------------------------------------------------------
 GomQG::GomQG(const LocationsQG & locs, const oops::Variables & vars,
              const std::vector<size_t> & sizes):
-  vars_(vars), locs_(&locs), levs_(sizes[0])
+  vars_(vars), locs_(&locs)
 {
 // All variables have same levels
-  for (size_t jj = 1; jj < sizes.size(); ++jj) ASSERT(sizes[jj] == static_cast<size_t>(levs_));
-  qg_gom_setup_f90(keyGom_, locs, vars_, levs_);
+  for (size_t jj = 1; jj < sizes.size(); ++jj) ASSERT(sizes[jj] == sizes[0]);
+  const int levs = sizes[0];
+  qg_gom_setup_f90(keyGom_, locs, vars_, levs);
 }
 // -----------------------------------------------------------------------------
 /*! QG GeoVaLs Constructor with Config */
@@ -43,7 +44,7 @@ GomQG::GomQG(const Parameters_ & params,
 // -----------------------------------------------------------------------------
 // Copy constructor
 GomQG::GomQG(const GomQG & other):
-  vars_(other.vars_), locs_(other.locs_), levs_(other.levs_)
+  vars_(other.vars_), locs_(other.locs_)
 {
   qg_gom_create_f90(keyGom_);
   qg_gom_copy_f90(keyGom_, other.keyGom_);
@@ -103,6 +104,24 @@ double GomQG::dot_product_with(const GomQG & other) const {
   double zz;
   qg_gom_dotprod_f90(keyGom_, other.keyGom_, zz);
   return zz;
+}
+// -----------------------------------------------------------------------------
+void GomQG::fill(const std::vector<size_t> & indx, const std::vector<double> & vals) {
+  const size_t npts = indx.size();
+  const size_t nvals = vals.size();
+  std::vector<int> findx(indx.size());
+  for (size_t jj = 0; jj < indx.size(); ++jj) findx[jj] = indx[jj] + 1;
+
+  qg_gom_fill_f90(keyGom_, npts, findx[0], nvals, vals[0]);
+}
+// -----------------------------------------------------------------------------
+void GomQG::fillAD(const std::vector<size_t> & indx, std::vector<double> & vals) const {
+  const size_t npts = indx.size();
+  const size_t nvals = vals.size();
+  std::vector<int> findx(indx.size());
+  for (size_t jj = 0; jj < indx.size(); ++jj) findx[jj] = indx[jj] + 1;
+
+  qg_gom_fillad_f90(keyGom_, npts, findx[0], nvals, vals[0]);
 }
 // -----------------------------------------------------------------------------
 void GomQG::read(const Parameters_ & params) {

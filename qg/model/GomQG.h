@@ -73,12 +73,14 @@ class GomQG : public util::Printable,
 
   const int & toFortran() const {return keyGom_;}
 
+  void fill(const std::vector<size_t> &, const std::vector<double> &);
+  void fillAD(const std::vector<size_t> &, std::vector<double> &) const;
+
  private:
   void print(std::ostream &) const;
   F90gom keyGom_;
   oops::Variables vars_;
   const LocationsQG * locs_;
-  int levs_;
 };
 
 }  // namespace qg

@@ -14,6 +14,7 @@
 #include <utility>
 #include <vector>
 
+#include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
 
 #include "oops/base/Geometry.h"
@@ -65,6 +66,10 @@ class GeometryCoupled : public util::Printable {
   const int & modelNumber() const {return mymodel_;}
   const int & localRank() const {return myrank_;}
   const bool & isParallel() const {return parallel_;}
+
+  void latlon(std::vector<double> &, std::vector<double> &, const bool) const {
+    throw eckit::NotImplemented("GeometryCoupled::latlon", Here());
+  }
 
  private:
   void print(std::ostream & os) const override;

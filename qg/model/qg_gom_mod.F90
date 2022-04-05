@@ -29,7 +29,7 @@ public :: qg_gom
 public :: qg_gom_registry
 public :: qg_gom_setup,qg_gom_alloc,qg_gom_delete,qg_gom_copy,qg_gom_zero,qg_gom_abs,qg_gom_random,qg_gom_mult, &
         & qg_gom_add,qg_gom_diff,qg_gom_schurmult,qg_gom_divide,qg_gom_rms,qg_gom_dotprod,qg_gom_stats,qg_gom_maxloc, &
-        & qg_gom_read_file, qg_gom_write_file,qg_gom_analytic_init
+        & qg_gom_fill, qg_gom_fillad, qg_gom_read_file, qg_gom_write_file,qg_gom_analytic_init
 ! ------------------------------------------------------------------------------
 type :: qg_gom
   integer :: nobs                               !< Number of observations
@@ -147,6 +147,94 @@ if (self%vars%has('v')) self%v = other%v
 if (self%vars%has('z')) self%z = other%z
 
 end subroutine qg_gom_copy
+! ------------------------------------------------------------------------------
+subroutine qg_gom_fill(self, c_nloc, c_indx, c_nval, c_vals)
+implicit none
+type(qg_gom), intent(inout) :: self
+integer(c_int), intent(in) :: c_nloc
+integer(c_int), intent(in) :: c_indx(c_nloc)
+integer(c_int), intent(in) :: c_nval
+real(c_double), intent(in) :: c_vals(c_nval)
+
+character(len=1024) :: fieldname
+real(kind_real),pointer :: gval(:,:)
+integer :: jvar, jlev, jloc, iloc, ii
+
+if (.not.self%lalloc) call abor1_ftn('qg_gom_fill: gom not allocated')
+
+ii = 0
+do jvar=1,self%vars%nvars()
+  fieldname = self%vars%variable(jvar)
+  select case (trim(fieldname))
+  case ('x')
+    gval => self%x(:,:)
+  case ('q')
+    gval => self%q(:,:)
+  case ('u')
+    gval => self%u(:,:)
+  case ('v')
+    gval => self%v(:,:)
+  case ('z')
+    gval => self%z(:,:)
+  case default
+    call abor1_ftn('qg_gom_fill: wrong variable')
+  endselect
+ 
+  do jloc=1,c_nloc
+    iloc = c_indx(jloc)
+    do jlev = 1, self%levs
+      ii = ii + 1
+      gval(jlev,iloc) = c_vals(ii)
+    enddo
+  enddo
+enddo
+if (ii /= c_nval) call abor1_ftn('qg_gom_fill: error size')
+
+end subroutine qg_gom_fill
+! ------------------------------------------------------------------------------
+subroutine qg_gom_fillad(self, c_nloc, c_indx, c_nval, c_vals)
+implicit none
+type(qg_gom), intent(in) :: self
+integer(c_int), intent(in) :: c_nloc
+integer(c_int), intent(in) :: c_indx(c_nloc)
+integer(c_int), intent(in) :: c_nval
+real(c_double), intent(inout) :: c_vals(c_nval)
+
+character(len=1024) :: fieldname
+real(kind_real),pointer :: gval(:,:)
+integer :: jvar, jlev, jloc, iloc, ii
+
+if (.not.self%lalloc) call abor1_ftn('qg_gom_fillad: gom not allocated')
+
+ii = 0
+do jvar=1,self%vars%nvars()
+  fieldname = self%vars%variable(jvar)
+  select case (trim(fieldname))
+  case ('x')
+    gval => self%x(:,:)
+  case ('q')
+    gval => self%q(:,:)
+  case ('u')
+    gval => self%u(:,:)
+  case ('v')
+    gval => self%v(:,:)
+  case ('z')
+    gval => self%z(:,:)
+  case default
+    call abor1_ftn('qg_gom_fillad: wrong variable')
+  endselect
+ 
+  do jloc=1,c_nloc
+    iloc = c_indx(jloc)
+    do jlev = 1, self%levs
+      ii = ii + 1
+      c_vals(ii) = gval(jlev,iloc)
+    enddo
+  enddo
+enddo
+if (ii /= c_nval) call abor1_ftn('qg_gom_fillad: error size')
+
+end subroutine qg_gom_fillad
 ! ------------------------------------------------------------------------------
 !> Set GOM to zero
 subroutine qg_gom_zero(self)

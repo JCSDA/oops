@@ -119,6 +119,10 @@ extern "C" {
                               atlas::field::FieldSetImpl *);
   void qg_fields_from_atlas_f90(const F90flds &, const oops::Variables &,
                                 atlas::field::FieldSetImpl *);
+  void qg_fields_getvals_f90(const F90flds &, const oops::Variables &,
+                             const int &, const double &, const int &, double &);
+  void qg_fields_getvalsad_f90(const F90flds &, const oops::Variables &,
+                               const int &, const double &, const int &, const double &);
   void qg_fields_getpoint_f90(const F90flds&, const F90iter&, const int &, double &);
   void qg_fields_setpoint_f90(const F90flds&, const F90iter&, const int &, const double &);
   void qg_fields_serialize_f90(const F90flds &, const int &, double[]);
@@ -166,9 +170,11 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Local Values (GOM)
 // -----------------------------------------------------------------------------
-  void qg_gom_setup_f90(F90gom &, const LocationsQG &, const oops::Variables &, int &);
+  void qg_gom_setup_f90(F90gom &, const LocationsQG &, const oops::Variables &, const int &);
   void qg_gom_create_f90(F90gom &);
   void qg_gom_delete_f90(F90gom &);
+  void qg_gom_fill_f90(const F90gom &, const int &, const int &, const int &, const double &);
+  void qg_gom_fillad_f90(const F90gom &, const int &, const int &, const int &, double &);
   void qg_gom_copy_f90(const F90gom &, const F90gom &);
   void qg_gom_zero_f90(const F90gom &);
   void qg_gom_abs_f90(const F90gom &);

@@ -30,6 +30,10 @@
 #include "oops/util/Serializable.h"
 #include "oops/util/Timer.h"
 
+namespace atlas {
+  class FieldSet;
+}
+
 namespace oops {
 
 namespace interface {
@@ -123,6 +127,9 @@ class State : public util::Printable,
   /// Accumulate (add \p w * \p x to the state)
   void accumul(const double & w, const State & x);
 
+  /// Atlas FieldSet interface
+  void getFieldSet(const Variables &, atlas::FieldSet &) const;
+
   /// Serialize and deserialize (used in 4DEnVar, weak-constraint 4DVar and Block-Lanczos minimizer)
   size_t serialSize() const override;
   void serialize(std::vector<double> &) const override;
@@ -131,13 +138,16 @@ class State : public util::Printable,
  private:
   std::unique_ptr<State_> state_;
   void print(std::ostream &) const override;
+
+ protected:
+  mutable std::unique_ptr<atlas::FieldSet> fset_;
 };
 
 // =============================================================================
 
 template<typename MODEL>
 State<MODEL>::State(const Geometry_ & resol, const Variables & vars,
-                    const util::DateTime & time) : state_()
+                    const util::DateTime & time) : state_(), fset_()
 {
   Log::trace() << "State<MODEL>::State starting" << std::endl;
   util::Timer timer(classname(), "State");
@@ -150,7 +160,7 @@ State<MODEL>::State(const Geometry_ & resol, const Variables & vars,
 
 template<typename MODEL>
 State<MODEL>::State(const Geometry_ & resol,
-                    const Parameters_ & params) : state_()
+                    const Parameters_ & params) : state_(), fset_()
 {
   Log::trace() << "State<MODEL>::State read starting" << std::endl;
   util::Timer timer(classname(), "State");
@@ -166,7 +176,7 @@ State<MODEL>::State(const Geometry_ & resol,
 
 template<typename MODEL>
 State<MODEL>::State(const Geometry_ & resol, const State & other)
-  : state_()
+  : state_(), fset_()
 {
   Log::trace() << "State<MODEL>::State interpolated starting" << std::endl;
   util::Timer timer(classname(), "State");
@@ -178,7 +188,7 @@ State<MODEL>::State(const Geometry_ & resol, const State & other)
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-State<MODEL>::State(const State & other) : state_()
+State<MODEL>::State(const State & other) : state_(), fset_()
 {
   Log::trace() << "State<MODEL>::State starting copy" << std::endl;
   util::Timer timer(classname(), "State");
@@ -193,6 +203,7 @@ template<typename MODEL>
 State<MODEL>::~State() {
   Log::trace() << "State<MODEL>::~State starting" << std::endl;
   util::Timer timer(classname(), "~State");
+  fset_.reset();
   state_.reset();
   Log::trace() << "State<MODEL>::~State done" << std::endl;
 }
@@ -203,6 +214,7 @@ template<typename MODEL>
 State<MODEL> & State<MODEL>::operator=(const State & rhs) {
   Log::trace() << "State<MODEL>::operator= starting" << std::endl;
   util::Timer timer(classname(), "operator=");
+  fset_.reset();
   *state_ = *rhs.state_;
   Log::trace() << "State<MODEL>::operator= done" << std::endl;
   return *this;
@@ -214,6 +226,7 @@ template<typename MODEL>
 void State<MODEL>::read(const Parameters_ & parameters) {
   Log::trace() << "State<MODEL>::read starting" << std::endl;
   util::Timer timer(classname(), "read");
+  fset_.reset();
   state_->read(parametersOrConfiguration<HasParameters_<State_>::value>(parameters));
   Log::trace() << "State<MODEL>::read done" << std::endl;
 }
@@ -312,8 +325,19 @@ template<typename MODEL>
 void State<MODEL>::deserialize(const std::vector<double> & vect, size_t & current) {
   Log::trace() << "State<MODEL>::State deserialize starting" << std::endl;
   util::Timer timer(classname(), "deserialize");
+  fset_.reset();
   state_->deserialize(vect, current);
   Log::trace() << "State<MODEL>::State deserialize done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void State<MODEL>::getFieldSet(const Variables & vars, atlas::FieldSet & fset) const {
+  Log::trace() << "State<MODEL>::getFieldSet starting" << std::endl;
+  util::Timer timer(classname(), "getFieldSet");
+  state_->getFieldSet(vars, fset);
+  Log::trace() << "State<MODEL>::getFieldSet done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -332,6 +356,7 @@ template<typename MODEL>
 void State<MODEL>::zero() {
   Log::trace() << "State<MODEL>::zero starting" << std::endl;
   util::Timer timer(classname(), "zero");
+  fset_.reset();
   state_->zero();
   Log::trace() << "State<MODEL>::zero done" << std::endl;
 }
@@ -342,6 +367,7 @@ template<typename MODEL>
 void State<MODEL>::accumul(const double & zz, const State & xx) {
   Log::trace() << "State<MODEL>::accumul starting" << std::endl;
   util::Timer timer(classname(), "accumul");
+  fset_.reset();
   state_->accumul(zz, *xx.state_);
   Log::trace() << "State<MODEL>::accumul done" << std::endl;
 }

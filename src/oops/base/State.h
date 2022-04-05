@@ -67,6 +67,9 @@ class State : public interface::State<MODEL> {
   /// Copies \p other State, changing its resolution to \p geometry
   State(const Geometry_ & resol, const State & other);
 
+  // Get values as Atlas FieldSet
+  const atlas::FieldSet & fieldSet() const;
+
   /// Norm (used in tests)
   double norm() const;
 
@@ -115,6 +118,17 @@ template<typename MODEL>
 State<MODEL>::State(const Geometry_ & resol, const State & other) :
   interface::State<MODEL>(resol, other), commTime_(&resol.timeComm())
 {}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+const atlas::FieldSet & State<MODEL>::fieldSet() const {
+  if (!interface::State<MODEL>::fset_) {
+    interface::State<MODEL>::fset_ = std::make_unique<atlas::FieldSet>();
+    this->getFieldSet(this->variables(), *interface::State<MODEL>::fset_);
+  }
+  return *interface::State<MODEL>::fset_;
+}
 
 // -----------------------------------------------------------------------------
 

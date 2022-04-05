@@ -15,9 +15,11 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "eckit/mpi/Comm.h"
 
+#include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -49,6 +51,9 @@ class Locations : public util::Printable,
   Locations(Locations &&);
   Locations & operator=(const Locations &) = delete;
   Locations & operator=(Locations &&);
+
+  void localCoords(const util::DateTime &, const util::DateTime &,
+                   std::vector<double> &, std::vector<double> &, std::vector<size_t> &) const;
 
   /// Interfacing
   const Locations_ & locations() const {return *locs_;}
@@ -102,6 +107,18 @@ Locations<OBS> & Locations<OBS>::operator=(Locations<OBS> && other) {
   locs_ = std::move(other.locs_);
   Log::trace() << "Locations<OBS>::operator= done" << std::endl;
   return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+void Locations<OBS>::localCoords(const util::DateTime & t1, const util::DateTime & t2,
+                                 std::vector<double> & lats, std::vector<double> & lons,
+                                 std::vector<size_t> & indx) const {
+  Log::trace() << "Locations<OBS>::localCoords starting" << std::endl;
+  util::Timer timer(classname(), "localCoords");
+  locs_->localCoords(t1, t2, lats, lons, indx);
+  Log::trace() << "Locations<OBS>::localCoords done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

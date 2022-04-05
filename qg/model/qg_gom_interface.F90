@@ -113,6 +113,38 @@ call qg_gom_copy(self,other)
 
 end subroutine qg_gom_copy_c
 ! ------------------------------------------------------------------------------
+subroutine qg_gom_fill_c(c_key, c_nloc, c_indx, c_nval, c_vals) bind(c, name="qg_gom_fill_f90")
+implicit none
+integer(c_int), intent(in) :: c_key
+integer(c_int), intent(in) :: c_nloc
+integer(c_int), intent(in) :: c_indx(c_nloc)
+integer(c_int), intent(in) :: c_nval
+real(c_double), intent(in) :: c_vals(c_nval)
+
+type(qg_gom), pointer :: self
+
+call qg_gom_registry%get(c_key,self)
+
+call qg_gom_fill(self, c_nloc, c_indx, c_nval, c_vals)
+
+end subroutine qg_gom_fill_c
+! ------------------------------------------------------------------------------
+subroutine qg_gom_fillad_c(c_key, c_nloc, c_indx, c_nval, c_vals) bind(c, name="qg_gom_fillad_f90")
+implicit none
+integer(c_int), intent(in) :: c_key
+integer(c_int), intent(in) :: c_nloc
+integer(c_int), intent(in) :: c_indx(c_nloc)
+integer(c_int), intent(in) :: c_nval
+real(c_double), intent(inout) :: c_vals(c_nval)
+
+type(qg_gom),pointer :: self
+
+call qg_gom_registry%get(c_key, self)
+
+call qg_gom_fillad(self, c_nloc, c_indx, c_nval, c_vals)
+
+end subroutine qg_gom_fillad_c
+! ------------------------------------------------------------------------------
 !> Set GOM to zero
 subroutine qg_gom_zero_c(c_key_self) bind(c,name='qg_gom_zero_f90')
 

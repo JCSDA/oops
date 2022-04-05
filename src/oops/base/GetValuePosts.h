@@ -14,7 +14,7 @@
 #include <utility>
 #include <vector>
 
-#include "oops/base/GetValuePost.h"
+#include "oops/base/GetValues.h"
 #include "oops/base/PostBase.h"
 #include "oops/base/State.h"
 #include "oops/interface/VariableChange.h"
@@ -30,7 +30,7 @@ class GetValuePosts : public PostBase<State<MODEL>> {
   typedef VariableChange<MODEL>     VariableChange_;
   typedef typename VariableChange_::Parameters_ VariableChangeParameters_;
   typedef State<MODEL>              State_;
-  typedef std::shared_ptr<GetValuePost<MODEL, OBS>> GetValuePtr_;
+  typedef std::shared_ptr<GetValues<MODEL, OBS>> GetValuePtr_;
 
  public:
 /// \brief Saves Locations and Variables to be processed

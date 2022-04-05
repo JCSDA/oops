@@ -16,7 +16,7 @@
 
 #include "eckit/config/Configuration.h"
 #include "oops/base/Geometry.h"
-#include "oops/base/GetValueTLAD.h"
+#include "oops/base/GetValues.h"
 #include "oops/base/ObsVector.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/LinearObsOperator.h"
@@ -38,7 +38,7 @@ template <typename MODEL, typename OBS>
 class ObserverTLAD {
   typedef Geometry<MODEL>              Geometry_;
   typedef GeoVaLs<OBS>                 GeoVaLs_;
-  typedef GetValueTLAD<MODEL, OBS>     GetValTLAD_;
+  typedef GetValues<MODEL, OBS>        GetValues_;
   typedef LinearObsOperator<OBS>       LinearObsOperator_;
   typedef Locations<OBS>               Locations_;
   typedef ObsAuxControl<OBS>           ObsAuxCtrl_;
@@ -52,7 +52,7 @@ class ObserverTLAD {
   ObserverTLAD(const ObsSpace_ &, const Parameters_ &);
   ~ObserverTLAD() {}
 
-  std::shared_ptr<GetValTLAD_> initializeTraj(const Geometry_ &, const ObsAuxCtrl_ &);
+  std::shared_ptr<GetValues_> initializeTraj(const Geometry_ &, const ObsAuxCtrl_ &);
   void finalizeTraj();
 
   void finalizeTL(const ObsAuxIncr_ &, ObsVector_ &);
@@ -64,7 +64,7 @@ class ObserverTLAD {
   Parameters_                   parameters_;
   const ObsSpace_ &             obspace_;    // ObsSpace used in H(x)
   LinearObsOperator_            hoptlad_;    // Linear obs operator
-  std::shared_ptr<GetValTLAD_>  getvals_;    // Postproc passed to the model during integration
+  std::shared_ptr<GetValues_>   getvals_;    // Postproc passed to the model during integration
   std::vector<size_t>  linvars_sizes_;       // Sizes of variables requested from model for
                                              // TL/AD (e.g. number of vertical levels)
   std::unique_ptr<Locations_>   locations_;  // locations
@@ -95,7 +95,7 @@ ObserverTLAD<MODEL, OBS>::ObserverTLAD(const ObsSpace_ & obsdb, const Parameters
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
-std::shared_ptr<GetValueTLAD<MODEL, OBS>>
+std::shared_ptr<GetValues<MODEL, OBS>>
 ObserverTLAD<MODEL, OBS>::initializeTraj(const Geometry_ & geom, const ObsAuxCtrl_ & ybias) {
   Log::trace() << "ObserverTLAD::initializeTraj start" << std::endl;
   ybias_ = &ybias;
@@ -113,8 +113,8 @@ ObserverTLAD<MODEL, OBS>::initializeTraj(const Geometry_ & geom, const ObsAuxCtr
   geovars += hop.requiredVars();
   geovars += ybias_->requiredVars();
 
-  getvals_.reset(new GetValTLAD_(gvconf, geom, winbgn_, winend_,
-                                 *locations_, geovars, hoptlad_.requiredVars()));
+  getvals_.reset(new GetValues_(gvconf, geom, winbgn_, winend_,
+                                *locations_, geovars, hoptlad_.requiredVars()));
 
   init_ = true;
   Log::trace() << "ObserverTLAD::initializeTraj done" << std::endl;

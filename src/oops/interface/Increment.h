@@ -173,6 +173,8 @@ class Increment : public oops::GeneralizedDepartures,
   void setAtlas(atlas::FieldSet *) const;
   void toAtlas(atlas::FieldSet *) const;
   void fromAtlas(atlas::FieldSet *);
+  void getFieldSet(const Variables &, atlas::FieldSet &) const;
+  void getFieldSetAD(const Variables &, const atlas::FieldSet &);
 
   /// Serialize and deserialize (used in 4DEnVar, weak-constraint 4DVar and Block-Lanczos minimizer)
   size_t serialSize() const override;
@@ -186,6 +188,7 @@ class Increment : public oops::GeneralizedDepartures,
 
  protected:
   std::unique_ptr<Increment_> increment_;   /// pointer to the Increment implementation
+  mutable std::unique_ptr<atlas::FieldSet> fset_;
 
  private:
   void print(std::ostream &) const override;
@@ -196,7 +199,7 @@ class Increment : public oops::GeneralizedDepartures,
 template<typename MODEL>
 Increment<MODEL>::Increment(const Geometry_ & resol, const Variables & vars,
                             const util::DateTime & time)
-  : increment_()
+  : increment_(), fset_()
 {
   Log::trace() << "Increment<MODEL>::Increment starting" << std::endl;
   util::Timer timer(classname(), "Increment");
@@ -209,7 +212,7 @@ Increment<MODEL>::Increment(const Geometry_ & resol, const Variables & vars,
 
 template<typename MODEL>
 Increment<MODEL>::Increment(const Geometry_ & resol, const Increment & other)
-  : increment_()
+  : increment_(), fset_()
 {
   Log::trace() << "Increment<MODEL>::Increment starting" << std::endl;
   util::Timer timer(classname(), "Increment");
@@ -222,7 +225,7 @@ Increment<MODEL>::Increment(const Geometry_ & resol, const Increment & other)
 
 template<typename MODEL>
 Increment<MODEL>::Increment(const Increment & other, const bool copy)
-  : increment_()
+  : increment_(), fset_()
 {
   Log::trace() << "Increment<MODEL>::Increment copy starting" << std::endl;
   util::Timer timer(classname(), "Increment");
@@ -238,6 +241,7 @@ Increment<MODEL>::~Increment() {
   Log::trace() << "Increment<MODEL>::~Increment starting" << std::endl;
   util::Timer timer(classname(), "~Increment");
   increment_.reset();
+  fset_.reset();
   Log::trace() << "Increment<MODEL>::~Increment done" << std::endl;
 }
 
@@ -247,6 +251,7 @@ template<typename MODEL>
 void Increment<MODEL>::diff(const State_ & x1, const State_ & x2) {
   Log::trace() << "Increment<MODEL>::diff starting" << std::endl;
   util::Timer timer(classname(), "diff");
+  fset_.reset();
   increment_->diff(x1.state(), x2.state());
   Log::trace() << "Increment<MODEL>::diff done" << std::endl;
 }
@@ -257,6 +262,7 @@ template<typename MODEL>
 void Increment<MODEL>::zero() {
   Log::trace() << "Increment<MODEL>::zero starting" << std::endl;
   util::Timer timer(classname(), "zero");
+  fset_.reset();
   increment_->zero();
   Log::trace() << "Increment<MODEL>::zero done" << std::endl;
 }
@@ -267,6 +273,7 @@ template<typename MODEL>
 void Increment<MODEL>::zero(const util::DateTime & tt) {
   Log::trace() << "Increment<MODEL>::zero starting" << std::endl;
   util::Timer timer(classname(), "zero");
+  fset_.reset();
   increment_->zero(tt);
   Log::trace() << "Increment<MODEL>::zero done" << std::endl;
 }
@@ -277,6 +284,7 @@ template<typename MODEL>
 void Increment<MODEL>::ones() {
   Log::trace() << "Increment<MODEL>::ones starting" << std::endl;
   util::Timer timer(classname(), "ones");
+  fset_.reset();
   increment_->ones();
   Log::trace() << "Increment<MODEL>::ones done" << std::endl;
 }
@@ -287,6 +295,7 @@ template<typename MODEL>
 void Increment<MODEL>::dirac(const DiracParameters_ & parameters) {
   Log::trace() << "Increment<MODEL>::dirac starting" << std::endl;
   util::Timer timer(classname(), "dirac");
+  fset_.reset();
   increment_->dirac(parametersOrConfiguration<HasDiracParameters_<Increment_>::value>(parameters));
   Log::trace() << "Increment<MODEL>::dirac done" << std::endl;
 }
@@ -306,6 +315,7 @@ template<typename MODEL>
 Increment<MODEL> & Increment<MODEL>::operator=(const Increment & rhs) {
   Log::trace() << "Increment<MODEL>::operator= starting" << std::endl;
   util::Timer timer(classname(), "operator=");
+  fset_.reset();
   *increment_ = *rhs.increment_;
   Log::trace() << "Increment<MODEL>::operator= done" << std::endl;
   return *this;
@@ -317,6 +327,7 @@ template<typename MODEL>
 Increment<MODEL> & Increment<MODEL>::operator+=(const Increment & rhs) {
   Log::trace() << "Increment<MODEL>::operator+= starting" << std::endl;
   util::Timer timer(classname(), "operator+=");
+  fset_.reset();
   *increment_ += *rhs.increment_;
   Log::trace() << "Increment<MODEL>::operator+= done" << std::endl;
   return *this;
@@ -328,6 +339,7 @@ template<typename MODEL>
 Increment<MODEL> & Increment<MODEL>::operator-=(const Increment & rhs) {
   Log::trace() << "Increment<MODEL>::operator-= starting" << std::endl;
   util::Timer timer(classname(), "operator-=");
+  fset_.reset();
   *increment_ -= *rhs.increment_;
   Log::trace() << "Increment<MODEL>::operator-= done" << std::endl;
   return *this;
@@ -339,6 +351,7 @@ template<typename MODEL>
 Increment<MODEL> & Increment<MODEL>::operator*=(const double & zz) {
   Log::trace() << "Increment<MODEL>::operator*= starting" << std::endl;
   util::Timer timer(classname(), "operator*=");
+  fset_.reset();
   *increment_ *= zz;
   Log::trace() << "Increment<MODEL>::operator*= done" << std::endl;
   return *this;
@@ -350,6 +363,7 @@ template<typename MODEL>
 void Increment<MODEL>::axpy(const double & zz, const Increment & dx, const bool check) {
   Log::trace() << "Increment<MODEL>::axpy starting" << std::endl;
   util::Timer timer(classname(), "axpy");
+  fset_.reset();
   increment_->axpy(zz, *dx.increment_, check);
   Log::trace() << "Increment<MODEL>::axpy done" << std::endl;
 }
@@ -360,6 +374,7 @@ template<typename MODEL>
 double Increment<MODEL>::dot_product_with(const Increment & dx) const {
   Log::trace() << "Increment<MODEL>::dot_product_with starting" << std::endl;
   util::Timer timer(classname(), "dot_product_with");
+  fset_.reset();
   double zz = increment_->dot_product_with(*dx.increment_);
   Log::trace() << "Increment<MODEL>::dot_product_with done" << std::endl;
   return zz;
@@ -371,6 +386,7 @@ template<typename MODEL>
 void Increment<MODEL>::schur_product_with(const Increment & dx) {
   Log::trace() << "Increment<MODEL>::schur_product_with starting" << std::endl;
   util::Timer timer(classname(), "schur_product_with");
+  fset_.reset();
   increment_->schur_product_with(*dx.increment_);
   Log::trace() << "Increment<MODEL>::schur_product_with done" << std::endl;
 }
@@ -381,6 +397,7 @@ template<typename MODEL>
 void Increment<MODEL>::random() {
   Log::trace() << "Increment<MODEL>::random starting" << std::endl;
   util::Timer timer(classname(), "random");
+  fset_.reset();
   increment_->random();
   Log::trace() << "Increment<MODEL>::random done" << std::endl;
 }
@@ -391,6 +408,7 @@ template<typename MODEL>
 void Increment<MODEL>::accumul(const double & zz, const State_ & xx) {
   Log::trace() << "Increment<MODEL>::accumul starting" << std::endl;
   util::Timer timer(classname(), "accumul");
+  fset_.reset();
   increment_->accumul(zz, xx.state());
   Log::trace() << "Increment<MODEL>::accumul done" << std::endl;
 }
@@ -412,6 +430,7 @@ void Increment<MODEL>::setLocal(const LocalIncrement & gp,
                                 const GeometryIterator_ & iter) {
   Log::trace() << "Increment<MODEL>::setLocal starting" << std::endl;
   util::Timer timer(classname(), "setLocal");
+  fset_.reset();
   increment_->setLocal(gp, iter.geometryiter());
   Log::trace() << "Increment<MODEL>::setLocal done" << std::endl;
 }
@@ -422,6 +441,7 @@ template<typename MODEL>
 void Increment<MODEL>::read(const ReadParameters_ & parameters) {
   Log::trace() << "Increment<MODEL>::read starting" << std::endl;
   util::Timer timer(classname(), "read");
+  fset_.reset();
   increment_->read(parametersOrConfiguration<HasReadParameters_<Increment_>::value>(parameters));
   Log::trace() << "Increment<MODEL>::read done" << std::endl;
 }
@@ -509,6 +529,26 @@ void Increment<MODEL>::fromAtlas(atlas::FieldSet * atlasFieldSet) {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
+void Increment<MODEL>::getFieldSet(const Variables & vars, atlas::FieldSet & fset) const {
+  Log::trace() << "Increment<MODEL>::getFieldSet starting" << std::endl;
+  util::Timer timer(classname(), "getFieldSet");
+  increment_->getFieldSet(vars, fset);
+  Log::trace() << "Increment<MODEL>::getFieldSet done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::getFieldSetAD(const Variables & vars, const atlas::FieldSet & fset) {
+  Log::trace() << "Increment<MODEL>::getFieldSetAD starting" << std::endl;
+  util::Timer timer(classname(), "getFieldSetAD");
+  increment_->getFieldSetAD(vars, fset);
+  Log::trace() << "Increment<MODEL>::getFieldSetAD done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
 size_t Increment<MODEL>::serialSize() const {
   Log::trace() << "Increment<MODEL>::serialSize" << std::endl;
   util::Timer timer(classname(), "serialSize");
@@ -531,6 +571,7 @@ template<typename MODEL>
 void Increment<MODEL>::deserialize(const std::vector<double> & vect, size_t & current) {
   Log::trace() << "Increment<MODEL>::Increment deserialize starting" << std::endl;
   util::Timer timer(classname(), "deserialize");
+  fset_.reset();
   increment_->deserialize(vect, current);
   Log::trace() << "Increment<MODEL>::Increment deserialize done" << std::endl;
 }

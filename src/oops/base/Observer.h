@@ -15,7 +15,7 @@
 #include "eckit/config/LocalConfiguration.h"
 
 #include "oops/base/Geometry.h"
-#include "oops/base/GetValuePost.h"
+#include "oops/base/GetValues.h"
 #include "oops/base/ObsError.h"
 #include "oops/base/ObsFilters.h"
 #include "oops/base/ObsVector.h"
@@ -65,7 +65,7 @@ template <typename MODEL, typename OBS>
 class Observer {
   typedef Geometry<MODEL>              Geometry_;
   typedef GeoVaLs<OBS>                 GeoVaLs_;
-  typedef GetValuePost<MODEL, OBS>     GetValPost_;
+  typedef GetValues<MODEL, OBS>        GetValues_;
   typedef Locations<OBS>               Locations_;
   typedef ObsAuxControl<OBS>           ObsAuxCtrl_;
   typedef ObsDataVector<OBS, int>      ObsDataInt_;
@@ -83,8 +83,8 @@ class Observer {
 
 /// \brief Initializes variables, obs bias, obs filters (could be different for
 /// different iterations
-  std::shared_ptr<GetValPost_> initialize(const Geometry_ &, const ObsAuxCtrl_ &,
-                                          ObsError_ &, const eckit::Configuration &);
+  std::shared_ptr<GetValues_> initialize(const Geometry_ &, const ObsAuxCtrl_ &,
+                                         ObsError_ &, const eckit::Configuration &);
 
 /// \brief Computes H(x) from the filled in GeoVaLs
   void finalize(ObsVector_ &);
@@ -98,7 +98,7 @@ class Observer {
   ObsError_ *                   Rmat_;       // Obs error covariance
   std::unique_ptr<ObsFilters_>  filters_;    // QC filters
   std::unique_ptr<ObsVector_>   obserr_;     // Obs error std dev
-  std::shared_ptr<GetValPost_>  getvals_;    // Postproc passed to the model during integration.
+  std::shared_ptr<GetValues_>   getvals_;    // Postproc passed to the model during integration.
   std::shared_ptr<ObsDataInt_>  qcflags_;    // QC flags (should not be a pointer)
   bool                          initialized_;
   std::unique_ptr<eckit::LocalConfiguration> iterconf_;
@@ -122,7 +122,7 @@ Observer<MODEL, OBS>::Observer(const ObsSpace_ & obspace, const Parameters_ & pa
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-std::shared_ptr<GetValuePost<MODEL, OBS>>
+std::shared_ptr<GetValues<MODEL, OBS>>
 Observer<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrl_ & biascoeff,
                                  ObsError_ & R, const eckit::Configuration & conf) {
   Log::trace() << "Observer<MODEL, OBS>::initialize start" << std::endl;
@@ -146,7 +146,7 @@ Observer<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrl_ & bia
   geovars += filters_->requiredVars();
 
 // Set up GetValues
-  getvals_.reset(new GetValPost_(parameters_.getValues, geom, obspace_.windowStart(),
+  getvals_.reset(new GetValues_(parameters_.getValues, geom, obspace_.windowStart(),
                                  obspace_.windowEnd(), *locations_, geovars));
 
   initialized_ = true;

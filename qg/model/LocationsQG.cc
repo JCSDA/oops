@@ -141,6 +141,23 @@ LocationsQG::LocationsQG(atlas::FieldSet & fields,
   times_ = times;
 }
 // -------------------------------------------------------------------------
+void LocationsQG::localCoords(const util::DateTime & t1, const util::DateTime & t2,
+                              std::vector<double> & lats, std::vector<double> & lons,
+                              std::vector<size_t> & indx) const {
+  lats.clear();
+  lons.clear();
+  indx.clear();
+  atlas::Field field_lonlat = pointcloud_->lonlat();
+  auto lonlat = make_view<double, 2>(field_lonlat);
+  for (size_t jloc = 0; jloc < pointcloud_->size(); ++jloc) {
+    if (times_[jloc] > t1 && times_[jloc] <= t2) {
+      lats.push_back(lonlat(jloc, 1));
+      lons.push_back(lonlat(jloc, 0));
+      indx.push_back(jloc);
+    }
+  }
+}
+// -------------------------------------------------------------------------
 void LocationsQG::print(std::ostream & os) const {
   int nobs = pointcloud_->size();
   atlas::Field field_lonlat = pointcloud_->lonlat();

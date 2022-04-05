@@ -279,12 +279,6 @@ ecbuild_add_test( TARGET test_l95_state
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_getvalues
-                  SOURCES executables/TestGetValues.cc
-                  ARGS "testinput/interfaces.yaml"
-                  LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
-
 ecbuild_add_test( TARGET test_l95_modelaux
                   SOURCES executables/TestModelAuxControl.cc
                   ARGS "testinput/interfaces.yaml"
@@ -317,12 +311,6 @@ ecbuild_add_test( TARGET test_l95_identitymodel
 
 ecbuild_add_test( TARGET test_l95_increment
                   SOURCES executables/TestIncrement.cc
-                  ARGS "testinput/interfaces.yaml"
-                  LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
-
-ecbuild_add_test( TARGET test_l95_lineargetvalues
-                  SOURCES executables/TestLinearGetValues.cc
                   ARGS "testinput/interfaces.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )

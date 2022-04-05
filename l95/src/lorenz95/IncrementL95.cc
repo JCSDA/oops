@@ -14,8 +14,6 @@
 #include <fstream>
 #include <string>
 
-#include "atlas/field.h"
-
 #include "eckit/exception/Exceptions.h"
 
 #include "oops/base/LocalIncrement.h"
@@ -228,15 +226,15 @@ void IncrementL95::setLocal(const oops::LocalIncrement & gp, const Iterator & i)
 /// Convert to/from ATLAS fieldset
 // -----------------------------------------------------------------------------
 void IncrementL95::setAtlas(atlas::FieldSet *) const {
-  ABORT("FieldL95 setAtlas not implemented");
+  throw eckit::NotImplemented("IncrementL95::setAtlas", Here());
 }
 // -----------------------------------------------------------------------------
 void IncrementL95::toAtlas(atlas::FieldSet *) const {
-  ABORT("FieldL95 toAtlas not implemented");
+  throw eckit::NotImplemented("IncrementL95::toAtlas", Here());
 }
 // -----------------------------------------------------------------------------
 void IncrementL95::fromAtlas(atlas::FieldSet *) {
-  ABORT("FieldL95 fromAtlas not implemented");
+  throw eckit::NotImplemented("IncrementL95::fromAtlas", Here());
 }
 // -----------------------------------------------------------------------------
 /// Serialize - deserialize

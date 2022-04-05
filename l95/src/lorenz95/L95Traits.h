@@ -16,12 +16,11 @@
 // This file includes headers in which all these implementations are defined.
 
 #include "lorenz95/ErrorCovarianceL95.h"
-#include "lorenz95/GetValuesL95.h"
-#include "lorenz95/GetValuesTLAD.h"
 #include "lorenz95/GomL95.h"
 #include "lorenz95/IdChangeVariable.h"
 #include "lorenz95/IdChangeVarTLADL95.h"
 #include "lorenz95/IncrementL95.h"
+#include "lorenz95/InterpolatorL95.h"
 #include "lorenz95/Iterator.h"
 #include "lorenz95/L95TraitsFwd.h"
 #include "lorenz95/LocsL95.h"

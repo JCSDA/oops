@@ -118,6 +118,7 @@ class IncrementL95 : public util::Printable,
   void setAtlas(atlas::FieldSet *) const;
   void toAtlas(atlas::FieldSet *) const;
   void fromAtlas(atlas::FieldSet *);
+  void getFieldSetAD(const oops::Variables &, const atlas::FieldSet &) {}
 
 // Utilities
   void read(const ReadParameters_ &);

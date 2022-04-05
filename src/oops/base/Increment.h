@@ -12,6 +12,8 @@
 #ifndef OOPS_BASE_INCREMENT_H_
 #define OOPS_BASE_INCREMENT_H_
 
+#include <memory>
+
 #include "atlas/field.h"
 
 #include "oops/base/Geometry.h"
@@ -70,6 +72,9 @@ class Increment : public interface::Increment<MODEL> {
   /// Accessors to the ATLAS fieldset
   atlas::FieldSet & atlas() {return atlasFieldSet_;}
   const atlas::FieldSet & atlas() const {return atlasFieldSet_;}
+  const atlas::FieldSet & fieldSet() const;
+  atlas::FieldSet & fieldSet();
+  void synchronizeFieldsAD();
 
   /// dot product with the \p other increment
   double dot_product_with(const Increment & other) const;
@@ -176,13 +181,42 @@ void Increment<MODEL>::shift_backward(const util::DateTime & end) {
   Log::trace() << "Increment<MODEL>::Increment shift_backward done" << std::endl;
 }
 
-
 // -----------------------------------------------------------------------------
+
 template<typename MODEL>
 void Increment<MODEL>::toAtlas() {
   interface::Increment<MODEL>::setAtlas(&atlasFieldSet_);
   interface::Increment<MODEL>::toAtlas(&atlasFieldSet_);
   this->increment_.reset();
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+const atlas::FieldSet & Increment<MODEL>::fieldSet() const {
+  if (!interface::Increment<MODEL>::fset_) {
+    interface::Increment<MODEL>::fset_ = std::make_unique<atlas::FieldSet>();
+    this->getFieldSet(this->variables(), *interface::Increment<MODEL>::fset_);
+  }
+  return *interface::Increment<MODEL>::fset_;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+atlas::FieldSet & Increment<MODEL>::fieldSet() {
+  if (!interface::Increment<MODEL>::fset_) {
+    interface::Increment<MODEL>::fset_ = std::make_unique<atlas::FieldSet>();
+    this->getFieldSet(this->variables(), *interface::Increment<MODEL>::fset_);
+  }
+  return *interface::Increment<MODEL>::fset_;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::synchronizeFieldsAD() {
+  this->getFieldSetAD(this->variables(), *interface::Increment<MODEL>::fset_);
 }
 
 // -----------------------------------------------------------------------------

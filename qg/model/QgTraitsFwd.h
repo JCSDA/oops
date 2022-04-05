@@ -21,9 +21,8 @@ class GeometryQGIterator;
 class StateQG;
 class IncrementQG;
 class ErrorCovarianceQG;
+class InterpolatorQG;
 
-class GetValuesQG;
-class GetValuesTLAD;
 class ChangeVarQG;
 class ChangeVarTLADQG;
 
@@ -56,14 +55,13 @@ struct QgTraits {
 
   typedef qg::GeometryQGIterator    GeometryIterator;
 
-  typedef qg::GetValuesQG           GetValues;
-  typedef qg::GetValuesTLAD         LinearGetValues;
   typedef qg::ChangeVarQG           VariableChange;
   typedef qg::ChangeVarTLADQG       LinearVariableChange;
 
   typedef qg::StateQG               State;
   typedef qg::IncrementQG           Increment;
   typedef qg::ErrorCovarianceQG     Covariance;
+  typedef qg::InterpolatorQG        LocalInterpolator;
 
   typedef qg::ModelBias             ModelAuxControl;
   typedef qg::ModelBiasIncrement    ModelAuxIncrement;

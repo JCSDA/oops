@@ -66,6 +66,9 @@ class GeoVaLs : public util::Printable,
   void read(const Parameters_ &);
   void write(const Parameters_ &) const;
 
+  void fill(const std::vector<size_t> &, const std::vector<double> &);
+  void fillAD(const std::vector<size_t> &, std::vector<double> &) const;
+
  private:
   void print(std::ostream &) const;
   std::unique_ptr<GeoVaLs_> gvals_;
@@ -220,6 +223,26 @@ void GeoVaLs<OBS>::random() {
   util::Timer timer(classname(), "random");
   gvals_->random();
   Log::trace() << "GeoVaLs<OBS>::random done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+void GeoVaLs<OBS>::fill(const std::vector<size_t> & indx, const std::vector<double> & vals) {
+  Log::trace() << "GeoVaLs<OBS>::fill starting" << std::endl;
+  util::Timer timer(classname(), "fill");
+  gvals_->fill(indx, vals);
+  Log::trace() << "GeoVaLs<OBS>::fill done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+void GeoVaLs<OBS>::fillAD(const std::vector<size_t> & indx, std::vector<double> & vals) const {
+  Log::trace() << "GeoVaLs<OBS>::fillAD starting" << std::endl;
+  util::Timer timer(classname(), "fillAD");
+  gvals_->fillAD(indx, vals);
+  Log::trace() << "GeoVaLs<OBS>::fillAD done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

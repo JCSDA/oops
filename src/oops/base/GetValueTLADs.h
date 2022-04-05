@@ -13,7 +13,7 @@
 #include <utility>
 #include <vector>
 
-#include "oops/base/GetValueTLAD.h"
+#include "oops/base/GetValues.h"
 #include "oops/base/Increment.h"
 #include "oops/base/PostBaseTLAD.h"
 #include "oops/base/State.h"
@@ -24,15 +24,16 @@
 
 namespace oops {
 
+// -----------------------------------------------------------------------------
 /// Computes observation equivalent TL and AD to/from increments.
 
 template <typename MODEL, typename OBS>
 class GetValueTLADs : public PostBaseTLAD<MODEL> {
-  typedef VariableChange<MODEL>            VariableChange_;
+  typedef Increment<MODEL>          Increment_;
+  typedef State<MODEL>              State_;
+  typedef VariableChange<MODEL>     VariableChange_;
   typedef typename VariableChange_::Parameters_ VariableChangeParameters_;
-  typedef Increment<MODEL>                 Increment_;
-  typedef State<MODEL>                     State_;
-  typedef std::shared_ptr<GetValueTLAD<MODEL, OBS>> GetValPtr_;
+  typedef std::shared_ptr<GetValues<MODEL, OBS>> GetValPtr_;
   typedef std::unique_ptr<LinearVariableChange<MODEL>> CVarPtr_;
 
  public:
@@ -145,12 +146,11 @@ void GetValueTLADs<MODEL, OBS>::doProcessingAD(Increment_ & dx) {
   Increment_ dz(dx.geometry(), linvars_, dx.validTime());
   dz.zero();
 
-  Increment_ tmpz(dz);
   for (GetValPtr_ getval : getvals_) {
-    tmpz.zero();
-    getval->processAD(tmpz);
-    dz += tmpz;
+    getval->processAD(dz);
   }
+
+  dz.synchronizeFieldsAD();  // includes adjoint of halo update
 
   chvartlad_[now]->multiplyAD(dz, dx.variables());
   dx += dz;

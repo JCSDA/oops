@@ -9,10 +9,6 @@ set( _l95_srcs
         FieldL95.h
         FinalCheck.cc
         FinalCheck.h
-        GetValuesL95.cc
-        GetValuesL95.h
-        GetValuesTLAD.cc
-        GetValuesTLAD.h
         GomL95.cc
         GomL95.h
         GomL95.cc
@@ -21,6 +17,8 @@ set( _l95_srcs
         IdChangeVarTLADL95.h
         IncrementL95.cc
         IncrementL95.h
+        InterpolatorL95.cc
+        InterpolatorL95.h
         instantiateLocalizationFactory.h
         Iterator.cc
         Iterator.h

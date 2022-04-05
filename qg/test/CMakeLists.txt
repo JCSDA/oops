@@ -63,14 +63,12 @@ list( APPEND qg_testinput
   testinput/ens_variance_inflation_value.yaml
   testinput/forecast.yaml
   testinput/gen_ens_pert_B.yaml
-  testinput/getvalues.yaml
   testinput/hofx.yaml
   testinput/hofx3d.yaml
   testinput/hybridgain_analysis.yaml
   testinput/hybridgain_increment.yaml
   testinput/interfaces.yaml
   testinput/letkf.yaml
-  testinput/lineargetvalues.yaml
   testinput/make_obs_3d.yaml
   testinput/make_obs_4d_12h.yaml
   testinput/make_obs_4d_24h.yaml
@@ -358,19 +356,6 @@ ecbuild_add_test( TARGET  test_qg_linear_variable_change
                   ARGS    "testinput/interfaces.yaml"
                   LIBS    qg
                   TEST_DEPENDS test_qg_truth )
-
-ecbuild_add_test( TARGET  test_qg_getvalues
-                  SOURCES executables/TestGetValues.cc
-                  ARGS    "testinput/getvalues.yaml"
-                  LIBS    qg
-                  TEST_DEPENDS test_qg_truth )
-
-ecbuild_add_test( TARGET  test_qg_lineargetvalues
-                  SOURCES executables/TestLinearGetValues.cc
-                  ARGS    "testinput/lineargetvalues.yaml"
-                  LIBS    qg
-                  TEST_DEPENDS test_qg_truth )
-
 
 #####################################################################
 # forecast-related tests

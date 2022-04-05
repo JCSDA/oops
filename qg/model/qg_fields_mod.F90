@@ -43,6 +43,7 @@ public :: qg_fields_create,qg_fields_create_from_other,qg_fields_delete, &
         & qg_fields_self_schur,qg_fields_dot_prod,qg_fields_add_incr,qg_fields_diff_incr,qg_fields_change_resol, &
         & qg_fields_read_file,qg_fields_write_file,qg_fields_analytic_init,qg_fields_gpnorm,qg_fields_rms,qg_fields_sizes, &
         & qg_fields_lbc,qg_fields_set_atlas,qg_fields_to_atlas,qg_fields_from_atlas, &
+        & qg_fields_getvals, qg_fields_getvalsad, &
         & qg_fields_getpoint,qg_fields_setpoint,qg_fields_serialize,qg_fields_deserialize, &
         & qg_fields_complete,qg_fields_check,qg_fields_check_resolution
 ! ------------------------------------------------------------------------------
@@ -1319,6 +1320,121 @@ do jvar=1,vars%nvars()
 enddo
 
 end subroutine qg_fields_from_atlas
+! ------------------------------------------------------------------------------
+subroutine qg_fields_getvals(self, vars, lats, lons, vals)
+
+implicit none
+type(qg_fields),intent(in)      :: self
+type(oops_variables),intent(in) :: vars
+real(kind_real), intent(in)     :: lats(:)
+real(kind_real), intent(in)     :: lons(:)
+real(c_double), intent(inout)   :: vals(:)
+
+integer :: nlocs, levs, jvar, jloc, ii
+character(len=1024) :: fname
+
+call qg_fields_check(self)
+
+nlocs = size(lats)
+levs = self%geom%nz
+
+ii = 0
+do jvar=1,vars%nvars()
+  fname = vars%variable(jvar)
+  select case (trim(fname))
+  case ('x')
+    if (.not.allocated(self%x)) call abor1_ftn('qg_fields_getvals: x not allocated')
+    do jloc=1,nlocs
+      call qg_interp_bilinear(self%geom,lons(jloc),lats(jloc),self%x(:,:,:),vals(ii+1:ii+levs))
+      ii = ii + levs
+    enddo
+  case ('q')
+    if (.not.allocated(self%q)) call abor1_ftn('qg_fields_getvals: q not allocated')
+    do jloc=1,nlocs
+      call qg_interp_bilinear(self%geom,lons(jloc),lats(jloc),self%q(:,:,:),vals(ii+1:ii+levs))
+      ii = ii + levs
+    enddo
+  case ('u')
+    if (.not.allocated(self%u)) call abor1_ftn('qg_fields_getvals: u not allocated')
+    do jloc=1,nlocs
+      call qg_interp_bilinear(self%geom,lons(jloc),lats(jloc),self%u(:,:,:),vals(ii+1:ii+levs))
+      ii = ii + levs
+    enddo
+  case ('v')
+    if (.not.allocated(self%v)) call abor1_ftn('qg_fields_getvals: v not allocated')
+    do jloc=1,nlocs
+      call qg_interp_bilinear(self%geom,lons(jloc),lats(jloc),self%v(:,:,:),vals(ii+1:ii+levs))
+      ii = ii + levs
+    enddo
+  case ('z')
+    if (.not.allocated(self%geom%z)) call abor1_ftn('qg_fields_getvals: z not allocated')
+    do jloc=1,nlocs
+      vals(ii+1:ii+levs) = self%geom%z(:)
+      ii = ii + levs
+    enddo
+  case default
+    call abor1_ftn('qg_fields_getvals: wrong input variable')
+  endselect
+enddo
+if (size(vals) /= ii) call abor1_ftn('qg_fields_getvals: error size')
+
+end subroutine qg_fields_getvals
+! ------------------------------------------------------------------------------
+subroutine qg_fields_getvalsad(self, vars, lats, lons, vals)
+
+implicit none
+type(qg_fields),intent(inout)   :: self
+type(oops_variables),intent(in) :: vars
+real(kind_real), intent(in)     :: lats(:)
+real(kind_real), intent(in)     :: lons(:)
+real(c_double), intent(in)      :: vals(:)
+
+integer :: nlocs, levs, jvar, jloc, ii
+character(len=1024) :: fname
+
+call qg_fields_check(self)
+
+nlocs = size(lats)
+levs = self%geom%nz
+
+ii = 0
+do jvar=1,vars%nvars()
+  fname = vars%variable(jvar)
+  select case (trim(fname))
+  case ('x')
+    if (.not.allocated(self%x)) call abor1_ftn('qg_fields_getvalsad: x not allocated')
+    do jloc=1,nlocs
+      call qg_interp_bilinear_ad(self%geom,lons(jloc),lats(jloc),vals(ii+1:ii+levs),self%x)
+      ii = ii + levs
+    enddo
+  case ('q')
+    if (.not.allocated(self%q)) call abor1_ftn('qg_fields_getvalsad: q not allocated')
+    do jloc=1,nlocs
+      call qg_interp_bilinear_ad(self%geom,lons(jloc),lats(jloc),vals(ii+1:ii+levs),self%q)
+      ii = ii + levs
+    enddo
+  case ('u')
+    if (.not.allocated(self%u)) call abor1_ftn('qg_fields_getvalsad: u not allocated')
+    do jloc=1,nlocs
+      call qg_interp_bilinear_ad(self%geom,lons(jloc),lats(jloc),vals(ii+1:ii+levs),self%u)
+      ii = ii + levs
+    enddo
+  case ('v')
+    if (.not.allocated(self%v)) call abor1_ftn('qg_fields_getvalsad: v not allocated')
+    do jloc=1,nlocs
+      call qg_interp_bilinear_ad(self%geom,lons(jloc),lats(jloc),vals(ii+1:ii+levs),self%v)
+      ii = ii + levs
+    enddo
+  case ('z')
+    ! do nothing
+    ii = ii + nlocs * levs
+  case default
+    call abor1_ftn('qg_fields_getvalsad: wrong input variable')
+  endselect
+enddo
+if (size(vals) /= ii) call abor1_ftn('qg_fields_getvalsad: error size')
+
+end subroutine qg_fields_getvalsad
 ! ------------------------------------------------------------------------------
 !> Get points from fields
 subroutine qg_fields_getpoint(fld,iter,nval,vals)

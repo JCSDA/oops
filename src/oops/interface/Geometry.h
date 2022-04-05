@@ -91,6 +91,7 @@ class Geometry : public util::Printable,
   const eckit::mpi::Comm & getComm() const {return geom_->getComm();}
   atlas::FunctionSpace * atlasFunctionSpace() const {return geom_->atlasFunctionSpace();}
   atlas::FieldSet * atlasFieldSet() const {return geom_->atlasFieldSet();}
+  void latlon(std::vector<double> &, std::vector<double> &, const bool) const;
 
   /// Accessor to MODEL::Geometry, used in the other interface classes in oops.
   /// Does not need to be implemented.
@@ -187,12 +188,26 @@ GeometryIterator<MODEL> Geometry<MODEL>::end() const {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
+void Geometry<MODEL>::latlon(std::vector<double> & lats, std::vector<double> & lons,
+                             const bool halo) const {
+  Log::trace() << "Geometry<MODEL>::latlon starting" << std::endl;
+  util::Timer timer(classname(), "latlon");
+  geom_->latlon(lats, lons, halo);
+  ASSERT(lats.size() == lons.size());
+  Log::trace() << "Geometry<MODEL>::latlon done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
 void Geometry<MODEL>::print(std::ostream & os) const {
   Log::trace() << "Geometry<MODEL>::print starting" << std::endl;
   util::Timer timer(classname(), "print");
   os << *geom_;
   Log::trace() << "Geometry<MODEL>::print done" << std::endl;
 }
+
+// -----------------------------------------------------------------------------
 
 }  // namespace interface
 

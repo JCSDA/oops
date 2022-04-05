@@ -95,9 +95,8 @@ oops/base/EnsembleCovariance.h
 oops/base/ForecastParameters.h
 oops/base/GeneralizedDepartures.h
 oops/base/Geometry.h
-oops/base/GetValuePost.h
 oops/base/GetValuePosts.h
-oops/base/GetValueTLAD.h
+oops/base/GetValues.h
 oops/base/GetValueTLADs.h
 oops/base/LocalIncrement.cc
 oops/base/LocalIncrement.h
@@ -107,8 +106,6 @@ oops/base/Increment.h
 oops/base/Increment4D.h
 oops/base/IncrementEnsemble.h
 oops/base/IncrementEnsemble4D.h
-oops/base/InterpolatorBase.h
-oops/base/InterpolatorBase.cc
 oops/base/instantiateCovarFactory.h
 oops/base/instantiateObsFilterFactory.h
 oops/base/LinearModel.h
@@ -195,14 +192,11 @@ oops/generic/IdentityModel.h
 oops/generic/instantiateLinearModelFactory.h
 oops/generic/instantiateModelFactory.h
 oops/generic/instantiateObsErrorFactory.h
-oops/generic/InterpolatorAtlas.h
-oops/generic/InterpolatorAtlas.cc
-oops/generic/interpolatorunstrc_f.h
-oops/generic/interpolatorunstrc_interface.F90
 oops/generic/InterpolatorUnstructured.h
 oops/generic/InterpolatorUnstructured.cc
 oops/generic/LinearModelBase.h
 oops/generic/LocalizationBase.h
+oops/generic/LocalUnstructuredInterpolator.h
 oops/generic/ModelBase.h
 oops/generic/ObsErrorDiag.h
 oops/generic/ObsErrorDiag.cc
@@ -213,7 +207,6 @@ oops/generic/PseudoModel.h
 oops/generic/PseudoModelState4D.h
 oops/generic/soar.h
 oops/generic/soar.cc
-oops/generic/unstructured_interpolation_mod.F90
 oops/generic/VerticalLocEV.h
 
 oops/interface/AnalyticInitBase.h
@@ -221,12 +214,11 @@ oops/interface/ErrorCovariance.h
 oops/interface/Geometry.h
 oops/interface/GeometryIterator.h
 oops/interface/GeoVaLs.h
-oops/interface/GetValues.h
 oops/interface/Increment.h
-oops/interface/LinearGetValues.h
 oops/interface/LinearModelBase.h
 oops/interface/LinearObsOperator.h
 oops/interface/LinearVariableChange.h
+oops/interface/LocalInterpolator.h
 oops/interface/LocalizationBase.h
 oops/interface/Locations.h
 oops/interface/ModelAuxControl.h
@@ -421,9 +413,7 @@ test/interface/Geometry.h
 test/interface/GeometryIterator.h
 test/interface/GeometryFixture.h
 test/interface/GeoVaLs.h
-test/interface/GetValues.h
 test/interface/Increment.h
-test/interface/LinearGetValues.h
 test/interface/LinearModel.h
 test/interface/LinearObsOperator.h
 test/interface/LinearVariableChange.h
@@ -775,15 +765,10 @@ ecbuild_add_test( TARGET  test_mpi_mpi
                   ARGS    "test/testinput/mpi.yaml"
                   LIBS    oops )
 
-ecbuild_add_test( TARGET  test_oops_atlas_interpolation_interface
-                  SOURCES test/generic/InterpolationInterface.cc
-                  ARGS    "test/testinput/atlas_interpolation_interface.yaml"
-                  LIBS    oops )
-
-ecbuild_add_test( TARGET  test_oops_unstructured_interpolation
-                  SOURCES test/generic/InterpolationInterface.cc
-                  ARGS    "test/testinput/unstructured_interpolation.yaml"
-                  LIBS    oops )
+#ecbuild_add_test( TARGET  test_oops_unstructured_interpolation
+#                  SOURCES test/generic/InterpolationInterface.cc
+#                  ARGS    "test/testinput/unstructured_interpolation.yaml"
+#                  LIBS    oops )
 
 ecbuild_add_test( TARGET  test_fft_multiple
                   SOURCES test/generic/fft_multiple.cc

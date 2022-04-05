@@ -99,6 +99,7 @@ class IncrementQG : public util::Printable,
   void setAtlas(atlas::FieldSet *) const;
   void toAtlas(atlas::FieldSet *) const;
   void fromAtlas(atlas::FieldSet *);
+  void getFieldSetAD(const oops::Variables &, const atlas::FieldSet &) {}
 
 /// Access to fields
   FieldsQG & fields() {return *fields_;}

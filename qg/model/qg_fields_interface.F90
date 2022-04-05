@@ -8,7 +8,7 @@
 
 module qg_fields_interface
 
-use atlas_module, only: atlas_fieldset
+use atlas_module, only: atlas_fieldset, atlas_field
 use datetime_mod
 use fckit_configuration_module, only: fckit_configuration
 use iso_c_binding
@@ -638,6 +638,66 @@ afieldset = atlas_fieldset(c_afieldset)
 call qg_fields_from_atlas(fld,vars,afieldset)
 
 end subroutine qg_fields_from_atlas_c
+! ------------------------------------------------------------------------------
+subroutine qg_fields_getvals_c(c_key, c_vars, c_nlocs, c_locs, c_nvals, c_vals) bind (c,name='qg_fields_getvals_f90')
+
+implicit none
+integer(c_int), intent(in)    :: c_key
+type(c_ptr),value,intent(in)  :: c_vars
+integer(c_int), intent(in)    :: c_nlocs
+real(c_double), intent(in)    :: c_locs(2 * c_nlocs)
+integer(c_int), intent(in)    :: c_nvals
+real(c_double), intent(inout) :: c_vals(c_nvals)
+
+type(qg_fields),pointer :: self
+type(oops_variables) :: vars
+real(kind_real) :: lats(c_nlocs), lons(c_nlocs)
+integer :: ii, jj
+
+call qg_fields_registry%get(c_key, self)
+vars = oops_variables(c_vars)
+
+ii = 0
+do jj = 1, c_nlocs
+  ii = ii + 1
+  lats(jj) = c_locs(ii)
+  ii = ii + 1
+  lons(jj) = c_locs(ii)
+enddo
+
+call qg_fields_getvals(self, vars, lats, lons, c_vals)
+
+end subroutine qg_fields_getvals_c
+! ------------------------------------------------------------------------------
+subroutine qg_fields_getvalsad_c(c_key, c_vars, c_nlocs, c_locs, c_nvals, c_vals) bind (c,name='qg_fields_getvalsad_f90')
+
+implicit none
+integer(c_int),intent(in)    :: c_key
+type(c_ptr),value,intent(in) :: c_vars
+integer(c_int), intent(in)   :: c_nlocs
+real(c_double), intent(in)   :: c_locs(2 * c_nlocs)
+integer(c_int), intent(in)   :: c_nvals
+real(c_double), intent(in)   :: c_vals(c_nvals)
+
+type(qg_fields),pointer :: self
+type(oops_variables) :: vars
+real(kind_real) :: lats(c_nlocs), lons(c_nlocs)
+integer :: ii, jj
+
+call qg_fields_registry%get(c_key, self)
+vars = oops_variables(c_vars)
+
+ii = 0
+do jj = 1, c_nlocs
+  ii = ii + 1
+  lats(jj) = c_locs(ii)
+  ii = ii + 1
+  lons(jj) = c_locs(ii)
+enddo
+
+call qg_fields_getvalsad(self, vars, lats, lons, c_vals)
+
+end subroutine qg_fields_getvalsad_c
 ! ------------------------------------------------------------------------------
 !> Get points from fields
 subroutine qg_fields_getpoint_c(c_key_fld,c_key_iter,c_nval,c_vals) bind(c,name='qg_fields_getpoint_f90')

@@ -57,6 +57,7 @@ class Resolution : public util::Printable {
   std::vector<double> verticalCoord(std::string &) const;
   std::vector<size_t> variableSizes(const oops::Variables &) const;
   const eckit::mpi::Comm & getComm() const {return comm_;}
+  void latlon(std::vector<double> &, std::vector<double> &, const bool) const;
 
  private:
   void print(std::ostream & os) const {os << resol_;}

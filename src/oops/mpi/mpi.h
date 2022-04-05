@@ -155,6 +155,13 @@ void allGatherv(const eckit::mpi::Comm & comm, std::vector<T> &x) {
     x = std::move(buffer.buffer);
 }
 
+template <typename T>
+void allGatherv(const eckit::mpi::Comm & comm, const std::vector<T> & send, std::vector<T> & recv) {
+    eckit::mpi::Buffer<T> buffer(comm.size());
+    comm.allGatherv(send.begin(), send.end(), buffer);
+    recv = std::move(buffer.buffer);
+}
+
 // ------------------------------------------------------------------------------------------------
 
 /// \brief Perform the MPI *all gather* operation on a vector of DateTime objects.

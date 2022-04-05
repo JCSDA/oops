@@ -50,6 +50,9 @@ class LocationsQG : public util::Printable,
   atlas::Field & altitude() {ASSERT(altitude_); return *altitude_;}
   util::DateTime & times(size_t idx) {return times_[idx];}
 
+  void localCoords(const util::DateTime &, const util::DateTime &,
+                   std::vector<double> &, std::vector<double> &, std::vector<size_t> &) const;
+
  private:
   void print(std::ostream &) const;
   std::unique_ptr<atlas::functionspace::PointCloud> pointcloud_;
