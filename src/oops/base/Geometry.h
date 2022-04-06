@@ -35,6 +35,7 @@ namespace oops {
 template <typename MODEL>
 class Geometry : public interface::Geometry<MODEL> {
   typedef typename MODEL::Geometry              Geometry_;
+
  public:
   typedef typename interface::Geometry<MODEL>::Parameters_ Parameters_;
 
@@ -48,6 +49,11 @@ class Geometry : public interface::Geometry<MODEL> {
            const eckit::mpi::Comm & time = oops::mpi::myself());
   /// Constructor from pointer to the MODEL::Geometry (used in 1DVar filter)
   explicit Geometry(std::shared_ptr<const Geometry_>);
+
+  Geometry(const Geometry &) = delete;
+  Geometry & operator=(const Geometry &) = delete;
+
+  bool operator==(const Geometry &) const;
 
   /// Accessor to the MPI communicator for distribution in time
   const eckit::mpi::Comm & timeComm() const {return *timeComm_;}
@@ -78,6 +84,18 @@ template <typename MODEL>
 Geometry<MODEL>::Geometry(std::shared_ptr<const Geometry_> ptr):
   interface::Geometry<MODEL>(ptr), timeComm_(&oops::mpi::myself())
 {}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+bool Geometry<MODEL>::operator==(const Geometry & rhs) const {
+  Log::trace() << "Geometry<MODEL>::operator== starting" << std::endl;
+  bool eq = (this->geom_ == rhs.geom_) && (timeComm_ == rhs.timeComm_);
+  Log::trace() << "Geometry<MODEL>::operator== done" << std::endl;
+  return eq;
+}
+
+// -----------------------------------------------------------------------------
 
 }  // namespace oops
 

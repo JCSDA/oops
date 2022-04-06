@@ -80,7 +80,7 @@ template<typename MODEL> class CostJbJq : public CostJbState<MODEL> {
   std::unique_ptr<ModelSpaceCovarianceBase<MODEL> > B_;
   const State_ & xb_;
   const Variables ctlvars_;
-  std::unique_ptr<const Geometry_> resol_;
+  const Geometry_ * resol_;
   const eckit::LocalConfiguration conf_;
   const eckit::mpi::Comm & commTime_;
   const bool first_;
@@ -106,7 +106,7 @@ CostJbJq<MODEL>::CostJbJq(const eckit::Configuration & config, const eckit::mpi:
 template<typename MODEL>
 void CostJbJq<MODEL>::linearize(const State_ & fg, const Geometry_ & lowres) {
   Log::trace() << "CostJbJq::linearize start" << std::endl;
-  resol_.reset(new Geometry_(lowres));
+  resol_ = &lowres;
   const eckit::LocalConfiguration covConf(conf_, "background error");
 
   std::vector<eckit::LocalConfiguration> confs;

@@ -102,7 +102,7 @@ template<typename MODEL, typename OBS> class CostFct3DVar : public CostFunction<
   util::DateTime windowEnd_;
   util::DateTime windowHalf_;
   const eckit::mpi::Comm & comm_;
-  Geometry_ resol_;
+  const Geometry_ resol_;
   const Variables ctlvars_;
 };
 

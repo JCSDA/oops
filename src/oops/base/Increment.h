@@ -57,6 +57,11 @@ class Increment : public interface::Increment<MODEL> {
   /// Copies \p other if \p copy is true, otherwise creates zero increment
   Increment(const Increment & other, const bool copy = true);
 
+  Increment & operator=(const Increment &);
+
+  /// Accessor to geometry associated with this Increment
+  const Geometry_ & geometry() const {return resol_;}
+
   /// Accessor to the time communicator
   const eckit::mpi::Comm & timeComm() const {return *timeComm_;}
 
@@ -84,6 +89,7 @@ class Increment : public interface::Increment<MODEL> {
  private:
   void print(std::ostream &) const override;
 
+  const Geometry_ & resol_;
   const eckit::mpi::Comm * timeComm_;  /// pointer to the MPI communicator in time
   atlas::FieldSet atlasFieldSet_;      /// Atlas fields associated with this Increment
 };
@@ -93,7 +99,7 @@ class Increment : public interface::Increment<MODEL> {
 template <typename MODEL>
 Increment<MODEL>::Increment(const Geometry_ & geometry, const Variables & variables,
                             const util::DateTime & date):
-  interface::Increment<MODEL>(geometry, variables, date),
+  interface::Increment<MODEL>(geometry, variables, date), resol_(geometry),
   timeComm_(&geometry.timeComm())
 {}
 
@@ -101,7 +107,7 @@ Increment<MODEL>::Increment(const Geometry_ & geometry, const Variables & variab
 
 template <typename MODEL>
 Increment<MODEL>::Increment(const Geometry_ & geometry, const Increment & other):
-  interface::Increment<MODEL>(geometry, other),
+  interface::Increment<MODEL>(geometry, other), resol_(geometry),
   timeComm_(other.timeComm_)
 {}
 
@@ -109,9 +115,19 @@ Increment<MODEL>::Increment(const Geometry_ & geometry, const Increment & other)
 
 template <typename MODEL>
 Increment<MODEL>::Increment(const Increment & other, const bool copy):
-  interface::Increment<MODEL>(other, copy),
+  interface::Increment<MODEL>(other, copy), resol_(other.resol_),
   timeComm_(other.timeComm_)
 {}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+Increment<MODEL> & Increment<MODEL>::operator=(const Increment & rhs) {
+  ASSERT(resol_ == rhs.resol_);
+  ASSERT(timeComm_ == rhs.timeComm_);
+  interface::Increment<MODEL>::operator=(rhs);
+  return *this;
+}
 
 // -----------------------------------------------------------------------------
 

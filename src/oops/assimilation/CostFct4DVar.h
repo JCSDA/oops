@@ -125,7 +125,7 @@ template<typename MODEL, typename OBS> class CostFct4DVar : public CostFunction<
   util::DateTime windowBegin_;
   util::DateTime windowEnd_;
   const eckit::mpi::Comm & comm_;
-  Geometry_ resol_;
+  const Geometry_ resol_;
   Model_ model_;
   const Variables ctlvars_;
   std::shared_ptr<LinearModel_> tlm_;

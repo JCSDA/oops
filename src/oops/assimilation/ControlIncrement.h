@@ -80,7 +80,7 @@ class ControlIncrement : public util::Printable,
   void write(const eckit::Configuration &) const;
 
 /// Get geometry
-  Geometry_ geometry() const {return increment_.geometry();}
+  const Geometry_ & geometry() const {return increment_.geometry();}
 
 /// Get state control variable
   Increment_ & state() {return increment_;}

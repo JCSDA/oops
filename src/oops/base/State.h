@@ -67,6 +67,12 @@ class State : public interface::State<MODEL> {
   /// Copies \p other State, changing its resolution to \p geometry
   State(const Geometry_ & resol, const State & other);
 
+  State(const State &);
+  State & operator=(const State &);
+
+  /// Accessor to geometry associated with this State
+  const Geometry_ & geometry() const {return resol_;}
+
   // Get values as Atlas FieldSet
   const atlas::FieldSet & fieldSet() const;
 
@@ -78,7 +84,9 @@ class State : public interface::State<MODEL> {
   void write(const WriteParameters_ &) const;
 
  private:
+  const Geometry_ & resol_;
   const eckit::mpi::Comm * commTime_;  /// pointer to the MPI communicator in time
+
   void print(std::ostream &) const override;
 };
 
@@ -87,7 +95,7 @@ class State : public interface::State<MODEL> {
 template<typename MODEL>
 State<MODEL>::State(const Geometry_ & resol, const Variables & vars,
                     const util::DateTime & time) :
-  interface::State<MODEL>(resol, vars, time), commTime_(&resol.timeComm())
+  interface::State<MODEL>(resol, vars, time), resol_(resol), commTime_(&resol.timeComm())
 {}
 
 // -----------------------------------------------------------------------------
@@ -102,7 +110,7 @@ State<MODEL>::State(const Geometry_ & resol, const ParametersND_ & paramsND) :
 
 template<typename MODEL>
 State<MODEL>::State(const Geometry_ & resol, const Parameters_ & params) :
-  interface::State<MODEL>(resol, params), commTime_(&resol.timeComm())
+  interface::State<MODEL>(resol, params), resol_(resol), commTime_(&resol.timeComm())
 {}
 
 // -----------------------------------------------------------------------------
@@ -116,8 +124,25 @@ State<MODEL>::State(const Geometry_ & resol, const eckit::Configuration & conf) 
 
 template<typename MODEL>
 State<MODEL>::State(const Geometry_ & resol, const State & other) :
-  interface::State<MODEL>(resol, other), commTime_(&resol.timeComm())
+  interface::State<MODEL>(resol, other), resol_(resol), commTime_(&resol.timeComm())
 {}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+State<MODEL>::State(const State & other) :
+  interface::State<MODEL>(other.resol_, other), resol_(other.resol_), commTime_(&resol_.timeComm())
+{}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+State<MODEL> & State<MODEL>::operator=(const State & rhs) {
+  ASSERT(resol_ == rhs.resol_);
+  ASSERT(commTime_ == rhs.commTime_);
+  interface::State<MODEL>::operator=(rhs);
+  return *this;
+}
 
 // -----------------------------------------------------------------------------
 

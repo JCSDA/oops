@@ -112,7 +112,7 @@ template<typename MODEL, typename OBS> class CostFct4DEnsVar : public CostFuncti
   util::DateTime subWinEnd_;
   size_t nsubwin_;
   size_t mysubwin_;
-  std::unique_ptr<Geometry_> resol_;
+  std::unique_ptr<const Geometry_> resol_;
   const Variables ctlvars_;
   eckit::mpi::Comm * commSpace_;
   eckit::mpi::Comm * commTime_;

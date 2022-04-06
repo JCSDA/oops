@@ -88,7 +88,7 @@ template<typename MODEL, typename OBS> class CostJbTotal {
   const CtrlInc_ & getFirstGuess() const {return *dxFG_;}
 
 /// Jb terms for ControlIncrement constructor.
-  const Geometry_ & resolution() const {return *resol_;}
+  const Geometry_ & resolution() const;
   const JbState_ & jbState() const {return *jb_;}
   const ModelAuxCovar_ & jbModBias() const {return jbModBias_;}
   const ObsAuxCovars_ & jbObsBias() const {return jbObsBias_;}
@@ -109,7 +109,7 @@ template<typename MODEL, typename OBS> class CostJbTotal {
   std::unique_ptr<CtrlInc_> dxFG_;
 
 /// Inner loop resolution
-  std::unique_ptr<Geometry_> resol_;
+  const Geometry_ * resol_;
   const util::DateTime windowBegin_;
   const util::DateTime windowEnd_;
 
@@ -127,7 +127,7 @@ CostJbTotal<MODEL, OBS>::CostJbTotal(const CtrlVar_ & xb, JbState_ * jb,
                                      const Geometry_ & resol, const ObsSpaces_ & odb)
   : xb_(xb), jb_(jb),
     jbModBias_(conf.getSubConfiguration("model aux error"), resol),
-    jbObsBias_(odb, conf.getSubConfiguration("observations")), dxFG_(), resol_(),
+    jbObsBias_(odb, conf.getSubConfiguration("observations")), dxFG_(), resol_(nullptr),
     windowBegin_(conf.getString("window begin")),
     windowEnd_(windowBegin_ + util::Duration(conf.getString("window length"))),
     jqtraj_()
@@ -144,6 +144,14 @@ CostJbTotal<MODEL, OBS>::~CostJbTotal() {
   // Write out obs bias covariance
   jbObsBias_.write(jbObsBias_.config());
   Log::trace() << "CostJbTotal::~CostJbTotal done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL, typename OBS>
+const Geometry<MODEL> & CostJbTotal<MODEL, OBS>::resolution() const {
+  ASSERT(resol_);
+  return *resol_;
 }
 
 // -----------------------------------------------------------------------------
@@ -189,7 +197,7 @@ void CostJbTotal<MODEL, OBS>::initializeTraj(const CtrlVar_ & fg, const Geometry
                                              PostProcTLAD_ & pptraj) {
   Log::trace() << "CostJbTotal::initializeTraj start" << std::endl;
   fg_ = &fg;
-  resol_.reset(new Geometry_(resol));
+  resol_ = &resol;
 // Linearize terms
   jb_->linearize(fg.state(), *resol_);
   jbModBias_.linearize(fg.modVar(), *resol_);

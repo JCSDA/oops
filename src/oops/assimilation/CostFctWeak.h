@@ -17,8 +17,6 @@
 #include <string>
 #include <vector>
 
-#include <boost/make_unique.hpp>
-
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/CostJbJq.h"
@@ -128,7 +126,7 @@ template<typename MODEL, typename OBS> class CostFctWeak : public CostFunction<M
   util::DateTime subWinEnd_;
   size_t nsubwin_;
   size_t mysubwin_;
-  std::unique_ptr<Geometry_> resol_;
+  std::unique_ptr<const Geometry_> resol_;
   std::unique_ptr<Model_> model_;
   const Variables ctlvars_;
   std::shared_ptr<LinearModel_> tlm_;

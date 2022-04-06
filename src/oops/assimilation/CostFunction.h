@@ -178,6 +178,7 @@ template<typename MODEL, typename OBS> class CostFunction : private boost::nonco
   std::unique_ptr<const CtrlVar_> xb_;
   std::unique_ptr<JbTotal_> jb_;
   boost::ptr_vector<CostBase_> jterms_;
+  std::unique_ptr<const Geometry_> lowres_;
 
   mutable double costJb_;
   mutable double costJoJc_;
@@ -353,17 +354,19 @@ double CostFunction<MODEL, OBS>::linearize(const CtrlVar_ & fguess,
   Log::trace() << "CostFunction::linearize start" << std::endl;
 // Inner loop resolution
   const eckit::LocalConfiguration resConf(innerConf, "geometry");
-  const Geometry_ lowres(resConf, this->geometry().getComm(), this->geometry().timeComm());
+  lowres_.reset();
+  lowres_ = std::make_unique<Geometry_>(resConf, this->geometry().getComm(),
+                                        this->geometry().timeComm());
 
 // Setup trajectory for terms of cost function
   PostProcessorTLAD<MODEL> pptraj;
-  jb_->initializeTraj(fguess, lowres, innerConf, pptraj);
+  jb_->initializeTraj(fguess, *lowres_, innerConf, pptraj);
   for (size_t jj = 0; jj < jterms_.size(); ++jj) {
-    jterms_[jj].setPostProcTraj(fguess, innerConf, lowres, pptraj);
+    jterms_[jj].setPostProcTraj(fguess, innerConf, *lowres_, pptraj);
   }
 
 // Specific linearization if needed (including TLM)
-  this->doLinearize(lowres, innerConf, *xb_, fguess, post, pptraj);
+  this->doLinearize(*lowres_, innerConf, *xb_, fguess, post, pptraj);
 
 // Run NL model
   double zzz = this->evaluate(fguess, innerConf, post);

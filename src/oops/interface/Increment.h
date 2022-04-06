@@ -89,6 +89,7 @@ class Increment : public oops::GeneralizedDepartures,
 
   static const std::string classname() {return "oops::Increment";}
 
+ protected:
   /// Constructor for specified \p geometry, with \p variables, valid on \p date
   Increment(const Geometry_ & geometry, const Variables & variables, const util::DateTime & date);
   /// Copies \p other increment, changing its resolution to \p geometry
@@ -97,6 +98,7 @@ class Increment : public oops::GeneralizedDepartures,
   /// Copies \p other if \p copy is true, otherwise creates zero increment
   Increment(const Increment &, const bool copy = true);
 
+ public:
   /// Destructor (defined explicitly for timing and tracing)
   virtual ~Increment();
 
@@ -121,8 +123,10 @@ class Increment : public oops::GeneralizedDepartures,
   /// Set Increment according to the configuration (used in Dirac application)
   void dirac(const eckit::Configuration &);
 
+ protected:
   /// Assignment operator
   Increment & operator =(const Increment &);
+ public:
   /// Linear algebra operators
   Increment & operator+=(const Increment &);
   Increment & operator-=(const Increment &);
@@ -155,9 +159,6 @@ class Increment : public oops::GeneralizedDepartures,
   LocalIncrement getLocal(const GeometryIterator_ & iter) const;
   /// Set local (at \p iter local volume) increment to be \p gp (used in LocalEnsembleSolver)
   void setLocal(const LocalIncrement & gp, const GeometryIterator_ & iter);
-
-  /// Accessor to geometry associated with this Increment
-  Geometry_ geometry() const;
 
   /// ATLAS FieldSet interface (used to communicate data with SABER)
   /// For models that are not using ATLAS fields for their own Increment data:
@@ -214,11 +215,11 @@ template<typename MODEL>
 Increment<MODEL>::Increment(const Geometry_ & resol, const Increment & other)
   : increment_(), fset_()
 {
-  Log::trace() << "Increment<MODEL>::Increment starting" << std::endl;
+  Log::trace() << "Increment<MODEL>::Increment chres starting" << std::endl;
   util::Timer timer(classname(), "Increment");
   increment_.reset(new Increment_(resol.geometry(), *other.increment_));
   this->setObjectSize(increment_->serialSize()*sizeof(double));
-  Log::trace() << "Increment<MODEL>::Increment done" << std::endl;
+  Log::trace() << "Increment<MODEL>::Increment chres done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -483,17 +484,6 @@ double Increment<MODEL>::norm() const {
   double zz = increment_->norm();
   Log::trace() << "Increment<MODEL>::norm done" << std::endl;
   return zz;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-oops::Geometry<MODEL> Increment<MODEL>::geometry() const {
-  Log::trace() << "Increment<MODEL>::geometry starting" << std::endl;
-  util::Timer timer(classname(), "geometry");
-  oops::Geometry<MODEL> geom(increment_->geometry());
-  Log::trace() << "Increment<MODEL>::geometry done" << std::endl;
-  return geom;
 }
 
 // -----------------------------------------------------------------------------

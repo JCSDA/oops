@@ -117,8 +117,6 @@ class State : public util::Printable,
   /// Norm (used in tests)
   double norm() const;
 
-  /// Accessor to geometry associated with this State
-  Geometry_ geometry() const;
   /// Accessor to variables associated with this State
   const Variables & variables() const;
 
@@ -278,17 +276,6 @@ double State<MODEL>::norm() const {
   double zz = state_->norm();
   Log::trace() << "State<MODEL>::norm done" << std::endl;
   return zz;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-oops::Geometry<MODEL> State<MODEL>::geometry() const {
-  Log::trace() << "State<MODEL>::geometry starting" << std::endl;
-  util::Timer timer(classname(), "geometry");
-  oops::Geometry<MODEL> geom(state_->geometry());
-  Log::trace() << "State<MODEL>::geometry done" << std::endl;
-  return geom;
 }
 
 // -----------------------------------------------------------------------------
