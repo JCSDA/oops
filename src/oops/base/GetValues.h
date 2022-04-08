@@ -135,9 +135,11 @@ class GetValues {
   void setTree(const Geometry_ &);
   int closestTask(const double &, const double &) const;
 
-  util::DateTime winbgn_;   /// Begining of assimilation window
-  util::DateTime winend_;   /// End of assimilation window
-  util::Duration hslot_;    /// Half time slot
+  util::DateTime winbgn_;        /// Begining of assimilation window
+  util::DateTime winend_;        /// End of assimilation window
+  util::Duration hslot_;         /// Half time slot
+  bool duplicatedDistribution_;  /// Set true if your model duplicates fields
+                                 /// (locations will not be redistributed)
 
   const Locations_ & locations_;       /// locations of observations
   const Variables geovars_;            /// Variables needed from model
@@ -165,11 +167,12 @@ GetValues<MODEL, OBS>::GetValues(const eckit::Configuration & conf, const Geomet
   : winbgn_(bgn), winend_(end), hslot_(), locations_(locs),
     geovars_(vars), varsizes_(geom.variableSizes(geovars_)), geovals_(),
     linvars_(varl), linsizes_(geom.variableSizes(linvars_)), gvalstl_(), gvalsad_(),
-    comm_(geom.getComm()), earth_(atlas::util::Earth::radius()),  globalTree_(earth_)
+    comm_(geom.getComm()), earth_(atlas::util::Earth::radius()), globalTree_(earth_),
+    duplicatedDistribution_(conf.getBool("duplicated distribution", false))
 {
   Log::trace() << "GetValues::GetValues start" << std::endl;
   util::Timer timer("oops::GetValues", "GetValues");
-  this->setTree(geom);
+  if (!duplicatedDistribution_) this->setTree(geom);
   Log::trace() << "GetValues::GetValues done" << std::endl;
 }
 
@@ -210,7 +213,8 @@ void GetValues<MODEL, OBS>::process(const State_ & xx) {
   std::vector<std::vector<size_t>> myobs_index_by_task(ntasks);
   std::vector<std::vector<double>> myobs_latlon_by_task(ntasks);
   for (size_t jobs = 0; jobs < obsindx.size(); ++jobs) {
-    const size_t itask = this->closestTask(obslats[jobs], obslons[jobs]);
+    const size_t itask = duplicatedDistribution_ ? comm_.rank() :
+                                                   this->closestTask(obslats[jobs], obslons[jobs]);
     myobs_index_by_task[itask].push_back(obsindx[jobs]);
     myobs_latlon_by_task[itask].push_back(obslats[jobs]);
     myobs_latlon_by_task[itask].push_back(obslons[jobs]);
