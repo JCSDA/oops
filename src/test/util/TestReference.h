@@ -38,58 +38,61 @@ CASE("util/TestReference") {
   std::string bad_ref5 = "0.123456787";
 
   oops::TestReference::IntT iTol = 0;
-  oops::TestReference::FloatT fTol = 1e-9;
-  bool relativeTol = true;
-  bool absoluteTol = false;  // Is defined as not relative tolerance
+  oops::TestReference::FloatT fRelTol = 1e-9;
+  oops::TestReference::FloatT fAbsTol = 0;
 
   // Extra parentheses protect EXPECT_* macros arguments which cannot contain commas.
-  EXPECT_NO_THROW((oops::TestReference::compare(test1, good_ref1, fTol, relativeTol, iTol)));
+  EXPECT_NO_THROW((oops::TestReference::compare(test1, good_ref1, fRelTol, fAbsTol, iTol)));
 
-  EXPECT_NO_THROW((oops::TestReference::compare(test2, good_ref2, fTol, relativeTol, iTol)));
-  EXPECT_NO_THROW((oops::TestReference::compare(test2_1, good_ref2, fTol, relativeTol, iTol)));
+  EXPECT_NO_THROW((oops::TestReference::compare(test2, good_ref2, fRelTol, fAbsTol, iTol)));
+  EXPECT_NO_THROW((oops::TestReference::compare(test2_1, good_ref2, fRelTol, fAbsTol, iTol)));
 
-  EXPECT_THROWS_AS((oops::TestReference::compare(test1, good_ref2, fTol, relativeTol, iTol)),
+  EXPECT_THROWS_AS((oops::TestReference::compare(test1, good_ref2, fRelTol, fAbsTol, iTol)),
                     oops::TestReferenceMissingTestLineError);
 
-  EXPECT_THROWS_AS((oops::TestReference::compare(test2, good_ref1, fTol, relativeTol, iTol)),
+  EXPECT_THROWS_AS((oops::TestReference::compare(test2, good_ref1, fRelTol, fAbsTol, iTol)),
                     oops::TestReferenceMissingReferenceLineError);
-  EXPECT_THROWS_AS((oops::TestReference::compare(test2_1, good_ref1, fTol, relativeTol, iTol)),
+  EXPECT_THROWS_AS((oops::TestReference::compare(test2_1, good_ref1, fRelTol, fAbsTol, iTol)),
                     oops::TestReferenceMissingReferenceLineError);
 
-  EXPECT_THROWS_AS((oops::TestReference::compare(test1, bad_ref1, fTol, relativeTol, iTol)),
+  EXPECT_THROWS_AS((oops::TestReference::compare(test1, bad_ref1, fRelTol, fAbsTol, iTol)),
                     oops::TestReferenceIntegerMismatchError);
 
-  EXPECT_THROWS_AS((oops::TestReference::compare(test2, bad_ref2_1, fTol, relativeTol, iTol)),
-                    oops::TestReferenceFloatMismatchError);
-  EXPECT_THROWS_AS((oops::TestReference::compare(test2_1, bad_ref2_1, fTol, relativeTol, iTol)),
+  EXPECT_THROWS_AS((oops::TestReference::compare(test2, bad_ref2_1, fRelTol, fAbsTol, iTol)),
                     oops::TestReferenceFloatMismatchError);
 
-  EXPECT_THROWS_AS((oops::TestReference::compare(test2, bad_ref2_2, fTol, relativeTol, iTol)),
+  EXPECT_THROWS_AS((oops::TestReference::compare(test2_1, bad_ref2_1, fRelTol, fAbsTol, iTol)),
+                    oops::TestReferenceFloatMismatchError);
+
+  EXPECT_THROWS_AS((oops::TestReference::compare(test2, bad_ref2_2, fRelTol, fAbsTol, iTol)),
                     oops::TestReferenceTextMismatchError);
 
-  EXPECT_THROWS_AS((oops::TestReference::compare(test3, bad_ref3, fTol, relativeTol, iTol)),
+  EXPECT_THROWS_AS((oops::TestReference::compare(test3, bad_ref3, fRelTol, fAbsTol, iTol)),
                     oops::TestReferenceTextMismatchError);
 
-  EXPECT_NO_THROW((oops::TestReference::compare(test4, good_ref4, fTol, relativeTol, iTol)));
+  EXPECT_NO_THROW((oops::TestReference::compare(test4, good_ref4, fRelTol, fAbsTol, iTol)));
 
-  EXPECT_THROWS_AS((oops::TestReference::compare(test4, bad_ref4_1, fTol, relativeTol, iTol)),
+  EXPECT_THROWS_AS((oops::TestReference::compare(test4, bad_ref4_1, fRelTol, fAbsTol, iTol)),
                     oops::TestReferenceFloatMismatchError);
 
-  EXPECT_THROWS_AS((oops::TestReference::compare(test4, bad_ref4_2, fTol, relativeTol, iTol)),
+  EXPECT_THROWS_AS((oops::TestReference::compare(test4, bad_ref4_2, fRelTol, fAbsTol, iTol)),
                     oops::TestReferenceIntegerMismatchError);
 
-  EXPECT_THROWS_AS((oops::TestReference::compare(test4, bad_ref4_3, fTol, relativeTol, iTol)),
+  EXPECT_THROWS_AS((oops::TestReference::compare(test4, bad_ref4_3, fRelTol, fAbsTol, iTol)),
                     oops::TestReferenceTextMismatchError);
 
-  EXPECT_NO_THROW((oops::TestReference::compare(test5, good_ref5, fTol, absoluteTol, iTol)));
-
-  EXPECT_THROWS_AS((oops::TestReference::compare(test5, good_ref5, fTol, relativeTol, iTol)),
+  // Cannot meet the relative tolerance:
+  EXPECT_THROWS_AS((oops::TestReference::compare(test5, good_ref5, fRelTol, fAbsTol, iTol)),
                     oops::TestReferenceFloatMismatchError);
 
-  EXPECT_THROWS_AS((oops::TestReference::compare(test5, bad_ref5, fTol, absoluteTol, iTol)),
+  // But can meet the same absolute tolerance:
+  fAbsTol = 1e-9;
+  EXPECT_NO_THROW((oops::TestReference::compare(test5, good_ref5, fRelTol, fAbsTol, iTol)));
+
+  EXPECT_THROWS_AS((oops::TestReference::compare(test5, bad_ref5, fRelTol, fAbsTol, iTol)),
                     oops::TestReferenceFloatMismatchError);
 
-  EXPECT_THROWS_AS((oops::TestReference::compare(test5, bad_ref5, fTol, relativeTol, iTol)),
+  EXPECT_THROWS_AS((oops::TestReference::compare(test5, bad_ref5, fRelTol, fAbsTol, iTol)),
                     oops::TestReferenceFloatMismatchError);
 }  // CASE("util/TestReference")
 

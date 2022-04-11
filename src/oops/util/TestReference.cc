@@ -97,16 +97,12 @@ void TestReference::initialise(const eckit::LocalConfiguration &conf)
   refFile_ = conf.getString("reference filename");
   oops::Log::info() << "[TestReference] Comparing to reference file: " << refFile_ << std::endl;
 
-  tolFloat_ = conf.getFloat("float relative tolerance", 0.0);
-  relativeTol_ = true;
-  if (conf.has("float absolute tolerance")) {
-    tolFloat_ = conf.getFloat("float absolute tolerance");
-    relativeTol_ = false;
-    if (conf.has("float relative tolerance")) {
-      oops::Log::warning() << "Both relative and absolute tolerances are specified, "
-                           << "absolute tolerance will be used." << std::endl;
-    }
-  }
+  tolRelativeFloat_ = conf.getDouble("float relative tolerance", 0.0);
+  tolAbsoluteFloat_ = conf.getDouble("float absolute tolerance", 0.0);
+  oops::Log::info() << "Relative float tolerance for tests : " << tolRelativeFloat_
+                     << std::endl;
+  oops::Log::info() << "Absolute float tolerance for tests : " << tolAbsoluteFloat_
+                     << std::endl;
 
   tolInt_ = conf.getInt("integer tolerance", 0);
 
@@ -126,17 +122,10 @@ void TestReference::initialise(const eckit::LocalConfiguration &conf)
 
 void TestReference::compare(const std::string & test,
                             const std::string & ref,
-                            FloatT tolFloat,
-                            bool relativeTol,
+                            FloatT tolRelativeFloat,
+                            FloatT tolAbsoluteFloat,
                             IntT tolInt)
 {
-  oops::Log::debug() << "[TestReference] Comparing with ";
-  if (relativeTol) {
-    oops::Log::debug() << "relative tolerance = " << tolFloat << std::endl;
-  } else {
-    oops::Log::debug() << "absolute tolerance = " << tolFloat << std::endl;
-  }
-
   int lineCounter = 0;
   std::string testPrefix = "Test     : ";  // Test prefix string to remove
   std::stringstream testStream(test);
@@ -188,16 +177,11 @@ void TestReference::compare(const std::string & test,
         FloatT ref_float = stod(refNums[i]);
         FloatT test_float = stod(testNums[i]);
         FloatT diff = std::abs(ref_float - test_float);
-
-        if (relativeTol) {
-          if (diff / std::abs(0.5 * (ref_float + test_float)) > tolFloat)
-            throw TestReferenceFloatMismatchError(lineCounter, test_float,
-              ref_float, diff / std::abs(0.5 * (ref_float + test_float)), tolFloat,
-              testLine, refLine);
-        } else {
-          if (diff > tolFloat)
-            throw TestReferenceFloatMismatchError(lineCounter, test_float,
-              ref_float, diff, tolFloat, testLine, refLine);
+        if (diff > tolRelativeFloat * std::abs(0.5 * (ref_float + test_float)) &&
+            diff > tolAbsoluteFloat) {
+          throw TestReferenceFloatMismatchError(lineCounter, test_float, ref_float, diff,
+            tolRelativeFloat * std::abs(0.5 * (ref_float + test_float)),
+            tolAbsoluteFloat, testLine, refLine);
         }
       }
     }
@@ -234,7 +218,7 @@ void TestReference::finalise(const std::string & testStr)
     testFileOut.close();
   }
 
-  compare(testStr, refStr, tolFloat_, relativeTol_, tolInt_);
+  compare(testStr, refStr, tolRelativeFloat_, tolAbsoluteFloat_, tolInt_);
   oops::Log::info() << "[TestReference] Comparison is done" << std::endl;
 }
 
@@ -293,7 +277,9 @@ TestReferenceIntegerMismatchError::TestReferenceIntegerMismatchError(int line_nu
 // -----------------------------------------------------------------------------
 
 TestReferenceFloatMismatchError::TestReferenceFloatMismatchError(int line_num,
-                                  NumT test_val, NumT ref_val, NumT diff, NumT tolerance,
+                                  NumT test_val, NumT ref_val, NumT diff,
+                                  NumT relativeTolerance,
+                                  NumT absoluteTolerance,
                                   const std::string &test_line,
                                   const std::string &ref_line)
 {
@@ -306,7 +292,8 @@ TestReferenceFloatMismatchError::TestReferenceFloatMismatchError(int line_num,
      << "Delta    : "
      << diff
      << "\n"
-     << "Tolerance: " << tolerance << "\n"
+     << "Relative tolerance: " << relativeTolerance << "\n"
+     << "Absolute tolerance: " << absoluteTolerance << "\n"
      << "Test Line: '" << test_line << "'\n"
      << "Ref Line : '" << ref_line << "'";
   what_ = os.str();
