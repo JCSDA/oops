@@ -135,8 +135,6 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
         ytmp.read("hofxm"+std::to_string(iteration)+"_"+std::to_string(ieig+1)+
                       "_"+std::to_string(iens+1));
         HZb_[ii] = ytmp - yb_mean;
-        Log::test() << "H(Zx) - ymean for member " << iens+1 << " eig "<< ieig+1
-                    << " :" << std::endl << HZb_[ii] << std::endl;
         ii = ii + 1;
       }
     }
@@ -161,8 +159,6 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
         HZb_[ii] = tmpObs - yb_mean;
         tmpObs.save("hofxm"+std::to_string(iteration)+"_"+std::to_string(ieig+1)+
                       "_"+std::to_string(iens+1));
-        Log::test() << "H(Zx) - ymean for member " << iens+1 << " eig "<< ieig+1 << " :"
-                    << std::endl << HZb_[ii] << std::endl;
         ii = ii + 1;
       }
     }

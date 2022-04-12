@@ -84,12 +84,17 @@ namespace util {
           // Check items nature
           if (isSubConfig(subConfigs[0])) {
             // Items are subconfigurations
+            std::vector<eckit::LocalConfiguration> updatedSubConfigs;
 
             // Loop over items
             for (eckit::LocalConfiguration & subConfig : subConfigs) {
               // Call seekAndReplace for a subconfiguration
               seekAndReplace(subConfig, pattern, value_out);
+              updatedSubConfigs.push_back(subConfig);
             }
+
+            // Reset vector
+            config.set(keys[jj], updatedSubConfigs);
           } else if (isVector(subConfigs[0])) {
             // Items are vectors of subconfigurations
             ABORT("Vector of vectors is not implemented yet...");
@@ -109,12 +114,9 @@ namespace util {
               }
             }
 
-            // Reset vector
+            // Reset vector of final pairs
             config.set(keys[jj], subStrings);
           }
-
-          // Reset vector of subconfigurations
-          config.set(keys[jj], subConfigs);
         } else if (isFinal(subConfig)) {
           // The local configuration is a final pair
 
@@ -134,6 +136,9 @@ namespace util {
 
           // Call seekAndReplace for a subconfiguration
           seekAndReplace(subConfig, pattern, value_out);
+
+          // Reset subconfiguration
+          config.set(keys[jj], subConfig);
         }
       }
     } else if (isVector(config)) {
