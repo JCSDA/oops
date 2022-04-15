@@ -88,3 +88,4 @@ output:
 
 test:
   reference filename: testoutput/4dvar.hybrid.test
+  output precision: 6

@@ -109,3 +109,4 @@ output:
 
 test:
   reference filename: testoutput/4dvar_ipcg.test
+  output precision: 6

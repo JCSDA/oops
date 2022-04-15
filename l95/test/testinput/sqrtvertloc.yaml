@@ -20,4 +20,4 @@ output:
 
 test:
   reference filename: testoutput/sqrtvertloc.test
-#  test output filename: testoutput/sqrtvertloc.test.out
+  output precision: 6

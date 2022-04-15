@@ -1,41 +1,29 @@
 Initial state for member 1:
  Valid time: 2010-01-02T00:00:00Z
- Min=3.53609, Max=11.1974, Average=7.90978
-
+ Min=3.536094e+00, Max=1.119741e+01, Average=7.909777e+00
 Initial state for member 2:
  Valid time: 2010-01-02T00:00:00Z
- Min=3.77507, Max=11.1844, Average=7.75047
-
+ Min=3.775071e+00, Max=1.118439e+01, Average=7.750474e+00
 Initial state for member 3:
  Valid time: 2010-01-02T00:00:00Z
- Min=5.36882, Max=10.844, Average=7.80576
-
+ Min=5.368815e+00, Max=1.084402e+01, Average=7.805761e+00
 Initial state for member 4:
  Valid time: 2010-01-02T00:00:00Z
- Min=4.14639, Max=11.6734, Average=7.76001
-
+ Min=4.146387e+00, Max=1.167338e+01, Average=7.760012e+00
 Initial state for member 5:
  Valid time: 2010-01-02T00:00:00Z
- Min=3.17563, Max=10.8183, Average=7.60243
-
+ Min=3.175629e+00, Max=1.081829e+01, Average=7.602427e+00
 H(x) for member 1:
-Lorenz 95 nobs= 120 Min=3.53609, Max=11.1974, Average=7.90978
-
+Lorenz 95 nobs= 120 Min=3.536094e+00, Max=1.119741e+01, Average=7.909777e+00
 H(x) for member 2:
-Lorenz 95 nobs= 120 Min=3.77507, Max=11.1844, Average=7.75047
-
+Lorenz 95 nobs= 120 Min=3.775071e+00, Max=1.118439e+01, Average=7.750474e+00
 H(x) for member 3:
-Lorenz 95 nobs= 120 Min=5.36882, Max=10.844, Average=7.80576
-
+Lorenz 95 nobs= 120 Min=5.368815e+00, Max=1.084402e+01, Average=7.805761e+00
 H(x) for member 4:
-Lorenz 95 nobs= 120 Min=4.14639, Max=11.6734, Average=7.76001
-
+Lorenz 95 nobs= 120 Min=4.146387e+00, Max=1.167338e+01, Average=7.760012e+00
 H(x) for member 5:
-Lorenz 95 nobs= 120 Min=3.17563, Max=10.8183, Average=7.60243
-
+Lorenz 95 nobs= 120 Min=3.175629e+00, Max=1.081829e+01, Average=7.602427e+00
 H(x) ensemble background mean: 
-Lorenz 95 nobs= 120 Min=5.25199, Max=9.50208, Average=7.76569
-
+Lorenz 95 nobs= 120 Min=5.251989e+00, Max=9.502075e+00, Average=7.765690e+00
 background y - H(x): 
-Lorenz 95 nobs= 120 Min=-1.48379, Max=2.74405, Average=0.2457
-
+Lorenz 95 nobs= 120 Min=-1.483785e+00, Max=2.744051e+00, Average=2.457002e-01

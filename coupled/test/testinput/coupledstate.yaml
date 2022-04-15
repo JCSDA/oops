@@ -39,3 +39,4 @@ state test:
 
 test:
   reference filename: testref/coupledstate.test
+  output precision: 6

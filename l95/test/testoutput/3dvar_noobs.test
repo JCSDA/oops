@@ -1,21 +1,15 @@
-CostJb   : Nonlinear Jb = 0
-CostJo   : Nonlinear Jo(Lorenz 95) = 0 --- No Observations
-CostFunction: Nonlinear J = 0
+CostJb   : Nonlinear Jb = 0.000000e+00
+CostJo   : Nonlinear Jo(Lorenz 95) = 0.000000e+00 --- No Observations
+CostFunction: Nonlinear J = 0.000000e+00
 CostFunction::addIncrement: Analysis: 
  Valid time: 2010-01-02T00:00:00Z
- Min=6.65953, Max=9.39191, Average=7.97085
-
-
-
-CostJb   : Nonlinear Jb = 0
-CostJo   : Nonlinear Jo(Lorenz 95) = 0 --- No Observations
-CostFunction: Nonlinear J = 0
+ Min=6.659531e+00, Max=9.391912e+00, Average=7.970848e+00
+CostJb   : Nonlinear Jb = 0.000000e+00
+CostJo   : Nonlinear Jo(Lorenz 95) = 0.000000e+00 --- No Observations
+CostFunction: Nonlinear J = 0.000000e+00
 CostFunction::addIncrement: Analysis: 
  Valid time: 2010-01-02T00:00:00Z
- Min=6.65953, Max=9.39191, Average=7.97085
-
-
-
-CostJb   : Nonlinear Jb = 0
-CostJo   : Nonlinear Jo(Lorenz 95) = 0 --- No Observations
-CostFunction: Nonlinear J = 0
+ Min=6.659531e+00, Max=9.391912e+00, Average=7.970848e+00
+CostJb   : Nonlinear Jb = 0.000000e+00
+CostJo   : Nonlinear Jo(Lorenz 95) = 0.000000e+00 --- No Observations
+CostFunction: Nonlinear J = 0.000000e+00

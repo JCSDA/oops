@@ -27,3 +27,4 @@ increments:
 
 test:
   reference filename: testoutput/convertincrement.test
+  output precision: 6

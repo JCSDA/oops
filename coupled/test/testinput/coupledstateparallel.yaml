@@ -39,4 +39,6 @@ state test:
   date: 2010-01-01T00:00:00Z
 
 test:
+  float relative tolerance: 1e-5
   reference filename: testref/coupledstate.test
+  output precision: 6

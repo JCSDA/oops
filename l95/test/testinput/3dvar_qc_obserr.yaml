@@ -62,3 +62,4 @@ output:
 
 test:
   reference filename: testoutput/3dvar_qc_obserr.test
+  output precision: 6

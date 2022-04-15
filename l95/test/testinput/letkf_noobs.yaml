@@ -39,3 +39,4 @@ output:
 
 test:
   reference filename: testoutput/letkf_noobs.test
+  output precision: 6

@@ -46,3 +46,4 @@ output:
 test:
   reference filename: testoutput/simplifiedl95_DRPFOM.test
   float relative tolerance: 1e-8
+  output precision: 6

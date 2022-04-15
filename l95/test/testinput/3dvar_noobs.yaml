@@ -47,3 +47,4 @@ output:
 
 test:
   reference filename: testoutput/3dvar_noobs.test
+  output precision: 6

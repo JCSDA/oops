@@ -102,3 +102,4 @@ output:
 
 test:
   reference filename: testoutput/4dvar_drpfom.test
+  output precision: 6

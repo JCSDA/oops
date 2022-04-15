@@ -4,3 +4,4 @@ files:
 
 test:
   reference filename: testoutput/eda_3dvar_block.test
+  output precision: 6

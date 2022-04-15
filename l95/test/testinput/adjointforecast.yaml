@@ -80,3 +80,4 @@ adjoint forecast:
 
 test:
   reference filename: testoutput/adjointforecast.test
+  output precision: 6

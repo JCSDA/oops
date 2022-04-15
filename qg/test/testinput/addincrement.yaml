@@ -21,3 +21,4 @@ output:
 
 test:
   reference filename: testoutput/addincrement.test
+  output precision: 6

@@ -29,3 +29,4 @@ recentered output:
 
 test:
   reference filename: testoutput/ens_recenter.test
+  output precision: 6

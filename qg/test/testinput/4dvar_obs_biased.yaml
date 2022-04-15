@@ -110,3 +110,4 @@ output:
 
 test:
   reference filename: testoutput/4dvar_obs_biased.test
+  output precision: 6

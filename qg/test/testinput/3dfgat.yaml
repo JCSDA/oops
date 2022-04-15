@@ -88,3 +88,4 @@ output:
 
 test:
   reference filename: testoutput/3dfgat.test
+  output precision: 6

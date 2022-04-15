@@ -80,5 +80,4 @@ test:
   reference filename: testoutput/4dvar.obsbias.test
   float relative tolerance: 0.0
   integer tolerance: 0
-  log output filename: testoutput/4dvar.obsbias.log.out
-  test output filename: testoutput/4dvar.obsbias.test.out
+  output precision: 6

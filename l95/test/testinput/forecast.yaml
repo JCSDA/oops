@@ -17,3 +17,4 @@ output:
 
 test:
   reference filename: testoutput/forecast.test
+  output precision: 6

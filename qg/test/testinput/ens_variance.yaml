@@ -21,3 +21,4 @@ variance output:
   date: 2010-01-01T00:00:00Z
 test:
   reference filename: testoutput/ens_variance.test
+  output precision: 6

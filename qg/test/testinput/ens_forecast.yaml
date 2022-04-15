@@ -4,3 +4,4 @@ files:
 
 test:
   reference filename: testoutput/ens_forecast.test
+  output precision: 6

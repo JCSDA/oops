@@ -129,3 +129,4 @@ output:
 
 test:
   reference filename: testoutput/4densvar_hybrid.test
+  output precision: 6

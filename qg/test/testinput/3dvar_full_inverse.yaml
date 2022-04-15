@@ -86,3 +86,4 @@ output:
 
 test:
   reference filename: testoutput/3dvar_full_inverse.test
+  output precision: 6

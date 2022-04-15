@@ -63,3 +63,4 @@ prints:
 
 test:
   reference filename: testoutput/make_obs_4d_24h_filter_ordering.test
+  output precision: 6

@@ -50,3 +50,4 @@ output:
 
 test:
   reference filename: testoutput/fsoi_3dvar_pcg.test
+  output precision: 6

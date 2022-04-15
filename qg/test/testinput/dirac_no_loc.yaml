@@ -30,4 +30,4 @@ output variance:
 
 test:
   reference filename: testoutput/dirac_no_loc.test
-  test output filename: testoutput/dirac_no_loc.log.out
+  output precision: 6

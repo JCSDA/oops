@@ -51,3 +51,4 @@ output:
 
 test:
   reference filename: testoutput/3dvar_4fsoi_dripcg.test
+  output precision: 6

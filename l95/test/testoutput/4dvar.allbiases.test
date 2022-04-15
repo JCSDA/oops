@@ -1,24 +1,24 @@
-CostJb   : Nonlinear Jb = 0
-CostJo   : Nonlinear Jo(Lorenz 95) = 294.698, nobs = 160, Jo/n = 1.84186, err = 0.4
-CostJcDFI: Nonlinear Jc = 0.338917
-CostFunction: Nonlinear J = 295.037
-DRPLanczosMinimizer: reduction in residual norm = 9.41823e-05
+CostJb   : Nonlinear Jb = 0.000000e+00
+CostJo   : Nonlinear Jo(Lorenz 95) = 2.946983e+02, nobs = 160, Jo/n = 1.841864e+00, err = 4.000000e-01
+CostJcDFI: Nonlinear Jc = 3.389165e-01
+CostFunction: Nonlinear J = 2.950372e+02
+DRPLanczosMinimizer: reduction in residual norm = 9.418233e-05
 CostFunction::addIncrement: Analysis: 
  Valid time: 2010-01-01T03:00:00Z
- Min=7.66146, Max=8.65431, Average=7.99961
-ModelBias = 0.351503
-ObsBias = 0.5881
-CostJb   : Nonlinear Jb = 2.37634
-CostJo   : Nonlinear Jo(Lorenz 95) = 0.820597, nobs = 160, Jo/n = 0.00512873, err = 0.4
-CostJcDFI: Nonlinear Jc = 0.365469
-CostFunction: Nonlinear J = 3.5624
-DRPLanczosMinimizer: reduction in residual norm = 0.012503
+ Min=7.661460e+00, Max=8.654314e+00, Average=7.999608e+00
+ModelBias = 3.515034e-01
+ObsBias = 5.881003e-01
+CostJb   : Nonlinear Jb = 2.376336e+00
+CostJo   : Nonlinear Jo(Lorenz 95) = 8.205974e-01, nobs = 160, Jo/n = 5.128734e-03, err = 4.000000e-01
+CostJcDFI: Nonlinear Jc = 3.654688e-01
+CostFunction: Nonlinear J = 3.562402e+00
+DRPLanczosMinimizer: reduction in residual norm = 1.250299e-02
 CostFunction::addIncrement: Analysis: 
  Valid time: 2010-01-01T03:00:00Z
- Min=7.66624, Max=8.66691, Average=7.99865
-ModelBias = 0.276465
-ObsBias = 0.590795
-CostJb   : Nonlinear Jb = 2.44253
-CostJo   : Nonlinear Jo(Lorenz 95) = 0.525164, nobs = 160, Jo/n = 0.00328227, err = 0.4
-CostJcDFI: Nonlinear Jc = 0.360309
-CostFunction: Nonlinear J = 3.328
+ Min=7.666244e+00, Max=8.666912e+00, Average=7.998649e+00
+ModelBias = 2.764646e-01
+ObsBias = 5.907951e-01
+CostJb   : Nonlinear Jb = 2.442530e+00
+CostJo   : Nonlinear Jo(Lorenz 95) = 5.251638e-01, nobs = 160, Jo/n = 3.282274e-03, err = 4.000000e-01
+CostJcDFI: Nonlinear Jc = 3.603086e-01
+CostFunction: Nonlinear J = 3.328002e+00

@@ -1,42 +1,42 @@
 Input state: 
   Valid time: 2010-01-01T09:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -4.4304e+08, Max=  9.3153e+07, RMS=  1.7024e+08
-  Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+  Streamfunction         :  Min=-4.430397e+08, Max=9.315261e+07, RMS=1.702431e+08
+  Streamfunction LBC     :  Min=-4.003161e+08, Max=-0.000000e+00, RMS=2.063182e+08
+  Potential vorticity LBC:  Min=-6.729379e-04, Max=5.790287e-04, RMS=4.463972e-04
 Variable transform: QG change of variable
 Variable change from: 1 variables: x
 Variable change to: 1 variables: q
 State after variable transform: 
   Valid time: 2010-01-01T09:00:00Z
   Resolution = 20, 10, 2
-  Potential vorticity    :  Min= -5.8027e-04, Max=  5.4508e-04, RMS=  3.2514e-04
-  Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-  Potential vorticity LBC:  Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+  Potential vorticity    :  Min=-5.802728e-04, Max=5.450789e-04, RMS=3.251373e-04
+  Streamfunction LBC     :  Min=-4.003161e+08, Max=-0.000000e+00, RMS=2.063182e+08
+  Potential vorticity LBC:  Min=-6.726283e-04, Max=5.790287e-04, RMS=4.463972e-04
 Output state: 
   Valid time: 2010-01-01T09:00:00Z
   Resolution = 20, 10, 2
-  Potential vorticity    :  Min= -5.8027e-04, Max=  5.4508e-04, RMS=  3.2514e-04
-  Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-  Potential vorticity LBC:  Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+  Potential vorticity    :  Min=-5.802728e-04, Max=5.450789e-04, RMS=3.251373e-04
+  Streamfunction LBC     :  Min=-4.003161e+08, Max=-0.000000e+00, RMS=2.063182e+08
+  Potential vorticity LBC:  Min=-6.726283e-04, Max=5.790287e-04, RMS=4.463972e-04
 Input state: 
   Valid time: 2010-01-01T10:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -4.3926e+08, Max=  9.3338e+07, RMS=  1.6950e+08
-  Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+  Streamfunction         :  Min=-4.392600e+08, Max=9.333763e+07, RMS=1.694983e+08
+  Streamfunction LBC     :  Min=-4.003161e+08, Max=-0.000000e+00, RMS=2.063182e+08
+  Potential vorticity LBC:  Min=-6.729379e-04, Max=5.790287e-04, RMS=4.463972e-04
 Variable transform: QG change of variable
 Variable change from: 1 variables: x
 Variable change to: 1 variables: q
 State after variable transform: 
   Valid time: 2010-01-01T10:00:00Z
   Resolution = 20, 10, 2
-  Potential vorticity    :  Min= -5.7613e-04, Max=  5.4113e-04, RMS=  3.2534e-04
-  Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-  Potential vorticity LBC:  Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+  Potential vorticity    :  Min=-5.761251e-04, Max=5.411300e-04, RMS=3.253410e-04
+  Streamfunction LBC     :  Min=-4.003161e+08, Max=-0.000000e+00, RMS=2.063182e+08
+  Potential vorticity LBC:  Min=-6.726283e-04, Max=5.790287e-04, RMS=4.463972e-04
 Output state: 
   Valid time: 2010-01-01T10:00:00Z
   Resolution = 20, 10, 2
-  Potential vorticity    :  Min= -5.7613e-04, Max=  5.4113e-04, RMS=  3.2534e-04
-  Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-  Potential vorticity LBC:  Min= -6.7263e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+  Potential vorticity    :  Min=-5.761251e-04, Max=5.411300e-04, RMS=3.253410e-04
+  Streamfunction LBC     :  Min=-4.003161e+08, Max=-0.000000e+00, RMS=2.063182e+08
+  Potential vorticity LBC:  Min=-6.726283e-04, Max=5.790287e-04, RMS=4.463972e-04

@@ -47,6 +47,7 @@ class LibOOPS : public eckit::system::Library {
   void initialise();
   void testReferenceInitialise(const eckit::LocalConfiguration &);
   void teeOutput(const std::string &);
+  void setOutputPrecision(const int & precision = 0);
   void finalise(bool finaliseMPI = true);
 
  protected:

@@ -36,4 +36,4 @@ output variance:
 
 test:
   reference filename: testoutput/dirac_loc_3d.test
-  test output filename: testoutput/dirac_loc_3d.log.out
+  output precision: 6

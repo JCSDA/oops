@@ -293,9 +293,12 @@ template <typename MODEL, typename OBS> void testLinearGetValuesLinearApproximat
     double testdot = dot_product(gvdiff, gvdiff);
     errors.push_back(testdot);
 
-    oops::Log::test() << "  ||g(x+dx) - g(x)|| = " << std::setprecision(16) << nlnorm << std::endl;
-    oops::Log::test() << "             ||Gdx|| = " << std::setprecision(16) << tlnorm << std::endl;
-    oops::Log::test() << "||g(x+dx)-g(x)-Gdx|| = " << std::setprecision(16) << testdot << std::endl;
+    std::streamsize ss = Log::test().precision();
+    oops::Log::test() << std::setprecision(16);
+    oops::Log::test() << "  ||g(x+dx) - g(x)|| = " << nlnorm << std::endl;
+    oops::Log::test() << "             ||Gdx|| = " << tlnorm << std::endl;
+    oops::Log::test() << "||g(x+dx)-g(x)-Gdx|| = " << testdot << std::endl;
+    oops::Log::test() << std::setprecision(ss);
 
     zz /= 10.0;
   }
@@ -339,9 +342,12 @@ template <typename MODEL, typename OBS> void testLinearGetValuesAdjoint() {
   const double tol = Test_::testconf().getDouble("tolerance AD", 1.0e-11);
   EXPECT(oops::is_close(dot1, dot2, tol));
 
-  oops::Log::test() << "Dot Product <dx, M^Tgv> = " << std::setprecision(16) << dot1 << std::endl;
-  oops::Log::test() << "Dot Product <gv, M  dx> = " << std::setprecision(16) << dot2 << std::endl;
-  oops::Log::test() << "Relative diff: " << std::setprecision(16) << (dot1-dot2)/dot1 << std::endl;
+  std::streamsize ss = Log::test().precision();
+  oops::Log::test() << std::setprecision(16);
+  oops::Log::test() << "Dot Product <dx, M^Tgv> = " << dot1 << std::endl;
+  oops::Log::test() << "Dot Product <gv, M  dx> = " << dot2 << std::endl;
+  oops::Log::test() << "Relative diff: " << (dot1-dot2)/dot1 << std::endl;
+  oops::Log::test() << std::setprecision(ss);
 }
 
 // =================================================================================================

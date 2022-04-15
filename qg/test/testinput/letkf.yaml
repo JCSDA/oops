@@ -84,3 +84,4 @@ output:
 
 test:
   reference filename: testoutput/letkf.test
+  output precision: 6

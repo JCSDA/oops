@@ -7,3 +7,4 @@ geometry:   # coupled geometry (QG and L95)
     resol: 40
 test:
   reference filename: testref/coupledgeometry.test
+  output precision: 6

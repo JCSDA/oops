@@ -113,3 +113,4 @@ output:
 
 test:
   reference filename: testoutput/4dvar_drplanczos.test
+  output precision: 6

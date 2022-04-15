@@ -84,3 +84,4 @@ output:
 
 test:
   reference filename: testoutput/3dvar_change_var.test
+  output precision: 6

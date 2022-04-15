@@ -24,3 +24,4 @@ make obs: true
 
 test:
   reference filename: testoutput/makeobs4d12h.test
+  output precision: 6

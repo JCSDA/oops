@@ -75,3 +75,4 @@ output:
 
 test:
   reference filename: testoutput/4dvar.planczos.test
+  output precision: 6

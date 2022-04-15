@@ -137,10 +137,10 @@ void GomQG::print(std::ostream & os) const {
   double zmin, zmax, zrms;
   qg_gom_stats_f90(keyGom_, nobs, zmin, zmax, zrms);
   std::ios_base::fmtflags f(os.flags());
-  os << " nobs= " << nobs << std::scientific << std::setprecision(4)
-     << "  Min=" << std::setw(12) << zmin
-     << ", Max=" << std::setw(12) << zmax
-     << ", RMS=" << std::setw(12) << zrms;
+  os << " nobs= " << nobs
+     << "  Min=" << zmin
+     << ", Max=" << zmax
+     << ", RMS=" << zrms;
   os.flags(f);
 
   // If the min value across all variables is positive, then this may be an

@@ -119,3 +119,4 @@ output:
 test:
   reference filename: testoutput/4dvar_saddlepoint.test
   float relative tolerance: 0.0000000001
+  output precision: 6

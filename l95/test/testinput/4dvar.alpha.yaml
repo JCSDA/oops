@@ -76,3 +76,4 @@ output:
 
 test:
   reference filename: testoutput/4dvar.alpha.test
+  output precision: 6

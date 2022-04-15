@@ -47,4 +47,4 @@ output dirac:
 
 test:
   reference filename: testoutput/dirac_hyb_field.test
-  test output filename: testoutput/dirac_hyb_field.log.out
+  output precision: 6

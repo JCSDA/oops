@@ -199,10 +199,10 @@ void FieldsQG::print(std::ostream & os) const {
   for (int jj = 0; jj < 6; ++jj) {
     if (vpresent[jj] == 1) {
       std::ios_base::fmtflags f(os.flags());
-      os << std::endl << "  " << var[jj] << std::scientific << std::setprecision(4)
-       << "  Min=" << std::setw(12) << vmin[jj]
-       << ", Max=" << std::setw(12) << vmax[jj]
-       << ", RMS=" << std::setw(12) << vrms[jj];
+      os << std::endl << "  " << var[jj]
+       << "  Min=" << vmin[jj]
+       << ", Max=" << vmax[jj]
+       << ", RMS=" << vrms[jj];
       os.flags(f);
     }
   }

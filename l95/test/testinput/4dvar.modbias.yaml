@@ -79,3 +79,4 @@ output:
 
 test:
   reference filename: testoutput/4dvar.modbias.test
+  output precision: 6

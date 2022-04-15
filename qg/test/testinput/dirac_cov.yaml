@@ -29,4 +29,4 @@ output variance:
 
 test:
   reference filename: testoutput/dirac_cov.test
-  test output filename: testoutput/dirac_cov.log.out
+  output precision: 6

@@ -302,8 +302,11 @@ template <typename MODEL> void testLinearApproximation() {
     derr -= diff;
     const double errnorm = derr.norm();
     errors.push_back(errnorm / difnorm);
-    oops::Log::test() << "TL error = " << std::setprecision(16) << err
+    std::streamsize ss = oops::Log::test().precision();
+    oops::Log::test() << std::setprecision(16);
+    oops::Log::test() << "TL error = " << err
                       << ", relative error = " << errnorm / difnorm << std::endl;
+    oops::Log::test() << std::setprecision(ss);
     zz /= 10.0;
   }
 

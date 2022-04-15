@@ -126,6 +126,15 @@ void LibOOPS::teeOutput(const std::string & fileprefix) {
   eckit::Log::addFile(teefile);
 }
 
+void LibOOPS::setOutputPrecision(const int & precision) {
+  if (testChannel_) {
+    if (precision > 0) {
+      testChannel_->setf(std::ios::scientific);
+      testChannel_->precision(precision);
+    }
+  }
+}
+
 void LibOOPS::testReferenceInitialise(const eckit::LocalConfiguration &testConf) {
   testReference_.initialise(testConf);
 }

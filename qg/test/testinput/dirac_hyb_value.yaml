@@ -49,4 +49,4 @@ output variance:
 
 test:
   reference filename: testoutput/dirac_hyb_value.test
-  test output filename: testoutput/dirac_hyb_value.log.out
+  output precision: 6

@@ -103,3 +103,4 @@ output:
 
 test:
   reference filename: testoutput/4dvar_rpcg.test
+  output precision: 6

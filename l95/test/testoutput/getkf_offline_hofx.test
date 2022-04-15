@@ -1,49 +1,35 @@
 Initial state for member 1:
  Valid time: 2010-01-02T00:00:00Z
- Min=3.53609, Max=11.1974, Average=7.90978
-
+ Min=3.536094e+00, Max=1.119741e+01, Average=7.909777e+00
 Initial state for member 2:
  Valid time: 2010-01-02T00:00:00Z
- Min=3.77507, Max=11.1844, Average=7.75047
-
+ Min=3.775071e+00, Max=1.118439e+01, Average=7.750474e+00
 Initial state for member 3:
  Valid time: 2010-01-02T00:00:00Z
- Min=5.36882, Max=10.844, Average=7.80576
-
+ Min=5.368815e+00, Max=1.084402e+01, Average=7.805761e+00
 Initial state for member 4:
  Valid time: 2010-01-02T00:00:00Z
- Min=4.14639, Max=11.6734, Average=7.76001
-
+ Min=4.146387e+00, Max=1.167338e+01, Average=7.760012e+00
 Initial state for member 5:
  Valid time: 2010-01-02T00:00:00Z
- Min=3.17563, Max=10.8183, Average=7.60243
-
+ Min=3.175629e+00, Max=1.081829e+01, Average=7.602427e+00
 H(x) for member 1:
-Lorenz 95 nobs= 120 Min=3.53609, Max=11.1974, Average=7.90978
-
+Lorenz 95 nobs= 120 Min=3.536090e+00, Max=1.119740e+01, Average=7.909777e+00
 H(x) for member 2:
-Lorenz 95 nobs= 120 Min=3.77507, Max=11.1844, Average=7.75048
-
+Lorenz 95 nobs= 120 Min=3.775070e+00, Max=1.118440e+01, Average=7.750477e+00
 H(x) for member 3:
-Lorenz 95 nobs= 120 Min=5.36882, Max=10.844, Average=7.80576
-
+Lorenz 95 nobs= 120 Min=5.368820e+00, Max=1.084400e+01, Average=7.805760e+00
 H(x) for member 4:
-Lorenz 95 nobs= 120 Min=4.14639, Max=11.6734, Average=7.76001
-
+Lorenz 95 nobs= 120 Min=4.146390e+00, Max=1.167340e+01, Average=7.760012e+00
 H(x) for member 5:
-Lorenz 95 nobs= 120 Min=3.17563, Max=10.8183, Average=7.60243
-
+Lorenz 95 nobs= 120 Min=3.175630e+00, Max=1.081830e+01, Average=7.602428e+00
 H(x) ensemble background mean: 
-Lorenz 95 nobs= 120 Min=5.25199, Max=9.50207, Average=7.76569
-
+Lorenz 95 nobs= 120 Min=5.251988e+00, Max=9.502070e+00, Average=7.765691e+00
 background y - H(x): 
-Lorenz 95 nobs= 120 Min=-1.48378, Max=2.74405, Average=0.2457
-
+Lorenz 95 nobs= 120 Min=-1.483780e+00, Max=2.744052e+00, Average=2.456996e-01
 Background mean :
  Valid time: 2010-01-02T00:00:00Z
- Min=5.25199, Max=9.50208, Average=7.76569
-
+ Min=5.251989e+00, Max=9.502075e+00, Average=7.765690e+00
 Analysis mean :
  Valid time: 2010-01-02T00:00:00Z
- Min=6.73405, Max=9.18815, Average=7.98704
-
+ Min=6.734051e+00, Max=9.188146e+00, Average=7.987043e+00

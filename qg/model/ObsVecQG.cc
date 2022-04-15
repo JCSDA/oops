@@ -158,10 +158,9 @@ void ObsVecQG::print(std::ostream & os) const {
     qg_obsvec_stats_f90(keyOvec_, zmin, zmax, zavg);
     std::ios_base::fmtflags f(os.flags());
     os << obsdb_.obsname() << " nobs= " << nobs()
-       << std::scientific << std::setprecision(4)
-       << "  Min=" << std::setw(12) << zmin
-       << ", Max=" << std::setw(12) << zmax
-       << ", Average=" << std::setw(12) << zavg;
+       << "  Min=" << zmin
+       << ", Max=" << zmax
+       << ", Average=" << zavg;
     os.flags(f);
   }
 }

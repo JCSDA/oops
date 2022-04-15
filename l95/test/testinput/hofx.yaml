@@ -20,3 +20,4 @@ observations:
 
 test:
   reference filename: testoutput/hofx.test
+  output precision: 6

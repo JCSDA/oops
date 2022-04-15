@@ -83,3 +83,4 @@ output:
 
 test:
   reference filename: testoutput/4dvar.allbiases.test
+  output precision: 6

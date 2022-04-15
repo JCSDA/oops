@@ -86,4 +86,4 @@ output variance:
 
 test:
   reference filename: testoutput/dirac_loc_4d.test
-  test output filename: testoutput/dirac_loc_4d.log.out
+  output precision: 6

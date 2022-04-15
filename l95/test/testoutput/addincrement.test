@@ -1,9 +1,9 @@
 State: 
  Valid time: 2010-01-02T00:00:00Z
- Min=6.5867, Max=9.28852, Average=8.00062
+ Min=6.586703e+00, Max=9.288520e+00, Average=8.000623e+00
 Increment: 
  Valid time: 2010-01-02T00:00:00Z
- Min=-0.226841, Max=0.17469, Average=0.0151963
+ Min=-2.268410e-01, Max=1.746903e-01, Average=1.519635e-02
 State plus increment: 
  Valid time: 2010-01-02T00:00:00Z
- Min=6.75469, Max=9.06168, Average=8.01582
+ Min=6.754693e+00, Max=9.061679e+00, Average=8.015819e+00

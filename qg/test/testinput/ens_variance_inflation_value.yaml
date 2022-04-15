@@ -22,3 +22,4 @@ variance output:
 
 test:
   reference filename: testoutput/ens_variance_inflation_value.test
+  output precision: 6

@@ -1,160 +1,160 @@
-Input Dirac increment: 
+Input Dirac increment:
   Valid time: 2010-01-01T00:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
+  Streamfunction         :  Min=0, Max=0, RMS=0
   Valid time: 2010-01-01T01:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
+  Streamfunction         :  Min=0, Max=0, RMS=0
   Valid time: 2010-01-01T02:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
+  Streamfunction         :  Min=0, Max=0, RMS=0
   Valid time: 2010-01-01T03:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
+  Streamfunction         :  Min=0, Max=0, RMS=0
   Valid time: 2010-01-01T04:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
+  Streamfunction         :  Min=0, Max=0, RMS=0
   Valid time: 2010-01-01T05:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
+  Streamfunction         :  Min=0, Max=0, RMS=0
   Valid time: 2010-01-01T06:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  0.0000e+00, Max=  1.0000e+00, RMS=  2.5000e-02
+  Streamfunction         :  Min=0, Max=1, RMS=0.025
   Valid time: 2010-01-01T07:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
+  Streamfunction         :  Min=0, Max=0, RMS=0
   Valid time: 2010-01-01T08:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
+  Streamfunction         :  Min=0, Max=0, RMS=0
   Valid time: 2010-01-01T09:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
+  Streamfunction         :  Min=0, Max=0, RMS=0
   Valid time: 2010-01-01T10:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
+  Streamfunction         :  Min=0, Max=0, RMS=0
   Valid time: 2010-01-01T11:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
+  Streamfunction         :  Min=0, Max=0, RMS=0
   Valid time: 2010-01-01T12:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  0.0000e+00, Max=  0.0000e+00, RMS=  0.0000e+00
-Covariance(ensemble) * Increment: 
+  Streamfunction         :  Min=0, Max=0, RMS=0
+Covariance(ensemble) * Increment:
   Valid time: 2010-01-01T00:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -4.0432e+13, Max=  1.9692e+14, RMS=  2.2098e+13
+  Streamfunction         :  Min=-4.04321e+13, Max=1.96922e+14, RMS=2.20983e+13
   Valid time: 2010-01-01T01:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -4.0552e+13, Max=  2.0894e+14, RMS=  2.2747e+13
+  Streamfunction         :  Min=-4.05524e+13, Max=2.08935e+14, RMS=2.27472e+13
   Valid time: 2010-01-01T02:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -3.9769e+13, Max=  2.1965e+14, RMS=  2.3431e+13
+  Streamfunction         :  Min=-3.9769e+13, Max=2.19655e+14, RMS=2.34306e+13
   Valid time: 2010-01-01T03:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -3.8287e+13, Max=  2.2877e+14, RMS=  2.4126e+13
+  Streamfunction         :  Min=-3.82874e+13, Max=2.28774e+14, RMS=2.41265e+13
   Valid time: 2010-01-01T04:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -3.6244e+13, Max=  2.3634e+14, RMS=  2.4826e+13
+  Streamfunction         :  Min=-3.62439e+13, Max=2.36338e+14, RMS=2.48261e+13
   Valid time: 2010-01-01T05:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -3.3760e+13, Max=  2.4250e+14, RMS=  2.5516e+13
+  Streamfunction         :  Min=-3.37597e+13, Max=2.42499e+14, RMS=2.55157e+13
   Valid time: 2010-01-01T06:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -3.0971e+13, Max=  2.4747e+14, RMS=  2.6180e+13
+  Streamfunction         :  Min=-3.09714e+13, Max=2.47472e+14, RMS=2.618e+13
   Valid time: 2010-01-01T07:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -2.8061e+13, Max=  2.5136e+14, RMS=  2.6788e+13
+  Streamfunction         :  Min=-2.80612e+13, Max=2.51357e+14, RMS=2.67882e+13
   Valid time: 2010-01-01T08:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -2.5144e+13, Max=  2.5423e+14, RMS=  2.7311e+13
+  Streamfunction         :  Min=-2.5144e+13, Max=2.54229e+14, RMS=2.73109e+13
   Valid time: 2010-01-01T09:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -2.3979e+13, Max=  2.5615e+14, RMS=  2.7721e+13
+  Streamfunction         :  Min=-2.39792e+13, Max=2.56149e+14, RMS=2.7721e+13
   Valid time: 2010-01-01T10:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -2.3448e+13, Max=  2.5735e+14, RMS=  2.8021e+13
+  Streamfunction         :  Min=-2.34482e+13, Max=2.57352e+14, RMS=2.80214e+13
   Valid time: 2010-01-01T11:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -2.2850e+13, Max=  2.5807e+14, RMS=  2.8223e+13
+  Streamfunction         :  Min=-2.28499e+13, Max=2.58074e+14, RMS=2.82226e+13
   Valid time: 2010-01-01T12:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -2.2238e+13, Max=  2.5841e+14, RMS=  2.8326e+13
-Localization(ensemble) * Increment: 
+  Streamfunction         :  Min=-2.22379e+13, Max=2.58411e+14, RMS=2.83256e+13
+Localization(ensemble) * Increment:
   Valid time: 2010-01-01T00:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
+  Streamfunction         :  Min=-1.4154e-09, Max=1, RMS=0.138156
   Valid time: 2010-01-01T01:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
+  Streamfunction         :  Min=-1.4154e-09, Max=1, RMS=0.138156
   Valid time: 2010-01-01T02:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
+  Streamfunction         :  Min=-1.4154e-09, Max=1, RMS=0.138156
   Valid time: 2010-01-01T03:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
+  Streamfunction         :  Min=-1.4154e-09, Max=1, RMS=0.138156
   Valid time: 2010-01-01T04:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
+  Streamfunction         :  Min=-1.4154e-09, Max=1, RMS=0.138156
   Valid time: 2010-01-01T05:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
+  Streamfunction         :  Min=-1.4154e-09, Max=1, RMS=0.138156
   Valid time: 2010-01-01T06:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
+  Streamfunction         :  Min=-1.4154e-09, Max=1, RMS=0.138156
   Valid time: 2010-01-01T07:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
+  Streamfunction         :  Min=-1.4154e-09, Max=1, RMS=0.138156
   Valid time: 2010-01-01T08:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
+  Streamfunction         :  Min=-1.4154e-09, Max=1, RMS=0.138156
   Valid time: 2010-01-01T09:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
+  Streamfunction         :  Min=-1.4154e-09, Max=1, RMS=0.138156
   Valid time: 2010-01-01T10:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
+  Streamfunction         :  Min=-1.4154e-09, Max=1, RMS=0.138156
   Valid time: 2010-01-01T11:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
+  Streamfunction         :  Min=-1.4154e-09, Max=1, RMS=0.138156
   Valid time: 2010-01-01T12:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -1.4154e-09, Max=  1.0000e+00, RMS=  1.3816e-01
+  Streamfunction         :  Min=-1.4154e-09, Max=1, RMS=0.138156
 Randomized variance: 
   Valid time: 2010-01-01T00:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  3.7303e+12, Max=  1.0538e+15, RMS=  2.4663e+14
+  Streamfunction         :  Min=3.73035e+12, Max=1.05384e+15, RMS=2.46628e+14
   Valid time: 2010-01-01T01:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  3.9097e+12, Max=  1.1299e+15, RMS=  2.5694e+14
+  Streamfunction         :  Min=3.90969e+12, Max=1.12991e+15, RMS=2.56941e+14
   Valid time: 2010-01-01T02:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  2.4068e+12, Max=  1.2020e+15, RMS=  2.6754e+14
+  Streamfunction         :  Min=2.40679e+12, Max=1.20195e+15, RMS=2.67544e+14
   Valid time: 2010-01-01T03:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  1.8149e+12, Max=  1.2679e+15, RMS=  2.7848e+14
+  Streamfunction         :  Min=1.81489e+12, Max=1.26787e+15, RMS=2.78479e+14
   Valid time: 2010-01-01T04:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  1.9945e+12, Max=  1.3266e+15, RMS=  2.8969e+14
+  Streamfunction         :  Min=1.99446e+12, Max=1.32664e+15, RMS=2.89695e+14
   Valid time: 2010-01-01T05:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  2.4492e+12, Max=  1.3767e+15, RMS=  3.0102e+14
+  Streamfunction         :  Min=2.44921e+12, Max=1.37668e+15, RMS=3.01022e+14
   Valid time: 2010-01-01T06:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  2.3155e+12, Max=  1.4163e+15, RMS=  3.1227e+14
+  Streamfunction         :  Min=2.31554e+12, Max=1.4163e+15, RMS=3.12267e+14
   Valid time: 2010-01-01T07:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  2.2409e+12, Max=  1.4568e+15, RMS=  3.2326e+14
+  Streamfunction         :  Min=2.24093e+12, Max=1.45678e+15, RMS=3.23258e+14
   Valid time: 2010-01-01T08:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  2.0067e+12, Max=  1.5122e+15, RMS=  3.3397e+14
+  Streamfunction         :  Min=2.00667e+12, Max=1.51222e+15, RMS=3.33972e+14
   Valid time: 2010-01-01T09:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  1.7114e+12, Max=  1.5718e+15, RMS=  3.4435e+14
+  Streamfunction         :  Min=1.71143e+12, Max=1.57176e+15, RMS=3.44349e+14
   Valid time: 2010-01-01T10:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  1.4554e+12, Max=  1.6333e+15, RMS=  3.5419e+14
+  Streamfunction         :  Min=1.45543e+12, Max=1.63334e+15, RMS=3.54186e+14
   Valid time: 2010-01-01T11:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  1.2259e+12, Max=  1.6944e+15, RMS=  3.6352e+14
+  Streamfunction         :  Min=1.22591e+12, Max=1.69441e+15, RMS=3.63516e+14
   Valid time: 2010-01-01T12:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  1.0259e+12, Max=  1.7698e+15, RMS=  3.7255e+14
+  Streamfunction         :  Min=1.02585e+12, Max=1.76977e+15, RMS=3.72552e+14

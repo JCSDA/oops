@@ -1,11 +1,11 @@
 State: 
   Valid time: 2010-01-01T06:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -5.0526e+08, Max=  1.1159e+08, RMS=  1.8719e+08
-  Streamfunction LBC     :  Min= -4.0032e+08, Max= -0.0000e+00, RMS=  2.0632e+08
-  Potential vorticity LBC:  Min= -6.7294e-04, Max=  5.7903e-04, RMS=  4.4640e-04
+  Streamfunction         :  Min=-5.052604e+08, Max=1.115930e+08, RMS=1.871914e+08
+  Streamfunction LBC     :  Min=-4.003161e+08, Max=-0.000000e+00, RMS=2.063182e+08
+  Potential vorticity LBC:  Min=-6.729379e-04, Max=5.790287e-04, RMS=4.463972e-04
 H(x): 
-Stream nobs= 300  Min= -5.8159e+08, Max=  8.9514e+07, Average= -1.3681e+08
-Wind nobs= 160  Min= -8.3304e+01, Max=  1.0663e+02, Average=  1.0113e+01
-WSpeed nobs= 300  Min=  1.6435e+01, Max=  1.4412e+02, Average=  5.1343e+01
+Stream nobs= 300  Min=-5.815934e+08, Max=8.951409e+07, Average=-1.368070e+08
+Wind nobs= 160  Min=-8.330355e+01, Max=1.066331e+02, Average=1.011268e+01
+WSpeed nobs= 300  Min=1.643532e+01, Max=1.441214e+02, Average=5.134302e+01
 End H(x)

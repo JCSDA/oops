@@ -16,3 +16,4 @@ output:
 
 test:
   reference filename: testoutput/diffstates.test
+  output precision: 6

@@ -82,3 +82,4 @@ output:
 
 test:
   reference filename: testoutput/4dsaddlepoint.test
+  output precision: 6

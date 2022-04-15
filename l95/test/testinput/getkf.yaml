@@ -44,5 +44,4 @@ output:
 test:
   reference filename: testoutput/getkf.test
   float relative tolerance: 1.5e-3
-  test output filename: testoutput/getkf.test.out
-
+  output precision: 6

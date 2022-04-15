@@ -77,3 +77,4 @@ output:
 
 test:
   reference filename: testoutput/4dvar.drplanclmp.test
+  output precision: 6

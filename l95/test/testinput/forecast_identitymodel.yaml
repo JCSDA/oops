@@ -17,3 +17,4 @@ geometry:
 
 test:
   reference filename: testoutput/forecast_identitymodel.test
+  output precision: 6

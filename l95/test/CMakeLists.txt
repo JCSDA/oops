@@ -495,7 +495,7 @@ ecbuild_add_test( TARGET test_l95_3dvar
                   ARGS testinput/3dvar.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
 
-ecbuild_add_test( TARGET test_3dvar_noobs
+ecbuild_add_test( TARGET test_l95_3dvar_noobs
                   COMMAND l95_4dvar.x
                   ARGS testinput/3dvar_noobs.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )

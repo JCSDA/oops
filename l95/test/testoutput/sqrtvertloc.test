@@ -1,12 +1,12 @@
 Background: 
  Valid time: 2010-01-01T00:00:00Z
- Min=7, Max=8, Average=7.975
-Variance Explained=1
+ Min=7.000000e+00, Max=8.000000e+00, Average=7.975000e+00
+Variance Explained=1.000000e+00
 Number of retained columns=1
-Retained fraction of the variance=1
+Retained fraction of the variance=1.000000e+00
 Variance for truncated correlation matrix
  Valid time: 2010-01-01T00:00:00Z
- Min=1, Max=1, Average=1
+ Min=1.000000e+00, Max=1.000000e+00, Average=1.000000e+00
 Columns of sqrt(B) 0
  Valid time: 2010-01-01T00:00:00Z
- Min=1, Max=1, Average=1
+ Min=1.000000e+00, Max=1.000000e+00, Average=1.000000e+00

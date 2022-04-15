@@ -1,33 +1,33 @@
 Initial state: 
  Valid time: 2010-01-01T00:00:00Z
- Min=7, Max=8, Average=7.975
+ Min=7.000000e+00, Max=8.000000e+00, Average=7.975000e+00
 Member 0 final state: 
  Valid time: 2010-01-02T03:00:00Z
- Min=3.21752, Max=11.6627, Average=7.84602
+ Min=3.217516e+00, Max=1.166274e+01, Average=7.846024e+00
 Member 1 final state: 
  Valid time: 2010-01-02T03:00:00Z
- Min=3.37329, Max=11.3831, Average=7.67679
+ Min=3.373290e+00, Max=1.138305e+01, Average=7.676794e+00
 Member 2 final state: 
  Valid time: 2010-01-02T03:00:00Z
- Min=4.80264, Max=11.5457, Average=7.77423
+ Min=4.802644e+00, Max=1.154575e+01, Average=7.774232e+00
 Member 3 final state: 
  Valid time: 2010-01-02T03:00:00Z
- Min=3.15896, Max=11.4182, Average=7.71317
+ Min=3.158958e+00, Max=1.141816e+01, Average=7.713174e+00
 Member 4 final state: 
  Valid time: 2010-01-02T03:00:00Z
- Min=2.58571, Max=11.1087, Average=7.52551
+ Min=2.585712e+00, Max=1.110870e+01, Average=7.525510e+00
 Member 5 final state: 
  Valid time: 2010-01-02T03:00:00Z
- Min=2.47211, Max=11.9171, Average=7.73606
+ Min=2.472107e+00, Max=1.191712e+01, Average=7.736060e+00
 Member 6 final state: 
  Valid time: 2010-01-02T03:00:00Z
- Min=4.38182, Max=11.3824, Average=7.7142
+ Min=4.381824e+00, Max=1.138242e+01, Average=7.714202e+00
 Member 7 final state: 
  Valid time: 2010-01-02T03:00:00Z
- Min=4.1669, Max=11.0728, Average=7.62218
+ Min=4.166898e+00, Max=1.107279e+01, Average=7.622180e+00
 Member 8 final state: 
  Valid time: 2010-01-02T03:00:00Z
- Min=3.12835, Max=11.8686, Average=7.71032
+ Min=3.128352e+00, Max=1.186858e+01, Average=7.710318e+00
 Member 9 final state: 
  Valid time: 2010-01-02T03:00:00Z
- Min=4.08623, Max=11.7555, Average=7.82686
+ Min=4.086233e+00, Max=1.175555e+01, Average=7.826857e+00

@@ -77,3 +77,4 @@ output:
 
 test:
   reference filename: testoutput/4dforcing.test
+  output precision: 6

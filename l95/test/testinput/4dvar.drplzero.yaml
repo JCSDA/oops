@@ -78,3 +78,4 @@ output:
 
 test:
   reference filename: testoutput/4dvar.drplzero.test
+  output precision: 6

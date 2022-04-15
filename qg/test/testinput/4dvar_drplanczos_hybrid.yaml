@@ -125,3 +125,4 @@ output:
 
 test:
   reference filename: testoutput/4dvar_drplanczos_hybrid.test
+  output precision: 6

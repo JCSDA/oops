@@ -30,3 +30,4 @@ geometry:
 
 test:
   reference filename: testoutput/forecast_pseudomodel.test
+  output precision: 6

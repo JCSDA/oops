@@ -102,3 +102,4 @@ output:
 
 test:
   reference filename: testoutput/3dvar_hybrid_wo_jb_evaluation.test
+  output precision: 6
