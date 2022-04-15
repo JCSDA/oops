@@ -68,6 +68,9 @@ class Geometry : public interface::Geometry<MODEL> {
   int closestTask(const double, const double) const;
   atlas::util::KDTree<size_t>::ValueList closestPoints(const double, const double, const int) const;
 
+  /// Temporary option for ops-um-jedi to disable observation redistribution
+  bool ops_um_jedi_ = false;
+
  private:
   std::unique_ptr<util::Timer> timer_;
   const eckit::mpi::Comm * spaceComm_;  /// pointer to the MPI communicator in space
@@ -140,9 +143,12 @@ bool Geometry<MODEL>::operator==(const Geometry & rhs) const {
 
 template <typename MODEL>
 int Geometry<MODEL>::closestTask(const double lat, const double lon) const {
-  atlas::PointLonLat obsloc(lon, lat);
-  obsloc.normalise();
-  const int itask = globalTree_.closestPoint(obsloc).payload();
+  int itask = spaceComm_->rank();
+  if (!ops_um_jedi_) {
+    atlas::PointLonLat obsloc(lon, lat);
+    obsloc.normalise();
+    itask = globalTree_.closestPoint(obsloc).payload();
+  }
   ASSERT(itask >= 0 && itask < spaceComm_->size());
   return itask;
 }
@@ -168,6 +174,7 @@ void Geometry<MODEL>::setLocalTree() {
   std::vector<double> lats;
   std::vector<double> lons;
   this->latlon(lats, lons, true);
+  ops_um_jedi_ = (lats.size() == 0);
   const size_t npoints = lats.size();
   std::vector<size_t> indx(npoints);
   for (size_t jj = 0; jj < npoints; ++jj) indx[jj] = jj;
