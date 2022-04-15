@@ -185,7 +185,7 @@ class Increment : public oops::GeneralizedDepartures,
   /// Accessor to MODEL::Increment, used in the other interface classes in oops.
   /// Does not need to be implemented.
   const Increment_ & increment() const {return *this->increment_;}
-  Increment_ & increment() {return *this->increment_;}
+  Increment_ & increment() {fset_.reset(); return *this->increment_;}
 
  protected:
   std::unique_ptr<Increment_> increment_;   /// pointer to the Increment implementation
@@ -375,7 +375,6 @@ template<typename MODEL>
 double Increment<MODEL>::dot_product_with(const Increment & dx) const {
   Log::trace() << "Increment<MODEL>::dot_product_with starting" << std::endl;
   util::Timer timer(classname(), "dot_product_with");
-  fset_.reset();
   double zz = increment_->dot_product_with(*dx.increment_);
   Log::trace() << "Increment<MODEL>::dot_product_with done" << std::endl;
   return zz;
@@ -513,6 +512,7 @@ void Increment<MODEL>::fromAtlas(atlas::FieldSet * atlasFieldSet) {
   Log::trace() << "Increment<MODEL>::fromAtlas starting" << std::endl;
   util::Timer timer(classname(), "fromAtlas");
   increment_->fromAtlas(atlasFieldSet);
+  fset_.reset();
   Log::trace() << "Increment<MODEL>::fromAtlas done" << std::endl;
 }
 

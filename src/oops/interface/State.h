@@ -99,7 +99,7 @@ class State : public util::Printable,
   State & operator =(const State &);
 
   /// Accessor
-  State_ & state() {return *state_;}
+  State_ & state() {fset_.reset(); return *state_;}
   /// const accessor
   const State_ & state() const {return *state_;}
 

@@ -13,17 +13,13 @@
 #include <utility>
 #include <vector>
 
-#include "atlas/field.h"
-#include "atlas/util/Geometry.h"
-#include "atlas/util/KDTree.h"
-
 #include "eckit/config/LocalConfiguration.h"
 
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
-#include "oops/generic/LocalUnstructuredInterpolator.h"
+#include "oops/generic/UnstructuredInterpolator.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/LocalInterpolator.h"
 #include "oops/interface/Locations.h"
@@ -67,7 +63,7 @@ struct TModelInterpolator_IfAvailableElseGenericInterpolator;
 
 template<typename MODEL>
 struct TModelInterpolator_IfAvailableElseGenericInterpolator<MODEL, false> {
-  typedef LocalUnstructuredInterpolator<MODEL> type;
+  typedef UnstructuredInterpolator<MODEL> type;
 };
 
 template<typename MODEL>
@@ -77,7 +73,7 @@ struct TModelInterpolator_IfAvailableElseGenericInterpolator<MODEL, true> {
 
 /// \brief Resolved to \c oops::LocalInterpolator<MODEL> (wrapper for \c MODEL::LocalInterpolator)
 /// if \c MODEL defines \c LocalInterpolator; otherwise resolved to
-/// \c oops::LocalUnstructuredInterpolator<MODEL>
+/// \c oops::UnstructuredInterpolator<MODEL>
 template<typename MODEL>
 using TModelInterpolator_IfAvailableElseGenericInterpolator_t =
 typename TModelInterpolator_IfAvailableElseGenericInterpolator<MODEL,
@@ -132,14 +128,9 @@ class GetValues {
   const Variables & requiredVariables() const {return geovars_;}
 
  private:
-  void setTree(const Geometry_ &);
-  int closestTask(const double &, const double &) const;
-
-  util::DateTime winbgn_;        /// Begining of assimilation window
-  util::DateTime winend_;        /// End of assimilation window
-  util::Duration hslot_;         /// Half time slot
-  bool duplicatedDistribution_;  /// Set true if your model duplicates fields
-                                 /// (locations will not be redistributed)
+  util::DateTime winbgn_;   /// Begining of assimilation window
+  util::DateTime winend_;   /// End of assimilation window
+  util::Duration hslot_;    /// Half time slot
 
   const Locations_ & locations_;       /// locations of observations
   const Variables geovars_;            /// Variables needed from model
@@ -151,10 +142,7 @@ class GetValues {
   const std::vector<size_t> linsizes_;
   std::unique_ptr<GeoVaLs_> gvalstl_;        /// GeoVaLs for TL
   std::unique_ptr<const GeoVaLs_> gvalsad_;  /// Input GeoVaLs for adjoint forcing
-
-  const eckit::mpi::Comm & comm_;
-  const atlas::Geometry earth_;
-  atlas::util::IndexKDTree globalTree_;
+  eckit::LocalConfiguration interpConf_;
 };
 
 // -----------------------------------------------------------------------------
@@ -167,12 +155,8 @@ GetValues<MODEL, OBS>::GetValues(const eckit::Configuration & conf, const Geomet
   : winbgn_(bgn), winend_(end), hslot_(), locations_(locs),
     geovars_(vars), varsizes_(geom.variableSizes(geovars_)), geovals_(),
     linvars_(varl), linsizes_(geom.variableSizes(linvars_)), gvalstl_(), gvalsad_(),
-    comm_(geom.getComm()), earth_(atlas::util::Earth::radius()), globalTree_(earth_),
-    duplicatedDistribution_(conf.getBool("duplicated distribution", false))
+    interpConf_(conf)
 {
-  Log::trace() << "GetValues::GetValues start" << std::endl;
-  util::Timer timer("oops::GetValues", "GetValues");
-  if (!duplicatedDistribution_) this->setTree(geom);
   Log::trace() << "GetValues::GetValues done" << std::endl;
 }
 
@@ -195,13 +179,13 @@ void GetValues<MODEL, OBS>::process(const State_ & xx) {
   Log::trace() << "GetValues::process start" << std::endl;
   util::Timer timer("oops::GetValues", "process");
 
-  eckit::LocalConfiguration conf;
   ASSERT(geovals_);
   size_t nvars = 0;
   for (size_t jj = 0; jj < varsizes_.size(); ++jj) nvars += varsizes_[jj];
   util::DateTime t1 = std::max(xx.validTime()-hslot_, winbgn_);
   util::DateTime t2 = std::min(xx.validTime()+hslot_, winend_);
-  const size_t ntasks = comm_.size();
+  const eckit::mpi::Comm & comm = xx.geometry().getComm();
+  const size_t ntasks = comm.size();
 
 // Get local obs coordinates
   std::vector<double> obslats;
@@ -213,25 +197,24 @@ void GetValues<MODEL, OBS>::process(const State_ & xx) {
   std::vector<std::vector<size_t>> myobs_index_by_task(ntasks);
   std::vector<std::vector<double>> myobs_latlon_by_task(ntasks);
   for (size_t jobs = 0; jobs < obsindx.size(); ++jobs) {
-    const size_t itask = duplicatedDistribution_ ? comm_.rank() :
-                                                   this->closestTask(obslats[jobs], obslons[jobs]);
+    const size_t itask = xx.geometry().closestTask(obslats[jobs], obslons[jobs]);
     myobs_index_by_task[itask].push_back(obsindx[jobs]);
     myobs_latlon_by_task[itask].push_back(obslats[jobs]);
     myobs_latlon_by_task[itask].push_back(obslons[jobs]);
   }
   std::vector<std::vector<double>> mylocs_latlon_by_task(ntasks);
-  comm_.allToAll(myobs_latlon_by_task, mylocs_latlon_by_task);
+  comm.allToAll(myobs_latlon_by_task, mylocs_latlon_by_task);
 
 // Interpolate
   std::vector<std::vector<double>> locinterp(ntasks);
   for (size_t jtask = 0; jtask < ntasks; ++jtask) {
-    LocalInterp_ interp(conf, xx.geometry(), mylocs_latlon_by_task[jtask]);
+    LocalInterp_ interp(interpConf_, xx.geometry(), mylocs_latlon_by_task[jtask]);
     interp.apply(geovars_, xx, locinterp[jtask]);
   }
 
 // Send/receive interpolated values
   std::vector<std::vector<double>> recvinterp(ntasks);
-  comm_.allToAll(locinterp, recvinterp);
+  comm.allToAll(locinterp, recvinterp);
 
 // Store output in GeoVaLs
   for (size_t jtask = 0; jtask < ntasks; ++jtask) {
@@ -271,7 +254,6 @@ void GetValues<MODEL, OBS>::processTraj(const State_ & xx) {
   Log::trace() << "GetValues::processTraj start" << std::endl;
   util::Timer timer("oops::GetValues", "processTraj");
 
-  eckit::LocalConfiguration conf;
   ASSERT(geovals_);
   size_t nvars = 0;
   for (size_t jj = 0; jj < varsizes_.size(); ++jj) nvars += varsizes_[jj];
@@ -290,7 +272,7 @@ void GetValues<MODEL, OBS>::processTraj(const State_ & xx) {
   std::vector<std::vector<size_t>> myobs_index_by_task(ntasks);
   std::vector<std::vector<double>> myobs_latlon_by_task(ntasks);
   for (size_t jobs = 0; jobs < obsindx.size(); ++jobs) {
-    const size_t itask = this->closestTask(obslats[jobs], obslons[jobs]);
+    const size_t itask = xx.geometry().closestTask(obslats[jobs], obslons[jobs]);
     myobs_index_by_task[itask].push_back(obsindx[jobs]);
     myobs_latlon_by_task[itask].push_back(obslats[jobs]);
     myobs_latlon_by_task[itask].push_back(obslons[jobs]);
@@ -301,7 +283,7 @@ void GetValues<MODEL, OBS>::processTraj(const State_ & xx) {
 // Interpolate
   std::vector<std::vector<double>> locinterp(ntasks);
   for (size_t jtask = 0; jtask < ntasks; ++jtask) {
-    LocalInterp_ interp(conf, xx.geometry(), mylocs_latlon_by_task[jtask]);
+    LocalInterp_ interp(interpConf_, xx.geometry(), mylocs_latlon_by_task[jtask]);
     interp.apply(geovars_, xx, locinterp[jtask]);
   }
 
@@ -348,7 +330,6 @@ void GetValues<MODEL, OBS>::processTL(const Increment_ & dx) {
   Log::trace() << "GetValues::processTL start" << std::endl;
   util::Timer timer("oops::GetValues", "processTL");
 
-  eckit::LocalConfiguration conf;
   ASSERT(gvalstl_);
   size_t nvars = 0;
   for (size_t jj = 0; jj < linsizes_.size(); ++jj) nvars += linsizes_[jj];
@@ -367,7 +348,7 @@ void GetValues<MODEL, OBS>::processTL(const Increment_ & dx) {
   std::vector<std::vector<size_t>> myobs_index_by_task(ntasks);
   std::vector<std::vector<double>> myobs_latlon_by_task(ntasks);
   for (size_t jobs = 0; jobs < obsindx.size(); ++jobs) {
-    const size_t itask = this->closestTask(obslats[jobs], obslons[jobs]);
+    const size_t itask = dx.geometry().closestTask(obslats[jobs], obslons[jobs]);
     myobs_index_by_task[itask].push_back(obsindx[jobs]);
     myobs_latlon_by_task[itask].push_back(obslats[jobs]);
     myobs_latlon_by_task[itask].push_back(obslons[jobs]);
@@ -378,7 +359,7 @@ void GetValues<MODEL, OBS>::processTL(const Increment_ & dx) {
 // Interpolate
   std::vector<std::vector<double>> locinterp(ntasks);
   for (size_t jtask = 0; jtask < ntasks; ++jtask) {
-    LocalInterp_ interp(conf, dx.geometry(), mylocs_latlon_by_task[jtask]);
+    LocalInterp_ interp(interpConf_, dx.geometry(), mylocs_latlon_by_task[jtask]);
     interp.apply(linvars_, dx, locinterp[jtask]);
   }
 
@@ -432,7 +413,6 @@ void GetValues<MODEL, OBS>::processAD(Increment_ & dx) {
   Log::trace() << "GetValues::processAD start" << std::endl;
   util::Timer timer("oops::GetValues", "processAD");
 
-  eckit::LocalConfiguration conf;
   ASSERT(gvalsad_);
   size_t nvars = 0;
   for (size_t jj = 0; jj < linsizes_.size(); ++jj) nvars += linsizes_[jj];
@@ -451,7 +431,7 @@ void GetValues<MODEL, OBS>::processAD(Increment_ & dx) {
   std::vector<std::vector<size_t>> myobs_index_by_task(ntasks);
   std::vector<std::vector<double>> myobs_latlon_by_task(ntasks);
   for (size_t jobs = 0; jobs < obsindx.size(); ++jobs) {
-    const size_t itask = this->closestTask(obslats[jobs], obslons[jobs]);
+    const size_t itask = dx.geometry().closestTask(obslats[jobs], obslons[jobs]);
     myobs_index_by_task[itask].push_back(obsindx[jobs]);
     myobs_latlon_by_task[itask].push_back(obslats[jobs]);
     myobs_latlon_by_task[itask].push_back(obslons[jobs]);
@@ -473,7 +453,7 @@ void GetValues<MODEL, OBS>::processAD(Increment_ & dx) {
 
 // (Adjoint of) Interpolate
   for (size_t jtask = 0; jtask < ntasks; ++jtask) {
-    LocalInterp_ interp(conf, dx.geometry(), mylocs_latlon_by_task[jtask]);
+    LocalInterp_ interp(interpConf_, dx.geometry(), mylocs_latlon_by_task[jtask]);
     interp.applyAD(linvars_, dx, locinterp[jtask]);
   }
 
@@ -486,71 +466,6 @@ template <typename MODEL, typename OBS>
 void GetValues<MODEL, OBS>::finalizeAD() {
   ASSERT(gvalsad_);
   gvalsad_.reset();
-}
-
-// -----------------------------------------------------------------------------
-//  Private methods
-// -----------------------------------------------------------------------------
-
-template <typename MODEL, typename OBS>
-void GetValues<MODEL, OBS>::setTree(const Geometry_ & grid) {
-  const size_t ntasks = comm_.size();
-
-// Local latitudes and longitudes
-  std::vector<double> lats;
-  std::vector<double> lons;
-  grid.latlon(lats, lons, false);
-  for (size_t jj = 0; jj < lons.size(); ++jj) {
-    if (lons[jj] < 0.0) lons[jj] += 360.0;
-  }
-
-  const size_t sizel = lats.size();
-  std::vector<double> latlon(2*sizel);
-  for (size_t jj = 0; jj < sizel; ++jj) {
-    latlon[2*jj]   = lats[jj];
-    latlon[2*jj+1] = lons[jj];
-  }
-
-// Collect global grid lats and lons
-  std::vector<size_t> sizes(ntasks);
-  comm_.allGather(sizel, sizes.begin(), sizes.end());
-
-  size_t sizeg = 0;
-  for (size_t jtask = 0; jtask < ntasks; ++jtask) sizeg += sizes[jtask];
-
-  std::vector<double> latlon_global(2*sizeg);
-  mpi::allGatherv(comm_, latlon, latlon_global);
-
-// Arrange coordinates and task index for kd-tree
-  std::vector<double> latglo(sizeg), longlo(sizeg);
-  std::vector<int> taskindx(sizeg);
-  size_t jglo = 0;
-  for (size_t jtask = 0; jtask < ntasks; ++jtask) {
-    for (size_t jj = 0; jj < sizes[jtask]; ++jj) {
-      latglo[jglo] = latlon_global[2*jglo];
-      longlo[jglo] = latlon_global[2*jglo+1];
-      taskindx[jglo] = jtask;
-      ++jglo;
-    }
-  }
-  ASSERT(jglo == sizeg);
-
-// Create global kd-tree
-  globalTree_.build(longlo, latglo, taskindx);
-
-  Log::info() << "GetValues: Global tree size = " << globalTree_.size()
-              << ", footprint = " << globalTree_.footprint() << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL, typename OBS>
-int GetValues<MODEL, OBS>::closestTask(const double & lat, const double & lon) const {
-  atlas::PointLonLat obsloc(lon, lat);
-  obsloc.normalise();
-  const int itask = globalTree_.closestPoint(obsloc).payload();
-  ASSERT(itask >= 0 && itask < comm_.size());
-  return itask;
 }
 
 // -----------------------------------------------------------------------------

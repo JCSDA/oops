@@ -67,9 +67,7 @@ class GeometryCoupled : public util::Printable {
   const int & localRank() const {return myrank_;}
   const bool & isParallel() const {return parallel_;}
 
-  void latlon(std::vector<double> &, std::vector<double> &, const bool) const {
-    throw eckit::NotImplemented("GeometryCoupled::latlon", Here());
-  }
+  void latlon(std::vector<double> &, std::vector<double> &, const bool) const {}
 
  private:
   void print(std::ostream & os) const override;

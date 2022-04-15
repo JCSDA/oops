@@ -192,11 +192,8 @@ oops/generic/IdentityModel.h
 oops/generic/instantiateLinearModelFactory.h
 oops/generic/instantiateModelFactory.h
 oops/generic/instantiateObsErrorFactory.h
-oops/generic/InterpolatorUnstructured.h
-oops/generic/InterpolatorUnstructured.cc
 oops/generic/LinearModelBase.h
 oops/generic/LocalizationBase.h
-oops/generic/LocalUnstructuredInterpolator.h
 oops/generic/ModelBase.h
 oops/generic/ObsErrorDiag.h
 oops/generic/ObsErrorDiag.cc
@@ -207,6 +204,7 @@ oops/generic/PseudoModel.h
 oops/generic/PseudoModelState4D.h
 oops/generic/soar.h
 oops/generic/soar.cc
+oops/generic/UnstructuredInterpolator.h
 oops/generic/VerticalLocEV.h
 
 oops/interface/AnalyticInitBase.h
