@@ -246,12 +246,12 @@ double StateCoupled<MODEL1, MODEL2>::norm() const {
   if (parallel_) {
     if (xx1_) zz = xx1_->norm();
     if (xx2_) zz = xx2_->norm();
-    geom_->getComm().allReduceInPlace(zz, eckit::mpi::Operation::SUM);
+    geom_->getCommPairRanks().allReduceInPlace(zz, eckit::mpi::Operation::SUM);
   } else {
     zz = xx1_->norm() + xx2_->norm();
   }
-  return zz;
   Log::trace() << "StateCoupled::norm done" << std::endl;
+  return zz;
 }
 
 // -----------------------------------------------------------------------------
@@ -319,7 +319,8 @@ void StateCoupled<MODEL1, MODEL2>::deserialize(const std::vector<double> & buf, 
 template<typename MODEL1, typename MODEL2>
 void StateCoupled<MODEL1, MODEL2>::print(std::ostream & os) const {
   Log::trace() << "StateCoupled::print starting" << std::endl;
-  if (parallel_ && geom_->localRank() == 0) {
+
+  if (parallel_) {
     std::stringstream ss;
     if (xx1_) {
       ss << std::endl << "StateCoupled: " << MODEL1::name() << std::endl;
@@ -329,15 +330,14 @@ void StateCoupled<MODEL1, MODEL2>::print(std::ostream & os) const {
       ss << std::endl << "StateCoupled: " << MODEL2::name() << std::endl;
       ss << std::setprecision(os.precision()) << *xx2_ << std::endl;
     }
-    util::gatherPrint(os, ss.str(), geom_->getComm());
-  }
-
-  if (!parallel_) {
+    util::gatherPrint(os, ss.str(), geom_->getCommPairRanks());
+  } else {
     os << std::endl << "StateCoupled: " << MODEL1::name() << std::endl;
     os << *xx1_ << std::endl;
     os << std::endl << "StateCoupled: " << MODEL2::name() << std::endl;
     os << *xx2_;
   }
+
   Log::trace() << "StateCoupled::print done" << std::endl;
 }
 // -----------------------------------------------------------------------------

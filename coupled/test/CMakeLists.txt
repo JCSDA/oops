@@ -1,8 +1,9 @@
 list( APPEND coupled_testinput
   testinput/coupledgeometry.yaml
   testinput/coupledgeometryparallel.yaml
-  testinput/coupledmodelauxcontrol.yaml
   testinput/coupledmodel.yaml
+  testinput/coupledmodelauxcontrol.yaml
+  testinput/coupledmodelparallel.yaml
   testinput/coupledstate.yaml
   testinput/coupledstateparallel.yaml
   testinput/forecast_qg_l95.yaml
@@ -10,6 +11,7 @@ list( APPEND coupled_testinput
 
 list( APPEND coupled_testref
   testref/coupledgeometry.test
+  testref/coupledmodel.test
   testref/coupledstate.test
   testref/forecast_qg_l95.test
 )
@@ -76,6 +78,14 @@ ecbuild_add_test( TARGET  test_coupled_state_qg_l95_parallel
 ecbuild_add_test( TARGET  test_coupled_model_qg_l95
                   SOURCES executables/TestCoupledModel.cc
                   ARGS    "testinput/coupledmodel.yaml"
+                  LIBS    qg lorenz95
+                  TEST_DEPENDS test_qg_truth test_l95_3dvar)
+
+# Test CoupledModel class
+ecbuild_add_test( TARGET  test_coupled_model_qg_l95_parallel
+                  SOURCES executables/TestCoupledModel.cc
+                  ARGS    "testinput/coupledmodelparallel.yaml"
+                  MPI     2
                   LIBS    qg lorenz95
                   TEST_DEPENDS test_qg_truth test_l95_3dvar)
 

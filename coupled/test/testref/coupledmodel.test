@@ -1,0 +1,5 @@
+Test     : Testing Model: 
+Test     : ModelCoupled: QG
+Test     : ModelQG::print not implemented
+Test     : ModelCoupled: Lorenz 95
+Test     : ModelL95: resol = 40, f = 8, tstep = PT1H

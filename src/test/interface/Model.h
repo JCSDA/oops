@@ -94,7 +94,6 @@ template <typename MODEL> class ModelFixture : private boost::noncopyable {
 /// \brief tests constructor, timeResolution() method and print method
 template <typename MODEL> void testModelConstructor() {
   typedef ModelFixture<MODEL>   Test_;
-
   const util::Duration zero(0);
   EXPECT(Test_::model().timeResolution() > zero);
   oops::Log::test() << "Testing Model: " << Test_::model() << std::endl;
