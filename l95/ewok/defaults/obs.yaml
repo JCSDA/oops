@@ -3,14 +3,10 @@
 # This software is licensed under the terms of the Apache Licence Version 2.0
 # which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 
-obs operator: 
-  obs type: Obs
+obs operator: {}
 obs space:
-  source: truth
-  filetype: obt
-  obsdatain:  '$(run_dir)/input.obs.{{window_begin}}.obt'
-  obsdataout: '$(run_dir)/$(experiment).obs.{{window_begin}}.obt'
+  _obs name: L95
+  _source: truth
+  _file_format: obt
 obs error:
   covariance model: diagonal
-r2d2_type: l95_obs
-

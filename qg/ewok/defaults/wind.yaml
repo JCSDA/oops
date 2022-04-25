@@ -6,12 +6,8 @@
 obs operator:
   obs type: Wind
 obs space:
-  source: truth
-  obsdatain: 
-    obsfile: $(current_dir)/obs.wind.{{window_begin}}.nc
-  obsdataout: 
-    obsfile: $(current_dir)/obs.wind.$(experiment).{{window_begin}}.nc
   obs type: Wind
+  _source: truth
+  _file_format: nc
 obs error:
   covariance model: diagonal
-r2d2_type: qg_wind
