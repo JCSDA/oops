@@ -29,12 +29,16 @@ namespace lorenz95 {
 
 class InterpolatorL95 : public util::Printable {
  public:
-  InterpolatorL95(const eckit::Configuration &, const Resolution &, const std::vector<double> &);
+  InterpolatorL95(const eckit::Configuration &, const Resolution &,
+                  const std::vector<double> &, const std::vector<double> &);
   ~InterpolatorL95();
 
-  void apply(const oops::Variables &, const StateL95 &, std::vector<double> &) const;
-  void apply(const oops::Variables &, const IncrementL95 &, std::vector<double> &) const;
-  void applyAD(const oops::Variables &, IncrementL95 &, const std::vector<double> &) const;
+  void apply(const oops::Variables &, const StateL95 &, const std::vector<bool> &,
+             std::vector<double> &) const;
+  void apply(const oops::Variables &, const IncrementL95 &, const std::vector<bool> &,
+             std::vector<double> &) const;
+  void applyAD(const oops::Variables &, IncrementL95 &, const std::vector<bool> &,
+               const std::vector<double> &) const;
 
  private:
   void print(std::ostream &) const;

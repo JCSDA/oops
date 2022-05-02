@@ -192,11 +192,6 @@ void Geometry<MODEL>::setGlobalTree() {
   std::vector<double> lons;
   this->latlon(lats, lons, false);
   const size_t sizel = lats.size();
-
-  for (size_t jj = 0; jj < sizel; ++jj) {
-    if (lons[jj] < 0.0) lons[jj] += 360.0;
-  }
-
   std::vector<double> latlon(2*sizel);
   for (size_t jj = 0; jj < sizel; ++jj) {
     latlon[2*jj]   = lats[jj];

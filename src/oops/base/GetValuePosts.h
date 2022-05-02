@@ -43,6 +43,7 @@ class GetValuePosts : public PostBase<State<MODEL>> {
   void doInitialize(const State_ &, const util::DateTime &, const util::Duration &) override;
 /// \brief called at each model step: fill in GeoVaLs for the current time slot
   void doProcessing(const State_ &) override;
+  void doFinalize(const State_ &) override;
 
 // Data
   std::vector<GetValuePtr_> getvals_;
@@ -93,6 +94,15 @@ void GetValuePosts<MODEL, OBS>::doProcessing(const State_ & xx) {
   for (GetValuePtr_ getval : getvals_) getval->process(zz);
 
   Log::trace() << "GetValuePosts::doProcessing done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename OBS>
+void GetValuePosts<MODEL, OBS>::doFinalize(const State_ &) {
+  Log::trace() << "GetValuePosts::doFinalize start" << std::endl;
+  for (GetValuePtr_ getval : getvals_) getval->finalize();
+  Log::trace() << "GetValuePosts::doFinalize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

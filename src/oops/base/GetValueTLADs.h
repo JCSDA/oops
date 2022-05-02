@@ -45,15 +45,15 @@ class GetValueTLADs : public PostBaseTLAD<MODEL> {
 // Methods
   void doInitializeTraj(const State_ &, const util::DateTime &, const util::Duration &) override;
   void doProcessingTraj(const State_ &) override;
-  void doFinalizeTraj(const State_ &) override {}
+  void doFinalizeTraj(const State_ &) override;
 
   void doInitializeTL(const Increment_ &, const util::DateTime &, const util::Duration &) override;
   void doProcessingTL(const Increment_ &) override;
-  void doFinalizeTL(const Increment_ &) override {}
+  void doFinalizeTL(const Increment_ &) override;
 
   void doFirstAD(Increment_ &, const util::DateTime &, const util::Duration &) override;
   void doProcessingAD(Increment_ &) override;
-  void doLastAD(Increment_ &) override {}
+  void doLastAD(Increment_ &) override;
 
 // Data
   Variables geovars_;
@@ -83,7 +83,7 @@ template <typename MODEL, typename OBS>
 void GetValueTLADs<MODEL, OBS>::doInitializeTraj(const State_ &, const util::DateTime &,
                                                  const util::Duration & tstep) {
   Log::trace() << "GetValueTLADs::doInitializeTraj start" << std::endl;
-  for (GetValPtr_ getval : getvals_) getval->initializeTraj(tstep);
+  for (GetValPtr_ getval : getvals_) getval->initialize(tstep);
   Log::trace() << "GetValueTLADs::doInitializeTraj done" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -99,13 +99,20 @@ void GetValueTLADs<MODEL, OBS>::doProcessingTraj(const State_ & xx) {
   State_ zz(xx);
   chvar.changeVar(zz, geovars_);
 
-  for (GetValPtr_ getval : getvals_) getval->processTraj(zz);
+  for (GetValPtr_ getval : getvals_) getval->process(zz);
 
   CVarPtr_ cvtlad(new LinearVariableChange<MODEL>(xx.geometry(), chvarconf));
   cvtlad->setTrajectory(xx);
   chvartlad_[xx.validTime()] = std::move(cvtlad);
 
   Log::trace() << "GetValueTLADs::doProcessingTraj done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template <typename MODEL, typename OBS>
+void GetValueTLADs<MODEL, OBS>::doFinalizeTraj(const State_ &) {
+  Log::trace() << "GetValueTLADs::doFinalizeTraj start" << std::endl;
+  for (GetValPtr_ getval : getvals_) getval->finalize();
+  Log::trace() << "GetValueTLADs::doFinalizeTraj done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
@@ -130,10 +137,17 @@ void GetValueTLADs<MODEL, OBS>::doProcessingTL(const Increment_ & dx) {
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
+void GetValueTLADs<MODEL, OBS>::doFinalizeTL(const Increment_ &) {
+  Log::trace() << "GetValueTLADs::doFinalizeTL start" << std::endl;
+  for (GetValPtr_ getval : getvals_) getval->finalizeTL();
+  Log::trace() << "GetValueTLADs::doFinalizeTL done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template <typename MODEL, typename OBS>
 void GetValueTLADs<MODEL, OBS>::doFirstAD(Increment_ &, const util::DateTime &,
                                           const util::Duration & tstep) {
   Log::trace() << "GetValueTLADs::doFirstAD start" << std::endl;
-  for (GetValPtr_ getval : getvals_) getval->initializeAD(tstep);
+  for (GetValPtr_ getval : getvals_) getval->finalizeAD(tstep);
   Log::trace() << "GetValueTLADs::doFirstAD done" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -156,6 +170,13 @@ void GetValueTLADs<MODEL, OBS>::doProcessingAD(Increment_ & dx) {
   dx += dz;
 
   Log::trace() << "GetValueTLADs::doProcessingAD done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template <typename MODEL, typename OBS>
+void GetValueTLADs<MODEL, OBS>::doLastAD(Increment_ &) {
+  Log::trace() << "GetValueTLADs::doLastAD start" << std::endl;
+  for (GetValPtr_ getval : getvals_) getval->initializeAD();
+  Log::trace() << "GetValueTLADs::doLastAD done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 

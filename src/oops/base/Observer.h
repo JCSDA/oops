@@ -138,7 +138,7 @@ Observer<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrl_ & bia
                                  parameters_.filtersParameters,
                                  qcflags_, *obserr_, iterfilt));
   filters_->preProcess();
-  locations_.reset(new Locations_(obsop_->locations()));
+
 // Set up variables that will be requested from the model
   Variables geovars;
   geovars += obsop_->requiredVars();
@@ -146,8 +146,9 @@ Observer<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrl_ & bia
   geovars += filters_->requiredVars();
 
 // Set up GetValues
+  locations_.reset(new Locations_(obsop_->locations()));
   getvals_.reset(new GetValues_(parameters_.getValues, geom, obspace_.windowStart(),
-                                 obspace_.windowEnd(), *locations_, geovars));
+                                obspace_.windowEnd(), *locations_, geovars));
 
   initialized_ = true;
   Log::trace() << "Observer<MODEL, OBS>::initialize done" << std::endl;

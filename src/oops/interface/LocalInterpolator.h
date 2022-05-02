@@ -36,12 +36,16 @@ class LocalInterpolator : public util::Printable,
  public:
   static const std::string classname() {return "oops::LocalInterpolator";}
 
-  LocalInterpolator(const eckit::Configuration &, const Geometry_ &, const std::vector<double> &);
+  LocalInterpolator(const eckit::Configuration &, const Geometry_ &,
+                    const std::vector<double> &, const std::vector<double> &);
   ~LocalInterpolator();
 
-  void apply(const Variables &, const State_ &, std::vector<double> &) const;
-  void apply(const Variables &, const Increment_ &, std::vector<double> &) const;
-  void applyAD(const Variables &, Increment_ &, const std::vector<double> &) const;
+  void apply(const Variables &, const State_ &,
+             const std::vector<bool> &, std::vector<double> &) const;
+  void apply(const Variables &, const Increment_ &,
+             const std::vector<bool> &, std::vector<double> &) const;
+  void applyAD(const Variables &, Increment_ &,
+               const std::vector<bool> &, const std::vector<double> &) const;
 
  private:
   std::unique_ptr<LocalInterpolator_> interpolator_;
@@ -53,12 +57,13 @@ class LocalInterpolator : public util::Printable,
 template<typename MODEL>
 LocalInterpolator<MODEL>::LocalInterpolator(const eckit::Configuration & conf,
                                             const Geometry_ & resol,
-                                            const std::vector<double> & latlon)
+                                            const std::vector<double> & lats,
+                                            const std::vector<double> & lons)
   : interpolator_()
 {
   Log::trace() << "LocalInterpolator<MODEL>::LocalInterpolator starting" << std::endl;
   util::Timer timer(classname(), "LocalInterpolator");
-  interpolator_.reset(new LocalInterpolator_(conf, resol.geometry(), latlon));
+  interpolator_.reset(new LocalInterpolator_(conf, resol.geometry(), lats, lons));
   Log::trace() << "LocalInterpolator<MODEL>::LocalInterpolator done" << std::endl;
 }
 
@@ -76,10 +81,11 @@ LocalInterpolator<MODEL>::~LocalInterpolator() {
 
 template<typename MODEL>
 void LocalInterpolator<MODEL>::apply(const Variables & vars, const State_ & xx,
+                                     const std::vector<bool> & mask,
                                      std::vector<double> & vect) const {
   Log::trace() << "LocalInterpolator<MODEL>::apply starting" << std::endl;
   util::Timer timer(classname(), "apply");
-  interpolator_->apply(vars, xx.state(), vect);
+  interpolator_->apply(vars, xx.state(), mask, vect);
   Log::trace() << "LocalInterpolator<MODEL>::apply done" << std::endl;
 }
 
@@ -87,10 +93,11 @@ void LocalInterpolator<MODEL>::apply(const Variables & vars, const State_ & xx,
 
 template<typename MODEL>
 void LocalInterpolator<MODEL>::apply(const Variables & vars, const Increment_ & dx,
+                                     const std::vector<bool> & mask,
                                      std::vector<double> & vect) const {
   Log::trace() << "LocalInterpolator<MODEL>::applyTL starting" << std::endl;
   util::Timer timer(classname(), "applyTL");
-  interpolator_->apply(vars, dx.increment(), vect);
+  interpolator_->apply(vars, dx.increment(), mask, vect);
   Log::trace() << "LocalInterpolator<MODEL>::applyTL done" << std::endl;
 }
 
@@ -98,10 +105,11 @@ void LocalInterpolator<MODEL>::apply(const Variables & vars, const Increment_ & 
 
 template<typename MODEL>
 void LocalInterpolator<MODEL>::applyAD(const Variables & vars, Increment_ & dx,
+                                       const std::vector<bool> & mask,
                                        const std::vector<double> & vect) const {
   Log::trace() << "LocalInterpolator<MODEL>::applyAD starting" << std::endl;
   util::Timer timer(classname(), "applyAD");
-  interpolator_->applyAD(vars, dx.increment(), vect);
+  interpolator_->applyAD(vars, dx.increment(), mask, vect);
   Log::trace() << "LocalInterpolator<MODEL>::applyAD done" << std::endl;
 }
 

@@ -21,6 +21,7 @@ namespace oops {
 }
 
 namespace qg {
+  class FieldsQG;
   class GeometryQG;
   class IncrementQG;
   class StateQG;
@@ -29,14 +30,20 @@ namespace qg {
 
 class InterpolatorQG : public util::Printable {
  public:
-  InterpolatorQG(const eckit::Configuration &, const GeometryQG &, const std::vector<double> &);
+  InterpolatorQG(const eckit::Configuration &, const GeometryQG &,
+                 const std::vector<double> &, const std::vector<double> &);
   ~InterpolatorQG();
 
-  void apply(const oops::Variables &, const StateQG &, std::vector<double> &) const;
-  void apply(const oops::Variables &, const IncrementQG &, std::vector<double> &) const;
-  void applyAD(const oops::Variables &, IncrementQG &, const std::vector<double> &) const;
+  void apply(const oops::Variables &, const StateQG &, const std::vector<bool> &,
+             std::vector<double> &) const;
+  void apply(const oops::Variables &, const IncrementQG &, const std::vector<bool> &,
+             std::vector<double> &) const;
+  void applyAD(const oops::Variables &, IncrementQG &, const std::vector<bool> &,
+               const std::vector<double> &) const;
 
  private:
+  void apply(const oops::Variables &, const FieldsQG &, const std::vector<bool> &,
+             std::vector<double> &) const;
   void print(std::ostream &) const;
 
   const size_t nlevs_;

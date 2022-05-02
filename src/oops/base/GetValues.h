@@ -26,6 +26,7 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/missingValues.h"
 #include "oops/util/Timer.h"
 
 namespace oops {
@@ -97,31 +98,23 @@ class GetValues {
             const util::DateTime &, const util::DateTime &,
             const Locations_ &, const Variables &, const Variables & varl = Variables());
 
-// *********************************************************************************
-// *** TEMPORARY INTERFACES: Nonlinear, trajectory and TL are the same code with ***
-// *** TEMPORARY INTERFACES: different variables, will be collapsed together     ***
-// *********************************************************************************
-
 /// Nonlinear
   void initialize(const util::Duration &);
   void process(const State_ &);
+  void finalize();
   std::unique_ptr<GeoVaLs_> releaseGeoVaLs();
-
-/// Linearization trajectory
-  void initializeTraj(const util::Duration &);
-  void processTraj(const State_ &);
-  std::unique_ptr<GeoVaLs_> finalizeTraj();
 
 /// TL
   void initializeTL(const util::Duration &);
   void processTL(const Increment_ &);
-  std::unique_ptr<GeoVaLs_> finalizeTL();
+  void finalizeTL();
+  std::unique_ptr<GeoVaLs_> releaseGeoVaLsTL();
 
 /// AD
-  void setAD(std::unique_ptr<GeoVaLs_> &);
-  void initializeAD(const util::Duration &);
+  void releaseGeoVaLsAD(std::unique_ptr<GeoVaLs_> &);
+  void initializeAD();
   void processAD(Increment_ &);
-  void finalizeAD();
+  void finalizeAD(const util::Duration &);
 
 /// Variables that will be required from the State and Increment
   const Variables & linearVariables() const {return linvars_;}
@@ -143,6 +136,12 @@ class GetValues {
   std::unique_ptr<GeoVaLs_> gvalstl_;        /// GeoVaLs for TL
   std::unique_ptr<const GeoVaLs_> gvalsad_;  /// Input GeoVaLs for adjoint forcing
   eckit::LocalConfiguration interpConf_;
+  const eckit::mpi::Comm & comm_;
+  const size_t ntasks_;
+  std::vector<std::unique_ptr<LocalInterp_>> interp_;
+  std::vector<std::vector<size_t>> myobs_index_by_task_;
+  std::vector<std::vector<util::DateTime>> obs_times_by_task_;
+  std::vector<std::vector<double>> locinterp_;
 };
 
 // -----------------------------------------------------------------------------
@@ -155,8 +154,48 @@ GetValues<MODEL, OBS>::GetValues(const eckit::Configuration & conf, const Geomet
   : winbgn_(bgn), winend_(end), hslot_(), locations_(locs),
     geovars_(vars), varsizes_(geom.variableSizes(geovars_)), geovals_(),
     linvars_(varl), linsizes_(geom.variableSizes(linvars_)), gvalstl_(), gvalsad_(),
-    interpConf_(conf)
+    interpConf_(conf), comm_(geom.getComm()), ntasks_(comm_.size()), interp_(ntasks_),
+    myobs_index_by_task_(ntasks_), obs_times_by_task_(ntasks_), locinterp_()
 {
+  Log::trace() << "GetValues::GetValues start" << std::endl;
+  util::Timer timer("oops::GetValues", "GetValues");
+
+// Local obs coordinates
+  std::vector<double> obslats = locations_.latitudes();
+  std::vector<double> obslons = locations_.longitudes();
+  std::vector<util::DateTime> obstimes = locations_.times();
+
+// Exchange obs locations
+  std::vector<std::vector<double>> myobs_locs_by_task(ntasks_);
+  for (size_t jobs = 0; jobs < obstimes.size(); ++jobs) {
+    const size_t itask = geom.closestTask(obslats[jobs], obslons[jobs]);
+    myobs_index_by_task_[itask].push_back(jobs);
+    myobs_locs_by_task[itask].push_back(obslats[jobs]);
+    myobs_locs_by_task[itask].push_back(obslons[jobs]);
+    obstimes[jobs].serialize(myobs_locs_by_task[itask]);
+  }
+
+  std::vector<std::vector<double>> mylocs_by_task(ntasks_);
+  comm_.allToAll(myobs_locs_by_task, mylocs_by_task);
+
+// Setup interpolators
+  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
+    // The 4 below is because each loc holds lat + lon + 2 datetime ints
+    const size_t nobs = mylocs_by_task[jtask].size() / 4;
+    std::vector<double> lats(nobs);
+    std::vector<double> lons(nobs);
+    obs_times_by_task_[jtask].resize(nobs);
+    size_t ii = 0;
+    for (size_t jobs = 0; jobs < nobs; ++jobs) {
+      lats[jobs] = mylocs_by_task[jtask][ii];
+      lons[jobs] = mylocs_by_task[jtask][ii + 1];
+      ii += 2;
+      obs_times_by_task_[jtask][jobs].deserialize(mylocs_by_task[jtask], ii);
+    }
+    ASSERT(mylocs_by_task[jtask].size() == ii);
+    interp_[jtask] = std::make_unique<LocalInterp_>(interpConf_, geom, lats, lons);
+  }
+
   Log::trace() << "GetValues::GetValues done" << std::endl;
 }
 
@@ -167,8 +206,16 @@ GetValues<MODEL, OBS>::GetValues(const eckit::Configuration & conf, const Geomet
 template <typename MODEL, typename OBS>
 void GetValues<MODEL, OBS>::initialize(const util::Duration & tstep) {
   Log::trace() << "GetValues::initialize start" << std::endl;
-  hslot_ = tstep/2;
-  geovals_.reset(new GeoVaLs_(locations_, geovars_, varsizes_));
+  double missing = 0.0;
+  missing = util::missingValue(missing);
+  size_t nvars = 0;
+  for (size_t jj = 0; jj < varsizes_.size(); ++jj) nvars += varsizes_[jj];
+  ASSERT(locinterp_.empty());
+  locinterp_.resize(ntasks_);
+  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
+    locinterp_[jtask].resize(obs_times_by_task_[jtask].size() * nvars, missing);
+  }
+  hslot_ = tstep / 2;
   Log::trace() << "GetValues::initialize done" << std::endl;
 }
 
@@ -179,48 +226,18 @@ void GetValues<MODEL, OBS>::process(const State_ & xx) {
   Log::trace() << "GetValues::process start" << std::endl;
   util::Timer timer("oops::GetValues", "process");
 
-  ASSERT(geovals_);
-  size_t nvars = 0;
-  for (size_t jj = 0; jj < varsizes_.size(); ++jj) nvars += varsizes_[jj];
   util::DateTime t1 = std::max(xx.validTime()-hslot_, winbgn_);
   util::DateTime t2 = std::min(xx.validTime()+hslot_, winend_);
-  const eckit::mpi::Comm & comm = xx.geometry().getComm();
-  const size_t ntasks = comm.size();
 
-// Get local obs coordinates
-  std::vector<double> obslats;
-  std::vector<double> obslons;
-  std::vector<size_t> obsindx;
-  locations_.localCoords(t1, t2, obslats, obslons, obsindx);
+  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
+//  Mask obs outside time slot
+    std::vector<bool> mask(obs_times_by_task_[jtask].size());
+    for (size_t jobs = 0; jobs < obs_times_by_task_[jtask].size(); ++jobs) {
+      mask[jobs] = obs_times_by_task_[jtask][jobs] > t1 && obs_times_by_task_[jtask][jobs] <= t2;
+    }
 
-// Exchange obs locations
-  std::vector<std::vector<size_t>> myobs_index_by_task(ntasks);
-  std::vector<std::vector<double>> myobs_latlon_by_task(ntasks);
-  for (size_t jobs = 0; jobs < obsindx.size(); ++jobs) {
-    const size_t itask = xx.geometry().closestTask(obslats[jobs], obslons[jobs]);
-    myobs_index_by_task[itask].push_back(obsindx[jobs]);
-    myobs_latlon_by_task[itask].push_back(obslats[jobs]);
-    myobs_latlon_by_task[itask].push_back(obslons[jobs]);
-  }
-  std::vector<std::vector<double>> mylocs_latlon_by_task(ntasks);
-  comm.allToAll(myobs_latlon_by_task, mylocs_latlon_by_task);
-
-// Interpolate
-  std::vector<std::vector<double>> locinterp(ntasks);
-  for (size_t jtask = 0; jtask < ntasks; ++jtask) {
-    LocalInterp_ interp(interpConf_, xx.geometry(), mylocs_latlon_by_task[jtask]);
-    interp.apply(geovars_, xx, locinterp[jtask]);
-  }
-
-// Send/receive interpolated values
-  std::vector<std::vector<double>> recvinterp(ntasks);
-  comm.allToAll(locinterp, recvinterp);
-
-// Store output in GeoVaLs
-  for (size_t jtask = 0; jtask < ntasks; ++jtask) {
-    const size_t nvals = myobs_index_by_task[jtask].size() * nvars;
-    ASSERT(recvinterp[jtask].size() == nvals);
-    geovals_->fill(myobs_index_by_task[jtask], recvinterp[jtask]);
+//  Local interpolation
+    interp_[jtask]->apply(geovars_, xx, mask, locinterp_[jtask]);
   }
 
   Log::trace() << "GetValues::process done" << std::endl;
@@ -229,85 +246,36 @@ void GetValues<MODEL, OBS>::process(const State_ & xx) {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-std::unique_ptr<GeoVaLs<OBS>> GetValues<MODEL, OBS>::releaseGeoVaLs() {
-  Log::trace() << "GetValues::releaseGeoVaLs" << std::endl;
-// Release ownership of GeoVaLs
-  return std::move(geovals_);
-}
-
-// -----------------------------------------------------------------------------
-//  Trajectory methods
-// -----------------------------------------------------------------------------
-
-template <typename MODEL, typename OBS>
-void GetValues<MODEL, OBS>::initializeTraj(const util::Duration & tstep) {
-  Log::trace() << "GetValues::initializeTraj start" << std::endl;
-  hslot_ = tstep/2;
-  geovals_.reset(new GeoVaLs_(locations_, geovars_, varsizes_));
-  Log::trace() << "GetValues::initializeTraj done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL, typename OBS>
-void GetValues<MODEL, OBS>::processTraj(const State_ & xx) {
-  Log::trace() << "GetValues::processTraj start" << std::endl;
-  util::Timer timer("oops::GetValues", "processTraj");
-
-  ASSERT(geovals_);
-  size_t nvars = 0;
-  for (size_t jj = 0; jj < varsizes_.size(); ++jj) nvars += varsizes_[jj];
-  util::DateTime t1 = std::max(xx.validTime()-hslot_, winbgn_);
-  util::DateTime t2 = std::min(xx.validTime()+hslot_, winend_);
-  const eckit::mpi::Comm & comm = xx.geometry().getComm();
-  const size_t ntasks = comm.size();
-
-// Get local obs coordinates
-  std::vector<double> obslats;
-  std::vector<double> obslons;
-  std::vector<size_t> obsindx;
-  locations_.localCoords(t1, t2, obslats, obslons, obsindx);
-
-// Exchange obs locations
-  std::vector<std::vector<size_t>> myobs_index_by_task(ntasks);
-  std::vector<std::vector<double>> myobs_latlon_by_task(ntasks);
-  for (size_t jobs = 0; jobs < obsindx.size(); ++jobs) {
-    const size_t itask = xx.geometry().closestTask(obslats[jobs], obslons[jobs]);
-    myobs_index_by_task[itask].push_back(obsindx[jobs]);
-    myobs_latlon_by_task[itask].push_back(obslats[jobs]);
-    myobs_latlon_by_task[itask].push_back(obslons[jobs]);
-  }
-  std::vector<std::vector<double>> mylocs_latlon_by_task(ntasks);
-  comm.allToAll(myobs_latlon_by_task, mylocs_latlon_by_task);
-
-// Interpolate
-  std::vector<std::vector<double>> locinterp(ntasks);
-  for (size_t jtask = 0; jtask < ntasks; ++jtask) {
-    LocalInterp_ interp(interpConf_, xx.geometry(), mylocs_latlon_by_task[jtask]);
-    interp.apply(geovars_, xx, locinterp[jtask]);
-  }
+void GetValues<MODEL, OBS>::finalize() {
+  Log::trace() << "GetValues::finalize start" << std::endl;
+  util::Timer timer("oops::GetValues", "finalize");
 
 // Send/receive interpolated values
-  std::vector<std::vector<double>> recvinterp(ntasks);
-  comm.allToAll(locinterp, recvinterp);
+  std::vector<std::vector<double>> recvinterp(ntasks_);
+  comm_.allToAll(locinterp_, recvinterp);
+  locinterp_.clear();
 
 // Store output in GeoVaLs
-  for (size_t jtask = 0; jtask < ntasks; ++jtask) {
-    const size_t nvals = myobs_index_by_task[jtask].size() * nvars;
+  size_t nvars = 0;
+  for (size_t jj = 0; jj < varsizes_.size(); ++jj) nvars += varsizes_[jj];
+  ASSERT(!geovals_);
+  geovals_.reset(new GeoVaLs_(locations_, geovars_, varsizes_));
+  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
+    const size_t nvals = myobs_index_by_task_[jtask].size() * nvars;
     ASSERT(recvinterp[jtask].size() == nvals);
-    geovals_->fill(myobs_index_by_task[jtask], recvinterp[jtask]);
+    geovals_->fill(myobs_index_by_task_[jtask], recvinterp[jtask]);
   }
 
-  Log::trace() << "GetValues::processTraj done" << std::endl;
+  Log::trace() << "GetValues::finalize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-std::unique_ptr<GeoVaLs<OBS>> GetValues<MODEL, OBS>::finalizeTraj() {
-  Log::trace() << "GetValues::finalizeTraj" << std::endl;
+std::unique_ptr<GeoVaLs<OBS>> GetValues<MODEL, OBS>::releaseGeoVaLs() {
+  Log::trace() << "GetValues::releaseGeoVaLs" << std::endl;
   ASSERT(geovals_);
-  // Release ownership of GeoVaLs
+// Release ownership of GeoVaLs
   return std::move(geovals_);
 }
 
@@ -318,8 +286,16 @@ std::unique_ptr<GeoVaLs<OBS>> GetValues<MODEL, OBS>::finalizeTraj() {
 template <typename MODEL, typename OBS>
 void GetValues<MODEL, OBS>::initializeTL(const util::Duration & tstep) {
   Log::trace() << "GetValues::initializeTL start" << std::endl;
+  double missing = 0.0;
+  missing = util::missingValue(missing);
+  size_t nvars = 0;
+  for (size_t jj = 0; jj < linsizes_.size(); ++jj) nvars += linsizes_[jj];
+  ASSERT(locinterp_.empty());
+  locinterp_.resize(ntasks_);
+  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
+    locinterp_[jtask].resize(obs_times_by_task_[jtask].size() * nvars, missing);
+  }
   hslot_ = tstep/2;
-  gvalstl_.reset(new GeoVaLs_(locations_, linvars_, linsizes_));
   Log::trace() << "GetValues::initializeTL done" << std::endl;
 }
 
@@ -330,48 +306,18 @@ void GetValues<MODEL, OBS>::processTL(const Increment_ & dx) {
   Log::trace() << "GetValues::processTL start" << std::endl;
   util::Timer timer("oops::GetValues", "processTL");
 
-  ASSERT(gvalstl_);
-  size_t nvars = 0;
-  for (size_t jj = 0; jj < linsizes_.size(); ++jj) nvars += linsizes_[jj];
   util::DateTime t1 = std::max(dx.validTime()-hslot_, winbgn_);
   util::DateTime t2 = std::min(dx.validTime()+hslot_, winend_);
-  const eckit::mpi::Comm & comm = dx.geometry().getComm();
-  const size_t ntasks = comm.size();
 
-// Get local obs coordinates
-  std::vector<double> obslats;
-  std::vector<double> obslons;
-  std::vector<size_t> obsindx;
-  locations_.localCoords(t1, t2, obslats, obslons, obsindx);
+  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
+//  Mask obs outside time slot
+    std::vector<bool> mask(obs_times_by_task_[jtask].size());
+    for (size_t jobs = 0; jobs < obs_times_by_task_[jtask].size(); ++jobs) {
+      mask[jobs] = obs_times_by_task_[jtask][jobs] > t1 && obs_times_by_task_[jtask][jobs] <= t2;
+    }
 
-// Exchange obs locations
-  std::vector<std::vector<size_t>> myobs_index_by_task(ntasks);
-  std::vector<std::vector<double>> myobs_latlon_by_task(ntasks);
-  for (size_t jobs = 0; jobs < obsindx.size(); ++jobs) {
-    const size_t itask = dx.geometry().closestTask(obslats[jobs], obslons[jobs]);
-    myobs_index_by_task[itask].push_back(obsindx[jobs]);
-    myobs_latlon_by_task[itask].push_back(obslats[jobs]);
-    myobs_latlon_by_task[itask].push_back(obslons[jobs]);
-  }
-  std::vector<std::vector<double>> mylocs_latlon_by_task(ntasks);
-  comm.allToAll(myobs_latlon_by_task, mylocs_latlon_by_task);
-
-// Interpolate
-  std::vector<std::vector<double>> locinterp(ntasks);
-  for (size_t jtask = 0; jtask < ntasks; ++jtask) {
-    LocalInterp_ interp(interpConf_, dx.geometry(), mylocs_latlon_by_task[jtask]);
-    interp.apply(linvars_, dx, locinterp[jtask]);
-  }
-
-// Send/receive interpolated values
-  std::vector<std::vector<double>> recvinterp(ntasks);
-  comm.allToAll(locinterp, recvinterp);
-
-// Store output in GeoVaLs
-  for (size_t jtask = 0; jtask < ntasks; ++jtask) {
-    const size_t nvals = myobs_index_by_task[jtask].size() * nvars;
-    ASSERT(recvinterp[jtask].size() == nvals);
-    gvalstl_->fill(myobs_index_by_task[jtask], recvinterp[jtask]);
+//  Local interpolation
+    interp_[jtask]->apply(linvars_, dx, mask, locinterp_[jtask]);
   }
 
   Log::trace() << "GetValues::processTL done" << std::endl;
@@ -380,7 +326,33 @@ void GetValues<MODEL, OBS>::processTL(const Increment_ & dx) {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-std::unique_ptr<GeoVaLs<OBS>> GetValues<MODEL, OBS>::finalizeTL() {
+void GetValues<MODEL, OBS>::finalizeTL() {
+  Log::trace() << "GetValues::finalizeTL start" << std::endl;
+  util::Timer timer("oops::GetValues", "finalizeTL");
+
+// Send/receive interpolated values
+  std::vector<std::vector<double>> recvinterp(ntasks_);
+  comm_.allToAll(locinterp_, recvinterp);
+  locinterp_.clear();
+
+// Store output in GeoVaLs
+  size_t nvars = 0;
+  for (size_t jj = 0; jj < linsizes_.size(); ++jj) nvars += linsizes_[jj];
+  ASSERT(!gvalstl_);
+  gvalstl_.reset(new GeoVaLs_(locations_, linvars_, linsizes_));
+  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
+    const size_t nvals = myobs_index_by_task_[jtask].size() * nvars;
+    ASSERT(recvinterp[jtask].size() == nvals);
+    gvalstl_->fill(myobs_index_by_task_[jtask], recvinterp[jtask]);
+  }
+
+  Log::trace() << "GetValues::processTL done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename OBS>
+std::unique_ptr<GeoVaLs<OBS>> GetValues<MODEL, OBS>::releaseGeoVaLsTL() {
   Log::trace() << "GetValues::finalizeTL" << std::endl;
   ASSERT(gvalstl_);
   // Release ownership of GeoVaLs
@@ -392,18 +364,10 @@ std::unique_ptr<GeoVaLs<OBS>> GetValues<MODEL, OBS>::finalizeTL() {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-void GetValues<MODEL, OBS>::setAD(std::unique_ptr<GeoVaLs_> & geovals) {
-// Take ownership of GeoVaLs
-  gvalsad_ = std::move(geovals);
-  Log::trace() << "GetValues::setAD" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL, typename OBS>
-void GetValues<MODEL, OBS>::initializeAD(const util::Duration & tstep) {
-  hslot_ = tstep/2;
-  Log::trace() << "GetValues::initializeAD" << std::endl;
+void GetValues<MODEL, OBS>::initializeAD() {
+  Log::trace() << "GetValues::initializeAD start" << std::endl;
+  locinterp_.clear();
+  Log::trace() << "GetValues::initializeAD done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -413,48 +377,18 @@ void GetValues<MODEL, OBS>::processAD(Increment_ & dx) {
   Log::trace() << "GetValues::processAD start" << std::endl;
   util::Timer timer("oops::GetValues", "processAD");
 
-  ASSERT(gvalsad_);
-  size_t nvars = 0;
-  for (size_t jj = 0; jj < linsizes_.size(); ++jj) nvars += linsizes_[jj];
   util::DateTime t1 = std::max(dx.validTime()-hslot_, winbgn_);
   util::DateTime t2 = std::min(dx.validTime()+hslot_, winend_);
-  const eckit::mpi::Comm & comm = dx.geometry().getComm();
-  const size_t ntasks = comm.size();
 
-// Get local obs coordinates
-  std::vector<double> obslats;
-  std::vector<double> obslons;
-  std::vector<size_t> obsindx;
-  locations_.localCoords(t1, t2, obslats, obslons, obsindx);
+  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
+//  Mask obs outside time slot
+    std::vector<bool> mask(obs_times_by_task_[jtask].size());
+    for (size_t jobs = 0; jobs < obs_times_by_task_[jtask].size(); ++jobs) {
+      mask[jobs] = obs_times_by_task_[jtask][jobs] > t1 && obs_times_by_task_[jtask][jobs] <= t2;
+    }
 
-// Exchange obs locations
-  std::vector<std::vector<size_t>> myobs_index_by_task(ntasks);
-  std::vector<std::vector<double>> myobs_latlon_by_task(ntasks);
-  for (size_t jobs = 0; jobs < obsindx.size(); ++jobs) {
-    const size_t itask = dx.geometry().closestTask(obslats[jobs], obslons[jobs]);
-    myobs_index_by_task[itask].push_back(obsindx[jobs]);
-    myobs_latlon_by_task[itask].push_back(obslats[jobs]);
-    myobs_latlon_by_task[itask].push_back(obslons[jobs]);
-  }
-  std::vector<std::vector<double>> mylocs_latlon_by_task(ntasks);
-  comm.allToAll(myobs_latlon_by_task, mylocs_latlon_by_task);
-
-// (Adjoint of) Store output in GeoVaLs
-  std::vector<std::vector<double>> recvinterp(ntasks);
-  for (size_t jtask = 0; jtask < ntasks; ++jtask) {
-    const size_t nvals = myobs_index_by_task[jtask].size() * nvars;
-    recvinterp[jtask].resize(nvals);
-    gvalsad_->fillAD(myobs_index_by_task[jtask], recvinterp[jtask]);
-  }
-
-// (Adjoint of) Send/receive interpolated values
-  std::vector<std::vector<double>> locinterp(ntasks);
-  comm.allToAll(recvinterp, locinterp);
-
-// (Adjoint of) Interpolate
-  for (size_t jtask = 0; jtask < ntasks; ++jtask) {
-    LocalInterp_ interp(interpConf_, dx.geometry(), mylocs_latlon_by_task[jtask]);
-    interp.applyAD(linvars_, dx, locinterp[jtask]);
+//  (Adjoint of) Local interpolation
+    interp_[jtask]->applyAD(linvars_, dx, mask, locinterp_[jtask]);
   }
 
   Log::trace() << "GetValues::processAD done" << std::endl;
@@ -463,9 +397,47 @@ void GetValues<MODEL, OBS>::processAD(Increment_ & dx) {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-void GetValues<MODEL, OBS>::finalizeAD() {
+void GetValues<MODEL, OBS>::finalizeAD(const util::Duration & tstep) {
+  Log::trace() << "GetValues::finalizeAD start" << std::endl;
+  util::Timer timer("oops::GetValues", "finalizeAD");
+
+  double missing = 0.0;
+  missing = util::missingValue(missing);
+  size_t nvars = 0;
+  for (size_t jj = 0; jj < linsizes_.size(); ++jj) nvars += linsizes_[jj];
+  ASSERT(locinterp_.empty());
+  locinterp_.resize(ntasks_);
+  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
+    locinterp_[jtask].resize(obs_times_by_task_[jtask].size() * nvars, missing);
+  }
+  hslot_ = tstep/2;
+
   ASSERT(gvalsad_);
+
+// (Adjoint of) Store output in GeoVaLs
+  std::vector<std::vector<double>> recvinterp(ntasks_);
+  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
+    const size_t nvals = myobs_index_by_task_[jtask].size() * nvars;
+    recvinterp[jtask].resize(nvals);
+    gvalsad_->fillAD(myobs_index_by_task_[jtask], recvinterp[jtask]);
+  }
+
+// (Adjoint of) Send/receive interpolated values
+  comm_.allToAll(recvinterp, locinterp_);
+
   gvalsad_.reset();
+
+  Log::trace() << "GetValues::processAD done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename OBS>
+void GetValues<MODEL, OBS>::releaseGeoVaLsAD(std::unique_ptr<GeoVaLs_> & geovals) {
+// Take ownership of GeoVaLs
+  ASSERT(!gvalsad_);
+  gvalsad_ = std::move(geovals);
+  Log::trace() << "GetValues::releaseGeoVaLsAD" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

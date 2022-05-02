@@ -52,8 +52,9 @@ class Locations : public util::Printable,
   Locations & operator=(const Locations &) = delete;
   Locations & operator=(Locations &&);
 
-  void localCoords(const util::DateTime &, const util::DateTime &,
-                   std::vector<double> &, std::vector<double> &, std::vector<size_t> &) const;
+  const std::vector<double> & latitudes() const;
+  const std::vector<double> & longitudes() const;
+  const std::vector<util::DateTime> & times() const;
 
   /// Interfacing
   const Locations_ & locations() const {return *locs_;}
@@ -112,13 +113,28 @@ Locations<OBS> & Locations<OBS>::operator=(Locations<OBS> && other) {
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-void Locations<OBS>::localCoords(const util::DateTime & t1, const util::DateTime & t2,
-                                 std::vector<double> & lats, std::vector<double> & lons,
-                                 std::vector<size_t> & indx) const {
-  Log::trace() << "Locations<OBS>::localCoords starting" << std::endl;
-  util::Timer timer(classname(), "localCoords");
-  locs_->localCoords(t1, t2, lats, lons, indx);
-  Log::trace() << "Locations<OBS>::localCoords done" << std::endl;
+const std::vector<double> & Locations<OBS>::latitudes() const {
+  Log::trace() << "Locations<OBS>::latitudes starting" << std::endl;
+  util::Timer timer(classname(), "latitudes");
+  return locs_->latitudes();
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+const std::vector<double> & Locations<OBS>::longitudes() const {
+  Log::trace() << "Locations<OBS>::longitudes starting" << std::endl;
+  util::Timer timer(classname(), "longitudes");
+  return locs_->longitudes();
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+const std::vector<util::DateTime> & Locations<OBS>::times() const {
+  Log::trace() << "Locations<OBS>::times starting" << std::endl;
+  util::Timer timer(classname(), "times");
+  return locs_->times();
 }
 
 // -----------------------------------------------------------------------------

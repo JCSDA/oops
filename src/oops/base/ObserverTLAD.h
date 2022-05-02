@@ -58,7 +58,7 @@ class ObserverTLAD {
   void finalizeTL(const ObsAuxIncr_ &, ObsVector_ &);
 
   void initializeAD(const ObsVector_ &, ObsAuxIncr_ &);
-  void finalizeAD();
+  void finalizeAD() {}
 
  private:
   Parameters_                   parameters_;
@@ -127,7 +127,7 @@ void ObserverTLAD<MODEL, OBS>::finalizeTraj() {
   ASSERT(init_);
 
   // GetValues releases GeoVaLs, Observer takes ownership
-  std::unique_ptr<GeoVaLs_> geovals = getvals_->finalizeTraj();
+  std::unique_ptr<GeoVaLs_> geovals = getvals_->releaseGeoVaLs();
 
   /// Set linearization trajectory for H(x)
   hoptlad_.setTrajectory(*geovals, *ybias_);
@@ -141,7 +141,7 @@ void ObserverTLAD<MODEL, OBS>::finalizeTL(const ObsAuxIncr_ & ybiastl, ObsVector
   Log::trace() << "ObserverTLAD::finalizeTL start" << std::endl;
 
   // GetValues releases GeoVaLs, Observer takes ownership
-  std::unique_ptr<GeoVaLs_> geovals = getvals_->finalizeTL();
+  std::unique_ptr<GeoVaLs_> geovals = getvals_->releaseGeoVaLsTL();
 
   // Compute linear H(x)
   hoptlad_.simulateObsTL(*geovals, ydeptl, ybiastl);
@@ -159,15 +159,9 @@ void ObserverTLAD<MODEL, OBS>::initializeAD(const ObsVector_ & ydepad, ObsAuxInc
   hoptlad_.simulateObsAD(*geovals, ydepad, ybiasad);
 
   // GetValues get GeoVaLs and takes ownership
-  getvals_->setAD(geovals);
+  getvals_->releaseGeoVaLsAD(geovals);
 
   Log::trace() << "ObserverTLAD::initializeAD done" << std::endl;
-}
-// -----------------------------------------------------------------------------
-template <typename MODEL, typename OBS>
-void ObserverTLAD<MODEL, OBS>::finalizeAD() {
-  getvals_->finalizeAD();
-  Log::trace() << "ObserverTLAD::finalizeAD done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 

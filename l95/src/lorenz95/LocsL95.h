@@ -40,14 +40,15 @@ class LocsL95 : public util::Printable,
 
   size_t size() const {return locs_.size();}
   const double & operator[](const size_t ii) const {return locs_.at(ii);}
-  const std::vector<util::DateTime> & times() const {return times_;}
 
-  void localCoords(const util::DateTime &, const util::DateTime &,
-                   std::vector<double> &, std::vector<double> &, std::vector<size_t> &) const;
+  const std::vector<double> & latitudes() const {return dummy_;}
+  const std::vector<double> & longitudes() const {return locs_;}
+  const std::vector<util::DateTime> & times() const {return times_;}
 
  private:
   void print(std::ostream & os) const;
   std::vector<double> locs_;
+  std::vector<double> dummy_;  // for interfaces expecting a latitude coordinate
   std::vector<util::DateTime> times_;
 };
 
