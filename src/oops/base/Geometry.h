@@ -25,12 +25,25 @@
 #include "oops/mpi/mpi.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Timer.h"
+#include "oops/util/TypeTraits.h"
 
 namespace eckit {
   class Configuration;
 }
 
 namespace oops {
+
+/// \brief Checks whether Geometry has method closestTask. Default: no.
+template<class, class = void>
+struct HasClosestTask
+  : std::false_type {};
+
+/// \brief Checks whether Geometry has method closestTask. Specialization for the case
+///        when it does.
+template<class Geometry>
+struct HasClosestTask<Geometry,
+       util::void_t<decltype(std::declval<Geometry>().closestTask(double(), double()))>>
+  : std::true_type {};
 
 // -----------------------------------------------------------------------------
 /// \brief Geometry class used in oops; subclass of interface class interface::Geometry.
@@ -65,11 +78,30 @@ class Geometry : public interface::Geometry<MODEL> {
   /// Accessor to the MPI communicator for distribution in time
   const eckit::mpi::Comm & timeComm() const {return *timeComm_;}
 
-  int closestTask(const double, const double) const;
-  atlas::util::KDTree<size_t>::ValueList closestPoints(const double, const double, const int) const;
+  /// Returns the MPI task that contains the closest point to the point with
+  /// specified \p lat and \p lon.
+  ///@{
+  /// If MODEL::Geometry has method closestTask implemented, call it.
+  template<class Geom = Geometry_>
+  typename std::enable_if< HasClosestTask<Geom>::value, int>::type
+  closestTask(const double lat, const double lon) const {
+    return this->geom_->closestTask(lat, lon);
+  }
 
-  /// Temporary option for ops-um-jedi to disable observation redistribution
-  bool ops_um_jedi_ = false;
+  /// If MODEL::Geometry doesn't have closestTask implemented,
+  /// use a generic implementation.
+  template<class Geom = Geometry_>
+  typename std::enable_if<!HasClosestTask<Geom>::value, int>::type
+  closestTask(const double lat, const double lon) const {
+    atlas::PointLonLat obsloc(lon, lat);
+    obsloc.normalise();
+    const int itask = globalTree_.closestPoint(obsloc).payload();
+    ASSERT(itask >= 0 && itask < spaceComm_->size());
+    return itask;
+  }
+  ///@}
+
+  atlas::util::KDTree<size_t>::ValueList closestPoints(const double, const double, const int) const;
 
  private:
   std::unique_ptr<util::Timer> timer_;
@@ -142,20 +174,6 @@ bool Geometry<MODEL>::operator==(const Geometry & rhs) const {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-int Geometry<MODEL>::closestTask(const double lat, const double lon) const {
-  int itask = spaceComm_->rank();
-  if (!ops_um_jedi_) {
-    atlas::PointLonLat obsloc(lon, lat);
-    obsloc.normalise();
-    itask = globalTree_.closestPoint(obsloc).payload();
-  }
-  ASSERT(itask >= 0 && itask < spaceComm_->size());
-  return itask;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
 atlas::util::KDTree<size_t>::ValueList
     Geometry<MODEL>::closestPoints(const double lat, const double lon, const int npoints) const {
   atlas::PointLonLat obsloc(lon, lat);
@@ -174,7 +192,6 @@ void Geometry<MODEL>::setLocalTree() {
   std::vector<double> lats;
   std::vector<double> lons;
   this->latlon(lats, lons, true);
-  ops_um_jedi_ = (lats.size() == 0);
   const size_t npoints = lats.size();
   std::vector<size_t> indx(npoints);
   for (size_t jj = 0; jj < npoints; ++jj) indx[jj] = jj;
