@@ -97,6 +97,7 @@ class ObsTable : public oops::ObsSpaceBase,
   const std::vector<double> & locations() const { return locations_; }
   const std::vector<util::DateTime> & times() const { return times_; }
   const oops::Variables & obsvariables() const { return obsvars_; }
+  const oops::Variables & assimvariables() const { return assimvars_; }
   const std::string & obsname() const {return obsname_;}
 
   /// iterator to the first observation
@@ -118,6 +119,7 @@ class ObsTable : public oops::ObsSpaceBase,
 
   const eckit::mpi::Comm & comm_;
   const oops::Variables obsvars_;
+  const oops::Variables assimvars_;
   std::string nameIn_;
   std::string nameOut_;
   const std::string obsname_ = "Lorenz 95";

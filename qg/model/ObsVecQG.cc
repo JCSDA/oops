@@ -22,10 +22,11 @@
 
 namespace qg {
 // -----------------------------------------------------------------------------
-ObsVecQG::ObsVecQG(const ObsSpaceQG & obsdb, const std::string & name)
+ObsVecQG::ObsVecQG(const ObsSpaceQG & obsdb, const std::string & name ,
+                   const bool useObservedVariables)
   : obsdb_(obsdb), keyOvec_(0)
 {
-  qg_obsvec_setup_f90(keyOvec_, obsdb.obsvariables().size(), obsdb.nobs());
+  qg_obsvec_setup_f90(keyOvec_, obsdb.assimvariables().size(), obsdb.nobs());
   if (!name.empty()) obsdb_.getdb(name, keyOvec_);
 }
 // -----------------------------------------------------------------------------

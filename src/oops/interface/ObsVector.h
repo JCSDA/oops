@@ -43,7 +43,8 @@ class ObsVector : public util::Printable,
 
   /// Creates vector from \p obsspace. If \p name is specified, reads the
   /// specified \p name variable from \p obsspace. Otherwise, zero vector is created.
-  explicit ObsVector(const ObsSpace<OBS> & obsspace, const std::string name = "");
+  explicit ObsVector(const ObsSpace<OBS> & obsspace, const std::string name = "",
+                     const bool useObservedVariables = false);
 
   /// Wraps an existing ObsVector_.
   /// This wrapping constructor doesn't need to be implemented in an ObsVector implementation.
@@ -111,11 +112,11 @@ class ObsVector : public util::Printable,
 
 // -----------------------------------------------------------------------------
 template <typename OBS>
-ObsVector<OBS>::ObsVector(const ObsSpace<OBS> & os, const std::string name)
-  : data_() {
+ObsVector<OBS>::ObsVector(const ObsSpace<OBS> & os, const std::string name,
+                          const bool useObservedVariables) : data_() {
   Log::trace() << "ObsVector<OBS>::ObsVector starting " << name << std::endl;
   util::Timer timer(classname(), "ObsVector");
-  data_.reset(new ObsVector_(os.obsspace(), name));
+  data_.reset(new ObsVector_(os.obsspace(), name, useObservedVariables));
   this->setObjectSize(data_->size() * sizeof(double));
   Log::trace() << "ObsVector<OBS>::ObsVector done" << std::endl;
 }

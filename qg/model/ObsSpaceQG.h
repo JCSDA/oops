@@ -100,8 +100,11 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
   /// return number of observations (unique locations)
   int nobs() const;
 
-  /// return variables simulated by ObsOperators
+  /// return variables to be processed
   const oops::Variables & obsvariables() const { return obsvars_; }
+
+  /// return variables simulated by ObsOperators
+  const oops::Variables & assimvariables() const { return assimvars_; }
 
   /// observation type
   const std::string & obsname() const {return obsname_;}
@@ -121,7 +124,8 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
   const std::string obsname_;        // corresponds with obstype
   const util::DateTime winbgn_;      // window for the observations
   const util::DateTime winend_;
-  oops::Variables obsvars_;          // variables simulated by ObsOperators
+  oops::Variables assimvars_;          // variables simulated by ObsOperators
+  oops::Variables obsvars_;          // variables that are observed
 
   // defines mapping for Fortran structures
   static std::map < std::string, F90odb > theObsFileRegister_;

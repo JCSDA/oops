@@ -61,6 +61,7 @@ class ObsSpace : public util::Printable,
   const util::DateTime & windowEnd() const {return obsdb_->windowEnd();}
 
   const Variables & obsvariables() const;
+  const Variables & assimvariables() const;
 
 // Other
   const std::string & obsname() const {return obsdb_->obsname();}
@@ -136,6 +137,15 @@ const Variables & ObsSpace<OBS>::obsvariables() const {
   Log::trace() << "ObsSpace<OBS>::obsvariables starting" << std::endl;
   util::Timer timer(classname(), "obsvariables");
   return obsdb_->obsvariables();
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+const Variables & ObsSpace<OBS>::assimvariables() const {
+  Log::trace() << "ObsSpace<OBS>::assimvariables starting" << std::endl;
+  util::Timer timer(classname(), "assimvariables");
+  return obsdb_->assimvariables();
 }
 
 // -----------------------------------------------------------------------------

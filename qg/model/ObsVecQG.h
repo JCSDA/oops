@@ -34,7 +34,7 @@ class ObsVecQG : public util::Printable,
   static const std::string classname() {return "qg::ObsVecQG";}
 
   ObsVecQG(const ObsSpaceQG &,
-           const std::string & name = "");
+           const std::string & name = "", const bool useObservedVariables = false);
   ObsVecQG(const ObsVecQG &);
   ~ObsVecQG();
 

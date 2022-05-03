@@ -89,6 +89,9 @@ ObsSpaceQG::ObsSpaceQG(const Parameters_ & params, const eckit::mpi::Comm & comm
     obsvars_.push_back("Vwind");
   }
 
+  // For this model the processed varaibles are the same as the simulated variables.
+  assimvars_ = obsvars_;
+
   //  Generate locations etc... if required
   if (params.generate.value() != boost::none) {
     const ObsGenerateParameters &gParams = *params.generate.value();

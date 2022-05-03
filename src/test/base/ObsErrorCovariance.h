@@ -77,7 +77,7 @@ template <typename OBS> void testMultiplies() {
     EXPECT(oops::is_close(R.getRMSE(), obserr.rms(), 1.e-10));
 
     // create random vector dy and its copies dy1, dy2
-    ObsVector_ dy(Test_::obspace()[jj]);
+    ObsVector_ dy(Test_::obspace()[jj], "");
     R.randomize(dy);
     ObsVector_ dy1(dy);
     ObsVector_ dy2(dy);

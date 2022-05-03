@@ -165,6 +165,9 @@ size_t Variables::find(const std::string & var) const {
   for (size_t jj = 0; jj < vars_.size(); ++jj) {
     if (vars_[jj] == var) ii = jj;
   }
+  if (ii >= vars_.size()) {
+    Log::error() << "Could not find " << var << " in variables list: " << vars_ << std::endl;
+  }
   ASSERT(ii < vars_.size());
   return ii;
 }

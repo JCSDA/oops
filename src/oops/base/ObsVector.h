@@ -39,7 +39,10 @@ class ObsVector : public interface::ObsVector<OBS>  {
 
   /// Creates vector from \p obsspace. If \p name is specified, reads the
   /// specified \p name variable from \p obsspace. Otherwise, zero vector is created.
-  explicit ObsVector(const ObsSpace<OBS> & obsspace, const std::string name = "");
+  /// If \p useObservedVariables is true the vector is made for the list of
+  /// observed variables rather than the simulated varaibles.
+  explicit ObsVector(const ObsSpace<OBS> & obsspace, const std::string name = "",
+                     const bool useObservedVariables = false);
 
   /// Wraps an existing ObsVector_.
   ///
@@ -67,8 +70,9 @@ class ObsVector : public interface::ObsVector<OBS>  {
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-ObsVector<OBS>::ObsVector(const ObsSpace<OBS> & os, const std::string name)
-  : interface::ObsVector<OBS>(os, name), commTime_(&os.timeComm()) {}
+ObsVector<OBS>::ObsVector(const ObsSpace<OBS> & os, const std::string name,
+                          const bool useObservedVariables)
+  : interface::ObsVector<OBS>(os, name, useObservedVariables), commTime_(&os.timeComm()) {}
 
 // -----------------------------------------------------------------------------
 
