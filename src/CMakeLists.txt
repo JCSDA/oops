@@ -246,6 +246,7 @@ oops/runs/AddIncrement.h
 oops/runs/AdjointForecast.h
 oops/runs/Application.cc
 oops/runs/Application.h
+oops/runs/ConvertIncrement.h
 oops/runs/ConvertState.h
 oops/runs/DiffStates.h
 oops/runs/Dirac.h
