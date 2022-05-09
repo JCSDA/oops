@@ -30,4 +30,3 @@ make obs: true
 
 test:
   reference filename: testoutput/makeobspert.test
-  output precision: 6

@@ -38,4 +38,3 @@ prints:
   frequency: PT6H
 test:
   reference filename: testref/forecast_qg_l95.test
-  output precision: 6

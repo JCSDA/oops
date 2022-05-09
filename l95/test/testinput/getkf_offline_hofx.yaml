@@ -48,4 +48,3 @@ output:
 test:
   reference filename: testoutput/getkf_offline_hofx.test
   float relative tolerance: 1e-3
-  output precision: 6

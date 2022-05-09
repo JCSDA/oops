@@ -24,4 +24,3 @@ factor: 0.5
 
 test:
   reference filename: testoutput/rtpp.test
-  output precision: 6

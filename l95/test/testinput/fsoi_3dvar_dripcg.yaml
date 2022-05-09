@@ -50,4 +50,3 @@ output:
 
 test:
   reference filename: testoutput/fsoi_3dvar_dripcg.test
-  output precision: 6

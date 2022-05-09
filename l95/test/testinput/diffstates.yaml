@@ -4,10 +4,10 @@ increment geometry:
   resol: 40
 state1:
   date: 2010-01-02T00:00:00Z
-  filename: Data/eda.3dvar.mem003.an.2010-01-02T00:00:00Z.l95
+  filename: Data/eda_3dvar.mem003.an.2010-01-02T00:00:00Z.l95
 state2:
   date: 2010-01-02T00:00:00Z
-  filename: Data/eda.4dvar.mem003.an.2010-01-02T00:00:00Z.l95
+  filename: Data/eda_4dvar.mem003.an.2010-01-02T00:00:00Z.l95
 output:
   datadir: Data
   date: 2010-01-02T00:00:00Z
@@ -16,4 +16,3 @@ output:
 
 test:
   reference filename: testoutput/diffstates.test
-  output precision: 6

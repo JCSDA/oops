@@ -23,4 +23,3 @@ geometry:
 
 test:
   reference filename: testoutput/uniform_field_hybrid.test
-  output precision: 6

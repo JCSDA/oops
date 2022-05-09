@@ -38,8 +38,6 @@ class ApplicationTestParameters : public Parameters {
  public:
   RequiredParameter<std::string> referenceFilename{"reference filename", this};
 
-  OptionalParameter<double> outputPrecision{"output precision", this};
-
   OptionalParameter<double> floatAbsTol{"float absolute tolerance", this};
   OptionalParameter<double> floatRelTol{"float relative tolerance", this};
   OptionalParameter<int> integerTol{"integer tolerance", this};

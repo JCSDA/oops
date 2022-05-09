@@ -101,4 +101,3 @@ output:
 
 test:
   reference filename: testoutput/3dvar_hybrid.test
-  output precision: 6

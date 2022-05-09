@@ -54,4 +54,3 @@ prints:
 
 test:
   reference filename: testoutput/make_obs_4d_12h.test
-  output precision: 6

@@ -132,13 +132,15 @@ void GeometryCoupled<MODEL1, MODEL2>::print(std::ostream & os) const {
     // Each model's geometry string is constructed on rank 0 for that model's communicator.
     // Here we gather the strings from each model onto the global rank 0 proc.
     std::stringstream ss;
+    ss.setf(os.flags());
+    ss.precision(os.precision());
     if (geom1_) {
       ss << std::endl << "GeometryCoupled: " << MODEL1::name() << std::endl;
-      ss << std::setprecision(os.precision()) << *geom1_ << std::endl;
+      ss << *geom1_ << std::endl;
     }
     if (geom2_) {
       ss << std::endl << "GeometryCoupled: " << MODEL2::name() << std::endl;
-      ss << std::setprecision(os.precision()) << *geom2_ << std::endl;
+      ss << *geom2_ << std::endl;
     }
     util::gatherPrint(os, ss.str(), *commPrints_);
   } else {

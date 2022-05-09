@@ -58,4 +58,3 @@ prints:
 
 test:
   reference filename: testoutput/make_obs_4d_biased.test
-  output precision: 6

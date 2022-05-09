@@ -45,5 +45,3 @@ output:
 
 test:
   reference filename: testoutput/simplifiedl95_RPCG.test
-  float relative tolerance: 1e-8
-  output precision: 6

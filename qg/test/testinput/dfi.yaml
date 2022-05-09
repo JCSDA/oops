@@ -25,4 +25,3 @@ geometry:
 
 test:
   reference filename: testoutput/dfi.test
-  output precision: 6

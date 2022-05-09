@@ -24,4 +24,3 @@ make obs: true
 
 test:
   reference filename: testoutput/makeobs3d.test
-  output precision: 6

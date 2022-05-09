@@ -22,4 +22,3 @@ geometry:
 
 test:
   reference filename: testoutput/analytic_forecast.test
-  output precision: 6

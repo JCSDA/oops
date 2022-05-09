@@ -176,13 +176,15 @@ void AuxCoupledModel<MODEL1, MODEL2>::print(std::ostream & os) const {
 
   if (parallel_) {
     std::stringstream ss;
+    ss.setf(os.flags());
+    ss.precision(os.precision());
     if (aux1_) {
       ss << std::endl << "AuxCoupledModel: " << MODEL1::name() << std::endl;
-      ss << std::setprecision(os.precision()) << *aux1_ << std::endl;
+      ss << *aux1_ << std::endl;
     }
     if (aux2_) {
       ss << std::endl << "AuxCoupledModel: " << MODEL2::name() << std::endl;
-      ss << std::setprecision(os.precision()) << *aux2_ << std::endl;
+      ss << *aux2_ << std::endl;
     }
     util::gatherPrint(os, ss.str(), geom_->getCommPairRanks());
   } else {

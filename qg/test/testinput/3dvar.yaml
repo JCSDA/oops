@@ -106,4 +106,3 @@ output:
 
 test:
   reference filename: testoutput/3dvar.test
-  output precision: 6

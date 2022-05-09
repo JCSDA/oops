@@ -35,4 +35,3 @@ observations:
 
 test:
   reference filename: testoutput/hofx3d.test
-  output precision: 6

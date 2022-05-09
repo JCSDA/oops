@@ -26,4 +26,3 @@ make obs: true
 
 test:
   reference filename: testoutput/makeobsbias.test
-  output precision: 6

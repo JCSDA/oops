@@ -1,4 +1,3 @@
-
 list( APPEND l95_test_input
   testinput/3dvar.yaml
   testinput/3dvar_4fsoi_dripcg.yaml
@@ -13,59 +12,60 @@ list( APPEND l95_test_input
   testinput/3dvar_qc_iterations.yaml
   testinput/3dfgat.yaml
   testinput/4densvar.yaml
-  testinput/4densvar.hybrid.yaml
+  testinput/4densvar_hybrid.yaml
   testinput/4dforcing.yaml
   testinput/4dsaddlepoint.yaml
-  testinput/4dvar.alpha.yaml
-  testinput/4dvar.drgmresr.yaml
-  testinput/4dvar.dripcg.yaml
-  testinput/4dvar.dripcgqn.yaml
-  testinput/4dvar.drpcg.yaml
-  testinput/4dvar.drpcgqn.yaml
-  testinput/4dvar.drplanczos.yaml
-  testinput/4dvar.drplanclmp.yaml
-  testinput/4dvar.drplzero.yaml
-  testinput/4dvar.fgmres.yaml
-  testinput/4dvar.gmresr.yaml
-  testinput/4dvar.hybrid.yaml
-  testinput/4dvar.ipcg.yaml
-  testinput/4dvar.lbgmresr.yaml
-  testinput/4dvar.pcg.yaml
-  testinput/4dvar.planczos.yaml
-  testinput/4dvar.rpcg.yaml
-  testinput/4dvar.rplanczos.yaml
-  testinput/4dvar.minres.yaml
-  testinput/4dvar.modbias.yaml
-  testinput/4dvar.obsbias.yaml
-  testinput/4dvar.allbiases.yaml
+  testinput/4dvar_alpha.yaml
+  testinput/4dvar_drgmresr.yaml
+  testinput/4dvar_dripcg.yaml
+  testinput/4dvar_dripcgqn.yaml
+  testinput/4dvar_drpcg.yaml
+  testinput/4dvar_drpcgqn.yaml
+  testinput/4dvar_drplanczos.yaml
+  testinput/4dvar_drplanclmp.yaml
+  testinput/4dvar_drplzero.yaml
+  testinput/4dvar_fgmres.yaml
+  testinput/4dvar_gmresr.yaml
+  testinput/4dvar_hybrid.yaml
+  testinput/4dvar_ipcg.yaml
+  testinput/4dvar_lbgmresr.yaml
+  testinput/4dvar_pcg.yaml
+  testinput/4dvar_planczos.yaml
+  testinput/4dvar_rpcg.yaml
+  testinput/4dvar_rplanczos.yaml
+  testinput/4dvar_minres.yaml
+  testinput/4dvar_modbias.yaml
+  testinput/4dvar_obsbias.yaml
+  testinput/4dvar_allbiases.yaml
   testinput/addincrement.yaml
   testinput/addincrement_scaled.yaml
   testinput/adjointforecast.yaml
   testinput/diffstates.yaml
-  testinput/eda.3dfgat.1.yaml
-  testinput/eda.3dfgat.2.yaml
-  testinput/eda.3dfgat.3.yaml
-  testinput/eda.3dfgat.4.yaml
-  testinput/eda.3dfgat.yaml
-  testinput/eda.3dvar.1.yaml
-  testinput/eda.3dvar.2.yaml
-  testinput/eda.3dvar.3.yaml
-  testinput/eda.3dvar.4.yaml
-  testinput/eda.3dvar.yaml
-  testinput/eda.3dvar.block.1.yaml
-  testinput/eda.3dvar.block.2.yaml
-  testinput/eda.3dvar.block.yaml
-  testinput/eda.3dvar.zeromeanpert.1.yaml
-  testinput/eda.3dvar.zeromeanpert.2.yaml
-  testinput/eda.3dvar.zeromeanpert.3.yaml
-  testinput/eda.3dvar.zeromeanpert.4.yaml
-  testinput/eda.3dvar.zeromeanpert.yaml
-  testinput/eda.4dvar.3.yaml
-  testinput/eda.4dvar.yaml
-  testinput/enshofx.1.yaml
-  testinput/enshofx.2.yaml
-  testinput/enshofx.3.yaml
-  testinput/enshofx.4.yaml
+  testinput/eda_3dfgat_1.yaml
+  testinput/eda_3dfgat_2.yaml
+  testinput/eda_3dfgat_3.yaml
+  testinput/eda_3dfgat_4.yaml
+  testinput/eda_3dfgat.yaml
+  testinput/eda_3dvar_1.yaml
+  testinput/eda_3dvar_2.yaml
+  testinput/eda_3dvar_3.yaml
+  testinput/eda_3dvar_4.yaml
+  testinput/eda_3dvar.yaml
+  testinput/eda_3dvar_block_1.yaml
+  testinput/eda_3dvar_block_2.yaml
+  testinput/eda_3dvar_block.yaml
+  testinput/eda_3dvar_zeromeanpert_1.yaml
+  testinput/eda_3dvar_zeromeanpert_2.yaml
+  testinput/eda_3dvar_zeromeanpert_3.yaml
+  testinput/eda_3dvar_zeromeanpert_4.yaml
+  testinput/eda_3dvar_zeromeanpert_compare.yaml
+  testinput/eda_3dvar_zeromeanpert.yaml
+  testinput/eda_4dvar_3.yaml
+  testinput/eda_4dvar.yaml
+  testinput/enshofx_1.yaml
+  testinput/enshofx_2.yaml
+  testinput/enshofx_3.yaml
+  testinput/enshofx_4.yaml
   testinput/enshofx.yaml
   testinput/forecast.yaml
   testinput/forecast_pseudomodel.yaml
@@ -80,7 +80,7 @@ list( APPEND l95_test_input
   testinput/hofx3d_for_getkf.yaml
   testinput/identitymodel.yaml
   testinput/interfaces.yaml
-  testinput/letkfGSI.yaml
+  testinput/letkf_gsi.yaml
   testinput/letkf.yaml
   testinput/letkf_noobs.yaml
   testinput/letkf_qc.yaml
@@ -136,36 +136,41 @@ list( APPEND l95_testoutput
   testoutput/3dvar_qc_iterations.test
   testoutput/3dfgat.test
   testoutput/4densvar.test
-  testoutput/4densvar.hybrid.test
+  testoutput/4densvar_hybrid.test
   testoutput/4dforcing.test
   testoutput/4dsaddlepoint.test
-  testoutput/4dvar.alpha.test
-  testoutput/4dvar.drgmresr.test
-  testoutput/4dvar.dripcg.test
-  testoutput/4dvar.dripcgqn.test
-  testoutput/4dvar.drpcg.test
-  testoutput/4dvar.drpcgqn.test
-  testoutput/4dvar.drplanclmp.test
-  testoutput/4dvar.drplanczos.test
-  testoutput/4dvar.drplzero.test
-  testoutput/4dvar.fgmres.test
-  testoutput/4dvar.gmresr.test
-  testoutput/4dvar.hybrid.test
-  testoutput/4dvar.ipcg.test
-  testoutput/4dvar.lbgmresr.test
-  testoutput/4dvar.modbias.test
-  testoutput/4dvar.obsbias.test
-  testoutput/4dvar.allbiases.test
-  testoutput/4dvar.pcg.test
-  testoutput/4dvar.planczos.test
-  testoutput/4dvar.rpcg.test
-  testoutput/4dvar.rplanczos.test
-  testoutput/4dvar.minres.test
+  testoutput/4dvar_alpha.test
+  testoutput/4dvar_drgmresr.test
+  testoutput/4dvar_dripcg.test
+  testoutput/4dvar_dripcgqn.test
+  testoutput/4dvar_drpcg.test
+  testoutput/4dvar_drpcgqn.test
+  testoutput/4dvar_drplanclmp.test
+  testoutput/4dvar_drplanczos.test
+  testoutput/4dvar_drplzero.test
+  testoutput/4dvar_fgmres.test
+  testoutput/4dvar_gmresr.test
+  testoutput/4dvar_hybrid.test
+  testoutput/4dvar_ipcg.test
+  testoutput/4dvar_lbgmresr.test
+  testoutput/4dvar_modbias.test
+  testoutput/4dvar_obsbias.test
+  testoutput/4dvar_allbiases.test
+  testoutput/4dvar_pcg.test
+  testoutput/4dvar_planczos.test
+  testoutput/4dvar_rpcg.test
+  testoutput/4dvar_rplanczos.test
+  testoutput/4dvar_minres.test
   testoutput/diffstates.test
   testoutput/addincrement.test
   testoutput/addincrement_scaled.test
   testoutput/adjointforecast.test
+  testoutput/eda_3dfgat.test
+  testoutput/eda_3dvar.test
   testoutput/eda_3dvar_block.test
+  testoutput/eda_3dvar_zeromeanpert.test
+  testoutput/eda_3dvar_zeromeanpert_compare.test
+  testoutput/eda_4dvar.test
   testoutput/enshofx.test
   testoutput/forecast.test
   testoutput/forecast_pseudomodel.test
@@ -547,92 +552,92 @@ ecbuild_add_test( TARGET test_l95_3dfgat
 
 ecbuild_add_test( TARGET test_l95_4dvar_drgmresr
                   COMMAND l95_4dvar.x
-                  ARGS testinput/4dvar.drgmresr.yaml
+                  ARGS testinput/4dvar_drgmresr.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 ecbuild_add_test( TARGET test_l95_4dvar_dripcg
                   COMMAND l95_4dvar.x
-                  ARGS testinput/4dvar.dripcg.yaml
+                  ARGS testinput/4dvar_dripcg.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 ecbuild_add_test( TARGET test_l95_4dvar_dripcgqn
                   COMMAND l95_4dvar.x
-                  ARGS testinput/4dvar.dripcgqn.yaml
+                  ARGS testinput/4dvar_dripcgqn.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 ecbuild_add_test( TARGET test_l95_4dvar_drpcg
                   COMMAND l95_4dvar.x
-                  ARGS testinput/4dvar.drpcg.yaml
+                  ARGS testinput/4dvar_drpcg.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 ecbuild_add_test( TARGET test_l95_4dvar_drpcgqn
                   COMMAND l95_4dvar.x
-                  ARGS testinput/4dvar.drpcgqn.yaml
+                  ARGS testinput/4dvar_drpcgqn.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 ecbuild_add_test( TARGET test_l95_4dvar_drplanczos
                   COMMAND l95_4dvar.x
-                  ARGS testinput/4dvar.drplanczos.yaml
+                  ARGS testinput/4dvar_drplanczos.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 ecbuild_add_test( TARGET test_l95_4dvar_drplanclmp
                   COMMAND l95_4dvar.x
-                  ARGS testinput/4dvar.drplanclmp.yaml
+                  ARGS testinput/4dvar_drplanclmp.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 ecbuild_add_test( TARGET test_l95_4dvar_fgmres
                   COMMAND l95_4dvar.x
-                  ARGS testinput/4dvar.fgmres.yaml
+                  ARGS testinput/4dvar_fgmres.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 ecbuild_add_test( TARGET test_l95_4dvar_gmresr
                   COMMAND l95_4dvar.x
-                  ARGS testinput/4dvar.gmresr.yaml
+                  ARGS testinput/4dvar_gmresr.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 ecbuild_add_test( TARGET test_l95_4dvar_ipcg
                   COMMAND l95_4dvar.x
-                  ARGS testinput/4dvar.ipcg.yaml
+                  ARGS testinput/4dvar_ipcg.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 ecbuild_add_test( TARGET test_l95_4dvar_lbgmresr
                   COMMAND l95_4dvar.x
-                  ARGS testinput/4dvar.lbgmresr.yaml
+                  ARGS testinput/4dvar_lbgmresr.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 ecbuild_add_test( TARGET test_l95_4dvar_pcg
                   COMMAND l95_4dvar.x
-                  ARGS testinput/4dvar.pcg.yaml
+                  ARGS testinput/4dvar_pcg.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 ecbuild_add_test( TARGET test_l95_4dvar_planczos
                   COMMAND l95_4dvar.x
-                  ARGS testinput/4dvar.planczos.yaml
+                  ARGS testinput/4dvar_planczos.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 ecbuild_add_test( TARGET test_l95_4dvar_rpcg
                   COMMAND l95_4dvar.x
-                  ARGS testinput/4dvar.rpcg.yaml
+                  ARGS testinput/4dvar_rpcg.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 ecbuild_add_test( TARGET test_l95_4dvar_rplanczos
                   COMMAND l95_4dvar.x
-                  ARGS testinput/4dvar.rplanczos.yaml
+                  ARGS testinput/4dvar_rplanczos.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 ecbuild_add_test( TARGET test_l95_4dvar_minres
                   COMMAND l95_4dvar.x
-                  ARGS testinput/4dvar.minres.yaml
+                  ARGS testinput/4dvar_minres.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 ecbuild_add_test( TARGET test_l95_4dvar_modbias
                   COMMAND l95_4dvar.x
-                  ARGS testinput/4dvar.modbias.yaml
+                  ARGS testinput/4dvar_modbias.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 ecbuild_add_test( TARGET test_l95_4dvar_drplzero
                   COMMAND l95_4dvar.x
-                  ARGS testinput/4dvar.drplzero.yaml
+                  ARGS testinput/4dvar_drplzero.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 #ecbuild_add_test( TARGET test_l95_4dforcing
@@ -648,22 +653,22 @@ ecbuild_add_test( TARGET test_l95_4dsaddlepoint
 
 ecbuild_add_test( TARGET test_l95_4dvar_obsbias
                   COMMAND l95_4dvar.x
-                  ARGS testinput/4dvar.obsbias.yaml
+                  ARGS testinput/4dvar_obsbias.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobsbias )
 
 ecbuild_add_test( TARGET test_l95_4dvar_allbiases
                   COMMAND l95_4dvar.x
-                  ARGS testinput/4dvar.allbiases.yaml
+                  ARGS testinput/4dvar_allbiases.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobsbias )
 
 ecbuild_add_test( TARGET test_l95_4dvar_alpha
                   COMMAND l95_4dvar.x
-                  ARGS testinput/4dvar.alpha.yaml
+                  ARGS testinput/4dvar_alpha.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d test_l95_genenspert )
 
 ecbuild_add_test( TARGET test_l95_4dvar_hybrid
                   COMMAND l95_4dvar.x
-                  ARGS testinput/4dvar.hybrid.yaml
+                  ARGS testinput/4dvar_hybrid.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d test_l95_genenspert )
 
 ecbuild_add_test( TARGET test_l95_4densvar
@@ -675,7 +680,7 @@ ecbuild_add_test( TARGET test_l95_4densvar
 ecbuild_add_test( TARGET test_l95_4densvar_hybrid
                   COMMAND l95_4dvar.x
                   MPI 9
-                  ARGS testinput/4densvar.hybrid.yaml
+                  ARGS testinput/4densvar_hybrid.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d test_l95_genenspert )
 
 #####################################################################
@@ -685,40 +690,40 @@ ecbuild_add_test( TARGET test_l95_4densvar_hybrid
 ecbuild_add_test( TARGET test_l95_eda_3dfgat
                   MPI 4
                   COMMAND l95_eda.x
-                  ARGS testinput/eda.3dfgat.yaml
+                  ARGS testinput/eda_3dfgat.yaml
                   DEPENDS l95_eda.x
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
 
 ecbuild_add_test( TARGET test_l95_eda_3dvar
                   MPI 4
                   COMMAND l95_eda.x
-                  ARGS testinput/eda.3dvar.yaml
+                  ARGS testinput/eda_3dvar.yaml
                   DEPENDS l95_eda.x
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
 
 ecbuild_add_test( TARGET test_l95_eda_4dvar
                   MPI 1
                   COMMAND l95_eda.x
-                  ARGS testinput/eda.4dvar.yaml
+                  ARGS testinput/eda_4dvar.yaml
                   DEPENDS l95_eda.x
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 ecbuild_add_test( TARGET test_l95_eda_3dvar_block
                   MPI 2
                   COMMAND l95_eda.x
-                  ARGS testinput/eda.3dvar.block.yaml
+                  ARGS testinput/eda_3dvar_block.yaml
                   TEST_DEPENDS test_l95_genenspert test_l95_makeobs3d )
 
 ecbuild_add_test( TARGET test_l95_eda_3dvar_zeromeanpert
                   MPI 4
                   COMMAND l95_eda.x
-                  ARGS testinput/eda.3dvar.zeromeanpert.yaml
+                  ARGS testinput/eda_3dvar_zeromeanpert.yaml
                   DEPENDS l95_eda.x
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
 
 ecbuild_add_test( TARGET test_l95_eda_3dvar_zeromeanpert_compare
                   SOURCES lorenz95/ObsErrorDiagZeroMeanPerturbations.cc
-                  ARGS testinput/eda.3dvar.zeromeanpert.yaml
+                  ARGS testinput/eda_3dvar_zeromeanpert_compare.yaml
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_eda_3dvar_zeromeanpert )
 
@@ -788,7 +793,7 @@ ecbuild_add_test( TARGET test_l95_letkf_qc
 
 ecbuild_add_test( TARGET test_l95_letkf_gsi
                   COMMAND l95_letkf.x
-                  ARGS testinput/letkfGSI.yaml
+                  ARGS testinput/letkf_gsi.yaml
                   TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
 
 ecbuild_add_test( TARGET test_l95_getkf

@@ -116,8 +116,10 @@ list( APPEND qg_testoutput
   testoutput/dirac_loc_3d.test
   testoutput/dirac_loc_4d.test
   testoutput/dirac_no_loc.test
-  testoutput/eda_4dvar.test
+  testoutput/eda_3dfgat.test
+  testoutput/eda_3dvar.test
   testoutput/eda_3dvar_block.test
+  testoutput/eda_4dvar.test
   testoutput/ens_forecast.test
   testoutput/ens_hofx.test
   testoutput/ens_recenter.test

@@ -1,89 +1,89 @@
-CostJb   : Nonlinear Jb = 0.000000e+00
-CostJo   : Nonlinear Jo(Stream) = 1.613468e+03, nobs = 150, Jo/n = 1.075645e+01, err = 4.000000e+06
-CostJo   : Nonlinear Jo(Wind) = 7.670095e+01, nobs = 80, Jo/n = 9.587619e-01, err = 6.000000e+00
-CostJo   : Nonlinear Jo(WSpeed) = 4.404846e+01, nobs = 150, Jo/n = 2.936564e-01, err = 1.200000e+01
-CostFunction: Nonlinear J = 1.734217e+03
-DRPLanczosMinimizer: reduction in residual norm = 1.713310e-02
+CostJb   : Nonlinear Jb = 0.0000000000000000e+00
+CostJo   : Nonlinear Jo(Stream) = 1.6134677008779211e+03, nobs = 150, Jo/n = 1.0756451339186141e+01, err = 4.0000000000000000e+06
+CostJo   : Nonlinear Jo(Wind) = 7.6700951993395435e+01, nobs = 80, Jo/n = 9.5876189991744298e-01, err = 6.0000000000000000e+00
+CostJo   : Nonlinear Jo(WSpeed) = 4.4048458895541202e+01, nobs = 150, Jo/n = 2.9365639263694132e-01, err = 1.2000000000000000e+01
+CostFunction: Nonlinear J = 1.7342171117668577e+03
+DRPLanczosMinimizer: reduction in residual norm = 1.7133097152454421e-02
 CostFunction::addIncrement: Analysis: 
   Valid time: 2010-01-01T00:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-4.80041e+08, Max=9.70123e+07, RMS=1.82934e+08
-  Streamfunction LBC     :  Min=-4.00316e+08, Max=-0, RMS=2.06318e+08
-  Potential vorticity LBC:  Min=-0.000672938, Max=0.000579029, RMS=0.000446397
+  Streamfunction         :  Min=-4.8004139612839025e+08, Max=9.7012281786753967e+07, RMS=1.8293372832444751e+08
+  Streamfunction LBC     :  Min=-4.0031613555457592e+08, Max=-0.0000000000000000e+00, RMS=2.0631821381632423e+08
+  Potential vorticity LBC:  Min=-6.7293786157197357e-04, Max=5.7902869607001021e-04, RMS=4.4639722241150535e-04
   Valid time: 2010-01-01T01:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-4.90893e+08, Max=1.05992e+08, RMS=1.86244e+08
-  Streamfunction LBC     :  Min=-4.00316e+08, Max=-0, RMS=2.06318e+08
-  Potential vorticity LBC:  Min=-0.000672938, Max=0.000579029, RMS=0.000446397
+  Streamfunction         :  Min=-4.9089294813870358e+08, Max=1.0599189244936737e+08, RMS=1.8624386085742325e+08
+  Streamfunction LBC     :  Min=-4.0031613555457592e+08, Max=-0.0000000000000000e+00, RMS=2.0631821381632423e+08
+  Potential vorticity LBC:  Min=-6.7293786157197357e-04, Max=5.7902869607001021e-04, RMS=4.4639722241150535e-04
   Valid time: 2010-01-01T02:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-4.93997e+08, Max=9.98914e+07, RMS=1.87263e+08
-  Streamfunction LBC     :  Min=-4.00316e+08, Max=-0, RMS=2.06318e+08
-  Potential vorticity LBC:  Min=-0.000672938, Max=0.000579029, RMS=0.000446397
+  Streamfunction         :  Min=-4.9399720877822447e+08, Max=9.9891438510633111e+07, RMS=1.8726330981879181e+08
+  Streamfunction LBC     :  Min=-4.0031613555457592e+08, Max=-0.0000000000000000e+00, RMS=2.0631821381632423e+08
+  Potential vorticity LBC:  Min=-6.7293786157197357e-04, Max=5.7902869607001021e-04, RMS=4.4639722241150535e-04
   Valid time: 2010-01-01T03:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-4.72196e+08, Max=9.73397e+07, RMS=1.80964e+08
-  Streamfunction LBC     :  Min=-4.00316e+08, Max=-0, RMS=2.06318e+08
-  Potential vorticity LBC:  Min=-0.000672938, Max=0.000579029, RMS=0.000446397
+  Streamfunction         :  Min=-4.7219576098775023e+08, Max=9.7339719646567822e+07, RMS=1.8096428635214105e+08
+  Streamfunction LBC     :  Min=-4.0031613555457592e+08, Max=-0.0000000000000000e+00, RMS=2.0631821381632423e+08
+  Potential vorticity LBC:  Min=-6.7293786157197357e-04, Max=5.7902869607001021e-04, RMS=4.4639722241150535e-04
   Valid time: 2010-01-01T04:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-4.85688e+08, Max=1.00713e+08, RMS=1.84948e+08
-  Streamfunction LBC     :  Min=-4.00316e+08, Max=-0, RMS=2.06318e+08
-  Potential vorticity LBC:  Min=-0.000672938, Max=0.000579029, RMS=0.000446397
+  Streamfunction         :  Min=-4.8568849620530456e+08, Max=1.0071261639652735e+08, RMS=1.8494784082945755e+08
+  Streamfunction LBC     :  Min=-4.0031613555457592e+08, Max=-0.0000000000000000e+00, RMS=2.0631821381632423e+08
+  Potential vorticity LBC:  Min=-6.7293786157197357e-04, Max=5.7902869607001021e-04, RMS=4.4639722241150535e-04
   Valid time: 2010-01-01T05:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-4.6799e+08, Max=9.75874e+07, RMS=1.79002e+08
-  Streamfunction LBC     :  Min=-4.00316e+08, Max=-0, RMS=2.06318e+08
-  Potential vorticity LBC:  Min=-0.000672938, Max=0.000579029, RMS=0.000446397
+  Streamfunction         :  Min=-4.6799007593075889e+08, Max=9.7587412103711188e+07, RMS=1.7900185962076631e+08
+  Streamfunction LBC     :  Min=-4.0031613555457592e+08, Max=-0.0000000000000000e+00, RMS=2.0631821381632423e+08
+  Potential vorticity LBC:  Min=-6.7293786157197357e-04, Max=5.7902869607001021e-04, RMS=4.4639722241150535e-04
   Valid time: 2010-01-01T06:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-4.77832e+08, Max=1.01355e+08, RMS=1.82823e+08
-  Streamfunction LBC     :  Min=-4.00316e+08, Max=-0, RMS=2.06318e+08
-  Potential vorticity LBC:  Min=-0.000672938, Max=0.000579029, RMS=0.000446397
-CostJb   : Nonlinear Jb = 4.620304e+01
-CostJo   : Nonlinear Jo(Stream) = 3.325580e+00, nobs = 150, Jo/n = 2.217053e-02, err = 4.000000e+06
-CostJo   : Nonlinear Jo(Wind) = 6.390782e+00, nobs = 80, Jo/n = 7.988477e-02, err = 6.000000e+00
-CostJo   : Nonlinear Jo(WSpeed) = 7.998542e+00, nobs = 150, Jo/n = 5.332361e-02, err = 1.200000e+01
-CostFunction: Nonlinear J = 6.391794e+01
-DRPLanczosMinimizer: reduction in residual norm = 1.397461e-01
+  Streamfunction         :  Min=-4.7783168101541841e+08, Max=1.0135508538094185e+08, RMS=1.8282339572913373e+08
+  Streamfunction LBC     :  Min=-4.0031613555457592e+08, Max=-0.0000000000000000e+00, RMS=2.0631821381632423e+08
+  Potential vorticity LBC:  Min=-6.7293786157197357e-04, Max=5.7902869607001021e-04, RMS=4.4639722241150535e-04
+CostJb   : Nonlinear Jb = 4.6203040913416679e+01
+CostJo   : Nonlinear Jo(Stream) = 3.3255798803923460e+00, nobs = 150, Jo/n = 2.2170532535948972e-02, err = 4.0000000000000000e+06
+CostJo   : Nonlinear Jo(Wind) = 6.3907818727204182e+00, nobs = 80, Jo/n = 7.9884773409005225e-02, err = 6.0000000000000000e+00
+CostJo   : Nonlinear Jo(WSpeed) = 7.9985416051209484e+00, nobs = 150, Jo/n = 5.3323610700806323e-02, err = 1.2000000000000000e+01
+CostFunction: Nonlinear J = 6.3917944271650391e+01
+DRPLanczosMinimizer: reduction in residual norm = 1.3974613567601268e-01
 CostFunction::addIncrement: Analysis: 
   Valid time: 2010-01-01T00:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-4.81376e+08, Max=9.69843e+07, RMS=1.82962e+08
-  Streamfunction LBC     :  Min=-4.00316e+08, Max=-0, RMS=2.06318e+08
-  Potential vorticity LBC:  Min=-0.000672938, Max=0.000579029, RMS=0.000446397
+  Streamfunction         :  Min=-4.8137627993303072e+08, Max=9.6984253581390008e+07, RMS=1.8296154484509048e+08
+  Streamfunction LBC     :  Min=-4.0031613555457592e+08, Max=-0.0000000000000000e+00, RMS=2.0631821381632423e+08
+  Potential vorticity LBC:  Min=-6.7293786157197357e-04, Max=5.7902869607001021e-04, RMS=4.4639722241150535e-04
   Valid time: 2010-01-01T01:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-4.93621e+08, Max=1.04965e+08, RMS=1.86416e+08
-  Streamfunction LBC     :  Min=-4.00316e+08, Max=-0, RMS=2.06318e+08
-  Potential vorticity LBC:  Min=-0.000672938, Max=0.000579029, RMS=0.000446397
+  Streamfunction         :  Min=-4.9362061229256868e+08, Max=1.0496480371604881e+08, RMS=1.8641590603588143e+08
+  Streamfunction LBC     :  Min=-4.0031613555457592e+08, Max=-0.0000000000000000e+00, RMS=2.0631821381632423e+08
+  Potential vorticity LBC:  Min=-6.7293786157197357e-04, Max=5.7902869607001021e-04, RMS=4.4639722241150535e-04
   Valid time: 2010-01-01T02:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-4.94357e+08, Max=9.98889e+07, RMS=1.87148e+08
-  Streamfunction LBC     :  Min=-4.00316e+08, Max=-0, RMS=2.06318e+08
-  Potential vorticity LBC:  Min=-0.000672938, Max=0.000579029, RMS=0.000446397
+  Streamfunction         :  Min=-4.9435741293470722e+08, Max=9.9888905617412046e+07, RMS=1.8714762383530861e+08
+  Streamfunction LBC     :  Min=-4.0031613555457592e+08, Max=-0.0000000000000000e+00, RMS=2.0631821381632423e+08
+  Potential vorticity LBC:  Min=-6.7293786157197357e-04, Max=5.7902869607001021e-04, RMS=4.4639722241150535e-04
   Valid time: 2010-01-01T03:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-4.73727e+08, Max=9.8372e+07, RMS=1.8125e+08
-  Streamfunction LBC     :  Min=-4.00316e+08, Max=-0, RMS=2.06318e+08
-  Potential vorticity LBC:  Min=-0.000672938, Max=0.000579029, RMS=0.000446397
+  Streamfunction         :  Min=-4.7372732534969079e+08, Max=9.8372010545939058e+07, RMS=1.8125024595848614e+08
+  Streamfunction LBC     :  Min=-4.0031613555457592e+08, Max=-0.0000000000000000e+00, RMS=2.0631821381632423e+08
+  Potential vorticity LBC:  Min=-6.7293786157197357e-04, Max=5.7902869607001021e-04, RMS=4.4639722241150535e-04
   Valid time: 2010-01-01T04:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-4.85264e+08, Max=1.0074e+08, RMS=1.84845e+08
-  Streamfunction LBC     :  Min=-4.00316e+08, Max=-0, RMS=2.06318e+08
-  Potential vorticity LBC:  Min=-0.000672938, Max=0.000579029, RMS=0.000446397
+  Streamfunction         :  Min=-4.8526428534636128e+08, Max=1.0073955287163119e+08, RMS=1.8484520350724643e+08
+  Streamfunction LBC     :  Min=-4.0031613555457592e+08, Max=-0.0000000000000000e+00, RMS=2.0631821381632423e+08
+  Potential vorticity LBC:  Min=-6.7293786157197357e-04, Max=5.7902869607001021e-04, RMS=4.4639722241150535e-04
   Valid time: 2010-01-01T05:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-4.69546e+08, Max=9.86562e+07, RMS=1.79297e+08
-  Streamfunction LBC     :  Min=-4.00316e+08, Max=-0, RMS=2.06318e+08
-  Potential vorticity LBC:  Min=-0.000672938, Max=0.000579029, RMS=0.000446397
+  Streamfunction         :  Min=-4.6954602070278805e+08, Max=9.8656155392194182e+07, RMS=1.7929730769326532e+08
+  Streamfunction LBC     :  Min=-4.0031613555457592e+08, Max=-0.0000000000000000e+00, RMS=2.0631821381632423e+08
+  Potential vorticity LBC:  Min=-6.7293786157197357e-04, Max=5.7902869607001021e-04, RMS=4.4639722241150535e-04
   Valid time: 2010-01-01T06:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-4.77445e+08, Max=1.01393e+08, RMS=1.82738e+08
-  Streamfunction LBC     :  Min=-4.00316e+08, Max=-0, RMS=2.06318e+08
-  Potential vorticity LBC:  Min=-0.000672938, Max=0.000579029, RMS=0.000446397
-CostJb   : Nonlinear Jb = 4.825105e+01
-CostJo   : Nonlinear Jo(Stream) = 2.379440e+00, nobs = 150, Jo/n = 1.586293e-02, err = 4.000000e+06
-CostJo   : Nonlinear Jo(Wind) = 4.561444e+00, nobs = 80, Jo/n = 5.701806e-02, err = 6.000000e+00
-CostJo   : Nonlinear Jo(WSpeed) = 5.817664e+00, nobs = 150, Jo/n = 3.878443e-02, err = 1.200000e+01
-CostFunction: Nonlinear J = 6.100960e+01
+  Streamfunction         :  Min=-4.7744496278376782e+08, Max=1.0139310745008050e+08, RMS=1.8273759041754740e+08
+  Streamfunction LBC     :  Min=-4.0031613555457592e+08, Max=-0.0000000000000000e+00, RMS=2.0631821381632423e+08
+  Potential vorticity LBC:  Min=-6.7293786157197357e-04, Max=5.7902869607001021e-04, RMS=4.4639722241150535e-04
+CostJb   : Nonlinear Jb = 4.8251051846980843e+01
+CostJo   : Nonlinear Jo(Stream) = 2.3794400739127868e+00, nobs = 150, Jo/n = 1.5862933826085245e-02, err = 4.0000000000000000e+06
+CostJo   : Nonlinear Jo(Wind) = 4.5614444659517703e+00, nobs = 80, Jo/n = 5.7018055824397132e-02, err = 6.0000000000000000e+00
+CostJo   : Nonlinear Jo(WSpeed) = 5.8176642227025024e+00, nobs = 150, Jo/n = 3.8784428151350019e-02, err = 1.2000000000000000e+01
+CostFunction: Nonlinear J = 6.1009600609547903e+01

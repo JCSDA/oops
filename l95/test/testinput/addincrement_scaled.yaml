@@ -4,7 +4,7 @@ increment geometry:
   resol: 40
 state:
   date: 2010-01-02T00:00:00Z
-  filename: Data/eda.4dvar.mem003.an.2010-01-02T00:00:00Z.l95
+  filename: Data/eda_4dvar.mem003.an.2010-01-02T00:00:00Z.l95
 increment:
   date: 2010-01-02T00:00:00Z
   filename: Data/diffstates.in.2010-01-02T00:00:00Z.PT0S.l95
@@ -18,4 +18,3 @@ output:
 
 test:
   reference filename: testoutput/addincrement_scaled.test
-  output precision: 6

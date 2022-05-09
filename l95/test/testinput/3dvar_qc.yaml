@@ -53,4 +53,3 @@ output:
 
 test:
   reference filename: testoutput/3dvar_qc.test
-  output precision: 6

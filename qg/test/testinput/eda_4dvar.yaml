@@ -6,4 +6,3 @@ files:
 
 test:
   reference filename: testoutput/eda_4dvar.test
-  output precision: 6

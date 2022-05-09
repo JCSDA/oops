@@ -20,4 +20,3 @@ prints:
 
 test:
   reference filename: testoutput/truth.test
-  output precision: 6

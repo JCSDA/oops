@@ -15,4 +15,3 @@ analysis variables: [x]
 
 test:
   reference filename: testoutput/static_b_init.test
-  output precision: 6

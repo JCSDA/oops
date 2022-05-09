@@ -1,0 +1,15 @@
+CostJb   : Nonlinear Jb = 0.0000000000000000e+00
+CostJo   : Nonlinear Jo(Lorenz 95) = 1.2385634722309175e+02, nobs = 160, Jo/n = 7.7410217014432336e-01, err = 4.0000000596046370e-01 (Monitoring only)
+CostFunction: Nonlinear J = 0.0000000000000000e+00
+CostFunction::addIncrement: Analysis: 
+ Valid time: 2010-01-01T03:00:00Z
+ Min=7.0282037281574601e+00, Max=8.1949821012801998e+00, Average=7.9755053456105118e+00
+CostJb   : Nonlinear Jb = 0.0000000000000000e+00
+CostJo   : Nonlinear Jo(Lorenz 95) = 1.2385634722309175e+02, nobs = 160, Jo/n = 7.7410217014432336e-01, err = 4.0000000596046370e-01 (Monitoring only)
+CostFunction: Nonlinear J = 0.0000000000000000e+00
+CostFunction::addIncrement: Analysis: 
+ Valid time: 2010-01-01T03:00:00Z
+ Min=7.0282037281574601e+00, Max=8.1949821012801998e+00, Average=7.9755053456105118e+00
+CostJb   : Nonlinear Jb = 0.0000000000000000e+00
+CostJo   : Nonlinear Jo(Lorenz 95) = 1.2385634722309175e+02, nobs = 160, Jo/n = 7.7410217014432336e-01, err = 4.0000000596046370e-01 (Monitoring only)
+CostFunction: Nonlinear J = 0.0000000000000000e+00

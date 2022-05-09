@@ -1,0 +1,8 @@
+files:
+  - testinput/eda_3dfgat_1.yaml
+  - testinput/eda_3dfgat_2.yaml
+  - testinput/eda_3dfgat_3.yaml
+  - testinput/eda_3dfgat_4.yaml
+
+test:
+  reference filename: testoutput/eda_3dfgat.test

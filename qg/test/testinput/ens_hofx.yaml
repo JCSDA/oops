@@ -7,4 +7,3 @@ files:
 
 test:
   reference filename: testoutput/ens_hofx.test
-  output precision: 6

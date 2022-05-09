@@ -1,17 +1,17 @@
 Initial state: 
   Valid time: 2010-01-01T00:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-4.702971e+08, Max=9.332762e+07, RMS=1.843655e+08
-  Streamfunction LBC     :  Min=-4.003161e+08, Max=-0.000000e+00, RMS=2.063182e+08
-  Potential vorticity LBC:  Min=-6.729379e-04, Max=5.790287e-04, RMS=4.463972e-04
+  Streamfunction         :  Min=-4.7029707276176435e+08, Max=9.3327623574970037e+07, RMS=1.8436551848972490e+08
+  Streamfunction LBC     :  Min=-4.0031613555457592e+08, Max=-0.0000000000000000e+00, RMS=2.0631821381632423e+08
+  Potential vorticity LBC:  Min=-6.7293786157197357e-04, Max=5.7902869607001021e-04, RMS=4.4639722241150535e-04
 Final state: 
   Valid time: 2010-01-01T12:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-4.422382e+08, Max=1.241762e+08, RMS=1.758448e+08
-  Streamfunction LBC     :  Min=-4.003161e+08, Max=-0.000000e+00, RMS=2.063182e+08
-  Potential vorticity LBC:  Min=-6.729379e-04, Max=5.790287e-04, RMS=4.463972e-04
+  Streamfunction         :  Min=-4.4223815102683681e+08, Max=1.2417620486695006e+08, RMS=1.7584483249371383e+08
+  Streamfunction LBC     :  Min=-4.0031613555457592e+08, Max=-0.0000000000000000e+00, RMS=2.0631821381632423e+08
+  Potential vorticity LBC:  Min=-6.7293786157197357e-04, Max=5.7902869607001021e-04, RMS=4.4639722241150535e-04
 H(x): 
-Stream nobs= 300  Min=-5.385597e+08, Max=8.695044e+07, Average=-1.207203e+08
-Wind nobs= 160  Min=-1.244040e+02, Max=9.425683e+01, Average=1.176791e+01
-WSpeed nobs= 300  Min=1.271013e+00, Max=1.251036e+02, Average=4.682996e+01
+Stream nobs= 300  Min=-5.3855973167997050e+08, Max=8.6950438874074385e+07, Average=-1.2072029253929746e+08
+Wind nobs= 160  Min=-1.2440397541279330e+02, Max=9.4256833654634306e+01, Average=1.1767911827185900e+01
+WSpeed nobs= 300  Min=1.2710134877822754e+00, Max=1.2510355745915405e+02, Average=4.6829959389507806e+01
 End H(x)

@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <iomanip>
+#include <limits>
 #include <sstream>
 #include <string>
 
@@ -126,15 +127,6 @@ void LibOOPS::teeOutput(const std::string & fileprefix) {
   eckit::Log::addFile(teefile);
 }
 
-void LibOOPS::setOutputPrecision(const int & precision) {
-  if (testChannel_) {
-    if (precision > 0) {
-      testChannel_->setf(std::ios::scientific);
-      testChannel_->precision(precision);
-    }
-  }
-}
-
 void LibOOPS::testReferenceInitialise(const eckit::LocalConfiguration &testConf) {
   testReference_.initialise(testConf);
 }
@@ -226,6 +218,8 @@ eckit::Channel& LibOOPS::testChannel() const {
   } else {
     testChannel_.reset(new eckit::Channel());
   }
+  testChannel_->setf(std::ios::scientific);
+  testChannel_->precision(std::numeric_limits<double>::digits10+1);
   return *testChannel_;
 }
 

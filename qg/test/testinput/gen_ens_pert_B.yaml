@@ -28,4 +28,3 @@ perturbed variables: [x]
 
 test:
   reference filename: testoutput/gen_ens_pert_B.test
-  output precision: 6

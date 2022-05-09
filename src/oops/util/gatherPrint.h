@@ -26,7 +26,9 @@ void gatherPrint(std::ostream & os, const T & obj, const eckit::mpi::Comm & comm
     size_t maxlen = 10000;
 
     std::stringstream ss;
-    ss << std::setprecision(os.precision()) << obj;
+    ss.setf(os.flags());
+    ss.precision(os.precision());
+    ss << obj;
     std::string sloc = ss.str();
     std::vector<char> vloc(sloc.begin(), sloc.end());
     for (size_t jj = vloc.size(); jj < maxlen; ++jj) vloc.push_back('#');

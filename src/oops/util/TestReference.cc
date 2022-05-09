@@ -97,10 +97,7 @@ void TestReference::initialise(const eckit::LocalConfiguration &conf)
   refFile_ = conf.getString("reference filename");
   oops::Log::info() << "[TestReference] Comparing to reference file: " << refFile_ << std::endl;
 
-  const int precision = conf.getInt("output precision", 0);
-  LibOOPS::instance().setOutputPrecision(precision);
-
-  tolRelativeFloat_ = conf.getDouble("float relative tolerance", 0.0);
+  tolRelativeFloat_ = conf.getDouble("float relative tolerance", 1.0e-6);
   tolAbsoluteFloat_ = conf.getDouble("float absolute tolerance", 0.0);
   oops::Log::info() << "Relative float tolerance for tests : " << tolRelativeFloat_
                      << std::endl;

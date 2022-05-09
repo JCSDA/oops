@@ -31,4 +31,3 @@ states:
 
 test:
   reference filename: testoutput/convertstate.test
-  output precision: 6

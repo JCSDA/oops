@@ -22,4 +22,3 @@ output:
 
 test:
   reference filename: testoutput/addincrement_scaled.test
-  output precision: 6

@@ -98,4 +98,3 @@ output:
 
 test:
   reference filename: testoutput/4densvar.test
-  output precision: 6

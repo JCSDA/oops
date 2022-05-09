@@ -322,13 +322,15 @@ void StateCoupled<MODEL1, MODEL2>::print(std::ostream & os) const {
 
   if (parallel_) {
     std::stringstream ss;
+    ss.setf(os.flags());
+    ss.precision(os.precision());
     if (xx1_) {
       ss << std::endl << "StateCoupled: " << MODEL1::name() << std::endl;
-      ss << std::setprecision(os.precision()) << *xx1_ << std::endl;
+      ss << *xx1_ << std::endl;
     }
     if (xx2_) {
       ss << std::endl << "StateCoupled: " << MODEL2::name() << std::endl;
-      ss << std::setprecision(os.precision()) << *xx2_ << std::endl;
+      ss << *xx2_ << std::endl;
     }
     util::gatherPrint(os, ss.str(), geom_->getCommPairRanks());
   } else {

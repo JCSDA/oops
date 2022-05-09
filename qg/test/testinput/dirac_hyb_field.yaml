@@ -47,4 +47,3 @@ output dirac:
 
 test:
   reference filename: testoutput/dirac_hyb_field.test
-  output precision: 6

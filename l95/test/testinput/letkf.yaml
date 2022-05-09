@@ -72,4 +72,3 @@ output variance posterior:
 
 test:
   reference filename: testoutput/letkf.test
-  output precision: 6

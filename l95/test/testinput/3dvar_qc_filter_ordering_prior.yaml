@@ -52,4 +52,3 @@ output:
 
 test:
   reference filename: testoutput/3dvar_qc_filter_ordering_prior.test
-  output precision: 6

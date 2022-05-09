@@ -24,4 +24,3 @@ output:
 
 test:
   reference filename: testoutput/genenspert.test
-  output precision: 6

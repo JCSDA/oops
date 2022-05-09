@@ -42,4 +42,3 @@ output:
 
 test:
   reference filename: testoutput/letkf_qc.test
-  output precision: 6

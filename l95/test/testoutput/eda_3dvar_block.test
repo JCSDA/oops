@@ -1,57 +1,57 @@
-CostJb   : Nonlinear Jb = 0.000000e+00
-CostJo   : Nonlinear Jo(Lorenz 95) = 1.003273e+03, nobs = 120, Jo/n = 8.360612e+00, err = 4.000000e-01
-CostFunction: Nonlinear J = 1.003273e+03
-   Norm reduction all members ( 1) = 2.261125e-01, 2.460786e-01
-   Quadratic cost function all members: J ( 1) = 1.579043e+02, 1.866149e+02
-   Norm reduction all members ( 2) = 7.111685e-02, 8.019272e-02
-   Quadratic cost function all members: J ( 2) = 1.191205e+02, 1.298804e+02
-   Norm reduction all members ( 3) = 3.296958e-02, 3.247635e-02
-   Quadratic cost function all members: J ( 3) = 1.141344e+02, 1.217962e+02
-   Norm reduction all members ( 4) = 1.439610e-02, 1.466576e-02
-   Quadratic cost function all members: J ( 4) = 1.131028e+02, 1.204157e+02
-   Norm reduction all members ( 5) = 8.010815e-03, 6.039255e-03
-   Quadratic cost function all members: J ( 5) = 1.128535e+02, 1.201436e+02
-   Norm reduction all members ( 6) = 5.258536e-03, 4.079497e-03
-   Quadratic cost function all members: J ( 6) = 1.127692e+02, 1.200728e+02
-   Norm reduction all members ( 7) = 3.136764e-03, 2.517489e-03
-   Quadratic cost function all members: J ( 7) = 1.127348e+02, 1.200462e+02
-   Norm reduction all members ( 8) = 1.785131e-03, 1.292323e-03
-   Quadratic cost function all members: J ( 8) = 1.127227e+02, 1.200359e+02
-   Norm reduction all members ( 9) = 9.471412e-04, 9.900836e-04
-   Quadratic cost function all members: J ( 9) = 1.127191e+02, 1.200327e+02
-   Norm reduction all members (10) = 5.873966e-04, 5.539389e-04
-   Quadratic cost function all members: J (10) = 1.127180e+02, 1.200312e+02
-DRPBlockLanczosMinimizer: reduction in residual norm = 5.873966e-04
+CostJb   : Nonlinear Jb = 0.0000000000000000e+00
+CostJo   : Nonlinear Jo(Lorenz 95) = 1.0032734286406445e+03, nobs = 120, Jo/n = 8.3606119053387040e+00, err = 4.0000000596046387e-01
+CostFunction: Nonlinear J = 1.0032734286406445e+03
+   Norm reduction all members ( 1) = 2.2611246413146999e-01, 2.4607858218138590e-01
+   Quadratic cost function all members: J ( 1) = 1.5790425160879681e+02, 1.8661490481274211e+02
+   Norm reduction all members ( 2) = 7.1116846990498611e-02, 8.0192715250274230e-02
+   Quadratic cost function all members: J ( 2) = 1.1912053082227921e+02, 1.2988039448615825e+02
+   Norm reduction all members ( 3) = 3.2969581807836372e-02, 3.2476346786926756e-02
+   Quadratic cost function all members: J ( 3) = 1.1413440707947899e+02, 1.2179618191581001e+02
+   Norm reduction all members ( 4) = 1.4396100891678804e-02, 1.4665757882633431e-02
+   Quadratic cost function all members: J ( 4) = 1.1310277861858718e+02, 1.2041572290992272e+02
+   Norm reduction all members ( 5) = 8.0108154109805024e-03, 6.0392552465568421e-03
+   Quadratic cost function all members: J ( 5) = 1.1285348255267269e+02, 1.2014356366704077e+02
+   Norm reduction all members ( 6) = 5.2585359730192033e-03, 4.0794966580262170e-03
+   Quadratic cost function all members: J ( 6) = 1.1276915841444249e+02, 1.2007282699132402e+02
+   Norm reduction all members ( 7) = 3.1367637438545291e-03, 2.5174891831740544e-03
+   Quadratic cost function all members: J ( 7) = 1.1273481209266114e+02, 1.2004622461292132e+02
+   Norm reduction all members ( 8) = 1.7851311726002949e-03, 1.2923225877236565e-03
+   Quadratic cost function all members: J ( 8) = 1.1272270323141866e+02, 1.2003587549925341e+02
+   Norm reduction all members ( 9) = 9.4714117665693309e-04, 9.9008355866420897e-04
+   Quadratic cost function all members: J ( 9) = 1.1271914734381647e+02, 1.2003269961432876e+02
+   Norm reduction all members (10) = 5.8739664039733457e-04, 5.5393886798713976e-04
+   Quadratic cost function all members: J (10) = 1.1271803585766246e+02, 1.2003119036705215e+02
+DRPBlockLanczosMinimizer: reduction in residual norm = 5.8739664039733457e-04
 CostFunction::addIncrement: Analysis: 
  Valid time: 2010-01-02T00:00:00Z
- Min=6.773640e+00, Max=9.008607e+00, Average=8.005602e+00
-CostJb   : Nonlinear Jb = 9.733939e+01
-CostJo   : Nonlinear Jo(Lorenz 95) = 1.537864e+01, nobs = 120, Jo/n = 1.281554e-01, err = 4.000000e-01
-CostFunction: Nonlinear J = 1.127180e+02
-   Norm reduction all members ( 1) = 6.032091e-01, 5.311549e-01
-   Quadratic cost function all members: J ( 1) = 1.127177e+02, 1.200309e+02
-   Norm reduction all members ( 2) = 4.865494e-01, 4.139710e-01
-   Quadratic cost function all members: J ( 2) = 1.127175e+02, 1.200307e+02
-   Norm reduction all members ( 3) = 2.252516e-01, 2.254736e-01
-   Quadratic cost function all members: J ( 3) = 1.127174e+02, 1.200306e+02
-   Norm reduction all members ( 4) = 1.367025e-01, 1.504840e-01
-   Quadratic cost function all members: J ( 4) = 1.127174e+02, 1.200306e+02
-   Norm reduction all members ( 5) = 8.447879e-02, 8.974346e-02
-   Quadratic cost function all members: J ( 5) = 1.127174e+02, 1.200306e+02
-   Norm reduction all members ( 6) = 5.433141e-02, 5.228844e-02
-   Quadratic cost function all members: J ( 6) = 1.127174e+02, 1.200306e+02
-   Norm reduction all members ( 7) = 3.252254e-02, 2.864185e-02
-   Quadratic cost function all members: J ( 7) = 1.127174e+02, 1.200306e+02
-   Norm reduction all members ( 8) = 1.779814e-02, 1.622060e-02
-   Quadratic cost function all members: J ( 8) = 1.127174e+02, 1.200306e+02
-   Norm reduction all members ( 9) = 8.687236e-03, 7.774957e-03
-   Quadratic cost function all members: J ( 9) = 1.127174e+02, 1.200306e+02
-   Norm reduction all members (10) = 3.196327e-03, 3.723595e-03
-   Quadratic cost function all members: J (10) = 1.127174e+02, 1.200306e+02
-DRPBlockLanczosMinimizer: reduction in residual norm = 3.196327e-03
+ Min=6.7736404557112531e+00, Max=9.0086074116267341e+00, Average=8.0056024881884031e+00
+CostJb   : Nonlinear Jb = 9.7339391856854988e+01
+CostJo   : Nonlinear Jo(Lorenz 95) = 1.5378644000806579e+01, nobs = 120, Jo/n = 1.2815536667338817e-01, err = 4.0000000596046387e-01
+CostFunction: Nonlinear J = 1.1271803585766156e+02
+   Norm reduction all members ( 1) = 6.0320910569443920e-01, 5.3115494329707946e-01
+   Quadratic cost function all members: J ( 1) = 1.1271772595677018e+02, 1.2003087005628028e+02
+   Norm reduction all members ( 2) = 4.8654938629831618e-01, 4.1397095469901574e-01
+   Quadratic cost function all members: J ( 2) = 1.1271750470324157e+02, 1.2003070885865284e+02
+   Norm reduction all members ( 3) = 2.2525158462798139e-01, 2.2547362493732098e-01
+   Quadratic cost function all members: J ( 3) = 1.1271741103527950e+02, 1.2003060004750195e+02
+   Norm reduction all members ( 4) = 1.3670252262065077e-01, 1.5048403154751011e-01
+   Quadratic cost function all members: J ( 4) = 1.1271738953416818e+02, 1.2003057725516730e+02
+   Norm reduction all members ( 5) = 8.4478786094006428e-02, 8.9743464647764920e-02
+   Quadratic cost function all members: J ( 5) = 1.1271738144978619e+02, 1.2003056391065319e+02
+   Norm reduction all members ( 6) = 5.4331407265448384e-02, 5.2288443183716053e-02
+   Quadratic cost function all members: J ( 6) = 1.1271737812642057e+02, 1.2003055950398826e+02
+   Norm reduction all members ( 7) = 3.2522539840993660e-02, 2.8641846550448435e-02
+   Quadratic cost function all members: J ( 7) = 1.1271737683654662e+02, 1.2003055836121129e+02
+   Norm reduction all members ( 8) = 1.7798135747741490e-02, 1.6220601526279219e-02
+   Quadratic cost function all members: J ( 8) = 1.1271737640522116e+02, 1.2003055790823673e+02
+   Norm reduction all members ( 9) = 8.6872355439489880e-03, 7.7749568365926315e-03
+   Quadratic cost function all members: J ( 9) = 1.1271737627818840e+02, 1.2003055779888730e+02
+   Norm reduction all members (10) = 3.1963274445363909e-03, 3.7235949280231737e-03
+   Quadratic cost function all members: J (10) = 1.1271737625496461e+02, 1.2003055777554715e+02
+DRPBlockLanczosMinimizer: reduction in residual norm = 3.1963274445363909e-03
 CostFunction::addIncrement: Analysis: 
  Valid time: 2010-01-02T00:00:00Z
- Min=6.771932e+00, Max=9.009122e+00, Average=8.005720e+00
-CostJb   : Nonlinear Jb = 9.734187e+01
-CostJo   : Nonlinear Jo(Lorenz 95) = 1.537551e+01, nobs = 120, Jo/n = 1.281293e-01, err = 4.000000e-01
-CostFunction: Nonlinear J = 1.127174e+02
+ Min=6.7719322403775370e+00, Max=9.0091219467353056e+00, Average=8.0057195522758260e+00
+CostJb   : Nonlinear Jb = 9.7341865419036864e+01
+CostJo   : Nonlinear Jo(Lorenz 95) = 1.5375510835927765e+01, nobs = 120, Jo/n = 1.2812925696606470e-01, err = 4.0000000596046387e-01
+CostFunction: Nonlinear J = 1.1271737625496463e+02

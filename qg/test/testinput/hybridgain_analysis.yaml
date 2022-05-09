@@ -37,4 +37,3 @@ recentered output:
 
 test:
   reference filename: testoutput/hybridgain_analysis.test
-  output precision: 6

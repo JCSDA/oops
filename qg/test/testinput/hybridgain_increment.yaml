@@ -41,4 +41,3 @@ recentered output:
 
 test:
   reference filename: testoutput/hybridgain_increment.test
-  output precision: 6
