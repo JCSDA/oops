@@ -112,10 +112,11 @@ template <typename MODEL, typename OBS> class HofX3D : public Application {
     Log::test() << "State: " << xx << std::endl;
 
 //  Check that state is inside the obs window
-    if (xx.validTime() < winbgn || xx.validTime() > winend) {
+    if (xx.validTime() != winHalf) {
       Log::error() << "State time: " << xx.validTime() << std::endl;
       Log::error() << "Obs window: " << winbgn << " to " << winend << std::endl;
-      throw eckit::BadValue("State cannot be outside observation window.");
+      Log::error() << "Half window: " << winHalf << std::endl;
+      throw eckit::BadValue("The state should be valid at half of the observation window.");
     }
 
 //  Setup observations
