@@ -13,4 +13,5 @@ initial condition:
 model:
   $(MODEL)
 observations:
-  $(OBS)
+  observers:
+    $(OBS)

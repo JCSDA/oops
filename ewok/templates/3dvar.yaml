@@ -15,7 +15,8 @@ cost function:
   background error:
     $(BACKGROUND_ERROR)
   observations:
-    $(OBS)
+    observers:
+      $(OBS)
 variational:
   minimizer:
     $(MINIMIZER)

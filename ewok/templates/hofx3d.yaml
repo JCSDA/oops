@@ -10,4 +10,5 @@ geometry:
 state:
   $(BACKGROUND)
 observations:
-  $(OBS)
+  observers:
+    $(OBS)
