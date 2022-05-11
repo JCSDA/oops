@@ -6,12 +6,13 @@ state:
   date: 2010-01-02T00:00:00Z
   filename: Data/forecast.fc.2010-01-01T00:00:00Z.P1D.l95
 observations:
-- obs space:
-    obsdatain:
-      obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
-    obsdataout:
-      obsfile: Data/hofx.2010-01-02T00:00:00Z.obt
-  obs operator: {}
+  observers:
+  - obs space:
+      obsdatain:
+        obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+      obsdataout:
+        obsfile: Data/hofx.2010-01-02T00:00:00Z.obt
+    obs operator: {}
 
 test:
   reference filename: testoutput/hofx3d.test

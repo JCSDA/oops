@@ -110,6 +110,7 @@ class LocalEnsembleSolver {
 
  private:
   const eckit::LocalConfiguration obsconf_;  // configuration for observations
+  const eckit::LocalConfiguration observersconf_;  // configuration for observations.observers
   ObsLocalizations_ obsloc_;      ///< observation space localization
 };
 
@@ -121,7 +122,9 @@ LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
                                         const eckit::Configuration & config, size_t nens,
                                         const State4D_ & xbmean)
   : geometry_(geometry), obspaces_(obspaces), omb_(obspaces_), Yb_(obspaces_, nens),
-    obsconf_(config, "observations"), obsloc_(obsconf_, obspaces_) {
+    obsconf_(config, "observations"),
+    observersconf_(obsconf_, "observers"),
+    obsloc_(observersconf_, obspaces_) {
   // initialize and print options
   options_.deserialize(config);
   const LocalEnsembleSolverInflationParameters & inflopt = this->options_.infl;
@@ -171,8 +174,8 @@ void LocalEnsembleSolver<MODEL, OBS>::computeHofX4D(const eckit::Configuration &
   const Model_ model(std::move(pseudomodel));
   // Setup model and obs biases; obs errors
   ModelAux_ moderr(geometry_, eckit::LocalConfiguration());
-  ObsAux_ obsaux(obspaces_, obsconf_);
-  R_.reset(new ObsErrors_(obsconf_, obspaces_));
+  ObsAux_ obsaux(obspaces_, observersconf_);
+  R_.reset(new ObsErrors_(observersconf_, obspaces_));
   // Setup and run the model forecast with observers
   State_ init_xx = xx[0];
   PostProcessor<State_> post;
@@ -202,7 +205,7 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(const StateEnsemb
       obsens[jj].read("hofx"+std::to_string(iteration)+"_"+std::to_string(jj+1));
       Log::test() << "H(x) for member " << jj+1 << ":" << std::endl << obsens[jj] << std::endl;
     }
-    R_.reset(new ObsErrors_(obsconf_, obspaces_));
+    R_.reset(new ObsErrors_(observersconf_, obspaces_));
   } else {
     // compute and save H(x)
     Log::debug() << "Computing H(X) online" << std::endl;

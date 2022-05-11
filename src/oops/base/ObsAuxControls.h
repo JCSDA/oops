@@ -108,7 +108,8 @@ ObsAuxControls<OBS>::~ObsAuxControls() {
 template<typename OBS>
 void ObsAuxControls<OBS>::read(const eckit::Configuration & conf) {
   Log::trace() << "ObsAuxControls<OBS>::read starting" << std::endl;
-  std::vector<eckit::LocalConfiguration> obsconfs = conf.getSubConfigurations("observations");
+  std::vector<eckit::LocalConfiguration> obsconfs =
+      conf.getSubConfigurations("observations.observers");
   ASSERT(obsconfs.size() == auxs_.size());
   for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) {
     eckit::LocalConfiguration obsauxconf = obsconfs[jobs].getSubConfiguration("obs bias");
@@ -124,7 +125,8 @@ void ObsAuxControls<OBS>::read(const eckit::Configuration & conf) {
 template<typename OBS>
 void ObsAuxControls<OBS>::write(const eckit::Configuration & conf) const {
   Log::trace() << "ObsAuxControls<OBS>::write starting" << std::endl;
-  std::vector<eckit::LocalConfiguration> obsconfs = conf.getSubConfigurations("observations");
+  std::vector<eckit::LocalConfiguration> obsconfs =
+      conf.getSubConfigurations("observations.observers");
   ASSERT(obsconfs.size() == auxs_.size());
   for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) {
     eckit::LocalConfiguration obsauxconf = obsconfs[jobs].getSubConfiguration("obs bias");

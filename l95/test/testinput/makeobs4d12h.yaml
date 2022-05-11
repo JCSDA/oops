@@ -12,14 +12,15 @@ forecast length: PT12H
 window begin: 2010-01-01T03:00:00Z
 window length: PT12H
 observations:
-- obs space:
-    obsdataout:
-        obsfile: Data/truth4d.2010-01-01T12:00:00Z.obt
-    generate:
-      obs_density: 10
-      obs_error: 0.4
-      obs_frequency: PT1H30M
-  obs operator: {}
+  observers:
+  - obs space:
+      obsdataout:
+          obsfile: Data/truth4d.2010-01-01T12:00:00Z.obt
+      generate:
+        obs_density: 10
+        obs_error: 0.4
+        obs_frequency: PT1H30M
+    obs operator: {}
 make obs: true
 
 test:

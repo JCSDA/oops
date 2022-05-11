@@ -14,20 +14,21 @@ cost function:
     length_scale: 1.0
     standard_deviation: 0.6
   observations:
-  - obs error:
-      covariance model: diagonal
-      random amplitude: 0.2
-      zero-mean perturbations: true
-      member: 2
-      number of members: 4
-    obs space:
-      obsdatain:
-        obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
-      obsdataout:
-        obsfile: Data/mem002.eda_3dvar_zeromeanpert.2010-01-02T00:00:00Z.obt
-      # Note: the same seed must be used for all members for the zero-mean perturbations option to work
-      obs perturbations seed: 1
-    obs operator: {}
+    observers:
+    - obs error:
+        covariance model: diagonal
+        random amplitude: 0.2
+        zero-mean perturbations: true
+        member: 2
+        number of members: 4
+      obs space:
+        obsdatain:
+          obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+        obsdataout:
+          obsfile: Data/mem002.eda_3dvar_zeromeanpert.2010-01-02T00:00:00Z.obt
+        # Note: the same seed must be used for all members for the zero-mean perturbations option to work
+        obs perturbations seed: 1
+      obs operator: {}
 variational:
   minimizer:
     algorithm: DRIPCG

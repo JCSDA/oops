@@ -20,42 +20,43 @@ cost function:
     standard_deviation: 1.8e7
     vertical_length_scale: 15000.0
   observations:
-  - obs operator:
-      obs type: Stream
-    obs space:
-      obs type: Stream
-      obsdatain:
-        obsfile: Data/truth.obs4d_24h.nc
-      obsdataout:
-        obsfile: Data/mem003.eda_4dvar.obs4d_24h.nc
-      obs perturbations seed: 3
-    obs error:
-      covariance model: diagonal
-      random amplitude: 0.4
-  - obs operator:
-      obs type: Wind
-    obs space:
-      obs type: Wind
-      obsdatain:
-        obsfile: Data/truth.obs4d_24h.nc
-      obsdataout:
-        obsfile: Data/mem003.eda_4dvar.obs4d_24h.nc
-      obs perturbations seed: 3
-    obs error:
-      covariance model: diagonal
-      random amplitude: 0.5
-  - obs operator:
-      obs type: WSpeed
-    obs space:
-      obs type: WSpeed
-      obsdatain:
-        obsfile: Data/truth.obs4d_24h.nc
-      obsdataout:
-        obsfile: Data/mem003.eda_4dvar.obs4d_24h.nc
-      obs perturbations seed: 3
-    obs error:
-      covariance model: diagonal
-      random amplitude: 0.2
+    observers:
+    - obs operator:
+        obs type: Stream
+      obs space:
+        obs type: Stream
+        obsdatain:
+          obsfile: Data/truth.obs4d_24h.nc
+        obsdataout:
+          obsfile: Data/mem003.eda_4dvar.obs4d_24h.nc
+        obs perturbations seed: 3
+      obs error:
+        covariance model: diagonal
+        random amplitude: 0.4
+    - obs operator:
+        obs type: Wind
+      obs space:
+        obs type: Wind
+        obsdatain:
+          obsfile: Data/truth.obs4d_24h.nc
+        obsdataout:
+          obsfile: Data/mem003.eda_4dvar.obs4d_24h.nc
+        obs perturbations seed: 3
+      obs error:
+        covariance model: diagonal
+        random amplitude: 0.5
+    - obs operator:
+        obs type: WSpeed
+      obs space:
+        obs type: WSpeed
+        obsdatain:
+          obsfile: Data/truth.obs4d_24h.nc
+        obsdataout:
+          obsfile: Data/mem003.eda_4dvar.obs4d_24h.nc
+        obs perturbations seed: 3
+      obs error:
+        covariance model: diagonal
+        random amplitude: 0.2
   constraints:
   - jcdfi:
       filtered variables: [x]

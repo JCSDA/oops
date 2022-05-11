@@ -12,51 +12,52 @@ forecast length: P1D
 window begin: 2010-01-01T00:00:00Z
 window length: P1D
 observations:
-- obs operator:
-    obs type: Stream
-  obs space:
-    obsdataout:
-      obsfile: Data/truth.obs4d_24h_filter_ordering.nc
-    obs type: Stream
-    generate:
-      begin: PT3H
-      nval: 1
-      obs_density: 100
-      obs_error: 4.0e6
-      obs_period: PT3H
-  obs post filters:
-  - filter: GOMsaver
-    filename: Data/truth.obs4d_24h_filter_ordering.stream.gom
-- obs operator:
-    obs type: Wind
-  obs space:
-    obsdataout:
-      obsfile: Data/truth.obs4d_24h_filter_ordering.nc
-    obs type: Wind
-    generate:
-      begin: PT6H
-      nval: 2
-      obs_density: 100
-      obs_error: 6.0
-      obs_period: PT6H
-  obs post filters:
-  - filter: GOMsaver
-    filename: Data/truth.obs4d_24h_filter_ordering.wind.gom
-- obs operator:
-    obs type: WSpeed
-  obs space:
-    obsdataout:
-      obsfile: Data/truth.obs4d_24h_filter_ordering.nc
-    obs type: WSpeed
-    generate:
-      begin: PT3H
-      nval: 1
-      obs_density: 100
-      obs_error: 12.0
-      obs_period: PT6H
-  obs post filters:
-  - filter: GOMsaver
-    filename: Data/truth.obs4d_24h_filter_ordering.wspeed.gom
+  observers:
+  - obs operator:
+      obs type: Stream
+    obs space:
+      obsdataout:
+        obsfile: Data/truth.obs4d_24h_filter_ordering.nc
+      obs type: Stream
+      generate:
+        begin: PT3H
+        nval: 1
+        obs_density: 100
+        obs_error: 4.0e6
+        obs_period: PT3H
+    obs post filters:
+    - filter: GOMsaver
+      filename: Data/truth.obs4d_24h_filter_ordering.stream.gom
+  - obs operator:
+      obs type: Wind
+    obs space:
+      obsdataout:
+        obsfile: Data/truth.obs4d_24h_filter_ordering.nc
+      obs type: Wind
+      generate:
+        begin: PT6H
+        nval: 2
+        obs_density: 100
+        obs_error: 6.0
+        obs_period: PT6H
+    obs post filters:
+    - filter: GOMsaver
+      filename: Data/truth.obs4d_24h_filter_ordering.wind.gom
+  - obs operator:
+      obs type: WSpeed
+    obs space:
+      obsdataout:
+        obsfile: Data/truth.obs4d_24h_filter_ordering.nc
+      obs type: WSpeed
+      generate:
+        begin: PT3H
+        nval: 1
+        obs_density: 100
+        obs_error: 12.0
+        obs_period: PT6H
+    obs post filters:
+    - filter: GOMsaver
+      filename: Data/truth.obs4d_24h_filter_ordering.wspeed.gom
 make obs: true
 prints:
   frequency: PT3H

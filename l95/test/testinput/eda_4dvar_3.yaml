@@ -18,16 +18,17 @@ cost function:
     length_scale: 1.0
     standard_deviation: 0.6
   observations:
-  - obs operator: {}
-    obs space:
-      obsdatain:
-        obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
-      obsdataout:
-        obsfile: Data/mem003.eda_4dvar.2010-01-02T00:00:00Z.obt
-      obs perturbations seed: 3
-    obs error:
-      covariance model: diagonal
-      random amplitude: 0.2
+    observers:
+    - obs operator: {}
+      obs space:
+        obsdatain:
+          obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
+        obsdataout:
+          obsfile: Data/mem003.eda_4dvar.2010-01-02T00:00:00Z.obt
+        obs perturbations seed: 3
+      obs error:
+        covariance model: diagonal
+        random amplitude: 0.2
   constraints:
   - jcdfi:
       filtered variables: [x]

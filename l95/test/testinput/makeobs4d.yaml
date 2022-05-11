@@ -12,17 +12,18 @@ forecast length: P1D
 window begin: 2010-01-01T03:00:00Z
 window length: P1D
 observations:
-- obs space:
-    obsdataout:
-        obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
-    generate:
-      obs_density: 20
-      obs_error: 0.4
-      obs_frequency: PT3H
-  obs operator: {}
-  obs filters:
-  - filter: GOMsaver
-    filename: Data/gom.l95
+  observers:
+  - obs space:
+      obsdataout:
+          obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
+      generate:
+        obs_density: 20
+        obs_error: 0.4
+        obs_frequency: PT3H
+    obs operator: {}
+    obs filters:
+    - filter: GOMsaver
+      filename: Data/gom.l95
 make obs: true
 
 test:

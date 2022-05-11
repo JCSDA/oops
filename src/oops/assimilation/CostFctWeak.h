@@ -114,7 +114,7 @@ template<typename MODEL, typename OBS> class CostFctWeak : public CostFunction<M
 
   CostJbJq<MODEL>     * newJb(const eckit::Configuration &, const Geometry_ &,
                               const CtrlVar_ &) const override;
-  CostJo<MODEL, OBS>       * newJo(const std::vector<ObsTypeParameters<OBS>> &) const override;
+  CostJo<MODEL, OBS>       * newJo(const ObserversParameters<MODEL, OBS> &) const override;
   CostTermBase<MODEL, OBS> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
   void doLinearize(const Geometry_ &, const eckit::Configuration &,
                    const CtrlVar_ &, const CtrlVar_ &,
@@ -196,7 +196,7 @@ CostJbJq<MODEL> * CostFctWeak<MODEL, OBS>::newJb(const eckit::Configuration & jb
 
 template <typename MODEL, typename OBS>
 CostJo<MODEL, OBS> * CostFctWeak<MODEL, OBS>::newJo(
-    const std::vector<ObsTypeParameters<OBS>> & joParams) const {
+    const ObserversParameters<MODEL, OBS> & joParams) const {
   return new CostJo<MODEL, OBS>(joParams, *commSpace_,
                                 subWinBegin_, subWinEnd_, *commTime_);
 }

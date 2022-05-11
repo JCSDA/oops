@@ -18,14 +18,15 @@ cost function:
     length_scale: 1.0
     standard_deviation: 0.6
   observations:
-  - obs error:
-      covariance model: diagonal
-    obs operator: {}
-    obs space:
-      obsdatain:
-        obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
-      obsdataout:
-        obsfile: Data/4dvar_drgmresr.2010-01-02T00:00:00Z.obt
+    observers:
+    - obs error:
+        covariance model: diagonal
+      obs operator: {}
+      obs space:
+        obsdatain:
+          obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
+        obsdataout:
+          obsfile: Data/4dvar_drgmresr.2010-01-02T00:00:00Z.obt
   constraints:
   - jcdfi:
       filtered variables: [x]

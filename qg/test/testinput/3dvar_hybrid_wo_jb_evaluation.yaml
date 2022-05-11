@@ -35,36 +35,37 @@ cost function:
       weight:
         value: 0.5
   observations:
-  - obs operator:
-      obs type: Stream
-    obs space:
-      obsdatain:
-        obsfile: Data/truth.obs3d.nc
-      obsdataout:
-        obsfile: Data/3dvar_hybrid.obs3d.nojb_eval.nc
-      obs type: Stream
-    obs error:
-      covariance model: diagonal
-  - obs operator:
-      obs type: Wind
-    obs space:
-      obsdatain:
-        obsfile: Data/truth.obs3d.nc
-      obsdataout:
-        obsfile: Data/3dvar_hybrid.obs3d.nojb_eval.nc
-      obs type: Wind
-    obs error:
-      covariance model: diagonal
-  - obs operator:
-      obs type: WSpeed
-    obs space:
-      obsdatain:
-        obsfile: Data/truth.obs3d.nc
-      obsdataout:
-        obsfile: Data/3dvar_hybrid.obs3d.nojb_eval.nc
-      obs type: WSpeed
-    obs error:
-      covariance model: diagonal
+    observers:
+    - obs operator:
+        obs type: Stream
+      obs space:
+        obsdatain:
+          obsfile: Data/truth.obs3d.nc
+        obsdataout:
+          obsfile: Data/3dvar_hybrid.obs3d.nojb_eval.nc
+        obs type: Stream
+      obs error:
+        covariance model: diagonal
+    - obs operator:
+        obs type: Wind
+      obs space:
+        obsdatain:
+          obsfile: Data/truth.obs3d.nc
+        obsdataout:
+          obsfile: Data/3dvar_hybrid.obs3d.nojb_eval.nc
+        obs type: Wind
+      obs error:
+        covariance model: diagonal
+    - obs operator:
+        obs type: WSpeed
+      obs space:
+        obsdatain:
+          obsfile: Data/truth.obs3d.nc
+        obsdataout:
+          obsfile: Data/3dvar_hybrid.obs3d.nojb_eval.nc
+        obs type: WSpeed
+      obs error:
+        covariance model: diagonal
   geometry:
     nx: 40
     ny: 20

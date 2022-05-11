@@ -45,7 +45,7 @@ CASE("test_obserrordiag_zeromeanpert") {
     const eckit::YAMLConfiguration memberConf(confPath);
     const eckit::LocalConfiguration costFunctionConf(memberConf, "cost function");
     const std::vector<eckit::LocalConfiguration> obsConfs =
-        costFunctionConf.getSubConfigurations("observations");
+        costFunctionConf.getSubConfigurations("observations.observers");
     EXPECT_EQUAL(obsConfs.size(), 1);
 
     const eckit::LocalConfiguration obsErrorConf(obsConfs[0], "obs error");

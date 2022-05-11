@@ -127,7 +127,7 @@ CostJbTotal<MODEL, OBS>::CostJbTotal(const CtrlVar_ & xb, JbState_ * jb,
                                      const Geometry_ & resol, const ObsSpaces_ & odb)
   : xb_(xb), jb_(jb),
     jbModBias_(conf.getSubConfiguration("model aux error"), resol),
-    jbObsBias_(odb, conf.getSubConfiguration("observations")), dxFG_(), resol_(nullptr),
+    jbObsBias_(odb, conf.getSubConfiguration("observations.observers")), dxFG_(), resol_(nullptr),
     windowBegin_(conf.getString("window begin")),
     windowEnd_(windowBegin_ + util::Duration(conf.getString("window length"))),
     jqtraj_()

@@ -14,17 +14,18 @@ cost function:
     length_scale: 1.0
     standard_deviation: 0.6
   observations:
-  - obs operator: {}
-    obs space:
-      obsdatain:
-        obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
-      obsdataout:
-        obsfile: Data/3dvar_qc.2010-01-02T00:00:00Z.obt
-    obs error:
-      covariance model: diagonal
-    obs filters:
-    - filter: Background Check
-      threshold: 1.3
+    observers:
+    - obs operator: {}
+      obs space:
+        obsdatain:
+          obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+        obsdataout:
+          obsfile: Data/3dvar_qc.2010-01-02T00:00:00Z.obt
+      obs error:
+        covariance model: diagonal
+      obs filters:
+      - filter: Background Check
+        threshold: 1.3
 
 variational:
   minimizer:

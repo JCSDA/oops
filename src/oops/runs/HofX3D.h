@@ -53,8 +53,8 @@ class HofX3DParameters : public ApplicationParameters {
   RequiredParameter<util::DateTime> windowBegin{"window begin", this};
   RequiredParameter<util::Duration> windowLength{"window length", this};
 
-  /// A list whose elements determine treatment of observations from individual observation spaces.
-  Parameter<std::vector<ObsTypeParameters<OBS>>> observations{"observations", {}, this};
+  /// Options describing the observations and their treatment
+  Parameter<ObserversParameters<MODEL, OBS>> observations{"observations", {}, this};
 
   /// Geometry parameters.
   RequiredParameter<GeometryParameters_> geometry{"geometry", this};
@@ -119,14 +119,15 @@ template <typename MODEL, typename OBS> class HofX3D : public Application {
     }
 
 //  Setup observations
-    ObsSpaces_ obspaces(obsSpaceParameters(params.observations.value()),
-                        this->getComm(), winbgn, winend);
-    ObsAux_ obsaux(obspaces, obsAuxParameters(params.observations.value()));
-    ObsErrors_ Rmat(obsErrorParameters(params.observations.value()), obspaces);
+    const auto & observersParams = params.observations.value().observers.value();
+    ObsSpaces_ obspaces(obsSpaceParameters(observersParams), this->getComm(), winbgn, winend);
+    ObsAux_ obsaux(obspaces, obsAuxParameters(observersParams));
+    ObsErrors_ Rmat(obsErrorParameters(observersParams), obspaces);
 
 //  Setup and initialize observer
     PostProcessor<State_> post;
-    Observers_ hofx(obspaces, observerParameters(params.observations.value()));
+    Observers_ hofx(obspaces, observerParameters(observersParams),
+                    params.observations.value().getValues.value());
     hofx.initialize(geometry, obsaux, Rmat, post);
 
 //  Compute H(x)

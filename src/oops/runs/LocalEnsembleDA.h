@@ -181,7 +181,8 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     const Geometry_ geometry(params.geometry, this->getComm());
 
     // Get observations configuration
-    eckit::LocalConfiguration obsConfig = params.observations;
+    const eckit::LocalConfiguration observationsConfig = params.observations;
+    eckit::LocalConfiguration obsConfig = observationsConfig.getSubConfiguration("observers");
 
     // if any of the obs. spaces uses Halo distribution it will need to know the geometry
     // of the local grid on this PE
@@ -431,8 +432,8 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
       }
 
       eckit::LocalConfiguration tmp;
-      tmp.set("observations", obsConfigs);
-      obsConfig = tmp.getSubConfiguration("observations");
+      tmp.set("observers", obsConfigs);
+      obsConfig = tmp.getSubConfiguration("observers");
     } else {
       obsConfig.set("obs space.distribution.center", patchCenter);
       obsConfig.set("obs space.distribution.radius", patchRadius);

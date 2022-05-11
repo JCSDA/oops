@@ -14,15 +14,16 @@ cost function:
     length_scale: 0.1
     standard_deviation: 1.0
   observations:
-  - obs operator: {}
-    obs space:
-      obsdatain:
-        obsfile: Data/simplifiedl95.truth.obt
-      obsdataout:
-        obsfile: Data/simplifiedl95.obt
-    obs error:
-      covariance model: diagonal
-      random amplitude: 1.0
+    observers:
+    - obs operator: {}
+      obs space:
+        obsdatain:
+          obsfile: Data/simplifiedl95.truth.obt
+        obsdataout:
+          obsfile: Data/simplifiedl95.obt
+      obs error:
+        covariance model: diagonal
+        random amplitude: 1.0
 variational:
   minimizer:
     algorithm: GMRESR

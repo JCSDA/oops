@@ -7,14 +7,15 @@ cost function:
   geometry:
     resol: 40
   observations:
-  - obs error:
-      covariance model: diagonal
-    obs space:
-      obsdatain:
-        obsfile: Data/truth4d.2010-01-01T12:00:00Z.obt
-      obsdataout:
-        obsfile: Data/4densvar.2010-01-01T12:00:00Z.obt
-    obs operator: {}
+    observers:
+    - obs error:
+        covariance model: diagonal
+      obs space:
+        obsdatain:
+          obsfile: Data/truth4d.2010-01-01T12:00:00Z.obt
+        obsdataout:
+          obsfile: Data/4densvar.2010-01-01T12:00:00Z.obt
+      obs operator: {}
   background:
     states:
     - date: 2010-01-01T03:00:00Z

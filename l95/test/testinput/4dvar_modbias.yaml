@@ -22,14 +22,15 @@ cost function:
   model aux error:
     standard_deviation: 1.0
   observations:
-  - obs error:
-      covariance model: diagonal
-    obs space:
-      obsdatain:
-        obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
-      obsdataout:
-        obsfile: Data/4dvar_modbias.2010-01-02T00:00:00Z.obt
-    obs operator: {}
+    observers:
+    - obs error:
+        covariance model: diagonal
+      obs space:
+        obsdatain:
+          obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
+        obsdataout:
+          obsfile: Data/4dvar_modbias.2010-01-02T00:00:00Z.obt
+      obs operator: {}
   constraints:
   - jcdfi:
       filtered variables: [x]

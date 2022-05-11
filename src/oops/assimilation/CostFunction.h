@@ -74,7 +74,7 @@ class CostFunctionParametersBase : public Parameters {
 
   // These options are used (directly or indirectly) in the CostFunction base class.
   // Jo
-  RequiredParameter<std::vector<ObsTypeParameters<OBS>>> observations{"observations", this};
+  RequiredParameter<ObserversParameters<MODEL, OBS>> observations{"observations", this};
 
   // Jb
   Parameter<bool> jbEvaluation{"jb evaluation", true, this};
@@ -166,7 +166,7 @@ template<typename MODEL, typename OBS> class CostFunction : private boost::nonco
 
   virtual CostJbState<MODEL>  * newJb(const eckit::Configuration &, const Geometry_ &,
                                       const CtrlVar_ &) const = 0;
-  virtual CostJo<MODEL, OBS>       * newJo(const std::vector<ObsTypeParameters<OBS>> &) const = 0;
+  virtual CostJo<MODEL, OBS>       * newJo(const ObserversParameters<MODEL, OBS> &) const = 0;
   virtual CostTermBase<MODEL, OBS> * newJc(const eckit::Configuration &,
                                            const Geometry_ &) const = 0;
   virtual void doLinearize(const Geometry_ &, const eckit::Configuration &,
@@ -288,11 +288,8 @@ void CostFunction<MODEL, OBS>::setupTerms(const eckit::Configuration & config) {
 
 // Jo
   eckit::LocalConfiguration obsconf(config, "observations");
-  std::vector<eckit::LocalConfiguration> obsconfs = obsconf.getSubConfigurations();
-  std::vector<ObsTypeParameters<OBS>> joparams(obsconfs.size());
-  for (size_t i = 0; i < obsconfs.size(); ++i) {
-    joparams[i].deserialize(obsconfs[i]);
-  }
+  ObserversParameters<MODEL, OBS> joparams{};
+  joparams.deserialize(obsconf);
   CostJo<MODEL, OBS> * jo = this->newJo(joparams);
   jterms_.push_back(jo);
   Log::trace() << "CostFunction::setupTerms Jo added" << std::endl;

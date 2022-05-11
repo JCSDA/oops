@@ -14,18 +14,19 @@ background:
     nmembers: 5
 
 observations:
-- obs error:
-    covariance model: diagonal
-  obs localizations:
-  - localization method: Gaspari-Cohn
-    lengthscale: .1
-  obs space:
-    obsdatain:
-      obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
-  obs operator: {}
-  obs filters:
-  - filter: Background Check
-    threshold: 3.0
+  observers:
+  - obs error:
+      covariance model: diagonal
+    obs localizations:
+    - localization method: Gaspari-Cohn
+      lengthscale: .1
+    obs space:
+      obsdatain:
+        obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+    obs operator: {}
+    obs filters:
+    - filter: Background Check
+      threshold: 3.0
 
 local ensemble DA:
   solver: LETKF

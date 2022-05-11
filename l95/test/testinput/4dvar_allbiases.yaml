@@ -22,18 +22,19 @@ cost function:
   model aux error:
     standard_deviation: 1.0
   observations:
-  - obs operator: {}
-    obs space:
-      obsdatain:
-        obsfile: Data/biased.2010-01-02T00:00:00Z.obt
-      obsdataout:
-        obsfile: Data/4dvar_allbiases.2010-01-02T00:00:00Z.obt
-    obs error:
-      covariance model: diagonal
-    obs bias:
-      bias: 0.0
-      covariance:
-        standard_deviation: 0.8
+    observers:
+    - obs operator: {}
+      obs space:
+        obsdatain:
+          obsfile: Data/biased.2010-01-02T00:00:00Z.obt
+        obsdataout:
+          obsfile: Data/4dvar_allbiases.2010-01-02T00:00:00Z.obt
+      obs error:
+        covariance model: diagonal
+      obs bias:
+        bias: 0.0
+        covariance:
+          standard_deviation: 0.8
   constraints:
   - jcdfi:
       filtered variables: [x]

@@ -41,36 +41,37 @@ cost function:
       weight:
         value: 0.5
   observations:
-  - obs error:
-      covariance model: diagonal
-    obs operator:
-      obs type: Stream
-    obs space:
-      obsdatain:
-        obsfile: Data/truth.obs4d_24h.nc
-      obsdataout:
-        obsfile: Data/4dvar_drplanczos_hybrid.obs4d_24h.nc
-      obs type: Stream
-  - obs error:
-      covariance model: diagonal
-    obs operator:
-      obs type: Wind
-    obs space:
-      obsdatain:
-        obsfile: Data/truth.obs4d_24h.nc
-      obsdataout:
-        obsfile: Data/4dvar_drplanczos_hybrid.obs4d_24h.nc
-      obs type: Wind
-  - obs error:
-      covariance model: diagonal
-    obs operator:
-      obs type: WSpeed
-    obs space:
-      obsdatain:
-        obsfile: Data/truth.obs4d_24h.nc
-      obsdataout:
-        obsfile: Data/4dvar_drplanczos_hybrid.obs4d_24h.nc
-      obs type: WSpeed
+    observers:
+    - obs error:
+        covariance model: diagonal
+      obs operator:
+        obs type: Stream
+      obs space:
+        obsdatain:
+          obsfile: Data/truth.obs4d_24h.nc
+        obsdataout:
+          obsfile: Data/4dvar_drplanczos_hybrid.obs4d_24h.nc
+        obs type: Stream
+    - obs error:
+        covariance model: diagonal
+      obs operator:
+        obs type: Wind
+      obs space:
+        obsdatain:
+          obsfile: Data/truth.obs4d_24h.nc
+        obsdataout:
+          obsfile: Data/4dvar_drplanczos_hybrid.obs4d_24h.nc
+        obs type: Wind
+    - obs error:
+        covariance model: diagonal
+      obs operator:
+        obs type: WSpeed
+      obs space:
+        obsdatain:
+          obsfile: Data/truth.obs4d_24h.nc
+        obsdataout:
+          obsfile: Data/4dvar_drplanczos_hybrid.obs4d_24h.nc
+        obs type: WSpeed
   constraints:
   - jcdfi:
       filtered variables: [x]

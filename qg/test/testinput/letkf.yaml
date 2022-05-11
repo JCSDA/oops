@@ -21,45 +21,46 @@ background:
     nmembers: 5
 
 observations:
-- obs operator:
-    obs type: Stream
-  obs space:
-    obsdatain:
-      obsfile: Data/truth.obs4d_12h.nc
-    obsdataout:
-      obsfile: Data/letkf.obs4d_12h.nc
-    obs type: Stream
-  obs error:
-    covariance model: diagonal
-  obs localizations:
-  - localization method: Heaviside
-    lengthscale: 5e6
-- obs operator:
-    obs type: Wind
-  obs space:
-    obsdatain:
-      obsfile: Data/truth.obs4d_12h.nc
-    obsdataout:
-      obsfile: Data/letkf.obs4d_12h.nc
-    obs type: Wind
-  obs error:
-    covariance model: diagonal
-  obs localizations:
-  - localization method: Heaviside
-    lengthscale: 5e6
-- obs operator:
-    obs type: WSpeed
-  obs space:
-    obsdatain:
-      obsfile: Data/truth.obs4d_12h.nc
-    obsdataout:
-      obsfile: Data/letkf.obs4d_12h.nc
-    obs type: WSpeed
-  obs error:
-    covariance model: diagonal
-  obs localizations:
-  - localization method: Heaviside
-    lengthscale: 5e6
+  observers:
+  - obs operator:
+      obs type: Stream
+    obs space:
+      obsdatain:
+        obsfile: Data/truth.obs4d_12h.nc
+      obsdataout:
+        obsfile: Data/letkf.obs4d_12h.nc
+      obs type: Stream
+    obs error:
+      covariance model: diagonal
+    obs localizations:
+    - localization method: Heaviside
+      lengthscale: 5e6
+  - obs operator:
+      obs type: Wind
+    obs space:
+      obsdatain:
+        obsfile: Data/truth.obs4d_12h.nc
+      obsdataout:
+        obsfile: Data/letkf.obs4d_12h.nc
+      obs type: Wind
+    obs error:
+      covariance model: diagonal
+    obs localizations:
+    - localization method: Heaviside
+      lengthscale: 5e6
+  - obs operator:
+      obs type: WSpeed
+    obs space:
+      obsdatain:
+        obsfile: Data/truth.obs4d_12h.nc
+      obsdataout:
+        obsfile: Data/letkf.obs4d_12h.nc
+      obs type: WSpeed
+    obs error:
+      covariance model: diagonal
+    obs localizations:
+    - localization method: Heaviside
+      lengthscale: 5e6
 
 local ensemble DA:
   solver: LETKF

@@ -14,15 +14,16 @@ background:
     nmembers: 5
 
 observations:
-- obs error:
-    covariance model: diagonal
-  obs localizations:
-  - localization method: Gaspari-Cohn
-    lengthscale: .1
-  obs space:
-    obsdatain:
-      obsfile: Data/noobs.obt
-  obs operator: {}
+  observers:
+  - obs error:
+      covariance model: diagonal
+    obs localizations:
+    - localization method: Gaspari-Cohn
+      lengthscale: .1
+    obs space:
+      obsdatain:
+        obsfile: Data/noobs.obt
+    obs operator: {}
 
 local ensemble DA:
   solver: LETKF

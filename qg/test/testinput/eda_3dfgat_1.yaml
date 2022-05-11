@@ -20,50 +20,51 @@ cost function:
     standard_deviation: 1.8e7
     vertical_length_scale: 15000.0
   observations:
-  - obs error:
-      covariance model: diagonal
-      random amplitude: 0.4
-    obs operator:
-      obs type: Stream
-    obs space:
-      obsdatain:
-        obsfile: Data/truth.obs3d.nc
-      obsdataout:
-        obsfile: Data/mem001.eda_3dfgat.obs3d.nc
-      obs type: Stream
-      obs perturbations seed: 1
-    get values:
-      interpolation type: default_1
-    linear get values:
-      interpolation type: default_a
-  - obs error:
-      covariance model: diagonal
-      random amplitude: 0.5
-    obs operator:
-      obs type: Wind
-    obs space:
-      obsdatain:
-        obsfile: Data/truth.obs3d.nc
-      obsdataout:
-        obsfile: Data/mem001.eda_3dfgat.obs3d.nc
-      obs type: Wind
-      obs perturbations seed: 1
-    get values:
-      interpolation type: default_2
-  - obs error:
-      covariance model: diagonal
-      random amplitude: 0.2
-    obs operator:
-      obs type: WSpeed
-    obs space:
-      obsdatain:
-        obsfile: Data/truth.obs3d.nc
-      obsdataout:
-        obsfile: Data/mem001.eda_3dfgat.obs3d.nc
-      obs type: WSpeed
-      obs perturbations seed: 1
-    get values:
-      interpolation type: default_3
+    observers:
+    - obs error:
+        covariance model: diagonal
+        random amplitude: 0.4
+      obs operator:
+        obs type: Stream
+      obs space:
+        obsdatain:
+          obsfile: Data/truth.obs3d.nc
+        obsdataout:
+          obsfile: Data/mem001.eda_3dfgat.obs3d.nc
+        obs type: Stream
+        obs perturbations seed: 1
+      get values:
+        interpolation type: default_1
+      linear get values:
+        interpolation type: default_a
+    - obs error:
+        covariance model: diagonal
+        random amplitude: 0.5
+      obs operator:
+        obs type: Wind
+      obs space:
+        obsdatain:
+          obsfile: Data/truth.obs3d.nc
+        obsdataout:
+          obsfile: Data/mem001.eda_3dfgat.obs3d.nc
+        obs type: Wind
+        obs perturbations seed: 1
+      get values:
+        interpolation type: default_2
+    - obs error:
+        covariance model: diagonal
+        random amplitude: 0.2
+      obs operator:
+        obs type: WSpeed
+      obs space:
+        obsdatain:
+          obsfile: Data/truth.obs3d.nc
+        obsdataout:
+          obsfile: Data/mem001.eda_3dfgat.obs3d.nc
+        obs type: WSpeed
+        obs perturbations seed: 1
+      get values:
+        interpolation type: default_3
 variational:
   minimizer:
     algorithm: DRIPCG

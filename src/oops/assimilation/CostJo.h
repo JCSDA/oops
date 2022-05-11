@@ -66,10 +66,10 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   typedef PostProcessorTLAD<MODEL>      PostProcTLAD_;
 
  public:
-  typedef ObsTypeParameters<OBS> Parameters_;
+  typedef ObserversParameters<MODEL, OBS> Parameters_;
 
   /// Construct \f$ J_o\f$ from \f$ R\f$ and \f$ y_{obs}\f$.
-  CostJo(const std::vector<Parameters_> &, const eckit::mpi::Comm &,
+  CostJo(const Parameters_ &, const eckit::mpi::Comm &,
          const util::DateTime &, const util::DateTime &,
          const eckit::mpi::Comm & ctime = oops::mpi::myself());
 
@@ -114,7 +114,7 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   const ObsSpaces_ & obspaces() const {return obspaces_;}
 
  private:
-  const std::vector<Parameters_> params_;
+  const Parameters_ params_;
   ObsSpaces_ obspaces_;
   std::unique_ptr<Observations_> yobs_;
   ObsErrors_ Rmat_;
@@ -133,12 +133,15 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
 // =============================================================================
 
 template<typename MODEL, typename OBS>
-CostJo<MODEL, OBS>::CostJo(const std::vector<Parameters_> & joParams, const eckit::mpi::Comm & comm,
+CostJo<MODEL, OBS>::CostJo(const Parameters_ & joParams, const eckit::mpi::Comm & comm,
                            const util::DateTime & winbgn, const util::DateTime & winend,
                            const eckit::mpi::Comm & ctime)
-  : params_(joParams), obspaces_(obsSpaceParameters(params_), comm, winbgn, winend, ctime),
-    Rmat_(obsErrorParameters(params_), obspaces_),
-    observers_(obspaces_, observerParameters(params_)), gradFG_(), obstlad_(), currentConf_()
+  : params_(joParams),
+    obspaces_(obsSpaceParameters(params_.observers.value()), comm, winbgn, winend, ctime),
+    Rmat_(obsErrorParameters(params_.observers.value()), obspaces_),
+    observers_(obspaces_, observerParameters(params_.observers.value()),
+               params_.getValues.value()),
+    gradFG_(), obstlad_(), currentConf_()
 {
   Log::trace() << "CostJo::CostJo" << std::endl;
 }
@@ -226,7 +229,7 @@ double CostJo<MODEL, OBS>::computeCost() {
       Log::test() << zz << " --- No Observations";
     }
 
-    if (params_[jj].observer.monitoringOnly) {
+    if (params_.observers.value()[jj].observer.monitoringOnly) {
       Log::test() << " (Monitoring only)";
     } else {
       zjo += zz;
@@ -244,7 +247,7 @@ template<typename MODEL, typename OBS>
 void CostJo<MODEL, OBS>::setPostProcTraj(const CtrlVar_ & xx, const eckit::Configuration & conf,
                                          const Geometry_ & lowres, PostProcTLAD_ & pptraj) {
   Log::trace() << "CostJo::setPostProcTraj start" << std::endl;
-  obstlad_.reset(new ObserversTLAD_(obspaces_, observerParameters(params_)));
+  obstlad_.reset(new ObserversTLAD_(obspaces_, observerParameters(params_.observers.value())));
   obstlad_->initializeTraj(lowres, xx.obsVar(), pptraj);
   Log::trace() << "CostJo::setPostProcTraj done" << std::endl;
 }

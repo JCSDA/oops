@@ -27,19 +27,20 @@ cost function:
       length_scale: 1.0
       standard_deviation: 0.2
   observations:
-  - obs error:
-      covariance model: diagonal
-    obs space:
-      obsdatain:
-        obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
-      obsdataout:
-        obsfile: Data/4dsaddlepoint.2010-01-02T00:00:00Z.obt
-    obs operator: {}
-#  constraints:
-#  - jcdfi:
-#      filtered variables: [x]
-#      alpha: 100.0
-#      cutoff: PT3H
+    observers:
+    - obs error:
+        covariance model: diagonal
+      obs space:
+        obsdatain:
+          obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
+        obsdataout:
+          obsfile: Data/4dsaddlepoint.2010-01-02T00:00:00Z.obt
+      obs operator: {}
+#    constraints:
+#    - jcdfi:
+#        filtered variables: [x]
+#        alpha: 100.0
+#        cutoff: PT3H
 variational:
   minimizer:
     algorithm: SaddlePoint
