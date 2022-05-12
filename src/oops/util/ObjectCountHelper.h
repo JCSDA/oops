@@ -34,6 +34,7 @@ class ObjectCountHelper : public util::Printable,
   void oneMore();
   void oneLess(const size_t &);
   void setSize(const size_t &);
+  size_t created() const {return created_;}
 
  private:
   static std::map< std::string, std::shared_ptr<ObjectCountHelper> > counters_;

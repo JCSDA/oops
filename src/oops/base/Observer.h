@@ -92,6 +92,8 @@ class Observer {
  private:
   Parameters_                   parameters_;
   const ObsSpace_ &             obspace_;    // ObsSpace used in H(x)
+  Variables                     geovars_;
+  std::vector<size_t>           varsizes_;   // Sizes of variables requested from model
   std::unique_ptr<ObsOperator_> obsop_;      // Obs operator
   std::unique_ptr<Locations_>   locations_;  // locations
   const ObsAuxCtrl_ *           biascoeff_;  // bias coefficients
@@ -108,7 +110,7 @@ class Observer {
 
 template <typename MODEL, typename OBS>
 Observer<MODEL, OBS>::Observer(const ObsSpace_ & obspace, const Parameters_ & params)
-  : parameters_(params), obspace_(obspace), obsop_(), locations_(),
+  : parameters_(params), obspace_(obspace), geovars_(), varsizes_(), obsop_(), locations_(),
     biascoeff_(nullptr), filters_(), qcflags_(), initialized_(false)
 {
   Log::trace() << "Observer::Observer start" << std::endl;
@@ -140,15 +142,15 @@ Observer<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrl_ & bia
   filters_->preProcess();
 
 // Set up variables that will be requested from the model
-  Variables geovars;
-  geovars += obsop_->requiredVars();
-  geovars += biascoeff_->requiredVars();
-  geovars += filters_->requiredVars();
+  geovars_ += obsop_->requiredVars();
+  geovars_ += biascoeff_->requiredVars();
+  geovars_ += filters_->requiredVars();
+  varsizes_ = geom.variableSizes(geovars_);
 
 // Set up GetValues
   locations_.reset(new Locations_(obsop_->locations()));
   getvals_.reset(new GetValues_(parameters_.getValues, geom, obspace_.windowStart(),
-                                obspace_.windowEnd(), *locations_, geovars));
+                                obspace_.windowEnd(), *locations_, geovars_));
 
   initialized_ = true;
   Log::trace() << "Observer<MODEL, OBS>::initialize done" << std::endl;
@@ -162,11 +164,13 @@ void Observer<MODEL, OBS>::finalize(ObsVector_ & yobsim) {
   oops::Log::trace() << "Observer<MODEL, OBS>::finalize start" << std::endl;
   ASSERT(initialized_);
 
-  // GetValues releases GeoVaLs, Observer takes ownership
-  std::unique_ptr<GeoVaLs_> geovals = getvals_->releaseGeoVaLs();
+  GeoVaLs_ geovals(*locations_, geovars_, varsizes_);
+
+  // Fill GeoVaLs
+  getvals_->fillGeoVaLs(geovals);
 
   /// Call prior filters
-  filters_->priorFilter(*geovals);
+  filters_->priorFilter(geovals);
 
   /// Setup diagnostics
   Variables vars;
@@ -179,10 +183,10 @@ void Observer<MODEL, OBS>::finalize(ObsVector_ & yobsim) {
   ybias.zero();
 
   /// Compute H(x)
-  obsop_->simulateObs(*geovals, yobsim, *biascoeff_, ybias, ydiags);
+  obsop_->simulateObs(geovals, yobsim, *biascoeff_, ybias, ydiags);
 
   /// Call posterior filters
-  filters_->postFilter(*geovals, yobsim, ybias, ydiags);
+  filters_->postFilter(geovals, yobsim, ybias, ydiags);
 
   // Update R with obs errors that filters might have updated
   Rmat_->update(*obserr_);

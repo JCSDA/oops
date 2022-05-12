@@ -63,6 +63,8 @@ class ObserverTLAD {
  private:
   Parameters_                   parameters_;
   const ObsSpace_ &             obspace_;    // ObsSpace used in H(x)
+  Variables                     geovars_;
+  std::vector<size_t>           varsizes_;   // Sizes of variables requested from model
   LinearObsOperator_            hoptlad_;    // Linear obs operator
   std::shared_ptr<GetValues_>   getvals_;    // Postproc passed to the model during integration
   std::vector<size_t>  linvars_sizes_;       // Sizes of variables requested from model for
@@ -77,7 +79,7 @@ class ObserverTLAD {
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
 ObserverTLAD<MODEL, OBS>::ObserverTLAD(const ObsSpace_ & obsdb, const Parameters_ & params)
-  : parameters_(params), obspace_(obsdb),
+  : parameters_(params), obspace_(obsdb), geovars_(), varsizes_(),
     hoptlad_(obspace_,
              params.linearObsOperator.value() != boost::none ?
                params.linearObsOperator.value().value() :
@@ -109,12 +111,12 @@ ObserverTLAD<MODEL, OBS>::initializeTraj(const Geometry_ & geom, const ObsAuxCtr
         parameters_.linearGetValues.value().value() : parameters_.getValues.value());
 
 // Set up variables that will be requested from the model
-  Variables geovars;
-  geovars += hop.requiredVars();
-  geovars += ybias_->requiredVars();
+  geovars_ += hop.requiredVars();
+  geovars_ += ybias_->requiredVars();
+  varsizes_ = geom.variableSizes(geovars_);
 
   getvals_.reset(new GetValues_(gvconf, geom, winbgn_, winend_,
-                                *locations_, geovars, hoptlad_.requiredVars()));
+                                *locations_, geovars_, hoptlad_.requiredVars()));
 
   init_ = true;
   Log::trace() << "ObserverTLAD::initializeTraj done" << std::endl;
@@ -126,11 +128,13 @@ void ObserverTLAD<MODEL, OBS>::finalizeTraj() {
   Log::trace() << "ObserverTLAD::finalizeTraj start" << std::endl;
   ASSERT(init_);
 
-  // GetValues releases GeoVaLs, Observer takes ownership
-  std::unique_ptr<GeoVaLs_> geovals = getvals_->releaseGeoVaLs();
+  GeoVaLs_ geovals(*locations_, geovars_, varsizes_);
+
+  // Fill GeoVaLs
+  getvals_->fillGeoVaLs(geovals);
 
   /// Set linearization trajectory for H(x)
-  hoptlad_.setTrajectory(*geovals, *ybias_);
+  hoptlad_.setTrajectory(geovals, *ybias_);
 
   init_ = false;
   Log::trace() << "ObserverTLAD::finalizeTraj done" << std::endl;
@@ -140,11 +144,13 @@ template <typename MODEL, typename OBS>
 void ObserverTLAD<MODEL, OBS>::finalizeTL(const ObsAuxIncr_ & ybiastl, ObsVector_ & ydeptl) {
   Log::trace() << "ObserverTLAD::finalizeTL start" << std::endl;
 
-  // GetValues releases GeoVaLs, Observer takes ownership
-  std::unique_ptr<GeoVaLs_> geovals = getvals_->releaseGeoVaLsTL();
+  GeoVaLs_ geovals(*locations_, hoptlad_.requiredVars(), linvars_sizes_);
+
+  // Fill GeoVaLs
+  getvals_->fillGeoVaLsTL(geovals);
 
   // Compute linear H(x)
-  hoptlad_.simulateObsTL(*geovals, ydeptl, ybiastl);
+  hoptlad_.simulateObsTL(geovals, ydeptl, ybiastl);
 
   Log::trace() << "ObserverTLAD::finalizeTL done" << std::endl;
 }
@@ -153,13 +159,13 @@ template <typename MODEL, typename OBS>
 void ObserverTLAD<MODEL, OBS>::initializeAD(const ObsVector_ & ydepad, ObsAuxIncr_ & ybiasad) {
   Log::trace() << "ObserverTLAD::initializeAD start" << std::endl;
 
-  // Compute adjoint of H(x)
-  std::unique_ptr<GeoVaLs_> geovals(new GeoVaLs_(*locations_, hoptlad_.requiredVars(),
-                                                 linvars_sizes_));
-  hoptlad_.simulateObsAD(*geovals, ydepad, ybiasad);
+  GeoVaLs_ geovals(*locations_, hoptlad_.requiredVars(), linvars_sizes_);
 
-  // GetValues get GeoVaLs and takes ownership
-  getvals_->releaseGeoVaLsAD(geovals);
+  // Compute adjoint of H(x)
+  hoptlad_.simulateObsAD(geovals, ydepad, ybiasad);
+
+  // GeoVaLs forcing to GetValues
+  getvals_->fillGeoVaLsAD(geovals);
 
   Log::trace() << "ObserverTLAD::initializeAD done" << std::endl;
 }

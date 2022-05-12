@@ -27,6 +27,7 @@
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
+#include "oops/util/ObjectCounter.h"
 #include "oops/util/Timer.h"
 
 namespace oops {
@@ -85,7 +86,7 @@ typename TModelInterpolator_IfAvailableElseGenericInterpolator<MODEL,
 /// \brief Fills GeoVaLs with requested variables at obs locations during model run
 
 template <typename MODEL, typename OBS>
-class GetValues {
+class GetValues : private util::ObjectCounter<GetValues<MODEL, OBS> > {
   typedef Geometry<MODEL>           Geometry_;
   typedef GeoVaLs<OBS>              GeoVaLs_;
   typedef Increment<MODEL>          Increment_;
@@ -94,6 +95,8 @@ class GetValues {
   typedef State<MODEL>              State_;
 
  public:
+  static const std::string classname() {return "oops::GetValues";}
+
   GetValues(const eckit::Configuration &, const Geometry_ &,
             const util::DateTime &, const util::DateTime &,
             const Locations_ &, const Variables &, const Variables & varl = Variables());
@@ -102,16 +105,16 @@ class GetValues {
   void initialize(const util::Duration &);
   void process(const State_ &);
   void finalize();
-  std::unique_ptr<GeoVaLs_> releaseGeoVaLs();
+  void fillGeoVaLs(GeoVaLs_ &);
 
 /// TL
   void initializeTL(const util::Duration &);
   void processTL(const Increment_ &);
   void finalizeTL();
-  std::unique_ptr<GeoVaLs_> releaseGeoVaLsTL();
+  void fillGeoVaLsTL(GeoVaLs_ &);
 
 /// AD
-  void releaseGeoVaLsAD(std::unique_ptr<GeoVaLs_> &);
+  void fillGeoVaLsAD(const GeoVaLs_ &);
   void initializeAD();
   void processAD(Increment_ &);
   void finalizeAD(const util::Duration &);
@@ -127,14 +130,10 @@ class GetValues {
 
   const Locations_ & locations_;       /// locations of observations
   const Variables geovars_;            /// Variables needed from model
-  std::vector<size_t> varsizes_;       /// Sizes (e.g. number of vertical levels)
+  size_t varsizes_;                    /// Sizes (e.g. number of vertical levels)
                                        /// for all Variables in GeoVaLs
-  std::unique_ptr<GeoVaLs_> geovals_;  /// GeoVaLs that are filled in
-
   const Variables linvars_;
-  const std::vector<size_t> linsizes_;
-  std::unique_ptr<GeoVaLs_> gvalstl_;        /// GeoVaLs for TL
-  std::unique_ptr<const GeoVaLs_> gvalsad_;  /// Input GeoVaLs for adjoint forcing
+  size_t linsizes_;
   eckit::LocalConfiguration interpConf_;
   const eckit::mpi::Comm & comm_;
   const size_t ntasks_;
@@ -142,6 +141,10 @@ class GetValues {
   std::vector<std::vector<size_t>> myobs_index_by_task_;
   std::vector<std::vector<util::DateTime>> obs_times_by_task_;
   std::vector<std::vector<double>> locinterp_;
+  std::vector<std::vector<double>> recvinterp_;
+  std::vector<eckit::mpi::Request> send_req_;
+  std::vector<eckit::mpi::Request> recv_req_;
+  int tag_;
 };
 
 // -----------------------------------------------------------------------------
@@ -152,13 +155,18 @@ GetValues<MODEL, OBS>::GetValues(const eckit::Configuration & conf, const Geomet
                                  const Locations_ & locs,
                                  const Variables & vars, const Variables & varl)
   : winbgn_(bgn), winend_(end), hslot_(), locations_(locs),
-    geovars_(vars), varsizes_(geom.variableSizes(geovars_)), geovals_(),
-    linvars_(varl), linsizes_(geom.variableSizes(linvars_)), gvalstl_(), gvalsad_(),
+    geovars_(vars), varsizes_(0), linvars_(varl), linsizes_(0),
     interpConf_(conf), comm_(geom.getComm()), ntasks_(comm_.size()), interp_(ntasks_),
-    myobs_index_by_task_(ntasks_), obs_times_by_task_(ntasks_), locinterp_()
+    myobs_index_by_task_(ntasks_), obs_times_by_task_(ntasks_),
+    locinterp_(), recvinterp_(), send_req_(), recv_req_(), tag_(789)
 {
   Log::trace() << "GetValues::GetValues start" << std::endl;
   util::Timer timer("oops::GetValues", "GetValues");
+
+  tag_ += this->created();
+
+  for (size_t jj = 0; jj < geovars_.size(); ++jj) varsizes_ += geom.variableSizes(geovars_)[jj];
+  for (size_t jj = 0; jj < linvars_.size(); ++jj) linsizes_ += geom.variableSizes(linvars_)[jj];
 
 // Local obs coordinates
   std::vector<double> obslats = locations_.latitudes();
@@ -206,14 +214,11 @@ GetValues<MODEL, OBS>::GetValues(const eckit::Configuration & conf, const Geomet
 template <typename MODEL, typename OBS>
 void GetValues<MODEL, OBS>::initialize(const util::Duration & tstep) {
   Log::trace() << "GetValues::initialize start" << std::endl;
-  double missing = 0.0;
-  missing = util::missingValue(missing);
-  size_t nvars = 0;
-  for (size_t jj = 0; jj < varsizes_.size(); ++jj) nvars += varsizes_[jj];
+  const double missing = util::missingValue(double());
   ASSERT(locinterp_.empty());
   locinterp_.resize(ntasks_);
   for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
-    locinterp_[jtask].resize(obs_times_by_task_[jtask].size() * nvars, missing);
+    locinterp_[jtask].resize(obs_times_by_task_[jtask].size() * varsizes_, missing);
   }
   hslot_ = tstep / 2;
   Log::trace() << "GetValues::initialize done" << std::endl;
@@ -250,20 +255,20 @@ void GetValues<MODEL, OBS>::finalize() {
   Log::trace() << "GetValues::finalize start" << std::endl;
   util::Timer timer("oops::GetValues", "finalize");
 
-// Send/receive interpolated values
-  std::vector<std::vector<double>> recvinterp(ntasks_);
-  comm_.allToAll(locinterp_, recvinterp);
-  locinterp_.clear();
-
-// Store output in GeoVaLs
-  size_t nvars = 0;
-  for (size_t jj = 0; jj < varsizes_.size(); ++jj) nvars += varsizes_[jj];
-  ASSERT(!geovals_);
-  geovals_.reset(new GeoVaLs_(locations_, geovars_, varsizes_));
+// Send values interpolated locally (non-blocking)
+  send_req_.resize(ntasks_);
   for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
-    const size_t nvals = myobs_index_by_task_[jtask].size() * nvars;
-    ASSERT(recvinterp[jtask].size() == nvals);
-    geovals_->fill(myobs_index_by_task_[jtask], recvinterp[jtask]);
+    send_req_[jtask] = comm_.iSend(&locinterp_[jtask][0], locinterp_[jtask].size(), jtask, tag_);
+  }
+
+// Allocate receive buffers and non blocking receive of interpolated values
+  ASSERT(recvinterp_.empty());
+  recvinterp_.resize(ntasks_);
+  recv_req_.resize(ntasks_);
+  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
+    const size_t nrecv = myobs_index_by_task_[jtask].size() * varsizes_;
+    recvinterp_[jtask].resize(nrecv);
+    recv_req_[jtask] = comm_.iReceive(&recvinterp_[jtask][0], nrecv, jtask, tag_);
   }
 
   Log::trace() << "GetValues::finalize done" << std::endl;
@@ -272,11 +277,32 @@ void GetValues<MODEL, OBS>::finalize() {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-std::unique_ptr<GeoVaLs<OBS>> GetValues<MODEL, OBS>::releaseGeoVaLs() {
-  Log::trace() << "GetValues::releaseGeoVaLs" << std::endl;
-  ASSERT(geovals_);
-// Release ownership of GeoVaLs
-  return std::move(geovals_);
+void GetValues<MODEL, OBS>::fillGeoVaLs(GeoVaLs_ & geovals) {
+  Log::trace() << "GetValues::fillGeoVaLs start" << std::endl;
+  util::Timer timer("oops::GetValues", "fillGeoVaLs");
+
+// Wait for received interpolated values and store in GeoVaLs
+  ASSERT(recvinterp_.size() == ntasks_);
+  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
+    int itask = -1;
+    eckit::mpi::Status rst = comm_.waitAny(recv_req_, itask);
+    ASSERT(rst.error() == 0);
+    ASSERT(itask >=0 && itask < ntasks_);
+    geovals.fill(myobs_index_by_task_[itask], recvinterp_[itask]);
+  }
+  recv_req_.clear();
+  recvinterp_.clear();
+
+// Clean-up send buffers (after making sure data has been sent)
+  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
+    int itask = -1;
+    eckit::mpi::Status sst = comm_.waitAny(send_req_, itask);
+    ASSERT(sst.error() == 0);
+  }
+  send_req_.clear();
+  locinterp_.clear();
+
+  Log::trace() << "GetValues::fillGeoVaLs done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -286,14 +312,11 @@ std::unique_ptr<GeoVaLs<OBS>> GetValues<MODEL, OBS>::releaseGeoVaLs() {
 template <typename MODEL, typename OBS>
 void GetValues<MODEL, OBS>::initializeTL(const util::Duration & tstep) {
   Log::trace() << "GetValues::initializeTL start" << std::endl;
-  double missing = 0.0;
-  missing = util::missingValue(missing);
-  size_t nvars = 0;
-  for (size_t jj = 0; jj < linsizes_.size(); ++jj) nvars += linsizes_[jj];
+  const double missing = util::missingValue(double());
   ASSERT(locinterp_.empty());
   locinterp_.resize(ntasks_);
   for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
-    locinterp_[jtask].resize(obs_times_by_task_[jtask].size() * nvars, missing);
+    locinterp_[jtask].resize(obs_times_by_task_[jtask].size() * linsizes_, missing);
   }
   hslot_ = tstep/2;
   Log::trace() << "GetValues::initializeTL done" << std::endl;
@@ -330,33 +353,54 @@ void GetValues<MODEL, OBS>::finalizeTL() {
   Log::trace() << "GetValues::finalizeTL start" << std::endl;
   util::Timer timer("oops::GetValues", "finalizeTL");
 
-// Send/receive interpolated values
-  std::vector<std::vector<double>> recvinterp(ntasks_);
-  comm_.allToAll(locinterp_, recvinterp);
-  locinterp_.clear();
-
-// Store output in GeoVaLs
-  size_t nvars = 0;
-  for (size_t jj = 0; jj < linsizes_.size(); ++jj) nvars += linsizes_[jj];
-  ASSERT(!gvalstl_);
-  gvalstl_.reset(new GeoVaLs_(locations_, linvars_, linsizes_));
+// Send values interpolated locally (non-blocking)
+  send_req_.resize(ntasks_);
   for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
-    const size_t nvals = myobs_index_by_task_[jtask].size() * nvars;
-    ASSERT(recvinterp[jtask].size() == nvals);
-    gvalstl_->fill(myobs_index_by_task_[jtask], recvinterp[jtask]);
+    send_req_[jtask] = comm_.iSend(&locinterp_[jtask][0], locinterp_[jtask].size(), jtask, tag_);
   }
 
-  Log::trace() << "GetValues::processTL done" << std::endl;
+// Allocate receive buffers and non blocking receive of interpolated values
+  ASSERT(recvinterp_.empty());
+  recvinterp_.resize(ntasks_);
+  recv_req_.resize(ntasks_);
+  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
+    const size_t nrecv = myobs_index_by_task_[jtask].size() * linsizes_;
+    recvinterp_[jtask].resize(nrecv);
+    recv_req_[jtask] = comm_.iReceive(&recvinterp_[jtask][0], nrecv, jtask, tag_);
+  }
+
+  Log::trace() << "GetValues::finalizeTL done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-std::unique_ptr<GeoVaLs<OBS>> GetValues<MODEL, OBS>::releaseGeoVaLsTL() {
-  Log::trace() << "GetValues::finalizeTL" << std::endl;
-  ASSERT(gvalstl_);
-  // Release ownership of GeoVaLs
-  return std::move(gvalstl_);
+void GetValues<MODEL, OBS>::fillGeoVaLsTL(GeoVaLs_ & geovals) {
+  Log::trace() << "GetValues::fillGeoVaLsTL start" << std::endl;
+  util::Timer timer("oops::GetValues", "fillGeoVaLsTL");
+
+// Wait for received interpolated values and store in GeoVaLs
+  ASSERT(recvinterp_.size() == ntasks_);
+  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
+    int itask = -1;
+    eckit::mpi::Status rst = comm_.waitAny(recv_req_, itask);
+    ASSERT(rst.error() == 0);
+    ASSERT(itask >=0 && itask < ntasks_);
+    geovals.fill(myobs_index_by_task_[itask], recvinterp_[itask]);
+  }
+  recv_req_.clear();
+  recvinterp_.clear();
+
+// Clean-up send buffers (after making sure data has been sent)
+  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
+    int itask = -1;
+    eckit::mpi::Status sst = comm_.waitAny(send_req_, itask);
+    ASSERT(sst.error() == 0);
+  }
+  send_req_.clear();
+  locinterp_.clear();
+
+  Log::trace() << "GetValues::fillGeoVaLsTL done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -401,31 +445,29 @@ void GetValues<MODEL, OBS>::finalizeAD(const util::Duration & tstep) {
   Log::trace() << "GetValues::finalizeAD start" << std::endl;
   util::Timer timer("oops::GetValues", "finalizeAD");
 
-  double missing = 0.0;
-  missing = util::missingValue(missing);
-  size_t nvars = 0;
-  for (size_t jj = 0; jj < linsizes_.size(); ++jj) nvars += linsizes_[jj];
-  ASSERT(locinterp_.empty());
-  locinterp_.resize(ntasks_);
-  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
-    locinterp_[jtask].resize(obs_times_by_task_[jtask].size() * nvars, missing);
-  }
   hslot_ = tstep/2;
 
-  ASSERT(gvalsad_);
-
-// (Adjoint of) Store output in GeoVaLs
-  std::vector<std::vector<double>> recvinterp(ntasks_);
+// (Adjoint of) Send values interpolated locally (non-blocking)
+// i.e. wait for receive of local sensitivities
+  ASSERT(locinterp_.size() == ntasks_);
   for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
-    const size_t nvals = myobs_index_by_task_[jtask].size() * nvars;
-    recvinterp[jtask].resize(nvals);
-    gvalsad_->fillAD(myobs_index_by_task_[jtask], recvinterp[jtask]);
+    int itask = -1;
+    eckit::mpi::Status sst = comm_.waitAny(send_req_, itask);
+    ASSERT(sst.error() == 0);
+    ASSERT(itask >=0 && itask < ntasks_);
   }
+  send_req_.clear();
 
-// (Adjoint of) Send/receive interpolated values
-  comm_.allToAll(recvinterp, locinterp_);
-
-  gvalsad_.reset();
+// (Adjoint of) Allocate receive buffers and non blocking receive of interpolated values
+// i.e. deallocate buffers (after making sure data has been sent)
+  ASSERT(recvinterp_.size() == ntasks_);
+  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
+    int itask = -1;
+    eckit::mpi::Status rst = comm_.waitAny(recv_req_, itask);
+    ASSERT(rst.error() == 0);
+  }
+  recv_req_.clear();
+  recvinterp_.clear();
 
   Log::trace() << "GetValues::processAD done" << std::endl;
 }
@@ -433,14 +475,37 @@ void GetValues<MODEL, OBS>::finalizeAD(const util::Duration & tstep) {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-void GetValues<MODEL, OBS>::releaseGeoVaLsAD(std::unique_ptr<GeoVaLs_> & geovals) {
-// Take ownership of GeoVaLs
-  ASSERT(!gvalsad_);
-  gvalsad_ = std::move(geovals);
-  Log::trace() << "GetValues::releaseGeoVaLsAD" << std::endl;
+void GetValues<MODEL, OBS>::fillGeoVaLsAD(const GeoVaLs_ & geovals) {
+  Log::trace() << "GetValues::fillGeoVaLsAD start" << std::endl;
+  util::Timer timer("oops::GetValues", "fillGeoVaLsAD");
+
+  const double missing = util::missingValue(double());
+
+// (Afjoint of) Clean-up send buffers
+// i.e. allocate buffer and prepare to receive values
+  ASSERT(locinterp_.empty());
+  locinterp_.resize(ntasks_);
+  send_req_.resize(ntasks_);
+  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
+    locinterp_[jtask].resize(obs_times_by_task_[jtask].size() * linsizes_, missing);
+    send_req_[jtask] = comm_.iReceive(&locinterp_[jtask][0], locinterp_[jtask].size(), jtask, tag_);
+  }
+
+// (Adjoint of) Wait for received interpolated values and store in GeoVaLs
+// i.e. get values from GeoVaLs and send them
+  ASSERT(recvinterp_.empty());
+  recvinterp_.resize(ntasks_);
+  recv_req_.resize(ntasks_);
+  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
+    const size_t nrecv = myobs_index_by_task_[jtask].size() * linsizes_;
+    recvinterp_[jtask].resize(nrecv);
+    geovals.fillAD(myobs_index_by_task_[jtask], recvinterp_[jtask]);
+    recv_req_[jtask] = comm_.iSend(&recvinterp_[jtask][0], nrecv, jtask, tag_);
+  }
+
+  Log::trace() << "GetValues::fillGeoVaLsAD" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 }  // namespace oops
-
