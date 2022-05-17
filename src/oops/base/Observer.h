@@ -55,7 +55,6 @@ class ObserverParameters : public Parameters {
   oops::Parameter<bool> monitoringOnly{"monitoring only", false, this};
   oops::OptionalParameter<LinearObsOperatorParameters_> linearObsOperator{"linear obs operator",
       this};
-  oops::OptionalParameter<eckit::LocalConfiguration> linearGetValues{"linear get values", this};
 };
 
 // -----------------------------------------------------------------------------

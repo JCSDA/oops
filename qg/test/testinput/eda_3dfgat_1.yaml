@@ -35,8 +35,6 @@ cost function:
         obs perturbations seed: 1
       get values:
         interpolation type: default_1
-      linear get values:
-        interpolation type: default_a
     - obs error:
         covariance model: diagonal
         random amplitude: 0.5

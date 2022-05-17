@@ -180,9 +180,6 @@ std::vector<ObserverParameters<OBS>> Observers<MODEL, OBS>::convertToParameters(
     eckit::LocalConfiguration getValuesConfig;
     if (subconfig.get("get values", getValuesConfig))
       observerConfig.set("get values", getValuesConfig);
-    eckit::LocalConfiguration linearGetValuesConfig;
-    if (subconfig.get("linear get values", linearGetValuesConfig))
-      observerConfig.set("linear get values", linearGetValuesConfig);
 
     parameters[i].deserialize(observerConfig);
   }

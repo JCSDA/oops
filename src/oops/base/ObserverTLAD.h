@@ -106,16 +106,13 @@ ObserverTLAD<MODEL, OBS>::initializeTraj(const Geometry_ & geom, const ObsAuxCtr
   ObsOperator_ hop(obspace_, parameters_.obsOperator);
   locations_.reset(new Locations_(hop.locations()));
   linvars_sizes_ = geom.variableSizes(hoptlad_.requiredVars());
-  eckit::LocalConfiguration gvconf(
-      parameters_.linearGetValues.value() != boost::none ?
-        parameters_.linearGetValues.value().value() : parameters_.getValues.value());
 
 // Set up variables that will be requested from the model
   geovars_ += hop.requiredVars();
   geovars_ += ybias_->requiredVars();
   varsizes_ = geom.variableSizes(geovars_);
 
-  getvals_.reset(new GetValues_(gvconf, geom, winbgn_, winend_,
+  getvals_.reset(new GetValues_(parameters_.getValues.value(), geom, winbgn_, winend_,
                                 *locations_, geovars_, hoptlad_.requiredVars()));
 
   init_ = true;

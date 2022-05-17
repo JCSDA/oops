@@ -27,8 +27,6 @@ observations:
       obs type: Stream
     get values:
       interpolation type: default_1
-    linear get values:
-      interpolation type: default_a
   - obs space:
       obsdatain:
         obsfile: Data/truth.obs4d_12h.nc
@@ -39,8 +37,6 @@ observations:
       obs type: Wind
     get values:
       interpolation type: default_2
-    linear get values:
-      interpolation type: default_b
   - obs space:
       obsdatain:
         obsfile: Data/truth.obs4d_12h.nc
@@ -51,8 +47,6 @@ observations:
       obs type: WSpeed
     get values:
       interpolation type: default_3
-    linear get values:
-      interpolation type: default_c
 prints:
   frequency: PT3H
 
