@@ -63,6 +63,7 @@ list( APPEND qg_testinput
   testinput/ens_variance_inflation_value.yaml
   testinput/forecast.yaml
   testinput/gen_ens_pert_B.yaml
+  testinput/getvalues.yaml
   testinput/hofx.yaml
   testinput/hofx3d.yaml
   testinput/hybridgain_analysis.yaml
@@ -356,6 +357,12 @@ ecbuild_add_test( TARGET  test_qg_linear_variable_change
                   MPI    1
                   SOURCES executables/TestLinearVariableChange.cc
                   ARGS    "testinput/interfaces.yaml"
+                  LIBS    qg
+                  TEST_DEPENDS test_qg_truth )
+
+ecbuild_add_test( TARGET  test_qg_getvalues
+                  SOURCES executables/TestGetValues.cc
+                  ARGS    "testinput/getvalues.yaml"
                   LIBS    qg
                   TEST_DEPENDS test_qg_truth )
 

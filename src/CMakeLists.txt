@@ -412,6 +412,7 @@ test/interface/Geometry.h
 test/interface/GeometryIterator.h
 test/interface/GeometryFixture.h
 test/interface/GeoVaLs.h
+test/interface/GetValues.h
 test/interface/Increment.h
 test/interface/LinearModel.h
 test/interface/LinearObsOperator.h

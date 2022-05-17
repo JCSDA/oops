@@ -75,6 +75,7 @@ list( APPEND l95_test_input
   testinput/genenspert.yaml
   testinput/getkf.yaml
   testinput/getkf_offline_hofx.yaml
+  testinput/getvalues.yaml
   testinput/hofx.yaml
   testinput/hofx3d.yaml
   testinput/hofx3d_for_getkf.yaml
@@ -281,6 +282,12 @@ ecbuild_add_test( TARGET test_l95_geovals
 ecbuild_add_test( TARGET test_l95_state
                   SOURCES executables/TestState.cc
                   ARGS "testinput/interfaces.yaml"
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth )
+
+ecbuild_add_test( TARGET test_l95_getvalues
+                  SOURCES executables/TestGetValues.cc
+                  ARGS "testinput/getvalues.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 

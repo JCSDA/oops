@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2020-2021 UCAR
+ * (C) Copyright 2020-2022 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -24,12 +24,13 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
+
 #include "oops/base/AnalyticInit.h"
 #include "oops/base/Geometry.h"
+#include "oops/base/GetValues.h"
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
-#include "oops/interface/GetValues.h"
 #include "oops/interface/Locations.h"
 #include "oops/interface/VariableChange.h"
 #include "oops/mpi/mpi.h"
@@ -44,33 +45,29 @@ namespace test {
 // =================================================================================================
 
 template <typename MODEL, typename OBS> class GetValuesFixture : private boost::noncopyable {
-  typedef eckit::LocalConfiguration    LocalConfig_;
-  typedef oops::GeoVaLs<OBS>           GeoVaLs_;
-  typedef oops::Geometry<MODEL>        Geometry_;
-  typedef oops::GetValues<MODEL, OBS>  GetValues_;
-  typedef oops::Locations<OBS>         Locations_;
-  typedef oops::Variables              Variables_;
-  typedef util::DateTime               DateTime_;
+  typedef oops::Geometry<MODEL> Geometry_;
+  typedef oops::Locations<OBS>  Locations_;
+  typedef oops::State<MODEL>    State_;
+  typedef oops::Variables       Variables_;
+  typedef util::DateTime        DateTime_;
 
  public:
+  static const DateTime_         & time()            {return *getInstance().time_;}
   static const DateTime_         & timebeg()         {return *getInstance().timebeg_;}
   static const DateTime_         & timeend()         {return *getInstance().timeend_;}
-  static const GeoVaLs_          & geovals()         {return *getInstance().geovals_;}
   static const Geometry_         & resol()           {return *getInstance().resol_;}
-  static const GetValues_        & getvalues()       {return *getInstance().getvalues_;}
-  static const LocalConfig_      & testconf()        {return *getInstance().testconf_;}
   static const Locations_        & locs()            {return *getInstance().locs_;}
-  static const Variables_        & geovalvars()      {return *getInstance().geovalvars_;}
-  static const std::vector<size_t> & geovalvarsizes() {return getInstance().geovalvarsizes_;}
+  static const Variables_        & variables()       {return *getInstance().variables_;}
+  static const std::vector<size_t> & varsizes() {return getInstance().varsizes_;}
+
   static void reset() {
-    getInstance().getvalues_.reset();
-    getInstance().geovals_.reset();
+    getInstance().time_.reset();
     getInstance().timeend_.reset();
     getInstance().timebeg_.reset();
     getInstance().locs_.reset();
-    getInstance().geovalvars_.reset();
+    getInstance().state_.reset();
+    getInstance().variables_.reset();
     getInstance().resol_.reset();
-    getInstance().testconf_.reset();
   }
 
  private:
@@ -80,134 +77,77 @@ template <typename MODEL, typename OBS> class GetValuesFixture : private boost::
   }
 
   GetValuesFixture<MODEL, OBS>() {
-    testconf_.reset(new LocalConfig_(TestEnvironment::config(), "getvalues test"));
-
     // Geometry
-    const LocalConfig_ resolConfig(TestEnvironment::config(), "geometry");
+    const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "geometry");
     resol_.reset(new Geometry_(resolConfig, oops::mpi::world()));
 
     // Variables
-    geovalvars_.reset(new Variables_(TestEnvironment::config(), "state variables"));
-    geovalvarsizes_ = resol_->variableSizes(*geovalvars_);
+    variables_.reset(new Variables_(TestEnvironment::config(), "variables"));
+    varsizes_ = resol_->variableSizes(*variables_);
 
     // Locations
-    const LocalConfig_ locsConfig(TestEnvironment::config(), "locations");
+    const eckit::LocalConfiguration locsConfig(TestEnvironment::config(), "locations");
     locs_.reset(new Locations_(locsConfig, oops::mpi::world()));
 
     // Window times
     timebeg_.reset(new DateTime_(locsConfig.getString("window begin")));
     timeend_.reset(new DateTime_(locsConfig.getString("window end")));
 
-    // GeoVaLs
-    geovals_.reset(new GeoVaLs_(*locs_, *geovalvars_, geovalvarsizes_));
-
-    // GetValues
-    LocalConfig_ getvaluesConfig;
-    if (TestEnvironment::config().has("get values"))
-      getvaluesConfig = eckit::LocalConfiguration(TestEnvironment::config(), "get values");
-    getvalues_.reset(new GetValues_( *resol_, *locs_, getvaluesConfig)); }
+    // State
+    const eckit::LocalConfiguration stateConfig(TestEnvironment::config(), "state");
+    state_.reset(new State_(*resol_, stateConfig));
+    time_.reset(new DateTime_(state_->validTime()));
+  }
 
   ~GetValuesFixture<MODEL, OBS>() {}
 
+  std::unique_ptr<const DateTime_>        time_;
   std::unique_ptr<const DateTime_>        timebeg_;
   std::unique_ptr<const DateTime_>        timeend_;
-  std::unique_ptr<const GeoVaLs_>         geovals_;
   std::unique_ptr<const Geometry_>        resol_;
-  std::unique_ptr<const GetValues_>       getvalues_;
-  std::unique_ptr<const LocalConfig_>     testconf_;
   std::unique_ptr<const Locations_>       locs_;
-  std::unique_ptr<const Variables_>       geovalvars_;
-  std::vector<size_t>                     geovalvarsizes_;
+  std::unique_ptr<const State_>           state_;
+  std::unique_ptr<const Variables_>       variables_;
+  std::vector<size_t>                     varsizes_;
 };
 
-// =================================================================================================
-/// \brief tests constructor and print method
+// -------------------------------------------------------------------------------------------------
+
+/// \brief Test constructor
 template <typename MODEL, typename OBS> void testGetValuesConstructor() {
   typedef GetValuesFixture<MODEL, OBS>  Test_;
   typedef oops::GetValues<MODEL, OBS>   GetValues_;
 
-  std::unique_ptr<const GetValues_>
-    GetValues(new GetValues_(Test_::resol(), Test_::locs(), TestEnvironment::config()));
+  std::unique_ptr<const GetValues_> getvalues(
+      new GetValues_(
+          TestEnvironment::config(),
+          Test_::resol(),
+          Test_::timebeg(),
+          Test_::timeend(),
+          Test_::locs(),
+          Test_::variables()));
+  EXPECT(getvalues.get());
 
-  EXPECT(GetValues.get());
-  oops::Log::test() << "Testing GetValues: " << *GetValues << std::endl;
-  GetValues.reset();
-  EXPECT(!GetValues.get());
+  getvalues.reset();
+  EXPECT(!getvalues.get());
 }
 
 // -------------------------------------------------------------------------------------------------
 
-template <typename MODEL, typename OBS> void testGetValuesMultiWindow() {
-  typedef GetValuesFixture<MODEL, OBS>    Test_;
-  typedef oops::VariableChange<MODEL>     VariableChange_;
-  typedef typename VariableChange_::Parameters_ VariableChangeParameters_;
-  typedef oops::GeoVaLs<OBS>              GeoVaLs_;
-  typedef oops::State<MODEL>              State_;
-
-  const util::Duration windowlength = Test_::timeend() - Test_::timebeg();
-  const util::DateTime timemid = Test_::timebeg() + windowlength/2;
-
-  const eckit::LocalConfiguration confgen(Test_::testconf(), "state generate");
-  const State_ xx(Test_::resol(), confgen);
-
-  eckit::LocalConfiguration chvarconf;  // empty for now
-  VariableChangeParameters_ params;
-  params.validateAndDeserialize(chvarconf);
-  VariableChange_ chvar(params, Test_::resol());
-  State_ zz(xx);
-  chvar.changeVar(zz, Test_::geovalvars());
-  EXPECT(zz.norm() > 0.0);
-
-  GeoVaLs_ gv1(Test_::locs(), Test_::geovalvars(), Test_::geovalvarsizes());
-  GeoVaLs_ gv2(Test_::locs(), Test_::geovalvars(), Test_::geovalvarsizes());
-
-  // Compute all geovals together
-  Test_::getvalues().fillGeoVaLs(zz, Test_::timebeg(), Test_::timeend(), gv1);
-
-  // Compute all geovals as two subwindows
-  Test_::getvalues().fillGeoVaLs(zz, Test_::timebeg(), timemid, gv2);
-  Test_::getvalues().fillGeoVaLs(zz, timemid, Test_::timeend(), gv2);
-
-  EXPECT(gv1.rms() > 0.0);
-  EXPECT(gv2.rms() > 0.0);
-  EXPECT(gv1.rms() == gv2.rms());
-}
-
-// -------------------------------------------------------------------------------------------------
-
-/*! \brief Interpolation test
- *
- * \details **testGetValuesInterpolation()** tests the creation of an
- * analytic state for a given model.  The conceptual steps are as follows:
- * 1. Initialize the JEDI State object based on idealized analytic formulae
- * 2. Interpolate the State variables onto selected "observation" locations
- *    using the getValues() method of the State object.  The result is
- *    placed in a JEDI GeoVaLs object
- * 3. Compute the correct solution by applying the analytic formulae directly
- *    at the observation locations.
- * 4. Assess the accuracy of the interpolation by comparing the interpolated
- *    values from Step 2 with the exact values from Step 3
- *
- * The interpolated state values are compared to the analytic solution for
- * a series of **locations** which includes values optionally specified by the
- * user in the "state test" section of the config file in addition to a
- * randomly-generated list of **nrandom** random locations.  nrandom is also
- * specified by the user in the "state test" section of the config file, as is the
- * (nondimensional) tolerence level (**interpolation tolerance**) to be used for the tests.
- *
- * Relevant parameters in the **State* section of the config file include
- *
- * * **norm-gen** Normalization test for the generated State
- * * **interpolation tolerance** tolerance for the interpolation test
- *
- * \date April, 2018: M. Miesch (JCSDA) adapted a preliminary version in the
- * feature/interp branch
- *
- * \warning Since this model compares the interpolated state values to an exact analytic
- * solution, it requires that the "analytic_init" option be implemented in the model and
- * selected in the "state.state generate" section of the config file.
- */
-
+/// \brief Test GetValues interpolations
+///
+/// This test constructs two sets of GeoVaLs that should be the same:
+/// 1. One GeoVaLs is filled by calling GetValues on a model State initialized from
+///    an idealized analytic formula. This interpolates from the analytic function
+///    values defined at the model grid points to a set of random locations.
+/// 2. The other GeoVaLs is directly filled by evaluating the same analytic formula
+///    at the same random locations. This is the expected result if the interpolation in
+///    GetValues is of high accuracy.
+///
+/// These two GeoVaLs are then checked to match within a specified tolerance.
+///
+/// \note This test requires that the model State has a constructor accepting an "analytic init"
+///       config, and a matching AnalyticInit class to fill in the expected GeoVaLs.
 template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
   typedef GetValuesFixture<MODEL, OBS>    Test_;
   typedef oops::AnalyticInit<OBS>         AnalyticInit_;
@@ -216,8 +156,9 @@ template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
   typedef oops::AnalyticInitParametersWrapper<OBS> Parameters_;
   typedef oops::State<MODEL>              State_;
   typedef oops::GeoVaLs<OBS>              GeoVaLs_;
+  typedef oops::GetValues<MODEL, OBS>     GetValues_;
 
-  const eckit::LocalConfiguration confgen(Test_::testconf(), "state generate");
+  const eckit::LocalConfiguration confgen(TestEnvironment::config(), "state");
   const State_ xx(Test_::resol(), confgen);
 
   eckit::LocalConfiguration chvarconf;  // empty for now
@@ -225,25 +166,29 @@ template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
   params.validateAndDeserialize(chvarconf);
   VariableChange_ chvar(params, Test_::resol());
   State_ zz(xx);
-  chvar.changeVar(zz, Test_::geovalvars());
+  chvar.changeVar(zz, Test_::variables());
 
-  // Interpolation tolerance
-  double interp_tol = Test_::testconf().getDouble("interpolation tolerance");
-
-  // Ceate a GeoVaLs object from locs and vars
-  GeoVaLs_ gval(Test_::locs(), Test_::geovalvars(), Test_::geovalvarsizes());
+  GeoVaLs_ gval(Test_::locs(), Test_::variables(), Test_::varsizes());
 
   EXPECT(zz.norm() > 0.0);
 
-  // Execute the interpolation
-  Test_::getvalues().fillGeoVaLs(zz, Test_::timebeg(), Test_::timeend(), gval);
+  // Fill GeoVaLs by calling GetValues to interpolate from the state
+  const util::Duration windowlength = Test_::timeend() - Test_::timebeg();
+  GetValues_ getvalues(TestEnvironment::config(),
+          Test_::resol(),
+          Test_::timebeg(),
+          Test_::timeend(),
+          Test_::locs(),
+          Test_::variables());
+  getvalues.initialize(windowlength);
+  getvalues.process(zz);
+  getvalues.finalize();
+  getvalues.fillGeoVaLs(gval);
 
   EXPECT(gval.rms() > 0.0);
-  oops::Log::debug() << "RMS GeoVaLs: " << gval.rms() << std::endl;
 
-  // Now create another GeoVaLs object that contains the exact analytic solutions.
+  // Fill GeoVaLs with exact values
   GeoVaLs_ ref(gval);
-
   const eckit::LocalConfiguration analyticConf(confgen, "analytic init");
   Parameters_ anparams;
   anparams.validateAndDeserialize(analyticConf);
@@ -251,17 +196,165 @@ template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
   init.fillGeoVaLs(Test_::locs(), ref);
 
   EXPECT(ref.rms() > 0.0);
-  oops::Log::debug() << "RMS reference GeoVaLs: " << ref.rms() << std::endl;
 
   // Compute the difference between the interpolated and exact values
+  // and check to see if the errors are within specified tolerance
+  const double tol = TestEnvironment::config().getDouble("tolerance interpolation");
   gval -= ref;
-
-  // And check to see if the errors are within specified tolerance
   oops::Log::test() << "Normalized rms of the difference: " << gval.normalizedrms(ref) << std::endl;
-  EXPECT(gval.normalizedrms(ref) < interp_tol);
+  EXPECT(gval.normalizedrms(ref) < tol);
 }
 
-// =================================================================================================
+// -------------------------------------------------------------------------------------------------
+
+/// \brief Test that GetValues on a zero Increment produces a zero GeoVaLs
+template <typename MODEL, typename OBS> void testGetValuesTLZeroPert() {
+  typedef GetValuesFixture<MODEL, OBS>  Test_;
+  typedef oops::GeoVaLs<OBS>            GeoVaLs_;
+  typedef oops::GetValues<MODEL, OBS>   GetValues_;
+  typedef oops::Increment<MODEL>        Increment_;
+
+  Increment_ dx(Test_::resol(), Test_::variables(), Test_::time());
+  dx.zero();
+  EXPECT(dx.norm() == 0.0);
+
+  GeoVaLs_ gv(Test_::locs(), Test_::variables(), Test_::varsizes());
+
+  const util::Duration windowlength = Test_::timeend() - Test_::timebeg();
+  GetValues_ getvalues(TestEnvironment::config(),
+          Test_::resol(),
+          Test_::timebeg(),
+          Test_::timeend(),
+          Test_::locs(),
+          Test_::variables(),
+          Test_::variables());  // linear variables
+
+  // Test passing zeros forward
+  getvalues.initializeTL(windowlength);
+  getvalues.processTL(dx);
+  getvalues.finalizeTL();
+  getvalues.fillGeoVaLsTL(gv);
+
+  EXPECT(dx.norm() == 0.0);
+  EXPECT(gv.rms() == 0.0);
+
+  // Test adjoint of passing zeros
+  getvalues.fillGeoVaLsAD(gv);
+  getvalues.finalizeAD(windowlength);
+  getvalues.processAD(dx);
+  getvalues.initializeAD();
+
+  EXPECT(dx.norm() == 0.0);
+  EXPECT(gv.rms() == 0.0);
+}
+
+// -------------------------------------------------------------------------------------------------
+
+/// \brief Test that GetValues is a linear function of the input Increment
+template <typename MODEL, typename OBS> void testGetValuesLinearity() {
+  typedef GetValuesFixture<MODEL, OBS>  Test_;
+  typedef oops::GeoVaLs<OBS>            GeoVaLs_;
+  typedef oops::GetValues<MODEL, OBS>   GetValues_;
+  typedef oops::Increment<MODEL>        Increment_;
+
+  const double zz = 3.1415;  // arbitrary scalar factor
+
+  Increment_ dx1(Test_::resol(), Test_::variables(), Test_::time());
+  dx1.random();
+  Increment_ dx2(dx1);
+
+  EXPECT(dx1.norm() > 0.0);
+  EXPECT(dx2.norm() > 0.0);
+
+  GeoVaLs_ gv1(Test_::locs(), Test_::variables(), Test_::varsizes());
+  GeoVaLs_ gv2(Test_::locs(), Test_::variables(), Test_::varsizes());
+
+  const util::Duration windowlength = Test_::timeend() - Test_::timebeg();
+  GetValues_ getvalues(TestEnvironment::config(),
+          Test_::resol(),
+          Test_::timebeg(),
+          Test_::timeend(),
+          Test_::locs(),
+          Test_::variables(),
+          Test_::variables());  // linear variables
+
+  // Compute geovals
+  getvalues.initializeTL(windowlength);
+  getvalues.processTL(dx1);
+  getvalues.finalizeTL();
+  getvalues.fillGeoVaLsTL(gv1);
+
+  gv1 *= zz;
+  dx2 *= zz;
+
+  // Compute geovals
+  getvalues.initializeTL(windowlength);
+  getvalues.processTL(dx2);
+  getvalues.finalizeTL();
+  getvalues.fillGeoVaLsTL(gv2);
+
+  const double tol = TestEnvironment::config().getDouble("tolerance linearity", 1.0e-11);
+  GeoVaLs_ gv_diff = gv1;
+  gv_diff -= gv2;
+  EXPECT(gv_diff.rms() < tol);
+}
+
+// -------------------------------------------------------------------------------------------------
+
+/// \brief Test the adjoint of GetValues
+template <typename MODEL, typename OBS> void testGetValuesAdjoint() {
+  typedef GetValuesFixture<MODEL, OBS>  Test_;
+  typedef oops::GeoVaLs<OBS>            GeoVaLs_;
+  typedef oops::GetValues<MODEL, OBS>   GetValues_;
+  typedef oops::Increment<MODEL>        Increment_;
+
+  Increment_ dx_in(Test_::resol(), Test_::variables(), Test_::time());
+  Increment_ dx_out(Test_::resol(), Test_::variables(), Test_::time());
+
+  GeoVaLs_ gv_out(Test_::locs(), Test_::variables(), Test_::varsizes());
+
+  const util::Duration windowlength = Test_::timeend() - Test_::timebeg();
+  GetValues_ getvalues(TestEnvironment::config(),
+          Test_::resol(),
+          Test_::timebeg(),
+          Test_::timeend(),
+          Test_::locs(),
+          Test_::variables(),
+          Test_::variables());  // linear variables
+
+  // Tangent linear
+  dx_in.random();
+  EXPECT(dx_in.norm() > 0.0);
+  getvalues.initializeTL(windowlength);
+  getvalues.processTL(dx_in);
+  getvalues.finalizeTL();
+  getvalues.fillGeoVaLsTL(gv_out);
+  EXPECT(gv_out.rms() > 0.0);
+
+  // Adjoint
+  GeoVaLs_ gv_in(gv_out);
+  gv_in.random();
+  EXPECT(gv_in.rms() > 0.0);
+  dx_out.zero();
+  getvalues.fillGeoVaLsAD(gv_in);
+  getvalues.finalizeAD(windowlength);
+  getvalues.processAD(dx_out);
+  getvalues.initializeAD();
+  dx_out.synchronizeFieldsAD();
+  EXPECT(dx_out.norm() > 0.0);
+
+  // Dot products
+  const double dot1 = dot_product(dx_in, dx_out);
+  const double dot2 = dot_product(gv_in, gv_out);
+  const double tol = TestEnvironment::config().getDouble("tolerance AD", 1.0e-11);
+  EXPECT(oops::is_close(dot1, dot2, tol));
+
+  oops::Log::test() << "Dot Product <dx, M^Tgv> = " << dot1 << std::endl;
+  oops::Log::test() << "Dot Product <gv, M  dx> = " << dot2 << std::endl;
+  oops::Log::test() << "Relative diff: " << (dot1-dot2)/dot1 << std::endl;
+}
+
+// -------------------------------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
 class GetValues : public oops::Test {
@@ -278,10 +371,14 @@ class GetValues : public oops::Test {
 
     ts.emplace_back(CASE("interface/GetValues/testGetValuesConstructor")
       { testGetValuesConstructor<MODEL, OBS>(); });
-    ts.emplace_back(CASE("interface/GetValues/testGetValuesMultiWindow")
-      { testGetValuesMultiWindow<MODEL, OBS>(); });
     ts.emplace_back(CASE("interface/GetValues/testGetValuesInterpolation")
       { testGetValuesInterpolation<MODEL, OBS>(); });
+    ts.emplace_back(CASE("interface/GetValues/testGetValuesTLZeroPert")
+      { testGetValuesTLZeroPert<MODEL, OBS>(); });
+    ts.emplace_back(CASE("interface/GetValues/testGetValuesLinearity")
+      { testGetValuesLinearity<MODEL, OBS>(); });
+    ts.emplace_back(CASE("interface/GetValues/testGetValuesAdjoint")
+      { testGetValuesAdjoint<MODEL, OBS>(); });
   }
 
   void clear() const override {}

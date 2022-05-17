@@ -43,7 +43,7 @@ void InterpolatorL95::apply(const oops::Variables &, const StateL95 & xx,
                             const std::vector<bool> & mask,
                             std::vector<double> & vals) const {
   ASSERT(mask.size() == nout_);
-  ASSERT(vals.size() == nout_);
+  vals.resize(nout_);
   for (size_t jj = 0; jj < nout_; ++jj) {
     if (mask[jj]) vals[jj] = xx.getField()[ilocs_[jj]];
   }
@@ -55,7 +55,7 @@ void InterpolatorL95::apply(const oops::Variables &, const IncrementL95 & dx,
                             const std::vector<bool> & mask,
                             std::vector<double> & vals) const {
   ASSERT(mask.size() == nout_);
-  ASSERT(vals.size() == nout_);
+  vals.resize(nout_);
   for (size_t jj = 0; jj < nout_; ++jj) {
     if (mask[jj]) vals[jj] = dx.getField()[ilocs_[jj]];
   }
