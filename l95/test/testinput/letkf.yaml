@@ -31,6 +31,7 @@ driver:
   save prior mean: true
   save posterior mean: true
   save posterior mean increment: true
+  save posterior ensemble increments: true
   save prior variance: true
   save posterior variance: true
 
@@ -48,6 +49,12 @@ output:
   type: an
 
 output increment:
+  datadir: Data
+  date: *date
+  exp: letkf.increment.%{member}%
+  type: an
+
+output ensemble increments:
   datadir: Data
   date: *date
   exp: letkf.increment.%{member}%

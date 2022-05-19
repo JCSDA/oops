@@ -67,6 +67,9 @@ class LocalEnsembleDADriverParameters : public Parameters {
   Parameter<bool> savePostMeanInc{"save posterior mean increment",
                   "controls whether posterior (analysis) mean ensemble increment is saved",
                   false, this};
+  Parameter<bool> savePostEnsInc{"save posterior ensemble increments",
+                  "controls whether posterior (analysis) increments are saved",
+                  false, this};
   Parameter<bool> savePriorVar{"save prior variance",
                   "controls whether prior (background) ensemble variance is saved",
                   false, this};
@@ -125,6 +128,10 @@ class LocalEnsembleDAParameters : public ApplicationParameters {
   /// Note: these Parameters have to be present if driver.savePostMeanInc is true.
   OptionalParameter<IncrementWriteParameters_> outputPostMeanInc{"output increment",
          "parameters for posterior mean increment output", this};
+
+  /// Note: these Parameters have to be present if driver.savePostEnsInc is true.
+  OptionalParameter<IncrementWriteParameters_> outputPostEnsInc{"output ensemble increments",
+         "parameters for posterior ensemble increments output", this};
 
   /// Note: these Parameters have to be present if driver.savePriorVar is true.
   OptionalParameter<IncrementWriteParameters_> outputPriorVar{"output variance prior",
@@ -252,7 +259,25 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
       ens_xx[jj] += ana_pert[jj];
     }
 
-    // save the posterior mean and ensemble first (since they are needed for the next cycle)
+    // save the posterior mean, ensemble, and ensemble of increments first
+    // (since they are needed for the next cycle)
+
+    // save the posterior ensemble increments
+    if (params.driver.value().savePostEnsInc.value()) {
+      if (params.outputPostEnsInc.value() == boost::none) {
+        throw eckit::BadValue(
+          "`save posterior ensemble increment` is set to true, but `output ensemble increments` "
+          "configuration not found.");
+      }
+      IncrementWriteParameters_ output = *params.outputPostEnsInc.value();
+      for (size_t jj = 0; jj < nens; ++jj) {
+        output.setMember(jj+1);
+        for (size_t itime = 0; itime < ana_pert[0].size(); ++itime) {
+          ana_pert[jj][itime].write(output);
+        }
+      }
+    }
+
     // save the posterior mean
     State4D_ ana_mean = ens_xx.mean();   // calculate analysis mean
     if (do_test_prints) {
@@ -293,7 +318,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
       bkg_mean.write(outConfig);
     }
 
-    // save the analysis increment
+    // save the analysis mean increment
     if (params.driver.value().savePostMeanInc.value()) {
       if (params.outputPostMeanInc.value() == boost::none) {
         throw eckit::BadValue("`save posterior mean increment` is set to true, but "
