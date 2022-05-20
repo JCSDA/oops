@@ -65,6 +65,7 @@ list( APPEND qg_testinput
   testinput/gen_ens_pert_B.yaml
   testinput/getvalues.yaml
   testinput/hofx.yaml
+  testinput/hofx_tinterp.yaml
   testinput/hofx3d.yaml
   testinput/hybridgain_analysis.yaml
   testinput/hybridgain_increment.yaml
@@ -130,6 +131,7 @@ list( APPEND qg_testoutput
   testoutput/forecast.test
   testoutput/gen_ens_pert_B.test
   testoutput/hofx.test
+  testoutput/hofx_tinterp.test
   testoutput/hofx3d.test
   testoutput/hybridgain_analysis.test
   testoutput/hybridgain_increment.test
@@ -407,6 +409,12 @@ ecbuild_add_test( TARGET test_qg_make_obs_4d_biased
 ecbuild_add_test( TARGET test_qg_hofx
                   OMP 2
                   ARGS testinput/hofx.yaml
+                  COMMAND  qg_hofx.x
+                  TEST_DEPENDS test_qg_make_obs_4d_12h )
+
+ecbuild_add_test( TARGET test_qg_hofx_tinterp
+                  OMP 2
+                  ARGS testinput/hofx_tinterp.yaml
                   COMMAND  qg_hofx.x
                   TEST_DEPENDS test_qg_make_obs_4d_12h )
 

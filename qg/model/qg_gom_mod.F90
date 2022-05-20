@@ -179,10 +179,10 @@ do jvar=1,self%vars%nvars()
   case default
     call abor1_ftn('qg_gom_fill: wrong variable')
   endselect
- 
-  do jloc=1,c_nloc
-    iloc = c_indx(jloc)
-    do jlev = 1, self%levs
+
+  do jlev = 1, self%levs
+    do jloc=1,c_nloc
+      iloc = c_indx(jloc)
       ii = ii + 1
       gval(jlev,iloc) = c_vals(ii)
     enddo
@@ -224,9 +224,9 @@ do jvar=1,self%vars%nvars()
     call abor1_ftn('qg_gom_fillad: wrong variable')
   endselect
  
-  do jloc=1,c_nloc
-    iloc = c_indx(jloc)
-    do jlev = 1, self%levs
+  do jlev = 1, self%levs  
+    do jloc=1,c_nloc
+      iloc = c_indx(jloc)
       ii = ii + 1
       c_vals(ii) = gval(jlev,iloc)
     enddo

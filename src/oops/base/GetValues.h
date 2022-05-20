@@ -23,6 +23,7 @@
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/LocalInterpolator.h"
 #include "oops/interface/Locations.h"
+#include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -124,6 +125,10 @@ class GetValues : private util::ObjectCounter<GetValues<MODEL, OBS> > {
   const Variables & requiredVariables() const {return geovars_;}
 
  private:
+/// time-interpolation helper: adds contribution from this time to running total
+  void incInterpValues(const util::DateTime &, const std::vector<bool> &,
+                       const size_t &, const std::vector<double> &);
+
   util::DateTime winbgn_;   /// Begining of assimilation window
   util::DateTime winend_;   /// End of assimilation window
   util::Duration hslot_;    /// Half time slot
@@ -145,6 +150,10 @@ class GetValues : private util::ObjectCounter<GetValues<MODEL, OBS> > {
   std::vector<eckit::mpi::Request> send_req_;
   std::vector<eckit::mpi::Request> recv_req_;
   int tag_;
+  std::vector<size_t> geovarsSizes_;   /// number of levels for geovars_
+  bool doLinearTimeInterpolation_;     /// set true for linear and false for
+                                       /// nearest-neighbour time-
+                                       /// interpolation (default false)
 };
 
 // -----------------------------------------------------------------------------
@@ -158,10 +167,25 @@ GetValues<MODEL, OBS>::GetValues(const eckit::Configuration & conf, const Geomet
     geovars_(vars), varsizes_(0), linvars_(varl), linsizes_(0),
     interpConf_(conf), comm_(geom.getComm()), ntasks_(comm_.size()), interp_(ntasks_),
     myobs_index_by_task_(ntasks_), obs_times_by_task_(ntasks_),
-    locinterp_(), recvinterp_(), send_req_(), recv_req_(), tag_(789)
+    locinterp_(), recvinterp_(), send_req_(), recv_req_(), tag_(789),
+    geovarsSizes_(geom.variableSizes(geovars_))
 {
   Log::trace() << "GetValues::GetValues start" << std::endl;
   util::Timer timer("oops::GetValues", "GetValues");
+
+// set the type of time-interpolation
+  std::string value;
+  if (conf.get("time interpolation", value)) {
+    if (value == "linear") {
+      doLinearTimeInterpolation_ = true;
+    } else if (value == "nearest") {
+      doLinearTimeInterpolation_ = false;
+    } else {
+      ABORT("GetValues::GetValues: time interpolation has an unsuported value.");
+    }
+  } else {
+    doLinearTimeInterpolation_ = false;
+  }
 
   tag_ += this->created();
 
@@ -216,16 +240,61 @@ void GetValues<MODEL, OBS>::initialize(const util::Duration & tstep) {
   Log::trace() << "GetValues::initialize start" << std::endl;
   const double missing = util::missingValue(double());
   ASSERT(locinterp_.empty());
+
   locinterp_.resize(ntasks_);
   for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
     locinterp_[jtask].resize(obs_times_by_task_[jtask].size() * varsizes_, missing);
   }
-  hslot_ = tstep / 2;
+  hslot_ = doLinearTimeInterpolation_ ? tstep : tstep/2;
   Log::trace() << "GetValues::initialize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
+template <typename MODEL, typename OBS>
+void GetValues<MODEL, OBS>::incInterpValues(
+                    const util::DateTime & tCurrent, const std::vector<bool> & mask,
+                    const size_t & jtask,
+                    const std::vector<double> & tmplocinterp)
+{
+  Log::trace() << "GetValues::incInterpValues start" << std::endl;
 
+// Get the state previous and next times and time-step
+  const util::DateTime tPrevious = tCurrent - hslot_;
+  const util::DateTime tNext = tCurrent + hslot_;
+  const double dt = static_cast<double>(hslot_.toSeconds());
+
+// Compute and add time weighted contribution from the input interpolated values.
+  bool isFirst = true;
+  double timeWeight = 0;
+  const size_t nObs = obs_times_by_task_[jtask].size();
+  for (size_t jp = 0; jp < nObs; ++jp) {
+    size_t valuesIndex = jp;
+    if (mask[jp]) {
+      if (obs_times_by_task_[jtask][jp] > tCurrent) {
+        isFirst = true;
+        timeWeight =
+          static_cast<double>((tNext - obs_times_by_task_[jtask][jp]).toSeconds())/dt;
+      } else {
+        isFirst = false;
+        timeWeight =
+          static_cast<double>((obs_times_by_task_[jtask][jp] - tPrevious).toSeconds())/dt;
+      }
+      for (size_t jf = 0; jf < geovars_.size(); ++jf) {
+        for (size_t jlev = 0; jlev < geovarsSizes_[jf]; ++jlev) {
+          if (isFirst) {
+            locinterp_[jtask][valuesIndex] = tmplocinterp[valuesIndex]*timeWeight;
+          } else {
+            locinterp_[jtask][valuesIndex] += tmplocinterp[valuesIndex]*timeWeight;
+          }
+          valuesIndex += nObs;
+        }
+      }
+    }
+  }
+  Log::trace() << "GetValues::incInterpValues done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
 void GetValues<MODEL, OBS>::process(const State_ & xx) {
   Log::trace() << "GetValues::process start" << std::endl;
@@ -242,7 +311,13 @@ void GetValues<MODEL, OBS>::process(const State_ & xx) {
     }
 
 //  Local interpolation
-    interp_[jtask]->apply(geovars_, xx, mask, locinterp_[jtask]);
+    if (doLinearTimeInterpolation_) {
+      std::vector<double> tmplocinterp(locinterp_[jtask].size(), 0);
+      interp_[jtask]->apply(geovars_, xx, mask, tmplocinterp);
+      incInterpValues(xx.validTime(), mask, jtask, tmplocinterp);
+    } else {
+      interp_[jtask]->apply(geovars_, xx, mask, locinterp_[jtask]);
+    }
   }
 
   Log::trace() << "GetValues::process done" << std::endl;

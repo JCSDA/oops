@@ -72,17 +72,18 @@ void InterpolatorQG::apply(const oops::Variables & vars, const FieldsQG & flds,
 
   qg_fields_getvals_f90(flds.toFortran(), vars, nout, locs[0], nvals, tmp[0]);
 
-  size_t itmp = 0;
   size_t ival = 0;
   for (size_t jv = 0; jv < vars.size(); ++jv) {
-    for (size_t jj = 0; jj < nlocs_; ++jj) {
-      if (mask[jj]) {
-        for (size_t jl = 0; jl < nlevs_; ++jl) {
-          values[ival + jl] = tmp[itmp + jl];
+    const size_t jvStart = jv * nlevs_ * nout;
+    for (size_t jl = 0; jl < nlevs_; ++jl) {
+      size_t itmp = jvStart + jl;
+      for (size_t jj = 0; jj < nlocs_; ++jj) {
+        if (mask[jj]) {
+          values[ival] = tmp[itmp];
+          itmp += nlevs_;
         }
-        itmp += nlevs_;
+        ++ival;
       }
-      ival += nlevs_;
     }
   }
 }
@@ -107,17 +108,18 @@ void InterpolatorQG::applyAD(const oops::Variables & vars, IncrementQG & dx,
   const size_t nvals = vars.size() * nlevs_ * nout;
   std::vector<double> tmp(nvals);
 
-  size_t itmp = 0;
   size_t ival = 0;
   for (size_t jv = 0; jv < vars.size(); ++jv) {
-    for (size_t jj = 0; jj < nlocs_; ++jj) {
-      if (mask[jj]) {
-        for (size_t jl = 0; jl < nlevs_; ++jl) {
-          tmp[itmp + jl] = values[ival + jl];
+    const size_t jvStart = jv * nlevs_ * nout;
+    for (size_t jl = 0; jl < nlevs_; ++jl) {
+      size_t itmp = jvStart + jl;
+      for (size_t jj = 0; jj < nlocs_; ++jj) {
+        if (mask[jj]) {
+          tmp[itmp] = values[ival];
+          itmp += nlevs_;
         }
-        itmp += nlevs_;
+        ++ival;
       }
-      ival += nlevs_;
     }
   }
 

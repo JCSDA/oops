@@ -77,6 +77,7 @@ list( APPEND l95_test_input
   testinput/getkf_offline_hofx.yaml
   testinput/getvalues.yaml
   testinput/hofx.yaml
+  testinput/hofx_tinterp.yaml
   testinput/hofx3d.yaml
   testinput/hofx3d_for_getkf.yaml
   testinput/identitymodel.yaml
@@ -182,6 +183,7 @@ list( APPEND l95_testoutput
   testoutput/getkf.test
   testoutput/getkf_offline_hofx.test
   testoutput/hofx.test
+  testoutput/hofx_tinterp.test
   testoutput/hofx3d.test
   testoutput/hofx3d_for_getkf.test
   testoutput/letkf.test
@@ -472,6 +474,11 @@ ecbuild_add_test( TARGET test_l95_makeobspert
 ecbuild_add_test( TARGET test_l95_hofx
                   COMMAND l95_hofx.x
                   ARGS testinput/hofx.yaml
+                  TEST_DEPENDS test_l95_truth test_l95_makeobs4d )
+
+ecbuild_add_test( TARGET test_l95_hofx_tinterp
+                  COMMAND l95_hofx.x
+                  ARGS testinput/hofx_tinterp.yaml
                   TEST_DEPENDS test_l95_truth test_l95_makeobs4d )
 
 ecbuild_add_test( TARGET test_l95_hofx3d
