@@ -237,6 +237,8 @@ double CostJo<MODEL, OBS>::computeCost() {
     Log::test() << std::endl;
   }
 
+  Log::info() << "CostJo   : Nonlinear Jo = " << zjo << std::endl;
+
   Log::trace() << "CostJo::computeCost done" << std::endl;
   return zjo;
 }
