@@ -2,7 +2,7 @@
 """
 @author: Mayeul Destouches
 @author: modified by Benjamin Menetrier and Anna Shlyaeva for JEDI
-@description: plot analysis and background (if specified) errors compared to truth
+@description: plot increment (analysis-background) and perfect increment (truth-background)
 """
 
 import os
@@ -31,8 +31,8 @@ def func(args):
 
     # Load analysis field
     field, date = read_field(args.filepath)
-    # Load truth field
-    truth, date = read_field(args.truthfilepath)
+    # Load the background field
+    bgfield, date = read_field(args.bgfilepath)
 
     # Variable index
     n = len(field)
@@ -43,8 +43,7 @@ def func(args):
     else:    
         indc=list(range(round(n/2),n))+list(range(0,round(n/2)))
         indlabels=list(range(round(n/2)+1,n+1))+list(range(1,round(n/2)+1))
-
-    # Plot analysis error field
+    # Plot increment (analysis - background) and optinally perfect increment (truth-background)
     fig, ax = plt.subplots()
     if not args.title is None:
         ax.set_title(args.title)
@@ -52,17 +51,19 @@ def func(args):
         ax.set_title("Date: " + date)
     ax.set_xlabel("Variable index")
     ax.set_ylabel("Value")
-    ax.plot(ind, np.subtract(field, truth)[indc], "r.-", label="analysis error")
+    ax.plot(ind, np.subtract(field, bgfield)[indc], "r.-", label="increment")
     ax.set_xlim([1,n])
     plt.xticks(ind,indlabels)
-    ax.xaxis.set_major_locator(plt.MaxNLocator(10))    
-
-    if not args.bgfilepath is None:
-        # Load background field
-        bgfield, date = read_field(args.bgfilepath)
-        ax.plot(ind, np.subtract(bgfield, truth)[indc], "b.--", label="background error")
+    ax.xaxis.set_major_locator(plt.MaxNLocator(10))
+    
+    if not args.truthfilepath is None:
+        # Load truth field
+        truth, date = read_field(args.truthfilepath)
+        ax.plot(ind, np.subtract(truth, bgfield)[indc], "b.--", label="perfect increment")
 
     ax.legend()
+    
+    
     # Save plot
     if args.output is None:
         plotpath = os.path.splitext(os.path.basename(args.filepath))[0]

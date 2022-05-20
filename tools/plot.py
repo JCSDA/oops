@@ -25,6 +25,7 @@ parser_l95_cost = subparser_diagnostic_l95.add_parser("cost", help="L95 cost par
 parser_l95_fields = subparser_diagnostic_l95.add_parser("fields", help="L95 fields parser")
 parser_l95_timeseries = subparser_diagnostic_l95.add_parser("timeseries", help="L95 timeseries parser")
 parser_l95_errors = subparser_diagnostic_l95.add_parser("errors", help="L95 errors parser")
+parser_l95_increments = subparser_diagnostic_l95.add_parser("increments", help="L95 increments parser")
 
 # L95 cost arguments
 parser_l95_cost.add_argument("filepath", type=str, help="File path")
@@ -39,6 +40,13 @@ parser_l95_fields.add_argument("--output", help="Output file path")
 
 # L95 RMSE time series arguments
 parser_l95_timeseries.add_argument("filepath", help="Files path with %id% template that will be replaced with values in times argument")
+parser_l95_timeseries.add_argument("-fKey", "--fileKey", help="Specify a Key in the legend for file 1",default=None)
+parser_l95_timeseries.add_argument("-f2", "--filepath2", help="a second File path with %id% template that will be replaced with values in times argument",default=None)
+parser_l95_timeseries.add_argument("-f2Key", "--file2Key", help="Specify a Key in the legend for file 2",default=None)
+parser_l95_timeseries.add_argument("-f3", "--filepath3", help="a third File path with %id% template that will be replaced with values in times argument",default=None)
+parser_l95_timeseries.add_argument("-f3Key", "--file3Key", help="Specify a Key in the legend for file 3",default=None)
+parser_l95_timeseries.add_argument("-f4", "--filepath4", help="a fourth File path with %id% template that will be replaced with values in times argument", default=None)
+parser_l95_timeseries.add_argument("-f4Key", "--file4Key", help="Specify a Key in the legend for file 4",default=None)
 parser_l95_timeseries.add_argument("truthfilepath", help="Truth files path with %id% template that will be replaced with values in times argument")
 parser_l95_timeseries.add_argument("times", help="Time series pattern values (will be used to replace %id% in the file names")
 parser_l95_timeseries.add_argument("--output", help="Output file path")
@@ -48,7 +56,15 @@ parser_l95_errors.add_argument("filepath", help="Analysis file path")
 parser_l95_errors.add_argument("truthfilepath", help="Truth file path")
 parser_l95_errors.add_argument("-bg", "--bgfilepath", help="Background file path", default=None)
 parser_l95_errors.add_argument("--output", help="Output file path")
-
+parser_l95_errors.add_argument("--recenter", action="store_true", help="Center plot at 1st and last variables?")
+parser_l95_errors.add_argument("--title", help="Specify a title for the plot with --title 'my title' ")
+#L95 increments arguments
+parser_l95_increments.add_argument("filepath", help="Analysis file path")
+parser_l95_increments.add_argument("bgfilepath", help="Background file path")
+parser_l95_increments.add_argument("-t", "--truthfilepath", help="Truth file path", default=None)
+parser_l95_increments.add_argument("--output", help="Output file path")
+parser_l95_increments.add_argument("--recenter", action="store_true", help="Center plot at 1st and last variables?")
+parser_l95_increments.add_argument("--title", help="Specify a title for the plot with --title 'my title' ")
 # -----------------------------------------------------------------------------
 # QG model sub-parsers --------------------------------------------------------
 # -----------------------------------------------------------------------------
