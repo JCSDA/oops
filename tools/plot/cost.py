@@ -21,11 +21,11 @@ def subfunc(args):
     with open(args.filepath, "r") as file:
         for line in file:
             # Get observation types
-            pattern = "Nonlinear Jo"
+            pattern = "Nonlinear Jo\("
             if re.search(pattern, line):
-               obs_type = line.split('(', 1)[1].split(')', 1)[0]
-               if not obs_type in obs_types:
-                  obs_types.append(obs_type)
+                obs_type = line.split('(', 1)[1].split(')', 1)[0]
+                if not obs_type in obs_types:
+                    obs_types.append(obs_type)
 
             # Get number of outer iterations (+1 with initial value)
             pattern = "Nonlinear J ="
