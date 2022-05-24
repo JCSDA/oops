@@ -22,7 +22,7 @@ namespace lorenz95 {
 // -----------------------------------------------------------------------------
 
 LocsL95::LocsL95(const std::vector<double> & locs, const std::vector<util::DateTime> & times)
-  : locs_(locs), times_(times), dummy_(locs.size(), 0.0)
+  : locs_(locs), dummy_(locs.size(), 0.0), times_(times)
 {
   ASSERT(locs_.size() == times_.size());
 }
@@ -30,7 +30,7 @@ LocsL95::LocsL95(const std::vector<double> & locs, const std::vector<util::DateT
 // -----------------------------------------------------------------------------
 
 LocsL95::LocsL95(const eckit::Configuration & conf, const eckit::mpi::Comm &)
-  : locs_(), times_(), dummy_() {
+  : locs_(), dummy_(), times_() {
   conf.get("positions", locs_);
   const util::DateTime time(conf.getString("time"));
   for (size_t jj = 0; jj < locs_.size(); ++jj) {

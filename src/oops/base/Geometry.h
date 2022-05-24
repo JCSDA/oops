@@ -96,7 +96,7 @@ class Geometry : public interface::Geometry<MODEL> {
     atlas::PointLonLat obsloc(lon, lat);
     obsloc.normalise();
     const int itask = globalTree_.closestPoint(obsloc).payload();
-    ASSERT(itask >= 0 && itask < spaceComm_->size());
+    ASSERT(itask >= 0 && (size_t)itask < spaceComm_->size());
     return itask;
   }
   ///@}

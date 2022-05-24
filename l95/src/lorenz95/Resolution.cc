@@ -37,7 +37,7 @@ void Resolution::latlon(std::vector<double> & lats, std::vector<double> & lons, 
   const double dx = 1.0 / static_cast<double>(resol_);
   lats.resize(resol_);
   lons.resize(resol_);
-  for (size_t jj = 0; jj < resol_; ++jj) {
+  for (size_t jj = 0; jj < (size_t)resol_; ++jj) {
     lons[jj] = static_cast<double>(jj) * dx;
     lats[jj] = 0.0;
   }

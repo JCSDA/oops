@@ -362,7 +362,7 @@ void GetValues<MODEL, OBS>::fillGeoVaLs(GeoVaLs_ & geovals) {
     int itask = -1;
     eckit::mpi::Status rst = comm_.waitAny(recv_req_, itask);
     ASSERT(rst.error() == 0);
-    ASSERT(itask >=0 && itask < ntasks_);
+    ASSERT(itask >=0 && (size_t)itask < ntasks_);
     geovals.fill(myobs_index_by_task_[itask], recvinterp_[itask]);
   }
   recv_req_.clear();
@@ -460,7 +460,7 @@ void GetValues<MODEL, OBS>::fillGeoVaLsTL(GeoVaLs_ & geovals) {
     int itask = -1;
     eckit::mpi::Status rst = comm_.waitAny(recv_req_, itask);
     ASSERT(rst.error() == 0);
-    ASSERT(itask >=0 && itask < ntasks_);
+    ASSERT(itask >=0 && (size_t)itask < ntasks_);
     geovals.fill(myobs_index_by_task_[itask], recvinterp_[itask]);
   }
   recv_req_.clear();
@@ -529,7 +529,7 @@ void GetValues<MODEL, OBS>::finalizeAD(const util::Duration & tstep) {
     int itask = -1;
     eckit::mpi::Status sst = comm_.waitAny(send_req_, itask);
     ASSERT(sst.error() == 0);
-    ASSERT(itask >=0 && itask < ntasks_);
+    ASSERT(itask >=0 && (size_t)itask < ntasks_);
   }
   send_req_.clear();
 

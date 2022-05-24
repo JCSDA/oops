@@ -26,7 +26,7 @@ InterpolatorL95::InterpolatorL95(const eckit::Configuration &, const Resolution 
   const size_t res = resol.npoints();
   const double dres = static_cast<double>(res);
   for (size_t jj = 0; jj < nout_; ++jj) {
-    int ii = round(locs[jj] * dres);
+    size_t ii = round(locs[jj] * dres);
     ASSERT(ii >= 0 && ii <= res);
     if (ii == res) ii = 0;
     ilocs_[jj] = ii;
