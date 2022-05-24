@@ -1,0 +1,94 @@
+# (C) Copyright 2022 UCAR.
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+
+oops_target_sources(
+  AnyOf.h
+  AssociativeContainers.h
+  CompareNVectors.h
+  CompositePath.cc
+  CompositePath.h
+  ConfigFunctions.cc
+  ConfigFunctions.h
+  DateTime.cc
+  DateTime.h
+  Duration.cc
+  Duration.h
+  Expect.h
+  FloatCompare.h
+  IntSetParser.cc
+  IntSetParser.h
+  IsAnyPointInVolumeInterior.h
+  IsPointInVolumeInterior.h
+  LibOOPS.cc
+  LibOOPS.h
+  LocalEnvironment.cc
+  LocalEnvironment.h
+  Logger.h
+  NamedEnumerator.h
+  ObjectCountHelper.cc
+  ObjectCountHelper.h
+  ObjectCounter.h
+  PartialDateTime.cc
+  PartialDateTime.h
+  PrintAdjTest.h
+  Printable.h
+  PropertiesOfNVectors.h
+  Random.h
+  ScalarOrMap.h
+  Serializable.h
+  TestReference.cc
+  TestReference.h
+  Timer.cc
+  Timer.h
+  TimerHelper.cc
+  TimerHelper.h
+  TypeTraits.h
+  abor1_cpp.cc
+  abor1_cpp.h
+  abor1_ftn.F90
+  algorithms.h
+  dateFunctions.cc
+  dateFunctions.h
+  datetime.intfb.h
+  datetime_f.cc
+  datetime_f.h
+  datetime_mod.F90
+  dot_product.h
+  duration.intfb.h
+  duration_f.cc
+  duration_f.h
+  duration_mod.F90
+  formats.h
+  gatherPrint.h
+  kinds.F90
+  liboops_f.cc
+  liboops_f.h
+  liboops_mod.F90
+  missingValues.cc
+  missingValues.h
+  missing_values_f.cc
+  missing_values_f.h
+  missing_values_mod.F90
+  netcdf_utils_mod.f90
+  printRunStats.cc
+  printRunStats.h
+  random.intfb.h
+  random_f.cc
+  random_f.h
+  random_mod.F90
+  signal_trap.cc
+  sqr.h
+  stringFunctions.cc
+  stringFunctions.h
+  string_f_c_interface.cc
+  string_f_c_interface.h
+  string_f_c_mod.F90
+  string_utils.F90
+  utilNamespaceDoc.h
+  wildcard.cc
+  wildcard.h
+  )
+
+add_subdirectory( parameters )
