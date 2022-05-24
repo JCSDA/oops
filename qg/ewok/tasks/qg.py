@@ -8,10 +8,10 @@ import forecastQG
   
 # Inherit from generic tasks so tasks default to generic.
 # It is possible not to inherit if all tasks are defined here.
-class ModelTasks(ewok.tasks.GenericModel.GenericModelTasks):
+class ModelTasks(ewok.tasks.GenericModel.ModelTasks):
 
     def __init__(self):
-        ewok.tasks.GenericModel.GenericModelTasks.__init__(self)
+        ewok.tasks.GenericModel.ModelTasks.__init__(self)
 
         self.forecast = forecastQG.forecastQG
 
