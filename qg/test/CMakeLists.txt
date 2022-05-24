@@ -70,7 +70,6 @@ list( APPEND qg_testinput
   testinput/hybridgain_analysis.yaml
   testinput/hybridgain_increment.yaml
   testinput/interfaces.yaml
-  testinput/interfaces/variablechange.yaml
   testinput/letkf.yaml
   testinput/make_obs_3d.yaml
   testinput/make_obs_4d_12h.yaml
@@ -147,12 +146,10 @@ list( APPEND qg_testoutput
   testoutput/truth.test
   testoutput/uniform_field_hybrid.test
   testoutput/uniform_field_inflation.test
-  testoutput/variablechange.test
 )
 
 # Create data directory for test input and symlink all files
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testinput)
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testinput/interfaces)
 foreach(FILENAME ${qg_testinput})
     execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
            ${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}
@@ -354,7 +351,7 @@ ecbuild_add_test( TARGET  test_qg_localization
 
 ecbuild_add_test( TARGET  test_qg_variable_change
                   SOURCES executables/TestVariableChange.cc
-                  ARGS    "testinput/interfaces/variablechange.yaml"
+                  ARGS    "testinput/interfaces.yaml"
                   LIBS    qg
                   TEST_DEPENDS test_qg_truth )
 
