@@ -113,10 +113,11 @@ def func(args):
 
         # Define color levels
         clevels = []
+        vmax = 0.0
         for level in levels:
-            vmax = 0.0
             for field in fields_plot:
                 vmax = max(vmax, np.max(np.abs(field[level])))
+        for level in levels:
             clevels.append(np.linspace(-vmax, vmax, 30))
 
         # Define plot
@@ -147,7 +148,10 @@ def func(args):
             # Loop over levels
             for level, ax in zip(levels, axs[::-1]):
                 # Plot variable
-                im = ax.contourf(xx, yy, fields_plot[iplot][level], cmap="plasma", levels=clevels[level])
+                if args.basefilepath is None:
+                    im = ax.contourf(xx, yy, fields_plot[iplot][level], cmap="plasma", levels=clevels[level])
+                else:
+                    im = ax.contourf(xx, yy, fields_plot[iplot][level], cmap="RdYlBu_r", levels=clevels[level])
 
                 if args.plotwind:
                     # Plot wind field
@@ -164,7 +168,10 @@ def func(args):
                 # Set title
                 varname = dict(x="Streamfunction", q="Potential vorticity").get(variable)
                 unit = dict(x="m$^2$s$^{-1}$", q="s$^{-1}$").get(variable)
-                fig.suptitle(varname + " in " + unit)
+                if not args.title is None:
+                    fig.suptitle(args.title + " - " + varname + " in " + unit)
+                else:
+                    fig.suptitle(varname + " in " + unit)
                 fig.subplots_adjust(left=0.04, right=0.98, bottom=0.04, top=0.9, hspace=0.01)
 
             # Save plot
@@ -177,7 +184,7 @@ def func(args):
             if args.basefilepath is None:
                 plotpath = plotpath + "_" + str(variable) + ".jpg"
             else:
-                plotpath = plotpath + "_" + str(variable) + "_incr.jpg"
+                plotpath = plotpath + "_" + str(variable) + "_diff.jpg"
             if not args.gif is None:
                 cmd = cmd + plotpath + " "
                 if iplot == 0:

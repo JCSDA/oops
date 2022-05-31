@@ -86,6 +86,7 @@ parser_qg_fields.add_argument("basefilepath", nargs="?", help="Base file path", 
 parser_qg_fields.add_argument("--plotwind", dest="plotwind", action="store_true", help="Plot wind")
 parser_qg_fields.add_argument("--gif", help="Gif pattern values, separated with commas, replacing %id% in the file path")
 parser_qg_fields.add_argument("--output", help="Output file path")
+parser_qg_fields.add_argument("--title", help="Specify a title for the plot with --title 'my title' ")
 
 # QG obs arguments
 parser_qg_obs.add_argument("filepath", type=str, help="File path")
