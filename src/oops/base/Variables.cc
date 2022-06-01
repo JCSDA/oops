@@ -131,9 +131,21 @@ Variables & Variables::operator-=(const std::string & var) {
 // -----------------------------------------------------------------------------
 
 bool Variables::operator==(const Variables & rhs) const {
-  return convention_ == rhs.convention_
-    && vars_ == rhs.vars_
-    && channels_ == rhs.channels_;
+  if ((convention_  != rhs.convention_) ||
+      (channels_    != rhs.channels_)   ||
+      (vars_.size() != rhs.vars_.size()))
+    return false;
+  else {
+    std::vector<std::string> myvars = this->asCanonical();
+    std::vector<std::string> othervars = rhs.asCanonical();
+    return myvars == othervars;
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+bool Variables::operator!=(const Variables & rhs) const {
+  return (!(*this == rhs));
 }
 
 // -----------------------------------------------------------------------------
@@ -146,6 +158,20 @@ bool Variables::operator<=(const Variables & rhs) const {
     is_in_rhs = is_in_rhs && rhs.has(vars_[jj]);
   }
   return is_in_rhs;
+}
+
+// -----------------------------------------------------------------------------
+
+void Variables::intersection(const Variables & rhs) {
+  ASSERT(convention_ == rhs.convention_);
+  ASSERT(channels_ == rhs.channels_);
+  std::vector<std::string> myvars = this->asCanonical();
+  std::vector<std::string> othervars = rhs.asCanonical();
+
+  std::vector<std::string> commonvars;
+  std::set_intersection(myvars.begin(), myvars.end(),
+                        othervars.begin(), othervars.end(), std::back_inserter(commonvars));
+  vars_ = commonvars;
 }
 
 // -----------------------------------------------------------------------------
@@ -187,7 +213,11 @@ void Variables::sort() {
 
 // -----------------------------------------------------------------------------
 
-Variables::~Variables() {}
+std::vector<std::string> Variables::asCanonical() const {
+  std::vector<std::string> vars(vars_);
+  std::sort(vars.begin(), vars.end());
+  return vars;
+}
 
 // -----------------------------------------------------------------------------
 

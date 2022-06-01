@@ -31,8 +31,6 @@ class Variables : public util::Printable {
   explicit Variables(const std::vector<std::string> &, const std::string & conv = "");
   Variables(const std::vector<std::string> & vars, const std::vector<int> & channels);
 
-  ~Variables();
-
   Variables(const Variables &);
   Variables & operator+=(const Variables &);
   Variables & operator-=(const Variables &);
@@ -41,10 +39,14 @@ class Variables : public util::Printable {
   size_t size() const {return vars_.size();}
   const std::string & operator[](const size_t kk) const {return vars_.at(kk);}
   bool operator==(const Variables &) const;
+  bool operator!=(const Variables &) const;
   bool operator<=(const Variables &) const;
 
   bool has(const std::string &) const;
   size_t find(const std::string &) const;
+
+  /// make this Variables an intersection between this Variables and \p other variables
+  void intersection(const Variables & other);
 
   const std::vector<std::string> & variables() const {return vars_;}
   const std::vector<int> & channels() const {return channels_;}
@@ -54,6 +56,8 @@ class Variables : public util::Printable {
  private:
   void print(std::ostream &) const;
   void setConf();
+  /// returns sorted variable names
+  std::vector<std::string> asCanonical() const;
 
   std::string convention_;
   std::vector<std::string> vars_;

@@ -139,11 +139,71 @@ void testArithmeticOperators() {
 }
 
 // -----------------------------------------------------------------------------
+/// \brief tests Variables::operator== and operator!=
+void testEquality() {
+  oops::Variables abc({"a", "b", "c"});
+  oops::Variables acb({"a", "c", "b"});
+  oops::Variables ba({"b", "a"});
+
+  EXPECT(abc == acb);
+  EXPECT(!(abc != acb));
+  EXPECT(!(ba == abc));
+  EXPECT(acb != ba);
+}
+
+// -----------------------------------------------------------------------------
+/// \brief tests Variables::intersection (also uses operator=)
+void testIntersection() {
+  oops::Variables empty;
+  oops::Variables acb({"a", "c", "b"});
+  oops::Variables b({"b"});
+  oops::Variables ba({"b", "a"});
+  oops::Variables de({"d", "e"});
+
+  oops::Variables test = empty;
+  test.intersection(empty);
+  EXPECT(test == empty);
+
+  test = empty;
+  test.intersection(acb);
+  EXPECT(test == empty);
+
+  test = acb;
+  test.intersection(empty);
+  EXPECT(test == empty);
+
+  test = acb;
+  test.intersection(b);
+  EXPECT(test == b);
+
+  test = b;
+  test.intersection(acb);
+  EXPECT(test == b);
+
+  test = acb;
+  test.intersection(ba);
+  EXPECT(test == ba);
+
+  test = ba;
+  test.intersection(acb);
+  EXPECT(test == ba);
+
+  test = acb;
+  test.intersection(de);
+  EXPECT(test == empty);
+
+  test = de;
+  test.intersection(acb);
+  EXPECT(test == empty);
+}
+
+// -----------------------------------------------------------------------------
 
 class Variables : public oops::Test {
  public:
   Variables() {}
   virtual ~Variables() {}
+
  private:
   std::string testid() const override {return "test::Variables";}
 
@@ -158,6 +218,10 @@ class Variables : public oops::Test {
       { testFortranInterface(); });
     ts.emplace_back(CASE("Variables/testArithmeticOperators")
       { testArithmeticOperators(); });
+    ts.emplace_back(CASE("Variables/testEquality")
+      { testEquality(); });
+    ts.emplace_back(CASE("Variables/testIntersection")
+      { testIntersection(); });
   }
 
   void clear() const override {}
