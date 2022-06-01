@@ -133,9 +133,9 @@ Variables & Variables::operator-=(const std::string & var) {
 bool Variables::operator==(const Variables & rhs) const {
   if ((convention_  != rhs.convention_) ||
       (channels_    != rhs.channels_)   ||
-      (vars_.size() != rhs.vars_.size()))
+      (vars_.size() != rhs.vars_.size())) {
     return false;
-  else {
+  } else {
     std::vector<std::string> myvars = this->asCanonical();
     std::vector<std::string> othervars = rhs.asCanonical();
     return myvars == othervars;
