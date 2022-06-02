@@ -273,7 +273,9 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
       for (size_t jj = 0; jj < nens; ++jj) {
         output.setMember(jj+1);
         for (size_t itime = 0; itime < ana_pert[0].size(); ++itime) {
-          ana_pert[jj][itime].write(output);
+          Increment_ ana_increment(ana_pert[jj][itime], true);
+          ana_increment -= bkg_pert[jj][itime];
+          ana_increment.write(output);
         }
       }
     }
