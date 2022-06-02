@@ -815,8 +815,8 @@ call vars%push_back('u')
 call vars%push_back('v')
 call qg_fields_create(fld_io,fld%geom,vars,.true.)
 call qg_fields_copy_lbc(fld_io,fld)
-if (trim(typ)=='diag') then
-  ! Diagnostic file: don't complete fields
+if ((trim(typ)=='diag') .or. (trim(typ)=='in')) then
+  ! Diagnostic or increment file: don't complete fields
   if (allocated(fld%x)) then
     fld_io%x = fld%x
   else
