@@ -469,15 +469,25 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
                     const bool do_test_prints, const std::string & strOut) const {
     // save and optionaly print varaince of an IncrementEnsemble4D_ object
     size_t nens = perts.size();
-    const double nc = 1.0/(static_cast<double>(nens) - 1.0);
+    const double ncVar = 1.0/(static_cast<double>(nens) - 1.0);
+    const double ncMean = 1.0/(static_cast<double>(nens));
     for (size_t itime = 0; itime < perts[0].size(); ++itime) {
+      // compute the mean
+      Increment_ mean(perts[0][itime], false);
+      for (size_t iens = 0; iens < nens; ++iens) {
+         mean += perts[iens][itime];
+      }
+      mean *= ncMean;
+      // remove the mean from the ensemble and accumulate sum of squares
       Increment_ var(perts[0][itime], false);
       for (size_t iens = 0; iens < nens; ++iens) {
         Increment_ tmp(perts[iens][itime], true);
-        tmp.schur_product_with(perts[iens][itime]);
+        tmp -= mean;
+        tmp.schur_product_with(tmp);
         var += tmp;
       }
-      var *= nc;
+      var *= ncVar;
+      // write to disk and do test prints
       var.write(params);
       if (do_test_prints) {
         Log::test() << strOut << var << std::endl;
