@@ -21,15 +21,19 @@ def func(args):
     req = 6371229.0                      # Earth radius at equator (m)
     domain_zonal = 2 * np.pi * req       # Model domain in zonal direction (m)
     domain_meridional = 0.5 * np.pi *req # Model domain in meridional direction (m)
+    plot_width=7 #units in inches
+    plot_height=3.5 #units in inches
+    vec_len_frac=20 # with --plotwind the longest vector plotted will be (1/vec_len_frac)*plot_width inches in length
 
     # Variables to plot
-    variables = ["x", "q"]
+    variables = ["x", "q","u","v"]
 
     # File path
     filepaths = []
     ids = []
     if args.gif is None:
         filepaths.append(args.filepath)
+        print(filepaths)
     else:
         check_convert = subprocess.getstatusoutput('convert --help')
         if check_convert[0] != 0:
@@ -132,9 +136,9 @@ def func(args):
         if args.plotwind:
             # Select scale
             if args.basefilepath is None:
-                scale = 400
+                scale = (vec_len_frac)*np.max(np.sqrt(np.square(fields_u_plot)+np.square(fields_v_plot)),axis=(0,1,2,3))/plot_width
             else:
-                scale = 200
+                scale = (vec_len_frac)*np.max(np.sqrt(np.square(fields_u_plot)+np.square(fields_v_plot)),axis=(0,1,2,3))/plot_width
             dx_quiver = max(nx//20, 1)
             dy_quiver = max(ny//10, 1)
 
@@ -143,7 +147,7 @@ def func(args):
              cmd = "convert -delay 20 -loop 0 "
 
         for iplot in range(0, len(filepaths)):
-            fig, axs = plt.subplots(nrows=2, figsize=(7,3.5))
+            fig, axs = plt.subplots(nrows=2, figsize=(plot_width, plot_height))
 
             # Loop over levels
             for level, ax in zip(levels, axs[::-1]):
@@ -166,8 +170,8 @@ def func(args):
                 ax.xaxis.set_major_formatter(my_formatter)
 
                 # Set title
-                varname = dict(x="Streamfunction", q="Potential vorticity").get(variable)
-                unit = dict(x="m$^2$s$^{-1}$", q="s$^{-1}$").get(variable)
+                varname = dict(x="Streamfunction", q="Potential vorticity",u="Horizontal Wind", v="Vertical Wind").get(variable)
+                unit = dict(x="m$^2$s$^{-1}$", q="s$^{-1}$", u="m/s",v="m/s").get(variable)
                 if not args.title is None:
                     fig.suptitle(args.title + " - " + varname + " in " + unit)
                 else:
