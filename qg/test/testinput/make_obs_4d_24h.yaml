@@ -22,9 +22,9 @@ observations:
       generate:
         begin: PT3H
         nval: 1
-        obs_density: 100
-        obs_error: 4.0e6
-        obs_period: PT3H
+        obs density: 100
+        obs error: 4.0e6
+        obs period: PT3H
     obs filters:
     - filter: GOMsaver
       filename: Data/truth.obs4d_24h.stream.gom
@@ -37,9 +37,9 @@ observations:
       generate:
         begin: PT6H
         nval: 2
-        obs_density: 100
-        obs_error: 6.0
-        obs_period: PT6H
+        obs density: 100
+        obs error: 6.0
+        obs period: PT6H
     obs filters:
     - filter: GOMsaver
       filename: Data/truth.obs4d_24h.wind.gom
@@ -52,9 +52,9 @@ observations:
       generate:
         begin: PT3H
         nval: 1
-        obs_density: 100
-        obs_error: 12.0
-        obs_period: PT6H
+        obs density: 100
+        obs error: 12.0
+        obs period: PT6H
     obs filters:
     - filter: GOMsaver
       filename: Data/truth.obs4d_24h.wspeed.gom

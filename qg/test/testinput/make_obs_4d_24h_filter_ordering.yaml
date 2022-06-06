@@ -20,11 +20,14 @@ observations:
         obsfile: Data/truth.obs4d_24h_filter_ordering.nc
       obs type: Stream
       generate:
-        begin: PT3H
+        begin: PT12H
         nval: 1
-        obs_density: 100
-        obs_error: 4.0e6
-        obs_period: PT3H
+        obs locations:
+          lon: [-30.0, 30.0]
+          lat: [45.0, 10.0]
+          z: [7000.0, 6000.0]
+        obs error: 4.0e6
+        obs period: PT12H
     obs post filters:
     - filter: GOMsaver
       filename: Data/truth.obs4d_24h_filter_ordering.stream.gom
@@ -37,9 +40,9 @@ observations:
       generate:
         begin: PT6H
         nval: 2
-        obs_density: 100
-        obs_error: 6.0
-        obs_period: PT6H
+        obs density: 100
+        obs error: 6.0
+        obs period: PT6H
     obs post filters:
     - filter: GOMsaver
       filename: Data/truth.obs4d_24h_filter_ordering.wind.gom
@@ -52,9 +55,9 @@ observations:
       generate:
         begin: PT3H
         nval: 1
-        obs_density: 100
-        obs_error: 12.0
-        obs_period: PT6H
+        obs density: 100
+        obs error: 12.0
+        obs period: PT6H
     obs post filters:
     - filter: GOMsaver
       filename: Data/truth.obs4d_24h_filter_ordering.wspeed.gom

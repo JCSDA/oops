@@ -95,6 +95,11 @@ ObsSpaceQG::ObsSpaceQG(const Parameters_ & params, const eckit::mpi::Comm & comm
   //  Generate locations etc... if required
   if (params.generate.value() != boost::none) {
     const ObsGenerateParameters &gParams = *params.generate.value();
+    if ((gParams.obsDensity.value() == boost::none) &&
+        (gParams.obsLocs.value() == boost::none)) {
+      throw eckit::BadValue("Neither 'obs density' nor 'obs locations' are specified "
+                            "in the parameters of 'obs space.generate'", Here());
+    }
     const util::Duration first(gParams.begin);
     const util::DateTime start(winbgn_ + first);
     const util::Duration freq(gParams.obsPeriod);

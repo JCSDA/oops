@@ -22,9 +22,9 @@ observations:
       generate:
         begin: PT3H
         nval: 1
-        obs_density: 100
-        obs_error: 4.0e6
-        obs_period: PT3H
+        obs density: 100
+        obs error: 4.0e6
+        obs period: PT3H
     obs bias:
       stream: -1.0e7
   - obs operator:
@@ -36,9 +36,9 @@ observations:
       generate:
         begin: PT6H
         nval: 2
-        obs_density: 100
-        obs_error: 6.0
-        obs_period: PT6H
+        obs density: 100
+        obs error: 6.0
+        obs period: PT6H
     obs bias:
       uwind: 10.0
   - obs operator:
@@ -50,9 +50,9 @@ observations:
       generate:
         begin: PT3H
         nval: 1
-        obs_density: 100
-        obs_error: 12.0
-        obs_period: PT6H
+        obs density: 100
+        obs error: 12.0
+        obs period: PT6H
 make obs: true
 prints:
   frequency: PT3H

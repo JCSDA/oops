@@ -22,9 +22,9 @@ observations:
       generate:
         begin: PT10H
         nval: 1
-        obs_density: 100
-        obs_error: 4.0e6
-        obs_period: PT1H
+        obs density: 100
+        obs error: 4.0e6
+        obs period: PT1H
   - obs operator:
       obs type: Wind
     obs space:
@@ -34,9 +34,9 @@ observations:
       generate:
         begin: PT11H
         nval: 2
-        obs_density: 100
-        obs_error: 6.0
-        obs_period: PT2H
+        obs density: 100
+        obs error: 6.0
+        obs period: PT2H
   - obs operator:
       obs type: WSpeed
     obs space:
@@ -46,9 +46,9 @@ observations:
       generate:
         begin: PT10H
         nval: 1
-        obs_density: 100
-        obs_error: 12.0
-        obs_period: PT2H
+        obs density: 100
+        obs error: 12.0
+        obs period: PT2H
 make obs: true
 
 test:
