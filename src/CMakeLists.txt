@@ -587,6 +587,16 @@ set_tests_properties(test_oops_base_dummy_run_one PROPERTIES
 )
 
 ecbuild_add_test(
+  TARGET  test_oops_base_dummy_run_no_validate
+  COMMAND test_oops_base_dummy_run
+  ARGS    "--no-validate" "test/testinput/hello.yaml"
+  DEPENDS test_oops_base_dummy_run
+)
+set_tests_properties(test_oops_base_dummy_run_one PROPERTIES
+  PASS_REGULAR_EXPRESSION "hello earth"
+)
+
+ecbuild_add_test(
   TARGET  test_oops_base_dummy_run_validate_zero
   COMMAND test_oops_base_dummy_run
   ARGS    "--validate-only" "test/testinput/hello.yaml"

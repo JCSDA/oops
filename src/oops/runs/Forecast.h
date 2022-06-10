@@ -60,10 +60,11 @@ template <typename MODEL> class Forecast : public Application {
 // -----------------------------------------------------------------------------
   virtual ~Forecast() {}
 // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const override {
+  int execute(const eckit::Configuration & fullConfig, bool validate) const override {
 //  Deserialize parameters
     ForecastAppParameters_ params;
-    params.validateAndDeserialize(fullConfig);
+    if (validate) params.validate(fullConfig);
+    params.deserialize(fullConfig);
 
 //  Setup resolution
     const Geometry_ resol(params.fcstConf.geometry, this->getComm());

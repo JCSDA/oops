@@ -84,10 +84,11 @@ template <typename MODEL> class ConvertIncrement : public Application {
 // -------------------------------------------------------------------------------------------------
   virtual ~ConvertIncrement() {}
 // -------------------------------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const override {
+  int execute(const eckit::Configuration & fullConfig, bool validate) const override {
 //  Deserialize parameters
     Parameters_ params;
-    params.validateAndDeserialize(fullConfig);
+    if (validate) params.validate(fullConfig);
+    params.deserialize(fullConfig);
 
 //  Setup resolution for intput and output
     const Geometry_ resol1(params.inputGeometry, this->getComm());

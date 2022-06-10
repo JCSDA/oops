@@ -84,7 +84,7 @@ class Application : public util::Printable {
  public:
   explicit Application(const eckit::mpi::Comm & comm) : comm_(comm) {}
   virtual ~Application() {}
-  virtual int execute(const eckit::Configuration &) const = 0;
+  virtual int execute(const eckit::Configuration &, bool validate) const = 0;
 
   /// This method aborts. Sub-class should override to output JSON schema.
   virtual void outputSchema(const std::string & outputPath) const;

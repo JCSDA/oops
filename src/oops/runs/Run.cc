@@ -92,6 +92,8 @@ Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(
       std::cout << "Usages:" << std::endl;
       std::cout << "  # run main application:" << std::endl;
       std::cout << "  " << argv0 << " input-file [output-file]" << std::endl;
+      std::cout << "  # run main application without validating YAML file:" << std::endl;
+      std::cout << "  " << argv0 << " --no-validate input-file" << std::endl;
       std::cout << "  # check input YAML file against its schema:" << std::endl;
       std::cout << "  " << argv0 << " --validate-only input-file" << std::endl;
       std::cout << "  # write input file schema to given file name:" << std::endl;
@@ -101,6 +103,8 @@ Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(
       is_print_help_only_ = true;
     } else if (item == "--validate-only") {
       is_validate_only_ = true;
+    } else if (item == "--no-validate") {
+      validate_ = false;
     } else if (item.rfind("--output-json-schema=", 0) == 0) {
       output_json_schema_path_ = item.substr(item.find("=") + 1);
     } else if (infilename.empty()) {
@@ -174,7 +178,7 @@ int Run::execute(const Application & app) {
       util::ObjectCountHelper::start();
       util::printRunStats("Run start", true);
       Log::info() << "Run: Starting " << app << std::endl;
-      status = app.execute(*config_);
+      status = app.execute(*config_, validate_);
       Log::info() << std::endl << "Run: Finishing " << app << std::endl;
       // Performance diagnostics
       util::ObjectCountHelper::stop();

@@ -39,7 +39,7 @@ class Test : public Application {
  public:
   explicit Test(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {}
   virtual ~Test() {}
-  int execute(const eckit::Configuration & config) const override;
+  int execute(const eckit::Configuration & config, bool validate) const override;
  private:
   virtual void register_tests() const = 0;
   virtual std::string testid() const = 0;
@@ -50,7 +50,7 @@ class Test : public Application {
 
 // -----------------------------------------------------------------------------
 
-int Test::execute(const eckit::Configuration & config) const {
+int Test::execute(const eckit::Configuration & config, bool validate) const {
 // Setup configuration for tests
   test::TestEnvironment::getInstance().setup(config);
 

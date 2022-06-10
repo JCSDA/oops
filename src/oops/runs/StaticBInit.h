@@ -66,10 +66,11 @@ template <typename MODEL> class StaticBInit : public Application {
   // -----------------------------------------------------------------------------
   virtual ~StaticBInit() {}
   // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const override {
+  int execute(const eckit::Configuration & fullConfig, bool validate) const override {
     //  Deserialize parameters
     StaticBInitParameters_ params;
-    params.validateAndDeserialize(fullConfig);
+    if (validate) params.validate(fullConfig);
+    params.deserialize(fullConfig);
 
     //  Setup resolution
     const Geometry_ resol(params.geometry, this->getComm());

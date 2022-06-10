@@ -92,10 +92,11 @@ template <typename MODEL, typename OBS> class HofX3D : public Application {
 // -----------------------------------------------------------------------------
   virtual ~HofX3D() = default;
 // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const override {
+  int execute(const eckit::Configuration & fullConfig, bool validate) const override {
 //  Deserialize parameters
     HofX3DParameters_ params;
-    params.validateAndDeserialize(fullConfig);
+    if (validate) params.validate(fullConfig);
+    params.deserialize(fullConfig);
 
 //  Setup observation window
     const util::Duration winlen = params.windowLength;

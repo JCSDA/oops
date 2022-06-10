@@ -69,10 +69,11 @@ template <typename MODEL> class DiffStates : public Application {
 // -----------------------------------------------------------------------------
   virtual ~DiffStates() {}
 // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const override {
+  int execute(const eckit::Configuration & fullConfig, bool validate) const override {
 //  Deserialize parameters
     DiffStatesParameters_ params;
-    params.validateAndDeserialize(fullConfig);
+    if (validate) params.validate(fullConfig);
+    params.deserialize(fullConfig);
 
 //  Setup resolutions
     const Geometry_ stateGeometry(params.stateGeometryConf, this->getComm());

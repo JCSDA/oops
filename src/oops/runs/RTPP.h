@@ -67,10 +67,10 @@ template <typename MODEL> class RTPP : public Application {
 
 // -----------------------------------------------------------------------------
 
-  int execute(const eckit::Configuration & fullConfig) const override {
+  int execute(const eckit::Configuration & fullConfig, bool validate) const override {
     RTPPParameters<MODEL> params;
-
-    params.validateAndDeserialize(fullConfig);
+    if (validate) params.validate(fullConfig);
+    params.deserialize(fullConfig);
 
     // Setup geometry
     const Geometry_ geometry(params.geometry, this->getComm(), oops::mpi::myself());

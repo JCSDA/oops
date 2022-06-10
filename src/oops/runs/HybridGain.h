@@ -87,10 +87,11 @@ template <typename MODEL> class HybridGain : public Application {
   // -----------------------------------------------------------------------------
   virtual ~HybridGain() {}
   // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const override {
+  int execute(const eckit::Configuration & fullConfig, bool validate) const override {
     // Deserialize parameters
     HybridGainParameters_ params;
-    params.validateAndDeserialize(fullConfig);
+    if (validate) params.validate(fullConfig);
+    params.deserialize(fullConfig);
 
     // Setup Geometry
     const Geometry_ resol(params.geometry, this->getComm());

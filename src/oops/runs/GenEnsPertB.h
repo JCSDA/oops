@@ -99,10 +99,11 @@ template <typename MODEL> class GenEnsPertB : public Application {
 // -----------------------------------------------------------------------------
   virtual ~GenEnsPertB() {}
 // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const override {
+  int execute(const eckit::Configuration & fullConfig, bool validate) const override {
 //  Deserialize parameters
     GenEnsPertBParameters_ params;
-    params.validateAndDeserialize(fullConfig);
+    if (validate) params.validate(fullConfig);
+    params.deserialize(fullConfig);
 
 //  Setup resolution
     const Geometry_ resol(params.geometry, this->getComm(), oops::mpi::myself());

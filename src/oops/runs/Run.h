@@ -39,6 +39,7 @@ class Run : public eckit::Main {
  private:
   bool is_print_help_only_ = false;
   bool is_validate_only_ = false;
+  bool validate_ = true;
   std::string output_json_schema_path_ = "";
   std::unique_ptr<const eckit::YAMLConfiguration> config_;
   std::unique_ptr<util::Timer> timer_;

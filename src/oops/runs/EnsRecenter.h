@@ -74,10 +74,11 @@ template <typename MODEL> class EnsRecenter : public Application {
   // -----------------------------------------------------------------------------
   virtual ~EnsRecenter() {}
   // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const override {
+  int execute(const eckit::Configuration & fullConfig, bool validate) const override {
     // Deserialize parameters
     EnsRecenterParameters<MODEL> params;
-    params.validateAndDeserialize(fullConfig);
+    if (validate) params.validate(fullConfig);
+    params.deserialize(fullConfig);
 
     // Setup Geometry
     const Geometry_ resol(params.geometry.value(), this->getComm());

@@ -92,10 +92,11 @@ template <typename MODEL> class Dirac : public Application {
 // -----------------------------------------------------------------------------
   virtual ~Dirac() {}
 // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const override {
+  int execute(const eckit::Configuration & fullConfig, bool validate) const override {
 //  Deserialize parameters
     DiracParameters_ params;
-    params.validateAndDeserialize(fullConfig);
+    if (validate) params.validate(fullConfig);
+    params.deserialize(fullConfig);
 
 //  Define number of subwindows
     const eckit::LocalConfiguration backgroundConfig(fullConfig, "initial condition");

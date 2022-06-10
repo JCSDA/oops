@@ -94,10 +94,11 @@ template <typename MODEL> class ConvertState : public Application {
 // -------------------------------------------------------------------------------------------------
   virtual ~ConvertState() {}
 // -------------------------------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const override {
+  int execute(const eckit::Configuration & fullConfig, bool validate) const override {
 //  Deserialize parameters
     ConvertStateParameters_ params;
-    params.validateAndDeserialize(fullConfig);
+    if (validate) params.validate(fullConfig);
+    params.deserialize(fullConfig);
 
 //  Setup resolution for input and output
     const Geometry_ resol1(params.inputGeometry, this->getComm());

@@ -78,10 +78,11 @@ template <typename MODEL> class EnsVariance : public Application {
   // -----------------------------------------------------------------------------
   virtual ~EnsVariance() {}
   // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const override {
+  int execute(const eckit::Configuration & fullConfig, bool validate) const override {
 //  Deserialize parameters
     EnsVarianceParameters_ params;
-    params.validateAndDeserialize(fullConfig);
+    if (validate) params.validate(fullConfig);
+    params.deserialize(fullConfig);
 
 //  Setup Geometry
     const Geometry_ resol(params.resolConfig, this->getComm());

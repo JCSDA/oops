@@ -55,7 +55,7 @@ template <typename MODEL, typename OBS> class Variational : public Application {
 // -----------------------------------------------------------------------------
   virtual ~Variational() {}
 // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const override {
+  int execute(const eckit::Configuration & fullConfig, bool validate) const override {
 /// The background is constructed inside the cost function because its valid
 /// time within the assimilation window can be different (3D-Var vs. 4D-Var),
 /// it can be 3D or 4D (strong vs weak constraint), etc...
@@ -64,7 +64,8 @@ template <typename MODEL, typename OBS> class Variational : public Application {
 //  Setup cost function
     eckit::LocalConfiguration cfConf(fullConfig, "cost function");
     CostFunctionParametersWrapper<MODEL, OBS> cfParams;
-    cfParams.validateAndDeserialize(cfConf);
+    if (validate) cfParams.validate(cfConf);
+    cfParams.deserialize(cfConf);
     std::unique_ptr<CostFunction<MODEL, OBS>>
       J(CostFactory<MODEL, OBS>::create(cfParams.costTypeParameters, this->getComm()));
     Log::trace() << "Variational: cost function has been set up" << std::endl;
@@ -117,6 +118,14 @@ template <typename MODEL, typename OBS> class Variational : public Application {
 
     util::printRunStats("Variational end");
     return 0;
+  }
+// -----------------------------------------------------------------------------
+  void validateConfig(const eckit::Configuration & fullConfig) const override {
+    // Note: Variational app doesn't have application level Parameters yet;
+    // for now validating only one (but most expensive) part of Parameters.
+    eckit::LocalConfiguration cfConf(fullConfig, "cost function");
+    CostFunctionParametersWrapper<MODEL, OBS> cfParams;
+    cfParams.validate(cfConf);
   }
 // -----------------------------------------------------------------------------
  private:

@@ -88,10 +88,11 @@ template <typename MODEL> class AdjointForecast : public Application {
 // -----------------------------------------------------------------------------
   virtual ~AdjointForecast() {}
 // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const {
+  int execute(const eckit::Configuration & fullConfig, bool validate) const {
     // Deserialize parameters
     AdjointForecastParameters_ params;
-    params.validateAndDeserialize(fullConfig);
+    if (validate) params.validate(fullConfig);
+    params.deserialize(fullConfig);
 
     // Create the linear model
     const Geometry_ adjointForecastModelGeometry

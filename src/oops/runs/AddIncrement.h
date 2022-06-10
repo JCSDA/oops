@@ -86,10 +86,11 @@ template <typename MODEL> class AddIncrement : public Application {
 // -----------------------------------------------------------------------------
   virtual ~AddIncrement() {}
 // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const override {
+  int execute(const eckit::Configuration & fullConfig, bool validate) const override {
 //  Load input configuration options
     AddIncrementParameters_ params;
-    params.validateAndDeserialize(fullConfig);
+    if (validate) params.validate(fullConfig);
+    params.deserialize(fullConfig);
 
 //  Setup resolution
     const Geometry_ stateResol(params.stateGeometry, this->getComm());

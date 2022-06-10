@@ -53,7 +53,7 @@ template <typename MODEL> class SqrtOfVertLoc : public Application {
 // -----------------------------------------------------------------------------
   virtual ~SqrtOfVertLoc() {}
 // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const override {
+  int execute(const eckit::Configuration & fullConfig, bool validate) const override {
 //  truncation tolerence
     const double TruncationTollerance = fullConfig.getDouble("truncation tolerence", 1.0);
 
