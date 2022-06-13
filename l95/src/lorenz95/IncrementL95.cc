@@ -223,20 +223,6 @@ void IncrementL95::setLocal(const oops::LocalIncrement & gp, const Iterator & i)
   fld_[i.index()] = vals[0];
 }
 // -----------------------------------------------------------------------------
-/// Convert to/from ATLAS fieldset
-// -----------------------------------------------------------------------------
-void IncrementL95::setAtlas(atlas::FieldSet *) const {
-  throw eckit::NotImplemented("IncrementL95::setAtlas", Here());
-}
-// -----------------------------------------------------------------------------
-void IncrementL95::toAtlas(atlas::FieldSet *) const {
-  throw eckit::NotImplemented("IncrementL95::toAtlas", Here());
-}
-// -----------------------------------------------------------------------------
-void IncrementL95::fromAtlas(atlas::FieldSet *) {
-  throw eckit::NotImplemented("IncrementL95::fromAtlas", Here());
-}
-// -----------------------------------------------------------------------------
 /// Serialize - deserialize
 // -----------------------------------------------------------------------------
 size_t IncrementL95::serialSize() const {

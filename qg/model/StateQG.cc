@@ -140,6 +140,15 @@ void StateQG::print(std::ostream & os) const {
   os << *fields_;
 }
 // -----------------------------------------------------------------------------
+/// ATLAS FieldSet
+// -----------------------------------------------------------------------------
+void StateQG::toFieldSet(atlas::FieldSet & fset) const {
+  fields_->toFieldSet(fset);
+}
+void StateQG::fromFieldSet(const atlas::FieldSet & fset) {
+  fields_->fromFieldSet(fset);
+}
+// -----------------------------------------------------------------------------
 /// For accumulator
 // -----------------------------------------------------------------------------
 void StateQG::zero() {

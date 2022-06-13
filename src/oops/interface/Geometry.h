@@ -89,8 +89,16 @@ class Geometry : public util::Printable,
 
   /// Accessor to the geometry communicator
   const eckit::mpi::Comm & getComm() const {return geom_->getComm();}
-  atlas::FunctionSpace * atlasFunctionSpace() const {return geom_->atlasFunctionSpace();}
-  atlas::FieldSet * atlasFieldSet() const {return geom_->atlasFieldSet();}
+
+  /// Accessor to the functionspace
+  const atlas::FunctionSpace & functionSpace() const {return geom_->functionSpace();}
+  atlas::FunctionSpace & functionSpace() {return geom_->functionSpace();}
+
+  /// Accessor to the extra fields
+  const atlas::FieldSet & extraFields() const {return geom_->extraFields();}
+  atlas::FieldSet & extraFields() {return geom_->extraFields();}
+
+  /// Accessor to the latitude/longitude vectors
   void latlon(std::vector<double> &, std::vector<double> &, const bool) const;
 
   /// Accessor to MODEL::Geometry, used in the other interface classes in oops.

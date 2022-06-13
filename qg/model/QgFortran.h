@@ -113,12 +113,10 @@ extern "C" {
   void qg_fields_rms_f90(const F90flds &, double &);
   void qg_fields_sizes_f90(const F90flds &, int &, int &, int &);
   void qg_fields_lbc_f90(const F90flds &, int &);
-  void qg_fields_set_atlas_f90(const F90flds &, const oops::Variables &,
-                               atlas::field::FieldSetImpl *);
-  void qg_fields_to_atlas_f90(const F90flds &, const oops::Variables &,
-                              atlas::field::FieldSetImpl *);
-  void qg_fields_from_atlas_f90(const F90flds &, const oops::Variables &,
-                                atlas::field::FieldSetImpl *);
+  void qg_fields_to_fieldset_f90(const F90flds &,
+                                 atlas::field::FieldSetImpl *);
+  void qg_fields_from_fieldset_f90(const F90flds &,
+                                   const atlas::field::FieldSetImpl *);
   void qg_fields_getvals_f90(const F90flds &, const oops::Variables &,
                              const int &, const double &, const int &, double &);
   void qg_fields_getvalsad_f90(const F90flds &, const oops::Variables &,
@@ -148,10 +146,10 @@ extern "C" {
 //  Geometry
 // -----------------------------------------------------------------------------
   void qg_geom_setup_f90(F90geom &, const eckit::Configuration &);
-  void qg_geom_set_atlas_lonlat_f90(const F90geom &, atlas::field::FieldSetImpl *);
-  void qg_geom_set_atlas_functionspace_pointer_f90(const F90geom &,
+  void qg_geom_set_lonlat_f90(const F90geom &, atlas::field::FieldSetImpl *);
+  void qg_geom_set_functionspace_pointer_f90(const F90geom &,
                                                    atlas::functionspace::FunctionSpaceImpl *);
-  void qg_geom_fill_atlas_fieldset_f90(const F90geom &, atlas::field::FieldSetImpl *);
+  void qg_geom_fill_extra_fields_f90(const F90geom &, atlas::field::FieldSetImpl *);
   void qg_geom_clone_f90(F90geom &, const F90geom &);
   void qg_geom_info_f90(const F90geom &, int &, int &, int &, double &, double &);
   void qg_geom_delete_f90(F90geom &);

@@ -245,3 +245,4 @@ window end: 2010-01-02T00:00:00Z
 
 increment test:
  date: 2009-12-31T00:00:00Z
+ skip atlas: 1

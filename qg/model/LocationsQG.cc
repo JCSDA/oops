@@ -143,7 +143,7 @@ LocationsQG::LocationsQG(atlas::FieldSet & fields,
   lons_.resize(pointcloud_->size());
   atlas::Field field_lonlat = pointcloud_->lonlat();
   auto lonlat = make_view<double, 2>(field_lonlat);
-  for (size_t jloc = 0; jloc < pointcloud_->size(); ++jloc) {
+  for (atlas::idx_t jloc = 0; jloc < pointcloud_->size(); ++jloc) {
     lats_[jloc] = lonlat(jloc, 1);
     lons_[jloc] = lonlat(jloc, 0);
   }

@@ -99,7 +99,7 @@ class State : public util::Printable,
   State & operator =(const State &);
 
   /// Accessor
-  State_ & state() {fset_.reset(); return *state_;}
+  State_ & state() {fset_.clear(); return *state_;}
   /// const accessor
   const State_ & state() const {return *state_;}
 
@@ -125,8 +125,16 @@ class State : public util::Printable,
   /// Accumulate (add \p w * \p x to the state)
   void accumul(const double & w, const State & x);
 
-  /// Atlas FieldSet interface
-  void getFieldSet(const Variables &, atlas::FieldSet &) const;
+  /// ATLAS FieldSet interface
+  /// For models that are not using ATLAS fieldsets for their own State data:
+  /// - "toFieldSet" allocates the ATLAS fieldset based on the variables present in the State and
+  ///    copies State data into the fieldset, including halo.
+  /// - "fromFieldSet" copies fieldset data back into the State (interior points only).
+  /// For models that are using ATLAS fieldsets for their own Incerment data, fields are shared from
+  /// a fieldset to another. A working example is available with the QUENCH testbed of SABER
+  /// inf saber/test/quench.
+  void toFieldSet(atlas::FieldSet &) const;
+  void fromFieldSet(const atlas::FieldSet &);
 
   /// Serialize and deserialize (used in 4DEnVar, weak-constraint 4DVar and Block-Lanczos minimizer)
   size_t serialSize() const override;
@@ -138,7 +146,7 @@ class State : public util::Printable,
   void print(std::ostream &) const override;
 
  protected:
-  mutable std::unique_ptr<atlas::FieldSet> fset_;
+  mutable atlas::FieldSet fset_;
 };
 
 // =============================================================================
@@ -201,7 +209,7 @@ template<typename MODEL>
 State<MODEL>::~State() {
   Log::trace() << "State<MODEL>::~State starting" << std::endl;
   util::Timer timer(classname(), "~State");
-  fset_.reset();
+  fset_.clear();
   state_.reset();
   Log::trace() << "State<MODEL>::~State done" << std::endl;
 }
@@ -212,7 +220,7 @@ template<typename MODEL>
 State<MODEL> & State<MODEL>::operator=(const State & rhs) {
   Log::trace() << "State<MODEL>::operator= starting" << std::endl;
   util::Timer timer(classname(), "operator=");
-  fset_.reset();
+  fset_.clear();
   *state_ = *rhs.state_;
   Log::trace() << "State<MODEL>::operator= done" << std::endl;
   return *this;
@@ -224,7 +232,7 @@ template<typename MODEL>
 void State<MODEL>::read(const Parameters_ & parameters) {
   Log::trace() << "State<MODEL>::read starting" << std::endl;
   util::Timer timer(classname(), "read");
-  fset_.reset();
+  fset_.clear();
   state_->read(parametersOrConfiguration<HasParameters_<State_>::value>(parameters));
   Log::trace() << "State<MODEL>::read done" << std::endl;
 }
@@ -312,7 +320,7 @@ template<typename MODEL>
 void State<MODEL>::deserialize(const std::vector<double> & vect, size_t & current) {
   Log::trace() << "State<MODEL>::State deserialize starting" << std::endl;
   util::Timer timer(classname(), "deserialize");
-  fset_.reset();
+  fset_.clear();
   state_->deserialize(vect, current);
   Log::trace() << "State<MODEL>::State deserialize done" << std::endl;
 }
@@ -320,11 +328,11 @@ void State<MODEL>::deserialize(const std::vector<double> & vect, size_t & curren
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void State<MODEL>::getFieldSet(const Variables & vars, atlas::FieldSet & fset) const {
-  Log::trace() << "State<MODEL>::getFieldSet starting" << std::endl;
-  util::Timer timer(classname(), "getFieldSet");
-  state_->getFieldSet(vars, fset);
-  Log::trace() << "State<MODEL>::getFieldSet done" << std::endl;
+void State<MODEL>::toFieldSet(atlas::FieldSet & fset) const {
+  Log::trace() << "State<MODEL>::toFieldSet starting" << std::endl;
+  util::Timer timer(classname(), "toFieldSet");
+  state_->toFieldSet(fset);
+  Log::trace() << "State<MODEL>::toFieldSet done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -343,7 +351,7 @@ template<typename MODEL>
 void State<MODEL>::zero() {
   Log::trace() << "State<MODEL>::zero starting" << std::endl;
   util::Timer timer(classname(), "zero");
-  fset_.reset();
+  fset_.clear();
   state_->zero();
   Log::trace() << "State<MODEL>::zero done" << std::endl;
 }
@@ -354,7 +362,7 @@ template<typename MODEL>
 void State<MODEL>::accumul(const double & zz, const State & xx) {
   Log::trace() << "State<MODEL>::accumul starting" << std::endl;
   util::Timer timer(classname(), "accumul");
-  fset_.reset();
+  fset_.clear();
   state_->accumul(zz, *xx.state_);
   Log::trace() << "State<MODEL>::accumul done" << std::endl;
 }

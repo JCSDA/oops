@@ -38,38 +38,34 @@ GeometryQG::GeometryQG(const GeometryQgParameters & params,
   qg_geom_info_f90(keyGeom_, nx, ny, nz, deltax, deltay);
   levs_ = nz;
 
-  // Set ATLAS lon/lat field
-  atlasFieldSet_.reset(new atlas::FieldSet());
-  qg_geom_set_atlas_lonlat_f90(keyGeom_, atlasFieldSet_->get());
-  atlas::Field atlasField = atlasFieldSet_->field("lonlat");
+  // Create function space
+  atlas::FieldSet fieldSet;
+  qg_geom_set_lonlat_f90(keyGeom_, fieldSet.get());
+  const atlas::Field & field = fieldSet.field("lonlat");
+  functionSpace_ = atlas::functionspace::PointCloud(field);
 
-  // Create ATLAS function space
-  atlasFunctionSpace_.reset(new atlas::functionspace::PointCloud(atlasField));
+  // Set function space pointer in Fortran
+  qg_geom_set_functionspace_pointer_f90(keyGeom_, functionSpace_.get());
 
-  // Set ATLAS function space pointer in Fortran
-  qg_geom_set_atlas_functionspace_pointer_f90(keyGeom_, atlasFunctionSpace_->get());
-
-  // Fill ATLAS fieldset
-  atlasFieldSet_.reset(new atlas::FieldSet());
-  qg_geom_fill_atlas_fieldset_f90(keyGeom_, atlasFieldSet_->get());
+  // Fill extra fields
+  extraFields_ = atlas::FieldSet();
+  qg_geom_fill_extra_fields_f90(keyGeom_, extraFields_.get());
 }
 // -----------------------------------------------------------------------------
 GeometryQG::GeometryQG(const GeometryQG & other) : comm_(other.comm_), levs_(other.levs_) {
   ASSERT(comm_.size() == 1);
   qg_geom_clone_f90(keyGeom_, other.keyGeom_);
 
-  // Copy ATLAS function space
-  atlasFunctionSpace_.reset(new atlas::functionspace::PointCloud(
-                            other.atlasFunctionSpace_->lonlat()));
+  // Copy function space
+  functionSpace_ = other.functionSpace_;
 
-  // Set ATLAS function space pointer in Fortran
-  qg_geom_set_atlas_functionspace_pointer_f90(keyGeom_, atlasFunctionSpace_.get()->get());
+  // Set function space pointer in Fortran
+  qg_geom_set_functionspace_pointer_f90(keyGeom_, functionSpace_.get());
 
-  // Copy ATLAS fieldset
-  atlasFieldSet_.reset(new atlas::FieldSet());
-  for (int jfield = 0; jfield < other.atlasFieldSet_->size(); ++jfield) {
-    atlas::Field atlasField = other.atlasFieldSet_->field(jfield);
-    atlasFieldSet_->add(atlasField);
+  // Copy extra fields
+  extraFields_ = atlas::FieldSet();
+  for (auto & field : other.extraFields_) {
+    extraFields_.add(field);
   }
 }
 // -----------------------------------------------------------------------------
@@ -92,8 +88,8 @@ GeometryQGIterator GeometryQG::end() const {
 }
 // -------------------------------------------------------------------------------------------------
 void GeometryQG::latlon(std::vector<double> & lats, std::vector<double> & lons, const bool) const {
-  const auto lonlat = atlas::array::make_view<double, 2>(atlasFunctionSpace_->lonlat());
-  const size_t npts = atlasFunctionSpace_->size();
+  const auto lonlat = atlas::array::make_view<double, 2>(functionSpace_.lonlat());
+  const size_t npts = functionSpace_.size();
   lats.resize(npts);
   lons.resize(npts);
   for (size_t jj = 0; jj < npts; ++jj) {

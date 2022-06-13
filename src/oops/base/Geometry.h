@@ -109,7 +109,7 @@ class Geometry : public interface::Geometry<MODEL> {
   const eckit::mpi::Comm * timeComm_;   /// pointer to the MPI communicator in time
 
   const atlas::Geometry earth_;
-  atlas::util::IndexKDTree  localTree_;
+  atlas::util::IndexKDTree localTree_;
   atlas::util::IndexKDTree globalTree_;
 
   void setLocalTree();

@@ -23,6 +23,7 @@
 #include "lorenz95/Resolution.h"
 
 #include "oops/base/WriteParametersBase.h"
+#include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
@@ -115,10 +116,12 @@ class IncrementL95 : public util::Printable,
   void random();
 
 /// ATLAS
-  void setAtlas(atlas::FieldSet *) const;
-  void toAtlas(atlas::FieldSet *) const;
-  void fromAtlas(atlas::FieldSet *);
-  void getFieldSetAD(const oops::Variables &, const atlas::FieldSet &) {}
+  void toFieldSet(atlas::FieldSet &) const
+    {ABORT("toFieldSet not implemented");}
+  void toFieldSetAD(const atlas::FieldSet &)
+    {ABORT("toFieldSetAD not implemented");}
+  void fromFieldSet(const atlas::FieldSet &)
+    {ABORT("fromFieldSet not implemented");}
 
 // Utilities
   void read(const ReadParameters_ &);

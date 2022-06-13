@@ -148,16 +148,12 @@ void FieldsQG::diff(const FieldsQG & x1, const FieldsQG & x2) {
   qg_fields_diff_incr_f90(keyFlds_, x1_myres.keyFlds_, x2_myres.keyFlds_);
 }
 // -----------------------------------------------------------------------------
-void FieldsQG::setAtlas(atlas::FieldSet * afieldset) const {
-  qg_fields_set_atlas_f90(keyFlds_, vars_, afieldset->get());
+void FieldsQG::toFieldSet(atlas::FieldSet & afieldset) const {
+  qg_fields_to_fieldset_f90(keyFlds_, afieldset.get());
 }
 // -----------------------------------------------------------------------------
-void FieldsQG::toAtlas(atlas::FieldSet * afieldset) const {
-  qg_fields_to_atlas_f90(keyFlds_, vars_, afieldset->get());
-}
-// -----------------------------------------------------------------------------
-void FieldsQG::fromAtlas(atlas::FieldSet * afieldset) {
-  qg_fields_from_atlas_f90(keyFlds_, vars_, afieldset->get());
+void FieldsQG::fromFieldSet(const atlas::FieldSet & afieldset) {
+  qg_fields_from_fieldset_f90(keyFlds_, afieldset.get());
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::read(const eckit::Configuration & config) {

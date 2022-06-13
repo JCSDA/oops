@@ -71,8 +71,10 @@ class GeometryQG : public util::Printable,
   GeometryQGIterator end() const;
   std::vector<double> verticalCoord(std::string &) const;
   const eckit::mpi::Comm & getComm() const {return comm_;}
-  atlas::FunctionSpace * atlasFunctionSpace() const {return atlasFunctionSpace_.get();}
-  atlas::FieldSet * atlasFieldSet() const {return atlasFieldSet_.get();}
+  const atlas::FunctionSpace & functionSpace() const {return functionSpace_;}
+  atlas::FunctionSpace & functionSpace() {return functionSpace_;}
+  const atlas::FieldSet & extraFields() const {return extraFields_;}
+  atlas::FieldSet & extraFields() {return extraFields_;}
   size_t levels() const {return levs_;}
 
   std::vector<size_t> variableSizes(const oops::Variables & vars) const;
@@ -84,8 +86,8 @@ class GeometryQG : public util::Printable,
   void print(std::ostream &) const;
   F90geom keyGeom_;
   const eckit::mpi::Comm & comm_;
-  std::unique_ptr<atlas::functionspace::PointCloud> atlasFunctionSpace_;
-  std::unique_ptr<atlas::FieldSet> atlasFieldSet_;
+  atlas::FunctionSpace functionSpace_;
+  atlas::FieldSet extraFields_;
   size_t levs_;
 };
 // -----------------------------------------------------------------------------

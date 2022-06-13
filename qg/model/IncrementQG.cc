@@ -141,16 +141,16 @@ void IncrementQG::dirac(const eckit::Configuration & config) {
 // -----------------------------------------------------------------------------
 /// ATLAS FieldSet
 // -----------------------------------------------------------------------------
-void IncrementQG::setAtlas(atlas::FieldSet * afieldset) const {
-  fields_->setAtlas(afieldset);
+void IncrementQG::toFieldSet(atlas::FieldSet & fset) const {
+  fields_->toFieldSet(fset);
 }
 // -----------------------------------------------------------------------------
-void IncrementQG::toAtlas(atlas::FieldSet * afieldset) const {
-  fields_->toAtlas(afieldset);
+void IncrementQG::toFieldSetAD(const atlas::FieldSet & fset) {
+  fields_->toFieldSetAD(fset);
 }
 // -----------------------------------------------------------------------------
-void IncrementQG::fromAtlas(atlas::FieldSet * afieldset) {
-  fields_->fromAtlas(afieldset);
+void IncrementQG::fromFieldSet(const atlas::FieldSet & fset) {
+  fields_->fromFieldSet(fset);
 }
 // -----------------------------------------------------------------------------
 /// I/O and diagnostics

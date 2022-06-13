@@ -42,7 +42,7 @@ public :: qg_fields_create,qg_fields_create_from_other,qg_fields_delete, &
         & qg_fields_copy,qg_fields_copy_lbc,qg_fields_self_add,qg_fields_self_sub,qg_fields_self_mul,qg_fields_axpy, &
         & qg_fields_self_schur,qg_fields_dot_prod,qg_fields_add_incr,qg_fields_diff_incr,qg_fields_change_resol, &
         & qg_fields_read_file,qg_fields_write_file,qg_fields_analytic_init,qg_fields_gpnorm,qg_fields_rms,qg_fields_sizes, &
-        & qg_fields_lbc,qg_fields_set_atlas,qg_fields_to_atlas,qg_fields_from_atlas, &
+        & qg_fields_lbc,qg_fields_to_fieldset,qg_fields_from_fieldset, &
         & qg_fields_getvals, qg_fields_getvalsad, &
         & qg_fields_getpoint,qg_fields_setpoint,qg_fields_serialize,qg_fields_deserialize, &
         & qg_fields_complete,qg_fields_check,qg_fields_check_resolution
@@ -1175,47 +1175,14 @@ endif
 
 end subroutine qg_fields_lbc
 ! ------------------------------------------------------------------------------
-!> Set ATLAS field
-subroutine qg_fields_set_atlas(self,vars,afieldset)
+!> Convert Fieldset to fields
+subroutine qg_fields_to_fieldset(self,afieldset)
 
 implicit none
 
 ! Passed variables
 type(qg_fields),intent(in) :: self              !< Fields
-type(oops_variables),intent(in) :: vars         !< List of variables
-type(atlas_fieldset),intent(inout) :: afieldset !< ATLAS fieldset
-
-! Local variables
-integer :: jvar
-character(len=1024) :: fieldname
-type(atlas_field) :: afield
-
-! Get or create field
-do jvar=1,vars%nvars()
-   fieldname = vars%variable(jvar)
-   if (.not.afieldset%has_field(trim(fieldname))) then
-     ! Create field
-     afield = self%geom%afunctionspace%create_field(name=trim(fieldname),kind=atlas_real(kind_real),levels=self%geom%nz)
-
-     ! Add field
-     call afieldset%add(afield)
-
-     ! Release pointer
-     call afield%final()
-   endif
-enddo
-
-end subroutine qg_fields_set_atlas
-! ------------------------------------------------------------------------------
-!> Convert fields to ATLAS
-subroutine qg_fields_to_atlas(self,vars,afieldset)
-
-implicit none
-
-! Passed variables
-type(qg_fields),intent(in) :: self              !< Fields
-type(oops_variables),intent(in) :: vars         !< List of variables
-type(atlas_fieldset),intent(inout) :: afieldset !< ATLAS fieldset
+type(atlas_fieldset),intent(inout) :: afieldset !< FieldSet
 
 ! Local variables
 integer :: jvar,ix,iy,iz,inode
@@ -1224,8 +1191,8 @@ character(len=1024) :: fieldname
 type(atlas_field) :: afield
 
 ! Get variable
-do jvar=1,vars%nvars()
-   fieldname = vars%variable(jvar)
+do jvar=1,self%vars%nvars()
+   fieldname = self%vars%variable(jvar)
    if (afieldset%has_field(trim(fieldname))) then
      ! Get afield
      afield = afieldset%field(trim(fieldname))
@@ -1256,7 +1223,7 @@ do jvar=1,vars%nvars()
          case ('z')
            ptr(iz,inode) = self%geom%z(iz)
          case default
-           call abor1_ftn('qg_fields_to_atlas: wrong variable')
+           call abor1_ftn('qg_fields_to_fieldset: wrong variable')
          endselect
        enddo
      enddo
@@ -1266,16 +1233,15 @@ do jvar=1,vars%nvars()
    call afield%final()
 enddo
 
-end subroutine qg_fields_to_atlas
+end subroutine qg_fields_to_fieldset
 ! ------------------------------------------------------------------------------
-!> Get fields from ATLAS
-subroutine qg_fields_from_atlas(self,vars,afieldset)
+!> Convert Fieldset to fields
+subroutine qg_fields_from_fieldset(self,afieldset)
 
 implicit none
 
 ! Passed variables
 type(qg_fields),intent(inout) :: self           !< Fields
-type(oops_variables),intent(in) :: vars         !< List of variables
 type(atlas_fieldset),intent(inout) :: afieldset !< ATLAS fieldset
 
 ! Local variables
@@ -1285,9 +1251,9 @@ character(len=1024) :: fieldname
 type(atlas_field) :: afield
 
 ! Get variable
-do jvar=1,vars%nvars()
+do jvar=1,self%vars%nvars()
    ! Get afield
-   fieldname = vars%variable(jvar)
+   fieldname = self%vars%variable(jvar)
    afield = afieldset%field(trim(fieldname))
 
    ! Copy field
@@ -1309,7 +1275,7 @@ do jvar=1,vars%nvars()
          case ('z')
            ! do nothing
          case default
-           call abor1_ftn('qg_fields_from_atlas: wrong variable')
+           call abor1_ftn('qg_fields_from_fieldset: wrong variable')
          endselect
        enddo
      enddo
@@ -1319,7 +1285,7 @@ do jvar=1,vars%nvars()
    call afield%final()
 enddo
 
-end subroutine qg_fields_from_atlas
+end subroutine qg_fields_from_fieldset
 ! ------------------------------------------------------------------------------
 subroutine qg_fields_getvals(self, vars, lats, lons, vals)
 

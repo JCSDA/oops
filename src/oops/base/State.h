@@ -24,7 +24,7 @@ namespace oops {
 /// \details
 /// Handles additional MPI communicator parameter \p commTime_ in the constructors
 /// (for MPI distribution in time, used in oops for 4DEnVar and weak-constraint 4DVar).
-/// Adds communication through time to the following Increment methods:
+/// Adds communication through time to the following State methods:
 /// - norm
 /// - print
 
@@ -73,8 +73,10 @@ class State : public interface::State<MODEL> {
   /// Accessor to geometry associated with this State
   const Geometry_ & geometry() const {return resol_;}
 
-  // Get values as Atlas FieldSet
+  /// Accessors to the ATLAS fieldset
   const atlas::FieldSet & fieldSet() const;
+  atlas::FieldSet & fieldSet();
+  void synchronizeFields();
 
   /// Norm (used in tests)
   double norm() const;
@@ -148,11 +150,31 @@ State<MODEL> & State<MODEL>::operator=(const State & rhs) {
 
 template<typename MODEL>
 const atlas::FieldSet & State<MODEL>::fieldSet() const {
-  if (!interface::State<MODEL>::fset_) {
-    interface::State<MODEL>::fset_ = std::make_unique<atlas::FieldSet>();
-    this->getFieldSet(this->variables(), *interface::State<MODEL>::fset_);
+  if (interface::State<MODEL>::fset_.empty()) {
+    interface::State<MODEL>::fset_ = atlas::FieldSet();
+    this->toFieldSet(interface::State<MODEL>::fset_);
   }
-  return *interface::State<MODEL>::fset_;
+  return interface::State<MODEL>::fset_;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+atlas::FieldSet & State<MODEL>::fieldSet() {
+  if (interface::State<MODEL>::fset_.empty()) {
+    interface::State<MODEL>::fset_ = atlas::FieldSet();
+    this->toFieldSet(interface::State<MODEL>::fset_);
+  }
+  return interface::State<MODEL>::fset_;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void State<MODEL>::synchronizeFields() {
+  // TODO(JEDI core team): remove this method when accessors are fully implemented
+  ASSERT(!interface::State<MODEL>::fset_.empty());
+  this->fromFieldSet(interface::State<MODEL>::fset_);
 }
 
 // -----------------------------------------------------------------------------

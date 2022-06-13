@@ -96,10 +96,9 @@ class IncrementQG : public util::Printable,
   void updateTime(const util::Duration & dt) {fields_->time() += dt;}
 
 /// ATLAS FieldSet
-  void setAtlas(atlas::FieldSet *) const;
-  void toAtlas(atlas::FieldSet *) const;
-  void fromAtlas(atlas::FieldSet *);
-  void getFieldSetAD(const oops::Variables &, const atlas::FieldSet &) {}
+  void toFieldSet(atlas::FieldSet &) const;
+  void toFieldSetAD(const atlas::FieldSet &);
+  void fromFieldSet(const atlas::FieldSet &);
 
 /// Access to fields
   FieldsQG & fields() {return *fields_;}

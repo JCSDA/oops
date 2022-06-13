@@ -70,15 +70,10 @@ class Increment : public interface::Increment<MODEL> {
   /// Shift backward in time by \p dt
   void shift_backward(const util::DateTime & dt);
 
-  /// Set ATLAS fieldset associated with this Increment internally
-  void toAtlas();
-  /// Allow to access base class's method as well
-  using interface::Increment<MODEL>::toAtlas;
   /// Accessors to the ATLAS fieldset
-  atlas::FieldSet & atlas() {return atlasFieldSet_;}
-  const atlas::FieldSet & atlas() const {return atlasFieldSet_;}
   const atlas::FieldSet & fieldSet() const;
   atlas::FieldSet & fieldSet();
+  void synchronizeFields();
   void synchronizeFieldsAD();
 
   /// dot product with the \p other increment
@@ -91,7 +86,6 @@ class Increment : public interface::Increment<MODEL> {
 
   const Geometry_ & resol_;
   const eckit::mpi::Comm * timeComm_;  /// pointer to the MPI communicator in time
-  atlas::FieldSet atlasFieldSet_;      /// Atlas fields associated with this Increment
 };
 
 // -----------------------------------------------------------------------------
@@ -200,39 +194,42 @@ void Increment<MODEL>::shift_backward(const util::DateTime & end) {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void Increment<MODEL>::toAtlas() {
-  interface::Increment<MODEL>::setAtlas(&atlasFieldSet_);
-  interface::Increment<MODEL>::toAtlas(&atlasFieldSet_);
-  this->increment_.reset();
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
 const atlas::FieldSet & Increment<MODEL>::fieldSet() const {
-  if (!interface::Increment<MODEL>::fset_) {
-    interface::Increment<MODEL>::fset_ = std::make_unique<atlas::FieldSet>();
-    this->getFieldSet(this->variables(), *interface::Increment<MODEL>::fset_);
+  if (interface::Increment<MODEL>::fset_.empty()) {
+    interface::Increment<MODEL>::fset_ = atlas::FieldSet();
+    this->toFieldSet(interface::Increment<MODEL>::fset_);
   }
-  return *interface::Increment<MODEL>::fset_;
+  return interface::Increment<MODEL>::fset_;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 atlas::FieldSet & Increment<MODEL>::fieldSet() {
-  if (!interface::Increment<MODEL>::fset_) {
-    interface::Increment<MODEL>::fset_ = std::make_unique<atlas::FieldSet>();
-    this->getFieldSet(this->variables(), *interface::Increment<MODEL>::fset_);
+  if (interface::Increment<MODEL>::fset_.empty()) {
+    interface::Increment<MODEL>::fset_ = atlas::FieldSet();
+    this->toFieldSet(interface::Increment<MODEL>::fset_);
   }
-  return *interface::Increment<MODEL>::fset_;
+  return interface::Increment<MODEL>::fset_;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::synchronizeFields() {
+  // TODO(JEDI core team): remove this method when accessors are fully implemented
+  ASSERT(!interface::Increment<MODEL>::fset_.empty());
+  this->fromFieldSet(interface::Increment<MODEL>::fset_);
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 void Increment<MODEL>::synchronizeFieldsAD() {
-  this->getFieldSetAD(this->variables(), *interface::Increment<MODEL>::fset_);
+  // TODO(JEDI core team): remove this method when accessors are fully implemented
+  if (!interface::Increment<MODEL>::fset_.empty()) {
+    this->toFieldSetAD(interface::Increment<MODEL>::fset_);
+  }
 }
 
 // -----------------------------------------------------------------------------
