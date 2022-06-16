@@ -1599,15 +1599,15 @@ enddo
 ! Boundaries
 if (self%lbc) then
   do iz=1,self%geom%nz
-    index = index + 1
     self%x_north(iz) = vect_fld(index)
     index = index + 1
     self%x_south(iz) = vect_fld(index)
+    index = index + 1
     do ix=1,self%geom%nx
-      index = index + 1
       self%q_north(ix,iz) = vect_fld(index)
       index = index + 1
       self%q_south(ix,iz) = vect_fld(index)
+      index = index + 1
     enddo
   enddo
 endif

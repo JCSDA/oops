@@ -226,30 +226,21 @@ void IncrementL95::setLocal(const oops::LocalIncrement & gp, const Iterator & i)
 /// Serialize - deserialize
 // -----------------------------------------------------------------------------
 size_t IncrementL95::serialSize() const {
-  size_t nn = 3;
+  size_t nn = 0;
   nn += fld_.serialSize();
   nn += time_.serialSize();
   return nn;
 }
 // -----------------------------------------------------------------------------
 void IncrementL95::serialize(std::vector<double> & vect) const {
-  vect.push_back(1000.0);
   fld_.serialize(vect);
-  vect.push_back(2000.0);
   time_.serialize(vect);
-  vect.push_back(3000.0);
 }
 // -----------------------------------------------------------------------------
 void IncrementL95::deserialize(const std::vector<double> & vect, size_t & index) {
-  size_t ii = index + this->serialSize();
-  ASSERT(vect.at(index) == 1000.0);
-  ++index;
+  const size_t ii = index + this->serialSize();
   fld_.deserialize(vect, index);
-  ASSERT(vect.at(index) == 2000.0);
-  ++index;
   time_.deserialize(vect, index);
-  ASSERT(vect.at(index) == 3000.0);
-  ++index;
   ASSERT(index == ii);
 }
 // -----------------------------------------------------------------------------

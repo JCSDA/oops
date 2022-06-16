@@ -27,7 +27,8 @@ namespace oops {
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-class ObsAuxControls : public util::Printable {
+class ObsAuxControls : public util::Printable,
+                       public util::Serializable {
   typedef ObsAuxControl<OBS>       ObsAuxControl_;
   typedef ObsSpaces<OBS>           ObsSpaces_;
   typedef typename ObsAuxControl_::Parameters_ Parameters_;
@@ -52,8 +53,13 @@ class ObsAuxControls : public util::Printable {
 
   ObsAuxControls & operator=(const ObsAuxControls &);
 
+/// Serialize-Deserialize
+  size_t serialSize() const override {return 0;}
+  void serialize(std::vector<double> &) const override {}
+  void deserialize(const std::vector<double> &, size_t &) override {}
+
  private:
-  void print(std::ostream &) const;
+  void print(std::ostream &) const override;
   std::vector<std::unique_ptr<ObsAuxControl_> > auxs_;
 };
 

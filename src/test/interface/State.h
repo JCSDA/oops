@@ -236,7 +236,6 @@ template <typename MODEL> void testStateGeometry() {
  * solution, it requires that the "analytic_init" option be implemented in the model and
  * selected in the "state.state generate" section of the config file.
  */
-
 template <typename MODEL> void testStateAnalyticInitialCondition() {
   typedef StateFixture<MODEL>    Test_;
   typedef oops::State<MODEL>     State_;
@@ -301,6 +300,8 @@ template <typename MODEL> void testStateZeroAndAccumul() {
   EXPECT_NOT(oops::is_close(zz.norm(), yy.norm(), tol, 0, oops::TestVerbosity::SILENT));
 }
 
+// -----------------------------------------------------------------------------
+
 /*! \brief validTime and updateTime tests
  *
  * \details **testStateDateTime()** tests the validTime and updateTime routines.
@@ -336,6 +337,52 @@ template <typename MODEL> void testStateDateTime() {
   // Increment the first state's time again and check the times are now not equal
   xx.updateTime(onehour);
   EXPECT_NOT(xx.validTime() == yy.validTime());
+}
+
+// -----------------------------------------------------------------------------
+/*! \brief Serialize and Deserialize test
+ *
+ * \details **testStateSerialize()** tests the serialization and deserialization of a state.
+*/
+
+template <typename MODEL> void testStateSerialize() {
+  typedef StateFixture<MODEL>   Test_;
+  typedef oops::State<MODEL>    State_;
+
+  // Configuration to read initial state
+  State_ xx(Test_::resol(), Test_::test().statefile);
+  const util::Duration tt("PT15H");
+  xx.updateTime(tt);
+
+// Create another state
+  State_ yy(Test_::resol(), Test_::test().statefile);
+  yy.zero();
+  yy.accumul(2.5, xx);
+
+  EXPECT(yy.validTime() != xx.validTime());
+  if (xx.norm() > 0.0) EXPECT(yy.norm() != xx.norm());
+
+// Test serialize-deserialize
+  std::vector<double> vect;
+  xx.serialize(vect);
+  EXPECT(vect.size() == xx.serialSize());
+
+  size_t index = 0;
+  yy.deserialize(vect, index);
+
+  EXPECT(index == xx.serialSize());
+  EXPECT(index == yy.serialSize());
+
+  xx.serialize(vect);
+  EXPECT(vect.size() == xx.serialSize() * 2);
+
+  if (xx.serialSize() > 0) {  // until all models have implemented serialize
+    EXPECT(xx.norm() > 0.0);
+    EXPECT(yy.norm() > 0.0);
+    EXPECT(yy.validTime() == xx.validTime());
+    xx.accumul(-1.0, yy);
+    EXPECT(xx.norm() == 0);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -414,7 +461,9 @@ class State : public oops::Test {
     ts.emplace_back(CASE("interface/State/testStateZeroAndAccumul")
       { testStateZeroAndAccumul<MODEL>(); });
     ts.emplace_back(CASE("interface/State/testStateDateTime")
-                    { testStateDateTime<MODEL>(); });
+      { testStateDateTime<MODEL>(); });
+    ts.emplace_back(CASE("interface/State/testStateSerialize")
+      { testStateSerialize<MODEL>(); });
     ts.emplace_back(CASE("interface/State/testStateReadWrite")
       { testStateReadWrite<MODEL>(); });
   }

@@ -14,6 +14,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "oops/base/Geometry.h"
 #include "oops/util/Logger.h"
@@ -57,6 +58,7 @@ namespace oops {
 ///    ModelAuxControl(const Geometry_ &, const Parameters_ &);
 template <typename MODEL>
 class ModelAuxControl : public util::Printable,
+                        public util::Serializable,
                         private util::ObjectCounter<ModelAuxControl<MODEL> > {
   typedef typename MODEL::ModelAuxControl      ModelAuxControl_;
   typedef Geometry<MODEL>            Geometry_;
@@ -91,9 +93,14 @@ class ModelAuxControl : public util::Printable,
   /// Norm (used in tests)
   double norm() const;
 
+  /// Serialize and deserialize
+  size_t serialSize() const override {return 0;}
+  void serialize(std::vector<double> &) const override {}
+  void deserialize(const std::vector<double> &, size_t &) override {}
+
  private:
   ModelAuxControl & operator=(const ModelAuxControl &);
-  void print(std::ostream &) const;
+  void print(std::ostream &) const override;
   std::unique_ptr<ModelAuxControl_> aux_;
 };
 
