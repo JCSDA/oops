@@ -116,7 +116,7 @@ class ObsErrorDiag : public ObsErrorBase<OBS> {
 
 template<typename OBS>
 ObsErrorDiag<OBS>::ObsErrorDiag(const ObsErrorDiagParameters & options, const ObsSpace_ & obsgeom)
-  : stddev_(obsgeom, "ObsError", true), inverseVariance_(obsgeom, "", true), options_(options)
+  : stddev_(obsgeom, "ObsError"), inverseVariance_(obsgeom, ""), options_(options)
 {
   inverseVariance_ = stddev_;
   inverseVariance_ *= stddev_;

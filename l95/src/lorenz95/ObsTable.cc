@@ -43,7 +43,7 @@ ObsTable::ObsTable(const Parameters_ & params, const eckit::mpi::Comm & comm,
                    const util::DateTime & bgn, const util::DateTime & end,
                    const eckit::mpi::Comm & timeComm)
   : oops::ObsSpaceBase(params, comm, bgn, end), winbgn_(bgn), winend_(end), comm_(timeComm),
-    obsvars_()
+    obsvars_(), assimvars_()
 {
   oops::Log::trace() << "ObsTable::ObsTable starting" << std::endl;
   if (params.obsdatain.value() != boost::none) {

@@ -24,7 +24,7 @@
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
 ObsVec1D::ObsVec1D(const ObsTable & ot,
-                   const std::string & name, const bool useObservedVariables)
+                   const std::string & name)
   : obsdb_(ot), data_(ot.nobs()), missing_(util::missingValue(missing_))
 {
   for (double & val : data_) { val = 0.0; }

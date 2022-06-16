@@ -72,6 +72,7 @@ class ObsFilters : public util::Printable,
   typedef ObsFiltersParameters<OBS> Parameters_;
   typedef std::shared_ptr<ObsDataVector<OBS, int> >  ObsDataPtr_;
   typedef std::vector<ObsFilterParametersWrapper<OBS>> FilterParams_;
+  typedef ObsDataVector<OBS, float> ObsDataVector_;
 
  public:
   /// Initialize all filters for \p obspace, from parameters, using
@@ -80,7 +81,7 @@ class ObsFilters : public util::Printable,
   /// assimilation.
   ObsFilters(const ObsSpace_ &,
              const Parameters_ &,
-             ObsDataPtr_ qcflags, ObsVector_ & obserr, const int iteration = 0);
+             ObsDataPtr_ qcflags, ObsDataVector_ & obserr, const int iteration = 0);
 
   void preProcess();
   void priorFilter(const GeoVaLs_ &);
@@ -111,7 +112,7 @@ class ObsFilters : public util::Printable,
   Variables geovars_;
   Variables diagvars_;
   ObsDataPtr_ qcflags_;
-  ObsVector_ & obserr_;
+  ObsDataVector_ & obserrfilter_;
   std::shared_ptr<ObsDataVector<OBS, float> > obserrtmp_;
   const int iteration_;
 };
@@ -121,10 +122,10 @@ class ObsFilters : public util::Printable,
 template <typename OBS>
 ObsFilters<OBS>::ObsFilters(const ObsSpace_ & os,
                             const Parameters_ & params,
-                            ObsDataPtr_ qcflags, ObsVector_ & obserr, const int iteration)
+                            ObsDataPtr_ qcflags, ObsDataVector_ & obserr, const int iteration)
   : obsspace_(os), autoFilters_(), preFilters_(), priorFilters_(), postFilters_(),
-    geovars_(), diagvars_(), qcflags_(qcflags), obserr_(obserr),
-    obserrtmp_(new ObsDataVector<OBS, float>(obserr)), iteration_(iteration) {
+    geovars_(), diagvars_(), qcflags_(qcflags), obserrfilter_(obserr),
+    obserrtmp_(new ObsDataVector_(obserr)), iteration_(iteration) {
   Log::trace() << "ObsFilters::ObsFilters starting";
 
   const FilterParams_ & autoFiltersParams = params.obsFilters;
@@ -221,8 +222,9 @@ void ObsFilters<OBS>::preProcess() {
       filter.preProcess();
     }
   }
+
   obserrtmp_->mask(*qcflags_);
-  obserr_ = *obserrtmp_;
+  obserrfilter_ = *obserrtmp_;
 }
 
 // -----------------------------------------------------------------------------
@@ -240,8 +242,9 @@ void ObsFilters<OBS>::priorFilter(const GeoVaLs_ & gv) {
       filter.priorFilter(gv);
     }
   }
+
   obserrtmp_->mask(*qcflags_);
-  obserr_ = *obserrtmp_;
+  obserrfilter_ = *obserrtmp_;
 }
 
 // -----------------------------------------------------------------------------
@@ -262,8 +265,9 @@ void ObsFilters<OBS>::postFilter(const GeoVaLs_ & gv,
       filter.postFilter(gv, hofx, bias, diags);
     }
   }
+
   obserrtmp_->mask(*qcflags_);
-  obserr_ = *obserrtmp_;
+  obserrfilter_ = *obserrtmp_;
 }
 
 // -----------------------------------------------------------------------------

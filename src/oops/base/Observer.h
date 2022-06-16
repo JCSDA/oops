@@ -75,6 +75,8 @@ class Observer {
   typedef ObsOperator<OBS>             ObsOperator_;
   typedef ObsSpace<OBS>                ObsSpace_;
   typedef ObsVector<OBS>               ObsVector_;
+  typedef ObsDataVector<OBS, float>    ObsDataVector_;
+
 
  public:
 /// \brief Initializes ObsOperators, Locations, and QC data
@@ -98,7 +100,7 @@ class Observer {
   const ObsAuxCtrl_ *           biascoeff_;  // bias coefficients
   ObsError_ *                   Rmat_;       // Obs error covariance
   std::unique_ptr<ObsFilters_>  filters_;    // QC filters
-  std::unique_ptr<ObsVector_>   obserr_;     // Obs error std dev
+  std::unique_ptr<ObsDataVector_> obserrfilter_;  // Obs error std dev for processed variables
   std::shared_ptr<GetValues_>   getvals_;    // Postproc passed to the model during integration.
   std::shared_ptr<ObsDataInt_>  qcflags_;    // QC flags (should not be a pointer)
   bool                          initialized_;
@@ -116,7 +118,7 @@ Observer<MODEL, OBS>::Observer(const ObsSpace_ & obspace, const Parameters_ & pa
   /// Set up observation operators
   obsop_.reset(new ObsOperator_(obspace_, parameters_.obsOperator));
   qcflags_.reset(new ObsDataInt_(obspace_, obspace_.obsvariables()));
-
+  obserrfilter_.reset(new ObsDataVector_(obspace_, obspace_.obsvariables(), "ObsError"));
   Log::trace() << "Observer::Observer done" << std::endl;
 }
 
@@ -131,13 +133,12 @@ Observer<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrl_ & bia
   iterconf_.reset(new eckit::LocalConfiguration(conf));
   biascoeff_ = &biascoeff;
   Rmat_ = &R;
-  obserr_.reset(new ObsVector_(Rmat_->obserrors()));
 
   // Set up QC filters and run preprocess
   const int iterfilt = iterconf_->getInt("iteration", 0);
   filters_.reset(new ObsFilters_(obspace_,
                                  parameters_.filtersParameters,
-                                 qcflags_, *obserr_, iterfilt));
+                                 qcflags_, *obserrfilter_, iterfilt));
   filters_->preProcess();
 
 // Set up variables that will be requested from the model
@@ -188,7 +189,9 @@ void Observer<MODEL, OBS>::finalize(ObsVector_ & yobsim) {
   filters_->postFilter(geovals, yobsim, ybias, ydiags);
 
   // Update R with obs errors that filters might have updated
-  Rmat_->update(*obserr_);
+  ObsVector_ obserr(Rmat_->obserrors());
+  obserr = *obserrfilter_;
+  Rmat_->update(obserr);
 
   // Save current obs, obs error estimates and QC flags (for diagnostics use only)
   std::string siter = "";
@@ -204,7 +207,7 @@ void Observer<MODEL, OBS>::finalize(ObsVector_ & yobsim) {
   }
   if (iterconf_->getBool("save obs errors", true)) {
     const std::string errname = "EffectiveError" + siter;
-    Rmat_->save(errname);
+    obserrfilter_->save(errname);
   }
   if (iterconf_->getBool("save obs bias", true)) {
     const std::string biasname  = "ObsBias" + siter;
