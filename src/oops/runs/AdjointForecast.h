@@ -88,7 +88,7 @@ template <typename MODEL> class AdjointForecast : public Application {
 // -----------------------------------------------------------------------------
   virtual ~AdjointForecast() {}
 // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig, bool validate) const {
+  int execute(const eckit::Configuration & fullConfig, bool validate) const override {
     // Deserialize parameters
     AdjointForecastParameters_ params;
     if (validate) params.validate(fullConfig);
@@ -177,6 +177,16 @@ template <typename MODEL> class AdjointForecast : public Application {
     Log::test() << "Final increment state: " << dx << std::endl;
 
     return 0;
+  }
+// -----------------------------------------------------------------------------
+  void outputSchema(const std::string & outputPath) const override {
+    AdjointForecastParameters_ params;
+    params.outputSchema(outputPath);
+  }
+// -----------------------------------------------------------------------------
+  void validateConfig(const eckit::Configuration & fullConfig) const override {
+    AdjointForecastParameters_ params;
+    params.validate(fullConfig);
   }
 // -----------------------------------------------------------------------------
  private:

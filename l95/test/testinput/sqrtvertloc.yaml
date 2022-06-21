@@ -11,7 +11,7 @@ background:
   filename: Data/forecast.an.2010-01-01T00:00:00Z.l95
 max neig output: 5
 number of random samples: 10
-truncation tolerence: .95
+truncation tolerance: .95
 output:
   datadir: Data
   date: 2010-01-01T00:00:00Z 

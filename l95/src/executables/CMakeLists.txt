@@ -8,6 +8,7 @@ oops_output_json_schema( l95_forecast.x )
 ecbuild_add_executable( TARGET  l95_adjointforecast.x
                         SOURCES AdjointForecast.cc
                         LIBS    lorenz95 )
+oops_output_json_schema( l95_adjointforecast.x )
 
 ecbuild_add_executable( TARGET  l95_genpert.x
                         SOURCES GenEnsPertB.cc
@@ -17,6 +18,7 @@ oops_output_json_schema( l95_genpert.x )
 ecbuild_add_executable( TARGET  l95_sqrtofvertloc.x
                         SOURCES SqrtOfVertLoc.cc
                         LIBS    lorenz95 )
+oops_output_json_schema( l95_sqrtofvertloc.x )
 
 ecbuild_add_executable( TARGET  l95_4dvar.x
                         SOURCES Main4dvar.cc

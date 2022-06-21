@@ -28,8 +28,41 @@
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/OptionalParameter.h"
+#include "oops/util/parameters/Parameter.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
+
+template <typename MODEL> class SqrtOfVertLocParameters : public ApplicationParameters {
+  OOPS_CONCRETE_PARAMETERS(SqrtOfVertLocParameters, ApplicationParameters)
+
+ public:
+  typedef ModelSpaceCovarianceParametersWrapper<MODEL> CovarianceParameters_;
+  typedef typename Geometry<MODEL>::Parameters_        GeometryParameters_;
+  typedef typename State<MODEL>::Parameters_           StateParameters_;
+  typedef typename Increment<MODEL>::WriteParameters_  WriteParameters_;
+
+  Parameter<double> truncationTolerance{"truncation tolerance", 1.0, this};
+
+  RequiredParameter<GeometryParameters_> geometry{"geometry", "geometry parameters", this};
+  RequiredParameter<StateParameters_> background{"background", "background parameters", this};
+
+  RequiredParameter<Variables> perturbedVariables{"perturbed variables",
+        "list of variables to perturb", this};
+
+  RequiredParameter<CovarianceParameters_> backgroundError{"background error",
+        "background error covariance model", this};
+
+  RequiredParameter<size_t> samples{"number of random samples", this};
+  OptionalParameter<size_t> maxNeigOutput{"max neig output",
+        "maximum number of eigenvectors to output", this};
+
+  RequiredParameter<WriteParameters_> output{"output",
+        "where to write the output", this};
+  Parameter<bool> printTestEachMember{"print test for each member", true, this};
+};
 /* -----------------------------------------------------------------------------
 *  @brief this program computes sqrt of the vertical correlation in B
 *  this is done for each grid point by computing the eigen value problem
@@ -42,8 +75,10 @@ template <typename MODEL> class SqrtOfVertLoc : public Application {
   typedef GeometryIterator<MODEL>    GeometryIterator_;
   typedef Increment<MODEL>           Increment_;
   typedef IncrementEnsemble<MODEL>   IncrementEnsemble_;
-  typedef ModelSpaceCovarianceBase<MODEL> ModelSpaceCovariance_;
   typedef State<MODEL>               State_;
+  typedef typename Increment_::WriteParameters_ WriteParameters_;
+  typedef ModelSpaceCovarianceBase<MODEL>   ModelSpaceCovariance_;
+  typedef SqrtOfVertLocParameters<MODEL>    Parameters_;
 
  public:
 // -----------------------------------------------------------------------------
@@ -51,35 +86,38 @@ template <typename MODEL> class SqrtOfVertLoc : public Application {
     instantiateCovarFactory<MODEL>();
   }
 // -----------------------------------------------------------------------------
-  virtual ~SqrtOfVertLoc() {}
+  virtual ~SqrtOfVertLoc() = default;
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig, bool validate) const override {
-//  truncation tolerence
-    const double TruncationTollerance = fullConfig.getDouble("truncation tolerence", 1.0);
+    Parameters_ params;
+    if (validate) params.validate(fullConfig);
+    params.deserialize(fullConfig);
 
-//  Setup geometry
-    const eckit::LocalConfiguration geometryConfig(fullConfig, "geometry");
-    const Geometry_ geometry(geometryConfig, this->getComm());
+    const double truncationTolerance = params.truncationTolerance;
 
-//  Setup background state
-    const eckit::LocalConfiguration initialConfig(fullConfig, "background");
-    const State_ xx(geometry, initialConfig);
+//  Setup geometry and background
+    const Geometry_ geometry(params.geometry, this->getComm());
+    const State_ xx(geometry, params.background);
     Log::test() << "Background: " << xx << std::endl;
 
 //  Setup variables
-    const Variables vars(fullConfig, "perturbed variables");
+    const Variables & vars = params.perturbedVariables;
 
 //  Setup B matrix
-    const eckit::LocalConfiguration covar(fullConfig, "background error");
+    const auto &covarParams =
+        params.backgroundError.value().covarianceParameters;
     std::unique_ptr< ModelSpaceCovarianceBase<MODEL> >
-      Bmat(CovarianceFactory<MODEL>::create(geometry, vars, covar, xx, xx));
+      Bmat(CovarianceFactory<MODEL>::create(geometry, vars, covarParams, xx, xx));
 
-//  Retreave vertical eigen vectors from B
-    const size_t samples = fullConfig.getInt("number of random samples");
+//  Retrieve vertical eigenvectors from B
+    const size_t samples = params.samples;
     IncrementEnsemble_ perts(geometry, vars, xx.validTime(), samples);
-    size_t maxNeigOutput = fullConfig.getInt("max neig output", samples);
+    size_t maxNeigOutput = samples;
+    if (params.maxNeigOutput.value() != boost::none) {
+      maxNeigOutput = *params.maxNeigOutput.value();
+    }
     size_t truncatedNeig = getVerticalEigenVectors(*Bmat, geometry, perts,
-                           TruncationTollerance, maxNeigOutput);
+                           truncationTolerance, maxNeigOutput);
 
 //  Inflate truncated columns of sqrt(B) to account for the truncated spectrum
     // (1) compute trace of the truncated correlation matrix
@@ -104,17 +142,26 @@ template <typename MODEL> class SqrtOfVertLoc : public Application {
     }
 
 //  Output columns of sqrt(B)
-    const bool printTestForEachMember = fullConfig.getDouble("print test for each member", true);
     for (size_t jm = 0; jm < truncatedNeig; ++jm) {
-      eckit::LocalConfiguration outConfig(fullConfig, "output");
-      outConfig.set("member", jm+1);
+      WriteParameters_ outParams = params.output;
+      outParams.setMember(jm + 1);
       perts[jm].schur_product_with(sumOfSquares);  //  Scale eigen vectors
-      perts[jm].write(outConfig);
-      if (printTestForEachMember) {
+      perts[jm].write(outParams);
+      if (params.printTestEachMember) {
         Log::test() << "Columns of sqrt(B) " << jm << perts[jm] << std::endl;
       }
     }
     return 0;
+  }
+// -----------------------------------------------------------------------------
+  void outputSchema(const std::string & outputPath) const override {
+    Parameters_ params;
+    params.outputSchema(outputPath);
+  }
+// -----------------------------------------------------------------------------
+  void validateConfig(const eckit::Configuration & fullConfig) const override {
+    Parameters_ params;
+    params.validate(fullConfig);
   }
 // -----------------------------------------------------------------------------
  private:
@@ -126,15 +173,15 @@ template <typename MODEL> class SqrtOfVertLoc : public Application {
             perts.size() -- defines size of the randomization
     @param cov   -- covariance matrix
     @param perts -- preallocated structure for IncrementEnsemble
-                    on entrence can be anything. just perts.size() is used
-                    on exit contains vertical eigen vectors in decreasingorder
-    @param TruncationTollerance -- float [0 1] defines trunctation
+                    on entrance can be anything. just perts.size() is used
+                    on exit contains vertical eigen vectors in decreasing order
+    @param truncationTolerance -- float [0 1] defines truncation
     @param maxNeigOutput -- maxNeigOutput for output
   */
   size_t getVerticalEigenVectors(const ModelSpaceCovariance_ & cov,
                                  const Geometry_ & geom,
                                  IncrementEnsemble_ & perts,
-                                 const double TruncationTollerance,
+                                 const double truncationTolerance,
                                  const size_t maxNeigOutput) const {
 //  Mpi communicator
     const eckit::mpi::Comm & mpiComm = geom.getComm();
@@ -242,7 +289,7 @@ template <typename MODEL> class SqrtOfVertLoc : public Application {
     for (int ii=0; ii < averageEigenSpectrum.size(); ++ii) {
       frac += averageEigenSpectrum(ii);
       neig += 1;
-      if (frac/averageEigenSpectrumSum >= TruncationTollerance) { break; }
+      if (frac/averageEigenSpectrumSum >= truncationTolerance) { break; }
     }
 
 //  Compute number of output vectors and retained fraction of the variance

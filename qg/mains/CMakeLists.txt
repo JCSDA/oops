@@ -4,7 +4,7 @@ ecbuild_add_executable( TARGET  qg_dfi.x
                         SOURCES qgDFI.cc
                         LIBS    qg
                        )
-# TODO: oops_output_json_schema( qg_dfi.x )
+oops_output_json_schema( qg_dfi.x )
 
 ecbuild_add_executable( TARGET  qg_ens_hofx.x
                         SOURCES qgEnsHofX.cc
