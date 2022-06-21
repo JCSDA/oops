@@ -133,7 +133,7 @@ State<MODEL>::State(const Geometry_ & resol, const State & other) :
 
 template<typename MODEL>
 State<MODEL>::State(const State & other) :
-  interface::State<MODEL>(other.resol_, other), resol_(other.resol_), commTime_(&resol_.timeComm())
+  interface::State<MODEL>(other), resol_(other.resol_), commTime_(&resol_.timeComm())
 {}
 
 // -----------------------------------------------------------------------------
