@@ -25,6 +25,7 @@
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
+#include "oops/util/FieldSetOperations.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Timer.h"
 
@@ -52,7 +53,7 @@ class HybridCovariance : public ModelSpaceCovarianceBase<MODEL> {
   std::vector< std::unique_ptr< ModelSpaceCovarianceBase<MODEL> > > Bcomponents_;
   std::vector< std::string > weightTypes_;
   std::vector< double > valueWeights_;
-  std::vector< Increment_ > incrementWeights_;
+  std::vector< Increment_ > incrementWeightsSqrt_;
 };
 
 // =============================================================================
@@ -81,13 +82,19 @@ HybridCovariance<MODEL>::HybridCovariance(const Geometry_ & resol, const Variabl
     if (weightConf.has("value")) {
       // Scalar weight provided in the configuration
       weightTypes_.push_back("value");
-      valueWeights_.push_back(weightConf.getDouble("value"));
+      const double valueWeight = weightConf.getDouble("value");
+      ASSERT(valueWeight >= 0.0);
+      valueWeights_.push_back(valueWeight);
     } else {
       // 3D weight read from a file
       weightTypes_.push_back("increment");
       Increment_ weight(resol, vars, xb.validTime());
       weight.read(weightConf);
-      incrementWeights_.push_back(weight);
+
+      // Compute weight square-root
+      util::FieldSetSqrt(weight.fieldSet());
+      weight.synchronizeFields();
+      incrementWeightsSqrt_.push_back(weight);
     }
   }
   Log::trace() << "HybridCovariance::HybridCovariance done" << std::endl;
@@ -105,13 +112,16 @@ void HybridCovariance<MODEL>::doMultiply(const Increment_ & dxi, Increment_ & dx
   int valueIndex = 0;
   int incrementIndex = 0;
   for (size_t jcomp = 0; jcomp < Bcomponents_.size(); ++jcomp) {
+     if (weightTypes_[jcomp] == "increment") {
+        tmp.schur_product_with(incrementWeightsSqrt_[incrementIndex]);
+     }
      Bcomponents_[jcomp]->multiply(dxi, tmp);
      if (weightTypes_[jcomp] == "value") {
         tmp *= valueWeights_[valueIndex];
         valueIndex += 1;
      }
      if (weightTypes_[jcomp] == "increment") {
-        tmp.schur_product_with(incrementWeights_[incrementIndex]);
+        tmp.schur_product_with(incrementWeightsSqrt_[incrementIndex]);
         incrementIndex += 1;
      }
      dxo += tmp;
@@ -130,6 +140,7 @@ void HybridCovariance<MODEL>::doRandomize(Increment_ & dx) const {
   dx.zero();
   Increment_ tmp(dx);
   int valueIndex = 0;
+  int incrementIndex = 0;
   for (size_t jcomp = 0; jcomp < Bcomponents_.size(); ++jcomp) {
      Bcomponents_[jcomp]->randomize(tmp);
      if (weightTypes_[jcomp] == "value") {
@@ -137,7 +148,8 @@ void HybridCovariance<MODEL>::doRandomize(Increment_ & dx) const {
         valueIndex += 1;
      }
      if (weightTypes_[jcomp] == "increment") {
-        throw eckit::NotImplemented("HybridCovariance::doRandomize: no square-root", Here());
+        tmp.schur_product_with(incrementWeightsSqrt_[incrementIndex]);
+        incrementIndex += 1;
      }
      dx += tmp;
   }
