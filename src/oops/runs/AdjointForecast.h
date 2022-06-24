@@ -190,7 +190,7 @@ template <typename MODEL> class AdjointForecast : public Application {
   }
 // -----------------------------------------------------------------------------
  private:
-  std::string appname() const {
+  std::string appname() const override {
     return "oops::AdjointForecast<" + MODEL::name() + ">";
   }
 // -----------------------------------------------------------------------------
