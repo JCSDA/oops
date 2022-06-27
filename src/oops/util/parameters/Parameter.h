@@ -130,7 +130,7 @@ template<class, class = void>
 struct HasValueAsJson : std::false_type {};
 
 template<class T>
-struct HasValueAsJson<T, util::void_t<
+struct HasValueAsJson<T, cpp17::void_t<
   decltype(ParameterTraits<T>::valueAsJson(std::declval<T>()))>> : std::true_type
 {};
 

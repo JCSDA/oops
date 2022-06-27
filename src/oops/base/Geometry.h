@@ -42,7 +42,7 @@ struct HasClosestTask
 ///        when it does.
 template<class Geometry>
 struct HasClosestTask<Geometry,
-       util::void_t<decltype(std::declval<Geometry>().closestTask(double(), double()))>>
+       cpp17::void_t<decltype(std::declval<Geometry>().closestTask(double(), double()))>>
   : std::true_type {};
 
 // -----------------------------------------------------------------------------

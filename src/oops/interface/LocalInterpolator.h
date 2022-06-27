@@ -19,6 +19,59 @@
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Timer.h"
+#include "oops/util/TypeTraits.h"
+
+namespace detail {
+
+// ApplyHelper selects whether to call the model interpolator's apply and applyAD methods using an
+// atlas::FieldSet interface or a model State/Increment interface.
+//
+// The fallback case uses the model State/Increment interface.
+template <typename MODEL, typename = cpp17::void_t<>>
+struct ApplyHelper {
+  static void apply(const typename MODEL::LocalInterpolator & interp,
+             const oops::Variables & vars, const oops::State<MODEL> & state,
+             const std::vector<bool> & mask, std::vector<double> & buffer) {
+    interp.apply(vars, state.state(), mask, buffer);
+  }
+  static void apply(const typename MODEL::LocalInterpolator & interp,
+             const oops::Variables & vars, const oops::Increment<MODEL> & increment,
+             const std::vector<bool> & mask, std::vector<double> & buffer) {
+    interp.apply(vars, increment.increment(), mask, buffer);
+  }
+  static void applyAD(const typename MODEL::LocalInterpolator & interp,
+             const oops::Variables & vars, oops::Increment<MODEL> & increment,
+             const std::vector<bool> & mask, const std::vector<double> & buffer) {
+    interp.applyAD(vars, increment.increment(), mask, buffer);
+  }
+};
+
+// The specialization calls the interpolator's FieldSet interface.
+// Note: Here we *assume* that if the interpolator has apply(FieldSet interface), then it also
+//       has applyAD(FieldSet interface). Code may fail to compile if this assumption is false.
+template <typename MODEL>
+struct ApplyHelper<MODEL, cpp17::void_t<decltype(std::declval<typename MODEL::LocalInterpolator>().
+                                                   apply(std::declval<oops::Variables>(),
+                                                         std::declval<atlas::FieldSet>(),
+                                                         std::declval<std::vector<bool>>(),
+                                                         std::declval<std::vector<double>&>()))>> {
+  static void apply(const typename MODEL::LocalInterpolator & interp,
+             const oops::Variables & vars, const oops::State<MODEL> & state,
+             const std::vector<bool> & mask, std::vector<double> & buffer) {
+    interp.apply(vars, state.fieldSet(), mask, buffer);
+  }
+  static void apply(const typename MODEL::LocalInterpolator & interp,
+             const oops::Variables & vars, const oops::Increment<MODEL> & increment,
+             const std::vector<bool> & mask, std::vector<double> & buffer) {
+    interp.apply(vars, increment.fieldSet(), mask, buffer);
+  }
+  static void applyAD(const typename MODEL::LocalInterpolator & interp,
+             const oops::Variables & vars, oops::Increment<MODEL> & increment,
+             const std::vector<bool> & mask, const std::vector<double> & buffer) {
+    interp.applyAD(vars, increment.fieldSet(), mask, buffer);
+  }
+};
+}  // namespace detail
 
 namespace oops {
 
@@ -85,7 +138,7 @@ void LocalInterpolator<MODEL>::apply(const Variables & vars, const State_ & xx,
                                      std::vector<double> & vect) const {
   Log::trace() << "LocalInterpolator<MODEL>::apply starting" << std::endl;
   util::Timer timer(classname(), "apply");
-  interpolator_->apply(vars, xx.state(), mask, vect);
+  detail::ApplyHelper<MODEL>::apply(*interpolator_, vars, xx, mask, vect);
   Log::trace() << "LocalInterpolator<MODEL>::apply done" << std::endl;
 }
 
@@ -97,7 +150,7 @@ void LocalInterpolator<MODEL>::apply(const Variables & vars, const Increment_ & 
                                      std::vector<double> & vect) const {
   Log::trace() << "LocalInterpolator<MODEL>::applyTL starting" << std::endl;
   util::Timer timer(classname(), "applyTL");
-  interpolator_->apply(vars, dx.increment(), mask, vect);
+  detail::ApplyHelper<MODEL>::apply(*interpolator_, vars, dx, mask, vect);
   Log::trace() << "LocalInterpolator<MODEL>::applyTL done" << std::endl;
 }
 
@@ -109,7 +162,7 @@ void LocalInterpolator<MODEL>::applyAD(const Variables & vars, Increment_ & dx,
                                        const std::vector<double> & vect) const {
   Log::trace() << "LocalInterpolator<MODEL>::applyAD starting" << std::endl;
   util::Timer timer(classname(), "applyAD");
-  interpolator_->applyAD(vars, dx.increment(), mask, vect);
+  detail::ApplyHelper<MODEL>::applyAD(*interpolator_, vars, dx, mask, vect);
   Log::trace() << "LocalInterpolator<MODEL>::applyAD done" << std::endl;
 }
 
