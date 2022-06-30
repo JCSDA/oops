@@ -1,4 +1,5 @@
 # (C) Copyright 2009-2016 ECMWF.
+# (C) Copyright 2022- UCAR.
 #
 # This software is licensed under the terms of the Apache Licence Version 2.0
 # which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -11,7 +12,7 @@
 ################################################################################
 
 cmake_minimum_required( VERSION 3.12 )
-project( oops VERSION 1.2.0 LANGUAGES CXX Fortran )
+project( oops VERSION 1.3.0 LANGUAGES CXX Fortran )
 
 option(OPENMP "Build oops with OpenMP support" ON)
 
