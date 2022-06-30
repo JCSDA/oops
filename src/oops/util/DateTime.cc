@@ -52,6 +52,32 @@ DateTime::DateTime(const int &YYYY, const int &MM, const int &DD,
 
 // -----------------------------------------------------------------------------
 
+DateTime::DateTime(const int YYYYMMDD, const int hhmmss) {
+  int year;    // in YYYY format, eg 2020
+  int month;   // in MM format, 01 (Jan) through 12 (Dec)
+  int day;     // in DD format, 01 through 28, 29, 30, or 31
+  int hour;    // in hh format, 00 through 23
+  int minute;  // in mm format, 00 through 59
+  int second;  // in ss format, 00 through 59
+
+  int tempInt;
+
+  year = YYYYMMDD / 10000;     // remove lower 4 digits, yields YYYY
+  tempInt = YYYYMMDD % 10000;  // keep lower 4 digits, yields MMDD
+  month = tempInt / 100;       // remove lower 2 digits, yields MM
+  day = tempInt % 100;         // keep lower 2 digits, yields DD
+
+  hour = hhmmss / 10000;       // remove lower 4 digits, yields hh
+  tempInt = hhmmss % 10000;    // keep lower 4 digits, yields mmss
+  minute = tempInt / 100;      // remove lower 2 digits, yields mm
+  second = tempInt % 100;      // keep lower 2 digits, yeilds ss
+
+  date_ = df::dateToJulian(year, month, day);
+  time_ = df::hmsToSeconds(hour, minute, second);
+}
+
+// -----------------------------------------------------------------------------
+
 void DateTime::set(const std::string & str) {
   int year;
   int month;
@@ -103,6 +129,36 @@ void DateTime::toYYYYMMDDhhmmss(int & year, int & month, int & day,
                                 int & hour, int & minute, int & second) const {
   df::julianToDate(date_, year, month, day);
   df::secondToHms(time_, hour, minute, second);
+}
+
+// -----------------------------------------------------------------------------
+
+void DateTime::toYYYYMMDDhhmmss(int & YYYYMMDD, int & hhmmss) const {
+  int year;
+  int month;
+  int day;
+  int hour;
+  int minute;
+  int second;
+
+  toYYYYMMDDhhmmss(year, month, day, hour, minute, second);
+  YYYYMMDD = (year * 10000) + (month * 100) + day;
+  hhmmss = (hour * 10000) + (minute * 100) + second;
+}
+
+// -----------------------------------------------------------------------------
+
+int64_t DateTime::secondsSinceJan1() const {
+  int year;
+  int month;
+  int day;
+  int hour;
+  int minute;
+  int second;
+  toYYYYMMDDhhmmss(year, month, day, hour, minute, second);
+
+  const util::Duration dt_since_jan1 = *this - DateTime(year, 1, 1, 0, 0, 0);
+  return dt_since_jan1.toSeconds();
 }
 
 // -----------------------------------------------------------------------------

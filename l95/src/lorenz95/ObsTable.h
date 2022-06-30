@@ -30,13 +30,20 @@ namespace lorenz95 {
   class ObsIterator;
 
 // -----------------------------------------------------------------------------
+/// Contents of the `obsdatain` or `obsdataout` YAML section.
+class ObsDataParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(ObsDataParameters, Parameters)
+
+ public:
+  /// File path.
+  oops::RequiredParameter<std::string> obsfile{"obsfile", this};
+};
+// -----------------------------------------------------------------------------
 /// Options controlling generation of artificial observations.
 class ObsGenerateParameters : public oops::Parameters {
   OOPS_CONCRETE_PARAMETERS(ObsGenerateParameters, Parameters)
 
  public:
-  oops::RequiredParameter<util::Duration> begin{"begin", this};
-  oops::OptionalParameter<util::Duration> end{"end", this};
   oops::RequiredParameter<util::Duration> obsFrequency{"obs_frequency", this};
   /// Number of observations to generate in each time slot.
   oops::RequiredParameter<int> obsDensity{"obs_density", this};
@@ -50,9 +57,9 @@ class ObsTableParameters : public oops::ObsSpaceParametersBase {
 
  public:
   /// File from which to load observations.
-  oops::OptionalParameter<std::string> obsdatain{"obsdatain", this};
+  oops::OptionalParameter<ObsDataParameters> obsdatain{"obsdatain", this};
   /// File to which to save observations and analysis.
-  oops::OptionalParameter<std::string> obsdataout{"obsdataout", this};
+  oops::OptionalParameter<ObsDataParameters> obsdataout{"obsdataout", this};
   /// Options controlling generation of artificial observations.
   oops::OptionalParameter<ObsGenerateParameters> generate{"generate", this};
 };
@@ -90,6 +97,7 @@ class ObsTable : public oops::ObsSpaceBase,
   const std::vector<double> & locations() const { return locations_; }
   const std::vector<util::DateTime> & times() const { return times_; }
   const oops::Variables & obsvariables() const { return obsvars_; }
+  const oops::Variables & assimvariables() const { return assimvars_; }
   const std::string & obsname() const {return obsname_;}
 
   /// iterator to the first observation
@@ -111,6 +119,7 @@ class ObsTable : public oops::ObsSpaceBase,
 
   const eckit::mpi::Comm & comm_;
   const oops::Variables obsvars_;
+  const oops::Variables assimvars_;
   std::string nameIn_;
   std::string nameOut_;
   const std::string obsname_ = "Lorenz 95";

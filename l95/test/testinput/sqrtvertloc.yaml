@@ -1,0 +1,22 @@
+geometry:
+  resol: 40
+perturbed variables: [x]
+background error:
+  covariance model: L95Error
+  date: 2010-01-01T00:00:00Z
+  length_scale: 1.0
+  standard_deviation: 0.6
+background:
+  date: 2010-01-01T00:00:00Z
+  filename: Data/forecast.an.2010-01-01T00:00:00Z.l95
+max neig output: 5
+number of random samples: 10
+truncation tolerance: .95
+output:
+  datadir: Data
+  date: 2010-01-01T00:00:00Z 
+  exp: sqrtverloc.%{member}%
+  type: ens
+
+test:
+  reference filename: testoutput/sqrtvertloc.test

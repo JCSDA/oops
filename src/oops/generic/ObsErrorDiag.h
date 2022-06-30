@@ -20,6 +20,8 @@
 #include "oops/generic/ObsErrorBase.h"
 #include "oops/interface/ObsSpace.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/NumericConstraints.h"
+#include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
 
@@ -28,9 +30,36 @@ namespace oops {
 /// \brief Parameters for diagonal obs errors
 class ObsErrorDiagParameters : public ObsErrorParametersBase {
   OOPS_CONCRETE_PARAMETERS(ObsErrorDiagParameters, ObsErrorParametersBase)
+
  public:
   /// perturbation amplitude multiplier
   Parameter<double> pert{"random amplitude", 1.0, this};
+
+  /// Set to true to constrain observation perturbations to have a zero ensemble mean.
+  ///
+  /// Important: for this to work, the following requirements must be satisfied:
+  ///
+  /// 1. The `obs perturbations seed` option in the `obs space` section must be set to the same
+  /// value for all ensemble members.
+  ///
+  /// 2. All ensemble members must use the same observations in the same order.
+  Parameter<bool> zeroMeanPerturbations{"zero-mean perturbations", false, this};
+
+  /// 1-based ensemble member index.
+  ///
+  /// Used (and required) only if `zero-mean perturbations` is set to true.
+  OptionalParameter<int> member{"member", this, {minConstraint(1)}};
+
+  /// Number of ensemble members.
+  ///
+  /// Used (and required) only if `zero-mean perturbations` is set to true.
+  OptionalParameter<int> numberOfMembers{"number of members", this, {minConstraint(1)}};
+
+  // Import both overloads from the base class; we're going to override one of them
+  using ObsErrorParametersBase::deserialize;
+
+  /// Overridden to detect missing conditionally required parameters
+  void deserialize(util::CompositePath &path, const eckit::Configuration &config) override;
 };
 
 // -----------------------------------------------------------------------------
@@ -73,6 +102,11 @@ class ObsErrorDiag : public ObsErrorBase<OBS> {
 
  private:
   void print(std::ostream &) const override;
+
+  void randomizeWithoutZeroEnsembleMean(ObsVector_ &) const;
+
+  void randomizeWithZeroEnsembleMean(ObsVector_ &) const;
+
   ObsVector_ stddev_;
   ObsVector_ inverseVariance_;
   Parameters_ options_;
@@ -82,7 +116,7 @@ class ObsErrorDiag : public ObsErrorBase<OBS> {
 
 template<typename OBS>
 ObsErrorDiag<OBS>::ObsErrorDiag(const ObsErrorDiagParameters & options, const ObsSpace_ & obsgeom)
-  : stddev_(obsgeom, "ObsError"), inverseVariance_(obsgeom), options_(options)
+  : stddev_(obsgeom, "ObsError"), inverseVariance_(obsgeom, ""), options_(options)
 {
   inverseVariance_ = stddev_;
   inverseVariance_ *= stddev_;
@@ -119,6 +153,43 @@ void ObsErrorDiag<OBS>::inverseMultiply(ObsVector_ & dy) const {
 
 template<typename OBS>
 void ObsErrorDiag<OBS>::randomize(ObsVector_ & dy) const {
+  if (options_.zeroMeanPerturbations)
+    randomizeWithZeroEnsembleMean(dy);
+  else
+    randomizeWithoutZeroEnsembleMean(dy);
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename OBS>
+void ObsErrorDiag<OBS>::randomizeWithZeroEnsembleMean(ObsVector_ & dy) const {
+  ObsVector_ perturbation(dy);
+  ObsVector_ sum(dy);
+  sum.zero();
+
+  // Generate initial independent perturbations for all ensemble members.
+  // Calculate their sum and store this member's perturbations in 'dy'.
+  const int myMember = options_.member.value().value();
+  const int numMembers = options_.numberOfMembers.value().value();
+  for (int member = 1; member <= numMembers; ++member) {
+    perturbation.random();
+    sum += perturbation;
+    if (member == myMember)
+      dy = perturbation;
+  }
+
+  // Subtract the ensemble mean of perturbations from this member's perturbations.
+  dy.axpy(-1.0 / numMembers, sum);
+
+  // Scale perturbations to the requested amplitude.
+  dy *= stddev_;
+  dy *= std::sqrt(numMembers / (numMembers - 1.0)) * options_.pert.value();
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename OBS>
+void ObsErrorDiag<OBS>::randomizeWithoutZeroEnsembleMean(ObsVector_ & dy) const {
   dy.random();
   dy *= stddev_;
   dy *= options_.pert;

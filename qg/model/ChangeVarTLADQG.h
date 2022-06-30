@@ -1,6 +1,6 @@
 /*
- * (C) Copyright 2017-2018  UCAR.
- * 
+ * (C) Copyright 2017-2021  UCAR.
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
@@ -12,12 +12,15 @@
 #include <string>
 
 #include "oops/util/Printable.h"
-
-#include "oops/qg/QgFortran.h"
+#include "ChangeVarTLADQGParams.h"
 
 // Forward declarations
 namespace eckit {
   class Configuration;
+}
+
+namespace oops {
+  class Variables;
 }
 
 namespace qg {
@@ -30,17 +33,19 @@ namespace qg {
 
 class ChangeVarTLADQG: public util::Printable {
  public:
-  static const std::string classname() {return "qg::ChangeVarQG";}
+  typedef ChangeVarTLADQGParams Parameters_;
+  static const std::string classname() {return "qg::ChangeVarTLADQG";}
 
-  ChangeVarTLADQG(const StateQG &, const StateQG &, const GeometryQG &,
-                  const eckit::Configuration &);
+  ChangeVarTLADQG(const GeometryQG &, const Parameters_ &);
   ~ChangeVarTLADQG();
 
 /// Perform linear transforms
-  void multiply(const IncrementQG &, IncrementQG &) const;
-  void multiplyInverse(const IncrementQG &, IncrementQG &) const;
-  void multiplyAD(const IncrementQG &, IncrementQG &) const;
-  void multiplyInverseAD(const IncrementQG &, IncrementQG &) const;
+  void multiply(IncrementQG &, const oops::Variables &) const;
+  void multiplyInverse(IncrementQG &, const oops::Variables &) const;
+  void multiplyAD(IncrementQG &, const oops::Variables &) const;
+  void multiplyInverseAD(IncrementQG &, const oops::Variables &) const;
+
+  void setTrajectory(const StateQG &, const StateQG &);
 
  private:
   void print(std::ostream &) const override;

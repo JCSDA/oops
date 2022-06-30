@@ -9,12 +9,27 @@
 #define OOPS_UTIL_STRINGFUNCTIONS_H_
 
 #include <string>
+
+#include <boost/optional.hpp>
+
 #include "eckit/config/Configuration.h"
 
 namespace util {
   namespace stringfunctions {
 
-    void swapNameMember(const eckit::Configuration &, std::string &);
+    /// \brief Replace a placeholder with ensemble member index.
+    ///
+    /// If \p conf contains an integer-valued key "member", the "%{member}%" placeholder in \p
+    /// filename is replaced by "XXX", where XXX is the value of \p member padded with zeros
+    /// from the left to a total of \p ndigits digits.
+    void swapNameMember(const eckit::Configuration &member, std::string &filename, int ndigits = 3);
+
+    /// \brief Replace a placeholder with ensemble member index.
+    ///
+    /// \brief If \p member is not none, the "%{member}%" placeholder in \p filename is replaced
+    /// by "XXX", where XXX is the value of \p member padded with zeros from the left
+    /// to a total of \p ndigits digits.
+    void swapNameMember(const boost::optional<int> &member, std::string &filename, int ndigits = 3);
 
     /// \brief Convert sequence elements to strings and join them using a delimiter.
     ///

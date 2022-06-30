@@ -12,13 +12,15 @@
 #define OOPS_ASSIMILATION_QNEWTONLMP_H_
 
 #include <algorithm>
+#include <cmath>
+#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
-
 
 namespace oops {
 
@@ -37,12 +39,14 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template<typename VECTOR, typename BMATRIX> class QNewtonLMP {
+template<typename VECTOR, typename BMATRIX, typename CMATRIX> class QNewtonLMP {
  public:
   explicit QNewtonLMP(const eckit::Configuration &);
   ~QNewtonLMP() {}
 
   void push(const VECTOR &, const VECTOR &, const VECTOR &, const double &);
+  /// Set ObsBias part of the preconditioner to \p Cmat.
+  void updateObsBias(std::unique_ptr<CMATRIX> Cmat);
   void update(const BMATRIX & B);
 
   void multiply(const VECTOR &, VECTOR &) const;
@@ -63,6 +67,7 @@ template<typename VECTOR, typename BMATRIX> class QNewtonLMP {
   std::vector<VECTOR> BAP_;
   std::vector<double> rhos_;
   std::vector<unsigned> usedpairIndx_;
+  std::unique_ptr<CMATRIX> Cmatrix_;
 
   std::vector<VECTOR> savedP_;
   std::vector<VECTOR> savedPh_;
@@ -72,8 +77,8 @@ template<typename VECTOR, typename BMATRIX> class QNewtonLMP {
 
 // =============================================================================
 
-template<typename VECTOR, typename BMATRIX>
-QNewtonLMP<VECTOR, BMATRIX>::QNewtonLMP(const eckit::Configuration & conf)
+template<typename VECTOR, typename BMATRIX, typename CMATRIX>
+QNewtonLMP<VECTOR, BMATRIX, CMATRIX>::QNewtonLMP(const eckit::Configuration & conf)
   : maxpairs_(0), maxnewpairs_(0), useoldpairs_(false), maxouter_(0), update_(1)
 {
   maxouter_ = conf.getInt("nouter");
@@ -98,9 +103,9 @@ QNewtonLMP<VECTOR, BMATRIX>::QNewtonLMP(const eckit::Configuration & conf)
 
 // -----------------------------------------------------------------------------
 
-template<typename VECTOR, typename BMATRIX>
-void QNewtonLMP<VECTOR, BMATRIX>::push(const VECTOR & p, const VECTOR & ph,
-                                       const VECTOR & ap, const double & rho) {
+template<typename VECTOR, typename BMATRIX, typename CMATRIX>
+void QNewtonLMP<VECTOR, BMATRIX, CMATRIX>::push(const VECTOR & p, const VECTOR & ph,
+                                     const VECTOR & ap, const double & rho) {
   ASSERT(savedP_.size() <= maxnewpairs_);
   if (maxnewpairs_ > 0 && update_ < maxouter_) {
     if (savedP_.size() == maxnewpairs_) {
@@ -118,8 +123,16 @@ void QNewtonLMP<VECTOR, BMATRIX>::push(const VECTOR & p, const VECTOR & ph,
 
 // -----------------------------------------------------------------------------
 
-template<typename VECTOR, typename BMATRIX>
-void QNewtonLMP<VECTOR, BMATRIX>::update(const BMATRIX & Bmat) {
+template<typename VECTOR, typename BMATRIX, typename CMATRIX>
+void QNewtonLMP<VECTOR, BMATRIX, CMATRIX>::updateObsBias(std::unique_ptr<CMATRIX> Cmat) {
+  // Save the preconditioner
+  Cmatrix_ = std::move(Cmat);
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename VECTOR, typename BMATRIX, typename CMATRIX>
+void QNewtonLMP<VECTOR, BMATRIX, CMATRIX>::update(const BMATRIX & Bmat) {
   Log::debug() << "QNewtonLMP size saved Ph    = " << savedPh_.size() << std::endl;
   Log::debug() << "QNewtonLMP size saved P     = " << savedP_.size() << std::endl;
   Log::debug() << "QNewtonLMP size saved AP    = " << savedAP_.size() << std::endl;
@@ -175,7 +188,7 @@ void QNewtonLMP<VECTOR, BMATRIX>::update(const BMATRIX & Bmat) {
       Ph_.push_back(savedPh_[jv]);
       AP_.push_back(savedAP_[jv]);
       rhos_.push_back(savedrhos_[jv]);
-      // Save B*ap
+    // Save B*ap
       VECTOR ww(savedAP_[jv]);
       Bmat.multiply(savedAP_[jv], ww);
       BAP_.push_back(ww);
@@ -189,7 +202,7 @@ void QNewtonLMP<VECTOR, BMATRIX>::update(const BMATRIX & Bmat) {
     Log::info() << "Number of removed old pairs      : " << rmpairs << std::endl;
     for (unsigned kiter = 0; kiter < usedpairIndx_.size(); ++kiter) {
       Log::info() << "Number of used pairs from outer loop " << kiter + 1
-                << " : "                                   << usedpairIndx_[kiter];
+                  << " : "                                   << usedpairIndx_[kiter];
     }
   }
 
@@ -201,13 +214,16 @@ void QNewtonLMP<VECTOR, BMATRIX>::update(const BMATRIX & Bmat) {
 }
 
 // -----------------------------------------------------------------------------
-
-template<typename VECTOR, typename BMATRIX>
-void QNewtonLMP<VECTOR, BMATRIX>::multiply(const VECTOR & a, VECTOR & b) const {
+template<typename VECTOR, typename BMATRIX, typename CMATRIX>
+void QNewtonLMP<VECTOR, BMATRIX, CMATRIX>::multiply(const VECTOR & a, VECTOR & b) const {
+  if (!Cmatrix_) {
+    oops::Log::error() << "The VarBC preconditioner matrix is not defined" << std::endl;
+    throw eckit::UserError("The VarBC preconditioner matrix is not defined", Here());
+  }
   b = a;
   const unsigned nvec = P_.size();
+  std::vector<double> etas;
   if (nvec != 0) {
-    std::vector<double> etas;
     etas.clear();
     for (int iiter = nvec-1; iiter >= 0; iiter--) {
       double eta = dot_product(b, P_[iiter]);
@@ -215,6 +231,11 @@ void QNewtonLMP<VECTOR, BMATRIX>::multiply(const VECTOR & a, VECTOR & b) const {
       etas.push_back(eta);
       b.axpy(-eta, AP_[iiter]);
     }
+  }
+// For VarBC the obsbias section of the increment is multiplied by the preconditioner
+  Cmatrix_->multiply(b, b);
+  if (nvec != 0) {
+  // Scale b for improved preconditiong of state section of increment.
     b *= dot_product(AP_[nvec-1], AP_[nvec-1])/dot_product(AP_[nvec-1], Ph_[nvec-1]);
     for (unsigned iiter = 0; iiter < nvec; ++iiter) {
       double sigma = dot_product(b, BAP_[iiter]);
@@ -226,13 +247,16 @@ void QNewtonLMP<VECTOR, BMATRIX>::multiply(const VECTOR & a, VECTOR & b) const {
 }
 
 // -----------------------------------------------------------------------------
-
-template<typename VECTOR, typename BMATRIX>
-void QNewtonLMP<VECTOR, BMATRIX>::tmultiply(const VECTOR & a, VECTOR & b) const {
+template<typename VECTOR, typename BMATRIX, typename CMATRIX>
+void QNewtonLMP<VECTOR, BMATRIX, CMATRIX>::tmultiply(const VECTOR & a, VECTOR & b) const {
+  if (!Cmatrix_) {
+    oops::Log::error() << "The VarBC preconditioner matrix is not defined" << std::endl;
+    throw eckit::UserError("The VarBC preconditioner matrix is not defined", Here());
+  }
   b = a;
   const unsigned nvec = P_.size();
+  std::vector<double> etas;
   if (nvec != 0) {
-    std::vector<double> etas;
     etas.clear();
     for (int iiter = nvec-1; iiter >= 0; iiter--) {
       double eta = dot_product(b, Ph_[iiter]);
@@ -240,6 +264,13 @@ void QNewtonLMP<VECTOR, BMATRIX>::tmultiply(const VECTOR & a, VECTOR & b) const 
       etas.push_back(eta);
       b.axpy(-eta, BAP_[iiter]);
     }
+  }
+// For VarBC the obsbias section of the increment is multiplied by the transpose
+// of the preconditioner. Note because the preconditioner is curently diagonal
+// P^t*b = P*b so we just multiply by the preconditioner.
+  Cmatrix_->multiply(b, b);
+  if (nvec != 0) {
+  // Scale b for improved preconditiong of state section of increment.
     b *= dot_product(AP_[nvec-1], AP_[nvec-1])/dot_product(AP_[nvec-1], Ph_[nvec-1]);
     for (unsigned iiter = 0; iiter < nvec; ++iiter) {
       double sigma = dot_product(b, AP_[iiter]);
@@ -249,9 +280,6 @@ void QNewtonLMP<VECTOR, BMATRIX>::tmultiply(const VECTOR & a, VECTOR & b) const 
     }
   }
 }
-
-// -----------------------------------------------------------------------------
-
 }  // namespace oops
 
 #endif  // OOPS_ASSIMILATION_QNEWTONLMP_H_

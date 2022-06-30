@@ -17,7 +17,6 @@
 #include <boost/noncopyable.hpp>
 
 #include "oops/base/ObsVector.h"
-#include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsDiagnostics.h"
@@ -28,6 +27,8 @@
 #include "oops/util/Timer.h"
 
 namespace oops {
+
+class Variables;
 
 // -----------------------------------------------------------------------------
 /// \brief MODEL-agnostic part of nonlinear observation (forward) operator.
@@ -88,6 +89,7 @@ class ObsOperator : public util::Printable,
   /// Print, used for logging
   void print(std::ostream &) const;
 
+  const std::string name_;
   /// Pointer to the implementation of ObsOperator
   std::unique_ptr<ObsOperator_> oper_;
 };
@@ -95,10 +97,11 @@ class ObsOperator : public util::Printable,
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-ObsOperator<OBS>::ObsOperator(const ObsSpace_ & os,
-                              const Parameters_ & parameters) : oper_() {
+ObsOperator<OBS>::ObsOperator(const ObsSpace_ & os, const Parameters_ & parameters)
+  : name_("oops::ObsOperator::"+os.obsname()), oper_()
+{
   Log::trace() << "ObsOperator<OBS>::ObsOperator starting" << std::endl;
-  util::Timer timer(classname(), "ObsOperator");
+  util::Timer timer(name_, "ObsOperator");
   oper_.reset(new ObsOperator_(os.obsspace(), parameters));
   Log::trace() << "ObsOperator<OBS>::ObsOperator done" << std::endl;
 }
@@ -108,7 +111,7 @@ ObsOperator<OBS>::ObsOperator(const ObsSpace_ & os,
 template <typename OBS>
 ObsOperator<OBS>::~ObsOperator() {
   Log::trace() << "ObsOperator<OBS>::~ObsOperator starting" << std::endl;
-  util::Timer timer(classname(), "~ObsOperator");
+  util::Timer timer(name_, "~ObsOperator");
   oper_.reset();
   Log::trace() << "ObsOperator<OBS>::~ObsOperator done" << std::endl;
 }
@@ -120,7 +123,7 @@ void ObsOperator<OBS>::simulateObs(const GeoVaLs_ & gvals, ObsVector_ & yy,
                                      const ObsAuxControl_ & aux, ObsVector_ & ybias,
                                      ObsDiags_ & ydiag) const {
   Log::trace() << "ObsOperator<OBS>::simulateObs starting" << std::endl;
-  util::Timer timer(classname(), "simulateObs");
+  util::Timer timer(name_, "simulateObs");
   oper_->simulateObs(gvals.geovals(), yy.obsvector(), aux.obsauxcontrol(), ybias.obsvector(),
                      ydiag.obsdiagnostics());
   Log::trace() << "ObsOperator<OBS>::simulateObs done" << std::endl;
@@ -131,7 +134,7 @@ void ObsOperator<OBS>::simulateObs(const GeoVaLs_ & gvals, ObsVector_ & yy,
 template <typename OBS>
 const Variables & ObsOperator<OBS>::requiredVars() const {
   Log::trace() << "ObsOperator<OBS>::requiredVars starting" << std::endl;
-  util::Timer timer(classname(), "requiredVars");
+  util::Timer timer(name_, "requiredVars");
   return oper_->requiredVars();
 }
 
@@ -140,7 +143,7 @@ const Variables & ObsOperator<OBS>::requiredVars() const {
 template <typename OBS>
 Locations<OBS> ObsOperator<OBS>::locations() const {
   Log::trace() << "ObsOperator<OBS>::locations starting" << std::endl;
-  util::Timer timer(classname(), "locations");
+  util::Timer timer(name_, "locations");
   return Locations_(oper_->locations());
 }
 
@@ -149,7 +152,7 @@ Locations<OBS> ObsOperator<OBS>::locations() const {
 template<typename OBS>
 void ObsOperator<OBS>::print(std::ostream & os) const {
   Log::trace() << "ObsOperator<OBS>::print starting" << std::endl;
-  util::Timer timer(classname(), "print");
+  util::Timer timer(name_, "print");
   os << *oper_;
   Log::trace() << "ObsOperator<OBS>::print done" << std::endl;
 }

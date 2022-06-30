@@ -29,16 +29,16 @@ static ObsOpTLADMaker<ObsWSpeedTLAD> makerWSpeedTL_("WSpeed");
 // -----------------------------------------------------------------------------
 
 ObsWSpeedTLAD::ObsWSpeedTLAD(const ObsSpaceQG & odb, const eckit::Configuration & config)
-  : traj_(), varin_(std::vector<std::string>{"u", "v"})
+  : obsdb_(odb), traj_(), varin_(std::vector<std::string>{"u", "v", "z"})
 {
-  qg_wspeed_gettraj_f90(odb.nobs(), varin_, traj_.toFortran());
+  qg_wspeed_alloctraj_f90(odb.nobs(), traj_);
   oops::Log::trace() << "ObsWSpeedTLAD created" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsWSpeedTLAD::setTrajectory(const GomQG & gom, const ObsBias &) {
-  qg_wspeed_settraj_f90(gom.toFortran(), traj_.toFortran());
+  qg_wspeed_settraj_f90(obsdb_.toFortran(), gom.toFortran(), traj_);
   oops::Log::trace() << "ObsWSpeedTLAD trajectory was set " << traj_ << std::endl;
 }
 
@@ -46,16 +46,16 @@ void ObsWSpeedTLAD::setTrajectory(const GomQG & gom, const ObsBias &) {
 
 void ObsWSpeedTLAD::simulateObsTL(const GomQG & gom, ObsVecQG & ovec,
                                   const ObsBiasIncrement & bias) const {
-  qg_wspeed_equiv_tl_f90(gom.toFortran(), ovec.toFortran(),
-                         traj_.toFortran(), bias.wspd());
+  qg_wspeed_equiv_tl_f90(obsdb_.toFortran(), gom.toFortran(), ovec.toFortran(),
+                         traj_, bias.wspd());
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsWSpeedTLAD::simulateObsAD(GomQG & gom, const ObsVecQG & ovec,
                                   ObsBiasIncrement & bias) const {
-  qg_wspeed_equiv_ad_f90(gom.toFortran(), ovec.toFortran(),
-                         traj_.toFortran(), bias.wspd());
+  qg_wspeed_equiv_ad_f90(obsdb_.toFortran(), gom.toFortran(), ovec.toFortran(),
+                         traj_, bias.wspd());
 }
 
 // -----------------------------------------------------------------------------

@@ -50,14 +50,14 @@ StateL95::StateL95(const Resolution & resol, const oops::Variables & vars,
   oops::Log::trace() << "StateL95::StateL95 created" << std::endl;
 }
 // -----------------------------------------------------------------------------
-StateL95::StateL95(const Resolution & resol, const eckit::Configuration & conf)
-  : fld_(resol), time_(conf.getString("date")), vars_({"x"})
+StateL95::StateL95(const Resolution & resol, const Parameters_ & parameters)
+  : fld_(resol), time_(parameters.date), vars_({"x"})
 {
-  oops::Log::trace() << "StateL95::StateL95 conf " << conf << std::endl;
-  if (conf.has("filename")) {
-    this->read(conf);
-  } else {
-    fld_.generate(conf);
+  oops::Log::trace() << "StateL95::StateL95 conf " << parameters << std::endl;
+  if (parameters.filename.value() != boost::none) {
+    this->read(parameters);
+  } else if (parameters.analyticInit.value() != boost::none) {
+    fld_.generate(*parameters.analyticInit.value());
   }
   oops::Log::trace() << "StateL95::StateL95 created and read in." << std::endl;
 }
@@ -98,9 +98,9 @@ StateL95 & StateL95::operator+=(const IncrementL95 & dx) {
 // -----------------------------------------------------------------------------
 /// Utilities
 // -----------------------------------------------------------------------------
-void StateL95::read(const eckit::Configuration & config) {
-  std::string filename(config.getString("filename"));
-  sf::swapNameMember(config, filename);
+void StateL95::read(const Parameters_ & parameters) {
+  std::string filename(parameters.filename.value().value());
+  sf::swapNameMember(parameters.member.value(), filename);
   oops::Log::trace() << "StateL95::read opening " << filename << std::endl;
   std::ifstream fin(filename.c_str());
   if (!fin.is_open()) ABORT("StateL95::read: Error opening file: " + filename);
@@ -122,34 +122,22 @@ void StateL95::read(const eckit::Configuration & config) {
   oops::Log::trace() << "StateL95::read: file closed." << std::endl;
 }
 // -----------------------------------------------------------------------------
-void StateL95::write(const eckit::Configuration & config) const {
-  std::string dir = config.getString("datadir");
-  std::string exp = config.getString("exp");
-  std::string type = config.getString("type");
-  std::string filename = dir+"/"+exp+"."+type;
-
-  if (type == "ens") {
-    std::string memb = config.getString("member");
-    filename += "."+memb;
-  }
-
-  if (type == "fc" || type == "ens") {
-    const util::DateTime antime(config.getString("date"));
-    filename += "."+antime.toString();
-    const util::Duration step = time_ - antime;
-    filename += "."+step.toString();
-  }
-
-  if (type == "an") {
-    filename += "."+time_.toString();
-  }
+void StateL95::write(const WriteParameters_ & parameters) const {
+  const std::string &dir = parameters.datadir;
+  const std::string &type = *parameters.type.value();
+  std::string filename = dir+"/"+*parameters.prefix.value();
 
   if (type == "krylov") {
-    std::string iter = config.getString("iteration");
-    filename += "."+iter+"."+time_.toString();
+    if (parameters.iteration.value() == boost::none)
+      throw eckit::BadValue("'iteration' was not set in the parameters passed to write() "
+                            "even though 'type' was set to '" + type + "'", Here());
+    const int &iter = *parameters.iteration.value();
+    filename += "."+std::to_string(iter)+"."+time_.toString();
   }
 
-  sf::swapNameMember(config, filename);
+  filename += ".l95";
+
+  sf::swapNameMember(parameters.member.value(), filename);
 
   oops::Log::trace() << "StateL95::write opening " << filename << std::endl;
   std::ofstream fout(filename.c_str());
@@ -182,30 +170,21 @@ void StateL95::accumul(const double & zz, const StateL95 & xx) {
 /// Serialize - deserialize
 // -----------------------------------------------------------------------------
 size_t StateL95::serialSize() const {
-  size_t nn = 3;
+  size_t nn = 0;
   nn += fld_.serialSize();
   nn += time_.serialSize();
   return nn;
 }
 // -----------------------------------------------------------------------------
 void StateL95::serialize(std::vector<double> & vect) const {
-  vect.push_back(1001.0);
   fld_.serialize(vect);
-  vect.push_back(2002.0);
   time_.serialize(vect);
-  vect.push_back(3003.0);
 }
 // -----------------------------------------------------------------------------
 void StateL95::deserialize(const std::vector<double> & vect, size_t & index) {
-  size_t ii = index + this->serialSize();
-  ASSERT(vect.at(index) == 1001.0);
-  ++index;
+  const size_t ii = index + this->serialSize();
   fld_.deserialize(vect, index);
-  ASSERT(vect.at(index) == 2002.0);
-  ++index;
   time_.deserialize(vect, index);
-  ASSERT(vect.at(index) == 3003.0);
-  ++index;
   ASSERT(index == ii);
 }
 // -----------------------------------------------------------------------------

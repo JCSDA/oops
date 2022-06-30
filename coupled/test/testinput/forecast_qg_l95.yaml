@@ -1,0 +1,40 @@
+forecast length: P2D
+geometry:   # coupled geometry (QG and L95)
+  QG:
+    nx: 40
+    ny: 20
+    depths: [4500.0, 5500.0]
+  Lorenz 95:
+    resol: 40
+initial condition:
+  QG:
+    date: 2010-01-01T00:00:00Z
+    filename: ../../qg/test/Data/truth.fc.2009-12-15T00:00:00Z.P17D.nc
+  Lorenz 95:
+    date: 2010-01-01T00:00:00Z
+    filename: ../../l95/test/Data/forecast.an.2010-01-01T00:00:00Z.l95
+model:
+  name: Coupled
+  QG:
+    name: QG
+    tstep: PT1H
+  Lorenz 95:
+    name: L95
+    tstep: PT1H
+    f: 8.0
+output:
+  frequency: PT12H
+  QG:
+    datadir: Data
+    date: 2010-01-01T00:00:00Z
+    exp: coupled_qg
+    type: fc
+  Lorenz 95:
+    datadir: Data
+    date: 2010-01-01T00:00:00Z
+    exp: coupled_l95
+    type: fc
+prints:
+  frequency: PT6H
+test:
+  reference filename: testref/forecast_qg_l95.test

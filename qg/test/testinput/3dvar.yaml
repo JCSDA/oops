@@ -17,48 +17,37 @@ cost function:
     standard_deviation: 1.8e7
     vertical_length_scale: 15000.0
   observations:
-  - obs error:
-      covariance model: diagonal
-    obs operator:
-      obs type: Stream
-    obs space:
-      obsdatain:
-        obsfile: Data/truth.obs3d.nc
-      obsdataout:
-        obsfile: Data/3dvar.obs3d.nc
-      obs type: Stream
-    get values:
-      interpolation type: default_1
-    linear get values:
-      interpolation type: default_a
-  - obs error:
-      covariance model: diagonal
-    obs operator:
-      obs type: Wind
-    obs space:
-      obsdatain:
-        obsfile: Data/truth.obs3d.nc
-      obsdataout:
-        obsfile: Data/3dvar.obs3d.nc
-      obs type: Wind
-    get values:
-      interpolation type: default_2
-    linear get values:
-      interpolation type: default_b
-  - obs error:
-      covariance model: diagonal
-    obs operator:
-      obs type: WSpeed
-    obs space:
-      obsdatain:
-        obsfile: Data/truth.obs3d.nc
-      obsdataout:
-        obsfile: Data/3dvar.obs3d.nc
-      obs type: WSpeed
-    get values:
-      interpolation type: default_3
-    linear get values:
-      interpolation type: default_c
+    observers:
+    - obs error:
+        covariance model: diagonal
+      obs operator:
+        obs type: Stream
+      obs space:
+        obsdatain:
+          obsfile: Data/truth.obs3d.nc
+        obsdataout:
+          obsfile: Data/3dvar.obs3d.nc
+        obs type: Stream
+    - obs error:
+        covariance model: diagonal
+      obs operator:
+        obs type: Wind
+      obs space:
+        obsdatain:
+          obsfile: Data/truth.obs3d.nc
+        obsdataout:
+          obsfile: Data/3dvar.obs3d.nc
+        obs type: Wind
+    - obs error:
+        covariance model: diagonal
+      obs operator:
+        obs type: WSpeed
+      obs space:
+        obsdatain:
+          obsfile: Data/truth.obs3d.nc
+        obsdataout:
+          obsfile: Data/3dvar.obs3d.nc
+        obs type: WSpeed
 variational:
   minimizer:
     algorithm: DRIPCG
@@ -99,6 +88,17 @@ variational:
 final:
   diagnostics:
     departures: oman
+  increment:
+    geometry:
+      nx: 40
+      ny: 20
+      depths: [4500.0, 5500.0]
+    output:
+      datadir: Data
+      date: 2010-01-01T12:00:00Z
+      exp: 3dvar.increment
+      type: in
+      analysis variables: [x]
 output:
   datadir: Data
   exp: 3dvar

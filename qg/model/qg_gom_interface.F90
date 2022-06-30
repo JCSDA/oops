@@ -11,6 +11,7 @@ module qg_gom_interface
 use atlas_module, only: atlas_field
 use fckit_configuration_module, only: fckit_configuration
 use iso_c_binding
+use datetime_mod
 use qg_geom_mod
 use qg_gom_mod
 use qg_locs_mod
@@ -23,7 +24,7 @@ private
 contains
 ! ------------------------------------------------------------------------------
 !> Setup GOM
-subroutine qg_gom_setup_c(c_key_self,c_locs,c_vars) bind(c,name='qg_gom_setup_f90')
+subroutine qg_gom_setup_c(c_key_self,c_locs,c_vars,nlevs) bind(c,name='qg_gom_setup_f90')
 
 implicit none
 
@@ -31,31 +32,32 @@ implicit none
 integer(c_int),intent(inout) :: c_key_self !< GOM
 type(c_ptr),value,intent(in) :: c_locs     !< Locations
 type(c_ptr),value,intent(in) :: c_vars     !< Variables
+integer(c_int),intent(in)    :: nlevs
 
 ! Local variables
 type(qg_gom),pointer :: self
 type(qg_locs) :: locs
+type(oops_variables) :: vars
 
 ! Interface
 call qg_gom_registry%init()
 call qg_gom_registry%add(c_key_self)
 call qg_gom_registry%get(c_key_self,self)
 locs = qg_locs(c_locs)
-self%vars = oops_variables(c_vars)
+vars = oops_variables(c_vars)
 
 ! Call Fortran
-call qg_gom_setup(self,locs%nlocs())
+call qg_gom_setup(self,locs,vars,nlevs)
 
 end subroutine qg_gom_setup_c
 ! ------------------------------------------------------------------------------
 !> Create GOM and do nothing
-subroutine qg_gom_create_c(c_key_self,c_vars) bind(c,name='qg_gom_create_f90')
+subroutine qg_gom_create_c(c_key_self) bind(c,name='qg_gom_create_f90')
 
 implicit none
 
 ! Passed variables
 integer(c_int),intent(inout) :: c_key_self !< GOM
-type(c_ptr),value,intent(in) :: c_vars     !< Variables
 
 ! Local variables
 type(qg_gom),pointer :: self
@@ -64,7 +66,6 @@ type(qg_gom),pointer :: self
 call qg_gom_registry%init()
 call qg_gom_registry%add(c_key_self)
 call qg_gom_registry%get(c_key_self,self)
-self%vars = oops_variables(c_vars)
 
 end subroutine qg_gom_create_c
 ! ------------------------------------------------------------------------------
@@ -111,6 +112,38 @@ call qg_gom_registry%get(c_key_other,other)
 call qg_gom_copy(self,other)
 
 end subroutine qg_gom_copy_c
+! ------------------------------------------------------------------------------
+subroutine qg_gom_fill_c(c_key, c_nloc, c_indx, c_nval, c_vals) bind(c, name="qg_gom_fill_f90")
+implicit none
+integer(c_int), intent(in) :: c_key
+integer(c_int), intent(in) :: c_nloc
+integer(c_int), intent(in) :: c_indx(c_nloc)
+integer(c_int), intent(in) :: c_nval
+real(c_double), intent(in) :: c_vals(c_nval)
+
+type(qg_gom), pointer :: self
+
+call qg_gom_registry%get(c_key,self)
+
+call qg_gom_fill(self, c_nloc, c_indx, c_nval, c_vals)
+
+end subroutine qg_gom_fill_c
+! ------------------------------------------------------------------------------
+subroutine qg_gom_fillad_c(c_key, c_nloc, c_indx, c_nval, c_vals) bind(c, name="qg_gom_fillad_f90")
+implicit none
+integer(c_int), intent(in) :: c_key
+integer(c_int), intent(in) :: c_nloc
+integer(c_int), intent(in) :: c_indx(c_nloc)
+integer(c_int), intent(in) :: c_nval
+real(c_double), intent(inout) :: c_vals(c_nval)
+
+type(qg_gom),pointer :: self
+
+call qg_gom_registry%get(c_key, self)
+
+call qg_gom_fillad(self, c_nloc, c_indx, c_nval, c_vals)
+
+end subroutine qg_gom_fillad_c
 ! ------------------------------------------------------------------------------
 !> Set GOM to zero
 subroutine qg_gom_zero_c(c_key_self) bind(c,name='qg_gom_zero_f90')
@@ -368,24 +401,27 @@ call qg_gom_maxloc(self,c_mxval,c_mxloc,mxvar)
 end subroutine qg_gom_maxloc_c
 ! ------------------------------------------------------------------------------
 !> Read GOM from file
-subroutine qg_gom_read_file_c(c_key_self,c_conf) bind(c,name='qg_gom_read_file_f90')
+subroutine qg_gom_read_file_c(c_key_self,c_vars,c_conf) bind(c,name='qg_gom_read_file_f90')
 
 implicit none
 
 ! Passed variables
 integer(c_int),intent(inout) :: c_key_self !< GOM
+type(c_ptr),value,intent(in) :: c_vars     !< Variables
 type(c_ptr),value,intent(in) :: c_conf     !< Configuration
 
 ! Local variables
 type(fckit_configuration) :: f_conf
 type(qg_gom),pointer :: self
+type(oops_variables) :: vars
 
 ! Interface
 call qg_gom_registry%get(c_key_self,self)
 f_conf = fckit_configuration(c_conf)
+vars = oops_variables(c_vars)
 
 ! Call Fortran
-call qg_gom_read_file(self,f_conf)
+call qg_gom_read_file(self,vars,f_conf)
 
 end subroutine qg_gom_read_file_c
 ! ------------------------------------------------------------------------------

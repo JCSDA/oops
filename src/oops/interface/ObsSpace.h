@@ -16,10 +16,8 @@
 #include <ostream>
 #include <string>
 
-#include "eckit/geometry/Point2.h"
 #include "eckit/system/ResourceUsage.h"
 
-#include "oops/base/Variables.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/Logger.h"
@@ -27,15 +25,13 @@
 #include "oops/util/Printable.h"
 #include "oops/util/Timer.h"
 
-namespace eckit {
-  class Configuration;
-}
-
 namespace util {
   class DateTime;
 }
 
 namespace oops {
+
+class Variables;
 
 // -----------------------------------------------------------------------------
 
@@ -65,6 +61,7 @@ class ObsSpace : public util::Printable,
   const util::DateTime & windowEnd() const {return obsdb_->windowEnd();}
 
   const Variables & obsvariables() const;
+  const Variables & assimvariables() const;
 
 // Other
   const std::string & obsname() const {return obsdb_->obsname();}
@@ -140,6 +137,15 @@ const Variables & ObsSpace<OBS>::obsvariables() const {
   Log::trace() << "ObsSpace<OBS>::obsvariables starting" << std::endl;
   util::Timer timer(classname(), "obsvariables");
   return obsdb_->obsvariables();
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+const Variables & ObsSpace<OBS>::assimvariables() const {
+  Log::trace() << "ObsSpace<OBS>::assimvariables starting" << std::endl;
+  util::Timer timer(classname(), "assimvariables");
+  return obsdb_->assimvariables();
 }
 
 // -----------------------------------------------------------------------------

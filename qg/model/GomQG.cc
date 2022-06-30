@@ -12,11 +12,11 @@
 
 #include <iomanip>
 
-#include "eckit/config/Configuration.h"
 #include "model/LocationsQG.h"
 #include "model/ObsSpaceQG.h"
 #include "model/QgFortran.h"
 #include "oops/base/Variables.h"
+#include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 
 namespace qg {
@@ -24,28 +24,29 @@ namespace qg {
 // -----------------------------------------------------------------------------
 GomQG::GomQG(const LocationsQG & locs, const oops::Variables & vars,
              const std::vector<size_t> & sizes):
-  vars_(vars)
+  vars_(vars), locs_(&locs)
 {
-  // gom_setup just creates and allocates the GeoVaLs object without filling
-  // in values
-  qg_gom_setup_f90(keyGom_, locs, vars_);
+// All variables have same levels
+  for (size_t jj = 1; jj < sizes.size(); ++jj) ASSERT(sizes[jj] == sizes[0]);
+  const int levs = sizes[0];
+  qg_gom_setup_f90(keyGom_, locs, vars_, levs);
 }
 // -----------------------------------------------------------------------------
 /*! QG GeoVaLs Constructor with Config */
 
-  GomQG::GomQG(const eckit::Configuration & config,
-               const ObsSpaceQG & ospace, const oops::Variables & vars):
-  vars_(vars)
+GomQG::GomQG(const Parameters_ & params,
+             const ObsSpaceQG & ospace, const oops::Variables & vars):
+  vars_(vars), locs_(nullptr)
 {
-  qg_gom_create_f90(keyGom_, vars_);
-  qg_gom_read_file_f90(keyGom_, config);
+  qg_gom_create_f90(keyGom_);
+  qg_gom_read_file_f90(keyGom_, vars_, params.toConfiguration());
 }
 // -----------------------------------------------------------------------------
 // Copy constructor
 GomQG::GomQG(const GomQG & other):
-  vars_(other.vars_)
+  vars_(other.vars_), locs_(other.locs_)
 {
-  qg_gom_create_f90(keyGom_, vars_);
+  qg_gom_create_f90(keyGom_);
   qg_gom_copy_f90(keyGom_, other.keyGom_);
 }
 // -----------------------------------------------------------------------------
@@ -105,12 +106,30 @@ double GomQG::dot_product_with(const GomQG & other) const {
   return zz;
 }
 // -----------------------------------------------------------------------------
-void GomQG::read(const eckit::Configuration & config) {
-  qg_gom_read_file_f90(keyGom_, config);
+void GomQG::fill(const std::vector<size_t> & indx, const std::vector<double> & vals) {
+  const size_t npts = indx.size();
+  const size_t nvals = vals.size();
+  std::vector<int> findx(indx.size());
+  for (size_t jj = 0; jj < indx.size(); ++jj) findx[jj] = indx[jj] + 1;
+
+  qg_gom_fill_f90(keyGom_, npts, findx[0], nvals, vals[0]);
 }
 // -----------------------------------------------------------------------------
-void GomQG::write(const eckit::Configuration & config) const {
-  qg_gom_write_file_f90(keyGom_, config);
+void GomQG::fillAD(const std::vector<size_t> & indx, std::vector<double> & vals) const {
+  const size_t npts = indx.size();
+  const size_t nvals = vals.size();
+  std::vector<int> findx(indx.size());
+  for (size_t jj = 0; jj < indx.size(); ++jj) findx[jj] = indx[jj] + 1;
+
+  qg_gom_fillad_f90(keyGom_, npts, findx[0], nvals, vals[0]);
+}
+// -----------------------------------------------------------------------------
+void GomQG::read(const Parameters_ & params) {
+  qg_gom_read_file_f90(keyGom_, vars_, params.toConfiguration());
+}
+// -----------------------------------------------------------------------------
+void GomQG::write(const Parameters_ & params) const {
+  qg_gom_write_file_f90(keyGom_, params.toConfiguration());
 }
 // -----------------------------------------------------------------------------
 void GomQG::print(std::ostream & os) const {
@@ -118,10 +137,10 @@ void GomQG::print(std::ostream & os) const {
   double zmin, zmax, zrms;
   qg_gom_stats_f90(keyGom_, nobs, zmin, zmax, zrms);
   std::ios_base::fmtflags f(os.flags());
-  os << " nobs= " << nobs << std::scientific << std::setprecision(4)
-     << "  Min=" << std::setw(12) << zmin
-     << ", Max=" << std::setw(12) << zmax
-     << ", RMS=" << std::setw(12) << zrms;
+  os << " nobs= " << nobs
+     << "  Min=" << zmin
+     << ", Max=" << zmax
+     << ", RMS=" << zrms;
   os.flags(f);
 
   // If the min value across all variables is positive, then this may be an

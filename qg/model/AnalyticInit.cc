@@ -12,8 +12,14 @@
 
 namespace qg {
 
+// Ideally, we would have two separate analytic init classes; one for baroclinic
+// instability, one for large vortices, but for now we'll use the same class to
+// do both.
+static oops::AnalyticInitMaker<QgObsTraits, AnalyticInit> makerAnalytic1_("baroclinic-instability");
+static oops::AnalyticInitMaker<QgObsTraits, AnalyticInit> makerAnalytic2_("large-vortices");
+
 // -----------------------------------------------------------------------------
-AnalyticInit::AnalyticInit(const eckit::Configuration & config): config_(config)
+AnalyticInit::AnalyticInit(const Parameters_ & options) : options_(options)
 { }
 // -----------------------------------------------------------------------------
 /*! \brief GeoVaLs Analytic Initialization
@@ -24,9 +30,7 @@ AnalyticInit::AnalyticInit(const eckit::Configuration & config): config_(config)
  */
 void AnalyticInit::fillGeoVaLs(const LocationsQG & locs,
                                GomQG & geovals) const {
-  // Optionally replace values with analytic init
-  if (config_.has("analytic_init"))
-    qg_gom_analytic_init_f90(geovals.toFortran(), locs, config_);
+  qg_gom_analytic_init_f90(geovals.toFortran(), locs, options_.toConfiguration());
 }
 // -----------------------------------------------------------------------------
 }  // namespace qg

@@ -42,6 +42,60 @@ class LocalConfigurationEx : public eckit::LocalConfiguration {
 
 }  // namespace
 
+// Specialization for IntegerParameterTraits
+template std::string IntegerParameterTraits<int>::valueAsJson(const int &value);
+
+template std::string IntegerParameterTraits<size_t>::valueAsJson(const size_t &value);
+
+template std::string IntegerParameterTraits<int64_t>::valueAsJson(const int64_t &value);
+
+template <typename T>
+std::string IntegerParameterTraits<T>::valueAsJson(const T &value) {
+  return std::to_string(value);
+}
+
+// Specialization for FloatingPointParameterTraits
+template std::string FloatingPointParameterTraits<float>::valueAsJson(const float &value);
+
+template std::string FloatingPointParameterTraits<double>::valueAsJson(const double &value);
+
+template <typename T>
+std::string FloatingPointParameterTraits<T>::valueAsJson(const T &value) {
+  std::stringstream valueStream;
+  valueStream
+    << std::setprecision(std::numeric_limits<T>::max_digits10)
+    << std::scientific
+    << value;
+  return valueStream.str();
+}
+
+// Specialization for ParameterTraits<bool, std::false_type>
+std::string ParameterTraits<bool, std::false_type>::valueAsJson(const bool &value) {
+  return value ? "true" : "false";
+}
+
+// Specialization for ParameterTraits<std::string, std::false_type>
+std::string ParameterTraits<std::string, std::false_type>::valueAsJson(const std::string &value) {
+  return "\"" + value + "\"";
+}
+
+// Specialization for ParameterTraits<util::DateTime>
+std::string ParameterTraits<util::DateTime>::valueAsJson(const util::DateTime &value) {
+  return "\"" + value.toString() + "\"";
+}
+
+// Specialization for ParameterTraits<util::Duration>
+std::string ParameterTraits<util::Duration>::valueAsJson(const util::Duration &value) {
+  return "\"" + value.toString() + "\"";
+}
+
+// Specialization for ParameterTraits<util::PartialDateTime>
+std::string ParameterTraits<util::PartialDateTime>::valueAsJson(
+    const util::PartialDateTime &value)
+{
+  return "\"" + value.toString() + "\"";
+}
+
 // Specialization for std::set<int>
 boost::optional<std::set<int>> ParameterTraits<std::set<int>, std::false_type>::get(
     util::CompositePath &path, const eckit::Configuration &config, const std::string &name) {
@@ -75,6 +129,18 @@ void ParameterTraits<std::set<int>, std::false_type>::set(
 ObjectJsonSchema ParameterTraits<std::set<int>, std::false_type>::jsonSchema(
     const std::string &name) {
   return ParameterTraits<std::string>::jsonSchema(name);
+}
+
+std::string ParameterTraits<std::set<int>, std::false_type>::valueAsJson(
+    const std::set<int> &value)
+{
+  if (value.empty()) {
+    return "[]";
+  }
+  return "["
+    + util::stringfunctions::join(
+      ", ", value.begin(), value.end(), [](int n) { return std::to_string(n); })
+    + "]";
 }
 
 }  // namespace oops

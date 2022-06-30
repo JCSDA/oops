@@ -16,8 +16,6 @@
 #include "oops/base/Variables.h"
 #include "oops/interface/ObsSpace.h"
 #include "oops/util/Logger.h"
-#include "oops/util/ObjectCounter.h"
-#include "oops/util/Printable.h"
 #include "oops/util/Timer.h"
 
 #include "oops/interface/ObsDataVector_head.h"

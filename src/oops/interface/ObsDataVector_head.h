@@ -12,15 +12,13 @@
 #include <ostream>
 #include <string>
 
-#include "oops/base/Variables.h"
-#include "oops/interface/ObsSpace.h"
-#include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
-#include "oops/util/Timer.h"
 
 namespace oops {
+  template <typename OBS> class ObsSpace;
   template <typename OBS> class ObsVector;
+  class Variables;
 
 // -----------------------------------------------------------------------------
 /// \brief ObsDataVector is a vector templated on data type, in the observation space

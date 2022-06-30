@@ -20,12 +20,12 @@
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-ModelBias::ModelBias(const Resolution &, const eckit::Configuration & conf)
+ModelBias::ModelBias(const Resolution &, const Parameters_ & parameters)
   : bias_(0.0), active_(false)
 {
-  oops::Log::trace() << "ModelBias::ModelBias conf is:" << conf << std::endl;
-  if (conf.has("bias")) {
-    bias_ = conf.getDouble("bias");
+  oops::Log::trace() << "ModelBias::ModelBias conf is:" << parameters << std::endl;
+  if (parameters.bias.value() != boost::none) {
+    bias_ = *parameters.bias.value();
     active_ = true;
   }
 }

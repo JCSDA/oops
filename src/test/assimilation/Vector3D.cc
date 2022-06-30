@@ -83,6 +83,13 @@ namespace test {
     return this->x_ * rhs.x_ + this->y_ * rhs.y_ + this->z_ * rhs.z_;
   }
 
+  void Vector3D::multiply(const Vector3D& rhs, Vector3D& lhs)
+  {
+    lhs.x_ = x_ * rhs.x_;
+    lhs.y_ = y_ * rhs.y_;
+    lhs.z_ = z_ * rhs.z_;
+  }
+
   void Vector3D::print(std::ostream & os) const {
     os << x_ << ", " << y_ << ", " << z_ << std::endl;
   }

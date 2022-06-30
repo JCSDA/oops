@@ -7,18 +7,20 @@ cost function:
   analysis variables: [x]
   background:
     date: 2010-01-02T00:00:00Z
-    filename: Data/test.fc.2010-01-01T00:00:00Z.P1D
+    filename: Data/forecast.fc.2010-01-01T00:00:00Z.P1D.l95
   background error:
     covariance model: L95Error
     date: 2010-01-02T00:00:00Z
     length_scale: 1.0
     standard_deviation: 0.6
   observations:
-  - obs operator: {}
-    obs space:
-      obsdatain:  Data/noobs.obt
-    obs error:
-      covariance model: diagonal
+    observers:
+    - obs operator: {}
+      obs space:
+        obsdatain:
+          obsfile: Data/noobs.obt
+      obs error:
+        covariance model: diagonal
 variational:
   minimizer:
     algorithm: RPCG
@@ -40,7 +42,7 @@ final:
     departures: oman
 output:
   datadir: Data
-  exp: test
+  exp: 3dvar_noobs
   frequency: PT6H
   type: an
 

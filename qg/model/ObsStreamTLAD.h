@@ -50,6 +50,7 @@ class ObsStreamTLAD : public ObsOpBaseTLAD,
 
  private:
   void print(std::ostream &) const override;
+  const ObsSpaceQG & obsdb_;
   const oops::Variables varin_;
 };
 // -----------------------------------------------------------------------------

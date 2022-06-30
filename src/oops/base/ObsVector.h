@@ -15,11 +15,11 @@
 #include <utility>
 
 #include "oops/interface/ObsVector.h"
-
-#include "oops/interface/ObsSpace.h"
 #include "oops/util/gatherPrint.h"
 
 namespace oops {
+
+template<typename OBS> class ObsSpace;
 
 // -----------------------------------------------------------------------------
 /// \brief ObsVector class used in oops; subclass of interface class interface::ObsVector.
@@ -37,8 +37,8 @@ class ObsVector : public interface::ObsVector<OBS>  {
  public:
   static const std::string classname() {return "oops::ObsVector";}
 
-  /// Creates vector from \p obsspace. If \p name is specified, reads the
-  /// specified \p name variable from \p obsspace. Otherwise, zero vector is created.
+  /// Creates vector from the simulated variable in the \p obsspace. If \p name is specified,
+  /// reads the specified \p name variable from \p obsspace. Otherwise, zero vector is created.
   explicit ObsVector(const ObsSpace<OBS> & obsspace, const std::string name = "");
 
   /// Wraps an existing ObsVector_.

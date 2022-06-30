@@ -35,8 +35,6 @@ namespace qg {
 // -------------------------------------------------------------------------
 /*! This constructor creates test locations based on settings in the config file */
 LocationsQG::LocationsQG(const eckit::Configuration & config, const eckit::mpi::Comm &) {
-  std::vector<double> lons;
-  std::vector<double> lats;
   std::vector<double> z;
   unsigned int nrandom;
 
@@ -44,12 +42,12 @@ LocationsQG::LocationsQG(const eckit::Configuration & config, const eckit::mpi::
     /*! These are optional lists of locations that the user can
     * specify in the config file for testing
     */
-    lons = config.getDoubleVector("lons");
-    lats = config.getDoubleVector("lats");
+    lons_ = config.getDoubleVector("lons");
+    lats_ = config.getDoubleVector("lats");
     z  = config.getDoubleVector("z");
 
-    ASSERT(lons.size() == lats.size());
-    ASSERT(lons.size() == z.size());
+    ASSERT(lons_.size() == lats_.size());
+    ASSERT(lons_.size() == z.size());
 
     /*! Instead of or in addition to the specific locations in the config file
     * let the user specify a number of random locations
@@ -79,21 +77,21 @@ LocationsQG::LocationsQG(const eckit::Configuration & config, const eckit::mpi::
     randlons.sort();
 
     for (std::size_t jj=0; jj < nrandom; ++jj) {
-      lons.push_back(randlons[jj]);
-      lats.push_back(randlats[jj]);
+      lons_.push_back(randlons[jj]);
+      lats_.push_back(randlats[jj]);
       z.push_back(randzs[jj]);
     }
   }
 
-  const unsigned int nlocs = lons.size();
+  const unsigned int nlocs = lons_.size();
   ASSERT(nlocs > 0);
 
   /*! render lat, lon as an atlas functionspace */
   atlas::Field field_lonlat("lonlat", make_datatype<double>(), make_shape(nlocs, 2));
   auto lonlat = make_view<double, 2>(field_lonlat);
   for ( unsigned int j = 0; j < nlocs; ++j ) {
-      lonlat(j, 0) = lons[j];
-      lonlat(j, 1) = lats[j];
+      lonlat(j, 0) = lons_[j];
+      lonlat(j, 1) = lats_[j];
   }
   pointcloud_.reset(new atlas::functionspace::PointCloud(field_lonlat));
 
@@ -125,6 +123,8 @@ LocationsQG::LocationsQG(const LocationsQG & other) {
   pointcloud_.reset(new atlas::functionspace::PointCloud(other.lonlat()));
   altitude_.reset(new atlas::Field(*other.altitude_));
   times_ = other.times_;
+  lats_ = other.lats_;
+  lons_ = other.lons_;
 }
 // -------------------------------------------------------------------------
 /*! Constructor from fields and times.  These may be obtained from the obsdb,
@@ -139,6 +139,14 @@ LocationsQG::LocationsQG(atlas::FieldSet & fields,
     altitude_.reset(new atlas::Field(atlas::Field()));
   }
   times_ = times;
+  lats_.resize(pointcloud_->size());
+  lons_.resize(pointcloud_->size());
+  atlas::Field field_lonlat = pointcloud_->lonlat();
+  auto lonlat = make_view<double, 2>(field_lonlat);
+  for (atlas::idx_t jloc = 0; jloc < pointcloud_->size(); ++jloc) {
+    lats_[jloc] = lonlat(jloc, 1);
+    lons_[jloc] = lonlat(jloc, 0);
+  }
 }
 // -------------------------------------------------------------------------
 void LocationsQG::print(std::ostream & os) const {
@@ -146,10 +154,14 @@ void LocationsQG::print(std::ostream & os) const {
   atlas::Field field_lonlat = pointcloud_->lonlat();
   auto lonlat = make_view<double, 2>(field_lonlat);
   auto z = make_view<double, 1>(*altitude_);
-    for (size_t jj=0; jj < static_cast<size_t>(nobs); ++jj) {
-    os << "location " << jj << std::setprecision(2) << ": lon = " << lonlat(jj, 0)
+  std::ios_base::fmtflags fmt = os.flags();
+  std::streamsize ss = os.precision();
+  for (size_t jj=0; jj < static_cast<size_t>(nobs); ++jj) {
+    os << "location " << jj << std::fixed << std::setprecision(2) << ": lon = " << lonlat(jj, 0)
        << ", lat = " << lonlat(jj, 1) << ", z = " << z(jj) << std::endl;
   }
+  os.setf(fmt);
+  os.precision(ss);
 }
 // -------------------------------------------------------------------------
 }  // namespace qg

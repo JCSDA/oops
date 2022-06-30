@@ -27,7 +27,7 @@ static ObsOpMaker<ObsStreamQG> makerStream_("Stream");
 // -----------------------------------------------------------------------------
 
 ObsStreamQG::ObsStreamQG(const ObsSpaceQG & odb, const eckit::Configuration & config)
-  : obsdb_(odb), varin_(std::vector<std::string>{"x"})
+  : obsdb_(odb), varin_(std::vector<std::string>{"x", "z"})
 {
   oops::Log::trace() << "ObsStreamQG created." << std::endl;
 }
@@ -36,7 +36,7 @@ ObsStreamQG::ObsStreamQG(const ObsSpaceQG & odb, const eckit::Configuration & co
 
 void ObsStreamQG::simulateObs(const GomQG & gom, ObsVecQG & ovec,
                               const ObsBias & bias) const {
-  qg_stream_equiv_f90(gom.toFortran(), ovec.toFortran(), bias.stream());
+  qg_stream_equiv_f90(obsdb_.toFortran(), gom.toFortran(), ovec.toFortran(), bias.stream());
 }
 
 // -----------------------------------------------------------------------------

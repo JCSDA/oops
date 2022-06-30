@@ -46,11 +46,11 @@ template <typename MODEL> class ErrorCovarianceFixture : private boost::noncopya
   typedef oops::Geometry<MODEL>       Geometry_;
 
  public:
-  static const eckit::Configuration   & test()       {return *getInstance().test_;}
-  static const Geometry_       & resol()      {return *getInstance().resol_;}
-  static const oops::Variables & ctlvars()    {return *getInstance().ctlvars_;}
-  static const util::DateTime  & time()       {return *getInstance().time_;}
-  static const Covariance_     & covariance() {return *getInstance().B_;}
+  static const eckit::Configuration & test()       {return *getInstance().test_;}
+  static const Geometry_            & resol()      {return *getInstance().resol_;}
+  static const oops::Variables      & ctlvars()    {return *getInstance().ctlvars_;}
+  static const util::DateTime       & time()       {return *getInstance().time_;}
+  static const Covariance_          & covariance() {return *getInstance().B_;}
   static void reset() {
     getInstance().B_.reset();
     getInstance().time_.reset();
@@ -82,7 +82,7 @@ template <typename MODEL> class ErrorCovarianceFixture : private boost::noncopya
 
 //  Setup the B matrix
     const eckit::LocalConfiguration covar(TestEnvironment::config(), "background error");
-    B_.reset(oops::CovarianceFactory<MODEL>::create(covar, *resol_, *ctlvars_, xx, xx));
+    B_.reset(oops::CovarianceFactory<MODEL>::create(*resol_, *ctlvars_, covar, xx, xx));
   }
 
   ~ErrorCovarianceFixture<MODEL>() {}

@@ -18,6 +18,7 @@
 
 #include "oops/qg/GomQG.h"
 #include "oops/qg/ObsOpBaseTLAD.h"
+#include "oops/qg/QgFortran.h"
 
 // Forward declarations
 namespace eckit {
@@ -50,7 +51,8 @@ class ObsWSpeedTLAD : public ObsOpBaseTLAD,
 
  private:
   void print(std::ostream &) const override;
-  GomQG traj_;
+  const ObsSpaceQG & obsdb_;
+  F90traj traj_;
   const oops::Variables varin_;
 };
 // -----------------------------------------------------------------------------

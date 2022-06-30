@@ -27,6 +27,7 @@ namespace test {
     /// x -> x + mult * rhs
     void axpy(const double, const Vector3D&);
     double dot_product_with(const Vector3D&) const;
+    void multiply(const Vector3D&, Vector3D&);
     double x() const {return x_;}
     double y() const {return y_;}
     double z() const {return z_;}

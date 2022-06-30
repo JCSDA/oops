@@ -8,15 +8,15 @@
 #ifndef OOPS_BASE_VARIABLES_F_H_
 #define OOPS_BASE_VARIABLES_F_H_
 
-#include <string>
-
-#include "oops/base/Variables.h"
+#include <stddef.h>
 
 // ------------------------------------------------------------------------------
 // These functions provide tools for interfacing Fortran and C++ string objects
 // ------------------------------------------------------------------------------
 
 namespace oops {
+
+class Variables;
 
 extern "C" {
   oops::Variables* variables_empty_ctor_f();

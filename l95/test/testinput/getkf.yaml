@@ -6,29 +6,24 @@ geometry:
 
 # use 3D for middle of the window
 background:
-  members:
-  - date: &date 2010-01-02T00:00:00Z
-    filename: Data/test.ens.1.2010-01-01T00:00:00Z.P1D
-  - date: *date
-    filename: Data/test.ens.2.2010-01-01T00:00:00Z.P1D
-  - date: *date
-    filename: Data/test.ens.3.2010-01-01T00:00:00Z.P1D
-  - date: *date
-    filename: Data/test.ens.4.2010-01-01T00:00:00Z.P1D
-  - date: *date
-    filename: Data/test.ens.5.2010-01-01T00:00:00Z.P1D
+  members from template:
+    template:
+      date: &date 2010-01-02T00:00:00Z
+      filename: Data/forecast.ens.%mem%.2010-01-01T00:00:00Z.P1D.l95
+    pattern: %mem%
+    nmembers: 5
 
 observations:
-- obs error:
-    covariance model: diagonal
-  obs localization:
-    localization method: Gaspari-Cohn
-    lengthscale: .1
-  obs space:
-    obsdatain:  Data/l95.truth3d.2010-01-02T00:00:00Z.obt
-  obs operator: {}
-
-driver:
+  observers:
+  - obs error:
+      covariance model: diagonal
+    obs localizations:
+    - localization method: Gaspari-Cohn
+      lengthscale: .1
+    obs space:
+      obsdatain:
+        obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+    obs operator: {}
 
 local ensemble DA:
   solver: GETKF

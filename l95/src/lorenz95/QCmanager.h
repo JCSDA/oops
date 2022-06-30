@@ -36,7 +36,11 @@ class QCmanager : public oops::interface::ObsFilterBase<L95ObsTraits> {
 
   void preProcess() override {}
   void priorFilter(const GomL95 &) override {}
-  void postFilter(const ObsVec1D &, const ObsVec1D &, const ObsDiags1D &) override {}
+  void postFilter(const GomL95 &,
+                  const ObsVec1D &,
+                  const ObsVec1D &,
+                  const ObsDiags1D &) override {}
+  void checkFilterData(const oops::FilterStage filterStage) override {}
 
   oops::Variables requiredVars() const override {return novars_;}
   oops::Variables requiredHdiagnostics() const override {return novars_;}

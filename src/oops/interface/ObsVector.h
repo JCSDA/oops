@@ -20,19 +20,10 @@
 
 #include "oops/interface/ObsDataVector_head.h"
 #include "oops/interface/ObsSpace.h"
-#include "oops/util/gatherPrint.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Timer.h"
-
-namespace eckit {
-  class Configuration;
-}
-
-namespace util {
-  class DateTime;
-}
 
 namespace oops {
 
@@ -120,8 +111,7 @@ class ObsVector : public util::Printable,
 
 // -----------------------------------------------------------------------------
 template <typename OBS>
-ObsVector<OBS>::ObsVector(const ObsSpace<OBS> & os, const std::string name)
-  : data_() {
+ObsVector<OBS>::ObsVector(const ObsSpace<OBS> & os, const std::string name) : data_() {
   Log::trace() << "ObsVector<OBS>::ObsVector starting " << name << std::endl;
   util::Timer timer(classname(), "ObsVector");
   data_.reset(new ObsVector_(os.obsspace(), name));

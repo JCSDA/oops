@@ -41,26 +41,26 @@ namespace qg {
 // -----------------------------------------------------------------------------
 IncrementQG::IncrementQG(const GeometryQG & resol, const oops::Variables & vars,
                          const util::DateTime & vt)
-  : fields_(new FieldsQG(resol, vars, lbc_, vt))
+  : fields_(new FieldsQG(resol, vars, lbc_, vt)), vars_(vars)
 {
   fields_->zero();
   oops::Log::trace() << "IncrementQG constructed." << std::endl;
 }
 // -----------------------------------------------------------------------------
 IncrementQG::IncrementQG(const GeometryQG & resol, const IncrementQG & other)
-  : fields_(new FieldsQG(*other.fields_, resol))
+  : fields_(new FieldsQG(*other.fields_, resol)), vars_(other.vars_)
 {
   oops::Log::trace() << "IncrementQG constructed from other." << std::endl;
 }
 // -----------------------------------------------------------------------------
 IncrementQG::IncrementQG(const IncrementQG & other, const bool copy)
-  : fields_(new FieldsQG(*other.fields_, copy))
+  : fields_(new FieldsQG(*other.fields_, copy)), vars_(other.vars_)
 {
   oops::Log::trace() << "IncrementQG copy-created." << std::endl;
 }
 // -----------------------------------------------------------------------------
 IncrementQG::IncrementQG(const IncrementQG & other)
-  : fields_(new FieldsQG(*other.fields_))
+  : fields_(new FieldsQG(*other.fields_)), vars_(other.vars_)
 {
   oops::Log::trace() << "IncrementQG copy-created." << std::endl;
 }
@@ -141,16 +141,16 @@ void IncrementQG::dirac(const eckit::Configuration & config) {
 // -----------------------------------------------------------------------------
 /// ATLAS FieldSet
 // -----------------------------------------------------------------------------
-void IncrementQG::setAtlas(atlas::FieldSet * afieldset) const {
-  fields_->setAtlas(afieldset);
+void IncrementQG::toFieldSet(atlas::FieldSet & fset) const {
+  fields_->toFieldSet(fset);
 }
 // -----------------------------------------------------------------------------
-void IncrementQG::toAtlas(atlas::FieldSet * afieldset) const {
-  fields_->toAtlas(afieldset);
+void IncrementQG::toFieldSetAD(const atlas::FieldSet & fset) {
+  fields_->toFieldSetAD(fset);
 }
 // -----------------------------------------------------------------------------
-void IncrementQG::fromAtlas(atlas::FieldSet * afieldset) {
-  fields_->fromAtlas(afieldset);
+void IncrementQG::fromFieldSet(const atlas::FieldSet & fset) {
+  fields_->fromFieldSet(fset);
 }
 // -----------------------------------------------------------------------------
 /// I/O and diagnostics

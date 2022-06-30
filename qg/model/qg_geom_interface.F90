@@ -44,12 +44,12 @@ call qg_geom_setup(self,f_conf)
 
 end subroutine qg_geom_setup_c
 ! ------------------------------------------------------------------------------
-!> Set ATLAS lon/lat field
-subroutine qg_geom_set_atlas_lonlat_c(c_key_self,c_afieldset) bind(c,name='qg_geom_set_atlas_lonlat_f90')
+!> Set lon/lat field
+subroutine qg_geom_set_lonlat_c(c_key_self,c_afieldset) bind(c,name='qg_geom_set_lonlat_f90')
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_self     !< Geometry
-type(c_ptr),intent(in),value :: c_afieldset !< ATLAS fieldset pointer
+type(c_ptr),intent(in),value :: c_afieldset !< Fieldset pointer
 
 ! Local variables
 type(qg_geom),pointer :: self
@@ -60,17 +60,17 @@ call qg_geom_registry%get(c_key_self,self)
 afieldset = atlas_fieldset(c_afieldset)
 
 ! Call Fortran
-call qg_geom_set_atlas_lonlat(self,afieldset)
+call qg_geom_set_lonlat(self,afieldset)
 
-end subroutine qg_geom_set_atlas_lonlat_c
+end subroutine qg_geom_set_lonlat_c
 ! ------------------------------------------------------------------------------
-!> Set ATLAS function space pointer
-subroutine qg_geom_set_atlas_functionspace_pointer_c(c_key_self,c_afunctionspace) &
- & bind(c,name='qg_geom_set_atlas_functionspace_pointer_f90')
+!> Set function space pointer
+subroutine qg_geom_set_functionspace_pointer_c(c_key_self,c_afunctionspace) &
+ & bind(c,name='qg_geom_set_functionspace_pointer_f90')
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_self          !< Geometry
-type(c_ptr),intent(in),value :: c_afunctionspace !< ATLAS function space pointer
+type(c_ptr),intent(in),value :: c_afunctionspace !< Function space pointer
 
 ! Local variables
 type(qg_geom),pointer :: self
@@ -79,15 +79,15 @@ type(qg_geom),pointer :: self
 call qg_geom_registry%get(c_key_self,self)
 self%afunctionspace = atlas_functionspace_pointcloud(c_afunctionspace)
 
-end subroutine qg_geom_set_atlas_functionspace_pointer_c
+end subroutine qg_geom_set_functionspace_pointer_c
 ! ------------------------------------------------------------------------------
-!> Fill ATLAS fieldset
-subroutine qg_geom_fill_atlas_fieldset_c(c_key_self,c_afieldset) &
- & bind(c,name='qg_geom_fill_atlas_fieldset_f90')
+!> Fill extra fields
+subroutine qg_geom_fill_extra_fields_c(c_key_self,c_afieldset) &
+ & bind(c,name='qg_geom_fill_extra_fields_f90')
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_self     !< Geometry
-type(c_ptr),intent(in),value :: c_afieldset !< ATLAS fieldset pointer
+type(c_ptr),intent(in),value :: c_afieldset !< Fieldset pointer
 
 ! Local variables
 type(qg_geom),pointer :: self
@@ -98,9 +98,9 @@ call qg_geom_registry%get(c_key_self,self)
 afieldset = atlas_fieldset(c_afieldset)
 
 ! Call Fortran
-call qg_geom_fill_atlas_fieldset(self,afieldset)
+call qg_geom_fill_extra_fields(self,afieldset)
 
-end subroutine qg_geom_fill_atlas_fieldset_c
+end subroutine qg_geom_fill_extra_fields_c
 ! ------------------------------------------------------------------------------
 !> Clone geometry
 subroutine qg_geom_clone_c(c_key_self,c_key_other) bind(c,name='qg_geom_clone_f90')

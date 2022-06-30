@@ -9,6 +9,7 @@
 #define OOPS_UTIL_PARAMETERS_PARAMETERSORCONFIGURATION_H_
 
 namespace eckit {
+class Configuration;
 class LocalConfiguration;
 }
 
@@ -51,6 +52,30 @@ template <bool returnParameters, typename ParametersType>
 const typename ParametersOrConfiguration<returnParameters, ParametersType>::ReturnType &
 parametersOrConfiguration(const ParametersType& parameters) {
   return ParametersOrConfiguration<returnParameters, ParametersType>()(parameters);
+}
+
+/// Overloaded function used to handle in a uniform way "new-style" interface implementations that
+/// provide functions returning instances of subclasses of Parameters and "old style"
+/// implementations that provide functions returning eckit::Configuration objects.
+///
+/// This is the overload handling the former of these cases; it simply returns its argument.
+template <typename ParametersType>
+const ParametersType& toParameters(const ParametersType &parameters) {
+  return parameters;
+}
+
+/// Overloaded function used to handle in a uniform way interface implementations that
+/// provide functions returning instances of subclasses of Parameters and those that provide
+/// functions returning eckit::Configuration objects.
+///
+/// This is the overload handling the latter of these cases; it deserializes the received
+/// Configuration object into an instance of ParametersType (which would typically be
+/// GenericParameters or a similar class) and returns that instance.
+template <typename ParametersType>
+ParametersType toParameters(const eckit::Configuration &conf) {
+  ParametersType parameters;
+  parameters.validateAndDeserialize(conf);
+  return parameters;
 }
 
 }  // namespace oops

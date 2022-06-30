@@ -43,11 +43,11 @@ ObsTable::ObsTable(const Parameters_ & params, const eckit::mpi::Comm & comm,
                    const util::DateTime & bgn, const util::DateTime & end,
                    const eckit::mpi::Comm & timeComm)
   : oops::ObsSpaceBase(params, comm, bgn, end), winbgn_(bgn), winend_(end), comm_(timeComm),
-    obsvars_()
+    obsvars_(), assimvars_()
 {
   oops::Log::trace() << "ObsTable::ObsTable starting" << std::endl;
   if (params.obsdatain.value() != boost::none) {
-    nameIn_ = *params.obsdatain.value();
+    nameIn_ = params.obsdatain.value()->obsfile;
     otOpen(nameIn_);
   }
   //  Generate locations etc... if required
@@ -55,7 +55,7 @@ ObsTable::ObsTable(const Parameters_ & params, const eckit::mpi::Comm & comm,
     generateDistribution(*params.generate.value());
   }
   if (params.obsdataout.value() != boost::none) {
-    nameOut_ = *params.obsdataout.value();
+    nameOut_ = params.obsdataout.value()->obsfile;
     sf::swapNameMember(params.toConfiguration(), nameOut_);
   }
   oops::Log::trace() << "ObsTable::ObsTable created nobs = " << nobs() << std::endl;
@@ -176,18 +176,16 @@ void ObsTable::getdb(const std::string & col, std::vector<double> & vec) const {
 void ObsTable::generateDistribution(const ObsGenerateParameters & params) {
   oops::Log::trace() << "ObsTable::generateDistribution starting" << std::endl;
 
-  const util::Duration &first = params.begin;
-  util::Duration last(winend_-winbgn_);
-  if (params.end.value() != boost::none) {
-    last = *params.end.value();
-  }
   const util::Duration &freq = params.obsFrequency;
 
   int nobstimes = 0;
-  util::Duration step(first);
-  while (step <= last) {
+  // observations at the beginning of the window are never included (only
+  // observations from (winbgn, winend] are used, so we'll start with
+  // winbgn_ + freq
+  util::DateTime now = winbgn_ + freq;
+  while (now <= winend_) {
     ++nobstimes;
-    step += freq;
+    now += freq;
   }
 
   const unsigned int nobs_locations = params.obsDensity;
@@ -198,17 +196,17 @@ void ObsTable::generateDistribution(const ObsGenerateParameters & params) {
   locations_.resize(nobs);
 
   unsigned int iobs = 0;
-  util::DateTime now(winbgn_);
-  step = first;
-  while (step <= last) {
-    now = winbgn_ + step;
+  now = winbgn_ + freq;
+  while (now <= winend_) {
     for (unsigned int jobs = 0; jobs < nobs_locations; ++jobs) {
       double xpos = jobs*dx;
+      // For single obs case ensure the obs is in the middle
+      if (nobs_locations == 1) xpos = 0.5;
       times_[iobs] = now;
       locations_[iobs] = xpos;
       ++iobs;
     }
-    step += freq;
+    now += freq;
   }
   ASSERT(iobs == nobs);
 

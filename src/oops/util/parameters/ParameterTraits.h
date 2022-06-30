@@ -9,6 +9,8 @@
 #define OOPS_UTIL_PARAMETERS_PARAMETERTRAITS_H_
 
 #include <cstdint>
+#include <iomanip>
+#include <limits>
 #include <map>
 #include <memory>
 #include <set>
@@ -61,6 +63,16 @@ namespace oops {
 /// /// the YAML node from which option \p name is loaded.
 /// static ObjectJsonSchema jsonSchema(const std::string &name);
 /// \endcode
+///
+/// Optionally, the following member function may also be provided:
+///
+/// \code
+/// /// \brief Return a JSON representation of a value of type \c T.
+/// static std::string valueAsJson(const T &value);
+/// \endcode
+///
+/// If this member function is available, default values of parameters holding values of type \c T
+/// can be embedded in JSON schemas.
 template <typename T,
           typename IsTDerivedFromParameters =
           typename std::integral_constant<bool,
@@ -163,6 +175,14 @@ struct EnumParameterTraits {
     return ObjectJsonSchema({{name, {{"enum", enumSchema}}}});
   }
 
+  static std::string valueAsJson(const EnumType &value) {
+    for (util::NamedEnumerator<EnumType> namedValue : Helper::namedValues)
+      if (value == namedValue.value) {
+        return quotedName(namedValue);
+      }
+    return "";
+  }
+
  private:
   static std::string quotedName(util::NamedEnumerator<EnumType> namedValue) {
     std::string result = "\"";
@@ -177,6 +197,8 @@ struct IntegerParameterTraits : public GenericParameterTraits<T> {
   static ObjectJsonSchema jsonSchema(const std::string &name) {
     return ObjectJsonSchema({{name, {{"type", "\"integer\""}}}});
   }
+
+  static std::string valueAsJson(const T &value);
 };
 
 template <>
@@ -185,11 +207,16 @@ struct ParameterTraits<int, std::false_type> : public IntegerParameterTraits<int
 template <>
 struct ParameterTraits<size_t, std::false_type> : public IntegerParameterTraits<size_t> {};
 
+template <>
+struct ParameterTraits<int64_t, std::false_type> : public IntegerParameterTraits<int64_t> {};
+
 template <typename T>
 struct FloatingPointParameterTraits : public GenericParameterTraits<T> {
   static ObjectJsonSchema jsonSchema(const std::string &name) {
     return ObjectJsonSchema({{name, {{"type", "\"number\""}}}});
   }
+
+  static std::string valueAsJson(const T &value);
 };
 
 template <>
@@ -203,6 +230,8 @@ struct ParameterTraits<bool, std::false_type> : public GenericParameterTraits<bo
   static ObjectJsonSchema jsonSchema(const std::string &name) {
     return ObjectJsonSchema({{name, {{"type", "\"boolean\""}}}});
   }
+
+  static std::string valueAsJson(const bool &value);
 };
 
 template <>
@@ -211,6 +240,8 @@ struct ParameterTraits<std::string, std::false_type> :
   static ObjectJsonSchema jsonSchema(const std::string &name) {
     return ObjectJsonSchema({{name, {{"type", R"(["string", "number"])"}}}});
   }
+
+  static std::string valueAsJson(const std::string &value);
 };
 
 template <>
@@ -277,6 +308,8 @@ struct ParameterTraits<util::DateTime> {
     return ObjectJsonSchema({{name, {{"type", "\"string\""},
                                      {"format", "\"date-time\""}}}});
   }
+
+  static std::string valueAsJson(const util::DateTime &value);
 };
 
 /// \brief Specialization for Duration objects.
@@ -303,6 +336,8 @@ struct ParameterTraits<util::Duration> {
     return ObjectJsonSchema({{name, {{"type", "\"string\""},
                                      {"format", "\"duration\""}}}});
   }
+
+  static std::string valueAsJson(const util::Duration &value);
 };
 
 
@@ -332,6 +367,8 @@ struct ParameterTraits<util::PartialDateTime> {
     return ObjectJsonSchema({{name, {{"type", "\"string\""},
                                      {"pattern", expression}}}});
   }
+
+  static std::string valueAsJson(const util::PartialDateTime &value);
 };
 
 /// \brief Specialization for vectors.
@@ -378,6 +415,73 @@ struct ParameterTraits<std::vector<Value>, std::false_type> {
     ObjectJsonSchema itemSchema = ParameterTraits<Value>::jsonSchema("");
     return ObjectJsonSchema({{name, {{"type", "\"array\""},
                                      {"items", toString(itemSchema.properties().at(""))}}}});
+  }
+};
+
+/// \brief Specialization for pairs (specified as a two-element list)
+template <typename Value1, typename Value2>
+struct ParameterTraits<std::pair<Value1, Value2>, std::false_type> {
+  static boost::optional<std::pair<Value1, Value2>> get(util::CompositePath &path,
+                                                        const eckit::Configuration &config,
+                                                        const std::string &name) {
+    boost::optional<std::pair<Value1, Value2>> result;
+
+    if (!config.has(name))
+      return result;
+
+    const std::vector<eckit::LocalConfiguration> subConfigs = config.getSubConfigurations(name);
+    if (subConfigs.size() != 2) {
+      throw eckit::Exception(path.path() + " has to have exactly two entries for key '" +
+                             name + "'", Here());
+    }
+    util::PathComponent component(path, name);
+    std::string separator{config.separator()};
+    boost::optional<Value1> value1 = ParameterTraits<Value1>::get(path, subConfigs[0], separator);
+    boost::optional<Value2> value2 = ParameterTraits<Value2>::get(path, subConfigs[1], separator);
+    if (value1 && value2) {
+      result = std::pair<Value1, Value2>(std::move(*value1), std::move(*value2));
+    }
+    return result;
+  }
+
+  static void set(eckit::LocalConfiguration &config,
+                  const std::string &name,
+                  const std::pair<Value1, Value2> &values) {
+    std::vector<eckit::LocalConfiguration> subConfigs;
+    subConfigs.reserve(2);
+
+    eckit::LocalConfiguration temp;
+    const std::string dummyName = "a";
+    ParameterTraits<Value1>::set(temp, dummyName, values.first);
+    subConfigs.push_back(temp.getSubConfiguration(dummyName));
+    ParameterTraits<Value2>::set(temp, dummyName, values.second);
+    subConfigs.push_back(temp.getSubConfiguration(dummyName));
+
+    config.set(name, subConfigs);
+  }
+
+  static ObjectJsonSchema jsonSchema(const std::string &name) {
+    std::stringstream items;
+    {
+      eckit::Channel ch;
+      ch.setStream(items);
+      ch << "[\n";
+      {
+        eckit::AutoIndent indent(ch);
+        ObjectJsonSchema item1Schema = ParameterTraits<Value1>::jsonSchema("");
+        ch << toString(item1Schema.properties().at(""));
+        ch << ",\n";
+        ObjectJsonSchema item2Schema = ParameterTraits<Value2>::jsonSchema("");
+        ch << toString(item2Schema.properties().at(""));
+        ch << '\n';
+      }
+      ch << "]";
+    }
+
+    return ObjectJsonSchema({{name, {{"type", "\"array\""},
+                                     {"items", items.str()},
+                                     {"minItems", "2"},
+                                     {"maxItems", "2"}}}});
   }
 };
 
@@ -491,6 +595,8 @@ struct ParameterTraits<std::set<int>, std::false_type> {
                   const std::set<int> &value);
 
   static ObjectJsonSchema jsonSchema(const std::string &name);
+
+  static std::string valueAsJson(const std::set<int> &value);
 };
 
 

@@ -12,7 +12,7 @@
 #include <memory>
 #include <string>
 
-#include "eckit/geometry/Point2.h"
+#include "eckit/geometry/Point3.h"
 
 #include "model/LocationsQG.h"
 
@@ -23,7 +23,7 @@ namespace qg {
 
 /// Iterator over all observations
 class ObsIteratorQG: public std::iterator<std::forward_iterator_tag,
-                                       eckit::geometry::Point2>,
+                                       eckit::geometry::Point3>,
                    public util::Printable,
                    private util::ObjectCounter<ObsIteratorQG> {
  public:
@@ -36,7 +36,7 @@ class ObsIteratorQG: public std::iterator<std::forward_iterator_tag,
   bool operator!=(const ObsIteratorQG &) const;
 
   /// return location of current observation
-  eckit::geometry::Point2 operator*() const;
+  eckit::geometry::Point3 operator*() const;
 
   ObsIteratorQG& operator++();
 

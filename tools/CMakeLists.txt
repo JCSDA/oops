@@ -3,7 +3,13 @@
 list( APPEND tool_files
     compare.py
     cpplint.py
-    run_time_test.py
+    plot.py
+    plot/cost.py
+    plot/l95_cost.py
+    plot/l95_fields.py
+    plot/qg_cost.py
+    plot/qg_fields.py
+    plot/qg_obs.py
     test_wrapper.sh
 )
 

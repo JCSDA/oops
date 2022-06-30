@@ -26,42 +26,46 @@
 namespace qg {
 // -----------------------------------------------------------------------------
 GeometryQG::GeometryQG(const GeometryQgParameters & params,
-                       const eckit::mpi::Comm & comm) : comm_(comm) {
+                       const eckit::mpi::Comm & comm) : comm_(comm), levs_(0) {
   ASSERT(comm_.size() == 1);
   qg_geom_setup_f90(keyGeom_, params.toConfiguration());
 
-  // Set ATLAS lon/lat field
-  atlasFieldSet_.reset(new atlas::FieldSet());
-  qg_geom_set_atlas_lonlat_f90(keyGeom_, atlasFieldSet_->get());
-  atlas::Field atlasField = atlasFieldSet_->field("lonlat");
+  int nx = 0;
+  int ny = 0;
+  int nz;
+  double deltax;
+  double deltay;
+  qg_geom_info_f90(keyGeom_, nx, ny, nz, deltax, deltay);
+  levs_ = nz;
 
-  // Create ATLAS function space
-  atlasFunctionSpace_.reset(new atlas::functionspace::PointCloud(atlasField));
+  // Create function space
+  atlas::FieldSet fieldSet;
+  qg_geom_set_lonlat_f90(keyGeom_, fieldSet.get());
+  const atlas::Field & field = fieldSet.field("lonlat");
+  functionSpace_ = atlas::functionspace::PointCloud(field);
 
-  // Set ATLAS function space pointer in Fortran
-  qg_geom_set_atlas_functionspace_pointer_f90(keyGeom_, atlasFunctionSpace_->get());
+  // Set function space pointer in Fortran
+  qg_geom_set_functionspace_pointer_f90(keyGeom_, functionSpace_.get());
 
-  // Fill ATLAS fieldset
-  atlasFieldSet_.reset(new atlas::FieldSet());
-  qg_geom_fill_atlas_fieldset_f90(keyGeom_, atlasFieldSet_->get());
+  // Fill extra fields
+  extraFields_ = atlas::FieldSet();
+  qg_geom_fill_extra_fields_f90(keyGeom_, extraFields_.get());
 }
 // -----------------------------------------------------------------------------
-GeometryQG::GeometryQG(const GeometryQG & other) : comm_(other.comm_) {
+GeometryQG::GeometryQG(const GeometryQG & other) : comm_(other.comm_), levs_(other.levs_) {
   ASSERT(comm_.size() == 1);
   qg_geom_clone_f90(keyGeom_, other.keyGeom_);
 
-  // Copy ATLAS function space
-  atlasFunctionSpace_.reset(new atlas::functionspace::PointCloud(
-                            other.atlasFunctionSpace_->lonlat()));
+  // Copy function space
+  functionSpace_ = other.functionSpace_;
 
-  // Set ATLAS function space pointer in Fortran
-  qg_geom_set_atlas_functionspace_pointer_f90(keyGeom_, atlasFunctionSpace_.get()->get());
+  // Set function space pointer in Fortran
+  qg_geom_set_functionspace_pointer_f90(keyGeom_, functionSpace_.get());
 
-  // Copy ATLAS fieldset
-  atlasFieldSet_.reset(new atlas::FieldSet());
-  for (int jfield = 0; jfield < other.atlasFieldSet_->size(); ++jfield) {
-    atlas::Field atlasField = other.atlasFieldSet_->field(jfield);
-    atlasFieldSet_->add(atlasField);
+  // Copy extra fields
+  extraFields_ = atlas::FieldSet();
+  for (auto & field : other.extraFields_) {
+    extraFields_.add(field);
   }
 }
 // -----------------------------------------------------------------------------
@@ -76,18 +80,29 @@ GeometryQGIterator GeometryQG::begin() const {
 GeometryQGIterator GeometryQG::end() const {
   int nx = 0;
   int ny = 0;
-  int nz;
+  int nz = 1;
   double deltax;
   double deltay;
   qg_geom_info_f90(keyGeom_, nx, ny, nz, deltax, deltay);
   return GeometryQGIterator(*this, nx*ny+1);
 }
 // -------------------------------------------------------------------------------------------------
+void GeometryQG::latlon(std::vector<double> & lats, std::vector<double> & lons, const bool) const {
+  const auto lonlat = atlas::array::make_view<double, 2>(functionSpace_.lonlat());
+  const size_t npts = functionSpace_.size();
+  lats.resize(npts);
+  lons.resize(npts);
+  for (size_t jj = 0; jj < npts; ++jj) {
+    lats[jj] = lonlat(jj, 1);
+    lons[jj] = lonlat(jj, 0);
+  }
+}
+// -------------------------------------------------------------------------------------------------
 std::vector<double> GeometryQG::verticalCoord(std::string & vcUnits) const {
   // returns vertical coordinate in untis of vcUnits
   int nx = 0;
   int ny = 0;
-  int nz;
+  int nz = 1;
   double deltax;
   double deltay;
   qg_geom_info_f90(keyGeom_, nx, ny, nz, deltax, deltay);
@@ -104,9 +119,7 @@ std::vector<double> GeometryQG::verticalCoord(std::string & vcUnits) const {
 }
 // -------------------------------------------------------------------------------------------------
 std::vector<size_t> GeometryQG::variableSizes(const oops::Variables & vars) const {
-  // Note: in qg we always do trilinear interpolation, so GeoVaLs are always
-  // size 1.
-  std::vector<size_t> sizes(vars.size(), 1);
+  std::vector<size_t> sizes(vars.size(), levs_);
   return sizes;
 }
 // -----------------------------------------------------------------------------

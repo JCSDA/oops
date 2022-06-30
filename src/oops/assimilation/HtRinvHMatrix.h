@@ -21,7 +21,6 @@
 #include "oops/assimilation/DualVector.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/util/dot_product.h"
-#include "oops/util/formats.h"
 #include "oops/util/Logger.h"
 #include "oops/util/PrintAdjTest.h"
 

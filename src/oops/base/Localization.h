@@ -67,6 +67,7 @@ class Localization : public util::Printable,
   /// Print, used in logging
   void print(std::ostream &) const override;
 
+  std::unique_ptr<util::Timer> timeConstr_;
   /// Pointer to the Localization implementation
   std::unique_ptr<LocBase_> loc_;
 };
@@ -76,9 +77,11 @@ class Localization : public util::Printable,
 template<typename MODEL>
 Localization<MODEL>::Localization(const Geometry_ & geometry,
                                   const eckit::Configuration & conf)
-  : loc_(LocalizationFactory<MODEL>::create(geometry, conf))
+  : timeConstr_(new util::Timer(classname(), "Localization")),
+    loc_(LocalizationFactory<MODEL>::create(geometry, conf))
 {
   Log::trace() << "Localization<MODEL>::Localization done" << std::endl;
+  timeConstr_.reset();
 }
 
 // -----------------------------------------------------------------------------

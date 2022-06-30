@@ -19,11 +19,7 @@
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/DualVector.h"
-#include "oops/base/Departures.h"
 #include "oops/base/PostProcessorTLAD.h"
-#include "oops/util/formats.h"
-#include "oops/util/Logger.h"
-#include "oops/util/PrintAdjTest.h"
 
 namespace oops {
 

@@ -1,0 +1,8 @@
+files:
+  - testinput/eda_3dvar_1.yaml
+  - testinput/eda_3dvar_2.yaml
+  - testinput/eda_3dvar_3.yaml
+  - testinput/eda_3dvar_4.yaml
+
+test:
+  reference filename: testoutput/eda_3dvar.test

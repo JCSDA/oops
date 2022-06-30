@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -12,12 +12,14 @@
 #define QG_MODEL_OBSBIASCOVARIANCE_H_
 
 #include <array>
+#include <memory>
 #include <ostream>
 #include <string>
 #include <boost/noncopyable.hpp>
 
 #include "model/ObsBias.h"
 #include "model/ObsBiasParameters.h"
+#include "model/ObsBiasPreconditioner.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/parameters/GenericParameters.h"
 #include "oops/util/Printable.h"
@@ -47,7 +49,13 @@ class ObsBiasCovariance : public util::Printable,
   void inverseMultiply(const ObsBiasIncrement &, ObsBiasIncrement &) const;
   void randomize(ObsBiasIncrement &) const;
 
+  std::unique_ptr<ObsBiasPreconditioner> preconditioner() const;
+
+/// I/O and diagnostics
+  void write(const Parameters_ &) const {}
   bool active(const unsigned int ii) const {return variance_[ii] > 0.0;}
+
+
 
  private:
   void print(std::ostream &) const;

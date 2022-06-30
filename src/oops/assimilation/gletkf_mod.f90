@@ -29,9 +29,8 @@ integer, parameter :: i_kind=c_int, r_kind=r_single
 
 contains
 
-subroutine letkf_core(nobsl,hxens,hxens_orig,dep,&
-                      wts_ensmean,wts_ensperts,&
-                      rdiaginv_loc,nanals,neigv,getkf_inflation,denkf,getkf)
+subroutine letkf_core(nobsl,hxens,hxens_orig,dep,wts_ensmean,wts_ensperts,&
+                      rdiaginv_loc,nanals,neigv,getkf_inflation,denkf,getkf,mult_infl)
 !$$$  subprogram documentation block
 !                .      .    .
 ! subprogram:    letkf_core
@@ -81,6 +80,8 @@ subroutine letkf_core(nobsl,hxens,hxens_orig,dep,&
 !     denkf - if true, use DEnKF approximation (implies getkf=T)
 !             See Sakov and Oke 2008 https://doi.org/10.1111/j.1600-0870.2007.00299.x
 !     getkf - if true, use gain formulation
+!     mult_infl - multiplicative prior inflation.
+!                 mult_infl == 1 is no inflation. mult_infl>1 prior is inflated. 
 !
 !   output argument list:
 !
@@ -129,6 +130,7 @@ real(r_single),dimension(nanals/neigv,nobsl),intent(in)  :: hxens_orig
 real(r_single),dimension(nobsl),intent(in)  :: dep
 real(r_single),dimension(nanals),intent(out)  :: wts_ensmean
 real(r_single),dimension(nanals,nanals/neigv),intent(out)  :: wts_ensperts
+real(r_single), intent(in) :: mult_infl
 !real(r_single),dimension(:,:),allocatable, intent(inout) :: paens
 ! local variables.
 real(r_kind),allocatable,dimension(:,:) :: work3,evecs
@@ -210,7 +212,7 @@ enddo
 !$OMP END PARALLEL DO
 
 ! gammapI used in calculation of posterior cov in ensemble space
-gammapI = evals+1.0
+gammapI = evals+1.0/mult_infl
 deallocate(evals)
 
 ! create HZ^T R**-1/2 

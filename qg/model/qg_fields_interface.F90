@@ -8,7 +8,7 @@
 
 module qg_fields_interface
 
-use atlas_module, only: atlas_fieldset
+use atlas_module, only: atlas_fieldset, atlas_field
 use datetime_mod
 use fckit_configuration_module, only: fckit_configuration
 use iso_c_binding
@@ -165,30 +165,21 @@ call qg_fields_dirac(self,f_conf)
 end subroutine qg_fields_dirac_c
 ! ------------------------------------------------------------------------------
 !> Generate random fields
-subroutine qg_fields_random_c(c_key_self,c_vars) bind(c,name='qg_fields_random_f90')
+subroutine qg_fields_random_c(c_key_self) bind(c,name='qg_fields_random_f90')
 
 implicit none
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_self !< Fields
-type(c_ptr),value,intent(in) :: c_vars  !< List of variables
 
 ! Local variables
 type(qg_fields),pointer :: self
-type(oops_variables) :: vars
 
 ! Interface
 call qg_fields_registry%get(c_key_self,self)
-vars = oops_variables(c_vars)
 
 ! Call Fortran
-if (vars%has('x')) then
-  call qg_fields_random(self,'x')
-elseif (vars%has('q')) then
-  call qg_fields_random(self,'q')
-else
-  call abor1_ftn('qg_fields_random_c: x or q required in output field')
-endif
+call qg_fields_random(self)
 
 end subroutine qg_fields_random_c
 ! ------------------------------------------------------------------------------
@@ -573,80 +564,109 @@ call qg_fields_lbc(fld,c_lbc)
 
 end subroutine qg_fields_lbc_c
 ! ------------------------------------------------------------------------------
-!> Create ATLAS fields
-subroutine qg_fields_set_atlas_c(c_key_fld,c_vars,c_afieldset) bind (c,name='qg_fields_set_atlas_f90')
+!> Convert fields to FieldSet
+subroutine qg_fields_to_fieldset_c(c_key_fld,c_afieldset) bind (c,name='qg_fields_to_fieldset_f90')
 
 implicit none
 
 ! Passed variables
-integer(c_int),intent(in) :: c_key_fld           !< Fields
-type(c_ptr),value,intent(in) :: c_vars           !< List of variables
-type(c_ptr),intent(in),value :: c_afieldset      !< ATLAS fieldset pointer
+integer(c_int),intent(in) :: c_key_fld      !< Fields
+type(c_ptr),intent(in),value :: c_afieldset !< FieldSet pointer
 
 ! Local variables
 type(qg_fields),pointer :: fld
-type(oops_variables) :: vars
 type(atlas_fieldset) :: afieldset
 
 ! Interface
 call qg_fields_registry%get(c_key_fld,fld)
-vars = oops_variables(c_vars)
 afieldset = atlas_fieldset(c_afieldset)
 
 ! Call Fortran
-call qg_fields_set_atlas(fld,vars,afieldset)
+call qg_fields_to_fieldset(fld,afieldset)
 
-end subroutine qg_fields_set_atlas_c
+end subroutine qg_fields_to_fieldset_c
 ! ------------------------------------------------------------------------------
-!> Convert fields to ATLAS
-subroutine qg_fields_to_atlas_c(c_key_fld,c_vars,c_afieldset) bind (c,name='qg_fields_to_atlas_f90')
+!> Convert Fieldset to fields
+subroutine qg_fields_from_fieldset_c(c_key_fld,c_afieldset) bind (c,name='qg_fields_from_fieldset_f90')
 
 implicit none
 
 ! Passed variables
-integer(c_int),intent(in) :: c_key_fld           !< Fields
-type(c_ptr),value,intent(in) :: c_vars           !< List of variables
-type(c_ptr),intent(in),value :: c_afieldset      !< ATLAS fieldset pointer
+integer(c_int),intent(in) :: c_key_fld      !< Fields
+type(c_ptr),intent(in),value :: c_afieldset !< FieldSet pointer
 
 ! Local variables
 type(qg_fields),pointer :: fld
-type(oops_variables) :: vars
 type(atlas_fieldset) :: afieldset
 
 ! Interface
 call qg_fields_registry%get(c_key_fld,fld)
-vars = oops_variables(c_vars)
 afieldset = atlas_fieldset(c_afieldset)
 
 ! Call Fortran
-call qg_fields_to_atlas(fld,vars,afieldset)
+call qg_fields_from_fieldset(fld,afieldset)
 
-end subroutine qg_fields_to_atlas_c
+end subroutine qg_fields_from_fieldset_c
 ! ------------------------------------------------------------------------------
-!> Get fields from ATLAS
-subroutine qg_fields_from_atlas_c(c_key_fld,c_vars,c_afieldset) bind (c,name='qg_fields_from_atlas_f90')
+subroutine qg_fields_getvals_c(c_key, c_vars, c_nlocs, c_locs, c_nvals, c_vals) bind (c,name='qg_fields_getvals_f90')
 
 implicit none
+integer(c_int), intent(in)    :: c_key
+type(c_ptr),value,intent(in)  :: c_vars
+integer(c_int), intent(in)    :: c_nlocs
+real(c_double), intent(in)    :: c_locs(2 * c_nlocs)
+integer(c_int), intent(in)    :: c_nvals
+real(c_double), intent(inout) :: c_vals(c_nvals)
 
-! Passed variables
-integer(c_int),intent(in) :: c_key_fld           !< Fields
-type(c_ptr),value,intent(in) :: c_vars           !< List of variables
-type(c_ptr),intent(in),value :: c_afieldset      !< ATLAS fieldset pointer
-
-! Local variables
-type(qg_fields),pointer :: fld
+type(qg_fields),pointer :: self
 type(oops_variables) :: vars
-type(atlas_fieldset) :: afieldset
+real(kind_real) :: lats(c_nlocs), lons(c_nlocs)
+integer :: ii, jj
 
-! Interface
-call qg_fields_registry%get(c_key_fld,fld)
+call qg_fields_registry%get(c_key, self)
 vars = oops_variables(c_vars)
-afieldset = atlas_fieldset(c_afieldset)
 
-! Call Fortran
-call qg_fields_from_atlas(fld,vars,afieldset)
+ii = 0
+do jj = 1, c_nlocs
+  ii = ii + 1
+  lats(jj) = c_locs(ii)
+  ii = ii + 1
+  lons(jj) = c_locs(ii)
+enddo
 
-end subroutine qg_fields_from_atlas_c
+call qg_fields_getvals(self, vars, lats, lons, c_vals)
+
+end subroutine qg_fields_getvals_c
+! ------------------------------------------------------------------------------
+subroutine qg_fields_getvalsad_c(c_key, c_vars, c_nlocs, c_locs, c_nvals, c_vals) bind (c,name='qg_fields_getvalsad_f90')
+
+implicit none
+integer(c_int),intent(in)    :: c_key
+type(c_ptr),value,intent(in) :: c_vars
+integer(c_int), intent(in)   :: c_nlocs
+real(c_double), intent(in)   :: c_locs(2 * c_nlocs)
+integer(c_int), intent(in)   :: c_nvals
+real(c_double), intent(in)   :: c_vals(c_nvals)
+
+type(qg_fields),pointer :: self
+type(oops_variables) :: vars
+real(kind_real) :: lats(c_nlocs), lons(c_nlocs)
+integer :: ii, jj
+
+call qg_fields_registry%get(c_key, self)
+vars = oops_variables(c_vars)
+
+ii = 0
+do jj = 1, c_nlocs
+  ii = ii + 1
+  lats(jj) = c_locs(ii)
+  ii = ii + 1
+  lons(jj) = c_locs(ii)
+enddo
+
+call qg_fields_getvalsad(self, vars, lats, lons, c_vals)
+
+end subroutine qg_fields_getvalsad_c
 ! ------------------------------------------------------------------------------
 !> Get points from fields
 subroutine qg_fields_getpoint_c(c_key_fld,c_key_iter,c_nval,c_vals) bind(c,name='qg_fields_getpoint_f90')

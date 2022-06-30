@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#include "eckit/geometry/Point2.h"
+#include "eckit/geometry/Point3.h"
 
 #include "lorenz95/Resolution.h"
 
@@ -25,7 +25,7 @@ class Resolution;
 
 // -----------------------------------------------------------------------------
 class Iterator: public std::iterator<std::forward_iterator_tag,
-                                     eckit::geometry::Point2>,
+                                     eckit::geometry::Point3>,
                 public util::Printable,
                 private util::ObjectCounter<Iterator> {
  public:
@@ -35,7 +35,7 @@ class Iterator: public std::iterator<std::forward_iterator_tag,
 
   bool operator==(const Iterator &) const;
   bool operator!=(const Iterator &) const;
-  eckit::geometry::Point2 operator*() const;
+  eckit::geometry::Point3 operator*() const;
   Iterator& operator++();
 
   int index() const {return index_;}

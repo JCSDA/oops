@@ -29,7 +29,7 @@ namespace test {
 
   void test_SpectralLMP(const eckit::LocalConfiguration &conf)
   {
-    oops::SpectralLMP<Vector3D> spectralLMP(conf);
+    oops::SpectralLMP<Vector3D, Vector3D> spectralLMP(conf);
 
     // assign vectors following DRPLanczosMinimizer.h
     std::vector<std::unique_ptr<Vector3D>> hvecs;
@@ -59,6 +59,7 @@ namespace test {
     Vector3D pr(1, 1, 1);
     Vector3D zz(1, 1, 1);
 
+    spectralLMP.updateObsBias(std::unique_ptr<Vector3D>(new Vector3D(1, 1, 1)));
     spectralLMP.multiply(pr, zz);
 
     // More complicated case
@@ -90,6 +91,17 @@ namespace test {
     spectralLMP.multiply(pr2, zz2);
   }
 
+  void test_SpectralLMP_Cmat(const eckit::LocalConfiguration &conf)
+  {
+    oops::SpectralLMP<Vector3D, Vector3D> spectralLMP(conf);
+
+    Vector3D pr(1, 1, 1);
+    Vector3D zz(1, 1, 1);
+
+    EXPECT_THROWS_MSG(spectralLMP.multiply(pr, zz),
+                      "The VarBC preconditioner matrix is not defined");
+  }
+
   class SpectralLMP : public oops::Test {
    private:
     std::string testid() const override {return "test::SpectralLMP";}
@@ -105,6 +117,10 @@ namespace test {
           ts.emplace_back(CASE("SpectralLMP/" + testCaseName, testCaseConf)
                           {
                             test_SpectralLMP(testCaseConf);
+                          });
+          ts.emplace_back(CASE("SpectralLMPCmat/" + testCaseName, testCaseConf)
+                          {
+                            test_SpectralLMP_Cmat(testCaseConf);
                           });
         }
     }

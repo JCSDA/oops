@@ -14,10 +14,9 @@
 #include <fstream>
 #include <string>
 
-#include "atlas/field.h"
-
 #include "eckit/exception/Exceptions.h"
 
+#include "oops/base/LocalIncrement.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
@@ -27,6 +26,7 @@
 
 #include "lorenz95/FieldL95.h"
 #include "lorenz95/GomL95.h"
+#include "lorenz95/Iterator.h"
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/ModelBiasCorrection.h"
 #include "lorenz95/Resolution.h"
@@ -42,23 +42,23 @@ namespace lorenz95 {
 // -----------------------------------------------------------------------------
 /// Constructor, destructor
 // -----------------------------------------------------------------------------
-IncrementL95::IncrementL95(const Resolution & resol, const oops::Variables &,
+IncrementL95::IncrementL95(const Resolution & resol, const oops::Variables & vars,
                            const util::DateTime & vt)
-  : fld_(resol), time_(vt)
+  : fld_(resol), time_(vt), vars_(vars)
 {
   fld_.zero();
   oops::Log::trace() << "IncrementL95::IncrementL95 created." << std::endl;
 }
 // -----------------------------------------------------------------------------
 IncrementL95::IncrementL95(const Resolution & resol, const IncrementL95 & dx)
-  : fld_(resol), time_(dx.time_)
+  : fld_(resol), time_(dx.time_), vars_(dx.variables())
 {
   fld_ = dx.fld_;
   oops::Log::trace() << "IncrementL95::IncrementL95 created by interpolation." << std::endl;
 }
 // -----------------------------------------------------------------------------
 IncrementL95::IncrementL95(const IncrementL95 & dx, const bool copy)
-  : fld_(dx.fld_, copy), time_(dx.time_)
+  : fld_(dx.fld_, copy), time_(dx.time_), vars_(dx.variables())
 {
   oops::Log::trace() << "IncrementL95::IncrementL95 copy-created." << std::endl;
 }
@@ -111,8 +111,8 @@ void IncrementL95::ones() {
   fld_.ones();
 }
 // -----------------------------------------------------------------------------
-void IncrementL95::dirac(const eckit::Configuration & config) {
-  fld_.dirac(config);
+void IncrementL95::dirac(const DiracParameters_ & params) {
+  fld_.dirac(params);
 }
 // -----------------------------------------------------------------------------
 void IncrementL95::axpy(const double & zz, const IncrementL95 & rhs,
@@ -140,9 +140,9 @@ void IncrementL95::accumul(const double & zz, const StateL95 & xx) {
 // -----------------------------------------------------------------------------
 /// Utilities
 // -----------------------------------------------------------------------------
-void IncrementL95::read(const eckit::Configuration & config) {
-  std::string filename(config.getString("filename"));
-  sf::swapNameMember(config, filename);
+void IncrementL95::read(const ReadParameters_ & params) {
+  std::string filename(params.filename);
+  sf::swapNameMember(params.member, filename);
   oops::Log::trace() << "IncrementL95::read opening " << filename << std::endl;
   std::ifstream fin(filename.c_str());
   if (!fin.is_open()) ABORT("IncrementL95::read: Error opening file: " + filename);
@@ -154,7 +154,7 @@ void IncrementL95::read(const eckit::Configuration & config) {
   std::string stime;
   fin >> stime;
   const util::DateTime tt(stime);
-  const util::DateTime tc(config.getString("date"));
+  const util::DateTime tc(params.date);
   if (tc != tt) {
     ABORT("IncrementL95::read: date and data file inconsistent.");
   }
@@ -166,22 +166,28 @@ void IncrementL95::read(const eckit::Configuration & config) {
   oops::Log::trace() << "IncrementL95::read: file closed." << std::endl;
 }
 // -----------------------------------------------------------------------------
-void IncrementL95::write(const eckit::Configuration & config) const {
-  std::string dir = config.getString("datadir");
-  std::string exp = config.getString("exp");
-  std::string type = config.getString("type");
+void IncrementL95::write(const WriteParameters_ & params) const {
+  const std::string &dir = params.datadir;
+  const std::string &exp = params.exp;
+  const std::string &type = params.type;
   std::string filename = dir+"/"+exp+"."+type;
 
   if (type == "krylov") {
-    std::string iter = config.getString("iteration");
-    filename += "."+iter;
+    if (params.iteration.value() == boost::none)
+      throw eckit::BadValue("'iteration' was not set in the parameters passed to write() "
+                            "even though 'type' was set to '" + type + "'", Here());
+    const int &iter = *params.iteration.value();
+    filename += "."+std::to_string(iter);
   }
 
-  const util::DateTime antime(config.getString("date"));
+  if (params.date.value() == boost::none)
+    throw eckit::BadValue("'date' was not set in the parameters passed to write()", Here());
+  const util::DateTime &antime = *params.date.value();
   filename += "."+antime.toString();
   const util::Duration step = time_ - antime;
   filename += "."+step.toString();
-  sf::swapNameMember(config, filename);
+  sf::swapNameMember(params.member, filename);
+  filename += ".l95";
 
   oops::Log::trace() << "IncrementL95::write opening " << filename << std::endl;
   std::ofstream fout(filename.c_str());
@@ -217,47 +223,24 @@ void IncrementL95::setLocal(const oops::LocalIncrement & gp, const Iterator & i)
   fld_[i.index()] = vals[0];
 }
 // -----------------------------------------------------------------------------
-/// Convert to/from ATLAS fieldset
-// -----------------------------------------------------------------------------
-void IncrementL95::setAtlas(atlas::FieldSet *) const {
-  ABORT("FieldL95 setAtlas not implemented");
-}
-// -----------------------------------------------------------------------------
-void IncrementL95::toAtlas(atlas::FieldSet *) const {
-  ABORT("FieldL95 toAtlas not implemented");
-}
-// -----------------------------------------------------------------------------
-void IncrementL95::fromAtlas(atlas::FieldSet *) {
-  ABORT("FieldL95 fromAtlas not implemented");
-}
-// -----------------------------------------------------------------------------
 /// Serialize - deserialize
 // -----------------------------------------------------------------------------
 size_t IncrementL95::serialSize() const {
-  size_t nn = 3;
+  size_t nn = 0;
   nn += fld_.serialSize();
   nn += time_.serialSize();
   return nn;
 }
 // -----------------------------------------------------------------------------
 void IncrementL95::serialize(std::vector<double> & vect) const {
-  vect.push_back(1000.0);
   fld_.serialize(vect);
-  vect.push_back(2000.0);
   time_.serialize(vect);
-  vect.push_back(3000.0);
 }
 // -----------------------------------------------------------------------------
 void IncrementL95::deserialize(const std::vector<double> & vect, size_t & index) {
-  size_t ii = index + this->serialSize();
-  ASSERT(vect.at(index) == 1000.0);
-  ++index;
+  const size_t ii = index + this->serialSize();
   fld_.deserialize(vect, index);
-  ASSERT(vect.at(index) == 2000.0);
-  ++index;
   time_.deserialize(vect, index);
-  ASSERT(vect.at(index) == 3000.0);
-  ++index;
   ASSERT(index == ii);
 }
 // -----------------------------------------------------------------------------

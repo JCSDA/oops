@@ -20,7 +20,8 @@ public datetime, datetime_create, datetime_set, datetime_delete, &
      & assignment(=), c_f_datetime, f_c_datetime, datetime_to_string, &
      & operator(<), operator(<=), operator(>=), operator(>), &
      & datetime_update, datetime_diff, f_c_push_to_datetime_vector, &
-     & datetime_to_ifs, datetime_from_ifs, datetime_to_YYYYMMDDhhmmss
+     & datetime_to_ifs, datetime_from_ifs, datetime_to_YYYYMMDDhhmmss, &
+     & datetime_seconds_since_jan1
 
 !>  Derived type encapsulating a C++ DateTime pointer.
 
@@ -180,6 +181,21 @@ integer(kind=c_int), intent(out) :: year, month, day, hour, minute, second
 call c_datetime_to_yyyymmddhhmmss(fdt%ptr, year, month, day, hour, minute, second)
 
 end subroutine datetime_to_yyyymmddhhmmss
+
+!-------------------------------------------------------------------------------
+
+!> Extract seconds elapsed since Jan 1 00:00:00 of the year
+
+integer function datetime_seconds_since_jan1(fdt)
+implicit none
+type(datetime), intent(in) :: fdt
+integer(c_int64_t) :: c_seconds
+
+c_seconds = c_datetime_seconds_since_jan1(fdt%ptr)
+
+datetime_seconds_since_jan1 = c_seconds
+
+end function datetime_seconds_since_jan1
 
 !-------------------------------------------------------------------------------
 

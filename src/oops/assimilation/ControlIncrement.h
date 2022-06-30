@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
+#include "oops/assimilation/ControlVariable.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
 #include "oops/base/ObsAuxIncrements.h"
@@ -50,11 +51,12 @@ template<typename MODEL, typename OBS>
 class ControlIncrement : public util::Printable,
                          public util::Serializable,
                          private util::ObjectCounter<ControlIncrement<MODEL, OBS> > {
-  typedef CostJbTotal<MODEL, OBS>  JbTotal_;
-  typedef Geometry<MODEL>          Geometry_;
-  typedef Increment<MODEL>         Increment_;
-  typedef ModelAuxIncrement<MODEL> ModelAuxIncr_;
-  typedef ObsAuxIncrements<OBS>    ObsAuxIncrs_;
+  typedef CostJbTotal<MODEL, OBS>      JbTotal_;
+  typedef ControlVariable<MODEL, OBS>  CtrlVar_;
+  typedef Geometry<MODEL>              Geometry_;
+  typedef Increment<MODEL>             Increment_;
+  typedef ModelAuxIncrement<MODEL>     ModelAuxIncr_;
+  typedef ObsAuxIncrements<OBS>        ObsAuxIncrs_;
 
  public:
   static const std::string classname() {return "oops::ControlIncrement";}
@@ -74,13 +76,17 @@ class ControlIncrement : public util::Printable,
   ControlIncrement & operator*=(const double);
   void axpy(const double, const ControlIncrement &);
   double dot_product_with(const ControlIncrement &) const;
+  void schur_product_with(const ControlIncrement & other);
+
+  /// Set this ControlIncrement to be difference between \p cvar1 and \p cvar2
+  void diff(const CtrlVar_ & cvar1, const CtrlVar_ & cvar2);
 
 /// I/O and diagnostics
   void read(const eckit::Configuration &);
   void write(const eckit::Configuration &) const;
 
 /// Get geometry
-  Geometry_ geometry() const {return increment_.geometry();}
+  const Geometry_ & geometry() const {return increment_.geometry();}
 
 /// Get state control variable
   Increment_ & state() {return increment_;}
@@ -156,6 +162,11 @@ ControlIncrement<MODEL, OBS>::ControlIncrement(const Geometry_ & geom,
 // -----------------------------------------------------------------------------
 template<typename MODEL, typename OBS>
 ControlIncrement<MODEL, OBS>::~ControlIncrement() {}
+// -----------------------------------------------------------------------------
+template<typename MODEL, typename OBS>
+void ControlIncrement<MODEL, OBS>::diff(const CtrlVar_ & cvar1, const CtrlVar_ & cvar2) {
+  increment_.diff(cvar1.state(), cvar2.state());
+}
 // -----------------------------------------------------------------------------
 template<typename MODEL, typename OBS> ControlIncrement<MODEL, OBS> &
 ControlIncrement<MODEL, OBS>::operator=(const ControlIncrement & rhs) {
@@ -234,8 +245,13 @@ double ControlIncrement<MODEL, OBS>::dot_product_with(const ControlIncrement & x
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL, typename OBS>
+void ControlIncrement<MODEL, OBS>::schur_product_with(const ControlIncrement & other) {
+  increment_.schur_product_with(other.increment_);
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL, typename OBS>
 size_t ControlIncrement<MODEL, OBS>::serialSize() const {
-  size_t ss = 4;
+  size_t ss = 0;
   ss += increment_.serialSize();
   ss += modbias_.serialSize();
   ss += obsbias_.serialSize();
@@ -245,37 +261,16 @@ size_t ControlIncrement<MODEL, OBS>::serialSize() const {
 template<typename MODEL, typename OBS>
 void ControlIncrement<MODEL, OBS>::serialize(std::vector<double> & vec) const {
   vec.reserve(vec.size() + this->serialSize());  // allocate memory to avoid reallocations
-
-  vec.push_back(-111.0);
   increment_.serialize(vec);
-
-  vec.push_back(-222.0);
   modbias_.serialize(vec);
-
-  vec.push_back(-333.0);
   obsbias_.serialize(vec);
-
-  vec.push_back(-444.0);
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL, typename OBS>
 void ControlIncrement<MODEL, OBS>::deserialize(const std::vector<double> & vec, size_t & indx) {
-  ASSERT(vec.at(indx) == -111.0);
-  ++indx;
-
   increment_.deserialize(vec, indx);
-
-  ASSERT(vec.at(indx) == -222.0);
-  ++indx;
-
   modbias_.deserialize(vec, indx);
-
-  ASSERT(vec.at(indx) == -333.0);
-  ++indx;
-
   obsbias_.deserialize(vec, indx);
-  ASSERT(vec.at(indx) == -444.0);
-  ++indx;
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL, typename OBS>

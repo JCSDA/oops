@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2018 UCAR
+ * (C) Copyright 2018-2021 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -11,7 +11,6 @@
 #include <memory>
 #include <string>
 
-#include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/instantiateCovarFactory.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
@@ -20,14 +19,44 @@
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
 
+/// Options taken by the StaticBInit application.
+template <typename MODEL> class StaticBInitParameters : public ApplicationParameters {
+  OOPS_CONCRETE_PARAMETERS(StaticBInitParameters, ApplicationParameters);
+
+ public:
+  typedef ModelSpaceCovarianceParametersWrapper<MODEL> CovarianceParameters_;
+  typedef typename Geometry<MODEL>::Parameters_        GeometryParameters_;
+  typedef typename State<MODEL>::Parameters_           StateParameters_;
+
+  /// Geometry parameters.
+  RequiredParameter<GeometryParameters_> geometry{"geometry", this};
+
+  /// List of variables for analysis.
+  RequiredParameter<Variables> analysisVariables{"analysis variables", this};
+
+  /// Background state parameters.
+  RequiredParameter<StateParameters_> background{"background", this};
+
+  /// Background error covariance model.
+  RequiredParameter<CovarianceParameters_> backgroundError{"background error", this};
+};
+
+// -----------------------------------------------------------------------------
+
 template <typename MODEL> class StaticBInit : public Application {
-  typedef ModelSpaceCovarianceBase<MODEL>  Covariance_;
-  typedef Geometry<MODEL>                  Geometry_;
-  typedef Increment<MODEL>                 Increment_;
-  typedef State<MODEL>                     State_;
+  typedef ModelSpaceCovarianceBase<MODEL>           CovarianceBase_;
+  typedef CovarianceFactory<MODEL>                  CovarianceFactory_;
+  typedef ModelSpaceCovarianceParametersBase<MODEL> CovarianceParametersBase_;
+  typedef Geometry<MODEL>                           Geometry_;
+  typedef Increment<MODEL>                          Increment_;
+  typedef State<MODEL>                              State_;
+
+  typedef StaticBInitParameters<MODEL>              StaticBInitParameters_;
 
  public:
   // -----------------------------------------------------------------------------
@@ -37,22 +66,26 @@ template <typename MODEL> class StaticBInit : public Application {
   // -----------------------------------------------------------------------------
   virtual ~StaticBInit() {}
   // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const {
+  int execute(const eckit::Configuration & fullConfig, bool validate) const override {
+    //  Deserialize parameters
+    StaticBInitParameters_ params;
+    if (validate) params.validate(fullConfig);
+    params.deserialize(fullConfig);
+
     //  Setup resolution
-    const eckit::LocalConfiguration resolConfig(fullConfig, "geometry");
-    const Geometry_ resol(resolConfig, this->getComm());
+    const Geometry_ resol(params.geometry, this->getComm());
 
     //  Setup variables
-    const Variables vars(fullConfig, "analysis variables");
+    const Variables &vars = params.analysisVariables;
 
     //  Setup background state
-    const eckit::LocalConfiguration bkgconf(fullConfig, "background");
-    State_ xx(resol, bkgconf);
+    const State_ xx(resol, params.background);
 
     //  Initialize static B matrix
-    const eckit::LocalConfiguration covarconf(fullConfig, "background error");
-    std::unique_ptr< Covariance_ >
-     Bmat(CovarianceFactory<MODEL>::create(covarconf, resol, vars, xx, xx));
+    const CovarianceParametersBase_ &covarParams =
+        params.backgroundError.value().covarianceParameters;
+    const std::unique_ptr<CovarianceBase_> Bmat(CovarianceFactory_::create(
+                                                    resol, vars, covarParams, xx, xx));
 
     //  Randomize B matrix
     Increment_ dx(resol, vars, xx.validTime());
@@ -62,8 +95,18 @@ template <typename MODEL> class StaticBInit : public Application {
     return 0;
   }
   // -----------------------------------------------------------------------------
+  void outputSchema(const std::string & outputPath) const override {
+    StaticBInitParameters_ params;
+    params.outputSchema(outputPath);
+  }
+  // -----------------------------------------------------------------------------
+  void validateConfig(const eckit::Configuration & fullConfig) const override {
+    StaticBInitParameters_ params;
+    params.validate(fullConfig);
+  }
+  // -----------------------------------------------------------------------------
  private:
-  std::string appname() const {
+  std::string appname() const override {
     return "oops::StaticBInit<" + MODEL::name() + ">";
   }
   // -----------------------------------------------------------------------------

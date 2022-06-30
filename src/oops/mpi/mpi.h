@@ -30,10 +30,10 @@ namespace mpi {
 
 // ------------------------------------------------------------------------------------------------
 
-/// Default communicator with all MPI tasks (ie MPI_COMM_WORLD)
+/// Communicator with all MPI tasks (ie MPI_COMM_WORLD)
 const eckit::mpi::Comm & world();
 
-/// Default communicator with each MPI task by itself
+/// Communicator with each MPI task by itself
 const eckit::mpi::Comm & myself();
 
 // ------------------------------------------------------------------------------------------------
@@ -153,6 +153,13 @@ void allGatherv(const eckit::mpi::Comm & comm, std::vector<T> &x) {
     eckit::mpi::Buffer<T> buffer(comm.size());
     comm.allGatherv(x.begin(), x.end(), buffer);
     x = std::move(buffer.buffer);
+}
+
+template <typename T>
+void allGatherv(const eckit::mpi::Comm & comm, const std::vector<T> & send, std::vector<T> & recv) {
+    eckit::mpi::Buffer<T> buffer(comm.size());
+    comm.allGatherv(send.begin(), send.end(), buffer);
+    recv = std::move(buffer.buffer);
 }
 
 // ------------------------------------------------------------------------------------------------

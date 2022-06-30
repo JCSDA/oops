@@ -646,14 +646,16 @@ IMPLICIT NONE
 		! if the horizontal velocities follow hybrid eta coordinates then
 		! the perceived vertical velocity is
 
-		call test1_advection_orograph_hybrid_eta_velocity(w)
+		! original long name: call test1_advection_orograph_hybrid_eta_velocity(w)
+		call test1_hybrid_eta_velocity(w)
 
 	elseif (cfv .eq. 2) then
 
 		! if the horizontal velocities follow Gal Chen coordinates then
 		! the perceived vertical velocity is	
 
-		call test1_advection_orograph_Gal_Chen_velocity(w)	
+		! original long name: call test1_advection_orograph_Gal_Chen_velocity(w)
+		call test1_Gal_Chen_velocity(w)
 
 !        else
 !               compute your own vertical velocity if other orography-following 
@@ -717,7 +719,8 @@ IMPLICIT NONE
 	!    		UNDER HYBRID-ETA COORDINATES
 	!-----------------------------------------------------------------------
 
-	SUBROUTINE test1_advection_orograph_hybrid_eta_velocity(w)
+	! original long name: SUBROUTINE test1_advection_orograph_hybrid_eta_velocity(w)
+	SUBROUTINE test1_hybrid_eta_velocity(w)
 	IMPLICIT NONE
 	real(8), intent(out) ::	w
 
@@ -776,7 +779,8 @@ IMPLICIT NONE
 			w = 0.d0
 		endif
 
-	END SUBROUTINE test1_advection_orograph_hybrid_eta_velocity
+	! original long name: END SUBROUTINE test1_advection_orograph_hybrid_eta_velocity
+	END SUBROUTINE test1_hybrid_eta_velocity
 
 
 
@@ -785,7 +789,8 @@ IMPLICIT NONE
 	!    		UNDER GAL-CHEN COORDINATES
 	!-----------------------------------------------------------------------
 
-	SUBROUTINE test1_advection_orograph_Gal_Chen_velocity(w)
+	! original long name: SUBROUTINE test1_advection_orograph_Gal_Chen_velocity(w)
+	SUBROUTINE test1_Gal_Chen_velocity(w)
 	IMPLICIT NONE
 	real(8), intent(out) ::	w
 
@@ -834,7 +839,8 @@ IMPLICIT NONE
 			w = 0.d0
 		endif
 
-	END SUBROUTINE test1_advection_orograph_Gal_Chen_velocity
+	! original long name: END SUBROUTINE test1_advection_orograph_Gal_Chen_velocity
+	END SUBROUTINE test1_Gal_Chen_velocity
 
 END SUBROUTINE test1_advection_orography
 

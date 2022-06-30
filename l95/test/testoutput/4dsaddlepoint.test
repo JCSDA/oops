@@ -1,21 +1,21 @@
-CostJb   : Nonlinear Jb = 0
-CostJo   : Nonlinear Jo(Lorenz 95) = 123.856, nobs = 160, Jo/n = 0.774102, err = 0.4
-CostFunction: Nonlinear J = 123.856
-SaddlePointMinimizer: reduction in residual norm = 0.008318
+CostJb   : Nonlinear Jb = 0.0000000000000000e+00
+CostJo   : Nonlinear Jo(Lorenz 95) = 1.2385634722309118e+02, nobs = 160, Jo/n = 7.7410217014431981e-01, err = 4.0000000596046409e-01
+CostFunction: Nonlinear J = 1.2385634722309118e+02
+SaddlePointMinimizer: reduction in residual norm = 8.3175319713441366e-03
 CostFunction::addIncrement: Analysis: 
  Valid time: 2010-01-01T03:00:00Z
- Min=7.64279, Max=8.61955, Average=8.0027
+ Min=7.6427940242267507e+00, Max=8.6195460899495338e+00, Average=8.0027035428769899e+00
  Valid time: 2010-01-01T15:00:00Z
- Min=7.14059, Max=8.7605, Average=8.00521
-CostJb   : Nonlinear Jb = 2.33597
-CostJo   : Nonlinear Jo(Lorenz 95) = 0.552166, nobs = 160, Jo/n = 0.00345104, err = 0.4
-CostFunction: Nonlinear J = 2.88814
-SaddlePointMinimizer: reduction in residual norm = 0.1199
+ Min=7.1405904839811081e+00, Max=8.7604956979308231e+00, Average=8.0052135346992053e+00
+CostJb   : Nonlinear Jb = 2.3359728858062629e+00
+CostJo   : Nonlinear Jo(Lorenz 95) = 5.5216599413658540e-01, nobs = 160, Jo/n = 3.4510374633536589e-03, err = 4.0000000596046409e-01
+CostFunction: Nonlinear J = 2.8881388799428485e+00
+SaddlePointMinimizer: reduction in residual norm = 1.1989699097856214e-01
 CostFunction::addIncrement: Analysis: 
  Valid time: 2010-01-01T03:00:00Z
- Min=7.6677, Max=8.64256, Average=8.01168
+ Min=7.6677026181123091e+00, Max=8.6425566813554191e+00, Average=8.0116789631159886e+00
  Valid time: 2010-01-01T15:00:00Z
- Min=7.14396, Max=8.77199, Average=8.01306
-CostJb   : Nonlinear Jb = 2.09932
-CostJo   : Nonlinear Jo(Lorenz 95) = 0.38713, nobs = 160, Jo/n = 0.00241957, err = 0.4
-CostFunction: Nonlinear J = 2.48645
+ Min=7.1439613006908464e+00, Max=8.7719911690608399e+00, Average=8.0130564700611195e+00
+CostJb   : Nonlinear Jb = 2.0993218397597699e+00
+CostJo   : Nonlinear Jo(Lorenz 95) = 3.8713042141953047e-01, nobs = 160, Jo/n = 2.4195651338720656e-03, err = 4.0000000596046409e-01
+CostFunction: Nonlinear J = 2.4864522611793003e+00

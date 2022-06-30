@@ -7,19 +7,22 @@ cost function:
   analysis variables: [x]
   background:
     date: 2010-01-02T00:00:00Z
-    filename: Data/test.fc.2010-01-01T00:00:00Z.P1D
+    filename: Data/forecast.fc.2010-01-01T00:00:00Z.P1D.l95
   background error:
     covariance model: L95Error
     date: 2010-01-02T00:00:00Z
     length_scale: 1.0
     standard_deviation: 0.6
   observations:
-  - obs operator: {}
-    obs space:
-      obsdatain:  Data/l95.truth3d.2010-01-02T00:00:00Z.obt
-      obsdataout: Data/l95.3dvar.2010-01-02T00:00:00Z.obt
-    obs error:
-      covariance model: diagonal
+    observers:
+    - obs operator: {}
+      obs space:
+        obsdatain:
+          obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+        obsdataout:
+          obsfile: Data/3dvar.2010-01-02T00:00:00Z.obt
+      obs error:
+        covariance model: diagonal
 variational:
   minimizer:
     algorithm: DRIPCG
@@ -36,7 +39,7 @@ variational:
       increment:
         datadir: Data
         date: 2010-01-02T00:00:00Z
-        exp: test.iter1
+        exp: 3dvar.iter1
         type: in
   - ninner: 10
     gradient norm reduction: 1e-10
@@ -48,15 +51,15 @@ variational:
       increment:
         datadir: Data
         date: 2010-01-02T00:00:00Z
-        exp: test.iter2
+        exp: 3dvar.iter2
         type: in
 final:
   diagnostics:
     departures: oman
 output:
   datadir: Data
-  exp: test
-  frequency: PT6H
+  exp: 3dvar
+  steps: ["2010-01-02T00:00:00Z"]
   type: an
 
 test:

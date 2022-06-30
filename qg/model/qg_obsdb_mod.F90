@@ -30,7 +30,7 @@ implicit none
 private
 public :: qg_obsdb
 public :: qg_obsdb_registry
-public :: qg_obsdb_setup,qg_obsdb_delete,qg_obsdb_get,qg_obsdb_put,qg_obsdb_locations,qg_obsdb_generate,qg_obsdb_nobs
+public :: qg_obsdb_setup,qg_obsdb_delete,qg_obsdb_save,qg_obsdb_get,qg_obsdb_put,qg_obsdb_locations,qg_obsdb_generate,qg_obsdb_nobs
 ! ------------------------------------------------------------------------------
 integer,parameter :: rseed = 1 !< Random seed (for reproducibility)
 
@@ -99,7 +99,7 @@ call fckit_log%info('qg_obsdb_setup: file in = '//trim(fin))
 ! Output file
 if (f_conf%has("obsdataout")) then
   call f_conf%get_or_die("obsdataout.obsfile",str)
-  call swap_name_member(f_conf, str)
+  call swap_name_member(f_conf, str, 6)
 
   fout = str
   call fckit_log%info('qg_obsdb_setup: file out = '//trim(fout))
@@ -130,9 +130,6 @@ type(group_data),pointer :: jgrp
 type(column_data),pointer :: jcol
 integer :: jobs
 
-! Write observation data
-if (self%fileout/='') call qg_obsdb_write(self)
-
 ! Release memory
 do while (associated(self%grphead))
   jgrp => self%grphead
@@ -151,6 +148,15 @@ do while (associated(self%grphead))
 enddo
 
 end subroutine qg_obsdb_delete
+! ------------------------------------------------------------------------------
+!> Delete observation data
+subroutine qg_obsdb_save(self)
+implicit none
+type(qg_obsdb),intent(in) :: self !< Observation data
+
+if (self%fileout/='') call qg_obsdb_write(self)
+
+end subroutine qg_obsdb_save
 ! ------------------------------------------------------------------------------
 !> Get observation data
 subroutine qg_obsdb_get(self,grp,col,ovec)
@@ -186,7 +192,10 @@ endif
 
 ! Find observation column
 call qg_obsdb_find_column(jgrp,col,jcol)
-if (.not.associated(jcol)) call abor1_ftn('qg_obsdb_get: obs column not found')
+if (.not.associated(jcol)) then
+  call fckit_log%error('qg_obsdb_get: cannot find '//trim(col))
+  call abor1_ftn('qg_obsdb_get: obs column not found')
+endif
 
 ! Get observation data
 if (allocated(ovec%values)) deallocate(ovec%values)
@@ -324,26 +333,44 @@ integer,intent(in) :: ktimes                   !< Number of time-slots
 integer,intent(inout) :: kobs                  !< Number of observations
 
 ! Local variables
-integer :: nlev,nlocs
+integer :: nlev,nlocs, jobs
+real(kind_real),allocatable :: x(:), y(:), lon(:), lat(:), z(:)
 real(kind_real) :: err
 type(datetime),allocatable :: times(:)
 type(qg_obsvec) :: obsloc,obserr
 
 ! Get number of observations
-call f_conf%get_or_die("obs_density",nlocs)
-kobs = nlocs*ktimes
+if (f_conf%has("obs density")) then
+  call f_conf%get_or_die("obs density",nlocs)
+  allocate(x(nlocs), y(nlocs), z(nlocs), lon(nlocs), lat(nlocs))
+  ! Generate random locations
+  call uniform_distribution(x,0.0_kind_real,domain_zonal,rseed)
+  call uniform_distribution(y,0.0_kind_real,domain_meridional,rseed)
+  call uniform_distribution(z,0.0_kind_real,domain_depth,rseed)
+  ! Convert to lon/lat
+  do jobs=1,nlocs
+    call xy_to_lonlat(x(jobs),y(jobs),lon(jobs),lat(jobs))
+  enddo
+  deallocate(x, y)
+else
+  nlocs = f_conf%get_size("obs locations.lon")
+  allocate(lon(nlocs), lat(nlocs), z(nlocs))
+  call f_conf%get_or_die("obs locations.lon", lon)
+  call f_conf%get_or_die("obs locations.lat", lat)
+  call f_conf%get_or_die("obs locations.z", z)
+endif
 
 ! Allocation
+kobs = nlocs*ktimes
 allocate(times(kobs))
-
 ! Generate locations
-call qg_obsdb_generate_locations(nlocs,ktimes,bgn,step,times,obsloc)
+call qg_obsdb_generate_locations(nlocs,lon,lat,z,ktimes,bgn,step,times,obsloc)
 
 ! Create observations data
 call qg_obsdb_create(self,trim(grp),times,obsloc)
 
 ! Create observation error
-call f_conf%get_or_die("obs_error",err)
+call f_conf%get_or_die("obs error",err)
 call f_conf%get_or_die("nval",nlev)
 call qg_obsvec_setup(obserr,nlev,kobs)
 obserr%values(:,:) = err
@@ -353,6 +380,7 @@ call qg_obsdb_put(self,trim(grp),'ObsError',obserr)
 deallocate(times)
 deallocate(obsloc%values)
 deallocate(obserr%values)
+deallocate(lon,lat,z)
 
 end subroutine qg_obsdb_generate
 ! ------------------------------------------------------------------------------
@@ -632,12 +660,13 @@ enddo
 end subroutine qg_obsdb_find_column
 ! ------------------------------------------------------------------------------
 !> Generate random locations
-subroutine qg_obsdb_generate_locations(nlocs,ntimes,bgn,step,times,obsloc)
+subroutine qg_obsdb_generate_locations(nlocs,lon,lat,z,ntimes,bgn,step,times,obsloc)
 
 implicit none
 
 ! Passed variables
 integer,intent(in) :: nlocs                         !< Number of locations
+real(kind_real),intent(in) :: lon(nlocs),lat(nlocs),z(nlocs) !< Locations
 integer,intent(in) :: ntimes                        !< Number of time-slots
 type(datetime),intent(in) :: bgn                    !< Start time
 type(duration),intent(in) :: step                   !< Time-step
@@ -646,18 +675,7 @@ type(qg_obsvec),intent(inout) :: obsloc             !< Observation locations
 
 ! Local variables
 integer :: jobs,iobs,jstep
-real(kind_real) :: x(nlocs),y(nlocs),z(nlocs),lon(nlocs),lat(nlocs)
 type(datetime) :: now
-
-! Generate random locations
-call uniform_distribution(x,0.0_kind_real,domain_zonal,rseed)
-call uniform_distribution(y,0.0_kind_real,domain_meridional,rseed)
-call uniform_distribution(z,0.0_kind_real,domain_depth,rseed)
-
-! Convert to lon/lat
-do jobs=1,nlocs
-  call xy_to_lonlat(x(jobs),y(jobs),lon(jobs),lat(jobs))
-enddo
 
 ! Setup observation vector
 call qg_obsvec_setup(obsloc,3,nlocs*ntimes)

@@ -25,6 +25,8 @@
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/RequiredParameter.h"
 #include "oops/util/Printable.h"
+#include "L95TraitsFwd.h"
+#include "IdChangeVarTLADL95.h"
 
 // Forward declarations
 namespace oops {
@@ -35,8 +37,6 @@ namespace lorenz95 {
   class IncrementL95;
   class StateL95;
   class Resolution;
-
-  struct L95Traits;
 
 class ErrorCovarianceL95Parameters : public oops::ModelSpaceCovarianceParametersBase<L95Traits> {
   OOPS_CONCRETE_PARAMETERS(ErrorCovarianceL95Parameters,

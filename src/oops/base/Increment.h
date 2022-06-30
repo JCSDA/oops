@@ -12,6 +12,8 @@
 #ifndef OOPS_BASE_INCREMENT_H_
 #define OOPS_BASE_INCREMENT_H_
 
+#include <memory>
+
 #include "atlas/field.h"
 
 #include "oops/base/Geometry.h"
@@ -33,7 +35,6 @@ namespace oops {
 /// - timeComm()  (accessor to the MPI communicator in time - collection of processes
 ///                holding the data needed to represent the state in a particular region
 ///                of space X_i and throughout the whole time interval for which DA is done)
-/// - variables() (accessor to variables in this Increment)
 /// - shift_forward
 /// - shift_backward
 /// - toAtlas, atlas
@@ -56,23 +57,24 @@ class Increment : public interface::Increment<MODEL> {
   /// Copies \p other if \p copy is true, otherwise creates zero increment
   Increment(const Increment & other, const bool copy = true);
 
+  Increment & operator=(const Increment &);
+
+  /// Accessor to geometry associated with this Increment
+  const Geometry_ & geometry() const {return resol_;}
+
   /// Accessor to the time communicator
   const eckit::mpi::Comm & timeComm() const {return *timeComm_;}
-  /// Accessor to Variables stored in this increment
-  const Variables & variables() const {return variables_;}
 
   /// Shift forward in time by \p dt
   void shift_forward(const util::DateTime & dt);
   /// Shift backward in time by \p dt
   void shift_backward(const util::DateTime & dt);
 
-  /// Set ATLAS fieldset associated with this Increment internally
-  void toAtlas();
-  /// Allow to access base class's method as well
-  using interface::Increment<MODEL>::toAtlas;
   /// Accessors to the ATLAS fieldset
-  atlas::FieldSet & atlas() {return atlasFieldSet_;}
-  const atlas::FieldSet & atlas() const {return atlasFieldSet_;}
+  const atlas::FieldSet & fieldSet() const;
+  atlas::FieldSet & fieldSet();
+  void synchronizeFields();
+  void synchronizeFieldsAD();
 
   /// dot product with the \p other increment
   double dot_product_with(const Increment & other) const;
@@ -82,9 +84,8 @@ class Increment : public interface::Increment<MODEL> {
  private:
   void print(std::ostream &) const override;
 
-  Variables variables_;                /// Variables stored in this Increment
+  const Geometry_ & resol_;
   const eckit::mpi::Comm * timeComm_;  /// pointer to the MPI communicator in time
-  atlas::FieldSet atlasFieldSet_;      /// Atlas fields associated with this Increment
 };
 
 // -----------------------------------------------------------------------------
@@ -92,7 +93,7 @@ class Increment : public interface::Increment<MODEL> {
 template <typename MODEL>
 Increment<MODEL>::Increment(const Geometry_ & geometry, const Variables & variables,
                             const util::DateTime & date):
-  interface::Increment<MODEL>(geometry, variables, date), variables_(variables),
+  interface::Increment<MODEL>(geometry, variables, date), resol_(geometry),
   timeComm_(&geometry.timeComm())
 {}
 
@@ -100,7 +101,7 @@ Increment<MODEL>::Increment(const Geometry_ & geometry, const Variables & variab
 
 template <typename MODEL>
 Increment<MODEL>::Increment(const Geometry_ & geometry, const Increment & other):
-  interface::Increment<MODEL>(geometry, other), variables_(other.variables_),
+  interface::Increment<MODEL>(geometry, other), resol_(geometry),
   timeComm_(other.timeComm_)
 {}
 
@@ -108,9 +109,19 @@ Increment<MODEL>::Increment(const Geometry_ & geometry, const Increment & other)
 
 template <typename MODEL>
 Increment<MODEL>::Increment(const Increment & other, const bool copy):
-  interface::Increment<MODEL>(other, copy), variables_(other.variables_),
+  interface::Increment<MODEL>(other, copy), resol_(other.resol_),
   timeComm_(other.timeComm_)
 {}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+Increment<MODEL> & Increment<MODEL>::operator=(const Increment & rhs) {
+  ASSERT(resol_ == rhs.resol_);
+  ASSERT(timeComm_ == rhs.timeComm_);
+  interface::Increment<MODEL>::operator=(rhs);
+  return *this;
+}
 
 // -----------------------------------------------------------------------------
 
@@ -180,13 +191,45 @@ void Increment<MODEL>::shift_backward(const util::DateTime & end) {
   Log::trace() << "Increment<MODEL>::Increment shift_backward done" << std::endl;
 }
 
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+const atlas::FieldSet & Increment<MODEL>::fieldSet() const {
+  if (interface::Increment<MODEL>::fset_.empty()) {
+    interface::Increment<MODEL>::fset_ = atlas::FieldSet();
+    this->toFieldSet(interface::Increment<MODEL>::fset_);
+  }
+  return interface::Increment<MODEL>::fset_;
+}
 
 // -----------------------------------------------------------------------------
+
 template<typename MODEL>
-void Increment<MODEL>::toAtlas() {
-  interface::Increment<MODEL>::setAtlas(&atlasFieldSet_);
-  interface::Increment<MODEL>::toAtlas(&atlasFieldSet_);
-  this->increment_.reset();
+atlas::FieldSet & Increment<MODEL>::fieldSet() {
+  if (interface::Increment<MODEL>::fset_.empty()) {
+    interface::Increment<MODEL>::fset_ = atlas::FieldSet();
+    this->toFieldSet(interface::Increment<MODEL>::fset_);
+  }
+  return interface::Increment<MODEL>::fset_;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::synchronizeFields() {
+  // TODO(JEDI core team): remove this method when accessors are fully implemented
+  ASSERT(!interface::Increment<MODEL>::fset_.empty());
+  this->fromFieldSet(interface::Increment<MODEL>::fset_);
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::synchronizeFieldsAD() {
+  // TODO(JEDI core team): remove this method when accessors are fully implemented
+  if (!interface::Increment<MODEL>::fset_.empty()) {
+    this->toFieldSetAD(interface::Increment<MODEL>::fset_);
+  }
 }
 
 // -----------------------------------------------------------------------------

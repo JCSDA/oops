@@ -20,10 +20,6 @@
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/Printable.h"
 
-namespace eckit {
-  class Configuration;
-}
-
 namespace oops {
 
 /// \brief Base class for configuration parameters of observation spaces.

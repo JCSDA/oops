@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2020 UCAR
+ * (C) Copyright 2020-2021 UCAR
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -14,6 +14,8 @@
 #include <string>
 #include <vector>
 
+#include <boost/make_unique.hpp>
+
 #include "eckit/config/Configuration.h"
 
 #include "oops/base/Geometry.h"
@@ -23,7 +25,6 @@
 #include "oops/base/LocalIncrement.h"
 #include "oops/generic/gc99.h"
 #include "oops/interface/GeometryIterator.h"
-#include "oops/interface/Increment.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/parameters/Parameter.h"
@@ -66,7 +67,6 @@ class VerticalLocEV: public util::Printable,
                      private util::ObjectCounter<VerticalLocEV<MODEL>> {
   typedef Geometry<MODEL>            Geometry_;
   typedef GeometryIterator<MODEL>    GeometryIterator_;
-  typedef Increment<MODEL>           Increment_;
   typedef Increment4D<MODEL>         Increment4D_;
   typedef IncrementEnsemble<MODEL>   IncrementEnsemble_;
   typedef IncrementEnsemble4D<MODEL> IncrementEnsemble4D_;
@@ -185,6 +185,8 @@ template<typename MODEL>
     for (size_t jj = 0; jj < memberConfig.size(); ++jj) {
       (*sqrtVertLoc_)[jj].read(memberConfig[jj]);
     }
+    // TODO(frolovsa) check that correlation matrix has 1 on the diagnoal.
+    // If not, assume that fewer vectors were read and renormalize
   }
 
 // -------------------------------------------------------------------------------------------------

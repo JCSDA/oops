@@ -14,7 +14,7 @@
 #include <iterator>
 #include <string>
 
-#include "eckit/geometry/Point2.h"
+#include "eckit/geometry/Point3.h"
 
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -28,7 +28,7 @@ class GeometryQG;
 
 // -----------------------------------------------------------------------------
 class GeometryQGIterator: public std::iterator<std::forward_iterator_tag,
-                                               eckit::geometry::Point2>,
+                                               eckit::geometry::Point3>,
                           public util::Printable,
                           private util::ObjectCounter<GeometryQGIterator> {
  public:
@@ -40,7 +40,7 @@ class GeometryQGIterator: public std::iterator<std::forward_iterator_tag,
 
   bool operator==(const GeometryQGIterator &) const;
   bool operator!=(const GeometryQGIterator &) const;
-  eckit::geometry::Point2 operator*() const;
+  eckit::geometry::Point3 operator*() const;
   GeometryQGIterator& operator++();
 
   const F90iter & toFortran() const {return keyIter_;}

@@ -34,6 +34,8 @@ class ObjectCounter {
     {count_->oneLess(bytes_);}
 
  protected:
+  size_t created() const {return count_->created();}
+
 // Optionally set object size (in bytes)
   void setObjectSize(const size_t & bytes) {
     ASSERT(bytes_ == 0);  // can only be set once

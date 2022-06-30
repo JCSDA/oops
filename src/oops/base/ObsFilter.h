@@ -74,16 +74,24 @@ class ObsFilter : public util::Printable,
   /// outputs produced by the observation operator.
   void priorFilter(const GeoVaLs_ &);
 
-  /// \brief Perform any observation processing steps that require access to
+  /// \brief Perform any observation processing steps that require access to both GeoVaLs and
   /// outputs produced by the observation operator.
   ///
+  /// \param gv
+  ///   GeoVaLs.
   /// \param ov
   ///   Model equivalents produced by the observation operator.
   /// \param bv
   ///   Bias of departure produced by the observation operator.
   /// \param dv
   ///   Observation diagnostics produced by the observation operator.
-  void postFilter(const ObsVector_ &ov, const ObsVector_ &bv, const ObsDiags_ &dv);
+  void postFilter(const GeoVaLs_ & gv,
+                  const ObsVector_ &ov,
+                  const ObsVector_ &bv,
+                  const ObsDiags_ &dv);
+
+  /// \brief Check the required filter data are present prior to running this filter.
+  void checkFilterData(const FilterStage filterStage);
 
   /// \brief Return the list of GeoVaLs required by this filter.
   Variables requiredVars() const;
@@ -143,11 +151,13 @@ void ObsFilter<OBS>::priorFilter(const GeoVaLs_ & gv) {
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-void ObsFilter<OBS>::postFilter(const ObsVector_ & ov, const ObsVector_ & bv,
+void ObsFilter<OBS>::postFilter(const GeoVaLs_ & gv,
+                                const ObsVector_ & ov,
+                                const ObsVector_ & bv,
                                 const ObsDiags_ & dv) {
   Log::trace() << "ObsFilter<OBS>::postFilter starting" << std::endl;
   util::Timer timer(classname(), "postFilter");
-  ofilt_->postFilter(ov, bv, dv);
+  ofilt_->postFilter(gv, ov, bv, dv);
   Log::trace() << "ObsFilter<OBS>::postFilter done" << std::endl;
 }
 
@@ -175,6 +185,16 @@ void ObsFilter<OBS>::print(std::ostream & os) const {
   util::Timer timer(classname(), "print");
   os << *ofilt_;
   Log::trace() << "ObsFilter<OBS>::print done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+void ObsFilter<OBS>::checkFilterData(const FilterStage filterStage) {
+  Log::trace() << "ObsFilter<OBS>::checkFilterData starting" << std::endl;
+  util::Timer timer(classname(), "checkFilterData");
+  ofilt_->checkFilterData(filterStage);
+  Log::trace() << "ObsFilter<OBS>::checkFilterData done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

@@ -17,42 +17,43 @@ cost function:
     standard_deviation: 1.8e7
     vertical_length_scale: 15000.0
   observations:
-  - obs error:
-      covariance model: diagonal
-      random amplitude: 0.4
-    obs operator:
-      obs type: Stream
-    obs space:
-      obsdatain:
-        obsfile: Data/truth.obs3d.nc
-      obsdataout:
-        obsfile: Data/mem002.eda_3dvar.obs3d.nc
-      obs type: Stream
-      obs perturbations seed: 2
-  - obs error:
-      covariance model: diagonal
-      random amplitude: 0.5
-    obs operator:
-      obs type: Wind
-    obs space:
-      obsdatain:
-        obsfile: Data/truth.obs3d.nc
-      obsdataout:
-        obsfile: Data/mem002.eda_3dvar.obs3d.nc
-      obs type: Wind
-      obs perturbations seed: 2
-  - obs error:
-      covariance model: diagonal
-      random amplitude: 0.2
-    obs operator:
-      obs type: WSpeed
-    obs space:
-      obsdatain:
-        obsfile: Data/truth.obs3d.nc
-      obsdataout:
-        obsfile: Data/mem002.eda_3dvar.obs3d.nc
-      obs type: WSpeed
-      obs perturbations seed: 2
+    observers:
+    - obs error:
+        covariance model: diagonal
+        random amplitude: 0.4
+      obs operator:
+        obs type: Stream
+      obs space:
+        obsdatain:
+          obsfile: Data/truth.obs3d.nc
+        obsdataout:
+          obsfile: Data/mem002.eda_3dvar.obs3d.nc
+        obs type: Stream
+        obs perturbations seed: 2
+    - obs error:
+        covariance model: diagonal
+        random amplitude: 0.5
+      obs operator:
+        obs type: Wind
+      obs space:
+        obsdatain:
+          obsfile: Data/truth.obs3d.nc
+        obsdataout:
+          obsfile: Data/mem002.eda_3dvar.obs3d.nc
+        obs type: Wind
+        obs perturbations seed: 2
+    - obs error:
+        covariance model: diagonal
+        random amplitude: 0.2
+      obs operator:
+        obs type: WSpeed
+      obs space:
+        obsdatain:
+          obsfile: Data/truth.obs3d.nc
+        obsdataout:
+          obsfile: Data/mem002.eda_3dvar.obs3d.nc
+        obs type: WSpeed
+        obs perturbations seed: 2
 variational:
   minimizer:
     algorithm: DRIPCG
@@ -67,6 +68,7 @@ variational:
       depths: [4500.0, 5500.0]
     test: on
     obs perturbations: true
+    save perturbed obs: false
   - diagnostics:
       departures: ombg
     gradient norm reduction: 1.0e-10

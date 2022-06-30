@@ -11,23 +11,50 @@
 #include <memory>
 #include <string>
 
-#include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
+#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/State.h"
 #include "oops/base/StateEnsemble.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/OptionalParameter.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
 
+/// Options taken by the RTPP application.
+template <typename MODEL> class RTPPParameters : public ApplicationParameters {
+  OOPS_CONCRETE_PARAMETERS(RTPPParameters, ApplicationParameters);
+
+  typedef Geometry<MODEL> Geometry_;
+  typedef State<MODEL> State_;
+
+ public:
+  typedef typename Geometry<MODEL>::Parameters_ GeometryParameters_;
+  typedef typename State_::WriteParameters_     StateWriteParameters_;
+  typedef StateEnsembleParameters<MODEL>        StateEnsembleParameters_;
+  RequiredParameter<GeometryParameters_> geometry{
+      "geometry", "Geometry parameters", this};
+  RequiredParameter<StateEnsembleParameters_> background{
+      "background", "Background ensemble states", this};
+  RequiredParameter<StateEnsembleParameters_> analysis{
+      "analysis", "Analysis ensemble states", this};
+  RequiredParameter<float> factor{"factor", "Perturbation factor", this};
+  OptionalParameter<Variables> analysisVariables{"analysis variables", this};
+  RequiredParameter<StateWriteParameters_> output{
+      "output", "analysis mean and ensemble members output", this};
+};
+
 /// \brief Application for relaxation to prior perturbation (RTPP) inflation
 template <typename MODEL> class RTPP : public Application {
-  typedef Geometry<MODEL>                  Geometry_;
-  typedef Increment<MODEL>                 Increment_;
-  typedef State<MODEL>                     State_;
-  typedef StateEnsemble<MODEL>             StateEnsemble_;
+  typedef Geometry<MODEL>                   Geometry_;
+  typedef Increment<MODEL>                  Increment_;
+  typedef State<MODEL>                      State_;
+  typedef StateEnsemble<MODEL>              StateEnsemble_;
+  typedef typename State_::WriteParameters_ StateWriteParameters_;
 
  public:
 // -----------------------------------------------------------------------------
@@ -40,25 +67,26 @@ template <typename MODEL> class RTPP : public Application {
 
 // -----------------------------------------------------------------------------
 
-  int execute(const eckit::Configuration & fullConfig) const {
-    // Setup geometry
-    const eckit::LocalConfiguration geometryConfig(fullConfig, "geometry");
-    const Geometry_ geometry(geometryConfig, this->getComm());
+  int execute(const eckit::Configuration & fullConfig, bool validate) const override {
+    RTPPParameters<MODEL> params;
+    if (validate) params.validate(fullConfig);
+    params.deserialize(fullConfig);
 
-    // Get configurations
-    const eckit::LocalConfiguration bgConfig(fullConfig, "background");
-    const eckit::LocalConfiguration anConfig(fullConfig, "analysis");
-    const float factor = fullConfig.getFloat("factor");
+    // Setup geometry
+    const Geometry_ geometry(params.geometry, this->getComm(), oops::mpi::myself());
+
+    const float factor = params.factor.value();
 
     // Read all ensemble members
-    StateEnsemble_ bgens(geometry, bgConfig);
-    StateEnsemble_ anens(geometry, anConfig);
+    StateEnsemble_ bgens(geometry, params.background);
+    StateEnsemble_ anens(geometry, params.analysis);
     const size_t nens = bgens.size();
     ASSERT(nens == anens.size());
 
     Variables anvars = anens.variables();
-    if (fullConfig.has("analysis variables"))
-      anvars = Variables(fullConfig, "analysis variables");
+    if (params.analysisVariables.value() != boost::none) {
+      anvars = params.analysisVariables.value().get();
+    }
 
     // calculate ensemble means
     State_ bg_mean = bgens.mean();
@@ -95,16 +123,16 @@ template <typename MODEL> class RTPP : public Application {
     // save the analysis mean
     an_mean = anens.mean();   // calculate analysis mean
     Log::test() << "Analysis mean:" << an_mean << std::endl;
-    eckit::LocalConfiguration outConfig(fullConfig, "output");
-    outConfig.set("member", 0);
-    an_mean.write(outConfig);
+    StateWriteParameters_ output = params.output;
+    output.setMember(0);
+    an_mean.write(output);
 
     // save the analysis ensemble
     size_t mymember;
     for (size_t jj=0; jj < nens; ++jj) {
       mymember = jj+1;
-      outConfig.set("member", mymember);
-      anens[jj].write(outConfig);
+      output.setMember(mymember);
+      anens[jj].write(output);
     }
 
     return 0;
@@ -112,8 +140,22 @@ template <typename MODEL> class RTPP : public Application {
 
 // -----------------------------------------------------------------------------
 
+  void outputSchema(const std::string & outputPath) const override {
+    RTPPParameters<MODEL> params;
+    params.outputSchema(outputPath);
+  }
+
+// -----------------------------------------------------------------------------
+
+  void validateConfig(const eckit::Configuration & fullConfig) const override {
+    RTPPParameters<MODEL> params;
+    params.validate(fullConfig);
+  }
+
+// -----------------------------------------------------------------------------
+
  private:
-  std::string appname() const {
+  std::string appname() const override {
     return "oops::RTPP<" + MODEL::name() + ">";
   }
 

@@ -21,12 +21,29 @@
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
 #include "oops/base/ObsSpaces.h"
+#include "oops/base/ObsTypeParameters.h"
 #include "oops/base/ObsVector.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
+
+// Note on Parameters hierarchy:
+// 1. the ObserversParameters is typically the top-level Parameter for obs-related options,
+//    and so is typically accessed via the "observations" key in the YAML files.
+// 2. the ObserversParameters constructs an Observers object. It contains an "obsevers" key
+//    the options to construct a vector of Observer objects.
+template <typename MODEL, typename OBS>
+class ObserversParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(ObserversParameters, Parameters)
+
+  typedef typename VariableChange<MODEL>::Parameters_ VarChangeParameters_;
+
+ public:
+  Parameter<std::vector<ObsTypeParameters<OBS>>> observers{"observers", {}, this};
+  Parameter<GetValuesParameters<MODEL>> getValues{"get values", {}, this};
+};
 
 // -----------------------------------------------------------------------------
 
@@ -36,6 +53,7 @@ template <typename MODEL, typename OBS>
 class Observers {
   typedef Geometry<MODEL>               Geometry_;
   typedef GetValuePosts<MODEL, OBS>     GetValuePosts_;
+  typedef GetValuesParameters<MODEL>    GetValuesParameters_;
   typedef ObsAuxControls<OBS>           ObsAuxCtrls_;
   typedef ObsErrors<OBS>                ObsErrors_;
   typedef Observations<OBS>             Observations_;
@@ -50,7 +68,8 @@ class Observers {
 
  public:
 /// \brief Initializes ObsOperators, Locations, and QC data
-  Observers(const ObsSpaces_ &, const std::vector<ObserverParameters_> &);
+  Observers(const ObsSpaces_ &, const std::vector<ObserverParameters_> &,
+            const GetValuesParameters_ &);
   Observers(const ObsSpaces_ &, const eckit::Configuration &);
 
 /// \brief Initializes variables, obs bias, obs filters (could be different for
@@ -63,17 +82,20 @@ class Observers {
 
  private:
   static std::vector<ObserverParameters_> convertToParameters(const eckit::Configuration &config);
+  static GetValuesParameters_ extractGetValuesParameters(const eckit::Configuration &config);
 
  private:
   std::vector<std::unique_ptr<Observer_>>  observers_;
+  GetValuesParameters_ getValuesParams_;
 };
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
 Observers<MODEL, OBS>::Observers(const ObsSpaces_ & obspaces,
-                                 const std::vector<ObserverParameters_> &params)
-  : observers_()
+                                 const std::vector<ObserverParameters_> & params,
+                                 const GetValuesParameters_ & getValuesParams)
+  : observers_(), getValuesParams_(getValuesParams)
 {
   Log::trace() << "Observers<MODEL, OBS>::Observers start" << std::endl;
 
@@ -89,7 +111,9 @@ Observers<MODEL, OBS>::Observers(const ObsSpaces_ & obspaces,
 
 template <typename MODEL, typename OBS>
 Observers<MODEL, OBS>::Observers(const ObsSpaces_ & obspaces, const eckit::Configuration & config)
-  : Observers(obspaces, convertToParameters(config))
+  : Observers(obspaces,
+              convertToParameters(config.getSubConfiguration("observers")),
+              extractGetValuesParameters(config.getSubConfiguration("get values")))
 {}
 
 // -----------------------------------------------------------------------------
@@ -100,7 +124,7 @@ void Observers<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrls
                                        const eckit::Configuration & conf) {
   Log::trace() << "Observers<MODEL, OBS>::initialize start" << std::endl;
 
-  std::shared_ptr<GetValuePosts_> getvals(new GetValuePosts_());
+  std::shared_ptr<GetValuePosts_> getvals(new GetValuePosts_(getValuesParams_));
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
     getvals->append(observers_[jj]->initialize(geom, obsaux[jj], Rmat[jj], conf));
   }
@@ -147,18 +171,33 @@ std::vector<ObserverParameters<OBS>> Observers<MODEL, OBS>::convertToParameters(
     std::vector<eckit::LocalConfiguration> filterConfigs;
     if (subconfig.get("obs filters", filterConfigs))
       observerConfig.set("obs filters", filterConfigs);
+    if (subconfig.get("obs pre filters", filterConfigs))
+      observerConfig.set("obs pre filters", filterConfigs);
+    if (subconfig.get("obs prior filters", filterConfigs))
+      observerConfig.set("obs prior filters", filterConfigs);
+    if (subconfig.get("obs post filters", filterConfigs))
+      observerConfig.set("obs post filters", filterConfigs);
     eckit::LocalConfiguration getValuesConfig;
     if (subconfig.get("get values", getValuesConfig))
       observerConfig.set("get values", getValuesConfig);
-    eckit::LocalConfiguration linearGetValuesConfig;
-    if (subconfig.get("linear get values", linearGetValuesConfig))
-      observerConfig.set("linear get values", linearGetValuesConfig);
 
-    parameters[i].validateAndDeserialize(observerConfig);
+    parameters[i].deserialize(observerConfig);
   }
 
-  oops::Log::trace() << "Observers<MODEL, OBS>::convertToParameters start" << std::endl;
+  oops::Log::trace() << "Observers<MODEL, OBS>::convertToParameters done" << std::endl;
 
+  return parameters;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename OBS>
+GetValuesParameters<MODEL> Observers<MODEL, OBS>::extractGetValuesParameters(
+    const eckit::Configuration & config) {
+  oops::Log::trace() << "Observers<MODEL, OBS>::extractGetValuesParameters start" << std::endl;
+  GetValuesParameters<MODEL> parameters{};
+  parameters.deserialize(config);
+  oops::Log::trace() << "Observers<MODEL, OBS>::extractGetValuesParameters done" << std::endl;
   return parameters;
 }
 

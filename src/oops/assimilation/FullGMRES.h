@@ -19,7 +19,6 @@
 #include "oops/assimilation/rotmat.h"
 #include "oops/assimilation/UpTriSolve.h"
 #include "oops/util/dot_product.h"
-#include "oops/util/formats.h"
 #include "oops/util/Logger.h"
 
 namespace oops {

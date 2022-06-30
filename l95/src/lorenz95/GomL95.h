@@ -15,8 +15,9 @@
 #include <string>
 #include <vector>
 
-#include "eckit/config/Configuration.h"
 #include "oops/util/ObjectCounter.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 #include "oops/util/Printable.h"
 
 namespace oops {
@@ -27,16 +28,26 @@ namespace lorenz95 {
   class LocsL95;
   class ObsTable;
 
-/// GomL95 class to handle locations for L95 model.
+/// \brief Parameters controlling a Lorenz95 GeoVaLs read/write
+class GomL95Parameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(GomL95Parameters, Parameters)
 
+ public:
+  oops::RequiredParameter<std::string> filename{"filename", "filename for input and output",
+                                                this};
+};
+
+
+/// GomL95 class to handle State values at obs locations for L95 model.
 class GomL95 : public util::Printable,
                private util::ObjectCounter<GomL95> {
  public:
+  typedef GomL95Parameters Parameters_;
+
   static const std::string classname() {return "lorenz95::GomL95";}
 
   GomL95(const LocsL95 &, const oops::Variables &, const std::vector<size_t> &);
-  GomL95(const eckit::Configuration &, const ObsTable &,
-         const oops::Variables &);
+  GomL95(const Parameters_ &, const ObsTable &, const oops::Variables &);
 
   void zero();
   void random();
@@ -47,13 +58,16 @@ class GomL95 : public util::Printable,
   GomL95 & operator-=(const GomL95 &);
   GomL95 & operator*=(const GomL95 &);
   double dot_product_with(const GomL95 &) const;
-  void read(const eckit::Configuration &);
-  void write(const eckit::Configuration &) const;
+  void read(const Parameters_ &);
+  void write(const Parameters_ &) const;
   void print(std::ostream &) const;
 
   size_t size() const {return size_;}
   const double & operator[](const int ii) const {return locval_[ii];}
   double & operator[](const int ii) {return locval_[ii];}
+
+  void fill(const std::vector<size_t> &, const std::vector<double> &);
+  void fillAD(const std::vector<size_t> &, std::vector<double> &) const;
 
  private:
   size_t size_;

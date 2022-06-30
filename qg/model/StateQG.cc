@@ -51,7 +51,7 @@ StateQG::StateQG(const GeometryQG & resol, const eckit::Configuration & file)
   if (file.has("state variables")) vars = oops::Variables(file, "state variables");
   oops::Log::trace() << "StateQG::StateQG variables: " << vars << std::endl;
   fields_.reset(new FieldsQG(resol, vars, 1, util::DateTime()));
-  if (file.has("analytic_init")) {
+  if (file.has("analytic init")) {
     fields_->analytic_init(file);
   } else if (file.has("read_from_file")) {
     const int read_from_file = file.getInt("read_from_file");
@@ -140,6 +140,15 @@ void StateQG::print(std::ostream & os) const {
   os << *fields_;
 }
 // -----------------------------------------------------------------------------
+/// ATLAS FieldSet
+// -----------------------------------------------------------------------------
+void StateQG::toFieldSet(atlas::FieldSet & fset) const {
+  fields_->toFieldSet(fset);
+}
+void StateQG::fromFieldSet(const atlas::FieldSet & fset) {
+  fields_->fromFieldSet(fset);
+}
+// -----------------------------------------------------------------------------
 /// For accumulator
 // -----------------------------------------------------------------------------
 void StateQG::zero() {
@@ -149,5 +158,6 @@ void StateQG::zero() {
 void StateQG::accumul(const double & zz, const StateQG & xx) {
   fields_->axpy(zz, *xx.fields_);
 }
+// -----------------------------------------------------------------------------
 
 }  // namespace qg

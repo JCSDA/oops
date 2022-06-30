@@ -20,44 +20,45 @@ cost function:
     standard_deviation: 1.8e7
     vertical_length_scale: 15000.0
   observations:
-  - obs error:
-      covariance model: diagonal
-    obs operator:
-      obs type: Stream
-    obs space:
-      obsdatain:
-        obsfile: Data/truth.obs4d_biased.nc
-      obsdataout:
-        obsfile: Data/4dvar_obs_biased.obs4d_biased.nc
-      obs type: Stream
-    obs bias:
-      stream: 0.0
-      covariance:
-        stream: 2.0e7
-  - obs error:
-      covariance model: diagonal
-    obs operator:
-      obs type: Wind
-    obs space:
-      obsdatain:
-        obsfile: Data/truth.obs4d_biased.nc
-      obsdataout:
-        obsfile: Data/4dvar_obs_biased.obs4d_biased.nc
-      obs type: Wind
-    obs bias:
-      uwind: 0.0
-      covariance:
-        uwind: 15.0
-  - obs error:
-      covariance model: diagonal
-    obs operator:
-      obs type: WSpeed
-    obs space:
-      obsdatain:
-        obsfile: Data/truth.obs4d_biased.nc
-      obsdataout:
-        obsfile: Data/4dvar_obs_biased.obs4d_biased.nc
-      obs type: WSpeed
+    observers:
+    - obs error:
+        covariance model: diagonal
+      obs operator:
+        obs type: Stream
+      obs space:
+        obsdatain:
+          obsfile: Data/truth.stream.biased.nc
+        obsdataout:
+          obsfile: Data/4dvar.stream.biased.nc
+        obs type: Stream
+      obs bias:
+        stream: 0.0
+        covariance:
+          stream: 2.0e7
+    - obs error:
+        covariance model: diagonal
+      obs operator:
+        obs type: Wind
+      obs space:
+        obsdatain:
+          obsfile: Data/truth.wind.biased.nc
+        obsdataout:
+          obsfile: Data/4dvar.wind.biased.nc
+        obs type: Wind
+      obs bias:
+        uwind: 0.0
+        covariance:
+          uwind: 15.0
+    - obs error:
+        covariance model: diagonal
+      obs operator:
+        obs type: WSpeed
+      obs space:
+        obsdatain:
+          obsfile: Data/truth.wspeed.biased.nc
+        obsdataout:
+          obsfile: Data/4dvar.wspeed.biased.nc
+        obs type: WSpeed
   constraints:
   - jcdfi:
       filtered variables: [x]

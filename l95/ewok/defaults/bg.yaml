@@ -1,2 +1,0 @@
-date: '{{window_begin}}'
-filename: '$(run_dir)/$(experiment).bg.{{current_cycle}}.l95'

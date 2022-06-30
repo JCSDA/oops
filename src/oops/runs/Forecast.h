@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2017-2022 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -13,7 +14,7 @@
 
 #include <string>
 
-#include "eckit/config/LocalConfiguration.h"
+#include "oops/base/ForecastParameters.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Model.h"
 #include "oops/base/PostProcessor.h"
@@ -26,14 +27,32 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/Parameter.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
 
+/// Options taken by the Forecast application.
+template <typename MODEL> class ForecastAppParameters : public ApplicationParameters {
+  OOPS_CONCRETE_PARAMETERS(ForecastAppParameters, ApplicationParameters);
+
+ public:
+  typedef ForecastParameters<MODEL> ForecastParameters_;
+
+  /// Forecast parameters.
+  ForecastParameters_ fcstConf{this};
+};
+
+// -----------------------------------------------------------------------------
+
+/// Application that runs a forecast from a model and initial condition
 template <typename MODEL> class Forecast : public Application {
-  typedef Geometry<MODEL>            Geometry_;
-  typedef Model<MODEL>               Model_;
-  typedef ModelAuxControl<MODEL>      ModelAux_;
-  typedef State<MODEL>               State_;
+  typedef Geometry<MODEL>              Geometry_;
+  typedef Model<MODEL>                 Model_;
+  typedef ModelAuxControl<MODEL>       ModelAux_;
+  typedef State<MODEL>                 State_;
+  typedef ForecastAppParameters<MODEL> ForecastAppParameters_;
 
  public:
 // -----------------------------------------------------------------------------
@@ -41,40 +60,36 @@ template <typename MODEL> class Forecast : public Application {
 // -----------------------------------------------------------------------------
   virtual ~Forecast() {}
 // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const {
+  int execute(const eckit::Configuration & fullConfig, bool validate) const override {
+//  Deserialize parameters
+    ForecastAppParameters_ params;
+    if (validate) params.validate(fullConfig);
+    params.deserialize(fullConfig);
+
 //  Setup resolution
-    const eckit::LocalConfiguration resolConfig(fullConfig, "geometry");
-    const Geometry_ resol(resolConfig, this->getComm());
+    const Geometry_ resol(params.fcstConf.geometry, this->getComm());
 
 //  Setup Model
-    const eckit::LocalConfiguration modelConfig(fullConfig, "model");
-    const Model_ model(resol, modelConfig);
+    const Model_ model(resol, params.fcstConf.model.value().modelParameters);
 
 //  Setup initial state
-    const eckit::LocalConfiguration initialConfig(fullConfig, "initial condition");
-    State_ xx(resol, initialConfig);
+    State_ xx(resol, params.fcstConf.initialCondition);
     Log::test() << "Initial state: " << xx << std::endl;
 
 //  Setup augmented state
-    const ModelAux_ moderr(resol, fullConfig.getSubConfiguration("model aux control"));
+    const ModelAux_ moderr(resol, params.fcstConf.modelAuxControl);
 
 //  Setup times
-    const util::Duration fclength(fullConfig.getString("forecast length"));
+    const util::Duration fclength = params.fcstConf.forecastLength;
     const util::DateTime bgndate(xx.validTime());
     const util::DateTime enddate(bgndate + fclength);
     Log::info() << "Running forecast from " << bgndate << " to " << enddate << std::endl;
 
 //  Setup forecast outputs
     PostProcessor<State_> post;
-
-    eckit::LocalConfiguration prtConfig;
-    if (fullConfig.has("prints")) {
-      prtConfig = eckit::LocalConfiguration(fullConfig, "prints");
-    }
-    post.enrollProcessor(new StateInfo<State_>("fc", prtConfig));
-
-    const eckit::LocalConfiguration outConfig(fullConfig, "output");
-    post.enrollProcessor(new StateWriter<State_>(outConfig));
+    post.enrollProcessor(new StateInfo<State_>("fc", params.fcstConf.prints));
+//    params.output.date = bgndate;     DATE SHOULD BE SET HERE, NOT IN YAML
+    post.enrollProcessor(new StateWriter<State_>(params.fcstConf.output));
 
 //  Run forecast
     model.forecast(xx, moderr, fclength, post);
@@ -84,8 +99,18 @@ template <typename MODEL> class Forecast : public Application {
     return 0;
   }
 // -----------------------------------------------------------------------------
+  void outputSchema(const std::string & outputPath) const override {
+    ForecastAppParameters_ params;
+    params.outputSchema(outputPath);
+  }
+// -----------------------------------------------------------------------------
+  void validateConfig(const eckit::Configuration & fullConfig) const override {
+    ForecastAppParameters_ params;
+    params.validate(fullConfig);
+  }
+// -----------------------------------------------------------------------------
  private:
-  std::string appname() const {
+  std::string appname() const override {
     return "oops::Forecast<" + MODEL::name() + ">";
   }
 // -----------------------------------------------------------------------------

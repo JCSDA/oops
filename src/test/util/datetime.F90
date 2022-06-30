@@ -273,4 +273,21 @@ TEST(test_datetime_to_yyyymmddhhmmss)
   CHECK_EQUAL(second, 56)
 END_TEST
 
+!> Test datetime_seconds_since_jan1.
+TEST(test_datetime_seconds_since_jan1)
+  use datetime_mod
+  implicit none
+  character(len=20) :: fstring
+  type(datetime) :: fdt
+  integer :: seconds_since_jan1
+
+  fstring="2020-05-18T03:27:45Z"
+  call datetime_create(fstring, fdt)
+  seconds_since_jan1 = datetime_seconds_since_jan1(fdt)
+
+  ! Below, the number 138 comes from the number of elapsed days before May 18th,
+  ! which was the 139th day of 2020
+  CHECK_EQUAL(seconds_since_jan1, 45 + 27 * 60 + 3 * 3600 + 138 * 86400)
+END_TEST
+
 END_TESTSUITE

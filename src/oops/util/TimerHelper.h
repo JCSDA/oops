@@ -30,7 +30,7 @@ class TimerHelper : public util::Printable,
  public:
   static void start();
   static void stop();
-  static void add(const std::string &, const double);
+  static void add(const std::string &, const double, const bool);
 //               const std::chrono::duration<double> &);
   ~TimerHelper();
 

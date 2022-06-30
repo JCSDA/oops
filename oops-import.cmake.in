@@ -23,10 +23,8 @@ if(NOT Eigen3_FOUND)
     find_dependency( Eigen3 REQUIRED NO_MODULE HINTS @EIGEN3_ROOT_DIR@ )
 endif()
 
-if(NOT (OpenMP_CXX_FOUND AND OpenMP_Fortran_FOUND))
-    if(@OpenMP_FOUND@)
-        find_dependency( OpenMP REQUIRED COMPONENTS CXX Fortran )
-    endif()
+if(@OPENMP@ AND NOT (OpenMP_CXX_FOUND AND OpenMP_Fortran_FOUND))
+    find_dependency( OpenMP REQUIRED COMPONENTS CXX Fortran )
 endif()
 
 if(NOT (MPI_CXX_FOUND AND MPI_Fortran_FOUND))
@@ -59,6 +57,13 @@ endif()
 
 if(@ENABLE_GPTL@ AND NOT GPTL_FOUND)
     find_dependency( GPTL REQUIRED )
+endif()
+
+if(@nlohmann_json_FOUND@ AND NOT nlohmann_json_FOUND)
+    find_dependency(nlohmann_json QUIET)
+endif()
+if (@nlohmann_json_schema_validator_FOUND@ AND NOT nlohmann_json_schema_validator_FOUND)
+    find_dependency(nlohmann_json_schema_validator QUIET)
 endif()
 
 #Export Fortran compiler version for checking module compatibility

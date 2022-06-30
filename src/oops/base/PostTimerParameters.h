@@ -14,10 +14,6 @@
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
 
-namespace eckit {
-  class Configuration;
-}
-
 namespace oops {
 
 /// \brief Options controlling PostTimer

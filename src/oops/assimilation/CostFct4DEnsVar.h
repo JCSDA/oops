@@ -14,8 +14,8 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
-#include "eckit/config/LocalConfiguration.h"
 #include "eckit/mpi/Comm.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/CostJb4D.h"
@@ -24,17 +24,40 @@
 #include "oops/assimilation/CostTermBase.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
+#include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/State.h"
-#include "oops/base/StateInfo.h"
+#include "oops/base/StateParametersND.h"
 #include "oops/base/TrajectorySaver.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
+
+/// Parameters for the 4D-Ens-Var cost function
+template <typename MODEL, typename OBS>
+class CostFct4DEnsVarParameters : public CostFunctionParametersBase<MODEL, OBS> {
+  // This typedef prevents the macro below from choking on the 2 args of the templated type
+  typedef CostFunctionParametersBase<MODEL, OBS> CostFuntionParametersBase_;
+  OOPS_CONCRETE_PARAMETERS(CostFct4DEnsVarParameters, CostFuntionParametersBase_);
+
+ public:
+  typedef StateParameters4D<MODEL>                     StateParameters4D_;
+  typedef ModelSpaceCovarianceParametersWrapper<MODEL> CovarianceParameters_;
+
+  RequiredParameter<util::Duration> subwindow{"subwindow", "length of assimilation subwindows",
+      this};
+
+  // options for Jb term
+  RequiredParameter<StateParameters4D_> background{"background", "background state(s)", this};
+  RequiredParameter<CovarianceParameters_> backgroundError{"background error",
+      "background error(s)", this};
+};
 
 /// 4D-Ens-Var Cost Function
 /*!
@@ -56,7 +79,9 @@ template<typename MODEL, typename OBS> class CostFct4DEnsVar : public CostFuncti
   typedef State<MODEL>                    State_;
 
  public:
-  CostFct4DEnsVar(const eckit::Configuration &, const eckit::mpi::Comm &);
+  typedef CostFct4DEnsVarParameters<MODEL, OBS> Parameters_;
+
+  CostFct4DEnsVar(const Parameters_ &, const eckit::mpi::Comm &);
   ~CostFct4DEnsVar() {}
 
   void runTLM(CtrlInc_ &, PostProcessorTLAD<MODEL> &,
@@ -74,7 +99,7 @@ template<typename MODEL, typename OBS> class CostFct4DEnsVar : public CostFuncti
 
   CostJb4D<MODEL>     * newJb(const eckit::Configuration &, const Geometry_ &,
                               const CtrlVar_ &) const override;
-  CostJo<MODEL, OBS>       * newJo(const eckit::Configuration &) const override;
+  CostJo<MODEL, OBS>       * newJo(const ObserversParameters<MODEL, OBS> &) const override;
   CostTermBase<MODEL, OBS> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
   void doLinearize(const Geometry_ &, const eckit::Configuration &,
                    const CtrlVar_ &, const CtrlVar_ &,
@@ -87,7 +112,7 @@ template<typename MODEL, typename OBS> class CostFct4DEnsVar : public CostFuncti
   util::DateTime subWinEnd_;
   size_t nsubwin_;
   size_t mysubwin_;
-  std::unique_ptr<Geometry_> resol_;
+  std::unique_ptr<const Geometry_> resol_;
   const Variables ctlvars_;
   eckit::mpi::Comm * commSpace_;
   eckit::mpi::Comm * commTime_;
@@ -96,16 +121,16 @@ template<typename MODEL, typename OBS> class CostFct4DEnsVar : public CostFuncti
 // =============================================================================
 
 template<typename MODEL, typename OBS>
-CostFct4DEnsVar<MODEL, OBS>::CostFct4DEnsVar(const eckit::Configuration & config,
+CostFct4DEnsVar<MODEL, OBS>::CostFct4DEnsVar(const Parameters_ & params,
                                              const eckit::mpi::Comm & comm)
-  : CostFunction<MODEL, OBS>::CostFunction(config),
-    resol_(), ctlvars_(config, "analysis variables")
+  : CostFunction<MODEL, OBS>::CostFunction(),
+    resol_(), ctlvars_(params.analysisVariables)
 {
   Log::trace() << "CostFct4DEnsVar::CostFct4DEnsVar start" << std::endl;
-  util::Duration windowLength(config.getString("window length"));
-  util::DateTime windowBegin(config.getString("window begin"));
-  util::DateTime windowEnd = windowBegin + windowLength;
-  subWinLength_ = util::Duration(config.getString("subwindow"));
+  const util::Duration windowLength = params.windowLength;
+  const util::DateTime windowBegin = params.windowBegin;
+  const util::DateTime windowEnd = windowBegin + windowLength;
+  subWinLength_ = params.subwindow;
 
   nsubwin_ = windowLength.toSeconds() / subWinLength_.toSeconds() + 1;  // Not like WC
   ASSERT(windowLength.toSeconds() == subWinLength_.toSeconds() * (int64_t)(nsubwin_ - 1));
@@ -138,10 +163,9 @@ CostFct4DEnsVar<MODEL, OBS>::CostFct4DEnsVar(const eckit::Configuration & config
   ASSERT(commTime_->size() == nsubwin_);
 
 // Now can setup the rest
-  resol_.reset(new Geometry_(eckit::LocalConfiguration(config, "geometry"),
-                             *commSpace_, *commTime_));
+  resol_.reset(new Geometry_(params.geometry, *commSpace_, *commTime_));
 
-  this->setupTerms(config);
+  this->setupTerms(params.toConfiguration());
 
   Log::trace() << "CostFct4DEnsVar::CostFct4DEnsVar done" << std::endl;
 }
@@ -159,9 +183,10 @@ CostJb4D<MODEL> * CostFct4DEnsVar<MODEL, OBS>::newJb(const eckit::Configuration 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-CostJo<MODEL, OBS> * CostFct4DEnsVar<MODEL, OBS>::newJo(const eckit::Configuration & joConf) const {
+CostJo<MODEL, OBS> * CostFct4DEnsVar<MODEL, OBS>::newJo(
+    const ObserversParameters<MODEL, OBS> & joParams) const {
   Log::trace() << "CostFct4DEnsVar::newJo" << std::endl;
-  return new CostJo<MODEL, OBS>(joConf, *commSpace_,
+  return new CostJo<MODEL, OBS>(joParams, *commSpace_,
                                 subWinBegin_, subWinEnd_, *commTime_);
 }
 

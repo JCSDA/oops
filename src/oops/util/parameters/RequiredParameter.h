@@ -11,6 +11,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -80,6 +81,16 @@ class RequiredParameter : public ParameterBase {
       constraints_(std::move(constraints))
   {}
 
+  /// \brief Constructor with the arguments packaged as a tuple.
+  /// This ctor can be called when creating a tuple of RequiredParameters.
+  /// \param packagedArgs
+  ///   Tuple containing ctor arguments; the tuple elements must exactly match
+  ///   (types and ordering) the arguments of the ctor to call.
+  template <typename... Args>
+  explicit RequiredParameter(const std::tuple<Args...> & packagedArgs)
+    : RequiredParameter(packagedArgs, std::index_sequence_for<Args...>{})
+  {}
+
   /// \brief Load the value of this parameter from \p config.
   ///
   /// An exception is thrown if \p config does not contain a key with the name specified in this
@@ -107,6 +118,12 @@ class RequiredParameter : public ParameterBase {
   // default-constructible.
   boost::optional<T> value_;
   std::vector<std::shared_ptr<const ParameterConstraint<T>>> constraints_;
+
+  /// \brief Constructor with the arguments packaged as a tuple, taking
+  /// index_sequence on input.
+  template <typename Tuple, size_t... Is>
+  explicit RequiredParameter(const Tuple & packagedArgs, std::index_sequence<Is...> /*meta*/)
+      : RequiredParameter(std::get<Is>(packagedArgs)...) {}
 };
 
 template <typename T>

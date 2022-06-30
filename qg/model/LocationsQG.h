@@ -48,6 +48,9 @@ class LocationsQG : public util::Printable,
   atlas::functionspace::PointCloud & pointcloud() {return *pointcloud_;}
   atlas::Field lonlat() const {return pointcloud_->lonlat();}
   atlas::Field & altitude() {ASSERT(altitude_); return *altitude_;}
+  const std::vector<double> & latitudes() const {return lats_;}
+  const std::vector<double> & longitudes() const {return lons_;}
+  const std::vector<util::DateTime> & times() const {return times_;}
   util::DateTime & times(size_t idx) {return times_[idx];}
 
  private:
@@ -55,6 +58,8 @@ class LocationsQG : public util::Printable,
   std::unique_ptr<atlas::functionspace::PointCloud> pointcloud_;
   std::unique_ptr<atlas::Field> altitude_;
   std::vector<util::DateTime> times_;
+  std::vector<double> lats_;
+  std::vector<double> lons_;
 };
 
 }  // namespace qg

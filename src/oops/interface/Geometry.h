@@ -21,13 +21,10 @@
 
 #include "oops/base/Variables.h"
 #include "oops/interface/GeometryIterator.h"
-#include "oops/mpi/mpi.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
-#include "oops/util/parameters/ConfigurationParameter.h"
 #include "oops/util/parameters/GenericParameters.h"
 #include "oops/util/parameters/HasParameters_.h"
-#include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/ParametersOrConfiguration.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Timer.h"
@@ -92,8 +89,17 @@ class Geometry : public util::Printable,
 
   /// Accessor to the geometry communicator
   const eckit::mpi::Comm & getComm() const {return geom_->getComm();}
-  atlas::FunctionSpace * atlasFunctionSpace() const {return geom_->atlasFunctionSpace();}
-  atlas::FieldSet * atlasFieldSet() const {return geom_->atlasFieldSet();}
+
+  /// Accessor to the functionspace
+  const atlas::FunctionSpace & functionSpace() const {return geom_->functionSpace();}
+  atlas::FunctionSpace & functionSpace() {return geom_->functionSpace();}
+
+  /// Accessor to the extra fields
+  const atlas::FieldSet & extraFields() const {return geom_->extraFields();}
+  atlas::FieldSet & extraFields() {return geom_->extraFields();}
+
+  /// Accessor to the latitude/longitude vectors
+  void latlon(std::vector<double> &, std::vector<double> &, const bool) const;
 
   /// Accessor to MODEL::Geometry, used in the other interface classes in oops.
   /// Does not need to be implemented.
@@ -190,12 +196,26 @@ GeometryIterator<MODEL> Geometry<MODEL>::end() const {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
+void Geometry<MODEL>::latlon(std::vector<double> & lats, std::vector<double> & lons,
+                             const bool halo) const {
+  Log::trace() << "Geometry<MODEL>::latlon starting" << std::endl;
+  util::Timer timer(classname(), "latlon");
+  geom_->latlon(lats, lons, halo);
+  ASSERT(lats.size() == lons.size());
+  Log::trace() << "Geometry<MODEL>::latlon done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
 void Geometry<MODEL>::print(std::ostream & os) const {
   Log::trace() << "Geometry<MODEL>::print starting" << std::endl;
   util::Timer timer(classname(), "print");
   os << *geom_;
   Log::trace() << "Geometry<MODEL>::print done" << std::endl;
 }
+
+// -----------------------------------------------------------------------------
 
 }  // namespace interface
 

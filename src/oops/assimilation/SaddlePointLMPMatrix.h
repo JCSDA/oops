@@ -24,7 +24,6 @@
 #include "oops/assimilation/DualVector.h"
 #include "oops/assimilation/SaddlePointPrecondMatrix.h"
 #include "oops/assimilation/SaddlePointVector.h"
-#include "oops/base/IdentityMatrix.h"
 
 namespace oops {
 

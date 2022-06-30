@@ -14,7 +14,7 @@ namespace oops {
     void letkf_core_f90(const int &, const float *, const float *, const float *,
                         float *, float *,
                         const float *, const int &, const int &,
-                        const int &, const int &, const int &);
+                        const int &, const int &, const int &, const float &);
   }
 
 }  // namespace oops

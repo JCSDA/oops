@@ -11,6 +11,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -21,6 +22,7 @@
 #include "oops/util/parameters/ParameterConstraint.h"
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/ParameterTraits.h"
+#include "oops/util/TypeTraits.h"
 
 namespace oops {
 
@@ -84,7 +86,7 @@ class Parameter : public ParameterBase {
   Parameter(const char *name, const char *description, const T& defaultValue, Parameters *parent,
             std::vector<std::shared_ptr<const ParameterConstraint<T>>> constraints = {})
     : ParameterBase(parent), name_(name), description_(description), value_(defaultValue),
-      constraints_(std::move(constraints))
+      defaultValue_(defaultValue), constraints_(std::move(constraints))
   {}
 
   void deserialize(util::CompositePath &path, const eckit::Configuration &config) override;
@@ -103,6 +105,7 @@ class Parameter : public ParameterBase {
   std::string name_;
   std::string description_;
   T value_;
+  T defaultValue_;
   std::vector<std::shared_ptr<const ParameterConstraint<T>>> constraints_;
 };
 
@@ -123,12 +126,43 @@ void Parameter<T>::serialize(eckit::LocalConfiguration &config) const {
   ParameterTraits<T>::set(config, name_, value_);
 }
 
+template<class, class = void>
+struct HasValueAsJson : std::false_type {};
+
+template<class T>
+struct HasValueAsJson<T, cpp17::void_t<
+  decltype(ParameterTraits<T>::valueAsJson(std::declval<T>()))>> : std::true_type
+{};
+
+// Overload selected when ParameterTraits<T> has a static member function `valueAsJson()`
+// taking a parameter of type `T`.
+template <typename T>
+typename std::enable_if<HasValueAsJson<T>::value, void>::type
+maybeExtendPropertySchemaWithDefault(ObjectJsonSchema &schema,
+                                     const std::string &propertyName,
+                                     const T &defaultValue)
+{
+  std::string defaultValueAsJson = ParameterTraits<T>::valueAsJson(defaultValue);
+  if (defaultValueAsJson != "") {
+    schema.extendPropertySchema(propertyName, {{"default", defaultValueAsJson}});
+  }
+}
+
+// No-op overload selected otherwise
+template <typename T>
+typename std::enable_if<!HasValueAsJson<T>::value, void>::type
+maybeExtendPropertySchemaWithDefault(ObjectJsonSchema &schema,
+                                     const std::string &propertyName,
+                                     const T &defaultValue)
+{}
+
 template <typename T>
 ObjectJsonSchema Parameter<T>::jsonSchema() const {
   ObjectJsonSchema schema = ParameterTraits<T>::jsonSchema(name_);
   if (description_ != "") {
     schema.extendPropertySchema(name_, {{"description", "\"" + description_ + "\""}});
   }
+  maybeExtendPropertySchemaWithDefault(schema, name_, defaultValue_);
   for (const std::shared_ptr<const ParameterConstraint<T>> &constraint : constraints_) {
     PropertyJsonSchema constraintSchema = constraint->jsonSchema();
     schema.extendPropertySchema(name_, std::move(constraintSchema));

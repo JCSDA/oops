@@ -216,7 +216,7 @@ template <typename OBS> void testMask() {
     EXPECT(nobs_all > 0);
 
     /// apply empty mask, check that vector is the same
-    ObsDataVector_ unsetmask(obspace, obspace.obsvariables());
+    ObsDataVector_ unsetmask(obspace, obspace.assimvariables());
     unsetmask.zero();
     ObsVector_ with_unsetmask(reference);
     with_unsetmask.mask(unsetmask);
@@ -248,7 +248,7 @@ template <typename OBS> void testMask() {
       tmp.ones();
       tmp.save(maskvarname);
     }
-    ObsDataVector_ mask(obspace, obspace.obsvariables(), maskvarname);
+    ObsDataVector_ mask(obspace, obspace.assimvariables(), maskvarname);
     ObsVector_ with_mask(reference);
     with_mask.mask(mask);
     oops::Log::test() << "ObsVector masked with " << maskvarname << " mask: " <<

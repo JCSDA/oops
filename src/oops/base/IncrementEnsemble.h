@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2021-2022 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -11,51 +12,107 @@
 #ifndef OOPS_BASE_INCREMENTENSEMBLE_H_
 #define OOPS_BASE_INCREMENTENSEMBLE_H_
 
+#include <Eigen/Dense>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include <boost/ptr_container/ptr_vector.hpp>
-
 #include "eckit/config/LocalConfiguration.h"
-#include "oops/base/Accumulator.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
-#include "oops/base/LinearVariableChangeBase.h"
+#include "oops/base/LocalIncrement.h"
 #include "oops/base/State.h"
 #include "oops/base/StateEnsemble.h"
 #include "oops/base/Variables.h"
+#include "oops/interface/LinearVariableChange.h"
+#include "oops/util/ConfigFunctions.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/OptionalParameter.h"
+#include "oops/util/parameters/Parameter.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
 
+template <typename MODEL> class GeometryIterator;
+
+/// Parameters for ensemble members from template.
+template <typename MODEL>
+class IncrementMemberTemplateParameters : public Parameters {
+  OOPS_CONCRETE_PARAMETERS(IncrementMemberTemplateParameters, Parameters)
+
+  typedef typename Increment<MODEL>::ReadParameters_ Parameters_;
+ public:
+  RequiredParameter<Parameters_> increment{"template", "template to define a generic member", this};
+  RequiredParameter<std::string> pattern{"pattern", "pattern to be replaced for members", this};
+  RequiredParameter<size_t> nmembers{"nmembers", "number of members", this};
+  Parameter<size_t> start{"start", "starting member index", 1, this};
+  Parameter<std::vector<size_t>> except{"except", "excluded members indices", {}, this};
+  Parameter<size_t> zpad{"zero padding", "zero padding", 0, this};
+};
+
+/// Parameters for the ensemble of increments.
+template <typename MODEL>
+class IncrementEnsembleParameters : public Parameters {
+  OOPS_CONCRETE_PARAMETERS(IncrementEnsembleParameters, Parameters)
+
+  typedef typename Increment<MODEL>::ReadParameters_ Parameters_;
+  typedef IncrementMemberTemplateParameters<MODEL> IncrementMemberTemplateParameters_;
+ public:
+  RequiredParameter<util::DateTime> date{"date", "increment date", this};
+  OptionalParameter<std::vector<Parameters_>> increments{"members",
+                   "members of the increment ensemble", this};
+  OptionalParameter<IncrementMemberTemplateParameters_> increments_template{"members from template",
+                   "template to define members of the increment ensemble", this};
+};
+
 // -----------------------------------------------------------------------------
+/// Parameters for the ensemble of increments generated from ensemble of states
+/// with specified inflation and linear variable changes.
+template <typename MODEL>
+class IncrementEnsembleFromStatesParameters : public Parameters {
+  OOPS_CONCRETE_PARAMETERS(IncrementEnsembleFromStatesParameters, Parameters)
 
-/// \brief Ensemble of inrements
+  typedef typename Increment<MODEL>::ReadParameters_ IncrementReadParameters_;
+  typedef typename LinearVariableChange<MODEL>::Parameters_ LinearVarChangeParameters_;
+ public:
+  OptionalParameter<IncrementReadParameters_> inflationField{"inflation field",
+                   "inflation field (as increment in model space)", this};
+  Parameter<double> inflationValue{"inflation value", "inflation value (scalar)",
+                    1.0, this};
+  OptionalParameter<LinearVarChangeParameters_> linVarChange{"linear variable change",
+                   "linear variable changes applied to the increments", this};
+  StateEnsembleParameters<MODEL> states{this};
+};
+
+
+/// \brief Ensemble of increments
 template<typename MODEL> class IncrementEnsemble {
-  typedef Geometry<MODEL>            Geometry_;
-  typedef Increment<MODEL>           Increment_;
-  typedef LinearVariableChangeBase<MODEL>  LinearVariableChangeBase_;
-  typedef State<MODEL>               State_;
-  typedef StateEnsemble<MODEL>       StateEnsemble_;
-
-  typedef typename boost::ptr_vector<LinearVariableChangeBase_> ChvarVec_;
-  typedef typename ChvarVec_::const_reverse_iterator ircst_;
+  typedef Geometry<MODEL>                    Geometry_;
+  typedef GeometryIterator<MODEL>            GeometryIterator_;
+  typedef Increment<MODEL>                   Increment_;
+  typedef LinearVariableChange<MODEL>        LinearVariableChange_;
+  typedef State<MODEL>                       State_;
+  typedef StateEnsemble<MODEL>               StateEnsemble_;
+  typedef IncrementEnsembleFromStatesParameters<MODEL> IncrementEnsembleFromStatesParameters_;
+  typedef IncrementEnsembleParameters<MODEL> IncrementEnsembleParameters_;
+  typedef StateEnsembleParameters<MODEL>     StateEnsembleParameters_;
+  typedef StateParametersND<MODEL>           StateParameters_;
 
  public:
   /// Constructor
   IncrementEnsemble(const Geometry_ & resol, const Variables & vars,
                     const util::DateTime &, const int rank);
-  IncrementEnsemble(const eckit::Configuration &, const State_ &, const State_ &,
+  IncrementEnsemble(const IncrementEnsembleFromStatesParameters_ &, const State_ &, const State_ &,
                     const Geometry_ &, const Variables &);
   /// \brief construct ensemble of perturbations by reading them from disk
-  IncrementEnsemble(const Geometry_ &, const Variables &, const eckit::Configuration &);
+  IncrementEnsemble(const Geometry_ &, const Variables &, const IncrementEnsembleParameters_ &);
   /// \brief construct ensemble of perturbations by reading two state ensembles (one member at a
   //         time) and taking the  difference of each set of pairs
-  IncrementEnsemble(const Geometry_ &, const Variables &, const eckit::Configuration &,
-                    const eckit::Configuration &);
+  IncrementEnsemble(const Geometry_ &, const Variables &, const StateEnsembleParameters_ &,
+                    const StateEnsembleParameters_ &);
 
   void write(const eckit::Configuration &) const;
 
@@ -64,11 +121,10 @@ template<typename MODEL> class IncrementEnsemble {
   Increment_ & operator[](const int ii) {return ensemblePerturbs_[ii];}
   const Increment_ & operator[](const int ii) const {return ensemblePerturbs_[ii];}
 
-  /// Control variables
-  const Variables & controlVariables() const {return vars_;}
+  void packEigen(Eigen::MatrixXd & X, const GeometryIterator_ & gi) const;
+  void setEigen(const Eigen::MatrixXd & X, const GeometryIterator_ & gi);
 
  private:
-  const Variables vars_;
   std::vector<Increment_> ensemblePerturbs_;
 };
 
@@ -77,11 +133,11 @@ template<typename MODEL> class IncrementEnsemble {
 template<typename MODEL>
 IncrementEnsemble<MODEL>::IncrementEnsemble(const Geometry_ & resol, const Variables & vars,
                                             const util::DateTime & tslot, const int rank)
-  : vars_(vars), ensemblePerturbs_()
+  : ensemblePerturbs_()
 {
   ensemblePerturbs_.reserve(rank);
   for (int m = 0; m < rank; ++m) {
-    ensemblePerturbs_.emplace_back(resol, vars_, tslot);
+    ensemblePerturbs_.emplace_back(resol, vars, tslot);
   }
   Log::trace() << "IncrementEnsemble:contructor done" << std::endl;
 }
@@ -89,54 +145,52 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const Geometry_ & resol, const Varia
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-IncrementEnsemble<MODEL>::IncrementEnsemble(const eckit::Configuration & conf,
+IncrementEnsemble<MODEL>::IncrementEnsemble(const IncrementEnsembleFromStatesParameters_ & params,
                                             const State_ & xb, const State_ & fg,
                                             const Geometry_ & resol, const Variables & vars)
-  : vars_(vars), ensemblePerturbs_()
+  : ensemblePerturbs_()
 {
+  Log::trace() << "IncrementEnsemble:contructor start" << std::endl;
   // Check sizes and fill in timeslots
   util::DateTime tslot = xb.validTime();
 
   // Read inflation field
   std::unique_ptr<Increment_> inflationField;
-  if (conf.has("inflation field")) {
-    const eckit::LocalConfiguration inflationConfig(conf, "inflation field");
+  if (params.inflationField.value() != boost::none) {
     inflationField.reset(new Increment_(resol, vars, tslot));
-    inflationField->read(inflationConfig);
+    inflationField->read(*params.inflationField.value());
   }
 
   // Get inflation value
-  double inflationValue = conf.getDouble("inflation value", 1.0);
+  const double inflationValue = params.inflationValue;
 
   // Setup change of variable
-  ChvarVec_ chvars;
-  std::vector<eckit::LocalConfiguration> chvarconfs;
-  conf.get("variable changes", chvarconfs);
-  for (const auto & conf : chvarconfs) {
-    chvars.push_back(LinearVariableChangeFactory<MODEL>::create(xb, fg, resol, conf));
+  std::unique_ptr<LinearVariableChange_> linvarchg;
+  if (params.linVarChange.value() != boost::none) {
+    linvarchg.reset(new LinearVariableChange_(resol, *params.linVarChange.value()));
+    linvarchg->setTrajectory(xb, fg);
   }
-  // TODO(Benjamin): one change of variable for each timeslot
 
   // Read ensemble
-  StateEnsemble_ ensemble(resol, conf);
+  StateEnsemble_ ensemble(resol, params.states);
   State_ bgmean = ensemble.mean();
 
   ensemblePerturbs_.reserve(ensemble.size());
   for (unsigned int ie = 0; ie < ensemble.size(); ++ie) {
     // Ensemble will be centered around ensemble mean
-    Increment_ dx(resol, vars_, tslot);
+    Increment_ dx(resol, vars, tslot);
     dx.diff(ensemble[ie], bgmean);
 
     // Apply inflation
-    if (conf.has("inflation field")) {
+    if (params.inflationField.value() != boost::none) {
       dx.schur_product_with(*inflationField);
     }
     dx *= inflationValue;
 
-    // Apply inverse of the linear balance operator
-    // K_1^{-1} K_2^{-1} .. K_N^{-1}
-    for (ircst_ it = chvars.rbegin(); it != chvars.rend(); ++it) {
-      dx = it->multiplyInverse(dx);
+    if (params.linVarChange.value() != boost::none) {
+      const auto & linvar = *params.linVarChange.value();
+      oops::Variables varin = *linvar.inputVariables.value();
+      linvarchg->multiplyInverse(dx, varin);
     }
 
     ensemblePerturbs_.emplace_back(std::move(dx));
@@ -148,23 +202,66 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const eckit::Configuration & conf,
 
 template<typename MODEL>
 IncrementEnsemble<MODEL>::IncrementEnsemble(const Geometry_ & resol, const Variables & vars,
-                                            const eckit::Configuration & config)
-  : vars_(vars), ensemblePerturbs_()
+                                            const IncrementEnsembleParameters_ & params)
+  : ensemblePerturbs_()
 {
-  std::vector<eckit::LocalConfiguration> memberConfig;
-  config.get("members", memberConfig);
-
   // Datetime for ensemble
-  util::DateTime tslot = util::DateTime(config.getString("date"));
+  util::DateTime tslot = params.date;
 
-  // Reserve memory to hold ensemble
-  ensemblePerturbs_.reserve(memberConfig.size());
+  // Abort if both "members" and "members from template" are specified
+  if (params.increments.value() != boost::none && params.increments_template.value() != boost::none)
+    ABORT("StateEnsemble:contructor: both members and members from template are specified");
 
-  // Loop over all ensemble members
-  for (size_t jj = 0; jj < memberConfig.size(); ++jj) {
-    Increment_ dx(resol, vars_, tslot);
-    dx.read(memberConfig[jj]);
-    ensemblePerturbs_.emplace_back(std::move(dx));
+  if (params.increments.value() != boost::none) {
+    // Explicit members
+
+    // Reserve memory to hold ensemble
+    const size_t nens = params.increments.value()->size();
+    ensemblePerturbs_.reserve(nens);
+
+    // Loop over all ensemble members
+    for (size_t jj = 0; jj < nens; ++jj) {
+      Increment_ dx(resol, vars, tslot);
+      dx.read((*params.increments.value())[jj]);
+      ensemblePerturbs_.emplace_back(std::move(dx));
+    }
+  } else if (params.increments_template.value() != boost::none) {
+    // Members template
+
+    // Template configuration
+    eckit::LocalConfiguration incConf;
+    params.increments_template.value()->increment.value().serialize(incConf);
+
+    // Reserve memory to hold ensemble
+    const size_t nens = params.increments_template.value()->nmembers.value();
+    ensemblePerturbs_.reserve(nens);
+
+    // Loop over all ensemble members
+    size_t count = params.increments_template.value()->start;
+    for (size_t jj = 0; jj < nens; ++jj) {
+      // Check for excluded members
+      while (std::count(params.increments_template.value()->except.value().begin(),
+             params.increments_template.value()->except.value().end(), count)) {
+        count += 1;
+      }
+
+      // Copy and update template configuration with pattern
+      eckit::LocalConfiguration memberConf(incConf);
+
+      // Replace pattern recursively in the configuration
+      util::seekAndReplace(memberConf, params.increments_template.value()->pattern,
+        count, params.increments_template.value()->zpad);
+
+      // Read increment
+      Increment_ dx(resol, vars, tslot);
+      dx.read(memberConf);
+      ensemblePerturbs_.emplace_back(std::move(dx));
+
+      // Update counter
+      count += 1;
+    }
+  } else {
+    ABORT("StateEnsemble:contructor: ensemble not specified");
   }
   Log::trace() << "IncrementEnsemble:contructor (by reading increment ensemble) done" << std::endl;
 }
@@ -173,29 +270,94 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const Geometry_ & resol, const Varia
 
 template<typename MODEL>
 IncrementEnsemble<MODEL>::IncrementEnsemble(const Geometry_ & resol, const Variables & vars,
-                                            const eckit::Configuration & configBase,
-                                            const eckit::Configuration & configPert)
-  : vars_(vars), ensemblePerturbs_()
+                                            const StateEnsembleParameters_ & configBase,
+                                            const StateEnsembleParameters_ & configPert)
+  : ensemblePerturbs_()
 {
-  std::vector<eckit::LocalConfiguration> memberConfigBase;
-  configBase.get("members", memberConfigBase);
+  // Abort if both "members" and "members from template" are specified
+  if (configBase.states.value() != boost::none
+    && configBase.states_template.value() != boost::none)
+    ABORT("IncrementEnsemble:contructor: both members and members from template are specified");
+  if (configPert.states.value() != boost::none
+    && configPert.states_template.value() != boost::none)
+    ABORT("IncrementEnsemble:contructor: both members and members from template are specified");
 
-  std::vector<eckit::LocalConfiguration> memberConfigPert;
-  configPert.get("members", memberConfigPert);
+  // Base ensemble size
+  size_t baseNens = 0;
+  eckit::LocalConfiguration baseTemplateConf;
+  if (configBase.states.value() != boost::none) {
+    baseNens = configBase.states.value()->size();
+  } else if (configBase.states_template.value() != boost::none) {
+    baseNens = configBase.states_template.value()->nmembers.value();
+    configBase.states_template.value()->state.value().serialize(baseTemplateConf);
+
+  } else {
+    ABORT("IncrementEnsemble:contructor: base ensemble not specified");
+  }
+
+  // Perturbation ensemble size
+  size_t pertNens = 0;
+  eckit::LocalConfiguration pertTemplateConf;
+  if (configPert.states.value() != boost::none) {
+    pertNens = configPert.states.value()->size();
+  } else if (configPert.states_template.value() != boost::none) {
+    pertNens = configPert.states_template.value()->nmembers.value();
+    configPert.states_template.value()->state.value().serialize(pertTemplateConf);
+
+  } else {
+    ABORT("IncrementEnsemble:contructor: perturbation ensemble not specified");
+  }
 
   // Ensure input ensembles are of the same size
-  ASSERT(memberConfigBase.size() == memberConfigPert.size());
+  ASSERT(baseNens == pertNens);
 
   // Reserve memory to hold ensemble
-  ensemblePerturbs_.reserve(memberConfigBase.size());
+  ensemblePerturbs_.reserve(baseNens);
 
   // Loop over all ensemble members
-  for (size_t jj = 0; jj < memberConfigBase.size(); ++jj) {
-    State_ xBase(resol, memberConfigBase[jj]);
-    State_ xPert(resol, memberConfigPert[jj]);
-    Increment_ dx(resol, vars_, xBase.validTime());
+  eckit::LocalConfiguration baseStateConf, pertStateConf;
+  size_t baseCount, pertCount;
+  if (configBase.states_template.value() != boost::none)
+    baseCount = configBase.states_template.value()->start;
+  if (configPert.states_template.value() != boost::none)
+    pertCount = configPert.states_template.value()->start;
+  for (size_t jj = 0; jj < baseNens; ++jj) {
+    // Load base member
+    if (configBase.states.value() != boost::none) {
+      (*configBase.states.value())[jj].serialize(baseStateConf);
+    } else if (configBase.states_template.value() != boost::none) {
+      while (std::count(configBase.states_template.value()->except.value().begin(),
+             configBase.states_template.value()->except.value().end(), baseCount)) {
+        baseCount += 1;
+      }
+      baseStateConf = eckit::LocalConfiguration(baseTemplateConf);
+      util::seekAndReplace(baseStateConf, configBase.states_template.value()->pattern,
+        baseCount, configBase.states_template.value()->zpad);
+    }
+    State_ xBase(resol, baseStateConf);
+
+    // Load perturbation member
+    if (configPert.states.value() != boost::none) {
+      (*configPert.states.value())[jj].serialize(pertStateConf);
+    } else if (configPert.states_template.value() != boost::none) {
+      while (std::count(configPert.states_template.value()->except.value().begin(),
+             configPert.states_template.value()->except.value().end(), pertCount)) {
+        pertCount += 1;
+      }
+      pertStateConf = eckit::LocalConfiguration(pertTemplateConf);
+      util::seekAndReplace(pertStateConf, configPert.states_template.value()->pattern,
+        pertCount, configPert.states_template.value()->zpad);
+    }
+    State_ xPert(resol, pertStateConf);
+
+    // Difference
+    Increment_ dx(resol, vars, xBase.validTime());
     dx.diff(xBase, xPert);
     ensemblePerturbs_.emplace_back(std::move(dx));
+
+    // Update counters
+    if (configBase.states_template.value() != boost::none) baseCount += 1;
+    if (configPert.states_template.value() != boost::none) pertCount += 1;
   }
   Log::trace() << "IncrementEnsemble:contructor (by diffing state ensembles) done" << std::endl;
 }
@@ -209,6 +371,45 @@ void IncrementEnsemble<MODEL>::write(const eckit::Configuration & config) const
   for (size_t ii=0; ii < size(); ++ii) {
     outConfig.set("member", ii+1);
     ensemblePerturbs_[ii].write(outConfig);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void IncrementEnsemble<MODEL>::packEigen(Eigen::MatrixXd & X,
+                                         const GeometryIterator_ & gi) const
+{
+  size_t ngp = ensemblePerturbs_[0].getLocal(gi).getVals().size();
+  size_t nens = ensemblePerturbs_.size();
+  X.resize(ngp, nens);
+  for (size_t iens=0; iens < nens; ++iens) {
+    LocalIncrement gp = ensemblePerturbs_[iens].getLocal(gi);
+    std::vector<double> tmp1 = gp.getVals();
+    for (size_t iv=0; iv < ngp; ++iv) {
+      X(iv, iens) = tmp1[iv];
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void IncrementEnsemble<MODEL>::setEigen(const Eigen::MatrixXd & X,
+                                        const GeometryIterator_ & gi)
+{
+  size_t ngp = ensemblePerturbs_[0].getLocal(gi).getVals().size();
+  size_t nens = ensemblePerturbs_.size();
+
+  LocalIncrement gptmp = ensemblePerturbs_[0].getLocal(gi);
+  std::vector<double> tmp = gptmp.getVals();
+
+  for (size_t iens=0; iens < nens; ++iens) {
+    for (size_t iv=0; iv < ngp; ++iv) {
+      tmp[iv] = X(iv, iens);
+    }
+    gptmp.setVals(tmp);
+    ensemblePerturbs_[iens].setLocal(gptmp, gi);
   }
 }
 

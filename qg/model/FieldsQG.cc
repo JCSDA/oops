@@ -126,7 +126,7 @@ void FieldsQG::schur_product_with(const FieldsQG & dx) {
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::random() {
-  qg_fields_random_f90(keyFlds_, vars_);
+  qg_fields_random_f90(keyFlds_);
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::dirac(const eckit::Configuration & config) {
@@ -148,16 +148,12 @@ void FieldsQG::diff(const FieldsQG & x1, const FieldsQG & x2) {
   qg_fields_diff_incr_f90(keyFlds_, x1_myres.keyFlds_, x2_myres.keyFlds_);
 }
 // -----------------------------------------------------------------------------
-void FieldsQG::setAtlas(atlas::FieldSet * afieldset) const {
-  qg_fields_set_atlas_f90(keyFlds_, vars_, afieldset->get());
+void FieldsQG::toFieldSet(atlas::FieldSet & afieldset) const {
+  qg_fields_to_fieldset_f90(keyFlds_, afieldset.get());
 }
 // -----------------------------------------------------------------------------
-void FieldsQG::toAtlas(atlas::FieldSet * afieldset) const {
-  qg_fields_to_atlas_f90(keyFlds_, vars_, afieldset->get());
-}
-// -----------------------------------------------------------------------------
-void FieldsQG::fromAtlas(atlas::FieldSet * afieldset) {
-  qg_fields_from_atlas_f90(keyFlds_, vars_, afieldset->get());
+void FieldsQG::fromFieldSet(const atlas::FieldSet & afieldset) {
+  qg_fields_from_fieldset_f90(keyFlds_, afieldset.get());
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::read(const eckit::Configuration & config) {
@@ -199,10 +195,10 @@ void FieldsQG::print(std::ostream & os) const {
   for (int jj = 0; jj < 6; ++jj) {
     if (vpresent[jj] == 1) {
       std::ios_base::fmtflags f(os.flags());
-      os << std::endl << "  " << var[jj] << std::scientific << std::setprecision(4)
-       << "  Min=" << std::setw(12) << vmin[jj]
-       << ", Max=" << std::setw(12) << vmax[jj]
-       << ", RMS=" << std::setw(12) << vrms[jj];
+      os << std::endl << "  " << var[jj]
+       << "  Min=" << vmin[jj]
+       << ", Max=" << vmax[jj]
+       << ", RMS=" << vrms[jj];
       os.flags(f);
     }
   }

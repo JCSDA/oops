@@ -1,4 +1,5 @@
 # (C) Copyright 2009-2016 ECMWF.
+# (C) Copyright 2022- UCAR.
 #
 # This software is licensed under the terms of the Apache Licence Version 2.0
 # which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -11,7 +12,9 @@
 ################################################################################
 
 cmake_minimum_required( VERSION 3.12 )
-project( oops VERSION 1.2.0 LANGUAGES CXX Fortran )
+project( oops VERSION 1.3.0 LANGUAGES CXX Fortran )
+
+option(OPENMP "Build oops with OpenMP support" ON)
 
 ## Ecbuild integration
 find_package( ecbuild 3.3.2 REQUIRED )
@@ -47,10 +50,12 @@ find_package( Eigen3 REQUIRED NO_MODULE HINTS
     $ENV{Eigen3_ROOT} $ENV{EIGEN3_ROOT} $ENV{Eigen_ROOT} $ENV{EIGEN_ROOT}
     $ENV{Eigen3_PATH} $ENV{EIGEN3_PATH} $ENV{Eigen_PATH} $ENV{EIGEN_PATH})
 
-find_package( OpenMP COMPONENTS CXX Fortran )
+if(OPENMP)
+  find_package( OpenMP REQUIRED COMPONENTS CXX Fortran )
+endif()
 find_package( MPI REQUIRED COMPONENTS C CXX Fortran )
 find_package( NetCDF REQUIRED COMPONENTS Fortran )
-find_package( Boost 1.64.0 REQUIRED)
+find_package( Boost 1.64.0 REQUIRED )
 find_package( eckit 1.11.6 REQUIRED COMPONENTS MPI )
 find_package( fckit 0.7.0 REQUIRED )
 if(OpenMP_FOUND)
@@ -74,6 +79,16 @@ endif()
 find_package(nlohmann_json QUIET)
 find_package(nlohmann_json_schema_validator QUIET)
 
+# JSON schema file generation logic
+include( oops_output_json_schema )
+install(
+  FILES
+    "cmake/oops_output_json_schema.cmake"
+    "cmake/oops_output_json_schema_x.cmake.in"
+  DESTINATION
+    "${INSTALL_CMAKE_DIR}"
+)
+
 ## Sources
 add_subdirectory( src )
 add_subdirectory( tools )
@@ -87,6 +102,9 @@ if( ENABLE_LORENZ95_MODEL )
 endif()
 if( ENABLE_QG_MODEL )
   add_subdirectory( qg )
+  if( ENABLE_LORENZ95_MODEL )
+    add_subdirectory( coupled )
+  endif()
 endif()
 
 ## Package Config

@@ -15,7 +15,7 @@ use datetime_mod
 
 implicit none
 private
-public :: qg_locs
+public :: qg_locs, locs_copy
 ! ------------------------------------------------------------------------------
 integer,parameter :: rseed = 1 !< Random seed (for reproducibility)
 
@@ -45,6 +45,13 @@ function ctor_from_ptr(ptr) result(this)
 
   this%ptr = ptr
 end function ctor_from_ptr
+
+! ------------------------------------------------------------------------------
+subroutine locs_copy(self, other)
+  type(qg_locs), intent(inout) :: self
+  type(qg_locs), intent(in) :: other
+  self%ptr = other%ptr
+end subroutine locs_copy
 
 ! ------------------------------------------------------------------------------
 function locs_nlocs(self)

@@ -117,7 +117,7 @@ template <typename MODEL> class LinearModelFixture : private boost::noncopyable 
 //  Create a covariance matrix
     oops::instantiateCovarFactory<MODEL>();
     const eckit::LocalConfiguration covar(TestEnvironment::config(), "background error");
-    B_.reset(oops::CovarianceFactory<MODEL>::create(covar, *resol_, *ctlvars_, *xref_, *xref_));
+    B_.reset(oops::CovarianceFactory<MODEL>::create(*resol_, *ctlvars_, covar, *xref_, *xref_));
 
 //  Linear model configuration
     tlConf_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "linear model"));
@@ -302,8 +302,11 @@ template <typename MODEL> void testLinearApproximation() {
     derr -= diff;
     const double errnorm = derr.norm();
     errors.push_back(errnorm / difnorm);
-    oops::Log::test() << "TL error = " << std::setprecision(16) << err
+    std::streamsize ss = oops::Log::test().precision();
+    oops::Log::test() << std::setprecision(16);
+    oops::Log::test() << "TL error = " << err
                       << ", relative error = " << errnorm / difnorm << std::endl;
+    oops::Log::test() << std::setprecision(ss);
     zz /= 10.0;
   }
 

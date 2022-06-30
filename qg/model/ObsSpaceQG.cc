@@ -89,9 +89,17 @@ ObsSpaceQG::ObsSpaceQG(const Parameters_ & params, const eckit::mpi::Comm & comm
     obsvars_.push_back("Vwind");
   }
 
+  // For this model the processed varaibles are the same as the simulated variables.
+  assimvars_ = obsvars_;
+
   //  Generate locations etc... if required
   if (params.generate.value() != boost::none) {
     const ObsGenerateParameters &gParams = *params.generate.value();
+    if ((gParams.obsDensity.value() == boost::none) &&
+        (gParams.obsLocs.value() == boost::none)) {
+      throw eckit::BadValue("Neither 'obs density' nor 'obs locations' are specified "
+                            "in the parameters of 'obs space.generate'", Here());
+    }
     const util::Duration first(gParams.begin);
     const util::DateTime start(winbgn_ + first);
     const util::Duration freq(gParams.obsPeriod);
@@ -109,17 +117,19 @@ ObsSpaceQG::ObsSpaceQG(const Parameters_ & params, const eckit::mpi::Comm & comm
 
 // -----------------------------------------------------------------------------
 
-ObsSpaceQG::~ObsSpaceQG() {}
-
-// -----------------------------------------------------------------------------
-
-void ObsSpaceQG::save() const {
+ObsSpaceQG::~ObsSpaceQG() {
   ASSERT(theObsFileCount_ > 0);
   theObsFileCount_--;
   if (theObsFileCount_ == 0) {
     theObsFileRegister_.clear();
     qg_obsdb_delete_f90(key_);
   }
+}
+
+// -----------------------------------------------------------------------------
+
+void ObsSpaceQG::save() const {
+  qg_obsdb_save_f90(key_);
 }
 
 // -----------------------------------------------------------------------------

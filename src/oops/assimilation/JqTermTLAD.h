@@ -18,8 +18,11 @@
 #include "oops/base/PostBaseTLAD.h"
 #include "oops/base/State.h"
 #include "oops/mpi/mpi.h"
-#include "oops/util/DateTime.h"
-#include "oops/util/Duration.h"
+
+namespace util {
+class DateTime;
+class Duration;
+}
 
 namespace oops {
 

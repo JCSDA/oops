@@ -34,6 +34,7 @@ use random_mod
 implicit none
 
 private
+public :: rseed
 public :: qg_fields
 public :: qg_fields_registry
 public :: qg_fields_create,qg_fields_create_from_other,qg_fields_delete, &
@@ -41,7 +42,8 @@ public :: qg_fields_create,qg_fields_create_from_other,qg_fields_delete, &
         & qg_fields_copy,qg_fields_copy_lbc,qg_fields_self_add,qg_fields_self_sub,qg_fields_self_mul,qg_fields_axpy, &
         & qg_fields_self_schur,qg_fields_dot_prod,qg_fields_add_incr,qg_fields_diff_incr,qg_fields_change_resol, &
         & qg_fields_read_file,qg_fields_write_file,qg_fields_analytic_init,qg_fields_gpnorm,qg_fields_rms,qg_fields_sizes, &
-        & qg_fields_lbc,qg_fields_set_atlas,qg_fields_to_atlas,qg_fields_from_atlas, &
+        & qg_fields_lbc,qg_fields_to_fieldset,qg_fields_from_fieldset, &
+        & qg_fields_getvals, qg_fields_getvalsad, &
         & qg_fields_getpoint,qg_fields_setpoint,qg_fields_serialize,qg_fields_deserialize, &
         & qg_fields_complete,qg_fields_check,qg_fields_check_resolution
 ! ------------------------------------------------------------------------------
@@ -49,6 +51,7 @@ integer,parameter :: rseed = 7 !< Random seed (for reproducibility)
 
 type :: qg_fields
   type(qg_geom),pointer :: geom                !< Geometry
+  type(oops_variables) :: vars                 !< List of variables
   logical :: lbc                               !< Boundaries are present
   real(kind_real),allocatable :: x(:,:,:)      !< Streamfunction
   real(kind_real),allocatable :: q(:,:,:)      !< Potential vorticity
@@ -92,14 +95,17 @@ character(len=1024) :: record
 ! Associate geometry
 self%geom => geom
 
+! Set variables
+self%vars = oops_variables(vars)
+
 ! Set boundaries
 self%lbc = lbc
 
 ! Allocate 3d fields
-if (vars%has('x')) allocate(self%x(self%geom%nx,self%geom%ny,self%geom%nz))
-if (vars%has('q')) allocate(self%q(self%geom%nx,self%geom%ny,self%geom%nz))
-if (vars%has('u')) allocate(self%u(self%geom%nx,self%geom%ny,self%geom%nz))
-if (vars%has('v')) allocate(self%v(self%geom%nx,self%geom%ny,self%geom%nz))
+if (self%vars%has('x')) allocate(self%x(self%geom%nx,self%geom%ny,self%geom%nz))
+if (self%vars%has('q')) allocate(self%q(self%geom%nx,self%geom%ny,self%geom%nz))
+if (self%vars%has('u')) allocate(self%u(self%geom%nx,self%geom%ny,self%geom%nz))
+if (self%vars%has('v')) allocate(self%v(self%geom%nx,self%geom%ny,self%geom%nz))
 
 ! Allocate boundaries
 if (self%lbc) then
@@ -127,6 +133,9 @@ type(qg_geom),target,intent(in) :: geom !< Geometry
 
 ! Associate geometry
 self%geom => geom
+
+! Copy variables
+self%vars = oops_variables(other%vars)
 
 ! Copy attributes
 self%lbc = other%lbc
@@ -160,6 +169,7 @@ implicit none
 type(qg_fields),intent(inout) :: self !< Fields
 
 ! Release memory
+call self%vars%destruct()
 if (allocated(self%x)) deallocate(self%x)
 if (allocated(self%q)) deallocate(self%q)
 if (allocated(self%u)) deallocate(self%u)
@@ -282,31 +292,39 @@ call qg_fields_complete(self,var)
 end subroutine qg_fields_dirac
 ! ------------------------------------------------------------------------------
 !> Generate random fields
-subroutine qg_fields_random(self,var)
+subroutine qg_fields_random(self, seed)
 
 implicit none
 
 ! Passed variables
 type(qg_fields),intent(inout) :: self !< Fields
-character(len=1),intent(in) :: var    !< Variable to randomize ('x' or 'q')
+
+! Local variables
+logical :: allocate_x
+integer,intent(in),optional :: seed   !< Optional seed
+
+! Local variables
+integer :: lseed
 
 ! Check field
 call qg_fields_check(self)
 
+! Local seed
+lseed = rseed
+if (present(seed)) lseed = seed
+
+! Allocation
+allocate_x = .not.allocated(self%x)
+if (allocate_x) allocate(self%x(self%geom%nx,self%geom%ny,self%geom%nz))
+
 ! Set at random value
-select case (var)
-case ('x')
-   if (.not.allocated(self%x)) call abor1_ftn('qg_fields_random: x should be allocated')
-   call normal_distribution(self%x,0.0_kind_real,1.0_kind_real,rseed)
-case ('q')
-   if (.not.allocated(self%q)) call abor1_ftn('qg_fields_random: q should be allocated')
-   call normal_distribution(self%q,0.0_kind_real,1.0_kind_real,rseed)
-case default
-  call abor1_ftn('qg_fields_random: wrong variable')
-endselect
+call normal_distribution(self%x,0.0_kind_real,1.0_kind_real,lseed)
 
 ! Complete other fields
-call qg_fields_complete(self,var)
+call qg_fields_complete(self,'x')
+
+! Release memory
+if (allocate_x) deallocate(self%x)
 
 end subroutine qg_fields_random
 ! ------------------------------------------------------------------------------
@@ -682,7 +700,7 @@ else
 
   ! Get filename
   call f_conf%get_or_die("filename",str)
-  call swap_name_member(f_conf, str)
+  call swap_name_member(f_conf, str, 6)
   filename = str
   call fckit_log%info('qg_fields_read_file: opening '//trim(filename))
 
@@ -776,10 +794,15 @@ type(datetime),intent(in) :: vdate             !< Date and time
 integer :: ncid,nx_id,ny_id,nz_id,lon_id,lat_id,z_id,area_id,heat_id,x_id,q_id,u_id,v_id
 integer :: x_north_id,x_south_id,q_north_id,q_south_id
 integer :: info
+character(len=:),allocatable :: str
 character(len=20) :: sdate
-character(len=1024) :: filename
+character(len=1024) :: typ,filename
 type(oops_variables) :: vars
 type(qg_fields) :: fld_io
+
+! Get output type
+call f_conf%get_or_die("type",str)
+typ = str
 
 ! Check field
 call qg_fields_check(fld)
@@ -792,14 +815,39 @@ call vars%push_back('u')
 call vars%push_back('v')
 call qg_fields_create(fld_io,fld%geom,vars,.true.)
 call qg_fields_copy_lbc(fld_io,fld)
-if (allocated(fld%x)) then
-  fld_io%x = fld%x
-  call qg_fields_complete(fld_io,'x')
-elseif (allocated(fld%q)) then
-  fld_io%q = fld%q
-  call qg_fields_complete(fld_io,'q')
+if ((trim(typ)=='diag') .or. (trim(typ)=='in')) then
+  ! Diagnostic or increment file: don't complete fields
+  if (allocated(fld%x)) then
+    fld_io%x = fld%x
+  else
+    fld_io%x = missing_value(1.0_kind_real)
+  endif
+  if (allocated(fld%q)) then
+    fld_io%q = fld%q
+  else
+    fld_io%q = missing_value(1.0_kind_real)
+  endif
+  if (allocated(fld%u)) then
+    fld_io%u = fld%u
+  else
+    fld_io%u = missing_value(1.0_kind_real)
+  endif
+  if (allocated(fld%v)) then
+    fld_io%v = fld%v
+  else
+    fld_io%v = missing_value(1.0_kind_real)
+  endif
 else
-  call abor1_ftn('qg_fields_write_file: x or q required')
+  ! Usual file: complete fields
+  if (allocated(fld%x)) then
+    fld_io%x = fld%x
+    call qg_fields_complete(fld_io,'x')
+  elseif (allocated(fld%q)) then
+    fld_io%q = fld%q
+    call qg_fields_complete(fld_io,'q')
+  else
+    call abor1_ftn('qg_fields_write_file: x or q required')
+  endif
 endif
 
 ! Set filename
@@ -897,8 +945,8 @@ character(len=20) :: sdate
 character(len=:),allocatable :: str
 
 ! Check configuration
-if (f_conf%has("analytic_init")) then
-  call f_conf%get_or_die("analytic_init",str)
+if (f_conf%has("analytic init.method")) then
+  call f_conf%get_or_die("analytic init.method",str)
   ic = str
 else
   ic = 'baroclinic-instability'
@@ -1127,47 +1175,14 @@ endif
 
 end subroutine qg_fields_lbc
 ! ------------------------------------------------------------------------------
-!> Set ATLAS field
-subroutine qg_fields_set_atlas(self,vars,afieldset)
+!> Convert Fieldset to fields
+subroutine qg_fields_to_fieldset(self,afieldset)
 
 implicit none
 
 ! Passed variables
 type(qg_fields),intent(in) :: self              !< Fields
-type(oops_variables),intent(in) :: vars         !< List of variables
-type(atlas_fieldset),intent(inout) :: afieldset !< ATLAS fieldset
-
-! Local variables
-integer :: jvar
-character(len=1024) :: fieldname
-type(atlas_field) :: afield
-
-! Get or create field
-do jvar=1,vars%nvars()
-   fieldname = vars%variable(jvar)
-   if (.not.afieldset%has_field(trim(fieldname))) then
-     ! Create field
-     afield = self%geom%afunctionspace%create_field(name=trim(fieldname),kind=atlas_real(kind_real),levels=self%geom%nz)
-
-     ! Add field
-     call afieldset%add(afield)
-
-     ! Release pointer
-     call afield%final()
-   endif
-enddo
-
-end subroutine qg_fields_set_atlas
-! ------------------------------------------------------------------------------
-!> Convert fields to ATLAS
-subroutine qg_fields_to_atlas(self,vars,afieldset)
-
-implicit none
-
-! Passed variables
-type(qg_fields),intent(in) :: self              !< Fields
-type(oops_variables),intent(in) :: vars         !< List of variables
-type(atlas_fieldset),intent(inout) :: afieldset !< ATLAS fieldset
+type(atlas_fieldset),intent(inout) :: afieldset !< FieldSet
 
 ! Local variables
 integer :: jvar,ix,iy,iz,inode
@@ -1176,8 +1191,8 @@ character(len=1024) :: fieldname
 type(atlas_field) :: afield
 
 ! Get variable
-do jvar=1,vars%nvars()
-   fieldname = vars%variable(jvar)
+do jvar=1,self%vars%nvars()
+   fieldname = self%vars%variable(jvar)
    if (afieldset%has_field(trim(fieldname))) then
      ! Get afield
      afield = afieldset%field(trim(fieldname))
@@ -1205,8 +1220,10 @@ do jvar=1,vars%nvars()
            ptr(iz,inode) = self%u(ix,iy,iz)
          case ('v')
            ptr(iz,inode) = self%v(ix,iy,iz)
+         case ('z')
+           ptr(iz,inode) = self%geom%z(iz)
          case default
-           call abor1_ftn('qg_fields_to_atlas: wrong variable')
+           call abor1_ftn('qg_fields_to_fieldset: wrong variable')
          endselect
        enddo
      enddo
@@ -1216,16 +1233,15 @@ do jvar=1,vars%nvars()
    call afield%final()
 enddo
 
-end subroutine qg_fields_to_atlas
+end subroutine qg_fields_to_fieldset
 ! ------------------------------------------------------------------------------
-!> Get fields from ATLAS
-subroutine qg_fields_from_atlas(self,vars,afieldset)
+!> Convert Fieldset to fields
+subroutine qg_fields_from_fieldset(self,afieldset)
 
 implicit none
 
 ! Passed variables
 type(qg_fields),intent(inout) :: self           !< Fields
-type(oops_variables),intent(in) :: vars         !< List of variables
 type(atlas_fieldset),intent(inout) :: afieldset !< ATLAS fieldset
 
 ! Local variables
@@ -1235,9 +1251,9 @@ character(len=1024) :: fieldname
 type(atlas_field) :: afield
 
 ! Get variable
-do jvar=1,vars%nvars()
+do jvar=1,self%vars%nvars()
    ! Get afield
-   fieldname = vars%variable(jvar)
+   fieldname = self%vars%variable(jvar)
    afield = afieldset%field(trim(fieldname))
 
    ! Copy field
@@ -1256,8 +1272,10 @@ do jvar=1,vars%nvars()
            self%u(ix,iy,iz) = ptr(iz,inode)
          case ('v')
            self%v(ix,iy,iz) = ptr(iz,inode)
+         case ('z')
+           ! do nothing
          case default
-           call abor1_ftn('qg_fields_to_atlas: wrong variable')
+           call abor1_ftn('qg_fields_from_fieldset: wrong variable')
          endselect
        enddo
      enddo
@@ -1267,7 +1285,122 @@ do jvar=1,vars%nvars()
    call afield%final()
 enddo
 
-end subroutine qg_fields_from_atlas
+end subroutine qg_fields_from_fieldset
+! ------------------------------------------------------------------------------
+subroutine qg_fields_getvals(self, vars, lats, lons, vals)
+
+implicit none
+type(qg_fields),intent(in)      :: self
+type(oops_variables),intent(in) :: vars
+real(kind_real), intent(in)     :: lats(:)
+real(kind_real), intent(in)     :: lons(:)
+real(c_double), intent(inout)   :: vals(:)
+
+integer :: nlocs, levs, jvar, jloc, ii
+character(len=1024) :: fname
+
+call qg_fields_check(self)
+
+nlocs = size(lats)
+levs = self%geom%nz
+
+ii = 0
+do jvar=1,vars%nvars()
+  fname = vars%variable(jvar)
+  select case (trim(fname))
+  case ('x')
+    if (.not.allocated(self%x)) call abor1_ftn('qg_fields_getvals: x not allocated')
+    do jloc=1,nlocs
+      call qg_interp_bilinear(self%geom,lons(jloc),lats(jloc),self%x(:,:,:),vals(ii+1:ii+levs))
+      ii = ii + levs
+    enddo
+  case ('q')
+    if (.not.allocated(self%q)) call abor1_ftn('qg_fields_getvals: q not allocated')
+    do jloc=1,nlocs
+      call qg_interp_bilinear(self%geom,lons(jloc),lats(jloc),self%q(:,:,:),vals(ii+1:ii+levs))
+      ii = ii + levs
+    enddo
+  case ('u')
+    if (.not.allocated(self%u)) call abor1_ftn('qg_fields_getvals: u not allocated')
+    do jloc=1,nlocs
+      call qg_interp_bilinear(self%geom,lons(jloc),lats(jloc),self%u(:,:,:),vals(ii+1:ii+levs))
+      ii = ii + levs
+    enddo
+  case ('v')
+    if (.not.allocated(self%v)) call abor1_ftn('qg_fields_getvals: v not allocated')
+    do jloc=1,nlocs
+      call qg_interp_bilinear(self%geom,lons(jloc),lats(jloc),self%v(:,:,:),vals(ii+1:ii+levs))
+      ii = ii + levs
+    enddo
+  case ('z')
+    if (.not.allocated(self%geom%z)) call abor1_ftn('qg_fields_getvals: z not allocated')
+    do jloc=1,nlocs
+      vals(ii+1:ii+levs) = self%geom%z(:)
+      ii = ii + levs
+    enddo
+  case default
+    call abor1_ftn('qg_fields_getvals: wrong input variable')
+  endselect
+enddo
+if (size(vals) /= ii) call abor1_ftn('qg_fields_getvals: error size')
+
+end subroutine qg_fields_getvals
+! ------------------------------------------------------------------------------
+subroutine qg_fields_getvalsad(self, vars, lats, lons, vals)
+
+implicit none
+type(qg_fields),intent(inout)   :: self
+type(oops_variables),intent(in) :: vars
+real(kind_real), intent(in)     :: lats(:)
+real(kind_real), intent(in)     :: lons(:)
+real(c_double), intent(in)      :: vals(:)
+
+integer :: nlocs, levs, jvar, jloc, ii
+character(len=1024) :: fname
+
+call qg_fields_check(self)
+
+nlocs = size(lats)
+levs = self%geom%nz
+
+ii = 0
+do jvar=1,vars%nvars()
+  fname = vars%variable(jvar)
+  select case (trim(fname))
+  case ('x')
+    if (.not.allocated(self%x)) call abor1_ftn('qg_fields_getvalsad: x not allocated')
+    do jloc=1,nlocs
+      call qg_interp_bilinear_ad(self%geom,lons(jloc),lats(jloc),vals(ii+1:ii+levs),self%x)
+      ii = ii + levs
+    enddo
+  case ('q')
+    if (.not.allocated(self%q)) call abor1_ftn('qg_fields_getvalsad: q not allocated')
+    do jloc=1,nlocs
+      call qg_interp_bilinear_ad(self%geom,lons(jloc),lats(jloc),vals(ii+1:ii+levs),self%q)
+      ii = ii + levs
+    enddo
+  case ('u')
+    if (.not.allocated(self%u)) call abor1_ftn('qg_fields_getvalsad: u not allocated')
+    do jloc=1,nlocs
+      call qg_interp_bilinear_ad(self%geom,lons(jloc),lats(jloc),vals(ii+1:ii+levs),self%u)
+      ii = ii + levs
+    enddo
+  case ('v')
+    if (.not.allocated(self%v)) call abor1_ftn('qg_fields_getvalsad: v not allocated')
+    do jloc=1,nlocs
+      call qg_interp_bilinear_ad(self%geom,lons(jloc),lats(jloc),vals(ii+1:ii+levs),self%v)
+      ii = ii + levs
+    enddo
+  case ('z')
+    ! do nothing
+    ii = ii + nlocs * levs
+  case default
+    call abor1_ftn('qg_fields_getvalsad: wrong input variable')
+  endselect
+enddo
+if (size(vals) /= ii) call abor1_ftn('qg_fields_getvalsad: error size')
+
+end subroutine qg_fields_getvalsad
 ! ------------------------------------------------------------------------------
 !> Get points from fields
 subroutine qg_fields_getpoint(fld,iter,nval,vals)
@@ -1466,15 +1599,15 @@ enddo
 ! Boundaries
 if (self%lbc) then
   do iz=1,self%geom%nz
-    index = index + 1
     self%x_north(iz) = vect_fld(index)
     index = index + 1
     self%x_south(iz) = vect_fld(index)
+    index = index + 1
     do ix=1,self%geom%nx
-      index = index + 1
       self%q_north(ix,iz) = vect_fld(index)
       index = index + 1
       self%q_south(ix,iz) = vect_fld(index)
+      index = index + 1
     enddo
   enddo
 endif
@@ -1562,11 +1695,8 @@ type(qg_fields),intent(in) :: self !< Fields
 logical :: bad
 character(len=1024) :: record
 
-! Initialization
-bad = .false.
-
 ! Check 3d field
-bad = bad.or.(.not.(allocated(self%x).or.allocated(self%q).or.allocated(self%u).or.allocated(self%v)))
+bad = .not.(allocated(self%x).or.allocated(self%q).or.allocated(self%u).or.allocated(self%v))
 if (allocated(self%x)) then
   bad = bad.or.(size(self%x,1)/=self%geom%nx)
   bad = bad.or.(size(self%x,2)/=self%geom%ny)

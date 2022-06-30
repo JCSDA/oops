@@ -5,6 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
+#include "oops/base/variables_f.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <string>
@@ -12,7 +14,6 @@
 #include "eckit/exception/Exceptions.h"
 
 #include "oops/base/Variables.h"
-#include "oops/base/variables_f.h"
 
 namespace oops {
 

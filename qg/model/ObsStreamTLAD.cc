@@ -28,8 +28,8 @@ namespace qg {
 static ObsOpTLADMaker<ObsStreamTLAD> makerStreamTL_("Stream");
 // -----------------------------------------------------------------------------
 
-ObsStreamTLAD::ObsStreamTLAD(const ObsSpaceQG &, const eckit::Configuration & config)
-  : varin_(std::vector<std::string>{"x"})
+ObsStreamTLAD::ObsStreamTLAD(const ObsSpaceQG & odb, const eckit::Configuration & config)
+  : obsdb_(odb), varin_(std::vector<std::string>{"x", "z"})
 {
   oops::Log::trace() << "ObsStreamTLAD created" << std::endl;
 }
@@ -42,14 +42,14 @@ void ObsStreamTLAD::setTrajectory(const GomQG &, const ObsBias &) {}
 
 void ObsStreamTLAD::simulateObsTL(const GomQG & gom, ObsVecQG & ovec,
                                   const ObsBiasIncrement & bias) const {
-  qg_stream_equiv_tl_f90(gom.toFortran(), ovec.toFortran(), bias.stream());
+  qg_stream_equiv_tl_f90(obsdb_.toFortran(), gom.toFortran(), ovec.toFortran(), bias.stream());
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsStreamTLAD::simulateObsAD(GomQG & gom, const ObsVecQG & ovec,
                                   ObsBiasIncrement & bias) const {
-  qg_stream_equiv_ad_f90(gom.toFortran(), ovec.toFortran(), bias.stream());
+  qg_stream_equiv_ad_f90(obsdb_.toFortran(), gom.toFortran(), ovec.toFortran(), bias.stream());
 }
 
 // -----------------------------------------------------------------------------

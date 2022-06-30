@@ -55,6 +55,8 @@ typedef int F90ovec;
 typedef int F90odb;
 // Localization matrix
 typedef int F90lclz;
+// trajectory for wind speed
+typedef int F90traj;
 
 /// Interface to Fortran QG model
 /*!
@@ -66,9 +68,9 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Change of variable
 // -----------------------------------------------------------------------------
-  void qg_change_var_f90(const F90flds &, const F90flds &);
-  void qg_change_var_tl_f90(const F90flds &, const F90flds &);
-  void qg_change_var_ad_f90(const F90flds &, const F90flds &);
+  void qg_change_var_f90(const F90flds &, const oops::Variables &);
+  void qg_change_var_tl_f90(const F90flds &, const oops::Variables &);
+  void qg_change_var_ad_f90(const F90flds &, const oops::Variables &);
 
 // -----------------------------------------------------------------------------
 //  Error covariance
@@ -90,7 +92,7 @@ extern "C" {
   void qg_fields_zero_f90(const F90flds &);
   void qg_fields_ones_f90(const F90flds &);
   void qg_fields_dirac_f90(const F90flds &, const eckit::Configuration &);
-  void qg_fields_random_f90(const F90flds &, const oops::Variables &);
+  void qg_fields_random_f90(const F90flds &);
   void qg_fields_copy_f90(const F90flds &, const F90flds &);
   void qg_fields_self_add_f90(const F90flds &, const F90flds &);
   void qg_fields_self_sub_f90(const F90flds &, const F90flds &);
@@ -111,12 +113,14 @@ extern "C" {
   void qg_fields_rms_f90(const F90flds &, double &);
   void qg_fields_sizes_f90(const F90flds &, int &, int &, int &);
   void qg_fields_lbc_f90(const F90flds &, int &);
-  void qg_fields_set_atlas_f90(const F90flds &, const oops::Variables &,
-                               atlas::field::FieldSetImpl *);
-  void qg_fields_to_atlas_f90(const F90flds &, const oops::Variables &,
-                              atlas::field::FieldSetImpl *);
-  void qg_fields_from_atlas_f90(const F90flds &, const oops::Variables &,
-                                atlas::field::FieldSetImpl *);
+  void qg_fields_to_fieldset_f90(const F90flds &,
+                                 atlas::field::FieldSetImpl *);
+  void qg_fields_from_fieldset_f90(const F90flds &,
+                                   const atlas::field::FieldSetImpl *);
+  void qg_fields_getvals_f90(const F90flds &, const oops::Variables &,
+                             const int &, const double &, const int &, double &);
+  void qg_fields_getvalsad_f90(const F90flds &, const oops::Variables &,
+                               const int &, const double &, const int &, const double &);
   void qg_fields_getpoint_f90(const F90flds&, const F90iter&, const int &, double &);
   void qg_fields_setpoint_f90(const F90flds&, const F90iter&, const int &, const double &);
   void qg_fields_serialize_f90(const F90flds &, const int &, double[]);
@@ -126,6 +130,9 @@ extern "C" {
 //  GetValues
 // -----------------------------------------------------------------------------
   void qg_getvalues_interp_f90(const LocationsQG &, const F90flds &,
+                               const util::DateTime &,
+                               const util::DateTime &, const F90gom &);
+  void qg_getvalues_interp_traj_f90(const LocationsQG &, const F90flds &,
                                const util::DateTime &,
                                const util::DateTime &, const F90gom &);
   void qg_getvalues_interp_tl_f90(const LocationsQG &, const F90flds &,
@@ -139,10 +146,10 @@ extern "C" {
 //  Geometry
 // -----------------------------------------------------------------------------
   void qg_geom_setup_f90(F90geom &, const eckit::Configuration &);
-  void qg_geom_set_atlas_lonlat_f90(const F90geom &, atlas::field::FieldSetImpl *);
-  void qg_geom_set_atlas_functionspace_pointer_f90(const F90geom &,
+  void qg_geom_set_lonlat_f90(const F90geom &, atlas::field::FieldSetImpl *);
+  void qg_geom_set_functionspace_pointer_f90(const F90geom &,
                                                    atlas::functionspace::FunctionSpaceImpl *);
-  void qg_geom_fill_atlas_fieldset_f90(const F90geom &, atlas::field::FieldSetImpl *);
+  void qg_geom_fill_extra_fields_f90(const F90geom &, atlas::field::FieldSetImpl *);
   void qg_geom_clone_f90(F90geom &, const F90geom &);
   void qg_geom_info_f90(const F90geom &, int &, int &, int &, double &, double &);
   void qg_geom_delete_f90(F90geom &);
@@ -161,9 +168,11 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Local Values (GOM)
 // -----------------------------------------------------------------------------
-  void qg_gom_setup_f90(F90gom &, const LocationsQG &, const oops::Variables &);
-  void qg_gom_create_f90(F90gom &, const oops::Variables &);
+  void qg_gom_setup_f90(F90gom &, const LocationsQG &, const oops::Variables &, const int &);
+  void qg_gom_create_f90(F90gom &);
   void qg_gom_delete_f90(F90gom &);
+  void qg_gom_fill_f90(const F90gom &, const int &, const int &, const int &, const double &);
+  void qg_gom_fillad_f90(const F90gom &, const int &, const int &, const int &, double &);
   void qg_gom_copy_f90(const F90gom &, const F90gom &);
   void qg_gom_zero_f90(const F90gom &);
   void qg_gom_abs_f90(const F90gom &);
@@ -177,7 +186,7 @@ extern "C" {
   void qg_gom_dotprod_f90(const F90gom &, const F90gom &, double &);
   void qg_gom_stats_f90(const F90gom &, int &, double &, double &, double &);
   void qg_gom_maxloc_f90(const F90gom &, double &, int &, const oops::Variables &);
-  void qg_gom_read_file_f90(const F90gom &, const eckit::Configuration &);
+  void qg_gom_read_file_f90(const F90gom &, const oops::Variables &, const eckit::Configuration &);
   void qg_gom_write_file_f90(const F90gom &, const eckit::Configuration &);
   void qg_gom_analytic_init_f90(const F90gom &, const LocationsQG &,
                                 const eckit::Configuration &);
@@ -197,6 +206,7 @@ extern "C" {
   void qg_obsdb_setup_f90(F90odb &, const eckit::Configuration &,
                           const util::DateTime &, const util::DateTime &);
   void qg_obsdb_delete_f90(F90odb &);
+  void qg_obsdb_save_f90(const F90odb &);
   void qg_obsdb_get_f90(const F90odb &, const int &, const char *,
                         const int &, const char *, const F90ovec &);
   void qg_obsdb_put_f90(const F90odb &, const int &, const char *,
@@ -246,26 +256,27 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Streamfunction observations
 // -----------------------------------------------------------------------------
-  void qg_stream_equiv_f90(const F90gom &, const F90ovec &, const double &);
-  void qg_stream_equiv_tl_f90(const F90gom &, const F90ovec &, const double &);
-  void qg_stream_equiv_ad_f90(const F90gom &, const F90ovec &, double &);
+  void qg_stream_equiv_f90(const F90odb &, const F90gom &, const F90ovec &, const double &);
+  void qg_stream_equiv_tl_f90(const F90odb &, const F90gom &, const F90ovec &, const double &);
+  void qg_stream_equiv_ad_f90(const F90odb &, const F90gom &, const F90ovec &, double &);
 
 // -----------------------------------------------------------------------------
 //  Wind observations
 // -----------------------------------------------------------------------------
-  void qg_wind_equiv_f90(const F90gom &, const F90ovec &, const double &);
-  void qg_wind_equiv_tl_f90(const F90gom &, const F90ovec &, const double &);
-  void qg_wind_equiv_ad_f90(const F90gom &, const F90ovec &, double &);
+  void qg_wind_equiv_f90(const F90odb &, const F90gom &, const F90ovec &, const double &);
+  void qg_wind_equiv_tl_f90(const F90odb &, const F90gom &, const F90ovec &, const double &);
+  void qg_wind_equiv_ad_f90(const F90odb &, const F90gom &, const F90ovec &, double &);
 
 // -----------------------------------------------------------------------------
 //  Wind speed observations
 // -----------------------------------------------------------------------------
-  void qg_wspeed_equiv_f90(const F90gom &, const F90ovec &, const double &);
-  void qg_wspeed_equiv_tl_f90(const F90gom &, const F90ovec &, const F90gom &, const double &);
-  void qg_wspeed_equiv_ad_f90(const F90gom &, const F90ovec &, const F90gom &, double &);
-  void qg_wspeed_gettraj_f90(const int &, const oops::Variables &, const F90gom &);
-  void qg_wspeed_settraj_f90(const F90gom &, const F90gom &);
-
+  void qg_wspeed_equiv_f90(const F90odb &, const F90gom &, const F90ovec &, const double &);
+  void qg_wspeed_equiv_tl_f90(const F90odb &, const F90gom &, const F90ovec &, const F90traj &,
+                              const double &);
+  void qg_wspeed_equiv_ad_f90(const F90odb &, const F90gom &, const F90ovec &, const F90traj &,
+                              double &);
+  void qg_wspeed_alloctraj_f90(const int &, const F90traj &);
+  void qg_wspeed_settraj_f90(const F90odb &, const F90gom &, const F90traj &);
 }
 
 }  // namespace qg

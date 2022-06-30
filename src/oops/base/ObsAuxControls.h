@@ -27,7 +27,8 @@ namespace oops {
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-class ObsAuxControls : public util::Printable {
+class ObsAuxControls : public util::Printable,
+                       public util::Serializable {
   typedef ObsAuxControl<OBS>       ObsAuxControl_;
   typedef ObsSpaces<OBS>           ObsSpaces_;
   typedef typename ObsAuxControl_::Parameters_ Parameters_;
@@ -52,8 +53,13 @@ class ObsAuxControls : public util::Printable {
 
   ObsAuxControls & operator=(const ObsAuxControls &);
 
+/// Serialize-Deserialize
+  size_t serialSize() const override {return 0;}
+  void serialize(std::vector<double> &) const override {}
+  void deserialize(const std::vector<double> &, size_t &) override {}
+
  private:
-  void print(std::ostream &) const;
+  void print(std::ostream &) const override;
   std::vector<std::unique_ptr<ObsAuxControl_> > auxs_;
 };
 
@@ -108,7 +114,8 @@ ObsAuxControls<OBS>::~ObsAuxControls() {
 template<typename OBS>
 void ObsAuxControls<OBS>::read(const eckit::Configuration & conf) {
   Log::trace() << "ObsAuxControls<OBS>::read starting" << std::endl;
-  std::vector<eckit::LocalConfiguration> obsconfs = conf.getSubConfigurations("observations");
+  std::vector<eckit::LocalConfiguration> obsconfs =
+      conf.getSubConfigurations("observations.observers");
   ASSERT(obsconfs.size() == auxs_.size());
   for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) {
     eckit::LocalConfiguration obsauxconf = obsconfs[jobs].getSubConfiguration("obs bias");
@@ -124,7 +131,8 @@ void ObsAuxControls<OBS>::read(const eckit::Configuration & conf) {
 template<typename OBS>
 void ObsAuxControls<OBS>::write(const eckit::Configuration & conf) const {
   Log::trace() << "ObsAuxControls<OBS>::write starting" << std::endl;
-  std::vector<eckit::LocalConfiguration> obsconfs = conf.getSubConfigurations("observations");
+  std::vector<eckit::LocalConfiguration> obsconfs =
+      conf.getSubConfigurations("observations.observers");
   ASSERT(obsconfs.size() == auxs_.size());
   for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) {
     eckit::LocalConfiguration obsauxconf = obsconfs[jobs].getSubConfiguration("obs bias");

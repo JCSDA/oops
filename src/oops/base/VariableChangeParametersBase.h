@@ -8,12 +8,9 @@
 #ifndef OOPS_BASE_VARIABLECHANGEPARAMETERSBASE_H_
 #define OOPS_BASE_VARIABLECHANGEPARAMETERSBASE_H_
 
-#include <string>
-
 #include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/Variables.h"
 #include "oops/util/parameters/OptionalParameter.h"
-#include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
 
 namespace oops {
@@ -22,9 +19,6 @@ namespace oops {
 class VariableChangeParametersBase : public Parameters {
   OOPS_ABSTRACT_PARAMETERS(VariableChangeParametersBase, Parameters)
  public:
-  /// \brief Variable change type.
-  Parameter<std::string> variableChange{"variable change", "Identity", this};
-
   OptionalParameter<Variables> inputVariables{"input variables", this};
   OptionalParameter<Variables> outputVariables{"output variables", this};
 };

@@ -1,6 +1,0 @@
-datadir: $(experiment_dir)/{{current_cycle}}
-exp: $(experiment)
-#first: '{% $(window_length) - $(window_offset) %}'
-first: PT3H
-frequency: PT06H
-type: an

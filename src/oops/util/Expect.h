@@ -9,6 +9,7 @@
 #define OOPS_UTIL_EXPECT_H_
 
 #include <sstream>
+#include <string>
 
 // Recent versions of the JCSDA fork of eckit define the EXPECT_EQUAL macro in eckit/testing/Test.h.
 // This definition is repeated below for compatibility with older versions of eckit.
@@ -42,8 +43,9 @@
         exceptionWithMsgThrown = true;                                                       \
     }                                                                                        \
     if (!exceptionWithMsgThrown)                                                             \
-      throw eckit::testing::TestException("Expected exception with message (" #msg           \
-                                          ") not thrown in: " #expr, Here());                \
+      throw eckit::testing::TestException("Expected exception with message '" +              \
+                                          std::string(msg) +                                 \
+                                          "' not thrown in: " #expr, Here());                \
   } while (false)
 
 #endif  // OOPS_UTIL_EXPECT_H_

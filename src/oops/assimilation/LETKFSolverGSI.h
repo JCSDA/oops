@@ -12,13 +12,11 @@
 #include <cfloat>
 #include <vector>
 
-#include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/gletkfInterface.h"
 #include "oops/assimilation/LETKFSolver.h"
 #include "oops/base/Departures.h"
 #include "oops/base/DeparturesEnsemble.h"
 #include "oops/base/ObsErrors.h"
-#include "oops/util/Logger.h"
 
 namespace oops {
 
@@ -62,6 +60,8 @@ void LETKFSolverGSI<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
   // compute transformation matrix, save in Wa_, wa_
   // uses GSI GETKF code
   const int nobsl = dy.size();
+  const LocalEnsembleSolverInflationParameters & inflopt = this->options_.infl;
+  const float infl = inflopt.mult;
 
   // cast eigen<double> to eigen<float>
   Eigen::VectorXf dy_f = dy.cast<float>();
@@ -79,7 +79,7 @@ void LETKFSolverGSI<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
   letkf_core_f90(nobsl, Yb_f.data(), Yb_f.data(), dy_f.data(),
                  wa_f.data(), Wa_f.data(),
                  R_invvar_f.data(), this->nens_, neigv,
-                 getkf_inflation, denkf, getkf);
+                 getkf_inflation, denkf, getkf, infl);
   this->Wa_ = Wa_f.cast<double>();
   this->wa_ = wa_f.cast<double>();
 }

@@ -13,10 +13,12 @@
 
 #include <string>
 
-#include "eckit/config/Configuration.h"
 #include "oops/base/PostBase.h"
-#include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
+
+namespace eckit {
+  class Configuration;
+}
 
 namespace oops {
 
@@ -27,8 +29,10 @@ namespace oops {
 
 template <typename FLDS> class StateInfo : public PostBase<FLDS> {
  public:
+  StateInfo(const std::string sgrep, const PostTimerParameters & timerParameters):
+    PostBase<FLDS>(timerParameters), sgrep_(sgrep) {}
   StateInfo(const std::string sgrep, const eckit::Configuration & conf):
-    PostBase<FLDS>(conf), sgrep_(sgrep) {}
+    StateInfo(sgrep, validateAndDeserialize<PostTimerParameters>(conf)) {}
   StateInfo(const std::string sgrep, const util::Duration & freq):
     PostBase<FLDS>(freq), sgrep_(sgrep) {}
   ~StateInfo() {}

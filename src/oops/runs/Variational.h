@@ -21,6 +21,8 @@
 #include "oops/assimilation/IncrementalAssimilation.h"
 #include "oops/assimilation/instantiateCostFactory.h"
 #include "oops/assimilation/instantiateMinFactory.h"
+#include "oops/base/Geometry.h"
+#include "oops/base/Increment.h"
 #include "oops/base/instantiateCovarFactory.h"
 #include "oops/base/instantiateObsFilterFactory.h"
 #include "oops/base/PostProcessor.h"
@@ -29,7 +31,6 @@
 #include "oops/base/StateWriter.h"
 #include "oops/generic/instantiateLinearModelFactory.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
-#include "oops/generic/instantiateVariableChangeFactory.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
@@ -50,12 +51,11 @@ template <typename MODEL, typename OBS> class Variational : public Application {
     instantiateObsErrorFactory<OBS>();
     instantiateObsFilterFactory<OBS>();
     instantiateLinearModelFactory<MODEL>();
-    instantiateVariableChangeFactory<MODEL>();
   }
 // -----------------------------------------------------------------------------
   virtual ~Variational() {}
 // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const {
+  int execute(const eckit::Configuration & fullConfig, bool validate) const override {
 /// The background is constructed inside the cost function because its valid
 /// time within the assimilation window can be different (3D-Var vs. 4D-Var),
 /// it can be 3D or 4D (strong vs weak constraint), etc...
@@ -63,8 +63,11 @@ template <typename MODEL, typename OBS> class Variational : public Application {
 
 //  Setup cost function
     eckit::LocalConfiguration cfConf(fullConfig, "cost function");
+    CostFunctionParametersWrapper<MODEL, OBS> cfParams;
+    if (validate) cfParams.validate(cfConf);
+    cfParams.deserialize(cfConf);
     std::unique_ptr<CostFunction<MODEL, OBS>>
-      J(CostFactory<MODEL, OBS>::create(cfConf, this->getComm()));
+      J(CostFactory<MODEL, OBS>::create(cfParams.costTypeParameters, this->getComm()));
     Log::trace() << "Variational: cost function has been set up" << std::endl;
 
 //  Initialize first guess from background
@@ -80,11 +83,29 @@ template <typename MODEL, typename OBS> class Variational : public Application {
 //  Save analysis and final diagnostics
     PostProcessor<State_> post;
     const util::DateTime winbgn(cfConf.getString("window begin"));
-    const eckit::LocalConfiguration outConfig(fullConfig, "output");
-    post.enrollProcessor(new StateWriter<State_>(outConfig));
+    if (fullConfig.has("output")) {
+      const eckit::LocalConfiguration outConfig(fullConfig, "output");
+      post.enrollProcessor(new StateWriter<State_>(outConfig));
+    }
 
     eckit::LocalConfiguration finalConfig(fullConfig, "final");
     finalConfig.set("iteration", iouter);
+
+//  Save increment if desired
+    if (finalConfig.has("increment")) {
+      const eckit::LocalConfiguration incConfig(finalConfig, "increment");
+      Log::trace() << "Variational: writing analysis increment" << std::endl;
+      ControlVariable<MODEL, OBS> x_b(J->jb().getBackground());
+      const eckit::LocalConfiguration incGeomConfig(incConfig, "geometry");
+      Geometry<MODEL> incGeom(incGeomConfig,
+                              xx.state().geometry().getComm(),
+                              xx.state().geometry().timeComm());
+      Increment<MODEL> dx(incGeom, xx.state().variables(), xx.state().validTime());
+      dx.diff(xx.state(), x_b.state());
+      const eckit::LocalConfiguration incOutConfig(incConfig, "output");
+      dx.write(incOutConfig);
+    }
+
     if (finalConfig.has("prints")) {
       const eckit::LocalConfiguration prtConfig(finalConfig, "prints");
       post.enrollProcessor(new StateInfo<State_>("final", prtConfig));
@@ -99,8 +120,16 @@ template <typename MODEL, typename OBS> class Variational : public Application {
     return 0;
   }
 // -----------------------------------------------------------------------------
+  void validateConfig(const eckit::Configuration & fullConfig) const override {
+    // Note: Variational app doesn't have application level Parameters yet;
+    // for now validating only one (but most expensive) part of Parameters.
+    eckit::LocalConfiguration cfConf(fullConfig, "cost function");
+    CostFunctionParametersWrapper<MODEL, OBS> cfParams;
+    cfParams.validate(cfConf);
+  }
+// -----------------------------------------------------------------------------
  private:
-  std::string appname() const {
+  std::string appname() const override {
     return "oops::Variational<" + MODEL::name() + ", " + OBS::name() + ">";
   }
 // -----------------------------------------------------------------------------

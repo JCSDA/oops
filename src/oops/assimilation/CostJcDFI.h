@@ -97,9 +97,9 @@ template<typename MODEL, typename OBS> class CostJcDFI : public CostTermBase<MOD
   double alpha_;
   std::unique_ptr<WeightingFct> wfct_;
   std::unique_ptr<Increment_> gradFG_;
-  const Geometry_ resol_;
+  const Geometry_ & resol_;
   const util::Duration tstep_;
-  std::unique_ptr<Geometry_> tlres_;
+  const Geometry_ * tlres_;
   util::Duration tlstep_;
   mutable std::shared_ptr<WeightedDiff<MODEL, Increment_, State_> > filter_;
   mutable std::shared_ptr<WeightedDiffTLAD<MODEL> > ftlad_;
@@ -149,7 +149,7 @@ double CostJcDFI<MODEL, OBS>::computeCost() {
 template<typename MODEL, typename OBS>
 void CostJcDFI<MODEL, OBS>::setPostProcTraj(const CtrlVar_ &, const eckit::Configuration & conf,
                                             const Geometry_ & tlres, PostProcTLAD_ & pptraj) {
-  tlres_.reset(new Geometry_(tlres));
+  tlres_ = &tlres;
   tlstep_ = util::Duration(conf.getString("linear model.tstep", tstep_.toString()));
   ftlad_.reset(new WeightedDiffTLAD<MODEL>(vars_, vt_, span_, tstep_, *tlres_, *wfct_));
   pptraj.enrollProcessor(ftlad_);

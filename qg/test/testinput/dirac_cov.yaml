@@ -18,11 +18,9 @@ geometry:
 initial condition:
   date: 2010-01-01T12:00:00Z
   filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H.nc
-model:
-  tstep: PT1H
-output B:
+output dirac:
   datadir: Data
-  exp: dirac_cov_B
+  exp: dirac_cov_%id%
   type: an
 output variance:
   datadir: Data

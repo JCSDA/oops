@@ -1,7 +1,3 @@
-#
-#=== Simplified L95 test for RPCG minimizer ===#
-#
-
 cost function:
   cost type: 3D-Var
   window begin: 2010-01-01T00:00:00Z
@@ -11,20 +7,23 @@ cost function:
   analysis variables: [x]
   background:
     date: 2010-01-01T00:30:00Z
-    filename: Data/simplifiedl95.fc
+    filename: Data/simplifiedl95.fc.l95
   background error:
     covariance model: L95Error
     date: 2010-01-01T00:00:00Z
     length_scale: 0.1
     standard_deviation: 1.0
   observations:
-  - obs operator: {}
-    obs space:
-      obsdatain:  Data/simplifiedl95.truth.obt
-      obsdataout: Data/simplifiedl95.obt
-    obs error:
-      covariance model: diagonal
-      random amplitude: 1.0
+    observers:
+    - obs operator: {}
+      obs space:
+        obsdatain:
+          obsfile: Data/simplifiedl95.truth.obt
+        obsdataout:
+          obsfile: Data/simplifiedl95.obt
+      obs error:
+        covariance model: diagonal
+        random amplitude: 1.0
 variational:
   minimizer:
     algorithm: RPCG
@@ -41,10 +40,9 @@ final:
     departures: oman
 output:
   datadir: Data
-  exp: simplifiedl95
+  exp: simplifiedl95_RPCG
   frequency: PT1H
   type: an
 
 test:
   reference filename: testoutput/simplifiedl95_RPCG.test
-  float relative tolerance: 1e-8

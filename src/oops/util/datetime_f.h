@@ -28,6 +28,7 @@ extern "C" {
   void datetime_to_yyyymmddhhmmss_f(const util::DateTime *dt,
                                     int & year, int & month, int & day,
                                     int & hour, int & minute, int & second);
+  int64_t datetime_seconds_since_jan1_f(const util::DateTime *dt);
   void datetime_getints_f(const util::DateTime *, int64_t &, int &);
   void datetime_setints_f(util::DateTime *, const int64_t &, const int &);
   int64_t datetime_diff_f(const util::DateTime *, const util::DateTime *);

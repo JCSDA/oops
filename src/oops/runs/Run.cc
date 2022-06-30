@@ -10,6 +10,7 @@
 
 #include "oops/runs/Run.h"
 
+#include <iostream>
 #include <string>
 
 #include "eckit/config/LocalConfiguration.h"
@@ -17,6 +18,7 @@
 #include "eckit/exception/Exceptions.h"
 
 #include "oops/runs/Application.h"
+#include "oops/util/abor1_cpp.h"
 #include "oops/util/LibOOPS.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCountHelper.h"
@@ -79,46 +81,111 @@ Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(
   }
 #endif
 
-  LibOOPS::instance().initialise();
-
-// Get configuration file and optional output file from command line
-  ASSERT(argc >= 2);
-  eckit::PathName configfile = argv[1];
-  if (argc == 3) {
-    eckit::PathName outputfile;
-    outputfile = argv[2];
-    LibOOPS::instance().teeOutput(outputfile);
+  // Command line options and arguments
+  std::string infilename = "";
+  std::string outfilename = "";
+  for (int i = 1; i < argc; ++i) {
+    std::string item = static_cast<std::string>(argv[i]);
+    if (item == "-h" || item == "--help") {
+      eckit::PathName argv0 = static_cast<std::string>(argv[0]);
+      argv0 = argv0.baseName();
+      std::cout << "Usages:" << std::endl;
+      std::cout << "  # run main application:" << std::endl;
+      std::cout << "  " << argv0 << " input-file [output-file]" << std::endl;
+      std::cout << "  # run main application without validating YAML file:" << std::endl;
+      std::cout << "  " << argv0 << " --no-validate input-file" << std::endl;
+      std::cout << "  # check input YAML file against its schema:" << std::endl;
+      std::cout << "  " << argv0 << " --validate-only input-file" << std::endl;
+      std::cout << "  # write input file schema to given file name:" << std::endl;
+      std::cout << "  " << argv0 << " --output-json-schema=file-name" << std::endl;
+      std::cout << "  # print this help and exit:" << std::endl;
+      std::cout << "  " << argv0 << " --help" << std::endl;
+      is_print_help_only_ = true;
+    } else if (item == "--validate-only") {
+      is_validate_only_ = true;
+    } else if (item == "--no-validate") {
+      validate_ = false;
+    } else if (item.rfind("--output-json-schema=", 0) == 0) {
+      output_json_schema_path_ = item.substr(item.find("=") + 1);
+    } else if (infilename.empty()) {
+      infilename = item;
+    } else if (outfilename.empty()) {
+      outfilename = item;
+    } else {
+      ABORT(item + ": unknown option or positional argument");
+    }
   }
 
-// Read configuration
-  config_.reset(new eckit::YAMLConfiguration(configfile));
+  if (infilename.empty()) {
+    if (!is_print_help_only_ && output_json_schema_path_.empty()) {
+      ABORT("Positional argument 1 must be the file name of a YAML configuration file");
+    }
+  } else if (!output_json_schema_path_.empty()) {
+    ABORT("Cannot specify config file name (positional argument 1) with --output-json-schema=...");
+  } else if (is_validate_only_ && !outfilename.empty()) {
+    ABORT("Cannot specify output file name (positional argument 2) with --validate-only");
+  } else {
+    // Read configuration
+    eckit::PathName infilepathname = infilename;
+    config_.reset(new eckit::YAMLConfiguration(infilepathname));
 
-  // Configure TestReference with "test:" sub-config
-  if (config_->has("test"))
-    LibOOPS::instance().testReferenceInitialise(config_->getSubConfiguration("test"));
+    Log::info() << "Configuration input file is: " << infilepathname << std::endl;
+    Log::info() << "Full configuration is:"  << *config_ << std::endl;
 
-  Log::info() << "Configuration input file is: " << configfile << std::endl;
-  Log::info() << "Full configuration is:"  << *config_ << std::endl;
+    if (!is_validate_only_) {
+      // Get configuration file and optional output file from command line
+      LibOOPS::instance().initialise();
 
-// Start measuring performance
-  util::TimerHelper::start();
-  util::ObjectCountHelper::start();
+      // Configure TestReference with "test:" sub-config
+      if (config_->has("test"))
+        LibOOPS::instance().testReferenceInitialise(config_->getSubConfiguration("test"));
+
+      if (!outfilename.empty()) {
+        eckit::PathName outfilepathname = outfilename;
+        LibOOPS::instance().teeOutput(outfilepathname);
+      }
+    }
+  }
 }
 
 // -----------------------------------------------------------------------------
 
 Run::~Run() {
-  LibOOPS::instance().finalise();  // Finalize MPI and logs
+  if (!is_print_help_only_ && !is_validate_only_ && output_json_schema_path_.empty()) {
+    LibOOPS::instance().finalise();  // Finalize MPI and logs
+  }
 }
 
 // -----------------------------------------------------------------------------
 
 int Run::execute(const Application & app) {
-  util::printRunStats("Run start", true);
+  if (is_print_help_only_) {
+    return 0;
+  }
   int status = 1;
-  Log::info() << "Run: Starting " << app << std::endl;
   try {
-    status = app.execute(*config_);
+    if (!output_json_schema_path_.empty()) {
+      app.outputSchema(output_json_schema_path_);
+      Log::info() << "Output JSON Schema file: " << output_json_schema_path_ << std::endl;
+      status = 0;
+    } else if (is_validate_only_) {
+      app.validateConfig(*config_);
+      Log::info() << "Configuration OK" << std::endl;
+      status = 0;
+    } else {
+      // Start measuring performance
+      util::TimerHelper::start();
+      util::ObjectCountHelper::start();
+      util::printRunStats("Run start", true);
+      Log::info() << "Run: Starting " << app << std::endl;
+      status = app.execute(*config_, validate_);
+      Log::info() << std::endl << "Run: Finishing " << app << std::endl;
+      // Performance diagnostics
+      util::ObjectCountHelper::stop();
+      util::TimerHelper::stop();
+      util::printRunStats("Run end", true);
+      Log::info() << "Run: Finishing " << app << " with status = " << status << std::endl;
+    }
   }
   catch(const eckit::Exception & e) {
     status = 1;
@@ -135,14 +202,6 @@ int Run::execute(const Application & app) {
     status = 1;
     Log::error() << "Unknown exception: " << app << " terminating..." << std::endl;
   }
-  Log::info() << std::endl << "Run: Finishing " << app << std::endl;
-
-// Performance diagnostics
-  util::ObjectCountHelper::stop();
-  util::TimerHelper::stop();
-  util::printRunStats("Run end", true);
-
-  Log::info() << "Run: Finishing " << app << " with status = " << status << std::endl;
   return status;
 }
 

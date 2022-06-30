@@ -1,5 +1,10 @@
+# (C) Copyright 2020-2021 UCAR
+# 
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+
 covariance model: QgError
-horizontal_length_scale: 2.2e6
-maximum_condition_number: 1.0e6
-standard_deviation: 1.8e7
+horizontal_length_scale: 2200000.0
+maximum_condition_number: 1000000.0
+standard_deviation: 18000000.0
 vertical_length_scale: 15000.0

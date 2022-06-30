@@ -1,0 +1,60 @@
+cost function:
+  cost type: 3D-Var
+  window begin: 2010-01-01T21:00:00Z
+  window length: PT6H
+  geometry:
+    resol: 40
+  analysis variables: [x]
+  background:
+    date: 2010-01-02T00:00:00Z
+    filename: Data/forecast.ens.2.2010-01-01T00:00:00Z.P1D.l95
+  background error:
+    covariance model: L95Error
+    date: 2010-01-02T00:00:00Z
+    length_scale: 1.0
+    standard_deviation: 0.6
+  observations:
+    observers:
+    - obs error:
+        covariance model: diagonal
+        random amplitude: 0.2
+      obs space:
+        obsdatain:
+          obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+        obsdataout:
+          obsfile: Data/mem002.eda_3dvar_block.2010-01-02T00:00:00Z.obt
+        obs perturbations seed: 2
+      obs operator: {}
+variational:
+  minimizer:
+    algorithm: DRPBlockLanczos
+    members: 2
+    online diagnostics:
+      write basis: true
+      krylov basis:
+        datadir: Data
+        date: 2010-01-01T00:00:00Z
+        exp: 3dvar.block.m2
+        type: krylov
+  iterations:
+  - geometry:
+      resol: 40
+    ninner: 10
+    gradient norm reduction: 1e-10
+    diagnostics:
+      departures: ombg
+    test: on
+    obs perturbations: true
+  - geometry:
+      resol: 40
+    ninner: 10
+    gradient norm reduction: 1e-10
+    test: on
+final:
+  diagnostics:
+    departures: oman
+output:
+  datadir: Data
+  exp: eda_3dvar_block.mem002
+  frequency: PT6H
+  type: an

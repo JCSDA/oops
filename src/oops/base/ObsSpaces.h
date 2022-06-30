@@ -19,9 +19,7 @@
 #include <utility>
 #include <vector>
 
-#include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
-#include "eckit/geometry/Point2.h"
 
 #include "oops/interface/ObsSpace.h"
 #include "oops/mpi/mpi.h"
@@ -31,7 +29,6 @@
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/Printable.h"
-#include "oops/util/Timer.h"
 
 namespace oops {
 

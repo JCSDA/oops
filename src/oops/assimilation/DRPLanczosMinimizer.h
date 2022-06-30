@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "oops/assimilation/BMatrix.h"
+#include "oops/assimilation/CMatrix.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/DRMinimizer.h"
@@ -27,7 +28,6 @@
 #include "oops/assimilation/SpectralLMP.h"
 #include "oops/assimilation/TriDiagSolve.h"
 #include "oops/util/dot_product.h"
-#include "oops/util/formats.h"
 #include "oops/util/Logger.h"
 #include "oops/util/printRunStats.h"
 
@@ -78,6 +78,7 @@ template<typename MODEL, typename OBS> class DRPLanczosMinimizer : public DRMini
   typedef CostFunction<MODEL, OBS>        CostFct_;
   typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
   typedef HtRinvHMatrix<MODEL, OBS>       HtRinvH_;
+  typedef CMatrix<MODEL, OBS>             Cmat_;
 
  public:
   const std::string classname() const override {return "DRPLanczosMinimizer";}
@@ -88,7 +89,7 @@ template<typename MODEL, typename OBS> class DRPLanczosMinimizer : public DRMini
   double solve(CtrlInc_ &, CtrlInc_ &, CtrlInc_ &, const Bmat_ &, const HtRinvH_ &,
                const double, const double, const int, const double) override;
 
-  SpectralLMP<CtrlInc_> lmp_;
+  SpectralLMP<CtrlInc_, Cmat_> lmp_;
 
   std::vector<std::unique_ptr<CtrlInc_>> hvecs_;
   std::vector<std::unique_ptr<CtrlInc_>> vvecs_;
@@ -126,6 +127,9 @@ double DRPLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, Ctr
 
   std::vector<double> ss;
   std::vector<double> dd;
+
+  // Set ObsBias part of the preconditioner
+  lmp_.updateObsBias(std::make_unique<Cmat_>(B.obsAuxCovariance()));
 
   // J0
   const double costJ0 = costJ0Jb + costJ0JoJc;

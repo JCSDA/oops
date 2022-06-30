@@ -1,19 +1,14 @@
 background:
   date: 2010-01-01T00:00:00Z
   filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1D.nc
+  state variables: [x]
 ensemble:
-  output variables: [x]
-  members:
-  - date: 2010-01-01T00:00:00Z
-    filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1D.nc
-  - date: 2010-01-01T00:00:00Z
-    filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1D.nc
-  - date: 2010-01-01T00:00:00Z
-    filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1D.nc
-  - date: 2010-01-01T00:00:00Z
-    filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1D.nc
-  - date: 2010-01-01T00:00:00Z
-    filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1D.nc
+  members from template:
+    template:
+      date: 2010-01-01T12:00:00Z
+      filename: Data/forecast.ens.%mem%.2009-12-31T00:00:00Z.P1D.nc
+    pattern: %mem%
+    nmembers: 5
   inflation value: 2.0
 geometry:
   nx: 40
@@ -22,7 +17,7 @@ geometry:
 variance output:
   datadir: Data
   exp: variance_inflation_value
-  type: fc
+  type: diag
   date: 2010-01-01T00:00:00Z
 
 test:

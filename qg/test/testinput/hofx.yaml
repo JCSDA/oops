@@ -12,42 +12,41 @@ forecast length: PT12H
 window begin: 2010-01-01T00:00:00Z
 window length: PT12H
 observations:
-- obs space:
-    obsdatain:
-      obsfile: Data/truth.obs4d_12h.nc
-    obsdataout:
-      obsfile: Data/hofx.obs4d_12h.nc
-    obs type: Stream
-  obs operator:
-    obs type: Stream
   get values:
-    interpolation type: default_1
-  linear get values:
-    interpolation type: default_a
-- obs space:
-    obsdatain:
-      obsfile: Data/truth.obs4d_12h.nc
-    obsdataout:
-      obsfile: Data/hofx.obs4d_12h.nc
-    obs type: Wind
-  obs operator:
-    obs type: Wind
-  get values:
-    interpolation type: default_2
-  linear get values:
-    interpolation type: default_b
-- obs space:
-    obsdatain:
-      obsfile: Data/truth.obs4d_12h.nc
-    obsdataout:
-      obsfile: Data/hofx.obs4d_12h.nc
-    obs type: WSpeed
-  obs operator:
-    obs type: WSpeed
-  get values:
-    interpolation type: default_3
-  linear get values:
-    interpolation type: default_c
+    variable change:
+      input variables: []
+      output variables: []
+  observers:
+  - obs space:
+      obsdatain:
+        obsfile: Data/truth.obs4d_12h.nc
+      obsdataout:
+        obsfile: Data/hofx.obs4d_12h.nc
+      obs type: Stream
+    obs operator:
+      obs type: Stream
+    get values:
+      interpolation type: default_1
+  - obs space:
+      obsdatain:
+        obsfile: Data/truth.obs4d_12h.nc
+      obsdataout:
+        obsfile: Data/hofx.obs4d_12h.nc
+      obs type: Wind
+    obs operator:
+      obs type: Wind
+    get values:
+      interpolation type: default_2
+  - obs space:
+      obsdatain:
+        obsfile: Data/truth.obs4d_12h.nc
+      obsdataout:
+        obsfile: Data/hofx.obs4d_12h.nc
+      obs type: WSpeed
+    obs operator:
+      obs type: WSpeed
+    get values:
+      interpolation type: default_3
 prints:
   frequency: PT3H
 

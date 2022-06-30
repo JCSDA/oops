@@ -22,7 +22,6 @@
 #include "oops/assimilation/RinvMatrix.h"
 #include "oops/base/IdentityMatrix.h"
 #include "oops/util/dot_product.h"
-#include "oops/util/formats.h"
 #include "oops/util/Logger.h"
 
 namespace oops {

@@ -14,6 +14,7 @@
 #include <cmath>
 #include <ostream>
 #include <string>
+#include <vector>
 
 #include "eckit/config/Configuration.h"
 #include "oops/base/Geometry.h"
@@ -43,6 +44,7 @@ template<typename MODEL, typename OBS> class ControlVariable;
 // -----------------------------------------------------------------------------
 template<typename MODEL, typename OBS>
 class ControlVariable : public util::Printable,
+                        public util::Serializable,
                         private util::ObjectCounter<ControlVariable<MODEL, OBS> > {
   typedef Geometry<MODEL>            Geometry_;
   typedef ModelAuxControl<MODEL>     ModelAux_;
@@ -75,9 +77,14 @@ class ControlVariable : public util::Printable,
   ObsAuxCtrls_ & obsVar() {return obsbias_;}
   const ObsAuxCtrls_ & obsVar() const {return obsbias_;}
 
+/// Serialize and deserialize ControlVariable
+  size_t serialSize() const override;
+  void serialize(std::vector<double> &) const override;
+  void deserialize(const std::vector<double> &, size_t &) override;
+
  private:
   ControlVariable & operator= (const ControlVariable &);  // No assignment
-  void print(std::ostream &) const;
+  void print(std::ostream &) const override;
 
   State_ state_;
   ModelAux_ modbias_;     // not only for bias, better name?
@@ -91,7 +98,7 @@ ControlVariable<MODEL, OBS>::ControlVariable(const eckit::Configuration & conf,
                                              const Geometry_ & resol, const ObsSpaces_ & odb)
   : state_(resol, eckit::LocalConfiguration(conf, "background")),
     modbias_(resol, conf.getSubConfiguration("model aux control")),
-    obsbias_(odb, conf.getSubConfiguration("observations"))
+    obsbias_(odb, conf.getSubConfiguration("observations.observers"))
 {
   Log::trace() << "ControlVariable contructed" << std::endl;
 }
@@ -150,6 +157,31 @@ double ControlVariable<MODEL, OBS>::norm() const {
   zz = obsbias_.norm();
   zn += zz * zz;
   return sqrt(zn);
+}
+
+// -----------------------------------------------------------------------------
+template<typename MODEL, typename OBS>
+size_t ControlVariable<MODEL, OBS>::serialSize() const {
+  size_t ss = 0;
+  ss += state_.serialSize();
+  ss += modbias_.serialSize();
+  ss += obsbias_.serialSize();
+  return ss;
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL, typename OBS>
+void ControlVariable<MODEL, OBS>::serialize(std::vector<double> & vec) const {
+  vec.reserve(vec.size() + this->serialSize());  // allocate memory to avoid reallocations
+  state_.serialize(vec);
+  modbias_.serialize(vec);
+  obsbias_.serialize(vec);
+}
+// -----------------------------------------------------------------------------
+template<typename MODEL, typename OBS>
+void ControlVariable<MODEL, OBS>::deserialize(const std::vector<double> & vec, size_t & indx) {
+  state_.deserialize(vec, indx);
+  modbias_.deserialize(vec, indx);
+  obsbias_.deserialize(vec, indx);
 }
 
 // -----------------------------------------------------------------------------

@@ -34,8 +34,17 @@ phases:
         else export CODEBUILD_GIT_BRANCH=${CODEBUILD_WEBHOOK_HEAD_REF#refs/heads/};
         fi
 
+      # Determine the git base branch. This is the branch we are merging into.
+      # It can be develop or another branch. It will be used as a fall back branch in clone.sh
+      - export GIT_BASE_BRANCH=${CODEBUILD_WEBHOOK_BASE_REF#refs/heads/}
+
+      - echo "GIT_BASE_BRANCH=${GIT_BASE_BRANCH}"
       - echo "CODEBUILD_GIT_BRANCH=${CODEBUILD_GIT_BRANCH}"
       - echo "CODEBUILD_SOURCE_VERSION=${CODEBUILD_SOURCE_VERSION}"
+
+      # read cdash url from s3
+      - wget https://ci-test-cdash-url.s3.amazonaws.com/cdash_url.txt
+      - CDASH_URL=$(cat cdash_url.txt)
 
   pre_build:
     commands:
@@ -46,11 +55,13 @@ phases:
       - cp ~/.gitconfig /home/jedi/
       - cd CI
 
-      - if [ "$CODEBUILD_GIT_BRANCH" = "develop" ];
-        then export CODEBUILD_GIT_BRANCH_FORK="release-stable";
-        else export CODEBUILD_GIT_BRANCH_FORK=${CODEBUILD_GIT_BRANCH};
-        echo "CODEBUILD_GIT_BRANCH_FORK=${CODEBUILD_GIT_BRANCH_FORK}";
-        fi
+      #  Setting git credentials
+      - sed -i '/ssh/d' ~/.gitconfig
+      - sed '/instead/d' ~/.gitconfig
+      - git config --global credential.helper store
+      - touch ~/.git-credentials
+      - chmod 0700 ~/.git-credentials
+      - echo "https://${GIT_USER}:${GIT_PASS}@github.com" >~/.git-credentials
 
       # Upload branch name and commit sha as CodeBuild artifact to S3
       - mkdir /jcsda/artifacts
@@ -58,7 +69,7 @@ phases:
       - echo ${CODEBUILD_RESOLVED_SOURCE_VERSION} > /jcsda/artifacts/commit_sha.txt
 
       # oops
-      - ./clone.sh $GIT_USER $GIT_PASS jcsda-internal/oops $CODEBUILD_GIT_BRANCH oops /jcsda/oops-bundle develop
+      - ./clone.sh jcsda-internal/oops $CODEBUILD_GIT_BRANCH  /jcsda/oops-bundle oops ${GIT_BASE_BRANCH} develop
 
       # move CMakeLists.txt from oops/CI to bundle directory
       - cp CMakeLists.txt /jcsda/oops-bundle/CMakeLists.txt
@@ -68,6 +79,8 @@ phases:
       - cp cmake/CTestCustom.ctest.in /jcsda/oops-bundle/cmake/
       - cp cmake/cdash-integration.cmake /jcsda/oops-bundle/cmake/
       - cp cmake/CTestConfig.cmake /jcsda/oops-bundle/
+      - sed -i "s@CDASH_URL@$CDASH_URL@g" /jcsda/oops-bundle/CTestConfig.cmake
+      - cat /jcsda/oops-bundle/CTestConfig.cmake
 
   build:
     on-failure: CONTINUE
@@ -83,7 +96,7 @@ phases:
         && export FC=mpifort
         && export CC=mpicc
         && export CXX=mpicxx
-        && ecbuild -Wno-dev -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCDASH_OVERRIDE_GIT_BRANCH=$CODEBUILD_GIT_BRANCH -DCTEST_UPDATE_VERSION_ONLY=FALSE -DENABLE_GPROF=ON /jcsda/oops-bundle/"
+        && ecbuild -Wno-dev -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCDASH_OVERRIDE_SITE=CodeBuild -DCDASH_OVERRIDE_GIT_BRANCH=$CODEBUILD_GIT_BRANCH -DCTEST_UPDATE_VERSION_ONLY=FALSE -DENABLE_GPROF=ON /jcsda/oops-bundle/"
 
       - su - jedi -c "cd /home/jedi/oops
         && export FC=mpifort
@@ -124,8 +137,7 @@ phases:
       # upload find cdash url and upload it as CodeBuild artifact to S3
       - if [ "$BUILD_STATUS" = "1" ];
         then echo "Build & tests passed, find cdash url";
-        bash /jcsda/oops-bundle/oops/CI/cdash-url.sh /home/jedi/oops/Testing;
-        url=$(bash /jcsda/oops-bundle/oops/CI/cdash-url.sh /home/jedi/oops/Testing);
+        url=$(bash /jcsda/oops-bundle/oops/CI/cdash-url.sh /home/jedi/oops/Testing $CDASH_URL);
         echo $url;
         echo ${url} > /jcsda/artifacts/cdash-url.txt;
         cat /jcsda/artifacts/cdash-url.txt;

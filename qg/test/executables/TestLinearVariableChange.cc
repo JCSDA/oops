@@ -8,14 +8,12 @@
  * does it submit to any jurisdiction.
  */
 
-#include "model/instantiateQgChangeVarFactory.h"
 #include "model/QgTraits.h"
 #include "oops/runs/Run.h"
 #include "test/interface/LinearVariableChange.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  qg::instantiateQgChangeVarFactory();
   test::LinearVariableChange<qg::QgTraits> tests;
   return run.execute(tests);
 }

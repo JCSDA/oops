@@ -22,7 +22,6 @@
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
-#include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
@@ -82,7 +81,7 @@ template<typename MODEL> class CostJb4D : public CostJbState<MODEL> {
   const State_ & xb_;
   std::unique_ptr<ModelSpaceCovarianceBase<MODEL> > B_;
   const Variables ctlvars_;
-  std::unique_ptr<const Geometry_> resol_;
+  const Geometry_ * resol_;
   util::DateTime time_;
   const eckit::LocalConfiguration conf_;
   const eckit::mpi::Comm & commTime_;
@@ -106,8 +105,8 @@ CostJb4D<MODEL>::CostJb4D(const eckit::Configuration & config, const eckit::mpi:
 
 template<typename MODEL>
 void CostJb4D<MODEL>::linearize(const State_ & fg, const Geometry_ & lowres) {
-  resol_.reset(new Geometry_(lowres));
-  B_.reset(CovarianceFactory<MODEL>::create(conf_, lowres, ctlvars_, xb_, fg));
+  resol_ = &lowres;
+  B_.reset(CovarianceFactory<MODEL>::create(lowres, ctlvars_, conf_, xb_, fg));
 }
 
 // -----------------------------------------------------------------------------

@@ -11,8 +11,7 @@
 #include <string>
 #include <vector>
 
-#include "eckit/config/LocalConfiguration.h"
-#include "oops/base/LinearVariableChangeBase.h"
+#include "oops/interface/LinearVariableChange.h"
 #include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
@@ -33,14 +32,15 @@ class ModelSpaceCovarianceParametersBase : public Parameters {
   /// a covariance model whose type is determined at runtime), but not others (e.g. in tests
   /// written with a particular model in mind). ModelSpaceCovarianceParametersWrapper will throw an
   /// exception if this parameter is not provided.
+  typedef typename LinearVariableChange<MODEL>::Parameters_ Parameters_;
   OptionalParameter<std::string> covarianceModel{"covariance model", this};
 
-  Parameter<std::vector<LinearVariableChangeParametersWrapper<MODEL>>> variableChanges{
-    "variable changes", {}, this};
   Parameter<size_t> randomizationSize{"randomization size", 50, this};
   Parameter<bool> fullInverse{"full inverse", false, this};
   Parameter<int> fullInverseIterations{"full inverse iterations", 10, this};
   Parameter<double> fullInverseAccuracy{"full inverse accuracy", 1.0e-3, this};
+  OptionalParameter<Parameters_> variableChange{"linear variable change",
+    this};
 };
 
 }  // namespace oops

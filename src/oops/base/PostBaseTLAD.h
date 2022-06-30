@@ -15,8 +15,6 @@
 
 #include <boost/noncopyable.hpp>
 
-#include "eckit/config/Configuration.h"
-#include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/Increment.h"
 #include "oops/base/PostTimer.h"
 #include "oops/base/State.h"

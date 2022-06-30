@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <iomanip>
+#include <limits>
 #include <sstream>
 #include <string>
 
@@ -217,6 +218,8 @@ eckit::Channel& LibOOPS::testChannel() const {
   } else {
     testChannel_.reset(new eckit::Channel());
   }
+  testChannel_->setf(std::ios::scientific);
+  testChannel_->precision(std::numeric_limits<double>::digits10+1);
   return *testChannel_;
 }
 

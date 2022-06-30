@@ -22,8 +22,6 @@
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
-#include "oops/util/dot_product.h"
-#include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
@@ -82,7 +80,7 @@ template<typename MODEL> class CostJbJq : public CostJbState<MODEL> {
   std::unique_ptr<ModelSpaceCovarianceBase<MODEL> > B_;
   const State_ & xb_;
   const Variables ctlvars_;
-  std::unique_ptr<const Geometry_> resol_;
+  const Geometry_ * resol_;
   const eckit::LocalConfiguration conf_;
   const eckit::mpi::Comm & commTime_;
   const bool first_;
@@ -108,7 +106,7 @@ CostJbJq<MODEL>::CostJbJq(const eckit::Configuration & config, const eckit::mpi:
 template<typename MODEL>
 void CostJbJq<MODEL>::linearize(const State_ & fg, const Geometry_ & lowres) {
   Log::trace() << "CostJbJq::linearize start" << std::endl;
-  resol_.reset(new Geometry_(lowres));
+  resol_ = &lowres;
   const eckit::LocalConfiguration covConf(conf_, "background error");
 
   std::vector<eckit::LocalConfiguration> confs;
@@ -116,7 +114,7 @@ void CostJbJq<MODEL>::linearize(const State_ & fg, const Geometry_ & lowres) {
   ASSERT(confs.size() == lowres.timeComm().size());
   eckit::LocalConfiguration myconf = confs[lowres.timeComm().rank()];
 
-  B_.reset(CovarianceFactory<MODEL>::create(myconf, lowres, ctlvars_, xb_, fg));
+  B_.reset(CovarianceFactory<MODEL>::create(lowres, ctlvars_, myconf, xb_, fg));
   Log::trace() << "CostJbJq::linearize done" << std::endl;
 }
 

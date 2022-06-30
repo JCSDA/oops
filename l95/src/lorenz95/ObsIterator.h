@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#include "eckit/geometry/Point2.h"
+#include "eckit/geometry/Point3.h"
 
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -21,7 +21,7 @@ namespace lorenz95 {
 
 /// Iterator over all observations
 class ObsIterator: public std::iterator<std::forward_iterator_tag,
-                                       eckit::geometry::Point2>,
+                                       eckit::geometry::Point3>,
                    public util::Printable,
                    private util::ObjectCounter<ObsIterator> {
  public:
@@ -33,7 +33,7 @@ class ObsIterator: public std::iterator<std::forward_iterator_tag,
   bool operator!=(const ObsIterator &) const;
 
   /// return location of current observation
-  eckit::geometry::Point2 operator*() const;
+  eckit::geometry::Point3 operator*() const;
 
   ObsIterator& operator++();
 

@@ -17,7 +17,6 @@
 #include <utility>
 
 #include "oops/base/Accumulator.h"
-#include "oops/base/DolphChebyshev.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
 #include "oops/base/PostBaseTLAD.h"

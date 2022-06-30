@@ -33,11 +33,45 @@
 
 namespace oops {
 
+template <typename MODEL>
+class ExternalDFIParameters : public ApplicationParameters {
+  OOPS_CONCRETE_PARAMETERS(ExternalDFIParameters, ApplicationParameters)
+
+  typedef Geometry<MODEL> Geometry_;
+  typedef State<MODEL> State_;
+  typedef ModelAuxControl<MODEL>     ModelAux_;
+
+ public:
+  typedef typename Geometry_::Parameters_     GeometryParameters_;
+  typedef ModelParametersWrapper<MODEL>       ModelParameters_;
+  typedef typename State_::Parameters_        StateParameters_;
+  typedef typename ModelAux_::Parameters_     ModelAuxParameters_;
+  typedef StateWriterParameters<State<MODEL>> StateWriterParameters_;
+
+  RequiredParameter<GeometryParameters_> geometry{"geometry",
+                   "geometry for initial state", this};
+  RequiredParameter<StateParameters_> initialCondition{"initial condition",
+                   "initial state parameters", this};
+  RequiredParameter<ModelParameters_> model{"model", "forecast model parameters", this};
+  Parameter<ModelAuxParameters_> modelAuxControl{"model aux control",
+                   "augmented model state", {}, this};
+
+  RequiredParameter<util::Duration> forecastLength{"forecast length",
+                   "forecast length", this};
+
+  Parameter<PostTimerParameters> prints{"prints",
+                   "options passed to the object writing out forecast fields", {}, this};
+  RequiredParameter<StateWriterParameters_> output{"output", "where to write output", this};
+
+  RequiredParameter<eckit::LocalConfiguration> dfi{"dfi", "DFI parameters", this};
+};
+
 template <typename MODEL> class ExternalDFI : public Application {
   typedef Geometry<MODEL>            Geometry_;
   typedef Model<MODEL>               Model_;
   typedef ModelAuxControl<MODEL>     ModelAux_;
   typedef State<MODEL>               State_;
+  typedef ExternalDFIParameters<MODEL> Parameters_;
 
  public:
 // -----------------------------------------------------------------------------
@@ -45,40 +79,31 @@ template <typename MODEL> class ExternalDFI : public Application {
 // -----------------------------------------------------------------------------
   virtual ~ExternalDFI() {}
 // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const {
-//  Setup resolution
-    const eckit::LocalConfiguration resolConfig(fullConfig, "geometry");
-    const Geometry_ resol(resolConfig, this->getComm());
+  int execute(const eckit::Configuration & fullConfig, bool validate) const override {
+    Parameters_ params;
+    if (validate) params.validate(fullConfig);
+    params.deserialize(fullConfig);
 
-//  Setup Model
-    const eckit::LocalConfiguration modelConfig(fullConfig, "model");
-    const Model_ model(resol, modelConfig);
-
-//  Setup initial state
-    const eckit::LocalConfiguration initialConfig(fullConfig, "initial condition");
-    State_ xx(resol, initialConfig);
+    // Setup resolution, model, initial state, augmented state
+    const Geometry_ resol(params.geometry, this->getComm());
+    const Model_ model(resol, params.model.value().modelParameters);
+    State_ xx(resol, params.initialCondition);
+    const ModelAux_ moderr(resol, params.modelAuxControl);
     Log::test() << "Initial state: " << xx << std::endl;
 
-//  Setup augmented state
-    const ModelAux_ moderr(resol, fullConfig.getSubConfiguration("model aux control"));
-
 //  Setup times
-    const util::Duration fclength(fullConfig.getString("forecast length"));
+    const util::Duration fclength(params.forecastLength);
     const util::DateTime bgndate(xx.validTime());
     const util::DateTime enddate(bgndate + fclength);
     Log::info() << "Running forecast from " << bgndate << " to " << enddate << std::endl;
 
 //  Setup post-processing
     PostProcessor<State_> post;
-
-    eckit::LocalConfiguration prtConf;
-    fullConfig.get("prints", prtConf);
-    post.enrollProcessor(new StateInfo<State_>("fc", prtConf));
+    post.enrollProcessor(new StateInfo<State_>("fc", params.prints));
 
 //  Setup DFI
     PostProcessor<State_> pp(post);
-
-    const eckit::LocalConfiguration dfiConf(fullConfig, "dfi");
+    const eckit::LocalConfiguration & dfiConf = params.dfi;
     const util::Duration dfispan(dfiConf.getString("filter_span"));
     const util::DateTime dfitime(bgndate+dfispan/2);
     const Variables vars(dfiConf, "filtered variables");
@@ -94,8 +119,7 @@ template <typename MODEL> class ExternalDFI : public Application {
     Log::test() << "Filtered state: " << *xdfi << std::endl;
 
 //  Setup forecast outputs
-    const eckit::LocalConfiguration outConfig(fullConfig, "output");
-    post.enrollProcessor(new StateWriter<State_>(outConfig));
+    post.enrollProcessor(new StateWriter<State_>(params.output));
 
 //  Run forecast from initialized state
     const util::Duration fclen = fclength - dfispan/2;
@@ -108,8 +132,18 @@ template <typename MODEL> class ExternalDFI : public Application {
     return 0;
   }
 // -----------------------------------------------------------------------------
+  void outputSchema(const std::string & outputPath) const override {
+    Parameters_ params;
+    params.outputSchema(outputPath);
+  }
+// -----------------------------------------------------------------------------
+  void validateConfig(const eckit::Configuration & fullConfig) const override {
+    Parameters_ params;
+    params.validate(fullConfig);
+  }
+// -----------------------------------------------------------------------------
  private:
-  std::string appname() const {
+  std::string appname() const override {
     return "oops::ExternalDFI<" + MODEL::name() + ">";
   }
 // -----------------------------------------------------------------------------

@@ -6,27 +6,12 @@ background error:
     maximum_condition_number: 1.0e6
     standard_deviation: 1.0
     vertical_length_scale: 30000.0
-  members:
-  - date: 2010-01-01T12:00:00Z
-    filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1DT12H.nc
-  - date: 2010-01-01T12:00:00Z
-    filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1DT12H.nc
-  - date: 2010-01-01T12:00:00Z
-    filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1DT12H.nc
-  - date: 2010-01-01T12:00:00Z
-    filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1DT12H.nc
-  - date: 2010-01-01T12:00:00Z
-    filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1DT12H.nc
-  - date: 2010-01-01T12:00:00Z
-    filename: Data/forecast.ens.6.2009-12-31T00:00:00Z.P1DT12H.nc
-  - date: 2010-01-01T12:00:00Z
-    filename: Data/forecast.ens.7.2009-12-31T00:00:00Z.P1DT12H.nc
-  - date: 2010-01-01T12:00:00Z
-    filename: Data/forecast.ens.8.2009-12-31T00:00:00Z.P1DT12H.nc
-  - date: 2010-01-01T12:00:00Z
-    filename: Data/forecast.ens.9.2009-12-31T00:00:00Z.P1DT12H.nc
-  - date: 2010-01-01T12:00:00Z
-    filename: Data/forecast.ens.10.2009-12-31T00:00:00Z.P1DT12H.nc
+  members from template:
+    template:
+      date: 2010-01-01T12:00:00Z
+      filename: Data/forecast.ens.%mem%.2009-12-31T00:00:00Z.P1DT12H.nc
+    pattern: %mem%
+    nmembers: 10
 dirac:
   date: 2010-01-01T12:00:00Z
   ixdir: [20]
@@ -40,21 +25,9 @@ geometry:
 initial condition:
   date: 2010-01-01T12:00:00Z
   filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H.nc
-model:
-  tstep: PT1H
-output B:
+output dirac:
   datadir: Data
-  date: 2010-01-01T12:00:00Z
-  exp: dirac_loc_3d_B
-  type: an
-output localization:
-  datadir: Data
-  date: 2010-01-01T00:00:00Z
-  exp: dirac_loc_3d_localization
-  type: an
-output variance:
-  datadir: Data
-  exp: dirac_loc_3d_var
+  exp: dirac_loc_3d_%id%
   type: an
 output variance:
   datadir: Data

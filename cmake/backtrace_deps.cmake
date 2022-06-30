@@ -14,6 +14,9 @@ include(CheckCXXSourceCompiles)
 
 set(saved_libraries ${CMAKE_REQUIRED_LIBRARIES})
 set(saved_defs ${CMAKE_REQUIRED_DEFINITIONS})
+set(saved_incs ${CMAKE_REQUIRED_INCLUDES})
+
+list( APPEND CMAKE_REQUIRED_INCLUDES ${Boost_INCLUDE_DIRS})
 
 string(CONFIGURE [[
     #include <iostream>
@@ -29,10 +32,10 @@ string(CONFIGURE [[
 # Different configs
 
 list( APPEND OOPS_STACKTRACE_none_LIBS "")
-set(  OOPS_STACKTRACE_none_DEFS -DBOOST_STACKTRACE_USE_NOOP)
+list( APPEND OOPS_STACKTRACE_none_DEFS -DBOOST_STACKTRACE_USE_NOOP)
 
 list( APPEND OOPS_STACKTRACE_default_LIBS -ldl)
-set(  OOPS_STACKTRACE_default_DEFS "")
+list( APPEND OOPS_STACKTRACE_default_DEFS "")
 
 list( APPEND OOPS_STACKTRACE_libbacktrace_LIBS -ldl -lbacktrace)
 list( APPEND OOPS_STACKTRACE_libbacktrace_DEFS -DBOOST_STACKTRACE_USE_BACKTRACE)
@@ -58,7 +61,16 @@ foreach ( provider IN ITEMS libbacktrace addr2line default none )
 	endif()
 endforeach()
 
+set(CMAKE_REQUIRED_LIBRARIES ${saved_libraries})
+set(CMAKE_REQUIRED_DEFINITIONS ${saved_defs})
+set(CMAKE_REQUIRED_INCLUDES ${saved_incs})
+
+if (NOT OOPS_STACKTRACE_AVAILABLE_PROVIDERS)
+	message(FATAL_ERROR "Cannot find a stacktrace provider.")
+endif()
+
 message( STATUS "Boost stacktrace supports these providers: ${OOPS_STACKTRACE_AVAILABLE_PROVIDERS}.")
 list(GET OOPS_STACKTRACE_AVAILABLE_PROVIDERS 0 OOPS_STACKTRACE_PROVIDER)
 message( STATUS "Using this provider for stacktraces: ${OOPS_STACKTRACE_PROVIDER}.")
+
 

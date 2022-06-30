@@ -31,9 +31,33 @@
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
+#include "oops/util/parameters/IgnoreOtherParameters.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 #include "test/TestEnvironment.h"
 
 namespace test {
+
+// =============================================================================
+
+/// \brief Parameters loaded from the input YAML file and used by this test.
+template <typename MODEL>
+class TestParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(TestParameters, Parameters)
+
+ public:
+  typedef typename oops::Geometry<MODEL>::Parameters_ GeometryParameters_;
+  typedef typename oops::ModelAuxIncrement<MODEL>::Parameters_ ModelAuxIncrementParameters_;
+
+  /// \brief Group of parameters controlling the tested model's geometry.
+  oops::RequiredParameter<GeometryParameters_> geometry{"geometry", this};
+  /// \brief Group of parameters controlling the tested implementation of the ModelAuxIncrement
+  /// interface.
+  oops::RequiredParameter<ModelAuxIncrementParameters_> modelAuxError{"model aux error", this};
+  /// \brief Don't treat the presence of other parameter groups as an error (this makes it
+  /// possible to reuse a single YAML file in tests of implementations of multiple oops interfaces).
+  oops::IgnoreOtherParameters ignoreOthers{this};
+};
 
 // =============================================================================
 
@@ -42,9 +66,10 @@ template <typename MODEL> class ModelAuxIncrementFixture : private boost::noncop
   typedef oops::ModelAuxCovariance<MODEL> Covariance_;
   typedef oops::ModelAuxControl<MODEL>    ModelAux_;
   typedef oops::ModelAuxIncrement<MODEL>  AuxIncr_;
+  typedef TestParameters<MODEL>           TestParameters_;
 
  public:
-  static const eckit::Configuration & config()     {return *getInstance().conf_;}
+  static const typename AuxIncr_::Parameters_ & parameters() {return getInstance().parameters_;}
   static const Covariance_  & covariance() {return *getInstance().covar_;}
   static const Geometry_    & resol()      {return *getInstance().resol_;}
 
@@ -55,18 +80,22 @@ template <typename MODEL> class ModelAuxIncrementFixture : private boost::noncop
   }
 
   ModelAuxIncrementFixture<MODEL>() {
+    TestParameters_ parameters;
+    parameters.validateAndDeserialize(TestEnvironment::config());
+
 //  Setup a geometry
-    const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "geometry");
-    resol_.reset(new Geometry_(resolConfig, oops::mpi::world()));
+    resol_.reset(new Geometry_(parameters.geometry, oops::mpi::world()));
 
 //  Setup a covariance matrix
-    conf_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "model aux error"));
-    covar_.reset(new Covariance_(*conf_, *resol_));
+    parameters_ = parameters.modelAuxError;
+//  It is assumed that the types defined as AuxIncr_::Parameters_ and Covariance_::Parameters_ are
+//  the same.
+    covar_.reset(new Covariance_(parameters_, *resol_));
   }
 
   ~ModelAuxIncrementFixture<MODEL>() {}
 
-  std::unique_ptr<const eckit::LocalConfiguration> conf_;
+  typename AuxIncr_::Parameters_ parameters_;
   std::unique_ptr<const Geometry_>    resol_;
   std::unique_ptr<const Covariance_>  covar_;
 };
@@ -77,7 +106,8 @@ template <typename MODEL> void testModelAuxIncrementConstructor() {
   typedef ModelAuxIncrementFixture<MODEL>   Test_;
   typedef oops::ModelAuxIncrement<MODEL>    AuxIncr_;
 
-  AuxIncr_ dx(Test_::resol(), Test_::config());
+  AuxIncr_ dx(Test_::resol(), Test_::parameters());
+
   oops::Log::test() << "Testing ModelAuxIncrement: " << dx << std::endl;
   EXPECT(dx.norm() == 0.0);
 }
@@ -88,7 +118,7 @@ template <typename MODEL> void testModelAuxIncrementCopyConstructor() {
   typedef ModelAuxIncrementFixture<MODEL>   Test_;
   typedef oops::ModelAuxIncrement<MODEL>    AuxIncr_;
 
-  AuxIncr_ dx1(Test_::resol(), Test_::config());
+  AuxIncr_ dx1(Test_::resol(), Test_::parameters());
   ModelAuxIncrementFixture<MODEL>::covariance().randomize(dx1);
 
   AuxIncr_ dx2(dx1);
@@ -106,10 +136,10 @@ template <typename MODEL> void testModelAuxIncrementChangeRes() {
   typedef ModelAuxIncrementFixture<MODEL>   Test_;
   typedef oops::ModelAuxIncrement<MODEL>    AuxIncr_;
 
-  AuxIncr_ dx1(Test_::resol(), Test_::config());
+  AuxIncr_ dx1(Test_::resol(), Test_::parameters());
   ModelAuxIncrementFixture<MODEL>::covariance().randomize(dx1);
 
-  AuxIncr_ dx2(dx1, Test_::config());
+  AuxIncr_ dx2(dx1, Test_::parameters());
   EXPECT(dx2.norm() > 0.0);
   EXPECT(dx2.norm() == dx1.norm());
 
@@ -124,9 +154,9 @@ template <typename MODEL> void testModelAuxIncrementTriangle() {
   typedef ModelAuxIncrementFixture<MODEL>   Test_;
   typedef oops::ModelAuxIncrement<MODEL>    AuxIncr_;
 
-  AuxIncr_ dx1(Test_::resol(), Test_::config());
+  AuxIncr_ dx1(Test_::resol(), Test_::parameters());
   ModelAuxIncrementFixture<MODEL>::covariance().randomize(dx1);
-  AuxIncr_ dx2(Test_::resol(), Test_::config());
+  AuxIncr_ dx2(Test_::resol(), Test_::parameters());
   ModelAuxIncrementFixture<MODEL>::covariance().randomize(dx2);
 
 // test triangle inequality
@@ -149,7 +179,7 @@ template <typename MODEL> void testModelAuxIncrementOpPlusEq() {
   typedef ModelAuxIncrementFixture<MODEL>   Test_;
   typedef oops::ModelAuxIncrement<MODEL>    AuxIncr_;
 
-  AuxIncr_ dx1(Test_::resol(), Test_::config());
+  AuxIncr_ dx1(Test_::resol(), Test_::parameters());
   ModelAuxIncrementFixture<MODEL>::covariance().randomize(dx1);
   AuxIncr_ dx2(dx1);
 
@@ -167,9 +197,9 @@ template <typename MODEL> void testModelAuxIncrementDotProduct() {
   typedef ModelAuxIncrementFixture<MODEL>   Test_;
   typedef oops::ModelAuxIncrement<MODEL>    AuxIncr_;
 
-  AuxIncr_ dx1(Test_::resol(), Test_::config());
+  AuxIncr_ dx1(Test_::resol(), Test_::parameters());
   ModelAuxIncrementFixture<MODEL>::covariance().randomize(dx1);
-  AuxIncr_ dx2(Test_::resol(), Test_::config());
+  AuxIncr_ dx2(Test_::resol(), Test_::parameters());
   ModelAuxIncrementFixture<MODEL>::covariance().randomize(dx2);
 
 // test symmetry of dot product
@@ -185,7 +215,7 @@ template <typename MODEL> void testModelAuxIncrementZero() {
   typedef ModelAuxIncrementFixture<MODEL>   Test_;
   typedef oops::ModelAuxIncrement<MODEL>    AuxIncr_;
 
-  AuxIncr_ dx(Test_::resol(), Test_::config());
+  AuxIncr_ dx(Test_::resol(), Test_::parameters());
   ModelAuxIncrementFixture<MODEL>::covariance().randomize(dx);
   EXPECT(dx.norm() > 0.0);
 
@@ -200,7 +230,7 @@ template <typename MODEL> void testModelAuxIncrementAxpy() {
   typedef ModelAuxIncrementFixture<MODEL>   Test_;
   typedef oops::ModelAuxIncrement<MODEL>    AuxIncr_;
 
-  AuxIncr_ dx1(Test_::resol(), Test_::config());
+  AuxIncr_ dx1(Test_::resol(), Test_::parameters());
   ModelAuxIncrementFixture<MODEL>::covariance().randomize(dx1);
 
 // test axpy

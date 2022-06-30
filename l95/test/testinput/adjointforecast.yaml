@@ -1,0 +1,82 @@
+# Configuration for the linear model
+# ----------------------------------
+linear forecast:
+  # Geometry for the trajectory, increment and linear model
+  geometry:
+    resol: 40
+
+  # Linear model config
+  linear model:
+    name: L95TLM
+    tstep: PT1H30M
+    trajectory:
+      name: L95
+      f: 7.6
+      tstep: PT1H30M
+
+# Configuration for the model
+# ---------------------------
+forecast:
+
+  # Forecast length
+  forecast length: P1D
+
+  # Geometry for the forecast model
+  geometry:
+    resol: 40
+
+  # Model config
+  model:
+    f: 7.6
+    name: L95
+    tstep: PT1H30M
+
+  # Model initial condition
+  initial condition:
+    date: 2010-01-01T00:00:00Z
+    filename: Data/truth.an.2010-01-01T00:00:00Z.l95
+
+  # Output
+  output:
+    datadir: Data
+    date: 2010-01-01T00:00:00Z
+    exp: admforecast
+    frequency: P1D
+    type: fc
+
+# Configuration for the forecast aspect
+# -------------------------------------
+forecast aspect:
+
+  # Verification state
+  verification resolution:
+    resol: 40
+
+  verification state:
+    date: 2010-01-02T00:00:00Z
+    filename: Data/truth.fc.2010-01-01T00:00:00Z.P1D.l95
+
+  # Norm definition
+  norm:
+    kind: l2
+
+# Configuration for the adjoint forecast
+# --------------------------------------
+adjoint forecast:
+
+  # Optionally write the adjoint initial condition
+  adjoint initial condition output:
+    datadir: Data
+    exp: initialincrement
+    date: 2010-01-02T00:00:00Z
+    type: fc
+
+  # Output adjoint forecast states
+  adjoint forecast output:
+    datadir: Data
+    exp: finalincrement
+    date: 2010-01-01T00:00:00Z
+    type: fc
+
+test:
+  reference filename: testoutput/adjointforecast.test

@@ -11,6 +11,7 @@
 #include <iostream>
 #include <set>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "eckit/config/Configuration.h"
@@ -95,19 +96,56 @@ Variables & Variables::operator+=(const Variables & rhs) {
   // revisit late, should we add channels this way ?
   channels_.insert(channels_.end(), rhs.channels_.begin(), rhs.channels_.end());
   // remove duplicated variables and channels
-  std::sort(vars_.begin(), vars_.end());
-  vars_.erase(std::unique(vars_.begin(), vars_.end() ), vars_.end());
-  std::sort(channels_.begin(), channels_.end());
-  channels_.erase(std::unique(channels_.begin(), channels_.end() ), channels_.end());
+  std::unordered_set<std::string> svars;
+  auto mvar = std::stable_partition(vars_.begin(), vars_.end(),
+        [&svars](std::string const &var) {return svars.insert(var).second;});
+  vars_.erase(mvar, vars_.end());
+  std::unordered_set<int> schannels;
+  auto mchannel = std::stable_partition(channels_.begin(), channels_.end(),
+        [&schannels](int const &channel) {return schannels.insert(channel).second;});
+  channels_.erase(mchannel, channels_.end());
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+Variables & Variables::operator-=(const Variables & rhs) {
+  ASSERT(convention_ == rhs.convention_);
+  if (!rhs.channels().empty()) {
+    throw eckit::NotImplemented(
+        "Variables::operator-= not implemented for rhs objects with channels", Here());
+  }
+  for (auto & var : rhs.vars_) {
+    vars_.erase(std::remove(vars_.begin(), vars_.end(), var), vars_.end());
+  }
+  return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+Variables & Variables::operator-=(const std::string & var) {
+  vars_.erase(std::remove(vars_.begin(), vars_.end(), var), vars_.end());
   return *this;
 }
 
 // -----------------------------------------------------------------------------
 
 bool Variables::operator==(const Variables & rhs) const {
-  return convention_ == rhs.convention_
-    && vars_ == rhs.vars_
-    && channels_ == rhs.channels_;
+  if ((convention_  != rhs.convention_) ||
+      (channels_    != rhs.channels_)   ||
+      (vars_.size() != rhs.vars_.size())) {
+    return false;
+  } else {
+    std::vector<std::string> myvars = this->asCanonical();
+    std::vector<std::string> othervars = rhs.asCanonical();
+    return myvars == othervars;
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+bool Variables::operator!=(const Variables & rhs) const {
+  return (!(*this == rhs));
 }
 
 // -----------------------------------------------------------------------------
@@ -120,6 +158,20 @@ bool Variables::operator<=(const Variables & rhs) const {
     is_in_rhs = is_in_rhs && rhs.has(vars_[jj]);
   }
   return is_in_rhs;
+}
+
+// -----------------------------------------------------------------------------
+
+void Variables::intersection(const Variables & rhs) {
+  ASSERT(convention_ == rhs.convention_);
+  ASSERT(channels_ == rhs.channels_);
+  std::vector<std::string> myvars = this->asCanonical();
+  std::vector<std::string> othervars = rhs.asCanonical();
+
+  std::vector<std::string> commonvars;
+  std::set_intersection(myvars.begin(), myvars.end(),
+                        othervars.begin(), othervars.end(), std::back_inserter(commonvars));
+  vars_ = commonvars;
 }
 
 // -----------------------------------------------------------------------------
@@ -139,6 +191,9 @@ size_t Variables::find(const std::string & var) const {
   for (size_t jj = 0; jj < vars_.size(); ++jj) {
     if (vars_[jj] == var) ii = jj;
   }
+  if (ii >= vars_.size()) {
+    Log::error() << "Could not find " << var << " in variables list: " << vars_ << std::endl;
+  }
   ASSERT(ii < vars_.size());
   return ii;
 }
@@ -151,7 +206,18 @@ void Variables::push_back(const std::string & vname) {
 
 // -----------------------------------------------------------------------------
 
-Variables::~Variables() {}
+void Variables::sort() {
+  std::sort(vars_.begin(), vars_.end());
+  std::sort(channels_.begin(), channels_.end());
+}
+
+// -----------------------------------------------------------------------------
+
+std::vector<std::string> Variables::asCanonical() const {
+  std::vector<std::string> vars(vars_);
+  std::sort(vars.begin(), vars.end());
+  return vars;
+}
 
 // -----------------------------------------------------------------------------
 

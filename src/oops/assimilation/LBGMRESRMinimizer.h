@@ -15,17 +15,16 @@
 #include <string>
 #include <vector>
 
-#include "eckit/config/Configuration.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/GMRESR.h"
 #include "oops/assimilation/LBHessianMatrix.h"
 #include "oops/assimilation/LBMinimizer.h"
-#include "oops/assimilation/QNewtonLMP.h"
 #include "oops/base/IdentityMatrix.h"
-#include "oops/util/dot_product.h"
-#include "oops/util/formats.h"
-#include "oops/util/Logger.h"
+
+namespace eckit {
+  class Configuration;
+}
 
 namespace oops {
 

@@ -15,7 +15,7 @@
 #include <memory>
 #include <string>
 
-#include "eckit/geometry/Point2.h"
+#include "eckit/geometry/Point3.h"
 
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
@@ -27,7 +27,7 @@ namespace oops {
 // -----------------------------------------------------------------------------
 template<typename TRAIT>
 class GeometryIterator: public std::iterator<std::forward_iterator_tag,
-                                             eckit::geometry::Point2>,
+                                             eckit::geometry::Point3>,
                         public util::Printable,
                         private util::ObjectCounter<GeometryIterator<TRAIT>> {
   typedef typename TRAIT::GeometryIterator GeometryIterator_;
@@ -41,7 +41,7 @@ class GeometryIterator: public std::iterator<std::forward_iterator_tag,
 
   bool operator==(const GeometryIterator&);
   bool operator!=(const GeometryIterator&);
-  eckit::geometry::Point2 operator*() const;
+  eckit::geometry::Point3 operator*() const;
   GeometryIterator operator++();
 
 /// Interfacing
@@ -109,10 +109,10 @@ bool GeometryIterator<TRAIT>::operator!=(const GeometryIterator& other) {
 // -----------------------------------------------------------------------------
 
 template<typename TRAIT>
-eckit::geometry::Point2 GeometryIterator<TRAIT>::operator*() const {
+eckit::geometry::Point3 GeometryIterator<TRAIT>::operator*() const {
   Log::trace() << "GeometryIterator<TRAIT>::operator* starting" << std::endl;
   util::Timer timer(classname(), "operator*");
-  eckit::geometry::Point2 loc = *(*geometryiter_);
+  eckit::geometry::Point3 loc = *(*geometryiter_);
   Log::trace() << "GeometryIterator<TRAIT>::operator* done" << std::endl;
   return loc;
 }

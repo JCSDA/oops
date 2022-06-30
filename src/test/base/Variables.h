@@ -107,10 +107,103 @@ void testFortranInterface() {
 
 // -----------------------------------------------------------------------------
 
+void testArithmeticOperators() {
+  std::vector<std::string> varsStartStr{"var1", "var2", "var3"};
+  std::vector<std::string> varsFinalStr{"var1", "var2"};
+  std::vector<std::string> varsAddRemStr{"var3"};
+
+  // Check on removing other Variables object
+  oops::Variables varsStartRemoveVars(varsStartStr);
+  oops::Variables varsFinalRemoveVars(varsFinalStr);
+  oops::Variables varsRemove(varsAddRemStr);
+  varsStartRemoveVars -= varsRemove;
+  EXPECT(varsStartRemoveVars == varsFinalRemoveVars);
+
+  // Check on removing other string
+  oops::Variables varsStartRemoveStr(varsStartStr);
+  oops::Variables varsFinalRemoveStr(varsFinalStr);
+  varsStartRemoveStr -= "var3";
+  EXPECT(varsStartRemoveStr == varsFinalRemoveStr);
+
+  // Check on adding other Variables object
+  oops::Variables varsStartAddVars(varsFinalStr);
+  oops::Variables varsFinalAddVars(varsStartStr);
+  oops::Variables varsAdd(varsAddRemStr);
+  varsStartAddVars += varsAdd;
+  EXPECT(varsStartAddVars == varsFinalAddVars);
+
+  // Check we get exception if we subtract vars with channels
+  oops::Variables varsStartChnnl(varsStartStr);
+  oops::Variables varsWithChannels{varsAddRemStr, std::vector<int>{1}};
+  EXPECT_THROWS_AS(varsStartChnnl -= varsWithChannels, eckit::NotImplemented);
+}
+
+// -----------------------------------------------------------------------------
+/// \brief tests Variables::operator== and operator!=
+void testEquality() {
+  oops::Variables abc({"a", "b", "c"});
+  oops::Variables acb({"a", "c", "b"});
+  oops::Variables ba({"b", "a"});
+
+  EXPECT(abc == acb);
+  EXPECT(!(abc != acb));
+  EXPECT(!(ba == abc));
+  EXPECT(acb != ba);
+}
+
+// -----------------------------------------------------------------------------
+/// \brief tests Variables::intersection (also uses operator=)
+void testIntersection() {
+  oops::Variables empty;
+  oops::Variables acb({"a", "c", "b"});
+  oops::Variables b({"b"});
+  oops::Variables ba({"b", "a"});
+  oops::Variables de({"d", "e"});
+
+  oops::Variables test = empty;
+  test.intersection(empty);
+  EXPECT(test == empty);
+
+  test = empty;
+  test.intersection(acb);
+  EXPECT(test == empty);
+
+  test = acb;
+  test.intersection(empty);
+  EXPECT(test == empty);
+
+  test = acb;
+  test.intersection(b);
+  EXPECT(test == b);
+
+  test = b;
+  test.intersection(acb);
+  EXPECT(test == b);
+
+  test = acb;
+  test.intersection(ba);
+  EXPECT(test == ba);
+
+  test = ba;
+  test.intersection(acb);
+  EXPECT(test == ba);
+
+  test = acb;
+  test.intersection(de);
+  EXPECT(test == empty);
+
+  test = de;
+  test.intersection(acb);
+  EXPECT(test == empty);
+}
+
+// -----------------------------------------------------------------------------
+
 class Variables : public oops::Test {
  public:
   Variables() {}
   virtual ~Variables() {}
+
  private:
   std::string testid() const override {return "test::Variables";}
 
@@ -123,6 +216,12 @@ class Variables : public oops::Test {
       { testCopyConstructor(); });
     ts.emplace_back(CASE("Variables/testFortranInterface")
       { testFortranInterface(); });
+    ts.emplace_back(CASE("Variables/testArithmeticOperators")
+      { testArithmeticOperators(); });
+    ts.emplace_back(CASE("Variables/testEquality")
+      { testEquality(); });
+    ts.emplace_back(CASE("Variables/testIntersection")
+      { testIntersection(); });
   }
 
   void clear() const override {}

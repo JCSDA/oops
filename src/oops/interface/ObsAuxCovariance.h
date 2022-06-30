@@ -20,6 +20,7 @@
 #include "eckit/config/Configuration.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsAuxIncrement.h"
+#include "oops/interface/ObsAuxPreconditioner.h"
 #include "oops/interface/ObsSpace.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
@@ -42,6 +43,7 @@ class ObsAuxCovariance : public util::Printable,
   typedef typename OBS::ObsAuxCovariance          ObsAuxCovariance_;
   typedef ObsAuxControl<OBS>                      ObsAuxControl_;
   typedef ObsAuxIncrement<OBS>                    ObsAuxIncrement_;
+  typedef ObsAuxPreconditioner<OBS>               ObsAuxPreconditioner_;
 
  public:
   typedef typename ObsAuxCovariance_::Parameters_ Parameters_;
@@ -61,6 +63,11 @@ class ObsAuxCovariance : public util::Printable,
   void inverseMultiply(const ObsAuxIncrement_ &, ObsAuxIncrement_ &) const;
   /// randomize the values in the ObsAuxIncrement
   void randomize(ObsAuxIncrement_ &) const;
+  /// return preconditioner
+  ObsAuxPreconditioner_ preconditioner() const;
+
+  /// Write this ObsAuxCovariance out to file
+  void write(const Parameters_ &) const;
 
  private:
   void print(std::ostream &) const;
@@ -129,6 +136,24 @@ void ObsAuxCovariance<OBS>::randomize(ObsAuxIncrement_ & dx) const {
   util::Timer timer(classname(), "randomize");
   cov_->randomize(dx.obsauxincrement());
   Log::trace() << "ObsAuxCovariance<OBS>::randomize done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename OBS>
+void ObsAuxCovariance<OBS>::write(const Parameters_ & params) const {
+  Log::trace() << "ObsAuxCovariance<OBS>::write starting" << std::endl;
+  util::Timer timer(classname(), "write");
+  cov_->write(params);
+  Log::trace() << "ObsAuxCovariance<OBS>::write done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+
+template<typename OBS>
+ObsAuxPreconditioner<OBS> ObsAuxCovariance<OBS>::preconditioner() const {
+    Log::trace() << "ObsAuxCovariance<OBS>::preconditioner" << std::endl;
+    util::Timer timer(classname(), "preconditioner");
+    return ObsAuxPreconditioner_(cov_->preconditioner());
 }
 
 // -----------------------------------------------------------------------------

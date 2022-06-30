@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -238,6 +238,45 @@ template <typename OBS> void testObsAuxIncrementAxpy() {
   }
 }
 
+// -----------------------------------------------------------------------------
+
+template <typename OBS> void testObsAuxIncrementSerializeDeserialize() {
+  typedef ObsTestsFixture<OBS>  Test_;
+  typedef ObsAuxIncrementFixture<OBS>   AuxTest_;
+  typedef oops::ObsAuxIncrement<OBS>    AuxIncr_;
+
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    eckit::LocalConfiguration biasconf = Test_::config(jj).getSubConfiguration("obs bias");
+    typename AuxIncr_::Parameters_ biasparams;
+    biasparams.validateAndDeserialize(biasconf);
+    AuxIncr_ dx1(Test_::obspace()[jj], biasparams);
+    AuxIncr_ dx2(Test_::obspace()[jj], biasparams);
+    dx2.zero();
+
+    AuxTest_::covariance(jj).randomize(dx1);
+
+    EXPECT(dx1.norm() != dx2.norm());
+
+    // test serialize / deserialize
+    std::vector<double> vect;
+    dx1.serialize(vect);
+    EXPECT(vect.size() == dx1.serialSize());
+
+    size_t index = 0;
+    dx2.deserialize(vect, index);
+    EXPECT(index == dx1.serialSize());
+    EXPECT(index == dx2.serialSize());
+
+    dx1.serialize(vect);
+    EXPECT(vect.size() == dx1.serialSize() * 2);
+    EXPECT(dx1.norm() > 0.0);
+    EXPECT(dx2.norm() > 0.0);
+
+    dx2 -= dx1;
+    EXPECT(dx2.norm() == 0.0);
+  }
+}
+
 // =============================================================================
 
 template <typename OBS>
@@ -265,6 +304,8 @@ class ObsAuxIncrement : public oops::Test {
     ts.emplace_back(CASE("interface/ObsAuxIncrement/testObsAuxIncrementDotProduct")
       { testObsAuxIncrementDotProduct<OBS>(); });
     ts.emplace_back(CASE("interface/ObsAuxIncrement/testObsAuxIncrementAxpy")
+      { testObsAuxIncrementAxpy<OBS>(); });
+    ts.emplace_back(CASE("interface/ObsAuxIncrement/testObsAuxIncrementSerializeDeserialize")
       { testObsAuxIncrementAxpy<OBS>(); });
   }
 

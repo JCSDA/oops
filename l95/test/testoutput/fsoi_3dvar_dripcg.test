@@ -1,11 +1,11 @@
-CostJb   : Nonlinear Jb = 0
-CostJo   : Nonlinear Jo(Lorenz 95) = 114.535, nobs = 120, Jo/n = 0.954461, err = 0.4
-CostFunction: Nonlinear J = 114.535
-DRIPCGMinimizer: reduction in residual norm = 4.49681e-10
+CostJb   : Nonlinear Jb = 0.0000000000000000e+00
+CostJo   : Nonlinear Jo(Lorenz 95) = 1.1453536836501503e+02, nobs = 120, Jo/n = 9.5446140304179194e-01, err = 4.0000000596046387e-01
+CostFunction: Nonlinear J = 1.1453536836501503e+02
+DRIPCGMinimizer: reduction in residual norm = 4.4968074713396044e-10
 FSOI increment test within tolerance.
 CostFunction::addIncrement: Analysis: 
  Valid time: 2010-01-02T00:00:00Z
- Min=6.65953, Max=9.39191, Average=7.97085
-CostJb   : Nonlinear Jb = 0
-CostJo   : Nonlinear Jo(Lorenz 95) = 114.535, nobs = 120, Jo/n = 0.954461, err = 0.4
-CostFunction: Nonlinear J = 114.535
+ Min=6.6595314516584496e+00, Max=9.3919116670326392e+00, Average=7.9708478863576486e+00
+CostJb   : Nonlinear Jb = 0.0000000000000000e+00
+CostJo   : Nonlinear Jo(Lorenz 95) = 1.1453536836501503e+02, nobs = 120, Jo/n = 9.5446140304179194e-01, err = 4.0000000596046387e-01
+CostFunction: Nonlinear J = 1.1453536836501503e+02

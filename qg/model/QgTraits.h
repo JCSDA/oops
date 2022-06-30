@@ -11,16 +11,18 @@
 #ifndef QG_MODEL_QGTRAITS_H_
 #define QG_MODEL_QGTRAITS_H_
 
-#include <string>
+// The QgTraits and QgObsTraits classes are defined in QgTraitsFwd.h, which, however,
+// contains only forward declarations of the QG implementations of oops interfaces.
+// This file includes headers in which all these implementations are defined.
 
-#include "oops/qg/AnalyticInit.h"
+#include "oops/qg/ChangeVarQG.h"
+#include "oops/qg/ChangeVarTLADQG.h"
 #include "oops/qg/ErrorCovarianceQG.h"
 #include "oops/qg/GeometryQG.h"
 #include "oops/qg/GeometryQGIterator.h"
-#include "oops/qg/GetValuesQG.h"
-#include "oops/qg/GetValuesTLAD.h"
 #include "oops/qg/GomQG.h"
 #include "oops/qg/IncrementQG.h"
+#include "oops/qg/InterpolatorQG.h"
 #include "oops/qg/LocationsQG.h"
 #include "oops/qg/ModelBias.h"
 #include "oops/qg/ModelBiasCovariance.h"
@@ -28,6 +30,7 @@
 #include "oops/qg/ObsBias.h"
 #include "oops/qg/ObsBiasCovariance.h"
 #include "oops/qg/ObsBiasIncrement.h"
+#include "oops/qg/ObsBiasPreconditioner.h"
 #include "oops/qg/ObsDataQG.h"
 #include "oops/qg/ObsDiagsQG.h"
 #include "oops/qg/ObsIteratorQG.h"
@@ -35,52 +38,7 @@
 #include "oops/qg/ObsOperatorTLAD.h"
 #include "oops/qg/ObsSpaceQG.h"
 #include "oops/qg/ObsVecQG.h"
+#include "oops/qg/QgTraitsFwd.h"
 #include "oops/qg/StateQG.h"
-
-namespace qg {
-
-struct QgTraits {
-  static std::string name() {return "QG";}
-  static std::string nameCovar() {return "QgError";}
-  static std::string nameCovar4D() {return "QgError";}
-
-  typedef qg::GeometryQG            Geometry;
-
-  typedef qg::GeometryQGIterator    GeometryIterator;
-
-  typedef qg::GetValuesQG           GetValues;
-  typedef qg::GetValuesTLAD         LinearGetValues;
-
-  typedef qg::StateQG               State;
-  typedef qg::IncrementQG           Increment;
-  typedef qg::ErrorCovarianceQG     Covariance;
-
-  typedef qg::ModelBias             ModelAuxControl;
-  typedef qg::ModelBiasIncrement    ModelAuxIncrement;
-  typedef qg::ModelBiasCovariance   ModelAuxCovariance;
-};
-
-struct QgObsTraits {
-  static std::string name() {return "QG obs";}
-
-  typedef qg::ObsSpaceQG            ObsSpace;
-  typedef qg::ObsVecQG              ObsVector;
-  typedef qg::ObsOperatorQG         ObsOperator;
-  typedef qg::ObsOperatorTLAD       LinearObsOperator;
-  template <typename DATATYPE> using ObsDataVector = qg::ObsDataQG<DATATYPE>;
-  typedef qg::ObsIteratorQG         GeometryIterator;
-
-  typedef qg::ObsBias               ObsAuxControl;
-  typedef qg::ObsBiasIncrement      ObsAuxIncrement;
-  typedef qg::ObsBiasCovariance     ObsAuxCovariance;
-
-  typedef qg::ObsDiagsQG            ObsDiagnostics;
-
-  typedef qg::GomQG                 GeoVaLs;
-  typedef qg::LocationsQG           Locations;
-  typedef qg::AnalyticInit          AnalyticInit;
-};
-
-}  // namespace qg
 
 #endif  // QG_MODEL_QGTRAITS_H_

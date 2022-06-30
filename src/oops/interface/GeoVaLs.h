@@ -17,7 +17,6 @@
 
 #include <boost/noncopyable.hpp>
 
-#include "eckit/config/Configuration.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/Locations.h"
 #include "oops/interface/ObsSpace.h"
@@ -36,13 +35,15 @@ class GeoVaLs : public util::Printable,
   typedef Locations<OBS>                 Locations_;
 
  public:
+  typedef typename GeoVaLs_::Parameters_ Parameters_;
+
   static const std::string classname() {return "oops::GeoVaLs";}
 
   /// Allocate GeoVaLs for \p locs locations, to be filled with \p vars variables.
   /// Sizes of GeoVaLs for i-th variable at a single location are defined by
   /// i-th value of \p sizes.
   GeoVaLs(const Locations_ & locs, const Variables &, const std::vector<size_t> & sizes);
-  GeoVaLs(const eckit::Configuration &, const ObsSpace_ &, const Variables &);
+  GeoVaLs(const Parameters_ &, const ObsSpace_ &, const Variables &);
   GeoVaLs(const GeoVaLs &);
 
   ~GeoVaLs();
@@ -62,8 +63,11 @@ class GeoVaLs : public util::Printable,
   GeoVaLs & operator-=(const GeoVaLs &);
   GeoVaLs & operator*=(const GeoVaLs &);
   double dot_product_with(const GeoVaLs &) const;
-  void read(const eckit::Configuration &);
-  void write(const eckit::Configuration &) const;
+  void read(const Parameters_ &);
+  void write(const Parameters_ &) const;
+
+  void fill(const std::vector<size_t> &, const std::vector<double> &);
+  void fillAD(const std::vector<size_t> &, std::vector<double> &) const;
 
  private:
   void print(std::ostream &) const;
@@ -84,12 +88,12 @@ GeoVaLs<OBS>::GeoVaLs(const Locations_ & locs, const Variables & vars,
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-  GeoVaLs<OBS>::GeoVaLs(const eckit::Configuration & conf,
-                          const ObsSpace_ & ospace, const Variables & vars)
+  GeoVaLs<OBS>::GeoVaLs(const Parameters_ & params,
+                        const ObsSpace_ & ospace, const Variables & vars)
   : gvals_() {
   Log::trace() << "GeoVaLs<OBS>::GeoVaLs read starting" << std::endl;
   util::Timer timer(classname(), "GeoVaLs");
-  gvals_.reset(new GeoVaLs_(conf, ospace.obsspace(), vars));
+  gvals_.reset(new GeoVaLs_(params, ospace.obsspace(), vars));
   Log::trace() << "GeoVaLs<OBS>::GeoVaLs read done" << std::endl;
 }
 
@@ -223,21 +227,41 @@ void GeoVaLs<OBS>::random() {
 
 // -----------------------------------------------------------------------------
 
+template <typename OBS>
+void GeoVaLs<OBS>::fill(const std::vector<size_t> & indx, const std::vector<double> & vals) {
+  Log::trace() << "GeoVaLs<OBS>::fill starting" << std::endl;
+  util::Timer timer(classname(), "fill");
+  gvals_->fill(indx, vals);
+  Log::trace() << "GeoVaLs<OBS>::fill done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+void GeoVaLs<OBS>::fillAD(const std::vector<size_t> & indx, std::vector<double> & vals) const {
+  Log::trace() << "GeoVaLs<OBS>::fillAD starting" << std::endl;
+  util::Timer timer(classname(), "fillAD");
+  gvals_->fillAD(indx, vals);
+  Log::trace() << "GeoVaLs<OBS>::fillAD done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
 template<typename OBS>
-void GeoVaLs<OBS>::read(const eckit::Configuration & conf) {
+void GeoVaLs<OBS>::read(const Parameters_ & params) {
   Log::trace() << "GeoVaLs<OBS>::read starting" << std::endl;
   util::Timer timer(classname(), "read");
-  gvals_->read(conf);
+  gvals_->read(params);
   Log::trace() << "GeoVaLs<OBS>::read done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename OBS>
-void GeoVaLs<OBS>::write(const eckit::Configuration & conf) const {
+void GeoVaLs<OBS>::write(const Parameters_ & params) const {
   Log::trace() << "GeoVaLs<OBS>::write starting" << std::endl;
   util::Timer timer(classname(), "write");
-  gvals_->write(conf);
+  gvals_->write(params);
   Log::trace() << "GeoVaLs<OBS>::write done" << std::endl;
 }
 

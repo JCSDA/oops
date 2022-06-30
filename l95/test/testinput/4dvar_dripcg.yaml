@@ -1,0 +1,78 @@
+cost function:
+  cost type: 4D-Var
+  window begin: 2010-01-01T03:00:00Z
+  window length: P1D
+  geometry:
+    resol: 40
+  model:
+    f: 8.0
+    name: L95
+    tstep: PT1H30M
+  analysis variables: [x]
+  background:
+    date: 2010-01-01T03:00:00Z
+    filename: Data/forecast.fc.2010-01-01T00:00:00Z.PT3H.l95
+  background error:
+    covariance model: L95Error
+    date: 2010-01-01T03:00:00Z
+    length_scale: 1.0
+    standard_deviation: 0.6
+  observations:
+    observers:
+    - obs error:
+        covariance model: diagonal
+      obs space:
+        obsdatain:
+          obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
+        obsdataout:
+          obsfile: Data/4dvar_dripcg.2010-01-02T00:00:00Z.obt
+      obs operator: {}
+  constraints:
+  - jcdfi:
+      filtered variables: [x]
+      alpha: 100.0
+      cutoff: PT3H
+variational:
+  minimizer:
+    algorithm: DRIPCG
+  iterations:
+  - diagnostics:
+      departures: ombg
+    gradient norm reduction: 1e-10
+    linear model:
+      trajectory:
+        f: 8.0
+        tstep: PT1H30M
+      tstep: PT1H30M
+      variable change: Identity
+      name: L95TLM
+    ninner: 10
+    geometry:
+      resol: 40
+    test: on
+  - gradient norm reduction: 1e-10
+    linear model:
+      trajectory:
+        f: 8.0
+        tstep: PT1H30M
+      tstep: PT1H30M
+      variable change: Identity
+      name: L95TLM
+    ninner: 10
+    geometry:
+      resol: 40
+    test: on
+final:
+  diagnostics:
+    departures: oman
+  prints:
+    frequency: PT1H30M
+output:
+  datadir: Data
+  exp: 4dvar_dripcg
+  first: PT3H
+  frequency: PT06H
+  type: an
+
+test:
+  reference filename: testoutput/4dvar_dripcg.test

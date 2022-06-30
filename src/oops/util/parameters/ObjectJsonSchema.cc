@@ -31,6 +31,7 @@ std::vector<ConditionalObjectJsonSchema> cartesianProduct(
       ConditionalObjectJsonSchema combinedSchema = schemaA;
       combinedSchema.if_.combineWith(schemaB.if_);
       combinedSchema.then.combineWith(schemaB.then);
+      combinedSchema.else_.combineWith(schemaB.else_);
       result.push_back(std::move(combinedSchema));
     }
   return result;
@@ -85,6 +86,14 @@ ObjectJsonSchema::ObjectJsonSchema(const std::string &selector,
   }
 }
 
+ObjectJsonSchema::ObjectJsonSchema(std::vector<ConditionalObjectJsonSchema> allOf)
+  : allOf_(allOf)
+{}
+
+bool ObjectJsonSchema::empty() const {
+  return properties_.empty() && required_.empty() && allOf_.empty();
+}
+
 std::string ObjectJsonSchema::toString(bool /*includeSchemaKeyword*/) const {
   PropertyJsonSchema schema = toPropertyJsonSchema();
   // TODO(wsmigaj): handle the includeSchemaKeyword parameter.
@@ -99,6 +108,10 @@ PropertyJsonSchema ObjectJsonSchema::toPropertyJsonSchema() const {
   std::string str = propertiesToString();
   if (!str.empty())
     result["properties"] = str;
+
+  str = patternPropertiesToString();
+  if (!str.empty())
+    result["patternProperties"] = str;
 
   str = requiredToString();
   if (!str.empty())
@@ -116,8 +129,16 @@ PropertyJsonSchema ObjectJsonSchema::toPropertyJsonSchema() const {
 }
 
 std::string ObjectJsonSchema::propertiesToString() const {
+  return propertyJsonSchemasToString(properties_);
+}
+
+std::string ObjectJsonSchema::patternPropertiesToString() const {
+  return propertyJsonSchemasToString(patternProperties_);
+}
+
+std::string ObjectJsonSchema::propertyJsonSchemasToString(const PropertyJsonSchemas &properties) {
   std::stringstream stream;
-  if (!properties_.empty()) {
+  if (!properties.empty()) {
     eckit::Channel channel;
     channel.setStream(stream);
 
@@ -125,7 +146,7 @@ std::string ObjectJsonSchema::propertiesToString() const {
     bool needsCommaAndNewline = false;
     {
       eckit::AutoIndent indent(channel);
-      for (const auto &nameAndSchema : properties_) {
+      for (const auto &nameAndSchema : properties) {
         if (needsCommaAndNewline)
           channel << ",\n";
         channel << '"' << nameAndSchema.first << '"'
@@ -187,9 +208,16 @@ std::string ObjectJsonSchema::allOfToString() const {
           eckit::AutoIndent indent(channel);
           channel << R"("if": )";
           channel << conditionalSchema.if_.toString();
-          channel << ",\n";
-          channel << R"("then": )";
-          channel << conditionalSchema.then.toString();
+          if (!conditionalSchema.then.empty()) {
+            channel << ",\n";
+            channel << R"("then": )";
+            channel << conditionalSchema.then.toString();
+          }
+          if (!conditionalSchema.else_.empty()) {
+            channel << ",\n";
+            channel << R"("else": )";
+            channel << conditionalSchema.else_.toString();
+          }
         }
         channel << "\n}";
         needsCommaAndNewline = true;
@@ -202,6 +230,7 @@ std::string ObjectJsonSchema::allOfToString() const {
 
 void ObjectJsonSchema::combineWith(const ObjectJsonSchema& other) {
   combinePropertiesWith(other);
+  combinePatternPropertiesWith(other);
   combineRequiredWith(other);
   combineAdditionalPropertiesWith(other);
   // This call needs to be at the end.
@@ -209,13 +238,22 @@ void ObjectJsonSchema::combineWith(const ObjectJsonSchema& other) {
 }
 
 void ObjectJsonSchema::combinePropertiesWith(const ObjectJsonSchema& other) {
-  for (const std::pair<const std::string, PropertyJsonSchema> &keyAndValue : other.properties_) {
+  combinePropertyJsonSchemasWith(properties_, other.properties());
+}
+
+void ObjectJsonSchema::combinePatternPropertiesWith(const ObjectJsonSchema& other) {
+  combinePropertyJsonSchemasWith(patternProperties_, other.patternProperties());
+}
+
+void ObjectJsonSchema::combinePropertyJsonSchemasWith(PropertyJsonSchemas &properties,
+                                                      const PropertyJsonSchemas& otherProperties) {
+  for (const std::pair<const std::string, PropertyJsonSchema> &keyAndValue : otherProperties) {
     const std::string &key = keyAndValue.first;
-    auto it = properties_.find(key);
-    if (it == properties_.end()) {
+    auto it = properties.find(key);
+    if (it == properties.end()) {
       // This schema doesn't define a schema for the property with this key.
       // Import the definition from the other schema.
-      properties_.insert(keyAndValue);
+      properties.insert(keyAndValue);
     } else {
       // This schema already defines a schema for the property with this key.
       PropertyJsonSchema &ourSchema = it->second;
@@ -256,9 +294,18 @@ void ObjectJsonSchema::combineAllOfWith(const ObjectJsonSchema& other) {
   // Note: this object's properties, required and additionalProperties member variables have
   // already been combined with those of the other schema.
   for (ConditionalObjectJsonSchema &conditionalSchema : allOf_) {
-    conditionalSchema.then.combinePropertiesWith(*this);
-    conditionalSchema.then.combineRequiredWith(*this);
-    conditionalSchema.then.combineAdditionalPropertiesWith(*this);
+    if (!conditionalSchema.then.empty()) {
+      conditionalSchema.then.combinePropertiesWith(*this);
+      conditionalSchema.then.combinePatternPropertiesWith(*this);
+      conditionalSchema.then.combineRequiredWith(*this);
+      conditionalSchema.then.combineAdditionalPropertiesWith(*this);
+    }
+    if (!conditionalSchema.else_.empty()) {
+      conditionalSchema.else_.combinePropertiesWith(*this);
+      conditionalSchema.else_.combinePatternPropertiesWith(*this);
+      conditionalSchema.else_.combineRequiredWith(*this);
+      conditionalSchema.else_.combineAdditionalPropertiesWith(*this);
+    }
   }
 }
 
@@ -269,10 +316,22 @@ void ObjectJsonSchema::extendPropertySchema(const std::string &property,
     combinePropertySchemaWith(conditionalSchema.then.properties_[property], schema);
 }
 
+void ObjectJsonSchema::extendPatternPropertySchema(const std::string &property,
+                                                   const PropertyJsonSchema &schema) {
+  combinePropertySchemaWith(patternProperties_[property], schema);
+  for (ConditionalObjectJsonSchema &conditionalSchema : allOf_)
+    combinePropertySchemaWith(conditionalSchema.then.patternProperties_[property], schema);
+}
+
+
 void ObjectJsonSchema::require(const std::string &property) {
   required_.insert(property);
-  for (ConditionalObjectJsonSchema &conditionalSchema : allOf_)
-    conditionalSchema.then.required_.insert(property);
+  for (ConditionalObjectJsonSchema &conditionalSchema : allOf_) {
+    if (!conditionalSchema.then.empty())
+      conditionalSchema.then.required_.insert(property);
+    if (!conditionalSchema.else_.empty())
+      conditionalSchema.else_.required_.insert(property);
+  }
 }
 
 }  // namespace oops

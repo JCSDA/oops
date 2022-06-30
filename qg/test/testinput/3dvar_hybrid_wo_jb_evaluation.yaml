@@ -20,57 +20,52 @@ cost function:
         value: 0.5
     - covariance:
         covariance model: ensemble
-        date: 2010-01-01T12:00:00Z
         localization:
           horizontal_length_scale: 4.0e6
           localization method: QG
           maximum_condition_number: 1.0e6
           standard_deviation: 1.0
           vertical_length_scale: 30000.0
-        members:
-        - date: 2010-01-01T12:00:00Z
-          filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1DT12H.nc
-        - date: 2010-01-01T12:00:00Z
-          filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1DT12H.nc
-        - date: 2010-01-01T12:00:00Z
-          filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1DT12H.nc
-        - date: 2010-01-01T12:00:00Z
-          filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1DT12H.nc
-        - date: 2010-01-01T12:00:00Z
-          filename: Data/forecast.ens.5.2009-12-31T00:00:00Z.P1DT12H.nc
+        members from template:
+          template:
+            date: 2010-01-01T12:00:00Z
+            filename: Data/forecast.ens.%mem%.2009-12-31T00:00:00Z.P1DT12H.nc
+          pattern: %mem%
+          nmembers: 5
       weight:
         value: 0.5
   observations:
-  - obs operator:
-      obs type: Stream
-    obs space:
-      obsdatain:
-        obsfile: Data/truth.obs3d.nc
-      obsdataout:
-        obsfile: Data/3dvar_hybrid.obs3d.nojb_eval.nc
-      obs type: Stream
-    obs error:
-      covariance model: diagonal
-  - obs operator:
-      obs type: Wind
-    obs space:
-      obsdatain:
-        obsfile: Data/truth.obs3d.nc
-      obsdataout:
-        obsfile: Data/3dvar_hybrid.obs3d.nojb_eval.nc
-      obs type: Wind
-    obs error:
-      covariance model: diagonal
-  - obs operator:
-      obs type: WSpeed
-    obs space:
-      obsdatain:
-        obsfile: Data/truth.obs3d.nc
-      obsdataout:
-        obsfile: Data/3dvar_hybrid.obs3d.nojb_eval.nc
-      obs type: WSpeed
-    obs error:
-      covariance model: diagonal
+    observers:
+    - obs operator:
+        obs type: Stream
+      obs space:
+        obsdatain:
+          obsfile: Data/truth.obs3d.nc
+        obsdataout:
+          obsfile: Data/3dvar_hybrid.obs3d.nojb_eval.nc
+        obs type: Stream
+      obs error:
+        covariance model: diagonal
+    - obs operator:
+        obs type: Wind
+      obs space:
+        obsdatain:
+          obsfile: Data/truth.obs3d.nc
+        obsdataout:
+          obsfile: Data/3dvar_hybrid.obs3d.nojb_eval.nc
+        obs type: Wind
+      obs error:
+        covariance model: diagonal
+    - obs operator:
+        obs type: WSpeed
+      obs space:
+        obsdatain:
+          obsfile: Data/truth.obs3d.nc
+        obsdataout:
+          obsfile: Data/3dvar_hybrid.obs3d.nojb_eval.nc
+        obs type: WSpeed
+      obs error:
+        covariance model: diagonal
   geometry:
     nx: 40
     ny: 20

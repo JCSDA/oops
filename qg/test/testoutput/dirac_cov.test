@@ -1,12 +1,12 @@
-Input Dirac increment: 
+Input Dirac increment:
   Valid time: 2010-01-01T12:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  0.0000e+00, Max=  1.0000e+00, RMS=  2.5000e-02
-B * Increment: 
+  Streamfunction         :  Min=0.0000000000000000e+00, Max=1.0000000000000000e+00, RMS=2.5000000000000001e-02
+Covariance(QgError) * Increment:
   Valid time: 2010-01-01T12:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -7.2330e+05, Max=  3.2400e+14, RMS=  6.2881e+13
+  Streamfunction         :  Min=-7.2330020619748102e+05, Max=3.2399999999999988e+14, RMS=6.2881006924295109e+13
 Randomized variance: 
   Valid time: 2010-01-01T12:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  2.8165e+14, Max=  3.6315e+14, RMS=  3.2388e+14
+  Streamfunction         :  Min=2.8164653371812294e+14, Max=3.6314831111633388e+14, RMS=3.2388476391941831e+14

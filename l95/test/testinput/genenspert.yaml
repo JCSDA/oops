@@ -14,11 +14,11 @@ background error:
 forecast length: PT27H
 initial condition:
   date: 2010-01-01T00:00:00Z
-  filename: Data/test.an.2010-01-01T00:00:00Z.l95
+  filename: Data/forecast.an.2010-01-01T00:00:00Z.l95
 output:
   datadir: Data
   date: 2010-01-01T00:00:00Z
-  exp: test
+  exp: forecast
   frequency: PT1H30M
   type: ens
 

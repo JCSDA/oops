@@ -12,29 +12,30 @@ forecast length: PT12H
 window begin: 2010-01-01T00:00:00Z
 window length: PT12H
 observations:
-- obs operator:
-    obs type: Stream
-  obs space:
-    obsdatain:
-      obsfile: Data/truth.obs4d_12h.nc
-    obsdataout:
-      obsfile: Data/mem002.ens_hofx.obs4d_12h.nc
-    obs type: Stream
-- obs operator:
-    obs type: Wind
-  obs space:
-    obsdatain:
-      obsfile: Data/truth.obs4d_12h.nc
-    obsdataout:
-      obsfile: Data/mem002.ens_hofx.obs4d_12h.nc
-    obs type: Wind
-- obs operator:
-    obs type: WSpeed
-  obs space:
-    obsdatain:
-      obsfile: Data/truth.obs4d_12h.nc
-    obsdataout:
-      obsfile: Data/mem002.ens_hofx.obs4d_12h.nc
-    obs type: WSpeed
+  observers:
+  - obs operator:
+      obs type: Stream
+    obs space:
+      obsdatain:
+        obsfile: Data/truth.obs4d_12h.nc
+      obsdataout:
+        obsfile: Data/mem002.ens_hofx.obs4d_12h.nc
+      obs type: Stream
+  - obs operator:
+      obs type: Wind
+    obs space:
+      obsdatain:
+        obsfile: Data/truth.obs4d_12h.nc
+      obsdataout:
+        obsfile: Data/mem002.ens_hofx.obs4d_12h.nc
+      obs type: Wind
+  - obs operator:
+      obs type: WSpeed
+    obs space:
+      obsdatain:
+        obsfile: Data/truth.obs4d_12h.nc
+      obsdataout:
+        obsfile: Data/mem002.ens_hofx.obs4d_12h.nc
+      obs type: WSpeed
 prints:
   frequency: PT3H

@@ -1,6 +1,7 @@
 forecast length: P4D
 initial condition:
-  analytic_init: large-vortices
+  analytic init:
+    method: large-vortices
   date: 2010-01-01T00:00:00Z
 model:
   name: QG

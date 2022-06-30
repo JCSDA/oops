@@ -21,7 +21,6 @@
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
-#include "oops/util/dot_product.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 
@@ -87,7 +86,7 @@ template<typename MODEL> class CostJb3D : public CostJbState<MODEL> {
   std::unique_ptr< ModelSpaceCovarianceBase<MODEL> > B_;
   const util::Duration winLength_;
   const Variables controlvars_;
-  std::unique_ptr<const Geometry_> resol_;
+  const Geometry_ * resol_;
   const util::DateTime time_;
   const eckit::LocalConfiguration conf_;
 };
@@ -111,8 +110,8 @@ CostJb3D<MODEL>::CostJb3D(const eckit::Configuration & config, const Geometry_ &
 
 template<typename MODEL>
 void CostJb3D<MODEL>::linearize(const State_ & fg, const Geometry_ & lowres) {
-  resol_.reset(new Geometry_(lowres));
-  B_.reset(CovarianceFactory<MODEL>::create(conf_, lowres, controlvars_, xb_, fg));
+  resol_ = &lowres;
+  B_.reset(CovarianceFactory<MODEL>::create(lowres, controlvars_, conf_, xb_, fg));
 }
 
 // -----------------------------------------------------------------------------
@@ -155,8 +154,7 @@ void CostJb3D<MODEL>::randomize(Increment_ & dx) const {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-Increment<MODEL> *
-CostJb3D<MODEL>::newStateIncrement() const {
+Increment<MODEL> * CostJb3D<MODEL>::newStateIncrement() const {
   Increment_ * incr = new Increment_(*resol_, controlvars_, time_);
   return incr;
 }

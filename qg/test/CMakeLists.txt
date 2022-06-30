@@ -65,15 +65,16 @@ list( APPEND qg_testinput
   testinput/gen_ens_pert_B.yaml
   testinput/getvalues.yaml
   testinput/hofx.yaml
+  testinput/hofx_tinterp.yaml
   testinput/hofx3d.yaml
   testinput/hybridgain_analysis.yaml
   testinput/hybridgain_increment.yaml
   testinput/interfaces.yaml
   testinput/letkf.yaml
-  testinput/lineargetvalues.yaml
   testinput/make_obs_3d.yaml
   testinput/make_obs_4d_12h.yaml
   testinput/make_obs_4d_24h.yaml
+  testinput/make_obs_4d_24h_filter_ordering.yaml
   testinput/make_obs_4d_biased.yaml
   testinput/rtpp.yaml
   testinput/static_b_init.yaml
@@ -88,6 +89,7 @@ list( APPEND qg_testoutput
   testoutput/3densvar.test
   testoutput/3dvar.test
   testoutput/3dvar_change_var.test
+  testoutput/3dvar_full_inverse.test
   testoutput/3dvar_hybrid.test
   testoutput/3dvar_hybrid_wo_jb_evaluation.test
   testoutput/3dfgat.test
@@ -116,8 +118,10 @@ list( APPEND qg_testoutput
   testoutput/dirac_loc_3d.test
   testoutput/dirac_loc_4d.test
   testoutput/dirac_no_loc.test
-  testoutput/eda_4dvar.test
+  testoutput/eda_3dfgat.test
+  testoutput/eda_3dvar.test
   testoutput/eda_3dvar_block.test
+  testoutput/eda_4dvar.test
   testoutput/ens_forecast.test
   testoutput/ens_hofx.test
   testoutput/ens_recenter.test
@@ -127,6 +131,7 @@ list( APPEND qg_testoutput
   testoutput/forecast.test
   testoutput/gen_ens_pert_B.test
   testoutput/hofx.test
+  testoutput/hofx_tinterp.test
   testoutput/hofx3d.test
   testoutput/hybridgain_analysis.test
   testoutput/hybridgain_increment.test
@@ -134,6 +139,7 @@ list( APPEND qg_testoutput
   testoutput/make_obs_3d.test
   testoutput/make_obs_4d_12h.test
   testoutput/make_obs_4d_24h.test
+  testoutput/make_obs_4d_24h_filter_ordering.test
   testoutput/make_obs_4d_biased.test
   testoutput/rtpp.test
   testoutput/static_b_init.test
@@ -181,6 +187,12 @@ ecbuild_add_test( TARGET test_qg_make_obs_4d_24h
                   COMMAND  qg_hofx.x
                   TEST_DEPENDS test_qg_truth )
 
+ecbuild_add_test( TARGET test_qg_make_obs_4d_24h_filter_ordering
+                  OMP 2
+                  ARGS testinput/make_obs_4d_24h_filter_ordering.yaml
+                  COMMAND  qg_hofx.x
+                  TEST_DEPENDS test_qg_truth )
+
 
 #####################################################################
 # interface tests
@@ -206,12 +218,6 @@ ecbuild_add_test( TARGET  test_qg_geovals
 
 ecbuild_add_test( TARGET  test_qg_state
                   SOURCES executables/TestState.cc
-                  ARGS    "testinput/interfaces.yaml"
-                  LIBS    qg
-                  TEST_DEPENDS test_qg_truth )
-
-ecbuild_add_test( TARGET  test_qg_model_aux
-                  SOURCES executables/TestModelAuxControl.cc
                   ARGS    "testinput/interfaces.yaml"
                   LIBS    qg
                   TEST_DEPENDS test_qg_truth )
@@ -362,13 +368,6 @@ ecbuild_add_test( TARGET  test_qg_getvalues
                   LIBS    qg
                   TEST_DEPENDS test_qg_truth )
 
-ecbuild_add_test( TARGET  test_qg_lineargetvalues
-                  SOURCES executables/TestLinearGetValues.cc
-                  ARGS    "testinput/lineargetvalues.yaml"
-                  LIBS    qg
-                  TEST_DEPENDS test_qg_truth )
-
-
 #####################################################################
 # forecast-related tests
 #####################################################################
@@ -410,6 +409,12 @@ ecbuild_add_test( TARGET test_qg_make_obs_4d_biased
 ecbuild_add_test( TARGET test_qg_hofx
                   OMP 2
                   ARGS testinput/hofx.yaml
+                  COMMAND  qg_hofx.x
+                  TEST_DEPENDS test_qg_make_obs_4d_12h )
+
+ecbuild_add_test( TARGET test_qg_hofx_tinterp
+                  OMP 2
+                  ARGS testinput/hofx_tinterp.yaml
                   COMMAND  qg_hofx.x
                   TEST_DEPENDS test_qg_make_obs_4d_12h )
 

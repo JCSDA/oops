@@ -44,7 +44,7 @@ template<typename MODEL> class State4D : public util::Printable {
   State_ & operator[](const int ii) {return state4d_[ii];}
   const State_ & operator[](const int ii) const {return state4d_[ii];}
 
-  Geometry_ geometry() const { return state4d_[0].geometry(); }
+  const Geometry_ & geometry() const {return state4d_[0].geometry();}
   const Variables & variables() const {return state4d_[0].variables();}
   const std::vector<util::DateTime> validTimes() const;
 

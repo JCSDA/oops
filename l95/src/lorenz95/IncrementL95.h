@@ -20,13 +20,17 @@
 #include "atlas/field.h"
 
 #include "lorenz95/FieldL95.h"
-#include "lorenz95/Iterator.h"
 #include "lorenz95/Resolution.h"
 
-#include "oops/base/LocalIncrement.h"
+#include "oops/base/WriteParametersBase.h"
+#include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
+#include "oops/util/parameters/OptionalParameter.h"
+#include "oops/util/parameters/Parameter.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Serializable.h"
 
@@ -40,10 +44,37 @@ namespace oops {
 }
 
 namespace lorenz95 {
-  class GomL95;
-  class LocsL95;
-  class ModelBiasCorrection;
+  class Iterator;
   class StateL95;
+
+// -----------------------------------------------------------------------------
+
+/// \brief Parameters passed to the IncrementL95::read() method.
+class IncrementL95ReadParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(IncrementL95ReadParameters, Parameters)
+
+ public:
+  /// \brief File to read the increment from.
+  oops::RequiredParameter<std::string> filename{"filename", this};
+  /// \brief Expected validity date of the increment (must match the value in the file).
+  oops::RequiredParameter<util::DateTime> date{"date", this};
+  /// \brief Ensemble member index.
+  oops::OptionalParameter<int> member{"member", this};
+};
+
+// -----------------------------------------------------------------------------
+
+/// \brief Parameters controlling the action of writing a Lorenz95 model's state to a file.
+class IncrementL95WriteParameters : public oops::WriteParametersBase {
+  OOPS_CONCRETE_PARAMETERS(IncrementL95WriteParameters, WriteParametersBase)
+
+ public:
+  oops::Parameter<std::string> datadir{"datadir", ".", this};
+  oops::RequiredParameter<std::string> exp{"exp", this};
+  oops::RequiredParameter<std::string> type{"type", this};
+};
+
+// -----------------------------------------------------------------------------
 
 /// Increment Class: Difference between two states
 /*!
@@ -57,6 +88,10 @@ class IncrementL95 : public util::Printable,
                      public util::Serializable,
                      private util::ObjectCounter<IncrementL95> {
  public:
+  typedef FieldL95DiracParameters     DiracParameters_;
+  typedef IncrementL95ReadParameters  ReadParameters_;
+  typedef IncrementL95WriteParameters WriteParameters_;
+
   static const std::string classname() {return "lorenz95::IncrementL95";}
 
 /// Constructor, destructor
@@ -70,7 +105,7 @@ class IncrementL95 : public util::Printable,
   void zero();
   void zero(const util::DateTime &);
   void ones();
-  void dirac(const eckit::Configuration &);
+  void dirac(const DiracParameters_ &);
   IncrementL95 & operator =(const IncrementL95 &);
   IncrementL95 & operator+=(const IncrementL95 &);
   IncrementL95 & operator-=(const IncrementL95 &);
@@ -81,13 +116,16 @@ class IncrementL95 : public util::Printable,
   void random();
 
 /// ATLAS
-  void setAtlas(atlas::FieldSet *) const;
-  void toAtlas(atlas::FieldSet *) const;
-  void fromAtlas(atlas::FieldSet *);
+  void toFieldSet(atlas::FieldSet &) const
+    {ABORT("toFieldSet not implemented");}
+  void toFieldSetAD(const atlas::FieldSet &)
+    {ABORT("toFieldSetAD not implemented");}
+  void fromFieldSet(const atlas::FieldSet &)
+    {ABORT("fromFieldSet not implemented");}
 
 // Utilities
-  void read(const eckit::Configuration &);
-  void write(const eckit::Configuration &) const;
+  void read(const ReadParameters_ &);
+  void write(const WriteParameters_ &) const;
   double norm () const {return fld_.rms();}
   const util::DateTime & validTime() const {return time_;}
   util::DateTime & validTime() {return time_;}
@@ -105,6 +143,7 @@ class IncrementL95 : public util::Printable,
   }
   std::vector<double> & asVector() {return fld_.asVector();}
   const std::vector<double> & asVector() const {return fld_.asVector();}
+  const oops::Variables & variables() const {return vars_;}
 
   void accumul(const double &, const StateL95 &);
 
@@ -117,6 +156,7 @@ class IncrementL95 : public util::Printable,
   void print(std::ostream &) const override;
   FieldL95 fld_;
   util::DateTime time_;
+  oops::Variables vars_;
 };
 
 // -----------------------------------------------------------------------------

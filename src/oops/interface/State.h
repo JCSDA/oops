@@ -18,21 +18,48 @@
 
 #include "eckit/config/Configuration.h"
 #include "oops/base/Geometry.h"
-#include "oops/base/PostProcessor.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
-#include "oops/util/gatherPrint.h"
 #include "oops/util/ObjectCounter.h"
+#include "oops/util/parameters/GenericParameters.h"
+#include "oops/util/parameters/HasParameters_.h"
+#include "oops/util/parameters/HasWriteParameters_.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/ParametersOrConfiguration.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Serializable.h"
 #include "oops/util/Timer.h"
+
+namespace atlas {
+  class FieldSet;
+}
 
 namespace oops {
 
 namespace interface {
 
-/// Encapsulates the model state
-
+/// \brief Encapsulates the model state.
+///
+/// Note: implementations of this interface can opt to extract their settings either from
+/// a Configuration object or from a subclass of Parameters.
+///
+/// In the former case, they should provide a constructor and read()/write() methods with the
+/// following signatures:
+///
+///    State(const Geometry_ &, const eckit::Configuration &);
+///    void read(const eckit::Configuration &);
+///    void write(const eckit::Configuration &) const;
+///
+/// In the latter case, the implementer should first define (a) a subclass of Parameters holding
+/// the settings needed by the constructor and the read() method and (b) a subclass of
+/// WriteParametersBase holding the settings needed by the write() method. The implementation of
+/// the State interface should then typedef `Parameters_` and `WriteParameters_` to the names of
+/// these subclasses and provide a constructor and read()/write() method with the following
+/// signatures:
+///
+///    State(const Geometry_ &, const Parameters_ &);
+///    void read(const Parameters_ &);
+///    void write(const WriteParameters_ &) const;
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
@@ -43,11 +70,24 @@ class State : public util::Printable,
   typedef oops::Geometry<MODEL>            Geometry_;
 
  public:
+  /// Set to State_::Parameters_ if State_ provides a type called Parameters_ and to
+  /// GenericParameters (a thin wrapper of an eckit::LocalConfiguration object) if not.
+  typedef TParameters_IfAvailableElseFallbackType_t<State_, GenericParameters> Parameters_;
+
+  /// Set to State_::WriteParameters_ if State_ provides a type called WriteParameters_ and to
+  /// GenericWriteParameters (a thin wrapper of an eckit::LocalConfiguration object) if not.
+  typedef TWriteParameters_IfAvailableElseFallbackType_t<State_, GenericWriteParameters>
+    WriteParameters_;
+
   static const std::string classname() {return "oops::State";}
 
   /// Constructor for specified \p resol, with \p vars, valid at \p time
   State(const Geometry_ & resol, const Variables & vars, const util::DateTime & time);
-  /// Constructor for specified \p resol and files read from \p conf
+  /// Constructor for specified \p resol and parameters \p params specifying e.g. a file to read
+  /// or an analytic state to generate
+  State(const Geometry_ & resol, const Parameters_ & params);
+  /// Constructor for specified \p resol and parameters \p params specifying e.g. a file to read
+  /// or an analytic state to generate
   State(const Geometry_ & resol, const eckit::Configuration & conf);
   /// Copies \p other State, changing its resolution to \p geometry
   State(const Geometry_ & resol, const State & other);
@@ -59,7 +99,7 @@ class State : public util::Printable,
   State & operator =(const State &);
 
   /// Accessor
-  State_ & state() {return *state_;}
+  State_ & state() {fset_.clear(); return *state_;}
   /// const accessor
   const State_ & state() const {return *state_;}
 
@@ -69,14 +109,14 @@ class State : public util::Printable,
   void updateTime(const util::Duration & dt) {state_->updateTime(dt);}
 
   /// Read this State from file
+  void read(const Parameters_ &);
   void read(const eckit::Configuration &);
   /// Write this State out to file
+  void write(const WriteParameters_ &) const;
   void write(const eckit::Configuration &) const;
   /// Norm (used in tests)
   double norm() const;
 
-  /// Accessor to geometry associated with this State
-  Geometry_ geometry() const;
   /// Accessor to variables associated with this State
   const Variables & variables() const;
 
@@ -84,6 +124,17 @@ class State : public util::Printable,
   void zero();
   /// Accumulate (add \p w * \p x to the state)
   void accumul(const double & w, const State & x);
+
+  /// ATLAS FieldSet interface
+  /// For models that are not using ATLAS fieldsets for their own State data:
+  /// - "toFieldSet" allocates the ATLAS fieldset based on the variables present in the State and
+  ///    copies State data into the fieldset, including halo.
+  /// - "fromFieldSet" copies fieldset data back into the State (interior points only).
+  /// For models that are using ATLAS fieldsets for their own Incerment data, fields are shared from
+  /// a fieldset to another. A working example is available with the QUENCH testbed of SABER
+  /// inf saber/test/quench.
+  void toFieldSet(atlas::FieldSet &) const;
+  void fromFieldSet(const atlas::FieldSet &);
 
   /// Serialize and deserialize (used in 4DEnVar, weak-constraint 4DVar and Block-Lanczos minimizer)
   size_t serialSize() const override;
@@ -93,13 +144,16 @@ class State : public util::Printable,
  private:
   std::unique_ptr<State_> state_;
   void print(std::ostream &) const override;
+
+ protected:
+  mutable atlas::FieldSet fset_;
 };
 
 // =============================================================================
 
 template<typename MODEL>
 State<MODEL>::State(const Geometry_ & resol, const Variables & vars,
-                    const util::DateTime & time) : state_()
+                    const util::DateTime & time) : state_(), fset_()
 {
   Log::trace() << "State<MODEL>::State starting" << std::endl;
   util::Timer timer(classname(), "State");
@@ -111,25 +165,15 @@ State<MODEL>::State(const Geometry_ & resol, const Variables & vars,
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-State<MODEL>::State(const Geometry_ & resol, const eckit::Configuration & conf)
-  : state_()
+State<MODEL>::State(const Geometry_ & resol,
+                    const Parameters_ & params) : state_(), fset_()
 {
   Log::trace() << "State<MODEL>::State read starting" << std::endl;
   util::Timer timer(classname(), "State");
 
-  eckit::LocalConfiguration myconf;
-  if (conf.has("states")) {
-//  Parallel 4D state:
-    std::vector<eckit::LocalConfiguration> confs;
-    conf.get("states", confs);
-    ASSERT(confs.size() == resol.timeComm().size());
-    myconf = confs[resol.timeComm().rank()];
-  } else {
-//  3D state:
-    myconf = eckit::LocalConfiguration(conf);
-  }
-
-  state_.reset(new State_(resol.geometry(), myconf));
+  state_.reset(new State_(
+                 resol.geometry(),
+                 parametersOrConfiguration<HasParameters_<State_>::value>(params)));
   this->setObjectSize(state_->serialSize()*sizeof(double));
   Log::trace() << "State<MODEL>::State read done" << std::endl;
 }
@@ -138,7 +182,7 @@ State<MODEL>::State(const Geometry_ & resol, const eckit::Configuration & conf)
 
 template<typename MODEL>
 State<MODEL>::State(const Geometry_ & resol, const State & other)
-  : state_()
+  : state_(), fset_()
 {
   Log::trace() << "State<MODEL>::State interpolated starting" << std::endl;
   util::Timer timer(classname(), "State");
@@ -150,7 +194,7 @@ State<MODEL>::State(const Geometry_ & resol, const State & other)
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-State<MODEL>::State(const State & other) : state_()
+State<MODEL>::State(const State & other) : state_(), fset_()
 {
   Log::trace() << "State<MODEL>::State starting copy" << std::endl;
   util::Timer timer(classname(), "State");
@@ -165,6 +209,7 @@ template<typename MODEL>
 State<MODEL>::~State() {
   Log::trace() << "State<MODEL>::~State starting" << std::endl;
   util::Timer timer(classname(), "~State");
+  fset_.clear();
   state_.reset();
   Log::trace() << "State<MODEL>::~State done" << std::endl;
 }
@@ -175,6 +220,7 @@ template<typename MODEL>
 State<MODEL> & State<MODEL>::operator=(const State & rhs) {
   Log::trace() << "State<MODEL>::operator= starting" << std::endl;
   util::Timer timer(classname(), "operator=");
+  fset_.clear();
   *state_ = *rhs.state_;
   Log::trace() << "State<MODEL>::operator= done" << std::endl;
   return *this;
@@ -183,21 +229,50 @@ State<MODEL> & State<MODEL>::operator=(const State & rhs) {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void State<MODEL>::read(const eckit::Configuration & conf) {
+void State<MODEL>::read(const Parameters_ & parameters) {
   Log::trace() << "State<MODEL>::read starting" << std::endl;
   util::Timer timer(classname(), "read");
-  state_->read(conf);
+  fset_.clear();
+  state_->read(parametersOrConfiguration<HasParameters_<State_>::value>(parameters));
   Log::trace() << "State<MODEL>::read done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void State<MODEL>::write(const eckit::Configuration & conf) const {
+void State<MODEL>::read(const eckit::Configuration & conf) {
+  // It would be possible to implement this function so as to avoid creating a short-lived
+  // GenericParameters object if State_::read() takes an eckit::Configuration rather than a
+  // subclass of Parameters. But for simplicity we don't do that for now, instead delegating work
+  // to the other read() overload. In any case, reading a model state is likely to be much more
+  // time-consuming than constructing a GenericParameters object.
+  Parameters_ parameters;
+  parameters.validateAndDeserialize(conf);
+  read(parameters);
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void State<MODEL>::write(const WriteParameters_ & parameters) const {
   Log::trace() << "State<MODEL>::write starting" << std::endl;
   util::Timer timer(classname(), "write");
-  state_->write(conf);
+  state_->write(parametersOrConfiguration<HasWriteParameters_<State_>::value>(parameters));
   Log::trace() << "State<MODEL>::write done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void State<MODEL>::write(const eckit::Configuration & conf) const {
+  // It would be possible to implement this function so as to avoid creating a short-lived
+  // GenericParameters object if State_::write() takes an eckit::Configuration rather than a
+  // subclass of Parameters. But for simplicity we don't do that for now, instead delegating work
+  // to the other write() overload. In any case, writing a model state is likely to be much more
+  // time-consuming than constructing a GenericParameters object.
+  WriteParameters_ parameters;
+  parameters.validateAndDeserialize(conf);
+  write(parameters);
 }
 
 // -----------------------------------------------------------------------------
@@ -209,17 +284,6 @@ double State<MODEL>::norm() const {
   double zz = state_->norm();
   Log::trace() << "State<MODEL>::norm done" << std::endl;
   return zz;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-oops::Geometry<MODEL> State<MODEL>::geometry() const {
-  Log::trace() << "State<MODEL>::geometry starting" << std::endl;
-  util::Timer timer(classname(), "geometry");
-  oops::Geometry<MODEL> geom(state_->geometry());
-  Log::trace() << "State<MODEL>::geometry done" << std::endl;
-  return geom;
 }
 
 // -----------------------------------------------------------------------------
@@ -256,8 +320,19 @@ template<typename MODEL>
 void State<MODEL>::deserialize(const std::vector<double> & vect, size_t & current) {
   Log::trace() << "State<MODEL>::State deserialize starting" << std::endl;
   util::Timer timer(classname(), "deserialize");
+  fset_.clear();
   state_->deserialize(vect, current);
   Log::trace() << "State<MODEL>::State deserialize done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void State<MODEL>::toFieldSet(atlas::FieldSet & fset) const {
+  Log::trace() << "State<MODEL>::toFieldSet starting" << std::endl;
+  util::Timer timer(classname(), "toFieldSet");
+  state_->toFieldSet(fset);
+  Log::trace() << "State<MODEL>::toFieldSet done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -276,6 +351,7 @@ template<typename MODEL>
 void State<MODEL>::zero() {
   Log::trace() << "State<MODEL>::zero starting" << std::endl;
   util::Timer timer(classname(), "zero");
+  fset_.clear();
   state_->zero();
   Log::trace() << "State<MODEL>::zero done" << std::endl;
 }
@@ -286,6 +362,7 @@ template<typename MODEL>
 void State<MODEL>::accumul(const double & zz, const State & xx) {
   Log::trace() << "State<MODEL>::accumul starting" << std::endl;
   util::Timer timer(classname(), "accumul");
+  fset_.clear();
   state_->accumul(zz, *xx.state_);
   Log::trace() << "State<MODEL>::accumul done" << std::endl;
 }

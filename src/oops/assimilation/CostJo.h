@@ -30,6 +30,7 @@
 #include "oops/base/Observers.h"
 #include "oops/base/ObserversTLAD.h"
 #include "oops/base/ObsSpaces.h"
+#include "oops/base/ObsTypeParameters.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/State.h"
@@ -65,8 +66,10 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   typedef PostProcessorTLAD<MODEL>      PostProcTLAD_;
 
  public:
+  typedef ObserversParameters<MODEL, OBS> Parameters_;
+
   /// Construct \f$ J_o\f$ from \f$ R\f$ and \f$ y_{obs}\f$.
-  CostJo(const eckit::Configuration &, const eckit::mpi::Comm &,
+  CostJo(const Parameters_ &, const eckit::mpi::Comm &,
          const util::DateTime &, const util::DateTime &,
          const eckit::mpi::Comm & ctime = oops::mpi::myself());
 
@@ -111,7 +114,7 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   const ObsSpaces_ & obspaces() const {return obspaces_;}
 
  private:
-  const eckit::LocalConfiguration obsconf_;
+  const Parameters_ params_;
   ObsSpaces_ obspaces_;
   std::unique_ptr<Observations_> yobs_;
   ObsErrors_ Rmat_;
@@ -130,11 +133,14 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
 // =============================================================================
 
 template<typename MODEL, typename OBS>
-CostJo<MODEL, OBS>::CostJo(const eckit::Configuration & joConf, const eckit::mpi::Comm & comm,
+CostJo<MODEL, OBS>::CostJo(const Parameters_ & joParams, const eckit::mpi::Comm & comm,
                            const util::DateTime & winbgn, const util::DateTime & winend,
                            const eckit::mpi::Comm & ctime)
-  : obsconf_(joConf), obspaces_(obsconf_, comm, winbgn, winend, ctime),
-    Rmat_(obsconf_, obspaces_), observers_(obspaces_, joConf),
+  : params_(joParams),
+    obspaces_(obsSpaceParameters(params_.observers.value()), comm, winbgn, winend, ctime),
+    Rmat_(obsErrorParameters(params_.observers.value()), obspaces_),
+    observers_(obspaces_, observerParameters(params_.observers.value()),
+               params_.getValues.value()),
     gradFG_(), obstlad_(), currentConf_()
 {
   Log::trace() << "CostJo::CostJo" << std::endl;
@@ -175,11 +181,13 @@ double CostJo<MODEL, OBS>::computeCost() {
   Observations_ yeqv(obspaces_);
   observers_.finalize(yeqv);
 
-  // Perturb observations according to obs error statistics
+  // Perturb observations according to obs error statistics and save to output file
   bool obspert = currentConf_->getBool("obs perturbations", false);
   if (obspert) {
     yobs_->perturb(Rmat_);
     Log::info() << "Perturbed observations: " << *yobs_ << std::endl;
+    bool saveobspert = currentConf_->getBool("save perturbed obs", true);
+    if (saveobspert) yobs_->save("EffectiveObsValue");
   }
 
   // Compute observations departures and save to output file
@@ -208,7 +216,6 @@ double CostJo<MODEL, OBS>::computeCost() {
 
   // Print Jo table
   double zjo = 0.0;
-  std::vector<eckit::LocalConfiguration> typeconfs = obsconf_.getSubConfigurations();
   for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
     double zz = 0.0;
     const unsigned nobs = (*gradFG_)[jj].nobs();
@@ -222,13 +229,15 @@ double CostJo<MODEL, OBS>::computeCost() {
       Log::test() << zz << " --- No Observations";
     }
 
-    if (typeconfs[jj].getBool("monitoring only", false)) {
+    if (params_.observers.value()[jj].observer.monitoringOnly) {
       Log::test() << " (Monitoring only)";
     } else {
       zjo += zz;
     }
     Log::test() << std::endl;
   }
+
+  Log::info() << "CostJo   : Nonlinear Jo = " << zjo << std::endl;
 
   Log::trace() << "CostJo::computeCost done" << std::endl;
   return zjo;
@@ -240,7 +249,7 @@ template<typename MODEL, typename OBS>
 void CostJo<MODEL, OBS>::setPostProcTraj(const CtrlVar_ & xx, const eckit::Configuration & conf,
                                          const Geometry_ & lowres, PostProcTLAD_ & pptraj) {
   Log::trace() << "CostJo::setPostProcTraj start" << std::endl;
-  obstlad_.reset(new ObserversTLAD_(obspaces_, obsconf_));
+  obstlad_.reset(new ObserversTLAD_(obspaces_, observerParameters(params_.observers.value())));
   obstlad_->initializeTraj(lowres, xx.obsVar(), pptraj);
   Log::trace() << "CostJo::setPostProcTraj done" << std::endl;
 }

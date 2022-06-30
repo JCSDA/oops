@@ -3,12 +3,12 @@ geometry:
 model:
   name: Identity
   tstep: PT1H30M
-  state variables: ['x']
+  state variables: [x]
 model aux control: {}
 model test:
   forecast length: PT48H
   final norm: 8.026
   tolerance: 0.00005
 initial condition:
-  date: '2010-01-01T03:00:00Z'
-  filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H
+  date: 2010-01-01T03:00:00Z
+  filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H.l95

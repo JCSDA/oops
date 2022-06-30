@@ -45,6 +45,13 @@ subroutine c_datetime_to_yyyymmddhhmmss(ptr, year, month, day, hour, minute, sec
   integer(c_int), intent(out) :: year, month, day, hour, minute, second
 end subroutine c_datetime_to_yyyymmddhhmmss
 !-------------------------------------------------------------------------------
+integer(kind=c_int64_t) function c_datetime_seconds_since_jan1(ptr) &
+    bind(C,name='datetime_seconds_since_jan1_f')
+  use, intrinsic :: iso_c_binding
+  implicit none
+  type(c_ptr), value :: ptr
+end function c_datetime_seconds_since_jan1
+!-------------------------------------------------------------------------------
 subroutine c_datetime_getints(ptr, kdate, ksecs) bind(C,name='datetime_getints_f')
   use, intrinsic :: iso_c_binding
   implicit none

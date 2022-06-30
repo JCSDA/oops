@@ -11,8 +11,7 @@
 #include <cmath>
 #include <vector>
 
-#include "eckit/config/Configuration.h"
-#include "eckit/geometry/Point2.h"
+#include "eckit/geometry/Point3.h"
 
 #include "lorenz95/Iterator.h"
 #include "lorenz95/L95Traits.h"
@@ -28,8 +27,8 @@ static oops::ObsLocalizationMaker<L95Traits, L95ObsTraits, ObsLocGC99> makerGC_(
 
 // -----------------------------------------------------------------------------
 
-ObsLocGC99::ObsLocGC99(const eckit::Configuration & config, const ObsTable & obsdb)
-  : rscale_(config.getDouble("lengthscale")), obsdb_(obsdb)
+ObsLocGC99::ObsLocGC99(const Parameters_ & params, const ObsTable & obsdb)
+  : rscale_(params.lengthscale), obsdb_(obsdb)
 {
 }
 
@@ -37,14 +36,14 @@ ObsLocGC99::ObsLocGC99(const eckit::Configuration & config, const ObsTable & obs
 
 void ObsLocGC99::computeLocalization(const Iterator & iterator, ObsVec1D & locfactor) const {
   std::vector<double> locations = obsdb_.locations();
-  eckit::geometry::Point2 center = *iterator;
+  eckit::geometry::Point3 center = *iterator;
   for (unsigned int ii=0; ii < obsdb_.nobs(); ++ii) {
     double curdist = std::abs(center[0] - locations[ii]);
     curdist = std::min(curdist, 1.-curdist);
     if (curdist >= rscale_) {
       locfactor[ii] = locfactor.missing();
     } else {
-      locfactor[ii] = oops::gc99(curdist/rscale_);
+      locfactor[ii] *= oops::gc99(curdist/rscale_);
     }
   }
 }

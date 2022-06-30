@@ -15,6 +15,7 @@
 #include <iostream>
 #include <vector>
 
+#include "lorenz95/ModelBiasCovarianceParameters.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Serializable.h"
 
@@ -32,10 +33,12 @@ namespace lorenz95 {
 class ModelBiasCorrection : public util::Printable,
                             public util::Serializable {
  public:
+  typedef ModelBiasCovarianceParameters Parameters_;
+
 /// Constructor, destructor
-  ModelBiasCorrection(const Resolution &, const eckit::Configuration &);
+  ModelBiasCorrection(const Resolution &, const Parameters_ &);
   ModelBiasCorrection(const ModelBiasCorrection &, const bool);
-  ModelBiasCorrection(const ModelBiasCorrection &, const eckit::Configuration &);
+  ModelBiasCorrection(const ModelBiasCorrection &, const Parameters_ &);
   ~ModelBiasCorrection() {}
 
 /// Linear algebra operators

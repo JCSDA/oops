@@ -7,19 +7,22 @@ cost function:
   analysis variables: [x]
   background:
     date: 2010-01-02T00:00:00Z
-    filename: Data/test.fc.2010-01-01T00:00:00Z.P1D
+    filename: Data/forecast.fc.2010-01-01T00:00:00Z.P1D.l95
   background error:
     covariance model: L95Error
     date: 2010-01-02T00:00:00Z
     length_scale: 1.0
     standard_deviation: 0.6
   observations:
-  - obs operator: {}
-    obs space:
-      obsdatain:  Data/l95.truth3d.2010-01-02T00:00:00Z.obt
-      obsdataout: Data/l95.3dvar_4fsoi_dripcg.2010-01-02T00:00:00Z.obt
-    obs error:
-      covariance model: diagonal
+    observers:
+    - obs operator: {}
+      obs space:
+        obsdatain:
+          obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+        obsdataout:
+          obsfile: Data/3dvar_4fsoi_dripcg.2010-01-02T00:00:00Z.obt
+      obs error:
+        covariance model: diagonal
 variational:
   minimizer:
     algorithm: DRIPCG
@@ -43,7 +46,7 @@ final:
     departures: oman
 output:
   datadir: Data
-  exp: l95.3dvar_4fsoi_dripcg
+  exp: 3dvar_4fsoi_dripcg
   frequency: PT6H
   type: an
 

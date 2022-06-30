@@ -1,0 +1,41 @@
+geometry:   # coupled geometry (QG and L95)
+  QG:
+    nx: 40
+    ny: 20
+    depths: [4500.0, 5500.0]
+  Lorenz 95:
+    resol: 40
+state test:
+  statefile:
+    QG:
+      date: 2010-01-01T00:00:00Z
+      filename: ../../qg/test/Data/truth.fc.2009-12-15T00:00:00Z.P17D.nc
+    Lorenz 95:
+      date: 2010-01-01T00:00:00Z
+      filename: ../../l95/test/Data/forecast.an.2010-01-01T00:00:00Z.l95
+  write then read test:
+    state write:
+      QG:
+        datadir: Data
+        exp: coupled_state_test_qg
+        type: fc
+        date: 2010-01-01T00:00:00Z
+      Lorenz 95:
+        datadir: Data
+        exp: coupled_state_test_l95
+        type: fc
+        date: 2010-01-01T00:00:00Z
+    state read:
+      QG:
+        date: 2010-01-01T00:00:00Z
+        filename: Data/coupled_state_test_qg.fc.2010-01-01T00:00:00Z.PT0S.nc
+      Lorenz 95:
+        date: 2010-01-01T00:00:00Z
+        filename: Data/coupled_state_test_l95.fc.2010-01-01T00:00:00Z.PT0S.l95
+
+  norm file: 182665691.455
+  tolerance: 1.e-3
+  date: 2010-01-01T00:00:00Z
+
+test:
+  reference filename: testref/coupledstate.test

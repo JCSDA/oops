@@ -12,7 +12,6 @@
 
 #include <cmath>
 
-#include "eckit/config/Configuration.h"
 #include "model/FieldsQG.h"
 #include "model/GeometryQG.h"
 #include "model/IncrementQG.h"
@@ -27,9 +26,9 @@
 namespace qg {
 // -----------------------------------------------------------------------------
 ErrorCovarianceQG::ErrorCovarianceQG(const GeometryQG & resol, const oops::Variables & vars,
-                                     const eckit::Configuration & conf,
+                                     const Parameters_ & params,
                                      const StateQG &, const StateQG &) {
-  qg_error_covariance_setup_f90(keyConfig_, conf, resol.toFortran());
+  qg_error_covariance_setup_f90(keyConfig_, params.toConfiguration(), resol.toFortran());
   oops::Log::trace() << "ErrorCovarianceQG created" << std::endl;
 }
 // -----------------------------------------------------------------------------

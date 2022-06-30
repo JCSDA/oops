@@ -13,8 +13,6 @@
 
 #include <vector>
 
-#include "oops/util/Logger.h"
-
 extern "C" {
   void FtnTriDiagSpectrum(const int &, const double *, const double *,
                           double *, double *);

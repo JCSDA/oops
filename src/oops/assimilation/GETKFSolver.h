@@ -17,13 +17,11 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/gletkfInterface.h"
-#include "oops/assimilation/LETKFSolverParameters.h"
 #include "oops/assimilation/LocalEnsembleSolver.h"
 #include "oops/base/Departures.h"
 #include "oops/base/DeparturesEnsemble.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/IncrementEnsemble4D.h"
-#include "oops/base/LocalIncrement.h"
 #include "oops/base/ObsEnsemble.h"
 #include "oops/base/Observations.h"
 #include "oops/base/ObsSpaces.h"
@@ -88,7 +86,6 @@ class GETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
                     const GeometryIterator_ &);
 
  private:
-  LETKFSolverParameters options_;
   // parameters
   size_t nens_;
   const Geometry_ & geometry_;
@@ -113,29 +110,6 @@ GETKFSolver<MODEL, OBS>::GETKFSolver(ObsSpaces_ & obspaces, const Geometry_ & ge
     vertloc_(config.getSubConfiguration("local ensemble DA.vertical localization"), xbmean[0]),
     neig_(vertloc_.neig()), nanal_(neig_*nens_), HZb_(obspaces, nanal_)
 {
-  options_.deserialize(config);
-  const LETKFInflationParameters & inflopt = options_.infl;
-
-  // parse inflation options
-  Log::info() << "Multiplicative inflation multCoeff=" <<
-                 inflopt.mult << std::endl;
-
-  if (inflopt.dortpp()) {
-      Log::info() << "RTPP inflation will be applied with rtppCoeff=" <<
-                    inflopt.rtpp << std::endl;
-  } else {
-      Log::info() << "RTPP inflation is not applied rtppCoeff is out of bounds (0,1], rtppCoeff="
-                  << inflopt.rtpp << std::endl;
-  }
-
-  if (inflopt.dortps()) {
-    Log::info() << "RTPS inflation will be applied with rtpsCoeff=" <<
-                    inflopt.rtps << std::endl;
-  } else {
-    Log::info() << "RTPS inflation is not applied rtpsCoeff is out of bounds (0,1], rtpsCoeff="
-                << inflopt.rtps << std::endl;
-  }
-
   // pre-allocate transformation matrices
   Wa_.resize(nanal_, nens);
   wa_.resize(nanal_);
@@ -161,8 +135,6 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
         ytmp.read("hofxm"+std::to_string(iteration)+"_"+std::to_string(ieig+1)+
                       "_"+std::to_string(iens+1));
         HZb_[ii] = ytmp - yb_mean;
-        Log::test() << "H(Zx) - ymean for member " << iens+1 << " eig "<< ieig+1
-                    << " :" << std::endl << HZb_[ii] << std::endl;
         ii = ii + 1;
       }
     }
@@ -187,8 +159,6 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
         HZb_[ii] = tmpObs - yb_mean;
         tmpObs.save("hofxm"+std::to_string(iteration)+"_"+std::to_string(ieig+1)+
                       "_"+std::to_string(iens+1));
-        Log::test() << "H(Zx) - ymean for member " << iens+1 << " eig "<< ieig+1 << " :"
-                    << std::endl << HZb_[ii] << std::endl;
         ii = ii + 1;
       }
     }
@@ -207,6 +177,8 @@ void GETKFSolver<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
   // Yb(nobs,neig*nens), YbOrig(nobs,nens)
   // uses GSI GETKF code
   util::Timer timer(classname(), "computeWeights");
+  const LocalEnsembleSolverInflationParameters & inflopt = this->options_.infl;
+  const float infl = inflopt.mult;
 
   const int nobsl = dy.size();
 
@@ -226,7 +198,7 @@ void GETKFSolver<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
   letkf_core_f90(nobsl, Yb_f.data(), YbOrig_f.data(), dy_f.data(),
                  wa_f.data(), Wa_f.data(),
                  R_invvar_f.data(), nanal_, neig_,
-                 getkf_inflation, denkf, getkf);
+                 getkf_inflation, denkf, getkf, infl);
   this->Wa_ = Wa_f.cast<double>();
   this->wa_ = wa_f.cast<double>();
 }
@@ -240,71 +212,31 @@ void GETKFSolver<MODEL, OBS>::applyWeights(const IncrementEnsemble4D_ & bkg_pert
   // apply Wa_, wa_
   util::Timer timer(classname(), "applyWeights");
 
-  const LETKFInflationParameters & inflopt = options_.infl;
-
   // allocate tmp arrays
-  LocalIncrement gptmpl = bkg_pert[0][0].getLocal(i);
-  std::vector<double> tmp = gptmpl.getVals();
-  size_t ngp = tmp.size();
-  Eigen::MatrixXd Xb(ngp, nens_);
+  Eigen::MatrixXd XbModulated;  // modulated perturbations
+  Eigen::MatrixXd XbOriginal;   // original perturbations
 
   // loop through analysis times and ens. members
   for (unsigned itime=0; itime < bkg_pert[0].size(); ++itime) {
     // cast bkg_pert ensemble at grid point i as an Eigen matrix Xb
     // modulates Xb
-    Xb = vertloc_.modulateIncrement(bkg_pert, i, itime);
+    XbModulated = vertloc_.modulateIncrement(bkg_pert, i, itime);
+    // original Xb
+    bkg_pert.packEigen(XbOriginal, i, itime);
 
     // postmulptiply
-    Eigen::VectorXd xa = Xb*wa_;  // ensemble mean update
-    Eigen::MatrixXd Xa = Xb*Wa_;  // ensemble perturbation update
+    // ensemble mean update
+    Eigen::VectorXd xa = XbModulated*wa_;
+    // ensemble perturbation update
+    // Eq (10) from Lei 2018. (-) sign is accounted for in the Wa_ computation
+    Eigen::MatrixXd Xa = XbOriginal + XbModulated*Wa_;
 
-    // compute non-modulated Xb for RTPP and RTPS
-    if (inflopt.dortpp() || inflopt.dortps()) {
-      Xb.resize(ngp, nens_);
-      for (size_t iens=0; iens < nens_; ++iens) {
-        LocalIncrement gp = bkg_pert[iens][itime].getLocal(i);
-        std::vector<double> tmp1 = gp.getVals();
-        for (size_t iv=0; iv < ngp; ++iv) {
-          Xb(iv, iens) = tmp1[iv];
-        }
-      }
-    }
-
-    // RTPP inflation
-    if (inflopt.dortpp()) {
-      Xa = (1-inflopt.rtpp)*Xa+inflopt.rtpp*Xb;
-    }
-
-    // RTPS inflation
-    double eps = DBL_EPSILON;
-    if (inflopt.dortps()) {
-      // posterior spread
-      Eigen::ArrayXd asprd = Xa.array().square().rowwise().sum()/(nens_-1);
-      asprd = asprd.sqrt();
-      asprd = (asprd < eps).select(eps, asprd);  // avoid nan overflow for vars with no spread
-
-      // prior spread
-      Eigen::ArrayXd fsprd = Xb.array().square().rowwise().sum()/(nens_-1);
-      fsprd = fsprd.sqrt();
-      fsprd = (fsprd < eps).select(eps, fsprd);
-
-      // rtps inflation factor
-      Eigen::ArrayXd rtpsInfl = inflopt.rtps*((fsprd-asprd)/asprd) + 1;
-      rtpsInfl = (rtpsInfl < inflopt.rtpsInflMin()).select(inflopt.rtpsInflMin(), rtpsInfl);
-      rtpsInfl = (rtpsInfl > inflopt.rtpsInflMax()).select(inflopt.rtpsInflMax(), rtpsInfl);
-
-      // inlfate perturbation matrix
-      Xa.array().colwise() *= rtpsInfl;
-    }
+    // posterior inflation if rtps and rttp coefficients belong to (0,1]
+    this->posteriorInflation(XbOriginal, Xa);
 
     // assign Xa_ to ana_pert
-    for (size_t iens=0; iens < nens_; ++iens) {
-      for (size_t iv=0; iv < ngp; ++iv) {
-        tmp[iv] = Xa(iv, iens)+xa(iv);
-      }
-      gptmpl.setVals(tmp);
-      ana_pert[iens][itime].setLocal(gptmpl, i);
-    }
+    Xa = Xa.colwise() + xa;
+    ana_pert.setEigen(Xa, i, itime);
   }
 }
 

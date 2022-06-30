@@ -18,6 +18,9 @@ full:
     min: 7
     max: 8.5
   int_parameters: [1, 2]
+  pair_parameters:
+  - 5
+  - oranges
   range_parameters:
     - min: 9
       max: 10
@@ -86,6 +89,19 @@ misspelled_nesting_param:
   ronge_parameter:
     min: 7
     max: 8.5
+underscores:
+  # Parameters whose names start with underscores can be set to arbitrary values
+  _: xyz
+  _hidden:
+    int: 125
+    string: abc
+  range_parameter:
+    min: 7
+    max: 10
+    _: xyz
+    _hidden:
+      int: 125
+      string: abc
 error_in_float_parameter:
   float_parameter: ABCDEF
   req_float_parameter: 3
@@ -112,6 +128,25 @@ error_in_fruit_parameter:
   req_duration_parameter: PT1H
 error_in_int_parameters:
   int_parameters: ABCDEF
+  req_float_parameter: 3
+  req_duration_parameter: PT1H
+error_in_pair_parameters_singlevalue:
+  pair_parameters: single value
+  req_float_parameter: 3
+  req_duration_parameter: PT1H
+error_in_pair_parameters_toofew:
+  pair_parameters: [single value]
+  req_float_parameter: 3
+  req_duration_parameter: PT1H
+error_in_pair_parameters_wrongtypes:
+  pair_parameters: ["string", 10]
+  req_float_parameter: 3
+  req_duration_parameter: PT1H
+error_in_pair_parameters_toomany:
+  pair_parameters:
+  - 10
+  - apples
+  - up on top
   req_float_parameter: 3
   req_duration_parameter: PT1H
 error_in_range_parameters:

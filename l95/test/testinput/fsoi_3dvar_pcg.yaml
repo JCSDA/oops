@@ -7,19 +7,22 @@ cost function:
   analysis variables: [x]
   background:
     date: 2010-01-02T00:00:00Z
-    filename: Data/test.fc.2010-01-01T00:00:00Z.P1D
+    filename: Data/forecast.fc.2010-01-01T00:00:00Z.P1D.l95
   background error:
     covariance model: L95Error
     date: 2010-01-02T00:00:00Z
     length_scale: 1.0
     standard_deviation: 0.6
   observations:
-  - obs operator: {}
-    obs space:
-      obsdatain:  Data/l95.truth3d.2010-01-02T00:00:00Z.obt
-      obsdataout: Data/l95.fsoi_3dvar_pcg.2010-01-02T00:00:00Z.obt
-    obs error:
-      covariance model: diagonal
+    observers:
+    - obs operator: {}
+      obs space:
+        obsdatain:
+          obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+        obsdataout:
+          obsfile: Data/fsoi_3dvar_pcg.2010-01-02T00:00:00Z.obt
+      obs error:
+        covariance model: diagonal
 variational:
   minimizer:
     algorithm: PCG
@@ -36,13 +39,13 @@ variational:
       increment test tolerance: 1.0e-6
       input forecast sensitivity:
         date: 2010-01-02T00:00:00Z
-        filename: Data/3dvar_4fsoi_pcg.iter1.in.2010-01-02T00:00:00Z.PT0S
+        filename: Data/3dvar_4fsoi_pcg.iter1.in.2010-01-02T00:00:00Z.PT0S.l95
 final:
   diagnostics:
     departures: oman
 output:
   datadir: Data
-  exp: l95.fsoi_3dvar_pcg
+  exp: fsoi_3dvar_pcg
   frequency: PT6H
   type: an
 

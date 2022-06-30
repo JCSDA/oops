@@ -15,13 +15,12 @@
 #include <sstream>
 #include <string>
 
-
-#include "eckit/config/Configuration.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
 #include "oops/base/instantiateCovarFactory.h"
 #include "oops/base/Model.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
+#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State.h"
 #include "oops/base/StateWriter.h"
@@ -35,12 +34,62 @@
 
 namespace oops {
 
+/// Options taken by the GenEnsPertB application.
+template <typename MODEL> class GenEnsPertBParameters : public ApplicationParameters {
+  OOPS_CONCRETE_PARAMETERS(GenEnsPertBParameters, ApplicationParameters)
+
+ public:
+  typedef ModelSpaceCovarianceParametersWrapper<MODEL> CovarianceParameters_;
+  typedef typename Geometry<MODEL>::Parameters_        GeometryParameters_;
+  typedef ModelParametersWrapper<MODEL>                ModelParameters_;
+  typedef State<MODEL>                                 State_;
+  typedef typename State_::Parameters_                 StateParameters_;
+  typedef StateWriterParameters<State_>                StateWriterParameters_;
+  typedef ModelAuxControl<MODEL>                       ModelAux_;
+  typedef typename ModelAux_::Parameters_              ModelAuxParameters_;
+
+  /// Geometry parameters.
+  RequiredParameter<GeometryParameters_> geometry{"geometry", this};
+
+  /// Model parameters.
+  RequiredParameter<ModelParameters_> model{"model", this};
+
+  /// Initial state parameters.
+  RequiredParameter<StateParameters_> initialCondition{"initial condition", this};
+
+  /// Augmented model state.
+  Parameter<ModelAuxParameters_> modelAuxControl{"model aux control", {}, this};
+
+  /// Forecast length.
+  RequiredParameter<util::Duration> forecastLength{"forecast length", this};
+
+  /// List of variables to perturb.
+  RequiredParameter<Variables> perturbedVariables{"perturbed variables", this};
+
+  /// Background error covariance model.
+  RequiredParameter<CovarianceParameters_> backgroundError{"background error", this};
+
+  /// Size of the perturbed ensemble to generate.
+  RequiredParameter<int> members{"members", this};
+
+  /// Where to write the output.
+  RequiredParameter<StateWriterParameters_> output{"output", this};
+};
+
+// -----------------------------------------------------------------------------
+
 template <typename MODEL> class GenEnsPertB : public Application {
-  typedef Geometry<MODEL>            Geometry_;
-  typedef Model<MODEL>               Model_;
-  typedef ModelAuxControl<MODEL>      ModelAux_;
-  typedef Increment<MODEL>           Increment_;
-  typedef State<MODEL>               State_;
+  typedef ModelSpaceCovarianceBase<MODEL>           CovarianceBase_;
+  typedef CovarianceFactory<MODEL>                  CovarianceFactory_;
+  typedef ModelSpaceCovarianceParametersBase<MODEL> CovarianceParametersBase_;
+  typedef Geometry<MODEL>                           Geometry_;
+  typedef Model<MODEL>                              Model_;
+  typedef ModelAuxControl<MODEL>                    ModelAux_;
+  typedef Increment<MODEL>                          Increment_;
+  typedef State<MODEL>                              State_;
+  typedef StateWriterParameters<State_>             StateWriterParameters_;
+
+  typedef GenEnsPertBParameters<MODEL>              GenEnsPertBParameters_;
 
  public:
 // -----------------------------------------------------------------------------
@@ -50,41 +99,43 @@ template <typename MODEL> class GenEnsPertB : public Application {
 // -----------------------------------------------------------------------------
   virtual ~GenEnsPertB() {}
 // -----------------------------------------------------------------------------
-  int execute(const eckit::Configuration & fullConfig) const {
+  int execute(const eckit::Configuration & fullConfig, bool validate) const override {
+//  Deserialize parameters
+    GenEnsPertBParameters_ params;
+    if (validate) params.validate(fullConfig);
+    params.deserialize(fullConfig);
+
 //  Setup resolution
-    const eckit::LocalConfiguration resolConfig(fullConfig, "geometry");
-    const Geometry_ resol(resolConfig, this->getComm());
+    const Geometry_ resol(params.geometry, this->getComm(), oops::mpi::myself());
 
 //  Setup Model
-    const eckit::LocalConfiguration modelConfig(fullConfig, "model");
-    const Model_ model(resol, modelConfig);
+    const Model_ model(resol, params.model.value().modelParameters);
 
 //  Setup initial state
-    const eckit::LocalConfiguration initialConfig(fullConfig, "initial condition");
-    const State_ xx(resol, initialConfig);
+    const State_ xx(resol, params.initialCondition);
     Log::test() << "Initial state: " << xx << std::endl;
 
 //  Setup augmented state
-    const ModelAux_ moderr(resol, fullConfig.getSubConfiguration("model aux control"));
+    const ModelAux_ moderr(resol, params.modelAuxControl);
 
 //  Setup times
-    const util::Duration fclength(fullConfig.getString("forecast length"));
+    const util::Duration fclength = params.forecastLength;
     const util::DateTime bgndate(xx.validTime());
     const util::DateTime enddate(bgndate + fclength);
     Log::info() << "Running forecast from " << bgndate << " to " << enddate << std::endl;
 
 //  Setup variables
-    const Variables vars(fullConfig, "perturbed variables");
+    const Variables &vars = params.perturbedVariables;
 
 //  Setup B matrix
-    const eckit::LocalConfiguration covar(fullConfig, "background error");
-    std::unique_ptr< ModelSpaceCovarianceBase<MODEL> >
-      Bmat(CovarianceFactory<MODEL>::create(covar, resol, vars, xx, xx));
+    const CovarianceParametersBase_ &covarParams =
+        params.backgroundError.value().covarianceParameters;
+    std::unique_ptr<CovarianceBase_> Bmat(CovarianceFactory_::create(
+                                            resol, vars, covarParams, xx, xx));
 
 //  Generate perturbed states
     Increment_ dx(resol, vars, bgndate);
-    const int members = fullConfig.getInt("members");
-    for (int jm = 0; jm < members; ++jm) {
+    for (int jm = 0; jm < params.members; ++jm) {
 //    Generate pertubation
       Bmat->randomize(dx);
 
@@ -95,10 +146,10 @@ template <typename MODEL> class GenEnsPertB : public Application {
 //    Setup forecast outputs
       PostProcessor<State_> post;
 
-      eckit::LocalConfiguration outConfig(fullConfig, "output");
-      outConfig.set("member", jm+1);
+      StateWriterParameters_ outParams = params.output;
+      outParams.write.setMember(jm + 1);
 
-      post.enrollProcessor(new StateWriter<State_>(outConfig));
+      post.enrollProcessor(new StateWriter<State_>(outParams));
 
 //    Run forecast
       model.forecast(xp, moderr, fclength, post);
@@ -108,8 +159,18 @@ template <typename MODEL> class GenEnsPertB : public Application {
     return 0;
   }
 // -----------------------------------------------------------------------------
+  void outputSchema(const std::string & outputPath) const override {
+    GenEnsPertBParameters_ params;
+    params.outputSchema(outputPath);
+  }
+// -----------------------------------------------------------------------------
+  void validateConfig(const eckit::Configuration & fullConfig) const override {
+    GenEnsPertBParameters_ params;
+    params.validate(fullConfig);
+  }
+// -----------------------------------------------------------------------------
  private:
-  std::string appname() const {
+  std::string appname() const override {
     return "oops::GenEnsPertB<" + MODEL::name() + ">";
   }
 // -----------------------------------------------------------------------------

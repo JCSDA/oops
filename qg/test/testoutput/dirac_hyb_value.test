@@ -1,16 +1,24 @@
-Input Dirac increment: 
+Input Dirac increment:
   Valid time: 2010-01-01T12:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  0.0000e+00, Max=  1.0000e+00, RMS=  2.5000e-02
-B * Increment: 
+  Streamfunction         :  Min=0.0000000000000000e+00, Max=1.0000000000000000e+00, RMS=2.5000000000000001e-02
+Covariance(hybrid) * Increment:
   Valid time: 2010-01-01T12:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min= -1.3348e+13, Max=  3.1207e+14, RMS=  5.8758e+13
-Localized Increment: 
+  Streamfunction         :  Min=-1.3348446301435957e+13, Max=3.1206887948993562e+14, RMS=5.8757829853058438e+13
+Covariance(hybrid1_ensemble) * Increment:
   Valid time: 2010-01-01T12:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  2.1340e-06, Max=  1.0000e+00, RMS=  3.4333e-01
+  Streamfunction         :  Min=-6.5158442575487375e+13, Max=3.7255142534641150e+14, RMS=5.8877427391266664e+13
+Localization(hybrid1_ensemble) * Increment:
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=2.1339604522244027e-06, Max=9.9999999999999933e-01, RMS=3.4333222007736486e-01
+Covariance(hybrid2_QgError) * Increment:
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=-7.2330020619748102e+05, Max=3.2399999999999988e+14, RMS=6.2881006924295109e+13
 Randomized variance: 
   Valid time: 2010-01-01T12:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=  1.0521e+14, Max=  9.2106e+14, RMS=  3.1869e+14
+  Streamfunction         :  Min=1.0521174686508147e+14, Max=9.2106016469327750e+14, RMS=3.1868578162601281e+14

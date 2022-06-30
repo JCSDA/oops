@@ -21,7 +21,7 @@ implicit none
 private
 public :: qg_geom
 public :: qg_geom_registry
-public :: qg_geom_setup,qg_geom_set_atlas_lonlat,qg_geom_fill_atlas_fieldset,qg_geom_clone,qg_geom_delete,qg_geom_info
+public :: qg_geom_setup,qg_geom_set_lonlat,qg_geom_fill_extra_fields,qg_geom_clone,qg_geom_delete,qg_geom_info
 ! ------------------------------------------------------------------------------
 type :: qg_geom
   integer :: nx                                          !< Number of points in the zonal direction
@@ -41,7 +41,7 @@ type :: qg_geom
   real(kind_real),allocatable :: f_d(:)                  !< Coefficients of PV operator, eigenvalues
   real(kind_real),allocatable :: bet(:)                  !< Beta coefficient
   real(kind_real),allocatable :: heat(:,:)               !< Heating term
-  type(atlas_functionspace_pointcloud) :: afunctionspace !< ATLAS function space
+  type(atlas_functionspace_pointcloud) :: afunctionspace !< Function space
 end type qg_geom
 
 #define LISTED_TYPE qg_geom
@@ -219,12 +219,12 @@ endif
 
 end subroutine qg_geom_setup
 ! ------------------------------------------------------------------------------
-!> Set ATLAS lon/lat field
-subroutine qg_geom_set_atlas_lonlat(self,afieldset)
+!> Set lon/lat field
+subroutine qg_geom_set_lonlat(self,afieldset)
 
 ! Passed variables
 type(qg_geom),intent(inout) :: self             !< Geometry
-type(atlas_fieldset),intent(inout) :: afieldset !< ATLAS fieldset
+type(atlas_fieldset),intent(inout) :: afieldset !< Fieldset
 
 ! Local variables
 integer :: ix,iy,inode
@@ -245,14 +245,14 @@ end do
 call afieldset%add(afield)
 call afield%final()
 
-end subroutine qg_geom_set_atlas_lonlat
+end subroutine qg_geom_set_lonlat
 ! ------------------------------------------------------------------------------
-!> Fill ATLAS fieldset
-subroutine qg_geom_fill_atlas_fieldset(self,afieldset)
+!> Fill extra fields
+subroutine qg_geom_fill_extra_fields(self,afieldset)
 
 ! Passed variables
 type(qg_geom),intent(inout) :: self             !< Geometry
-type(atlas_fieldset),intent(inout) :: afieldset !< ATLAS fieldset
+type(atlas_fieldset),intent(inout) :: afieldset !< Fieldset
 
 ! Local variables
 integer :: ix,iy,iz,inode
@@ -281,7 +281,7 @@ end do
 call afieldset%add(afield)
 call afield%final()
 
-end subroutine qg_geom_fill_atlas_fieldset
+end subroutine qg_geom_fill_extra_fields
 ! ------------------------------------------------------------------------------
 !> Clone geometry
 subroutine qg_geom_clone(self,other)

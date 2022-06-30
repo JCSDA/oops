@@ -18,7 +18,6 @@
 #include <string>
 #include <vector>
 
-#include "eckit/geometry/Point2.h"
 #include "eckit/mpi/Comm.h"
 
 #include "oops/base/ObsSpaceBase.h"
@@ -44,17 +43,33 @@ class ObsDataParameters : public oops::Parameters {
   oops::RequiredParameter<std::string> obsfile{"obsfile", this};
 };
 
+/// Options specifying locations of artificial observations.
+class ObsLocGenParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(ObsLocGenParameters, Parameters)
+
+ public:
+  oops::RequiredParameter<std::vector<float>> lon{"lon",
+       "longitudes for obs locations, degrees between [-180.0, 180.0]", this};
+  oops::RequiredParameter<std::vector<float>> lat{"lat",
+       "latitudes for obs locations, degrees between [5.0, 84.0]", this};
+  oops::RequiredParameter<std::vector<float>> z{"z",
+       "depths for obs locations, meters between 0 and 1.e4", this};
+};
+
 /// Options controlling generation of artificial observations.
 class ObsGenerateParameters : public oops::Parameters {
   OOPS_CONCRETE_PARAMETERS(ObsGenerateParameters, Parameters)
 
  public:
   oops::RequiredParameter<util::Duration> begin{"begin", this};
-  oops::RequiredParameter<util::Duration> obsPeriod{"obs_period", this};
+  oops::RequiredParameter<util::Duration> obsPeriod{"obs period", this};
   /// Number of observations to generate in each time slot.
-  oops::RequiredParameter<int> obsDensity{"obs_density", this};
+  oops::OptionalParameter<int> obsDensity{"obs density", this};
+  /// Or locations of observations to generate in each time slot.
+  oops::OptionalParameter<ObsLocGenParameters> obsLocs{"obs locations", this};
+
   oops::RequiredParameter<int> nval{"nval", this};
-  oops::RequiredParameter<double> obsError{"obs_error", this};
+  oops::RequiredParameter<double> obsError{"obs error", this};
 };
 
 /// \brief Configuration parameters for the QG model's ObsSpace.
@@ -101,8 +116,11 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
   /// return number of observations (unique locations)
   int nobs() const;
 
-  /// return variables simulated by ObsOperators
+  /// return variables to be processed
   const oops::Variables & obsvariables() const { return obsvars_; }
+
+  /// return variables simulated by ObsOperators
+  const oops::Variables & assimvariables() const { return assimvars_; }
 
   /// observation type
   const std::string & obsname() const {return obsname_;}
@@ -122,7 +140,8 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
   const std::string obsname_;        // corresponds with obstype
   const util::DateTime winbgn_;      // window for the observations
   const util::DateTime winend_;
-  oops::Variables obsvars_;          // variables simulated by ObsOperators
+  oops::Variables assimvars_;          // variables simulated by ObsOperators
+  oops::Variables obsvars_;          // variables that are observed
 
   // defines mapping for Fortran structures
   static std::map < std::string, F90odb > theObsFileRegister_;

@@ -96,9 +96,9 @@ class IncrementQG : public util::Printable,
   void updateTime(const util::Duration & dt) {fields_->time() += dt;}
 
 /// ATLAS FieldSet
-  void setAtlas(atlas::FieldSet *) const;
-  void toAtlas(atlas::FieldSet *) const;
-  void fromAtlas(atlas::FieldSet *);
+  void toFieldSet(atlas::FieldSet &) const;
+  void toFieldSetAD(const atlas::FieldSet &);
+  void fromFieldSet(const atlas::FieldSet &);
 
 /// Access to fields
   FieldsQG & fields() {return *fields_;}
@@ -118,11 +118,14 @@ class IncrementQG : public util::Printable,
   void serialize(std::vector<double> &) const override;
   void deserialize(const std::vector<double> &, size_t &) override;
 
+  const oops::Variables & variables() const {return vars_;}
+
 /// Data
  private:
   void print(std::ostream &) const override;
   const bool lbc_ = false;
   std::unique_ptr<FieldsQG> fields_;
+  oops::Variables vars_;
 };
 // -----------------------------------------------------------------------------
 

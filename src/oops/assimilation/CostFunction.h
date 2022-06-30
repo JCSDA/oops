@@ -22,25 +22,87 @@
 #include "eckit/mpi/Comm.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/ControlVariable.h"
-#include "oops/assimilation/CostJbState.h"
 #include "oops/assimilation/CostJbTotal.h"
 #include "oops/assimilation/CostJo.h"
 #include "oops/assimilation/CostTermBase.h"
-#include "oops/assimilation/DualVector.h"
-#include "oops/assimilation/JqTermTLAD.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
+#include "oops/base/ObsTypeParameters.h"
+#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"
-#include "oops/util/dot_product.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/ConfigurationParameter.h"
+#include "oops/util/parameters/OptionalParameter.h"
+#include "oops/util/parameters/Parameter.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
+#include "oops/util/parameters/RequiredPolymorphicParameter.h"
 
 namespace oops {
+
+// Forward decl
+template <typename MODEL, typename OBS> class CostFactory;
+template <typename MODEL> class CostJbState;
+
+// -----------------------------------------------------------------------------
+
+/// \brief Parameters for an implementation of CostFunction
+template <typename MODEL, typename OBS>
+class CostFunctionParametersBase : public Parameters {
+  OOPS_ABSTRACT_PARAMETERS(CostFunctionParametersBase, Parameters)
+
+  typedef typename Geometry<MODEL>::Parameters_ GeometryParameters_;
+
+ public:
+  RequiredParameter<std::string> costType{"cost type", "Name of the cost function", this};
+
+  // These options aren't used in the CostFunction base class, but are used in the constructors of
+  // each individual cost function implementation.
+  RequiredParameter<GeometryParameters_> geometry{"geometry", "geometry", this};
+  RequiredParameter<util::Duration> windowLength{"window length", "length of assimilation window",
+      this};
+  RequiredParameter<util::DateTime> windowBegin{"window begin",
+      "start datetime of assimilation window", this};
+  RequiredParameter<Variables> analysisVariables{"analysis variables", "variables to assimilate",
+      this};
+
+  // These options are used (directly or indirectly) in the CostFunction base class.
+  // Jo
+  RequiredParameter<ObserversParameters<MODEL, OBS>> observations{"observations", this};
+
+  // Jb
+  Parameter<bool> jbEvaluation{"jb evaluation", true, this};
+
+  // Jc
+  OptionalParameter<eckit::LocalConfiguration> constraints{"constraints", this};
+
+  // Some models use extra options, which we will eventually clean up. Until then, make tests pass
+  // with this config parameter to "catch" options not described by Parameters.
+  ConfigurationParameter extraOptionsInConfig{this};
+};
+
+// -----------------------------------------------------------------------------
+
+/// \brief Contains a polymorphic parameter holding an instance of a subclass of
+/// CostFunctionParametersBase.
+template <typename MODEL, typename OBS>
+class CostFunctionParametersWrapper : public Parameters {
+  OOPS_CONCRETE_PARAMETERS(CostFunctionParametersWrapper, Parameters)
+
+ public:
+  /// After deserialization, holds an instance of a subclass of CostFunctionParametersBase
+  /// controlling the behavior of a cost function. The type of the subclass is
+  /// determined by the value of the "cost type" key in the Configuration object from which
+  /// this object is deserialized.
+  RequiredPolymorphicParameter<CostFunctionParametersBase<MODEL, OBS>, CostFactory<MODEL, OBS>>
+    costTypeParameters{"cost type", "Name of the cost function", this};
+};
 
 // -----------------------------------------------------------------------------
 
@@ -49,20 +111,20 @@ namespace oops {
  * The CostFunction defines and manages the computation of all the terms
  * of the variational data assimilation cost function.
  */
-
 template<typename MODEL, typename OBS> class CostFunction : private boost::noncopyable {
   typedef ControlIncrement<MODEL, OBS>  CtrlInc_;
   typedef ControlVariable<MODEL, OBS>   CtrlVar_;
   typedef CostJbTotal<MODEL, OBS>       JbTotal_;
   typedef CostTermBase<MODEL, OBS>      CostBase_;
-  typedef JqTermTLAD<MODEL>             JqTermTLAD_;
   typedef Geometry<MODEL>               Geometry_;
   typedef State<MODEL>                  State_;
   typedef Increment<MODEL>              Increment_;
 
  public:
-  explicit CostFunction(const eckit::Configuration &);
-  virtual ~CostFunction() {}
+  typedef CostFunctionParametersWrapper<MODEL, OBS> Parameters_;
+
+  CostFunction() = default;
+  virtual ~CostFunction() = default;
 
   double evaluate(const CtrlVar_ &,
                   const eckit::Configuration & config = eckit::LocalConfiguration(),
@@ -104,7 +166,7 @@ template<typename MODEL, typename OBS> class CostFunction : private boost::nonco
 
   virtual CostJbState<MODEL>  * newJb(const eckit::Configuration &, const Geometry_ &,
                                       const CtrlVar_ &) const = 0;
-  virtual CostJo<MODEL, OBS>       * newJo(const eckit::Configuration &) const = 0;
+  virtual CostJo<MODEL, OBS>       * newJo(const ObserversParameters<MODEL, OBS> &) const = 0;
   virtual CostTermBase<MODEL, OBS> * newJc(const eckit::Configuration &,
                                            const Geometry_ &) const = 0;
   virtual void doLinearize(const Geometry_ &, const eckit::Configuration &,
@@ -116,6 +178,7 @@ template<typename MODEL, typename OBS> class CostFunction : private boost::nonco
   std::unique_ptr<const CtrlVar_> xb_;
   std::unique_ptr<JbTotal_> jb_;
   boost::ptr_vector<CostBase_> jterms_;
+  std::unique_ptr<const Geometry_> lowres_;
 
   mutable double costJb_;
   mutable double costJoJc_;
@@ -127,14 +190,26 @@ template<typename MODEL, typename OBS> class CostFunction : private boost::nonco
 template <typename MODEL, typename OBS>
 class CostFactory {
  public:
-  static CostFunction<MODEL, OBS> * create(const eckit::Configuration &, const eckit::mpi::Comm &);
+  static std::unique_ptr<CostFunction<MODEL, OBS>> create(
+      const CostFunctionParametersBase<MODEL, OBS> &, const eckit::mpi::Comm &);
   virtual ~CostFactory() = default;
+
+  static std::unique_ptr<CostFunctionParametersBase<MODEL, OBS>> createParameters(
+      const std::string &name);
+
+  static std::vector<std::string> getMakerNames() {
+    return keys(getMakers());
+  }
 
  protected:
   explicit CostFactory(const std::string &);
+
  private:
-  virtual CostFunction<MODEL, OBS> * make(const eckit::Configuration &,
-                                          const eckit::mpi::Comm &) = 0;
+  virtual std::unique_ptr<CostFunction<MODEL, OBS>> make(
+      const CostFunctionParametersBase<MODEL, OBS> & params, const eckit::mpi::Comm &) = 0;
+
+  virtual std::unique_ptr<CostFunctionParametersBase<MODEL, OBS>> makeParameters() const = 0;
+
   static std::map < std::string, CostFactory<MODEL, OBS> * > & getMakers() {
     static std::map < std::string, CostFactory<MODEL, OBS> * > makers_;
     return makers_;
@@ -144,9 +219,19 @@ class CostFactory {
 template<class MODEL, class OBS, class FCT>
 class CostMaker : public CostFactory<MODEL, OBS> {
  private:
-  CostFunction<MODEL, OBS> * make(const eckit::Configuration & config,
-                                  const eckit::mpi::Comm & comm) override
-    {return new FCT(config, comm);}
+  typedef typename FCT::Parameters_ Parameters_;
+  std::unique_ptr<CostFunction<MODEL, OBS>> make(
+      const CostFunctionParametersBase<MODEL, OBS> & params,
+      const eckit::mpi::Comm & comm) override
+  {
+    const auto &stronglyTypedParams = dynamic_cast<const Parameters_&>(params);
+    return std::make_unique<FCT>(stronglyTypedParams, comm);
+  }
+
+  std::unique_ptr<CostFunctionParametersBase<MODEL, OBS>> makeParameters() const override {
+    return std::make_unique<Parameters_>();
+  }
+
  public:
   explicit CostMaker(const std::string & name) : CostFactory<MODEL, OBS>(name) {}
 };
@@ -167,27 +252,34 @@ CostFactory<MODEL, OBS>::CostFactory(const std::string & name) {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-CostFunction<MODEL, OBS>* CostFactory<MODEL, OBS>::create(const eckit::Configuration & config,
-                                                          const eckit::mpi::Comm & comm) {
-  std::string id = config.getString("cost type");
+std::unique_ptr<CostFunctionParametersBase<MODEL, OBS>>
+CostFactory<MODEL, OBS>::createParameters(const std::string &name) {
+  typename std::map<std::string, CostFactory<MODEL, OBS>*>::iterator it =
+      getMakers().find(name);
+  if (it == getMakers().end()) {
+    throw std::runtime_error(name + " does not exist in CostFactory");
+  }
+  return it->second->makeParameters();
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename OBS>
+std::unique_ptr<CostFunction<MODEL, OBS>> CostFactory<MODEL, OBS>::create(
+    const CostFunctionParametersBase<MODEL, OBS> & params, const eckit::mpi::Comm & comm) {
+  const std::string id = params.costType;
   Log::trace() << "Variational Assimilation Type=" << id << std::endl;
   typename std::map<std::string, CostFactory<MODEL, OBS>*>::iterator j = getMakers().find(id);
   if (j == getMakers().end()) {
     throw std::runtime_error(id + " does not exist in cost function factory.");
   }
+  std::unique_ptr<CostFunction<MODEL, OBS>> ptr(j->second->make(params, comm));
   Log::trace() << "CostFactory::create found cost function type" << std::endl;
-  return (*j).second->make(config, comm);
+  return ptr;
 }
 
 // -----------------------------------------------------------------------------
 //  Cost Function
-// -----------------------------------------------------------------------------
-
-template<typename MODEL, typename OBS>
-CostFunction<MODEL, OBS>::CostFunction(const eckit::Configuration & config)
-  : jb_(), jterms_()
-{}
-
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
@@ -196,7 +288,9 @@ void CostFunction<MODEL, OBS>::setupTerms(const eckit::Configuration & config) {
 
 // Jo
   eckit::LocalConfiguration obsconf(config, "observations");
-  CostJo<MODEL, OBS> * jo = this->newJo(obsconf);
+  ObserversParameters<MODEL, OBS> joparams{};
+  joparams.deserialize(obsconf);
+  CostJo<MODEL, OBS> * jo = this->newJo(joparams);
   jterms_.push_back(jo);
   Log::trace() << "CostFunction::setupTerms Jo added" << std::endl;
 
@@ -257,17 +351,19 @@ double CostFunction<MODEL, OBS>::linearize(const CtrlVar_ & fguess,
   Log::trace() << "CostFunction::linearize start" << std::endl;
 // Inner loop resolution
   const eckit::LocalConfiguration resConf(innerConf, "geometry");
-  const Geometry_ lowres(resConf, this->geometry().getComm(), this->geometry().timeComm());
+  lowres_.reset();
+  lowres_ = std::make_unique<Geometry_>(resConf, this->geometry().getComm(),
+                                        this->geometry().timeComm());
 
 // Setup trajectory for terms of cost function
   PostProcessorTLAD<MODEL> pptraj;
-  jb_->initializeTraj(fguess, lowres, innerConf, pptraj);
+  jb_->initializeTraj(fguess, *lowres_, innerConf, pptraj);
   for (size_t jj = 0; jj < jterms_.size(); ++jj) {
-    jterms_[jj].setPostProcTraj(fguess, innerConf, lowres, pptraj);
+    jterms_[jj].setPostProcTraj(fguess, innerConf, *lowres_, pptraj);
   }
 
 // Specific linearization if needed (including TLM)
-  this->doLinearize(lowres, innerConf, *xb_, fguess, post, pptraj);
+  this->doLinearize(*lowres_, innerConf, *xb_, fguess, post, pptraj);
 
 // Run NL model
   double zzz = this->evaluate(fguess, innerConf, post);

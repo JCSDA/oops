@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "oops/assimilation/BMatrix.h"
+#include "oops/assimilation/CMatrix.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/DRMinimizer.h"
@@ -25,7 +26,6 @@
 #include "oops/assimilation/SpectralLMP.h"
 #include "oops/assimilation/UpHessSolve.h"
 #include "oops/util/dot_product.h"
-#include "oops/util/formats.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
@@ -69,6 +69,7 @@ template<typename MODEL, typename OBS> class DRPFOMMinimizer : public DRMinimize
   typedef CostFunction<MODEL, OBS>        CostFct_;
   typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
   typedef HtRinvHMatrix<MODEL, OBS>       HtRinvH_;
+  typedef CMatrix<MODEL, OBS>             Cmat_;
 
  public:
   const std::string classname() const override {return "DRPFOMMinimizer";}
@@ -79,7 +80,7 @@ template<typename MODEL, typename OBS> class DRPFOMMinimizer : public DRMinimize
   double solve(CtrlInc_ &, CtrlInc_ &, CtrlInc_ &, const Bmat_ &, const HtRinvH_ &,
                const double, const double, const int, const double) override;
 
-  SpectralLMP<CtrlInc_> lmp_;
+  SpectralLMP<CtrlInc_, Cmat_> lmp_;
   // !!!!! Needs to be generalized for Hessenberg Matrix.
 
   std::vector<std::unique_ptr<CtrlInc_>> hvecs_;
@@ -116,6 +117,9 @@ double DRPFOMMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc
   std::vector<double> dd;
   std::vector< std::vector<double> > Hess;
   std::vector< std::vector<double> > UpHess;
+
+  // Set ObsBias part of the preconditioner
+  lmp_.updateObsBias(std::make_unique<Cmat_>(B.obsAuxCovariance()));
 
   // J0
   const double costJ0 = costJ0Jb + costJ0JoJc;
