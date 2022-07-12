@@ -60,7 +60,6 @@ class ObsVecQG : public util::Printable,
   void random();
   double dot_product_with(const ObsVecQG &) const;
   double rms() const;
-  void mask(const ObsDataQG<int> &);
   void mask(const ObsVecQG &);
   ObsVecQG & operator=(const ObsDataQG<float> &);
 

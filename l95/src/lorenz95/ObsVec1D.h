@@ -61,7 +61,6 @@ class ObsVec1D : public util::Printable,
   void random();
   double dot_product_with(const ObsVec1D &) const;
   double rms() const;
-  void mask(const ObsData1D<int> &);
   void mask(const ObsVec1D &);
   ObsVec1D & operator= (const ObsData1D<float> &);
 

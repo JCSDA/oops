@@ -156,12 +156,6 @@ unsigned int ObsVec1D::nobs() const {
   return data_.size() - std::count(data_.begin(), data_.end(), missing_);
 }
 // -----------------------------------------------------------------------------
-void ObsVec1D::mask(const ObsData1D<int> & mask) {
-  for (size_t jj = 0; jj < data_.size(); ++jj) {
-    if (mask[jj]) data_.at(jj) = missing_;
-  }
-}
-// -----------------------------------------------------------------------------
 void ObsVec1D::mask(const ObsVec1D & mask) {
   for (size_t jj = 0; jj < data_.size(); ++jj) {
     if (mask[jj] == missing_) data_.at(jj) = missing_;

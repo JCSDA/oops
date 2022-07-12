@@ -89,8 +89,6 @@ class ObsVector : public util::Printable,
   double dot_product_with(const ObsVector & other) const;
   /// Return this ObsVector rms
   double rms() const;
-  /// Mask out elements of the vector where \p mask is > 0
-  void mask(const ObsDataVector<OBS, int> & mask);
   /// Mask out elements of the vector where \p mask is a missing value
   void mask(const ObsVector & mask);
   /// Assignment operator from \p rhs ObsDataVector<OBS, float>
@@ -270,14 +268,6 @@ double ObsVector<OBS>::dot_product_with(const ObsVector & other) const {
 
   Log::trace() << "ObsVector<OBS>::dot_product done" << std::endl;
   return zz;
-}
-// -----------------------------------------------------------------------------
-template <typename OBS>
-void ObsVector<OBS>::mask(const ObsDataVector<OBS, int> & qc) {
-  Log::trace() << "ObsVector<OBS>::mask starting" << std::endl;
-  util::Timer timer(classname(), "mask");
-  data_->mask(qc.obsdatavector());
-  Log::trace() << "ObsVector<OBS>::mask done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename OBS>
