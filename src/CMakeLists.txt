@@ -206,6 +206,7 @@ oops/generic/soar.h
 oops/generic/soar.cc
 oops/generic/UnstructuredInterpolator.h
 oops/generic/VerticalLocEV.h
+oops/generic/HybridLinearModel.h
 
 oops/interface/AnalyticInitBase.h
 oops/interface/ErrorCovariance.h

@@ -58,11 +58,11 @@ class IdentityLinearModel : public LinearModelBase<MODEL> {
 /// finalize tangent linear forecast
   void finalizeTL(Increment_ &) const override;
 
-/// initialize tangent linear forecast
+/// initialize adjoint forecast
   void initializeAD(Increment_ &) const override;
-/// one tangent linear forecast step
+/// one adjoint forecast step
   void stepAD(Increment_ &, ModelAuxInc_ &) const override;
-/// finalize tangent linear forecast
+/// finalize adjoint forecast
   void finalizeAD(Increment_ &) const override;
 
 /// set trajectory
