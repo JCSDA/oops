@@ -103,6 +103,7 @@ class ObsFilter : public util::Printable,
   void print(std::ostream &) const override;
 
   std::unique_ptr<ObsFilterBase_> ofilt_;
+  std::string filterName_;
 };
 
 // -----------------------------------------------------------------------------
@@ -111,9 +112,11 @@ template <typename OBS>
 ObsFilter<OBS>::ObsFilter(const ObsSpace_ & os,
                           const ObsFilterParametersBase & parameters,
                           ObsDataPtr_<int> flags, ObsDataPtr_<float> obserr)
+  : ofilt_(), filterName_("oops::ObsFilter::"+parameters.filter.value().value())
 {
   Log::trace() << "ObsFilter<OBS>::ObsFilter starting" << std::endl;
   util::Timer timer(classname(), "ObsFilter");
+  util::Timer timef(filterName_, "ObsFilter");
   ofilt_ = FilterFactory<OBS>::create(os, parameters, flags, obserr);
   Log::trace() << "ObsFilter<OBS>::ObsFilter done" << std::endl;
 }
@@ -134,6 +137,7 @@ template <typename OBS>
 void ObsFilter<OBS>::preProcess() {
   Log::trace() << "ObsFilter<OBS>::preProcess starting" << std::endl;
   util::Timer timer(classname(), "preProcess");
+  util::Timer timef(filterName_, "preProcess");
   ofilt_->preProcess();
   Log::trace() << "ObsFilter<OBS>::preProcess done" << std::endl;
 }
@@ -144,6 +148,7 @@ template <typename OBS>
 void ObsFilter<OBS>::priorFilter(const GeoVaLs_ & gv) {
   Log::trace() << "ObsFilter<OBS>::priorFilter starting" << std::endl;
   util::Timer timer(classname(), "priorFilter");
+  util::Timer timef(filterName_, "priorFilter");
   ofilt_->priorFilter(gv);
   Log::trace() << "ObsFilter<OBS>::priorFilter done" << std::endl;
 }
@@ -157,6 +162,7 @@ void ObsFilter<OBS>::postFilter(const GeoVaLs_ & gv,
                                 const ObsDiags_ & dv) {
   Log::trace() << "ObsFilter<OBS>::postFilter starting" << std::endl;
   util::Timer timer(classname(), "postFilter");
+  util::Timer timef(filterName_, "postFilter");
   ofilt_->postFilter(gv, ov, bv, dv);
   Log::trace() << "ObsFilter<OBS>::postFilter done" << std::endl;
 }
