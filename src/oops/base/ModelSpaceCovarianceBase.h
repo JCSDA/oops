@@ -332,7 +332,6 @@ ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(const Geometry_ & reso
       parameters.variableChange;
   if (variableChangeParms != boost::none) {
       linVarChg_.reset(new LinearVariableChange_(resol, *variableChangeParms));
-      linVarChg_->setTrajectory(xb, fg);
       const boost::optional<Variables> &inputVars = variableChangeParms->inputVariables;
       if (inputVars != boost::none) {
           BVars_.reset(new Variables(*inputVars));
@@ -340,7 +339,10 @@ ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(const Geometry_ & reso
       const boost::optional<Variables> &outputVars = variableChangeParms->outputVariables;
       if (outputVars != boost::none) {
           anaVars_.reset(new Variables(*outputVars));
+      } else {
+          anaVars_.reset(new Variables());
       }
+      linVarChg_->changeVarTraj(fg, *anaVars_);
   }
   Log::trace() << "ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase done" << std::endl;
 }
@@ -364,7 +366,7 @@ void ModelSpaceCovarianceBase<MODEL>::randomize(Increment_ & dx) const {
   // TODO(notguillaume): Generalize to non-square change of variable
   this->doRandomize(dx);
   if (linVarChg_) {
-    linVarChg_->multiply(dx, *anaVars_);
+    linVarChg_->changeVarTL(dx, *anaVars_);
   }
   Log::trace() << "ModelSpaceCovarianceBase<MODEL>::randomize done" << std::endl;
 }
@@ -379,7 +381,7 @@ void ModelSpaceCovarianceBase<MODEL>::multiply(const Increment_ & dxi,
   if (linVarChg_) {
     // Copy input increment and apply adjoint variable change (to control variables)
     Increment_ dxiTemp(dxi);
-    linVarChg_->multiplyAD(dxiTemp, *BVars_);
+    linVarChg_->changeVarAD(dxiTemp, *BVars_);
 
     // Create temporary output increment
     Increment_ dxoTemp(dxiTemp, false);
@@ -388,7 +390,7 @@ void ModelSpaceCovarianceBase<MODEL>::multiply(const Increment_ & dxi,
     this->doMultiply(dxiTemp, dxoTemp);
 
     // Apply control to analysis/model variable change
-    linVarChg_->multiply(dxoTemp, *anaVars_);
+    linVarChg_->changeVarTL(dxoTemp, *anaVars_);
 
     // Copy to output increment
     dxo = dxoTemp;
@@ -414,7 +416,7 @@ void ModelSpaceCovarianceBase<MODEL>::inverseMultiply(const Increment_ & dxi,
     if (linVarChg_) {
       // Copy input increment and apply inverse variable change (K^{-1})
       Increment_ dxiTemp(dxi);
-      linVarChg_->multiplyInverse(dxiTemp, *BVars_);
+      linVarChg_->changeVarInverseTL(dxiTemp, *BVars_);
 
       // Create temporary output increment
       Increment_ dxoTemp(dxiTemp, false);
@@ -423,7 +425,7 @@ void ModelSpaceCovarianceBase<MODEL>::inverseMultiply(const Increment_ & dxi,
       this->doInverseMultiply(dxiTemp, dxoTemp);
 
       // Apply adjoint inverse variable change (K^T^{-1})
-      linVarChg_->multiplyInverseAD(dxoTemp, *anaVars_);
+      linVarChg_->changeVarInverseAD(dxoTemp, *anaVars_);
 
       // Copy to output increment
       dxo = dxoTemp;

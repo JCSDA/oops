@@ -167,8 +167,9 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const IncrementEnsembleFromStatesPar
   // Setup change of variable
   std::unique_ptr<LinearVariableChange_> linvarchg;
   if (params.linVarChange.value() != boost::none) {
-    linvarchg.reset(new LinearVariableChange_(resol, *params.linVarChange.value()));
-    linvarchg->setTrajectory(xb, fg);
+    const auto & linvar = *params.linVarChange.value();
+    linvarchg.reset(new LinearVariableChange_(resol, linvar));
+    linvarchg->changeVarTraj(fg, *linvar.outputVariables.value());
   }
 
   // Read ensemble
@@ -190,7 +191,7 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const IncrementEnsembleFromStatesPar
     if (params.linVarChange.value() != boost::none) {
       const auto & linvar = *params.linVarChange.value();
       oops::Variables varin = *linvar.inputVariables.value();
-      linvarchg->multiplyInverse(dx, varin);
+      linvarchg->changeVarInverseTL(dx, varin);
     }
 
     ensemblePerturbs_.emplace_back(std::move(dx));
