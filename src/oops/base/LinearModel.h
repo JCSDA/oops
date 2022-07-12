@@ -1,3 +1,4 @@
+
 /*
  * (C) Copyright 2009-2016 ECMWF.
  * (C) Copyright 2018-2021 UCAR.
@@ -16,6 +17,8 @@
 #include <boost/noncopyable.hpp>
 
 #include "oops/base/Geometry.h"
+#include "oops/base/PostProcessor.h"
+#include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/State.h"
 #include "oops/generic/LinearModelBase.h"
 #include "oops/interface/Increment.h"
@@ -303,3 +306,4 @@ void LinearModel<MODEL>::setTrajectory(const State_ & xx, State_ & xtraj,
 }  // namespace oops
 
 #endif  // OOPS_BASE_LINEARMODEL_H_
+
