@@ -264,24 +264,26 @@ void GetValues<MODEL, OBS>::incInterpValues(
   const double dt = static_cast<double>(hslot_.toSeconds());
 
 // Compute and add time weighted contribution from the input interpolated values.
-  bool isFirst = true;
   double timeWeight = 0;
   const size_t nObs = obs_times_by_task_[jtask].size();
   for (size_t jp = 0; jp < nObs; ++jp) {
     size_t valuesIndex = jp;
     if (mask[jp]) {
-      if (obs_times_by_task_[jtask][jp] > tCurrent) {
-        isFirst = true;
+      const util::DateTime & obCurrentTime = obs_times_by_task_[jtask][jp];
+      const bool isCurrentTime = obCurrentTime == tCurrent;
+      const bool isFirst = obCurrentTime > tCurrent;
+      if (!isCurrentTime && isFirst) {
         timeWeight =
-          static_cast<double>((tNext - obs_times_by_task_[jtask][jp]).toSeconds())/dt;
-      } else {
-        isFirst = false;
+          static_cast<double>((tNext - obCurrentTime).toSeconds())/dt;
+      } else if (!isCurrentTime && !isFirst) {
         timeWeight =
-          static_cast<double>((obs_times_by_task_[jtask][jp] - tPrevious).toSeconds())/dt;
+          static_cast<double>((obCurrentTime - tPrevious).toSeconds())/dt;
       }
       for (size_t jf = 0; jf < geovars_.size(); ++jf) {
         for (size_t jlev = 0; jlev < geovarsSizes_[jf]; ++jlev) {
-          if (isFirst) {
+          if (isCurrentTime) {
+            locinterp_[jtask][valuesIndex] = tmplocinterp[valuesIndex];
+          } else if (isFirst) {
             locinterp_[jtask][valuesIndex] = tmplocinterp[valuesIndex]*timeWeight;
           } else {
             locinterp_[jtask][valuesIndex] += tmplocinterp[valuesIndex]*timeWeight;
