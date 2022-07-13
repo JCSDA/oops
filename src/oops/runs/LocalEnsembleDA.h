@@ -46,7 +46,7 @@ class LocalEnsembleDADriverParameters : public Parameters {
   Parameter<bool> updateObsConfig{"update obs config with geometry info",
                   "controls whether observations config needs to be updated with information "
                   "about geometry distribution",
-                  false, this};
+                  true, this};
   Parameter<bool> doTestPrints{"do test prints",
                   "controls whether additional output is printed to test stream",
                   true, this};

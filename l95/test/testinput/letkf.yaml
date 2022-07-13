@@ -34,6 +34,7 @@ driver:
   save posterior ensemble increments: true
   save prior variance: true
   save posterior variance: true
+  update obs config with geometry info: false
 
 local ensemble DA:
   solver: LETKF

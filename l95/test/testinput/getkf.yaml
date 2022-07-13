@@ -13,6 +13,9 @@ background:
     pattern: %mem%
     nmembers: 5
 
+driver:
+  update obs config with geometry info: false
+
 observations:
   observers:
   - obs error:

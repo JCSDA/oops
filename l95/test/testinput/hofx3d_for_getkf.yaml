@@ -29,6 +29,7 @@ observations:
 
 driver:
   run as observer only: true
+  update obs config with geometry info: false
 
 local ensemble DA:
   solver: GETKF

@@ -62,6 +62,9 @@ observations:
     - localization method: Heaviside
       lengthscale: 5e6
 
+driver:
+  update obs config with geometry info: false
+
 local ensemble DA:
   solver: LETKF
   inflation:
