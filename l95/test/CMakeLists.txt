@@ -67,12 +67,16 @@ list( APPEND l95_test_input
   testinput/enshofx_3.yaml
   testinput/enshofx_4.yaml
   testinput/enshofx.yaml
+  testinput/errorcovariance.yaml
   testinput/forecast.yaml
   testinput/forecast_pseudomodel.yaml
   testinput/forecast_identitymodel.yaml
   testinput/fsoi_3dvar_dripcg.yaml
   testinput/fsoi_3dvar_pcg.yaml
   testinput/genenspert.yaml
+  testinput/geometry.yaml
+  testinput/geometry_iterator.yaml
+  testinput/geovals.yaml
   testinput/getkf.yaml
   testinput/getkf_offline_hofx.yaml
   testinput/getvalues.yaml
@@ -81,22 +85,33 @@ list( APPEND l95_test_input
   testinput/hofx3d.yaml
   testinput/hofx3d_for_getkf.yaml
   testinput/identitymodel.yaml
-  testinput/interfaces.yaml
+  testinput/increment.yaml
   testinput/letkf_gsi.yaml
   testinput/letkf.yaml
   testinput/letkf_noobs.yaml
   testinput/letkf_qc.yaml
+  testinput/linearmodel.yaml
   testinput/linearmodelfactory.yaml
+  testinput/linobsoperator.yaml
+  testinput/localization.yaml
   testinput/makeobs3d.yaml
   testinput/makeobs4d.yaml
   testinput/makeobs4d12h.yaml
   testinput/makeobsbias.yaml
   testinput/makeobspert.yaml
+  testinput/model.yaml
+  testinput/modelaux.yaml
+  testinput/modelauxcontrol.yaml
+  testinput/obs_iterator.yaml
+  testinput/obsaux.yaml
   testinput/obserrordiagparameters.yaml
+  testinput/obslocalization.yaml
   testinput/obslocalizations.yaml
+  testinput/obsoperator.yaml
+  testinput/obsspace.yaml
+  testinput/obsvector.yaml
   testinput/pseudomodel.yaml
   testinput/pseudomodel_state4d.yaml
-  testinput/truth.yaml
   testinput/simplifiedl95_DRGMRESR.yaml
   testinput/simplifiedl95_DRIPCG.yaml
   testinput/simplifiedl95_DRPCG.yaml
@@ -112,6 +127,8 @@ list( APPEND l95_test_input
   testinput/simplifiedl95_RPCG.yaml
   testinput/simplifiedl95_RPLanczos.yaml
   testinput/sqrtvertloc.yaml
+  testinput/state.yaml
+  testinput/truth.yaml
 )
 
 list( APPEND l95_test_data
@@ -265,25 +282,25 @@ ecbuild_add_test( TARGET test_l95_makeobs4d
 
 ecbuild_add_test( TARGET test_l95_geometry
                   SOURCES executables/TestGeometry.cc
-                  ARGS "testinput/interfaces.yaml"
+                  ARGS "testinput/geometry.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
 ecbuild_add_test( TARGET test_l95_geometry_iterator
                   SOURCES executables/TestGeometryIterator.cc
-                  ARGS "testinput/interfaces.yaml"
+                  ARGS "testinput/geometry_iterator.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
 ecbuild_add_test( TARGET test_l95_geovals
                   SOURCES executables/TestGeoVaLs.cc
-                  ARGS "testinput/interfaces.yaml"
+                  ARGS "testinput/geovals.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
 ecbuild_add_test( TARGET test_l95_state
                   SOURCES executables/TestState.cc
-                  ARGS "testinput/interfaces.yaml"
+                  ARGS "testinput/state.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
@@ -293,15 +310,15 @@ ecbuild_add_test( TARGET test_l95_getvalues
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_modelaux
+ecbuild_add_test( TARGET test_l95_modelauxcontrol
                   SOURCES executables/TestModelAuxControl.cc
-                  ARGS "testinput/interfaces.yaml"
+                  ARGS "testinput/modelauxcontrol.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
 ecbuild_add_test( TARGET test_l95_model
                   SOURCES executables/TestModel.cc
-                  ARGS "testinput/interfaces.yaml"
+                  ARGS "testinput/model.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
@@ -325,49 +342,49 @@ ecbuild_add_test( TARGET test_l95_identitymodel
 
 ecbuild_add_test( TARGET test_l95_increment
                   SOURCES executables/TestIncrement.cc
-                  ARGS "testinput/interfaces.yaml"
+                  ARGS "testinput/increment.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
 ecbuild_add_test( TARGET test_l95_errorcovariance
                   SOURCES executables/TestErrorCovariance.cc
-                  ARGS "testinput/interfaces.yaml"
+                  ARGS "testinput/errorcovariance.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
 ecbuild_add_test( TARGET test_l95_modelauxincrement
                   SOURCES executables/TestModelAuxIncrement.cc
-                  ARGS "testinput/interfaces.yaml"
+                  ARGS "testinput/modelaux.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
 ecbuild_add_test( TARGET test_l95_modelauxcovariance
                   SOURCES executables/TestModelAuxCovariance.cc
-                  ARGS "testinput/interfaces.yaml"
+                  ARGS "testinput/modelaux.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
 ecbuild_add_test( TARGET test_l95_linearmodel
                   SOURCES executables/TestLinearModel.cc
-                  ARGS "testinput/interfaces.yaml"
+                  ARGS "testinput/linearmodel.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
 ecbuild_add_test( TARGET test_l95_obsspace
                   SOURCES executables/TestObsSpace.cc
-                  ARGS "testinput/interfaces.yaml"
+                  ARGS "testinput/obsspace.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
 ecbuild_add_test( TARGET test_l95_obs_iterator
                   SOURCES executables/TestObsIterator.cc
-                  ARGS "testinput/interfaces.yaml"
+                  ARGS "testinput/obs_iterator.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
 ecbuild_add_test( TARGET test_l95_obslocalization
                   SOURCES executables/TestObsLocalization.cc
-                  ARGS "testinput/interfaces.yaml"
+                  ARGS "testinput/obslocalization.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
@@ -379,55 +396,55 @@ ecbuild_add_test( TARGET test_l95_obslocalizations
 
 ecbuild_add_test( TARGET test_l95_obsvector
                   SOURCES executables/TestObsVector.cc
-                  ARGS "testinput/interfaces.yaml"
+                  ARGS "testinput/obsvector.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
 ecbuild_add_test( TARGET test_l95_obsdatavector
                   SOURCES executables/TestObsDataVector.cc
-                  ARGS "testinput/interfaces.yaml"
+                  ARGS "testinput/obsspace.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
 ecbuild_add_test( TARGET test_l95_obsoperator
                   SOURCES executables/TestObsOperator.cc
-                  ARGS "testinput/interfaces.yaml"
+                  ARGS "testinput/obsoperator.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
 ecbuild_add_test( TARGET test_l95_linobsoperator
                   SOURCES executables/TestLinearObsOperator.cc
-                  ARGS "testinput/interfaces.yaml"
+                  ARGS "testinput/linobsoperator.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
 ecbuild_add_test( TARGET test_l95_obserrorcovar
                   SOURCES executables/TestObsErrorCovariance.cc
-                  ARGS "testinput/interfaces.yaml"
+                  ARGS "testinput/obsspace.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
 ecbuild_add_test( TARGET test_l95_obsaux
                   SOURCES executables/TestObsAuxControl.cc
-                  ARGS "testinput/interfaces.yaml"
+                  ARGS "testinput/obsaux.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
 ecbuild_add_test( TARGET test_l95_obsauxcovariance
                   SOURCES executables/TestObsAuxCovariance.cc
-                  ARGS "testinput/interfaces.yaml"
+                  ARGS "testinput/obsspace.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
 ecbuild_add_test( TARGET test_l95_obsauxincrement
                   SOURCES executables/TestObsAuxIncrement.cc
-                  ARGS "testinput/interfaces.yaml"
+                  ARGS "testinput/obsspace.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
 ecbuild_add_test( TARGET test_l95_localization
                   SOURCES executables/TestLocalization.cc
-                  ARGS "testinput/interfaces.yaml"
+                  ARGS "testinput/localization.yaml"
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_truth )
 
@@ -908,4 +925,3 @@ ecbuild_add_test( TARGET test_l95_adjointforecast
                   COMMAND l95_adjointforecast.x
                   ARGS testinput/adjointforecast.yaml
                   TEST_DEPENDS test_l95_truth )
-
