@@ -110,3 +110,6 @@ output:
   first: PT0S
   frequency: PT6H
   type: an
+  
+test:
+  reference filename: testoutput/4dvar_dripcg.test

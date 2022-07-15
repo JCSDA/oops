@@ -14,6 +14,7 @@ list( APPEND qg_testinput
   testinput/4dvar_drplanczos.yaml
   testinput/4dvar_drplanczos_hybrid.yaml
   testinput/4dvar_forcing.yaml
+  testinput/4dvar_htlm_qgtlm_dripcg.yaml
   testinput/4dvar_ipcg.yaml
   testinput/4dvar_obs_biased.yaml
   testinput/4dvar_rpcg.yaml
@@ -663,6 +664,12 @@ ecbuild_add_test( TARGET test_qg_4dvar_drplanczos_hybrid
 #                  ARGS testinput/4dvar_forcing.yaml
 #                  COMMAND  qg_4dvar.x
 #                  TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
+
+ecbuild_add_test( TARGET test_qg_4dvar_htlm_qgtlm_dripcg
+                  OMP 2
+                  ARGS testinput/4dvar_htlm_qgtlm_dripcg.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
 
 ecbuild_add_test( TARGET test_qg_4dvar_ipcg
                   OMP 2
