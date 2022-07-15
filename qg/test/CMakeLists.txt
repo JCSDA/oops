@@ -63,7 +63,9 @@ list( APPEND qg_testinput
   testinput/ens_variance_inflation_field.yaml
   testinput/ens_variance_inflation_value.yaml
   testinput/forecast.yaml
+  testinput/forecast_control_htlm.yaml
   testinput/gen_ens_pert_B.yaml
+  testinput/gen_ens_pert_B_HTLM.yaml
   testinput/getvalues.yaml
   testinput/hofx.yaml
   testinput/hofx_tinterp.yaml
@@ -130,7 +132,9 @@ list( APPEND qg_testoutput
   testoutput/ens_variance_inflation_field.test
   testoutput/ens_variance_inflation_value.test
   testoutput/forecast.test
+  testoutput/forecastHTLM.test
   testoutput/gen_ens_pert_B.test
+  testoutput/gen_ens_pert_B_HTLM.test
   testoutput/hofx.test
   testoutput/hofx_tinterp.test
   testoutput/hofx3d.test
@@ -383,6 +387,11 @@ ecbuild_add_test( TARGET test_qg_forecast
                   ARGS testinput/forecast.yaml
                   COMMAND  qg_forecast.x
                   TEST_DEPENDS test_qg_truth )
+ecbuild_add_test( TARGET test_qg_forecast_control_htlm
+                  OMP 2
+                  ARGS testinput/forecast_control_htlm.yaml
+                  COMMAND  qg_forecast.x
+                  TEST_DEPENDS test_qg_forecast test_qg_truth )
 
 
 #####################################################################
@@ -434,6 +443,11 @@ ecbuild_add_test( TARGET test_qg_gen_ens_pert_B
                   ARGS testinput/gen_ens_pert_B.yaml
                   COMMAND  qg_gen_ens_pert_B.x
                   TEST_DEPENDS test_qg_truth )
+ecbuild_add_test( TARGET test_qg_gen_ens_pert_B_HTLM
+                  OMP 2
+                  ARGS testinput/gen_ens_pert_B_HTLM.yaml
+                  COMMAND  qg_gen_ens_pert_B.x
+                  TEST_DEPENDS test_qg_forecast test_qg_truth  )
 
 ecbuild_add_test( TARGET test_qg_ens_forecast
                   MPI    2

@@ -1,0 +1,19 @@
+forecast length: P1D
+geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0] 
+initial condition:
+  date: 2010-01-01T00:00:00Z
+  filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D.nc
+model:
+  name: QG
+  tstep: PT1H
+output:
+  datadir: Data
+  date: 2010-01-01T00:00:00Z
+  exp: forecast
+  frequency: PT1H
+  type: fc
+test:
+  reference filename: testoutput/forecastHTLM.test
