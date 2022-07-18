@@ -174,6 +174,7 @@ oops/coupled/GeometryCoupled.h
 oops/coupled/ModelCoupled.h
 oops/coupled/StateCoupled.h
 oops/coupled/TraitCoupled.h
+oops/coupled/VariableChangeCoupled.h
 oops/coupled/instantiateCoupledFactory.h
 
 oops/generic/AnalyticInitBase.h

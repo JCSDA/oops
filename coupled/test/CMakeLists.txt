@@ -1,4 +1,5 @@
 list( APPEND coupled_testinput
+  testinput/coupledconvertstate.yaml
   testinput/coupledgeometry.yaml
   testinput/coupledgeometryparallel.yaml
   testinput/coupledmodel.yaml
@@ -10,6 +11,7 @@ list( APPEND coupled_testinput
 )
 
 list( APPEND coupled_testref
+  testref/coupledconvertstate.test
   testref/coupledgeometry.test
   testref/coupledmodel.test
   testref/coupledstate.test
@@ -71,6 +73,13 @@ ecbuild_add_test( TARGET  test_coupled_state_qg_l95_parallel
                   SOURCES executables/TestCoupledState.cc
                   ARGS    "testinput/coupledstateparallel.yaml"
                   MPI     2
+                  LIBS    qg lorenz95
+                  TEST_DEPENDS test_qg_truth test_l95_3dvar)
+
+# Test CoupledVariableChange class
+ecbuild_add_test( TARGET  test_coupled_convertstate_qg_l95
+                  SOURCES executables/TestCoupledConvertState.cc
+                  ARGS    "testinput/coupledconvertstate.yaml"
                   LIBS    qg lorenz95
                   TEST_DEPENDS test_qg_truth test_l95_3dvar)
 

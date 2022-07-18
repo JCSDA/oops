@@ -12,6 +12,7 @@
 #include "oops/coupled/AuxCoupledModel.h"
 #include "oops/coupled/GeometryCoupled.h"
 #include "oops/coupled/StateCoupled.h"
+#include "oops/coupled/VariableChangeCoupled.h"
 
 namespace oops {
 
@@ -23,6 +24,7 @@ struct TraitCoupled {
   typedef GeometryCoupled<MODEL1, MODEL2>           Geometry;
   typedef StateCoupled<MODEL1, MODEL2>              State;
   typedef AuxCoupledModel<MODEL1, MODEL2>           ModelAuxControl;
+  typedef VariableChangeCoupled<MODEL1, MODEL2>     VariableChange;
 };
 
 }  // namespace oops
