@@ -163,14 +163,15 @@ void LocalEnsembleSolver<MODEL, OBS>::computeHofX4D(const eckit::Configuration &
   // compute forecast length from State4D times
   const std::vector<util::DateTime> times = xx.validTimes();
   const util::Duration flength = times[times.size()-1] - times[0];
-  // observation window is passed to PseudoModel as the default model time step.
-  // This is required when State4D has a single state: in this case if the default
-  // model time step is not specified, it will be set to zero and no observations
-  // will be processed during the "forecast"
-  const util::Duration winlen = obspaces_.windowEnd() - obspaces_.windowStart();
-
+  // default_tstep = 2*observation window is passed to PseudoModel as the default
+  // pseudomodel time step. It is only used when State4D has a single state, to enable
+  // processing of all observations in the specified window regardless of where in
+  // the time window the state is. Observations in
+  // ( max(winbgn, xx.time - tstep/2); min(winend, xx.time + tstep/2) ] are
+  // processed in H(x).
+  const util::Duration default_tstep = (obspaces_.windowEnd() - obspaces_.windowStart()) * 2;
   // Setup PseudoModelState4D
-  std::unique_ptr<PseudoModel_> pseudomodel(new PseudoModel_(xx, winlen));
+  std::unique_ptr<PseudoModel_> pseudomodel(new PseudoModel_(xx, default_tstep));
   const Model_ model(std::move(pseudomodel));
   // Setup model and obs biases; obs errors
   ModelAux_ moderr(geometry_, eckit::LocalConfiguration());
