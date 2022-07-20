@@ -256,17 +256,17 @@ type(atlas_fieldset),intent(inout) :: afieldset !< Fieldset
 
 ! Local variables
 integer :: ix,iy,iz,inode
-real(kind_real),pointer :: real_ptr_1(:),real_ptr_2(:,:)
+real(kind_real),pointer :: real_ptr(:,:)
 type(atlas_field) :: afield
 
 ! Add area
-afield = self%afunctionspace%create_field(name='area',kind=atlas_real(kind_real),levels=0)
-call afield%data(real_ptr_1)
+afield = self%afunctionspace%create_field(name='area',kind=atlas_real(kind_real),levels=1)
+call afield%data(real_ptr)
 inode = 0
 do iy=1,self%ny
   do ix=1,self%nx
     inode = inode+1
-    real_ptr_1(inode) = self%area(ix,iy)
+    real_ptr(1,inode) = self%area(ix,iy)
   enddo
 enddo
 call afieldset%add(afield)
@@ -274,9 +274,9 @@ call afield%final()
 
 ! Add vertical unit
 afield = self%afunctionspace%create_field(name='vunit',kind=atlas_real(kind_real),levels=self%nz)
-call afield%data(real_ptr_2)
+call afield%data(real_ptr)
 do iz=1,self%nz
-  real_ptr_2(iz,1:self%nx*self%ny) = self%z(iz)
+  real_ptr(iz,1:self%nx*self%ny) = self%z(iz)
 end do
 call afieldset%add(afield)
 call afield%final()
