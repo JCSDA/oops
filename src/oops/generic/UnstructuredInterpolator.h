@@ -47,7 +47,17 @@ class UnstructuredInterpolator : public util::Printable,
 
   UnstructuredInterpolator(const eckit::Configuration &, const Geometry_ &,
                            const std::vector<double> &, const std::vector<double> &);
+  // Interpolator interface with no target-point mask, i.e., interpolates to every target point.
+  void apply(const Variables &, const State_ &, std::vector<double> &) const;
+  void apply(const Variables &, const Increment_ &, std::vector<double> &) const;
+  void applyAD(const Variables &, Increment_ &, const std::vector<double> &) const;
 
+  void apply(const Variables &, const atlas::FieldSet &, std::vector<double> &) const;
+  void applyAD(const Variables &, atlas::FieldSet &, const std::vector<double> &) const;
+
+  // Interpolator interface with a target-point mask, i.e., interpolates to target points for which
+  // the mask is true. At points for which mask is false, the return vector is unmodified from its
+  // input state.
   void apply(const Variables &, const State_ &, const std::vector<bool> &,
              std::vector<double> &) const;
   void apply(const Variables &, const Increment_ &, const std::vector<bool> &,
@@ -55,10 +65,12 @@ class UnstructuredInterpolator : public util::Printable,
   void applyAD(const Variables &, Increment_ &, const std::vector<bool> &,
                const std::vector<double> &) const;
 
- private:
   void apply(const Variables &, const atlas::FieldSet &, const std::vector<bool> &,
              std::vector<double> &) const;
+  void applyAD(const Variables &, atlas::FieldSet &, const std::vector<bool> &,
+               const std::vector<double> &) const;
 
+ private:
   void applyPerLevel(const std::string &, const std::vector<bool> &,
                      const atlas::array::ArrayView<double, 2> &,
                      std::vector<double>::iterator &, const size_t &) const;
@@ -157,6 +169,55 @@ UnstructuredInterpolator<MODEL>::UnstructuredInterpolator(const eckit::Configura
 
 template<typename MODEL>
 void UnstructuredInterpolator<MODEL>::apply(const Variables & vars, const State_ & xx,
+                                            std::vector<double> & locvals) const
+{
+  std::vector<bool> mask(nout_, true);
+  this->apply(vars, xx.fieldSet(), mask, locvals);
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void UnstructuredInterpolator<MODEL>::apply(const Variables & vars, const Increment_ & dx,
+                                            std::vector<double> & locvals) const
+{
+  std::vector<bool> mask(nout_, true);
+  this->apply(vars, dx.fieldSet(), mask, locvals);
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void UnstructuredInterpolator<MODEL>::applyAD(const Variables & vars, Increment_ & dx,
+                                              const std::vector<double> & vals) const {
+  std::vector<bool> mask(nout_, true);
+  this->applyAD(vars, dx.fieldSet(), mask, vals);
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void UnstructuredInterpolator<MODEL>::apply(const Variables & vars, const atlas::FieldSet & fset,
+                                            std::vector<double> & locvals) const
+{
+  std::vector<bool> mask(nout_, true);
+  this->apply(vars, fset, mask, locvals);
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void UnstructuredInterpolator<MODEL>::applyAD(const Variables & vars, atlas::FieldSet & fset,
+                                              const std::vector<double> & vals) const {
+  std::vector<bool> mask(nout_, true);
+  this->applyAD(vars, fset, mask, vals);
+}
+
+// -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void UnstructuredInterpolator<MODEL>::apply(const Variables & vars, const State_ & xx,
                                             const std::vector<bool> & mask,
                                             std::vector<double> & locvals) const
 {
@@ -171,6 +232,15 @@ void UnstructuredInterpolator<MODEL>::apply(const Variables & vars, const Increm
                                             std::vector<double> & locvals) const
 {
   this->apply(vars, dx.fieldSet(), mask, locvals);
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void UnstructuredInterpolator<MODEL>::applyAD(const Variables & vars, Increment_ & dx,
+                                              const std::vector<bool> & mask,
+                                              const std::vector<double> & vals) const {
+  this->applyAD(vars, dx.fieldSet(), mask, vals);
 }
 
 // -----------------------------------------------------------------------------
@@ -208,7 +278,7 @@ void UnstructuredInterpolator<MODEL>::apply(const Variables & vars, const atlas:
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void UnstructuredInterpolator<MODEL>::applyAD(const Variables & vars, Increment_ & dx,
+void UnstructuredInterpolator<MODEL>::applyAD(const Variables & vars, atlas::FieldSet & fset,
                                               const std::vector<bool> & mask,
                                               const std::vector<double> & vals) const {
   Log::trace() << "UnstructuredInterpolator::applyAD starting" << std::endl;
@@ -217,7 +287,7 @@ void UnstructuredInterpolator<MODEL>::applyAD(const Variables & vars, Increment_
   std::vector<double>::const_iterator current = vals.begin();
   for (size_t jf = 0; jf < vars.size(); ++jf) {
     const std::string & fname = vars[jf];
-    atlas::Field fld = dx.fieldSet().field(fname);
+    atlas::Field & fld = fset.field(fname);
 
 //    const std::string interp_type = fld.metadata().get<std::string>("interp_type");
 //    ASSERT(interp_type == "default" || interp_type == "integer" || interp_type == "nearest");

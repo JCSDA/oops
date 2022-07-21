@@ -436,13 +436,13 @@ test/interface/ObsSpace.h
 test/interface/ObsTestsFixture.h
 test/interface/ObsVector.h
 test/interface/State.h
+test/interface/UnstructuredInterpolator.h
 test/interface/VariableChange.h
 
 test/mpi/mpi.h
 
 test/generic/fft_multiple.cc
 test/generic/fft_multiple.h
-test/generic/InterpolationInterface.h
 test/generic/PseudoModelState4D.h
 test/generic/VerticalLocEV.h
 
@@ -485,8 +485,6 @@ endfunction(CREATE_SYMLINK)
 list( APPEND oops_test_input
   test/testinput/random.yaml
   test/testinput/pushstringvector.yaml
-  test/testinput/atlas_interpolation_interface.yaml
-  test/testinput/unstructured_interpolation.yaml
   test/testinput/variables.yaml
   test/testinput/parameters.yaml
   test/testinput/parameters_older_eckit.yaml
@@ -777,11 +775,6 @@ ecbuild_add_test( TARGET  test_mpi_mpi
                   SOURCES test/mpi/mpi.cc
                   ARGS    "test/testinput/mpi.yaml"
                   LIBS    oops )
-
-#ecbuild_add_test( TARGET  test_oops_unstructured_interpolation
-#                  SOURCES test/generic/InterpolationInterface.cc
-#                  ARGS    "test/testinput/unstructured_interpolation.yaml"
-#                  LIBS    oops )
 
 ecbuild_add_test( TARGET  test_fft_multiple
                   SOURCES test/generic/fft_multiple.cc
