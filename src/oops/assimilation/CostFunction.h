@@ -344,6 +344,7 @@ double CostFunction<MODEL, OBS>::evaluate(const CtrlVar_ & fguess,
     costJoJc_ += jterms_[jj].computeCost();
   }
   zzz += costJoJc_;
+  Log::info() << "CostFunction: Nonlinear J = " << zzz << std::endl;
   Log::test() << "CostFunction: Nonlinear J = " << zzz << std::endl;
   Log::trace() << "CostFunction::evaluate done" << std::endl;
   return zzz;

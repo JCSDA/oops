@@ -86,7 +86,6 @@ GeometryCoupled<MODEL1, MODEL2>::GeometryCoupled(const Parameters_ & params,
   : geom1_(), geom2_(), commPrints_(nullptr), parallel_(params.parallel.value()), mymodel_(-1)
 {
   if (params.parallel) {
-    Log::debug() << "Parallel coupled geometries" << std::endl;
     const int mytask = comm.rank();
     const int ntasks = comm.size();
     const int tasks_per_model = ntasks / 2;
@@ -116,7 +115,6 @@ GeometryCoupled<MODEL1, MODEL2>::GeometryCoupled(const Parameters_ & params,
     char const *commPrintsName = commPrintStr.c_str();
     commPrints_ = &comm.split(myrank, commPrintsName);
   } else {
-    Log::debug() << "Sequential coupled geometries" << std::endl;
     geom1_ = std::make_shared<Geometry<MODEL1>>(std::get<0>(params.geometries), comm);
     geom2_ = std::make_shared<Geometry<MODEL2>>(std::get<1>(params.geometries), comm);
   }

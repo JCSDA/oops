@@ -141,10 +141,6 @@ void SpectralLMP<VECTOR, CMATRIX>::update(std::vector<std::unique_ptr<VECTOR>> &
   }
 
   ++update_;
-  Log::debug() << "SpectralLMP size Zl    = " << Zl.size() << std::endl;
-  Log::debug() << "SpectralLMP size Zhl   = " << Zhl.size() << std::endl;
-  Log::debug() << "SpectralLMP size alpha = " << alphas.size() << std::endl;
-  Log::debug() << "SpectralLMP size beta  = " << betas.size() << std::endl;
   const unsigned nvec = Zl.size();
   ASSERT(Zhl.size() == nvec);
 

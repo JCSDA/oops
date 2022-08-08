@@ -133,11 +133,6 @@ void QNewtonLMP<VECTOR, BMATRIX, CMATRIX>::updateObsBias(std::unique_ptr<CMATRIX
 
 template<typename VECTOR, typename BMATRIX, typename CMATRIX>
 void QNewtonLMP<VECTOR, BMATRIX, CMATRIX>::update(const BMATRIX & Bmat) {
-  Log::debug() << "QNewtonLMP size saved Ph    = " << savedPh_.size() << std::endl;
-  Log::debug() << "QNewtonLMP size saved P     = " << savedP_.size() << std::endl;
-  Log::debug() << "QNewtonLMP size saved AP    = " << savedAP_.size() << std::endl;
-  Log::debug() << "QNewtonLMP size saved rhos  = " << savedrhos_.size() << std::endl;
-
   const unsigned nvec = savedPh_.size();
   ASSERT(savedP_.size() == nvec);
   ASSERT(savedAP_.size() == nvec);

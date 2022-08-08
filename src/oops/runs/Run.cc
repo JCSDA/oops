@@ -130,7 +130,6 @@ Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(
     config_.reset(new eckit::YAMLConfiguration(infilepathname));
 
     Log::info() << "Configuration input file is: " << infilepathname << std::endl;
-    Log::info() << "Full configuration is:"  << *config_ << std::endl;
 
     if (!is_validate_only_) {
       // Get configuration file and optional output file from command line
@@ -145,6 +144,7 @@ Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(
         LibOOPS::instance().teeOutput(outfilepathname);
       }
     }
+    Log::info() << "Full configuration is:"  << *config_ << std::endl;
   }
 }
 

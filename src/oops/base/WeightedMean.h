@@ -113,8 +113,6 @@ void WeightedMean<MODEL, FLDS>::doProcessing(const FLDS & xx) {
     const double zz = weights_[now];
     avg_->accumul(zz, xx);
     sum_ += zz;
-    Log::debug() << "WeightedMean: time = " << now
-               << ", weight = " << zz << ", sum = " << sum_ << std::endl;
   }
 }
 

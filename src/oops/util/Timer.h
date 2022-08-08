@@ -12,7 +12,6 @@
 #define OOPS_UTIL_TIMER_H_
 
 #include <chrono>
-#include <ostream>
 #include <string>
 
 namespace util {
@@ -24,26 +23,14 @@ class Timer {
   using ClockT = std::chrono::steady_clock;  // Monotonic clock type
   using TimeT = ClockT::time_point;
 
-  Timer(const std::string &class_name, const std::string &method_name);
+  Timer(const std::string & class_name, const std::string & method_name);
   ~Timer();
 
   Timer(const Timer&) = delete;  // Non-copyable
 
- protected:
+ private:
   std::string name_;
   TimeT start_;
-};
-
-// -----------------------------------------------------------------------------
-
-class LoggingTimer : public Timer {
- public:
-  LoggingTimer(const std::string &class_name, const std::string &method_name);
-  LoggingTimer(const std::string &class_name, const std::string &method_name, std::ostream &log);
-  ~LoggingTimer();
-
- protected:
-  std::ostream& log_;
 };
 
 // -----------------------------------------------------------------------------

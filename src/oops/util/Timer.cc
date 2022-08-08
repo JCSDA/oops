@@ -10,40 +10,15 @@
 
 #include "oops/util/Timer.h"
 
-#include <iomanip>
-#include <ratio>
+#include <chrono>
 
-#include "oops/util/Logger.h"
 #include "oops/util/TimerHelper.h"
 
 namespace util {
 
-namespace {  // Local global constants
-  // Width to print variable names
-  constexpr int METHOD_PRINT_WIDTH = 60;
-}
-
 // -----------------------------------------------------------------------------
 
-/** InitTime
- *
- * A class to be static initialized that measures time deltas since program initialization
- */
-class InitTime
-{
- public:
-  InitTime() : init_t_(Timer::ClockT::now())
-  { }
-
-  double elapsed_sec(const Timer::TimeT &t) {
-    return std::chrono::duration<double>(t - init_t_).count();
-  }
-
- private:
-  Timer::TimeT init_t_;
-};
-
-static InitTime init_time;  // static instance representing program static init time
+static std::chrono::steady_clock::time_point start_time(std::chrono::steady_clock::now());
 
 static int nested_timers = 0;  // Only non-nested timers count towards measured time
 
@@ -70,36 +45,9 @@ Timer::~Timer() {
 
 // -----------------------------------------------------------------------------
 
-LoggingTimer::LoggingTimer(const std::string & class_name, const std::string & method_name)
-    : LoggingTimer(class_name, method_name, oops::Log::timer())
-{ }
-
-// -----------------------------------------------------------------------------
-
-LoggingTimer::LoggingTimer(const std::string & class_name,
-                           const std::string & method_name, std::ostream& log)
-    : Timer(class_name, method_name), log_(log)
-{
-  double st = init_time.elapsed_sec(start_);
-  log_ << std::left << std::setw(METHOD_PRINT_WIDTH) << std::setfill('.') << name_
-       << " Start: " << std::fixed << std::setprecision(2) << st << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-LoggingTimer::~LoggingTimer()
-{
-  double st = init_time.elapsed_sec(start_);
-  double et = init_time.elapsed_sec(ClockT::now());
-  log_ << std::left << std::setw(METHOD_PRINT_WIDTH) << std::setfill('.') << name_
-       << ".. End: " << std::fixed << std::setprecision(2) << et
-       << " Elapsed: " << et-st << " sec" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
 double timeStamp() {
-  return init_time.elapsed_sec(Timer::ClockT::now());
+  const std::chrono::steady_clock::time_point t(std::chrono::steady_clock::now());
+  return std::chrono::duration<double>(t - start_time).count();
 }
 
 // -----------------------------------------------------------------------------

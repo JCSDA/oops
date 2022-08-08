@@ -133,6 +133,7 @@ DRMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
   double reduc = this->solve(*dx, dxh, rhs, B, HtRinvH, costJ0Jb, costJ0JoJc, ninner, gnreduc);
 
   Log::test() << classname() << ": reduction in residual norm = " << reduc << std::endl;
+  Log::info() << classname() << ": reduction in residual norm = " << reduc << std::endl;
   Log::info() << classname() << " output increment:" << *dx << std::endl;
 
 // Update gradient Jb

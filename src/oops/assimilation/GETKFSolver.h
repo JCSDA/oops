@@ -126,7 +126,6 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
   Observations_ yb_mean =
             LocalEnsembleSolver<MODEL, OBS>::computeHofX(ens_xx, iteration, readFromFile);
   if (readFromFile) {
-    Log::debug() << "Read H(X) from disk" << std::endl;
     // read modulated ensemble
     Observations_ ytmp(yb_mean);
     size_t ii = 0;
@@ -139,7 +138,6 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
       }
     }
   } else {
-    Log::debug() << "Computing H(X) online" << std::endl;
     // modulate ensemble of obs
     State4D_ xx_mean(ens_xx.mean());
     IncrementEnsemble4D_ dx(ens_xx, xx_mean, xx_mean[0].variables());

@@ -201,7 +201,6 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(const StateEnsemb
 
   if (readFromDisk) {
     // read hofx from disk
-    Log::debug() << "Read H(X) from disk" << std::endl;
     for (size_t jj = 0; jj < nens; ++jj) {
       obsens[jj].read("hofx"+std::to_string(iteration)+"_"+std::to_string(jj+1));
       Log::test() << "H(x) for member " << jj+1 << ":" << std::endl << obsens[jj] << std::endl;
@@ -209,7 +208,6 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(const StateEnsemb
     R_.reset(new ObsErrors_(observersconf_, obspaces_));
   } else {
     // compute and save H(x)
-    Log::debug() << "Computing H(X) online" << std::endl;
 
     // save QC filters and ob errors to be used for all other members
     // do not save H(X) (saved explicitly below)

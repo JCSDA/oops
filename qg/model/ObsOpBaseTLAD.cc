@@ -28,7 +28,6 @@ ObsOpTLADFactory::ObsOpTLADFactory(const std::string & name) {
 ObsOpBaseTLAD * ObsOpTLADFactory::create(const ObsSpaceQG & odb,
                                          const eckit::Configuration & conf) {
   oops::Log::trace() << "ObsOpBaseQG::create starting" << std::endl;
-  oops::Log::debug() << "ObsOpBaseQG::create conf" << conf << std::endl;
   const std::string id = conf.getString("obs type");
   typename std::map<std::string, ObsOpTLADFactory*>::iterator
     jloc = getMakers().find(id);

@@ -114,6 +114,8 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   const ObsSpaces_ & obspaces() const {return obspaces_;}
 
  private:
+  double printJo(size_t, Departures_ &, std::ostream &) const;
+
   const Parameters_ params_;
   ObsSpaces_ obspaces_;
   std::unique_ptr<Observations_> yobs_;
@@ -217,30 +219,44 @@ double CostJo<MODEL, OBS>::computeCost() {
   // Print Jo table
   double zjo = 0.0;
   for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
-    double zz = 0.0;
-    const unsigned nobs = (*gradFG_)[jj].nobs();
-    Log::test() << "CostJo   : Nonlinear Jo(" << obspaces_[jj].obsname() << ") = ";
-
-    if (nobs > 0) {
-      zz = 0.5 * dot_product(ydep[jj], (*gradFG_)[jj]);
-      const double err = Rmat_[jj].getRMSE();
-      Log::test() << zz << ", nobs = " << nobs << ", Jo/n = " << zz/nobs << ", err = " << err;
-    } else {
-      Log::test() << zz << " --- No Observations";
-    }
-
-    if (params_.observers.value()[jj].observer.monitoringOnly) {
-      Log::test() << " (Monitoring only)";
-    } else {
-      zjo += zz;
-    }
-    Log::test() << std::endl;
+    zjo += this->printJo(jj, ydep, Log::info());
+  }
+  for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
+    this->printJo(jj, ydep, Log::test());
   }
 
   Log::info() << "CostJo   : Nonlinear Jo = " << zjo << std::endl;
 
   Log::trace() << "CostJo::computeCost done" << std::endl;
   return zjo;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL, typename OBS>
+double CostJo<MODEL, OBS>::printJo(size_t jj, Departures_ & ydep, std::ostream & os) const {
+  Log::trace() << "CostJo::printJo start" << std::endl;
+
+  double zz = 0.0;
+  const unsigned nobs = (*gradFG_)[jj].nobs();
+  os << "CostJo   : Nonlinear Jo(" << obspaces_[jj].obsname() << ") = ";
+
+  if (nobs > 0) {
+    zz = 0.5 * dot_product(ydep[jj], (*gradFG_)[jj]);
+    const double err = Rmat_[jj].getRMSE();
+    os << zz << ", nobs = " << nobs << ", Jo/n = " << zz/nobs << ", err = " << err;
+  } else {
+    os << zz << " --- No Observations";
+  }
+
+  if (params_.observers.value()[jj].observer.monitoringOnly) {
+    os << " (Monitoring only)";
+    zz = 0.0;
+  }
+  os << std::endl;
+
+  Log::trace() << "CostJo::printJo done" << std::endl;
+  return zz;
 }
 
 // -----------------------------------------------------------------------------

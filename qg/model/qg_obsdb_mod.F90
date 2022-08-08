@@ -174,10 +174,6 @@ type(group_data),pointer :: jgrp
 type(column_data),pointer :: jcol
 integer :: jobs,jlev
 
-! Print Group and column
-call fckit_log%debug('qg_obsdb_get: grp = '//trim(grp))
-call fckit_log%debug('qg_obsdb_get: col = '//trim(col))
-
 ! Find observation group
 call qg_obsdb_find_group(self,grp,jgrp)
 if (.not.associated(jgrp)) then

@@ -210,7 +210,6 @@ template <typename MODEL> class Dirac : public Application {
              std::string & id,
              const Geometry_ & resol, const State_ & xx,
              const Increment_ & dxi) const {
-    Log::debug() << "Input ID is " << id << std::endl;
     // Define output increment
     Increment_ dxo(dxi, false);
 

@@ -91,7 +91,6 @@ ModelCoupled<MODEL1, MODEL2>::ModelCoupled(const GeometryCoupled_ & geom,
     parallel_(geom.isParallel()) {
   Log::trace() << "ModelCoupled::ModelCoupled starting" << std::endl;
   if (parallel_) {
-    Log::debug() << "Parallel coupled models" << std::endl;
     if (geom.modelNumber() == 1) {
       model1_.reset(ModelFactory<MODEL1>::create(geom.geometry1(),
                     params.model1.value().modelParameters));
@@ -103,7 +102,6 @@ ModelCoupled<MODEL1, MODEL2>::ModelCoupled(const GeometryCoupled_ & geom,
       tstep_ = model2_->timeResolution();
     }
   } else {
-    Log::debug() << "Sequential coupled models" << std::endl;
     model1_.reset(ModelFactory<MODEL1>::create(geom.geometry1(),
                         params.model1.value().modelParameters));
     model2_.reset(ModelFactory<MODEL2>::create(geom.geometry2(),

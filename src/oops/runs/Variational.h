@@ -56,10 +56,11 @@ template <typename MODEL, typename OBS> class Variational : public Application {
   virtual ~Variational() {}
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig, bool validate) const override {
+    Log::trace() << "Variational: execute start" << std::endl;
+    util::printRunStats("Variational start");
 /// The background is constructed inside the cost function because its valid
 /// time within the assimilation window can be different (3D-Var vs. 4D-Var),
 /// it can be 3D or 4D (strong vs weak constraint), etc...
-    util::printRunStats("Variational start");
 
 //  Setup cost function
     eckit::LocalConfiguration cfConf(fullConfig, "cost function");
@@ -68,11 +69,9 @@ template <typename MODEL, typename OBS> class Variational : public Application {
     cfParams.deserialize(cfConf);
     std::unique_ptr<CostFunction<MODEL, OBS>>
       J(CostFactory<MODEL, OBS>::create(cfParams.costTypeParameters, this->getComm()));
-    Log::trace() << "Variational: cost function has been set up" << std::endl;
 
 //  Initialize first guess from background
     ControlVariable<MODEL, OBS> xx(J->jb().getBackground());
-    Log::trace() << "Variational: first guess has been set up" << std::endl;
 
 //  Perform Incremental Variational Assimilation
     eckit::LocalConfiguration varConf(fullConfig, "variational");
@@ -94,7 +93,6 @@ template <typename MODEL, typename OBS> class Variational : public Application {
 //  Save increment if desired
     if (finalConfig.has("increment")) {
       const eckit::LocalConfiguration incConfig(finalConfig, "increment");
-      Log::trace() << "Variational: writing analysis increment" << std::endl;
       ControlVariable<MODEL, OBS> x_b(J->jb().getBackground());
       const eckit::LocalConfiguration incGeomConfig(incConfig, "geometry");
       Geometry<MODEL> incGeom(incGeomConfig,
@@ -117,6 +115,7 @@ template <typename MODEL, typename OBS> class Variational : public Application {
     xx.obsVar().write(cfConf);
 
     util::printRunStats("Variational end");
+    Log::trace() << "Variational: execute done" << std::endl;
     return 0;
   }
 // -----------------------------------------------------------------------------

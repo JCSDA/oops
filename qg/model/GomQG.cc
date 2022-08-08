@@ -142,22 +142,6 @@ void GomQG::print(std::ostream & os) const {
      << ", Max=" << zmax
      << ", RMS=" << zrms;
   os.flags(f);
-
-  // If the min value across all variables is positive, then this may be an
-  // error measurement.  If so, print the location and variable where the
-  // maximum occurs to the debug stream, for use in debugging
-
-  if (zmin >= 0.0) {
-    double mxval;
-    int iloc;
-    oops::Variables maxvar;
-
-    qg_gom_maxloc_f90(keyGom_, mxval, iloc, maxvar);
-
-    oops::Log::debug() << "GomQG: Maximum Value = " << std::setprecision(4)
-                       << mxval << " at location = " << iloc
-                       << " and variable = " << maxvar << std::endl;
-  }
 }
 // -----------------------------------------------------------------------------
 }  // namespace qg

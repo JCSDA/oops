@@ -114,7 +114,6 @@ std::vector<double> GeometryQG::verticalCoord(std::string & vcUnits) const {
     errorMsg << "Uknown vertical coordinate unit " << vcUnits << std::endl;
     ABORT(errorMsg.str());
   }
-  oops::Log::debug() << "QG vert coord: " << vc << std::endl;
   return vc;
 }
 // -------------------------------------------------------------------------------------------------

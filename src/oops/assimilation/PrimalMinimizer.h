@@ -104,6 +104,7 @@ PrimalMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
   double reduc = this->solve(*dx, rhs, hessian, B, ninner, gnreduc);
 
   Log::test() << classname() << ": reduction in residual norm = " << reduc << std::endl;
+  Log::info() << classname() << ": reduction in residual norm = " << reduc << std::endl;
   Log::info() << classname() << " output" << *dx << std::endl;
 
   if (config.has("fsoi")) {
