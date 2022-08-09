@@ -1,0 +1,20 @@
+geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+
+background:
+  date: 2009-12-31T00:00:00Z
+  filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
+
+linear variable change tests:
+- linear variable change:
+    input variables:  [x]
+    output variables: [q]
+  test inverse: 1
+  tolerance inverse: 1.0e-8
+- linear variable change:
+    input variables:  [q]
+    output variables: [x]
+  test inverse: 1
+  tolerance inverse: 1.0e-8

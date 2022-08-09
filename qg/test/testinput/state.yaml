@@ -1,0 +1,26 @@
+geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+
+state test:
+  statefile:
+    date: 2009-12-31T00:00:00Z
+    filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
+  write then read test:
+    state write:
+      datadir: Data
+      exp: out
+      type: fc
+      date: '2009-12-15T00:00:00Z'
+    state read:
+      date: '2009-12-15T00:00:00Z'
+      filename: Data/out.fc.2009-12-15T00:00:00Z.P16D.nc
+  state generate:
+    analytic init:
+      method: large-vortices
+    date: 2009-12-31T00:00:00Z
+  date: 2009-12-31T00:00:00Z
+  norm file: 195415162.30387616
+  norm generated state: 148702024.11261204
+  tolerance: 1.0e-08

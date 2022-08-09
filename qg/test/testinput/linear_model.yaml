@@ -1,0 +1,36 @@
+geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+
+initial condition:
+  date: 2009-12-31T00:00:00Z
+  filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
+
+background error:
+  covariance model: QgError
+  horizontal_length_scale: 1.0e6
+  maximum_condition_number: 1.0e6
+  standard_deviation: 8.0e6
+  vertical_length_scale: 2787.0
+
+analysis variables: [x]
+
+model:
+  name: QG
+  tstep: PT1H
+model aux control: {}
+
+linear model:
+  trajectory:
+    tstep: PT1H
+  tstep: PT1H
+  name: QgTLM
+linear model test:
+  forecast length: PT24H
+  iterations TL: 12
+  tolerance AD: 1.0e-12
+  tolerance TL: 1.0e-6
+
+window begin: 2010-01-01T00:00:00Z
+window end: 2010-01-02T00:00:00Z

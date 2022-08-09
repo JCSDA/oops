@@ -1,0 +1,14 @@
+geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+
+localization:
+  horizontal_length_scale: 4.0e6
+  localization method: QG
+  maximum_condition_number: 1.0e6
+  standard_deviation: 1.0
+  vertical_length_scale: 30000.0
+
+loc variables: [x]
+test date: 2009-12-31T00:00:00Z
