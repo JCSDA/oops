@@ -42,7 +42,7 @@ public :: qg_fields_create,qg_fields_create_from_other,qg_fields_delete, &
         & qg_fields_copy,qg_fields_copy_lbc,qg_fields_self_add,qg_fields_self_sub,qg_fields_self_mul,qg_fields_axpy, &
         & qg_fields_self_schur,qg_fields_dot_prod,qg_fields_add_incr,qg_fields_diff_incr,qg_fields_change_resol, &
         & qg_fields_read_file,qg_fields_write_file,qg_fields_analytic_init,qg_fields_gpnorm,qg_fields_rms,qg_fields_sizes, &
-        & qg_fields_lbc,qg_fields_to_fieldset,qg_fields_from_fieldset, &
+        & qg_fields_lbc,qg_fields_to_fieldset,qg_fields_to_fieldset_ad,qg_fields_from_fieldset, &
         & qg_fields_getvals, qg_fields_getvalsad, &
         & qg_fields_getpoint,qg_fields_setpoint,qg_fields_serialize,qg_fields_deserialize, &
         & qg_fields_complete,qg_fields_check,qg_fields_check_resolution
@@ -1234,6 +1234,58 @@ do jvar=1,self%vars%nvars()
 enddo
 
 end subroutine qg_fields_to_fieldset
+! ------------------------------------------------------------------------------
+!> Convert fields to Fieldset (adjoint)
+subroutine qg_fields_to_fieldset_ad(self,afieldset)
+
+implicit none
+
+! Passed variables
+type(qg_fields),intent(inout) :: self           !< Fields
+type(atlas_fieldset),intent(inout) :: afieldset !< ATLAS fieldset
+
+! Local variables
+integer :: jvar,ix,iy,iz,inode
+real(kind_real),pointer :: ptr(:,:)
+character(len=1024) :: fieldname
+type(atlas_field) :: afield
+
+! Get variable
+do jvar=1,self%vars%nvars()
+   ! Get afield
+   fieldname = self%vars%variable(jvar)
+   afield = afieldset%field(trim(fieldname))
+
+   ! Copy field
+   call afield%data(ptr)
+   do iz=1,self%geom%nz
+     inode = 0
+     do iy=1,self%geom%ny
+       do ix=1,self%geom%nx
+         inode = inode+1
+         select case (trim(fieldname))
+         case ('x')
+           self%x(ix,iy,iz) = ptr(iz,inode)
+         case ('q')
+           self%q(ix,iy,iz) = ptr(iz,inode)
+         case ('u')
+           self%u(ix,iy,iz) = ptr(iz,inode)
+         case ('v')
+           self%v(ix,iy,iz) = ptr(iz,inode)
+         case ('z')
+           ! do nothing
+         case default
+           call abor1_ftn('qg_fields_to_fieldset_ad: wrong variable')
+         endselect
+       enddo
+     enddo
+   enddo
+
+   ! Release pointer
+   call afield%final()
+enddo
+
+end subroutine qg_fields_to_fieldset_ad
 ! ------------------------------------------------------------------------------
 !> Convert Fieldset to fields
 subroutine qg_fields_from_fieldset(self,afieldset)

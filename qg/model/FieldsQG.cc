@@ -152,6 +152,10 @@ void FieldsQG::toFieldSet(atlas::FieldSet & afieldset) const {
   qg_fields_to_fieldset_f90(keyFlds_, afieldset.get());
 }
 // -----------------------------------------------------------------------------
+void FieldsQG::toFieldSetAD(const atlas::FieldSet & afieldset) {
+  qg_fields_to_fieldset_ad_f90(keyFlds_, afieldset.get());
+}
+// -----------------------------------------------------------------------------
 void FieldsQG::fromFieldSet(const atlas::FieldSet & afieldset) {
   qg_fields_from_fieldset_f90(keyFlds_, afieldset.get());
 }
