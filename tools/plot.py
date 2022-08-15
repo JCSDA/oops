@@ -83,6 +83,7 @@ parser_qg_cost.add_argument("--output", help="Output file path")
 # QG fields arguments
 parser_qg_fields.add_argument("filepath", help="File path")
 parser_qg_fields.add_argument("basefilepath", nargs="?", help="Base file path", default=None)
+parser_qg_fields.add_argument("--plotObsLocations", help="Specify an observation file to plot the obs positions")
 parser_qg_fields.add_argument("--plotwind", dest="plotwind", action="store_true", help="Plot wind")
 parser_qg_fields.add_argument("--gif", help="Gif pattern values, separated with commas, replacing %id% in the file path")
 parser_qg_fields.add_argument("--output", help="Output file path")
