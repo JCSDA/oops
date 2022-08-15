@@ -112,15 +112,15 @@ void HybridCovariance<MODEL>::doMultiply(const Increment_ & dxi, Increment_ & dx
   int valueIndex = 0;
   int incrementIndex = 0;
   for (size_t jcomp = 0; jcomp < Bcomponents_.size(); ++jcomp) {
-     if (weightTypes_[jcomp] == "increment") {
-        tmp.schur_product_with(incrementWeightsSqrt_[incrementIndex]);
-     }
-     Bcomponents_[jcomp]->multiply(dxi, tmp);
      if (weightTypes_[jcomp] == "value") {
+        Bcomponents_[jcomp]->multiply(dxi, tmp);
         tmp *= valueWeights_[valueIndex];
         valueIndex += 1;
      }
      if (weightTypes_[jcomp] == "increment") {
+        Increment_ tmp_dxi(dxi);
+        tmp_dxi.schur_product_with(incrementWeightsSqrt_[incrementIndex]);
+        Bcomponents_[jcomp]->multiply(tmp_dxi, tmp);
         tmp.schur_product_with(incrementWeightsSqrt_[incrementIndex]);
         incrementIndex += 1;
      }
