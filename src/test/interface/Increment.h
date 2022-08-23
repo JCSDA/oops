@@ -160,6 +160,33 @@ template <typename MODEL> void testIncrementChangeResConstructor() {
 }
 
 // -----------------------------------------------------------------------------
+template <typename MODEL> void testIncrementRmsByLevel() {
+  typedef IncrementFixture<MODEL>   Test_;
+  typedef oops::Increment<MODEL>    Increment_;
+    if (Test_::skipAtlas()) {
+      oops::Log::warning() << "Skipping Increment.rms test";
+      return;
+    }
+
+
+  // dx has easily calculable rms as only 1s and 0s
+  Increment_ dx1(Test_::resol(), Test_::ctlvars(), Test_::time());
+  auto v = Test_::ctlvars()[0];
+  dx1.zero();
+  atlas::FieldSet incrField = dx1.fieldSet();
+  auto fieldView = atlas::array::make_view<double, 2>(incrField[v]);
+  std::vector<double> vect(fieldView.shape(1));
+  for (atlas::idx_t k = 0; k < fieldView.shape(1); ++k) {
+      for (atlas::idx_t i = 0; i < k; ++i) {
+          fieldView(i, k) = 1;
+      }
+      vect[k] = sqrt(static_cast<double>(k)/fieldView.shape(0));
+  }
+  dx1.fromFieldSet(incrField);
+  EXPECT(dx1.rms(v) == vect);
+}
+
+// -----------------------------------------------------------------------------
 
 template <typename MODEL> void testIncrementTriangle() {
   typedef IncrementFixture<MODEL>   Test_;
@@ -470,6 +497,8 @@ class Increment : public oops::Test {
       { testIncrementCopyBoolConstructor<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementChangeResConstructor")
       { testIncrementChangeResConstructor<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/testIncrementRmsByLevel")
+      { testIncrementRmsByLevel<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementTriangle")
       { testIncrementTriangle<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementOpPlusEq")

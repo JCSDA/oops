@@ -13,6 +13,8 @@
 #define OOPS_BASE_INCREMENT_H_
 
 #include <memory>
+#include<string>
+#include<vector>
 
 #include "atlas/field.h"
 
@@ -80,6 +82,8 @@ class Increment : public interface::Increment<MODEL> {
   double dot_product_with(const Increment & other) const;
   /// Norm for diagnostics
   double norm() const;
+  /// rms of each level for htlm
+  std::vector<double>  rms(const std::string &) const;
 
  private:
   void print(std::ostream &) const override;
@@ -141,6 +145,21 @@ double Increment<MODEL>::norm() const {
   timeComm_->allReduceInPlace(zz, eckit::mpi::Operation::SUM);
   zz = sqrt(zz);
   return zz;
+}
+
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+std::vector<double> Increment<MODEL>::rms(const std::string & v) const {
+    atlas::FieldSet incrField = Increment<MODEL>::fieldSet();
+    const auto fieldView = atlas::array::make_view<double, 2>(incrField[v]);
+    std::vector<double> vect(fieldView.shape(1));
+    for (atlas::idx_t k = 0; k < fieldView.shape(1); ++k) {
+        for (atlas::idx_t i = 0; i < fieldView.shape(0); ++i) {
+            vect[k]+=(fieldView(i, k))*(fieldView(i, k));
+        }
+        vect[k] = sqrt(vect[k]/fieldView.shape(0));
+    }
+    return vect;
 }
 
 // -----------------------------------------------------------------------------
