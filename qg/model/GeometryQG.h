@@ -47,6 +47,8 @@ class GeometryQgParameters : public oops::Parameters {
   oops::RequiredParameter<std::vector<float>> depths{"depths", this};
   /// Heating option (AS: should it be in geometry or model?)
   oops::Parameter<bool> heating{"heating", true, this};
+  /// Modified QG option
+  oops::Parameter<float> perturbedheat{"perturbed heating", 0, this};
 };
 
 class GeometryQGIterator;

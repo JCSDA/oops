@@ -41,6 +41,7 @@ type :: qg_geom
   real(kind_real),allocatable :: f_d(:)                  !< Coefficients of PV operator, eigenvalues
   real(kind_real),allocatable :: bet(:)                  !< Beta coefficient
   real(kind_real),allocatable :: heat(:,:)               !< Heating term
+  real(kind_real),allocatable :: ph_coeff                !< Perturbed Heating Coefficient
   type(atlas_functionspace_pointcloud) :: afunctionspace !< Function space
 end type qg_geom
 
@@ -75,6 +76,7 @@ real(kind_real),allocatable :: fsave(:,:),vrlu(:,:),vrlusave(:,:)
 real(kind_real) :: norm
 character(len=1024) :: record
 logical :: htype
+real(kind_real) :: pcoeff
 character(len=:),allocatable :: str
 
 ! Get horizontal resolution data
@@ -103,6 +105,7 @@ allocate(vrlu(self%nz,self%nz))
 allocate(vrlusave(self%nz,self%nz))
 allocate(ipiv(self%nz))
 allocate(ipivsave(self%nz))
+allocate(self%ph_coeff)
 
 ! Get depths
 call f_conf%get_or_die("depths",real_array)
@@ -195,6 +198,16 @@ self%f_pinv = self%f_pinv / norm
 do iy=1,self%ny
   self%bet(iy) = real(iy-(self%ny+1)/2,kind_real)*self%deltay*bet0
 enddo
+
+! Set perturbed heating coeff
+call f_conf%get_or_die("perturbed heating",pcoeff)
+if (pcoeff/=0) then
+  call fckit_log%info('qg_geom_setup: Perturbed Heating ON')
+  self%ph_coeff = pcoeff
+else 
+  call fckit_log%info('qg_geom_setup: Perturbed Heating OFF')
+  self%ph_coeff = 0
+end if
 
 ! Set heating term
 call f_conf%get_or_die("heating",htype)
@@ -308,6 +321,7 @@ allocate(self%f_pinv(self%nz,self%nz))
 allocate(self%f_d(self%nz))
 allocate(self%bet(self%ny))
 allocate(self%heat(self%nx,self%ny))
+allocate(self%ph_coeff)
 
 ! Copy data
 self%deltax = other%deltax
@@ -324,6 +338,7 @@ self%f_pinv = other%f_pinv
 self%f_d = other%f_d
 self%bet = other%bet
 self%heat = other%heat
+self%ph_coeff=other%ph_coeff
 self%afunctionspace = atlas_functionspace_pointcloud(other%afunctionspace%c_ptr())
 
 end subroutine qg_geom_clone
@@ -347,6 +362,7 @@ deallocate(self%f_pinv)
 deallocate(self%f_d)
 deallocate(self%bet)
 deallocate(self%heat)
+deallocate(self%ph_coeff)
 call self%afunctionspace%final()
 
 end subroutine qg_geom_delete

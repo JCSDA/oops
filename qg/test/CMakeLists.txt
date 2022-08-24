@@ -101,6 +101,7 @@ list( APPEND qg_testinput
   testinput/state.yaml
   testinput/static_b_init.yaml
   testinput/truth.yaml
+  testinput/truth_pert_heat.yaml
   testinput/variable_change.yaml
   testinput/verticallocev.yaml
   testinput/verticallocev_io.yaml
@@ -169,6 +170,7 @@ list( APPEND qg_testoutput
   testoutput/rtpp.test
   testoutput/static_b_init.test
   testoutput/truth.test
+  testoutput/truth_pert_heat.test
   testoutput/uniform_field_hybrid.test
   testoutput/uniform_field_inflation.test
 )
@@ -204,6 +206,11 @@ file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Data)
 ecbuild_add_test( TARGET test_qg_truth
                   OMP 2
                   ARGS testinput/truth.yaml
+                  COMMAND qg_forecast.x )
+
+ecbuild_add_test( TARGET test_qg_truth_pert_heat
+                  OMP 2
+                  ARGS testinput/truth_pert_heat.yaml
                   COMMAND qg_forecast.x )
 
 ecbuild_add_test( TARGET test_qg_make_obs_4d_24h
