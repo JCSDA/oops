@@ -171,8 +171,8 @@ template<typename MODEL>
 void UnstructuredInterpolator<MODEL>::apply(const Variables & vars, const State_ & xx,
                                             std::vector<double> & locvals) const
 {
-  std::vector<bool> mask(nout_, true);
-  this->apply(vars, xx.fieldSet(), mask, locvals);
+  std::vector<bool> target_mask(nout_, true);
+  this->apply(vars, xx.fieldSet(), target_mask, locvals);
 }
 
 // -----------------------------------------------------------------------------
@@ -181,8 +181,8 @@ template<typename MODEL>
 void UnstructuredInterpolator<MODEL>::apply(const Variables & vars, const Increment_ & dx,
                                             std::vector<double> & locvals) const
 {
-  std::vector<bool> mask(nout_, true);
-  this->apply(vars, dx.fieldSet(), mask, locvals);
+  std::vector<bool> target_mask(nout_, true);
+  this->apply(vars, dx.fieldSet(), target_mask, locvals);
 }
 
 // -----------------------------------------------------------------------------
@@ -190,8 +190,8 @@ void UnstructuredInterpolator<MODEL>::apply(const Variables & vars, const Increm
 template<typename MODEL>
 void UnstructuredInterpolator<MODEL>::applyAD(const Variables & vars, Increment_ & dx,
                                               const std::vector<double> & vals) const {
-  std::vector<bool> mask(nout_, true);
-  this->applyAD(vars, dx.fieldSet(), mask, vals);
+  std::vector<bool> target_mask(nout_, true);
+  this->applyAD(vars, dx.fieldSet(), target_mask, vals);
 }
 
 // -----------------------------------------------------------------------------
@@ -200,8 +200,8 @@ template<typename MODEL>
 void UnstructuredInterpolator<MODEL>::apply(const Variables & vars, const atlas::FieldSet & fset,
                                             std::vector<double> & locvals) const
 {
-  std::vector<bool> mask(nout_, true);
-  this->apply(vars, fset, mask, locvals);
+  std::vector<bool> target_mask(nout_, true);
+  this->apply(vars, fset, target_mask, locvals);
 }
 
 // -----------------------------------------------------------------------------
@@ -209,8 +209,8 @@ void UnstructuredInterpolator<MODEL>::apply(const Variables & vars, const atlas:
 template<typename MODEL>
 void UnstructuredInterpolator<MODEL>::applyAD(const Variables & vars, atlas::FieldSet & fset,
                                               const std::vector<double> & vals) const {
-  std::vector<bool> mask(nout_, true);
-  this->applyAD(vars, fset, mask, vals);
+  std::vector<bool> target_mask(nout_, true);
+  this->applyAD(vars, fset, target_mask, vals);
 }
 
 // -----------------------------------------------------------------------------
@@ -218,36 +218,36 @@ void UnstructuredInterpolator<MODEL>::applyAD(const Variables & vars, atlas::Fie
 
 template<typename MODEL>
 void UnstructuredInterpolator<MODEL>::apply(const Variables & vars, const State_ & xx,
-                                            const std::vector<bool> & mask,
+                                            const std::vector<bool> & target_mask,
                                             std::vector<double> & locvals) const
 {
-  this->apply(vars, xx.fieldSet(), mask, locvals);
+  this->apply(vars, xx.fieldSet(), target_mask, locvals);
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 void UnstructuredInterpolator<MODEL>::apply(const Variables & vars, const Increment_ & dx,
-                                            const std::vector<bool> & mask,
+                                            const std::vector<bool> & target_mask,
                                             std::vector<double> & locvals) const
 {
-  this->apply(vars, dx.fieldSet(), mask, locvals);
+  this->apply(vars, dx.fieldSet(), target_mask, locvals);
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 void UnstructuredInterpolator<MODEL>::applyAD(const Variables & vars, Increment_ & dx,
-                                              const std::vector<bool> & mask,
+                                              const std::vector<bool> & target_mask,
                                               const std::vector<double> & vals) const {
-  this->applyAD(vars, dx.fieldSet(), mask, vals);
+  this->applyAD(vars, dx.fieldSet(), target_mask, vals);
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 void UnstructuredInterpolator<MODEL>::apply(const Variables & vars, const atlas::FieldSet & fset,
-                                            const std::vector<bool> & mask,
+                                            const std::vector<bool> & target_mask,
                                             std::vector<double> & vals) const {
   Log::trace() << "UnstructuredInterpolator::apply starting" << std::endl;
   util::Timer timer("oops::UnstructuredInterpolator", "apply");
@@ -269,7 +269,7 @@ void UnstructuredInterpolator<MODEL>::apply(const Variables & vars, const atlas:
 
     const atlas::array::ArrayView<double, 2> fldin = atlas::array::make_view<double, 2>(fld);
     for (size_t jlev = 0; jlev < fldin.shape(1); ++jlev) {
-      this->applyPerLevel(interp_type, mask, fldin, current, jlev);
+      this->applyPerLevel(interp_type, target_mask, fldin, current, jlev);
     }
   }
   Log::trace() << "UnstructuredInterpolator::apply done" << std::endl;
@@ -279,7 +279,7 @@ void UnstructuredInterpolator<MODEL>::apply(const Variables & vars, const atlas:
 
 template<typename MODEL>
 void UnstructuredInterpolator<MODEL>::applyAD(const Variables & vars, atlas::FieldSet & fset,
-                                              const std::vector<bool> & mask,
+                                              const std::vector<bool> & target_mask,
                                               const std::vector<double> & vals) const {
   Log::trace() << "UnstructuredInterpolator::applyAD starting" << std::endl;
   util::Timer timer("oops::UnstructuredInterpolator", "applyAD");
@@ -295,7 +295,7 @@ void UnstructuredInterpolator<MODEL>::applyAD(const Variables & vars, atlas::Fie
 
     atlas::array::ArrayView<double, 2> fldin = atlas::array::make_view<double, 2>(fld);
     for (size_t jlev = 0; jlev < fldin.shape(1); ++jlev) {
-      this->applyPerLevelAD(interp_type, mask, fldin, current, jlev);
+      this->applyPerLevelAD(interp_type, target_mask, fldin, current, jlev);
     }
   }
   Log::trace() << "UnstructuredInterpolator::applyAD done" << std::endl;
@@ -305,12 +305,12 @@ void UnstructuredInterpolator<MODEL>::applyAD(const Variables & vars, atlas::Fie
 
 template<typename MODEL>
 void UnstructuredInterpolator<MODEL>::applyPerLevel(
-    const std::string & interp_type, const std::vector<bool> & mask,
+    const std::string & interp_type, const std::vector<bool> & target_mask,
     const atlas::array::ArrayView<double, 2> & gridin,
     std::vector<double>::iterator & gridout, const size_t & ilev) const {
-  ASSERT(mask.size() == nout_);
+  ASSERT(target_mask.size() == nout_);
   for (size_t jloc = 0; jloc < nout_; ++jloc) {
-    if (mask[jloc]) {
+    if (target_mask[jloc]) {
       *gridout = 0.0;
       if (interp_type == "default") {
         for (size_t jj = 0; jj < nninterp_; ++jj) {
@@ -349,13 +349,13 @@ void UnstructuredInterpolator<MODEL>::applyPerLevel(
 
 template<typename MODEL>
 void UnstructuredInterpolator<MODEL>::applyPerLevelAD(const std::string & interp_type,
-                                                      const std::vector<bool> & mask,
+                                                      const std::vector<bool> & target_mask,
                                                       atlas::array::ArrayView<double, 2> & gridin,
                                                       std::vector<double>::const_iterator & gridout,
                                                       const size_t & ilev) const {
-  ASSERT(mask.size() == nout_);
+  ASSERT(target_mask.size() == nout_);
   for (size_t jloc = 0; jloc < nout_; ++jloc) {
-    if (mask[jloc]) {
+    if (target_mask[jloc]) {
       if (interp_type == "default") {
         for (size_t jj = 0; jj < nninterp_; ++jj) {
           gridin(interp_i_[jloc][jj], ilev) += interp_w_[jloc][jj] * *gridout;
