@@ -78,6 +78,7 @@ class GeometryQG : public util::Printable,
   const atlas::FieldSet & extraFields() const {return extraFields_;}
   atlas::FieldSet & extraFields() {return extraFields_;}
   size_t levels() const {return levs_;}
+  bool levelsAreTopDown() const {return true;}
 
   std::vector<size_t> variableSizes(const oops::Variables & vars) const;
 

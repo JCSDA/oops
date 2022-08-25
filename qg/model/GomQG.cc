@@ -106,7 +106,8 @@ double GomQG::dot_product_with(const GomQG & other) const {
   return zz;
 }
 // -----------------------------------------------------------------------------
-void GomQG::fill(const std::vector<size_t> & indx, const std::vector<double> & vals) {
+void GomQG::fill(const std::vector<size_t> & indx,
+                 const std::vector<double> & vals, const bool levelsTopDown) {
   const size_t npts = indx.size();
   const size_t nvals = vals.size();
   std::vector<int> findx(indx.size());
@@ -115,7 +116,8 @@ void GomQG::fill(const std::vector<size_t> & indx, const std::vector<double> & v
   qg_gom_fill_f90(keyGom_, npts, findx[0], nvals, vals[0]);
 }
 // -----------------------------------------------------------------------------
-void GomQG::fillAD(const std::vector<size_t> & indx, std::vector<double> & vals) const {
+void GomQG::fillAD(const std::vector<size_t> & indx,
+                   std::vector<double> & vals, const bool levelsTopDown) const {
   const size_t npts = indx.size();
   const size_t nvals = vals.size();
   std::vector<int> findx(indx.size());

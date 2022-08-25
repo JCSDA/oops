@@ -150,6 +150,7 @@ class GetValues : private util::ObjectCounter<GetValues<MODEL, OBS> > {
   std::vector<eckit::mpi::Request> send_req_;
   std::vector<eckit::mpi::Request> recv_req_;
   int tag_;
+  const bool levelsTopDown_;            /// When true: Levels are in top down order.
   std::vector<size_t> geovarsSizes_;   /// number of levels for geovars_
   bool doLinearTimeInterpolation_;     /// set true for linear and false for
                                        /// nearest-neighbour time-
@@ -168,7 +169,7 @@ GetValues<MODEL, OBS>::GetValues(const eckit::Configuration & conf, const Geomet
     interpConf_(conf), comm_(geom.getComm()), ntasks_(comm_.size()), interp_(ntasks_),
     myobs_index_by_task_(ntasks_), obs_times_by_task_(ntasks_),
     locinterp_(), recvinterp_(), send_req_(), recv_req_(), tag_(789),
-    geovarsSizes_(geom.variableSizes(geovars_))
+    levelsTopDown_(geom.levelsAreTopDown()), geovarsSizes_(geom.variableSizes(geovars_))
 {
   Log::trace() << "GetValues::GetValues start" << std::endl;
   util::Timer timer("oops::GetValues", "GetValues");
@@ -365,7 +366,7 @@ void GetValues<MODEL, OBS>::fillGeoVaLs(GeoVaLs_ & geovals) {
     eckit::mpi::Status rst = comm_.waitAny(recv_req_, itask);
     ASSERT(rst.error() == 0);
     ASSERT(itask >=0 && (size_t)itask < ntasks_);
-    geovals.fill(myobs_index_by_task_[itask], recvinterp_[itask]);
+    geovals.fill(myobs_index_by_task_[itask], recvinterp_[itask], this->levelsTopDown_);
   }
   recv_req_.clear();
   recvinterp_.clear();
@@ -463,7 +464,7 @@ void GetValues<MODEL, OBS>::fillGeoVaLsTL(GeoVaLs_ & geovals) {
     eckit::mpi::Status rst = comm_.waitAny(recv_req_, itask);
     ASSERT(rst.error() == 0);
     ASSERT(itask >=0 && (size_t)itask < ntasks_);
-    geovals.fill(myobs_index_by_task_[itask], recvinterp_[itask]);
+    geovals.fill(myobs_index_by_task_[itask], recvinterp_[itask], this->levelsTopDown_);
   }
   recv_req_.clear();
   recvinterp_.clear();
@@ -576,7 +577,7 @@ void GetValues<MODEL, OBS>::fillGeoVaLsAD(const GeoVaLs_ & geovals) {
   for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
     const size_t nrecv = myobs_index_by_task_[jtask].size() * linsizes_;
     recvinterp_[jtask].resize(nrecv);
-    geovals.fillAD(myobs_index_by_task_[jtask], recvinterp_[jtask]);
+    geovals.fillAD(myobs_index_by_task_[jtask], recvinterp_[jtask], this->levelsTopDown_);
     recv_req_[jtask] = comm_.iSend(&recvinterp_[jtask][0], nrecv, jtask, tag_);
   }
 

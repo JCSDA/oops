@@ -66,8 +66,8 @@ class GeoVaLs : public util::Printable,
   void read(const Parameters_ &);
   void write(const Parameters_ &) const;
 
-  void fill(const std::vector<size_t> &, const std::vector<double> &);
-  void fillAD(const std::vector<size_t> &, std::vector<double> &) const;
+  void fill(const std::vector<size_t> &, const std::vector<double> &, const bool);
+  void fillAD(const std::vector<size_t> &, std::vector<double> &, const bool) const;
 
  private:
   void print(std::ostream &) const;
@@ -228,20 +228,22 @@ void GeoVaLs<OBS>::random() {
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-void GeoVaLs<OBS>::fill(const std::vector<size_t> & indx, const std::vector<double> & vals) {
+void GeoVaLs<OBS>::fill(const std::vector<size_t> & indx,
+                        const std::vector<double> & vals, const bool levelsTopDown) {
   Log::trace() << "GeoVaLs<OBS>::fill starting" << std::endl;
   util::Timer timer(classname(), "fill");
-  gvals_->fill(indx, vals);
+  gvals_->fill(indx, vals, levelsTopDown);
   Log::trace() << "GeoVaLs<OBS>::fill done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-void GeoVaLs<OBS>::fillAD(const std::vector<size_t> & indx, std::vector<double> & vals) const {
+void GeoVaLs<OBS>::fillAD(const std::vector<size_t> & indx,
+                          std::vector<double> & vals, const bool levelsTopDown) const {
   Log::trace() << "GeoVaLs<OBS>::fillAD starting" << std::endl;
   util::Timer timer(classname(), "fillAD");
-  gvals_->fillAD(indx, vals);
+  gvals_->fillAD(indx, vals, levelsTopDown);
   Log::trace() << "GeoVaLs<OBS>::fillAD done" << std::endl;
 }
 
