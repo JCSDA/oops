@@ -315,7 +315,10 @@ oops/util/LibOOPS.cc
 oops/util/LibOOPS.h
 oops/util/LocalEnvironment.cc
 oops/util/LocalEnvironment.h
+oops/util/Logger_f.cc
+oops/util/Logger_f.h
 oops/util/Logger.h
+oops/util/logger_mod.F90
 oops/util/missing_values_f.cc
 oops/util/missing_values_f.h
 oops/util/missing_values_mod.F90
