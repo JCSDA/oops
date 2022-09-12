@@ -39,6 +39,8 @@ find_package( jedicmake QUIET )  # Prefer find modules from jedi-cmake
 
 if( ENABLE_MKL )
     find_package( MKL )
+else()
+    set( MKL_FOUND FALSE )
 endif()
 if( MKL_FOUND )
     set( LAPACK_LIBRARIES ${MKL_LIBRARIES} )
