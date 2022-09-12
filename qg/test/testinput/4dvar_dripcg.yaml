@@ -75,7 +75,6 @@ variational:
       name: QgTLM
     diagnostics:
       departures: ombg
-    test: on
   - gradient norm reduction: 1.0e-10
     ninner: 15
     geometry:
@@ -88,7 +87,6 @@ variational:
       tstep: PT1H
       variable change: Identity
       name: QgTLM
-    test: on
 final:
   diagnostics:
     departures: oman

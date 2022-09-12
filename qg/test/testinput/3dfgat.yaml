@@ -76,7 +76,6 @@ variational:
       variable change: Identity
     diagnostics:
       departures: ombg
-    test: on
 final:
   diagnostics:
     departures: oman

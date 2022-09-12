@@ -57,23 +57,21 @@ variational:
     algorithm: DRIPCG
   iterations:
   - diagnostics:
-      departures: ombg
+      departures: ombg0
     gradient norm reduction: 1.0e-10
     ninner: 10
     geometry:
       nx: 20
       ny: 10
       depths: [4500.0, 5500.0]
-    test: on
   - diagnostics:
-      departures: ombg
+      departures: ombg1
     gradient norm reduction: 1.0e-10
     ninner: 10
     geometry:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
-    test: on
 final:
   diagnostics:
     departures: oman

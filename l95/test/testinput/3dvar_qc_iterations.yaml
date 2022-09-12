@@ -38,12 +38,10 @@ variational:
       resol: 40
     diagnostics:
       departures: ombg
-    test: on
   - ninner: 10
     gradient norm reduction: 1e-10
     geometry:
       resol: 40
-    test: on
 final:
   diagnostics:
     departures: oman

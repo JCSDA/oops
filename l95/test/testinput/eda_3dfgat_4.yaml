@@ -44,7 +44,6 @@ variational:
       tstep: PT6H
     diagnostics:
       departures: ombg
-    test: on
     obs perturbations: true
 final:
   diagnostics:

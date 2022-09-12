@@ -33,7 +33,6 @@ variational:
       resol: 40
     diagnostics:
       departures: ombg
-    test: on
     online diagnostics:
       write increment: true
       increment:

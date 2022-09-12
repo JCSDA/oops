@@ -49,7 +49,6 @@ variational:
     ninner: 10
     geometry:
       resol: 40
-    test: on
   - gradient norm reduction: 1.0e-10
     linear model:
       trajectory:
@@ -61,7 +60,6 @@ variational:
     ninner: 10
     geometry:
       resol: 40
-    test: on
 final:
   diagnostics:
     departures: oman

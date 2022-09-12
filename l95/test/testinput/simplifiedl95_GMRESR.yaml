@@ -34,7 +34,6 @@ variational:
       resol: 4
     diagnostics:
       departures: ombg
-    test: on
 final:
   diagnostics:
     departures: oman

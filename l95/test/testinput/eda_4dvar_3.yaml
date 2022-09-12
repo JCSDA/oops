@@ -49,7 +49,6 @@ variational:
       tstep: PT1H30M
       variable change: Identity
       name: L95TLM
-    test: on
     diagnostics:
       departures: ombg
     obs perturbations: true
@@ -64,7 +63,6 @@ variational:
       tstep: PT1H30M
       variable change: Identity
       name: L95TLM
-    test: on
 final:
   diagnostics:
     departures: oman

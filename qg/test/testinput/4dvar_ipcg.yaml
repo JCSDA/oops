@@ -82,7 +82,6 @@ variational:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
-    test: on
   - gradient norm reduction: 1.0e-10
     linear model:
       trajectory:
@@ -95,7 +94,6 @@ variational:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
-    test: on
 final:
   diagnostics:
     departures: oman

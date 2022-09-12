@@ -108,14 +108,12 @@ variational:
       depths: [4500.0, 5500.0]
     diagnostics:
       departures: ombg
-    test: on
   - ninner: 10
     gradient norm reduction: 1.0e-10
     geometry:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
-    test: on
 final:
   diagnostics:
     departures: oman

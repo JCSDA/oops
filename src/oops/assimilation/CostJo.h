@@ -196,7 +196,9 @@ double CostJo<MODEL, OBS>::computeCost() {
   Departures_ ydep(yeqv - *yobs_);
   if (currentConf_->has("diagnostics.departures")) {
     const std::string depname = currentConf_->getString("diagnostics.departures");
-    ydep.save(depname);
+    Departures_ minusydep = ydep;
+    minusydep *= (-1.0);
+    minusydep.save(depname);
   }
 
   // Gradient at first guess (to define inner loop rhs)

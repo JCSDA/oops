@@ -33,7 +33,6 @@ variational:
       resol: 40
     diagnostics:
       departures: ombg
-    test: on
     fsoi:
       increment test: true
       increment test tolerance: 1.0e-6

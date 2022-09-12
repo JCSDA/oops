@@ -43,13 +43,11 @@ variational:
     gradient norm reduction: 1e-10
     diagnostics:
       departures: ombg
-    test: on
     obs perturbations: false
   - geometry:
       resol: 40
     ninner: 10
     gradient norm reduction: 1e-10
-    test: on
 final:
   diagnostics:
     departures: oman

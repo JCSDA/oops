@@ -80,7 +80,6 @@ variational:
       name: HTLM
     diagnostics:
       departures: ombg
-    test: on
   - gradient norm reduction: 1.0e-10
     ninner: 15
     geometry:
@@ -98,7 +97,6 @@ variational:
       increment variables: [x]
       variable change: Identity
       name: HTLM
-    test: on
 final:
   diagnostics:
     departures: oman

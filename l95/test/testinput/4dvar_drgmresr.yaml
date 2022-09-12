@@ -49,7 +49,6 @@ variational:
       variable change: Identity
     diagnostics:
       departures: ombg
-    test: on
   - ninner: 10
     gradient norm reduction: 1e-10
     geometry:
@@ -61,7 +60,6 @@ variational:
         tstep: PT1H30M
       tstep: PT1H30M
       variable change: Identity
-    test: on
 final:
   diagnostics:
     departures: oman
