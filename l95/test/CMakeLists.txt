@@ -67,6 +67,7 @@ list( APPEND l95_test_input
   testinput/enshofx_3.yaml
   testinput/enshofx_4.yaml
   testinput/enshofx.yaml
+  testinput/ensvariance.yaml
   testinput/errorcovariance.yaml
   testinput/forecast.yaml
   testinput/forecast_pseudomodel.yaml
@@ -191,6 +192,7 @@ list( APPEND l95_testoutput
   testoutput/eda_3dvar_zeromeanpert_compare.test
   testoutput/eda_4dvar.test
   testoutput/enshofx.test
+  testoutput/ensvariance.test
   testoutput/forecast.test
   testoutput/forecast_pseudomodel.test
   testoutput/forecast_identitymodel.test
@@ -521,6 +523,11 @@ ecbuild_add_test( TARGET test_l95_enshofx
 ecbuild_add_test( TARGET test_l95_sqrtvertloc
                   COMMAND l95_sqrtofvertloc.x
                   ARGS testinput/sqrtvertloc.yaml )
+
+ecbuild_add_test( TARGET test_l95_ensvariance
+                  COMMAND l95_ens_variance.x
+                  ARGS testinput/ensvariance.yaml
+                  TEST_DEPENDS test_l95_genenspert )
 
 #####################################################################
 # 3d variational tests

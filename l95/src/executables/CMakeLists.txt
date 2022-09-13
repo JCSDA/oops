@@ -20,6 +20,11 @@ ecbuild_add_executable( TARGET  l95_sqrtofvertloc.x
                         LIBS    lorenz95 )
 oops_output_json_schema( l95_sqrtofvertloc.x )
 
+ecbuild_add_executable( TARGET  l95_ens_variance.x
+                        SOURCES EnsVariance.cc
+                        LIBS    lorenz95 )
+oops_output_json_schema( l95_ens_variance.x )
+
 ecbuild_add_executable( TARGET  l95_4dvar.x
                         SOURCES Main4dvar.cc
                         LIBS    lorenz95 )
