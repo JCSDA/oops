@@ -8,6 +8,7 @@
 #ifndef OOPS_UTIL_FIELDSETOPERATIONS_H_
 #define OOPS_UTIL_FIELDSETOPERATIONS_H_
 
+#include "atlas/array.h"
 #include "atlas/field.h"
 
 #include "oops/util/Logger.h"
@@ -19,7 +20,7 @@ namespace util {
 void FieldSetMultiply(atlas::FieldSet & fset, const atlas::FieldSet & mulFset) {
   oops::Log::trace() << "FieldSetMultiply starting" << std::endl;
   // Loop over multiplier fields
-  for (const auto mulField : mulFset) {
+  for (const auto & mulField : mulFset) {
     // Get increment field with the same name
     atlas::Field field = fset.field(mulField.name());
 
@@ -60,7 +61,7 @@ void FieldSetMultiply(atlas::FieldSet & fset, const atlas::FieldSet & mulFset) {
 void FieldSetDivide(atlas::FieldSet & fset, const  atlas::FieldSet & divFset) {
   oops::Log::trace() << "FieldSetDivide starting" << std::endl;
   // Loop over divider fields
-  for (const auto divField : divFset) {
+  for (const auto & divField : divFset) {
     // Get increment field with the same name
     atlas::Field field = fset.field(divField.name());
 
