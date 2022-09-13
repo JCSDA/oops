@@ -52,7 +52,7 @@ double testfunc(const double lon, const double lat, const size_t level, const si
 
 /// Test OOPS unstructured-grid interpolator
 template <typename MODEL>
-void testInterpolator() {
+void testInterpolator(const bool testSourcePointMask) {
   typedef oops::Geometry<MODEL> Geometry_;
 
   const eckit::Configuration &config = ::test::TestEnvironment::config();
@@ -121,6 +121,37 @@ void testInterpolator() {
   atlas::FieldSet source_fields;
   source_fields.add(source_field);
 
+  // If testing with masks, two additional tasks:
+  // 1. add interp_source_point_mask metadata to source_field
+  // 2. add mask field to Geometry.extraFields (we could use one of the "native" masks for MODEL,
+  //    but this would make it very hard to write a generic test).
+  if (testSourcePointMask) {
+    source_field.metadata().set("interp_source_point_mask", "testmask");
+
+    // A simple mask for generic testing: mask = 0 in southern hemisphere; 1 in northern hemisphere
+    atlas::Field mask = source_fs->createField<double>(name("testmask") | levels(1));
+    auto mask_view = make_view<double, 2>(mask);
+    for (size_t jj = 0; jj < num_source; ++jj) {
+      mask_view(jj, 0) = (source_lats[jj] >= 0.0 ? 1.0 : 0.0);
+    }
+    // Hackily cast away the constness so we can shove a mask into the geometry
+    const_cast<typename MODEL::Geometry &>(geom->geometry()).extraFields().add(mask);
+
+    // We set the field values to a huge missingValue in the masked region, because this helps test
+    // correctness at the boundaries of the mask. In detail: for stencils including masked and
+    // unmasked source points, we still expect the interpolator to return a physical value, but if
+    // there's a bug in the mask that allows a masked source point to (incorrectly) contribute to
+    // the interpolation result, then the huge missing value will leak through and signal a bug.
+    auto infield = make_view<double, 2>(source_field);
+    for (size_t jj = 0; jj < num_source; ++jj) {
+      if (source_lats[jj] < 0.0) {
+        for (size_t jlev = 0; jlev < nlev; ++jlev) {
+          infield(jj, jlev) = util::missingValue(double());
+        }
+      }
+    }
+  }
+
   oops::Variables vars{};
   vars.push_back(varname);
 
@@ -131,12 +162,35 @@ void testInterpolator() {
   // Get test tolerance
   const size_t my_num_target = target_lons.size();
   const double tolerance = config.getDouble("tolerance interpolation");
-  for (size_t jlev = 0; jlev < nlev; ++jlev) {
-    for (size_t jj = 0; jj < my_num_target; ++jj) {
-      EXPECT(oops::is_close_absolute(
-               target_vals[jj + my_num_target * jlev],
-               testfunc(target_lons[jj], target_lats[jj], jlev, nlev),
-               tolerance));
+  if (!testSourcePointMask) {
+    for (size_t jlev = 0; jlev < nlev; ++jlev) {
+      for (size_t jj = 0; jj < my_num_target; ++jj) {
+        EXPECT(oops::is_close_absolute(
+                 target_vals[jj + my_num_target * jlev],
+                 testfunc(target_lons[jj], target_lats[jj], jlev, nlev),
+                 tolerance));
+      }
+    }
+  } else {
+    // Applying an interpolation mask can reduce the number of source points within the
+    // interpolation stencil, which can increase the interpolation error. So we loosen the test's
+    // tolerance. To make sure that we still detect any errors in the masking, we set the source
+    // field to huge missingValue above wherever it should be masked out, this way any errors
+    // in the mask will contribute huge values and will exceed the test tolerance.
+    const double masked_tol = 100.0 * tolerance;
+    for (size_t jlev = 0; jlev < nlev; ++jlev) {
+      for (size_t jj = 0; jj < my_num_target; ++jj) {
+        if (target_vals[jj + my_num_target * jlev] == util::missingValue(double())) {
+          // Interpolation should only return 'missing' when all inputs are masked.
+          // In this test, this should only happen in southern hemisphere.
+          EXPECT(target_lats[jj] < 0.0);
+        } else {
+          EXPECT(oops::is_close_absolute(
+                   target_vals[jj + my_num_target * jlev],
+                   testfunc(target_lons[jj], target_lats[jj], jlev, nlev),
+                   masked_tol));
+        }
+      }
     }
   }
 
@@ -159,6 +213,9 @@ void testInterpolator() {
       source_ad_view(jj, jlev) = 0.0;
     }
   }
+  if (testSourcePointMask) {
+    source_field_ad.metadata().set("interp_source_point_mask", "testmask");
+  }
   source_fields_ad.add(source_field_ad);
 
   // Apply interpolator adjoint
@@ -167,12 +224,28 @@ void testInterpolator() {
   // Check adjoint with a manual dot product
   double dot1 = 0.0;
   double dot2 = 0.0;
-  for (size_t jlev = 0; jlev < nlev; ++jlev) {
-    for (size_t jj = 0; jj < num_source; ++jj) {
-      dot1 += source_view(jj, jlev) * source_ad_view(jj, jlev);
+  if (!testSourcePointMask) {
+    for (size_t jlev = 0; jlev < nlev; ++jlev) {
+      for (size_t jj = 0; jj < num_source; ++jj) {
+        dot1 += source_view(jj, jlev) * source_ad_view(jj, jlev);
+      }
+      for (size_t jj = 0; jj < my_num_target; ++jj) {
+        dot2 += target_vals[jj + my_num_target * jlev] * target_vals_ad[jj + my_num_target * jlev];
+      }
     }
-    for (size_t jj = 0; jj < my_num_target; ++jj) {
-      dot2 += target_vals[jj + my_num_target * jlev] * target_vals_ad[jj + my_num_target * jlev];
+  } else {
+    for (size_t jlev = 0; jlev < nlev; ++jlev) {
+      for (size_t jj = 0; jj < num_source; ++jj) {
+        if (source_lats[jj] >= 0.0) {
+          dot1 += source_view(jj, jlev) * source_ad_view(jj, jlev);
+        }
+      }
+      for (size_t jj = 0; jj < my_num_target; ++jj) {
+        if (target_vals[jj + my_num_target * jlev] != util::missingValue(double())) {
+          dot2 += target_vals[jj + my_num_target * jlev]
+                  * target_vals_ad[jj + my_num_target * jlev];
+        }
+      }
     }
   }
 
@@ -180,7 +253,7 @@ void testInterpolator() {
   EXPECT(oops::is_close(dot1, dot2, toleranceAD));
 }
 
-///  Oops interpolation interface test
+/// Oops interpolation interface test
 template <typename MODEL>
 class UnstructuredInterpolator : public oops::Test {
  public:
@@ -194,7 +267,9 @@ class UnstructuredInterpolator : public oops::Test {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
     ts.emplace_back(CASE("generic/UnstructuredInterpolator/testInterpolator")
-      { testInterpolator<MODEL>(); });
+      { testInterpolator<MODEL>(false); });
+    ts.emplace_back(CASE("generic/UnstructuredInterpolator/testSourcePointMask")
+      { testInterpolator<MODEL>(true); });
   }
 
   void clear() const override {}

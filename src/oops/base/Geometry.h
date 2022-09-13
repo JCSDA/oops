@@ -104,6 +104,15 @@ class Geometry : public interface::Geometry<MODEL> {
   /// GetValues::fillGeoVaLs.
   bool levelsAreTopDown() const;
 
+  /// Check the Geometry's extraFields data for a field named maskName
+  bool hasMask(const std::string & maskName) const {
+    return this->geom_->extraFields().has_field(maskName);
+  }
+  /// Access the Geometry's extraFields data for a field named maskName
+  const atlas::Field & getMask(const std::string & maskName) const {
+    return this->geom_->extraFields().field(maskName);
+  }
+
   atlas::util::KDTree<size_t>::ValueList closestPoints(const double, const double, const int) const;
 
  private:
