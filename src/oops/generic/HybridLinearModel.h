@@ -12,13 +12,11 @@
 #include <string>
 
 #include "oops/base/Geometry.h"
-#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
+#include "oops/generic/HybridLinearModelCoeffs.h"
 #include "oops/generic/LinearModelBase.h"
-#include "oops/interface/Increment.h"
 #include "oops/interface/ModelAuxControl.h"
-#include "oops/interface/ModelAuxIncrement.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/Parameters.h"
@@ -29,27 +27,29 @@ namespace oops {
 template <typename MODEL>
 class HybridLinearModelParameters : public LinearModelParametersBase {
   OOPS_CONCRETE_PARAMETERS(HybridLinearModelParameters, LinearModelParametersBase)
+  typedef HybridLinearModelCoeffsParameters<MODEL>      HybridLinearModelCoeffsParameters_;
 
  public:
   oops::RequiredParameter<util::Duration> tstep{"tstep", this};
   oops::RequiredParameter<Variables> vars{"increment variables", this};
-  // This does not really belong here but adding as a quick fix
-  oops::OptionalParameter<std::string> variableChange{"variable change", this};
   // Option to specify which TLM will be used to generate ensemble for coefficient calculation
   oops::RequiredParameter<eckit::LocalConfiguration> simplifiedTLM{"simplified linear model", this};
+  oops::RequiredParameter<HybridLinearModelCoeffsParameters_> htlmCoeffs
+    {"htlm coefficient calc", this};
 };
 
 /// Generic implementation of Hybrid linear model
 template <typename MODEL>
 class HybridLinearModel : public LinearModelBase<MODEL> {
-  typedef Geometry<MODEL>          Geometry_;
-  typedef Increment<MODEL>         Increment_;
-  typedef ModelAuxControl<MODEL>   ModelAuxCtl_;
-  typedef ModelAuxIncrement<MODEL> ModelAuxInc_;
-  typedef State<MODEL>             State_;
-  typedef LinearModelBase<MODEL>              LinearModelBase_;
-  typedef LinearModelFactory<MODEL>           LinearModelFactory_;
-  typedef LinearModelParametersWrapper<MODEL> LinearModelParametersWrapper_;
+  typedef Geometry<MODEL>                          Geometry_;
+  typedef Increment<MODEL>                         Increment_;
+  typedef HybridLinearModelCoeffs<MODEL>           HybridLinearModelCoeffs_;
+  typedef ModelAuxControl<MODEL>                   ModelAuxCtl_;
+  typedef ModelAuxIncrement<MODEL>                 ModelAuxInc_;
+  typedef State<MODEL>                             State_;
+  typedef LinearModelBase<MODEL>                   LinearModelBase_;
+  typedef LinearModelFactory<MODEL>                LinearModelFactory_;
+  typedef LinearModelParametersWrapper<MODEL>      LinearModelParametersWrapper_;
 
  public:
   typedef HybridLinearModelParameters<MODEL>           Parameters_;
@@ -82,22 +82,25 @@ class HybridLinearModel : public LinearModelBase<MODEL> {
 
  private:
   void print(std::ostream &) const override {}
-  const HybridLinearModelParameters<MODEL> params_;
+  const  HybridLinearModelParameters<MODEL> params_;
   std::unique_ptr<LinearModelBase_> simplifiedLinearModel_;
+  const HybridLinearModelCoeffs_ htlmCoeffs_;
 };
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 HybridLinearModel<MODEL>::HybridLinearModel(const Geometry_ & resol,
-                                                const HybridLinearModelParameters<MODEL> & params)
-  : params_(params) {
-    // instantiate the simplified tangent linear model.
+                                                 const HybridLinearModelParameters<MODEL> & params)
+  : params_(params), htlmCoeffs_(params.htlmCoeffs.value(), resol, params_.tstep.value()) {
+    Log::trace() << "HybridLinearModel<MODEL>::HybridLinearModel() starting" << std::endl;
+
+    // Instantiate the simplified tangent linear model.
     LinearModelParametersWrapper_ simplifiedTLMParameters;
     simplifiedTLMParameters.validateAndDeserialize(params.simplifiedTLM);
     simplifiedLinearModel_.reset(LinearModelFactory_::create(
           resol, simplifiedTLMParameters.linearModelParameters));
-  Log::trace() << "HybridLinearModel<MODEL>::HybridLinearModel done" << std::endl;
+    Log::trace() << "HybridLinearModel<MODEL>::HybridLinearModel() done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

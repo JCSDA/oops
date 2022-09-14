@@ -188,6 +188,9 @@ oops/generic/gc99.h
 oops/generic/gc99.cc
 oops/generic/gc99_mod.F90
 oops/generic/GeoVaLsWriter.h
+oops/generic/HtlmEnsemble.h
+oops/generic/HybridLinearModel.h
+oops/generic/HybridLinearModelCoeffs.h
 oops/generic/IdentityLinearModel.h
 oops/generic/IdentityModel.h
 oops/generic/instantiateLinearModelFactory.h

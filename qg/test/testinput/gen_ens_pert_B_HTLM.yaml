@@ -16,7 +16,7 @@ model:
 output:
   datadir: Data
   date: 2010-01-01T00:00:00Z
-  exp: forecast
+  exp: forecast_HTLM
   frequency: PT1H
   type: ens
 geometry:
