@@ -188,6 +188,7 @@ oops/generic/gc99.h
 oops/generic/gc99.cc
 oops/generic/gc99_mod.F90
 oops/generic/GeoVaLsWriter.h
+oops/generic/GlobalInterpolator.h
 oops/generic/HtlmEnsemble.h
 oops/generic/HybridLinearModel.h
 oops/generic/HybridLinearModelCoeffs.h
@@ -423,6 +424,7 @@ test/interface/GeometryIterator.h
 test/interface/GeometryFixture.h
 test/interface/GeoVaLs.h
 test/interface/GetValues.h
+test/interface/GlobalInterpolator.h
 test/interface/Increment.h
 test/interface/LinearModel.h
 test/interface/LinearObsOperator.h

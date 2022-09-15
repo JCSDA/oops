@@ -73,6 +73,15 @@ class UnstructuredInterpolator : public util::Printable,
   void applyAD(const Variables &, atlas::FieldSet &, const std::vector<bool> &,
                const std::vector<double> &) const;
 
+  // Unscramble MPI buffer into the model's FieldSet representation
+  // Methods are static because they do NOT rely on any internal state of the interpolator; they
+  // only encode the inverse of the transformation done in apply() to get an MPI buffer from the
+  // FieldSet
+  static void bufferToFieldSet(const Variables &, const std::vector<size_t> &,
+                               const std::vector<double> &, atlas::FieldSet &);
+  static void bufferToFieldSetAD(const Variables &, const std::vector<size_t> &,
+                                 std::vector<double> &, const atlas::FieldSet &);
+
  private:
   // Small struct to help organize the interpolation matrices (= stencils and weights)
   struct InterpMatrix {
@@ -235,7 +244,7 @@ void UnstructuredInterpolator<MODEL>::apply(const Variables & vars, const atlas:
   auto current = vals.begin();
   for (size_t jf = 0; jf < vars.size(); ++jf) {
     const std::string & fname = vars[jf];
-    atlas::Field fld = fset.field(fname);
+    atlas::Field & fld = fset.field(fname);  // const in principle, but intel can't compile that
 
     const std::string interp_type = fld.metadata().get<std::string>("interp_type");
     ASSERT(interp_type == "default" || interp_type == "integer" || interp_type == "nearest");
@@ -420,6 +429,74 @@ void UnstructuredInterpolator<MODEL>::applyPerLevelAD(
       }
     }
     ++gridout;
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+// Unscramble MPI buffer into the model's FieldSet representation
+template<typename MODEL>
+void UnstructuredInterpolator<MODEL>::bufferToFieldSet(const Variables & vars,
+                                                       const std::vector<size_t> & buffer_indices,
+                                                       const std::vector<double> & buffer,
+                                                       atlas::FieldSet & target) {
+  const size_t buffer_chunk_size = buffer_indices.size();
+  const size_t buffer_size = buffer.size();
+  ASSERT(buffer_chunk_size > 0);
+  ASSERT(buffer_size % buffer_chunk_size == 0);
+
+  const auto buffer_start = buffer.begin();
+  auto current = buffer.begin();
+
+  for (size_t jf = 0; jf < vars.size(); ++jf) {
+    const std::string & fname = vars[jf];
+    atlas::Field & field = target.field(fname);
+
+    atlas::array::ArrayView<double, 2> view = atlas::array::make_view<double, 2>(field);
+    const size_t field_size = view.shape(0);
+    const size_t num_levels = view.shape(1);
+    ASSERT(buffer_chunk_size <= field_size);
+    for (size_t jlev = 0; jlev < num_levels; ++jlev) {
+      for (size_t ji = 0; ji < buffer_chunk_size; ++ji, ++current) {
+        const size_t index = buffer_indices[ji];
+        ASSERT(std::distance(buffer_start, current) < buffer_size);
+        view(index, jlev) = *current;
+      }
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+// (Adjoint of) Unscramble MPI buffer into the model's FieldSet representation
+template<typename MODEL>
+void UnstructuredInterpolator<MODEL>::bufferToFieldSetAD(const Variables & vars,
+                                                         const std::vector<size_t> & buffer_indices,
+                                                         std::vector<double> & buffer,
+                                                         const atlas::FieldSet & target) {
+  const size_t buffer_chunk_size = buffer_indices.size();
+  const size_t buffer_size = buffer.size();
+  ASSERT(buffer_chunk_size > 0);
+  ASSERT(buffer_size % buffer_chunk_size == 0);
+
+  const auto buffer_start = buffer.begin();
+  auto current = buffer.begin();
+
+  for (size_t jf = 0; jf < vars.size(); ++jf) {
+    const std::string & fname = vars[jf];
+    atlas::Field & field = target.field(fname);  // const in principle, but intel can't compile that
+
+    const atlas::array::ArrayView<double, 2> view = atlas::array::make_view<double, 2>(field);
+    const size_t field_size = view.shape(0);
+    const size_t num_levels = view.shape(1);
+    ASSERT(buffer_chunk_size <= field_size);
+    for (size_t jlev = 0; jlev < num_levels; ++jlev) {
+      for (size_t ji = 0; ji < buffer_chunk_size; ++ji, ++current) {
+        const size_t index = buffer_indices[ji];
+        ASSERT(std::distance(buffer_start, current) < buffer_size);
+        *current += view(index, jlev);
+      }
+    }
   }
 }
 
