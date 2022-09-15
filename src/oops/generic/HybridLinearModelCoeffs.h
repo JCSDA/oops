@@ -50,6 +50,9 @@ class HybridLinearModelCoeffs{
   static const std::string classname() {return "oops::HybridLinearCoeffs";}
 
   /// constructor
+  /* The geometry for the state is a yaml parameter
+   The geometry passed in is used for the TLM geometry in HtlmEnsemble
+   This is ultimatly first constucted in HybridLinearModel fromits paramters */
   HybridLinearModelCoeffs(const HybridLinearModelCoeffsParameters_ &, const Geometry_ &,
                                                                   const util::Duration &);
 

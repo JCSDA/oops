@@ -75,11 +75,22 @@ class HtlmEnsemble{
  public:
   static const std::string classname() {return "oops::HtlmEnsemble";}
 
+
 /// constructor
+
+  /* The geometry for the state is a yaml parameter
+   The geometry passed in is used for the TLM geometry
+   This is ultimatly first constucted in HybridLinearModel fromits paramters */
+
   HtlmEnsemble(const HtlmEnsembleParameters_ &, const Geometry_ &);
 
-/// step forward and get coeffs
+
   void step(const util::Duration &);
+
+
+/// Needed accessors
+  const std::vector<Increment_> & getLinearEns() const {return linearEnsemble_;}
+  const std::vector<Increment_> & getLinearErrDe() const {return linearErrorDe_;}
 
  private:
   const HtlmEnsembleParameters_ params_;
@@ -99,6 +110,8 @@ class HtlmEnsemble{
   std::vector<Increment_> linearEnsemble_;
 /// Nonlinear Differences
   std::vector<Increment_> nonLinearDifferences_;
+/// linear error (dE in the HTLM paper)
+  std::vector<Increment_> linearErrorDe_;
 ///  Augmented state
   ModelAux_ moderr_;
 /// Augmented increment
@@ -131,6 +144,8 @@ HtlmEnsemble<MODEL>::HtlmEnsemble(const HtlmEnsembleParameters_
         linearEnsemble_.emplace_back(incrementGeometry_, simpleLinearModel_.variables(),
                                                       controlState_.validTime());
         linearEnsemble_[m].diff(controlState_, perturbedStates_[m]);
+        nonLinearDifferences_.emplace_back(incrementGeometry_, simpleLinearModel_.variables(),
+                                            controlState_.validTime());
     }
 
     /// Check you have supplied the number of members you promised
@@ -153,14 +168,23 @@ void HtlmEnsemble<MODEL>::step(const util::Duration & tstep)  {
     simpleLinearModel_.setTrajectory(controlState_, downsampled_Control, moderr_);
     PostProcessor<State_> post;
     model_.forecast(controlState_, moderr_, tstep, post);
+
     for (size_t m = 0; m < ensembleSize_; ++m) {
         model_.forecast(perturbedStates_[m], moderr_, tstep, post);
         simpleLinearModel_.forecastTL(linearEnsemble_[m], modauxinc_, tstep);
     }
-
+    for (size_t m = 0; m < ensembleSize_; ++m) {
+        nonLinearDifferences_[m].updateTime(tstep);
+        nonLinearDifferences_[m].diff(controlState_, (perturbedStates_[m]));
+    }
+    linearErrorDe_ = nonLinearDifferences_;
+    for (size_t m = 0; m < ensembleSize_; ++m) {
+        linearErrorDe_[m] -= linearEnsemble_[m];
+    }
 
     Log::trace() << "HtlmEnsemble<MODEL>::step() done" << std::endl;
 }
+
 
 // -----------------------------------------------------------------------------
 
