@@ -65,9 +65,9 @@ class HybridLinearModelCoeffs{
 
 template<typename MODEL>
 HybridLinearModelCoeffs<MODEL>::HybridLinearModelCoeffs(const  HybridLinearModelCoeffsParameters_
-                                                        & params,  const Geometry_ & resol,
+                                                        & params,  const Geometry_ & geomTLM,
                                                         const util::Duration & tstep)
-: params_(params),  ens_(params.htlmEnsemble.value(), resol),
+: params_(params),  ens_(params.htlmEnsemble.value(), geomTLM),
   windowBegin_(params_.windowBegin.value()),
   windowLength_(params_.windowLength.value()), tstep_(tstep) {
   util::DateTime time(windowBegin_);

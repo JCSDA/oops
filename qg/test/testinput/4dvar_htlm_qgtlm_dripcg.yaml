@@ -84,6 +84,12 @@ variational:
           model:
             name: QG
             tstep: PT1H
+          coeff linear model:
+            trajectory:
+              tstep: PT30M
+            tstep: PT1H
+            variable change: Identity
+            name: QgTLM
           state geometry:
             nx: 40
             ny: 20
@@ -138,6 +144,12 @@ variational:
           model:
             name: QG
             tstep: PT1H
+          coeff linear model:
+            trajectory:
+              tstep: PT30M
+            tstep: PT1H
+            variable change: Identity
+            name: QgTLM
           state geometry:
             nx: 40
             ny: 20

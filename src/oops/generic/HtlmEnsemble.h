@@ -18,6 +18,7 @@
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
+#include "oops/generic/LinearModelBase.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -42,14 +43,19 @@ class HtlmEnsembleParameters : public Parameters {
   RequiredParameter<ModelParameters_> model{"model", this};
   /// Background and analysis geometry.
   RequiredParameter<GeometryParameters_> stateGeometry{"state geometry", this};
-  /// Configurations of all perturbed members.
-  RequiredParameter<std::vector<StateParameters_>>
-        perturbedMembers{"perturbed members", this};
-  /// Configurations of the control member.
-  RequiredParameter<StateParameters_> control{"control member", this};
   /// Augmented model state
   Parameter<eckit::LocalConfiguration> modelAuxControl{"model aux control",
     eckit::LocalConfiguration(), this};
+  /// Linear model.
+  RequiredParameter<eckit::LocalConfiguration> linearModel{"coeff linear model", this};
+  /// Augmented Model Increment
+  Parameter<eckit::LocalConfiguration> modelAuxIncrement{"model aux increment",
+    eckit::LocalConfiguration(), this};
+  /// Configurations of the control member.
+  RequiredParameter<StateParameters_> control{"control member", this};
+  /// Configurations of all perturbed members.
+  RequiredParameter<std::vector<StateParameters_>>
+        perturbedMembers{"perturbed members", this};
   /// Number of perturbed ensemble members
   RequiredParameter<size_t> ensembleSize{"ensemble size", this};
 };
@@ -59,7 +65,9 @@ template <typename MODEL>
 class HtlmEnsemble{
   typedef Geometry<MODEL>                               Geometry_;
   typedef Model<MODEL>                                  Model_;
+  typedef LinearModel<MODEL>                            LinearModel_;
   typedef ModelAuxControl<MODEL>                        ModelAux_;
+  typedef ModelAuxIncrement<MODEL>                      ModelAuxIncrement_;
   typedef State<MODEL>                                  State_;
   typedef Increment<MODEL>                              Increment_;
   typedef HtlmEnsembleParameters<MODEL>                 HtlmEnsembleParameters_;
@@ -68,76 +76,94 @@ class HtlmEnsemble{
   static const std::string classname() {return "oops::HtlmEnsemble";}
 
 /// constructor
-    HtlmEnsemble(const HtlmEnsembleParameters_ &, const Geometry_ &);
+  HtlmEnsemble(const HtlmEnsembleParameters_ &, const Geometry_ &);
 
 /// step forward and get coeffs
-    void step(const util::Duration &) const;
+  void step(const util::Duration &);
 
  private:
   const HtlmEnsembleParameters_ params_;
   const size_t ensembleSize_;
   const Geometry_ stateGeometry_;
+  const Geometry_ & incrementGeometry_;
 
 ///  Model
   const Model_ model_;
-
+/// ptr to linear model
+  LinearModel_ simpleLinearModel_;
 ///  control member IC
-  std::unique_ptr<State_> controlState_;
+  State_ controlState_;
 ///  perturbed member ICs
-  std::vector<std::unique_ptr<State_>> perturbedStates_;
+  std::vector<State_> perturbedStates_;
+///  Linear Ensemble
+  std::vector<Increment_> linearEnsemble_;
+/// Nonlinear Differences
+  std::vector<Increment_> nonLinearDifferences_;
 ///  Augmented state
-  std::unique_ptr<ModelAux_> moderr_;
+  ModelAux_ moderr_;
+/// Augmented increment
+  ModelAuxIncrement_ modauxinc_;
 };
 
 //----------------------------------------------------------------------------------
 
 template<typename MODEL>
 HtlmEnsemble<MODEL>::HtlmEnsemble(const HtlmEnsembleParameters_
-                                                        & params, const Geometry_ & geom)
+                                                        & params, const Geometry_ & geomTLM)
     : params_(params), ensembleSize_(params.ensembleSize),
-      stateGeometry_(params.stateGeometry.value(), geom.getComm()),
-      model_(stateGeometry_, params_.model.value().modelParameters.value()) {
+      stateGeometry_(params.stateGeometry.value(), geomTLM.getComm()),
+      incrementGeometry_(geomTLM),
+      model_(stateGeometry_, params_.model.value().modelParameters.value()),
+      simpleLinearModel_(geomTLM, params_.linearModel),
+      controlState_(stateGeometry_, params_.control.value()),
+      moderr_(stateGeometry_, params_.modelAuxControl.value()),
+      modauxinc_(incrementGeometry_, params_.modelAuxIncrement.value()) {
 
     Log::trace() << "HtlmEnsemble<MODEL>::HtlmEnsemble() starting"
                  << std::endl;
 
-    ///  Setup control member IC
-    controlState_ = std::make_unique<State_>(stateGeometry_, params_.control.value());
-    ///  Setup perturbed member ICs
+    ///  Setup perturbed member, linear Ensemble, nonlinear differences
     perturbedStates_.reserve(ensembleSize_);
+    linearEnsemble_.reserve(ensembleSize_);
+    nonLinearDifferences_.reserve(ensembleSize_);
     for (size_t m = 0; m < ensembleSize_; ++m) {
-        perturbedStates_.emplace_back(std::make_unique<State_>(stateGeometry_,
-                                                              params_.perturbedMembers.
-                                                              value()[m]));
+        perturbedStates_.emplace_back(stateGeometry_, params_.perturbedMembers.value()[m]);
+        linearEnsemble_.emplace_back(incrementGeometry_, simpleLinearModel_.variables(),
+                                                      controlState_.validTime());
+        linearEnsemble_[m].diff(controlState_, perturbedStates_[m]);
     }
 
-     /// Check you have supplied the number of members you promised
+    /// Check you have supplied the number of members you promised
     if (params_.perturbedMembers.value().size() != ensembleSize_) {
       Log::info() << "supplied number of inital states does not equal ensemble size in yaml"
                                                                                << std::endl;
       abort();
     }
 
-    ///  Setup augmented state
-    moderr_ = std::make_unique<ModelAux_>(stateGeometry_, params_.modelAuxControl.value());
+
     Log::trace() << "HtlmEnsemble<MODEL>::HtlmEnsemble() done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void HtlmEnsemble<MODEL>::step(const util::Duration & tstep) const {
+void HtlmEnsemble<MODEL>::step(const util::Duration & tstep)  {
     Log::trace() << "HtlmEnsemble<MODEL>::step() starting" << std::endl;
+    State_ downsampled_Control(incrementGeometry_, controlState_);
+    simpleLinearModel_.setTrajectory(controlState_, downsampled_Control, moderr_);
     PostProcessor<State_> post;
-    model_.forecast((*controlState_), *moderr_, tstep, post);
+    model_.forecast(controlState_, moderr_, tstep, post);
     for (size_t m = 0; m < ensembleSize_; ++m) {
-        model_.forecast(*(perturbedStates_[m]), *moderr_, tstep, post);
-        }
+        model_.forecast(perturbedStates_[m], moderr_, tstep, post);
+        simpleLinearModel_.forecastTL(linearEnsemble_[m], modauxinc_, tstep);
+    }
+
 
     Log::trace() << "HtlmEnsemble<MODEL>::step() done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
+
 
 }  // namespace oops
 
