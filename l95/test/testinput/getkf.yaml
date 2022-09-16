@@ -25,7 +25,8 @@ observations:
       lengthscale: .1
     obs space:
       obsdatain:
-        obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+        engine:
+          obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
     obs operator: {}
 
 local ensemble DA:

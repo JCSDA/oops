@@ -22,9 +22,11 @@ cost function:
     - obs operator: {}
       obs space:
         obsdatain:
-          obsfile: Data/biased.2010-01-02T00:00:00Z.obt
+          engine:
+            obsfile: Data/biased.2010-01-02T00:00:00Z.obt
         obsdataout:
-          obsfile: Data/4dvar_obsbias.2010-01-02T00:00:00Z.obt
+          engine:
+            obsfile: Data/4dvar_obsbias.2010-01-02T00:00:00Z.obt
       obs error:
         covariance model: diagonal
       obs bias:

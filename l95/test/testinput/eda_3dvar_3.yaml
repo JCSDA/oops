@@ -20,9 +20,11 @@ cost function:
         random amplitude: 0.2
       obs space:
         obsdatain:
-          obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+          engine:
+            obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
         obsdataout:
-          obsfile: Data/mem003.eda_3dvar.2010-01-02T00:00:00Z.obt
+          engine:
+            obsfile: Data/mem003.eda_3dvar.2010-01-02T00:00:00Z.obt
         obs perturbations seed: 3
       obs operator: {}
 variational:

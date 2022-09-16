@@ -47,18 +47,18 @@ ObsSpaceQG::ObsSpaceQG(const Parameters_ & params, const eckit::mpi::Comm & comm
   eckit::LocalConfiguration fileconf = params.toConfiguration();
   std::string ofin("-");
   if (params.obsdatain.value() != boost::none) {
-    ofin = params.obsdatain.value()->obsfile;
+    ofin = params.obsdatain.value()->engine.value().obsfile;
   }
   std::string ofout("-");
   if (params.obsdataout.value() != boost::none) {
-    ofout = params.obsdataout.value()->obsfile;
+    ofout = params.obsdataout.value()->engine.value().obsfile;
     if (timeComm.size() > 1) {
       std::ostringstream ss;
       ss << "_" << timeComm.rank();
       std::size_t found = ofout.find_last_of(".");
       if (found == std::string::npos) found = ofout.length();
       std::string fileout = ofout.insert(found, ss.str());
-      fileconf.set("obsdataout.obsfile", fileout);
+      fileconf.set("obsdataout.engine.obsfile", fileout);
     }
   }
   std::string ref = ofin + ofout;

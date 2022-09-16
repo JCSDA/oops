@@ -20,7 +20,8 @@ observations:
         obs_error: 0.4
         obs_frequency: PT1H30M
       obsdataout:
-          obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+          engine:
+            obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
 make obs: true
 
 test:

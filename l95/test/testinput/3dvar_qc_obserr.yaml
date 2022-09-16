@@ -18,9 +18,11 @@ cost function:
     - obs operator: {}
       obs space:
         obsdatain:
-          obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+          engine:
+            obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
         obsdataout:
-          obsfile: Data/3dvar_qc_obserr.2010-01-02T00:00:00Z.obt
+          engine:
+            obsfile: Data/3dvar_qc_obserr.2010-01-02T00:00:00Z.obt
       obs error:
         covariance model: diagonal
       obs filters:

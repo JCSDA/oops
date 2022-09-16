@@ -15,9 +15,11 @@ observations:
   observers:
   - obs space:
       obsdatain:
-        obsfile: Data/truth.obs4d_12h.nc
+        engine:
+          obsfile: Data/truth.obs4d_12h.nc
       obsdataout:
-        obsfile: Data/hofx.obs4d_12h.nc
+        engine:
+          obsfile: Data/hofx.obs4d_12h.nc
       obs type: Stream
     obs operator:
       obs type: Stream
@@ -26,9 +28,11 @@ observations:
       interpolation type: default_1
   - obs space:
       obsdatain:
-        obsfile: Data/truth.obs4d_12h.nc
+        engine:
+          obsfile: Data/truth.obs4d_12h.nc
       obsdataout:
-        obsfile: Data/hofx.obs4d_12h.nc
+        engine:
+          obsfile: Data/hofx.obs4d_12h.nc
       obs type: Wind
     obs operator:
       obs type: Wind
@@ -37,9 +41,11 @@ observations:
       interpolation type: default_2
   - obs space:
       obsdatain:
-        obsfile: Data/truth.obs4d_12h.nc
+        engine:
+          obsfile: Data/truth.obs4d_12h.nc
       obsdataout:
-        obsfile: Data/hofx.obs4d_12h.nc
+        engine:
+          obsfile: Data/hofx.obs4d_12h.nc
       obs type: WSpeed
     obs operator:
       obs type: WSpeed

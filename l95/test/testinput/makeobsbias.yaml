@@ -15,7 +15,8 @@ observations:
   observers:
   - obs space:
       obsdataout:
-          obsfile: Data/biased.2010-01-02T00:00:00Z.obt
+          engine:
+            obsfile: Data/biased.2010-01-02T00:00:00Z.obt
       generate:
         obs_density: 20
         obs_error: 0.4

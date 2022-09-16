@@ -27,9 +27,11 @@ cost function:
         obs type: Stream
       obs space:
         obsdatain:
-          obsfile: Data/truth.obs4d_24h.nc
+          engine:
+            obsfile: Data/truth.obs4d_24h.nc
         obsdataout:
-          obsfile: Data/4dvar_ipcg.obs4d_24h.nc
+          engine:
+            obsfile: Data/4dvar_ipcg.obs4d_24h.nc
         obs type: Stream
     - obs error:
         covariance model: diagonal
@@ -37,9 +39,11 @@ cost function:
         obs type: Wind
       obs space:
         obsdatain:
-          obsfile: Data/truth.obs4d_24h.nc
+          engine:
+            obsfile: Data/truth.obs4d_24h.nc
         obsdataout:
-          obsfile: Data/4dvar_ipcg.obs4d_24h.nc
+          engine:
+            obsfile: Data/4dvar_ipcg.obs4d_24h.nc
         obs type: Wind
     - obs error:
         covariance model: diagonal
@@ -47,9 +51,11 @@ cost function:
         obs type: WSpeed
       obs space:
         obsdatain:
-          obsfile: Data/truth.obs4d_24h.nc
+          engine:
+            obsfile: Data/truth.obs4d_24h.nc
         obsdataout:
-          obsfile: Data/4dvar_ipcg.obs4d_24h.nc
+          engine:
+            obsfile: Data/4dvar_ipcg.obs4d_24h.nc
         obs type: WSpeed
   constraints:
   - jcdfi:

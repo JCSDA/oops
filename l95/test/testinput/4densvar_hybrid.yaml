@@ -12,9 +12,11 @@ cost function:
         covariance model: diagonal
       obs space:
         obsdatain:
-          obsfile: Data/truth4d.2010-01-01T12:00:00Z.obt
+          engine:
+            obsfile: Data/truth4d.2010-01-01T12:00:00Z.obt
         obsdataout:
-          obsfile: Data/4densvar_hybrid.2010-01-01T12:00:00Z.obt
+          engine:
+            obsfile: Data/4densvar_hybrid.2010-01-01T12:00:00Z.obt
       obs operator: {}
   background:
     states:

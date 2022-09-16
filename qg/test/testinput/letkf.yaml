@@ -26,9 +26,11 @@ observations:
       obs type: Stream
     obs space:
       obsdatain:
-        obsfile: Data/truth.obs4d_12h.nc
+        engine:
+          obsfile: Data/truth.obs4d_12h.nc
       obsdataout:
-        obsfile: Data/letkf.obs4d_12h.nc
+        engine:
+          obsfile: Data/letkf.obs4d_12h.nc
       obs type: Stream
     obs error:
       covariance model: diagonal
@@ -39,9 +41,11 @@ observations:
       obs type: Wind
     obs space:
       obsdatain:
-        obsfile: Data/truth.obs4d_12h.nc
+        engine:
+          obsfile: Data/truth.obs4d_12h.nc
       obsdataout:
-        obsfile: Data/letkf.obs4d_12h.nc
+        engine:
+          obsfile: Data/letkf.obs4d_12h.nc
       obs type: Wind
     obs error:
       covariance model: diagonal
@@ -52,9 +56,11 @@ observations:
       obs type: WSpeed
     obs space:
       obsdatain:
-        obsfile: Data/truth.obs4d_12h.nc
+        engine:
+          obsfile: Data/truth.obs4d_12h.nc
       obsdataout:
-        obsfile: Data/letkf.obs4d_12h.nc
+        engine:
+          obsfile: Data/letkf.obs4d_12h.nc
       obs type: WSpeed
     obs error:
       covariance model: diagonal

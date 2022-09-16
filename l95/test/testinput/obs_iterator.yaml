@@ -6,9 +6,11 @@ observations:
     covariance model: diagonal
   obs space:
     obsdatain:
-      obsfile: Data/truth.2010-01-02T00:00:00Z.obt
+      engine:
+        obsfile: Data/truth.2010-01-02T00:00:00Z.obt
     obsdataout:
-      obsfile: Data/forecast.2010-01-02T00:00:00Z.obt
+      engine:
+        obsfile: Data/forecast.2010-01-02T00:00:00Z.obt
   obs iterator test:
     tolerance: 0.0
     reference nlocs: 160

@@ -22,7 +22,8 @@ observations:
       lengthscale: .1
     obs space:
       obsdatain:
-        obsfile: Data/getkf.2010-01-02T00:00:00Z.obt
+        engine:
+          obsfile: Data/getkf.2010-01-02T00:00:00Z.obt
     obs operator: {}
 
 driver:

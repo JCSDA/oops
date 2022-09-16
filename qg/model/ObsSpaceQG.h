@@ -34,13 +34,23 @@
 namespace qg {
   class ObsIteratorQG;
 
-/// Contents of the `obsdatain` or `obsdataout` YAML section.
+// -----------------------------------------------------------------------------
+/// Contents of the `engine` YAML section.
 class ObsDataParameters : public oops::Parameters {
   OOPS_CONCRETE_PARAMETERS(ObsDataParameters, Parameters)
 
  public:
-  /// File path.
+  /// File path and file type
   oops::RequiredParameter<std::string> obsfile{"obsfile", this};
+};
+
+/// Contents of the `obsdatain` or `obsdataout` YAML section.
+class ObsEngineParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(ObsEngineParameters, Parameters)
+
+ public:
+  /// File path.
+  oops::RequiredParameter<ObsDataParameters> engine{"engine", this};
 };
 
 /// Options specifying locations of artificial observations.
@@ -80,13 +90,14 @@ class ObsSpaceQGParameters : public oops::ObsSpaceParametersBase {
   /// Type of observations.
   oops::RequiredParameter<std::string> obsType{"obs type", this};
   /// File from which to load observations.
-  oops::OptionalParameter<ObsDataParameters> obsdatain{"obsdatain", this};
+  oops::OptionalParameter<ObsEngineParameters> obsdatain{"obsdatain", this};
   /// File to which to save observations and analysis.
-  oops::OptionalParameter<ObsDataParameters> obsdataout{"obsdataout", this};
+  oops::OptionalParameter<ObsEngineParameters> obsdataout{"obsdataout", this};
   /// Options controlling generation of artificial observations.
   oops::OptionalParameter<ObsGenerateParameters> generate{"generate", this};
 };
 
+// -----------------------------------------------------------------------------
 /// \brief ObsSpace for QG model
 /// \details ObsSpaceQG is created for each obs type. The underlying Fortran
 /// structure (key_) is created for each matching input-output filename pair

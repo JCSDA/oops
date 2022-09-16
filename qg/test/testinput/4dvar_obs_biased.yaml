@@ -27,9 +27,11 @@ cost function:
         obs type: Stream
       obs space:
         obsdatain:
-          obsfile: Data/truth.stream.biased.nc
+          engine:
+            obsfile: Data/truth.stream.biased.nc
         obsdataout:
-          obsfile: Data/4dvar.stream.biased.nc
+          engine:
+            obsfile: Data/4dvar.stream.biased.nc
         obs type: Stream
       obs bias:
         stream: 0.0
@@ -41,9 +43,11 @@ cost function:
         obs type: Wind
       obs space:
         obsdatain:
-          obsfile: Data/truth.wind.biased.nc
+          engine:
+            obsfile: Data/truth.wind.biased.nc
         obsdataout:
-          obsfile: Data/4dvar.wind.biased.nc
+          engine:
+            obsfile: Data/4dvar.wind.biased.nc
         obs type: Wind
       obs bias:
         uwind: 0.0
@@ -55,9 +59,11 @@ cost function:
         obs type: WSpeed
       obs space:
         obsdatain:
-          obsfile: Data/truth.wspeed.biased.nc
+          engine:
+            obsfile: Data/truth.wspeed.biased.nc
         obsdataout:
-          obsfile: Data/4dvar.wspeed.biased.nc
+          engine:
+            obsfile: Data/4dvar.wspeed.biased.nc
         obs type: WSpeed
   constraints:
   - jcdfi:

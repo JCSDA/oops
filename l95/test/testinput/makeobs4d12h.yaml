@@ -15,7 +15,8 @@ observations:
   observers:
   - obs space:
       obsdataout:
-          obsfile: Data/truth4d.2010-01-01T12:00:00Z.obt
+          engine:
+            obsfile: Data/truth4d.2010-01-01T12:00:00Z.obt
       generate:
         obs_density: 10
         obs_error: 0.4

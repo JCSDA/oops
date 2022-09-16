@@ -7,9 +7,11 @@ window end: 2010-01-02T03:00:00Z
 observations:
 - obs space:
     obsdatain:
-      obsfile: Data/truth.2010-01-02T00:00:00Z.obt
+      engine:
+        obsfile: Data/truth.2010-01-02T00:00:00Z.obt
     obsdataout:
-      obsfile: Data/forecast.2010-01-02T00:00:00Z.obt
+      engine:
+        obsfile: Data/forecast.2010-01-02T00:00:00Z.obt
   obs localizations:
   - localization method: Gaspari-Cohn
     lengthscale: 0.19
@@ -22,4 +24,4 @@ observation localizations reference:
     lats:               [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     depths:              [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
   local nobs: [56, 64, 56, 64, 56, 64, 56, 64, 56, 64]
-  rms: [0.52443,0.489544,0.52443,0.489544,0.52443,0.489544,0.52443,0.489544,0.52443,0.489544] 
+  rms: [0.52443,0.489544,0.52443,0.489544,0.52443,0.489544,0.52443,0.489544,0.52443,0.489544]
