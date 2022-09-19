@@ -150,7 +150,7 @@ template <typename MODEL> class Dirac : public Application {
         params.backgroundError.value().covarianceParameters;
     eckit::LocalConfiguration covarConf(covarParams.toConfiguration());
     std::string id;
-    dirac(covarConf, params.outputDirac.value(), id, resol, xx, dxi);
+    dirac(covarConf, params.outputDirac.value(), id, xx, dxi);
 
 //  Variance randomization
     const boost::optional<eckit::LocalConfiguration> &outputVariance =
@@ -208,14 +208,14 @@ template <typename MODEL> class Dirac : public Application {
   void dirac(const eckit::LocalConfiguration & covarConfig,
              const eckit::LocalConfiguration & outputConfig,
              std::string & id,
-             const Geometry_ & resol, const State_ & xx,
+             const State_ & xx,
              const Increment_ & dxi) const {
     // Define output increment
     Increment_ dxo(dxi, false);
 
     // Covariance
     std::unique_ptr<CovarianceBase_> Bmat(CovarianceFactory_::create(
-        resol, xx.variables(), covarConfig, xx, xx));
+        xx.geometry(), xx.variables(), covarConfig, xx, xx));
 
     // Multiply
     Bmat->multiply(dxi, dxo);
@@ -243,7 +243,7 @@ template <typename MODEL> class Dirac : public Application {
       for (const auto & conf : confs) {
         std::string idC(id + std::to_string(componentIndex));
         const eckit::LocalConfiguration componentConfig(conf, "covariance");
-        dirac(componentConfig, outputConfig, idC, resol, xx, dxi);
+        dirac(componentConfig, outputConfig, idC, xx, dxi);
         ++componentIndex;
       }
     }
@@ -255,7 +255,7 @@ template <typename MODEL> class Dirac : public Application {
       Increment_ dxo(dxi);
 
       // Setup localization
-      Localization_ Lmat(resol, locConfig);
+      Localization_ Lmat(xx.geometry(), xx.variables(), locConfig);
 
       // Apply localization
       Lmat.multiply(dxo);

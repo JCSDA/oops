@@ -25,6 +25,7 @@
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
 LocalizationMatrixL95::LocalizationMatrixL95(const Resolution & resol,
+                                             const oops::Variables & vars,
                                              const eckit::Configuration & config)
   : resol_(resol.npoints()),
     rscale_(1.0/config.getDouble("length_scale"))

@@ -37,7 +37,9 @@ namespace interface {
 ///
 /// Note: subclasses need to provide a constructor with the following signature:
 ///
-///     LocalizationBase(const MODEL::Geometry &, const eckit::Configuration &);
+///     LocalizationBase(const MODEL::Geometry &,
+///                      const oops::Variables &,
+///                      const eckit::Configuration &);
 ///
 template<typename MODEL>
 class LocalizationBase : public oops::LocalizationBase<MODEL> {
@@ -68,8 +70,9 @@ template<class MODEL, class T>
 class LocalizationMaker : public oops::LocalizationFactory<MODEL> {
   typedef oops::Geometry<MODEL>  Geometry_;
   std::unique_ptr<oops::LocalizationBase<MODEL>> make(const Geometry_ & geometry,
+                                                      const oops::Variables & vars,
                                                       const eckit::Configuration & conf) override
-    { return std::make_unique<T>(geometry.geometry(), conf); }
+    { return std::make_unique<T>(geometry.geometry(), vars, conf); }
  public:
   explicit LocalizationMaker(const std::string & name) : oops::LocalizationFactory<MODEL>(name) {}
 };

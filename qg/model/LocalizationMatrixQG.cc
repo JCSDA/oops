@@ -19,6 +19,7 @@
 namespace qg {
 // -----------------------------------------------------------------------------
 LocalizationMatrixQG::LocalizationMatrixQG(const GeometryQG & resol,
+                                           const oops::Variables & vars,
                                            const eckit::Configuration & config) {
   qg_error_covariance_setup_f90(keyLocal_, config, resol.toFortran());
 }

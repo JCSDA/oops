@@ -64,7 +64,7 @@ template <typename MODEL> class LocalizationFixture : private boost::noncopyable
 
 //  Setup the localization matrix
     const eckit::LocalConfiguration conf(TestEnvironment::config(), "localization");
-    local_.reset(new Localization_(*resol_, conf));
+    local_.reset(new Localization_(*resol_, *ctlvars_, conf));
 
     oops::Log::test() << "Testing localization: " << *local_ << std::endl;
   }

@@ -36,7 +36,9 @@ class LocalizationMatrixQG: public oops::interface::LocalizationBase<qg::QgTrait
  public:
   static const std::string classname() {return "qg::LocalizationMatrixQG";}
 
-  LocalizationMatrixQG(const GeometryQG &, const eckit::Configuration &);
+  LocalizationMatrixQG(const GeometryQG &,
+                       const oops::Variables &,
+                       const eckit::Configuration &);
   ~LocalizationMatrixQG();
 
   void randomize(IncrementQG &) const override;
