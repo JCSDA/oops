@@ -50,9 +50,9 @@ phases:
 
       - echo "check for same branch names, except for develop"
       - if ! [ "$CODEBUILD_GIT_BRANCH" = "develop" ]; then
-        pip install boto3;
-        pip install pygithub;
-        python CI/update_webhook_branchname.py $CODEBUILD_GIT_BRANCH $CODEBUILD_RESOLVED_SOURCE_VERSION;
+        pip3 install boto3;
+        pip3 install pygithub;
+        python3 CI/update_webhook_branchname.py $CODEBUILD_GIT_BRANCH $CODEBUILD_RESOLVED_SOURCE_VERSION;
         fi
 
   pre_build:
@@ -62,7 +62,6 @@ phases:
       - mkdir /build_container
 
       - git lfs install
-      - cp ~/.gitconfig /home/jedi/
       - cd CI
 
       #  Setting git credentials
@@ -102,6 +101,7 @@ phases:
       - echo $CODEBUILD_BUILD_SUCCEEDING
 
       - cd /build_container
+      - source /etc/profile.d/z10_spack_environment.sh
       - ecbuild -Wno-dev -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCDASH_OVERRIDE_SITE=CodeBuild -DCDASH_OVERRIDE_GIT_BRANCH=$CODEBUILD_GIT_BRANCH -DCTEST_UPDATE_VERSION_ONLY=FALSE /jcsda/oops-bundle/
       - cd /build_container/oops
       - cp ../DartConfiguration.tcl .

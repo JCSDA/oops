@@ -52,7 +52,6 @@ phases:
       - mkdir -p /jcsda/oops-bundle
 
       - git lfs install
-      - cp ~/.gitconfig /home/jedi/
       - cd CI
 
       #  Setting git credentials
@@ -91,20 +90,20 @@ phases:
       - echo $CODEBUILD_BUILD_SUCCEEDING
 
       # configure and build
-      - su - jedi -c "cd /home/jedi
+      - su - nonroot -c "cd /home/nonroot
         && ls
         && export FC=mpifort
         && export CC=mpicc
         && export CXX=mpicxx
         && ecbuild -Wno-dev -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCDASH_OVERRIDE_SITE=CodeBuild -DCDASH_OVERRIDE_GIT_BRANCH=$CODEBUILD_GIT_BRANCH -DCTEST_UPDATE_VERSION_ONLY=FALSE -DENABLE_GPROF=ON /jcsda/oops-bundle/"
 
-      - su - jedi -c "cd /home/jedi/oops
+      - su - nonroot -c "cd /home/nonroot/oops
         && export FC=mpifort
         && export CC=mpicc
         && export CXX=mpicxx
         && cp ../DartConfiguration.tcl .
         && sed -i 's/oops-bundle/oops-bundle\/oops/' DartConfiguration.tcl
-        && sed -i 's/jedi/jedi\/oops/' DartConfiguration.tcl
+        && sed -i 's/nonroot/nonroot\/oops/' DartConfiguration.tcl
         && cat DartConfiguration.tcl
         && make -j4"
 
@@ -115,14 +114,14 @@ phases:
       - echo $BUILD_STATUS
 
       # run ctest and upload to cdash
-      - su - jedi -c "cd /home/jedi/oops
+      - su - nonroot -c "cd /home/nonroot/oops
         && export FC=mpifort
         && export CC=mpicc
         && export CXX=mpicxx
         && ctest -C RelWithDebInfo -D ExperimentalTest -E test_qg_4dvar_saddlepoint"
 
     finally:
-       - su - jedi -c "cd /home/jedi/oops
+       - su - nonroot -c "cd /home/nonroot/oops
         && export FC=mpifort
         && export CC=mpicc
         && export CXX=mpicxx
@@ -137,7 +136,7 @@ phases:
       # upload find cdash url and upload it as CodeBuild artifact to S3
       - if [ "$BUILD_STATUS" = "1" ];
         then echo "Build & tests passed, find cdash url";
-        url=$(bash /jcsda/oops-bundle/oops/CI/cdash-url.sh /home/jedi/oops/Testing $CDASH_URL);
+        url=$(bash /jcsda/oops-bundle/oops/CI/cdash-url.sh /home/nonroot/oops/Testing $CDASH_URL);
         echo $url;
         echo ${url} > /jcsda/artifacts/cdash-url.txt;
         cat /jcsda/artifacts/cdash-url.txt;
@@ -145,7 +144,7 @@ phases:
         fi
 
       - echo 'Connect to CodeCov'
-      - cd /home/jedi/oops
+      - cd /home/nonroot/oops
       - pwd
       - ls
       - bash /jcsda/oops-bundle/oops/CI/codecov_script_$org_name.sh
