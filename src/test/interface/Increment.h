@@ -92,6 +92,7 @@ template <typename MODEL> class IncrementFixture : private boost::noncopyable {
   std::unique_ptr<util::DateTime>  time_;
   std::unique_ptr<bool> skipAccumTest_;
   std::unique_ptr<bool> skipDiffTest_;
+  std::unique_ptr<bool> skipRmsByLevelTest_;
 };
 
 // =============================================================================
@@ -157,33 +158,6 @@ template <typename MODEL> void testIncrementChangeResConstructor() {
 
   // Check they are same. Should be replaced with change res and check they are different
   EXPECT(dx2.norm() == dx1.norm());
-}
-
-// -----------------------------------------------------------------------------
-template <typename MODEL> void testIncrementRmsByLevel() {
-  typedef IncrementFixture<MODEL>   Test_;
-  typedef oops::Increment<MODEL>    Increment_;
-    if (Test_::skipAtlas()) {
-      oops::Log::warning() << "Skipping Increment.rms test";
-      return;
-    }
-
-
-  // dx has easily calculable rms as only 1s and 0s
-  Increment_ dx1(Test_::resol(), Test_::ctlvars(), Test_::time());
-  auto v = Test_::ctlvars()[0];
-  dx1.zero();
-  atlas::FieldSet incrField = dx1.fieldSet();
-  auto fieldView = atlas::array::make_view<double, 2>(incrField[v]);
-  std::vector<double> vect(fieldView.shape(1));
-  for (atlas::idx_t k = 0; k < fieldView.shape(1); ++k) {
-      for (atlas::idx_t i = 0; i < k; ++i) {
-          fieldView(i, k) = 1;
-      }
-      vect[k] = sqrt(static_cast<double>(k)/fieldView.shape(0));
-  }
-  dx1.fromFieldSet(incrField);
-  EXPECT(dx1.rms(v) == vect);
 }
 
 // -----------------------------------------------------------------------------
@@ -345,6 +319,25 @@ template <typename MODEL> void testIncrementAccum() {
 }
 
 // -----------------------------------------------------------------------------
+template <typename MODEL> void testRmsByLevel() {
+  typedef IncrementFixture<MODEL>   Test_;
+  typedef oops::Increment<MODEL>    Increment_;
+
+  // Option to skip test
+  const bool skipTest = Test_::test().getBool("skip rms by level test", false);
+  if (skipTest) {
+    oops::Log::warning() << "Skipping Increment.rmsByLevel test";
+    return;
+  } else {
+      Increment_ dx1(Test_::resol(), Test_::ctlvars(), Test_::time());
+      dx1.ones();
+      std::vector<double> vec = dx1.rmsByLevel(dx1.variables()[0]);
+      std::vector<double> referenceVec(vec.size(), 1.0);
+      EXPECT(vec == referenceVec);
+  }
+}
+
+// -----------------------------------------------------------------------------
 
 template <typename MODEL> void testIncrementSerialize() {
   typedef IncrementFixture<MODEL>   Test_;
@@ -497,8 +490,8 @@ class Increment : public oops::Test {
       { testIncrementCopyBoolConstructor<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementChangeResConstructor")
       { testIncrementChangeResConstructor<MODEL>(); });
-    ts.emplace_back(CASE("interface/Increment/testIncrementRmsByLevel")
-      { testIncrementRmsByLevel<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/rmsByLevel")
+      { testRmsByLevel<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementTriangle")
       { testIncrementTriangle<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementOpPlusEq")

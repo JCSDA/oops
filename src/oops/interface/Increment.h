@@ -154,6 +154,8 @@ class Increment : public oops::GeneralizedDepartures,
   void write(const eckit::Configuration &) const;
   /// Norm (used in tests)
   double norm() const;
+  /// Root mean square of each level in an increment used by htlm
+  std::vector<double> rmsByLevel(const std::string &) const;
 
   /// Get local (at \p iter local volume) increment (used in LocalEnsembleSolver)
   LocalIncrement getLocal(const GeometryIterator_ & iter) const;
@@ -479,6 +481,17 @@ double Increment<MODEL>::norm() const {
   double zz = increment_->norm();
   Log::trace() << "Increment<MODEL>::norm done" << std::endl;
   return zz;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+std::vector<double> Increment<MODEL>::rmsByLevel(const std::string & var) const {
+  Log::trace() << "Increment<MODEL>::rmsByLevel starting" << std::endl;
+  util::Timer timer(classname(), "rmsByLevel");
+  std::vector<double> rms = increment_->rmsByLevel(var);
+  Log::trace() << "Increment<MODEL>::rmsByLevel done" << std::endl;
+  return rms;
 }
 
 // -----------------------------------------------------------------------------
