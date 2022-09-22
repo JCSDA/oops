@@ -83,8 +83,12 @@ variational:
       tstep: PT1H
       increment variables: [x]
       htlm coefficient calc:
+        variables: [x]
         window length: PT24H
         window begin: 2010-01-01T00:00:00Z
+        htlm calculator:
+          influence region size: 2
+          regularization param: 0.0
         htlm ensemble:
           ensemble size: 10
           model:
@@ -143,8 +147,12 @@ variational:
       tstep: PT1H
       increment variables: [x]
       htlm coefficient calc:
+        variables: [x]
         window length: PT24H
         window begin: 2010-01-01T00:00:00Z
+        htlm calculator:
+          influence region size: 2
+          regularization param: 0.0
         htlm ensemble:
           ensemble size: 10
           model:

@@ -76,6 +76,7 @@ list( APPEND qg_testinput
   testinput/hofx3d.yaml
   testinput/hybridgain_analysis.yaml
   testinput/hybridgain_increment.yaml
+  testinput/hybrid_linear_model.yaml
   testinput/increment.yaml
   testinput/letkf.yaml
   testinput/linear_model.yaml
@@ -302,6 +303,12 @@ ecbuild_add_test( TARGET  test_qg_linear_model
                   ARGS    "testinput/linear_model.yaml"
                   LIBS    qg
                   TEST_DEPENDS test_qg_truth )
+            
+ecbuild_add_test( TARGET  test_qg_hybrid_linear_model
+                  SOURCES executables/TestLinearModel.cc
+                  ARGS    "testinput/hybrid_linear_model.yaml"
+                  LIBS    qg
+                  TEST_DEPENDS test_qg_truth test_qg_forecast_control_htlm test_qg_gen_ens_pert_B_HTLM )
 
 ecbuild_add_test( TARGET test_qg_locations
                   SOURCES executables/TestLocations.cc

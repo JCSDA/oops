@@ -30,7 +30,7 @@
 
 namespace oops {
 
-/// paramaters for for forwarding the ensemble.
+// parameters for forwarding the ensemble.
 template <typename MODEL>
 class HtlmEnsembleParameters : public Parameters {
   OOPS_CONCRETE_PARAMETERS(HtlmEnsembleParameters, Parameters);
@@ -39,28 +39,28 @@ class HtlmEnsembleParameters : public Parameters {
   typedef typename Geometry<MODEL>::Parameters_ GeometryParameters_;
 
  public:
-  /// Nonlinear forecast model.
+  // Nonlinear forecast model.
   RequiredParameter<ModelParameters_> model{"model", this};
-  /// Background and analysis geometry.
+  // Background and analysis geometry.
   RequiredParameter<GeometryParameters_> stateGeometry{"state geometry", this};
-  /// Augmented model state
+  // Augmented model state
   Parameter<eckit::LocalConfiguration> modelAuxControl{"model aux control",
     eckit::LocalConfiguration(), this};
-  /// Linear model.
+  // Linear model.
   RequiredParameter<eckit::LocalConfiguration> linearModel{"coeff linear model", this};
-  /// Augmented Model Increment
+  // Augmented Model Increment
   Parameter<eckit::LocalConfiguration> modelAuxIncrement{"model aux increment",
     eckit::LocalConfiguration(), this};
-  /// Configurations of the control member.
+  // Configurations of the control member.
   RequiredParameter<StateParameters_> control{"control member", this};
-  /// Configurations of all perturbed members.
+  // Configurations of all perturbed members.
   RequiredParameter<std::vector<StateParameters_>>
         perturbedMembers{"perturbed members", this};
-  /// Number of perturbed ensemble members
+  // Number of perturbed ensemble members
   RequiredParameter<size_t> ensembleSize{"ensemble size", this};
 };
 
-// class declerations for htlmensemble
+// class declarations for htlmensemble
 template <typename MODEL>
 class HtlmEnsemble{
   typedef Geometry<MODEL>                               Geometry_;
@@ -76,11 +76,11 @@ class HtlmEnsemble{
   static const std::string classname() {return "oops::HtlmEnsemble";}
 
 
-/// constructor
+// constructor
 
   /* The geometry for the state is a yaml parameter
    The geometry passed in is used for the TLM geometry
-   This is ultimatly first constucted in HybridLinearModel fromits paramters */
+   This is ultimately first constructed in HybridLinearModel from its parameters */
 
   HtlmEnsemble(const HtlmEnsembleParameters_ &, const Geometry_ &);
 
@@ -88,9 +88,9 @@ class HtlmEnsemble{
   void step(const util::Duration &);
 
 
-/// Needed accessors
-  const std::vector<Increment_> & getLinearEns() const {return linearEnsemble_;}
-  const std::vector<Increment_> & getLinearErrDe() const {return linearErrorDe_;}
+// Needed accessors for passing info to calculator
+  std::vector<Increment_> & getLinearEns() {return linearEnsemble_;}
+  std::vector<Increment_> & getLinearErrDe() {return linearErrorDe_;}
 
  private:
   const HtlmEnsembleParameters_ params_;
@@ -98,23 +98,23 @@ class HtlmEnsemble{
   const Geometry_ stateGeometry_;
   const Geometry_ & incrementGeometry_;
 
-///  Model
+//  Model
   const Model_ model_;
-/// ptr to linear model
+// ptr to linear model
   LinearModel_ simpleLinearModel_;
-///  control member IC
+//  control member IC
   State_ controlState_;
-///  perturbed member ICs
+//  perturbed member ICs
   std::vector<State_> perturbedStates_;
-///  Linear Ensemble
+//  Linear Ensemble
   std::vector<Increment_> linearEnsemble_;
-/// Nonlinear Differences
+// Nonlinear Differences
   std::vector<Increment_> nonLinearDifferences_;
-/// linear error (dE in the HTLM paper)
+// linear error (dE in the HTLM paper)
   std::vector<Increment_> linearErrorDe_;
-///  Augmented state
+//  Augmented state
   ModelAux_ moderr_;
-/// Augmented increment
+// Augmented increment
   ModelAuxIncrement_ modauxinc_;
 };
 
@@ -135,7 +135,7 @@ HtlmEnsemble<MODEL>::HtlmEnsemble(const HtlmEnsembleParameters_
     Log::trace() << "HtlmEnsemble<MODEL>::HtlmEnsemble() starting"
                  << std::endl;
 
-    ///  Setup perturbed member, linear Ensemble, nonlinear differences
+    //  Setup perturbed member, linear Ensemble, nonlinear differences
     perturbedStates_.reserve(ensembleSize_);
     linearEnsemble_.reserve(ensembleSize_);
     nonLinearDifferences_.reserve(ensembleSize_);
@@ -148,18 +148,17 @@ HtlmEnsemble<MODEL>::HtlmEnsemble(const HtlmEnsembleParameters_
                                             controlState_.validTime());
     }
 
-    /// Check you have supplied the number of members you promised
+    // Check you have supplied the number of members you promised
     if (params_.perturbedMembers.value().size() != ensembleSize_) {
       Log::info() << "supplied number of inital states does not equal ensemble size in yaml"
                                                                                << std::endl;
       abort();
     }
 
-
     Log::trace() << "HtlmEnsemble<MODEL>::HtlmEnsemble() done" << std::endl;
 }
 
-// -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 template<typename MODEL>
 void HtlmEnsemble<MODEL>::step(const util::Duration & tstep)  {
@@ -186,7 +185,7 @@ void HtlmEnsemble<MODEL>::step(const util::Duration & tstep)  {
 }
 
 
-// -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 
 }  // namespace oops

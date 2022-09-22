@@ -189,6 +189,7 @@ oops/generic/gc99.cc
 oops/generic/gc99_mod.F90
 oops/generic/GeoVaLsWriter.h
 oops/generic/GlobalInterpolator.h
+oops/generic/HtlmCalculator.h
 oops/generic/HtlmEnsemble.h
 oops/generic/HybridLinearModel.h
 oops/generic/HybridLinearModelCoeffs.h

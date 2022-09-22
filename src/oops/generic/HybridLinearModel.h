@@ -38,7 +38,7 @@ class HybridLinearModelParameters : public LinearModelParametersBase {
     {"htlm coefficient calc", this};
 };
 
-/// Generic implementation of Hybrid linear model
+// Generic implementation of Hybrid linear model
 template <typename MODEL>
 class HybridLinearModel : public LinearModelBase<MODEL> {
   typedef Geometry<MODEL>                          Geometry_;
@@ -58,26 +58,26 @@ class HybridLinearModel : public LinearModelBase<MODEL> {
 
   HybridLinearModel(const Geometry_ &, const HybridLinearModelParameters<MODEL> &);
 
-/// initialize tangent linear forecast
+// initialize tangent linear forecast
   void initializeTL(Increment_ &) const override;
-/// one tangent linear forecast step
+// one tangent linear forecast step
   void stepTL(Increment_ &, const ModelAuxInc_ &) const override;
-/// finalize tangent linear forecast
+// finalize tangent linear forecast
   void finalizeTL(Increment_ &) const override;
 
-/// initialize adjoint forecast
+// initialize adjoint forecast
   void initializeAD(Increment_ &) const override;
-/// one adjoint forecast step
+// one adjoint forecast step
   void stepAD(Increment_ &, ModelAuxInc_ &) const override;
-/// finalize adjoint forecast
+// finalize adjoint forecast
   void finalizeAD(Increment_ &) const override;
 
-/// set trajectory
+// set trajectory
   void setTrajectory(const State_ &, State_ &, const ModelAuxCtl_ &) override;
 
-/// linear model time step
+// linear model time step
   const util::Duration & timeResolution() const override {return params_.tstep;}
-/// linear model variables
+// linear model variables
   const oops::Variables & variables() const override {return params_.vars;}
 
  private:
@@ -87,7 +87,7 @@ class HybridLinearModel : public LinearModelBase<MODEL> {
   const HybridLinearModelCoeffs_ htlmCoeffs_;
 };
 
-// -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 template<typename MODEL>
 HybridLinearModel<MODEL>::HybridLinearModel(const Geometry_ & resol,
@@ -103,7 +103,7 @@ HybridLinearModel<MODEL>::HybridLinearModel(const Geometry_ & resol,
     Log::trace() << "HybridLinearModel<MODEL>::HybridLinearModel() done" << std::endl;
 }
 
-// -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 template<typename MODEL>
 void HybridLinearModel<MODEL>::initializeTL(Increment_ & dx) const {
@@ -111,16 +111,17 @@ void HybridLinearModel<MODEL>::initializeTL(Increment_ & dx) const {
   simplifiedLinearModel_->initializeTL(dx);
 }
 
-// -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 template<typename MODEL>
 void HybridLinearModel<MODEL>::stepTL(Increment_ & dx, const ModelAuxInc_ & merr) const {
   Log::trace() << "HybridLinearModel<MODEL>:stepTL Starting " << std::endl;
   simplifiedLinearModel_->stepTL(dx, merr);
+  htlmCoeffs_.updateIncTL(dx);
   Log::trace() << "HybridLinearModel<MODEL>::stepTL done" << std::endl;
 }
 
-// -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 template<typename MODEL>
 void HybridLinearModel<MODEL>::finalizeTL(Increment_ & dx) const {
@@ -128,7 +129,7 @@ void HybridLinearModel<MODEL>::finalizeTL(Increment_ & dx) const {
   simplifiedLinearModel_->finalizeTL(dx);
 }
 
-// -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 template<typename MODEL>
 void HybridLinearModel<MODEL>::initializeAD(Increment_ & dx) const {
@@ -136,16 +137,17 @@ void HybridLinearModel<MODEL>::initializeAD(Increment_ & dx) const {
   simplifiedLinearModel_->initializeAD(dx);
 }
 
-// -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 template<typename MODEL>
 void HybridLinearModel<MODEL>::stepAD(Increment_ & dx, ModelAuxInc_ & merr) const {
   Log::trace() << "HybridLinearModel<MODEL>:stepAD Starting " << std::endl;
+  htlmCoeffs_.updateIncAD(dx);
   simplifiedLinearModel_->stepAD(dx , merr);
   Log::trace() << "HybridLinearModel<MODEL>::stepAD done" << std::endl;
 }
 
-// -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 template<typename MODEL>
 void HybridLinearModel<MODEL>::finalizeAD(Increment_ & dx) const {
@@ -153,7 +155,7 @@ void HybridLinearModel<MODEL>::finalizeAD(Increment_ & dx) const {
   simplifiedLinearModel_->finalizeAD(dx);
 }
 
-// -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 template<typename MODEL>
 void HybridLinearModel<MODEL>::setTrajectory(const State_ & x, State_ & xlr,
@@ -162,7 +164,7 @@ void HybridLinearModel<MODEL>::setTrajectory(const State_ & x, State_ & xlr,
   simplifiedLinearModel_->setTrajectory(x , xlr, maux);
 }
 
-// -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 }  // namespace oops
 
