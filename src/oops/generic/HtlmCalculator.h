@@ -38,7 +38,8 @@ class HtlmCalculatorParameters : public Parameters {
   For a grid point at say the bottom level, all influence points would be above it.
   The influence region also includes other model variables at the same locations.  */ 
   RequiredParameter<atlas::idx_t> influenceRegionSize{"influence region size", this};
-  RequiredParameter<double> lambda{"regularization param", this};
+  RequiredParameter<double>       lambda{"regularization param", this};
+  Parameter<bool>                 rms{"rms scaling", false, this};
 };
 
 // Class declarations for HtlmCalculator
@@ -109,7 +110,9 @@ void HtlmCalculator<MODEL>::calcCoeffs(const std::vector<Increment_> & linearEns
          coeffField(vars_[varInd], atlas::array::make_datatype<double>(),
             atlas::array::make_shape(horizExt_, vertExt_, vars_.size() * influenceSize_));
       coeffFieldSet.add(coeffField);
-
+    // get rms by level scaling
+      const std::vector<double> rmsVals =
+        params_.rms ? linearEnsemble[0].rmsByLevel(vars_[varInd]) : std::vector<double>{};
     // calculate coefficient vector for each grid point
     for (atlas::idx_t i = 0; i < horizExt_; ++i) {
       for (atlas::idx_t k = 0; k < vertExt_; ++k) {
@@ -128,7 +131,11 @@ void HtlmCalculator<MODEL>::calcCoeffs(const std::vector<Increment_> & linearEns
           const atlas::FieldSet & linearEnsembleFset = linearEnsemble[ensInd].fieldSet();
           const atlas::FieldSet & linErrFset = linearErrorDe[ensInd].fieldSet();
           const auto linErrView = atlas::array::make_view<double, 2>(linErrFset[vars_[varInd]]);
-          linErrVec(ensInd, 0) = linErrView(i, k);
+          if (params_.rms) {
+            linErrVec(ensInd, 0) = linErrView(i, k)/rmsVals[k];
+          } else {
+            linErrVec(ensInd, 0) = linErrView(i, k);
+          }
           // populate influenceMat
           for (size_t varInd2 = 0; varInd2 < vars_.size(); ++varInd2) {
             const auto linearEnsembleView =

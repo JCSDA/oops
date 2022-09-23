@@ -80,8 +80,8 @@ class HybridLinearModelCoeffs{
  private:
   std::map<util::DateTime, atlas::FieldSet> coeffSaver_;
   const Variables vars_;
-  const size_t influenceSize_;
-  const size_t halfInfluenceSize_;
+  const atlas::idx_t influenceSize_;
+  const atlas::idx_t halfInfluenceSize_;
 };
 
 //------------------------------------------------------------------------------
