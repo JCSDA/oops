@@ -45,7 +45,7 @@ class HybridLinearModelCoeffsParameters : public Parameters {
   // Window begin
   RequiredParameter<util::DateTime> windowBegin{"window begin", this};
   // variables
-  RequiredParameter<Variables> vars{"variables", this};
+  RequiredParameter<Variables> vars{"training variables", this};
 };
 
 template <typename MODEL>
@@ -128,18 +128,26 @@ void HybridLinearModelCoeffs<MODEL>::updateIncTL(Increment_ & dx) const {
   Log::trace() << "HybridLinearModelCoeffs<MODEL::updateIncTL() starting" << std::endl;
   atlas::FieldSet & dxFset = dx.fieldSet();
   for (size_t varInd = 0; varInd < vars_.size(); ++varInd) {
-    auto dxView = atlas::array::make_view<double, 2>(dxFset[varInd]);
-    for (atlas::idx_t i = 0; i < dxView.shape(1); ++i) {
-      for (atlas::idx_t k = 0; k < dxView.shape(2); ++k) {
+    auto dxView = atlas::array::make_view<double, 2>(dxFset[vars_[varInd]]);
+    for (atlas::idx_t i = 0; i < dxView.shape(0); ++i) {
+      std::vector<double> updateVal(dxView.shape(1), 0.0);
+
+      for (atlas::idx_t k = 0; k < dxView.shape(1); ++k) {
         std::vector<double> dxVec = getInfluenceVec(dxFset, i, k);
+
         auto coeffView = atlas::array::make_view<double, 3>
                                         (coeffSaver_.at(dx.validTime())[vars_[varInd]]);
         for (atlas::idx_t infInd = 0; infInd < atlas::idx_t(dxVec.size()); ++infInd) {
-          dxView(i, k) += coeffView(i, k, infInd)*dxVec[infInd];
+          updateVal[k] += coeffView(i, k, infInd)*dxVec[infInd];
         }
+      }
+      for (atlas::idx_t k = 0; k < dxView.shape(1); ++k) {
+        dxView(i, k) += updateVal[k];
       }
     }
   }
+
+  dx.synchronizeFields();
   Log::trace() << "HybridLinearModelCoeffs<MODEL::updateIncTL() done" << std::endl;
 }
 
@@ -150,18 +158,42 @@ void HybridLinearModelCoeffs<MODEL>::updateIncAD(Increment_ & dx) const {
   Log::trace() << "HybridLinearModelCoeffs<MODEL::updateIncAD() starting" << std::endl;
     atlas::FieldSet & dxFset = dx.fieldSet();
   for (size_t varInd = 0; varInd < vars_.size(); ++varInd) {
-    auto dxView = atlas::array::make_view<double, 2>(dxFset[varInd]);
-    for (atlas::idx_t i = 0; i < dxView.shape(1); ++i) {
-      for (atlas::idx_t k = 0; k < dxView.shape(2); ++k) {
-        std::vector<double> dxVec = getInfluenceVec(dxFset, i, k);
+    auto dxView = atlas::array::make_view<double, 2>(dxFset[vars_[varInd]]);
+    for (atlas::idx_t i = 0; i < dxView.shape(0); ++i) {
+      std::vector<double> updateVal(dxView.shape(1), 0.0);
+      for (atlas::idx_t k = 0; k < dxView.shape(1); ++k) {
         auto coeffView = atlas::array::make_view<double, 3>
                                         (coeffSaver_.at(dx.validTime())[vars_[varInd]]);
-        for (atlas::idx_t infInd = 0; infInd < atlas::idx_t(dxVec.size()); ++infInd) {
-          dxView(i, k) -= coeffView(i, k, infInd)*dxVec[infInd];
+        if (k-halfInfluenceSize_ > 0 && k+halfInfluenceSize_ < dxView.shape(1)) {
+          for (int infInd = 0; infInd < influenceSize_; infInd++)
+          {
+            updateVal[k+infInd-halfInfluenceSize_]+= coeffView(i, k, infInd)*dxView(i, k);
+          }
+
+        } else if (k-halfInfluenceSize_ <= 0) {
+          for (int infInd= 0; infInd < influenceSize_; infInd++)
+          {
+            updateVal[infInd]+= coeffView(i, k, infInd)*dxView(i, k);
+          }
+        } else if (k+halfInfluenceSize_ >= dxView.shape(1)) {
+          for (int infInd= 0; infInd < influenceSize_; infInd++)
+          {
+            updateVal[(dxView.shape(1)-influenceSize_+infInd)]+=
+                                             coeffView(i, k, infInd)*dxView(i, k);
+          }
+        } else {
+            // Checking cases are correct
+            Log::info() << "HybridLinearModelCoeffs<MODEL>::updateIncAD() "
+                           "unable to get influence region AD" << std::endl;
+            abort();
         }
+      }
+      for (atlas::idx_t k = 0; k < dxView.shape(1); ++k) {
+        dxView(i, k) += updateVal[k];
       }
     }
   }
+  dx.synchronizeFields();
   Log::trace() << "HybridLinearModelCoeffs<MODEL::updateIncAD() done" << std::endl;
 }
 
@@ -174,7 +206,7 @@ std::vector<double> HybridLinearModelCoeffs<MODEL>::getInfluenceVec(const atlas:
   Log::trace() << "HybridLinearModelCoeffs<MODEL>::getInfluenceVec() starting" << std::endl;
   std::vector<double> dxVec(influenceSize_*vars_.size());
   for (size_t varInd = 0; varInd < vars_.size(); ++varInd) {
-    const auto dxFview = atlas::array::make_view<double, 2>(dxFset[varInd]);
+    const auto dxFview = atlas::array::make_view<double, 2>(dxFset[vars_[varInd]]);
       for (atlas::idx_t infInd = 0; infInd < influenceSize_; ++infInd) {
         if (k-halfInfluenceSize_ > 0 && k + halfInfluenceSize_ < dxFview.shape(1)) {
           // middle case

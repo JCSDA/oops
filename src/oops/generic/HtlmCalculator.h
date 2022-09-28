@@ -39,7 +39,7 @@ class HtlmCalculatorParameters : public Parameters {
   The influence region also includes other model variables at the same locations.  */ 
   RequiredParameter<atlas::idx_t> influenceRegionSize{"influence region size", this};
   RequiredParameter<double>       lambda{"regularization param", this};
-  Parameter<bool>                 rms{"rms scaling", false, this};
+  Parameter<bool>                 rms{"rms scaling", true, this};
 };
 
 // Class declarations for HtlmCalculator
@@ -161,7 +161,7 @@ void HtlmCalculator<MODEL>::calcCoeffs(const std::vector<Increment_> & linearEns
                 abort();
               }  // end else
             }   // end infInd
-          }   // end varInd
+          }   // end varInd2
         }   // end ensInd
         Log::trace() << "HtlmCalculator<MODEL>::coeffCalc() filling matrices done" << std::endl;
 
@@ -188,7 +188,7 @@ void HtlmCalculator<MODEL>::calcCoeffs(const std::vector<Increment_> & linearEns
 
         // Copy the coeff vect into the its field set.
         Log::trace() << "HtlmCalculator<MODEL>::coeffCalc() placing vector starting" << std::endl;
-        auto coeffsView = atlas::array::make_view<double, 3>(coeffFieldSet[varInd]);
+        auto coeffsView = atlas::array::make_view<double, 3>(coeffFieldSet[vars_[varInd]]);
         for (atlas::idx_t coeffInd = 0; coeffInd < atlas::idx_t(coeffVect.size()); ++coeffInd) {
           coeffsView(i, k, coeffInd) = coeffVect[coeffInd];
         }

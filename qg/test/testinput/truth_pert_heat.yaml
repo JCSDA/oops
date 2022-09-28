@@ -3,7 +3,7 @@ geometry:
   nx: 40
   ny: 20
   depths: [4000.0, 6000.0]
-  perturbed heating: 1000.00
+  perturbed heating: 0.1
 initial condition:
   date: 2009-12-15T00:00:00Z
   read_from_file: 0
