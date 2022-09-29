@@ -15,6 +15,8 @@
 #include <string>
 #include <vector>
 
+#include "atlas/field.h"
+#include "atlas/functionspace.h"
 #include "eckit/config/Configuration.h"
 #include "lorenz95/Iterator.h"
 #include "oops/base/Variables.h"
@@ -59,11 +61,15 @@ class Resolution : public util::Printable {
   bool levelsAreTopDown() const {return true;}
   const eckit::mpi::Comm & getComm() const {return comm_;}
   void latlon(std::vector<double> &, std::vector<double> &, const bool) const;
+  const atlas::FunctionSpace & functionSpace() const {return nospace_;}
+  const atlas::FieldSet & extraFields() const {return nofields_;}
 
  private:
   void print(std::ostream & os) const {os << resol_;}
   const int resol_;
   const eckit::mpi::Comm & comm_;
+  atlas::FunctionSpace nospace_;
+  atlas::FieldSet nofields_;
 };
 
 // -----------------------------------------------------------------------------

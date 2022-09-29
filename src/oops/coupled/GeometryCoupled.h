@@ -14,6 +14,9 @@
 #include <utility>
 #include <vector>
 
+#include "atlas/field.h"
+#include "atlas/functionspace.h"
+
 #include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
 
@@ -68,6 +71,10 @@ class GeometryCoupled : public util::Printable {
 
   void latlon(std::vector<double> &, std::vector<double> &, const bool) const {}
 
+  bool levelsAreTopDown() const {return true;}
+  const atlas::FunctionSpace & functionSpace() const {return nospace_;}
+  const atlas::FieldSet & extraFields() const {return nofields_;}
+
  private:
   void print(std::ostream & os) const override;
 
@@ -76,6 +83,8 @@ class GeometryCoupled : public util::Printable {
   eckit::mpi::Comm * commPrints_;
   bool parallel_;
   int mymodel_;
+  atlas::FunctionSpace nospace_;
+  atlas::FieldSet nofields_;
 };
 
 // -----------------------------------------------------------------------------

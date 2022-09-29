@@ -87,16 +87,19 @@ class Geometry : public util::Printable,
   /// levels required for i-th variable in the i-th position.
   std::vector<size_t> variableSizes(const Variables &) const;
 
+  /// Returns true if the GeoVaLs levels are ordered from top to bottom.
+  /// If this is false, then the GeoVaLs are flipped by level during
+  /// GetValues::fillGeoVaLs.
+  bool levelsAreTopDown() const;
+
   /// Accessor to the geometry communicator
   const eckit::mpi::Comm & getComm() const {return geom_->getComm();}
 
   /// Accessor to the functionspace
   const atlas::FunctionSpace & functionSpace() const {return geom_->functionSpace();}
-  atlas::FunctionSpace & functionSpace() {return geom_->functionSpace();}
 
   /// Accessor to the extra fields
   const atlas::FieldSet & extraFields() const {return geom_->extraFields();}
-  atlas::FieldSet & extraFields() {return geom_->extraFields();}
 
   /// Accessor to the latitude/longitude vectors
   void latlon(std::vector<double> &, std::vector<double> &, const bool) const;
@@ -181,6 +184,16 @@ std::vector<size_t> Geometry<MODEL>::variableSizes(const Variables & vars) const
   std::vector<size_t> sizes = geom_->variableSizes(vars);
   Log::trace() << "Geometry<MODEL>::variableSizes done" << std::endl;
   return sizes;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+bool Geometry<MODEL>::levelsAreTopDown() const {
+  Log::trace() << "Geometry<MODEL>::levelsAreTopDown starting" << std::endl;
+  bool levelsTopDown = this->geom_->levelsAreTopDown();
+  Log::trace() << "Geometry<MODEL>::levelsAreTopDown done" << std::endl;
+  return levelsTopDown;
 }
 
 // -----------------------------------------------------------------------------

@@ -25,6 +25,7 @@
 #include "eckit/exception/Exceptions.h"
 
 #include "oops/base/Geometry.h"
+#include "oops/base/GeometryData.h"
 #include "oops/base/Increment.h"
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
@@ -106,7 +107,7 @@ class UnstructuredInterpolator : public util::Printable,
   void computeMaskedInterpMatrix(const std::string &,
                                  const atlas::array::ArrayView<double, 2> &) const;
 
-  const Geometry_ & geom_;
+  const GeometryData & geom_;
   std::string interp_method_;
   int nninterp_;
   size_t nout_;
@@ -126,7 +127,7 @@ UnstructuredInterpolator<MODEL>::UnstructuredInterpolator(const eckit::Configura
                                                           const Geometry_ & grid,
                                                           const std::vector<double> & lats_out,
                                                           const std::vector<double> & lons_out)
-  : geom_(grid), interp_method_(), nninterp_(0), nout_(0), interp_matrices_{}
+  : geom_(grid.generic()), interp_method_(), nninterp_(0), nout_(0), interp_matrices_{}
 {
   Log::trace() << "UnstructuredInterpolator::UnstructuredInterpolator start" << std::endl;
   util::Timer timer("oops::UnstructuredInterpolator", "UnstructuredInterpolator");
@@ -257,8 +258,8 @@ void UnstructuredInterpolator<MODEL>::apply(const Variables & vars, const atlas:
     std::string maskName = unmaskedName_;
     if (fld.metadata().has("interp_source_point_mask")) {
       maskName = fld.metadata().get<std::string>("interp_source_point_mask");
-      ASSERT(geom_.hasMask(maskName));
-      const atlas::Field & source_mask_fld = geom_.getMask(maskName);
+      ASSERT(geom_.has(maskName));
+      const atlas::Field & source_mask_fld = geom_.getField(maskName);
       ASSERT(source_mask_fld.shape(0) == fld.shape(0));
       ASSERT(source_mask_fld.shape(1) == 1);  // For now, support 2D masks only
       const auto source_mask = atlas::array::make_view<double, 2>(source_mask_fld);
@@ -304,8 +305,8 @@ void UnstructuredInterpolator<MODEL>::applyAD(const Variables & vars, atlas::Fie
     std::string maskName = unmaskedName_;
     if (fld.metadata().has("interp_source_point_mask")) {
       maskName = fld.metadata().get<std::string>("interp_source_point_mask");
-      ASSERT(geom_.hasMask(maskName));
-      const atlas::Field & source_mask_fld = geom_.getMask(maskName);
+      ASSERT(geom_.has(maskName));
+      const atlas::Field & source_mask_fld = geom_.getField(maskName);
       ASSERT(source_mask_fld.shape(0) == fld.shape(0));
       ASSERT(source_mask_fld.shape(1) == 1);  // For now, support 2D masks only
       const auto source_mask = atlas::array::make_view<double, 2>(source_mask_fld);

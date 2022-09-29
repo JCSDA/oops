@@ -95,6 +95,8 @@ oops/base/EnsembleCovariance.h
 oops/base/ForecastParameters.h
 oops/base/GeneralizedDepartures.h
 oops/base/Geometry.h
+oops/base/GeometryData.cc
+oops/base/GeometryData.h
 oops/base/GetValuePosts.h
 oops/base/GetValues.h
 oops/base/GetValueTLADs.h
