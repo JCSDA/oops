@@ -29,9 +29,22 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
+// Select UnstructuredInterpolator (default) or LocalInterpolator.
+template<typename MODEL, typename = void>
+struct SelectInterp {
+  typedef UnstructuredInterpolator<MODEL> type;
+};
+
+template<typename MODEL>
+struct SelectInterp<MODEL, cpp17::void_t<typename MODEL::LocalInterpolator>> {
+  typedef typename MODEL::LocalInterpolator type;
+};
+
+
 template<typename MODEL>
 class GlobalInterpolator : public util::Printable {
   typedef Geometry<MODEL>  Geometry_;
+  typedef typename SelectInterp<MODEL>::type Interp_;
 
  public:
   GlobalInterpolator(const eckit::Configuration &,
@@ -58,7 +71,7 @@ class GlobalInterpolator : public util::Printable {
 
   const eckit::mpi::Comm & comm_;
   std::vector<std::vector<size_t>> mytarget_index_by_task_;
-  std::vector<std::unique_ptr<UnstructuredInterpolator<MODEL>>> interp_;
+  std::vector<std::unique_ptr<Interp_>> interp_;
 };
 
 // -----------------------------------------------------------------------------
@@ -151,7 +164,7 @@ void GlobalInterpolator<MODEL>::setupInterpolators(
       ii += 2;
     }
     ASSERT(mylocs_latlon_by_task[jtask].size() == ii);
-    interp_[jtask].reset(new UnstructuredInterpolator<MODEL>(config, source_grid, lats, lons));
+    interp_[jtask].reset(new Interp_(config, source_grid, lats, lons));
   }
 }
 
@@ -196,7 +209,7 @@ void GlobalInterpolator<MODEL>::apply(const atlas::FieldSet & source,
     const size_t nvals = mytarget_index_by_task_[jtask].size() * nvars;
     ASSERT(recvinterp[jtask].size() == nvals);
     if (nvals > 0) {
-      UnstructuredInterpolator<MODEL>::bufferToFieldSet(vars, mytarget_index_by_task_[jtask],
+      Interp_::bufferToFieldSet(vars, mytarget_index_by_task_[jtask],
                                                         recvinterp[jtask], target);
     }
   }
@@ -235,7 +248,7 @@ void GlobalInterpolator<MODEL>::applyAD(atlas::FieldSet & source,
     const size_t nvals = mytarget_index_by_task_[jtask].size() * nvars;
     recvinterp[jtask].resize(nvals, 0.0);
     if (nvals > 0) {
-      UnstructuredInterpolator<MODEL>::bufferToFieldSetAD(vars, mytarget_index_by_task_[jtask],
+      Interp_::bufferToFieldSetAD(vars, mytarget_index_by_task_[jtask],
                                                           recvinterp[jtask], target);
     }
   }
