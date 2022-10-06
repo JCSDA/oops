@@ -18,9 +18,11 @@ cost function:
         obs type: Stream
       obs space:
         obsdatain:
-          obsfile: Data/truth.obs4d_24h.nc
+          engine:
+            obsfile: Data/truth.obs4d_24h.nc
         obsdataout:
-          obsfile: Data/4dvar_drplanczos.obs4d_24h.nc
+          engine:
+            obsfile: Data/4dvar_drplanczos.obs4d_24h.nc
         obs type: Stream
       obs error:
         covariance model: diagonal
@@ -28,9 +30,11 @@ cost function:
         obs type: Wind
       obs space:
         obsdatain:
-          obsfile: Data/truth.obs4d_24h.nc
+          engine:
+            obsfile: Data/truth.obs4d_24h.nc
         obsdataout:
-          obsfile: Data/4dvar_drplanczos.obs4d_24h.nc
+          engine:
+            obsfile: Data/4dvar_drplanczos.obs4d_24h.nc
         obs type: Wind
       obs error:
         covariance model: diagonal
@@ -38,9 +42,11 @@ cost function:
         obs type: WSpeed
       obs space:
         obsdatain:
-          obsfile: Data/truth.obs4d_24h.nc
+          engine:
+            obsfile: Data/truth.obs4d_24h.nc
         obsdataout:
-          obsfile: Data/4dvar_drplanczos.obs4d_24h.nc
+          engine:
+            obsfile: Data/4dvar_drplanczos.obs4d_24h.nc
         obs type: WSpeed
       obs error:
         covariance model: diagonal
@@ -83,8 +89,7 @@ variational:
       tstep: PT1H
       variable change: Identity
     diagnostics:
-      departures: ombg
-    test: on
+      departures: ombg0
   - ninner: 10
     gradient norm reduction: 1.0e-10
     geometry:
@@ -98,8 +103,7 @@ variational:
       tstep: PT1H
       variable change: Identity
     diagnostics:
-      departures: ombg
-    test: on
+      departures: ombg1
 final:
   diagnostics:
     departures: oman

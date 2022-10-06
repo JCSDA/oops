@@ -1,0 +1,17 @@
+geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+
+initial condition:
+  date: 2009-12-31T00:00:00Z
+  filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
+
+model:
+  name: QG
+  tstep: PT1H
+model aux control: {}
+model test:
+  forecast length: PT24H
+  final norm: 170792839.48101598
+  tolerance: 0.005

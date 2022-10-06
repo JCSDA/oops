@@ -17,7 +17,8 @@ observations:
       obs type: Stream
     obs space:
       obsdataout:
-        obsfile: Data/truth.obs4d_24h_filter_ordering.nc
+        engine:
+          obsfile: Data/truth.obs4d_24h_filter_ordering.nc
       obs type: Stream
       generate:
         begin: PT12H
@@ -35,7 +36,8 @@ observations:
       obs type: Wind
     obs space:
       obsdataout:
-        obsfile: Data/truth.obs4d_24h_filter_ordering.nc
+        engine:
+          obsfile: Data/truth.obs4d_24h_filter_ordering.nc
       obs type: Wind
       generate:
         begin: PT6H
@@ -50,7 +52,8 @@ observations:
       obs type: WSpeed
     obs space:
       obsdataout:
-        obsfile: Data/truth.obs4d_24h_filter_ordering.nc
+        engine:
+          obsfile: Data/truth.obs4d_24h_filter_ordering.nc
       obs type: WSpeed
       generate:
         begin: PT3H

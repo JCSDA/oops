@@ -1,0 +1,25 @@
+geometry:
+  resol: 40
+
+state test:
+  norm file: 8.025826422250747
+  tolerance: 1.0e-12
+  date: 2010-01-01T03:00:00Z
+  statefile:
+    date: 2010-01-01T03:00:00Z
+    filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H.l95
+  write then read test:
+    state write:
+      datadir: Data
+      exp: out
+      type: fc
+      date: 2010-01-01T03:00:00Z
+    state read:
+      date: 2010-01-01T03:00:00Z
+      filename: Data/out.fc.2010-01-01T03:00:00Z.PT0S.l95
+  state generate:
+    date: 2010-01-01T03:00:00Z
+    analytic init:
+      mean: 8.0
+      sinus: 2.0
+  norm generated state: 8.12403840464

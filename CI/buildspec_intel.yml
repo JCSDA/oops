@@ -51,7 +51,6 @@ phases:
       - echo ${CODEBUILD_RESOLVED_SOURCE_VERSION} > /jcsda/artifacts/commit_sha.txt
 
       - cd CI
-      - . /etc/profile.d/intel.sh
 
       # read cdash url from s3
       - wget https://ci-test-cdash-url.s3.amazonaws.com/cdash_url.txt
@@ -81,8 +80,6 @@ phases:
       - chmod 777 -R /jcsda/oops-bundle
 
       - cd /jcsda/oops-bundle
-      - ls
-      - ls -ln /jcsda/oops-bundle/oops/CI
 
   build:
     on-failure: CONTINUE
@@ -92,27 +89,30 @@ phases:
       - echo $BUILD_STATUS
       - echo $CODEBUILD_BUILD_SUCCEEDING
 
-      # configure and build
-      - su - jedi -c "export CC=mpiicc
-        && export FC=mpiifort
-        && export CXX=mpiicpc
-        && export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-        && export PATH=/usr/local/lib:$PATH
-        && cd /home/jedi
-        && ecbuild -Wno-dev -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCDASH_OVERRIDE_SITE=CodeBuild -DCDASH_OVERRIDE_GIT_BRANCH=$CODEBUILD_GIT_BRANCH -DCTEST_UPDATE_VERSION_ONLY=FALSE /jcsda/oops-bundle/"
+      - mkdir /build_container
+      - chmod 777 /build_container
 
-      - su - jedi -c "export CC=mpiicc
-        && export FC=mpiifort
-        && export CXX=mpiicpc
-        && export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-        && export PATH=/usr/local/lib:$PATH
-        && cd /home/jedi/oops
-        && ls -ln /home/jedi/oops
-        && cp ../DartConfiguration.tcl .
-        && sed -i 's/oops-bundle/oops-bundle\/oops/' DartConfiguration.tcl
-        && sed -i 's/jedi/jedi\/oops/' DartConfiguration.tcl
-        && cat DartConfiguration.tcl
-        && make -j4"
+      # These are not permitted
+      #- ulimit -S -s unlimited
+      #- ulimit -S -v unlimited
+      - source /etc/profile.d/z10_spack_environment.sh
+      - cat /etc/profile.d/z10_spack_environment.sh
+      - source /opt/intel/oneapi/compiler/latest/env/vars.sh
+      - source /opt/intel/oneapi/mpi/latest/env/vars.sh
+
+      # for debugging
+      #- which icc || true
+      #- which mpiicc || true
+      #- export | grep CC
+
+      - cd /build_container
+      - ecbuild -Wno-dev -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCDASH_OVERRIDE_SITE=CodeBuild -DCDASH_OVERRIDE_SYSTEM_NAME=IntelContainer -DCDASH_OVERRIDE_GIT_BRANCH=$CODEBUILD_GIT_BRANCH -DCTEST_UPDATE_VERSION_ONLY=FALSE /jcsda/oops-bundle/
+
+      - cd /build_container/oops
+      - cp ../DartConfiguration.tcl .
+      - sed -i 's/oops-bundle/oops-bundle\/oops/' DartConfiguration.tcl
+      - sed -i 's/build_container/build_container\/oops/' DartConfiguration.tcl
+      - make -j2
 
       - if [ "$CODEBUILD_BUILD_SUCCEEDING" = "1" ];
         then export BUILD_STATUS="1";
@@ -121,22 +121,12 @@ phases:
       - echo $BUILD_STATUS
 
       # run ctest and upload to cdash
-      - su - jedi -c "export CC=mpiicc
-        && export FC=mpiifort
-        && export CXX=mpiicpc
-        && export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-        && export PATH=/usr/local/lib:$PATH
-        && cd /home/jedi/oops
-        && ctest -C RelWithDebInfo -D ExperimentalTest -E test_qg_4dvar_saddlepoint"
+      - cd /build_container/oops
+      - ctest -C RelWithDebInfo -D ExperimentalTest -E test_qg_4dvar_saddlepoint
 
     finally:
-      - su - jedi -c "export CC=mpiicc
-        && export FC=mpiifort
-        && export CXX=mpiicpc
-        && export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-        && export PATH=/usr/local/lib:$PATH
-        && cd /home/jedi/oops
-        && ctest -C RelWithDebInfo -D ExperimentalSubmit -M Continuous -- --track Continuous --group Continuous"
+      - cd /build_container/oops
+      - ctest -C RelWithDebInfo -D ExperimentalSubmit -M Continuous -- --track Continuous --group Continuous
 
   post_build:
     commands:
@@ -147,7 +137,7 @@ phases:
 
       - if [ "$BUILD_STATUS" = "1" ];
         then echo "Build & tests passed, find cdash url";
-        url=$(bash /jcsda/oops-bundle/oops/CI/cdash-url.sh /home/jedi/oops/Testing $CDASH_URL);
+        url=$(bash /jcsda/oops-bundle/oops/CI/cdash-url.sh /build_container/oops/Testing $CDASH_URL);
         echo $url;
         echo ${url} > /jcsda/artifacts/cdash-url.txt;
         cat /jcsda/artifacts/cdash-url.txt;

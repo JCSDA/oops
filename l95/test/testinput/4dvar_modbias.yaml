@@ -27,9 +27,11 @@ cost function:
         covariance model: diagonal
       obs space:
         obsdatain:
-          obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
+          engine:
+            obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
         obsdataout:
-          obsfile: Data/4dvar_modbias.2010-01-02T00:00:00Z.obt
+          engine:
+            obsfile: Data/4dvar_modbias.2010-01-02T00:00:00Z.obt
       obs operator: {}
   constraints:
   - jcdfi:
@@ -53,7 +55,6 @@ variational:
       name: L95TLM
     diagnostics:
       departures: ombg
-    test: on
   - ninner: 10
     gradient norm reduction: 1e-10
     geometry:
@@ -65,7 +66,6 @@ variational:
       tstep: PT1H30M
       variable change: Identity
       name: L95TLM
-    test: on
 final:
   diagnostics:
     departures: oman

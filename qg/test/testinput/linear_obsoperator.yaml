@@ -1,0 +1,57 @@
+window begin: 2010-01-01T00:00:00Z
+window end: 2010-01-02T00:00:00Z
+
+observations:
+- obs error:
+    covariance model: diagonal
+  geovals:
+    filename: Data/truth.obs4d_24h.stream.gom
+  obs space:
+    obsdatain:
+      engine:
+        obsfile: Data/truth.obs4d_24h.nc
+    obs type: Stream
+  obs operator:
+    obs type: Stream
+  linear obs operator test:
+    coef TL: 1.e-4
+    tolerance AD: 1.0e-10
+    tolerance TL: 1.0e-6
+  obs bias:
+    stream: -10.0
+    covariance:
+      stream: 2.0e7
+- obs error:
+    covariance model: diagonal
+  geovals:
+    filename: Data/truth.obs4d_24h.wind.gom
+  obs space:
+    obsdatain:
+      engine:
+        obsfile: Data/truth.obs4d_24h.nc
+    obs type: Wind
+  obs operator:
+    obs type: Wind
+  linear obs operator test:
+    coef TL: 1.e-4
+    tolerance AD: 1.0e-10
+    tolerance TL: 1.0e-6
+  obs bias:
+    uwind: 10.0
+    covariance:
+      uwind: 15.0
+- obs error:
+    covariance model: diagonal
+  geovals:
+    filename: Data/truth.obs4d_24h.wspeed.gom
+  obs space:
+    obsdatain:
+      engine:
+        obsfile: Data/truth.obs4d_24h.nc
+    obs type: WSpeed
+  obs operator:
+    obs type: WSpeed
+  linear obs operator test:
+    coef TL: 1.e-4
+    tolerance AD: 1.0e-10
+    tolerance TL: 1.0e-6

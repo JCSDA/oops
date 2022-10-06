@@ -79,7 +79,6 @@ AuxCoupledModel<MODEL1, MODEL2>::AuxCoupledModel(const GeometryCoupled_ & geom,
 {
   Log::trace() << "AuxCoupledModel::AuxCoupledModel read starting" << std::endl;
   if (parallel_) {
-    Log::debug() << "Parallel aux coupled models" << std::endl;
     if (geom.modelNumber() == 1) {
       aux1_ = std::make_unique<ModelAuxControl<MODEL1>>(geom.geometry1(), params.modelaux1);
     }
@@ -87,7 +86,6 @@ AuxCoupledModel<MODEL1, MODEL2>::AuxCoupledModel(const GeometryCoupled_ & geom,
       aux2_ = std::make_unique<ModelAuxControl<MODEL2>>(geom.geometry2(), params.modelaux2);
     }
   } else {
-    Log::debug() << "Sequential aux coupled models" << std::endl;
     aux1_ = std::make_unique<ModelAuxControl<MODEL1>>(geom.geometry1(), params.modelaux1);
     aux2_ = std::make_unique<ModelAuxControl<MODEL2>>(geom.geometry2(), params.modelaux2);
   }

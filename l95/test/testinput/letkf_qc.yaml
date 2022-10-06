@@ -13,6 +13,9 @@ background:
     pattern: %mem%
     nmembers: 5
 
+driver:
+  update obs config with geometry info: false
+
 observations:
   observers:
   - obs error:
@@ -22,7 +25,8 @@ observations:
       lengthscale: .1
     obs space:
       obsdatain:
-        obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+        engine:
+          obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
     obs operator: {}
     obs filters:
     - filter: Background Check

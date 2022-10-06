@@ -56,6 +56,7 @@ class Resolution : public util::Printable {
   Iterator end() const;
   std::vector<double> verticalCoord(std::string &) const;
   std::vector<size_t> variableSizes(const oops::Variables &) const;
+  bool levelsAreTopDown() const {return true;}
   const eckit::mpi::Comm & getComm() const {return comm_;}
   void latlon(std::vector<double> &, std::vector<double> &, const bool) const;
 

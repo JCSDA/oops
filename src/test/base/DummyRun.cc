@@ -28,7 +28,7 @@ namespace test {
       if (validate) params.validate(fullConfig);
       params.deserialize(fullConfig);
       std::string hello_str = params.hello;
-      oops::Log::test() << "hello " << hello_str << std::endl;
+      oops::Log::info() << "hello " << hello_str << std::endl;
       return 0;
     }
     void outputSchema(const std::string & outputPath) const override {

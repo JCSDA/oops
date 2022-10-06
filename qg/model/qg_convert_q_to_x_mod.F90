@@ -41,7 +41,11 @@ real(kind_real) :: zz
 !$omp parallel do schedule(static) private(iy)
 do iy=1,geom%ny
   q_nobc(:,iy,:) = q(:,iy,:)-geom%bet(iy)
-  q_nobc(:,iy,1) = q_nobc(:,iy,1)-geom%heat(:,iy)
+  if(geom%ph_coeff/=0) then
+    q_nobc(:,iy,1) = q_nobc(:,iy,1)-geom%heat(:,iy)*tanh(geom%ph_coeff*q_nobc(:,iy,1))
+  else
+    q_nobc(:,iy,1) = q_nobc(:,iy,1)-geom%heat(:,iy)
+  endif
 enddo
 !$omp end parallel do
 

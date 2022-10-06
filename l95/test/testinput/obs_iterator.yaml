@@ -1,0 +1,20 @@
+window begin: 2010-01-01T03:00:00Z
+window end: 2010-01-02T03:00:00Z
+
+observations:
+- obs error:
+    covariance model: diagonal
+  obs space:
+    obsdatain:
+      engine:
+        obsfile: Data/truth.2010-01-02T00:00:00Z.obt
+    obsdataout:
+      engine:
+        obsfile: Data/forecast.2010-01-02T00:00:00Z.obt
+  obs iterator test:
+    tolerance: 0.0
+    reference nlocs: 160
+    lon1: 0.0
+    lat1: 0.0
+    lon2: 0.05
+    lat2: 0.0

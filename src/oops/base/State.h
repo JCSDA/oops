@@ -153,6 +153,11 @@ const atlas::FieldSet & State<MODEL>::fieldSet() const {
   if (interface::State<MODEL>::fset_.empty()) {
     interface::State<MODEL>::fset_ = atlas::FieldSet();
     this->toFieldSet(interface::State<MODEL>::fset_);
+    for (const auto & field : interface::State<MODEL>::fset_) {
+      ASSERT_MSG(field.rank() == 2,
+                 "OOPS expects the model's State::toFieldSet method to return rank-2 fields,"
+                 " but field " + field.name() + " has rank = " + std::to_string(field.rank()));
+    }
   }
   return interface::State<MODEL>::fset_;
 }
@@ -164,6 +169,11 @@ atlas::FieldSet & State<MODEL>::fieldSet() {
   if (interface::State<MODEL>::fset_.empty()) {
     interface::State<MODEL>::fset_ = atlas::FieldSet();
     this->toFieldSet(interface::State<MODEL>::fset_);
+    for (const auto & field : interface::State<MODEL>::fset_) {
+      ASSERT_MSG(field.rank() == 2,
+                 "OOPS expects the model's State::toFieldSet method to return rank-2 fields,"
+                 " but field " + field.name() + " has rank = " + std::to_string(field.rank()));
+    }
   }
   return interface::State<MODEL>::fset_;
 }

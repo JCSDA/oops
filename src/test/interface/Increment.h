@@ -92,6 +92,7 @@ template <typename MODEL> class IncrementFixture : private boost::noncopyable {
   std::unique_ptr<util::DateTime>  time_;
   std::unique_ptr<bool> skipAccumTest_;
   std::unique_ptr<bool> skipDiffTest_;
+  std::unique_ptr<bool> skipRmsByLevelTest_;
 };
 
 // =============================================================================
@@ -318,6 +319,25 @@ template <typename MODEL> void testIncrementAccum() {
 }
 
 // -----------------------------------------------------------------------------
+template <typename MODEL> void testRmsByLevel() {
+  typedef IncrementFixture<MODEL>   Test_;
+  typedef oops::Increment<MODEL>    Increment_;
+
+  // Option to skip test
+  const bool skipTest = Test_::test().getBool("skip rms by level test", false);
+  if (skipTest) {
+    oops::Log::warning() << "Skipping Increment.rmsByLevel test";
+    return;
+  } else {
+      Increment_ dx1(Test_::resol(), Test_::ctlvars(), Test_::time());
+      dx1.ones();
+      std::vector<double> vec = dx1.rmsByLevel(dx1.variables()[0]);
+      std::vector<double> referenceVec(vec.size(), 1.0);
+      EXPECT(vec == referenceVec);
+  }
+}
+
+// -----------------------------------------------------------------------------
 
 template <typename MODEL> void testIncrementSerialize() {
   typedef IncrementFixture<MODEL>   Test_;
@@ -470,6 +490,8 @@ class Increment : public oops::Test {
       { testIncrementCopyBoolConstructor<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementChangeResConstructor")
       { testIncrementChangeResConstructor<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/rmsByLevel")
+      { testRmsByLevel<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementTriangle")
       { testIncrementTriangle<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementOpPlusEq")

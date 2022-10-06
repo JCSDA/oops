@@ -174,6 +174,7 @@ oops/coupled/GeometryCoupled.h
 oops/coupled/ModelCoupled.h
 oops/coupled/StateCoupled.h
 oops/coupled/TraitCoupled.h
+oops/coupled/VariableChangeCoupled.h
 oops/coupled/instantiateCoupledFactory.h
 
 oops/generic/AnalyticInitBase.h
@@ -187,6 +188,11 @@ oops/generic/gc99.h
 oops/generic/gc99.cc
 oops/generic/gc99_mod.F90
 oops/generic/GeoVaLsWriter.h
+oops/generic/GlobalInterpolator.h
+oops/generic/HtlmCalculator.h
+oops/generic/HtlmEnsemble.h
+oops/generic/HybridLinearModel.h
+oops/generic/HybridLinearModelCoeffs.h
 oops/generic/IdentityLinearModel.h
 oops/generic/IdentityModel.h
 oops/generic/instantiateLinearModelFactory.h
@@ -206,6 +212,7 @@ oops/generic/soar.h
 oops/generic/soar.cc
 oops/generic/UnstructuredInterpolator.h
 oops/generic/VerticalLocEV.h
+oops/generic/HybridLinearModel.h
 
 oops/interface/AnalyticInitBase.h
 oops/interface/ErrorCovariance.h
@@ -297,6 +304,7 @@ oops/util/Duration.cc
 oops/util/Duration.h
 oops/util/duration.intfb.h
 oops/util/Expect.h
+oops/util/FieldSetOperations.cc
 oops/util/FieldSetOperations.h
 oops/util/FloatCompare.h
 oops/util/formats.h
@@ -313,7 +321,10 @@ oops/util/LibOOPS.cc
 oops/util/LibOOPS.h
 oops/util/LocalEnvironment.cc
 oops/util/LocalEnvironment.h
+oops/util/Logger_f.cc
+oops/util/Logger_f.h
 oops/util/Logger.h
+oops/util/logger_mod.F90
 oops/util/missing_values_f.cc
 oops/util/missing_values_f.h
 oops/util/missing_values_mod.F90
@@ -414,6 +425,7 @@ test/interface/GeometryIterator.h
 test/interface/GeometryFixture.h
 test/interface/GeoVaLs.h
 test/interface/GetValues.h
+test/interface/GlobalInterpolator.h
 test/interface/Increment.h
 test/interface/LinearModel.h
 test/interface/LinearObsOperator.h
@@ -434,13 +446,13 @@ test/interface/ObsSpace.h
 test/interface/ObsTestsFixture.h
 test/interface/ObsVector.h
 test/interface/State.h
+test/interface/UnstructuredInterpolator.h
 test/interface/VariableChange.h
 
 test/mpi/mpi.h
 
 test/generic/fft_multiple.cc
 test/generic/fft_multiple.h
-test/generic/InterpolationInterface.h
 test/generic/PseudoModelState4D.h
 test/generic/VerticalLocEV.h
 
@@ -483,8 +495,6 @@ endfunction(CREATE_SYMLINK)
 list( APPEND oops_test_input
   test/testinput/random.yaml
   test/testinput/pushstringvector.yaml
-  test/testinput/atlas_interpolation_interface.yaml
-  test/testinput/unstructured_interpolation.yaml
   test/testinput/variables.yaml
   test/testinput/parameters.yaml
   test/testinput/parameters_older_eckit.yaml
@@ -775,11 +785,6 @@ ecbuild_add_test( TARGET  test_mpi_mpi
                   SOURCES test/mpi/mpi.cc
                   ARGS    "test/testinput/mpi.yaml"
                   LIBS    oops )
-
-#ecbuild_add_test( TARGET  test_oops_unstructured_interpolation
-#                  SOURCES test/generic/InterpolationInterface.cc
-#                  ARGS    "test/testinput/unstructured_interpolation.yaml"
-#                  LIBS    oops )
 
 ecbuild_add_test( TARGET  test_fft_multiple
                   SOURCES test/generic/fft_multiple.cc

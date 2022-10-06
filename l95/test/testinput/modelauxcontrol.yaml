@@ -1,0 +1,5 @@
+geometry:
+  resol: 40
+
+model aux control:
+  bias: 0.2

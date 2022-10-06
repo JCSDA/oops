@@ -28,7 +28,6 @@ struct Log {
   static std::ostream& trace() {return LibOOPS::instance().traceChannel();}  // prefix "OOPS_TRACE"
   static std::ostream& stats() {return LibOOPS::instance().statsChannel();}  // prefix "OOPS_STATS"
   static std::ostream& test()  {return LibOOPS::instance().testChannel();}   // prefix "Test     :"
-  static std::ostream& timer() {return LibOOPS::instance().timerChannel();}  // prefix "OOPS_TIMER:"
 };
 
 // -----------------------------------------------------------------------------

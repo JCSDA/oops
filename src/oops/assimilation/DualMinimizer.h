@@ -130,6 +130,7 @@ DualMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
 // Solve the linear system
   double reduc = this->solve(vv, vvp, rr, HBHt, Rinv, ninner, gnreduc, dy, sigma);
 
+  Log::info() << classname() << ": reduction in residual norm = " << reduc << std::endl;
   Log::test() << classname() << ": reduction in residual norm = " << reduc << std::endl;
 
 // Recover solution in primal space

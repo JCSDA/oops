@@ -18,9 +18,11 @@ cost function:
     - obs operator: {}
       obs space:
         obsdatain:
-          obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+          engine:
+            obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
         obsdataout:
-          obsfile: Data/3dvar_qc_filter_ordering_prior.2010-01-02T00:00:00Z.obt
+          engine:
+            obsfile: Data/3dvar_qc_filter_ordering_prior.2010-01-02T00:00:00Z.obt
       obs error:
         covariance model: diagonal
       obs prior filters:
@@ -36,12 +38,10 @@ variational:
       resol: 40
     diagnostics:
       departures: ombg
-    test: on
   - ninner: 10
     gradient norm reduction: 1e-10
     geometry:
       resol: 40
-    test: on
 final:
   diagnostics:
     departures: oman

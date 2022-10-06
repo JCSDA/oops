@@ -134,8 +134,8 @@ template <typename MODEL> class ConvertIncrement : public Application {
         Log::test() << "Trajectory state: " << xTrajBg << std::endl;
 
           // Create variable change
-        lvc->setTrajectory(xTrajBg);
-        lvc->multiply(dx, varout);
+        lvc->changeVarTraj(xTrajBg, varout);
+        lvc->changeVarTL(dx, varout);
       }
 
 //    Write state

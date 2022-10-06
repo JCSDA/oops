@@ -1,0 +1,22 @@
+background:
+  date: 2010-01-01T06:00:00Z
+  filename: Data/forecast.ens.1.2010-01-01T00:00:00Z.PT6H.l95
+  # state variables: [x]
+ensemble:
+  members:
+  - date: 2010-01-01T06:00:00Z
+    filename: Data/forecast.ens.1.2010-01-01T00:00:00Z.PT6H.l95
+  - date: 2010-01-01T06:00:00Z
+    filename: Data/forecast.ens.2.2010-01-01T00:00:00Z.PT6H.l95
+  - date: 2010-01-01T06:00:00Z
+    filename: Data/forecast.ens.3.2010-01-01T00:00:00Z.PT6H.l95
+geometry:
+  resol: 40
+variance output:
+  datadir: Data
+  exp: ensvariance
+  type: an
+  date: 2010-01-01T06:00:00Z
+
+test:
+  reference filename: testoutput/ensvariance.test

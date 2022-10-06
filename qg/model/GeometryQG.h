@@ -47,6 +47,8 @@ class GeometryQgParameters : public oops::Parameters {
   oops::RequiredParameter<std::vector<float>> depths{"depths", this};
   /// Heating option (AS: should it be in geometry or model?)
   oops::Parameter<bool> heating{"heating", true, this};
+  /// Modified QG option
+  oops::Parameter<float> perturbedheat{"perturbed heating", 0, this};
 };
 
 class GeometryQGIterator;
@@ -76,6 +78,7 @@ class GeometryQG : public util::Printable,
   const atlas::FieldSet & extraFields() const {return extraFields_;}
   atlas::FieldSet & extraFields() {return extraFields_;}
   size_t levels() const {return levs_;}
+  bool levelsAreTopDown() const {return true;}
 
   std::vector<size_t> variableSizes(const oops::Variables & vars) const;
 

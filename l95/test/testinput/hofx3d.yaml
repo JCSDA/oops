@@ -9,9 +9,11 @@ observations:
   observers:
   - obs space:
       obsdatain:
-        obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+        engine:
+          obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
       obsdataout:
-        obsfile: Data/hofx.2010-01-02T00:00:00Z.obt
+        engine:
+          obsfile: Data/hofx.2010-01-02T00:00:00Z.obt
     obs operator: {}
 
 test:

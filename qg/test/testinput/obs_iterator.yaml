@@ -1,0 +1,46 @@
+window begin: 2010-01-01T00:00:00Z
+window end: 2010-01-02T00:00:00Z
+
+observations:
+- obs error:
+    covariance model: diagonal
+  obs space:
+    obsdatain:
+      engine:
+        obsfile: Data/truth.obs4d_24h.nc
+    obs type: Stream
+  obs iterator test:
+    tolerance: 1.0e-6
+    reference nlocs: 800
+    lon1: -29.87208056
+    lat1: 3.637673423
+    lon2: 178.9865309
+    lat2: 8.23197272
+- obs error:
+    covariance model: diagonal
+  obs space:
+    obsdatain:
+      engine:
+        obsfile: Data/truth.obs4d_24h.nc
+    obs type: Wind
+  obs iterator test:
+    tolerance: 1.0e-6
+    reference nlocs: 400
+    lon1: -154.0892581
+    lat1: 80.79695176
+    lon2: -74.03059012
+    lat2: 78.99264774
+- obs error:
+    covariance model: diagonal
+  obs space:
+    obsdatain:
+      engine:
+        obsfile: Data/truth.obs4d_24h.nc
+    obs type: WSpeed
+  obs iterator test:
+    tolerance: 1.0e-6
+    reference nlocs: 400
+    lon1: 112.2691295
+    lat1: 66.91093417
+    lon2: 131.4322691
+    lat2: 82.16827599

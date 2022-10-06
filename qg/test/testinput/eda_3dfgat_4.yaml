@@ -28,9 +28,11 @@ cost function:
         obs type: Stream
       obs space:
         obsdatain:
-          obsfile: Data/truth.obs3d.nc
+          engine:
+            obsfile: Data/truth.obs3d.nc
         obsdataout:
-          obsfile: Data/mem004.eda_3dfgat.obs3d.nc
+          engine:
+            obsfile: Data/mem004.eda_3dfgat.obs3d.nc
         obs type: Stream
         obs perturbations seed: 4
     - obs error:
@@ -40,9 +42,11 @@ cost function:
         obs type: Wind
       obs space:
         obsdatain:
-          obsfile: Data/truth.obs3d.nc
+          engine:
+            obsfile: Data/truth.obs3d.nc
         obsdataout:
-          obsfile: Data/mem004.eda_3dfgat.obs3d.nc
+          engine:
+            obsfile: Data/mem004.eda_3dfgat.obs3d.nc
         obs type: Wind
         obs perturbations seed: 4
     - obs error:
@@ -52,9 +56,11 @@ cost function:
         obs type: WSpeed
       obs space:
         obsdatain:
-          obsfile: Data/truth.obs3d.nc
+          engine:
+            obsfile: Data/truth.obs3d.nc
         obsdataout:
-          obsfile: Data/mem004.eda_3dfgat.obs3d.nc
+          engine:
+            obsfile: Data/mem004.eda_3dfgat.obs3d.nc
         obs type: WSpeed
         obs perturbations seed: 4
 variational:
@@ -74,7 +80,6 @@ variational:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
-    test: on
     obs perturbations: true
 final:
   diagnostics:

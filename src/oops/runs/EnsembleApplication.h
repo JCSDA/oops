@@ -81,9 +81,6 @@ class EnsembleApplication : public Application {
     eckit::PathName confPath = files[mymember-1];
     eckit::YAMLConfiguration memberConf(confPath);
 
-    Log::debug() << "EnsembleApplication config for member " << mymember << ": "
-                 << memberConf << std::endl;
-
     APP ensapp(commMember);
     return ensapp.execute(memberConf, validate);
   }

@@ -18,23 +18,24 @@ def subfunc(args):
     obs_types = []
     nouter = 0
     ninner = 0
+    pattern_test = "Test     :"
     with open(args.filepath, "r") as file:
         for line in file:
             # Get observation types
             pattern = "Nonlinear Jo\("
-            if re.search(pattern, line):
+            if re.search(pattern, line) and not re.search(pattern_test, line):
                 obs_type = line.split('(', 1)[1].split(')', 1)[0]
                 if not obs_type in obs_types:
                     obs_types.append(obs_type)
 
             # Get number of outer iterations (+1 with initial value)
             pattern = "Nonlinear J ="
-            if re.search(pattern, line):
+            if re.search(pattern, line) and not re.search(pattern_test, line):
                 nouter += 1
 
             # Get total number of inner iterations
             pattern = "Quadratic cost function: J "
-            if re.search(pattern, line):
+            if re.search(pattern, line) and not re.search(pattern_test, line):
                 ninner += 1
 
     print(nouter-1, "outer iterations with a total of", ninner, "inner iterations")
@@ -52,19 +53,19 @@ def subfunc(args):
         iter = 0
         for line in file:
             # Get nonlinear Jb
-            pattern = "Test     : CostJb   : Nonlinear Jb ="
-            if re.search(pattern, line):
+            pattern = "CostJb   : Nonlinear Jb ="
+            if re.search(pattern, line) and not re.search(pattern_test, line):
                 Jb[iter] = float(line.split("=")[1])
 
             # Get nonlinear Jo
             for iobs in range(0, len(obs_types)):
-               pattern = "Test     : CostJo   : Nonlinear Jo\(" + obs_types[iobs] + "\) ="
-               if re.search(pattern, line):
+               pattern = "CostJo   : Nonlinear Jo\(" + obs_types[iobs] + "\) ="
+               if re.search(pattern, line) and not re.search(pattern_test, line):
                   Jo[iter, iobs] = float(line.split("=", 1)[1].split(",", 1)[0])
 
             # Get nonlinear J
-            pattern = "Test     : CostFunction: Nonlinear J ="
-            if re.search(pattern, line):
+            pattern = "CostFunction: Nonlinear J ="
+            if re.search(pattern, line) and not re.search(pattern_test, line):
                 J[iter] = float(line.split("=")[1])
                 iter += 1
 
@@ -74,7 +75,7 @@ def subfunc(args):
         for line in file:
             # Get quadratic J
             pattern = "Quadratic cost function: J "
-            if re.search(pattern, line):
+            if re.search(pattern, line) and not re.search(pattern_test, line):
                 indexQuadJ[iter] = int(re.split("[()]", line)[1])
                 if indexQuadJ[iter] == 1:
                     indexJ.append(iter)

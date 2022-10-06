@@ -257,6 +257,7 @@ double CostJbTotal<MODEL, OBS>::evaluate(const CtrlInc_ & dx) const {
 // Get rid of very small values for test
   double ztest = zjb;
   if (zjb >= 0.0 && zjb <= std::numeric_limits<double>::epsilon()) ztest = 0.0;
+  Log::info() << "CostJb   : Nonlinear Jb = " << ztest << std::endl;
   Log::test() << "CostJb   : Nonlinear Jb = " << ztest << std::endl;
 
   Log::trace() << "CostJbTotal::evaluate done" << std::endl;

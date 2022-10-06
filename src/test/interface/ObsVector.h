@@ -189,9 +189,9 @@ template <typename OBS> void testReadWrite() {
 /// \brief Tests ObsVector::mask, ObsVector::packEigen and
 ///        ObsVector::packEigenSize methods.
 /// \details Tests that:
-/// - mask of all zeros (nothing to mask) applied to ObsVector doesn't change
-///   its size and content;
-/// - mask of either all ones (if "mask variable" isn't specified in yaml), or
+/// - mask of "nothing to mask" applied to ObsVector doesn't change its size
+///   and content;
+/// - mask of either "mask all" (if "mask variable" isn't specified in yaml), or
 ///   from the file applied to ObsVector changes its size.
 /// - linear algebra operations with ObsVector that were masked out produce
 ///   ObsVectors that have the same number of obs masked out.
@@ -200,7 +200,8 @@ template <typename OBS> void testReadWrite() {
 ///   task.
 template <typename OBS> void testMask() {
   typedef ObsTestsFixture<OBS>           Test_;
-  typedef oops::ObsDataVector<OBS, int>  ObsDataVector_;
+  typedef oops::ObsDataVector<OBS, int>  ObsDataVectorInt_;
+  typedef oops::ObsDataVector<OBS, float>  ObsDataVector_;
   typedef oops::ObsSpace<OBS>            ObsSpace_;
   typedef oops::ObsVector<OBS>           ObsVector_;
 
@@ -216,7 +217,7 @@ template <typename OBS> void testMask() {
     EXPECT(nobs_all > 0);
 
     /// apply empty mask, check that vector is the same
-    ObsDataVector_ unsetmask(obspace, obspace.assimvariables());
+    ObsVector_ unsetmask(obspace);
     unsetmask.zero();
     ObsVector_ with_unsetmask(reference);
     with_unsetmask.mask(unsetmask);
@@ -248,7 +249,15 @@ template <typename OBS> void testMask() {
       tmp.ones();
       tmp.save(maskvarname);
     }
-    ObsDataVector_ mask(obspace, obspace.assimvariables(), maskvarname);
+    // emulate the flow in the applications: ObsDataVector_ obs errors
+    // get masked with ObsDataVectorInt_ QC flags; then copied into ObsVector
+    // obs errors, and used as a mask for another ObsVector (e.g. H(x)).
+    ObsDataVectorInt_ qcmask(obspace, obspace.assimvariables(), maskvarname);
+    ObsDataVector_ masked_withqc(obspace, obspace.assimvariables());
+    ObsVector_ mask(obspace);
+    masked_withqc.mask(qcmask);
+    mask = masked_withqc;
+
     ObsVector_ with_mask(reference);
     with_mask.mask(mask);
     oops::Log::test() << "ObsVector masked with " << maskvarname << " mask: " <<

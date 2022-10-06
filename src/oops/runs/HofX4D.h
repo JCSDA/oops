@@ -181,6 +181,7 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
 //  Get observations from observer
     Observations_ yobs(obspaces);
     hofx.finalize(yobs);
+    Log::info() << "H(x): " << std::endl << yobs << "End H(x)" << std::endl;
     Log::test() << "H(x): " << std::endl << yobs << "End H(x)" << std::endl;
 
 //  Perturb H(x) if needed

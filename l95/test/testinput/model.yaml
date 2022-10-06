@@ -1,0 +1,17 @@
+geometry:
+  resol: 40
+
+initial condition:
+  date: 2010-01-01T03:00:00Z
+  filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H.l95
+
+model:
+  f: 8.0
+  name: L95
+  tstep: PT1H30M
+model aux control:
+  bias: 0.2
+model test:
+  forecast length: PT48H
+  final norm: 7.938
+  tolerance: 0.00005

@@ -40,12 +40,12 @@ class ChangeVarTLADQG: public util::Printable {
   ~ChangeVarTLADQG();
 
 /// Perform linear transforms
-  void multiply(IncrementQG &, const oops::Variables &) const;
-  void multiplyInverse(IncrementQG &, const oops::Variables &) const;
-  void multiplyAD(IncrementQG &, const oops::Variables &) const;
-  void multiplyInverseAD(IncrementQG &, const oops::Variables &) const;
+  void changeVarTL(IncrementQG &, const oops::Variables &) const;
+  void changeVarInverseTL(IncrementQG &, const oops::Variables &) const;
+  void changeVarAD(IncrementQG &, const oops::Variables &) const;
+  void changeVarInverseAD(IncrementQG &, const oops::Variables &) const;
 
-  void setTrajectory(const StateQG &, const StateQG &);
+  void changeVarTraj(const StateQG &, const oops::Variables &);
 
  private:
   void print(std::ostream &) const override;

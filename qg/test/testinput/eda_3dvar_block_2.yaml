@@ -25,9 +25,11 @@ cost function:
         obs type: Stream
       obs space:
         obsdatain:
-          obsfile: Data/truth.obs3d.nc
+          engine:
+            obsfile: Data/truth.obs3d.nc
         obsdataout:
-          obsfile: Data/mem002.block_eda_3dvar.obs3d.nc
+          engine:
+            obsfile: Data/mem002.block_eda_3dvar.obs3d.nc
         obs type: Stream
         obs perturbations seed: 2
     - obs error:
@@ -37,9 +39,11 @@ cost function:
         obs type: Wind
       obs space:
         obsdatain:
-          obsfile: Data/truth.obs3d.nc
+          engine:
+            obsfile: Data/truth.obs3d.nc
         obsdataout:
-          obsfile: Data/mem002.block_eda_3dvar.obs3d.nc
+          engine:
+            obsfile: Data/mem002.block_eda_3dvar.obs3d.nc
         obs type: Wind
         obs perturbations seed: 2
     - obs error:
@@ -49,9 +53,11 @@ cost function:
         obs type: WSpeed
       obs space:
         obsdatain:
-          obsfile: Data/truth.obs3d.nc
+          engine:
+            obsfile: Data/truth.obs3d.nc
         obsdataout:
-          obsfile: Data/mem002.block_eda_3dvar.obs3d.nc
+          engine:
+            obsfile: Data/mem002.block_eda_3dvar.obs3d.nc
         obs type: WSpeed
         obs perturbations seed: 2
 variational:
@@ -60,24 +66,22 @@ variational:
     members: 4
   iterations:
   - diagnostics:
-      departures: ombg
+      departures: ombg0
     gradient norm reduction: 0.2
     ninner: 10
     geometry:
       nx: 20
       ny: 10
       depths: [4500.0, 5500.0]
-    test: on
     obs perturbations: true
   - diagnostics:
-      departures: ombg
+      departures: ombg1
     gradient norm reduction: 0.2
     ninner: 10
     geometry:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
-    test: on
 final:
   diagnostics:
     departures: oman

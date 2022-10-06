@@ -41,12 +41,12 @@ class IdChangeVarTLADL95: public util::Printable {
   ~IdChangeVarTLADL95() {}
 
 /// Perform linear transforms
-  void multiply(IncrementL95 &, const oops::Variables &) const {}
-  void multiplyInverse(IncrementL95 &, const oops::Variables &) const {}
-  void multiplyAD(IncrementL95 &, const oops::Variables &) const {}
-  void multiplyInverseAD(IncrementL95 &, const oops::Variables &) const {}
+  void changeVarTL(IncrementL95 &, const oops::Variables &) const {}
+  void changeVarInverseTL(IncrementL95 &, const oops::Variables &) const {}
+  void changeVarAD(IncrementL95 &, const oops::Variables &) const {}
+  void changeVarInverseAD(IncrementL95 &, const oops::Variables &) const {}
 
-  void setTrajectory(const StateL95 &, const StateL95 &) {}
+  void changeVarTraj(const StateL95 &, const oops::Variables &) {}
 
  private:
   void print(std::ostream & os) const {os << "IdChangeVarTLADL95";}

@@ -56,7 +56,7 @@ namespace oops {
 
 static LibOOPS liboops;
 
-LibOOPS::LibOOPS() : Library("oops"), rank_(0),
+LibOOPS::LibOOPS() : Library("oops"), rank_(0), test_(false),
                      debug_(false), predebug_("OOPS_DEBUG"),
                      trace_(false), pretrace_("OOPS_TRACE") {
 }
@@ -101,13 +101,6 @@ void LibOOPS::initialise() {
     do_abortfpe = getEnv("OOPS_ABORTFPE", 1);
     trap_sigfpe(do_abortfpe);
   }
-  enable_timer_channel_ = getEnv("OOPS_TIMER", 0) > 0 && rank_ == 0;
-
-  // testStream_ is used by TestReference for comparing test output
-  // with a reference file
-  if ( rank_ == 0 ) {
-    testChannel().addStream(testStream_);
-  }
 
 #ifdef ENABLE_GPTL
   do_profile = getEnv("OOPS_PROFILE", 0);
@@ -128,7 +121,13 @@ void LibOOPS::teeOutput(const std::string & fileprefix) {
 }
 
 void LibOOPS::testReferenceInitialise(const eckit::LocalConfiguration &testConf) {
-  testReference_.initialise(testConf);
+  // testStream_ is used by TestReference for comparing test output
+  // with a reference file
+  if ( rank_ == 0 ) {
+    test_ = true;
+    testChannel().addStream(testStream_);
+    testReference_.initialise(testConf);
+  }
 }
 
 /** Clears logs and finalises MPI (unless \p finaliseMPI is false).
@@ -168,12 +167,10 @@ void LibOOPS::finalise(bool finaliseMPI) {
     traceChannel_.reset(new eckit::Channel());
     statsChannel_.reset(new eckit::Channel());
     testChannel_.reset(new eckit::Channel());
-    timerChannel_.reset(new eckit::Channel());
     // Destroy info channel last after other channels have flushed all output
     infoChannel_.reset(new eckit::Channel());
 
-    if (finaliseMPI)
-      eckit::mpi::finaliseAllComms();
+    if (finaliseMPI) eckit::mpi::finaliseAllComms();
 }
 
 const void* LibOOPS::addr() const {return this;}
@@ -212,7 +209,7 @@ eckit::Channel& LibOOPS::statsChannel() const {
 
 eckit::Channel& LibOOPS::testChannel() const {
   if (testChannel_) {return *testChannel_;}
-  if (rank_ == 0) {
+  if (test_) {
     testChannel_.reset(new eckit::Channel(
       new eckit::PrefixTarget("Test     :", new eckit::OStreamTarget(eckit::Log::info()))));
   } else {
@@ -221,17 +218,6 @@ eckit::Channel& LibOOPS::testChannel() const {
   testChannel_->setf(std::ios::scientific);
   testChannel_->precision(std::numeric_limits<double>::digits10+1);
   return *testChannel_;
-}
-
-eckit::Channel& LibOOPS::timerChannel() const {
-  if (timerChannel_) {return *timerChannel_;}
-  if (enable_timer_channel_) {
-    timerChannel_.reset(new eckit::Channel(
-      new eckit::PrefixTarget("OOPS_TIMER:", new eckit::OStreamTarget(eckit::Log::info()))));
-  } else {
-    timerChannel_.reset(new eckit::Channel());
-  }
-  return *timerChannel_;
 }
 
 eckit::Channel& LibOOPS::infoChannel() const {

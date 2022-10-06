@@ -1,0 +1,10 @@
+# (C) Copyright 2022- UCAR
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+
+horizontal_length_scale: 2.0e+6
+localization method: QG
+maximum_condition_number: 1.0e+6
+standard_deviation: 1.0
+vertical_length_scale: 30000.0

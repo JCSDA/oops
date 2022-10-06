@@ -102,7 +102,7 @@ void GetValueTLADs<MODEL, OBS>::doProcessingTraj(const State_ & xx) {
   for (GetValPtr_ getval : getvals_) getval->process(zz);
 
   CVarPtr_ cvtlad(new LinearVariableChange<MODEL>(xx.geometry(), chvarconf));
-  cvtlad->setTrajectory(xx);
+  cvtlad->changeVarTraj(xx, linvars_);
   chvartlad_[xx.validTime()] = std::move(cvtlad);
 
   Log::trace() << "GetValueTLADs::doProcessingTraj done" << std::endl;
@@ -130,7 +130,7 @@ void GetValueTLADs<MODEL, OBS>::doProcessingTL(const Increment_ & dx) {
   ASSERT(chvartlad_.find(now) != chvartlad_.end());
 
   Increment_ dz(dx);
-  chvartlad_[now]->multiply(dz, linvars_);
+  chvartlad_[now]->changeVarTL(dz, linvars_);
 
   for (GetValPtr_ getval : getvals_) getval->processTL(dz);
   Log::trace() << "GetValueTLADs::doProcessingTL done" << std::endl;
@@ -166,7 +166,7 @@ void GetValueTLADs<MODEL, OBS>::doProcessingAD(Increment_ & dx) {
 
   dz.synchronizeFieldsAD();  // includes adjoint of halo update
 
-  chvartlad_[now]->multiplyAD(dz, dx.variables());
+  chvartlad_[now]->changeVarAD(dz, dx.variables());
   dx += dz;
 
   Log::trace() << "GetValueTLADs::doProcessingAD done" << std::endl;

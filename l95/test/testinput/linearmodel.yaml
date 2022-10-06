@@ -1,0 +1,35 @@
+geometry:
+  resol: 40
+
+background error:
+  covariance model: L95Error
+  date: 2010-01-01T03:00:00Z
+  length_scale: 1.0
+  standard_deviation: 0.6
+analysis variables: [x]
+
+model:
+  f: 8.0
+  name: L95
+  tstep: PT1H30M
+model aux control:
+  bias: 0.2
+
+initial condition:
+  date: 2010-01-01T03:00:00Z
+  filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H.l95
+
+linear model:
+  trajectory:
+    f: 8.0
+    tstep: PT1H30M
+  tstep: PT1H30M
+  name: L95TLM
+linear model test:
+  forecast length: PT48H
+  iterations TL: 12
+  tolerance AD: 1.0e-14
+  tolerance TL: 1.0e-07
+
+window begin: 2010-01-01T03:00:00Z
+window end: 2010-01-02T03:00:00Z

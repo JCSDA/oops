@@ -24,23 +24,23 @@ ChangeVarTLADQG::ChangeVarTLADQG(const GeometryQG &, const Parameters_ &) {}
 // -----------------------------------------------------------------------------
 ChangeVarTLADQG::~ChangeVarTLADQG() {}
 // -----------------------------------------------------------------------------
-void ChangeVarTLADQG::multiply(IncrementQG & dx, const oops::Variables & vars) const {
+void ChangeVarTLADQG::changeVarTL(IncrementQG & dx, const oops::Variables & vars) const {
   qg_change_var_tl_f90(dx.fields().toFortran(), vars);
 }
 // -----------------------------------------------------------------------------
-void ChangeVarTLADQG::multiplyInverse(IncrementQG & dx, const oops::Variables & vars) const {
+void ChangeVarTLADQG::changeVarInverseTL(IncrementQG & dx, const oops::Variables & vars) const {
   qg_change_var_tl_f90(dx.fields().toFortran(), vars);
 }
 // -----------------------------------------------------------------------------
-void ChangeVarTLADQG::multiplyAD(IncrementQG & dx, const oops::Variables & vars) const {
+void ChangeVarTLADQG::changeVarAD(IncrementQG & dx, const oops::Variables & vars) const {
   qg_change_var_ad_f90(dx.fields().toFortran(), vars);
 }
 // -----------------------------------------------------------------------------
-void ChangeVarTLADQG::multiplyInverseAD(IncrementQG & dx, const oops::Variables & vars) const {
+void ChangeVarTLADQG::changeVarInverseAD(IncrementQG & dx, const oops::Variables & vars) const {
   qg_change_var_ad_f90(dx.fields().toFortran(), vars);
 }
 // -----------------------------------------------------------------------------
-void ChangeVarTLADQG::setTrajectory(const StateQG & background, const StateQG & firstGuess) {
+void ChangeVarTLADQG::changeVarTraj(const StateQG & firstGuess, const oops::Variables & vars) {
   // No QG trajectory used. No fortran to call here.
 }
 // -----------------------------------------------------------------------------

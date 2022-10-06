@@ -89,7 +89,7 @@ character(len=:),allocatable :: str
 
 ! Input file
 if (f_conf%has("obsdatain")) then
-  call f_conf%get_or_die("obsdatain.obsfile",str)
+  call f_conf%get_or_die("obsdatain.engine.obsfile",str)
   fin = str
 else
   fin = ''
@@ -98,7 +98,7 @@ call fckit_log%info('qg_obsdb_setup: file in = '//trim(fin))
 
 ! Output file
 if (f_conf%has("obsdataout")) then
-  call f_conf%get_or_die("obsdataout.obsfile",str)
+  call f_conf%get_or_die("obsdataout.engine.obsfile",str)
   call swap_name_member(f_conf, str, 6)
 
   fout = str
@@ -173,10 +173,6 @@ type(qg_obsvec),intent(inout) :: ovec !< Observation vector
 type(group_data),pointer :: jgrp
 type(column_data),pointer :: jcol
 integer :: jobs,jlev
-
-! Print Group and column
-call fckit_log%debug('qg_obsdb_get: grp = '//trim(grp))
-call fckit_log%debug('qg_obsdb_get: col = '//trim(col))
 
 ! Find observation group
 call qg_obsdb_find_group(self,grp,jgrp)

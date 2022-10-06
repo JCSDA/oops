@@ -1,0 +1,21 @@
+window begin: 2010-01-01T03:00:00Z
+window end: 2010-01-02T03:00:00Z
+observations:
+- obs error:
+    covariance model: diagonal
+  geovals:
+    filename: Data/gom.l95
+  obs space:
+    obsdatain:
+      engine:
+        obsfile: Data/truth.2010-01-02T00:00:00Z.obt
+    obsdataout:
+      engine:
+        obsfile: Data/forecast.2010-01-02T00:00:00Z.obt
+  obs operator: {}
+  obs bias:
+    bias: 0.3
+    covariance:
+      standard_deviation: 0.5
+  rms ref: 8.3207407741318846
+  tolerance: 1.0e-10

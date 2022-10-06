@@ -97,34 +97,34 @@ template <typename MODEL> void testLinearVariableChangeZero() {
     std::unique_ptr<LinearVariableChange_>
         changevar(new LinearVariableChange_(Test_::resol(), lvcConfig));
     oops::Log::test() << "Testing linear variable change" << std::endl;
-    Increment_  dxMultiply(Test_::resol(), varin,  Test_::time());
-    Increment_  dxMultiplyAD(Test_::resol(), varout,  Test_::time());
+    Increment_  dxChangeVarTL(Test_::resol(), varin,  Test_::time());
+    Increment_  dxChangeVarAD(Test_::resol(), varout,  Test_::time());
 
-    changevar->setTrajectory(Test_::xx());
+    changevar->changeVarTraj(Test_::xx(), varout);
 
     // dxMultiply = 0, check if K.dxMultiply = 0
-    dxMultiply.zero();
-    changevar->multiply(dxMultiply, varout);
-    EXPECT(dxMultiply.norm() == 0.0);
+    dxChangeVarTL.zero();
+    changevar->changeVarTL(dxChangeVarTL, varout);
+    EXPECT(dxChangeVarTL.norm() == 0.0);
 
     // dxinAdInv = 0, check if K^T.dxinAdInv = 0
-    dxMultiplyAD.zero();
-    changevar->multiplyAD(dxMultiplyAD, varin);
-    EXPECT(dxMultiplyAD.norm() == 0.0);
+    dxChangeVarAD.zero();
+    changevar->changeVarAD(dxChangeVarAD, varin);
+    EXPECT(dxChangeVarAD.norm() == 0.0);
 
     const bool testinverse = Test_::confs()[jj].getBool("test inverse", true);
     if (testinverse)
       {
         oops::Log::test() << "Doing zero test for inverse" << std::endl;
-        Increment_  dxMultiplyInverse(Test_::resol(), varout,  Test_::time());
-        Increment_  dxMultiplyInverseAD(Test_::resol(), varin,  Test_::time());
-        dxMultiplyInverseAD.zero();
-        changevar->multiplyInverseAD(dxMultiplyInverseAD, varout);
-        EXPECT(dxMultiplyInverseAD.norm() == 0.0);
+        Increment_  dxChangeVarInverseTL(Test_::resol(), varout,  Test_::time());
+        Increment_  dxChangeVarInverseAD(Test_::resol(), varin,  Test_::time());
+        dxChangeVarInverseAD.zero();
+        changevar->changeVarInverseAD(dxChangeVarInverseAD, varout);
+        EXPECT(dxChangeVarInverseAD.norm() == 0.0);
 
-        dxMultiplyInverse.zero();
-        changevar->multiplyInverse(dxMultiplyInverse, varin);
-        EXPECT(dxMultiplyInverse.norm() == 0.0);
+        dxChangeVarInverseTL.zero();
+        changevar->changeVarInverseTL(dxChangeVarInverseTL, varin);
+        EXPECT(dxChangeVarInverseTL.norm() == 0.0);
       } else {
       oops::Log::test() << "Not doing zero test for inverse" << std::endl;
     }
@@ -144,22 +144,22 @@ template <typename MODEL> void testLinearVariableChangeAdjoint() {
 
     std::unique_ptr<LinearVariableChange_>
         changevar(new LinearVariableChange_(Test_::resol(), lvcConfig));
-    changevar->setTrajectory(Test_::xx());
+    changevar->changeVarTraj(Test_::xx(), varout);
 
-    Increment_  dxMultiply(Test_::resol(), varin,  Test_::time());
-    Increment_  dxMultiplyAD(Test_::resol(), varout,  Test_::time());
+    Increment_  dxChangeVarTL(Test_::resol(), varin,  Test_::time());
+    Increment_  dxChangeVarAD(Test_::resol(), varout,  Test_::time());
 
-    dxMultiply.random();
-    dxMultiplyAD.random();
+    dxChangeVarTL.random();
+    dxChangeVarAD.random();
 
-    Increment_  dxMultiplyIn(dxMultiply);
-    Increment_  dxMultiplyADIn(dxMultiplyAD);
+    Increment_  dxChangeVarTLIn(dxChangeVarTL);
+    Increment_  dxChangeVarADIn(dxChangeVarAD);
 
-    changevar->multiply(dxMultiply, varout);
-    changevar->multiplyAD(dxMultiplyAD, varin);
+    changevar->changeVarTL(dxChangeVarTL, varout);
+    changevar->changeVarAD(dxChangeVarAD, varin);
 
-    double zz1 = dot_product(dxMultiply, dxMultiplyADIn);
-    double zz2 = dot_product(dxMultiplyIn, dxMultiplyAD);
+    double zz1 = dot_product(dxChangeVarTL, dxChangeVarADIn);
+    double zz2 = dot_product(dxChangeVarTLIn, dxChangeVarAD);
 
     oops::Log::test() << "<dxout,KTdxin>-<Kdxout,dxin>/<dxout,KTdxin>="
                       << (zz1-zz2)/zz1 << std::endl;
@@ -171,19 +171,19 @@ template <typename MODEL> void testLinearVariableChangeAdjoint() {
     if (testinverse)
     {
       oops::Log::test() << "Doing adjoint test for inverse" << std::endl;
-      Increment_  dxMultiplyInverse(Test_::resol(), varout,  Test_::time());
-      Increment_  dxMultiplyInverseAD(Test_::resol(), varin,  Test_::time());
-      dxMultiplyInverse.random();
-      dxMultiplyInverseAD.random();
+      Increment_  dxChangeVarInverseTL(Test_::resol(), varout,  Test_::time());
+      Increment_  dxChangeVarInverseAD(Test_::resol(), varin,  Test_::time());
+      dxChangeVarInverseTL.random();
+      dxChangeVarInverseAD.random();
 
-      Increment_  dxMultiplyInverseIn(dxMultiplyInverse);
-      Increment_  dxMultiplyInverseADIn(dxMultiplyInverseAD);
+      Increment_  dxChangeVarInverseTLIn(dxChangeVarInverseTL);
+      Increment_  dxChangeVarInverseADIn(dxChangeVarInverseAD);
 
-      changevar->multiplyInverseAD(dxMultiplyInverseAD, varout);
-      changevar->multiplyInverse(dxMultiplyInverse, varin);
+      changevar->changeVarInverseAD(dxChangeVarInverseAD, varout);
+      changevar->changeVarInverseTL(dxChangeVarInverseTL, varin);
 
-      zz1 = dot_product(dxMultiplyInverse, dxMultiplyInverseADIn);
-      zz2 = dot_product(dxMultiplyInverseIn, dxMultiplyInverseAD);
+      zz1 = dot_product(dxChangeVarInverseTL, dxChangeVarInverseADIn);
+      zz2 = dot_product(dxChangeVarInverseTLIn, dxChangeVarInverseAD);
       oops::Log::test() << "<dxout,KinvTdxin>-<Kinvdxout,dxin>/<dxout,KinvTdxin>="
                       << (zz1-zz2)/zz1 << std::endl;
       oops::Log::test() << "<dxout,KinvTdxin>-<Kinvdxout,dxin>/<Kinvdxout,dxin>="
@@ -215,14 +215,14 @@ template <typename MODEL> void testLinearVariableChangeInverse() {
       oops::Log::test() << "Testing multiplyInverse" << std::endl;
       std::unique_ptr<LinearVariableChange_>
         changevar(new LinearVariableChange_(Test_::resol(), lvcConfig));
-      changevar->setTrajectory(Test_::xx());
+      changevar->changeVarTraj(Test_::xx(), varout);
 
       Increment_  dx(Test_::resol(), varout, Test_::time());
       dx.random();
       Increment_  dx0(dx);
 
-      changevar->multiplyInverse(dx, varin);
-      changevar->multiply(dx, varout);
+      changevar->changeVarInverseTL(dx, varin);
+      changevar->changeVarTL(dx, varout);
 
       const double zz1 = dx.norm();
       const double zz2 = dx0.norm();

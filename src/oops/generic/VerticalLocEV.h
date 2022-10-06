@@ -193,7 +193,6 @@ template<typename MODEL>
 template<typename MODEL>
   Eigen::MatrixXd VerticalLocEV<MODEL>::computeCorrMatrix(const Geometry_ & geom) {
     std::string locUnits = options_.VertLocUnits;
-    oops::Log::debug() << "locUnits: " << locUnits << std::endl;
     std::vector<double> vCoord = geom.verticalCoord(locUnits);
     size_t nlevs = vCoord.size();
 
@@ -204,7 +203,6 @@ template<typename MODEL>
         cov(ii, jj) = oops::gc99(std::abs(vCoord[jj]-vCoord[ii])/options_.VertLocDist);
       }
     }
-    oops::Log::debug() << "corr: " << cov << std::endl;
 
     return cov;
   }
@@ -290,14 +288,7 @@ bool VerticalLocEV<MODEL>::testTruncateEvecs(const Geometry_ & geom) {
   // recreate covNew from stored Evecs
   Eigen::MatrixXd covNew = Evecs_*Evecs_.transpose();
 
-  oops::Log::debug() << "Trace covNew " << covNew.diagonal().sum() << std::endl;
-  oops::Log::debug() << "Trace cov " << covOld.diagonal().sum() << std::endl;
-
-  oops::Log::debug() << "norm(covNew) " << covNew.norm() << std::endl;
-  oops::Log::debug() << "norm(cov) " << covOld.norm() << std::endl;
-
   covNew = covNew.array() - covOld.array();
-  oops::Log::debug() << "norm(covNew-cov) " << covNew.norm() << std::endl;
 
   bool rv = (covNew.diagonal().sum() - cov.diagonal().sum()) < 1e-5;
   return rv;

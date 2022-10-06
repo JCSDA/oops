@@ -42,30 +42,24 @@ ModelQG::~ModelQG() {
 // -----------------------------------------------------------------------------
 void ModelQG::initialize(StateQG & xx) const {
   ASSERT(xx.fields().isForModel(true));
-  oops::Log::debug() << "ModelQG::initialize" << xx.fields() << std::endl;
 }
 // -----------------------------------------------------------------------------
 void ModelQG::step(StateQG & xx, const ModelBias &) const {
   ASSERT(xx.fields().isForModel(true));
-  oops::Log::debug() << "ModelQG::step fields in" << xx.fields() << std::endl;
   qg_model_propagate_f90(keyConfig_, xx.fields().toFortran());
   xx.validTime() += params_.tstep;
-  oops::Log::debug() << "ModelQG::step fields out" << xx.fields() << std::endl;
 }
 // -----------------------------------------------------------------------------
 void ModelQG::finalize(StateQG & xx) const {
   ASSERT(xx.fields().isForModel(true));
-  oops::Log::debug() << "ModelQG::finalize" << xx.fields() << std::endl;
 }
 // -----------------------------------------------------------------------------
 int ModelQG::saveTrajectory(StateQG & xx, const ModelBias &) const {
   ASSERT(xx.fields().isForModel(true));
   int ftraj = 0;
-  oops::Log::debug() << "ModelQG::saveTrajectory fields in" << xx.fields() << std::endl;
   qg_fields_create_from_other_f90(ftraj, xx.fields().toFortran(), geom_.toFortran());
   qg_fields_copy_f90(ftraj, xx.fields().toFortran());
   ASSERT(ftraj != 0);
-  oops::Log::debug() << "ModelQG::saveTrajectory fields out" << xx.fields() << std::endl;
   return ftraj;
 }
 // -----------------------------------------------------------------------------

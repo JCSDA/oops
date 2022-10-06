@@ -8,13 +8,17 @@
 #ifndef OOPS_GENERIC_INSTANTIATELINEARMODELFACTORY_H_
 #define OOPS_GENERIC_INSTANTIATELINEARMODELFACTORY_H_
 
+#include "oops/generic/HybridLinearModel.h"
 #include "oops/generic/IdentityLinearModel.h"
 #include "oops/generic/LinearModelBase.h"
+
+
 
 namespace oops {
 
 template <typename MODEL> void instantiateLinearModelFactory() {
   static LinearModelMaker<MODEL, IdentityLinearModel<MODEL> > makerIdentityLinearModel_("Identity");
+  static LinearModelMaker<MODEL, HybridLinearModel<MODEL> > makerHybridTangentLinearModel_("HTLM");
 }
 
 }  // namespace oops

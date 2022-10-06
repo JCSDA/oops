@@ -66,8 +66,8 @@ class GomL95 : public util::Printable,
   const double & operator[](const int ii) const {return locval_[ii];}
   double & operator[](const int ii) {return locval_[ii];}
 
-  void fill(const std::vector<size_t> &, const std::vector<double> &);
-  void fillAD(const std::vector<size_t> &, std::vector<double> &) const;
+  void fill(const std::vector<size_t> &, const std::vector<double> &, const bool);
+  void fillAD(const std::vector<size_t> &, std::vector<double> &, const bool) const;
 
  private:
   size_t size_;

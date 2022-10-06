@@ -22,9 +22,11 @@ cost function:
     - obs operator: {}
       obs space:
         obsdatain:
-          obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
+          engine:
+            obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
         obsdataout:
-          obsfile: Data/mem003.eda_4dvar.2010-01-02T00:00:00Z.obt
+          engine:
+            obsfile: Data/mem003.eda_4dvar.2010-01-02T00:00:00Z.obt
         obs perturbations seed: 3
       obs error:
         covariance model: diagonal
@@ -49,7 +51,6 @@ variational:
       tstep: PT1H30M
       variable change: Identity
       name: L95TLM
-    test: on
     diagnostics:
       departures: ombg
     obs perturbations: true
@@ -64,7 +65,6 @@ variational:
       tstep: PT1H30M
       variable change: Identity
       name: L95TLM
-    test: on
 final:
   diagnostics:
     departures: oman

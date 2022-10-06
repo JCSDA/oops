@@ -124,7 +124,6 @@ StateCoupled<MODEL1, MODEL2>::StateCoupled(const GeometryCoupled_ & resol,
   : geom_(new GeometryCoupled_(resol)), xx1_(), xx2_(), parallel_(resol.isParallel()) {
   Log::trace() << "StateCoupled::StateCoupled starting" << std::endl;
   if (parallel_) {
-    Log::debug() << "Parallel coupled states" << std::endl;
     if (resol.modelNumber() == 1) {
       xx1_ = std::make_unique<State<MODEL1>>(resol.geometry1(), vars, time);
       vars_ = xx1_->variables();
@@ -134,7 +133,6 @@ StateCoupled<MODEL1, MODEL2>::StateCoupled(const GeometryCoupled_ & resol,
       vars_ = xx2_->variables();
     }
   } else {
-    Log::debug() << "Sequential coupled states" << std::endl;
     xx1_ = std::make_unique<State<MODEL1>>(resol.geometry1(), vars, time);
     xx2_ = std::make_unique<State<MODEL2>>(resol.geometry2(), vars, time);
     vars_ = xx1_->variables();
@@ -152,7 +150,6 @@ StateCoupled<MODEL1, MODEL2>::StateCoupled(const GeometryCoupled_ & resol,
   Log::trace() << "StateCoupled::StateCoupled read starting" << std::endl;
 
   if (parallel_) {
-    Log::debug() << "Parallel coupled states" << std::endl;
     if (resol.modelNumber() == 1) {
       xx1_ = std::make_unique<State<MODEL1>>(resol.geometry1(), std::get<0>(params.states));
       vars_ = xx1_->variables();
@@ -162,7 +159,6 @@ StateCoupled<MODEL1, MODEL2>::StateCoupled(const GeometryCoupled_ & resol,
       vars_ = xx2_->variables();
     }
   } else {
-    Log::debug() << "Sequential coupled states" << std::endl;
     xx1_ = std::make_unique<State<MODEL1>>(resol.geometry1(), std::get<0>(params.states));
     xx2_ = std::make_unique<State<MODEL2>>(resol.geometry2(), std::get<1>(params.states));
     vars_ = xx1_->variables();

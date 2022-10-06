@@ -55,9 +55,11 @@ cost function:
         obs type: Stream
       obs space:
         obsdatain:
-          obsfile: Data/truth.obs4d_12h.nc
+          engine:
+            obsfile: Data/truth.obs4d_12h.nc
         obsdataout:
-          obsfile: Data/4densvar.obs.nc
+          engine:
+            obsfile: Data/4densvar.obs.nc
         obs type: Stream
     - obs error:
         covariance model: diagonal
@@ -65,9 +67,11 @@ cost function:
         obs type: Wind
       obs space:
         obsdatain:
-          obsfile: Data/truth.obs4d_12h.nc
+          engine:
+            obsfile: Data/truth.obs4d_12h.nc
         obsdataout:
-          obsfile: Data/4densvar.obs.nc
+          engine:
+            obsfile: Data/4densvar.obs.nc
         obs type: Wind
     - obs error:
         covariance model: diagonal
@@ -75,9 +79,11 @@ cost function:
         obs type: WSpeed
       obs space:
         obsdatain:
-          obsfile: Data/truth.obs4d_12h.nc
+          engine:
+            obsfile: Data/truth.obs4d_12h.nc
         obsdataout:
-          obsfile: Data/4densvar.obs.nc
+          engine:
+            obsfile: Data/4densvar.obs.nc
         obs type: WSpeed
 #    constraints:
 #    - jcdfi:
@@ -101,14 +107,12 @@ variational:
       depths: [4500.0, 5500.0]
     diagnostics:
       departures: ombg
-    test: on
   - ninner: 10
     gradient norm reduction: 1.0e-10
     geometry:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
-    test: on
 final:
   diagnostics:
     departures: oman

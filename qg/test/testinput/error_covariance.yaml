@@ -1,0 +1,17 @@
+geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+background:
+  date: 2009-12-31T00:00:00Z
+  filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
+background error:
+  covariance model: QgError
+  horizontal_length_scale: 1.0e6
+  maximum_condition_number: 1.0e6
+  standard_deviation: 8.0e6
+  vertical_length_scale: 2787.0
+analysis variables: [x]
+
+covariance test:
+  tolerance: 0.06

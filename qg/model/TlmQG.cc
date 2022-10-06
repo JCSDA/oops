@@ -64,7 +64,6 @@ void TlmQG::setTrajectory(const StateQG & xx, StateQG & xlr, const ModelBias & b
 // -----------------------------------------------------------------------------
 void TlmQG::initializeTL(IncrementQG & dx) const {
   ASSERT(dx.fields().isForModel(false));
-  oops::Log::debug() << "TlmQG::initializeTL" << dx.fields() << std::endl;
 }
 // -----------------------------------------------------------------------------
 void TlmQG::stepTL(IncrementQG & dx, const ModelBiasIncrement &) const {
@@ -74,19 +73,14 @@ void TlmQG::stepTL(IncrementQG & dx, const ModelBiasIncrement &) const {
     ABORT("TlmQG: trajectory not available");
   }
   ASSERT(dx.fields().isForModel(false));
-  oops::Log::debug() << "TlmQG::stepTL fields in" << dx.fields() << std::endl;
   qg_model_propagate_tl_f90(keyConfig_, itra->second, dx.fields().toFortran());
-  oops::Log::debug() << "TlmQG::stepTL fields out" << dx.fields() << std::endl;
   dx.validTime() += tstep_;
 }
 // -----------------------------------------------------------------------------
-void TlmQG::finalizeTL(IncrementQG & dx) const {
-  oops::Log::debug() << "TlmQG::finalizeTL" << dx.fields() << std::endl;
-}
+void TlmQG::finalizeTL(IncrementQG & dx) const {}
 // -----------------------------------------------------------------------------
 void TlmQG::initializeAD(IncrementQG & dx) const {
   ASSERT(dx.fields().isForModel(false));
-  oops::Log::debug() << "TlmQG::initializeAD" << dx.fields() << std::endl;
 }
 // -----------------------------------------------------------------------------
 void TlmQG::stepAD(IncrementQG & dx, ModelBiasIncrement &) const {
@@ -97,14 +91,10 @@ void TlmQG::stepAD(IncrementQG & dx, ModelBiasIncrement &) const {
     ABORT("TlmQG: trajectory not available");
   }
   ASSERT(dx.fields().isForModel(false));
-  oops::Log::debug() << "TlmQG::stepAD fields in" << dx.fields() << std::endl;
   qg_model_propagate_ad_f90(keyConfig_, itra->second, dx.fields().toFortran());
-  oops::Log::debug() << "TlmQG::stepAD fields out" << dx.fields() << std::endl;
 }
 // -----------------------------------------------------------------------------
-void TlmQG::finalizeAD(IncrementQG & dx) const {
-  oops::Log::debug() << "TlmQG::finalizeAD" << dx.fields() << std::endl;
-}
+void TlmQG::finalizeAD(IncrementQG & dx) const {}
 // -----------------------------------------------------------------------------
 void TlmQG::print(std::ostream & os) const {
   os << "QG TLM Trajectory, nstep=" << traj_.size() << std::endl;

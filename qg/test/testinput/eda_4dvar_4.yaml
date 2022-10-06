@@ -26,9 +26,11 @@ cost function:
       obs space:
         obs type: Stream
         obsdatain:
-          obsfile: Data/truth.obs4d_24h.nc
+          engine:
+            obsfile: Data/truth.obs4d_24h.nc
         obsdataout:
-          obsfile: Data/mem004.eda_4dvar.obs4d_24h.nc
+          engine:
+            obsfile: Data/mem004.eda_4dvar.obs4d_24h.nc
         obs perturbations seed: 4
       obs error:
         covariance model: diagonal
@@ -38,9 +40,11 @@ cost function:
       obs space:
         obs type: Wind
         obsdatain:
-          obsfile: Data/truth.obs4d_24h.nc
+          engine:
+            obsfile: Data/truth.obs4d_24h.nc
         obsdataout:
-          obsfile: Data/mem004.eda_4dvar.obs4d_24h.nc
+          engine:
+            obsfile: Data/mem004.eda_4dvar.obs4d_24h.nc
         obs perturbations seed: 4
       obs error:
         covariance model: diagonal
@@ -50,9 +54,11 @@ cost function:
       obs space:
         obs type: WSpeed
         obsdatain:
-          obsfile: Data/truth.obs4d_24h.nc
+          engine:
+            obsfile: Data/truth.obs4d_24h.nc
         obsdataout:
-          obsfile: Data/mem004.eda_4dvar.obs4d_24h.nc
+          engine:
+            obsfile: Data/mem004.eda_4dvar.obs4d_24h.nc
         obs perturbations seed: 4
       obs error:
         covariance model: diagonal
@@ -70,7 +76,7 @@ variational:
       maxpairs: 3
   iterations:
   - diagnostics:
-      departures: ombg
+      departures: ombg0
     gradient norm reduction: 1.0e-10
     linear model:
       trajectory:
@@ -83,10 +89,9 @@ variational:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
-    test: on
     obs perturbations: true
   - diagnostics:
-      departures: ombg
+      departures: ombg1
     gradient norm reduction: 1.0e-10
     linear model:
       trajectory:
@@ -99,7 +104,6 @@ variational:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
-    test: on
 final:
   diagnostics:
     departures: oman

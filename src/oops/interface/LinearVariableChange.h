@@ -62,12 +62,11 @@ class LinearVariableChange {
 
   virtual ~LinearVariableChange();
 
-  void setTrajectory(const State_ &, const State_ &);
-  void setTrajectory(const State_ &);
-  void multiply(Increment_ &, const Variables &) const;
-  void multiplyInverse(Increment_ &, const Variables &) const;
-  void multiplyAD(Increment_ &, const Variables &) const;
-  void multiplyInverseAD(Increment_ &, const Variables &) const;
+  void changeVarTraj(const State_ &, const Variables &);
+  void changeVarTL(Increment_ &, const Variables &) const;
+  void changeVarInverseTL(Increment_ &, const Variables &) const;
+  void changeVarAD(Increment_ &, const Variables &) const;
+  void changeVarInverseAD(Increment_ &, const Variables &) const;
 
  private:
   void print(std::ostream &) const;
@@ -106,61 +105,53 @@ LinearVariableChange<MODEL>::~LinearVariableChange() {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void LinearVariableChange<MODEL>::multiply(Increment_ & dx, const Variables & vars) const {
-  Log::trace() << "LinearVariableChange<MODEL>::multiply starting" << std::endl;
-  util::Timer timer(classname(), "multiply");
-  chvar_->multiply(dx.increment(), vars);
-  Log::trace() << "LinearVariableChange<MODEL>::multiply done" << std::endl;
+void LinearVariableChange<MODEL>::changeVarTL(Increment_ & dx, const Variables & vars) const {
+  Log::trace() << "LinearVariableChange<MODEL>::changeVarTL starting" << std::endl;
+  util::Timer timer(classname(), "changeVarTL");
+  chvar_->changeVarTL(dx.increment(), vars);
+  Log::trace() << "LinearVariableChange<MODEL>::changeVarTL done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void LinearVariableChange<MODEL>::multiplyInverse(Increment_ & dx,
-                                                const Variables & vars) const {
-  Log::trace() << "LinearVariableChange<MODEL>::multiplyInverse starting" << std::endl;
-  util::Timer timer(classname(), "multiplyInverse");
-  chvar_->multiplyInverse(dx.increment(), vars);
-  Log::trace() << "LinearVariableChange<MODEL>::multiplyInverse done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void LinearVariableChange<MODEL>::multiplyAD(Increment_ & dx,
-                                                const Variables & vars) const {
-  Log::trace() << "LinearVariableChange<MODEL>::multiplyAD starting" << std::endl;
-  util::Timer timer(classname(), "multiplyAD");
-  chvar_->multiplyAD(dx.increment(), vars);
-  Log::trace() << "LinearVariableChange<MODEL>::multiplyAD done" << std::endl;
+void LinearVariableChange<MODEL>::changeVarInverseTL(Increment_ & dx,
+                                                     const Variables & vars) const {
+  Log::trace() << "LinearVariableChange<MODEL>::changeVarInverseTL starting" << std::endl;
+  util::Timer timer(classname(), "changeVarInverseTL");
+  chvar_->changeVarInverseTL(dx.increment(), vars);
+  Log::trace() << "LinearVariableChange<MODEL>::changeVarInverseTL done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void LinearVariableChange<MODEL>::multiplyInverseAD(Increment_ & dx,
-                                                const Variables & vars) const {
-  Log::trace() << "LinearVariableChange<MODEL>::multiplyInverseAD starting" << std::endl;
-  util::Timer timer(classname(), "multiplyInverseAD");
-  chvar_->multiplyInverseAD(dx.increment(), vars);
-  Log::trace() << "LinearVariableChange<MODEL>::multiplyInverseAD done" << std::endl;
+void LinearVariableChange<MODEL>::changeVarAD(Increment_ & dx, const Variables & vars) const {
+  Log::trace() << "LinearVariableChange<MODEL>::changeVarAD starting" << std::endl;
+  util::Timer timer(classname(), "changeVarAD");
+  chvar_->changeVarAD(dx.increment(), vars);
+  Log::trace() << "LinearVariableChange<MODEL>::changeVarAD done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void LinearVariableChange<MODEL>::setTrajectory(const State_ & xBackground,
-                                                const State_ & xFirstGuess) {
-  Log::trace() << "LinearVariableChange<MODEL>::setTrajectory starting" << std::endl;
-  util::Timer timer(classname(), "setTrajectory");
-  chvar_->setTrajectory(xBackground.state(), xFirstGuess.state());
-  Log::trace() << "LinearVariableChange<MODEL>::setTrajectory done" << std::endl;
+void LinearVariableChange<MODEL>::changeVarInverseAD(Increment_ & dx,
+                                                     const Variables & vars) const {
+  Log::trace() << "LinearVariableChange<MODEL>::changeVarInverseAD starting" << std::endl;
+  util::Timer timer(classname(), "changeVarInverseAD");
+  chvar_->changeVarInverseAD(dx.increment(), vars);
+  Log::trace() << "LinearVariableChange<MODEL>::changeVarInverseAD done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void LinearVariableChange<MODEL>::setTrajectory(const State_ & xBackground) {
-  this->setTrajectory(xBackground, xBackground);
+void LinearVariableChange<MODEL>::changeVarTraj(const State_ & xFirstGuess,
+                                                const Variables & vars) {
+  Log::trace() << "LinearVariableChange<MODEL>::changeVarTraj starting" << std::endl;
+  util::Timer timer(classname(), "changeVarTraj");
+  chvar_->changeVarTraj(xFirstGuess.state(), vars);
+  Log::trace() << "LinearVariableChange<MODEL>::changeVarTraj done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

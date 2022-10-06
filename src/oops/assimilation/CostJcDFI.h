@@ -140,6 +140,7 @@ double CostJcDFI<MODEL, OBS>::computeCost() {
   double zz = 0.5 * alpha_;
   std::unique_ptr<Increment_> dx(filter_->releaseDiff());
   zz *= dot_product(*dx, *dx);
+  Log::info() << "CostJcDFI: Nonlinear Jc = " << zz << std::endl;
   Log::test() << "CostJcDFI: Nonlinear Jc = " << zz << std::endl;
   return zz;
 }

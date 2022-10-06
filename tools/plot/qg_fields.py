@@ -54,6 +54,18 @@ def func(args):
         if args.plotwind:
             fields_u = []
             fields_v = []
+        if args.plotObsLocations:
+            # Variables to get
+            obs_types = ["Stream", "Wind", "WSpeed"]
+            # Check file extension
+            if not args.plotObsLocations.endswith(".nc"):
+                print("   Error: filepath extension should be .nc")
+                sys.exit(1)
+            # Get data
+            res = netCDF4.Dataset(args.plotObsLocations)
+            locations = res.groups[list(res.groups.keys())[0]].groups["Location"].variables["values"][:,:]
+            obs_lon = locations[:,0]
+            obs_lat = locations[:,1]
 
         # Loop over filepaths
         for filepath in filepaths:
@@ -107,13 +119,23 @@ def func(args):
         nz, ny, nx = fields_plot[0].shape
         levels = list(range(nz))
         z_coord = netCDF4.Dataset(filepaths[0]).variables["z"][:]
-        dx = domain_zonal / nx # zonal grid cell in km
-        dy = domain_meridional / (ny + 1) # meridional cell in km
-        x_coord = (np.arange(1, nx+1) - 0.5) * dx
-        lon_coord = x_coord / domain_zonal * 360 - 180
-        y_coord = np.arange(1, ny+1) * dy
-        lat_coord = y_coord / domain_meridional * 90
-        xx, yy = np.meshgrid(lon_coord, lat_coord)
+        lon_coord = netCDF4.Dataset(filepaths[0]).variables["lon"][:]
+        lat_coord = netCDF4.Dataset(filepaths[0]).variables["lat"][:]
+
+        min_lon = np.min(lon_coord)
+        max_lon = np.max(lon_coord)
+        min_lat = np.min(lat_coord)
+        max_lat = np.max(lat_coord)
+
+        # Get obs locations in other unit
+        if args.plotObsLocations:
+            indexes = []
+            for ii in range(len(obs_lon)):
+                obs_lat[ii] = 90/(max_lat-min_lat) * (obs_lat[ii] - min_lat)
+                if (obs_lon[ii] < min_lon) or (obs_lon[ii] > max_lon) or (obs_lat[ii] < min_lat) or (obs_lat[ii] > max_lat):
+                    indexes.append(ii)
+            obs_lon = np.delete(obs_lon, indexes)
+            obs_lat = np.delete(obs_lat, indexes)
 
         # Define color levels
         clevels = []
@@ -153,15 +175,19 @@ def func(args):
             for level, ax in zip(levels, axs[::-1]):
                 # Plot variable
                 if args.basefilepath is None:
-                    im = ax.contourf(xx, yy, fields_plot[iplot][level], cmap="plasma", levels=clevels[level])
+                    im = ax.contourf(lon_coord, lat_coord, fields_plot[iplot][level], cmap="plasma", levels=clevels[level])
                 else:
-                    im = ax.contourf(xx, yy, fields_plot[iplot][level], cmap="RdYlBu_r", levels=clevels[level])
+                    im = ax.contourf(lon_coord, lat_coord, fields_plot[iplot][level], cmap="RdYlBu_r", levels=clevels[level])
 
                 if args.plotwind:
                     # Plot wind field
-                    ax.quiver(xx[::dy_quiver, ::dx_quiver], yy[::dy_quiver, ::dx_quiver],
+                    ax.quiver(lon_coord[::dy_quiver, ::dx_quiver], lat_coord[::dy_quiver, ::dx_quiver],
                                   fields_u_plot[iplot][level, ::dy_quiver, ::dx_quiver], fields_v_plot[iplot][level, ::dy_quiver, ::dx_quiver],
                                   scale=scale, scale_units="inches")
+
+                if args.plotObsLocations:
+                    ax.scatter(obs_lon, obs_lat, marker='x', c='k', s=8, linewidths=0.5)
+
 
                 # Set plot formatting
                 ax.set_aspect("equal")

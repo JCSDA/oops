@@ -1,0 +1,63 @@
+geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+
+window begin: 2010-01-01T00:00:00Z
+window end: 2010-01-02T00:00:00Z
+
+observations:
+- obs error:
+    covariance model: diagonal
+  obs space:
+    obsdatain:
+      engine:
+        obsfile: Data/truth.obs4d_24h.nc
+    obs type: Stream
+  obs operator:
+    obs type: Stream
+  obs localizations:
+  - localization method: Heaviside
+    lengthscale: 0.0
+    reference local nobs: [0]
+    reference gridpoints:
+      lons: [-175.5]
+      lats: [5.623]
+      depths: [0.0]
+    reference rms: [0]
+- obs error:
+    covariance model: diagonal
+  obs space:
+    obsdatain:
+      engine:
+        obsfile: Data/truth.obs4d_24h.nc
+    obs type: Wind
+  obs operator:
+    obs type: Wind
+  obs localizations:
+  - localization method: Heaviside
+    lengthscale: 1.e8
+    reference local nobs: [800]
+    reference gridpoints:
+      lons: [-175.5]
+      lats: [5.623]
+      depths: [0.0]
+    reference rms: [1]
+- obs error:
+    covariance model: diagonal
+  obs space:
+    obsdatain:
+      engine:
+        obsfile: Data/truth.obs4d_24h.nc
+    obs type: WSpeed
+  obs operator:
+    obs type: WSpeed
+  obs localizations:
+  - localization method: Heaviside
+    lengthscale: 5.e6
+    reference local nobs: [48]
+    reference gridpoints:
+      lons: [-175.5]
+      lats: [5.623]
+      depths: [0.0]
+    reference rms: [1]

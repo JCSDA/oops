@@ -38,8 +38,6 @@ ObsSpaceBase::ObsSpaceBase(const ObsSpaceParametersBase & params, const eckit::m
 //             31622400 seconds max in 1 year
 //          12197962800 seed at this step for 2010-01-01T03:00:00Z
   seed_ += 100000000000 * instance_;
-
-  Log::debug() << "ObsSpaceBase: seed = " << seed_ << std::endl;
 }
 
 // -----------------------------------------------------------------------------

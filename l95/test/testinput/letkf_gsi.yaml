@@ -22,9 +22,11 @@ observations:
         lengthscale: .1
     obs space:
       obsdatain:
-        obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+        engine:
+          obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
       obsdataout:
-        obsfile: Data/letkf_gsi.2010-01-02T00:00:00Z.obt
+        engine:
+          obsfile: Data/letkf_gsi.2010-01-02T00:00:00Z.obt
     obs operator: {}
 
 driver:
@@ -33,6 +35,7 @@ driver:
   save posterior mean increment: true
   save prior variance: true
   save posterior variance: true
+  update obs config with geometry info: false
 
 local ensemble DA:
   solver: GSI LETKF

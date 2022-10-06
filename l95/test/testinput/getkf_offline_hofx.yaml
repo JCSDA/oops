@@ -22,12 +22,14 @@ observations:
       lengthscale: .1
     obs space:
       obsdatain:
-        obsfile: Data/getkf.2010-01-02T00:00:00Z.obt
+        engine:
+          obsfile: Data/getkf.2010-01-02T00:00:00Z.obt
     obs operator: {}
 
 driver:
   read HX from disk: true
   do posterior observer: false
+  update obs config with geometry info: false
 
 local ensemble DA:
   solver: GETKF

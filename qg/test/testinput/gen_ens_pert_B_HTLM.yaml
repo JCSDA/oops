@@ -1,0 +1,29 @@
+background error:
+  covariance model: QgError
+  horizontal_length_scale: 3.0e5
+  maximum_condition_number: 1.0e6
+  standard_deviation: 8.0e6
+  vertical_length_scale: 2787.0
+  randomization_seed: 7
+forecast length: PT24H
+initial condition:
+  date: 2010-01-01T00:00:00Z
+  filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D.nc
+members: 10
+model:
+  name: QG
+  tstep: PT1H
+output:
+  datadir: Data
+  date: 2010-01-01T00:00:00Z
+  exp: forecast_HTLM
+  frequency: PT1H
+  type: ens
+geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+perturbed variables: [x]
+test:
+  reference filename: testoutput/gen_ens_pert_B_HTLM.test
+

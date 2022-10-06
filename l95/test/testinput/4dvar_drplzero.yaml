@@ -22,9 +22,11 @@ cost function:
     - obs operator: {}
       obs space:
         obsdatain:
-          obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
+          engine:
+            obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
         obsdataout:
-          obsfile: Data/4dvar_drplzero.2010-01-02T00:00:00Z.obt
+          engine:
+            obsfile: Data/4dvar_drplzero.2010-01-02T00:00:00Z.obt
       monitoring only: true
       obs error:
         covariance model: diagonal
@@ -52,7 +54,6 @@ variational:
       variable change: Identity
     diagnostics:
       departures: ombg
-    test: on
   - ninner: 10
     gradient norm reduction: 1.0e-10
     geometry:
@@ -64,7 +65,6 @@ variational:
         f: 8.0
         tstep: PT1H30M
       variable change: Identity
-    test: on
 final:
   diagnostics:
     departures: oman

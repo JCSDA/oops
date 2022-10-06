@@ -77,7 +77,6 @@ class Geometry : public interface::Geometry<MODEL> {
 
   /// Accessor to the MPI communicator for distribution in time
   const eckit::mpi::Comm & timeComm() const {return *timeComm_;}
-
   /// Returns the MPI task that contains the closest point to the point with
   /// specified \p lat and \p lon.
   ///@{
@@ -87,7 +86,6 @@ class Geometry : public interface::Geometry<MODEL> {
   closestTask(const double lat, const double lon) const {
     return this->geom_->closestTask(lat, lon);
   }
-
   /// If MODEL::Geometry doesn't have closestTask implemented,
   /// use a generic implementation.
   template<class Geom = Geometry_>
@@ -100,6 +98,20 @@ class Geometry : public interface::Geometry<MODEL> {
     return itask;
   }
   ///@}
+
+  /// Returns true if the GeoVaLs levels are ordered from top to bottom.
+  /// If this is false, then the GeoVaLs are flipped by level during
+  /// GetValues::fillGeoVaLs.
+  bool levelsAreTopDown() const;
+
+  /// Check the Geometry's extraFields data for a field named maskName
+  bool hasMask(const std::string & maskName) const {
+    return this->geom_->extraFields().has_field(maskName);
+  }
+  /// Access the Geometry's extraFields data for a field named maskName
+  const atlas::Field & getMask(const std::string & maskName) const {
+    return this->geom_->extraFields().field(maskName);
+  }
 
   atlas::util::KDTree<size_t>::ValueList closestPoints(const double, const double, const int) const;
 
@@ -169,6 +181,16 @@ bool Geometry<MODEL>::operator==(const Geometry & rhs) const {
              spaceComm_ == rhs.spaceComm_ && timeComm_ == rhs.timeComm_);
   Log::trace() << "Geometry<MODEL>::operator== done" << std::endl;
   return eq;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+bool Geometry<MODEL>::levelsAreTopDown() const {
+  Log::trace() << "Geometry<MODEL>::levelsAreTopDown starting" << std::endl;
+  bool levelsTopDown = this->geom_->levelsAreTopDown();
+  Log::trace() << "Geometry<MODEL>::levelsAreTopDown done" << std::endl;
+  return levelsTopDown;
 }
 
 // -----------------------------------------------------------------------------

@@ -93,12 +93,16 @@ double GomL95::dot_product_with(const GomL95 & gom) const {
   return zz;
 }
 // -----------------------------------------------------------------------------
-void GomL95::fill(const std::vector<size_t> & indx, const std::vector<double> & vals) {
+void GomL95::fill(const std::vector<size_t> & indx,
+                  const std::vector<double> & vals,
+                  const bool) {
   ASSERT(indx.size() == vals.size());
   for (size_t jj = 0; jj < vals.size(); ++jj) locval_[indx[jj]] = vals[jj];
 }
 // -----------------------------------------------------------------------------
-void GomL95::fillAD(const std::vector<size_t> & indx, std::vector<double> & vals) const {
+void GomL95::fillAD(const std::vector<size_t> & indx,
+                    std::vector<double> & vals,
+                    const bool) const {
   ASSERT(indx.size() == vals.size());
   for (size_t jj = 0; jj < vals.size(); ++jj) vals[jj] += locval_[indx[jj]];
 }

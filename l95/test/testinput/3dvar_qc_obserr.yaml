@@ -18,9 +18,11 @@ cost function:
     - obs operator: {}
       obs space:
         obsdatain:
-          obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+          engine:
+            obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
         obsdataout:
-          obsfile: Data/3dvar_qc_obserr.2010-01-02T00:00:00Z.obt
+          engine:
+            obsfile: Data/3dvar_qc_obserr.2010-01-02T00:00:00Z.obt
       obs error:
         covariance model: diagonal
       obs filters:
@@ -42,7 +44,6 @@ variational:
       tstep: PT0H
     diagnostics:
       departures: ombg
-    test: on
   - ninner: 10
     gradient norm reduction: 1e-10
     geometry:
@@ -51,7 +52,6 @@ variational:
       name: identity
       variable change: Identity
       tstep: PT0H
-    test: on
 final:
   diagnostics:
     departures: oman

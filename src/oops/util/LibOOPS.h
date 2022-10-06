@@ -42,7 +42,6 @@ class LibOOPS : public eckit::system::Library {
   eckit::Channel& traceChannel() const;
   eckit::Channel& statsChannel() const;
   eckit::Channel& testChannel() const;
-  eckit::Channel& timerChannel() const;
 
   void initialise();
   void testReferenceInitialise(const eckit::LocalConfiguration &);
@@ -62,9 +61,9 @@ class LibOOPS : public eckit::system::Library {
   mutable std::unique_ptr<eckit::Channel> traceChannel_;
   mutable std::unique_ptr<eckit::Channel> statsChannel_;
   mutable std::unique_ptr<eckit::Channel> testChannel_;
-  mutable std::unique_ptr<eckit::Channel> timerChannel_;
 
   size_t rank_;
+  bool test_;
   bool debug_;
   std::string predebug_;
   bool trace_;
@@ -73,9 +72,6 @@ class LibOOPS : public eckit::system::Library {
   // TestReferece associated member variables
   std::stringstream testStream_;
   TestReference testReference_;
-
- private:
-  bool enable_timer_channel_;
 };
 
 // -----------------------------------------------------------------------------

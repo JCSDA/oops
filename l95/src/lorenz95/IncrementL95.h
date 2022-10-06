@@ -130,6 +130,10 @@ class IncrementL95 : public util::Printable,
   const util::DateTime & validTime() const {return time_;}
   util::DateTime & validTime() {return time_;}
   void updateTime(const util::Duration & dt) {time_ += dt;}
+  std::vector<double> rmsByLevel(const std::string &) const {
+      ABORT("rmsByLevel not implemented");
+      return {};
+  }
 
   oops::LocalIncrement getLocal(const Iterator &) const;
   void setLocal(const oops::LocalIncrement &, const Iterator &);

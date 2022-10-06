@@ -81,7 +81,6 @@ ObsSpaces<OBS>::ObsSpaces(const std::vector<Parameters_> & params, const eckit::
 {
   spaces_.reserve(params.size());
   for (const Parameters_ & param : params) {
-    Log::debug() << "ObsSpaces::ObsSpaces : conf " << param << std::endl;
     auto tmp = std::make_shared<ObsSpace_>(param, comm, bgn, end, time);
     spaces_.push_back(std::move(tmp));
   }

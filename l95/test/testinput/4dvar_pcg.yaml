@@ -23,9 +23,11 @@ cost function:
         covariance model: diagonal
       obs space:
         obsdatain:
-          obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
+          engine:
+            obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
         obsdataout:
-          obsfile: Data/4dvar_pcg.2010-01-02T00:00:00Z.obt
+          engine:
+            obsfile: Data/4dvar_pcg.2010-01-02T00:00:00Z.obt
       obs operator: {}
   constraints:
   - jcdfi:
@@ -49,7 +51,6 @@ variational:
     ninner: 10
     geometry:
       resol: 40
-    test: on
   - gradient norm reduction: 1.0e-10
     linear model:
       trajectory:
@@ -61,7 +62,6 @@ variational:
     ninner: 10
     geometry:
       resol: 40
-    test: on
 final:
   diagnostics:
     departures: oman

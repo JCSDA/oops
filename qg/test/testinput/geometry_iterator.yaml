@@ -1,0 +1,8 @@
+geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+inc variables: [x]
+increment test:
+ date: 2009-12-31T00:00:00Z
+ skip atlas: 1

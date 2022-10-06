@@ -12,7 +12,7 @@
 ################################################################################
 
 cmake_minimum_required( VERSION 3.12 )
-project( oops VERSION 1.3.0 LANGUAGES CXX Fortran )
+project( oops VERSION 1.4.0 LANGUAGES CXX Fortran )
 
 option(OPENMP "Build oops with OpenMP support" ON)
 
@@ -39,6 +39,8 @@ find_package( jedicmake QUIET )  # Prefer find modules from jedi-cmake
 
 if( ENABLE_MKL )
     find_package( MKL )
+else()
+    set( MKL_FOUND FALSE )
 endif()
 if( MKL_FOUND )
     set( LAPACK_LIBRARIES ${MKL_LIBRARIES} )
@@ -56,12 +58,12 @@ endif()
 find_package( MPI REQUIRED COMPONENTS C CXX Fortran )
 find_package( NetCDF REQUIRED COMPONENTS Fortran )
 find_package( Boost 1.64.0 REQUIRED )
-find_package( eckit 1.11.6 REQUIRED COMPONENTS MPI )
-find_package( fckit 0.7.0 REQUIRED )
+find_package( eckit 1.19.0 REQUIRED COMPONENTS MPI )
+find_package( fckit 0.9.5 REQUIRED )
 if(OpenMP_FOUND)
-    find_package( atlas 0.20.2 REQUIRED COMPONENTS OMP OMP_Fortran )
+    find_package( atlas 0.30.0 REQUIRED COMPONENTS OMP OMP_Fortran )
 else()
-    find_package( atlas 0.20.2 REQUIRED )
+    find_package( atlas 0.30.0 REQUIRED )
 endif()
 
 #Optional Dependencies

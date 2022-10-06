@@ -1,0 +1,39 @@
+Input state: 
+StateCoupled: QG
+  Valid time: 2010-01-01T00:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=-5.1807161668026185e+08, Max=1.0739375282587397e+08, RMS=1.9152134601534730e+08
+  Streamfunction LBC     :  Min=-4.0031613555457592e+08, Max=-0.0000000000000000e+00, RMS=2.0631821381632423e+08
+  Potential vorticity LBC:  Min=-6.7293786157197357e-04, Max=5.7902869607001021e-04, RMS=4.4639722241150535e-04
+StateCoupled: Lorenz 95
+ Valid time: 2010-01-01T00:00:00Z
+ Min=7.0000000000000000e+00, Max=8.0000000000000000e+00, Average=7.9749999999999996e+00
+
+Variable transform: Coupled VariableChange (QG and Lorenz 95)
+QG change of variable
+IdChangeVariable
+
+Variable change from: 1 variables: x
+Variable change to: 2 variables: x, q
+
+State after variable transform: 
+StateCoupled: QG
+  Valid time: 2010-01-01T00:00:00Z
+  Resolution = 40, 20, 2
+  Potential vorticity    :  Min=-5.7882177993261337e-04, Max=6.0656639600613414e-04, RMS=3.2747658383811055e-04
+  Streamfunction LBC     :  Min=-4.0031613555457592e+08, Max=-0.0000000000000000e+00, RMS=2.0631821381632423e+08
+  Potential vorticity LBC:  Min=-6.7293786157197357e-04, Max=5.7902869607001021e-04, RMS=4.4639722241150535e-04
+StateCoupled: Lorenz 95
+ Valid time: 2010-01-01T00:00:00Z
+ Min=7.0000000000000000e+00, Max=8.0000000000000000e+00, Average=7.9749999999999996e+00
+
+Output state: 
+StateCoupled: QG
+  Valid time: 2010-01-01T00:00:00Z
+  Resolution = 40, 20, 2
+  Potential vorticity    :  Min=-5.7882177993261337e-04, Max=6.0656639600613414e-04, RMS=3.2747658383811055e-04
+  Streamfunction LBC     :  Min=-4.0031613555457592e+08, Max=-0.0000000000000000e+00, RMS=2.0631821381632423e+08
+  Potential vorticity LBC:  Min=-6.7293786157197357e-04, Max=5.7902869607001021e-04, RMS=4.4639722241150535e-04
+StateCoupled: Lorenz 95
+ Valid time: 2010-01-01T00:00:00Z
+ Min=7.0000000000000000e+00, Max=8.0000000000000000e+00, Average=7.9749999999999996e+00

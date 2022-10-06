@@ -53,6 +53,7 @@ class Localization : public util::Printable,
 
   /// Set up Localization for \p geometry, configured with \p conf
   Localization(const Geometry_ & geometry,
+               const oops::Variables & incVars,
                const eckit::Configuration & conf);
   ~Localization();
 
@@ -76,9 +77,10 @@ class Localization : public util::Printable,
 
 template<typename MODEL>
 Localization<MODEL>::Localization(const Geometry_ & geometry,
+                                  const oops::Variables & incVars,
                                   const eckit::Configuration & conf)
   : timeConstr_(new util::Timer(classname(), "Localization")),
-    loc_(LocalizationFactory<MODEL>::create(geometry, conf))
+    loc_(LocalizationFactory<MODEL>::create(geometry, incVars, conf))
 {
   Log::trace() << "Localization<MODEL>::Localization done" << std::endl;
   timeConstr_.reset();

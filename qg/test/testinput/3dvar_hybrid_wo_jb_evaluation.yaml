@@ -40,9 +40,11 @@ cost function:
         obs type: Stream
       obs space:
         obsdatain:
-          obsfile: Data/truth.obs3d.nc
+          engine:
+            obsfile: Data/truth.obs3d.nc
         obsdataout:
-          obsfile: Data/3dvar_hybrid.obs3d.nojb_eval.nc
+          engine:
+            obsfile: Data/3dvar_hybrid.obs3d.nojb_eval.nc
         obs type: Stream
       obs error:
         covariance model: diagonal
@@ -50,9 +52,11 @@ cost function:
         obs type: Wind
       obs space:
         obsdatain:
-          obsfile: Data/truth.obs3d.nc
+          engine:
+            obsfile: Data/truth.obs3d.nc
         obsdataout:
-          obsfile: Data/3dvar_hybrid.obs3d.nojb_eval.nc
+          engine:
+            obsfile: Data/3dvar_hybrid.obs3d.nojb_eval.nc
         obs type: Wind
       obs error:
         covariance model: diagonal
@@ -60,9 +64,11 @@ cost function:
         obs type: WSpeed
       obs space:
         obsdatain:
-          obsfile: Data/truth.obs3d.nc
+          engine:
+            obsfile: Data/truth.obs3d.nc
         obsdataout:
-          obsfile: Data/3dvar_hybrid.obs3d.nojb_eval.nc
+          engine:
+            obsfile: Data/3dvar_hybrid.obs3d.nojb_eval.nc
         obs type: WSpeed
       obs error:
         covariance model: diagonal
@@ -81,8 +87,7 @@ variational:
       ny: 20
       depths: [4500.0, 5500.0]
     diagnostics:
-      departures: ombg
-    test: on
+      departures: ombg0
   - ninner: 10
     gradient norm reduction: 1.0e-10
     geometry:
@@ -90,8 +95,7 @@ variational:
       ny: 20
       depths: [4500.0, 5500.0]
     diagnostics:
-      departures: ombg
-    test: on
+      departures: ombg1
 final:
   diagnostics:
     departures: oman

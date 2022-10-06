@@ -223,7 +223,6 @@ void ObsFilters<OBS>::preProcess() {
     }
   }
 
-  obserrtmp_->mask(*qcflags_);
   obserrfilter_ = *obserrtmp_;
 }
 
@@ -243,7 +242,6 @@ void ObsFilters<OBS>::priorFilter(const GeoVaLs_ & gv) {
     }
   }
 
-  obserrtmp_->mask(*qcflags_);
   obserrfilter_ = *obserrtmp_;
 }
 

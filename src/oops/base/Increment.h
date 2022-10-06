@@ -13,6 +13,8 @@
 #define OOPS_BASE_INCREMENT_H_
 
 #include <memory>
+#include<string>
+#include<vector>
 
 #include "atlas/field.h"
 
@@ -198,6 +200,11 @@ const atlas::FieldSet & Increment<MODEL>::fieldSet() const {
   if (interface::Increment<MODEL>::fset_.empty()) {
     interface::Increment<MODEL>::fset_ = atlas::FieldSet();
     this->toFieldSet(interface::Increment<MODEL>::fset_);
+    for (const auto & field : interface::Increment<MODEL>::fset_) {
+      ASSERT_MSG(field.rank() == 2,
+                 "OOPS expects the model's Increment::toFieldSet method to return rank-2 fields,"
+                 " but field " + field.name() + " has rank = " + std::to_string(field.rank()));
+    }
   }
   return interface::Increment<MODEL>::fset_;
 }
@@ -209,6 +216,11 @@ atlas::FieldSet & Increment<MODEL>::fieldSet() {
   if (interface::Increment<MODEL>::fset_.empty()) {
     interface::Increment<MODEL>::fset_ = atlas::FieldSet();
     this->toFieldSet(interface::Increment<MODEL>::fset_);
+    for (const auto & field : interface::Increment<MODEL>::fset_) {
+      ASSERT_MSG(field.rank() == 2,
+                 "OOPS expects the model's Increment::toFieldSet method to return rank-2 fields,"
+                 " but field " + field.name() + " has rank = " + std::to_string(field.rank()));
+    }
   }
   return interface::Increment<MODEL>::fset_;
 }

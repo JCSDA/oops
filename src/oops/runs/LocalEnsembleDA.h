@@ -46,7 +46,7 @@ class LocalEnsembleDADriverParameters : public Parameters {
   Parameter<bool> updateObsConfig{"update obs config with geometry info",
                   "controls whether observations config needs to be updated with information "
                   "about geometry distribution",
-                  false, this};
+                  true, this};
   Parameter<bool> doTestPrints{"do test prints",
                   "controls whether additional output is printed to test stream",
                   true, this};
@@ -427,8 +427,6 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
 
   void updateConfigWithPatchGeometry(const Geometry_ & geometry,
                                      eckit::LocalConfiguration & obsConfig) const {
-    Log::debug() << "updateConfigWithPatchGeometry..." << std::endl;
-
     std::vector<double> patchCenter(2, 0.0);
     double patchRadius = 0.0;
 
@@ -446,9 +444,6 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
       double dist = eckit::geometry::Sphere::distance(radius_earth, center, gptmp);
       patchRadius = fmax(patchRadius, dist);
     }
-
-    Log::debug() << "patch center=" << patchCenter
-                 << " patch radius=" << patchRadius << std::endl;
 
     // update observations configs with information on patch center and radius
     std::vector<eckit::LocalConfiguration> obsConfigs = obsConfig.getSubConfigurations();

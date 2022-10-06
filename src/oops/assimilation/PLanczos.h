@@ -71,9 +71,6 @@ double PLanczos(VECTOR & xx, const VECTOR & bb,
   vVEC.reserve(maxiter+1);
   zVEC.reserve(maxiter+1);
 
-  Log::debug() << "PLanczos xx = " << xx << std::endl;
-  Log::debug() << "PLanczos bb = " << bb << std::endl;
-
   std::vector<double> alphas;
   std::vector<double> betas;
   std::vector<double> dd;
@@ -86,16 +83,13 @@ double PLanczos(VECTOR & xx, const VECTOR & bb,
     A.multiply(xx, zz);
     rr -= zz;
   }
-  Log::debug() << "PLanczos rr = " << rr << std::endl;
 
   // z = precond r
   precond.multiply(rr, zz);
-  Log::debug() << "PLanczos zz = " << zz << std::endl;
 
   double normReduction = 1.0;
   double beta0 = sqrt(dot_product(rr, zz));
   double beta = 0.0;
-  Log::debug() << "PLanczos beta0 = " << beta0 << std::endl;
 
   VECTOR vv(rr);
   vv  *= 1/beta0;
@@ -104,9 +98,6 @@ double PLanczos(VECTOR & xx, const VECTOR & bb,
   zVEC.push_back(zz);     // zVEC[0] = z_1 ---> required for re-orthogonalization
   vVEC.push_back(vv);     // vVEC[0] = v_1 ---> required for re-orthogonalization
 
-  Log::debug() << "PLanczos vv = " << vv << std::endl;
-  Log::debug() << "PLanczos zz = " << zz << std::endl;
-
   int jiter = 0;
   Log::info() << std::endl;
   while (jiter < maxiter) {
@@ -114,33 +105,25 @@ double PLanczos(VECTOR & xx, const VECTOR & bb,
 
     // w = A z - beta * vold
     A.multiply(zz, ww);     // w = A z
-    Log::debug() << "PLanczos ww = " << ww << std::endl;
     if (jiter > 0) ww.axpy(-beta, vVEC[jiter-1]);
 
     double alpha = dot_product(zz, ww);
-    Log::debug() << "PLanczos alpha = " << alpha << std::endl;
 
     ww.axpy(-alpha, vv);  // w = w - alpha * v
-    Log::debug() << "PLanczos ww = " << ww << std::endl;
 
     // Re-orthogonalization
     for (int iiter = 0; iiter < jiter; ++iiter) {
       double proj = dot_product(ww, zVEC[iiter]);
       ww.axpy(-proj, vVEC[iiter]);
     }
-    Log::debug() << "PLanczos ww = " << ww << std::endl;
 
     precond.multiply(ww, zz);  // z = precond w
-    Log::debug() << "PLanczos zz = " << zz << std::endl;
 
     beta = sqrt(dot_product(zz, ww));
-    Log::debug() << "PLanczos beta = " << beta << std::endl;
 
     vv = ww;
     vv *= 1/beta;
     zz *= 1/beta;
-    Log::debug() << "PLanczos vv = " << vv << std::endl;
-    Log::debug() << "PLanczos zz = " << zz << std::endl;
 
     zVEC.push_back(zz);  // zVEC[jiter+1] = z_jiter
     vVEC.push_back(vv);  // vVEC[jiter+1] = v_jiter
@@ -158,7 +141,6 @@ double PLanczos(VECTOR & xx, const VECTOR & bb,
 
     // Gradient norm in precond metric --> sqrt(r'z) --> beta * y(jiter)
     double rznorm = beta*std::abs(yy[jiter]);
-    Log::debug() << "PLanczos rznorm = " << rznorm << std::endl;
 
     normReduction = rznorm/beta0;
 
@@ -174,7 +156,6 @@ double PLanczos(VECTOR & xx, const VECTOR & bb,
       break;
     }
   }
-  Log::debug() << "PLanczos jiter = " << jiter << std::endl;
 
   // Calculate the solution (xh = Binv x)
   for (int iiter = 0; iiter < jiter; ++iiter) {

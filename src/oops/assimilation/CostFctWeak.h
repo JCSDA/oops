@@ -244,7 +244,7 @@ void CostFctWeak<MODEL, OBS>::doLinearize(const Geometry_ & resol,
   inc2model_.reset(new LinVarCha_(resol, innerConf.getSubConfiguration("linear variable change")));
 
   // Trajecotry for linear variable change
-  inc2model_->setTrajectory(bg.state(), fg.state());
+  inc2model_->changeVarTraj(fg.state(), tlm_->variables());
 
   Log::trace() << "CostFctWeak::doLinearize done" << std::endl;
 }
@@ -262,9 +262,9 @@ void CostFctWeak<MODEL, OBS>::runTLM(CtrlInc_ & dx,
 
   Variables incvars = dx.state().variables();
 
-  inc2model_->multiply(dx.state(), tlm_->variables());
+  inc2model_->changeVarTL(dx.state(), tlm_->variables());
   tlm_->forecastTL(dx.state(), dx.modVar(), subWinLength_, post, cost, idModel);
-  inc2model_->multiplyInverse(dx.state(), incvars);
+  inc2model_->changeVarInverseTL(dx.state(), incvars);
 
   ASSERT(dx.state().validTime() == subWinEnd_);
   Log::trace() << "CostFctWeak: runTLM done" << std::endl;
@@ -283,9 +283,9 @@ void CostFctWeak<MODEL, OBS>::runTLM(CtrlInc_ & dx, const bool idModel) const {
   if (idModel) {
     dx.state().updateTime(subWinLength_);
   } else {
-    inc2model_->multiply(dx.state(), tlm_->variables());
+    inc2model_->changeVarTL(dx.state(), tlm_->variables());
     tlm_->forecastTL(dx.state(), dx.modVar(), subWinLength_, post, cost);
-    inc2model_->multiplyInverse(dx.state(), incvars);
+    inc2model_->changeVarInverseTL(dx.state(), incvars);
   }
 
   ASSERT(dx.state().validTime() == subWinEnd_);
@@ -312,9 +312,9 @@ void CostFctWeak<MODEL, OBS>::runADJ(CtrlInc_ & dx,
   ASSERT(dx.state().validTime() == subWinEnd_);
 
   Variables incvars = dx.state().variables();
-  inc2model_->multiplyInverseAD(dx.state(), tlm_->variables());
+  inc2model_->changeVarInverseAD(dx.state(), tlm_->variables());
   tlm_->forecastAD(dx.state(), dx.modVar(), subWinLength_, post, cost, idModel);
-  inc2model_->multiplyAD(dx.state(), incvars);
+  inc2model_->changeVarAD(dx.state(), incvars);
 
   ASSERT(dx.state().validTime() == subWinBegin_);
   Log::trace() << "CostFctWeak: runADJ done" << std::endl;
@@ -333,9 +333,9 @@ void CostFctWeak<MODEL, OBS>::runADJ(CtrlInc_ & dx, const bool idModel) const {
   if (idModel) {
     dx.state().updateTime(-subWinLength_);
   } else {
-    inc2model_->multiplyInverseAD(dx.state(), tlm_->variables());
+    inc2model_->changeVarInverseAD(dx.state(), tlm_->variables());
     tlm_->forecastAD(dx.state(), dx.modVar(), subWinLength_, post, cost);
-    inc2model_->multiplyAD(dx.state(), incvars);
+    inc2model_->changeVarAD(dx.state(), incvars);
   }
 
   ASSERT(dx.state().validTime() == subWinBegin_);

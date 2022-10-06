@@ -22,13 +22,16 @@ observations:
       lengthscale: .1
     obs space:
       obsdatain:
-        obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+        engine:
+          obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
       obsdataout:
-        obsfile: Data/getkf.2010-01-02T00:00:00Z.obt
+        engine:
+          obsfile: Data/getkf.2010-01-02T00:00:00Z.obt
     obs operator: {}
 
 driver:
   run as observer only: true
+  update obs config with geometry info: false
 
 local ensemble DA:
   solver: GETKF

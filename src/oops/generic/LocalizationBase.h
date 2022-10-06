@@ -38,6 +38,7 @@ namespace oops {
 /// Note: generic implementations need to provide a constructor with the following signature:
 ///
 ///     LocalizationBase(const Geometry<MODEL> &,
+///                      const oops::Variables &,
 ///                      const eckit::Configuration &);
 template <typename MODEL>
 class LocalizationBase : public util::Printable,
@@ -66,6 +67,7 @@ class LocalizationFactory {
   /// The Localization type is determined by the "localization method" entry of
   /// \p config.
   static std::unique_ptr<LocalizationBase<MODEL>> create(const Geometry_ &,
+                                                         const oops::Variables &,
                                                          const eckit::Configuration & config);
   virtual ~LocalizationFactory() = default;
  protected:
@@ -73,6 +75,7 @@ class LocalizationFactory {
   explicit LocalizationFactory(const std::string & name);
  private:
   virtual std::unique_ptr<LocalizationBase<MODEL>> make(const Geometry_ &,
+                                                        const oops::Variables &,
                                                         const eckit::Configuration &) = 0;
   static std::map < std::string, LocalizationFactory<MODEL> * > & getMakers() {
     static std::map < std::string, LocalizationFactory<MODEL> * > makers_;
@@ -87,8 +90,9 @@ template<class MODEL, class T>
 class LocalizationMaker : public LocalizationFactory<MODEL> {
   typedef Geometry<MODEL>                             Geometry_;
   std::unique_ptr<LocalizationBase<MODEL>> make(const Geometry_ & geometry,
+                                                const oops::Variables & incVars,
                                                 const eckit::Configuration & conf) override
-    { return std::make_unique<T>(geometry, conf); }
+    { return std::make_unique<T>(geometry, incVars, conf); }
  public:
   explicit LocalizationMaker(const std::string & name) : LocalizationFactory<MODEL>(name) {}
 };
@@ -108,6 +112,7 @@ LocalizationFactory<MODEL>::LocalizationFactory(const std::string & name) {
 template <typename MODEL>
 std::unique_ptr<LocalizationBase<MODEL>>
 LocalizationFactory<MODEL>::create(const Geometry_ & geometry,
+                                   const oops::Variables & incVars,
                                    const eckit::Configuration & conf) {
   Log::trace() << "LocalizationBase<MODEL>::create starting" << std::endl;
   const std::string id = conf.getString("localization method");
@@ -123,7 +128,7 @@ LocalizationFactory<MODEL>::create(const Geometry_ & geometry,
     }
     throw std::runtime_error(id + " does not exist in localization factory.");
   }
-  std::unique_ptr<LocalizationBase<MODEL>> ptr(jloc->second->make(geometry, conf));
+  std::unique_ptr<LocalizationBase<MODEL>> ptr(jloc->second->make(geometry, incVars, conf));
   Log::trace() << "LocalizationBase<MODEL>::create done" << std::endl;
   return ptr;
 }

@@ -1,0 +1,33 @@
+geometry:
+  resol: 40
+
+window begin: 2010-01-01T03:00:00Z
+window end: 2010-01-02T03:00:00Z
+
+observations:
+- obs error:
+    covariance model: diagonal
+  obs space:
+    obsdatain:
+      engine:
+        obsfile: Data/truth.2010-01-02T00:00:00Z.obt
+    obsdataout:
+      engine:
+        obsfile: Data/forecast.2010-01-02T00:00:00Z.obt
+  obs localizations:
+  - localization method: Gaspari-Cohn
+    lengthscale: 0.19
+    reference local nobs: [56, 64, 56, 64, 56, 64, 56, 64, 56, 64]
+    reference gridpoints:
+      lons:               [ 0, 0.025, 0.05, 0.075, 0.1, 0.875, 0.9, 0.925, 0.95, 0.975 ]
+      lats:               [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+      depths:              [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    reference rms: [0.52443,0.489544,0.52443,0.489544,0.52443,0.489544,0.52443,0.489544,0.52443,0.489544]
+  - localization method: Box Car
+    lengthscale: 0.19
+    reference local nobs: [56, 64, 56, 64, 56, 64, 56, 64, 56, 64]
+    reference gridpoints:
+      lons:               [ 0, 0.025, 0.05, 0.075, 0.1, 0.875, 0.9, 0.925, 0.95, 0.975 ]
+      lats:               [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+      depths:              [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    reference rms: [1.0, 1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]

@@ -26,9 +26,11 @@ cost function:
     - obs operator: {}
       obs space:
         obsdatain:
-          obsfile: Data/biased.2010-01-02T00:00:00Z.obt
+          engine:
+            obsfile: Data/biased.2010-01-02T00:00:00Z.obt
         obsdataout:
-          obsfile: Data/4dvar_allbiases.2010-01-02T00:00:00Z.obt
+          engine:
+            obsfile: Data/4dvar_allbiases.2010-01-02T00:00:00Z.obt
       obs error:
         covariance model: diagonal
       obs bias:
@@ -57,7 +59,6 @@ variational:
       variable change: Identity
     diagnostics:
       departures: ombg
-    test: on
   - ninner: 10
     gradient norm reduction: 1e-10
     geometry:
@@ -69,7 +70,6 @@ variational:
         f: 8.5
         tstep: PT1H30M
       variable change: Identity
-    test: on
 final:
   diagnostics:
     departures: oman

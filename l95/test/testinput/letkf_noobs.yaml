@@ -13,6 +13,9 @@ background:
     pattern: %mem%
     nmembers: 5
 
+driver:
+  update obs config with geometry info: false
+
 observations:
   observers:
   - obs error:
@@ -22,7 +25,8 @@ observations:
       lengthscale: .1
     obs space:
       obsdatain:
-        obsfile: Data/noobs.obt
+        engine:
+          obsfile: Data/noobs.obt
     obs operator: {}
 
 local ensemble DA:
