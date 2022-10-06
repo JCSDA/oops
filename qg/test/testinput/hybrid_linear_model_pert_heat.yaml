@@ -2,10 +2,11 @@ geometry:
   nx: 40
   ny: 20
   depths: [4500.0, 5500.0]
+  perturbed heating: 0.1
 
 initial condition:
   date: 2010-01-01T00:00:00Z
-  filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D.nc
+  filename: Data/forecast_control_pert_heat.fc.2010-01-01T00:00:00Z.PT0S.nc
 
 background error:
   covariance model: QgError
@@ -54,30 +55,31 @@ linear model:
         nx: 40
         ny: 20
         depths: [4500.0, 5500.0]
+        perturbed heating: 0.1
       control member:
         date: '2010-01-01T00:00:00Z'
-        filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D.nc
+        filename: Data/forecast_control_pert_heat.fc.2010-01-01T00:00:00Z.PT0S.nc
       perturbed members:
       - date: '2010-01-01T00:00:00Z'
-        filename: Data/forecast_HTLM.ens.1.2010-01-01T00:00:00Z.PT0S.nc
+        filename: Data/forecast_HTLM_pert_heat.ens.1.2010-01-01T00:00:00Z.PT0S.nc
       - date: '2010-01-01T00:00:00Z'
-        filename: Data/forecast_HTLM.ens.2.2010-01-01T00:00:00Z.PT0S.nc
+        filename: Data/forecast_HTLM_pert_heat.ens.2.2010-01-01T00:00:00Z.PT0S.nc
       - date: '2010-01-01T00:00:00Z'
-        filename: Data/forecast_HTLM.ens.3.2010-01-01T00:00:00Z.PT0S.nc
+        filename: Data/forecast_HTLM_pert_heat.ens.3.2010-01-01T00:00:00Z.PT0S.nc
       - date: '2010-01-01T00:00:00Z'
-        filename: Data/forecast_HTLM.ens.4.2010-01-01T00:00:00Z.PT0S.nc
+        filename: Data/forecast_HTLM_pert_heat.ens.4.2010-01-01T00:00:00Z.PT0S.nc
       - date: '2010-01-01T00:00:00Z'
-        filename: Data/forecast_HTLM.ens.5.2010-01-01T00:00:00Z.PT0S.nc
+        filename: Data/forecast_HTLM_pert_heat.ens.5.2010-01-01T00:00:00Z.PT0S.nc
       - date: '2010-01-01T00:00:00Z'
-        filename: Data/forecast_HTLM.ens.6.2010-01-01T00:00:00Z.PT0S.nc
+        filename: Data/forecast_HTLM_pert_heat.ens.6.2010-01-01T00:00:00Z.PT0S.nc
       - date: '2010-01-01T00:00:00Z'
-        filename: Data/forecast_HTLM.ens.7.2010-01-01T00:00:00Z.PT0S.nc
+        filename: Data/forecast_HTLM_pert_heat.ens.7.2010-01-01T00:00:00Z.PT0S.nc
       - date: '2010-01-01T00:00:00Z'
-        filename: Data/forecast_HTLM.ens.8.2010-01-01T00:00:00Z.PT0S.nc
+        filename: Data/forecast_HTLM_pert_heat.ens.8.2010-01-01T00:00:00Z.PT0S.nc
       - date: '2010-01-01T00:00:00Z'
-        filename: Data/forecast_HTLM.ens.9.2010-01-01T00:00:00Z.PT0S.nc
+        filename: Data/forecast_HTLM_pert_heat.ens.9.2010-01-01T00:00:00Z.PT0S.nc
       - date: '2010-01-01T00:00:00Z'
-        filename: Data/forecast_HTLM.ens.10.2010-01-01T00:00:00Z.PT0S.nc
+        filename: Data/forecast_HTLM_pert_heat.ens.10.2010-01-01T00:00:00Z.PT0S.nc
   name: HTLM
 linear model test:
   forecast length: PT24H

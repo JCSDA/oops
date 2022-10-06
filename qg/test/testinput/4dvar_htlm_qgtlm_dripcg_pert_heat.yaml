@@ -2,11 +2,12 @@ cost function:
   cost type: 4D-Var
   window begin: 2010-01-01T00:00:00Z
   window length: PT24H
-  analysis variables: [x]
+  analysis variables: [x,q]
   geometry:
     nx: 40
     ny: 20
     depths: [4500.0, 5500.0]
+    perturbed heating: 0.1
   model:
     name: QG
     tstep: PT15M
@@ -28,7 +29,7 @@ cost function:
       obs space:
         obsdatain:
           engine:
-            obsfile: Data/truth.obs4d_24h.nc
+            obsfile: Data/truth.obs4d_24h_pert_heat.nc
         obsdataout:
           engine:
             obsfile: Data/4dvar_dripcg.obs4d_24h.nc
@@ -40,7 +41,7 @@ cost function:
       obs space:
         obsdatain:
           engine:
-            obsfile: Data/truth.obs4d_24h.nc
+            obsfile: Data/truth.obs4d_24h_pert_heat.nc
         obsdataout:
           engine:
             obsfile: Data/4dvar_dripcg.obs4d_24h.nc
@@ -52,7 +53,7 @@ cost function:
       obs space:
         obsdatain:
           engine:
-            obsfile: Data/truth.obs4d_24h.nc
+            obsfile: Data/truth.obs4d_24h_pert_heat.nc
         obsdataout:
           engine:
             obsfile: Data/4dvar_dripcg.obs4d_24h.nc
@@ -73,6 +74,7 @@ variational:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
+      perturbed heating: 0.1
     linear model:
       simplified linear model:
         trajectory:
@@ -81,9 +83,9 @@ variational:
         variable change: Identity
         name: QgTLM
       tstep: PT1H
-      increment variables: [x]
+      increment variables: [x,q]
       htlm coefficient calc:
-        training variables: [x]
+        training variables: [q]
         window length: PT24H
         window begin: 2010-01-01T00:00:00Z
         htlm calculator:
@@ -101,34 +103,36 @@ variational:
             tstep: PT1H
             variable change: Identity
             name: QgTLM
+            tlm variables: [x,q]
           state geometry:
             nx: 40
             ny: 20
             depths: [4500.0, 5500.0]
+            perturbed heating: 0.1
           control member:
             date: '2010-01-01T00:00:00Z'
-            filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D.nc
+            filename: Data/forecast_control_pert_heat.fc.2010-01-01T00:00:00Z.PT0S.nc
           perturbed members:
           - date: '2010-01-01T00:00:00Z'
-            filename: Data/forecast_HTLM.ens.1.2010-01-01T00:00:00Z.PT0S.nc
+            filename: Data/forecast_HTLM_pert_heat.ens.1.2010-01-01T00:00:00Z.PT0S.nc
           - date: '2010-01-01T00:00:00Z'
-            filename: Data/forecast_HTLM.ens.2.2010-01-01T00:00:00Z.PT0S.nc
+            filename: Data/forecast_HTLM_pert_heat.ens.2.2010-01-01T00:00:00Z.PT0S.nc
           - date: '2010-01-01T00:00:00Z'
-            filename: Data/forecast_HTLM.ens.3.2010-01-01T00:00:00Z.PT0S.nc
+            filename: Data/forecast_HTLM_pert_heat.ens.3.2010-01-01T00:00:00Z.PT0S.nc
           - date: '2010-01-01T00:00:00Z'
-            filename: Data/forecast_HTLM.ens.4.2010-01-01T00:00:00Z.PT0S.nc
+            filename: Data/forecast_HTLM_pert_heat.ens.4.2010-01-01T00:00:00Z.PT0S.nc
           - date: '2010-01-01T00:00:00Z'
-            filename: Data/forecast_HTLM.ens.5.2010-01-01T00:00:00Z.PT0S.nc
+            filename: Data/forecast_HTLM_pert_heat.ens.5.2010-01-01T00:00:00Z.PT0S.nc
           - date: '2010-01-01T00:00:00Z'
-            filename: Data/forecast_HTLM.ens.6.2010-01-01T00:00:00Z.PT0S.nc
+            filename: Data/forecast_HTLM_pert_heat.ens.6.2010-01-01T00:00:00Z.PT0S.nc
           - date: '2010-01-01T00:00:00Z'
-            filename: Data/forecast_HTLM.ens.7.2010-01-01T00:00:00Z.PT0S.nc
+            filename: Data/forecast_HTLM_pert_heat.ens.7.2010-01-01T00:00:00Z.PT0S.nc
           - date: '2010-01-01T00:00:00Z'
-            filename: Data/forecast_HTLM.ens.8.2010-01-01T00:00:00Z.PT0S.nc
+            filename: Data/forecast_HTLM_pert_heat.ens.8.2010-01-01T00:00:00Z.PT0S.nc
           - date: '2010-01-01T00:00:00Z'
-            filename: Data/forecast_HTLM.ens.9.2010-01-01T00:00:00Z.PT0S.nc
+            filename: Data/forecast_HTLM_pert_heat.ens.9.2010-01-01T00:00:00Z.PT0S.nc
           - date: '2010-01-01T00:00:00Z'
-            filename: Data/forecast_HTLM.ens.10.2010-01-01T00:00:00Z.PT0S.nc
+            filename: Data/forecast_HTLM_pert_heat.ens.10.2010-01-01T00:00:00Z.PT0S.nc
       name: HTLM
     diagnostics:
       departures: ombg
@@ -138,6 +142,7 @@ variational:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
+      perturbed heating: 0.1
     linear model:
       simplified linear model:
         trajectory:
@@ -146,9 +151,9 @@ variational:
         variable change: Identity
         name: QgTLM
       tstep: PT1H
-      increment variables: [x]
+      increment variables: [x,q]
       htlm coefficient calc:
-        training variables: [x]
+        training variables: [q]
         window length: PT24H
         window begin: 2010-01-01T00:00:00Z
         htlm calculator:
@@ -166,34 +171,36 @@ variational:
             tstep: PT1H
             variable change: Identity
             name: QgTLM
+            tlm variables: [x,q]
           state geometry:
             nx: 40
             ny: 20
             depths: [4500.0, 5500.0]
+            perturbed heating: 0.1
           control member:
             date: '2010-01-01T00:00:00Z'
-            filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D.nc
+            filename: Data/forecast_control_pert_heat.fc.2010-01-01T00:00:00Z.PT0S.nc
           perturbed members:
           - date: '2010-01-01T00:00:00Z'
-            filename: Data/forecast_HTLM.ens.1.2010-01-01T00:00:00Z.PT0S.nc
+            filename: Data/forecast_HTLM_pert_heat.ens.1.2010-01-01T00:00:00Z.PT0S.nc
           - date: '2010-01-01T00:00:00Z'
-            filename: Data/forecast_HTLM.ens.2.2010-01-01T00:00:00Z.PT0S.nc
+            filename: Data/forecast_HTLM_pert_heat.ens.2.2010-01-01T00:00:00Z.PT0S.nc
           - date: '2010-01-01T00:00:00Z'
-            filename: Data/forecast_HTLM.ens.3.2010-01-01T00:00:00Z.PT0S.nc
+            filename: Data/forecast_HTLM_pert_heat.ens.3.2010-01-01T00:00:00Z.PT0S.nc
           - date: '2010-01-01T00:00:00Z'
-            filename: Data/forecast_HTLM.ens.4.2010-01-01T00:00:00Z.PT0S.nc
+            filename: Data/forecast_HTLM_pert_heat.ens.4.2010-01-01T00:00:00Z.PT0S.nc
           - date: '2010-01-01T00:00:00Z'
-            filename: Data/forecast_HTLM.ens.5.2010-01-01T00:00:00Z.PT0S.nc
+            filename: Data/forecast_HTLM_pert_heat.ens.5.2010-01-01T00:00:00Z.PT0S.nc
           - date: '2010-01-01T00:00:00Z'
-            filename: Data/forecast_HTLM.ens.6.2010-01-01T00:00:00Z.PT0S.nc
+            filename: Data/forecast_HTLM_pert_heat.ens.6.2010-01-01T00:00:00Z.PT0S.nc
           - date: '2010-01-01T00:00:00Z'
-            filename: Data/forecast_HTLM.ens.7.2010-01-01T00:00:00Z.PT0S.nc
+            filename: Data/forecast_HTLM_pert_heat.ens.7.2010-01-01T00:00:00Z.PT0S.nc
           - date: '2010-01-01T00:00:00Z'
-            filename: Data/forecast_HTLM.ens.8.2010-01-01T00:00:00Z.PT0S.nc
+            filename: Data/forecast_HTLM_pert_heat.ens.8.2010-01-01T00:00:00Z.PT0S.nc
           - date: '2010-01-01T00:00:00Z'
-            filename: Data/forecast_HTLM.ens.9.2010-01-01T00:00:00Z.PT0S.nc
+            filename: Data/forecast_HTLM_pert_heat.ens.9.2010-01-01T00:00:00Z.PT0S.nc
           - date: '2010-01-01T00:00:00Z'
-            filename: Data/forecast_HTLM.ens.10.2010-01-01T00:00:00Z.PT0S.nc
+            filename: Data/forecast_HTLM_pert_heat.ens.10.2010-01-01T00:00:00Z.PT0S.nc
       name: HTLM
 final:
   diagnostics:
@@ -208,4 +215,4 @@ output:
   type: an
 
 test:
-  reference filename: testoutput/4dvar_htlm_qgtlm_dripcg.test
+  reference filename: testoutput/4dvar_htlm_qgtlm_dripcg_pert_heat.test

@@ -1,0 +1,70 @@
+geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+  perturbed heating: 0.1
+initial condition:
+  date: 2010-01-01T00:00:00Z
+  filename: Data/truth_pert_heat.fc.2009-12-15T00:00:00Z.P17D.nc
+model:
+  name: QG
+  tstep: PT1H
+forecast length: P1D
+window begin: 2010-01-01T00:00:00Z
+window length: P1D
+observations:
+  observers:
+  - obs operator:
+      obs type: Stream
+    obs space:
+      obsdataout:
+        engine:
+          obsfile: Data/truth.obs4d_24h_pert_heat.nc
+      obs type: Stream
+      generate:
+        begin: PT3H
+        nval: 1
+        obs density: 100
+        obs error: 4.0e6
+        obs period: PT3H
+    obs filters:
+    - filter: GOMsaver
+      filename: Data/truth.obs4d_24h_pert_heat.stream.gom
+  - obs operator:
+      obs type: Wind
+    obs space:
+      obsdataout:
+        engine:
+          obsfile: Data/truth.obs4d_24h_pert_heat.nc
+      obs type: Wind
+      generate:
+        begin: PT6H
+        nval: 2
+        obs density: 100
+        obs error: 6.0
+        obs period: PT6H
+    obs filters:
+    - filter: GOMsaver
+      filename: Data/truth.obs4d_24h_pert_heat.wind.gom
+  - obs operator:
+      obs type: WSpeed
+    obs space:
+      obsdataout:
+        engine:
+          obsfile: Data/truth.obs4d_24h_pert_heat.nc
+      obs type: WSpeed
+      generate:
+        begin: PT3H
+        nval: 1
+        obs density: 100
+        obs error: 12.0
+        obs period: PT6H
+    obs filters:
+    - filter: GOMsaver
+      filename: Data/truth.obs4d_24h_pert_heat.wspeed.gom
+make obs: true
+prints:
+  frequency: PT3H
+
+test:
+  reference filename: testoutput/make_obs_4d_24h_pert_heat.test
