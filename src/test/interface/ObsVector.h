@@ -331,11 +331,12 @@ template <typename OBS> void testMask() {
     Eigen::VectorXd with_mask_vec = test.packEigen(maskvec);
     // check that the size of returned Eigen Vector is consistent with size
     // returned by packEigenSize()
-    EXPECT_EQUAL(with_mask_vec.size(), test.packEigenSize(maskvec));
+    EXPECT_EQUAL(static_cast<size_t>(with_mask_vec.size()), test.packEigenSize(maskvec));
     oops::Log::debug() << "Local number of masked observations is: " <<
                           with_mask_vec.size() << std::endl;
     // check that the size is consistent with reference for this MPI task
-    EXPECT_EQUAL(with_mask_vec.size(), nobs_after_mask_local[Test_::comm().rank()]);
+    EXPECT_EQUAL(static_cast<size_t>(with_mask_vec.size()),
+                 nobs_after_mask_local[Test_::comm().rank()]);
   }
 }
 // -----------------------------------------------------------------------------
