@@ -9,6 +9,7 @@ list( APPEND qg_testinput
   testinput/4densvar.yaml
   testinput/4densvar_hybrid.yaml
   testinput/4dvar_dripcg.yaml
+  testinput/4dvar_dripcg_5level.yaml
   testinput/4dvar_drpcg_lmp.yaml
   testinput/4dvar_drpfom.yaml
   testinput/4dvar_drplanczos.yaml
@@ -65,6 +66,7 @@ list( APPEND qg_testinput
   testinput/ens_variance_inflation_value.yaml
   testinput/error_covariance.yaml
   testinput/forecast.yaml
+  testinput/forecast_5level.yaml
   testinput/forecast_control_htlm_pert_heat.yaml
   testinput/gen_ens_pert_B.yaml
   testinput/gen_ens_pert_B_HTLM.yaml
@@ -90,6 +92,7 @@ list( APPEND qg_testinput
   testinput/make_obs_3d.yaml
   testinput/make_obs_4d_12h.yaml
   testinput/make_obs_4d_24h.yaml
+  testinput/make_obs_4d_24h_5level.yaml
   testinput/make_obs_4d_24h_pert_heat.yaml
   testinput/make_obs_4d_24h_filter_ordering.yaml
   testinput/make_obs_4d_biased.yaml
@@ -106,6 +109,7 @@ list( APPEND qg_testinput
   testinput/state.yaml
   testinput/static_b_init.yaml
   testinput/truth.yaml
+  testinput/truth_5level.yaml
   testinput/truth_pert_heat.yaml
   testinput/variable_change.yaml
   testinput/verticallocev.yaml
@@ -125,6 +129,7 @@ list( APPEND qg_testoutput
   testoutput/4densvar.test
   testoutput/4densvar_hybrid.test
   testoutput/4dvar_dripcg.test
+  testoutput/4dvar_dripcg_5level.test
   testoutput/4dvar_htlm_qgtlm_dripcg.test
   testoutput/4dvar_htlm_qgtlm_dripcg_pert_heat.test
   testoutput/4dvar_drpcg_lmp.test
@@ -160,6 +165,8 @@ list( APPEND qg_testoutput
   testoutput/ens_variance_inflation_field.test
   testoutput/ens_variance_inflation_value.test
   testoutput/forecast.test
+  testoutput/forecast_5level.test
+  testoutput/forecastHTLM.test
   testoutput/forecast_control_htlm_pert_heat.test
   testoutput/gen_ens_pert_B.test
   testoutput/gen_ens_pert_B_HTLM.test
@@ -173,12 +180,14 @@ list( APPEND qg_testoutput
   testoutput/make_obs_3d.test
   testoutput/make_obs_4d_12h.test
   testoutput/make_obs_4d_24h.test
+  testoutput/make_obs_4d_24h_5level.test
   testoutput/make_obs_4d_24h_filter_ordering.test
   testoutput/make_obs_4d_24h_pert_heat.test
   testoutput/make_obs_4d_biased.test
   testoutput/rtpp.test
   testoutput/static_b_init.test
   testoutput/truth.test
+  testoutput/truth_5level.test
   testoutput/truth_pert_heat.test
   testoutput/uniform_field_hybrid.test
   testoutput/uniform_field_inflation.test
@@ -216,6 +225,10 @@ ecbuild_add_test( TARGET test_qg_truth
                   OMP 2
                   ARGS testinput/truth.yaml
                   COMMAND qg_forecast.x )
+ecbuild_add_test( TARGET test_qg_truth_5level
+                  OMP 2
+                  ARGS testinput/truth_5level.yaml
+                  COMMAND qg_forecast.x )
 
 ecbuild_add_test( TARGET test_qg_truth_pert_heat
                   OMP 2
@@ -227,6 +240,11 @@ ecbuild_add_test( TARGET test_qg_make_obs_4d_24h
                   ARGS testinput/make_obs_4d_24h.yaml
                   COMMAND  qg_hofx.x
                   TEST_DEPENDS test_qg_truth )
+ecbuild_add_test( TARGET test_qg_make_obs_4d_24h_5level
+                  OMP 2
+                  ARGS testinput/make_obs_4d_24h_5level.yaml
+                  COMMAND  qg_hofx.x
+                  TEST_DEPENDS test_qg_truth_5level )
 
 ecbuild_add_test( TARGET test_qg_make_obs_4d_24h_filter_ordering
                   OMP 2
@@ -322,7 +340,7 @@ ecbuild_add_test( TARGET  test_qg_hybrid_linear_model
                   SOURCES executables/TestLinearModel.cc
                   ARGS    "testinput/hybrid_linear_model.yaml"
                   LIBS    qg
-                  TEST_DEPENDS test_qg_truth test_qg_forecast_control_htlm test_qg_gen_ens_pert_B_HTLM )
+                  TEST_DEPENDS test_qg_truth test_qg_forecast test_qg_gen_ens_pert_B_HTLM )
 
 ecbuild_add_test( TARGET  test_qg_hybrid_linear_model_pert_heat
                   SOURCES executables/TestLinearModel.cc
@@ -441,6 +459,13 @@ ecbuild_add_test( TARGET test_qg_forecast
                   ARGS testinput/forecast.yaml
                   COMMAND  qg_forecast.x
                   TEST_DEPENDS test_qg_truth )
+
+ecbuild_add_test( TARGET test_qg_forecast_5level
+                  OMP 2
+                  ARGS testinput/forecast_5level.yaml
+                  COMMAND  qg_forecast.x
+                  TEST_DEPENDS test_qg_truth_5level )
+
 ecbuild_add_test( TARGET test_qg_forecast_control_htlm_pert_heat
                   OMP 2
                   ARGS testinput/forecast_control_htlm_pert_heat.yaml
@@ -708,6 +733,11 @@ ecbuild_add_test( TARGET test_qg_4dvar_dripcg
                   ARGS testinput/4dvar_dripcg.yaml
                   COMMAND  qg_4dvar.x
                   TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
+ecbuild_add_test( TARGET test_qg_4dvar_dripcg_5level
+                  OMP 2
+                  ARGS testinput/4dvar_dripcg_5level.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast_5level test_qg_make_obs_4d_24h_5level )
 
 ecbuild_add_test( TARGET test_qg_4dvar_drpcg_lmp
                   OMP 2

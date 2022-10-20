@@ -1,8 +1,8 @@
 ! (C) Copyright 2009-2016 ECMWF.
-! 
+!
 ! This software is licensed under the terms of the Apache Licence Version 2.0
-! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
-! In applying this licence, ECMWF does not waive the privileges and immunities 
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
 ! granted to it by virtue of its status as an intergovernmental organisation nor
 ! does it submit to any jurisdiction.
 
@@ -29,7 +29,7 @@ type :: wspeed_traj
   integer :: nobs
   real(kind_real), allocatable :: u(:)
   real(kind_real), allocatable :: v(:)
-  real(kind_real) :: zsave(2)
+  real(kind_real), allocatable :: zsave(:)
 end type
 
 #define LISTED_TYPE wspeed_traj
@@ -152,7 +152,6 @@ enddo
 end subroutine qg_wspeed_equiv_ad
 ! ------------------------------------------------------------------------------
 subroutine qg_wspeed_alloctraj(traj, nobs)
-implicit none
 type(wspeed_traj), intent(inout) :: traj
 integer, intent(in) :: nobs
 traj%nobs = nobs
@@ -172,8 +171,9 @@ integer :: iobs
 real(kind_real) :: zz
 type(qg_obsvec) :: zobs
 
-call qg_obsdb_get(obsdb, 'WSpeed', 'Location', zobs)
 
+call qg_obsdb_get(obsdb, 'WSpeed', 'Location', zobs)
+if (.not.allocated(traj%zsave)) allocate(traj%zsave(gom%levs))
 ! Loop over observations
 do iobs=1,gom%nobs
   call qg_vert_interp(gom%levs,gom%z(:,iobs),zobs%values(3,iobs),gom%u(:,iobs),traj%u(iobs))

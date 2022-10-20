@@ -1,0 +1,110 @@
+cost function:
+  cost type: 4D-Var
+  window begin: 2010-01-01T00:00:00Z
+  window length: PT24H
+  analysis variables: [x]
+  geometry:
+    nx: 40
+    ny: 20
+    depths: [500, 1000, 1500, 3000, 4000]
+  model:
+    name: QG
+    tstep: PT15M
+  background:
+    date: 2010-01-01T00:00:00Z
+    filename: Data/forecast5levels.fc.2009-12-25T00:00:00Z.P7D.nc
+  background error:
+    covariance model: QgError
+    horizontal_length_scale: 2.2e6
+    maximum_condition_number: 1.0e6
+    standard_deviation: 1.8e7
+    vertical_length_scale: 15000.0
+  observations:
+    observers:
+    - obs error:
+        covariance model: diagonal
+      obs operator:
+        obs type: Stream
+      obs space:
+        obsdatain:
+          engine:
+            obsfile: Data/truth5levels.obs4d_24h.nc
+        obsdataout:
+          engine:
+            obsfile: Data/4dvar_dripcg_5level.obs4d_24h.nc
+        obs type: Stream
+    - obs error:
+        covariance model: diagonal
+      obs operator:
+        obs type: Wind
+      obs space:
+        obsdatain:
+          engine:
+            obsfile: Data/truth5levels.obs4d_24h.nc
+        obsdataout:
+          engine:
+            obsfile: Data/4dvar_dripcg_5level.obs4d_24h.nc
+        obs type: Wind
+    - obs error:
+        covariance model: diagonal
+      obs operator:
+        obs type: WSpeed
+      obs space:
+        obsdatain:
+          engine:
+            obsfile: Data/truth5levels.obs4d_24h.nc
+        obsdataout:
+          engine:
+            obsfile: Data/4dvar_dripcg_5level.obs4d_24h.nc
+        obs type: WSpeed
+  constraints:
+  - jcdfi:
+      filtered variables: [x]
+      alpha: 1.0e-13
+      cutoff: PT3H
+      type: DolphChebyshev
+variational:
+  minimizer:
+    algorithm: DRIPCG
+  iterations:
+  - gradient norm reduction: 1.0e-10
+    ninner: 10
+    geometry:
+      nx: 40
+      ny: 20
+      depths: [500, 1000, 1500, 3000, 4000]
+    linear model:
+      trajectory:
+        tstep: PT30M
+      tstep: PT1H
+      variable change: Identity
+      name: QgTLM
+    diagnostics:
+      departures: ombg
+  - gradient norm reduction: 1.0e-10
+    ninner: 15
+    geometry:
+      nx: 40
+      ny: 20
+      depths: [500, 1000, 1500, 3000, 4000]
+    linear model:
+      trajectory:
+        tstep: PT30M
+      tstep: PT1H
+      variable change: Identity
+      name: QgTLM
+final:
+  diagnostics:
+    departures: oman
+  prints:
+    frequency: PT1H
+output:
+  datadir: Data
+  exp: 4dvar_dripcg_5level
+  first: PT0S
+  frequency: PT6H
+  type: an
+
+test:
+  reference filename: testoutput/4dvar_dripcg_5level.test
+
