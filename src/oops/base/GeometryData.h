@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -15,7 +16,15 @@
 #include "atlas/util/Geometry.h"
 #include "atlas/util/KDTree.h"
 
-#include "oops/mpi/mpi.h"
+namespace eckit {
+namespace mpi {
+class Comm;
+}  // namespace mpi
+}  // namespace eckit
+
+namespace stripack {
+class Triangulation;
+}  // namespace stripack
 
 namespace oops {
 
@@ -25,6 +34,8 @@ class GeometryData {
  public:
   GeometryData(const atlas::FunctionSpace &, const atlas::FieldSet &,
                const bool, const eckit::mpi::Comm &);
+
+  ~GeometryData();  // defined in .cc file, where stripack::Triangulation is complete
 
 // Local tree requires lats and lons with halo
   void setLocalTree(const std::vector<double> &, const std::vector<double> &);
@@ -36,6 +47,12 @@ class GeometryData {
 
   int closestTask(const double, const double) const;
   atlas::util::KDTree<size_t>::ValueList closestPoints(const double, const double, const int) const;
+
+  /// Identifies the three model grid points defining the triangle containing (lat,lon).
+  ///
+  /// Returns true if such a triangle is found; false if not.
+  bool containingTriangleAndBarycentricCoords(double lat, double lon,
+      std::array<int, 3> & indices, std::array<double, 3> & barycentricCoords) const;
 
 // Accessors
   const atlas::FunctionSpace & functionSpace() const {return fspace_;}
@@ -57,6 +74,12 @@ class GeometryData {
   atlas::util::IndexKDTree globalTree_;
   bool loctree_;
   bool glotree_;
+
+  const atlas::Geometry unitsphere_;
+  std::vector<double> lats_;
+  std::vector<double> lons_;
+  // Triangulation is a bit expensive (and not valid for models like L95), so compute on demand
+  mutable std::unique_ptr<const stripack::Triangulation> triangulation_;
 };
 
 // -----------------------------------------------------------------------------

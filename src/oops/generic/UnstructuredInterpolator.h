@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <limits>
 #include <memory>
+#include <numeric>
 #include <ostream>
 #include <string>
 #include <unordered_map>
@@ -21,6 +22,7 @@
 #include "atlas/util/Geometry.h"
 #include "atlas/util/KDTree.h"
 #include "atlas/util/Metadata.h"
+#include "atlas/util/Point.h"
 #include "eckit/config/Configuration.h"
 #include "eckit/exception/Exceptions.h"
 
@@ -29,11 +31,29 @@
 #include "oops/base/Increment.h"
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
+#include "oops/external/stripack/stripack.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Timer.h"
+
+namespace detail {
+template <size_t N>
+std::array<size_t, N> decreasing_permutation(const std::array<double, N> & arr) {
+  std::array<std::size_t, N> p{};
+  std::iota(p.begin(), p.end(), 0);
+  std::sort(p.begin(), p.end(), [&arr](const size_t i, const size_t j){ return arr[i] > arr[j]; });
+  return p;
+}
+
+template <typename T, size_t N>
+std::array<T, N> permute_array(const std::array<T, N> & arr, const std::array<std::size_t, N> & p) {
+  std::array<T, N> sorted{};
+  std::transform(p.begin(), p.end(), sorted.begin(), [&](const size_t i){ return arr[i]; });
+  return sorted;
+}
+}  // namespace detail
 
 namespace oops {
 
@@ -108,9 +128,12 @@ class UnstructuredInterpolator : public util::Printable,
                                  const atlas::array::ArrayView<double, 2> &) const;
 
   const GeometryData & geom_;
-  std::string interp_method_;
-  int nninterp_;
   size_t nout_;
+
+  // Current triangulation-based algorithm requires the interpolation stencil to contain 3 points,
+  // but this could in principle depend on the config if we generalize the algorithm to perform
+  // higher-order (than linear) interpolations using information from neighboring triangles.
+  constexpr static size_t nstencil_ = 3;
 
   // The interpolation matrices depend on the mask used at runtime. We cache the matrices as they
   // are computed, to save computations across multiple interpolations using the same mask.
@@ -123,23 +146,17 @@ class UnstructuredInterpolator : public util::Printable,
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-UnstructuredInterpolator<MODEL>::UnstructuredInterpolator(const eckit::Configuration & config,
+UnstructuredInterpolator<MODEL>::UnstructuredInterpolator(const eckit::Configuration & /*config*/,
                                                           const Geometry_ & grid,
                                                           const std::vector<double> & lats_out,
                                                           const std::vector<double> & lons_out)
-  : geom_(grid.generic()), interp_method_(), nninterp_(0), nout_(0), interp_matrices_{}
+  : geom_(grid.generic()), nout_(0), interp_matrices_{}
 {
   Log::trace() << "UnstructuredInterpolator::UnstructuredInterpolator start" << std::endl;
   util::Timer timer("oops::UnstructuredInterpolator", "UnstructuredInterpolator");
 
-  // This is a new option for this class, so isn't in any YAMLs yet!
-  interp_method_ = config.getString("interpolation method", "barycentric");
-  ASSERT(interp_method_ == "barycentric" || interp_method_ == "inverse distance");
-
   ASSERT(lats_out.size() == lons_out.size());
   nout_ = lats_out.size();
-
-  nninterp_ = config.getInt("nnearest", 4);
 
   computeUnmaskedInterpMatrix(lats_out, lons_out);
 
@@ -341,7 +358,7 @@ void UnstructuredInterpolator<MODEL>::applyPerLevel(
     if (target_mask[jloc]) {
       *gridout = 0.0;
 
-      // Edge case: all source points for this stencil are masked out, return missingValue
+      // Edge case: no valid stencil to interpolate to this target => return missingValue
       if (!interpMatrix.targetHasValidStencil[jloc]) {
         *gridout = util::missingValue(double());
         ++gridout;
@@ -352,7 +369,7 @@ void UnstructuredInterpolator<MODEL>::applyPerLevel(
       const std::vector<double> & interp_ws = interpMatrix.weights[jloc];
 
       if (interp_type == "default") {
-        for (size_t jj = 0; jj < nninterp_; ++jj) {
+        for (size_t jj = 0; jj < nstencil_; ++jj) {
           *gridout += interp_ws[jj] * gridin(interp_is[jj], ilev);
         }
       } else if (interp_type == "integer") {
@@ -363,12 +380,12 @@ void UnstructuredInterpolator<MODEL>::applyPerLevel(
         // the range of possible integer values, but vectors are almost always much more efficient.
         int minval = std::numeric_limits<int>().max();
         int maxval = std::numeric_limits<int>().min();
-        for (size_t jj = 0; jj < nninterp_; ++jj) {
+        for (size_t jj = 0; jj < nstencil_; ++jj) {
           minval = std::min(minval, static_cast<int>(std::round(gridin(interp_is[jj], ilev))));
           maxval = std::max(maxval, static_cast<int>(std::round(gridin(interp_is[jj], ilev))));
         }
         std::vector<double> int_weights(maxval - minval + 1, 0.0);
-        for (size_t jj = 0; jj < nninterp_; ++jj) {
+        for (size_t jj = 0; jj < nstencil_; ++jj) {
           const int this_int = std::round(gridin(interp_is[jj], ilev));
           int_weights[this_int - minval] += interp_ws[jj];
         }
@@ -376,7 +393,7 @@ void UnstructuredInterpolator<MODEL>::applyPerLevel(
             std::max_element(int_weights.begin(), int_weights.end()));
       } else if (interp_type == "nearest") {
         // Return value from closest unmasked source point
-        for (size_t jj = 0; jj < nninterp_; ++jj) {
+        for (size_t jj = 0; jj < nstencil_; ++jj) {
           if (interp_ws[jj] > 1.0e-9) {  // use a small tolerance to allow for roundoff in weights
             *gridout = gridin(interp_is[jj], ilev);
             break;
@@ -402,7 +419,7 @@ void UnstructuredInterpolator<MODEL>::applyPerLevelAD(
     const size_t & ilev) const {
   for (size_t jloc = 0; jloc < nout_; ++jloc) {
     if (target_mask[jloc]) {
-      // (Adjoint of) All source points for this stencil are masked out, return missingValue
+      // (Adjoint of) No valid stencil to interpolate to this target => return missingValue
       if (!interpMatrix.targetHasValidStencil[jloc]) {
         ++gridout;
         continue;
@@ -412,14 +429,14 @@ void UnstructuredInterpolator<MODEL>::applyPerLevelAD(
       const std::vector<double> & interp_ws = interpMatrix.weights[jloc];
 
       if (interp_type == "default") {
-        for (size_t jj = 0; jj < nninterp_; ++jj) {
+        for (size_t jj = 0; jj < nstencil_; ++jj) {
           gridin(interp_is[jj], ilev) += interp_ws[jj] * *gridout;
         }
       } else if (interp_type == "integer") {
         throw eckit::BadValue("No adjoint for integer interpolation");
       } else if (interp_type == "nearest") {
         // (Adjoint of) Return value from closest unmasked source point
-        for (size_t jj = 0; jj < nninterp_; ++jj) {
+        for (size_t jj = 0; jj < nstencil_; ++jj) {
           if (interp_ws[jj] > 1.0e-9) {  // use a small tolerance to allow for roundoff in weights
             gridin(interp_is[jj], ilev) += *gridout;
             break;
@@ -522,63 +539,41 @@ void UnstructuredInterpolator<MODEL>::computeUnmaskedInterpMatrix(
   interp_matrices_.insert(
       std::make_pair(unmaskedName_, InterpMatrix{
         std::vector<bool>(nout_, true),
-        std::vector<std::vector<size_t>>(nout_, std::vector<size_t>(nninterp_)),
-        std::vector<std::vector<double>>(nout_, std::vector<double>(nninterp_, 0.0))}));
-
-  const atlas::Geometry earth(atlas::util::Earth::radius());
-  const double close = 1.0e-10;
+        std::vector<std::vector<size_t>>(nout_, std::vector<size_t>(nstencil_)),
+        std::vector<std::vector<double>>(nout_, std::vector<double>(nstencil_, 0.0))}));
 
   for (size_t jloc = 0; jloc < nout_; ++jloc) {
-    const atlas::util::KDTree<size_t>::ValueList neighbours =
-                          geom_.closestPoints(lats_out[jloc], lons_out[jloc], nninterp_);
+    std::array<int, 3> indices{};
+    std::array<double, 3> baryCoords{};
+    const bool validTriangle = geom_.containingTriangleAndBarycentricCoords(
+        lats_out[jloc], lons_out[jloc], indices, baryCoords);
 
+    // Edge case: target point outside of source grid, can occur for local-area models
+    if (!validTriangle) {
+      interp_matrices_[unmaskedName_].targetHasValidStencil[jloc] = false;
+      continue;
+    }
+
+    // Reorder points from nearest to furthest (barycentric coords from largest to smallest)
+    // This ordering of the coefficients is used in nearest-neighbor interpolations
+    const auto permutation = detail::decreasing_permutation(baryCoords);
+    indices = detail::permute_array(indices, permutation);
+    baryCoords = detail::permute_array(baryCoords, permutation);
+
+    // STRIPACK produces unnormalized barycentric coords, so normalize
+    double wsum = 0.0;
+    for (size_t j = 0; j < nstencil_; ++j) {
+      wsum += baryCoords[j];
+    }
+    ASSERT(wsum > 0.0);
+
+    // Store indices and weights into InterpMatrix datastructure
     std::vector<size_t> & interp_is = interp_matrices_.at(unmaskedName_).stencils[jloc];
     std::vector<double> & interp_ws = interp_matrices_.at(unmaskedName_).weights[jloc];
-
-    // Barycentric and inverse-distance interpolation both rely on indices, 1/distances
-    size_t jj = 0;
-    for (const atlas::util::KDTree<size_t>::Value & val : neighbours) {
-      interp_is[jj] = val.payload();
-      interp_ws[jj] = 1.0 / val.distance();
-      ++jj;
-    }
-    ASSERT(jj == nninterp_);
-
-    if (interp_ws[0] > 1e10) {
-      // Handle edge case where output point is close to one input point => interp_w very large
-      // Atlas returns the neighbors in nearest-first order, so only need to check first element
-      for (size_t jn = 0; jn < nninterp_; ++jn) interp_ws[jn] = 0.0;
-      interp_ws[0] = 1.0;
-    } else if (interp_method_ == "barycentric") {
-      // Barycentric weights
-      std::vector<double> bw(nninterp_);
-      for (size_t j = 0; j < nninterp_; ++j) {
-        double wprod = 1.0;
-        const auto& p1 = neighbours[j].point();
-        for (size_t k = 0; k < nninterp_; ++k) {
-          if (k != j) {
-            const auto& p2 = neighbours[k].point();
-            const double dist = earth.distance(p1, p2);
-            wprod *= std::max(dist, close);
-          }
-        }
-        bw[j] = 1.0 / wprod;
-      }
-      // Interpolation weights from barycentric weights
-      double wsum = 0.0;
-      for (size_t j = 0; j < nninterp_; ++j) wsum += interp_ws[j] * bw[j];
-      for (size_t j = 0; j < nninterp_; ++j) {
-        interp_ws[j] *= bw[j] / wsum;
-        ASSERT(interp_ws[j] >= 0.0 && interp_ws[j] <= 1.0);
-      }
-    } else {
-      // Inverse-distance interpolation weights
-      double wsum = 0.0;
-      for (size_t j = 0; j < nninterp_; ++j) wsum += interp_ws[j];
-      for (size_t j = 0; j < nninterp_; ++j) {
-        interp_ws[j] /= wsum;
-        ASSERT(interp_ws[j] >= 0.0 && interp_ws[j] <= 1.0);
-      }
+    for (size_t j = 0; j < nstencil_; ++j) {
+      interp_is[j] = indices[j];
+      interp_ws[j] = baryCoords[j] / wsum;
+      ASSERT(interp_ws[j] >= 0.0 && interp_ws[j] <= 1.0);
     }
   }
 }
@@ -599,12 +594,17 @@ void UnstructuredInterpolator<MODEL>::computeMaskedInterpMatrix(
   interp_matrices_[maskName] = interp_matrices_[unmaskedName_];
 
   for (size_t jloc = 0; jloc < nout_; ++jloc) {
+    // Edge case: unmasked interp stencil is already invalid => masked matrix also invalid
+    if (!interp_matrices_[unmaskedName_].targetHasValidStencil[jloc]) {
+      interp_matrices_[maskName].targetHasValidStencil[jloc] = false;
+      continue;
+    }
     std::vector<size_t> & interp_is = interp_matrices_[maskName].stencils[jloc];
     std::vector<double> & interp_ws = interp_matrices_[maskName].weights[jloc];
 
     // Sum up mask weights, will be used to renormalize interpolation weights
     double normalization = 0.0;
-    for (size_t jj = 0; jj < nninterp_; ++jj) {
+    for (size_t jj = 0; jj < nstencil_; ++jj) {
       ASSERT(source_mask(interp_is[jj], 0) >= 0.0 && source_mask(interp_is[jj], 0) <= 1.0);
       normalization += interp_ws[jj] * source_mask(interp_is[jj], 0);
     }
@@ -614,7 +614,7 @@ void UnstructuredInterpolator<MODEL>::computeMaskedInterpMatrix(
       interp_matrices_[maskName].targetHasValidStencil[jloc] = false;
     } else {
       // Standard case: renormalize
-      for (size_t jj = 0; jj < nninterp_; ++jj) {
+      for (size_t jj = 0; jj < nstencil_; ++jj) {
         interp_ws[jj] *= source_mask(interp_is[jj], 0) / normalization;
       }
     }

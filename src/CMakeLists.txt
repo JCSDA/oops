@@ -179,6 +179,11 @@ oops/coupled/TraitCoupled.h
 oops/coupled/VariableChangeCoupled.h
 oops/coupled/instantiateCoupledFactory.h
 
+oops/external/stripack/stripack.cc
+oops/external/stripack/stripack.h
+oops/external/stripack/stripack.f90
+oops/external/stripack/stripack_interface.f90
+
 oops/generic/AnalyticInitBase.h
 oops/generic/AtlasInterpolator.h
 oops/generic/fft_gpoint2spectral_f.F90
