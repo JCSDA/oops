@@ -122,7 +122,7 @@ class ControlIncrement : public util::Printable,
 
 template<typename MODEL, typename OBS>
 ControlIncrement<MODEL, OBS>::ControlIncrement(const JbTotal_ & jb)
-  : increment_(*jb.jbState().newStateIncrement()),  // not good, extra copy
+  : increment_(jb.jbState().geometry(), jb.jbState().variables(), jb.jbState().time()),
     modbias_(jb.resolution(), jb.jbModBias().config()),
     obsbias_(jb.jbObsBias().obspaces(), jb.jbObsBias().config()),
     windowBegin_(jb.windowBegin()), windowEnd_(jb.windowEnd())

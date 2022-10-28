@@ -73,8 +73,10 @@ template<typename MODEL> class CostJbJq : public CostJbState<MODEL> {
 /// Randomize
   void randomize(Increment_ &) const override;
 
-/// Create new increment (set to 0).
-  Increment_ * newStateIncrement() const override;
+/// Accessors to data for constructing a new increment.
+  const Geometry_ & geometry() const override;
+  const Variables & variables() const override;
+  const util::DateTime time() const override;
 
  private:
   std::unique_ptr<ModelSpaceCovarianceBase<MODEL> > B_;
@@ -226,11 +228,22 @@ void CostJbJq<MODEL>::randomize(Increment_ & dx) const {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-Increment<MODEL> * CostJbJq<MODEL>::newStateIncrement() const {
-  Log::trace() << "CostJbJq::newStateIncrement start" << std::endl;
-  Increment_ * incr = new Increment_(*resol_, ctlvars_, xb_.validTime());
-  Log::trace() << "CostJbJq::newStateIncrement done" << std::endl;
-  return incr;
+const Geometry<MODEL> & CostJbJq<MODEL>::geometry() const {
+  return *resol_;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+const Variables & CostJbJq<MODEL>::variables() const {
+  return ctlvars_;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+const util::DateTime CostJbJq<MODEL>::time() const {
+  return xb_.validTime();
 }
 
 // -----------------------------------------------------------------------------

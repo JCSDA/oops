@@ -70,8 +70,10 @@ template<typename MODEL> class CostJbState : private boost::noncopyable {
 /// Randomize
   virtual void randomize(Increment_ &) const = 0;
 
-/// Create new increment (set to 0).
-  virtual Increment_ * newStateIncrement() const = 0;
+/// Accessors to data for constructing a new increment.
+  virtual const Geometry_ & geometry() const = 0;
+  virtual const Variables & variables() const = 0;
+  virtual const util::DateTime time() const = 0;
 };
 
 // -----------------------------------------------------------------------------

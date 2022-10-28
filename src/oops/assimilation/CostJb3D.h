@@ -78,8 +78,10 @@ template<typename MODEL> class CostJb3D : public CostJbState<MODEL> {
 /// Randomize
   void randomize(Increment_ &) const override;
 
-/// Create new increment (set to 0).
-  Increment_ * newStateIncrement() const override;
+/// Accessors to data for constructing a new increment.
+  const Geometry_ & geometry() const override;
+  const Variables & variables() const override;
+  const util::DateTime time() const override;
 
  private:
   const State_ & xb_;
@@ -154,11 +156,23 @@ void CostJb3D<MODEL>::randomize(Increment_ & dx) const {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-Increment<MODEL> * CostJb3D<MODEL>::newStateIncrement() const {
-  Increment_ * incr = new Increment_(*resol_, controlvars_, time_);
-  return incr;
+const Geometry<MODEL> & CostJb3D<MODEL>::geometry() const {
+  return *resol_;
 }
 
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+const Variables & CostJb3D<MODEL>::variables() const {
+  return controlvars_;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+const util::DateTime CostJb3D<MODEL>::time() const {
+  return time_;
+}
 // -----------------------------------------------------------------------------
 
 }  // namespace oops
