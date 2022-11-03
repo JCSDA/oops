@@ -259,6 +259,8 @@ void GetValues<MODEL, OBS>::incInterpValues(
 {
   Log::trace() << "GetValues::incInterpValues start" << std::endl;
 
+  const double missing = util::missingValue(double());
+
 // Get the state previous and next times and time-step
   const util::DateTime tPrevious = tCurrent - hslot_;
   const util::DateTime tNext = tCurrent + hslot_;
@@ -282,11 +284,14 @@ void GetValues<MODEL, OBS>::incInterpValues(
       }
       for (size_t jf = 0; jf < geovars_.size(); ++jf) {
         for (size_t jlev = 0; jlev < geovarsSizes_[jf]; ++jlev) {
-          if (isCurrentTime) {
+          if (tmplocinterp[valuesIndex] == missing) {
+            locinterp_[jtask][valuesIndex] = missing;
+          } else if (isCurrentTime) {
             locinterp_[jtask][valuesIndex] = tmplocinterp[valuesIndex];
           } else if (isFirst) {
             locinterp_[jtask][valuesIndex] = tmplocinterp[valuesIndex]*timeWeight;
-          } else {
+          } else if (locinterp_[jtask][valuesIndex] != missing) {
+            // Don't linearly interpolate missing data
             locinterp_[jtask][valuesIndex] += tmplocinterp[valuesIndex]*timeWeight;
           }
           valuesIndex += nObs;
