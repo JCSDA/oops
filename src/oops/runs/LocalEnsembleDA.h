@@ -380,7 +380,13 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
       Log::test() << "ombg RMS: " << ombg.rms() << std::endl
                 << "oman RMS: " << oman.rms() << std::endl;
     }
-    obsdb.save();
+
+    // Save the obsspace only if an hofx was calculated
+    // (either prior and/or posterior)
+    if ( !params.driver.value().readHofX.value() ||
+         params.driver.value().doPostObs.value()) {
+      obsdb.save();
+    }
 
     return 0;
   }
