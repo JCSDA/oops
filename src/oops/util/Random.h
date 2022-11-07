@@ -225,11 +225,11 @@ class NormalDistribution : public Random<datatype> {
  *  in the range to be shuffled.
  * \param[in] seed The seed to use for the random number generator upon first
  *            instantiation of the function (optional).  If omitted, a seed
- *            will be generated based on the calendar time.  This parameter is 
+ *            will be generated based on the calendar time.  This parameter is
  *            only used on the first instantiation of this class for a
  *            particular data type and/or if the **reset** flag is set to true.
  * \param[in] reset If this is set to **true** then this forces the generator
- *            to re-initilize itself with the specified seed.  Otherwise, the
+ *            to re-initialize itself with the specified seed.  Otherwise, the
  *            seed is only used on first instantiation (this is the default
  *            behavior).
  */

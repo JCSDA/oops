@@ -9,7 +9,6 @@
 
 #include <algorithm>
 #include <array>
-#include <random>
 #include <vector>
 
 #include "atlas/util/Geometry.h"
@@ -18,6 +17,7 @@
 #include "eckit/exception/Exceptions.h"
 
 #include "oops/util/FloatCompare.h"
+#include "oops/util/Random.h"
 
 namespace stripack {
 
@@ -46,8 +46,8 @@ Triangulation::Triangulation(const std::vector<double> & lats, const std::vector
   // First, construct a random permutation and its inverse:
   std::vector<size_t> indices(num_nodes_);
   std::iota(indices.begin(), indices.end(), 0);
-  std::mt19937 gen;
-  std::shuffle(begin(indices), end(indices), gen);
+  const unsigned int seed = 7452;   // arbitrary, but reproducible
+  util::shuffle(begin(indices), end(indices), seed);
   for (size_t i = 0; i < num_nodes_; ++i) {
     random_permutation_[i] = indices[i];
     inverse_random_permutation_[indices[i]] = i;
