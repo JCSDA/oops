@@ -6,6 +6,13 @@
  *
  */
 
+#if defined  (__APPLE__) && defined (__aarch64__)
+void trap_sigfpe(const int abortflg)
+{
+    // do nothing
+}
+#else
+
 #ifdef __APPLE__
 #include <xmmintrin.h>  // Apple-specific signal handling
 #else
@@ -104,3 +111,4 @@ void sigfpe_handler(int sig, siginfo_t *info, void *ucontext) {
   }
 }
 
+#endif
