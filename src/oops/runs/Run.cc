@@ -158,7 +158,7 @@ Run::~Run() {
 
 // -----------------------------------------------------------------------------
 
-int Run::execute(const Application & app) {
+int Run::execute(const Application & app, const eckit::mpi::Comm & comm) {
   if (is_print_help_only_) {
     return 0;
   }
@@ -174,16 +174,17 @@ int Run::execute(const Application & app) {
       status = 0;
     } else {
       // Start measuring performance
+      util::TimerHelper::setComm(comm);
       util::TimerHelper::start();
       util::ObjectCountHelper::start();
-      util::printRunStats("Run start", true);
+      util::printRunStats("Run start", true, comm);
       Log::info() << "Run: Starting " << app << std::endl;
       status = app.execute(*config_, validate_);
       Log::info() << std::endl << "Run: Finishing " << app << std::endl;
       // Performance diagnostics
       util::ObjectCountHelper::stop();
       util::TimerHelper::stop();
-      util::printRunStats("Run end", true);
+      util::printRunStats("Run end", true, comm);
       Log::info() << "Run: Finishing " << app << " with status = " << status << std::endl;
     }
   }

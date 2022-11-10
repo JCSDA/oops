@@ -9,12 +9,16 @@
 
 #include <string>
 
+#include "eckit/mpi/Comm.h"
+#include "oops/mpi/mpi.h"
+
 namespace util {
 
 // -----------------------------------------------------------------------------
 
 // Print runtime and memory statistics (only for task 0 by default)
-void printRunStats(const std::string &, const bool alltasks = false);
+void printRunStats(const std::string &, const bool alltasks = false,
+                   const eckit::mpi::Comm & comm = oops::mpi::world());
 
 // -----------------------------------------------------------------------------
 

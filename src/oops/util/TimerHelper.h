@@ -18,6 +18,8 @@
 // #include <chrono>
 
 #include <boost/noncopyable.hpp>
+#include "eckit/mpi/Comm.h"
+#include "oops/mpi/mpi.h"
 #include "oops/util/Printable.h"
 
 namespace util {
@@ -32,6 +34,7 @@ class TimerHelper : public util::Printable,
   static void stop();
   static void add(const std::string &, const double, const bool);
 //               const std::chrono::duration<double> &);
+  static void setComm(const eckit::mpi::Comm & comm);
   ~TimerHelper();
 
  private:
@@ -43,6 +46,7 @@ class TimerHelper : public util::Printable,
   std::map< std::string, double > timers_;
   std::map< std::string, int > counts_;
   std::unique_ptr<Timer> total_;
+  const eckit::mpi::Comm * comm_;
 };
 
 // -----------------------------------------------------------------------------

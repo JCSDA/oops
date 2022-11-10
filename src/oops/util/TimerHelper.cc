@@ -62,7 +62,13 @@ void TimerHelper::add(const std::string & name, const double dt, const bool meas
 
 // -----------------------------------------------------------------------------
 
-TimerHelper::TimerHelper(): on_(false), timers_(), counts_(), total_() {}
+void TimerHelper::setComm(const eckit::mpi::Comm & comm) {
+  getHelper().comm_ = &comm;
+}
+// -----------------------------------------------------------------------------
+
+TimerHelper::TimerHelper(): on_(false), timers_(), counts_(), total_(),
+                            comm_(&oops::mpi::world()) {}
 
 // -----------------------------------------------------------------------------
 
@@ -98,18 +104,17 @@ void TimerHelper::print(std::ostream & os) const {
      << title << std::string(std::ceil(title_half_width), '-') << std::endl;
 
 // For MPI applications, gather and print statistics across tasks
-
-  size_t ntasks = oops::mpi::world().size();
+  size_t ntasks = comm_->size();
   int tag = 1234;
 // Tasks send their stats to task 0
-  if (oops::mpi::world().rank() > 0) {
+  if (comm_->rank() > 0) {
     eckit::Buffer bufr(8000);
     eckit::ResizableMemoryStream sstr(bufr);
     sstr << timers_.size();
     for (cit jt = timers_.begin(); jt != timers_.end(); ++jt) {
       sstr << jt->first << jt->second;
     }
-    oops::mpi::world().send(static_cast<const char*>(bufr.data()), sstr.position(), 0, tag);
+    comm_->send(static_cast<const char*>(bufr.data()), sstr.position(), 0, tag);
   } else {  // Task 0
 //  Structure for global statistics
     std::map<std::string, std::array<double, 3>> stats;
@@ -118,12 +123,12 @@ void TimerHelper::print(std::ostream & os) const {
     }
 //  Task 0 receives stats from other tasks
     for (size_t from = 1; from < ntasks; ++from) {
-      eckit::mpi::Status st = oops::mpi::world().probe(from, tag);
-      size_t size = oops::mpi::world().getCount<char>(st);
+      eckit::mpi::Status st = comm_->probe(from, tag);
+      size_t size = comm_->getCount<char>(st);
       eckit::Buffer bufr(size);
       bufr.zero();
 
-      oops::mpi::world().receive(static_cast<char*>(bufr.data()), bufr.size(), from, tag);
+      comm_->receive(static_cast<char*>(bufr.data()), bufr.size(), from, tag);
       eckit::ResizableMemoryStream sstr(bufr);
 
       std::string name;
