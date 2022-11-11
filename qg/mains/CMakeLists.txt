@@ -96,6 +96,13 @@ ecbuild_add_executable( TARGET  qg_ens_variance.x
                       )
 oops_output_json_schema( qg_ens_variance.x )
 
+
+ecbuild_add_executable( TARGET  qg_ens_mean_variance.x
+                        SOURCES qgEnsMeanVariance.cc
+                        LIBS    qg
+                      )
+oops_output_json_schema( qg_ens_mean_variance.x )
+
 ecbuild_add_executable( TARGET  qg_letkf.x
                         SOURCES qgLETKF.cc
                         LIBS    qg

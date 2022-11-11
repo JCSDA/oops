@@ -60,6 +60,7 @@ list( APPEND qg_testinput
   testinput/ens_hofx_4.yaml
   testinput/ens_hofx_5.yaml
   testinput/ens_hofx.yaml
+  testinput/ens_mean_variance.yaml
   testinput/ens_recenter.yaml
   testinput/ens_variance.yaml
   testinput/ens_variance_inflation_field.yaml
@@ -160,6 +161,7 @@ list( APPEND qg_testoutput
   testoutput/eda_4dvar.test
   testoutput/ens_forecast.test
   testoutput/ens_hofx.test
+  testoutput/ens_mean_variance.test
   testoutput/ens_recenter.test
   testoutput/ens_variance.test
   testoutput/ens_variance_inflation_field.test
@@ -335,7 +337,7 @@ ecbuild_add_test( TARGET  test_qg_linear_model
                   ARGS    "testinput/linear_model.yaml"
                   LIBS    qg
                   TEST_DEPENDS test_qg_truth )
-            
+
 ecbuild_add_test( TARGET  test_qg_hybrid_linear_model
                   SOURCES executables/TestLinearModel.cc
                   ARGS    "testinput/hybrid_linear_model.yaml"
@@ -527,7 +529,7 @@ ecbuild_add_test( TARGET test_qg_gen_ens_pert_B_HTLM
                   ARGS testinput/gen_ens_pert_B_HTLM.yaml
                   COMMAND  qg_gen_ens_pert_B.x
                   TEST_DEPENDS test_qg_forecast test_qg_truth  )
-                  
+
 ecbuild_add_test( TARGET test_qg_gen_ens_pert_B_HTLM_pert_heat
                   OMP 2
                   ARGS testinput/gen_ens_pert_B_HTLM_pert_heat.yaml
@@ -552,6 +554,12 @@ ecbuild_add_test( TARGET test_qg_ens_variance
                   OMP 2
                   ARGS testinput/ens_variance.yaml
                   COMMAND  qg_ens_variance.x
+                  TEST_DEPENDS test_qg_gen_ens_pert_B )
+
+ecbuild_add_test( TARGET test_qg_ens_mean_variance
+                  OMP 2
+                  ARGS testinput/ens_mean_variance.yaml
+                  COMMAND  qg_ens_mean_variance.x
                   TEST_DEPENDS test_qg_gen_ens_pert_B )
 
 ecbuild_add_test( TARGET test_qg_ens_recenter
