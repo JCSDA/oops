@@ -459,7 +459,6 @@ test/interface/VariableChange.h
 
 test/mpi/mpi.h
 
-test/generic/fft_multiple.cc
 test/generic/fft_multiple.h
 test/generic/PseudoModelState4D.h
 test/generic/VerticalLocEV.h
