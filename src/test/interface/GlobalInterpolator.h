@@ -234,7 +234,8 @@ void testInterpolator() {
   // the source and target domains; for the dot products to match, the domains must match too.
   double dot1_sum = 0.0;
   double dot2_sum = 0.0;
-  geom->getComm().allReduce(dot1_sum, dot2_sum, eckit::mpi::Operation::Code::SUM);
+  geom->getComm().allReduce(dot1, dot1_sum, eckit::mpi::Operation::Code::SUM);
+  geom->getComm().allReduce(dot2, dot2_sum, eckit::mpi::Operation::Code::SUM);
 
   const double toleranceAD = conf.getDouble("tolerance AD", 1.0e-11);
   EXPECT(oops::is_close(dot1_sum, dot2_sum, toleranceAD));
