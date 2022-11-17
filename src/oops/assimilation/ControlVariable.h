@@ -100,7 +100,7 @@ ControlVariable<MODEL, OBS>::ControlVariable(const eckit::Configuration & conf,
     modbias_(resol, conf.getSubConfiguration("model aux control")),
     obsbias_(odb, conf.getSubConfiguration("observations.observers"))
 {
-  Log::trace() << "ControlVariable contructed" << std::endl;
+  Log::trace() << "ControlVariable constructed" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

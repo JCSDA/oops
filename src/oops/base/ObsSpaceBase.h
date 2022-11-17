@@ -23,7 +23,7 @@
 namespace oops {
 
 /// \brief Base class for configuration parameters of observation spaces.
-class ObsSpaceParametersBase : public oops::Parameters {
+class ObsSpaceParametersBase : public Parameters {
   OOPS_ABSTRACT_PARAMETERS(ObsSpaceParametersBase, Parameters)
 
  public:
@@ -33,7 +33,7 @@ class ObsSpaceParametersBase : public oops::Parameters {
   /// The seed is a sum of this integer and terms derived from the position of the assimilation
   /// window, the ensemble member index and the number of ObsSpaceBase instances created so far
   /// during the lifetime of the program.
-  oops::Parameter<int> obsPerturbationsSeed{"obs perturbations seed", 0, this};
+  Parameter<int> obsPerturbationsSeed{"obs perturbations seed", 0, this};
 };
 
 // -----------------------------------------------------------------------------

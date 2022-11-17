@@ -23,10 +23,8 @@ int ObsSpaceBase::instances_ = 0;
 ObsSpaceBase::ObsSpaceBase(const ObsSpaceParametersBase & params, const eckit::mpi::Comm & comm,
                            const util::DateTime & bgn, const util::DateTime & end)
   : winbgn_(bgn), winend_(end), instance_(++instances_) {
-//
-// Determine seed for random number generator that is reproducible when re-running
-// but does not repeat itself over analysis cycles, ensemble members or obs type
-//
+  // Determine seed for random number generator that is reproducible when re-running
+  // but does not repeat itself over analysis cycles, ensemble members or obs type
   util::DateTime ref(1623, 6, 19, 0, 0, 0);
   ASSERT(winbgn_ > ref);
   util::Duration dt(winbgn_ - ref);
@@ -35,8 +33,8 @@ ObsSpaceBase::ObsSpaceBase(const ObsSpaceParametersBase & params, const eckit::m
   // Won't repeat if more seconds between analysis cycles than members in EDA
   seed_ += params.obsPerturbationsSeed;
 
-//             31622400 seconds max in 1 year
-//          12197962800 seed at this step for 2010-01-01T03:00:00Z
+  //           31622400 seconds max in 1 year
+  //        12197962800 seed at this step for 2010-01-01T03:00:00Z
   seed_ += 100000000000 * instance_;
 }
 

@@ -11,12 +11,13 @@ model:
 forecast length: P1D
 window begin: 2010-01-01T00:00:00Z
 window length: P1D
-obs perturbations: true
-make obs: true
 observations:
+  obs perturbations: true
   observers:
   - obs operator:
       obs type: Stream
+    obs error:
+      covariance model: diagonal
     obs space:
       obsdataout:
         engine:
@@ -33,6 +34,8 @@ observations:
       filename: Data/truth5levels.obs4d_24h.stream.gom
   - obs operator:
       obs type: Wind
+    obs error:
+      covariance model: diagonal
     obs space:
       obsdataout:
         engine:
@@ -49,6 +52,8 @@ observations:
       filename: Data/truth5levels.obs4d_24h.wind.gom
   - obs operator:
       obs type: WSpeed
+    obs error:
+      covariance model: diagonal
     obs space:
       obsdataout:
         engine:
@@ -63,6 +68,7 @@ observations:
     obs filters:
     - filter: GOMsaver
       filename: Data/truth5levels.obs4d_24h.wspeed.gom
+make obs: true
 prints:
   frequency: PT3H
 

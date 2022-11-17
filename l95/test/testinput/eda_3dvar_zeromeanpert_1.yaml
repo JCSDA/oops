@@ -14,10 +14,11 @@ cost function:
     length_scale: 1.0
     standard_deviation: 0.6
   observations:
+    obs perturbations: true
     observers:
     - obs error:
         covariance model: diagonal
-        random amplitude: 0.2
+        obs perturbations amplitude: 0.2
         zero-mean perturbations: true
         member: 1
         number of members: 4
@@ -41,7 +42,6 @@ variational:
     gradient norm reduction: 1e-10
     diagnostics:
       departures: ombg
-    obs perturbations: true
   - geometry:
       resol: 40
     ninner: 10

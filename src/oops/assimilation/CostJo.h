@@ -121,6 +121,7 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   std::unique_ptr<Observations_> yobs_;
   ObsErrors_ Rmat_;
   Observers_ observers_;
+  bool firstOuterLoop_;
 
   /// Jo Gradient at first guess : \f$ R^{-1} (H(x_{fg})-y_{obs}) \f$.
   std::unique_ptr<Departures_> gradFG_;
@@ -166,6 +167,12 @@ void CostJo<MODEL, OBS>::setPostProc(const CtrlVar_ & xx, const eckit::Configura
 
   currentConf_.reset(new eckit::LocalConfiguration(conf));
 
+  if (!yobs_) {
+    firstOuterLoop_ = true;
+  } else {
+    firstOuterLoop_ = false;
+  }
+
   observers_.initialize(xx.state().geometry(), xx.obsVar(), Rmat_, pp, conf);
 
   Log::trace() << "CostJo::setPostProc done" << std::endl;
@@ -183,13 +190,11 @@ double CostJo<MODEL, OBS>::computeCost() {
   Observations_ yeqv(obspaces_);
   observers_.finalize(yeqv);
 
-  // Perturb observations according to obs error statistics and save to output file
-  bool obspert = currentConf_->getBool("obs perturbations", false);
-  if (obspert) {
+  if (firstOuterLoop_ && params_.obsPerturbations) {
+    // Perturb observations according to obs error statistics and save to output file
     yobs_->perturb(Rmat_);
     Log::info() << "Perturbed observations: " << *yobs_ << std::endl;
-    bool saveobspert = currentConf_->getBool("save perturbed obs", true);
-    if (saveobspert) yobs_->save("EffectiveObsValue");
+    yobs_->save("EffectiveObsValue");
   }
 
   // Compute observations departures and save to output file

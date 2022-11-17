@@ -20,7 +20,6 @@ cost function:
     observers:
     - obs error:
         covariance model: diagonal
-        random amplitude: 0.4
       obs operator:
         obs type: Stream
       obs space:
@@ -31,10 +30,8 @@ cost function:
           engine:
             obsfile: Data/mem001.block_eda_3dvar.obs3d.nc
         obs type: Stream
-        obs perturbations seed: 1
     - obs error:
         covariance model: diagonal
-        random amplitude: 0.5
       obs operator:
         obs type: Wind
       obs space:
@@ -45,10 +42,8 @@ cost function:
           engine:
             obsfile: Data/mem001.block_eda_3dvar.obs3d.nc
         obs type: Wind
-        obs perturbations seed: 1
     - obs error:
         covariance model: diagonal
-        random amplitude: 0.2
       obs operator:
         obs type: WSpeed
       obs space:
@@ -59,7 +54,6 @@ cost function:
           engine:
             obsfile: Data/mem001.block_eda_3dvar.obs3d.nc
         obs type: WSpeed
-        obs perturbations seed: 1
 variational:
   minimizer:
     algorithm: DRPBlockLanczos
@@ -73,7 +67,6 @@ variational:
       nx: 20
       ny: 10
       depths: [4500.0, 5500.0]
-    obs perturbations: false
   - diagnostics:
       departures: ombg1
     gradient norm reduction: 0.2

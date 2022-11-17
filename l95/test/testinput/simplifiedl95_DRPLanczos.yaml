@@ -25,7 +25,6 @@ cost function:
             obsfile: Data/simplifiedl95.obt
       obs error:
         covariance model: diagonal
-        random amplitude: 1.0
 variational:
   minimizer:
     algorithm: DRPLanczos

@@ -17,7 +17,6 @@ cost function:
     observers:
     - obs error:
         covariance model: diagonal
-        random amplitude: 0.2
       obs space:
         obsdatain:
           engine:
@@ -25,7 +24,6 @@ cost function:
         obsdataout:
           engine:
             obsfile: Data/mem001.eda_3dvar_block.2010-01-02T00:00:00Z.obt
-        obs perturbations seed: 1
       obs operator: {}
 variational:
   minimizer:
@@ -45,7 +43,6 @@ variational:
     gradient norm reduction: 1e-10
     diagnostics:
       departures: ombg
-    obs perturbations: false
   - geometry:
       resol: 40
     ninner: 10

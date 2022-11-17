@@ -31,10 +31,8 @@ cost function:
         obsdataout:
           engine:
             obsfile: Data/mem001.eda_4dvar.obs4d_24h.nc
-        obs perturbations seed: 1
       obs error:
         covariance model: diagonal
-        random amplitude: 0.4
     - obs operator:
         obs type: Wind
       obs space:
@@ -45,10 +43,8 @@ cost function:
         obsdataout:
           engine:
             obsfile: Data/mem001.eda_4dvar.obs4d_24h.nc
-        obs perturbations seed: 1
       obs error:
         covariance model: diagonal
-        random amplitude: 0.5
     - obs operator:
         obs type: WSpeed
       obs space:
@@ -59,10 +55,8 @@ cost function:
         obsdataout:
           engine:
             obsfile: Data/mem001.eda_4dvar.obs4d_24h.nc
-        obs perturbations seed: 1
       obs error:
         covariance model: diagonal
-        random amplitude: 0.2
   constraints:
   - jcdfi:
       filtered variables: [x]
@@ -89,7 +83,6 @@ variational:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
-    obs perturbations: false
   - diagnostics:
       departures: ombg1
     gradient norm reduction: 1.0e-10

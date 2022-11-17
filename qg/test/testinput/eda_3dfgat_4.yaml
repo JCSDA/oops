@@ -20,10 +20,11 @@ cost function:
     standard_deviation: 1.8e7
     vertical_length_scale: 15000.0
   observations:
+    obs perturbations: true
     observers:
     - obs error:
         covariance model: diagonal
-        random amplitude: 0.4
+        obs perturbations amplitude: 0.4
       obs operator:
         obs type: Stream
       obs space:
@@ -37,7 +38,7 @@ cost function:
         obs perturbations seed: 4
     - obs error:
         covariance model: diagonal
-        random amplitude: 0.5
+        obs perturbations amplitude: 0.5
       obs operator:
         obs type: Wind
       obs space:
@@ -51,7 +52,7 @@ cost function:
         obs perturbations seed: 4
     - obs error:
         covariance model: diagonal
-        random amplitude: 0.2
+        obs perturbations amplitude: 0.2
       obs operator:
         obs type: WSpeed
       obs space:
@@ -80,7 +81,6 @@ variational:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
-    obs perturbations: true
 final:
   diagnostics:
     departures: oman

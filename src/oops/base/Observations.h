@@ -68,7 +68,7 @@ template <typename OBS> class Observations : public util::Printable {
   Observations & operator*=(const double);
 
 /// Perturbations
-  void perturb(const ObsErrors_ &);  // to be removed
+  void perturb(const ObsErrors_ &);
 
  private:
   void print(std::ostream &) const;

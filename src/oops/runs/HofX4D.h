@@ -72,9 +72,6 @@ class HofX4DParameters : public ApplicationParameters {
   /// Options passed to the object writing out forecast fields.
   Parameter<PostTimerParameters> prints{"prints", {}, this};
 
-  /// Whether to perturb the H(x) vector before saving.
-  Parameter<bool> obsPerturbations{"obs perturbations", false, this};
-
   /// Whether to save the H(x) vector as ObsValues.
   Parameter<bool> makeObs{"make obs", false, this};
 
@@ -185,7 +182,7 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
     Log::test() << "H(x): " << std::endl << yobs << "End H(x)" << std::endl;
 
 //  Perturb H(x) if needed
-    if (params.obsPerturbations) {
+    if (params.observations.value().obsPerturbations) {
       yobs.perturb(Rmat);
       Log::test() << "Perturbed H(x): " << std::endl << yobs << "End Perturbed H(x)" << std::endl;
     }

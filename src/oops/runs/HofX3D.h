@@ -59,9 +59,6 @@ class HofX3DParameters : public ApplicationParameters {
   /// Geometry parameters.
   RequiredParameter<GeometryParameters_> geometry{"geometry", this};
 
-  /// Whether to perturb the H(x) vector before saving.
-  Parameter<bool> obsPerturbations{"obs perturbations", false, this};
-
   /// Whether to save the H(x) vector as ObsValues.
   Parameter<bool> makeObs{"make obs", false, this};
 
@@ -144,7 +141,7 @@ template <typename MODEL, typename OBS> class HofX3D : public Application {
     Log::test() << "H(x): " << std::endl << yobs << "End H(x)" << std::endl;
 
 //  Perturb H(x) if needed
-    if (params.obsPerturbations) {
+    if (params.observations.value().obsPerturbations) {
       yobs.perturb(Rmat);
       Log::test() << "Perturbed H(x): " << std::endl << yobs << "End Perturbed H(x)" << std::endl;
     }

@@ -18,6 +18,7 @@ cost function:
     length_scale: 1.0
     standard_deviation: 0.6
   observations:
+    obs perturbations: true
     observers:
     - obs operator: {}
       obs space:
@@ -30,7 +31,7 @@ cost function:
         obs perturbations seed: 3
       obs error:
         covariance model: diagonal
-        random amplitude: 0.2
+        obs perturbations amplitude: 0.2
   constraints:
   - jcdfi:
       filtered variables: [x]
@@ -53,7 +54,6 @@ variational:
       name: L95TLM
     diagnostics:
       departures: ombg
-    obs perturbations: true
   - geometry:
       resol: 40
     ninner: 10

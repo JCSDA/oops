@@ -15,6 +15,7 @@ cost function:
   background error:
     $(BACKGROUND_ERROR)
   observations:
+    obs perturbations: $(obspert)
     observers:
       $(OBS)
 variational:
@@ -23,7 +24,6 @@ variational:
   iterations:
   - ninner: $(ninner)
     gradient norm reduction: $(reduc)
-    obs perturbations: $(obspert)
     geometry:
       $(MIN_GEOMETRY)
     diagnostics:

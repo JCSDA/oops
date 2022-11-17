@@ -41,6 +41,7 @@ class ObserversParameters : public oops::Parameters {
   typedef typename VariableChange<MODEL>::Parameters_ VarChangeParameters_;
 
  public:
+  Parameter<bool> obsPerturbations{"obs perturbations", false, this};
   Parameter<std::vector<ObsTypeParameters<OBS>>> observers{"observers", {}, this};
   Parameter<GetValuesParameters<MODEL>> getValues{"get values", {}, this};
 };

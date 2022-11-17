@@ -49,7 +49,7 @@ CASE("test_obserrordiag_zeromeanpert") {
     EXPECT_EQUAL(obsConfs.size(), 1);
 
     const eckit::LocalConfiguration obsErrorConf(obsConfs[0], "obs error");
-    randomAmplitude = obsErrorConf.getDouble("random amplitude");
+    randomAmplitude = obsErrorConf.getDouble("obs perturbations amplitude");
 
     eckit::LocalConfiguration obsSpaceConf;
     obsSpaceConf.set("obsdatain.engine.obsfile",
