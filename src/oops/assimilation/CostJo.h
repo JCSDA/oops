@@ -185,10 +185,10 @@ double CostJo<MODEL, OBS>::computeCost() {
   Log::trace() << "CostJo::computeCost start" << std::endl;
 
   // Obs, simulated obs and departures (held here for nice prints and diagnostics)
-  if (!yobs_)
-    yobs_.reset(new Observations_(obspaces_, "ObsValue"));
   Observations_ yeqv(obspaces_);
   observers_.finalize(yeqv);
+  if (!yobs_)
+    yobs_.reset(new Observations_(obspaces_, "ObsValue"));
 
   if (firstOuterLoop_ && params_.obsPerturbations) {
     // Perturb observations according to obs error statistics and save to output file
