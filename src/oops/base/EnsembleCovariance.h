@@ -92,6 +92,10 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Var
   util::Timer timer("oops::Covariance", "EnsembleCovariance");
   size_t init = eckit::system::ResourceUsage().maxResidentSetSize();
   ens_.reset(new Ensemble_(params.ensemble, xb, fg, resol, vars));
+  if (ens_->size() < 2) {
+    throw eckit::BadParameter("Not enough ensemble members provided for ensemble "
+                              "covariances (at least 2 required)", Here());
+  }
   if (params.localization.value() != boost::none) {
     loc_.reset(new Localization_(resol, xb.variables(), *params.localization.value()));
   }
