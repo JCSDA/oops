@@ -337,6 +337,17 @@ void State<MODEL>::toFieldSet(atlas::FieldSet & fset) const {
 
 // -----------------------------------------------------------------------------
 
+
+template<typename MODEL>
+void State<MODEL>::fromFieldSet(const atlas::FieldSet & fset) {
+  Log::trace() << "State<MODEL>::fromFieldSet starting" << std::endl;
+  util::Timer timer(classname(), "fromFieldSet");
+  state_->fromFieldSet(fset);
+  Log::trace() << "State<MODEL>::fromFieldSet done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
 template<typename MODEL>
 void State<MODEL>::print(std::ostream & os) const {
   Log::trace() << "State<MODEL>::print starting" << std::endl;
