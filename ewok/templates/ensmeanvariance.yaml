@@ -11,4 +11,4 @@ geometry:
 variance output:
   $(ENSVARIANCEOUT)
 mean output:
-  $(ENSVARIANCEOUT)
+  $(ENSMEANOUT)
