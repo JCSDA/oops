@@ -185,6 +185,7 @@ oops/external/stripack/stripack.f90
 oops/external/stripack/stripack_interface.f90
 
 oops/generic/AnalyticInitBase.h
+oops/generic/AtlasInterpolator.cc
 oops/generic/AtlasInterpolator.h
 oops/generic/fft_gpoint2spectral_f.F90
 oops/generic/fft_init_f.F90
@@ -219,6 +220,7 @@ oops/generic/PseudoModelState4D.h
 oops/generic/soar.h
 oops/generic/soar.cc
 oops/generic/UnstructuredInterpolator.h
+oops/generic/UnstructuredInterpolator.cc
 oops/generic/VerticalLocEV.h
 oops/generic/HybridLinearModel.h
 

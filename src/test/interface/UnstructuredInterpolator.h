@@ -31,6 +31,7 @@
 #include "oops/generic/UnstructuredInterpolator.h"
 #include "oops/runs/Test.h"
 #include "oops/util/Logger.h"
+#include "oops/util/missingValues.h"
 #include "oops/util/Random.h"
 
 #include "test/interface/GeometryFixture.h"
@@ -99,7 +100,7 @@ void testInterpolator(const bool testSourcePointMask) {
   }
   atlas::functionspace::PointCloud target_fs(target_points);
 
-  oops::UnstructuredInterpolator<MODEL> interpolator(config, *geom, target_lats, target_lons);
+  oops::UnstructuredInterpolator interpolator(config, *geom, target_lats, target_lons);
 
   // Test print method
   oops::Log::info() << "Interpolator created:\n" << interpolator << std::endl;

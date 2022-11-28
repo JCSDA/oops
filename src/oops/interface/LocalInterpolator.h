@@ -11,8 +11,10 @@
 #include <string>
 #include <vector>
 
+#include "atlas/field/FieldSet.h"
 #include "eckit/config/Configuration.h"
 #include "oops/base/Geometry.h"
+#include "oops/base/GeometryData.h"
 #include "oops/base/Increment.h"
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
@@ -29,6 +31,24 @@ namespace detail {
 // The fallback case uses the model State/Increment interface.
 template <typename MODEL, typename = cpp17::void_t<>>
 struct ApplyHelper {
+  // without mask
+  static void apply(const typename MODEL::LocalInterpolator & interp,
+             const oops::Variables & vars, const oops::State<MODEL> & state,
+             std::vector<double> & buffer) {
+    interp.apply(vars, state.state(), buffer);
+  }
+  static void apply(const typename MODEL::LocalInterpolator & interp,
+             const oops::Variables & vars, const oops::Increment<MODEL> & increment,
+             std::vector<double> & buffer) {
+    interp.apply(vars, increment.increment(), buffer);
+  }
+  static void applyAD(const typename MODEL::LocalInterpolator & interp,
+             const oops::Variables & vars, oops::Increment<MODEL> & increment,
+             const std::vector<double> & buffer) {
+    interp.applyAD(vars, increment.increment(), buffer);
+  }
+
+  // with mask
   static void apply(const typename MODEL::LocalInterpolator & interp,
              const oops::Variables & vars, const oops::State<MODEL> & state,
              const std::vector<bool> & mask, std::vector<double> & buffer) {
@@ -47,14 +67,34 @@ struct ApplyHelper {
 };
 
 // The specialization calls the interpolator's FieldSet interface.
-// Note: Here we *assume* that if the interpolator has apply(FieldSet interface), then it also
-//       has applyAD(FieldSet interface). Code may fail to compile if this assumption is false.
+// Note: Here we *assume* that...
+// - if the interpolator has apply(FieldSet interface), then it has applyAD(FieldSet interface)
+// - if the interpolator has apply(with mask), then it has apply(without mask)
+// Code may fail to compile if either assumption is violated.
 template <typename MODEL>
 struct ApplyHelper<MODEL, cpp17::void_t<decltype(std::declval<typename MODEL::LocalInterpolator>().
                                                    apply(std::declval<oops::Variables>(),
                                                          std::declval<atlas::FieldSet>(),
                                                          std::declval<std::vector<bool>>(),
                                                          std::declval<std::vector<double>&>()))>> {
+  // without mask
+  static void apply(const typename MODEL::LocalInterpolator & interp,
+             const oops::Variables & vars, const oops::State<MODEL> & state,
+             std::vector<double> & buffer) {
+    interp.apply(vars, state.fieldSet(), buffer);
+  }
+  static void apply(const typename MODEL::LocalInterpolator & interp,
+             const oops::Variables & vars, const oops::Increment<MODEL> & increment,
+             std::vector<double> & buffer) {
+    interp.apply(vars, increment.fieldSet(), buffer);
+  }
+  static void applyAD(const typename MODEL::LocalInterpolator & interp,
+             const oops::Variables & vars, oops::Increment<MODEL> & increment,
+             const std::vector<double> & buffer) {
+    interp.applyAD(vars, increment.fieldSet(), buffer);
+  }
+
+  // with mask
   static void apply(const typename MODEL::LocalInterpolator & interp,
              const oops::Variables & vars, const oops::State<MODEL> & state,
              const std::vector<bool> & mask, std::vector<double> & buffer) {
@@ -69,6 +109,32 @@ struct ApplyHelper<MODEL, cpp17::void_t<decltype(std::declval<typename MODEL::Lo
              const oops::Variables & vars, oops::Increment<MODEL> & increment,
              const std::vector<bool> & mask, const std::vector<double> & buffer) {
     interp.applyAD(vars, increment.fieldSet(), mask, buffer);
+  }
+};
+
+// Constructor helper - determine whether interpolator has a GeomData based constructor
+template <typename MODEL, typename = void>
+struct ConstructHelper {
+  static typename MODEL::LocalInterpolator* apply(const eckit::Configuration & conf,
+                                                  const oops::Geometry<MODEL> & geom,
+                                                  const std::vector<double> & lats,
+                                                  const std::vector<double> & lons) {
+    return new typename MODEL::LocalInterpolator(conf, geom.geometry(), lats, lons);
+  }
+};
+
+template <typename MODEL>
+struct ConstructHelper<MODEL, cpp17::void_t<typename std::enable_if<std::is_constructible<
+                              typename MODEL::LocalInterpolator,
+                              const eckit::Configuration &,
+                              const oops::GeometryData &,
+                              const std::vector<double> &,
+                              const std::vector<double> &>::value>::type>>{
+  static typename MODEL::LocalInterpolator* apply(const eckit::Configuration & conf,
+                                                  const oops::Geometry<MODEL> & geom,
+                                                  const std::vector<double> & lats,
+                                                  const std::vector<double> & lons) {
+    return new typename MODEL::LocalInterpolator(conf, geom.generic(), lats, lons);
   }
 };
 }  // namespace detail
@@ -95,10 +161,29 @@ class LocalInterpolator : public util::Printable,
 
   void apply(const Variables &, const State_ &,
              const std::vector<bool> &, std::vector<double> &) const;
+  void apply(const Variables &, const State_ &,
+             std::vector<double> &) const;
   void apply(const Variables &, const Increment_ &,
              const std::vector<bool> &, std::vector<double> &) const;
+  void apply(const Variables &, const Increment_ &,
+             std::vector<double> &) const;
+  void apply(const Variables &, const atlas::FieldSet &,
+             const std::vector<bool> &, std::vector<double> &) const;
+  void apply(const Variables &, const atlas::FieldSet &,
+             std::vector<double> &) const;
   void applyAD(const Variables &, Increment_ &,
                const std::vector<bool> &, const std::vector<double> &) const;
+  void applyAD(const Variables &, Increment_ &,
+               const std::vector<double> &) const;
+  void applyAD(const Variables &, atlas::FieldSet &,
+               const std::vector<bool> &, const std::vector<double> &) const;
+  void applyAD(const Variables &, atlas::FieldSet &,
+               const std::vector<double> &) const;
+
+  static void bufferToFieldSet(const Variables &, const std::vector<size_t> &,
+                               const std::vector<double> &, atlas::FieldSet &);
+  static void bufferToFieldSetAD(const Variables &, const std::vector<size_t> &,
+                                 std::vector<double> &, const atlas::FieldSet &);
 
  private:
   std::unique_ptr<LocalInterpolator_> interpolator_;
@@ -116,7 +201,7 @@ LocalInterpolator<MODEL>::LocalInterpolator(const eckit::Configuration & conf,
 {
   Log::trace() << "LocalInterpolator<MODEL>::LocalInterpolator starting" << std::endl;
   util::Timer timer(classname(), "LocalInterpolator");
-  interpolator_.reset(new LocalInterpolator_(conf, resol.geometry(), lats, lons));
+  interpolator_.reset(detail::ConstructHelper<MODEL>::apply(conf, resol, lats, lons));
   Log::trace() << "LocalInterpolator<MODEL>::LocalInterpolator done" << std::endl;
 }
 
@@ -145,6 +230,17 @@ void LocalInterpolator<MODEL>::apply(const Variables & vars, const State_ & xx,
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
+void LocalInterpolator<MODEL>::apply(const Variables & vars, const State_ & xx,
+                                     std::vector<double> & vect) const {
+  Log::trace() << "LocalInterpolator<MODEL>::apply starting" << std::endl;
+  util::Timer timer(classname(), "apply");
+  detail::ApplyHelper<MODEL>::apply(*interpolator_, vars, xx, vect);
+  Log::trace() << "LocalInterpolator<MODEL>::apply done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
 void LocalInterpolator<MODEL>::apply(const Variables & vars, const Increment_ & dx,
                                      const std::vector<bool> & mask,
                                      std::vector<double> & vect) const {
@@ -157,6 +253,40 @@ void LocalInterpolator<MODEL>::apply(const Variables & vars, const Increment_ & 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
+void LocalInterpolator<MODEL>::apply(const Variables & vars, const Increment_ & dx,
+                                     std::vector<double> & vect) const {
+  Log::trace() << "LocalInterpolator<MODEL>::applyTL starting" << std::endl;
+  util::Timer timer(classname(), "applyTL");
+  detail::ApplyHelper<MODEL>::apply(*interpolator_, vars, dx, vect);
+  Log::trace() << "LocalInterpolator<MODEL>::applyTL done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void LocalInterpolator<MODEL>::apply(const Variables & vars, const atlas::FieldSet & fs,
+                                     const std::vector<bool> & mask,
+                                     std::vector<double> & vect) const {
+  Log::trace() << "LocalInterpolator<MODEL>::apply(FieldSet) starting" << std::endl;
+  util::Timer timer(classname(), "applyTL");
+  interpolator_->apply(vars, fs, mask, vect);
+  Log::trace() << "LocalInterpolator<MODEL>::apply(FieldSet) done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void LocalInterpolator<MODEL>::apply(const Variables & vars, const atlas::FieldSet & fs,
+                                     std::vector<double> & vect) const {
+  Log::trace() << "LocalInterpolator<MODEL>::apply(FieldSet) starting" << std::endl;
+  util::Timer timer(classname(), "applyTL");
+  interpolator_->apply(vars, fs, vect);
+  Log::trace() << "LocalInterpolator<MODEL>::apply(FieldSet) done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
 void LocalInterpolator<MODEL>::applyAD(const Variables & vars, Increment_ & dx,
                                        const std::vector<bool> & mask,
                                        const std::vector<double> & vect) const {
@@ -164,6 +294,65 @@ void LocalInterpolator<MODEL>::applyAD(const Variables & vars, Increment_ & dx,
   util::Timer timer(classname(), "applyAD");
   detail::ApplyHelper<MODEL>::applyAD(*interpolator_, vars, dx, mask, vect);
   Log::trace() << "LocalInterpolator<MODEL>::applyAD done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+void LocalInterpolator<MODEL>::applyAD(const Variables & vars, Increment_ & dx,
+                                       const std::vector<double> & vect) const {
+  Log::trace() << "LocalInterpolator<MODEL>::applyAD starting" << std::endl;
+  util::Timer timer(classname(), "applyAD");
+  detail::ApplyHelper<MODEL>::applyAD(*interpolator_, vars, dx, vect);
+  Log::trace() << "LocalInterpolator<MODEL>::applyAD done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void LocalInterpolator<MODEL>::applyAD(const Variables & vars, atlas::FieldSet & fs,
+                                       const std::vector<bool> & mask,
+                                       const std::vector<double> & vect) const {
+  Log::trace() << "LocalInterpolator<MODEL>::applyAD(FieldSet) starting" << std::endl;
+  util::Timer timer(classname(), "applyAD");
+  interpolator_->applyAD(vars, fs, mask, vect);
+  Log::trace() << "LocalInterpolator<MODEL>::applyAD(FieldSet) done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void LocalInterpolator<MODEL>::applyAD(const Variables & vars, atlas::FieldSet & fs,
+                                       const std::vector<double> & vect) const {
+  Log::trace() << "LocalInterpolator<MODEL>::applyAD(FieldSet) starting" << std::endl;
+  util::Timer timer(classname(), "applyAD");
+  interpolator_->applyAD(vars, fs, vect);
+  Log::trace() << "LocalInterpolator<MODEL>::applyAD(FieldSet) done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void LocalInterpolator<MODEL>::bufferToFieldSet(const Variables & vars,
+                                                const std::vector<size_t> & buffer_indices,
+                                                const std::vector<double> & buffer,
+                                                atlas::FieldSet & target) {
+  Log::trace() << "LocalInterpolator<MODEL>::bufferToFieldSet starting" << std::endl;
+  util::Timer timer(classname(), "bufferToFieldSet");
+  LocalInterpolator_::bufferToFieldSet(vars, buffer_indices, buffer, target);
+  Log::trace() << "LocalInterpolator<MODEL>::bufferToFieldSet done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void LocalInterpolator<MODEL>::bufferToFieldSetAD(const Variables & vars,
+                                                  const std::vector<size_t> & buffer_indices,
+                                                  std::vector<double> & buffer,
+                                                  const atlas::FieldSet & target) {
+  Log::trace() << "LocalInterpolator<MODEL>::bufferToFieldSetAD starting" << std::endl;
+  util::Timer timer(classname(), "bufferToFieldSetAD");
+  LocalInterpolator_::bufferToFieldSetAD(vars, buffer_indices, buffer, target);
+  Log::trace() << "LocalInterpolator<MODEL>::bufferToFieldSet done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

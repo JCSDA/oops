@@ -66,7 +66,7 @@ struct TModelInterpolator_IfAvailableElseGenericInterpolator;
 
 template<typename MODEL>
 struct TModelInterpolator_IfAvailableElseGenericInterpolator<MODEL, false> {
-  typedef UnstructuredInterpolator<MODEL> type;
+  typedef UnstructuredInterpolator type;
 };
 
 template<typename MODEL>

@@ -21,6 +21,7 @@
 
 #include "oops/base/Variables.h"
 #include "oops/generic/UnstructuredInterpolator.h"
+#include "oops/interface/LocalInterpolator.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
 
@@ -32,12 +33,12 @@ namespace oops {
 // Select UnstructuredInterpolator (default) or LocalInterpolator.
 template<typename MODEL, typename = void>
 struct SelectInterp {
-  typedef UnstructuredInterpolator<MODEL> type;
+  typedef UnstructuredInterpolator type;
 };
 
 template<typename MODEL>
 struct SelectInterp<MODEL, cpp17::void_t<typename MODEL::LocalInterpolator>> {
-  typedef typename MODEL::LocalInterpolator type;
+  typedef LocalInterpolator<MODEL> type;
 };
 
 
@@ -209,8 +210,7 @@ void GlobalInterpolator<MODEL>::apply(const atlas::FieldSet & source,
     const size_t nvals = mytarget_index_by_task_[jtask].size() * nvars;
     ASSERT(recvinterp[jtask].size() == nvals);
     if (nvals > 0) {
-      Interp_::bufferToFieldSet(vars, mytarget_index_by_task_[jtask],
-                                                        recvinterp[jtask], target);
+      Interp_::bufferToFieldSet(vars, mytarget_index_by_task_[jtask], recvinterp[jtask], target);
     }
   }
 }
@@ -248,8 +248,7 @@ void GlobalInterpolator<MODEL>::applyAD(atlas::FieldSet & source,
     const size_t nvals = mytarget_index_by_task_[jtask].size() * nvars;
     recvinterp[jtask].resize(nvals, 0.0);
     if (nvals > 0) {
-      Interp_::bufferToFieldSetAD(vars, mytarget_index_by_task_[jtask],
-                                                          recvinterp[jtask], target);
+      Interp_::bufferToFieldSetAD(vars, mytarget_index_by_task_[jtask], recvinterp[jtask], target);
     }
   }
 
