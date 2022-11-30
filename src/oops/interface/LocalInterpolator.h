@@ -137,6 +137,125 @@ struct ConstructHelper<MODEL, cpp17::void_t<typename std::enable_if<std::is_cons
     return new typename MODEL::LocalInterpolator(conf, geom.generic(), lats, lons);
   }
 };
+
+// ApplyAtlasHelper tries to call the model interpolator's apply(AD) methods.
+// The fallback case errors.
+template <typename MODEL, typename = cpp17::void_t<>>
+struct ApplyAtlasHelper {
+  // without target-point mask
+  static void apply(const typename MODEL::LocalInterpolator & interp,
+             const oops::Variables & vars, const atlas::FieldSet & fset,
+             std::vector<double> & buffer) {
+    throw eckit::Exception("The LocalInterpolator for model " + MODEL::name() + " has no method "
+                           "apply (taking an atlas::FieldSet), but an oops::LocalInterpolator "
+                           "tried to call this non-existent method.");
+  }
+  static void applyAD(const typename MODEL::LocalInterpolator & interp,
+             const oops::Variables & vars, atlas::FieldSet & fset,
+             const std::vector<double> & buffer) {
+    throw eckit::Exception("The LocalInterpolator for model " + MODEL::name() + " has no method "
+                           "applyAD (taking an atlas::FieldSet), but an oops::LocalInterpolator "
+                           "tried to call this non-existent method.");
+  }
+  // with target-point mask
+  static void apply(const typename MODEL::LocalInterpolator & interp,
+             const oops::Variables & vars, const atlas::FieldSet & fset,
+             const std::vector<bool> & mask, std::vector<double> & buffer) {
+    throw eckit::Exception("The LocalInterpolator for model " + MODEL::name() + " has no method "
+                           "apply (taking an atlas::FieldSet), but an oops::LocalInterpolator "
+                           "tried to call this non-existent method.");
+  }
+  static void applyAD(const typename MODEL::LocalInterpolator & interp,
+             const oops::Variables & vars, atlas::FieldSet & fset,
+             const std::vector<bool> & mask, const std::vector<double> & buffer) {
+    throw eckit::Exception("The LocalInterpolator for model " + MODEL::name() + " has no method "
+                           "applyAD (taking an atlas::FieldSet), but an oops::LocalInterpolator "
+                           "tried to call this non-existent method.");
+  }
+};
+
+// The specialization calls the model-specific interpolator's atlas::FieldSet interface.
+// Note: Here we simplify the template metaprogramming by assuming that if the interpolator has a
+//       method apply(FieldSet), then it also has applyAD(FieldSet), and also assuming that
+//       interfaces without and with target-point masks exist. The code may fail to compile if these
+//       assumptions are violated.
+template <typename MODEL>
+struct ApplyAtlasHelper<MODEL,
+    cpp17::void_t<decltype(std::declval<typename MODEL::LocalInterpolator>().apply(
+        std::declval<oops::Variables>(),
+        std::declval<atlas::FieldSet>(),
+        std::declval<std::vector<double>&>()))>> {
+  // without target-point mask
+  static void apply(const typename MODEL::LocalInterpolator & interp,
+             const oops::Variables & vars, const atlas::FieldSet & fset,
+             std::vector<double> & buffer) {
+    interp.apply(vars, fset, buffer);
+  }
+  static void applyAD(const typename MODEL::LocalInterpolator & interp,
+             const oops::Variables & vars, atlas::FieldSet & fset,
+             const std::vector<double> & buffer) {
+    interp.applyAD(vars, fset, buffer);
+  }
+  // with target-point mask
+  static void apply(const typename MODEL::LocalInterpolator & interp,
+             const oops::Variables & vars, const atlas::FieldSet & fset,
+             const std::vector<bool> & mask, std::vector<double> & buffer) {
+    interp.apply(vars, fset, mask, buffer);
+  }
+  static void applyAD(const typename MODEL::LocalInterpolator & interp,
+             const oops::Variables & vars, atlas::FieldSet & fset,
+             const std::vector<bool> & mask, const std::vector<double> & buffer) {
+    interp.applyAD(vars, fset, mask, buffer);
+  }
+};
+
+// BufferToAtlasHelper tries to call the model interpolator's bufferToFieldSet(AD) methods.
+// The fallback case errors.
+template <typename MODEL, typename = cpp17::void_t<>>
+struct BufferToAtlasHelper {
+  static void bufferToFieldSet(const oops::Variables & vars,
+                               const std::vector<size_t> & buffer_indices,
+                               const std::vector<double> & buffer,
+                               atlas::FieldSet & fset) {
+    throw eckit::Exception("The LocalInterpolator for model " + MODEL::name() + " has no method "
+                           "bufferToFieldSet, but an oops::LocalInterpolator tried to call this "
+                           "non-existent method.");
+  }
+  static void bufferToFieldSetAD(const oops::Variables & vars,
+                                 const std::vector<size_t> & buffer_indices,
+                                 std::vector<double> & buffer,
+                                 const atlas::FieldSet & fset) {
+    throw eckit::Exception("The LocalInterpolator for model " + MODEL::name() + " has no method "
+                           "bufferToFieldSetAD, but an oops::LocalInterpolator tried to call this "
+                           "non-existent method.");
+  }
+};
+
+// The specialization calls the model-specific interpolator's bufferToFieldSet interface.
+// Note: Here we simplify the template metaprogramming by assuming that if the interpolator has a
+//       method bufferToFieldSet, then it also has bufferToFieldSetAD. The code may fail to compile
+//       if these assumptions are violated.
+template <typename MODEL>
+struct BufferToAtlasHelper<MODEL,
+    cpp17::void_t<decltype(std::declval<typename MODEL::LocalInterpolator>().bufferToFieldSet(
+        std::declval<oops::Variables>(),
+        std::declval<std::vector<size_t>&>(),
+        std::declval<std::vector<double>&>(),
+        std::declval<atlas::FieldSet&>()))>> {
+  static void bufferToFieldSet(const oops::Variables & vars,
+                               const std::vector<size_t> & buffer_indices,
+                               const std::vector<double> & buffer,
+                               atlas::FieldSet & fset) {
+    MODEL::LocalInterpolator::bufferToFieldSet(vars, buffer_indices, buffer, fset);
+  }
+  static void bufferToFieldSetAD(const oops::Variables & vars,
+                                 const std::vector<size_t> & buffer_indices,
+                                 std::vector<double> & buffer,
+                                 const atlas::FieldSet & fset) {
+    MODEL::LocalInterpolator::bufferToFieldSetAD(vars, buffer_indices, buffer, fset);
+  }
+};
+
 }  // namespace detail
 
 namespace oops {
@@ -269,7 +388,7 @@ void LocalInterpolator<MODEL>::apply(const Variables & vars, const atlas::FieldS
                                      std::vector<double> & vect) const {
   Log::trace() << "LocalInterpolator<MODEL>::apply(FieldSet) starting" << std::endl;
   util::Timer timer(classname(), "applyTL");
-  interpolator_->apply(vars, fs, mask, vect);
+  detail::ApplyAtlasHelper<MODEL>::apply(*interpolator_, vars, fs, mask, vect);
   Log::trace() << "LocalInterpolator<MODEL>::apply(FieldSet) done" << std::endl;
 }
 
@@ -280,7 +399,7 @@ void LocalInterpolator<MODEL>::apply(const Variables & vars, const atlas::FieldS
                                      std::vector<double> & vect) const {
   Log::trace() << "LocalInterpolator<MODEL>::apply(FieldSet) starting" << std::endl;
   util::Timer timer(classname(), "applyTL");
-  interpolator_->apply(vars, fs, vect);
+  detail::ApplyAtlasHelper<MODEL>::apply(*interpolator_, vars, fs, vect);
   Log::trace() << "LocalInterpolator<MODEL>::apply(FieldSet) done" << std::endl;
 }
 
@@ -314,7 +433,7 @@ void LocalInterpolator<MODEL>::applyAD(const Variables & vars, atlas::FieldSet &
                                        const std::vector<double> & vect) const {
   Log::trace() << "LocalInterpolator<MODEL>::applyAD(FieldSet) starting" << std::endl;
   util::Timer timer(classname(), "applyAD");
-  interpolator_->applyAD(vars, fs, mask, vect);
+  detail::ApplyAtlasHelper<MODEL>::applyAD(*interpolator_, vars, fs, mask, vect);
   Log::trace() << "LocalInterpolator<MODEL>::applyAD(FieldSet) done" << std::endl;
 }
 
@@ -325,7 +444,7 @@ void LocalInterpolator<MODEL>::applyAD(const Variables & vars, atlas::FieldSet &
                                        const std::vector<double> & vect) const {
   Log::trace() << "LocalInterpolator<MODEL>::applyAD(FieldSet) starting" << std::endl;
   util::Timer timer(classname(), "applyAD");
-  interpolator_->applyAD(vars, fs, vect);
+  detail::ApplyAtlasHelper<MODEL>::applyAD(*interpolator_, vars, fs, vect);
   Log::trace() << "LocalInterpolator<MODEL>::applyAD(FieldSet) done" << std::endl;
 }
 
@@ -338,7 +457,7 @@ void LocalInterpolator<MODEL>::bufferToFieldSet(const Variables & vars,
                                                 atlas::FieldSet & target) {
   Log::trace() << "LocalInterpolator<MODEL>::bufferToFieldSet starting" << std::endl;
   util::Timer timer(classname(), "bufferToFieldSet");
-  LocalInterpolator_::bufferToFieldSet(vars, buffer_indices, buffer, target);
+  detail::BufferToAtlasHelper<MODEL>::bufferToFieldSet(vars, buffer_indices, buffer, target);
   Log::trace() << "LocalInterpolator<MODEL>::bufferToFieldSet done" << std::endl;
 }
 
@@ -351,7 +470,7 @@ void LocalInterpolator<MODEL>::bufferToFieldSetAD(const Variables & vars,
                                                   const atlas::FieldSet & target) {
   Log::trace() << "LocalInterpolator<MODEL>::bufferToFieldSetAD starting" << std::endl;
   util::Timer timer(classname(), "bufferToFieldSetAD");
-  LocalInterpolator_::bufferToFieldSetAD(vars, buffer_indices, buffer, target);
+  detail::BufferToAtlasHelper<MODEL>::bufferToFieldSetAD(vars, buffer_indices, buffer, target);
   Log::trace() << "LocalInterpolator<MODEL>::bufferToFieldSet done" << std::endl;
 }
 

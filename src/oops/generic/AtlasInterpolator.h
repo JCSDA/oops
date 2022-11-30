@@ -17,7 +17,6 @@
 #include "eckit/config/Configuration.h"
 
 #include "oops/base/GeometryData.h"
-
 #include "oops/generic/UnstructuredInterpolator.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
