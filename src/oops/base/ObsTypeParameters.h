@@ -25,9 +25,11 @@ namespace oops {
 // -----------------------------------------------------------------------------
 
 /// \brief Options controlling the processing of observations from a single obs space.
+///
+/// This is an abstract base class; it can be inherited from and extended with extra parameters.
 template <typename OBS>
-class ObsTypeParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(ObsTypeParameters, Parameters)
+class ObsTypeParametersBase : public Parameters {
+  OOPS_ABSTRACT_PARAMETERS(ObsTypeParametersBase, Parameters)
 
  public:
   typedef typename ObsAuxControl<OBS>::Parameters_ ObsAuxControlParameters_;
@@ -45,6 +47,14 @@ class ObsTypeParameters : public oops::Parameters {
 
   /// Options used to configure bias correction.
   oops::Parameter<ObsAuxControlParameters_> obsBias{"obs bias", {}, this};
+};
+
+// -----------------------------------------------------------------------------
+
+/// \brief Options controlling the processing of observations from a single obs space.
+template <typename OBS>
+class ObsTypeParameters : public ObsTypeParametersBase<OBS> {
+  OOPS_CONCRETE_PARAMETERS(ObsTypeParameters, ObsTypeParametersBase<OBS>)
 };
 
 // -----------------------------------------------------------------------------

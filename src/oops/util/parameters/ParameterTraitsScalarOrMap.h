@@ -76,6 +76,10 @@ struct ParameterTraits<util::ScalarOrMap<Key, Value>, std::false_type>
           config,
           name + config.separator() + boost::lexical_cast<std::string>(keyValue.first),
           keyValue.second);
+      // If the map is empty, the loop above won't do anything, so we need to set the 'name' key
+      // to an empty value of type "map" explicitly.
+      if (value.begin() == value.end())  // is the map empty?
+        config.set(name, eckit::LocalConfiguration());
     }
   }
 
