@@ -126,3 +126,10 @@ ecbuild_add_executable( TARGET  qg_rtpp.x
                         LIBS    qg
                       )
 oops_output_json_schema( qg_rtpp.x )
+
+ecbuild_add_executable( TARGET  qg_htlmcoefficients.x
+                        SOURCES qgHTLMCoefficients.cc
+                        LIBS    qg
+                      )
+oops_output_json_schema( qg_htlmcoefficients.x )
+

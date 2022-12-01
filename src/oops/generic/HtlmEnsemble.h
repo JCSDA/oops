@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "oops/base/Geometry.h"
+#include "oops/base/LinearModel.h"
 #include "oops/base/Model.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State.h"
