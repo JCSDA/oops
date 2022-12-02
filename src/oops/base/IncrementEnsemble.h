@@ -32,6 +32,7 @@
 #include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/ParametersOrConfiguration.h"
 #include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
@@ -172,29 +173,54 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const IncrementEnsembleFromStatesPar
     linvarchg->changeVarTraj(fg, *linvar.outputVariables.value());
   }
 
-  // Read ensemble
-  StateEnsemble_ ensemble(resol, params.states);
-  State_ bgmean = ensemble.mean();
+  // Create a zero state (to be kept constant for building increments)
+  State_ zerov = State_(resol, vars, tslot);
+  zerov.zero();
 
-  ensemblePerturbs_.reserve(ensemble.size());
-  for (unsigned int ie = 0; ie < ensemble.size(); ++ie) {
-    // Ensemble will be centered around ensemble mean
+  // Initialize the ensemble mean accumulator
+  Accumulator<MODEL, State_, State_> ensmean(zerov);
+
+  // Ensemble size from parameters and its inverse for the mean
+  const size_t nens = params.states.size();
+  const double rr = 1.0/static_cast<double>(nens);
+
+  // Reserve memory for the departures ensemble
+  ensemblePerturbs_.reserve(nens);
+  for (unsigned int ie = 0; ie < nens; ++ie) {
     Increment_ dx(resol, vars, tslot);
-    dx.diff(ensemble[ie], bgmean);
+    ensemblePerturbs_.emplace_back(std::move(dx));
+  }
 
-    // Apply inflation
+  // Read the state, compute the mean and store states at increment resolution.
+  for (unsigned int ie = 0; ie < nens; ++ie) {
+    // 1. Read state ie
+    State_ xx(resol, params.states.getStateParameters(ie));
+    // 2. Accumulate it to mean.
+    ensmean.accumul(rr, xx);
+    // 3. Subtract zerov so to have an increment at ir res. and push to ensPert
+    ensemblePerturbs_[ie].diff(xx, zerov);
+  }
+  State_ bgmean = std::move(ensmean);
+
+  // 4. Subtract zerov from bgmean so to have an increment at ir res. and store in bgmean_ir
+  Increment_ bgmean_ir(resol, vars, tslot);
+  bgmean_ir.diff(bgmean, zerov);
+
+  // 5. Loop on the stored states at increment resolution
+  for (unsigned int ie = 0; ie < nens; ++ie) {
+    // 5.1 remove the mean
+    ensemblePerturbs_[ie] -= bgmean_ir;
+    // 5.2 Apply inflation
     if (params.inflationField.value() != boost::none) {
-      dx.schur_product_with(*inflationField);
+      ensemblePerturbs_[ie].schur_product_with(*inflationField);
     }
-    dx *= inflationValue;
-
+    ensemblePerturbs_[ie] *= inflationValue;
+    // 5.3 Apply lin chvar
     if (params.linVarChange.value() != boost::none) {
       const auto & linvar = *params.linVarChange.value();
       oops::Variables varin = *linvar.inputVariables.value();
-      linvarchg->changeVarInverseTL(dx, varin);
+      linvarchg->changeVarInverseTL(ensemblePerturbs_[ie], varin);
     }
-
-    ensemblePerturbs_.emplace_back(std::move(dx));
   }
   Log::trace() << "IncrementEnsemble:contructor done" << std::endl;
 }

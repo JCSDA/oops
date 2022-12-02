@@ -55,7 +55,83 @@ class StateEnsembleParameters : public Parameters {
                    "members of the state ensemble", this};
   OptionalParameter<StateMemberTemplateParameters_> states_template{"members from template",
                    "members of the state ensemble", this};
+
+  void check() const;
+  size_t size() const;
+  Parameters_ getStateParameters(const size_t &) const;
 };
+
+template <typename MODEL>
+void StateEnsembleParameters<MODEL>::check() const
+{
+  if (states.value() == boost::none && states_template.value() == boost::none) {
+    ABORT("StateEnsembleParameters: both members and members from template are missing");
+  }
+  if (states.value() != boost::none && states_template.value() != boost::none) {
+    ABORT("StateEnsembleParameters: both members and members from template are present");
+  }
+}
+
+template <typename MODEL>
+size_t StateEnsembleParameters<MODEL>::size() const
+{
+  // Check consistency
+  this->check();
+
+  if (states.value() != boost::none) {
+    return states.value()->size();
+  } else {
+    return states_template.value()->nmembers.value();
+  }
+}
+
+template <typename MODEL>
+StateParametersND<MODEL> StateEnsembleParameters<MODEL>::getStateParameters(const size_t & ie) const
+{
+  // Check consistency
+  this->check();
+
+  // Check ensemble size
+  if (ie >= this->size()) {
+    ABORT("StateEnsembleParameters: getStateParameters requested member index is too large");
+  }
+
+  if (states.value() != boost::none) {
+    // Explicit members
+    return (*states.value())[ie];
+  } else {
+    // Members template
+
+    // Template configuration
+    eckit::LocalConfiguration stateConf;
+    states_template.value()->state.value().serialize(stateConf);
+
+    // Get correct index
+    size_t count = states_template.value()->start;
+    for (size_t jj = 0; jj < ie; ++jj) {
+      // Check for excluded members
+      while (std::count(states_template.value()->except.value().begin(),
+             states_template.value()->except.value().end(), count)) {
+        count += 1;
+      }
+
+      // Update counter
+      count += 1;
+    }
+
+    // Copy and update template configuration with pattern
+    eckit::LocalConfiguration memberConf(stateConf);
+
+    // Replace pattern recursively in the configuration
+    util::seekAndReplace(memberConf, states_template.value()->pattern,
+      count, states_template.value()->zpad);
+
+    // Get member parameters
+    Parameters_ params;
+    params.validateAndDeserialize(memberConf);
+    return params;
+  }
+}
 
 /// \brief Ensemble of states
 template<typename MODEL> class StateEnsemble {
@@ -65,7 +141,8 @@ template<typename MODEL> class StateEnsemble {
 
  public:
   /// Create ensemble of states
-  StateEnsemble(const Geometry_ &, const StateEnsembleParameters_ &);
+  StateEnsemble(const Geometry_ &,
+                const StateEnsembleParameters_ &);
 
   /// Calculate ensemble mean
   State_ mean() const;
@@ -88,56 +165,16 @@ template<typename MODEL>
 StateEnsemble<MODEL>::StateEnsemble(const Geometry_ & resol,
                                     const StateEnsembleParameters_ & params)
   : states_() {
-  // Abort if both "members" and "members from template" are specified
-  if (params.states.value() != boost::none && params.states_template.value() != boost::none)
-    ABORT("StateEnsemble:contructor: both members and members from template are specified");
+  // Check parameters consistency
+  params.check();
 
-  if (params.states.value() != boost::none) {
-    // Explicit members
+  // Reserve memory to hold ensemble
+  const size_t nens = params.size();
+  states_.reserve(nens);
 
-    // Reserve memory to hold ensemble
-    const size_t nens = params.states.value()->size();
-    states_.reserve(nens);
-
-    // Loop over all ensemble members
-    for (size_t jj = 0; jj < nens; ++jj) {
-      states_.emplace_back(State_(resol, (*params.states.value())[jj]));
-    }
-  } else if (params.states_template.value() != boost::none) {
-    // Members template
-
-    // Template configuration
-    eckit::LocalConfiguration stateConf;
-    params.states_template.value()->state.value().serialize(stateConf);
-
-    // Reserve memory to hold ensemble
-    const size_t nens = params.states_template.value()->nmembers.value();
-    states_.reserve(nens);
-
-    // Loop over all ensemble members
-    size_t count = params.states_template.value()->start;
-    for (size_t jj = 0; jj < nens; ++jj) {
-      // Check for excluded members
-      while (std::count(params.states_template.value()->except.value().begin(),
-             params.states_template.value()->except.value().end(), count)) {
-        count += 1;
-      }
-
-      // Copy and update template configuration with pattern
-      eckit::LocalConfiguration memberConf(stateConf);
-
-      // Replace pattern recursively in the configuration
-      util::seekAndReplace(memberConf, params.states_template.value()->pattern,
-        count, params.states_template.value()->zpad);
-
-      // Read state
-      states_.emplace_back(State_(resol, memberConf));
-
-      // Update counter
-      count += 1;
-    }
-  } else {
-    ABORT("StateEnsemble:contructor: ensemble not specified");
+  // Loop over all ensemble members
+  for (size_t jj = 0; jj < nens; ++jj) {
+    states_.emplace_back(State_(resol, params.getStateParameters(jj)));
   }
   Log::trace() << "StateEnsemble:contructor done" << std::endl;
 }
