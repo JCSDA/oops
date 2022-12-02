@@ -16,6 +16,7 @@
 
 #include "oops/base/ForecastParameters.h"
 #include "oops/base/Geometry.h"
+#include "oops/base/LatLonGridPostProcessor.h"
 #include "oops/base/Model.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State.h"
@@ -90,6 +91,10 @@ template <typename MODEL> class Forecast : public Application {
     post.enrollProcessor(new StateInfo<State_>("fc", params.fcstConf.prints));
 //    params.output.date = bgndate;     DATE SHOULD BE SET HERE, NOT IN YAML
     post.enrollProcessor(new StateWriter<State_>(params.fcstConf.output));
+    if (params.fcstConf.latlonGridOutput.value() != boost::none) {
+      post.enrollProcessor(new LatLonGridPostProcessor<MODEL, State_>(
+            params.fcstConf.latlonGridOutput.value().value(), resol));
+    }
 
 //  Run forecast
     model.forecast(xx, moderr, fclength, post);

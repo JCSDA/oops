@@ -25,6 +25,8 @@
 #include "oops/base/Increment.h"
 #include "oops/base/instantiateCovarFactory.h"
 #include "oops/base/instantiateObsFilterFactory.h"
+#include "oops/base/LatLonGridPostProcessor.h"
+#include "oops/base/LatLonGridWriter.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State.h"
 #include "oops/base/StateInfo.h"
@@ -35,11 +37,13 @@
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/Parameters.h"
 #include "oops/util/printRunStats.h"
 
 namespace oops {
 
 template <typename MODEL, typename OBS> class Variational : public Application {
+  typedef Increment<MODEL>           Increment_;
   typedef State<MODEL>               State_;
 
  public:
@@ -104,9 +108,32 @@ template <typename MODEL, typename OBS> class Variational : public Application {
       dx.write(incOutConfig);
     }
 
+    if (finalConfig.has("increment to latlon")) {
+      eckit::LocalConfiguration incLatlonConf(finalConfig, "increment to latlon");
+      LatLonGridWriterParameters incLatlonParams;
+      incLatlonParams.deserialize(incLatlonConf);
+
+      ControlVariable<MODEL, OBS> x_b(J->jb().getBackground());
+
+      Increment<MODEL> dx(xx.state().geometry(),
+                          xx.state().variables(), xx.state().validTime());
+      dx.diff(xx.state(), x_b.state());
+
+      const LatLonGridWriter<MODEL> latlon(incLatlonParams, xx.state().geometry());
+      latlon.interpolateAndWrite(dx);
+    }
+
     if (finalConfig.has("prints")) {
       const eckit::LocalConfiguration prtConfig(finalConfig, "prints");
       post.enrollProcessor(new StateInfo<State_>("final", prtConfig));
+    }
+
+    if (finalConfig.has("analysis to latlon")) {
+      eckit::LocalConfiguration outLatlonConf(finalConfig, "analysis to latlon");
+      LatLonGridPostProcessorParameters outputLatlonParams;
+      outputLatlonParams.deserialize(outLatlonConf);
+      post.enrollProcessor(new LatLonGridPostProcessor<MODEL, State_>(
+            outputLatlonParams, xx.state().geometry() ));
     }
 
     J->evaluate(xx, finalConfig, post);

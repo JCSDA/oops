@@ -9,10 +9,12 @@
 #define OOPS_BASE_FORECASTPARAMETERS_H_
 
 #include "oops/base/Geometry.h"
+#include "oops/base/LatLonGridPostProcessor.h"
 #include "oops/base/Model.h"
 #include "oops/base/State.h"
 #include "oops/base/StateWriter.h"
 #include "oops/generic/LinearModelBase.h"
+#include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/RequiredParameter.h"
@@ -49,6 +51,7 @@ template <typename MODEL> class ForecastParameters : public Parameters {
 
   /// Where to write the output.
   RequiredParameter<StateWriterParameters_> output{"output", this};
+  OptionalParameter<LatLonGridPostProcessorParameters> latlonGridOutput{"forecast to latlon", this};
 
   /// Options passed to the object writing out forecast fields.
   Parameter<PostTimerParameters> prints{"prints", {}, this};

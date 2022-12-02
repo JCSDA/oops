@@ -61,6 +61,14 @@ class GeometryCoupled : public util::Printable {
   /// Accessor to the MPI communicator between models
   const eckit::mpi::Comm & getCommPairRanks() const {ASSERT(commPrints_); return *commPrints_;}
 
+  /// WARNING: This implementation is wrong because there are in general two communicators.
+  ///          It is provided for compile-time compatibility with oops interfaces, but will throw
+  ///          an exception if called as a reminder that the implementation is incorrect.
+  const eckit::mpi::Comm & getComm() const {
+    throw eckit::Exception("Called GeometryCoupled.getComm(), but this is just a stub");
+    return oops::mpi::world();
+  }
+
   /// Accessors to components of coupled geometry
   const Geometry<MODEL1> & geometry1() const {ASSERT(geom1_); return *geom1_;}
   const Geometry<MODEL2> & geometry2() const {ASSERT(geom2_); return *geom2_;}

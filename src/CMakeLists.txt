@@ -110,6 +110,8 @@ oops/base/IncrementEnsemble.h
 oops/base/IncrementEnsemble4D.h
 oops/base/instantiateCovarFactory.h
 oops/base/instantiateObsFilterFactory.h
+oops/base/LatLonGridPostProcessor.h
+oops/base/LatLonGridWriter.h
 oops/base/LinearModel.h
 oops/base/LinearVariableChangeParametersBase.h
 oops/base/Localization.h

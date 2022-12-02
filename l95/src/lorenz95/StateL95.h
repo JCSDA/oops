@@ -22,6 +22,7 @@
 
 #include "oops/base/Variables.h"
 #include "oops/base/WriteParametersBase.h"
+#include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
@@ -99,6 +100,14 @@ class StateL95 : public util::Printable,
     std::shared_ptr<const Resolution> geom(new Resolution(fld_.resol()));
     return geom;
   }
+
+/// ATLAS
+  void toFieldSet(atlas::FieldSet &) const
+    {ABORT("toFieldSet not implemented");}
+  void toFieldSetAD(const atlas::FieldSet &)
+    {ABORT("toFieldSetAD not implemented");}
+  void fromFieldSet(const atlas::FieldSet &)
+    {ABORT("fromFieldSet not implemented");}
 
   void read(const Parameters_ &);
   void write(const WriteParameters_ &) const;

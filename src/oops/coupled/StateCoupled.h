@@ -18,6 +18,7 @@
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
 #include "oops/base/WriteParametersBase.h"
+#include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Printable.h"
@@ -84,6 +85,11 @@ class StateCoupled : public util::Printable {
   State<MODEL2> & state2() {ASSERT(xx2_); return *xx2_;}
   const State<MODEL1> & state1() const {ASSERT(xx1_); return *xx1_;}
   const State<MODEL2> & state2() const {ASSERT(xx2_); return *xx2_;}
+
+  /// ATLAS
+  void toFieldSet(atlas::FieldSet &) const {ABORT("toFieldSet not implemented");}
+  void toFieldSetAD(const atlas::FieldSet &) {ABORT("toFieldSetAD not implemented");}
+  void fromFieldSet(const atlas::FieldSet &) {ABORT("fromFieldSet not implemented");}
 
   /// Accessor to the state's valid time
   const util::DateTime validTime() const;

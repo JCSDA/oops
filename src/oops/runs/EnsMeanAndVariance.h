@@ -16,12 +16,16 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
+#include "oops/base/LatLonGridWriter.h"
+#include "oops/base/PostProcessor.h"
 #include "oops/base/State.h"
 #include "oops/base/StateEnsemble.h"
 #include "oops/base/Variables.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
+#include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
@@ -34,10 +38,10 @@ class EnsMeanAndVarianceParameters : public ApplicationParameters {
   OOPS_CONCRETE_PARAMETERS(EnsMeanAndVarianceParameters, ApplicationParameters)
 
  public:
-  typedef typename Geometry<MODEL>::Parameters_        GeometryParameters_;
-  typedef typename Increment<MODEL>::WriteParameters_  IncrementWriteParameters_;
-  typedef typename State<MODEL>::WriteParameters_      StateWriteParameters_;
-  typedef StateEnsembleParameters<MODEL>               StateEnsembleParameters_;
+  typedef typename Geometry<MODEL>::Parameters_           GeometryParameters_;
+  typedef typename Increment<MODEL>::WriteParameters_     IncrementWriteParameters_;
+  typedef typename State<MODEL>::WriteParameters_         StateWriteParameters_;
+  typedef StateEnsembleParameters<MODEL>                  StateEnsembleParameters_;
 
   /// Geometry parameters.
   RequiredParameter<GeometryParameters_> resolConfig{"geometry", this};
@@ -46,10 +50,14 @@ class EnsMeanAndVarianceParameters : public ApplicationParameters {
   RequiredParameter<StateEnsembleParameters_> ensembleConfig{"ensemble", this};
 
   /// Output increment parameters for variance.
-  RequiredParameter<IncrementWriteParameters_> outputVarConfig{"variance output", this};
+  OptionalParameter<IncrementWriteParameters_> outputVarConfig{"variance output", this};
+  OptionalParameter<LatLonGridWriterParameters> outputVarConfigLL{"ensvariance to latlon",
+                                                 this};
 
   /// Output state parameters for mean.
-  RequiredParameter<StateWriteParameters_> outputMeanConfig{"mean output", this};
+  OptionalParameter<StateWriteParameters_> outputMeanConfig{"mean output", this};
+  OptionalParameter<LatLonGridWriterParameters> outputMeanConfigLL{"ensmean to latlon",
+                                                 this};
 };
 
 // -----------------------------------------------------------------------------
@@ -100,11 +108,23 @@ template <typename MODEL> class EnsMeanAndVariance : public Application {
     sigb2 *= rk;
 
 //  Write mean to file
-    ensmean.write(params.outputMeanConfig);
+    if (params.outputMeanConfig.value() != boost::none)
+        ensmean.write(params.outputMeanConfig.value().value());
+
+    if (params.outputMeanConfigLL.value() != boost::none) {
+      const LatLonGridWriter<MODEL> latlon(params.outputMeanConfigLL.value().value(), resol);
+      latlon.interpolateAndWrite(ensmean);
+    }
     Log::test() << "Mean: " << std::endl << ensmean << std::endl;
 
 //  Write variance to file
-    sigb2.write(params.outputVarConfig);
+    if (params.outputVarConfig.value() != boost::none)
+        sigb2.write(params.outputVarConfig.value().value());
+
+    if (params.outputVarConfigLL.value() != boost::none) {
+      const LatLonGridWriter<MODEL> latlon(params.outputVarConfigLL.value().value(), resol);
+      latlon.interpolateAndWrite(sigb2);
+    }
     Log::test() << "Variance: " << std::endl << sigb2 << std::endl;
 
     return 0;
