@@ -108,7 +108,7 @@ StateParametersND<MODEL> StateEnsembleParameters<MODEL>::getStateParameters(cons
 
     // Get correct index
     size_t count = states_template.value()->start;
-    for (size_t jj = 0; jj < ie; ++jj) {
+    for (size_t jj = 0; jj <= ie; ++jj) {
       // Check for excluded members
       while (std::count(states_template.value()->except.value().begin(),
              states_template.value()->except.value().end(), count)) {
@@ -116,7 +116,7 @@ StateParametersND<MODEL> StateEnsembleParameters<MODEL>::getStateParameters(cons
       }
 
       // Update counter
-      count += 1;
+      if (jj < ie) count += 1;
     }
 
     // Copy and update template configuration with pattern
