@@ -32,8 +32,8 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL> class HTLMCoefficientsParameters : public Parameters {
-    OOPS_CONCRETE_PARAMETERS(HTLMCoefficientsParameters, Parameters)
+template <typename MODEL> class HTLMCoefficientsParameters : public ApplicationParameters {
+    OOPS_CONCRETE_PARAMETERS(HTLMCoefficientsParameters, ApplicationParameters)
     typedef HtlmEnsembleParameters<MODEL>               HtlmEnsembleParameters_;
     typedef HtlmCalculatorParameters<MODEL>             HtlmCalculatorParameters_;
     typedef typename Geometry<MODEL>::Parameters_       GeometryParameters_;
@@ -174,6 +174,8 @@ template <typename MODEL> class HTLMCoefficients : public Application {
 // -----------------------------------------------------------------------------
 
     void outputSchema(const std::string & outputPath) const override {
+        HTLMCoefficientsParameters_ params;
+        params.outputSchema(outputPath);
     }
 
 // -----------------------------------------------------------------------------
