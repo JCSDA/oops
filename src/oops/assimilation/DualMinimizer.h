@@ -14,6 +14,7 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "eckit/config/Configuration.h"
 #include "oops/assimilation/BMatrix.h"
@@ -47,17 +48,20 @@ template<typename MODEL, typename OBS> class DualMinimizer : public Minimizer<MO
   typedef RinvMatrix<MODEL, OBS>          Rinv_;
 
  public:
-  explicit DualMinimizer(const CostFct_ & J): Minimizer_(J), J_(J), gradJb_() {}
+  explicit DualMinimizer(const CostFct_ & J): Minimizer_(J), J_(J), gradJb_(), costJ0Jb_(0) {}
   ~DualMinimizer() {}
   const std::string classname() const override = 0;
 
  private:
   CtrlInc_ * doMinimize(const eckit::Configuration &) override;
   virtual double solve(Dual_ &, double &, Dual_ &, const HBHt_ &, const Rinv_ &,
+                       const double, const double,
                        const int &, const double &, Dual_ &, const double &) = 0;
 
   const CostFct_ & J_;
   std::unique_ptr<CtrlInc_> gradJb_;
+  std::vector<CtrlInc_> dxh_;
+  double costJ0Jb_;
 };
 
 // =============================================================================
@@ -127,8 +131,13 @@ DualMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
 
   double sigma = dot_product(J_.jb().getFirstGuess(), g0);
 
+// Set J[0] = 0.5 (x_i - x_b)^T B^{-1} (x_i - x_b) + 0.5 d^T R^{-1} d
+  const double costJ0Jb = costJ0Jb_;
+  const double costJ0JoJc = J_.getCostJoJc();
+
 // Solve the linear system
-  double reduc = this->solve(vv, vvp, rr, HBHt, Rinv, ninner, gnreduc, dy, sigma);
+  double reduc = this->solve(vv, vvp, rr, HBHt, Rinv, costJ0Jb, costJ0JoJc,
+                             ninner, gnreduc, dy, sigma);
 
   Log::info() << classname() << ": reduction in residual norm = " << reduc << std::endl;
   Log::test() << classname() << ": reduction in residual norm = " << reduc << std::endl;
@@ -147,6 +156,14 @@ DualMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
 
 // Update gradient Jb
   *gradJb_ += dh;
+  dxh_.push_back(dh);
+
+// Update Jb component of J[0]: 0.5 (x_i - x_b)^T B^-1 (x_i - x_b)
+  costJ0Jb_ += 0.5 * dot_product(*dx, dh);
+  for (unsigned int jouter = 1; jouter < dxh_.size(); ++jouter) {
+    CtrlInc_ dxhtmp(dx->geometry(), dxh_[jouter-1]);
+    costJ0Jb_ += dot_product(*dx, dxhtmp);
+  }
 
   return dx;
 }
