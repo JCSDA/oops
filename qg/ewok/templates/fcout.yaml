@@ -5,6 +5,6 @@
 
 type: fc
 exp: $(expid)
-date: '{{current_cycle}}'
+date: $(fcdatetime)
 frequency: $(forecast_output_frequency)
 datadir: $(fcworkdir)
