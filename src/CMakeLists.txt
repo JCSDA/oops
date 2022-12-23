@@ -487,6 +487,7 @@ test/util/LocalEnvironment.h
 test/util/TestReference.h
 test/util/TypeTraits.h
 test/util/algorithms.h
+test/util/ConfigFunctions.h
 )
 
 list (APPEND oops_fheader_files
@@ -840,6 +841,11 @@ ecbuild_add_test( TARGET  test_util_typetraits
 
 ecbuild_add_test( TARGET  test_util_wildcard
                   SOURCES test/util/wildcard.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_configfunctions
+                  SOURCES test/util/ConfigFunctions.cc
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 

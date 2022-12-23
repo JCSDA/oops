@@ -92,7 +92,7 @@ HybridCovariance<MODEL>::HybridCovariance(const Geometry_ & resol, const Variabl
       weight.read(weightConf);
 
       // Compute weight square-root
-      util::FieldSetSqrt(weight.fieldSet());
+      util::sqrtFieldSet(weight.fieldSet());
       weight.synchronizeFields();
       incrementWeightsSqrt_.push_back(weight);
     }

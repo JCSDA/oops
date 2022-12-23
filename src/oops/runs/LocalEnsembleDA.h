@@ -79,6 +79,9 @@ class LocalEnsembleDADriverParameters : public Parameters {
   Parameter<bool> doPostObs{"do posterior observer",
                   "controls whether H(x) is computed for the posterior (analysis) ensemble",
                   true, this};
+  Parameter<bool> useControlMember{"use control member",
+                  "use control member to center prior ensemble instead of the prior ensemble mean",
+                  false, this};
 };
 
 // -----------------------------------------------------------------------------
@@ -115,6 +118,10 @@ class LocalEnsembleDAParameters : public ApplicationParameters {
 
   RequiredParameter<eckit::LocalConfiguration> localEnsDA{"local ensemble DA",
           "local ensemble DA solver and its options", this};
+
+  /// Note: these Parameters have to be present if driver.useControlMember==true
+  OptionalParameter<eckit::LocalConfiguration> controlMember{"control member",
+          "control member that can be used insteead of the ensemble mean", this};
 
   /// Note: these Parameters have to be present if driver.savePostMean or driver.savePostEns
   /// are true.
@@ -201,11 +208,16 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     ObsSpaces_ obsdb(obsConfig, this->getComm(), winbgn, winend, time);
     Observations_ yobs(obsdb, "ObsValue");
 
-    // Read all ensemble members and compute the mean
+    // Read all ensemble members and compute the ensemble mean
     StateEnsemble4D_ ens_xx(geometry, params.background);
     const size_t nens = ens_xx.size();
     const Variables statevars = ens_xx.variables();
     State4D_ bkg_mean = ens_xx.mean();
+    // if control member is present use that instead of the ensemble mean
+    if (params.driver.value().useControlMember) {
+      State4D_ controlMember(geometry, *params.controlMember.value());
+      bkg_mean = controlMember;
+    }
 
     // set up solver
     std::unique_ptr<LocalSolver_> solver =
@@ -222,11 +234,15 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
 
     // compute H(x)
     Observations_ yb_mean = solver->computeHofX(ens_xx, 0, params.driver.value().readHofX);
-    Log::test() << "H(x) ensemble background mean: " << std::endl << yb_mean << std::endl;
+    if (do_test_prints) {
+       Log::test() << "H(x) ensemble background mean: " << std::endl << yb_mean << std::endl;
+    }
 
     Departures_ ombg(yobs - yb_mean);
     ombg.save("ombg");
-    Log::test() << "background y - H(x): " << std::endl << ombg << std::endl;
+    if (do_test_prints) {
+       Log::test() << "background y - H(x): " << std::endl << ombg << std::endl;
+    }
 
     // quit early if running in observer-only mode
     if (params.driver.value().runObsOnly.value()) {

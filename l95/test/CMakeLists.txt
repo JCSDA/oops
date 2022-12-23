@@ -80,6 +80,7 @@ list( APPEND l95_test_input
   testinput/geovals.yaml
   testinput/getkf.yaml
   testinput/getkf_offline_hofx.yaml
+  testinput/getkf_offline_hofx_one_member.yaml
   testinput/getvalues.yaml
   testinput/hofx.yaml
   testinput/hofx_tinterp.yaml
@@ -201,6 +202,7 @@ list( APPEND l95_testoutput
   testoutput/genenspert.test
   testoutput/getkf.test
   testoutput/getkf_offline_hofx.test
+  testoutput/getkf_offline_hofx_one_member.test
   testoutput/hofx.test
   testoutput/hofx_tinterp.test
   testoutput/hofx3d.test
@@ -849,6 +851,10 @@ ecbuild_add_test( TARGET test_l95_getkf_offline_hofx
                   ARGS testinput/getkf_offline_hofx.yaml
                   TEST_DEPENDS test_l95_hofx3d_for_getkf )
 
+ecbuild_add_test( TARGET test_l95_getkf_offline_hofx_one_member
+                  COMMAND l95_letkf.x
+                  ARGS testinput/getkf_offline_hofx_one_member.yaml
+                  TEST_DEPENDS test_l95_hofx3d_for_getkf )
 
 #####################################################################
 # tests of factory and parameters classes

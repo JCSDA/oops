@@ -11,11 +11,11 @@ background:
       date: &date 2010-01-02T00:00:00Z
       filename: Data/forecast.ens.%mem%.2010-01-01T00:00:00Z.P1D.l95
     pattern: %mem%
-    nmembers: 5
+    nmembers: 1
 
-driver:
-  update obs config with geometry info: false
-  save prior mean: true
+control member:
+  date: 2010-01-02T00:00:00Z 
+  filename: Data/getkf.xbmean.an.2010-01-02T00:00:00Z.l95
 
 observations:
   observers:
@@ -27,8 +27,15 @@ observations:
     obs space:
       obsdatain:
         engine:
-          obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+          obsfile: Data/getkf.2010-01-02T00:00:00Z.obt
     obs operator: {}
+
+driver:
+  read HX from disk: false
+  do posterior observer: false
+  update obs config with geometry info: false
+  use control member: true
+  run as observer only: true
 
 local ensemble DA:
   solver: GETKF
@@ -47,12 +54,7 @@ output:
   exp: getkf.%{member}%
   type: an
 
-output mean prior:
-  datadir: Data
-  date: *date
-  exp: getkf.xbmean
-  type: an
-
 test:
-  reference filename: testoutput/getkf.test
-  float relative tolerance: 1.5e-3
+  reference filename: testoutput/getkf_offline_hofx_one_member.test
+  float relative tolerance: 1e-3
+#  test output filename: testoutput/getkf_offline_hofx_one_member.out

@@ -5,21 +5,44 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef OOPS_UTIL_FIELDSETOPERATIONS_H_
-#define OOPS_UTIL_FIELDSETOPERATIONS_H_
+#pragma once
+
+#include <string>
+#include <vector>
 
 #include "atlas/field.h"
+#include "atlas/functionspace.h"
+
+#include "eckit/mpi/Comm.h"
+
+#include "oops/base/GeometryData.h"
+#include "oops/base/Variables.h"
 
 namespace util {
 
 // -----------------------------------------------------------------------------
 
-void FieldSetMultiply(atlas::FieldSet & fset, const atlas::FieldSet & mulFset);
-void FieldSetDivide(atlas::FieldSet & fset, const  atlas::FieldSet & divFset);
-void FieldSetSqrt(atlas::FieldSet & fset);
+atlas::FieldSet createRandomFieldSet(const oops::GeometryData &,
+                                     const std::vector<size_t> &,
+                                     const oops::Variables &);
+atlas::FieldSet copyFieldSet(const atlas::FieldSet &);
+void removeFieldsFromFieldSet(atlas::FieldSet &,
+                              const oops::Variables &);
+void zeroFieldSet(atlas::FieldSet &);
+void addFieldSets(atlas::FieldSet &,
+                  const atlas::FieldSet &);
+void multiplyFieldSet(atlas::FieldSet &,
+                      const double &);
+void multiplyFieldSets(atlas::FieldSet &,
+                       const atlas::FieldSet &);
+double dotProductFieldSets(const atlas::FieldSet &,
+                           const atlas::FieldSet &,
+                           const oops::Variables &,
+                           const eckit::mpi::Comm &);
+void divideFieldSets(atlas::FieldSet &,
+                     const  atlas::FieldSet &);
+void sqrtFieldSet(atlas::FieldSet &);
 
 // -----------------------------------------------------------------------------
 
 }  // namespace util
-
-#endif  // OOPS_UTIL_FIELDSETOPERATIONS_H_

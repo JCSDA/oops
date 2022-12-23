@@ -37,7 +37,7 @@ namespace util {
     // Print configuration into stringstream, then into string
     std::stringstream ss;
     ss << config << std::endl;
-    std::string str = ss.str();
+    const std::string str = ss.str();
 
     // Check if the configuration is a vector of configurations
     return str.find("LocalConfiguration[root=(") != std::string::npos;
@@ -48,7 +48,7 @@ namespace util {
     // Print configuration into stringstream, then into string
     std::stringstream ss;
     ss << config << std::endl;
-    std::string str = ss.str();
+    const std::string str = ss.str();
 
     // Check if the configuration is a subconfiguration
     return str.find("LocalConfiguration[root={") != std::string::npos;
@@ -163,6 +163,50 @@ namespace util {
 
     // Replace pattern recursively in the configuration
     util::seekAndReplace(config, pattern, rs);
+  }
+
+  eckit::LocalConfiguration mergeConfigs(const eckit::Configuration & config1,
+                                         const eckit::Configuration & config2)
+  {
+    // Initialize output configuration
+    eckit::LocalConfiguration config;
+
+    // Check if config is a subconfiguration
+    if (isSubConfig(config1) && isSubConfig(config2)) {
+      // Get the subconfiguration keys
+      std::vector<std::string> keys1(config1.keys());
+      std::vector<std::string> keys2(config2.keys());
+
+      // Loop over keys1
+      for (size_t jj = 0; jj < keys1.size(); ++jj) {
+        if (config2.has(keys1[jj])) {
+          // Merge required
+          eckit::LocalConfiguration sub1;
+          config1.get(keys1[jj], sub1);
+          eckit::LocalConfiguration sub2;
+          config2.get(keys1[jj], sub2);
+          eckit::LocalConfiguration sub = mergeConfigs(sub1, sub2);
+          config.set(keys1[jj], sub);
+        } else {
+          // Add key to output config
+          eckit::LocalConfiguration sub;
+          config1.get(keys1[jj], sub);
+          config.set(keys1[jj], sub);
+        }
+      }
+
+      // Loop over keys2
+      for (size_t jj = 0; jj < keys2.size(); ++jj) {
+        if (!config1.has(keys2[jj])) {
+          // Add key to output config
+          eckit::LocalConfiguration sub;
+          config2.get(keys2[jj], sub);
+          config.set(keys2[jj], sub);
+        }
+      }
+    }
+
+    return config;
   }
 
 }  // namespace util

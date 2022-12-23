@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -24,6 +24,7 @@
 #include "oops/base/IdentityMatrix.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
+#include "oops/util/printRunStats.h"
 
 namespace oops {
 
@@ -79,6 +80,7 @@ template<typename MODEL, typename OBS> class RPLanczosMinimizer : public DualMin
 
  private:
   double solve(Dual_ &, double &, Dual_ &, const HBHt_ &, const Rinv_ &,
+               const double, const double,
                const int &, const double &, Dual_ &, const double &) override;
 };
 
@@ -87,13 +89,17 @@ template<typename MODEL, typename OBS> class RPLanczosMinimizer : public DualMin
 template<typename MODEL, typename OBS>
 double RPLanczosMinimizer<MODEL, OBS>::solve(Dual_ & vv, double & vvp, Dual_ & rr,
                                         const HBHt_ & HBHt, const Rinv_ & Rinv,
+                                        const double costJ0Jb, const double costJ0JoJc,
                                         const int & maxiter, const double & tolerance,
                                         Dual_ & dy, const double & sigma) {
+  util::printRunStats("RPLanczos start");
+
   IdentityMatrix<Dual_> precond;
 
   Dual_ zz(vv);
   Dual_ ww(vv);
   Dual_ tt(vv);
+  Dual_ tt0(vv);
   Dual_ vold(vv);
   Dual_ v(vv);
 
@@ -102,6 +108,7 @@ double RPLanczosMinimizer<MODEL, OBS>::solve(Dual_ & vv, double & vvp, Dual_ & r
   double zzp;
   double wwp;
   double ttp = 0.0;
+  double ttp0 = 0.0;
   double voldp = 0.0;
   double vp = 1.0;
 
@@ -121,6 +128,9 @@ double RPLanczosMinimizer<MODEL, OBS>::solve(Dual_ & vv, double & vvp, Dual_ & r
   std::vector<double> y;
   std::vector<double> d;
 
+  // J0
+  const double costJ0 = costJ0Jb + costJ0JoJc;
+
   // zzaug = Gaug  rraug
   precond.multiply(rr, zz);
   zzp = rrp;
@@ -129,6 +139,10 @@ double RPLanczosMinimizer<MODEL, OBS>::solve(Dual_ & vv, double & vvp, Dual_ & r
   HBHt.multiply(zz, tt);
   tt.axpy(zzp, dy);
   ttp = dot_product(dy, zz) + sigma*zzp;
+
+  // Store initial values
+  ttp0 = ttp;
+  tt0 = tt;
 
   double normReduction = 1.0;
   double beta0 = sqrt(dot_product(rr, tt) + rrp*ttp);
@@ -165,6 +179,7 @@ double RPLanczosMinimizer<MODEL, OBS>::solve(Dual_ & vv, double & vvp, Dual_ & r
   Log::info() << std::endl;
   while (jiter < maxiter) {
     Log::info() << "RPLanczos Starting Iteration " << jiter+1 << std::endl;
+    util::printRunStats("RPLanczos iteration " + std::to_string(jiter+1));
 
     // ww = (RinvHBHt + I) zz - beta * vold
     Rinv.multiply(tt, ww);
@@ -228,6 +243,21 @@ double RPLanczosMinimizer<MODEL, OBS>::solve(Dual_ & vv, double & vvp, Dual_ & r
       TriDiagSolve(alphas, betas, d, y);
     }
 
+    // The following diagnostic is working only if precond is the IdentityMatrix
+    // Compute the quadratic cost function
+    // J[du_{i}] = J[0] - 0.5 s_{i}^T Z_{i}^T r_{0}
+    // Jb[du_{i}] = 0.5 s_{i}^T V_{i}^T Z_{i} s_{i}
+    double costJ = costJ0;
+
+    double costJb = costJ0Jb;
+    for (int jj = 0; jj < jiter+1; ++jj) {
+      costJ -= 0.5 * y[jj] * dot_product(zVEC[jj], tt0);
+      costJ -= 0.5 * y[jj] * zpVEC[jj] * ttp0;
+      costJb += 0.5 * y[jj] * dot_product(zVEC[jj], tVEC[jj]) * y[jj];
+      costJb += 0.5 * y[jj] * zpVEC[jj] * tpVEC[jj] * y[jj];
+    }
+    double costJoJc = costJ - costJb;
+
     // Gradient norm in precond metric --> sqrt(r't) --> beta * y(jiter)
     double rznorm = beta*std::abs(y[jiter]);
 
@@ -237,6 +267,7 @@ double RPLanczosMinimizer<MODEL, OBS>::solve(Dual_ & vv, double & vvp, Dual_ & r
 
     Log::info() << "RPLanczos end of iteration " << jiter+1 << std::endl;
     printNormReduction(jiter+1, rznorm, normReduction);
+    printQuadraticCostFunction(jiter+1, costJ, costJb, costJoJc);
 
     ++jiter;
 
@@ -254,6 +285,7 @@ double RPLanczosMinimizer<MODEL, OBS>::solve(Dual_ & vv, double & vvp, Dual_ & r
 
   Log::info() << "RPLanczos: end" << std::endl;
 
+  util::printRunStats("RPLanczos end");
   return normReduction;
 }
 

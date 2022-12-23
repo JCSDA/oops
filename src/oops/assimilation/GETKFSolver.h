@@ -139,14 +139,14 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
     }
   } else {
     // modulate ensemble of obs
-    State4D_ xx_mean(ens_xx.mean());
-    IncrementEnsemble4D_ dx(ens_xx, xx_mean, xx_mean[0].variables());
-    IncrementEnsemble4D_ Ztmp(geometry_, xx_mean[0].variables(), ens_xx[0].validTimes(), neig_);
+    IncrementEnsemble4D_ dx(ens_xx, this->xbmean_, this->xbmean_[0].variables());
+    IncrementEnsemble4D_ Ztmp(geometry_, this->xbmean_[0].variables(),
+                              ens_xx[0].validTimes(), neig_);
     size_t ii = 0;
     for (size_t iens = 0; iens < nens_; ++iens) {
       vertloc_.modulateIncrement(dx[iens], Ztmp);
       for (size_t ieig = 0; ieig < neig_; ++ieig) {
-        State4D_ tmpState = xx_mean;
+        State4D_ tmpState = this->xbmean_;
         tmpState += Ztmp[ieig];
         Observations_ tmpObs(this->obspaces_);
         eckit::LocalConfiguration config;
