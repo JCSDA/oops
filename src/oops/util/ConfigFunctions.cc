@@ -81,41 +81,44 @@ namespace util {
           std::vector<eckit::LocalConfiguration> subConfigs;
           config.get(keys[jj], subConfigs);
 
-          // Check items nature
-          if (isSubConfig(subConfigs[0])) {
-            // Items are subconfigurations
-            std::vector<eckit::LocalConfiguration> updatedSubConfigs;
+          if (subConfigs.size() > 0) {
+            // Check items nature
+            if (isSubConfig(subConfigs[0])) {
+              // Items are subconfigurations
+              std::vector<eckit::LocalConfiguration> updatedSubConfigs;
 
-            // Loop over items
-            for (eckit::LocalConfiguration & subConfig : subConfigs) {
-              // Call seekAndReplace for a subconfiguration
-              seekAndReplace(subConfig, pattern, value_out);
-              updatedSubConfigs.push_back(subConfig);
-            }
-
-            // Reset vector
-            config.set(keys[jj], updatedSubConfigs);
-          } else if (isVector(subConfigs[0])) {
-            // Items are vectors of subconfigurations
-            ABORT("Vector of vectors is not implemented yet...");
-          } else {
-            // Items are final pairs
-
-            // Get items as strings
-            std::vector<std::string> subStrings;
-            config.get(keys[jj], subStrings);
-
-            // Loop over items
-            for (size_t kk=0; kk < subStrings.size(); ++kk) {
-              // Check if the substring contains the pattern
-              if (subStrings[kk].find(pattern) != std::string::npos) {
-                // Update the substring
-                subStrings[kk] = std::regex_replace(subStrings[kk], std::regex(pattern), value_out);
+              // Loop over items
+              for (eckit::LocalConfiguration & subConfig : subConfigs) {
+                // Call seekAndReplace for a subconfiguration
+                seekAndReplace(subConfig, pattern, value_out);
+                updatedSubConfigs.push_back(subConfig);
               }
-            }
 
-            // Reset vector of final pairs
-            config.set(keys[jj], subStrings);
+              // Reset vector
+              config.set(keys[jj], updatedSubConfigs);
+            } else if (isVector(subConfigs[0])) {
+              // Items are vectors of subconfigurations
+              ABORT("Vector of vectors is not implemented yet...");
+            } else {
+              // Items are final pairs
+
+              // Get items as strings
+              std::vector<std::string> subStrings;
+              config.get(keys[jj], subStrings);
+
+              // Loop over items
+              for (size_t kk=0; kk < subStrings.size(); ++kk) {
+                // Check if the substring contains the pattern
+                if (subStrings[kk].find(pattern) != std::string::npos) {
+                  // Update the substring
+                  subStrings[kk] = std::regex_replace(subStrings[kk], std::regex(pattern),
+                    value_out);
+                }
+              }
+
+              // Reset vector of final pairs
+              config.set(keys[jj], subStrings);
+            }
           }
         } else if (isFinal(subConfig)) {
           // The local configuration is a final pair
@@ -185,8 +188,27 @@ namespace util {
           config1.get(keys1[jj], sub1);
           eckit::LocalConfiguration sub2;
           config2.get(keys1[jj], sub2);
-          eckit::LocalConfiguration sub = mergeConfigs(sub1, sub2);
-          config.set(keys1[jj], sub);
+          if (isSubConfig(sub1) && isSubConfig(sub2)) {
+            eckit::LocalConfiguration sub = mergeConfigs(sub1, sub2);
+            config.set(keys1[jj], sub);
+          } else if (isVector(sub1) && isVector(sub2)) {
+            // Merge two vectors
+            std::vector<std::string> strVec1 = config1.getStringVector(keys1[jj]);
+            std::vector<std::string> strVec2 = config2.getStringVector(keys1[jj]);
+            std::vector<std::string> strVec;
+            for (const auto & str : strVec1) {
+              strVec.push_back(str);
+            }
+            for (const auto & str : strVec2) {
+              strVec.push_back(str);
+            }
+            config.set(keys1[jj], strVec);
+          } else if (isFinal(sub1) && isFinal(sub2)) {
+            // Keep config1 value
+            eckit::LocalConfiguration sub;
+            config1.get(keys1[jj], sub);
+            config.set(keys1[jj], sub);
+          }
         } else {
           // Add key to output config
           eckit::LocalConfiguration sub;
