@@ -93,18 +93,18 @@ double GomL95::dot_product_with(const GomL95 & gom) const {
   return zz;
 }
 // -----------------------------------------------------------------------------
-void GomL95::fill(const std::vector<size_t> & indx,
-                  const std::vector<double> & vals,
-                  const bool) {
-  ASSERT(indx.size() == vals.size());
-  for (size_t jj = 0; jj < vals.size(); ++jj) locval_[indx[jj]] = vals[jj];
+void GomL95::fill(const std::string &, const ConstVectorRef<size_t> &indx,
+                  const ConstMatrixRef<double> &vals, const bool) {
+  ASSERT(indx.size() == vals.rows());
+  ASSERT(vals.cols() == 1);
+  for (Eigen::Index jj = 0; jj < indx.size(); ++jj) locval_[indx[jj]] = vals(jj, 0);
 }
 // -----------------------------------------------------------------------------
-void GomL95::fillAD(const std::vector<size_t> & indx,
-                    std::vector<double> & vals,
-                    const bool) const {
-  ASSERT(indx.size() == vals.size());
-  for (size_t jj = 0; jj < vals.size(); ++jj) vals[jj] += locval_[indx[jj]];
+void GomL95::fillAD(const std::string &, const ConstVectorRef<size_t> &indx,
+                    MatrixRef<double> vals, const bool) const {
+  ASSERT(indx.size() == vals.rows());
+  ASSERT(vals.cols() == 1);
+  for (Eigen::Index jj = 0; jj < indx.size(); ++jj) vals(jj, 0) += locval_[indx[jj]];
 }
 // -----------------------------------------------------------------------------
 void GomL95::read(const Parameters_ & params) {

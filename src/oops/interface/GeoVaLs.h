@@ -11,6 +11,8 @@
 #ifndef OOPS_INTERFACE_GEOVALS_H_
 #define OOPS_INTERFACE_GEOVALS_H_
 
+#include <Eigen/Core>
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -33,6 +35,27 @@ class GeoVaLs : public util::Printable,
   typedef typename OBS::GeoVaLs          GeoVaLs_;
   typedef ObsSpace<OBS>                  ObsSpace_;
   typedef Locations<OBS>                 Locations_;
+
+  /// \brief A reference to a read-only vector-valued expression.
+  ///
+  /// For example, an Eigen::Vector or an Eigen::Map (the latter can be used as a view onto
+  /// a chunk of memory stored in another container, such as a std::vector).
+  template <typename T>
+  using ConstVectorRef = Eigen::Ref<const Eigen::Vector<T, Eigen::Dynamic>>;
+
+  /// \brief A reference to a read-only matrix-valued expression.
+  ///
+  /// For example, an Eigen::Matrix or an Eigen::Map (the latter can be used as a view onto
+  /// a chunk of memory stored in another container, such as a std::vector).
+  template <typename T>
+  using ConstMatrixRef = Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>>;
+
+  /// \brief A reference to a writable matrix-valued expression.
+  ///
+  /// For example, an Eigen::Matrix or an Eigen::Map (the latter can be used as a view onto
+  /// a chunk of memory stored in another container, such as a std::vector).
+  template <typename T>
+  using MatrixRef = Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>>;
 
  public:
   typedef typename GeoVaLs_::Parameters_ Parameters_;
@@ -66,8 +89,24 @@ class GeoVaLs : public util::Printable,
   void read(const Parameters_ &);
   void write(const Parameters_ &) const;
 
-  void fill(const std::vector<size_t> &, const std::vector<double> &, const bool);
-  void fillAD(const std::vector<size_t> &, std::vector<double> &, const bool) const;
+  /// \brief Set the values of a given variable at specified locations.
+  ///
+  /// \param name
+  ///   Variable name.
+  /// \param indx
+  ///   Location indices.
+  /// \param vals
+  ///   Matrix whose `i`th row contains the values of the variable `name` at the location with
+  ///   index `indx[i]`, ordered from top to bottom if `levelsTopDown` is `true` and from bottom to
+  ///   top otherwise.
+  /// \param levelTopDown
+  ///   True if each row of `vals` contains variable values at model levels ordered from top to
+  ///   bottom, false if they are ordered from bottom to top.
+  void fill(const std::string &name, const ConstVectorRef<size_t> &indx,
+            const ConstMatrixRef<double> &vals, const bool levelsTopDown);
+  /// \brief Adjoint of fill().
+  void fillAD(const std::string &name, const ConstVectorRef<size_t> &indx,
+              MatrixRef<double> vals, const bool levelsTopDown) const;
 
  private:
   void print(std::ostream &) const;
@@ -228,22 +267,26 @@ void GeoVaLs<OBS>::random() {
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-void GeoVaLs<OBS>::fill(const std::vector<size_t> & indx,
-                        const std::vector<double> & vals, const bool levelsTopDown) {
+void GeoVaLs<OBS>::fill(const std::string &name, const ConstVectorRef<size_t> &indx,
+                        const ConstMatrixRef<double> &vals, const bool levelsTopDown) {
   Log::trace() << "GeoVaLs<OBS>::fill starting" << std::endl;
   util::Timer timer(classname(), "fill");
-  gvals_->fill(indx, vals, levelsTopDown);
+  ASSERT(indx.size() == vals.rows());
+  gvals_->fill(name, indx, vals, levelsTopDown);
   Log::trace() << "GeoVaLs<OBS>::fill done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-void GeoVaLs<OBS>::fillAD(const std::vector<size_t> & indx,
-                          std::vector<double> & vals, const bool levelsTopDown) const {
+void GeoVaLs<OBS>::fillAD(const std::string & name,
+                          const Eigen::Ref<const Eigen::VectorX<size_t>> &indx,
+                          Eigen::Ref<Eigen::MatrixXd> vals,
+                          const bool levelsTopDown) const {
   Log::trace() << "GeoVaLs<OBS>::fillAD starting" << std::endl;
   util::Timer timer(classname(), "fillAD");
-  gvals_->fillAD(indx, vals, levelsTopDown);
+  ASSERT(indx.size() == vals.rows());
+  gvals_->fillAD(name, indx, vals, levelsTopDown);
   Log::trace() << "GeoVaLs<OBS>::fillAD done" << std::endl;
 }
 

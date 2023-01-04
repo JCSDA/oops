@@ -7,8 +7,11 @@
 
 #pragma once
 
+#include <Eigen/Core>
+
 #include <algorithm>
 #include <memory>
+#include <numeric>
 #include <string>
 #include <utility>
 #include <vector>
@@ -152,6 +155,7 @@ class GetValues : private util::ObjectCounter<GetValues<MODEL, OBS> > {
   int tag_;
   const bool levelsTopDown_;            /// When true: Levels are in top down order.
   std::vector<size_t> geovarsSizes_;   /// number of levels for geovars_
+  std::vector<size_t> linvarsSizes_;   /// number of levels for linvars_
   bool doLinearTimeInterpolation_;     /// set true for linear and false for
                                        /// nearest-neighbour time-
                                        /// interpolation (default false)
@@ -169,7 +173,8 @@ GetValues<MODEL, OBS>::GetValues(const eckit::Configuration & conf, const Geomet
     interpConf_(conf), comm_(geom.getComm()), ntasks_(comm_.size()), interp_(ntasks_),
     myobs_index_by_task_(ntasks_), obs_times_by_task_(ntasks_),
     locinterp_(), recvinterp_(), send_req_(), recv_req_(), tag_(789),
-    levelsTopDown_(geom.levelsAreTopDown()), geovarsSizes_(geom.variableSizes(geovars_))
+    levelsTopDown_(geom.levelsAreTopDown()), geovarsSizes_(geom.variableSizes(geovars_)),
+    linvarsSizes_(geom.variableSizes(linvars_))
 {
   Log::trace() << "GetValues::GetValues start" << std::endl;
   util::Timer timer("oops::GetValues", "GetValues");
@@ -190,8 +195,8 @@ GetValues<MODEL, OBS>::GetValues(const eckit::Configuration & conf, const Geomet
 
   tag_ += this->created();
 
-  for (size_t jj = 0; jj < geovars_.size(); ++jj) varsizes_ += geom.variableSizes(geovars_)[jj];
-  for (size_t jj = 0; jj < linvars_.size(); ++jj) linsizes_ += geom.variableSizes(linvars_)[jj];
+  varsizes_ = std::accumulate(geovarsSizes_.begin(), geovarsSizes_.end(), 0);
+  linsizes_ = std::accumulate(linvarsSizes_.begin(), linvarsSizes_.end(), 0);
 
 // Local obs coordinates
   std::vector<double> obslats = locations_.latitudes();
@@ -371,7 +376,27 @@ void GetValues<MODEL, OBS>::fillGeoVaLs(GeoVaLs_ & geovals) {
     eckit::mpi::Status rst = comm_.waitAny(recv_req_, itask);
     ASSERT(rst.error() == 0);
     ASSERT(itask >=0 && (size_t)itask < ntasks_);
-    geovals.fill(myobs_index_by_task_[itask], recvinterp_[itask], this->levelsTopDown_);
+
+    ASSERT(recvinterp_[itask].size() == myobs_index_by_task_[itask].size() * varsizes_);
+
+    // Create non-owning views ("maps") into the interpolation results.
+    const Eigen::Map<const Eigen::VectorX<size_t>> indices(myobs_index_by_task_[itask].data(),
+                                                           myobs_index_by_task_[itask].size());
+    // Each column contains the values of a single variable at a single level and all locations
+    // with indices 'indices'. The columns are ordered first by level and then by variable.
+    const Eigen::Map<const Eigen::MatrixXd> values(recvinterp_[itask].data(),
+                                                   myobs_index_by_task_[itask].size(), varsizes_);
+
+    size_t colOffset = 0;
+    for (size_t jvar = 0; jvar < geovars_.size(); ++jvar) {
+      const size_t numLevels = geovarsSizes_[jvar];
+      geovals.fill(geovars_[jvar],
+                   indices,
+                   values.middleCols(colOffset, numLevels),
+                   this->levelsTopDown_);
+      colOffset += numLevels;
+    }
+    ASSERT(colOffset == varsizes_);
   }
   recv_req_.clear();
   recvinterp_.clear();
@@ -469,7 +494,27 @@ void GetValues<MODEL, OBS>::fillGeoVaLsTL(GeoVaLs_ & geovals) {
     eckit::mpi::Status rst = comm_.waitAny(recv_req_, itask);
     ASSERT(rst.error() == 0);
     ASSERT(itask >=0 && (size_t)itask < ntasks_);
-    geovals.fill(myobs_index_by_task_[itask], recvinterp_[itask], this->levelsTopDown_);
+
+    ASSERT(recvinterp_[itask].size() == myobs_index_by_task_[itask].size() * linsizes_);
+
+    // Create non-owning views ("maps") into the interpolation results.
+    const Eigen::Map<const Eigen::VectorX<size_t>> indices(myobs_index_by_task_[itask].data(),
+                                                           myobs_index_by_task_[itask].size());
+    // Each column contains the values of a single variable at a single level and all locations
+    // with indices 'indices'. The columns are ordered first by level and then by variable.
+    const Eigen::Map<const Eigen::MatrixXd> values(recvinterp_[itask].data(),
+                                                   myobs_index_by_task_[itask].size(), linsizes_);
+
+    size_t colOffset = 0;
+    for (size_t jvar = 0; jvar < linvars_.size(); ++jvar) {
+      const size_t numLevels = linvarsSizes_[jvar];
+      geovals.fill(linvars_[jvar],
+                   indices,
+                   values.middleCols(colOffset, numLevels),
+                   this->levelsTopDown_);
+      colOffset += numLevels;
+    }
+    ASSERT(colOffset == linsizes_);
   }
   recv_req_.clear();
   recvinterp_.clear();
@@ -582,8 +627,26 @@ void GetValues<MODEL, OBS>::fillGeoVaLsAD(const GeoVaLs_ & geovals) {
   for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
     const size_t nrecv = myobs_index_by_task_[jtask].size() * linsizes_;
     recvinterp_[jtask].resize(nrecv);
-    geovals.fillAD(myobs_index_by_task_[jtask], recvinterp_[jtask], this->levelsTopDown_);
-    recv_req_[jtask] = comm_.iSend(&recvinterp_[jtask][0], nrecv, jtask, tag_);
+
+    // Create non-owning views ("maps") into the interpolation results.
+    const Eigen::Map<const Eigen::VectorX<size_t>> indices(myobs_index_by_task_[jtask].data(),
+                                                           myobs_index_by_task_[jtask].size());
+    // Each column contains the values of a single variable at a single level and all locations
+    // with indices 'indices'. The columns are ordered first by level and then by variable.
+    Eigen::Map<Eigen::MatrixXd> values(recvinterp_[jtask].data(),
+                                       myobs_index_by_task_[jtask].size(), linsizes_);
+    size_t colOffset = 0;
+    for (size_t jvar = 0; jvar < linvars_.size(); ++jvar) {
+      const size_t numLevels = linvarsSizes_[jvar];
+      geovals.fillAD(linvars_[jvar],
+                     indices,
+                     values.middleCols(colOffset, numLevels),
+                     this->levelsTopDown_);
+      colOffset += numLevels;
+    }
+    ASSERT(colOffset == linsizes_);
+
+    recv_req_[jtask] = comm_.iSend(recvinterp_[jtask].data(), nrecv, jtask, tag_);
   }
 
   Log::trace() << "GetValues::fillGeoVaLsAD" << std::endl;

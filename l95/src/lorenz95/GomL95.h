@@ -11,6 +11,8 @@
 #ifndef LORENZ95_GOML95_H_
 #define LORENZ95_GOML95_H_
 
+#include <Eigen/Core>
+
 #include <ostream>
 #include <string>
 #include <vector>
@@ -41,6 +43,17 @@ class GomL95Parameters : public oops::Parameters {
 /// GomL95 class to handle State values at obs locations for L95 model.
 class GomL95 : public util::Printable,
                private util::ObjectCounter<GomL95> {
+  /// References to read-only or writable vector- or matrix-valued expressions.
+  ///
+  /// For example, an Eigen::Vector, Eigen::Matrix or an Eigen::Map (the latter can be used as a
+  /// view onto a chunk of memory stored in another container, such as a std::vector).
+  template <typename T>
+  using ConstVectorRef = Eigen::Ref<const Eigen::Vector<T, Eigen::Dynamic>>;
+  template <typename T>
+  using ConstMatrixRef = Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>>;
+  template <typename T>
+  using MatrixRef = Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>>;
+
  public:
   typedef GomL95Parameters Parameters_;
 
@@ -66,8 +79,10 @@ class GomL95 : public util::Printable,
   const double & operator[](const int ii) const {return locval_[ii];}
   double & operator[](const int ii) {return locval_[ii];}
 
-  void fill(const std::vector<size_t> &, const std::vector<double> &, const bool);
-  void fillAD(const std::vector<size_t> &, std::vector<double> &, const bool) const;
+  void fill(const std::string &name, const ConstVectorRef<size_t> &indx,
+            const ConstMatrixRef<double> &vals, const bool levelsTopDown);
+  void fillAD(const std::string &name, const ConstVectorRef<size_t> &indx,
+              MatrixRef<double> vals, const bool levelsTopDow) const;
 
  private:
   size_t size_;
