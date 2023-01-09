@@ -263,6 +263,9 @@ void Duration::operator*=(const int kk) {
 // -----------------------------------------------------------------------------
 
 void Duration::operator/=(const int kk) {
+  ASSERT_MSG(seconds_ % kk == 0,
+             "Forbidden inexact division of Duration by integer: "
+             + std::to_string(seconds_) + " / " + std::to_string(kk));
   seconds_ /= kk;
 }
 
