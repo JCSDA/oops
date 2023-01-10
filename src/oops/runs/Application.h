@@ -36,6 +36,7 @@ class ApplicationTestParameters : public Parameters {
   OOPS_CONCRETE_PARAMETERS(ApplicationTestParameters, Parameters);
 
  public:
+  OptionalParameter<std::string> mpiPattern{"mpi pattern", this};
   RequiredParameter<std::string> referenceFilename{"reference filename", this};
 
   OptionalParameter<double> floatAbsTol{"float absolute tolerance", this};
