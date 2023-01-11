@@ -145,12 +145,21 @@ template <typename MODEL> class Dirac : public Application {
     dxi.dirac(params.dirac);
     Log::test() << "Input Dirac increment:" << dxi << std::endl;
 
+//  Output Dirac configuration
+    eckit::LocalConfiguration outputDirac(params.outputDirac.value());
+    if (outputDirac.has("mpi pattern")) {
+      std::string mpi_pattern = outputDirac.getString("mpi pattern");
+      std::string mpi_size = std::to_string(oops::mpi::world().size());
+      util::seekAndReplace(outputDirac, mpi_pattern, mpi_size);
+    }
+
 //  Go recursively through the covariance configuration
     const CovarianceParametersBase_ &covarParams =
         params.backgroundError.value().covarianceParameters;
     eckit::LocalConfiguration covarConf(covarParams.toConfiguration());
+
     std::string id;
-    dirac(covarConf, params.outputDirac.value(), id, xx, dxi);
+    dirac(covarConf, outputDirac, id, xx, dxi);
 
 //  Variance randomization
     const boost::optional<eckit::LocalConfiguration> &outputVariance =
@@ -182,8 +191,16 @@ template <typename MODEL> class Dirac : public Application {
       double rk_norm = 1.0/static_cast<double>(Bmat->randomizationSize()-1);
       variance *= rk_norm;
 
+      // Output variance configuration
+      eckit::LocalConfiguration outputVarianceUpdated(*outputVariance);
+      if (outputVarianceUpdated.has("mpi pattern")) {
+        std::string mpi_pattern = outputVarianceUpdated.getString("mpi pattern");
+        std::string mpi_size = std::to_string(oops::mpi::world().size());
+        util::seekAndReplace(outputVarianceUpdated, mpi_pattern, mpi_size);
+      }
+
       // Write increment
-      variance.write(*(params.outputVariance.value()));
+      variance.write(outputVarianceUpdated);
       Log::test() << "Randomized variance: " << variance << std::endl;
     }
 
