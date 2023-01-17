@@ -104,14 +104,14 @@ atlas::FieldSet createRandomFieldSet(const oops::GeometryData & geometryData,
             } else {
               // Real part
               for (atlas::idx_t jlevel = 0; jlevel < field.shape(1); ++jlevel) {
-                view(jnode, jlevel) = rand_vec[n];
+                view(jnode, jlevel) = rand_vec[n] / std::sqrt(2.0);
                 ++n;
               }
               ++jnode;
 
               // Imaginary part
               for (atlas::idx_t jlevel = 0; jlevel < field.shape(1); ++jlevel) {
-                view(jnode, jlevel) = rand_vec[n];
+                view(jnode, jlevel) = rand_vec[n] / std::sqrt(2.0);
                 ++n;
               }
               ++jnode;
