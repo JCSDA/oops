@@ -51,7 +51,7 @@ void writer(const atlas::FunctionSpace & fs,
   // Get sizes
   atlas::idx_t npts = fs.size();
   atlas::idx_t nz = levels.size();
-  ASSERT(nlats * nlons == npts);
+  ASSERT(nlats * nlons == static_cast<size_t>(npts));
 
   // NetCDF IDs
   int ncid, retval;
@@ -89,7 +89,8 @@ void writer(const atlas::FunctionSpace & fs,
     const size_t var_levs = fset.field(vars[jvar]).levels();
     if (var_levs > 1) {
       // Upper-air data case
-      ASSERT(nz <= var_levs);  // sanity check we didn't request more levels than the model has
+      // Sanity check we didn't request more levels than the model has
+      ASSERT(static_cast<size_t>(nz) <= var_levs);
       d2D_id[1] = nz_id;
     } else {
       // Surface data case

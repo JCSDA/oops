@@ -140,7 +140,7 @@ void UnstructuredInterpolator::apply(const Variables & vars, const atlas::FieldS
     const auto & interpMatrix = interp_matrices_.at(maskName);
 
     const atlas::array::ArrayView<double, 2> fldin = atlas::array::make_view<double, 2>(fld);
-    for (size_t jlev = 0; jlev < fldin.shape(1); ++jlev) {
+    for (size_t jlev = 0; jlev < static_cast<size_t>(fldin.shape(1)); ++jlev) {
       this->applyPerLevel(interpMatrix, interp_type, target_mask, fldin, current, jlev);
     }
   }
@@ -186,7 +186,7 @@ void UnstructuredInterpolator::applyAD(const Variables & vars, atlas::FieldSet &
     const auto & interpMatrix = interp_matrices_.at(maskName);
 
     atlas::array::ArrayView<double, 2> fldin = atlas::array::make_view<double, 2>(fld);
-    for (size_t jlev = 0; jlev < fldin.shape(1); ++jlev) {
+    for (size_t jlev = 0; jlev < static_cast<size_t>(fldin.shape(1)); ++jlev) {
       this->applyPerLevelAD(interpMatrix, interp_type, target_mask, fldin, current, jlev);
     }
   }
@@ -322,7 +322,7 @@ void UnstructuredInterpolator::bufferToFieldSet(const Variables & vars,
     for (size_t jlev = 0; jlev < num_levels; ++jlev) {
       for (size_t ji = 0; ji < buffer_chunk_size; ++ji, ++current) {
         const size_t index = buffer_indices[ji];
-        ASSERT(std::distance(buffer_start, current) < buffer_size);
+        ASSERT(static_cast<size_t>(std::distance(buffer_start, current)) < buffer_size);
         view(index, jlev) = *current;
       }
     }
@@ -355,7 +355,7 @@ void UnstructuredInterpolator::bufferToFieldSetAD(const Variables & vars,
     for (size_t jlev = 0; jlev < num_levels; ++jlev) {
       for (size_t ji = 0; ji < buffer_chunk_size; ++ji, ++current) {
         const size_t index = buffer_indices[ji];
-        ASSERT(std::distance(buffer_start, current) < buffer_size);
+        ASSERT(static_cast<size_t>(std::distance(buffer_start, current)) < buffer_size);
         *current += view(index, jlev);
       }
     }

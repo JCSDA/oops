@@ -126,9 +126,10 @@ LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
                                         const eckit::Configuration & config, size_t nens,
                                         const State4D_ & xbmean)
   : geometry_(geometry), obspaces_(obspaces), omb_(obspaces_), Yb_(obspaces_, nens),
+    xbmean_(xbmean),
     obsconf_(config, "observations"),
     observersconf_(obsconf_, "observers"),
-    obsloc_(observersconf_, obspaces_), xbmean_(xbmean) {
+    obsloc_(observersconf_, obspaces_) {
   // initialize and print options
   options_.deserialize(config);
   const LocalEnsembleSolverInflationParameters & inflopt = this->options_.infl;

@@ -77,7 +77,7 @@ bool Triangulation::containingTriangleAndBarycentricCoords(
       const int guess_index,
       std::array<int, 3> & vertexIndices,
       std::array<double, 3> & barycentricCoords) const {
-  ASSERT(guess_index >= 0 && guess_index <= num_nodes_ - 1);
+  ASSERT(guess_index >= 0 && guess_index <= static_cast<int>(num_nodes_) - 1);
   ASSERT(oops::is_close_absolute(
       sqrt(coords[0]*coords[0] + coords[1]*coords[1] + coords[2]*coords[2]),
       1.0, 1.0e-9));
