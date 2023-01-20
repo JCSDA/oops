@@ -13,11 +13,11 @@
 
 #include <string>
 
-#include "oops/assimilation/BMatrix.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/HessianMatrix.h"
 #include "oops/assimilation/PCG.h"
+#include "oops/assimilation/PMatrix.h"
 #include "oops/assimilation/PrimalMinimizer.h"
 
 namespace oops {
@@ -30,10 +30,10 @@ namespace oops {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS> class PCGMinimizer : public PrimalMinimizer<MODEL, OBS> {
-  typedef BMatrix<MODEL, OBS>             Bmat_;
   typedef CostFunction<MODEL, OBS>        CostFct_;
   typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
   typedef HessianMatrix<MODEL, OBS>       Hessian_;
+  typedef PMatrix<MODEL, OBS>             Pmat_;
 
  public:
   const std::string classname() const override {return "PCGMinimizer";}
@@ -42,7 +42,7 @@ template<typename MODEL, typename OBS> class PCGMinimizer : public PrimalMinimiz
 
  private:
   double solve(CtrlInc_ &, const CtrlInc_ &,
-               const Hessian_ &, const Bmat_ &,
+               const Hessian_ &, const Pmat_ &,
                const int, const double) override;
 };
 
@@ -50,10 +50,10 @@ template<typename MODEL, typename OBS> class PCGMinimizer : public PrimalMinimiz
 
 template<typename MODEL, typename OBS>
 double PCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, const CtrlInc_ & rhs,
-                                  const Hessian_ & hessian, const Bmat_ & B,
+                                  const Hessian_ & hessian, const Pmat_ & P,
                                   const int ninner, const double gnreduc) {
 // Solve the linear system
-  double reduc = PCG(dx, rhs, hessian, B, ninner, gnreduc);
+  const double reduc = PCG(dx, rhs, hessian, P, ninner, gnreduc);
   return reduc;
 }
 

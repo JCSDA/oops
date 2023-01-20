@@ -16,10 +16,10 @@
 #include <string>
 
 #include "eckit/config/Configuration.h"
-#include "oops/assimilation/BMatrix.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/assimilation/Minimizer.h"
+#include "oops/assimilation/PMatrix.h"
 #include "oops/assimilation/RinvHMatrix.h"
 #include "oops/util/FloatCompare.h"
 #include "oops/util/Logger.h"
@@ -39,9 +39,9 @@ namespace oops {
 template<typename MODEL, typename OBS> class PrimalMinimizer : public Minimizer<MODEL, OBS> {
   typedef CostFunction<MODEL, OBS>        CostFct_;
   typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
-  typedef BMatrix<MODEL, OBS>             Bmat_;
   typedef HessianMatrix<MODEL, OBS>       Hessian_;
   typedef Minimizer<MODEL, OBS>           Minimizer_;
+  typedef PMatrix<MODEL, OBS>             Pmat_;
   typedef RinvHMatrix<MODEL, OBS>         RinvH_;
 
  public:
@@ -52,7 +52,7 @@ template<typename MODEL, typename OBS> class PrimalMinimizer : public Minimizer<
  private:
   CtrlInc_ * doMinimize(const eckit::Configuration &) override;
   virtual double solve(CtrlInc_ &, const CtrlInc_ &,
-                       const Hessian_ &, const Bmat_ &,
+                       const Hessian_ &, const Pmat_ &,
                        const int, const double) = 0;
 
   const CostFct_ & J_;
@@ -73,7 +73,7 @@ PrimalMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
 
 // Define the matrices
   Hessian_ hessian(J_, runOnlineAdjTest);
-  Bmat_ B(J_);
+  Pmat_ P(J_);
 
 // Define minimisation starting point
   CtrlInc_ * dx = new CtrlInc_(J_.jb());
@@ -101,7 +101,7 @@ PrimalMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
   }
 
 // Solve the linear system
-  double reduc = this->solve(*dx, rhs, hessian, B, ninner, gnreduc);
+  double reduc = this->solve(*dx, rhs, hessian, P, ninner, gnreduc);
 
   Log::test() << classname() << ": reduction in residual norm = " << reduc << std::endl;
   Log::info() << classname() << ": reduction in residual norm = " << reduc << std::endl;
