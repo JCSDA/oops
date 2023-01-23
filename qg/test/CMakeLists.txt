@@ -33,7 +33,9 @@ list( APPEND qg_testinput
   testinput/dirac_hyb_field.yaml
   testinput/dirac_hyb_value.yaml
   testinput/dirac_loc_3d.yaml
-  testinput/dirac_loc_4d.yaml
+  testinput/dirac_loc_4d_collective1.yaml
+  testinput/dirac_loc_4d_collective2.yaml
+  testinput/dirac_loc_4d_sequential.yaml
   testinput/dirac_no_loc.yaml
   testinput/eda_3dfgat_1.yaml
   testinput/eda_3dfgat_2.yaml
@@ -660,10 +662,24 @@ ecbuild_add_test( TARGET test_qg_dirac_loc_3d
                   COMMAND  qg_dirac.x
                   TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B )
 
-ecbuild_add_test( TARGET test_qg_dirac_loc_4d
+ecbuild_add_test( TARGET test_qg_dirac_loc_4d_collective1
                   OMP 2
                   MPI 13
-                  ARGS testinput/dirac_loc_4d.yaml
+                  ARGS testinput/dirac_loc_4d_collective1.yaml
+                  COMMAND  qg_dirac.x
+                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B )
+
+ecbuild_add_test( TARGET test_qg_dirac_loc_4d_collective2
+                  OMP 2
+                  MPI 13
+                  ARGS testinput/dirac_loc_4d_collective2.yaml
+                  COMMAND  qg_dirac.x
+                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B )
+
+ecbuild_add_test( TARGET test_qg_dirac_loc_4d_sequential
+                  OMP 2
+                  MPI 13
+                  ARGS testinput/dirac_loc_4d_sequential.yaml
                   COMMAND  qg_dirac.x
                   TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B )
 

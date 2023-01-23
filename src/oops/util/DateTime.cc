@@ -29,7 +29,7 @@ namespace util {
 
 // -----------------------------------------------------------------------------
 
-DateTime::DateTime() : date_(0), time_(0) {
+DateTime::DateTime() : date_(0), time_(-1) {
 }
 
 // -----------------------------------------------------------------------------
@@ -287,7 +287,7 @@ bool DateTime::operator>=(const DateTime& other) const {
 // -----------------------------------------------------------------------------
 
 void DateTime::failIfUnset() const {
-  if (date_ == 0) {
+  if (date_ == 0 && time_ == -1) {
     throw eckit::BadValue("DateTime was default-constructed and never set");
   }
 }

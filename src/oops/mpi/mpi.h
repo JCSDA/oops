@@ -65,6 +65,38 @@ void receive(const eckit::mpi::Comm & comm, SERIALIZABLE & recvobj,
 
 // ------------------------------------------------------------------------------------------------
 
+template <typename SERIALIZABLE>
+void broadcast(const eckit::mpi::Comm & comm, SERIALIZABLE & obj, const size_t root) {
+  util::Timer timer("oops::mpi", "send");
+  size_t sz = obj.serialSize();
+  std::vector<double> buf;
+  if (comm.rank() == root) {
+    obj.serialize(buf);
+  } else {
+    buf.resize(sz);
+  }
+  comm.broadcast(buf, root);
+  size_t ii = 0;
+  obj.deserialize(buf, ii);
+  ASSERT(ii == sz);
+}
+
+// ------------------------------------------------------------------------------------------------
+
+template <typename SERIALIZABLE>
+void allReduceInPlace(const eckit::mpi::Comm & comm, SERIALIZABLE & obj) {
+  util::Timer timer("oops::mpi", "allReduceInPlace");
+  size_t sz = obj.serialSize();
+  std::vector<double> buf;
+  obj.serialize(buf);
+  comm.allReduceInPlace(buf.data(), sz, eckit::mpi::sum());
+  size_t ii = 0;
+  obj.deserialize(buf, ii);
+  ASSERT(ii == sz);
+}
+
+// ------------------------------------------------------------------------------------------------
+
 void gather(const eckit::mpi::Comm & comm, const std::vector<double> & send,
             std::vector<double> & recv, const size_t root);
 

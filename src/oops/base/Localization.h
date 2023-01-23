@@ -14,6 +14,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 
 #include <boost/noncopyable.hpp>
 
@@ -21,6 +22,7 @@
 #include "oops/base/Increment.h"
 #include "oops/generic/LocalizationBase.h"
 #include "oops/mpi/mpi.h"
+#include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -71,6 +73,9 @@ class Localization : public util::Printable,
   std::unique_ptr<util::Timer> timeConstr_;
   /// Pointer to the Localization implementation
   std::unique_ptr<LocBase_> loc_;
+
+  // Communication method (sequential / collective in 1 step / collective in 2 steps)
+  const std::string commMode_;
 };
 
 // -----------------------------------------------------------------------------
@@ -80,8 +85,16 @@ Localization<MODEL>::Localization(const Geometry_ & geometry,
                                   const oops::Variables & incVars,
                                   const eckit::Configuration & conf)
   : timeConstr_(new util::Timer(classname(), "Localization")),
-    loc_(LocalizationFactory<MODEL>::create(geometry, incVars, conf))
+    loc_(),
+    commMode_(conf.getString("communication mode", "sequential"))
 {
+  Log::trace() << "Localization<MODEL>::Localization starting" << std::endl;
+  const eckit::mpi::Comm & comm = geometry.timeComm();
+  int mytime = comm.rank();
+  if (((commMode_ == "sequential" || commMode_ == "collective in 2 steps") && (mytime == 0))
+    || (commMode_ == "collective in 1 step")) {
+    loc_ = std::move(LocalizationFactory<MODEL>::create(geometry, incVars, conf));
+  }
   Log::trace() << "Localization<MODEL>::Localization done" << std::endl;
   timeConstr_.reset();
 }
@@ -107,21 +120,34 @@ void Localization<MODEL>::randomize(Increment_ & dx) const {
   size_t nslots = comm.size();
   int mytime = comm.rank();
 
-  if (mytime > 0) {
-    util::DateTime dt = dx.validTime();   // Save original time value
-    dx.zero();
-    oops::mpi::receive(comm, dx, 0, tag);
-    dx.updateTime(dt - dx.validTime());  // Set time back to original value
-  } else {
-    // Apply 3D localization
-    loc_->randomize(dx);
+  if (commMode_ == "sequential") {
+    if (mytime > 0) {
+      util::DateTime dt = dx.validTime();   // Save original time value
+      dx.zero();
+      oops::mpi::receive(comm, dx, 0, tag);
+      dx.updateTime(dt - dx.validTime());  // Set time back to original value
+    } else {
+      // Apply 3D localization
+      loc_->randomize(dx);
 
-    // Copy result to all timeslots
-    for (size_t jj = 1; jj < nslots; ++jj) {
-      oops::mpi::send(comm, dx, jj, tag);
+      // Copy result to all timeslots
+      for (size_t jj = 1; jj < nslots; ++jj) {
+        oops::mpi::send(comm, dx, jj, tag);
+      }
     }
+    ++tag;
+  } else if (commMode_ == "collective in 1 step" || commMode_ == "collective in 2 steps") {
+    if (mytime == 0) {
+      // Apply 3D localization
+      loc_->randomize(dx);
+    }
+
+    // Broadcast
+    oops::mpi::broadcast(comm, dx, 0);
+  } else {
+    ABORT("wrong communication option: " + commMode_);
   }
-  ++tag;
+
   Log::trace() << "Localization<MODEL>::randomize done" << std::endl;
 }
 
@@ -150,29 +176,82 @@ void Localization<MODEL>::multiply(Increment_ & dx) const {
   //             (Id)                 (x_2)   (Id)                      (L_3D ( x_1 + x_2 + x_3 ))
   //             (Id)                 (x_3)   (Id)                      (L_3D ( x_1 + x_2 + x_3 ))
   // Reference in section 3.4.2. of https://rmets.onlinelibrary.wiley.com/doi/full/10.1002/qj.2325.
-  if (mytime > 0) {
-    util::DateTime dt = dx.validTime();   // Save original time value
-    oops::mpi::send(comm, dx, 0, tag);
-    dx.zero();
-    oops::mpi::receive(comm, dx, 0, tag);
-    dx.updateTime(dt - dx.validTime());  // Set time back to original value
-  } else {
-    // Sum over timeslots
-    for (size_t jj = 1; jj < nslots; ++jj) {
-      Increment_ dxtmp(dx);
-      oops::mpi::receive(comm, dxtmp, jj, tag);
-      dx.axpy(1.0, dxtmp, false);
-    }
 
+  // Save original time value
+  util::DateTime tsub = dx.validTime();
+
+  if (commMode_ == "sequential") {
+    if (mytime > 0) {
+      // Send to root task
+      oops::mpi::send(comm, dx, 0, tag);
+
+      // Set to zero
+      dx.zero();
+
+      // Receive from root task
+      oops::mpi::receive(comm, dx, 0, tag);
+
+      // Set time back to original value
+      dx.updateTime(tsub - dx.validTime());
+    } else {
+      // Sum over timeslots
+      for (size_t jj = 1; jj < nslots; ++jj) {
+        Increment_ dxtmp(dx);
+        oops::mpi::receive(comm, dxtmp, jj, tag);
+        dx.axpy(1.0, dxtmp, false);
+      }
+
+      // Apply 3D localization
+      loc_->multiply(dx);
+
+      // Copy result to all timeslots
+      for (size_t jj = 1; jj < nslots; ++jj) {
+        oops::mpi::send(comm, dx, jj, tag);
+      }
+    }
+    ++tag;
+  } else if (commMode_ == "collective in 1 step") {
     // Apply 3D localization
     loc_->multiply(dx);
 
-    // Copy result to all timeslots
-    for (size_t jj = 1; jj < nslots; ++jj) {
-      oops::mpi::send(comm, dx, jj, tag);
+    if (mytime > 0) {
+      // Set time to 0
+      util::DateTime t0(0, 0);
+      dx.updateTime(t0-dx.validTime());
     }
+
+    // Allreduce
+    oops::mpi::allReduceInPlace(comm, dx);
+
+    if (mytime > 0) {
+      // Set time back to original value
+      dx.updateTime(tsub - dx.validTime());
+    }
+  } else if (commMode_ == "collective in 2 steps") {
+    if (mytime > 0) {
+      // Set time to 0
+      util::DateTime t0(0, 0);
+      dx.updateTime(t0-dx.validTime());
+    }
+
+    // Allreduce (should be a "reduce", but it does not exist in eckit)
+    oops::mpi::allReduceInPlace(comm, dx);
+
+    if (mytime == 0) {
+      // Apply 3D localization
+      loc_->multiply(dx);
+    }
+
+    // Broadcast
+    oops::mpi::broadcast(comm, dx, 0);
+
+    if (mytime > 0) {
+      // Set time back to original value
+      dx.updateTime(tsub - dx.validTime());
+    }
+  } else {
+    ABORT("wrong communication option: " + commMode_);
   }
-  ++tag;
 
   Log::trace() << "Localization<MODEL>::multiply done" << std::endl;
 }
