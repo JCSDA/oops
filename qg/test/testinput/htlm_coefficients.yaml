@@ -28,26 +28,12 @@ htlm ensemble:
     date: '2010-01-01T00:00:00Z'
     filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D.nc
   perturbed members:
-  - date: '2010-01-01T00:00:00Z'
-    filename: Data/forecast_HTLM.ens.1.2010-01-01T00:00:00Z.PT0S.nc
-  - date: '2010-01-01T00:00:00Z'
-    filename: Data/forecast_HTLM.ens.2.2010-01-01T00:00:00Z.PT0S.nc
-  - date: '2010-01-01T00:00:00Z'
-    filename: Data/forecast_HTLM.ens.3.2010-01-01T00:00:00Z.PT0S.nc
-  - date: '2010-01-01T00:00:00Z'
-    filename: Data/forecast_HTLM.ens.4.2010-01-01T00:00:00Z.PT0S.nc
-  - date: '2010-01-01T00:00:00Z'
-    filename: Data/forecast_HTLM.ens.5.2010-01-01T00:00:00Z.PT0S.nc
-  - date: '2010-01-01T00:00:00Z'
-    filename: Data/forecast_HTLM.ens.6.2010-01-01T00:00:00Z.PT0S.nc
-  - date: '2010-01-01T00:00:00Z'
-    filename: Data/forecast_HTLM.ens.7.2010-01-01T00:00:00Z.PT0S.nc
-  - date: '2010-01-01T00:00:00Z'
-    filename: Data/forecast_HTLM.ens.8.2010-01-01T00:00:00Z.PT0S.nc
-  - date: '2010-01-01T00:00:00Z'
-    filename: Data/forecast_HTLM.ens.9.2010-01-01T00:00:00Z.PT0S.nc
-  - date: '2010-01-01T00:00:00Z'
-    filename: Data/forecast_HTLM.ens.10.2010-01-01T00:00:00Z.PT0S.nc
+    members from template:
+      template:
+        date: 2010-01-01T00:00:00Z
+        filename: Data/forecast_HTLM.ens.%mem%.2010-01-01T00:00:00Z.PT0S.nc
+      pattern: %mem%
+      nmembers: 10
 output:
   datadir: Data
   date: '2010-01-01T00:00:00Z'

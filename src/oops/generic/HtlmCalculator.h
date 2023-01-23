@@ -16,6 +16,7 @@
 
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
+#include "oops/base/IncrementEnsemble.h"
 #include "oops/base/Variables.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"
@@ -47,6 +48,7 @@ template <typename MODEL>
 class HtlmCalculator{
   typedef HtlmCalculatorParameters<MODEL>   HtlmCalculatorParameters_;
   typedef Increment<MODEL>                  Increment_;
+  typedef IncrementEnsemble<MODEL>          IncrementEnsemble_;
   typedef Geometry<MODEL>                   Geometry_;
 
  public:
@@ -55,8 +57,8 @@ class HtlmCalculator{
   HtlmCalculator(const HtlmCalculatorParameters_ &, const Variables &, const size_t &,
                                                      const Geometry_ &, const util::DateTime &);
 
-  void calcCoeffs(const std::vector<Increment_> &,
-                 const std::vector<Increment_> &,
+  void calcCoeffs(const IncrementEnsemble_ &,
+                 const IncrementEnsemble_ &,
                  atlas::FieldSet &);
 
  private:
@@ -99,8 +101,8 @@ vars_(vars),
 // Runs the coefficient calculation looping over variables and grid points,
 // also sizes the field set to store coefficient vectors and copies them.
 template<typename MODEL>
-void HtlmCalculator<MODEL>::calcCoeffs(const std::vector<Increment_> & linearEnsemble,
-                                       const std::vector<Increment_> & linearErrorDe,
+void HtlmCalculator<MODEL>::calcCoeffs(const IncrementEnsemble_ & linearEnsemble,
+                                       const IncrementEnsemble_ & linearErrorDe,
                                        atlas::FieldSet & coeffFieldSet) {
   Log::trace() << "HtlmCalculator<MODEL>::coeffCalc() starting" << std::endl;
   // For each variable loop over every grid point and calculate the coefficient vector for each

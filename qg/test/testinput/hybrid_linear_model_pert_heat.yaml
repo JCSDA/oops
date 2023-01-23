@@ -60,26 +60,12 @@ linear model:
         date: '2010-01-01T00:00:00Z'
         filename: Data/forecast_control_pert_heat.fc.2010-01-01T00:00:00Z.PT0S.nc
       perturbed members:
-      - date: '2010-01-01T00:00:00Z'
-        filename: Data/forecast_HTLM_pert_heat.ens.1.2010-01-01T00:00:00Z.PT0S.nc
-      - date: '2010-01-01T00:00:00Z'
-        filename: Data/forecast_HTLM_pert_heat.ens.2.2010-01-01T00:00:00Z.PT0S.nc
-      - date: '2010-01-01T00:00:00Z'
-        filename: Data/forecast_HTLM_pert_heat.ens.3.2010-01-01T00:00:00Z.PT0S.nc
-      - date: '2010-01-01T00:00:00Z'
-        filename: Data/forecast_HTLM_pert_heat.ens.4.2010-01-01T00:00:00Z.PT0S.nc
-      - date: '2010-01-01T00:00:00Z'
-        filename: Data/forecast_HTLM_pert_heat.ens.5.2010-01-01T00:00:00Z.PT0S.nc
-      - date: '2010-01-01T00:00:00Z'
-        filename: Data/forecast_HTLM_pert_heat.ens.6.2010-01-01T00:00:00Z.PT0S.nc
-      - date: '2010-01-01T00:00:00Z'
-        filename: Data/forecast_HTLM_pert_heat.ens.7.2010-01-01T00:00:00Z.PT0S.nc
-      - date: '2010-01-01T00:00:00Z'
-        filename: Data/forecast_HTLM_pert_heat.ens.8.2010-01-01T00:00:00Z.PT0S.nc
-      - date: '2010-01-01T00:00:00Z'
-        filename: Data/forecast_HTLM_pert_heat.ens.9.2010-01-01T00:00:00Z.PT0S.nc
-      - date: '2010-01-01T00:00:00Z'
-        filename: Data/forecast_HTLM_pert_heat.ens.10.2010-01-01T00:00:00Z.PT0S.nc
+        members from template:
+          template:
+            date: 2010-01-01T00:00:00Z
+            filename: Data/forecast_HTLM_pert_heat.ens.%mem%.2010-01-01T00:00:00Z.PT0S.nc
+          pattern: %mem%
+          nmembers: 10
   name: HTLM
 linear model test:
   forecast length: PT24H
