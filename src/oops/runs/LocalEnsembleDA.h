@@ -369,7 +369,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
 
     // save the posterior variance
     if (params.driver.value().savePostVar.value()) {
-      if (params.outputPriorVar.value() == boost::none) {
+      if (params.outputPostVar.value() == boost::none) {
         throw eckit::BadValue("`save posterior variance` is set to true, but "
                               "`output variance posterior` configuration not found.");
       }
