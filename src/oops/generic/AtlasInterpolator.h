@@ -148,15 +148,15 @@ class AtlasInterpolator : public util::Printable,
   /// Set all values in a field to zero.
   static void zeroField(atlas::Field& field);
 
+  /// Get or make an interpolation object using targetLonLats and mask.
+  const atlas::Interpolation& getInterp(const std::vector<bool>& mask) const;
+
  private:
-  void print(std::ostream& os) const;
+  virtual void print(std::ostream& os) const;
 
   // Get the total number of elements to write to the target vector.
   size_t getTotalElements(const Variables& variables,
                           const atlas::FieldSet& inputFields) const;
-
-  // Get or make an interpolation object using targetLonLats and mask.
-  const atlas::Interpolation& getInterp(const std::vector<bool>& mask) const;
 
   // FunctionSpace from Geometry.
   atlas::FunctionSpace sourceFunctionSpace_{};
