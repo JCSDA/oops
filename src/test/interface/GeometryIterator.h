@@ -111,7 +111,7 @@ template <typename MODEL> void testGetSetLocal() {
 template <typename MODEL> class GeometryIterator : public oops::Test {
  public:
   GeometryIterator() {}
-  virtual ~GeometryIterator() {}
+  virtual ~GeometryIterator() {IncrementFixture<MODEL>::reset();}
 
  private:
   std::string testid() const override {return "test::GeometryIterator<" + MODEL::name() + ">";}
