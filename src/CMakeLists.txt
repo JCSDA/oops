@@ -64,6 +64,7 @@ oops/assimilation/MINRES.h
 oops/assimilation/MINRESMinimizer.h
 oops/assimilation/PCG.h
 oops/assimilation/PCGMinimizer.h
+oops/assimilation/PFF.h
 oops/assimilation/PLanczos.h
 oops/assimilation/PLanczosMinimizer.h
 oops/assimilation/PMatrix.h

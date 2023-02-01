@@ -1,0 +1,96 @@
+cost function:
+  cost type: 3D-Var
+  window begin: 2010-01-01T21:00:00Z
+  window length: PT6H
+  geometry:
+    resol: 40
+  analysis variables: [x]
+  background:
+    date: 2010-01-02T00:00:00Z
+    filename: Data/forecast.ens.1.2010-01-01T00:00:00Z.P1D.l95
+  background error:
+    covariance model: L95Error
+    date: 2010-01-02T00:00:00Z
+    length_scale: 1.0
+    standard_deviation: 0.6
+  observations:
+    observers:
+    - obs error:
+        covariance model: diagonal
+        obs perturbations amplitude: 0.2
+      obs space:
+        obsdatain:
+          engine:
+            obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+        obsdataout:
+          engine:
+            obsfile: Data/mem001.eda_3dvar_pff.2010-01-02T00:00:00Z.obt
+      obs operator: {}
+variational:
+  minimizer:
+    algorithm: PFF
+    members: 4
+    standard_deviation: 0.6
+    eps: 0.05
+    minimum learning rate: 1e-5
+    ct check: 7
+    inflation factor: 1.00
+  iterations:
+  - geometry:
+      resol: 40
+    ninner: 1
+    gradient norm reduction: 1e-10
+    test: on
+  - geometry:
+      resol: 40
+    ninner: 1
+    gradient norm reduction: 1e-10
+    test: on
+  - geometry:
+      resol: 40
+    ninner: 1
+    gradient norm reduction: 1e-10
+    test: on
+  - geometry:
+      resol: 40
+    ninner: 1
+    gradient norm reduction: 1e-10
+    test: on
+  - geometry:
+      resol: 40
+    ninner: 1
+    gradient norm reduction: 1e-10
+    test: on
+  - geometry:
+      resol: 40
+    ninner: 1
+    gradient norm reduction: 1e-10
+    test: on
+  - geometry:
+      resol: 40
+    ninner: 1
+    gradient norm reduction: 1e-10
+    test: on
+  - geometry:
+      resol: 40
+    ninner: 1
+    gradient norm reduction: 1e-10
+    test: on
+  - geometry:
+      resol: 40
+    ninner: 1
+    gradient norm reduction: 1e-10
+    test: on
+  - geometry:
+      resol: 40
+    ninner: 1
+    gradient norm reduction: 1e-10
+    test: on
+final:
+  diagnostics:
+    departures: oman
+output:
+  datadir: Data
+  exp: eda_3dvar_pff.mem001
+  frequency: PT6H
+  type: a

@@ -24,6 +24,7 @@
 #include "oops/assimilation/Minimizer.h"
 #include "oops/assimilation/MINRESMinimizer.h"
 #include "oops/assimilation/PCGMinimizer.h"
+#include "oops/assimilation/PFF.h"
 #include "oops/assimilation/PLanczosMinimizer.h"
 #include "oops/assimilation/RPCGMinimizer.h"
 #include "oops/assimilation/RPLanczosMinimizer.h"
@@ -50,6 +51,7 @@ template <typename MODEL, typename OBS> void instantiateMinFactory() {
   static MinMaker<MODEL, OBS, FGMRESMinimizer<MODEL, OBS> >       makerFGMRES_("FGMRES");
   static MinMaker<MODEL, OBS, DRPBlockLanczosMinimizer<MODEL, OBS> >
             makerBlockBLanczos_("DRPBlockLanczos");
+  static MinMaker<MODEL, OBS, PFF<MODEL, OBS> >                   makerPFF_("PFF");
 }
 
 }  // namespace oops
