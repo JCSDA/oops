@@ -107,7 +107,7 @@ template <typename MODEL, typename OBS> void testObsLocalization() {
       }
       std::unique_ptr<ObsLocalization_> obsloc =
         oops::ObsLocalizationFactory<MODEL, OBS>::create(params.obsloc.obslocParameters, obspace);
-      oops::Log::test() << "Testing obs-space localization: " << *obsloc << std::endl;
+      oops::Log::info() << "Testing obs-space localization: " << *obsloc << std::endl;
 
       ObsVector_ locvector(obspace);
       ObsVector_ obsvector(obspace);
@@ -120,8 +120,8 @@ template <typename MODEL, typename OBS> void testObsLocalization() {
         // debug print to help decide which points to specify for reference
         // set OOPS_DEBUG environment variable to -1 to see prints from all MPI tasks
         if (params.printIterator.value()) {
-          oops::Log::debug() << "Iterating over " << std::setprecision(9) << ii << ": "
-                           << *ii << std::endl;
+            oops::Log::debug() << "Iterating over " << std::setprecision(12) << *ii
+                    << " ref[0].distance=" << reference_points[0].distance(*ii)<< std::endl;
         }
         // check if we need to test at this location (if there are any points in the
         // reference point list within 1e-5 of this locationn)
@@ -133,11 +133,7 @@ template <typename MODEL, typename OBS> void testObsLocalization() {
           size_t index = it - reference_points.begin();
           locvector.ones();
           obsloc->computeLocalization(ii, locvector);
-          oops::Log::test() << "Obs localization with geometry iterator: " << ii << ": "
-                            << *ii << std::endl;
-          oops::Log::test() << "Localization values: " << locvector << std::endl;
-          oops::Log::test() << "Local vector nobs and reference: " << locvector.nobs() << ", "
-                            << nobs_local_ref[index] << std::endl;
+          oops::Log::info() << "Localization values: " << locvector << std::endl;
           oops::Log::debug() << "Local vector stats lat,lon,nobs,rms: " <<  *ii << ", "
                              << locvector.nobs() << ", " << locvector.rms() << std::endl;
 
@@ -147,7 +143,7 @@ template <typename MODEL, typename OBS> void testObsLocalization() {
           // apply localization to a vector of ones
           obsvector.ones();
           obsvector *= locvector;
-          oops::Log::test() << "Localization applied to local ObsVector of ones: " <<
+          oops::Log::info() << "Localization applied to local ObsVector of ones: " <<
                                obsvector << std::endl;
           // save localized vector rms to be tested later
           locvector_rms[index] = obsvector.rms();
