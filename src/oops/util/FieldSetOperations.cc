@@ -26,18 +26,37 @@ atlas::FieldSet createRandomFieldSet(const oops::GeometryData & geometryData,
                                      const oops::Variables & vars) {
   oops::Log::trace() << "createRandomFieldSet starting" << std::endl;
 
-  // Get ghost points
-  atlas::Field ghost;
-  if (geometryData.functionSpace().type() == "Spectral") {
-    ghost = geometryData.functionSpace().createField<int>(atlas::option::name("ghost"));
-    auto ghostView = atlas::array::make_view<int, 1>(ghost);
-    for (atlas::idx_t jnode = 0; jnode < ghost.shape(0); ++jnode) {
-      ghostView(jnode) = 0;
-    }
-  } else {
-    ghost = geometryData.functionSpace().ghost();
+  // Local ghost points
+  atlas::Field localGhost;
+  if (geometryData.functionSpace().type() != "Spectral") {
+    localGhost = geometryData.functionSpace().ghost();
   }
-  auto ghostView = atlas::array::make_view<int, 1>(ghost);
+
+  // Global ghost points
+  atlas::Field globalGhost;
+  if (geometryData.functionSpace().type() != "PointCloud") {
+    globalGhost = geometryData.functionSpace().createField<int>(atlas::option::name("ghost")
+     | atlas::option::global());
+
+    // Gather masks on main processor
+    if (geometryData.functionSpace().type() == "StructuredColumns") {
+      // StructuredColumns
+      atlas::functionspace::StructuredColumns fs(geometryData.functionSpace());
+      fs.gather(localGhost, globalGhost);
+    } else if (geometryData.functionSpace().type() == "NodeColumns") {
+      // NodeColumns
+      atlas::functionspace::CubedSphereNodeColumns fs(geometryData.functionSpace());
+      fs.gather(localGhost, globalGhost);
+      // TODO(??): have to assume the NodeColumns is CubedSphere here, cannot differentiate with
+      // other NodeColumns from what is in geometryData.
+      // atlas::functionspace::NodeColumns fs(geometryData.functionSpace());
+      // fs.gather(localGhost, globalGhost);
+    } else if (geometryData.functionSpace().type() == "Spectral") {
+      // Not needed
+    } else {
+      ABORT(geometryData.functionSpace().type() + " function space not supported yet");
+    }
+  }
 
   // Create FieldSet
   atlas::FieldSet fset;
@@ -66,69 +85,139 @@ atlas::FieldSet createRandomFieldSet(const oops::GeometryData & geometryData,
           }
         }
       } else {
+        auto localGhostView = atlas::array::make_view<int, 1>(localGhost);
         for (atlas::idx_t jnode = 0; jnode < field.shape(0); ++jnode) {
-          if (ghostView(jnode) == 0) n += field.shape(1);
+          if (localGhostView(jnode) == 0) n += field.shape(1);
         }
       }
     }
 
-    // Generate random vector
-    util::NormalDistribution<double> rand_vec(n, 0.0, 1.0, 1);
+    // Gather local sizes
+    std::vector<size_t> nlocs(geometryData.comm().size());
+    geometryData.comm().gather(n, nlocs, 0);
 
-    // Populate with random numbers
-    n = 0;
-    if (field.rank() == 2) {
-      auto view = atlas::array::make_view<double, 2>(field);
-      if (geometryData.functionSpace().type() == "Spectral") {
-        atlas::functionspace::Spectral fs(geometryData.functionSpace());
-        const atlas::idx_t N = fs.truncation();
-        const auto zonal_wavenumbers = fs.zonal_wavenumbers();
-        const atlas::idx_t nb_zonal_wavenumbers = zonal_wavenumbers.size();
-        int jnode = 0;
-        for (int jm=0; jm < nb_zonal_wavenumbers; ++jm) {
-          const atlas::idx_t m1 = zonal_wavenumbers(jm);
-          for (std::size_t n1 = m1; n1 <= static_cast<std::size_t>(N); ++n1) {
-            if (m1 == 0) {
-              // Real part only
-              for (atlas::idx_t jlevel = 0; jlevel < field.shape(1); ++jlevel) {
-                view(jnode, jlevel) = rand_vec[n];
-                ++n;
-              }
-              ++jnode;
+    // Get global size
+    size_t nglb = 0;
+    if (geometryData.comm().rank() == 0) {
+      for (const size_t & nloc : nlocs)
+        nglb += nloc;
+    }
 
-              // No imaginary part
-              for (atlas::idx_t jlevel = 0; jlevel < field.shape(1); ++jlevel) {
-                view(jnode, jlevel) = 0.0;
-              }
-              ++jnode;
-            } else {
-              // Real part
-              for (atlas::idx_t jlevel = 0; jlevel < field.shape(1); ++jlevel) {
-                view(jnode, jlevel) = rand_vec[n] / std::sqrt(2.0);
-                ++n;
-              }
-              ++jnode;
+    // Global field
+    atlas::Field globalField = geometryData.functionSpace().createField<double>(
+      atlas::option::name(vars.variables()[jvar]) | atlas::option::levels(variableSizes[jvar])
+      | atlas::option::global());
 
-              // Imaginary part
-              for (atlas::idx_t jlevel = 0; jlevel < field.shape(1); ++jlevel) {
-                view(jnode, jlevel) = rand_vec[n] / std::sqrt(2.0);
-                ++n;
+    std::vector<double> rand_vec_glb(nglb);
+    if (geometryData.comm().rank() == 0) {
+      // Generate global random vector
+      util::NormalDistribution<double> dist(nglb, 0.0, 1.0, 1);
+      for (size_t i = 0; i < nglb; ++i)
+        rand_vec_glb[i] = dist[i];
+
+      if (geometryData.functionSpace().type() != "PointCloud") {
+        // Copy to field
+        n = 0;
+        if (globalField.rank() == 2) {
+          auto view = atlas::array::make_view<double, 2>(globalField);
+          if (geometryData.functionSpace().type() == "Spectral") {
+            atlas::functionspace::Spectral fs(geometryData.functionSpace());
+            const atlas::idx_t N = fs.truncation();
+            int jnode = 0;
+            for (int jm=0; jm <= N; ++jm) {
+              const atlas::idx_t m1 = jm;
+              for (std::size_t n1 = m1; n1 <= static_cast<std::size_t>(N); ++n1) {
+                if (m1 == 0) {
+                  // Real part only
+                  for (atlas::idx_t jlevel = 0; jlevel < globalField.shape(1); ++jlevel) {
+                    view(jnode, jlevel) = dist[n];
+                    ++n;
+                  }
+                  ++jnode;
+
+                  // No imaginary part
+                  for (atlas::idx_t jlevel = 0; jlevel < globalField.shape(1); ++jlevel) {
+                    view(jnode, jlevel) = 0.0;
+                  }
+                  ++jnode;
+                } else {
+                  // Real part
+                  for (atlas::idx_t jlevel = 0; jlevel < globalField.shape(1); ++jlevel) {
+                    view(jnode, jlevel) = dist[n] * M_SQRT1_2;
+                    ++n;
+                  }
+                  ++jnode;
+
+                  // Imaginary part
+                  for (atlas::idx_t jlevel = 0; jlevel < globalField.shape(1); ++jlevel) {
+                    view(jnode, jlevel) = dist[n] * M_SQRT1_2;
+                    ++n;
+                  }
+                  ++jnode;
+                }
               }
-              ++jnode;
+            }
+          } else {
+            auto globalGhostView = atlas::array::make_view<int, 1>(globalGhost);
+            for (atlas::idx_t jnode = 0; jnode < globalField.shape(0); ++jnode) {
+              if (globalGhostView(jnode) == 0) {
+                for (atlas::idx_t jlevel = 0; jlevel < globalField.shape(1); ++jlevel) {
+                  view(jnode, jlevel) = dist[n];
+                  ++n;
+                }
+              }
             }
           }
         }
-      } else {
+      }
+    }
+
+    if (geometryData.functionSpace().type() == "PointCloud") {
+      // Scatter random vector
+      std::vector<int> sendcounts(geometryData.comm().size());
+      std::vector<int> displs(geometryData.comm().size());
+      if (geometryData.comm().rank() == 0) {
+        int sum = 0;
+        for (size_t i = 0; i < geometryData.comm().size(); ++i) {
+          sendcounts[i] = nlocs[i];
+          displs[i] = sum;
+          sum += sendcounts[i];
+        }
+      }
+      std::vector<double> rand_vec_loc(n);
+      geometryData.comm().scatterv(rand_vec_glb.cbegin(), rand_vec_glb.cend(), sendcounts, displs,
+      rand_vec_loc.begin(), rand_vec_loc.end(), 0);
+
+      // Populate with random numbers
+      n = 0;
+      if (field.rank() == 2) {
+        auto view = atlas::array::make_view<double, 2>(field);
         for (atlas::idx_t jnode = 0; jnode < field.shape(0); ++jnode) {
           for (atlas::idx_t jlevel = 0; jlevel < field.shape(1); ++jlevel) {
-            if (ghostView(jnode) == 0) {
-              view(jnode, jlevel) = rand_vec[n];
-              ++n;
-            } else {
-              view(jnode, jlevel) = 0.0;
-            }
+            view(jnode, jlevel) = rand_vec_loc[n];
+            ++n;
           }
         }
+      }
+    } else {
+      // Scatter global field
+      if (geometryData.functionSpace().type() == "StructuredColumns") {
+        // StructuredColumns
+        atlas::functionspace::StructuredColumns fs(geometryData.functionSpace());
+        fs.scatter(globalField, field);
+      } else if (geometryData.functionSpace().type() == "NodeColumns") {
+        // CubedSphere
+        atlas::functionspace::CubedSphereNodeColumns fs(geometryData.functionSpace());
+        fs.scatter(globalField, field);
+        // TODO(??): have to assume the NodeColumns is CubedSphere here, cannot differentiate with
+        // other NodeColumns from what is in geometryData.
+        // atlas::functionspace::NodeColumns fs(geometryData.functionSpace());
+        // fs.scatter(globalField, field);
+      } else if (geometryData.functionSpace().type() == "Spectral") {
+        atlas::functionspace::Spectral fs(geometryData.functionSpace());
+        fs.scatter(globalField, field);
+      } else {
+        ABORT(geometryData.functionSpace().type() + " function space not supported yet");
       }
     }
 
