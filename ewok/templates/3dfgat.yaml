@@ -11,7 +11,7 @@ cost function:
     $(GEOMETRY)
   model:
     $(MODEL)
-  analysis variables: $(an_variables)
+  analysis variables: $(AN_VARIABLES)
   variable change:
     $(AN_VARCHANGE)
   background:

@@ -9,7 +9,7 @@ cost function:
   window length: $(window_length)
   geometry:
     $(GEOMETRY)
-  analysis variables: $(an_variables)
+  analysis variables: $(AN_VARIABLES)
   background:
     $(BACKGROUND)
   background error:
