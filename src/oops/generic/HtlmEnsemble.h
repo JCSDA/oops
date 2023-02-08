@@ -16,6 +16,7 @@
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/LinearModel.h"
 #include "oops/base/Model.h"
+#include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State.h"
 #include "oops/base/StateEnsemble.h"
@@ -29,8 +30,45 @@
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/RequiredParameter.h"
 
-
 namespace oops {
+
+template <typename MODEL>
+class StatePerturbationParameters : public Parameters {
+  OOPS_CONCRETE_PARAMETERS(StatePerturbationParameters, Parameters)
+  typedef ModelSpaceCovarianceParametersWrapper<MODEL> CovarianceParameters_;
+
+ public:
+  RequiredParameter<CovarianceParameters_> backgroundError{"background error", this};
+  RequiredParameter<Variables> variables{"variables", this};
+};
+
+template<typename MODEL>
+class NonLinearEnsembleParameters : public Parameters {
+  OOPS_CONCRETE_PARAMETERS(NonLinearEnsembleParameters, Parameters)
+  typedef StatePerturbationParameters<MODEL>    StatePerturbationParameters_;
+  typedef StateEnsembleParameters<MODEL>        StateEnsembleParameters_;
+
+ public:
+    // Configurations of all perturbed members if reading
+    OptionalParameter<StateEnsembleParameters_> statesReadIn{"perturbed members",
+                                 "read perturbed members from disk", this};
+    // Parameters to generate initial ensemble if not reading in
+    OptionalParameter<StatePerturbationParameters_>
+    statesPerturbation{"ensemble perturbation", "generate ensemble from error covariance", this};
+
+    void check() const;
+};
+
+template <typename MODEL>
+void NonLinearEnsembleParameters<MODEL>::check() const
+{
+  if (statesReadIn.value() == boost::none && statesPerturbation.value() == boost::none) {
+    ABORT("HtlmEnsembleParameters: both initial ensemble and ensemble perturbation are missing");
+  }
+  if (statesReadIn.value() != boost::none && statesPerturbation.value() != boost::none) {
+    ABORT("HtlmEnsembleParameters: both initial ensemble and ensemble perturbation are present");
+  }
+}
 
 // parameters for forwarding the ensemble.
 template <typename MODEL>
@@ -40,6 +78,8 @@ class HtlmEnsembleParameters : public Parameters {
   typedef StateEnsembleParameters<MODEL>        StateEnsembleParameters_;
   typedef ModelParametersWrapper<MODEL>         ModelParameters_;
   typedef typename Geometry<MODEL>::Parameters_ GeometryParameters_;
+  typedef NonLinearEnsembleParameters<MODEL>    NlEnsParameters_;
+
 
  public:
   // Nonlinear forecast model.
@@ -56,11 +96,10 @@ class HtlmEnsembleParameters : public Parameters {
     eckit::LocalConfiguration(), this};
   // Configurations of the control member.
   RequiredParameter<StateParameters_> control{"control member", this};
-  // Configurations of all perturbed members.
-  RequiredParameter<StateEnsembleParameters_>
-        perturbedMembers{"perturbed members", this};
   // Number of perturbed ensemble members
   RequiredParameter<size_t> ensembleSize{"ensemble size", this};
+  // Nonlinear ensemble initalization parameters
+  RequiredParameter<NlEnsParameters_> nlEnsemble{"non linear ensemble", this};
 };
 
 // class declarations for htlmensemble
@@ -76,6 +115,9 @@ class HtlmEnsemble{
   typedef Increment<MODEL>                              Increment_;
   typedef IncrementEnsemble<MODEL>                      IncrementEnsemble_;
   typedef HtlmEnsembleParameters<MODEL>                 HtlmEnsembleParameters_;
+  typedef ModelSpaceCovarianceBase<MODEL>               CovarianceBase_;
+  typedef CovarianceFactory<MODEL>                      CovarianceFactory_;
+  typedef ModelSpaceCovarianceParametersBase<MODEL>     CovarianceParametersBase_;
 
  public:
   static const std::string classname() {return "oops::HtlmEnsemble";}
@@ -93,7 +135,7 @@ class HtlmEnsemble{
   void step(const util::Duration &);
 
 
-// Needed accessors for passing info to calculator
+  // Needed accessors for passing info to calculator
   IncrementEnsemble_ & getLinearEns() {return linearEnsemble_;}
   IncrementEnsemble_ & getLinearErrDe() {return linearErrorDe_;}
 
@@ -103,23 +145,23 @@ class HtlmEnsemble{
   const Geometry_ stateGeometry_;
   const Geometry_ & incrementGeometry_;
 
-//  Model
+  //  Model
   const Model_ model_;
-// ptr to linear model
+  // ptr to linear model
   LinearModel_ simpleLinearModel_;
-//  control member IC
+  //  control member IC
   State_ controlState_;
-//  Augmented state
+  //  Augmented state
   ModelAux_ moderr_;
-// Augmented increment
+  // Augmented increment
   ModelAuxIncrement_ modauxinc_;
-//  perturbed member ICs
+  //  perturbed member ICs
   StateEnsemble_ perturbedStates_;
-//  Linear Ensemble
+  //  Linear Ensemble
   IncrementEnsemble_ linearEnsemble_;
-// Nonlinear Differences
+  // Nonlinear Differences
   IncrementEnsemble_ nonLinearDifferences_;
-// linear error (dE in the HTLM paper)
+  // linear error (dE in the HTLM paper)
   IncrementEnsemble_ linearErrorDe_;
 };
 
@@ -136,7 +178,9 @@ HtlmEnsemble<MODEL>::HtlmEnsemble(const HtlmEnsembleParameters_
       controlState_(stateGeometry_, params_.control.value()),
       moderr_(stateGeometry_, params_.modelAuxControl.value()),
       modauxinc_(incrementGeometry_, params_.modelAuxIncrement.value()),
-      perturbedStates_(stateGeometry_, params_.perturbedMembers.value()),
+      perturbedStates_(params_.nlEnsemble.value().statesReadIn.value() != boost::none ?
+             StateEnsemble_(stateGeometry_, *params_.nlEnsemble.value().statesReadIn.value()) :
+                                                   StateEnsemble_(controlState_, ensembleSize_)),
       linearEnsemble_(incrementGeometry_, simpleLinearModel_.variables(),
                       controlState_.validTime(), ensembleSize_),
       nonLinearDifferences_(incrementGeometry_, simpleLinearModel_.variables(),
@@ -144,11 +188,34 @@ HtlmEnsemble<MODEL>::HtlmEnsemble(const HtlmEnsembleParameters_
       linearErrorDe_(nonLinearDifferences_) {
     Log::trace() << "HtlmEnsemble<MODEL>::HtlmEnsemble() starting"
                  << std::endl;
+    // Check ensemble initilization params
+    params_.nlEnsemble.value().check();
 
-    //  Set up linearEnsemble_
-    for (size_t m = 0; m < ensembleSize_; ++m) {
-        linearEnsemble_[m].diff(controlState_, perturbedStates_[m]);
+    // If chosesn, initialize nonlinear ensemble from background error.
+    if (params_.nlEnsemble.value().statesPerturbation.value() != boost::none) {
+      // set up variables to perturb
+      const Variables vars_(params_.nlEnsemble.value().statesPerturbation.value()->variables);
+      // set up Bmatrix
+      const CovarianceParametersBase_ &covarParams =
+      params_.nlEnsemble.value().statesPerturbation.value()->
+                           backgroundError.value().covarianceParameters;
+
+      std::unique_ptr<CovarianceBase_> Bmat(CovarianceFactory_::create(
+                           stateGeometry_, vars_, covarParams, controlState_, controlState_));
+    //  Generate perturbed states
+    Increment_ dx(stateGeometry_, vars_, controlState_.validTime());
+      for (size_t jm = 0; jm < ensembleSize_; ++jm) {
+        //  Generate linear ensemble increments
+        Bmat->randomize(dx);
+        //  Add to control state
+        perturbedStates_[jm] += dx;
+      }
     }
+
+      //  Set up linearEnsemble_
+      for (size_t m = 0; m < ensembleSize_; ++m) {
+          linearEnsemble_[m].diff(controlState_, perturbedStates_[m]);
+      }
 
     Log::trace() << "HtlmEnsemble<MODEL>::HtlmEnsemble() done" << std::endl;
 }

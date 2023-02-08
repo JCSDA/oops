@@ -2,11 +2,12 @@ cost function:
   cost type: 4D-Var
   window begin: 2010-01-01T00:00:00Z
   window length: PT24H
-  analysis variables: [x]
+  analysis variables: [x,q]
   geometry:
     nx: 40
     ny: 20
     depths: [4500.0, 5500.0]
+    perturbed heating: 0.1
   model:
     name: QG
     tstep: PT15M
@@ -28,7 +29,7 @@ cost function:
       obs space:
         obsdatain:
           engine:
-            obsfile: Data/truth.obs4d_24h.nc
+            obsfile: Data/truth.obs4d_24h_pert_heat.nc
         obsdataout:
           engine:
             obsfile: Data/4dvar_dripcg.obs4d_24h.nc
@@ -40,7 +41,7 @@ cost function:
       obs space:
         obsdatain:
           engine:
-            obsfile: Data/truth.obs4d_24h.nc
+            obsfile: Data/truth.obs4d_24h_pert_heat.nc
         obsdataout:
           engine:
             obsfile: Data/4dvar_dripcg.obs4d_24h.nc
@@ -52,7 +53,7 @@ cost function:
       obs space:
         obsdatain:
           engine:
-            obsfile: Data/truth.obs4d_24h.nc
+            obsfile: Data/truth.obs4d_24h_pert_heat.nc
         obsdataout:
           engine:
             obsfile: Data/4dvar_dripcg.obs4d_24h.nc
@@ -73,6 +74,7 @@ variational:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
+      perturbed heating: 0.1
     linear model:
       simplified linear model:
         trajectory:
@@ -81,9 +83,9 @@ variational:
         variable change: Identity
         name: QgTLM
       tstep: PT1H
-      increment variables: [x]
+      increment variables: [x,q]
       htlm coefficient calc:
-        training variables: [x]
+        training variables: [q]
         window length: PT24H
         window begin: 2010-01-01T00:00:00Z
         htlm calculator:
@@ -101,21 +103,25 @@ variational:
             tstep: PT1H
             variable change: Identity
             name: QgTLM
+            tlm variables: [x,q]
           state geometry:
             nx: 40
             ny: 20
             depths: [4500.0, 5500.0]
+            perturbed heating: 0.1
           control member:
             date: '2010-01-01T00:00:00Z'
-            filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D.nc
+            filename: Data/forecast_control_pert_heat.fc.2010-01-01T00:00:00Z.PT0S.nc
           non linear ensemble:
-            perturbed members:
-              members from template:
-                template:
-                  date: 2010-01-01T00:00:00Z
-                  filename: Data/forecast_HTLM.ens.%mem%.2010-01-01T00:00:00Z.PT0S.nc
-                pattern: %mem%
-                nmembers: 10
+            ensemble perturbation:
+              background error:
+                covariance model: QgError
+                horizontal_length_scale: 3.0e5
+                maximum_condition_number: 1.0e6
+                standard_deviation: 8.0e6
+                vertical_length_scale: 2787.0
+                randomization_seed: 7
+              variables: [x]
       name: HTLM
     diagnostics:
       departures: ombg
@@ -125,6 +131,7 @@ variational:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
+      perturbed heating: 0.1
     linear model:
       simplified linear model:
         trajectory:
@@ -133,9 +140,9 @@ variational:
         variable change: Identity
         name: QgTLM
       tstep: PT1H
-      increment variables: [x]
+      increment variables: [x,q]
       htlm coefficient calc:
-        training variables: [x]
+        training variables: [q]
         window length: PT24H
         window begin: 2010-01-01T00:00:00Z
         htlm calculator:
@@ -153,21 +160,25 @@ variational:
             tstep: PT1H
             variable change: Identity
             name: QgTLM
+            tlm variables: [x,q]
           state geometry:
             nx: 40
             ny: 20
             depths: [4500.0, 5500.0]
+            perturbed heating: 0.1
           control member:
             date: '2010-01-01T00:00:00Z'
-            filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D.nc
+            filename: Data/forecast_control_pert_heat.fc.2010-01-01T00:00:00Z.PT0S.nc
           non linear ensemble:
-            perturbed members:
-              members from template:
-                template:
-                  date: 2010-01-01T00:00:00Z
-                  filename: Data/forecast_HTLM.ens.%mem%.2010-01-01T00:00:00Z.PT0S.nc
-                pattern: %mem%
-                nmembers: 10
+            ensemble perturbation:
+              background error:
+                covariance model: QgError
+                horizontal_length_scale: 3.0e5
+                maximum_condition_number: 1.0e6
+                standard_deviation: 8.0e6
+                vertical_length_scale: 2787.0
+                randomization_seed: 7
+              variables: [x]
       name: HTLM
 final:
   diagnostics:
@@ -176,10 +187,10 @@ final:
     frequency: PT1H
 output:
   datadir: Data
-  exp: 4dvar_HTLM
+  exp: 4dvar_HTLM_gen_ens
   first: PT0S
   frequency: PT6H
   type: an
 
 test:
-  reference filename: testoutput/4dvar_htlm_qgtlm_dripcg.test
+  reference filename: testoutput/4dvar_htlm_qgtlm_dripcg_pert_heat.test

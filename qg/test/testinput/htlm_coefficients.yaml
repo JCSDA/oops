@@ -27,13 +27,14 @@ htlm ensemble:
   control member:
     date: '2010-01-01T00:00:00Z'
     filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D.nc
-  perturbed members:
-    members from template:
-      template:
-        date: 2010-01-01T00:00:00Z
-        filename: Data/forecast_HTLM.ens.%mem%.2010-01-01T00:00:00Z.PT0S.nc
-      pattern: %mem%
-      nmembers: 10
+  non linear ensemble:
+    perturbed members:
+      members from template:
+        template:
+          date: 2010-01-01T00:00:00Z
+          filename: Data/forecast_HTLM_pert_heat.ens.%mem%.2010-01-01T00:00:00Z.PT0S.nc
+        pattern: %mem%
+        nmembers: 10
 output:
   datadir: Data
   date: '2010-01-01T00:00:00Z'

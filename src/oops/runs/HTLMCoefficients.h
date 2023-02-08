@@ -17,6 +17,7 @@
 #include "eckit/mpi/Comm.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
+#include "oops/base/instantiateCovarFactory.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/HtlmCalculator.h"
 #include "oops/generic/HtlmEnsemble.h"
@@ -84,8 +85,9 @@ template <typename MODEL> class HTLMCoefficients : public Application {
 
     int execute(const eckit::Configuration & fullConfig, bool validate) const override {
         // Calculate coefficients:
-        // Deserialize parameters
         HTLMCoefficientsParameters_ params;
+        instantiateCovarFactory<MODEL>();
+        // Deserialize parameters
         if (validate) params.validate(fullConfig);
         params.deserialize(fullConfig);
         // Set up linear model geometry and time step

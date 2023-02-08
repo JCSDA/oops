@@ -2,10 +2,11 @@ geometry:
   nx: 40
   ny: 20
   depths: [4500.0, 5500.0]
+  perturbed heating: 0.1
 
 initial condition:
   date: 2010-01-01T00:00:00Z
-  filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D.nc
+  filename: Data/forecast_control_pert_heat.fc.2010-01-01T00:00:00Z.PT0S.nc
 
 background error:
   covariance model: QgError
@@ -54,17 +55,20 @@ linear model:
         nx: 40
         ny: 20
         depths: [4500.0, 5500.0]
+        perturbed heating: 0.1
       control member:
         date: '2010-01-01T00:00:00Z'
-        filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D.nc
+        filename: Data/forecast_control_pert_heat.fc.2010-01-01T00:00:00Z.PT0S.nc
       non linear ensemble:
-        perturbed members:
-          members from template:
-            template:
-              date: 2010-01-01T00:00:00Z
-              filename: Data/forecast_HTLM.ens.%mem%.2010-01-01T00:00:00Z.PT0S.nc
-            pattern: %mem%
-            nmembers: 10
+        ensemble perturbation:
+          background error:
+            covariance model: QgError
+            horizontal_length_scale: 3.0e5
+            maximum_condition_number: 1.0e6
+            standard_deviation: 8.0e6
+            vertical_length_scale: 2787.0
+            randomization_seed: 7
+          variables: [x]
   name: HTLM
 linear model test:
   forecast length: PT24H

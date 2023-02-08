@@ -109,13 +109,15 @@ variational:
             date: '2010-01-01T00:00:00Z'
             filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D.nc
           non linear ensemble:
-            perturbed members:
-              members from template:
-                template:
-                  date: 2010-01-01T00:00:00Z
-                  filename: Data/forecast_HTLM.ens.%mem%.2010-01-01T00:00:00Z.PT0S.nc
-                pattern: %mem%
-                nmembers: 10
+            ensemble perturbation:
+              background error:
+                covariance model: QgError
+                horizontal_length_scale: 3.0e5
+                maximum_condition_number: 1.0e6
+                standard_deviation: 8.0e6
+                vertical_length_scale: 2787.0
+                randomization_seed: 7
+              variables: [x]
       name: HTLM
     diagnostics:
       departures: ombg
@@ -161,13 +163,15 @@ variational:
             date: '2010-01-01T00:00:00Z'
             filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D.nc
           non linear ensemble:
-            perturbed members:
-              members from template:
-                template:
-                  date: 2010-01-01T00:00:00Z
-                  filename: Data/forecast_HTLM.ens.%mem%.2010-01-01T00:00:00Z.PT0S.nc
-                pattern: %mem%
-                nmembers: 10
+            ensemble perturbation:
+              background error:
+                covariance model: QgError
+                horizontal_length_scale: 3.0e5
+                maximum_condition_number: 1.0e6
+                standard_deviation: 8.0e6
+                vertical_length_scale: 2787.0
+                randomization_seed: 7
+              variables: [x]
       name: HTLM
 final:
   diagnostics:
@@ -176,7 +180,7 @@ final:
     frequency: PT1H
 output:
   datadir: Data
-  exp: 4dvar_HTLM
+  exp: 4dvar_HTLM_gen_ens
   first: PT0S
   frequency: PT6H
   type: an

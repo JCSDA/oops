@@ -105,7 +105,7 @@ phases:
         && sed -i 's/oops-bundle/oops-bundle\/oops/' DartConfiguration.tcl
         && sed -i 's/nonroot/nonroot\/oops/' DartConfiguration.tcl
         && cat DartConfiguration.tcl
-        && make -j4"
+        && make -j3"
 
       - if [ "$CODEBUILD_BUILD_SUCCEEDING" = "1" ];
         then export BUILD_STATUS="1";

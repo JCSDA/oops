@@ -112,13 +112,14 @@ variational:
           control member:
             date: '2010-01-01T00:00:00Z'
             filename: Data/forecast_control_pert_heat.fc.2010-01-01T00:00:00Z.PT0S.nc
-          perturbed members:
-            members from template:
-              template:
-                date: 2010-01-01T00:00:00Z
-                filename: Data/forecast_HTLM_pert_heat.ens.%mem%.2010-01-01T00:00:00Z.PT0S.nc
-              pattern: %mem%
-              nmembers: 10
+          non linear ensemble:
+            perturbed members:
+              members from template:
+                template:
+                  date: 2010-01-01T00:00:00Z
+                  filename: Data/forecast_HTLM_pert_heat.ens.%mem%.2010-01-01T00:00:00Z.PT0S.nc
+                pattern: %mem%
+                nmembers: 10
       name: HTLM
     diagnostics:
       departures: ombg
@@ -166,13 +167,14 @@ variational:
           control member:
             date: '2010-01-01T00:00:00Z'
             filename: Data/forecast_control_pert_heat.fc.2010-01-01T00:00:00Z.PT0S.nc
-          perturbed members:
-            members from template:
-              template:
-                date: 2010-01-01T00:00:00Z
-                filename: Data/forecast_HTLM_pert_heat.ens.%mem%.2010-01-01T00:00:00Z.PT0S.nc
-              pattern: %mem%
-              nmembers: 10
+          non linear ensemble:
+            perturbed members:
+              members from template:
+                template:
+                  date: 2010-01-01T00:00:00Z
+                  filename: Data/forecast_HTLM_pert_heat.ens.%mem%.2010-01-01T00:00:00Z.PT0S.nc
+                pattern: %mem%
+                nmembers: 10
       name: HTLM
 final:
   diagnostics:

@@ -143,6 +143,8 @@ template<typename MODEL> class StateEnsemble {
   /// Create ensemble of states
   StateEnsemble(const Geometry_ &,
                 const StateEnsembleParameters_ &);
+  /// Create n copies of a state in an ensemble
+  StateEnsemble(const State_ &, const size_t &);
 
   /// Calculate ensemble mean
   State_ mean() const;
@@ -175,6 +177,16 @@ StateEnsemble<MODEL>::StateEnsemble(const Geometry_ & resol,
   // Loop over all ensemble members
   for (size_t jj = 0; jj < nens; ++jj) {
     states_.emplace_back(State_(resol, params.getStateParameters(jj)));
+  }
+  Log::trace() << "StateEnsemble:contructor done" << std::endl;
+}
+
+template<typename MODEL>
+StateEnsemble<MODEL>::StateEnsemble(const State_ & copyState_, const size_t & ensSize_)
+  : states_() {
+    states_.reserve(ensSize_);
+    for (size_t jj = 0; jj < ensSize_; ++jj) {
+    states_.emplace_back(State_(copyState_));
   }
   Log::trace() << "StateEnsemble:contructor done" << std::endl;
 }
