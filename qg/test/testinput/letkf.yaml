@@ -20,6 +20,8 @@ background:
     pattern: %mem%
     nmembers: 5
 
+increment variables: [x]
+
 observations:
   observers:
   - obs operator:

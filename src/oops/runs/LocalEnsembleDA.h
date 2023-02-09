@@ -20,6 +20,7 @@
 #include "oops/base/Departures.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
+#include "oops/base/Increment4D.h"
 #include "oops/base/IncrementEnsemble4D.h"
 #include "oops/base/instantiateObsFilterFactory.h"
 #include "oops/base/Observations.h"
@@ -116,6 +117,9 @@ class LocalEnsembleDAParameters : public ApplicationParameters {
   RequiredParameter<eckit::LocalConfiguration> background{"background",
           "ensemble of backgrounds", this};
 
+  OptionalParameter<Variables> incvars{"increment variables",
+          "analysis increment variables", this};
+
   RequiredParameter<eckit::LocalConfiguration> localEnsDA{"local ensemble DA",
           "local ensemble DA solver and its options", this};
 
@@ -157,6 +161,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
   typedef GeometryIterator<MODEL>          GeometryIterator_;
   typedef IncrementEnsemble4D<MODEL>       IncrementEnsemble4D_;
   typedef Increment<MODEL>                 Increment_;
+  typedef Increment4D<MODEL>               Increment4D_;
   typedef LocalEnsembleSolver<MODEL, OBS>  LocalSolver_;
   typedef ObsSpaces<OBS>                   ObsSpaces_;
   typedef Observations<OBS>                Observations_;
@@ -256,10 +261,16 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     }
 
     // calculate background ensemble perturbations
-    IncrementEnsemble4D_ bkg_pert(ens_xx, bkg_mean, statevars);
+    Variables incvars;
+    if (params.incvars.value() == boost::none) {
+      incvars += statevars;
+    } else {
+      incvars += *params.incvars.value();
+    }
+    IncrementEnsemble4D_ bkg_pert(ens_xx, bkg_mean, incvars);
 
     // initialize empty analysis perturbations
-    IncrementEnsemble4D_ ana_pert(geometry, statevars, ens_xx[0].validTimes(), bkg_pert.size());
+    IncrementEnsemble4D_ ana_pert(geometry, incvars, ens_xx[0].validTimes(), bkg_pert.size());
 
     // run the solver at each gridpoint
     Log::info() << "Beginning core local solver..." << std::endl;
@@ -271,9 +282,20 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     oops::mpi::world().barrier();
 
     // calculate final analysis states
-    for (size_t jj = 0; jj < nens; ++jj) {
-      ens_xx[jj] = bkg_mean;
-      ens_xx[jj] += ana_pert[jj];
+    if (incvars == statevars) {
+      for (size_t jj = 0; jj < nens; ++jj) {
+        ens_xx[jj] = bkg_mean;
+        ens_xx[jj] += ana_pert[jj];
+      }
+    } else {
+      Increment4D_ ana_increment(geometry, incvars, ens_xx[0].validTimes());
+      for (size_t jj = 0; jj < nens; ++jj) {
+        ana_increment = ana_pert[jj];
+        for (size_t itime = 0; itime < bkg_pert[jj].size(); ++itime) {
+          ana_increment[itime] -= bkg_pert[jj][itime];
+        }
+        ens_xx[jj] += ana_increment;
+      }
     }
 
     // save the posterior mean, ensemble, and ensemble of increments first
