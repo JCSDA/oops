@@ -56,11 +56,11 @@ template<typename MODEL, typename OBS> class CostJbTotal {
 /// Initialize before nonlinear model integration.
   void initialize(const CtrlVar_ &) const;
   void initializeTraj(const CtrlVar_ &, const Geometry_ &,
-                      const eckit::Configuration &, PostProcTLAD_ &);
+                      PostProcTLAD_ &);
 
 /// Finalize computation after nonlinear model integration.
   double finalize(const CtrlVar_ &) const;
-  void finalizeTraj();
+  void finalizeTraj(const eckit::Configuration &);
 
 /// Initialize before starting the TL run.
   void initializeTL(PostProcTLAD_ &) const;
@@ -193,28 +193,27 @@ double CostJbTotal<MODEL, OBS>::finalize(const CtrlVar_ & mx) const {
 
 template<typename MODEL, typename OBS>
 void CostJbTotal<MODEL, OBS>::initializeTraj(const CtrlVar_ & fg, const Geometry_ & resol,
-                                             const eckit::Configuration & inner,
                                              PostProcTLAD_ & pptraj) {
   Log::trace() << "CostJbTotal::initializeTraj start" << std::endl;
   fg_ = &fg;
   resol_ = &resol;
-// Linearize terms
+// Linearize model-related terms (obs term gets linearized in finalizeTraj)
   jb_->linearize(fg.state(), *resol_);
   jbModBias_.linearize(fg.modVar(), *resol_);
-  jbObsBias_.linearize(fg.obsVar(), inner);
-
   jqtraj_.reset(jb_->initializeJqTLAD());
   pptraj.enrollProcessor(jqtraj_);
-
   Log::trace() << "CostJbTotal::initializeTraj done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-void CostJbTotal<MODEL, OBS>::finalizeTraj() {
+void CostJbTotal<MODEL, OBS>::finalizeTraj(const eckit::Configuration & inner) {
   Log::trace() << "CostJbTotal::finalizeTraj start" << std::endl;
   ASSERT(fg_);
+// Linearize obs bias term
+  jbObsBias_.linearize(fg_->obsVar(), inner);
+
 // Compute and save first guess increment.
   dxFG_.reset(new CtrlInc_(*this));
 
