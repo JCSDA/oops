@@ -200,6 +200,7 @@ oops/generic/gc99.h
 oops/generic/gc99.cc
 oops/generic/gc99_mod.F90
 oops/generic/GeoVaLsWriter.h
+oops/generic/GlobalAtlasInterpolator.h
 oops/generic/GlobalInterpolator.h
 oops/generic/HtlmCalculator.h
 oops/generic/HtlmEnsemble.h
