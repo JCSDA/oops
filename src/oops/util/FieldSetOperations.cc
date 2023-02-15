@@ -221,6 +221,11 @@ atlas::FieldSet createRandomFieldSet(const oops::GeometryData & geometryData,
       }
     }
 
+    // Set metadata for interpolation type
+    if (geometryData.functionSpace().type() != "Spectral") {
+      field.metadata().set("interp_type", "default");
+    }
+
     // Add field
     fset.add(field);
   }
@@ -259,6 +264,9 @@ atlas::FieldSet copyFieldSet(const atlas::FieldSet & otherFset) {
     } else {
       ABORT("copyFieldSet: wrong rank");
     }
+
+    // Copy metadata
+    field.metadata() = otherField.metadata();
 
     // Add field
     fset.add(field);
@@ -299,11 +307,7 @@ void zeroFieldSet(atlas::FieldSet & fset) {
     // Set data to zero
     if (field.rank() == 2) {
       auto view = atlas::array::make_view<double, 2>(field);
-      for (atlas::idx_t jnode = 0; jnode < field.shape(0); ++jnode) {
-        for (atlas::idx_t jlevel = 0; jlevel < field.shape(1); ++jlevel) {
-            view(jnode, jlevel) = 0.0;
-        }
-      }
+      view.assign(0.0);
     } else {
       ABORT("zeroFieldSet: wrong rank");
     }
