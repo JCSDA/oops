@@ -495,7 +495,7 @@ void divideFieldSets(atlas::FieldSet & fset,
       auto view = atlas::array::make_view<double, 2>(field);
       for (int jnode = 0; jnode < field.shape(0); ++jnode) {
         for (int jlevel = 0; jlevel < field.shape(1); ++jlevel) {
-          if (abs(divView(jnode, jlevel)) > 0.0) {
+          if (std::abs(divView(jnode, jlevel)) > 0.0) {
             view(jnode, jlevel) /= divView(jnode, jlevel);
           } else {
             ABORT("divideFieldSets: divide by zero");
