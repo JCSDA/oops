@@ -29,6 +29,7 @@ list( APPEND qg_testinput
   testinput/addincrement_scaled.yaml
   testinput/analytic_forecast.yaml
   testinput/convertincrement.yaml
+  testinput/convertincrement_inv.yaml
   testinput/convertstate.yaml
   testinput/dfi.yaml
   testinput/diffstates.yaml
@@ -153,6 +154,7 @@ list( APPEND qg_testoutput
   #testoutput/4dvar_saddlepoint.test
   testoutput/analytic_forecast.test
   testoutput/convertincrement.test
+  testoutput/convertincrement_inv.test
   testoutput/convertstate.test
   testoutput/addincrement.test
   testoutput/addincrement_scaled.test
@@ -364,7 +366,7 @@ ecbuild_add_test( TARGET  test_qg_hybrid_linear_model_pert_heat
                   ARGS    "testinput/hybrid_linear_model_pert_heat.yaml"
                   LIBS    qg
                   TEST_DEPENDS test_qg_truth_pert_heat test_qg_forecast_control_htlm_pert_heat test_qg_gen_ens_pert_B_HTLM_pert_heat )
-                  
+
 ecbuild_add_test( TARGET  test_qg_hybrid_linear_model_pert_heat_gen_ens
                   SOURCES executables/TestLinearModel.cc
                   ARGS    "testinput/hybrid_linear_model_pert_heat_gen_ens.yaml"
@@ -829,7 +831,7 @@ ecbuild_add_test( TARGET test_qg_4dvar_htlm_qgtlm_dripcg_pert_heat
                   ARGS testinput/4dvar_htlm_qgtlm_dripcg_pert_heat.yaml
                   COMMAND  qg_4dvar.x
                   TEST_DEPENDS test_qg_gen_ens_pert_B_HTLM_pert_heat test_qg_make_obs_4d_24h_pert_heat)
-                  
+
 ecbuild_add_test( TARGET test_qg_4dvar_htlm_qgtlm_dripcg_pert_heat_gen_ens
                   OMP 2
                   ARGS testinput/4dvar_htlm_qgtlm_dripcg_pert_heat_gen_ens.yaml
@@ -932,6 +934,12 @@ ecbuild_add_test( TARGET test_qg_addincrement_scaled
 ecbuild_add_test( TARGET test_qg_convertincrement
                   OMP    2
                   ARGS testinput/convertincrement.yaml
+                  COMMAND qg_convertincrement.x
+                  TEST_DEPENDS test_qg_diffstates )
+
+ecbuild_add_test( TARGET test_qg_convertincrement_inv
+                  OMP    2
+                  ARGS testinput/convertincrement_inv.yaml
                   COMMAND qg_convertincrement.x
                   TEST_DEPENDS test_qg_diffstates )
 
