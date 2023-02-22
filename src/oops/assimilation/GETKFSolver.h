@@ -34,6 +34,7 @@
 #include "oops/util/Timer.h"
 
 namespace oops {
+  class Variables;
 
 /*!
  * An implementation of the GETKF from Lei 2018 JAMES
@@ -63,7 +64,7 @@ class GETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
   /// Constructor (allocates Wa, wa, HZb_,
   /// saves options from the config, computes VerticalLocEV_)
   GETKFSolver(ObsSpaces_ &, const Geometry_ &, const eckit::Configuration &, size_t,
-              const State4D_ &);
+              const State4D_ &, const Variables &);
 
   Observations_ computeHofX(const StateEnsemble4D_ &, size_t, bool) override;
 
@@ -104,11 +105,11 @@ class GETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
 template <typename MODEL, typename OBS>
 GETKFSolver<MODEL, OBS>::GETKFSolver(ObsSpaces_ & obspaces, const Geometry_ & geometry,
                                 const eckit::Configuration & config, size_t nens,
-                                const State4D_ & xbmean)
-  : LocalEnsembleSolver<MODEL, OBS>(obspaces, geometry, config, nens, xbmean),
+                                const State4D_ & xbmean, const Variables & incvars)
+  : LocalEnsembleSolver<MODEL, OBS>(obspaces, geometry, config, nens, xbmean, incvars),
     nens_(nens), geometry_(geometry),
-    vertloc_(config.getSubConfiguration("local ensemble DA.vertical localization"), xbmean[0]),
-    neig_(vertloc_.neig()), nanal_(neig_*nens_), HZb_(obspaces, nanal_)
+    vertloc_(config.getSubConfiguration("local ensemble DA.vertical localization"), xbmean[0],
+    incvars), neig_(vertloc_.neig()), nanal_(neig_*nens_), HZb_(obspaces, nanal_)
 {
   // pre-allocate transformation matrices
   Wa_.resize(nanal_, nens);
@@ -139,8 +140,8 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
     }
   } else {
     // modulate ensemble of obs
-    IncrementEnsemble4D_ dx(ens_xx, this->xbmean_, this->xbmean_[0].variables());
-    IncrementEnsemble4D_ Ztmp(geometry_, this->xbmean_[0].variables(),
+    IncrementEnsemble4D_ dx(ens_xx, this->xbmean_, this->incvars_);
+    IncrementEnsemble4D_ Ztmp(geometry_, this->incvars_,
                               ens_xx[0].validTimes(), neig_);
     size_t ii = 0;
     for (size_t iens = 0; iens < nens_; ++iens) {

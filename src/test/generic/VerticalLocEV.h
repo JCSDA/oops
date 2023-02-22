@@ -53,7 +53,7 @@ template <typename MODEL> void testVerticalLocEV() {
   // make an empty state vector to be used to intitialize VerticalLocEV_
   State_ x(Test_::resol(), Test_::ctlvars(), Test_::time());
 
-  VerticalLocEV_ vertloc(vertlocconf, x);
+  VerticalLocEV_ vertloc(vertlocconf, x, x.variables());
   oops::Log::test() << "Number of eigenvalues used in VerticalLoc: " << vertloc.neig() << std::endl;
 
   //--- check for expected number of eigen modes

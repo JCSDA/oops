@@ -217,6 +217,12 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     StateEnsemble4D_ ens_xx(geometry, params.background);
     const size_t nens = ens_xx.size();
     const Variables statevars = ens_xx.variables();
+    Variables incvars;
+    if (params.incvars.value() == boost::none) {
+      incvars += statevars;
+    } else {
+      incvars += *params.incvars.value();
+    }
     State4D_ bkg_mean = ens_xx.mean();
     // if control member is present use that instead of the ensemble mean
     if (params.driver.value().useControlMember) {
@@ -227,7 +233,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     // set up solver
     std::unique_ptr<LocalSolver_> solver =
          LocalEnsembleSolverFactory<MODEL, OBS>::create(obsdb, geometry, fullConfig,
-                                                        nens, bkg_mean);
+                                                        nens, bkg_mean, incvars);
 
     // test prints for the prior ensemble
     bool do_test_prints = params.driver.value().doTestPrints;
@@ -261,12 +267,6 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     }
 
     // calculate background ensemble perturbations
-    Variables incvars;
-    if (params.incvars.value() == boost::none) {
-      incvars += statevars;
-    } else {
-      incvars += *params.incvars.value();
-    }
     IncrementEnsemble4D_ bkg_pert(ens_xx, bkg_mean, incvars);
 
     // initialize empty analysis perturbations

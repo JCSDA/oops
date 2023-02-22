@@ -27,6 +27,7 @@
 #include "oops/util/Logger.h"
 
 namespace oops {
+  class Variables;
 
 /// Local Ensemble Tranform Kalman Filter solver
 /*!
@@ -55,7 +56,7 @@ class LETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
   static const std::string classname() {return "oops::LETKFSolver";}
 
   LETKFSolver(ObsSpaces_ &, const Geometry_ &, const eckit::Configuration &, size_t,
-              const State4D_ &);
+              const State4D_ &, const Variables &);
 
   /// KF update + posterior inflation at a grid point location (GeometryIterator_)
   void measurementUpdate(const IncrementEnsemble4D_ &,
@@ -88,8 +89,8 @@ class LETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
 template <typename MODEL, typename OBS>
 LETKFSolver<MODEL, OBS>::LETKFSolver(ObsSpaces_ & obspaces, const Geometry_ & geometry,
                                      const eckit::Configuration & config, size_t nens,
-                                     const State4D_ & xbmean)
-  : LocalEnsembleSolver<MODEL, OBS>(obspaces, geometry, config, nens, xbmean),
+                                     const State4D_ & xbmean, const Variables & incvars)
+  : LocalEnsembleSolver<MODEL, OBS>(obspaces, geometry, config, nens, xbmean, incvars),
     nens_(nens)
 {
   Log::trace() << "LETKFSolver<MODEL, OBS>::create starting" << std::endl;
