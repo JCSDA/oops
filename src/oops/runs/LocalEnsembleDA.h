@@ -34,6 +34,7 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/printRunStats.h"
 
 
 namespace oops {
@@ -230,6 +231,8 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
       bkg_mean = controlMember;
     }
 
+    util::printRunStats("LocalEnsembleDA before solver ctor");
+
     // set up solver
     std::unique_ptr<LocalSolver_> solver =
          LocalEnsembleSolverFactory<MODEL, OBS>::create(obsdb, geometry, fullConfig,
@@ -242,6 +245,8 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
         Log::test() << "Initial state for member " << jj+1 << ":" << ens_xx[jj] << std::endl;
       }
     }
+
+    util::printRunStats("LocalEnsembleDA before computeHofX");
 
     // compute H(x)
     Observations_ yb_mean = solver->computeHofX(ens_xx, 0, params.driver.value().readHofX);
@@ -274,12 +279,15 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
 
     // run the solver at each gridpoint
     Log::info() << "Beginning core local solver..." << std::endl;
+    util::printRunStats("LocalEnsembleDA before solver", true);
     solver->measurementUpdate(bkg_pert, ana_pert);
-    Log::info() << "Local solver completed." << std::endl;
 
     // wait all tasks to finish their solution, so the timing for functions below reports
     // time which truly used (not from mpi_wait(), as all tasks need to sync before write).
     oops::mpi::world().barrier();
+
+    Log::info() << "Local solver completed." << std::endl;
+    util::printRunStats("LocalEnsembleDA after solver", true);
 
     // calculate final analysis states
     if (incvars == statevars) {

@@ -31,6 +31,7 @@
 #include "oops/interface/GeometryIterator.h"
 #include "oops/util/ConfigFunctions.h"
 #include "oops/util/Logger.h"
+#include "oops/util/printRunStats.h"
 #include "oops/util/Timer.h"
 
 namespace oops {
@@ -131,6 +132,8 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
     Observations_ ytmp(yb_mean);
     size_t ii = 0;
     for (size_t iens = 0; iens < nens_; ++iens) {
+      Log::info() << " GETKFSolver::computeHofX starting ensemble member " << iens+1 << std::endl;
+      util::printRunStats("GETKFSolver read hofx");
       for (size_t ieig = 0; ieig < neig_; ++ieig) {
         ytmp.read("hofxm"+std::to_string(iteration)+"_"+std::to_string(ieig+1)+
                       "_"+std::to_string(iens+1));
@@ -145,6 +148,8 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
                               ens_xx[0].validTimes(), neig_);
     size_t ii = 0;
     for (size_t iens = 0; iens < nens_; ++iens) {
+      Log::info() << " GETKFSolver::computeHofX starting ensemble member " << iens+1 << std::endl;
+      util::printRunStats("GETKFSolver calculate hofx");
       vertloc_.modulateIncrement(dx[iens], Ztmp);
       for (size_t ieig = 0; ieig < neig_; ++ieig) {
         State4D_ tmpState = this->xbmean_;
