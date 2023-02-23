@@ -29,6 +29,7 @@
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/RequiredParameter.h"
+#include "oops/util/Printable.h"
 
 // From SABER quench/Fields.cc file
 #define ERR(e) {ABORT(nc_strerror(e));}
@@ -181,7 +182,7 @@ class LatLonGridWriterParameters : public Parameters {
 /// Interpolates requested model fields to a uniform lat-lon grid, then writes to a NetCDF file.
 /// This is useful for plotting model fields and for diagnostic computations.
 template <typename MODEL>
-class LatLonGridWriter {
+class LatLonGridWriter : public util::Printable  {
  public:
   explicit LatLonGridWriter(
       const LatLonGridWriterParameters & parameters,
@@ -192,6 +193,8 @@ class LatLonGridWriter {
   void interpolateAndWrite(const FLDS & xx) const;
 
  private:
+  void print(std::ostream &) const;
+
   const eckit::mpi::Comm & comm_;
   std::unique_ptr<atlas::functionspace::PointCloud> targetFunctionSpace_;
   std::unique_ptr<oops::GlobalInterpolator<MODEL>> interp_;
@@ -266,6 +269,20 @@ void LatLonGridWriter<MODEL>::interpolateAndWrite(const FLDS & xx) const {
     const size_t nlats = 2*gridRes_ + 1;
     const size_t nlons = 4*gridRes_;
     detail::writer(*targetFunctionSpace_, fsetLatLon, vars_, levels_, filepath, nlats, nlons);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+void LatLonGridWriter<MODEL>::print(std::ostream & os) const
+{
+  os << "LatLonGridWriter::<" << MODEL::name() << ">" << std::endl;
+  os << "Grid Resolution: " << gridRes_ << std::endl;
+  os << "Variables: " << vars_ << std::endl;
+  os << "Levels: ";
+  for (size_t i=0; i < levels_.size(); i++) {
+    os << levels_[i] << " ";
   }
 }
 

@@ -269,6 +269,7 @@ oops/runs/Application.cc
 oops/runs/Application.h
 oops/runs/ConvertIncrement.h
 oops/runs/ConvertState.h
+oops/runs/ConvertToLatLon.h
 oops/runs/DiffStates.h
 oops/runs/Dirac.h
 oops/runs/EnsembleApplication.h
