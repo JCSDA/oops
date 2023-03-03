@@ -173,6 +173,8 @@ oops/base/WeightingFct.h
 
 oops/contrib/dcmip_initial_conditions_test_1_2_3_v5.f90
 oops/contrib/dcmip_initial_conditions_test_4_v3.f90
+oops/contrib/dcmip_initial_conditions_test_4_v3_interface.f90
+oops/contrib/dcmipInitialConditionsTest_4_v3_Fortran.h
 
 oops/coupled/AuxCoupledModel.h
 oops/coupled/GeometryCoupled.h
