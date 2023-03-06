@@ -129,22 +129,6 @@ extern "C" {
   void qg_fields_deserialize_f90(const F90flds &, const int &, const double[], int &);
 
 // -----------------------------------------------------------------------------
-//  GetValues
-// -----------------------------------------------------------------------------
-  void qg_getvalues_interp_f90(const LocationsQG &, const F90flds &,
-                               const util::DateTime &,
-                               const util::DateTime &, const F90gom &);
-  void qg_getvalues_interp_traj_f90(const LocationsQG &, const F90flds &,
-                               const util::DateTime &,
-                               const util::DateTime &, const F90gom &);
-  void qg_getvalues_interp_tl_f90(const LocationsQG &, const F90flds &,
-                                  const util::DateTime &,
-                                  const util::DateTime &, const F90gom &);
-  void qg_getvalues_interp_ad_f90(const LocationsQG &, const F90flds &,
-                                  const util::DateTime &,
-                                  const util::DateTime &, const F90gom &);
-
-// -----------------------------------------------------------------------------
 //  Geometry
 // -----------------------------------------------------------------------------
   void qg_geom_setup_f90(F90geom &, const eckit::Configuration &);
