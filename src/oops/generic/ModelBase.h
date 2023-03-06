@@ -132,7 +132,7 @@ template <typename MODEL>
 class ModelParametersWrapper : public Parameters {
   OOPS_CONCRETE_PARAMETERS(ModelParametersWrapper, Parameters)
  public:
-  /// After deserializtion, holds an instance of a subclass of ModelParametersBase controlling
+  /// After deserialization, holds an instance of a subclass of ModelParametersBase controlling
   /// the behavior of a model. The type of the subclass is determined by the value of the "name"
   /// key in the Configuration object from which this object is deserialized.
   RequiredPolymorphicParameter<ModelParametersBase, ModelFactory<MODEL>>

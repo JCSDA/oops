@@ -113,8 +113,8 @@ class LocalEnsembleSolver {
                                            ///  computeHofX method
   LocalEnsembleSolverParameters options_;
 
-  const State4D_ & xbmean_;     ///< ensemble mean or a controll memeber that will be used to
-                                 ///  center the prior ensemble
+  const State4D_ & xbmean_;     ///< ensemble mean or a control member that will be used to
+                                ///  center the prior ensemble
   const Variables incvars_;
 
  private:

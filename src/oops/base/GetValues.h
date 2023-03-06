@@ -597,7 +597,7 @@ void GetValues<MODEL, OBS>::finalizeAD(const util::Duration & tstep) {
   recv_req_.clear();
   recvinterp_.clear();
 
-  Log::trace() << "GetValues::processAD done" << std::endl;
+  Log::trace() << "GetValues::finalizeAD done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

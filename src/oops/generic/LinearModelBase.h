@@ -147,9 +147,9 @@ template <typename MODEL>
 class LinearModelParametersWrapper : public Parameters {
   OOPS_CONCRETE_PARAMETERS(LinearModelParametersWrapper, Parameters)
  public:
-  /// After deserializtion, holds an instance of a subclass of LinearModelParametersBase controlling
-  /// the behavior of a linear model. The type of the subclass is determined by the value of the
-  /// "name" key in the Configuration object from which this object is deserialized.
+  /// After deserialization, holds an instance of a subclass of LinearModelParametersBase
+  /// controlling the behavior of a linear model. The type of the subclass is determined by the
+  /// value of the "name" key in the Configuration object from which this object is deserialized.
   RequiredPolymorphicParameter<LinearModelParametersBase, LinearModelFactory<MODEL>>
     linearModelParameters{"name", this};
 };
