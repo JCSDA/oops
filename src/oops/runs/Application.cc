@@ -19,6 +19,7 @@ namespace oops {
 void ApplicationParameters::outputSchema(const std::string & outputPath) const {
   std::ofstream stream(outputPath);
   stream << jsonSchema().toString(true);
+  stream.close();
 }
 
 // -----------------------------------------------------------------------------

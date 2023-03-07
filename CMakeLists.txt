@@ -86,7 +86,6 @@ include( oops_output_json_schema )
 install(
   FILES
     "cmake/oops_output_json_schema.cmake"
-    "cmake/oops_output_json_schema_x.cmake.in"
   DESTINATION
     "${INSTALL_CMAKE_DIR}"
 )
