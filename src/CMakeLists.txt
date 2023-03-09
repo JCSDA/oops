@@ -206,6 +206,8 @@ oops/generic/GlobalAtlasInterpolator.h
 oops/generic/GlobalInterpolator.h
 oops/generic/HtlmCalculator.h
 oops/generic/HtlmEnsemble.h
+oops/generic/HtlmRegularization.cc
+oops/generic/HtlmRegularization.h
 oops/generic/HybridLinearModel.h
 oops/generic/HybridLinearModelCoeffs.h
 oops/generic/IdentityLinearModel.h

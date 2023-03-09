@@ -2,7 +2,7 @@ cost function:
   cost type: 4D-Var
   window begin: 2010-01-01T00:00:00Z
   window length: PT24H
-  analysis variables: [x,q]
+  analysis variables: [x, q]
   geometry:
     nx: 40
     ny: 20
@@ -64,6 +64,7 @@ cost function:
       alpha: 1.0e-13
       cutoff: PT3H
       type: DolphChebyshev
+
 variational:
   minimizer:
     algorithm: DRIPCG
@@ -83,13 +84,22 @@ variational:
         variable change: Identity
         name: QgTLM
       tstep: PT1H
-      increment variables: [x,q]
+      increment variables: [x, q]
       htlm coefficient calc:
         training variables: [q]
         window length: PT24H
         window begin: 2010-01-01T00:00:00Z
         htlm calculator:
           influence region size: 2
+          regularization:
+            base value: 1e100
+            parts:
+            - variables: [q]
+              levels: [0]
+              bounding lons: [60.0, 90.0]
+              bounding lats: [60.0, 90.0]
+              value: 0.0
+            - value: 0.0
           rms scaling: true
         htlm ensemble:
           ensemble size: 10
@@ -102,7 +112,7 @@ variational:
             tstep: PT1H
             variable change: Identity
             name: QgTLM
-            tlm variables: [x,q]
+            tlm variables: [x, q]
           state geometry:
             nx: 40
             ny: 20
@@ -137,13 +147,22 @@ variational:
         variable change: Identity
         name: QgTLM
       tstep: PT1H
-      increment variables: [x,q]
+      increment variables: [x, q]
       htlm coefficient calc:
         training variables: [q]
         window length: PT24H
         window begin: 2010-01-01T00:00:00Z
         htlm calculator:
           influence region size: 2
+          regularization:
+            base value: 1e100
+            parts:
+            - variables: [q]
+              levels: [0]
+              bounding lons: [60.0, 90.0]
+              bounding lats: [60.0, 90.0]
+              value: 0.0
+            - value: 0.0
           rms scaling: true
         htlm ensemble:
           ensemble size: 10
@@ -156,7 +175,7 @@ variational:
             tstep: PT1H
             variable change: Identity
             name: QgTLM
-            tlm variables: [x,q]
+            tlm variables: [x, q]
           state geometry:
             nx: 40
             ny: 20
@@ -174,17 +193,10 @@ variational:
                 pattern: %mem%
                 nmembers: 10
       name: HTLM
+
 final:
   diagnostics:
     departures: oman
-  prints:
-    frequency: PT1H
-output:
-  datadir: Data
-  exp: 4dvar_HTLM
-  first: PT0S
-  frequency: PT6H
-  type: an
 
 test:
   reference filename: testoutput/4dvar_htlm_qgtlm_dripcg_pert_heat.test

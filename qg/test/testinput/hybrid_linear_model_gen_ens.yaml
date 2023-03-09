@@ -36,7 +36,6 @@ linear model:
     window begin: 2010-01-01T00:00:00Z
     htlm calculator:
       influence region size: 2
-      regularization param: 0.0
       rms scaling: true
     htlm ensemble:
       ensemble size: 10

@@ -87,6 +87,7 @@ list( APPEND qg_testinput
   testinput/hofx_tinterp.yaml
   testinput/hofx3d.yaml
   testinput/htlm_coefficients.yaml
+  testinput/htlm_regularization_vector_construction.yaml
   testinput/hybridgain_analysis.yaml
   testinput/hybridgain_increment.yaml
   testinput/hybrid_linear_model.yaml
@@ -837,6 +838,12 @@ ecbuild_add_test( TARGET test_qg_4dvar_htlm_qgtlm_dripcg_pert_heat_gen_ens
                   ARGS testinput/4dvar_htlm_qgtlm_dripcg_pert_heat_gen_ens.yaml
                   COMMAND  qg_4dvar.x
                   TEST_DEPENDS test_qg_gen_ens_pert_B_HTLM_pert_heat test_qg_make_obs_4d_24h_pert_heat)
+
+ecbuild_add_test( TARGET test_qg_htlm_regularization_vector_construction
+                  OMP 2
+                  ARGS testinput/htlm_regularization_vector_construction.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_4dvar_htlm_qgtlm_dripcg_pert_heat)
 
 ecbuild_add_test( TARGET test_qg_htlm_coefficient_calculation_application
                   OMP 2

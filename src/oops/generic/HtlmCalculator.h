@@ -18,6 +18,7 @@
 #include "oops/base/Increment.h"
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/Variables.h"
+#include "oops/generic/HtlmRegularization.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
@@ -39,7 +40,7 @@ class HtlmCalculatorParameters : public Parameters {
   For a grid point at say the bottom level, all influence points would be above it.
   The influence region also includes other model variables at the same locations.  */ 
   RequiredParameter<atlas::idx_t> influenceRegionSize{"influence region size", this};
-  RequiredParameter<double>       lambda{"regularization param", this};
+  Parameter<HtlmRegularizationParameters> regularizationParams{"regularization", {}, this};
   Parameter<bool>                 rms{"rms scaling", true, this};
 };
 
@@ -69,7 +70,7 @@ class HtlmCalculator{
   Variables vars_;
 
   // regularization paramater in coeff calculation
-  double lambda_;
+  std::unique_ptr<HtlmRegularization> regularizationPtr_;
 
   // Increment geometry used to get needed dimensions.
   const Geometry_ & incrementGeometry_;
@@ -88,12 +89,21 @@ HtlmCalculator<MODEL>::HtlmCalculator(const HtlmCalculatorParameters_ & params,
 : params_(params), ensembleSize_(atlas::idx_t(ensembleSize)),
 influenceSize_(params_.influenceRegionSize.value()), halfInfluenceSize_(influenceSize_/2),
 vars_(vars),
- lambda_(params_.lambda), incrementGeometry_(geomTLM) {
+ incrementGeometry_(geomTLM) {
   // Use increment geometry to get needed dimensions
   Increment_ coeffSetupInc(incrementGeometry_, vars_, startTime);
   atlas::FieldSet coeffSetupFset = coeffSetupInc.fieldSet();
   horizExt_ = coeffSetupFset[0].shape(0);
   vertExt_ = coeffSetupFset[0].shape(1);
+
+  // Set up regularization
+  if (params_.regularizationParams.value().parts.value() == boost::none) {
+    regularizationPtr_ = std::make_unique<HtlmRegularization>(params_.regularizationParams.value());
+  } else {
+    regularizationPtr_ =
+      std::make_unique<HtlmRegularizationComponentDependent>(params_.regularizationParams.value(),
+                                                             coeffSetupFset);
+  }
 }
 
 //-----------------------------------------------------------------------------------
@@ -179,9 +189,9 @@ void HtlmCalculator<MODEL>::calcCoeffs(const IncrementEnsemble_ & linearEnsemble
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> singularValues =
                                                   bdc_svd_solver.singularValues().asDiagonal();
         const auto U = bdc_svd_solver.matrixU();
-        // calculate singleValues+lambdaI
+        // Apply regularization
         for (int ij = 0; ij < singularValues.cols(); ++ij) {
-          singularValues(ij, ij)+=lambda_;
+          singularValues(ij, ij) += regularizationPtr_->getRegularizationValue(vars_[varInd], i, k);
         }
         const auto pseudoInv = singularValues.completeOrthogonalDecomposition().pseudoInverse();
         coeffVect = U*pseudoInv*U.transpose()*influenceMat*linErrVec;
