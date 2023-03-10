@@ -46,11 +46,8 @@ class Resolution : public util::Printable {
  public:
   typedef ResolutionParameters Parameters_;
 
-  Resolution(const ResolutionParameters & parameters, const eckit::mpi::Comm & comm)
-              : resol_(parameters.resol), comm_(comm)
-    {ASSERT(comm_.size() == 1);}
-  explicit Resolution(const int resol): resol_(resol), comm_(oops::mpi::myself())
-    {ASSERT(comm_.size() == 1);}
+  Resolution(const ResolutionParameters & parameters, const eckit::mpi::Comm & comm);
+  explicit Resolution(const int resol);
 
   int npoints() const {return resol_;}
 
@@ -61,14 +58,14 @@ class Resolution : public util::Printable {
   bool levelsAreTopDown() const {return true;}
   const eckit::mpi::Comm & getComm() const {return comm_;}
   void latlon(std::vector<double> &, std::vector<double> &, const bool) const;
-  const atlas::FunctionSpace & functionSpace() const {return nospace_;}
+  const atlas::FunctionSpace & functionSpace() const {return functionSpace_;}
   const atlas::FieldSet & extraFields() const {return nofields_;}
 
  private:
   void print(std::ostream & os) const {os << resol_;}
   const int resol_;
   const eckit::mpi::Comm & comm_;
-  atlas::FunctionSpace nospace_;
+  atlas::FunctionSpace functionSpace_;
   atlas::FieldSet nofields_;
 };
 
