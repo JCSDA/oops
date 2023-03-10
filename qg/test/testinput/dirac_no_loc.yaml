@@ -12,6 +12,7 @@ dirac:
   iydir: [10]
   izdir: [1]
   var: x
+diagnostic points:
 geometry:
   nx: 40
   ny: 20

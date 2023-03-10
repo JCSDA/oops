@@ -45,6 +45,10 @@ double dotProductFieldSets(const atlas::FieldSet &,
 void divideFieldSets(atlas::FieldSet &,
                      const  atlas::FieldSet &);
 void sqrtFieldSet(atlas::FieldSet &);
+void printDiagValues(const eckit::mpi::Comm &,
+                     const oops::GeometryData &,
+                     const atlas::FieldSet &,
+                     const atlas::FieldSet &);
 
 // -----------------------------------------------------------------------------
 

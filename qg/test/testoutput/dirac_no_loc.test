@@ -2,6 +2,9 @@ Input Dirac increment:
   Valid time: 2010-01-01T12:00:00Z
   Resolution = 40, 20, 2
   Streamfunction         :  Min=0.0000000000000000e+00, Max=1.0000000000000000e+00, RMS=2.5000000000000001e-02
+Covariance(ensemble) diagnostics:
+- Variances at Dirac points:
+  + Value for variable x, subwindow 0, at point (-4.5000000000000000e+00, 4.1146238600188383e+01, 1): 2.8979256551972738e+14
 Covariance(ensemble) * Increment:
   Valid time: 2010-01-01T12:00:00Z
   Resolution = 40, 20, 2

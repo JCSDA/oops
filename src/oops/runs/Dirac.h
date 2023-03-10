@@ -62,6 +62,9 @@ template <typename MODEL> class DiracParameters : public ApplicationParameters {
   /// Dirac location/variables parameters.
   RequiredParameter<eckit::LocalConfiguration> dirac{"dirac", this};
 
+  /// Diagnostic location/variables parameters.
+  OptionalParameter<eckit::LocalConfiguration> diagnostic{"diagnostic points", this};
+
   /// Where to write the output(s) of Dirac tests
   RequiredParameter<eckit::LocalConfiguration> outputDirac{"output dirac", this};
 
@@ -145,21 +148,35 @@ template <typename MODEL> class Dirac : public Application {
     dxi.dirac(params.dirac);
     Log::test() << "Input Dirac increment:" << dxi << std::endl;
 
-//  Output Dirac configuration
+//  Test configuration
+    eckit::LocalConfiguration testConf;
+
+//  Add dirac configuration
+    testConf.set("dirac", params.dirac.value());
+
+//  Add diagnostic print configuration
+    const boost::optional<eckit::LocalConfiguration> &diagnostic = params.diagnostic.value();
+    if (diagnostic != boost::none) {
+      testConf.set("diagnostic points", *diagnostic);
+    }
+
+//  Add output Dirac configuration
     eckit::LocalConfiguration outputDirac(params.outputDirac.value());
     if (outputDirac.has("mpi pattern")) {
       std::string mpi_pattern = outputDirac.getString("mpi pattern");
       std::string mpi_size = std::to_string(oops::mpi::world().size());
       util::seekAndReplace(outputDirac, mpi_pattern, mpi_size);
     }
+    testConf.set("output dirac", outputDirac);
 
 //  Go recursively through the covariance configuration
     const CovarianceParametersBase_ &covarParams =
         params.backgroundError.value().covarianceParameters;
     eckit::LocalConfiguration covarConf(covarParams.toConfiguration());
 
+//  Apply B matrix
     std::string id;
-    dirac(covarConf, outputDirac, id, xx, dxi);
+    dirac(covarConf, testConf, id, xx, dxi);
 
 //  Variance randomization
     const boost::optional<eckit::LocalConfiguration> &outputVariance =
@@ -221,9 +238,26 @@ template <typename MODEL> class Dirac : public Application {
   std::string appname() const override {
     return "oops::Dirac<" + MODEL::name() + ">";
   }
+// -----------------------------------------------------------------------------
+  void print_value_at_positions(const eckit::LocalConfiguration & diagConf,
+                                const Increment_ & data) const {
+    Log::trace() << appname() << "::print_value_at_position starting" << std::endl;
 
+    // Create diagnostic field
+    Increment_ diagPoints(data);
+    diagPoints.dirac(diagConf);
+
+    // Get diagnostic values
+    util::printDiagValues(data.geometry().timeComm(),
+                          data.geometry().generic(),
+                          data.fieldSet(),
+                          diagPoints.fieldSet());
+
+    Log::trace() << appname() << "::print_value_at_position done" << std::endl;
+  }
+// -----------------------------------------------------------------------------
   void dirac(const eckit::LocalConfiguration & covarConfig,
-             const eckit::LocalConfiguration & outputConfig,
+             const eckit::LocalConfiguration & testConfig,
              std::string & id,
              const State_ & xx,
              const Increment_ & dxi) const {
@@ -237,12 +271,27 @@ template <typename MODEL> class Dirac : public Application {
     // Multiply
     Bmat->multiply(dxi, dxo);
 
-    // Copy configuration
-    eckit::LocalConfiguration outputBConf(outputConfig);
-
     // Update ID
     if (id != "") id.append("_");
     id.append(Bmat->covarianceModel());
+
+    if (testConfig.has("diagnostic points")) {
+      Log::test() << "Covariance(" << id << ") diagnostics:" << std::endl;
+
+      // Print variances
+      Log::test() << "- Variances at Dirac points:" << std::endl;
+      print_value_at_positions(testConfig.getSubConfiguration("dirac"), dxo);
+
+      // Print covariances
+      const auto & diagnosticConfig = testConfig.getSubConfiguration("diagnostic points");
+      if (!diagnosticConfig.empty()) {
+        Log::test() << "- Covariances at diagnostic points:" << std::endl;
+        print_value_at_positions(diagnosticConfig, dxo);
+      }
+    }
+
+    // Copy configuration
+    eckit::LocalConfiguration outputBConf(testConfig.getSubConfiguration("output dirac"));
 
     // Seek and replace %id% with id, recursively
     util::seekAndReplace(outputBConf, "%id%", id);
@@ -260,7 +309,7 @@ template <typename MODEL> class Dirac : public Application {
       for (const auto & conf : confs) {
         std::string idC(id + std::to_string(componentIndex));
         const eckit::LocalConfiguration componentConfig(conf, "covariance");
-        dirac(componentConfig, outputConfig, idC, xx, dxi);
+        dirac(componentConfig, testConfig, idC, xx, dxi);
         ++componentIndex;
       }
     }
@@ -277,12 +326,22 @@ template <typename MODEL> class Dirac : public Application {
       // Apply localization
       Lmat.multiply(dxo);
 
-      // Copy configuration
-      eckit::LocalConfiguration outputLConf(outputConfig);
-
       // Update ID
       std::string idL(id);
       idL.append("_localization");
+
+      if (testConfig.has("diagnostic points")) {
+        const auto & diagnosticConfig = testConfig.getSubConfiguration("diagnostic points");
+        if (!diagnosticConfig.empty()) {
+          Log::test() << "Localization(" << idL << ") diagnostics:" << std::endl;
+          // Print localization
+          Log::test() << "- Localization at diagnostic points:" << std::endl;
+          print_value_at_positions(diagnosticConfig, dxo);
+        }
+      }
+
+      // Copy configuration
+      eckit::LocalConfiguration outputLConf(testConfig.getSubConfiguration("output dirac"));
 
       // Seek and replace %id% with id, recursively
       util::seekAndReplace(outputLConf, "%id%", idL);

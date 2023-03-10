@@ -5,6 +5,12 @@ background error:
   standard_deviation: 1.8e7
   vertical_length_scale: 15000.0
   randomization size: 1000
+diagnostic points:
+  date: 2010-01-01T12:00:00Z
+  ixdir: [10, 30]
+  iydir: [10, 10]
+  izdir: [1, 2]
+  var: x
 dirac:
   date: 2010-01-01T12:00:00Z
   ixdir: [20]

@@ -2,10 +2,20 @@ Input Dirac increment:
   Valid time: 2010-01-01T12:00:00Z
   Resolution = 40, 20, 2
   Streamfunction         :  Min=0.0000000000000000e+00, Max=1.0000000000000000e+00, RMS=2.5000000000000001e-02
+Covariance(ensemble) diagnostics:
+- Variances at Dirac points:
+  + Value for variable x, subwindow 0, at point (-4.5000000000000000e+00, 4.1146238600188383e+01, 1): 2.8979256564842825e+14
+- Covariances at diagnostic points:
+  + Value for variable x, subwindow 0, at point (-9.4500000000000000e+01, 4.1146238600188383e+01, 1): -7.1465141404697546e+11
+  + Value for variable x, subwindow 0, at point (8.5500000000000000e+01, 4.1146238600188383e+01, 2): 1.1714308767815400e+13
 Covariance(ensemble) * Increment:
   Valid time: 2010-01-01T12:00:00Z
   Resolution = 40, 20, 2
   Streamfunction         :  Min=-6.5158442575487375e+13, Max=3.7255142534641150e+14, RMS=5.8877427391266664e+13
+Localization(ensemble_localization) diagnostics:
+- Localization at diagnostic points:
+  + Value for variable x, subwindow 0, at point (-9.4500000000000000e+01, 4.1146238600188383e+01, 1): 4.3720228850754154e-02
+  + Value for variable x, subwindow 0, at point (8.5500000000000000e+01, 4.1146238600188383e+01, 2): 4.3117200838286435e-02
 Localization(ensemble) * Increment:
   Valid time: 2010-01-01T12:00:00Z
   Resolution = 40, 20, 2

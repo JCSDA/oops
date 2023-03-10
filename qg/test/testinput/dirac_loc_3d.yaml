@@ -12,6 +12,12 @@ background error:
       filename: Data/forecast.ens.%mem%.2009-12-31T00:00:00Z.P1DT12H.nc
     pattern: %mem%
     nmembers: 10
+diagnostic points:
+  date: 2010-01-01T12:00:00Z
+  ixdir: [10, 30]
+  iydir: [10, 10]
+  izdir: [1, 2]
+  var: x
 dirac:
   date: 2010-01-01T12:00:00Z
   ixdir: [20]

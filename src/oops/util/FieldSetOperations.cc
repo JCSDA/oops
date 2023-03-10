@@ -485,7 +485,7 @@ double dotProductFieldSets(const atlas::FieldSet & fset1,
       const auto field2 = fset2.field(var);
 
       if (field1.rank() == 2 && field2.rank() == 2) {
-      // Check fields consistency
+        // Check fields consistency
         ASSERT(field1.shape(0) == field2.shape(0));
         ASSERT(field1.shape(1) == field2.shape(1));
 
@@ -602,6 +602,143 @@ void sqrtFieldSet(atlas::FieldSet & fset) {
   }
 
   oops::Log::trace() << "sqrtFieldSet starting" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+void printDiagValues(const eckit::mpi::Comm & timeComm,
+                     const oops::GeometryData & geometryData,
+                     const atlas::FieldSet & dataFset,
+                     const atlas::FieldSet & diagFset) {
+  oops::Log::trace() << "printDiagValues starting" << std::endl;
+
+  // Global lon/lat field
+  atlas::FieldSet globalCoords;
+  atlas::Field lonGlobal = geometryData.functionSpace().createField<double>(
+    atlas::option::name("lon") | atlas::option::global());
+  globalCoords.add(lonGlobal);
+  atlas::Field latGlobal = geometryData.functionSpace().createField<double>(
+    atlas::option::name("lat") | atlas::option::global());
+  globalCoords.add(latGlobal);
+  auto lonViewGlobal = atlas::array::make_view<double, 1>(lonGlobal);
+  auto latViewGlobal = atlas::array::make_view<double, 1>(latGlobal);
+  const atlas::Field localLonlat = geometryData.functionSpace().lonlat();
+  const auto lonlatView = atlas::array::make_view<double, 2>(localLonlat);
+  if (geometryData.functionSpace().type() == "PointCloud") {
+    // Copy local
+    for (atlas::idx_t jnode = 0; jnode < localLonlat.shape(0); ++jnode) {
+       lonViewGlobal(jnode) = lonlatView(jnode, 0);
+       latViewGlobal(jnode) = lonlatView(jnode, 1);
+    }
+  } else {
+    // Gather local
+    atlas::FieldSet localCoords;
+    atlas::Field lonLocal = geometryData.functionSpace().createField<double>(
+      atlas::option::name("lon"));
+    localCoords.add(lonLocal);
+    atlas::Field latLocal = geometryData.functionSpace().createField<double>(
+      atlas::option::name("lat"));
+    localCoords.add(latLocal);
+    auto lonViewLocal = atlas::array::make_view<double, 1>(lonLocal);
+    auto latViewLocal = atlas::array::make_view<double, 1>(latLocal);
+    for (atlas::idx_t jnode = 0; jnode < localLonlat.shape(0); ++jnode) {
+       lonViewLocal(jnode) = lonlatView(jnode, 0);
+       latViewLocal(jnode) = lonlatView(jnode, 1);
+    }
+    geometryData.functionSpace().gather(localCoords, globalCoords);
+  }
+
+  for (const auto & diagField : diagFset) {
+    // Get data field with the same name
+    const atlas::Field dataField = dataFset.field(diagField.name());
+
+    // Global fields
+    atlas::Field globalDataField;
+    atlas::Field globalDiagField;
+    if (geometryData.functionSpace().type() == "PointCloud") {
+      // Copy local
+      globalDataField = dataField;
+      globalDiagField = diagField;
+    } else {
+      // Gather local
+      globalDataField = geometryData.functionSpace().createField<double>(
+        atlas::option::name(dataField.name()) | atlas::option::levels(dataField.levels())
+        | atlas::option::global());
+      globalDiagField = geometryData.functionSpace().createField<double>(
+        atlas::option::name(diagField.name()) | atlas::option::levels(diagField.levels())
+        | atlas::option::global());
+      geometryData.functionSpace().gather(dataField, globalDataField);
+      geometryData.functionSpace().gather(diagField, globalDiagField);
+    }
+
+    if (geometryData.comm().rank() == 0) {
+      // Print data values at diag points
+      std::vector<double> lons;
+      std::vector<double> lats;
+      std::vector<size_t> levs;
+      std::vector<size_t> subWindows;
+      std::vector<double> values;
+
+      if (globalDiagField.rank() == 2) {
+        auto dataView = atlas::array::make_view<double, 2>(globalDataField);
+        auto diagView = atlas::array::make_view<double, 2>(globalDiagField);
+        for (int jnode = 0; jnode < globalDiagField.shape(0); ++jnode) {
+          for (int jlevel = 0; jlevel < globalDiagField.shape(1); ++jlevel) {
+            if (std::abs(diagView(jnode, jlevel) - 1.0) < 1.0e-12) {
+              // Diagnostic point found
+              lons.push_back(lonViewGlobal(jnode));
+              lats.push_back(latViewGlobal(jnode));
+              levs.push_back(jlevel+1);
+              subWindows.push_back(timeComm.rank());
+              values.push_back(dataView(jnode, jlevel));
+            }
+          }
+        }
+      } else {
+        ABORT("getDiagValues: wrong rank");
+      }
+
+      // Gather sizes
+      int size = lons.size();
+      std::vector<int> sizes(timeComm.size());
+      timeComm.gather(size, sizes, 0);
+
+      // Gather data
+      std::vector<int> displs;
+      std::vector<int> recvcounts;
+      if (timeComm.rank() == 0) {
+        displs.resize(timeComm.size());
+        recvcounts.resize(timeComm.size());
+        for (size_t i = 0; i < timeComm.size(); ++i) {
+          recvcounts[i] = sizes[i];
+          displs[i] = static_cast<int>(i ? displs[i - 1] + recvcounts[i - 1] : 0);
+        }
+      }
+      size_t recvsize = size_t(std::accumulate(recvcounts.begin(), recvcounts.end(), 0));
+      std::vector<double> lonsOnRoot(recvsize);
+      std::vector<double> latsOnRoot(recvsize);
+      std::vector<size_t> levsOnRoot(recvsize);
+      std::vector<size_t> subWindowsOnRoot(recvsize);
+      std::vector<double> valuesOnRoot(recvsize);
+      timeComm.gatherv(lons, lonsOnRoot, recvcounts, displs, 0);
+      timeComm.gatherv(lats, latsOnRoot, recvcounts, displs, 0);
+      timeComm.gatherv(levs, levsOnRoot, recvcounts, displs, 0);
+      timeComm.gatherv(subWindows, subWindowsOnRoot, recvcounts, displs, 0);
+      timeComm.gatherv(values, valuesOnRoot, recvcounts, displs, 0);
+
+      // Print results
+      if (timeComm.rank() == 0) {
+        for (size_t i = 0; i < lonsOnRoot.size(); ++i) {
+          oops::Log::test() << "  + Value for variable " << diagField.name() << ", subwindow "
+                            << subWindowsOnRoot[i] << ", at point (" << lonsOnRoot[i] << ", "
+                            << latsOnRoot[i] << ", "<< levsOnRoot[i] << "): " << valuesOnRoot[i]
+                            << std::endl;
+        }
+      }
+    }
+  }
+
+  oops::Log::trace() << "printDiagValues done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
