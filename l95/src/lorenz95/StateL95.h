@@ -102,12 +102,8 @@ class StateL95 : public util::Printable,
   }
 
 /// ATLAS
-  void toFieldSet(atlas::FieldSet &) const
-    {ABORT("toFieldSet not implemented");}
-  void toFieldSetAD(const atlas::FieldSet &)
-    {ABORT("toFieldSetAD not implemented");}
-  void fromFieldSet(const atlas::FieldSet &)
-    {ABORT("fromFieldSet not implemented");}
+  void toFieldSet(atlas::FieldSet &) const;
+  void fromFieldSet(const atlas::FieldSet &);
 
   void read(const Parameters_ &);
   void write(const WriteParameters_ &) const;
@@ -128,6 +124,7 @@ class StateL95 : public util::Printable,
 
  private:
   void print(std::ostream &) const;
+
   FieldL95 fld_;
   util::DateTime time_;
   oops::Variables vars_;

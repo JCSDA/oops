@@ -116,12 +116,9 @@ class IncrementL95 : public util::Printable,
   void random();
 
 /// ATLAS
-  void toFieldSet(atlas::FieldSet &) const
-    {ABORT("toFieldSet not implemented");}
-  void toFieldSetAD(const atlas::FieldSet &)
-    {ABORT("toFieldSetAD not implemented");}
-  void fromFieldSet(const atlas::FieldSet &)
-    {ABORT("fromFieldSet not implemented");}
+  void toFieldSet(atlas::FieldSet &) const;
+  void toFieldSetAD(const atlas::FieldSet &);
+  void fromFieldSet(const atlas::FieldSet &);
 
 // Utilities
   void read(const ReadParameters_ &);

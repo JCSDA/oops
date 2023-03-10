@@ -96,6 +96,34 @@ StateL95 & StateL95::operator+=(const IncrementL95 & dx) {
   return *this;
 }
 // -----------------------------------------------------------------------------
+/// Atlas
+// -----------------------------------------------------------------------------
+void StateL95::toFieldSet(atlas::FieldSet & fset) const {
+  ASSERT(fset.empty());
+
+  // TODO(FH): revisit how the Field is created when updating to "version 2" of atlas interfaces:
+  // The "proper" way to create the Field would be via the FunctionSpace's createField, so that the
+  // Field is linked to the FunctionSpace. This may be needed for atlas's haloExchange method.
+  const int resol = fld_.resol();
+  atlas::Field fld("field", atlas::array::DataType::real64(), atlas::array::ArrayShape({resol, 1}));
+
+  auto view = atlas::array::make_view<double, 2>(fld);
+  for (size_t jj = 0; jj < static_cast<size_t>(resol); ++jj) {
+    view(jj, 0) = fld_[jj];
+  }
+  fset.add(fld);
+}
+// -----------------------------------------------------------------------------
+void StateL95::fromFieldSet(const atlas::FieldSet & fset) {
+  ASSERT(!fset.empty());
+
+  const int resol = fld_.resol();
+  const auto & view = atlas::array::make_view<double, 2>(fset["field"]);
+  for (size_t jj = 0; jj < static_cast<size_t>(resol); ++jj) {
+    fld_[jj] = view(jj, 0);
+  }
+}
+// -----------------------------------------------------------------------------
 /// Utilities
 // -----------------------------------------------------------------------------
 void StateL95::read(const Parameters_ & parameters) {
