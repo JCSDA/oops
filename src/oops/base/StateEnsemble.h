@@ -43,6 +43,8 @@ class StateMemberTemplateParameters : public Parameters {
   Parameter<size_t> zpad{"zero padding", "zero padding", 0, this};
 };
 
+// -----------------------------------------------------------------------------
+
 /// Parameters for the ensemble of states.
 template <typename MODEL>
 class StateEnsembleParameters : public Parameters {
@@ -54,30 +56,46 @@ class StateEnsembleParameters : public Parameters {
   OptionalParameter<std::vector<Parameters_>> states{"members",
                    "members of the state ensemble", this};
   OptionalParameter<StateMemberTemplateParameters_> states_template{"members from template",
-                   "members of the state ensemble", this};
+                   "template to define members of the state ensemble", this};
 
-  void check() const;
+  /// Overridden to detect missing conditionally required parameters
+  using Parameters::deserialize;
+  void deserialize(util::CompositePath &path, const eckit::Configuration &config) override;
+
+  /// Get ensemble size
   size_t size() const;
+
+  /// Get Increment parameters for a given ensemble index
   Parameters_ getStateParameters(const size_t &) const;
 };
 
+// -----------------------------------------------------------------------------
+
 template <typename MODEL>
-void StateEnsembleParameters<MODEL>::check() const
+void StateEnsembleParameters<MODEL>::deserialize(util::CompositePath &path,
+                                                 const eckit::Configuration &config)
 {
+  Parameters::deserialize(path, config);
+
   if (states.value() == boost::none && states_template.value() == boost::none) {
-    ABORT("StateEnsembleParameters: both members and members from template are missing");
+    throw eckit::UserError(
+        path.path() +
+        ": both members and members from template are missing",
+        Here());
   }
   if (states.value() != boost::none && states_template.value() != boost::none) {
-    ABORT("StateEnsembleParameters: both members and members from template are present");
+    throw eckit::UserError(
+        path.path() +
+        ": both members and members from template are present",
+        Here());
   }
 }
+
+// -----------------------------------------------------------------------------
 
 template <typename MODEL>
 size_t StateEnsembleParameters<MODEL>::size() const
 {
-  // Check consistency
-  this->check();
-
   if (states.value() != boost::none) {
     return states.value()->size();
   } else {
@@ -85,15 +103,14 @@ size_t StateEnsembleParameters<MODEL>::size() const
   }
 }
 
+// -----------------------------------------------------------------------------
+
 template <typename MODEL>
 StateParametersND<MODEL> StateEnsembleParameters<MODEL>::getStateParameters(const size_t & ie) const
 {
-  // Check consistency
-  this->check();
-
   // Check ensemble size
   if (ie >= this->size()) {
-    ABORT("StateEnsembleParameters: getStateParameters requested member index is too large");
+    ABORT("StateEnsembleParameters: getStateParameters member index is too large");
   }
 
   if (states.value() != boost::none) {
@@ -133,6 +150,8 @@ StateParametersND<MODEL> StateEnsembleParameters<MODEL>::getStateParameters(cons
   }
 }
 
+// -----------------------------------------------------------------------------
+
 /// \brief Ensemble of states
 template<typename MODEL> class StateEnsemble {
   typedef Geometry<MODEL>      Geometry_;
@@ -167,9 +186,6 @@ template<typename MODEL>
 StateEnsemble<MODEL>::StateEnsemble(const Geometry_ & resol,
                                     const StateEnsembleParameters_ & params)
   : states_() {
-  // Check parameters consistency
-  params.check();
-
   // Reserve memory to hold ensemble
   const size_t nens = params.size();
   states_.reserve(nens);

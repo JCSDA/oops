@@ -856,6 +856,11 @@ ecbuild_add_test( TARGET  test_util_configfunctions
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 
+ecbuild_add_test( TARGET  test_util_fieldsetoperations
+                  SOURCES test/util/FieldSetOperations.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
 ecbuild_add_test( TARGET  test_assimilation_fullgmres
                   SOURCES test/assimilation/FullGMRES.cc
                   ARGS    "test/testinput/empty.yaml"

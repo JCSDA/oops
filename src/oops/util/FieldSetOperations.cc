@@ -41,15 +41,15 @@ atlas::FieldSet createRandomFieldSet(const oops::GeometryData & geometryData,
     // Gather masks on main processor
     if (geometryData.functionSpace().type() == "StructuredColumns") {
       // StructuredColumns
-      atlas::functionspace::StructuredColumns fs(geometryData.functionSpace());
+      const atlas::functionspace::StructuredColumns fs(geometryData.functionSpace());
       fs.gather(localGhost, globalGhost);
     } else if (geometryData.functionSpace().type() == "NodeColumns") {
       // NodeColumns
-      atlas::functionspace::CubedSphereNodeColumns fs(geometryData.functionSpace());
+      const atlas::functionspace::CubedSphereNodeColumns fs(geometryData.functionSpace());
       fs.gather(localGhost, globalGhost);
       // TODO(??): have to assume the NodeColumns is CubedSphere here, cannot differentiate with
       // other NodeColumns from what is in geometryData.
-      // atlas::functionspace::NodeColumns fs(geometryData.functionSpace());
+      // const atlas::functionspace::NodeColumns fs(geometryData.functionSpace());
       // fs.gather(localGhost, globalGhost);
     } else if (geometryData.functionSpace().type() == "Spectral") {
       // Not needed
@@ -70,7 +70,7 @@ atlas::FieldSet createRandomFieldSet(const oops::GeometryData & geometryData,
     size_t n = 0;
     if (field.rank() == 2) {
       if (geometryData.functionSpace().type() == "Spectral") {
-        atlas::functionspace::Spectral fs(geometryData.functionSpace());
+        const atlas::functionspace::Spectral fs(geometryData.functionSpace());
         const atlas::idx_t N = fs.truncation();
         const auto zonal_wavenumbers = fs.zonal_wavenumbers();
         const atlas::idx_t nb_zonal_wavenumbers = zonal_wavenumbers.size();
@@ -121,7 +121,7 @@ atlas::FieldSet createRandomFieldSet(const oops::GeometryData & geometryData,
         if (globalField.rank() == 2) {
           auto view = atlas::array::make_view<double, 2>(globalField);
           if (geometryData.functionSpace().type() == "Spectral") {
-            atlas::functionspace::Spectral fs(geometryData.functionSpace());
+            const atlas::functionspace::Spectral fs(geometryData.functionSpace());
             const atlas::idx_t N = fs.truncation();
             int jnode = 0;
             for (int jm=0; jm <= N; ++jm) {
@@ -203,18 +203,18 @@ atlas::FieldSet createRandomFieldSet(const oops::GeometryData & geometryData,
       // Scatter global field
       if (geometryData.functionSpace().type() == "StructuredColumns") {
         // StructuredColumns
-        atlas::functionspace::StructuredColumns fs(geometryData.functionSpace());
+        const atlas::functionspace::StructuredColumns fs(geometryData.functionSpace());
         fs.scatter(globalField, field);
       } else if (geometryData.functionSpace().type() == "NodeColumns") {
         // CubedSphere
-        atlas::functionspace::CubedSphereNodeColumns fs(geometryData.functionSpace());
+        const atlas::functionspace::CubedSphereNodeColumns fs(geometryData.functionSpace());
         fs.scatter(globalField, field);
         // TODO(??): have to assume the NodeColumns is CubedSphere here, cannot differentiate with
         // other NodeColumns from what is in geometryData.
-        // atlas::functionspace::NodeColumns fs(geometryData.functionSpace());
+        // const atlas::functionspace::NodeColumns fs(geometryData.functionSpace());
         // fs.scatter(globalField, field);
       } else if (geometryData.functionSpace().type() == "Spectral") {
-        atlas::functionspace::Spectral fs(geometryData.functionSpace());
+        const atlas::functionspace::Spectral fs(geometryData.functionSpace());
         fs.scatter(globalField, field);
       } else {
         ABORT(geometryData.functionSpace().type() + " function space not supported yet");
@@ -278,6 +278,23 @@ atlas::FieldSet copyFieldSet(const atlas::FieldSet & otherFset) {
 
 // -----------------------------------------------------------------------------
 
+atlas::FieldSet shareFields(const atlas::FieldSet & otherFset) {
+  oops::Log::trace() << "shareFields starting" << std::endl;
+
+  // Create FieldSet
+  atlas::FieldSet fset;
+
+  // Add other FieldSet fields
+  for (const auto & field : otherFset) {
+    fset.add(field);
+  }
+
+  // Return FieldSet
+  return fset;
+}
+
+// -----------------------------------------------------------------------------
+
 void removeFieldsFromFieldSet(atlas::FieldSet & fset,
                               const oops::Variables & vars) {
   oops::Log::trace() << "removeFieldsFromFieldSet starting" << std::endl;
@@ -296,6 +313,59 @@ void removeFieldsFromFieldSet(atlas::FieldSet & fset,
   fset = fsetTmp;
 
   oops::Log::trace() << "removeFieldsFromFieldSet done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+std::string getGridUid(const atlas::FunctionSpace & fspace) {
+  oops::Log::trace() << "getGridUid starting" << std::endl;
+
+  if (fspace.type() == "StructuredColumns") {
+    // StructuredColumns
+    const atlas::functionspace::StructuredColumns fs(fspace);
+    return fs.grid().uid();
+  } else if (fspace.type() == "NodeColumns") {
+    // CubedSphere
+    const atlas::functionspace::CubedSphereNodeColumns fs(fspace);
+    return fs.mesh().grid().uid();
+    // TODO(??): have to assume the NodeColumns is CubedSphere here, cannot differentiate with
+    // other NodeColumns from what is in fspace.
+    // const atlas::functionspace::NodeColumns fs(fspace);
+    // return fs.grid().uid();
+  } else if (fspace.type() == "PointCloud") {
+    const atlas::functionspace::PointCloud fs(fspace);
+    return "PointCloud" + std::to_string(fs.size());
+  } else if (fspace.type() == "Spectral") {
+    const atlas::functionspace::Spectral fs(fspace);
+    return "Spectral" + std::to_string(fs.truncation());
+  } else {
+    ABORT(fspace.type() + " function space not supported yet");
+    return "";
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+std::string getGridUid(const atlas::FieldSet & fset) {
+  oops::Log::trace() << "getGridUid starting" << std::endl;
+
+  if (fset.size() > 0) {
+    // Get grid UID of the first field
+    std::string uid = getGridUid(fset[0].functionspace());
+
+    // Check that other fields have the same UID
+    for (const auto & field : fset) {
+      if (getGridUid(field.functionspace()) != uid) {
+        ABORT("All fields should have the same grid");
+      }
+    }
+
+    // Return UID
+    return uid;
+  } else {
+    // No field in the fieldset
+    return "";
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -423,7 +493,7 @@ double dotProductFieldSets(const atlas::FieldSet & fset1,
         auto view1 = atlas::array::make_view<double, 2>(field1);
         auto view2 = atlas::array::make_view<double, 2>(field2);
         if (field1.functionspace().type() == "Spectral") {
-          atlas::functionspace::Spectral fs(field1.functionspace());
+          const atlas::functionspace::Spectral fs(field1.functionspace());
           const atlas::idx_t N = fs.truncation();
           const auto zonal_wavenumbers = fs.zonal_wavenumbers();
           const atlas::idx_t nb_zonal_wavenumbers = zonal_wavenumbers.size();

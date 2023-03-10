@@ -26,8 +26,11 @@ atlas::FieldSet createRandomFieldSet(const oops::GeometryData &,
                                      const std::vector<size_t> &,
                                      const oops::Variables &);
 atlas::FieldSet copyFieldSet(const atlas::FieldSet &);
+atlas::FieldSet shareFields(const atlas::FieldSet &);
 void removeFieldsFromFieldSet(atlas::FieldSet &,
                               const oops::Variables &);
+std::string getGridUid(const atlas::FunctionSpace &);
+std::string getGridUid(const atlas::FieldSet &);
 void zeroFieldSet(atlas::FieldSet &);
 void addFieldSets(atlas::FieldSet &,
                   const atlas::FieldSet &);
