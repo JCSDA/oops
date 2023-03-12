@@ -46,7 +46,7 @@ template <typename OBS> void testConstructor() {
     std::unique_ptr<Covar_> R = std::make_unique<Covar_>(rparams.obsErrorParameters,
                                                          Test_::obspace()[jj]);
     EXPECT(R.get());
-    oops::Log::test() << "Testing ObsError: " << *R << std::endl;
+    oops::Log::info() << "Testing ObsError: " << *R << std::endl;
     R.reset();
     EXPECT(!R.get());
   }
@@ -81,20 +81,20 @@ template <typename OBS> void testMultiplies() {
     R.randomize(dy);
     ObsVector_ dy1(dy);
     ObsVector_ dy2(dy);
-    oops::Log::test() << "Random vector dy: " << dy << std::endl;
+    oops::Log::info() << "Random vector dy: " << dy << std::endl;
 
     R.multiply(dy1);
-    oops::Log::test() << "R*dy: " << dy1 << std::endl;
+    oops::Log::info() << "R*dy: " << dy1 << std::endl;
     R.inverseMultiply(dy1);
     // dy1 = R^{-1}*R*dy
-    oops::Log::test() << "R^{-1}*R*dy: " << dy1 << std::endl;
+    oops::Log::info() << "R^{-1}*R*dy: " << dy1 << std::endl;
     EXPECT(oops::is_close(dy1.rms(), dy.rms(), 1.e-10));
 
     R.inverseMultiply(dy2);
-    oops::Log::test() << "R^{-1}*dy: " << dy2 << std::endl;
+    oops::Log::info() << "R^{-1}*dy: " << dy2 << std::endl;
     R.multiply(dy2);
     // dy2 = R*R^P-1}*dy
-    oops::Log::test() << "R*R^{-1}*dy: " << dy2 << std::endl;
+    oops::Log::info() << "R*R^{-1}*dy: " << dy2 << std::endl;
     EXPECT(oops::is_close(dy2.rms(), dy.rms(), 1.e-10));
   }
 }
@@ -122,18 +122,18 @@ template <typename OBS> void testAccessors() {
     Covar_ R(rparams.obsErrorParameters, Test_::obspace()[jj]);
 
     ObsVector_ dy(R.obserrors());
-    oops::Log::test() << "ObsError: " << dy << std::endl;
+    oops::Log::info() << "ObsError: " << dy << std::endl;
     EXPECT(oops::is_close(dy.rms(), obserr.rms(), 1.e-10));
 
     ObsVector_ dy1(R.inverseVariance());
-    oops::Log::test() << "inverseVariance: " << dy1 << std::endl;
+    oops::Log::info() << "inverseVariance: " << dy1 << std::endl;
     dy *= dy;
     dy.invert();
     EXPECT(oops::is_close(dy.rms(), dy1.rms(), 1.e-10));
 
     dy.ones();
     R.update(dy);
-    oops::Log::test() << "R filled with ones: " << R.obserrors() << std::endl;
+    oops::Log::info() << "R filled with ones: " << R.obserrors() << std::endl;
     EXPECT(oops::is_close(R.obserrors().rms(), R.inverseVariance().rms(), 1.e-10));
     EXPECT(oops::is_close(R.obserrors().rms(), dy.rms(), 1.e-10));
 

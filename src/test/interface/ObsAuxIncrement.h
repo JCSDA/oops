@@ -76,7 +76,7 @@ template <typename OBS> void testObsAuxIncrementConstructor() {
     typename AuxIncr_::Parameters_ biasparams;
     biasparams.validateAndDeserialize(biasconf);
     AuxIncr_ dx(Test_::obspace()[jj], biasparams);
-    oops::Log::test() << "Printing zero ObsAuxIncrement: " << dx << std::endl;
+    oops::Log::info() << "Printing zero ObsAuxIncrement: " << dx << std::endl;
     EXPECT(dx.norm() == 0.0);
   }
 }
@@ -94,7 +94,7 @@ template <typename OBS> void testObsAuxIncrementCopyConstructor() {
       biasparams.validateAndDeserialize(biasconf);
       AuxIncr_ dx1(Test_::obspace()[jj], biasparams);
       ObsAuxIncrementFixture<OBS>::covariance(jj).randomize(dx1);
-      oops::Log::test() << "Printing random ObsAuxIncrement: " << dx1 << std::endl;
+      oops::Log::info() << "Printing random ObsAuxIncrement: " << dx1 << std::endl;
       /// Test that creating new increment without copying data works
       AuxIncr_ dxempty(dx1, false);
       EXPECT_EQUAL(dxempty.norm(), 0.0);

@@ -38,7 +38,7 @@ template <typename OBS> void testConstructor() {
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     std::unique_ptr<ObsVector_> ov(new ObsVector_(Test_::obspace()[jj]));
     EXPECT(ov.get());
-    oops::Log::test() << "Printing zero ObsVector: " << *ov << std::endl;
+    oops::Log::info() << "Printing zero ObsVector: " << *ov << std::endl;
     ov.reset();
     EXPECT(!ov.get());
   }
@@ -54,7 +54,7 @@ template <typename OBS> void testCopyConstructor() {
     std::unique_ptr<ObsVector_> ov(new ObsVector_(Test_::obspace()[jj]));
 
     ov->random();
-    oops::Log::test() << "Printing random ObsVector: " << *ov << std::endl;
+    oops::Log::info() << "Printing random ObsVector: " << *ov << std::endl;
 
     std::unique_ptr<ObsVector_> other(new ObsVector_(*ov));
     EXPECT(other.get());
@@ -82,7 +82,7 @@ template <typename OBS> void testWrappingConstructor() {
     ObsVector_ ov(Test_::obspace()[jj]);
 
     ov.random();
-    oops::Log::test() << "Printing random ObsVector: " << ov << std::endl;
+    oops::Log::info() << "Printing random ObsVector: " << ov << std::endl;
 
     ObsVector_ other(std::make_unique<typename OBS::ObsVector_>(ov->obsvector()),
                      Test_::obspace()[jj]);
@@ -210,7 +210,7 @@ template <typename OBS> void testMask() {
 
     ObsVector_ reference(obspace);
     reference.random();
-    oops::Log::test() << "ObsVector before masking: " << reference << std::endl;
+    oops::Log::info() << "ObsVector before masking: " << reference << std::endl;
 
     const size_t nobs_all = Test_::config(jj).getInt("reference global nobs");
     EXPECT_EQUAL(reference.nobs(), nobs_all);
@@ -221,7 +221,7 @@ template <typename OBS> void testMask() {
     unsetmask.zero();
     ObsVector_ with_unsetmask(reference);
     with_unsetmask.mask(unsetmask);
-    oops::Log::test() << "ObsVector masked with all-zero-mask: " << with_unsetmask << std::endl;
+    oops::Log::info() << "ObsVector masked with all-zero-mask: " << with_unsetmask << std::endl;
     EXPECT_EQUAL(with_unsetmask.nobs(), nobs_all);
     with_unsetmask -= reference;
     EXPECT_EQUAL(with_unsetmask.rms(), 0.0);
@@ -260,7 +260,7 @@ template <typename OBS> void testMask() {
 
     ObsVector_ with_mask(reference);
     with_mask.mask(mask);
-    oops::Log::test() << "ObsVector masked with " << maskvarname << " mask: " <<
+    oops::Log::info() << "ObsVector masked with " << maskvarname << " mask: " <<
                          with_mask << std::endl;
     EXPECT_EQUAL(with_mask.nobs(), nobs_after_mask);
 

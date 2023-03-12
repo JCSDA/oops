@@ -36,7 +36,7 @@ template <typename OBS> void testConstructor() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(), "locations");
   std::unique_ptr<Locations_> locs(new Locations_(conf, oops::mpi::world()));
   EXPECT(locs.get());
-  oops::Log::test() << "Testing locations: " << *locs << std::endl;
+  oops::Log::info() << "Testing locations: " << *locs << std::endl;
   locs.reset();
   EXPECT(!locs.get());
 }

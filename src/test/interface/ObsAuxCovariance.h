@@ -39,7 +39,7 @@ template <typename OBS> void testConstructor() {
     biasparams.validateAndDeserialize(biasconf);
     std::unique_ptr<Covariance_> cov(new Covariance_(Test_::obspace()[jj], biasparams));
     EXPECT(cov.get());
-    oops::Log::test() << "Testing ObsAuxCovariance: " << *cov << std::endl;
+    oops::Log::info() << "Testing ObsAuxCovariance: " << *cov << std::endl;
     cov.reset();
     EXPECT(!cov.get());
   }

@@ -71,7 +71,7 @@ template <typename OBS> void testConstructor() {
     std::unique_ptr<GeoVaLs_> geovals(new GeoVaLs_(params.geovals, Test_::obspace()[jj],
                                                    params.geovalstest.value().vars));
     EXPECT(geovals.get());
-    oops::Log::test() << "Testing GeoVaLs: " << *geovals << std::endl;
+    oops::Log::info() << "Testing GeoVaLs: " << *geovals << std::endl;
     geovals.reset();
     EXPECT(!geovals.get());
   }

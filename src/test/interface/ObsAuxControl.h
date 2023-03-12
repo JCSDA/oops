@@ -40,7 +40,7 @@ template <typename OBS> void testConstructor() {
     biasparams.validateAndDeserialize(biasconf);
     std::unique_ptr<ObsAux_> bias(new ObsAux_(Test_::obspace()[jj], biasparams));
     EXPECT(bias.get());
-    oops::Log::test() << "Testing ObsAuxControl: " << *bias << std::endl;
+    oops::Log::info() << "Testing ObsAuxControl: " << *bias << std::endl;
 
     // Not all configurations for interface tests specify "obs bias"; need to check
     // whether "obs bias" section is available

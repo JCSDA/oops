@@ -38,7 +38,7 @@ template <typename OBS> void testConstructors() {
     EXPECT(odv1.get());
 
     odv1->zero();
-    oops::Log::test() << "Printing zero ObsDataVector: " << *odv1 << std::endl;
+    oops::Log::info() << "Printing zero ObsDataVector: " << *odv1 << std::endl;
 
     std::unique_ptr<ObsDataVector_> odv2(new ObsDataVector_(*odv1));
     EXPECT(odv2.get());
@@ -63,15 +63,15 @@ template <typename OBS> void testObsVector() {
     ov1.random();
 
     ObsDataVector_ odv(ov1);
-    oops::Log::test() << "Printing random ObsDataVector: " << odv << std::endl;
+    oops::Log::info() << "Printing random ObsDataVector: " << odv << std::endl;
 
     oops::ObsVector<OBS> ov2(Test_::obspace()[jj]);
     ov2 = odv;
 
     ov1 -= ov2;
-    oops::Log::test() << "ObsVector - ObsDataVector = " << ov1 << std::endl;
+    oops::Log::info() << "ObsVector - ObsDataVector = " << ov1 << std::endl;
     const double diff = dot_product(ov1, ov1);
-    oops::Log::test() << "ObsVector, ObsDataVector diff = " << diff << std::endl;
+    oops::Log::info() << "ObsVector, ObsDataVector diff = " << diff << std::endl;
     EXPECT(diff < tolerance);
   }
 }

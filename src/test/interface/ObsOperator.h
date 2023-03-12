@@ -143,7 +143,7 @@ template <typename OBS> void testConstructor() {
     if (obsTypeParams.expectConstructorToThrow.value() == boost::none) {
       auto hop = std::make_unique<ObsOperator_>(Test_::obspace()[jj], obsOpParams);;
       EXPECT(hop.get());
-      oops::Log::test() << "Testing ObsOperator: " << *hop << std::endl;
+      oops::Log::info() << "Testing ObsOperator: " << *hop << std::endl;
       hop.reset();
       EXPECT(!hop.get());
     } else {
@@ -223,7 +223,7 @@ template <typename OBS> void testSimulateObs() {
       ObsVector_ obsref(Test_::obspace()[jj], *obsTypeParams.vectorRef.value());
       obsref -= hofx;
       const double zz = obsref.rms();
-      oops::Log::test() << "Vector difference between reference and computed: " << obsref;
+      oops::Log::info() << "Vector difference between reference and computed: " << obsref;
       EXPECT(zz < 100*tol);  //  change tol from percent to actual value.
                              //  tol used in is_close is relative
     } else if (obsTypeParams.normRef.value() != boost::none) {
@@ -233,7 +233,7 @@ template <typename OBS> void testSimulateObs() {
       obsref -= hofx;
       obsref /= hofx;
       const double zz = obsref.rms();
-      oops::Log::test() << "Normalised vector difference between reference and computed: "
+      oops::Log::info() << "Normalised vector difference between reference and computed: "
                         << obsref;
       EXPECT(zz < 100*tol);  //  change tol from percent to actual value.
                              //  tol used in is_close is relative

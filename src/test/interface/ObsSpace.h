@@ -37,7 +37,7 @@ template <typename OBS> void testConstructor() {
   typedef ObsTestsFixture<OBS> Test_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    oops::Log::test() << "Testing ObsSpace: " << Test_::obspace()[jj] << std::endl;
+    oops::Log::info() << "Testing ObsSpace: " << Test_::obspace()[jj] << std::endl;
     EXPECT(Test_::obspace()[jj].windowStart() == Test_::tbgn());
     EXPECT(Test_::obspace()[jj].windowEnd() ==   Test_::tend());
   }
@@ -53,7 +53,7 @@ template <typename OBS> void testSubwindows() {
   typedef oops::ObsVector<OBS>   ObsVector_;
 
   util::DateTime tmid = Test_::tbgn() + (Test_::tend()-Test_::tbgn())/2;
-  oops::Log::test() << "Testing subwindows: " << Test_::tbgn() << " to " << tmid << " and "
+  oops::Log::info() << "Testing subwindows: " << Test_::tbgn() << " to " << tmid << " and "
                                               << tmid << " to " << Test_::tend() << std::endl;
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     eckit::LocalConfiguration obsconfig(Test_::config(jj), "obs space");
@@ -66,7 +66,7 @@ template <typename OBS> void testSubwindows() {
     ObsVector_ ovec(Test_::obspace()[jj]);
     ObsVector_ ovec1(obspace1);
     ObsVector_ ovec2(obspace2);
-    oops::Log::test() << Test_::obspace()[jj].obsname() << " nobs(all): " << ovec.nobs()
+    oops::Log::info() << Test_::obspace()[jj].obsname() << " nobs(all): " << ovec.nobs()
                       << " nobs(1st subwindow): " << ovec1.nobs()
                       << " nobs(2nd subwindow): " << ovec2.nobs() << std::endl;
     EXPECT_EQUAL(ovec1.nobs() + ovec2.nobs(), ovec.nobs());
