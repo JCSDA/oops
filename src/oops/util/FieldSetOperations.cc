@@ -729,10 +729,14 @@ void printDiagValues(const eckit::mpi::Comm & timeComm,
       // Print results
       if (timeComm.rank() == 0) {
         for (size_t i = 0; i < lonsOnRoot.size(); ++i) {
-          oops::Log::test() << "  + Value for variable " << diagField.name() << ", subwindow "
-                            << subWindowsOnRoot[i] << ", at point (" << lonsOnRoot[i] << ", "
-                            << latsOnRoot[i] << ", "<< levsOnRoot[i] << "): " << valuesOnRoot[i]
-                            << std::endl;
+          oops::Log::test() << "  + Value for variable " << diagField.name()
+                            <<", subwindow " << subWindowsOnRoot[i]
+                            << std::fixed << std::setprecision(5)
+                            << ", at (longitude, latitude, vertical index) point ("
+                            << lonsOnRoot[i] << ", " << latsOnRoot[i]
+                            << ", " << levsOnRoot[i] << "): "
+                            << std::scientific << std::setprecision(16)
+                            << valuesOnRoot[i] << std::endl;
         }
       }
     }

@@ -4,10 +4,10 @@ Input Dirac increment:
   Streamfunction         :  Min=0.0000000000000000e+00, Max=1.0000000000000000e+00, RMS=2.5000000000000001e-02
 Covariance(QgError) diagnostics:
 - Variances at Dirac points:
-  + Value for variable x, subwindow 0, at point (-4.5000000000000000e+00, 4.1146238600188383e+01, 1): 3.2400000000000006e+14
+  + Value for variable x, subwindow 0, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 3.2400000000000000e+14
 - Covariances at diagnostic points:
-  + Value for variable x, subwindow 0, at point (-9.4500000000000000e+01, 4.1146238600188383e+01, 1): 1.0396943607426168e+10
-  + Value for variable x, subwindow 0, at point (8.5500000000000000e+01, 4.1146238600188383e+01, 2): 9.8350872531201591e+09
+  + Value for variable x, subwindow 0, at (longitude, latitude, vertical index) point (-94.50000, 41.14624, 1): 1.0396943607385935e+10
+  + Value for variable x, subwindow 0, at (longitude, latitude, vertical index) point (85.50000, 41.14624, 2): 9.8350872531201611e+09
 Covariance(QgError) * Increment:
   Valid time: 2010-01-01T12:00:00Z
   Resolution = 40, 20, 2
