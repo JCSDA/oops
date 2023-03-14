@@ -156,15 +156,15 @@ void HtlmCalculator<MODEL>::calcCoeffs(const IncrementEnsemble_ & linearEnsemble
               if (k-halfInfluenceSize_ > 0 &&
                       k + halfInfluenceSize_ < linearEnsembleView.shape(1) ) {
                 // middle case
-                influenceMat(vars_.size()*varInd2 + infInd, ensInd) =
+                influenceMat(influenceSize_*varInd2 + infInd, ensInd) =
                         linearEnsembleView(i, k-halfInfluenceSize_ + infInd);
               } else if (k-halfInfluenceSize_ <= 0) {
                 // start of increment edge case
-                influenceMat(vars_.size()*varInd2 + infInd, ensInd) =
+                influenceMat(influenceSize_*varInd2 + infInd, ensInd) =
                                                     linearEnsembleView(i, infInd);
               } else if (k+halfInfluenceSize_ >= linearEnsembleView.shape(1)) {
                 // end of increment edge case
-                influenceMat(vars_.size()*varInd2 + infInd, ensInd) =
+                influenceMat(influenceSize_*varInd2 + infInd, ensInd) =
                     linearEnsembleView(i, (linearEnsembleView.shape(1)-influenceSize_) + infInd);
               } else {
                 // Checking cases are correct

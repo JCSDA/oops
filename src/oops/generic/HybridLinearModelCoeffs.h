@@ -247,14 +247,14 @@ std::vector<double> HybridLinearModelCoeffs<MODEL>::getInfluenceVec(const atlas:
         for (atlas::idx_t infInd = 0; infInd < influenceSize_; ++infInd) {
             if (k - halfInfluenceSize_ > 0 && k + halfInfluenceSize_ < dxFview.shape(1)) {
                 // General (middle) case
-                dxVec[vars_.size() * varInd + infInd] =
+                dxVec[influenceSize_ * varInd + infInd] =
                         dxFview(i, k - halfInfluenceSize_ + infInd);
             } else if (k - halfInfluenceSize_ <= 0) {
                 // Start of increment edge case
-                dxVec[vars_.size() * varInd + infInd] = dxFview(i, infInd);
+                dxVec[influenceSize_ * varInd + infInd] = dxFview(i, infInd);
             } else if (k + halfInfluenceSize_ >= dxFview.shape(1)) {
                 // End of increment edge case
-                dxVec[vars_.size() * varInd + infInd] =
+                dxVec[influenceSize_ * varInd + infInd] =
                         dxFview(i, (dxFview.shape(1) - influenceSize_) + infInd);
             } else {
                 // Checking cases are correct
