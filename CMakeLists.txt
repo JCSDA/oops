@@ -61,9 +61,9 @@ find_package( Boost 1.64.0 REQUIRED )
 find_package( eckit 1.19.0 REQUIRED COMPONENTS MPI )
 find_package( fckit 0.9.5 REQUIRED )
 if(OpenMP_FOUND)
-    find_package( atlas 0.30.0 REQUIRED COMPONENTS OMP OMP_Fortran )
+    find_package( atlas 0.31.1 REQUIRED COMPONENTS OMP OMP_Fortran )
 else()
-    find_package( atlas 0.30.0 REQUIRED )
+    find_package( atlas 0.31.1 REQUIRED )
 endif()
 
 #Optional Dependencies
