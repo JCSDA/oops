@@ -178,9 +178,12 @@ oops/contrib/dcmipInitialConditionsTest_4_v3_Fortran.h
 
 oops/coupled/AuxCoupledModel.h
 oops/coupled/GeometryCoupled.h
+oops/coupled/GetValuesCoupled.h
 oops/coupled/ModelCoupled.h
 oops/coupled/StateCoupled.h
 oops/coupled/TraitCoupled.h
+oops/coupled/UtilsCoupled.cc
+oops/coupled/UtilsCoupled.h
 oops/coupled/VariableChangeCoupled.h
 oops/coupled/instantiateCoupledFactory.h
 
@@ -752,6 +755,10 @@ ecbuild_add_test( TARGET  test_generic_gc99
 
 ecbuild_add_test( TARGET  test_generic_soar
                   SOURCES test/generic/soar.cc
+                  LIBS    oops eckit )
+
+ecbuild_add_test( TARGET  test_coupled_splitvariables
+                  SOURCES test/coupled/SplitVariables.cc
                   LIBS    oops eckit )
 
 ecbuild_add_test( TARGET  test_util_isanypointinvolumeinterior

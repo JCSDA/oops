@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2021-2021 UCAR
+ * (C) Copyright 2021-2023 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -10,7 +10,6 @@
 #include <memory>
 #include <ostream>
 #include <string>
-#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -21,6 +20,8 @@
 #include "eckit/mpi/Comm.h"
 
 #include "oops/base/Geometry.h"
+#include "oops/base/Variables.h"
+#include "oops/coupled/UtilsCoupled.h"
 #include "oops/util/gatherPrint.h"
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
@@ -31,21 +32,24 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 /// Parameters for Geometry describing a coupled model geometry
-template<class... MODELs>
+template<typename MODEL1, typename MODEL2>
 class GeometryCoupledParameters : public Parameters {
   OOPS_CONCRETE_PARAMETERS(GeometryCoupledParameters, Parameters)
 
-  /// Type of tuples stored in the GeometryCoupledParameters
-  using RequiredParametersTupleT =
-        std::tuple<RequiredParameter<typename Geometry<MODELs>::Parameters_>...>;
-  /// Tuple that can be passed to the Parameter ctor
-  using RequiredParameterInit = std::tuple<const char *, Parameters *>;
+  typedef typename Geometry<MODEL1>::Parameters_ Parameters1_;
+  typedef typename Geometry<MODEL2>::Parameters_ Parameters2_;
 
  public:
-  /// Tuple of all Geometry Parameters.
-  RequiredParametersTupleT geometries{RequiredParameterInit(MODELs::name().c_str(), this) ... };
-  // Parameter to run the models sequentially or in parallel
-  Parameter<bool> parallel{"parallel", false, this};
+  RequiredParameter<Parameters1_> geometry1{MODEL1::name().c_str(), this};
+  RequiredParameter<Parameters2_> geometry2{MODEL2::name().c_str(), this};
+  Parameter<bool> parallel{"parallel", "run the models sequentially or in parallel",
+                           false, this};
+  Parameter<Variables> vars1{std::string(MODEL1::name() + " variables").c_str(),
+          "variables that the first model should provide, have to be different "
+          "from the variables that the second model provides", {}, this};
+  Parameter<Variables> vars2{std::string(MODEL2::name() + " variables").c_str(),
+          "variables that the second model should provide, have to be different "
+          "from the variables that the first model provides", {}, this};
 };
 
 // -----------------------------------------------------------------------------
@@ -79,6 +83,10 @@ class GeometryCoupled : public util::Printable {
 
   void latlon(std::vector<double> &, std::vector<double> &, const bool) const {}
 
+  std::vector<size_t> variableSizes(const Variables & vars) const;
+
+  const std::vector<Variables> & variables() const {return vars_;}
+
   bool levelsAreTopDown() const {return true;}
   const atlas::FunctionSpace & functionSpace() const {return nospace_;}
   const atlas::FieldSet & extraFields() const {return nofields_;}
@@ -88,6 +96,7 @@ class GeometryCoupled : public util::Printable {
 
   std::shared_ptr<Geometry<MODEL1>> geom1_;
   std::shared_ptr<Geometry<MODEL2>> geom2_;
+  const std::vector<Variables> vars_;  ///< variables that model1 and model2 should provide
   eckit::mpi::Comm * commPrints_;
   bool parallel_;
   int mymodel_;
@@ -100,8 +109,17 @@ class GeometryCoupled : public util::Printable {
 template <typename MODEL1, typename MODEL2>
 GeometryCoupled<MODEL1, MODEL2>::GeometryCoupled(const Parameters_ & params,
                                                  const eckit::mpi::Comm & comm)
-  : geom1_(), geom2_(), commPrints_(nullptr), parallel_(params.parallel.value()), mymodel_(-1)
+  : geom1_(), geom2_(), vars_({params.vars1.value(), params.vars2.value()}),
+    commPrints_(nullptr), parallel_(params.parallel.value()), mymodel_(-1)
 {
+  // check that the same variable isn't specified in both models'
+  // variables
+  Variables commonvars = vars_[0];
+  commonvars.intersection(vars_[1]);
+  if (commonvars.size() > 0) {
+    throw eckit::BadParameter("Variables for different components of coupled "
+          "model can not overlap", Here());
+  }
   if (params.parallel) {
     const int mytask = comm.rank();
     const int ntasks = comm.size();
@@ -117,10 +135,10 @@ GeometryCoupled<MODEL1, MODEL2>::GeometryCoupled(const Parameters_ & params,
     eckit::mpi::Comm & commModel = comm.split(mymodel_, commName);
 
     if (mymodel_ == 1) {
-      geom1_ = std::make_shared<Geometry<MODEL1>>(std::get<0>(params.geometries), commModel);
+      geom1_ = std::make_shared<Geometry<MODEL1>>(params.geometry1, commModel);
     }
     if (mymodel_ == 2) {
-      geom2_ = std::make_shared<Geometry<MODEL2>>(std::get<1>(params.geometries), commModel);
+      geom2_ = std::make_shared<Geometry<MODEL2>>(params.geometry2, commModel);
     }
 
 // This is creating Nprocs/2 new communicators, each of which pairs two processes:
@@ -132,9 +150,29 @@ GeometryCoupled<MODEL1, MODEL2>::GeometryCoupled(const Parameters_ & params,
     char const *commPrintsName = commPrintStr.c_str();
     commPrints_ = &comm.split(myrank, commPrintsName);
   } else {
-    geom1_ = std::make_shared<Geometry<MODEL1>>(std::get<0>(params.geometries), comm);
-    geom2_ = std::make_shared<Geometry<MODEL2>>(std::get<1>(params.geometries), comm);
+    geom1_ = std::make_shared<Geometry<MODEL1>>(params.geometry1, comm);
+    geom2_ = std::make_shared<Geometry<MODEL2>>(params.geometry2, comm);
   }
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL1, typename MODEL2>
+std::vector<size_t> GeometryCoupled<MODEL1, MODEL2>::variableSizes(const Variables & vars) const {
+  // decide what variables are provided by what model
+  std::vector<Variables> splitvars = splitVariables(vars, vars_);
+  const std::vector<size_t> reqvars1sizes = geom1_->variableSizes(splitvars[0]);
+  const std::vector<size_t> reqvars2sizes = geom2_->variableSizes(splitvars[1]);
+
+  std::vector<size_t> varsizes(vars.size());
+  for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
+    if (splitvars[0].has(vars[jvar])) {
+      varsizes[jvar] = reqvars1sizes[splitvars[0].find(vars[jvar])];
+    } else {
+      varsizes[jvar] = reqvars2sizes[splitvars[1].find(vars[jvar])];
+    }
+  }
+  return varsizes;
 }
 
 // -----------------------------------------------------------------------------

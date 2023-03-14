@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2022- UCAR.
+ * (C) Copyright 2022-2023 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -10,12 +10,14 @@
 #include <memory>
 #include <ostream>
 #include <string>
+#include <vector>
 
 #include "oops/base/VariableChangeParametersBase.h"
 #include "oops/coupled/GeometryCoupled.h"
 #include "oops/coupled/StateCoupled.h"
+#include "oops/coupled/UtilsCoupled.h"
 #include "oops/interface/VariableChange.h"
-#include "oops/util/parameters/RequiredParameter.h"
+#include "oops/util/parameters/Parameter.h"
 #include "oops/util/Printable.h"
 
 namespace oops {
@@ -29,14 +31,8 @@ class VariableChangeCoupledParameters : public VariableChangeParametersBase {
   typedef typename VariableChange<MODEL1>::Parameters_ Parameters1_;
   typedef typename VariableChange<MODEL2>::Parameters_ Parameters2_;
  public:
-  RequiredParameter<Parameters1_> varchg1{MODEL1::name().c_str(), this};
-  RequiredParameter<Parameters2_> varchg2{MODEL2::name().c_str(), this};
-  RequiredParameter<Variables> vars1{std::string(MODEL1::name() + " variables").c_str(),
-          "variables that the first model should provide, have to be different "
-          "from the variables that the second model provides", this};
-  RequiredParameter<Variables> vars2{std::string(MODEL2::name() + " variables").c_str(),
-          "variables that the second model should provide, have to be different "
-          "from the variables that the first model provides", this};
+  Parameter<Parameters1_> varchg1{MODEL1::name().c_str(), {}, this};
+  Parameter<Parameters2_> varchg2{MODEL2::name().c_str(), {}, this};
 };
 
 // -----------------------------------------------------------------------------
@@ -62,28 +58,18 @@ class VariableChangeCoupled : public util::Printable {
 
   std::unique_ptr<VariableChange1_> varchg1_;
   std::unique_ptr<VariableChange2_> varchg2_;
-  const Variables vars1_;  ///< variables that model1 should provide
-  const Variables vars2_;  ///< variables that model2 should provide
+  const std::vector<Variables> availableVars_;
 };
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL1, typename MODEL2>
 VariableChangeCoupled<MODEL1, MODEL2>::VariableChangeCoupled(
-      const Parameters_ & params, const Geometry_ & geometry)
-  : vars1_(params.vars1), vars2_(params.vars2) {
+      const Parameters_ & params, const Geometry_ & geometry) :
+  availableVars_(geometry.variables()) {
   if (geometry.isParallel()) {
     throw eckit::NotImplemented(Here());
   }
-  // check that the same variable isn't specified in both models'
-  // variables
-  Variables commonvars = vars1_;
-  commonvars.intersection(vars2_);
-  if (commonvars.size() > 0) {
-    throw eckit::BadParameter("Variables for different components of coupled "
-          "variable change can not overlap", Here());
-  }
-
   varchg1_ = std::make_unique<VariableChange1_>(params.varchg1, geometry.geometry1());
   varchg2_ = std::make_unique<VariableChange2_>(params.varchg2, geometry.geometry2());
 }
@@ -94,18 +80,9 @@ template <typename MODEL1, typename MODEL2>
 void VariableChangeCoupled<MODEL1, MODEL2>::changeVar(State_ & xx,
                                             const oops::Variables & vars) const {
   // decide what variables are provided by what model
-  Variables outvars1 = vars;
-  outvars1.intersection(vars1_);
-  Variables outvars2 = vars;
-  outvars2.intersection(vars2_);
-  // check that all variables are accounted for
-  Variables alloutvars = outvars1;
-  alloutvars += outvars2;
-  if (alloutvars != vars) {
-    throw eckit::UserError("Not all variables can be provided by the coupled variable change");
-  }
-  varchg1_->changeVar(xx.state1(), outvars1);
-  varchg2_->changeVar(xx.state2(), outvars2);
+  std::vector<Variables> splitvars = splitVariables(vars, availableVars_);
+  varchg1_->changeVar(xx.state1(), splitvars[0]);
+  varchg2_->changeVar(xx.state2(), splitvars[1]);
 }
 
 // -----------------------------------------------------------------------------
@@ -113,18 +90,10 @@ void VariableChangeCoupled<MODEL1, MODEL2>::changeVar(State_ & xx,
 template <typename MODEL1, typename MODEL2>
 void VariableChangeCoupled<MODEL1, MODEL2>::changeVarInverse(State_ & xx,
                                             const oops::Variables & vars) const {
-  Variables outvars1 = vars;
-  outvars1.intersection(vars1_);
-  Variables outvars2 = vars;
-  outvars2.intersection(vars2_);
-  // check that all variables are accounted for
-  Variables alloutvars = outvars1;
-  alloutvars += outvars2;
-  if (alloutvars != vars) {
-    throw eckit::UserError("Not all variables can be provided by the coupled variable change");
-  }
-  varchg1_->changeVarInverse(xx.state1(), outvars1);
-  varchg2_->changeVarInverse(xx.state2(), outvars2);
+  // decide what variables are provided by what model
+  std::vector<Variables> splitvars = splitVariables(vars, availableVars_);
+  varchg1_->changeVarInverse(xx.state1(), splitvars[0]);
+  varchg2_->changeVarInverse(xx.state2(), splitvars[1]);
 }
 
 // -----------------------------------------------------------------------------

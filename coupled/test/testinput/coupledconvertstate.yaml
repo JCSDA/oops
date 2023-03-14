@@ -5,6 +5,8 @@ input geometry:   # coupled geometry (QG and L95)
     depths: [4500.0, 5500.0]
   Lorenz 95:
     resol: 40
+  Lorenz 95 variables: ['x']
+  QG variables: ['q']
 output geometry:  # use the same geometry for output; goal is to test variable change
   QG:
     nx: 40
@@ -12,11 +14,9 @@ output geometry:  # use the same geometry for output; goal is to test variable c
     depths: [4500.0, 5500.0]
   Lorenz 95:
     resol: 40
-variable change:
-  Lorenz 95: {}
   Lorenz 95 variables: ['x']
-  QG: {}
   QG variables: ['q']
+variable change:
   output variables: ['x', 'q']
 
 states:

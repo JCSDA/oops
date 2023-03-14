@@ -8,6 +8,7 @@ list( APPEND coupled_testinput
   testinput/coupledstate.yaml
   testinput/coupledstateparallel.yaml
   testinput/forecast_qg_l95.yaml
+  testinput/hofx3d_qg_qg.yaml
 )
 
 list( APPEND coupled_testref
@@ -16,6 +17,7 @@ list( APPEND coupled_testref
   testref/coupledmodel.test
   testref/coupledstate.test
   testref/forecast_qg_l95.test
+  testref/hofx3d_qg_qg.test
 )
 
 # Create directory for test yamls and symlink all files
@@ -104,3 +106,10 @@ ecbuild_add_test( TARGET  test_coupled_forecast_qg_l95
                   ARGS    "testinput/forecast_qg_l95.yaml"
                   LIBS    qg lorenz95
                   TEST_DEPENDS test_qg_truth test_l95_3dvar)
+
+# Test HofX3D application with coupled trait
+ecbuild_add_test( TARGET  test_coupled_hofx3d_qg_qg
+                  SOURCES executables/hofx3d_qg_qg.cc
+                  ARGS    "testinput/hofx3d_qg_qg.yaml"
+                  LIBS    qg
+                  TEST_DEPENDS test_qg_truth )

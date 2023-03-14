@@ -22,6 +22,9 @@ struct TraitCoupled {
   static std::string name() {return "Coupled";}
 
   typedef GeometryCoupled<MODEL1, MODEL2>           Geometry;
+  // Increment is not used anywhere, but required to build the code
+  // with GetValues class (H(x) application); for now pointing to State
+  typedef StateCoupled<MODEL1, MODEL2>              Increment;
   typedef StateCoupled<MODEL1, MODEL2>              State;
   typedef AuxCoupledModel<MODEL1, MODEL2>           ModelAuxControl;
   typedef VariableChangeCoupled<MODEL1, MODEL2>     VariableChange;
