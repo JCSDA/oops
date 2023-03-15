@@ -615,10 +615,10 @@ void printDiagValues(const eckit::mpi::Comm & timeComm,
   // Global lon/lat field
   atlas::FieldSet globalCoords;
   atlas::Field lonGlobal = geometryData.functionSpace().createField<double>(
-    atlas::option::name("lon") | atlas::option::global());
+    atlas::option::name("lon") | atlas::option::global() | atlas::option::levels(0));
   globalCoords.add(lonGlobal);
   atlas::Field latGlobal = geometryData.functionSpace().createField<double>(
-    atlas::option::name("lat") | atlas::option::global());
+    atlas::option::name("lat") | atlas::option::global() | atlas::option::levels(0));
   globalCoords.add(latGlobal);
   auto lonViewGlobal = atlas::array::make_view<double, 1>(lonGlobal);
   auto latViewGlobal = atlas::array::make_view<double, 1>(latGlobal);
@@ -634,10 +634,10 @@ void printDiagValues(const eckit::mpi::Comm & timeComm,
     // Gather local
     atlas::FieldSet localCoords;
     atlas::Field lonLocal = geometryData.functionSpace().createField<double>(
-      atlas::option::name("lon"));
+      atlas::option::name("lon") | atlas::option::levels(0));
     localCoords.add(lonLocal);
     atlas::Field latLocal = geometryData.functionSpace().createField<double>(
-      atlas::option::name("lat"));
+      atlas::option::name("lat") | atlas::option::levels(0));
     localCoords.add(latLocal);
     auto lonViewLocal = atlas::array::make_view<double, 1>(lonLocal);
     auto latViewLocal = atlas::array::make_view<double, 1>(latLocal);
@@ -748,4 +748,3 @@ void printDiagValues(const eckit::mpi::Comm & timeComm,
 // -----------------------------------------------------------------------------
 
 }  // namespace util
-
