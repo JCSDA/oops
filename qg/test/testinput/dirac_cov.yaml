@@ -32,6 +32,13 @@ output variance:
   datadir: Data
   exp: dirac_cov_var
   type: an
+output ensemble:
+  member template:
+    datadir: Data
+    exp: dirac_cov_mb%mem%
+    type: an
+  member pattern: %mem%
+  size: 2
 
 test:
   reference filename: testoutput/dirac_cov.test
