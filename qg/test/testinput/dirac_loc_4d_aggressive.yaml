@@ -1,7 +1,7 @@
 background error:
   covariance model: ensemble
   localization:
-    communication mode: sequential
+    communication mode: aggressive
     horizontal_length_scale: 2.0e6
     localization method: QG
     maximum_condition_number: 1.0e6
@@ -84,11 +84,11 @@ initial condition:
     filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H.nc
 output dirac:
   datadir: Data
-  exp: dirac_loc_4d_sequential_%id%
+  exp: dirac_loc_4d_aggressive_%id%
   type: an
 output variance:
   datadir: Data
-  exp: dirac_loc_4d_sequential_var
+  exp: dirac_loc_4d_aggressive_var
   type: an
 
 test:

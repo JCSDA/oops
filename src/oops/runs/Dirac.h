@@ -196,6 +196,8 @@ template <typename MODEL> class Dirac : public Application {
 
       // Randomization
       for (size_t ie = 0; ie < Bmat->randomizationSize(); ++ie) {
+        Log::info() << "Randomize member #" << (ie+1) << "/" << Bmat->randomizationSize()
+                    << std::endl;
         Bmat->randomize(dx);
         dx -= mean;
         dxsq = dx;
@@ -316,6 +318,7 @@ template <typename MODEL> class Dirac : public Application {
     if (covarianceModel == "ensemble" && covarConfig.has("localization")) {
       // Localization configuration
       eckit::LocalConfiguration locConfig(covarConfig.getSubConfiguration("localization"));
+      locConfig.set("date", xx.validTime().toString());
 
       // Define output increment
       Increment_ dxo(dxi);

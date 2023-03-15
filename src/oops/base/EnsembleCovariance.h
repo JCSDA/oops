@@ -97,7 +97,9 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Var
                               "covariances (at least 2 required)", Here());
   }
   if (params.localization.value() != boost::none) {
-    loc_.reset(new Localization_(resol, xb.variables(), *params.localization.value()));
+    eckit::LocalConfiguration conf = *params.localization.value();
+    conf.set("date", xb.validTime().toString());
+    loc_.reset(new Localization_(resol, xb.variables(), conf));
   }
   size_t current = eckit::system::ResourceUsage().maxResidentSetSize();
   this->setObjectSize(current - init);
