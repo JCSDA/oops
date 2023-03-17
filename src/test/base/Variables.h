@@ -159,6 +159,12 @@ void testIntersection() {
   oops::Variables b({"b"});
   oops::Variables ba({"b", "a"});
   oops::Variables de({"d", "e"});
+  oops::Variables de12({"d", "e"}, std::vector<int>{1, 2});
+  oops::Variables ed21({"e", "d"}, std::vector<int>{2, 1});
+  oops::Variables de1({"d", "e"}, std::vector<int>{1});
+  oops::Variables d12({"d"}, std::vector<int>{1, 2});
+  oops::Variables b1({"b"}, std::vector<int>{1});
+  oops::Variables d1({"d"}, std::vector<int>{1});
 
   oops::Variables test = empty;
   test.intersection(empty);
@@ -194,6 +200,33 @@ void testIntersection() {
 
   test = de;
   test.intersection(acb);
+  EXPECT(test == empty);
+
+  test = de12;
+  test.intersection(b1);
+  EXPECT(test == empty);
+
+  test = de12;
+  test.intersection(d1);
+  EXPECT(test == d1);
+
+  test = de12;
+  test.intersection(ed21);
+  EXPECT(test == de12);
+
+  test = de12;
+  test.intersection(de1);
+  EXPECT(test == de1);
+
+  test = de12;
+  test.intersection(d12);
+  EXPECT(test == d12);
+
+  test = de12;
+  EXPECT_THROWS(test.intersection(de));
+
+  test = de12;
+  test.intersection(empty);
   EXPECT(test == empty);
 }
 

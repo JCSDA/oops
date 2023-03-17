@@ -164,14 +164,28 @@ bool Variables::operator<=(const Variables & rhs) const {
 
 void Variables::intersection(const Variables & rhs) {
   ASSERT(convention_ == rhs.convention_);
-  ASSERT(channels_ == rhs.channels_);
+  if (this->size() * rhs.size() > 0) ASSERT(channels_.empty() == rhs.channels_.empty());
+
   std::vector<std::string> myvars = this->asCanonical();
   std::vector<std::string> othervars = rhs.asCanonical();
-
   std::vector<std::string> commonvars;
-  std::set_intersection(myvars.begin(), myvars.end(),
-                        othervars.begin(), othervars.end(), std::back_inserter(commonvars));
+  std::set_intersection(myvars.cbegin(), myvars.cend(),
+                        othervars.cbegin(), othervars.cend(), std::back_inserter(commonvars));
   vars_ = commonvars;
+
+  if (!commonvars.empty()) {
+    std::vector<int> mychannels = channels_;
+    std::vector<int> otherchannels = rhs.channels_;
+    std::sort(mychannels.begin(), mychannels.end());
+    std::sort(otherchannels.begin(), otherchannels.end());
+    std::vector<int> commonchannels;
+    std::set_intersection(mychannels.cbegin(), mychannels.cend(),
+                          otherchannels.cbegin(), otherchannels.cend(),
+                          std::back_inserter(commonchannels));
+    channels_ = commonchannels;
+  } else {
+    channels_.clear();
+  }
 }
 
 // -----------------------------------------------------------------------------
