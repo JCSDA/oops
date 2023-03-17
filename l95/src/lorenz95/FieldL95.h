@@ -76,7 +76,7 @@ class FieldL95 : public util::Printable,
   void axpy(const double &, const FieldL95 &);
   double dot_product_with(const FieldL95 &) const;
   void schur(const FieldL95 &);
-  void random();
+  void random(const size_t &);
   void generate(const Field95GenerateParameters &);
 
 /// Utilities

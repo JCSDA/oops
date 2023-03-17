@@ -28,7 +28,7 @@ namespace qg {
 ErrorCovarianceQG::ErrorCovarianceQG(const GeometryQG & resol, const oops::Variables & vars,
                                      const Parameters_ & params,
                                      const StateQG &, const StateQG &) {
-  qg_error_covariance_setup_f90(keyConfig_, params.toConfiguration(), resol.toFortran());
+  qg_error_covariance_setup_f90(keyConfig_, params.toConfiguration(), resol.toFortran(), 0);
   oops::Log::trace() << "ErrorCovarianceQG created" << std::endl;
 }
 // -----------------------------------------------------------------------------

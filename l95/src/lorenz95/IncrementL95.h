@@ -113,7 +113,7 @@ class IncrementL95 : public util::Printable,
   void axpy(const double &, const IncrementL95 &, const bool check = true);
   double dot_product_with(const IncrementL95 &) const;
   void schur_product_with(const IncrementL95 &);
-  void random();
+  void random(const size_t & seed = 1);
 
 /// ATLAS
   void toFieldSet(atlas::FieldSet &) const;

@@ -144,8 +144,8 @@ void FieldL95::schur(const FieldL95 & rhs) {
   for (int jj = 0; jj < resol_; ++jj) x_[jj] *= rhs.x_[jj];
 }
 // -----------------------------------------------------------------------------
-void FieldL95::random() {
-  util::NormalDistribution<double> xx(resol_, 0.0, 1.0, 1);
+void FieldL95::random(const size_t & seed) {
+  util::NormalDistribution<double> xx(resol_, 0.0, 1.0, seed);
   for (int jj = 0; jj < resol_; ++jj) x_[jj] = xx[jj];
 }
 // -----------------------------------------------------------------------------

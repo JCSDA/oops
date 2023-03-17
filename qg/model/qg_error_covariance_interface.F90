@@ -24,7 +24,7 @@ public
 contains
 ! ------------------------------------------------------------------------------
 !> Setup error covariance matrix
-subroutine qg_error_covariance_setup_c(c_key_self,c_conf,c_key_geom) bind (c,name='qg_error_covariance_setup_f90')
+subroutine qg_error_covariance_setup_c(c_key_self,c_conf,c_key_geom,c_time_rank) bind (c,name='qg_error_covariance_setup_f90')
 
 implicit none
 
@@ -32,6 +32,7 @@ implicit none
 integer(c_int),intent(inout) :: c_key_self !< Error covariance configuration
 type(c_ptr),value,intent(in) :: c_conf     !< Configuration
 integer(c_int),intent(in) :: c_key_geom    !< Geometry
+integer(c_int),intent(in) :: c_time_rank   !< Time rank
 
 ! Local variables
 type(fckit_configuration) :: f_conf
@@ -46,7 +47,7 @@ call qg_error_covariance_registry%add(c_key_self)
 call qg_error_covariance_registry%get(c_key_self,self)
 
 ! Call Fortran
-call qg_error_covariance_setup(self,f_conf,geom)
+call qg_error_covariance_setup(self,f_conf,geom,c_time_rank)
 
 end subroutine qg_error_covariance_setup_c
 ! ------------------------------------------------------------------------------

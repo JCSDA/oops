@@ -99,6 +99,7 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Var
   if (params.localization.value() != boost::none) {
     eckit::LocalConfiguration conf = *params.localization.value();
     conf.set("date", xb.validTime().toString());
+    conf.set("time rank", resol.timeComm().rank());
     loc_.reset(new Localization_(resol, xb.variables(), conf));
   }
   size_t current = eckit::system::ResourceUsage().maxResidentSetSize();

@@ -24,7 +24,8 @@ namespace util {
 
 atlas::FieldSet createRandomFieldSet(const oops::GeometryData &,
                                      const std::vector<size_t> &,
-                                     const oops::Variables &);
+                                     const oops::Variables &,
+                                     const size_t & timeRank = 0);
 atlas::FieldSet copyFieldSet(const atlas::FieldSet &);
 atlas::FieldSet shareFields(const atlas::FieldSet &);
 void removeFieldsFromFieldSet(atlas::FieldSet &,

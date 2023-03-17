@@ -1,5 +1,6 @@
 background error:
   covariance model: ensemble
+  randomization size: 5
   localization:
     time decay: PT3H
     communication mode: fast
@@ -99,6 +100,10 @@ initial condition:
 output dirac:
   datadir: Data
   exp: dirac_loc_4d_time_decay_fast_%id%
+  type: an
+output variance:
+  datadir: Data
+  exp: dirac_loc_4d_time_decay_fast_var
   type: an
 
 test:

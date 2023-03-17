@@ -164,8 +164,21 @@ Localization<MODEL>::Localization(const Geometry_ & geometry,
     }
 
     // Cholesky decomposition to get the time factor
-    Eigen::LLT<Eigen::MatrixXd> lltOfTD(TD);
-    TDLower_ = lltOfTD.matrixL();
+    Eigen::LDLT<Eigen::MatrixXd> ldlt(TD);
+    Eigen::MatrixXd L(ntimes_, ntimes_);
+    L = ldlt.matrixL();
+    Eigen::ArrayXXd d(ntimes_, 1);
+    d =  ldlt.vectorD().array();
+    for (size_t i = 0; i < ntimes_; i++) {
+      if (d(i, 0) < 0.0) d(i, 0) = 0.0;
+    }
+    Eigen::MatrixXd sqrtd(ntimes_, 1);
+    sqrtd = d.sqrt();
+    TDLower_ = ldlt.transpositionsP().transpose()*L*sqrtd.asDiagonal();
+    Eigen::MatrixXd TDerror(ntimes_, ntimes_);
+    TDerror = (TDLower_*(TDLower_.transpose())-TD).cwiseAbs();
+    Log::info() << "Time-decay matrix: " << std::endl << TD << std::endl;
+    Log::info() << "LDLT matrix error: " << TDerror.maxCoeff() << std::endl;
   } else {
     // Check communication mode
     if (!(commMode_ == "standard" || commMode_ == "fast" || commMode_ == "aggressive")) {
@@ -283,6 +296,7 @@ void Localization<MODEL>::randomize(Increment_ & dx) const {
       // Apply 3D localization
       loc_->randomize(dx);
     }
+
     // Broadcast
     oops::mpi::broadcast(comm_, dx, 0);
   }

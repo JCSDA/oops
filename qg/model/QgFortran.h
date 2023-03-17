@@ -76,7 +76,7 @@ extern "C" {
 //  Error covariance
 // -----------------------------------------------------------------------------
   void qg_error_covariance_setup_f90(F90error_covariance &, const eckit::Configuration &,
-                                     const F90geom &);
+                                     const F90geom &, const int &);
   void qg_error_covariance_delete_f90(F90error_covariance &);
   void qg_error_covariance_mult_f90(const F90error_covariance &, const F90flds &, const F90flds &);
   void qg_error_covariance_inv_mult_f90(const F90error_covariance &, const F90flds &,

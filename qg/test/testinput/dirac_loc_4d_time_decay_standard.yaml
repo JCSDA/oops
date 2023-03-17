@@ -101,6 +101,10 @@ output dirac:
   datadir: Data
   exp: dirac_loc_4d_time_decay_standard_%id%
   type: an
+output variance:
+  datadir: Data
+  exp: dirac_loc_4d_time_decay_standard_var
+  type: an
 
 test:
   reference filename: testoutput/dirac_loc_4d_time_decay.test

@@ -72,7 +72,7 @@ class LocalizationMaker : public oops::LocalizationFactory<MODEL> {
   std::unique_ptr<oops::LocalizationBase<MODEL>> make(const Geometry_ & geometry,
                                                       const oops::Variables & vars,
                                                       const eckit::Configuration & conf) override
-    { return std::make_unique<T>(geometry.geometry(), vars, conf); }
+    { return std::make_unique<T>(geometry.geometry(), vars, conf, geometry.timeComm().rank()); }
  public:
   explicit LocalizationMaker(const std::string & name) : oops::LocalizationFactory<MODEL>(name) {}
 };

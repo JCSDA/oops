@@ -130,8 +130,8 @@ void IncrementL95::schur_product_with(const IncrementL95 & rhs) {
   fld_.schur(rhs.fld_);
 }
 // -----------------------------------------------------------------------------
-void IncrementL95::random() {
-  fld_.random();
+void IncrementL95::random(const size_t & seed) {
+  fld_.random(seed);
 }
 // -----------------------------------------------------------------------------
 void IncrementL95::accumul(const double & zz, const StateL95 & xx) {

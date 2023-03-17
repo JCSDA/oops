@@ -23,7 +23,8 @@ namespace util {
 // -----------------------------------------------------------------------------
 atlas::FieldSet createRandomFieldSet(const oops::GeometryData & geometryData,
                                      const std::vector<size_t> & variableSizes,
-                                     const oops::Variables & vars) {
+                                     const oops::Variables & vars,
+                                     const size_t & timeRank) {
   oops::Log::trace() << "createRandomFieldSet starting" << std::endl;
 
   // Local ghost points
@@ -111,9 +112,10 @@ atlas::FieldSet createRandomFieldSet(const oops::GeometryData & geometryData,
     std::vector<double> rand_vec_glb(nglb);
     if (geometryData.comm().rank() == 0) {
       // Generate global random vector
-      util::NormalDistribution<double> dist(nglb, 0.0, 1.0, 1);
-      for (size_t i = 0; i < nglb; ++i)
+      util::NormalDistribution<double> dist(nglb, 0.0, 1.0, 1+timeRank);
+      for (size_t i = 0; i < nglb; ++i) {
         rand_vec_glb[i] = dist[i];
+      }
 
       if (geometryData.functionSpace().type() != "PointCloud") {
         // Copy to field

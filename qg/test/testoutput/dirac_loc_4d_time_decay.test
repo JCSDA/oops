@@ -47,11 +47,11 @@ Covariance(ensemble) diagnostics:
   + Value for variable x, subwindow 2, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 8.4209652954894266e+13
   + Value for variable x, subwindow 3, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 1.3133106319184591e+14
   + Value for variable x, subwindow 4, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 1.8161644843676794e+14
-  + Value for variable x, subwindow 5, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 2.2258115700728362e+14
+  + Value for variable x, subwindow 5, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 2.2258115700728359e+14
   + Value for variable x, subwindow 6, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 2.4183222699707278e+14
-  + Value for variable x, subwindow 7, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 2.3302803547183150e+14
+  + Value for variable x, subwindow 7, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 2.3302803547183153e+14
   + Value for variable x, subwindow 8, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 1.9929170152705525e+14
-  + Value for variable x, subwindow 9, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 1.5139068617323050e+14
+  + Value for variable x, subwindow 9, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 1.5139068617323053e+14
   + Value for variable x, subwindow 10, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 1.0231106436925892e+14
   + Value for variable x, subwindow 11, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 6.1609732439717406e+13
   + Value for variable x, subwindow 12, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 3.3094309126904316e+13
@@ -61,13 +61,13 @@ Covariance(ensemble) * Increment:
   Streamfunction         :  Min=-5.4718930551118477e+12, Max=2.6650473123856035e+13, RMS=2.9906863826216401e+12
   Valid time: 2010-01-01T01:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-1.0111828076052635e+13, Max=5.2098515403318750e+13, RMS=5.6720744144367197e+12
+  Streamfunction         :  Min=-1.0111828076052637e+13, Max=5.2098515403318758e+13, RMS=5.6720744144367207e+12
   Valid time: 2010-01-01T02:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-1.6349538881787479e+13, Max=9.0302808212735984e+13, RMS=9.6325944038593242e+12
+  Streamfunction         :  Min=-1.6349538881787479e+13, Max=9.0302808212735953e+13, RMS=9.6325944038593242e+12
   Valid time: 2010-01-01T03:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-2.3222509909078445e+13, Max=1.3875838556556416e+14, RMS=1.4633458537742906e+13
+  Streamfunction         :  Min=-2.3222509909078441e+13, Max=1.3875838556556412e+14, RMS=1.4633458537742902e+13
   Valid time: 2010-01-01T04:00:00Z
   Resolution = 40, 20, 2
   Streamfunction         :  Min=-2.9021844463717797e+13, Max=1.8924463298028353e+14, RMS=1.9879146899743742e+13
@@ -76,77 +76,117 @@ Covariance(ensemble) * Increment:
   Streamfunction         :  Min=-3.1935281968904539e+13, Max=2.2939417494783900e+14, RMS=2.4136863724480758e+13
   Valid time: 2010-01-01T06:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-3.0971412210469492e+13, Max=2.4747193592791319e+14, RMS=2.6180009418909805e+13
+  Streamfunction         :  Min=-3.0971412210469496e+13, Max=2.4747193592791319e+14, RMS=2.6180009418909797e+13
   Valid time: 2010-01-01T07:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-2.6544733994898336e+13, Max=2.3777310474347369e+14, RMS=2.5340518528128500e+13
+  Streamfunction         :  Min=-2.6544733994898336e+13, Max=2.3777310474347375e+14, RMS=2.5340518528128504e+13
   Valid time: 2010-01-01T08:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-2.0133703496616500e+13, Max=2.0357092279685003e+14, RMS=2.1868863536365273e+13
+  Streamfunction         :  Min=-2.0133703496616500e+13, Max=2.0357092279685009e+14, RMS=2.1868863536365273e+13
   Valid time: 2010-01-01T09:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-1.4544132278890670e+13, Max=1.5536213211081019e+14, RMS=1.6813638613614236e+13
+  Streamfunction         :  Min=-1.4544132278890672e+13, Max=1.5536213211081019e+14, RMS=1.6813638613614236e+13
   Valid time: 2010-01-01T10:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-9.6398505534842148e+12, Max=1.0580072537057216e+14, RMS=1.1519950394027166e+13
+  Streamfunction         :  Min=-9.6398505534842148e+12, Max=1.0580072537057217e+14, RMS=1.1519950394027168e+13
   Valid time: 2010-01-01T11:00:00Z
   Resolution = 40, 20, 2
   Streamfunction         :  Min=-5.6976840212056719e+12, Max=6.4351246654690719e+13, RMS=7.0373581232607471e+12
   Valid time: 2010-01-01T12:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-3.0095699173972026e+12, Max=3.4972161994354750e+13, RMS=3.8334557054137256e+12
+  Streamfunction         :  Min=-3.0095699173972021e+12, Max=3.4972161994354750e+13, RMS=3.8334557054137261e+12
 Localization(ensemble_localization) diagnostics:
 - Localization at diagnostic points:
   + Value for variable x, subwindow 0, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 1.3533528323661267e-01
-  + Value for variable x, subwindow 1, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 2.4935220877729616e-01
-  + Value for variable x, subwindow 2, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 4.1111229050718739e-01
+  + Value for variable x, subwindow 1, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 2.4935220877729619e-01
+  + Value for variable x, subwindow 2, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 4.1111229050718734e-01
   + Value for variable x, subwindow 3, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 6.0653065971263320e-01
-  + Value for variable x, subwindow 4, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 8.0073740291680784e-01
-  + Value for variable x, subwindow 5, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 9.4595946890676519e-01
+  + Value for variable x, subwindow 4, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 8.0073740291680773e-01
+  + Value for variable x, subwindow 5, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 9.4595946890676508e-01
   + Value for variable x, subwindow 6, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 9.9999999999999967e-01
   + Value for variable x, subwindow 7, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 9.4595946890676508e-01
-  + Value for variable x, subwindow 8, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 8.0073740291680773e-01
-  + Value for variable x, subwindow 9, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 6.0653065971263320e-01
-  + Value for variable x, subwindow 10, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 4.1111229050718717e-01
-  + Value for variable x, subwindow 11, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 2.4935220877729616e-01
-  + Value for variable x, subwindow 12, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 1.3533528323661267e-01
+  + Value for variable x, subwindow 8, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 8.0073740291680795e-01
+  + Value for variable x, subwindow 9, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 6.0653065971263342e-01
+  + Value for variable x, subwindow 10, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 4.1111229050718734e-01
+  + Value for variable x, subwindow 11, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 2.4935220877729622e-01
+  + Value for variable x, subwindow 12, at (longitude, latitude, vertical index) point (-4.50000, 41.14624, 1): 1.3533528323661270e-01
 Localization(ensemble) * Increment:
   Valid time: 2010-01-01T00:00:00Z
   Resolution = 40, 20, 2
   Streamfunction         :  Min=-1.9155372908842098e-10, Max=1.3533528323661267e-01, RMS=1.8697438056200777e-02
   Valid time: 2010-01-01T01:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-3.5293343110015850e-10, Max=2.4935220877729616e-01, RMS=3.4449608160490738e-02
+  Streamfunction         :  Min=-3.5293342164943358e-10, Max=2.4935220877729619e-01, RMS=3.4449608160490738e-02
   Valid time: 2010-01-01T02:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-5.8188884801246902e-10, Max=4.1111229050718739e-01, RMS=5.6797801741485791e-02
+  Streamfunction         :  Min=-5.8188882745657689e-10, Max=4.1111229050718734e-01, RMS=5.6797801741485784e-02
   Valid time: 2010-01-01T03:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-8.5848424044473364e-10, Max=6.0653065971263320e-01, RMS=8.3796103779797931e-02
+  Streamfunction         :  Min=-8.5848421061138972e-10, Max=6.0653065971263320e-01, RMS=8.3796103779797917e-02
   Valid time: 2010-01-01T04:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-1.1333646942602065e-09, Max=8.0073740291680784e-01, RMS=1.1062701190896662e-01
+  Streamfunction         :  Min=-1.1333646589952227e-09, Max=8.0073740291680773e-01, RMS=1.1062701190896661e-01
   Valid time: 2010-01-01T05:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-1.3389121784655623e-09, Max=9.4595946890676519e-01, RMS=1.3069037246286933e-01
+  Streamfunction         :  Min=-1.3389121419831636e-09, Max=9.4595946890676508e-01, RMS=1.3069037246286930e-01
   Valid time: 2010-01-01T06:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-1.4154012107773844e-09, Max=9.9999999999999967e-01, RMS=1.3815641870354847e-01
+  Streamfunction         :  Min=-1.4154011768526904e-09, Max=9.9999999999999967e-01, RMS=1.3815641870354844e-01
   Valid time: 2010-01-01T07:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-1.3389121786190272e-09, Max=9.4595946890676508e-01, RMS=1.3069037246286930e-01
+  Streamfunction         :  Min=-1.3389121502636851e-09, Max=9.4595946890676508e-01, RMS=1.3069037246286930e-01
   Valid time: 2010-01-01T08:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-1.1333646915382045e-09, Max=8.0073740291680773e-01, RMS=1.1062701190896662e-01
+  Streamfunction         :  Min=-1.1333646705473700e-09, Max=8.0073740291680795e-01, RMS=1.1062701190896661e-01
   Valid time: 2010-01-01T09:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-8.5848423204718241e-10, Max=6.0653065971263320e-01, RMS=8.3796103779797945e-02
+  Streamfunction         :  Min=-8.5848421857520176e-10, Max=6.0653065971263342e-01, RMS=8.3796103779797959e-02
   Valid time: 2010-01-01T10:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-5.8188883488390068e-10, Max=4.1111229050718717e-01, RMS=5.6797801741485791e-02
+  Streamfunction         :  Min=-5.8188882758884286e-10, Max=4.1111229050718734e-01, RMS=5.6797801741485784e-02
   Valid time: 2010-01-01T11:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-3.5293341847100971e-10, Max=2.4935220877729616e-01, RMS=3.4449608160490745e-02
+  Streamfunction         :  Min=-3.5293341528195532e-10, Max=2.4935220877729622e-01, RMS=3.4449608160490745e-02
   Valid time: 2010-01-01T12:00:00Z
   Resolution = 40, 20, 2
-  Streamfunction         :  Min=-1.9155372348318878e-10, Max=1.3533528323661267e-01, RMS=1.8697438056200777e-02
+  Streamfunction         :  Min=-1.9155372247419598e-10, Max=1.3533528323661270e-01, RMS=1.8697438056200777e-02
+Randomized variance: 
+  Valid time: 2010-01-01T00:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=1.9077911390822334e+12, Max=1.9936947014026245e+15, RMS=2.7248702200528022e+14
+  Valid time: 2010-01-01T01:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=8.7094653081370642e+11, Max=1.4848907942479780e+15, RMS=2.8320873264341744e+14
+  Valid time: 2010-01-01T02:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=9.3550154239259290e+11, Max=2.2685230824301580e+15, RMS=3.3289222535366131e+14
+  Valid time: 2010-01-01T03:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=5.4724153804369934e+11, Max=3.4254467161498460e+15, RMS=4.0793770850372425e+14
+  Valid time: 2010-01-01T04:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=3.1679478489453497e+11, Max=4.0146488409866365e+15, RMS=4.5397116952121425e+14
+  Valid time: 2010-01-01T05:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=3.0848018168367761e+11, Max=3.5666530203051755e+15, RMS=4.4059308116383194e+14
+  Valid time: 2010-01-01T06:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=1.6127079702146832e+11, Max=3.1344559523166840e+15, RMS=4.0129659733394531e+14
+  Valid time: 2010-01-01T07:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=1.0030411671359717e+12, Max=3.1424747940833725e+15, RMS=3.7281589400434269e+14
+  Valid time: 2010-01-01T08:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=7.6054761965949841e+11, Max=3.1449688221314300e+15, RMS=3.6655487034013888e+14
+  Valid time: 2010-01-01T09:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=8.9379488522779797e+11, Max=3.0202273467171210e+15, RMS=3.7392264837367131e+14
+  Valid time: 2010-01-01T10:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=1.4548682828401767e+11, Max=2.4383737919390080e+15, RMS=3.7835401488802662e+14
+  Valid time: 2010-01-01T11:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=7.6664521557434021e+11, Max=1.7389275852068085e+15, RMS=3.8661985883727438e+14
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=2.4627016168899371e+11, Max=2.2814413202983055e+15, RMS=4.0887755737331544e+14
