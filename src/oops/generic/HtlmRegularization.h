@@ -83,6 +83,7 @@ class HtlmRegularization {
  public:
   explicit HtlmRegularization(const HtlmRegularizationParameters & params)
     : params_(params), baseValue_(params_.baseValue.value()) {}
+  virtual ~HtlmRegularization() = default;
   static const std::string classname() {return "oops::HtlmRegularization";}
   virtual const double & getRegularizationValue(const std::string &,
                                                 const size_t &,
@@ -96,6 +97,7 @@ class HtlmRegularization {
 class HtlmRegularizationComponentDependent : public HtlmRegularization {
  public:
   HtlmRegularizationComponentDependent(const HtlmRegularizationParameters &, atlas::FieldSet);
+  virtual ~HtlmRegularizationComponentDependent() = default;
   virtual const double & getRegularizationValue(const std::string &,
                                                 const size_t &,
                                                 const size_t &) const;
