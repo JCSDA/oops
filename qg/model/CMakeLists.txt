@@ -100,6 +100,8 @@ qg_geom_interface.F90
 qg_geom_mod.F90
 qg_geom_iter_interface.F90
 qg_geom_iter_mod.F90
+qg_getvalues_interp_interface.F90
+qg_getvalues_interp_mod.F90
 qg_gom_interface.F90
 qg_gom_mod.F90
 qg_interp_mod.F90

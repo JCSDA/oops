@@ -152,6 +152,16 @@ extern "C" {
   void qg_geom_iter_next_f90(const F90iter &);
 
 // -----------------------------------------------------------------------------
+//  Interpolation for getvalues via generic structures
+// -----------------------------------------------------------------------------
+  void qg_getvalues_interp_f90(const F90geom &, const atlas::field::FieldSetImpl *,
+                               const oops::Variables &, const int &, const double &,
+                               const int &, double &);
+  void qg_getvalues_interp_ad_f90(const F90geom &, atlas::field::FieldSetImpl *,
+                                  const oops::Variables &, const int &, const double &,
+                                  const int &, const double &);
+
+// -----------------------------------------------------------------------------
 //  Local Values (GOM)
 // -----------------------------------------------------------------------------
   void qg_gom_setup_f90(F90gom &, const LocationsQG &, const oops::Variables &, const int &);
