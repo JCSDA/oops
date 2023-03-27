@@ -1,0 +1,34 @@
+geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+background:
+  members:
+  - date: &date 2010-01-01T06:00:00Z
+    filename: Data/forecast.ens.1.2009-12-31T00:00:00Z.P1DT6H.nc
+  - date: *date
+    filename: Data/forecast.ens.2.2009-12-31T00:00:00Z.P1DT6H.nc
+  - date: *date
+    filename: Data/forecast.ens.3.2009-12-31T00:00:00Z.P1DT6H.nc
+  - date: *date
+    filename: Data/forecast.ens.4.2009-12-31T00:00:00Z.P1DT6H.nc
+analysis:
+  members:
+  - date: *date
+    filename: Data/mem001.eda_4dvar.an.2010-01-01T06:00:00Z.nc
+  - date: *date
+    filename: Data/mem002.eda_4dvar.an.2010-01-01T06:00:00Z.nc
+  - date: *date
+    filename: Data/mem003.eda_4dvar.an.2010-01-01T06:00:00Z.nc
+  - date: *date
+    filename: Data/mem004.eda_4dvar.an.2010-01-01T06:00:00Z.nc
+analysis variables: [x]
+output:
+  datadir: Data
+  date: *date
+  exp: rtps.%{member}%
+  type: an
+factor: 0.5
+
+test:
+  reference filename: testoutput/rtps.test

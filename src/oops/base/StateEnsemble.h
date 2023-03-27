@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "oops/base/Accumulator.h"
+#include "oops/base/Increment.h"
 #include "oops/base/State.h"
 #include "oops/base/StateParametersND.h"
 #include "oops/util/abor1_cpp.h"
@@ -155,6 +156,7 @@ StateParametersND<MODEL> StateEnsembleParameters<MODEL>::getStateParameters(cons
 /// \brief Ensemble of states
 template<typename MODEL> class StateEnsemble {
   typedef Geometry<MODEL>      Geometry_;
+  typedef Increment<MODEL>     Increment_;
   typedef State<MODEL>         State_;
   typedef StateEnsembleParameters<MODEL> StateEnsembleParameters_;
 
@@ -168,6 +170,9 @@ template<typename MODEL> class StateEnsemble {
   /// Calculate ensemble mean
   State_ mean() const;
 
+  /// Calculate ensemble spread
+  Increment_ variance() const;
+
   /// Accessors
   size_t size() const { return states_.size(); }
   State_ & operator[](const int ii) { return states_[ii]; }
@@ -178,6 +183,7 @@ template<typename MODEL> class StateEnsemble {
 
  private:
   std::vector<State_> states_;
+  const Geometry_ & geom_;
 };
 
 // ====================================================================================
@@ -185,7 +191,7 @@ template<typename MODEL> class StateEnsemble {
 template<typename MODEL>
 StateEnsemble<MODEL>::StateEnsemble(const Geometry_ & resol,
                                     const StateEnsembleParameters_ & params)
-  : states_() {
+  : states_(), geom_(resol) {
   // Reserve memory to hold ensemble
   const size_t nens = params.size();
   states_.reserve(nens);
@@ -199,7 +205,7 @@ StateEnsemble<MODEL>::StateEnsemble(const Geometry_ & resol,
 
 template<typename MODEL>
 StateEnsemble<MODEL>::StateEnsemble(const State_ & copyState_, const size_t & ensSize_)
-  : states_() {
+  : states_(), geom_(copyState_.geometry()) {
     states_.reserve(ensSize_);
     for (size_t jj = 0; jj < ensSize_; ++jj) {
     states_.emplace_back(State_(copyState_));
@@ -221,6 +227,31 @@ State<MODEL> StateEnsemble<MODEL>::mean() const {
 
   Log::trace() << "StateEnsemble::mean done" << std::endl;
   return std::move(ensmean);
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+Increment<MODEL> StateEnsemble<MODEL>::variance() const {
+  ASSERT(states_.size() > 1);
+  // Ensemble mean
+  State<MODEL> ensmean = this->mean();
+
+  // Compute ensemble variance
+  Increment_ ensVar(geom_, this->variables(), ensmean.validTime());
+  ensVar.zero();
+
+  const double rr = 1.0/(static_cast<double>(states_.size()) - 1.0);
+  Increment_ pert(ensVar);
+  for (size_t iens = 0; iens < states_.size(); ++iens) {
+    pert.zero();
+    pert.diff(states_[iens], ensmean);
+    pert.schur_product_with(pert);
+    ensVar.axpy(rr, pert);
+  }
+
+  Log::trace() << "StateEnsemble:: variance done" << std::endl;
+  return ensVar;
 }
 
 // -----------------------------------------------------------------------------

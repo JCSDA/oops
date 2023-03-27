@@ -120,6 +120,7 @@ list( APPEND qg_testinput
   testinput/obsspace.yaml
   testinput/obsvector.yaml
   testinput/rtpp.yaml
+  testinput/rtps.yaml
   testinput/state.yaml
   testinput/static_b_init.yaml
   testinput/truth.yaml
@@ -202,6 +203,7 @@ list( APPEND qg_testoutput
   testoutput/make_obs_4d_24h_pert_heat.test
   testoutput/make_obs_4d_biased.test
   testoutput/rtpp.test
+  testoutput/rtps.test
   testoutput/static_b_init.test
   testoutput/truth.test
   testoutput/truth_5level.test
@@ -628,6 +630,11 @@ ecbuild_add_test( TARGET test_qg_rtpp
                   ARGS testinput/rtpp.yaml
                   COMMAND  qg_rtpp.x
                   TEST_DEPENDS test_qg_gen_ens_pert_B )
+
+ecbuild_add_test( TARGET test_qg_rtps
+                  ARGS testinput/rtps.yaml
+                  COMMAND  qg_rtps.x
+                  TEST_DEPENDS test_qg_gen_ens_pert_B test_qg_eda_4dvar)
 
 #####################################################################
 # other tests

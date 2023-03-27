@@ -87,25 +87,8 @@ template <typename MODEL> class EnsMeanAndVariance : public Application {
 
 //  Setup ensemble of states
     const StateEnsemble_ stateEnsemble(resol, params.ensembleConfig);
-    const size_t nm = stateEnsemble.size();
     const State_ ensmean = stateEnsemble.mean();
-
-//  Compute ensemble standard deviation
-    Increment_ km1dx(resol, ensmean.variables(), ensmean.validTime());
-    km1dx.zero();
-    Increment_ sigb2(km1dx);
-    sigb2.zero();
-
-    for (unsigned jj = 0; jj < nm; ++jj) {
-      km1dx.diff(stateEnsemble[jj], ensmean);
-
-//    Accumulate km1dx^2
-      km1dx.schur_product_with(km1dx);
-      sigb2 += km1dx;
-    }
-
-    const double rk = 1.0/(static_cast<double>(nm) - 1.0);
-    sigb2 *= rk;
+    const Increment_ sigb2 = stateEnsemble.variance();
 
 //  Write mean to file
     if (params.outputMeanConfig.value() != boost::none)

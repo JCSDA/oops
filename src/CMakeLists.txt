@@ -291,6 +291,7 @@ oops/runs/HTLMCoefficients.h
 oops/runs/HybridGain.h
 oops/runs/LocalEnsembleDA.h
 oops/runs/RTPP.h
+oops/runs/RTPS.h
 oops/runs/Run.cc
 oops/runs/Run.h
 oops/runs/StaticBInit.h
