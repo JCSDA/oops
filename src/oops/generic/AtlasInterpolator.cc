@@ -32,7 +32,7 @@ struct ForEach {
                     VecIt& targetFieldVecIt, const Functor& dataCopy,
                     Idxs... idxs) {
     // Iterate over dimension Dim of array.
-    for (atlas::idx_t idx = 0; idx < targetFieldView.shape(Dim); ++idx) {
+    for (atlas::idx_t idx = 0; idx < targetFieldView.shape(Dim - 1); ++idx) {
       ForEach<Rank, Dim - 1>::apply(mask, targetFieldView, targetFieldVecIt,
                                     dataCopy, idx, idxs...);
     }
@@ -127,6 +127,9 @@ void AtlasInterpolator::apply(const Variables& variables,
   Log::trace() << classname() + "::apply start" << std::endl;
   util::Timer timer(classname(), "apply");
 
+  // Resize targetFieldVec (just in case);
+  targetFieldVec.resize(getTotalElements(variables, sourceFieldSet));
+
   // Exit if all mask elements are false.
   if (std::none_of(mask.cbegin(), mask.cend(),
                    [](const bool & maskElem)->bool { return maskElem; })) {
@@ -154,9 +157,6 @@ void AtlasInterpolator::apply(const Variables& variables,
 
   // Post-process fields.
   postProcessFields(targetFieldSet, mask);
-
-  // Resize targetFieldVec (just in case);
-  targetFieldVec.resize(getTotalElements(variables, sourceFieldSet));
 
   // Copy targetFieldSet to vector.
   const auto dataCopy = [](const double & fieldElem, double & vecElem)->void {
@@ -317,12 +317,12 @@ const atlas::Interpolation& AtlasInterpolator::getInterp(
     auto lonLatView = atlas::array::make_view<double, 2>(lonLatField);
 
     // Copy lonlats with mask == true.
-    atlas::idx_t idx = 0;
-    for (const auto& maskElem : mask) {
-      if (maskElem) {
-        lonLatView(idx, 0) = targetLonLats_[idx].lon();
-        lonLatView(idx, 1) = targetLonLats_[idx].lat();
-        idx++;
+    atlas::idx_t maskedIdx = 0;
+    for (size_t unmaskedIdx = 0; unmaskedIdx < mask.size(); unmaskedIdx++) {
+      if (mask[unmaskedIdx] == true) {
+        lonLatView(maskedIdx, 0) = targetLonLats_[unmaskedIdx].lon();
+        lonLatView(maskedIdx, 1) = targetLonLats_[unmaskedIdx].lat();
+        maskedIdx++;
       }
     }
 
@@ -353,7 +353,9 @@ size_t AtlasInterpolator::getTotalElements(
     }
     totalElements += elementsPerLocation;
   }
-  return totalElements * targetLonLats_.size();
+  totalElements *= targetLonLats_.size();
+
+  return totalElements;
 }
 
 }  // namespace oops
