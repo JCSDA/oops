@@ -21,6 +21,7 @@ list( APPEND qg_testinput
   testinput/4dvar_htlm_qgtlm_dripcg_pert_heat_gen_ens.yaml
   testinput/4dvar_htlm_qgtlm_dripcg_pert_heat_precalccoeff.yaml
   testinput/4dvar_htlm_qgtlm_dripcg_pert_heat_precalccoeff_gen_ens.yaml
+  testinput/4dvar_htlm_qgtlm_dripcg_shorter_stlm_timestep.yaml
   testinput/4dvar_ipcg.yaml
   testinput/4dvar_obs_biased.yaml
   testinput/4dvar_rpcg.yaml
@@ -147,6 +148,7 @@ list( APPEND qg_testoutput
   testoutput/4dvar_dripcg_5level.test
   testoutput/4dvar_htlm_qgtlm_dripcg.test
   testoutput/4dvar_htlm_qgtlm_dripcg_pert_heat.test
+  testoutput/4dvar_htlm_qgtlm_dripcg_shorter_stlm_timestep.test
   testoutput/4dvar_drpcg_lmp.test
   testoutput/4dvar_drpfom.test
   testoutput/4dvar_drplanczos.test
@@ -886,6 +888,12 @@ ecbuild_add_test( TARGET test_qg_4dvar_htlm_qgtlm_dripcg_pert_heat_precalccoeff_
                   ARGS testinput/4dvar_htlm_qgtlm_dripcg_pert_heat_precalccoeff_gen_ens.yaml
                   COMMAND  qg_4dvar.x
                   TEST_DEPENDS test_qg_htlm_coefficient_calculation_application test_qg_make_obs_4d_24h_pert_heat)
+
+ecbuild_add_test( TARGET test_qg_4dvar_htlm_qgtlm_dripcg_shorter_stlm_timestep
+                  OMP 2
+                  ARGS testinput/4dvar_htlm_qgtlm_dripcg_shorter_stlm_timestep.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
 
 ecbuild_add_test( TARGET test_qg_4dvar_ipcg
                   OMP 2

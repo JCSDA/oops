@@ -225,14 +225,21 @@ HtlmEnsemble<MODEL>::HtlmEnsemble(const HtlmEnsembleParameters_
 template<typename MODEL>
 void HtlmEnsemble<MODEL>::step(const util::Duration & tstep)  {
     Log::trace() << "HtlmEnsemble<MODEL>::step() starting" << std::endl;
-    State_ downsampled_Control(incrementGeometry_, controlState_);
-    simpleLinearModel_.setTrajectory(controlState_, downsampled_Control, moderr_);
-    PostProcessor<State_> post;
-    model_.forecast(controlState_, moderr_, tstep, post);
-
-    for (size_t m = 0; m < ensembleSize_; ++m) {
-        model_.forecast(perturbedStates_[m], moderr_, tstep, post);
-        simpleLinearModel_.forecastTL(linearEnsemble_[m], modauxinc_, tstep);
+    // Note: this loop over stepsPerUpdate must be kept equivalent to that in
+    // HybridLinearModel::stepTL() and ::stepAD(), to ensure that the hybrid TLM is trained in the
+    // same way that it is used.
+    const size_t stepsPerUpdate =
+      tstep.toSeconds() / simpleLinearModel_.timeResolution().toSeconds();
+    for (size_t t = 0; t < stepsPerUpdate; t++) {
+      State_ downsampled_Control(incrementGeometry_, controlState_);
+      simpleLinearModel_.setTrajectory(controlState_, downsampled_Control, moderr_);
+      PostProcessor<State_> post;
+      model_.forecast(controlState_, moderr_, simpleLinearModel_.timeResolution(), post);
+      for (size_t m = 0; m < ensembleSize_; m++) {
+        model_.forecast(perturbedStates_[m], moderr_, simpleLinearModel_.timeResolution(), post);
+        simpleLinearModel_.forecastTL(linearEnsemble_[m], modauxinc_,
+                                      simpleLinearModel_.timeResolution());
+      }
     }
     for (size_t m = 0; m < ensembleSize_; ++m) {
         nonLinearDifferences_[m].updateTime(tstep);

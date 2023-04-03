@@ -85,6 +85,7 @@ class HybridLinearModel : public LinearModelBase<MODEL> {
   const  HybridLinearModelParameters<MODEL> params_;
   std::unique_ptr<LinearModelBase_> simplifiedLinearModel_;
   const HybridLinearModelCoeffs_ htlmCoeffs_;
+  size_t stepsPerUpdate_;
 };
 
 //------------------------------------------------------------------------------
@@ -100,6 +101,12 @@ HybridLinearModel<MODEL>::HybridLinearModel(const Geometry_ & resol,
     simplifiedTLMParameters.validateAndDeserialize(params.simplifiedTLM);
     simplifiedLinearModel_.reset(LinearModelFactory_::create(
           resol, simplifiedTLMParameters.linearModelParameters));
+    if (params_.tstep.value() % simplifiedLinearModel_->timeResolution()) {
+      ABORT("HybridLinearModel<MODEL>::HybridLinearModel(): hybrid linear model time step must be "
+            "an exact multiple of simplified linear model timestep");
+    }
+    stepsPerUpdate_ = params_.tstep.value().toSeconds()  // see note in ::stepTL()
+                      / simplifiedLinearModel_->timeResolution().toSeconds();
     Log::trace() << "HybridLinearModel<MODEL>::HybridLinearModel() done" << std::endl;
 }
 
@@ -116,7 +123,11 @@ void HybridLinearModel<MODEL>::initializeTL(Increment_ & dx) const {
 template<typename MODEL>
 void HybridLinearModel<MODEL>::stepTL(Increment_ & dx, const ModelAuxInc_ & merr) const {
   Log::trace() << "HybridLinearModel<MODEL>:stepTL Starting " << std::endl;
-  simplifiedLinearModel_->stepTL(dx, merr);
+  // Note: this loop over stepsPerUpdate_ must be kept equivalent to that in HtlmEnsemble::step(),
+  // to ensure that the hybrid TLM is trained in the same way that it is used.
+  for (size_t t = 0; t < stepsPerUpdate_; t++) {
+    simplifiedLinearModel_->stepTL(dx, merr);
+  }
   htlmCoeffs_.updateIncTL(dx);
   Log::trace() << "HybridLinearModel<MODEL>::stepTL done" << std::endl;
 }
@@ -143,7 +154,9 @@ template<typename MODEL>
 void HybridLinearModel<MODEL>::stepAD(Increment_ & dx, ModelAuxInc_ & merr) const {
   Log::trace() << "HybridLinearModel<MODEL>:stepAD Starting " << std::endl;
   htlmCoeffs_.updateIncAD(dx);
-  simplifiedLinearModel_->stepAD(dx , merr);
+  for (size_t t = 0; t < stepsPerUpdate_; t++) {  // see note in ::stepTL()
+    simplifiedLinearModel_->stepAD(dx, merr);
+  }
   Log::trace() << "HybridLinearModel<MODEL>::stepAD done" << std::endl;
 }
 
