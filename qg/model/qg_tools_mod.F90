@@ -27,7 +27,7 @@ real(kind_real),parameter :: utop = 58.0_kind_real !< Zonal wind at the top (m/s
 contains
 ! ------------------------------------------------------------------------------
 !> Generate filename
-function genfilename(f_conf,length,vdate)
+function genfilename(f_conf,length,vdate,date_cols)
 use string_utils
 
 implicit none
@@ -36,6 +36,7 @@ implicit none
 type(fckit_configuration),intent(in) :: f_conf !< FCKIT configuration
 integer,intent(in) :: length                   !< Length
 type(datetime),intent(in) :: vdate             !< Date and time
+logical,intent(in) :: date_cols                !< Date written with colons or not
 
 ! Result
 character(len=2*length) :: genfilename
@@ -78,17 +79,28 @@ endif
 if ((typ=='fc').or.(typ=='ens')) then
   call f_conf%get_or_die("date",str)
   referencedate = str
-  call datetime_to_string(vdate,validitydate)
-  call datetime_create(trim(referencedate),rdate)
-  call datetime_diff(vdate,rdate,step)
-  call duration_to_string(step,sstep)
+  if (date_cols) then
+    call datetime_create(trim(referencedate),rdate)
+    call datetime_diff(vdate,rdate,step)
+    call duration_to_string(step,sstep)
+  else
+    call datetime_create(trim(referencedate),rdate)
+    call datetime_to_string_io(rdate,referencedate)
+    call datetime_diff(vdate,rdate,step)
+    call duration_to_string(step,sstep)
+  endif
+
   lenfn = lenfn+1+len_trim(referencedate)+1+len_trim(sstep)
   genfilename = trim(prefix)//'.'//trim(referencedate)//'.'// trim(sstep)//'.nc'
 endif
 
 ! Analysis, diagnostic or increment case
 if ((typ=='an').or.(typ=='diag').or.(typ=='in')) then
-  call datetime_to_string(vdate,validitydate)
+  if (date_cols) then
+    call datetime_to_string(vdate,validitydate)
+  else
+    call datetime_to_string_io(vdate,validitydate)
+  endif
   lenfn = lenfn+1+len_trim(validitydate)
   genfilename = trim(prefix)//'.'//trim(validitydate)//'.nc'
 endif
@@ -96,7 +108,11 @@ endif
 if (typ=='krylov') then
   call f_conf%get_or_die("iteration",str)
   iter = str
-  call datetime_to_string(vdate,validitydate)
+  if (date_cols) then
+    call datetime_to_string(vdate,validitydate)
+  else
+    call datetime_to_string_io(vdate,validitydate)
+  endif
   lenfn = lenfn+1+len_trim(iter)+1+len_trim(validitydate)
   genfilename = trim(prefix)//'.'// trim(iter)//'.'//trim(validitydate)//'.nc'
 endif

@@ -61,6 +61,9 @@ class DateTime : public util::Serializable {
   /// Convert the datetime to ISO 8601 format: YYYY-MM-DDThh:mm:ssZ
   std::string toString() const;
 
+  /// Convert the datetime to format: YYYYMMDDThhmmssZ
+  std::string toStringIO() const;
+
   // Convert the datetime to set of integers, year, month, day, hour, minute, second
   void toYYYYMMDDhhmmss(int & year, int & month, int & day,
                         int & hour, int & minute, int & second) const;
@@ -144,4 +147,3 @@ std::size_t hash_value(const util::DateTime&);
 }  // namespace util
 
 #endif  // OOPS_UTIL_DATETIME_H_
-

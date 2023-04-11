@@ -171,7 +171,7 @@ class LatLonGridWriterParameters : public Parameters {
                                     {oops::exclusiveMinConstraint(0.0), oops::maxConstraint(90.0)}};
   RequiredParameter<Variables> variables{"variables to output", this};
   RequiredParameter<std::vector<std::size_t>> levels{"levels to output", this};
-  // output file will be: <datapath>/<filename prefix>.YYYY-MM-DDThh:mm:ssZ.nc
+  // output file will be: <datapath>/<filename prefix>.YYYYMMDDThhmmssZ.nc
   // as with other writers, assumes datapath exists
   Parameter<std::string> path{"datapath", ".", this};
   RequiredParameter<std::string> prefix{"filename prefix", this};
@@ -265,7 +265,7 @@ void LatLonGridWriter<MODEL>::interpolateAndWrite(const FLDS & xx) const {
 
   // Write data on proc0 only
   if (comm_.rank() == 0) {
-    const std::string filepath = path_ + "/" + prefix_ + "." + xx.validTime().toString();
+    const std::string filepath = path_ + "/" + prefix_ + "." + xx.validTime().toStringIO();;
     const size_t nlats = 2*gridRes_ + 1;
     const size_t nlons = 4*gridRes_;
     detail::writer(*targetFunctionSpace_, fsetLatLon, vars_, levels_, filepath, nlats, nlons);

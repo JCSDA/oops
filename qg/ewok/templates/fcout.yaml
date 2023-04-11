@@ -6,5 +6,6 @@
 type: fc
 exp: $(expid)
 date: $(fcdatetime)
+date colons: false
 frequency: $(forecast_output_frequency)
 datadir: $(fcworkdir)

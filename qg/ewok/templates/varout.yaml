@@ -5,4 +5,5 @@
 
 type: diag
 exp: $(expid).$(vartype)
+date colons: false
 datadir: $(varworkdir)

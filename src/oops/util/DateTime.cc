@@ -125,6 +125,34 @@ std::string DateTime::toString() const {
 
 // -----------------------------------------------------------------------------
 
+std::string DateTime::toStringIO() const {
+  failIfUnset();
+
+  int year;
+  int month;
+  int day;
+  int hour;
+  int minute;
+  int second;
+
+  df::julianToDate(date_, year, month, day);
+  df::secondToHms(time_, hour, minute, second);
+
+  std::ostringstream os;
+  os << std::setfill('0');
+  os << std::setw(4) << year;
+  os << std::setw(2) << month;
+  os << std::setw(2) << day;
+  os.put('T');
+  os << std::setw(2) << hour;
+  os << std::setw(2) << minute;
+  os << std::setw(2) << second;
+  os.put('Z');
+  return os.str();
+}
+
+// -----------------------------------------------------------------------------
+
 void DateTime::toYYYYMMDDhhmmss(int & year, int & month, int & day,
                                 int & hour, int & minute, int & second) const {
   df::julianToDate(date_, year, month, day);
@@ -325,4 +353,3 @@ std::size_t hash_value(const util::DateTime& d) {
 // -----------------------------------------------------------------------------
 
 }  // namespace util
-

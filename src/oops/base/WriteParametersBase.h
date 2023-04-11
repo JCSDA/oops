@@ -12,6 +12,7 @@
 
 #include "oops/util/parameters/ConfigurationParameter.h"
 #include "oops/util/parameters/OptionalParameter.h"
+#include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
 
 namespace oops {
@@ -50,6 +51,9 @@ class WriteParametersBase : public Parameters {
 
   /// Prefix for filenames
   OptionalParameter<std::string> prefix{"prefix", this};
+
+  /// IO format for the date in the filenames
+  Parameter<bool> dateCols{"date colons", true, this};
 };
 
 // -----------------------------------------------------------------------------

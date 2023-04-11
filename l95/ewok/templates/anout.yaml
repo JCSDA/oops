@@ -6,6 +6,7 @@
 type: an
 exp: $(expid)
 date: '{{current_cycle}}'
+date colons: false
 first: $(an_first)
 frequency: $(an_frequency)
 datadir: $(anworkdir)

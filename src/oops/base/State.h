@@ -202,6 +202,8 @@ double State<MODEL>::norm() const {
 
 template<typename MODEL>
 void State<MODEL>::write(const eckit::Configuration & conf) const {
+  const bool dateCols = conf.getBool("date colons", true);
+
   if (conf.has("type") && conf.has("exp") && !conf.has("prefix")) {
     const std::string type = conf.getString("type");
     std::string prefix = conf.getString("exp") + "." + type;
@@ -218,18 +220,28 @@ void State<MODEL>::write(const eckit::Configuration & conf) const {
         throw eckit::BadValue("'date' was not set in the parameters passed to write() "
                               "even though 'type' was set to '" + type + "'", Here());
       const util::DateTime antime(conf.getString("date"));
-      prefix += "." + antime.toString();
+      if (dateCols) {
+        prefix += "." + antime.toString();
+      } else {
+        prefix += "." + antime.toStringIO();
+      }
       const util::Duration step = this->validTime() - antime;
       prefix += "." + step.toString();
     }
 
     if (type == "an") {
-      prefix += "." + this->validTime().toString();
+      if (dateCols) {
+        prefix += "." + this->validTime().toString();
+      } else {
+        prefix += "." + this->validTime().toStringIO();
+      }
     }
 
     eckit::LocalConfiguration preconf(conf);
+    if (conf.has("date colons")) preconf.set("date colons", dateCols);
     preconf.set("prefix", prefix);
     interface::State<MODEL>::write(preconf);
+
   } else {
     interface::State<MODEL>::write(conf);
   }

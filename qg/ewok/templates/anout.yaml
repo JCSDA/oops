@@ -5,6 +5,7 @@
 
 type: an
 exp: $(expid)
+date colons: false
 date: '{{current_cycle}}'
 first: $(an_first)
 frequency: $(an_frequency)

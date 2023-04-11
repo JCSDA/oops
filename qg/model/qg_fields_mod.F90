@@ -799,6 +799,7 @@ character(len=20) :: sdate
 character(len=1024) :: typ,filename
 type(oops_variables) :: vars
 type(qg_fields) :: fld_io
+logical :: date_cols
 
 ! Get output type
 call f_conf%get_or_die("type",str)
@@ -850,8 +851,14 @@ else
   endif
 endif
 
+! Get date IO format (colons or not?)
+date_cols = .true.
+if (f_conf%has("date colons")) then
+  call f_conf%get_or_die("date colons", date_cols)
+end if
+
 ! Set filename
-filename = genfilename(f_conf,800,vdate)
+filename = genfilename(f_conf,800,vdate,date_cols)
 call fckit_log%info('qg_fields_write_file: writing '//trim(filename))
 
 ! Set date
