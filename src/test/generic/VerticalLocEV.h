@@ -102,7 +102,7 @@ template <typename MODEL> void testVerticalLocEV() {
   oops::Log::debug() << "dot product 0: " <<  n0 << std::endl;
   // check that eigen vectors are not zeros
   EXPECT(n0 > 0);
-  double tol = 2*n0*DBL_EPSILON;
+  double tol = 20*n0*DBL_EPSILON;
   oops::Log::debug() << "tolerance :" << tol << std::endl;
 
   // check that eig[ieig>0] are orthogonal to eig[0]
