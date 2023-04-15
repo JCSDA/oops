@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "atlas/field/FieldSet.h"
@@ -27,9 +28,9 @@ class HtlmRegularizationPartParameters : public Parameters {
   RequiredParameter<double> value{"value", this};
   OptionalParameter<std::vector<std::string>> variables{"variables", this};  // Must be a subset of
   // variables in FieldSet given as argument to HtlmRegularization constructor. Defaults to all.
-  OptionalParameter<std::vector<double>> boundingLons{"bounding lons", this};  // Band proceeds
-  // eastward from lower to higher value. Defaults to including all longitudes.
-  OptionalParameter<std::vector<double>> boundingLats{"bounding lats", this};  // Defaults to
+  OptionalParameter<std::pair<double, double>> boundingLons{"bounding lons", this};  // Band
+  // proceeds eastward from lower to higher value. Defaults to including all longitudes.
+  OptionalParameter<std::pair<double, double>> boundingLats{"bounding lats", this};  // Defaults to
   // including all latitudes.
   OptionalParameter<std::vector<size_t>> levels{"levels", this};  // Defaults to all.
 };
@@ -39,27 +40,29 @@ class HtlmRegularizationPart {
  public:
   HtlmRegularizationPart(const HtlmRegularizationPartParameters &,
                          const std::vector<std::string> &,
-                         const std::vector<size_t> &,
-                         const std::vector<double> &,
-                         const std::vector<double> &);
+                         const std::vector<size_t> &);
   const std::vector<std::string> & getVariables() const {return variables_;}
   const std::vector<size_t> & getLevels() const {return levels_;}
-  const std::vector<double> & getBoundingLons() const {return boundingLons_;}
-  const std::vector<double> & getBoundingLats() const {return boundingLats_;}
+  const std::pair<double, double> & getBoundingLons() const {return boundingLons_;}
+  const std::pair<double, double> & getBoundingLats() const {return boundingLats_;}
   const double & getValue() const {return value_;}
   const bool & containsAllGridPoints() const {return containsAllGridPoints_;}
 
  private:
   template <typename T>
   const bool AIsSubsetOfB(std::vector<T>, std::vector<T>) const;
-  const bool AllOfAAreInRangeOfB(const std::vector<double> &, const std::vector<double> &) const;
+  const bool allOfAAreInRangeOfB(const std::pair<double, double> &,
+                                 const std::pair<double, double> &) const;
+
+  static const std::pair<double, double> limitsLon;
+  static const std::pair<double, double> limitsLat;
 
   const HtlmRegularizationPartParameters params_;
   const double value_;
   const std::vector<std::string> variables_;
   std::vector<size_t> levels_;
-  std::vector<double> boundingLons_;
-  std::vector<double> boundingLats_;
+  std::pair<double, double> boundingLons_;
+  std::pair<double, double> boundingLats_;
   bool containsAllGridPoints_;
 };
 
@@ -86,8 +89,8 @@ class HtlmRegularization {
   virtual ~HtlmRegularization() = default;
   static const std::string classname() {return "oops::HtlmRegularization";}
   virtual const double & getRegularizationValue(const std::string &,
-                                                const size_t &,
-                                                const size_t &) const {return baseValue_;}
+                                                const size_t,
+                                                const size_t) const {return baseValue_;}
 
  protected:
   const HtlmRegularizationParameters params_;
@@ -99,13 +102,13 @@ class HtlmRegularizationComponentDependent : public HtlmRegularization {
   HtlmRegularizationComponentDependent(const HtlmRegularizationParameters &, atlas::FieldSet);
   virtual ~HtlmRegularizationComponentDependent() = default;
   virtual const double & getRegularizationValue(const std::string &,
-                                                const size_t &,
-                                                const size_t &) const;
+                                                const size_t,
+                                                const size_t) const;
 
  private:
   template <typename T>
   const bool AIsInB(const T &, const std::vector<T> &) const;
-  const bool AIsInRangeOfB(const double &, const std::vector<double> &) const;
+  const bool AIsInRangeOfB(const double, const std::pair<double, double> &) const;
   void applyPart(const HtlmRegularizationPart &, atlas::FieldSet &);
 
   const size_t nLevels_;
