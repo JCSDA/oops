@@ -70,6 +70,25 @@ namespace {
     EXPECT_THROWS(splitVariables(Variables({"a", "b", "c", "d", "e"}), available));
   }
 
+// -----------------------------------------------------------------------------
+
+  CASE("test_overlapping_coupledvars") {
+    using oops::Variables;
+    using oops::splitVariables;
+    typedef std::vector<Variables> VariablesVec;
+
+    Variables vars1({"a", "b"});
+    Variables vars2({"c", "d", "a"});
+    Variables vars3({"e"});
+    VariablesVec available({vars1, vars2});
+
+    EXPECT_THROWS(splitVariables(Variables(), available));
+    EXPECT_THROWS(splitVariables(Variables({"a"}), available));
+    EXPECT_THROWS(splitVariables(Variables({"a", "b", "c", "d"}), available));
+    EXPECT_THROWS(splitVariables(Variables({"a", "b", "c", "d", "e"}),
+                                 VariablesVec({vars1, vars2, vars3})));
+  }
+
 }  // anonymous namespace
 
 // -----------------------------------------------------------------------------

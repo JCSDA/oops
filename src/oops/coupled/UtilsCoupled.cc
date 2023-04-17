@@ -15,21 +15,36 @@ namespace oops {
 // -----------------------------------------------------------------------------
 std::vector<Variables> splitVariables(const Variables & varsToSplit,
                                       const std::vector<Variables> & varsOfCoupledModels) {
-  // decide what variables are provided by what model
   std::vector<Variables> splitvars = varsOfCoupledModels;
-  for (auto & element : splitvars) {
-    element.intersection(varsToSplit);
-  }
-  // check that all variables are accounted for
-  Variables allreqvars;
-  for (auto & element : splitvars) {
-    allreqvars += element;
-  }
-  if (allreqvars != varsToSplit) {
-    Log::error() << "Not all variables can be provided by the coupled model. " << std::endl
-                 << "Requested: " << varsToSplit << std::endl
-                 << "Available: " << allreqvars << std::endl;
-    throw eckit::UserError("Not all variables can be provided by the coupled model");
+  if (varsOfCoupledModels.size() > 0) {
+    // check that the same variable isn't specified in both models' variables
+    Variables allvars;
+    size_t allvarsize = 0;
+    for (const auto & vars : varsOfCoupledModels) {
+      allvars += vars;
+      allvarsize += vars.size();
+    }
+    if (allvars.size() != allvarsize) {
+      Log::error() << "Variables for different components of coupled model can not overlap."
+                   << std::endl;
+      throw eckit::BadParameter("Variables for different components of coupled "
+                                "model can not overlap", Here());
+    }
+    // decide what variables are provided by what model
+    for (auto & element : splitvars) {
+      element.intersection(varsToSplit);
+    }
+    // check that all variables are accounted for
+    Variables allreqvars;
+    for (const auto & element : splitvars) {
+      allreqvars += element;
+    }
+    if (allreqvars != varsToSplit) {
+      Log::error() << "Not all variables can be provided by the coupled model. " << std::endl
+                   << "Requested: " << varsToSplit << std::endl
+                   << "Available: " << allreqvars << std::endl;
+      throw eckit::UserError("Not all variables can be provided by the coupled model");
+    }
   }
   return splitvars;
 }

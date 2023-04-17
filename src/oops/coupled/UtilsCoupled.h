@@ -15,6 +15,10 @@ class Variables;
 
 /// Returns \p varsToSplit variables split by coupled model components according to which
 /// variables are available for different model components.
+/// \p varsOfCoupledModels specifies which variables are available for which model
+/// components. A variable name can only be in one of the elements of \p varsOfCoupledModels.
+/// If a variable name is in more than one elements of \p varsOfCoupledModels, an exception
+/// is thrown.
 /// The return vector has the same size as \p varsOfCoupledModels. Each of the element of
 /// the return vector should only contain variables that also exist in the corresponding
 /// element of \p varsOfCoupledModels. The superset of all elements in the return vector
