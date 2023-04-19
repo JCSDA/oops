@@ -56,7 +56,8 @@ namespace datefunctions {
 // -----------------------------------------------------------------------------
 
 uint64_t dateToJulian(const int year, const int month, const int day) {
-//  Compute the Julian Day number applying the following formula
+//  Compute the Julian Day number using the following formula
+//  from https://doi.org/10.1145/364096.364097
 //
 //  julian_day = ( 1461 * ( y + 4800 + ( m - 14 ) / 12 ) ) / 4 +
 //               ( 367 * ( m - 2 - 12 * ( ( m - 14 ) / 12 ) ) ) / 12 -
@@ -82,6 +83,8 @@ uint64_t dateToJulian(const int year, const int month, const int day) {
 // -----------------------------------------------------------------------------
 
 void julianToDate(const uint64_t julian, int & yy, int & mm, int & dd) {
+// Compute the year, month, and day from the Julian Day number
+// using the formula from https://doi.org/10.1145/364096.364097
   uint64_t l     = 0;
   uint64_t n     = 0;
   uint64_t i     = 0;
