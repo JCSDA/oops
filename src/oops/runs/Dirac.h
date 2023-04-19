@@ -30,6 +30,7 @@
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/ConfigFunctions.h"
 #include "oops/util/DateTime.h"
+#include "oops/util/FieldSetHelpers.h"
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/Parameter.h"
@@ -274,7 +275,8 @@ template <typename MODEL> class Dirac : public Application {
 
     // Get diagnostic values
     util::printDiagValues(data.geometry().timeComm(),
-                          data.geometry().generic(),
+                          data.geometry().generic().comm(),
+                          data.geometry().generic().functionSpace(),
                           data.fieldSet(),
                           diagPoints.fieldSet());
 

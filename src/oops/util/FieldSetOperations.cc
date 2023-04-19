@@ -11,364 +11,16 @@
 
 #include "atlas/array.h"
 #include "atlas/field.h"
+#include "atlas/functionspace.h"
 
 #include "eckit/exception/Exceptions.h"
+#include "eckit/mpi/Comm.h"
 
-#include "oops/base/Variables.h"
+#include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
-#include "oops/util/Random.h"
+#include "oops/util/missingValues.h"
 
 namespace util {
-
-// -----------------------------------------------------------------------------
-atlas::FieldSet createRandomFieldSet(const oops::GeometryData & geometryData,
-                                     const std::vector<size_t> & variableSizes,
-                                     const oops::Variables & vars,
-                                     const size_t & timeRank) {
-  oops::Log::trace() << "createRandomFieldSet starting" << std::endl;
-
-  // Local ghost points
-  atlas::Field localGhost;
-  if (geometryData.functionSpace().type() != "Spectral") {
-    localGhost = geometryData.functionSpace().ghost();
-  }
-
-  // Global ghost points
-  atlas::Field globalGhost;
-  if (geometryData.functionSpace().type() != "PointCloud") {
-    globalGhost = geometryData.functionSpace().createField<int>(atlas::option::name("ghost")
-     | atlas::option::global());
-
-    // Gather masks on main processor
-    if (geometryData.functionSpace().type() == "StructuredColumns") {
-      // StructuredColumns
-      const atlas::functionspace::StructuredColumns fs(geometryData.functionSpace());
-      fs.gather(localGhost, globalGhost);
-    } else if (geometryData.functionSpace().type() == "NodeColumns") {
-      // NodeColumns
-      const atlas::functionspace::CubedSphereNodeColumns fs(geometryData.functionSpace());
-      fs.gather(localGhost, globalGhost);
-      // TODO(??): have to assume the NodeColumns is CubedSphere here, cannot differentiate with
-      // other NodeColumns from what is in geometryData.
-      // const atlas::functionspace::NodeColumns fs(geometryData.functionSpace());
-      // fs.gather(localGhost, globalGhost);
-    } else if (geometryData.functionSpace().type() == "Spectral") {
-      // Not needed
-    } else {
-      ABORT(geometryData.functionSpace().type() + " function space not supported yet");
-    }
-  }
-
-  // Create FieldSet
-  atlas::FieldSet fset;
-
-  for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
-    // Create field
-    atlas::Field field = geometryData.functionSpace().createField<double>(
-      atlas::option::name(vars.variables()[jvar]) | atlas::option::levels(variableSizes[jvar]));
-
-    // Get field owned size
-    size_t n = 0;
-    if (field.rank() == 2) {
-      if (geometryData.functionSpace().type() == "Spectral") {
-        const atlas::functionspace::Spectral fs(geometryData.functionSpace());
-        const atlas::idx_t N = fs.truncation();
-        const auto zonal_wavenumbers = fs.zonal_wavenumbers();
-        const atlas::idx_t nb_zonal_wavenumbers = zonal_wavenumbers.size();
-        for (int jm=0; jm < nb_zonal_wavenumbers; ++jm) {
-          const atlas::idx_t m1 = zonal_wavenumbers(jm);
-          for (std::size_t n1 = m1; n1 <= static_cast<std::size_t>(N); ++n1) {
-            if (m1 == 0) {
-              n += field.shape(1);
-            } else {
-              n += 2*field.shape(1);
-            }
-          }
-        }
-      } else {
-        auto localGhostView = atlas::array::make_view<int, 1>(localGhost);
-        for (atlas::idx_t jnode = 0; jnode < field.shape(0); ++jnode) {
-          if (localGhostView(jnode) == 0) n += field.shape(1);
-        }
-      }
-    }
-
-    // Gather local sizes
-    std::vector<size_t> nlocs(geometryData.comm().size());
-    geometryData.comm().gather(n, nlocs, 0);
-
-    // Get global size
-    size_t nglb = 0;
-    if (geometryData.comm().rank() == 0) {
-      for (const size_t & nloc : nlocs)
-        nglb += nloc;
-    }
-
-    // Global field
-    atlas::Field globalField = geometryData.functionSpace().createField<double>(
-      atlas::option::name(vars.variables()[jvar]) | atlas::option::levels(variableSizes[jvar])
-      | atlas::option::global());
-
-    std::vector<double> rand_vec_glb(nglb);
-    if (geometryData.comm().rank() == 0) {
-      // Generate global random vector
-      util::NormalDistribution<double> dist(nglb, 0.0, 1.0, 1+timeRank);
-      for (size_t i = 0; i < nglb; ++i) {
-        rand_vec_glb[i] = dist[i];
-      }
-
-      if (geometryData.functionSpace().type() != "PointCloud") {
-        // Copy to field
-        n = 0;
-        if (globalField.rank() == 2) {
-          auto view = atlas::array::make_view<double, 2>(globalField);
-          if (geometryData.functionSpace().type() == "Spectral") {
-            const atlas::functionspace::Spectral fs(geometryData.functionSpace());
-            const atlas::idx_t N = fs.truncation();
-            int jnode = 0;
-            for (int jm=0; jm <= N; ++jm) {
-              const atlas::idx_t m1 = jm;
-              for (std::size_t n1 = m1; n1 <= static_cast<std::size_t>(N); ++n1) {
-                if (m1 == 0) {
-                  // Real part only
-                  for (atlas::idx_t jlevel = 0; jlevel < globalField.shape(1); ++jlevel) {
-                    view(jnode, jlevel) = dist[n];
-                    ++n;
-                  }
-                  ++jnode;
-
-                  // No imaginary part
-                  for (atlas::idx_t jlevel = 0; jlevel < globalField.shape(1); ++jlevel) {
-                    view(jnode, jlevel) = 0.0;
-                  }
-                  ++jnode;
-                } else {
-                  // Real part
-                  for (atlas::idx_t jlevel = 0; jlevel < globalField.shape(1); ++jlevel) {
-                    view(jnode, jlevel) = dist[n] * M_SQRT1_2;
-                    ++n;
-                  }
-                  ++jnode;
-
-                  // Imaginary part
-                  for (atlas::idx_t jlevel = 0; jlevel < globalField.shape(1); ++jlevel) {
-                    view(jnode, jlevel) = dist[n] * M_SQRT1_2;
-                    ++n;
-                  }
-                  ++jnode;
-                }
-              }
-            }
-          } else {
-            auto globalGhostView = atlas::array::make_view<int, 1>(globalGhost);
-            for (atlas::idx_t jnode = 0; jnode < globalField.shape(0); ++jnode) {
-              if (globalGhostView(jnode) == 0) {
-                for (atlas::idx_t jlevel = 0; jlevel < globalField.shape(1); ++jlevel) {
-                  view(jnode, jlevel) = dist[n];
-                  ++n;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    if (geometryData.functionSpace().type() == "PointCloud") {
-      // Scatter random vector
-      std::vector<int> sendcounts(geometryData.comm().size());
-      std::vector<int> displs(geometryData.comm().size());
-      if (geometryData.comm().rank() == 0) {
-        int sum = 0;
-        for (size_t i = 0; i < geometryData.comm().size(); ++i) {
-          sendcounts[i] = nlocs[i];
-          displs[i] = sum;
-          sum += sendcounts[i];
-        }
-      }
-      std::vector<double> rand_vec_loc(n);
-      geometryData.comm().scatterv(rand_vec_glb.cbegin(), rand_vec_glb.cend(), sendcounts, displs,
-      rand_vec_loc.begin(), rand_vec_loc.end(), 0);
-
-      // Populate with random numbers
-      n = 0;
-      if (field.rank() == 2) {
-        auto view = atlas::array::make_view<double, 2>(field);
-        for (atlas::idx_t jnode = 0; jnode < field.shape(0); ++jnode) {
-          for (atlas::idx_t jlevel = 0; jlevel < field.shape(1); ++jlevel) {
-            view(jnode, jlevel) = rand_vec_loc[n];
-            ++n;
-          }
-        }
-      }
-    } else {
-      // Scatter global field
-      if (geometryData.functionSpace().type() == "StructuredColumns") {
-        // StructuredColumns
-        const atlas::functionspace::StructuredColumns fs(geometryData.functionSpace());
-        fs.scatter(globalField, field);
-      } else if (geometryData.functionSpace().type() == "NodeColumns") {
-        // CubedSphere
-        const atlas::functionspace::CubedSphereNodeColumns fs(geometryData.functionSpace());
-        fs.scatter(globalField, field);
-        // TODO(??): have to assume the NodeColumns is CubedSphere here, cannot differentiate with
-        // other NodeColumns from what is in geometryData.
-        // const atlas::functionspace::NodeColumns fs(geometryData.functionSpace());
-        // fs.scatter(globalField, field);
-      } else if (geometryData.functionSpace().type() == "Spectral") {
-        const atlas::functionspace::Spectral fs(geometryData.functionSpace());
-        fs.scatter(globalField, field);
-      } else {
-        ABORT(geometryData.functionSpace().type() + " function space not supported yet");
-      }
-    }
-
-    // Set metadata for interpolation type
-    if (geometryData.functionSpace().type() != "Spectral") {
-      field.metadata().set("interp_type", "default");
-    }
-
-    // Add field
-    fset.add(field);
-  }
-
-  if (geometryData.functionSpace().type() != "Spectral") {
-    // Halo exchange
-    fset.haloExchange();
-  }
-
-  // Return FieldSet
-  return fset;
-}
-
-// -----------------------------------------------------------------------------
-
-atlas::FieldSet copyFieldSet(const atlas::FieldSet & otherFset) {
-  oops::Log::trace() << "copyFieldSet starting" << std::endl;
-
-  // Create FieldSet
-  atlas::FieldSet fset;
-
-  for (const auto & otherField : otherFset) {
-    // Create Field
-    atlas::Field field = otherField.functionspace().createField<double>(
-      atlas::option::name(otherField.name()) | atlas::option::levels(otherField.levels()));
-
-    // Copy data
-    if (field.rank() == 2) {
-      auto view = atlas::array::make_view<double, 2>(field);
-      auto otherView = atlas::array::make_view<double, 2>(otherField);
-      for (atlas::idx_t jnode = 0; jnode < otherField.shape(0); ++jnode) {
-        for (atlas::idx_t jlevel = 0; jlevel < otherField.shape(1); ++jlevel) {
-            view(jnode, jlevel) = otherView(jnode, jlevel);
-        }
-      }
-    } else {
-      ABORT("copyFieldSet: wrong rank");
-    }
-
-    // Copy metadata
-    field.metadata() = otherField.metadata();
-
-    // Add field
-    fset.add(field);
-  }
-
-  // Return FieldSet
-  return fset;
-}
-
-// -----------------------------------------------------------------------------
-
-atlas::FieldSet shareFields(const atlas::FieldSet & otherFset) {
-  oops::Log::trace() << "shareFields starting" << std::endl;
-
-  // Create FieldSet
-  atlas::FieldSet fset;
-
-  // Add other FieldSet fields
-  for (const auto & field : otherFset) {
-    fset.add(field);
-  }
-
-  // Return FieldSet
-  return fset;
-}
-
-// -----------------------------------------------------------------------------
-
-void removeFieldsFromFieldSet(atlas::FieldSet & fset,
-                              const oops::Variables & vars) {
-  oops::Log::trace() << "removeFieldsFromFieldSet starting" << std::endl;
-
-  // Create FieldSet
-  atlas::FieldSet fsetTmp;
-
-  for (const auto & field : fset) {
-    if (!vars.has(field.name())) {
-      // Add field
-      fsetTmp.add(field);
-    }
-  }
-
-  // Replace FieldSet
-  fset = fsetTmp;
-
-  oops::Log::trace() << "removeFieldsFromFieldSet done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-std::string getGridUid(const atlas::FunctionSpace & fspace) {
-  oops::Log::trace() << "getGridUid starting" << std::endl;
-
-  if (fspace.type() == "StructuredColumns") {
-    // StructuredColumns
-    const atlas::functionspace::StructuredColumns fs(fspace);
-    return fs.grid().uid();
-  } else if (fspace.type() == "NodeColumns") {
-    // CubedSphere
-    const atlas::functionspace::CubedSphereNodeColumns fs(fspace);
-    return fs.mesh().grid().uid();
-    // TODO(??): have to assume the NodeColumns is CubedSphere here, cannot differentiate with
-    // other NodeColumns from what is in fspace.
-    // const atlas::functionspace::NodeColumns fs(fspace);
-    // return fs.grid().uid();
-  } else if (fspace.type() == "PointCloud") {
-    const atlas::functionspace::PointCloud fs(fspace);
-    return "PointCloud" + std::to_string(fs.size());
-  } else if (fspace.type() == "Spectral") {
-    const atlas::functionspace::Spectral fs(fspace);
-    return "Spectral" + std::to_string(fs.truncation());
-  } else {
-    ABORT(fspace.type() + " function space not supported yet");
-    return "";
-  }
-}
-
-// -----------------------------------------------------------------------------
-
-std::string getGridUid(const atlas::FieldSet & fset) {
-  oops::Log::trace() << "getGridUid starting" << std::endl;
-
-  if (fset.size() > 0) {
-    // Get grid UID of the first field
-    std::string uid = getGridUid(fset[0].functionspace());
-
-    // Check that other fields have the same UID
-    for (const auto & field : fset) {
-      if (getGridUid(field.functionspace()) != uid) {
-        ABORT("All fields should have the same grid");
-      }
-    }
-
-    // Return UID
-    return uid;
-  } else {
-    // No field in the fieldset
-    return "";
-  }
-}
 
 // -----------------------------------------------------------------------------
 
@@ -415,6 +67,35 @@ void addFieldSets(atlas::FieldSet & fset,
   }
 
   oops::Log::trace() << "addFieldSets starting" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+void subtractFieldSets(atlas::FieldSet & fset,
+                       const atlas::FieldSet & subFset) {
+  oops::Log::trace() << "subtractFieldSets starting" << std::endl;
+
+  // Loop over subtracted fields. The RHS FieldSet may contain only a subset of Fields from the
+  // input/output FieldSet. If this is the case, no work is done for fields present only in the LHS.
+  for (auto & subField : subFset) {
+    // Get field with the same name
+    atlas::Field field = fset.field(subField.name());
+
+    // Get data and sub
+    if (field.rank() == 2 && subField.rank() == 2) {
+      auto view = atlas::array::make_view<double, 2>(field);
+      const auto subView = atlas::array::make_view<double, 2>(subField);
+      for (int jnode = 0; jnode < field.shape(0); ++jnode) {
+        for (int jlevel = 0; jlevel < field.shape(1); ++jlevel) {
+          view(jnode, jlevel) -= subView(jnode, jlevel);
+        }
+      }
+    } else {
+      ABORT("subFieldSets: wrong rank");
+    }
+  }
+
+  oops::Log::trace() << "subFieldSets starting" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -473,13 +154,14 @@ void multiplyFieldSets(atlas::FieldSet & fset,
 
 double dotProductFieldSets(const atlas::FieldSet & fset1,
                            const atlas::FieldSet & fset2,
-                           const oops::Variables & activeVars,
-                           const eckit::mpi::Comm & comm) {
+                           const std::vector<std::string> & vars,
+                           const eckit::mpi::Comm & comm,
+                           const bool & includeHalo) {
   oops::Log::trace() << "dotProductFieldSets starting" << std::endl;
 
   // Compute dot product
   double dp = 0.0;
-  for (const auto & var : activeVars.variables()) {
+  for (const auto & var : vars) {
     // Check fields presence
     if (fset1.has(var) && fset2.has(var)) {
       // Get fields
@@ -506,7 +188,10 @@ double dotProductFieldSets(const atlas::FieldSet & fset1,
               if (m1 == 0) {
                 // Real part only
                 for (atlas::idx_t jlevel = 0; jlevel < field1.shape(1); ++jlevel) {
-                  dp += view1(jnode, jlevel)*view2(jnode, jlevel);
+                  if (view1(jnode, jlevel) != util::missingValue(double())
+                    && view2(jnode, jlevel) != util::missingValue(double())) {
+                    dp += view1(jnode, jlevel)*view2(jnode, jlevel);
+                  }
                 }
                 ++jnode;
 
@@ -515,22 +200,34 @@ double dotProductFieldSets(const atlas::FieldSet & fset1,
               } else {
                 // Real part
                 for (atlas::idx_t jlevel = 0; jlevel < field1.shape(1); ++jlevel) {
-                  dp += 2.0*view1(jnode, jlevel)*view2(jnode, jlevel);
+                  if (view1(jnode, jlevel) != util::missingValue(double())
+                    && view2(jnode, jlevel) != util::missingValue(double())) {
+                    dp += 2.0*view1(jnode, jlevel)*view2(jnode, jlevel);
+                  }
                 }
                 ++jnode;
 
                 // Imaginary part
                 for (atlas::idx_t jlevel = 0; jlevel < field1.shape(1); ++jlevel) {
-                  dp += 2.0*view1(jnode, jlevel)*view2(jnode, jlevel);
+                  if (view1(jnode, jlevel) != util::missingValue(double())
+                    && view2(jnode, jlevel) != util::missingValue(double())) {
+                    dp += 2.0*view1(jnode, jlevel)*view2(jnode, jlevel);
+                  }
                 }
                 ++jnode;
               }
             }
           }
         } else {
+          const auto ghostView = atlas::array::make_view<int, 1>(field1.functionspace().ghost());
           for (atlas::idx_t jnode = 0; jnode < field1.shape(0); ++jnode) {
-            for (atlas::idx_t jlevel = 0; jlevel < field1.shape(1); ++jlevel) {
-              dp += view1(jnode, jlevel)*view2(jnode, jlevel);
+            if (includeHalo || (ghostView(jnode) == 0)) {
+              for (atlas::idx_t jlevel = 0; jlevel < field1.shape(1); ++jlevel) {
+                if (view1(jnode, jlevel) != util::missingValue(double())
+                  && view2(jnode, jlevel) != util::missingValue(double())) {
+                  dp += view1(jnode, jlevel)*view2(jnode, jlevel);
+                }
+              }
             }
           }
         }
@@ -547,6 +244,15 @@ double dotProductFieldSets(const atlas::FieldSet & fset1,
   return dp;
 
   oops::Log::trace() << "dotProductFieldSets done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+double normFieldSet(const atlas::FieldSet & fset,
+                    const std::vector<std::string> & vars,
+                    const eckit::mpi::Comm & comm) {
+    oops::Log::trace() << "normFieldSet starting" << std::endl;
+    return std::sqrt(dotProductFieldSets(fset, fset, vars, comm, false));
 }
 
 // -----------------------------------------------------------------------------
@@ -604,147 +310,6 @@ void sqrtFieldSet(atlas::FieldSet & fset) {
   }
 
   oops::Log::trace() << "sqrtFieldSet starting" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-void printDiagValues(const eckit::mpi::Comm & timeComm,
-                     const oops::GeometryData & geometryData,
-                     const atlas::FieldSet & dataFset,
-                     const atlas::FieldSet & diagFset) {
-  oops::Log::trace() << "printDiagValues starting" << std::endl;
-
-  // Global lon/lat field
-  atlas::FieldSet globalCoords;
-  atlas::Field lonGlobal = geometryData.functionSpace().createField<double>(
-    atlas::option::name("lon") | atlas::option::global() | atlas::option::levels(0));
-  globalCoords.add(lonGlobal);
-  atlas::Field latGlobal = geometryData.functionSpace().createField<double>(
-    atlas::option::name("lat") | atlas::option::global() | atlas::option::levels(0));
-  globalCoords.add(latGlobal);
-  auto lonViewGlobal = atlas::array::make_view<double, 1>(lonGlobal);
-  auto latViewGlobal = atlas::array::make_view<double, 1>(latGlobal);
-  const atlas::Field localLonlat = geometryData.functionSpace().lonlat();
-  const auto lonlatView = atlas::array::make_view<double, 2>(localLonlat);
-  if (geometryData.functionSpace().type() == "PointCloud") {
-    // Copy local
-    for (atlas::idx_t jnode = 0; jnode < localLonlat.shape(0); ++jnode) {
-       lonViewGlobal(jnode) = lonlatView(jnode, 0);
-       latViewGlobal(jnode) = lonlatView(jnode, 1);
-    }
-  } else {
-    // Gather local
-    atlas::FieldSet localCoords;
-    atlas::Field lonLocal = geometryData.functionSpace().createField<double>(
-      atlas::option::name("lon") | atlas::option::levels(0));
-    localCoords.add(lonLocal);
-    atlas::Field latLocal = geometryData.functionSpace().createField<double>(
-      atlas::option::name("lat") | atlas::option::levels(0));
-    localCoords.add(latLocal);
-    auto lonViewLocal = atlas::array::make_view<double, 1>(lonLocal);
-    auto latViewLocal = atlas::array::make_view<double, 1>(latLocal);
-    for (atlas::idx_t jnode = 0; jnode < localLonlat.shape(0); ++jnode) {
-       lonViewLocal(jnode) = lonlatView(jnode, 0);
-       latViewLocal(jnode) = lonlatView(jnode, 1);
-    }
-    geometryData.functionSpace().gather(localCoords, globalCoords);
-  }
-
-  for (const auto & diagField : diagFset) {
-    // Get data field with the same name
-    const atlas::Field dataField = dataFset.field(diagField.name());
-
-    // Global fields
-    atlas::Field globalDataField;
-    atlas::Field globalDiagField;
-    if (geometryData.functionSpace().type() == "PointCloud") {
-      // Copy local
-      globalDataField = dataField;
-      globalDiagField = diagField;
-    } else {
-      // Gather local
-      globalDataField = geometryData.functionSpace().createField<double>(
-        atlas::option::name(dataField.name()) | atlas::option::levels(dataField.levels())
-        | atlas::option::global());
-      globalDiagField = geometryData.functionSpace().createField<double>(
-        atlas::option::name(diagField.name()) | atlas::option::levels(diagField.levels())
-        | atlas::option::global());
-      geometryData.functionSpace().gather(dataField, globalDataField);
-      geometryData.functionSpace().gather(diagField, globalDiagField);
-    }
-
-    if (geometryData.comm().rank() == 0) {
-      // Print data values at diag points
-      std::vector<double> lons;
-      std::vector<double> lats;
-      std::vector<size_t> levs;
-      std::vector<size_t> subWindows;
-      std::vector<double> values;
-
-      if (globalDiagField.rank() == 2) {
-        auto dataView = atlas::array::make_view<double, 2>(globalDataField);
-        auto diagView = atlas::array::make_view<double, 2>(globalDiagField);
-        for (int jnode = 0; jnode < globalDiagField.shape(0); ++jnode) {
-          for (int jlevel = 0; jlevel < globalDiagField.shape(1); ++jlevel) {
-            if (std::abs(diagView(jnode, jlevel) - 1.0) < 1.0e-12) {
-              // Diagnostic point found
-              lons.push_back(lonViewGlobal(jnode));
-              lats.push_back(latViewGlobal(jnode));
-              levs.push_back(jlevel+1);
-              subWindows.push_back(timeComm.rank());
-              values.push_back(dataView(jnode, jlevel));
-            }
-          }
-        }
-      } else {
-        ABORT("getDiagValues: wrong rank");
-      }
-
-      // Gather sizes
-      int size = lons.size();
-      std::vector<int> sizes(timeComm.size());
-      timeComm.gather(size, sizes, 0);
-
-      // Gather data
-      std::vector<int> displs;
-      std::vector<int> recvcounts;
-      if (timeComm.rank() == 0) {
-        displs.resize(timeComm.size());
-        recvcounts.resize(timeComm.size());
-        for (size_t i = 0; i < timeComm.size(); ++i) {
-          recvcounts[i] = sizes[i];
-          displs[i] = static_cast<int>(i ? displs[i - 1] + recvcounts[i - 1] : 0);
-        }
-      }
-      size_t recvsize = size_t(std::accumulate(recvcounts.begin(), recvcounts.end(), 0));
-      std::vector<double> lonsOnRoot(recvsize);
-      std::vector<double> latsOnRoot(recvsize);
-      std::vector<size_t> levsOnRoot(recvsize);
-      std::vector<size_t> subWindowsOnRoot(recvsize);
-      std::vector<double> valuesOnRoot(recvsize);
-      timeComm.gatherv(lons, lonsOnRoot, recvcounts, displs, 0);
-      timeComm.gatherv(lats, latsOnRoot, recvcounts, displs, 0);
-      timeComm.gatherv(levs, levsOnRoot, recvcounts, displs, 0);
-      timeComm.gatherv(subWindows, subWindowsOnRoot, recvcounts, displs, 0);
-      timeComm.gatherv(values, valuesOnRoot, recvcounts, displs, 0);
-
-      // Print results
-      if (timeComm.rank() == 0) {
-        for (size_t i = 0; i < lonsOnRoot.size(); ++i) {
-          oops::Log::test() << "  + Value for variable " << diagField.name()
-                            <<", subwindow " << subWindowsOnRoot[i]
-                            << std::fixed << std::setprecision(5)
-                            << ", at (longitude, latitude, vertical index) point ("
-                            << lonsOnRoot[i] << ", " << latsOnRoot[i]
-                            << ", " << levsOnRoot[i] << "): "
-                            << std::scientific << std::setprecision(16)
-                            << valuesOnRoot[i] << std::endl;
-        }
-      }
-    }
-  }
-
-  oops::Log::trace() << "printDiagValues done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

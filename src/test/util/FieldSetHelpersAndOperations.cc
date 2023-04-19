@@ -6,10 +6,10 @@
  */
 
 #include "oops/runs/Run.h"
-#include "test/util/FieldSetOperations.h"
+#include "test/util/FieldSetHelpersAndOperations.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  test::FieldSetOperations tests;
+  test::FieldSetHelpersAndOperations tests;
   return run.execute(tests);
 }

@@ -328,6 +328,8 @@ oops/util/Duration.cc
 oops/util/Duration.h
 oops/util/duration.intfb.h
 oops/util/Expect.h
+oops/util/FieldSetHelpers.cc
+oops/util/FieldSetHelpers.h
 oops/util/FieldSetOperations.cc
 oops/util/FieldSetOperations.h
 oops/util/FloatCompare.h
@@ -864,8 +866,8 @@ ecbuild_add_test( TARGET  test_util_configfunctions
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 
-ecbuild_add_test( TARGET  test_util_fieldsetoperations
-                  SOURCES test/util/FieldSetOperations.cc
+ecbuild_add_test( TARGET  test_util_fieldset_helpers_and_operations
+                  SOURCES test/util/FieldSetHelpersAndOperations.cc
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 
