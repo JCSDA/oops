@@ -10,6 +10,7 @@ list( APPEND l95_test_input
   testinput/3dvar_qc_filter_ordering_post.yaml
   testinput/3dvar_qc_obserr.yaml
   testinput/3dvar_qc_iterations.yaml
+  testinput/3dvar_zero-valued_obs.yaml
   testinput/3dfgat.yaml
   testinput/4densvar.yaml
   testinput/4densvar_hybrid.yaml
@@ -146,6 +147,7 @@ list( APPEND l95_test_data
   simplifiedl95.fc.l95
   simplifiedl95.truth.obt
   noobs.obt
+  zero.an.2010-01-02T00:00:00Z.l95
 )
 
 list( APPEND l95_testoutput
@@ -160,6 +162,7 @@ list( APPEND l95_testoutput
   testoutput/3dvar_qc_filter_ordering_post.test
   testoutput/3dvar_qc_obserr.test
   testoutput/3dvar_qc_iterations.test
+  testoutput/3dvar_zero-valued_obs.test
   testoutput/3dfgat.test
   testoutput/4densvar.test
   testoutput/4densvar_hybrid.test
@@ -584,6 +587,11 @@ ecbuild_add_test( TARGET test_l95_3dvar_qc_obserr
 ecbuild_add_test( TARGET test_l95_3dvar_qc_iterations
                   COMMAND l95_4dvar.x
                   ARGS testinput/3dvar_qc_iterations.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
+
+ecbuild_add_test( TARGET test_l95_3dvar_zero-valued_obs
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/3dvar_zero-valued_obs.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
 
 ecbuild_add_test( TARGET test_l95_3dfgat

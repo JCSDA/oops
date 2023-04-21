@@ -164,17 +164,9 @@ void CostJo<MODEL, OBS>::setPostProc(const CtrlVar_ & xx, const eckit::Configura
                                      PostProc_ & pp) {
   Log::trace() << "CostJo::setPostProc start" << std::endl;
   gradFG_.reset();
-
   currentConf_.reset(new eckit::LocalConfiguration(conf));
-
-  if (!yobs_) {
-    firstOuterLoop_ = true;
-  } else {
-    firstOuterLoop_ = false;
-  }
-
+  firstOuterLoop_ = !yobs_;
   observers_.initialize(xx.state().geometry(), xx.obsVar(), Rmat_, pp, conf);
-
   Log::trace() << "CostJo::setPostProc done" << std::endl;
 }
 
@@ -187,14 +179,14 @@ double CostJo<MODEL, OBS>::computeCost() {
   // Obs, simulated obs and departures (held here for nice prints and diagnostics)
   Observations_ yeqv(obspaces_);
   observers_.finalize(yeqv);
-  if (!yobs_)
-    yobs_.reset(new Observations_(obspaces_, "ObsValue"));
-
-  if (firstOuterLoop_ && params_.obsPerturbations) {
-    // Perturb observations according to obs error statistics and save to output file
-    yobs_->perturb(Rmat_);
-    Log::info() << "Perturbed observations: " << *yobs_ << std::endl;
-    yobs_->save("EffectiveObsValue");
+  if (firstOuterLoop_) {
+    yobs_.reset(new Observations_(obspaces_, params_.useZeroValuedObs ? "" : "ObsValue"));
+    if (params_.obsPerturbations) {
+      // Perturb observations according to obs error statistics and save to output file
+      yobs_->perturb(Rmat_);
+      Log::info() << "Perturbed observations: " << *yobs_ << std::endl;
+      yobs_->save("EffectiveObsValue");
+    }
   }
 
   // Compute observations departures and save to output file
