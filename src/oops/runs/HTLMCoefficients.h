@@ -111,6 +111,12 @@ template <typename MODEL> class HTLMCoefficients : public Application {
         const util::DateTime windowBegin = params.windowBegin.value();
         const util::Duration windowLength = params.windowLength.value();
         util::DateTime time(windowBegin);
+        // Instantiate influenceStencil
+        Increment_ vertExtInc(geomTLM , vars_ , time);
+        atlas::FieldSet vertExtFset = vertExtInc.fieldSet();
+        atlas::idx_t vertExt = vertExtFset[0].shape(1);
+        atlas::Field influenceStencil = makeUpdateStencil(vertExt, influenceSize_,
+                                                          halfInfluenceSize_);
         // Loop over time, stepping ensemble forward and calculating coefficients
         while (time < (windowBegin + windowLength)) {
             time += tstep;
@@ -130,7 +136,8 @@ template <typename MODEL> class HTLMCoefficients : public Application {
                             vars_,
                             influenceSize_,
                             halfInfluenceSize_,
-                            coeffSaver_);
+                            coeffSaver_,
+                            influenceStencil);
             }
         }
 
@@ -196,70 +203,75 @@ template <typename MODEL> class HTLMCoefficients : public Application {
 
 // -----------------------------------------------------------------------------
 
+// Updates grid point dx to dx' with htlm coefficents
     void updateIncTL(Increment_ & dx,                     const Variables & vars_,
                      const atlas::idx_t & influenceSize_, const atlas::idx_t & halfInfluenceSize_,
-                     std::map<util::DateTime, atlas::FieldSet> & coeffSaver_) const {
-        Log::trace() << "updateIncTL() starting" << std::endl;
-        atlas::FieldSet & dxFset = dx.fieldSet();
-        for (size_t varInd = 0; varInd < vars_.size(); ++varInd) {
-            auto dxView = atlas::array::make_view<double, 2>(dxFset[vars_[varInd]]);
-            for (atlas::idx_t i = 0; i < dxView.shape(0); ++i) {
-                std::vector<double> updateVal(dxView.shape(1), 0.0);
-                for (atlas::idx_t k = 0; k < dxView.shape(1); ++k) {
-                    std::vector<double> dxVec = getInfluenceVec(dxFset,
-                                                                i,
-                                                                k,
-                                                                vars_,
-                                                                influenceSize_,
-                                                                halfInfluenceSize_);
-                    auto coeffView = atlas::array::make_view<double, 3>
-                            (coeffSaver_.at(dx.validTime())[vars_[varInd]]);
-                    for (atlas::idx_t infInd = 0; infInd < atlas::idx_t(dxVec.size()); ++infInd) {
-                        updateVal[k] += coeffView(i, k, infInd) * dxVec[infInd];
+                     std::map<util::DateTime, atlas::FieldSet> & coeffSaver_,
+                     atlas::Field & influenceStencil) const {
+    Log::trace() << "HybridLinearModelCoeffs<MODEL::updateIncTL() starting" << std::endl;
+    auto stencilView = atlas::array::make_view<int, 2>(influenceStencil);
+    atlas::FieldSet & dxFset = dx.fieldSet();
+    auto dxView = atlas::array::make_view<double, 2>(dxFset[vars_[0]]);
+        for (atlas::idx_t i = 0; i < dxView.shape(0); ++i) {
+            std::vector<double> updateVals(dxView.shape(1)*vars_.size(), 0.0);
+            // Calculate update values
+            for (size_t varInd = 0; varInd < vars_.size(); ++varInd) {
+                auto coeffView = atlas::array::make_view<double, 3>
+                                          (coeffSaver_.at(dx.validTime())[vars_[varInd]]);
+                for (atlas::idx_t k = 0; k < dxView.shape(1); k++) {
+                    for (size_t varInd2 = 0; varInd2 < vars_.size(); varInd2++) {
+                        auto dxView = atlas::array::make_view<double, 2>(dxFset[vars_[varInd2]]);
+                        for (atlas::idx_t coeffInd = 0; coeffInd < influenceSize_; coeffInd++) {
+                            updateVals[k+varInd*dxView.shape(1)] +=
+                                coeffView(i, k, varInd2*influenceSize_ + coeffInd)*
+                                                      dxView(i, stencilView(k, coeffInd));
+                        }
                     }
                 }
-                for (atlas::idx_t k = 0; k < dxView.shape(1); ++k) {
-                    dxView(i, k) += updateVal[k];
+            }
+            // Update column
+            for (size_t varInd = 0; varInd < vars_.size(); ++varInd) {
+                auto dxView = atlas::array::make_view<double, 2>(dxFset[vars_[varInd]]);
+                for (atlas::idx_t k = 0; k < dxView.shape(1); k++) {
+                    dxView(i, k)+=updateVals[k+varInd*dxView.shape(1)];
                 }
             }
         }
-        dx.synchronizeFields();
-        Log::trace() << "updateIncTL() done" << std::endl;
-    }
+    dx.synchronizeFields();
+    Log::trace() << "HybridLinearModelCoeffs<MODEL::updateIncTL() done" << std::endl;
+}
 
 // -----------------------------------------------------------------------------
 
-    std::vector<double> getInfluenceVec(const atlas::FieldSet & dxFset,
-                                        const atlas::idx_t & i,
-                                        const atlas::idx_t & k,
-                                        const Variables & vars_,
-                                        const atlas::idx_t & influenceSize_,
-                                        const atlas::idx_t & halfInfluenceSize_) const {
-        Log::trace() << "getInfluenceVec() starting" << std::endl;
-        std::vector<double> dxVec(influenceSize_ * vars_.size());
-        for (size_t varInd = 0; varInd < vars_.size(); ++varInd) {
-            const auto dxFview = atlas::array::make_view<double, 2>(dxFset[vars_[varInd]]);
-            for (atlas::idx_t infInd = 0; infInd < influenceSize_; ++infInd) {
-                if (k - halfInfluenceSize_ > 0 && k + halfInfluenceSize_ < dxFview.shape(1)) {
-                    // General (middle) case
-                    dxVec[influenceSize_ * varInd + infInd] =
-                            dxFview(i, k - halfInfluenceSize_ + infInd);
-                } else if (k - halfInfluenceSize_ <= 0) {
-                    // Start of increment edge case
-                    dxVec[influenceSize_ * varInd + infInd] = dxFview(i, infInd);
-                } else if (k + halfInfluenceSize_ >= dxFview.shape(1)) {
-                    // End of increment edge case
-                    dxVec[influenceSize_ * varInd + infInd] =
-                            dxFview(i, (dxFview.shape(1) - influenceSize_) + infInd);
-                } else {
-                    // Checking cases are correct
-                    Log::info() << "getInfluenceVec() unable to get influence region" << std::endl;
-                    abort();
-                }
-            }
-        }
-        return dxVec;
+atlas::Field makeUpdateStencil(const atlas::idx_t vertExt,
+                               const atlas::idx_t influenceSize_,
+                               const atlas::idx_t halfInfluenceSize_) const {
+    atlas::Field
+            influenceStencil("influence_stencil", atlas::array::make_datatype<int>(),
+            atlas::array::make_shape(vertExt, influenceSize_));
+    auto stencilView = atlas::array::make_view<atlas::idx_t, 2>(influenceStencil);
+    for (atlas::idx_t k = 0; k < vertExt; ++k) {
+        for (atlas::idx_t infInd = 0; infInd < influenceSize_; ++infInd) {
+            if (k-halfInfluenceSize_ > 0 &&
+                    k + halfInfluenceSize_ < vertExt ) {
+            // middle case
+            stencilView(k, infInd) = k-halfInfluenceSize_ + infInd;
+            } else if (k-halfInfluenceSize_ <= 0) {
+            // start of increment edge case
+            stencilView(k, infInd) = infInd;
+            } else if (k+halfInfluenceSize_ >= vertExt) {
+            // end of increment edge case
+            stencilView(k, infInd) = (vertExt-influenceSize_) + infInd;
+            } else {
+            // Checking cases are correct
+            Log::info() << "HtlmLinearModelCoeffs<MODEL>::makeUpdateStencil() "
+                            "unable to get influence region" << std::endl;
+            abort();
+            }  // end else
+        }   // end infInd
     }
+return influenceStencil;
+}
 // -----------------------------------------------------------------------------
 };
 
