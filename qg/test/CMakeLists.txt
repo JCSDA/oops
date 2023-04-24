@@ -19,8 +19,6 @@ list( APPEND qg_testinput
   testinput/4dvar_htlm_qgtlm_dripcg_gen_ens.yaml
   testinput/4dvar_htlm_qgtlm_dripcg_pert_heat.yaml
   testinput/4dvar_htlm_qgtlm_dripcg_pert_heat_gen_ens.yaml
-  testinput/4dvar_htlm_qgtlm_dripcg_pert_heat_precalccoeff.yaml
-  testinput/4dvar_htlm_qgtlm_dripcg_pert_heat_precalccoeff_gen_ens.yaml
   testinput/4dvar_htlm_qgtlm_dripcg_shorter_stlm_timestep.yaml
   testinput/4dvar_ipcg.yaml
   testinput/4dvar_obs_biased.yaml
@@ -89,7 +87,6 @@ list( APPEND qg_testinput
   testinput/hofx.yaml
   testinput/hofx_tinterp.yaml
   testinput/hofx3d.yaml
-  testinput/htlm_coefficients.yaml
   testinput/htlm_regularization_vector_construction.yaml
   testinput/hybridgain_analysis.yaml
   testinput/hybridgain_increment.yaml
@@ -870,24 +867,6 @@ ecbuild_add_test( TARGET test_qg_htlm_regularization_vector_construction
                   ARGS testinput/htlm_regularization_vector_construction.yaml
                   COMMAND  qg_4dvar.x
                   TEST_DEPENDS test_qg_4dvar_htlm_qgtlm_dripcg_pert_heat)
-
-ecbuild_add_test( TARGET test_qg_htlm_coefficient_calculation_application
-                  OMP 2
-                  ARGS testinput/htlm_coefficients.yaml
-                  COMMAND  qg_htlmcoefficients.x
-                  TEST_DEPENDS test_qg_gen_ens_pert_B_HTLM_pert_heat)
-
-ecbuild_add_test( TARGET test_qg_4dvar_htlm_qgtlm_dripcg_pert_heat_precalccoeff
-                  OMP 2
-                  ARGS testinput/4dvar_htlm_qgtlm_dripcg_pert_heat_precalccoeff.yaml
-                  COMMAND  qg_4dvar.x
-                  TEST_DEPENDS test_qg_htlm_coefficient_calculation_application test_qg_make_obs_4d_24h_pert_heat)
-
-ecbuild_add_test( TARGET test_qg_4dvar_htlm_qgtlm_dripcg_pert_heat_precalccoeff_gen_ens
-                  OMP 2
-                  ARGS testinput/4dvar_htlm_qgtlm_dripcg_pert_heat_precalccoeff_gen_ens.yaml
-                  COMMAND  qg_4dvar.x
-                  TEST_DEPENDS test_qg_htlm_coefficient_calculation_application test_qg_make_obs_4d_24h_pert_heat)
 
 ecbuild_add_test( TARGET test_qg_4dvar_htlm_qgtlm_dripcg_shorter_stlm_timestep
                   OMP 2
