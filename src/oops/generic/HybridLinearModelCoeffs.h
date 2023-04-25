@@ -49,8 +49,6 @@ class HybridLinearModelCoeffsParameters : public Parameters {
     RequiredParameter<util::DateTime> windowBegin{"window begin", this};
     // Variables
     RequiredParameter<Variables> vars{"training variables", this};
-    // Precalculated coefficient files (if using)
-    Parameter<std::vector<ReadParameters_>> coefficients{"coefficients", {}, this};
 };
 
 //------------------------------------------------------------------------------
@@ -107,60 +105,27 @@ HybridLinearModelCoeffs<MODEL>::HybridLinearModelCoeffs
     atlas::FieldSet vertExtFset = vertExtInc.fieldSet();
     atlas::idx_t vertExt_ = vertExtFset[0].shape(1);
     influenceStencil_ = makeUpdateStencil(vertExt_);
-    if (!params.coefficients.value().empty()) {
-        size_t fileIndex = 0;
-        while (time < (windowBegin + windowLength)) {
-            time += tstep;
-            atlas::FieldSet rank3FieldSet;  // Equivalent to coeffFieldSet in else clause below
-            for (atlas::idx_t x = 0; x < influenceSize_; x++) {
-                Increment_ incrementFromFile(geomTLM, vars_, time);
-                incrementFromFile.read(params.coefficients.value()[fileIndex]);
-                ++fileIndex;
-                atlas::FieldSet & rank2FieldSet = incrementFromFile.fieldSet();
-                for (atlas::FieldSet::iterator iterFieldSet = rank2FieldSet.begin();
-                     iterFieldSet != rank2FieldSet.end();
-                     ++iterFieldSet) {
-                    atlas::Field rank2Field = *iterFieldSet;
-                    auto rank2FieldView = atlas::array::make_view<double, 2>(rank2Field);
-                    atlas::Field rank3Field(rank2Field.name(),
-                                            atlas::array::make_datatype<double>(),
-                                            atlas::array::make_shape(rank2Field.shape(0),
-                                                                     rank2Field.shape(1),
-                                                                     influenceSize_));
-                    auto rank3FieldView = atlas::array::make_view<double, 3>(rank3Field);
-                    for (atlas::idx_t i = 0; i < rank2Field.shape(0); i++) {
-                        for (atlas::idx_t k = 0; k < rank2Field.shape(1); k++) {
-                            rank3FieldView(i, k, x) = rank2FieldView(i, k);
-                        }
-                    }
-                    rank3FieldSet.add(rank3Field);
-                }
-            }
-            coeffSaver_.emplace(time, rank3FieldSet);
-        }
-    } else {
-        HtlmEnsemble_ ens(params.htlmEnsemble.value(), geomTLM);
-        HtlmCalculator_ calculator(params.htlmCalculator.value(), params.vars,
-        params.htlmEnsemble.value().ensembleSize.value(), geomTLM, params.windowBegin.value());
-        const size_t ensembleSize = params.htlmEnsemble.value().ensembleSize.value();
-        // Step ensemble and calculate coefficients at time t
-        while (time < (windowBegin + windowLength)) {
-            time += tstep;
-            // Step ensemble (HtlmEnsemble.h)
-            ens.step(tstep);
-            // Create an empty atlas::FieldSet (coeffFieldSet) to store coefficients at this time
-            // Dimensions of the FieldSet are defined in the HtlmCalculator object
-            // (To which the field is passed by reference)
-            atlas::FieldSet coeffFieldSet;
-            // Emplace coeffFieldSet in map for storage
-            coeffSaver_.emplace(time, coeffFieldSet);
-            // Ensemble info and FieldSet for coefficient storage passed to HtlmCalculator
-            calculator.calcCoeffs(ens.getLinearEns(), ens.getLinearErrDe(), coeffFieldSet);
-            // Update increments with coefficients before next step
-            for (size_t ensInd = 0; ensInd < ensembleSize; ++ensInd) {
-                updateIncTL(ens.getLinearEns()[ensInd]);
-            }
-        }
+    HtlmEnsemble_ ens(params.htlmEnsemble.value(), geomTLM);
+    HtlmCalculator_ calculator(params.htlmCalculator.value(), params.vars,
+    params.htlmEnsemble.value().ensembleSize.value(), geomTLM, params.windowBegin.value());
+    const size_t ensembleSize = params.htlmEnsemble.value().ensembleSize.value();
+    // Step ensemble and calculate coefficients at time t
+    while (time < (windowBegin + windowLength)) {
+      time += tstep;
+      // Step ensemble (HtlmEnsemble.h)
+      ens.step(tstep);
+      // Create an empty atlas::FieldSet (coeffFieldSet) to store coefficients at this time
+      // Dimensions of the FieldSet are defined in the HtlmCalculator object
+      // (To which the field is passed by reference)
+      atlas::FieldSet coeffFieldSet;
+      // Emplace coeffFieldSet in map for storage
+      coeffSaver_.emplace(time, coeffFieldSet);
+      // Ensemble info and FieldSet for coefficient storage passed to HtlmCalculator
+      calculator.calcCoeffs(ens.getLinearEns(), ens.getLinearErrDe(), coeffFieldSet);
+      // Update increments with coefficients before next step
+      for (size_t ensInd = 0; ensInd < ensembleSize; ++ensInd) {
+          updateIncTL(ens.getLinearEns()[ensInd]);
+      }
     }
 }
 
