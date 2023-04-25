@@ -21,7 +21,6 @@
 #include "lorenz95/FieldL95.h"
 #include "lorenz95/GomL95.h"
 #include "lorenz95/IncrementL95.h"
-#include "lorenz95/LocsL95.h"
 #include "lorenz95/ModelBias.h"
 #include "lorenz95/ModelL95.h"
 #include "lorenz95/ModelTrajectory.h"

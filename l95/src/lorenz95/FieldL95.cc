@@ -19,7 +19,6 @@
 #include "eckit/exception/Exceptions.h"
 
 #include "lorenz95/GomL95.h"
-#include "lorenz95/LocsL95.h"
 #include "lorenz95/Resolution.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"

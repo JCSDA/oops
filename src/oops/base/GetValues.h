@@ -25,7 +25,7 @@
 #include "oops/generic/UnstructuredInterpolator.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/LocalInterpolator.h"
-#include "oops/interface/Locations.h"
+#include "oops/interface/SampledLocations.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -95,7 +95,7 @@ class GetValues : private util::ObjectCounter<GetValues<MODEL, OBS> > {
   typedef GeoVaLs<OBS>              GeoVaLs_;
   typedef Increment<MODEL>          Increment_;
   typedef TModelInterpolator_IfAvailableElseGenericInterpolator_t<MODEL> LocalInterp_;
-  typedef Locations<OBS>            Locations_;
+  typedef SampledLocations<OBS>     SampledLocations_;
   typedef State<MODEL>              State_;
 
  public:
@@ -103,7 +103,8 @@ class GetValues : private util::ObjectCounter<GetValues<MODEL, OBS> > {
 
   GetValues(const eckit::Configuration &, const Geometry_ &,
             const util::DateTime &, const util::DateTime &,
-            const Locations_ &, const Variables &, const Variables & varl = Variables());
+            const SampledLocations_ &,
+            const Variables &, const Variables & varl = Variables());
 
 /// Nonlinear
   void initialize(const util::Duration &);
@@ -136,7 +137,6 @@ class GetValues : private util::ObjectCounter<GetValues<MODEL, OBS> > {
   util::DateTime winend_;   /// End of assimilation window
   util::Duration hslot_;    /// Half time slot
 
-  const Locations_ & locations_;       /// locations of observations
   const Variables geovars_;            /// Variables needed from model
   size_t varsizes_;                    /// Sizes (e.g. number of vertical levels)
                                        /// for all Variables in GeoVaLs
@@ -166,9 +166,9 @@ class GetValues : private util::ObjectCounter<GetValues<MODEL, OBS> > {
 template <typename MODEL, typename OBS>
 GetValues<MODEL, OBS>::GetValues(const eckit::Configuration & conf, const Geometry_ & geom,
                                  const util::DateTime & bgn, const util::DateTime & end,
-                                 const Locations_ & locs,
+                                 const SampledLocations_ & locs,
                                  const Variables & vars, const Variables & varl)
-  : winbgn_(bgn), winend_(end), hslot_(), locations_(locs),
+  : winbgn_(bgn), winend_(end), hslot_(),
     geovars_(vars), varsizes_(0), linvars_(varl), linsizes_(0),
     interpConf_(conf), comm_(geom.getComm()), ntasks_(comm_.size()), interp_(ntasks_),
     myobs_index_by_task_(ntasks_), obs_times_by_task_(ntasks_),
@@ -198,10 +198,11 @@ GetValues<MODEL, OBS>::GetValues(const eckit::Configuration & conf, const Geomet
   varsizes_ = std::accumulate(geovarsSizes_.begin(), geovarsSizes_.end(), 0);
   linsizes_ = std::accumulate(linvarsSizes_.begin(), linvarsSizes_.end(), 0);
 
-// Local obs coordinates
-  std::vector<double> obslats = locations_.latitudes();
-  std::vector<double> obslons = locations_.longitudes();
-  std::vector<util::DateTime> obstimes = locations_.times();
+// Interpolation paths (currently vertical columns) sampling the obs locations
+
+  const std::vector<double> &obslats = locs.latitudes();
+  const std::vector<double> &obslons = locs.longitudes();
+  const std::vector<util::DateTime> &obstimes = locs.times();
 
 // Exchange obs locations
   std::vector<std::vector<double>> myobs_locs_by_task(ntasks_);

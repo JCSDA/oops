@@ -25,7 +25,6 @@
 
 #include "model/GeometryQG.h"
 #include "model/GomQG.h"
-#include "model/LocationsQG.h"
 #include "model/QgFortran.h"
 
 #include "oops/base/Variables.h"

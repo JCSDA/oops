@@ -27,7 +27,6 @@
 #include "lorenz95/FieldL95.h"
 #include "lorenz95/GomL95.h"
 #include "lorenz95/Iterator.h"
-#include "lorenz95/LocsL95.h"
 #include "lorenz95/ModelBiasCorrection.h"
 #include "lorenz95/Resolution.h"
 #include "lorenz95/StateL95.h"

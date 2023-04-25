@@ -36,6 +36,7 @@ class ObserversTLAD {
   typedef Departures<OBS>             Departures_;
   typedef Geometry<MODEL>             Geometry_;
   typedef GeoVaLs<OBS>                GeoVaLs_;
+  typedef GetValues<MODEL, OBS> GetValues_;
   typedef GetValueTLADs<MODEL, OBS>   GetValueTLADs_;
   typedef Observations<OBS>           Observations_;
   typedef ObsAuxControls<OBS>         ObsAuxCtrls_;
@@ -58,7 +59,7 @@ class ObserversTLAD {
 
  private:
   std::vector<std::unique_ptr<ObserverTLAD_>>  observers_;
-  std::shared_ptr<GetValueTLADs_> getvals_;
+  std::shared_ptr<GetValueTLADs_> posts_;
   util::DateTime winbgn_;
   util::DateTime winend_;
 };
@@ -83,11 +84,14 @@ template <typename MODEL, typename OBS>
 void ObserversTLAD<MODEL, OBS>::initializeTraj(const Geometry_ & geom, const ObsAuxCtrls_ & ybias,
                                                PostProcTLAD_ & pp) {
   Log::trace() << "ObserversTLAD<MODEL, OBS>::initializeTraj start" << std::endl;
-  getvals_.reset(new GetValueTLADs_(winbgn_, winend_));
+  posts_.reset(new GetValueTLADs_(winbgn_, winend_));
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
-    if (observers_[jj]) getvals_->append(observers_[jj]->initializeTraj(geom, ybias[jj]));
+    if (observers_[jj]) {
+      for (std::shared_ptr<GetValues_> &getvalues : observers_[jj]->initializeTraj(geom, ybias[jj]))
+        posts_->append(std::move(getvalues));
+    }
   }
-  pp.enrollProcessor(getvals_);
+  pp.enrollProcessor(posts_);
   Log::trace() << "ObserversTLAD<MODEL, OBS>::initializeTraj done" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -103,7 +107,7 @@ void ObserversTLAD<MODEL, OBS>::finalizeTraj() {
 template <typename MODEL, typename OBS>
 void ObserversTLAD<MODEL, OBS>::initializeTL(PostProcTLAD_ & pp) {
   Log::trace() << "ObserversTLAD<MODEL, OBS>::initializeTL start" << std::endl;
-  pp.enrollProcessor(getvals_);
+  pp.enrollProcessor(posts_);
   Log::trace() << "ObserversTLAD<MODEL, OBS>::initializeTL done" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -123,7 +127,7 @@ void ObserversTLAD<MODEL, OBS>::initializeAD(const Departures_ & dy, ObsAuxIncrs
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
     if (observers_[jj]) observers_[jj]->initializeAD(dy[jj], ybias[jj]);
   }
-  pp.enrollProcessor(getvals_);
+  pp.enrollProcessor(posts_);
   Log::trace() << "ObserversTLAD<MODEL, OBS>::initializeAD done" << std::endl;
 }
 // -----------------------------------------------------------------------------

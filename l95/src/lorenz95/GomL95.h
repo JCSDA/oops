@@ -24,10 +24,11 @@
 
 namespace oops {
   class Variables;
+  template <typename OBS> class Locations;
 }
 
 namespace lorenz95 {
-  class LocsL95;
+  struct L95ObsTraits;
   class ObsTable;
 
 /// \brief Parameters controlling a Lorenz95 GeoVaLs read/write
@@ -59,7 +60,8 @@ class GomL95 : public util::Printable,
 
   static const std::string classname() {return "lorenz95::GomL95";}
 
-  GomL95(const LocsL95 &, const oops::Variables &, const std::vector<size_t> &);
+  GomL95(const oops::Locations<L95ObsTraits> &,
+         const oops::Variables &, const std::vector<size_t> &);
   GomL95(const Parameters_ &, const ObsTable &, const oops::Variables &);
 
   void zero();

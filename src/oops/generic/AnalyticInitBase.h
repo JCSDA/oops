@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "oops/interface/GeoVaLs.h"
-#include "oops/interface/Locations.h"
+#include "oops/interface/SampledLocations.h"
 #include "oops/util/AssociativeContainers.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/parameters/Parameters.h"
@@ -27,7 +27,7 @@ namespace oops {
 template <typename OBS>
 class AnalyticInitBase : private util::ObjectCounter<AnalyticInitBase<OBS> > {
   typedef GeoVaLs<OBS>                GeoVaLs_;
-  typedef Locations<OBS>              Locations_;
+  typedef SampledLocations<OBS>       SampledLocations_;
 
  public:
   static const std::string classname() {return "oops::AnalyticInitBase";}
@@ -43,7 +43,7 @@ class AnalyticInitBase : private util::ObjectCounter<AnalyticInitBase<OBS> > {
  * formulae used for the State initialization (see test::TestStateInterpolation()
  * for further information).  This in turn requires information about the
  * vertical profile in addition to the latitude and longitude positional
- * information in the Locations object.  Currently, this information
+ * information in the SampledLocations object.  Currently, this information
  * about the vertical profile is obtained from an existing GeoVaLs object
  * (passed as *gvals*) that represents the output of the State::interpolate()
  * method.
@@ -53,7 +53,7 @@ class AnalyticInitBase : private util::ObjectCounter<AnalyticInitBase<OBS> > {
  *
  * \sa test::TestStateInterpolation()
  */
-  virtual void fillGeoVaLs(const Locations_ &, GeoVaLs_ &) const = 0;
+  virtual void fillGeoVaLs(const SampledLocations_ &, GeoVaLs_ &) const = 0;
 };
 
 // -----------------------------------------------------------------------------

@@ -15,6 +15,7 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
@@ -31,7 +32,7 @@
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
-#include "oops/interface/Locations.h"
+#include "oops/interface/SampledLocations.h"
 #include "oops/interface/VariableChange.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
@@ -46,25 +47,32 @@ namespace test {
 
 template <typename MODEL, typename OBS> class GetValuesFixture : private boost::noncopyable {
   typedef oops::Geometry<MODEL> Geometry_;
-  typedef oops::Locations<OBS>  Locations_;
+  typedef oops::SampledLocations<OBS> SampledLocations_;
+  typedef oops::Locations<OBS> Locations_;
   typedef oops::State<MODEL>    State_;
   typedef oops::Variables       Variables_;
   typedef util::DateTime        DateTime_;
 
  public:
-  static const DateTime_         & time()            {return *getInstance().time_;}
-  static const DateTime_         & timebeg()         {return *getInstance().timebeg_;}
-  static const DateTime_         & timeend()         {return *getInstance().timeend_;}
-  static const Geometry_         & resol()           {return *getInstance().resol_;}
-  static const Locations_        & locs()            {return *getInstance().locs_;}
-  static const Variables_        & variables()       {return *getInstance().variables_;}
-  static const std::vector<size_t> & varsizes() {return getInstance().varsizes_;}
+  static const DateTime_         & time()             {return *getInstance().time_;}
+  static const DateTime_         & timebeg()          {return *getInstance().timebeg_;}
+  static const DateTime_         & timeend()          {return *getInstance().timeend_;}
+  static const Geometry_         & resol()            {return *getInstance().resol_;}
+  static const Variables_        & variables()        {return *getInstance().variables_;}
+  static const std::vector<size_t> & varsizes()       {return getInstance().varsizes_;}
+  static const SampledLocations_ & sampledLocations() {
+    // In this test only one location sampling method is used.
+    return locations().samplingMethod(0);
+  }
+  static const Locations_ & locations() {
+    return *getInstance().locations_;
+  }
 
   static void reset() {
     getInstance().time_.reset();
     getInstance().timeend_.reset();
     getInstance().timebeg_.reset();
-    getInstance().locs_.reset();
+    getInstance().locations_.reset();
     getInstance().state_.reset();
     getInstance().variables_.reset();
     getInstance().resol_.reset();
@@ -86,12 +94,13 @@ template <typename MODEL, typename OBS> class GetValuesFixture : private boost::
     varsizes_ = resol_->variableSizes(*variables_);
 
     // Locations
-    const eckit::LocalConfiguration locsConfig(TestEnvironment::config(), "locations");
-    locs_.reset(new Locations_(locsConfig, oops::mpi::world()));
+    const eckit::LocalConfiguration locationsConfig(TestEnvironment::config(), "locations");
+    SampledLocations_ sampledLocations(locationsConfig, oops::mpi::world());
+    locations_.reset(new Locations_(std::move(sampledLocations)));
 
     // Window times
-    timebeg_.reset(new DateTime_(locsConfig.getString("window begin")));
-    timeend_.reset(new DateTime_(locsConfig.getString("window end")));
+    timebeg_.reset(new DateTime_(locationsConfig.getString("window begin")));
+    timeend_.reset(new DateTime_(locationsConfig.getString("window end")));
 
     // State
     const eckit::LocalConfiguration stateConfig(TestEnvironment::config(), "state");
@@ -105,7 +114,7 @@ template <typename MODEL, typename OBS> class GetValuesFixture : private boost::
   std::unique_ptr<const DateTime_>        timebeg_;
   std::unique_ptr<const DateTime_>        timeend_;
   std::unique_ptr<const Geometry_>        resol_;
-  std::unique_ptr<const Locations_>       locs_;
+  std::unique_ptr<const Locations_>       locations_;
   std::unique_ptr<const State_>           state_;
   std::unique_ptr<const Variables_>       variables_;
   std::vector<size_t>                     varsizes_;
@@ -124,7 +133,7 @@ template <typename MODEL, typename OBS> void testGetValuesConstructor() {
           Test_::resol(),
           Test_::timebeg(),
           Test_::timeend(),
-          Test_::locs(),
+          Test_::sampledLocations(),
           Test_::variables()));
   EXPECT(getvalues.get());
 
@@ -168,7 +177,7 @@ template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
   State_ zz(xx);
   chvar.changeVar(zz, Test_::variables());
 
-  GeoVaLs_ gval(Test_::locs(), Test_::variables(), Test_::varsizes());
+  GeoVaLs_ gval(Test_::locations(), Test_::variables(), Test_::varsizes());
 
   EXPECT(zz.norm() > 0.0);
 
@@ -178,7 +187,7 @@ template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
           Test_::resol(),
           Test_::timebeg(),
           Test_::timeend(),
-          Test_::locs(),
+          Test_::sampledLocations(),
           Test_::variables());
   getvalues.initialize(windowlength);
   getvalues.process(zz);
@@ -193,7 +202,7 @@ template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
   Parameters_ anparams;
   anparams.validateAndDeserialize(analyticConf);
   AnalyticInit_ init(anparams.analyticInitParameters);
-  init.fillGeoVaLs(Test_::locs(), ref);
+  init.fillGeoVaLs(Test_::sampledLocations(), ref);
 
   EXPECT(ref.rms() > 0.0);
 
@@ -218,14 +227,14 @@ template <typename MODEL, typename OBS> void testGetValuesTLZeroPert() {
   dx.zero();
   EXPECT(dx.norm() == 0.0);
 
-  GeoVaLs_ gv(Test_::locs(), Test_::variables(), Test_::varsizes());
+  GeoVaLs_ gv(Test_::locations(), Test_::variables(), Test_::varsizes());
 
   const util::Duration windowlength = Test_::timeend() - Test_::timebeg();
   GetValues_ getvalues(TestEnvironment::config(),
           Test_::resol(),
           Test_::timebeg(),
           Test_::timeend(),
-          Test_::locs(),
+          Test_::sampledLocations(),
           Test_::variables(),
           Test_::variables());  // linear variables
 
@@ -266,15 +275,15 @@ template <typename MODEL, typename OBS> void testGetValuesLinearity() {
   EXPECT(dx1.norm() > 0.0);
   EXPECT(dx2.norm() > 0.0);
 
-  GeoVaLs_ gv1(Test_::locs(), Test_::variables(), Test_::varsizes());
-  GeoVaLs_ gv2(Test_::locs(), Test_::variables(), Test_::varsizes());
+  GeoVaLs_ gv1(Test_::locations(), Test_::variables(), Test_::varsizes());
+  GeoVaLs_ gv2(Test_::locations(), Test_::variables(), Test_::varsizes());
 
   const util::Duration windowlength = Test_::timeend() - Test_::timebeg();
   GetValues_ getvalues(TestEnvironment::config(),
           Test_::resol(),
           Test_::timebeg(),
           Test_::timeend(),
-          Test_::locs(),
+          Test_::sampledLocations(),
           Test_::variables(),
           Test_::variables());  // linear variables
 
@@ -311,14 +320,14 @@ template <typename MODEL, typename OBS> void testGetValuesAdjoint() {
   Increment_ dx_in(Test_::resol(), Test_::variables(), Test_::time());
   Increment_ dx_out(Test_::resol(), Test_::variables(), Test_::time());
 
-  GeoVaLs_ gv_out(Test_::locs(), Test_::variables(), Test_::varsizes());
+  GeoVaLs_ gv_out(Test_::locations(), Test_::variables(), Test_::varsizes());
 
   const util::Duration windowlength = Test_::timeend() - Test_::timebeg();
   GetValues_ getvalues(TestEnvironment::config(),
           Test_::resol(),
           Test_::timebeg(),
           Test_::timeend(),
-          Test_::locs(),
+          Test_::sampledLocations(),
           Test_::variables(),
           Test_::variables());  // linear variables
 

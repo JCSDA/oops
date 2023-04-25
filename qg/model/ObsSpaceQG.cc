@@ -147,7 +147,7 @@ std::unique_ptr<LocationsQG> ObsSpaceQG::locations() const {
   atlas::FieldSet fields;
   std::vector<util::DateTime> times;
   qg_obsdb_locations_f90(key_, obsname_.size(), obsname_.c_str(), fields.get(), times);
-  return std::unique_ptr<LocationsQG>(new LocationsQG(fields, std::move(times)));
+  return std::make_unique<LocationsQG>(fields, std::move(times));
 }
 
 // -----------------------------------------------------------------------------

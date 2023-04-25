@@ -88,7 +88,7 @@ struct L95ObsTraits {
   typedef lorenz95::ObsDiags1D             ObsDiagnostics;
 
   typedef lorenz95::GomL95                 GeoVaLs;
-  typedef lorenz95::LocsL95                Locations;
+  typedef lorenz95::LocsL95                SampledLocations;
 };
 
 }  // namespace lorenz95

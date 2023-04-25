@@ -164,7 +164,7 @@ extern "C" {
 // -----------------------------------------------------------------------------
 //  Local Values (GOM)
 // -----------------------------------------------------------------------------
-  void qg_gom_setup_f90(F90gom &, const LocationsQG &, const oops::Variables &, const int &);
+  void qg_gom_setup_f90(F90gom &, const int &, const oops::Variables &, const int &);
   void qg_gom_create_f90(F90gom &);
   void qg_gom_delete_f90(F90gom &);
   void qg_gom_fill_f90(const F90gom &, const int &, const char *, const int &, const int *,

@@ -15,6 +15,8 @@
 #include "model/LocationsQG.h"
 #include "model/ObsSpaceQG.h"
 #include "model/QgFortran.h"
+#include "model/QgTraitsFwd.h"
+#include "oops/base/Locations.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
@@ -22,21 +24,25 @@
 namespace qg {
 
 // -----------------------------------------------------------------------------
-GomQG::GomQG(const LocationsQG & locs, const oops::Variables & vars,
+GomQG::GomQG(const Locations_ & locs,
+             const oops::Variables & vars,
              const std::vector<size_t> & sizes):
-  vars_(vars), locs_(&locs)
+  vars_(vars)
 {
+// The QG model cannot handle locations sampled with more than one method yet.
+  ASSERT(locs.numSamplingMethods() == 1);
+
 // All variables have same levels
   for (size_t jj = 1; jj < sizes.size(); ++jj) ASSERT(sizes[jj] == sizes[0]);
   const int levs = sizes[0];
-  qg_gom_setup_f90(keyGom_, locs, vars_, levs);
+  qg_gom_setup_f90(keyGom_, locs.samplingMethod(0).sampledLocations().size(), vars_, levs);
 }
 // -----------------------------------------------------------------------------
 /*! QG GeoVaLs Constructor with Config */
 
 GomQG::GomQG(const Parameters_ & params,
              const ObsSpaceQG & ospace, const oops::Variables & vars):
-  vars_(vars), locs_(nullptr)
+  vars_(vars)
 {
   qg_gom_create_f90(keyGom_);
   qg_gom_read_file_f90(keyGom_, vars_, params.toConfiguration());
@@ -44,7 +50,7 @@ GomQG::GomQG(const Parameters_ & params,
 // -----------------------------------------------------------------------------
 // Copy constructor
 GomQG::GomQG(const GomQG & other):
-  vars_(other.vars_), locs_(other.locs_)
+  vars_(other.vars_)
 {
   qg_gom_create_f90(keyGom_);
   qg_gom_copy_f90(keyGom_, other.keyGom_);

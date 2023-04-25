@@ -27,11 +27,12 @@
 #include "oops/qg/QgFortran.h"
 
 namespace oops {
+  template <typename OBS> class Locations;
   class Variables;
 }
 
 namespace qg {
-  class LocationsQG;
+  struct QgObsTraits;
 
 /// \brief Parameters controlling a QG GeoVaLs read/write
 class GomQGParameters : public oops::Parameters {
@@ -59,10 +60,12 @@ class GomQG : public util::Printable,
 
  public:
   typedef GomQGParameters Parameters_;
+  typedef oops::Locations<QgObsTraits> Locations_;
 
   static const std::string classname() {return "qg::GomQG";}
 
-  GomQG(const LocationsQG &, const oops::Variables &, const std::vector<size_t> &);
+  GomQG(const Locations_ &,
+        const oops::Variables &, const std::vector<size_t> &);
   GomQG(const Parameters_ &, const ObsSpaceQG &, const oops::Variables &);
   explicit GomQG(const GomQG &);
 
@@ -95,7 +98,6 @@ class GomQG : public util::Printable,
   void print(std::ostream &) const;
   F90gom keyGom_;
   oops::Variables vars_;
-  const LocationsQG * locs_;
 };
 
 }  // namespace qg

@@ -103,6 +103,7 @@ oops/base/GetValues.h
 oops/base/GetValueTLADs.h
 oops/base/LocalIncrement.cc
 oops/base/LocalIncrement.h
+oops/base/Locations.h
 oops/base/HybridCovariance.h
 oops/base/IdentityMatrix.h
 oops/base/Increment.h
@@ -131,6 +132,7 @@ oops/base/Observer.h
 oops/base/Observers.h
 oops/base/ObserversTLAD.h
 oops/base/ObserverTLAD.h
+oops/base/ObserverUtils.h
 oops/base/ObsFilter.h
 oops/base/ObsFilters.h
 oops/base/ObsLocalizationBase.h
@@ -150,6 +152,7 @@ oops/base/PostProcessorTLAD.h
 oops/base/PostTimer.cc
 oops/base/PostTimer.h
 oops/base/PostTimerParameters.h
+oops/base/SamplingMethodSelector.h
 oops/base/State.h
 oops/base/State4D.h
 oops/base/StateEnsemble.h
@@ -158,6 +161,7 @@ oops/base/StateInfo.h
 oops/base/StateParametersND.h
 oops/base/StateWriter.h
 oops/base/TrajectorySaver.h
+oops/base/TrivialSamplingMethodSelector.h
 oops/base/WriteParametersBase.cc
 oops/base/WriteParametersBase.h
 oops/base/VariableChangeParametersBase.h
@@ -246,7 +250,6 @@ oops/interface/LinearObsOperator.h
 oops/interface/LinearVariableChange.h
 oops/interface/LocalInterpolator.h
 oops/interface/LocalizationBase.h
-oops/interface/Locations.h
 oops/interface/ModelAuxControl.h
 oops/interface/ModelAuxCovariance.h
 oops/interface/ModelAuxIncrement.h
@@ -264,6 +267,7 @@ oops/interface/ObsFilterBase.h
 oops/interface/ObsOperator.h
 oops/interface/ObsSpace.h
 oops/interface/ObsVector.h
+oops/interface/SampledLocations.h
 oops/interface/State.h
 oops/interface/VariableChange.h
 
@@ -370,6 +374,7 @@ oops/util/random_f.h
 oops/util/random_mod.F90
 oops/util/Random.h
 oops/util/random.intfb.h
+oops/util/Range.h
 oops/util/ScalarOrMap.h
 oops/util/Serializable.h
 oops/util/signal_trap.cc
@@ -455,7 +460,6 @@ test/interface/Increment.h
 test/interface/LinearModel.h
 test/interface/LinearObsOperator.h
 test/interface/LinearVariableChange.h
-test/interface/Locations.h
 test/interface/Model.h
 test/interface/ModelAuxControl.h
 test/interface/ModelAuxCovariance.h
@@ -470,6 +474,7 @@ test/interface/ObsOperator.h
 test/interface/ObsSpace.h
 test/interface/ObsTestsFixture.h
 test/interface/ObsVector.h
+test/interface/SampledLocations.h
 test/interface/State.h
 test/interface/UnstructuredInterpolator.h
 test/interface/VariableChange.h
@@ -806,6 +811,11 @@ ecbuild_add_test( TARGET  test_util_stringfunctions
 
 ecbuild_add_test( TARGET  test_util_testreference
                   SOURCES test/util/TestReference.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_range
+                  SOURCES test/util/Range.cc
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 

@@ -8,8 +8,8 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef TEST_INTERFACE_LOCATIONS_H_
-#define TEST_INTERFACE_LOCATIONS_H_
+#ifndef TEST_INTERFACE_SAMPLEDLOCATIONS_H_
+#define TEST_INTERFACE_SAMPLEDLOCATIONS_H_
 
 #include <memory>
 #include <string>
@@ -17,11 +17,9 @@
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
-#include <boost/noncopyable.hpp>
-
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
-#include "oops/interface/Locations.h"
+#include "oops/interface/SampledLocations.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "test/TestEnvironment.h"
@@ -29,14 +27,14 @@
 namespace test {
 
 // -----------------------------------------------------------------------------
-/// \brief tests test constructor and print method
+/// \brief Test the constructor and the print method
 template <typename OBS> void testConstructor() {
-  typedef oops::Locations<OBS>        Locations_;
+  typedef oops::SampledLocations<OBS> SampledLocations_;
 
-  const eckit::LocalConfiguration conf(TestEnvironment::config(), "locations");
-  std::unique_ptr<Locations_> locs(new Locations_(conf, oops::mpi::world()));
+  const eckit::LocalConfiguration conf(TestEnvironment::config(), "sampled locations");
+  std::unique_ptr<SampledLocations_> locs(new SampledLocations_(conf, oops::mpi::world()));
   EXPECT(locs.get());
-  oops::Log::info() << "Testing locations: " << *locs << std::endl;
+  oops::Log::info() << "Testing sampled locations: " << *locs << std::endl;
   locs.reset();
   EXPECT(!locs.get());
 }
@@ -44,17 +42,19 @@ template <typename OBS> void testConstructor() {
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-class Locations : public oops::Test {
+class SampledLocations : public oops::Test {
  public:
-  Locations() {}
-  virtual ~Locations() {}
+  SampledLocations() {}
+  virtual ~SampledLocations() {}
  private:
-  std::string testid() const override {return "test::Locations<" + OBS::name() + ">";}
+  std::string testid() const override {
+    return "test::SampledLocations<" + OBS::name() + ">";
+  }
 
   void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
 
-    ts.emplace_back(CASE("interface/Locations/testConstructor")
+    ts.emplace_back(CASE("interface/SampledLocations/testConstructor")
       { testConstructor<OBS>(); });
   }
 
@@ -65,4 +65,4 @@ class Locations : public oops::Test {
 
 }  // namespace test
 
-#endif  // TEST_INTERFACE_LOCATIONS_H_
+#endif  // TEST_INTERFACE_SAMPLEDLOCATIONS_H_

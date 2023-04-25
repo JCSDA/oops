@@ -19,8 +19,8 @@
 
 #include <boost/noncopyable.hpp>
 
+#include "oops/base/Locations.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/Locations.h"
 #include "oops/interface/ObsSpace.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -32,9 +32,9 @@ namespace oops {
 template <typename OBS>
 class GeoVaLs : public util::Printable,
                 private util::ObjectCounter<GeoVaLs<OBS> > {
-  typedef typename OBS::GeoVaLs          GeoVaLs_;
-  typedef ObsSpace<OBS>                  ObsSpace_;
-  typedef Locations<OBS>                 Locations_;
+  typedef typename OBS::GeoVaLs GeoVaLs_;
+  typedef ObsSpace<OBS>         ObsSpace_;
+  typedef Locations<OBS>        Locations_;
 
   /// \brief A reference to a read-only vector-valued expression.
   ///
@@ -62,10 +62,18 @@ class GeoVaLs : public util::Printable,
 
   static const std::string classname() {return "oops::GeoVaLs";}
 
-  /// Allocate GeoVaLs for \p locs locations, to be filled with \p vars variables.
-  /// Sizes of GeoVaLs for i-th variable at a single location are defined by
-  /// i-th value of \p sizes.
-  GeoVaLs(const Locations_ & locs, const Variables &, const std::vector<size_t> & sizes);
+  /// Allocate GeoVaLs to store variables \p vars interpolated along sets of paths sampling
+  /// the observation locations.
+  ///
+  /// \param locations
+  ///   Maps variables to sets of paths sampling the observation locations; each variable will be
+  ///   interpolated along the corresponding set of paths.
+  /// \param vars
+  ///   Names of the variables whose values will be stored in the new GeoVaLs.
+  /// \param sizes
+  ///   Vector whose ith element indicates how many values per interpolation path will be stored
+  ///   in the GeoVaL corresponding to the ith variable.
+  GeoVaLs(const Locations_ & locations, const Variables &vars, const std::vector<size_t> & sizes);
   GeoVaLs(const Parameters_ &, const ObsSpace_ &, const Variables &);
   GeoVaLs(const GeoVaLs &);
 
@@ -89,16 +97,16 @@ class GeoVaLs : public util::Printable,
   void read(const Parameters_ &);
   void write(const Parameters_ &) const;
 
-  /// \brief Set the values of a given variable at specified locations.
+  /// \brief Set the values of a given variable along specified interpolation paths.
   ///
   /// \param name
   ///   Variable name.
   /// \param indx
-  ///   Location indices.
+  ///   Path indices.
   /// \param vals
-  ///   Matrix whose `i`th row contains the values of the variable `name` at the location with
-  ///   index `indx[i]`, ordered from top to bottom if `levelsTopDown` is `true` and from bottom to
-  ///   top otherwise.
+  ///   Matrix whose `i`th row contains the values of the variable `name` along the interpolation
+  ///   path with index `indx[i]`, ordered from top to bottom if `levelsTopDown` is `true` and
+  ///   from bottom to top otherwise.
   /// \param levelTopDown
   ///   True if each row of `vals` contains variable values at model levels ordered from top to
   ///   bottom, false if they are ordered from bottom to top.
@@ -116,11 +124,11 @@ class GeoVaLs : public util::Printable,
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-GeoVaLs<OBS>::GeoVaLs(const Locations_ & locs, const Variables & vars,
+GeoVaLs<OBS>::GeoVaLs(const Locations_ & locations, const Variables & vars,
                       const std::vector<size_t> & sizes) : gvals_() {
   Log::trace() << "GeoVaLs<OBS>::GeoVaLs starting" << std::endl;
   util::Timer timer(classname(), "GeoVaLs");
-  gvals_.reset(new GeoVaLs_(locs.locations(), vars, sizes));
+  gvals_.reset(new GeoVaLs_(locations, vars, sizes));
   Log::trace() << "GeoVaLs<OBS>::GeoVaLs done" << std::endl;
 }
 

@@ -41,7 +41,6 @@ type :: qg_gom
   real(kind_real), pointer :: z(:,:) => null()  !< Height values
   logical :: lalloc = .false.                   !< Allocation flag
   type(oops_variables) :: vars                  !< Variables
-  type(qg_locs) :: locs                         !< Locations of obs
   integer :: levs                               !< Number of levels
 end type qg_gom
 
@@ -61,21 +60,20 @@ contains
 #include "oops/util/linkedList_c.f"
 ! ------------------------------------------------------------------------------
 !> Setup GOM
-subroutine qg_gom_setup(self,locs,vars,levs)
+subroutine qg_gom_setup(self,npaths,vars,levs)
 
 implicit none
 
 ! Passed variables
 type(qg_gom),intent(inout) :: self      !< GOM
-type(qg_locs), intent(in)  :: locs      !< Locations of obs
+integer(c_int), intent(in) :: npaths    !< Number of interpolation paths
 type(oops_variables), intent(in) :: vars
 integer(c_int),intent(in)  :: levs
 
 ! Set attributes
 self%vars = vars
-call locs_copy(self%locs, locs)
 
-call qg_gom_alloc(self, locs%nlocs(), levs)
+call qg_gom_alloc(self, npaths, levs)
 
 end subroutine qg_gom_setup
 ! ------------------------------------------------------------------------------

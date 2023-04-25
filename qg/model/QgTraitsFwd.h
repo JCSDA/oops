@@ -86,7 +86,7 @@ struct QgObsTraits {
   typedef qg::ObsDiagsQG            ObsDiagnostics;
 
   typedef qg::GomQG                 GeoVaLs;
-  typedef qg::LocationsQG           Locations;
+  typedef qg::LocationsQG           SampledLocations;
 };
 
 }  // namespace qg

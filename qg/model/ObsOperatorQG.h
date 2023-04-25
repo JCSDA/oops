@@ -22,14 +22,18 @@
 #include "oops/util/Printable.h"
 
 // Forward declarations
+namespace oops {
+  template <typename OBS> class Locations;
+}
+
 namespace qg {
   class GomQG;
-  class LocationsQG;
   class ObsBias;
   class ObsDiagsQG;
   class ObsOpBaseQG;
   class ObsSpaceQG;
   class ObsVecQG;
+  struct QgObsTraits;
 
 // -----------------------------------------------------------------------------
 
@@ -37,6 +41,7 @@ class ObsOperatorQG : public util::Printable,
                       private boost::noncopyable {
  public:
   typedef ObservationParameters Parameters_;
+  typedef oops::Locations<QgObsTraits> Locations_;
 
   ObsOperatorQG(const ObsSpaceQG &, const Parameters_ &);
   ~ObsOperatorQG();
@@ -46,7 +51,8 @@ class ObsOperatorQG : public util::Printable,
 
 /// Other
   const oops::Variables & requiredVars() const;  // Required input requiredVars from Model
-  std::unique_ptr<LocationsQG> locations() const;
+/// Model variable interpolation paths
+  Locations_ locations() const;
 
  private:
   void print(std::ostream &) const;

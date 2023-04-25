@@ -22,11 +22,16 @@
 
 #include "oops/qg/ObsSpaceQG.h"
 
+
+namespace oops {
+template <typename OBS> class Locations;
+}
+
 namespace qg {
 class GomQG;
-class LocationsQG;
 class ObsBias;
 class ObsVecQG;
+struct QgObsTraits;
 
 // -----------------------------------------------------------------------------
 /// Base class for observation operators
@@ -34,6 +39,8 @@ class ObsVecQG;
 class ObsOpBaseQG : public util::Printable,
                     private boost::noncopyable {
  public:
+  typedef oops::Locations<QgObsTraits> Locations_;
+
   ObsOpBaseQG() = default;
 
 /// Obs Operator
@@ -41,7 +48,7 @@ class ObsOpBaseQG : public util::Printable,
 
 /// Other
   virtual const oops::Variables & requiredVars() const = 0;  // Required from Model
-  virtual std::unique_ptr<LocationsQG> locations() const = 0;
+  virtual Locations_ locations() const = 0;
 
  private:
   virtual void print(std::ostream &) const = 0;

@@ -16,6 +16,7 @@
 
 #include <boost/noncopyable.hpp>
 
+#include "oops/base/Locations.h"
 #include "oops/base/ObsVector.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
@@ -48,8 +49,8 @@ class ObsOperator : public util::Printable,
                     private util::ObjectCounter<ObsOperator<OBS> > {
   typedef typename OBS::ObsOperator  ObsOperator_;
   typedef GeoVaLs<OBS>               GeoVaLs_;
-  typedef ObsDiagnostics<OBS>        ObsDiags_;
   typedef Locations<OBS>             Locations_;
+  typedef ObsDiagnostics<OBS>        ObsDiags_;
   typedef ObsAuxControl<OBS>         ObsAuxControl_;
   typedef ObsVector<OBS>             ObsVector_;
   typedef ObsSpace<OBS>              ObsSpace_;
@@ -66,7 +67,8 @@ class ObsOperator : public util::Printable,
   ~ObsOperator();
 
   /// Compute forward operator \p y = ObsOperator (\p x).
-  /// \param[in]  x        obs operator input, State interpolated to observations locations.
+  /// \param[in]  x        obs operator input, State interpolated along paths sampling the
+  ///                      observation locations.
   /// \param[out] y        result of computing obs operator on \p x.
   /// \param[in]  obsaux   additional input for computing H(x), used in the minimization
   ///                      in Variational DA, e.g. bias correction coefficients or obs operator
@@ -82,7 +84,16 @@ class ObsOperator : public util::Printable,
   /// Variables required from the model State to compute obs operator. These variables
   /// will be provided in GeoVaLs passed to simulateObs.
   const Variables & requiredVars() const;
-  /// Locations used for computing GeoVaLs that will be passed to simulateObs.
+
+  /// Return an object holding one or more collections of paths sampling the observation locations
+  /// and indicating along which of these sets of paths individual model variables should be
+  /// interpolated.
+  ///
+  /// Operators simulating pointwise observations will normally ask for all variables to be
+  /// interpolated along the same set of vertical paths, each at the nominal latitude
+  /// and longitude of a single observation. Operators simulating spatially extended observations
+  /// can ask for some or all variables to be interpolated along multiple paths sampling each
+  /// observation location, for instance to then compute a weighted average.
   Locations_ locations() const;
 
  private:
@@ -144,7 +155,7 @@ template <typename OBS>
 Locations<OBS> ObsOperator<OBS>::locations() const {
   Log::trace() << "ObsOperator<OBS>::locations starting" << std::endl;
   util::Timer timer(name_, "locations");
-  return Locations_(oper_->locations());
+  return oper_->locations();
 }
 
 // -----------------------------------------------------------------------------

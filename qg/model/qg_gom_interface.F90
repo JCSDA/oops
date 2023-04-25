@@ -24,30 +24,29 @@ private
 contains
 ! ------------------------------------------------------------------------------
 !> Setup GOM
-subroutine qg_gom_setup_c(c_key_self,c_locs,c_vars,nlevs) bind(c,name='qg_gom_setup_f90')
+subroutine qg_gom_setup_c(c_key_self,c_npaths,c_vars,nlevs) bind(c,name='qg_gom_setup_f90')
 
 implicit none
 
 ! Passed variables
 integer(c_int),intent(inout) :: c_key_self !< GOM
-type(c_ptr),value,intent(in) :: c_locs     !< Locations
+integer(c_int),intent(in)    :: c_npaths   !< Number of paths along which all variables
+                                           !< will be interpolated
 type(c_ptr),value,intent(in) :: c_vars     !< Variables
 integer(c_int),intent(in)    :: nlevs
 
 ! Local variables
 type(qg_gom),pointer :: self
-type(qg_locs) :: locs
 type(oops_variables) :: vars
 
 ! Interface
 call qg_gom_registry%init()
 call qg_gom_registry%add(c_key_self)
 call qg_gom_registry%get(c_key_self,self)
-locs = qg_locs(c_locs)
 vars = oops_variables(c_vars)
 
 ! Call Fortran
-call qg_gom_setup(self,locs,vars,nlevs)
+call qg_gom_setup(self,c_npaths,vars,nlevs)
 
 end subroutine qg_gom_setup_c
 ! ------------------------------------------------------------------------------

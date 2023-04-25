@@ -16,8 +16,10 @@
 #include <iomanip>
 #include <limits>
 
+#include "lorenz95/L95Traits.h"
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/ObsTable.h"
+#include "oops/base/Locations.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Random.h"
@@ -29,8 +31,9 @@ class Variables;
 namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
-GomL95::GomL95(const LocsL95 & locs, const oops::Variables &, const std::vector<size_t> &)
-  : size_(locs.size()), locval_(size_, 0.0)
+GomL95::GomL95(const oops::Locations<L95ObsTraits> & locs,
+               const oops::Variables &, const std::vector<size_t> &)
+  : size_(locs.samplingMethod("x").sampledLocations().size()), locval_(size_, 0.0)
 {
   oops::Log::trace() << "GomL95::GomL95 done" << std::endl;
 }

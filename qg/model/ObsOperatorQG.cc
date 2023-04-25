@@ -18,6 +18,8 @@
 #include "model/ObsOpBaseQG.h"
 #include "model/ObsSpaceQG.h"
 #include "model/ObsVecQG.h"
+#include "model/QgTraitsFwd.h"
+#include "oops/base/Locations.h"
 #include "oops/base/Variables.h"
 
 namespace qg {
@@ -47,7 +49,7 @@ const oops::Variables & ObsOperatorQG::requiredVars() const {
 
 // -----------------------------------------------------------------------------
 
-std::unique_ptr<LocationsQG> ObsOperatorQG::locations() const {
+ObsOperatorQG::Locations_ ObsOperatorQG::locations() const {
   return oper_->locations();
 }
 

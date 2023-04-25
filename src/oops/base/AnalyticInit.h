@@ -13,7 +13,7 @@
 
 #include "oops/generic/AnalyticInitBase.h"
 #include "oops/interface/GeoVaLs.h"
-#include "oops/interface/Locations.h"
+#include "oops/interface/SampledLocations.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Timer.h"
 
@@ -22,9 +22,9 @@ namespace oops {
 /// \brief Initializes GeoVaLs with analytic formula
 template <typename OBS>
 class AnalyticInit : private util::ObjectCounter<AnalyticInit<OBS> > {
-  typedef AnalyticInitBase<OBS>       AnalyticInit_;
-  typedef GeoVaLs<OBS>                GeoVaLs_;
-  typedef Locations<OBS>              Locations_;
+  typedef AnalyticInitBase<OBS> AnalyticInit_;
+  typedef GeoVaLs<OBS>          GeoVaLs_;
+  typedef SampledLocations<OBS> SampledLocations_;
 
  public:
   static const std::string classname() {return "oops::AnalyticInit";}
@@ -40,7 +40,7 @@ class AnalyticInit : private util::ObjectCounter<AnalyticInit<OBS> > {
   AnalyticInit& operator=(AnalyticInit &&) = delete;
 
   /// Fill GeoVaLs with values computed by analytic function
-  void fillGeoVaLs(const Locations_ &, GeoVaLs_ &) const;
+  void fillGeoVaLs(const SampledLocations_ &, GeoVaLs_ &) const;
 
  private:
   std::unique_ptr<AnalyticInit_> analytic_;
@@ -69,7 +69,8 @@ AnalyticInit<OBS>::~AnalyticInit() {
 // -----------------------------------------------------------------------------
 
 template<typename OBS>
-void AnalyticInit<OBS>::fillGeoVaLs(const Locations_ & locs, GeoVaLs_ & gvals) const {
+void AnalyticInit<OBS>::fillGeoVaLs(const SampledLocations_ & locs,
+                                    GeoVaLs_ & gvals) const {
   Log::trace() << "AnalyticInit<OBS>::fillGeoVaLs starting" << std::endl;
   util::Timer timer(classname(), "fillGeoVaLs");
   analytic_->fillGeoVaLs(locs, gvals);

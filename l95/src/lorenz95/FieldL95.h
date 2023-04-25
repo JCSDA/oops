@@ -23,7 +23,6 @@
 
 namespace lorenz95 {
 // Forward declarations
-  class LocsL95;
   class GomL95;
   class Resolution;
 

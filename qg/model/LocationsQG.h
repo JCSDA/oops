@@ -31,7 +31,7 @@
 namespace qg {
 
 // -----------------------------------------------------------------------------
-/// LocationsQG class to handle locations for QG model.
+/// implements the oops SampledLocations interface for the QG obs type.
 class LocationsQG : public util::Printable,
                     private util::ObjectCounter<LocationsQG> {
  public:

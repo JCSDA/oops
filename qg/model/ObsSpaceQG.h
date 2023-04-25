@@ -121,7 +121,7 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
   /// save data or metadata
   void putdb(const std::string &, const int &) const;
 
-  /// create locations for the whole time window
+  /// sample the location of each observation in the time window with a single path
   std::unique_ptr<LocationsQG> locations() const;
 
   /// return number of observations (unique locations)

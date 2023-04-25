@@ -10,6 +10,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
@@ -54,6 +55,7 @@ class ObserversParameters : public oops::Parameters {
 template <typename MODEL, typename OBS>
 class Observers {
   typedef Geometry<MODEL>               Geometry_;
+  typedef GetValues<MODEL, OBS> GetValues_;
   typedef GetValuePosts<MODEL, OBS>     GetValuePosts_;
   typedef GetValuesParameters<MODEL>    GetValuesParameters_;
   typedef ObsAuxControls<OBS>           ObsAuxCtrls_;
@@ -126,11 +128,14 @@ void Observers<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrls
                                        const eckit::Configuration & conf) {
   Log::trace() << "Observers<MODEL, OBS>::initialize start" << std::endl;
 
-  std::shared_ptr<GetValuePosts_> getvals(new GetValuePosts_(getValuesParams_));
+  std::shared_ptr<GetValuePosts_> posts(new GetValuePosts_(getValuesParams_));
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
-    getvals->append(observers_[jj]->initialize(geom, obsaux[jj], Rmat[jj], conf));
+    std::vector<std::shared_ptr<GetValues_>> getvalues =
+        observers_[jj]->initialize(geom, obsaux[jj], Rmat[jj], conf);
+    for (std::shared_ptr<GetValues_> &gv : getvalues)
+      posts->append(std::move(gv));
   }
-  pp.enrollProcessor(getvals);
+  pp.enrollProcessor(posts);
 
   Log::trace() << "Observers<MODEL, OBS>::initialize done" << std::endl;
 }

@@ -47,7 +47,7 @@ class ObsStreamQG : public ObsOpBaseQG,
 
 // Other
   const oops::Variables & requiredVars() const override {return varin_;}
-  std::unique_ptr<LocationsQG> locations() const override;
+  Locations_ locations() const override;
 
  private:
   void print(std::ostream &) const override;

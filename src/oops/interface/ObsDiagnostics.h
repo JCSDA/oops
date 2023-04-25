@@ -16,7 +16,6 @@
 #include <boost/noncopyable.hpp>
 
 #include "oops/base/Variables.h"
-#include "oops/interface/Locations.h"
 #include "oops/interface/ObsSpace.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
@@ -26,6 +25,8 @@
 #include "oops/util/Timer.h"
 
 namespace oops {
+
+template <typename OBS> class Locations;
 
 // -----------------------------------------------------------------------------
 
@@ -63,12 +64,13 @@ class ObsDiagnostics : public util::Printable,
 
 // -----------------------------------------------------------------------------
 template <typename OBS>
-ObsDiagnostics<OBS>::ObsDiagnostics(const ObsSpace_ & os, const Locations_ & locs,
-                                      const Variables & vars) : diags_()
+ObsDiagnostics<OBS>::ObsDiagnostics(const ObsSpace_ & os,
+                                    const Locations_ & locations,
+                                    const Variables & vars) : diags_()
 {
   Log::trace() << "ObsDiagnostics<OBS>::ObsDiagnostics starting" << std::endl;
   util::Timer timer(classname(), "ObsDiagnostics");
-  diags_.reset(new ObsDiags_(os.obsspace(), locs.locations(), vars));
+  diags_.reset(new ObsDiags_(os.obsspace(), locations, vars));
   Log::trace() << "ObsDiagnostics<OBS>::ObsDiagnostics done" << std::endl;
 }
 // -----------------------------------------------------------------------------
