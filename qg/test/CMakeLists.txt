@@ -36,6 +36,9 @@ list( APPEND qg_testinput
   testinput/dirac_hyb_field.yaml
   testinput/dirac_hyb_value.yaml
   testinput/dirac_loc_3d.yaml
+  testinput/dirac_loc_3d_ensemble_transform.yaml
+  testinput/dirac_loc_3d_inflation_field.yaml
+  testinput/dirac_loc_3d_inflation_value.yaml
   testinput/dirac_loc_4d_fast.yaml
   testinput/dirac_loc_4d_aggressive.yaml
   testinput/dirac_loc_4d_standard.yaml
@@ -71,8 +74,6 @@ list( APPEND qg_testinput
   testinput/ens_mean_variance.yaml
   testinput/ens_recenter.yaml
   testinput/ens_variance.yaml
-  testinput/ens_variance_inflation_field.yaml
-  testinput/ens_variance_inflation_value.yaml
   testinput/error_covariance.yaml
   testinput/forecast.yaml
   testinput/forecast_5level.yaml
@@ -167,6 +168,9 @@ list( APPEND qg_testoutput
   testoutput/dirac_hyb_field.test
   testoutput/dirac_hyb_value.test
   testoutput/dirac_loc_3d.test
+  testoutput/dirac_loc_3d_ensemble_transform.test
+  testoutput/dirac_loc_3d_inflation_field.test
+  testoutput/dirac_loc_3d_inflation_value.test
   testoutput/dirac_loc_4d.test
   testoutput/dirac_loc_4d_time_decay.test
   testoutput/dirac_no_loc.test
@@ -179,8 +183,6 @@ list( APPEND qg_testoutput
   testoutput/ens_mean_variance.test
   testoutput/ens_recenter.test
   testoutput/ens_variance.test
-  testoutput/ens_variance_inflation_field.test
-  testoutput/ens_variance_inflation_value.test
   testoutput/forecast.test
   testoutput/forecast_5level.test
   testoutput/forecastHTLM.test
@@ -613,18 +615,6 @@ ecbuild_add_test( TARGET test_qg_uniform_field_inflation
                   ARGS testinput/uniform_field_inflation.yaml
                   COMMAND qg_forecast.x )
 
-ecbuild_add_test( TARGET test_qg_ens_variance_inflation_field
-                  OMP 2
-                  ARGS testinput/ens_variance_inflation_field.yaml
-                  COMMAND  qg_ens_variance.x
-                  TEST_DEPENDS test_qg_gen_ens_pert_B test_qg_uniform_field_inflation )
-
-ecbuild_add_test( TARGET test_qg_ens_variance_inflation_value
-                  OMP 2
-                  ARGS testinput/ens_variance_inflation_value.yaml
-                  COMMAND  qg_ens_variance.x
-                  TEST_DEPENDS test_qg_gen_ens_pert_B )
-
 ecbuild_add_test( TARGET test_qg_rtpp
                   ARGS testinput/rtpp.yaml
                   COMMAND  qg_rtpp.x
@@ -688,6 +678,24 @@ ecbuild_add_test( TARGET test_qg_dirac_hyb_field
 ecbuild_add_test( TARGET test_qg_dirac_loc_3d
                   OMP 2
                   ARGS testinput/dirac_loc_3d.yaml
+                  COMMAND  qg_dirac.x
+                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B )
+
+ecbuild_add_test( TARGET test_qg_dirac_loc_3d_ensemble_transform
+                  OMP 2
+                  ARGS testinput/dirac_loc_3d_ensemble_transform.yaml
+                  COMMAND  qg_dirac.x
+                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B )
+
+ecbuild_add_test( TARGET test_qg_dirac_loc_3d_inflation_field
+                  OMP 2
+                  ARGS testinput/dirac_loc_3d_inflation_field.yaml
+                  COMMAND  qg_dirac.x
+                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_uniform_field_inflation )
+
+ecbuild_add_test( TARGET test_qg_dirac_loc_3d_inflation_value
+                  OMP 2
+                  ARGS testinput/dirac_loc_3d_inflation_value.yaml
                   COMMAND  qg_dirac.x
                   TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B )
 

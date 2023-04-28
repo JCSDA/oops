@@ -92,7 +92,7 @@ template <typename MODEL> class EnsVariance : public Application {
 
 //  Compute transformed ensemble perturbations
 //         ens_k = K^-1 dx_k
-    Ensemble_ ens_k(params.ensembleConfig.value().ensemble, xx, xx, resol, xx.variables());
+    Ensemble_ ens_k(params.ensembleConfig.value().ensemble, resol, xx.variables(), xx.validTime());
 
 //  Get ensemble size
     unsigned nm = ens_k.size();

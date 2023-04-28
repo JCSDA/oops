@@ -25,7 +25,6 @@
 #include "oops/base/State.h"
 #include "oops/base/StateEnsemble.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/LinearVariableChange.h"
 #include "oops/util/ConfigFunctions.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
@@ -165,20 +164,11 @@ typename Increment<MODEL>::ReadParameters_
 
 // -----------------------------------------------------------------------------
 /// Parameters for the ensemble of increments generated from ensemble of states
-/// with specified inflation and linear variable changes.
 template <typename MODEL>
 class IncrementEnsembleFromStatesParameters : public Parameters {
   OOPS_CONCRETE_PARAMETERS(IncrementEnsembleFromStatesParameters, Parameters)
 
-  typedef typename Increment<MODEL>::ReadParameters_ IncrementReadParameters_;
-  typedef typename LinearVariableChange<MODEL>::Parameters_ LinearVarChangeParameters_;
  public:
-  OptionalParameter<IncrementReadParameters_> inflationField{"inflation field",
-                   "inflation field (as increment in model space)", this};
-  Parameter<double> inflationValue{"inflation value", "inflation value (scalar)",
-                    1.0, this};
-  OptionalParameter<LinearVarChangeParameters_> linVarChange{"linear variable change",
-                   "linear variable changes applied to the increments", this};
   StateEnsembleParameters<MODEL> states{this};
 };
 
@@ -188,7 +178,6 @@ template<typename MODEL> class IncrementEnsemble {
   typedef Geometry<MODEL>                    Geometry_;
   typedef GeometryIterator<MODEL>            GeometryIterator_;
   typedef Increment<MODEL>                   Increment_;
-  typedef LinearVariableChange<MODEL>        LinearVariableChange_;
   typedef State<MODEL>                       State_;
   typedef StateEnsemble<MODEL>               StateEnsemble_;
   typedef IncrementEnsembleFromStatesParameters<MODEL> IncrementEnsembleFromStatesParameters_;
@@ -200,8 +189,8 @@ template<typename MODEL> class IncrementEnsemble {
   /// Constructor
   IncrementEnsemble(const Geometry_ & resol, const Variables & vars,
                     const util::DateTime &, const int rank);
-  IncrementEnsemble(const IncrementEnsembleFromStatesParameters_ &, const State_ &, const State_ &,
-                    const Geometry_ &, const Variables &);
+  IncrementEnsemble(const IncrementEnsembleFromStatesParameters_ &,
+                    const Geometry_ &, const Variables &, const util::DateTime &);
   /// \brief construct ensemble of perturbations by reading them from disk
   IncrementEnsemble(const Geometry_ &, const Variables &, const IncrementEnsembleParameters_ &);
   /// \brief construct ensemble of perturbations by reading two state ensembles (one member at a
@@ -226,13 +215,15 @@ template<typename MODEL> class IncrementEnsemble {
 // ====================================================================================
 
 template<typename MODEL>
-IncrementEnsemble<MODEL>::IncrementEnsemble(const Geometry_ & resol, const Variables & vars,
-                                            const util::DateTime & tslot, const int rank)
+IncrementEnsemble<MODEL>::IncrementEnsemble(const Geometry_ & resol,
+                                            const Variables & vars,
+                                            const util::DateTime & time,
+                                            const int rank)
   : ensemblePerturbs_()
 {
   ensemblePerturbs_.reserve(rank);
   for (int m = 0; m < rank; ++m) {
-    ensemblePerturbs_.emplace_back(resol, vars, tslot);
+    ensemblePerturbs_.emplace_back(resol, vars, time);
   }
   Log::trace() << "IncrementEnsemble:contructor done" << std::endl;
 }
@@ -241,34 +232,14 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const Geometry_ & resol, const Varia
 
 template<typename MODEL>
 IncrementEnsemble<MODEL>::IncrementEnsemble(const IncrementEnsembleFromStatesParameters_ & params,
-                                            const State_ & xb, const State_ & fg,
-                                            const Geometry_ & resol, const Variables & vars)
+                                            const Geometry_ & resol,
+                                            const Variables & vars,
+                                            const util::DateTime & time)
   : ensemblePerturbs_()
 {
   Log::trace() << "IncrementEnsemble:contructor start" << std::endl;
-  // Check sizes and fill in timeslots
-  util::DateTime tslot = xb.validTime();
-
-  // Read inflation field
-  std::unique_ptr<Increment_> inflationField;
-  if (params.inflationField.value() != boost::none) {
-    inflationField.reset(new Increment_(resol, vars, tslot));
-    inflationField->read(*params.inflationField.value());
-  }
-
-  // Get inflation value
-  const double inflationValue = params.inflationValue;
-
-  // Setup change of variable
-  std::unique_ptr<LinearVariableChange_> linvarchg;
-  if (params.linVarChange.value() != boost::none) {
-    const auto & linvar = *params.linVarChange.value();
-    linvarchg.reset(new LinearVariableChange_(resol, linvar));
-    linvarchg->changeVarTraj(fg, *linvar.outputVariables.value());
-  }
-
   // Create a zero state (to be kept constant for building increments)
-  State_ zerov = State_(resol, vars, tslot);
+  State_ zerov = State_(resol, vars, time);
   zerov.zero();
 
   // Initialize the ensemble mean accumulator
@@ -281,40 +252,32 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const IncrementEnsembleFromStatesPar
   // Reserve memory for the departures ensemble
   ensemblePerturbs_.reserve(nens);
   for (size_t jj = 0; jj < nens; ++jj) {
-    Increment_ dx(resol, vars, tslot);
+    Increment_ dx(resol, vars, time);
     ensemblePerturbs_.emplace_back(std::move(dx));
   }
 
-  // Read the state, compute the mean and store states at increment resolution.
+  // Read the state, compute the mean and store the states
   for (size_t jj = 0; jj < nens; ++jj) {
-    // 1. Read state jj
+    // Read state
     State_ xx(resol, params.states.getStateParameters(jj));
-    // 2. Accumulate it to mean.
+
+    // Accumulate it to mean
     ensmean.accumul(rr, xx);
-    // 3. Subtract zerov so to have an increment at ir res. and push to ensPert
+
+    // Subtract zerov to get an increment and push it to ensemblePerturb_
     ensemblePerturbs_[jj].diff(xx, zerov);
   }
+
+  // Move mean from Accumulator to State_
   State_ bgmean = std::move(ensmean);
 
-  // 4. Subtract zerov from bgmean so to have an increment at ir res. and store in bgmean_ir
-  Increment_ bgmean_ir(resol, vars, tslot);
+  // Subtract zerov to get an increment
+  Increment_ bgmean_ir(resol, vars, time);
   bgmean_ir.diff(bgmean, zerov);
 
-  // 5. Loop on the stored states at increment resolution
+  // Subtract the mean from the ensemble
   for (size_t jj = 0; jj < nens; ++jj) {
-    // 5.1 remove the mean
     ensemblePerturbs_[jj] -= bgmean_ir;
-    // 5.2 Apply inflation
-    if (params.inflationField.value() != boost::none) {
-      ensemblePerturbs_[jj].schur_product_with(*inflationField);
-    }
-    ensemblePerturbs_[jj] *= inflationValue;
-    // 5.3 Apply lin chvar
-    if (params.linVarChange.value() != boost::none) {
-      const auto & linvar = *params.linVarChange.value();
-      oops::Variables varin = *linvar.inputVariables.value();
-      linvarchg->changeVarInverseTL(ensemblePerturbs_[jj], varin);
-    }
   }
   Log::trace() << "IncrementEnsemble:contructor done" << std::endl;
 }
@@ -322,12 +285,13 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const IncrementEnsembleFromStatesPar
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-IncrementEnsemble<MODEL>::IncrementEnsemble(const Geometry_ & resol, const Variables & vars,
+IncrementEnsemble<MODEL>::IncrementEnsemble(const Geometry_ & resol,
+                                            const Variables & vars,
                                             const IncrementEnsembleParameters_ & params)
   : ensemblePerturbs_()
 {
   // Datetime for ensemble
-  util::DateTime tslot = params.date;
+  util::DateTime time = params.date;
 
   // Reserve memory to hold ensemble
   const size_t nens = params.size();
@@ -335,7 +299,7 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const Geometry_ & resol, const Varia
 
   // Loop over all ensemble members
   for (size_t jj = 0; jj < nens; ++jj) {
-    Increment_ dx(resol, vars, tslot);
+    Increment_ dx(resol, vars, time);
     dx.read(params.getIncrementParameters(jj));
     ensemblePerturbs_.emplace_back(std::move(dx));
   }
@@ -345,7 +309,8 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const Geometry_ & resol, const Varia
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-IncrementEnsemble<MODEL>::IncrementEnsemble(const Geometry_ & resol, const Variables & vars,
+IncrementEnsemble<MODEL>::IncrementEnsemble(const Geometry_ & resol,
+                                            const Variables & vars,
                                             const StateEnsembleParameters_ & configBase,
                                             const StateEnsembleParameters_ & configPert)
   : ensemblePerturbs_()
