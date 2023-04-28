@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2021-2023 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -20,6 +21,8 @@ namespace oops {
   template<typename MODEL> class Geometry;
   template<typename MODEL> class Increment;
   template<typename MODEL> class State;
+  template<typename MODEL> class PostProcessor;
+  template<typename MODEL> class JqTerm;
   template<typename MODEL> class JqTermTLAD;
 
 // -----------------------------------------------------------------------------
@@ -34,6 +37,9 @@ template<typename MODEL> class CostJbState : private boost::noncopyable {
   typedef Geometry<MODEL>            Geometry_;
   typedef Increment<MODEL>           Increment_;
   typedef State<MODEL>               State_;
+  typedef PostProcessor<State_>      PostProc_;
+  typedef JqTerm<MODEL>              JqTerm_;
+  typedef JqTermTLAD<MODEL>          JqTLAD_;
 
  public:
 /// Constructor
@@ -42,10 +48,13 @@ template<typename MODEL> class CostJbState : private boost::noncopyable {
 /// Destructor
   virtual ~CostJbState() {}
 
+  virtual void setPostProc(PostProc_ &) {}
+  virtual std::shared_ptr<JqTerm_> getJq() {return nullptr;}
+
 /// Get increment from state. This is usually first guess - background.
 /// The third state argument is M(x) at the end of the window/subwindows for
 /// computing the model error term (M(x_{i-1})-x_i) when active.
-  virtual void computeIncrement(const State_ &, const State_ &, const State_ &,
+  virtual void computeIncrement(const State_ &, const State_ &, const std::shared_ptr<JqTerm_>,
                                 Increment_ &) const = 0;
 
 /// Linearize before the linear computations.
@@ -55,13 +64,13 @@ template<typename MODEL> class CostJbState : private boost::noncopyable {
   virtual void addGradient(const Increment_ &, Increment_ &, Increment_ &) const = 0;
 
 /// Initialize Jq computations if needed.
-  virtual JqTermTLAD<MODEL> * initializeJqTLAD() const = 0;
+  virtual JqTLAD_ * initializeJqTLAD() const = 0;
 
 /// Finalize \f$ J_b\f$ after the TL run.
-  virtual JqTermTLAD<MODEL> * initializeJqTL() const = 0;
+  virtual JqTLAD_ * initializeJqTL() const = 0;
 
 /// Initialize \f$ J_b\f$ before the AD run.
-  virtual JqTermTLAD<MODEL> * initializeJqAD(const Increment_ &) const = 0;
+  virtual JqTLAD_ * initializeJqAD(const Increment_ &) const = 0;
 
 /// Multiply by \f$ B\f$ and \f$ B^{-1}\f$.
   virtual void Bmult(const Increment_ &, Increment_ &) const = 0;

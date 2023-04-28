@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2021-2023 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -325,19 +326,19 @@ double CostFunction<MODEL, OBS>::evaluate(const CtrlVar_ & fguess,
                                           PostProcessor<State_> post) {
   Log::trace() << "CostFunction::evaluate start" << std::endl;
 // Setup terms of cost function
-  jb_->initialize(fguess);
   PostProcessor<State_> pp(post);
+  jb_->setPostProc(fguess, config, pp);
   for (size_t jj = 0; jj < jterms_.size(); ++jj) {
     jterms_[jj].setPostProc(fguess, config, pp);
   }
 
 // Run NL model
-  CtrlVar_ mfguess(fguess);
-  this->runNL(mfguess, pp);
+  CtrlVar_ xxtmp(fguess);
+  this->runNL(xxtmp, pp);
 
 // Cost function value
   double zzz = 0.0;
-  costJb_ = jb_->finalize(mfguess);
+  costJb_ = jb_->computeCost();  // depends on linearization, it shouldn't...
   zzz += costJb_;
   costJoJc_ = 0.0;
   for (size_t jj = 0; jj < jterms_.size(); ++jj) {
@@ -365,7 +366,7 @@ double CostFunction<MODEL, OBS>::linearize(const CtrlVar_ & fguess,
 
 // Setup trajectory for terms of cost function
   PostProcessorTLAD<MODEL> pptraj;
-  jb_->initializeTraj(fguess, *lowres_, pptraj);
+  jb_->setPostProcTraj(fguess, innerConf, *lowres_, pptraj);
   for (size_t jj = 0; jj < jterms_.size(); ++jj) {
     jterms_[jj].setPostProcTraj(fguess, innerConf, *lowres_, pptraj);
   }
@@ -377,7 +378,7 @@ double CostFunction<MODEL, OBS>::linearize(const CtrlVar_ & fguess,
   double zzz = this->evaluate(fguess, innerConf, post);
 
 // Finalize trajectory setup
-  jb_->finalizeTraj(innerConf);
+  jb_->computeCostTraj();
   for (size_t jj = 0; jj < jterms_.size(); ++jj) {
     jterms_[jj].computeCostTraj();
   }

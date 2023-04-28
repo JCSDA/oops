@@ -49,6 +49,7 @@ oops/assimilation/instantiateLocalEnsembleSolverFactory.h
 oops/assimilation/instantiateMinFactory.h
 oops/assimilation/IPCG.h
 oops/assimilation/IPCGMinimizer.h
+oops/assimilation/JqTerm.h
 oops/assimilation/JqTermTLAD.h
 oops/assimilation/LBGMRESRMinimizer.h
 oops/assimilation/LBHessianMatrix.h

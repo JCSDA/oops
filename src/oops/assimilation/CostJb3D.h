@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2021-2023 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -25,6 +26,7 @@
 #include "oops/util/Logger.h"
 
 namespace oops {
+  template<typename MODEL> class JqTerm;
   template<typename MODEL> class JqTermTLAD;
 
 // -----------------------------------------------------------------------------
@@ -43,6 +45,7 @@ template<typename MODEL> class CostJb3D : public CostJbState<MODEL> {
   typedef Geometry<MODEL>            Geometry_;
   typedef Increment<MODEL>           Increment_;
   typedef State<MODEL>               State_;
+  typedef JqTerm<MODEL>              JqTerm_;
 
  public:
 /// Construct \f$ J_b\f$.
@@ -53,7 +56,7 @@ template<typename MODEL> class CostJb3D : public CostJbState<MODEL> {
   virtual ~CostJb3D() {}
 
 /// Get increment from state (usually first guess).
-  void computeIncrement(const State_ &, const State_ &, const State_ &,
+  void computeIncrement(const State_ &, const State_ &, const std::shared_ptr<JqTerm_>,
                         Increment_ &) const override;
 
 /// Linearize before the linear computations.
@@ -119,8 +122,8 @@ void CostJb3D<MODEL>::linearize(const State_ & fg, const Geometry_ & lowres) {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void CostJb3D<MODEL>::computeIncrement(const State_ & xb, const State_ & fg, const State_ &,
-                                       Increment_ & dx) const {
+void CostJb3D<MODEL>::computeIncrement(const State_ & xb, const State_ & fg,
+                                       const std::shared_ptr<JqTerm_>, Increment_ & dx) const {
   dx.diff(fg, xb);
 }
 
