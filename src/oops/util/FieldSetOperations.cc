@@ -66,7 +66,7 @@ void addFieldSets(atlas::FieldSet & fset,
     }
   }
 
-  oops::Log::trace() << "addFieldSets starting" << std::endl;
+  oops::Log::trace() << "addFieldSets done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ void subtractFieldSets(atlas::FieldSet & fset,
     }
   }
 
-  oops::Log::trace() << "subFieldSets starting" << std::endl;
+  oops::Log::trace() << "subFieldSets done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -147,7 +147,7 @@ void multiplyFieldSets(atlas::FieldSet & fset,
     }
   }
 
-  oops::Log::trace() << "multiplyFieldSets starting" << std::endl;
+  oops::Log::trace() << "multiplyFieldSets done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -240,10 +240,9 @@ double dotProductFieldSets(const atlas::FieldSet & fset1,
   // Allreduce
   comm.allReduceInPlace(dp, eckit::mpi::sum());
 
+  oops::Log::trace() << "dotProductFieldSets done" << std::endl;
   // Return dot product
   return dp;
-
-  oops::Log::trace() << "dotProductFieldSets done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -285,7 +284,7 @@ void divideFieldSets(atlas::FieldSet & fset,
     }
   }
 
-  oops::Log::trace() << "divideFieldSets starting" << std::endl;
+  oops::Log::trace() << "divideFieldSets done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -309,9 +308,30 @@ void sqrtFieldSet(atlas::FieldSet & fset) {
     }
   }
 
-  oops::Log::trace() << "sqrtFieldSet starting" << std::endl;
+  oops::Log::trace() << "sqrtFieldSet done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
+// if a fieldset does not have the field with name defined by string variable
+// "fldname", it will create one using the functionspace from field defined by
+// variable string "template_name" and assign it a value of 0.0
+void addZeroFieldToFieldSet(const std::string & fldname,
+                            const std::string & template_name,
+                            atlas::FieldSet & fset) {
+  oops::Log::trace() << "addZeroFieldToFieldSet starting" << std::endl;
+
+  if ((!fset.has(fldname)) && fset.has(template_name) &&
+      (fset[template_name].rank() == 2)) {
+    atlas::Field t = fset[template_name].functionspace().createField<double>(
+      atlas::option::name(fldname) |
+      atlas::option::levels(fset[template_name].levels()));
+    t.haloExchange();
+    atlas::array::make_view<double, 2>(t).assign(0.0);
+    fset.add(t);
+  }
+
+  oops::Log::trace() << "addZeroFieldToFieldSet done" << std::endl;
+}
+
 
 }  // namespace util

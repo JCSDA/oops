@@ -38,6 +38,10 @@ double normFieldSet(const atlas::FieldSet &,
 void divideFieldSets(atlas::FieldSet &,
                      const  atlas::FieldSet &);
 void sqrtFieldSet(atlas::FieldSet &);
+void addZeroFieldToFieldSet(const std::string &,
+                            const std::string &,
+                            atlas::FieldSet & fset);
+
 
 // -----------------------------------------------------------------------------
 
