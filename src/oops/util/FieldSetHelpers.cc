@@ -830,6 +830,9 @@ void readFieldSet(const eckit::mpi::Comm & comm,
   } else {
     ABORT(fspace.type() + " function space not supported yet");
   }
+
+  // Exchange halo
+  fset.haloExchange();
 }
 
 // -----------------------------------------------------------------------------
