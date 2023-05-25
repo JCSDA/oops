@@ -48,7 +48,7 @@ void ObservationTLAD::simulateObsAD(GomL95 & gom, const ObsVec1D & ovec,
   const double missing = util::missingValue(double());
   for (size_t jj = 0; jj < gom.size(); ++jj) {
     if (ovec[jj] != missing) {
-      gom[jj] = ovec[jj];
+      gom[jj] += ovec[jj];
       bias.value() += ovec[jj];
     }
   }
