@@ -309,6 +309,8 @@ oops/util/abor1_ftn.F90
 oops/util/algorithms.h
 oops/util/AnyOf.h
 oops/util/AssociativeContainers.h
+oops/util/AtlasArrayUtil.cc
+oops/util/AtlasArrayUtil.h
 oops/util/CompareNVectors.h
 oops/util/CompositePath.cc
 oops/util/CompositePath.h
@@ -486,6 +488,7 @@ test/generic/fft_multiple.h
 test/generic/PseudoModelState4D.h
 test/generic/VerticalLocEV.h
 
+test/util/ArrayUtil.h
 test/util/Fortran.h
 test/util/IsAnyPointInVolumeInterior.h
 test/util/Random.h
@@ -873,6 +876,12 @@ ecbuild_add_test( TARGET  test_util_wildcard
 
 ecbuild_add_test( TARGET  test_util_configfunctions
                   SOURCES test/util/ConfigFunctions.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_arrayutil
+                  MPI     2
+                  SOURCES test/util/ArrayUtil.cc
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 
