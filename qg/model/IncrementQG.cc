@@ -139,7 +139,7 @@ void IncrementQG::dirac(const eckit::Configuration & config) {
     if (this->validTime() == dd) fields_->dirac(config);
   } else if (config.has("dates")) {
     std::vector<std::string> dates(config.getStringVector("dates"));
-    for (const auto date : dates) {
+    for (const auto & date : dates) {
       util::DateTime dd(date);
       if (this->validTime() == dd) fields_->dirac(config);
     }
