@@ -12,8 +12,6 @@
 
 #include <Eigen/Dense>
 
-// TODO(Algo team): remove when eckit JEDI default version includes commit 2bda26c
-#include <mpi.h>
 
 #include <string>
 #include <utility>
@@ -21,8 +19,6 @@
 
 #include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
-// TODO(Algo team): remove when eckit JEDI default version includes commit 2bda26c
-#include "eckit/mpi/Parallel.h"
 
 #include "oops/util/Timer.h"
 
@@ -40,11 +36,6 @@ const eckit::mpi::Comm & world();
 
 /// Communicator with each MPI task by itself
 const eckit::mpi::Comm & myself();
-
-// ------------------------------------------------------------------------------------------------
-
-// TODO(Algo team): remove when eckit JEDI default version includes commit 2bda26c
-MPI_Comm MPIComm(const eckit::mpi::Comm &comm);
 
 // ------------------------------------------------------------------------------------------------
 
@@ -82,14 +73,8 @@ void sendReceiveReplace(const eckit::mpi::Comm & comm, SERIALIZABLE & sendrecvob
   size_t sz = sendrecvobj.serialSize();
   std::vector<double> sendrecvbuf;
   sendrecvobj.serialize(sendrecvbuf);
-  // TODO(Algo team): remove when eckit JEDI default version includes commit 2bda26c
-  MPI_Comm mpicomm = MPIComm(comm);
-  MPI_Status status;
-  MPI_Sendrecv_replace(sendrecvbuf.data(), static_cast<int>(sz), MPI_DOUBLE,
-                       dest, sendtag, source, recvtag, mpicomm, &status);
-  // TODO(Algo team): uncomment when eckit JEDI default version includes commit 2bda26c
-  // eckit::mpi::Status status = comm.sendReceiveReplace(sendrecvbuf.data(), sz,
-  //                                                  dest, sendtag, source, recvtag);
+  eckit::mpi::Status status = comm.sendReceiveReplace(sendrecvbuf.data(), sz,
+                                                      dest, sendtag, source, recvtag);
   size_t ii = 0;
   sendrecvobj.deserialize(sendrecvbuf, ii);
   ASSERT(ii == sz);
@@ -121,17 +106,7 @@ void reduceInPlace(const eckit::mpi::Comm & comm, SERIALIZABLE & obj, const size
   size_t sz = obj.serialSize();
   std::vector<double> buf;
   obj.serialize(buf);
-  // TODO(Algo team): remove when eckit JEDI default version includes commit 2bda26c
-  MPI_Comm mpicomm = MPIComm(comm);
-  if (comm.rank() == root) {
-    MPI_Reduce(MPI_IN_PLACE, buf.data(), static_cast<int>(sz), MPI_DOUBLE, MPI_SUM,
-               static_cast<int>(root), mpicomm);
-  } else {
-    MPI_Reduce(buf.data(), buf.data(), static_cast<int>(sz), MPI_DOUBLE, MPI_SUM,
-               static_cast<int>(root), mpicomm);
-  }
-  // TODO(Algo team): uncomment when eckit JEDI default version includes commit 2bda26c
-  // comm.reduceInPlace(buf.data(), sz, eckit::mpi::sum(), root);
+  comm.reduceInPlace(buf.data(), sz, eckit::mpi::sum(), root);
   size_t ii = 0;
   if (comm.rank() == root) {
     obj.deserialize(buf, ii);

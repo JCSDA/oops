@@ -93,14 +93,6 @@ const eckit::mpi::Comm & myself() {
 
 // ------------------------------------------------------------------------------------------------
 
-// TODO(Algo team): remove when eckit JEDI default version includes commit 2bda26c
-MPI_Comm MPIComm(const eckit::mpi::Comm &comm) {
-  auto* pcomm = static_cast<const eckit::mpi::Parallel*>(&comm);
-  return pcomm->MPIComm();
-}
-
-// ------------------------------------------------------------------------------------------------
-
 void gather(const eckit::mpi::Comm & comm, const std::vector<double> & send,
             std::vector<double> & recv, const size_t root) {
   size_t ntasks = comm.size();

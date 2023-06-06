@@ -13,8 +13,6 @@
 #define OOPS_BASE_LOCALIZATION_H_
 
 #include <Eigen/Dense>
-// TODO(Algo team): remove when eckit JEDI default version includes commit 2bda26c
-#include <mpi.h>
 
 #include <algorithm>
 #include <functional>
@@ -240,15 +238,9 @@ void Localization<MODEL>::randomize(Increment_ & dx) const {
       for (size_t j=0; j <= mytime_; ++j) {
         dx.axpy(TDLower_(mytime_, mytime_-j), dxtmp, false);
         size_t dest = mytime_ + 1;
-        // TODO(Algo team): remove when eckit JEDI default version includes commit 2bda26c
-        if (mytime_ == ntimes_ - 1 ) dest = MPI_PROC_NULL;
-        // TODO(Algo team): uncomment when eckit JEDI default version includes commit 2bda26c
-        // if (mytime_ == ntimes_ - 1 ) dest = comm_.procNull();
+        if (mytime_ == ntimes_ - 1 ) dest = comm_.procNull();
         size_t src = mytime_ - 1;
-        // TODO(Algo team): remove when eckit JEDI default version includes commit 2bda26c
-        if (mytime_ == j) src = MPI_PROC_NULL;
-        // TODO(Algo team): uncomment when eckit JEDI default version includes commit 2bda26c
-        // if (mytime_ == j) src = comm_.procNull();
+        if (mytime_ == j) src = comm_.procNull();
         oops::mpi::sendReceiveReplace(comm_, dxtmp, dest, 0, src, 0);
       }
     } else if (commMode_ == "fast") {
@@ -267,23 +259,11 @@ void Localization<MODEL>::randomize(Increment_ & dx) const {
       for (size_t j=0; j <= mytime_; ++j) {
         dx_v += TDLower_(mytime_, mytime_-j) * dxtmp_v;
         size_t dest = mytime_ + 1;
-        // TODO(Algo team): remove when eckit JEDI default version includes commit 2bda26c
-        if (mytime_ == ntimes_ - 1 ) dest = MPI_PROC_NULL;
-        // TODO(Algo team): uncomment when eckit JEDI default version includes commit 2bda26c
-        // if (mytime_ == ntimes_ - 1 ) dest = comm_.procNull();
+        if (mytime_ == ntimes_ - 1 ) dest = comm_.procNull();
         size_t src = mytime_ - 1;
-        // TODO(Algo team): remove when eckit JEDI default version includes commit 2bda26c
-        if (mytime_ == j) src = MPI_PROC_NULL;
-        // TODO(Algo team): uncomment when eckit JEDI default version includes commit 2bda26c
-        // if (mytime_ == j) src = comm_.procNull();
-        // TODO(Algo team): remove when eckit JEDI default version includes commit 2bda26c
-        MPI_Comm mpicomm = oops::mpi::MPIComm(comm_);
-        MPI_Status status;
-        MPI_Sendrecv_replace(dxtmp_s.data(), static_cast<int>(sz), MPI_DOUBLE,
-                             dest, 0, src, 0, mpicomm, &status);
-        // TODO(Algo team): uncomment when eckit JEDI default version includes commit 2bda26c
-        // eckit::mpi::Status status = comm_.sendReceiveReplace(dxtmp_s.data(), sz,
-        //                                                      dest, 0, src, 0);
+        if (mytime_ == j) src = comm_.procNull();
+        eckit::mpi::Status status = comm_.sendReceiveReplace(dxtmp_s.data(), sz,
+                                                             dest, 0, src, 0);
         }
 
       // Deserialize and store the result
@@ -344,23 +324,11 @@ void Localization<MODEL>::multiply(Increment_ & dx) const {
       for (size_t j=0; j < ntimes_-mytime_; ++j) {
         dxtmp_v += TDLower_(mytime_+j, mytime_) * dx_v;
         size_t dest = mytime_ - 1;
-        // TODO(Algo team): remove when eckit JEDI default version includes commit 2bda26c
-        if (mytime_ == 0) dest = MPI_PROC_NULL;
-        // TODO(Algo team): uncomment when eckit JEDI default version includes commit 2bda26c
-        // if (mytime_ == 0) dest = comm_.procNull();
+        if (mytime_ == 0) dest = comm_.procNull();
         size_t src = mytime_ + 1;
-        // TODO(Algo team): remove when eckit JEDI default version includes commit 2bda26c
-        if (mytime_ == ntimes_ - 1 - j) src = MPI_PROC_NULL;
-        // TODO(Algo team): uncomment when eckit JEDI default version includes commit 2bda26c
-        // if (mytime_ == ntimes_ - 1 - j) src = comm_.procNull();
-        // TODO(Algo team): remove when eckit JEDI default version includes commit 2bda26c
-        MPI_Comm mpicomm = oops::mpi::MPIComm(comm_);
-        MPI_Status status;
-        MPI_Sendrecv_replace(dx_s.data(), static_cast<int>(sz), MPI_DOUBLE,
-                             dest, 0, src, 0, mpicomm, &status);
-        // TODO(Algo team): uncomment when eckit JEDI default version includes commit 2bda26c
-        // eckit::mpi::Status status = comm_.sendReceiveReplace(dx_s.data(), sz,
-        //                                                     dest, 0, src, 0);
+        if (mytime_ == ntimes_ - 1 - j) src = comm_.procNull();
+        eckit::mpi::Status status = comm_.sendReceiveReplace(dx_s.data(), sz,
+                                                             dest, 0, src, 0);
       }
 
       // Apply 3D localization
@@ -383,23 +351,11 @@ void Localization<MODEL>::multiply(Increment_ & dx) const {
       for (size_t j=0; j <= mytime_; ++j) {
         dx_v += TDLower_(mytime_, mytime_-j) * dxtmp_v;
         size_t dest = mytime_ + 1;
-        // TODO(Algo team): remove when eckit JEDI default version includes commit 2bda26c
-        if (mytime_ == ntimes_ - 1) dest = MPI_PROC_NULL;
-        // TODO(Algo team): uncomment when eckit JEDI default version includes commit 2bda26c
-        // if (mytime_ == ntimes_ - 1) dest = comm_.procNull();
+        if (mytime_ == ntimes_ - 1) dest = comm_.procNull();
         size_t src = mytime_ - 1;
-        // TODO(Algo team): remove when eckit JEDI default version includes commit 2bda26c
-        if (mytime_ == j) src = MPI_PROC_NULL;
-        // TODO(Algo team): uncomment when eckit JEDI default version includes commit 2bda26c
-        // if (mytime_ == j) src = comm_.procNull();
-        // TODO(Algo team): remove when eckit JEDI default version includes commit 2bda26c
-        MPI_Comm mpicomm = oops::mpi::MPIComm(comm_);
-        MPI_Status status;
-        MPI_Sendrecv_replace(dxtmp_s.data(), static_cast<int>(sz), MPI_DOUBLE,
-                             dest, 0, src, 0, mpicomm, &status);
-        // TODO(Algo team): uncomment when eckit JEDI default version includes commit 2bda26c
-        // eckit::mpi::Status status = comm_.sendReceiveReplace(dxtmp_s.data(), sz,
-        //                                                      dest, 0, src, 0);
+        if (mytime_ == j) src = comm_.procNull();
+        eckit::mpi::Status status = comm_.sendReceiveReplace(dxtmp_s.data(), sz,
+                                                             dest, 0, src, 0);
       }
 
       // Deserialize and store the result
@@ -413,15 +369,9 @@ void Localization<MODEL>::multiply(Increment_ & dx) const {
       for (size_t j=0; j < ntimes_-mytime_; ++j) {
         dxtmp.axpy(TDLower_(mytime_+j, mytime_), dx, false);
         size_t dest = mytime_ - 1;
-        // TODO(Algo team): remove when eckit JEDI default version includes commit 2bda26c
-        if (mytime_ == 0) dest = MPI_PROC_NULL;
-        // TODO(Algo team): uncomment when eckit JEDI default version includes commit 2bda26c
-        // if (mytime_ == 0) dest = comm_.procNull();
+        if (mytime_ == 0) dest = comm_.procNull();
         size_t src = mytime_ + 1;
-        // TODO(Algo team): remove when eckit JEDI default version includes commit 2bda26c
-        if (mytime_ == ntimes_ - 1 - j) src = MPI_PROC_NULL;
-        // TODO(Algo team): uncomment when eckit JEDI default version includes commit 2bda26c
-        // if (mytime_ == ntimes_ - 1 - j) src = comm_.procNull();
+        if (mytime_ == ntimes_ - 1 - j) src = comm_.procNull();
         oops::mpi::sendReceiveReplace(comm_, dx, dest, 0, src, 0);
       }
 
@@ -435,15 +385,9 @@ void Localization<MODEL>::multiply(Increment_ & dx) const {
       for (size_t j=0; j <= mytime_; ++j) {
         dx.axpy(TDLower_(mytime_, mytime_-j), dxtmp, false);
         size_t dest = mytime_ + 1;
-        // TODO(Algo team): remove when eckit JEDI default version includes commit 2bda26c
-        if (mytime_ == ntimes_ - 1) dest = MPI_PROC_NULL;
-        // TODO(Algo team): uncomment when eckit JEDI default version includes commit 2bda26c
-        // if (mytime_ == ntimes_ - 1) dest = comm_.procNull();
+        if (mytime_ == ntimes_ - 1) dest = comm_.procNull();
         size_t src = mytime_ - 1;
-        // TODO(Algo team): remove when eckit JEDI default version includes commit 2bda26c
-        if (mytime_ == j) src = MPI_PROC_NULL;
-        // TODO(Algo team): uncomment when eckit JEDI default version includes commit 2bda26c
-        // if (mytime_ == j) src = comm_.procNull();
+        if (mytime_ == j) src = comm_.procNull();
         oops::mpi::sendReceiveReplace(comm_, dxtmp, dest, 0, src, 0);
       }
     }
