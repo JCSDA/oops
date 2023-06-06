@@ -18,6 +18,7 @@
 #include "oops/base/StateParametersND.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/ConfigFunctions.h"
+#include "oops/util/FieldSetOperations.h"
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
@@ -172,6 +173,7 @@ template<typename MODEL> class StateEnsemble {
 
   /// Calculate ensemble spread
   Increment_ variance() const;
+  Increment_ stddev() const;
 
   /// Accessors
   size_t size() const { return states_.size(); }
@@ -252,6 +254,21 @@ Increment<MODEL> StateEnsemble<MODEL>::variance() const {
 
   Log::trace() << "StateEnsemble:: variance done" << std::endl;
   return ensVar;
+}
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+Increment<MODEL> StateEnsemble<MODEL>::stddev() const {
+  ASSERT(states_.size() > 1);
+  // Ensemble variance
+  Increment<MODEL> ensStdDev = this->variance();
+
+  // Compute ensemble standard deviation
+  util::sqrtFieldSet(ensStdDev.fieldSet());
+  ensStdDev.synchronizeFields();
+
+  Log::trace() << "StateEnsemble:: standard deviation done" << std::endl;
+  return ensStdDev;
 }
 
 // -----------------------------------------------------------------------------

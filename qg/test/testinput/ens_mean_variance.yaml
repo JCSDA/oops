@@ -18,6 +18,12 @@ variance output:
   type: diag
   date: 2010-01-01T00:00:00Z
 
+standard deviation output:
+  datadir: Data
+  exp: stddev
+  type: diag
+  date: 2010-01-01T00:00:00Z
+
 mean output:
   datadir: Data
   exp: mean

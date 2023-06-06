@@ -50,6 +50,10 @@ class EnsMeanAndVarianceParameters : public ApplicationParameters {
   RequiredParameter<StateEnsembleParameters_> ensembleConfig{"ensemble", this};
 
   /// Output increment parameters for variance.
+  OptionalParameter<IncrementWriteParameters_> outputStdDevConfig{"standard deviation output",
+                                                this};
+  OptionalParameter<LatLonGridWriterParameters> outputStdDevConfigLL{"standard deviation to latlon",
+                                                 this};
   OptionalParameter<IncrementWriteParameters_> outputVarConfig{"variance output", this};
   OptionalParameter<LatLonGridWriterParameters> outputVarConfigLL{"ensvariance to latlon",
                                                  this};
@@ -89,6 +93,7 @@ template <typename MODEL> class EnsMeanAndVariance : public Application {
     const StateEnsemble_ stateEnsemble(resol, params.ensembleConfig);
     const State_ ensmean = stateEnsemble.mean();
     const Increment_ sigb2 = stateEnsemble.variance();
+    const Increment_ sigb = stateEnsemble.stddev();
 
 //  Write mean to file
     if (params.outputMeanConfig.value() != boost::none)
@@ -109,6 +114,17 @@ template <typename MODEL> class EnsMeanAndVariance : public Application {
       latlon.interpolateAndWrite(sigb2);
     }
     Log::test() << "Variance: " << std::endl << sigb2 << std::endl;
+
+//  Write standard deviation to file
+    if (params.outputStdDevConfig.value() != boost::none)
+        sigb.write(params.outputStdDevConfig.value().value());
+
+    if (params.outputStdDevConfigLL.value() != boost::none) {
+      const LatLonGridWriter<MODEL> latlon(params.outputStdDevConfigLL.value().value(), resol);
+      latlon.interpolateAndWrite(sigb);
+    }
+    Log::test() << "Standard Deviation: " << std::endl << sigb << std::endl;
+
 
     return 0;
   }

@@ -285,6 +285,7 @@ oops/runs/ConvertToLatLon.h
 oops/runs/DiffStates.h
 oops/runs/Dirac.h
 oops/runs/EnsembleApplication.h
+oops/runs/EnsMeanAndVariance.h
 oops/runs/EnsRecenter.h
 oops/runs/EnsVariance.h
 oops/runs/ExternalDFI.h
