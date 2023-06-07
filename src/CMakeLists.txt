@@ -9,6 +9,7 @@ oops/assimilation/ControlVariable.h
 oops/assimilation/CostFct3DVar.h
 oops/assimilation/CostFct4DEnsVar.h
 oops/assimilation/CostFct4DVar.h
+oops/assimilation/CostFctFGAT.h
 oops/assimilation/CostFctWeak.h
 oops/assimilation/CostFunction.h
 oops/assimilation/CostJb3D.h
@@ -160,6 +161,7 @@ oops/base/StateEnsemble.h
 oops/base/StateEnsemble4D.h
 oops/base/StateInfo.h
 oops/base/StateParametersND.h
+oops/base/StateSaver.h
 oops/base/StateWriter.h
 oops/base/TrajectorySaver.h
 oops/base/TrivialSamplingMethodSelector.h

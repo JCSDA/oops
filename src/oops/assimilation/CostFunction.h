@@ -128,11 +128,7 @@ template<typename MODEL, typename OBS> class CostFunction : private boost::nonco
   CostFunction() = default;
   virtual ~CostFunction() = default;
 
-  double evaluate(const CtrlVar_ &,
-                  const eckit::Configuration & config = eckit::LocalConfiguration(),
-                  PostProcessor<State_> post = PostProcessor<State_>() );
-  double linearize(const CtrlVar_ &, const eckit::Configuration &,
-                   PostProcessor<State_> post = PostProcessor<State_>() );
+  double evaluate(CtrlVar_ &, const eckit::Configuration &, PostProcessor<State_>);
 
   virtual void runTLM(CtrlInc_ &, PostProcessorTLAD<MODEL> &,
                       PostProcessor<Increment_> post = PostProcessor<Increment_>(),
@@ -161,23 +157,21 @@ template<typename MODEL, typename OBS> class CostFunction : private boost::nonco
 
  protected:
   void setupTerms(const eckit::Configuration &);
-  const CtrlVar_ & background() const {return *xb_;}
+  const CtrlVar_ & background() const {return jb_->background();}
 
  private:
   virtual void addIncr(CtrlVar_ &, const CtrlInc_ &, PostProcessor<Increment_>&) const = 0;
 
-  virtual CostJbState<MODEL>  * newJb(const eckit::Configuration &, const Geometry_ &,
-                                      const CtrlVar_ &) const = 0;
+  virtual CostJbState<MODEL> * newJb(const eckit::Configuration &, const Geometry_ &) const = 0;
   virtual CostJo<MODEL, OBS>       * newJo(const ObserversParameters<MODEL, OBS> &) const = 0;
   virtual CostTermBase<MODEL, OBS> * newJc(const eckit::Configuration &,
                                            const Geometry_ &) const = 0;
-  virtual void doLinearize(const Geometry_ &, const eckit::Configuration &,
-                           const CtrlVar_ &, const CtrlVar_ &,
+  virtual void doLinearize(const Geometry_ &, const eckit::Configuration &, CtrlVar_ &, CtrlVar_ &,
                            PostProcessor<State_> &, PostProcessorTLAD<MODEL> &) = 0;
+  virtual void finishLinearize() {}
   virtual const Geometry_ & geometry() const = 0;
 
 // Data members
-  std::unique_ptr<const CtrlVar_> xb_;
   std::unique_ptr<JbTotal_> jb_;
   boost::ptr_vector<CostBase_> jterms_;
   std::unique_ptr<const Geometry_> lowres_;
@@ -303,8 +297,7 @@ void CostFunction<MODEL, OBS>::setupTerms(const eckit::Configuration & config) {
   Log::trace() << "CostFunction::setupTerms Jo added" << std::endl;
 
 // Jb
-  xb_.reset(new CtrlVar_(config, this->geometry(), jo->obspaces()));
-  jb_.reset(new JbTotal_(*xb_, this->newJb(config, this->geometry(), *xb_),
+  jb_.reset(new JbTotal_(this->newJb(config, this->geometry()),   // constructs background
                          config, this->geometry(), jo->obspaces()));
   Log::trace() << "CostFunction::setupTerms Jb added" << std::endl;
 
@@ -321,69 +314,67 @@ void CostFunction<MODEL, OBS>::setupTerms(const eckit::Configuration & config) {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-double CostFunction<MODEL, OBS>::evaluate(const CtrlVar_ & fguess,
-                                          const eckit::Configuration & config,
+double CostFunction<MODEL, OBS>::evaluate(CtrlVar_ & fguess,
+                                          const eckit::Configuration & innerConf,
                                           PostProcessor<State_> post) {
-  Log::trace() << "CostFunction::evaluate start" << std::endl;
+  const bool linearize = innerConf.getBool("linearize", false);
+  Log::trace() << "CostFunction::evaluate start, linearize = " << linearize << std::endl;
+  if (linearize) {
+//  Inner loop resolution
+    lowres_previter_ = std::move(lowres_);
+    const eckit::LocalConfiguration resConf(innerConf, "geometry");
+    lowres_ = std::make_unique<Geometry_>(resConf, this->geometry().getComm(),
+                                          this->geometry().timeComm());
+
+//  Setup trajectory for terms of cost function
+    PostProcessorTLAD<MODEL> pptraj;
+    jb_->setPostProcTraj(fguess, innerConf, *lowres_, pptraj);
+    for (size_t jj = 0; jj < jterms_.size(); ++jj) {
+      jterms_[jj].setPostProcTraj(fguess, innerConf, *lowres_, pptraj);
+    }
+
+//  Setup specific linearization if needed (including TLM)
+    this->doLinearize(*lowres_, innerConf, jb_->getBackground(), fguess, post, pptraj);
+  }
+
 // Setup terms of cost function
-  PostProcessor<State_> pp(post);
-  jb_->setPostProc(fguess, config, pp);
+  jb_->setPostProc(fguess, innerConf, post);
   for (size_t jj = 0; jj < jterms_.size(); ++jj) {
-    jterms_[jj].setPostProc(fguess, config, pp);
+    jterms_[jj].setPostProc(fguess, innerConf, post);
   }
 
 // Run NL model
   CtrlVar_ xxtmp(fguess);
-  this->runNL(xxtmp, pp);
+  this->runNL(xxtmp, post);
 
-// Cost function value
-  double zzz = 0.0;
-  costJb_ = jb_->computeCost();  // depends on linearization, it shouldn't...
-  zzz += costJb_;
+// Cost function value (except Jb)
   costJoJc_ = 0.0;
   for (size_t jj = 0; jj < jterms_.size(); ++jj) {
-    costJoJc_ += jterms_[jj].computeCost();
+    costJoJc_ += jterms_[jj].computeCost();  // needed before jb_->computeCostTraj()
   }
-  zzz += costJoJc_;
+
+  if (linearize) {
+//  Finalize trajectory setup
+    this->finishLinearize();  // Used only for FGAT
+    jb_->computeCostTraj();   // constructs B (requires H(x)/QC for VarBC part of B)
+    for (size_t jj = 0; jj < jterms_.size(); ++jj) {
+      jterms_[jj].computeCostTraj();
+    }
+  }
+
+// Cost function value (Jb)
+  costJb_ = jb_->computeCost();  // Should be after linearization because requires B
+
+// Print cost function for test (hack so we can update references separately)
+  for (size_t jj = 0; jj < jterms_.size(); ++jj) {
+    jterms_[jj].printCostTestHack();
+  }
+
+  double zzz = costJb_ + costJoJc_;
   Log::info() << "CostFunction: Nonlinear J = " << zzz << std::endl;
   Log::test() << "CostFunction: Nonlinear J = " << zzz << std::endl;
+
   Log::trace() << "CostFunction::evaluate done" << std::endl;
-  return zzz;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL, typename OBS>
-double CostFunction<MODEL, OBS>::linearize(const CtrlVar_ & fguess,
-                                           const eckit::Configuration & innerConf,
-                                           PostProcessor<State_> post) {
-  Log::trace() << "CostFunction::linearize start" << std::endl;
-// Inner loop resolution
-  const eckit::LocalConfiguration resConf(innerConf, "geometry");
-  lowres_previter_ = std::move(lowres_);
-  lowres_ = std::make_unique<Geometry_>(resConf, this->geometry().getComm(),
-                                        this->geometry().timeComm());
-
-// Setup trajectory for terms of cost function
-  PostProcessorTLAD<MODEL> pptraj;
-  jb_->setPostProcTraj(fguess, innerConf, *lowres_, pptraj);
-  for (size_t jj = 0; jj < jterms_.size(); ++jj) {
-    jterms_[jj].setPostProcTraj(fguess, innerConf, *lowres_, pptraj);
-  }
-
-// Specific linearization if needed (including TLM)
-  this->doLinearize(*lowres_, innerConf, *xb_, fguess, post, pptraj);
-
-// Run NL model
-  double zzz = this->evaluate(fguess, innerConf, post);
-
-// Finalize trajectory setup
-  jb_->computeCostTraj();
-  for (size_t jj = 0; jj < jterms_.size(); ++jj) {
-    jterms_[jj].computeCostTraj();
-  }
-
-  Log::trace() << "CostFunction::linearize done" << std::endl;
   return zzz;
 }
 

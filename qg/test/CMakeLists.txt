@@ -6,6 +6,7 @@ list( APPEND qg_testinput
   testinput/3dvar_hybrid.yaml
   testinput/3dvar_hybrid_wo_jb_evaluation.yaml
   testinput/3dfgat.yaml
+  testinput/4dfgat.yaml
   testinput/4densvar.yaml
   testinput/4densvar_hybrid.yaml
   testinput/4dvar_dripcg.yaml
@@ -140,6 +141,7 @@ list( APPEND qg_testoutput
   testoutput/3dvar_hybrid.test
   testoutput/3dvar_hybrid_wo_jb_evaluation.test
   testoutput/3dfgat.test
+  testoutput/4dfgat.test
   testoutput/4densvar.test
   testoutput/4densvar_hybrid.test
   testoutput/4dvar_dripcg.test
@@ -786,6 +788,12 @@ ecbuild_add_test( TARGET test_qg_3dvar_hybrid_wo_jb_evaluation
 ecbuild_add_test( TARGET test_qg_3dfgat
                   OMP 2
                   ARGS testinput/3dfgat.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_make_obs_3d )
+
+ecbuild_add_test( TARGET test_qg_4dfgat
+                  OMP 2
+                  ARGS testinput/4dfgat.yaml
                   COMMAND  qg_4dvar.x
                   TEST_DEPENDS test_qg_forecast test_qg_make_obs_3d )
 

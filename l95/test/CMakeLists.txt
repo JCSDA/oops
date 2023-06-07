@@ -12,6 +12,7 @@ list( APPEND l95_test_input
   testinput/3dvar_qc_iterations.yaml
   testinput/3dvar_zero-valued_obs.yaml
   testinput/3dfgat.yaml
+  testinput/4dfgat.yaml
   testinput/4densvar.yaml
   testinput/4densvar_hybrid.yaml
   testinput/4dforcing.yaml
@@ -164,6 +165,7 @@ list( APPEND l95_testoutput
   testoutput/3dvar_qc_iterations.test
   testoutput/3dvar_zero-valued_obs.test
   testoutput/3dfgat.test
+  testoutput/4dfgat.test
   testoutput/4densvar.test
   testoutput/4densvar_hybrid.test
   testoutput/4dforcing.test
@@ -597,6 +599,11 @@ ecbuild_add_test( TARGET test_l95_3dvar_zero-valued_obs
 ecbuild_add_test( TARGET test_l95_3dfgat
                   COMMAND l95_4dvar.x
                   ARGS testinput/3dfgat.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
+
+ecbuild_add_test( TARGET test_l95_4dfgat
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/4dfgat.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
 
 

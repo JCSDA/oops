@@ -1,5 +1,5 @@
 cost function:
-  cost type: 3D-FGAT
+  cost type: 4D-Var
   window begin: 2010-01-01T21:00:00Z
   window length: PT6H
   geometry:
@@ -14,7 +14,7 @@ cost function:
     filename: Data/forecast.fc.2010-01-01T00:00:00Z.PT21H.l95
   background error:
     covariance model: L95Error
-    date: 2010-01-02T00:00:00Z
+    date: 2010-01-01T21:00:00Z
     length_scale: 1.0
     standard_deviation: 0.6
   observations:
@@ -37,6 +37,11 @@ variational:
       resol: 40
     ninner: 10
     gradient norm reduction: 1e-10
+    linear model:
+      name: Identity
+      increment variables: [x]
+      variable change: Identity
+      tstep: PT6H
     diagnostics:
       departures: ombg
 final:
@@ -44,9 +49,10 @@ final:
     departures: oman
 output:
   datadir: Data
-  exp: 3dfgat
-  steps: ["2010-01-02T00:00:00Z"]
+  exp: 4dfgat
+  first: PT3H
+  frequency: PT6H
   type: an
 
 test:
-  reference filename: testoutput/3dfgat.test
+  reference filename: testoutput/4dfgat.test

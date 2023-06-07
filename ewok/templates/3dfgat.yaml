@@ -30,8 +30,6 @@ variational:
     gradient norm reduction: $(reduc)
     geometry:
       $(MIN_GEOMETRY)
-    linear model:
-      $(LINEAR_MODEL)
     diagnostics:
       departures: $(diag)
 final:

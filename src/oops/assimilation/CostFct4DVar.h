@@ -112,12 +112,10 @@ template<typename MODEL, typename OBS> class CostFct4DVar : public CostFunction<
  private:
   void addIncr(CtrlVar_ &, const CtrlInc_ &, PostProcessor<Increment_>&) const override;
 
-  CostJb3D<MODEL>     * newJb(const eckit::Configuration &, const Geometry_ &,
-                              const CtrlVar_ &) const override;
+  CostJb3D<MODEL> * newJb(const eckit::Configuration &, const Geometry_ &) const override;
   CostJo<MODEL, OBS>       * newJo(const ObserversParameters<MODEL, OBS> &) const override;
   CostTermBase<MODEL, OBS> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
-  void doLinearize(const Geometry_ &, const eckit::Configuration &,
-                   const CtrlVar_ &, const CtrlVar_ &,
+  void doLinearize(const Geometry_ &, const eckit::Configuration &, CtrlVar_ &, CtrlVar_ &,
                    PostProcessor<State_> &, PostProcessorTLAD<MODEL> &) override;
   const Geometry_ & geometry() const override {return resol_;}
 
@@ -158,9 +156,8 @@ CostFct4DVar<MODEL, OBS>::CostFct4DVar(const Parameters_ & params,
 
 template <typename MODEL, typename OBS>
 CostJb3D<MODEL> * CostFct4DVar<MODEL, OBS>::newJb(const eckit::Configuration & jbConf,
-                                                  const Geometry_ & resol,
-                                                  const CtrlVar_ & xb) const {
-  return new CostJb3D<MODEL>(jbConf, resol, ctlvars_, windowLength_, xb.state());
+                                                  const Geometry_ & resol) const {
+  return new CostJb3D<MODEL>(jbConf, resol, ctlvars_);
 }
 
 // -----------------------------------------------------------------------------
@@ -199,7 +196,7 @@ void CostFct4DVar<MODEL, OBS>::runNL(CtrlVar_ & xx, PostProcessor<State_> & post
 template<typename MODEL, typename OBS>
 void CostFct4DVar<MODEL, OBS>::doLinearize(const Geometry_ & resol,
                                            const eckit::Configuration & innerConf,
-                                           const CtrlVar_ & bg, const CtrlVar_ & fg,
+                                           CtrlVar_ & bg, CtrlVar_ & fg,
                                            PostProcessor<State_> & pp,
                                            PostProcessorTLAD<MODEL> & pptraj) {
   Log::trace() << "CostFct4DVar::doLinearize start" << std::endl;

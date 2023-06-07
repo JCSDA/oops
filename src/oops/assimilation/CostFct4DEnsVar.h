@@ -97,12 +97,10 @@ template<typename MODEL, typename OBS> class CostFct4DEnsVar : public CostFuncti
  private:
   void addIncr(CtrlVar_ &, const CtrlInc_ &, PostProcessor<Increment_>&) const override;
 
-  CostJb4D<MODEL>     * newJb(const eckit::Configuration &, const Geometry_ &,
-                              const CtrlVar_ &) const override;
+  CostJb4D<MODEL> * newJb(const eckit::Configuration &, const Geometry_ &) const override;
   CostJo<MODEL, OBS>       * newJo(const ObserversParameters<MODEL, OBS> &) const override;
   CostTermBase<MODEL, OBS> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
-  void doLinearize(const Geometry_ &, const eckit::Configuration &,
-                   const CtrlVar_ &, const CtrlVar_ &,
+  void doLinearize(const Geometry_ &, const eckit::Configuration &, CtrlVar_ &, CtrlVar_ &,
                    PostProcessor<State_> &, PostProcessorTLAD<MODEL> &) override;
   const Geometry_ & geometry() const override {return *resol_;}
 
@@ -174,10 +172,9 @@ CostFct4DEnsVar<MODEL, OBS>::CostFct4DEnsVar(const Parameters_ & params,
 
 template <typename MODEL, typename OBS>
 CostJb4D<MODEL> * CostFct4DEnsVar<MODEL, OBS>::newJb(const eckit::Configuration & jbConf,
-                                                     const Geometry_ & resol,
-                                                     const CtrlVar_ & xb) const {
+                                                     const Geometry_ & resol) const {
   Log::trace() << "CostFct4DEnsVar::newJb" << std::endl;
-  return new CostJb4D<MODEL>(jbConf, *commTime_, resol, ctlvars_, xb.state());
+  return new CostJb4D<MODEL>(jbConf, *commTime_, resol, ctlvars_);
 }
 
 // -----------------------------------------------------------------------------
@@ -224,7 +221,7 @@ void CostFct4DEnsVar<MODEL, OBS>::runNL(CtrlVar_ & xx, PostProcessor<State_> & p
 template<typename MODEL, typename OBS>
 void CostFct4DEnsVar<MODEL, OBS>::doLinearize(const Geometry_ & resol,
                                               const eckit::Configuration & conf,
-                                              const CtrlVar_ &, const CtrlVar_ &,
+                                              CtrlVar_ &, CtrlVar_ &,
                                               PostProcessor<State_> & pp,
                                               PostProcessorTLAD<MODEL> & pptraj) {
   Log::trace() << "CostFct4DEnsVar::doLinearize start" << std::endl;

@@ -35,6 +35,8 @@ template <typename FLDS> class PostBase : private boost::noncopyable {
  public:
 /// Constructors and basic operators
   PostBase() : timer_() {}
+  explicit PostBase(const eckit::Configuration & conf)
+    : PostBase(validateAndDeserialize<PostTimerParameters>(conf)) {}
   explicit PostBase(const PostTimerParameters & timerParams) : timer_(timerParams) {}
   PostBase(const util::DateTime & start, const util::DateTime & finish,
            const util::Duration & freq = util::Duration(0))

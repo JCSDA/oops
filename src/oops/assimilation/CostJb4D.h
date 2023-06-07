@@ -46,7 +46,7 @@ template<typename MODEL> class CostJb4D : public CostJbState<MODEL> {
  public:
 /// Construct \f$ J_b\f$.
   CostJb4D(const eckit::Configuration &, const eckit::mpi::Comm &,
-           const Geometry_ &, const Variables &, const State_ &);
+           const Geometry_ &, const Variables &);
 
 /// Destructor
   virtual ~CostJb4D() {}
@@ -56,7 +56,7 @@ template<typename MODEL> class CostJb4D : public CostJbState<MODEL> {
                         Increment_ &) const override;
 
 /// Linearize before the linear computations.
-  void linearize(const State_ &, const Geometry_ &) override;
+  void linearize(const State_ &, const State_ &, const Geometry_ &) override;
 
 /// Add Jb gradient.
   void addGradient(const Increment_ &, Increment_ &, Increment_ &) const override;
@@ -83,7 +83,6 @@ template<typename MODEL> class CostJb4D : public CostJbState<MODEL> {
   const util::DateTime time() const override;
 
  private:
-  const State_ & xb_;
   std::unique_ptr<ModelSpaceCovarianceBase<MODEL> > B_;
   const Variables ctlvars_;
   const Geometry_ * resol_;
@@ -99,8 +98,8 @@ template<typename MODEL> class CostJb4D : public CostJbState<MODEL> {
 
 template<typename MODEL>
 CostJb4D<MODEL>::CostJb4D(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
-                          const Geometry_ &, const Variables & ctlvars, const State_ & xb)
-  : xb_(xb), B_(), ctlvars_(ctlvars), resol_(), time_(xb.validTime()),
+                          const Geometry_ &, const Variables & ctlvars)
+  : B_(), ctlvars_(ctlvars), resol_(), time_(),
     conf_(config, "background error"), commTime_(comm)
 {
   Log::trace() << "CostJb4D contructed." << std::endl;
@@ -109,9 +108,10 @@ CostJb4D<MODEL>::CostJb4D(const eckit::Configuration & config, const eckit::mpi:
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void CostJb4D<MODEL>::linearize(const State_ & fg, const Geometry_ & lowres) {
+void CostJb4D<MODEL>::linearize(const State_ & xb, const State_ & fg, const Geometry_ & lowres) {
   resol_ = &lowres;
-  B_.reset(CovarianceFactory<MODEL>::create(lowres, ctlvars_, conf_, xb_, fg));
+  time_ = xb.validTime();
+  B_.reset(CovarianceFactory<MODEL>::create(lowres, ctlvars_, conf_, xb, fg));
 }
 
 // -----------------------------------------------------------------------------

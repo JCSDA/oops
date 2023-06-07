@@ -49,8 +49,7 @@ template<typename MODEL> class CostJb3D : public CostJbState<MODEL> {
 
  public:
 /// Construct \f$ J_b\f$.
-  CostJb3D(const eckit::Configuration &, const Geometry_ &, const Variables &,
-           const util::Duration &, const State_ &);
+  CostJb3D(const eckit::Configuration &, const Geometry_ &, const Variables &);
 
 /// Destructor
   virtual ~CostJb3D() {}
@@ -60,7 +59,7 @@ template<typename MODEL> class CostJb3D : public CostJbState<MODEL> {
                         Increment_ &) const override;
 
 /// Linearize before the linear computations.
-  void linearize(const State_ &, const Geometry_ &) override;
+  void linearize(const State_ &, const State_ &, const Geometry_ &) override;
 
 /// Add Jb gradient.
   void addGradient(const Increment_ &, Increment_ &, Increment_ &) const override;
@@ -87,12 +86,10 @@ template<typename MODEL> class CostJb3D : public CostJbState<MODEL> {
   const util::DateTime time() const override;
 
  private:
-  const State_ & xb_;
   std::unique_ptr< ModelSpaceCovarianceBase<MODEL> > B_;
-  const util::Duration winLength_;
   const Variables controlvars_;
   const Geometry_ * resol_;
-  const util::DateTime time_;
+  util::DateTime time_;
   const eckit::LocalConfiguration conf_;
 };
 
@@ -103,10 +100,8 @@ template<typename MODEL> class CostJb3D : public CostJbState<MODEL> {
 
 template<typename MODEL>
 CostJb3D<MODEL>::CostJb3D(const eckit::Configuration & config, const Geometry_ &,
-                          const Variables & ctlvars, const util::Duration & len,
-                          const State_ & xb)
-  : xb_(xb), B_(), winLength_(len), controlvars_(ctlvars), resol_(), time_(xb.validTime()),
-    conf_(config, "background error")
+                          const Variables & ctlvars)
+  : B_(), controlvars_(ctlvars), resol_(), time_(), conf_(config, "background error")
 {
   Log::trace() << "CostJb3D constructed." << std::endl;
 }
@@ -114,9 +109,10 @@ CostJb3D<MODEL>::CostJb3D(const eckit::Configuration & config, const Geometry_ &
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void CostJb3D<MODEL>::linearize(const State_ & fg, const Geometry_ & lowres) {
+void CostJb3D<MODEL>::linearize(const State_ & xb, const State_ & fg, const Geometry_ & lowres) {
   resol_ = &lowres;
-  B_.reset(CovarianceFactory<MODEL>::create(lowres, controlvars_, conf_, xb_, fg));
+  time_ = xb.validTime();
+  B_.reset(CovarianceFactory<MODEL>::create(lowres, controlvars_, conf_, xb, fg));
 }
 
 // -----------------------------------------------------------------------------

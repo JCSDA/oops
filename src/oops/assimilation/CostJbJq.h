@@ -48,7 +48,7 @@ template<typename MODEL> class CostJbJq : public CostJbState<MODEL> {
  public:
 /// Construct \f$ J_b\f$.
   CostJbJq(const eckit::Configuration &, const eckit::mpi::Comm &,
-           const Geometry_ &, const Variables &, const State_ &);
+           const Geometry_ &, const Variables &);
 
 /// Destructor
   virtual ~CostJbJq() {}
@@ -61,7 +61,7 @@ template<typename MODEL> class CostJbJq : public CostJbState<MODEL> {
                         Increment_ &) const override;
 
 /// Linearize before the linear computations.
-  void linearize(const State_ &, const Geometry_ &) override;
+  void linearize(const State_ &, const State_ &, const Geometry_ &) override;
 
 /// Add Jb gradient.
   void addGradient(const Increment_ &, Increment_ &, Increment_ &) const override;
@@ -89,13 +89,13 @@ template<typename MODEL> class CostJbJq : public CostJbState<MODEL> {
 
  private:
   std::unique_ptr<ModelSpaceCovarianceBase<MODEL> > B_;
-  const State_ & xb_;
   const Variables ctlvars_;
   const Geometry_ * resol_;
   const eckit::LocalConfiguration conf_;
   const eckit::mpi::Comm & commTime_;
   const bool first_;
   std::shared_ptr<JqTerm_> jq_;
+  util::DateTime time_;
 };
 
 // =============================================================================
@@ -105,10 +105,9 @@ template<typename MODEL> class CostJbJq : public CostJbState<MODEL> {
 
 template<typename MODEL>
 CostJbJq<MODEL>::CostJbJq(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
-                          const Geometry_ & resolouter, const Variables & ctlvars,
-                          const State_ & xb)
-  : B_(), xb_(xb), ctlvars_(ctlvars), resol_(), conf_(config), commTime_(comm),
-    first_(comm.rank() == 0), jq_()
+                          const Geometry_ & resolouter, const Variables & ctlvars)
+  : B_(), ctlvars_(ctlvars), resol_(), conf_(config), commTime_(comm),
+    first_(comm.rank() == 0), jq_(), time_()
 {
   Log::trace() << "CostJbJq contructed." << std::endl;
 }
@@ -124,9 +123,10 @@ void CostJbJq<MODEL>::setPostProc(PostProc_ & pp) {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void CostJbJq<MODEL>::linearize(const State_ & fg, const Geometry_ & lowres) {
+void CostJbJq<MODEL>::linearize(const State_ & xb, const State_ & fg, const Geometry_ & lowres) {
   Log::trace() << "CostJbJq::linearize start" << std::endl;
   resol_ = &lowres;
+  time_ = xb.validTime();
   const eckit::LocalConfiguration covConf(conf_, "background error");
 
   std::vector<eckit::LocalConfiguration> confs;
@@ -134,7 +134,7 @@ void CostJbJq<MODEL>::linearize(const State_ & fg, const Geometry_ & lowres) {
   ASSERT(confs.size() == lowres.timeComm().size());
   eckit::LocalConfiguration myconf = confs[lowres.timeComm().rank()];
 
-  B_.reset(CovarianceFactory<MODEL>::create(lowres, ctlvars_, myconf, xb_, fg));
+  B_.reset(CovarianceFactory<MODEL>::create(lowres, ctlvars_, myconf, xb, fg));
   Log::trace() << "CostJbJq::linearize done" << std::endl;
 }
 
@@ -262,7 +262,7 @@ const Variables & CostJbJq<MODEL>::variables() const {
 
 template<typename MODEL>
 const util::DateTime CostJbJq<MODEL>::time() const {
-  return xb_.validTime();
+  return time_;
 }
 
 // -----------------------------------------------------------------------------

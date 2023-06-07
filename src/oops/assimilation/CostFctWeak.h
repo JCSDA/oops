@@ -112,12 +112,10 @@ template<typename MODEL, typename OBS> class CostFctWeak : public CostFunction<M
  private:
   void addIncr(CtrlVar_ &, const CtrlInc_ &, PostProcessor<Increment_> &) const override;
 
-  CostJbJq<MODEL>     * newJb(const eckit::Configuration &, const Geometry_ &,
-                              const CtrlVar_ &) const override;
+  CostJbJq<MODEL> * newJb(const eckit::Configuration &, const Geometry_ &) const override;
   CostJo<MODEL, OBS>       * newJo(const ObserversParameters<MODEL, OBS> &) const override;
   CostTermBase<MODEL, OBS> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
-  void doLinearize(const Geometry_ &, const eckit::Configuration &,
-                   const CtrlVar_ &, const CtrlVar_ &,
+  void doLinearize(const Geometry_ &, const eckit::Configuration &, CtrlVar_ &, CtrlVar_ &,
                    PostProcessor<State_> &, PostProcessorTLAD<MODEL> &) override;
   const Geometry_ & geometry() const override {return *resol_;}
 
@@ -187,9 +185,8 @@ CostFctWeak<MODEL, OBS>::CostFctWeak(const Parameters_ & params,
 
 template <typename MODEL, typename OBS>
 CostJbJq<MODEL> * CostFctWeak<MODEL, OBS>::newJb(const eckit::Configuration & jbConf,
-                                                 const Geometry_ & resol,
-                                                 const CtrlVar_ & xb) const {
-  return new CostJbJq<MODEL>(jbConf, *commTime_, resol, ctlvars_, xb.state());
+                                                 const Geometry_ & resol) const {
+  return new CostJbJq<MODEL>(jbConf, *commTime_, resol, ctlvars_);
 }
 
 // -----------------------------------------------------------------------------
@@ -230,7 +227,7 @@ void CostFctWeak<MODEL, OBS>::runNL(CtrlVar_ & xx, PostProcessor<State_> & post)
 template<typename MODEL, typename OBS>
 void CostFctWeak<MODEL, OBS>::doLinearize(const Geometry_ & resol,
                                           const eckit::Configuration & innerConf,
-                                          const CtrlVar_ & bg, const CtrlVar_ & fg,
+                                          CtrlVar_ & bg, CtrlVar_ & fg,
                                           PostProcessor<State_> & pp,
                                           PostProcessorTLAD<MODEL> & pptraj) {
   Log::trace() << "CostFctWeak::doLinearize start" << std::endl;

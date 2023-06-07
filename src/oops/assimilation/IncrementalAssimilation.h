@@ -62,8 +62,9 @@ int IncrementalAssimilation(ControlVariable<MODEL, OBS> & xx, CostFunction<MODEL
       post.enrollProcessor(new StateInfo<State_>("traj", prtConfig));
     }
 
-//  Setup quadratic problem
-    J.linearize(xx, iterconfs[jouter], post);
+//  Evaluate cost function and setup quadratic problem
+    iterconfs[jouter].set("linearize", true);
+    J.evaluate(xx, iterconfs[jouter], post);
     util::printRunStats("IncrementalAssimilation linearize " + std::to_string(jouter));
 
 //  Minimization

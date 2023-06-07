@@ -88,12 +88,10 @@ template<typename MODEL, typename OBS> class CostFct3DVar : public CostFunction<
  private:
   void addIncr(CtrlVar_ &, const CtrlInc_ &, PostProcessor<Increment_>&) const override;
 
-  CostJb3D<MODEL>     * newJb(const eckit::Configuration &, const Geometry_ &,
-                              const CtrlVar_ &) const override;
+  CostJb3D<MODEL> * newJb(const eckit::Configuration &, const Geometry_ &) const override;
   CostJo<MODEL, OBS>       * newJo(const ObserversParameters<MODEL, OBS> &) const override;
   CostTermBase<MODEL, OBS> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
-  void doLinearize(const Geometry_ &, const eckit::Configuration &,
-                   const CtrlVar_ &, const CtrlVar_ &,
+  void doLinearize(const Geometry_ &, const eckit::Configuration &, CtrlVar_ &, CtrlVar_ &,
                    PostProcessor<State_> &, PostProcessorTLAD<MODEL> &) override;
   const Geometry_ & geometry() const override {return resol_;}
 
@@ -132,10 +130,9 @@ CostFct3DVar<MODEL, OBS>::CostFct3DVar(const Parameters_ & params,
 
 template <typename MODEL, typename OBS>
 CostJb3D<MODEL> * CostFct3DVar<MODEL, OBS>::newJb(const eckit::Configuration & jbConf,
-                                                  const Geometry_ & resol,
-                                                  const CtrlVar_ & xb) const {
+                                                  const Geometry_ & resol) const {
   Log::trace() << "CostFct3DVar::newJb" << std::endl;
-  return new CostJb3D<MODEL>(jbConf, resol, ctlvars_, util::Duration(0), xb.state());
+  return new CostJb3D<MODEL>(jbConf, resol, ctlvars_);
 }
 
 // -----------------------------------------------------------------------------
@@ -150,12 +147,11 @@ CostJo<MODEL, OBS> * CostFct3DVar<MODEL, OBS>::newJo(
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-CostTermBase<MODEL, OBS> * CostFct3DVar<MODEL, OBS>::newJc(const eckit::Configuration & jcConf,
+CostTermBase<MODEL, OBS> * CostFct3DVar<MODEL, OBS>::newJc(const eckit::Configuration &,
                                                            const Geometry_ &) const {
   Log::trace() << "CostFct3DVar::newJc" << std::endl;
 // For now there is no Jc that can work with 3D-Var
-  CostTermBase<MODEL, OBS> * pjc = 0;
-  return pjc;
+  return nullptr;
 }
 
 // -----------------------------------------------------------------------------
@@ -177,7 +173,7 @@ void CostFct3DVar<MODEL, OBS>::runNL(CtrlVar_ & xx, PostProcessor<State_> & post
 
 template<typename MODEL, typename OBS>
 void CostFct3DVar<MODEL, OBS>::doLinearize(const Geometry_ & res, const eckit::Configuration & conf,
-                                           const CtrlVar_ &, const CtrlVar_ &,
+                                           CtrlVar_ &, CtrlVar_ &,
                                            PostProcessor<State_> & pp,
                                            PostProcessorTLAD<MODEL> & pptraj) {
   Log::trace() << "CostFct3DVar::doLinearize start" << std::endl;

@@ -31,6 +31,7 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/missingValues.h"
 
 namespace oops {
 
@@ -61,6 +62,7 @@ template<typename MODEL, typename OBS> class CostJcDFI : public CostTermBase<MOD
 /// Nonlinear Jc DFI computation
   void setPostProc(const CtrlVar_ &, const eckit::Configuration &, PostProc_ &) override;
   double computeCost() override;
+  void printCostTestHack() override;
 
 /// Linearization trajectory for Jc DFI computation
   void setPostProcTraj(const CtrlVar_ &, const eckit::Configuration &,
@@ -104,6 +106,7 @@ template<typename MODEL, typename OBS> class CostJcDFI : public CostTermBase<MOD
   mutable std::shared_ptr<WeightedDiff<MODEL, Increment_, State_> > filter_;
   mutable std::shared_ptr<WeightedDiffTLAD<MODEL> > ftlad_;
   Variables vars_;
+  double zhack_;
 };
 
 // =============================================================================
@@ -113,7 +116,8 @@ CostJcDFI<MODEL, OBS>::CostJcDFI(const eckit::Configuration & conf, const Geomet
                                  const util::DateTime & vt, const util::Duration & span,
                                  const util::Duration & tstep)
   : vt_(vt), span_(span), alpha_(0), wfct_(), gradFG_(),
-    resol_(resol), tstep_(tstep), tlres_(), tlstep_(), filter_(), vars_(conf, "filtered variables")
+    resol_(resol), tstep_(tstep), tlres_(), tlstep_(), filter_(),
+    vars_(conf, "filtered variables"), zhack_(util::missingValue(alpha_))
 {
   alpha_ = conf.getDouble("alpha");
   if (conf.has("ftime")) vt_ = util::DateTime(conf.getString("ftime"));
@@ -141,8 +145,19 @@ double CostJcDFI<MODEL, OBS>::computeCost() {
   std::unique_ptr<Increment_> dx(filter_->releaseDiff());
   zz *= dot_product(*dx, *dx);
   Log::info() << "CostJcDFI: Nonlinear Jc = " << zz << std::endl;
-  Log::test() << "CostJcDFI: Nonlinear Jc = " << zz << std::endl;
+// TEMPORARY HACK START
+//  Log::test() << "CostJcDFI: Nonlinear Jc = " << zz << std::endl;
+  zhack_ = zz;
+// TEMPORARY HACK END
   return zz;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL, typename OBS>
+void CostJcDFI<MODEL, OBS>::printCostTestHack() {
+  Log::test() << "CostJcDFI: Nonlinear Jc = " << zhack_ << std::endl;
+  zhack_ = util::missingValue(zhack_);
 }
 
 // -----------------------------------------------------------------------------

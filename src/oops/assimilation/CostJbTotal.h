@@ -51,8 +51,7 @@ template<typename MODEL, typename OBS> class CostJbTotal {
 
  public:
 /// Construct \f$ J_b\f$.
-  CostJbTotal(const CtrlVar_ &, JbState_ *, const eckit::Configuration &,
-              const Geometry_ &, const ObsSpaces_ & odb);
+  CostJbTotal(JbState_ *, const eckit::Configuration &, const Geometry_ &, const ObsSpaces_ &);
 
 /// Destructor
   ~CostJbTotal();
@@ -87,6 +86,7 @@ template<typename MODEL, typename OBS> class CostJbTotal {
 
 /// Return background.
   const CtrlVar_ & getBackground() const {return xb_;}
+  CtrlVar_ & getBackground() {return xb_;}
 
 /// Return first guess \f$ x_0-x_b\f$.
   const CtrlInc_ & getFirstGuess() const {return *dxFG_;}
@@ -102,7 +102,7 @@ template<typename MODEL, typename OBS> class CostJbTotal {
  private:
   double evaluate(const CtrlInc_ &) const;
 
-  const CtrlVar_ & xb_;
+  CtrlVar_ xb_;
   std::unique_ptr<JbState_> jb_;
   ModelAuxCovar_ jbModBias_;
   ObsAuxCovars_  jbObsBias_;
@@ -127,10 +127,10 @@ template<typename MODEL, typename OBS> class CostJbTotal {
 // =============================================================================
 
 template<typename MODEL, typename OBS>
-CostJbTotal<MODEL, OBS>::CostJbTotal(const CtrlVar_ & xb, JbState_ * jb,
+CostJbTotal<MODEL, OBS>::CostJbTotal(JbState_ * jb,
                                      const eckit::Configuration & conf,
                                      const Geometry_ & resol, const ObsSpaces_ & odb)
-  : xb_(xb), jb_(jb),
+  : xb_(conf, resol, odb), jb_(jb),
     jbModBias_(conf.getSubConfiguration("model aux error"), resol),
     jbObsBias_(odb, conf.getSubConfiguration("observations.observers")), resol_(nullptr),
     windowBegin_(conf.getString("window begin")),
@@ -176,7 +176,7 @@ void CostJbTotal<MODEL, OBS>::setPostProc(const CtrlVar_ & xx,
 template<typename MODEL, typename OBS>
 double CostJbTotal<MODEL, OBS>::computeCost() {
   Log::trace() << "CostJbTotal::computeCost start" << std::endl;
-  ASSERT(resol_);  // check that the B matrix has been setup (setPostProcTraj), not great
+  ASSERT(resol_);  // check that the B matrix has been setup (by setPostProcTraj), not great
   ASSERT(xx_);
 
   CtrlInc_ dx(*this);
@@ -210,9 +210,6 @@ void CostJbTotal<MODEL, OBS>::setPostProcTraj(const CtrlVar_ & fg,
   traj_ = &fg;
   innerConf_ = eckit::LocalConfiguration(inner);
   resol_ = &resol;
-// Linearize model-related terms and setup B (obs term done in computeCostTraj)
-  jb_->linearize(traj_->state(), *resol_);
-  jbModBias_.linearize(traj_->modVar(), *resol_);
 // Trajectory for model error term
   jqtraj_.reset(jb_->initializeJqTLAD());
   pptraj.enrollProcessor(jqtraj_);
@@ -226,6 +223,10 @@ void CostJbTotal<MODEL, OBS>::computeCostTraj() {
   Log::trace() << "CostJbTotal::computeCostTraj start" << std::endl;
   ASSERT(resol_);
   ASSERT(traj_);
+
+// Linearize model-related terms and setup B (obs term done in computeCostTraj)
+  jb_->linearize(xb_.state(), traj_->state(), *resol_);
+  jbModBias_.linearize(traj_->modVar(), *resol_);
 
 // Linearize obs bias term
   jbObsBias_.linearize(traj_->obsVar(), innerConf_);
@@ -274,7 +275,6 @@ double CostJbTotal<MODEL, OBS>::evaluate(const CtrlInc_ & dx) const {
 // Get rid of very small values for test
   double ztest = zjb;
   if (zjb >= 0.0 && zjb <= std::numeric_limits<double>::epsilon()) ztest = 0.0;
-  Log::info() << "CostJb   : Nonlinear Jb = " << ztest << std::endl;
   Log::test() << "CostJb   : Nonlinear Jb = " << ztest << std::endl;
 
   Log::trace() << "CostJbTotal::evaluate done" << std::endl;

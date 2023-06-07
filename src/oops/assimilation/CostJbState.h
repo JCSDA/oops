@@ -58,7 +58,7 @@ template<typename MODEL> class CostJbState : private boost::noncopyable {
                                 Increment_ &) const = 0;
 
 /// Linearize before the linear computations.
-  virtual void linearize(const State_ &, const Geometry_ &) = 0;
+  virtual void linearize(const State_ &, const State_ &, const Geometry_ &) = 0;
 
 /// Add Jb gradient.
   virtual void addGradient(const Increment_ &, Increment_ &, Increment_ &) const = 0;

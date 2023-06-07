@@ -80,6 +80,7 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   void setPostProc(const CtrlVar_ &, const eckit::Configuration &, PostProc_ &) override;
   /// Finalize \f$ J_o\f$ after the integration of the model.
   double computeCost() override;
+  void printCostTestHack() override;
 
   /// Initialize \f$ J_o\f$ for the trajectory run
   void setPostProcTraj(const CtrlVar_ &, const eckit::Configuration &,
@@ -131,6 +132,7 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
 
   /// Configuration for current initialize/finalize pair
   std::unique_ptr<eckit::LocalConfiguration> currentConf_;
+  std::unique_ptr<Departures_> yhack_;
 };
 
 // =============================================================================
@@ -220,14 +222,27 @@ double CostJo<MODEL, OBS>::computeCost() {
   for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
     zjo += this->printJo(jj, ydep, Log::info());
   }
-  for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
-    this->printJo(jj, ydep, Log::test());
-  }
+// TEMPORARY HACK START
+//  for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
+//    this->printJo(jj, ydep, Log::test());
+//  }
+  yhack_.reset(new Departures_(ydep));
+// TEMPORARY HACK END
 
   Log::info() << "CostJo   : Nonlinear Jo = " << zjo << std::endl;
 
   Log::trace() << "CostJo::computeCost done" << std::endl;
   return zjo;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL, typename OBS>
+void CostJo<MODEL, OBS>::printCostTestHack() {
+  for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
+    this->printJo(jj, *yhack_, Log::test());
+  }
+  yhack_.reset();
 }
 
 // -----------------------------------------------------------------------------
