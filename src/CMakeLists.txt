@@ -257,6 +257,7 @@ oops/interface/ModelAuxControl.h
 oops/interface/ModelAuxCovariance.h
 oops/interface/ModelAuxIncrement.h
 oops/interface/ModelBase.h
+oops/interface/ModelData.h
 oops/interface/NormGradient.h
 oops/interface/ObsAuxControl.h
 oops/interface/ObsAuxCovariance.h
