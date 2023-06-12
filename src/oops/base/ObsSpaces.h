@@ -79,12 +79,14 @@ ObsSpaces<OBS>::ObsSpaces(const std::vector<Parameters_> & params, const eckit::
                           const eckit::mpi::Comm & time)
   : spaces_(0), wbgn_(bgn), wend_(end)
 {
+  Log::trace() << "ObsSpaces<MODEL, OBS>::ObsSpaces param start" << std::endl;
   spaces_.reserve(params.size());
   for (const Parameters_ & param : params) {
     auto tmp = std::make_shared<ObsSpace_>(param, comm, bgn, end, time);
     spaces_.push_back(std::move(tmp));
   }
   ASSERT(spaces_.size() >0);
+  Log::trace() << "ObsSpaces<MODEL, OBS>::ObsSpaces param done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -93,11 +95,20 @@ template <typename OBS>
 ObsSpaces<OBS>::ObsSpaces(const eckit::Configuration & conf, const eckit::mpi::Comm & comm,
                           const util::DateTime & bgn, const util::DateTime & end,
                           const eckit::mpi::Comm & time)
-  : ObsSpaces(  // Split conf into subconfigurations, extract the "obs space" section from each
-                // of them, then validate and deserialize that section into a Parameters_ object
-              validateAndDeserialize<Parameters_>(util::vectoriseAndFilter(conf, "obs space")),
-              comm, bgn, end, time)
-{}
+  : spaces_(0), wbgn_(bgn), wend_(end)
+{
+  Log::trace() << "ObsSpaces<MODEL, OBS>::ObsSpaces start" << std::endl;
+  std::vector<eckit::LocalConfiguration> subconfigs = conf.getSubConfigurations();
+  spaces_.reserve(subconfigs.size());
+  for (size_t jj = 0; jj < subconfigs.size(); ++jj) {
+    Parameters_ param;
+    param.deserialize(subconfigs[jj].getSubConfiguration("obs space"));
+    auto tmp = std::make_shared<ObsSpace_>(param, comm, bgn, end, time);
+    spaces_.push_back(std::move(tmp));
+  }
+  ASSERT(spaces_.size() >0);
+  Log::trace() << "ObsSpaces<MODEL, OBS>::ObsSpaces done" << std::endl;
+}
 
 // -----------------------------------------------------------------------------
 

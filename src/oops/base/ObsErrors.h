@@ -84,12 +84,20 @@ ObsErrors<OBS>::ObsErrors(const std::vector<Parameters_> & params,
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-ObsErrors<OBS>::ObsErrors(const eckit::Configuration & config,
-                          const ObsSpaces_ & os) :
-  ObsErrors(  // Split config into subconfigurations, extract the "obs error" section from each
-              // of them, then validate and deserialize that section into a Parameters_ object
-            validateAndDeserialize<Parameters_>(util::vectoriseAndFilter(config, "obs error")), os)
-{}
+ObsErrors<OBS>::ObsErrors(const eckit::Configuration & config, const ObsSpaces_ & os)
+  : err_(), os_(os)
+{
+  std::vector<eckit::LocalConfiguration> subconfigs = config.getSubConfigurations();
+  ASSERT(subconfigs.size() == os.size());
+  err_.reserve(os.size());
+  for (size_t jj = 0; jj < os.size(); ++jj) {
+    Parameters_ param;
+    if (subconfigs[jj].has("obs error")) {
+      param.deserialize(subconfigs[jj].getSubConfiguration("obs error"));
+    }
+    err_.emplace_back(param.obsErrorParameters, os_[jj]);
+  }
+}
 
 // -----------------------------------------------------------------------------
 

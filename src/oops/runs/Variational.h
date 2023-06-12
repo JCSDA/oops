@@ -68,11 +68,8 @@ template <typename MODEL, typename OBS> class Variational : public Application {
 
 //  Setup cost function
     eckit::LocalConfiguration cfConf(fullConfig, "cost function");
-    CostFunctionParametersWrapper<MODEL, OBS> cfParams;
-    if (validate) cfParams.validate(cfConf);
-    cfParams.deserialize(cfConf);
     std::unique_ptr<CostFunction<MODEL, OBS>>
-      J(CostFactory<MODEL, OBS>::create(cfParams.costTypeParameters, this->getComm()));
+      J(CostFactory<MODEL, OBS>::create(cfConf, this->getComm()));
 
 //  Initialize first guess from background
     ControlVariable<MODEL, OBS> xx(J->jb().getBackground());
@@ -148,10 +145,7 @@ template <typename MODEL, typename OBS> class Variational : public Application {
 // -----------------------------------------------------------------------------
   void validateConfig(const eckit::Configuration & fullConfig) const override {
     // Note: Variational app doesn't have application level Parameters yet;
-    // for now validating only one (but most expensive) part of Parameters.
-    eckit::LocalConfiguration cfConf(fullConfig, "cost function");
-    CostFunctionParametersWrapper<MODEL, OBS> cfParams;
-    cfParams.validate(cfConf);
+    // not validating anything.
   }
 // -----------------------------------------------------------------------------
  private:

@@ -42,12 +42,13 @@ class PostTimer : private boost::noncopyable {
   bool itIsTime(const util::DateTime &);
 
  private:
-  PostTimerParameters options_;
   util::DateTime bgn_;
   util::DateTime end_;
   std::unique_ptr<util::DateTime> start_;
   std::unique_ptr<util::DateTime> finish_;
-  std::vector<util::DateTime> pptimes_;
+  util::Duration frequency_;
+  util::Duration first_;
+  std::vector<util::DateTime> steps_;
 };
 
 // -----------------------------------------------------------------------------

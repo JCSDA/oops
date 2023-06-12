@@ -15,7 +15,6 @@
 #include <map>
 #include <memory>
 #include <string>
-#include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/CostFunction.h"
@@ -29,7 +28,6 @@
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/State.h"
-#include "oops/base/StateParametersND.h"
 #include "oops/base/TrajectorySaver.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/LinearVariableChange.h"
@@ -38,39 +36,8 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
-
-template <typename MODEL, typename OBS> class CostTermBase;
-
-/// Parameters for the Weak cost function
-template <typename MODEL, typename OBS>
-class CostFctWeakParameters : public CostFunctionParametersBase<MODEL, OBS> {
-  // This typedef prevents the macro below from choking on the 2 args of the templated type
-  typedef CostFunctionParametersBase<MODEL, OBS> CostFuntionParametersBase_;
-  OOPS_CONCRETE_PARAMETERS(CostFctWeakParameters, CostFuntionParametersBase_);
-
- public:
-  typedef ModelParametersWrapper<MODEL> ModelParameters_;
-  typedef StateParameters4D<MODEL>      StateParameters4D_;
-  typedef typename VariableChange<MODEL>::Parameters_  VariableChangeParameters_;
-
-  RequiredParameter<ModelParameters_> model{"model", "model", this};
-  RequiredParameter<util::Duration> subwindow{"subwindow", "length of assimilation subwindows",
-      this};
-
-  Parameter<VariableChangeParameters_> variableChange{"variable change",
-           "variable change from B matrix variables to model variables", {}, this};
-
-  // options for Jb term
-  RequiredParameter<StateParameters4D_> background{"background", "background state(s)", this};
-  // Currently `ModelSpaceCovarianceParametersWrapper` doesn't support multiple covariances for
-  // multiple models, so read this as a config.
-  RequiredParameter<eckit::LocalConfiguration> backgroundError{"background error",
-      "background error(s)", this};
-};
 
 /// Weak Constraint 4D-Var Cost Function
 /*!
@@ -92,9 +59,7 @@ template<typename MODEL, typename OBS> class CostFctWeak : public CostFunction<M
   typedef LinearVariableChange<MODEL>     LinVarCha_;
 
  public:
-  typedef CostFctWeakParameters<MODEL, OBS> Parameters_;
-
-  CostFctWeak(const Parameters_ &, const eckit::mpi::Comm &);
+  CostFctWeak(const eckit::Configuration &, const eckit::mpi::Comm &);
   ~CostFctWeak() {}
 
   void runTLM(CtrlInc_ &, PostProcessorTLAD<MODEL> &,
@@ -113,7 +78,7 @@ template<typename MODEL, typename OBS> class CostFctWeak : public CostFunction<M
   void addIncr(CtrlVar_ &, const CtrlInc_ &, PostProcessor<Increment_> &) const override;
 
   CostJbJq<MODEL> * newJb(const eckit::Configuration &, const Geometry_ &) const override;
-  CostJo<MODEL, OBS>       * newJo(const ObserversParameters<MODEL, OBS> &) const override;
+  CostJo<MODEL, OBS>       * newJo(const eckit::Configuration &) const override;
   CostTermBase<MODEL, OBS> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
   void doLinearize(const Geometry_ &, const eckit::Configuration &, CtrlVar_ &, CtrlVar_ &,
                    PostProcessor<State_> &, PostProcessorTLAD<MODEL> &) override;
@@ -137,15 +102,15 @@ template<typename MODEL, typename OBS> class CostFctWeak : public CostFunction<M
 // =============================================================================
 
 template<typename MODEL, typename OBS>
-CostFctWeak<MODEL, OBS>::CostFctWeak(const Parameters_ & params,
+CostFctWeak<MODEL, OBS>::CostFctWeak(const eckit::Configuration & config,
                                      const eckit::mpi::Comm & comm)
   : CostFunction<MODEL, OBS>::CostFunction(), resol_(), model_(),
-    ctlvars_(params.analysisVariables), tlm_(), an2model_(),
+    ctlvars_(config, "analysis variables"), tlm_(), an2model_(),
     inc2model_(), commSpace_(nullptr), commTime_(nullptr)
 {
-  const util::Duration windowLength = params.windowLength;
-  const util::DateTime windowBegin = params.windowBegin;
-  subWinLength_ = params.subwindow;
+  const util::Duration windowLength(config.getString("window length"));
+  const util::DateTime windowBegin(config.getString("window begin"));
+  subWinLength_ = util::Duration(config.getString("subwindow"));
 
   nsubwin_ = windowLength.toSeconds() / subWinLength_.toSeconds();
   ASSERT(windowLength.toSeconds() == subWinLength_.toSeconds()*(int64_t)nsubwin_);
@@ -173,10 +138,10 @@ CostFctWeak<MODEL, OBS>::CostFctWeak(const Parameters_ & params,
   ASSERT(commTime_->size() == nsubwin_);
 
 // Now can setup the rest
-  resol_.reset(new Geometry_(params.geometry, *commSpace_, *commTime_));
-  model_.reset(new Model_(*resol_, params.model.value().modelParameters));
-  an2model_.reset(new VarCha_(params.variableChange, *resol_));
-  this->setupTerms(params.toConfiguration());
+  resol_.reset(new Geometry_(eckit::LocalConfiguration(config, "geometry"),
+                             *commSpace_, *commTime_));
+  model_.reset(new Model_(*resol_, eckit::LocalConfiguration(config, "model")));
+  this->setupTerms(config);
 
   Log::trace() << "CostFctWeak constructed" << std::endl;
 }
@@ -192,9 +157,8 @@ CostJbJq<MODEL> * CostFctWeak<MODEL, OBS>::newJb(const eckit::Configuration & jb
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-CostJo<MODEL, OBS> * CostFctWeak<MODEL, OBS>::newJo(
-    const ObserversParameters<MODEL, OBS> & joParams) const {
-  return new CostJo<MODEL, OBS>(joParams, *commSpace_,
+CostJo<MODEL, OBS> * CostFctWeak<MODEL, OBS>::newJo(const eckit::Configuration & joConf) const {
+  return new CostJo<MODEL, OBS>(joConf, *commSpace_,
                                 subWinBegin_, subWinEnd_, *commTime_);
 }
 
@@ -232,15 +196,15 @@ void CostFctWeak<MODEL, OBS>::doLinearize(const Geometry_ & resol,
                                           PostProcessorTLAD<MODEL> & pptraj) {
   Log::trace() << "CostFctWeak::doLinearize start" << std::endl;
   eckit::LocalConfiguration lmConf(innerConf, "linear model");
-  // Setup linear model (and trajectory)
+// Setup linear model (and trajectory)
   tlm_.reset(new LinearModel_(resol, lmConf));
   pp.enrollProcessor(new TrajectorySaver<MODEL>(lmConf, resol, fg.modVar(), tlm_, pptraj));
 
-  // Create variable change
+// Create variable change
   std::unique_ptr<eckit::LocalConfiguration> lvcConf;
   inc2model_.reset(new LinVarCha_(resol, innerConf.getSubConfiguration("linear variable change")));
 
-  // Trajecotry for linear variable change
+// Trajecotry for linear variable change
   inc2model_->changeVarTraj(fg.state(), tlm_->variables());
 
   Log::trace() << "CostFctWeak::doLinearize done" << std::endl;

@@ -12,7 +12,6 @@
 #define OOPS_ASSIMILATION_COSTFCT3DVAR_H_
 
 #include <memory>
-#include <vector>
 
 #include "eckit/config/Configuration.h"
 #include "eckit/mpi/Comm.h"
@@ -22,37 +21,16 @@
 #include "oops/assimilation/CostTermBase.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
-#include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/State.h"
 #include "oops/base/TrajectorySaver.h"
 #include "oops/base/Variables.h"
-#include "oops/generic/ModelBase.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
-
-/// Parameters for the 3D-Var cost function
-template <typename MODEL, typename OBS>
-class CostFct3DVarParameters : public CostFunctionParametersBase<MODEL, OBS> {
-  // This typedef prevents the macro below from choking on the 2 args of the templated type
-  typedef CostFunctionParametersBase<MODEL, OBS> CostFuntionParametersBase_;
-  OOPS_CONCRETE_PARAMETERS(CostFct3DVarParameters, CostFuntionParametersBase_);
-
- public:
-  typedef typename State<MODEL>::Parameters_           StateParameters_;
-  typedef ModelSpaceCovarianceParametersWrapper<MODEL> CovarianceParameters_;
-
-  // options for Jb term
-  RequiredParameter<StateParameters_> background{"background", "background state", this};
-  RequiredParameter<CovarianceParameters_> backgroundError{"background error", "background error",
-      this};
-};
 
 /// 3D-Var Cost Function
 /*!
@@ -72,9 +50,7 @@ template<typename MODEL, typename OBS> class CostFct3DVar : public CostFunction<
   typedef State<MODEL>                    State_;
 
  public:
-  typedef CostFct3DVarParameters<MODEL, OBS> Parameters_;
-
-  CostFct3DVar(const Parameters_ &, const eckit::mpi::Comm &);
+  CostFct3DVar(const eckit::Configuration &, const eckit::mpi::Comm &);
   virtual ~CostFct3DVar() {}
 
   void runTLM(CtrlInc_ &, PostProcessorTLAD<MODEL> &,
@@ -89,7 +65,7 @@ template<typename MODEL, typename OBS> class CostFct3DVar : public CostFunction<
   void addIncr(CtrlVar_ &, const CtrlInc_ &, PostProcessor<Increment_>&) const override;
 
   CostJb3D<MODEL> * newJb(const eckit::Configuration &, const Geometry_ &) const override;
-  CostJo<MODEL, OBS>       * newJo(const ObserversParameters<MODEL, OBS> &) const override;
+  CostJo<MODEL, OBS>       * newJo(const eckit::Configuration &) const override;
   CostTermBase<MODEL, OBS> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
   void doLinearize(const Geometry_ &, const eckit::Configuration &, CtrlVar_ &, CtrlVar_ &,
                    PostProcessor<State_> &, PostProcessorTLAD<MODEL> &) override;
@@ -107,20 +83,20 @@ template<typename MODEL, typename OBS> class CostFct3DVar : public CostFunction<
 // =============================================================================
 
 template<typename MODEL, typename OBS>
-CostFct3DVar<MODEL, OBS>::CostFct3DVar(const Parameters_ & params,
+CostFct3DVar<MODEL, OBS>::CostFct3DVar(const eckit::Configuration & config,
                                        const eckit::mpi::Comm & comm)
   : CostFunction<MODEL, OBS>::CostFunction(),
     windowLength_(), windowHalf_(), comm_(comm),
-    resol_(params.geometry, comm),
-    ctlvars_(params.analysisVariables)
+    resol_(eckit::LocalConfiguration(config, "geometry"), comm),
+    ctlvars_(config, "analysis variables")
 {
   Log::trace() << "CostFct3DVar::CostFct3DVar start" << std::endl;
-  windowLength_ = params.windowLength;
-  windowBegin_ = params.windowBegin;
+  windowLength_ = util::Duration(config.getString("window length"));
+  windowBegin_ = util::DateTime(config.getString("window begin"));
   windowEnd_ = windowBegin_ + windowLength_;
   windowHalf_ = windowBegin_ + windowLength_/2;
 
-  this->setupTerms(params.toConfiguration());  // Background is read here
+  this->setupTerms(config);  // Background is read here
 
   Log::info() << "3DVar window: begin = " << windowBegin_ << ", end = " << windowEnd_ << std::endl;
   Log::trace() << "CostFct3DVar::CostFct3DVar done" << std::endl;
@@ -138,10 +114,9 @@ CostJb3D<MODEL> * CostFct3DVar<MODEL, OBS>::newJb(const eckit::Configuration & j
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-CostJo<MODEL, OBS> * CostFct3DVar<MODEL, OBS>::newJo(
-    const ObserversParameters<MODEL, OBS> & joParams) const {
+CostJo<MODEL, OBS> * CostFct3DVar<MODEL, OBS>::newJo(const eckit::Configuration & joConf) const {
   Log::trace() << "CostFct3DVar::newJo" << std::endl;
-  return new CostJo<MODEL, OBS>(joParams, comm_, windowBegin_, windowEnd_);
+  return new CostJo<MODEL, OBS>(joConf, comm_, windowBegin_, windowEnd_);
 }
 
 // -----------------------------------------------------------------------------

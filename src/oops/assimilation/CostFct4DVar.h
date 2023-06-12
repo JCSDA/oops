@@ -13,7 +13,6 @@
 #define OOPS_ASSIMILATION_COSTFCT4DVAR_H_
 
 #include <memory>
-#include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/mpi/Comm.h"
@@ -36,41 +35,8 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
-#include "oops/util/parameters/OptionalParameter.h"
-#include "oops/util/parameters/Parameter.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
-
-template <typename MODEL, typename OBS> class CostTermBase;
-
-/// Parameters for the 4D-Var cost function
-template <typename MODEL, typename OBS>
-class CostFct4DVarParameters : public CostFunctionParametersBase<MODEL, OBS> {
-  // This typedef prevents the macro below from choking on the 2 args of the templated type
-  typedef CostFunctionParametersBase<MODEL, OBS> CostFuntionParametersBase_;
-  OOPS_CONCRETE_PARAMETERS(CostFct4DVarParameters, CostFuntionParametersBase_);
-
- public:
-  typedef typename State<MODEL>::Parameters_           StateParameters_;
-  typedef typename VariableChange<MODEL>::Parameters_  VariableChangeParameters_;
-  typedef ModelParametersWrapper<MODEL>                ModelParameters_;
-  typedef ModelSpaceCovarianceParametersWrapper<MODEL> CovarianceParameters_;
-
-  RequiredParameter<ModelParameters_> model{"model", "model", this};
-
-  // Variable Change
-  Parameter<VariableChangeParameters_> variableChange{"variable change",
-           "variable change from B matrix variables to model variables", {}, this};
-
-  // options for Jb term
-  RequiredParameter<StateParameters_> background{"background", "background state", this};
-  RequiredParameter<CovarianceParameters_> backgroundError{"background error", "background error",
-      this};
-  OptionalParameter<eckit::LocalConfiguration> modelAuxControl{"model aux control", this};
-  OptionalParameter<eckit::LocalConfiguration> modelAuxError{"model aux error", this};
-};
 
 /// Strong Constraint 4D-Var Cost Function
 /*!
@@ -94,9 +60,7 @@ template<typename MODEL, typename OBS> class CostFct4DVar : public CostFunction<
   typedef LinearVariableChange<MODEL>     LinVarCha_;
 
  public:
-  typedef CostFct4DVarParameters<MODEL, OBS> Parameters_;
-
-  CostFct4DVar(const Parameters_ &, const eckit::mpi::Comm &);
+  CostFct4DVar(const eckit::Configuration &, const eckit::mpi::Comm &);
   ~CostFct4DVar() {}
 
   void runTLM(CtrlInc_ &, PostProcessorTLAD<MODEL> &,
@@ -113,7 +77,7 @@ template<typename MODEL, typename OBS> class CostFct4DVar : public CostFunction<
   void addIncr(CtrlVar_ &, const CtrlInc_ &, PostProcessor<Increment_>&) const override;
 
   CostJb3D<MODEL> * newJb(const eckit::Configuration &, const Geometry_ &) const override;
-  CostJo<MODEL, OBS>       * newJo(const ObserversParameters<MODEL, OBS> &) const override;
+  CostJo<MODEL, OBS>       * newJo(const eckit::Configuration &) const override;
   CostTermBase<MODEL, OBS> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
   void doLinearize(const Geometry_ &, const eckit::Configuration &, CtrlVar_ &, CtrlVar_ &,
                    PostProcessor<State_> &, PostProcessorTLAD<MODEL> &) override;
@@ -127,27 +91,29 @@ template<typename MODEL, typename OBS> class CostFct4DVar : public CostFunction<
   Model_ model_;
   const Variables ctlvars_;
   std::shared_ptr<LinearModel_> tlm_;
-  VarCha_ an2model_;
+  std::unique_ptr<VarCha_> an2model_;
   std::unique_ptr<LinVarCha_> inc2model_;
 };
 
 // =============================================================================
 
 template<typename MODEL, typename OBS>
-CostFct4DVar<MODEL, OBS>::CostFct4DVar(const Parameters_ & params,
+CostFct4DVar<MODEL, OBS>::CostFct4DVar(const eckit::Configuration & config,
                                        const eckit::mpi::Comm & comm)
   : CostFunction<MODEL, OBS>::CostFunction(), comm_(comm),
-    resol_(params.geometry, comm),
-    model_(resol_, params.model.value().modelParameters),
-    ctlvars_(params.analysisVariables), tlm_(),
-    an2model_(params.variableChange, resol_),
-    inc2model_()
+    resol_(eckit::LocalConfiguration(config, "geometry"), comm),
+    model_(resol_, eckit::LocalConfiguration(config, "model")),
+    ctlvars_(config.getStringVector("analysis variables")), tlm_(),
+    an2model_(), inc2model_()
 {
   Log::trace() << "CostFct4DVar:CostFct4DVar" << std::endl;
-  windowLength_ = params.windowLength;
-  windowBegin_ = params.windowBegin;
+  windowLength_ = util::Duration(config.getString("window length"));
+  windowBegin_ = util::DateTime(config.getString("window begin"));
   windowEnd_ = windowBegin_ + windowLength_;
-  this->setupTerms(params.toConfiguration());
+  typename VariableChange<MODEL>::Parameters_ params;
+  params.deserialize(config.getSubConfiguration("variable change"));
+  an2model_ = std::make_unique<VarCha_>(params, resol_);
+  this->setupTerms(config);
   // ASSERT(ctlvars_ <= this->background().state().variables());
   Log::trace() << "CostFct4DVar constructed" << std::endl;
 }
@@ -163,9 +129,8 @@ CostJb3D<MODEL> * CostFct4DVar<MODEL, OBS>::newJb(const eckit::Configuration & j
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-CostJo<MODEL, OBS> * CostFct4DVar<MODEL, OBS>::newJo(
-    const ObserversParameters<MODEL, OBS> & joParams) const {
-  return new CostJo<MODEL, OBS>(joParams, comm_, windowBegin_, windowEnd_);
+CostJo<MODEL, OBS> * CostFct4DVar<MODEL, OBS>::newJo(const eckit::Configuration & joConf) const {
+  return new CostJo<MODEL, OBS>(joConf, comm_, windowBegin_, windowEnd_);
 }
 
 // -----------------------------------------------------------------------------
@@ -185,9 +150,9 @@ void CostFct4DVar<MODEL, OBS>::runNL(CtrlVar_ & xx, PostProcessor<State_> & post
   ASSERT(xx.state().validTime() == windowBegin_);
 
   Variables anvars(xx.state().variables());
-  an2model_.changeVar(xx.state(), model_.variables());
+  an2model_->changeVar(xx.state(), model_.variables());
   model_.forecast(xx.state(), xx.modVar(), windowLength_, post);
-  an2model_.changeVarInverse(xx.state(), anvars);
+  an2model_->changeVarInverse(xx.state(), anvars);
   ASSERT(xx.state().validTime() == windowEnd_);
 }
 
@@ -201,14 +166,14 @@ void CostFct4DVar<MODEL, OBS>::doLinearize(const Geometry_ & resol,
                                            PostProcessorTLAD<MODEL> & pptraj) {
   Log::trace() << "CostFct4DVar::doLinearize start" << std::endl;
   eckit::LocalConfiguration lmConf(innerConf, "linear model");
-  // Setup linear model (and trajectory)
+// Setup linear model (and trajectory)
   tlm_.reset(new LinearModel_(resol, lmConf));
   pp.enrollProcessor(new TrajectorySaver<MODEL>(lmConf, resol, fg.modVar(), tlm_, pptraj));
 
-  // Create variable change
+// Create variable change
   inc2model_.reset(new LinVarCha_(resol, innerConf.getSubConfiguration("linear variable change")));
 
-  // Trajectory for linear variable change
+// Trajectory for linear variable change
   inc2model_->changeVarTraj(fg.state(), tlm_->variables());
 
   Log::trace() << "CostFct4DVar::doLinearize done" << std::endl;

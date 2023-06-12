@@ -30,39 +30,8 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
-#include "oops/util/parameters/OptionalParameter.h"
-#include "oops/util/parameters/Parameter.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
-
-/// Parameters for the 3D-Var cost function
-template <typename MODEL, typename OBS>
-class CostFctFGATParameters : public CostFunctionParametersBase<MODEL, OBS> {
-  // This typedef prevents the macro below from choking on the 2 args of the templated type
-  typedef CostFunctionParametersBase<MODEL, OBS> CostFuntionParametersBase_;
-  OOPS_CONCRETE_PARAMETERS(CostFctFGATParameters, CostFuntionParametersBase_);
-
- public:
-  typedef typename State<MODEL>::Parameters_           StateParameters_;
-  typedef typename VariableChange<MODEL>::Parameters_  VariableChangeParameters_;
-  typedef ModelParametersWrapper<MODEL>                ModelParameters_;
-  typedef ModelSpaceCovarianceParametersWrapper<MODEL> CovarianceParameters_;
-
-  RequiredParameter<ModelParameters_> model{"model", "model", this};
-
-  // Variable Change
-  Parameter<VariableChangeParameters_> variableChange{"variable change",
-           "variable change from B matrix variables to model variables", {}, this};
-
-  // options for Jb term
-  RequiredParameter<StateParameters_> background{"background", "background state", this};
-  RequiredParameter<CovarianceParameters_> backgroundError{"background error", "background error",
-      this};
-  OptionalParameter<eckit::LocalConfiguration> modelAuxControl{"model aux control", this};
-  OptionalParameter<eckit::LocalConfiguration> modelAuxError{"model aux error", this};
-};
 
 /// 3D-FGAT Cost Function
 
@@ -79,9 +48,7 @@ template<typename MODEL, typename OBS> class CostFctFGAT : public CostFunction<M
   typedef VariableChange<MODEL>           VarCha_;
 
  public:
-  typedef CostFctFGATParameters<MODEL, OBS> Parameters_;
-
-  CostFctFGAT(const Parameters_ &, const eckit::mpi::Comm &);
+  CostFctFGAT(const eckit::Configuration &, const eckit::mpi::Comm &);
   virtual ~CostFctFGAT() {}
 
   void runTLM(CtrlInc_ &, PostProcessorTLAD<MODEL> &,
@@ -96,23 +63,22 @@ template<typename MODEL, typename OBS> class CostFctFGAT : public CostFunction<M
   void addIncr(CtrlVar_ &, const CtrlInc_ &, PostProcessor<Increment_>&) const override;
 
   CostJb3D<MODEL> * newJb(const eckit::Configuration &, const Geometry_ &) const override;
-  CostJo<MODEL, OBS>       * newJo(const ObserversParameters<MODEL, OBS> &) const override;
+  CostJo<MODEL, OBS>       * newJo(const eckit::Configuration &) const override;
   CostTermBase<MODEL, OBS> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
   void doLinearize(const Geometry_ &, const eckit::Configuration &, CtrlVar_ &, CtrlVar_ &,
                    PostProcessor<State_> &, PostProcessorTLAD<MODEL> &) override;
   void finishLinearize() override;
   const Geometry_ & geometry() const override {return resol_;}
 
-  eckit::LocalConfiguration conf_;
   util::Duration windowLength_;
   util::DateTime windowBegin_;
   util::DateTime windowEnd_;
   util::DateTime windowHalf_;
   const eckit::mpi::Comm & comm_;
   const Geometry_ resol_;
-  const Variables ctlvars_;
   Model_ model_;
-  VarCha_ an2model_;
+  const Variables ctlvars_;
+  std::unique_ptr<VarCha_> an2model_;
   mutable bool fgat_;
   State_ * hackBG_;
   State_ * hackFG_;
@@ -122,24 +88,24 @@ template<typename MODEL, typename OBS> class CostFctFGAT : public CostFunction<M
 // =============================================================================
 
 template<typename MODEL, typename OBS>
-CostFctFGAT<MODEL, OBS>::CostFctFGAT(const Parameters_ & params,
+CostFctFGAT<MODEL, OBS>::CostFctFGAT(const eckit::Configuration & config,
                                      const eckit::mpi::Comm & comm)
-  : CostFunction<MODEL, OBS>::CostFunction(),
-    conf_(params.toConfiguration()),
-    windowLength_(), windowHalf_(), comm_(comm),
-    resol_(eckit::LocalConfiguration(conf_, "geometry"), comm),
-    ctlvars_(conf_, "analysis variables"),
-    model_(resol_, eckit::LocalConfiguration(conf_, "model")),
-    an2model_(params.variableChange, resol_),
+  : CostFunction<MODEL, OBS>::CostFunction(), comm_(comm),
+    resol_(eckit::LocalConfiguration(config, "geometry"), comm),
+    model_(resol_, eckit::LocalConfiguration(config, "model")),
+    ctlvars_(config, "analysis variables"),
     fgat_(false), hackBG_(nullptr), hackFG_(nullptr), saver_()
 {
   Log::trace() << "CostFctFGAT::CostFctFGAT start" << std::endl;
-  windowLength_ = util::Duration(conf_.getString("window length"));
-  windowBegin_ = util::DateTime(conf_.getString("window begin"));
+  windowLength_ = util::Duration(config.getString("window length"));
+  windowBegin_ = util::DateTime(config.getString("window begin"));
   windowEnd_ = windowBegin_ + windowLength_;
   windowHalf_ = windowBegin_ + windowLength_/2;
+  typename VariableChange<MODEL>::Parameters_ params;
+  params.deserialize(config.getSubConfiguration("variable change"));
+  an2model_ = std::make_unique<VarCha_>(params, resol_);
 
-  this->setupTerms(conf_);  // Background is read here
+  this->setupTerms(config);  // Background is read here
 
   Log::info() << "FGAT window: begin = " << windowBegin_ << ", end = " << windowEnd_ << std::endl;
   Log::trace() << "CostFctFGAT::CostFctFGAT done" << std::endl;
@@ -158,10 +124,9 @@ CostJb3D<MODEL> * CostFctFGAT<MODEL, OBS>::newJb(const eckit::Configuration & jb
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-CostJo<MODEL, OBS> * CostFctFGAT<MODEL, OBS>::newJo(
-    const ObserversParameters<MODEL, OBS> & joParams) const {
+CostJo<MODEL, OBS> * CostFctFGAT<MODEL, OBS>::newJo(const eckit::Configuration & joConf) const {
   Log::trace() << "CostFctFGAT::newJo" << std::endl;
-  return new CostJo<MODEL, OBS>(joParams, comm_, windowBegin_, windowEnd_);
+  return new CostJo<MODEL, OBS>(joConf, comm_, windowBegin_, windowEnd_);
 }
 
 // -----------------------------------------------------------------------------
@@ -184,9 +149,9 @@ void CostFctFGAT<MODEL, OBS>::runNL(CtrlVar_ & xx, PostProcessor<State_> & post)
     ASSERT(xx.state().validTime() == windowBegin_);
 
     Variables anvars(xx.state().variables());
-    an2model_.changeVar(xx.state(), model_.variables());
+    an2model_->changeVar(xx.state(), model_.variables());
     model_.forecast(xx.state(), xx.modVar(), windowLength_, post);
-    an2model_.changeVarInverse(xx.state(), anvars);
+    an2model_->changeVarInverse(xx.state(), anvars);
 
     ASSERT(xx.state().validTime() == windowEnd_);
   } else {
@@ -231,7 +196,7 @@ void CostFctFGAT<MODEL, OBS>::finishLinearize() {
   Log::trace() << "CostFctFGAT::finishLinearize start" << std::endl;
   ASSERT(saver_->getState().validTime() == windowHalf_);
   Variables anvars(hackBG_->variables());
-  an2model_.changeVarInverse(saver_->getState(), anvars);
+  an2model_->changeVarInverse(saver_->getState(), anvars);
   *hackBG_ = saver_->getState();
   *hackFG_ = saver_->getState();
   fgat_ = false;
