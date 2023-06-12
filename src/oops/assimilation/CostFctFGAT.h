@@ -230,6 +230,8 @@ template<typename MODEL, typename OBS>
 void CostFctFGAT<MODEL, OBS>::finishLinearize() {
   Log::trace() << "CostFctFGAT::finishLinearize start" << std::endl;
   ASSERT(saver_->getState().validTime() == windowHalf_);
+  Variables anvars(hackBG_->variables());
+  an2model_.changeVarInverse(saver_->getState(), anvars);
   *hackBG_ = saver_->getState();
   *hackFG_ = saver_->getState();
   fgat_ = false;
