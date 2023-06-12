@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2019 UCAR
+ * (C) Copyright 2019-2023 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -16,6 +16,7 @@
 #include "oops/base/Increment.h"
 #include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/State.h"
+#include "oops/base/StateEnsemble.h"
 #include "oops/base/Variables.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
@@ -39,6 +40,7 @@ class EnsRecenterParameters : public ApplicationParameters {
   typedef typename Geometry_::Parameters_   GeometryParameters_;
   typedef typename State_::Parameters_      StateParameters_;
   typedef typename State_::WriteParameters_ StateWriteParameters_;
+  typedef StateEnsembleParameters<MODEL>                  StateEnsembleParameters_;
 
   /// Geometry parameters.
   RequiredParameter<GeometryParameters_> geometry{"geometry", this};
@@ -50,7 +52,7 @@ class EnsRecenterParameters : public ApplicationParameters {
   Parameter<bool> zeroCenter{"zero center", false, this};
 
   /// Parameters describing ensemble states to be recentered
-  RequiredParameter<std::vector<StateParameters_>> ensemble{"ensemble", this};
+  RequiredParameter<StateEnsembleParameters_> ensemble{"ensemble", this};
 
   /// Variables to be recentered
   RequiredParameter<oops::Variables> recenterVars{"recenter variables", this};
@@ -66,6 +68,7 @@ template <typename MODEL> class EnsRecenter : public Application {
   typedef Geometry<MODEL>   Geometry_;
   typedef Increment<MODEL>  Increment_;
   typedef State<MODEL>      State_;
+  typedef StateEnsemble<MODEL> StateEnsemble_;
   typedef typename State_::WriteParameters_ StateWriteParameters_;
 
  public:
@@ -95,14 +98,9 @@ template <typename MODEL> class EnsRecenter : public Application {
     unsigned nm = params.ensemble.value().size();
 
     // Compute ensemble mean
-    State_ ensmean(x_center);
-    ensmean.zero();
-    const double rk = 1.0/(static_cast<double>(nm));
-    for (unsigned jj = 0; jj < nm; ++jj) {
-      State_ x(resol, params.ensemble.value()[jj]);
-      ensmean.accumul(rk, x);
-      Log::test() << "Original member " << jj << " : " << x << std::endl;
-    }
+    const StateEnsemble_ stateEnsemble(resol, params.ensemble);
+
+    State_ ensmean = stateEnsemble.mean();
     Log::test() << "Ensemble mean: " << std::endl << ensmean << std::endl;
 
     // Optionally write the mean out
@@ -112,7 +110,7 @@ template <typename MODEL> class EnsRecenter : public Application {
 
     // Recenter ensemble around central and save
     for (unsigned jj = 0; jj < nm; ++jj) {
-      State_ x(resol, params.ensemble.value()[jj]);
+      State_ x(resol, stateEnsemble[jj]);
       Increment_ pert(resol, params.recenterVars, x.validTime());
       pert.diff(x, ensmean);
       x = x_center;
