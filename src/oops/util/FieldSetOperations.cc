@@ -188,8 +188,8 @@ double dotProductFieldSets(const atlas::FieldSet & fset1,
               if (m1 == 0) {
                 // Real part only
                 for (atlas::idx_t jlevel = 0; jlevel < field1.shape(1); ++jlevel) {
-                  if (view1(jnode, jlevel) != util::missingValue(double())
-                    && view2(jnode, jlevel) != util::missingValue(double())) {
+                  if (view1(jnode, jlevel) != util::missingValue<double>()
+                    && view2(jnode, jlevel) != util::missingValue<double>()) {
                     dp += view1(jnode, jlevel)*view2(jnode, jlevel);
                   }
                 }
@@ -200,8 +200,8 @@ double dotProductFieldSets(const atlas::FieldSet & fset1,
               } else {
                 // Real part
                 for (atlas::idx_t jlevel = 0; jlevel < field1.shape(1); ++jlevel) {
-                  if (view1(jnode, jlevel) != util::missingValue(double())
-                    && view2(jnode, jlevel) != util::missingValue(double())) {
+                  if (view1(jnode, jlevel) != util::missingValue<double>()
+                    && view2(jnode, jlevel) != util::missingValue<double>()) {
                     dp += 2.0*view1(jnode, jlevel)*view2(jnode, jlevel);
                   }
                 }
@@ -209,8 +209,8 @@ double dotProductFieldSets(const atlas::FieldSet & fset1,
 
                 // Imaginary part
                 for (atlas::idx_t jlevel = 0; jlevel < field1.shape(1); ++jlevel) {
-                  if (view1(jnode, jlevel) != util::missingValue(double())
-                    && view2(jnode, jlevel) != util::missingValue(double())) {
+                  if (view1(jnode, jlevel) != util::missingValue<double>()
+                    && view2(jnode, jlevel) != util::missingValue<double>()) {
                     dp += 2.0*view1(jnode, jlevel)*view2(jnode, jlevel);
                   }
                 }
@@ -223,8 +223,8 @@ double dotProductFieldSets(const atlas::FieldSet & fset1,
           for (atlas::idx_t jnode = 0; jnode < field1.shape(0); ++jnode) {
             if (includeHalo || (ghostView(jnode) == 0)) {
               for (atlas::idx_t jlevel = 0; jlevel < field1.shape(1); ++jlevel) {
-                if (view1(jnode, jlevel) != util::missingValue(double())
-                  && view2(jnode, jlevel) != util::missingValue(double())) {
+                if (view1(jnode, jlevel) != util::missingValue<double>()
+                  && view2(jnode, jlevel) != util::missingValue<double>()) {
                   dp += view1(jnode, jlevel)*view2(jnode, jlevel);
                 }
               }

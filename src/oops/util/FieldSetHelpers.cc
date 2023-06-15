@@ -853,7 +853,7 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
   std::vector<std::string> vars = fset.field_names();
 
   // Missing value
-  const double msvalr = util::missingValue(double());
+  const double msvalr = util::missingValue<double>();
 
   // NetCDF IDs
   int retval, ncid, nx_id, ny_id, nb_nodes_id, nz_id[vars.size()],

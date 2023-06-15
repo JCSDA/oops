@@ -207,7 +207,7 @@ void UnstructuredInterpolator::applyPerLevel(
 
       // Edge case: no valid stencil to interpolate to this target => return missingValue
       if (!interpMatrix.targetHasValidStencil[jloc]) {
-        *gridout = util::missingValue(double());
+        *gridout = util::missingValue<double>();
         ++gridout;
         continue;
       }

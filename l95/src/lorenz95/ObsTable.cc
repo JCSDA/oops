@@ -83,8 +83,8 @@ bool ObsTable::has(const std::string & col) const {
 
 void ObsTable::putdb(const std::string & col, const std::vector<int> & vec) const {
   std::vector<double> tmp(vec.size());
-  int intmiss = util::missingValue(int());
-  double doublemiss = util::missingValue(double());
+  const int intmiss = util::missingValue<int>();
+  const double doublemiss = util::missingValue<double>();
   for (size_t jobs = 0; jobs < vec.size(); ++jobs) {
     if (vec[jobs] == intmiss) {
       tmp[jobs] = doublemiss;
@@ -99,8 +99,8 @@ void ObsTable::putdb(const std::string & col, const std::vector<int> & vec) cons
 
 void ObsTable::putdb(const std::string & col, const std::vector<float> & vec) const {
   std::vector<double> tmp(vec.size());
-  float floatmiss = util::missingValue(float());
-  double doublemiss = util::missingValue(double());
+  const float floatmiss = util::missingValue<float>();
+  const double doublemiss = util::missingValue<double>();
   for (size_t jobs = 0; jobs < vec.size(); ++jobs) {
     if (vec[jobs] == floatmiss) {
       tmp[jobs] = doublemiss;
@@ -128,8 +128,8 @@ void ObsTable::putdb(const std::string & col, const std::vector<double> & vec) c
 void ObsTable::getdb(const std::string & col, std::vector<int> & vec) const {
   std::vector<double> tmp;
   this->getdb(col, tmp);
-  int intmiss = util::missingValue(int());
-  double doublemiss = util::missingValue(double());
+  const int intmiss = util::missingValue<int>();
+  const double doublemiss = util::missingValue<double>();
   vec.resize(nobs());
   for (size_t jobs = 0; jobs < nobs(); ++jobs) {
     if (tmp[jobs] == doublemiss) {
@@ -145,8 +145,8 @@ void ObsTable::getdb(const std::string & col, std::vector<int> & vec) const {
 void ObsTable::getdb(const std::string & col, std::vector<float> & vec) const {
   std::vector<double> tmp;
   this->getdb(col, tmp);
-  float floatmiss = util::missingValue(float());
-  double doublemiss = util::missingValue(double());
+  const float floatmiss = util::missingValue<float>();
+  const double doublemiss = util::missingValue<double>();
   vec.resize(nobs());
   for (size_t jobs = 0; jobs < nobs(); ++jobs) {
     if (tmp[jobs] == doublemiss) {

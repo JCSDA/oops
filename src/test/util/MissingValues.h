@@ -23,7 +23,10 @@ namespace test {
 template <typename T>
 void testMissingValues()
 {
-  T missing = util::missingValue(missing);
+  T missing;
+  missing = util::missingValue(T());
+  missing = util::missingValue<T>();
+  (void)missing;  // silence set-but-not-used warning
 }
 
 CASE("util/MissingValues/float") {
@@ -46,12 +49,20 @@ CASE("util/MissingValues/int64_t") {
   testMissingValues<int64_t>();
 }
 
-CASE("util/MissingValues/DateTime") {
-  testMissingValues<util::DateTime>();
+CASE("util/MissingValues/bool") {
+  testMissingValues<bool>();
+}
+
+CASE("util/MissingValues/char") {
+  testMissingValues<char>();
 }
 
 CASE("util/MissingValues/std::string") {
   testMissingValues<std::string>();
+}
+
+CASE("util/MissingValues/DateTime") {
+  testMissingValues<util::DateTime>();
 }
 
 class MissingValues : public oops::Test {

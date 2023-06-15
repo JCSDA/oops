@@ -39,7 +39,7 @@ void atlasArrayWriteHeader(
   int retval;
 
   // Missing value
-  double msv(::util::missingValue(double()));
+  const double msv(::util::missingValue<double>());
 
   if ((retval = nc_create(ncfilepath.c_str(), NC_CLOBBER, &ncid))) ERR1(retval);
   netcdfGeneralIDs.push_back(ncid);

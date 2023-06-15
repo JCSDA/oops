@@ -147,7 +147,7 @@ void testInterpolator(const bool testSourcePointMask) {
     for (size_t jj = 0; jj < num_source; ++jj) {
       if (source_lats[jj] < 0.0) {
         for (size_t jlev = 0; jlev < nlev; ++jlev) {
-          infield(jj, jlev) = util::missingValue(double());
+          infield(jj, jlev) = util::missingValue<double>();
         }
       }
     }
@@ -181,7 +181,7 @@ void testInterpolator(const bool testSourcePointMask) {
     const double masked_tol = 100.0 * tolerance;
     for (size_t jlev = 0; jlev < nlev; ++jlev) {
       for (size_t jj = 0; jj < my_num_target; ++jj) {
-        if (target_vals[jj + my_num_target * jlev] == util::missingValue(double())) {
+        if (target_vals[jj + my_num_target * jlev] == util::missingValue<double>()) {
           // Interpolation should only return 'missing' when all inputs are masked.
           // In this test, this should only happen in southern hemisphere.
           EXPECT(target_lats[jj] < 0.0);
@@ -242,7 +242,7 @@ void testInterpolator(const bool testSourcePointMask) {
         }
       }
       for (size_t jj = 0; jj < my_num_target; ++jj) {
-        if (target_vals[jj + my_num_target * jlev] != util::missingValue(double())) {
+        if (target_vals[jj + my_num_target * jlev] != util::missingValue<double>()) {
           dot2 += target_vals[jj + my_num_target * jlev]
                   * target_vals_ad[jj + my_num_target * jlev];
         }

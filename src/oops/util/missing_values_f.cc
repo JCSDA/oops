@@ -13,22 +13,22 @@ namespace util {
 
 // -----------------------------------------------------------------------------
 int32_t missing_value_int32_f() {
-  const int32_t miss = util::missingValue(int32_t());
+  const int32_t miss = util::missingValue<int32_t>();
   return miss;
 }
 // -----------------------------------------------------------------------------
 int64_t missing_value_int64_f() {
-  const int64_t miss = util::missingValue(int64_t());
+  const int64_t miss = util::missingValue<int64_t>();
   return miss;
 }
 // -----------------------------------------------------------------------------
 float missing_value_flt_f() {
-  const float miss = util::missingValue(float());
+  const float miss = util::missingValue<float>();
   return miss;
 }
 // -----------------------------------------------------------------------------
 double missing_value_dbl_f() {
-  const double miss = util::missingValue(double());
+  const double miss = util::missingValue<double>();
   return miss;
 }
 // -----------------------------------------------------------------------------

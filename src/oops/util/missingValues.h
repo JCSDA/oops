@@ -8,19 +8,19 @@
 #ifndef OOPS_UTIL_MISSINGVALUES_H_
 #define OOPS_UTIL_MISSINGVALUES_H_
 
-#include <cstdint>
-#include <string>
 
 namespace util {
-class DateTime;
 
-const float &        missingValue(const float &);
-const double &       missingValue(const double &);
-const int16_t &      missingValue(const int16_t &);
-const int32_t &      missingValue(const int32_t &);
-const int64_t &      missingValue(const int64_t &);
-const DateTime &     missingValue(const DateTime &);
-const std::string &  missingValue(const std::string &);
+// Special missing value for type T. Preferred interface, accepting T as a template parameter.
+template <typename T>
+const T & missingValue();
+
+// Special missing value for type T. Backwards-compatibility interface, where the type T is
+// inferred from a dummy function argument.
+template <typename T>
+const T & missingValue(const T & /*dummy*/) {
+  return missingValue<T>();
+}
 
 }  // namespace util
 

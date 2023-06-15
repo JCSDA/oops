@@ -246,7 +246,7 @@ GetValues<MODEL, OBS>::GetValues(const eckit::Configuration & conf, const Geomet
 template <typename MODEL, typename OBS>
 void GetValues<MODEL, OBS>::initialize(const util::Duration & tstep) {
   Log::trace() << "GetValues::initialize start" << std::endl;
-  const double missing = util::missingValue(double());
+  const double missing = util::missingValue<double>();
   ASSERT(locinterp_.empty());
 
   locinterp_.resize(ntasks_);
@@ -267,7 +267,7 @@ void GetValues<MODEL, OBS>::incInterpValues(
 {
   Log::trace() << "GetValues::incInterpValues start" << std::endl;
 
-  const double missing = util::missingValue(double());
+  const double missing = util::missingValue<double>();
 
 // Get the state previous and next times and time-step
   const util::DateTime tPrevious = tCurrent - hslot_;
@@ -431,7 +431,7 @@ void GetValues<MODEL, OBS>::fillGeoVaLs(GeoVaLs_ & geovals) {
 template <typename MODEL, typename OBS>
 void GetValues<MODEL, OBS>::initializeTL(const util::Duration & tstep) {
   Log::trace() << "GetValues::initializeTL start" << std::endl;
-  const double missing = util::missingValue(double());
+  const double missing = util::missingValue<double>();
   ASSERT(locinterp_.empty());
   locinterp_.resize(ntasks_);
   for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
@@ -625,7 +625,7 @@ void GetValues<MODEL, OBS>::fillGeoVaLsAD(const GeoVaLs_ & geovals) {
   Log::trace() << "GetValues::fillGeoVaLsAD start" << std::endl;
   util::Timer timer("oops::GetValues", "fillGeoVaLsAD");
 
-  const double missing = util::missingValue(double());
+  const double missing = util::missingValue<double>();
 
 // (Afjoint of) Clean-up send buffers
 // i.e. allocate buffer and prepare to receive values

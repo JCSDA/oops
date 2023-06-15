@@ -117,7 +117,7 @@ CostJcDFI<MODEL, OBS>::CostJcDFI(const eckit::Configuration & conf, const Geomet
                                  const util::Duration & tstep)
   : vt_(vt), span_(span), alpha_(0), wfct_(), gradFG_(),
     resol_(resol), tstep_(tstep), tlres_(), tlstep_(), filter_(),
-    vars_(conf, "filtered variables"), zhack_(util::missingValue(alpha_))
+    vars_(conf, "filtered variables"), zhack_(util::missingValue<double>())
 {
   alpha_ = conf.getDouble("alpha");
   if (conf.has("ftime")) vt_ = util::DateTime(conf.getString("ftime"));
@@ -157,7 +157,7 @@ double CostJcDFI<MODEL, OBS>::computeCost() {
 template<typename MODEL, typename OBS>
 void CostJcDFI<MODEL, OBS>::printCostTestHack() {
   Log::test() << "CostJcDFI: Nonlinear Jc = " << zhack_ << std::endl;
-  zhack_ = util::missingValue(zhack_);
+  zhack_ = util::missingValue<double>();
 }
 
 // -----------------------------------------------------------------------------
