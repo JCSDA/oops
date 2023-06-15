@@ -159,6 +159,7 @@ class GetValues : private util::ObjectCounter<GetValues<MODEL, OBS> > {
   bool doLinearTimeInterpolation_;     /// set true for linear and false for
                                        /// nearest-neighbour time-
                                        /// interpolation (default false)
+  std::vector<size_t> recv_tasks_;
 };
 
 // -----------------------------------------------------------------------------
@@ -257,6 +258,7 @@ void GetValues<MODEL, OBS>::initialize(const util::Duration & tstep) {
 }
 
 // -----------------------------------------------------------------------------
+
 template <typename MODEL, typename OBS>
 void GetValues<MODEL, OBS>::incInterpValues(
                     const util::DateTime & tCurrent, const std::vector<bool> & mask,
@@ -309,6 +311,7 @@ void GetValues<MODEL, OBS>::incInterpValues(
 }
 
 // -----------------------------------------------------------------------------
+
 template <typename MODEL, typename OBS>
 void GetValues<MODEL, OBS>::process(const State_ & xx) {
   Log::trace() << "GetValues::process start" << std::endl;
@@ -344,20 +347,27 @@ void GetValues<MODEL, OBS>::finalize() {
   Log::trace() << "GetValues::finalize start" << std::endl;
   util::Timer timer("oops::GetValues", "finalize");
 
-// Send values interpolated locally (non-blocking)
-  send_req_.resize(ntasks_);
-  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
-    send_req_[jtask] = comm_.iSend(&locinterp_[jtask][0], locinterp_[jtask].size(), jtask, tag_);
-  }
-
 // Allocate receive buffers and non blocking receive of interpolated values
   ASSERT(recvinterp_.empty());
+  ASSERT(recv_req_.empty());
+  ASSERT(recv_tasks_.empty());
   recvinterp_.resize(ntasks_);
-  recv_req_.resize(ntasks_);
   for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
     const size_t nrecv = myobs_index_by_task_[jtask].size() * varsizes_;
-    recvinterp_[jtask].resize(nrecv);
-    recv_req_[jtask] = comm_.iReceive(&recvinterp_[jtask][0], nrecv, jtask, tag_);
+    if (nrecv > 0) {
+      recvinterp_[jtask].resize(nrecv);
+      recv_req_.push_back(comm_.iReceive(&recvinterp_[jtask][0], nrecv, jtask, tag_));
+      recv_tasks_.push_back(jtask);
+    }
+  }
+
+// Send values interpolated locally (non-blocking)
+  ASSERT(send_req_.empty());
+  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
+    if (locinterp_[jtask].size() > 0) {
+      send_req_.push_back(comm_.iSend(&locinterp_[jtask][0], locinterp_[jtask].size(),
+                                      jtask, tag_));
+    }
   }
 
   Log::trace() << "GetValues::finalize done" << std::endl;
@@ -372,10 +382,11 @@ void GetValues<MODEL, OBS>::fillGeoVaLs(GeoVaLs_ & geovals) {
 
 // Wait for received interpolated values and store in GeoVaLs
   ASSERT(recvinterp_.size() == ntasks_);
-  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
-    int itask = -1;
-    eckit::mpi::Status rst = comm_.waitAny(recv_req_, itask);
+  for (size_t jreq = 0; jreq < recv_req_.size(); ++jreq) {
+    int ireq = -1;
+    eckit::mpi::Status rst = comm_.waitAny(recv_req_, ireq);
     ASSERT(rst.error() == 0);
+    size_t itask = recv_tasks_[ireq];
     ASSERT(itask >=0 && (size_t)itask < ntasks_);
 
     ASSERT(recvinterp_[itask].size() == myobs_index_by_task_[itask].size() * varsizes_);
@@ -391,19 +402,18 @@ void GetValues<MODEL, OBS>::fillGeoVaLs(GeoVaLs_ & geovals) {
     size_t colOffset = 0;
     for (size_t jvar = 0; jvar < geovars_.size(); ++jvar) {
       const size_t numLevels = geovarsSizes_[jvar];
-      geovals.fill(geovars_[jvar],
-                   indices,
-                   values.middleCols(colOffset, numLevels),
+      geovals.fill(geovars_[jvar], indices, values.middleCols(colOffset, numLevels),
                    this->levelsTopDown_);
       colOffset += numLevels;
     }
     ASSERT(colOffset == varsizes_);
   }
   recv_req_.clear();
+  recv_tasks_.clear();
   recvinterp_.clear();
 
 // Clean-up send buffers (after making sure data has been sent)
-  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
+  for (size_t jreq = 0; jreq < send_req_.size(); ++jreq) {
     int itask = -1;
     eckit::mpi::Status sst = comm_.waitAny(send_req_, itask);
     ASSERT(sst.error() == 0);
@@ -462,20 +472,27 @@ void GetValues<MODEL, OBS>::finalizeTL() {
   Log::trace() << "GetValues::finalizeTL start" << std::endl;
   util::Timer timer("oops::GetValues", "finalizeTL");
 
-// Send values interpolated locally (non-blocking)
-  send_req_.resize(ntasks_);
-  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
-    send_req_[jtask] = comm_.iSend(&locinterp_[jtask][0], locinterp_[jtask].size(), jtask, tag_);
-  }
-
 // Allocate receive buffers and non blocking receive of interpolated values
   ASSERT(recvinterp_.empty());
+  ASSERT(recv_req_.empty());
+  ASSERT(recv_tasks_.empty());
   recvinterp_.resize(ntasks_);
-  recv_req_.resize(ntasks_);
   for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
     const size_t nrecv = myobs_index_by_task_[jtask].size() * linsizes_;
     recvinterp_[jtask].resize(nrecv);
-    recv_req_[jtask] = comm_.iReceive(&recvinterp_[jtask][0], nrecv, jtask, tag_);
+    if (nrecv > 0) {
+      recv_req_.push_back(comm_.iReceive(&recvinterp_[jtask][0], nrecv, jtask, tag_));
+      recv_tasks_.push_back(jtask);
+    }
+  }
+
+// Send values interpolated locally (non-blocking)
+  ASSERT(send_req_.empty());
+  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
+    if (locinterp_[jtask].size() > 0) {
+      send_req_.push_back(comm_.iSend(&locinterp_[jtask][0], locinterp_[jtask].size(),
+                                      jtask, tag_));
+    }
   }
 
   Log::trace() << "GetValues::finalizeTL done" << std::endl;
@@ -490,10 +507,11 @@ void GetValues<MODEL, OBS>::fillGeoVaLsTL(GeoVaLs_ & geovals) {
 
 // Wait for received interpolated values and store in GeoVaLs
   ASSERT(recvinterp_.size() == ntasks_);
-  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
-    int itask = -1;
-    eckit::mpi::Status rst = comm_.waitAny(recv_req_, itask);
+  for (size_t jreq = 0; jreq < recv_req_.size(); ++jreq) {
+    int ireq = -1;
+    eckit::mpi::Status rst = comm_.waitAny(recv_req_, ireq);
     ASSERT(rst.error() == 0);
+    size_t itask = recv_tasks_[ireq];
     ASSERT(itask >=0 && (size_t)itask < ntasks_);
 
     ASSERT(recvinterp_[itask].size() == myobs_index_by_task_[itask].size() * linsizes_);
@@ -509,19 +527,18 @@ void GetValues<MODEL, OBS>::fillGeoVaLsTL(GeoVaLs_ & geovals) {
     size_t colOffset = 0;
     for (size_t jvar = 0; jvar < linvars_.size(); ++jvar) {
       const size_t numLevels = linvarsSizes_[jvar];
-      geovals.fill(linvars_[jvar],
-                   indices,
-                   values.middleCols(colOffset, numLevels),
+      geovals.fill(linvars_[jvar], indices, values.middleCols(colOffset, numLevels),
                    this->levelsTopDown_);
       colOffset += numLevels;
     }
     ASSERT(colOffset == linsizes_);
   }
   recv_req_.clear();
+  recv_tasks_.clear();
   recvinterp_.clear();
 
 // Clean-up send buffers (after making sure data has been sent)
-  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
+  for (size_t jreq = 0; jreq < send_req_.size(); ++jreq) {
     int itask = -1;
     eckit::mpi::Status sst = comm_.waitAny(send_req_, itask);
     ASSERT(sst.error() == 0);
@@ -579,7 +596,7 @@ void GetValues<MODEL, OBS>::finalizeAD(const util::Duration & tstep) {
 // (Adjoint of) Send values interpolated locally (non-blocking)
 // i.e. wait for receive of local sensitivities
   ASSERT(locinterp_.size() == ntasks_);
-  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
+  for (size_t jreq = 0; jreq < send_req_.size(); ++jreq) {
     int itask = -1;
     eckit::mpi::Status sst = comm_.waitAny(send_req_, itask);
     ASSERT(sst.error() == 0);
@@ -590,7 +607,7 @@ void GetValues<MODEL, OBS>::finalizeAD(const util::Duration & tstep) {
 // (Adjoint of) Allocate receive buffers and non blocking receive of interpolated values
 // i.e. deallocate buffers (after making sure data has been sent)
   ASSERT(recvinterp_.size() == ntasks_);
-  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
+  for (size_t jreq = 0; jreq < recv_req_.size(); ++jreq) {
     int itask = -1;
     eckit::mpi::Status rst = comm_.waitAny(recv_req_, itask);
     ASSERT(rst.error() == 0);
@@ -613,41 +630,44 @@ void GetValues<MODEL, OBS>::fillGeoVaLsAD(const GeoVaLs_ & geovals) {
 // (Afjoint of) Clean-up send buffers
 // i.e. allocate buffer and prepare to receive values
   ASSERT(locinterp_.empty());
+  ASSERT(send_req_.empty());
   locinterp_.resize(ntasks_);
-  send_req_.resize(ntasks_);
   for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
     locinterp_[jtask].resize(obs_times_by_task_[jtask].size() * linsizes_, missing);
-    send_req_[jtask] = comm_.iReceive(&locinterp_[jtask][0], locinterp_[jtask].size(), jtask, tag_);
+    if (obs_times_by_task_[jtask].size() > 0) {
+      send_req_.push_back(comm_.iReceive(&locinterp_[jtask][0], locinterp_[jtask].size(),
+                                         jtask, tag_));
+    }
   }
 
 // (Adjoint of) Wait for received interpolated values and store in GeoVaLs
 // i.e. get values from GeoVaLs and send them
   ASSERT(recvinterp_.empty());
+  ASSERT(recv_req_.empty());
   recvinterp_.resize(ntasks_);
-  recv_req_.resize(ntasks_);
   for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
     const size_t nrecv = myobs_index_by_task_[jtask].size() * linsizes_;
     recvinterp_[jtask].resize(nrecv);
 
-    // Create non-owning views ("maps") into the interpolation results.
-    const Eigen::Map<const Eigen::VectorX<size_t>> indices(myobs_index_by_task_[jtask].data(),
-                                                           myobs_index_by_task_[jtask].size());
-    // Each column contains the values of a single variable at a single level and all locations
-    // with indices 'indices'. The columns are ordered first by level and then by variable.
-    Eigen::Map<Eigen::MatrixXd> values(recvinterp_[jtask].data(),
-                                       myobs_index_by_task_[jtask].size(), linsizes_);
-    size_t colOffset = 0;
-    for (size_t jvar = 0; jvar < linvars_.size(); ++jvar) {
-      const size_t numLevels = linvarsSizes_[jvar];
-      geovals.fillAD(linvars_[jvar],
-                     indices,
-                     values.middleCols(colOffset, numLevels),
-                     this->levelsTopDown_);
-      colOffset += numLevels;
-    }
-    ASSERT(colOffset == linsizes_);
+    if (nrecv > 0) {
+      // Create non-owning views ("maps") into the interpolation results.
+      const Eigen::Map<const Eigen::VectorX<size_t>> indices(myobs_index_by_task_[jtask].data(),
+                                                             myobs_index_by_task_[jtask].size());
+      // Each column contains the values of a single variable at a single level and all locations
+      // with indices 'indices'. The columns are ordered first by level and then by variable.
+      Eigen::Map<Eigen::MatrixXd> values(recvinterp_[jtask].data(),
+                                         myobs_index_by_task_[jtask].size(), linsizes_);
+      size_t colOffset = 0;
+      for (size_t jvar = 0; jvar < linvars_.size(); ++jvar) {
+        const size_t numLevels = linvarsSizes_[jvar];
+        geovals.fillAD(linvars_[jvar], indices, values.middleCols(colOffset, numLevels),
+                       this->levelsTopDown_);
+        colOffset += numLevels;
+      }
+      ASSERT(colOffset == linsizes_);
 
-    recv_req_[jtask] = comm_.iSend(recvinterp_[jtask].data(), nrecv, jtask, tag_);
+      recv_req_.push_back(comm_.iSend(recvinterp_[jtask].data(), nrecv, jtask, tag_));
+    }
   }
 
   Log::trace() << "GetValues::fillGeoVaLsAD" << std::endl;
