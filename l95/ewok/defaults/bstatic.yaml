@@ -1,9 +1,0 @@
-# (C) Copyright 2020-2021 UCAR
-# 
-# This software is licensed under the terms of the Apache Licence Version 2.0
-# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
-
-covariance model: L95Error
-date: '{{window_begin}}'
-length_scale: 1.0
-standard_deviation: 0.6
