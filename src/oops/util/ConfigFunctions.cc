@@ -105,6 +105,7 @@ namespace util {
               // Get items as strings
               std::vector<std::string> subStrings;
               config.get(keys[jj], subStrings);
+              std::vector<std::string> subStringsSave(subStrings);
 
               // Loop over items
               for (size_t kk=0; kk < subStrings.size(); ++kk) {
@@ -117,7 +118,9 @@ namespace util {
               }
 
               // Reset vector of final pairs
-              config.set(keys[jj], subStrings);
+              if (subStrings != subStringsSave) {
+                config.set(keys[jj], subStrings);
+              }
             }
           }
         } else if (isFinal(subConfig)) {

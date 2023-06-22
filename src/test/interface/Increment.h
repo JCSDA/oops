@@ -250,6 +250,30 @@ template <typename MODEL> void testIncrementZero() {
 
 // -----------------------------------------------------------------------------
 
+template <typename MODEL> void testIncrementDirac() {
+  typedef IncrementFixture<MODEL>   Test_;
+  typedef oops::Increment<MODEL>    Increment_;
+
+// Option to skip test
+  bool skipTest = Test_::test().getBool("skip dirac test", false);
+  if (skipTest) {
+    oops::Log::warning() << "Skipping Increment.dirac test";
+    return;
+  }
+
+  Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
+
+// test dirac
+  dx.dirac(Test_::test().getSubConfiguration("dirac"));
+  Increment_ dx2_minus_dx(dx);
+  dx2_minus_dx.schur_product_with(dx);
+  dx2_minus_dx -= dx;
+  EXPECT(dx.norm() > 0.0);
+  EXPECT(dx2_minus_dx.norm() == 0.0);
+}
+
+// -----------------------------------------------------------------------------
+
 template <typename MODEL> void testIncrementAxpy() {
   typedef IncrementFixture<MODEL>   Test_;
   typedef oops::Increment<MODEL>    Increment_;
@@ -506,6 +530,8 @@ class Increment : public oops::Test {
       { testIncrementDiff<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementZero")
       { testIncrementZero<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/testIncrementDirac")
+      { testIncrementDirac<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementTime")
       { testIncrementTime<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementSchur")

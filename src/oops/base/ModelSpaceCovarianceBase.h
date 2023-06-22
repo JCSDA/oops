@@ -324,7 +324,7 @@ ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(const Geometry_ & reso
   }
   timername_ = "oops::Covariance::" + covarianceModel_;
   util::Timer timer(timername_, "Constructor");
-  randomizationSize_ = parameters.randomizationSize;
+  randomizationSize_ = parameters.randomizationSize.value().get_value_or(0);
   fullInverse_ = parameters.fullInverse;
   fullInverseIterations_ = parameters.fullInverseIterations;
   fullInverseAccuracy_ = parameters.fullInverseAccuracy;

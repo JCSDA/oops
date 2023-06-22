@@ -60,18 +60,6 @@ ecbuild_add_executable( TARGET  qg_addincrement.x
                       )
 oops_output_json_schema( qg_addincrement.x )
 
-ecbuild_add_executable( TARGET  qg_dirac.x
-                        SOURCES qgDirac.cc
-                        LIBS    qg
-                      )
-oops_output_json_schema( qg_dirac.x )
-
-ecbuild_add_executable( TARGET  qg_staticbinit.x
-                        SOURCES qgStaticBInit.cc
-                        LIBS    qg
-                      )
-oops_output_json_schema( qg_staticbinit.x )
-
 ecbuild_add_executable( TARGET  qg_eda.x
                         SOURCES qgEDA.cc
                         LIBS    qg

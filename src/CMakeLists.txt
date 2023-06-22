@@ -286,7 +286,6 @@ oops/runs/ConvertIncrement.h
 oops/runs/ConvertState.h
 oops/runs/ConvertToLatLon.h
 oops/runs/DiffStates.h
-oops/runs/Dirac.h
 oops/runs/EnsembleApplication.h
 oops/runs/EnsMeanAndVariance.h
 oops/runs/EnsRecenter.h
@@ -302,7 +301,6 @@ oops/runs/RTPP.h
 oops/runs/RTPS.h
 oops/runs/Run.cc
 oops/runs/Run.h
-oops/runs/StaticBInit.h
 oops/runs/SqrtOfVertLoc.h
 oops/runs/Test.h
 oops/runs/Variational.h

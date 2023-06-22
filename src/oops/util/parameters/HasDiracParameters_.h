@@ -5,8 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef OOPS_UTIL_PARAMETERS_HASDIRACPARAMETERS__H_
-#define OOPS_UTIL_PARAMETERS_HASDIRACPARAMETERS__H_
+#pragma once
 
 #include <type_traits>
 
@@ -51,4 +50,3 @@ typename TDiracParameters_IfAvailableElseFallbackType<T, FallbackType>::type;
 
 }  // namespace oops
 
-#endif  // OOPS_UTIL_PARAMETERS_HASDIRACPARAMETERS__H_

@@ -33,19 +33,19 @@ list( APPEND qg_testinput
   testinput/convertstate.yaml
   testinput/dfi.yaml
   testinput/diffstates.yaml
-  testinput/dirac_cov.yaml
-  testinput/dirac_hyb_field.yaml
-  testinput/dirac_hyb_value.yaml
-  testinput/dirac_loc_3d.yaml
-  testinput/dirac_loc_3d_ensemble_transform.yaml
-  testinput/dirac_loc_3d_inflation_field.yaml
-  testinput/dirac_loc_3d_inflation_value.yaml
-  testinput/dirac_loc_4d_fast.yaml
-  testinput/dirac_loc_4d_aggressive.yaml
-  testinput/dirac_loc_4d_standard.yaml
-  testinput/dirac_loc_4d_time_decay_fast.yaml
-  testinput/dirac_loc_4d_time_decay_standard.yaml
-  testinput/dirac_no_loc.yaml
+  testinput/3dvar_single-obs_cov.yaml
+  testinput/3dvar_single-obs_hyb_field.yaml
+  testinput/3dvar_single-obs_hyb_value.yaml
+  testinput/3dvar_single-obs_loc_3d.yaml
+  testinput/3dvar_single-obs_loc_3d_ensemble_transform.yaml
+  testinput/3dvar_single-obs_loc_3d_inflation_field.yaml
+  testinput/3dvar_single-obs_loc_3d_inflation_value.yaml
+  testinput/4densvar_single-obs_loc_4d_fast.yaml
+  testinput/4densvar_single-obs_loc_4d_aggressive.yaml
+  testinput/4densvar_single-obs_loc_4d_standard.yaml
+  testinput/4densvar_single-obs_loc_4d_time_decay_fast.yaml
+  testinput/4densvar_single-obs_loc_4d_time_decay_standard.yaml
+  testinput/4densvar_single-obs_no_loc.yaml
   testinput/eda_3dfgat_1.yaml
   testinput/eda_3dfgat_2.yaml
   testinput/eda_3dfgat_3.yaml
@@ -110,6 +110,8 @@ list( APPEND qg_testinput
   testinput/make_obs_4d_24h_pert_heat.yaml
   testinput/make_obs_4d_24h_filter_ordering.yaml
   testinput/make_obs_4d_biased.yaml
+  testinput/make_single-obs_3d.yaml
+  testinput/make_single-obs_4d_12h.yaml
   testinput/model.yaml
   testinput/modelauxcovariance.yaml
   testinput/modelauxincrement.yaml
@@ -122,7 +124,6 @@ list( APPEND qg_testinput
   testinput/rtpp.yaml
   testinput/rtps.yaml
   testinput/state.yaml
-  testinput/static_b_init.yaml
   testinput/truth.yaml
   testinput/truth_5level.yaml
   testinput/truth_pert_heat.yaml
@@ -166,16 +167,16 @@ list( APPEND qg_testoutput
   testoutput/addincrement_scaled.test
   testoutput/dfi.test
   testoutput/diffstates.test
-  testoutput/dirac_cov.test
-  testoutput/dirac_hyb_field.test
-  testoutput/dirac_hyb_value.test
-  testoutput/dirac_loc_3d.test
-  testoutput/dirac_loc_3d_ensemble_transform.test
-  testoutput/dirac_loc_3d_inflation_field.test
-  testoutput/dirac_loc_3d_inflation_value.test
-  testoutput/dirac_loc_4d.test
-  testoutput/dirac_loc_4d_time_decay.test
-  testoutput/dirac_no_loc.test
+  testoutput/3dvar_single-obs_cov.test
+  testoutput/3dvar_single-obs_hyb_field.test
+  testoutput/3dvar_single-obs_hyb_value.test
+  testoutput/3dvar_single-obs_loc_3d.test
+  testoutput/3dvar_single-obs_loc_3d_ensemble_transform.test
+  testoutput/3dvar_single-obs_loc_3d_inflation_field.test
+  testoutput/3dvar_single-obs_loc_3d_inflation_value.test
+  testoutput/4densvar_single-obs_loc_4d.test
+  testoutput/4densvar_single-obs_loc_4d_time_decay.test
+  testoutput/4densvar_single-obs_no_loc.test
   testoutput/eda_3dfgat.test
   testoutput/eda_3dvar.test
   testoutput/eda_3dvar_block.test
@@ -205,9 +206,10 @@ list( APPEND qg_testoutput
   testoutput/make_obs_4d_24h_filter_ordering.test
   testoutput/make_obs_4d_24h_pert_heat.test
   testoutput/make_obs_4d_biased.test
+  testoutput/make_single-obs_3d.test
+  testoutput/make_single-obs_4d_12h.test
   testoutput/rtpp.test
   testoutput/rtps.test
-  testoutput/static_b_init.test
   testoutput/truth.test
   testoutput/truth_5level.test
   testoutput/truth_pert_heat.test
@@ -547,6 +549,18 @@ ecbuild_add_test( TARGET test_qg_hofx3d
                   COMMAND  qg_hofx3d.x
                   TEST_DEPENDS test_qg_make_obs_4d_12h )
 
+ecbuild_add_test( TARGET test_qg_make_single-obs_3d
+                  OMP 2
+                  ARGS testinput/make_single-obs_3d.yaml
+                  COMMAND  qg_hofx.x
+                  TEST_DEPENDS test_qg_truth )
+
+ecbuild_add_test( TARGET test_qg_make_single-obs_4d_12h
+                  OMP 2
+                  ARGS testinput/make_single-obs_4d_12h.yaml
+                  COMMAND  qg_hofx.x
+                  TEST_DEPENDS test_qg_truth )
+
 #####################################################################
 # ensemble-related tests
 #####################################################################
@@ -631,13 +645,6 @@ ecbuild_add_test( TARGET test_qg_rtps
 # other tests
 #####################################################################
 
-ecbuild_add_test( TARGET test_qg_static_b_init
-                  MPI 1
-                  OMP 2
-                  ARGS testinput/static_b_init.yaml
-                  COMMAND  qg_staticbinit.x
-                  TEST_DEPENDS test_qg_truth )
-
 ecbuild_add_test( TARGET test_qg_dfi
                   OMP 2
                   ARGS testinput/dfi.yaml
@@ -651,97 +658,91 @@ ecbuild_add_test( TARGET test_qg_convertstate
                   TEST_DEPENDS test_qg_forecast )
 
 #####################################################################
-# QG dirac tests
+# QG single-obs tests
 #####################################################################
 
-ecbuild_add_test( TARGET test_qg_dirac_cov
+ecbuild_add_test( TARGET test_qg_3dvar_single-obs_cov
                   OMP 2
-                  ARGS testinput/dirac_cov.yaml
-                  COMMAND  qg_dirac.x
-                  TEST_DEPENDS test_qg_forecast )
+                  ARGS testinput/3dvar_single-obs_cov.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_make_single-obs_3d )
 
-ecbuild_add_test( TARGET test_qg_dirac_hyb_value
+ecbuild_add_test( TARGET test_qg_3dvar_single-obs_hyb_value
                   OMP 2
-                  ARGS testinput/dirac_hyb_value.yaml
-                  COMMAND  qg_dirac.x
-                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B )
+                  ARGS testinput/3dvar_single-obs_hyb_value.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_make_single-obs_3d test_qg_gen_ens_pert_B )
 
 ecbuild_add_test( TARGET test_qg_uniform_field_hybrid
                   OMP 2
                   ARGS testinput/uniform_field_hybrid.yaml
                   COMMAND qg_forecast.x )
 
-ecbuild_add_test( TARGET test_qg_dirac_hyb_field
+ecbuild_add_test( TARGET test_qg_3dvar_single-obs_hyb_field
                   OMP 2
-                  ARGS testinput/dirac_hyb_field.yaml
-                  COMMAND  qg_dirac.x
-                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_uniform_field_hybrid )
+                  ARGS testinput/3dvar_single-obs_hyb_field.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_make_single-obs_3d test_qg_gen_ens_pert_B )
 
-ecbuild_add_test( TARGET test_qg_dirac_loc_3d
+ecbuild_add_test( TARGET test_qg_3dvar_single-obs_loc_3d
                   OMP 2
-                  ARGS testinput/dirac_loc_3d.yaml
-                  COMMAND  qg_dirac.x
-                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B )
+                  ARGS testinput/3dvar_single-obs_loc_3d.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_make_single-obs_3d test_qg_gen_ens_pert_B )
 
-ecbuild_add_test( TARGET test_qg_dirac_loc_3d_ensemble_transform
+ecbuild_add_test( TARGET test_qg_3dvar_single-obs_loc_3d_ensemble_transform
                   OMP 2
-                  ARGS testinput/dirac_loc_3d_ensemble_transform.yaml
-                  COMMAND  qg_dirac.x
-                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B )
+                  ARGS testinput/3dvar_single-obs_loc_3d_ensemble_transform.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_make_single-obs_3d test_qg_gen_ens_pert_B )
 
-ecbuild_add_test( TARGET test_qg_dirac_loc_3d_inflation_field
+ecbuild_add_test( TARGET test_qg_3dvar_single-obs_loc_3d_inflation_field
                   OMP 2
-                  ARGS testinput/dirac_loc_3d_inflation_field.yaml
-                  COMMAND  qg_dirac.x
-                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_uniform_field_inflation )
+                  ARGS testinput/3dvar_single-obs_loc_3d_inflation_field.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_make_single-obs_3d test_qg_gen_ens_pert_B )
 
-ecbuild_add_test( TARGET test_qg_dirac_loc_3d_inflation_value
+ecbuild_add_test( TARGET test_qg_3dvar_single-obs_loc_3d_inflation_value
                   OMP 2
-                  ARGS testinput/dirac_loc_3d_inflation_value.yaml
-                  COMMAND  qg_dirac.x
-                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B )
+                  ARGS testinput/3dvar_single-obs_loc_3d_inflation_value.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_make_single-obs_3d test_qg_gen_ens_pert_B )
 
-ecbuild_add_test( TARGET test_qg_dirac_loc_4d_fast
-                  OMP 2
+ecbuild_add_test( TARGET test_qg_4densvar_single-obs_loc_4d_fast
                   MPI 13
-                  ARGS testinput/dirac_loc_4d_fast.yaml
-                  COMMAND  qg_dirac.x
-                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B )
+                  ARGS testinput/4densvar_single-obs_loc_4d_fast.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_single-obs_4d_12h )
 
-ecbuild_add_test( TARGET test_qg_dirac_loc_4d_aggressive
-                  OMP 2
+ecbuild_add_test( TARGET test_qg_4densvar_single-obs_loc_4d_aggressive
                   MPI 13
-                  ARGS testinput/dirac_loc_4d_aggressive.yaml
-                  COMMAND  qg_dirac.x
-                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B )
+                  ARGS testinput/4densvar_single-obs_loc_4d_aggressive.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_single-obs_4d_12h )
 
-ecbuild_add_test( TARGET test_qg_dirac_loc_4d_standard
-                  OMP 2
+ecbuild_add_test( TARGET test_qg_4densvar_single-obs_loc_4d_standard
                   MPI 13
-                  ARGS testinput/dirac_loc_4d_standard.yaml
-                  COMMAND  qg_dirac.x
-                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B )
+                  ARGS testinput/4densvar_single-obs_loc_4d_standard.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_single-obs_4d_12h )
 
-ecbuild_add_test( TARGET test_qg_dirac_loc_4d_time_decay_fast
-                  OMP 2
+ecbuild_add_test( TARGET test_qg_4densvar_single-obs_loc_4d_time_decay_fast
                   MPI 13
-                  ARGS testinput/dirac_loc_4d_time_decay_fast.yaml
-                  COMMAND  qg_dirac.x
-                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B )
+                  ARGS testinput/4densvar_single-obs_loc_4d_time_decay_fast.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_single-obs_4d_12h )
 
-ecbuild_add_test( TARGET test_qg_dirac_loc_4d_time_decay_standard
-                  OMP 2
+ecbuild_add_test( TARGET test_qg_4densvar_single-obs_loc_4d_time_decay_standard
                   MPI 13
-                  ARGS testinput/dirac_loc_4d_time_decay_standard.yaml
-                  COMMAND  qg_dirac.x
-                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B )
+                  ARGS testinput/4densvar_single-obs_loc_4d_time_decay_standard.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_single-obs_4d_12h )
 
-ecbuild_add_test( TARGET test_qg_dirac_no_loc
-                  OMP 2
-                  ARGS testinput/dirac_no_loc.yaml
-                  COMMAND  qg_dirac.x
-                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B )
-
+ecbuild_add_test( TARGET test_qg_4densvar_single-obs_no_loc
+                  MPI 13
+                  ARGS testinput/4densvar_single-obs_no_loc.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_single-obs_4d_12h )
 
 #####################################################################
 # 3d variational tests
@@ -818,6 +819,7 @@ ecbuild_add_test( TARGET test_qg_4dvar_dripcg
                   ARGS testinput/4dvar_dripcg.yaml
                   COMMAND  qg_4dvar.x
                   TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
+                  
 ecbuild_add_test( TARGET test_qg_4dvar_dripcg_5level
                   OMP 2
                   ARGS testinput/4dvar_dripcg_5level.yaml

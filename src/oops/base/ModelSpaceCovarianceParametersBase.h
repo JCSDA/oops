@@ -35,7 +35,7 @@ class ModelSpaceCovarianceParametersBase : public Parameters {
   typedef typename LinearVariableChange<MODEL>::Parameters_ Parameters_;
   OptionalParameter<std::string> covarianceModel{"covariance model", this};
 
-  Parameter<size_t> randomizationSize{"randomization size", 50, this};
+  OptionalParameter<size_t> randomizationSize{"randomization size", this};
   Parameter<bool> fullInverse{"full inverse", false, this};
   Parameter<int> fullInverseIterations{"full inverse iterations", 10, this};
   Parameter<double> fullInverseAccuracy{"full inverse accuracy", 1.0e-3, this};

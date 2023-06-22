@@ -7,21 +7,28 @@
 
 #include "oops/base/WriteParametersBase.h"
 
+#include "oops/util/ConfigFunctions.h"
+
 namespace oops {
 
-void WriteParametersBase::setMember(int mem) {
+void WriteParametersBase::setMember(const int & mem) {
   eckit::LocalConfiguration conf = toConfiguration();
-  conf.set("member", mem);
+  if (conf.has("member pattern")) {
+    std::string memberPattern = conf.getString("member pattern");
+    util::seekAndReplace(conf, memberPattern, std::to_string(mem));
+  } else {
+    conf.set("member", mem);
+  }
   validateAndDeserialize(conf);
 }
 
-void WriteParametersBase::setDate(const util::DateTime &d) {
+void WriteParametersBase::setDate(const util::DateTime & d) {
   eckit::LocalConfiguration conf = toConfiguration();
   conf.set("date", d.toString());
   validateAndDeserialize(conf);
 }
 
-void WriteParametersBase::setIteration(int it) {
+void WriteParametersBase::setIteration(const int & it) {
   eckit::LocalConfiguration conf = toConfiguration();
   conf.set("iteration", it);
   validateAndDeserialize(conf);
