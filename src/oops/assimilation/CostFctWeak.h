@@ -141,6 +141,11 @@ CostFctWeak<MODEL, OBS>::CostFctWeak(const eckit::Configuration & config,
   resol_.reset(new Geometry_(eckit::LocalConfiguration(config, "geometry"),
                              *commSpace_, *commTime_));
   model_.reset(new Model_(*resol_, eckit::LocalConfiguration(config, "model")));
+
+  typename VariableChange<MODEL>::Parameters_ params;
+  params.deserialize(config.getSubConfiguration("variable change"));
+  an2model_ = std::make_unique<VarCha_>(params, *resol_);
+
   this->setupTerms(config);
 
   Log::trace() << "CostFctWeak constructed" << std::endl;

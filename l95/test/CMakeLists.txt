@@ -701,10 +701,11 @@ ecbuild_add_test( TARGET test_l95_4dvar_drplzero
                   ARGS testinput/4dvar_drplzero.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
-#ecbuild_add_test( TARGET test_l95_4dforcing
-#                  COMMAND l95_4dvar.x
-#                  ARGS testinput/4dforcing.yaml
-#                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+ecbuild_add_test( TARGET test_l95_4dforcing
+                  COMMAND l95_4dvar.x
+                  MPI 2
+                  ARGS testinput/4dforcing.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
 ecbuild_add_test( TARGET test_l95_4dsaddlepoint
                   COMMAND l95_4dvar.x
