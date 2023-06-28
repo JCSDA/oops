@@ -1,37 +1,26 @@
 /*
- * (C) Copyright 2022 MetOffice.
- * (C) Copyright 2021-2022 UCAR.
+ * (C) Copyright 2022-2023 UCAR.
+ * (C) Crown copyright 2022-2023 Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
+
 #ifndef OOPS_GENERIC_HTLMCALCULATOR_H_
 #define OOPS_GENERIC_HTLMCALCULATOR_H_
 
-#include <Eigen/Geometry>
-#include <Eigen/SVD>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "oops/base/Geometry.h"
-#include "oops/base/Increment.h"
 #include "oops/base/IncrementEnsemble.h"
-#include "oops/base/Variables.h"
 #include "oops/generic/HtlmRegularization.h"
-#include "oops/mpi/mpi.h"
-#include "oops/util/DateTime.h"
-#include "oops/util/Logger.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
 
-// Parameters for coefficient calculation
 template <typename MODEL>
 class HtlmCalculatorParameters : public Parameters {
   OOPS_CONCRETE_PARAMETERS(HtlmCalculatorParameters, Parameters);
-  typedef typename Geometry<MODEL>::Parameters_ GeometryParameters_;
 
  public:
   /* The influence region size is the number of points that go into the calculation of
@@ -44,7 +33,6 @@ class HtlmCalculatorParameters : public Parameters {
   Parameter<bool>                 rms{"rms scaling", true, this};
 };
 
-// Class declarations for HtlmCalculator
 template <typename MODEL>
 class HtlmCalculator{
   typedef HtlmCalculatorParameters<MODEL>   HtlmCalculatorParameters_;
@@ -54,10 +42,8 @@ class HtlmCalculator{
 
  public:
   static const std::string classname() {return "oops::HtlmCalculator";}
-
-  HtlmCalculator(const HtlmCalculatorParameters_ &, const Variables &, const size_t &,
-                                                     const Geometry_ &, const util::DateTime &);
-
+  HtlmCalculator(const HtlmCalculatorParameters_ &, const Variables &, const size_t,
+                 const Geometry_ &, const size_t, const size_t, const util::DateTime &);
   void calcCoeffs(const IncrementEnsemble_ &,
                  const IncrementEnsemble_ &,
                  atlas::FieldSet &);
@@ -68,12 +54,7 @@ class HtlmCalculator{
   atlas::idx_t influenceSize_;
   atlas::idx_t halfInfluenceSize_;
   Variables vars_;
-
-  // regularization paramater in coeff calculation
   std::unique_ptr<HtlmRegularization> regularizationPtr_;
-
-  // Increment geometry used to get needed dimensions.
-  const Geometry_ & incrementGeometry_;
   atlas::idx_t horizExt_;
   atlas::idx_t vertExt_;
 };
@@ -82,27 +63,22 @@ class HtlmCalculator{
 
 template <typename MODEL>
 HtlmCalculator<MODEL>::HtlmCalculator(const HtlmCalculatorParameters_ & params,
-                                                      const Variables & vars,
-                                                      const size_t & ensembleSize,
-                                                      const Geometry_ & geomTLM,
-                                                      const util::DateTime & startTime)
-: params_(params), ensembleSize_(atlas::idx_t(ensembleSize)),
-influenceSize_(params_.influenceRegionSize.value()), halfInfluenceSize_(influenceSize_/2),
-vars_(vars),
- incrementGeometry_(geomTLM) {
-  // Use increment geometry to get needed dimensions
-  Increment_ coeffSetupInc(incrementGeometry_, vars_, startTime);
-  atlas::FieldSet coeffSetupFset = coeffSetupInc.fieldSet();
-  horizExt_ = coeffSetupFset[0].shape(0);
-  vertExt_ = coeffSetupFset[0].shape(1);
-
-  // Set up regularization
+                                      const Variables & vars,
+                                      const size_t ensembleSize,
+                                      const Geometry_ & geomTLM,
+                                      const size_t nLocations,
+                                      const size_t nLevels,
+                                      const util::DateTime & startTime)
+: params_(params), ensembleSize_(ensembleSize), influenceSize_(params_.influenceRegionSize.value()),
+  halfInfluenceSize_(influenceSize_/2), vars_(vars), horizExt_(nLocations), vertExt_(nLevels) {
   if (params_.regularizationParams.value().parts.value() == boost::none) {
     regularizationPtr_ = std::make_unique<HtlmRegularization>(params_.regularizationParams.value());
   } else {
+    Increment_ regularizationIncrement(geomTLM, vars_, startTime);
+    atlas::FieldSet regularizationFieldSet = regularizationIncrement.fieldSet();
     regularizationPtr_ =
       std::make_unique<HtlmRegularizationComponentDependent>(params_.regularizationParams.value(),
-                                                             coeffSetupFset);
+                                                             regularizationFieldSet);
   }
 }
 
@@ -213,5 +189,6 @@ void HtlmCalculator<MODEL>::calcCoeffs(const IncrementEnsemble_ & linearEnsemble
 
 //-----------------------------------------------------------------------------------
 
-}  //  namespace oops
-#endif  //  OOPS_GENERIC_HTLMCALCULATOR_H_
+}  // namespace oops
+
+#endif  // OOPS_GENERIC_HTLMCALCULATOR_H_

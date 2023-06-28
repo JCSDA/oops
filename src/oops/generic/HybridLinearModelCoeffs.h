@@ -1,6 +1,6 @@
 /*
- * (C) Copyright 2022 MetOffice.
- * (C) Copyright 2021-2022 UCAR.
+ * (C) Copyright 2022-2023 UCAR.
+ * (C) Crown copyright 2022-2023 Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -9,6 +9,7 @@
 #ifndef OOPS_GENERIC_HYBRIDLINEARMODELCOEFFS_H_
 #define OOPS_GENERIC_HYBRIDLINEARMODELCOEFFS_H_
 
+#include <functional>
 #include <map>
 #include <memory>
 #include <string>
@@ -101,14 +102,18 @@ HybridLinearModelCoeffs<MODEL>::HybridLinearModelCoeffs
     const util::DateTime windowBegin = params.windowBegin.value();
     const util::Duration windowLength = params.windowLength.value();
     util::DateTime time(windowBegin);
-    Increment_ vertExtInc(geomTLM , vars_ , time);
-    atlas::FieldSet vertExtFset = vertExtInc.fieldSet();
-    atlas::idx_t vertExt_ = vertExtFset[0].shape(1);
-    influenceStencil_ = makeUpdateStencil(vertExt_);
+    const size_t nLocations = geomTLM.functionSpace().size();
+    const std::vector<size_t> nLevelsAll = geomTLM.variableSizes(vars_);
+    auto it = std::adjacent_find(nLevelsAll.begin(), nLevelsAll.end(), std::not_equal_to<>());
+    if (it == nLevelsAll.end()) {
+      influenceStencil_ = makeUpdateStencil(nLevelsAll[0]);
+    } else {
+      ABORT("HybridLinearModelCoeffs: variables do not have same number of vertical levels");
+    }
     HtlmEnsemble_ ens(params.htlmEnsemble.value(), geomTLM);
-    HtlmCalculator_ calculator(params.htlmCalculator.value(), params.vars,
-    params.htlmEnsemble.value().ensembleSize.value(), geomTLM, params.windowBegin.value());
     const size_t ensembleSize = params.htlmEnsemble.value().ensembleSize.value();
+    HtlmCalculator_ calculator(params.htlmCalculator.value(), params.vars, ensembleSize, geomTLM,
+                               nLocations, nLevelsAll[0], params.windowBegin.value());
     // Step ensemble and calculate coefficients at time t
     while (time < (windowBegin + windowLength)) {
       time += tstep;
