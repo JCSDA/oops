@@ -48,6 +48,13 @@ template <typename MODEL> class LocalizationFixture : private boost::noncopyable
   static const util::DateTime  & time()         {return *getInstance().time_;}
   static const Localization_   & localization() {return *getInstance().local_;}
 
+  static void reset() {
+    getInstance().resol_.reset();
+    getInstance().ctlvars_.reset();
+    getInstance().time_.reset();
+    getInstance().local_.reset();
+  }
+
  private:
   static LocalizationFixture<MODEL>& getInstance() {
     static LocalizationFixture<MODEL> theLocalizationFixture;
@@ -70,7 +77,7 @@ template <typename MODEL> class LocalizationFixture : private boost::noncopyable
     oops::Log::test() << "Testing localization: " << *local_ << std::endl;
   }
 
-  ~LocalizationFixture<MODEL>() {}
+  ~LocalizationFixture<MODEL>() = default;
 
   std::unique_ptr<const Geometry_>       resol_;
   std::unique_ptr<const oops::Variables> ctlvars_;
@@ -120,9 +127,12 @@ template <typename MODEL> void testLocalizationMultiply() {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL> class Localization : public oops::Test {
+  typedef LocalizationFixture<MODEL> Test_;
+
  public:
   Localization() {}
   virtual ~Localization() {}
+
  private:
   std::string testid() const override {return "test::Localization<" + MODEL::name() + ">";}
 
@@ -137,7 +147,7 @@ template <typename MODEL> class Localization : public oops::Test {
       { testLocalizationMultiply<MODEL>(); });
   }
 
-  void clear() const override {}
+  void clear() const override { Test_::reset(); }
 };
 
 // -----------------------------------------------------------------------------
