@@ -261,5 +261,42 @@ void allGatherv(const eckit::mpi::Comm & comm, std::vector<std::string> &x);
 /// on all ranks lower than the calling rank (and to 0 on rank 0).
 void exclusiveScan(const eckit::mpi::Comm &comm, size_t &x);
 
+// ------------------------------------------------------------------------------------------------
+// MPI broadcast utilities based on eckit broadcast.
+
+/// \brief broadcast a vector variable via the eckit broadcast
+/// \param comm eckit communicator group
+/// \param vectorVar vector for broadcasting
+/// \param root root rank for broadcasting
+template <typename VecType>
+void broadcastVector(const eckit::mpi::Comm & comm, std::vector<VecType> & vectorVar,
+                     const int root) {
+    // eckit broadcast support vectors, but you need to have the vectors identically
+    // sized on both sides before doing the broadcast. This routine will broadcast
+    // the vector size so the receiving end can resize properly.
+    int vecSize;
+    if (comm.rank() == root) {
+        vecSize = vectorVar.size();
+        comm.broadcast(vecSize, root);
+        comm.broadcast(vectorVar, root);
+    } else {
+        comm.broadcast(vecSize, root);
+        vectorVar.resize(vecSize);
+        comm.broadcast(vectorVar, root);
+    }
+}
+
+/// @brief broadcast a bool variable via the eckit broadcast
+/// @param comm eckit communicator group
+/// @param boolVar variable for broadcasting
+/// @param root root rank for broadcasting
+void broadcastBool(const eckit::mpi::Comm & comm, bool & boolVar, const int root);
+
+/// \brief broadcast a string variable via the eckit broadcast
+/// \param comm eckit communicator group
+/// \param stringVar string for broadcasting
+/// \param root root rank for broadcasting
+void broadcastString(const eckit::mpi::Comm & comm, std::string & stringVar, const int root);
+
 }  // namespace mpi
 }  // namespace oops
