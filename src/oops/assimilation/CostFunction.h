@@ -196,8 +196,8 @@ void CostFunction<MODEL, OBS>::setupTerms(const eckit::Configuration & config) {
   Log::trace() << "CostFunction::setupTerms Jo added" << std::endl;
 
 // Jb
-  jb_.reset(new JbTotal_(this->newJb(config, this->geometry()),   // constructs background
-                         config, this->geometry(), jo->obspaces()));
+  CostJbState<MODEL> * jbs = this->newJb(config, this->geometry());  // constructs background
+  jb_.reset(new JbTotal_(jbs, config, this->geometry(), jo->obspaces()));
   Log::trace() << "CostFunction::setupTerms Jb added" << std::endl;
 
 // Other constraints
@@ -207,7 +207,7 @@ void CostFunction<MODEL, OBS>::setupTerms(const eckit::Configuration & config) {
     CostTermBase<MODEL, OBS> * jc = this->newJc(jcs[jj], this->geometry());
     jterms_.push_back(jc);
   }
-  Log::trace() << "CostFunction::setupTerms done" << std::endl;
+  Log::trace() << "CostFunction::setupTerms Jc added" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

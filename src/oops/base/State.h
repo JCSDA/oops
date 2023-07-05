@@ -14,7 +14,6 @@
 
 #include "oops/base/StateParametersND.h"
 #include "oops/interface/State.h"
-#include "oops/util/gatherPrint.h"
 
 namespace oops {
 
@@ -78,18 +77,12 @@ class State : public interface::State<MODEL> {
   atlas::FieldSet & fieldSet();
   void synchronizeFields();
 
-  /// Norm (used in tests)
-  double norm() const;
-
   /// Write
   void write(const eckit::Configuration &) const;
   void write(const WriteParameters_ &) const;
 
  private:
   const Geometry_ & resol_;
-  const eckit::mpi::Comm * commTime_;  /// pointer to the MPI communicator in time
-
-  void print(std::ostream &) const override;
 };
 
 // =============================================================================
@@ -97,7 +90,7 @@ class State : public interface::State<MODEL> {
 template<typename MODEL>
 State<MODEL>::State(const Geometry_ & resol, const Variables & vars,
                     const util::DateTime & time) :
-  interface::State<MODEL>(resol, vars, time), resol_(resol), commTime_(&resol.timeComm())
+  interface::State<MODEL>(resol, vars, time), resol_(resol)
 {}
 
 // -----------------------------------------------------------------------------
@@ -112,7 +105,7 @@ State<MODEL>::State(const Geometry_ & resol, const ParametersND_ & paramsND) :
 
 template<typename MODEL>
 State<MODEL>::State(const Geometry_ & resol, const Parameters_ & params) :
-  interface::State<MODEL>(resol, params), resol_(resol), commTime_(&resol.timeComm())
+  interface::State<MODEL>(resol, params), resol_(resol)
 {}
 
 // -----------------------------------------------------------------------------
@@ -126,14 +119,14 @@ State<MODEL>::State(const Geometry_ & resol, const eckit::Configuration & conf) 
 
 template<typename MODEL>
 State<MODEL>::State(const Geometry_ & resol, const State & other) :
-  interface::State<MODEL>(resol, other), resol_(resol), commTime_(&resol.timeComm())
+  interface::State<MODEL>(resol, other), resol_(resol)
 {}
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 State<MODEL>::State(const State & other) :
-  interface::State<MODEL>(other), resol_(other.resol_), commTime_(&resol_.timeComm())
+  interface::State<MODEL>(other), resol_(other.resol_)
 {}
 
 // -----------------------------------------------------------------------------
@@ -141,7 +134,6 @@ State<MODEL>::State(const State & other) :
 template<typename MODEL>
 State<MODEL> & State<MODEL>::operator=(const State & rhs) {
   ASSERT(resol_ == rhs.resol_);
-  ASSERT(commTime_ == rhs.commTime_);
   interface::State<MODEL>::operator=(rhs);
   return *this;
 }
@@ -185,17 +177,6 @@ void State<MODEL>::synchronizeFields() {
   // TODO(JEDI core team): remove this method when accessors are fully implemented
   ASSERT(!interface::State<MODEL>::fset_.empty());
   this->fromFieldSet(interface::State<MODEL>::fset_);
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-double State<MODEL>::norm() const {
-  double zz = interface::State<MODEL>::norm();
-  zz *= zz;
-  commTime_->allReduceInPlace(zz, eckit::mpi::Operation::SUM);
-  zz = sqrt(zz);
-  return zz;
 }
 
 // -----------------------------------------------------------------------------
@@ -253,17 +234,6 @@ template<typename MODEL>
 void State<MODEL>::write(const WriteParameters_ & params) const {
   eckit::LocalConfiguration conf = params.toConfiguration();
   this->write(conf);
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void State<MODEL>::print(std::ostream & os) const {
-  if (commTime_->size() > 1) {
-    gatherPrint(os, this->state(), *commTime_);
-  } else {
-    os << this->state();
-  }
 }
 
 // -----------------------------------------------------------------------------

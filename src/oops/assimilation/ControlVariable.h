@@ -12,6 +12,7 @@
 #define OOPS_ASSIMILATION_CONTROLVARIABLE_H_
 
 #include <cmath>
+#include <memory>
 #include <ostream>
 #include <string>
 #include <vector>
@@ -21,6 +22,7 @@
 #include "oops/base/ObsAuxControls.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/State.h"
+#include "oops/base/State4D.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/util/ObjectCounter.h"
@@ -42,40 +44,39 @@ namespace oops {
 template<typename MODEL, typename OBS> class ControlVariable;
 
 // -----------------------------------------------------------------------------
+
 template<typename MODEL, typename OBS>
 class ControlVariable : public util::Printable,
                         public util::Serializable,
                         private util::ObjectCounter<ControlVariable<MODEL, OBS> > {
   typedef Geometry<MODEL>            Geometry_;
+  typedef State4D<MODEL>             State4D_;
   typedef ModelAuxControl<MODEL>     ModelAux_;
-  typedef ObsAuxControls<OBS>        ObsAuxCtrls_;
+  typedef ObsAuxControls<OBS>        ObsAux_;
   typedef ObsSpaces<OBS>             ObsSpaces_;
-  typedef State<MODEL>               State_;
 
  public:
   static const std::string classname() {return "oops::ControlVariable";}
 
 /// The arguments define the number of sub-windows and the resolution
-  ControlVariable(const eckit::Configuration &, const Geometry_ &, const ObsSpaces_ &);
+  ControlVariable(std::shared_ptr<State4D_>,
+                  std::shared_ptr<ModelAux_>, std::shared_ptr<ObsAux_>);
   explicit ControlVariable(const ControlVariable &);
   ~ControlVariable();
 
-/// I/O and diagnostics
-  void read(const eckit::Configuration &);
-  void write(const eckit::Configuration &) const;
-  double norm() const;
-
 /// Get state control variable
-  State_ & state() {return state_;}
-  const State_ & state() const {return state_;}
+  State<MODEL> & state(const size_t ii = 0) {return (*state_)[ii];}
+  const State<MODEL> & state(const size_t ii = 0) const {return (*state_)[ii];}
+  State4D<MODEL> & states() {return *state_;}
+  const State4D<MODEL> & states() const {return *state_;}
 
 /// Get augmented model control variable
-  ModelAux_ & modVar() {return modbias_;}
-  const ModelAux_ & modVar() const {return modbias_;}
+  ModelAux_ & modVar() {return *modbias_;}
+  const ModelAux_ & modVar() const {return *modbias_;}
 
 /// Get augmented observation control variable
-  ObsAuxCtrls_ & obsVar() {return obsbias_;}
-  const ObsAuxCtrls_ & obsVar() const {return obsbias_;}
+  ObsAux_ & obsVar() {return *obsbias_;}
+  const ObsAux_ & obsVar() const {return *obsbias_;}
 
 /// Serialize and deserialize ControlVariable
   size_t serialSize() const override;
@@ -86,29 +87,30 @@ class ControlVariable : public util::Printable,
   ControlVariable & operator= (const ControlVariable &);  // No assignment
   void print(std::ostream &) const override;
 
-  State_ state_;
-  ModelAux_ modbias_;     // not only for bias, better name?
-  ObsAuxCtrls_ obsbias_;  // not only for bias, better name?
+  std::shared_ptr<State4D_> state_;
+  std::shared_ptr<ModelAux_> modbias_;  // not only for bias, better name?
+  std::shared_ptr<ObsAux_> obsbias_;    // not only for bias, better name?
 };
 
-// =============================================================================
+// -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-ControlVariable<MODEL, OBS>::ControlVariable(const eckit::Configuration & conf,
-                                             const Geometry_ & resol, const ObsSpaces_ & odb)
-  : state_(resol, eckit::LocalConfiguration(conf, "background")),
-    modbias_(resol, conf.getSubConfiguration("model aux control")),
-    obsbias_(odb, conf.getSubConfiguration("observations.observers"))
+ControlVariable<MODEL, OBS>::ControlVariable(std::shared_ptr<State4D_> bg,
+                                             std::shared_ptr<ModelAux_> maux,
+                                             std::shared_ptr<ObsAux_> oaux)
+  : state_(bg), modbias_(maux), obsbias_(oaux)
 {
-  Log::trace() << "ControlVariable constructed" << std::endl;
+  Log::trace() << "ControlVariable::ControlVariable done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
 ControlVariable<MODEL, OBS>::ControlVariable(const ControlVariable & other)
-  : state_(other.state_), modbias_(other.modbias_), obsbias_(other.obsbias_)
+  : state_(new State4D_(*other.state_)), modbias_(), obsbias_()
 {
+  if (other.modbias_) modbias_.reset(new ModelAux_(*other.modbias_));
+  if (other.obsbias_) obsbias_.reset(new ObsAux_(*other.obsbias_));
   Log::trace() << "ControlVariable copied" << std::endl;
 }
 
@@ -121,67 +123,47 @@ ControlVariable<MODEL, OBS>::~ControlVariable() {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL, typename OBS>
-void ControlVariable<MODEL, OBS>::read(const eckit::Configuration & config) {
-  state_.read(config);
-  modbias_.read(config);
-  obsbias_.read(config);
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL, typename OBS>
-void ControlVariable<MODEL, OBS>::write(const eckit::Configuration & config) const {
-  state_.write(config);
-  modbias_.write(config);
-  obsbias_.write(config);
-}
-
-// -----------------------------------------------------------------------------
-
 template <typename MODEL, typename OBS>
 void ControlVariable<MODEL, OBS>::print(std::ostream & outs) const {
-  outs << state_ << std::endl;
-  outs << modbias_ << std::endl;
-  outs << obsbias_;
+  outs << *state_ << std::endl;
+  outs << *modbias_ << std::endl;
+  outs << *obsbias_;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL, typename OBS>
-double ControlVariable<MODEL, OBS>::norm() const {
-  double zz = state_.norm();
-  double zn = zz * zz;
-  zz = modbias_.norm();
-  zn += zz * zz;
-  zz = obsbias_.norm();
-  zn += zz * zz;
-  return sqrt(zn);
-}
-
-// -----------------------------------------------------------------------------
 template<typename MODEL, typename OBS>
 size_t ControlVariable<MODEL, OBS>::serialSize() const {
   size_t ss = 0;
-  ss += state_.serialSize();
-  ss += modbias_.serialSize();
-  ss += obsbias_.serialSize();
+  for (size_t js = 0; js < state_->size(); ++js) {
+    ss += (*state_)[js].serialSize();
+  }
+  ss += modbias_->serialSize();
+  ss += obsbias_->serialSize();
   return ss;
 }
+
 // -----------------------------------------------------------------------------
+
 template<typename MODEL, typename OBS>
 void ControlVariable<MODEL, OBS>::serialize(std::vector<double> & vec) const {
   vec.reserve(vec.size() + this->serialSize());  // allocate memory to avoid reallocations
-  state_.serialize(vec);
-  modbias_.serialize(vec);
-  obsbias_.serialize(vec);
+  for (size_t js = 0; js < state_->size(); ++js) {
+    (*state_)[js].serialize(vec);
+  }
+  modbias_->serialize(vec);
+  obsbias_->serialize(vec);
 }
+
 // -----------------------------------------------------------------------------
+
 template<typename MODEL, typename OBS>
 void ControlVariable<MODEL, OBS>::deserialize(const std::vector<double> & vec, size_t & indx) {
-  state_.deserialize(vec, indx);
-  modbias_.deserialize(vec, indx);
-  obsbias_.deserialize(vec, indx);
+  for (size_t js = 0; js < state_->size(); ++js) {
+    (*state_)[js].deserialize(vec, indx);
+  }
+  modbias_->deserialize(vec, indx);
+  obsbias_->deserialize(vec, indx);
 }
 
 // -----------------------------------------------------------------------------

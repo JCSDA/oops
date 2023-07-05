@@ -33,7 +33,7 @@ template<typename MODEL, typename OBS> class PMatrix {
 
  public:
     explicit PMatrix(const CostFct_ & j): j_(j),
-    p_(j_.jb().jbObsBias().preconditioner()) {}
+    p_(j_.jb().jbObsBias().covariance().preconditioner()) {}
     void multiply(const CtrlInc_ & x, CtrlInc_ & px) const {
       j_.jb().multiplyB(x, px);
       // Applying VarBC preconditioner

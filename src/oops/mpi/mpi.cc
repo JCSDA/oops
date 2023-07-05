@@ -81,6 +81,12 @@ namespace mpi {
 
 // ------------------------------------------------------------------------------------------------
 
+const eckit::mpi::Comm & clone(const eckit::mpi::Comm & comm) {
+  return eckit::mpi::comm(comm.name().c_str());
+}
+
+// ------------------------------------------------------------------------------------------------
+
 const eckit::mpi::Comm & world() {
   return eckit::mpi::comm("world");
 }

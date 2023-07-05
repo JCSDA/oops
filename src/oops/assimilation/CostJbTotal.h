@@ -17,6 +17,8 @@
 
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/ControlVariable.h"
+#include "oops/assimilation/CostJbModelAux.h"
+#include "oops/assimilation/CostJbObsAux.h"
 #include "oops/assimilation/CostJbState.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/ObsAuxCovariances.h"
@@ -40,14 +42,16 @@ template<typename MODEL, typename OBS> class CostJbTotal {
   typedef ControlVariable<MODEL, OBS>   CtrlVar_;
   typedef State<MODEL>                  State_;
   typedef CostJbState<MODEL>            JbState_;
+  typedef CostJbModelAux<MODEL, OBS>    JbModelAux_;
+  typedef CostJbObsAux<MODEL, OBS>      JbObsAux_;
   typedef JqTerm<MODEL>                 JqTerm_;
   typedef JqTermTLAD<MODEL>             JqTermTLAD_;
   typedef Geometry<MODEL>               Geometry_;
-  typedef ModelAuxCovariance<MODEL>     ModelAuxCovar_;
-  typedef ObsAuxCovariances<OBS>        ObsAuxCovars_;
+  typedef ModelAuxCovariance<MODEL>     ModelAuxCovariance_;
   typedef ObsSpaces<OBS>                ObsSpaces_;
   typedef PostProcessor<State_>         PostProc_;
   typedef PostProcessorTLAD<MODEL>      PostProcTLAD_;
+  typedef ObsAuxCovariances<OBS>        ObsAuxCovars_;
 
  public:
 /// Construct \f$ J_b\f$.
@@ -94,18 +98,18 @@ template<typename MODEL, typename OBS> class CostJbTotal {
 /// Jb terms for ControlIncrement constructor.
   const Geometry_ & resolution() const;
   const JbState_ & jbState() const {return *jb_;}
-  const ModelAuxCovar_ & jbModBias() const {return jbModBias_;}
-  const ObsAuxCovars_ & jbObsBias() const {return jbObsBias_;}
+  const JbModelAux_ & jbModBias() const {return jbModBias_;}
+  const JbObsAux_ & jbObsBias() const {return jbObsBias_;}
   const util::DateTime & windowBegin() const {return windowBegin_;}
   const util::DateTime & windowEnd()   const {return windowEnd_;}
 
  private:
   double evaluate(const CtrlInc_ &) const;
 
-  CtrlVar_ xb_;
   std::unique_ptr<JbState_> jb_;
-  ModelAuxCovar_ jbModBias_;
-  ObsAuxCovars_  jbObsBias_;
+  JbModelAux_ jbModBias_;
+  JbObsAux_  jbObsBias_;
+  CtrlVar_ xb_;
 
 /// Inner loop resolution
   const Geometry_ * resol_;
@@ -130,10 +134,10 @@ template<typename MODEL, typename OBS>
 CostJbTotal<MODEL, OBS>::CostJbTotal(JbState_ * jb,
                                      const eckit::Configuration & conf,
                                      const Geometry_ & resol, const ObsSpaces_ & odb)
-  : xb_(conf, resol, odb), jb_(jb),
-    jbModBias_(conf.getSubConfiguration("model aux error"), resol),
-    jbObsBias_(odb, conf.getSubConfiguration("observations.observers")), resol_(nullptr),
-    windowBegin_(conf.getString("window begin")),
+  : jb_(jb), jbModBias_(conf, resol),
+    jbObsBias_(odb, conf.getSubConfiguration("observations.observers")),
+    xb_(jb_->background(), jbModBias_.background(), jbObsBias_.background()),
+    resol_(nullptr), windowBegin_(conf.getString("window begin")),
     windowEnd_(windowBegin_ + util::Duration(conf.getString("window length"))),
     innerConf_(), dxFG_(), xx_(), traj_(), jqtraj_()
 {
@@ -146,8 +150,7 @@ CostJbTotal<MODEL, OBS>::CostJbTotal(JbState_ * jb,
 template<typename MODEL, typename OBS>
 CostJbTotal<MODEL, OBS>::~CostJbTotal() {
   Log::trace() << "CostJbTotal::~CostJbTotal start" << std::endl;
-  // Write out obs bias covariance
-  jbObsBias_.write(jbObsBias_.config());
+  jbObsBias_.covariance().write(jbObsBias_.covariance().config());
   Log::trace() << "CostJbTotal::~CostJbTotal done" << std::endl;
 }
 
@@ -182,7 +185,7 @@ double CostJbTotal<MODEL, OBS>::computeCost() {
   CtrlInc_ dx(*this);
 
 // Compute x_0 - x_b for Jb (and Jq if present)
-  jb_->computeIncrement(xb_.state(), xx_->state(), jb_->getJq(), dx.state());
+  jb_->computeIncrement(xb_.states(), xx_->states(), jb_->getJq(), dx.states());
 
 // Model and Obs biases
   dx.modVar().diff(xx_->modVar(), xb_.modVar());
@@ -213,6 +216,8 @@ void CostJbTotal<MODEL, OBS>::setPostProcTraj(const CtrlVar_ & fg,
 // Trajectory for model error term
   jqtraj_.reset(jb_->initializeJqTLAD());
   pptraj.enrollProcessor(jqtraj_);
+  jbModBias_.setPostProcTraj(*traj_, innerConf_, *resol_, pptraj);
+  jbObsBias_.setPostProcTraj(*traj_, innerConf_, *resol_, pptraj);
   Log::trace() << "CostJbTotal::setPostProcTraj done" << std::endl;
 }
 
@@ -225,11 +230,11 @@ void CostJbTotal<MODEL, OBS>::computeCostTraj() {
   ASSERT(traj_);
 
 // Linearize model-related terms and setup B (obs term done in computeCostTraj)
-  jb_->linearize(xb_.state(), traj_->state(), *resol_);
-  jbModBias_.linearize(traj_->modVar(), *resol_);
+  jb_->linearize(xb_.states(), traj_->states(), *resol_);
+  jbModBias_.computeCostTraj();
 
 // Linearize obs bias term
-  jbObsBias_.linearize(traj_->obsVar(), innerConf_);
+  jbObsBias_.computeCostTraj();
 
 // Compute and save first guess increment.
   dxFG_.reset(new CtrlInc_(*this));
@@ -237,7 +242,7 @@ void CostJbTotal<MODEL, OBS>::computeCostTraj() {
 // Compute x_0 - x_b for Jb (and Jq if present)
   std::shared_ptr<JqTerm_> jq;
   if (jqtraj_) jq = jqtraj_->getJq();
-  jb_->computeIncrement(xb_.state(), traj_->state(), jq, dxFG_->state());
+  jb_->computeIncrement(xb_.states(), traj_->states(), jq, dxFG_->states());
 
 // Model and Obs biases
   dxFG_->modVar().diff(traj_->modVar(), xb_.modVar());
@@ -260,7 +265,7 @@ double CostJbTotal<MODEL, OBS>::evaluate(const CtrlInc_ & dx) const {
   this->multiplyBinv(dx, gg);
 
   double zjb = 0.0;
-  double zz = 0.5 * dot_product(dx.state(), gg.state());
+  double zz = 0.5 * dot_product(dx.states(), gg.states());
   Log::info() << "CostJb   : Nonlinear Jb State = " << zz << std::endl;
   zjb += zz;
   zz = 0.5 * dot_product(dx.modVar(), gg.modVar());
@@ -297,7 +302,7 @@ void CostJbTotal<MODEL, OBS>::addGradientFG(CtrlInc_ & grad) const {
 template<typename MODEL, typename OBS>
 void CostJbTotal<MODEL, OBS>::addGradientFG(CtrlInc_ & grad, CtrlInc_ & gradJb) const {
   Log::trace() << "CostJbTotal::addGradientFG 2 start" << std::endl;
-  jb_->addGradient(dxFG_->state(), grad.state(), gradJb.state());
+  jb_->addGradient(dxFG_->states(), grad.states(), gradJb.states());
   grad.modVar() += gradJb.modVar();
   grad.obsVar() += gradJb.obsVar();
   Log::trace() << "CostJbTotal::addGradientFG 2 done" << std::endl;
@@ -330,7 +335,7 @@ template<typename MODEL, typename OBS>
 void CostJbTotal<MODEL, OBS>::initializeAD(CtrlInc_ & bgns, const CtrlInc_ & dx,
                                            PostProcTLAD_ & ppad) const {
   Log::trace() << "CostJbTotal::initializeAD start" << std::endl;
-  jqad_.reset(jb_->initializeJqAD(dx.state()));
+  jqad_.reset(jb_->initializeJqAD(dx.states()));
   bgns += dx;
   ppad.enrollProcessor(jqad_);
   Log::trace() << "CostJbTotal::initializeAD done" << std::endl;
@@ -350,9 +355,9 @@ void CostJbTotal<MODEL, OBS>::finalizeAD() const {
 template<typename MODEL, typename OBS>
 void CostJbTotal<MODEL, OBS>::multiplyB(const CtrlInc_ & dxin, CtrlInc_ & dxout) const {
   Log::trace() << "CostJbTotal::multiplyB start" << std::endl;
-  jb_->Bmult(dxin.state(), dxout.state());
-  jbModBias_.multiply(dxin.modVar(), dxout.modVar());
-  jbObsBias_.multiply(dxin.obsVar(), dxout.obsVar());
+  jb_->Bmult(dxin.states(), dxout.states());
+  jbModBias_.multiplyCovar(dxin, dxout);
+  jbObsBias_.multiplyCovar(dxin, dxout);
   Log::trace() << "CostJbTotal::multiplyB done" << std::endl;
 }
 
@@ -361,9 +366,9 @@ void CostJbTotal<MODEL, OBS>::multiplyB(const CtrlInc_ & dxin, CtrlInc_ & dxout)
 template<typename MODEL, typename OBS>
 void CostJbTotal<MODEL, OBS>::multiplyBinv(const CtrlInc_ & dxin, CtrlInc_ & dxout) const {
   Log::trace() << "CostJbTotal::multiplyBinv start" << std::endl;
-  jb_->Bminv(dxin.state(), dxout.state());
-  jbModBias_.inverseMultiply(dxin.modVar(), dxout.modVar());
-  jbObsBias_.inverseMultiply(dxin.obsVar(), dxout.obsVar());
+  jb_->Bminv(dxin.states(), dxout.states());
+  jbModBias_.multiplyCoInv(dxin, dxout);
+  jbObsBias_.multiplyCoInv(dxin, dxout);
   Log::trace() << "CostJbTotal::multiplyBinv done" << std::endl;
 }
 
@@ -372,9 +377,9 @@ void CostJbTotal<MODEL, OBS>::multiplyBinv(const CtrlInc_ & dxin, CtrlInc_ & dxo
 template<typename MODEL, typename OBS>
 void CostJbTotal<MODEL, OBS>::randomize(CtrlInc_ & dx) const {
   Log::trace() << "CostJbTotal::randomize start" << std::endl;
-  jb_->randomize(dx.state());
-  jbModBias_.randomize(dx.modVar());
-  jbObsBias_.randomize(dx.obsVar());
+  jb_->randomize(dx.states());
+  jbModBias_.randomize(dx);
+  jbObsBias_.randomize(dx);
   Log::trace() << "CostJbTotal::randomize done" << std::endl;
 }
 

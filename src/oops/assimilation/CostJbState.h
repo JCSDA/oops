@@ -13,17 +13,19 @@
 #define OOPS_ASSIMILATION_COSTJBSTATE_H_
 
 #include <memory>
+#include <vector>
 #include <boost/noncopyable.hpp>
 
 namespace oops {
 
 // Forward declaration
   template<typename MODEL> class Geometry;
-  template<typename MODEL> class Increment;
-  template<typename MODEL> class State;
-  template<typename MODEL> class PostProcessor;
+  template<typename MODEL> class Increment4D;
   template<typename MODEL> class JqTerm;
   template<typename MODEL> class JqTermTLAD;
+  template<typename MODEL> class PostProcessor;
+  template<typename MODEL> class State;
+  template<typename MODEL> class State4D;
 
 // -----------------------------------------------------------------------------
 
@@ -35,9 +37,8 @@ namespace oops {
 
 template<typename MODEL> class CostJbState : private boost::noncopyable {
   typedef Geometry<MODEL>            Geometry_;
-  typedef Increment<MODEL>           Increment_;
-  typedef State<MODEL>               State_;
-  typedef PostProcessor<State_>      PostProc_;
+  typedef Increment4D<MODEL>         Increment_;
+  typedef State4D<MODEL>             State_;
   typedef JqTerm<MODEL>              JqTerm_;
   typedef JqTermTLAD<MODEL>          JqTLAD_;
 
@@ -48,7 +49,7 @@ template<typename MODEL> class CostJbState : private boost::noncopyable {
 /// Destructor
   virtual ~CostJbState() {}
 
-  virtual void setPostProc(PostProc_ &) {}
+  virtual void setPostProc(PostProcessor<State<MODEL>> &) {}
   virtual std::shared_ptr<JqTerm_> getJq() {return nullptr;}
 
 /// Get increment from state. This is usually first guess - background.
@@ -82,7 +83,9 @@ template<typename MODEL> class CostJbState : private boost::noncopyable {
 /// Accessors to data for constructing a new increment.
   virtual const Geometry_ & geometry() const = 0;
   virtual const Variables & variables() const = 0;
-  virtual const util::DateTime time() const = 0;
+  virtual const std::vector<util::DateTime> & times() const = 0;
+  virtual const eckit::mpi::Comm & comm() const = 0;
+  virtual std::shared_ptr<State_> background() const = 0;
 };
 
 // -----------------------------------------------------------------------------

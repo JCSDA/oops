@@ -241,6 +241,8 @@ void EnsembleCovariance<MODEL>::doMultiply(const Increment_ & dxi, Increment_ & 
       dxoTmp.axpy(1.0, dx, false);
     } else {
       // Raw covariance matrix
+      if (dxi.geometry().timeComm().size() > 1)
+        throw eckit::NotImplemented("dot_product not correctly implemented", Here());
       double wgt = dxiTmp.dot_product_with((*ens_)[ie]);
       dxoTmp.axpy(wgt, (*ens_)[ie], false);
     }

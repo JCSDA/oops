@@ -108,7 +108,7 @@ template <typename MODEL, typename OBS>
 CostJb3D<MODEL> * CostFct3DVar<MODEL, OBS>::newJb(const eckit::Configuration & jbConf,
                                                   const Geometry_ & resol) const {
   Log::trace() << "CostFct3DVar::newJb" << std::endl;
-  return new CostJb3D<MODEL>(jbConf, resol, ctlvars_);
+  return new CostJb3D<MODEL>(windowHalf_, jbConf, resol, ctlvars_);
 }
 
 // -----------------------------------------------------------------------------
@@ -134,6 +134,7 @@ CostTermBase<MODEL, OBS> * CostFct3DVar<MODEL, OBS>::newJc(const eckit::Configur
 template <typename MODEL, typename OBS>
 void CostFct3DVar<MODEL, OBS>::runNL(CtrlVar_ & xx, PostProcessor<State_> & post) const {
   Log::trace() << "CostFct3DVar::runNL start" << std::endl;
+  ASSERT(xx.states().is_3d());
   ASSERT(xx.state().validTime() == windowHalf_);
 
   post.initialize(xx.state(), windowHalf_, windowLength_);
@@ -164,6 +165,7 @@ void CostFct3DVar<MODEL, OBS>::runTLM(CtrlInc_ & dx,
                                       PostProcessor<Increment_> post,
                                       const bool) const {
   Log::trace() << "CostFct3DVar::runTLM start" << std::endl;
+  ASSERT(dx.states().is_3d());
   ASSERT(dx.state().validTime() == windowHalf_);
 
   cost.initializeTL(dx.state(), windowHalf_, windowLength_);
@@ -184,6 +186,7 @@ void CostFct3DVar<MODEL, OBS>::runTLM(CtrlInc_ & dx,
 template <typename MODEL, typename OBS>
 void CostFct3DVar<MODEL, OBS>::zeroAD(CtrlInc_ & dx) const {
   Log::trace() << "CostFct3DVar::zeroAD start" << std::endl;
+  ASSERT(dx.states().is_3d());
   dx.state().zero(windowHalf_);
   dx.modVar().zero();
   dx.obsVar().zero();
@@ -198,6 +201,7 @@ void CostFct3DVar<MODEL, OBS>::runADJ(CtrlInc_ & dx,
                                       PostProcessor<Increment_> post,
                                       const bool) const {
   Log::trace() << "CostFct3DVar::runADJ start" << std::endl;
+  ASSERT(dx.states().is_3d());
   ASSERT(dx.state().validTime() == windowHalf_);
 
   post.initialize(dx.state(), windowHalf_, windowLength_);
@@ -220,6 +224,8 @@ template<typename MODEL, typename OBS>
 void CostFct3DVar<MODEL, OBS>::addIncr(CtrlVar_ & xx, const CtrlInc_ & dx,
                                        PostProcessor<Increment_> &) const {
   Log::trace() << "CostFct3DVar::addIncr start" << std::endl;
+  ASSERT(xx.states().is_3d());
+  ASSERT(dx.states().is_3d());
   ASSERT(xx.state().validTime() == windowHalf_);
   ASSERT(dx.state().validTime() == windowHalf_);
   xx.state() += dx.state();

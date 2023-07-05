@@ -117,7 +117,7 @@ template <typename MODEL, typename OBS>
 CostJb3D<MODEL> * CostFctFGAT<MODEL, OBS>::newJb(const eckit::Configuration & jbConf,
                                                  const Geometry_ & resol) const {
   Log::trace() << "CostFctFGAT::newJb" << std::endl;
-  CostJb3D<MODEL> * jb = new CostJb3D<MODEL>(jbConf, resol, ctlvars_);
+  CostJb3D<MODEL> * jb = new CostJb3D<MODEL>(windowBegin_, jbConf, resol, ctlvars_);
   return jb;
 }
 
@@ -144,6 +144,7 @@ CostTermBase<MODEL, OBS> * CostFctFGAT<MODEL, OBS>::newJc(const eckit::Configura
 template <typename MODEL, typename OBS>
 void CostFctFGAT<MODEL, OBS>::runNL(CtrlVar_ & xx, PostProcessor<State_> & post) const {
   Log::trace() << "CostFctFGAT::runNL start" << std::endl;
+  ASSERT(xx.states().is_3d());
 
   if (fgat_) {
     ASSERT(xx.state().validTime() == windowBegin_);
@@ -175,6 +176,8 @@ void CostFctFGAT<MODEL, OBS>::doLinearize(const Geometry_ & res, const eckit::Co
                                           PostProcessor<State_> & pp,
                                           PostProcessorTLAD<MODEL> & pptraj) {
   Log::trace() << "CostFctFGAT::doLinearize start" << std::endl;
+  ASSERT(bg.states().is_3d());
+  ASSERT(fg.states().is_3d());
   fgat_ = (conf.getInt("iteration") == 0);
   pp.enrollProcessor(new TrajectorySaver<MODEL>(conf, res, pptraj));
   hackBG_ = &bg.state();
@@ -211,6 +214,7 @@ void CostFctFGAT<MODEL, OBS>::runTLM(CtrlInc_ & dx,
                                      PostProcessor<Increment_> post,
                                      const bool) const {
   Log::trace() << "CostFctFGAT::runTLM start" << std::endl;
+  ASSERT(dx.states().is_3d());
   ASSERT(dx.state().validTime() == windowHalf_);
 
   cost.initializeTL(dx.state(), windowHalf_, windowLength_);
@@ -231,6 +235,7 @@ void CostFctFGAT<MODEL, OBS>::runTLM(CtrlInc_ & dx,
 template <typename MODEL, typename OBS>
 void CostFctFGAT<MODEL, OBS>::zeroAD(CtrlInc_ & dx) const {
   Log::trace() << "CostFctFGAT::zeroAD start" << std::endl;
+  ASSERT(dx.states().is_3d());
   dx.state().zero(windowHalf_);
   dx.modVar().zero();
   dx.obsVar().zero();
@@ -245,6 +250,7 @@ void CostFctFGAT<MODEL, OBS>::runADJ(CtrlInc_ & dx,
                                      PostProcessor<Increment_> post,
                                      const bool) const {
   Log::trace() << "CostFctFGAT::runADJ start" << std::endl;
+  ASSERT(dx.states().is_3d());
   ASSERT(dx.state().validTime() == windowHalf_);
 
   post.initialize(dx.state(), windowHalf_, windowLength_);
@@ -267,6 +273,8 @@ template<typename MODEL, typename OBS>
 void CostFctFGAT<MODEL, OBS>::addIncr(CtrlVar_ & xx, const CtrlInc_ & dx,
                                       PostProcessor<Increment_> &) const {
   Log::trace() << "CostFctFGAT::addIncr start" << std::endl;
+  ASSERT(xx.states().is_3d());
+  ASSERT(dx.states().is_3d());
   ASSERT(xx.state().validTime() == windowHalf_);
   ASSERT(dx.state().validTime() == windowHalf_);
   xx.state() += dx.state();

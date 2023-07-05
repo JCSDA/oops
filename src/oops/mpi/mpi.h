@@ -37,6 +37,8 @@ const eckit::mpi::Comm & world();
 /// Communicator with each MPI task by itself
 const eckit::mpi::Comm & myself();
 
+const eckit::mpi::Comm & clone(const eckit::mpi::Comm &);
+
 // ------------------------------------------------------------------------------------------------
 
 /// Extend eckit Comm for Serializable oops objects

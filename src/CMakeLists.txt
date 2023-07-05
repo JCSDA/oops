@@ -15,6 +15,8 @@ oops/assimilation/CostFunction.h
 oops/assimilation/CostJb3D.h
 oops/assimilation/CostJb4D.h
 oops/assimilation/CostJbJq.h
+oops/assimilation/CostJbModelAux.h
+oops/assimilation/CostJbObsAux.h
 oops/assimilation/CostJbState.h
 oops/assimilation/CostJbTotal.h
 oops/assimilation/CostJcDFI.h
@@ -89,6 +91,7 @@ oops/assimilation/UpHessSolve.h
 oops/assimilation/UpTriSolve.h
 oops/base/Accumulator.h
 oops/base/AnalyticInit.h
+oops/base/DataSetBase.h
 oops/base/Departures.h
 oops/base/DeparturesEnsemble.h
 oops/base/DiagonalMatrix.h
@@ -112,6 +115,7 @@ oops/base/Increment.h
 oops/base/Increment4D.h
 oops/base/IncrementEnsemble.h
 oops/base/IncrementEnsemble4D.h
+oops/base/IncrementSet.h
 oops/base/instantiateCovarFactory.h
 oops/base/instantiateObsFilterFactory.h
 oops/base/LatLonGridPostProcessor.h
@@ -162,6 +166,7 @@ oops/base/StateEnsemble4D.h
 oops/base/StateInfo.h
 oops/base/StateParametersND.h
 oops/base/StateSaver.h
+oops/base/StateSet.h
 oops/base/StateWriter.h
 oops/base/TrajectorySaver.h
 oops/base/TrivialSamplingMethodSelector.h

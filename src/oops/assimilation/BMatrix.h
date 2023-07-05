@@ -37,7 +37,7 @@ template<typename MODEL, typename OBS> class BMatrix : private boost::noncopyabl
   }
 
   /// Return ObsBias block of control variable error covariances
-  const ObsAuxCovars_ & obsAuxCovariance() const {return j_.jb().jbObsBias();}
+  const ObsAuxCovars_ & obsAuxCovariance() const {return j_.jb().jbObsBias().covariance();}
 
  private:
   CostFct_ const & j_;

@@ -13,14 +13,16 @@
 #define OOPS_ASSIMILATION_COSTJB3D_H_
 
 #include <memory>
+#include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/CostJbState.h"
 #include "oops/base/Geometry.h"
-#include "oops/base/Increment.h"
+#include "oops/base/Increment4D.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
-#include "oops/base/State.h"
+#include "oops/base/State4D.h"
 #include "oops/base/Variables.h"
+#include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -43,13 +45,14 @@ namespace oops {
 
 template<typename MODEL> class CostJb3D : public CostJbState<MODEL> {
   typedef Geometry<MODEL>            Geometry_;
-  typedef Increment<MODEL>           Increment_;
-  typedef State<MODEL>               State_;
+  typedef Increment4D<MODEL>         Increment_;
+  typedef State4D<MODEL>             State_;
   typedef JqTerm<MODEL>              JqTerm_;
 
  public:
 /// Construct \f$ J_b\f$.
-  CostJb3D(const eckit::Configuration &, const Geometry_ &, const Variables &);
+  CostJb3D(const util::DateTime &, const eckit::Configuration &,
+           const Geometry_ &, const Variables &);
 
 /// Destructor
   virtual ~CostJb3D() {}
@@ -83,13 +86,16 @@ template<typename MODEL> class CostJb3D : public CostJbState<MODEL> {
 /// Accessors to data for constructing a new increment.
   const Geometry_ & geometry() const override;
   const Variables & variables() const override;
-  const util::DateTime time() const override;
+  const std::vector<util::DateTime> & times() const override;
+  const eckit::mpi::Comm & comm() const override {return oops::mpi::myself();}
+  std::shared_ptr<State_> background() const override {return bg_;}
 
  private:
-  std::unique_ptr< ModelSpaceCovarianceBase<MODEL> > B_;
+  std::unique_ptr<ModelSpaceCovarianceBase<MODEL>> B_;
+  std::shared_ptr<State_> bg_;
   const Variables controlvars_;
   const Geometry_ * resol_;
-  util::DateTime time_;
+  std::vector<util::DateTime> time_;
   const eckit::LocalConfiguration conf_;
 };
 
@@ -99,10 +105,14 @@ template<typename MODEL> class CostJb3D : public CostJbState<MODEL> {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-CostJb3D<MODEL>::CostJb3D(const eckit::Configuration & config, const Geometry_ &,
-                          const Variables & ctlvars)
-  : B_(), controlvars_(ctlvars), resol_(), time_(), conf_(config, "background error")
+CostJb3D<MODEL>::CostJb3D(const util::DateTime & time, const eckit::Configuration & config,
+                          const Geometry_ & geom, const Variables & ctlvars)
+  : B_(), bg_(), controlvars_(ctlvars), resol_(), time_(1), conf_(config, "background error")
 {
+  std::vector<util::DateTime> times({time});
+  bg_.reset(new State_(times, oops::mpi::myself()));
+  bg_->read(geom, eckit::LocalConfiguration(config, "background"));
+  ASSERT(bg_->is_3d());
   Log::trace() << "CostJb3D constructed." << std::endl;
 }
 
@@ -110,9 +120,11 @@ CostJb3D<MODEL>::CostJb3D(const eckit::Configuration & config, const Geometry_ &
 
 template<typename MODEL>
 void CostJb3D<MODEL>::linearize(const State_ & xb, const State_ & fg, const Geometry_ & lowres) {
+  Log::trace() << "CostJb3D:linearize start" << std::endl;
   resol_ = &lowres;
-  time_ = xb.validTime();
-  B_.reset(CovarianceFactory<MODEL>::create(lowres, controlvars_, conf_, xb, fg));
+  time_[0] = xb[0].validTime();  // not earlier because of FGAT
+  B_.reset(CovarianceFactory<MODEL>::create(lowres, controlvars_, conf_, xb[0], fg[0]));
+  Log::trace() << "CostJb3D:linearize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -135,21 +147,21 @@ void CostJb3D<MODEL>::addGradient(const Increment_ & dxFG, Increment_ & grad,
 
 template<typename MODEL>
 void CostJb3D<MODEL>::Bmult(const Increment_ & dxin, Increment_ & dxout) const {
-  B_->multiply(dxin, dxout);
+  B_->multiply(dxin[0], dxout[0]);
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 void CostJb3D<MODEL>::Bminv(const Increment_ & dxin, Increment_ & dxout) const {
-  B_->inverseMultiply(dxin, dxout);
+  B_->inverseMultiply(dxin[0], dxout[0]);
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 void CostJb3D<MODEL>::randomize(Increment_ & dx) const {
-  B_->randomize(dx);
+  B_->randomize(dx[0]);
 }
 
 // -----------------------------------------------------------------------------
@@ -169,7 +181,7 @@ const Variables & CostJb3D<MODEL>::variables() const {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-const util::DateTime CostJb3D<MODEL>::time() const {
+const std::vector<util::DateTime> & CostJb3D<MODEL>::times() const {
   return time_;
 }
 // -----------------------------------------------------------------------------
