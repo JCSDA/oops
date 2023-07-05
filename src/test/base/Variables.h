@@ -11,12 +11,14 @@
 #ifndef TEST_BASE_VARIABLES_H_
 #define TEST_BASE_VARIABLES_H_
 
+#include <iostream>
 #include <memory>
 #include <string>
 #include <vector>
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
+#include "eckit/config/Configuration.h"
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "oops/base/Variables.h"
@@ -58,6 +60,28 @@ void testConstructor() {
     oops::Variables other(TestEnvironment::config(), "empty variables");
     EXPECT(other.variables() == varnames);
     EXPECT(other.channels() == channels);
+  }
+
+  {
+    // Fixture
+    oops::Variables other(std::vector<std::string>({"var1", "var2", "var3"}));
+    other.addMetaData("var2", "levels", 20);
+    other.addMetaData("var3", "levels", 30);
+    oops::Log::info() << "variables local config: " << other << std::endl;
+
+    // Testing .variablesMetaData()
+    int modelLevels(0);
+    std::vector<std::string> confKeys(other.variablesMetaData().keys());
+    std::vector<std::string> refKeys{"var2", "var3"};
+    EXPECT(confKeys == refKeys);
+
+    eckit::LocalConfiguration confOut(other.variablesMetaData());
+    int i(0);
+    for (const std::string s : other.variablesMetaData().keys()) {
+      modelLevels = other.getLevels(s);
+      EXPECT_EQUAL(modelLevels, (i + 2) * 10);
+      ++i;
+    }
   }
 
   vars.reset();
@@ -139,6 +163,37 @@ void testArithmeticOperators() {
 }
 
 // -----------------------------------------------------------------------------
+
+void testMetaDataArithmeticOperators() {
+  // Fixture
+  oops::Variables vars(std::vector<std::string>{"var1", "var2", "var3"});
+  for (auto & i : std::vector<int>{1, 2, 3}) {
+    std::string var("var" + std::to_string(i));
+    vars.addMetaData(var, "levels", i * 10);
+  }
+  oops::Variables varsCopy(vars);
+
+  oops::Variables var1(std::vector<std::string>{"var1"});
+  var1.addMetaData("var1", "levels", 10);
+
+  oops::Log::info() << "vars lconf = " << vars << std::endl;
+  vars -= var1;
+  oops::Log::info() << "vars lconf minus var1 = " << vars << std::endl;
+
+  // check -= string
+  oops::Variables vars23(vars);
+  oops::Variables vars123(varsCopy);
+  vars123 -= std::string{"var1"};
+  oops::Log::info() << "vars23 = " << vars23 << std::endl;
+  oops::Log::info() << "vars123 = " << vars123 << std::endl;
+  EXPECT(vars123 == vars23);
+
+  vars += var1;
+  oops::Log::info() << "vars adding back var1 = " << vars << std::endl;
+  EXPECT(vars == varsCopy);
+}
+
+// -----------------------------------------------------------------------------
 /// \brief tests Variables::operator== and operator!=
 void testEquality() {
   oops::Variables abc({"a", "b", "c"});
@@ -150,6 +205,41 @@ void testEquality() {
   EXPECT(!(ba == abc));
   EXPECT(acb != ba);
 }
+
+// -----------------------------------------------------------------------------
+/// \brief tests Variables::operator== and operator!=
+void testEqualityWithMetaData() {
+  oops::Variables vars123(std::vector<std::string>{"var1", "var2", "var3"});
+  for (auto & i : std::vector<int>{1, 2, 3}) {
+    std::string var("var" + std::to_string(i));
+    vars123.addMetaData(var, "levels", i * 10);
+  }
+
+  oops::Log::info() << "vars123 = " << vars123 << std::endl;
+
+  oops::Variables vars213(std::vector<std::string>{"var2", "var1", "var3"});
+  for (auto & i : std::vector<int>{2, 1, 3}) {
+    std::string var("var" + std::to_string(i));
+    vars213.addMetaData(var, "levels", i * 10);
+  }
+
+  oops::Log::info() << "vars213 = " << vars213 << std::endl;
+
+  oops::Variables vars213SameMeta(std::vector<std::string>{"var2", "var1", "var3"});
+  for (auto & i : std::vector<int>{2, 1, 3}) {
+    std::string var("var" + std::to_string(i));
+    vars213SameMeta.addMetaData(var, "levels", 30);
+  }
+
+  oops::Log::info() << "vars213 same meta = " << vars213SameMeta << std::endl;
+
+  EXPECT(vars123 == vars213);
+  EXPECT(!(vars123 != vars213));
+
+  EXPECT(vars123 != vars213SameMeta);
+  EXPECT(!(vars123 == vars213SameMeta));
+}
+
 
 // -----------------------------------------------------------------------------
 /// \brief tests Variables::intersection (also uses operator=)
@@ -251,8 +341,12 @@ class Variables : public oops::Test {
       { testFortranInterface(); });
     ts.emplace_back(CASE("Variables/testArithmeticOperators")
       { testArithmeticOperators(); });
+    ts.emplace_back(CASE("Variables/testMetaDataArithmeticOperators")
+      { testMetaDataArithmeticOperators(); });
     ts.emplace_back(CASE("Variables/testEquality")
       { testEquality(); });
+    ts.emplace_back(CASE("Variables/testEqualityWithMetaData")
+      { testEqualityWithMetaData(); });
     ts.emplace_back(CASE("Variables/testIntersection")
       { testIntersection(); });
   }

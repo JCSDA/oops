@@ -1128,6 +1128,48 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
   }
 }
 
+
+// -----------------------------------------------------------------------------
+
+atlas::FieldSet createRandomFieldSet(const eckit::mpi::Comm & comm,
+                                     const atlas::FunctionSpace & fspace,
+                                     const oops::Variables & vars,
+                                     const size_t & timeRank) {
+  std::vector<size_t> variableSizes;
+  for (const std::string & var : vars.variables()) {
+    variableSizes.push_back(vars.getLevels(var));
+  }
+  return createRandomFieldSet(comm, fspace, variableSizes, vars.variables(), timeRank);
+}
+
+// -----------------------------------------------------------------------------
+
+atlas::FieldSet createSmoothFieldSet(const eckit::mpi::Comm & comm,
+                                     const atlas::FunctionSpace & fspace,
+                                     const oops::Variables & vars) {
+  std::vector<size_t> variableSizes;
+  for (const std::string & var : vars.variables()) {
+    variableSizes.push_back(vars.getLevels(var));
+  }
+  return createSmoothFieldSet(comm, fspace, variableSizes, vars.variables());
+}
+
+// -----------------------------------------------------------------------------
+
+void readFieldSet(const eckit::mpi::Comm & comm,
+                  const atlas::FunctionSpace & fspace ,
+                  const oops::Variables & vars,
+                  const eckit::Configuration & config,
+                  atlas::FieldSet & fset) {
+  std::vector<size_t> variableSizes;
+  for (const std::string & var : vars.variables()) {
+    variableSizes.push_back(vars.getLevels(var));
+  }
+  readFieldSet(comm, fspace, variableSizes, vars.variables(), config, fset);
+}
+
+
+
 // -----------------------------------------------------------------------------
 
 }  // namespace util

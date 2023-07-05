@@ -13,6 +13,8 @@
 #include "atlas/field.h"
 #include "atlas/functionspace.h"
 
+#include "oops/base/Variables.h"
+
 #include "eckit/mpi/Comm.h"
 
 namespace util {
@@ -53,9 +55,27 @@ void readFieldSet(const eckit::mpi::Comm &,
                   const std::vector<std::string> &,
                   const eckit::Configuration &,
                   atlas::FieldSet &);
+
 void writeFieldSet(const eckit::mpi::Comm &,
                    const eckit::Configuration &,
                    const atlas::FieldSet &);
+
+atlas::FieldSet createRandomFieldSet(const eckit::mpi::Comm &,
+                                     const atlas::FunctionSpace &,
+                                     const oops::Variables &,
+                                     const size_t & timeRank = 0);
+/// Returns a fieldset with the same smooth field for all variables.
+/// Useful for testing interpolation.
+atlas::FieldSet createSmoothFieldSet(const eckit::mpi::Comm &,
+                                     const atlas::FunctionSpace &,
+                                     const oops::Variables &);
+
+void readFieldSet(const eckit::mpi::Comm &,
+                  const atlas::FunctionSpace &,
+                  const oops::Variables &,
+                  const eckit::Configuration &,
+                  atlas::FieldSet &);
+
 
 // -----------------------------------------------------------------------------
 
