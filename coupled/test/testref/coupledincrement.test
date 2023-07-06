@@ -1,0 +1,16 @@
+Printing zero increment:
+IncrementCoupled: QG
+  Valid time: 2010-01-01T00:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=0.0000000000000000e+00, Max=0.0000000000000000e+00, RMS=0.0000000000000000e+00
+IncrementCoupled: Lorenz 95
+ Valid time: 2010-01-01T00:00:00Z
+ Min=0.0000000000000000e+00, Max=0.0000000000000000e+00, Average=0.0000000000000000e+00
+Printing random increment:
+IncrementCoupled: QG
+  Valid time: 2010-01-01T00:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=-3.2125918800575031e+00, Max=3.4904459170592372e+00, RMS=9.8891253822096981e-01
+IncrementCoupled: Lorenz 95
+ Valid time: 2010-01-01T00:00:00Z
+ Min=-2.4178347993473905e+00, Max=1.5355252841467621e+00, Average=-1.4158491861254729e-04

@@ -7,6 +7,7 @@ list( APPEND coupled_testinput
   testinput/coupledmodelparallel.yaml
   testinput/coupledstate.yaml
   testinput/coupledstateparallel.yaml
+  testinput/coupledincrement.yaml
   testinput/forecast_qg_l95.yaml
   testinput/hofx3d_qg_qg.yaml
 )
@@ -16,6 +17,7 @@ list( APPEND coupled_testref
   testref/coupledgeometry.test
   testref/coupledmodel.test
   testref/coupledstate.test
+  testref/coupledincrement.test
   testref/forecast_qg_l95.test
   testref/hofx3d_qg_qg.test
 )
@@ -75,6 +77,13 @@ ecbuild_add_test( TARGET  test_coupled_state_qg_l95_parallel
                   SOURCES executables/TestCoupledState.cc
                   ARGS    "testinput/coupledstateparallel.yaml"
                   MPI     2
+                  LIBS    qg lorenz95
+                  TEST_DEPENDS test_qg_truth test_l95_3dvar)
+
+# Test CoupledIncrement class
+ecbuild_add_test( TARGET  test_coupled_increment_qg_l95
+                  SOURCES executables/TestCoupledIncrement.cc
+                  ARGS    "testinput/coupledincrement.yaml"
                   LIBS    qg lorenz95
                   TEST_DEPENDS test_qg_truth test_l95_3dvar)
 

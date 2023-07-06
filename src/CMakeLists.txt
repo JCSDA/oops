@@ -191,6 +191,7 @@ oops/contrib/dcmipInitialConditionsTest_4_v3_Fortran.h
 oops/coupled/AuxCoupledModel.h
 oops/coupled/GeometryCoupled.h
 oops/coupled/GetValuesCoupled.h
+oops/coupled/IncrementCoupled.h
 oops/coupled/ModelCoupled.h
 oops/coupled/StateCoupled.h
 oops/coupled/TraitCoupled.h
