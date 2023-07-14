@@ -65,7 +65,7 @@ const char & missingValue<char>() {
 // -----------------------------------------------------------------------------
 template <>
 const std::string & missingValue<std::string>() {
-  static const std::string strmiss("*** MISSING ***");
+  static const std::string strmiss("MISSING*");
   return strmiss;
 }
 // -----------------------------------------------------------------------------
