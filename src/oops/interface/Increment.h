@@ -169,8 +169,7 @@ class Increment : public oops::GeneralizedDepartures,
   /// - "toFieldSetAD" adjoint of toFieldSet
   /// - "fromFieldSet" copies fieldset data back into the Increment (interior points only).
   /// For models that are using ATLAS fieldsets for their own Increment data, fields are shared from
-  /// a fieldset to another. A working example is available with the QUENCH testbed of SABER
-  /// in saber/test/quench.
+  /// a fieldset to another. A working example is available with the QUENCH testbed of SABER.
   void toFieldSet(atlas::FieldSet &) const;
   void toFieldSetAD(const atlas::FieldSet &);
   void fromFieldSet(const atlas::FieldSet &);

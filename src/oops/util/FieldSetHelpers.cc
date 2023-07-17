@@ -413,7 +413,8 @@ void removeFieldsFromFieldSet(atlas::FieldSet & fset,
 
 bool compareFieldSets(const atlas::FieldSet & fset1,
                       const atlas::FieldSet & fset2,
-                      const double & tol) {
+                      const double & tol,
+                      const bool & absolute) {
   oops::Log::trace() << "compareFieldSets starting" << std::endl;
 
   // Initialize flag
@@ -445,7 +446,13 @@ bool compareFieldSets(const atlas::FieldSet & fset1,
       auto view2 = atlas::array::make_view<double, 2>(field2);
       for (atlas::idx_t jnode = 0; jnode < field1.shape(0); ++jnode) {
         for (atlas::idx_t jlevel = 0; jlevel < field1.shape(1); ++jlevel) {
-          sameFieldSets = oops::is_close_absolute(view1(jnode, jlevel), view2(jnode, jlevel), tol);
+          if (absolute) {
+            sameFieldSets = oops::is_close_absolute(view1(jnode, jlevel), view2(jnode, jlevel),
+              tol);
+          } else {
+            sameFieldSets = oops::is_close_relative(view1(jnode, jlevel), view2(jnode, jlevel),
+              tol);
+          }
           if (!sameFieldSets) return sameFieldSets;
         }
       }

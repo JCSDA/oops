@@ -131,8 +131,7 @@ class State : public util::Printable,
   ///    copies State data into the fieldset, including halo.
   /// - "fromFieldSet" copies fieldset data back into the State (interior points only).
   /// For models that are using ATLAS fieldsets for their own Incerment data, fields are shared from
-  /// a fieldset to another. A working example is available with the QUENCH testbed of SABER
-  /// inf saber/test/quench.
+  /// a fieldset to another. A working example is available with the QUENCH testbed of SABER.
   void toFieldSet(atlas::FieldSet &) const;
   void fromFieldSet(const atlas::FieldSet &);
 

@@ -41,7 +41,8 @@ void removeFieldsFromFieldSet(atlas::FieldSet &,
                               const std::vector<std::string> &);
 bool compareFieldSets(const atlas::FieldSet &,
                       const atlas::FieldSet &,
-                      const double & tol = 1.0e-12);
+                      const double & tol = 1.0e-12,
+                      const bool & absolute = true);
 std::string getGridUid(const atlas::FunctionSpace &);
 std::string getGridUid(const atlas::FieldSet &);
 void printDiagValues(const eckit::mpi::Comm &,

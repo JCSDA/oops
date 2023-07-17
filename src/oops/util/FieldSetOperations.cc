@@ -250,8 +250,8 @@ double dotProductFieldSets(const atlas::FieldSet & fset1,
 double normFieldSet(const atlas::FieldSet & fset,
                     const std::vector<std::string> & vars,
                     const eckit::mpi::Comm & comm) {
-    oops::Log::trace() << "normFieldSet starting" << std::endl;
-    return std::sqrt(dotProductFieldSets(fset, fset, vars, comm, false));
+  oops::Log::trace() << "normFieldSet starting" << std::endl;
+  return std::sqrt(dotProductFieldSets(fset, fset, vars, comm, false));
 }
 
 // -----------------------------------------------------------------------------
@@ -333,5 +333,6 @@ void addZeroFieldToFieldSet(const std::string & fldname,
   oops::Log::trace() << "addZeroFieldToFieldSet done" << std::endl;
 }
 
+// -----------------------------------------------------------------------------
 
 }  // namespace util

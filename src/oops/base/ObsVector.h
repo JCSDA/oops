@@ -123,7 +123,7 @@ unsigned int ObsVector<OBS>::nobs() const {
 template <typename OBS>
 void ObsVector<OBS>::print(std::ostream & os) const {
   if (commTime_->size() > 1) {
-    gatherPrint(os, this->obsvector(), *commTime_);
+    util::gatherPrint(os, this->obsvector(), *commTime_);
   } else {
     os << this->obsvector();
   }

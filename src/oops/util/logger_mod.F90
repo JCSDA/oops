@@ -27,65 +27,7 @@ end type oops_log_type
 
 type(oops_log_type) :: oops_log
 
-interface
-
-subroutine c_log_info(msg,newl,flush) bind(c, name='log_info_f')
-  use, intrinsic :: iso_c_binding
-  implicit none
-  character(kind=c_char), dimension(*) :: msg
-  integer(c_int32_t), value :: newl
-  integer(c_int32_t), value :: flush
-end subroutine c_log_info
-!-------------------------------------------------------------------------------
-subroutine c_log_error(msg,newl,flush) bind(c, name='log_error_f')
-  use, intrinsic :: iso_c_binding
-  implicit none
-  character(kind=c_char), dimension(*) :: msg
-  integer(c_int32_t), value :: newl
-  integer(c_int32_t), value :: flush
-end subroutine c_log_error
-!-------------------------------------------------------------------------------
-subroutine c_log_warning(msg,newl,flush) bind(c, name='log_warning_f')
-  use, intrinsic :: iso_c_binding
-  implicit none
-  character(kind=c_char), dimension(*) :: msg
-  integer(c_int32_t), value :: newl
-  integer(c_int32_t), value :: flush
-end subroutine c_log_warning
-!-------------------------------------------------------------------------------
-subroutine c_log_debug(msg,newl,flush) bind(c, name='log_debug_f')
-  use, intrinsic :: iso_c_binding
-  implicit none
-  character(kind=c_char), dimension(*) :: msg
-  integer(c_int32_t), value :: newl
-  integer(c_int32_t), value :: flush
-end subroutine c_log_debug
-!-------------------------------------------------------------------------------
-subroutine c_log_trace(msg,newl,flush) bind(c, name='log_trace_f')
-  use, intrinsic :: iso_c_binding
-  implicit none
-  character(kind=c_char), dimension(*) :: msg
-  integer(c_int32_t), value :: newl
-  integer(c_int32_t), value :: flush
-end subroutine c_log_trace
-!-------------------------------------------------------------------------------
-subroutine c_log_stats(msg,newl,flush) bind(c, name='log_stats_f')
-  use, intrinsic :: iso_c_binding
-  implicit none
-  character(kind=c_char), dimension(*) :: msg
-  integer(c_int32_t), value :: newl
-  integer(c_int32_t), value :: flush
-end subroutine c_log_stats
-!-------------------------------------------------------------------------------
-subroutine c_log_test(msg,newl,flush) bind(c, name='log_test_f')
-  use, intrinsic :: iso_c_binding
-  implicit none
-  character(kind=c_char), dimension(*) :: msg
-  integer(c_int32_t), value :: newl
-  integer(c_int32_t), value :: flush
-end subroutine c_log_test
-
-end interface
+#include "logger_interface.f"
 
 private
 
@@ -278,4 +220,4 @@ call c_log_test(c_str_right_trim(msg),opt_newl,opt_flush)
 
 end subroutine test
 
-end module Logger_mod
+end module logger_mod
