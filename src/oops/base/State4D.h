@@ -36,6 +36,7 @@ template<typename MODEL> class State4D : public StateSet<MODEL> {
   State4D(const std::vector<util::DateTime> &, const eckit::mpi::Comm &);
   State4D(const Geometry_ &, const eckit::Configuration &,
           const eckit::mpi::Comm & commTime = oops::mpi::myself());
+  State4D(const Geometry_ &, const State4D &);
 
   /// Accumulator
   void zero();
@@ -61,6 +62,16 @@ template<typename MODEL>
 State4D<MODEL>::State4D(const Geometry_ & resol, const eckit::Configuration & config,
                         const eckit::mpi::Comm & commTime)
   : StateSet<MODEL>(resol, config, commTime)
+{
+  ASSERT(this->is_4d());
+  Log::trace() << "State4D constructed." << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+State4D<MODEL>::State4D(const Geometry_ & resol, const State4D & other)
+  : StateSet<MODEL>(resol, other)
 {
   ASSERT(this->is_4d());
   Log::trace() << "State4D constructed." << std::endl;

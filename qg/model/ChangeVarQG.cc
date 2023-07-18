@@ -21,10 +21,12 @@ ChangeVarQG::~ChangeVarQG() {}
 // -----------------------------------------------------------------------------
 void ChangeVarQG::changeVar(StateQG & xx, const oops::Variables & vars) const {
   qg_change_var_f90(xx.fields().toFortran(), vars);
+  xx.fields().variables() = vars;
 }
 // -----------------------------------------------------------------------------
 void ChangeVarQG::changeVarInverse(StateQG & xx, const oops::Variables & vars) const {
   qg_change_var_f90(xx.fields().toFortran(), vars);
+  xx.fields().variables() = vars;
 }
 // -----------------------------------------------------------------------------
 void ChangeVarQG::print(std::ostream & os) const {

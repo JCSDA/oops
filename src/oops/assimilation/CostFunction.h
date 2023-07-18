@@ -39,10 +39,8 @@
 #include "oops/util/Logger.h"
 
 namespace oops {
-
-// Forward decl
-template <typename MODEL, typename OBS> class CostFactory;
-template <typename MODEL> class CostJbState;
+  template <typename MODEL, typename OBS> class CostFactory;
+  template <typename MODEL, typename OBS> class CostJbState;
 
 // -----------------------------------------------------------------------------
 
@@ -98,7 +96,8 @@ template<typename MODEL, typename OBS> class CostFunction : private boost::nonco
  private:
   virtual void addIncr(CtrlVar_ &, const CtrlInc_ &, PostProcessor<Increment_>&) const = 0;
 
-  virtual CostJbState<MODEL> * newJb(const eckit::Configuration &, const Geometry_ &) const = 0;
+  virtual CostJbState<MODEL, OBS>  * newJb(const eckit::Configuration &,
+                                           const Geometry_ &) const = 0;
   virtual CostJo<MODEL, OBS>       * newJo(const eckit::Configuration &) const = 0;
   virtual CostTermBase<MODEL, OBS> * newJc(const eckit::Configuration &,
                                            const Geometry_ &) const = 0;
@@ -196,7 +195,7 @@ void CostFunction<MODEL, OBS>::setupTerms(const eckit::Configuration & config) {
   Log::trace() << "CostFunction::setupTerms Jo added" << std::endl;
 
 // Jb
-  CostJbState<MODEL> * jbs = this->newJb(config, this->geometry());  // constructs background
+  CostJbState<MODEL, OBS> * jbs = this->newJb(config, this->geometry());  // constructs background
   jb_.reset(new JbTotal_(jbs, config, this->geometry(), jo->obspaces()));
   Log::trace() << "CostFunction::setupTerms Jb added" << std::endl;
 

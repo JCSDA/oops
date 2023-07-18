@@ -19,6 +19,7 @@
 #include "eckit/config/Configuration.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
+#include "oops/base/Increment4D.h"
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/instantiateCovarFactory.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
@@ -74,8 +75,9 @@ template <typename MODEL> class SqrtOfVertLoc : public Application {
   typedef Geometry<MODEL>            Geometry_;
   typedef GeometryIterator<MODEL>    GeometryIterator_;
   typedef Increment<MODEL>           Increment_;
+  typedef Increment4D<MODEL>         Increment4D_;
   typedef IncrementEnsemble<MODEL>   IncrementEnsemble_;
-  typedef State<MODEL>               State_;
+  typedef State4D<MODEL>             State4D_;
   typedef typename Increment_::WriteParameters_ WriteParameters_;
   typedef ModelSpaceCovarianceBase<MODEL>   ModelSpaceCovariance_;
   typedef SqrtOfVertLocParameters<MODEL>    Parameters_;
@@ -97,8 +99,9 @@ template <typename MODEL> class SqrtOfVertLoc : public Application {
 
 //  Setup geometry and background
     const Geometry_ geometry(params.geometry, this->getComm());
-    const State_ xx(geometry, params.background);
+    const State4D_ xx(geometry, eckit::LocalConfiguration(fullConfig, "background"));
     Log::test() << "Background: " << xx << std::endl;
+    ASSERT(xx.is_3d());
 
 //  Setup variables
     const Variables & vars = params.perturbedVariables;
@@ -111,7 +114,7 @@ template <typename MODEL> class SqrtOfVertLoc : public Application {
 
 //  Retrieve vertical eigenvectors from B
     const size_t samples = params.samples;
-    IncrementEnsemble_ perts(geometry, vars, xx.validTime(), samples);
+    IncrementEnsemble_ perts(geometry, vars, xx[0].validTime(), samples);
     size_t maxNeigOutput = samples;
     if (params.maxNeigOutput.value() != boost::none) {
       maxNeigOutput = *params.maxNeigOutput.value();
@@ -121,8 +124,8 @@ template <typename MODEL> class SqrtOfVertLoc : public Application {
 
 //  Inflate truncated columns of sqrt(B) to account for the truncated spectrum
     // (1) compute trace of the truncated correlation matrix
-    Increment_ tmpIncr1(geometry, vars, xx.validTime());
-    Increment_ sumOfSquares(geometry, vars, xx.validTime());
+    Increment_ tmpIncr1(geometry, vars, xx[0].validTime());
+    Increment_ sumOfSquares(geometry, vars, xx[0].validTime());
     sumOfSquares.zero();
     for (size_t jm = 0; jm < truncatedNeig; ++jm) {
       tmpIncr1 = perts[jm];
@@ -187,9 +190,13 @@ template <typename MODEL> class SqrtOfVertLoc : public Application {
     const eckit::mpi::Comm & mpiComm = geom.getComm();
 
 //  Generate random sample of B
+    Increment4D_ tmp(geom, perts[0].variables(), {perts[0].validTime()});
+    ASSERT(tmp.is_3d());
     size_t samples = perts.size();
     for (size_t jm = 0; jm < samples; ++jm) {
-      cov.randomize(perts[jm]);
+      tmp[0] = perts[jm];
+      cov.randomize(tmp);
+      perts[jm] = tmp[0];
     }
 
 //  Create temp. eigen matrices

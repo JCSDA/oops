@@ -78,7 +78,7 @@ template<typename MODEL, typename OBS> class CostFctWeak : public CostFunction<M
  private:
   void addIncr(CtrlVar_ &, const CtrlInc_ &, PostProcessor<Increment_> &) const override;
 
-  CostJbJq<MODEL> * newJb(const eckit::Configuration &, const Geometry_ &) const override;
+  CostJbJq<MODEL, OBS> * newJb(const eckit::Configuration &, const Geometry_ &) const override;
   CostJo<MODEL, OBS>       * newJo(const eckit::Configuration &) const override;
   CostTermBase<MODEL, OBS> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
   void doLinearize(const Geometry_ &, const eckit::Configuration &, CtrlVar_ &, CtrlVar_ &,
@@ -176,14 +176,14 @@ CostFctWeak<MODEL, OBS>::CostFctWeak(const eckit::Configuration & conf,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-CostJbJq<MODEL> * CostFctWeak<MODEL, OBS>::newJb(const eckit::Configuration & jbConf,
+CostJbJq<MODEL, OBS> * CostFctWeak<MODEL, OBS>::newJb(const eckit::Configuration & jbConf,
                                                  const Geometry_ & resol) const {
   Log::trace() << "CostFctWeak::newJb start" << std::endl;
   std::vector<util::DateTime> times;
   for (util::DateTime jj = windowBegin_; jj < windowEnd_; jj += subWinLength_) {
     times.push_back(jj);
   }
-  return new CostJbJq<MODEL>(times, jbConf, *commTime_, resol, ctlvars_);
+  return new CostJbJq<MODEL, OBS>(times, jbConf, *commTime_, resol, ctlvars_);
 }
 
 // -----------------------------------------------------------------------------

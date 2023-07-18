@@ -17,10 +17,9 @@
 #include <boost/noncopyable.hpp>
 
 namespace oops {
-
-// Forward declaration
+  template<typename MODEL, typename OBS> class ControlVariable;
+  template<typename MODEL, typename OBS> class ControlIncrement;
   template<typename MODEL> class Geometry;
-  template<typename MODEL> class Increment4D;
   template<typename MODEL> class JqTerm;
   template<typename MODEL> class JqTermTLAD;
   template<typename MODEL> class PostProcessor;
@@ -35,12 +34,13 @@ namespace oops {
  * state part of the control variable.
  */
 
-template<typename MODEL> class CostJbState : private boost::noncopyable {
-  typedef Geometry<MODEL>            Geometry_;
-  typedef Increment4D<MODEL>         Increment_;
-  typedef State4D<MODEL>             State_;
-  typedef JqTerm<MODEL>              JqTerm_;
-  typedef JqTermTLAD<MODEL>          JqTLAD_;
+template<typename MODEL, typename OBS> class CostJbState : private boost::noncopyable {
+  typedef ControlIncrement<MODEL, OBS>  CtrlInc_;
+  typedef ControlVariable<MODEL, OBS>   CtrlVar_;
+  typedef Geometry<MODEL>               Geometry_;
+  typedef State4D<MODEL>                State_;
+  typedef JqTerm<MODEL>                 JqTerm_;
+  typedef JqTermTLAD<MODEL>             JqTLAD_;
 
  public:
 /// Constructor
@@ -55,14 +55,14 @@ template<typename MODEL> class CostJbState : private boost::noncopyable {
 /// Get increment from state. This is usually first guess - background.
 /// The third state argument is M(x) at the end of the window/subwindows for
 /// computing the model error term (M(x_{i-1})-x_i) when active.
-  virtual void computeIncrement(const State_ &, const State_ &, const std::shared_ptr<JqTerm_>,
-                                Increment_ &) const = 0;
+  virtual void computeIncrement(const CtrlVar_ &, const CtrlVar_ &, const std::shared_ptr<JqTerm_>,
+                                CtrlInc_ &) const = 0;
 
 /// Linearize before the linear computations.
-  virtual void linearize(const State_ &, const State_ &, const Geometry_ &) = 0;
+  virtual void linearize(const CtrlVar_ &, const CtrlVar_ &, const Geometry_ &) = 0;
 
 /// Add Jb gradient.
-  virtual void addGradient(const Increment_ &, Increment_ &, Increment_ &) const = 0;
+  virtual void addGradient(const CtrlInc_ &, CtrlInc_ &, CtrlInc_ &) const = 0;
 
 /// Initialize Jq computations if needed.
   virtual JqTLAD_ * initializeJqTLAD() const = 0;
@@ -71,14 +71,14 @@ template<typename MODEL> class CostJbState : private boost::noncopyable {
   virtual JqTLAD_ * initializeJqTL() const = 0;
 
 /// Initialize \f$ J_b\f$ before the AD run.
-  virtual JqTLAD_ * initializeJqAD(const Increment_ &) const = 0;
+  virtual JqTLAD_ * initializeJqAD(const CtrlInc_ &) const = 0;
 
 /// Multiply by \f$ B\f$ and \f$ B^{-1}\f$.
-  virtual void Bmult(const Increment_ &, Increment_ &) const = 0;
-  virtual void Bminv(const Increment_ &, Increment_ &) const = 0;
+  virtual void Bmult(const CtrlInc_ &, CtrlInc_ &) const = 0;
+  virtual void Bminv(const CtrlInc_ &, CtrlInc_ &) const = 0;
 
 /// Randomize
-  virtual void randomize(Increment_ &) const = 0;
+  virtual void randomize(CtrlInc_ &) const = 0;
 
 /// Accessors to data for constructing a new increment.
   virtual const Geometry_ & geometry() const = 0;

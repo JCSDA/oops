@@ -28,13 +28,14 @@
 #include "eckit/testing/Test.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
+#include "oops/base/Increment4D.h"
 #include "oops/base/instantiateCovarFactory.h"
 #include "oops/base/LinearModel.h"
 #include "oops/base/Model.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
-#include "oops/base/State.h"
+#include "oops/base/State4D.h"
 #include "oops/base/TrajectorySaver.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/instantiateLinearModelFactory.h"
@@ -54,11 +55,13 @@ namespace test {
 template <typename MODEL> class LinearModelFixture : private boost::noncopyable {
   typedef oops::Geometry<MODEL>          Geometry_;
   typedef oops::Increment<MODEL>         Increment_;
+  typedef oops::Increment4D<MODEL>       Increment4D_;
   typedef oops::LinearModel<MODEL>       LinearModel_;
   typedef oops::Model<MODEL>             Model_;
   typedef oops::ModelAuxControl<MODEL>   ModelAux_;
   typedef oops::ModelAuxIncrement<MODEL> ModelAuxIncr_;
   typedef oops::State<MODEL>             State_;
+  typedef oops::State4D<MODEL>           State4D_;
   typedef oops::ModelSpaceCovarianceBase<MODEL> Covariance_;
 
  public:
@@ -68,7 +71,7 @@ template <typename MODEL> class LinearModelFixture : private boost::noncopyable 
   static const util::DateTime   & time()       {return *getInstance().time_;}
   static const Covariance_      & covariance() {return *getInstance().B_;}
   static const Model_           & model()      {return *getInstance().model_;}
-  static const State_           & xref()       {return *getInstance().xref_;}
+  static const State4D_         & xref()       {return *getInstance().xref_;}
   static const ModelAux_        & bias()       {return *getInstance().bias_;}
   static const ModelAuxIncr_    & dbias()      {return *getInstance().dbias_;}
   static const LinearModel_     & tlm()        {return *getInstance().tlm_;}
@@ -111,8 +114,8 @@ template <typename MODEL> class LinearModelFixture : private boost::noncopyable 
     model_.reset(new Model_(*resol_, nlConf));
 
     const eckit::LocalConfiguration iniConf(TestEnvironment::config(), "initial condition");
-    xref_.reset(new State_(*resol_, iniConf));
-    time_.reset(new util::DateTime(xref_->validTime()));
+    xref_.reset(new State4D_(*resol_, iniConf));
+    time_.reset(new util::DateTime(xref_->times()[0]));
 
 //  Create a covariance matrix
     oops::instantiateCovarFactory<MODEL>();
@@ -128,7 +131,7 @@ template <typename MODEL> class LinearModelFixture : private boost::noncopyable 
     oops::PostProcessorTLAD<MODEL> pptraj;
     tlm_.reset(new LinearModel_(*resol_, *tlConf_));
     post.enrollProcessor(new oops::TrajectorySaver<MODEL>(*tlConf_, *resol_, *bias_, tlm_, pptraj));
-    State_ xx(*xref_);
+    State_ xx((*xref_)[0]);
     model_->forecast(xx, *bias_, len, post);
   }
 
@@ -139,7 +142,7 @@ template <typename MODEL> class LinearModelFixture : private boost::noncopyable 
   std::unique_ptr<const Geometry_>       resol_;
   std::unique_ptr<const util::DateTime>  time_;
   std::unique_ptr<const oops::Variables> ctlvars_;
-  std::unique_ptr<const State_>          xref_;
+  std::unique_ptr<const State4D_>        xref_;
   std::unique_ptr<const Model_>          model_;
   std::unique_ptr<const ModelAux_>       bias_;
   std::unique_ptr<const ModelAuxIncr_>   dbias_;
@@ -163,27 +166,28 @@ template <typename MODEL> void testLinearModelConstructor() {
 template <typename MODEL> void testLinearModelZeroLength() {
   typedef LinearModelFixture<MODEL>      Test_;
   typedef oops::Increment<MODEL>         Increment_;
+  typedef oops::Increment4D<MODEL>       Increment4D_;
   typedef oops::ModelAuxIncrement<MODEL> ModelAuxIncr_;
 
   const util::DateTime vt(Test_::time());
   const util::Duration zero(0);
 
-  Increment_ dxref(Test_::resol(), Test_::ctlvars(), vt);
+  Increment4D_ dxref(Test_::resol(), Test_::ctlvars(), {vt});
   Test_::covariance().randomize(dxref);
   ModelAuxIncr_ daux(Test_::dbias());
-  const double ininorm = dxref.norm();
+  const double ininorm = dxref[0].norm();
   EXPECT(ininorm > 0.0);
 
   Increment_ dx(Test_::resol(), Test_::ctlvars(), vt);
   Increment_ dxm(Test_::resol(), Test_::tlm().variables(), vt);
-  dxm = dxref;
+  dxm = dxref[0];
   Test_::tlm().forecastTL(dxm, daux, zero);
   dx = dxm;
   EXPECT(dx.validTime() == vt);
   EXPECT(dx.norm() == ininorm);
 
   dxm.zero();
-  dxm = dxref;
+  dxm = dxref[0];
   Test_::tlm().forecastAD(dxm, daux, zero);
   dx = dxm;
   EXPECT(dx.validTime() == vt);
@@ -225,6 +229,7 @@ template <typename MODEL> void testLinearModelZeroPert() {
 template <typename MODEL> void testLinearModelLinearity() {
   typedef LinearModelFixture<MODEL>      Test_;
   typedef oops::Increment<MODEL>         Increment_;
+  typedef oops::Increment4D<MODEL>       Increment4D_;
   typedef oops::ModelAuxIncrement<MODEL> ModelAuxIncr_;
 
   const util::Duration len(Test_::test().getString("forecast length"));
@@ -233,16 +238,16 @@ template <typename MODEL> void testLinearModelLinearity() {
   EXPECT(t2 > t1);
   const double zz = 3.1415;
 
-  Increment_ dx1(Test_::resol(), Test_::tlm().variables(), t1);
+  Increment4D_ dx1(Test_::resol(), Test_::tlm().variables(), {t1});
   Test_::covariance().randomize(dx1);
   ModelAuxIncr_ daux1(Test_::dbias());
-  EXPECT(dx1.norm() > 0.0);
+  EXPECT(dx1[0].norm() > 0.0);
 
-  Increment_ dx2(dx1);
+  Increment_ dx2(dx1[0]);
   ModelAuxIncr_ daux2(daux1);
 
-  Test_::tlm().forecastTL(dx1, daux1, len);
-  EXPECT(dx1.validTime() == t2);
+  Test_::tlm().forecastTL(dx1[0], daux1, len);
+  EXPECT(dx1[0].validTime() == t2);
   dx1 *= zz;
   daux1 *= zz;
 
@@ -252,7 +257,7 @@ template <typename MODEL> void testLinearModelLinearity() {
   EXPECT(dx2.validTime() == t2);
 
   const double tol = Test_::test().getDouble("tolerance AD");
-  EXPECT(oops::is_close(dx1.norm(), dx2.norm(), tol));
+  EXPECT(oops::is_close(dx1[0].norm(), dx2.norm(), tol));
 }
 
 // -----------------------------------------------------------------------------
@@ -260,6 +265,7 @@ template <typename MODEL> void testLinearModelLinearity() {
 template <typename MODEL> void testLinearApproximation() {
   typedef LinearModelFixture<MODEL>      Test_;
   typedef oops::Increment<MODEL>         Increment_;
+  typedef oops::Increment4D<MODEL>       Increment4D_;
   typedef oops::State<MODEL>             State_;
 
   const util::Duration len(Test_::test().getString("forecast length"));
@@ -267,16 +273,16 @@ template <typename MODEL> void testLinearApproximation() {
   const util::DateTime t2(t1 + len);
   EXPECT(t2 > t1);
 
-  Increment_ dx0(Test_::resol(), Test_::tlm().variables(), t1);
+  Increment4D_ dx0(Test_::resol(), Test_::tlm().variables(), {t1});
   Test_::covariance().randomize(dx0);
-  EXPECT(dx0.norm() > 0.0);
+  EXPECT(dx0[0].norm() > 0.0);
 
-  Increment_ dx(dx0);
+  Increment_ dx(dx0[0]);
   Test_::tlm().forecastTL(dx, Test_::dbias(), len);
   const double dxnorm = dx.norm();
 
   oops::PostProcessor<State_> post;
-  State_ xx0(Test_::xref());
+  State_ xx0(Test_::xref()[0]);
   Test_::model().forecast(xx0, Test_::bias(), len, post);
 
   const unsigned int ntest = Test_::test().getInt("iterations TL");
@@ -287,8 +293,8 @@ template <typename MODEL> void testLinearApproximation() {
 
   std::vector<double> errors;
   for (unsigned int jtest = 0; jtest < ntest; ++jtest) {
-    State_ xx(Test_::xref());
-    Increment_ pert(dx0);
+    State_ xx(Test_::xref()[0]);
+    Increment_ pert(dx0[0]);
     pert *= zz;
     xx += pert;
     Test_::model().forecast(xx, Test_::bias(), len, post);
@@ -322,6 +328,7 @@ template <typename MODEL> void testLinearApproximation() {
 template <typename MODEL> void testLinearModelAdjoint() {
   typedef LinearModelFixture<MODEL>      Test_;
   typedef oops::Increment<MODEL>         Increment_;
+  typedef oops::Increment4D<MODEL>       Increment4D_;
   typedef oops::ModelAuxIncrement<MODEL> ModelAuxIncr_;
 
   const util::Duration len(Test_::test().getString("forecast length"));
@@ -329,29 +336,29 @@ template <typename MODEL> void testLinearModelAdjoint() {
   const util::DateTime t2(t1 + len);
   EXPECT(t2 > t1);
 
-  Increment_ dx11(Test_::resol(), Test_::tlm().variables(), t1);
+  Increment4D_ dx11(Test_::resol(), Test_::tlm().variables(), {t1});
   Test_::covariance().randomize(dx11);
   ModelAuxIncr_ daux1(Test_::dbias());
-  EXPECT(dx11.norm() > 0.0);
-  Increment_ dx12(dx11);
+  EXPECT(dx11[0].norm() > 0.0);
+  Increment_ dx12(dx11[0]);
   Test_::tlm().forecastTL(dx12, daux1, len);
   EXPECT(dx12.norm() > 0.0);
-  Increment_ dx22(Test_::resol(), Test_::tlm().variables(), t2);
+  Increment4D_ dx22(Test_::resol(), Test_::tlm().variables(), {t2});
   Test_::covariance().randomize(dx22);
   ModelAuxIncr_ daux2(Test_::dbias());
-  EXPECT(dx22.norm() > 0.0);
-  Increment_ dx21(dx22);
+  EXPECT(dx22[0].norm() > 0.0);
+  Increment_ dx21(dx22[0]);
   Test_::tlm().forecastAD(dx21, daux2, len);
   EXPECT(dx21.norm() > 0.0);
 
-  EXPECT(dx11.norm() != dx22.norm());
-  EXPECT(dx11.validTime() == t1);
+  EXPECT(dx11[0].norm() != dx22[0].norm());
+  EXPECT(dx11[0].validTime() == t1);
   EXPECT(dx21.validTime() == t1);
   EXPECT(dx12.validTime() == t2);
-  EXPECT(dx22.validTime() == t2);
+  EXPECT(dx22[0].validTime() == t2);
 
-  const double dot1 = dot_product(dx11, dx21);
-  const double dot2 = dot_product(dx12, dx22);
+  const double dot1 = dot_product(dx11[0], dx21);
+  const double dot2 = dot_product(dx12, dx22[0]);
   const double tol = Test_::test().getDouble("tolerance AD");
   EXPECT(oops::is_close(dot1, dot2, tol));
 }

@@ -13,12 +13,15 @@
 #include <string>
 
 #include "oops/base/Geometry.h"
+#include "oops/base/Increment.h"
+#include "oops/base/Increment4D.h"
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/LinearModel.h"
 #include "oops/base/Model.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State.h"
+#include "oops/base/State4D.h"
 #include "oops/base/StateEnsemble.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/LinearModelBase.h"
@@ -111,8 +114,10 @@ class HtlmEnsemble{
   typedef ModelAuxControl<MODEL>                        ModelAux_;
   typedef ModelAuxIncrement<MODEL>                      ModelAuxIncrement_;
   typedef State<MODEL>                                  State_;
+  typedef State4D<MODEL>                                State4D_;
   typedef StateEnsemble<MODEL>                          StateEnsemble_;
   typedef Increment<MODEL>                              Increment_;
+  typedef Increment4D<MODEL>                            Increment4D_;
   typedef IncrementEnsemble<MODEL>                      IncrementEnsemble_;
   typedef HtlmEnsembleParameters<MODEL>                 HtlmEnsembleParameters_;
   typedef ModelSpaceCovarianceBase<MODEL>               CovarianceBase_;
@@ -150,7 +155,7 @@ class HtlmEnsemble{
   // ptr to linear model
   LinearModel_ simpleLinearModel_;
   //  control member IC
-  State_ controlState_;
+  State4D_ controlState_;
   //  Augmented state
   ModelAux_ moderr_;
   // Augmented increment
@@ -175,16 +180,16 @@ HtlmEnsemble<MODEL>::HtlmEnsemble(const HtlmEnsembleParameters_
       incrementGeometry_(geomTLM),
       model_(stateGeometry_, params_.model.value().modelParameters.value()),
       simpleLinearModel_(geomTLM, params_.linearModel),
-      controlState_(stateGeometry_, params_.control.value()),
+      controlState_(stateGeometry_, params_.control.value().toConfiguration()),
       moderr_(stateGeometry_, params_.modelAuxControl.value()),
       modauxinc_(incrementGeometry_, params_.modelAuxIncrement.value()),
       perturbedStates_(params_.nlEnsemble.value().statesReadIn.value() != boost::none ?
              StateEnsemble_(stateGeometry_, *params_.nlEnsemble.value().statesReadIn.value()) :
-                                                   StateEnsemble_(controlState_, ensembleSize_)),
+                                                   StateEnsemble_(controlState_[0], ensembleSize_)),
       linearEnsemble_(incrementGeometry_, simpleLinearModel_.variables(),
-                      controlState_.validTime(), ensembleSize_),
+                      controlState_[0].validTime(), ensembleSize_),
       nonLinearDifferences_(incrementGeometry_, simpleLinearModel_.variables(),
-                            controlState_.validTime(), ensembleSize_),
+                            controlState_[0].validTime(), ensembleSize_),
       linearErrorDe_(nonLinearDifferences_) {
     Log::trace() << "HtlmEnsemble<MODEL>::HtlmEnsemble() starting"
                  << std::endl;
@@ -203,18 +208,18 @@ HtlmEnsemble<MODEL>::HtlmEnsemble(const HtlmEnsembleParameters_
       std::unique_ptr<CovarianceBase_> Bmat(CovarianceFactory_::create(
                            stateGeometry_, vars_, covarParams, controlState_, controlState_));
     //  Generate perturbed states
-    Increment_ dx(stateGeometry_, vars_, controlState_.validTime());
+    Increment4D_ dx(stateGeometry_, vars_, controlState_.times());
       for (size_t jm = 0; jm < ensembleSize_; ++jm) {
         //  Generate linear ensemble increments
         Bmat->randomize(dx);
         //  Add to control state
-        perturbedStates_[jm] += dx;
+        perturbedStates_[jm] += dx[0];
       }
     }
 
       //  Set up linearEnsemble_
       for (size_t m = 0; m < ensembleSize_; ++m) {
-          linearEnsemble_[m].diff(controlState_, perturbedStates_[m]);
+          linearEnsemble_[m].diff(controlState_[0], perturbedStates_[m]);
       }
 
     Log::trace() << "HtlmEnsemble<MODEL>::HtlmEnsemble() done" << std::endl;
@@ -231,10 +236,10 @@ void HtlmEnsemble<MODEL>::step(const util::Duration & tstep)  {
     const size_t stepsPerUpdate =
       tstep.toSeconds() / simpleLinearModel_.timeResolution().toSeconds();
     for (size_t t = 0; t < stepsPerUpdate; t++) {
-      State_ downsampled_Control(incrementGeometry_, controlState_);
-      simpleLinearModel_.setTrajectory(controlState_, downsampled_Control, moderr_);
+      State_ downsampled_Control(incrementGeometry_, controlState_[0]);
+      simpleLinearModel_.setTrajectory(controlState_[0], downsampled_Control, moderr_);
       PostProcessor<State_> post;
-      model_.forecast(controlState_, moderr_, simpleLinearModel_.timeResolution(), post);
+      model_.forecast(controlState_[0], moderr_, simpleLinearModel_.timeResolution(), post);
       for (size_t m = 0; m < ensembleSize_; m++) {
         model_.forecast(perturbedStates_[m], moderr_, simpleLinearModel_.timeResolution(), post);
         simpleLinearModel_.forecastTL(linearEnsemble_[m], modauxinc_,
@@ -243,7 +248,7 @@ void HtlmEnsemble<MODEL>::step(const util::Duration & tstep)  {
     }
     for (size_t m = 0; m < ensembleSize_; ++m) {
         nonLinearDifferences_[m].updateTime(tstep);
-        nonLinearDifferences_[m].diff(controlState_, (perturbedStates_[m]));
+        nonLinearDifferences_[m].diff(controlState_[0], (perturbedStates_[m]));
     }
     linearErrorDe_ = nonLinearDifferences_;
     for (size_t m = 0; m < ensembleSize_; ++m) {

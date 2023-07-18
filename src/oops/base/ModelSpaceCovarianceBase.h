@@ -30,8 +30,9 @@
 #include "oops/base/Geometry.h"
 #include "oops/base/IdentityMatrix.h"
 #include "oops/base/Increment.h"
+#include "oops/base/Increment4D.h"
 #include "oops/base/ModelSpaceCovarianceParametersBase.h"
-#include "oops/base/State.h"
+#include "oops/base/State4D.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/LinearVariableChange.h"
 #include "oops/util/AssociativeContainers.h"
@@ -68,25 +69,22 @@ template <typename MODEL>
 class ModelSpaceCovarianceBase {
   typedef Geometry<MODEL>                                       Geometry_;
   typedef GeometryIterator<MODEL>                               GeometryIterator_;
-  typedef State<MODEL>                                          State_;
+  typedef State4D<MODEL>                                        State4D_;
   typedef Increment<MODEL>                                      Increment_;
+  typedef Increment4D<MODEL>                                    Increment4D_;
   typedef LinearVariableChange<MODEL>                           LinearVariableChange_;
 
  public:
-  ModelSpaceCovarianceBase(const Geometry_ &,
-                           const ModelSpaceCovarianceParametersBase<MODEL> &,
-                           const State_ &,
-                           const State_ &);
-  ModelSpaceCovarianceBase(const Geometry_ &,
-                           const eckit::Configuration &,
-                           const State_ &,
-                           const State_ &);
+  ModelSpaceCovarianceBase(const Geometry_ &, const ModelSpaceCovarianceParametersBase<MODEL> &,
+                           const State4D_ &, const State4D_ &);
+  ModelSpaceCovarianceBase(const Geometry_ &, const eckit::Configuration &,
+                           const State4D_ &, const State4D_ &);
   virtual ~ModelSpaceCovarianceBase() {}
 
-  void randomize(Increment_ &) const;
-  void multiply(const Increment_ &, Increment_ &) const;
-  void inverseMultiply(const Increment_ &, Increment_ &) const;
-  void getVariance(Increment_ &) const;
+  void randomize(Increment4D_ &) const;
+  void multiply(const Increment4D_ &, Increment4D_ &) const;
+  void inverseMultiply(const Increment4D_ &, Increment4D_ &) const;
+  void getVariance(Increment4D_ &) const;
 
   const std::string covarianceModel() const {return covarianceModel_;}
   size_t randomizationSize() const {return randomizationSize_;}
@@ -95,9 +93,9 @@ class ModelSpaceCovarianceBase {
   std::unique_ptr<Variables> BVars_;
 
  private:
-  virtual void doRandomize(Increment_ &) const = 0;
-  virtual void doMultiply(const Increment_ &, Increment_ &) const = 0;
-  virtual void doInverseMultiply(const Increment_ &, Increment_ &) const = 0;
+  virtual void doRandomize(Increment4D_ &) const = 0;
+  virtual void doMultiply(const Increment4D_ &, Increment4D_ &) const = 0;
+  virtual void doInverseMultiply(const Increment4D_ &, Increment4D_ &) const = 0;
 
   std::string covarianceModel_;
   size_t randomizationSize_;
@@ -156,7 +154,7 @@ class ModelSpaceCovarianceParametersWrapper : public Parameters {
 template <typename MODEL>
 class CovarianceFactory {
   typedef Geometry<MODEL> Geometry_;
-  typedef State<MODEL>    State_;
+  typedef State4D<MODEL>  State4D_;
 
  public:
   /// \brief Create and return a new covariance model.
@@ -167,8 +165,8 @@ class CovarianceFactory {
   static ModelSpaceCovarianceBase<MODEL> * create(const Geometry_ &,
                                                   const Variables &,
                                                   const ModelSpaceCovarianceParametersBase<MODEL> &,
-                                                  const State_ &,
-                                                  const State_ &);
+                                                  const State4D_ &,
+                                                  const State4D_ &);
 
   /// \brief Create and return a new covariance model.
   ///
@@ -176,8 +174,8 @@ class CovarianceFactory {
   static ModelSpaceCovarianceBase<MODEL> * create(const Geometry_ &,
                                                   const Variables &,
                                                   const eckit::Configuration &,
-                                                  const State_ &,
-                                                  const State_ &);
+                                                  const State4D_ &,
+                                                  const State4D_ &);
 
   /// \brief Create and return an instance of the subclass of ModelSpaceCovarianceParametersBase
   /// storing parameters of the specified covariance model.
@@ -199,7 +197,7 @@ class CovarianceFactory {
  private:
   virtual ModelSpaceCovarianceBase<MODEL> * make(const Geometry_ &, const Variables &,
                                                  const ModelSpaceCovarianceParametersBase<MODEL> &,
-                                                 const State_ &, const State_ &) = 0;
+                                                 const State4D_ &, const State4D_ &) = 0;
 
   virtual std::unique_ptr<ModelSpaceCovarianceParametersBase<MODEL>> makeParameters() const = 0;
 
@@ -219,14 +217,11 @@ class CovarMaker : public CovarianceFactory<MODEL> {
     COVAR, GenericModelSpaceCovarianceParameters<MODEL>> Parameters_;
 
   typedef Geometry<MODEL> Geometry_;
-  typedef State<MODEL>    State_;
+  typedef State4D<MODEL>  State4D_;
 
-  ModelSpaceCovarianceBase<MODEL> * make(
-      const Geometry_ & resol,
-      const Variables & vars,
-      const ModelSpaceCovarianceParametersBase<MODEL> & params,
-      const State_ & xb,
-      const State_ & fg) override {
+  ModelSpaceCovarianceBase<MODEL> * make(const Geometry_ & resol, const Variables & vars,
+                                const ModelSpaceCovarianceParametersBase<MODEL> & params,
+                                const State4D_ & xb, const State4D_ & fg) override {
     const auto &stronglyTypedParams = dynamic_cast<const Parameters_&>(params);
     return new COVAR(resol, vars,
                      parametersOrConfiguration<HasParameters_<COVAR>::value>(stronglyTypedParams),
@@ -258,8 +253,8 @@ ModelSpaceCovarianceBase<MODEL>* CovarianceFactory<MODEL>::create(
     const Geometry_ & resol,
     const Variables & vars,
     const ModelSpaceCovarianceParametersBase<MODEL> & parameters,
-    const State_ & xb,
-    const State_ & fg) {
+    const State4D_ & xb,
+    const State4D_ & fg) {
   const std::string id = parameters.covarianceModel.value().value();
   Log::trace() << "ModelSpaceCovarianceBase type = " << id << std::endl;
   typename std::map<std::string, CovarianceFactory<MODEL>*>::iterator jcov = getMakers().find(id);
@@ -284,12 +279,9 @@ ModelSpaceCovarianceBase<MODEL>* CovarianceFactory<MODEL>::create(
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-ModelSpaceCovarianceBase<MODEL>* CovarianceFactory<MODEL>::create(
-    const Geometry_ & resol,
-    const Variables & vars,
-    const eckit::Configuration & conf,
-    const State_ & xb,
-    const State_ & fg) {
+ModelSpaceCovarianceBase<MODEL>* CovarianceFactory<MODEL>::create(const Geometry_ & resol,
+                                const Variables & vars, const eckit::Configuration & conf,
+                                const State4D_ & xb, const State4D_ & fg) {
   ModelSpaceCovarianceParametersWrapper<MODEL> parameters;
   parameters.validateAndDeserialize(conf);
   return create(resol, vars, parameters.covarianceParameters, xb, fg);
@@ -299,8 +291,7 @@ ModelSpaceCovarianceBase<MODEL>* CovarianceFactory<MODEL>::create(
 
 template <typename MODEL>
 std::unique_ptr<ModelSpaceCovarianceParametersBase<MODEL>>
-  CovarianceFactory<MODEL>::createParameters(
-    const std::string &name) {
+  CovarianceFactory<MODEL>::createParameters(const std::string &name) {
   typename std::map<std::string, CovarianceFactory<MODEL>*>::iterator it =
       getMakers().find(name);
   if (it == getMakers().end()) {
@@ -314,7 +305,8 @@ std::unique_ptr<ModelSpaceCovarianceParametersBase<MODEL>>
 template <typename MODEL>
 ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(const Geometry_ & resol,
                      const ModelSpaceCovarianceParametersBase<MODEL> & parameters,
-                                                          const State_ & xb, const State_ & fg) {
+                                                          const State4D_ & xb, const State4D_ & fg)
+{
   Log::trace() << "ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase starting" << std::endl;
   const boost::optional<std::string> &covarianceModel = parameters.covarianceModel.value();
   if (covarianceModel == boost::none) {
@@ -342,7 +334,7 @@ ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(const Geometry_ & reso
       } else {
           anaVars_.reset(new Variables());
       }
-      linVarChg_->changeVarTraj(fg, *anaVars_);
+      linVarChg_->changeVarTraj(fg[0], *anaVars_);
   }
   Log::trace() << "ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase done" << std::endl;
 }
@@ -352,7 +344,7 @@ ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(const Geometry_ & reso
 template <typename MODEL>
 ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(const Geometry_ & resol,
                                                           const eckit::Configuration & conf,
-                                                          const State_ & xb, const State_ & fg)
+                                                          const State4D_ & xb, const State4D_ & fg)
   : ModelSpaceCovarianceBase(
       resol, validateAndDeserialize<GenericModelSpaceCovarianceParameters<MODEL>>(conf), xb, fg)
 {}
@@ -360,13 +352,13 @@ ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(const Geometry_ & reso
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void ModelSpaceCovarianceBase<MODEL>::randomize(Increment_ & dx) const {
+void ModelSpaceCovarianceBase<MODEL>::randomize(Increment4D_ & dx) const {
   Log::trace() << "ModelSpaceCovarianceBase<MODEL>::randomize starting" << std::endl;
   util::Timer timer(timername_, "randomize");
   // TODO(notguillaume): Generalize to non-square change of variable
   this->doRandomize(dx);
   if (linVarChg_) {
-    linVarChg_->changeVarTL(dx, *anaVars_);
+    linVarChg_->changeVarTL(dx[0], *anaVars_);
   }
   Log::trace() << "ModelSpaceCovarianceBase<MODEL>::randomize done" << std::endl;
 }
@@ -374,23 +366,23 @@ void ModelSpaceCovarianceBase<MODEL>::randomize(Increment_ & dx) const {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void ModelSpaceCovarianceBase<MODEL>::multiply(const Increment_ & dxi,
-                                               Increment_ & dxo) const {
+void ModelSpaceCovarianceBase<MODEL>::multiply(const Increment4D_ & dxi,
+                                               Increment4D_ & dxo) const {
   Log::trace() << "ModelSpaceCovarianceBase<MODEL>::multiply starting" << std::endl;
   util::Timer timer(timername_, "multiply");
   if (linVarChg_) {
     // Copy input increment and apply adjoint variable change (to control variables)
-    Increment_ dxiTemp(dxi);
-    linVarChg_->changeVarAD(dxiTemp, *BVars_);
+    Increment4D_ dxiTemp(dxi);
+    linVarChg_->changeVarAD(dxiTemp[0], *BVars_);
 
     // Create temporary output increment
-    Increment_ dxoTemp(dxiTemp, false);
+    Increment4D_ dxoTemp(dxiTemp, false);
 
     // Apply background error model
     this->doMultiply(dxiTemp, dxoTemp);
 
     // Apply control to analysis/model variable change
-    linVarChg_->changeVarTL(dxoTemp, *anaVars_);
+    linVarChg_->changeVarTL(dxoTemp[0], *anaVars_);
 
     // Copy to output increment
     dxo = dxoTemp;
@@ -403,29 +395,29 @@ void ModelSpaceCovarianceBase<MODEL>::multiply(const Increment_ & dxi,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void ModelSpaceCovarianceBase<MODEL>::inverseMultiply(const Increment_ & dxi,
-                                                      Increment_ & dxo) const {
+void ModelSpaceCovarianceBase<MODEL>::inverseMultiply(const Increment4D_ & dxi,
+                                                      Increment4D_ & dxo) const {
   Log::trace() << "ModelSpaceCovarianceBase<MODEL>::inverseMultiply starting" << std::endl;
   util::Timer timer(timername_, "inverseMultiply");
   if (fullInverse_) {
     // Approximate full inverse using GMRESR
-    IdentityMatrix<Increment_> Id;
+    IdentityMatrix<Increment4D_> Id;
     dxo.zero();
     GMRESR(dxo, dxi, *this, Id, fullInverseIterations_, fullInverseAccuracy_);
   } else {
     if (linVarChg_) {
       // Copy input increment and apply inverse variable change (K^{-1})
-      Increment_ dxiTemp(dxi);
-      linVarChg_->changeVarInverseTL(dxiTemp, *BVars_);
+      Increment4D_ dxiTemp(dxi);
+      linVarChg_->changeVarInverseTL(dxiTemp[0], *BVars_);
 
       // Create temporary output increment
-      Increment_ dxoTemp(dxiTemp, false);
+      Increment4D_ dxoTemp(dxiTemp, false);
 
       // Apply background error model
       this->doInverseMultiply(dxiTemp, dxoTemp);
 
       // Apply adjoint inverse variable change (K^T^{-1})
-      linVarChg_->changeVarInverseAD(dxoTemp, *anaVars_);
+      linVarChg_->changeVarInverseAD(dxoTemp[0], *anaVars_);
 
       // Copy to output increment
       dxo = dxoTemp;
@@ -439,12 +431,12 @@ void ModelSpaceCovarianceBase<MODEL>::inverseMultiply(const Increment_ & dxi,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void ModelSpaceCovarianceBase<MODEL>::getVariance(Increment_ & variance) const {
+void ModelSpaceCovarianceBase<MODEL>::getVariance(Increment4D_ & variance) const {
   Log::trace() << "ModelSpaceCovarianceBase<MODEL>::getVariance starting" << std::endl;
   util::Timer timer(timername_, "getVariance");
-  Increment_ dx(variance);
-  Increment_ dxsq(variance);
-  Increment_ mean(variance);
+  Increment_ dx(variance[0]);
+  Increment_ dxsq(variance[0]);
+  Increment_ mean(variance[0]);
   mean.zero();
   variance.zero();
   for (size_t ie = 0; ie < randomizationSize_; ++ie) {
@@ -454,7 +446,7 @@ void ModelSpaceCovarianceBase<MODEL>::getVariance(Increment_ & variance) const {
     dxsq.schur_product_with(dx);
     double rk_var = static_cast<double>(ie)/static_cast<double>(ie+1);
     double rk_mean = 1.0/static_cast<double>(ie+1);
-    variance.axpy(rk_var, dxsq, false);
+    variance[0].axpy(rk_var, dxsq, false);
     mean.axpy(rk_mean, dx, false);
   }
   double rk_norm = 1.0/static_cast<double>(randomizationSize_-1);

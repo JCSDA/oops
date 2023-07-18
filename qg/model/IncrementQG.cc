@@ -40,26 +40,26 @@ namespace qg {
 // -----------------------------------------------------------------------------
 IncrementQG::IncrementQG(const GeometryQG & resol, const oops::Variables & vars,
                          const util::DateTime & vt)
-  : fields_(new FieldsQG(resol, vars, lbc_, vt)), vars_(vars)
+  : fields_(new FieldsQG(resol, vars, lbc_, vt))
 {
   fields_->zero();
   oops::Log::trace() << "IncrementQG constructed." << std::endl;
 }
 // -----------------------------------------------------------------------------
 IncrementQG::IncrementQG(const GeometryQG & resol, const IncrementQG & other)
-  : fields_(new FieldsQG(*other.fields_, resol)), vars_(other.vars_)
+  : fields_(new FieldsQG(*other.fields_, resol))
 {
   oops::Log::trace() << "IncrementQG constructed from other." << std::endl;
 }
 // -----------------------------------------------------------------------------
 IncrementQG::IncrementQG(const IncrementQG & other, const bool copy)
-  : fields_(new FieldsQG(*other.fields_, copy)), vars_(other.vars_)
+  : fields_(new FieldsQG(*other.fields_, copy))
 {
   oops::Log::trace() << "IncrementQG copy-created." << std::endl;
 }
 // -----------------------------------------------------------------------------
 IncrementQG::IncrementQG(const IncrementQG & other)
-  : fields_(new FieldsQG(*other.fields_)), vars_(other.vars_)
+  : fields_(new FieldsQG(*other.fields_))
 {
   oops::Log::trace() << "IncrementQG copy-created." << std::endl;
 }

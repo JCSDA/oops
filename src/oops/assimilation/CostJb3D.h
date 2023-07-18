@@ -16,6 +16,8 @@
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "oops/assimilation/ControlIncrement.h"
+#include "oops/assimilation/ControlVariable.h"
 #include "oops/assimilation/CostJbState.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment4D.h"
@@ -43,11 +45,12 @@ namespace oops {
  * with one sub-window. It is provided for readability.
  */
 
-template<typename MODEL> class CostJb3D : public CostJbState<MODEL> {
-  typedef Geometry<MODEL>            Geometry_;
-  typedef Increment4D<MODEL>         Increment_;
-  typedef State4D<MODEL>             State_;
-  typedef JqTerm<MODEL>              JqTerm_;
+template<typename MODEL, typename OBS> class CostJb3D : public CostJbState<MODEL, OBS> {
+  typedef ControlIncrement<MODEL, OBS>  CtrlInc_;
+  typedef ControlVariable<MODEL, OBS>   CtrlVar_;
+  typedef Geometry<MODEL>               Geometry_;
+  typedef State4D<MODEL>                State_;
+  typedef JqTerm<MODEL>                 JqTerm_;
 
  public:
 /// Construct \f$ J_b\f$.
@@ -58,14 +61,14 @@ template<typename MODEL> class CostJb3D : public CostJbState<MODEL> {
   virtual ~CostJb3D() {}
 
 /// Get increment from state (usually first guess).
-  void computeIncrement(const State_ &, const State_ &, const std::shared_ptr<JqTerm_>,
-                        Increment_ &) const override;
+  void computeIncrement(const CtrlVar_ &, const CtrlVar_ &, const std::shared_ptr<JqTerm_>,
+                        CtrlInc_ &) const override;
 
 /// Linearize before the linear computations.
-  void linearize(const State_ &, const State_ &, const Geometry_ &) override;
+  void linearize(const CtrlVar_ &, const CtrlVar_ &, const Geometry_ &) override;
 
 /// Add Jb gradient.
-  void addGradient(const Increment_ &, Increment_ &, Increment_ &) const override;
+  void addGradient(const CtrlInc_ &, CtrlInc_ &, CtrlInc_ &) const override;
 
 /// Empty Jq observer.
   JqTermTLAD<MODEL> * initializeJqTLAD() const override {return 0;}
@@ -74,40 +77,37 @@ template<typename MODEL> class CostJb3D : public CostJbState<MODEL> {
   JqTermTLAD<MODEL> * initializeJqTL() const override {return 0;}
 
 /// Empty AD Jq observer.
-  JqTermTLAD<MODEL> * initializeJqAD(const Increment_ &) const override {return 0;}
+  JqTermTLAD<MODEL> * initializeJqAD(const CtrlInc_ &) const override {return 0;}
 
 /// Multiply by \f$ B\f$ and \f$ B^{-1}\f$.
-  void Bmult(const Increment_ &, Increment_ &) const override;
-  void Bminv(const Increment_ &, Increment_ &) const override;
+  void Bmult(const CtrlInc_ &, CtrlInc_ &) const override;
+  void Bminv(const CtrlInc_ &, CtrlInc_ &) const override;
 
 /// Randomize
-  void randomize(Increment_ &) const override;
+  void randomize(CtrlInc_ &) const override;
 
 /// Accessors to data for constructing a new increment.
-  const Geometry_ & geometry() const override;
-  const Variables & variables() const override;
-  const std::vector<util::DateTime> & times() const override;
+  const Geometry_ & geometry() const override {return *resol_;}
+  const Variables & variables() const override {return ctlvars_;}
+  const std::vector<util::DateTime> & times() const override {return time_;}
   const eckit::mpi::Comm & comm() const override {return oops::mpi::myself();}
   std::shared_ptr<State_> background() const override {return bg_;}
 
  private:
   std::unique_ptr<ModelSpaceCovarianceBase<MODEL>> B_;
   std::shared_ptr<State_> bg_;
-  const Variables controlvars_;
+  const Variables ctlvars_;
   const Geometry_ * resol_;
   std::vector<util::DateTime> time_;
   const eckit::LocalConfiguration conf_;
 };
 
-// =============================================================================
-
-//  Jb Term of Cost Function
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-CostJb3D<MODEL>::CostJb3D(const util::DateTime & time, const eckit::Configuration & config,
+template<typename MODEL, typename OBS>
+CostJb3D<MODEL, OBS>::CostJb3D(const util::DateTime & time, const eckit::Configuration & config,
                           const Geometry_ & geom, const Variables & ctlvars)
-  : B_(), bg_(), controlvars_(ctlvars), resol_(), time_(1), conf_(config, "background error")
+  : B_(), bg_(), ctlvars_(ctlvars), resol_(), time_(1), conf_(config, "background error")
 {
   std::vector<util::DateTime> times({time});
   bg_.reset(new State_(times, oops::mpi::myself()));
@@ -118,72 +118,53 @@ CostJb3D<MODEL>::CostJb3D(const util::DateTime & time, const eckit::Configuratio
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostJb3D<MODEL>::linearize(const State_ & xb, const State_ & fg, const Geometry_ & lowres) {
+template<typename MODEL, typename OBS>
+void CostJb3D<MODEL, OBS>::linearize(const CtrlVar_ & xb, const CtrlVar_ & fg,
+                                     const Geometry_ & lowres) {
   Log::trace() << "CostJb3D:linearize start" << std::endl;
   resol_ = &lowres;
-  time_[0] = xb[0].validTime();  // not earlier because of FGAT
-  B_.reset(CovarianceFactory<MODEL>::create(lowres, controlvars_, conf_, xb[0], fg[0]));
+  time_[0] = xb.state(0).validTime();  // not earlier because of FGAT
+  B_.reset(CovarianceFactory<MODEL>::create(lowres, ctlvars_, conf_, xb.states(), fg.states()));
   Log::trace() << "CostJb3D:linearize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostJb3D<MODEL>::computeIncrement(const State_ & xb, const State_ & fg,
-                                       const std::shared_ptr<JqTerm_>, Increment_ & dx) const {
-  dx.diff(fg, xb);
+template<typename MODEL, typename OBS>
+void CostJb3D<MODEL, OBS>::computeIncrement(const CtrlVar_ & xb, const CtrlVar_ & fg,
+                                       const std::shared_ptr<JqTerm_>, CtrlInc_ & dx) const {
+  dx.states().diff(fg.states(), xb.states());
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostJb3D<MODEL>::addGradient(const Increment_ & dxFG, Increment_ & grad,
-                                  Increment_ & gradJb) const {
-  grad += gradJb;
+template<typename MODEL, typename OBS>
+void CostJb3D<MODEL, OBS>::addGradient(const CtrlInc_ & dxFG, CtrlInc_ & grad,
+                                  CtrlInc_ & gradJb) const {
+  grad.states() += gradJb.states();
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostJb3D<MODEL>::Bmult(const Increment_ & dxin, Increment_ & dxout) const {
-  B_->multiply(dxin[0], dxout[0]);
+template<typename MODEL, typename OBS>
+void CostJb3D<MODEL, OBS>::Bmult(const CtrlInc_ & dxin, CtrlInc_ & dxout) const {
+  B_->multiply(dxin.states(), dxout.states());
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostJb3D<MODEL>::Bminv(const Increment_ & dxin, Increment_ & dxout) const {
-  B_->inverseMultiply(dxin[0], dxout[0]);
+template<typename MODEL, typename OBS>
+void CostJb3D<MODEL, OBS>::Bminv(const CtrlInc_ & dxin, CtrlInc_ & dxout) const {
+  B_->inverseMultiply(dxin.states(), dxout.states());
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostJb3D<MODEL>::randomize(Increment_ & dx) const {
-  B_->randomize(dx[0]);
+template<typename MODEL, typename OBS>
+void CostJb3D<MODEL, OBS>::randomize(CtrlInc_ & dx) const {
+  B_->randomize(dx.states());
 }
 
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-const Geometry<MODEL> & CostJb3D<MODEL>::geometry() const {
-  return *resol_;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-const Variables & CostJb3D<MODEL>::variables() const {
-  return controlvars_;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-const std::vector<util::DateTime> & CostJb3D<MODEL>::times() const {
-  return time_;
-}
 // -----------------------------------------------------------------------------
 
 }  // namespace oops

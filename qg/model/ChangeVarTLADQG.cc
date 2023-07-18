@@ -26,21 +26,25 @@ ChangeVarTLADQG::~ChangeVarTLADQG() {}
 // -----------------------------------------------------------------------------
 void ChangeVarTLADQG::changeVarTL(IncrementQG & dx, const oops::Variables & vars) const {
   qg_change_var_tl_f90(dx.fields().toFortran(), vars);
+  dx.fields().variables() = vars;
 }
 // -----------------------------------------------------------------------------
 void ChangeVarTLADQG::changeVarInverseTL(IncrementQG & dx, const oops::Variables & vars) const {
   qg_change_var_tl_f90(dx.fields().toFortran(), vars);
+  dx.fields().variables() = vars;
 }
 // -----------------------------------------------------------------------------
 void ChangeVarTLADQG::changeVarAD(IncrementQG & dx, const oops::Variables & vars) const {
   qg_change_var_ad_f90(dx.fields().toFortran(), vars);
+  dx.fields().variables() = vars;
 }
 // -----------------------------------------------------------------------------
 void ChangeVarTLADQG::changeVarInverseAD(IncrementQG & dx, const oops::Variables & vars) const {
   qg_change_var_ad_f90(dx.fields().toFortran(), vars);
+  dx.fields().variables() = vars;
 }
 // -----------------------------------------------------------------------------
-void ChangeVarTLADQG::changeVarTraj(const StateQG & firstGuess, const oops::Variables & vars) {
+void ChangeVarTLADQG::changeVarTraj(const StateQG &, const oops::Variables &) {
   // No QG trajectory used. No fortran to call here.
 }
 // -----------------------------------------------------------------------------

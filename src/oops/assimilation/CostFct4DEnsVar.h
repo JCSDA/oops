@@ -72,7 +72,7 @@ template<typename MODEL, typename OBS> class CostFct4DEnsVar : public CostFuncti
  private:
   void addIncr(CtrlVar_ &, const CtrlInc_ &, PostProcessor<Increment_>&) const override;
 
-  CostJb4D<MODEL> * newJb(const eckit::Configuration &, const Geometry_ &) const override;
+  CostJb4D<MODEL, OBS> * newJb(const eckit::Configuration &, const Geometry_ &) const override;
   CostJo<MODEL, OBS>       * newJo(const eckit::Configuration &) const override;
   CostTermBase<MODEL, OBS> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
   void doLinearize(const Geometry_ &, const eckit::Configuration &, CtrlVar_ &, CtrlVar_ &,
@@ -162,14 +162,14 @@ CostFct4DEnsVar<MODEL, OBS>::CostFct4DEnsVar(const eckit::Configuration & conf,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-CostJb4D<MODEL> * CostFct4DEnsVar<MODEL, OBS>::newJb(const eckit::Configuration & jbConf,
+CostJb4D<MODEL, OBS> * CostFct4DEnsVar<MODEL, OBS>::newJb(const eckit::Configuration & jbConf,
                                                      const Geometry_ & resol) const {
   Log::trace() << "CostFct4DEnsVar::newJb" << std::endl;
   std::vector<util::DateTime> times;
   for (util::DateTime jj = windowBegin_; jj <= windowEnd_; jj += subWinLength_) {
     times.push_back(jj);
   }
-  return new CostJb4D<MODEL>(times, jbConf, *commTime_, resol, ctlvars_);
+  return new CostJb4D<MODEL, OBS>(times, jbConf, *commTime_, resol, ctlvars_);
 }
 
 // -----------------------------------------------------------------------------

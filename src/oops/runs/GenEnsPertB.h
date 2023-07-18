@@ -23,6 +23,7 @@
 #include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State.h"
+#include "oops/base/State4D.h"
 #include "oops/base/StateWriter.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/ModelAuxControl.h"
@@ -86,7 +87,9 @@ template <typename MODEL> class GenEnsPertB : public Application {
   typedef Model<MODEL>                              Model_;
   typedef ModelAuxControl<MODEL>                    ModelAux_;
   typedef Increment<MODEL>                          Increment_;
+  typedef Increment4D<MODEL>                        Increment4D_;
   typedef State<MODEL>                              State_;
+  typedef State4D<MODEL>                            State4D_;
   typedef StateWriterParameters<State_>             StateWriterParameters_;
 
   typedef GenEnsPertBParameters<MODEL>              GenEnsPertBParameters_;
@@ -112,7 +115,7 @@ template <typename MODEL> class GenEnsPertB : public Application {
     const Model_ model(resol, params.model.value().modelParameters);
 
 //  Setup initial state
-    const State_ xx(resol, params.initialCondition);
+    const State4D_ xx(resol, eckit::LocalConfiguration(fullConfig, "initial condition"));
     Log::test() << "Initial state: " << xx << std::endl;
 
 //  Setup augmented state
@@ -120,7 +123,7 @@ template <typename MODEL> class GenEnsPertB : public Application {
 
 //  Setup times
     const util::Duration fclength = params.forecastLength;
-    const util::DateTime bgndate(xx.validTime());
+    const util::DateTime bgndate(xx[0].validTime());
     const util::DateTime enddate(bgndate + fclength);
     Log::info() << "Running forecast from " << bgndate << " to " << enddate << std::endl;
 
@@ -134,14 +137,14 @@ template <typename MODEL> class GenEnsPertB : public Application {
                                             resol, vars, covarParams, xx, xx));
 
 //  Generate perturbed states
-    Increment_ dx(resol, vars, bgndate);
+    Increment4D_ dx(resol, vars, xx.times());
     for (int jm = 0; jm < params.members; ++jm) {
 //    Generate pertubation
       Bmat->randomize(dx);
 
 //    Add mean state
-      State_ xp(xx);
-      xp += dx;
+      State_ xp(xx[0]);
+      xp += dx[0];
 
 //    Setup forecast outputs
       PostProcessor<State_> post;

@@ -41,7 +41,7 @@ template<typename MODEL, typename OBS> class CostJbTotal {
   typedef ControlIncrement<MODEL, OBS>  CtrlInc_;
   typedef ControlVariable<MODEL, OBS>   CtrlVar_;
   typedef State<MODEL>                  State_;
-  typedef CostJbState<MODEL>            JbState_;
+  typedef CostJbState<MODEL, OBS>       JbState_;
   typedef CostJbModelAux<MODEL, OBS>    JbModelAux_;
   typedef CostJbObsAux<MODEL, OBS>      JbObsAux_;
   typedef JqTerm<MODEL>                 JqTerm_;
@@ -185,7 +185,7 @@ double CostJbTotal<MODEL, OBS>::computeCost() {
   CtrlInc_ dx(*this);
 
 // Compute x_0 - x_b for Jb (and Jq if present)
-  jb_->computeIncrement(xb_.states(), xx_->states(), jb_->getJq(), dx.states());
+  jb_->computeIncrement(xb_, *xx_, jb_->getJq(), dx);
 
 // Model and Obs biases
   dx.modVar().diff(xx_->modVar(), xb_.modVar());
@@ -230,7 +230,7 @@ void CostJbTotal<MODEL, OBS>::computeCostTraj() {
   ASSERT(traj_);
 
 // Linearize model-related terms and setup B (obs term done in computeCostTraj)
-  jb_->linearize(xb_.states(), traj_->states(), *resol_);
+  jb_->linearize(xb_, *traj_, *resol_);
   jbModBias_.computeCostTraj();
 
 // Linearize obs bias term
@@ -242,7 +242,7 @@ void CostJbTotal<MODEL, OBS>::computeCostTraj() {
 // Compute x_0 - x_b for Jb (and Jq if present)
   std::shared_ptr<JqTerm_> jq;
   if (jqtraj_) jq = jqtraj_->getJq();
-  jb_->computeIncrement(xb_.states(), traj_->states(), jq, dxFG_->states());
+  jb_->computeIncrement(xb_, *traj_, jq, *dxFG_);
 
 // Model and Obs biases
   dxFG_->modVar().diff(traj_->modVar(), xb_.modVar());
@@ -302,7 +302,7 @@ void CostJbTotal<MODEL, OBS>::addGradientFG(CtrlInc_ & grad) const {
 template<typename MODEL, typename OBS>
 void CostJbTotal<MODEL, OBS>::addGradientFG(CtrlInc_ & grad, CtrlInc_ & gradJb) const {
   Log::trace() << "CostJbTotal::addGradientFG 2 start" << std::endl;
-  jb_->addGradient(dxFG_->states(), grad.states(), gradJb.states());
+  jb_->addGradient(*dxFG_, grad, gradJb);
   grad.modVar() += gradJb.modVar();
   grad.obsVar() += gradJb.obsVar();
   Log::trace() << "CostJbTotal::addGradientFG 2 done" << std::endl;
@@ -335,7 +335,7 @@ template<typename MODEL, typename OBS>
 void CostJbTotal<MODEL, OBS>::initializeAD(CtrlInc_ & bgns, const CtrlInc_ & dx,
                                            PostProcTLAD_ & ppad) const {
   Log::trace() << "CostJbTotal::initializeAD start" << std::endl;
-  jqad_.reset(jb_->initializeJqAD(dx.states()));
+  jqad_.reset(jb_->initializeJqAD(dx));
   bgns += dx;
   ppad.enrollProcessor(jqad_);
   Log::trace() << "CostJbTotal::initializeAD done" << std::endl;
@@ -355,7 +355,7 @@ void CostJbTotal<MODEL, OBS>::finalizeAD() const {
 template<typename MODEL, typename OBS>
 void CostJbTotal<MODEL, OBS>::multiplyB(const CtrlInc_ & dxin, CtrlInc_ & dxout) const {
   Log::trace() << "CostJbTotal::multiplyB start" << std::endl;
-  jb_->Bmult(dxin.states(), dxout.states());
+  jb_->Bmult(dxin, dxout);
   jbModBias_.multiplyCovar(dxin, dxout);
   jbObsBias_.multiplyCovar(dxin, dxout);
   Log::trace() << "CostJbTotal::multiplyB done" << std::endl;
@@ -366,7 +366,7 @@ void CostJbTotal<MODEL, OBS>::multiplyB(const CtrlInc_ & dxin, CtrlInc_ & dxout)
 template<typename MODEL, typename OBS>
 void CostJbTotal<MODEL, OBS>::multiplyBinv(const CtrlInc_ & dxin, CtrlInc_ & dxout) const {
   Log::trace() << "CostJbTotal::multiplyBinv start" << std::endl;
-  jb_->Bminv(dxin.states(), dxout.states());
+  jb_->Bminv(dxin, dxout);
   jbModBias_.multiplyCoInv(dxin, dxout);
   jbObsBias_.multiplyCoInv(dxin, dxout);
   Log::trace() << "CostJbTotal::multiplyBinv done" << std::endl;
@@ -377,7 +377,7 @@ void CostJbTotal<MODEL, OBS>::multiplyBinv(const CtrlInc_ & dxin, CtrlInc_ & dxo
 template<typename MODEL, typename OBS>
 void CostJbTotal<MODEL, OBS>::randomize(CtrlInc_ & dx) const {
   Log::trace() << "CostJbTotal::randomize start" << std::endl;
-  jb_->randomize(dx.states());
+  jb_->randomize(dx);
   jbModBias_.randomize(dx);
   jbObsBias_.randomize(dx);
   Log::trace() << "CostJbTotal::randomize done" << std::endl;

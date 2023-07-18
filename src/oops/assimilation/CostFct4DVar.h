@@ -24,7 +24,6 @@
 #include "oops/base/Increment.h"
 #include "oops/base/LinearModel.h"
 #include "oops/base/Model.h"
-#include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/State.h"
@@ -76,7 +75,7 @@ template<typename MODEL, typename OBS> class CostFct4DVar : public CostFunction<
  private:
   void addIncr(CtrlVar_ &, const CtrlInc_ &, PostProcessor<Increment_>&) const override;
 
-  CostJb3D<MODEL> * newJb(const eckit::Configuration &, const Geometry_ &) const override;
+  CostJb3D<MODEL, OBS> * newJb(const eckit::Configuration &, const Geometry_ &) const override;
   CostJo<MODEL, OBS>       * newJo(const eckit::Configuration &) const override;
   CostTermBase<MODEL, OBS> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
   void doLinearize(const Geometry_ &, const eckit::Configuration &, CtrlVar_ &, CtrlVar_ &,
@@ -121,10 +120,10 @@ CostFct4DVar<MODEL, OBS>::CostFct4DVar(const eckit::Configuration & config,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-CostJb3D<MODEL> * CostFct4DVar<MODEL, OBS>::newJb(const eckit::Configuration & jbConf,
+CostJb3D<MODEL, OBS> * CostFct4DVar<MODEL, OBS>::newJb(const eckit::Configuration & jbConf,
                                                   const Geometry_ & resol) const {
   Log::trace() << "CostFct4DVar::newJb start" << std::endl;
-  return new CostJb3D<MODEL>(windowBegin_, jbConf, resol, ctlvars_);
+  return new CostJb3D<MODEL, OBS>(windowBegin_, jbConf, resol, ctlvars_);
 }
 
 // -----------------------------------------------------------------------------

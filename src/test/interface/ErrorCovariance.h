@@ -24,10 +24,10 @@
 #include "eckit/config/Configuration.h"
 #include "eckit/testing/Test.h"
 #include "oops/base/Geometry.h"
-#include "oops/base/Increment.h"
+#include "oops/base/Increment4D.h"
 #include "oops/base/instantiateCovarFactory.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
-#include "oops/base/State.h"
+#include "oops/base/State4D.h"
 #include "oops/base/Variables.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
@@ -49,11 +49,11 @@ template <typename MODEL> class ErrorCovarianceFixture : private boost::noncopya
   static const eckit::Configuration & test()       {return *getInstance().test_;}
   static const Geometry_            & resol()      {return *getInstance().resol_;}
   static const oops::Variables      & ctlvars()    {return *getInstance().ctlvars_;}
-  static const util::DateTime       & time()       {return *getInstance().time_;}
+  static const std::vector<util::DateTime> & time() {return getInstance().time_;}
   static const Covariance_          & covariance() {return *getInstance().B_;}
   static void reset() {
     getInstance().B_.reset();
-    getInstance().time_.reset();
+    getInstance().time_.clear();
     getInstance().ctlvars_.reset();
     getInstance().resol_.reset();
     getInstance().test_.reset();
@@ -76,9 +76,9 @@ template <typename MODEL> class ErrorCovarianceFixture : private boost::noncopya
     ctlvars_.reset(new oops::Variables(TestEnvironment::config(), "analysis variables"));
 
     const eckit::LocalConfiguration fgconf(TestEnvironment::config(), "background");
-    oops::State<MODEL> xx(*resol_, fgconf);
+    oops::State4D<MODEL> xx(*resol_, fgconf);
 
-    time_.reset(new util::DateTime(xx.validTime()));
+    time_ = xx.times();
 
 //  Setup the B matrix
     const eckit::LocalConfiguration covar(TestEnvironment::config(), "background error");
@@ -90,7 +90,7 @@ template <typename MODEL> class ErrorCovarianceFixture : private boost::noncopya
   std::unique_ptr<const eckit::LocalConfiguration>   test_;
   std::unique_ptr<const Geometry_>       resol_;
   std::unique_ptr<const oops::Variables> ctlvars_;
-  std::unique_ptr<const util::DateTime>  time_;
+  std::vector<util::DateTime>            time_;
   std::unique_ptr<Covariance_>           B_;
 };
 
@@ -98,19 +98,19 @@ template <typename MODEL> class ErrorCovarianceFixture : private boost::noncopya
 
 template <typename MODEL> void testErrorCovarianceZero() {
   typedef ErrorCovarianceFixture<MODEL>   Test_;
-  typedef oops::Increment<MODEL>    Increment_;
+  typedef oops::Increment4D<MODEL>    Increment_;
 
   Increment_ dx1(Test_::resol(), Test_::ctlvars(), Test_::time());
   Increment_ dx2(Test_::resol(), Test_::ctlvars(), Test_::time());
 
   Test_::covariance().randomize(dx2);
-  oops::Log::test() << "dx2.norm()=" << dx2.norm() << std::endl;
+  oops::Log::test() << "dx2.norm()=" << dx2[0].norm() << std::endl;
 
-  EXPECT(dx1.norm() == 0.0);
-  EXPECT(dx2.norm() > 0.0);
+  EXPECT(dx1[0].norm() == 0.0);
+  EXPECT(dx2[0].norm() > 0.0);
 
   Test_::covariance().multiply(dx1, dx2);
-  EXPECT(dx2.norm() == 0.0);
+  EXPECT(dx2[0].norm() == 0.0);
 
   const bool testinverse = Test_::test().getBool("testinverse", true);
   if (testinverse)
@@ -118,10 +118,10 @@ template <typename MODEL> void testErrorCovarianceZero() {
       oops::Log::test() << "Doing zero test for inverse" << std::endl;
       dx1.zero();
       Test_::covariance().randomize(dx2);
-      EXPECT(dx1.norm() == 0.0);
-      EXPECT(dx2.norm() > 0.0);
+      EXPECT(dx1[0].norm() == 0.0);
+      EXPECT(dx2[0].norm() > 0.0);
       Test_::covariance().inverseMultiply(dx1, dx2);
-      EXPECT(dx2.norm() == 0.0);
+      EXPECT(dx2[0].norm() == 0.0);
     } else {
       oops::Log::test() << "Not doing zero test for inverse" << std::endl;
     }
@@ -131,7 +131,7 @@ template <typename MODEL> void testErrorCovarianceZero() {
 
 template <typename MODEL> void testErrorCovarianceInverse() {
   typedef ErrorCovarianceFixture<MODEL>   Test_;
-  typedef oops::Increment<MODEL>    Increment_;
+  typedef oops::Increment4D<MODEL>    Increment_;
 
   const bool testinverse = Test_::test().getBool("testinverse", true);
   if (testinverse)
@@ -140,16 +140,16 @@ template <typename MODEL> void testErrorCovarianceInverse() {
       Increment_ dx2(Test_::resol(), Test_::ctlvars(), Test_::time());
       Increment_ dx3(Test_::resol(), Test_::ctlvars(), Test_::time());
       Test_::covariance().randomize(dx1);
-      EXPECT(dx1.norm() > 0.0);
+      EXPECT(dx1[0].norm() > 0.0);
 
       Test_::covariance().multiply(dx1, dx2);
       Test_::covariance().inverseMultiply(dx2, dx3);
 
-      EXPECT(dx2.norm() > 0.0);
-      EXPECT(dx3.norm() > 0.0);
+      EXPECT(dx2[0].norm() > 0.0);
+      EXPECT(dx3[0].norm() > 0.0);
       dx3 -= dx1;
       const double tol = Test_::test().getDouble("tolerance");
-      EXPECT(dx3.norm()/dx1.norm() < tol);
+      EXPECT(dx3[0].norm()/dx1[0].norm() < tol);
     } else {
       return;
     }
@@ -159,7 +159,7 @@ template <typename MODEL> void testErrorCovarianceInverse() {
 
 template <typename MODEL> void testErrorCovarianceSym() {
   typedef ErrorCovarianceFixture<MODEL>   Test_;
-  typedef oops::Increment<MODEL>    Increment_;
+  typedef oops::Increment4D<MODEL>    Increment_;
 
   Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
   Increment_ Bdx(Test_::resol(), Test_::ctlvars(), Test_::time());

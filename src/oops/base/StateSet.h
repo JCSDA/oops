@@ -38,6 +38,7 @@ template<typename MODEL> class StateSet : public DataSetBase<State<MODEL>> {
   StateSet(const Geometry_ &, const eckit::Configuration &,
            const eckit::mpi::Comm & commTime = oops::mpi::myself(),
            const eckit::mpi::Comm & commEns = oops::mpi::myself());
+  StateSet(const Geometry_ &, const StateSet &);
   StateSet(const StateSet &) = default;
   virtual ~StateSet() = default;
 
@@ -81,6 +82,19 @@ StateSet<MODEL>::StateSet(const Geometry_ & resol, const eckit::Configuration & 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
+StateSet<MODEL>::StateSet(const Geometry_ & resol, const StateSet & other)
+  : DataSetBase<State_>(other.times_, other.commTime_, other.members_, other.commEns_)
+{
+  Log::trace() << "StateSet::StateSet chres start" << std::endl;
+  for (size_t jj = 0; jj < other.size(); ++jj) {
+    Base_::dataset_.emplace_back(State_(resol, other[jj]));
+  }
+  Log::trace() << "StateSet::StateSet chres done" << *this << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
 void StateSet<MODEL>::read(const Geometry_ & resol, const eckit::Configuration & config) {
   Log::trace() << "StateSet::read start " << config << std::endl;
   ASSERT(Base_::dataset_.size() == 0);
@@ -111,14 +125,20 @@ void StateSet<MODEL>::read(const Geometry_ & resol, const eckit::Configuration &
     } else {
       confs = {mconf};
     }
+    Base_::times_.clear();
     Base_::ntimes_ = confs.size();
     Base_::localtimes_ = Base_::ntimes_ / Base_::commTime_.size();
     for (size_t jt = 0; jt < Base_::localtimes_; ++jt) {
       const size_t it = Base_::commTime_.rank() * Base_::localtimes_ + jt;
       Base_::dataset_.emplace_back(State_(resol, confs.at(it)));
+      Base_::times_.push_back(Base_::dataset_.back().validTime());
       ASSERT(jm * Base_::localtimes_ + jt == Base_::dataset_.size() - 1);
     }
+    ASSERT(Base_::times_.size() == Base_::localtimes_);
   }
+
+  mpi::allGatherv(Base_::commTime_, Base_::times_);
+  ASSERT(Base_::times_.size() == Base_::ntimes_);
 
   this->check_consistency();
 

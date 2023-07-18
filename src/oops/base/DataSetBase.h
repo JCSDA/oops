@@ -30,13 +30,14 @@ template<typename DATA> class DataSetBase : public util::Printable {
 
   DataSetBase & operator=(const DataSetBase &);
 
-  const Variables & variables() const {return dataset_[0].variables();}
+  const Variables & variables() const {this->check_consistency(); return dataset_[0].variables();}
   const std::vector<util::DateTime> validTimes() const;
 
   bool is_3d() const {return nmembers_ == 1 && ntimes_ == 1;}
   bool is_4d() const {return nmembers_ == 1;}
   size_t ens_size() const {return nmembers_;}
   size_t time_size() const {return ntimes_;}
+  const std::vector<util::DateTime> & times() const {return times_;}
 
   DATA & operator()(const size_t it, const size_t im) {return this->data(it, im);}
   const DATA & operator()(const size_t it, const size_t im) const {return this->data(it, im);}

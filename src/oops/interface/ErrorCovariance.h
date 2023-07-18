@@ -19,9 +19,9 @@
 #include "eckit/system/ResourceUsage.h"
 
 #include "oops/base/Geometry.h"
-#include "oops/base/Increment.h"
+#include "oops/base/Increment4D.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
-#include "oops/base/State.h"
+#include "oops/base/State4D.h"
 #include "oops/base/Variables.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
@@ -52,8 +52,8 @@ class ErrorCovariance : public oops::ModelSpaceCovarianceBase<MODEL>,
                         private boost::noncopyable {
   typedef typename MODEL::Covariance Covariance_;
   typedef Geometry<MODEL>            Geometry_;
-  typedef Increment<MODEL>           Increment_;
-  typedef State<MODEL>               State_;
+  typedef Increment4D<MODEL>         Increment_;
+  typedef State4D<MODEL>             State_;
 
  public:
   /// Defined as Covariance_::Parameters_ if Covariance_ defines a Parameters_ type; otherwise as
@@ -93,7 +93,7 @@ ErrorCovariance<MODEL>::ErrorCovariance(const Geometry_ & resol, const Variables
   covariance_.reset(new Covariance_(resol.geometry(), vars,
                                     parametersOrConfiguration<HasParameters_<Covariance_>::value>(
                                       parameters),
-                                    xb.state(), fg.state()));
+                                    xb[0].state(), fg[0].state()));
   size_t current = eckit::system::ResourceUsage().maxResidentSetSize();
   this->setObjectSize(current - init);
   Log::trace() << "ErrorCovariance<MODEL>::ErrorCovariance done" << std::endl;
@@ -126,7 +126,7 @@ template<typename MODEL>
 void ErrorCovariance<MODEL>::doRandomize(Increment_ & dx) const {
   Log::trace() << "ErrorCovariance<MODEL>::doRandomize starting" << std::endl;
   util::Timer timer(classname(), "doRandomize");
-  covariance_->randomize(dx.increment());
+  covariance_->randomize(dx[0].increment());
   Log::trace() << "ErrorCovariance<MODEL>::doRandomize done" << std::endl;
 }
 
@@ -136,7 +136,7 @@ template<typename MODEL>
 void ErrorCovariance<MODEL>::doMultiply(const Increment_ & dx1, Increment_ & dx2) const {
   Log::trace() << "ErrorCovariance<MODEL>::doMultiply starting" << std::endl;
   util::Timer timer(classname(), "doMultiply");
-  covariance_->multiply(dx1.increment(), dx2.increment());
+  covariance_->multiply(dx1[0].increment(), dx2[0].increment());
   Log::trace() << "ErrorCovariance<MODEL>::doMultiply done" << std::endl;
 }
 
@@ -146,7 +146,7 @@ template<typename MODEL>
 void ErrorCovariance<MODEL>::doInverseMultiply(const Increment_ & dx1, Increment_ & dx2) const {
   Log::trace() << "ErrorCovariance<MODEL>::doInverseMultiply starting" << std::endl;
   util::Timer timer(classname(), "doInverseMultiply");
-  covariance_->inverseMultiply(dx1.increment(), dx2.increment());
+  covariance_->inverseMultiply(dx1[0].increment(), dx2[0].increment());
   Log::trace() << "ErrorCovariance<MODEL>::doInverseMultiply done" << std::endl;
 }
 

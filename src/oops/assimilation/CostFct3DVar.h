@@ -64,7 +64,7 @@ template<typename MODEL, typename OBS> class CostFct3DVar : public CostFunction<
  private:
   void addIncr(CtrlVar_ &, const CtrlInc_ &, PostProcessor<Increment_>&) const override;
 
-  CostJb3D<MODEL> * newJb(const eckit::Configuration &, const Geometry_ &) const override;
+  CostJb3D<MODEL, OBS> * newJb(const eckit::Configuration &, const Geometry_ &) const override;
   CostJo<MODEL, OBS>       * newJo(const eckit::Configuration &) const override;
   CostTermBase<MODEL, OBS> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
   void doLinearize(const Geometry_ &, const eckit::Configuration &, CtrlVar_ &, CtrlVar_ &,
@@ -105,10 +105,10 @@ CostFct3DVar<MODEL, OBS>::CostFct3DVar(const eckit::Configuration & config,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-CostJb3D<MODEL> * CostFct3DVar<MODEL, OBS>::newJb(const eckit::Configuration & jbConf,
+CostJb3D<MODEL, OBS> * CostFct3DVar<MODEL, OBS>::newJb(const eckit::Configuration & jbConf,
                                                   const Geometry_ & resol) const {
   Log::trace() << "CostFct3DVar::newJb" << std::endl;
-  return new CostJb3D<MODEL>(windowHalf_, jbConf, resol, ctlvars_);
+  return new CostJb3D<MODEL, OBS>(windowHalf_, jbConf, resol, ctlvars_);
 }
 
 // -----------------------------------------------------------------------------

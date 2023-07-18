@@ -22,11 +22,11 @@
 #include "oops/assimilation/GMRESR.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/IdentityMatrix.h"
-#include "oops/base/Increment.h"
+#include "oops/base/Increment4D.h"
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/Localization.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
-#include "oops/base/State.h"
+#include "oops/base/State4D.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/LinearVariableChange.h"
 #include "oops/util/Logger.h"
@@ -65,9 +65,10 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL>,
                            private util::ObjectCounter<EnsembleCovariance<MODEL>> {
   typedef Geometry<MODEL>                           Geometry_;
   typedef Increment<MODEL>                          Increment_;
+  typedef Increment4D<MODEL>                        Increment4D_;
   typedef LinearVariableChange<MODEL>               LinearVariableChange_;
   typedef Localization<MODEL>                       Localization_;
-  typedef State<MODEL>                              State_;
+  typedef State4D<MODEL>                            State4D_;
   typedef IncrementEnsemble<MODEL>                  Ensemble_;
   typedef std::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
 
@@ -77,13 +78,13 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL>,
   static const std::string classname() {return "oops::EnsembleCovariance";}
 
   EnsembleCovariance(const Geometry_ &, const Variables &,
-                     const Parameters_ &, const State_ &, const State_ &);
+                     const Parameters_ &, const State4D_ &, const State4D_ &);
   ~EnsembleCovariance();
 
  private:
-  void doRandomize(Increment_ &) const override;
-  void doMultiply(const Increment_ &, Increment_ &) const override;
-  void doInverseMultiply(const Increment_ &, Increment_ &) const override;
+  void doRandomize(Increment4D_ &) const override;
+  void doMultiply(const Increment4D_ &, Increment4D_ &) const override;
+  void doInverseMultiply(const Increment4D_ &, Increment4D_ &) const override;
 
   EnsemblePtr_ ens_;
   std::unique_ptr<LinearVariableChange_> ensTrans_;
@@ -100,7 +101,7 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL>,
 template<typename MODEL>
 EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Variables & vars,
                                               const Parameters_ & params,
-                                              const State_ & xb, const State_ & fg)
+                                              const State4D_ & xb, const State4D_ & fg)
   : ModelSpaceCovarianceBase<MODEL>(resol, params, xb, fg), ens_(),
     ensTransInputVars_(vars), ensTransOutputVars_(vars), loc_()
 {
@@ -109,14 +110,14 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Var
   size_t init = eckit::system::ResourceUsage().maxResidentSetSize();
 
   // Create ensemble (with a zero mean for this IncrementEnsemble constructor)
-  ens_.reset(new Ensemble_(params.ensemble, resol, vars, xb.validTime()));
+  ens_.reset(new Ensemble_(params.ensemble, resol, vars, xb[0].validTime()));
   if (ens_->size() < 2) {
     throw eckit::BadParameter("Not enough ensemble members provided for ensemble "
                               "covariances (at least 2 required)", Here());
   }
 
   // Get timeslot
-  util::DateTime tslot = xb.validTime();
+  util::DateTime tslot = xb[0].validTime();
 
   // Setup ensemble transform
   if (params.ensTrans.value() != boost::none) {
@@ -139,7 +140,7 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Var
     }
 
     // Set trajectory
-    ensTrans_->changeVarTraj(fg, ensTransOutputVars_);
+    ensTrans_->changeVarTraj(fg[0], ensTransOutputVars_);
   }
 
   // Read inflation field
@@ -171,7 +172,7 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Var
   // Create localization
   if (params.localization.value() != boost::none) {
     eckit::LocalConfiguration conf = *params.localization.value();
-    conf.set("date", xb.validTime().toString());
+    conf.set("date", xb[0].validTime().toString());
     conf.set("time rank", resol.timeComm().rank());
     oops::Variables locVars(vars);
     if (ensTrans_) {
@@ -191,27 +192,27 @@ EnsembleCovariance<MODEL>::~EnsembleCovariance() {
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-void EnsembleCovariance<MODEL>::doRandomize(Increment_ & dx) const {
+void EnsembleCovariance<MODEL>::doRandomize(Increment4D_ & dx) const {
   dx.zero();
   if (loc_) {
     // Localized covariance matrix
     for (unsigned int ie = 0; ie < ens_->size(); ++ie) {
-      Increment_ tmp(dx);
+      Increment_ tmp(dx[0]);
       loc_->randomize(tmp);
       tmp.schur_product_with((*ens_)[ie]);
-      dx.axpy(1.0, tmp, false);
+      dx[0].axpy(1.0, tmp, false);
     }
   } else {
     // Raw covariance matrix
     util::NormalDistribution<double> normalDist(ens_->size(), 0.0, 1.0, seed_);
     for (unsigned int ie = 0; ie < ens_->size(); ++ie) {
-      dx.axpy(normalDist[ie], (*ens_)[ie]);
+      dx[0].axpy(normalDist[ie], (*ens_)[ie]);
     }
   }
 
   // Ensemble transform
   if (ensTrans_) {
-    ensTrans_->changeVarTL(dx, ensTransOutputVars_);
+    ensTrans_->changeVarTL(dx[0], ensTransOutputVars_);
   }
 
   // Normalization
@@ -219,9 +220,9 @@ void EnsembleCovariance<MODEL>::doRandomize(Increment_ & dx) const {
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-void EnsembleCovariance<MODEL>::doMultiply(const Increment_ & dxi, Increment_ & dxo) const {
+void EnsembleCovariance<MODEL>::doMultiply(const Increment4D_ & dxi, Increment4D_ & dxo) const {
   // Ensemble transform adjoint
-  Increment_ dxiTmp(dxi);
+  Increment_ dxiTmp(dxi[0]);
   if (ensTrans_) {
     ensTrans_->changeVarAD(dxiTmp, ensTransInputVars_);
   }
@@ -257,12 +258,13 @@ void EnsembleCovariance<MODEL>::doMultiply(const Increment_ & dxi, Increment_ & 
   dxoTmp *= 1.0/static_cast<double>(ens_->size()-1);
 
   // Copy to output Increment_
-  dxo = dxoTmp;
+  dxo[0] = dxoTmp;
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-void EnsembleCovariance<MODEL>::doInverseMultiply(const Increment_ & dxi, Increment_ & dxo) const {
-  IdentityMatrix<Increment_> Id;
+void EnsembleCovariance<MODEL>::doInverseMultiply(const Increment4D_ & dxi,
+                                                  Increment4D_ & dxo) const {
+  IdentityMatrix<Increment4D_> Id;
   dxo.zero();
   GMRESR(dxo, dxi, *this, Id, 10, 1.0e-3);
 }

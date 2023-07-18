@@ -16,6 +16,8 @@
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "oops/assimilation/ControlIncrement.h"
+#include "oops/assimilation/ControlVariable.h"
 #include "oops/assimilation/CostJbState.h"
 #include "oops/assimilation/GMRESR.h"
 #include "oops/base/Geometry.h"
@@ -33,35 +35,19 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL> class Bwrapper {
-  typedef Increment4D<MODEL>               Increment4D_;
-  typedef ModelSpaceCovarianceBase<MODEL>  Covariance_;
-
- public:
-  explicit Bwrapper(const Covariance_ & B) : B_(&B) {}
-  ~Bwrapper() {}
-
-  void multiply(const Increment4D_ & dxin, Increment4D_ & dxout) const {
-    B_->multiply(dxin[0], dxout[0]);
-  }
-
- private:
-  const Covariance_ * B_;
-};
-
-// -----------------------------------------------------------------------------
-
 /// 4D Jb Cost Function
 /*!
  * CostJb4D encapsulates the generalized four dimensional Jb term of
  * the 4D-Ens-Var cost function.
  */
 
-template<typename MODEL> class CostJb4D : public CostJbState<MODEL> {
-  typedef Geometry<MODEL>            Geometry_;
-  typedef Increment4D<MODEL>         Increment_;
-  typedef State4D<MODEL>             State_;
-  typedef JqTerm<MODEL>              JqTerm_;
+template<typename MODEL, typename OBS> class CostJb4D : public CostJbState<MODEL, OBS> {
+  typedef ControlIncrement<MODEL, OBS>  CtrlInc_;
+  typedef ControlVariable<MODEL, OBS>   CtrlVar_;
+  typedef Geometry<MODEL>               Geometry_;
+  typedef Increment4D<MODEL>            Increment_;
+  typedef State4D<MODEL>                State_;
+  typedef JqTerm<MODEL>                 JqTerm_;
 
  public:
 /// Construct \f$ J_b\f$.
@@ -73,14 +59,14 @@ template<typename MODEL> class CostJb4D : public CostJbState<MODEL> {
   virtual ~CostJb4D() {}
 
 /// Get increment from state (usually first guess).
-  void computeIncrement(const State_ &, const State_ &, const std::shared_ptr<JqTerm_>,
-                        Increment_ &) const override;
+  void computeIncrement(const CtrlVar_ &, const CtrlVar_ &, const std::shared_ptr<JqTerm_>,
+                        CtrlInc_ &) const override;
 
 /// Linearize before the linear computations.
-  void linearize(const State_ &, const State_ &, const Geometry_ &) override;
+  void linearize(const CtrlVar_ &, const CtrlVar_ &, const Geometry_ &) override;
 
 /// Add Jb gradient.
-  void addGradient(const Increment_ &, Increment_ &, Increment_ &) const override;
+  void addGradient(const CtrlInc_ &, CtrlInc_ &, CtrlInc_ &) const override;
 
 /// Empty Jq observer.
   JqTermTLAD<MODEL> * initializeJqTLAD() const override {return 0;}
@@ -89,14 +75,14 @@ template<typename MODEL> class CostJb4D : public CostJbState<MODEL> {
   JqTermTLAD<MODEL> * initializeJqTL() const override {return 0;}
 
 /// Empty AD Jq observer.
-  JqTermTLAD<MODEL> * initializeJqAD(const Increment_ &) const override {return 0;}
+  JqTermTLAD<MODEL> * initializeJqAD(const CtrlInc_ &) const override {return 0;}
 
 /// Multiply by \f$ B\f$ and \f$ B^{-1}\f$.
-  void Bmult(const Increment_ &, Increment_ &) const override;
-  void Bminv(const Increment_ &, Increment_ &) const override;
+  void Bmult(const CtrlInc_ &, CtrlInc_ &) const override;
+  void Bminv(const CtrlInc_ &, CtrlInc_ &) const override;
 
 /// Randomize
-  void randomize(Increment_ &) const override;
+  void randomize(CtrlInc_ &) const override;
 
 /// Accessors to data for constructing a new increment.
   const Geometry_ & geometry() const override {return *resol_;}
@@ -115,15 +101,12 @@ template<typename MODEL> class CostJb4D : public CostJbState<MODEL> {
   const eckit::mpi::Comm & commTime_;
 };
 
-// =============================================================================
-
-//  Generalized Jb Term of Cost Function
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-CostJb4D<MODEL>::CostJb4D(const std::vector<util::DateTime> & times,
-                          const eckit::Configuration & config, const eckit::mpi::Comm & comm,
-                          const Geometry_ & geom, const Variables & ctlvars)
+template<typename MODEL, typename OBS>
+CostJb4D<MODEL, OBS>::CostJb4D(const std::vector<util::DateTime> & times,
+                               const eckit::Configuration & config, const eckit::mpi::Comm & comm,
+                               const Geometry_ & geom, const Variables & ctlvars)
   : B_(), bg_(), ctlvars_(ctlvars), resol_(), times_(times), conf_(config, "background error"),
     commTime_(mpi::clone(comm))
 {
@@ -135,51 +118,47 @@ CostJb4D<MODEL>::CostJb4D(const std::vector<util::DateTime> & times,
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostJb4D<MODEL>::linearize(const State_ & xb, const State_ & fg, const Geometry_ & lowres) {
+template<typename MODEL, typename OBS>
+void CostJb4D<MODEL, OBS>::linearize(const CtrlVar_ & xb, const CtrlVar_ & fg,
+                                     const Geometry_ & lowres) {
   resol_ = &lowres;
-  B_.reset(CovarianceFactory<MODEL>::create(lowres, ctlvars_, conf_, xb[0], fg[0]));
+  B_.reset(CovarianceFactory<MODEL>::create(lowres, ctlvars_, conf_, xb.states(), fg.states()));
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostJb4D<MODEL>::computeIncrement(const State_ & xb, const State_ & fg,
-                                       const std::shared_ptr<JqTerm_>, Increment_ & dx) const {
-  dx.diff(fg, xb);
+template<typename MODEL, typename OBS>
+void CostJb4D<MODEL, OBS>::computeIncrement(const CtrlVar_ & xb, const CtrlVar_ & fg,
+                                       const std::shared_ptr<JqTerm_>, CtrlInc_ & dx) const {
+  dx.states().diff(fg.states(), xb.states());
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostJb4D<MODEL>::addGradient(const Increment_ &, Increment_ & grad,
-                                  Increment_ & gradJb) const {
-  grad += gradJb;
+template<typename MODEL, typename OBS>
+void CostJb4D<MODEL, OBS>::addGradient(const CtrlInc_ &, CtrlInc_ & grad, CtrlInc_ & gradJb) const {
+  grad.states() += gradJb.states();
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostJb4D<MODEL>::Bmult(const Increment_ & dxin, Increment_ & dxout) const {
-  B_->multiply(dxin[0], dxout[0]);
+template<typename MODEL, typename OBS>
+void CostJb4D<MODEL, OBS>::Bmult(const CtrlInc_ & dxin, CtrlInc_ & dxout) const {
+  B_->multiply(dxin.states(), dxout.states());
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostJb4D<MODEL>::Bminv(const Increment_ & dxin, Increment_ & dxout) const {
-//  B_->inverseMultiply(dxin[0], dxout[0]);
-  Bwrapper<MODEL> BW(*B_);
-  IdentityMatrix<Increment_> Id;
-  dxout.zero();
-  GMRESR(dxout, dxin, BW, Id, 10, 1.0e-3);
+template<typename MODEL, typename OBS>
+void CostJb4D<MODEL, OBS>::Bminv(const CtrlInc_ & dxin, CtrlInc_ & dxout) const {
+  B_->inverseMultiply(dxin.states(), dxout.states());
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void CostJb4D<MODEL>::randomize(Increment_ & dx) const {
-  B_->randomize(dx[0]);
+template<typename MODEL, typename OBS>
+void CostJb4D<MODEL, OBS>::randomize(CtrlInc_ & dx) const {
+  B_->randomize(dx.states());
 }
 
 // -----------------------------------------------------------------------------
