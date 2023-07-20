@@ -307,6 +307,24 @@ CASE("mpi/mpi/broadcastVector<char>") {
   EXPECT_EQUAL(result, expectedResult);
 }
 // -----------------------------------------------------------------------------------------------
+CASE("mpi/mpi/sendReceiveString") {
+  const eckit::mpi::Comm &comm = oops::mpi::world();
+  const size_t rank = comm.rank();
+
+  std::string expectedResult("Hello World");
+  std::string result;
+  if (rank == 0) {
+    result = expectedResult;
+    for (int i = 1; i < comm.size(); ++i) {
+        oops::mpi::sendString(comm, result, i);
+    }
+  } else {
+    result = "NULL";
+    oops::mpi::receiveString(comm, result, 0);
+  }
+  EXPECT_EQUAL(result, expectedResult);
+}
+// -----------------------------------------------------------------------------------------------
 
 class Mpi : public oops::Test {
  private:

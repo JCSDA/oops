@@ -300,5 +300,20 @@ void broadcastBool(const eckit::mpi::Comm & comm, bool & boolVar, const int root
 /// \param root root rank for broadcasting
 void broadcastString(const eckit::mpi::Comm & comm, std::string & stringVar, const int root);
 
+// ------------------------------------------------------------------------------------------------
+// MPI send/receive utilities based on eckit send/receive.
+
+/// \brief send a string variable via the eckit send
+/// \param comm eckit communicator group
+/// \param stringVar string for sending
+/// \param toRank rank we are sending to
+void sendString(const eckit::mpi::Comm & comm, const std::string & stringVar, const int toRank);
+
+/// \brief receive a string variable via the eckit receive
+/// \param comm eckit communicator group
+/// \param stringVar string for receiving
+/// \param fromRank rank we are receiving from
+void receiveString(const eckit::mpi::Comm & comm, std::string & stringVar, const int fromRank);
+
 }  // namespace mpi
 }  // namespace oops

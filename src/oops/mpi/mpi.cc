@@ -215,5 +215,34 @@ void broadcastString(const eckit::mpi::Comm & comm, std::string & stringVar, con
     }
 }
 
+// ------------------------------------------------------------------------------------------------
+
+// MPI tag values for send/receive utilities
+static const int msgIsSize = 1;
+static const int msgIsData = 2;
+
+void sendString(const eckit::mpi::Comm & comm, const std::string & stringVar,
+                                               const int toRank)  {
+    // First send the string length, then send the string
+    int stringSize = stringVar.size();
+    std::vector<char> buffer(stringSize + 1);    // Allow for trailing NULL
+    strncpy(buffer.data(), stringVar.data(), stringSize);
+    buffer[stringSize] = '\0';
+    comm.send<int>(&stringSize, 1, toRank, msgIsSize);
+    comm.send<char>(buffer.data(), buffer.size(), toRank, msgIsData);
+}
+
+void receiveString(const eckit::mpi::Comm & comm, std::string & stringVar,
+                                                  const int fromRank) {
+    // First receive the string length, then receive the string
+    // The string will be coming in a vector of char
+    int stringSize;
+    comm.receive<int>(&stringSize, 1, fromRank, msgIsSize);
+    // Can't assign directly to a string.data() pointer (which is const);
+    std::vector<char> buffer(stringSize + 1);
+    comm.receive<char>(buffer.data(), buffer.size(), fromRank, msgIsData);
+    stringVar = buffer.data();
+}
+
 }  // namespace mpi
 }  // namespace oops
