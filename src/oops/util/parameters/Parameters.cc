@@ -19,8 +19,8 @@
 #include "oops/util/Timer.h"
 
 #ifdef OOPS_HAVE_NLOHMANN_JSON_SCHEMA_VALIDATOR
+#include <regex>
 #include <boost/algorithm/string/replace.hpp>
-#include <boost/regex.hpp>
 #include "eckit/log/JSON.h"
 #include <nlohmann/json-schema.hpp>
 #endif
@@ -62,9 +62,9 @@ class ValidationErrorHandler : public nlohmann::json_schema::basic_error_handler
                                   "are required to validate - ",
                                   "");
 
-    const boost::regex additionalPropertyRegex("validation failed for additional property '(.*?)': "
+    const std::regex additionalPropertyRegex("validation failed for additional property '(.*?)': "
                                              "instance invalid as per false-schema");
-    editedMessage = boost::regex_replace(editedMessage, additionalPropertyRegex,
+    editedMessage = std::regex_replace(editedMessage, additionalPropertyRegex,
                                        std::string("additional properties are not allowed "
                                        "('$1' was unexpected)"));
 
@@ -92,10 +92,10 @@ void checkStringFormat(const std::string &format, const std::string &value) {
   if (format == "duration") {
     // Matches ISO 8601 representations of durations, for example P1Y (a duration of 1 year),
     // PT1H30M (a duration of 1 h and 30 min), P1YT1S (a duration of 1 year and 1 s)
-    static const boost::regex regex(
+    static const std::regex regex(
           R"(^P(?!$)(\d+Y)?(\d+M)?(\d+W)?(\d+D)?(T(?=\d+[HMS])(\d+H)?(\d+M)?(\d+S)?)?$)");
-    boost::smatch matches;
-    if (!boost::regex_match(value, matches, regex)) {
+    std::smatch matches;
+    if (!std::regex_match(value, matches, regex)) {
       throw std::invalid_argument(value + " is not a duration string.");
     }
   } else {
