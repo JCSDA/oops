@@ -65,8 +65,6 @@ class Model : public util::Printable,
   /// \brief Time step for running Model's forecast in oops (frequency with which the
   /// State will be updated)
   const util::Duration & timeResolution() const {return model_->timeResolution();}
-  /// \brief Model variables (only used in 4DVar)
-  const oops::Variables & variables() const {return model_->variables();}
 
  private:
   /// \brief Forecast initialization, called before every forecast run

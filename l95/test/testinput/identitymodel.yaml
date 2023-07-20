@@ -3,7 +3,6 @@ geometry:
 model:
   name: Identity
   tstep: PT1H30M
-  state variables: [x]
 model aux control: {}
 model test:
   forecast length: PT48H

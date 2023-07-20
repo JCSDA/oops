@@ -67,9 +67,6 @@ class ModelCoupled : public interface::ModelBase<TraitCoupled<MODEL1, MODEL2>> {
   // Information and diagnostics
   const util::Duration & timeResolution() const override {return tstep_;}
   void checkTimes(const StateCoupled_ &) const;
-  const Variables & variables() const override {
-    throw eckit::NotImplemented("ModelCoupled::variables", Here());
-  }
 
  private:
   void print(std::ostream &) const override;

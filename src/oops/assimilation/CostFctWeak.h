@@ -99,7 +99,6 @@ template<typename MODEL, typename OBS> class CostFctWeak : public CostFunction<M
   std::unique_ptr<Model_> model_;
   const Variables ctlvars_;
   std::shared_ptr<LinearModel_> tlm_;
-  std::unique_ptr<VarCha_> an2model_;
   std::unique_ptr<LinVarCha_> inc2model_;
 };
 
@@ -113,7 +112,7 @@ CostFctWeak<MODEL, OBS>::CostFctWeak(const eckit::Configuration & conf,
     windowEnd_(windowBegin_ + windowLength_), subWinLength_(conf.getString("subwindow")),
     subWinBgn_(), subWinEnd_(),
     commSpace_(nullptr), commTime_(nullptr),
-    resol_(), model_(), ctlvars_(conf, "analysis variables"), tlm_(), an2model_(), inc2model_()
+    resol_(), model_(), ctlvars_(conf, "analysis variables"), tlm_(), inc2model_()
 {
   Log::trace() << "CostFctWeak::CostFctWeak start" << std::endl;
 
@@ -166,7 +165,6 @@ CostFctWeak<MODEL, OBS>::CostFctWeak(const eckit::Configuration & conf,
 
   typename VariableChange<MODEL>::Parameters_ params;
   params.deserialize(conf.getSubConfiguration("variable change"));
-  an2model_ = std::make_unique<VarCha_>(params, *resol_);
 
   this->setupTerms(conf);
 
@@ -219,10 +217,7 @@ void CostFctWeak<MODEL, OBS>::runNL(CtrlVar_ & xx, PostProcessor<State_> & post)
   for (size_t jsub = 0; jsub < nsublocal_; ++jsub) {
     ASSERT(xx.state(jsub).validTime() == subWinBgn_[jsub]);
 
-    Variables anvars(xx.state(jsub).variables());
-    an2model_->changeVar(xx.state(jsub), model_->variables());
     model_->forecast(xx.state(jsub), xx.modVar(), subWinLength_, post);
-    an2model_->changeVarInverse(xx.state(jsub), anvars);
 
     ASSERT(xx.state().validTime() == subWinEnd_[jsub]);
   }

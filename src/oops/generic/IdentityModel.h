@@ -28,7 +28,6 @@ class IdentityModelParameters : public ModelParametersBase {
 
  public:
   oops::RequiredParameter<util::Duration> tstep{"tstep", this};
-  oops::RequiredParameter<Variables> vars{"state variables", this};
 };
 
 /// Generic implementation of identity model
@@ -54,8 +53,6 @@ class IdentityModel : public ModelBase<MODEL> {
 
 /// model time step
   const util::Duration & timeResolution() const override {return params_.tstep;}
-/// model variables
-  const oops::Variables & variables() const override {return params_.vars;}
 
  private:
   void print(std::ostream &) const override {}

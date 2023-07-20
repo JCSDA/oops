@@ -35,7 +35,6 @@ class PseudoModelParameters : public ModelParametersBase {
   typedef typename State<MODEL>::Parameters_ StateParameters_;
 
   RequiredParameter<util::Duration> tstep{"tstep", "Time step", this};
-  RequiredParameter<Variables> stateVariables{"state variables", "List of model variables", this};
   RequiredParameter<std::vector<StateParameters_>> states{
     "states",
     "List of configuration options used to initialize the model state at each time step",
@@ -69,13 +68,9 @@ class PseudoModel : public ModelBase<MODEL> {
 /// model time step
   const util::Duration & timeResolution() const override {return tstep_;}
 
-/// model variables
-  const oops::Variables & variables() const override {return vars_;}
-
  private:
   void print(std::ostream &) const override;
   const util::Duration tstep_;
-  const oops::Variables vars_;
   std::vector<StateParameters_> states_;
   mutable size_t currentstate_;
 };
@@ -84,7 +79,7 @@ class PseudoModel : public ModelBase<MODEL> {
 
 template<typename MODEL>
 PseudoModel<MODEL>::PseudoModel(const Geometry_ & resol, const Parameters_ & parameters)
-  : tstep_(parameters.tstep), vars_(parameters.stateVariables),
+  : tstep_(parameters.tstep),
     states_(parameters.states),
     currentstate_(0) {
   Log::trace() << "PseudoModel<MODEL>::PseudoModel done" << std::endl;

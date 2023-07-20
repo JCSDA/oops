@@ -78,8 +78,6 @@ class ModelBase : public util::Printable,
   /// \brief Time step for running Model's forecast in oops (frequency with which the
   /// State will be updated)
   virtual const util::Duration & timeResolution() const = 0;
-  /// \brief Model variables (only used in 4DVar)
-  virtual const oops::Variables & variables() const = 0;
 
  private:
   /// \brief Print; used for logging

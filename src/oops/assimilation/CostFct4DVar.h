@@ -90,7 +90,6 @@ template<typename MODEL, typename OBS> class CostFct4DVar : public CostFunction<
   Model_ model_;
   const Variables ctlvars_;
   std::shared_ptr<LinearModel_> tlm_;
-  std::unique_ptr<VarCha_> an2model_;
   std::unique_ptr<LinVarCha_> inc2model_;
 };
 
@@ -103,7 +102,7 @@ CostFct4DVar<MODEL, OBS>::CostFct4DVar(const eckit::Configuration & config,
     resol_(eckit::LocalConfiguration(config, "geometry"), comm),
     model_(resol_, eckit::LocalConfiguration(config, "model")),
     ctlvars_(config.getStringVector("analysis variables")), tlm_(),
-    an2model_(), inc2model_()
+    inc2model_()
 {
   Log::trace() << "CostFct4DVar:CostFct4DVar start" << std::endl;
   windowLength_ = util::Duration(config.getString("window length"));
@@ -111,7 +110,6 @@ CostFct4DVar<MODEL, OBS>::CostFct4DVar(const eckit::Configuration & config,
   windowEnd_ = windowBegin_ + windowLength_;
   typename VariableChange<MODEL>::Parameters_ params;
   params.deserialize(config.getSubConfiguration("variable change"));
-  an2model_ = std::make_unique<VarCha_>(params, resol_);
   this->setupTerms(config);
   // ASSERT(ctlvars_ <= this->background().state().variables());
   Log::trace() << "CostFct4DVar::CostFct4DVar done" << std::endl;
@@ -152,11 +150,7 @@ void CostFct4DVar<MODEL, OBS>::runNL(CtrlVar_ & xx, PostProcessor<State_> & post
   Log::trace() << "CostFct4DVar::runNL start" << std::endl;
   ASSERT(xx.states().is_3d());
   ASSERT(xx.state().validTime() == windowBegin_);
-
-  Variables anvars(xx.state().variables());
-  an2model_->changeVar(xx.state(), model_.variables());
   model_.forecast(xx.state(), xx.modVar(), windowLength_, post);
-  an2model_->changeVarInverse(xx.state(), anvars);
   ASSERT(xx.state().validTime() == windowEnd_);
   Log::trace() << "CostFct4DVar::runNL done" << std::endl;
 }

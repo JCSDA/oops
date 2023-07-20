@@ -149,10 +149,7 @@ void CostFctFGAT<MODEL, OBS>::runNL(CtrlVar_ & xx, PostProcessor<State_> & post)
   if (fgat_) {
     ASSERT(xx.state().validTime() == windowBegin_);
 
-    Variables anvars(xx.state().variables());
-    an2model_->changeVar(xx.state(), model_.variables());
     model_.forecast(xx.state(), xx.modVar(), windowLength_, post);
-    an2model_->changeVarInverse(xx.state(), anvars);
 
     ASSERT(xx.state().validTime() == windowEnd_);
   } else {
