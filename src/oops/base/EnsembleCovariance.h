@@ -70,7 +70,6 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL>,
   typedef Localization<MODEL>                       Localization_;
   typedef State4D<MODEL>                            State4D_;
   typedef IncrementEnsemble<MODEL>                  Ensemble_;
-  typedef std::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
 
  public:
   typedef EnsembleCovarianceParameters<MODEL> Parameters_;
@@ -86,7 +85,7 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL>,
   void doMultiply(const Increment4D_ &, Increment4D_ &) const override;
   void doInverseMultiply(const Increment4D_ &, Increment4D_ &) const override;
 
-  EnsemblePtr_ ens_;
+  std::unique_ptr<Ensemble_> ens_;
   std::unique_ptr<LinearVariableChange_> ensTrans_;
   Variables ensTransInputVars_;
   Variables ensTransOutputVars_;

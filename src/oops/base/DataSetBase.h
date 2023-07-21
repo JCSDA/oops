@@ -24,27 +24,39 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-template<typename DATA> class DataSetBase : public util::Printable {
+template<typename DATA, typename GEOM>
+class DataSetBase : public util::Printable {
  public:
   virtual ~DataSetBase() = default;
 
   DataSetBase & operator=(const DataSetBase &);
 
-  const Variables & variables() const {this->check_consistency(); return dataset_[0].variables();}
-  const std::vector<util::DateTime> validTimes() const;
-
   bool is_3d() const {return nmembers_ == 1 && ntimes_ == 1;}
   bool is_4d() const {return nmembers_ == 1;}
+
   size_t ens_size() const {return nmembers_;}
   size_t time_size() const {return ntimes_;}
-  const std::vector<util::DateTime> & times() const {return times_;}
+  const std::vector<util::DateTime> & times() const {return alltimes_;}
+  const std::vector<int> & members() const {return allmembers_;}
 
+  const size_t & local_ens_size() const {return localmembers_;}
+  const size_t & local_time_size() const {return localtimes_;}
   DATA & operator()(const size_t it, const size_t im) {return this->data(it, im);}
   const DATA & operator()(const size_t it, const size_t im) const {return this->data(it, im);}
 
   size_t size() const {return dataset_.size();}
   DATA & operator[](const int ii) {return dataset_[ii];}
   const DATA & operator[](const int ii) const {return dataset_[ii];}
+
+  const GEOM & geometry() const {return dataset_[0].geometry();}
+  const Variables & variables() const {this->check_consistency(); return dataset_[0].variables();}
+  const std::vector<util::DateTime> validTimes() const;
+
+  const eckit::mpi::Comm & commEns() const {return commEns_;}
+  const eckit::mpi::Comm & commTime() const {return commTime_;}
+
+  void read(const GEOM &, const eckit::Configuration &);
+  void write(const eckit::Configuration &) const;
 
   void shift_forward();
   void shift_backward();
@@ -58,39 +70,42 @@ template<typename DATA> class DataSetBase : public util::Printable {
   void check_consistency() const;
   void check_consistency(const DataSetBase &) const;
 
+  std::vector<DATA> & dataset() {return dataset_;}
+  const std::vector<DATA> & dataset() const {return dataset_;}
+
+ private:
   DATA & data(const size_t it, const size_t im) {return dataset_.at(im * localtimes_ + it);}
   const DATA & data(const size_t it, const size_t im) const
                                                 {return dataset_.at(im * localtimes_ + it);}
 
   size_t ntimes_;
   size_t localtimes_;
-  std::vector<util::DateTime> times_;
+  std::vector<util::DateTime> alltimes_;
   const eckit::mpi::Comm & commTime_;
   util::Duration subWinLength_;
 
   size_t nmembers_;
   size_t localmembers_;
-  std::vector<int> members_;
+  std::vector<int> allmembers_;
   const eckit::mpi::Comm & commEns_;
   std::vector<size_t> mymembers_;
 
   std::vector<DATA> dataset_;
 
- private:
   void print(std::ostream &) const;
   virtual std::string classname() const = 0;
 };
 
 // -----------------------------------------------------------------------------
 
-template<typename DATA>
-DataSetBase<DATA>::DataSetBase(const std::vector<util::DateTime> & times,
-                               const eckit::mpi::Comm & commTime,
-                               const std::vector<int> & members,
-                               const eckit::mpi::Comm & commEns)
-  : ntimes_(times.size()), localtimes_(), times_(times), commTime_(mpi::clone(commTime)),
+template<typename DATA, typename GEOM>
+DataSetBase<DATA, GEOM>::DataSetBase(const std::vector<util::DateTime> & times,
+                                     const eckit::mpi::Comm & commTime,
+                                     const std::vector<int> & members,
+                                     const eckit::mpi::Comm & commEns)
+  : ntimes_(times.size()), localtimes_(), alltimes_(times), commTime_(mpi::clone(commTime)),
     subWinLength_(),
-    nmembers_(members.size()), localmembers_(), members_(members), commEns_(mpi::clone(commEns)),
+    nmembers_(members.size()), localmembers_(), allmembers_(members), commEns_(mpi::clone(commEns)),
     mymembers_(),
     dataset_()
 {
@@ -98,33 +113,34 @@ DataSetBase<DATA>::DataSetBase(const std::vector<util::DateTime> & times,
   localmembers_ = nmembers_ / commEns_.size();
   for (size_t jj = 0; jj < localmembers_; ++jj) {
     size_t indx = localmembers_ * commEns_.rank() + jj;
-    ASSERT(indx < members_.size());
-    mymembers_.push_back(members_[indx]);
+    ASSERT(indx < allmembers_.size());
+    mymembers_.push_back(allmembers_[indx]);
   }
   if (ntimes_ > 1) {
-    subWinLength_ = times_[1] - times_[0];
+    subWinLength_ = alltimes_[1] - alltimes_[0];
     for (size_t jt = 2; jt < ntimes_; ++jt) {
-      ASSERT(times_[jt] - times_[jt-1] == subWinLength_);
+      ASSERT(alltimes_[jt] - alltimes_[jt-1] == subWinLength_);
     }
   }
 }
 
 // -----------------------------------------------------------------------------
 
-template<typename DATA>
-DataSetBase<DATA>::DataSetBase(const eckit::mpi::Comm & commTime,
-                               const eckit::mpi::Comm & commEns)
-  : ntimes_(), localtimes_(), times_(), commTime_(mpi::clone(commTime)),
+template<typename DATA, typename GEOM>
+DataSetBase<DATA, GEOM>::DataSetBase(const eckit::mpi::Comm & commTime,
+                                     const eckit::mpi::Comm & commEns)
+  : ntimes_(), localtimes_(), alltimes_(), commTime_(mpi::clone(commTime)),
     subWinLength_(),
-    nmembers_(), localmembers_(), members_(), commEns_(mpi::clone(commEns)),
+    nmembers_(), localmembers_(), allmembers_(), commEns_(mpi::clone(commEns)),
     mymembers_(),
     dataset_()
 {}
 
 // -----------------------------------------------------------------------------
 
-template <typename DATA>
-DataSetBase<DATA> & DataSetBase<DATA>::operator=(const DataSetBase<DATA> & other) {
+template <typename DATA, typename GEOM>
+DataSetBase<DATA, GEOM> & DataSetBase<DATA, GEOM>::operator=(const DataSetBase<DATA, GEOM> & other)
+{
   this->check_consistency(other);
   for (size_t jj = 0; jj < dataset_.size(); ++jj) dataset_[jj] = other.dataset_[jj];
   return *this;
@@ -132,8 +148,8 @@ DataSetBase<DATA> & DataSetBase<DATA>::operator=(const DataSetBase<DATA> & other
 
 // -----------------------------------------------------------------------------
 
-template <typename DATA>
-void DataSetBase<DATA>::check_consistency() const {
+template <typename DATA, typename GEOM>
+void DataSetBase<DATA, GEOM>::check_consistency() const {
   bool error = false;
   if (ntimes_ <= 0) {
     Log::error() << classname() << " error ntimes = " << ntimes_ << std::endl;
@@ -190,8 +206,8 @@ void DataSetBase<DATA>::check_consistency() const {
 
 // -----------------------------------------------------------------------------
 
-template <typename DATA>
-void DataSetBase<DATA>::check_consistency(const DataSetBase<DATA> & other) const {
+template <typename DATA, typename GEOM>
+void DataSetBase<DATA, GEOM>::check_consistency(const DataSetBase<DATA, GEOM> & other) const {
   this->check_consistency();
   other.check_consistency();
 
@@ -256,8 +272,8 @@ void DataSetBase<DATA>::check_consistency(const DataSetBase<DATA> & other) const
 
 // -----------------------------------------------------------------------------
 
-template<typename DATA>
-const std::vector<util::DateTime> DataSetBase<DATA>::validTimes() const {
+template<typename DATA, typename GEOM>
+const std::vector<util::DateTime> DataSetBase<DATA, GEOM>::validTimes() const {
   std::vector<util::DateTime> times(localtimes_);
   for (size_t jt = 0; jt < localtimes_; ++jt) {
     times[jt] = dataset_.at(jt).validTime();
@@ -267,8 +283,84 @@ const std::vector<util::DateTime> DataSetBase<DATA>::validTimes() const {
 
 // -----------------------------------------------------------------------------
 
-template<typename DATA>
-void DataSetBase<DATA>::shift_forward() {
+template<typename DATA, typename GEOM>
+void DataSetBase<DATA, GEOM>::read(const GEOM & resol, const eckit::Configuration & config) {
+  Log::trace() << "DataSetBase::read start " << config << std::endl;
+  ASSERT(dataset_.size() == 0);
+
+  if (config.has("members from template")) {
+    throw eckit::BadParameter("Members template should be expanded", Here());
+  }
+
+  std::vector<eckit::LocalConfiguration> ensconfs;
+  if (config.has("members")) {
+    ensconfs = config.getSubConfigurations("members");
+  } else {
+    ASSERT(commEns_.size() == 1);
+    ensconfs.emplace_back(eckit::LocalConfiguration(config));
+  }
+  nmembers_ = ensconfs.size();
+  localmembers_ = nmembers_ / commEns_.size();
+  mymembers_.clear();
+  for (size_t jm = 0; jm < localmembers_; ++jm) {
+    mymembers_.push_back(commEns_.rank() * localmembers_ + jm);
+  }
+
+  for (size_t jm = 0; jm < localmembers_; ++jm) {
+    const eckit::LocalConfiguration & mconf = ensconfs.at(mymembers_[jm]);
+    std::vector<eckit::LocalConfiguration> confs;
+    if (mconf.has("states")) {
+      confs = mconf.getSubConfigurations("states");
+    } else {
+      confs = {mconf};
+    }
+    alltimes_.clear();
+    ntimes_ = confs.size();
+    localtimes_ = ntimes_ / commTime_.size();
+    for (size_t jt = 0; jt < localtimes_; ++jt) {
+      const size_t it = commTime_.rank() * localtimes_ + jt;
+      dataset_.emplace_back(DATA(resol, confs.at(it)));
+      alltimes_.push_back(dataset_.back().validTime());
+      ASSERT(jm * localtimes_ + jt == dataset_.size() - 1);
+    }
+    ASSERT(alltimes_.size() == localtimes_);
+  }
+
+  mpi::allGatherv(commTime_, alltimes_);
+  ASSERT(alltimes_.size() == ntimes_);
+
+  this->check_consistency();
+
+  Log::trace() << "DataSetBase::read done" << *this << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename DATA, typename GEOM>
+void DataSetBase<DATA, GEOM>::write(const eckit::Configuration & config) const {
+  Log::trace() << "DataSetBase::write start" << std::endl;
+  if (nmembers_ > 1) throw eckit::NotImplemented("Ensemble write not implented", Here());
+
+  if (config.has("states")) {
+    std::vector<eckit::LocalConfiguration> confs;
+    config.get("states", confs);
+    ASSERT(confs.size() == ntimes_);
+    for (size_t jt = 0; jt < localtimes_; ++jt) {
+      size_t it = commTime_.rank() * localtimes_ + jt;
+      if (config.has("member")) confs[it].set("member", config.getInt("member"));
+      dataset_[jt].write(confs[it]);
+    }
+  } else {
+    ASSERT(dataset_.size() == 1);
+    dataset_[0].write(config);
+  }
+  Log::trace() << "DataSetBase::write done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename DATA, typename GEOM>
+void DataSetBase<DATA, GEOM>::shift_forward() {
   Log::trace() << "DataSetBase::shift_forward start" << std::endl;
   static int tag = 15357;
   size_t mytime = commTime_.rank();
@@ -303,7 +395,7 @@ void DataSetBase<DATA>::shift_forward() {
     ASSERT(ii == sz);
   } else {
     for (size_t jm = 0; jm < localmembers_; ++jm) {
-      data(0, jm).zero(times_[0]);
+      data(0, jm).zero(alltimes_[0]);
     }
   }
 
@@ -313,8 +405,8 @@ void DataSetBase<DATA>::shift_forward() {
 
 // -----------------------------------------------------------------------------
 
-template<typename DATA>
-void DataSetBase<DATA>::shift_backward() {
+template<typename DATA, typename GEOM>
+void DataSetBase<DATA, GEOM>::shift_backward() {
   Log::trace() << "DataSetBase::shift_backward start" << std::endl;
   static int tag = 30951;
   size_t mytime = commTime_.rank();
@@ -360,8 +452,8 @@ void DataSetBase<DATA>::shift_backward() {
 
 // -----------------------------------------------------------------------------
 
-template <typename DATA>
-void DataSetBase<DATA>::print(std::ostream & os) const {
+template <typename DATA, typename GEOM>
+void DataSetBase<DATA, GEOM>::print(std::ostream & os) const {
 //  os << classname() << ": " << ntimes_ << " times, " << localtimes_ << " local." << std::endl;
 //  os << classname() << ": " << nmembers_ << " members, " << localmembers_ << " local."
 //                    << std::endl;
