@@ -470,6 +470,24 @@ bool compareFieldSets(const atlas::FieldSet & fset1,
 std::string getGridUid(const atlas::FunctionSpace & fspace) {
   oops::Log::trace() << "getGridUid starting" << std::endl;
 
+  // WARNING: this is a local ID per MPI task!
+  // There is an unlikely failure mode where two FunctionSpaces have equal lonlats on some MPI
+  // tasks but different lonlats on other MPI tasks. In this case the local IDs would compare equal
+  // on some tasks and non-equal on others, which could lead to serious bugs.
+  // The fix would be to allGather the strings and re-hash, ensuring a globally-consistent ID.
+  auto customUidFromLonLat = [&](const atlas::FunctionSpace & fspace) {
+    std::unique_ptr<eckit::Hash> hash(eckit::HashFactory::instance().build("md5"));
+    // Add function space size to hash
+    hash->add(fspace.size());
+    // Add function space lon lat to hash
+    const auto lonlatView = atlas::array::make_view<double, 2>(fspace.lonlat());
+    for (size_t i = 0; i < lonlatView.shape(0) ; ++i) {
+      hash->add(lonlatView(i, 0));
+      hash->add(lonlatView(i, 1));
+    }
+    return hash->digest();
+  };
+
   if (fspace.type() == "StructuredColumns") {
     // StructuredColumns
     const atlas::functionspace::StructuredColumns fs(fspace);
@@ -484,17 +502,7 @@ std::string getGridUid(const atlas::FunctionSpace & fspace) {
     return fs.grid().uid();
     */
   } else if (fspace.type() == "PointCloud") {
-    std::unique_ptr<eckit::Hash> hash(eckit::HashFactory::instance().build("md5"));
-    // Add function space size to hash
-    hash->add(fspace.size());
-    // Add function space lon lat to hash
-    atlas::Field lonlat = fspace.lonlat();
-    auto lonlatView = atlas::array::make_view<double, 2>(lonlat);
-    for ( int ii = 0; ii < lonlat.shape(0) ; ++ii ) {
-      hash->add(lonlatView(ii, 0));
-      hash->add(lonlatView(ii, 1));
-    }
-    return hash->digest();
+    return customUidFromLonLat(fspace);
   } else if (fspace.type() == "Spectral") {
     const atlas::functionspace::Spectral fs(fspace);
     return "Spectral" + std::to_string(fs.truncation());
