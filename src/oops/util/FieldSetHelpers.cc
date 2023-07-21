@@ -686,7 +686,11 @@ void readFieldSet(const eckit::mpi::Comm & comm,
                   const std::vector<std::string> & vars,
                   const eckit::Configuration & config,
                   atlas::FieldSet & fset) {
-  // Filepath
+  // Options with one file per MPI task
+  const bool oneFilePerTask = config.getBool("one file per task", false);
+  ASSERT(oneFilePerTask || (fspace.type() != "PointCloud"));
+
+  // Build filepath
   std::string filepath = config.getString("filepath");
   if (config.has("member")) {
     std::ostringstream out;
@@ -694,252 +698,101 @@ void readFieldSet(const eckit::mpi::Comm & comm,
     filepath.append("_");
     filepath.append(out.str());
   }
-
-  // Local data
-  for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
-    if (!fset.has_field(vars[jvar])) {
-      atlas::Field field = fspace.createField<double>(
-        atlas::option::name(vars[jvar]) | atlas::option::levels(variableSizes[jvar]));
-      fset.add(field);
-    }
+  if (oneFilePerTask) {
+    size_t zpad = 6;
+    std::string commSize = std::to_string(comm.size());
+    commSize = std::string(zpad - std::min(zpad, commSize.length()), '0') + commSize;
+    std::string commRank = std::to_string(comm.rank()+1);
+    commRank = std::string(zpad - std::min(zpad, commRank.length()), '0') + commRank;
+    filepath.append("_");
+    filepath.append(commSize);
+    filepath.append("-");
+    filepath.append(commRank);
   }
 
-  // Global data
-  atlas::FieldSet globalData;
+  // Clear local fieldset
+  fset.clear();
+
+  // Create local fieldset
   for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
     atlas::Field field = fspace.createField<double>(
-      atlas::option::name(vars[jvar])
-      | atlas::option::levels(variableSizes[jvar]) | atlas::option::global());
-    globalData.add(field);
+      atlas::option::name(vars[jvar]) | atlas::option::levels(variableSizes[jvar]));
+    fset.add(field);
   }
 
-  // NetCDF input
-  if (fspace.type() == "StructuredColumns") {
-    // StructuredColumns
-    atlas::functionspace::StructuredColumns fs(fspace);
-
-    if (comm.rank() == 0) {
-      // Get grid
-      atlas::StructuredGrid grid = fs.grid();
-
-      // Get sizes
-      atlas::idx_t nx = grid.nxmax();
-      atlas::idx_t ny = grid.ny();
-
-      // NetCDF IDs
-      int ncid, retval, var_id[vars.size()];
-
-      // NetCDF file path
-      std::string ncfilepath = filepath;
-      ncfilepath.append(".");
-      ncfilepath.append(config.getString("netcdf extension", "nc"));
-      oops::Log::info() << "Info     : Reading file: " << ncfilepath << std::endl;
-
-      // Open NetCDF file
-      if ((retval = nc_open(ncfilepath.c_str(), NC_NOWRITE, &ncid))) ERR(retval);
-
-      // Get variables
-      for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
-        if ((retval = nc_inq_varid(ncid, vars[jvar].c_str(), &var_id[jvar]))) ERR(retval);
-      }
-
-      for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
-        // Read data
-        double zvar[variableSizes[jvar]][ny][nx];
-        if ((retval = nc_get_var_double(ncid, var_id[jvar], &zvar[0][0][0]))) ERR(retval);
-
-        // Copy data
-        auto varView = atlas::array::make_view<double, 2>(globalData[vars[jvar]]);
-        for (size_t k = 0; k < variableSizes[jvar]; ++k) {
-          for (atlas::idx_t j = 0; j < ny; ++j) {
-            for (atlas::idx_t i = 0; i < grid.nx(ny-1-j); ++i) {
-              atlas::gidx_t gidx = grid.index(i, ny-1-j);
-              varView(gidx, k) = zvar[k][j][i];
-            }
-          }
-        }
-      }
-
-      // Close file
-      if ((retval = nc_close(ncid))) ERR(retval);
-    }
-  } else if (fspace.type() == "NodeColumns") {
-    // NodeColumns
-    atlas::idx_t nb_nodes;
-
-    // CubedSphere
-    atlas::functionspace::CubedSphereNodeColumns fs(fspace);
-
-    // Get global number of nodes
-    nb_nodes = fs.nb_nodes_global();
-    /* TODO(??): have to assume the NodeColumns is CubedSphere here, cannot differentiate with
-       other NodeColumns from what is in fspace.
-    // Other NodeColumns
-    atlas::functionspace::NodeColumns fs(fspace);
-
-    // Get global number of nodes
-    nb_nodes = fs.nb_nodes_global();
-    */
-
-    if (comm.rank() == 0) {
-      // NetCDF IDs
-      int ncid, retval, var_id[vars.size()];
-
-      // NetCDF file path
-      std::string ncfilepath = filepath;
-      ncfilepath.append(".nc");
-      oops::Log::info() << "Info     : Reading file: " << ncfilepath << std::endl;
-
-      // Open NetCDF file
-      if ((retval = nc_open(ncfilepath.c_str(), NC_NOWRITE, &ncid))) ERR(retval);
-
-      // Get variables
-      for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
-        if ((retval = nc_inq_varid(ncid, vars[jvar].c_str(), &var_id[jvar]))) ERR(retval);
-      }
-
-      for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
-        // Read data
-        double zvar[nb_nodes][variableSizes[jvar]];
-        if ((retval = nc_get_var_double(ncid, var_id[jvar], &zvar[0][0]))) ERR(retval);
-
-        // Copy data
-        auto varView = atlas::array::make_view<double, 2>(globalData[vars[jvar]]);
-        for (size_t k = 0; k < variableSizes[jvar]; ++k) {
-          for (atlas::idx_t i = 0; i < nb_nodes; ++i) {
-            varView(i, k) = zvar[i][k];
-          }
-        }
-      }
-
-      // Close file
-      if ((retval = nc_close(ncid))) ERR(retval);
-    }
-  } else {
-    ABORT(fspace.type() + " function space not supported yet");
-  }
-
-  // Initialize local field
+  // Initialize local fieldset
   for (auto & field : fset) {
     auto view = atlas::array::make_view<double, 2>(field);
     view.assign(0.0);
   }
 
-  // Scatter data from main processor
-  if (fspace.type() == "StructuredColumns") {
-    // StructuredColumns
-    atlas::functionspace::StructuredColumns fs(fspace);
-    fs.scatter(globalData, fset);
-  } else if (fspace.type() == "NodeColumns") {
-    // NodeColumns
-
-    // CubedSphere
-    atlas::functionspace::CubedSphereNodeColumns fs(fspace);
-    fs.scatter(globalData, fset);
-    /* TODO(??): have to assume the NodeColumns is CubedSphere here, cannot differentiate with
-       other NodeColumns from what is in fspace.
-    // Other NodeColumns
-    atlas::functionspace::NodeColumns fs(fspace);
-    fs.scatter(globalData, fset);
-    */
-  } else {
-    ABORT(fspace.type() + " function space not supported yet");
-  }
-
-  // Exchange halo
-  fset.haloExchange();
-}
-
-// -----------------------------------------------------------------------------
-
-void writeFieldSet(const eckit::mpi::Comm & comm,
-                   const eckit::Configuration & config,
-                   const atlas::FieldSet & fset) {
-  // Filepath
-  std::string filepath = config.getString("filepath");
-  if (config.has("member")) {
-    std::ostringstream out;
-    out << std::setfill('0') << std::setw(6) << config.getInt("member");
-    filepath.append("_");
-    filepath.append(out.str());
-  }
-
-  // Define variables vector from fset
-  std::vector<std::string> vars = fset.field_names();
-
-  // Missing value
-  const double msvalr = util::missingValue<double>();
-
   // NetCDF IDs
-  int retval, ncid, nx_id, ny_id, nb_nodes_id, nz_id[vars.size()],
-    d1D_id[1], d2D_id[2], d3D_id[3], lon_id, lat_id, var_id[vars.size()];
+  int ncid, retval, var_id[vars.size()];
 
-  if (comm.rank() == 0) {
+  if (oneFilePerTask) {
+    // Case 1: one file per MPI task
+
     // NetCDF file path
     std::string ncfilepath = filepath;
     ncfilepath.append(".nc");
-    oops::Log::info() << "Info     : Writing file: " << ncfilepath << std::endl;
+    oops::Log::info() << "Info     : Reading file: " << ncfilepath << std::endl;
 
-    // Create NetCDF file
-    if ((retval = nc_create(ncfilepath.c_str(), NC_CLOBBER, &ncid))) ERR(retval);
-  }
+    // Open NetCDF file
+    if ((retval = nc_open(ncfilepath.c_str(), NC_NOWRITE, &ncid))) ERR(retval);
 
-  for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
-    // Initialization
-    atlas::Field field = fset.field(vars[jvar]);
-    size_t levels = field.levels();
-    atlas::FunctionSpace fspace = field.functionspace();
-
-    // Coordinates
-    atlas::FieldSet localCoordinates;
-    atlas::FieldSet globalCoordinates;
-    if (jvar == 0) {
-      // Local coordinates
-      atlas::Field lonLocal = fspace.createField<double>(atlas::option::name("lon"));
-      localCoordinates.add(lonLocal);
-      atlas::Field latLocal = fspace.createField<double>(atlas::option::name("lat"));
-      localCoordinates.add(latLocal);
-
-      // Global coordinates
-      atlas::Field lonGlobal = fspace.createField<double>(
-        atlas::option::name("lon") | atlas::option::global());
-      globalCoordinates.add(lonGlobal);
-      atlas::Field latGlobal = fspace.createField<double>(
-        atlas::option::name("lat") | atlas::option::global());
-      globalCoordinates.add(latGlobal);
+    // Get variables
+    for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
+      if ((retval = nc_inq_varid(ncid, vars[jvar].c_str(), &var_id[jvar]))) ERR(retval);
     }
 
-    // Local data
-    atlas::FieldSet localData;
-    localData.add(field);
+    // Get number of nodes
+    size_t nb_nodes = 0;
+    const auto ghostView = atlas::array::make_view<int, 1>(fspace.ghost());
+    for (atlas::idx_t jnode = 0; jnode < fset.field(vars[0]).shape(0); ++jnode) {
+      if (ghostView(jnode) == 0) ++nb_nodes;
+    }
+
+    for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
+      // Read data
+      double zvar[nb_nodes][variableSizes[jvar]];
+      if ((retval = nc_get_var_double(ncid, var_id[jvar], &zvar[0][0]))) ERR(retval);
+
+      // Copy data
+      auto varView = atlas::array::make_view<double, 2>(fset[vars[jvar]]);
+      size_t inode = 0;
+      for (atlas::idx_t jnode = 0; jnode < fset.field(vars[jvar]).shape(0); ++jnode) {
+        if (ghostView(jnode) == 0) {
+          for (size_t k = 0; k < variableSizes[jvar]; ++k) {
+            varView(jnode, k) = zvar[inode][k];
+          }
+          ++inode;
+        }
+      }
+    }
+
+    // Close file
+    if ((retval = nc_close(ncid))) ERR(retval);
+
+    if (fspace.type() != "PointCloud") {
+      // Exchange halo
+      fset.haloExchange();
+    }
+  } else {
+    // Case 2: one file for all MPI tasks
 
     // Global data
     atlas::FieldSet globalData;
-    atlas::Field globalField = fspace.createField<double>(atlas::option::name(vars[jvar]) |
-      atlas::option::levels(levels) | atlas::option::global());
-    globalData.add(globalField);
+    for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
+      atlas::Field field = fspace.createField<double>(
+        atlas::option::name(vars[jvar])
+        | atlas::option::levels(variableSizes[jvar]) | atlas::option::global());
+      globalData.add(field);
+    }
 
-    // NetCDF output
+    // NetCDF input
     if (fspace.type() == "StructuredColumns") {
       // StructuredColumns
       atlas::functionspace::StructuredColumns fs(fspace);
-
-      if (jvar == 0) {
-        // Local coordinates
-        const auto lonlatView = atlas::array::make_view<double, 2>(fs.xy());
-        auto lonViewLocal = atlas::array::make_view<double, 1>(localCoordinates.field("lon"));
-        auto latViewLocal = atlas::array::make_view<double, 1>(localCoordinates.field("lat"));
-        for (atlas::idx_t jnode = 0; jnode < fs.xy().shape(0); ++jnode) {
-           lonViewLocal(jnode) = lonlatView(jnode, 0);
-           latViewLocal(jnode) = lonlatView(jnode, 1);
-        }
-
-        // Gather coordinates on main processor
-        fs.gather(localCoordinates, globalCoordinates);
-      }
-
-      // Gather data on main processor
-      fs.gather(localData, globalData);
 
       if (comm.rank() == 0) {
         // Get grid
@@ -949,78 +802,42 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
         atlas::idx_t nx = grid.nxmax();
         atlas::idx_t ny = grid.ny();
 
-        if (jvar == 0) {
-          // Create dimensions
-          if ((retval = nc_def_dim(ncid, "nx", nx, &nx_id))) ERR(retval);
-          if ((retval = nc_def_dim(ncid, "ny", ny, &ny_id))) ERR(retval);
+        // NetCDF IDs
+        int ncid, retval, var_id[vars.size()];
 
-          // Dimensions arrays
-          d2D_id[0] = ny_id;
-          d2D_id[1] = nx_id;
-          d3D_id[1] = ny_id;
-          d3D_id[2] = nx_id;
+        // NetCDF file path
+        std::string ncfilepath = filepath;
+        ncfilepath.append(".");
+        ncfilepath.append(config.getString("netcdf extension", "nc"));
+        oops::Log::info() << "Info     : Reading file: " << ncfilepath << std::endl;
 
-          // Define coordinates
-          if ((retval = nc_def_var(ncid, "lon", NC_DOUBLE, 2, d2D_id, &lon_id))) ERR(retval);
-          if ((retval = nc_def_var(ncid, "lat", NC_DOUBLE, 2, d2D_id, &lat_id))) ERR(retval);
-          if ((retval = nc_put_att_double(ncid, lon_id, "_FillValue", NC_DOUBLE, 1, &msvalr)))
-            ERR(retval);
-          if ((retval = nc_put_att_double(ncid, lat_id, "_FillValue", NC_DOUBLE, 1, &msvalr)))
-            ERR(retval);
-        } else {
-          // Restart definition mode
-          if ((retval = nc_redef(ncid))) ERR(retval);
+        // Open NetCDF file
+        if ((retval = nc_open(ncfilepath.c_str(), NC_NOWRITE, &ncid))) ERR(retval);
+
+        // Get variables
+        for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
+          if ((retval = nc_inq_varid(ncid, vars[jvar].c_str(), &var_id[jvar]))) ERR(retval);
         }
 
-        // Define variables
-        std::string nzName = "nz_" + vars[jvar];
-        if ((retval = nc_def_dim(ncid, nzName.c_str(), levels, &nz_id[jvar]))) ERR(retval);
-        d3D_id[0] = nz_id[jvar];
-        if ((retval = nc_def_var(ncid, vars[jvar].c_str(), NC_DOUBLE, 3, d3D_id,
-          &var_id[jvar]))) ERR(retval);
-        if ((retval = nc_put_att_double(ncid, var_id[jvar], "_FillValue", NC_DOUBLE, 1,
-          &msvalr))) ERR(retval);
+        for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
+          // Read data
+          double zvar[variableSizes[jvar]][ny][nx];
+          if ((retval = nc_get_var_double(ncid, var_id[jvar], &zvar[0][0][0]))) ERR(retval);
 
-        // End definition mode
-        if ((retval = nc_enddef(ncid))) ERR(retval);
-
-        if (jvar == 0) {
-          // Copy coordinates
-          auto lonViewGlobal = atlas::array::make_view<double, 1>(globalCoordinates.field("lon"));
-          auto latViewGlobal = atlas::array::make_view<double, 1>(globalCoordinates.field("lat"));
-          double zlon[ny][nx];
-          double zlat[ny][nx];
-          for (atlas::idx_t j = 0; j < ny; ++j) {
-            for (atlas::idx_t i = 0; i < nx; ++i) {
-              zlon[j][i] = msvalr;
-              zlat[j][i] = msvalr;
-            }
-            for (atlas::idx_t i = 0; i < grid.nx(ny-1-j); ++i) {
-              atlas::gidx_t gidx = grid.index(i, ny-1-j);
-              zlon[j][i] = lonViewGlobal(gidx);
-              zlat[j][i] = latViewGlobal(gidx);
-            }
-          }
-
-          // Write coordinates
-          if ((retval = nc_put_var_double(ncid, lon_id, &zlon[0][0]))) ERR(retval);
-          if ((retval = nc_put_var_double(ncid, lat_id, &zlat[0][0]))) ERR(retval);
-        }
-
-        // Copy data
-        auto varView = atlas::array::make_view<double, 2>(globalData[vars[jvar]]);
-        double zvar[levels][ny][nx];
-        for (size_t k = 0; k < levels; ++k) {
-          for (atlas::idx_t j = 0; j < ny; ++j) {
-            for (atlas::idx_t i = 0; i < grid.nx(ny-1-j); ++i) {
-              atlas::gidx_t gidx = grid.index(i, ny-1-j);
-              zvar[k][j][i] = varView(gidx, k);
+          // Copy data
+          auto varView = atlas::array::make_view<double, 2>(globalData[vars[jvar]]);
+          for (size_t k = 0; k < variableSizes[jvar]; ++k) {
+            for (atlas::idx_t j = 0; j < ny; ++j) {
+              for (atlas::idx_t i = 0; i < grid.nx(ny-1-j); ++i) {
+                atlas::gidx_t gidx = grid.index(i, ny-1-j);
+                varView(gidx, k) = zvar[k][j][i];
+              }
             }
           }
         }
 
-        // Write data
-        if ((retval = nc_put_var_double(ncid, var_id[jvar], &zvar[0][0][0]))) ERR(retval);
+        // Close file
+        if ((retval = nc_close(ncid))) ERR(retval);
       }
     } else if (fspace.type() == "NodeColumns") {
       // NodeColumns
@@ -1029,120 +846,442 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
       // CubedSphere
       atlas::functionspace::CubedSphereNodeColumns fs(fspace);
 
-      if (jvar == 0) {
-        // Local coordinates
-        const auto lonlatView = atlas::array::make_view<double, 2>(fs.lonlat());
-        auto lonViewLocal = atlas::array::make_view<double, 1>(localCoordinates.field("lon"));
-        auto latViewLocal = atlas::array::make_view<double, 1>(localCoordinates.field("lat"));
-        for (atlas::idx_t jnode = 0; jnode < fs.lonlat().shape(0); ++jnode) {
-           lonViewLocal(jnode) = lonlatView(jnode, 0);
-           latViewLocal(jnode) = lonlatView(jnode, 1);
-        }
-
-        // Gather coordinates on main processor
-        fs.gather(localCoordinates, globalCoordinates);
-      }
-
-      // Gather data on main processor
-      fs.gather(localData, globalData);
-
       // Get global number of nodes
       nb_nodes = fs.nb_nodes_global();
       /* TODO(??): have to assume the NodeColumns is CubedSphere here, cannot differentiate with
          other NodeColumns from what is in fspace.
-
       // Other NodeColumns
       atlas::functionspace::NodeColumns fs(fspace);
-
-      if (jvar == 0) {
-        // Local coordinates
-        const auto lonlatView = atlas::array::make_view<double, 2>(fs.lonlat());
-        auto lonViewLocal = atlas::array::make_view<double, 1>(localCoordinates.field("lon"));
-        auto latViewLocal = atlas::array::make_view<double, 1>(localCoordinates.field("lat"));
-        for (atlas::idx_t jnode = 0; jnode < fs.lonlat().shape(0); ++jnode) {
-           lonViewLocal(jnode) = lonlatView(jnode, 0);
-           latViewLocal(jnode) = lonlatView(jnode, 1);
-        }
-
-        // Gather coordinates on main processor
-        fs.gather(localCoordinates, globalCoordinates);
-      }
-
-      // Gather data on main processor
-      fs.gather(localData, globalData);
 
       // Get global number of nodes
       nb_nodes = fs.nb_nodes_global();
       */
 
       if (comm.rank() == 0) {
-        if (jvar == 0) {
-          // Create dimensions
-          if ((retval = nc_def_dim(ncid, "nb_nodes", nb_nodes, &nb_nodes_id))) ERR(retval);
+        // NetCDF IDs
+        int ncid, retval, var_id[vars.size()];
 
-          // Dimensions array
-          d1D_id[0] = nb_nodes_id;
+        // NetCDF file path
+        std::string ncfilepath = filepath;
+        ncfilepath.append(".nc");
+        oops::Log::info() << "Info     : Reading file: " << ncfilepath << std::endl;
 
-          // Define coordinates
-          if ((retval = nc_def_var(ncid, "lon", NC_DOUBLE, 1, d1D_id, &lon_id))) ERR(retval);
-          if ((retval = nc_def_var(ncid, "lat", NC_DOUBLE, 1, d1D_id, &lat_id))) ERR(retval);
-        } else {
-          // Restart definition mode
-          if ((retval = nc_redef(ncid))) ERR(retval);
+        // Open NetCDF file
+        if ((retval = nc_open(ncfilepath.c_str(), NC_NOWRITE, &ncid))) ERR(retval);
+
+        // Get variables
+        for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
+          if ((retval = nc_inq_varid(ncid, vars[jvar].c_str(), &var_id[jvar]))) ERR(retval);
         }
 
-        // Define variables
-        d2D_id[0] = nb_nodes_id;
-        std::string nzName = "nz_" + vars[jvar];
-        if ((retval = nc_def_dim(ncid, nzName.c_str(), levels, &nz_id[jvar]))) ERR(retval);
-        d2D_id[1] = nz_id[jvar];
-        if ((retval = nc_def_var(ncid, vars[jvar].c_str(), NC_DOUBLE, 2, d2D_id,
-          &var_id[jvar]))) ERR(retval);
-        if ((retval = nc_put_att_double(ncid, var_id[jvar], "_FillValue", NC_DOUBLE, 1,
-          &msvalr))) ERR(retval);
+        for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
+          // Read data
+          double zvar[nb_nodes][variableSizes[jvar]];
+          if ((retval = nc_get_var_double(ncid, var_id[jvar], &zvar[0][0]))) ERR(retval);
+
+          // Copy data
+          auto varView = atlas::array::make_view<double, 2>(globalData[vars[jvar]]);
+          for (size_t k = 0; k < variableSizes[jvar]; ++k) {
+            for (atlas::idx_t i = 0; i < nb_nodes; ++i) {
+              varView(i, k) = zvar[i][k];
+            }
+          }
+        }
+
+        // Close file
+        if ((retval = nc_close(ncid))) ERR(retval);
+      }
+    } else {
+      ABORT(fspace.type() + " function space not supported yet");
+    }
+
+    // Scatter data from main processor
+    if (fspace.type() == "StructuredColumns") {
+      // StructuredColumns
+      atlas::functionspace::StructuredColumns fs(fspace);
+      fs.scatter(globalData, fset);
+    } else if (fspace.type() == "NodeColumns") {
+      // NodeColumns
+
+      // CubedSphere
+      atlas::functionspace::CubedSphereNodeColumns fs(fspace);
+      fs.scatter(globalData, fset);
+    }
+
+    // Exchange halo
+    fset.haloExchange();
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+void writeFieldSet(const eckit::mpi::Comm & comm,
+                   const eckit::Configuration & config,
+                   const atlas::FieldSet & fset) {
+  // Define variables vector from fset
+  std::vector<std::string> vars = fset.field_names();
+
+  // Get function space
+  atlas::FunctionSpace fspace = fset.field(vars[0]).functionspace();
+
+  // Options with one file per MPI task
+  const bool oneFilePerTask = config.getBool("one file per task", false);
+  ASSERT(oneFilePerTask || (fspace.type() != "PointCloud"));
+
+  // Build filepath
+  std::string filepath = config.getString("filepath");
+  if (config.has("member")) {
+    std::ostringstream out;
+    out << std::setfill('0') << std::setw(6) << config.getInt("member");
+    filepath.append("_");
+    filepath.append(out.str());
+  }
+  if (oneFilePerTask) {
+    size_t zpad = 6;
+    std::string commSize = std::to_string(comm.size());
+    commSize = std::string(zpad - std::min(zpad, commSize.length()), '0') + commSize;
+    std::string commRank = std::to_string(comm.rank()+1);
+    commRank = std::string(zpad - std::min(zpad, commRank.length()), '0') + commRank;
+    filepath.append("_");
+    filepath.append(commSize);
+    filepath.append("-");
+    filepath.append(commRank);
+  }
+
+  // Missing value
+  const double msvalr = util::missingValue<double>();
+
+  // NetCDF IDs
+  int retval, ncid, nx_id, ny_id, nb_nodes_id, nz_id[vars.size()],
+    d1D_id[1], d2D_id[2], d3D_id[3], lon_id, lat_id, var_id[vars.size()];
+
+  if (oneFilePerTask) {
+    // Case 1: one file per MPI task
+
+    // NetCDF file path
+    std::string ncfilepath = filepath;
+    ncfilepath.append(".nc");
+    oops::Log::info() << "Info     : Writing file: " << ncfilepath << std::endl;
+
+    // Get number of nodes
+    size_t nb_nodes = 0;
+    const auto ghostView = atlas::array::make_view<int, 1>(fspace.ghost());
+    for (atlas::idx_t jnode = 0; jnode < fset.field(vars[0]).shape(0); ++jnode) {
+      if (ghostView(jnode) == 0) ++nb_nodes;
+    }
+
+    // Definition mode
+
+    // Create NetCDF file
+    if ((retval = nc_create(ncfilepath.c_str(), NC_CLOBBER, &ncid))) ERR(retval);
+
+    // Create horizontal dimension
+    if ((retval = nc_def_dim(ncid, "nb_nodes", nb_nodes, &nb_nodes_id))) ERR(retval);
+
+    // Dimensions arrays, horizontal part
+    d1D_id[0] = nb_nodes_id;
+    d2D_id[0] = nb_nodes_id;
+
+    // Define coordinates
+    if ((retval = nc_def_var(ncid, "lon", NC_DOUBLE, 1, d1D_id, &lon_id))) ERR(retval);
+    if ((retval = nc_def_var(ncid, "lat", NC_DOUBLE, 1, d1D_id, &lat_id))) ERR(retval);
+
+    for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
+      // Create vertical dimension
+      std::string nzName = "nz_" + vars[jvar];
+      if ((retval = nc_def_dim(ncid, nzName.c_str(), fset.field(vars[jvar]).levels(),
+        &nz_id[jvar]))) ERR(retval);
+
+      // Dimensions array, vertical part
+      d2D_id[1] = nz_id[jvar];
+
+      // Define variable
+      if ((retval = nc_def_var(ncid, vars[jvar].c_str(), NC_DOUBLE, 2, d2D_id,
+        &var_id[jvar]))) ERR(retval);
+
+      // Add missing value metadata
+      if ((retval = nc_put_att_double(ncid, var_id[jvar], "_FillValue", NC_DOUBLE, 1,
+        &msvalr))) ERR(retval);
+    }
+
+    // End definition mode
+    if ((retval = nc_enddef(ncid))) ERR(retval);
+
+    // Data mode
+
+    // Copy coordinates
+    const auto lonlatView = atlas::array::make_view<double, 2>(fspace.lonlat());
+    double zlon[nb_nodes][1];
+    double zlat[nb_nodes][1];
+    size_t inode = 0;
+    for (atlas::idx_t jnode = 0; jnode < fset.field(vars[0]).shape(0); ++jnode) {
+      if (ghostView(jnode) == 0) {
+        zlon[inode][0] = lonlatView(jnode, 0);
+        zlat[inode][0] = lonlatView(jnode, 1);
+        ++inode;
+      }
+    }
+
+    // Write coordinates
+    if ((retval = nc_put_var_double(ncid, lon_id, &zlon[0][0]))) ERR(retval);
+    if ((retval = nc_put_var_double(ncid, lat_id, &zlat[0][0]))) ERR(retval);
+
+    for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
+      // Copy data
+      const auto varView = atlas::array::make_view<double, 2>(fset.field(vars[jvar]));
+      double zvar[nb_nodes][fset.field(vars[jvar]).levels()];
+      inode = 0;
+      for (atlas::idx_t jnode = 0; jnode < fset.field(vars[0]).shape(0); ++jnode) {
+        if (ghostView(jnode) == 0) {
+          for (atlas::idx_t k = 0; k < fset.field(vars[jvar]).levels(); ++k) {
+            zvar[inode][k] = varView(jnode, k);
+          }
+          ++inode;
+        }
+      }
+
+      // Write data
+      if ((retval = nc_put_var_double(ncid, var_id[jvar], &zvar[0][0]))) ERR(retval);
+    }
+
+    // Close file
+    if ((retval = nc_close(ncid))) ERR(retval);
+  } else {
+    // Case 2: one file for all MPI tasks
+
+    // Prepare local coordinates and data
+    atlas::FieldSet localData;
+    atlas::Field lonLocal = fspace.createField<double>(atlas::option::name("lon"));
+    localData.add(lonLocal);
+    atlas::Field latLocal = fspace.createField<double>(atlas::option::name("lat"));
+    localData.add(latLocal);
+    const auto lonlatView = atlas::array::make_view<double, 2>(fspace.lonlat());
+    auto lonViewLocal = atlas::array::make_view<double, 1>(localData.field("lon"));
+    auto latViewLocal = atlas::array::make_view<double, 1>(localData.field("lat"));
+    for (atlas::idx_t jnode = 0; jnode < fspace.lonlat().shape(0); ++jnode) {
+       lonViewLocal(jnode) = lonlatView(jnode, 0);
+       latViewLocal(jnode) = lonlatView(jnode, 1);
+    }
+    for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
+      localData.add(fset.field(vars[jvar]));
+    }
+
+    // Prepare global coordinates and data
+    atlas::FieldSet globalData;
+    atlas::Field lonGlobal = fspace.createField<double>(
+      atlas::option::name("lon") | atlas::option::global());
+    globalData.add(lonGlobal);
+    atlas::Field latGlobal = fspace.createField<double>(
+      atlas::option::name("lat") | atlas::option::global());
+    globalData.add(latGlobal);
+    for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
+      atlas::Field globalField = fspace.createField<double>(atlas::option::name(vars[jvar]) |
+        atlas::option::levels(fset.field(vars[jvar]).levels()) | atlas::option::global());
+      globalData.add(globalField);
+    }
+
+    if (fspace.type() == "StructuredColumns") {
+      // StructuredColumns
+      atlas::functionspace::StructuredColumns fs(fspace);
+
+      // Gather coordinates and data on main processor
+      fs.gather(localData, globalData);
+
+      if (comm.rank() == 0) {
+        // NetCDF file path
+        std::string ncfilepath = filepath;
+        ncfilepath.append(".nc");
+        oops::Log::info() << "Info     : Writing file: " << ncfilepath << std::endl;
+
+        // Get grid
+        atlas::StructuredGrid grid = fs.grid();
+
+        // Get sizes
+        atlas::idx_t nx = grid.nxmax();
+        atlas::idx_t ny = grid.ny();
+
+        // Definition mode
+
+        // Create NetCDF file
+        if ((retval = nc_create(ncfilepath.c_str(), NC_CLOBBER, &ncid))) ERR(retval);
+
+        // Create dimensions
+        if ((retval = nc_def_dim(ncid, "nx", nx, &nx_id))) ERR(retval);
+        if ((retval = nc_def_dim(ncid, "ny", ny, &ny_id))) ERR(retval);
+
+        // Dimensions arrays, horizontal part
+        d2D_id[0] = ny_id;
+        d2D_id[1] = nx_id;
+        d3D_id[1] = ny_id;
+        d3D_id[2] = nx_id;
+
+        // Define coordinates
+        if ((retval = nc_def_var(ncid, "lon", NC_DOUBLE, 2, d2D_id, &lon_id))) ERR(retval);
+        if ((retval = nc_def_var(ncid, "lat", NC_DOUBLE, 2, d2D_id, &lat_id))) ERR(retval);
+        if ((retval = nc_put_att_double(ncid, lon_id, "_FillValue", NC_DOUBLE, 1, &msvalr)))
+          ERR(retval);
+        if ((retval = nc_put_att_double(ncid, lat_id, "_FillValue", NC_DOUBLE, 1, &msvalr)))
+          ERR(retval);
+
+        for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
+          // Create vertical dimension
+          std::string nzName = "nz_" + vars[jvar];
+          if ((retval = nc_def_dim(ncid, nzName.c_str(), fset.field(vars[jvar]).levels(),
+            &nz_id[jvar]))) ERR(retval);
+
+          // Dimensions array, vertical part
+          d3D_id[0] = nz_id[jvar];
+
+          // Define variable
+          if ((retval = nc_def_var(ncid, vars[jvar].c_str(), NC_DOUBLE, 3, d3D_id,
+            &var_id[jvar]))) ERR(retval);
+
+          // Add missing value metadata
+          if ((retval = nc_put_att_double(ncid, var_id[jvar], "_FillValue", NC_DOUBLE, 1,
+            &msvalr))) ERR(retval);
+        }
 
         // End definition mode
         if ((retval = nc_enddef(ncid))) ERR(retval);
 
-        if (jvar == 0) {
-          // Copy coordinates
-          auto lonViewGlobal = atlas::array::make_view<double, 1>(globalCoordinates.field("lon"));
-          auto latViewGlobal = atlas::array::make_view<double, 1>(globalCoordinates.field("lat"));
-          double zlon[nb_nodes][1];
-          double zlat[nb_nodes][1];
-          for (atlas::idx_t i = 0; i < nb_nodes; ++i) {
-            zlon[i][0] = lonViewGlobal(i);
-            zlat[i][0] = latViewGlobal(i);
+        // Data mode
+
+        // Copy coordinates
+        auto lonViewGlobal = atlas::array::make_view<double, 1>(globalData.field("lon"));
+        auto latViewGlobal = atlas::array::make_view<double, 1>(globalData.field("lat"));
+        double zlon[ny][nx];
+        double zlat[ny][nx];
+        for (atlas::idx_t j = 0; j < ny; ++j) {
+          for (atlas::idx_t i = 0; i < nx; ++i) {
+            zlon[j][i] = msvalr;
+            zlat[j][i] = msvalr;
           }
-
-          // Write coordinates
-          if ((retval = nc_put_var_double(ncid, lon_id, &zlon[0][0]))) ERR(retval);
-          if ((retval = nc_put_var_double(ncid, lat_id, &zlat[0][0]))) ERR(retval);
-        }
-
-        // Copy data
-        auto varView = atlas::array::make_view<double, 2>(globalData[vars[jvar]]);
-        double zvar[nb_nodes][levels];
-        for (size_t k = 0; k < levels; ++k) {
-          for (atlas::idx_t i = 0; i < nb_nodes; ++i) {
-            zvar[i][k] = varView(i, k);
+          for (atlas::idx_t i = 0; i < grid.nx(ny-1-j); ++i) {
+            atlas::gidx_t gidx = grid.index(i, ny-1-j);
+            zlon[j][i] = lonViewGlobal(gidx);
+            zlat[j][i] = latViewGlobal(gidx);
           }
         }
 
-        // Write data
-        if ((retval = nc_put_var_double(ncid, var_id[jvar], &zvar[0][0]))) ERR(retval);
+        // Write coordinates
+        if ((retval = nc_put_var_double(ncid, lon_id, &zlon[0][0]))) ERR(retval);
+        if ((retval = nc_put_var_double(ncid, lat_id, &zlat[0][0]))) ERR(retval);
+
+        for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
+          // Copy data
+          auto varView = atlas::array::make_view<double, 2>(globalData[vars[jvar]]);
+          double zvar[fset.field(vars[jvar]).levels()][ny][nx];
+          for (atlas::idx_t k = 0; k < fset.field(vars[jvar]).levels(); ++k) {
+            for (atlas::idx_t j = 0; j < ny; ++j) {
+              for (atlas::idx_t i = 0; i < grid.nx(ny-1-j); ++i) {
+                atlas::gidx_t gidx = grid.index(i, ny-1-j);
+                zvar[k][j][i] = varView(gidx, k);
+              }
+            }
+          }
+
+          // Write data
+          if ((retval = nc_put_var_double(ncid, var_id[jvar], &zvar[0][0][0]))) ERR(retval);
+        }
+
+        // Close file
+        if ((retval = nc_close(ncid))) ERR(retval);
+      }
+    } else if (fspace.type() == "NodeColumns") {
+      /* TODO(??): have to assume the NodeColumns is CubedSphere here, cannot differentiate with
+         other NodeColumns from what is in fspace.
+      */
+
+      // CubedSphere
+      atlas::functionspace::CubedSphereNodeColumns fs(fspace);
+
+      // Gather coordinates and data on main processor
+      fs.gather(localData, globalData);
+
+      if (comm.rank() == 0) {
+        // NetCDF file path
+        std::string ncfilepath = filepath;
+        ncfilepath.append(".nc");
+        oops::Log::info() << "Info     : Writing file: " << ncfilepath << std::endl;
+
+        // Get global number of nodes
+        atlas::idx_t nb_nodes = fs.nb_nodes_global();
+
+        // Definition mode
+
+        // Create NetCDF file
+        if ((retval = nc_create(ncfilepath.c_str(), NC_CLOBBER, &ncid))) ERR(retval);
+
+        // Create dimensions
+        if ((retval = nc_def_dim(ncid, "nb_nodes", nb_nodes, &nb_nodes_id))) ERR(retval);
+
+        // Dimensions arrays, horizontal part
+        d1D_id[0] = nb_nodes_id;
+        d2D_id[0] = nb_nodes_id;
+
+        // Define coordinates
+        if ((retval = nc_def_var(ncid, "lon", NC_DOUBLE, 1, d1D_id, &lon_id))) ERR(retval);
+        if ((retval = nc_def_var(ncid, "lat", NC_DOUBLE, 1, d1D_id, &lat_id))) ERR(retval);
+
+        for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
+          // Create vertical dimension
+          std::string nzName = "nz_" + vars[jvar];
+          if ((retval = nc_def_dim(ncid, nzName.c_str(), fset.field(vars[jvar]).levels(),
+            &nz_id[jvar]))) ERR(retval);
+
+          // Dimensions array, vertical part
+          d2D_id[1] = nz_id[jvar];
+
+          // Define variable
+          if ((retval = nc_def_var(ncid, vars[jvar].c_str(), NC_DOUBLE, 2, d2D_id,
+            &var_id[jvar]))) ERR(retval);
+
+          // Add missing value metadata
+          if ((retval = nc_put_att_double(ncid, var_id[jvar], "_FillValue", NC_DOUBLE, 1,
+            &msvalr))) ERR(retval);
+        }
+
+        // End definition mode
+        if ((retval = nc_enddef(ncid))) ERR(retval);
+
+        // Data mode
+
+        // Copy coordinates
+        auto lonViewGlobal = atlas::array::make_view<double, 1>(globalData.field("lon"));
+        auto latViewGlobal = atlas::array::make_view<double, 1>(globalData.field("lat"));
+        double zlon[nb_nodes][1];
+        double zlat[nb_nodes][1];
+        for (atlas::idx_t i = 0; i < nb_nodes; ++i) {
+          zlon[i][0] = lonViewGlobal(i);
+          zlat[i][0] = latViewGlobal(i);
+        }
+
+        // Write coordinates
+        if ((retval = nc_put_var_double(ncid, lon_id, &zlon[0][0]))) ERR(retval);
+        if ((retval = nc_put_var_double(ncid, lat_id, &zlat[0][0]))) ERR(retval);
+
+        for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
+          // Copy data
+          auto varView = atlas::array::make_view<double, 2>(globalData[vars[jvar]]);
+          double zvar[nb_nodes][fset.field(vars[jvar]).levels()];
+          for (atlas::idx_t k = 0; k < fset.field(vars[jvar]).levels(); ++k) {
+            for (atlas::idx_t i = 0; i < nb_nodes; ++i) {
+              zvar[i][k] = varView(i, k);
+            }
+          }
+
+          // Write data
+          if ((retval = nc_put_var_double(ncid, var_id[jvar], &zvar[0][0]))) ERR(retval);
+        }
+
+        // Close file
+        if ((retval = nc_close(ncid))) ERR(retval);
       }
     } else {
       ABORT(fspace.type() + " function space not supported yet");
     }
   }
-
-  if (comm.rank() == 0) {
-    // Close file
-    if ((retval = nc_close(ncid))) ERR(retval);
-  }
 }
-
 
 // -----------------------------------------------------------------------------
 

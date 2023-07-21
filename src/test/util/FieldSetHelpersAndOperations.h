@@ -17,6 +17,7 @@
 #include "atlas/field.h"
 #include "atlas/functionspace.h"
 #include "atlas/grid.h"
+#include "atlas/meshgenerator.h"
 
 #include "oops/../test/TestEnvironment.h"
 #include "oops/runs/Test.h"
@@ -39,9 +40,6 @@ CASE("util/FieldSetHelpersAndOperations/StructuredColumns") {
   atlas::grid::Distribution distribution(grid, partitioner);
   atlas::functionspace::StructuredColumns fspace(grid, distribution, atlas::option::halo(1));
 
-  // FieldSet
-  atlas::FieldSet fset;
-
   // Variables
   std::vector<std::string> varnames({"var1", "var2"});
   eckit::LocalConfiguration metaml2, metaml4, variablesconf;
@@ -58,7 +56,6 @@ CASE("util/FieldSetHelpersAndOperations/StructuredColumns") {
   atlas::FieldSet fset2 = util::createRandomFieldSet(*comm, fspace, vars);
   const double dp2 = util::dotProductFieldSets(fset2, fset2, vars.variables(), *comm);
   EXPECT(oops::is_close(dp2, 5546.6627708858978, 1.0e-12));
-
 
   // Copy FieldSet
   atlas::FieldSet fset1copy = util::copyFieldSet(fset1);
@@ -130,22 +127,137 @@ CASE("util/FieldSetHelpersAndOperations/StructuredColumns") {
   EXPECT(util::compareFieldSets(fset1, fset1copy));
   EXPECT_NOT(util::compareFieldSets(fset1, fset2));
 
-  // Create Smooth Fieldset
+  // FieldSet norm
+  const double norm1 = util::normFieldSet(fset1, vars.variables(), *comm);
+  EXPECT(oops::is_close(norm1, 69.620477228480709, 1.0e-12));
+
+  // Create smooth Fieldset
   atlas::FieldSet smoothfset1 = util::createSmoothFieldSet(*comm, fspace, vars);
   smoothfset1.haloExchange();
   atlas::FieldSet smoothfset2;
 
   // Write to file
   eckit::LocalConfiguration lconf;
-  lconf.set("filepath", "./smoothfset");
-  const eckit::Configuration & conf = lconf;
-  util::writeFieldSet(*comm, conf, smoothfset1);
+  lconf.set("filepath", "./StructuredColumns_fset");
+  util::writeFieldSet(*comm, lconf, smoothfset1);
 
   // Read from file
-  util::readFieldSet(*comm, fspace, vars, conf, smoothfset2);
+  util::readFieldSet(*comm, fspace, vars, lconf, smoothfset2);
 
   // Compare smooth FieldSets
   EXPECT(util::compareFieldSets(smoothfset1, smoothfset2));
+
+  // Write to file (one file per task)
+  lconf.set("one file per task", true);
+  util::writeFieldSet(*comm, lconf, smoothfset1);
+
+  // Read from file (one file per task)
+  util::readFieldSet(*comm, fspace, vars, lconf, smoothfset2);
+
+  // Compare smooth FieldSets
+  EXPECT(util::compareFieldSets(smoothfset1, smoothfset2));
+}
+
+CASE("util/FieldSetHelpersAndOperations/NodeColumns") {
+  // Communicator
+  const eckit::mpi::Comm * comm = &oops::mpi::world();
+
+  // FunctionSpace
+  eckit::LocalConfiguration gridConfig;
+  gridConfig.set("name", "CS-LFR-15");
+  atlas::Grid grid(gridConfig);
+  atlas::Mesh mesh = atlas::MeshGenerator("cubedsphere_dual").generate(grid);
+  atlas::functionspace::CubedSphereNodeColumns fspace(mesh);
+
+  // Variables
+  std::vector<std::string> varnames({"var1", "var2"});
+  eckit::LocalConfiguration metaml2, metaml4, variablesconf;
+  metaml2.set("levels", 2);
+  metaml4.set("levels", 4);
+  variablesconf.set(varnames[0], metaml2);
+  variablesconf.set(varnames[1], metaml4);
+  oops::Variables vars(variablesconf, varnames);
+
+  // Create random fields
+  atlas::FieldSet fset1 = util::createRandomFieldSet(*comm, fspace, vars);
+  const double dp1 = util::dotProductFieldSets(fset1, fset1, vars.variables(), *comm);
+  EXPECT(oops::is_close(dp1, 10135.544564309557, 1.0e-12));
+  atlas::FieldSet fset2 = util::createRandomFieldSet(*comm, fspace, vars);
+  const double dp2 = util::dotProductFieldSets(fset2, fset2, vars.variables(), *comm);
+  EXPECT(oops::is_close(dp2, 10129.286186156089, 1.0e-12));
+
+  // Get grid UID
+  std::string uid = util::getGridUid(fspace);
+  EXPECT(uid == "f277fb2f5d7f540eae4d0eba82f94eea");
+  EXPECT(uid == util::getGridUid(fset1));
+
+  // Write to file
+  eckit::LocalConfiguration lconf;
+  lconf.set("filepath", "./CubedSphere_fset");
+  util::writeFieldSet(*comm, lconf, fset1);
+
+  // Read from file
+  util::readFieldSet(*comm, fspace, vars, lconf, fset2);
+
+  // Compare smooth FieldSets
+  EXPECT(util::compareFieldSets(fset1, fset2));
+
+  // Write to file (one file per task)
+  lconf.set("one file per task", true);
+  util::writeFieldSet(*comm, lconf, fset1);
+
+  // Read from file (one file per task)
+  util::readFieldSet(*comm, fspace, vars, lconf, fset2);
+
+  // Compare smooth FieldSets
+  EXPECT(util::compareFieldSets(fset1, fset2));
+}
+
+CASE("util/FieldSetHelpersAndOperations/PointCloud") {
+  // Communicator
+  const eckit::mpi::Comm * comm = &oops::mpi::world();
+
+  // FunctionSpace
+  eckit::LocalConfiguration gridConfig;
+  gridConfig.set("type", "unstructured");
+  const std::vector<double> lonlat({0, 90, 0,  -90, 180, -90, 180, 90});
+  gridConfig.set("xy", lonlat);
+  atlas::Grid grid(gridConfig);
+  atlas::functionspace::PointCloud fspace(grid);
+
+  // Variables
+  std::vector<std::string> varnames({"var1", "var2"});
+  eckit::LocalConfiguration metaml2, metaml4, variablesconf;
+  metaml2.set("levels", 2);
+  metaml4.set("levels", 4);
+  variablesconf.set(varnames[0], metaml2);
+  variablesconf.set(varnames[1], metaml4);
+  oops::Variables vars(variablesconf, varnames);
+
+  // Create random fields
+  atlas::FieldSet fset1 = util::createRandomFieldSet(*comm, fspace, vars);
+  const double dp1 = util::dotProductFieldSets(fset1, fset1, vars.variables(), *comm);
+  EXPECT(oops::is_close(dp1, 16.260813650827739, 1.0e-12));
+  atlas::FieldSet fset2 = util::createRandomFieldSet(*comm, fspace, vars);
+  const double dp2 = util::dotProductFieldSets(fset2, fset2, vars.variables(), *comm);
+  EXPECT(oops::is_close(dp2, 16.828513519408055, 1.0e-12));
+
+  // Get grid UID
+  std::string uid = util::getGridUid(fspace);
+  EXPECT(uid == "2ac7a1ed6f655833eb61b9ececd5e5eb");
+  EXPECT(uid == util::getGridUid(fset1));
+
+  // Write to file (one file per task)
+  eckit::LocalConfiguration lconf;
+  lconf.set("filepath", "./PointCloud_fset");
+  lconf.set("one file per task", true);
+  util::writeFieldSet(*comm, lconf, fset1);
+
+  // Read from file (one file per task)
+  util::readFieldSet(*comm, fspace, vars, lconf, fset2);
+
+  // Compare smooth FieldSets
+  EXPECT(util::compareFieldSets(fset1, fset2));
 }
 
 class FieldSetHelpersAndOperations : public oops::Test {
