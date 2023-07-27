@@ -18,6 +18,7 @@
 #include "oops/base/Increment.h"
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
+#include "oops/generic/LocalInterpolatorBase.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Timer.h"
@@ -209,53 +210,6 @@ struct ApplyAtlasHelper<MODEL,
   }
 };
 
-// BufferToAtlasHelper tries to call the model interpolator's bufferToFieldSet(AD) methods.
-// The fallback case errors.
-template <typename MODEL, typename = cpp17::void_t<>>
-struct BufferToAtlasHelper {
-  static void bufferToFieldSet(const oops::Variables & vars,
-                               const std::vector<size_t> & buffer_indices,
-                               const std::vector<double> & buffer,
-                               atlas::FieldSet & fset) {
-    throw eckit::Exception("The LocalInterpolator for model " + MODEL::name() + " has no method "
-                           "bufferToFieldSet, but an oops::LocalInterpolator tried to call this "
-                           "non-existent method.");
-  }
-  static void bufferToFieldSetAD(const oops::Variables & vars,
-                                 const std::vector<size_t> & buffer_indices,
-                                 std::vector<double> & buffer,
-                                 const atlas::FieldSet & fset) {
-    throw eckit::Exception("The LocalInterpolator for model " + MODEL::name() + " has no method "
-                           "bufferToFieldSetAD, but an oops::LocalInterpolator tried to call this "
-                           "non-existent method.");
-  }
-};
-
-// The specialization calls the model-specific interpolator's bufferToFieldSet interface.
-// Note: Here we simplify the template metaprogramming by assuming that if the interpolator has a
-//       method bufferToFieldSet, then it also has bufferToFieldSetAD. The code may fail to compile
-//       if these assumptions are violated.
-template <typename MODEL>
-struct BufferToAtlasHelper<MODEL,
-    cpp17::void_t<decltype(std::declval<typename MODEL::LocalInterpolator>().bufferToFieldSet(
-        std::declval<oops::Variables>(),
-        std::declval<std::vector<size_t>&>(),
-        std::declval<std::vector<double>&>(),
-        std::declval<atlas::FieldSet&>()))>> {
-  static void bufferToFieldSet(const oops::Variables & vars,
-                               const std::vector<size_t> & buffer_indices,
-                               const std::vector<double> & buffer,
-                               atlas::FieldSet & fset) {
-    MODEL::LocalInterpolator::bufferToFieldSet(vars, buffer_indices, buffer, fset);
-  }
-  static void bufferToFieldSetAD(const oops::Variables & vars,
-                                 const std::vector<size_t> & buffer_indices,
-                                 std::vector<double> & buffer,
-                                 const atlas::FieldSet & fset) {
-    MODEL::LocalInterpolator::bufferToFieldSetAD(vars, buffer_indices, buffer, fset);
-  }
-};
-
 }  // namespace detail
 
 namespace oops {
@@ -264,7 +218,7 @@ namespace oops {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-class LocalInterpolator : public util::Printable,
+class LocalInterpolator : public LocalInterpolatorBase,
                           private util::ObjectCounter<LocalInterpolator<MODEL> > {
   typedef typename MODEL::LocalInterpolator   LocalInterpolator_;
   typedef oops::Geometry<MODEL>            Geometry_;
@@ -287,22 +241,17 @@ class LocalInterpolator : public util::Printable,
   void apply(const Variables &, const Increment_ &,
              std::vector<double> &) const;
   void apply(const Variables &, const atlas::FieldSet &,
-             const std::vector<bool> &, std::vector<double> &) const;
+             const std::vector<bool> &, std::vector<double> &) const override;
   void apply(const Variables &, const atlas::FieldSet &,
-             std::vector<double> &) const;
+             std::vector<double> &) const override;
   void applyAD(const Variables &, Increment_ &,
                const std::vector<bool> &, const std::vector<double> &) const;
   void applyAD(const Variables &, Increment_ &,
                const std::vector<double> &) const;
   void applyAD(const Variables &, atlas::FieldSet &,
-               const std::vector<bool> &, const std::vector<double> &) const;
+               const std::vector<bool> &, const std::vector<double> &) const override;
   void applyAD(const Variables &, atlas::FieldSet &,
-               const std::vector<double> &) const;
-
-  static void bufferToFieldSet(const Variables &, const std::vector<size_t> &,
-                               const std::vector<double> &, atlas::FieldSet &);
-  static void bufferToFieldSetAD(const Variables &, const std::vector<size_t> &,
-                                 std::vector<double> &, const atlas::FieldSet &);
+               const std::vector<double> &) const override;
 
  private:
   std::unique_ptr<LocalInterpolator_> interpolator_;
@@ -320,7 +269,7 @@ LocalInterpolator<MODEL>::LocalInterpolator(const eckit::Configuration & conf,
 {
   Log::trace() << "LocalInterpolator<MODEL>::LocalInterpolator starting" << std::endl;
   util::Timer timer(classname(), "LocalInterpolator");
-  interpolator_.reset(detail::ConstructHelper<MODEL>::apply(conf, resol, lats, lons));
+  interpolator_.reset(::detail::ConstructHelper<MODEL>::apply(conf, resol, lats, lons));
   Log::trace() << "LocalInterpolator<MODEL>::LocalInterpolator done" << std::endl;
 }
 
@@ -342,7 +291,7 @@ void LocalInterpolator<MODEL>::apply(const Variables & vars, const State_ & xx,
                                      std::vector<double> & vect) const {
   Log::trace() << "LocalInterpolator<MODEL>::apply starting" << std::endl;
   util::Timer timer(classname(), "apply");
-  detail::ApplyHelper<MODEL>::apply(*interpolator_, vars, xx, mask, vect);
+  ::detail::ApplyHelper<MODEL>::apply(*interpolator_, vars, xx, mask, vect);
   Log::trace() << "LocalInterpolator<MODEL>::apply done" << std::endl;
 }
 
@@ -353,7 +302,7 @@ void LocalInterpolator<MODEL>::apply(const Variables & vars, const State_ & xx,
                                      std::vector<double> & vect) const {
   Log::trace() << "LocalInterpolator<MODEL>::apply starting" << std::endl;
   util::Timer timer(classname(), "apply");
-  detail::ApplyHelper<MODEL>::apply(*interpolator_, vars, xx, vect);
+  ::detail::ApplyHelper<MODEL>::apply(*interpolator_, vars, xx, vect);
   Log::trace() << "LocalInterpolator<MODEL>::apply done" << std::endl;
 }
 
@@ -365,7 +314,7 @@ void LocalInterpolator<MODEL>::apply(const Variables & vars, const Increment_ & 
                                      std::vector<double> & vect) const {
   Log::trace() << "LocalInterpolator<MODEL>::applyTL starting" << std::endl;
   util::Timer timer(classname(), "applyTL");
-  detail::ApplyHelper<MODEL>::apply(*interpolator_, vars, dx, mask, vect);
+  ::detail::ApplyHelper<MODEL>::apply(*interpolator_, vars, dx, mask, vect);
   Log::trace() << "LocalInterpolator<MODEL>::applyTL done" << std::endl;
 }
 
@@ -376,7 +325,7 @@ void LocalInterpolator<MODEL>::apply(const Variables & vars, const Increment_ & 
                                      std::vector<double> & vect) const {
   Log::trace() << "LocalInterpolator<MODEL>::applyTL starting" << std::endl;
   util::Timer timer(classname(), "applyTL");
-  detail::ApplyHelper<MODEL>::apply(*interpolator_, vars, dx, vect);
+  ::detail::ApplyHelper<MODEL>::apply(*interpolator_, vars, dx, vect);
   Log::trace() << "LocalInterpolator<MODEL>::applyTL done" << std::endl;
 }
 
@@ -388,7 +337,7 @@ void LocalInterpolator<MODEL>::apply(const Variables & vars, const atlas::FieldS
                                      std::vector<double> & vect) const {
   Log::trace() << "LocalInterpolator<MODEL>::apply(FieldSet) starting" << std::endl;
   util::Timer timer(classname(), "applyTL");
-  detail::ApplyAtlasHelper<MODEL>::apply(*interpolator_, vars, fs, mask, vect);
+  ::detail::ApplyAtlasHelper<MODEL>::apply(*interpolator_, vars, fs, mask, vect);
   Log::trace() << "LocalInterpolator<MODEL>::apply(FieldSet) done" << std::endl;
 }
 
@@ -399,7 +348,7 @@ void LocalInterpolator<MODEL>::apply(const Variables & vars, const atlas::FieldS
                                      std::vector<double> & vect) const {
   Log::trace() << "LocalInterpolator<MODEL>::apply(FieldSet) starting" << std::endl;
   util::Timer timer(classname(), "applyTL");
-  detail::ApplyAtlasHelper<MODEL>::apply(*interpolator_, vars, fs, vect);
+  ::detail::ApplyAtlasHelper<MODEL>::apply(*interpolator_, vars, fs, vect);
   Log::trace() << "LocalInterpolator<MODEL>::apply(FieldSet) done" << std::endl;
 }
 
@@ -411,7 +360,7 @@ void LocalInterpolator<MODEL>::applyAD(const Variables & vars, Increment_ & dx,
                                        const std::vector<double> & vect) const {
   Log::trace() << "LocalInterpolator<MODEL>::applyAD starting" << std::endl;
   util::Timer timer(classname(), "applyAD");
-  detail::ApplyHelper<MODEL>::applyAD(*interpolator_, vars, dx, mask, vect);
+  ::detail::ApplyHelper<MODEL>::applyAD(*interpolator_, vars, dx, mask, vect);
   Log::trace() << "LocalInterpolator<MODEL>::applyAD done" << std::endl;
 }
 
@@ -421,7 +370,7 @@ void LocalInterpolator<MODEL>::applyAD(const Variables & vars, Increment_ & dx,
                                        const std::vector<double> & vect) const {
   Log::trace() << "LocalInterpolator<MODEL>::applyAD starting" << std::endl;
   util::Timer timer(classname(), "applyAD");
-  detail::ApplyHelper<MODEL>::applyAD(*interpolator_, vars, dx, vect);
+  ::detail::ApplyHelper<MODEL>::applyAD(*interpolator_, vars, dx, vect);
   Log::trace() << "LocalInterpolator<MODEL>::applyAD done" << std::endl;
 }
 
@@ -433,7 +382,7 @@ void LocalInterpolator<MODEL>::applyAD(const Variables & vars, atlas::FieldSet &
                                        const std::vector<double> & vect) const {
   Log::trace() << "LocalInterpolator<MODEL>::applyAD(FieldSet) starting" << std::endl;
   util::Timer timer(classname(), "applyAD");
-  detail::ApplyAtlasHelper<MODEL>::applyAD(*interpolator_, vars, fs, mask, vect);
+  ::detail::ApplyAtlasHelper<MODEL>::applyAD(*interpolator_, vars, fs, mask, vect);
   Log::trace() << "LocalInterpolator<MODEL>::applyAD(FieldSet) done" << std::endl;
 }
 
@@ -444,34 +393,8 @@ void LocalInterpolator<MODEL>::applyAD(const Variables & vars, atlas::FieldSet &
                                        const std::vector<double> & vect) const {
   Log::trace() << "LocalInterpolator<MODEL>::applyAD(FieldSet) starting" << std::endl;
   util::Timer timer(classname(), "applyAD");
-  detail::ApplyAtlasHelper<MODEL>::applyAD(*interpolator_, vars, fs, vect);
+  ::detail::ApplyAtlasHelper<MODEL>::applyAD(*interpolator_, vars, fs, vect);
   Log::trace() << "LocalInterpolator<MODEL>::applyAD(FieldSet) done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void LocalInterpolator<MODEL>::bufferToFieldSet(const Variables & vars,
-                                                const std::vector<size_t> & buffer_indices,
-                                                const std::vector<double> & buffer,
-                                                atlas::FieldSet & target) {
-  Log::trace() << "LocalInterpolator<MODEL>::bufferToFieldSet starting" << std::endl;
-  util::Timer timer(classname(), "bufferToFieldSet");
-  detail::BufferToAtlasHelper<MODEL>::bufferToFieldSet(vars, buffer_indices, buffer, target);
-  Log::trace() << "LocalInterpolator<MODEL>::bufferToFieldSet done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void LocalInterpolator<MODEL>::bufferToFieldSetAD(const Variables & vars,
-                                                  const std::vector<size_t> & buffer_indices,
-                                                  std::vector<double> & buffer,
-                                                  const atlas::FieldSet & target) {
-  Log::trace() << "LocalInterpolator<MODEL>::bufferToFieldSetAD starting" << std::endl;
-  util::Timer timer(classname(), "bufferToFieldSetAD");
-  detail::BufferToAtlasHelper<MODEL>::bufferToFieldSetAD(vars, buffer_indices, buffer, target);
-  Log::trace() << "LocalInterpolator<MODEL>::bufferToFieldSet done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

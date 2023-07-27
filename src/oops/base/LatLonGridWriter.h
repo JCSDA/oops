@@ -17,8 +17,6 @@
 #include "atlas/functionspace/PointCloud.h"
 #include "atlas/grid.h"
 
-#include "eckit/config/LocalConfiguration.h"
-
 #include "oops/base/Geometry.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/GlobalInterpolator.h"
@@ -169,6 +167,10 @@ class LatLonGridWriterParameters : public Parameters {
   OOPS_CONCRETE_PARAMETERS(LatLonGridWriterParameters, Parameters)
 
  public:
+  // Local interpolator type: currently has to be either "atlas interpolator" or
+  // "oops unstructured grid interpolator". (see GlobalInterpolator for supported
+  // interpolators)
+  RequiredParameter<std::string> interpType{"local interpolator type", this};
   // Grid spacing in degrees. The output grid will be an atlas "LN" latlon grid with (2N+1) latitude
   // (incl both poles) and 4N longitude samples. N will be determined so that the resolution at the
   // equator is equal to, or slightly finer than, the requested resolution.
@@ -202,7 +204,7 @@ class LatLonGridWriter : public util::Printable  {
 
   const eckit::mpi::Comm & comm_;
   std::unique_ptr<atlas::functionspace::PointCloud> targetFunctionSpace_;
-  std::unique_ptr<oops::GlobalInterpolator<MODEL>> interp_;
+  std::unique_ptr<oops::GlobalInterpolator> interp_;
 
   size_t gridRes_;
   Variables vars_;
@@ -245,9 +247,9 @@ LatLonGridWriter<MODEL>::LatLonGridWriter(
     targetFunctionSpace_.reset(new atlas::functionspace::PointCloud(empty));
   }
 
-  const eckit::LocalConfiguration emptyConf{};
-  interp_.reset(new oops::GlobalInterpolator<MODEL>(emptyConf,
-        sourceGeometry, *targetFunctionSpace_, sourceGeometry.getComm()));
+  interp_.reset(new oops::GlobalInterpolator(parameters.toConfiguration(),
+        sourceGeometry.generic(), *targetFunctionSpace_,
+        sourceGeometry.getComm()));
 }
 
 // -----------------------------------------------------------------------------

@@ -15,8 +15,8 @@
 #include "atlas/field.h"
 #include "eckit/config/Configuration.h"
 
+#include "oops/generic/LocalInterpolatorBase.h"
 #include "oops/util/ObjectCounter.h"
-#include "oops/util/Printable.h"
 
 namespace oops {
 
@@ -32,7 +32,7 @@ class State;
 
 // -----------------------------------------------------------------------------
 
-class UnstructuredInterpolator : public util::Printable,
+class UnstructuredInterpolator : public LocalInterpolatorBase,
                                  private util::ObjectCounter<UnstructuredInterpolator> {
  public:
   static const std::string classname() {return "oops::UnstructuredInterpolator";}
@@ -46,16 +46,16 @@ class UnstructuredInterpolator : public util::Printable,
                            const std::vector<double> &, const std::vector<double> &);
 
   // Interpolator interface with no target-point mask, i.e., interpolates to every target point.
-  void apply(const Variables &, const atlas::FieldSet &, std::vector<double> &) const;
-  void applyAD(const Variables &, atlas::FieldSet &, const std::vector<double> &) const;
+  void apply(const Variables &, const atlas::FieldSet &, std::vector<double> &) const override;
+  void applyAD(const Variables &, atlas::FieldSet &, const std::vector<double> &) const override;
 
   // Interpolator interface with a target-point mask, i.e., interpolates to target points for which
   // the mask is true. At points for which mask is false, the return vector is unmodified from its
   // input state.
   void apply(const Variables &, const atlas::FieldSet &, const std::vector<bool> &,
-             std::vector<double> &) const;
+             std::vector<double> &) const override;
   void applyAD(const Variables &, atlas::FieldSet &, const std::vector<bool> &,
-               const std::vector<double> &) const;
+               const std::vector<double> &) const override;
 
   // MODEL-specific interface to generic interpolator
   template <typename MODEL>
@@ -73,15 +73,6 @@ class UnstructuredInterpolator : public util::Printable,
   template <typename MODEL>
   void applyAD(const Variables &, Increment<MODEL> &, const std::vector<bool> &,
                const std::vector<double> &) const;
-
-  // Unscramble MPI buffer into the model's FieldSet representation
-  // Methods are static because they do NOT rely on any internal state of the interpolator; they
-  // only encode the inverse of the transformation done in apply() to get an MPI buffer from the
-  // FieldSet
-  static void bufferToFieldSet(const Variables &, const std::vector<size_t> &,
-                               const std::vector<double> &, atlas::FieldSet &);
-  static void bufferToFieldSetAD(const Variables &, const std::vector<size_t> &,
-                                 std::vector<double> &, const atlas::FieldSet &);
 
  private:
   // Small struct to help organize the interpolation matrices (= stencils and weights)

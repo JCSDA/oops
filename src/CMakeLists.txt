@@ -218,8 +218,9 @@ oops/generic/gc99.h
 oops/generic/gc99.cc
 oops/generic/gc99_mod.F90
 oops/generic/GeoVaLsWriter.h
-oops/generic/GlobalAtlasInterpolator.h
+oops/generic/GlobalInterpolator.cc
 oops/generic/GlobalInterpolator.h
+oops/generic/GlobalTemplatedInterpolator.h
 oops/generic/HtlmCalculator.h
 oops/generic/HtlmEnsemble.h
 oops/generic/HtlmRegularization.cc
@@ -228,6 +229,8 @@ oops/generic/HybridLinearModel.h
 oops/generic/HybridLinearModelCoeffs.h
 oops/generic/IdentityLinearModel.h
 oops/generic/IdentityModel.h
+oops/generic/LocalInterpolatorBase.cc
+oops/generic/LocalInterpolatorBase.h
 oops/generic/instantiateLinearModelFactory.h
 oops/generic/instantiateModelFactory.h
 oops/generic/instantiateObsErrorFactory.h

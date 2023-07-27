@@ -17,9 +17,8 @@
 #include "eckit/config/Configuration.h"
 
 #include "oops/base/GeometryData.h"
-#include "oops/generic/UnstructuredInterpolator.h"
+#include "oops/generic/LocalInterpolatorBase.h"
 #include "oops/util/ObjectCounter.h"
-#include "oops/util/Printable.h"
 
 namespace oops {
 
@@ -34,7 +33,7 @@ class State;
 template <typename MODEL>
 class Increment;
 
-class AtlasInterpolator : public util::Printable,
+class AtlasInterpolator : public LocalInterpolatorBase,
                           private util::ObjectCounter<AtlasInterpolator> {
  public:
   /// Class name string.
@@ -107,14 +106,6 @@ class AtlasInterpolator : public util::Printable,
   void applyAD(const Variables& variables, Increment<MODEL>& inc,
                const std::vector<bool>& mask,
                const std::vector<double>& targetFieldVec) const;
-
-  /// Buffer to FieldSet method from UnstructuredInterpolator.
-  static constexpr auto bufferToFieldSet =
-      &UnstructuredInterpolator::bufferToFieldSet;
-
-  /// Buffer to FieldSet adjoint method from UnstructuredInterpolator.
-  static constexpr auto bufferToFieldSetAD =
-      &UnstructuredInterpolator::bufferToFieldSetAD;
 
  protected:
   /// Apply pre-processing to sourceFields (overridable)

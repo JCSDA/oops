@@ -32,7 +32,7 @@
 #include "eckit/testing/Test.h"
 
 #include "oops/base/Variables.h"
-#include "oops/generic/GlobalInterpolator.h"
+#include "oops/generic/GlobalTemplatedInterpolator.h"
 #include "oops/runs/Test.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Random.h"
