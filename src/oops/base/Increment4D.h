@@ -39,6 +39,7 @@ template<typename MODEL> class Increment4D : public IncrementSet<MODEL> {
   Increment4D(const Geometry_ &, const Increment4D &);
 
   void ones();
+  void dirac(const eckit::Configuration &);
 
  private:
   std::string classname() const {return "Increment4D";}
@@ -86,6 +87,22 @@ void Increment4D<MODEL>::ones() {
 }
 
 // -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment4D<MODEL>::dirac(const eckit::Configuration & conf) {
+  if (this->time_size() == 1) {
+    this->increments()[0].dirac(conf);
+  } else {
+    const std::vector<eckit::LocalConfiguration> confs = conf.getSubConfigurations();
+    ASSERT(this->time_size() == confs.size());
+    for (size_t jt = 0; jt < this->local_time_size(); ++jt) {
+      const size_t it = this->commTime().rank() * this->local_time_size() + jt;
+      if (!confs[it].empty()) {
+        this->increments()[jt].dirac(confs[it]);
+      }
+    }
+  }
+}
 
 }  // namespace oops
 
