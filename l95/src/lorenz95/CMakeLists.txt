@@ -86,6 +86,4 @@ ecbuild_add_library( TARGET lorenz95
                      HEADER_DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/l95
                      LINKER_LANGUAGE CXX )
 
-#TODO: Reenable cxx_std_14 when supported by intel jedi-stack modules (jedi-stack #125)
-target_compile_features( lorenz95 PUBLIC cxx_std_11 )
 target_include_directories( lorenz95 PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..> )
