@@ -1,5 +1,6 @@
 /*
- * (C) Copyright 2021-2022 UCAR.
+ * (C) Copyright 2022-2023 UCAR.
+ * (C) Crown copyright 2022-2023 Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -8,176 +9,109 @@
 #ifndef OOPS_GENERIC_HYBRIDLINEARMODEL_H_
 #define OOPS_GENERIC_HYBRIDLINEARMODEL_H_
 
-#include <memory>
 #include <string>
 
-#include "oops/base/Geometry.h"
-#include "oops/base/State.h"
-#include "oops/base/Variables.h"
 #include "oops/generic/HybridLinearModelCoeffs.h"
-#include "oops/generic/LinearModelBase.h"
-#include "oops/interface/ModelAuxControl.h"
-#include "oops/util/Duration.h"
-#include "oops/util/Logger.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
 
 template <typename MODEL>
 class HybridLinearModelParameters : public LinearModelParametersBase {
   OOPS_CONCRETE_PARAMETERS(HybridLinearModelParameters, LinearModelParametersBase)
-  typedef HybridLinearModelCoeffsParameters<MODEL>      HybridLinearModelCoeffsParameters_;
+  typedef HtlmSimplifiedLinearModelParameters<MODEL>    SimplifiedLinearModelParameters_;
+  typedef HybridLinearModelCoeffsParameters<MODEL>      CoeffsParameters_;
 
  public:
-  oops::RequiredParameter<util::Duration> tstep{"tstep", this};
-  oops::RequiredParameter<Variables> vars{"increment variables", this};
-  // Option to specify which TLM will be used to generate ensemble for coefficient calculation
-  oops::RequiredParameter<eckit::LocalConfiguration> simplifiedTLM{"simplified linear model", this};
-  oops::RequiredParameter<HybridLinearModelCoeffsParameters_> htlmCoeffs
-    {"htlm coefficient calc", this};
+  RequiredParameter<util::Duration> updateTstep{"update tstep", this};
+  RequiredParameter<Variables> updateVars{"update variables", this};
+  RequiredParameter<SimplifiedLinearModelParameters_>
+    simplifiedLinearModel{"simplified linear model", this};
+  RequiredParameter<CoeffsParameters_> coeffs{"coefficients", this};
 };
 
-// Generic implementation of Hybrid linear model
+//------------------------------------------------------------------------------
+
 template <typename MODEL>
 class HybridLinearModel : public LinearModelBase<MODEL> {
-  typedef Geometry<MODEL>                          Geometry_;
-  typedef Increment<MODEL>                         Increment_;
-  typedef HybridLinearModelCoeffs<MODEL>           HybridLinearModelCoeffs_;
-  typedef ModelAuxControl<MODEL>                   ModelAuxCtl_;
-  typedef ModelAuxIncrement<MODEL>                 ModelAuxInc_;
-  typedef State<MODEL>                             State_;
-  typedef LinearModelBase<MODEL>                   LinearModelBase_;
-  typedef LinearModelFactory<MODEL>                LinearModelFactory_;
-  typedef LinearModelParametersWrapper<MODEL>      LinearModelParametersWrapper_;
+  typedef Geometry<MODEL>                     Geometry_;
+  typedef HtlmCalculator<MODEL>               HtlmCalculator_;
+  typedef HtlmEnsemble<MODEL>                 HtlmEnsemble_;
+  typedef HtlmSimplifiedLinearModel<MODEL>    HtlmSimplifiedLinearModel_;
+  typedef HybridLinearModelCoeffs<MODEL>      HybridLinearModelCoeffs_;
+  typedef Increment<MODEL>                    Increment_;
+  typedef ModelAuxControl<MODEL>              ModelAuxCtl_;
+  typedef ModelAuxIncrement<MODEL>            ModelAuxInc_;
+  typedef State<MODEL>                        State_;
 
  public:
-  typedef HybridLinearModelParameters<MODEL>           Parameters_;
+  typedef HybridLinearModelParameters<MODEL>    Parameters_;
 
+  HybridLinearModel(const Geometry_ &, const Parameters_ &);
   static const std::string classname() {return "oops::HybridLinearModel";}
 
-  HybridLinearModel(const Geometry_ &, const HybridLinearModelParameters<MODEL> &);
-
-// initialize tangent linear forecast
-  void initializeTL(Increment_ &) const override;
-// one tangent linear forecast step
+  void initializeTL(Increment_ &) const override {}
   void stepTL(Increment_ &, const ModelAuxInc_ &) const override;
-// finalize tangent linear forecast
-  void finalizeTL(Increment_ &) const override;
+  void finalizeTL(Increment_ &) const override {}
 
-// initialize adjoint forecast
-  void initializeAD(Increment_ &) const override;
-// one adjoint forecast step
+  void initializeAD(Increment_ &) const override {}
   void stepAD(Increment_ &, ModelAuxInc_ &) const override;
-// finalize adjoint forecast
-  void finalizeAD(Increment_ &) const override;
+  void finalizeAD(Increment_ &) const override {}
 
-// set trajectory
   void setTrajectory(const State_ &, State_ &, const ModelAuxCtl_ &) override;
 
-// linear model time step
-  const util::Duration & timeResolution() const override {return params_.tstep;}
-// linear model variables
-  const oops::Variables & variables() const override {return params_.vars;}
+  const util::Duration & timeResolution() const override {return updateTstep_;}
+  const oops::Variables & variables() const override {return updateVars_;}
 
  private:
   void print(std::ostream &) const override {}
-  const  HybridLinearModelParameters<MODEL> params_;
-  std::unique_ptr<LinearModelBase_> simplifiedLinearModel_;
-  const HybridLinearModelCoeffs_ htlmCoeffs_;
-  size_t stepsPerUpdate_;
+  const util::Duration updateTstep_;
+  const Variables updateVars_;
+  HtlmSimplifiedLinearModel_ simplifiedLinearModel_;
+  HybridLinearModelCoeffs_ coeffs_;
 };
 
 //------------------------------------------------------------------------------
 
 template<typename MODEL>
-HybridLinearModel<MODEL>::HybridLinearModel(const Geometry_ & resol,
-                                                 const HybridLinearModelParameters<MODEL> & params)
-  : params_(params), htlmCoeffs_(params.htlmCoeffs.value(), resol, params_.tstep.value()) {
-    Log::trace() << "HybridLinearModel<MODEL>::HybridLinearModel() starting" << std::endl;
-
-    // Instantiate the simplified tangent linear model.
-    LinearModelParametersWrapper_ simplifiedTLMParameters;
-    simplifiedTLMParameters.validateAndDeserialize(params.simplifiedTLM);
-    simplifiedLinearModel_.reset(LinearModelFactory_::create(
-          resol, simplifiedTLMParameters.linearModelParameters));
-    if (params_.tstep.value() % simplifiedLinearModel_->timeResolution()) {
-      ABORT("HybridLinearModel<MODEL>::HybridLinearModel(): hybrid linear model time step must be "
-            "an exact multiple of simplified linear model timestep");
-    }
-    stepsPerUpdate_ = params_.tstep.value().toSeconds()  // see note in ::stepTL()
-                      / simplifiedLinearModel_->timeResolution().toSeconds();
-    Log::trace() << "HybridLinearModel<MODEL>::HybridLinearModel() done" << std::endl;
-}
-
-//------------------------------------------------------------------------------
-
-template<typename MODEL>
-void HybridLinearModel<MODEL>::initializeTL(Increment_ & dx) const {
-  Log::trace() << "HybridLinearModel<MODEL>::initializeTL done" << std::endl;
-  simplifiedLinearModel_->initializeTL(dx);
+HybridLinearModel<MODEL>::HybridLinearModel(const Geometry_ & updateGeometry,
+                                            const Parameters_ & params)
+: updateTstep_(params.updateTstep), updateVars_(params.updateVars),
+  simplifiedLinearModel_(params.simplifiedLinearModel, updateGeometry),
+  coeffs_(params.coeffs, updateGeometry, updateTstep_, simplifiedLinearModel_) {
+  Log::trace() << "HybridLinearModel<MODEL>::HybridLinearModel() starting" << std::endl;
+  Log::trace() << "HybridLinearModel<MODEL>::HybridLinearModel() done" << std::endl;
 }
 
 //------------------------------------------------------------------------------
 
 template<typename MODEL>
 void HybridLinearModel<MODEL>::stepTL(Increment_ & dx, const ModelAuxInc_ & merr) const {
-  Log::trace() << "HybridLinearModel<MODEL>:stepTL Starting " << std::endl;
-  // Note: this loop over stepsPerUpdate_ must be kept equivalent to that in HtlmEnsemble::step(),
-  // to ensure that the hybrid TLM is trained in the same way that it is used.
-  for (size_t t = 0; t < stepsPerUpdate_; t++) {
-    simplifiedLinearModel_->stepTL(dx, merr);
-  }
-  htlmCoeffs_.updateIncTL(dx);
-  Log::trace() << "HybridLinearModel<MODEL>::stepTL done" << std::endl;
-}
-
-//------------------------------------------------------------------------------
-
-template<typename MODEL>
-void HybridLinearModel<MODEL>::finalizeTL(Increment_ & dx) const {
-  Log::trace() << "HybridLinearModel<MODEL>::finalizeTL done" << std::endl;
-  simplifiedLinearModel_->finalizeTL(dx);
-}
-
-//------------------------------------------------------------------------------
-
-template<typename MODEL>
-void HybridLinearModel<MODEL>::initializeAD(Increment_ & dx) const {
-  Log::trace() << "HybridLinearModel<MODEL>::initializeAD done" << std::endl;
-  simplifiedLinearModel_->initializeAD(dx);
+  Log::trace() << "HybridLinearModel<MODEL>::stepTL() starting" << std::endl;
+  simplifiedLinearModel_.forecastSimplifiedTL(dx, merr, updateTstep_);
+  coeffs_.updateIncTL(dx);
+  Log::trace() << "HybridLinearModel<MODEL>::stepTL() done" << std::endl;
 }
 
 //------------------------------------------------------------------------------
 
 template<typename MODEL>
 void HybridLinearModel<MODEL>::stepAD(Increment_ & dx, ModelAuxInc_ & merr) const {
-  Log::trace() << "HybridLinearModel<MODEL>:stepAD Starting " << std::endl;
-  htlmCoeffs_.updateIncAD(dx);
-  for (size_t t = 0; t < stepsPerUpdate_; t++) {  // see note in ::stepTL()
-    simplifiedLinearModel_->stepAD(dx, merr);
-  }
-  Log::trace() << "HybridLinearModel<MODEL>::stepAD done" << std::endl;
+  Log::trace() << "HybridLinearModel<MODEL>::stepAD() starting" << std::endl;
+  coeffs_.updateIncAD(dx);
+  simplifiedLinearModel_.forecastSimplifiedAD(dx, merr, updateTstep_);
+  Log::trace() << "HybridLinearModel<MODEL>::stepAD() done" << std::endl;
 }
 
 //------------------------------------------------------------------------------
 
 template<typename MODEL>
-void HybridLinearModel<MODEL>::finalizeAD(Increment_ & dx) const {
-  Log::trace() << "HybridLinearModel<MODEL>::finalizeAD done" << std::endl;
-  simplifiedLinearModel_->finalizeAD(dx);
+void HybridLinearModel<MODEL>::setTrajectory(const State_ & x,
+                                             State_ & xlr,
+                                             const ModelAuxCtl_ & maux) {
+  Log::trace() << "HybridLinearModel<MODEL>::setTrajectory() starting" << std::endl;
+  simplifiedLinearModel_.setSimplifiedTrajectory(x , xlr, maux);
+  Log::trace() << "HybridLinearModel<MODEL>::setTrajectory() done" << std::endl;
 }
-
-//------------------------------------------------------------------------------
-
-template<typename MODEL>
-void HybridLinearModel<MODEL>::setTrajectory(const State_ & x, State_ & xlr,
-                                               const ModelAuxCtl_ & maux) {
-  Log::trace() << "HybridLinearModel<MODEL>::finalizeAD done" << std::endl;
-  simplifiedLinearModel_->setTrajectory(x , xlr, maux);
-}
-
-//------------------------------------------------------------------------------
 
 }  // namespace oops
 

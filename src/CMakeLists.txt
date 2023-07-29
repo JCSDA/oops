@@ -225,6 +225,7 @@ oops/generic/HtlmCalculator.h
 oops/generic/HtlmEnsemble.h
 oops/generic/HtlmRegularization.cc
 oops/generic/HtlmRegularization.h
+oops/generic/HtlmSimplifiedLinearModel.h
 oops/generic/HybridLinearModel.h
 oops/generic/HybridLinearModelCoeffs.h
 oops/generic/IdentityLinearModel.h
@@ -249,7 +250,6 @@ oops/generic/soar.cc
 oops/generic/UnstructuredInterpolator.h
 oops/generic/UnstructuredInterpolator.cc
 oops/generic/VerticalLocEV.h
-oops/generic/HybridLinearModel.h
 
 oops/interface/AnalyticInitBase.h
 oops/interface/ErrorCovariance.h

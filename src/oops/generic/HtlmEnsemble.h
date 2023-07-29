@@ -1,6 +1,6 @@
 /*
- * (C) Copyright 2022 MetOffice.
- * (C) Copyright 2021-2022 UCAR.
+ * (C) Copyright 2022-2023 UCAR.
+ * (C) Crown copyright 2022-2023 Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -12,26 +12,10 @@
 #include <memory>
 #include <string>
 
-#include "oops/base/Geometry.h"
-#include "oops/base/Increment.h"
-#include "oops/base/Increment4D.h"
 #include "oops/base/IncrementEnsemble.h"
-#include "oops/base/LinearModel.h"
 #include "oops/base/Model.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
-#include "oops/base/PostProcessor.h"
-#include "oops/base/State.h"
-#include "oops/base/State4D.h"
-#include "oops/base/StateEnsemble.h"
-#include "oops/base/Variables.h"
-#include "oops/generic/LinearModelBase.h"
-#include "oops/interface/ModelAuxControl.h"
-#include "oops/util/DateTime.h"
-#include "oops/util/Duration.h"
-#include "oops/util/Expect.h"
-#include "oops/util/Logger.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
+#include "oops/generic/HtlmSimplifiedLinearModel.h"
 
 namespace oops {
 
@@ -73,7 +57,6 @@ void NonLinearEnsembleParameters<MODEL>::check() const
   }
 }
 
-// parameters for forwarding the ensemble.
 template <typename MODEL>
 class HtlmEnsembleParameters : public Parameters {
   OOPS_CONCRETE_PARAMETERS(HtlmEnsembleParameters, Parameters);
@@ -83,7 +66,6 @@ class HtlmEnsembleParameters : public Parameters {
   typedef typename Geometry<MODEL>::Parameters_ GeometryParameters_;
   typedef NonLinearEnsembleParameters<MODEL>    NlEnsParameters_;
 
-
  public:
   // Nonlinear forecast model.
   RequiredParameter<ModelParameters_> model{"model", this};
@@ -92,8 +74,6 @@ class HtlmEnsembleParameters : public Parameters {
   // Augmented model state
   Parameter<eckit::LocalConfiguration> modelAuxControl{"model aux control",
     eckit::LocalConfiguration(), this};
-  // Linear model.
-  RequiredParameter<eckit::LocalConfiguration> linearModel{"coeff linear model", this};
   // Augmented Model Increment
   Parameter<eckit::LocalConfiguration> modelAuxIncrement{"model aux increment",
     eckit::LocalConfiguration(), this};
@@ -105,12 +85,10 @@ class HtlmEnsembleParameters : public Parameters {
   RequiredParameter<NlEnsParameters_> nlEnsemble{"non linear ensemble", this};
 };
 
-// class declarations for htlmensemble
 template <typename MODEL>
 class HtlmEnsemble{
   typedef Geometry<MODEL>                               Geometry_;
   typedef Model<MODEL>                                  Model_;
-  typedef LinearModel<MODEL>                            LinearModel_;
   typedef ModelAuxControl<MODEL>                        ModelAux_;
   typedef ModelAuxIncrement<MODEL>                      ModelAuxIncrement_;
   typedef State<MODEL>                                  State_;
@@ -123,37 +101,25 @@ class HtlmEnsemble{
   typedef ModelSpaceCovarianceBase<MODEL>               CovarianceBase_;
   typedef CovarianceFactory<MODEL>                      CovarianceFactory_;
   typedef ModelSpaceCovarianceParametersBase<MODEL>     CovarianceParametersBase_;
+  typedef HtlmSimplifiedLinearModel<MODEL>              HtlmSimplifiedLinearModel_;
 
  public:
   static const std::string classname() {return "oops::HtlmEnsemble";}
 
+  HtlmEnsemble(const HtlmEnsembleParameters_ &, const Variables &, const Geometry_ &);
+  void step(const util::Duration &, HtlmSimplifiedLinearModel_ &);
 
-// constructor
-
-  /* The geometry for the state is a yaml parameter
-   The geometry passed in is used for the TLM geometry
-   This is ultimately first constructed in HybridLinearModel from its parameters */
-
-  HtlmEnsemble(const HtlmEnsembleParameters_ &, const Geometry_ &);
-
-
-  void step(const util::Duration &);
-
-
-  // Needed accessors for passing info to calculator
   IncrementEnsemble_ & getLinearEns() {return linearEnsemble_;}
   IncrementEnsemble_ & getLinearErrDe() {return linearErrorDe_;}
+  const size_t size() const {return linearEnsemble_.size();}
 
  private:
   const HtlmEnsembleParameters_ params_;
   const size_t ensembleSize_;
   const Geometry_ stateGeometry_;
   const Geometry_ & incrementGeometry_;
-
   //  Model
   const Model_ model_;
-  // ptr to linear model
-  LinearModel_ simpleLinearModel_;
   //  control member IC
   State4D_ controlState_;
   //  Augmented state
@@ -173,22 +139,22 @@ class HtlmEnsemble{
 //----------------------------------------------------------------------------------
 
 template<typename MODEL>
-HtlmEnsemble<MODEL>::HtlmEnsemble(const HtlmEnsembleParameters_
-                                                        & params, const Geometry_ & geomTLM)
+HtlmEnsemble<MODEL>::HtlmEnsemble(const HtlmEnsembleParameters_ & params,
+                                  const Variables & simplifiedLinearModelVars,
+                                  const Geometry_ & updateGeometry)
     : params_(params), ensembleSize_(params.ensembleSize),
-      stateGeometry_(params.stateGeometry.value(), geomTLM.getComm()),
-      incrementGeometry_(geomTLM),
+      stateGeometry_(params.stateGeometry.value(), updateGeometry.getComm()),
+      incrementGeometry_(updateGeometry),
       model_(stateGeometry_, params_.model.value().modelParameters.value()),
-      simpleLinearModel_(geomTLM, params_.linearModel),
       controlState_(stateGeometry_, params_.control.value().toConfiguration()),
       moderr_(stateGeometry_, params_.modelAuxControl.value()),
       modauxinc_(incrementGeometry_, params_.modelAuxIncrement.value()),
       perturbedStates_(params_.nlEnsemble.value().statesReadIn.value() != boost::none ?
              StateEnsemble_(stateGeometry_, *params_.nlEnsemble.value().statesReadIn.value()) :
                                                    StateEnsemble_(controlState_[0], ensembleSize_)),
-      linearEnsemble_(incrementGeometry_, simpleLinearModel_.variables(),
+      linearEnsemble_(incrementGeometry_, simplifiedLinearModelVars,
                       controlState_[0].validTime(), ensembleSize_),
-      nonLinearDifferences_(incrementGeometry_, simpleLinearModel_.variables(),
+      nonLinearDifferences_(incrementGeometry_, simplifiedLinearModelVars,
                             controlState_[0].validTime(), ensembleSize_),
       linearErrorDe_(nonLinearDifferences_) {
     Log::trace() << "HtlmEnsemble<MODEL>::HtlmEnsemble() starting"
@@ -228,23 +194,16 @@ HtlmEnsemble<MODEL>::HtlmEnsemble(const HtlmEnsembleParameters_
 //------------------------------------------------------------------------------
 
 template<typename MODEL>
-void HtlmEnsemble<MODEL>::step(const util::Duration & tstep)  {
+void HtlmEnsemble<MODEL>::step(const util::Duration & tstep,
+                               HtlmSimplifiedLinearModel_ & simplifiedLinearModel)  {
     Log::trace() << "HtlmEnsemble<MODEL>::step() starting" << std::endl;
-    // Note: this loop over stepsPerUpdate must be kept equivalent to that in
-    // HybridLinearModel::stepTL() and ::stepAD(), to ensure that the hybrid TLM is trained in the
-    // same way that it is used.
-    const size_t stepsPerUpdate =
-      tstep.toSeconds() / simpleLinearModel_.timeResolution().toSeconds();
-    for (size_t t = 0; t < stepsPerUpdate; t++) {
-      State_ downsampled_Control(incrementGeometry_, controlState_[0]);
-      simpleLinearModel_.setTrajectory(controlState_[0], downsampled_Control, moderr_);
-      PostProcessor<State_> post;
-      model_.forecast(controlState_[0], moderr_, simpleLinearModel_.timeResolution(), post);
-      for (size_t m = 0; m < ensembleSize_; m++) {
-        model_.forecast(perturbedStates_[m], moderr_, simpleLinearModel_.timeResolution(), post);
-        simpleLinearModel_.forecastTL(linearEnsemble_[m], modauxinc_,
-                                      simpleLinearModel_.timeResolution());
-      }
+    State_ downsampled_Control(incrementGeometry_, controlState_[0]);
+    simplifiedLinearModel.setSimplifiedTrajectory(controlState_[0], downsampled_Control, moderr_);
+    PostProcessor<State_> post;
+    model_.forecast(controlState_[0], moderr_, tstep, post);
+    for (size_t m = 0; m < ensembleSize_; m++) {
+      model_.forecast(perturbedStates_[m], moderr_, tstep, post);
+      simplifiedLinearModel.forecastSimplifiedTL(linearEnsemble_[m], modauxinc_, tstep);
     }
     for (size_t m = 0; m < ensembleSize_; ++m) {
         nonLinearDifferences_[m].updateTime(tstep);
@@ -254,13 +213,8 @@ void HtlmEnsemble<MODEL>::step(const util::Duration & tstep)  {
     for (size_t m = 0; m < ensembleSize_; ++m) {
         linearErrorDe_[m] -= linearEnsemble_[m];
     }
-
     Log::trace() << "HtlmEnsemble<MODEL>::step() done" << std::endl;
 }
-
-
-//------------------------------------------------------------------------------
-
 
 }  // namespace oops
 

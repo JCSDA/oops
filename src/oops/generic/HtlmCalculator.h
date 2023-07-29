@@ -28,7 +28,6 @@ class HtlmCalculatorParameters : public Parameters {
   grid point and points above and below it in the vertical, evenly split when possible.
   For a grid point at say the bottom level, all influence points would be above it.
   The influence region also includes other model variables at the same locations.  */ 
-  RequiredParameter<atlas::idx_t> influenceRegionSize{"influence region size", this};
   Parameter<HtlmRegularizationParameters> regularizationParams{"regularization", {}, this};
   Parameter<bool>                 rms{"rms scaling", true, this};
 };
@@ -43,10 +42,11 @@ class HtlmCalculator{
  public:
   static const std::string classname() {return "oops::HtlmCalculator";}
   HtlmCalculator(const HtlmCalculatorParameters_ &, const Variables &, const size_t,
-                 const Geometry_ &, const size_t, const size_t, const util::DateTime &);
+                 const Geometry_ &, const size_t, const size_t, const util::DateTime &,
+                 const atlas::idx_t);
   void calcCoeffs(const IncrementEnsemble_ &,
-                 const IncrementEnsemble_ &,
-                 atlas::FieldSet &);
+                  const IncrementEnsemble_ &,
+                  atlas::FieldSet &) const;
 
  private:
   const HtlmCalculatorParameters_ params_;
@@ -68,8 +68,9 @@ HtlmCalculator<MODEL>::HtlmCalculator(const HtlmCalculatorParameters_ & params,
                                       const Geometry_ & geomTLM,
                                       const size_t nLocations,
                                       const size_t nLevels,
-                                      const util::DateTime & startTime)
-: params_(params), ensembleSize_(ensembleSize), influenceSize_(params_.influenceRegionSize.value()),
+                                      const util::DateTime & startTime,
+                                      const atlas::idx_t influenceRegionSize)
+: params_(params), ensembleSize_(ensembleSize), influenceSize_(influenceRegionSize),
   halfInfluenceSize_(influenceSize_/2), vars_(vars), horizExt_(nLocations), vertExt_(nLevels) {
   if (params_.regularizationParams.value().parts.value() == boost::none) {
     regularizationPtr_ = std::make_unique<HtlmRegularization>(params_.regularizationParams.value());
@@ -89,7 +90,7 @@ HtlmCalculator<MODEL>::HtlmCalculator(const HtlmCalculatorParameters_ & params,
 template<typename MODEL>
 void HtlmCalculator<MODEL>::calcCoeffs(const IncrementEnsemble_ & linearEnsemble,
                                        const IncrementEnsemble_ & linearErrorDe,
-                                       atlas::FieldSet & coeffFieldSet) {
+                                       atlas::FieldSet & coeffFieldSet) const {
   Log::trace() << "HtlmCalculator<MODEL>::coeffCalc() starting" << std::endl;
   // For each variable loop over every grid point and calculate the coefficient vector for each
   for (size_t varInd = 0; varInd < vars_.size(); ++varInd) {
