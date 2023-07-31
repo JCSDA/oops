@@ -39,8 +39,7 @@ GomL95::GomL95(const oops::Locations<L95ObsTraits> & locs,
 }
 // -----------------------------------------------------------------------------
 /*! Constructor with Configuration */
-GomL95::GomL95(const Parameters_ & params,
-               const ObsTable &, const oops::Variables &)
+GomL95::GomL95(const Parameters_ & params, const ObsTable &, const oops::Variables &)
   : size_(0), locval_()
 {
   this->read(params);

@@ -81,8 +81,7 @@ class ObsOperator : public util::Printable,
   void simulateObs(const GeoVaLs_ & x_int, ObsVector_ & y, const ObsAuxControl_ & obsaux,
                    ObsVector_ & obsbias, ObsDiags_ & obsdiags) const;
 
-  /// Variables required from the model State to compute obs operator. These variables
-  /// will be provided in GeoVaLs passed to simulateObs.
+  /// Variables required from the model State to compute the obs operator.
   const Variables & requiredVars() const;
 
   /// Return an object holding one or more collections of paths sampling the observation locations
@@ -95,6 +94,24 @@ class ObsOperator : public util::Printable,
   /// can ask for some or all variables to be interpolated along multiple paths sampling each
   /// observation location, for instance to then compute a weighted average.
   Locations_ locations() const;
+
+  /// \brief Convert values of model variables stored in the sampled format to the reduced format.
+  ///
+  /// This typically consists in computing, for each location, a weighted average of all the
+  /// profiles obtained by model field interpolation along the paths sampling that location.
+  ///
+  /// \param[in] vars
+  ///   List of variables whose reduced representation should be computed.
+  /// \param[inout] gvals
+  ///   A container for the sampled and reduced representations of the values of model variables.
+  ///   Values stored in the sampled format will already have been filled in by sampling model
+  ///   fields along the interpolation paths specified by locations(). This function needs to fill
+  ///   in the reduced representation of at least the variables `vars` (unless it is already
+  ///   available -- some implementations of the GeoVaLs interface automatically detect variables
+  ///   whose sampled and reduced formats are identical, store only their sampled representation
+  ///   and treat the reduced representation as an alias for the sampled one). It may optionally
+  ///   compute the reduced representation of other variables as well.
+  void computeReducedVars(const oops::Variables & vars, GeoVaLs_ & gvals) const;
 
  private:
   /// Print, used for logging
@@ -156,6 +173,15 @@ Locations<OBS> ObsOperator<OBS>::locations() const {
   Log::trace() << "ObsOperator<OBS>::locations starting" << std::endl;
   util::Timer timer(name_, "locations");
   return oper_->locations();
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+void ObsOperator<OBS>::computeReducedVars(const oops::Variables & vars, GeoVaLs_ & gvals) const {
+  Log::trace() << "ObsOperator<OBS>::computeReducedVars starting" << std::endl;
+  util::Timer timer(name_, "computeReducedVars");
+  oper_->computeReducedVars(vars, gvals.geovals());
 }
 
 // -----------------------------------------------------------------------------

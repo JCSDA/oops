@@ -231,11 +231,14 @@ template <typename OBS> void testLinearity() {
     const ObsAuxCtrl_ ybias(Test_::obspace()[jj], obsTypeParams.obsBias);
     ObsAuxIncr_ ybinc(Test_::obspace()[jj], obsTypeParams.obsBias);
 
-    // read geovals from the file
+    // initialize geovals
     oops::Variables hopvars = hop.requiredVars();
-    hopvars += ybias.requiredVars();
-
-    const GeoVaLs_ gval(obsTypeParams.geovals, Test_::obspace()[jj], hopvars);
+    oops::Variables reducedHopvars = ybias.requiredVars();
+    hopvars += reducedHopvars;
+    // read geovals from the file (in the sampled format)
+    GeoVaLs_ gval(obsTypeParams.geovals, Test_::obspace()[jj], hopvars);
+    // convert geovals to the reduced format
+    hop.computeReducedVars(reducedHopvars, gval);
 
      // initialize Obs. Bias Covariance
     const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], obsTypeParams.obsBias);
@@ -247,7 +250,8 @@ template <typename OBS> void testLinearity() {
     ObsVector_ dy1(Test_::obspace()[jj]);
 
     // create geovals
-    GeoVaLs_ dx(obsTypeParams.geovals, Test_::obspace()[jj], hoptl.requiredVars());
+    const oops::Variables hoptlvars = hoptl.requiredVars();
+    GeoVaLs_ dx(obsTypeParams.geovals, Test_::obspace()[jj], hoptlvars);
 
     // test rms(H * (dx, ybinc)) = 0, when dx = 0
     dx.zero();
@@ -317,18 +321,23 @@ template <typename OBS> void testAdjoint() {
     // initialize Obs. Bias Covariance
     const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], obsTypeParams.obsBias);
 
-    // read geovals from the file
+    // initialize geovals
     oops::Variables hopvars = hop.requiredVars();
-    hopvars += ybias.requiredVars();
-    const GeoVaLs_ gval(obsTypeParams.geovals, Test_::obspace()[jj], hopvars);
+    oops::Variables reducedHopvars = ybias.requiredVars();
+    hopvars += reducedHopvars;  // the reduced format is derived from the sampled format
+    // read geovals from the file (in the sampled format)
+    GeoVaLs_ gval(obsTypeParams.geovals, Test_::obspace()[jj], hopvars);
+    // convert geovals to the reduced format
+    hop.computeReducedVars(reducedHopvars, gval);
 
     // set TL/AD trajectory to the geovals from the file
     hoptl.setTrajectory(gval, ybias);
 
     ObsVector_ dy1(Test_::obspace()[jj]);
     ObsVector_ dy2(Test_::obspace()[jj]);
-    GeoVaLs_ dx1(obsTypeParams.geovals, Test_::obspace()[jj], hoptl.requiredVars());
-    GeoVaLs_ dx2(obsTypeParams.geovals, Test_::obspace()[jj], hoptl.requiredVars());
+    const oops::Variables hoptlvars = hoptl.requiredVars();
+    GeoVaLs_ dx1(obsTypeParams.geovals, Test_::obspace()[jj], hoptlvars);
+    GeoVaLs_ dx2(obsTypeParams.geovals, Test_::obspace()[jj], hoptlvars);
 
     // calculate dy1 = H (dx1, ybinc1) (with random dx1, and random ybinc1)
     dx1.random();
@@ -402,12 +411,16 @@ template <typename OBS> void testTangentLinear() {
     // initialize Obs. Bias Covariance
     const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], obsTypeParams.obsBias);
 
-    // read geovals from the file
+    // initialize geovals
     oops::Variables hopvars = hop.requiredVars();
-    hopvars += ybias0.requiredVars();
-
-    const GeoVaLs_ x0(obsTypeParams.geovals, Test_::obspace()[jj], hopvars);
+    oops::Variables reducedHopvars = ybias0.requiredVars();
+    hopvars += reducedHopvars;  // the reduced format is derived from the sampled format
+    // read geovals from the file
+    GeoVaLs_ x0(obsTypeParams.geovals, Test_::obspace()[jj], hopvars);
     GeoVaLs_ x(obsTypeParams.geovals, Test_::obspace()[jj], hopvars);
+    // convert geovals to the reduced format
+    hop.computeReducedVars(reducedHopvars, x0);
+    hop.computeReducedVars(reducedHopvars, x);
 
     // set TL trajectory to the geovals and the bias coeff. from the files
     hoptl.setTrajectory(x0, ybias0);
@@ -428,7 +441,8 @@ template <typename OBS> void testTangentLinear() {
     hop.simulateObs(x0, y1, ybias0, bias, ydiag);
 
     // randomize dx and ybinc
-    GeoVaLs_ dx(obsTypeParams.geovals, Test_::obspace()[jj], hoptl.requiredVars());
+    const oops::Variables hoptlvars = hoptl.requiredVars();
+    GeoVaLs_ dx(obsTypeParams.geovals, Test_::obspace()[jj], hoptlvars);
     dx.random();
     ObsAuxIncr_ ybinc(Test_::obspace()[jj], obsTypeParams.obsBias);
     Bobsbias.randomize(ybinc);
@@ -491,10 +505,13 @@ template <typename OBS> void testException() {
     ObsAuxIncr_ ybinc(Test_::obspace()[jj], obsTypeParams.obsBias);
     const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], obsTypeParams.obsBias);
     oops::Variables hopvars = hop.requiredVars();
-    hopvars += ybias.requiredVars();
-    const GeoVaLs_ gval(obsTypeParams.geovals, Test_::obspace()[jj], hopvars);
+    oops::Variables reducedHopvars = ybias.requiredVars();
+    hopvars += reducedHopvars;
+    GeoVaLs_ gval(obsTypeParams.geovals, Test_::obspace()[jj], hopvars);
+    hop.computeReducedVars(reducedHopvars, gval);
     oops::Variables diagvars;
     diagvars += ybias.requiredHdiagnostics();
+    const oops::Variables hoptlvars = hoptl.requiredVars();
 
     if (obsTypeParams.expectSetTrajectoryToThrow.value() != boost::none) {
       // The setTrajectory method is expected to throw an exception
@@ -510,7 +527,7 @@ template <typename OBS> void testException() {
     if (obsTypeParams.expectSimulateObsTLToThrow.value() != boost::none) {
       hoptl.setTrajectory(gval, ybias);
       ObsVector_ dy1(Test_::obspace()[jj]);
-      GeoVaLs_ dx1(obsTypeParams.geovals, Test_::obspace()[jj], hoptl.requiredVars());
+      GeoVaLs_ dx1(obsTypeParams.geovals, Test_::obspace()[jj], hoptlvars);
       dx1.random();
       Bobsbias.randomize(ybinc);
       // The simulateObsTL method is expected to throw an exception
@@ -523,7 +540,7 @@ template <typename OBS> void testException() {
     if (obsTypeParams.expectSimulateObsADToThrow.value() != boost::none) {
       hoptl.setTrajectory(gval, ybias);
       ObsVector_ dy2(Test_::obspace()[jj]);
-      GeoVaLs_ dx2(obsTypeParams.geovals, Test_::obspace()[jj], hoptl.requiredVars());
+      GeoVaLs_ dx2(obsTypeParams.geovals, Test_::obspace()[jj], hoptlvars);
       Bobsbias.randomize(ybinc);
       dy2.random();
       dx2.zero();

@@ -24,7 +24,7 @@ integer, parameter :: max_string = 800
 !-------------------------------------------------------------------------------
 contains
 !-------------------------------------------------------------------------------
-!> Test uniform real distribution
+!> Test the Fortran interface to Variables
 !
 subroutine c_test_vars_interface(c_conf, c_vars) bind(c,name='test_vars_interface_f')
 implicit none
@@ -51,6 +51,17 @@ call vars%push_back(test_vars)
 varname = "newvar"
 call vars%push_back(varname)
 
+! check the clear method
+call vars%clear()
+if (vars%nvars() /= 0) then
+  write(err_msg,*) myname_ // " clear did not remove all variables"
+  call abor1_ftn(err_msg)
+endif
+
+! add the variables again
+call vars%push_back(test_vars)
+call vars%push_back(varname)
+
 ! check varlist method
 varlist = vars%varlist()
 
@@ -67,6 +78,17 @@ if (trim(varname) /= trim(varlist(jvar))) then
    write(err_msg,*) myname_ // " varlist incorrect: ", jvar, &
        & trim(varname) // " /= " // trim(varlist(jvar))
     call abor1_ftn(err_msg)
+endif
+
+! check the find method
+jvar = vars%find(varname)
+if (jvar < 0 .or. jvar > vars%nvars()) then
+  write(err_msg,*) myname_ // " find returned an out-of-bound index ", jvar
+  call abor1_ftn(err_msg)
+endif
+if (trim(vars%variable(jvar)) /= varname) then
+  write(err_msg,*) myname_ // " find returned an incorrect index ", jvar
+  call abor1_ftn(err_msg)
 endif
 
 end subroutine c_test_vars_interface

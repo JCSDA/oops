@@ -50,9 +50,15 @@ class ObsOperatorQG : public util::Printable,
   void simulateObs(const GomQG &, ObsVecQG &, const ObsBias &, ObsVecQG &, ObsDiagsQG &) const;
 
 /// Other
-  const oops::Variables & requiredVars() const;  // Required input requiredVars from Model
+  const oops::Variables & requiredVars() const;  // Required input vars from Model
+
 /// Model variable interpolation paths
   Locations_ locations() const;
+
+// All obs operators in the QG model simulate pointwise observations and ask for model variables
+// sampled just at the nominal observation locations, so there's no need to distinguish between
+// the sampled and reduced formats of GeoVaLs.
+  void computeReducedVars(const oops::Variables &, GomQG &) const {}
 
  private:
   void print(std::ostream &) const;

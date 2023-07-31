@@ -65,6 +65,8 @@ class ObservationL95 : public util::Printable,
   const oops::Variables & requiredVars() const {return inputs_;}
   oops::Locations<L95ObsTraits> locations() const;
 
+  void computeReducedVars(const oops::Variables &, GomL95 &) const {}
+
   const ObsTable & table() const {return obsdb_;}
 
  private:

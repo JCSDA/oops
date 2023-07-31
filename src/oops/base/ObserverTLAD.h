@@ -68,6 +68,7 @@ class ObserverTLAD {
   const ObsSpace_ &             obspace_;    // ObsSpace used in H(x)
   Variables                     hopVars_;
   VariableSizes                 hopVarSizes_;   // Sizes of variables requested from model
+  ObsOperator_                  hop_;        // Obs operator
   LinearObsOperator_            hoptlad_;    // Linear obs operator
   // Instances of GetValues. Each receives a list of model variables and a set of paths along which
   // these variables should be interpolated. The interpolated values are stored in a single GeoVaLs
@@ -86,6 +87,7 @@ class ObserverTLAD {
 template <typename MODEL, typename OBS>
 ObserverTLAD<MODEL, OBS>::ObserverTLAD(const ObsSpace_ & obsdb, const Parameters_ & params)
   : parameters_(params), obspace_(obsdb), hopVars_(), hopVarSizes_(),
+    hop_(obspace_, parameters_.obsOperator),
     hoptlad_(obspace_,
              params.linearObsOperator.value() != boost::none ?
                params.linearObsOperator.value().value() :
@@ -108,15 +110,12 @@ ObserverTLAD<MODEL, OBS>::initializeTraj(const Geometry_ & geom, const ObsAuxCtr
   Log::trace() << "ObserverTLAD::initializeTraj start" << std::endl;
   ybias_ = &ybias;
 
-//  hop is only needed to get locations and required vars
-  ObsOperator_ hop(obspace_, parameters_.obsOperator);
-
-  // Get the list of variables to be obtained from the model state or interpolation paths
-  oops::Variables geovars = hop.requiredVars();
+  // Get the list of variables to be obtained from the model state
+  oops::Variables geovars = hop_.requiredVars();
   geovars += ybias_->requiredVars();
 
   // Get the observation locations and their discretizations
-  locations_ = std::make_unique<Locations_>(hop.locations());
+  locations_ = std::make_unique<Locations_>(hop_.locations());
 
   // Variables grouped by the set of paths along which they'll be interpolated
   const std::vector<oops::Variables> groupedHopVars = groupVariablesByLocationSamplingMethod(
@@ -152,6 +151,10 @@ void ObserverTLAD<MODEL, OBS>::finalizeTraj() {
     getvals_[m]->fillGeoVaLs(geovals);
   }
 
+  // Compute the reduced representation of the GeoVaLs for which it's been requested
+  oops::Variables reducedVars = ybias_->requiredVars();
+  hop_.computeReducedVars(reducedVars, geovals);
+
   /// Set linearization trajectory for H(x)
   hoptlad_.setTrajectory(geovals, *ybias_);
 
@@ -163,6 +166,7 @@ template <typename MODEL, typename OBS>
 void ObserverTLAD<MODEL, OBS>::finalizeTL(const ObsAuxIncr_ & ybiastl, ObsVector_ & ydeptl) {
   Log::trace() << "ObserverTLAD::finalizeTL start" << std::endl;
 
+  // TODO(wsmigaj): should we allow linear operators to require also *reduced* GeoVaLs?
   GeoVaLs_ geovals(*locations_, hoptlad_.requiredVars(), hoptladVarSizes_);
 
   // Fill GeoVaLs

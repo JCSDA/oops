@@ -187,6 +187,11 @@ void Observer<MODEL, OBS>::finalize(ObsVector_ & yobsim) {
     getvals_[m]->fillGeoVaLs(geovals);
   }
 
+  // Compute the reduced representation of the GeoVaLs for which it's been requested
+  oops::Variables reducedVars = biascoeff_->requiredVars();
+  reducedVars += filters_->requiredVars();
+  obsop_->computeReducedVars(reducedVars, geovals);
+
   /// Call prior filters
   filters_->priorFilter(geovals);
 

@@ -29,6 +29,7 @@
 namespace oops {
 
 // -----------------------------------------------------------------------------
+/// \brief Stores values of geophysical variables at observation locations.
 template <typename OBS>
 class GeoVaLs : public util::Printable,
                 private util::ObjectCounter<GeoVaLs<OBS> > {
@@ -62,7 +63,7 @@ class GeoVaLs : public util::Printable,
 
   static const std::string classname() {return "oops::GeoVaLs";}
 
-  /// Allocate GeoVaLs to store variables \p vars interpolated along sets of paths sampling
+  /// \brief Allocate GeoVaLs to store variables \p vars interpolated along sets of paths sampling
   /// the observation locations.
   ///
   /// \param locations
@@ -72,9 +73,19 @@ class GeoVaLs : public util::Printable,
   ///   Names of the variables whose values will be stored in the new GeoVaLs.
   /// \param sizes
   ///   Vector whose ith element indicates how many values per interpolation path will be stored
-  ///   in the GeoVaL corresponding to the ith variable.
-  GeoVaLs(const Locations_ & locations, const Variables &vars, const std::vector<size_t> & sizes);
-  GeoVaLs(const Parameters_ &, const ObsSpace_ &, const Variables &);
+  ///   in the GeoVaL corresponding to the ith variable in `vars`.
+  GeoVaLs(const Locations_ & locations, const Variables & vars, const std::vector<size_t> & sizes);
+
+  /// \brief Load values of specified geophysical variables from a file.
+  ///
+  /// \brief params
+  ///   Implementation-dependent parameters specifying the path to the file containing the values
+  ///   to be loaded.
+  /// \brief obspace
+  ///   Observation space.
+  /// \brief vars
+  ///   Names of the variables whose values should be loaded.
+  GeoVaLs(const Parameters_ & params, const ObsSpace_ & obspace, const Variables & vars);
   GeoVaLs(const GeoVaLs &);
 
   ~GeoVaLs();

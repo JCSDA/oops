@@ -184,10 +184,14 @@ template <typename OBS> void testSimulateObs() {
     // initialize bias correction
     const ObsAuxCtrl_ ybias(Test_::obspace()[jj], obsTypeParams.obsBias);
 
-    // read geovals from the file
+    // initialize geovals
     oops::Variables hopvars = hop.requiredVars();
-    hopvars += ybias.requiredVars();
-    const GeoVaLs_ gval(obsTypeParams.geovals, Test_::obspace()[jj], hopvars);
+    oops::Variables reducedHopvars = ybias.requiredVars();
+    hopvars += reducedHopvars;  // the reduced format is derived from the sampled format
+    // read geovals from the file (in the sampled format)
+    GeoVaLs_ gval(obsTypeParams.geovals, Test_::obspace()[jj], hopvars);
+    // convert geovals to the reduced format
+    hop.computeReducedVars(reducedHopvars, gval);
 
     // create obsvector to hold H(x)
     ObsVector_ hofx(Test_::obspace()[jj]);

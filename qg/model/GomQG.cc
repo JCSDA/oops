@@ -40,8 +40,8 @@ GomQG::GomQG(const Locations_ & locs,
 // -----------------------------------------------------------------------------
 /*! QG GeoVaLs Constructor with Config */
 
-GomQG::GomQG(const Parameters_ & params,
-             const ObsSpaceQG & ospace, const oops::Variables & vars):
+GomQG::GomQG(const Parameters_ & params, const ObsSpaceQG & ospace,
+             const oops::Variables & vars):
   vars_(vars)
 {
   qg_gom_create_f90(keyGom_);

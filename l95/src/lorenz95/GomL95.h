@@ -60,9 +60,9 @@ class GomL95 : public util::Printable,
 
   static const std::string classname() {return "lorenz95::GomL95";}
 
-  GomL95(const oops::Locations<L95ObsTraits> &,
-         const oops::Variables &, const std::vector<size_t> &);
-  GomL95(const Parameters_ &, const ObsTable &, const oops::Variables &);
+  GomL95(const oops::Locations<L95ObsTraits> & locs,
+         const oops::Variables & vars, const std::vector<size_t> & sizes);
+  GomL95(const Parameters_ &, const ObsTable &, const oops::Variables & vars);
 
   void zero();
   void random();

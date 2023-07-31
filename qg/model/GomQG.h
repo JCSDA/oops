@@ -64,9 +64,9 @@ class GomQG : public util::Printable,
 
   static const std::string classname() {return "qg::GomQG";}
 
-  GomQG(const Locations_ &,
-        const oops::Variables &, const std::vector<size_t> &);
-  GomQG(const Parameters_ &, const ObsSpaceQG &, const oops::Variables &);
+  GomQG(const Locations_ & locs,
+        const oops::Variables & vars, const std::vector<size_t> & sizes);
+  GomQG(const Parameters_ & params, const ObsSpaceQG & ospace, const oops::Variables & vars);
   explicit GomQG(const GomQG &);
 
   GomQG(): keyGom_(0) {}

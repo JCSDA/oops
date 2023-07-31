@@ -88,7 +88,8 @@ template <typename OBS> void testUtils() {
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     GeoVaLsTestParameters<OBS> params;
     params.validateAndDeserialize(Test_::config(jj));
-    GeoVaLs_ gval(params.geovals, Test_::obspace()[jj], params.geovalstest.value().vars);
+    GeoVaLs_ gval(params.geovals, Test_::obspace()[jj],
+                  params.geovalstest.value().vars);
 
     const double zz = dot_product(gval, gval);
 
