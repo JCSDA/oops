@@ -21,7 +21,7 @@ observations:
           obsfile: Data/truth.obs4d_12h.nc
       obsdataout:
         engine:
-          obsfile: Data/mem003.ens_hofx.obs4d_12h.nc
+          obsfile: Data/mem003.ens_hofx.obs4d_12h.ens.3.nc
       obs type: Stream
   - obs operator:
       obs type: Wind
@@ -31,7 +31,7 @@ observations:
           obsfile: Data/truth.obs4d_12h.nc
       obsdataout:
         engine:
-          obsfile: Data/mem003.ens_hofx.obs4d_12h.nc
+          obsfile: Data/mem003.ens_hofx.obs4d_12h.ens.3.nc
       obs type: Wind
   - obs operator:
       obs type: WSpeed
@@ -41,7 +41,7 @@ observations:
           obsfile: Data/truth.obs4d_12h.nc
       obsdataout:
         engine:
-          obsfile: Data/mem003.ens_hofx.obs4d_12h.nc
+          obsfile: Data/mem003.ens_hofx.obs4d_12h.ens.3.nc
       obs type: WSpeed
 prints:
   frequency: PT3H

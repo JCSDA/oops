@@ -32,7 +32,7 @@ cost function:
             obsfile: Data/truth.obs4d_24h_pert_heat.nc
         obsdataout:
           engine:
-            obsfile: Data/4dvar_dripcg.obs4d_24h.nc
+            obsfile: Data/4dvar_dripcg.obs4d_24h.htlm.nc
         obs type: Stream
     - obs error:
         covariance model: diagonal
@@ -44,7 +44,7 @@ cost function:
             obsfile: Data/truth.obs4d_24h_pert_heat.nc
         obsdataout:
           engine:
-            obsfile: Data/4dvar_dripcg.obs4d_24h.nc
+            obsfile: Data/4dvar_dripcg.obs4d_24h.htlm.nc
         obs type: Wind
     - obs error:
         covariance model: diagonal
@@ -56,7 +56,7 @@ cost function:
             obsfile: Data/truth.obs4d_24h_pert_heat.nc
         obsdataout:
           engine:
-            obsfile: Data/4dvar_dripcg.obs4d_24h.nc
+            obsfile: Data/4dvar_dripcg.obs4d_24h.htlm.nc
         obs type: WSpeed
   constraints:
   - jcdfi:

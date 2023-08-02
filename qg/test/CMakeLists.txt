@@ -118,7 +118,11 @@ list( APPEND qg_testinput
   testinput/obs_iterator.yaml
   testinput/obs_localization.yaml
   testinput/obsoperator.yaml
+  testinput/obsdatavector.yaml
   testinput/obsspace.yaml
+  testinput/obserror_covariance.yaml
+  testinput/obs_aux_increment.yaml
+  testinput/obs_aux_covariance.yaml
   testinput/obsvector.yaml
   testinput/rtpp.yaml
   testinput/rtps.yaml
@@ -337,7 +341,7 @@ ecbuild_add_test( TARGET  test_qg_verticallocev_io
                   SOURCES executables/TestVerticalLocEV.cc
                   ARGS    "testinput/verticallocev_io.yaml"
                   LIBS    qg
-                  TEST_DEPENDS test_qg_truth )
+                  TEST_DEPENDS test_qg_truth test_qg_verticallocev )
 
 ecbuild_add_test( TARGET  test_qg_modelauxincrement
                   SOURCES executables/TestModelAuxIncrement.cc
@@ -402,7 +406,7 @@ ecbuild_add_test( TARGET test_qg_obsvector
 
 ecbuild_add_test( TARGET test_qg_obsdatavector
                   SOURCES executables/TestObsDataVector.cc
-                  ARGS "testinput/obsspace.yaml"
+                  ARGS "testinput/obsdatavector.yaml"
                   LIBS    qg
                   TEST_DEPENDS test_qg_make_obs_4d_24h )
 
@@ -420,7 +424,7 @@ ecbuild_add_test( TARGET  test_qg_linear_obsoperator
 
 ecbuild_add_test( TARGET test_qg_obserror_covariance
                   SOURCES executables/TestObsErrorCovariance.cc
-                  ARGS "testinput/obsspace.yaml"
+                  ARGS "testinput/obserror_covariance.yaml"
                   LIBS    qg
                   TEST_DEPENDS test_qg_make_obs_4d_24h )
 
@@ -432,13 +436,13 @@ ecbuild_add_test( TARGET  test_qg_obs_aux
 
 ecbuild_add_test( TARGET  test_qg_obs_aux_increment
                   SOURCES executables/TestObsAuxIncrement.cc
-                  ARGS    "testinput/obsspace.yaml"
+                  ARGS    "testinput/obs_aux_increment.yaml"
                   LIBS    qg
                   TEST_DEPENDS test_qg_make_obs_4d_24h )
 
 ecbuild_add_test( TARGET  test_qg_obs_aux_covariance
                   SOURCES executables/TestObsAuxCovariance.cc
-                  ARGS    "testinput/obsspace.yaml"
+                  ARGS    "testinput/obs_aux_covariance.yaml"
                   LIBS    qg
                   TEST_DEPENDS test_qg_make_obs_4d_24h )
 

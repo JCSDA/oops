@@ -19,7 +19,7 @@ observations:
           obsfile: Data/truth.obs4d_12h.nc
       obsdataout:
         engine:
-          obsfile: Data/hofx.obs4d_12h.nc
+          obsfile: Data/hofx.obs4d_12h.tinterp.nc
       obs type: Stream
     obs operator:
       obs type: Stream
@@ -32,7 +32,7 @@ observations:
           obsfile: Data/truth.obs4d_12h.nc
       obsdataout:
         engine:
-          obsfile: Data/hofx.obs4d_12h.nc
+          obsfile: Data/hofx.obs4d_12h.tinterp.nc
       obs type: Wind
     obs operator:
       obs type: Wind
@@ -45,7 +45,7 @@ observations:
           obsfile: Data/truth.obs4d_12h.nc
       obsdataout:
         engine:
-          obsfile: Data/hofx.obs4d_12h.nc
+          obsfile: Data/hofx.obs4d_12h.tinterp.nc
       obs type: WSpeed
     obs operator:
       obs type: WSpeed

@@ -32,7 +32,7 @@ cost function:
             obsfile: Data/truth.obs3d.nc
         obsdataout:
           engine:
-            obsfile: Data/3dfgat.obs3d.nc
+            obsfile: Data/3dfgat.obs4d.nc
         obs type: Stream
     - obs error:
         covariance model: diagonal
@@ -44,7 +44,7 @@ cost function:
             obsfile: Data/truth.obs3d.nc
         obsdataout:
           engine:
-            obsfile: Data/3dfgat.obs3d.nc
+            obsfile: Data/3dfgat.obs4d.nc
         obs type: Wind
     - obs error:
         covariance model: diagonal
@@ -56,7 +56,7 @@ cost function:
             obsfile: Data/truth.obs3d.nc
         obsdataout:
           engine:
-            obsfile: Data/3dfgat.obs3d.nc
+            obsfile: Data/3dfgat.obs4d.nc
         obs type: WSpeed
 variational:
   minimizer:

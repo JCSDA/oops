@@ -882,7 +882,7 @@ ecbuild_add_test( TARGET test_l95_getkf_offline_hofx
 ecbuild_add_test( TARGET test_l95_getkf_offline_hofx_one_member
                   COMMAND l95_letkf.x
                   ARGS testinput/getkf_offline_hofx_one_member.yaml
-                  TEST_DEPENDS test_l95_hofx3d_for_getkf )
+                  TEST_DEPENDS test_l95_hofx3d_for_getkf test_l95_getkf )
 
 #####################################################################
 # tests of factory and parameters classes
