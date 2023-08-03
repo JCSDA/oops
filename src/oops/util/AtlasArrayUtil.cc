@@ -41,7 +41,7 @@ void atlasArrayWriteHeader(
   // Missing value
   const double msv(::util::missingValue<double>());
 
-  if ((retval = nc_create(ncfilepath.c_str(), NC_CLOBBER, &ncid))) ERR1(retval);
+  if ((retval = nc_create(ncfilepath.c_str(), NC_NETCDF4, &ncid))) ERR1(retval);
   netcdfGeneralIDs.push_back(ncid);
 
   for (std::size_t i = 0; i < dimNames.size(); ++i) {
