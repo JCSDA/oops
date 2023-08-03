@@ -1,6 +1,7 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
  * (C) Copyright 2020-2021 UCAR.
+ * (C) Crown Copyright 2023, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -111,7 +112,7 @@ CostFct4DVar<MODEL, OBS>::CostFct4DVar(const eckit::Configuration & config,
   typename VariableChange<MODEL>::Parameters_ params;
   params.deserialize(config.getSubConfiguration("variable change"));
   this->setupTerms(config);
-  // ASSERT(ctlvars_ <= this->background().state().variables());
+  // ASSERT(ctlvars_ <= this->jb().getBackground().state().variables());
   Log::trace() << "CostFct4DVar::CostFct4DVar done" << std::endl;
 }
 

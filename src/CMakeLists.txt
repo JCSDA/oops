@@ -10,6 +10,7 @@ oops/assimilation/CostFct3DVar.h
 oops/assimilation/CostFct4DEnsVar.h
 oops/assimilation/CostFct4DVar.h
 oops/assimilation/CostFctFGAT.h
+oops/assimilation/CostFctPert.h
 oops/assimilation/CostFctWeak.h
 oops/assimilation/CostFunction.h
 oops/assimilation/CostJb3D.h
@@ -21,6 +22,7 @@ oops/assimilation/CostJbState.h
 oops/assimilation/CostJbTotal.h
 oops/assimilation/CostJcDFI.h
 oops/assimilation/CostJo.h
+oops/assimilation/CostJoPert.h
 oops/assimilation/CostTermBase.h
 oops/assimilation/DRGMRESRMinimizer.h
 oops/assimilation/DRIPCGMinimizer.h
@@ -144,6 +146,8 @@ oops/base/ObsFilters.h
 oops/base/ObsLocalizationBase.h
 oops/base/ObsLocalizationParametersBase.h
 oops/base/ObsLocalizations.h
+oops/base/ObsOperatorBase.h
+oops/base/ObsOperatorPert.h
 oops/base/ObsSpaceBase.cc
 oops/base/ObsSpaceBase.h
 oops/base/ObsSpaces.h
@@ -291,6 +295,7 @@ oops/runs/AddIncrement.h
 oops/runs/AdjointForecast.h
 oops/runs/Application.cc
 oops/runs/Application.h
+oops/runs/ControlPert.h
 oops/runs/ConvertIncrement.h
 oops/runs/ConvertState.h
 oops/runs/ConvertToLatLon.h

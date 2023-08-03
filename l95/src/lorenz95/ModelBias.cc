@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2023, the Met Office.
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -40,6 +41,11 @@ ModelBias::ModelBias(const ModelBias & other, const bool copy)
   : bias_(0.0), active_(other.active_)
 {
   if (active_ && copy) bias_ = other.bias_;
+}
+// -----------------------------------------------------------------------------
+ModelBias & ModelBias::operator=(const ModelBias & other) {
+  if (active_) bias_ = other.bias_;
+  return *this;
 }
 // -----------------------------------------------------------------------------
 ModelBias & ModelBias::operator+=(const ModelBiasCorrection & dx) {

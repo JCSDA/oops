@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2023, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -61,7 +62,7 @@ class ControlVariable : public util::Printable,
 /// The arguments define the number of sub-windows and the resolution
   ControlVariable(std::shared_ptr<State4D_>,
                   std::shared_ptr<ModelAux_>, std::shared_ptr<ObsAux_>);
-  explicit ControlVariable(const ControlVariable &);
+  explicit ControlVariable(const ControlVariable &, const bool copy = true);
   ~ControlVariable();
 
 /// Get state control variable
@@ -83,8 +84,10 @@ class ControlVariable : public util::Printable,
   void serialize(std::vector<double> &) const override;
   void deserialize(const std::vector<double> &, size_t &) override;
 
+/// Assignment
+  ControlVariable & operator= (const ControlVariable &);
+
  private:
-  ControlVariable & operator= (const ControlVariable &);  // No assignment
   void print(std::ostream &) const override;
 
   std::shared_ptr<State4D_> state_;
@@ -106,11 +109,12 @@ ControlVariable<MODEL, OBS>::ControlVariable(std::shared_ptr<State4D_> bg,
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-ControlVariable<MODEL, OBS>::ControlVariable(const ControlVariable & other)
+ControlVariable<MODEL, OBS>::ControlVariable(const ControlVariable & other, const bool copy)
   : state_(new State4D_(*other.state_)), modbias_(), obsbias_()
 {
-  if (other.modbias_) modbias_.reset(new ModelAux_(*other.modbias_));
-  if (other.obsbias_) obsbias_.reset(new ObsAux_(*other.obsbias_));
+  if (!copy) state_->zero();
+  if (other.modbias_) modbias_.reset(new ModelAux_(*other.modbias_, copy));
+  if (other.obsbias_) obsbias_.reset(new ObsAux_(*other.obsbias_, copy));
   Log::trace() << "ControlVariable copied" << std::endl;
 }
 
@@ -165,7 +169,14 @@ void ControlVariable<MODEL, OBS>::deserialize(const std::vector<double> & vec, s
   modbias_->deserialize(vec, indx);
   obsbias_->deserialize(vec, indx);
 }
-
+// -----------------------------------------------------------------------------
+template<typename MODEL, typename OBS> ControlVariable<MODEL, OBS> &
+ControlVariable<MODEL, OBS>::operator=(const ControlVariable & rhs) {
+  state_ = rhs.state_;
+  modbias_ = rhs.modbias_;
+  obsbias_ = rhs.obsbias_;
+  return *this;
+}
 // -----------------------------------------------------------------------------
 }  // namespace oops
 

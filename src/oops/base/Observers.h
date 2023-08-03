@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2020 UCAR.
+ * (C) Crown Copyright 2023, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -21,6 +22,7 @@
 #include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observer.h"
+#include "oops/base/ObsOperatorBase.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/ObsTypeParameters.h"
 #include "oops/base/ObsVector.h"
@@ -42,7 +44,6 @@ class ObserversParameters : public oops::Parameters {
   typedef typename VariableChange<MODEL>::Parameters_ VarChangeParameters_;
 
  public:
-  Parameter<bool> useZeroValuedObs{"use zero valued obs", false, this};
   Parameter<bool> obsPerturbations{"obs perturbations", false, this};
   Parameter<std::vector<ObsTypeParameters<OBS>>> observers{"observers", {}, this};
   Parameter<GetValuesParameters<MODEL>> getValues{"get values", {}, this};
@@ -63,6 +64,7 @@ class Observers {
   typedef Observations<OBS>             Observations_;
   typedef Observer<MODEL, OBS>          Observer_;
   typedef ObserverParameters<OBS>       ObserverParameters_;
+  typedef ObsOperatorBase<OBS>          ObsOperatorBase_;
   typedef ObsSpaces<OBS>                ObsSpaces_;
   typedef ObsVector<OBS>                ObsVector_;
   typedef State<MODEL>                  State_;
@@ -73,8 +75,10 @@ class Observers {
  public:
 /// \brief Initializes ObsOperators, Locations, and QC data
   Observers(const ObsSpaces_ &, const std::vector<ObserverParameters_> &,
-            const GetValuesParameters_ &);
-  Observers(const ObsSpaces_ &, const eckit::Configuration &);
+            const GetValuesParameters_ &, std::vector<std::unique_ptr<ObsOperatorBase_>>
+            obsOpBases = {});
+  Observers(const ObsSpaces_ &, const eckit::Configuration &,
+            std::vector<std::unique_ptr<ObsOperatorBase_>> obsOpBases = {});
 
 /// \brief Initializes variables, obs bias, obs filters (could be different for
 /// different iterations
@@ -98,14 +102,15 @@ class Observers {
 template <typename MODEL, typename OBS>
 Observers<MODEL, OBS>::Observers(const ObsSpaces_ & obspaces,
                                  const std::vector<ObserverParameters_> & params,
-                                 const GetValuesParameters_ & getValuesParams)
+                                 const GetValuesParameters_ & getValuesParams,
+                                 std::vector<std::unique_ptr<ObsOperatorBase_>> obsOpBases)
   : observers_(), getValuesParams_(getValuesParams)
 {
   Log::trace() << "Observers<MODEL, OBS>::Observers start" << std::endl;
-
+  if (obsOpBases.size() != obspaces.size()) obsOpBases.resize(obspaces.size());
   ASSERT(obspaces.size() == params.size());
   for (size_t jj = 0; jj < obspaces.size(); ++jj) {
-    observers_.emplace_back(new Observer_(obspaces[jj], params[jj]));
+      observers_.emplace_back(new Observer_(obspaces[jj], params[jj], std::move(obsOpBases[jj])));
   }
 
   Log::trace() << "Observers<MODEL, OBS>::Observers done" << std::endl;
@@ -114,10 +119,12 @@ Observers<MODEL, OBS>::Observers(const ObsSpaces_ & obspaces,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-Observers<MODEL, OBS>::Observers(const ObsSpaces_ & obspaces, const eckit::Configuration & config)
+Observers<MODEL, OBS>::Observers(const ObsSpaces_ & obspaces, const eckit::Configuration & config,
+                                 std::vector<std::unique_ptr<ObsOperatorBase_>> obsOpBases)
   : Observers(obspaces,
               convertToParameters(config.getSubConfiguration("observers")),
-              extractGetValuesParameters(config.getSubConfiguration("get values")))
+              extractGetValuesParameters(config.getSubConfiguration("get values")),
+              std::move(obsOpBases))
 {}
 
 // -----------------------------------------------------------------------------

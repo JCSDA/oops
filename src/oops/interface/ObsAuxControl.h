@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2023, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -54,6 +55,9 @@ class ObsAuxControl : public util::Printable,
   /// Accessor
   ObsAuxControl_ & obsauxcontrol() {return *aux_;}
 
+  const Parameters_ & params() const {return params_;}
+  const ObsSpace<OBS> & obspace() const {return obspace_;}
+
   /// Read this ObsAuxControl from file
   void read(const Parameters_ &);
   /// Write this ObsAuxControl out to file
@@ -72,13 +76,15 @@ class ObsAuxControl : public util::Printable,
  private:
   void print(std::ostream &) const;
   std::unique_ptr<ObsAuxControl_> aux_;
+  const Parameters_ params_;
+  const ObsSpace<OBS> & obspace_;
 };
 
 // =============================================================================
 
 template<typename OBS>
-ObsAuxControl<OBS>::ObsAuxControl(const ObsSpace<OBS> & os,
-                                    const Parameters_ & params) : aux_()
+ObsAuxControl<OBS>::ObsAuxControl(const ObsSpace<OBS> & os, const Parameters_ & params)
+  : aux_(), params_(params), obspace_(os)
 {
   Log::trace() << "ObsAuxControl<OBS>::ObsAuxControl starting" << std::endl;
   util::Timer timer(classname(), "ObsAuxControl");
@@ -89,7 +95,8 @@ ObsAuxControl<OBS>::ObsAuxControl(const ObsSpace<OBS> & os,
 // -----------------------------------------------------------------------------
 
 template<typename OBS>
-ObsAuxControl<OBS>::ObsAuxControl(const ObsAuxControl & other, const bool copy) : aux_()
+ObsAuxControl<OBS>::ObsAuxControl(const ObsAuxControl & other, const bool copy)
+  : aux_(), params_(other.params()), obspace_(other.obspace())
 {
   Log::trace() << "ObsAuxControl<OBS>::ObsAuxControl copy starting" << std::endl;
   util::Timer timer(classname(), "ObsAuxControl");

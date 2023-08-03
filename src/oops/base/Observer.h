@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2020 UCAR.
+ * (C) Crown Copyright 2023, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -10,6 +11,7 @@
 #include <algorithm>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
@@ -20,6 +22,7 @@
 #include "oops/base/ObsError.h"
 #include "oops/base/ObserverUtils.h"
 #include "oops/base/ObsFilters.h"
+#include "oops/base/ObsOperatorBase.h"
 #include "oops/base/ObsVector.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
@@ -74,6 +77,7 @@ class Observer {
   typedef ObserverParameters<OBS>      Parameters_;
   typedef ObsFilters<OBS>              ObsFilters_;
   typedef ObsOperator<OBS>             ObsOperator_;
+  typedef ObsOperatorBase<OBS>         ObsOperatorBase_;
   typedef ObsSpace<OBS>                ObsSpace_;
   typedef ObsVector<OBS>               ObsVector_;
   typedef ObsDataVector<OBS, float>    ObsDataVector_;
@@ -81,7 +85,8 @@ class Observer {
 
  public:
 /// \brief Initializes ObsOperators, Locations, and QC data
-  Observer(const ObsSpace_ &, const Parameters_ &);
+  Observer(const ObsSpace_ & obspace, const Parameters_ & params,
+           std::unique_ptr<ObsOperatorBase_> obsOpBase = nullptr);
 
 /// \brief Initializes variables, obs bias, obs filters (could be different for
 /// different iterations
@@ -94,42 +99,46 @@ class Observer {
  private:
   typedef std::vector<size_t> VariableSizes;
 
-  Parameters_                   parameters_;
-  const ObsSpace_ &             obspace_;     // ObsSpace used in H(x)
-  Variables                     allVars_;     // All required variables
-  VariableSizes                 allVarSizes_;  // Sizes of these variables
-  std::unique_ptr<ObsOperator_> obsop_;      // Obs operator
-  std::unique_ptr<Locations_>   locations_;  // Obs locations
-  const ObsAuxCtrl_ *           biascoeff_;  // bias coefficients
-  ObsError_ *                   Rmat_;       // Obs error covariance
-  std::unique_ptr<ObsFilters_>  filters_;    // QC filters
-  std::unique_ptr<ObsDataVector_> obserrfilter_;  // Obs error std dev for processed variables
+  Parameters_                       parameters_;
+  const ObsSpace_ &                 obspace_;       // ObsSpace used in H(x)
+  Variables                         allVars_;       // All required variables
+  VariableSizes                     allVarSizes_;   // Sizes of these variables
+  std::unique_ptr<ObsOperatorBase_> obsop_;         // Obs operator
+  std::unique_ptr<Locations_>       locations_;     // Obs locations
+  const ObsAuxCtrl_ *               biascoeff_;     // bias coefficients
+  ObsError_ *                       Rmat_;          // Obs error covariance
+  std::unique_ptr<ObsFilters_>      filters_;       // QC filters
+  std::unique_ptr<ObsDataVector_>   obserrfilter_;  // Obs error std dev for processed variables
   // Instances of GetValues. Each receives a list of model variables and a set of paths along which
   // these variables should be interpolated. The interpolated values are stored in a single GeoVaLs
   // object (shared between all instances of GetValues).
   std::vector<std::shared_ptr<GetValues_>> getvals_;
-  std::shared_ptr<ObsDataInt_>  qcflags_;    // QC flags (should not be a pointer)
-  bool                          initialized_;
+  std::shared_ptr<ObsDataInt_>      qcflags_;       // QC flags (should not be a pointer)
+  bool                              initialized_;
   std::unique_ptr<eckit::LocalConfiguration> iterconf_;
 };
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-Observer<MODEL, OBS>::Observer(const ObsSpace_ & obspace, const Parameters_ & params)
+Observer<MODEL, OBS>::Observer(const ObsSpace_ & obspace, const Parameters_ & params,
+                               std::unique_ptr<ObsOperatorBase_> obsOpBase)
   : parameters_(params), obspace_(obspace), obsop_(),
     biascoeff_(nullptr), filters_(), qcflags_(), initialized_(false)
 {
   Log::trace() << "Observer::Observer start" << std::endl;
   /// Set up observation operators
-  obsop_.reset(new ObsOperator_(obspace_, parameters_.obsOperator));
+  if (obsOpBase == nullptr) {
+    obsop_.reset(new ObsOperator_(obspace_, parameters_.obsOperator));
+  } else {
+    obsop_ = std::move(obsOpBase);
+  }
   qcflags_.reset(new ObsDataInt_(obspace_, obspace_.obsvariables()));
   obserrfilter_.reset(new ObsDataVector_(obspace_, obspace_.obsvariables(), "ObsError"));
   Log::trace() << "Observer::Observer done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
-
 template <typename MODEL, typename OBS>
 std::vector<std::shared_ptr<GetValues<MODEL, OBS>>>
 Observer<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrl_ & biascoeff,

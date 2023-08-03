@@ -57,11 +57,15 @@ list( APPEND qg_testinput
   testinput/eda_3dvar_block_3.yaml
   testinput/eda_3dvar_block_4.yaml
   testinput/eda_3dvar_block.yaml
+  testinput/eda_3dvar_control_pert_template.yaml
+  testinput/eda_3dvar_control_pert.yaml
   testinput/eda_4dvar_1.yaml
   testinput/eda_4dvar_2.yaml
   testinput/eda_4dvar_3.yaml
   testinput/eda_4dvar_4.yaml
   testinput/eda_4dvar.yaml
+  testinput/eda_4dvar_control_pert_template.yaml
+  testinput/eda_4dvar_control_pert.yaml
   testinput/ens_forecast_1.yaml
   testinput/ens_forecast_2.yaml
   testinput/ens_forecast.yaml
@@ -182,7 +186,9 @@ list( APPEND qg_testoutput
   testoutput/eda_3dfgat.test
   testoutput/eda_3dvar.test
   testoutput/eda_3dvar_block.test
+  testoutput/eda_3dvar_control_pert.test
   testoutput/eda_4dvar.test
+  testoutput/eda_4dvar_control_pert.test
   testoutput/ens_forecast.test
   testoutput/ens_hofx.test
   testoutput/ens_mean_variance.test
@@ -942,6 +948,18 @@ ecbuild_add_test( TARGET test_qg_eda_3dvar_block
                   ARGS testinput/eda_3dvar_block.yaml
                   COMMAND qg_eda.x
                   TEST_DEPENDS test_qg_make_obs_3d test_qg_gen_ens_pert_B )
+
+ecbuild_add_test( TARGET test_qg_eda_3dvar_control_pert
+                  MPI    5
+                  ARGS testinput/eda_3dvar_control_pert.yaml
+                  COMMAND qg_ControlPert.x
+                  TEST_DEPENDS test_qg_forecast test_qg_make_obs_3d test_qg_gen_ens_pert_B)
+
+ecbuild_add_test( TARGET test_qg_eda_4dvar_control_pert
+                  MPI    4
+                  ARGS testinput/eda_4dvar_control_pert.yaml
+                  COMMAND qg_ControlPert.x
+                  TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h test_qg_gen_ens_pert_B)
 
 #####################################################################
 # state-related tests

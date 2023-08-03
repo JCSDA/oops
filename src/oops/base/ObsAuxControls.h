@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2017-2019 UCAR
+ * (C) Crown Copyright 2023, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -160,6 +161,19 @@ double ObsAuxControls<OBS>::norm() const {
   }
   Log::trace() << "ObsAuxControls<OBS>::norm done" << std::endl;
   return std::sqrt(zz/ii);
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename OBS>
+ObsAuxControls<OBS> & ObsAuxControls<OBS>::operator=(const ObsAuxControls & rhs) {
+  Log::trace() << "ObsAuxControl<OBS>::operator= starting" << std::endl;
+  util::Timer timer(classname(), "operator=");
+  for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) {
+    *auxs_[jobs] = *rhs.auxs_[jobs];
+  }
+  Log::trace() << "ObsAuxControl<OBS>::operator= done" << std::endl;
+  return *this;
 }
 
 // -----------------------------------------------------------------------------

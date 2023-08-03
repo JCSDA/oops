@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2023, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -60,6 +61,9 @@ class ObserverTLAD {
 
   void initializeAD(const ObsVector_ &, ObsAuxIncr_ &);
   void finalizeAD() {}
+
+/// Accessor to linear obs operator
+  const LinearObsOperator_ & linObsOp() {return hoptlad_;}
 
  private:
   typedef std::vector<size_t> VariableSizes;

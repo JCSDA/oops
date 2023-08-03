@@ -1,6 +1,7 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
  * (C) Copyright 2021-2023 UCAR
+ * (C) Crown Copyright 2023, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -53,6 +54,7 @@ template<typename MODEL, typename OBS> class CostFunction : private boost::nonco
   typedef ControlIncrement<MODEL, OBS>  CtrlInc_;
   typedef ControlVariable<MODEL, OBS>   CtrlVar_;
   typedef CostJbTotal<MODEL, OBS>       JbTotal_;
+  typedef CostJo<MODEL, OBS>            CostJo_;
   typedef CostTermBase<MODEL, OBS>      CostBase_;
   typedef Geometry<MODEL>               Geometry_;
   typedef State<MODEL>                  State_;
@@ -85,13 +87,14 @@ template<typename MODEL, typename OBS> class CostFunction : private boost::nonco
   const JbTotal_ & jb() const {return *jb_;}
 /// Access terms of the cost function other than \f$ J_b\f$
   const CostBase_ & jterm(const size_t ii) const {return jterms_[ii];}
+  const CostJo_ & jo() const {return *jo_;}
   size_t nterms() const {return jterms_.size();}
   double getCostJb() const {return costJb_;}
   double getCostJoJc() const {return costJoJc_;}
 
  protected:
   void setupTerms(const eckit::Configuration &);
-  const CtrlVar_ & background() const {return jb_->background();}
+  JbTotal_ & getNonConstJb() {return *jb_;}
 
  private:
   virtual void addIncr(CtrlVar_ &, const CtrlInc_ &, PostProcessor<Increment_>&) const = 0;
@@ -109,6 +112,7 @@ template<typename MODEL, typename OBS> class CostFunction : private boost::nonco
 // Data members
   std::unique_ptr<JbTotal_> jb_;
   boost::ptr_vector<CostBase_> jterms_;
+  CostJo_ * jo_;
   std::unique_ptr<const Geometry_> lowres_;
   // Geometry from the previous iteration. A temporary fix Required because
   // lowres_ is not properly shared between all the objects that use it.
@@ -190,13 +194,13 @@ void CostFunction<MODEL, OBS>::setupTerms(const eckit::Configuration & config) {
 
 // Jo
   eckit::LocalConfiguration obsconf(config, "observations");
-  CostJo<MODEL, OBS> * jo = this->newJo(obsconf);
-  jterms_.push_back(jo);
+  jo_ = this->newJo(obsconf);
+  jterms_.push_back(jo_);
   Log::trace() << "CostFunction::setupTerms Jo added" << std::endl;
 
 // Jb
   CostJbState<MODEL, OBS> * jbs = this->newJb(config, this->geometry());  // constructs background
-  jb_.reset(new JbTotal_(jbs, config, this->geometry(), jo->obspaces()));
+  jb_.reset(new JbTotal_(jbs, config, this->geometry(), jo_->obspaces()));
   Log::trace() << "CostFunction::setupTerms Jb added" << std::endl;
 
 // Other constraints
@@ -271,6 +275,10 @@ double CostFunction<MODEL, OBS>::evaluate(CtrlVar_ & fguess,
   double zzz = costJb_ + costJoJc_;
   Log::info() << "CostFunction: Nonlinear J = " << zzz << std::endl;
   Log::test() << "CostFunction: Nonlinear J = " << zzz << std::endl;
+
+//  First-guess gradient of Jb needs to be reset to zero before minimisation
+//  when the Pert members of Control-Pert EDA are run
+  if (innerConf.has("control pert")) this->getNonConstJb().zeroGradientFG();
 
   Log::trace() << "CostFunction::evaluate done" << std::endl;
   return zzz;

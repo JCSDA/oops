@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2023, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -59,6 +60,9 @@ class ObserversTLAD {
 
   void initializeAD(const Departures_ &, ObsAuxIncrs_ &, PostProcTLAD_ &);
   void finalizeAD();
+
+/// Accessors
+  ObserverTLAD_ & operator[](const std::size_t ii) {return *observers_.at(ii);}
 
  private:
   static std::vector<ObserverParameters_> convertToParameters(const eckit::Configuration &config);

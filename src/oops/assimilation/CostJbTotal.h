@@ -1,6 +1,7 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
  * (C) Copyright 2021-2023 UCAR
+ * (C) Crown Copyright 2023, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -83,6 +84,9 @@ template<typename MODEL, typename OBS> class CostJbTotal {
 
 /// Randomize
   void randomize(CtrlInc_ &) const;
+
+/// Reset Jb gradient at first guess to zero
+  void zeroGradientFG() {dxFG_->zero();}
 
 /// Add Jb gradient at first guess.
   void addGradientFG(CtrlInc_ &) const;

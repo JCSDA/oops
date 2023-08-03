@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2023, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -17,6 +18,7 @@
 #include <boost/noncopyable.hpp>
 
 #include "oops/base/Locations.h"
+#include "oops/base/ObsOperatorBase.h"
 #include "oops/base/ObsVector.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
@@ -44,7 +46,8 @@ class Variables;
 ///
 ///     ObsOperator(const OBS::ObsSpace &, const Parameters_ &);
 template <typename OBS>
-class ObsOperator : public util::Printable,
+class ObsOperator : public ObsOperatorBase<OBS>,
+                    public util::Printable,
                     private boost::noncopyable,
                     private util::ObjectCounter<ObsOperator<OBS> > {
   typedef typename OBS::ObsOperator  ObsOperator_;

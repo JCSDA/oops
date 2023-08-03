@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2023, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -75,6 +76,9 @@ template <typename MODEL> class GenEnsPertBParameters : public ApplicationParame
 
   /// Where to write the output.
   RequiredParameter<StateWriterParameters_> output{"output", this};
+
+  /// Whether to include the control as member zero
+  Parameter<bool> includeControl{"include control", false, this};
 };
 
 // -----------------------------------------------------------------------------
@@ -159,6 +163,22 @@ template <typename MODEL> class GenEnsPertB : public Application {
       Log::test() << "Member " << jm << " final state: " << xp << std::endl;
     }
 
+    if (params.includeControl) {
+//    Save control as ensemble member 0
+      State_ xp(xx[0]);
+
+//    Setup forecast outputs
+      PostProcessor<State_> post;
+
+      StateWriterParameters_ outParams = params.output;
+      outParams.write.setMember(0);
+
+      post.enrollProcessor(new StateWriter<State_>(outParams));
+
+//    Run forecast
+      model.forecast(xp, moderr, fclength, post);
+      Log::test() << " Control Member final state: " << xp << std::endl;
+  }
     return 0;
   }
 // -----------------------------------------------------------------------------

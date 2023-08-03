@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2023, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -118,6 +119,20 @@ class ControlIncrement : public util::Printable,
   ObsAuxIncrs_  obsbias_;   // not only for bias, better name?
 };
 
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename OBS>
+ControlVariable<MODEL, OBS> & operator+=(ControlVariable<MODEL, OBS> & xx,
+                                    const ControlIncrement<MODEL, OBS> & dx) {
+  Log::trace() << "operator+=(ControlVariable, ControlIncrement) starting" << std::endl;
+  util::Timer timer("oops::ControlIncrement", "operator+=ControlVariable");
+  xx.state() += dx.state();
+  xx.modVar() += dx.modVar();
+  xx.obsVar() += dx.obsVar();
+  Log::trace() << "operator+=(ControlVariable, ControlIncrement) done" << std::endl;
+  return xx;
+}
+
 // =============================================================================
 
 template<typename MODEL, typename OBS>
@@ -156,6 +171,8 @@ ControlIncrement<MODEL, OBS>::~ControlIncrement() {}
 template<typename MODEL, typename OBS>
 void ControlIncrement<MODEL, OBS>::diff(const CtrlVar_ & cvar1, const CtrlVar_ & cvar2) {
   increment_.diff(cvar1.states(), cvar2.states());
+  modbias_.diff(cvar1.modVar(), cvar2.modVar());
+  obsbias_.diff(cvar1.obsVar(), cvar2.obsVar());
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL, typename OBS> ControlIncrement<MODEL, OBS> &

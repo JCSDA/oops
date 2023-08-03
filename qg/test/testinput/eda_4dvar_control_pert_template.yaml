@@ -1,0 +1,132 @@
+cost function:
+  cost type: 4D-Var     # Cost function for the control member (Pert members always use 3D-Var)
+  window begin: 2010-01-01T00:00:00Z
+  window length: P1D
+  analysis variables: [x]
+  geometry:
+    nx: 40
+    ny: 20
+    depths: [4500.0, 5500.0]
+  background:
+    date: 2010-01-01T00:00:00Z
+    filename: Data/forecast.ens.%mem%.2009-12-31T00:00:00Z.P1D.nc
+  background error:
+    covariance model: QgError
+    horizontal_length_scale: 2.2e6
+    maximum_condition_number: 1.0e6
+    standard_deviation: 1.8e7
+    vertical_length_scale: 15000.0
+  model:
+    name: QG
+    tstep: PT1H
+  observations:
+    observers:
+    - obs error:
+        covariance model: diagonal
+      obs operator:
+        obs type: Stream
+      obs space:
+        obsdatain:
+          engine:
+            obsfile: Data/truth.obs4d_24h.nc
+        obsdataout:
+          engine:
+            obsfile: Data/mem%mem_pad%.eda_4dvar_control_pert.obs4d_24h.nc
+        obs type: Stream
+    - obs error:
+        covariance model: diagonal
+      obs operator:
+        obs type: Wind
+      obs space:
+        obsdatain:
+          engine:
+            obsfile: Data/truth.obs4d_24h.nc
+        obsdataout:
+          engine:
+            obsfile: Data/mem%mem_pad%.eda_4dvar_control_pert.obs4d_24h.nc
+        obs type: Wind
+    - obs error:
+        covariance model: diagonal
+      obs operator:
+        obs type: WSpeed
+      obs space:
+        obsdatain:
+          engine:
+            obsfile: Data/truth.obs4d_24h.nc
+        obsdataout:
+          engine:
+            obsfile: Data/mem%mem_pad%.eda_4dvar_control_pert.obs4d_24h.nc
+        obs type: WSpeed
+  constraints:
+  - jcdfi:
+      filtered variables: [x]
+      alpha: 1.0e-13
+      cutoff: PT12H
+      type: DolphChebyshev
+variational:
+  minimizer:
+    algorithm: DRPCG
+  iterations:
+  - geometry:
+      nx: 40
+      ny: 20
+      depths: [4500.0, 5500.0]
+    ninner: 10
+    gradient norm reduction: 1.0e-10
+    linear model:
+      trajectory:
+        tstep: PT1H
+      tstep: PT1H
+      variable change: Identity
+      name: QgTLM
+    diagnostics:
+      departures: ombg0
+    online diagnostics:
+      write increment: true
+      increment:
+        datadir: Data
+        date: 2010-01-01T12:00:00Z
+        exp: eda_4dvar_control_pert.mem%mem_pad%_iter0
+        type: in
+    prints: {}
+  - geometry:
+      nx: 40
+      ny: 20
+      depths: [4500.0, 5500.0]
+    ninner: 10
+    gradient norm reduction: 1.0e-10
+    linear model:
+      trajectory:
+        tstep: PT1H
+      tstep: PT1H
+      variable change: Identity
+      name: QgTLM
+    diagnostics:
+      departures: ombg1
+    online diagnostics:
+      write increment: true
+      increment:
+        datadir: Data
+        date: 2010-01-01T12:00:00Z
+        exp: eda_4dvar_control_pert.mem%mem_pad%_iter1
+        type: in
+    prints: {}
+final:
+  diagnostics:
+    departures: oman
+  increment:
+    geometry:
+      nx: 40
+      ny: 20
+      depths: [4500.0, 5500.0]
+    output:
+      datadir: Data
+      exp: eda_4dvar_control_pert.mem%mem_pad%_full_increment
+      type: in
+  prints: {}
+output:
+  datadir: Data
+  exp: mem%mem_pad%.eda_4dvar_control_pert
+  first: PT0S
+  frequency: PT6H
+  type: an

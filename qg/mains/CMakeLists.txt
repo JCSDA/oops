@@ -36,6 +36,12 @@ ecbuild_add_executable( TARGET  qg_4dvar.x
                       )
 # TODO: oops_output_json_schema( qg_4dvar.x )
 
+ecbuild_add_executable( TARGET  qg_ControlPert.x
+                        SOURCES qgControlPert.cc
+                        LIBS    qg
+                      )
+# TODO: oops_output_json_schema( qg_ControlPert.x )
+
 ecbuild_add_executable( TARGET  qg_hofx.x
                         SOURCES qgHofX.cc
                         LIBS    qg
