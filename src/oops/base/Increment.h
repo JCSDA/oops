@@ -48,6 +48,7 @@ namespace oops {
 template <typename MODEL>
 class Increment : public interface::Increment<MODEL> {
   typedef Geometry<MODEL>            Geometry_;
+  typedef State<MODEL>               State_;
 
  public:
   /// Constructor for specified \p geometry, with \p variables, valid on \p date
@@ -62,6 +63,8 @@ class Increment : public interface::Increment<MODEL> {
 
   /// Accessor to geometry associated with this Increment
   const Geometry_ & geometry() const {return resol_;}
+
+  void transfer_from_state(const State_ &);
 
   /// Accessors to the ATLAS fieldset
   const atlas::FieldSet & fieldSet() const;
@@ -157,6 +160,17 @@ void Increment<MODEL>::synchronizeFieldsAD() {
 
 // -----------------------------------------------------------------------------
 
+template<typename MODEL>
+void Increment<MODEL>::transfer_from_state(const State_ & xx) {
+  // TODO(JEDI core team): this is inneficient, we should recode this method using fieldSets
+  // when those are fully implemented
+  State_ zz(xx);
+  zz.zero();
+  this->diff(xx, zz);
+}
+
+// -----------------------------------------------------------------------------
+
 /// Add on \p dx incrment to model state \p xx
 template <typename MODEL>
 State<MODEL> & operator+=(State<MODEL> & xx, const Increment<MODEL> & dx) {
@@ -167,6 +181,7 @@ State<MODEL> & operator+=(State<MODEL> & xx, const Increment<MODEL> & dx) {
   return xx;
 }
 
+// -----------------------------------------------------------------------------
 
 }  // namespace oops
 

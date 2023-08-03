@@ -27,8 +27,9 @@ namespace oops {
 
 template<typename MODEL>
 class IncrementSet : public DataSetBase< Increment<MODEL>, Geometry<MODEL> > {
-  typedef Geometry<MODEL>                     Geometry_;
-  typedef Increment<MODEL>                    Increment_;
+  typedef Geometry<MODEL>     Geometry_;
+  typedef Increment<MODEL>    Increment_;
+  typedef StateSet<MODEL>     States_;
 
  public:
   IncrementSet(const Geometry_ &, const Variables &, const std::vector<util::DateTime> &,
@@ -37,6 +38,7 @@ class IncrementSet : public DataSetBase< Increment<MODEL>, Geometry<MODEL> > {
                const eckit::mpi::Comm & commEns = oops::mpi::myself());
   IncrementSet(const IncrementSet &, const bool copy = true);
   IncrementSet(const Geometry_ &, const IncrementSet &);
+  IncrementSet(const Geometry_ &, const Variables &, States_ &);
   virtual ~IncrementSet() = default;
 
   void zero();
@@ -48,7 +50,9 @@ class IncrementSet : public DataSetBase< Increment<MODEL>, Geometry<MODEL> > {
   double dot_product_with(const IncrementSet &) const;
   void schur_product_with(const IncrementSet &);
 
-  void diff(const StateSet<MODEL> &, const StateSet<MODEL> &);
+  void diff(const States_ &, const States_ &);
+
+  IncrementSet ens_mean() const;
 
  protected:
   const std::vector<Increment_> & increments() const {return this->dataset();}
@@ -79,7 +83,7 @@ IncrementSet<MODEL>::IncrementSet(const Geometry_ & resol, const Variables & var
 
   this->check_consistency();
 
-  Log::trace() << "IncrementSet::IncrementSet done" << *this << std::endl;
+  Log::trace() << "IncrementSet::IncrementSet done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -96,7 +100,7 @@ IncrementSet<MODEL>::IncrementSet(const IncrementSet & other, const bool copy)
     }
   }
   this->check_consistency();
-  Log::trace() << "IncrementSet::IncrementSet copied" << *this << std::endl;
+  Log::trace() << "IncrementSet::IncrementSet copied" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -111,13 +115,36 @@ IncrementSet<MODEL>::IncrementSet(const Geometry_ & resol, const IncrementSet & 
     (*this)[jj] = Increment_(resol, other[jj]);
   }
   this->check_consistency();
-  Log::trace() << "IncrementSet::IncrementSet chres done" << *this << std::endl;
+  Log::trace() << "IncrementSet::IncrementSet chres done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void IncrementSet<MODEL>::diff(const StateSet<MODEL> & xx1, const StateSet<MODEL> & xx2) {
+IncrementSet<MODEL>::IncrementSet(const Geometry_ & resol, const Variables & vars,
+                                  States_ & xx)
+  : DataSetBase<Increment_, Geometry_>(xx.times(), xx.commTime(), xx.members(), xx.commEns())
+{
+  Log::trace() << "IncrementSet::IncrementSet from States" << std::endl;
+
+  size_t mytime = this->local_time_size() * this->commTime().rank();
+  for (size_t jm = 0; jm < this->local_ens_size(); ++jm) {
+    for (size_t jt = 0; jt < this->local_time_size(); ++jt) {
+      const util::DateTime time = xx.times()[mytime + jt];
+      this->dataset().emplace_back(Increment_(resol, vars, time));
+      (*this)(jt, jm).transfer_from_state(xx(jt, jm));
+    }
+  }
+
+  this->check_consistency();
+
+  Log::trace() << "IncrementSet::IncrementSet from States done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void IncrementSet<MODEL>::diff(const States_ & xx1, const States_ & xx2) {
 //  this->check_consistency(xx1);
 //  this->check_consistency(xx2);
   for (size_t jj = 0; jj < this->size(); ++jj) {
@@ -158,9 +185,15 @@ StateSet<MODEL> & operator+=(StateSet<MODEL> & xx, const IncrementSet<MODEL> & d
 
 template <typename MODEL>
 IncrementSet<MODEL> & IncrementSet<MODEL>::operator+=(const IncrementSet<MODEL> & other) {
-  this->check_consistency(other);
-  for (size_t jj = 0; jj < this->size(); ++jj) {
-    (*this)[jj] += other[jj];
+  this->check_consistency(other, false);
+  ASSERT(other.ens_size() == this->ens_size() || other.ens_size() == 1);
+
+  for (size_t jm = 0; jm < this->local_ens_size(); ++jm) {
+    size_t im = jm;
+    if (other.ens_size() == 1) im = 0;
+    for (size_t jt = 0; jt < this->local_time_size(); ++jt) {
+      (*this)(jt, jm) += other(jt, im);
+    }
   }
   return *this;
 }
@@ -169,9 +202,15 @@ IncrementSet<MODEL> & IncrementSet<MODEL>::operator+=(const IncrementSet<MODEL> 
 
 template <typename MODEL>
 IncrementSet<MODEL> & IncrementSet<MODEL>::operator-=(const IncrementSet<MODEL> & other) {
-  this->check_consistency(other);
-  for (size_t jj = 0; jj < this->size(); ++jj) {
-    (*this)[jj] -= other[jj];
+  this->check_consistency(other, false);
+  ASSERT(other.ens_size() == this->ens_size() || other.ens_size() == 1);
+
+  for (size_t jm = 0; jm < this->local_ens_size(); ++jm) {
+    size_t im = jm;
+    if (other.ens_size() == 1) im = 0;
+    for (size_t jt = 0; jt < this->local_time_size(); ++jt) {
+      (*this)(jt, jm) -= other(jt, im);
+    }
   }
   return *this;
 }
@@ -217,6 +256,29 @@ void IncrementSet<MODEL>::schur_product_with(const IncrementSet<MODEL> & other) 
   for (size_t jj = 0; jj < this->size(); ++jj) {
     (*this)[jj].schur_product_with(other[jj]);
   }
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+IncrementSet<MODEL> IncrementSet<MODEL>::ens_mean() const {
+  Log::trace() << "IncrementSet::ens_mean start" << std::endl;
+  if (this->commEns().size() > 1) {
+    throw eckit::NotImplemented("IncrementSet::ens_mean not implemented for distributed ensembles",
+                                Here());
+  }
+
+  IncrementSet<MODEL> mean(this->geometry(), this->variables(), this->times(), this->commTime());
+  const double fact = 1.0 / static_cast<double>(this->ens_size());
+  for (size_t jt = 0; jt < this->local_time_size(); ++jt) {
+    for (size_t jm = 0; jm < this->local_ens_size(); ++jm) {
+      mean[jt] += (*this)(jt, jm);
+    }
+    mean[jt] *= fact;
+  }
+
+  Log::trace() << "IncrementSet::ens_mean done" << std::endl;
+  return mean;
 }
 
 // -----------------------------------------------------------------------------

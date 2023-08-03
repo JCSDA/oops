@@ -3,7 +3,7 @@ cost function:
   window begin: 2010-01-01T03:00:00Z
   window length: PT12H
   subwindow: PT1H30M
-  parallel subwindows: true
+  parallel subwindows: false
   analysis variables: [x]
   geometry:
     resol: 40

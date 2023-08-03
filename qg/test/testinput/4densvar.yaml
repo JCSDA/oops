@@ -3,6 +3,7 @@ cost function:
   window begin: 2010-01-01T00:00:00Z
   window length: PT6H
   subwindow: PT1H
+  parallel subwindows: true
   analysis variables: [x]
   background:
     states:

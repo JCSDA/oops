@@ -110,9 +110,9 @@ CostJb4D<MODEL, OBS>::CostJb4D(const std::vector<util::DateTime> & times,
   : B_(), bg_(), ctlvars_(ctlvars), resol_(), times_(times), conf_(config, "background error"),
     commTime_(mpi::clone(comm))
 {
-  bg_.reset(new State_(times, commTime_)),
-  bg_->read(geom, eckit::LocalConfiguration(config, "background"));
+  bg_.reset(new State_(geom, eckit::LocalConfiguration(config, "background"), commTime_));
   ASSERT(bg_->is_4d());
+  ASSERT(bg_->times() == times);
   Log::trace() << "CostJb4D contructed." << std::endl;
 }
 

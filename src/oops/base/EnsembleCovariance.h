@@ -69,7 +69,7 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL>,
   typedef LinearVariableChange<MODEL>               LinearVariableChange_;
   typedef Localization<MODEL>                       Localization_;
   typedef State4D<MODEL>                            State4D_;
-  typedef IncrementEnsemble<MODEL>                  Ensemble_;
+  typedef IncrementSet<MODEL>                       Ensemble_;
 
  public:
   typedef EnsembleCovarianceParameters<MODEL> Parameters_;
@@ -93,9 +93,6 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL>,
   int seed_ = 7;  // For reproducibility
 };
 
-// =============================================================================
-
-/// Constructor, destructor
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Variables & vars,
@@ -108,18 +105,19 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Var
   util::Timer timer("oops::Covariance", "EnsembleCovariance");
   size_t init = eckit::system::ResourceUsage().maxResidentSetSize();
 
-  // Create ensemble (with a zero mean for this IncrementEnsemble constructor)
-  ens_.reset(new Ensemble_(params.ensemble, resol, vars, xb[0].validTime()));
-  if (ens_->size() < 2) {
+  eckit::LocalConfiguration conf = params.toConfiguration();
+
+  // Create ensemble
+  StateSet<MODEL> tmp(resol, conf, xb.commTime());
+  if (tmp.ens_size() < 2) {
     throw eckit::BadParameter("Not enough ensemble members provided for ensemble "
                               "covariances (at least 2 required)", Here());
   }
-
-  // Get timeslot
-  util::DateTime tslot = xb[0].validTime();
+  ens_.reset(new Ensemble_(resol, vars, tmp));
+  *ens_ -= ens_->ens_mean();
 
   // Setup ensemble transform
-  if (params.ensTrans.value() != boost::none) {
+  if (conf.has("ensemble transform")) {
     // Create ensemble transform
     const auto & ensTransParams = *params.ensTrans.value();
     ensTrans_.reset(new LinearVariableChange_(resol, ensTransParams));
@@ -139,47 +137,53 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Var
     }
 
     // Set trajectory
-    ensTrans_->changeVarTraj(fg[0], ensTransOutputVars_);
+    ensTrans_->changeVarTraj(fg[0], ensTransOutputVars_);   // change var per time????????
   }
 
-  // Read inflation field
-  std::unique_ptr<Increment_> inflationField;
-  if (params.inflationField.value() != boost::none) {
-    inflationField.reset(new Increment_(resol, vars, tslot));
-    inflationField->read(*params.inflationField.value());
-  }
-
-  // Get inflation value
-  const double inflationValue = params.inflationValue;
-
-  // Loop over members
-  for (unsigned int ie = 0; ie < ens_->size(); ++ie) {
-    // Apply local inflation
-    if (inflationField) {
-      (*ens_)[ie].schur_product_with(*inflationField);
+  if (conf.has("inflation value") || conf.has("inflation field")) {
+    // Read inflation field
+    std::unique_ptr<Increment_> inflationField;
+    if (conf.has("inflation field")) {
+      inflationField.reset(new Increment_(resol, vars, xb[0].validTime()));
+      inflationField->read(*params.inflationField.value());
     }
 
-    // Apply global inflation
-    (*ens_)[ie] *= inflationValue;
+    // Get inflation value
+    const bool inflate = conf.has("inflation value");
+    const double inflationValue = conf.getDouble("inflation value", 1.0);
 
-    // Apply ensemble transform inverse
-    if (ensTrans_) {
-      ensTrans_->changeVarInverseTL((*ens_)[ie], ensTransInputVars_);
+    // Loop over members
+    for (size_t jt = 0; jt < ens_->local_time_size(); ++jt) {
+      for (size_t jm = 0; jm < ens_->local_ens_size(); ++jm) {
+        // Apply local inflation
+        if (inflationField) {
+          (*ens_)(jt, jm).schur_product_with(*inflationField);
+        }
+
+        // Apply global inflation
+        if (inflate) (*ens_)(jt, jm) *= inflationValue;
+
+        // Apply ensemble transform inverse
+        if (ensTrans_) {
+          ensTrans_->changeVarInverseTL((*ens_)(jt, jm), ensTransInputVars_);
+        }
+      }
     }
   }
 
   // Create localization
-  if (params.localization.value() != boost::none) {
-    eckit::LocalConfiguration conf = *params.localization.value();
-    conf.set("date", xb[0].validTime().toString());
-    conf.set("time rank", resol.timeComm().rank());
+  if (conf.has("localization")) {
+    eckit::LocalConfiguration locconf(conf, "localization");
+    locconf.set("date", xb[0].validTime().toString());
+    locconf.set("time rank", resol.timeComm().rank());
     oops::Variables locVars(vars);
     if (ensTrans_) {
       locVars -= ensTransOutputVars_;
       locVars += ensTransInputVars_;
     }
-    loc_.reset(new Localization_(resol, locVars, conf));
+    loc_.reset(new Localization_(resol, locVars, locconf));
   }
+
   size_t current = eckit::system::ResourceUsage().maxResidentSetSize();
   this->setObjectSize(current - init);
   Log::trace() << "EnsembleCovariance::EnsembleCovariance done" << std::endl;
@@ -192,26 +196,34 @@ EnsembleCovariance<MODEL>::~EnsembleCovariance() {
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 void EnsembleCovariance<MODEL>::doRandomize(Increment4D_ & dx) const {
+  ASSERT(ens_->ens_size() == ens_->local_ens_size());
   dx.zero();
+
   if (loc_) {
     // Localized covariance matrix
-    for (unsigned int ie = 0; ie < ens_->size(); ++ie) {
-      Increment_ tmp(dx[0]);
+    Increment4D_ tmp(dx);
+    for (size_t jm = 0; jm < ens_->ens_size(); ++jm) {
       loc_->randomize(tmp);
-      tmp.schur_product_with((*ens_)[ie]);
-      dx[0].axpy(1.0, tmp, false);
+      for (size_t jt = 0; jt < dx.local_time_size(); ++jt) {
+        tmp[jt].schur_product_with((*ens_)(jt, jm));
+      }
+      dx += tmp;
     }
   } else {
     // Raw covariance matrix
-    util::NormalDistribution<double> normalDist(ens_->size(), 0.0, 1.0, seed_);
-    for (unsigned int ie = 0; ie < ens_->size(); ++ie) {
-      dx[0].axpy(normalDist[ie], (*ens_)[ie]);
+    util::NormalDistribution<double> normalDist(ens_->ens_size(), 0.0, 1.0, seed_);
+    for (size_t jm = 0; jm < ens_->ens_size(); ++jm) {
+      for (size_t jt = 0; jt < dx.local_time_size(); ++jt) {
+        dx[jt].axpy(normalDist[jm], (*ens_)(jt, jm));
+      }
     }
   }
 
   // Ensemble transform
   if (ensTrans_) {
-    ensTrans_->changeVarTL(dx[0], ensTransOutputVars_);
+    for (size_t jt = 0; jt < dx.local_time_size(); ++jt) {
+      ensTrans_->changeVarTL(dx[jt], ensTransOutputVars_);
+    }
   }
 
   // Normalization
@@ -220,44 +232,56 @@ void EnsembleCovariance<MODEL>::doRandomize(Increment4D_ & dx) const {
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 void EnsembleCovariance<MODEL>::doMultiply(const Increment4D_ & dxi, Increment4D_ & dxo) const {
+  ASSERT(ens_->ens_size() == ens_->local_ens_size());
+  Increment4D_ dxiTmp(dxi);
+
   // Ensemble transform adjoint
-  Increment_ dxiTmp(dxi[0]);
   if (ensTrans_) {
-    ensTrans_->changeVarAD(dxiTmp, ensTransInputVars_);
+    for (size_t jt = 0; jt < ens_->local_time_size(); ++jt) {
+      ensTrans_->changeVarAD(dxiTmp[jt], ensTransInputVars_);
+    }
   }
 
-  // Initialization
-  Increment_ dxoTmp(dxiTmp);
+  Increment4D_ dxoTmp(dxiTmp);
   dxoTmp.zero();
 
   // Localization
-  for (unsigned int ie = 0; ie < ens_->size(); ++ie) {
-    if (loc_) {
-      // Localized covariance matrix
-      Increment_ dx(dxiTmp);
-      dx.schur_product_with((*ens_)[ie]);
+  if (loc_) {
+    // Localized covariance matrix
+    for (size_t jm = 0; jm < ens_->ens_size(); ++jm) {
+      Increment4D_ dx(dxiTmp);
+      for (size_t jt = 0; jt < ens_->local_time_size(); ++jt) {
+        dx[jt].schur_product_with((*ens_)(jt, jm));
+      }
       loc_->multiply(dx);
-      dx.schur_product_with((*ens_)[ie]);
-      dxoTmp.axpy(1.0, dx, false);
-    } else {
-      // Raw covariance matrix
-      if (dxi.geometry().timeComm().size() > 1)
-        throw eckit::NotImplemented("dot_product not correctly implemented", Here());
-      double wgt = dxiTmp.dot_product_with((*ens_)[ie]);
-      dxoTmp.axpy(wgt, (*ens_)[ie], false);
+      for (size_t jt = 0; jt < ens_->local_time_size(); ++jt) {
+        dx[jt].schur_product_with((*ens_)(jt, jm));
+      }
+      dxoTmp += dx;
+    }
+  } else {
+    if (dxi.geometry().timeComm().size() > 1)
+      throw eckit::NotImplemented("dot_product not correctly implemented", Here());
+    for (size_t jm = 0; jm < ens_->ens_size(); ++jm) {
+      for (size_t jt = 0; jt < ens_->local_time_size(); ++jt) {
+        double wgt = dxiTmp[jt].dot_product_with((*ens_)(jt, jm));
+        dxoTmp[jt].axpy(wgt, (*ens_)(jt, jm), false);
+      }
     }
   }
 
   // Ensemble transform
   if (ensTrans_) {
-    ensTrans_->changeVarTL(dxoTmp, ensTransOutputVars_);
+    for (size_t jt = 0; jt < ens_->local_time_size(); ++jt) {
+      ensTrans_->changeVarTL(dxoTmp[jt], ensTransOutputVars_);
+    }
   }
 
   // Normalization
-  dxoTmp *= 1.0/static_cast<double>(ens_->size()-1);
+  dxoTmp *= 1.0/static_cast<double>(ens_->ens_size()-1);
 
   // Copy to output Increment_
-  dxo[0] = dxoTmp;
+  dxo = dxoTmp;
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>

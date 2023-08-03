@@ -24,7 +24,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "oops/base/Geometry.h"
-#include "oops/base/Increment.h"
+#include "oops/base/Increment4D.h"
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/Localization.h"
 #include "oops/base/Variables.h"
@@ -89,39 +89,39 @@ template <typename MODEL> class LocalizationFixture : private boost::noncopyable
 
 template <typename MODEL> void testLocalizationRandomize() {
   typedef LocalizationFixture<MODEL> Test_;
-  typedef oops::Increment<MODEL>     Increment_;
+  typedef oops::Increment4D<MODEL>   Increment_;
 
-  Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
+  Increment_ dx(Test_::resol(), Test_::ctlvars(), {Test_::time()});
 
   Test_::localization().randomize(dx);
-  EXPECT(dx.norm() > 0.0);
+  EXPECT(dx[0].norm() > 0.0);
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL> void testLocalizationZero() {
   typedef LocalizationFixture<MODEL> Test_;
-  typedef oops::Increment<MODEL>     Increment_;
+  typedef oops::Increment4D<MODEL>   Increment_;
 
-  Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
+  Increment_ dx(Test_::resol(), Test_::ctlvars(), {Test_::time()});
 
-  EXPECT(dx.norm() == 0.0);
+  EXPECT(dx[0].norm() == 0.0);
   Test_::localization().multiply(dx);
-  EXPECT(dx.norm() == 0.0);
+  EXPECT(dx[0].norm() == 0.0);
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL> void testLocalizationMultiply() {
   typedef LocalizationFixture<MODEL> Test_;
-  typedef oops::Increment<MODEL>     Increment_;
+  typedef oops::Increment4D<MODEL>   Increment_;
 
-  Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
+  Increment_ dx(Test_::resol(), Test_::ctlvars(), {Test_::time()});
   dx.random();
 
-  EXPECT(dx.norm() > 0.0);
+  EXPECT(dx[0].norm() > 0.0);
   Test_::localization().multiply(dx);
-  EXPECT(dx.norm() > 0.0);
+  EXPECT(dx[0].norm() > 0.0);
 }
 
 // -----------------------------------------------------------------------------

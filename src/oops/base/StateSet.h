@@ -70,8 +70,21 @@ StateSet<MODEL>::StateSet(const Geometry_ & resol, const eckit::Configuration & 
   : DataSetBase<State_, Geometry_>(commTime, commEns)
 {
   Log::trace() << "StateSet::StateSet read start " << config << std::endl;
-  this->read(resol, config);
-  Log::trace() << "StateSet::StateSet read done" << *this << std::endl;
+
+  std::vector<eckit::LocalConfiguration> locals = this->configure(config);
+
+  size_t indx = 0;
+  for (size_t jm = 0; jm < this->local_ens_size(); ++jm) {
+    for (size_t jt = 0; jt < this->local_time_size(); ++jt) {
+      this->dataset().emplace_back(State_(resol, locals.at(indx)));
+      ++indx;
+    }
+  }
+
+  this->sync_times();
+  this->check_consistency();
+
+  Log::trace() << "StateSet::StateSet read done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -85,7 +98,7 @@ StateSet<MODEL>::StateSet(const Geometry_ & resol, const StateSet & other)
   for (size_t jj = 0; jj < other.size(); ++jj) {
     this->dataset().emplace_back(State_(resol, other[jj]));
   }
-  Log::trace() << "StateSet::StateSet chres done" << *this << std::endl;
+  Log::trace() << "StateSet::StateSet chres done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

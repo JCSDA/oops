@@ -109,10 +109,9 @@ CostJb3D<MODEL, OBS>::CostJb3D(const util::DateTime & time, const eckit::Configu
                           const Geometry_ & geom, const Variables & ctlvars)
   : B_(), bg_(), ctlvars_(ctlvars), resol_(), time_(1), conf_(config, "background error")
 {
-  std::vector<util::DateTime> times({time});
-  bg_.reset(new State_(times, oops::mpi::myself()));
-  bg_->read(geom, eckit::LocalConfiguration(config, "background"));
+  bg_.reset(new State_(geom, eckit::LocalConfiguration(config, "background"), oops::mpi::myself()));
   ASSERT(bg_->is_3d());
+  ASSERT(bg_->validTimes()[0] == time);
   Log::trace() << "CostJb3D constructed." << std::endl;
 }
 

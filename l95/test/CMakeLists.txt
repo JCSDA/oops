@@ -13,6 +13,7 @@ list( APPEND l95_test_input
   testinput/3dfgat.yaml
   testinput/4dfgat.yaml
   testinput/4densvar.yaml
+  testinput/4densvar_seq.yaml
   testinput/4densvar_hybrid.yaml
   testinput/4dforcing.yaml
   testinput/4dsaddlepoint.yaml
@@ -730,6 +731,11 @@ ecbuild_add_test( TARGET test_l95_4densvar
                   COMMAND l95_4dvar.x
                   MPI 9
                   ARGS testinput/4densvar.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d12h test_l95_genenspert )
+
+ecbuild_add_test( TARGET test_l95_4densvar_seq
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/4densvar_seq.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d12h test_l95_genenspert )
 
 ecbuild_add_test( TARGET test_l95_4densvar_hybrid

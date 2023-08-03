@@ -23,8 +23,11 @@
 
 #include <boost/noncopyable.hpp>
 
+#include "eckit/exception/Exceptions.h"
+
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
+#include "oops/base/Increment4D.h"
 #include "oops/generic/LocalizationBase.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/abor1_cpp.h"
@@ -51,8 +54,9 @@ template <typename MODEL>
 class Localization : public util::Printable,
                      private boost::noncopyable,
                      private util::ObjectCounter<Localization<MODEL> > {
-  typedef Geometry<MODEL>   Geometry_;
-  typedef Increment<MODEL>  Increment_;
+  typedef Geometry<MODEL>     Geometry_;
+  typedef Increment<MODEL>    Increment_;
+  typedef Increment4D<MODEL>  Increment4D_;
   typedef LocalizationBase<MODEL>   LocBase_;
 
  public:
@@ -66,10 +70,10 @@ class Localization : public util::Printable,
 
   /// Randomize \p dx and apply 4D localization. All 3D blocks of the 4D localization
   /// matrix are the same (and defined by 3D localization loc_)
-  virtual void randomize(Increment_ & dx) const;
+  virtual void randomize(Increment4D_ & dx) const;
   /// Apply 4D localization. All 3D blocks of the 4D localization matrix are the same
   /// (and defined by 3D localization loc_)
-  virtual void multiply(Increment_ & dx) const;
+  virtual void multiply(Increment4D_ & dx) const;
 
  private:
   /// Print, used in logging
@@ -209,25 +213,28 @@ Localization<MODEL>::~Localization() {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void Localization<MODEL>::randomize(Increment_ & dx) const {
+void Localization<MODEL>::randomize(Increment4D_ & dx) const {
   Log::trace() << "Localization<MODEL>::randomize starting" << std::endl;
   util::Timer timer(classname(), "randomize");
 
+  if (dx.local_time_size() > 1)
+    throw eckit::NotImplemented("4D localization not fully implemented", Here());
+
   // Save original time value
-  util::DateTime tsub = dx.validTime();
+  util::DateTime tsub = dx[0].validTime();
 
   if (hasTimeDecay_) {
     // Duplicated localization with time-decay
 
     // Set time to 0
     util::DateTime t0(0, 0);
-    dx.updateTime(t0-dx.validTime());
+    dx[0].updateTime(t0-dx[0].validTime());
 
     // Apply 3D localization
-    loc_->randomize(dx);
+    loc_->randomize(dx[0]);
 
     // Create temporary increment
-    Increment_ dxtmp(dx, true);
+    Increment_ dxtmp(dx[0], true);
 
     // Set output increment to zero
     dx.zero();
@@ -236,7 +243,7 @@ void Localization<MODEL>::randomize(Increment_ & dx) const {
     if (commMode_ == "standard") {
       // Apply lower triangular matrix of weights
       for (size_t j=0; j <= mytime_; ++j) {
-        dx.axpy(TDLower_(mytime_, mytime_-j), dxtmp, false);
+        dx[0].axpy(TDLower_(mytime_, mytime_-j), dxtmp, false);
         size_t dest = mytime_ + 1;
         if (mytime_ == ntimes_ - 1 ) dest = comm_.procNull();
         size_t src = mytime_ - 1;
@@ -246,8 +253,8 @@ void Localization<MODEL>::randomize(Increment_ & dx) const {
     } else if (commMode_ == "fast") {
       // Serialize the output
       std::vector<double> dx_s;
-      dx.serialize(dx_s);
-      size_t sz = dx.serialSize();
+      dx[0].serialize(dx_s);
+      size_t sz = dx[0].serialSize();
       Eigen::Map<Eigen::VectorXd> dx_v(dx_s.data(), sz);
 
       // Serialize the temporary increment
@@ -268,21 +275,21 @@ void Localization<MODEL>::randomize(Increment_ & dx) const {
 
       // Deserialize and store the result
       size_t ii = 0;
-      dx.deserialize(dx_s, ii);
+      dx[0].deserialize(dx_s, ii);
     }
   } else {
     // Duplicated localization without time decay
     if (mytime_ == 0) {
       // Apply 3D localization
-      loc_->randomize(dx);
+      loc_->randomize(dx[0]);
     }
 
     // Broadcast
-    oops::mpi::broadcast(comm_, dx, 0);
+    oops::mpi::broadcast(comm_, dx[0], 0);
   }
 
   // Set time back to original value
-  dx.updateTime(tsub - dx.validTime());
+  dx[0].updateTime(tsub - dx[0].validTime());
 
   Log::trace() << "Localization<MODEL>::randomize done" << std::endl;
 }
@@ -290,28 +297,30 @@ void Localization<MODEL>::randomize(Increment_ & dx) const {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void Localization<MODEL>::multiply(Increment_ & dx) const {
+void Localization<MODEL>::multiply(Increment4D_ & dx) const {
   Log::trace() << "Localization<MODEL>::multiply starting" << std::endl;
   util::Timer timer(classname(), "multiply");
 
   // Save original time value
-  util::DateTime tsub = dx.validTime();
+  util::DateTime tsub = dx[0].validTime();
 
   if (hasTimeDecay_) {
+    if (dx.local_time_size() > 1)
+      throw eckit::NotImplemented("4D localization not fully implemented", Here());
     // Duplicated localization with time-decay
 
     // Set time to 0
     util::DateTime t0(0, 0);
-    dx.updateTime(t0-dx.validTime());
+    dx[0].updateTime(t0-dx[0].validTime());
 
     // Create temporary increment
-    Increment_ dxtmp(dx);
+    Increment_ dxtmp(dx[0]);
 
     if (commMode_ == "fast") {
       // Serialize the input
       std::vector<double> dx_s;
-      dx.serialize(dx_s);
-      size_t sz = dx.serialSize();
+      dx[0].serialize(dx_s);
+      size_t sz = dx[0].serialSize();
       Eigen::Map<Eigen::VectorXd> dx_v(dx_s.data(), sz);
 
       // Set temporary increment to zero and serialize it
@@ -343,9 +352,9 @@ void Localization<MODEL>::multiply(Increment_ & dx) const {
       dxtmp.serialize(dxtmp_s);
 
       // Set output increment to zero
-      dx.zero();
+      dx[0].zero();
       dx_s.clear();
-      dx.serialize(dx_s);
+      dx[0].serialize(dx_s);
 
       // Apply lower triangular matrix of weights on serialized vector
       for (size_t j=0; j <= mytime_; ++j) {
@@ -360,30 +369,30 @@ void Localization<MODEL>::multiply(Increment_ & dx) const {
 
       // Deserialize and store the result
       ii = 0;
-      dx.deserialize(dx_s, ii);
+      dx[0].deserialize(dx_s, ii);
     } else if (commMode_ == "standard") {
       // Set temporary increment to zero
       dxtmp.zero();
 
       // Apply upper triangular matrix of weights
       for (size_t j=0; j < ntimes_-mytime_; ++j) {
-        dxtmp.axpy(TDLower_(mytime_+j, mytime_), dx, false);
+        dxtmp.axpy(TDLower_(mytime_+j, mytime_), dx[0], false);
         size_t dest = mytime_ - 1;
         if (mytime_ == 0) dest = comm_.procNull();
         size_t src = mytime_ + 1;
         if (mytime_ == ntimes_ - 1 - j) src = comm_.procNull();
-        oops::mpi::sendReceiveReplace(comm_, dx, dest, 0, src, 0);
+        oops::mpi::sendReceiveReplace(comm_, dx[0], dest, 0, src, 0);
       }
 
       // Apply 3D localization
       loc_->multiply(dxtmp);
 
       // Set output increment to zero
-      dx.zero();
+      dx[0].zero();
 
       // Apply lower triangular matrix of weights
       for (size_t j=0; j <= mytime_; ++j) {
-        dx.axpy(TDLower_(mytime_, mytime_-j), dxtmp, false);
+        dx[0].axpy(TDLower_(mytime_, mytime_-j), dxtmp, false);
         size_t dest = mytime_ + 1;
         if (mytime_ == ntimes_ - 1) dest = comm_.procNull();
         size_t src = mytime_ - 1;
@@ -393,7 +402,7 @@ void Localization<MODEL>::multiply(Increment_ & dx) const {
     }
 
     // Set time back to original value
-    dx.updateTime(tsub - dx.validTime());
+    dx[0].updateTime(tsub - dx[0].validTime());
 
   } else {
   // Use Mark Buehner's trick to save CPU when applying the same 3D localization for all
@@ -412,35 +421,43 @@ void Localization<MODEL>::multiply(Increment_ & dx) const {
   // Reference in section 3.4.2. of https://rmets.onlinelibrary.wiley.com/doi/full/10.1002/qj.2325.
 
     if (commMode_ == "standard") {
-      if (mytime_ > 0) {
-        // Send to root task
-        oops::mpi::send(comm_, dx, 0, 0);
+      std::vector<util::DateTime> times(dx.validTimes());
+      for (size_t jt = 1; jt < dx.local_time_size(); ++jt) {
+        dx[0].axpy(1.0, dx[jt], false);
+      }
+
+      if (dx.commTime().rank() > 0) {
+        oops::mpi::send(dx.commTime(), dx[0], 0, 0);
       } else {
-        // Sum over timeslots
-        Increment_ dxtmp(dx, false);
-        for (size_t jj = 1; jj < ntimes_; ++jj) {
+        Increment_ dxtmp(dx[0], false);
+        for (size_t jj = 1; jj < dx.commTime().size(); ++jj) {
           oops::mpi::receive(comm_, dxtmp, jj, 0);
-          dx.axpy(1.0, dxtmp, false);
+          dx[0].axpy(1.0, dxtmp, false);
         }
 
         // Apply 3D localization
-        loc_->multiply(dx);
+        loc_->multiply(dx[0]);
       }
       // Broadcast
-      oops::mpi::broadcast(comm_, dx, 0);
+      oops::mpi::broadcast(dx.commTime(), dx[0], 0);
 
-      // Set time back to original value
-      dx.updateTime(tsub - dx.validTime());
+      dx[0].updateTime(times[0] - dx[0].validTime());
+      for (size_t jt = 1; jt < dx.local_time_size(); ++jt) {
+        dx[jt] = dx[0];
+        dx[jt].updateTime(times[jt] - dx[jt].validTime());
+      }
 
     } else if (commMode_ == "fast") {
+      if (dx.local_time_size() > 1)
+        throw eckit::NotImplemented("4D localization not fully implemented", Here());
       // Set time to 0
       util::DateTime t0(0, 0);
-      dx.updateTime(t0-dx.validTime());
+      dx[0].updateTime(t0-dx[0].validTime());
 
       // Serialize the input
       std::vector<double> dx_s;
-      dx.serialize(dx_s);
-      size_t sz = dx.serialSize();
+      dx[0].serialize(dx_s);
+      size_t sz = dx[0].serialSize();
       Eigen::Map<Eigen::VectorXd> dx_v(dx_s.data(), sz);
 
       if (mytime_ > 0) {
@@ -457,39 +474,41 @@ void Localization<MODEL>::multiply(Increment_ & dx) const {
 
         // Apply 3D localization
         size_t ii = 0;
-        dx.deserialize(dx_s, ii);
-        dx.updateTime(tsub - dx.validTime());
-        loc_->multiply(dx);
+        dx[0].deserialize(dx_s, ii);
+        dx[0].updateTime(tsub - dx[0].validTime());
+        loc_->multiply(dx[0]);
       }
       // Broadcast
-      oops::mpi::broadcast(comm_, dx, 0);
+      oops::mpi::broadcast(comm_, dx[0], 0);
 
       if (mytime_ > 0) {
         // Set time back to original value
-        dx.updateTime(tsub - dx.validTime());
+        dx[0].updateTime(tsub - dx[0].validTime());
       }
 
     } else if (commMode_ == "aggressive") {
+      if (dx.local_time_size() > 1)
+        throw eckit::NotImplemented("4D localization not fully implemented", Here());
       if (mytime_ > 0) {
         // Set time to 0
         util::DateTime t0(0, 0);
-        dx.updateTime(t0-dx.validTime());
+        dx[0].updateTime(t0-dx[0].validTime());
       }
 
       // Reduce on mytime_ 0
-      oops::mpi::reduceInPlace(comm_, dx, 0);
+      oops::mpi::reduceInPlace(comm_, dx[0], 0);
 
       if (mytime_ == 0) {
         // Apply 3D localization
-        loc_->multiply(dx);
+        loc_->multiply(dx[0]);
       }
 
       // Broadcast
-      oops::mpi::broadcast(comm_, dx, 0);
+      oops::mpi::broadcast(comm_, dx[0], 0);
 
       if (mytime_ > 0) {
         // Set time back to original value
-        dx.updateTime(tsub - dx.validTime());
+        dx[0].updateTime(tsub - dx[0].validTime());
       }
     }
   }

@@ -116,9 +116,9 @@ CostJbJq<MODEL, OBS>::CostJbJq(const std::vector<util::DateTime> & times,
   : B_(), bg_(), ctlvars_(ctlvars), resol_(), conf_(config), commTime_(comm), jq_(), times_(times)
 {
   Log::trace() << "CostJbJq::CostJbJq start" << std::endl;
-  bg_.reset(new State_(times_, commTime_)),
-  bg_->read(geom, eckit::LocalConfiguration(config, "background"));
+  bg_.reset(new State_(geom, eckit::LocalConfiguration(config, "background"), commTime_));
   ASSERT(bg_->is_4d());
+  ASSERT(bg_->times() == times);
   Log::trace() << "CostJbJq::CostJbJq done" << std::endl;
 }
 
