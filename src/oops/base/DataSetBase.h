@@ -305,10 +305,16 @@ std::vector<eckit::LocalConfiguration>
     nmembers_ = tmpl.getInt("nmembers");
     const std::string pattern = tmpl.getString("pattern");
     const int zpad = tmpl.getInt("zero padding", 0);
+    const std::vector<size_t> except = tmpl.getUnsignedVector("except", {});
+    size_t index = tmpl.getUnsigned("start", 1);
     for (int jens = 0; jens < nmembers_; ++jens) {
+      while (std::count(except.begin(), except.end(), index)) {
+        index++;
+      }
       eckit::LocalConfiguration conf(tmpl, "template");
-      util::seekAndReplace(conf, pattern, jens+1, zpad);
+      util::seekAndReplace(conf, pattern, index, zpad);
       ensconfs.push_back(conf);
+      index++;
     }
   } else if (config.has("members")) {
     ensconfs = config.getSubConfigurations("members");
