@@ -38,7 +38,7 @@ class IncrementSet : public DataSetBase< Increment<MODEL>, Geometry<MODEL> > {
                const eckit::mpi::Comm & commEns = oops::mpi::myself());
   IncrementSet(const IncrementSet &, const bool copy = true);
   IncrementSet(const Geometry_ &, const IncrementSet &);
-  IncrementSet(const Geometry_ &, const Variables &, States_ &);
+  IncrementSet(const Geometry_ &, const Variables &, States_ &, const bool clearStates = false);
   virtual ~IncrementSet() = default;
 
   void zero();
@@ -53,10 +53,6 @@ class IncrementSet : public DataSetBase< Increment<MODEL>, Geometry<MODEL> > {
   void diff(const States_ &, const States_ &);
 
   IncrementSet ens_mean() const;
-
- protected:
-  const std::vector<Increment_> & increments() const {return this->dataset();}
-  std::vector<Increment_> & increments() {return this->dataset();}
 
  private:
   std::string classname() const {return "IncrementSet";}
@@ -77,7 +73,7 @@ IncrementSet<MODEL>::IncrementSet(const Geometry_ & resol, const Variables & var
   size_t mytime = this->local_time_size() * commTime.rank();
   for (size_t jm = 0; jm < this->local_ens_size(); ++jm) {
     for (size_t jt = 0; jt < this->local_time_size(); ++jt) {
-      this->dataset().emplace_back(Increment_(resol, vars, times[mytime + jt]));
+      this->dataset().emplace_back(new Increment_(resol, vars, times[mytime + jt]));
     }
   }
 
@@ -122,7 +118,7 @@ IncrementSet<MODEL>::IncrementSet(const Geometry_ & resol, const IncrementSet & 
 
 template<typename MODEL>
 IncrementSet<MODEL>::IncrementSet(const Geometry_ & resol, const Variables & vars,
-                                  States_ & xx)
+                                  States_ & xx, const bool clearStates)
   : DataSetBase<Increment_, Geometry_>(xx.times(), xx.commTime(), xx.members(), xx.commEns())
 {
   Log::trace() << "IncrementSet::IncrementSet from States" << std::endl;
@@ -131,10 +127,12 @@ IncrementSet<MODEL>::IncrementSet(const Geometry_ & resol, const Variables & var
   for (size_t jm = 0; jm < this->local_ens_size(); ++jm) {
     for (size_t jt = 0; jt < this->local_time_size(); ++jt) {
       const util::DateTime time = xx.times()[mytime + jt];
-      this->dataset().emplace_back(Increment_(resol, vars, time));
+      this->dataset().emplace_back(new Increment_(resol, vars, time));
       (*this)(jt, jm).transfer_from_state(xx(jt, jm));
+      if (clearStates) xx.clear(jt, jm);
     }
   }
+  if (clearStates) xx.clear();
 
   this->check_consistency();
 
@@ -157,7 +155,9 @@ void IncrementSet<MODEL>::diff(const States_ & xx1, const States_ & xx2) {
 template <typename MODEL>
 void IncrementSet<MODEL>::zero() {
   this->check_consistency();
-  for (Increment_ & incr : this->dataset()) incr.zero();
+  for (size_t jj = 0; jj < this->size(); ++jj) {
+    (*this)[jj].zero();
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -165,7 +165,9 @@ void IncrementSet<MODEL>::zero() {
 template <typename MODEL>
 void IncrementSet<MODEL>::random() {
   this->check_consistency();
-  for (Increment_ & incr : this->dataset()) incr.random();
+  for (size_t jj = 0; jj < this->size(); ++jj) {
+    (*this)[jj].random();
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -219,7 +221,9 @@ IncrementSet<MODEL> & IncrementSet<MODEL>::operator-=(const IncrementSet<MODEL> 
 
 template <typename MODEL>
 IncrementSet<MODEL> & IncrementSet<MODEL>::operator*=(const double zz) {
-  for (Increment_ & incr : this->dataset()) incr *= zz;
+  for (size_t jj = 0; jj < this->size(); ++jj) {
+    (*this)[jj] *= zz;
+  }
   return *this;
 }
 

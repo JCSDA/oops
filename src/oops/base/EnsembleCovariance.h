@@ -69,7 +69,6 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL>,
   typedef LinearVariableChange<MODEL>               LinearVariableChange_;
   typedef Localization<MODEL>                       Localization_;
   typedef State4D<MODEL>                            State4D_;
-  typedef IncrementSet<MODEL>                       Ensemble_;
 
  public:
   typedef EnsembleCovarianceParameters<MODEL> Parameters_;
@@ -85,7 +84,7 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL>,
   void doMultiply(const Increment4D_ &, Increment4D_ &) const override;
   void doInverseMultiply(const Increment4D_ &, Increment4D_ &) const override;
 
-  std::unique_ptr<Ensemble_> ens_;
+  std::unique_ptr<IncrementSet<MODEL>> ens_;
   std::unique_ptr<LinearVariableChange_> ensTrans_;
   Variables ensTransInputVars_;
   Variables ensTransOutputVars_;
@@ -113,7 +112,7 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Var
     throw eckit::BadParameter("Not enough ensemble members provided for ensemble "
                               "covariances (at least 2 required)", Here());
   }
-  ens_.reset(new Ensemble_(resol, vars, tmp));
+  ens_.reset(new IncrementSet<MODEL>(resol, vars, tmp, true));
   *ens_ -= ens_->ens_mean();
 
   // Setup ensemble transform

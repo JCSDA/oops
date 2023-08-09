@@ -82,8 +82,8 @@ State4D<MODEL>::State4D(const Geometry_ & resol, const State4D & other)
 template<typename MODEL>
 void State4D<MODEL>::zero() {
   Log::trace() << "State4D<MODEL>::zero starting" << std::endl;
-  for (State_ & state : this->states()) {
-    state.zero();
+  for (size_t jj = 0; jj < this->size(); ++jj) {
+    (*this)[jj].zero();
   }
   Log::trace() << "State4D<MODEL>::zero done" << std::endl;
 }
@@ -93,9 +93,9 @@ void State4D<MODEL>::zero() {
 template<typename MODEL>
 void State4D<MODEL>::accumul(const double & zz, const State4D & xx) {
   Log::trace() << "State4D<MODEL>::accumul starting" << std::endl;
-  ASSERT(xx.size() == this->states().size());
-  for (size_t jj = 0; jj < this->states().size(); ++jj) {
-    this->states()[jj].accumul(zz, xx[jj]);
+  ASSERT(xx.size() == this->size());
+  for (size_t jj = 0; jj < this->size(); ++jj) {
+    (*this)[jj].accumul(zz, xx[jj]);
   }
   Log::trace() << "State4D<MODEL>::accumul done" << std::endl;
 }

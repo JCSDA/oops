@@ -81,8 +81,8 @@ Increment4D<MODEL>::Increment4D(const Geometry_ & resol, const Increment4D & oth
 
 template<typename MODEL>
 void Increment4D<MODEL>::ones() {
-  for (Increment_ & incr : this->increments()) {
-    incr.ones();
+  for (size_t jj = 0; jj < this->size(); ++jj) {
+    (*this)[jj].ones();
   }
 }
 
@@ -91,18 +91,20 @@ void Increment4D<MODEL>::ones() {
 template<typename MODEL>
 void Increment4D<MODEL>::dirac(const eckit::Configuration & conf) {
   if (this->time_size() == 1) {
-    this->increments()[0].dirac(conf);
+    (*this)[0].dirac(conf);
   } else {
     const std::vector<eckit::LocalConfiguration> confs = conf.getSubConfigurations();
     ASSERT(this->time_size() == confs.size());
     for (size_t jt = 0; jt < this->local_time_size(); ++jt) {
       const size_t it = this->commTime().rank() * this->local_time_size() + jt;
       if (!confs[it].empty()) {
-        this->increments()[jt].dirac(confs[it]);
+        (*this)[jt].dirac(confs[it]);
       }
     }
   }
 }
+
+// -----------------------------------------------------------------------------
 
 }  // namespace oops
 

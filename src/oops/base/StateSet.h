@@ -42,10 +42,6 @@ class StateSet : public DataSetBase< State<MODEL>, Geometry<MODEL> > {
   StateSet(const StateSet &) = default;
   virtual ~StateSet() = default;
 
- protected:
-  const std::vector<State_> & states() const {return this->dataset();}
-  std::vector<State_> & states() {return this->dataset();}
-
  private:
   std::string classname() const {return "StateSet";}
 };
@@ -76,7 +72,7 @@ StateSet<MODEL>::StateSet(const Geometry_ & resol, const eckit::Configuration & 
   size_t indx = 0;
   for (size_t jm = 0; jm < this->local_ens_size(); ++jm) {
     for (size_t jt = 0; jt < this->local_time_size(); ++jt) {
-      this->dataset().emplace_back(State_(resol, locals.at(indx)));
+      this->dataset().emplace_back(new State_(resol, locals.at(indx)));
       ++indx;
     }
   }

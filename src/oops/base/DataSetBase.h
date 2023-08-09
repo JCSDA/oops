@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <memory>
 #include <numeric>
 #include <ostream>
 #include <string>
@@ -48,11 +49,11 @@ class DataSetBase : public util::Printable {
   const DATA & operator()(const size_t it, const size_t im) const {return this->data(it, im);}
 
   size_t size() const {return dataset_.size();}
-  DATA & operator[](const int ii) {return dataset_[ii];}
-  const DATA & operator[](const int ii) const {return dataset_[ii];}
+  DATA & operator[](const int ii) {return *dataset_[ii];}
+  const DATA & operator[](const int ii) const {return *dataset_[ii];}
 
-  const GEOM & geometry() const {return dataset_[0].geometry();}
-  const Variables & variables() const {this->check_consistency(); return dataset_[0].variables();}
+  const GEOM & geometry() const {return dataset_[0]->geometry();}
+  const Variables & variables() const {this->check_consistency(); return dataset_[0]->variables();}
   const std::vector<util::DateTime> validTimes() const;
 
   const eckit::mpi::Comm & commEns() const {return commEns_;}
@@ -64,24 +65,27 @@ class DataSetBase : public util::Printable {
   void shift_forward();
   void shift_backward();
 
+  void clear(const size_t it, const size_t im) {dataset_.at(im * localtimes_ + it).reset();}
+  void clear();
+
  protected:
   DataSetBase(const std::vector<util::DateTime> &, const eckit::mpi::Comm &,
               const std::vector<int> &, const eckit::mpi::Comm &);
   DataSetBase(const eckit::mpi::Comm &, const eckit::mpi::Comm &);
-  DataSetBase(const DataSetBase &) = default;
+  DataSetBase(const DataSetBase &);
   std::vector<eckit::LocalConfiguration> configure(const eckit::Configuration &);
   void sync_times();
 
   void check_consistency() const;
   void check_consistency(const DataSetBase &, const bool strict_members = true) const;
 
-  std::vector<DATA> & dataset() {return dataset_;}
-  const std::vector<DATA> & dataset() const {return dataset_;}
+  std::vector<std::unique_ptr<DATA>> & dataset() {return dataset_;}
+  const std::vector<std::unique_ptr<DATA>> & dataset() const {return dataset_;}
 
  private:
-  DATA & data(const size_t it, const size_t im) {return dataset_.at(im * localtimes_ + it);}
+  DATA & data(const size_t it, const size_t im) {return *dataset_.at(im * localtimes_ + it);}
   const DATA & data(const size_t it, const size_t im) const
-                                                {return dataset_.at(im * localtimes_ + it);}
+                                                {return *dataset_.at(im * localtimes_ + it);}
 
   size_t ntimes_;
   size_t localtimes_;
@@ -95,7 +99,7 @@ class DataSetBase : public util::Printable {
   const eckit::mpi::Comm & commEns_;
   std::vector<size_t> mymembers_;
 
-  std::vector<DATA> dataset_;
+  std::vector<std::unique_ptr<DATA>> dataset_;
 
   void print(std::ostream &) const;
   virtual std::string classname() const = 0;
@@ -144,10 +148,26 @@ DataSetBase<DATA, GEOM>::DataSetBase(const eckit::mpi::Comm & commTime,
 // -----------------------------------------------------------------------------
 
 template <typename DATA, typename GEOM>
+DataSetBase<DATA, GEOM>::DataSetBase(const DataSetBase<DATA, GEOM> & other)
+  : ntimes_(other.ntimes_), localtimes_(other.localtimes_), alltimes_(other.alltimes_),
+    commTime_(mpi::clone(other.commTime_)), subWinLength_(other.subWinLength_),
+    nmembers_(other.nmembers_), localmembers_(other.localmembers_), allmembers_(other.allmembers_),
+    commEns_(mpi::clone(other.commEns_)), mymembers_(other.mymembers_),
+    dataset_()
+{
+  for (size_t jj = 0; jj < other.dataset_.size(); ++jj) {
+    dataset_.emplace_back(new DATA(*other.dataset_[jj]));
+  }
+  this->check_consistency(other);
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename DATA, typename GEOM>
 DataSetBase<DATA, GEOM> & DataSetBase<DATA, GEOM>::operator=(const DataSetBase<DATA, GEOM> & other)
 {
   this->check_consistency(other);
-  for (size_t jj = 0; jj < dataset_.size(); ++jj) dataset_[jj] = other.dataset_[jj];
+  for (size_t jj = 0; jj < dataset_.size(); ++jj) *dataset_[jj] = *other.dataset_[jj];
   return *this;
 }
 
@@ -190,19 +210,19 @@ void DataSetBase<DATA, GEOM>::check_consistency() const {
   size_t indx = localtimes_;
   for (size_t jm = 1; jm < localmembers_; ++jm) {
     for (size_t jt = 0; jt < localtimes_; ++jt) {
-      if (dataset_.at(jt).validTime() != dataset_.at(indx).validTime()) {
+      if (dataset_.at(jt)->validTime() != dataset_.at(indx)->validTime()) {
         Log::error() << classname() << " error times : " << jt << " " << indx
-                     << " " << dataset_.at(jt).validTime()
-                     << " " << dataset_.at(indx).validTime() << std::endl;
+                     << " " << dataset_.at(jt)->validTime()
+                     << " " << dataset_.at(indx)->validTime() << std::endl;
         error = true;
       }
       ++indx;
     }
   }
   for (size_t jj = 1; jj < dataset_.size(); ++jj) {
-    if (dataset_[0].variables() != dataset_[jj].variables()) {
+    if (dataset_[0]->variables() != dataset_[jj]->variables()) {
       Log::error() << classname() << " error variables : " << jj << " "
-                   << dataset_[0].variables() << dataset_[jj].variables() << std::endl;
+                   << dataset_[0]->variables() << dataset_[jj]->variables() << std::endl;
       error = true;
     }
   }
@@ -229,10 +249,10 @@ void DataSetBase<DATA, GEOM>::check_consistency(const DataSetBase<DATA, GEOM> & 
     error = true;
   }
   for (size_t jt = 0; jt < localtimes_; ++jt) {
-    if (dataset_.at(jt).validTime() != other.dataset_.at(jt).validTime()) {
+    if (dataset_.at(jt)->validTime() != other.dataset_.at(jt)->validTime()) {
       Log::error() << classname() << " inconsistent times : " << jt
-                   << " " << dataset_.at(jt).validTime()
-                   << " " << other.dataset_.at(jt).validTime() << std::endl;
+                   << " " << dataset_.at(jt)->validTime()
+                   << " " << other.dataset_.at(jt)->validTime() << std::endl;
       error = true;
     }
   }
@@ -284,7 +304,7 @@ template<typename DATA, typename GEOM>
 const std::vector<util::DateTime> DataSetBase<DATA, GEOM>::validTimes() const {
   std::vector<util::DateTime> times(localtimes_);
   for (size_t jt = 0; jt < localtimes_; ++jt) {
-    times[jt] = dataset_.at(jt).validTime();
+    times[jt] = dataset_.at(jt)->validTime();
   }
   return times;
 }
@@ -395,11 +415,11 @@ void DataSetBase<DATA, GEOM>::write(const eckit::Configuration & config) const {
     for (size_t jt = 0; jt < localtimes_; ++jt) {
       size_t it = commTime_.rank() * localtimes_ + jt;
       if (config.has("member")) confs[it].set("member", config.getInt("member"));
-      dataset_[jt].write(confs[it]);
+      dataset_[jt]->write(confs[it]);
     }
   } else {
     ASSERT(dataset_.size() == 1);
-    dataset_[0].write(config);
+    dataset_[0]->write(config);
   }
   Log::trace() << "DataSetBase::write done" << std::endl;
 }
@@ -510,6 +530,20 @@ void DataSetBase<DATA, GEOM>::sync_times() {
 // -----------------------------------------------------------------------------
 
 template <typename DATA, typename GEOM>
+void DataSetBase<DATA, GEOM>::clear() {
+  alltimes_.clear();
+  allmembers_.clear();
+  mymembers_.clear();
+  dataset_.clear();
+  ntimes_ = 0;
+  localtimes_ = 0;
+  nmembers_ = 0;
+  localmembers_ = 0;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename DATA, typename GEOM>
 void DataSetBase<DATA, GEOM>::print(std::ostream & os) const {
 //  os << classname() << ": " << nmembers_ << " members, " << localmembers_ << " local."
 //                    << std::endl;
@@ -518,8 +552,8 @@ void DataSetBase<DATA, GEOM>::print(std::ostream & os) const {
 //  os << classname() << ": times: " << alltimes_[0];
 //  for (size_t jt = 1; jt < ntimes_; ++jt) os << ", " << alltimes_[jt];
 //  os << std::endl;
-//  os << classname() << ": valid times: " << dataset_.at(0).validTime();
-//  for (size_t jt = 1; jt < localtimes_; ++jt) os << ", " << dataset_.at(jt).validTime();
+//  os << classname() << ": valid times: " << dataset_.at(0)->validTime();
+//  for (size_t jt = 1; jt < localtimes_; ++jt) os << ", " << dataset_.at(jt)->validTime();
 //  os << std::endl;
 
   if (commTime_.size() > 1 && commEns_.size() > 1)
@@ -527,12 +561,12 @@ void DataSetBase<DATA, GEOM>::print(std::ostream & os) const {
 
   if (commTime_.size() > 1) {
     if (dataset_.size() > 1) throw eckit::NotImplemented("gatherprint not good enough", Here());
-    gatherPrint(os, dataset_[0], commTime_);
+    gatherPrint(os, *dataset_[0], commTime_);
   } else if (commEns_.size() > 1) {
     if (dataset_.size() > 1) throw eckit::NotImplemented("gatherprint not good enough", Here());
-    gatherPrint(os, dataset_[0], commEns_);
+    gatherPrint(os, *dataset_[0], commEns_);
   } else {
-    for (const DATA & data : dataset_) os << data;
+    for (const auto & data : dataset_) os << *data;
   }
 }
 
