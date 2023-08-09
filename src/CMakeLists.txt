@@ -100,6 +100,9 @@ oops/base/DiagonalMatrix.h
 oops/base/DolphChebyshev.cc
 oops/base/DolphChebyshev.h
 oops/base/EnsembleCovariance.h
+oops/base/FieldSet3D.cc
+oops/base/FieldSet3D.h
+oops/base/FieldSet4D.h
 oops/base/ForecastParameters.h
 oops/base/GeneralizedDepartures.h
 oops/base/Geometry.h
@@ -469,6 +472,7 @@ test/base/ObsLocalizations.h
 test/base/variables.F90
 
 test/interface/ErrorCovariance.h
+test/interface/FieldSet4D.h
 test/interface/Geometry.h
 test/interface/GeometryIterator.h
 test/interface/GeometryFixture.h

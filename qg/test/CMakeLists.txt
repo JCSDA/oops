@@ -79,6 +79,8 @@ list( APPEND qg_testinput
   testinput/ens_recenter.yaml
   testinput/ens_variance.yaml
   testinput/error_covariance.yaml
+  testinput/fieldset4D_par.yaml
+  testinput/fieldset4D_seq.yaml
   testinput/forecast.yaml
   testinput/forecast_5level.yaml
   testinput/forecast_control_htlm_pert_heat.yaml
@@ -568,6 +570,24 @@ ecbuild_add_test( TARGET test_qg_make_single-obs_4d_12h
                   ARGS testinput/make_single-obs_4d_12h.yaml
                   COMMAND  qg_hofx.x
                   TEST_DEPENDS test_qg_truth )
+
+#####################################################################
+# 4D-related tests
+#####################################################################
+
+ecbuild_add_test( TARGET  test_qg_fieldset4D_seq
+                  MPI     1
+                  SOURCES executables/TestFieldSet4D.cc
+                  ARGS    "testinput/fieldset4D_seq.yaml"
+                  LIBS    qg
+                  TEST_DEPENDS test_qg_truth test_qg_forecast )
+
+ecbuild_add_test( TARGET  test_qg_fieldset4D_par
+                  MPI     3
+                  SOURCES executables/TestFieldSet4D.cc
+                  ARGS    "testinput/fieldset4D_par.yaml"
+                  LIBS    qg
+                  TEST_DEPENDS test_qg_truth test_qg_forecast )
 
 #####################################################################
 # ensemble-related tests

@@ -152,6 +152,99 @@ void multiplyFieldSets(atlas::FieldSet & fset,
 
 // -----------------------------------------------------------------------------
 
+double dotProductFieldsLocal(const atlas::Field & field1,
+                             const atlas::Field & field2,
+                             const bool & includeHalo) {
+  oops::Log::trace() << "dotProductFieldsLocal starting" << std::endl;
+  ASSERT(field1.name() == field2.name());
+  // Compute dot product
+  double dp = 0.0;
+  if (field1.rank() == 2 && field2.rank() == 2) {
+    // Check fields consistency
+    ASSERT(field1.shape(0) == field2.shape(0));
+    ASSERT(field1.shape(1) == field2.shape(1));
+
+    // Add contributions
+    auto view1 = atlas::array::make_view<double, 2>(field1);
+    auto view2 = atlas::array::make_view<double, 2>(field2);
+    if (field1.functionspace().type() == "Spectral") {
+      const atlas::functionspace::Spectral fs(field1.functionspace());
+      const atlas::idx_t N = fs.truncation();
+      const auto zonal_wavenumbers = fs.zonal_wavenumbers();
+      const atlas::idx_t nb_zonal_wavenumbers = zonal_wavenumbers.size();
+      int jnode = 0;
+      for (int jm=0; jm < nb_zonal_wavenumbers; ++jm) {
+        const atlas::idx_t m1 = zonal_wavenumbers(jm);
+        for (std::size_t n1 = m1; n1 <= static_cast<std::size_t>(N); ++n1) {
+          if (m1 == 0) {
+            // Real part only
+            for (atlas::idx_t jlevel = 0; jlevel < field1.shape(1); ++jlevel) {
+              if (view1(jnode, jlevel) != util::missingValue<double>()
+                && view2(jnode, jlevel) != util::missingValue<double>()) {
+                dp += view1(jnode, jlevel)*view2(jnode, jlevel);
+              }
+            }
+            ++jnode;
+
+            // No imaginary part
+            ++jnode;
+          } else {
+            // Real part
+            for (atlas::idx_t jlevel = 0; jlevel < field1.shape(1); ++jlevel) {
+              if (view1(jnode, jlevel) != util::missingValue<double>()
+                && view2(jnode, jlevel) != util::missingValue<double>()) {
+                dp += 2.0*view1(jnode, jlevel)*view2(jnode, jlevel);
+              }
+            }
+            ++jnode;
+
+            // Imaginary part
+            for (atlas::idx_t jlevel = 0; jlevel < field1.shape(1); ++jlevel) {
+              if (view1(jnode, jlevel) != util::missingValue<double>()
+                && view2(jnode, jlevel) != util::missingValue<double>()) {
+                dp += 2.0*view1(jnode, jlevel)*view2(jnode, jlevel);
+              }
+            }
+            ++jnode;
+          }
+        }
+      }
+    } else {
+      const auto ghostView = atlas::array::make_view<int, 1>(field1.functionspace().ghost());
+      for (atlas::idx_t jnode = 0; jnode < field1.shape(0); ++jnode) {
+        if (includeHalo || (ghostView(jnode) == 0)) {
+          for (atlas::idx_t jlevel = 0; jlevel < field1.shape(1); ++jlevel) {
+            if (view1(jnode, jlevel) != util::missingValue<double>()
+              && view2(jnode, jlevel) != util::missingValue<double>()) {
+              dp += view1(jnode, jlevel)*view2(jnode, jlevel);
+            }
+          }
+        }
+      }
+    }
+  } else {
+    ABORT("dotProductFieldsLocal: wrong rank");
+  }
+
+  oops::Log::trace() << "dotProductFieldsLocal done" << std::endl;
+  // Return dot product
+  return dp;
+}
+
+// -----------------------------------------------------------------------------
+
+double dotProductFields(const atlas::Field & field1,
+                        const atlas::Field & field2,
+                        const eckit::mpi::Comm & comm,
+                        const bool & includeHalo) {
+  double dp = dotProductFieldsLocal(field1, field2, includeHalo);
+  // Allreduce
+  comm.allReduceInPlace(dp, eckit::mpi::sum());
+  return dp;
+}
+
+// -----------------------------------------------------------------------------
+
 double dotProductFieldSets(const atlas::FieldSet & fset1,
                            const atlas::FieldSet & fset2,
                            const std::vector<std::string> & vars,
@@ -164,79 +257,9 @@ double dotProductFieldSets(const atlas::FieldSet & fset1,
   for (const auto & var : vars) {
     // Check fields presence
     if (fset1.has(var) && fset2.has(var)) {
-      // Get fields
-      const auto field1 = fset1.field(var);
-      const auto field2 = fset2.field(var);
-
-      if (field1.rank() == 2 && field2.rank() == 2) {
-        // Check fields consistency
-        ASSERT(field1.shape(0) == field2.shape(0));
-        ASSERT(field1.shape(1) == field2.shape(1));
-
-        // Add contributions
-        auto view1 = atlas::array::make_view<double, 2>(field1);
-        auto view2 = atlas::array::make_view<double, 2>(field2);
-        if (field1.functionspace().type() == "Spectral") {
-          const atlas::functionspace::Spectral fs(field1.functionspace());
-          const atlas::idx_t N = fs.truncation();
-          const auto zonal_wavenumbers = fs.zonal_wavenumbers();
-          const atlas::idx_t nb_zonal_wavenumbers = zonal_wavenumbers.size();
-          int jnode = 0;
-          for (int jm=0; jm < nb_zonal_wavenumbers; ++jm) {
-            const atlas::idx_t m1 = zonal_wavenumbers(jm);
-            for (std::size_t n1 = m1; n1 <= static_cast<std::size_t>(N); ++n1) {
-              if (m1 == 0) {
-                // Real part only
-                for (atlas::idx_t jlevel = 0; jlevel < field1.shape(1); ++jlevel) {
-                  if (view1(jnode, jlevel) != util::missingValue<double>()
-                    && view2(jnode, jlevel) != util::missingValue<double>()) {
-                    dp += view1(jnode, jlevel)*view2(jnode, jlevel);
-                  }
-                }
-                ++jnode;
-
-                // No imaginary part
-                ++jnode;
-              } else {
-                // Real part
-                for (atlas::idx_t jlevel = 0; jlevel < field1.shape(1); ++jlevel) {
-                  if (view1(jnode, jlevel) != util::missingValue<double>()
-                    && view2(jnode, jlevel) != util::missingValue<double>()) {
-                    dp += 2.0*view1(jnode, jlevel)*view2(jnode, jlevel);
-                  }
-                }
-                ++jnode;
-
-                // Imaginary part
-                for (atlas::idx_t jlevel = 0; jlevel < field1.shape(1); ++jlevel) {
-                  if (view1(jnode, jlevel) != util::missingValue<double>()
-                    && view2(jnode, jlevel) != util::missingValue<double>()) {
-                    dp += 2.0*view1(jnode, jlevel)*view2(jnode, jlevel);
-                  }
-                }
-                ++jnode;
-              }
-            }
-          }
-        } else {
-          const auto ghostView = atlas::array::make_view<int, 1>(field1.functionspace().ghost());
-          for (atlas::idx_t jnode = 0; jnode < field1.shape(0); ++jnode) {
-            if (includeHalo || (ghostView(jnode) == 0)) {
-              for (atlas::idx_t jlevel = 0; jlevel < field1.shape(1); ++jlevel) {
-                if (view1(jnode, jlevel) != util::missingValue<double>()
-                  && view2(jnode, jlevel) != util::missingValue<double>()) {
-                  dp += view1(jnode, jlevel)*view2(jnode, jlevel);
-                }
-              }
-            }
-          }
-        }
-      } else {
-        ABORT("dotProductFieldSets: wrong rank");
-      }
+      dp += dotProductFieldsLocal(fset1.field(var), fset2.field(var), includeHalo);
     }
   }
-
   // Allreduce
   comm.allReduceInPlace(dp, eckit::mpi::sum());
 
@@ -247,10 +270,16 @@ double dotProductFieldSets(const atlas::FieldSet & fset1,
 
 // -----------------------------------------------------------------------------
 
+double normField(const atlas::Field & field,
+                 const eckit::mpi::Comm & comm) {
+  return std::sqrt(dotProductFields(field, field, comm, false));
+}
+
+// -----------------------------------------------------------------------------
+
 double normFieldSet(const atlas::FieldSet & fset,
                     const std::vector<std::string> & vars,
                     const eckit::mpi::Comm & comm) {
-  oops::Log::trace() << "normFieldSet starting" << std::endl;
   return std::sqrt(dotProductFieldSets(fset, fset, vars, comm, false));
 }
 

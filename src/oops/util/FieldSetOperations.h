@@ -27,11 +27,17 @@ void multiplyFieldSet(atlas::FieldSet &,
                       const double &);
 void multiplyFieldSets(atlas::FieldSet &,
                        const atlas::FieldSet &);
+double dotProductFields(const atlas::Field &,
+                        const atlas::Field &,
+                        const eckit::mpi::Comm &,
+                        const bool & includeHalo = true);
 double dotProductFieldSets(const atlas::FieldSet &,
                            const atlas::FieldSet &,
                            const std::vector<std::string> &,
                            const eckit::mpi::Comm &,
                            const bool & includeHalo = true);
+double normField(const atlas::Field &,
+                 const eckit::mpi::Comm &);
 double normFieldSet(const atlas::FieldSet &,
                     const std::vector<std::string> &,
                     const eckit::mpi::Comm &);
