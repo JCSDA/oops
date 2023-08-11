@@ -15,6 +15,7 @@
 
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/HtRinvHMatrix.h"
+#include "oops/base/LatLonGridWriter.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
@@ -122,10 +123,22 @@ void writeEigenvectors(const eckit::Configuration & diagConf,
         temp *= eigenvecT.coeff(jj, nn - 1 - ii);
         eigenv += temp;
       }
+
       // Save the eigenvector
-      eckit::LocalConfiguration basisConf(diagConf, "online diagnostics.eigenvector");
-      basisConf.set("iteration", ii);
-      eigenz.write(basisConf);
+      if (diagConf.has("online diagnostics.eigenvector")) {
+        eckit::LocalConfiguration basisConf(diagConf, "online diagnostics.eigenvector");
+        basisConf.set("iteration", ii);
+        eigenz.write(basisConf);
+      } else if (diagConf.has("online diagnostics.eigenvector to latlon")) {
+        eckit::LocalConfiguration eigenLatlonConf(diagConf,
+                    "online diagnostics.eigenvector to latlon");
+        eigenLatlonConf.set("filename prefix",
+              eigenLatlonConf.getString("filename prefix")+std::to_string(ii));
+        LatLonGridWriterParameters eigenLatlonParams;
+        eigenLatlonParams.deserialize(eigenLatlonConf);
+        const LatLonGridWriter<MODEL> latlon(eigenLatlonParams, eigenz.geometry());
+        latlon.interpolateAndWrite(eigenz.state());
+      }
 
       // Verification that eigenz is an eigenvector:
       // A.eigenv = eigenv + HtRinvH.Beigenv = eigenv + HtRinvH.eigenz = lambda eigenv
