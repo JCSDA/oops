@@ -1,0 +1,5 @@
+pattern with zero padding: __mem_pad__
+pattern without zero padding: __mem__
+number of pert members: $(nmembers)
+first pert member index: 1 # Do not change for now
+run pert members only: $(pert_only)

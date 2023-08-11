@@ -40,16 +40,10 @@ namespace oops {
 // -----------------------------------------------------------------------------
 
 /// \brief Top-level options taken by the ControlPert application.
-class ControlPertParameters : public ApplicationParameters {
-  OOPS_CONCRETE_PARAMETERS(ControlPertParameters, ApplicationParameters)
+class ControlPertTemplateParameters : public ApplicationParameters {
+  OOPS_CONCRETE_PARAMETERS(ControlPertTemplateParameters, ApplicationParameters)
 
  public:
-  /// Path to a templated YAML file: the YAML configuration for the control member is obtained
-  /// by replacing \param pattern with zeros (the number of zeros being determined by \param
-  /// max number of digits in member index), whereas the YAML configuration for the Pert members is
-  /// obtained by suitably modifying this template as described in the ControlPert::execute code.
-  RequiredParameter<std::string> memberTemplate{"member template", this};
-
   /// Template pattern in the \param member template file, to be substituted by the individual
   /// ensemble members' indices left-padded with zeros (subject to \param max number of digits
   /// in member index).
@@ -98,14 +92,13 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
     util::printRunStats("ControlPert start");
 
 //  Deserialize parameters
-    ControlPertParameters params;
-    if (validate) params.validate(fullConfig);
-    params.deserialize(fullConfig);
+    ControlPertTemplateParameters params;
+    eckit::LocalConfiguration templateConf(fullConfig, "template");
+    if (validate) params.validate(templateConf);
+    params.deserialize(templateConf);
 
 //  Retrieve control member configuration (for linearization)
-    eckit::PathName confPathControl = params.memberTemplate.value();
-    eckit::YAMLConfiguration controlYAMLConf(confPathControl);
-    eckit::LocalConfiguration controlConf(controlYAMLConf);
+    eckit::LocalConfiguration controlConf(fullConfig, "assimilation");
     const std::string & patternWithPad = params.patternWithPad.value();
     const std::string & patternNoPad = params.patternNoPad.value();
     const int patternLength = params.memberIndexMaxDigits.value();
@@ -124,13 +117,13 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
                              firstPertMember + mytask / tasks_per_member :
                              ((mytask < tasks_per_member) ?
                                    0 : firstPertMember - 1 + mytask / tasks_per_member);
-    ASSERT(ntasks%nmembers == 0);
-    ASSERT(lastPertMember < std::pow(10.0, patternLength));
-
     Log::info() << "Running members "
                 << (params.runPertsOnly.value() ? "" : "0 (control member) and ")
                 << firstPertMember << " to " << lastPertMember << ", handled by " << ntasks
                 << " MPI tasks and " << tasks_per_member << " MPI tasks per member." << std::endl;
+
+    ASSERT(ntasks%nmembers == 0);
+    ASSERT(lastPertMember < std::pow(10.0, patternLength));
 
 //  Create the communicator for each member, named comm_member_{i}
     std::string commMemNameStr = "comm_member_" + std::to_string(mymember);
@@ -144,9 +137,7 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
     eckit::mpi::Comm & commArea = this->getComm().split(myarea, commAreaName);
 
 //  Each member (including control member) uses a different configuration
-    eckit::PathName confPath = params.memberTemplate.value();
-    eckit::YAMLConfiguration memberYAMLConf(confPath);
-    eckit::LocalConfiguration memberConf(memberYAMLConf);
+    eckit::LocalConfiguration memberConf(fullConfig, "assimilation");
     util::seekAndReplace(memberConf, patternWithPad, mymember, patternLength);
     util::seekAndReplace(memberConf, patternNoPad, std::to_string(mymember));
 
@@ -270,7 +261,7 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
         iterconfsPert[0].set("linear model", emptyConf);
       }
 
-      // A switch to let IncrementalAssimilation know that the first-guess gradient of Jb
+      // A switch to let CostFunction::evaluate know that the first-guess gradient of Jb
       // needs to be reset to zero
       iterconfsPert[0].set("control pert", true);
 
@@ -381,8 +372,9 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
   }
 // -----------------------------------------------------------------------------
   void validateConfig(const eckit::Configuration & fullConfig) const override {
-    ControlPertParameters params;
-    params.validate(fullConfig);
+    ControlPertTemplateParameters params;
+    eckit::LocalConfiguration templateConf(fullConfig, "template");
+    params.validate(templateConf);
   }
 // -----------------------------------------------------------------------------
  private:

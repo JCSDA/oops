@@ -1,0 +1,4 @@
+assimilation:
+    $(CTRL_ASSIMILATION)
+template:
+    $(CTRL_SETTINGS)

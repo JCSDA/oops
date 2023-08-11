@@ -57,14 +57,12 @@ list( APPEND qg_testinput
   testinput/eda_3dvar_block_3.yaml
   testinput/eda_3dvar_block_4.yaml
   testinput/eda_3dvar_block.yaml
-  testinput/eda_3dvar_control_pert_template.yaml
   testinput/eda_3dvar_control_pert.yaml
   testinput/eda_4dvar_1.yaml
   testinput/eda_4dvar_2.yaml
   testinput/eda_4dvar_3.yaml
   testinput/eda_4dvar_4.yaml
   testinput/eda_4dvar.yaml
-  testinput/eda_4dvar_control_pert_template.yaml
   testinput/eda_4dvar_control_pert.yaml
   testinput/ens_forecast_1.yaml
   testinput/ens_forecast_2.yaml
