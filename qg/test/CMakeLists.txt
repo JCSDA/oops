@@ -99,6 +99,7 @@ list( APPEND qg_testinput
   testinput/hybrid_linear_model_gen_ens.yaml
   testinput/hybrid_linear_model_pert_heat.yaml
   testinput/hybrid_linear_model_pert_heat_gen_ens.yaml
+  testinput/hybrid_linear_model_pert_heat_subtimestep.yaml
   testinput/increment.yaml
   testinput/letkf.yaml
   testinput/linear_model.yaml
@@ -391,6 +392,12 @@ ecbuild_add_test( TARGET  test_qg_hybrid_linear_model_pert_heat_gen_ens
                   ARGS    "testinput/hybrid_linear_model_pert_heat_gen_ens.yaml"
                   LIBS    qg
                   TEST_DEPENDS test_qg_truth_pert_heat test_qg_forecast_control_htlm_pert_heat)
+
+ecbuild_add_test( TARGET  test_qg_hybrid_linear_model_pert_heat_subtimestep
+                  SOURCES executables/TestLinearModel.cc
+                  ARGS    "testinput/hybrid_linear_model_pert_heat_subtimestep.yaml"
+                  LIBS    qg
+                  TEST_DEPENDS test_qg_truth_pert_heat test_qg_forecast_control_htlm_pert_heat test_qg_gen_ens_pert_B_HTLM_pert_heat)
 
 ecbuild_add_test( TARGET test_qg_locations
                   SOURCES executables/TestLocations.cc

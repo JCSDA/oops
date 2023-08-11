@@ -198,9 +198,11 @@ void HtlmEnsemble<MODEL>::step(const util::Duration & tstep,
                                HtlmSimplifiedLinearModel_ & simplifiedLinearModel)  {
     Log::trace() << "HtlmEnsemble<MODEL>::step() starting" << std::endl;
     State_ downsampled_Control(incrementGeometry_, controlState_[0]);
-    simplifiedLinearModel.setSimplifiedTrajectory(controlState_[0], downsampled_Control, moderr_);
     PostProcessor<State_> post;
-    model_.forecast(controlState_[0], moderr_, tstep, post);
+    for (util::Duration t(0); t < tstep; t+= simplifiedLinearModel.timeResolution()) {
+      simplifiedLinearModel.setSimplifiedTrajectory(controlState_[0], downsampled_Control, moderr_);
+      model_.forecast(controlState_[0], moderr_, simplifiedLinearModel.timeResolution(), post);
+    }
     for (size_t m = 0; m < ensembleSize_; m++) {
       model_.forecast(perturbedStates_[m], moderr_, tstep, post);
       simplifiedLinearModel.forecastSimplifiedTL(linearEnsemble_[m], modauxinc_, tstep);

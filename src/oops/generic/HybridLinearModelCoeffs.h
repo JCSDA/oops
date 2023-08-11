@@ -75,6 +75,10 @@ HybridLinearModelCoeffs<MODEL>::HybridLinearModelCoeffs(
   nLevels_(updateGeometry.variableSizes(trainingVars_)[0]), influenceSize_(params_.influenceSize),
   updateStencil_("update stencil", atlas::array::make_datatype<int>(),
                  atlas::array::make_shape(nLevels_, influenceSize_)) {
+  if (updateTstep % simplifiedLinearModel.timeResolution() != 0) {
+    ABORT("HybridLinearModelCoeffs<MODEL>::HybridLinearModelCoeffs: "
+          "update tstep is not a multiple of simplified linear model tstep");
+  }
   // Make stencil for applying coefficients
   auto stencilView = atlas::array::make_view<atlas::idx_t, 2>(updateStencil_);
   const atlas::idx_t halfInfluenceSize = influenceSize_ / 2;
