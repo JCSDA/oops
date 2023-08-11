@@ -11,6 +11,8 @@
 #include <memory>
 #include <string>
 
+#include "oops/base/Geometry.h"
+
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
