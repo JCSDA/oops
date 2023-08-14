@@ -30,6 +30,12 @@ ecbuild_add_executable( TARGET  qg_gen_ens_pert_B.x
                       )
 oops_output_json_schema( qg_gen_ens_pert_B.x )
 
+ecbuild_add_executable( TARGET  qg_gen_hybrid_linear_model_coeffs.x
+                        SOURCES qgGenHybridLinearModelCoeffs.cc
+                        LIBS    qg
+                      )
+oops_output_json_schema( qg_gen_hybrid_linear_model_coeffs.x )
+
 ecbuild_add_executable( TARGET  qg_4dvar.x
                         SOURCES qg4DVar.cc
                         LIBS    qg

@@ -20,6 +20,7 @@ list( APPEND qg_testinput
   testinput/4dvar_htlm_qgtlm_dripcg_gen_ens.yaml
   testinput/4dvar_htlm_qgtlm_dripcg_pert_heat.yaml
   testinput/4dvar_htlm_qgtlm_dripcg_pert_heat_gen_ens.yaml
+  testinput/4dvar_htlm_qgtlm_dripcg_pert_heat_precalculated_coeffs.yaml
   testinput/4dvar_ipcg.yaml
   testinput/4dvar_obs_biased.yaml
   testinput/4dvar_rpcg.yaml
@@ -85,6 +86,7 @@ list( APPEND qg_testinput
   testinput/gen_ens_pert_B.yaml
   testinput/gen_ens_pert_B_HTLM.yaml
   testinput/gen_ens_pert_B_HTLM_pert_heat.yaml
+  testinput/gen_hybrid_linear_model_coeffs.yaml
   testinput/geometry_iterator.yaml
   testinput/geometry.yaml
   testinput/geovals.yaml
@@ -202,6 +204,7 @@ list( APPEND qg_testoutput
   testoutput/gen_ens_pert_B.test
   testoutput/gen_ens_pert_B_HTLM.test
   testoutput/gen_ens_pert_B_HTLM_pert_heat.test
+  testoutput/gen_hybrid_linear_model_coeffs.test
   testoutput/hofx.test
   testoutput/hofx_tinterp.test
   testoutput/hofx3d.test
@@ -615,6 +618,12 @@ ecbuild_add_test( TARGET test_qg_gen_ens_pert_B_HTLM_pert_heat
                   COMMAND  qg_gen_ens_pert_B.x
                   TEST_DEPENDS test_qg_forecast_control_htlm_pert_heat test_qg_truth_pert_heat  )
 
+ecbuild_add_test( TARGET test_qg_gen_hybrid_linear_model_coeffs
+                  OMP 2
+                  ARGS testinput/gen_hybrid_linear_model_coeffs.yaml
+                  COMMAND  qg_gen_hybrid_linear_model_coeffs.x
+                  TEST_DEPENDS test_qg_gen_ens_pert_B_HTLM_pert_heat test_qg_make_obs_4d_24h_pert_heat )
+
 ecbuild_add_test( TARGET test_qg_ens_forecast
                   MPI    2
                   COMMAND ${CMAKE_BINARY_DIR}/bin/qg_ens_forecast.x
@@ -912,6 +921,12 @@ ecbuild_add_test( TARGET test_qg_4dvar_htlm_qgtlm_dripcg_pert_heat_gen_ens
                   ARGS testinput/4dvar_htlm_qgtlm_dripcg_pert_heat_gen_ens.yaml
                   COMMAND  qg_4dvar.x
                   TEST_DEPENDS test_qg_gen_ens_pert_B_HTLM_pert_heat test_qg_make_obs_4d_24h_pert_heat)
+
+ecbuild_add_test( TARGET test_qg_4dvar_htlm_qgtlm_dripcg_pert_heat_precalculated_coeffs
+                  OMP 2
+                  ARGS testinput/4dvar_htlm_qgtlm_dripcg_pert_heat_precalculated_coeffs.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_gen_hybrid_linear_model_coeffs )
 
 ecbuild_add_test( TARGET test_qg_htlm_regularization_vector_construction
                   OMP 2

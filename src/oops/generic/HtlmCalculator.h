@@ -46,7 +46,8 @@ class HtlmCalculator{
                  const atlas::idx_t);
   void calcCoeffs(const IncrementEnsemble_ &,
                   const IncrementEnsemble_ &,
-                  atlas::FieldSet &) const;
+                  atlas::FieldSet &,
+                  const atlas::FunctionSpace &) const;
 
  private:
   const HtlmCalculatorParameters_ params_;
@@ -90,15 +91,18 @@ HtlmCalculator<MODEL>::HtlmCalculator(const HtlmCalculatorParameters_ & params,
 template<typename MODEL>
 void HtlmCalculator<MODEL>::calcCoeffs(const IncrementEnsemble_ & linearEnsemble,
                                        const IncrementEnsemble_ & linearErrorDe,
-                                       atlas::FieldSet & coeffFieldSet) const {
+                                       atlas::FieldSet & coeffFieldSet,
+                                       const atlas::FunctionSpace & fSpace) const {
   Log::trace() << "HtlmCalculator<MODEL>::coeffCalc() starting" << std::endl;
   // For each variable loop over every grid point and calculate the coefficient vector for each
   for (size_t varInd = 0; varInd < vars_.size(); ++varInd) {
      // make field set with size to store coefficient vectors
-      atlas::Field
-         coeffField(vars_[varInd], atlas::array::make_datatype<double>(),
-            atlas::array::make_shape(horizExt_, vertExt_, vars_.size() * influenceSize_));
+    for (size_t v = 0; v < vars_.size() * influenceSize_; v++) {
+      atlas::Field coeffField = fSpace.createField<double>(
+        atlas::option::name((vars_[varInd] + std::to_string(v)))
+        | atlas::option::levels(vertExt_));
       coeffFieldSet.add(coeffField);
+    }
     // get rms by level scaling
       const std::vector<double> rmsVals =
         params_.rms ? linearEnsemble[0].rmsByLevel(vars_[varInd]) : std::vector<double>{};
@@ -177,10 +181,12 @@ void HtlmCalculator<MODEL>::calcCoeffs(const IncrementEnsemble_ & linearEnsemble
 
         // Copy the coeff vect into the its field set.
         Log::trace() << "HtlmCalculator<MODEL>::coeffCalc() placing vector starting" << std::endl;
-        auto coeffsView = atlas::array::make_view<double, 3>(coeffFieldSet[vars_[varInd]]);
         for (atlas::idx_t coeffInd = 0; coeffInd < atlas::idx_t(coeffVect.size()); ++coeffInd) {
-          coeffsView(i, k, coeffInd) = coeffVect[coeffInd];
+          auto coeffsView = atlas::array::make_view<double, 2>(
+            coeffFieldSet[vars_[varInd] + std::to_string(coeffInd)]);
+          coeffsView(i, k) = coeffVect[coeffInd];
         }
+
         Log::trace() << "HtlmCalculator<MODEL>::coeffCalc() placing vector done" << std::endl;
       }  //  end for k
     }  //  end for i

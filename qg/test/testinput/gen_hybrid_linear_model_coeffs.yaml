@@ -1,0 +1,50 @@
+update geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+  perturbed heating: 0.1
+hybrid linear model:
+  simplified linear model:
+    linear model:
+      trajectory:
+        tstep: PT30M
+      tstep: PT1H
+      variable change: Identity
+      name: QgTLM
+      tlm variables: [x, q]
+  update tstep: PT1H
+  update variables: [x,q]
+  coefficients:
+    influence region size: 2
+    training variables: [q]
+    window length: PT24H
+    window begin: 2010-01-01T00:00:00Z
+    calculator:
+      rms scaling: true
+    ensemble:
+      ensemble size: 10
+      model:
+        name: QG
+        tstep: PT1H
+      state geometry:
+        nx: 40
+        ny: 20
+        depths: [4500.0, 5500.0]
+        perturbed heating: 0.1
+      control member:
+        date: '2010-01-01T00:00:00Z'
+        filename: Data/forecast_control_pert_heat.fc.2010-01-01T00:00:00Z.PT0S.nc
+      non linear ensemble:
+        perturbed members:
+          members from template:
+            template:
+              date: 2010-01-01T00:00:00Z
+              filename: Data/forecast_HTLM_pert_heat.ens.%mem%.2010-01-01T00:00:00Z.PT0S.nc
+            pattern: %mem%
+            nmembers: 10
+    output:
+      base filepath: Data/4dvar_htlm_qgtlm_dripcg_pert_heat_coeffs
+      one file per task: true
+  name: HTLM
+test:
+  reference filename: testoutput/gen_hybrid_linear_model_coeffs.test

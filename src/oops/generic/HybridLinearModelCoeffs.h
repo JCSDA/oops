@@ -10,10 +10,12 @@
 #define OOPS_GENERIC_HYBRIDLINEARMODELCOEFFS_H_
 
 #include <map>
+#include <string>
 #include <vector>
 
 #include "oops/generic/HtlmCalculator.h"
 #include "oops/generic/HtlmEnsemble.h"
+#include "oops/util/FieldSetHelpers.h"
 
 namespace oops {
 
@@ -30,7 +32,8 @@ class HybridLinearModelCoeffsParameters : public Parameters {
   RequiredParameter<util::Duration> windowLength{"window length", this};
   OptionalParameter<EnsembleParameters_> ensemble{"ensemble", this};
   OptionalParameter<CalculatorParameters_> calculator{"calculator", this};
-  OptionalParameter<bool> fromFile{"from file", this};  // TO DO
+  OptionalParameter<eckit::LocalConfiguration> input{"input", this};
+  OptionalParameter<eckit::LocalConfiguration> output{"output", this};
 };
 
 //------------------------------------------------------------------------------
@@ -54,6 +57,8 @@ class HybridLinearModelCoeffs {
 
  private:
   void generate(const Geometry_ &, const util::Duration &, HtlmSimplifiedLinearModel_ &);
+  void read(const Geometry_ &, const util::Duration &);
+  void write(const eckit::mpi::Comm &) const;
 
   const Parameters_ & params_;
   const Variables trainingVars_;
@@ -99,8 +104,8 @@ HybridLinearModelCoeffs<MODEL>::HybridLinearModelCoeffs(
   // Determine source of and obtain coefficients
   if (params_.ensemble.value() != boost::none && params_.calculator.value() != boost::none) {
     generate(updateGeometry, updateTstep, simplifiedLinearModel);
-  } else if (params.fromFile.value() != boost::none) {
-    // TO DO
+  } else if (params.input.value() != boost::none) {
+    read(updateGeometry, updateTstep);
   } else {
     ABORT("HybridLinearModelCoeffs<MODEL>::HybridLinearModelCoeffs(): no source of coefficients");
   }
@@ -126,11 +131,54 @@ void HybridLinearModelCoeffs<MODEL>::generate(const Geometry_ & updateGeometry,
     // Store this in the map
     coeffsSaver_.emplace(time, coeffsFieldSet);
     // Calculate the coefficients and assign them to the FieldSet
-    calculator.calcCoeffs(ensemble.getLinearEns(), ensemble.getLinearErrDe(), coeffsFieldSet);
+    calculator.calcCoeffs(ensemble.getLinearEns(), ensemble.getLinearErrDe(), coeffsFieldSet,
+                          updateGeometry.functionSpace());
     // Update increments with coefficients before next step
     for (size_t m = 0; m < ensemble.size(); m++) {
       updateIncTL(ensemble.getLinearEns()[m]);
     }
+  }
+  if (params_.output.value() != boost::none) {
+    write(updateGeometry.getComm());
+  }
+}
+
+//------------------------------------------------------------------------------
+
+template<typename MODEL>
+void HybridLinearModelCoeffs<MODEL>::read(const Geometry_ & updateGeometry,
+                                          const util::Duration & updateTstep) {
+  eckit::LocalConfiguration inputConfig(*params_.input.value());
+  const std::string baseFilepath = inputConfig.getString("base filepath");
+  Variables fileVars;
+  for (const std::string & var : trainingVars_.variables()) {
+    for (size_t v = 0; v < trainingVars_.size() * influenceSize_; v++) {
+      fileVars.push_back(var + std::to_string(v));
+      fileVars.addMetaData(var + std::to_string(v), "levels", nLevels_);
+    }
+  }
+  util::DateTime time(params_.windowBegin);
+  while (time < (params_.windowBegin.value() + params_.windowLength.value())) {
+    time += updateTstep;
+    const std::string filepath = baseFilepath + "_" + time.toStringIO();
+    inputConfig.set("filepath", filepath);
+    atlas::FieldSet coeffsFieldSet;
+    coeffsSaver_.emplace(time, coeffsFieldSet);
+    util::readFieldSet(updateGeometry.getComm(), updateGeometry.functionSpace(), fileVars,
+                       inputConfig, coeffsFieldSet);
+  }
+}
+
+//------------------------------------------------------------------------------
+
+template<typename MODEL>
+void HybridLinearModelCoeffs<MODEL>::write(const eckit::mpi::Comm & comm) const {
+  eckit::LocalConfiguration outputConfig(*params_.output.value());
+  const std::string baseFilepath = outputConfig.getString("base filepath");
+  for (const auto & element : coeffsSaver_) {
+    const std::string filepath = baseFilepath + "_" + element.first.toStringIO();
+    outputConfig.set("filepath", filepath);
+    util::writeFieldSet(comm, outputConfig, element.second);
   }
 }
 
@@ -146,14 +194,14 @@ void HybridLinearModelCoeffs<MODEL>::updateIncTL(Increment_ & dx) const {
     std::vector<double> updateVals(dxView.shape(1) * trainingVars_.size(), 0.0);
     // Calculate update values
     for (size_t varInd = 0; varInd < trainingVars_.size(); varInd++) {
-      auto coeffView =
-        atlas::array::make_view<double, 3>(coeffsSaver_.at(dx.validTime())[trainingVars_[varInd]]);
       for (atlas::idx_t k = 0; k < dxView.shape(1); k++) {
         for (size_t varInd2 = 0; varInd2 < trainingVars_.size(); varInd2++) {
           auto dxView = atlas::array::make_view<double, 2>(dxFset[trainingVars_[varInd2]]);
           for (atlas::idx_t coeffInd = 0; coeffInd < influenceSize_; coeffInd++) {
+            auto coeffView = atlas::array::make_view<double, 2>(coeffsSaver_.at(dx.validTime())[
+              trainingVars_[varInd] + std::to_string(varInd2 * influenceSize_ + coeffInd)]);
             updateVals[k + varInd * dxView.shape(1)] +=
-              coeffView(i, k, varInd2 * influenceSize_ + coeffInd)
+              coeffView(i, k)
               * dxView(i, stencilView(k, coeffInd));
           }
         }
@@ -190,14 +238,14 @@ void HybridLinearModelCoeffs<MODEL>::updateIncAD(Increment_ & dx) const {
     }
     // Adjoint of "Calculate update values"
     for (size_t varInd = 0; varInd < trainingVars_.size(); ++varInd) {
-      auto coeffView =
-        atlas::array::make_view<double, 3>(coeffsSaver_.at(dx.validTime())[trainingVars_[varInd]]);
       for (atlas::idx_t k = 0; k < dxView.shape(1); k++) {
         for (size_t varInd2 = 0; varInd2 < trainingVars_.size(); varInd2++) {
           auto dxView = atlas::array::make_view<double, 2>(dxFset[trainingVars_[varInd2]]);
           for (atlas::idx_t coeffInd = 0; coeffInd < influenceSize_; coeffInd++) {
+            auto coeffView = atlas::array::make_view<double, 2>(coeffsSaver_.at(dx.validTime())[
+              trainingVars_[varInd] + std::to_string(varInd2 * influenceSize_ + coeffInd)]);
             dxView(i, stencilView(k, coeffInd)) +=
-              coeffView(i, k, varInd2 * influenceSize_ + coeffInd)
+              coeffView(i, k)
               * updateVals[k + varInd * dxView.shape(1)];
           }
         }

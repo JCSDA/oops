@@ -310,6 +310,7 @@ oops/runs/EnsVariance.h
 oops/runs/ExternalDFI.h
 oops/runs/Forecast.h
 oops/runs/GenEnsPertB.h
+oops/runs/GenHybridLinearModelCoeffs.h
 oops/runs/HofX3D.h
 oops/runs/HofX4D.h
 oops/runs/HybridGain.h
