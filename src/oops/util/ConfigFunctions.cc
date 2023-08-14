@@ -10,10 +10,16 @@
 
 #include <iomanip>
 #include <iostream>
-#include <regex>
 #include <sstream>
 #include <string>
 
+#if USE_BOOST_REGEX
+#include <boost/regex.hpp>
+#define REGEX_NAMESPACE boost
+#else
+#include <regex>
+#define REGEX_NAMESPACE std
+#endif
 #include "eckit/log/JSON.h"
 #include "oops/util/abor1_cpp.h"
 
@@ -112,7 +118,8 @@ namespace util {
                 // Check if the substring contains the pattern
                 if (subStrings[kk].find(pattern) != std::string::npos) {
                   // Update the substring
-                  subStrings[kk] = std::regex_replace(subStrings[kk], std::regex(pattern),
+                  subStrings[kk] = REGEX_NAMESPACE::regex_replace(subStrings[kk],
+                                                                  REGEX_NAMESPACE::regex(pattern),
                     value_out);
                 }
               }
@@ -132,7 +139,8 @@ namespace util {
           // Check if the value contains the pattern
           if (value.find(pattern) != std::string::npos) {
             // Update the value
-            value = std::regex_replace(value, std::regex(pattern), value_out);
+            value = REGEX_NAMESPACE::regex_replace(value, REGEX_NAMESPACE::regex(pattern),
+                                                   value_out);
 
             // Reset the value
             config.set(keys[jj], value);
