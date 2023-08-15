@@ -278,6 +278,9 @@ call qg_error_covariance_sqrt_mult_ad(self,fld_tmp,fld_out)
 call qg_fields_copy(fld_tmp,fld_out)
 call qg_error_covariance_sqrt_mult(self,fld_tmp,fld_out)
 
+! Release memory
+call qg_fields_delete(fld_tmp)
+
 end subroutine qg_error_covariance_mult
 ! ------------------------------------------------------------------------------
 !> Randomize error covariance
@@ -298,6 +301,9 @@ call qg_fields_random(fld_tmp,self%seed)
 
 ! Apply square-root of the covariance matrix
 call qg_error_covariance_sqrt_mult(self,fld_tmp,fld_out)
+
+! Release memory
+call qg_fields_delete(fld_tmp)
 
 end subroutine qg_error_covariance_randomize
 ! ------------------------------------------------------------------------------

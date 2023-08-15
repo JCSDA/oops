@@ -89,6 +89,7 @@ if ((typ=='fc').or.(typ=='ens')) then
     call datetime_diff(vdate,rdate,step)
     call duration_to_string(step,sstep)
   endif
+  call datetime_delete(rdate)
 
   lenfn = lenfn+1+len_trim(referencedate)+1+len_trim(sstep)
   genfilename = trim(prefix)//'.'//trim(referencedate)//'.'// trim(sstep)//'.nc'

@@ -930,6 +930,7 @@ call ncerr(nf90_close(ncid))
 
 ! Release memory
 call vars%destruct()
+call qg_fields_delete(fld_io)
 
 end subroutine qg_fields_write_file
 ! ------------------------------------------------------------------------------

@@ -474,6 +474,7 @@ do igrp=1,self%ngrp
     else
       inwindow(iobs) = .false.
     endif
+    call datetime_delete(tobs)
   enddo
 
   ! Allocation
@@ -535,6 +536,9 @@ do igrp=1,self%ngrp
   enddo
 
   ! Release memory
+  do iobs=1,nobs_in_grp
+    if (inwindow(iobs)) call datetime_delete(alltimes(iobs))
+  enddo
   deallocate(alltimes)
   deallocate(inwindow)
 enddo
