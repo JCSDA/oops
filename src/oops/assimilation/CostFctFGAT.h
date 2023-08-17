@@ -180,9 +180,9 @@ void CostFctFGAT<MODEL, OBS>::doLinearize(const Geometry_ & res, const eckit::Co
   hackBG_ = &bg.state();
   hackFG_ = &fg.state();
 
-  std::vector<std::string> step = {windowHalf_.toString()};
+  std::vector<std::string> antime = {windowHalf_.toString()};
   eckit::LocalConfiguration halfwin;
-  halfwin.set("steps", step);
+  halfwin.set("times", antime);
   saver_.reset(new StateSaver<State_>(halfwin));
   pp.enrollProcessor(saver_);
 

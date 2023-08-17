@@ -24,18 +24,19 @@
 namespace oops {
 // -----------------------------------------------------------------------------
 PostTimer::PostTimer()
-  : bgn_(), end_(), start_(), finish_(), frequency_(0), first_(0), steps_() {}
+  : bgn_(), end_(), start_(), finish_(), frequency_(0), first_(0), steps_(), times_() {}
 // -----------------------------------------------------------------------------
 PostTimer::PostTimer(const PostTimerParameters & parameters)
   : bgn_(), end_(), start_(), finish_(),
-    frequency_(parameters.frequency), first_(parameters.first), steps_(parameters.steps)
+    frequency_(parameters.frequency), first_(parameters.first),
+    steps_(parameters.steps), times_(parameters.times)
 {}
 // -----------------------------------------------------------------------------
 PostTimer::PostTimer(const util::DateTime & start, const util::DateTime & finish,
                      const util::Duration & freq)
   : bgn_(), end_(),
     start_(new util::DateTime(start)), finish_(new util::DateTime(finish)),
-    frequency_(freq), first_(0), steps_()
+    frequency_(freq), first_(0), steps_(), times_()
 {}
 // -----------------------------------------------------------------------------
 void PostTimer::initialize(const util::DateTime & bgn, const util::DateTime & end) {
@@ -49,6 +50,9 @@ void PostTimer::initialize(const util::DateTime & bgn, const util::DateTime & en
   }
   // increase bgn_ value if needed
   bgn_ += first_;
+  for (const util::Duration & step : steps_) {
+    times_.push_back(bgn + step);
+  }
 }
 // -----------------------------------------------------------------------------
 bool PostTimer::itIsTime(const util::DateTime & now) {
@@ -56,16 +60,16 @@ bool PostTimer::itIsTime(const util::DateTime & now) {
 
   if (now >= bgn_ && now <= end_) {
     // use at every step, and no prespecified steps?
-    doit = (frequency_.toSeconds() == 0 && steps_.empty());
+    doit = (frequency_.toSeconds() == 0 && times_.empty());
     // frequency specified?
     if (!doit && frequency_.toSeconds() > 0) {
       const util::Duration dt = now - bgn_;
       doit = (dt >= util::Duration(0) && dt % frequency_ == 0);
     }
     // steps are prespecified?
-    if (!doit && !steps_.empty()) {
-      auto it = find(steps_.begin(), steps_.end(), now);
-      doit = (it != steps_.end());
+    if (!doit && !times_.empty()) {
+      auto it = find(times_.begin(), times_.end(), now);
+      doit = (it != times_.end());
     }
   }
 

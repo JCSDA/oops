@@ -25,7 +25,8 @@ class PostTimerParameters : public oops::Parameters {
   /// constrols delta for the first call of PostProcessor (first call will happen at begin+first)
   oops::Parameter<util::Duration> first{"first", util::Duration(0), this};
   /// specifies at which times to call PostProcessor
-  oops::Parameter<std::vector<util::DateTime>> steps{"steps", std::vector<util::DateTime>(), this};
+  oops::Parameter<std::vector<util::DateTime>> times{"times", std::vector<util::DateTime>(), this};
+  oops::Parameter<std::vector<util::Duration>> steps{"steps", std::vector<util::Duration>(), this};
 };
 
 }  // namespace oops

@@ -48,7 +48,8 @@ class PostTimer : private boost::noncopyable {
   std::unique_ptr<util::DateTime> finish_;
   util::Duration frequency_;
   util::Duration first_;
-  std::vector<util::DateTime> steps_;
+  std::vector<util::Duration> steps_;
+  std::vector<util::DateTime> times_;
 };
 
 // -----------------------------------------------------------------------------

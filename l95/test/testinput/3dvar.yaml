@@ -59,7 +59,7 @@ final:
 output:
   datadir: Data
   exp: 3dvar
-  steps: ["2010-01-02T00:00:00Z"]
+  times: ["2010-01-02T00:00:00Z"]
   type: an
 
 test:

@@ -119,22 +119,27 @@ void testConfCtor() {
   EXPECT(!timer3.itIsTime(winbgn-step));
   EXPECT(!timer3.itIsTime(winend+step));
 
+  std::vector<std::string> vtimes{"2020-01-01T00:00:00Z", "2020-01-01T03:00:00Z",
+                                  "2020-01-01T04:00:00Z", "2020-01-01T08:00:00Z",
+                                  "2020-01-01T12:00:00Z"};
   eckit::LocalConfiguration test3;
-  std::vector<std::string> steps{"2020-01-01T00:00:00Z", "2020-01-01T04:00:00Z",
+  std::vector<std::string> times{"2020-01-01T00:00:00Z", "2020-01-01T04:00:00Z",
                                  "2020-01-01T08:00:00Z"};
+  test3.set("times", times);
+  std::vector<std::string> steps{"PT3H", "PT12H", "PT8H"};
   test3.set("steps", steps);
   // create a timer, set predefined steps
   oops::PostTimer timer4(oops::validateAndDeserialize<oops::PostTimerParameters>(test3));
   // init with winbgn->winend window
   timer4.initialize(winbgn, winend);
-  // only steps specified above should work
+  // only times specified above should work
   EXPECT(timer4.itIsTime(winbgn));
   EXPECT(!timer4.itIsTime(winbgn+step));
   EXPECT(!timer4.itIsTime(winend));
   EXPECT(!timer4.itIsTime(winbgn-step));
   EXPECT(!timer4.itIsTime(winend+step));
-  for (auto step : steps) {
-    EXPECT(timer4.itIsTime(util::DateTime(step)));
+  for (auto time : vtimes) {
+    EXPECT(timer4.itIsTime(util::DateTime(time)));
   }
 }
 

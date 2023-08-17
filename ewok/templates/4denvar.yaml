@@ -1,0 +1,39 @@
+# (C) Copyright 2020-2021 UCAR
+#
+# This software is licensed under the terms of the Apache Licence Version 2.0
+# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+
+cost function:
+  cost type: $(cost_function)
+  window begin: '{{window_begin}}'
+  window length: $(window_length)
+  subwindow: $(subwindow)
+  parallel subwindows: false
+  geometry:
+    $(GEOMETRY)
+  analysis variables: $(AN_VARIABLES)
+  background:
+    $(BACKGROUND)
+  background error:
+    $(BACKGROUND_ERROR)
+  observations:
+    obs perturbations: $(obspert)
+    observers:
+      $(OBS)
+variational:
+  minimizer:
+    $(MINIMIZER)
+  iterations:
+  - ninner: $(ninner)
+    gradient norm reduction: $(reduc)
+    geometry:
+      $(MIN_GEOMETRY)
+    diagnostics:
+      departures: $(diag)
+final:
+  diagnostics:
+    departures: oman
+  prints:
+    frequency: PT3H
+output:
+  $(ANOUT)
