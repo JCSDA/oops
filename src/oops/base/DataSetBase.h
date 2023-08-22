@@ -25,6 +25,8 @@
 
 namespace oops {
 
+class Variables;
+
 // -----------------------------------------------------------------------------
 
 template<typename DATA, typename GEOM>
@@ -327,7 +329,7 @@ std::vector<eckit::LocalConfiguration>
     const int zpad = tmpl.getInt("zero padding", 0);
     const std::vector<size_t> except = tmpl.getUnsignedVector("except", {});
     size_t index = tmpl.getUnsigned("start", 1);
-    for (int jens = 0; jens < nmembers_; ++jens) {
+    for (size_t jens = 0; jens < nmembers_; ++jens) {
       while (std::count(except.begin(), except.end(), index)) {
         index++;
       }

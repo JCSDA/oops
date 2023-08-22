@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "oops/mpi/mpi.h"
+#include "oops/util/Logger.h"
 
 namespace util {
 

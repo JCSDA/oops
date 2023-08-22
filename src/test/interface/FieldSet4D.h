@@ -141,7 +141,8 @@ template <typename MODEL> void testFieldSet4D() {
   // For Increment4D test, use zero increments with variables specified in yaml,
   // and the same times as in State4D
   const oops::Variables incvars(config, "increment variables");
-  const Increment4D_ dx1(geometry, incvars, xx1.times(), *commTime);
+  Increment4D_ dx1(geometry, incvars, xx1.times(), *commTime);
+  dx1.ones();
   oops::Log::info() << "Increment4D: " << dx1 << std::endl;
   oops::FieldSet4D dx2(dx1);
   oops::Log::info() << "FieldSet4D: " << dx2 << std::endl;
@@ -156,6 +157,37 @@ template <typename MODEL> void testFieldSet4D() {
   // TODO(Algo): change to comparing .variables() when all models support State/Increment
   // variables that provide levels information.
   EXPECT(dx2.variables().variables() == dx1.variables().variables());
+    // Test dot-product call
+  double dotp1 = dx1.dot_product_with(dx1);
+  double dotp2 = dx2.dot_product_with(dx2, dx2.variables());
+  EXPECT(oops::is_close(dotp1, dotp2, 1.e-14));
+  EXPECT_NOT_EQUAL(dotp2, 0.0);
+  // Test shallow and deep copies, +=, *= and zero method.
+  // dx2_sc is a shallow copy of dx2; dx2_dc is a deep copy of dx2.
+  oops::FieldSet4D dx2_sc(dx2);
+  oops::FieldSet4D dx2_dc = copyFieldSet4D(dx2);
+  double dotp2_sc = dx2_sc.dot_product_with(dx2_sc, dx2_sc.variables());
+  double dotp2_dc = dx2_dc.dot_product_with(dx2_dc, dx2_dc.variables());
+  EXPECT(oops::is_close(dotp1, dotp2_sc, 1.e-14));
+  EXPECT(oops::is_close(dotp1, dotp2_dc, 1.e-14));
+  // Set deep copy to zero; dx2 and dx2_sc should stay unchanged.
+  dx2_dc.zero();
+  dotp2_sc = dx2_sc.dot_product_with(dx2_sc, dx2_sc.variables());
+  dotp2_dc = dx2_dc.dot_product_with(dx2_dc, dx2_dc.variables());
+  EXPECT(oops::is_close(dotp1, dotp2_sc, 1.e-14));
+  EXPECT_EQUAL(dotp2_dc, 0.0);
+  // Add zero fields to shallow copy and multiply by 1.0; should stay unchanged.
+  dx2_sc += dx2_dc;
+  dx2_sc *= 1.0;
+  dotp2_sc = dx2_sc.dot_product_with(dx2_sc, dx2_sc.variables());
+  EXPECT(oops::is_close(dotp1, dotp2_sc, 1.e-14));
+  // Multiply by zeroes shallow copy: both shallow copy and dx2 should now
+  // be zero.
+  dx2_sc *= dx2_dc;
+  dotp2 = dx2.dot_product_with(dx2, dx2.variables());
+  dotp2_sc = dx2_sc.dot_product_with(dx2_sc, dx2_sc.variables());
+  EXPECT_EQUAL(dotp2, 0.0);
+  EXPECT_EQUAL(dotp2_sc, 0.0);
 }
 
 // -----------------------------------------------------------------------------

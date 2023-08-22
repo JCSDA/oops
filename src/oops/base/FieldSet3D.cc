@@ -27,6 +27,12 @@ FieldSet3D::FieldSet3D(const atlas::FieldSet & fset,
 
 // -----------------------------------------------------------------------------
 
+FieldSet3D::FieldSet3D(const util::DateTime & validTime,
+                       const eckit::mpi::Comm & comm):
+  fset_(), validTime_(validTime), vars_(), comm_(comm)
+{}
+// -----------------------------------------------------------------------------
+
 oops::Variables FieldSet3D::currentVariables() const {
   oops::Variables vars;
   for (const auto & field : fset_) {

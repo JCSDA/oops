@@ -102,6 +102,7 @@ oops/base/DolphChebyshev.h
 oops/base/EnsembleCovariance.h
 oops/base/FieldSet3D.cc
 oops/base/FieldSet3D.h
+oops/base/FieldSet4D.cc
 oops/base/FieldSet4D.h
 oops/base/ForecastParameters.h
 oops/base/GeneralizedDepartures.h
