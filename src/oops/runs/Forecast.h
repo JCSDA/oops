@@ -71,7 +71,7 @@ template <typename MODEL> class Forecast : public Application {
     const Geometry_ resol(params.fcstConf.geometry, this->getComm());
 
 //  Setup Model
-    const Model_ model(resol, params.fcstConf.model.value().modelParameters);
+    const Model_ model(resol, eckit::LocalConfiguration(fullConfig, "model"));
 
 //  Setup initial state
     State_ xx(resol, params.fcstConf.initialCondition);

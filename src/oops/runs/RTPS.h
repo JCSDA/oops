@@ -13,6 +13,7 @@
 
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
+#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/State.h"
 #include "oops/base/StateEnsemble.h"
 #include "oops/mpi/mpi.h"

@@ -23,34 +23,9 @@
 #include "oops/base/Variables.h"
 #include "oops/coupled/UtilsCoupled.h"
 #include "oops/util/gatherPrint.h"
-#include "oops/util/parameters/Parameter.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 #include "oops/util/Printable.h"
 
 namespace oops {
-
-// -----------------------------------------------------------------------------
-/// Parameters for Geometry describing a coupled model geometry
-template<typename MODEL1, typename MODEL2>
-class GeometryCoupledParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(GeometryCoupledParameters, Parameters)
-
-  typedef typename Geometry<MODEL1>::Parameters_ Parameters1_;
-  typedef typename Geometry<MODEL2>::Parameters_ Parameters2_;
-
- public:
-  RequiredParameter<Parameters1_> geometry1{MODEL1::name().c_str(), this};
-  RequiredParameter<Parameters2_> geometry2{MODEL2::name().c_str(), this};
-  Parameter<bool> parallel{"parallel", "run the models sequentially or in parallel",
-                           false, this};
-  Parameter<Variables> vars1{std::string(MODEL1::name() + " variables").c_str(),
-          "variables that the first model should provide, have to be different "
-          "from the variables that the second model provides", {}, this};
-  Parameter<Variables> vars2{std::string(MODEL2::name() + " variables").c_str(),
-          "variables that the second model should provide, have to be different "
-          "from the variables that the first model provides", {}, this};
-};
 
 // -----------------------------------------------------------------------------
 
@@ -58,9 +33,12 @@ class GeometryCoupledParameters : public Parameters {
 template <typename MODEL1, typename MODEL2>
 class GeometryCoupled : public util::Printable {
  public:
-  typedef GeometryCoupledParameters<MODEL1, MODEL2> Parameters_;
+  static std::string name1() {return MODEL1::name();}
+  static std::string name2() {return MODEL2::name();}
+  static std::string vars1() {return MODEL1::name() + " variables";}
+  static std::string vars2() {return MODEL2::name() + " variables";}
 
-  GeometryCoupled(const Parameters_ &, const eckit::mpi::Comm &);
+  GeometryCoupled(const eckit::Configuration &, const eckit::mpi::Comm &);
 
   /// Accessor to the MPI communicator between models
   const eckit::mpi::Comm & getCommPairRanks() const {ASSERT(commPrints_); return *commPrints_;}
@@ -96,7 +74,7 @@ class GeometryCoupled : public util::Printable {
 
   std::shared_ptr<Geometry<MODEL1>> geom1_;
   std::shared_ptr<Geometry<MODEL2>> geom2_;
-  const std::vector<Variables> vars_;  ///< variables that model1 and model2 should provide
+  std::vector<Variables> vars_;  ///< variables that model1 and model2 should provide
   eckit::mpi::Comm * commPrints_;
   bool parallel_;
   int mymodel_;
@@ -107,20 +85,21 @@ class GeometryCoupled : public util::Printable {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL1, typename MODEL2>
-GeometryCoupled<MODEL1, MODEL2>::GeometryCoupled(const Parameters_ & params,
+GeometryCoupled<MODEL1, MODEL2>::GeometryCoupled(const eckit::Configuration & config,
                                                  const eckit::mpi::Comm & comm)
-  : geom1_(), geom2_(), vars_({params.vars1.value(), params.vars2.value()}),
-    commPrints_(nullptr), parallel_(params.parallel.value()), mymodel_(-1)
+  : geom1_(), geom2_(), vars_(2),
+    commPrints_(nullptr), parallel_(config.getBool("parallel", false)), mymodel_(-1)
 {
-  // check that the same variable isn't specified in both models'
-  // variables
+  if (config.has(vars1())) vars_[0] = Variables(config, vars1());
+  if (config.has(vars2())) vars_[1] = Variables(config, vars2());
+  // check that the same variable isn't specified in both models' variables
   Variables commonvars = vars_[0];
   commonvars.intersection(vars_[1]);
   if (commonvars.size() > 0) {
     throw eckit::BadParameter("Variables for different components of coupled "
           "model can not overlap", Here());
   }
-  if (params.parallel) {
+  if (parallel_) {
     const int mytask = comm.rank();
     const int ntasks = comm.size();
     const int tasks_per_model = ntasks / 2;
@@ -129,16 +108,18 @@ GeometryCoupled<MODEL1, MODEL2>::GeometryCoupled(const Parameters_ & params,
     // This creates the communicators for each model, named comm_model_{model name}
     // The first half of the MPI tasks will go to MODEL1, and the second half to MODEL2
     std::string commNameStr;
-    if (mymodel_ == 1) commNameStr = "comm_model_" + MODEL1::name();
-    if (mymodel_ == 2) commNameStr = "comm_model_" + MODEL2::name();
+    if (mymodel_ == 1) commNameStr = "comm_model_" + name1();
+    if (mymodel_ == 2) commNameStr = "comm_model_" + name2();
     char const *commName = commNameStr.c_str();
     eckit::mpi::Comm & commModel = comm.split(mymodel_, commName);
 
     if (mymodel_ == 1) {
-      geom1_ = std::make_shared<Geometry<MODEL1>>(params.geometry1, commModel);
+      const eckit::LocalConfiguration conf1(config, name1());
+      geom1_ = std::make_shared<Geometry<MODEL1>>(conf1, commModel);
     }
     if (mymodel_ == 2) {
-      geom2_ = std::make_shared<Geometry<MODEL2>>(params.geometry2, commModel);
+      const eckit::LocalConfiguration conf2(config, name2());
+      geom2_ = std::make_shared<Geometry<MODEL2>>(conf2, commModel);
     }
 
 // This is creating Nprocs/2 new communicators, each of which pairs two processes:
@@ -150,8 +131,10 @@ GeometryCoupled<MODEL1, MODEL2>::GeometryCoupled(const Parameters_ & params,
     char const *commPrintsName = commPrintStr.c_str();
     commPrints_ = &comm.split(myrank, commPrintsName);
   } else {
-    geom1_ = std::make_shared<Geometry<MODEL1>>(params.geometry1, comm);
-    geom2_ = std::make_shared<Geometry<MODEL2>>(params.geometry2, comm);
+    const eckit::LocalConfiguration conf1(config, name1());
+    geom1_ = std::make_shared<Geometry<MODEL1>>(conf1, comm);
+    const eckit::LocalConfiguration conf2(config, name2());
+    geom2_ = std::make_shared<Geometry<MODEL2>>(conf2, comm);
   }
 }
 

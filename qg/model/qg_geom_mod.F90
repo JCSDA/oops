@@ -200,7 +200,9 @@ do iy=1,self%ny
 enddo
 
 ! Set perturbed heating coeff
-call f_conf%get_or_die("perturbed heating",pcoeff)
+if (.not.f_conf%get("perturbed heating",pcoeff)) then
+  pcoeff = 0.0
+endif
 if (pcoeff/=0) then
   call fckit_log%info('qg_geom_setup: Perturbed Heating ON')
   self%ph_coeff = pcoeff
@@ -210,7 +212,9 @@ else
 end if
 
 ! Set heating term
-call f_conf%get_or_die("heating",htype)
+if (.not.f_conf%get("heating",htype)) then
+  htype = .true.
+endif
 if (.not. htype) then
   ! No heating term
   call fckit_log%info('qg_geom_setup: heating off')

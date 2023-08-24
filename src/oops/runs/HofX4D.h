@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/instantiateObsFilterFactory.h"
@@ -54,7 +55,6 @@ class HofX4DParameters : public ApplicationParameters {
 
  public:
   typedef typename Geometry_::Parameters_ GeometryParameters_;
-  typedef ModelParametersWrapper<MODEL> ModelParameters_;
   typedef typename State_::Parameters_ StateParameters_;
   typedef typename ModelAux_::Parameters_ ModelAuxParameters_;
 
@@ -83,7 +83,7 @@ class HofX4DParameters : public ApplicationParameters {
   RequiredParameter<util::Duration> forecastLength{"forecast length", this};
 
   /// Model parameters.
-  RequiredParameter<ModelParameters_> model{"model", this};
+  RequiredParameter<eckit::LocalConfiguration> model{"model", this};
 
   /// Initial state parameters.
   RequiredParameter<StateParameters_> initialCondition{"initial condition", this};
@@ -166,7 +166,7 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
     hofx.initialize(geometry, obsaux, Rmat, post);
 
 //  Setup Model
-    const Model_ model(geometry, params.model.value().modelParameters);
+    const Model_ model(geometry, eckit::LocalConfiguration(fullConfig, "model"));
     ModelAux_ moderr(geometry, params.modelAuxControl);
 
     post.enrollProcessor(new StateInfo<State_>("fc", params.prints));

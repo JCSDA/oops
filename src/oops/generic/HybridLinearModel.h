@@ -11,6 +11,10 @@
 
 #include <string>
 
+#include "oops/base/Geometry.h"
+#include "oops/base/ParameterTraitsVariables.h"
+#include "oops/base/State.h"
+#include "oops/base/Variables.h"
 #include "oops/generic/HybridLinearModelCoeffs.h"
 
 namespace oops {

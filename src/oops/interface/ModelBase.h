@@ -29,21 +29,7 @@ namespace interface {
 /// interface::ModelBase overrides oops::ModelBase methods to pass MODEL-specific
 /// implementations of State and ModelAuxControl to the MODEL-specific
 /// implementation of Model.
-///
-/// Note: implementations of this interface can opt to extract their settings either from
-/// a Configuration object or from a subclass of ModelParametersBase.
-///
-/// In the former case, they should provide a constructor with the following signature:
-///
-///    ModelBase(const Geometry_ &, const eckit::Configuration &);
-///
-/// In the latter case, the implementer should first define a subclass of ModelParametersBase
-/// holding the settings of the model in question. The implementation of the ModelBase interface
-/// should then typedef `Parameters_` to the name of that subclass and provide a constructor with
-/// the following signature:
-///
-///    ModelBase(const Geometry_ &, const Parameters_ &);
-///
+
 template <typename MODEL>
 class ModelBase : public oops::ModelBase<MODEL> {
   typedef typename MODEL::ModelAuxControl   ModelAux_;
@@ -78,26 +64,15 @@ class ModelBase : public oops::ModelBase<MODEL> {
 /// interface::ModelBase<MODEL>). Passes MODEL::Geometry to the constructor of T.
 template<class MODEL, class T>
 class ModelMaker : public ModelFactory<MODEL> {
- private:
-  /// Defined as T::Parameters_ if T defines a Parameters_ type; otherwise as
-  /// GenericModelParameters.
-  typedef TParameters_IfAvailableElseFallbackType_t<T, GenericModelParameters> Parameters_;
-
  public:
   typedef oops::Geometry<MODEL>   Geometry_;
 
   explicit ModelMaker(const std::string & name) : ModelFactory<MODEL>(name) {}
 
   oops::ModelBase<MODEL> * make(const Geometry_ & geom,
-                                const ModelParametersBase & parameters) override {
+                                const eckit::Configuration & config) override {
     Log::trace() << "interface::ModelBase<MODEL>::make starting" << std::endl;
-    const auto &stronglyTypedParameters = dynamic_cast<const Parameters_&>(parameters);
-    return new T(geom.geometry(),
-                 parametersOrConfiguration<HasParameters_<T>::value>(stronglyTypedParameters));
-  }
-
-  std::unique_ptr<ModelParametersBase> makeParameters() const override {
-    return boost::make_unique<Parameters_>();
+    return new T(geom.geometry(), config);
   }
 };
 

@@ -14,7 +14,7 @@
 #include "atlas/functionspace.h"
 #include "atlas/grid.h"
 #include "atlas/util/Config.h"
-
+#include "eckit/config/Configuration.h"
 #include "oops/base/Variables.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
@@ -25,10 +25,10 @@
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
-GeometryQG::GeometryQG(const GeometryQgParameters & params,
+GeometryQG::GeometryQG(const eckit::Configuration & conf,
                        const eckit::mpi::Comm & comm) : comm_(comm), levs_(0) {
   ASSERT(comm_.size() == 1);
-  qg_geom_setup_f90(keyGeom_, params.toConfiguration());
+  qg_geom_setup_f90(keyGeom_, conf);
 
   int nx = 0;
   int ny = 0;

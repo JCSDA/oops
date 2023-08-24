@@ -17,7 +17,6 @@
 
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
-#include "oops/base/WriteParametersBase.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -27,41 +26,6 @@
 
 namespace oops {
 
-
-// -----------------------------------------------------------------------------
-/// Parameters for the State describing a coupled model state (used in ctor and read)
-template<class... MODELs>
-class StateCoupledParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(StateCoupledParameters, Parameters)
-
-  /// Type of tuples stored in the StateCoupledParameters
-  using RequiredParametersTupleT =
-        std::tuple<RequiredParameter<typename State<MODELs>::Parameters_>...>;
-  /// Tuple that can be passed to the Parameter ctor
-  using RequiredParameterInit = std::tuple<const char *, Parameters *>;
-
- public:
-  /// Tuple of all State Parameters.
-  RequiredParametersTupleT states{RequiredParameterInit(MODELs::name().c_str(), this) ... };
-};
-
-// -----------------------------------------------------------------------------
-/// Parameters for the State describing how to output a coupled model state
-template<class... MODELs>
-class StateCoupledWriteParameters : public WriteParametersBase {
-  OOPS_CONCRETE_PARAMETERS(StateCoupledWriteParameters, WriteParametersBase)
-
-  /// Type of tuples stored in the StateCoupledWriteParameters
-  using RequiredParametersTupleT =
-        std::tuple<RequiredParameter<typename State<MODELs>::WriteParameters_>...>;
-  /// Tuple that can be passed to the Parameter ctor
-  using RequiredParameterInit = std::tuple<const char *, Parameters *>;
-
- public:
-  /// Tuple of all Write state Parameters.
-  RequiredParametersTupleT states{RequiredParameterInit(MODELs::name().c_str(), this) ... };
-};
-
 // -----------------------------------------------------------------------------
 /// Coupled model state
 template <typename MODEL1, typename MODEL2>
@@ -69,12 +33,9 @@ class StateCoupled : public util::Printable {
   typedef GeometryCoupled<MODEL1, MODEL2>  GeometryCoupled_;
 
  public:
-  typedef StateCoupledParameters<MODEL1, MODEL2>      Parameters_;
-  typedef StateCoupledWriteParameters<MODEL1, MODEL2> WriteParameters_;
-
   /// Constructor, destructor
   StateCoupled(const GeometryCoupled_ &, const Variables &, const util::DateTime &);
-  StateCoupled(const GeometryCoupled_ &, const Parameters_ &);
+  StateCoupled(const GeometryCoupled_ &, const eckit::Configuration &);
   StateCoupled(const GeometryCoupled_ &, const StateCoupled &);
   StateCoupled(const StateCoupled &);
   virtual ~StateCoupled();
@@ -97,8 +58,8 @@ class StateCoupled : public util::Printable {
   void updateTime(const util::Duration & dt);
 
   /// I/O and diagnostics
-  void read(const Parameters_ &);
-  void write(const WriteParameters_ &) const;
+  void read(const eckit::Configuration &);
+  void write(const eckit::Configuration &) const;
   double norm() const;
   std::shared_ptr<const GeometryCoupled_> geometry() const {return geom_;}
   const Variables & variables() const {return vars_;}
@@ -151,22 +112,25 @@ StateCoupled<MODEL1, MODEL2>::StateCoupled(const GeometryCoupled_ & resol,
 
 template<typename MODEL1, typename MODEL2>
 StateCoupled<MODEL1, MODEL2>::StateCoupled(const GeometryCoupled_ & resol,
-                                           const Parameters_ & params)
+                                           const eckit::Configuration & config)
   : geom_(new GeometryCoupled_(resol)), xx1_(), xx2_(), parallel_(resol.isParallel()) {
   Log::trace() << "StateCoupled::StateCoupled read starting" << std::endl;
+  Log::debug() << "StateCoupled: config " << config << std::endl;
 
+  const eckit::LocalConfiguration conf1(config, MODEL1::name());
+  const eckit::LocalConfiguration conf2(config, MODEL2::name());
   if (parallel_) {
     if (resol.modelNumber() == 1) {
-      xx1_ = std::make_unique<State<MODEL1>>(resol.geometry1(), std::get<0>(params.states));
+      xx1_ = std::make_unique<State<MODEL1>>(resol.geometry1(), conf1);
       vars_ = xx1_->variables();
     }
     if (resol.modelNumber() == 2) {
-      xx2_ = std::make_unique<State<MODEL2>>(resol.geometry2(), std::get<1>(params.states));
+      xx2_ = std::make_unique<State<MODEL2>>(resol.geometry2(), conf2);
       vars_ = xx2_->variables();
     }
   } else {
-    xx1_ = std::make_unique<State<MODEL1>>(resol.geometry1(), std::get<0>(params.states));
-    xx2_ = std::make_unique<State<MODEL2>>(resol.geometry2(), std::get<1>(params.states));
+    xx1_ = std::make_unique<State<MODEL1>>(resol.geometry1(), conf1);
+    xx2_ = std::make_unique<State<MODEL2>>(resol.geometry2(), conf2);
     vars_ = xx1_->variables();
     vars_ += xx2_->variables();
   }
@@ -222,20 +186,24 @@ StateCoupled<MODEL1, MODEL2> & StateCoupled<MODEL1, MODEL2>::operator=(const Sta
 // -----------------------------------------------------------------------------
 
 template<typename MODEL1, typename MODEL2>
-void StateCoupled<MODEL1, MODEL2>::read(const Parameters_ & params) {
+void StateCoupled<MODEL1, MODEL2>::read(const eckit::Configuration & config) {
   Log::trace() << "StateCoupled::read starting" << std::endl;
-  if (xx1_) xx1_->read(std::get<0>(params.states));
-  if (xx2_) xx2_->read(std::get<1>(params.states));
+  const eckit::LocalConfiguration conf1(config, MODEL1::name());
+  const eckit::LocalConfiguration conf2(config, MODEL2::name());
+  if (xx1_) xx1_->read(conf1);
+  if (xx2_) xx2_->read(conf2);
   Log::trace() << "StateCoupled::read done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL1, typename MODEL2>
-void StateCoupled<MODEL1, MODEL2>::write(const WriteParameters_ & params) const {
+void StateCoupled<MODEL1, MODEL2>::write(const eckit::Configuration & config) const {
   Log::trace() << "StateCoupled::write starting" << std::endl;
-  if (xx1_) xx1_->write(std::get<0>(params.states));
-  if (xx2_) xx2_->write(std::get<1>(params.states));
+  const eckit::LocalConfiguration conf1(config, MODEL1::name());
+  const eckit::LocalConfiguration conf2(config, MODEL2::name());
+  if (xx1_) xx1_->write(conf1);
+  if (xx2_) xx2_->write(conf2);
   Log::trace() << "StateCoupled::write done" << std::endl;
 }
 

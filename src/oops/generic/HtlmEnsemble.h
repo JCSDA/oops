@@ -12,6 +12,11 @@
 #include <memory>
 #include <string>
 
+#include "eckit/config/LocalConfiguration.h"
+
+#include "oops/base/Geometry.h"
+#include "oops/base/Increment.h"
+#include "oops/base/Increment4D.h"
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/Model.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
@@ -62,13 +67,12 @@ class HtlmEnsembleParameters : public Parameters {
   OOPS_CONCRETE_PARAMETERS(HtlmEnsembleParameters, Parameters);
   typedef typename State<MODEL>::Parameters_    StateParameters_;
   typedef StateEnsembleParameters<MODEL>        StateEnsembleParameters_;
-  typedef ModelParametersWrapper<MODEL>         ModelParameters_;
   typedef typename Geometry<MODEL>::Parameters_ GeometryParameters_;
   typedef NonLinearEnsembleParameters<MODEL>    NlEnsParameters_;
 
  public:
   // Nonlinear forecast model.
-  RequiredParameter<ModelParameters_> model{"model", this};
+  RequiredParameter<eckit::LocalConfiguration> model{"model", this};
   // Background and analysis geometry.
   RequiredParameter<GeometryParameters_> stateGeometry{"state geometry", this};
   // Augmented model state
@@ -114,7 +118,6 @@ class HtlmEnsemble{
   const size_t size() const {return linearEnsemble_.size();}
 
  private:
-  const HtlmEnsembleParameters_ params_;
   const size_t ensembleSize_;
   const Geometry_ stateGeometry_;
   const Geometry_ & incrementGeometry_;
@@ -142,15 +145,15 @@ template<typename MODEL>
 HtlmEnsemble<MODEL>::HtlmEnsemble(const HtlmEnsembleParameters_ & params,
                                   const Variables & simplifiedLinearModelVars,
                                   const Geometry_ & updateGeometry)
-    : params_(params), ensembleSize_(params.ensembleSize),
+    : ensembleSize_(params.ensembleSize),
       stateGeometry_(params.stateGeometry.value(), updateGeometry.getComm()),
       incrementGeometry_(updateGeometry),
-      model_(stateGeometry_, params_.model.value().modelParameters.value()),
-      controlState_(stateGeometry_, params_.control.value().toConfiguration()),
-      moderr_(stateGeometry_, params_.modelAuxControl.value()),
-      modauxinc_(incrementGeometry_, params_.modelAuxIncrement.value()),
-      perturbedStates_(params_.nlEnsemble.value().statesReadIn.value() != boost::none ?
-             StateEnsemble_(stateGeometry_, *params_.nlEnsemble.value().statesReadIn.value()) :
+      model_(stateGeometry_, eckit::LocalConfiguration(params.toConfiguration(), "model")),
+      controlState_(stateGeometry_, params.control.value().toConfiguration()),
+      moderr_(stateGeometry_, params.modelAuxControl.value()),
+      modauxinc_(incrementGeometry_, params.modelAuxIncrement.value()),
+      perturbedStates_(params.nlEnsemble.value().statesReadIn.value() != boost::none ?
+             StateEnsemble_(stateGeometry_, *params.nlEnsemble.value().statesReadIn.value()) :
                                                    StateEnsemble_(controlState_[0], ensembleSize_)),
       linearEnsemble_(incrementGeometry_, simplifiedLinearModelVars,
                       controlState_[0].validTime(), ensembleSize_),
@@ -160,35 +163,35 @@ HtlmEnsemble<MODEL>::HtlmEnsemble(const HtlmEnsembleParameters_ & params,
     Log::trace() << "HtlmEnsemble<MODEL>::HtlmEnsemble() starting"
                  << std::endl;
     // Check ensemble initilization params
-    params_.nlEnsemble.value().check();
+    params.nlEnsemble.value().check();
 
-    // If chosesn, initialize nonlinear ensemble from background error.
-    if (params_.nlEnsemble.value().statesPerturbation.value() != boost::none) {
-      // set up variables to perturb
-      const Variables vars_(params_.nlEnsemble.value().statesPerturbation.value()->variables);
-      // set up Bmatrix
-      const CovarianceParametersBase_ &covarParams =
-      params_.nlEnsemble.value().statesPerturbation.value()->
-                           backgroundError.value().covarianceParameters;
+  // If chosesn, initialize nonlinear ensemble from background error.
+  if (params.nlEnsemble.value().statesPerturbation.value() != boost::none) {
+    // set up variables to perturb
+    const Variables vars_(params.nlEnsemble.value().statesPerturbation.value()->variables);
+    // set up Bmatrix
+    const CovarianceParametersBase_ &covarParams =
+    params.nlEnsemble.value().statesPerturbation.value()->
+                         backgroundError.value().covarianceParameters;
 
-      std::unique_ptr<CovarianceBase_> Bmat(CovarianceFactory_::create(
-                           stateGeometry_, vars_, covarParams, controlState_, controlState_));
+    std::unique_ptr<CovarianceBase_> Bmat(CovarianceFactory_::create(
+                         stateGeometry_, vars_, covarParams, controlState_, controlState_));
     //  Generate perturbed states
     Increment4D_ dx(stateGeometry_, vars_, controlState_.times());
-      for (size_t jm = 0; jm < ensembleSize_; ++jm) {
-        //  Generate linear ensemble increments
-        Bmat->randomize(dx);
-        //  Add to control state
-        perturbedStates_[jm] += dx[0];
-      }
+    for (size_t jm = 0; jm < ensembleSize_; ++jm) {
+      //  Generate linear ensemble increments
+      Bmat->randomize(dx);
+      //  Add to control state
+      perturbedStates_[jm] += dx[0];
     }
+  }
 
-      //  Set up linearEnsemble_
-      for (size_t m = 0; m < ensembleSize_; ++m) {
-          linearEnsemble_[m].diff(controlState_[0], perturbedStates_[m]);
-      }
+  //  Set up linearEnsemble_
+  for (size_t m = 0; m < ensembleSize_; ++m) {
+    linearEnsemble_[m].diff(controlState_[0], perturbedStates_[m]);
+  }
 
-    Log::trace() << "HtlmEnsemble<MODEL>::HtlmEnsemble() done" << std::endl;
+  Log::trace() << "HtlmEnsemble<MODEL>::HtlmEnsemble() done" << std::endl;
 }
 
 //------------------------------------------------------------------------------
@@ -217,6 +220,8 @@ void HtlmEnsemble<MODEL>::step(const util::Duration & tstep,
     }
     Log::trace() << "HtlmEnsemble<MODEL>::step() done" << std::endl;
 }
+
+//------------------------------------------------------------------------------
 
 }  // namespace oops
 

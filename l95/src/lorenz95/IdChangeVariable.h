@@ -12,11 +12,14 @@
 #include <string>
 
 #include "oops/util/Printable.h"
-#include "IdChangeVariableParameters.h"
 
 #include "lorenz95/Resolution.h"
 
 // Forward declarations
+namespace eckit {
+  class Configuration;
+}
+
 namespace oops {
   class Variables;
 }
@@ -29,10 +32,9 @@ namespace lorenz95 {
 
 class IdChangeVariable : public util::Printable {
  public:
-  typedef IdChangeVariableParameters Parameters_;
   static const std::string classname() {return "lorenz95::IdChangeVariable";}
 
-  IdChangeVariable(const Parameters_ &, const Resolution &) {}
+  IdChangeVariable(const eckit::Configuration &, const Resolution &) {}
   void changeVar(StateL95 &, const oops::Variables &) const {}
   void changeVarInverse(StateL95 &, const oops::Variables &) const {}
 

@@ -109,8 +109,6 @@ CostFct4DVar<MODEL, OBS>::CostFct4DVar(const eckit::Configuration & config,
   windowLength_ = util::Duration(config.getString("window length"));
   windowBegin_ = util::DateTime(config.getString("window begin"));
   windowEnd_ = windowBegin_ + windowLength_;
-  typename VariableChange<MODEL>::Parameters_ params;
-  params.deserialize(config.getSubConfiguration("variable change"));
   this->setupTerms(config);
   // ASSERT(ctlvars_ <= this->jb().getBackground().state().variables());
   Log::trace() << "CostFct4DVar::CostFct4DVar done" << std::endl;

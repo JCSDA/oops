@@ -164,15 +164,11 @@ State<MODEL>::State(const Geometry_ & resol, const Variables & vars,
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-State<MODEL>::State(const Geometry_ & resol,
-                    const Parameters_ & params) : state_(), fset_()
+State<MODEL>::State(const Geometry_ & resol, const Parameters_ & params) : state_(), fset_()
 {
   Log::trace() << "State<MODEL>::State read starting" << std::endl;
   util::Timer timer(classname(), "State");
-
-  state_.reset(new State_(
-                 resol.geometry(),
-                 parametersOrConfiguration<HasParameters_<State_>::value>(params)));
+  state_.reset(new State_(resol.geometry(), params.toConfiguration()));
   this->setObjectSize(state_->serialSize()*sizeof(double));
   Log::trace() << "State<MODEL>::State read done" << std::endl;
 }
@@ -229,49 +225,34 @@ State<MODEL> & State<MODEL>::operator=(const State & rhs) {
 
 template<typename MODEL>
 void State<MODEL>::read(const Parameters_ & parameters) {
-  Log::trace() << "State<MODEL>::read starting" << std::endl;
-  util::Timer timer(classname(), "read");
-  fset_.clear();
-  state_->read(parametersOrConfiguration<HasParameters_<State_>::value>(parameters));
-  Log::trace() << "State<MODEL>::read done" << std::endl;
+  read(parameters.toConfiguration());
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 void State<MODEL>::read(const eckit::Configuration & conf) {
-  // It would be possible to implement this function so as to avoid creating a short-lived
-  // GenericParameters object if State_::read() takes an eckit::Configuration rather than a
-  // subclass of Parameters. But for simplicity we don't do that for now, instead delegating work
-  // to the other read() overload. In any case, reading a model state is likely to be much more
-  // time-consuming than constructing a GenericParameters object.
-  Parameters_ parameters;
-  parameters.validateAndDeserialize(conf);
-  read(parameters);
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void State<MODEL>::write(const WriteParameters_ & parameters) const {
   Log::trace() << "State<MODEL>::write starting" << std::endl;
   util::Timer timer(classname(), "write");
-  state_->write(parametersOrConfiguration<HasWriteParameters_<State_>::value>(parameters));
+  state_->read(conf);
   Log::trace() << "State<MODEL>::write done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
+void State<MODEL>::write(const WriteParameters_ & parameters) const {
+  write(parameters.toConfiguration());
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
 void State<MODEL>::write(const eckit::Configuration & conf) const {
-  // It would be possible to implement this function so as to avoid creating a short-lived
-  // GenericParameters object if State_::write() takes an eckit::Configuration rather than a
-  // subclass of Parameters. But for simplicity we don't do that for now, instead delegating work
-  // to the other write() overload. In any case, writing a model state is likely to be much more
-  // time-consuming than constructing a GenericParameters object.
-  WriteParameters_ parameters;
-  parameters.validateAndDeserialize(conf);
-  write(parameters);
+  Log::trace() << "State<MODEL>::write starting" << std::endl;
+  util::Timer timer(classname(), "write");
+  state_->write(conf);
+  Log::trace() << "State<MODEL>::write done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

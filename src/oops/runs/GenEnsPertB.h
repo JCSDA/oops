@@ -16,6 +16,7 @@
 #include <sstream>
 #include <string>
 
+#include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
 #include "oops/base/instantiateCovarFactory.h"
@@ -43,7 +44,6 @@ template <typename MODEL> class GenEnsPertBParameters : public ApplicationParame
  public:
   typedef ModelSpaceCovarianceParametersWrapper<MODEL> CovarianceParameters_;
   typedef typename Geometry<MODEL>::Parameters_        GeometryParameters_;
-  typedef ModelParametersWrapper<MODEL>                ModelParameters_;
   typedef State<MODEL>                                 State_;
   typedef typename State_::Parameters_                 StateParameters_;
   typedef StateWriterParameters<State_>                StateWriterParameters_;
@@ -54,7 +54,7 @@ template <typename MODEL> class GenEnsPertBParameters : public ApplicationParame
   RequiredParameter<GeometryParameters_> geometry{"geometry", this};
 
   /// Model parameters.
-  RequiredParameter<ModelParameters_> model{"model", this};
+  RequiredParameter<eckit::LocalConfiguration> model{"model", this};
 
   /// Initial state parameters.
   RequiredParameter<StateParameters_> initialCondition{"initial condition", this};
@@ -116,7 +116,7 @@ template <typename MODEL> class GenEnsPertB : public Application {
     const Geometry_ resol(params.geometry, this->getComm(), oops::mpi::myself());
 
 //  Setup Model
-    const Model_ model(resol, params.model.value().modelParameters);
+    const Model_ model(resol, eckit::LocalConfiguration(fullConfig, "model"));
 
 //  Setup initial state
     const State4D_ xx(resol, eckit::LocalConfiguration(fullConfig, "initial condition"));

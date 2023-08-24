@@ -43,7 +43,6 @@ class ExternalDFIParameters : public ApplicationParameters {
 
  public:
   typedef typename Geometry_::Parameters_     GeometryParameters_;
-  typedef ModelParametersWrapper<MODEL>       ModelParameters_;
   typedef typename State_::Parameters_        StateParameters_;
   typedef typename ModelAux_::Parameters_     ModelAuxParameters_;
   typedef StateWriterParameters<State<MODEL>> StateWriterParameters_;
@@ -52,7 +51,7 @@ class ExternalDFIParameters : public ApplicationParameters {
                    "geometry for initial state", this};
   RequiredParameter<StateParameters_> initialCondition{"initial condition",
                    "initial state parameters", this};
-  RequiredParameter<ModelParameters_> model{"model", "forecast model parameters", this};
+  RequiredParameter<eckit::LocalConfiguration> model{"model", "forecast model parameters", this};
   Parameter<ModelAuxParameters_> modelAuxControl{"model aux control",
                    "augmented model state", {}, this};
 
@@ -86,7 +85,7 @@ template <typename MODEL> class ExternalDFI : public Application {
 
     // Setup resolution, model, initial state, augmented state
     const Geometry_ resol(params.geometry, this->getComm());
-    const Model_ model(resol, params.model.value().modelParameters);
+    const Model_ model(resol, eckit::LocalConfiguration(fullConfig, "model"));
     State_ xx(resol, params.initialCondition);
     const ModelAux_ moderr(resol, params.modelAuxControl);
     Log::test() << "Initial state: " << xx << std::endl;

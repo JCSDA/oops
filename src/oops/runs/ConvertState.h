@@ -14,6 +14,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Geometry.h"
+#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/State.h"
 #include "oops/interface/VariableChange.h"
 #include "oops/mpi/mpi.h"
@@ -109,12 +110,12 @@ template <typename MODEL> class ConvertState : public Application {
     oops::Variables varout;
     bool inverse = false;
     if (params.varChange.value() != boost::none) {
-       const auto & varchangeparams = *params.varChange.value();
-       if (varchangeparams.varChange.outputVariables.value() != boost::none) {
-          vc.reset(new VariableChange_(varchangeparams.varChange, resol2));
-          varout = *varchangeparams.varChange.outputVariables.value();
-          inverse = varchangeparams.doInverse;
-       }
+      eckit::LocalConfiguration chconf(params.varChange.value()->toConfiguration());
+      if (chconf.has("output variables")) {
+        vc.reset(new VariableChange_(chconf, resol2));
+        varout = Variables(chconf, "output variables");
+        inverse = chconf.getBool("do inverse", false);
+      }
     }
 
 //  List of input and output states

@@ -15,7 +15,7 @@
 
 namespace qg {
 // -----------------------------------------------------------------------------
-ChangeVarQG::ChangeVarQG(const Parameters_ & params, const GeometryQG & geom) {}
+ChangeVarQG::ChangeVarQG(const eckit::Configuration &, const GeometryQG &) {}
 // -----------------------------------------------------------------------------
 ChangeVarQG::~ChangeVarQG() {}
 // -----------------------------------------------------------------------------

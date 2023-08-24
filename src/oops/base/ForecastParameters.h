@@ -29,7 +29,6 @@ template <typename MODEL> class ForecastParameters : public Parameters {
 
  public:
   typedef typename Geometry<MODEL>::Parameters_                 GeometryParameters_;
-  typedef ModelParametersWrapper<MODEL>                         ModelParameters_;
   typedef typename StateParametersND<MODEL>::StateParameters3D_ StateParameters_;
   typedef StateWriterParameters<State<MODEL>>                   StateWriterParameters_;
 
@@ -37,7 +36,7 @@ template <typename MODEL> class ForecastParameters : public Parameters {
   RequiredParameter<GeometryParameters_> geometry{"geometry", this};
 
   /// Model parameters.
-  RequiredParameter<ModelParameters_> model{"model", this};
+  RequiredParameter<eckit::LocalConfiguration> model{"model", this};
 
   /// Initial state parameters.
   RequiredParameter<StateParameters_> initialCondition{"initial condition", this};

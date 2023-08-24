@@ -18,6 +18,7 @@
 #include "atlas/grid.h"
 
 #include "oops/base/Geometry.h"
+#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/GlobalInterpolator.h"
 #include "oops/mpi/mpi.h"

@@ -33,10 +33,10 @@ namespace lorenz95 {
 // -----------------------------------------------------------------------------
 static oops::interface::LinearModelMaker<L95Traits, TLML95> makerTLML95_("L95TLM");
 // -----------------------------------------------------------------------------
-TLML95::TLML95(const Resolution & resol, const Parameters_ & params)
-  : resol_(resol), tstep_(params.tstep),
+TLML95::TLML95(const Resolution & resol, const eckit::Configuration & tlConf)
+  : resol_(resol), tstep_(util::Duration(tlConf.getString("tstep"))),
     dt_(tstep_.toSeconds()/432000.0), traj_(),
-    lrmodel_(resol_, params.trajectory),
+    lrmodel_(resol_, eckit::LocalConfiguration(tlConf, "trajectory")),
     vars_()
 {
   oops::Log::info() << "TLML95: resol = " << resol_ << ", tstep = " << tstep_ << std::endl;

@@ -18,6 +18,7 @@
 #include "oops/base/Increment.h"
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/LatLonGridWriter.h"
+#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/State.h"
 #include "oops/base/StateEnsemble.h"
 #include "oops/base/Variables.h"

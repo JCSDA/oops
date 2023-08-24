@@ -14,6 +14,7 @@
 #include <utility>
 #include <vector>
 
+#include "eckit/config/Configuration.h"
 #include "eckit/exception/Exceptions.h"
 
 #include "oops/base/Increment.h"
@@ -118,9 +119,9 @@ class IncrementCoupled : public util::Printable {
   void updateTime(const util::Duration & dt);
 
   /// I/O and diagnostics
-  void read(const ReadParameters_ &);
-  void write(const WriteParameters_ &) const;
-  void dirac(const DiracParameters_ &);
+  void read(const eckit::Configuration &);
+  void write(const eckit::Configuration &) const;
+  void dirac(const eckit::Configuration &);
   void ones();
   double norm() const;
   std::vector<double> rmsByLevel(const std::string &) const {
@@ -168,8 +169,8 @@ class IncrementCoupled : public util::Printable {
 
 template<typename MODEL1, typename MODEL2>
 IncrementCoupled<MODEL1, MODEL2>::IncrementCoupled(const GeometryCoupled_ & resol,
-                                           const Variables & vars,
-                                           const util::DateTime & time)
+                                                   const Variables & vars,
+                                                   const util::DateTime & time)
   : geom_(new GeometryCoupled_(resol)), dx1_(), dx2_(), parallel_(resol.isParallel()) {
   Log::trace() << "IncrementCoupled::IncrementCoupled starting" << std::endl;
   if (parallel_) {
@@ -194,7 +195,7 @@ IncrementCoupled<MODEL1, MODEL2>::IncrementCoupled(const GeometryCoupled_ & reso
 
 template<typename MODEL1, typename MODEL2>
 IncrementCoupled<MODEL1, MODEL2>::IncrementCoupled(const GeometryCoupled_ & resol,
-                                           const IncrementCoupled & other)
+                                                   const IncrementCoupled & other)
   : geom_(new GeometryCoupled_(resol)), dx1_(), dx2_(), parallel_(resol.isParallel()),
     vars_(other.vars_) {
   Log::trace() << "IncrementCoupled::IncrementCoupled interpolated starting" << std::endl;
@@ -239,30 +240,36 @@ void IncrementCoupled<MODEL1, MODEL2>::diff(const StateCoupled_ & xx1,
 // -----------------------------------------------------------------------------
 
 template<typename MODEL1, typename MODEL2>
-void IncrementCoupled<MODEL1, MODEL2>::read(const ReadParameters_ & params) {
+void IncrementCoupled<MODEL1, MODEL2>::read(const eckit::Configuration & config) {
   Log::trace() << "IncrementCoupled::read starting" << std::endl;
-  if (dx1_) dx1_->read(std::get<0>(params.increments));
-  if (dx2_) dx2_->read(std::get<1>(params.increments));
+  ReadParameters_ params;
+  params.deserialize(config);
+  if (dx1_) dx1_->read(std::get<0>(params.increments).value().toConfiguration());
+  if (dx2_) dx2_->read(std::get<1>(params.increments).value().toConfiguration());
   Log::trace() << "IncrementCoupled::read done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL1, typename MODEL2>
-void IncrementCoupled<MODEL1, MODEL2>::write(const WriteParameters_ & params) const {
+void IncrementCoupled<MODEL1, MODEL2>::write(const eckit::Configuration & config) const {
   Log::trace() << "IncrementCoupled::write starting" << std::endl;
-  if (dx1_) dx1_->write(std::get<0>(params.increments));
-  if (dx2_) dx2_->write(std::get<1>(params.increments));
+  WriteParameters_ params;
+  params.deserialize(config);
+  if (dx1_) dx1_->write(std::get<0>(params.increments).value().toConfiguration());
+  if (dx2_) dx2_->write(std::get<1>(params.increments).value().toConfiguration());
   Log::trace() << "IncrementCoupled::write done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL1, typename MODEL2>
-void IncrementCoupled<MODEL1, MODEL2>::dirac(const DiracParameters_ & params) {
+void IncrementCoupled<MODEL1, MODEL2>::dirac(const eckit::Configuration & config) {
   Log::trace() << "IncrementCoupled::dirac starting" << std::endl;
-  if (dx1_) dx1_->dirac(std::get<0>(params.increments));
-  if (dx2_) dx2_->dirac(std::get<1>(params.increments));
+  DiracParameters_ params;
+  params.deserialize(config);
+  if (dx1_) dx1_->dirac(std::get<0>(params.increments).value().toConfiguration());
+  if (dx2_) dx2_->dirac(std::get<1>(params.increments).value().toConfiguration());
   Log::trace() << "IncrementCoupled::dirac done" << std::endl;
 }
 

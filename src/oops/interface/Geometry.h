@@ -119,22 +119,20 @@ class Geometry : public util::Printable,
 
 template <typename MODEL>
 Geometry<MODEL>::Geometry(const eckit::Configuration & config,
-                          const eckit::mpi::Comm & comm)
-  : Geometry(validateAndDeserialize<Parameters_>(config), comm)
-{}
+                          const eckit::mpi::Comm & comm): geom_() {
+  Log::trace() << "Geometry<MODEL>::Geometry starting" << std::endl;
+  util::Timer timer(classname(), "Geometry");
+  geom_.reset(new Geometry_(config, comm));
+  Log::trace() << "Geometry<MODEL>::Geometry done" << std::endl;
+}
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
 Geometry<MODEL>::Geometry(const Parameters_ & parameters,
-                          const eckit::mpi::Comm & comm): geom_() {
-  Log::trace() << "Geometry<MODEL>::Geometry starting" << std::endl;
-  util::Timer timer(classname(), "Geometry");
-  geom_.reset(new Geometry_(
-                parametersOrConfiguration<HasParameters_<Geometry_>::value>(parameters),
-                comm));
-  Log::trace() << "Geometry<MODEL>::Geometry done" << std::endl;
-}
+                          const eckit::mpi::Comm & comm)
+  : Geometry(parameters.toConfiguration(), comm)
+{}
 
 // -----------------------------------------------------------------------------
 

@@ -16,18 +16,14 @@
 #include <boost/make_unique.hpp>
 #include <boost/noncopyable.hpp>
 
+#include "eckit/config/Configuration.h"
+
 #include "oops/base/Geometry.h"
 #include "oops/base/State.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/util/AssociativeContainers.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
-#include "oops/util/parameters/ConfigurationParameter.h"
-#include "oops/util/parameters/HasParameters_.h"
-#include "oops/util/parameters/OptionalParameter.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/ParametersOrConfiguration.h"
-#include "oops/util/parameters/RequiredPolymorphicParameter.h"
 #include "oops/util/Printable.h"
 
 namespace eckit {
@@ -41,21 +37,7 @@ namespace oops {
 /// \brief Base class for generic implementations of the forecasting models.
 /// Use this class as a base class for generic implementations,
 /// and interface::ModelBase as a base class for MODEL-specific implementations.
-///
-/// Note: implementations of this interface can opt to extract their settings either from
-/// a Configuration object or from a subclass of ModelParametersBase.
-///
-/// In the former case, they should provide a constructor with the following signature:
-///
-///    ModelBase(const Geometry_ &, const eckit::Configuration &);
-///
-/// In the latter case, the implementer should first define a subclass of ModelParametersBase
-/// holding the settings of the model in question. The implementation of the ModelBase interface
-/// should then typedef `Parameters_` to the name of that subclass and provide a constructor with
-/// the following signature:
-///
-///    ModelBase(const Geometry_ &, const Parameters_ &);
-///
+
 template <typename MODEL>
 class ModelBase : public util::Printable,
                   private boost::noncopyable {
@@ -86,59 +68,6 @@ class ModelBase : public util::Printable,
 
 // =============================================================================
 
-template <typename MODEL>
-class ModelFactory;
-
-// -----------------------------------------------------------------------------
-
-/// \brief Base class for classes storing model-specific parameters.
-class ModelParametersBase : public Parameters {
-  OOPS_ABSTRACT_PARAMETERS(ModelParametersBase, Parameters)
- public:
-  /// \brief Model name.
-  ///
-  /// \note This parameter is marked as optional because it is only required in certain
-  /// circumstances (e.g. when model parameters are deserialized into a ModelParametersWrapper
-  /// and used by ModelFactory to instantiate a model whose type is determined at runtime), but
-  /// not others (e.g. in tests written with a particular model in mind). ModelParametersWrapper
-  /// will throw an exception if this parameter is not provided.
-  OptionalParameter<std::string> name{"name", this};
-};
-
-// -----------------------------------------------------------------------------
-
-/// \brief A subclass of ModelParametersBase storing the values of all options in a
-/// single Configuration object.
-///
-/// This object can be accessed by calling the value() method of the \p config member variable.
-///
-/// The ConfigurationParameter class does not perform any parameter validation; models using
-/// GenericModelParameters should therefore ideally be refactored, replacing this class with a
-/// dedicated subclass of ModelParametersBase storing each parameter in a separate
-/// (Optional/Required)Parameter object.
-class GenericModelParameters : public ModelParametersBase {
-  OOPS_CONCRETE_PARAMETERS(GenericModelParameters, ModelParametersBase)
- public:
-  ConfigurationParameter config{this};
-};
-
-// -----------------------------------------------------------------------------
-
-/// \brief Contains a polymorphic parameter holding an instance of a subclass of
-/// ModelParametersBase.
-template <typename MODEL>
-class ModelParametersWrapper : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(ModelParametersWrapper, Parameters)
- public:
-  /// After deserialization, holds an instance of a subclass of ModelParametersBase controlling
-  /// the behavior of a model. The type of the subclass is determined by the value of the "name"
-  /// key in the Configuration object from which this object is deserialized.
-  RequiredPolymorphicParameter<ModelParametersBase, ModelFactory<MODEL>>
-    modelParameters{"name", this};
-};
-
-// =============================================================================
-
 /// Model factory
 template <typename MODEL>
 class ModelFactory {
@@ -146,16 +75,7 @@ class ModelFactory {
 
  public:
   /// \brief Create and return a new model.
-  ///
-  /// The model's type is determined by the \c name attribute of \p parameters.
-  /// \p parameters must be an instance of the subclass of ModelParametersBase
-  /// associated with that model type, otherwise an exception will be thrown.
-  static ModelBase<MODEL> * create(const Geometry_ &,
-                                   const ModelParametersBase & parameters);
-
-  /// \brief Create and return an instance of the subclass of ModelParametersBase
-  /// storing parameters of models of the specified type.
-  static std::unique_ptr<ModelParametersBase> createParameters(const std::string &name);
+  static ModelBase<MODEL> * create(const Geometry_ &, const eckit::Configuration &);
 
   /// \brief Return the names of all models that can be created by one of the registered makers.
   static std::vector<std::string> getMakerNames() {
@@ -169,9 +89,7 @@ class ModelFactory {
   explicit ModelFactory(const std::string & name);
 
  private:
-  virtual ModelBase<MODEL> * make(const Geometry_ &, const ModelParametersBase &) = 0;
-
-  virtual std::unique_ptr<ModelParametersBase> makeParameters() const = 0;
+  virtual ModelBase<MODEL> * make(const Geometry_ &, const eckit::Configuration &) = 0;
 
   static std::map < std::string, ModelFactory<MODEL> * > & getMakers() {
     static std::map < std::string, ModelFactory<MODEL> * > makers_;
@@ -185,26 +103,15 @@ class ModelFactory {
 /// ModelBase<MODEL>). Passes Geometry<MODEL> to the constructor of T.
 template<class MODEL, class T>
 class ModelMaker : public ModelFactory<MODEL> {
- private:
-  /// Defined as T::Parameters_ if T defines a Parameters_ type; otherwise as
-  /// GenericModelParameters.
-  typedef TParameters_IfAvailableElseFallbackType_t<T, GenericModelParameters> Parameters_;
-
  public:
   typedef Geometry<MODEL>   Geometry_;
 
   explicit ModelMaker(const std::string & name) : ModelFactory<MODEL>(name) {}
 
   ModelBase<MODEL> * make(const Geometry_ & geom,
-                          const ModelParametersBase & parameters) override {
+                          const eckit::Configuration & config) override {
     Log::trace() << "ModelBase<MODEL>::make starting" << std::endl;
-    const auto &stronglyTypedParameters = dynamic_cast<const Parameters_&>(parameters);
-    return new T(geom,
-                 parametersOrConfiguration<HasParameters_<T>::value>(stronglyTypedParameters));
-  }
-
-  std::unique_ptr<ModelParametersBase> makeParameters() const override {
-    return boost::make_unique<Parameters_>();
+    return new T(geom, config);
   }
 };
 
@@ -222,30 +129,17 @@ ModelFactory<MODEL>::ModelFactory(const std::string & name) {
 
 template <typename MODEL>
 ModelBase<MODEL> * ModelFactory<MODEL>::create(const Geometry_ & geom,
-                                               const ModelParametersBase & parameters) {
+                                               const eckit::Configuration & config) {
   Log::trace() << "ModelFactory<MODEL>::create starting" << std::endl;
-  const std::string &id = parameters.name.value().value();
+  const std::string id = config.getString("name");
   typename std::map<std::string, ModelFactory<MODEL>*>::iterator
     jerr = getMakers().find(id);
   if (jerr == getMakers().end()) {
     throw std::runtime_error(id + " does not exist in the model factory");
   }
-  ModelBase<MODEL> * ptr = jerr->second->make(geom, parameters);
+  ModelBase<MODEL> * ptr = jerr->second->make(geom, config);
   Log::trace() << "ModelFactory<MODEL>::create done" << std::endl;
   return ptr;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
-std::unique_ptr<ModelParametersBase> ModelFactory<MODEL>::createParameters(
-    const std::string &name) {
-  Log::trace() << "ModelFactory<MODEL>::createParameters starting" << std::endl;
-  typename std::map<std::string, ModelFactory<MODEL>*>::iterator it = getMakers().find(name);
-  if (it == getMakers().end()) {
-    throw std::runtime_error(name + " does not exist in the model factory");
-  }
-  return it->second->makeParameters();
 }
 
 // -----------------------------------------------------------------------------

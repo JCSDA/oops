@@ -20,7 +20,7 @@
 
 namespace qg {
 // -----------------------------------------------------------------------------
-ChangeVarTLADQG::ChangeVarTLADQG(const GeometryQG &, const Parameters_ &) {}
+ChangeVarTLADQG::ChangeVarTLADQG(const GeometryQG &, const eckit::Configuration &) {}
 // -----------------------------------------------------------------------------
 ChangeVarTLADQG::~ChangeVarTLADQG() {}
 // -----------------------------------------------------------------------------

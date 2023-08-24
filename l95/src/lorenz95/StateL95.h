@@ -21,15 +21,10 @@
 #include "lorenz95/Resolution.h"
 
 #include "oops/base/Variables.h"
-#include "oops/base/WriteParametersBase.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
-#include "oops/util/parameters/OptionalParameter.h"
-#include "oops/util/parameters/Parameter.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 #include "oops/util/Printable.h"
 
 namespace eckit {
@@ -38,34 +33,6 @@ namespace eckit {
 
 namespace lorenz95 {
   class IncrementL95;
-
-// -----------------------------------------------------------------------------
-
-/// \brief Parameters used to initialize a Lorenz95 model's state.
-class StateL95Parameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(StateL95Parameters, Parameters)
-
- public:
-  /// \brief Validity date.
-  oops::RequiredParameter<util::DateTime> date{"date", this};
-  /// \brief File to load the state from. Either this option or `analytic_init` must be set.
-  oops::OptionalParameter<std::string> filename{"filename", this};
-  /// \brief Options used to generate the state on the fly. Either this option or `filename`
-  /// must be set.
-  oops::OptionalParameter<Field95GenerateParameters> analyticInit{"analytic init", this};
-  /// \brief Ensemble member index.
-  oops::OptionalParameter<int> member{"member", this};
-};
-
-// -----------------------------------------------------------------------------
-
-/// \brief Parameters controlling the action of writing a Lorenz95 model's state to a file.
-class StateL95WriteParameters : public oops::WriteParametersBase {
-  OOPS_CONCRETE_PARAMETERS(StateL95WriteParameters, WriteParametersBase)
-
- public:
-  oops::Parameter<std::string> datadir{"datadir", ".", this};
-};
 
 /// L95 model state
 /*!
@@ -77,14 +44,11 @@ class StateL95WriteParameters : public oops::WriteParametersBase {
 class StateL95 : public util::Printable,
                  private util::ObjectCounter<StateL95> {
  public:
-  typedef StateL95Parameters Parameters_;
-  typedef StateL95WriteParameters WriteParameters_;
-
   static const std::string classname() {return "lorenz95::StateL95";}
 
 /// Constructor, destructor
   StateL95(const Resolution &, const oops::Variables &, const util::DateTime &);
-  StateL95(const Resolution &, const Parameters_ &);
+  StateL95(const Resolution &, const eckit::Configuration &);
   StateL95(const Resolution &, const StateL95 &);
   StateL95(const StateL95 &);
   virtual ~StateL95();
@@ -105,8 +69,8 @@ class StateL95 : public util::Printable,
   void toFieldSet(atlas::FieldSet &) const;
   void fromFieldSet(const atlas::FieldSet &);
 
-  void read(const Parameters_ &);
-  void write(const WriteParameters_ &) const;
+  void read(const eckit::Configuration &);
+  void write(const eckit::Configuration &) const;
   double norm () const {return fld_.rms();}
   const util::DateTime & validTime() const {return time_;}
   void updateTime(const util::Duration & dt) {time_ += dt;}

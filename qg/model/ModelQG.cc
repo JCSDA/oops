@@ -11,6 +11,7 @@
 
 #include "model/ModelQG.h"
 
+#include "eckit/config/Configuration.h"
 #include "eckit/exception/Exceptions.h"
 
 #include "oops/util/Logger.h"
@@ -26,12 +27,13 @@ namespace qg {
 // -----------------------------------------------------------------------------
 static oops::interface::ModelMaker<QgTraits, ModelQG> makermodel_("QG");
 // -----------------------------------------------------------------------------
-ModelQG::ModelQG(const GeometryQG & resol, const ModelQgParameters & params)
-  : keyConfig_(0), params_(params), geom_(resol),
-    vars_(params.variables())
+ModelQG::ModelQG(const GeometryQG & resol, const eckit::Configuration & config)
+  : keyConfig_(0), tstep_(util::Duration(config.getString("tstep"))),
+    geom_(resol), vars_({"x"})
 {
   oops::Log::trace() << "ModelQG::ModelQG" << std::endl;
-  qg_model_setup_f90(keyConfig_, params.toConfiguration());
+  if (config.has("variables")) vars_ = oops::Variables(config, "variables");
+  qg_model_setup_f90(keyConfig_, config);
   oops::Log::trace() << "ModelQG created" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -47,7 +49,7 @@ void ModelQG::initialize(StateQG & xx) const {
 void ModelQG::step(StateQG & xx, const ModelBias &) const {
   ASSERT(xx.fields().isForModel(true));
   qg_model_propagate_f90(keyConfig_, xx.fields().toFortran());
-  xx.validTime() += params_.tstep;
+  xx.validTime() += tstep_;
 }
 // -----------------------------------------------------------------------------
 void ModelQG::finalize(StateQG & xx) const {

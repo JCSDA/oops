@@ -15,6 +15,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
+#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/State.h"
 #include "oops/interface/LinearVariableChange.h"
 #include "oops/mpi/mpi.h"

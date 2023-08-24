@@ -19,8 +19,8 @@
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-Resolution::Resolution(const ResolutionParameters & parameters, const eckit::mpi::Comm & comm)
-  : resol_(parameters.resol), comm_(comm) {
+Resolution::Resolution(const eckit::Configuration & conf, const eckit::mpi::Comm & comm)
+  : resol_(conf.getInt("resol")), comm_(comm) {
   ASSERT(comm_.size() == 1);
 
   atlas::Field lonlat("lonlat", atlas::array::DataType::real64(),

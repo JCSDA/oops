@@ -105,23 +105,21 @@ class ModelAuxCovariance : public util::Printable,
 
 template<typename MODEL>
 ModelAuxCovariance<MODEL>::ModelAuxCovariance(const Parameters_ & parameters,
-                                              const Geometry_ & resol) : cov_()
-{
-  Log::trace() << "ModelAuxCovariance<MODEL>::ModelAuxCovariance starting" << std::endl;
-  util::Timer timer(classname(), "ModelAuxCovariance");
-  cov_.reset(new ModelAuxCovariance_(
-               parametersOrConfiguration<HasParameters_<ModelAuxCovariance_>::value>(parameters),
-               resol.geometry()));
-  Log::trace() << "ModelAuxCovariance<MODEL>::ModelAuxCovariance done" << std::endl;
-}
+                                              const Geometry_ & resol)
+  : ModelAuxCovariance(parameters.toConfiguration(), resol)
+{}
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 ModelAuxCovariance<MODEL>::ModelAuxCovariance(const eckit::Configuration & conf,
-                                              const Geometry_ & resol)
-  : ModelAuxCovariance(validateAndDeserialize<Parameters_>(conf), resol)
-{}
+                                              const Geometry_ & resol) : cov_()
+{
+  Log::trace() << "ModelAuxCovariance<MODEL>::ModelAuxCovariance starting" << std::endl;
+  util::Timer timer(classname(), "ModelAuxCovariance");
+  cov_.reset(new ModelAuxCovariance_(conf, resol.geometry()));
+  Log::trace() << "ModelAuxCovariance<MODEL>::ModelAuxCovariance done" << std::endl;
+}
 
 // -----------------------------------------------------------------------------
 

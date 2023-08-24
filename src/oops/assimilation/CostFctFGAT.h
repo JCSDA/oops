@@ -101,9 +101,7 @@ CostFctFGAT<MODEL, OBS>::CostFctFGAT(const eckit::Configuration & config,
   windowBegin_ = util::DateTime(config.getString("window begin"));
   windowEnd_ = windowBegin_ + windowLength_;
   windowHalf_ = windowBegin_ + windowLength_/2;
-  typename VariableChange<MODEL>::Parameters_ params;
-  params.deserialize(config.getSubConfiguration("variable change"));
-  an2model_ = std::make_unique<VarCha_>(params, resol_);
+  an2model_ = std::make_unique<VarCha_>(config.getSubConfiguration("variable change"), resol_);
 
   this->setupTerms(config);  // Background is read here
 

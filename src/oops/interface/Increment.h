@@ -291,20 +291,18 @@ void Increment<MODEL>::ones() {
 
 template<typename MODEL>
 void Increment<MODEL>::dirac(const DiracParameters_ & parameters) {
-  Log::trace() << "Increment<MODEL>::dirac starting" << std::endl;
-  util::Timer timer(classname(), "dirac");
-  fset_.clear();
-  increment_->dirac(parametersOrConfiguration<HasDiracParameters_<Increment_>::value>(parameters));
-  Log::trace() << "Increment<MODEL>::dirac done" << std::endl;
+  dirac(parameters.toConfiguration());
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 void Increment<MODEL>::dirac(const eckit::Configuration & config) {
-  DiracParameters_ parameters;
-  parameters.validateAndDeserialize(config);
-  dirac(parameters);
+  Log::trace() << "Increment<MODEL>::dirac starting" << std::endl;
+  util::Timer timer(classname(), "dirac");
+  fset_.clear();
+  increment_->dirac(config);
+  Log::trace() << "Increment<MODEL>::dirac done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -436,39 +434,35 @@ void Increment<MODEL>::setLocal(const LocalIncrement & gp,
 
 template<typename MODEL>
 void Increment<MODEL>::read(const ReadParameters_ & parameters) {
-  Log::trace() << "Increment<MODEL>::read starting" << std::endl;
-  util::Timer timer(classname(), "read");
-  fset_.clear();
-  increment_->read(parametersOrConfiguration<HasReadParameters_<Increment_>::value>(parameters));
-  Log::trace() << "Increment<MODEL>::read done" << std::endl;
+  increment_->read(parameters.toConfiguration());
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 void Increment<MODEL>::read(const eckit::Configuration & config) {
-  ReadParameters_ parameters;
-  parameters.validateAndDeserialize(config);
-  read(parameters);
+  Log::trace() << "Increment<MODEL>::read starting" << std::endl;
+  util::Timer timer(classname(), "read");
+  fset_.clear();
+  increment_->read(config);
+  Log::trace() << "Increment<MODEL>::read done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 void Increment<MODEL>::write(const WriteParameters_ & parameters) const {
-  Log::trace() << "Increment<MODEL>::write starting" << std::endl;
-  util::Timer timer(classname(), "write");
-  increment_->write(parametersOrConfiguration<HasWriteParameters_<Increment_>::value>(parameters));
-  Log::trace() << "Increment<MODEL>::write done" << std::endl;
+  increment_->write(parameters.toConfiguration());
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 void Increment<MODEL>::write(const eckit::Configuration & config) const {
-  WriteParameters_ parameters;
-  parameters.validateAndDeserialize(config);
-  write(parameters);
+  Log::trace() << "Increment<MODEL>::write starting" << std::endl;
+  util::Timer timer(classname(), "write");
+  increment_->write(config);
+  Log::trace() << "Increment<MODEL>::write done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

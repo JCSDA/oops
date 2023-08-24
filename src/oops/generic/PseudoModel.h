@@ -11,35 +11,17 @@
 #include <string>
 #include <vector>
 
+#include "eckit/config/Configuration.h"
+
 #include "oops/base/Geometry.h"
-#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/ModelBase.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
-#include "oops/util/parameters/HasParameters_.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/ParametersOrConfiguration.h"
-#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
-
-/// Configuration options taken by the pseudo model.
-template <typename MODEL>
-class PseudoModelParameters : public ModelParametersBase {
-  OOPS_CONCRETE_PARAMETERS(PseudoModelParameters, ModelParametersBase)
-
- public:
-  typedef typename State<MODEL>::Parameters_ StateParameters_;
-
-  RequiredParameter<util::Duration> tstep{"tstep", "Time step", this};
-  RequiredParameter<std::vector<StateParameters_>> states{
-    "states",
-    "List of configuration options used to initialize the model state at each time step",
-    this};
-};
 
 // -----------------------------------------------------------------------------
 
@@ -49,14 +31,11 @@ class PseudoModel : public ModelBase<MODEL> {
   typedef Geometry<MODEL>          Geometry_;
   typedef ModelAuxControl<MODEL>   ModelAux_;
   typedef State<MODEL>             State_;
-  typedef typename State<MODEL>::Parameters_ StateParameters_;
 
  public:
-  typedef PseudoModelParameters<MODEL> Parameters_;
-
   static const std::string classname() {return "oops::PseudoModel";}
 
-  PseudoModel(const Geometry_ &, const Parameters_ &);
+  PseudoModel(const Geometry_ &, const eckit::Configuration &);
 
 /// initialize forecast
   void initialize(State_ &) const override;
@@ -71,17 +50,16 @@ class PseudoModel : public ModelBase<MODEL> {
  private:
   void print(std::ostream &) const override;
   const util::Duration tstep_;
-  std::vector<StateParameters_> states_;
+  std::vector<eckit::LocalConfiguration> states_;
   mutable size_t currentstate_;
 };
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-PseudoModel<MODEL>::PseudoModel(const Geometry_ & resol, const Parameters_ & parameters)
-  : tstep_(parameters.tstep),
-    states_(parameters.states),
-    currentstate_(0) {
+PseudoModel<MODEL>::PseudoModel(const Geometry_ & resol, const eckit::Configuration & config)
+  : tstep_(config.getString("tstep")),
+    states_(config.getSubConfigurations("states")), currentstate_(0) {
   Log::trace() << "PseudoModel<MODEL>::PseudoModel done" << std::endl;
 }
 
@@ -99,7 +77,7 @@ template<typename MODEL>
 void PseudoModel<MODEL>::step(State_ & xx, const ModelAux_ & merr) const {
   Log::trace() << "PseudoModel<MODEL>:step Starting " << std::endl;
   xx.updateTime(tstep_);
-  xx.read(parametersOrConfiguration<HasParameters_<State<MODEL>>::value>(states_[currentstate_++]));
+  xx.read(states_[currentstate_++]);
   Log::trace() << "PseudoModel<MODEL>::step done" << std::endl;
 }
 

@@ -111,23 +111,21 @@ class ModelAuxControl : public util::Printable,
 
 template<typename MODEL>
 ModelAuxControl<MODEL>::ModelAuxControl(const Geometry_ & resol,
-                                        const Parameters_ & parameters) : aux_()
-{
-  Log::trace() << "ModelAuxControl<MODEL>::ModelAuxControl starting" << std::endl;
-  util::Timer timer(classname(), "ModelAuxControl");
-  aux_.reset(new ModelAuxControl_(
-               resol.geometry(),
-               parametersOrConfiguration<HasParameters_<ModelAuxControl_>::value>(parameters)));
-  Log::trace() << "ModelAuxControl<MODEL>::ModelAuxControl done" << std::endl;
-}
+                                        const Parameters_ & parameters)
+  : ModelAuxControl(resol, parameters.toConfiguration())
+{}
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 ModelAuxControl<MODEL>::ModelAuxControl(const Geometry_ & resol,
-                                        const eckit::Configuration & conf)
-  : ModelAuxControl(resol, validateAndDeserialize<Parameters_>(conf))
-{}
+                                        const eckit::Configuration & conf) : aux_()
+{
+  Log::trace() << "ModelAuxControl<MODEL>::ModelAuxControl starting" << std::endl;
+  util::Timer timer(classname(), "ModelAuxControl");
+  aux_.reset(new ModelAuxControl_(resol.geometry(), conf));
+  Log::trace() << "ModelAuxControl<MODEL>::ModelAuxControl done" << std::endl;
+}
 
 // -----------------------------------------------------------------------------
 

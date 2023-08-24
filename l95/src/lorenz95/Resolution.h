@@ -21,8 +21,6 @@
 #include "lorenz95/Iterator.h"
 #include "oops/base/Variables.h"
 #include "oops/mpi/mpi.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 #include "oops/util/Printable.h"
 
 namespace lorenz95 {
@@ -30,23 +28,11 @@ namespace lorenz95 {
 class Iterator;
 
 // -----------------------------------------------------------------------------
-/// \brief Parameters controlling a Lorenz95 model's resolution.
-class ResolutionParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(ResolutionParameters, Parameters)
-
- public:
-  /// \brief Number of gridpoints.
-  oops::RequiredParameter<int> resol{"resol", this};
-};
-
-// -----------------------------------------------------------------------------
 /// Handles resolution.
 
 class Resolution : public util::Printable {
  public:
-  typedef ResolutionParameters Parameters_;
-
-  Resolution(const ResolutionParameters & parameters, const eckit::mpi::Comm & comm);
+  Resolution(const eckit::Configuration &, const eckit::mpi::Comm &);
   explicit Resolution(const int resol);
 
   int npoints() const {return resol_;}

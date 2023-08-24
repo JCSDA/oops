@@ -61,9 +61,9 @@ void FieldL95::ones() {
   for (int jj = 0; jj < resol_; ++jj) x_[jj] = 1.0;
 }
 // -----------------------------------------------------------------------------
-void FieldL95::dirac(const FieldL95DiracParameters & parameters) {
+void FieldL95::dirac(const eckit::Configuration & config) {
 // Get Diracs position
-  const std::vector<int> ixdir = parameters.ixdir;
+  std::vector<int> ixdir(config.getIntVector("ixdir"));
 
 // Check
   ASSERT(ixdir.size() > 0);
@@ -76,20 +76,20 @@ void FieldL95::dirac(const FieldL95DiracParameters & parameters) {
   for (unsigned int jj = 0; jj < ixdir.size(); ++jj) x_[ixdir[jj]] = 1.0;
 }
 // -----------------------------------------------------------------------------
-void FieldL95::generate(const Field95GenerateParameters & parameters) {
+void FieldL95::generate(const eckit::Configuration & conf) {
   for (int jj = 0; jj < resol_; ++jj) x_[jj] = 0.0;
-  if (parameters.mean.value() != boost::none) {
-    const double zz = *parameters.mean.value();
+  if (conf.has("mean")) {
+    const double zz = conf.getDouble("mean");
     for (int jj = 0; jj < resol_; ++jj) x_[jj] = zz;
   }
-  if (parameters.sinus.value() != boost::none) {
-    const double zz = *parameters.sinus.value();
+  if (conf.has("sinus")) {
+    const double zz = conf.getDouble("sinus");
     const double pi = std::acos(-1.0);
     const double dx = 2.0 * pi / static_cast<double>(resol_);
     for (int jj = 0; jj < resol_; ++jj) x_[jj] += zz * std::sin(static_cast<double>(jj) * dx);
   }
-  if (parameters.dirac.value() != boost::none) {
-    const int ii = *parameters.dirac.value();
+  if (conf.has("dirac")) {
+    const int ii = conf.getInt("dirac");
     x_[ii] += 1.0;
   }
   oops::Log::trace() << "FieldL95::generate " << x_[28] << ", " << x_[29] << std::endl;

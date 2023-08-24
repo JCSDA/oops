@@ -25,6 +25,7 @@
 #include "oops/base/instantiateObsFilterFactory.h"
 #include "oops/base/Observations.h"
 #include "oops/base/ObsSpaces.h"
+#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/State4D.h"
 #include "oops/base/StateEnsemble4D.h"
 #include "oops/generic/instantiateObsErrorFactory.h"

@@ -163,9 +163,6 @@ CostFctWeak<MODEL, OBS>::CostFctWeak(const eckit::Configuration & conf,
                              *commSpace_, *commTime_));
   model_.reset(new Model_(*resol_, eckit::LocalConfiguration(conf, "model")));
 
-  typename VariableChange<MODEL>::Parameters_ params;
-  params.deserialize(conf.getSubConfiguration("variable change"));
-
   this->setupTerms(conf);
 
   Log::trace() << "CostFctWeak::CostFctWeak done" << std::endl;

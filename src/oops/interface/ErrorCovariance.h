@@ -105,9 +105,7 @@ template<typename MODEL>
 ErrorCovariance<MODEL>::ErrorCovariance(const Geometry_ & resol, const Variables & vars,
                                         const eckit::Configuration & conf,
                                         const State_ & xb, const State_ & fg)
-  : ErrorCovariance<MODEL>(resol, vars,
-                           validateAndDeserialize<Parameters_>(conf),
-                           xb, fg)
+  : ErrorCovariance<MODEL>(resol, vars, conf, xb, fg)
 {}
 
 // -----------------------------------------------------------------------------

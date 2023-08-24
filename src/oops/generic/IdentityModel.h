@@ -10,6 +10,8 @@
 
 #include <string>
 
+#include "eckit/config/Configuration.h"
+
 #include "oops/base/Geometry.h"
 #include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/State.h"
@@ -23,13 +25,6 @@
 
 namespace oops {
 
-class IdentityModelParameters : public ModelParametersBase {
-  OOPS_CONCRETE_PARAMETERS(IdentityModelParameters, ModelParametersBase)
-
- public:
-  oops::RequiredParameter<util::Duration> tstep{"tstep", this};
-};
-
 /// Generic implementation of identity model
 template <typename MODEL>
 class IdentityModel : public ModelBase<MODEL> {
@@ -38,11 +33,9 @@ class IdentityModel : public ModelBase<MODEL> {
   typedef State<MODEL>             State_;
 
  public:
-  typedef IdentityModelParameters           Parameters_;
-
   static const std::string classname() {return "oops::IdentityModel";}
 
-  IdentityModel(const Geometry_ &, const IdentityModelParameters &);
+  IdentityModel(const Geometry_ &, const eckit::Configuration &);
 
 /// initialize forecast
   void initialize(State_ &) const override;
@@ -52,18 +45,18 @@ class IdentityModel : public ModelBase<MODEL> {
   void finalize(State_ &) const override;
 
 /// model time step
-  const util::Duration & timeResolution() const override {return params_.tstep;}
+  const util::Duration & timeResolution() const override {return tstep_;}
 
  private:
   void print(std::ostream &) const override {}
-  const IdentityModelParameters params_;
+  const util::Duration tstep_;
 };
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-IdentityModel<MODEL>::IdentityModel(const Geometry_ & resol, const IdentityModelParameters & params)
-  : params_(params) {
+IdentityModel<MODEL>::IdentityModel(const Geometry_ & resol, const eckit::Configuration & config)
+  : tstep_(config.getString("tstep")) {
   Log::trace() << "IdentityModel<MODEL>::IdentityModel done" << std::endl;
 }
 
@@ -79,7 +72,7 @@ void IdentityModel<MODEL>::initialize(State_ & xx) const {
 template<typename MODEL>
 void IdentityModel<MODEL>::step(State_ & xx, const ModelAux_ & merr) const {
   Log::trace() << "IdentityModel<MODEL>:step Starting " << std::endl;
-  xx.updateTime(params_.tstep);
+  xx.updateTime(tstep_);
   Log::trace() << "IdentityModel<MODEL>::step done" << std::endl;
 }
 

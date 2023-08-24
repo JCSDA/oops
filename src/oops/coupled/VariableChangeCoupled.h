@@ -12,28 +12,14 @@
 #include <string>
 #include <vector>
 
-#include "oops/base/VariableChangeParametersBase.h"
 #include "oops/coupled/GeometryCoupled.h"
 #include "oops/coupled/StateCoupled.h"
 #include "oops/coupled/UtilsCoupled.h"
 #include "oops/interface/VariableChange.h"
-#include "oops/util/parameters/Parameter.h"
 #include "oops/util/Printable.h"
 
 namespace oops {
   class Variables;
-
-/// Parameters describing a variable change for coupled state
-template <typename MODEL1, typename MODEL2>
-class VariableChangeCoupledParameters : public VariableChangeParametersBase {
-  OOPS_CONCRETE_PARAMETERS(VariableChangeCoupledParameters,
-                           VariableChangeParametersBase)
-  typedef typename VariableChange<MODEL1>::Parameters_ Parameters1_;
-  typedef typename VariableChange<MODEL2>::Parameters_ Parameters2_;
- public:
-  Parameter<Parameters1_> varchg1{MODEL1::name().c_str(), {}, this};
-  Parameter<Parameters2_> varchg2{MODEL2::name().c_str(), {}, this};
-};
 
 // -----------------------------------------------------------------------------
 /// Change of variables for coupled state
@@ -45,9 +31,7 @@ class VariableChangeCoupled : public util::Printable {
   typedef VariableChange<MODEL2>           VariableChange2_;
 
  public:
-  typedef VariableChangeCoupledParameters<MODEL1, MODEL2> Parameters_;
-
-  VariableChangeCoupled(const Parameters_ &, const Geometry_ &);
+  VariableChangeCoupled(const eckit::Configuration &, const Geometry_ &);
 
   /// Perform transforms
   void changeVar(State_ &, const oops::Variables &) const;
@@ -64,14 +48,17 @@ class VariableChangeCoupled : public util::Printable {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL1, typename MODEL2>
-VariableChangeCoupled<MODEL1, MODEL2>::VariableChangeCoupled(
-      const Parameters_ & params, const Geometry_ & geometry) :
-  availableVars_(geometry.variables()) {
+VariableChangeCoupled<MODEL1, MODEL2>::VariableChangeCoupled(const eckit::Configuration & config,
+                                                             const Geometry_ & geometry)
+  : availableVars_(geometry.variables())
+{
   if (geometry.isParallel()) {
     throw eckit::NotImplemented(Here());
   }
-  varchg1_ = std::make_unique<VariableChange1_>(params.varchg1, geometry.geometry1());
-  varchg2_ = std::make_unique<VariableChange2_>(params.varchg2, geometry.geometry2());
+  const eckit::LocalConfiguration conf1 = config.getSubConfiguration(MODEL1::name());;
+  const eckit::LocalConfiguration conf2 = config.getSubConfiguration(MODEL2::name());;
+  varchg1_ = std::make_unique<VariableChange1_>(conf1, geometry.geometry1());
+  varchg2_ = std::make_unique<VariableChange2_>(conf2, geometry.geometry2());
 }
 
 // -----------------------------------------------------------------------------
@@ -104,5 +91,7 @@ void VariableChangeCoupled<MODEL1, MODEL2>::print(std::ostream & os) const {
         MODEL2::name() << ")" << std::endl;
   os << *varchg1_ << std::endl << *varchg2_;
 }
+
+// -----------------------------------------------------------------------------
 
 }  // namespace oops
