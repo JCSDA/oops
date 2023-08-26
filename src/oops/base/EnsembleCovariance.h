@@ -259,11 +259,13 @@ void EnsembleCovariance<MODEL>::doMultiply(const Increment4D_ & dxi, Increment4D
       dxoTmp += dx;
     }
   } else {
-    if (dxi.geometry().timeComm().size() > 1)
-      throw eckit::NotImplemented("dot_product not correctly implemented", Here());
     for (size_t jm = 0; jm < ens_->ens_size(); ++jm) {
+      double wgt = 0;
       for (size_t jt = 0; jt < ens_->local_time_size(); ++jt) {
-        double wgt = dxiTmp[jt].dot_product_with((*ens_)(jt, jm));
+        wgt += dxiTmp[jt].dot_product_with((*ens_)(jt, jm));
+      }
+      dxi.geometry().timeComm().allReduceInPlace(wgt, eckit::mpi::sum());
+      for (size_t jt = 0; jt < ens_->local_time_size(); ++jt) {
         dxoTmp[jt].axpy(wgt, (*ens_)(jt, jm), false);
       }
     }

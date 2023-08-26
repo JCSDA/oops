@@ -780,11 +780,11 @@ ecbuild_add_test( TARGET test_qg_4densvar_single-obs_loc_4d_time_decay_standard
                   COMMAND  qg_4dvar.x
                   TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_single-obs_4d_12h )
 
-#ecbuild_add_test( TARGET test_qg_4densvar_single-obs_no_loc
-#                  MPI 13
-#                  ARGS testinput/4densvar_single-obs_no_loc.yaml
-#                  COMMAND  qg_4dvar.x
-#                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_single-obs_4d_12h )
+ecbuild_add_test( TARGET test_qg_4densvar_single-obs_no_loc
+                  MPI 13
+                  ARGS testinput/4densvar_single-obs_no_loc.yaml
+                  COMMAND  qg_4dvar.x
+                  TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_single-obs_4d_12h )
 
 #####################################################################
 # 3d variational tests
