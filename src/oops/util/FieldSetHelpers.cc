@@ -323,6 +323,7 @@ atlas::FieldSet createSmoothFieldSet(const eckit::mpi::Comm & comm,
 
 void copyFieldSet(const atlas::FieldSet & otherFset, atlas::FieldSet & fset) {
   oops::Log::trace() << "copyFieldSet starting" << std::endl;
+  fset.clear();
   for (const auto & otherField : otherFset) {
     // Create Field
     atlas::Field field = otherField.functionspace().createField<double>(
