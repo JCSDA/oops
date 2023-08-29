@@ -98,8 +98,8 @@ class Geometry : public util::Printable,
   /// Accessor to the functionspace
   const atlas::FunctionSpace & functionSpace() const {return geom_->functionSpace();}
 
-  /// Accessor to the extra fields
-  const atlas::FieldSet & extraFields() const {return geom_->extraFields();}
+  /// Accessor to the geometry fields
+  const atlas::FieldSet & fields() const {return geom_->fields();}
 
   /// Accessor to the latitude/longitude vectors
   void latlon(std::vector<double> &, std::vector<double> &, const bool) const;

@@ -58,9 +58,7 @@ class GeometryQG : public util::Printable,
   std::vector<double> verticalCoord(std::string &) const;
   const eckit::mpi::Comm & getComm() const {return comm_;}
   const atlas::FunctionSpace & functionSpace() const {return functionSpace_;}
-  atlas::FunctionSpace & functionSpace() {return functionSpace_;}
-  const atlas::FieldSet & extraFields() const {return extraFields_;}
-  atlas::FieldSet & extraFields() {return extraFields_;}
+  const atlas::FieldSet & fields() const {return fields_;}
   size_t levels() const {return levs_;}
   bool levelsAreTopDown() const {return true;}
 
@@ -74,7 +72,7 @@ class GeometryQG : public util::Printable,
   F90geom keyGeom_;
   const eckit::mpi::Comm & comm_;
   atlas::FunctionSpace functionSpace_;
-  atlas::FieldSet extraFields_;
+  atlas::FieldSet fields_;
   size_t levs_;
 };
 // -----------------------------------------------------------------------------

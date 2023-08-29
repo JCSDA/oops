@@ -1,2 +1,5 @@
 geometry:
   resol: 40
+
+# L95 implements a minimal atlas interface
+test atlas interface: false

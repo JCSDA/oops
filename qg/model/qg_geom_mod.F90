@@ -8,7 +8,7 @@
 
 module qg_geom_mod
 
-use atlas_module, only: atlas_field, atlas_fieldset, atlas_real, atlas_functionspace_pointcloud
+use atlas_module, only: atlas_field, atlas_fieldset, atlas_integer, atlas_real, atlas_functionspace_pointcloud
 use fckit_configuration_module, only: fckit_configuration
 use fckit_log_module,only: fckit_log
 use kinds
@@ -21,7 +21,7 @@ implicit none
 private
 public :: qg_geom
 public :: qg_geom_registry
-public :: qg_geom_setup,qg_geom_set_lonlat,qg_geom_fill_extra_fields,qg_geom_clone,qg_geom_delete,qg_geom_info
+public :: qg_geom_setup,qg_geom_set_lonlat,qg_geom_fill_geometry_fields,qg_geom_clone,qg_geom_delete,qg_geom_info
 ! ------------------------------------------------------------------------------
 type :: qg_geom
   integer :: nx                                          !< Number of points in the zonal direction
@@ -264,8 +264,8 @@ call afield%final()
 
 end subroutine qg_geom_set_lonlat
 ! ------------------------------------------------------------------------------
-!> Fill extra fields
-subroutine qg_geom_fill_extra_fields(self,afieldset)
+!> Fill geometry fields
+subroutine qg_geom_fill_geometry_fields(self,afieldset)
 
 ! Passed variables
 type(qg_geom),intent(inout) :: self             !< Geometry
@@ -273,8 +273,16 @@ type(atlas_fieldset),intent(inout) :: afieldset !< Fieldset
 
 ! Local variables
 integer :: ix,iy,iz,inode
-real(kind_real),pointer :: real_ptr(:,:)
+real(kind_real), pointer :: real_ptr(:,:)
+integer, pointer :: int_ptr(:,:)
 type(atlas_field) :: afield
+
+! Add owned
+afield = self%afunctionspace%create_field(name='owned',kind=atlas_integer(kind_int),levels=1)
+call afield%data(int_ptr)
+int_ptr = 1
+call afieldset%add(afield)
+call afield%final()
 
 ! Add area
 afield = self%afunctionspace%create_field(name='area',kind=atlas_real(kind_real),levels=1)
@@ -290,7 +298,7 @@ call afieldset%add(afield)
 call afield%final()
 
 ! Add vertical unit
-afield = self%afunctionspace%create_field(name='vunit',kind=atlas_real(kind_real),levels=self%nz)
+afield = self%afunctionspace%create_field(name='vert_coord',kind=atlas_real(kind_real),levels=self%nz)
 call afield%data(real_ptr)
 do iz=1,self%nz
   real_ptr(iz,1:self%nx*self%ny) = self%z(iz)
@@ -298,7 +306,7 @@ end do
 call afieldset%add(afield)
 call afield%final()
 
-end subroutine qg_geom_fill_extra_fields
+end subroutine qg_geom_fill_geometry_fields
 ! ------------------------------------------------------------------------------
 !> Clone geometry
 subroutine qg_geom_clone(self,other)

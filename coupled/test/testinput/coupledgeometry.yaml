@@ -7,3 +7,7 @@ geometry:   # coupled geometry (QG and L95)
     resol: 40
 test:
   reference filename: testref/coupledgeometry.test
+
+# Coupled model delegates to other models, but does not
+# itself satisfy the atlas interface requirements
+test atlas interface: false

@@ -116,7 +116,7 @@ Geometry<MODEL>::Geometry(const eckit::Configuration & config,
                           const eckit::mpi::Comm & geometry, const eckit::mpi::Comm & time):
   interface::Geometry<MODEL>(config, geometry),
   timeComm_(&time),
-  gdata_(this->geom_->functionSpace(), this->geom_->extraFields(),
+  gdata_(this->geom_->functionSpace(), this->geom_->fields(),
          this->geom_->levelsAreTopDown(), geometry)
 {
   this->setTrees();
@@ -129,7 +129,7 @@ Geometry<MODEL>::Geometry(const Parameters_ & parameters,
                           const eckit::mpi::Comm & geometry, const eckit::mpi::Comm & time):
   interface::Geometry<MODEL>(parameters, geometry),
   timeComm_(&time),
-  gdata_(this->geom_->functionSpace(), this->geom_->extraFields(),
+  gdata_(this->geom_->functionSpace(), this->geom_->fields(),
          this->geom_->levelsAreTopDown(), geometry)
 {
   this->setTrees();
@@ -141,7 +141,7 @@ template <typename MODEL>
 Geometry<MODEL>::Geometry(std::shared_ptr<const Geometry_> ptr):
   interface::Geometry<MODEL>(ptr),
   timeComm_(&oops::mpi::myself()),
-  gdata_(this->geom_->functionSpace(), this->geom_->extraFields(),
+  gdata_(this->geom_->functionSpace(), this->geom_->fields(),
          this->geom_->levelsAreTopDown(), oops::mpi::world())
 {
   this->setTrees();

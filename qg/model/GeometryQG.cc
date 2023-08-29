@@ -47,9 +47,9 @@ GeometryQG::GeometryQG(const eckit::Configuration & conf,
   // Set function space pointer in Fortran
   qg_geom_set_functionspace_pointer_f90(keyGeom_, functionSpace_.get());
 
-  // Fill extra fields
-  extraFields_ = atlas::FieldSet();
-  qg_geom_fill_extra_fields_f90(keyGeom_, extraFields_.get());
+  // Fill geometry fields
+  fields_ = atlas::FieldSet();
+  qg_geom_fill_geometry_fields_f90(keyGeom_, fields_.get());
 }
 // -----------------------------------------------------------------------------
 GeometryQG::GeometryQG(const GeometryQG & other) : comm_(other.comm_), levs_(other.levs_) {
@@ -62,10 +62,10 @@ GeometryQG::GeometryQG(const GeometryQG & other) : comm_(other.comm_), levs_(oth
   // Set function space pointer in Fortran
   qg_geom_set_functionspace_pointer_f90(keyGeom_, functionSpace_.get());
 
-  // Copy extra fields
-  extraFields_ = atlas::FieldSet();
-  for (auto & field : other.extraFields_) {
-    extraFields_.add(field);
+  // Copy geometry fields
+  fields_ = atlas::FieldSet();
+  for (auto & field : other.fields_) {
+    fields_.add(field);
   }
 }
 // -----------------------------------------------------------------------------

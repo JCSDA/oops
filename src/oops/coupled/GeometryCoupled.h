@@ -67,7 +67,7 @@ class GeometryCoupled : public util::Printable {
 
   bool levelsAreTopDown() const {return true;}
   const atlas::FunctionSpace & functionSpace() const {return nospace_;}
-  const atlas::FieldSet & extraFields() const {return nofields_;}
+  const atlas::FieldSet & fields() const {return nofields_;}
 
  private:
   void print(std::ostream & os) const override;

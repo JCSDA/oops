@@ -124,7 +124,7 @@ void testInterpolator(const bool testSourcePointMask) {
 
   // If testing with masks, two additional tasks:
   // 1. add interp_source_point_mask metadata to source_field
-  // 2. add mask field to Geometry.extraFields (we could use one of the "native" masks for MODEL,
+  // 2. add mask field to Geometry.fields() (we could use one of the "native" masks for MODEL,
   //    but this would make it very hard to write a generic test).
   if (testSourcePointMask) {
     source_field.metadata().set("interp_source_point_mask", "testmask");
@@ -136,7 +136,7 @@ void testInterpolator(const bool testSourcePointMask) {
       mask_view(jj, 0) = (source_lats[jj] >= 0.0 ? 1.0 : 0.0);
     }
     // Hackily cast away the constness so we can shove a mask into the geometry
-    const_cast<typename MODEL::Geometry &>(geom->geometry()).extraFields().add(mask);
+    const_cast<atlas::FieldSet &>(geom->geometry().fields()).add(mask);
 
     // We set the field values to a huge missingValue in the masked region, because this helps test
     // correctness at the boundaries of the mask. In detail: for stencils including masked and

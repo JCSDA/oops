@@ -45,7 +45,7 @@ class Resolution : public util::Printable {
   const eckit::mpi::Comm & getComm() const {return comm_;}
   void latlon(std::vector<double> &, std::vector<double> &, const bool) const;
   const atlas::FunctionSpace & functionSpace() const {return functionSpace_;}
-  const atlas::FieldSet & extraFields() const {return nofields_;}
+  const atlas::FieldSet & fields() const {return nofields_;}
 
  private:
   void print(std::ostream & os) const {os << resol_;}
