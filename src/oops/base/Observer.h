@@ -96,6 +96,8 @@ class Observer {
 /// \brief Computes H(x) from the filled in GeoVaLs
   void finalize(ObsVector_ &);
 
+  void resetObsOp(std::unique_ptr<ObsOperatorBase_>);
+
  private:
   typedef std::vector<size_t> VariableSizes;
 
@@ -253,6 +255,13 @@ void Observer<MODEL, OBS>::finalize(ObsVector_ & yobsim) {
 
   initialized_ = false;
   Log::trace() << "Observer<MODEL, OBS>::finalize done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename OBS>
+void Observer<MODEL, OBS>::resetObsOp(std::unique_ptr<ObsOperatorBase_> obsOpBase) {
+  obsop_ = std::move(obsOpBase);
 }
 
 // -----------------------------------------------------------------------------

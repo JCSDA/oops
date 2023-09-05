@@ -2,10 +2,6 @@ CostJb   : Nonlinear Jb = 0.0000000000000000e+00
 CostJo   : Nonlinear Jo(Stream) = 7.8208865683853928e+03, nobs = 600, Jo/n = 1.3034810947308989e+01, err = 4.0000000000000000e+06
 CostJo   : Nonlinear Jo(Wind) = 1.0656078442533912e+03, nobs = 600, Jo/n = 1.7760130737556521e+00, err = 6.0000000000000000e+00
 CostFunction: Nonlinear J = 8.8864944126387836e+03
-CostJb   : Nonlinear Jb = 0.0000000000000000e+00
-CostJo   : Nonlinear Jo(Stream) = 7.8208865683853928e+03, nobs = 600, Jo/n = 1.3034810947308989e+01, err = 4.0000000000000000e+06
-CostJo   : Nonlinear Jo(Wind) = 1.0656078442533912e+03, nobs = 600, Jo/n = 1.7760130737556521e+00, err = 6.0000000000000000e+00
-CostFunction: Nonlinear J = 8.8864944126387836e+03
 DRIPCGMinimizer: reduction in residual norm = 4.9364735834247740e-02
 CostFunction::addIncrement: Analysis: 
   Valid time: 2010-01-01T12:00:00Z

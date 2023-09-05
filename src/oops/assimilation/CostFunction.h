@@ -64,7 +64,7 @@ template<typename MODEL, typename OBS> class CostFunction : private boost::nonco
   CostFunction() = default;
   virtual ~CostFunction() = default;
 
-  double evaluate(CtrlVar_ &, const eckit::Configuration &, PostProcessor<State_>);
+  virtual double evaluate(CtrlVar_ &, const eckit::Configuration &, PostProcessor<State_>);
 
   virtual void runTLM(CtrlInc_ &, PostProcessorTLAD<MODEL> &,
                       PostProcessor<Increment_> post = PostProcessor<Increment_>(),
@@ -78,7 +78,7 @@ template<typename MODEL, typename OBS> class CostFunction : private boost::nonco
 
   void addIncrement(CtrlVar_ &, const CtrlInc_ &,
                     PostProcessor<Increment_> post = PostProcessor<Increment_>() ) const;
-  void resetLinearization();
+  virtual void resetLinearization();
 
 /// Compute cost function gradient at first guess (without Jb).
   void computeGradientFG(CtrlInc_ &) const;
@@ -86,7 +86,7 @@ template<typename MODEL, typename OBS> class CostFunction : private boost::nonco
 /// Access \f$ J_b\f$
   const JbTotal_ & jb() const {return *jb_;}
 /// Access terms of the cost function other than \f$ J_b\f$
-  const CostBase_ & jterm(const size_t ii) const {return jterms_[ii];}
+  const CostBase_ & jterm(const size_t ii) const {return *(jterms_.at(ii));}
   const CostJo_ & jo() const {return *jo_;}
   size_t nterms() const {return jterms_.size();}
   double getCostJb() const {return costJb_;}
@@ -94,7 +94,10 @@ template<typename MODEL, typename OBS> class CostFunction : private boost::nonco
 
  protected:
   void setupTerms(const eckit::Configuration &);
-  JbTotal_ & getNonConstJb() {return *jb_;}
+  std::shared_ptr<JbTotal_> & getNonConstJb() {return jb_;}
+  std::shared_ptr<CostJo_> & getNonConstJo() {return jo_;}
+  std::vector<std::shared_ptr<CostBase_>> & getJTerms() {return jterms_;}
+  virtual const Geometry_ & geometry() const = 0;
 
  private:
   virtual void addIncr(CtrlVar_ &, const CtrlInc_ &, PostProcessor<Increment_>&) const = 0;
@@ -107,12 +110,11 @@ template<typename MODEL, typename OBS> class CostFunction : private boost::nonco
   virtual void doLinearize(const Geometry_ &, const eckit::Configuration &, CtrlVar_ &, CtrlVar_ &,
                            PostProcessor<State_> &, PostProcessorTLAD<MODEL> &) = 0;
   virtual void finishLinearize() {}
-  virtual const Geometry_ & geometry() const = 0;
 
 // Data members
-  std::unique_ptr<JbTotal_> jb_;
-  boost::ptr_vector<CostBase_> jterms_;
-  CostJo_ * jo_;
+  std::shared_ptr<JbTotal_> jb_;
+  std::vector<std::shared_ptr<CostBase_>> jterms_;
+  std::shared_ptr<CostJo_> jo_;
   std::unique_ptr<const Geometry_> lowres_;
   // Geometry from the previous iteration. A temporary fix Required because
   // lowres_ is not properly shared between all the objects that use it.
@@ -194,7 +196,7 @@ void CostFunction<MODEL, OBS>::setupTerms(const eckit::Configuration & config) {
 
 // Jo
   eckit::LocalConfiguration obsconf(config, "observations");
-  jo_ = this->newJo(obsconf);
+  jo_.reset(this->newJo(obsconf));
   jterms_.push_back(jo_);
   Log::trace() << "CostFunction::setupTerms Jo added" << std::endl;
 
@@ -207,7 +209,7 @@ void CostFunction<MODEL, OBS>::setupTerms(const eckit::Configuration & config) {
   std::vector<eckit::LocalConfiguration> jcs;
   config.get("constraints", jcs);
   for (size_t jj = 0; jj < jcs.size(); ++jj) {
-    CostTermBase<MODEL, OBS> * jc = this->newJc(jcs[jj], this->geometry());
+    std::shared_ptr<CostTermBase<MODEL, OBS>> jc(this->newJc(jcs[jj], this->geometry()));
     jterms_.push_back(jc);
   }
   Log::trace() << "CostFunction::setupTerms Jc added" << std::endl;
@@ -232,7 +234,7 @@ double CostFunction<MODEL, OBS>::evaluate(CtrlVar_ & fguess,
     PostProcessorTLAD<MODEL> pptraj;
     jb_->setPostProcTraj(fguess, innerConf, *lowres_, pptraj);
     for (size_t jj = 0; jj < jterms_.size(); ++jj) {
-      jterms_[jj].setPostProcTraj(fguess, innerConf, *lowres_, pptraj);
+      jterms_[jj]->setPostProcTraj(fguess, innerConf, *lowres_, pptraj);
     }
 
 //  Setup specific linearization if needed (including TLM)
@@ -242,7 +244,7 @@ double CostFunction<MODEL, OBS>::evaluate(CtrlVar_ & fguess,
 // Setup terms of cost function
   jb_->setPostProc(fguess, innerConf, post);
   for (size_t jj = 0; jj < jterms_.size(); ++jj) {
-    jterms_[jj].setPostProc(fguess, innerConf, post);
+    jterms_[jj]->setPostProc(fguess, innerConf, post);
   }
 
 // Run NL model
@@ -252,7 +254,7 @@ double CostFunction<MODEL, OBS>::evaluate(CtrlVar_ & fguess,
 // Cost function value (except Jb)
   costJoJc_ = 0.0;
   for (size_t jj = 0; jj < jterms_.size(); ++jj) {
-    costJoJc_ += jterms_[jj].computeCost();  // needed before jb_->computeCostTraj()
+    costJoJc_ += jterms_[jj]->computeCost();  // needed before jb_->computeCostTraj()
   }
 
   if (linearize) {
@@ -260,7 +262,7 @@ double CostFunction<MODEL, OBS>::evaluate(CtrlVar_ & fguess,
     this->finishLinearize();  // Used only for FGAT
     jb_->computeCostTraj();   // constructs B (requires H(x)/QC for VarBC part of B)
     for (size_t jj = 0; jj < jterms_.size(); ++jj) {
-      jterms_[jj].computeCostTraj();
+      jterms_[jj]->computeCostTraj();
     }
   }
 
@@ -269,7 +271,7 @@ double CostFunction<MODEL, OBS>::evaluate(CtrlVar_ & fguess,
 
 // Print cost function for test (hack so we can update references separately)
   for (size_t jj = 0; jj < jterms_.size(); ++jj) {
-    jterms_[jj].printCostTestHack();
+    jterms_[jj]->printCostTestHack();
   }
 
   double zzz = costJb_ + costJoJc_;
@@ -278,7 +280,7 @@ double CostFunction<MODEL, OBS>::evaluate(CtrlVar_ & fguess,
 
 //  First-guess gradient of Jb needs to be reset to zero before minimisation
 //  when the Pert members of Control-Pert EDA are run
-  if (innerConf.has("control pert")) this->getNonConstJb().zeroGradientFG();
+  if (innerConf.has("control pert")) this->getNonConstJb()->zeroGradientFG();
 
   Log::trace() << "CostFunction::evaluate done" << std::endl;
   return zzz;
@@ -294,14 +296,14 @@ void CostFunction<MODEL, OBS>::computeGradientFG(CtrlInc_ & grad) const {
   this->zeroAD(grad);
 
   for (size_t jj = 0; jj < jterms_.size(); ++jj) {
-    std::shared_ptr<const GeneralizedDepartures> tmp(jterms_[jj].newGradientFG());
-    jterms_[jj].computeCostAD(tmp, grad, costad);
+    std::shared_ptr<const GeneralizedDepartures> tmp(jterms_[jj]->newGradientFG());
+    jterms_[jj]->computeCostAD(tmp, grad, costad);
   }
 
   this->runADJ(grad, costad, pp);
 
   for (size_t jj = 0; jj < jterms_.size(); ++jj) {
-    jterms_[jj].setPostProcAD();
+    jterms_[jj]->setPostProcAD();
   }
 
   Log::info() << "CostFunction::computeGradientFG: gradient:" << grad << std::endl;
@@ -332,7 +334,7 @@ template<typename MODEL, typename OBS>
 void CostFunction<MODEL, OBS>::resetLinearization() {
   Log::trace() << "CostFunction::resetLinearization start" << std::endl;
   for (size_t jj = 0; jj < jterms_.size(); ++jj) {
-    jterms_[jj].resetLinearization();
+    jterms_[jj]->resetLinearization();
   }
   Log::trace() << "CostFunction::resetLinearization done" << std::endl;
 }

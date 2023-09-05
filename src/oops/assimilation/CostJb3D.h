@@ -70,6 +70,8 @@ template<typename MODEL, typename OBS> class CostJb3D : public CostJbState<MODEL
 /// Add Jb gradient.
   void addGradient(const CtrlInc_ &, CtrlInc_ &, CtrlInc_ &) const override;
 
+  void setTime(const CtrlVar_ & xx) override {time_[0] = xx.state(0).validTime();}
+
 /// Empty Jq observer.
   JqTermTLAD<MODEL> * initializeJqTLAD() const override {return 0;}
 

@@ -88,6 +88,8 @@ class Observers {
 /// \brief Computes H(x) from the filled in GeoVaLs
   void finalize(Observations_ &);
 
+  void resetObsOp(std::vector<std::unique_ptr<ObsOperatorBase_>>);
+
  private:
   static std::vector<ObserverParameters_> convertToParameters(const eckit::Configuration &config);
   static GetValuesParameters_ extractGetValuesParameters(const eckit::Configuration &config);
@@ -158,6 +160,19 @@ void Observers<MODEL, OBS>::finalize(Observations_ & yobs) {
   }
 
   oops::Log::trace() << "Observers<MODEL, OBS>::finalize done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename OBS>
+void Observers<MODEL, OBS>::resetObsOp(std::vector<std::unique_ptr<ObsOperatorBase_>> obsOpBases) {
+  oops::Log::trace() << "Observers<MODEL, OBS>::resetObsOp start" << std::endl;
+
+  for (size_t jj = 0; jj < observers_.size(); ++jj) {
+    observers_[jj]->resetObsOp(std::move(obsOpBases[jj]));
+  }
+
+  oops::Log::trace() << "Observers<MODEL, OBS>::resetObsOp done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

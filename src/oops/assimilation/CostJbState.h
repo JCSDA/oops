@@ -51,6 +51,7 @@ template<typename MODEL, typename OBS> class CostJbState : private boost::noncop
 
   virtual void setPostProc(PostProcessor<State<MODEL>> &) {}
   virtual std::shared_ptr<JqTerm_> getJq() {return nullptr;}
+  virtual void setTime(const CtrlVar_ &) {}
 
 /// Get increment from state. This is usually first guess - background.
 /// The third state argument is M(x) at the end of the window/subwindows for

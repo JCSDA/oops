@@ -170,10 +170,11 @@ const Geometry<MODEL> & CostJbTotal<MODEL, OBS>::resolution() const {
 
 template<typename MODEL, typename OBS>
 void CostJbTotal<MODEL, OBS>::setPostProc(const CtrlVar_ & xx,
-                                          const eckit::Configuration &,
+                                          const eckit::Configuration & config,
                                           PostProc_ & pp) {
   Log::trace() << "CostJbTotal::setPostProc start" << std::endl;
   xx_ = &xx;
+  if (config.has("control pert")) jb_->setTime(xx);
   jb_->setPostProc(pp);
   Log::trace() << "CostJbTotal::setPostProc done" << std::endl;
 }

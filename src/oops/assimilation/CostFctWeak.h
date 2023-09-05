@@ -75,6 +75,9 @@ template<typename MODEL, typename OBS> class CostFctWeak : public CostFunction<M
   void runADJ(CtrlInc_ &, const bool idModel = false) const;
   void runNL(CtrlVar_ &, PostProcessor<State_> &) const override;
 
+ protected:
+  const Geometry_ & geometry() const override {return *resol_;}
+
  private:
   void addIncr(CtrlVar_ &, const CtrlInc_ &, PostProcessor<Increment_> &) const override;
 
@@ -83,7 +86,6 @@ template<typename MODEL, typename OBS> class CostFctWeak : public CostFunction<M
   CostTermBase<MODEL, OBS> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
   void doLinearize(const Geometry_ &, const eckit::Configuration &, CtrlVar_ &, CtrlVar_ &,
                    PostProcessor<State_> &, PostProcessorTLAD<MODEL> &) override;
-  const Geometry_ & geometry() const override {return *resol_;}
 
   size_t nsubwin_;
   size_t nsublocal_;

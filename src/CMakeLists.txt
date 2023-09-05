@@ -10,7 +10,6 @@ oops/assimilation/CostFct3DVar.h
 oops/assimilation/CostFct4DEnsVar.h
 oops/assimilation/CostFct4DVar.h
 oops/assimilation/CostFctFGAT.h
-oops/assimilation/CostFctPert.h
 oops/assimilation/CostFctWeak.h
 oops/assimilation/CostFunction.h
 oops/assimilation/CostJb3D.h
@@ -22,7 +21,7 @@ oops/assimilation/CostJbState.h
 oops/assimilation/CostJbTotal.h
 oops/assimilation/CostJcDFI.h
 oops/assimilation/CostJo.h
-oops/assimilation/CostJoPert.h
+oops/assimilation/CostPert.h
 oops/assimilation/CostTermBase.h
 oops/assimilation/DRGMRESRMinimizer.h
 oops/assimilation/DRIPCGMinimizer.h

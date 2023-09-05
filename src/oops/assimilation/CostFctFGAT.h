@@ -59,6 +59,9 @@ template<typename MODEL, typename OBS> class CostFctFGAT : public CostFunction<M
 
   void runNL(CtrlVar_ &, PostProcessor<State_>&) const override;
 
+ protected:
+  const Geometry_ & geometry() const override {return resol_;}
+
  private:
   void addIncr(CtrlVar_ &, const CtrlInc_ &, PostProcessor<Increment_>&) const override;
 
@@ -68,7 +71,6 @@ template<typename MODEL, typename OBS> class CostFctFGAT : public CostFunction<M
   void doLinearize(const Geometry_ &, const eckit::Configuration &, CtrlVar_ &, CtrlVar_ &,
                    PostProcessor<State_> &, PostProcessorTLAD<MODEL> &) override;
   void finishLinearize() override;
-  const Geometry_ & geometry() const override {return resol_;}
 
   util::Duration windowLength_;
   util::DateTime windowBegin_;

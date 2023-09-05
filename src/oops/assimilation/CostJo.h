@@ -30,6 +30,8 @@
 #include "oops/base/Observations.h"
 #include "oops/base/Observers.h"
 #include "oops/base/ObserversTLAD.h"
+#include "oops/base/ObsOperatorBase.h"
+#include "oops/base/ObsOperatorPert.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
@@ -62,6 +64,8 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   typedef ObsSpaces<OBS>                ObsSpaces_;
   typedef Observers<MODEL, OBS>         Observers_;
   typedef ObserversTLAD<MODEL, OBS>     ObserversTLAD_;
+  typedef ObsOperatorBase<OBS>          ObsOperatorBase_;
+  typedef ObsOperatorPert<OBS>          ObsOperatorPert_;
   typedef PostProcessor<State_>         PostProc_;
   typedef PostProcessorTLAD<MODEL>      PostProcTLAD_;
 
@@ -106,23 +110,15 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   /// Return gradient at first guess ie \f$ R^{-1} {\cal H}(x^t ) - y\f$.
   std::unique_ptr<GeneralizedDepartures> newGradientFG() const override;
 
+  void setObsPert();
+
   /// Reset obs operator trajectory.
   void resetLinearization() override;
 
   /// Accessors
   const ObsSpaces_ & obspaces() const {return obspaces_;}
-  const std::shared_ptr<ObserversTLAD_> & observersTLAD() const {return obstlad_;}
-
- protected:
-  CostJo(const eckit::mpi::Comm &, const eckit::Configuration &,
-         const util::DateTime &, const util::DateTime &,
-         const eckit::mpi::Comm & ctime = oops::mpi::myself());
-  std::unique_ptr<Observers_> & observers() {return observers_;}
-  std::shared_ptr<ObserversTLAD_> & observersTLAD() {return obstlad_;}
-  std::unique_ptr<Observations_> & yobs() {return yobs_;}
 
  private:
-  virtual void newObs();
   double printJo(size_t, Departures_ &, std::ostream &) const;
 
   const eckit::LocalConfiguration conf_;
@@ -149,7 +145,10 @@ template<typename MODEL, typename OBS>
 CostJo<MODEL, OBS>::CostJo(const eckit::Configuration & joConf, const eckit::mpi::Comm & comm,
                            const util::DateTime & winbgn, const util::DateTime & winend,
                            const eckit::mpi::Comm & ctime)
-  : CostJo(comm, joConf, winbgn, winend, ctime)
+  : conf_(joConf),
+    obspaces_(eckit::LocalConfiguration(joConf, "observers"), comm, winbgn, winend, ctime),
+    Rmat_(eckit::LocalConfiguration(joConf, "observers"), obspaces_),
+    observers_(), gradFG_(), obstlad_(), currentConf_()
 {
   observers_.reset(new Observers_(obspaces_, joConf));
   Log::trace() << "CostJo::CostJo" << std::endl;
@@ -157,19 +156,6 @@ CostJo<MODEL, OBS>::CostJo(const eckit::Configuration & joConf, const eckit::mpi
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL, typename OBS>
-CostJo<MODEL, OBS>::CostJo(const eckit::mpi::Comm & comm, const eckit::Configuration & joConf,
-                           const util::DateTime & winbgn, const util::DateTime & winend,
-                           const eckit::mpi::Comm & ctime)
-  : conf_(joConf),
-    obspaces_(eckit::LocalConfiguration(joConf, "observers"), comm, winbgn, winend, ctime),
-    Rmat_(eckit::LocalConfiguration(joConf, "observers"), obspaces_),
-    observers_(), gradFG_(), obstlad_(), currentConf_()
-{
-  Log::trace() << "CostJo::CostJo" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
 template<typename MODEL, typename OBS>
 CostJo<MODEL, OBS>::~CostJo() {
   obspaces_.save();
@@ -199,7 +185,7 @@ double CostJo<MODEL, OBS>::computeCost() {
   Observations_ yeqv(obspaces_);
   observers_->finalize(yeqv);
   if (firstOuterLoop_) {
-    this->newObs();
+    yobs_.reset(new Observations_(obspaces_, "ObsValue"));
     Log::info() << "CostJo Observations: " << *yobs_ << std::endl;
     if (conf_.getBool("obs perturbations", false)) {
       // Perturb observations according to obs error statistics and save to output file
@@ -261,13 +247,6 @@ void CostJo<MODEL, OBS>::printCostTestHack() {
     this->printJo(jj, *yhack_, Log::test());
   }
   yhack_.reset();
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL, typename OBS>
-void CostJo<MODEL, OBS>::newObs() {
-  yobs_.reset(new Observations_(obspaces_, "ObsValue"));
 }
 
 // -----------------------------------------------------------------------------
@@ -401,6 +380,28 @@ std::unique_ptr<GeneralizedDepartures> CostJo<MODEL, OBS>::newDualVector() const
 template<typename MODEL, typename OBS>
 std::unique_ptr<GeneralizedDepartures> CostJo<MODEL, OBS>::newGradientFG() const {
   return std::unique_ptr<Departures_>(new Departures_(*gradFG_));
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL, typename OBS>
+void CostJo<MODEL, OBS>::setObsPert() {
+  ObserversParameters<MODEL, OBS> joparams{};
+  joparams.deserialize(conf_);
+//  Reset the observation operators to be the linear observation operators contained in *linObsTLAD,
+//  wrapped inside ObsOperatorPert
+  std::vector<std::unique_ptr<ObsOperatorBase_>> obsOpBases_;
+  for (std::size_t ii = 0; ii < obspaces_.size(); ++ii) {
+    obsOpBases_.push_back(std::make_unique<ObsOperatorPert_>(obspaces_[ii],
+                                    observerParameters(joparams.observers.value())[ii].obsOperator,
+                                    (*obstlad_)[ii].linObsOp(), true));
+  }
+  observers_->resetObsOp(std::move(obsOpBases_));
+  yobs_.reset(new Observations_(this->obspaces(), ""));
+  // Perturb observations according to obs error statistics and save to output file
+  yobs_->perturb(Rmat_);
+  Log::info() << "Perturbed observations: " << *yobs_ << std::endl;
+  yobs_->save("EffectiveObsValue");
 }
 
 // -----------------------------------------------------------------------------

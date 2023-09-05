@@ -15,8 +15,8 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/config/YAMLConfiguration.h"
 #include "oops/assimilation/ControlVariable.h"
-#include "oops/assimilation/CostFctPert.h"
 #include "oops/assimilation/CostFunction.h"
+#include "oops/assimilation/CostPert.h"
 #include "oops/assimilation/IncrementalAssimilation.h"
 #include "oops/assimilation/instantiateCostFactory.h"
 #include "oops/assimilation/instantiateMinFactory.h"
@@ -141,13 +141,11 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
     util::seekAndReplace(memberConf, patternWithPad, mymember, patternLength);
     util::seekAndReplace(memberConf, patternNoPad, std::to_string(mymember));
 
-//  Set up cost function for the control member (to be used for the linearization)
-    eckit::LocalConfiguration linCostConf(controlConf, "cost function");
-    std::unique_ptr<CostFunction<MODEL, OBS>>
-      Jlin(CostFactory<MODEL, OBS>::create(linCostConf, commMember));
-
 //  Retrieve cost function type for control member, to determine whether certain variables in
 //  the DA for the Pert members need to be time-shifted
+    eckit::LocalConfiguration linCostConf(controlConf, "cost function");
+    Log::info() << "Cost function configuration for Control member: "
+                << linCostConf << std::endl;
     std::string linCostName;
     linCostConf.get("cost type", linCostName);
     const bool shiftTime = !(linCostName == "3D-Var");
@@ -155,10 +153,7 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
 //  Check that the control member's cost function is one that uses CostJb3D in the state part
 //  of the Jb term, since the Pert members' cost function doesn't currently support other options
 //  for CostJbState but it needs to use the same B matrix as the control member's cost function
-    ASSERT(linCostName == "3D-Var" || linCostName == "3D-FGAT" || linCostName == "4D-Var");
-
-//  Initialize control member background as linearization state
-    ControlVariable<MODEL, OBS> xx(Jlin->jb().getBackground());
+    ASSERT(linCostName == "3D-Var" || linCostName == "4D-Var");
 
 //  Set up for the trajectory run
     std::vector<eckit::LocalConfiguration> iterconfsControl;
@@ -169,14 +164,11 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
       postLin.enrollProcessor(new StateInfo<State_>("lintraj", prtConfig));
     }
 
-//  Linearize cost function around linearization state, using configuration for control
-//  member's first outer iteration
-    iterconfsControl[0].set("iteration", 0);
-    iterconfsControl[0].set("linearize", true);
-    Jlin->evaluate(xx, iterconfsControl[0], postLin);
-
 //  Retrieve individual members' cost function configurations
     eckit::LocalConfiguration cfConf(memberConf, "cost function");
+
+//  Create cost function (currently a null pointer)
+    std::unique_ptr<CostFunction<MODEL, OBS>> J;
 
 //  Modify the Pert members' cost function configurations
     if (mymember > 0) {
@@ -191,52 +183,60 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
       if (cfConf.has("constraints")) {
         std::vector<eckit::LocalConfiguration> emptyConfVector;
         cfConf.set("constraints", emptyConfVector);
+        controlConf.set("cost function.constraints", emptyConfVector);
       }
 
       // Set "geometry" to be the first inner-loop resolution of the control member
       eckit::LocalConfiguration geomConf(iterconfsControl[0], "geometry");
       cfConf.set("geometry", geomConf);
 
-      // Turn on observation perturbations (NB: the use of zero-valued observations is guaranteed
-      // through the use of the CostJoPert class)
-      cfConf.set("observations.obs perturbations", true);
-
       // Set the nominal "obs perturbations seed" for every ObsSpace to be the member index
+      // Obs perturbations are not set to true as the control obs should not be perturbed
+      // Instead, CostPert will call to perturb them when setting up pert assimilation
       std::vector<eckit::LocalConfiguration> observersConf;
       cfConf.get("observations.observers", observersConf);
       for (unsigned int j = 0; j < observersConf.size(); ++j) {
         observersConf[j].set("obs space.obs perturbations seed", mymember);
       }
+      // Set the controlConf and cfConf to have the pert member obs configuration
+      // Needed for both to ensure the output is saved correctly
+      controlConf.set("cost function.observations.observers", observersConf);
       cfConf.set("observations.observers", observersConf);
-
-      // In UFO implementation, no need to remove the "static bc" section under "obs bias", since
-      // ObsOperatorPert::simulateObs will not pass any coefficients for static BC predictors to
-      // LinearObsOperator::simulateObsTL
 
       // Update the "cost function" section of the Pert members' configuration accordingly
       memberConf.set("cost function", cfConf);
 
       Log::info() << "Cost function configuration for Pert member " << mymember << ": "
                   << cfConf << std::endl;
+
+      // Set up the cost function for the pert member
+      if (shiftTime) {
+        J.reset(new CostPert<MODEL, OBS, oops::CostFct4DVar<MODEL, OBS>>
+                (controlConf, commMember, cfConf, shiftTime));
+      } else {
+        J.reset(new CostPert<MODEL, OBS, oops::CostFct3DVar<MODEL, OBS>>
+                (controlConf, commMember, cfConf));
+      }
+
+    } else {
+      // Set up the control cost function if needed
+      J.reset(CostFactory<MODEL, OBS>::create(linCostConf, commMember));
     }
 
-//  Set up cost function for the assimilation
-    std::unique_ptr<CostFunction<MODEL, OBS>>
-      J((mymember == 0) ? CostFactory<MODEL, OBS>::create(cfConf, commMember) :
-        new CostFctPert<MODEL, OBS>(cfConf, commMember, *Jlin, shiftTime));
 
 //  Retrieve length of the assimilation window, to be used if background time-shifting is needed
     std::string linCostWinLength;
     linCostConf.get("window length", linCostWinLength);
     util::Duration winLength(linCostWinLength);
 
-//  Initialize background for all members (for the Pert members, this is the difference between the
-//  ensemble member's background and the control member's background, since J->jb().getBackground()
-//  has already been modified in the constructor of CostFctPert)
+//  Initialize the control background
     ControlVariable<MODEL, OBS> xxMember(J->jb().getBackground());
 
 //  Create a copy of xxMember that will not be incremented as the run progresses
-    ControlVariable<MODEL, OBS> xxMemberCopy(xxMember);
+//  for the analysis state (valid at the beginning of the assimilation window if
+//  the control member's cost function is anything other than 3D-Var;
+//  otherwise valid at the middle of the assimilation window)
+    ControlVariable<MODEL, OBS> xxMemAnalysis(xxMember);
 
 //  Retrieve individual members' configurations for variational DA
     eckit::LocalConfiguration varConf(memberConf, "variational");
@@ -249,7 +249,6 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
 //  Modify the Pert members' variational DA configurations
     if (mymember > 0) {
       // All but the first item in "iterations" are deleted, as ControlPert does not support
-      // the running of more than one outer loop in the Pert members
       std::vector<eckit::LocalConfiguration> iterconfsPert;
       varConf.get("iterations", iterconfsPert);
       iterconfsPert.erase(iterconfsPert.begin() + 1, iterconfsPert.end());
@@ -261,29 +260,27 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
         iterconfsPert[0].set("linear model", emptyConf);
       }
 
-      // A switch to let CostFunction::evaluate know that the first-guess gradient of Jb
-      // needs to be reset to zero
-      iterconfsPert[0].set("control pert", true);
-
       // Update the "variational" section of the Pert members' configuration accordingly
       varConf.set("iterations", iterconfsPert);
       memberConf.set("variational", varConf);
     }
 
 //  Perform incremental variational assimilation
+//  xxMember starts as the control background
+//  It is updated within CostPert to reflect the pert member analysis
     int iouter = IncrementalAssimilation<MODEL, OBS>(xxMember, *J, varConf);
+
+//  Compute the full analysis increment
+    ControlIncrement<MODEL, OBS> dx(J->jb());
+    ControlVariable<MODEL, OBS> xxPert(J->jb().getBackground());
+    dx.diff(xxMember, xxPert);
 
 //  Retrieve individual members' configurations for the final run of J->evaluate
     eckit::LocalConfiguration finalConfig(memberConf, "final");
 
 //  Set the iteration count (so that the correct QC information can be retrieved from the ODB
 //  in ufo::ObsBiasCovariance::linearize), and update the member's configuration accordingly
-    finalConfig.set("iteration", iouter);
-    memberConf.set("variational", finalConfig);
-
-//  Compute the full analysis increment
-    ControlIncrement<MODEL, OBS> dx(J->jb());
-    dx.diff(xxMember, xxMemberCopy);
+    memberConf.set("final", finalConfig);
 
 //  Save the full analysis increment if desired
     if (finalConfig.has("increment")) {
@@ -303,6 +300,7 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
     if (mymember == 0 && memberConf.has("output")) {
       const eckit::LocalConfiguration outConfig(memberConf, "output");
       post.enrollProcessor(new StateWriter<State_>(outConfig));
+      finalConfig.set("iteration", iouter);
     }
     if (finalConfig.has("prints")) {
       const eckit::LocalConfiguration prtConfig(finalConfig, "prints");
@@ -312,23 +310,19 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
     Log::info() << "ControlPert: member " << mymember << " incremental assimilation done; "
                 << iouter << " iterations." << std::endl;
 
-//  Set up ControlVariable object for the analysis state (valid at the beginning of the
-//  assimilation window if the control member's cost function is anything other than 3D-Var;
-//  otherwise valid at the middle of the assimilation window)
-    ControlVariable<MODEL, OBS> xxMemberAnal(xx);
 
-//  Retrieve the ensemble members' (full-field) background state by adding xxMemberCopy, converted
-//  into a ControlIncrement object valid at the same time as xxMember Anal, to xxMemberAnal;
+//  Retrieve the ensemble members' (full-field) background state by adding xxPert, converted
+//  into a ControlIncrement object valid at the same time as xxMemAnalysis, to xxMemAnalysis;
 //  then add the Pert increment (time-shifted to the beginning of the window if necessary)
 //  to give an intermediate analysis state (which itself has no physical relevance)
     if (mymember > 0) {
-      if (shiftTime) xxMemberCopy.state().updateTime(-winLength/2);
-      ControlIncrement<MODEL, OBS> xxPertInc(Jlin->jb());
-      ControlVariable<MODEL, OBS> xxEmpty(xxMemberCopy, false);
-      xxPertInc.diff(xxMemberCopy, xxEmpty);
-      J->addIncrement(xxMemberAnal, xxPertInc);
+      ControlIncrement<MODEL, OBS> xxPertInc(J->jb());
+      ControlVariable<MODEL, OBS> xxEmpty(xxPert, false);
+      xxPertInc.diff(xxPert, xxEmpty);
+      if (shiftTime) xxPertInc.state().updateTime(-winLength/2);
+      J->addIncrement(xxMemAnalysis, xxPertInc);
       if (shiftTime) dx.state().updateTime(-winLength/2);
-      J->addIncrement(xxMemberAnal, dx);
+      J->addIncrement(xxMemAnalysis, dx);
     }
 
 //  The following computations can only be performed if the control member's DA is run
@@ -337,7 +331,7 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
 //    members including the control member
       ControlIncrement<MODEL, OBS> dxControl(dx);
       oops::mpi::broadcast(commArea, dxControl, 0);
-      J->addIncrement(xxMemberAnal, dxControl);
+      J->addIncrement(xxMemAnalysis, dxControl);
 
 //    Save the ensemble members' analysis trajectory (or state) if an output configuration
 //    is specified
@@ -345,25 +339,11 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
         eckit::LocalConfiguration outConfig(memberConf, "output");
         PostProcessor<State_> postMember;
         postMember.enrollProcessor(new StateWriter<State_>(outConfig));
-        Jlin->runNL(xxMemberAnal, postMember);  // Hack: by using Jlin instead of J, a model
-                                                // trajectory can be computed by calling runNL
-                                                // (unless Jlin uses 3D-Var or 4D-Ens-Var)
+        J->runNL(xxMemAnalysis, postMember);
       }
 
 //    Save the analysis ObsAux for all members including the control member
-      xxMemberAnal.obsVar().write(cfConf);
-    }
-
-//  Destructing Jlin before J will avoid ObsSpace files associated with J being overwritten,
-//  but since Jlin is held in the processor(s) for every ensemble member (including the control
-//  member), they need to be destructed one by one to avoid racing condition when saving files
-    if (!params.runPertsOnly.value()) {
-      if (mymember == 0) Jlin.reset();
-      this->getComm().barrier();
-    }
-    for (int nn = firstPertMember; nn < firstPertMember + nmembers; ++nn) {
-      if (mymember == nn) Jlin.reset();
-      this->getComm().barrier();
+      xxMemAnalysis.obsVar().write(cfConf);
     }
 
     util::printRunStats("ControlPert end");

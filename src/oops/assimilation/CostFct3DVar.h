@@ -46,11 +46,15 @@ template<typename MODEL, typename OBS> class CostFct3DVar : public CostFunction<
   typedef ControlIncrement<MODEL, OBS>    CtrlInc_;
   typedef ControlVariable<MODEL, OBS>     CtrlVar_;
   typedef CostFunction<MODEL, OBS>        CostFct_;
+  typedef CostJbTotal<MODEL, OBS>         JbTotal_;
+  typedef CostJo<MODEL, OBS>              CostJo_;
   typedef Geometry<MODEL>                 Geometry_;
   typedef State<MODEL>                    State_;
 
  public:
   CostFct3DVar(const eckit::Configuration &, const eckit::mpi::Comm &);
+  CostFct3DVar(const eckit::Configuration &, const eckit::mpi::Comm &,
+              std::shared_ptr<JbTotal_> &, std::shared_ptr<CostJo_> &);
   virtual ~CostFct3DVar() {}
 
   void runTLM(CtrlInc_ &, PostProcessorTLAD<MODEL> &,
@@ -61,6 +65,9 @@ template<typename MODEL, typename OBS> class CostFct3DVar : public CostFunction<
 
   void runNL(CtrlVar_ &, PostProcessor<State_>&) const override;
 
+ protected:
+  const Geometry_ & geometry() const override {return resol_;}
+
  private:
   void addIncr(CtrlVar_ &, const CtrlInc_ &, PostProcessor<Increment_>&) const override;
 
@@ -69,7 +76,6 @@ template<typename MODEL, typename OBS> class CostFct3DVar : public CostFunction<
   CostTermBase<MODEL, OBS> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
   void doLinearize(const Geometry_ &, const eckit::Configuration &, CtrlVar_ &, CtrlVar_ &,
                    PostProcessor<State_> &, PostProcessorTLAD<MODEL> &) override;
-  const Geometry_ & geometry() const override {return resol_;}
 
   util::Duration windowLength_;
   util::DateTime windowBegin_;
@@ -97,6 +103,31 @@ CostFct3DVar<MODEL, OBS>::CostFct3DVar(const eckit::Configuration & config,
   windowHalf_ = windowBegin_ + windowLength_/2;
 
   this->setupTerms(config);  // Background is read here
+
+  Log::info() << "3DVar window: begin = " << windowBegin_ << ", end = " << windowEnd_ << std::endl;
+  Log::trace() << "CostFct3DVar::CostFct3DVar done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL, typename OBS>
+CostFct3DVar<MODEL, OBS>::CostFct3DVar(const eckit::Configuration & config,
+                                     const eckit::mpi::Comm & comm,
+                                     std::shared_ptr<JbTotal_> & Jb, std::shared_ptr<CostJo_> & Jo)
+  : CostFunction<MODEL, OBS>::CostFunction(),
+    windowLength_(), windowHalf_(), comm_(comm),
+    resol_(eckit::LocalConfiguration(config, "geometry"), comm),
+    ctlvars_(config, "analysis variables")
+{
+  Log::trace() << "CostFct3DVar::CostFct3DVar start" << std::endl;
+  windowLength_ = util::Duration(config.getString("window length"));
+  windowBegin_ = util::DateTime(config.getString("window begin"));
+  windowEnd_ = windowBegin_ + windowLength_;
+  windowHalf_ = windowBegin_ + windowLength_/2;
+
+  this->getNonConstJb() = Jb;
+  this->getNonConstJo() = Jo;
+  this->getJTerms().push_back(this->getNonConstJo());
 
   Log::info() << "3DVar window: begin = " << windowBegin_ << ", end = " << windowEnd_ << std::endl;
   Log::trace() << "CostFct3DVar::CostFct3DVar done" << std::endl;

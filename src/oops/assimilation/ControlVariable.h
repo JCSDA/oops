@@ -172,9 +172,9 @@ void ControlVariable<MODEL, OBS>::deserialize(const std::vector<double> & vec, s
 // -----------------------------------------------------------------------------
 template<typename MODEL, typename OBS> ControlVariable<MODEL, OBS> &
 ControlVariable<MODEL, OBS>::operator=(const ControlVariable & rhs) {
-  state_ = rhs.state_;
-  modbias_ = rhs.modbias_;
-  obsbias_ = rhs.obsbias_;
+    state_ = rhs.state_;
+    modbias_ = rhs.modbias_;
+    obsbias_ = rhs.obsbias_;
   return *this;
 }
 // -----------------------------------------------------------------------------
