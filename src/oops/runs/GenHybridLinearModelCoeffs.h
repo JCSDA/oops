@@ -20,12 +20,9 @@ namespace oops {
 template <typename MODEL>
 class GenHybridLinearModelCoeffsParameters : public ApplicationParameters {
   OOPS_CONCRETE_PARAMETERS(GenHybridLinearModelCoeffsParameters, ApplicationParameters);
-  typedef HybridLinearModelParameters<MODEL>       HybridLinearModelParameters_;
-  typedef typename Geometry<MODEL>::Parameters_    GeometryParameters_;
-
  public:
-  RequiredParameter<HybridLinearModelParameters_> hybridLinearModel{"hybrid linear model", this};
-  RequiredParameter<GeometryParameters_> updateGeometry{"update geometry", this};
+  RequiredParameter<eckit::LocalConfiguration> hybridLinearModel{"hybrid linear model", this};
+  RequiredParameter<eckit::LocalConfiguration> updateGeometry{"update geometry", this};
 };
 
 /// \brief Application for generating and writing HybridLinearModel coefficients ahead of 4D-Var.
@@ -48,23 +45,19 @@ class GenHybridLinearModelCoeffs : public Application {
   virtual ~GenHybridLinearModelCoeffs() = default;
 
   int execute(const eckit::Configuration & fullConfig, bool validate) const override {
-    Parameters_ params;
-    if (validate) params.validate(fullConfig);
-    params.deserialize(fullConfig);
-
-    ASSERT(params.hybridLinearModel.value().coeffs.value().output.value() != boost::none);
-
-    const Geometry_ updateGeometry(params.updateGeometry, this->getComm());
-    HybridLinearModel_ hybridLinearModel(updateGeometry, params.hybridLinearModel);
+    eckit::LocalConfiguration htlmConf(fullConfig, "hybrid linear model");
+    eckit::LocalConfiguration geomConf(fullConfig, "update geometry");
+    const Geometry_ updateGeometry(geomConf, this->getComm());
+    HybridLinearModel_ hybridLinearModel(updateGeometry, htlmConf);
 
     if (!fullConfig.getSubConfiguration("test").empty()) {
-      Increment<MODEL> dx(updateGeometry, hybridLinearModel.variables(),
-                          params.hybridLinearModel.value().coeffs.value().windowBegin.value());
+      util::DateTime bgn(htlmConf.getString("coefficients.window begin"));   // bad
+      util::Duration len(htlmConf.getString("coefficients.window length"));  // bad
+      Increment<MODEL> dx(updateGeometry, hybridLinearModel.variables(), bgn);
       dx.ones();
       ModelAuxIncrement<MODEL> mauxinc(updateGeometry, eckit::LocalConfiguration());
-      util::DateTime time(params.hybridLinearModel.value().coeffs.value().windowBegin.value());
-      while (time < (params.hybridLinearModel.value().coeffs.value().windowBegin.value()
-                     + params.hybridLinearModel.value().coeffs.value().windowLength.value())) {
+      util::DateTime time(bgn);
+      while (time < bgn + len) {
         hybridLinearModel.stepTL(dx, mauxinc);
         time += hybridLinearModel.timeResolution();
         Log::test() << "dx at " << time << ": " << dx << std::endl;

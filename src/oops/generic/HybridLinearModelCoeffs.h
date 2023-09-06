@@ -53,10 +53,8 @@ class HybridLinearModelCoeffs {
   typedef HybridLinearModelCoeffsParameters<MODEL>    Parameters_;
   typedef Increment<MODEL>                            Increment_;
 
-  HybridLinearModelCoeffs(const Parameters_ &,
-                          const Geometry_ &,
-                          const util::Duration &,
-                          HtlmSimplifiedLinearModel_ &);
+  HybridLinearModelCoeffs(const eckit::Configuration &, const Geometry_ &,
+                          const util::Duration &, HtlmSimplifiedLinearModel_ &);
   void updateIncTL(Increment_ &) const;
   void updateIncAD(Increment_ &) const;
 
@@ -65,7 +63,7 @@ class HybridLinearModelCoeffs {
   void read(const Geometry_ &, const util::Duration &);
   void write(const eckit::mpi::Comm &) const;
 
-  const Parameters_ & params_;
+  Parameters_ params_;
   const Variables trainingVars_;
   const atlas::idx_t nLevels_;
   const atlas::idx_t influenceSize_;
@@ -76,15 +74,16 @@ class HybridLinearModelCoeffs {
 //------------------------------------------------------------------------------
 
 template<typename MODEL>
-HybridLinearModelCoeffs<MODEL>::HybridLinearModelCoeffs(
-                                                 const Parameters_ & params,
-                                                 const Geometry_ & updateGeometry,
-                                                 const util::Duration & updateTstep,
+HybridLinearModelCoeffs<MODEL>::HybridLinearModelCoeffs(const eckit::Configuration & config,
+                                                        const Geometry_ & updateGeometry,
+                                                        const util::Duration & updateTstep,
                                                  HtlmSimplifiedLinearModel_ & simplifiedLinearModel)
-: params_(params), trainingVars_(params_.trainingVars),
-  nLevels_(updateGeometry.variableSizes(trainingVars_)[0]), influenceSize_(params_.influenceSize),
+: params_(), trainingVars_(config, "training variables"),
+  nLevels_(updateGeometry.variableSizes(trainingVars_)[0]),
+  influenceSize_(config.getInt("influence region size")),
   updateStencil_("update stencil", atlas::array::make_datatype<int>(),
-                 atlas::array::make_shape(nLevels_, influenceSize_)) {
+                 atlas::array::make_shape(nLevels_, influenceSize_))
+{
   if (updateTstep % simplifiedLinearModel.timeResolution() != 0) {
     ABORT("HybridLinearModelCoeffs<MODEL>::HybridLinearModelCoeffs: "
           "update tstep is not a multiple of simplified linear model tstep");
@@ -107,9 +106,10 @@ HybridLinearModelCoeffs<MODEL>::HybridLinearModelCoeffs(
     }
   }
   // Determine source of and obtain coefficients
+  params_.deserialize(config);
   if (params_.ensemble.value() != boost::none && params_.calculator.value() != boost::none) {
     generate(updateGeometry, updateTstep, simplifiedLinearModel);
-  } else if (params.input.value() != boost::none) {
+  } else if (params_.input.value() != boost::none) {
     read(updateGeometry, updateTstep);
   } else {
     ABORT("HybridLinearModelCoeffs<MODEL>::HybridLinearModelCoeffs(): no source of coefficients");

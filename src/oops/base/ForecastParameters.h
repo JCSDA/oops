@@ -64,7 +64,6 @@ template <typename MODEL> class ForecastTLParameters : public Parameters {
 
  public:
   typedef typename Geometry<MODEL>::Parameters_ GeometryParameters_;
-  typedef LinearModelParametersWrapper<MODEL>   LinearModelParameters_;
 
   /// Geometry parameters.
   RequiredParameter<GeometryParameters_> geometry{"geometry", this};

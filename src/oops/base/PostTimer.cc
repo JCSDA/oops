@@ -26,10 +26,27 @@ namespace oops {
 PostTimer::PostTimer()
   : bgn_(), end_(), start_(), finish_(), frequency_(0), first_(0), steps_(), times_() {}
 // -----------------------------------------------------------------------------
-PostTimer::PostTimer(const PostTimerParameters & parameters)
+PostTimer::PostTimer(const eckit::Configuration & config)
   : bgn_(), end_(), start_(), finish_(),
-    frequency_(parameters.frequency), first_(parameters.first),
-    steps_(parameters.steps), times_(parameters.times)
+    frequency_(config.getString("frequency", "PT0S")),
+    first_(config.getString("first", "PT0S")), steps_(), times_()
+{
+  if (config.has("times")) {
+    std::vector<std::string> stimes = config.getStringVector("times");
+    for (size_t js = 0; js < stimes.size(); ++js) {
+      times_.push_back(util::DateTime(stimes[js]));
+    }
+  }
+  if (config.has("steps")) {
+    std::vector<std::string> ssteps = config.getStringVector("steps");
+    for (size_t js = 0; js < ssteps.size(); ++js) {
+      steps_.push_back(util::Duration(ssteps[js]));
+    }
+  }
+}
+// -----------------------------------------------------------------------------
+PostTimer::PostTimer(const PostTimerParameters & parameters)
+  : PostTimer(parameters.toConfiguration())
 {}
 // -----------------------------------------------------------------------------
 PostTimer::PostTimer(const util::DateTime & start, const util::DateTime & finish,

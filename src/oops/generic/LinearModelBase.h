@@ -13,7 +13,6 @@
 #include <string>
 #include <vector>
 
-#include <boost/make_unique.hpp>
 #include <boost/noncopyable.hpp>
 
 #include "oops/base/Geometry.h"
@@ -24,12 +23,6 @@
 #include "oops/util/AssociativeContainers.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
-#include "oops/util/parameters/ConfigurationParameter.h"
-#include "oops/util/parameters/HasParameters_.h"
-#include "oops/util/parameters/OptionalParameter.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/ParametersOrConfiguration.h"
-#include "oops/util/parameters/RequiredPolymorphicParameter.h"
 #include "oops/util/Printable.h"
 
 namespace eckit {
@@ -43,21 +36,6 @@ namespace oops {
 /// \brief Base class for generic implementations of the linearized forecasting models.
 /// Use this class as a base class for generic implementations,
 /// and interface::LinearModelBase as a base class for MODEL-specific implementations.
-///
-/// Note: implementations of this interface can opt to extract their settings either from
-/// a Configuration object or from a subclass of LinearModelParametersBase.
-///
-/// In the former case, they should provide a constructor with the following signature:
-///
-///    LinearModelBase(const Geometry_ &, const eckit::Configuration &);
-///
-/// In the latter case, the implementer should first define a subclass of LinearModelParametersBase
-/// holding the settings of the linear model in question. The implementation of the LinearModelBase
-/// interface should then typedef `Parameters_` to the name of that subclass and provide a
-/// constructor with the following signature:
-///
-///    LinearModelBase(const Geometry_ &, const Parameters_ &);
-///
 template <typename MODEL>
 class LinearModelBase : public util::Printable,
                         private boost::noncopyable {
@@ -102,60 +80,6 @@ class LinearModelBase : public util::Printable,
 
 // =============================================================================
 
-template <typename MODEL>
-class LinearModelFactory;
-
-// -----------------------------------------------------------------------------
-
-/// \brief Base class for classes storing linear model-specific parameters.
-class LinearModelParametersBase : public Parameters {
-  OOPS_ABSTRACT_PARAMETERS(LinearModelParametersBase, Parameters)
- public:
-  /// \brief LinearModel name.
-  ///
-  /// \note This parameter is marked as optional because it is only required in certain
-  /// circumstances (e.g. when linear model parameters are deserialized into a
-  /// LinearModelParametersWrapper and used by LinearModelFactory to instantiate a linear model
-  /// whose type is determined at runtime), but not others (e.g. in tests written with a particular
-  /// linear model in mind). LinearModelParametersWrapper will throw an exception if this parameter
-  /// is not provided.
-  OptionalParameter<std::string> name{"name", this};
-};
-
-// -----------------------------------------------------------------------------
-
-/// \brief A subclass of LinearModelParametersBase storing the values of all options in a
-/// single Configuration object.
-///
-/// This object can be accessed by calling the value() method of the \p config member variable.
-///
-/// The ConfigurationParameter class does not perform any parameter validation; linear models using
-/// GenericLinearModelParameters should therefore ideally be refactored, replacing this class with a
-/// dedicated subclass of LinearModelParametersBase storing each parameter in a separate
-/// (Optional/Required)Parameter object.
-class GenericLinearModelParameters : public LinearModelParametersBase {
-  OOPS_CONCRETE_PARAMETERS(GenericLinearModelParameters, LinearModelParametersBase)
- public:
-  ConfigurationParameter config{this};
-};
-
-// -----------------------------------------------------------------------------
-
-/// \brief Contains a polymorphic parameter holding an instance of a subclass of
-/// LinearModelParametersBase.
-template <typename MODEL>
-class LinearModelParametersWrapper : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(LinearModelParametersWrapper, Parameters)
- public:
-  /// After deserialization, holds an instance of a subclass of LinearModelParametersBase
-  /// controlling the behavior of a linear model. The type of the subclass is determined by the
-  /// value of the "name" key in the Configuration object from which this object is deserialized.
-  RequiredPolymorphicParameter<LinearModelParametersBase, LinearModelFactory<MODEL>>
-    linearModelParameters{"name", this};
-};
-
-// =============================================================================
-
 /// LinearModel factory
 template <typename MODEL>
 class LinearModelFactory {
@@ -163,16 +87,7 @@ class LinearModelFactory {
 
  public:
   /// \brief Create and return a new linear model.
-  ///
-  /// The linear model's type is determined by the \c name attribute of \p parameters.
-  /// \p parameters must be an instance of the subclass of LinearModelParametersBase
-  /// associated with that linear model type, otherwise an exception will be thrown.
-  static LinearModelBase<MODEL> * create(const Geometry_ &,
-                                         const LinearModelParametersBase & parameters);
-
-  /// \brief Create and return an instance of the subclass of LinearModelParametersBase
-  /// storing parameters of linear models of the specified type.
-  static std::unique_ptr<LinearModelParametersBase> createParameters(const std::string &name);
+  static LinearModelBase<MODEL> * create(const Geometry_ &, const eckit::Configuration &);
 
   /// \brief Return the names of all linear models that can be created by one of the registered
   /// makers.
@@ -187,9 +102,7 @@ class LinearModelFactory {
   explicit LinearModelFactory(const std::string & name);
 
  private:
-  virtual LinearModelBase<MODEL> * make(const Geometry_ &, const LinearModelParametersBase &) = 0;
-
-  virtual std::unique_ptr<LinearModelParametersBase> makeParameters() const = 0;
+  virtual LinearModelBase<MODEL> * make(const Geometry_ &, const eckit::Configuration &) = 0;
 
   static std::map < std::string, LinearModelFactory<MODEL> * > & getMakers() {
     static std::map < std::string, LinearModelFactory<MODEL> * > makers_;
@@ -203,26 +116,15 @@ class LinearModelFactory {
 /// LinearModelBase<MODEL>). Passes Geometry<MODEL> to the constructor of T.
 template<class MODEL, class T>
 class LinearModelMaker : public LinearModelFactory<MODEL> {
- private:
-  /// Defined as T::Parameters_ if T defines a Parameters_ type; otherwise as
-  /// GenericLinearModelParameters.
-  typedef TParameters_IfAvailableElseFallbackType_t<T, GenericLinearModelParameters> Parameters_;
-
  public:
   typedef Geometry<MODEL>   Geometry_;
 
   explicit LinearModelMaker(const std::string & name) : LinearModelFactory<MODEL>(name) {}
 
   LinearModelBase<MODEL> * make(const Geometry_ & geom,
-                                const LinearModelParametersBase & parameters) override {
+                                const eckit::Configuration & config) override {
     Log::trace() << "LinearModelBase<MODEL>::make starting" << std::endl;
-    const auto &stronglyTypedParameters = dynamic_cast<const Parameters_&>(parameters);
-    return new T(geom,
-                 parametersOrConfiguration<HasParameters_<T>::value>(stronglyTypedParameters));
-  }
-
-  std::unique_ptr<LinearModelParametersBase> makeParameters() const override {
-    return boost::make_unique<Parameters_>();
+    return new T(geom, config);
   }
 };
 
@@ -240,30 +142,16 @@ LinearModelFactory<MODEL>::LinearModelFactory(const std::string & name) {
 
 template <typename MODEL>
 LinearModelBase<MODEL> * LinearModelFactory<MODEL>::create(const Geometry_ & geom,
-                                                    const LinearModelParametersBase & parameters) {
+                                                           const eckit::Configuration & config) {
   Log::trace() << "LinearModelFactory<MODEL>::create starting" << std::endl;
-  const std::string &id = parameters.name.value().value();
-  typename std::map<std::string, LinearModelFactory<MODEL>*>::iterator
-    jerr = getMakers().find(id);
+  const std::string id = config.getString("name");
+  typename std::map<std::string, LinearModelFactory<MODEL>*>::iterator jerr = getMakers().find(id);
   if (jerr == getMakers().end()) {
     throw std::runtime_error(id + " does not exist in the linear model factory");
   }
-  LinearModelBase<MODEL> * ptr = jerr->second->make(geom, parameters);
+  LinearModelBase<MODEL> * ptr = jerr->second->make(geom, config);
   Log::trace() << "LinearModelFactory<MODEL>::create done" << std::endl;
   return ptr;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
-std::unique_ptr<LinearModelParametersBase> LinearModelFactory<MODEL>::createParameters(
-    const std::string &name) {
-  Log::trace() << "LinearModelFactory<MODEL>::createParameters starting" << std::endl;
-  typename std::map<std::string, LinearModelFactory<MODEL>*>::iterator it = getMakers().find(name);
-  if (it == getMakers().end()) {
-    throw std::runtime_error(name + " does not exist in the linear model factory");
-  }
-  return it->second->makeParameters();
 }
 
 // -----------------------------------------------------------------------------

@@ -1,27 +1,23 @@
 /*
- * (C) Copyright 2020-2020 UCAR.
+ * (C) Copyright 2020-2023 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef OOPS_GENERIC_IDENTITYMODEL_H_
-#define OOPS_GENERIC_IDENTITYMODEL_H_
+#pragma once
 
 #include <string>
 
 #include "eckit/config/Configuration.h"
 
 #include "oops/base/Geometry.h"
-#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/ModelBase.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
 
@@ -38,11 +34,11 @@ class IdentityModel : public ModelBase<MODEL> {
   IdentityModel(const Geometry_ &, const eckit::Configuration &);
 
 /// initialize forecast
-  void initialize(State_ &) const override;
+  void initialize(State_ &) const override {}
 /// one forecast step
   void step(State_ &, const ModelAux_ &) const override;
 /// finalize forecast
-  void finalize(State_ &) const override;
+  void finalize(State_ &) const override {}
 
 /// model time step
   const util::Duration & timeResolution() const override {return tstep_;}
@@ -63,13 +59,6 @@ IdentityModel<MODEL>::IdentityModel(const Geometry_ & resol, const eckit::Config
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void IdentityModel<MODEL>::initialize(State_ & xx) const {
-  Log::trace() << "IdentityModel<MODEL>::initialize done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
 void IdentityModel<MODEL>::step(State_ & xx, const ModelAux_ & merr) const {
   Log::trace() << "IdentityModel<MODEL>:step Starting " << std::endl;
   xx.updateTime(tstep_);
@@ -78,13 +67,4 @@ void IdentityModel<MODEL>::step(State_ & xx, const ModelAux_ & merr) const {
 
 // -----------------------------------------------------------------------------
 
-template<typename MODEL>
-void IdentityModel<MODEL>::finalize(State_ & xx) const {
-  Log::trace() << "IdentityModel<MODEL>::finalize done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
 }  // namespace oops
-
-#endif  // OOPS_GENERIC_IDENTITYMODEL_H_

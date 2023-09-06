@@ -13,20 +13,11 @@
 
 namespace oops {
 
-template <typename MODEL>
-class HtlmSimplifiedLinearModelParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(HtlmSimplifiedLinearModelParameters, Parameters)
-
- public:
-  oops::RequiredParameter<eckit::LocalConfiguration> linearModel{"linear model", this};
-};
-
-//------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 
 template <typename MODEL>
 class HtlmSimplifiedLinearModel {
   typedef Geometry<MODEL>                               Geometry_;
-  typedef HtlmSimplifiedLinearModelParameters<MODEL>    Parameters_;
   typedef Increment<MODEL>                              Increment_;
   typedef LinearModel<MODEL>                            LinearModel_;
   typedef ModelAuxControl<MODEL>                        ModelAuxCtl_;
@@ -34,8 +25,8 @@ class HtlmSimplifiedLinearModel {
   typedef State<MODEL>                                  State_;
 
  public:
-  HtlmSimplifiedLinearModel(const Parameters_ & params, const Geometry_ & updateGeometry)
-  : linearModel_(updateGeometry, params.linearModel) {}
+  HtlmSimplifiedLinearModel(const eckit::Configuration & config, const Geometry_ & updateGeometry)
+  : linearModel_(updateGeometry, eckit::LocalConfiguration(config, "linear model")) {}
 
   void forecastSimplifiedTL(Increment_ & dx, const ModelAuxInc_ & merr,
                             const util::Duration & updateTimestep) const {
@@ -56,6 +47,8 @@ class HtlmSimplifiedLinearModel {
  private:
   LinearModel_ linearModel_;
 };
+
+// -----------------------------------------------------------------------------
 
 }  // namespace oops
 

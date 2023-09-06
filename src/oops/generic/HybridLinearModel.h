@@ -16,22 +16,12 @@
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/HybridLinearModelCoeffs.h"
+#include "oops/generic/LinearModelBase.h"
+#include "oops/interface/ModelAuxControl.h"
+#include "oops/util/Duration.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
-
-template <typename MODEL>
-class HybridLinearModelParameters : public LinearModelParametersBase {
-  OOPS_CONCRETE_PARAMETERS(HybridLinearModelParameters, LinearModelParametersBase)
-  typedef HtlmSimplifiedLinearModelParameters<MODEL>    SimplifiedLinearModelParameters_;
-  typedef HybridLinearModelCoeffsParameters<MODEL>      CoeffsParameters_;
-
- public:
-  RequiredParameter<util::Duration> updateTstep{"update tstep", this};
-  RequiredParameter<Variables> updateVars{"update variables", this};
-  RequiredParameter<SimplifiedLinearModelParameters_>
-    simplifiedLinearModel{"simplified linear model", this};
-  RequiredParameter<CoeffsParameters_> coeffs{"coefficients", this};
-};
 
 //------------------------------------------------------------------------------
 
@@ -48,10 +38,9 @@ class HybridLinearModel : public LinearModelBase<MODEL> {
   typedef State<MODEL>                        State_;
 
  public:
-  typedef HybridLinearModelParameters<MODEL>    Parameters_;
-
-  HybridLinearModel(const Geometry_ &, const Parameters_ &);
   static const std::string classname() {return "oops::HybridLinearModel";}
+
+  HybridLinearModel(const Geometry_ &, const eckit::Configuration &);
 
   void initializeTL(Increment_ &) const override {}
   void stepTL(Increment_ &, const ModelAuxInc_ &) const override;
@@ -74,19 +63,20 @@ class HybridLinearModel : public LinearModelBase<MODEL> {
   HybridLinearModelCoeffs_ coeffs_;
 };
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 template<typename MODEL>
 HybridLinearModel<MODEL>::HybridLinearModel(const Geometry_ & updateGeometry,
-                                            const Parameters_ & params)
-: updateTstep_(params.updateTstep), updateVars_(params.updateVars),
-  simplifiedLinearModel_(params.simplifiedLinearModel, updateGeometry),
-  coeffs_(params.coeffs, updateGeometry, updateTstep_, simplifiedLinearModel_) {
-  Log::trace() << "HybridLinearModel<MODEL>::HybridLinearModel() starting" << std::endl;
-  Log::trace() << "HybridLinearModel<MODEL>::HybridLinearModel() done" << std::endl;
+                                            const eckit::Configuration & config)
+  : updateTstep_(config.getString("update tstep")), updateVars_(config, "update variables"),
+    simplifiedLinearModel_(config.getSubConfiguration("simplified linear model"), updateGeometry),
+    coeffs_(config.getSubConfiguration("coefficients"), updateGeometry, updateTstep_,
+            simplifiedLinearModel_)
+{
+    Log::trace() << "HybridLinearModel<MODEL>::HybridLinearModel done" << std::endl;
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 template<typename MODEL>
 void HybridLinearModel<MODEL>::stepTL(Increment_ & dx, const ModelAuxInc_ & merr) const {
@@ -109,13 +99,14 @@ void HybridLinearModel<MODEL>::stepAD(Increment_ & dx, ModelAuxInc_ & merr) cons
 //------------------------------------------------------------------------------
 
 template<typename MODEL>
-void HybridLinearModel<MODEL>::setTrajectory(const State_ & x,
-                                             State_ & xlr,
+void HybridLinearModel<MODEL>::setTrajectory(const State_ & x, State_ & xlr,
                                              const ModelAuxCtl_ & maux) {
   Log::trace() << "HybridLinearModel<MODEL>::setTrajectory() starting" << std::endl;
   simplifiedLinearModel_.setSimplifiedTrajectory(x , xlr, maux);
   Log::trace() << "HybridLinearModel<MODEL>::setTrajectory() done" << std::endl;
 }
+
+//------------------------------------------------------------------------------
 
 }  // namespace oops
 
