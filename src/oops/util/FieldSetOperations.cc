@@ -318,6 +318,46 @@ void divideFieldSets(atlas::FieldSet & fset,
 
 // -----------------------------------------------------------------------------
 
+void divideFieldSets(atlas::FieldSet & fset,
+                     const  atlas::FieldSet & divFset,
+                     const  atlas::FieldSet & maskFset) {
+  oops::Log::trace() << "divideFieldSets with mask starting" << std::endl;
+
+  // Loop over divider fields. The RHS FieldSet may contain only a subset of Fields from the
+  // input/output FieldSet. If this is the case, no work is done for fields present only in the LHS.
+  for (const auto & divField : divFset) {
+    // Get field with the same name
+    atlas::Field field = fset.field(divField.name());
+
+    // Get mask field with the same name
+    atlas::Field mask = maskFset.field(divField.name());
+
+    // Get data and divide
+    if (field.rank() == 2 && divField.rank() == 2 && mask.rank() == 2) {
+      const auto divView = atlas::array::make_view<double, 2>(divField);
+      const auto maskView = atlas::array::make_view<double, 2>(mask);
+      auto view = atlas::array::make_view<double, 2>(field);
+      for (int jnode = 0; jnode < field.shape(0); ++jnode) {
+        for (int jlevel = 0; jlevel < field.shape(1); ++jlevel) {
+          if (std::abs(maskView(jnode, jlevel)) > 0.0) {
+            if (std::abs(divView(jnode, jlevel)) > 0.0) {
+              view(jnode, jlevel) /= divView(jnode, jlevel);
+            } else {
+                ABORT("divideFieldSets with mask: divide by zero");
+            }
+          }
+        }
+      }
+    } else {
+      ABORT("divideFieldSets with mask: wrong rank");
+    }
+  }
+
+  oops::Log::trace() << "divideFieldSets with mask done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
 void sqrtFieldSet(atlas::FieldSet & fset) {
   oops::Log::trace() << "sqrtFieldSet starting" << std::endl;
 
