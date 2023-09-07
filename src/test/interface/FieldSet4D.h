@@ -67,7 +67,8 @@ template <typename MODEL> void testFieldSet3D() {
 
     const oops::Variables incvars(config, "increment variables");
     const util::DateTime inctime(2020, 1, 1, 0, 0, 0);
-    const Increment_ dx1(geometry, incvars, inctime);
+    Increment_ dx1(geometry, incvars, inctime);
+    dx1.ones();
     oops::Log::info() << "Increment: " << dx1 << std::endl;
     const oops::FieldSet3D dx2(dx1.fieldSet(), dx1.validTime(), geometry.getComm());
     oops::Log::info() << "FieldSet3D: " << dx2 << std::endl;
@@ -82,6 +83,33 @@ template <typename MODEL> void testFieldSet3D() {
     // TODO(Algo): change to comparing .variables() when all models support State/Increment
     // variables that provide levels information.
     EXPECT(dx2.variables().variables() == dx1.variables().variables());
+
+    // Test serialize-deserialize and initFieldSet3D
+    std::vector<double> vect;
+    dx2.serialize(vect);
+    EXPECT(vect.size() > 0);
+    EXPECT_EQUAL(vect.size(), dx2.serialSize());
+    oops::FieldSet3D dx3 = oops::initFieldSet3D(dx2);
+    dx3.zero();
+    double dx2dp = dx2.dot_product_with(dx2, dx2.variables());
+    double dx3dp = dx3.dot_product_with(dx3, dx3.variables());
+    EXPECT_NOT_EQUAL(dx2dp, 0.0);
+    EXPECT_EQUAL(dx3dp, 0.0);
+    // Deserialize into dx3 and check that dx3 is now equal to dx2
+    size_t index = 0;
+    dx3.deserialize(vect, index);
+    EXPECT_EQUAL(index, dx2.serialSize());
+    EXPECT_EQUAL(index, dx3.serialSize());
+    dx3dp = dx3.dot_product_with(dx3, dx3.variables());
+    EXPECT_NOT_EQUAL(dx3dp, 0.0);
+    EXPECT_EQUAL(dx3dp, dx3dp);
+    // Check that an empty fieldset can't be deserialized into
+    index = 0;
+    oops::FieldSet3D empty(dx3.validTime(), dx3.commGeom());
+    EXPECT_THROWS_AS(empty.deserialize(vect, index), eckit::BadParameter);
+    // Do another deserialization
+    dx2.serialize(vect);
+    EXPECT_EQUAL(vect.size(), dx2.serialSize() * 2);
   }
 }
 

@@ -8,6 +8,7 @@
 #pragma once
 
 #include <ostream>
+#include <vector>
 
 #include "atlas/field.h"
 
@@ -16,6 +17,7 @@
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Printable.h"
+#include "oops/util/Serializable.h"
 
 namespace oops {
 
@@ -27,7 +29,8 @@ namespace oops {
 /// the object's lifecycle, unlike oops::State and oops::Increment.
 /// FieldSet3D assumes that the variables of the data can change during its lifecycle.
 /// Copies of the objects of this class do shallow copies of atlas fieldsets.
-class FieldSet3D : public util::Printable {
+class FieldSet3D : public util::Serializable,
+                   public util::Printable {
  public:
   FieldSet3D(const atlas::FieldSet & fset, const util::DateTime & validTime,
              const eckit::mpi::Comm & comm);
@@ -41,6 +44,16 @@ class FieldSet3D : public util::Printable {
   const atlas::FieldSet & fieldSet() const {return fset_;}
   atlas::FieldSet & fieldSet() {return fset_;}
 
+  void zero();
+  FieldSet3D & operator+=(const FieldSet3D & other);
+  /// @brief Computes dot product of this FieldSet3D with the \p other FieldSet3D
+  ///        only for specified variables \p vars.
+  double dot_product_with(const FieldSet3D &, const Variables & vars) const;
+
+  size_t serialSize() const override;
+  void serialize(std::vector<double> &) const override;
+  void deserialize(const std::vector<double> &, size_t &) override;
+
  private:
   oops::Variables currentVariables() const;
   void print(std::ostream &) const override;
@@ -52,5 +65,10 @@ class FieldSet3D : public util::Printable {
 };
 
 // -----------------------------------------------------------------------------
+
+/// @brief Initializes FieldSet3D to have the same fields as the \p other; values
+///        are not copied.
+FieldSet3D initFieldSet3D(const FieldSet3D & other);
+
 
 }  // namespace oops

@@ -56,7 +56,7 @@ FieldSet4D::FieldSet4D(const FieldSet3D & fset3d)
 void FieldSet4D::zero() {
   this->check_consistency();
   for (size_t jj = 0; jj < this->size(); ++jj) {
-    util::zeroFieldSet((*this)[jj].fieldSet());
+    (*this)[jj].zero();
   }
 }
 
@@ -66,7 +66,7 @@ FieldSet4D & FieldSet4D::operator+=(const FieldSet4D & other) {
   this->check_consistency(other, false);
   ASSERT(this->is_4d());
   for (size_t jt = 0; jt < this->size(); ++jt) {
-    util::addFieldSets((*this)[jt].fieldSet(), other[jt].fieldSet());
+    (*this)[jt] += other[jt];
   }
   return *this;
 }
@@ -109,8 +109,7 @@ double FieldSet4D::dot_product_with(const FieldSet4D & other, const oops::Variab
   ASSERT(this->is_4d());
   double zz = 0.0;
   for (size_t jj = 0; jj < this->size(); ++jj) {
-    zz += util::dotProductFieldSets((*this)[jj].fieldSet(), other[jj].fieldSet(),
-       vars.variables(), (*this)[jj].commGeom());
+    zz += (*this)[jj].dot_product_with(other[jj], vars);
   }
   this->commTime().allReduceInPlace(zz, eckit::mpi::Operation::SUM);
   return zz;
