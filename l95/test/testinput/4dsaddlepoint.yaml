@@ -76,25 +76,11 @@ final:
     departures: oman
   prints:
     frequency: PT1H30M
-  increment:
-    geometry:
-      resol: 40
-    output:
-      states: # only increments at the background times can be saved for the
-              # weak-constraint cost function
-      - datadir: Data
-        date: 2010-01-01T03:00:00Z
-        exp: 4dsaddlepoint
-        type: in
-      - datadir: Data
-        date: 2010-01-01T15:00:00Z
-        exp: 4dsaddlepoint
-        type: in
 output:
   datadir: Data
   exp: 4dsaddlepoint
-  first: PT0H
-  frequency: PT12H
+  first: PT3H
+  frequency: PT06H
   type: an
 
 test:

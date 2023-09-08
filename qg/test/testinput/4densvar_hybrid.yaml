@@ -124,7 +124,9 @@ final:
     frequency: PT1H
 output:
   datadir: Data
-  exp: 4densvar_hybrid
+  exp: forecast
+  first: PT0S
+  frequency: PT6H
   type: an
 
 test:

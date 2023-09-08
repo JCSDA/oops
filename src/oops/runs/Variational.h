@@ -23,7 +23,6 @@
 #include "oops/assimilation/instantiateMinFactory.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
-#include "oops/base/Increment4D.h"
 #include "oops/base/instantiateCovarFactory.h"
 #include "oops/base/instantiateObsFilterFactory.h"
 #include "oops/base/LatLonGridPostProcessor.h"
@@ -98,11 +97,10 @@ template <typename MODEL, typename OBS> class Variational : public Application {
       ControlVariable<MODEL, OBS> x_b(J->jb().getBackground());
       const eckit::LocalConfiguration incGeomConfig(incConfig, "geometry");
       Geometry<MODEL> incGeom(incGeomConfig,
-                              xx.states().geometry().getComm(),
-                              xx.states().commTime());
-      Increment4D<MODEL> dx(incGeom, xx.states().variables(),
-                            xx.states().times(), xx.states().commTime());
-      dx.diff(xx.states(), x_b.states());
+                              xx.state().geometry().getComm(),
+                              xx.state().geometry().timeComm());
+      Increment<MODEL> dx(incGeom, xx.state().variables(), xx.state().validTime());
+      dx.diff(xx.state(), x_b.state());
       const eckit::LocalConfiguration incOutConfig(incConfig, "output");
       dx.write(incOutConfig);
     }
@@ -114,14 +112,12 @@ template <typename MODEL, typename OBS> class Variational : public Application {
 
       ControlVariable<MODEL, OBS> x_b(J->jb().getBackground());
 
-      Increment4D<MODEL> dx(xx.states().geometry(), xx.states().variables(),
-                            xx.states().times(), xx.states().commTime());
-      dx.diff(xx.states(), x_b.states());
+      Increment<MODEL> dx(xx.state().geometry(),
+                          xx.state().variables(), xx.state().validTime());
+      dx.diff(xx.state(), x_b.state());
 
-      const LatLonGridWriter<MODEL> latlon(incLatlonParams, xx.states().geometry());
-      for (size_t jtime = 0; jtime < dx.size(); ++jtime) {
-        latlon.interpolateAndWrite(dx[jtime]);
-      }
+      const LatLonGridWriter<MODEL> latlon(incLatlonParams, xx.state().geometry());
+      latlon.interpolateAndWrite(dx);
     }
 
     if (finalConfig.has("prints")) {
