@@ -256,6 +256,9 @@ void GETKFSolver<MODEL, OBS>::measurementUpdate(const IncrementEnsemble4D_ & bkg
   Departures_ locvector(this->obspaces_);
   locvector.ones();
   this->obsloc().computeLocalization(i, locvector);
+  for (size_t iens = 0; iens < nanal_; ++iens) {
+     (this->invVarR_)->mask(this->HZb_[iens]);
+  }
   locvector.mask(*(this->invVarR_));
   Eigen::VectorXd local_omb_vec = this->omb_.packEigen(locvector);
 

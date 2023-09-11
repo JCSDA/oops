@@ -268,12 +268,14 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(const StateEnsemb
   // calculate H(x) ensemble perturbations
   for (size_t iens = 0; iens < nens; ++iens) {
     Yb_[iens] = obsens[iens] - yb_mean;
+    invVarR_->mask(Yb_[iens]);
     Yb_[iens].mask(*invVarR_);
   }
 
   // calculate obs departures and mask with qc flag
   Observations_ yobs(obspaces_, "ObsValue");
   omb_ = yobs - yb_mean;
+  invVarR_->mask(omb_);
   omb_.mask(*invVarR_);
 
   // return mean H(x)
