@@ -231,8 +231,7 @@ void ControlIncrement<MODEL, OBS>::read(const eckit::Configuration & config) {
 // -----------------------------------------------------------------------------
 template<typename MODEL, typename OBS>
 void ControlIncrement<MODEL, OBS>::write(const eckit::Configuration & config) const {
-  ASSERT(increment_.is_3d());  // for now
-  increment_[0].write(config);
+  increment_.write(config);
   modbias_.write(config);
   obsbias_.write(config);
 }

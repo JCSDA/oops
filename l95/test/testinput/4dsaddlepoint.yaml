@@ -60,6 +60,18 @@ variational:
       variable change: Identity
     diagnostics:
       departures: ombg
+    online diagnostics:
+      write increment: true
+      increment:
+        states:
+        - datadir: Data
+          exp: 4dsaddlepoint.iter1
+          date: 2010-01-01T03:00:00Z
+          type: in
+        - datadir: Data
+          exp: 4dsaddlepoint.iter1
+          date: 2010-01-01T15:00:00Z
+          type: in
   - ninner: 30
     gradient norm reduction: 1.0e-10
     geometry:
