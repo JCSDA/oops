@@ -370,6 +370,12 @@ void GetValues<MODEL, OBS>::finalize() {
     }
   }
 
+// Add MPI barrier to work around an intel MPI deadlock on some AMD platforms;
+// barrier is added every N'th obs type
+#ifdef INTELMPI_DEADLOCK_GETVALUES_LIMIT
+  if ( tag_ % INTELMPI_DEADLOCK_GETVALUES_LIMIT == 0 ) comm_.barrier();
+#endif
+
   Log::trace() << "GetValues::finalize done" << std::endl;
 }
 
@@ -494,6 +500,12 @@ void GetValues<MODEL, OBS>::finalizeTL() {
                                       jtask, tag_));
     }
   }
+
+// Add MPI barrier to work around an intel MPI deadlock on some AMD platforms;
+// barrier is added every N'th obs type
+#ifdef INTELMPI_DEADLOCK_GETVALUES_LIMIT
+  if ( tag_ % INTELMPI_DEADLOCK_GETVALUES_LIMIT == 0 ) comm_.barrier();
+#endif
 
   Log::trace() << "GetValues::finalizeTL done" << std::endl;
 }
@@ -634,7 +646,7 @@ void GetValues<MODEL, OBS>::fillGeoVaLsAD(const GeoVaLs_ & geovals) {
   locinterp_.resize(ntasks_);
   for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
     locinterp_[jtask].resize(obs_times_by_task_[jtask].size() * linsizes_, missing);
-    if (obs_times_by_task_[jtask].size() > 0) {
+    if (locinterp_[jtask].size() > 0) {
       send_req_.push_back(comm_.iReceive(&locinterp_[jtask][0], locinterp_[jtask].size(),
                                          jtask, tag_));
     }
@@ -669,6 +681,12 @@ void GetValues<MODEL, OBS>::fillGeoVaLsAD(const GeoVaLs_ & geovals) {
       recv_req_.push_back(comm_.iSend(recvinterp_[jtask].data(), nrecv, jtask, tag_));
     }
   }
+
+// Add MPI barrier to work around an intel MPI deadlock on some AMD platforms;
+// barrier is added every N'th obs type
+#ifdef INTELMPI_DEADLOCK_GETVALUES_LIMIT
+  if ( tag_ % INTELMPI_DEADLOCK_GETVALUES_LIMIT == 0 ) comm_.barrier();
+#endif
 
   Log::trace() << "GetValues::fillGeoVaLsAD" << std::endl;
 }
