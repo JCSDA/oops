@@ -1,0 +1,34 @@
+---
+name: UKMO-CI-Az
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop]
+
+jobs:
+  build-and-test:
+    runs-on: jedi-self-hosted-ext
+    steps:
+      - name: checkout current repo
+        uses: actions/checkout@v3
+        with:
+          path: CI/meto/oops
+          repository: JCSDA-internal/oops
+
+      - name: checkout jedicmake
+        uses: actions/checkout@v3
+        with:
+          path: CI/meto/jedicmake
+          repository: JCSDA/jedi-cmake
+          submodules: true
+
+      - name: build and test
+        run: |
+          az acr login --name ngmssboxjediacr
+          docker run --rm \
+            --entrypoint=/usr/local/src/oops-ci/build-and-test \
+            --workdir=/usr/local/src/oops-ci/ \
+            --volume $PWD/CI/meto:/usr/local/src/oops-ci \
+            'ngmssboxjediacr.azurecr.io/jedibase:alma9'
