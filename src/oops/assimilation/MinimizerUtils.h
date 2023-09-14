@@ -149,6 +149,7 @@ void writeEigenvectors(const eckit::Configuration & diagConf,
       temp -= eigenv;
       Log::info() << "Eigenvalue " << ii+1 << " : " << eigenvalT.coeff(nn - 1 - ii) << std::endl;
       Log::info() << "Norm A*y-lambda*y = " << dot_product(temp, temp) << std::endl;
+      Log::info() << "Eigenvector " << ii+1 << " : " << eigenz << std::endl;
 
       Log::test() << "Eigenvalue " << ii+1 << " : " << eigenvalT.coeff(nn - 1 - ii) << std::endl;
       Log::test() << "Norm eigenvector = " << dot_product(eigenz, eigenz) << std::endl;
