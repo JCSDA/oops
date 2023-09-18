@@ -232,10 +232,10 @@ void State<MODEL>::read(const Parameters_ & parameters) {
 
 template<typename MODEL>
 void State<MODEL>::read(const eckit::Configuration & conf) {
-  Log::trace() << "State<MODEL>::write starting" << std::endl;
-  util::Timer timer(classname(), "write");
+  Log::trace() << "State<MODEL>::read starting" << std::endl;
+  util::Timer timer(classname(), "read");
   state_->read(conf);
-  Log::trace() << "State<MODEL>::write done" << std::endl;
+  Log::trace() << "State<MODEL>::read done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
