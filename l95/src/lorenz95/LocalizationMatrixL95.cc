@@ -26,11 +26,9 @@ namespace lorenz95 {
 // -----------------------------------------------------------------------------
 LocalizationMatrixL95::LocalizationMatrixL95(const Resolution & resol,
                                              const oops::Variables & vars,
-                                             const eckit::Configuration & config,
-                                             const size_t & timeRank)
+                                             const eckit::Configuration & config)
   : resol_(resol.npoints()),
-    rscale_(1.0/config.getDouble("length_scale")),
-    timeRank_(timeRank)
+    rscale_(1.0/config.getDouble("length_scale"))
 {
 // Gaussian structure function
   unsigned int size = resol_/2+1;
@@ -51,7 +49,7 @@ LocalizationMatrixL95::LocalizationMatrixL95(const Resolution & resol,
 }
 // -----------------------------------------------------------------------------
 void LocalizationMatrixL95::randomize(IncrementL95 & dx) const {
-  dx.random(1+timeRank_);
+  dx.random();
   unsigned int size = resol_/2+1;
   Eigen::FFT<double> fft;
   std::vector<std::complex<double> > four(size);

@@ -23,7 +23,7 @@
 #include "oops/util/FloatCompare.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
-#include "oops/util/Random.h"
+#include "oops/util/RandomField.h"
 
 #define ERR(e) {ABORT(nc_strerror(e));}
 
@@ -33,8 +33,7 @@ namespace util {
 atlas::FieldSet createRandomFieldSet(const eckit::mpi::Comm & comm,
                                      const atlas::FunctionSpace & fspace,
                                      const std::vector<size_t> & variableSizes,
-                                     const std::vector<std::string> & vars,
-                                     const size_t & timeRank) {
+                                     const std::vector<std::string> & vars) {
   oops::Log::trace() << "createRandomFieldSet starting" << std::endl;
 
   // Local ghost points
@@ -123,7 +122,7 @@ atlas::FieldSet createRandomFieldSet(const eckit::mpi::Comm & comm,
     std::vector<double> rand_vec_glb(nglb);
     if (comm.rank() == 0) {
       // Generate global random vector
-      util::NormalDistribution<double> dist(nglb, 0.0, 1.0, 1+timeRank);
+      util::NormalDistributionField dist(nglb, 0.0, 1.0);
       for (size_t i = 0; i < nglb; ++i) {
         rand_vec_glb[i] = dist[i];
       }
@@ -1288,13 +1287,12 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
 
 atlas::FieldSet createRandomFieldSet(const eckit::mpi::Comm & comm,
                                      const atlas::FunctionSpace & fspace,
-                                     const oops::Variables & vars,
-                                     const size_t & timeRank) {
+                                     const oops::Variables & vars) {
   std::vector<size_t> variableSizes;
   for (const std::string & var : vars.variables()) {
     variableSizes.push_back(vars.getLevels(var));
   }
-  return createRandomFieldSet(comm, fspace, variableSizes, vars.variables(), timeRank);
+  return createRandomFieldSet(comm, fspace, variableSizes, vars.variables());
 }
 
 // -----------------------------------------------------------------------------

@@ -58,7 +58,7 @@ contains
 #include "oops/util/linkedList_c.f"
 ! ------------------------------------------------------------------------------
 !> Setup error covariance matrix
-subroutine qg_error_covariance_setup(self,f_conf,geom,time_rank)
+subroutine qg_error_covariance_setup(self,f_conf,geom)
 
 implicit none
 
@@ -66,7 +66,6 @@ implicit none
 type(qg_error_covariance_config),intent(inout) :: self !< Error covariance configuration
 type(fckit_configuration),intent(in) :: f_conf         !< FCKIT configuration
 type(qg_geom),intent(in) :: geom                       !< Geometry
-integer,intent(in) :: time_rank                        !< Time rank
 
 ! Local variables
 integer :: ix,iy,jy,ky,iz,jz,kz,info
@@ -90,9 +89,6 @@ if (f_conf%has("randomization_seed")) then
 else
    self%seed = rseed
 end if
-
-! Modify the random seed based on the rank
-self%seed = self%seed+time_rank
 
 ! Check nx
 if (mod(geom%nx,2)/=0) then

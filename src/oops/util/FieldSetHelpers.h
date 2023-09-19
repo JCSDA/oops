@@ -24,8 +24,7 @@ namespace util {
 atlas::FieldSet createRandomFieldSet(const eckit::mpi::Comm &,
                                      const atlas::FunctionSpace &,
                                      const std::vector<size_t> &,
-                                     const std::vector<std::string> &,
-                                     const size_t & timeRank = 0);
+                                     const std::vector<std::string> &);
 /// Returns a fieldset with the same smooth field for all variables.
 /// Useful for testing interpolation.
 atlas::FieldSet createSmoothFieldSet(const eckit::mpi::Comm &,
@@ -63,8 +62,7 @@ void writeFieldSet(const eckit::mpi::Comm &,
 
 atlas::FieldSet createRandomFieldSet(const eckit::mpi::Comm &,
                                      const atlas::FunctionSpace &,
-                                     const oops::Variables &,
-                                     const size_t & timeRank = 0);
+                                     const oops::Variables &);
 /// Returns a fieldset with the same smooth field for all variables.
 /// Useful for testing interpolation.
 atlas::FieldSet createSmoothFieldSet(const eckit::mpi::Comm &,
