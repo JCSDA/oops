@@ -20,14 +20,10 @@ trap finally EXIT
 
 cd "${WORKD}"
 
-rm -f "${HERE}/bundle"
-ln -s '..' "${HERE}/bundle"
-
 # -- Configure
 cmake -B . -S "${HERE}" -DCMAKE_BUILD_TYPE=Debug -DMPI_ARGS="--oversubscribe"
 
 # -- Build
-# VERBOSE=1 cmake --build . -j "${NPROC}"
 cmake --build . -j "${NPROC}"
 
 # -- Test

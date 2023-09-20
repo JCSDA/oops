@@ -2,20 +2,28 @@
 name: UKMO-CI-Az
 
 on:
-  push:
-    branches: [develop]
   pull_request:
     branches: [develop]
 
 jobs:
   build-and-test:
+    if: github.repository_owner == 'JCSDA-internal'
     runs-on: jedi-self-hosted-ext
     steps:
-      - name: checkout current repo
+      - name: pre-submit cleanup
+        run: |
+          ls -la ./
+          rm -fr ./CI || true
+          ls -la ./
+      - name: checkout current
         uses: actions/checkout@v3
         with:
           path: CI/meto/oops
           repository: JCSDA-internal/oops
+
+      - name: initiate bundle
+        working-directory: CI/meto
+        run: ln -sf oops/CI/meto/* .
 
       - name: checkout jedicmake
         uses: actions/checkout@v3
@@ -31,4 +39,5 @@ jobs:
             --entrypoint=/usr/local/src/oops-ci/build-and-test \
             --workdir=/usr/local/src/oops-ci/ \
             --volume $PWD/CI/meto:/usr/local/src/oops-ci \
-            'ngmssboxjediacr.azurecr.io/jedibase:alma9'
+            'ngmssboxjediacr.azurecr.io/jedibase:alma9' && \
+          rm -fr ${{github.workspace}}/CI
