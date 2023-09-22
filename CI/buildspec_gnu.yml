@@ -90,14 +90,15 @@ phases:
       - echo $CODEBUILD_BUILD_SUCCEEDING
 
       # configure and build
-      - su - nonroot -c "cd /home/nonroot
-        && ls
+      - su - nonroot -c "source /opt/spack-environment/activate.sh
+        && cd /home/nonroot
         && export FC=mpifort
         && export CC=mpicc
         && export CXX=mpicxx
         && ecbuild -Wno-dev -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCDASH_OVERRIDE_SITE=CodeBuild -DCDASH_OVERRIDE_SYSTEM_NAME=GNUContainer -DCDASH_OVERRIDE_GIT_BRANCH=$CODEBUILD_GIT_BRANCH -DCTEST_UPDATE_VERSION_ONLY=FALSE -DENABLE_GPROF=ON /jcsda/oops-bundle/"
 
-      - su - nonroot -c "cd /home/nonroot/oops
+      - su - nonroot -c "source /opt/spack-environment/activate.sh
+        && cd /home/nonroot/oops
         && export FC=mpifort
         && export CC=mpicc
         && export CXX=mpicxx
@@ -114,14 +115,16 @@ phases:
       - echo $BUILD_STATUS
 
       # run ctest and upload to cdash
-      - su - nonroot -c "cd /home/nonroot/oops
+      - su - nonroot -c "source /opt/spack-environment/activate.sh
+        && cd /home/nonroot/oops
         && export FC=mpifort
         && export CC=mpicc
         && export CXX=mpicxx
         && ctest -C RelWithDebInfo -D ExperimentalTest -E test_qg_4dvar_saddlepoint"
 
     finally:
-       - su - nonroot -c "cd /home/nonroot/oops
+       - su - nonroot -c "source /opt/spack-environment/activate.sh
+        && cd /home/nonroot/oops
         && export FC=mpifort
         && export CC=mpicc
         && export CXX=mpicxx
