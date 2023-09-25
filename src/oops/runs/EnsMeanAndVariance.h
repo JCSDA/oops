@@ -111,7 +111,7 @@ template <typename MODEL> class EnsMeanAndVariance : public Application {
 
     if (params.outputVarConfigLL.value() != boost::none) {
       const LatLonGridWriter<MODEL> latlon(params.outputVarConfigLL.value().value(), resol);
-      latlon.interpolateAndWrite(sigb2);
+      latlon.interpolateAndWrite(sigb2, ensmean);
     }
     Log::test() << "Variance: " << std::endl << sigb2 << std::endl;
 
@@ -121,7 +121,7 @@ template <typename MODEL> class EnsMeanAndVariance : public Application {
 
     if (params.outputStdDevConfigLL.value() != boost::none) {
       const LatLonGridWriter<MODEL> latlon(params.outputStdDevConfigLL.value().value(), resol);
-      latlon.interpolateAndWrite(sigb);
+      latlon.interpolateAndWrite(sigb, ensmean);
     }
     Log::test() << "Standard Deviation: " << std::endl << sigb << std::endl;
 

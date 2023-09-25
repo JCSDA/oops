@@ -188,6 +188,8 @@ template <typename MODEL> class ConvertToLatLon : public Application {
         incToInterp_.read(params.incToLatLon.value()->at(jm).increment.value());
         const LatLonGridWriter_ latLonWriter_(params.stateToLatLon.value()->
                                                at(jm).latLonInterp.value(), resol_);
+        // This supports output on model levels only; to output on pressure levels would need to
+        // read in a reference background from which to read the vertical pressure coordinate
         latLonWriter_.interpolateAndWrite(incToInterp_);
         Log::test() << latLonWriter_ << std::endl;
       }
@@ -204,6 +206,8 @@ template <typename MODEL> class ConvertToLatLon : public Application {
                                                                                         resol_);
       size_t numstates = incrementsToInterp_.size();
       for (size_t jm=0; jm < numstates; jm++) {
+        // This supports output on model levels only; to output on pressure levels would need to
+        // read in a reference background from which to read the vertical pressure coordinate
         latLonWriter_.interpolateAndWrite(incrementsToInterp_[jm]);
         Log::test() << latLonWriter_ << std::endl;
       }

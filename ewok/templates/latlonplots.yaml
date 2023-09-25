@@ -6,6 +6,6 @@
 local interpolator type: oops unstructured grid interpolator
 resolution in degrees: $(plot_geom)
 variables to output: $(plot_variables)
-levels to output: $(plot_levels)
+pressure levels in hPa: $(plot_levels)
 datapath: $(latlonworkdir)
 filename prefix: $(expid)

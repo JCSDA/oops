@@ -134,6 +134,9 @@ void writeEigenvectors(const eckit::Configuration & diagConf,
                     "online diagnostics.eigenvector to latlon");
         eigenLatlonConf.set("filename prefix",
               eigenLatlonConf.getString("filename prefix")+std::to_string(ii));
+        // Eigenvector context has no meaningful State; therefore can't provide latlon output on
+        // pressure levels. Check here that model levels were requested:
+        ASSERT(eigenLatlonConf.has("model levels") && !eigenLatlonConf.has("pressure levels"));
         LatLonGridWriterParameters eigenLatlonParams;
         eigenLatlonParams.deserialize(eigenLatlonConf);
         const LatLonGridWriter<MODEL> latlon(eigenLatlonParams, eigenz.geometry());

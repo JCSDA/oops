@@ -117,7 +117,7 @@ template <typename MODEL, typename OBS> class Variational : public Application {
       dx.diff(xx.state(), x_b.state());
 
       const LatLonGridWriter<MODEL> latlon(incLatlonParams, xx.state().geometry());
-      latlon.interpolateAndWrite(dx);
+      latlon.interpolateAndWrite(dx, xx.state());
     }
 
     if (finalConfig.has("prints")) {

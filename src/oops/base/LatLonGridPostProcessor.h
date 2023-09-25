@@ -56,7 +56,7 @@ LatLonGridPostProcessor<MODEL, FLDS>::LatLonGridPostProcessor(
 
 template <typename MODEL, typename FLDS>
 void LatLonGridPostProcessor<MODEL, FLDS>::doProcessing(const FLDS & xx) {
-  this->interpolateAndWrite(xx);
+  this->interpolateAndWrite(xx);  // supports output on pressure levels for FLDS of State type only
 }
 
 // -----------------------------------------------------------------------------
