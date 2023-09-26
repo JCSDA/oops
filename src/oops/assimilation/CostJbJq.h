@@ -232,7 +232,18 @@ JqTermTLAD<MODEL> * CostJbJq<MODEL, OBS>::initializeJqAD(const CtrlInc_ & dx) co
 template<typename MODEL, typename OBS>
 void CostJbJq<MODEL, OBS>::Bmult(const CtrlInc_ & dxin, CtrlInc_ & dxout) const {
   Log::trace() << "CostJbJq::Bmult start" << std::endl;
-  B_->multiply(dxin.states(), dxout.states());
+  const Increment_ & dxin_global = dxin.states();
+  Increment_ & dxout_global = dxout.states();
+  // multiplication is done at each time slot separately, make a copy of increment
+  // with only local times
+  Increment_ dxin_local(dxin_global.geometry(), dxin_global.variables(),
+                        dxin_global.validTimes(), oops::mpi::myself());
+  dxin_local[0] = dxin_global[0];
+  Increment_ dxout_local(dxout_global.geometry(), dxout_global.variables(),
+                         dxout_global.validTimes(), oops::mpi::myself());
+  B_->multiply(dxin_local, dxout_local);
+  // copy result back to global
+  dxout_global[0] = dxout_local[0];
   Log::trace() << "CostJbJq::Bmult done" << std::endl;
 }
 

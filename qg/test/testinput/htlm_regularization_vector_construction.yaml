@@ -2,7 +2,7 @@ cost function:
   cost type: 4D-Var
   window begin: 2010-01-01T00:00:00Z
   window length: PT24H
-  analysis variables: [x, q]
+  analysis variables: [x]
   geometry:
     nx: 40
     ny: 20
@@ -78,7 +78,7 @@ variational:
       perturbed heating: 0.1
     linear model:
       update tstep: PT1H
-      update variables: [x, q]
+      update variables: [x]
       simplified linear model:
         linear model:
           trajectory:
@@ -86,9 +86,9 @@ variational:
           tstep: PT1H
           variable change: Identity
           name: QgTLM
-          tlm variables: [x, q]
+          tlm variables: [x]
       coefficients:
-        training variables: [q]
+        training variables: [x]
         influence region size: 2
         window length: PT24H
         window begin: 2010-01-01T00:00:00Z
@@ -96,7 +96,7 @@ variational:
           regularization:
             base value: 1e100
             parts:
-            - variables: [q]
+            - variables: [x]
               levels: [0]
               bounding lons: [60.0, 90.0]
               bounding lats: [60.0, 90.0]
@@ -136,7 +136,7 @@ variational:
       perturbed heating: 0.1
     linear model:
       update tstep: PT1H
-      update variables: [x, q]
+      update variables: [x]
       simplified linear model:
         linear model:
           trajectory:
@@ -144,9 +144,9 @@ variational:
           tstep: PT1H
           variable change: Identity
           name: QgTLM
-          tlm variables: [x, q]
+          tlm variables: [x]
       coefficients:
-        training variables: [q]
+        training variables: [x]
         influence region size: 2
         window length: PT24H
         window begin: 2010-01-01T00:00:00Z
@@ -154,7 +154,7 @@ variational:
           regularization:
             base value: 1e100
             parts:
-            - variables: [q]
+            - variables: [x]
               levels: [0]
               bounding lons: [60.0, 90.0]
               bounding lats: [60.0, 90.0]

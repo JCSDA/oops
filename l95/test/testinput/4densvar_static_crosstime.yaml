@@ -1,0 +1,74 @@
+cost function:
+  cost type: 4D-Ens-Var
+  window begin: 2010-01-01T03:00:00Z
+  window length: PT12H
+  subwindow: PT1H30M
+  analysis variables: [x]
+  geometry:
+    resol: 40
+  observations:
+    observers:
+    - obs error:
+        covariance model: diagonal
+      obs space:
+        obsdatain:
+          engine:
+            obsfile: Data/truth_static_crosstime.2010-01-01T09:00:00Z.obt
+        obsdataout:
+          engine:
+            obsfile: Data/4densvar_static_crosstime.2010-01-01T12:00:00Z.obt
+      obs operator: {}
+  background:
+    states:
+    - date: 2010-01-01T03:00:00Z
+      filename: Data/forecast.fc.2010-01-01T00:00:00Z.PT3H.l95
+    - date: 2010-01-01T04:30:00Z
+      filename: Data/forecast.fc.2010-01-01T00:00:00Z.PT4H30M.l95
+    - date: 2010-01-01T06:00:00Z
+      filename: Data/forecast.fc.2010-01-01T00:00:00Z.PT6H.l95
+    - date: 2010-01-01T07:30:00Z
+      filename: Data/forecast.fc.2010-01-01T00:00:00Z.PT7H30M.l95
+    - date: 2010-01-01T09:00:00Z
+      filename: Data/forecast.fc.2010-01-01T00:00:00Z.PT9H.l95
+    - date: 2010-01-01T10:30:00Z
+      filename: Data/forecast.fc.2010-01-01T00:00:00Z.PT10H30M.l95
+    - date: 2010-01-01T12:00:00Z
+      filename: Data/forecast.fc.2010-01-01T00:00:00Z.PT12H.l95
+    - date: 2010-01-01T13:30:00Z
+      filename: Data/forecast.fc.2010-01-01T00:00:00Z.PT13H30M.l95
+    - date: 2010-01-01T15:00:00Z
+      filename: Data/forecast.fc.2010-01-01T00:00:00Z.PT15H.l95
+  background error:
+      covariance model: L95Error
+      date: 2010-01-01T03:00:00Z
+      length_scale: 1.0
+      standard_deviation: 1.2
+#  constraints:
+#  - jcdfi:
+#      alpha: 1000.0
+#      cutoff: PT3H
+#      filtered variables: [x]
+variational:
+  minimizer:
+    algorithm: DRIPCG
+  iterations:
+  - ninner: 8
+    gradient norm reduction: 1e-10
+    geometry:
+      resol: 40
+  - ninner: 7
+    gradient norm reduction: 1e-10
+    geometry:
+      resol: 40
+final:
+  diagnostics:
+    departures: oman
+  prints:
+    frequency: PT1H30M
+output:
+  datadir: Data
+  exp: 4densvar_static_crosstime
+  type: an
+
+test:
+  reference filename: testoutput/4densvar_static_crosstime.test

@@ -2,7 +2,7 @@ cost function:
   cost type: 4D-Var
   window begin: 2010-01-01T00:00:00Z
   window length: PT24H
-  analysis variables: [x,q]
+  analysis variables: [x]
   geometry:
     nx: 40
     ny: 20
@@ -84,9 +84,9 @@ variational:
           variable change: Identity
           name: QgTLM
       update tstep: PT1H
-      update variables: [x,q]
+      update variables: [x]
       coefficients:
-        training variables: [q]
+        training variables: [x]
         influence region size: 2
         window length: PT24H
         window begin: 2010-01-01T00:00:00Z
@@ -112,9 +112,9 @@ variational:
           variable change: Identity
           name: QgTLM
       update tstep: PT1H
-      update variables: [x,q]
+      update variables: [x]
       coefficients:
-        training variables: [q]
+        training variables: [x]
         influence region size: 2
         window length: PT24H
         window begin: 2010-01-01T00:00:00Z
