@@ -35,11 +35,8 @@ template <typename MODEL> class ConvertStateStatesParameters : public Parameters
   typedef State<MODEL> State_;
 
  public:
-  typedef typename State_::Parameters_      StateParameters_;
-  typedef typename State_::WriteParameters_ WriteParameters_;
-
-  RequiredParameter<StateParameters_> input{"input", this};
-  RequiredParameter<WriteParameters_> output{"output", this};
+  RequiredParameter<eckit::LocalConfiguration> input{"input", this};
+  RequiredParameter<eckit::LocalConfiguration> output{"output", this};
 };
 
 /// Options controlling variable change in the ConvertState application.
@@ -152,7 +149,8 @@ template <typename MODEL> class ConvertState : public Application {
       }
 
 //    Write state
-      xx.write(stateParams.output.value());
+      eckit::LocalConfiguration outconf(stateParams.toConfiguration(), "output");
+      xx.write(outconf);
 
       Log::test() << "Output state: " << xx << std::endl;
     }

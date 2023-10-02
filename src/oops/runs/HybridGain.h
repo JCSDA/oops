@@ -19,6 +19,7 @@
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/abor1_cpp.h"
+#include "oops/util/ConfigHelpers.h"
 #include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/RequiredParameter.h"
@@ -42,8 +43,6 @@ template <typename MODEL> class HybridGainParameters : public ApplicationParamet
 
  public:
   typedef typename Geometry<MODEL>::Parameters_   GeometryParameters_;
-  typedef typename State<MODEL>::Parameters_      StateParameters_;
-  typedef typename State<MODEL>::WriteParameters_ StateWriteParameters_;
 
   /// Geometry parameters.
   RequiredParameter<GeometryParameters_> geometry{"geometry", this};
@@ -55,19 +54,20 @@ template <typename MODEL> class HybridGainParameters : public ApplicationParamet
   RequiredParameter<std::string> hybridType{"hybrid type", this};
 
   /// Control state parameters.
-  RequiredParameter<StateParameters_> control{"control", this};
+  RequiredParameter<eckit::LocalConfiguration> control{"control", this};
 
   /// Ensemble mean posterior.
-  RequiredParameter<StateParameters_> ensembleMeanPosterior{"ensemble mean posterior", this};
+  RequiredParameter<eckit::LocalConfiguration>
+      ensembleMeanPosterior{"ensemble mean posterior", this};
 
   /// Ensemble mean prior, required if hybrid type is "average increment".
-  OptionalParameter<StateParameters_> ensembleMeanPrior{"ensemble mean prior", this};
+  OptionalParameter<eckit::LocalConfiguration> ensembleMeanPrior{"ensemble mean prior", this};
 
   /// List of ensemble states.
-  RequiredParameter<std::vector<StateParameters_>> ensemble{"ensemble", this};
+  RequiredParameter<std::vector<eckit::LocalConfiguration>> ensemble{"ensemble", this};
 
   /// Output parameter for recentered state
-  RequiredParameter<StateWriteParameters_> recenteredOutput{"recentered output", this};
+  RequiredParameter<eckit::LocalConfiguration> recenteredOutput{"recentered output", this};
 };
 
 // -----------------------------------------------------------------------------
@@ -76,8 +76,6 @@ template <typename MODEL> class HybridGain : public Application {
   typedef Geometry<MODEL>                   Geometry_;
   typedef Increment<MODEL>                  Increment_;
   typedef State<MODEL>                      State_;
-  typedef typename State_::Parameters_      StateParameters_;
-  typedef typename State_::WriteParameters_ StateWriteParameters_;
 
   typedef HybridGainParameters<MODEL>  HybridGainParameters_;
 
@@ -162,17 +160,17 @@ template <typename MODEL> class HybridGain : public Application {
     }
 
     // Output new center
-    StateWriteParameters_ centeredOutput = params.recenteredOutput;
-    centeredOutput.setMember(0);
+    eckit::LocalConfiguration centeredOutput = params.recenteredOutput;
+    util::setMember(centeredOutput, 0);
     xNewCenter.write(centeredOutput);
     Log::test() << "new center : " << xNewCenter << std::endl;
 
     // Get ensemble parameters
-    const std::vector<StateParameters_>& ensParams = params.ensemble;
-    const unsigned nens = ensParams.size();
+    const std::vector<eckit::LocalConfiguration>& ensParams = params.ensemble;
+    const int nens = ensParams.size();
 
     // Recenter ensemble around new center and save
-    for (unsigned jj = 0; jj < nens; ++jj) {
+    for (int jj = 0; jj < nens; ++jj) {
       State_ x(resol, ensParams[jj]);
       Increment_ pert(resol, vars, x.validTime());
       pert.diff(x, xaEmeanPost);
@@ -180,8 +178,8 @@ template <typename MODEL> class HybridGain : public Application {
       x += pert;
 
       // Save recentered member
-      StateWriteParameters_ recenteredOutput = params.recenteredOutput;
-      recenteredOutput.setMember(jj+1);
+      eckit::LocalConfiguration recenteredOutput = params.recenteredOutput;
+      util::setMember(recenteredOutput, jj+1);
       x.write(recenteredOutput);
       Log::test() << "Recentered member " << jj << " : " << x << std::endl;
     }

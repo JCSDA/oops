@@ -31,6 +31,7 @@
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
+#include "oops/util/ConfigHelpers.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -45,8 +46,6 @@ template <typename MODEL> class GenEnsPertBParameters : public ApplicationParame
   typedef ModelSpaceCovarianceParametersWrapper<MODEL> CovarianceParameters_;
   typedef typename Geometry<MODEL>::Parameters_        GeometryParameters_;
   typedef State<MODEL>                                 State_;
-  typedef typename State_::Parameters_                 StateParameters_;
-  typedef StateWriterParameters<State_>                StateWriterParameters_;
   typedef ModelAuxControl<MODEL>                       ModelAux_;
   typedef typename ModelAux_::Parameters_              ModelAuxParameters_;
 
@@ -57,7 +56,7 @@ template <typename MODEL> class GenEnsPertBParameters : public ApplicationParame
   RequiredParameter<eckit::LocalConfiguration> model{"model", this};
 
   /// Initial state parameters.
-  RequiredParameter<StateParameters_> initialCondition{"initial condition", this};
+  RequiredParameter<eckit::LocalConfiguration> initialCondition{"initial condition", this};
 
   /// Augmented model state.
   Parameter<ModelAuxParameters_> modelAuxControl{"model aux control", {}, this};
@@ -75,7 +74,7 @@ template <typename MODEL> class GenEnsPertBParameters : public ApplicationParame
   RequiredParameter<int> members{"members", this};
 
   /// Where to write the output.
-  RequiredParameter<StateWriterParameters_> output{"output", this};
+  RequiredParameter<eckit::LocalConfiguration> output{"output", this};
 
   /// Whether to include the control as member zero
   Parameter<bool> includeControl{"include control", false, this};
@@ -94,7 +93,6 @@ template <typename MODEL> class GenEnsPertB : public Application {
   typedef Increment4D<MODEL>                        Increment4D_;
   typedef State<MODEL>                              State_;
   typedef State4D<MODEL>                            State4D_;
-  typedef StateWriterParameters<State_>             StateWriterParameters_;
 
   typedef GenEnsPertBParameters<MODEL>              GenEnsPertBParameters_;
 
@@ -116,7 +114,8 @@ template <typename MODEL> class GenEnsPertB : public Application {
     const Geometry_ resol(params.geometry, this->getComm(), oops::mpi::myself());
 
 //  Setup Model
-    const Model_ model(resol, eckit::LocalConfiguration(fullConfig, "model"));
+    const eckit::LocalConfiguration modelConfig(fullConfig, "model");
+    const Model_ model(resol, modelConfig);
 
 //  Setup initial state
     const State4D_ xx(resol, eckit::LocalConfiguration(fullConfig, "initial condition"));
@@ -126,13 +125,13 @@ template <typename MODEL> class GenEnsPertB : public Application {
     const ModelAux_ moderr(resol, params.modelAuxControl);
 
 //  Setup times
-    const util::Duration fclength = params.forecastLength;
+    const util::Duration fclength(fullConfig.getString("forecast length"));
     const util::DateTime bgndate(xx[0].validTime());
     const util::DateTime enddate(bgndate + fclength);
     Log::info() << "Running forecast from " << bgndate << " to " << enddate << std::endl;
 
 //  Setup variables
-    const Variables &vars = params.perturbedVariables;
+    const Variables vars(fullConfig, "perturbed variables");
 
 //  Setup B matrix
     const CovarianceParametersBase_ &covarParams =
@@ -142,7 +141,8 @@ template <typename MODEL> class GenEnsPertB : public Application {
 
 //  Generate perturbed states
     Increment4D_ dx(resol, vars, xx.times());
-    for (int jm = 0; jm < params.members; ++jm) {
+    const int members = fullConfig.getInt("members");
+    for (int jm = 0; jm < members; ++jm) {
 //    Generate pertubation
       Bmat->randomize(dx);
 
@@ -153,32 +153,32 @@ template <typename MODEL> class GenEnsPertB : public Application {
 //    Setup forecast outputs
       PostProcessor<State_> post;
 
-      StateWriterParameters_ outParams = params.output;
-      outParams.write.setMember(jm + 1);
+      eckit::LocalConfiguration outConfig(fullConfig, "output");
+      util::setMember(outConfig, jm+1);
 
-      post.enrollProcessor(new StateWriter<State_>(outParams));
+      post.enrollProcessor(new StateWriter<State_>(outConfig));
 
 //    Run forecast
       model.forecast(xp, moderr, fclength, post);
       Log::test() << "Member " << jm << " final state: " << xp << std::endl;
     }
 
-    if (params.includeControl) {
+    if (fullConfig.getBool("include control", false)) {
 //    Save control as ensemble member 0
       State_ xp(xx[0]);
 
 //    Setup forecast outputs
       PostProcessor<State_> post;
 
-      StateWriterParameters_ outParams = params.output;
-      outParams.write.setMember(0);
+      eckit::LocalConfiguration outConfig(fullConfig, "output");
+      util::setMember(outConfig, 0);
 
-      post.enrollProcessor(new StateWriter<State_>(outParams));
+      post.enrollProcessor(new StateWriter<State_>(outConfig));
 
 //    Run forecast
       model.forecast(xp, moderr, fclength, post);
       Log::test() << " Control Member final state: " << xp << std::endl;
-  }
+    }
     return 0;
   }
 // -----------------------------------------------------------------------------

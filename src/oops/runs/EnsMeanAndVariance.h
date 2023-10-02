@@ -40,7 +40,6 @@ class EnsMeanAndVarianceParameters : public ApplicationParameters {
  public:
   typedef typename Geometry<MODEL>::Parameters_           GeometryParameters_;
   typedef typename Increment<MODEL>::WriteParameters_     IncrementWriteParameters_;
-  typedef typename State<MODEL>::WriteParameters_         StateWriteParameters_;
   typedef StateEnsembleParameters<MODEL>                  StateEnsembleParameters_;
 
   /// Geometry parameters.
@@ -59,7 +58,7 @@ class EnsMeanAndVarianceParameters : public ApplicationParameters {
                                                  this};
 
   /// Output state parameters for mean.
-  OptionalParameter<StateWriteParameters_> outputMeanConfig{"mean output", this};
+  OptionalParameter<eckit::LocalConfiguration> outputMeanConfig{"mean output", this};
   OptionalParameter<LatLonGridWriterParameters> outputMeanConfigLL{"ensmean to latlon",
                                                  this};
 };
@@ -96,8 +95,8 @@ template <typename MODEL> class EnsMeanAndVariance : public Application {
     const Increment_ sigb = stateEnsemble.stddev();
 
 //  Write mean to file
-    if (params.outputMeanConfig.value() != boost::none)
-        ensmean.write(params.outputMeanConfig.value().value());
+    if (fullConfig.has("mean output"))
+      ensmean.write(eckit::LocalConfiguration(fullConfig, "mean output"));
 
     if (params.outputMeanConfigLL.value() != boost::none) {
       const LatLonGridWriter<MODEL> latlon(params.outputMeanConfigLL.value().value(), resol);

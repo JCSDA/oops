@@ -46,7 +46,6 @@ class HofX3DParameters : public ApplicationParameters {
 
  public:
   typedef typename Geometry_::Parameters_ GeometryParameters_;
-  typedef typename State_::Parameters_ StateParameters_;
 
   /// Only observations taken at times lying in the (`window begin`, `window begin` + `window
   /// length`] interval will be included in observation spaces.
@@ -63,7 +62,7 @@ class HofX3DParameters : public ApplicationParameters {
   Parameter<bool> makeObs{"make obs", false, this};
 
   /// Initial state parameters.
-  RequiredParameter<StateParameters_> initialCondition{"state", this};
+  RequiredParameter<eckit::LocalConfiguration> initialCondition{"state", this};
 };
 
 // -----------------------------------------------------------------------------

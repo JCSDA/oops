@@ -44,11 +44,10 @@ template <typename MODEL> class StateToLatLonParameters : public ApplicationPara
   typedef LatLonGridWriterParameters LatLonGridWriterParameters_;
 
  public:
-  typedef typename State_::Parameters_      StateParameters_;
   typedef typename Geometry_::Parameters_   GeometryParameters_;
 
   RequiredParameter<GeometryParameters_>         stateGeometry{"state geometry", this};
-  RequiredParameter<StateParameters_>            state{"state", this};
+  RequiredParameter<eckit::LocalConfiguration>   state{"state", this};
   RequiredParameter<LatLonGridWriterParameters_> latLonInterp{"latlon interpolation", this};
 };
 

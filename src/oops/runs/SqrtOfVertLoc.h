@@ -43,13 +43,13 @@ template <typename MODEL> class SqrtOfVertLocParameters : public ApplicationPara
  public:
   typedef ModelSpaceCovarianceParametersWrapper<MODEL> CovarianceParameters_;
   typedef typename Geometry<MODEL>::Parameters_        GeometryParameters_;
-  typedef typename State<MODEL>::Parameters_           StateParameters_;
   typedef typename Increment<MODEL>::WriteParameters_  WriteParameters_;
 
   Parameter<double> truncationTolerance{"truncation tolerance", 1.0, this};
 
   RequiredParameter<GeometryParameters_> geometry{"geometry", "geometry parameters", this};
-  RequiredParameter<StateParameters_> background{"background", "background parameters", this};
+  RequiredParameter<eckit::LocalConfiguration>
+        background{"background", "background parameters", this};
 
   RequiredParameter<Variables> perturbedVariables{"perturbed variables",
         "list of variables to perturb", this};

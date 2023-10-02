@@ -105,7 +105,7 @@ variational:
             perturbed heating: 0.1
           control member:
             date: '2010-01-01T00:00:00Z'
-            filename: Data/forecast_control_pert_heat.fc.2010-01-01T00:00:00Z.PT0S.nc
+            filename: Data/forecast_control_pert_heat.fc.2009-12-31T00:00:00Z.P1D.nc
           non linear ensemble:
             ensemble perturbation:
               background error:
@@ -156,7 +156,7 @@ variational:
             perturbed heating: 0.1
           control member:
             date: '2010-01-01T00:00:00Z'
-            filename: Data/forecast_control_pert_heat.fc.2010-01-01T00:00:00Z.PT0S.nc
+            filename: Data/forecast_control_pert_heat.fc.2009-12-31T00:00:00Z.P1D.nc
           non linear ensemble:
             ensemble perturbation:
               background error:

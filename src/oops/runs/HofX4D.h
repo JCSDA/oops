@@ -55,7 +55,6 @@ class HofX4DParameters : public ApplicationParameters {
 
  public:
   typedef typename Geometry_::Parameters_ GeometryParameters_;
-  typedef typename State_::Parameters_ StateParameters_;
   typedef typename ModelAux_::Parameters_ ModelAuxParameters_;
 
   /// Only observations taken at times lying in the (`window begin`, `window begin` + `window
@@ -86,7 +85,7 @@ class HofX4DParameters : public ApplicationParameters {
   RequiredParameter<eckit::LocalConfiguration> model{"model", this};
 
   /// Initial state parameters.
-  RequiredParameter<StateParameters_> initialCondition{"initial condition", this};
+  RequiredParameter<eckit::LocalConfiguration> initialCondition{"initial condition", this};
 
   /// Augmented model state.
   Parameter<ModelAuxParameters_> modelAuxControl{"model aux control", {}, this};
@@ -125,13 +124,16 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
     params.deserialize(fullConfig);
 
 //  Setup observation window
-    const util::Duration winlen = params.windowLength;
+    const util::Duration winlen(fullConfig.getString("window length"));
+    util::DateTime winbgn(fullConfig.getString("window begin"));
     // window is shifted so that observations in the window
     // obs_time >= winbgn && obs_time < winend are included.
     // This is ensured by a time-shift at the lowest time-resolution of 1 second.
-    const util::Duration winshift = params.shifting ?
-          util::Duration("PT1S") : util::Duration("PT0S");
-    const util::DateTime winbgn = params.windowBegin.value() - winshift;
+    util::Duration winshift(0);
+    if (params.shifting) {
+      winshift = util::Duration("PT1S");
+      winbgn -= winshift;
+    }
     const util::DateTime winend(winbgn + winlen);
     Log::info() << "Observation window from " << winbgn << " to " << winend << std::endl;
 
@@ -139,13 +141,14 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
     const Geometry_ geometry(params.geometry, this->getComm(), mpi::myself());
 
 //  Setup initial state
-    State_ xx(geometry, params.initialCondition);
+    const eckit::LocalConfiguration initialConfig(fullConfig, "initial condition");
+    State_ xx(geometry, initialConfig);
     Log::test() << "Initial state: " << xx << std::endl;
 
 //  Check that window specified for forecast is at least the same as obs window
-    const util::Duration fclength = params.forecastLength;
+    const util::Duration fclength(fullConfig.getString("forecast length"));
 
-    if (winbgn  + winshift < xx.validTime() || winend + winshift > xx.validTime() + fclength) {
+    if (winbgn + winshift < xx.validTime() || winend + winshift > xx.validTime() + fclength) {
         Log::error() << "Observation window can not be outside of forecast window." << std::endl;
         Log::error() << "Obs window: " << winbgn << " to " << winend << std::endl;
         Log::error() << "Forecast runs from: " << xx.validTime() << " for " <<
@@ -169,7 +172,11 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
     const Model_ model(geometry, eckit::LocalConfiguration(fullConfig, "model"));
     ModelAux_ moderr(geometry, params.modelAuxControl);
 
-    post.enrollProcessor(new StateInfo<State_>("fc", params.prints));
+    eckit::LocalConfiguration prtConfig;
+    if (fullConfig.has("prints")) {
+      prtConfig = eckit::LocalConfiguration(fullConfig, "prints");
+    }
+    post.enrollProcessor(new StateInfo<State_>("fc", prtConfig));
 
 //  Run the model and compute H(x)
     model.forecast(xx, moderr, fclength, post);

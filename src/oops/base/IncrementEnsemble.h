@@ -183,7 +183,6 @@ template<typename MODEL> class IncrementEnsemble {
   typedef IncrementEnsembleFromStatesParameters<MODEL> IncrementEnsembleFromStatesParameters_;
   typedef IncrementEnsembleParameters<MODEL> IncrementEnsembleParameters_;
   typedef StateEnsembleParameters<MODEL>     StateEnsembleParameters_;
-  typedef StateParametersND<MODEL>           StateParameters_;
 
  public:
   /// Constructor
@@ -256,10 +255,12 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const IncrementEnsembleFromStatesPar
     ensemblePerturbs_.emplace_back(std::move(dx));
   }
 
+  const size_t myrank = resol.timeComm().rank();
+
   // Read the state, compute the mean and store the states
   for (size_t jj = 0; jj < nens; ++jj) {
     // Read state
-    State_ xx(resol, params.states.getStateParameters(jj));
+    State_ xx(resol, params.states.getStateConfig(jj, myrank));
 
     // Accumulate it to mean
     ensmean.accumul(rr, xx);
@@ -323,13 +324,15 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const Geometry_ & resol,
   // Reserve memory to hold ensemble
   ensemblePerturbs_.reserve(baseNens);
 
+  const size_t myrank = resol.timeComm().rank();
+
   // Loop over all ensemble members
   for (size_t jj = 0; jj < baseNens; ++jj) {
     // Load base member
-    State_ xBase(resol, configBase.getStateParameters(jj));
+    State_ xBase(resol, configBase.getStateConfig(jj, myrank));
 
     // Load perturbation member
-    State_ xPert(resol, configPert.getStateParameters(jj));
+    State_ xPert(resol, configPert.getStateConfig(jj, myrank));
 
     // Difference
     Increment_ dx(resol, vars, xBase.validTime());

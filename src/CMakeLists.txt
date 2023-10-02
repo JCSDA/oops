@@ -171,7 +171,6 @@ oops/base/State4D.h
 oops/base/StateEnsemble.h
 oops/base/StateEnsemble4D.h
 oops/base/StateInfo.h
-oops/base/StateParametersND.h
 oops/base/StateSaver.h
 oops/base/StateSet.h
 oops/base/StateWriter.h
@@ -336,6 +335,8 @@ oops/util/CompositePath.cc
 oops/util/CompositePath.h
 oops/util/ConfigFunctions.cc
 oops/util/ConfigFunctions.h
+oops/util/ConfigHelpers.cc
+oops/util/ConfigHelpers.h
 oops/util/dateFunctions.cc
 oops/util/dateFunctions.h
 oops/util/datetime_f.cc
@@ -531,6 +532,7 @@ test/util/TestReference.h
 test/util/TypeTraits.h
 test/util/algorithms.h
 test/util/ConfigFunctions.h
+test/util/ConfigHelpers.h
 )
 
 list (APPEND oops_fheader_files
@@ -897,6 +899,11 @@ ecbuild_add_test( TARGET  test_util_wildcard
 
 ecbuild_add_test( TARGET  test_util_configfunctions
                   SOURCES test/util/ConfigFunctions.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_confighelpers
+                  SOURCES test/util/ConfigHelpers.cc
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 

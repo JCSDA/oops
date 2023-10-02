@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 
+#include "eckit/config/LocalConfiguration.h"
 #include "oops/base/ForecastParameters.h"
 #include "oops/base/Model.h"
 #include "oops/base/PostProcessor.h"
@@ -95,8 +96,15 @@ template <typename MODEL> class AdjointForecast : public Application {
       (params.linearFcstConf.value().geometry, this->getComm());
     oops::instantiateLinearModelFactory<MODEL>();
     oops::PostProcessor<State_> post;
-    post.enrollProcessor(new StateInfo<State_>("fc", params.fcstConf.value().prints));
-    post.enrollProcessor(new StateWriter<State_>(params.fcstConf.value().output));
+
+    const eckit::LocalConfiguration fcConf(fullConfig, "forecast");
+    if (fcConf.has("prints")) {
+      const eckit::LocalConfiguration prtConfig(fcConf, "prints");
+      post.enrollProcessor(new StateInfo<State_>("fc", prtConfig));
+    }
+    const eckit::LocalConfiguration outConfig(fcConf, "output");
+    post.enrollProcessor(new StateWriter<State_>(outConfig));
+
     oops::PostProcessorTLAD<MODEL> pptraj;
     std::shared_ptr<LinearModel_> linearmodel_;
     linearmodel_.reset(

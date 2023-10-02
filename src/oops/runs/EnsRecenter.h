@@ -20,6 +20,7 @@
 #include "oops/base/Variables.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
+#include "oops/util/ConfigHelpers.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/Parameter.h"
@@ -38,15 +39,13 @@ class EnsRecenterParameters : public ApplicationParameters {
 
  public:
   typedef typename Geometry_::Parameters_   GeometryParameters_;
-  typedef typename State_::Parameters_      StateParameters_;
-  typedef typename State_::WriteParameters_ StateWriteParameters_;
-  typedef StateEnsembleParameters<MODEL>                  StateEnsembleParameters_;
+  typedef StateEnsembleParameters<MODEL>    StateEnsembleParameters_;
 
   /// Geometry parameters.
   RequiredParameter<GeometryParameters_> geometry{"geometry", this};
 
   /// Central state parameters.
-  RequiredParameter<StateParameters_> center{"center", this};
+  RequiredParameter<eckit::LocalConfiguration> center{"center", this};
 
   /// Parameter controlling whether the center should be zeroed out
   Parameter<bool> zeroCenter{"zero center", false, this};
@@ -58,10 +57,10 @@ class EnsRecenterParameters : public ApplicationParameters {
   RequiredParameter<oops::Variables> recenterVars{"recenter variables", this};
 
   /// Parameters for ensemble mean output
-  OptionalParameter<StateWriteParameters_> ensmeanOutput{"ensemble mean output", this};
+  OptionalParameter<eckit::LocalConfiguration> ensmeanOutput{"ensemble meanoutput", this};
 
   /// Parameters for recentered ensemble output
-  RequiredParameter<StateWriteParameters_> recenteredOutput{"recentered output", this};
+  RequiredParameter<eckit::LocalConfiguration> recenteredOutput{"recentered output", this};
 };
 
 template <typename MODEL> class EnsRecenter : public Application {
@@ -69,7 +68,6 @@ template <typename MODEL> class EnsRecenter : public Application {
   typedef Increment<MODEL>  Increment_;
   typedef State<MODEL>      State_;
   typedef StateEnsemble<MODEL> StateEnsemble_;
-  typedef typename State_::WriteParameters_ StateWriteParameters_;
 
  public:
   // -----------------------------------------------------------------------------
@@ -104,8 +102,8 @@ template <typename MODEL> class EnsRecenter : public Application {
     Log::test() << "Ensemble mean: " << std::endl << ensmean << std::endl;
 
     // Optionally write the mean out
-    if (params.ensmeanOutput.value() != boost::none) {
-      ensmean.write(*params.ensmeanOutput.value());
+    if (fullConfig.has("ensemble meanoutput")) {
+      ensmean.write(eckit::LocalConfiguration(fullConfig, "ensemble meanoutput"));
     }
 
     // Recenter ensemble around central and save
@@ -117,8 +115,8 @@ template <typename MODEL> class EnsRecenter : public Application {
       x += pert;
 
       // Save recentered member
-      StateWriteParameters_ recenteredOutput = params.recenteredOutput;
-      recenteredOutput.setMember(jj+1);
+      eckit::LocalConfiguration recenteredOutput = params.recenteredOutput;
+      util::setMember(recenteredOutput, jj+1);
       x.write(recenteredOutput);
       Log::test() << "Recentered member " << jj << " : " << x << std::endl;
     }

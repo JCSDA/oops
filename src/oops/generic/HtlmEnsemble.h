@@ -65,7 +65,6 @@ void NonLinearEnsembleParameters<MODEL>::check() const
 template <typename MODEL>
 class HtlmEnsembleParameters : public Parameters {
   OOPS_CONCRETE_PARAMETERS(HtlmEnsembleParameters, Parameters);
-  typedef typename State<MODEL>::Parameters_    StateParameters_;
   typedef StateEnsembleParameters<MODEL>        StateEnsembleParameters_;
   typedef typename Geometry<MODEL>::Parameters_ GeometryParameters_;
   typedef NonLinearEnsembleParameters<MODEL>    NlEnsParameters_;
@@ -82,7 +81,7 @@ class HtlmEnsembleParameters : public Parameters {
   Parameter<eckit::LocalConfiguration> modelAuxIncrement{"model aux increment",
     eckit::LocalConfiguration(), this};
   // Configurations of the control member.
-  RequiredParameter<StateParameters_> control{"control member", this};
+  RequiredParameter<eckit::LocalConfiguration> control{"control member", this};
   // Number of perturbed ensemble members
   RequiredParameter<size_t> ensembleSize{"ensemble size", this};
   // Nonlinear ensemble initalization parameters
@@ -149,7 +148,7 @@ HtlmEnsemble<MODEL>::HtlmEnsemble(const HtlmEnsembleParameters_ & params,
       stateGeometry_(params.stateGeometry.value(), updateGeometry.getComm()),
       incrementGeometry_(updateGeometry),
       model_(stateGeometry_, eckit::LocalConfiguration(params.toConfiguration(), "model")),
-      controlState_(stateGeometry_, params.control.value().toConfiguration()),
+      controlState_(stateGeometry_, params.control.value()),
       moderr_(stateGeometry_, params.modelAuxControl.value()),
       modauxinc_(incrementGeometry_, params.modelAuxIncrement.value()),
       perturbedStates_(params.nlEnsemble.value().statesReadIn.value() != boost::none ?

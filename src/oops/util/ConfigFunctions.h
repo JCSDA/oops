@@ -14,6 +14,8 @@
 #include "eckit/config/Configuration.h"
 #include "eckit/config/LocalConfiguration.h"
 
+// ConfigFunctions are simple functions to manipulate eckit Configurations. These should be
+// simple operations not tied to OOPS/JEDI concepts.
 
 namespace util {
 

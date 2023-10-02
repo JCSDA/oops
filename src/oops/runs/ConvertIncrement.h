@@ -34,14 +34,12 @@ template <typename MODEL> class IncrementParameters : public Parameters {
 
  public:
   typedef typename Increment<MODEL>::ReadParameters_  ReadParameters_;
-  typedef typename Increment<MODEL>::WriteParameters_ WriteParameters_;
-  typedef typename State<MODEL>::Parameters_          StateParameters_;
 
   RequiredParameter<util::DateTime> date{"date", this};
   RequiredParameter<oops::Variables> inputVariables{"input variables", this};
   RequiredParameter<ReadParameters_> input{"input", this};
-  RequiredParameter<WriteParameters_> output{"output", this};
-  RequiredParameter<StateParameters_> trajectory{"trajectory", this};
+  RequiredParameter<eckit::LocalConfiguration> output{"output", this};
+  RequiredParameter<eckit::LocalConfiguration> trajectory{"trajectory", this};
 };
 
 /// Options controlling linear variable change
@@ -89,7 +87,6 @@ template <typename MODEL> class ConvertIncrement : public Application {
   typedef LinearVariableChange<MODEL>        LinearVariableChange_;
 
   typedef typename Increment<MODEL>::ReadParameters_  ReadParameters_;
-  typedef typename Increment<MODEL>::WriteParameters_ WriteParameters_;
   typedef IncrementParameters<MODEL>                  IncrementParameters_;
 
   typedef ConvertIncrementParameters<MODEL>  ConvertIncrementParameters_;
@@ -164,7 +161,7 @@ template <typename MODEL> class ConvertIncrement : public Application {
       }
 
 //    Write state
-      const WriteParameters_ outputParams = incrementParams[jm].output;
+      const eckit::LocalConfiguration outputParams = incrementParams[jm].output;
       dx.write(outputParams);
 
       Log::test() << "Output increment: " << dx << std::endl;

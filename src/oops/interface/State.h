@@ -21,11 +21,6 @@
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
-#include "oops/util/parameters/GenericParameters.h"
-#include "oops/util/parameters/HasParameters_.h"
-#include "oops/util/parameters/HasWriteParameters_.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/ParametersOrConfiguration.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Serializable.h"
 #include "oops/util/Timer.h"
@@ -39,27 +34,6 @@ namespace oops {
 namespace interface {
 
 /// \brief Encapsulates the model state.
-///
-/// Note: implementations of this interface can opt to extract their settings either from
-/// a Configuration object or from a subclass of Parameters.
-///
-/// In the former case, they should provide a constructor and read()/write() methods with the
-/// following signatures:
-///
-///    State(const Geometry_ &, const eckit::Configuration &);
-///    void read(const eckit::Configuration &);
-///    void write(const eckit::Configuration &) const;
-///
-/// In the latter case, the implementer should first define (a) a subclass of Parameters holding
-/// the settings needed by the constructor and the read() method and (b) a subclass of
-/// WriteParametersBase holding the settings needed by the write() method. The implementation of
-/// the State interface should then typedef `Parameters_` and `WriteParameters_` to the names of
-/// these subclasses and provide a constructor and read()/write() method with the following
-/// signatures:
-///
-///    State(const Geometry_ &, const Parameters_ &);
-///    void read(const Parameters_ &);
-///    void write(const WriteParameters_ &) const;
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
@@ -70,22 +44,10 @@ class State : public util::Printable,
   typedef oops::Geometry<MODEL>            Geometry_;
 
  public:
-  /// Set to State_::Parameters_ if State_ provides a type called Parameters_ and to
-  /// GenericParameters (a thin wrapper of an eckit::LocalConfiguration object) if not.
-  typedef TParameters_IfAvailableElseFallbackType_t<State_, GenericParameters> Parameters_;
-
-  /// Set to State_::WriteParameters_ if State_ provides a type called WriteParameters_ and to
-  /// GenericWriteParameters (a thin wrapper of an eckit::LocalConfiguration object) if not.
-  typedef TWriteParameters_IfAvailableElseFallbackType_t<State_, GenericWriteParameters>
-    WriteParameters_;
-
   static const std::string classname() {return "oops::State";}
 
   /// Constructor for specified \p resol, with \p vars, valid at \p time
   State(const Geometry_ & resol, const Variables & vars, const util::DateTime & time);
-  /// Constructor for specified \p resol and parameters \p params specifying e.g. a file to read
-  /// or an analytic state to generate
-  State(const Geometry_ & resol, const Parameters_ & params);
   /// Constructor for specified \p resol and parameters \p params specifying e.g. a file to read
   /// or an analytic state to generate
   State(const Geometry_ & resol, const eckit::Configuration & conf);
@@ -109,10 +71,8 @@ class State : public util::Printable,
   void updateTime(const util::Duration & dt) {state_->updateTime(dt);}
 
   /// Read this State from file
-  void read(const Parameters_ &);
   void read(const eckit::Configuration &);
   /// Write this State out to file
-  void write(const WriteParameters_ &) const;
   void write(const eckit::Configuration &) const;
   /// Norm (used in tests)
   double norm() const;
@@ -164,11 +124,12 @@ State<MODEL>::State(const Geometry_ & resol, const Variables & vars,
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-State<MODEL>::State(const Geometry_ & resol, const Parameters_ & params) : state_(), fset_()
+State<MODEL>::State(const Geometry_ & resol, const eckit::Configuration & config)
+  : state_(), fset_()
 {
   Log::trace() << "State<MODEL>::State read starting" << std::endl;
   util::Timer timer(classname(), "State");
-  state_.reset(new State_(resol.geometry(), params.toConfiguration()));
+  state_.reset(new State_(resol.geometry(), config));
   this->setObjectSize(state_->serialSize()*sizeof(double));
   Log::trace() << "State<MODEL>::State read done" << std::endl;
 }
@@ -224,25 +185,11 @@ State<MODEL> & State<MODEL>::operator=(const State & rhs) {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void State<MODEL>::read(const Parameters_ & parameters) {
-  read(parameters.toConfiguration());
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
 void State<MODEL>::read(const eckit::Configuration & conf) {
   Log::trace() << "State<MODEL>::read starting" << std::endl;
   util::Timer timer(classname(), "read");
   state_->read(conf);
   Log::trace() << "State<MODEL>::read done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void State<MODEL>::write(const WriteParameters_ & parameters) const {
-  write(parameters.toConfiguration());
 }
 
 // -----------------------------------------------------------------------------

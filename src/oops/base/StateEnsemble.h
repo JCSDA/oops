@@ -15,7 +15,6 @@
 #include "oops/base/Accumulator.h"
 #include "oops/base/Increment.h"
 #include "oops/base/State.h"
-#include "oops/base/StateParametersND.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/ConfigFunctions.h"
 #include "oops/util/FieldSetOperations.h"
@@ -35,9 +34,9 @@ template <typename MODEL>
 class StateMemberTemplateParameters : public Parameters {
   OOPS_CONCRETE_PARAMETERS(StateMemberTemplateParameters, Parameters)
 
-  typedef StateParametersND<MODEL> Parameters_;
  public:
-  RequiredParameter<Parameters_> state{"template", "template to define a generic member", this};
+  RequiredParameter<eckit::LocalConfiguration> state{"template",
+                                                     "template to define a generic member", this};
   RequiredParameter<std::string> pattern{"pattern", "pattern to be replaced for members", this};
   RequiredParameter<size_t> nmembers{"nmembers", "number of members", this};
   Parameter<size_t> start{"start", "starting member index", 1, this};
@@ -52,10 +51,9 @@ template <typename MODEL>
 class StateEnsembleParameters : public Parameters {
   OOPS_CONCRETE_PARAMETERS(StateEnsembleParameters, Parameters)
 
-  typedef StateParametersND<MODEL> Parameters_;
   typedef StateMemberTemplateParameters<MODEL> StateMemberTemplateParameters_;
  public:
-  OptionalParameter<std::vector<Parameters_>> states{"members",
+  OptionalParameter<std::vector<eckit::LocalConfiguration>> states{"members",
                    "members of the state ensemble", this};
   OptionalParameter<StateMemberTemplateParameters_> states_template{"members from template",
                    "template to define members of the state ensemble", this};
@@ -68,7 +66,7 @@ class StateEnsembleParameters : public Parameters {
   size_t size() const;
 
   /// Get Increment parameters for a given ensemble index
-  Parameters_ getStateParameters(const size_t &) const;
+  eckit::LocalConfiguration getStateConfig(const size_t &, const size_t &) const;
 };
 
 // -----------------------------------------------------------------------------
@@ -108,11 +106,12 @@ size_t StateEnsembleParameters<MODEL>::size() const
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-StateParametersND<MODEL> StateEnsembleParameters<MODEL>::getStateParameters(const size_t & ie) const
+eckit::LocalConfiguration StateEnsembleParameters<MODEL>::getStateConfig(const size_t & ie,
+                                                                         const size_t & rank) const
 {
   // Check ensemble size
   if (ie >= this->size()) {
-    ABORT("StateEnsembleParameters: getStateParameters member index is too large");
+    ABORT("StateEnsembleParameters: getStateConfig member index is too large");
   }
 
   if (states.value() != boost::none) {
@@ -122,8 +121,7 @@ StateParametersND<MODEL> StateEnsembleParameters<MODEL>::getStateParameters(cons
     // Members template
 
     // Template configuration
-    eckit::LocalConfiguration stateConf;
-    states_template.value()->state.value().serialize(stateConf);
+    eckit::LocalConfiguration stateConf(states_template.value()->state.value());
 
     // Get correct index
     size_t count = states_template.value()->start;
@@ -145,10 +143,15 @@ StateParametersND<MODEL> StateEnsembleParameters<MODEL>::getStateParameters(cons
     util::seekAndReplace(memberConf, states_template.value()->pattern,
       count, states_template.value()->zpad);
 
-    // Get member parameters
-    Parameters_ params;
-    params.validateAndDeserialize(memberConf);
-    return params;
+    if (memberConf.has("states")) {
+      std::vector<eckit::LocalConfiguration> confs = memberConf.getSubConfigurations("states");
+      ASSERT(rank < confs.size());
+      memberConf = confs[rank];
+    } else {
+      ASSERT(rank == 0);
+    }
+
+    return memberConf;
   }
 }
 
@@ -163,8 +166,7 @@ template<typename MODEL> class StateEnsemble {
 
  public:
   /// Create ensemble of states
-  StateEnsemble(const Geometry_ &,
-                const StateEnsembleParameters_ &);
+  StateEnsemble(const Geometry_ &, const StateEnsembleParameters_ &);
   /// Create n copies of a state in an ensemble
   StateEnsemble(const State_ &, const size_t &);
 
@@ -198,12 +200,16 @@ StateEnsemble<MODEL>::StateEnsemble(const Geometry_ & resol,
   const size_t nens = params.size();
   states_.reserve(nens);
 
+  const size_t myrank = resol.timeComm().rank();
+
   // Loop over all ensemble members
   for (size_t jj = 0; jj < nens; ++jj) {
-    states_.emplace_back(State_(resol, params.getStateParameters(jj)));
+    states_.emplace_back(State_(resol, params.getStateConfig(jj, myrank)));
   }
   Log::trace() << "StateEnsemble:contructor done" << std::endl;
 }
+
+// -----------------------------------------------------------------------------
 
 template<typename MODEL>
 StateEnsemble<MODEL>::StateEnsemble(const State_ & copyState_, const size_t & ensSize_)

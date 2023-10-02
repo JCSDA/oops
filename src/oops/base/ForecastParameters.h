@@ -8,12 +8,9 @@
 #ifndef OOPS_BASE_FORECASTPARAMETERS_H_
 #define OOPS_BASE_FORECASTPARAMETERS_H_
 
+#include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/LatLonGridPostProcessor.h"
-#include "oops/base/Model.h"
-#include "oops/base/State.h"
-#include "oops/base/StateWriter.h"
-#include "oops/generic/LinearModelBase.h"
 #include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
@@ -28,9 +25,7 @@ template <typename MODEL> class ForecastParameters : public Parameters {
   OOPS_CONCRETE_PARAMETERS(ForecastParameters, Parameters)
 
  public:
-  typedef typename Geometry<MODEL>::Parameters_                 GeometryParameters_;
-  typedef typename StateParametersND<MODEL>::StateParameters3D_ StateParameters_;
-  typedef StateWriterParameters<State<MODEL>>                   StateWriterParameters_;
+  typedef typename Geometry<MODEL>::Parameters_    GeometryParameters_;
 
   /// Geometry parameters.
   RequiredParameter<GeometryParameters_> geometry{"geometry", this};
@@ -39,7 +34,7 @@ template <typename MODEL> class ForecastParameters : public Parameters {
   RequiredParameter<eckit::LocalConfiguration> model{"model", this};
 
   /// Initial state parameters.
-  RequiredParameter<StateParameters_> initialCondition{"initial condition", this};
+  RequiredParameter<eckit::LocalConfiguration> initialCondition{"initial condition", this};
 
   /// Augmented model state.
   Parameter<eckit::LocalConfiguration> modelAuxControl{
@@ -49,11 +44,11 @@ template <typename MODEL> class ForecastParameters : public Parameters {
   RequiredParameter<util::Duration> forecastLength{"forecast length", this};
 
   /// Where to write the output.
-  RequiredParameter<StateWriterParameters_> output{"output", this};
+  RequiredParameter<eckit::LocalConfiguration> output{"output", this};
   OptionalParameter<LatLonGridPostProcessorParameters> latlonGridOutput{"forecast to latlon", this};
 
   /// Options passed to the object writing out forecast fields.
-  Parameter<PostTimerParameters> prints{"prints", {}, this};
+  Parameter<eckit::LocalConfiguration> prints{"prints", eckit::LocalConfiguration(), this};
 };
 
 // -----------------------------------------------------------------------------
@@ -80,15 +75,13 @@ template <typename MODEL> class ForecastADParameters : public Parameters {
 
  public:
   typedef typename Geometry<MODEL>::Parameters_ GeometryParameters_;
-  typedef typename State<MODEL>::Parameters_ StateParameters_;
-  typedef typename Increment<MODEL>::WriteParameters_ IncrementWriteParameters_;
 
   /// Adjoint initial condition output parameters.
-  OptionalParameter<IncrementWriteParameters_>
+  OptionalParameter<eckit::LocalConfiguration>
     adjointInitialConditionOutput{"adjoint initial condition output", this};
 
   /// Adjoint forecast output parameters.
-  RequiredParameter<IncrementWriteParameters_>
+  RequiredParameter<eckit::LocalConfiguration>
     adjointForecastOutput{"adjoint forecast output", this};
 
   /// Augmented model increment parameters.
@@ -104,19 +97,15 @@ template <typename MODEL> class ForecastAspectParameters : public Parameters {
 
  public:
   typedef typename Geometry<MODEL>::Parameters_ GeometryParameters_;
-  typedef typename State<MODEL>::Parameters_ StateParameters_;
 
   /// Verification resolution parameters.
-  RequiredParameter<GeometryParameters_>
-    verificationResolution{"verification resolution", this};
+  RequiredParameter<GeometryParameters_> verificationResolution{"verification resolution", this};
 
   /// Verification state parameters.
-  RequiredParameter<StateParameters_>
-    verificationConfig{"verification state", this};
+  RequiredParameter<eckit::LocalConfiguration> verificationConfig{"verification state", this};
 
   /// Adjoint initial condition norm parameters.
-  RequiredParameter<eckit::LocalConfiguration>
-    normConfig{"norm", this};
+  RequiredParameter<eckit::LocalConfiguration> normConfig{"norm", this};
 };
 
 // -----------------------------------------------------------------------------

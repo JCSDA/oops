@@ -18,6 +18,7 @@
 #include "oops/base/StateEnsemble.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
+#include "oops/util/ConfigHelpers.h"
 #include "oops/util/FieldSetOperations.h"
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/OptionalParameter.h"
@@ -35,7 +36,6 @@ template <typename MODEL> class RTPSParameters : public ApplicationParameters {
 
  public:
   typedef typename Geometry<MODEL>::Parameters_ GeometryParameters_;
-  typedef typename State_::WriteParameters_     StateWriteParameters_;
   typedef StateEnsembleParameters<MODEL>        StateEnsembleParameters_;
   RequiredParameter<GeometryParameters_> geometry{
       "geometry", "Geometry parameters", this};
@@ -45,7 +45,7 @@ template <typename MODEL> class RTPSParameters : public ApplicationParameters {
       "analysis", "Analysis ensemble states", this};
   RequiredParameter<float> factor{"factor", "Perturbation factor", this};
   OptionalParameter<Variables> analysisVariables{"analysis variables", this};
-  RequiredParameter<StateWriteParameters_> output{
+  RequiredParameter<eckit::LocalConfiguration> output{
       "output", "analysis mean and ensemble members output", this};
 };
 /// \brief Application for relaxation to prior spread (RTPS) inflation
@@ -67,7 +67,6 @@ template <typename MODEL> class RTPS : public Application {
   typedef Increment<MODEL>                  Increment_;
   typedef State<MODEL>                      State_;
   typedef StateEnsemble<MODEL>              StateEnsemble_;
-  typedef typename State_::WriteParameters_ StateWriteParameters_;
 
  public:
 // -----------------------------------------------------------------------------
@@ -146,15 +145,13 @@ template <typename MODEL> class RTPS : public Application {
     // save the analysis mean
     an_mean = anens.mean();   // calculate analysis mean
     Log::test() << "Analysis mean:" << an_mean << std::endl;
-    StateWriteParameters_ output = params.output;
-    output.setMember(0);
+    eckit::LocalConfiguration output = params.output;
+    util::setMember(output, 0);
     an_mean.write(output);
 
     // save the analysis ensemble
-    size_t mymember;
     for (size_t jj=0; jj < nens; ++jj) {
-      mymember = jj+1;
-      output.setMember(mymember);
+      util::setMember(output, jj+1);
       anens[jj].write(output);
     }
 

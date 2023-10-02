@@ -48,14 +48,10 @@ class StateWriteReadParameters : public oops::Parameters {
   OOPS_CONCRETE_PARAMETERS(StateWriteReadParameters, Parameters)
 
  public:
-  typedef oops::State<MODEL>                State_;
-  typedef typename State_::Parameters_      StateParameters_;
-  typedef typename State_::WriteParameters_ StateWriteParameters_;
-
   /// Options used by the code writing the state to a file.
-  oops::RequiredParameter<StateWriteParameters_> write{"state write", this};
+  oops::RequiredParameter<eckit::LocalConfiguration> write{"state write", this};
   /// Options used by the code reading the state back in.
-  oops::RequiredParameter<StateParameters_> read{"state read", this};
+  oops::RequiredParameter<eckit::LocalConfiguration> read{"state read", this};
 };
 
 // -----------------------------------------------------------------------------
@@ -66,17 +62,13 @@ class StateTestParameters : public oops::Parameters {
   OOPS_CONCRETE_PARAMETERS(StateTestParameters, Parameters)
 
  public:
-  typedef oops::State<MODEL>                 State_;
-  typedef StateWriteReadParameters<MODEL>    StateWriteReadParameters_;
-  typedef typename State_::Parameters_       StateParameters_;
-
   /// Relative tolerance of norm comparisons.
   oops::RequiredParameter<double> tolerance{"tolerance", this};
   /// Validity time for states loaded from a file and generated on the fly.
   oops::RequiredParameter<util::DateTime> date{"date", this};
 
   /// Configuration of the state loaded from a file.
-  oops::RequiredParameter<StateParameters_> statefile{"statefile", this};
+  oops::RequiredParameter<eckit::LocalConfiguration> statefile{"statefile", this};
   /// Expected norm of the state loaded from a file.
   oops::RequiredParameter<double> normFile{"norm file", this};
 
@@ -87,7 +79,7 @@ class StateTestParameters : public oops::Parameters {
   /// This option must be present if `state generate` is.
   oops::OptionalParameter<double> normGeneratedState{"norm generated state", this};
 
-  oops::OptionalParameter<StateWriteReadParameters_> writeReadTest{"write then read test", this};
+  oops::OptionalParameter<eckit::LocalConfiguration> writeReadTest{"write then read test", this};
 };
 
 // -----------------------------------------------------------------------------
@@ -411,12 +403,14 @@ template <typename MODEL> void testStateReadWrite() {
   xx.zero();
 
   // Read input file
-  xx.read(Test_::test().statefile);
+  xx.read(Test_::test().statefile.value());
 
   // Check norm has its initial value
   EXPECT(xx.norm() == norm);
 
   if (Test_::test().writeReadTest.value() != boost::none) {
+    const eckit::LocalConfiguration testconf = Test_::test().toConfiguration();
+    const eckit::LocalConfiguration rwconf(testconf, "write then read test");
     // Modify state
     const double mult = 2.0;
     xx.accumul(mult, xx);
@@ -425,10 +419,12 @@ template <typename MODEL> void testStateReadWrite() {
     const double normout = xx.norm();
 
     // Write modified state to output file
-    xx.write(Test_::test().writeReadTest.value()->write);
+    const eckit::LocalConfiguration wconf(rwconf, "state write");
+    xx.write(wconf);
 
     // Read modified state from output file
-    State_ yy(Test_::resol(), Test_::test().writeReadTest.value()->read);
+    const eckit::LocalConfiguration rconf(rwconf, "state read");
+    State_ yy(Test_::resol(), rconf);
 
     // Check modified state norm has its expected value
     EXPECT(oops::is_close(yy.norm(), normout, tol));

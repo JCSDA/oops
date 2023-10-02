@@ -46,7 +46,6 @@ class EnsVarianceParameters : public ApplicationParameters {
 
  public:
   typedef typename Geometry<MODEL>::Parameters_ GeometryParameters_;
-  typedef typename State<MODEL>::Parameters_ StateParameters_;
   typedef typename Increment<MODEL>::WriteParameters_ IncrementWriteParameters_;
   typedef EnsembleParameters<MODEL> EnsembleParameters_;
 
@@ -54,7 +53,7 @@ class EnsVarianceParameters : public ApplicationParameters {
   RequiredParameter<GeometryParameters_> resolConfig{"geometry", this};
 
   /// Background parameters.
-  RequiredParameter<StateParameters_> bkgConfig{"background", this};
+  RequiredParameter<eckit::LocalConfiguration> bkgConfig{"background", this};
 
   /// Ensemble parameters.
   RequiredParameter<EnsembleParameters_> ensembleConfig{"ensemble", this};
