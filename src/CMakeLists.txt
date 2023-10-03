@@ -555,7 +555,6 @@ list( APPEND oops_test_input
   test/testinput/pushstringvector.yaml
   test/testinput/variables.yaml
   test/testinput/parameters.yaml
-  test/testinput/parameters_older_eckit.yaml
   test/testinput/empty.yaml
   test/testinput/mpi.yaml
   test/testinput/spectrallmp.yaml
@@ -770,18 +769,10 @@ ecbuild_add_test( TARGET  test_util_pushstringvector
                   ARGS    "test/testinput/pushstringvector.yaml"
                   LIBS    oops )
 
-if (eckit_VERSION VERSION_GREATER_EQUAL 1.16)
-  ecbuild_add_test( TARGET  test_util_parameters
-                    SOURCES test/base/Parameters.cc
-                    ARGS    "test/testinput/parameters.yaml"
-                    LIBS    oops )
-else()
-  # Due to changes in eckit 1.16 a different input file is required.
-  ecbuild_add_test( TARGET  test_util_parameters
-                    SOURCES test/base/Parameters.cc
-                    ARGS    "test/testinput/parameters_older_eckit.yaml"
-                    LIBS    oops )
-endif()
+ecbuild_add_test( TARGET  test_util_parameters
+                  SOURCES test/base/Parameters.cc
+                  ARGS    "test/testinput/parameters.yaml"
+                  LIBS    oops )
 
 ecbuild_add_test( TARGET  test_generic_gc99
                   SOURCES test/generic/gc99.cc
