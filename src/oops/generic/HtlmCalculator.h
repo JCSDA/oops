@@ -11,6 +11,7 @@
 
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "oops/base/IncrementEnsemble.h"
@@ -23,178 +24,187 @@ class HtlmCalculatorParameters : public Parameters {
   OOPS_CONCRETE_PARAMETERS(HtlmCalculatorParameters, Parameters);
 
  public:
-  /* The influence region size is the number of points that go into the calculation of
-  coefficient vector for a tlm grid point. The influence region itself includes the tlm
-  grid point and points above and below it in the vertical, evenly split when possible.
-  For a grid point at say the bottom level, all influence points would be above it.
-  The influence region also includes other model variables at the same locations.  */ 
-  Parameter<HtlmRegularizationParameters> regularizationParams{"regularization", {}, this};
-  Parameter<bool>                 rms{"rms scaling", true, this};
+  Parameter<HtlmRegularizationParameters> regularization{"regularization", {}, this};
+  Parameter<bool> rmsScaling{"rms scaling", true, this};
 };
 
+//------------------------------------------------------------------------------
+
 template <typename MODEL>
-class HtlmCalculator{
-  typedef HtlmCalculatorParameters<MODEL>   HtlmCalculatorParameters_;
-  typedef Increment<MODEL>                  Increment_;
-  typedef IncrementEnsemble<MODEL>          IncrementEnsemble_;
-  typedef Geometry<MODEL>                   Geometry_;
+class HtlmCalculator {
+  typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>    EigenMatrix;
+  typedef Eigen::Matrix<double, Eigen::Dynamic, 1>                 EigenVector;
+  typedef Geometry<MODEL>                                          Geometry_;
+  typedef HtlmCalculatorParameters<MODEL>                          Parameters_;
+  typedef Increment<MODEL>                                         Increment_;
+  typedef IncrementEnsemble<MODEL>                                 IncrementEnsemble_;
 
  public:
-  static const std::string classname() {return "oops::HtlmCalculator";}
-  HtlmCalculator(const HtlmCalculatorParameters_ &, const Variables &, const size_t,
-                 const Geometry_ &, const size_t, const size_t, const util::DateTime &,
-                 const atlas::idx_t);
-  void calcCoeffs(const IncrementEnsemble_ &,
-                  const IncrementEnsemble_ &,
-                  atlas::FieldSet &,
-                  const atlas::FunctionSpace &) const;
+  HtlmCalculator(const Parameters_ &,
+                 const Variables &,
+                 const Geometry_ &,
+                 const atlas::idx_t,
+                 const atlas::idx_t,
+                 const std::unordered_map<std::string, std::vector<std::string>> &);
+  void setOfCoeffs(const IncrementEnsemble_ &, const IncrementEnsemble_ &, atlas::FieldSet &) const;
 
  private:
-  const HtlmCalculatorParameters_ params_;
-  atlas::idx_t ensembleSize_;
-  atlas::idx_t influenceSize_;
-  atlas::idx_t halfInfluenceSize_;
-  Variables vars_;
-  std::unique_ptr<HtlmRegularization> regularizationPtr_;
-  atlas::idx_t horizExt_;
-  atlas::idx_t vertExt_;
+  const Parameters_ & params_;
+  const Variables & updateVars_;
+  const atlas::idx_t nLocations_;
+  const atlas::idx_t nLevels_;
+  const atlas::idx_t influenceSize_;
+  const atlas::idx_t halfInfluenceSize_;
+  const atlas::idx_t nLevelsMinusInfluenceSize_;
+  const atlas::idx_t ensembleSize_;
+  const atlas::idx_t vectorSize_;
+  const std::unordered_map<std::string, std::vector<std::string>> & coeffsFieldNames_;
+  mutable std::unordered_map<std::string, std::vector<double>> rmsVals_;
+  std::unique_ptr<HtlmRegularization> regularization_;
+
+  void computeVectorsAt(const atlas::idx_t, const atlas::idx_t,
+                        const IncrementEnsemble_ &, const IncrementEnsemble_ &,
+                        atlas::FieldSet &) const;
+  const EigenMatrix makeInfluenceMatrix(const atlas::idx_t, const atlas::idx_t,
+                                        const IncrementEnsemble_ &) const;
+  const EigenVector computeVector(const Eigen::BDCSVD<EigenMatrix> &,
+                                  const EigenMatrix &, const EigenMatrix &, const EigenVector &,
+                                  const double &) const;
 };
 
-//----------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 template <typename MODEL>
-HtlmCalculator<MODEL>::HtlmCalculator(const HtlmCalculatorParameters_ & params,
-                                      const Variables & vars,
-                                      const size_t ensembleSize,
-                                      const Geometry_ & geomTLM,
-                                      const size_t nLocations,
-                                      const size_t nLevels,
-                                      const util::DateTime & startTime,
-                                      const atlas::idx_t influenceRegionSize)
-: params_(params), ensembleSize_(ensembleSize), influenceSize_(influenceRegionSize),
-  halfInfluenceSize_(influenceSize_/2), vars_(vars), horizExt_(nLocations), vertExt_(nLevels) {
-  if (params_.regularizationParams.value().parts.value() == boost::none) {
-    regularizationPtr_ = std::make_unique<HtlmRegularization>(params_.regularizationParams.value());
+HtlmCalculator<MODEL>::HtlmCalculator(
+                 const Parameters_ & params,
+                 const Variables & updateVars,
+                 const Geometry_ & updateGeometry,
+                 const atlas::idx_t influenceSize,
+                 const atlas::idx_t ensembleSize,
+                 const std::unordered_map<std::string, std::vector<std::string>> & coeffsFieldNames)
+: params_(params), updateVars_(updateVars), nLocations_(updateGeometry.functionSpace().size()),
+  nLevels_(updateGeometry.variableSizes(updateVars_)[0]), influenceSize_(influenceSize),
+  halfInfluenceSize_(influenceSize_ / 2), nLevelsMinusInfluenceSize_(nLevels_ - influenceSize_),
+  ensembleSize_(ensembleSize), vectorSize_(influenceSize_ * updateVars_.size()),
+  coeffsFieldNames_(coeffsFieldNames) {
+  // Set up regularization
+  if (params_.regularization.value().parts.value() == boost::none) {
+    regularization_ = std::make_unique<HtlmRegularization>(params_.regularization.value());
   } else {
-    Increment_ regularizationIncrement(geomTLM, vars_, startTime);
+    Increment_ regularizationIncrement(updateGeometry, updateVars_, util::DateTime());
     atlas::FieldSet regularizationFieldSet = regularizationIncrement.fieldSet();
-    regularizationPtr_ =
-      std::make_unique<HtlmRegularizationComponentDependent>(params_.regularizationParams.value(),
-                                                             regularizationFieldSet);
+    regularization_ = std::make_unique<HtlmRegularizationComponentDependent>(
+      params_.regularization.value(), regularizationFieldSet);
   }
 }
 
-//-----------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
-// Runs the coefficient calculation looping over variables and grid points,
-// also sizes the field set to store coefficient vectors and copies them.
 template<typename MODEL>
-void HtlmCalculator<MODEL>::calcCoeffs(const IncrementEnsemble_ & linearEnsemble,
-                                       const IncrementEnsemble_ & linearErrorDe,
-                                       atlas::FieldSet & coeffFieldSet,
-                                       const atlas::FunctionSpace & fSpace) const {
-  Log::trace() << "HtlmCalculator<MODEL>::coeffCalc() starting" << std::endl;
-  // For each variable loop over every grid point and calculate the coefficient vector for each
-  for (size_t varInd = 0; varInd < vars_.size(); ++varInd) {
-     // make field set with size to store coefficient vectors
-    for (size_t v = 0; v < vars_.size() * influenceSize_; v++) {
-      atlas::Field coeffField = fSpace.createField<double>(
-        atlas::option::name((vars_[varInd] + std::to_string(v)))
-        | atlas::option::levels(vertExt_));
-      coeffFieldSet.add(coeffField);
+void HtlmCalculator<MODEL>::setOfCoeffs(const IncrementEnsemble_ & linearEnsemble,
+                                        const IncrementEnsemble_ & linearDifference,
+                                        atlas::FieldSet & coeffsFSet) const {
+  // Calculate RMS-by-level scaling values if required
+  if (params_.rmsScaling) {
+    rmsVals_.clear();
+    for (const auto & var : updateVars_.variables()) {
+      rmsVals_.emplace(var, linearEnsemble[0].rmsByLevel(var));
     }
-    // get rms by level scaling
-      const std::vector<double> rmsVals =
-        params_.rms ? linearEnsemble[0].rmsByLevel(vars_[varInd]) : std::vector<double>{};
-    // calculate coefficient vector for each grid point
-    for (atlas::idx_t i = 0; i < horizExt_; ++i) {
-      for (atlas::idx_t k = 0; k < vertExt_; ++k) {
-        // matrices used for calculation of coeffs and storage
-        // a set for each grid point for future parallelization
-        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>
-                 influenceMat(influenceSize_*vars_.size(), ensembleSize_);
-        Eigen::Matrix<double, Eigen::Dynamic, 1> linErrVec(ensembleSize_);
-        Eigen::Matrix<double, Eigen::Dynamic, 1> coeffVect(influenceSize_*vars_.size());
-
-        // Populate influenceMat (M) and linErrVec (delta e) declared in class
-        Log::trace() << "HtlmCalculator<MODEL>::coeffCalc() filling matrices starting"
-                                                                            << std::endl;
-        for (atlas::idx_t ensInd = 0; ensInd < ensembleSize_; ++ensInd) {
-          // populate linErrVec
-          const atlas::FieldSet & linearEnsembleFset = linearEnsemble[ensInd].fieldSet();
-          const atlas::FieldSet & linErrFset = linearErrorDe[ensInd].fieldSet();
-          const auto linErrView = atlas::array::make_view<double, 2>(linErrFset[vars_[varInd]]);
-          if (params_.rms) {
-            linErrVec(ensInd, 0) = linErrView(i, k)/rmsVals[k];
-          } else {
-            linErrVec(ensInd, 0) = linErrView(i, k);
-          }
-          // populate influenceMat
-          for (size_t varInd2 = 0; varInd2 < vars_.size(); ++varInd2) {
-            const auto linearEnsembleView =
-              atlas::array::make_view<double, 2>(linearEnsembleFset[vars_[varInd2]]);
-            for (atlas::idx_t infInd = 0; infInd < influenceSize_; ++infInd) {
-              if (k-halfInfluenceSize_ > 0 &&
-                      k + halfInfluenceSize_ < linearEnsembleView.shape(1) ) {
-                // middle case
-                influenceMat(influenceSize_*varInd2 + infInd, ensInd) =
-                        linearEnsembleView(i, k-halfInfluenceSize_ + infInd);
-              } else if (k-halfInfluenceSize_ <= 0) {
-                // start of increment edge case
-                influenceMat(influenceSize_*varInd2 + infInd, ensInd) =
-                                                    linearEnsembleView(i, infInd);
-              } else if (k+halfInfluenceSize_ >= linearEnsembleView.shape(1)) {
-                // end of increment edge case
-                influenceMat(influenceSize_*varInd2 + infInd, ensInd) =
-                    linearEnsembleView(i, (linearEnsembleView.shape(1)-influenceSize_) + infInd);
-              } else {
-                // Checking cases are correct
-                Log::info() << "HtlmCalculator<MODEL>::coeffCalc() "
-                              "unable to get influence region" << std::endl;
-                abort();
-              }  // end else
-            }   // end infInd
-          }   // end varInd2
-        }   // end ensInd
-        Log::trace() << "HtlmCalculator<MODEL>::coeffCalc() filling matrices done" << std::endl;
-
-        // Calculate the coefficient vector for grid point at i,k
-        Log::trace() << "HtlmCalculator<MODEL>::coeffCalc() calculating coefficients starting"
-                                                                                    << std::endl;
-        // Calculate the coefficient vector coeffVect for the grid point at i,k using
-        // influenceMat (M) and linErrVec (delta e) declared in class
-        const auto normalMat = influenceMat*influenceMat.transpose();
-        const auto bdc_svd_solver =
-                   Eigen::BDCSVD<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>>
-                                          (normalMat, Eigen::ComputeFullU | Eigen::ComputeFullV);
-        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> singularValues =
-                                                  bdc_svd_solver.singularValues().asDiagonal();
-        const auto U = bdc_svd_solver.matrixU();
-        // Apply regularization
-        for (int ij = 0; ij < singularValues.cols(); ++ij) {
-          singularValues(ij, ij) += regularizationPtr_->getRegularizationValue(vars_[varInd], i, k);
-        }
-        const auto pseudoInv = singularValues.completeOrthogonalDecomposition().pseudoInverse();
-        coeffVect = U*pseudoInv*U.transpose()*influenceMat*linErrVec;
-        Log::trace() << "HtlmCalculator<MODEL>::coeffCalc() calculating coefficients done"
-                                                                              << std::endl;
-
-        // Copy the coeff vect into the its field set.
-        Log::trace() << "HtlmCalculator<MODEL>::coeffCalc() placing vector starting" << std::endl;
-        for (atlas::idx_t coeffInd = 0; coeffInd < atlas::idx_t(coeffVect.size()); ++coeffInd) {
-          auto coeffsView = atlas::array::make_view<double, 2>(
-            coeffFieldSet[vars_[varInd] + std::to_string(coeffInd)]);
-          coeffsView(i, k) = coeffVect[coeffInd];
-        }
-
-        Log::trace() << "HtlmCalculator<MODEL>::coeffCalc() placing vector done" << std::endl;
-      }  //  end for k
-    }  //  end for i
-  }  //  end for varInd
-  Log::trace() << "HtlmCalculator<MODEL>::coeffCalc() done" << std::endl;
+  }
+  // Loop over locations and levels
+  for (auto i = 0; i < nLocations_; i++) {
+    for (auto k = 0; k < nLevels_; k++) {
+      // Compute vectors of coeffs at each point i, k and store in coeffsFSet
+      computeVectorsAt(i, k, linearEnsemble, linearDifference, coeffsFSet);
+    }
+  }
 }
 
-//-----------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+
+template<typename MODEL>
+void HtlmCalculator<MODEL>::computeVectorsAt(const atlas::idx_t i,
+                                             const atlas::idx_t k,
+                                             const IncrementEnsemble_ & linearEnsemble,
+                                             const IncrementEnsemble_ & linearDifference,
+                                             atlas::FieldSet & coeffsFSet) const {
+  // Make influenceMatrix at i, k
+  EigenMatrix influenceMatrix = makeInfluenceMatrix(i, k, linearEnsemble);
+  // Compute its singular value decomposition and obtain the U matrix of this
+  const auto svd = Eigen::BDCSVD<EigenMatrix>(influenceMatrix * influenceMatrix.transpose(),
+                                              Eigen::ComputeFullU | Eigen::ComputeFullV);
+  const auto U = svd.matrixU();
+  for (const auto & var : updateVars_.variables()) {
+    // Copy (RMS-by-level scaled?) linearDifference for var at i, k into an EigenVector
+    EigenVector linearDifferenceVector(ensembleSize_);
+    for (auto m = 0; m < ensembleSize_; m++) {
+      if (params_.rmsScaling) {  // apply RMS-by-level scaling
+        linearDifferenceVector(m, 0)
+          = atlas::array::make_view<double, 2>(linearDifference[m].fieldSet()[var])(i, k)
+            / rmsVals_.at(var)[k];
+      } else {  // don't apply RMS-by-level scaling
+        linearDifferenceVector(m, 0)
+          = atlas::array::make_view<double, 2>(linearDifference[m].fieldSet()[var])(i, k);
+      }
+    }
+    // Compute vector of coeffs for var at i, k
+    const EigenVector coeffs = computeVector(svd, U, influenceMatrix, linearDifferenceVector,
+                                             regularization_->getRegularizationValue(var, i, k));
+    // Copy coeffs into FieldSet
+    for (auto x = 0; x < vectorSize_; x++) {
+      atlas::array::make_view<double, 2>(coeffsFSet[coeffsFieldNames_.at(var)[x]])(i, k)
+        = coeffs[x];
+    }
+  }
+}
+
+//------------------------------------------------------------------------------
+
+template<typename MODEL>
+const typename HtlmCalculator<MODEL>::EigenMatrix HtlmCalculator<MODEL>::makeInfluenceMatrix(
+                                                  const atlas::idx_t i,
+                                                  const atlas::idx_t k,
+                                                  const IncrementEnsemble_ & linearEnsemble) const {
+  EigenMatrix influenceMatrix(vectorSize_, ensembleSize_);
+  for (auto m = 0; m < ensembleSize_; m++) {
+    for (size_t v = 0; v < updateVars_.size(); v++) {
+      const auto linearEnsembleArray
+        = atlas::array::make_view<double, 2>(linearEnsemble[m].fieldSet()[updateVars_[v]]);
+      if (k >= halfInfluenceSize_ && k < nLevels_ - halfInfluenceSize_) {  // general case
+        for (auto s = 0; s < influenceSize_; s++) {
+          influenceMatrix(v * influenceSize_ + s, m)
+            = linearEnsembleArray(i, k - halfInfluenceSize_ + s);
+        }
+      } else if (k < halfInfluenceSize_) {  // bottom of model
+        for (auto s = 0; s < influenceSize_; s++) {
+          influenceMatrix(v * influenceSize_ + s, m) = linearEnsembleArray(i, s);
+        }
+      } else {  // top of model
+        for (auto s = 0; s < influenceSize_; s++) {
+          influenceMatrix(v * influenceSize_ + s, m)
+            = linearEnsembleArray(i, nLevels_ - influenceSize_ + s);
+        }
+      }
+    }
+  }
+  return influenceMatrix;
+}
+
+//------------------------------------------------------------------------------
+
+template<typename MODEL>
+const typename HtlmCalculator<MODEL>::EigenVector HtlmCalculator<MODEL>::computeVector(
+                                                         const Eigen::BDCSVD<EigenMatrix> & svd,
+                                                         const EigenMatrix & U,
+                                                         const EigenMatrix & influenceMatrix,
+                                                         const EigenVector & linearDifferenceVector,
+                                                         const double & regularizationValue) const {
+  // Equation 26 in https://doi.org/10.1175/MWR-D-20-0088.1
+  const EigenMatrix sigma
+    = (svd.singularValues() + EigenVector::Constant(vectorSize_, regularizationValue)).asDiagonal();
+  return U * sigma.completeOrthogonalDecomposition().pseudoInverse() * U.transpose()
+           * influenceMatrix * linearDifferenceVector;
+}
 
 }  // namespace oops
 
