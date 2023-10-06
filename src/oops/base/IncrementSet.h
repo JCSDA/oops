@@ -89,14 +89,14 @@ IncrementSet<MODEL>::IncrementSet(const IncrementSet & other, const bool copy)
   : IncrementSet(other.geometry(), other.variables(), other.times(),
                  other.commTime(), other.members(), other.commEns())
 {
-  Log::trace() << "IncrementSet::IncrementSet" << std::endl;
+  Log::trace() << "IncrementSet::IncrementSet copy" << std::endl;
   if (copy) {
     for (size_t jj = 0; jj < other.size(); ++jj) {
       (*this)[jj] = other[jj];
     }
   }
   this->check_consistency();
-  Log::trace() << "IncrementSet::IncrementSet copied" << std::endl;
+  Log::trace() << "IncrementSet::IncrementSet copy done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -106,7 +106,7 @@ IncrementSet<MODEL>::IncrementSet(const Geometry_ & resol, const IncrementSet & 
   : IncrementSet(resol, other.variables(), other.times(), other.commTime(),
                  other.members(), other.commEns())
 {
-  Log::trace() << "IncrementSet::IncrementSet" << std::endl;
+  Log::trace() << "IncrementSet::IncrementSet chres" << std::endl;
   for (size_t jj = 0; jj < other.size(); ++jj) {
     (*this)[jj] = Increment_(resol, other[jj]);
   }
