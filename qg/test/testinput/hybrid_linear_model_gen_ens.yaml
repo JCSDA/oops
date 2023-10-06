@@ -1,29 +1,25 @@
 geometry:
   nx: 40
   ny: 20
-  depths: [4500.0, 5500.0]
-
+  depths: [500, 1000, 1500, 3000, 4000]
+  perturbed heating: 0.1
 initial condition:
   date: 2010-01-01T00:00:00Z
-  filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D.nc
-
+  filename: Data/forecast_5level_pert_heat.fc.2009-12-31T00:00:00Z.P1D.nc
 background error:
   covariance model: QgError
   horizontal_length_scale: 1.0e6
   maximum_condition_number: 1.0e6
   standard_deviation: 8.0e6
   vertical_length_scale: 2787.0
-
 analysis variables: [x, q]
-
 model:
   name: QG
   tstep: PT1H
 model aux control: {}
-
 linear model:
   update tstep: PT1H
-  update variables: [x,q]
+  update variables: [x, q]
   simplified linear model:
     linear model:
       trajectory:
@@ -34,28 +30,28 @@ linear model:
       tlm variables: [x, q]
   coefficients:
     training variables: [q]
-    influence region size: 2
+    influence region size: 3
     window length: PT24H
     window begin: 2010-01-01T00:00:00Z
     calculator:
-      rms scaling: true
     ensemble:
-      ensemble size: 10
+      ensemble size: 3
       model:
         name: QG
         tstep: PT1H
       state geometry:
         nx: 40
         ny: 20
-        depths: [4500.0, 5500.0]
+        depths: [500, 1000, 1500, 3000, 4000]
+        perturbed heating: 0.1
       control member:
         date: '2010-01-01T00:00:00Z'
-        filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D.nc
+        filename: Data/forecast_5level_pert_heat.fc.2009-12-31T00:00:00Z.P1D.nc
       non linear ensemble:
         ensemble perturbation:
           background error:
             covariance model: QgError
-            horizontal_length_scale: 3.0e5
+            horizontal_length_scale: 1.0e6
             maximum_condition_number: 1.0e6
             standard_deviation: 8.0e6
             vertical_length_scale: 2787.0
@@ -67,6 +63,5 @@ linear model test:
   iterations TL: 12
   tolerance AD: 1.0e-12
   tolerance TL: 1.0e-6
-
 window begin: 2010-01-01T00:00:00Z
 window end: 2010-01-02T00:00:00Z

@@ -10,17 +10,12 @@ list( APPEND qg_testinput
   testinput/4densvar.yaml
   testinput/4densvar_hybrid.yaml
   testinput/4dvar_dripcg.yaml
-  testinput/4dvar_dripcg_5level.yaml
   testinput/4dvar_drpcg_lmp.yaml
   testinput/4dvar_drpfom.yaml
   testinput/4dvar_drplanczos.yaml
   testinput/4dvar_drplanczos_hybrid.yaml
   testinput/4dvar_forcing.yaml
-  testinput/4dvar_htlm_qgtlm_dripcg.yaml
-  testinput/4dvar_htlm_qgtlm_dripcg_gen_ens.yaml
-  testinput/4dvar_htlm_qgtlm_dripcg_pert_heat.yaml
-  testinput/4dvar_htlm_qgtlm_dripcg_pert_heat_gen_ens.yaml
-  testinput/4dvar_htlm_qgtlm_dripcg_pert_heat_precalculated_coeffs.yaml
+  testinput/4dvar_hybrid_linear_model.yaml
   testinput/4dvar_ipcg.yaml
   testinput/4dvar_obs_biased.yaml
   testinput/4dvar_rpcg.yaml
@@ -81,12 +76,10 @@ list( APPEND qg_testinput
   testinput/fieldset4D_par.yaml
   testinput/fieldset4D_seq.yaml
   testinput/forecast.yaml
-  testinput/forecast_5level.yaml
-  testinput/forecast_control_htlm_pert_heat.yaml
+  testinput/forecast_5level_pert_heat.yaml
   testinput/gen_ens_pert_B.yaml
-  testinput/gen_ens_pert_B_HTLM.yaml
-  testinput/gen_ens_pert_B_HTLM_pert_heat.yaml
-  testinput/gen_hybrid_linear_model_coeffs.yaml
+  testinput/gen_ens_pert_B_5level_pert_heat.yaml
+  testinput/gen_hybrid_linear_model_coeffs_with_subtimestep.yaml
   testinput/geometry_iterator.yaml
   testinput/geometry.yaml
   testinput/geovals.yaml
@@ -94,14 +87,10 @@ list( APPEND qg_testinput
   testinput/hofx.yaml
   testinput/hofx_tinterp.yaml
   testinput/hofx3d.yaml
-  testinput/htlm_regularization_vector_construction.yaml
   testinput/hybridgain_analysis.yaml
   testinput/hybridgain_increment.yaml
   testinput/hybrid_linear_model.yaml
   testinput/hybrid_linear_model_gen_ens.yaml
-  testinput/hybrid_linear_model_pert_heat.yaml
-  testinput/hybrid_linear_model_pert_heat_gen_ens.yaml
-  testinput/hybrid_linear_model_pert_heat_subtimestep.yaml
   testinput/increment.yaml
   testinput/letkf.yaml
   testinput/linear_model.yaml
@@ -112,8 +101,7 @@ list( APPEND qg_testinput
   testinput/make_obs_3d.yaml
   testinput/make_obs_4d_12h.yaml
   testinput/make_obs_4d_24h.yaml
-  testinput/make_obs_4d_24h_5level.yaml
-  testinput/make_obs_4d_24h_pert_heat.yaml
+  testinput/make_obs_4d_24h_5level_pert_heat.yaml
   testinput/make_obs_4d_24h_filter_ordering.yaml
   testinput/make_obs_4d_biased.yaml
   testinput/make_single-obs_3d.yaml
@@ -135,8 +123,7 @@ list( APPEND qg_testinput
   testinput/rtps.yaml
   testinput/state.yaml
   testinput/truth.yaml
-  testinput/truth_5level.yaml
-  testinput/truth_pert_heat.yaml
+  testinput/truth_5level_pert_heat.yaml
   testinput/variable_change.yaml
   testinput/verticallocev.yaml
   testinput/verticallocev_io.yaml
@@ -156,9 +143,7 @@ list( APPEND qg_testoutput
   testoutput/4densvar.test
   testoutput/4densvar_hybrid.test
   testoutput/4dvar_dripcg.test
-  testoutput/4dvar_dripcg_5level.test
-  testoutput/4dvar_htlm_qgtlm_dripcg.test
-  testoutput/4dvar_htlm_qgtlm_dripcg_pert_heat.test
+  testoutput/4dvar_hybrid_linear_model.test
   testoutput/4dvar_drpcg_lmp.test
   testoutput/4dvar_drpfom.test
   testoutput/4dvar_drplanczos.test
@@ -198,13 +183,10 @@ list( APPEND qg_testoutput
   testoutput/ens_recenter.test
   testoutput/ens_variance.test
   testoutput/forecast.test
-  testoutput/forecast_5level.test
-  testoutput/forecastHTLM.test
-  testoutput/forecast_control_htlm_pert_heat.test
+  testoutput/forecast_5level_pert_heat.test
   testoutput/gen_ens_pert_B.test
-  testoutput/gen_ens_pert_B_HTLM.test
-  testoutput/gen_ens_pert_B_HTLM_pert_heat.test
-  testoutput/gen_hybrid_linear_model_coeffs.test
+  testoutput/gen_ens_pert_B_5level_pert_heat.test
+  testoutput/gen_hybrid_linear_model_coeffs_with_subtimestep.test
   testoutput/hofx.test
   testoutput/hofx_tinterp.test
   testoutput/hofx3d.test
@@ -214,17 +196,15 @@ list( APPEND qg_testoutput
   testoutput/make_obs_3d.test
   testoutput/make_obs_4d_12h.test
   testoutput/make_obs_4d_24h.test
-  testoutput/make_obs_4d_24h_5level.test
+  testoutput/make_obs_4d_24h_5level_pert_heat.test
   testoutput/make_obs_4d_24h_filter_ordering.test
-  testoutput/make_obs_4d_24h_pert_heat.test
   testoutput/make_obs_4d_biased.test
   testoutput/make_single-obs_3d.test
   testoutput/make_single-obs_4d_12h.test
   testoutput/rtpp.test
   testoutput/rtps.test
   testoutput/truth.test
-  testoutput/truth_5level.test
-  testoutput/truth_pert_heat.test
+  testoutput/truth_5level_pert_heat.test
   testoutput/uniform_field_hybrid.test
   testoutput/uniform_field_inflation.test
 )
@@ -261,14 +241,10 @@ ecbuild_add_test( TARGET test_qg_truth
                   OMP 2
                   ARGS testinput/truth.yaml
                   COMMAND qg_forecast.x )
-ecbuild_add_test( TARGET test_qg_truth_5level
-                  OMP 2
-                  ARGS testinput/truth_5level.yaml
-                  COMMAND qg_forecast.x )
 
-ecbuild_add_test( TARGET test_qg_truth_pert_heat
+ecbuild_add_test( TARGET test_qg_truth_5level_pert_heat
                   OMP 2
-                  ARGS testinput/truth_pert_heat.yaml
+                  ARGS testinput/truth_5level_pert_heat.yaml
                   COMMAND qg_forecast.x )
 
 ecbuild_add_test( TARGET test_qg_make_obs_4d_24h
@@ -276,24 +252,18 @@ ecbuild_add_test( TARGET test_qg_make_obs_4d_24h
                   ARGS testinput/make_obs_4d_24h.yaml
                   COMMAND  qg_hofx.x
                   TEST_DEPENDS test_qg_truth )
-ecbuild_add_test( TARGET test_qg_make_obs_4d_24h_5level
+
+ecbuild_add_test( TARGET test_qg_make_obs_4d_24h_5level_pert_heat
                   OMP 2
-                  ARGS testinput/make_obs_4d_24h_5level.yaml
+                  ARGS testinput/make_obs_4d_24h_5level_pert_heat.yaml
                   COMMAND  qg_hofx.x
-                  TEST_DEPENDS test_qg_truth_5level )
+                  TEST_DEPENDS test_qg_truth_5level_pert_heat )
 
 ecbuild_add_test( TARGET test_qg_make_obs_4d_24h_filter_ordering
                   OMP 2
                   ARGS testinput/make_obs_4d_24h_filter_ordering.yaml
                   COMMAND  qg_hofx.x
                   TEST_DEPENDS test_qg_truth )
-
-ecbuild_add_test( TARGET test_qg_make_obs_4d_24h_pert_heat
-                  OMP 2
-                  ARGS testinput/make_obs_4d_24h_pert_heat.yaml
-                  COMMAND  qg_hofx.x
-                  TEST_DEPENDS test_qg_truth_pert_heat )
-
 
 #####################################################################
 # interface tests
@@ -376,31 +346,13 @@ ecbuild_add_test( TARGET  test_qg_hybrid_linear_model
                   SOURCES executables/TestLinearModel.cc
                   ARGS    "testinput/hybrid_linear_model.yaml"
                   LIBS    qg
-                  TEST_DEPENDS test_qg_truth test_qg_forecast test_qg_gen_ens_pert_B_HTLM)
+                  TEST_DEPENDS test_qg_gen_hybrid_linear_model_coeffs_with_subtimestep )
 
 ecbuild_add_test( TARGET  test_qg_hybrid_linear_model_gen_ens
                   SOURCES executables/TestLinearModel.cc
                   ARGS    "testinput/hybrid_linear_model_gen_ens.yaml"
                   LIBS    qg
-                  TEST_DEPENDS test_qg_truth test_qg_forecast)
-
-ecbuild_add_test( TARGET  test_qg_hybrid_linear_model_pert_heat
-                  SOURCES executables/TestLinearModel.cc
-                  ARGS    "testinput/hybrid_linear_model_pert_heat.yaml"
-                  LIBS    qg
-                  TEST_DEPENDS test_qg_truth_pert_heat test_qg_forecast_control_htlm_pert_heat test_qg_gen_ens_pert_B_HTLM_pert_heat )
-
-ecbuild_add_test( TARGET  test_qg_hybrid_linear_model_pert_heat_gen_ens
-                  SOURCES executables/TestLinearModel.cc
-                  ARGS    "testinput/hybrid_linear_model_pert_heat_gen_ens.yaml"
-                  LIBS    qg
-                  TEST_DEPENDS test_qg_truth_pert_heat test_qg_forecast_control_htlm_pert_heat)
-
-ecbuild_add_test( TARGET  test_qg_hybrid_linear_model_pert_heat_subtimestep
-                  SOURCES executables/TestLinearModel.cc
-                  ARGS    "testinput/hybrid_linear_model_pert_heat_subtimestep.yaml"
-                  LIBS    qg
-                  TEST_DEPENDS test_qg_truth_pert_heat test_qg_forecast_control_htlm_pert_heat test_qg_gen_ens_pert_B_HTLM_pert_heat)
+                  TEST_DEPENDS test_qg_forecast_5level_pert_heat )
 
 ecbuild_add_test( TARGET test_qg_locations
                   SOURCES executables/TestLocations.cc
@@ -514,18 +466,11 @@ ecbuild_add_test( TARGET test_qg_forecast
                   COMMAND  qg_forecast.x
                   TEST_DEPENDS test_qg_truth )
 
-ecbuild_add_test( TARGET test_qg_forecast_5level
+ecbuild_add_test( TARGET test_qg_forecast_5level_pert_heat
                   OMP 2
-                  ARGS testinput/forecast_5level.yaml
+                  ARGS testinput/forecast_5level_pert_heat.yaml
                   COMMAND  qg_forecast.x
-                  TEST_DEPENDS test_qg_truth_5level )
-
-ecbuild_add_test( TARGET test_qg_forecast_control_htlm_pert_heat
-                  OMP 2
-                  ARGS testinput/forecast_control_htlm_pert_heat.yaml
-                  COMMAND  qg_forecast.x
-                  TEST_DEPENDS test_qg_truth_pert_heat )
-
+                  TEST_DEPENDS test_qg_truth_5level_pert_heat )
 
 #####################################################################
 # obs-related tests
@@ -606,23 +551,18 @@ ecbuild_add_test( TARGET test_qg_gen_ens_pert_B
                   ARGS testinput/gen_ens_pert_B.yaml
                   COMMAND  qg_gen_ens_pert_B.x
                   TEST_DEPENDS test_qg_truth )
-ecbuild_add_test( TARGET test_qg_gen_ens_pert_B_HTLM
-                  OMP 2
-                  ARGS testinput/gen_ens_pert_B_HTLM.yaml
-                  COMMAND  qg_gen_ens_pert_B.x
-                  TEST_DEPENDS test_qg_forecast test_qg_truth  )
 
-ecbuild_add_test( TARGET test_qg_gen_ens_pert_B_HTLM_pert_heat
+ecbuild_add_test( TARGET test_qg_gen_ens_pert_B_5level_pert_heat
                   OMP 2
-                  ARGS testinput/gen_ens_pert_B_HTLM_pert_heat.yaml
+                  ARGS testinput/gen_ens_pert_B_5level_pert_heat.yaml
                   COMMAND  qg_gen_ens_pert_B.x
-                  TEST_DEPENDS test_qg_forecast_control_htlm_pert_heat test_qg_truth_pert_heat  )
+                  TEST_DEPENDS test_qg_truth_5level_pert_heat )
 
-ecbuild_add_test( TARGET test_qg_gen_hybrid_linear_model_coeffs
+ecbuild_add_test( TARGET test_qg_gen_hybrid_linear_model_coeffs_with_subtimestep
                   OMP 2
-                  ARGS testinput/gen_hybrid_linear_model_coeffs.yaml
+                  ARGS testinput/gen_hybrid_linear_model_coeffs_with_subtimestep.yaml
                   COMMAND  qg_gen_hybrid_linear_model_coeffs.x
-                  TEST_DEPENDS test_qg_gen_ens_pert_B_HTLM_pert_heat test_qg_make_obs_4d_24h_pert_heat )
+                  TEST_DEPENDS test_qg_forecast_5level_pert_heat test_qg_gen_ens_pert_B_5level_pert_heat )
 
 ecbuild_add_test( TARGET test_qg_ens_forecast
                   MPI    2
@@ -861,12 +801,6 @@ ecbuild_add_test( TARGET test_qg_4dvar_dripcg
                   ARGS testinput/4dvar_dripcg.yaml
                   COMMAND  qg_4dvar.x
                   TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
-                  
-ecbuild_add_test( TARGET test_qg_4dvar_dripcg_5level
-                  OMP 2
-                  ARGS testinput/4dvar_dripcg_5level.yaml
-                  COMMAND  qg_4dvar.x
-                  TEST_DEPENDS test_qg_forecast_5level test_qg_make_obs_4d_24h_5level )
 
 ecbuild_add_test( TARGET test_qg_4dvar_drpcg_lmp
                   OMP 2
@@ -898,41 +832,11 @@ ecbuild_add_test( TARGET test_qg_4dvar_drplanczos_hybrid
 #                  COMMAND  qg_4dvar.x
 #                  TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
 
-ecbuild_add_test( TARGET test_qg_4dvar_htlm_qgtlm_dripcg
+ecbuild_add_test( TARGET test_qg_4dvar_hybrid_linear_model
                   OMP 2
-                  ARGS testinput/4dvar_htlm_qgtlm_dripcg.yaml
+                  ARGS testinput/4dvar_hybrid_linear_model.yaml
                   COMMAND  qg_4dvar.x
-                  TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
-
-ecbuild_add_test( TARGET test_qg_4dvar_htlm_qgtlm_dripcg_gen_ens
-                  OMP 2
-                  ARGS testinput/4dvar_htlm_qgtlm_dripcg_gen_ens.yaml
-                  COMMAND  qg_4dvar.x
-                  TEST_DEPENDS test_qg_forecast test_qg_make_obs_4d_24h )
-
-ecbuild_add_test( TARGET test_qg_4dvar_htlm_qgtlm_dripcg_pert_heat
-                  OMP 2
-                  ARGS testinput/4dvar_htlm_qgtlm_dripcg_pert_heat.yaml
-                  COMMAND  qg_4dvar.x
-                  TEST_DEPENDS test_qg_gen_ens_pert_B_HTLM_pert_heat test_qg_make_obs_4d_24h_pert_heat)
-
-ecbuild_add_test( TARGET test_qg_4dvar_htlm_qgtlm_dripcg_pert_heat_gen_ens
-                  OMP 2
-                  ARGS testinput/4dvar_htlm_qgtlm_dripcg_pert_heat_gen_ens.yaml
-                  COMMAND  qg_4dvar.x
-                  TEST_DEPENDS test_qg_gen_ens_pert_B_HTLM_pert_heat test_qg_make_obs_4d_24h_pert_heat)
-
-ecbuild_add_test( TARGET test_qg_4dvar_htlm_qgtlm_dripcg_pert_heat_precalculated_coeffs
-                  OMP 2
-                  ARGS testinput/4dvar_htlm_qgtlm_dripcg_pert_heat_precalculated_coeffs.yaml
-                  COMMAND  qg_4dvar.x
-                  TEST_DEPENDS test_qg_gen_hybrid_linear_model_coeffs )
-
-ecbuild_add_test( TARGET test_qg_htlm_regularization_vector_construction
-                  OMP 2
-                  ARGS testinput/htlm_regularization_vector_construction.yaml
-                  COMMAND  qg_4dvar.x
-                  TEST_DEPENDS test_qg_4dvar_htlm_qgtlm_dripcg_pert_heat)
+                  TEST_DEPENDS test_qg_make_obs_4d_24h_5level_pert_heat test_qg_gen_hybrid_linear_model_coeffs_with_subtimestep )
 
 ecbuild_add_test( TARGET test_qg_4dvar_ipcg
                   OMP 2

@@ -1,7 +1,7 @@
 update geometry:
   nx: 40
   ny: 20
-  depths: [4500.0, 5500.0]
+  depths: [500, 1000, 1500, 3000, 4000]
   perturbed heating: 0.1
 hybrid linear model:
   simplified linear model:
@@ -11,16 +11,23 @@ hybrid linear model:
       tstep: PT1H
       variable change: Identity
       name: QgTLM
-      tlm variables: [x]
-  update tstep: PT1H
+  update tstep: PT6H
   update variables: [x]
   coefficients:
-    influence region size: 2
+    influence region size: 3
     training variables: [x]
     window length: PT24H
     window begin: 2010-01-01T00:00:00Z
     calculator:
-      rms scaling: true
+      regularization:
+        base value: 1e100
+        parts:
+        - variables: [x]
+          levels: [0]
+          bounding lons: [60.0, 90.0]
+          bounding lats: [60.0, 90.0]
+          value: 0.0
+        - value: 0.0
     ensemble:
       ensemble size: 10
       model:
@@ -29,22 +36,22 @@ hybrid linear model:
       state geometry:
         nx: 40
         ny: 20
-        depths: [4500.0, 5500.0]
+        depths: [500, 1000, 1500, 3000, 4000]
         perturbed heating: 0.1
       control member:
         date: '2010-01-01T00:00:00Z'
-        filename: Data/forecast_control_pert_heat.fc.2009-12-31T00:00:00Z.P1D.nc
+        filename: Data/forecast_5level_pert_heat.fc.2009-12-31T00:00:00Z.P1D.nc
       non linear ensemble:
         perturbed members:
           members from template:
             template:
               date: 2010-01-01T00:00:00Z
-              filename: Data/forecast_HTLM_pert_heat.ens.%mem%.2010-01-01T00:00:00Z.PT0S.nc
+              filename: Data/forecast_5level_pert_heat.ens.%mem%.2009-12-31T00:00:00Z.P1D.nc
             pattern: %mem%
             nmembers: 10
     output:
-      base filepath: Data/4dvar_htlm_qgtlm_dripcg_pert_heat_coeffs
+      base filepath: Data/hybrid_linear_model_coeffs
       one file per task: true
   name: HTLM
 test:
-  reference filename: testoutput/gen_hybrid_linear_model_coeffs.test
+  reference filename: testoutput/gen_hybrid_linear_model_coeffs_with_subtimestep.test

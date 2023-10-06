@@ -1,25 +1,28 @@
 geometry:
   nx: 40
   ny: 20
-  depths: [4500.0, 5500.0]
+  depths:  [500, 1000, 1500, 3000, 4000]
   perturbed heating: 0.1
 initial condition:
   date: 2010-01-01T00:00:00Z
-  filename: Data/truth_pert_heat.fc.2009-12-15T00:00:00Z.P17D.nc
+  filename: Data/truth_5level_pert_heat.fc.2009-12-15T00:00:00Z.P17D.nc
 model:
   name: QG
-  tstep: PT1H
+  tstep: PT10M
 forecast length: P1D
 window begin: 2010-01-01T00:00:00Z
 window length: P1D
 observations:
+  obs perturbations: true
   observers:
   - obs operator:
       obs type: Stream
+    obs error:
+      covariance model: diagonal
     obs space:
       obsdataout:
         engine:
-          obsfile: Data/truth.obs4d_24h_pert_heat.nc
+          obsfile: Data/truth_5level_pert_heat.obs4d_24h.nc
       obs type: Stream
       generate:
         begin: PT3H
@@ -29,13 +32,15 @@ observations:
         obs period: PT3H
     obs filters:
     - filter: GOMsaver
-      filename: Data/truth.obs4d_24h_pert_heat.stream.gom
+      filename: Data/truth_5level_pert_heat.obs4d_24h.stream.gom
   - obs operator:
       obs type: Wind
+    obs error:
+      covariance model: diagonal
     obs space:
       obsdataout:
         engine:
-          obsfile: Data/truth.obs4d_24h_pert_heat.nc
+          obsfile: Data/truth_5level_pert_heat.obs4d_24h.nc
       obs type: Wind
       generate:
         begin: PT6H
@@ -45,13 +50,15 @@ observations:
         obs period: PT6H
     obs filters:
     - filter: GOMsaver
-      filename: Data/truth.obs4d_24h_pert_heat.wind.gom
+      filename: Data/truth_5level_pert_heat.obs4d_24h.wind.gom
   - obs operator:
       obs type: WSpeed
+    obs error:
+      covariance model: diagonal
     obs space:
       obsdataout:
         engine:
-          obsfile: Data/truth.obs4d_24h_pert_heat.nc
+          obsfile: Data/truth_5level_pert_heat.obs4d_24h.nc
       obs type: WSpeed
       generate:
         begin: PT3H
@@ -61,10 +68,9 @@ observations:
         obs period: PT6H
     obs filters:
     - filter: GOMsaver
-      filename: Data/truth.obs4d_24h_pert_heat.wspeed.gom
+      filename: Data/truth_5level_pert_heat.obs4d_24h.wspeed.gom
 make obs: true
 prints:
   frequency: PT3H
-
 test:
-  reference filename: testoutput/make_obs_4d_24h_pert_heat.test
+  reference filename: testoutput/make_obs_4d_24h_5level_pert_heat.test
