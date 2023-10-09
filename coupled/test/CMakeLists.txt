@@ -121,4 +121,4 @@ ecbuild_add_test( TARGET  test_coupled_hofx3d_qg_qg
                   SOURCES executables/hofx3d_qg_qg.cc
                   ARGS    "testinput/hofx3d_qg_qg.yaml"
                   LIBS    qg
-                  TEST_DEPENDS test_qg_truth )
+                  TEST_DEPENDS test_qg_truth test_qg_make_obs_4d_12h )
