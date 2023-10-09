@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2018 UCAR
+ * (C) Crown Copyright 2023, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -48,8 +49,8 @@ template<typename MODEL, typename OBS> class DRPBlockLanczosMinimizer :
   ~DRPBlockLanczosMinimizer() {}
 
  private:
-  double solve(CtrlInc_ &, CtrlInc_ &, CtrlInc_ &, const Bmat_ &, const HtRinvH_ &, const double,
-               const double, const int, const double) override;
+  double solve(CtrlInc_ &, CtrlInc_ &, CtrlInc_ &, const Bmat_ &, const HtRinvH_ &,
+               const CtrlInc_ &, const double, const double, const int, const double) override;
 
   // other functions:
   void get_proj(const CtrlInc_ &, const CtrlInc_ &, eigenmat_ &, int &,
@@ -93,9 +94,10 @@ DRPBlockLanczosMinimizer<MODEL, OBS>::DRPBlockLanczosMinimizer(const eckit::Conf
 
 template<typename MODEL, typename OBS>
 double DRPBlockLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_ & rr,
-                                            const Bmat_ & B, const HtRinvH_ & HtRinvH,
-                                            const double costJ0Jb, const double costJ0JoJc,
-                                            const int maxiter, const double tolerance) {
+                                                   const Bmat_ & B, const HtRinvH_ & HtRinvH,
+                                                   const CtrlInc_ & gradJb,
+                                                   const double costJ0Jb, const double costJ0JoJc,
+                                                   const int maxiter, const double tolerance) {
   eigenvec_ zerov = Eigen::VectorXd::Zero(members_);
   eigenmat_ zeromm = Eigen::MatrixXd::Zero(members_, members_);
 
@@ -197,17 +199,19 @@ double DRPBlockLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh,
     const double costJ0 = costJ0Jb + costJ0JoJc;
     double costJ = costJ0;
     double costJb = 0;
-    double costJoJc = 0;
 
+    // Compute the quadratic cost function
+    // J[du_{i}] = J[0] - 0.5 s_{i}^T Z_{i}^T r_{0}
+    // Jb[du_{i}] = Jb[0] + {gradJb}^T Z_{i} s_{i} + 0.5 s_{i}^T V_{i}^T Z_{i} s_{i}
     for (int ll = 0; ll < iiter+1; ++ll) {
       SSLK = - (ss.block(ll*members_, 0, members_, members_));
-      // Compute the quadratic cost function
-      // J[du_{i}] = J[0] - 0.5 s_{i}^T Z_{i}^T r_{0}
-      // Jb[du_{i}] = 0.5 s_{i}^T V_{i}^T Z_{i} s_{i}
       temp2.zero();
       apply_proj(temp2, *Zbase[ll], SSLK, gestag, CommGeo, temp1);
       costJ -= 0.5 * dot_product(temp2, rr);
+      // TODO(Someone): add formula for costJb here
     }
+
+    double costJoJc = costJ - costJb;
 
     Log::info() << "BlockBLanczos end of iteration " << iiter+1 << std::endl;
     printNormReduction(iiter+1, norm_iiter, normReduction);

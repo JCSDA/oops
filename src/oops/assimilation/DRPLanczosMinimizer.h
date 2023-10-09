@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2023, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -87,7 +88,7 @@ template<typename MODEL, typename OBS> class DRPLanczosMinimizer : public DRMini
 
  private:
   double solve(CtrlInc_ &, CtrlInc_ &, CtrlInc_ &, const Bmat_ &, const HtRinvH_ &,
-               const double, const double, const int, const double) override;
+               const CtrlInc_ &, const double, const double, const int, const double) override;
 
   SpectralLMP<CtrlInc_, Cmat_> lmp_;
 
@@ -113,13 +114,15 @@ DRPLanczosMinimizer<MODEL, OBS>::DRPLanczosMinimizer(const eckit::Configuration 
 
 template<typename MODEL, typename OBS>
 double DRPLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_ & rr,
-                                        const Bmat_ & B, const HtRinvH_ & HtRinvH,
-                                        const double costJ0Jb, const double costJ0JoJc,
-                                        const int maxiter, const double tolerance) {
+                                              const Bmat_ & B, const HtRinvH_ & HtRinvH,
+                                              const CtrlInc_ & gradJb,
+                                              const double costJ0Jb, const double costJ0JoJc,
+                                              const int maxiter, const double tolerance) {
   util::printRunStats("DRPLanczos start");
-  // dx   increment
-  // dxh  B^{-1} dx
-  // rr   (sum B^{-1} dx_i^{b} +) G^T H^{-1} d
+  // dx      increment
+  // dxh     B^{-1} dx
+  // rr      (sum B^{-1} dx_i^{b} +) G^T H^{-1} d
+  // gradJb  sum B^{-1} dx_i^{b}
 
   CtrlInc_ zz(dxh);
   CtrlInc_ pr(dxh);
@@ -221,13 +224,14 @@ double DRPLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, Ctr
 
     // Compute the quadratic cost function
     // J[du_{i}] = J[0] - 0.5 s_{i}^T Z_{i}^T r_{0}
-    // Jb[du_{i}] = 0.5 s_{i}^T V_{i}^T Z_{i} s_{i}
+    // Jb[du_{i}] = Jb[0] + {gradJb}^T Z_{i} s_{i} + 0.5 s_{i}^T V_{i}^T Z_{i} s_{i}
     double costJ = costJ0;
 
     double costJb = costJ0Jb;
     for (int jj = 0; jj < jiter+1; ++jj) {
       costJ -= 0.5 * ss[jj] * dot_product(*zvecs_[jj], rr);
       costJb += 0.5 * ss[jj] * dot_product(*vvecs_[jj], *zvecs_[jj]) * ss[jj];
+      costJb += ss[jj] * dot_product(gradJb, *zvecs_[jj]);
     }
     double costJoJc = costJ - costJb;
 

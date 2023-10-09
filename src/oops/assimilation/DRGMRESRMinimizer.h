@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2023, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -81,16 +82,17 @@ template<typename MODEL, typename OBS> class DRGMRESRMinimizer : public DRMinimi
   ~DRGMRESRMinimizer() {}
  private:
   double solve(CtrlInc_ &, CtrlInc_ &, CtrlInc_ &, const Bmat_ &, const HtRinvH_ &,
-               const double, const double, const int, const double) override;
+               const CtrlInc_ &, const double, const double, const int, const double) override;
 };
 
 // =============================================================================
 
 template<typename MODEL, typename OBS>
 double DRGMRESRMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_ & rr,
-                                      const Bmat_ & B, const HtRinvH_ & HtRinvH,
-                                      const double costJ0Jb, const double costJ0JoJc,
-                                      const int maxiter, const double tolerance) {
+                                            const Bmat_ & B, const HtRinvH_ & HtRinvH,
+                                            const CtrlInc_ &,
+                                            const double costJ0Jb, const double costJ0JoJc,
+                                            const int maxiter, const double tolerance) {
   IdentityMatrix<CtrlInc_> precond;
   std::vector<CtrlInc_> c;
   std::vector<CtrlInc_> u;

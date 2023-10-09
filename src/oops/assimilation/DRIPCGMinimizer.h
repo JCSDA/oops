@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2023, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -87,7 +88,7 @@ template<typename MODEL, typename OBS> class DRIPCGMinimizer : public DRMinimize
 
  private:
   double solve(CtrlInc_ &, CtrlInc_ &, CtrlInc_ &, const Bmat_ &, const HtRinvH_ &,
-               const double, const double, const int, const double) override;
+               const CtrlInc_ &, const double, const double, const int, const double) override;
   QNewtonLMP<CtrlInc_, Bmat_, Cmat_> lmp_;
 };
 
@@ -102,9 +103,10 @@ DRIPCGMinimizer<MODEL, OBS>::DRIPCGMinimizer(const eckit::Configuration & conf, 
 
 template<typename MODEL, typename OBS>
 double DRIPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_ & rr,
-                                    const Bmat_ & B, const HtRinvH_ & HtRinvH,
-                                    const double costJ0Jb, const double costJ0JoJc,
-                                    const int maxiter, const double tolerance) {
+                                          const Bmat_ & B, const HtRinvH_ & HtRinvH,
+                                          const CtrlInc_ & gradJb,
+                                          const double costJ0Jb, const double costJ0JoJc,
+                                          const int maxiter, const double tolerance) {
   util::printRunStats("DRIPCG start");
   CtrlInc_ ap(xh);
   CtrlInc_ pp(xh);
@@ -176,7 +178,7 @@ double DRIPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_
 
     // Compute the quadratic cost function
     double costJ = costJ0 - 0.5 * dot_product(xx, r0);
-    double costJb = costJ0Jb + 0.5 * dot_product(xx, xh);
+    double costJb = costJ0Jb + dot_product(xx, gradJb) + 0.5 * dot_product(xx, xh);
     double costJoJc = costJ - costJb;
 
     // Re-orthogonalization
