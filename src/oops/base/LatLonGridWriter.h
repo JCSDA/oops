@@ -16,7 +16,6 @@
 #include <vector>
 
 #include "atlas/functionspace.h"
-#include "atlas/functionspace/PointCloud.h"
 #include "atlas/grid.h"
 
 #include "oops/base/Geometry.h"
@@ -364,7 +363,7 @@ class LatLonGridWriter : public util::Printable  {
   void print(std::ostream &) const;
 
   const eckit::mpi::Comm & comm_;
-  std::unique_ptr<atlas::functionspace::PointCloud> targetFunctionSpace_;
+  std::unique_ptr<atlas::functionspace::StructuredColumns> targetFunctionSpace_;
   std::unique_ptr<oops::GlobalInterpolator> interp_;
 
   const Geometry<MODEL> & sourceGeometry_;
@@ -431,17 +430,14 @@ LatLonGridWriter<MODEL>::LatLonGridWriter(
   const auto isNearlyInt = [](const double x) { return fabs(round(x) - x) < 1.e-6; };
   gridRes_ = static_cast<size_t>(isNearlyInt(ratio) ? round(ratio) : ceil(ratio));
 
-  // Want final results on proc0 only, so only proc0 gets points in the PointCloud.
-  // This requires passing an empty but valid FunctionSpaces to the interpolator, something that we
-  // can only do with PointCloud. (This is a bit hacky and could probably be cleaned up.)
-  if (comm_.rank() == 0) {
-    const std::string atlasGridName = "L" + std::to_string(gridRes_);
-    const atlas::RegularLonLatGrid grid(atlasGridName);
-    targetFunctionSpace_.reset(new atlas::functionspace::PointCloud(grid));
-  } else {
-    const std::vector<atlas::PointXY> empty{{}};
-    targetFunctionSpace_.reset(new atlas::functionspace::PointCloud(empty));
-  }
+  // Want final results on rank 0 only, so use atlas's serial partitioner to assign all grid points
+  // to mpi rank 0.
+  const std::string atlasGridName = "L" + std::to_string(gridRes_);
+  const atlas::RegularLonLatGrid grid(atlasGridName);
+  eckit::LocalConfiguration serialPartConf{};
+  serialPartConf.set("partition", 0);
+  const atlas::grid::Partitioner part("serial", serialPartConf);
+  targetFunctionSpace_.reset(new atlas::functionspace::StructuredColumns(grid, part));
 
   interp_.reset(new oops::GlobalInterpolator(parameters.toConfiguration(),
         sourceGeometry.generic(), *targetFunctionSpace_,
@@ -588,20 +584,15 @@ void LatLonGridWriter<MODEL>::interpolateAndWrite(const atlas::FieldSet & fsetIn
   // Before handling the vertical direction and writing, prepare some writer-related data
   const std::string filepath = path_ + "/" + prefix_ + "." + t.toStringIO();
 
-  // Because we're using a PointCloud FunctionSpace (for reasons discussed above), we have to
-  // reconstruct the grid here to obtain the lats/lons for writing to file. (The PointCloud is
-  // so generic it doesn't rely on or give access to a grid.)
-  const std::string atlasGridName = "L" + std::to_string(gridRes_);
-  const atlas::RegularLonLatGrid grid(atlasGridName);
-  const size_t nlats = grid.ny();
-  const size_t nlons = grid.nx();
-  std::vector<double> lats(nlats);
-  std::vector<double> lons(nlons);
-  for (size_t i = 0; i < nlats; ++i) {
-    lats[i] = grid.lat(i);
+  // Get 1D lat/lon coordinates from atlas grid
+  const atlas::RegularGrid grid(targetFunctionSpace_->grid());
+  std::vector<double> lats(grid.ny());
+  std::vector<double> lons(grid.nx());
+  for (int i = 0; i < grid.ny(); ++i) {
+    lats[i] = grid.y(i);
   }
-  for (size_t i = 0; i < nlons; ++i) {
-    lons[i] = grid.lon(i);
+  for (int i = 0; i < grid.nx(); ++i) {
+    lons[i] = grid.x(i);
   }
 
   // Handle output on pressure levels: vertical interpolation then writing
