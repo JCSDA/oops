@@ -32,6 +32,7 @@
 #include "oops/util/missingValues.h"
 #include "oops/util/Random.h"
 #include "oops/util/stringFunctions.h"
+#include "oops/util/TimeWindow.h"
 
 namespace sf = util::stringfunctions;
 
@@ -40,9 +41,10 @@ namespace lorenz95 {
 // -----------------------------------------------------------------------------
 
 ObsTable::ObsTable(const Parameters_ & params, const eckit::mpi::Comm & comm,
-                   const util::DateTime & bgn, const util::DateTime & end,
+                   const util::TimeWindow & timeWindow,
                    const eckit::mpi::Comm & timeComm)
-  : oops::ObsSpaceBase(params, comm, bgn, end), winbgn_(bgn), winend_(end), comm_(timeComm),
+  : oops::ObsSpaceBase(params, comm, timeWindow), comm_(timeComm),
+    timeWindow_(timeWindow),
     obsvars_(), assimvars_()
 {
   oops::Log::trace() << "ObsTable::ObsTable starting" << std::endl;
@@ -182,8 +184,8 @@ void ObsTable::generateDistribution(const ObsGenerateParameters & params) {
   // observations at the beginning of the window are never included (only
   // observations from (winbgn, winend] are used, so we'll start with
   // winbgn_ + freq
-  util::DateTime now = winbgn_ + freq;
-  while (now <= winend_) {
+  util::DateTime now = timeWindow_.start() + freq;
+  while (now <= timeWindow_.end()) {
     ++nobstimes;
     now += freq;
   }
@@ -196,8 +198,8 @@ void ObsTable::generateDistribution(const ObsGenerateParameters & params) {
   locations_.resize(nobs);
 
   unsigned int iobs = 0;
-  now = winbgn_ + freq;
-  while (now <= winend_) {
+  now = timeWindow_.start() + freq;
+  while (now <= timeWindow_.end()) {
     for (unsigned int jobs = 0; jobs < nobs_locations; ++jobs) {
       double xpos = jobs*dx;
       // For single obs case ensure the obs is in the middle
@@ -263,7 +265,7 @@ void ObsTable::otOpen(const std::string & filename) {
     std::string sss;
     fin >> sss;
     util::DateTime ttt(sss);
-    bool inside = ttt > winbgn_ && ttt <= winend_;
+    bool inside = ttt > timeWindow_.start() && ttt <= timeWindow_.end();
 
     if (inside) times_.push_back(ttt);
     double loc;
@@ -349,7 +351,7 @@ ObsIterator ObsTable::end() const {
 // -----------------------------------------------------------------------------
 
 void ObsTable::print(std::ostream & os) const {
-  os << "ObsTable: assimilation window = " << winbgn_ << " to " << winend_ << std::endl;
+  os << "ObsTable: assimilation window = " << timeWindow_ << std::endl;
   os << "ObsTable: file in = " << nameIn_ << ", file out = " << nameOut_;
 }
 

@@ -82,7 +82,6 @@ template <typename MODEL, typename OBS> class Variational : public Application {
 
 //  Save analysis and final diagnostics
     PostProcessor<State_> post;
-    const util::DateTime winbgn(cfConf.getString("window begin"));
     if (fullConfig.has("output")) {
       const eckit::LocalConfiguration outConfig(fullConfig, "output");
       post.enrollProcessor(new StateWriter<State_>(outConfig));

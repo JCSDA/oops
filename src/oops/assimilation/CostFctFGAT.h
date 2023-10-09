@@ -72,10 +72,7 @@ template<typename MODEL, typename OBS> class CostFctFGAT : public CostFunction<M
                    PostProcessor<State_> &, PostProcessorTLAD<MODEL> &) override;
   void finishLinearize() override;
 
-  util::Duration windowLength_;
-  util::DateTime windowBegin_;
-  util::DateTime windowEnd_;
-  util::DateTime windowHalf_;
+  std::unique_ptr<util::TimeWindow> timeWindow_;
   const eckit::mpi::Comm & comm_;
   const Geometry_ resol_;
   Model_ model_;
@@ -99,15 +96,17 @@ CostFctFGAT<MODEL, OBS>::CostFctFGAT(const eckit::Configuration & config,
     fgat_(false), hackBG_(nullptr), hackFG_(nullptr), saver_()
 {
   Log::trace() << "CostFctFGAT::CostFctFGAT start" << std::endl;
-  windowLength_ = util::Duration(config.getString("window length"));
-  windowBegin_ = util::DateTime(config.getString("window begin"));
-  windowEnd_ = windowBegin_ + windowLength_;
-  windowHalf_ = windowBegin_ + windowLength_/2;
+  const util::Duration windowLength = util::Duration(config.getString("window length"));
+  const util::DateTime windowBegin = util::DateTime(config.getString("window begin"));
+  const bool shifting = static_cast<bool>(config.getBool("window shift", false));
+  timeWindow_ = std::make_unique<util::TimeWindow>
+    (windowBegin, windowBegin + windowLength, util::boolToWindowBound(shifting));
+
   an2model_ = std::make_unique<VarCha_>(config.getSubConfiguration("variable change"), resol_);
 
   this->setupTerms(config);  // Background is read here
 
-  Log::info() << "FGAT window: begin = " << windowBegin_ << ", end = " << windowEnd_ << std::endl;
+  Log::info() << "FGAT window: " << *timeWindow_ << std::endl;
   Log::trace() << "CostFctFGAT::CostFctFGAT done" << std::endl;
 }
 
@@ -117,7 +116,8 @@ template <typename MODEL, typename OBS>
 CostJb3D<MODEL, OBS> * CostFctFGAT<MODEL, OBS>::newJb(const eckit::Configuration & jbConf,
                                                  const Geometry_ & resol) const {
   Log::trace() << "CostFctFGAT::newJb" << std::endl;
-  CostJb3D<MODEL, OBS> * jb = new CostJb3D<MODEL, OBS>(windowBegin_, jbConf, resol, ctlvars_);
+  CostJb3D<MODEL, OBS> * jb =
+    new CostJb3D<MODEL, OBS>(timeWindow_->start(), jbConf, resol, ctlvars_);
   return jb;
 }
 
@@ -126,7 +126,7 @@ CostJb3D<MODEL, OBS> * CostFctFGAT<MODEL, OBS>::newJb(const eckit::Configuration
 template <typename MODEL, typename OBS>
 CostJo<MODEL, OBS> * CostFctFGAT<MODEL, OBS>::newJo(const eckit::Configuration & joConf) const {
   Log::trace() << "CostFctFGAT::newJo" << std::endl;
-  return new CostJo<MODEL, OBS>(joConf, comm_, windowBegin_, windowEnd_);
+  return new CostJo<MODEL, OBS>(joConf, comm_, *timeWindow_);
 }
 
 // -----------------------------------------------------------------------------
@@ -147,19 +147,19 @@ void CostFctFGAT<MODEL, OBS>::runNL(CtrlVar_ & xx, PostProcessor<State_> & post)
   ASSERT(xx.states().is_3d());
 
   if (fgat_) {
-    ASSERT(xx.state().validTime() == windowBegin_);
+    ASSERT(xx.state().validTime() == timeWindow_->start());
 
-    model_.forecast(xx.state(), xx.modVar(), windowLength_, post);
+    model_.forecast(xx.state(), xx.modVar(), timeWindow_->length(), post);
 
-    ASSERT(xx.state().validTime() == windowEnd_);
+    ASSERT(xx.state().validTime() == timeWindow_->end());
   } else {
-    ASSERT(xx.state().validTime() == windowHalf_);
+    ASSERT(xx.state().validTime() == timeWindow_->midpoint());
 
-    post.initialize(xx.state(), windowHalf_, windowLength_);
+    post.initialize(xx.state(), timeWindow_->midpoint(), timeWindow_->length());
     post.process(xx.state());
     post.finalize(xx.state());
 
-    ASSERT(xx.state().validTime() == windowHalf_);
+    ASSERT(xx.state().validTime() == timeWindow_->midpoint());
   }
 
   Log::trace() << "CostFctFGAT::runNL done" << std::endl;
@@ -180,7 +180,7 @@ void CostFctFGAT<MODEL, OBS>::doLinearize(const Geometry_ & res, const eckit::Co
   hackBG_ = &bg.state();
   hackFG_ = &fg.state();
 
-  std::vector<std::string> antime = {windowHalf_.toString()};
+  std::vector<std::string> antime = {timeWindow_->midpoint().toString()};
   eckit::LocalConfiguration halfwin;
   halfwin.set("times", antime);
   saver_.reset(new StateSaver<State_>(halfwin));
@@ -194,7 +194,7 @@ void CostFctFGAT<MODEL, OBS>::doLinearize(const Geometry_ & res, const eckit::Co
 template<typename MODEL, typename OBS>
 void CostFctFGAT<MODEL, OBS>::finishLinearize() {
   Log::trace() << "CostFctFGAT::finishLinearize start" << std::endl;
-  ASSERT(saver_->getState().validTime() == windowHalf_);
+  ASSERT(saver_->getState().validTime() == timeWindow_->midpoint());
   Variables anvars(hackBG_->variables());
   an2model_->changeVarInverse(saver_->getState(), anvars);
   *hackBG_ = saver_->getState();
@@ -212,10 +212,10 @@ void CostFctFGAT<MODEL, OBS>::runTLM(CtrlInc_ & dx,
                                      const bool) const {
   Log::trace() << "CostFctFGAT::runTLM start" << std::endl;
   ASSERT(dx.states().is_3d());
-  ASSERT(dx.state().validTime() == windowHalf_);
+  ASSERT(dx.state().validTime() == timeWindow_->midpoint());
 
-  cost.initializeTL(dx.state(), windowHalf_, windowLength_);
-  post.initialize(dx.state(), windowHalf_, windowLength_);
+  cost.initializeTL(dx.state(), timeWindow_->midpoint(), timeWindow_->length());
+  post.initialize(dx.state(), timeWindow_->midpoint(), timeWindow_->length());
 
   cost.processTL(dx.state());
   post.process(dx.state());
@@ -223,7 +223,7 @@ void CostFctFGAT<MODEL, OBS>::runTLM(CtrlInc_ & dx,
   cost.finalizeTL(dx.state());
   post.finalize(dx.state());
 
-  ASSERT(dx.state().validTime() == windowHalf_);
+  ASSERT(dx.state().validTime() == timeWindow_->midpoint());
   Log::trace() << "CostFctFGAT::runTLM done" << std::endl;
 }
 
@@ -233,7 +233,7 @@ template <typename MODEL, typename OBS>
 void CostFctFGAT<MODEL, OBS>::zeroAD(CtrlInc_ & dx) const {
   Log::trace() << "CostFctFGAT::zeroAD start" << std::endl;
   ASSERT(dx.states().is_3d());
-  dx.state().zero(windowHalf_);
+  dx.state().zero(timeWindow_->midpoint());
   dx.modVar().zero();
   dx.obsVar().zero();
   Log::trace() << "CostFctFGAT::zeroAD done" << std::endl;
@@ -248,10 +248,10 @@ void CostFctFGAT<MODEL, OBS>::runADJ(CtrlInc_ & dx,
                                      const bool) const {
   Log::trace() << "CostFctFGAT::runADJ start" << std::endl;
   ASSERT(dx.states().is_3d());
-  ASSERT(dx.state().validTime() == windowHalf_);
+  ASSERT(dx.state().validTime() == timeWindow_->midpoint());
 
-  post.initialize(dx.state(), windowHalf_, windowLength_);
-  cost.initializeAD(dx.state(), windowHalf_, windowLength_);
+  post.initialize(dx.state(), timeWindow_->midpoint(), timeWindow_->length());
+  cost.initializeAD(dx.state(), timeWindow_->midpoint(), timeWindow_->length());
 
   cost.processAD(dx.state());
   post.process(dx.state());
@@ -259,7 +259,7 @@ void CostFctFGAT<MODEL, OBS>::runADJ(CtrlInc_ & dx,
   cost.finalizeAD(dx.state());
   post.finalize(dx.state());
 
-  ASSERT(dx.state().validTime() == windowHalf_);
+  ASSERT(dx.state().validTime() == timeWindow_->midpoint());
 
   Log::trace() << "CostFctFGAT::runADJ done" << std::endl;
 }
@@ -272,8 +272,8 @@ void CostFctFGAT<MODEL, OBS>::addIncr(CtrlVar_ & xx, const CtrlInc_ & dx,
   Log::trace() << "CostFctFGAT::addIncr start" << std::endl;
   ASSERT(xx.states().is_3d());
   ASSERT(dx.states().is_3d());
-  ASSERT(xx.state().validTime() == windowHalf_);
-  ASSERT(dx.state().validTime() == windowHalf_);
+  ASSERT(xx.state().validTime() == timeWindow_->midpoint());
+  ASSERT(dx.state().validTime() == timeWindow_->midpoint());
   xx.state() += dx.state();
   Log::trace() << "CostFctFGAT::addIncr done" << std::endl;
 }

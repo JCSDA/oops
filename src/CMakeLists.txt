@@ -416,6 +416,8 @@ oops/util/Timer.cc
 oops/util/Timer.h
 oops/util/TimerHelper.cc
 oops/util/TimerHelper.h
+oops/util/TimeWindow.cc
+oops/util/TimeWindow.h
 oops/util/TypeTraits.h
 oops/util/utilNamespaceDoc.h
 oops/util/wildcard.h
@@ -533,6 +535,7 @@ test/util/TypeTraits.h
 test/util/algorithms.h
 test/util/ConfigFunctions.h
 test/util/ConfigHelpers.h
+test/util/TimeWindow.h
 )
 
 list (APPEND oops_fheader_files
@@ -895,6 +898,11 @@ ecbuild_add_test( TARGET  test_util_configfunctions
 
 ecbuild_add_test( TARGET  test_util_confighelpers
                   SOURCES test/util/ConfigHelpers.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_timewindow
+                  SOURCES test/util/TimeWindow.cc
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 

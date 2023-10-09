@@ -197,6 +197,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     const util::DateTime winbgn = params.windowBegin;
     const util::Duration winlen = params.windowLength;
     const util::DateTime winend(winbgn + winlen);
+    const util::TimeWindow timeWindow(winbgn, winend);
     Log::info() << "Observation window from " << winbgn << " to " << winend << std::endl;
 
     // Setup geometry
@@ -212,7 +213,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
 
     // Setup observations
     const eckit::mpi::Comm & time = oops::mpi::myself();
-    ObsSpaces_ obsdb(obsConfig, this->getComm(), winbgn, winend, time);
+    ObsSpaces_ obsdb(obsConfig, this->getComm(), timeWindow, time);
     Observations_ yobs(obsdb, "ObsValue");
 
     // Read all ensemble members and compute the ensemble mean

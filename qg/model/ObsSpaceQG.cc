@@ -37,10 +37,10 @@ int ObsSpaceQG::theObsFileCount_ = 0;
 // -----------------------------------------------------------------------------
 
 ObsSpaceQG::ObsSpaceQG(const Parameters_ & params, const eckit::mpi::Comm & comm,
-                       const util::DateTime & bgn, const util::DateTime & end,
+                       const util::TimeWindow & timeWindow,
                        const eckit::mpi::Comm & timeComm)
-  : oops::ObsSpaceBase(params, comm, bgn, end), obsname_(params.obsType),
-    winbgn_(bgn), winend_(end), obsvars_()
+  : oops::ObsSpaceBase(params, comm, timeWindow), obsname_(params.obsType),
+    timeWindow_(timeWindow), obsvars_()
 {
   typedef std::map< std::string, F90odb >::iterator otiter;
 
@@ -66,11 +66,11 @@ ObsSpaceQG::ObsSpaceQG(const Parameters_ & params, const eckit::mpi::Comm & comm
     ABORT("Underspecified observation files.");
   }
 
-  ref = ref + bgn.toString() + end.toString();
+  ref = ref + timeWindow_.start().toString() + timeWindow_.end().toString();
   otiter it = theObsFileRegister_.find(ref);
   if ( it == theObsFileRegister_.end() ) {
     // Open new file
-    qg_obsdb_setup_f90(key_, fileconf, bgn, end);
+    qg_obsdb_setup_f90(key_, fileconf, timeWindow_.start(), timeWindow_.end());
     theObsFileRegister_[ref] = key_;
   } else {
     // File already open
@@ -98,11 +98,11 @@ ObsSpaceQG::ObsSpaceQG(const Parameters_ & params, const eckit::mpi::Comm & comm
                             "in the parameters of 'obs space.generate'", Here());
     }
     const util::Duration first(gParams.begin);
-    const util::DateTime start(winbgn_ + first);
+    const util::DateTime start(timeWindow_.start() + first);
     const util::Duration freq(gParams.obsPeriod);
     int nobstimes = 0;
     util::DateTime now(start);
-    while (now <= winend_) {
+    while (now <= timeWindow_.end()) {
       ++nobstimes;
       now += freq;
     }

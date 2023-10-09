@@ -51,6 +51,7 @@ class HofX3DParameters : public ApplicationParameters {
   /// length`] interval will be included in observation spaces.
   RequiredParameter<util::DateTime> windowBegin{"window begin", this};
   RequiredParameter<util::Duration> windowLength{"window length", this};
+  Parameter<bool> shifting{"window shift", false, this};
 
   /// Options describing the observations and their treatment
   Parameter<ObserversParameters<MODEL, OBS>> observations{"observations", {}, this};
@@ -97,9 +98,10 @@ template <typename MODEL, typename OBS> class HofX3D : public Application {
 //  Setup observation window
     const util::Duration winlen = params.windowLength;
     const util::DateTime winbgn = params.windowBegin;
-    const util::DateTime winend(winbgn + winlen);
-    const util::DateTime winHalf = winbgn + winlen/2;
-    Log::info() << "Observation window from " << winbgn << " to " << winend << std::endl;
+    const util::TimeWindow timeWindow(winbgn, winbgn + winlen,
+                                      util::boolToWindowBound(params.shifting));
+    const util::DateTime winmidpoint = timeWindow.midpoint();
+    Log::info() << "HofX3D observation window: " << timeWindow << std::endl;
 
 //  Setup geometry
     const Geometry_ geometry(params.geometry, this->getComm(), oops::mpi::myself());
@@ -109,16 +111,16 @@ template <typename MODEL, typename OBS> class HofX3D : public Application {
     Log::test() << "State: " << xx << std::endl;
 
 //  Check that state is inside the obs window
-    if (xx.validTime() != winHalf) {
+    if (xx.validTime() != winmidpoint) {
       Log::error() << "State time: " << xx.validTime() << std::endl;
-      Log::error() << "Obs window: " << winbgn << " to " << winend << std::endl;
-      Log::error() << "Half window: " << winHalf << std::endl;
+      Log::error() << "Obs window: " << timeWindow << std::endl;
+      Log::error() << "Window midpoint: " << winmidpoint << std::endl;
       throw eckit::BadValue("The state should be valid at half of the observation window.");
     }
 
 //  Setup observations
     const auto & observersParams = params.observations.value().observers.value();
-    ObsSpaces_ obspaces(obsSpaceParameters(observersParams), this->getComm(), winbgn, winend);
+    ObsSpaces_ obspaces(obsSpaceParameters(observersParams), this->getComm(), timeWindow);
     ObsAux_ obsaux(obspaces, obsAuxParameters(observersParams));
     ObsErrors_ Rmat(obsErrorParameters(observersParams), obspaces);
 
@@ -129,7 +131,7 @@ template <typename MODEL, typename OBS> class HofX3D : public Application {
     hofx.initialize(geometry, obsaux, Rmat, post);
 
 //  Compute H(x)
-    post.initialize(xx, winHalf, winlen);
+    post.initialize(xx, winmidpoint, winlen);
     post.process(xx);
     post.finalize(xx);
 

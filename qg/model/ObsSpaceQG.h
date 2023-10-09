@@ -26,6 +26,7 @@
 #include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/RequiredParameter.h"
+#include "oops/util/TimeWindow.h"
 
 #include "oops/qg/LocationsQG.h"
 #include "oops/qg/ObsIteratorQG.h"
@@ -110,7 +111,7 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
 
   /// create full ObsSpace (read or generate data)
   ObsSpaceQG(const Parameters_ &, const eckit::mpi::Comm &,
-             const util::DateTime &, const util::DateTime &, const eckit::mpi::Comm &);
+             const util::TimeWindow &, const eckit::mpi::Comm &);
   ~ObsSpaceQG();
 
   /// save and close file
@@ -149,8 +150,7 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
 
   mutable F90odb key_;               // pointer to Fortran structure
   const std::string obsname_;        // corresponds with obstype
-  const util::DateTime winbgn_;      // window for the observations
-  const util::DateTime winend_;
+  const util::TimeWindow timeWindow_;      // window for the observations
   oops::Variables assimvars_;          // variables simulated by ObsOperators
   oops::Variables obsvars_;          // variables that are observed
 

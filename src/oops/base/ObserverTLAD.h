@@ -32,6 +32,7 @@
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/RequiredParameter.h"
+#include "oops/util/TimeWindow.h"
 
 namespace oops {
 
@@ -81,8 +82,7 @@ class ObserverTLAD {
   VariableSizes        hoptladVarSizes_;     // Sizes of variables requested from model for
                                              // TL/AD (e.g. number of vertical levels)
   std::unique_ptr<Locations_> locations_;
-  util::DateTime winbgn_;                    // Begining of assimilation window
-  util::DateTime winend_;                    // End of assimilation window
+  util::TimeWindow timeWindow_;
   const ObsAuxCtrl_ *           ybias_;
   bool init_;
 };
@@ -102,7 +102,8 @@ ObserverTLAD<MODEL, OBS>::ObserverTLAD(const ObsSpace_ & obsdb, const Parameters
                //       - merges the two sets of Parameters so this switch can be removed
                validateAndDeserialize<typename LinearObsOperator_::Parameters_>(
                    params.obsOperator.value().toConfiguration())),
-    getvals_(), winbgn_(obsdb.windowStart()), winend_(obsdb.windowEnd()),
+    getvals_(),
+    timeWindow_(obsdb.timeWindow()),
     ybias_(nullptr), init_(false)
 {
   Log::trace() << "ObserverTLAD::ObserverTLAD" << std::endl;
@@ -136,7 +137,7 @@ ObserverTLAD<MODEL, OBS>::initializeTraj(const Geometry_ & geom, const ObsAuxCtr
         hoptlad_.requiredVars(), *locations_);
 
   // Set up GetValues
-  getvals_ = makeGetValuesVector(parameters_.getValues.value(), geom, winbgn_, winend_,
+  getvals_ = makeGetValuesVector(parameters_.getValues.value(), geom, timeWindow_,
                                  *locations_, groupedHopVars, groupedHoptladVars);
 
   init_ = true;

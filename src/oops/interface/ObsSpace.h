@@ -24,6 +24,7 @@
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Timer.h"
+#include "oops/util/TimeWindow.h"
 
 namespace util {
   class DateTime;
@@ -47,7 +48,7 @@ class ObsSpace : public util::Printable,
   static const std::string classname() {return "oops::ObsSpace";}
 
   ObsSpace(const Parameters_ &, const eckit::mpi::Comm &,
-           const util::DateTime &, const util::DateTime &,
+           const util::TimeWindow &,
            const eckit::mpi::Comm & time = oops::mpi::myself());
   ~ObsSpace();
 
@@ -57,8 +58,9 @@ class ObsSpace : public util::Printable,
   ObsSpace_ & obsspace() const {return *obsdb_;}  // const problem? YT
 
 /// Assimilation window
-  const util::DateTime & windowStart() const {return obsdb_->windowStart();}
-  const util::DateTime & windowEnd() const {return obsdb_->windowEnd();}
+  const util::DateTime windowStart() const {return obsdb_->windowStart();}
+  const util::DateTime windowEnd() const {return obsdb_->windowEnd();}
+  const util::TimeWindow timeWindow() const {return obsdb_->timeWindow();}
 
   const Variables & obsvariables() const;
   const Variables & assimvariables() const;
@@ -88,13 +90,12 @@ class ObsSpace : public util::Printable,
 template <typename OBS>
 ObsSpace<OBS>::ObsSpace(const Parameters_ & params,
                         const eckit::mpi::Comm & comm,
-                        const util::DateTime & bgn,
-                        const util::DateTime & end,
+                        const util::TimeWindow & timeWindow,
                         const eckit::mpi::Comm & time) : obsdb_(), time_(time) {
   Log::trace() << "ObsSpace<OBS>::ObsSpace starting" << std::endl;
   util::Timer timer(classname(), "ObsSpace");
   size_t init = eckit::system::ResourceUsage().maxResidentSetSize();
-  obsdb_.reset(new ObsSpace_(params, comm, bgn, end, time));
+  obsdb_.reset(new ObsSpace_(params, comm, timeWindow, time));
   size_t current = eckit::system::ResourceUsage().maxResidentSetSize();
   this->setObjectSize(current - init);
   Log::trace() << "ObsSpace<OBS>::ObsSpace done" << std::endl;

@@ -39,6 +39,7 @@
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/RequiredParameter.h"
+#include "oops/util/TimeWindow.h"
 
 namespace oops {
 
@@ -125,17 +126,11 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
 
 //  Setup observation window
     const util::Duration winlen(fullConfig.getString("window length"));
-    util::DateTime winbgn(fullConfig.getString("window begin"));
-    // window is shifted so that observations in the window
-    // obs_time >= winbgn && obs_time < winend are included.
-    // This is ensured by a time-shift at the lowest time-resolution of 1 second.
-    util::Duration winshift(0);
-    if (params.shifting) {
-      winshift = util::Duration("PT1S");
-      winbgn -= winshift;
-    }
+    const util::DateTime winbgn(fullConfig.getString("window begin"));
     const util::DateTime winend(winbgn + winlen);
-    Log::info() << "Observation window from " << winbgn << " to " << winend << std::endl;
+    const util::TimeWindow timeWindow(winbgn, winend,
+                                      util::boolToWindowBound(params.shifting));
+    Log::info() << "HofX4D observation window: " << timeWindow << std::endl;
 
 //  Setup geometry
     const Geometry_ geometry(params.geometry, this->getComm(), mpi::myself());
@@ -148,17 +143,19 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
 //  Check that window specified for forecast is at least the same as obs window
     const util::Duration fclength(fullConfig.getString("forecast length"));
 
-    if (winbgn + winshift < xx.validTime() || winend + winshift > xx.validTime() + fclength) {
+    if (timeWindow.start() < xx.validTime() ||
+        timeWindow.end() > xx.validTime() + fclength) {
         Log::error() << "Observation window can not be outside of forecast window." << std::endl;
-        Log::error() << "Obs window: " << winbgn << " to " << winend << std::endl;
-        Log::error() << "Forecast runs from: " << xx.validTime() << " for " <<
-                        fclength << std::endl;
+        Log::error() << "Obs window: " << timeWindow.start() << " to "
+                     << timeWindow.end() << std::endl;
+        Log::error() << "Forecast runs from: " << xx.validTime() << " for "
+                     << fclength << std::endl;
         throw eckit::BadValue("Observation window can not be outside of forecast window.");
     }
 
 //  Setup observations
     const auto & observersParams = params.observations.value().observers.value();
-    ObsSpaces_ obspaces(obsSpaceParameters(observersParams), this->getComm(), winbgn, winend);
+    ObsSpaces_ obspaces(obsSpaceParameters(observersParams), this->getComm(), timeWindow);
     ObsAux_ obsaux(obspaces, obsAuxParameters(observersParams));
     ObsErrors_ Rmat(obsErrorParameters(observersParams), obspaces);
 

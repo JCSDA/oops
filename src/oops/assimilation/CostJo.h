@@ -72,7 +72,7 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
  public:
   /// Construct \f$ J_o\f$ from \f$ R\f$ and \f$ y_{obs}\f$.
   CostJo(const eckit::Configuration &, const eckit::mpi::Comm &,
-         const util::DateTime &, const util::DateTime &,
+         const util::TimeWindow &,
          const eckit::mpi::Comm & ctime = oops::mpi::myself());
 
   /// Destructor
@@ -143,10 +143,10 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
 
 template<typename MODEL, typename OBS>
 CostJo<MODEL, OBS>::CostJo(const eckit::Configuration & joConf, const eckit::mpi::Comm & comm,
-                           const util::DateTime & winbgn, const util::DateTime & winend,
+                           const util::TimeWindow & timeWindow,
                            const eckit::mpi::Comm & ctime)
   : conf_(joConf),
-    obspaces_(eckit::LocalConfiguration(joConf, "observers"), comm, winbgn, winend, ctime),
+    obspaces_(eckit::LocalConfiguration(joConf, "observers"), comm, timeWindow, ctime),
     Rmat_(eckit::LocalConfiguration(joConf, "observers"), obspaces_),
     observers_(), gradFG_(), obstlad_(), currentConf_()
 {

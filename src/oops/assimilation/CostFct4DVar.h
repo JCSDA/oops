@@ -35,6 +35,7 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/TimeWindow.h"
 
 namespace oops {
 
@@ -85,9 +86,7 @@ template<typename MODEL, typename OBS> class CostFct4DVar : public CostFunction<
   void doLinearize(const Geometry_ &, const eckit::Configuration &, CtrlVar_ &, CtrlVar_ &,
                    PostProcessor<State_> &, PostProcessorTLAD<MODEL> &) override;
 
-  util::Duration windowLength_;
-  util::DateTime windowBegin_;
-  util::DateTime windowEnd_;
+  std::unique_ptr<util::TimeWindow> timeWindow_;
   const eckit::mpi::Comm & comm_;
   const Geometry_ resol_;
   Model_ model_;
@@ -108,11 +107,15 @@ CostFct4DVar<MODEL, OBS>::CostFct4DVar(const eckit::Configuration & config,
     inc2model_()
 {
   Log::trace() << "CostFct4DVar:CostFct4DVar start" << std::endl;
-  windowLength_ = util::Duration(config.getString("window length"));
-  windowBegin_ = util::DateTime(config.getString("window begin"));
-  windowEnd_ = windowBegin_ + windowLength_;
+  const util::Duration length = util::Duration(config.getString("window length"));
+  const util::DateTime windowBegin = util::DateTime(config.getString("window begin"));
+  const bool shifting = static_cast<bool>(config.getBool("window shift", false));
+  timeWindow_ = std::make_unique<util::TimeWindow>
+    (windowBegin, windowBegin + length, util::boolToWindowBound(shifting));
+
   this->setupTerms(config);
   // ASSERT(ctlvars_ <= this->jb().getBackground().state().variables());
+  Log::info() << "4DVar window: " << *timeWindow_ << std::endl;
   Log::trace() << "CostFct4DVar::CostFct4DVar done" << std::endl;
 }
 
@@ -122,7 +125,7 @@ template <typename MODEL, typename OBS>
 CostJb3D<MODEL, OBS> * CostFct4DVar<MODEL, OBS>::newJb(const eckit::Configuration & jbConf,
                                                   const Geometry_ & resol) const {
   Log::trace() << "CostFct4DVar::newJb start" << std::endl;
-  return new CostJb3D<MODEL, OBS>(windowBegin_, jbConf, resol, ctlvars_);
+  return new CostJb3D<MODEL, OBS>(timeWindow_->start(), jbConf, resol, ctlvars_);
 }
 
 // -----------------------------------------------------------------------------
@@ -130,7 +133,7 @@ CostJb3D<MODEL, OBS> * CostFct4DVar<MODEL, OBS>::newJb(const eckit::Configuratio
 template <typename MODEL, typename OBS>
 CostJo<MODEL, OBS> * CostFct4DVar<MODEL, OBS>::newJo(const eckit::Configuration & joConf) const {
   Log::trace() << "CostFct4DVar::newJo start" << std::endl;
-  return new CostJo<MODEL, OBS>(joConf, comm_, windowBegin_, windowEnd_);
+  return new CostJo<MODEL, OBS>(joConf, comm_, *timeWindow_);
 }
 
 // -----------------------------------------------------------------------------
@@ -140,8 +143,8 @@ CostTermBase<MODEL, OBS> * CostFct4DVar<MODEL, OBS>::newJc(const eckit::Configur
                                                            const Geometry_ & resol) const {
   Log::trace() << "CostFct4DVar::newJc start" << std::endl;
   const eckit::LocalConfiguration jcdfi(jcConf, "jcdfi");
-  const util::DateTime vt(windowBegin_ + windowLength_/2);
-  return new CostJcDFI<MODEL, OBS>(jcdfi, resol, vt, windowLength_);
+  const util::DateTime vt(timeWindow_->midpoint());
+  return new CostJcDFI<MODEL, OBS>(jcdfi, resol, vt, timeWindow_->length());
 }
 
 // -----------------------------------------------------------------------------
@@ -150,9 +153,9 @@ template <typename MODEL, typename OBS>
 void CostFct4DVar<MODEL, OBS>::runNL(CtrlVar_ & xx, PostProcessor<State_> & post) const {
   Log::trace() << "CostFct4DVar::runNL start" << std::endl;
   ASSERT(xx.states().is_3d());
-  ASSERT(xx.state().validTime() == windowBegin_);
-  model_.forecast(xx.state(), xx.modVar(), windowLength_, post);
-  ASSERT(xx.state().validTime() == windowEnd_);
+  ASSERT(xx.state().validTime() == timeWindow_->start());
+  model_.forecast(xx.state(), xx.modVar(), timeWindow_->length(), post);
+  ASSERT(xx.state().validTime() == timeWindow_->end());
   Log::trace() << "CostFct4DVar::runNL done" << std::endl;
 }
 
@@ -190,14 +193,14 @@ void CostFct4DVar<MODEL, OBS>::runTLM(CtrlInc_ & dx,
                                       const bool idModel) const {
   Log::trace() << "CostFct4DVar::runTLM start" << std::endl;
   ASSERT(dx.states().is_3d());
-  ASSERT(dx.state().validTime() == windowBegin_);
+  ASSERT(dx.state().validTime() == timeWindow_->start());
 
   Variables incvars = dx.state().variables();
 
   inc2model_->changeVarTL(dx.state(), tlm_->variables());
-  tlm_->forecastTL(dx.state(), dx.modVar(), windowLength_, post, cost, idModel);
+  tlm_->forecastTL(dx.state(), dx.modVar(), timeWindow_->length(), post, cost, idModel);
   inc2model_->changeVarInverseTL(dx.state(), incvars);
-  ASSERT(dx.state().validTime() == windowEnd_);
+  ASSERT(dx.state().validTime() == timeWindow_->end());
   Log::trace() << "CostFct4DVar::runTLM done" << std::endl;
 }
 
@@ -207,7 +210,7 @@ template <typename MODEL, typename OBS>
 void CostFct4DVar<MODEL, OBS>::zeroAD(CtrlInc_ & dx) const {
   Log::trace() << "CostFct4DVar::zeroAD start" << std::endl;
   ASSERT(dx.states().is_3d());
-  dx.state().zero(windowEnd_);
+  dx.state().zero(timeWindow_->end());
   dx.modVar().zero();
   dx.obsVar().zero();
   Log::trace() << "CostFct4DVar::zeroAD done" << std::endl;
@@ -222,14 +225,14 @@ void CostFct4DVar<MODEL, OBS>::runADJ(CtrlInc_ & dx,
                                       const bool idModel) const {
   Log::trace() << "CostFct4DVar::runADJ start" << std::endl;
   ASSERT(dx.states().is_3d());
-  ASSERT(dx.state().validTime() == windowEnd_);
+  ASSERT(dx.state().validTime() == timeWindow_->end());
 
   Variables incvars = dx.state().variables();
   inc2model_->changeVarInverseAD(dx.state(), tlm_->variables());
-  tlm_->forecastAD(dx.state(), dx.modVar(), windowLength_, post, cost, idModel);
+  tlm_->forecastAD(dx.state(), dx.modVar(), timeWindow_->length(), post, cost, idModel);
   inc2model_->changeVarAD(dx.state(), incvars);
 
-  ASSERT(dx.state().validTime() == windowBegin_);
+  ASSERT(dx.state().validTime() == timeWindow_->start());
   Log::trace() << "CostFct4DVar::runADJ done" << std::endl;
 }
 

@@ -54,7 +54,7 @@ class ObsTestsFixture : private boost::noncopyable {
     configs_ = TestEnvironment::config().getSubConfigurations("observations");
     eckit::LocalConfiguration obsconfig =
            TestEnvironment::config().getSubConfiguration("observations");
-    ospaces_.reset(new ObsSpaces_(obsconfig, comm_, *tbgn_, *tend_));
+    ospaces_.reset(new ObsSpaces_(obsconfig, comm_, util::TimeWindow(*tbgn_, *tend_)));
   }
 
   ~ObsTestsFixture() {}

@@ -39,7 +39,7 @@ template <typename OBS> void testConstructor() {
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     oops::Log::info() << "Testing ObsSpace: " << Test_::obspace()[jj] << std::endl;
     EXPECT(Test_::obspace()[jj].windowStart() == Test_::tbgn());
-    EXPECT(Test_::obspace()[jj].windowEnd() ==   Test_::tend());
+    EXPECT(Test_::obspace()[jj].windowEnd() == Test_::tend());
   }
 }
 
@@ -59,8 +59,8 @@ template <typename OBS> void testSubwindows() {
     eckit::LocalConfiguration obsconfig(Test_::config(jj), "obs space");
     ObsSpaceParameters_ obsparams;
     obsparams.validateAndDeserialize(obsconfig);
-    ObsSpace_ obspace1(obsparams, oops::mpi::world(), Test_::tbgn(), tmid);
-    ObsSpace_ obspace2(obsparams, oops::mpi::world(), tmid, Test_::tend());
+    ObsSpace_ obspace1(obsparams, oops::mpi::world(), util::TimeWindow(Test_::tbgn(), tmid));
+    ObsSpace_ obspace2(obsparams, oops::mpi::world(), util::TimeWindow(tmid, Test_::tend()));
 
     /// Create ObsVectors for each of the ObsSpaces, to compare nobs
     ObsVector_ ovec(Test_::obspace()[jj]);

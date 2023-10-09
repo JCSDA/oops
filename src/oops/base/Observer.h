@@ -177,7 +177,7 @@ Observer<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrl_ & bia
 
 // Set up GetValues
   getvals_ = makeGetValuesVector(parameters_.getValues, geom,
-                                 obspace_.windowStart(), obspace_.windowEnd(),
+                                 obspace_.timeWindow(),
                                  *locations_, groupedVars);
 
   initialized_ = true;

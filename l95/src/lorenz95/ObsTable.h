@@ -25,6 +25,7 @@
 #include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/RequiredParameter.h"
+#include "oops/util/TimeWindow.h"
 
 namespace lorenz95 {
   class ObsIterator;
@@ -87,7 +88,7 @@ class ObsTable : public oops::ObsSpaceBase,
   typedef ObsTableParameters Parameters_;
 
   ObsTable(const Parameters_ &, const eckit::mpi::Comm &,
-           const util::DateTime &, const util::DateTime &, const eckit::mpi::Comm &);
+           const util::TimeWindow &, const eckit::mpi::Comm &);
   ~ObsTable();
 
   void save() const;
@@ -119,14 +120,12 @@ class ObsTable : public oops::ObsSpaceBase,
   void otOpen(const std::string &);
   void otWrite(const std::string &) const;
 
-  const util::DateTime winbgn_;
-  const util::DateTime winend_;
-
   std::vector<util::DateTime> times_;
   std::vector<double> locations_;
   mutable std::map<std::string, std::vector<double> > data_;
 
   const eckit::mpi::Comm & comm_;
+  const util::TimeWindow timeWindow_;
   const oops::Variables obsvars_;
   const oops::Variables assimvars_;
   std::string nameIn_;

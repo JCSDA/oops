@@ -19,6 +19,7 @@
 #include "oops/runs/Test.h"
 #include "oops/util/Expect.h"
 #include "oops/util/sqr.h"
+#include "oops/util/TimeWindow.h"
 #include "test/TestEnvironment.h"
 
 namespace test {
@@ -60,7 +61,8 @@ CASE("test_obserrordiag_zeromeanpert") {
     util::DateTime windowBegin(costFunctionConf.getString("window begin"));
     util::Duration windowLength(costFunctionConf.getString("window length"));
     lorenz95::ObsTable obsSpace(obsSpaceParams, oops::mpi::world(),
-                                windowBegin, windowBegin + windowLength, oops::mpi::myself());
+                                util::TimeWindow(windowBegin, windowBegin + windowLength),
+                                oops::mpi::myself());
     obsSpace.getdb("ObsValue", originalObs);
     obsSpace.getdb("ObsError", obsErrors);
     obsSpace.getdb("EffectiveObsValue", perturbedObs);

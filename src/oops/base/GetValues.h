@@ -33,6 +33,7 @@
 #include "oops/util/missingValues.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Timer.h"
+#include "oops/util/TimeWindow.h"
 
 namespace oops {
 
@@ -102,7 +103,7 @@ class GetValues : private util::ObjectCounter<GetValues<MODEL, OBS> > {
   static const std::string classname() {return "oops::GetValues";}
 
   GetValues(const eckit::Configuration &, const Geometry_ &,
-            const util::DateTime &, const util::DateTime &,
+            const util::TimeWindow &,
             const SampledLocations_ &,
             const Variables &, const Variables & varl = Variables());
 
@@ -133,9 +134,8 @@ class GetValues : private util::ObjectCounter<GetValues<MODEL, OBS> > {
   void incInterpValues(const util::DateTime &, const std::vector<bool> &,
                        const size_t &, const std::vector<double> &);
 
-  util::DateTime winbgn_;   /// Begining of assimilation window
-  util::DateTime winend_;   /// End of assimilation window
   util::Duration hslot_;    /// Half time slot
+  const util::TimeWindow timeWindow_;
 
   const Variables geovars_;            /// Variables needed from model
   size_t varsizes_;                    /// Sizes (e.g. number of vertical levels)
@@ -166,10 +166,10 @@ class GetValues : private util::ObjectCounter<GetValues<MODEL, OBS> > {
 
 template <typename MODEL, typename OBS>
 GetValues<MODEL, OBS>::GetValues(const eckit::Configuration & conf, const Geometry_ & geom,
-                                 const util::DateTime & bgn, const util::DateTime & end,
+                                 const util::TimeWindow & timeWindow,
                                  const SampledLocations_ & locs,
                                  const Variables & vars, const Variables & varl)
-  : winbgn_(bgn), winend_(end), hslot_(),
+  : timeWindow_(timeWindow),
     geovars_(vars), varsizes_(0), linvars_(varl), linsizes_(0),
     interpConf_(conf), comm_(geom.getComm()), ntasks_(comm_.size()), interp_(ntasks_),
     myobs_index_by_task_(ntasks_), obs_times_by_task_(ntasks_),
@@ -317,15 +317,12 @@ void GetValues<MODEL, OBS>::process(const State_ & xx) {
   Log::trace() << "GetValues::process start" << std::endl;
   util::Timer timer("oops::GetValues", "process");
 
-  util::DateTime t1 = std::max(xx.validTime()-hslot_, winbgn_);
-  util::DateTime t2 = std::min(xx.validTime()+hslot_, winend_);
-
   for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
 //  Mask obs outside time slot
-    std::vector<bool> mask(obs_times_by_task_[jtask].size());
-    for (size_t jobs = 0; jobs < obs_times_by_task_[jtask].size(); ++jobs) {
-      mask[jobs] = obs_times_by_task_[jtask][jobs] > t1 && obs_times_by_task_[jtask][jobs] <= t2;
-    }
+    const util::TimeWindow timeSubWindow =
+      timeWindow_.createSubWindow(xx.validTime(), hslot_);
+    const std::vector<bool> mask =
+      timeSubWindow.createTimeMask(obs_times_by_task_[jtask]);
 
 //  Local interpolation
     if (doLinearTimeInterpolation_) {
@@ -454,15 +451,12 @@ void GetValues<MODEL, OBS>::processTL(const Increment_ & dx) {
   Log::trace() << "GetValues::processTL start" << std::endl;
   util::Timer timer("oops::GetValues", "processTL");
 
-  util::DateTime t1 = std::max(dx.validTime()-hslot_, winbgn_);
-  util::DateTime t2 = std::min(dx.validTime()+hslot_, winend_);
-
   for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
 //  Mask obs outside time slot
-    std::vector<bool> mask(obs_times_by_task_[jtask].size());
-    for (size_t jobs = 0; jobs < obs_times_by_task_[jtask].size(); ++jobs) {
-      mask[jobs] = obs_times_by_task_[jtask][jobs] > t1 && obs_times_by_task_[jtask][jobs] <= t2;
-    }
+    const util::TimeWindow timeSubWindow =
+      timeWindow_.createSubWindow(dx.validTime(), hslot_);
+    const std::vector<bool> mask =
+      timeSubWindow.createTimeMask(obs_times_by_task_[jtask]);
 
 //  Local interpolation
     interp_[jtask]->apply(linvars_, dx, mask, locinterp_[jtask]);
@@ -579,15 +573,12 @@ void GetValues<MODEL, OBS>::processAD(Increment_ & dx) {
   Log::trace() << "GetValues::processAD start" << std::endl;
   util::Timer timer("oops::GetValues", "processAD");
 
-  util::DateTime t1 = std::max(dx.validTime()-hslot_, winbgn_);
-  util::DateTime t2 = std::min(dx.validTime()+hslot_, winend_);
-
   for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
 //  Mask obs outside time slot
-    std::vector<bool> mask(obs_times_by_task_[jtask].size());
-    for (size_t jobs = 0; jobs < obs_times_by_task_[jtask].size(); ++jobs) {
-      mask[jobs] = obs_times_by_task_[jtask][jobs] > t1 && obs_times_by_task_[jtask][jobs] <= t2;
-    }
+    const util::TimeWindow timeSubWindow =
+      timeWindow_.createSubWindow(dx.validTime(), hslot_);
+    const std::vector<bool> mask =
+      timeSubWindow.createTimeMask(obs_times_by_task_[jtask]);
 
 //  (Adjoint of) Local interpolation
     interp_[jtask]->applyAD(linvars_, dx, mask, locinterp_[jtask]);

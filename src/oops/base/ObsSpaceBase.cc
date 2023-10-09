@@ -13,6 +13,7 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/TimeWindow.h"
 
 namespace oops {
 
@@ -21,13 +22,13 @@ int ObsSpaceBase::instances_ = 0;
 // -----------------------------------------------------------------------------
 
 ObsSpaceBase::ObsSpaceBase(const ObsSpaceParametersBase & params, const eckit::mpi::Comm & comm,
-                           const util::DateTime & bgn, const util::DateTime & end)
-  : winbgn_(bgn), winend_(end), instance_(++instances_) {
+                           const util::TimeWindow & timeWindow)
+  : timeWindow_(timeWindow), instance_(++instances_) {
   // Determine seed for random number generator that is reproducible when re-running
   // but does not repeat itself over analysis cycles, ensemble members or obs type
   util::DateTime ref(1623, 6, 19, 0, 0, 0);
-  ASSERT(winbgn_ > ref);
-  util::Duration dt(winbgn_ - ref);
+  ASSERT(timeWindow_.start() > ref);
+  util::Duration dt(timeWindow_.start() - ref);
   seed_ = dt.toSeconds();
 
   // Won't repeat if more seconds between analysis cycles than members in EDA

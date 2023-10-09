@@ -46,7 +46,7 @@ class GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>:
   static const std::string classname() {return "oops::GetValues";}
 
   GetValues(const eckit::Configuration &, const Geometry_ &,
-            const util::DateTime &, const util::DateTime &,
+            const util::TimeWindow &,
             const SampledLocations_ &,
             const Variables &, const Variables & varl = Variables());
 
@@ -84,7 +84,7 @@ class GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>:
 template <typename MODEL1, typename MODEL2, typename OBS>
 GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::GetValues(const eckit::Configuration & conf,
                                  const Geometry_ & geom,
-                                 const util::DateTime & bgn, const util::DateTime & end,
+                                 const util::TimeWindow & timeWindow,
                                  const SampledLocations_ & locs,
                                  const Variables & vars, const Variables & varl)
   : geovars_(vars), linvars_(varl)
@@ -95,10 +95,10 @@ GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::GetValues(const eckit::Configurati
   std::vector<Variables> splitlinvars = splitVariables(linvars_, geom.geometry().variables());
 
   getvals1_ = std::make_unique<GetValues<MODEL1, OBS>>(conf.getSubConfiguration(MODEL1::name()),
-                               geom.geometry().geometry1(), bgn, end, locs, splitgeovars[0],
+                               geom.geometry().geometry1(), timeWindow, locs, splitgeovars[0],
                                splitlinvars[0]);
   getvals2_ = std::make_unique<GetValues<MODEL2, OBS>>(conf.getSubConfiguration(MODEL2::name()),
-                               geom.geometry().geometry2(), bgn, end, locs, splitgeovars[1],
+                               geom.geometry().geometry2(), timeWindow, locs, splitgeovars[1],
                                splitlinvars[1]);
   Log::trace() << "GetValues::GetValues done" << std::endl;
 }

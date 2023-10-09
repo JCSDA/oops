@@ -19,6 +19,7 @@
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/Printable.h"
+#include "oops/util/TimeWindow.h"
 
 namespace oops {
 
@@ -43,21 +44,22 @@ class ObsSpaceBase : public util::Printable,
                      private boost::noncopyable {
  public:
   ObsSpaceBase(const ObsSpaceParametersBase &, const eckit::mpi::Comm &,
-               const util::DateTime &, const util::DateTime &);
+               const util::TimeWindow &);
 
   virtual ~ObsSpaceBase() {}
 
 /// Access information
-  const util::DateTime & windowStart() const {return winbgn_;}
-  const util::DateTime & windowEnd() const {return winend_;}
+  util::DateTime windowStart() const {return timeWindow_.start();}
+  util::DateTime windowEnd() const {return timeWindow_.end();}
+  util::TimeWindow timeWindow() const {return timeWindow_;}
 
   int64_t getSeed() const {return seed_;}
 
  private:
   static int instances_;
 
-  const util::DateTime winbgn_;
-  const util::DateTime winend_;
+  const util::TimeWindow timeWindow_;
+
   int64_t seed_;
   const int instance_;
 };

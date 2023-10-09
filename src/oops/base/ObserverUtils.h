@@ -65,7 +65,7 @@ inline std::pair<Variables, std::vector<size_t>> mergeVariablesAndSizes(
 template <typename MODEL, typename OBS>
 std::vector<std::shared_ptr<GetValues<MODEL, OBS>>> makeGetValuesVector(
     const eckit::Configuration & conf, const Geometry<MODEL> & geom,
-    const util::DateTime & bgn, const util::DateTime & end,
+    const util::TimeWindow & timeWindow,
     const Locations<OBS> & locations,
     const std::vector<Variables> & varsGroupedBySamplingMethod) {
   typedef GetValues<MODEL, OBS> GetValues_;
@@ -74,7 +74,7 @@ std::vector<std::shared_ptr<GetValues<MODEL, OBS>>> makeGetValuesVector(
   std::vector<std::shared_ptr<GetValues_>> getvalues;
   getvalues.reserve(locations.numSamplingMethods());
   for (size_t m = 0; m < locations.numSamplingMethods(); ++m) {
-    getvalues.push_back(std::make_shared<GetValues_>(conf, geom, bgn, end,
+    getvalues.push_back(std::make_shared<GetValues_>(conf, geom, timeWindow,
                                                      locations.samplingMethod(m),
                                                      varsGroupedBySamplingMethod[m]));
   }
@@ -84,10 +84,11 @@ std::vector<std::shared_ptr<GetValues<MODEL, OBS>>> makeGetValuesVector(
 template <typename MODEL, typename OBS>
 std::vector<std::shared_ptr<GetValues<MODEL, OBS>>> makeGetValuesVector(
     const eckit::Configuration & conf, const Geometry<MODEL> & geom,
-    const util::DateTime & bgn, const util::DateTime & end,
+    const util::TimeWindow & timeWindow,
     const Locations<OBS> & locations,
     const std::vector<Variables> & hopVarsGroupedBySamplingMethod,
     const std::vector<Variables> & hoptladVarsGroupedBySamplingMethod) {
+
   typedef GetValues<MODEL, OBS> GetValues_;
   ASSERT(locations.numSamplingMethods() == hopVarsGroupedBySamplingMethod.size());
   ASSERT(locations.numSamplingMethods() == hoptladVarsGroupedBySamplingMethod.size());
@@ -96,7 +97,7 @@ std::vector<std::shared_ptr<GetValues<MODEL, OBS>>> makeGetValuesVector(
   getvalues.reserve(locations.numSamplingMethods());
   for (size_t m = 0; m < locations.numSamplingMethods(); ++m) {
     getvalues.push_back(std::make_shared<GetValues_>(
-                          conf, geom, bgn, end, locations.samplingMethod(m),
+                          conf, geom, timeWindow, locations.samplingMethod(m),
                           hopVarsGroupedBySamplingMethod[m],
                           hoptladVarsGroupedBySamplingMethod[m]));
   }

@@ -39,6 +39,7 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Duration.h"
+#include "oops/util/TimeWindow.h"
 #include "test/TestEnvironment.h"
 
 namespace test {
@@ -131,8 +132,7 @@ template <typename MODEL, typename OBS> void testGetValuesConstructor() {
       new GetValues_(
           TestEnvironment::config(),
           Test_::resol(),
-          Test_::timebeg(),
-          Test_::timeend(),
+          util::TimeWindow(Test_::timebeg(), Test_::timeend()),
           Test_::sampledLocations(),
           Test_::variables()));
   EXPECT(getvalues.get());
@@ -185,8 +185,7 @@ template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
   const util::Duration windowlength = Test_::timeend() - Test_::timebeg();
   GetValues_ getvalues(TestEnvironment::config(),
           Test_::resol(),
-          Test_::timebeg(),
-          Test_::timeend(),
+          util::TimeWindow(Test_::timebeg(), Test_::timeend()),
           Test_::sampledLocations(),
           Test_::variables());
   getvalues.initialize(windowlength);
@@ -231,12 +230,11 @@ template <typename MODEL, typename OBS> void testGetValuesTLZeroPert() {
 
   const util::Duration windowlength = Test_::timeend() - Test_::timebeg();
   GetValues_ getvalues(TestEnvironment::config(),
-          Test_::resol(),
-          Test_::timebeg(),
-          Test_::timeend(),
-          Test_::sampledLocations(),
-          Test_::variables(),
-          Test_::variables());  // linear variables
+                       Test_::resol(),
+                       util::TimeWindow(Test_::timebeg(), Test_::timeend()),
+                       Test_::sampledLocations(),
+                       Test_::variables(),
+                       Test_::variables());  // linear variables
 
   // Test passing zeros forward
   getvalues.initializeTL(windowlength);
@@ -280,12 +278,11 @@ template <typename MODEL, typename OBS> void testGetValuesLinearity() {
 
   const util::Duration windowlength = Test_::timeend() - Test_::timebeg();
   GetValues_ getvalues(TestEnvironment::config(),
-          Test_::resol(),
-          Test_::timebeg(),
-          Test_::timeend(),
-          Test_::sampledLocations(),
-          Test_::variables(),
-          Test_::variables());  // linear variables
+                       Test_::resol(),
+                       util::TimeWindow(Test_::timebeg(), Test_::timeend()),
+                       Test_::sampledLocations(),
+                       Test_::variables(),
+                       Test_::variables());  // linear variables
 
   // Compute geovals
   getvalues.initializeTL(windowlength);
@@ -324,12 +321,11 @@ template <typename MODEL, typename OBS> void testGetValuesAdjoint() {
 
   const util::Duration windowlength = Test_::timeend() - Test_::timebeg();
   GetValues_ getvalues(TestEnvironment::config(),
-          Test_::resol(),
-          Test_::timebeg(),
-          Test_::timeend(),
-          Test_::sampledLocations(),
-          Test_::variables(),
-          Test_::variables());  // linear variables
+                       Test_::resol(),
+                       util::TimeWindow(Test_::timebeg(), Test_::timeend()),
+                       Test_::sampledLocations(),
+                       Test_::variables(),
+                       Test_::variables());  // linear variables
 
   // Tangent linear
   dx_in.random();

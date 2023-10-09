@@ -29,6 +29,7 @@
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/Printable.h"
+#include "oops/util/TimeWindow.h"
 
 namespace oops {
 
@@ -44,10 +45,10 @@ class ObsSpaces : public util::Printable,
   static const std::string classname() {return "oops::ObsSpaces";}
 
   ObsSpaces(const std::vector<Parameters_> &, const eckit::mpi::Comm &,
-            const util::DateTime &, const util::DateTime &,
+            const util::TimeWindow &,
             const eckit::mpi::Comm & time = oops::mpi::myself());
   ObsSpaces(const eckit::Configuration &, const eckit::mpi::Comm &,
-            const util::DateTime &, const util::DateTime &,
+            const util::TimeWindow &,
             const eckit::mpi::Comm & time = oops::mpi::myself());
   ~ObsSpaces();
 
@@ -60,29 +61,28 @@ class ObsSpaces : public util::Printable,
   const ObsSpace_ & operator[](const std::size_t ii) const {return *spaces_.at(ii);}
 
 /// Assimilation window
-  const util::DateTime & windowStart() const {return wbgn_;}
-  const util::DateTime & windowEnd() const {return wend_;}
+const util::DateTime windowStart() const {return timeWindow_.start();}
+const util::DateTime windowEnd() const {return timeWindow_.end();}
 
  private:
   void print(std::ostream &) const;
 
   std::vector<std::shared_ptr<ObsSpace_> > spaces_;
-  const util::DateTime wbgn_;
-  const util::DateTime wend_;
+  const util::TimeWindow timeWindow_;
 };
 
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
 ObsSpaces<OBS>::ObsSpaces(const std::vector<Parameters_> & params, const eckit::mpi::Comm & comm,
-                          const util::DateTime & bgn, const util::DateTime & end,
+                          const util::TimeWindow & timeWindow,
                           const eckit::mpi::Comm & time)
-  : spaces_(0), wbgn_(bgn), wend_(end)
+: spaces_(0), timeWindow_(timeWindow)
 {
   Log::trace() << "ObsSpaces<MODEL, OBS>::ObsSpaces param start" << std::endl;
   spaces_.reserve(params.size());
   for (const Parameters_ & param : params) {
-    auto tmp = std::make_shared<ObsSpace_>(param, comm, bgn, end, time);
+    auto tmp = std::make_shared<ObsSpace_>(param, comm, timeWindow, time);
     spaces_.push_back(std::move(tmp));
   }
   ASSERT(spaces_.size() >0);
@@ -93,9 +93,9 @@ ObsSpaces<OBS>::ObsSpaces(const std::vector<Parameters_> & params, const eckit::
 
 template <typename OBS>
 ObsSpaces<OBS>::ObsSpaces(const eckit::Configuration & conf, const eckit::mpi::Comm & comm,
-                          const util::DateTime & bgn, const util::DateTime & end,
+                          const util::TimeWindow & timeWindow,
                           const eckit::mpi::Comm & time)
-  : spaces_(0), wbgn_(bgn), wend_(end)
+  : spaces_(0), timeWindow_(timeWindow)
 {
   Log::trace() << "ObsSpaces<MODEL, OBS>::ObsSpaces start" << std::endl;
   std::vector<eckit::LocalConfiguration> subconfigs = conf.getSubConfigurations();
@@ -103,7 +103,7 @@ ObsSpaces<OBS>::ObsSpaces(const eckit::Configuration & conf, const eckit::mpi::C
   for (size_t jj = 0; jj < subconfigs.size(); ++jj) {
     Parameters_ param;
     param.deserialize(subconfigs[jj].getSubConfiguration("obs space"));
-    auto tmp = std::make_shared<ObsSpace_>(param, comm, bgn, end, time);
+    auto tmp = std::make_shared<ObsSpace_>(param, comm, timeWindow, time);
     spaces_.push_back(std::move(tmp));
   }
   ASSERT(spaces_.size() >0);

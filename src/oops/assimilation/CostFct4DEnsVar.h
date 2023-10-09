@@ -180,8 +180,9 @@ CostJb4D<MODEL, OBS> * CostFct4DEnsVar<MODEL, OBS>::newJb(const eckit::Configura
 template <typename MODEL, typename OBS>
 CostJo<MODEL, OBS> * CostFct4DEnsVar<MODEL, OBS>::newJo(const eckit::Configuration & joConf) const {
   Log::trace() << "CostFct4DEnsVar::newJo" << std::endl;
+  // todo: instantiate timeWindow in the CostFct4DEnsVar constructor and pass it here
   return new CostJo<MODEL, OBS>(joConf, *commSpace_,
-                                subWinBgn_[0], subWinEnd_[last_], *commTime_);
+                                util::TimeWindow(subWinBgn_[0], subWinEnd_[last_]), *commTime_);
 }
 
 // -----------------------------------------------------------------------------

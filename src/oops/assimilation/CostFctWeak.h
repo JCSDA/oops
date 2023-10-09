@@ -188,8 +188,10 @@ CostJbJq<MODEL, OBS> * CostFctWeak<MODEL, OBS>::newJb(const eckit::Configuration
 template <typename MODEL, typename OBS>
 CostJo<MODEL, OBS> * CostFctWeak<MODEL, OBS>::newJo(const eckit::Configuration & joConf) const {
   Log::trace() << "CostFctWeak::newJo" << std::endl;
+  // todo: instantiate timeWindow in the CostFctWeak constructor and pass it here
   return new CostJo<MODEL, OBS>(joConf, *commSpace_,
-                                subWinBgn_[0], subWinEnd_[nsublocal_ - 1], *commTime_);
+                                util::TimeWindow(subWinBgn_[0], subWinEnd_[nsublocal_ - 1]),
+                                *commTime_);
 }
 
 // -----------------------------------------------------------------------------
