@@ -27,11 +27,15 @@ namespace qg {
 class GeometryQG;
 
 // -----------------------------------------------------------------------------
-class GeometryQGIterator: public std::iterator<std::forward_iterator_tag,
-                                               eckit::geometry::Point3>,
-                          public util::Printable,
+class GeometryQGIterator: public util::Printable,
                           private util::ObjectCounter<GeometryQGIterator> {
  public:
+  typedef std::forward_iterator_tag iterator_category;
+  typedef eckit::geometry::Point3 value_type;
+  typedef eckit::geometry::Point3& reference;
+  typedef eckit::geometry::Point3* pointer;
+  typedef ptrdiff_t difference_type;
+
   static const std::string classname() {return "qg::GeometryQGIterator";}
 
   GeometryQGIterator(const GeometryQGIterator &);
@@ -41,7 +45,10 @@ class GeometryQGIterator: public std::iterator<std::forward_iterator_tag,
   bool operator==(const GeometryQGIterator &) const;
   bool operator!=(const GeometryQGIterator &) const;
   eckit::geometry::Point3 operator*() const;
+  // prefix operator
   GeometryQGIterator& operator++();
+  // postfix operator
+  GeometryQGIterator operator++(int);
 
   const F90iter & toFortran() const {return keyIter_;}
 

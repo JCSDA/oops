@@ -26,27 +26,38 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 template<typename TRAIT>
-class GeometryIterator: public std::iterator<std::forward_iterator_tag,
-                                             eckit::geometry::Point3>,
-                        public util::Printable,
+class GeometryIterator: public util::Printable,
                         private util::ObjectCounter<GeometryIterator<TRAIT>> {
   typedef typename TRAIT::GeometryIterator GeometryIterator_;
 
  public:
+  typedef eckit::geometry::Point3 value_type;
+  typedef value_type& reference;
+  typedef value_type* pointer;
+  typedef std::forward_iterator_tag iterator_category;
+  typedef std::ptrdiff_t difference_type;
+
   static const std::string classname() {return "oops::GeometryIterator";}
 
   GeometryIterator(const GeometryIterator&);
   explicit GeometryIterator(const GeometryIterator_&);
+
+
   ~GeometryIterator();
 
   bool operator==(const GeometryIterator&);
   bool operator!=(const GeometryIterator&);
   eckit::geometry::Point3 operator*() const;
-  GeometryIterator operator++();
+
+  // postfix operator
+  GeometryIterator operator++(int);
+  // prefix operator
+  GeometryIterator& operator++();
 
 /// Interfacing
   const GeometryIterator_ & geometryiter() const {return *geometryiter_;}
-  GeometryIterator_ & geometryiter() {return *geometryiter_; }
+
+  GeometryIterator_ & geometryiter() {return *geometryiter_;}
 
  private:
   void print(std::ostream &) const;
@@ -120,7 +131,7 @@ eckit::geometry::Point3 GeometryIterator<TRAIT>::operator*() const {
 // -----------------------------------------------------------------------------
 
 template<typename TRAIT>
-GeometryIterator<TRAIT> GeometryIterator<TRAIT>::operator++() {
+GeometryIterator<TRAIT>& GeometryIterator<TRAIT>::operator++() {
   Log::trace() << "GeometryIterator<TRAIT>::operator++ starting" << std::endl;
   util::Timer timer(classname(), "operator++");
   ++(*geometryiter_);
@@ -128,6 +139,17 @@ GeometryIterator<TRAIT> GeometryIterator<TRAIT>::operator++() {
   return *this;
 }
 
+// -----------------------------------------------------------------------------
+
+template<typename TRAIT>
+GeometryIterator<TRAIT> GeometryIterator<TRAIT>::operator++(int) {
+  Log::trace() << "GeometryIterator<TRAIT>::operator++(int) starting" << std::endl;
+  util::Timer timer(classname(), "operator++(int)");
+  GeometryIterator<TRAIT> other = *this;
+  ++(*geometryiter_);
+  Log::trace() << "GeometryIterator<TRAIT>::operator++(int) done" << std::endl;
+  return other;
+}
 
 // -----------------------------------------------------------------------------
 

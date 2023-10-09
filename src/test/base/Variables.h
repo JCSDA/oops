@@ -77,7 +77,7 @@ void testConstructor() {
 
     eckit::LocalConfiguration confOut(other.variablesMetaData());
     int i(0);
-    for (const std::string s : other.variablesMetaData().keys()) {
+    for (const std::string& s : other.variablesMetaData().keys()) {
       modelLevels = other.getLevels(s);
       EXPECT_EQUAL(modelLevels, (i + 2) * 10);
       ++i;

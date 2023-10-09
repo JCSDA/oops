@@ -24,11 +24,15 @@ namespace lorenz95 {
 class Resolution;
 
 // -----------------------------------------------------------------------------
-class Iterator: public std::iterator<std::forward_iterator_tag,
-                                     eckit::geometry::Point3>,
-                public util::Printable,
-                private util::ObjectCounter<Iterator> {
+class Iterator: public util::Printable, private util::ObjectCounter<Iterator> {
  public:
+  // needed for std::iterator_traits
+  typedef std::forward_iterator_tag iterator_category;
+  typedef eckit::geometry::Point3 value_type;
+  typedef ptrdiff_t difference_type;
+  typedef eckit::geometry::Point3& reference;
+  typedef eckit::geometry::Point3* pointer;
+
   static const std::string classname() {return "lorenz95::Iterator";}
 
   Iterator(const Resolution & res, const int & index);
@@ -36,8 +40,10 @@ class Iterator: public std::iterator<std::forward_iterator_tag,
   bool operator==(const Iterator &) const;
   bool operator!=(const Iterator &) const;
   eckit::geometry::Point3 operator*() const;
+  /// prefix operator
   Iterator& operator++();
-
+  /// postfix operator
+  Iterator operator++(int);
   int index() const {return index_;}
 
  private:

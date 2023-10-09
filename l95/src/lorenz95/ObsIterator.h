@@ -20,11 +20,16 @@
 namespace lorenz95 {
 
 /// Iterator over all observations
-class ObsIterator: public std::iterator<std::forward_iterator_tag,
-                                       eckit::geometry::Point3>,
-                   public util::Printable,
+class ObsIterator: public util::Printable,
                    private util::ObjectCounter<ObsIterator> {
  public:
+  // for std::iterator_traits
+  typedef std::forward_iterator_tag iterator_category;
+  typedef eckit::geometry::Point3 value_type;
+  typedef eckit::geometry::Point3& reference;
+  typedef eckit::geometry::Point3* pointer;
+  typedef std::ptrdiff_t difference_type;
+
   static const std::string classname() {return "lorenz95::ObsIterator";}
 
   ObsIterator(const std::vector<double> & locations, int index);
@@ -35,7 +40,10 @@ class ObsIterator: public std::iterator<std::forward_iterator_tag,
   /// return location of current observation
   eckit::geometry::Point3 operator*() const;
 
+  // pre-fix operator
   ObsIterator& operator++();
+  // post-fix operator
+  ObsIterator operator++(int);
 
  private:
   void print(std::ostream & os) const override {os << index_;}
