@@ -45,10 +45,8 @@ class GeometryQGIterator: public util::Printable,
   bool operator==(const GeometryQGIterator &) const;
   bool operator!=(const GeometryQGIterator &) const;
   eckit::geometry::Point3 operator*() const;
-  // prefix operator
+  // pre-increment operator
   GeometryQGIterator& operator++();
-  // postfix operator
-  GeometryQGIterator operator++(int);
 
   const F90iter & toFortran() const {return keyIter_;}
 

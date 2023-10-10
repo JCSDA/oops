@@ -40,10 +40,9 @@ class Iterator: public util::Printable, private util::ObjectCounter<Iterator> {
   bool operator==(const Iterator &) const;
   bool operator!=(const Iterator &) const;
   eckit::geometry::Point3 operator*() const;
-  /// prefix operator
+  /// pre-increment operator
   Iterator& operator++();
-  /// postfix operator
-  Iterator operator++(int);
+
   int index() const {return index_;}
 
  private:

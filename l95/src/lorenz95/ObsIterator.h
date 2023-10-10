@@ -36,14 +36,10 @@ class ObsIterator: public util::Printable,
 
   bool operator==(const ObsIterator &) const;
   bool operator!=(const ObsIterator &) const;
-
   /// return location of current observation
   eckit::geometry::Point3 operator*() const;
-
-  // pre-fix operator
+  // pre-increment operator
   ObsIterator& operator++();
-  // post-fix operator
-  ObsIterator operator++(int);
 
  private:
   void print(std::ostream & os) const override {os << index_;}

@@ -48,10 +48,7 @@ class GeometryIterator: public util::Printable,
   bool operator==(const GeometryIterator&);
   bool operator!=(const GeometryIterator&);
   eckit::geometry::Point3 operator*() const;
-
-  // postfix operator
-  GeometryIterator operator++(int);
-  // prefix operator
+  // pre-increment operator
   GeometryIterator& operator++();
 
 /// Interfacing
@@ -137,18 +134,6 @@ GeometryIterator<TRAIT>& GeometryIterator<TRAIT>::operator++() {
   ++(*geometryiter_);
   Log::trace() << "GeometryIterator<TRAIT>::operator++ done" << std::endl;
   return *this;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename TRAIT>
-GeometryIterator<TRAIT> GeometryIterator<TRAIT>::operator++(int) {
-  Log::trace() << "GeometryIterator<TRAIT>::operator++(int) starting" << std::endl;
-  util::Timer timer(classname(), "operator++(int)");
-  GeometryIterator<TRAIT> other = *this;
-  ++(*geometryiter_);
-  Log::trace() << "GeometryIterator<TRAIT>::operator++(int) done" << std::endl;
-  return other;
 }
 
 // -----------------------------------------------------------------------------

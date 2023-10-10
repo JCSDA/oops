@@ -39,13 +39,11 @@ class ObsIteratorQG:
 
   bool operator==(const ObsIteratorQG &) const;
   bool operator!=(const ObsIteratorQG &) const;
-
   /// return location of current observation
   eckit::geometry::Point3 operator*() const;
-  // prefix operator
+  // pre-increment operator
   ObsIteratorQG& operator++();
-  // postfix operator
-  ObsIteratorQG operator++(int);
+
  private:
   void print(std::ostream & os) const override {os << index_;}
 
