@@ -315,7 +315,7 @@ CASE("mpi/mpi/sendReceiveString") {
   std::string result;
   if (rank == 0) {
     result = expectedResult;
-    for (int i = 1; i < comm.size(); ++i) {
+    for (size_t i = 1; i < comm.size(); ++i) {
         oops::mpi::sendString(comm, result, i);
     }
   } else {

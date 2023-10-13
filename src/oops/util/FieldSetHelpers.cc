@@ -481,7 +481,7 @@ std::string getGridUid(const atlas::FunctionSpace & fspace) {
     hash->add(fspace.size());
     // Add function space lon lat to hash
     const auto lonlatView = atlas::array::make_view<double, 2>(fspace.lonlat());
-    for (size_t i = 0; i < lonlatView.shape(0) ; ++i) {
+    for (atlas::idx_t i = 0; i < lonlatView.shape(0) ; ++i) {
       hash->add(lonlatView(i, 0));
       hash->add(lonlatView(i, 1));
     }

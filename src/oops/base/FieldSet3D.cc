@@ -124,10 +124,12 @@ void FieldSet3D::serialize(std::vector<double> & vect)  const {
   validTime_.serialize(vect);
   vect.push_back(fset_.size());
 
+  static_assert(sizeof(double) == sizeof(size_t));
   // Serialize the fields, including variable name hashes and sizes
   for (const auto & field : fset_) {
     const size_t varname_hash = std::hash<std::string>{}(field.name());
-    vect.push_back(reinterpret_cast<const double &>(varname_hash));
+    const double* varname_hash_asdouble = reinterpret_cast<const double*>(&varname_hash);
+    vect.push_back(*varname_hash_asdouble);
     vect.push_back(field.shape(0));
     vect.push_back(field.shape(1));
     size_t index = vect.size();
@@ -162,9 +164,10 @@ void FieldSet3D::deserialize(const std::vector<double> & vect, size_t & index) {
                               Here());
   }
   // Deserialize the fields
+  static_assert(sizeof(double) == sizeof(size_t));
   for (auto & field : fset_) {
-    const size_t other_varname_hash = reinterpret_cast<const size_t &>(vect[index++]);
-    if (other_varname_hash != std::hash<std::string>{}(field.name())) {
+    const size_t* other_varname_hash = reinterpret_cast<const size_t*>(&vect[index++]);
+    if (*other_varname_hash != std::hash<std::string>{}(field.name())) {
       oops::Log::error() << "This FieldSet3D variable " << field.name() << " does not match "
                          << "corresponding serialized FieldSet3D variable." << std::endl;
       throw eckit::BadParameter("FieldSet3D::deserialize failed: different variable name", Here());

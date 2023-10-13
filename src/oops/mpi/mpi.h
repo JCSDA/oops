@@ -272,7 +272,7 @@ void exclusiveScan(const eckit::mpi::Comm &comm, size_t &x);
 /// \param root root rank for broadcasting
 template <typename VecType>
 void broadcastVector(const eckit::mpi::Comm & comm, std::vector<VecType> & vectorVar,
-                     const int root) {
+                     const size_t root) {
     // eckit broadcast support vectors, but you need to have the vectors identically
     // sized on both sides before doing the broadcast. This routine will broadcast
     // the vector size so the receiving end can resize properly.
@@ -292,13 +292,13 @@ void broadcastVector(const eckit::mpi::Comm & comm, std::vector<VecType> & vecto
 /// @param comm eckit communicator group
 /// @param boolVar variable for broadcasting
 /// @param root root rank for broadcasting
-void broadcastBool(const eckit::mpi::Comm & comm, bool & boolVar, const int root);
+void broadcastBool(const eckit::mpi::Comm & comm, bool & boolVar, const size_t root);
 
 /// \brief broadcast a string variable via the eckit broadcast
 /// \param comm eckit communicator group
 /// \param stringVar string for broadcasting
 /// \param root root rank for broadcasting
-void broadcastString(const eckit::mpi::Comm & comm, std::string & stringVar, const int root);
+void broadcastString(const eckit::mpi::Comm & comm, std::string & stringVar, const size_t root);
 
 // ------------------------------------------------------------------------------------------------
 // MPI send/receive utilities based on eckit send/receive.

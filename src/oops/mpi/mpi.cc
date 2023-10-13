@@ -189,7 +189,7 @@ void exclusiveScan(const eckit::mpi::Comm &comm, size_t &x) {
 }
 
 // ------------------------------------------------------------------------------------------------
-void broadcastBool(const eckit::mpi::Comm & comm, bool & boolVar, const int root) {
+void broadcastBool(const eckit::mpi::Comm & comm, bool & boolVar, const size_t root) {
     // Send bool as int since eckit MPI broadcast doesn't accept bool
     int tempInt;
     if (comm.rank() == root) {
@@ -201,7 +201,7 @@ void broadcastBool(const eckit::mpi::Comm & comm, bool & boolVar, const int root
     }
 }
 
-void broadcastString(const eckit::mpi::Comm & comm, std::string & stringVar, const int root) {
+void broadcastString(const eckit::mpi::Comm & comm, std::string & stringVar, const size_t root) {
     std::vector<char> buffer;
     if (comm.rank() == root) {
         // Send string as vector of char since eckit MPI broadcast doesn't accept string

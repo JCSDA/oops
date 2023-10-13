@@ -58,7 +58,7 @@ template <typename MODEL> void testAtlasInterface() {
 
   // Fields have consistent size
   EXPECT(fset.size() >= 1);  // should have at least the "owned" field
-  for (size_t i = 0; i < fset.size(); ++i) {
+  for (atlas::idx_t i = 0; i < fset.size(); ++i) {
     EXPECT(fset[i].rank() == 2);
   }
 
