@@ -21,11 +21,16 @@ TimeWindow::TimeWindow(const util::DateTime & winbgn,
     incBound_(inclusiveBound)
 {}
 
-util::TimeWindow TimeWindow::createSubWindow(const util::DateTime & validtime,
-                                             const util::Duration & halfwidth) const {
-  const util::DateTime tLower = std::max(validtime - halfwidth, winbgn_);
-  const util::DateTime tUpper = std::min(validtime + halfwidth, winend_);
+util::TimeWindow TimeWindow::createSubWindow(const util::DateTime & begintime,
+                                             const util::DateTime & endtime) const {
+  const util::DateTime tLower = std::max(begintime, winbgn_);
+  const util::DateTime tUpper = std::min(endtime, winend_);
   return util::TimeWindow(tLower, tUpper, incBound_);
+}
+
+util::TimeWindow TimeWindow::createSubWindow(const util::DateTime & midpoint,
+                                             const util::Duration & halfwidth) const {
+  return this->createSubWindow(midpoint - halfwidth, midpoint + halfwidth);
 }
 
 void TimeWindow::setEpoch(const util::DateTime & epoch) const {
@@ -42,7 +47,7 @@ std::vector<int64_t> TimeWindow::convertDateTimesToEpochTimes
 }
 
 std::vector<bool> TimeWindow::createTimeMask(const std::vector<util::DateTime> & obsTimes) const {
-  const std::vector<int64_t> obsEpochTimes = convertDateTimesToEpochTimes(obsTimes, epoch_);
+  const std::vector<int64_t> obsEpochTimes = this->convertDateTimesToEpochTimes(obsTimes, epoch_);
   return this->createTimeMask(obsEpochTimes);
 }
 

@@ -32,12 +32,19 @@ class TimeWindow : public util::Printable {
              const util::DateTime & winend,
              const InclusiveWindowBound inclusiveBound = InclusiveWindowBound::UPPER);
 
-  /// \brief Return a new TimeWindow object spanning `validtime` +/- `halfwidth`.
+  /// \brief Return a new TimeWindow object spanning `midpoint` +/- `halfwidth`.
   /// The code adjusts the bounds of the new time window in order to ensure they
   /// do not exceed those of the generating window.
   /// The new window has the same inclusive/exclusive bounds as the generating one.
-  util::TimeWindow createSubWindow(const util::DateTime & validtime,
+  util::TimeWindow createSubWindow(const util::DateTime & midpoint,
                                    const util::Duration & halfwidth) const;
+
+  /// \brief Return a new TimeWindow object spanning from `begin` to `end`.
+  /// The code adjusts the bounds of the new time window in order to ensure they
+  /// do not exceed those of the generating window.
+  /// The new window has the same inclusive/exclusive bounds as the generating one.
+  util::TimeWindow createSubWindow(const util::DateTime & begin,
+                                   const util::DateTime & end) const;
 
   /// \brief Create a mask that indicates which entries in a vector of `util::DateTime` objects lie
   /// within the time window. A value of `true` indicates that an entry lies in the window.

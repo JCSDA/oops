@@ -48,40 +48,61 @@ namespace test {
     EXPECT(timeWindowInclusiveLower.midpoint() == expectedWindowMidpoint);
   }
 
-  void testTimeSlot() {
+  void testSubWindow() {
     // Set up time window.
     const util::DateTime windowStart(2023, 1, 1, 0, 0, 0);
     const util::DateTime windowEnd(2023, 1, 2, 0, 0, 0);
     const util::TimeWindow timeWindow(windowStart, windowEnd);
 
-    // Valid time (in practice obtained from a model state).
-    const util::DateTime validTime(2023, 1, 1, 12, 0, 0);
-    // Window around valid time in which observations are accepted.
+    // Sub-window midpoint.
+    const util::DateTime midPoint(2023, 1, 1, 12, 0, 0);
+    // Window around midpoint in which observations are accepted.
     const util::Duration halfWidth("PT3H");
-    // Create time slot.
-    const util::TimeWindow timeSlot = timeWindow.createSubWindow(validTime, halfWidth);
+    // Create sub-window spanning `midPoint` +/- `halfHidth`.
+    const util::TimeWindow subWindow = timeWindow.createSubWindow(midPoint, halfWidth);
 
-    // Check time slot accessors.
-    const util::DateTime expectedTimeSlotStart(validTime - halfWidth);
-    const util::DateTime expectedTimeSlotEnd(validTime + halfWidth);
-    const util::Duration expectedTimeSlotLength(expectedTimeSlotEnd - expectedTimeSlotStart);
-    const util::DateTime expectedTimeSlotMidpoint
-      (expectedTimeSlotStart + expectedTimeSlotLength / 2);
+    // Check sub-window accessors.
+    const util::DateTime expectedSubWindowStart(midPoint - halfWidth);
+    const util::DateTime expectedSubWindowEnd(midPoint + halfWidth);
+    const util::Duration expectedSubWindowLength(expectedSubWindowEnd - expectedSubWindowStart);
+    const util::DateTime expectedSubWindowMidpoint
+      (expectedSubWindowStart + expectedSubWindowLength / 2);
 
-    EXPECT(timeSlot.start() == expectedTimeSlotStart);
-    EXPECT(timeSlot.end() == expectedTimeSlotEnd);
-    EXPECT(timeSlot.length() == expectedTimeSlotLength);
-    EXPECT(timeSlot.midpoint() == expectedTimeSlotMidpoint);
+    EXPECT(subWindow.start() == expectedSubWindowStart);
+    EXPECT(subWindow.end() == expectedSubWindowEnd);
+    EXPECT(subWindow.length() == expectedSubWindowLength);
+    EXPECT(subWindow.midpoint() == expectedSubWindowMidpoint);
 
     // Perform the same checks with a large half-width. In this case expect the
-    // time slot to have the same bounds as the original window.
+    // sub-window to have the same bounds as the original window.
     const util::Duration halfWidthLarge("P1D");
-    const util::TimeWindow timeSlotLarge = timeWindow.createSubWindow(validTime, halfWidthLarge);
+    const util::TimeWindow subWindowLarge = timeWindow.createSubWindow(midPoint, halfWidthLarge);
 
-    EXPECT(timeSlotLarge.start() == timeWindow.start());
-    EXPECT(timeSlotLarge.end() == timeWindow.end());
-    EXPECT(timeSlotLarge.length() == timeWindow.length());
-    EXPECT(timeSlotLarge.midpoint() == timeWindow.midpoint());
+    EXPECT(subWindowLarge.start() == timeWindow.start());
+    EXPECT(subWindowLarge.end() == timeWindow.end());
+    EXPECT(subWindowLarge.length() == timeWindow.length());
+    EXPECT(subWindowLarge.midpoint() == timeWindow.midpoint());
+
+    // Create another sub-window spanning `subBegin`, `subEnd`.
+    const util::DateTime subBegin(2023, 1, 1, 9, 0, 0);
+    const util::DateTime subEnd(2023, 1, 1, 15, 0, 0);
+    const util::TimeWindow subWindowBeginEnd(subBegin, subEnd);
+    // Expect this sub-window to have the same size as the first one.
+    EXPECT(subWindowBeginEnd.start() == subWindow.start());
+    EXPECT(subWindowBeginEnd.end() == subWindow.end());
+    EXPECT(subWindowBeginEnd.length() == subWindow.length());
+    EXPECT(subWindowBeginEnd.midpoint() == subWindow.midpoint());
+
+    // Perform the same checks with values of `subBegin` and `subEnd` that exceed
+    // the original window bounds.
+    const util::DateTime subBeginLarge(2022, 12, 31, 0, 0, 0);
+    const util::DateTime subEndLarge(2023, 1, 3, 0, 0, 0);
+    const util::TimeWindow subWindowBeginEndLarge =
+      timeWindow.createSubWindow(subBeginLarge, subEndLarge);
+    EXPECT(subWindowBeginEndLarge.start() == subWindowLarge.start());
+    EXPECT(subWindowBeginEndLarge.end() == subWindowLarge.end());
+    EXPECT(subWindowBeginEndLarge.length() == subWindowLarge.length());
+    EXPECT(subWindowBeginEndLarge.midpoint() == subWindowLarge.midpoint());
   }
 
   void testMask() {
@@ -134,8 +155,8 @@ namespace test {
     testAccessors();
   }
 
-  CASE("util/TimeWindow/timeslot") {
-    testTimeSlot();
+  CASE("util/TimeWindow/subwindow") {
+    testSubWindow();
   }
 
   CASE("util/TimeWindow/mask") {
