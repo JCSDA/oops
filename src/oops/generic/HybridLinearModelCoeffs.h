@@ -10,6 +10,7 @@
 #define OOPS_GENERIC_HYBRIDLINEARMODELCOEFFS_H_
 
 #include <map>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -36,6 +37,7 @@ class HybridLinearModelCoeffsParameters : public Parameters {
   RequiredParameter<atlas::idx_t> influenceSize{"influence region size", this};
   RequiredParameter<util::DateTime> windowBegin{"window begin", this};
   RequiredParameter<util::Duration> windowLength{"window length", this};
+  Parameter<bool> shifting{"window shift", false, this};
   OptionalParameter<EnsembleParameters_> ensemble{"ensemble", this};
   OptionalParameter<CalculatorParameters_> calculator{"calculator", this};
   OptionalParameter<eckit::LocalConfiguration> input{"input", this};
@@ -74,6 +76,7 @@ class HybridLinearModelCoeffs {
   atlas::Field updateStencil_;
   std::unordered_map<std::string, std::vector<std::string>> coeffsFieldNames_;
   std::map<util::DateTime, atlas::FieldSet> coeffsSaver_;
+  std::unique_ptr<util::TimeWindow> timeWindow_;
 };
 
 //------------------------------------------------------------------------------
@@ -96,6 +99,11 @@ HybridLinearModelCoeffs<MODEL>::HybridLinearModelCoeffs(
           "update tstep is not a multiple of simplified linear model tstep");
   }
   params_.deserialize(config);
+  // Create time window
+  timeWindow_ = std::make_unique<util::TimeWindow>
+    (params_.windowBegin.value(),
+     params_.windowBegin.value() + params_.windowLength.value(),
+     util::boolToWindowBound(params_.shifting));
   // Set up storage for coefficients
   makeCoeffsSaver(updateTstep, updateGeometry.functionSpace());
   // Set up stencil for applying coefficients
@@ -125,8 +133,8 @@ void HybridLinearModelCoeffs<MODEL>::makeCoeffsSaver(const util::Duration & upda
     coeffsFieldNames_.emplace(var, coeffsFieldNamesVar);
   }
   // Create Fields for coeffs at each time, using FunctionSpace from updateGeometry
-  util::DateTime time(params_.windowBegin);
-  while (time < (params_.windowBegin.value() + params_.windowLength.value())) {
+  util::DateTime time(timeWindow_->start());
+  while (time < timeWindow_->end()) {
     time += updateTstep;
     atlas::FieldSet coeffsFSet;
     coeffsSaver_.emplace(time, coeffsFSet);
@@ -168,8 +176,8 @@ void HybridLinearModelCoeffs<MODEL>::generate(const Geometry_ & updateGeometry,
                          updateGeometry);
   HtlmCalculator_ calculator(*params_.calculator.value(), trainingVars_, updateGeometry,
                              influenceSize_, ensemble.size(), coeffsFieldNames_);
-  util::DateTime time(params_.windowBegin);
-  while (time < (params_.windowBegin.value() + params_.windowLength.value())) {
+  util::DateTime time(timeWindow_->start());
+  while (time < timeWindow_->end()) {
     time += updateTstep;
     ensemble.step(updateTstep, simplifiedLinearModel);
     calculator.setOfCoeffs(ensemble.getLinearEns(), ensemble.getLinearErrDe(),
@@ -198,8 +206,8 @@ void HybridLinearModelCoeffs<MODEL>::read(const Geometry_ & updateGeometry,
       fileVars.addMetaData(var + std::to_string(v), "levels", nLevels_);
     }
   }
-  util::DateTime time(params_.windowBegin);
-  while (time < (params_.windowBegin.value() + params_.windowLength.value())) {
+  util::DateTime time(timeWindow_->start());
+  while (time < timeWindow_->end()) {
     time += updateTstep;
     const std::string filepath = baseFilepath + "_" + time.toStringIO();
     inputConfig.set("filepath", filepath);

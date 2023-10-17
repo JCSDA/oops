@@ -104,8 +104,8 @@ template<typename MODEL, typename OBS> class CostJbTotal {
   const JbState_ & jbState() const {return *jb_;}
   const JbModelAux_ & jbModBias() const {return jbModBias_;}
   const JbObsAux_ & jbObsBias() const {return jbObsBias_;}
-  const util::DateTime & windowBegin() const {return windowBegin_;}
-  const util::DateTime & windowEnd()   const {return windowEnd_;}
+  const util::DateTime & windowBegin() const {return timeWindow_->start();}
+  const util::DateTime & windowEnd()   const {return timeWindow_->end();}
 
  private:
   double evaluate(const CtrlInc_ &) const;
@@ -117,8 +117,7 @@ template<typename MODEL, typename OBS> class CostJbTotal {
 
 /// Inner loop resolution
   const Geometry_ * resol_;
-  const util::DateTime windowBegin_;
-  const util::DateTime windowEnd_;
+  std::unique_ptr<util::TimeWindow> timeWindow_;
   eckit::LocalConfiguration innerConf_;
 
 /// First guess increment \f$x_0-x_b\f$ or more generally \f$ x_i-M(x_{i-1})\f$.
@@ -141,11 +140,17 @@ CostJbTotal<MODEL, OBS>::CostJbTotal(JbState_ * jb,
   : jb_(jb), jbModBias_(conf, resol),
     jbObsBias_(odb, conf.getSubConfiguration("observations.observers")),
     xb_(jb_->background(), jbModBias_.background(), jbObsBias_.background()),
-    resol_(nullptr), windowBegin_(conf.getString("window begin")),
-    windowEnd_(windowBegin_ + util::Duration(conf.getString("window length"))),
-    innerConf_(), dxFG_(), xx_(), traj_(), jqtraj_()
+    resol_(nullptr), innerConf_(), dxFG_(), xx_(), traj_(), jqtraj_()
 {
   jbEvaluation_ = conf.getBool("jb evaluation", true);
+
+  const util::Duration windowLength = util::Duration(conf.getString("window length"));
+  const util::DateTime windowBegin = util::DateTime(conf.getString("window begin"));
+  const bool shifting = static_cast<bool>(conf.getBool("window shift", false));
+
+  timeWindow_ = std::make_unique<util::TimeWindow>
+    (windowBegin, windowBegin + windowLength, util::boolToWindowBound(shifting));
+
   Log::trace() << "CostJbTotal contructed." << std::endl;
 }
 

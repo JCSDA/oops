@@ -51,13 +51,16 @@ class GenHybridLinearModelCoeffs : public Application {
     HybridLinearModel_ hybridLinearModel(updateGeometry, htlmConf);
 
     if (!fullConfig.getSubConfiguration("test").empty()) {
-      util::DateTime bgn(htlmConf.getString("coefficients.window begin"));   // bad
-      util::Duration len(htlmConf.getString("coefficients.window length"));  // bad
-      Increment<MODEL> dx(updateGeometry, hybridLinearModel.variables(), bgn);
+      const util::DateTime bgn(htlmConf.getString("coefficients.window begin"));   // bad
+      const util::Duration len(htlmConf.getString("coefficients.window length"));  // bad
+      const bool shifting =
+        static_cast<bool>(htlmConf.getBool("coefficients.window shift", false));
+      const util::TimeWindow timeWindow(bgn, bgn + len, util::boolToWindowBound(shifting));
+      Increment<MODEL> dx(updateGeometry, hybridLinearModel.variables(), timeWindow.start());
       dx.ones();
       ModelAuxIncrement<MODEL> mauxinc(updateGeometry, eckit::LocalConfiguration());
-      util::DateTime time(bgn);
-      while (time < bgn + len) {
+      util::DateTime time(timeWindow.start());
+      while (time < timeWindow.end()) {
         hybridLinearModel.stepTL(dx, mauxinc);
         time += hybridLinearModel.timeResolution();
         Log::test() << "dx at " << time << ": " << dx << std::endl;
