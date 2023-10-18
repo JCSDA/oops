@@ -115,13 +115,7 @@ template<typename MODEL, typename OBS> class CostFunction : private boost::nonco
   std::shared_ptr<JbTotal_> jb_;
   std::vector<std::shared_ptr<CostBase_>> jterms_;
   std::shared_ptr<CostJo_> jo_;
-  std::unique_ptr<const Geometry_> lowres_;
-  // Geometry from the previous iteration. A temporary fix Required because
-  // lowres_ is not properly shared between all the objects that use it.
-  // lowres_ gets destructed after the first outer loop iteration, but some
-  // minimizers need access to the first outer loop Geometry in the second
-  // outer loop (e.g. DRMinimizer).
-  std::unique_ptr<const Geometry_> lowres_previter_;
+  std::vector<std::unique_ptr<const Geometry_>> lowres_;
 
   mutable double costJb_;
   mutable double costJoJc_;
@@ -225,20 +219,19 @@ double CostFunction<MODEL, OBS>::evaluate(CtrlVar_ & fguess,
   Log::trace() << "CostFunction::evaluate start, linearize = " << linearize << std::endl;
   if (linearize) {
 //  Inner loop resolution
-    lowres_previter_ = std::move(lowres_);
     const eckit::LocalConfiguration resConf(innerConf, "geometry");
-    lowres_ = std::make_unique<Geometry_>(resConf, this->geometry().getComm(),
-                                          this->geometry().timeComm());
+    lowres_.push_back(std::make_unique<Geometry_>(resConf, this->geometry().getComm(),
+                                                  this->geometry().timeComm()));
 
 //  Setup trajectory for terms of cost function
     PostProcessorTLAD<MODEL> pptraj;
-    jb_->setPostProcTraj(fguess, innerConf, *lowres_, pptraj);
+    jb_->setPostProcTraj(fguess, innerConf, *lowres_.back(), pptraj);
     for (size_t jj = 0; jj < jterms_.size(); ++jj) {
-      jterms_[jj]->setPostProcTraj(fguess, innerConf, *lowres_, pptraj);
+      jterms_[jj]->setPostProcTraj(fguess, innerConf, *lowres_.back(), pptraj);
     }
 
 //  Setup specific linearization if needed (including TLM)
-    this->doLinearize(*lowres_, innerConf, jb_->getBackground(), fguess, post, pptraj);
+    this->doLinearize(*lowres_.back(), innerConf, jb_->getBackground(), fguess, post, pptraj);
   }
 
 // Setup terms of cost function
