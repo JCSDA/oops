@@ -545,131 +545,141 @@ void printDiagValues(const eckit::mpi::Comm & timeComm,
                      const atlas::FieldSet & diagFset) {
   oops::Log::trace() << "printDiagValues starting" << std::endl;
 
-  // Global lon/lat field
-  atlas::FieldSet globalCoords;
-  atlas::Field lonGlobal = fspace.createField<double>(
-    atlas::option::name("lon") | atlas::option::global() | atlas::option::levels(0));
-  globalCoords.add(lonGlobal);
-  atlas::Field latGlobal = fspace.createField<double>(
-    atlas::option::name("lat") | atlas::option::global() | atlas::option::levels(0));
-  globalCoords.add(latGlobal);
-  auto lonViewGlobal = atlas::array::make_view<double, 1>(lonGlobal);
-  auto latViewGlobal = atlas::array::make_view<double, 1>(latGlobal);
-  const atlas::Field localLonlat = fspace.lonlat();
-  const auto lonlatView = atlas::array::make_view<double, 2>(localLonlat);
-  if (fspace.type() == "PointCloud") {
-    // Copy local
-    for (atlas::idx_t jnode = 0; jnode < localLonlat.shape(0); ++jnode) {
-       lonViewGlobal(jnode) = lonlatView(jnode, 0);
-       latViewGlobal(jnode) = lonlatView(jnode, 1);
+  // Pull out local values of lon/lat/data where diag is unity
+  std::vector<double> locLons;
+  std::vector<double> locLats;
+  std::vector<size_t> locLevs;
+  std::vector<size_t> locSubWindows;
+  std::vector<double> locValues;
+  std::vector<size_t> locFieldIndex;
+
+  const auto lonlatView = atlas::array::make_view<double, 2>(fspace.lonlat());
+  int counter = 0;
+  for (const auto & diagField : diagFset) {
+    const auto & dataField = dataFset.field(diagField.name());
+    ASSERT(diagField.rank() == 2);
+    ASSERT(dataField.rank() == 2);
+    const auto diagView = atlas::array::make_view<double, 2>(diagField);
+    const auto dataView = atlas::array::make_view<double, 2>(dataField);
+    for (int jnode = 0; jnode < diagField.shape(0); ++jnode) {
+      for (int jlevel = 0; jlevel < diagField.shape(1); ++jlevel) {
+        if (std::abs(diagView(jnode, jlevel) - 1.0) < 1.0e-12) {
+          // Diagnostic point found
+          locLons.push_back(lonlatView(jnode, 0));
+          locLats.push_back(lonlatView(jnode, 1));
+          locLevs.push_back(jlevel+1);
+          locSubWindows.push_back(timeComm.rank());
+          locValues.push_back(dataView(jnode, jlevel));
+          locFieldIndex.push_back(counter);
+        }
+      }
     }
-  } else {
-    // Gather local
-    atlas::FieldSet localCoords;
-    atlas::Field lonLocal = fspace.createField<double>(
-      atlas::option::name("lon") | atlas::option::levels(0));
-    localCoords.add(lonLocal);
-    atlas::Field latLocal = fspace.createField<double>(
-      atlas::option::name("lat") | atlas::option::levels(0));
-    localCoords.add(latLocal);
-    auto lonViewLocal = atlas::array::make_view<double, 1>(lonLocal);
-    auto latViewLocal = atlas::array::make_view<double, 1>(latLocal);
-    for (atlas::idx_t jnode = 0; jnode < localLonlat.shape(0); ++jnode) {
-       lonViewLocal(jnode) = lonlatView(jnode, 0);
-       latViewLocal(jnode) = lonlatView(jnode, 1);
-    }
-    fspace.gather(localCoords, globalCoords);
+    ++counter;
   }
 
-  for (const auto & diagField : diagFset) {
-    // Get data field with the same name
-    const atlas::Field dataField = dataFset.field(diagField.name());
+  // Gather local values onto root MPI task (w.r.t. geometry communicator, hence 'g' prefix)
+  // Gather sizes
+  const int gsize = locLons.size();
+  std::vector<int> gsizes(comm.size());
+  comm.gather(gsize, gsizes, 0);
 
-    // Global fields
-    atlas::Field globalDataField;
-    atlas::Field globalDiagField;
-    if (fspace.type() == "PointCloud") {
-      // Copy local
-      globalDataField = dataField;
-      globalDiagField = diagField;
-    } else {
-      // Gather local
-      globalDataField = fspace.createField<double>(
-        atlas::option::name(dataField.name()) | atlas::option::levels(dataField.levels())
-        | atlas::option::global());
-      globalDiagField = fspace.createField<double>(
-        atlas::option::name(diagField.name()) | atlas::option::levels(diagField.levels())
-        | atlas::option::global());
-      fspace.gather(dataField, globalDataField);
-      fspace.gather(diagField, globalDiagField);
+  // Gather data
+  std::vector<int> gdispls;
+  std::vector<int> grecvcounts;
+  if (comm.rank() == 0) {
+    gdispls.resize(comm.size());
+    grecvcounts.resize(comm.size());
+    for (size_t i = 0; i < comm.size(); ++i) {
+      grecvcounts[i] = gsizes[i];
+      gdispls[i] = static_cast<int>(i ? gdispls[i - 1] + grecvcounts[i - 1] : 0);
     }
+  }
+  const size_t grecvsize = std::accumulate(grecvcounts.begin(), grecvcounts.end(), 0);
+  std::vector<double> lons(grecvsize);
+  std::vector<double> lats(grecvsize);
+  std::vector<size_t> levs(grecvsize);
+  std::vector<size_t> subWindows(grecvsize);
+  std::vector<double> values(grecvsize);
+  std::vector<size_t> fieldIndex(grecvsize);
+  comm.gatherv(locLons, lons, grecvcounts, gdispls, 0);
+  comm.gatherv(locLats, lats, grecvcounts, gdispls, 0);
+  comm.gatherv(locLevs, levs, grecvcounts, gdispls, 0);
+  comm.gatherv(locSubWindows, subWindows, grecvcounts, gdispls, 0);
+  comm.gatherv(locValues, values, grecvcounts, gdispls, 0);
+  comm.gatherv(locFieldIndex, fieldIndex, grecvcounts, gdispls, 0);
 
-    if (comm.rank() == 0) {
-      // Print data values at diag points
-      std::vector<double> lons;
-      std::vector<double> lats;
-      std::vector<size_t> levs;
-      std::vector<size_t> subWindows;
-      std::vector<double> values;
-
-      if (globalDiagField.rank() == 2) {
-        auto dataView = atlas::array::make_view<double, 2>(globalDataField);
-        auto diagView = atlas::array::make_view<double, 2>(globalDiagField);
-        for (int jnode = 0; jnode < globalDiagField.shape(0); ++jnode) {
-          for (int jlevel = 0; jlevel < globalDiagField.shape(1); ++jlevel) {
-            if (std::abs(diagView(jnode, jlevel) - 1.0) < 1.0e-12) {
-              // Diagnostic point found
-              lons.push_back(lonViewGlobal(jnode));
-              lats.push_back(latViewGlobal(jnode));
-              levs.push_back(jlevel+1);
-              subWindows.push_back(timeComm.rank());
-              values.push_back(dataView(jnode, jlevel));
-            }
-          }
-        }
-      } else {
-        ABORT("getDiagValues: wrong rank");
+  // Search for and eliminate duplicate entries that can occur as a result of diagnostic points
+  // in overlapping halo regions. The algorithm here is not at all efficient, but this is for
+  // diagnostics and should be ok.
+  // TODO(ALGO): - once atlas is standardized, use the 'owned' field to consider only owned
+  //               points when collected local data above; then can delete this entire section
+  for (size_t i = 0; i < lons.size(); ++i) {
+    for (size_t j = 0; j < i; ++j) {
+      if ((lons[i] == lons[j]) && (lats[i] == lats[j])
+          && (levs[i] == levs[j]) && (subWindows[i] == subWindows[j])
+          && (values[i] == values[j]) && (fieldIndex[i] == fieldIndex[j])) {
+        // i,j are duplicates
+        // - delete i which is closer to end
+        // - decrement index i, so that next loop will keep same i (but new data after erasing)
+        lons.erase(lons.begin() + i);
+        lats.erase(lats.begin() + i);
+        levs.erase(levs.begin() + i);
+        subWindows.erase(subWindows.begin() + i);
+        values.erase(values.begin() + i);
+        fieldIndex.erase(fieldIndex.begin() + i);
+        --i;
+        continue;
       }
+    }
+  }
 
-      // Gather sizes
-      int size = lons.size();
-      std::vector<int> sizes(timeComm.size());
-      timeComm.gather(size, sizes, 0);
+  // Gather global values onto root MPI task (w.r.t. time communicator, hence 't' prefix)
+  if (comm.rank() == 0) {
+    // Gather sizes
+    const int tsize = lons.size();
+    std::vector<int> tsizes(timeComm.size());
+    timeComm.gather(tsize, tsizes, 0);
 
-      // Gather data
-      std::vector<int> displs;
-      std::vector<int> recvcounts;
-      if (timeComm.rank() == 0) {
-        displs.resize(timeComm.size());
-        recvcounts.resize(timeComm.size());
-        for (size_t i = 0; i < timeComm.size(); ++i) {
-          recvcounts[i] = sizes[i];
-          displs[i] = static_cast<int>(i ? displs[i - 1] + recvcounts[i - 1] : 0);
-        }
+    // Gather data
+    std::vector<int> tdispls;
+    std::vector<int> trecvcounts;
+    if (timeComm.rank() == 0) {
+      tdispls.resize(timeComm.size());
+      trecvcounts.resize(timeComm.size());
+      for (size_t i = 0; i < timeComm.size(); ++i) {
+        trecvcounts[i] = tsizes[i];
+        tdispls[i] = static_cast<int>(i ? tdispls[i - 1] + trecvcounts[i - 1] : 0);
       }
-      size_t recvsize = size_t(std::accumulate(recvcounts.begin(), recvcounts.end(), 0));
-      std::vector<double> lonsOnRoot(recvsize);
-      std::vector<double> latsOnRoot(recvsize);
-      std::vector<size_t> levsOnRoot(recvsize);
-      std::vector<size_t> subWindowsOnRoot(recvsize);
-      std::vector<double> valuesOnRoot(recvsize);
-      timeComm.gatherv(lons, lonsOnRoot, recvcounts, displs, 0);
-      timeComm.gatherv(lats, latsOnRoot, recvcounts, displs, 0);
-      timeComm.gatherv(levs, levsOnRoot, recvcounts, displs, 0);
-      timeComm.gatherv(subWindows, subWindowsOnRoot, recvcounts, displs, 0);
-      timeComm.gatherv(values, valuesOnRoot, recvcounts, displs, 0);
+    }
+    const size_t trecvsize = size_t(std::accumulate(trecvcounts.begin(), trecvcounts.end(), 0));
+    std::vector<double> lonsOnRoot(trecvsize);
+    std::vector<double> latsOnRoot(trecvsize);
+    std::vector<size_t> levsOnRoot(trecvsize);
+    std::vector<size_t> subWindowsOnRoot(trecvsize);
+    std::vector<double> valuesOnRoot(trecvsize);
+    std::vector<size_t> fieldIndexOnRoot(trecvsize);
+    timeComm.gatherv(lons, lonsOnRoot, trecvcounts, tdispls, 0);
+    timeComm.gatherv(lats, latsOnRoot, trecvcounts, tdispls, 0);
+    timeComm.gatherv(levs, levsOnRoot, trecvcounts, tdispls, 0);
+    timeComm.gatherv(subWindows, subWindowsOnRoot, trecvcounts, tdispls, 0);
+    timeComm.gatherv(values, valuesOnRoot, trecvcounts, tdispls, 0);
+    timeComm.gatherv(fieldIndex, fieldIndexOnRoot, trecvcounts, tdispls, 0);
 
-      // Print results
-      if (timeComm.rank() == 0) {
+    // Print results, scanning list multiple times to group prints by field name
+    if (timeComm.rank() == 0) {
+      const auto & names = diagFset.field_names();
+      for (const auto & name : names) {
         for (size_t i = 0; i < lonsOnRoot.size(); ++i) {
-          oops::Log::test() << "  + Value for variable " << diagField.name()
-                            <<", subwindow " << subWindowsOnRoot[i]
-                            << std::fixed << std::setprecision(5)
-                            << ", at (longitude, latitude, vertical index) point ("
-                            << lonsOnRoot[i] << ", " << latsOnRoot[i]
-                            << ", " << levsOnRoot[i] << "): "
-                            << std::scientific << std::setprecision(16)
-                            << valuesOnRoot[i] << std::endl;
+          if (name == names[fieldIndexOnRoot[i]]) {
+            oops::Log::test() << "  + Value for variable " << names[fieldIndexOnRoot[i]]
+                              <<", subwindow " << subWindowsOnRoot[i]
+                              << std::fixed << std::setprecision(5)
+                              << ", at (longitude, latitude, vertical index) point ("
+                              << lonsOnRoot[i] << ", " << latsOnRoot[i]
+                              << ", " << levsOnRoot[i] << "): "
+                              << std::scientific << std::setprecision(16)
+                              << valuesOnRoot[i] << std::endl;
+          }
         }
       }
     }
