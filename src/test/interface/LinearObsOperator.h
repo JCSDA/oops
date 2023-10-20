@@ -128,10 +128,12 @@ class TestParameters : public oops::Parameters {
   OOPS_CONCRETE_PARAMETERS(TestParameters, Parameters)
 
  public:
-  /// Only observations taken at times lying in the (`window begin`, `window end`] interval
-  /// will be included in observation spaces.
+  /// Only observations taken at times lying between `window begin` and `window end`
+  /// will be included in observation spaces. If `window shift` is `true`, the
+  /// lower bound of the time window is inclusive; if `false`, the upper bound is inclusive.
   oops::RequiredParameter<util::DateTime> windowBegin{"window begin", this};
   oops::RequiredParameter<util::DateTime> windowEnd{"window end", this};
+  oops::Parameter<bool> shifting{"window shift", false, this};
   /// Each element of this list configures an observation space and an operator whose capability
   /// of simulating observations from this space is to be tested.
   oops::Parameter<std::vector<ObsTypeParameters<OBS>>> observations{"observations", {}, this};
