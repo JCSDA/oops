@@ -16,6 +16,8 @@
 #include<iostream>
 #include<string>
 
+#include "eckit/exception/Exceptions.h"
+
 namespace util {
 
   /// This class represents time durations.
@@ -89,8 +91,22 @@ namespace util {
     int operator%(const Duration& other) const;
     void operator+=(const Duration& other);
     void operator-=(const Duration& other);
-    void operator*=(const int);
-    void operator/=(const int);
+    template <typename T> void operator*=(const T kk) {
+        static_assert(std::is_integral<T>::value,
+                      "Forbidden to multiply Duration by anything except "
+                      "an integral data type.");
+        seconds_ *= kk;
+      }
+
+    template <typename T> void operator/=(const T kk) {
+        static_assert(std::is_integral<T>::value,
+                      "Forbidden to divide Duration by anything except "
+                      "an integral data type.");
+        ASSERT_MSG(seconds_ % kk == 0,
+                   "Forbidden inexact division of Duration by integer: "
+                   + std::to_string(seconds_) + " / " + std::to_string(kk));
+        seconds_ /= kk;
+    }
 
    private:
   // -- Copy allowed
@@ -110,9 +126,25 @@ namespace util {
 
   Duration operator+ (const Duration &, const Duration &);
   Duration operator- (const Duration &, const Duration &);
-  Duration operator* (const int, const Duration &);
-  Duration operator* (const Duration &, const int);
-  Duration operator/ (const Duration &, const int);
+  template <typename T> Duration operator* (const T kk, const Duration & dd) {
+    return operator*(dd, kk);
+  }
+  template <typename T> Duration operator* (const Duration & dd, const T kk) {
+    static_assert(std::is_integral<T>::value,
+                  "Forbidden to multiply Duration by anything except "
+                  "an integral data type.");
+    Duration res(dd);
+    res *= kk;
+    return res;
+  }
+  template <typename T> Duration operator/ (const Duration & dd, const T kk) {
+    static_assert(std::is_integral<T>::value,
+                  "Forbidden to divide Duration by anything except "
+                  "an integral data type.");
+    Duration res(dd);
+    res /= kk;
+    return res;
+  }
 
   // -----------------------------------------------------------------------------
 
