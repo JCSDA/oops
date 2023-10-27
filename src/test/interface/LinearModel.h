@@ -184,14 +184,19 @@ template <typename MODEL> void testLinearModelZeroLength() {
   Test_::tlm().forecastTL(dxm, daux, zero);
   dx = dxm;
   EXPECT(dx.validTime() == vt);
-  EXPECT(dx.norm() == ininorm);
+  // In principle, test that a zero-length forecast (=> calling initialize then finalize) gives
+  // back the initial value of the Increment. In reality, for some models, the value is changed,
+  // for example if some accuracy-degrading variable change is used in going from the DA variables
+  // to/from the model internal variables. To handle this case, add a tolerance:
+  const double tol = Test_::test().getDouble("tolerance zero length forecast", 0.0);
+  EXPECT(oops::is_close(dx.norm(), ininorm, tol));
 
   dxm.zero();
   dxm = dxref[0];
   Test_::tlm().forecastAD(dxm, daux, zero);
   dx = dxm;
   EXPECT(dx.validTime() == vt);
-  EXPECT(dx.norm() == ininorm);
+  EXPECT(oops::is_close(dx.norm(), ininorm, tol));
 }
 
 // -----------------------------------------------------------------------------
