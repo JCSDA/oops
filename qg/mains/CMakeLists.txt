@@ -90,13 +90,6 @@ ecbuild_add_executable( TARGET  qg_convertincrement.x
                       )
 oops_output_json_schema( qg_convertincrement.x )
 
-ecbuild_add_executable( TARGET  qg_ens_variance.x
-                        SOURCES qgEnsVariance.cc
-                        LIBS    qg
-                      )
-oops_output_json_schema( qg_ens_variance.x )
-
-
 ecbuild_add_executable( TARGET  qg_ens_mean_variance.x
                         SOURCES qgEnsMeanVariance.cc
                         LIBS    qg

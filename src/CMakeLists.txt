@@ -305,7 +305,6 @@ oops/runs/DiffStates.h
 oops/runs/EnsembleApplication.h
 oops/runs/EnsMeanAndVariance.h
 oops/runs/EnsRecenter.h
-oops/runs/EnsVariance.h
 oops/runs/ExternalDFI.h
 oops/runs/Forecast.h
 oops/runs/GenEnsPertB.h

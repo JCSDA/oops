@@ -71,7 +71,6 @@ list( APPEND qg_testinput
   testinput/ens_hofx.yaml
   testinput/ens_mean_variance.yaml
   testinput/ens_recenter.yaml
-  testinput/ens_variance.yaml
   testinput/error_covariance.yaml
   testinput/fieldset4D_par.yaml
   testinput/fieldset4D_seq.yaml
@@ -181,7 +180,6 @@ list( APPEND qg_testoutput
   testoutput/ens_hofx.test
   testoutput/ens_mean_variance.test
   testoutput/ens_recenter.test
-  testoutput/ens_variance.test
   testoutput/forecast.test
   testoutput/forecast_5level_pert_heat.test
   testoutput/gen_ens_pert_B.test
@@ -577,12 +575,6 @@ ecbuild_add_test( TARGET test_qg_ens_hofx
                   ARGS testinput/ens_hofx.yaml testoutput/ens_hofx.log.out
                   DEPENDS qg_ens_hofx.x
                   TEST_DEPENDS test_qg_gen_ens_pert_B test_qg_make_obs_4d_12h )
-
-ecbuild_add_test( TARGET test_qg_ens_variance
-                  OMP 2
-                  ARGS testinput/ens_variance.yaml
-                  COMMAND  qg_ens_variance.x
-                  TEST_DEPENDS test_qg_gen_ens_pert_B )
 
 ecbuild_add_test( TARGET test_qg_ens_mean_variance
                   OMP 2
