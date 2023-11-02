@@ -12,10 +12,10 @@ hybrid linear model:
       variable change: Identity
       name: QgTLM
   update tstep: PT6H
-  update variables: [x]
+  variables: [x]
   coefficients:
     influence region size: 3
-    training variables: [x]
+    update variables: [x]
     window length: PT24H
     window begin: 2010-01-01T00:00:00Z
     calculator:
@@ -33,16 +33,16 @@ hybrid linear model:
       model:
         name: QG
         tstep: PT1H
-      state geometry:
+      model geometry:
         nx: 40
         ny: 20
         depths: [500, 1000, 1500, 3000, 4000]
         perturbed heating: 0.1
-      control member:
+      nonlinear control:
         date: '2010-01-01T00:00:00Z'
         filename: Data/forecast_5level_pert_heat.fc.2009-12-31T00:00:00Z.P1D.nc
-      non linear ensemble:
-        perturbed members:
+      nonlinear ensemble:
+        read:
           members from template:
             template:
               date: 2010-01-01T00:00:00Z

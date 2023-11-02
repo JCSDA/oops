@@ -53,12 +53,12 @@ class HybridLinearModel : public LinearModelBase<MODEL> {
   void setTrajectory(const State_ &, State_ &, const ModelAuxCtl_ &) override;
 
   const util::Duration & timeResolution() const override {return updateTstep_;}
-  const oops::Variables & variables() const override {return updateVars_;}
+  const oops::Variables & variables() const override {return vars_;}
 
  private:
   void print(std::ostream &) const override {}
   const util::Duration updateTstep_;
-  const Variables updateVars_;
+  const Variables vars_;  // superset of simplifiedLinearModel_.variables() and coeffs_::updateVars_
   HtlmSimplifiedLinearModel_ simplifiedLinearModel_;
   HybridLinearModelCoeffs_ coeffs_;
 };
@@ -68,7 +68,7 @@ class HybridLinearModel : public LinearModelBase<MODEL> {
 template<typename MODEL>
 HybridLinearModel<MODEL>::HybridLinearModel(const Geometry_ & updateGeometry,
                                             const eckit::Configuration & config)
-  : updateTstep_(config.getString("update tstep")), updateVars_(config, "update variables"),
+  : updateTstep_(config.getString("update tstep")), vars_(config, "variables"),
     simplifiedLinearModel_(config.getSubConfiguration("simplified linear model"), updateGeometry),
     coeffs_(config.getSubConfiguration("coefficients"), updateGeometry, updateTstep_,
             simplifiedLinearModel_)

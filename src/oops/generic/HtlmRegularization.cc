@@ -28,7 +28,7 @@ HtlmRegularizationPart::HtlmRegularizationPart(const HtlmRegularizationPartParam
     *params_.variables.value() : allVariables), levels_(allLevels), boundingLons_(limitsLon),
   boundingLats_(limitsLat), containsAllGridPoints_(true) {
   if (!AIsSubsetOfB(variables_, allVariables)) {
-    ABORT("HtlmRegularizationPart: \"variables\" must be a subset of H-TLM training variables");
+    ABORT("HtlmRegularizationPart: \"variables\" must be a subset of H-TLM update variables");
   }
   if (params_.levels.value() != boost::none) {
     levels_ = *params.levels.value();

@@ -12,10 +12,6 @@
 #include <memory>
 #include <string>
 
-#include "eckit/config/LocalConfiguration.h"
-
-#include "oops/base/Geometry.h"
-#include "oops/base/Increment.h"
 #include "oops/base/Increment4D.h"
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/Model.h"
@@ -27,169 +23,149 @@ namespace oops {
 template <typename MODEL>
 class StatePerturbationParameters : public Parameters {
   OOPS_CONCRETE_PARAMETERS(StatePerturbationParameters, Parameters)
-  typedef ModelSpaceCovarianceParametersWrapper<MODEL> CovarianceParameters_;
+  typedef ModelSpaceCovarianceParametersWrapper<MODEL>    CovarianceParameters_;
 
  public:
   RequiredParameter<CovarianceParameters_> backgroundError{"background error", this};
   RequiredParameter<Variables> variables{"variables", this};
 };
 
+//------------------------------------------------------------------------------
+
 template<typename MODEL>
-class NonLinearEnsembleParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(NonLinearEnsembleParameters, Parameters)
+class NonlinearEnsembleParameters : public Parameters {
+  OOPS_CONCRETE_PARAMETERS(NonlinearEnsembleParameters, Parameters)
   typedef StatePerturbationParameters<MODEL>    StatePerturbationParameters_;
   typedef StateEnsembleParameters<MODEL>        StateEnsembleParameters_;
 
  public:
-    // Configurations of all perturbed members if reading
-    OptionalParameter<StateEnsembleParameters_> statesReadIn{"perturbed members",
-                                 "read perturbed members from disk", this};
-    // Parameters to generate initial ensemble if not reading in
-    OptionalParameter<StatePerturbationParameters_>
-    statesPerturbation{"ensemble perturbation", "generate ensemble from error covariance", this};
+  OptionalParameter<StateEnsembleParameters_> fromFile{
+    "read", "read nonlinear ensemble initial conditions from file", this};
+  OptionalParameter<StatePerturbationParameters_> fromCovar{
+    "generate", "generate nonlinear ensemble initial conditions from covariance", this};
 
-    void check() const;
+  void check() const {
+    if (fromFile.value() == boost::none && fromCovar.value() == boost::none) {
+      ABORT("NonlinearEnsembleParameters<MODEL>: "
+            "no nonlinear ensemble initial conditions provided (HtlmEnsemble)");
+    }
+    if (fromFile.value() != boost::none && fromCovar.value() != boost::none) {
+      ABORT("NonlinearEnsembleParameters<MODEL>: "
+            "both types of nonlinear ensemble initial conditions provided (HtlmEnsemble)");
+    }
+  }
 };
 
-template <typename MODEL>
-void NonLinearEnsembleParameters<MODEL>::check() const
-{
-  if (statesReadIn.value() == boost::none && statesPerturbation.value() == boost::none) {
-    ABORT("HtlmEnsembleParameters: both initial ensemble and ensemble perturbation are missing");
-  }
-  if (statesReadIn.value() != boost::none && statesPerturbation.value() != boost::none) {
-    ABORT("HtlmEnsembleParameters: both initial ensemble and ensemble perturbation are present");
-  }
-}
+//------------------------------------------------------------------------------
 
 template <typename MODEL>
 class HtlmEnsembleParameters : public Parameters {
   OOPS_CONCRETE_PARAMETERS(HtlmEnsembleParameters, Parameters);
-  typedef StateEnsembleParameters<MODEL>        StateEnsembleParameters_;
-  typedef typename Geometry<MODEL>::Parameters_ GeometryParameters_;
-  typedef NonLinearEnsembleParameters<MODEL>    NlEnsParameters_;
+  typedef typename Geometry<MODEL>::Parameters_    GeometryParameters_;
+  typedef NonlinearEnsembleParameters<MODEL>       NonlinearEnsembleParameters_;
+  typedef StateEnsembleParameters<MODEL>           StateEnsembleParameters_;
 
  public:
-  // Nonlinear forecast model.
-  RequiredParameter<eckit::LocalConfiguration> model{"model", this};
-  // Background and analysis geometry.
-  RequiredParameter<GeometryParameters_> stateGeometry{"state geometry", this};
-  // Augmented model state
-  Parameter<eckit::LocalConfiguration> modelAuxControl{"model aux control",
-    eckit::LocalConfiguration(), this};
-  // Augmented Model Increment
-  Parameter<eckit::LocalConfiguration> modelAuxIncrement{"model aux increment",
-    eckit::LocalConfiguration(), this};
-  // Configurations of the control member.
-  RequiredParameter<eckit::LocalConfiguration> control{"control member", this};
-  // Number of perturbed ensemble members
   RequiredParameter<size_t> ensembleSize{"ensemble size", this};
-  // Nonlinear ensemble initalization parameters
-  RequiredParameter<NlEnsParameters_> nlEnsemble{"non linear ensemble", this};
+  RequiredParameter<eckit::LocalConfiguration> model{"model", this};
+  RequiredParameter<GeometryParameters_> modelGeometry{"model geometry", this};
+  RequiredParameter<eckit::LocalConfiguration> nonlinearControl{"nonlinear control", this};
+  RequiredParameter<NonlinearEnsembleParameters_> nonlinearEnsemble{"nonlinear ensemble", this};
 };
+
+//------------------------------------------------------------------------------
 
 template <typename MODEL>
 class HtlmEnsemble{
-  typedef Geometry<MODEL>                               Geometry_;
-  typedef Model<MODEL>                                  Model_;
-  typedef ModelAuxControl<MODEL>                        ModelAux_;
-  typedef ModelAuxIncrement<MODEL>                      ModelAuxIncrement_;
-  typedef State<MODEL>                                  State_;
-  typedef State4D<MODEL>                                State4D_;
-  typedef StateEnsemble<MODEL>                          StateEnsemble_;
-  typedef Increment<MODEL>                              Increment_;
-  typedef Increment4D<MODEL>                            Increment4D_;
-  typedef IncrementEnsemble<MODEL>                      IncrementEnsemble_;
-  typedef HtlmEnsembleParameters<MODEL>                 HtlmEnsembleParameters_;
-  typedef ModelSpaceCovarianceBase<MODEL>               CovarianceBase_;
-  typedef CovarianceFactory<MODEL>                      CovarianceFactory_;
-  typedef ModelSpaceCovarianceParametersBase<MODEL>     CovarianceParametersBase_;
-  typedef HtlmSimplifiedLinearModel<MODEL>              HtlmSimplifiedLinearModel_;
+  typedef CovarianceFactory<MODEL>                     CovarianceFactory_;
+  typedef Geometry<MODEL>                              Geometry_;
+  typedef HtlmEnsembleParameters<MODEL>                Parameters_;
+  typedef HtlmSimplifiedLinearModel<MODEL>             SimplifiedLinearModel_;
+  typedef Increment<MODEL>                             Increment_;
+  typedef Increment4D<MODEL>                           Increment4D_;
+  typedef IncrementEnsemble<MODEL>                     IncrementEnsemble_;
+  typedef Model<MODEL>                                 Model_;
+  typedef ModelAuxControl<MODEL>                       ModelAuxCtl_;
+  typedef ModelAuxIncrement<MODEL>                     ModelAuxIncrement_;
+  typedef ModelSpaceCovarianceBase<MODEL>              CovarianceBase_;
+  typedef ModelSpaceCovarianceParametersBase<MODEL>    CovarianceParameters_;
+  typedef State<MODEL>                                 State_;
+  typedef StateEnsemble<MODEL>                         StateEnsemble_;
+  typedef StatePerturbationParameters<MODEL>           PerturbationParameters_;
+  typedef State4D<MODEL>                               State4D_;
 
  public:
   static const std::string classname() {return "oops::HtlmEnsemble";}
 
-  HtlmEnsemble(const HtlmEnsembleParameters_ &, const Variables &, const Geometry_ &);
-  void step(const util::Duration &, HtlmSimplifiedLinearModel_ &);
+  HtlmEnsemble(const Parameters_ &, SimplifiedLinearModel_ &, const Geometry_ &);
+  void step(const util::Duration &, SimplifiedLinearModel_ &);
 
-  IncrementEnsemble_ & getLinearEns() {return linearEnsemble_;}
-  IncrementEnsemble_ & getLinearErrDe() {return linearErrorDe_;}
-  const size_t size() const {return linearEnsemble_.size();}
+  IncrementEnsemble_ & getLinearEnsemble() {return linearEnsemble_;}
+  const IncrementEnsemble_ & getLinearErrors() const {return linearErrors_;}
+  const size_t size() const {return ensembleSize_;}
 
  private:
   const size_t ensembleSize_;
-  const Geometry_ stateGeometry_;
-  const Geometry_ & incrementGeometry_;
-  //  Model
+  const Geometry_ & updateGeometry_;
+  const Geometry_ modelGeometry_;
   const Model_ model_;
-  //  control member IC
-  State4D_ controlState_;
-  //  Augmented state
-  ModelAux_ moderr_;
-  // Augmented increment
-  ModelAuxIncrement_ modauxinc_;
-  //  perturbed member ICs
-  StateEnsemble_ perturbedStates_;
-  //  Linear Ensemble
+  State4D_ nonlinearControl_;
+  StateEnsemble_ nonlinearEnsemble_;
+  IncrementEnsemble_ nonlinearDifferences_;
   IncrementEnsemble_ linearEnsemble_;
-  // Nonlinear Differences
-  IncrementEnsemble_ nonLinearDifferences_;
-  // linear error (dE in the HTLM paper)
-  IncrementEnsemble_ linearErrorDe_;
+  IncrementEnsemble_ linearErrors_;
+  ModelAuxCtl_ maux_;
+  ModelAuxIncrement_ mauxinc_;
+  PostProcessor<State_> trajectorySaver_;
+  PostProcessor<State_> emptyPp_;
 };
 
-//----------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 template<typename MODEL>
-HtlmEnsemble<MODEL>::HtlmEnsemble(const HtlmEnsembleParameters_ & params,
-                                  const Variables & simplifiedLinearModelVars,
+HtlmEnsemble<MODEL>::HtlmEnsemble(const Parameters_ & params,
+                                  SimplifiedLinearModel_ & simplifiedLinearModel,
                                   const Geometry_ & updateGeometry)
-    : ensembleSize_(params.ensembleSize),
-      stateGeometry_(params.stateGeometry.value(), updateGeometry.getComm()),
-      incrementGeometry_(updateGeometry),
-      model_(stateGeometry_, eckit::LocalConfiguration(params.toConfiguration(), "model")),
-      controlState_(stateGeometry_, params.control.value()),
-      moderr_(stateGeometry_, params.modelAuxControl.value()),
-      modauxinc_(incrementGeometry_, params.modelAuxIncrement.value()),
-      perturbedStates_(params.nlEnsemble.value().statesReadIn.value() != boost::none ?
-             StateEnsemble_(stateGeometry_, *params.nlEnsemble.value().statesReadIn.value()) :
-                                                   StateEnsemble_(controlState_[0], ensembleSize_)),
-      linearEnsemble_(incrementGeometry_, simplifiedLinearModelVars,
-                      controlState_[0].validTime(), ensembleSize_),
-      nonLinearDifferences_(incrementGeometry_, simplifiedLinearModelVars,
-                            controlState_[0].validTime(), ensembleSize_),
-      linearErrorDe_(nonLinearDifferences_) {
-    Log::trace() << "HtlmEnsemble<MODEL>::HtlmEnsemble() starting"
-                 << std::endl;
-    // Check ensemble initilization params
-    params.nlEnsemble.value().check();
-
-  // If chosesn, initialize nonlinear ensemble from background error.
-  if (params.nlEnsemble.value().statesPerturbation.value() != boost::none) {
-    // set up variables to perturb
-    const Variables vars_(params.nlEnsemble.value().statesPerturbation.value()->variables);
-    // set up Bmatrix
-    const CovarianceParametersBase_ &covarParams =
-    params.nlEnsemble.value().statesPerturbation.value()->
-                         backgroundError.value().covarianceParameters;
-
+: ensembleSize_(params.ensembleSize),
+  updateGeometry_(updateGeometry),
+  modelGeometry_(params.modelGeometry.value(), updateGeometry_.getComm()),
+  model_(modelGeometry_, eckit::LocalConfiguration(params.toConfiguration(), "model")),
+  nonlinearControl_(modelGeometry_, params.nonlinearControl.value()),
+  nonlinearEnsemble_(params.nonlinearEnsemble.value().fromFile.value() != boost::none ?
+    StateEnsemble_(modelGeometry_, *params.nonlinearEnsemble.value().fromFile.value()) :
+    StateEnsemble_(nonlinearControl_[0], ensembleSize_)),
+  nonlinearDifferences_(modelGeometry_, simplifiedLinearModel.variables(),
+                         nonlinearControl_[0].validTime(), ensembleSize_),
+  linearEnsemble_(updateGeometry_, simplifiedLinearModel.variables(),
+                  nonlinearControl_[0].validTime(), ensembleSize_),
+  linearErrors_(linearEnsemble_), maux_(modelGeometry_, eckit::LocalConfiguration()),
+  mauxinc_(updateGeometry_, eckit::LocalConfiguration())
+{
+  Log::trace() << "HtlmEnsemble<MODEL>::HtlmEnsemble() starting" << std::endl;
+  // If required, initialize nonlinear ensemble from covariance
+  params.nonlinearEnsemble.value().check();
+  if (params.nonlinearEnsemble.value().fromCovar.value() != boost::none) {
+    const PerturbationParameters_ pertParams = *params.nonlinearEnsemble.value().fromCovar.value();
+    const Variables vars(pertParams.variables);
+    const CovarianceParameters_ & covParams
+      = pertParams.backgroundError.value().covarianceParameters;
     std::unique_ptr<CovarianceBase_> Bmat(CovarianceFactory_::create(
-                         stateGeometry_, vars_, covarParams, controlState_, controlState_));
-    //  Generate perturbed states
-    Increment4D_ dx(stateGeometry_, vars_, controlState_.times());
-    for (size_t jm = 0; jm < ensembleSize_; ++jm) {
-      //  Generate linear ensemble increments
+      modelGeometry_, vars, covParams, nonlinearControl_, nonlinearControl_));
+    Increment4D_ dx(modelGeometry_, vars, nonlinearControl_.times());
+    for (size_t m = 0; m < ensembleSize_; m++) {
       Bmat->randomize(dx);
-      //  Add to control state
-      perturbedStates_[jm] += dx[0];
+      nonlinearEnsemble_[m] += dx[0];
     }
   }
-
-  //  Set up linearEnsemble_
-  for (size_t m = 0; m < ensembleSize_; ++m) {
-    linearEnsemble_[m].diff(controlState_[0], perturbedStates_[m]);
+  // Set up linearEnsemble_ initial conditions
+  Increment_ linearEnsembleMemberModelGeometry(modelGeometry_, simplifiedLinearModel.variables(),
+                                               nonlinearControl_[0].validTime());
+  for (size_t m = 0; m < ensembleSize_; m++) {
+    linearEnsembleMemberModelGeometry.diff(nonlinearControl_[0], nonlinearEnsemble_[m]);
+    linearEnsemble_[m] = Increment_(updateGeometry_, linearEnsembleMemberModelGeometry);
   }
-
+  // Set up a TrajectorySaver for simplifiedLinearModel_
+  simplifiedLinearModel.setUpTrajectorySaver(trajectorySaver_, maux_);
   Log::trace() << "HtlmEnsemble<MODEL>::HtlmEnsemble() done" << std::endl;
 }
 
@@ -197,30 +173,19 @@ HtlmEnsemble<MODEL>::HtlmEnsemble(const HtlmEnsembleParameters_ & params,
 
 template<typename MODEL>
 void HtlmEnsemble<MODEL>::step(const util::Duration & tstep,
-                               HtlmSimplifiedLinearModel_ & simplifiedLinearModel)  {
-    Log::trace() << "HtlmEnsemble<MODEL>::step() starting" << std::endl;
-    State_ downsampled_Control(incrementGeometry_, controlState_[0]);
-    PostProcessor<State_> post;
-    for (util::Duration t(0); t < tstep; t+= simplifiedLinearModel.timeResolution()) {
-      simplifiedLinearModel.setSimplifiedTrajectory(controlState_[0], downsampled_Control, moderr_);
-      model_.forecast(controlState_[0], moderr_, simplifiedLinearModel.timeResolution(), post);
-    }
-    for (size_t m = 0; m < ensembleSize_; m++) {
-      model_.forecast(perturbedStates_[m], moderr_, tstep, post);
-      simplifiedLinearModel.forecastSimplifiedTL(linearEnsemble_[m], modauxinc_, tstep);
-    }
-    for (size_t m = 0; m < ensembleSize_; ++m) {
-        nonLinearDifferences_[m].updateTime(tstep);
-        nonLinearDifferences_[m].diff(controlState_[0], (perturbedStates_[m]));
-    }
-    linearErrorDe_ = nonLinearDifferences_;
-    for (size_t m = 0; m < ensembleSize_; ++m) {
-        linearErrorDe_[m] -= linearEnsemble_[m];
-    }
-    Log::trace() << "HtlmEnsemble<MODEL>::step() done" << std::endl;
+                               SimplifiedLinearModel_ & simplifiedLinearModel) {
+  Log::trace() << "HtlmEnsemble<MODEL>::step() starting" << std::endl;
+  model_.forecast(nonlinearControl_[0], maux_, tstep, trajectorySaver_);
+  for (size_t m = 0; m < ensembleSize_; m++) {
+    model_.forecast(nonlinearEnsemble_[m], maux_, tstep, emptyPp_);
+    nonlinearDifferences_[m].updateTime(tstep);
+    nonlinearDifferences_[m].diff(nonlinearControl_[0], nonlinearEnsemble_[m]);
+    linearErrors_[m] = Increment_(updateGeometry_, nonlinearDifferences_[m]);
+    simplifiedLinearModel.forecastSimplifiedTL(linearEnsemble_[m], mauxinc_, tstep);
+    linearErrors_[m] -= linearEnsemble_[m];
+  }
+  Log::trace() << "HtlmEnsemble<MODEL>::step() done" << std::endl;
 }
-
-//------------------------------------------------------------------------------
 
 }  // namespace oops
 

@@ -102,7 +102,7 @@ HtlmCalculator<MODEL>::HtlmCalculator(
 
 template<typename MODEL>
 void HtlmCalculator<MODEL>::setOfCoeffs(const IncrementEnsemble_ & linearEnsemble,
-                                        const IncrementEnsemble_ & linearDifference,
+                                        const IncrementEnsemble_ & linearErrors,
                                         atlas::FieldSet & coeffsFSet) const {
   // Calculate RMS-by-level scaling values if required
   if (params_.rmsScaling) {
@@ -115,7 +115,7 @@ void HtlmCalculator<MODEL>::setOfCoeffs(const IncrementEnsemble_ & linearEnsembl
   for (auto i = 0; i < nLocations_; i++) {
     for (auto k = 0; k < nLevels_; k++) {
       // Compute vectors of coeffs at each point i, k and store in coeffsFSet
-      computeVectorsAt(i, k, linearEnsemble, linearDifference, coeffsFSet);
+      computeVectorsAt(i, k, linearEnsemble, linearErrors, coeffsFSet);
     }
   }
 }
@@ -126,7 +126,7 @@ template<typename MODEL>
 void HtlmCalculator<MODEL>::computeVectorsAt(const atlas::idx_t i,
                                              const atlas::idx_t k,
                                              const IncrementEnsemble_ & linearEnsemble,
-                                             const IncrementEnsemble_ & linearDifference,
+                                             const IncrementEnsemble_ & linearErrors,
                                              atlas::FieldSet & coeffsFSet) const {
   // Make influenceMatrix at i, k
   EigenMatrix influenceMatrix = makeInfluenceMatrix(i, k, linearEnsemble);
@@ -135,20 +135,20 @@ void HtlmCalculator<MODEL>::computeVectorsAt(const atlas::idx_t i,
                                               Eigen::ComputeFullU | Eigen::ComputeFullV);
   const auto U = svd.matrixU();
   for (const auto & var : updateVars_.variables()) {
-    // Copy (RMS-by-level scaled?) linearDifference for var at i, k into an EigenVector
-    EigenVector linearDifferenceVector(ensembleSize_);
+    // Copy (RMS-by-level scaled?) linearError for var at i, k into an EigenVector
+    EigenVector linearErrorVector(ensembleSize_);
     for (auto m = 0; m < ensembleSize_; m++) {
       if (params_.rmsScaling) {  // apply RMS-by-level scaling
-        linearDifferenceVector(m, 0)
-          = atlas::array::make_view<double, 2>(linearDifference[m].fieldSet()[var])(i, k)
+        linearErrorVector(m, 0)
+          = atlas::array::make_view<double, 2>(linearErrors[m].fieldSet()[var])(i, k)
             / rmsVals_.at(var)[k];
       } else {  // don't apply RMS-by-level scaling
-        linearDifferenceVector(m, 0)
-          = atlas::array::make_view<double, 2>(linearDifference[m].fieldSet()[var])(i, k);
+        linearErrorVector(m, 0)
+          = atlas::array::make_view<double, 2>(linearErrors[m].fieldSet()[var])(i, k);
       }
     }
     // Compute vector of coeffs for var at i, k
-    const EigenVector coeffs = computeVector(svd, U, influenceMatrix, linearDifferenceVector,
+    const EigenVector coeffs = computeVector(svd, U, influenceMatrix, linearErrorVector,
                                              regularization_->getRegularizationValue(var, i, k));
     // Copy coeffs into FieldSet
     for (auto x = 0; x < vectorSize_; x++) {
@@ -197,13 +197,13 @@ const typename HtlmCalculator<MODEL>::EigenVector HtlmCalculator<MODEL>::compute
                                                          const Eigen::BDCSVD<EigenMatrix> & svd,
                                                          const EigenMatrix & U,
                                                          const EigenMatrix & influenceMatrix,
-                                                         const EigenVector & linearDifferenceVector,
+                                                         const EigenVector & linearErrorVector,
                                                          const double & regularizationValue) const {
   // Equation 26 in https://doi.org/10.1175/MWR-D-20-0088.1
   const EigenMatrix sigma
     = (svd.singularValues() + EigenVector::Constant(vectorSize_, regularizationValue)).asDiagonal();
   return U * sigma.completeOrthogonalDecomposition().pseudoInverse() * U.transpose()
-           * influenceMatrix * linearDifferenceVector;
+           * influenceMatrix * linearErrorVector;
 }
 
 }  // namespace oops

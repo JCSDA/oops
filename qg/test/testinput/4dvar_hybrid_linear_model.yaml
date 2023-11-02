@@ -84,9 +84,9 @@ variational:
           variable change: Identity
           name: QgTLM
       update tstep: PT6H
-      update variables: [x]
+      variables: [x]
       coefficients:
-        training variables: [x]
+        update variables: [x]
         influence region size: 3
         window length: PT24H
         window begin: 2010-01-01T00:00:00Z
@@ -112,9 +112,9 @@ variational:
           variable change: Identity
           name: QgTLM
       update tstep: PT6H
-      update variables: [x]
+      variables: [x]
       coefficients:
-        training variables: [x]
+        update variables: [x]
         influence region size: 3
         window length: PT24H
         window begin: 2010-01-01T00:00:00Z

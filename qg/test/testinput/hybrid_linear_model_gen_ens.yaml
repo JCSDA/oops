@@ -19,7 +19,7 @@ model:
 model aux control: {}
 linear model:
   update tstep: PT1H
-  update variables: [x, q]
+  variables: [x, q]
   simplified linear model:
     linear model:
       trajectory:
@@ -29,7 +29,7 @@ linear model:
       name: QgTLM
       tlm variables: [x, q]
   coefficients:
-    training variables: [q]
+    update variables: [q]
     influence region size: 3
     window length: PT24H
     window begin: 2010-01-01T00:00:00Z
@@ -39,16 +39,16 @@ linear model:
       model:
         name: QG
         tstep: PT1H
-      state geometry:
+      model geometry:
         nx: 40
         ny: 20
         depths: [500, 1000, 1500, 3000, 4000]
         perturbed heating: 0.1
-      control member:
+      nonlinear control:
         date: '2010-01-01T00:00:00Z'
         filename: Data/forecast_5level_pert_heat.fc.2009-12-31T00:00:00Z.P1D.nc
-      non linear ensemble:
-        ensemble perturbation:
+      nonlinear ensemble:
+        generate:
           background error:
             covariance model: QgError
             horizontal_length_scale: 1.0e6
