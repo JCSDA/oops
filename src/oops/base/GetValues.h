@@ -153,12 +153,14 @@ class GetValues : private util::ObjectCounter<GetValues<MODEL, OBS> > {
   std::vector<eckit::mpi::Request> send_req_;
   std::vector<eckit::mpi::Request> recv_req_;
   int tag_;
-  const bool levelsTopDown_;            /// When true: Levels are in top down order.
+  const bool levelsTopDown_;           /// When true: Levels are in top down order.
   std::vector<size_t> geovarsSizes_;   /// number of levels for geovars_
   std::vector<size_t> linvarsSizes_;   /// number of levels for linvars_
-  bool doLinearTimeInterpolation_;     /// set true for linear and false for
+  bool useLinearTimeInterpolation_;    /// set true for linear and false for
                                        /// nearest-neighbour time-
                                        /// interpolation (default false)
+  bool doLinearTimeInterpolation_;     /// set true when linear time interpolation
+                                       /// needs to be done for this run
   std::vector<size_t> recv_tasks_;
 };
 
@@ -184,14 +186,14 @@ GetValues<MODEL, OBS>::GetValues(const eckit::Configuration & conf, const Geomet
   std::string value;
   if (conf.get("time interpolation", value)) {
     if (value == "linear") {
-      doLinearTimeInterpolation_ = true;
+      useLinearTimeInterpolation_ = true;
     } else if (value == "nearest") {
-      doLinearTimeInterpolation_ = false;
+      useLinearTimeInterpolation_ = false;
     } else {
       ABORT("GetValues::GetValues: time interpolation has an unsuported value.");
     }
   } else {
-    doLinearTimeInterpolation_ = false;
+    useLinearTimeInterpolation_ = false;
   }
 
   tag_ += this->created();
@@ -253,7 +255,11 @@ void GetValues<MODEL, OBS>::initialize(const util::Duration & tstep) {
   for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
     locinterp_[jtask].resize(obs_times_by_task_[jtask].size() * varsizes_, missing);
   }
+  doLinearTimeInterpolation_ = useLinearTimeInterpolation_;
+  // no need to do time interpolation if there is only one subwindow
+  if (tstep == timeWindow_.length()) doLinearTimeInterpolation_ = false;
   hslot_ = doLinearTimeInterpolation_ ? tstep : tstep/2;
+
   Log::trace() << "GetValues::initialize done" << std::endl;
 }
 
