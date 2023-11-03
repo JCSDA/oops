@@ -26,6 +26,7 @@
 #include "oops/mpi/mpi.h"
 #include "oops/util/LibOOPS.h"
 #include "oops/util/Logger.h"
+#include "oops/util/signal_trap.h"
 
 #ifdef ENABLE_GPTL
 #include <gptl.h>
@@ -33,8 +34,6 @@
 
 int do_profile = false;  // Flag says whether to enable profiling with GPTL (default false)
 #endif
-
-extern void trap_sigfpe(const int);
 
 namespace oops {
 
@@ -99,7 +98,7 @@ void LibOOPS::initialise() {
     // If SIGFPE trapping is enabled, default is to abort. Use caution trapping but not aborting:
     // It can possibly result in gargantuan output to stderr
     do_abortfpe = getEnv("OOPS_ABORTFPE", 1);
-    trap_sigfpe(do_abortfpe);
+    util::trap_sigfpe(do_abortfpe);
   }
 
 #ifdef ENABLE_GPTL

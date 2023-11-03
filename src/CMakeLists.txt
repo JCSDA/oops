@@ -401,6 +401,7 @@ oops/util/RandomField.h
 oops/util/Range.h
 oops/util/ScalarOrMap.h
 oops/util/Serializable.h
+oops/util/signal_trap.h
 oops/util/signal_trap.cc
 oops/util/sqr.h
 oops/util/string_f_c_interface.cc
@@ -759,10 +760,21 @@ ecbuild_add_test( TARGET  test_base_posttimer
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops eckit)
 
-ecbuild_add_test( TARGET  test_util_signal_trap
-                  SOURCES test/util/signal_trap.cc
+ecbuild_add_test( TARGET  test_util_signal_trap_fpe_div_by_zero
+                  SOURCES test/util/signal_trap_fpe_div_by_zero.cc
                   LIBS    oops)
-set_property( TEST test_util_signal_trap PROPERTY WILL_FAIL TRUE )
+set_property( TEST test_util_signal_trap_fpe_div_by_zero PROPERTY WILL_FAIL TRUE )
+
+ecbuild_add_test( TARGET  test_util_signal_trap_fpe_invalid_op
+                  SOURCES test/util/signal_trap_fpe_invalid_op.cc
+                  LIBS    oops)
+set_property( TEST test_util_signal_trap_fpe_invalid_op PROPERTY WILL_FAIL TRUE )
+
+# This test enables fpe trapping but doesn't perform any "bad" operations. So
+# the expected outcome is for the test program to successfully complete.
+ecbuild_add_test( TARGET  test_util_signal_trap_fpe_valid_op
+                  SOURCES test/util/signal_trap_fpe_valid_op.cc
+                  LIBS    oops)
 
 ecbuild_add_test( TARGET  test_util_random
                   SOURCES test/base/Random.cc
