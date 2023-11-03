@@ -312,6 +312,9 @@ atlas::FieldSet createSmoothFieldSet(const eckit::mpi::Comm & comm,
         }
       }
     }
+
+    // Set metadata for interpolation type
+    field.metadata().set("interp_type", "default");
     fset.add(field);
   }
 
