@@ -134,12 +134,13 @@ class GetValues : private util::ObjectCounter<GetValues<MODEL, OBS> > {
   void incInterpValues(const util::DateTime &, const std::vector<bool> &,
                        const size_t &, const std::vector<double> &);
 
+
   util::Duration hslot_;    /// Half time slot
   const util::TimeWindow timeWindow_;
 
-  const Variables geovars_;            /// Variables needed from model
-  size_t varsizes_;                    /// Sizes (e.g. number of vertical levels)
-                                       /// for all Variables in GeoVaLs
+  const Variables geovars_;  /// Variables needed from model
+  size_t varsizes_;          /// Sizes (e.g. number of vertical levels)
+                             /// for all Variables in GeoVaLs
   const Variables linvars_;
   size_t linsizes_;
   eckit::LocalConfiguration interpConf_;
@@ -190,7 +191,7 @@ GetValues<MODEL, OBS>::GetValues(const eckit::Configuration & conf, const Geomet
     } else if (value == "nearest") {
       useLinearTimeInterpolation_ = false;
     } else {
-      ABORT("GetValues::GetValues: time interpolation has an unsuported value.");
+      ABORT("GetValues::GetValues: time interpolation has an unsupported value.");
     }
   } else {
     useLinearTimeInterpolation_ = false;
