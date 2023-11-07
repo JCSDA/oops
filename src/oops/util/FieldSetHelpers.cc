@@ -20,6 +20,7 @@
 #include "eckit/utils/Hash.h"
 
 #include "oops/util/abor1_cpp.h"
+#include "oops/util/FieldSetOperations.h"
 #include "oops/util/FloatCompare.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
@@ -28,6 +29,48 @@
 #define ERR(e) {ABORT(nc_strerror(e));}
 
 namespace util {
+
+// -----------------------------------------------------------------------------
+atlas::FieldSet createFieldSet(const atlas::FunctionSpace & fspace,
+                               const std::vector<size_t> & variableSizes,
+                               const std::vector<std::string> & vars) {
+  oops::Log::trace() << "createFieldSet starting" << std::endl;
+
+  // Create FieldSet
+  atlas::FieldSet fset;
+
+  for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
+    // Create field
+    atlas::Field field = fspace.createField<double>(
+      atlas::option::name(vars[jvar]) | atlas::option::levels(variableSizes[jvar]));
+
+    // Add field
+    fset.add(field);
+  }
+
+  // Return FieldSet
+  return fset;
+}
+
+// -----------------------------------------------------------------------------
+atlas::FieldSet createFieldSet(const atlas::FunctionSpace & fspace,
+                               const std::vector<size_t> & variableSizes,
+                               const std::vector<std::string> & vars,
+                               const double & initalizationValue) {
+  oops::Log::trace() << "createFieldSet starting" << std::endl;
+
+  // Create FieldSet
+  atlas::FieldSet fset = createFieldSet(fspace, variableSizes, vars);
+
+  for (auto & field : fset) {
+    // Set field to initalizationValue
+    auto view = atlas::array::make_view<double, 2>(field);
+    view.assign(initalizationValue);
+  }
+
+  // Return FieldSet
+  return fset;
+}
 
 // -----------------------------------------------------------------------------
 atlas::FieldSet createRandomFieldSet(const eckit::mpi::Comm & comm,
@@ -70,13 +113,9 @@ atlas::FieldSet createRandomFieldSet(const eckit::mpi::Comm & comm,
   }
 
   // Create FieldSet
-  atlas::FieldSet fset;
+  atlas::FieldSet fset = createFieldSet(fspace, variableSizes, vars);
 
-  for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
-    // Create field
-    atlas::Field field = fspace.createField<double>(
-      atlas::option::name(vars[jvar]) | atlas::option::levels(variableSizes[jvar]));
-
+  for (auto & field : fset) {
     // Get field owned size
     size_t n = 0;
     if (field.rank() == 2) {
@@ -116,7 +155,7 @@ atlas::FieldSet createRandomFieldSet(const eckit::mpi::Comm & comm,
 
     // Global field
     atlas::Field globalField = fspace.createField<double>(
-      atlas::option::name(vars[jvar]) | atlas::option::levels(variableSizes[jvar])
+      atlas::option::name(field.name()) | atlas::option::levels(field.levels())
       | atlas::option::global());
 
     std::vector<double> rand_vec_glb(nglb);
@@ -238,9 +277,6 @@ atlas::FieldSet createRandomFieldSet(const eckit::mpi::Comm & comm,
     if (fspace.type() != "Spectral") {
       field.metadata().set("interp_type", "default");
     }
-
-    // Add field
-    fset.add(field);
   }
 
   if (fspace.type() != "Spectral") {
@@ -253,13 +289,12 @@ atlas::FieldSet createRandomFieldSet(const eckit::mpi::Comm & comm,
 }
 
 // -----------------------------------------------------------------------------
-atlas::FieldSet createSmoothFieldSet(const eckit::mpi::Comm & comm,
-                                     const atlas::FunctionSpace & fspace,
+atlas::FieldSet createSmoothFieldSet(const atlas::FunctionSpace & fspace,
                                      const std::vector<size_t> & variableSizes,
                                      const std::vector<std::string> & vars) {
   if (fspace.type() == "Spectral") {
     // Create random spectral FieldSet
-    atlas::FieldSet fset = createRandomFieldSet(comm, fspace, variableSizes, vars);
+    atlas::FieldSet fset = createFieldSet(fspace, variableSizes, vars, 0.0);
 
     // Convolve with Gaussian
     auto gaussian = [](double dist, double sigma){
@@ -295,11 +330,10 @@ atlas::FieldSet createSmoothFieldSet(const eckit::mpi::Comm & comm,
   }
 
   // Create FieldSet
-  atlas::FieldSet fset;
-  for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
+  atlas::FieldSet fset = createFieldSet(fspace, variableSizes, vars);
+
+  for (auto & field : fset) {
     // Create field
-    atlas::Field field = fspace.createField<double>(
-      atlas::option::name(vars[jvar]) | atlas::option::levels(variableSizes[jvar]));
     const auto lonlat = atlas::array::make_view<double, 2>(field.functionspace().lonlat());
     if (field.rank() == 2) {
       size_t nlev = field.shape(1);
@@ -315,7 +349,6 @@ atlas::FieldSet createSmoothFieldSet(const eckit::mpi::Comm & comm,
 
     // Set metadata for interpolation type
     field.metadata().set("interp_type", "default");
-    fset.add(field);
   }
 
   return fset;
@@ -1298,6 +1331,29 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
 
 // -----------------------------------------------------------------------------
 
+atlas::FieldSet createFieldSet(const atlas::FunctionSpace & fspace,
+                               const oops::Variables & vars) {
+  std::vector<size_t> variableSizes;
+  for (const std::string & var : vars.variables()) {
+    variableSizes.push_back(vars.getLevels(var));
+  }
+  return createFieldSet(fspace, variableSizes, vars.variables());
+}
+
+// -----------------------------------------------------------------------------
+
+atlas::FieldSet createFieldSet(const atlas::FunctionSpace & fspace,
+                               const oops::Variables & vars,
+                               const double & initalizationValue) {
+  std::vector<size_t> variableSizes;
+  for (const std::string & var : vars.variables()) {
+    variableSizes.push_back(vars.getLevels(var));
+  }
+  return createFieldSet(fspace, variableSizes, vars.variables(), initalizationValue);
+}
+
+// -----------------------------------------------------------------------------
+
 atlas::FieldSet createRandomFieldSet(const eckit::mpi::Comm & comm,
                                      const atlas::FunctionSpace & fspace,
                                      const oops::Variables & vars) {
@@ -1310,14 +1366,13 @@ atlas::FieldSet createRandomFieldSet(const eckit::mpi::Comm & comm,
 
 // -----------------------------------------------------------------------------
 
-atlas::FieldSet createSmoothFieldSet(const eckit::mpi::Comm & comm,
-                                     const atlas::FunctionSpace & fspace,
+atlas::FieldSet createSmoothFieldSet(const atlas::FunctionSpace & fspace,
                                      const oops::Variables & vars) {
   std::vector<size_t> variableSizes;
   for (const std::string & var : vars.variables()) {
     variableSizes.push_back(vars.getLevels(var));
   }
-  return createSmoothFieldSet(comm, fspace, variableSizes, vars.variables());
+  return createSmoothFieldSet(fspace, variableSizes, vars.variables());
 }
 
 // -----------------------------------------------------------------------------

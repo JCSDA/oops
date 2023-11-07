@@ -21,14 +21,20 @@ namespace util {
 
 // -----------------------------------------------------------------------------
 
+atlas::FieldSet createFieldSet(const atlas::FunctionSpace &,
+                               const std::vector<size_t> &,
+                               const std::vector<std::string> &);
+atlas::FieldSet createFieldSet(const atlas::FunctionSpace &,
+                               const std::vector<size_t> &,
+                               const std::vector<std::string> &,
+                               const double &);
 atlas::FieldSet createRandomFieldSet(const eckit::mpi::Comm &,
                                      const atlas::FunctionSpace &,
                                      const std::vector<size_t> &,
                                      const std::vector<std::string> &);
 /// Returns a fieldset with the same smooth field for all variables.
 /// Useful for testing interpolation.
-atlas::FieldSet createSmoothFieldSet(const eckit::mpi::Comm &,
-                                     const atlas::FunctionSpace &,
+atlas::FieldSet createSmoothFieldSet(const atlas::FunctionSpace &,
                                      const std::vector<size_t> &,
                                      const std::vector<std::string> &);
 
@@ -60,13 +66,17 @@ void writeFieldSet(const eckit::mpi::Comm &,
                    const eckit::Configuration &,
                    const atlas::FieldSet &);
 
+atlas::FieldSet createFieldSet(const atlas::FunctionSpace &,
+                               const oops::Variables &);
+atlas::FieldSet createFieldSet(const atlas::FunctionSpace &,
+                               const oops::Variables &,
+                               const double &);
 atlas::FieldSet createRandomFieldSet(const eckit::mpi::Comm &,
                                      const atlas::FunctionSpace &,
                                      const oops::Variables &);
 /// Returns a fieldset with the same smooth field for all variables.
 /// Useful for testing interpolation.
-atlas::FieldSet createSmoothFieldSet(const eckit::mpi::Comm &,
-                                     const atlas::FunctionSpace &,
+atlas::FieldSet createSmoothFieldSet(const atlas::FunctionSpace &,
                                      const oops::Variables &);
 
 void readFieldSet(const eckit::mpi::Comm &,
