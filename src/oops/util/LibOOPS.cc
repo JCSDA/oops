@@ -15,8 +15,10 @@
 #include <algorithm>
 #include <iomanip>
 #include <limits>
+#include <set>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "eckit/log/Log.h"
 #include "eckit/log/OStreamTarget.h"
@@ -24,6 +26,7 @@
 #include "eckit/utils/Translator.h"
 
 #include "oops/mpi/mpi.h"
+#include "oops/util/IntSetParser.h"
 #include "oops/util/LibOOPS.h"
 #include "oops/util/Logger.h"
 #include "oops/util/signal_trap.h"
@@ -51,13 +54,26 @@ namespace oops {
     return default_value;
   }
 
+  std::vector<int> getEnvList(const std::string& env, std::vector<int> default_value) {
+    if (::getenv(env.c_str())) {
+      const std::string pelist(::getenv(env.c_str()));
+      const std::set<int> pes = parseIntSet(pelist);
+      std::vector<int> info_pes;
+      std::copy(pes.begin(), pes.end(), std::back_inserter(info_pes));
+      return info_pes;
+    }
+    return default_value;
+  }
+
 //------------------------------------------------------------------------------
 
 static LibOOPS liboops;
 
 LibOOPS::LibOOPS() : Library("oops"), rank_(0), test_(false),
+                     info_(false), preinfo_(""),
                      debug_(false), predebug_("OOPS_DEBUG"),
-                     trace_(false), pretrace_("OOPS_TRACE") {
+                     trace_(false), pretrace_("OOPS_TRACE"),
+                     prestat_("OOPS_STATS") {
 }
 
 LibOOPS::~LibOOPS() {
@@ -80,18 +96,27 @@ void LibOOPS::initialise() {
 
   rank_ = oops::mpi::world().rank();
 
+  std::vector<int> iis(getEnvList("OOPS_INFO", std::vector<int>(1, 0)));
+  if (rank_ == 0) info_ = true;  // INFO is always logged for rank 0
+  for (int iter = 0; iter < iis.size(); iter++) {
+    if (iis[iter] < 0) info_ = true;
+    if (rank_ == iis[iter]) info_ = true;
+  }
+  if (info_ && rank_ > 0) {
+    preinfo_ += "[" + std::to_string(rank_) + "]";
+    prestat_ += "[" + std::to_string(rank_) + "]";
+  }
+
   const int it = getEnv("OOPS_TRACE", 0);
-  if (it > 0 && rank_ == 0) trace_ = true;
-  if (it < 0) {
-    trace_ = true;
-    pretrace_ += "[" + std::to_string(rank_) + "]";
-  }
+  if (it > 0) trace_ = info_;
+  if (it < 0) trace_ = true;
+  pretrace_ += "[" + std::to_string(rank_) + "]";
+
   const int id = getEnv("OOPS_DEBUG", 0);
-  if (id > 0 && rank_ == 0) debug_ = true;
-  if (id < 0) {
-    debug_ = true;
-    predebug_ += "[" + std::to_string(rank_) + "]";
-  }
+  if (id > 0) debug_ = info_;
+  if (id < 0) debug_ = true;
+  predebug_ += "[" + std::to_string(rank_) + "]";
+
   const int do_trapfpe = getEnv("OOPS_TRAPFPE", 0);
   int do_abortfpe;
   if (do_trapfpe) {
@@ -197,9 +222,9 @@ eckit::Channel& LibOOPS::traceChannel() const {
 
 eckit::Channel& LibOOPS::statsChannel() const {
   if (statsChannel_) {return *statsChannel_;}
-  if (rank_ == 0) {
+  if (rank_ == 0 || info_) {
     statsChannel_.reset(new eckit::Channel(
-      new eckit::PrefixTarget("OOPS_STATS", new eckit::OStreamTarget(eckit::Log::info()))));
+      new eckit::PrefixTarget(prestat_, new eckit::OStreamTarget(eckit::Log::info()))));
   } else {
     statsChannel_.reset(new eckit::Channel());
   }
@@ -220,7 +245,15 @@ eckit::Channel& LibOOPS::testChannel() const {
 }
 
 eckit::Channel& LibOOPS::infoChannel() const {
-  if (rank_ == 0) {return eckit::Log::info();}
+  if (infoChannel_) {return *infoChannel_;}
+  if (rank_ == 0) {
+    return eckit::Log::info();
+  } else if (info_ && rank_ > 0) {
+    infoChannel_.reset(new eckit::Channel(
+      new eckit::PrefixTarget(preinfo_, new eckit::OStreamTarget(eckit::Log::info()))));
+  } else {
+    infoChannel_.reset(new eckit::Channel());
+  }
   if (!infoChannel_) infoChannel_.reset(new eckit::Channel());
   return *infoChannel_;
 }

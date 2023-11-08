@@ -64,10 +64,13 @@ class LibOOPS : public eckit::system::Library {
 
   size_t rank_;
   bool test_;
+  bool info_;
+  std::string preinfo_;
   bool debug_;
   std::string predebug_;
   bool trace_;
   std::string pretrace_;
+  std::string prestat_;
 
   // TestReferece associated member variables
   std::stringstream testStream_;
