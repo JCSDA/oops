@@ -289,12 +289,13 @@ atlas::FieldSet createRandomFieldSet(const eckit::mpi::Comm & comm,
 }
 
 // -----------------------------------------------------------------------------
-atlas::FieldSet createSmoothFieldSet(const atlas::FunctionSpace & fspace,
+atlas::FieldSet createSmoothFieldSet(const eckit::mpi::Comm & comm,
+                                     const atlas::FunctionSpace & fspace,
                                      const std::vector<size_t> & variableSizes,
                                      const std::vector<std::string> & vars) {
   if (fspace.type() == "Spectral") {
     // Create random spectral FieldSet
-    atlas::FieldSet fset = createFieldSet(fspace, variableSizes, vars, 0.0);
+    atlas::FieldSet fset = createRandomFieldSet(comm, fspace, variableSizes, vars);
 
     // Convolve with Gaussian
     auto gaussian = [](double dist, double sigma){
@@ -497,7 +498,7 @@ bool compareFieldSets(const atlas::FieldSet & fset1,
     }
   }
 
-  // Comparison successuful!
+  // Comparison successful!
   return sameFieldSets;
 }
 
@@ -1366,13 +1367,14 @@ atlas::FieldSet createRandomFieldSet(const eckit::mpi::Comm & comm,
 
 // -----------------------------------------------------------------------------
 
-atlas::FieldSet createSmoothFieldSet(const atlas::FunctionSpace & fspace,
+atlas::FieldSet createSmoothFieldSet(const eckit::mpi::Comm & comm,
+                                     const atlas::FunctionSpace & fspace,
                                      const oops::Variables & vars) {
   std::vector<size_t> variableSizes;
   for (const std::string & var : vars.variables()) {
     variableSizes.push_back(vars.getLevels(var));
   }
-  return createSmoothFieldSet(fspace, variableSizes, vars.variables());
+  return createSmoothFieldSet(comm, fspace, variableSizes, vars.variables());
 }
 
 // -----------------------------------------------------------------------------

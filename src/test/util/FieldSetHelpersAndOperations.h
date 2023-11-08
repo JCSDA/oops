@@ -137,7 +137,7 @@ CASE("util/FieldSetHelpersAndOperations/StructuredColumns") {
   EXPECT(oops::is_close(norm1, 69.620477228480709, 1.0e-12));
 
   // Create smooth Fieldset
-  atlas::FieldSet smoothfset1 = util::createSmoothFieldSet(fspace, vars);
+  atlas::FieldSet smoothfset1 = util::createSmoothFieldSet(*comm, fspace, vars);
   smoothfset1.haloExchange();
   atlas::FieldSet smoothfset2;
 
