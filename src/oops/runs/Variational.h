@@ -96,12 +96,13 @@ template <typename MODEL, typename OBS> class Variational : public Application {
       ControlVariable<MODEL, OBS> x_b(J->jb().getBackground());
       const eckit::LocalConfiguration incGeomConfig(incConfig, "geometry");
       Geometry<MODEL> incGeom(incGeomConfig,
-                              xx.state().geometry().getComm(),
-                              xx.state().geometry().timeComm());
-      Increment<MODEL> dx(incGeom, xx.state().variables(), xx.state().validTime());
-      dx.diff(xx.state(), x_b.state());
+                              xx.states().geometry().getComm(),
+                              xx.states().commTime());
+      ControlIncrement<MODEL, OBS> dx_tmp(J->jb());
+      ControlIncrement<MODEL, OBS> dx(incGeom, dx_tmp);
+      dx.diff(xx, x_b);
       const eckit::LocalConfiguration incOutConfig(incConfig, "output");
-      dx.write(incOutConfig);
+      dx.states().write(incOutConfig);
     }
 
     if (finalConfig.has("increment to latlon")) {
@@ -111,12 +112,13 @@ template <typename MODEL, typename OBS> class Variational : public Application {
 
       ControlVariable<MODEL, OBS> x_b(J->jb().getBackground());
 
-      Increment<MODEL> dx(xx.state().geometry(),
-                          xx.state().variables(), xx.state().validTime());
-      dx.diff(xx.state(), x_b.state());
+      ControlIncrement<MODEL, OBS> dx(J->jb());
+      dx.diff(xx, x_b);
 
-      const LatLonGridWriter<MODEL> latlon(incLatlonParams, xx.state().geometry());
-      latlon.interpolateAndWrite(dx, xx.state());
+      const LatLonGridWriter<MODEL> latlon(incLatlonParams, xx.states().geometry());
+      for (size_t jtime = 0; jtime < dx.states().size(); ++jtime) {
+        latlon.interpolateAndWrite(dx.states()[jtime], xx.states()[jtime]);
+      }
     }
 
     if (finalConfig.has("prints")) {

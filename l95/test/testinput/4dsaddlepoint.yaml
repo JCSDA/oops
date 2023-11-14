@@ -88,11 +88,24 @@ final:
     departures: oman
   prints:
     frequency: PT1H30M
+  increment:
+    geometry:
+      resol: 40
+    output:
+      states:
+      - datadir: Data
+        date: 2010-01-01T03:00:00Z
+        exp: 4dsaddlepoint
+        type: in
+      - datadir: Data
+        date: 2010-01-01T15:00:00Z
+        exp: 4dsaddlepoint
+        type: in
 output:
   datadir: Data
   exp: 4dsaddlepoint
-  first: PT3H
-  frequency: PT06H
+  first: PT0H
+  frequency: PT12H
   type: an
 
 test:
