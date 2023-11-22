@@ -115,7 +115,7 @@ template <typename MODEL, typename OBS> class Variational : public Application {
       ControlIncrement<MODEL, OBS> dx(J->jb());
       dx.diff(xx, x_b);
 
-      const LatLonGridWriter<MODEL> latlon(incLatlonParams, xx.states().geometry());
+      const LatLonGridWriter<MODEL> latlon(incLatlonParams, dx.states().geometry());
       for (size_t jtime = 0; jtime < dx.states().size(); ++jtime) {
         latlon.interpolateAndWrite(dx.states()[jtime], xx.states()[jtime]);
       }
