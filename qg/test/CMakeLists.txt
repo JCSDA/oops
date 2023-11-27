@@ -95,6 +95,7 @@ list( APPEND qg_testinput
   testinput/linear_model.yaml
   testinput/linear_obsoperator.yaml
   testinput/linear_variable_change.yaml
+  testinput/linearization_error.yaml
   testinput/localization.yaml
   testinput/locations.yaml
   testinput/make_obs_3d.yaml
@@ -191,6 +192,7 @@ list( APPEND qg_testoutput
   testoutput/hybridgain_analysis.test
   testoutput/hybridgain_increment.test
   testoutput/letkf.test
+  testoutput/linearization_error.test
   testoutput/make_obs_3d.test
   testoutput/make_obs_4d_12h.test
   testoutput/make_obs_4d_24h.test
@@ -630,6 +632,12 @@ ecbuild_add_test( TARGET test_qg_convertstate
                   ARGS testinput/convertstate.yaml
                   COMMAND qg_convertstate.x
                   TEST_DEPENDS test_qg_forecast )
+
+ecbuild_add_test( TARGET test_qg_linearization_error
+                  OMP    2
+                  ARGS testinput/linearization_error.yaml
+                  COMMAND qg_linearization_error.x
+                  TEST_DEPENDS test_qg_4dvar_drplanczos_hybrid )
 
 #####################################################################
 # QG single-obs tests

@@ -126,4 +126,8 @@ ecbuild_add_executable( TARGET  qg_rtps.x
                       )
 oops_output_json_schema( qg_rtps.x )
 
-
+ecbuild_add_executable( TARGET  qg_linearization_error.x
+                        SOURCES qgLinearizationError.cc
+                        LIBS    qg
+                      )
+oops_output_json_schema( qg_linearization_error.x )
