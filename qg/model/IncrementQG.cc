@@ -46,8 +46,8 @@ IncrementQG::IncrementQG(const GeometryQG & resol, const oops::Variables & vars,
   oops::Log::trace() << "IncrementQG constructed." << std::endl;
 }
 // -----------------------------------------------------------------------------
-IncrementQG::IncrementQG(const GeometryQG & resol, const IncrementQG & other)
-  : fields_(new FieldsQG(*other.fields_, resol))
+IncrementQG::IncrementQG(const GeometryQG & resol, const IncrementQG & other, const bool ad)
+  : fields_(new FieldsQG(*other.fields_, resol, ad))
 {
   oops::Log::trace() << "IncrementQG constructed from other." << std::endl;
 }

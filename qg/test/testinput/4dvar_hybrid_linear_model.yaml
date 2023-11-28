@@ -76,7 +76,7 @@ variational:
       depths: [500, 1000, 1500, 3000, 4000]
       perturbed heating: 0.1
     linear model:
-      simplified linear model:
+      simple linear model:
         linear model:
           trajectory:
             tstep: PT30M
@@ -104,7 +104,7 @@ variational:
       depths: [500, 1000, 1500, 3000, 4000]
       perturbed heating: 0.1
     linear model:
-      simplified linear model:
+      simple linear model:
         linear model:
           trajectory:
             tstep: PT30M

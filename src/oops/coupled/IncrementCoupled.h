@@ -95,7 +95,7 @@ class IncrementCoupled : public util::Printable {
 
   /// Constructor, destructor
   IncrementCoupled(const GeometryCoupled_ &, const Variables &, const util::DateTime &);
-  IncrementCoupled(const GeometryCoupled_ &, const IncrementCoupled &);
+  IncrementCoupled(const GeometryCoupled_ &, const IncrementCoupled &, const bool ad = false);
   IncrementCoupled(const IncrementCoupled &, const bool copy = true);
   virtual ~IncrementCoupled();
 
@@ -195,13 +195,14 @@ IncrementCoupled<MODEL1, MODEL2>::IncrementCoupled(const GeometryCoupled_ & reso
 
 template<typename MODEL1, typename MODEL2>
 IncrementCoupled<MODEL1, MODEL2>::IncrementCoupled(const GeometryCoupled_ & resol,
-                                                   const IncrementCoupled & other)
+                                                   const IncrementCoupled & other,
+                                                   const bool ad)
   : geom_(new GeometryCoupled_(resol)), dx1_(), dx2_(), parallel_(resol.isParallel()),
     vars_(other.vars_) {
   Log::trace() << "IncrementCoupled::IncrementCoupled interpolated starting" << std::endl;
   ASSERT(parallel_ == other.parallel_);
-  if (other.dx1_) dx1_ = std::make_unique<Increment<MODEL1>>(resol.geometry1(), *other.dx1_);
-  if (other.dx2_) dx2_ = std::make_unique<Increment<MODEL2>>(resol.geometry2(), *other.dx2_);
+  if (other.dx1_) dx1_ = std::make_unique<Increment<MODEL1>>(resol.geometry1(), *other.dx1_, ad);
+  if (other.dx2_) dx2_ = std::make_unique<Increment<MODEL2>>(resol.geometry2(), *other.dx2_, ad);
   Log::trace() << "IncrementCoupled::IncrementCoupled interpolated done" << std::endl;
 }
 

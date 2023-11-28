@@ -231,7 +231,6 @@ oops/generic/HtlmCalculator.h
 oops/generic/HtlmEnsemble.h
 oops/generic/HtlmRegularization.cc
 oops/generic/HtlmRegularization.h
-oops/generic/HtlmSimplifiedLinearModel.h
 oops/generic/HybridLinearModel.h
 oops/generic/HybridLinearModelCoeffs.h
 oops/generic/IdentityLinearModel.h
@@ -251,6 +250,9 @@ oops/generic/ObsFilterBase.h
 oops/generic/ObsFilterParametersBase.h
 oops/generic/PseudoModel.h
 oops/generic/PseudoModelState4D.h
+oops/generic/SimpleLinearModel.h
+oops/generic/SimpleLinearModelMultiresolution.h
+oops/generic/SimpleLinearModelResidualForm.h
 oops/generic/soar.h
 oops/generic/soar.cc
 oops/generic/UnstructuredInterpolator.h

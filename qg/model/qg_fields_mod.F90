@@ -41,8 +41,8 @@ public :: qg_fields_create,qg_fields_create_from_other,qg_fields_delete, &
         & qg_fields_zero,qg_fields_ones,qg_fields_dirac,qg_fields_random, &
         & qg_fields_copy,qg_fields_copy_lbc,qg_fields_self_add,qg_fields_self_sub,qg_fields_self_mul,qg_fields_axpy, &
         & qg_fields_self_schur,qg_fields_dot_prod,qg_fields_add_incr,qg_fields_diff_incr,qg_fields_change_resol, &
-        & qg_fields_read_file,qg_fields_write_file,qg_fields_analytic_init,qg_fields_gpnorm,qg_fields_rms,qg_fields_sizes, &
-        & qg_fields_lbc,qg_fields_to_fieldset,qg_fields_to_fieldset_ad,qg_fields_from_fieldset, &
+        & qg_fields_change_resol_ad,qg_fields_read_file,qg_fields_write_file,qg_fields_analytic_init,qg_fields_gpnorm, &
+        & qg_fields_rms,qg_fields_sizes,qg_fields_lbc,qg_fields_to_fieldset,qg_fields_to_fieldset_ad,qg_fields_from_fieldset, &
         & qg_fields_getvals, qg_fields_getvalsad, &
         & qg_fields_getpoint,qg_fields_setpoint,qg_fields_serialize,qg_fields_deserialize, &
         & qg_fields_complete,qg_fields_check,qg_fields_check_resolution
@@ -664,6 +664,84 @@ else
 endif
 
 end subroutine qg_fields_change_resol
+! ------------------------------------------------------------------------------
+!> Change fields resolution (adjoint)
+subroutine qg_fields_change_resol_ad(fld, rhs)
+
+implicit none
+
+! Passed variables
+type(qg_fields),intent(inout)    :: fld !< Fields (blank field of target geom)
+type(qg_fields),intent(inout)    :: rhs !< Right-hand side (to be mapped to target geom via adjoint interpolation)
+
+integer :: ix,iy,iz
+real(kind_real), allocatable, dimension(:,:,:) :: q1, q2
+
+if ((rhs%geom%nx==fld%geom%nx).and.(rhs%geom%ny==fld%geom%ny).and.(rhs%geom%nz==fld%geom%nz)) then
+  ! Same resolution
+  call qg_fields_copy(fld,rhs)
+
+else
+  ! Deal with boundary conditions (adjoint)
+  if (rhs%lbc) then
+    if (fld%lbc) then
+      allocate(q1(fld%geom%nx,fld%geom%ny,fld%geom%nz))
+      allocate(q2(rhs%geom%nx,rhs%geom%ny,rhs%geom%nz))
+      do iy=1,fld%geom%ny
+        q1(:,iy,:) = fld%q_south
+      enddo
+      do iz=rhs%geom%nz,1,-1
+        do ix=rhs%geom%nx,1,-1
+          call qg_interp_trilinear_ad(fld%geom,rhs%geom%lon(ix,1),rhs%geom%lat(ix,1),rhs%geom%z(iz),q2(ix,1,iz),q1)
+        enddo
+      enddo
+      rhs%q_south = q2(:,1,:)
+      do iy=1,fld%geom%ny
+        q1(:,iy,:) = fld%q_north
+      enddo
+      do iz=rhs%geom%nz,1,-1
+        do ix=rhs%geom%nx,1,-1
+          call qg_interp_trilinear_ad(fld%geom,rhs%geom%lon(ix,1),rhs%geom%lat(ix,1),rhs%geom%z(iz),q2(ix,1,iz),q1)
+        enddo
+      enddo
+      rhs%q_north = q2(:,1,:)
+      deallocate(q1,q2)
+      rhs%x_north = fld%x_north
+      rhs%x_south = fld%x_south
+    else
+      rhs%x_north = 0.0_kind_real
+      rhs%x_south = 0.0_kind_real
+      rhs%q_north = 0.0_kind_real
+      rhs%q_south = 0.0_kind_real
+    endif
+  endif
+
+  ! Trilinear interpolation (adjoint)
+  do iz=rhs%geom%nz,1,-1
+    do iy=rhs%geom%ny,1,-1
+      do ix=rhs%geom%nx,1,-1
+        if (allocated(fld%x).and.allocated(rhs%x)) then
+          call qg_interp_trilinear_ad(fld%geom,rhs%geom%lon(ix,iy),rhs%geom%lat(ix,iy),rhs%geom%z(iz), &
+                                      rhs%x(ix,iy,iz),fld%x)
+        endif
+        if (allocated(fld%q).and.allocated(rhs%q)) then
+          call qg_interp_trilinear_ad(fld%geom,rhs%geom%lon(ix,iy),rhs%geom%lat(ix,iy),rhs%geom%z(iz), &
+                                      rhs%q(ix,iy,iz),fld%q)
+        endif
+        if (allocated(fld%u).and.allocated(rhs%u)) then
+          call qg_interp_trilinear_ad(fld%geom,rhs%geom%lon(ix,iy),rhs%geom%lat(ix,iy),rhs%geom%z(iz), &
+                                      rhs%u(ix,iy,iz),fld%u)
+        endif
+        if (allocated(fld%v).and.allocated(rhs%v)) then
+          call qg_interp_trilinear_ad(fld%geom,rhs%geom%lon(ix,iy),rhs%geom%lat(ix,iy),rhs%geom%z(iz), &
+                                      rhs%v(ix,iy,iz),fld%v)
+        endif
+      enddo
+    enddo
+  enddo
+endif
+
+end subroutine qg_fields_change_resol_ad
 ! ------------------------------------------------------------------------------
 !> Read fields from file
 subroutine qg_fields_read_file(fld,f_conf,vdate)

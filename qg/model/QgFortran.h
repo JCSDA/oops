@@ -103,6 +103,7 @@ extern "C" {
   void qg_fields_add_incr_f90(const F90flds &, const F90flds &);
   void qg_fields_diff_incr_f90(const F90flds &, const F90flds &, const F90flds &);
   void qg_fields_change_resol_f90(const F90flds &, const F90flds &);
+  void qg_fields_change_resol_ad_f90(const F90flds &, const F90flds &);
   void qg_fields_read_file_f90(const F90flds &, const eckit::Configuration &,
                                util::DateTime &);
   void qg_fields_write_file_f90(const F90flds &, const eckit::Configuration &,

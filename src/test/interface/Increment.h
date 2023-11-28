@@ -44,12 +44,13 @@ template <typename MODEL> class IncrementFixture : private boost::noncopyable {
   typedef oops::Geometry<MODEL>       Geometry_;
 
  public:
-  static const Geometry_            & resol()     {return *getInstance().resol_;}
-  static const oops::Variables      & ctlvars()   {return *getInstance().ctlvars_;}
-  static const util::DateTime       & time()      {return *getInstance().time_;}
-  static const double               & tolerance() {return getInstance().tolerance_;}
-  static const int                  & skipAtlas() {return getInstance().skipAtlas_;}
-  static const eckit::Configuration & test()      {return *getInstance().test_;}
+  static const Geometry_            & resol()      {return *getInstance().resol_;}
+  static const Geometry_            & otherResol() {return *getInstance().otherResol_;}
+  static const oops::Variables      & ctlvars()    {return *getInstance().ctlvars_;}
+  static const util::DateTime       & time()       {return *getInstance().time_;}
+  static const double               & tolerance()  {return getInstance().tolerance_;}
+  static const int                  & skipAtlas()  {return getInstance().skipAtlas_;}
+  static const eckit::Configuration & test()       {return *getInstance().test_;}
   static void reset() {
     getInstance().time_.reset();
     getInstance().ctlvars_.reset();
@@ -68,6 +69,12 @@ template <typename MODEL> class IncrementFixture : private boost::noncopyable {
     const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "geometry");
     resol_.reset(new Geometry_(resolConfig, oops::mpi::world()));
 
+    if (TestEnvironment::config().has("other geometry")) {
+      const eckit::LocalConfiguration otherResolConfig(TestEnvironment::config(), "other geometry");
+      otherResol_.reset(new Geometry_(otherResolConfig, oops::mpi::world()));
+      // Used to test adjoint resolution change
+    }
+
     ctlvars_.reset(new oops::Variables(TestEnvironment::config(), "inc variables"));
 
     const double tol_default = 1e-8;
@@ -85,6 +92,7 @@ template <typename MODEL> class IncrementFixture : private boost::noncopyable {
   ~IncrementFixture<MODEL>() {}
 
   std::unique_ptr<Geometry_>       resol_;
+  std::unique_ptr<Geometry_>       otherResol_;
   std::unique_ptr<oops::Variables> ctlvars_;
   std::unique_ptr<const eckit::LocalConfiguration> test_;
   double                           tolerance_;
@@ -158,6 +166,36 @@ template <typename MODEL> void testIncrementChangeResConstructor() {
 
   // Check they are same. Should be replaced with change res and check they are different
   EXPECT(dx2.norm() == dx1.norm());
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL> void testIncrementChangeResConstructorAD() {
+  typedef IncrementFixture<MODEL>   Test_;
+  typedef oops::Increment<MODEL>    Increment_;
+
+  // Skip test if no tolerance provided
+  if (!Test_::test().has("tolerance AD resolution change")) {
+    oops::Log::warning() << "Skipping Increment AD resolution change test";
+    return;
+  }
+
+  Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
+  dx.random();
+  EXPECT(dx.norm() > 0.0);
+  Increment_ dxOther(Test_::otherResol(), dx);
+  EXPECT(dxOther.norm() > 0.0);
+
+  Increment_ dy(Test_::otherResol(), Test_::ctlvars(), Test_::time());
+  dy.random();
+  EXPECT(dy.norm() > 0);
+  Increment_ dyOther(Test_::resol(), dy, true);
+  EXPECT(dyOther.norm() > 0.0);
+
+  EXPECT(dx.norm() != dy.norm());
+  const double dot1 = dot_product(dx, dyOther);
+  const double dot2 = dot_product(dxOther, dy);
+  EXPECT(oops::is_close(dot1, dot2, Test_::test().getDouble("tolerance AD resolution change")));
 }
 
 // -----------------------------------------------------------------------------
@@ -514,6 +552,8 @@ class Increment : public oops::Test {
       { testIncrementCopyBoolConstructor<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementChangeResConstructor")
       { testIncrementChangeResConstructor<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/testIncrementChangeResConstructorAD")
+      { testIncrementChangeResConstructorAD<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/rmsByLevel")
       { testRmsByLevel<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementTriangle")

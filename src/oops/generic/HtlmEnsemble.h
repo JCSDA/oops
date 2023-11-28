@@ -16,7 +16,7 @@
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/Model.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
-#include "oops/generic/HtlmSimplifiedLinearModel.h"
+#include "oops/generic/SimpleLinearModel.h"
 
 namespace oops {
 
@@ -80,7 +80,6 @@ class HtlmEnsemble{
   typedef CovarianceFactory<MODEL>                     CovarianceFactory_;
   typedef Geometry<MODEL>                              Geometry_;
   typedef HtlmEnsembleParameters<MODEL>                Parameters_;
-  typedef HtlmSimplifiedLinearModel<MODEL>             SimplifiedLinearModel_;
   typedef Increment<MODEL>                             Increment_;
   typedef Increment4D<MODEL>                           Increment4D_;
   typedef IncrementEnsemble<MODEL>                     IncrementEnsemble_;
@@ -89,6 +88,7 @@ class HtlmEnsemble{
   typedef ModelAuxIncrement<MODEL>                     ModelAuxIncrement_;
   typedef ModelSpaceCovarianceBase<MODEL>              CovarianceBase_;
   typedef ModelSpaceCovarianceParametersBase<MODEL>    CovarianceParameters_;
+  typedef SimpleLinearModel<MODEL>                     SimpleLinearModel_;
   typedef State<MODEL>                                 State_;
   typedef StateEnsemble<MODEL>                         StateEnsemble_;
   typedef StatePerturbationParameters<MODEL>           PerturbationParameters_;
@@ -97,8 +97,8 @@ class HtlmEnsemble{
  public:
   static const std::string classname() {return "oops::HtlmEnsemble";}
 
-  HtlmEnsemble(const Parameters_ &, SimplifiedLinearModel_ &, const Geometry_ &);
-  void step(const util::Duration &, SimplifiedLinearModel_ &);
+  HtlmEnsemble(const Parameters_ &, SimpleLinearModel_ &, const Geometry_ &);
+  void step(const util::Duration &, SimpleLinearModel_ &);
 
   IncrementEnsemble_ & getLinearEnsemble() {return linearEnsemble_;}
   const IncrementEnsemble_ & getLinearErrors() const {return linearErrors_;}
@@ -124,7 +124,7 @@ class HtlmEnsemble{
 
 template<typename MODEL>
 HtlmEnsemble<MODEL>::HtlmEnsemble(const Parameters_ & params,
-                                  SimplifiedLinearModel_ & simplifiedLinearModel,
+                                  SimpleLinearModel_ & simpleLinearModel,
                                   const Geometry_ & updateGeometry)
 : ensembleSize_(params.ensembleSize),
   updateGeometry_(updateGeometry),
@@ -134,9 +134,9 @@ HtlmEnsemble<MODEL>::HtlmEnsemble(const Parameters_ & params,
   nonlinearEnsemble_(params.nonlinearEnsemble.value().fromFile.value() != boost::none ?
     StateEnsemble_(modelGeometry_, *params.nonlinearEnsemble.value().fromFile.value()) :
     StateEnsemble_(nonlinearControl_[0], ensembleSize_)),
-  nonlinearDifferences_(modelGeometry_, simplifiedLinearModel.variables(),
+  nonlinearDifferences_(modelGeometry_, simpleLinearModel.variables(),
                          nonlinearControl_[0].validTime(), ensembleSize_),
-  linearEnsemble_(updateGeometry_, simplifiedLinearModel.variables(),
+  linearEnsemble_(updateGeometry_, simpleLinearModel.variables(),
                   nonlinearControl_[0].validTime(), ensembleSize_),
   linearErrors_(linearEnsemble_), maux_(modelGeometry_, eckit::LocalConfiguration()),
   mauxinc_(updateGeometry_, eckit::LocalConfiguration())
@@ -158,14 +158,14 @@ HtlmEnsemble<MODEL>::HtlmEnsemble(const Parameters_ & params,
     }
   }
   // Set up linearEnsemble_ initial conditions
-  Increment_ linearEnsembleMemberModelGeometry(modelGeometry_, simplifiedLinearModel.variables(),
+  Increment_ linearEnsembleMemberModelGeometry(modelGeometry_, simpleLinearModel.variables(),
                                                nonlinearControl_[0].validTime());
   for (size_t m = 0; m < ensembleSize_; m++) {
     linearEnsembleMemberModelGeometry.diff(nonlinearControl_[0], nonlinearEnsemble_[m]);
     linearEnsemble_[m] = Increment_(updateGeometry_, linearEnsembleMemberModelGeometry);
   }
-  // Set up a TrajectorySaver for simplifiedLinearModel_
-  simplifiedLinearModel.setUpTrajectorySaver(trajectorySaver_, maux_);
+  // Set up a TrajectorySaver for simpleLinearModel_
+  simpleLinearModel.setUpTrajectorySaver(trajectorySaver_, maux_);
   Log::trace() << "HtlmEnsemble<MODEL>::HtlmEnsemble() done" << std::endl;
 }
 
@@ -173,7 +173,7 @@ HtlmEnsemble<MODEL>::HtlmEnsemble(const Parameters_ & params,
 
 template<typename MODEL>
 void HtlmEnsemble<MODEL>::step(const util::Duration & tstep,
-                               SimplifiedLinearModel_ & simplifiedLinearModel) {
+                               SimpleLinearModel_ & simpleLinearModel) {
   Log::trace() << "HtlmEnsemble<MODEL>::step() starting" << std::endl;
   model_.forecast(nonlinearControl_[0], maux_, tstep, trajectorySaver_);
   for (size_t m = 0; m < ensembleSize_; m++) {
@@ -181,7 +181,7 @@ void HtlmEnsemble<MODEL>::step(const util::Duration & tstep,
     nonlinearDifferences_[m].updateTime(tstep);
     nonlinearDifferences_[m].diff(nonlinearControl_[0], nonlinearEnsemble_[m]);
     linearErrors_[m] = Increment_(updateGeometry_, nonlinearDifferences_[m]);
-    simplifiedLinearModel.forecastSimplifiedTL(linearEnsemble_[m], mauxinc_, tstep);
+    simpleLinearModel.forecastTL(linearEnsemble_[m], mauxinc_, tstep);
     linearErrors_[m] -= linearEnsemble_[m];
   }
   Log::trace() << "HtlmEnsemble<MODEL>::step() done" << std::endl;

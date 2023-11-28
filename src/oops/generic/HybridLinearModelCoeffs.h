@@ -52,24 +52,26 @@ class HybridLinearModelCoeffs {
   typedef Geometry<MODEL>                             Geometry_;
   typedef HtlmCalculator<MODEL>                       HtlmCalculator_;
   typedef HtlmEnsemble<MODEL>                         HtlmEnsemble_;
-  typedef HtlmSimplifiedLinearModel<MODEL>            HtlmSimplifiedLinearModel_;
   typedef HybridLinearModelCoeffsParameters<MODEL>    Parameters_;
   typedef Increment<MODEL>                            Increment_;
+  typedef SimpleLinearModel<MODEL>                    SimpleLinearModel_;
 
-  HybridLinearModelCoeffs(const eckit::Configuration &, const Geometry_ &,
-                          const util::Duration &, HtlmSimplifiedLinearModel_ &);
+  HybridLinearModelCoeffs(const eckit::Configuration &, const Geometry_ &, const util::Duration &);
+  void obtain(SimpleLinearModel_ &);
   void updateIncTL(Increment_ &) const;
   void updateIncAD(Increment_ &) const;
 
  private:
-  void makeCoeffsSaver(const util::Duration &, const atlas::FunctionSpace &);
+  void makeCoeffsSaver();
   void makeUpdateStencil();
-  void generate(const Geometry_ &, const util::Duration &, HtlmSimplifiedLinearModel_ &);
-  void read(const Geometry_ &, const util::Duration &);
-  void write(const eckit::mpi::Comm &) const;
+  void generate(SimpleLinearModel_ &);
+  void read();
+  void write() const;
 
   Parameters_ params_;
   const Variables updateVars_;
+  const Geometry_ & updateGeometry_;
+  const util::Duration & updateTstep_;
   const atlas::idx_t nLocations_;
   const atlas::idx_t nLevels_;
   const atlas::idx_t influenceSize_;
@@ -85,19 +87,14 @@ template<typename MODEL>
 HybridLinearModelCoeffs<MODEL>::HybridLinearModelCoeffs(
                                                  const eckit::Configuration & config,
                                                  const Geometry_ & updateGeometry,
-                                                 const util::Duration & updateTstep,
-                                                 HtlmSimplifiedLinearModel_ & simplifiedLinearModel)
-: params_(), updateVars_(config, "update variables"),
-  nLocations_(updateGeometry.functionSpace().size()),
+                                                 const util::Duration & updateTstep)
+: params_(), updateVars_(config, "update variables"), updateGeometry_(updateGeometry),
+  updateTstep_(updateTstep), nLocations_(updateGeometry_.functionSpace().size()),
   nLevels_(updateGeometry.variableSizes(updateVars_)[0]),
   influenceSize_(config.getInt("influence region size")),
   updateStencil_("update stencil", atlas::array::make_datatype<int>(),
                  atlas::array::make_shape(nLevels_, influenceSize_))
 {
-  if (updateTstep % simplifiedLinearModel.timeResolution() != 0) {
-    ABORT("HybridLinearModelCoeffs<MODEL>::HybridLinearModelCoeffs: "
-          "update tstep is not a multiple of simplified linear model tstep");
-  }
   if (influenceSize_ % 2 == 0) {
     oops::Log::warning() << "HybridLinearModelCoeffs<MODEL>::HybridLinearModelCoeffs: "
                             "influence region size is not an odd number;"
@@ -110,24 +107,29 @@ HybridLinearModelCoeffs<MODEL>::HybridLinearModelCoeffs(
      params_.windowBegin.value() + params_.windowLength.value(),
      util::boolToWindowBound(params_.shifting));
   // Set up storage for coefficients
-  makeCoeffsSaver(updateTstep, updateGeometry.functionSpace());
+  makeCoeffsSaver();
   // Set up stencil for applying coefficients
   makeUpdateStencil();
+}
+
+//------------------------------------------------------------------------------
+
+template<typename MODEL>
+void HybridLinearModelCoeffs<MODEL>::obtain(SimpleLinearModel_ & simpleLinearModel) {
   // Determine source of and obtain coefficients
   if (params_.ensemble.value() != boost::none && params_.calculator.value() != boost::none) {
-    generate(updateGeometry, updateTstep, simplifiedLinearModel);
+    generate(simpleLinearModel);
   } else if (params_.input.value() != boost::none) {
-    read(updateGeometry, updateTstep);
+    read();
   } else {
-    ABORT("HybridLinearModelCoeffs<MODEL>::HybridLinearModelCoeffs(): no source of coefficients");
+    ABORT("HybridLinearModelCoeffs<MODEL>::obtain(): no source of coefficients");
   }
 }
 
 //------------------------------------------------------------------------------
 
 template<typename MODEL>
-void HybridLinearModelCoeffs<MODEL>::makeCoeffsSaver(const util::Duration & updateTstep,
-                                                     const atlas::FunctionSpace & fSpace) {
+void HybridLinearModelCoeffs<MODEL>::makeCoeffsSaver() {
   const auto vectorSize = influenceSize_ * updateVars_.size();
   // Set up names for Fields of coeffs
   for (const auto & var : updateVars_.variables()) {
@@ -140,12 +142,12 @@ void HybridLinearModelCoeffs<MODEL>::makeCoeffsSaver(const util::Duration & upda
   // Create Fields for coeffs at each time, using FunctionSpace from updateGeometry
   util::DateTime time(timeWindow_->start());
   while (time < timeWindow_->end()) {
-    time += updateTstep;
+    time += updateTstep_;
     atlas::FieldSet coeffsFSet;
     coeffsSaver_.emplace(time, coeffsFSet);
     for (const auto & var : updateVars_.variables()) {
       for (size_t x = 0; x < vectorSize; x++) {
-        coeffsSaver_.at(time).add(fSpace.createField<double>(
+        coeffsSaver_.at(time).add(updateGeometry_.functionSpace().template createField<double>(
           atlas::option::name(coeffsFieldNames_.at(var)[x]) | atlas::option::levels(nLevels_)));
       }
     }
@@ -174,16 +176,14 @@ void HybridLinearModelCoeffs<MODEL>::makeUpdateStencil() {
 //------------------------------------------------------------------------------
 
 template<typename MODEL>
-void HybridLinearModelCoeffs<MODEL>::generate(const Geometry_ & updateGeometry,
-                                              const util::Duration & updateTstep,
-                                              HtlmSimplifiedLinearModel_ & simplifiedLinearModel) {
-  HtlmEnsemble_ ensemble(*params_.ensemble.value(), simplifiedLinearModel, updateGeometry);
-  HtlmCalculator_ calculator(*params_.calculator.value(), updateVars_, updateGeometry,
+void HybridLinearModelCoeffs<MODEL>::generate(SimpleLinearModel_ & simpleLinearModel) {
+  HtlmEnsemble_ ensemble(*params_.ensemble.value(), simpleLinearModel, updateGeometry_);
+  HtlmCalculator_ calculator(*params_.calculator.value(), updateVars_, updateGeometry_,
                              influenceSize_, ensemble.size(), coeffsFieldNames_);
   util::DateTime time(timeWindow_->start());
   while (time < timeWindow_->end()) {
-    time += updateTstep;
-    ensemble.step(updateTstep, simplifiedLinearModel);
+    time += updateTstep_;
+    ensemble.step(updateTstep_, simpleLinearModel);
     calculator.setOfCoeffs(ensemble.getLinearEnsemble(), ensemble.getLinearErrors(),
                            coeffsSaver_.at(time));
     // Update increments with coefficients before next step
@@ -192,15 +192,14 @@ void HybridLinearModelCoeffs<MODEL>::generate(const Geometry_ & updateGeometry,
     }
   }
   if (params_.output.value() != boost::none) {
-    write(updateGeometry.getComm());
+    write();
   }
 }
 
 //------------------------------------------------------------------------------
 
 template<typename MODEL>
-void HybridLinearModelCoeffs<MODEL>::read(const Geometry_ & updateGeometry,
-                                          const util::Duration & updateTstep) {
+void HybridLinearModelCoeffs<MODEL>::read() {
   eckit::LocalConfiguration inputConfig(*params_.input.value());
   const std::string baseFilepath = inputConfig.getString("base filepath");
   Variables fileVars;
@@ -212,10 +211,10 @@ void HybridLinearModelCoeffs<MODEL>::read(const Geometry_ & updateGeometry,
   }
   util::DateTime time(timeWindow_->start());
   while (time < timeWindow_->end()) {
-    time += updateTstep;
+    time += updateTstep_;
     const std::string filepath = baseFilepath + "_" + time.toStringIO();
     inputConfig.set("filepath", filepath);
-    util::readFieldSet(updateGeometry.getComm(), updateGeometry.functionSpace(), fileVars,
+    util::readFieldSet(updateGeometry_.getComm(), updateGeometry_.functionSpace(), fileVars,
                        inputConfig, coeffsSaver_.at(time));
   }
 }
@@ -223,13 +222,13 @@ void HybridLinearModelCoeffs<MODEL>::read(const Geometry_ & updateGeometry,
 //------------------------------------------------------------------------------
 
 template<typename MODEL>
-void HybridLinearModelCoeffs<MODEL>::write(const eckit::mpi::Comm & comm) const {
+void HybridLinearModelCoeffs<MODEL>::write() const {
   eckit::LocalConfiguration outputConfig(*params_.output.value());
   const std::string baseFilepath = outputConfig.getString("base filepath");
   for (const auto & element : coeffsSaver_) {
     const std::string filepath = baseFilepath + "_" + element.first.toStringIO();
     outputConfig.set("filepath", filepath);
-    util::writeFieldSet(comm, outputConfig, element.second);
+    util::writeFieldSet(updateGeometry_.getComm(), outputConfig, element.second);
   }
 }
 

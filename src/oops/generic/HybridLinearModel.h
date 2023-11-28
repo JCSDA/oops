@@ -9,6 +9,7 @@
 #ifndef OOPS_GENERIC_HYBRIDLINEARMODEL_H_
 #define OOPS_GENERIC_HYBRIDLINEARMODEL_H_
 
+#include <memory>
 #include <string>
 
 #include "oops/base/Geometry.h"
@@ -17,6 +18,7 @@
 #include "oops/base/Variables.h"
 #include "oops/generic/HybridLinearModelCoeffs.h"
 #include "oops/generic/LinearModelBase.h"
+#include "oops/generic/SimpleLinearModelResidualForm.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -27,15 +29,17 @@ namespace oops {
 
 template <typename MODEL>
 class HybridLinearModel : public LinearModelBase<MODEL> {
-  typedef Geometry<MODEL>                     Geometry_;
-  typedef HtlmCalculator<MODEL>               HtlmCalculator_;
-  typedef HtlmEnsemble<MODEL>                 HtlmEnsemble_;
-  typedef HtlmSimplifiedLinearModel<MODEL>    HtlmSimplifiedLinearModel_;
-  typedef HybridLinearModelCoeffs<MODEL>      HybridLinearModelCoeffs_;
-  typedef Increment<MODEL>                    Increment_;
-  typedef ModelAuxControl<MODEL>              ModelAuxCtl_;
-  typedef ModelAuxIncrement<MODEL>            ModelAuxInc_;
-  typedef State<MODEL>                        State_;
+  typedef Geometry<MODEL>                         Geometry_;
+  typedef HtlmCalculator<MODEL>                   HtlmCalculator_;
+  typedef HtlmEnsemble<MODEL>                     HtlmEnsemble_;
+  typedef HybridLinearModelCoeffs<MODEL>          HybridLinearModelCoeffs_;
+  typedef Increment<MODEL>                        Increment_;
+  typedef ModelAuxControl<MODEL>                  ModelAuxCtl_;
+  typedef ModelAuxIncrement<MODEL>                ModelAuxInc_;
+  typedef SimpleLinearModel<MODEL>                SimpleLinearModel_;
+  typedef SimpleLinearModelMultiresolution<MODEL> SLMMultiresolution_;
+  typedef SimpleLinearModelResidualForm<MODEL>    SLMResidualForm_;
+  typedef State<MODEL>                            State_;
 
  public:
   static const std::string classname() {return "oops::HybridLinearModel";}
@@ -58,8 +62,8 @@ class HybridLinearModel : public LinearModelBase<MODEL> {
  private:
   void print(std::ostream &) const override {}
   const util::Duration updateTstep_;
-  const Variables vars_;  // superset of simplifiedLinearModel_.variables() and coeffs_::updateVars_
-  HtlmSimplifiedLinearModel_ simplifiedLinearModel_;
+  const Variables vars_;  // superset of simpleLinearModel_.variables() and coeffs_::updateVars_
+  std::unique_ptr<SimpleLinearModel_> simpleLinearModel_;
   HybridLinearModelCoeffs_ coeffs_;
 };
 
@@ -68,12 +72,25 @@ class HybridLinearModel : public LinearModelBase<MODEL> {
 template<typename MODEL>
 HybridLinearModel<MODEL>::HybridLinearModel(const Geometry_ & updateGeometry,
                                             const eckit::Configuration & config)
-  : updateTstep_(config.getString("update tstep")), vars_(config, "variables"),
-    simplifiedLinearModel_(config.getSubConfiguration("simplified linear model"), updateGeometry),
-    coeffs_(config.getSubConfiguration("coefficients"), updateGeometry, updateTstep_,
-            simplifiedLinearModel_)
-{
-    Log::trace() << "HybridLinearModel<MODEL>::HybridLinearModel done" << std::endl;
+: updateTstep_(config.getString("update tstep")), vars_(config, "variables"),
+  coeffs_(config.getSubConfiguration("coefficients"), updateGeometry, updateTstep_) {
+  // Set up simpleLinearModel_
+  const eckit::LocalConfiguration slmConf(config, "simple linear model");
+  const util::DateTime wBgn(config.getSubConfiguration("coefficients").getString("window begin"));
+  if (slmConf.getBool("residual form", false)) {
+    simpleLinearModel_ = std::make_unique<SLMResidualForm_>(slmConf, updateGeometry, vars_, wBgn);
+  } else if (slmConf.has("geometry")) {
+    simpleLinearModel_ = std::make_unique<SLMMultiresolution_>(slmConf, updateGeometry);
+  } else {
+    simpleLinearModel_ = std::make_unique<SimpleLinearModel_>(slmConf, updateGeometry);
+  }
+  if (updateTstep_ % simpleLinearModel_->timeResolution() != 0) {
+    ABORT("HybridLinearModel<MODEL>::HybridLinearModel: "
+          "update tstep is not a multiple of simple linear model tstep");
+  }
+  // Obtain coefficients from file or by generating them
+  coeffs_.obtain(*simpleLinearModel_);
+  Log::trace() << "HybridLinearModel<MODEL>::HybridLinearModel done" << std::endl;
 }
 
 // ------------------------------------------------------------------------------
@@ -81,7 +98,7 @@ HybridLinearModel<MODEL>::HybridLinearModel(const Geometry_ & updateGeometry,
 template<typename MODEL>
 void HybridLinearModel<MODEL>::stepTL(Increment_ & dx, const ModelAuxInc_ & merr) const {
   Log::trace() << "HybridLinearModel<MODEL>::stepTL() starting" << std::endl;
-  simplifiedLinearModel_.forecastSimplifiedTL(dx, merr, updateTstep_);
+  simpleLinearModel_->forecastTL(dx, merr, updateTstep_);
   coeffs_.updateIncTL(dx);
   Log::trace() << "HybridLinearModel<MODEL>::stepTL() done" << std::endl;
 }
@@ -92,7 +109,7 @@ template<typename MODEL>
 void HybridLinearModel<MODEL>::stepAD(Increment_ & dx, ModelAuxInc_ & merr) const {
   Log::trace() << "HybridLinearModel<MODEL>::stepAD() starting" << std::endl;
   coeffs_.updateIncAD(dx);
-  simplifiedLinearModel_.forecastSimplifiedAD(dx, merr, updateTstep_);
+  simpleLinearModel_->forecastAD(dx, merr, updateTstep_);
   Log::trace() << "HybridLinearModel<MODEL>::stepAD() done" << std::endl;
 }
 
@@ -102,7 +119,7 @@ template<typename MODEL>
 void HybridLinearModel<MODEL>::setTrajectory(const State_ & x, State_ & xlr,
                                              const ModelAuxCtl_ & maux) {
   Log::trace() << "HybridLinearModel<MODEL>::setTrajectory() starting" << std::endl;
-  simplifiedLinearModel_.setSimplifiedTrajectory(x , xlr, maux);
+  simpleLinearModel_->setTrajectory(x , xlr, maux);
   Log::trace() << "HybridLinearModel<MODEL>::setTrajectory() done" << std::endl;
 }
 

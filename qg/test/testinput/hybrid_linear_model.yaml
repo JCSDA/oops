@@ -20,7 +20,7 @@ model aux control: {}
 linear model:
   update tstep: PT6H
   variables: [x]
-  simplified linear model:
+  simple linear model:
     linear model:
       trajectory:
         tstep: PT30M

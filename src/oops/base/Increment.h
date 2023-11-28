@@ -54,7 +54,8 @@ class Increment : public interface::Increment<MODEL> {
   /// Constructor for specified \p geometry, with \p variables, valid on \p date
   Increment(const Geometry_ & geometry, const Variables & variables, const util::DateTime & date);
   /// Copies \p other increment, changing its resolution to \p geometry
-  Increment(const Geometry_ & geometry, const Increment & other);
+  /// Uses adjoint resolution change if \p ad is true, though still to the target \p geometry
+  Increment(const Geometry_ & geometry, const Increment & other, const bool ad = false);
   /// Creates Increment with the same geometry and variables as \p other.
   /// Copies \p other if \p copy is true, otherwise creates zero increment
   Increment(const Increment & other, const bool copy = true);
@@ -87,8 +88,8 @@ Increment<MODEL>::Increment(const Geometry_ & geometry, const Variables & variab
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-Increment<MODEL>::Increment(const Geometry_ & geometry, const Increment & other):
-  interface::Increment<MODEL>(geometry, other), resol_(geometry)
+Increment<MODEL>::Increment(const Geometry_ & geometry, const Increment & other, const bool ad):
+  interface::Increment<MODEL>(geometry, other, ad), resol_(geometry)
 {}
 
 // -----------------------------------------------------------------------------

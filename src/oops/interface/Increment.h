@@ -25,6 +25,7 @@
 #include "oops/base/Variables.h"
 #include "oops/base/WriteParametersBase.h"
 #include "oops/interface/GeometryIterator.h"
+#include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
@@ -93,7 +94,8 @@ class Increment : public oops::GeneralizedDepartures,
   /// Constructor for specified \p geometry, with \p variables, valid on \p date
   Increment(const Geometry_ & geometry, const Variables & variables, const util::DateTime & date);
   /// Copies \p other increment, changing its resolution to \p geometry
-  Increment(const Geometry_ & geometry, const Increment & other);
+  /// Uses adjoint resolution change if \p ad is true, though still to the target \p geometry
+  Increment(const Geometry_ & geometry, const Increment & other, const bool ad);
   /// Creates Increment with the same geometry and variables as \p other.
   /// Copies \p other if \p copy is true, otherwise creates zero increment
   Increment(const Increment &, const bool copy = true);
@@ -209,12 +211,22 @@ Increment<MODEL>::Increment(const Geometry_ & resol, const Variables & vars,
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-Increment<MODEL>::Increment(const Geometry_ & resol, const Increment & other)
+Increment<MODEL>::Increment(const Geometry_ & resol, const Increment & other, const bool ad)
   : increment_(), fset_()
 {
   Log::trace() << "Increment<MODEL>::Increment chres starting" << std::endl;
   util::Timer timer(classname(), "Increment");
-  increment_.reset(new Increment_(resol.geometry(), *other.increment_));
+  // Adjoint resolution change currently only used in multiresolution HybridLinearModel.
+  // If MODEL attempts to use this without having implemented adjoint resolution change, abort.
+  if constexpr (std::is_constructible_v<Increment_,
+                const typename MODEL::Geometry &, const Increment_ &, const bool>) {
+    increment_.reset(new Increment_(resol.geometry(), *other.increment_, ad));
+  } else {
+    if (ad) {
+      ABORT("Increment<MODEL>::Increment adjoint resolution change requested but not implemented");
+    }
+    increment_.reset(new Increment_(resol.geometry(), *other.increment_));
+  }
   this->setObjectSize(increment_->serialSize()*sizeof(double));
   Log::trace() << "Increment<MODEL>::Increment chres done" << std::endl;
 }

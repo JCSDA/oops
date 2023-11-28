@@ -4,13 +4,19 @@ update geometry:
   depths: [500, 1000, 1500, 3000, 4000]
   perturbed heating: 0.1
 hybrid linear model:
-  simplified linear model:
+  simple linear model:
     linear model:
       trajectory:
         tstep: PT30M
       tstep: PT1H
       variable change: Identity
       name: QgTLM
+    geometry:
+      nx: 40
+      ny: 20
+      depths: [500, 1000, 1500, 3000, 4000]
+      perturbed heating: 0.1
+    residual form: true
   update tstep: PT6H
   variables: [x]
   coefficients:

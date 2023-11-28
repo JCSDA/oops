@@ -67,7 +67,7 @@ class IncrementQG : public util::Printable,
 
 /// Constructor, destructor
   IncrementQG(const GeometryQG &, const oops::Variables &, const util::DateTime &);
-  IncrementQG(const GeometryQG &, const IncrementQG &);
+  IncrementQG(const GeometryQG &, const IncrementQG &, const bool ad);
   IncrementQG(const IncrementQG &, const bool);
   IncrementQG(const IncrementQG &);
   virtual ~IncrementQG();
