@@ -26,6 +26,7 @@ class StatePerturbationParameters : public Parameters {
   typedef ModelSpaceCovarianceParametersWrapper<MODEL>    CovarianceParameters_;
 
  public:
+  RequiredParameter<size_t> ensembleSize{"ensemble size", this};
   RequiredParameter<CovarianceParameters_> backgroundError{"background error", this};
   RequiredParameter<Variables> variables{"variables", this};
 };
@@ -66,7 +67,6 @@ class HtlmEnsembleParameters : public Parameters {
   typedef StateEnsembleParameters<MODEL>           StateEnsembleParameters_;
 
  public:
-  RequiredParameter<size_t> ensembleSize{"ensemble size", this};
   RequiredParameter<eckit::LocalConfiguration> model{"model", this};
   RequiredParameter<GeometryParameters_> modelGeometry{"model geometry", this};
   RequiredParameter<eckit::LocalConfiguration> nonlinearControl{"nonlinear control", this};
@@ -105,12 +105,12 @@ class HtlmEnsemble{
   const size_t size() const {return ensembleSize_;}
 
  private:
-  const size_t ensembleSize_;
   const Geometry_ & updateGeometry_;
   const Geometry_ modelGeometry_;
   const Model_ model_;
   State4D_ nonlinearControl_;
   StateEnsemble_ nonlinearEnsemble_;
+  const size_t ensembleSize_;
   IncrementEnsemble_ nonlinearDifferences_;
   IncrementEnsemble_ linearEnsemble_;
   IncrementEnsemble_ linearErrors_;
@@ -126,14 +126,15 @@ template<typename MODEL>
 HtlmEnsemble<MODEL>::HtlmEnsemble(const Parameters_ & params,
                                   SimpleLinearModel_ & simpleLinearModel,
                                   const Geometry_ & updateGeometry)
-: ensembleSize_(params.ensembleSize),
-  updateGeometry_(updateGeometry),
+: updateGeometry_(updateGeometry),
   modelGeometry_(params.modelGeometry.value(), updateGeometry_.getComm()),
   model_(modelGeometry_, eckit::LocalConfiguration(params.toConfiguration(), "model")),
   nonlinearControl_(modelGeometry_, params.nonlinearControl.value()),
   nonlinearEnsemble_(params.nonlinearEnsemble.value().fromFile.value() != boost::none ?
     StateEnsemble_(modelGeometry_, *params.nonlinearEnsemble.value().fromFile.value()) :
-    StateEnsemble_(nonlinearControl_[0], ensembleSize_)),
+    StateEnsemble_(nonlinearControl_[0],
+                   (*params.nonlinearEnsemble.value().fromCovar.value()).ensembleSize.value())),
+  ensembleSize_(nonlinearEnsemble_.size()),
   nonlinearDifferences_(modelGeometry_, simpleLinearModel.variables(),
                          nonlinearControl_[0].validTime(), ensembleSize_),
   linearEnsemble_(updateGeometry_, simpleLinearModel.variables(),
