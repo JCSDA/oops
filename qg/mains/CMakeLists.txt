@@ -130,4 +130,4 @@ ecbuild_add_executable( TARGET  qg_linearization_error.x
                         SOURCES qgLinearizationError.cc
                         LIBS    qg
                       )
-oops_output_json_schema( qg_linearization_error.x )
+# TODO: oops_output_json_schema( qg_linearization_error.x )
