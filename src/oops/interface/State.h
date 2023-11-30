@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
+#include "oops/base/FieldSet3D.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
@@ -61,7 +62,7 @@ class State : public util::Printable,
   State & operator =(const State &);
 
   /// Accessor
-  State_ & state() {fset_.clear(); return *state_;}
+  State_ & state() {if (fset_) {fset_->clear();} return *state_;}
   /// const accessor
   const State_ & state() const {return *state_;}
 
@@ -105,14 +106,15 @@ class State : public util::Printable,
   void print(std::ostream &) const override;
 
  protected:
-  mutable atlas::FieldSet fset_;
+  mutable std::unique_ptr<FieldSet3D> fset_;
 };
 
 // =============================================================================
 
 template<typename MODEL>
 State<MODEL>::State(const Geometry_ & resol, const Variables & vars,
-                    const util::DateTime & time) : state_(), fset_()
+                    const util::DateTime & time)
+  : state_()
 {
   Log::trace() << "State<MODEL>::State starting" << std::endl;
   util::Timer timer(classname(), "State");
@@ -125,7 +127,7 @@ State<MODEL>::State(const Geometry_ & resol, const Variables & vars,
 
 template<typename MODEL>
 State<MODEL>::State(const Geometry_ & resol, const eckit::Configuration & config)
-  : state_(), fset_()
+  : state_()
 {
   Log::trace() << "State<MODEL>::State read starting" << std::endl;
   util::Timer timer(classname(), "State");
@@ -138,7 +140,7 @@ State<MODEL>::State(const Geometry_ & resol, const eckit::Configuration & config
 
 template<typename MODEL>
 State<MODEL>::State(const Geometry_ & resol, const State & other)
-  : state_(), fset_()
+  : state_()
 {
   Log::trace() << "State<MODEL>::State interpolated starting" << std::endl;
   util::Timer timer(classname(), "State");
@@ -150,7 +152,8 @@ State<MODEL>::State(const Geometry_ & resol, const State & other)
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-State<MODEL>::State(const State & other) : state_(), fset_()
+State<MODEL>::State(const State & other)
+  : state_()
 {
   Log::trace() << "State<MODEL>::State starting copy" << std::endl;
   util::Timer timer(classname(), "State");
@@ -165,8 +168,8 @@ template<typename MODEL>
 State<MODEL>::~State() {
   Log::trace() << "State<MODEL>::~State starting" << std::endl;
   util::Timer timer(classname(), "~State");
-  fset_.clear();
   state_.reset();
+  fset_.reset();
   Log::trace() << "State<MODEL>::~State done" << std::endl;
 }
 
@@ -176,7 +179,7 @@ template<typename MODEL>
 State<MODEL> & State<MODEL>::operator=(const State & rhs) {
   Log::trace() << "State<MODEL>::operator= starting" << std::endl;
   util::Timer timer(classname(), "operator=");
-  fset_.clear();
+  if (fset_) fset_->clear();
   *state_ = *rhs.state_;
   Log::trace() << "State<MODEL>::operator= done" << std::endl;
   return *this;
@@ -247,7 +250,7 @@ template<typename MODEL>
 void State<MODEL>::deserialize(const std::vector<double> & vect, size_t & current) {
   Log::trace() << "State<MODEL>::State deserialize starting" << std::endl;
   util::Timer timer(classname(), "deserialize");
-  fset_.clear();
+  if (fset_) fset_->clear();
   state_->deserialize(vect, current);
   Log::trace() << "State<MODEL>::State deserialize done" << std::endl;
 }
@@ -289,7 +292,7 @@ template<typename MODEL>
 void State<MODEL>::zero() {
   Log::trace() << "State<MODEL>::zero starting" << std::endl;
   util::Timer timer(classname(), "zero");
-  fset_.clear();
+  if (fset_) fset_->clear();
   state_->zero();
   Log::trace() << "State<MODEL>::zero done" << std::endl;
 }
@@ -300,7 +303,7 @@ template<typename MODEL>
 void State<MODEL>::accumul(const double & zz, const State & xx) {
   Log::trace() << "State<MODEL>::accumul starting" << std::endl;
   util::Timer timer(classname(), "accumul");
-  fset_.clear();
+  if (fset_) fset_->clear();
   state_->accumul(zz, *xx.state_);
   Log::trace() << "State<MODEL>::accumul done" << std::endl;
 }

@@ -460,7 +460,7 @@ void LatLonGridWriter<MODEL>::interpolateAndWrite(const State<MODEL> & xx) const
   State<MODEL> tmp_xx = xx;
   varchange.changeVar(tmp_xx, vars_for_latlon_interp);
 
-  interpolateAndWrite(tmp_xx.fieldSet(), xx.validTime());
+  interpolateAndWrite(tmp_xx.fieldSet().fieldSet(), xx.validTime());
 }
 
 // -----------------------------------------------------------------------------
@@ -480,10 +480,10 @@ void LatLonGridWriter<MODEL>::interpolateAndWrite(const Increment<MODEL> & dx,
   linvarchange.changeVarTraj(tmp_xx, vars_);
   linvarchange.changeVarTL(tmp_dx, vars_);
 
-  auto fset = tmp_dx.fieldSet();
+  auto fset = tmp_dx.fieldSet().fieldSet();
   if (pressureLevels_) {
     varchange.changeVar(tmp_xx, oops::Variables(std::vector<std::string>({"air_pressure"})));
-    fset.add(tmp_xx.fieldSet().field("air_pressure"));
+    fset.add(tmp_xx.fieldSet()["air_pressure"]);
   }
 
   interpolateAndWrite(fset, dx.validTime());
@@ -506,7 +506,7 @@ void LatLonGridWriter<MODEL>::interpolateAndWrite(const Increment<MODEL> & dx) c
     }
   }
 
-  interpolateAndWrite(dx.fieldSet(), dx.validTime());
+  interpolateAndWrite(dx.fieldSet().fieldSet(), dx.validTime());
 }
 
 // -----------------------------------------------------------------------------

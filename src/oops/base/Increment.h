@@ -67,9 +67,9 @@ class Increment : public interface::Increment<MODEL> {
 
   void transfer_from_state(const State_ &);
 
-  /// Accessors to the ATLAS fieldset
-  const atlas::FieldSet & fieldSet() const;
-  atlas::FieldSet & fieldSet();
+  /// Accessors to the FieldSet3D
+  const FieldSet3D & fieldSet() const;
+  FieldSet3D & fieldSet();
   void synchronizeFields();
   void synchronizeFieldsAD();
 
@@ -111,33 +111,37 @@ Increment<MODEL> & Increment<MODEL>::operator=(const Increment & rhs) {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-const atlas::FieldSet & Increment<MODEL>::fieldSet() const {
-  if (interface::Increment<MODEL>::fset_.empty()) {
-    interface::Increment<MODEL>::fset_ = atlas::FieldSet();
-    this->toFieldSet(interface::Increment<MODEL>::fset_);
-    for (const auto & field : interface::Increment<MODEL>::fset_) {
+const FieldSet3D & Increment<MODEL>::fieldSet() const {
+  if (!interface::Increment<MODEL>::fset_) {
+    interface::Increment<MODEL>::fset_.reset(new FieldSet3D(this->validTime(), resol_.getComm()));
+  }
+  if (interface::Increment<MODEL>::fset_->empty()) {
+    this->toFieldSet(interface::Increment<MODEL>::fset_->fieldSet());
+    for (const auto & field : *interface::Increment<MODEL>::fset_) {
       ASSERT_MSG(field.rank() == 2,
                  "OOPS expects the model's Increment::toFieldSet method to return rank-2 fields,"
                  " but field " + field.name() + " has rank = " + std::to_string(field.rank()));
     }
   }
-  return interface::Increment<MODEL>::fset_;
+  return *interface::Increment<MODEL>::fset_;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-atlas::FieldSet & Increment<MODEL>::fieldSet() {
-  if (interface::Increment<MODEL>::fset_.empty()) {
-    interface::Increment<MODEL>::fset_ = atlas::FieldSet();
-    this->toFieldSet(interface::Increment<MODEL>::fset_);
-    for (const auto & field : interface::Increment<MODEL>::fset_) {
+FieldSet3D & Increment<MODEL>::fieldSet() {
+  if (!interface::Increment<MODEL>::fset_) {
+    interface::Increment<MODEL>::fset_.reset(new FieldSet3D(this->validTime(), resol_.getComm()));
+  }
+  if (interface::Increment<MODEL>::fset_->empty()) {
+    this->toFieldSet(interface::Increment<MODEL>::fset_->fieldSet());
+    for (const auto & field : *interface::Increment<MODEL>::fset_) {
       ASSERT_MSG(field.rank() == 2,
                  "OOPS expects the model's Increment::toFieldSet method to return rank-2 fields,"
                  " but field " + field.name() + " has rank = " + std::to_string(field.rank()));
     }
   }
-  return interface::Increment<MODEL>::fset_;
+  return *interface::Increment<MODEL>::fset_;
 }
 
 // -----------------------------------------------------------------------------
@@ -145,8 +149,9 @@ atlas::FieldSet & Increment<MODEL>::fieldSet() {
 template<typename MODEL>
 void Increment<MODEL>::synchronizeFields() {
   // TODO(JEDI core team): remove this method when accessors are fully implemented
-  ASSERT(!interface::Increment<MODEL>::fset_.empty());
-  this->fromFieldSet(interface::Increment<MODEL>::fset_);
+  ASSERT(interface::Increment<MODEL>::fset_);
+  ASSERT(!interface::Increment<MODEL>::fset_->empty());
+  this->fromFieldSet(interface::Increment<MODEL>::fset_->fieldSet());
 }
 
 // -----------------------------------------------------------------------------
@@ -154,8 +159,10 @@ void Increment<MODEL>::synchronizeFields() {
 template<typename MODEL>
 void Increment<MODEL>::synchronizeFieldsAD() {
   // TODO(JEDI core team): remove this method when accessors are fully implemented
-  if (!interface::Increment<MODEL>::fset_.empty()) {
-    this->toFieldSetAD(interface::Increment<MODEL>::fset_);
+  if (interface::Increment<MODEL>::fset_) {
+    if (!interface::Increment<MODEL>::fset_->empty()) {
+      this->toFieldSetAD(interface::Increment<MODEL>::fset_->fieldSet());
+    }
   }
 }
 

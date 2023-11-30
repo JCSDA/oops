@@ -41,19 +41,21 @@ class FieldSet4D : public DataSetBase<FieldSet3D, atlas::FunctionSpace> {
   FieldSet4D & operator+=(const FieldSet4D & other);
   FieldSet4D & operator*=(const FieldSet4D & other);
   /// @brief  Multiplies each FieldSet3D in this FieldSet4D with the \p other.
-  FieldSet4D & operator*=(const atlas::FieldSet & other);
+  FieldSet4D & operator*=(const FieldSet3D & other);
   FieldSet4D & operator*=(const double zz);
   /// @brief Computes dot product of this FieldSet4D with the \p other FieldSet4D
   ///        only for specified variables \p vars.
   double dot_product_with(const FieldSet4D &, const Variables & vars) const;
+  double norm() const;
 
  private:
   std::string classname() const {return "FieldSet4D";}
 };
 
-/// @brief Deep copy of the FieldSet4D. Using FieldSet4D copy ctor or assignment
-///        operator results in shallow copies.
-FieldSet4D copyFieldSet4D(const FieldSet4D & other);
+/// @brief Deep or shallow copy of the FieldSet4D. Using FieldSet4D copy ctor or assignment
+///        operator results in deep copies.
+FieldSet4D copyFieldSet4D(const FieldSet4D & other,
+                          const bool & shallow = false);
 
 // -----------------------------------------------------------------------------
 
@@ -61,9 +63,9 @@ template<typename MODEL>
 FieldSet4D::FieldSet4D(const State4D<MODEL> & state4d)
   : Base_(state4d.times(), state4d.commTime(), {0}, oops::mpi::myself()) {
   for (size_t jj = 0; jj < state4d.size(); ++jj) {
-    this->dataset().emplace_back(new FieldSet3D(state4d[jj].fieldSet(),
-                                                state4d[jj].validTime(),
+    this->dataset().emplace_back(new FieldSet3D(state4d[jj].validTime(),
                                                 state4d.geometry().getComm()));
+    this->dataset()[jj]->shallowCopy(state4d[jj].fieldSet());
   }
 }
 
@@ -73,9 +75,9 @@ template<typename MODEL>
 FieldSet4D::FieldSet4D(const Increment4D<MODEL> & inc4d)
   : Base_(inc4d.times(), inc4d.commTime(), {0}, oops::mpi::myself()) {
   for (size_t jj = 0; jj < inc4d.size(); ++jj) {
-    this->dataset().emplace_back(new FieldSet3D(inc4d[jj].fieldSet(),
-                                                inc4d[jj].validTime(),
+    this->dataset().emplace_back(new FieldSet3D(inc4d[jj].validTime(),
                                                 inc4d.geometry().getComm()));
+    this->dataset()[jj]->shallowCopy(inc4d[jj].fieldSet());
   }
 }
 

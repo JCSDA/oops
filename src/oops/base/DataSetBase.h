@@ -43,7 +43,10 @@ class DataSetBase : public util::Printable {
   const std::vector<int> & members() const {return allmembers_;}
 
   size_t time_size() const {return ntimes_;}
-  const std::vector<util::DateTime> & times() const {return alltimes_;}
+  const std::vector<util::DateTime> & times() const {
+    sync_times();
+    return alltimes_;
+  }
 
   const size_t & local_ens_size() const {return localmembers_;}
   const size_t & local_time_size() const {return localtimes_;}
@@ -76,7 +79,7 @@ class DataSetBase : public util::Printable {
   DataSetBase(const eckit::mpi::Comm &, const eckit::mpi::Comm &);
   DataSetBase(const DataSetBase &);
   std::vector<eckit::LocalConfiguration> configure(const eckit::Configuration &);
-  void sync_times();
+  void sync_times() const;
 
   void check_consistency() const;
   void check_consistency(const DataSetBase &, const bool strict_members = true) const;
@@ -91,7 +94,7 @@ class DataSetBase : public util::Printable {
 
   size_t ntimes_;
   size_t localtimes_;
-  std::vector<util::DateTime> alltimes_;
+  mutable std::vector<util::DateTime> alltimes_;
   const eckit::mpi::Comm & commTime_;
   util::Duration subWinLength_;
 
@@ -522,7 +525,7 @@ void DataSetBase<DATA, GEOM>::shift_backward() {
 // -----------------------------------------------------------------------------
 
 template <typename DATA, typename GEOM>
-void DataSetBase<DATA, GEOM>::sync_times() {
+void DataSetBase<DATA, GEOM>::sync_times() const {
   alltimes_.resize(localtimes_);
   alltimes_ = this->validTimes();
   mpi::allGatherv(commTime_, alltimes_);

@@ -130,7 +130,7 @@ void UnstructuredInterpolator::apply(const Variables & vars, const State<MODEL> 
                                      std::vector<double> & locvals) const
 {
   std::vector<bool> target_mask(nout_, true);
-  this->apply(vars, xx.fieldSet(), target_mask, locvals);
+  this->apply(vars, xx.fieldSet().fieldSet(), target_mask, locvals);
 }
 
 // -----------------------------------------------------------------------------
@@ -140,7 +140,7 @@ void UnstructuredInterpolator::apply(const Variables & vars, const Increment<MOD
                                      std::vector<double> & locvals) const
 {
   std::vector<bool> target_mask(nout_, true);
-  this->apply(vars, dx.fieldSet(), target_mask, locvals);
+  this->apply(vars, dx.fieldSet().fieldSet(), target_mask, locvals);
 }
 
 // -----------------------------------------------------------------------------
@@ -149,7 +149,7 @@ template<typename MODEL>
 void UnstructuredInterpolator::applyAD(const Variables & vars, Increment<MODEL> & dx,
                                        const std::vector<double> & vals) const {
   std::vector<bool> target_mask(nout_, true);
-  this->applyAD(vars, dx.fieldSet(), target_mask, vals);
+  this->applyAD(vars, dx.fieldSet().fieldSet(), target_mask, vals);
 }
 
 // -----------------------------------------------------------------------------
@@ -159,7 +159,7 @@ void UnstructuredInterpolator::apply(const Variables & vars, const State<MODEL> 
                                      const std::vector<bool> & target_mask,
                                      std::vector<double> & locvals) const
 {
-  this->apply(vars, xx.fieldSet(), target_mask, locvals);
+  this->apply(vars, xx.fieldSet().fieldSet(), target_mask, locvals);
 }
 
 // -----------------------------------------------------------------------------
@@ -169,7 +169,7 @@ void UnstructuredInterpolator::apply(const Variables & vars, const Increment<MOD
                                      const std::vector<bool> & target_mask,
                                      std::vector<double> & locvals) const
 {
-  this->apply(vars, dx.fieldSet(), target_mask, locvals);
+  this->apply(vars, dx.fieldSet().fieldSet(), target_mask, locvals);
 }
 
 // -----------------------------------------------------------------------------
@@ -178,7 +178,7 @@ template<typename MODEL>
 void UnstructuredInterpolator::applyAD(const Variables & vars, Increment<MODEL> & dx,
                                        const std::vector<bool> & target_mask,
                                        const std::vector<double> & vals) const {
-  this->applyAD(vars, dx.fieldSet(), target_mask, vals);
+  this->applyAD(vars, dx.fieldSet().fieldSet(), target_mask, vals);
 }
 
 // -----------------------------------------------------------------------------

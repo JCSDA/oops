@@ -82,34 +82,34 @@ struct ApplyHelper<MODEL, cpp17::void_t<decltype(std::declval<typename MODEL::Lo
   static void apply(const typename MODEL::LocalInterpolator & interp,
              const oops::Variables & vars, const oops::State<MODEL> & state,
              std::vector<double> & buffer) {
-    interp.apply(vars, state.fieldSet(), buffer);
+    interp.apply(vars, state.fieldSet().fieldSet(), buffer);
   }
   static void apply(const typename MODEL::LocalInterpolator & interp,
              const oops::Variables & vars, const oops::Increment<MODEL> & increment,
              std::vector<double> & buffer) {
-    interp.apply(vars, increment.fieldSet(), buffer);
+    interp.apply(vars, increment.fieldSet().fieldSet(), buffer);
   }
   static void applyAD(const typename MODEL::LocalInterpolator & interp,
              const oops::Variables & vars, oops::Increment<MODEL> & increment,
              const std::vector<double> & buffer) {
-    interp.applyAD(vars, increment.fieldSet(), buffer);
+    interp.applyAD(vars, increment.fieldSet().fieldSet(), buffer);
   }
 
   // with mask
   static void apply(const typename MODEL::LocalInterpolator & interp,
              const oops::Variables & vars, const oops::State<MODEL> & state,
              const std::vector<bool> & mask, std::vector<double> & buffer) {
-    interp.apply(vars, state.fieldSet(), mask, buffer);
+    interp.apply(vars, state.fieldSet().fieldSet(), mask, buffer);
   }
   static void apply(const typename MODEL::LocalInterpolator & interp,
              const oops::Variables & vars, const oops::Increment<MODEL> & increment,
              const std::vector<bool> & mask, std::vector<double> & buffer) {
-    interp.apply(vars, increment.fieldSet(), mask, buffer);
+    interp.apply(vars, increment.fieldSet().fieldSet(), mask, buffer);
   }
   static void applyAD(const typename MODEL::LocalInterpolator & interp,
              const oops::Variables & vars, oops::Increment<MODEL> & increment,
              const std::vector<bool> & mask, const std::vector<double> & buffer) {
-    interp.applyAD(vars, increment.fieldSet(), mask, buffer);
+    interp.applyAD(vars, increment.fieldSet().fieldSet(), mask, buffer);
   }
 };
 

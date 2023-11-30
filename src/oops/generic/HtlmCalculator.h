@@ -92,7 +92,7 @@ HtlmCalculator<MODEL>::HtlmCalculator(
     regularization_ = std::make_unique<HtlmRegularization>(params_.regularization.value());
   } else {
     Increment_ regularizationIncrement(updateGeometry, updateVars_, util::DateTime());
-    atlas::FieldSet regularizationFieldSet = regularizationIncrement.fieldSet();
+    atlas::FieldSet regularizationFieldSet = regularizationIncrement.fieldSet().fieldSet();
     regularization_ = std::make_unique<HtlmRegularizationComponentDependent>(
       params_.regularization.value(), regularizationFieldSet);
   }

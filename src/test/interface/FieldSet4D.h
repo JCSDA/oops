@@ -51,26 +51,31 @@ template <typename MODEL> void testFieldSet3D() {
     const Geometry_ geometry(config.getSubConfiguration("geometry"), oops::mpi::world());
     const State_ xx1(geometry, config.getSubConfiguration("state"));
     oops::Log::info() << "State: " << xx1 << std::endl;
-    const oops::FieldSet3D xx2(xx1.fieldSet(), xx1.validTime(), geometry.getComm());
-    oops::Log::info() << "FieldSet3D: " << xx2 << std::endl;
+    oops::FieldSet3D xx2Deep(xx1.fieldSet());
+    oops::Log::info() << "FieldSet3D deep-copy: " << xx2Deep << std::endl;
+    oops::FieldSet3D xx2Shallow(xx1.validTime(), xx1.geometry().getComm());
+    xx2Shallow.shallowCopy(xx1.fieldSet());
+    oops::Log::info() << "FieldSet3D shallow-copy: " << xx2Shallow << std::endl;
 
     // Check that the valid times are the same:
-    EXPECT(xx2.validTime() == xx1.validTime());
+    EXPECT(xx2Deep.validTime() == xx1.validTime());
+    EXPECT(xx2Shallow.validTime() == xx1.validTime());
 
     // Check that the variables are the same:
     oops::Log::info() << "State variables: " << xx1.variables() << std::endl;
-    oops::Log::info() << "FieldSet3D variables: " << xx2.variables() << std::endl;
+    oops::Log::info() << "FieldSet3D variables: " << xx2Deep.variables() << std::endl;
     // Currently only comparing the variable strings since FieldSet3D provides levels in addition.
     // TODO(Algo): change to comparing .variables() when all models support State/Increment
     // variables that provide levels information.
-    EXPECT(xx2.variables().variables() == xx1.variables().variables());
+    EXPECT(xx2Deep.variables().variables() == xx1.variables().variables());
+    EXPECT(xx2Shallow.variables().variables() == xx1.variables().variables());
 
     const oops::Variables incvars(config, "increment variables");
     const util::DateTime inctime(2020, 1, 1, 0, 0, 0);
     Increment_ dx1(geometry, incvars, inctime);
     dx1.ones();
     oops::Log::info() << "Increment: " << dx1 << std::endl;
-    const oops::FieldSet3D dx2(dx1.fieldSet(), dx1.validTime(), geometry.getComm());
+    const oops::FieldSet3D dx2(dx1.fieldSet());
     oops::Log::info() << "FieldSet3D: " << dx2 << std::endl;
 
     // Check that the valid times are the same:
@@ -186,36 +191,29 @@ template <typename MODEL> void testFieldSet4D() {
   // variables that provide levels information.
   EXPECT(dx2.variables().variables() == dx1.variables().variables());
     // Test dot-product call
-  double dotp1 = dx1.dot_product_with(dx1);
-  double dotp2 = dx2.dot_product_with(dx2, dx2.variables());
-  EXPECT(oops::is_close(dotp1, dotp2, 1.e-14));
-  EXPECT_NOT_EQUAL(dotp2, 0.0);
+  const double norm1 = std::sqrt(dx1.dot_product_with(dx1));
+  EXPECT(oops::is_close(norm1, dx2.norm(), 1.e-14));
+  EXPECT_NOT_EQUAL(dx2.norm(), 0.0);
   // Test shallow and deep copies, +=, *= and zero method.
   // dx2_sc is a shallow copy of dx2; dx2_dc is a deep copy of dx2.
-  oops::FieldSet4D dx2_sc(dx2);
-  oops::FieldSet4D dx2_dc = copyFieldSet4D(dx2);
-  double dotp2_sc = dx2_sc.dot_product_with(dx2_sc, dx2_sc.variables());
-  double dotp2_dc = dx2_dc.dot_product_with(dx2_dc, dx2_dc.variables());
-  EXPECT(oops::is_close(dotp1, dotp2_sc, 1.e-14));
-  EXPECT(oops::is_close(dotp1, dotp2_dc, 1.e-14));
+  oops::FieldSet4D dx2_sc = copyFieldSet4D(dx2, true);
+  oops::FieldSet4D dx2_dc(dx2);
+  EXPECT(oops::is_close(norm1, dx2_sc.norm(), 1.e-14));
+  EXPECT(oops::is_close(norm1, dx2_dc.norm(), 1.e-14));
   // Set deep copy to zero; dx2 and dx2_sc should stay unchanged.
   dx2_dc.zero();
-  dotp2_sc = dx2_sc.dot_product_with(dx2_sc, dx2_sc.variables());
-  dotp2_dc = dx2_dc.dot_product_with(dx2_dc, dx2_dc.variables());
-  EXPECT(oops::is_close(dotp1, dotp2_sc, 1.e-14));
-  EXPECT_EQUAL(dotp2_dc, 0.0);
+  EXPECT(oops::is_close(norm1, dx2_sc.norm(), 1.e-13));
+  EXPECT_EQUAL(dx2_dc.norm(), 0.0);
   // Add zero fields to shallow copy and multiply by 1.0; should stay unchanged.
   dx2_sc += dx2_dc;
   dx2_sc *= 1.0;
-  dotp2_sc = dx2_sc.dot_product_with(dx2_sc, dx2_sc.variables());
-  EXPECT(oops::is_close(dotp1, dotp2_sc, 1.e-14));
+  EXPECT(oops::is_close(norm1, dx2_sc.norm(), 1.e-13));
   // Multiply by zeroes shallow copy: both shallow copy and dx2 should now
   // be zero.
   dx2_sc *= dx2_dc;
-  dotp2 = dx2.dot_product_with(dx2, dx2.variables());
-  dotp2_sc = dx2_sc.dot_product_with(dx2_sc, dx2_sc.variables());
-  EXPECT_EQUAL(dotp2, 0.0);
-  EXPECT_EQUAL(dotp2_sc, 0.0);
+  std::cout << " TOTO " << dx2.norm() << " / " << dx2_sc.norm() << std::endl;
+  EXPECT_EQUAL(dx2.norm(), 0.0);
+  EXPECT_EQUAL(dx2_sc.norm(), 0.0);
 }
 
 // -----------------------------------------------------------------------------

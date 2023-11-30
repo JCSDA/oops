@@ -21,10 +21,14 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-FieldSet4D copyFieldSet4D(const FieldSet4D & other) {
+FieldSet4D copyFieldSet4D(const FieldSet4D & other, const bool & shallow) {
   FieldSet4D copy(other.times(), other.commTime(), other[0].commGeom());
   for (size_t jtime = 0; jtime < other.size(); ++jtime) {
-    util::copyFieldSet(other[jtime].fieldSet(), copy[jtime].fieldSet());
+    if (shallow) {
+      copy[jtime].shallowCopy(other[jtime]);
+    } else {
+      copy[jtime].deepCopy(other[jtime]);
+    }
   }
   return copy;
 }
@@ -77,17 +81,17 @@ FieldSet4D & FieldSet4D::operator*=(const FieldSet4D & other) {
   this->check_consistency(other, false);
   ASSERT(this->is_4d());
   for (size_t jt = 0; jt < this->size(); ++jt) {
-    util::multiplyFieldSets((*this)[jt].fieldSet(), other[jt].fieldSet());
+    (*this)[jt] *= other[jt];
   }
   return *this;
 }
 
 // -----------------------------------------------------------------------------
 
-FieldSet4D & FieldSet4D::operator*=(const atlas::FieldSet & other) {
+FieldSet4D & FieldSet4D::operator*=(const FieldSet3D & other) {
   ASSERT(this->is_4d());
   for (size_t jt = 0; jt < this->size(); ++jt) {
-    util::multiplyFieldSets((*this)[jt].fieldSet(), other);
+    (*this)[jt] *= other;
   }
   return *this;
 }
@@ -97,7 +101,7 @@ FieldSet4D & FieldSet4D::operator*=(const atlas::FieldSet & other) {
 FieldSet4D & FieldSet4D::operator*=(const double zz) {
   ASSERT(this->is_4d());
   for (size_t jj = 0; jj < this->size(); ++jj) {
-    util::multiplyFieldSet((*this)[jj].fieldSet(), zz);
+    (*this)[jj] *= zz;
   }
   return *this;
 }
@@ -113,6 +117,13 @@ double FieldSet4D::dot_product_with(const FieldSet4D & other, const oops::Variab
   }
   this->commTime().allReduceInPlace(zz, eckit::mpi::Operation::SUM);
   return zz;
+}
+
+// -----------------------------------------------------------------------------
+
+double FieldSet4D::norm() const {
+  double zz = this->dot_product_with(*this, this->variables());
+  return std::sqrt(zz);
 }
 
 // -----------------------------------------------------------------------------

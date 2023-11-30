@@ -270,7 +270,7 @@ Increment<MODEL> StateEnsemble<MODEL>::stddev() const {
   Increment<MODEL> ensStdDev = this->variance();
 
   // Compute ensemble standard deviation
-  util::sqrtFieldSet(ensStdDev.fieldSet());
+  ensStdDev.fieldSet().sqrt();
   ensStdDev.synchronizeFields();
 
   Log::trace() << "StateEnsemble:: standard deviation done" << std::endl;

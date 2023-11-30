@@ -122,11 +122,11 @@ IncrementSet<MODEL>::IncrementSet(const Geometry_ & resol, const Variables & var
   : DataSetBase<Increment_, Geometry_>(xx.times(), xx.commTime(), xx.members(), xx.commEns())
 {
   Log::trace() << "IncrementSet::IncrementSet from States" << std::endl;
-
   size_t mytime = this->local_time_size() * this->commTime().rank();
+  const std::vector<util::DateTime> times = xx.times();
   for (size_t jm = 0; jm < this->local_ens_size(); ++jm) {
     for (size_t jt = 0; jt < this->local_time_size(); ++jt) {
-      const util::DateTime time = xx.times()[mytime + jt];
+      const util::DateTime time = times[mytime + jt];
       this->dataset().emplace_back(new Increment_(resol, vars, time));
       (*this)(jt, jm).transfer_from_state(xx(jt, jm));
       if (clearStates) xx.clear(jt, jm);

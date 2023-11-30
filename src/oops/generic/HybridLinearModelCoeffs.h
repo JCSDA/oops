@@ -238,7 +238,7 @@ template<typename MODEL>
 void HybridLinearModelCoeffs<MODEL>::updateIncTL(Increment_ & dx) const {
   Log::trace() << "HybridLinearModelCoeffs<MODEL>::updateIncTL() starting" << std::endl;
   const auto updateStencilArray = atlas::array::make_view<int, 2>(updateStencil_);
-  atlas::FieldSet & dxFSet = dx.fieldSet();
+  atlas::FieldSet & dxFSet = dx.fieldSet().fieldSet();
   std::vector<double> updateVals(nLevels_ * updateVars_.size());
   for (auto i = 0; i < nLocations_; i++) {
     std::fill(updateVals.begin(), updateVals.end(), 0.0);
@@ -273,7 +273,7 @@ template<typename MODEL>
 void HybridLinearModelCoeffs<MODEL>::updateIncAD(Increment_ & dx) const {
   Log::trace() << "HybridLinearModelCoeffs<MODEL>::updateIncAD() starting" << std::endl;
   const auto updateStencilArray = atlas::array::make_view<int, 2>(updateStencil_);
-  atlas::FieldSet & dxFSet = dx.fieldSet();
+  atlas::FieldSet & dxFSet = dx.fieldSet().fieldSet();
   std::vector<double> updateVals(nLevels_ * updateVars_.size());
   for (auto i = 0; i < nLocations_; i++) {
     std::fill(updateVals.begin(), updateVals.end(), 0.0);

@@ -55,9 +55,9 @@ class State : public interface::State<MODEL> {
   /// Accessor to geometry associated with this State
   const Geometry_ & geometry() const {return resol_;}
 
-  /// Accessors to the ATLAS fieldset
-  const atlas::FieldSet & fieldSet() const;
-  atlas::FieldSet & fieldSet();
+  /// Accessors to the FieldSet3D
+  const FieldSet3D & fieldSet() const;
+  FieldSet3D & fieldSet();
   void synchronizeFields();
 
   /// Write
@@ -108,33 +108,37 @@ State<MODEL> & State<MODEL>::operator=(const State & rhs) {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-const atlas::FieldSet & State<MODEL>::fieldSet() const {
-  if (interface::State<MODEL>::fset_.empty()) {
-    interface::State<MODEL>::fset_ = atlas::FieldSet();
-    this->toFieldSet(interface::State<MODEL>::fset_);
-    for (const auto & field : interface::State<MODEL>::fset_) {
+const FieldSet3D & State<MODEL>::fieldSet() const {
+  if (!interface::State<MODEL>::fset_) {
+    interface::State<MODEL>::fset_.reset(new FieldSet3D(this->validTime(), resol_.getComm()));
+  }
+  if (interface::State<MODEL>::fset_->empty()) {
+    this->toFieldSet(interface::State<MODEL>::fset_->fieldSet());
+    for (const auto & field : *interface::State<MODEL>::fset_) {
       ASSERT_MSG(field.rank() == 2,
                  "OOPS expects the model's State::toFieldSet method to return rank-2 fields,"
                  " but field " + field.name() + " has rank = " + std::to_string(field.rank()));
     }
   }
-  return interface::State<MODEL>::fset_;
+  return *interface::State<MODEL>::fset_;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-atlas::FieldSet & State<MODEL>::fieldSet() {
-  if (interface::State<MODEL>::fset_.empty()) {
-    interface::State<MODEL>::fset_ = atlas::FieldSet();
-    this->toFieldSet(interface::State<MODEL>::fset_);
-    for (const auto & field : interface::State<MODEL>::fset_) {
+FieldSet3D & State<MODEL>::fieldSet() {
+  if (!interface::State<MODEL>::fset_) {
+    interface::State<MODEL>::fset_.reset(new FieldSet3D(this->validTime(), resol_.getComm()));
+  }
+  if (interface::State<MODEL>::fset_->empty()) {
+    this->toFieldSet(interface::State<MODEL>::fset_->fieldSet());
+    for (const auto & field : *interface::State<MODEL>::fset_) {
       ASSERT_MSG(field.rank() == 2,
                  "OOPS expects the model's State::toFieldSet method to return rank-2 fields,"
                  " but field " + field.name() + " has rank = " + std::to_string(field.rank()));
     }
   }
-  return interface::State<MODEL>::fset_;
+  return *interface::State<MODEL>::fset_;
 }
 
 // -----------------------------------------------------------------------------
@@ -142,8 +146,9 @@ atlas::FieldSet & State<MODEL>::fieldSet() {
 template<typename MODEL>
 void State<MODEL>::synchronizeFields() {
   // TODO(JEDI core team): remove this method when accessors are fully implemented
-  ASSERT(!interface::State<MODEL>::fset_.empty());
-  this->fromFieldSet(interface::State<MODEL>::fset_);
+  ASSERT(interface::State<MODEL>::fset_);
+  ASSERT(!interface::State<MODEL>::fset_->empty());
+  this->fromFieldSet(interface::State<MODEL>::fset_->fieldSet());
 }
 
 // -----------------------------------------------------------------------------

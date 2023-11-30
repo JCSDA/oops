@@ -176,7 +176,7 @@ template <typename MODEL>
 void AtlasInterpolator::apply(const Variables& variables,
                               const State<MODEL>& state,
                               std::vector<double>& targetFieldVec) const {
-  apply(variables, state.fieldSet(),
+  apply(variables, state.fieldSet().fieldSet(),
         std::vector<bool>(targetLonLats_.size(), true), targetFieldVec);
 }
 
@@ -185,7 +185,7 @@ void AtlasInterpolator::apply(const Variables& variables,
                               const State<MODEL>& state,
                               const std::vector<bool>& mask,
                               std::vector<double>& targetFieldVec) const {
-  apply(variables, state.fieldSet(), mask, targetFieldVec);
+  apply(variables, state.fieldSet().fieldSet(), mask, targetFieldVec);
 }
 
 template <typename MODEL>
@@ -193,14 +193,14 @@ void AtlasInterpolator::apply(const Variables& variables,
                               const Increment<MODEL>& increment,
                               const std::vector<bool>& mask,
                               std::vector<double>& targetFieldVec) const {
-  apply(variables, increment.fieldSet(), mask, targetFieldVec);
+  apply(variables, increment.fieldSet().fieldSet(), mask, targetFieldVec);
 }
 
 template <typename MODEL>
 void AtlasInterpolator::apply(const Variables& variables,
                               const Increment<MODEL>& increment,
                               std::vector<double>& targetFieldVec) const {
-  apply(variables, increment.fieldSet(),
+  apply(variables, increment.fieldSet().fieldSet(),
         std::vector<bool>(targetLonLats_.size(), true), targetFieldVec);
 }
 
@@ -208,7 +208,7 @@ template <typename MODEL>
 void AtlasInterpolator::applyAD(
     const Variables& variables, Increment<MODEL>& increment,
     const std::vector<double>& targetFieldVec) const {
-  applyAD(variables, increment.fieldSet(),
+  applyAD(variables, increment.fieldSet().fieldSet(),
           std::vector<bool>(targetLonLats_.size(), true), targetFieldVec);
 }
 
@@ -217,6 +217,6 @@ void AtlasInterpolator::applyAD(
     const Variables& variables, Increment<MODEL>& increment,
     const std::vector<bool>& mask,
     const std::vector<double>& targetFieldVec) const {
-  applyAD(variables, increment.fieldSet(), mask, targetFieldVec);
+  applyAD(variables, increment.fieldSet().fieldSet(), mask, targetFieldVec);
 }
 }  // namespace oops

@@ -105,18 +105,18 @@ template <typename MODEL> class RTPS : public Application {
 
     // calculate ensemble standard deviations
     Increment_ an_stdDev = anens.variance();
-    util::sqrtFieldSet(an_stdDev.fieldSet());
+    an_stdDev.fieldSet().sqrt();
     an_stdDev.synchronizeFields();
 
     Increment_ bg_stdDev = bgens.variance();
-    util::sqrtFieldSet(bg_stdDev.fieldSet());
+    bg_stdDev.fieldSet().sqrt();
     bg_stdDev.synchronizeFields();
 
     // calculate inflation factor
     Increment_ inflation(an_stdDev);
     inflation *= (1.0 - factor);
     inflation.axpy(factor, bg_stdDev);
-    util::divideFieldSets(inflation.fieldSet(), an_stdDev.fieldSet());
+    inflation.fieldSet() /= an_stdDev.fieldSet();
     inflation.synchronizeFields();
 
     Log::test() << "Background member 1:" << bgens[0] << std::endl;
