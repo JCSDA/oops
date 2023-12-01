@@ -287,11 +287,11 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
       const eckit::LocalConfiguration incConfig(finalConfig, "increment");
       const eckit::LocalConfiguration incGeomConfig(incConfig, "geometry");
       Geometry<MODEL> incGeom(incGeomConfig,
-                              dx.state().geometry().getComm(),
-                              dx.state().geometry().timeComm());
-      Increment<MODEL> dxOutput(incGeom, dx.state());
+                              dx.states().geometry().getComm(),
+                              dx.states().commTime());
+      ControlIncrement<MODEL, OBS> dxOutput(incGeom, dx);
       const eckit::LocalConfiguration incOutConfig(incConfig, "output");
-      dxOutput.write(incOutConfig);
+      dxOutput.states().write(incOutConfig);
     }
 
 //  Compute final value of the cost function and, if an output configuration is specified,
