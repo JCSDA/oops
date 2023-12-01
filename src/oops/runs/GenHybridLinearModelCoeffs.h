@@ -56,7 +56,8 @@ class GenHybridLinearModelCoeffs : public Application {
       const bool shifting =
         static_cast<bool>(htlmConf.getBool("coefficients.window shift", false));
       const util::TimeWindow timeWindow(bgn, bgn + len, util::boolToWindowBound(shifting));
-      Increment<MODEL> dx(updateGeometry, hybridLinearModel.variables(), timeWindow.start());
+      const Variables vars(fullConfig.getSubConfiguration("test"), "variables");
+      Increment<MODEL> dx(updateGeometry, vars, timeWindow.start());
       dx.ones();
       ModelAuxIncrement<MODEL> mauxinc(updateGeometry, eckit::LocalConfiguration());
       util::DateTime time(timeWindow.start());

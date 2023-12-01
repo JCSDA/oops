@@ -59,4 +59,5 @@ hybrid linear model:
       one file per task: true
   name: HTLM
 test:
+  variables: [x]
   reference filename: testoutput/gen_hybrid_linear_model_coeffs_with_subtimestep.test

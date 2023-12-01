@@ -57,14 +57,14 @@ class HybridLinearModelCoeffs {
   typedef SimpleLinearModel<MODEL>                    SimpleLinearModel_;
 
   HybridLinearModelCoeffs(const eckit::Configuration &, const Geometry_ &, const util::Duration &);
-  void obtain(SimpleLinearModel_ &);
+  void obtain(SimpleLinearModel_ &, const Variables &);
   void updateIncTL(Increment_ &) const;
   void updateIncAD(Increment_ &) const;
 
  private:
   void makeCoeffsSaver();
   void makeUpdateStencil();
-  void generate(SimpleLinearModel_ &);
+  void generate(SimpleLinearModel_ &, const Variables &);
   void read();
   void write() const;
 
@@ -115,10 +115,11 @@ HybridLinearModelCoeffs<MODEL>::HybridLinearModelCoeffs(
 //------------------------------------------------------------------------------
 
 template<typename MODEL>
-void HybridLinearModelCoeffs<MODEL>::obtain(SimpleLinearModel_ & simpleLinearModel) {
+void HybridLinearModelCoeffs<MODEL>::obtain(SimpleLinearModel_ & simpleLinearModel,
+                                            const Variables & vars) {
   // Determine source of and obtain coefficients
   if (params_.ensemble.value() != boost::none && params_.calculator.value() != boost::none) {
-    generate(simpleLinearModel);
+    generate(simpleLinearModel, vars);
   } else if (params_.input.value() != boost::none) {
     read();
   } else {
@@ -176,8 +177,9 @@ void HybridLinearModelCoeffs<MODEL>::makeUpdateStencil() {
 //------------------------------------------------------------------------------
 
 template<typename MODEL>
-void HybridLinearModelCoeffs<MODEL>::generate(SimpleLinearModel_ & simpleLinearModel) {
-  HtlmEnsemble_ ensemble(*params_.ensemble.value(), simpleLinearModel, updateGeometry_);
+void HybridLinearModelCoeffs<MODEL>::generate(SimpleLinearModel_ & simpleLinearModel,
+                                              const Variables & vars) {
+  HtlmEnsemble_ ensemble(*params_.ensemble.value(), simpleLinearModel, updateGeometry_, vars);
   HtlmCalculator_ calculator(*params_.calculator.value(), updateVars_, updateGeometry_,
                              influenceSize_, ensemble.size(), coeffsFieldNames_);
   util::DateTime time(timeWindow_->start());

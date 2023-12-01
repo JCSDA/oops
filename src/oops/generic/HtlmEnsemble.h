@@ -97,7 +97,7 @@ class HtlmEnsemble{
  public:
   static const std::string classname() {return "oops::HtlmEnsemble";}
 
-  HtlmEnsemble(const Parameters_ &, SimpleLinearModel_ &, const Geometry_ &);
+  HtlmEnsemble(const Parameters_ &, SimpleLinearModel_ &, const Geometry_ &, const Variables &);
   void step(const util::Duration &, SimpleLinearModel_ &);
 
   IncrementEnsemble_ & getLinearEnsemble() {return linearEnsemble_;}
@@ -125,7 +125,8 @@ class HtlmEnsemble{
 template<typename MODEL>
 HtlmEnsemble<MODEL>::HtlmEnsemble(const Parameters_ & params,
                                   SimpleLinearModel_ & simpleLinearModel,
-                                  const Geometry_ & updateGeometry)
+                                  const Geometry_ & updateGeometry,
+                                  const Variables & vars)
 : updateGeometry_(updateGeometry),
   modelGeometry_(params.modelGeometry.value(), updateGeometry_.getComm()),
   model_(modelGeometry_, eckit::LocalConfiguration(params.toConfiguration(), "model")),
@@ -135,10 +136,8 @@ HtlmEnsemble<MODEL>::HtlmEnsemble(const Parameters_ & params,
     StateEnsemble_(nonlinearControl_[0],
                    (*params.nonlinearEnsemble.value().fromCovar.value()).ensembleSize.value())),
   ensembleSize_(nonlinearEnsemble_.size()),
-  nonlinearDifferences_(modelGeometry_, simpleLinearModel.variables(),
-                         nonlinearControl_[0].validTime(), ensembleSize_),
-  linearEnsemble_(updateGeometry_, simpleLinearModel.variables(),
-                  nonlinearControl_[0].validTime(), ensembleSize_),
+  nonlinearDifferences_(modelGeometry_, vars,  nonlinearControl_[0].validTime(), ensembleSize_),
+  linearEnsemble_(updateGeometry_, vars, nonlinearControl_[0].validTime(), ensembleSize_),
   linearErrors_(linearEnsemble_), maux_(modelGeometry_, eckit::LocalConfiguration()),
   mauxinc_(updateGeometry_, eckit::LocalConfiguration())
 {
@@ -159,7 +158,7 @@ HtlmEnsemble<MODEL>::HtlmEnsemble(const Parameters_ & params,
     }
   }
   // Set up linearEnsemble_ initial conditions
-  Increment_ linearEnsembleMemberModelGeometry(modelGeometry_, simpleLinearModel.variables(),
+  Increment_ linearEnsembleMemberModelGeometry(modelGeometry_, vars,
                                                nonlinearControl_[0].validTime());
   for (size_t m = 0; m < ensembleSize_; m++) {
     linearEnsembleMemberModelGeometry.diff(nonlinearControl_[0], nonlinearEnsemble_[m]);

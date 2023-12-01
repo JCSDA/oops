@@ -57,12 +57,11 @@ class HybridLinearModel : public LinearModelBase<MODEL> {
   void setTrajectory(const State_ &, State_ &, const ModelAuxCtl_ &) override;
 
   const util::Duration & timeResolution() const override {return updateTstep_;}
-  const oops::Variables & variables() const override {return vars_;}
 
  private:
   void print(std::ostream &) const override {}
   const util::Duration updateTstep_;
-  const Variables vars_;  // superset of simpleLinearModel_.variables() and coeffs_::updateVars_
+  const Variables vars_;  // superset of coeffs_::updateVars_
   std::unique_ptr<SimpleLinearModel_> simpleLinearModel_;
   HybridLinearModelCoeffs_ coeffs_;
 };
@@ -74,6 +73,7 @@ HybridLinearModel<MODEL>::HybridLinearModel(const Geometry_ & updateGeometry,
                                             const eckit::Configuration & config)
 : updateTstep_(config.getString("update tstep")), vars_(config, "variables"),
   coeffs_(config.getSubConfiguration("coefficients"), updateGeometry, updateTstep_) {
+  Log::trace() << "HybridLinearModel<MODEL>::HybridLinearModel starting" << std::endl;
   // Set up simpleLinearModel_
   const eckit::LocalConfiguration slmConf(config, "simple linear model");
   const util::DateTime wBgn(config.getSubConfiguration("coefficients").getString("window begin"));
@@ -89,7 +89,7 @@ HybridLinearModel<MODEL>::HybridLinearModel(const Geometry_ & updateGeometry,
           "update tstep is not a multiple of simple linear model tstep");
   }
   // Obtain coefficients from file or by generating them
-  coeffs_.obtain(*simpleLinearModel_);
+  coeffs_.obtain(*simpleLinearModel_, vars_);
   Log::trace() << "HybridLinearModel<MODEL>::HybridLinearModel done" << std::endl;
 }
 

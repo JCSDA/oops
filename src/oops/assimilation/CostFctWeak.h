@@ -31,8 +31,6 @@
 #include "oops/base/State.h"
 #include "oops/base/TrajectorySaver.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/LinearVariableChange.h"
-#include "oops/interface/VariableChange.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -56,8 +54,6 @@ template<typename MODEL, typename OBS> class CostFctWeak : public CostFunction<M
   typedef State<MODEL>                    State_;
   typedef Model<MODEL>                    Model_;
   typedef LinearModel<MODEL>              LinearModel_;
-  typedef VariableChange<MODEL>           VarCha_;
-  typedef LinearVariableChange<MODEL>     LinVarCha_;
 
  public:
   CostFctWeak(const eckit::Configuration &, const eckit::mpi::Comm &);
@@ -99,7 +95,6 @@ template<typename MODEL, typename OBS> class CostFctWeak : public CostFunction<M
   std::unique_ptr<Model_> model_;
   const Variables ctlvars_;
   std::shared_ptr<LinearModel_> tlm_;
-  std::unique_ptr<LinVarCha_> inc2model_;
 };
 
 // =============================================================================
@@ -111,7 +106,7 @@ CostFctWeak<MODEL, OBS>::CostFctWeak(const eckit::Configuration & conf,
     subWinLength_(conf.getString("subwindow")),
     subWinBgn_(), subWinEnd_(),
     commSpace_(nullptr), commTime_(nullptr),
-    resol_(), model_(), ctlvars_(conf, "analysis variables"), tlm_(), inc2model_()
+    resol_(), model_(), ctlvars_(conf, "analysis variables"), tlm_()
 {
   Log::trace() << "CostFctWeak::CostFctWeak start" << std::endl;
 
@@ -244,15 +239,6 @@ void CostFctWeak<MODEL, OBS>::doLinearize(const Geometry_ & resol,
   tlm_.reset(new LinearModel_(resol, lmConf));
   pp.enrollProcessor(new TrajectorySaver<MODEL>(lmConf, resol, fg.modVar(), tlm_, pptraj));
 
-// Create variable change
-  std::unique_ptr<eckit::LocalConfiguration> lvcConf;
-  inc2model_.reset(new LinVarCha_(resol, innerConf.getSubConfiguration("linear variable change")));
-
-// Trajecotry for linear variable change
-  for (size_t jsub = 0; jsub < nsublocal_; ++jsub) {
-    inc2model_->changeVarTraj(fg.state(jsub), tlm_->variables());
-  }
-
   Log::trace() << "CostFctWeak::doLinearize done" << std::endl;
 }
 
@@ -269,9 +255,7 @@ void CostFctWeak<MODEL, OBS>::runTLM(CtrlInc_ & dx,
     ASSERT(dx.state(jsub).validTime() == subWinBgn_[jsub]);
 
     Variables incvars = dx.state(jsub).variables();
-    inc2model_->changeVarTL(dx.state(jsub), tlm_->variables());
     tlm_->forecastTL(dx.state(jsub), dx.modVar(), subWinLength_, post, cost, idModel);
-    inc2model_->changeVarInverseTL(dx.state(jsub), incvars);
 
     Log::info() << "CostFctWeak::runTLM: " << dx.state(jsub) << std::endl;
     ASSERT(dx.state(jsub).validTime() == subWinEnd_[jsub]);
@@ -295,9 +279,7 @@ void CostFctWeak<MODEL, OBS>::runTLM(CtrlInc_ & dx, const bool idModel) const {
       dx.state(jsub).updateTime(subWinLength_);
     } else {
       Variables incvars = dx.state(jsub).variables();
-      inc2model_->changeVarTL(dx.state(jsub), tlm_->variables());
       tlm_->forecastTL(dx.state(jsub), dx.modVar(), subWinLength_, post, cost);
-      inc2model_->changeVarInverseTL(dx.state(jsub), incvars);
     }
 
     Log::info() << "CostFctWeak::runTLM: " << dx.state(jsub) << std::endl;
@@ -333,9 +315,7 @@ void CostFctWeak<MODEL, OBS>::runADJ(CtrlInc_ & dx,
     ASSERT(dx.state(jsub).validTime() == subWinEnd_[jsub]);
 
     Variables incvars = dx.state(jsub).variables();
-    inc2model_->changeVarInverseAD(dx.state(jsub), tlm_->variables());
     tlm_->forecastAD(dx.state(jsub), dx.modVar(), subWinLength_, post, cost, idModel);
-    inc2model_->changeVarAD(dx.state(jsub), incvars);
 
     Log::info() << "CostFctWeak::runADJ: " << dx.state(jsub) << std::endl;
     ASSERT(dx.state().validTime() == subWinBgn_[jsub]);
@@ -359,9 +339,7 @@ void CostFctWeak<MODEL, OBS>::runADJ(CtrlInc_ & dx, const bool idModel) const {
       dx.state(jsub).updateTime(-subWinLength_);
     } else {
       Variables incvars = dx.state(jsub).variables();
-      inc2model_->changeVarInverseAD(dx.state(jsub), tlm_->variables());
       tlm_->forecastAD(dx.state(jsub), dx.modVar(), subWinLength_, post, cost);
-      inc2model_->changeVarAD(dx.state(jsub), incvars);
     }
 
     Log::info() << "CostFctWeak::runADJ: " << dx.state(jsub) << std::endl;

@@ -78,7 +78,6 @@ variational:
     linear model:
       name: Identity
       tstep: PT6H
-      increment variables: ["x"]
       variable change: Identity
     diagnostics:
       departures: ombg

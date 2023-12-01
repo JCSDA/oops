@@ -84,8 +84,6 @@ class LinearModel : public util::Printable,
   /// \brief Time step for running LinearModel's forecast in oops (frequency with which the
   /// State will be updated)
   const util::Duration & timeResolution() const {return linearmodel_->timeResolution();}
-  /// \brief LinearModel variables (only used in 4DVar)
-  const oops::Variables & variables() const {return linearmodel_->variables();}
 
  private:
   /// \brief Tangent linear forecast initialization, called before every run

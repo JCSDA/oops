@@ -17,7 +17,6 @@
 
 #include <boost/noncopyable.hpp>
 
-#include "oops/base/Variables.h"
 #include "oops/interface/LinearModelBase.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
@@ -63,7 +62,6 @@ class TLML95: public oops::interface::LinearModelBase<L95Traits>,
 
 /// Other utilities
   const util::Duration & timeResolution() const override {return tstep_;}
-  const oops::Variables & variables() const override {return vars_;}
 
  private:
   const ModelTrajectory * getTrajectory(const util::DateTime &) const;
@@ -80,7 +78,6 @@ class TLML95: public oops::interface::LinearModelBase<L95Traits>,
   const double dt_;
   std::map< util::DateTime, ModelTrajectory * > traj_;
   const ModelL95 lrmodel_;
-  const oops::Variables vars_;
 };
 
 // -----------------------------------------------------------------------------

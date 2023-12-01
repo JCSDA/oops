@@ -27,7 +27,6 @@ linear model:
       tstep: PT1H
       variable change: Identity
       name: QgTLM
-      tlm variables: [x, q]
   coefficients:
     update variables: [q]
     influence region size: 3

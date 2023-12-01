@@ -30,8 +30,6 @@
 #include "oops/base/State.h"
 #include "oops/base/TrajectorySaver.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/LinearVariableChange.h"
-#include "oops/interface/VariableChange.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -57,8 +55,6 @@ template<typename MODEL, typename OBS> class CostFct4DVar : public CostFunction<
   typedef State<MODEL>                    State_;
   typedef Model<MODEL>                    Model_;
   typedef LinearModel<MODEL>              LinearModel_;
-  typedef VariableChange<MODEL>           VarCha_;
-  typedef LinearVariableChange<MODEL>     LinVarCha_;
 
  public:
   CostFct4DVar(const eckit::Configuration &, const eckit::mpi::Comm &);
@@ -92,7 +88,6 @@ template<typename MODEL, typename OBS> class CostFct4DVar : public CostFunction<
   Model_ model_;
   const Variables ctlvars_;
   std::shared_ptr<LinearModel_> tlm_;
-  std::unique_ptr<LinVarCha_> inc2model_;
 };
 
 // =============================================================================
@@ -103,8 +98,7 @@ CostFct4DVar<MODEL, OBS>::CostFct4DVar(const eckit::Configuration & config,
   : CostFunction<MODEL, OBS>::CostFunction(), comm_(comm),
     resol_(eckit::LocalConfiguration(config, "geometry"), comm),
     model_(resol_, eckit::LocalConfiguration(config, "model")),
-    ctlvars_(config.getStringVector("analysis variables")), tlm_(),
-    inc2model_()
+    ctlvars_(config.getStringVector("analysis variables")), tlm_()
 {
   Log::trace() << "CostFct4DVar:CostFct4DVar start" << std::endl;
   const util::Duration length = util::Duration(config.getString("window length"));
@@ -175,12 +169,6 @@ void CostFct4DVar<MODEL, OBS>::doLinearize(const Geometry_ & resol,
   tlm_.reset(new LinearModel_(resol, lmConf));
   pp.enrollProcessor(new TrajectorySaver<MODEL>(lmConf, resol, fg.modVar(), tlm_, pptraj));
 
-// Create variable change
-  inc2model_.reset(new LinVarCha_(resol, innerConf.getSubConfiguration("linear variable change")));
-
-// Trajectory for linear variable change
-  inc2model_->changeVarTraj(fg.state(), tlm_->variables());
-
   Log::trace() << "CostFct4DVar::doLinearize done" << std::endl;
 }
 
@@ -195,11 +183,7 @@ void CostFct4DVar<MODEL, OBS>::runTLM(CtrlInc_ & dx,
   ASSERT(dx.states().is_3d());
   ASSERT(dx.state().validTime() == timeWindow_->start());
 
-  Variables incvars = dx.state().variables();
-
-  inc2model_->changeVarTL(dx.state(), tlm_->variables());
   tlm_->forecastTL(dx.state(), dx.modVar(), timeWindow_->length(), post, cost, idModel);
-  inc2model_->changeVarInverseTL(dx.state(), incvars);
   ASSERT(dx.state().validTime() == timeWindow_->end());
   Log::trace() << "CostFct4DVar::runTLM done" << std::endl;
 }
@@ -227,10 +211,7 @@ void CostFct4DVar<MODEL, OBS>::runADJ(CtrlInc_ & dx,
   ASSERT(dx.states().is_3d());
   ASSERT(dx.state().validTime() == timeWindow_->end());
 
-  Variables incvars = dx.state().variables();
-  inc2model_->changeVarInverseAD(dx.state(), tlm_->variables());
   tlm_->forecastAD(dx.state(), dx.modVar(), timeWindow_->length(), post, cost, idModel);
-  inc2model_->changeVarAD(dx.state(), incvars);
 
   ASSERT(dx.state().validTime() == timeWindow_->start());
   Log::trace() << "CostFct4DVar::runADJ done" << std::endl;

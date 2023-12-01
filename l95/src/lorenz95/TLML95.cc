@@ -36,8 +36,7 @@ static oops::interface::LinearModelMaker<L95Traits, TLML95> makerTLML95_("L95TLM
 TLML95::TLML95(const Resolution & resol, const eckit::Configuration & tlConf)
   : resol_(resol), tstep_(util::Duration(tlConf.getString("tstep"))),
     dt_(tstep_.toSeconds()/432000.0), traj_(),
-    lrmodel_(resol_, eckit::LocalConfiguration(tlConf, "trajectory")),
-    vars_()
+    lrmodel_(resol_, eckit::LocalConfiguration(tlConf, "trajectory"))
 {
   oops::Log::info() << "TLML95: resol = " << resol_ << ", tstep = " << tstep_ << std::endl;
   oops::Log::trace() << "TLML95::TLML95 created" << std::endl;

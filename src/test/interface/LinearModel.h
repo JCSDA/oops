@@ -178,11 +178,8 @@ template <typename MODEL> void testLinearModelZeroLength() {
   const double ininorm = dxref[0].norm();
   EXPECT(ininorm > 0.0);
 
-  Increment_ dx(Test_::resol(), Test_::ctlvars(), vt);
-  Increment_ dxm(Test_::resol(), Test_::tlm().variables(), vt);
-  dxm = dxref[0];
-  Test_::tlm().forecastTL(dxm, daux, zero);
-  dx = dxm;
+  Increment_ dx(dxref[0]);
+  Test_::tlm().forecastTL(dx, daux, zero);
   EXPECT(dx.validTime() == vt);
   // In principle, test that a zero-length forecast (=> calling initialize then finalize) gives
   // back the initial value of the Increment. In reality, for some models, the value is changed,
@@ -191,10 +188,8 @@ template <typename MODEL> void testLinearModelZeroLength() {
   const double tol = Test_::test().getDouble("tolerance zero length forecast", 0.0);
   EXPECT(oops::is_close(dx.norm(), ininorm, tol));
 
-  dxm.zero();
-  dxm = dxref[0];
-  Test_::tlm().forecastAD(dxm, daux, zero);
-  dx = dxm;
+  dx = dxref[0];
+  Test_::tlm().forecastAD(dx, daux, zero);
   EXPECT(dx.validTime() == vt);
   EXPECT(oops::is_close(dx.norm(), ininorm, tol));
 }
@@ -211,7 +206,7 @@ template <typename MODEL> void testLinearModelZeroPert() {
   const util::DateTime t2(t1 + len);
   EXPECT(t2 > t1);
 
-  Increment_ dx(Test_::resol(), Test_::tlm().variables(), t1);
+  Increment_ dx(Test_::resol(), Test_::ctlvars(), t1);
   ModelAuxIncr_ daux(Test_::dbias());
 
   dx.zero();
@@ -243,7 +238,7 @@ template <typename MODEL> void testLinearModelLinearity() {
   EXPECT(t2 > t1);
   const double zz = 3.1415;
 
-  Increment4D_ dx1(Test_::resol(), Test_::tlm().variables(), {t1});
+  Increment4D_ dx1(Test_::resol(), Test_::ctlvars(), {t1});
   Test_::covariance().randomize(dx1);
   ModelAuxIncr_ daux1(Test_::dbias());
   EXPECT(dx1[0].norm() > 0.0);
@@ -278,7 +273,7 @@ template <typename MODEL> void testLinearApproximation() {
   const util::DateTime t2(t1 + len);
   EXPECT(t2 > t1);
 
-  Increment4D_ dx0(Test_::resol(), Test_::tlm().variables(), {t1});
+  Increment4D_ dx0(Test_::resol(), Test_::ctlvars(), {t1});
   Test_::covariance().randomize(dx0);
   EXPECT(dx0[0].norm() > 0.0);
 
@@ -304,7 +299,7 @@ template <typename MODEL> void testLinearApproximation() {
     xx += pert;
     Test_::model().forecast(xx, Test_::bias(), len, post);
 
-    Increment_ diff(Test_::resol(), Test_::tlm().variables(), t2);
+    Increment_ diff(Test_::resol(), Test_::ctlvars(), t2);
     diff.diff(xx, xx0);
     const double difnorm = diff.norm();
     const double err = zz * dxnorm / difnorm;
@@ -341,14 +336,14 @@ template <typename MODEL> void testLinearModelAdjoint() {
   const util::DateTime t2(t1 + len);
   EXPECT(t2 > t1);
 
-  Increment4D_ dx11(Test_::resol(), Test_::tlm().variables(), {t1});
+  Increment4D_ dx11(Test_::resol(), Test_::ctlvars(), {t1});
   Test_::covariance().randomize(dx11);
   ModelAuxIncr_ daux1(Test_::dbias());
   EXPECT(dx11[0].norm() > 0.0);
   Increment_ dx12(dx11[0]);
   Test_::tlm().forecastTL(dx12, daux1, len);
   EXPECT(dx12.norm() > 0.0);
-  Increment4D_ dx22(Test_::resol(), Test_::tlm().variables(), {t2});
+  Increment4D_ dx22(Test_::resol(), Test_::ctlvars(), {t2});
   Test_::covariance().randomize(dx22);
   ModelAuxIncr_ daux2(Test_::dbias());
   EXPECT(dx22[0].norm() > 0.0);

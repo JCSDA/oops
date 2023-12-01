@@ -11,7 +11,6 @@
 
 #include "oops/base/Geometry.h"
 #include "oops/base/State.h"
-#include "oops/base/Variables.h"
 #include "oops/generic/LinearModelBase.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/ModelAuxControl.h"
@@ -55,13 +54,10 @@ class IdentityLinearModel : public LinearModelBase<MODEL> {
 
 /// linear model time step
   const util::Duration & timeResolution() const override {return tstep_;}
-/// linear model variables
-  const oops::Variables & variables() const override {return vars_;}
 
  private:
   void print(std::ostream &) const override {}
   const util::Duration tstep_;
-  const oops::Variables vars_;
 };
 
 // -----------------------------------------------------------------------------
@@ -69,7 +65,7 @@ class IdentityLinearModel : public LinearModelBase<MODEL> {
 template<typename MODEL>
 IdentityLinearModel<MODEL>::IdentityLinearModel(const Geometry_ & resol,
                                                 const eckit::Configuration & config)
-  : tstep_(config.getString("tstep")), vars_(config, "increment variables") {
+  : tstep_(config.getString("tstep")) {
   Log::trace() << "IdentityLinearModel<MODEL>::IdentityLinearModel done" << std::endl;
 }
 
