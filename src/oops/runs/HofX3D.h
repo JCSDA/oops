@@ -47,11 +47,8 @@ class HofX3DParameters : public ApplicationParameters {
  public:
   typedef typename Geometry_::Parameters_ GeometryParameters_;
 
-  /// Only observations taken at times lying in the (`window begin`, `window begin` + `window
-  /// length`] interval will be included in observation spaces.
-  RequiredParameter<util::DateTime> windowBegin{"window begin", this};
-  RequiredParameter<util::Duration> windowLength{"window length", this};
-  Parameter<bool> shifting{"window shift", false, this};
+  /// Options describing the assimilation time window.
+  RequiredParameter<eckit::LocalConfiguration> timeWindow{"time window", this};
 
   /// Options describing the observations and their treatment
   Parameter<ObserversParameters<MODEL, OBS>> observations{"observations", {}, this};
@@ -96,10 +93,7 @@ template <typename MODEL, typename OBS> class HofX3D : public Application {
     params.deserialize(fullConfig);
 
 //  Setup observation window
-    const util::Duration winlen = params.windowLength;
-    const util::DateTime winbgn = params.windowBegin;
-    const util::TimeWindow timeWindow(winbgn, winbgn + winlen,
-                                      util::boolToWindowBound(params.shifting));
+    const util::TimeWindow timeWindow(fullConfig.getSubConfiguration("time window"));
     const util::DateTime winmidpoint = timeWindow.midpoint();
     Log::info() << "HofX3D observation window: " << timeWindow << std::endl;
 
@@ -131,7 +125,7 @@ template <typename MODEL, typename OBS> class HofX3D : public Application {
     hofx.initialize(geometry, obsaux, Rmat, post);
 
 //  Compute H(x)
-    post.initialize(xx, winmidpoint, winlen);
+    post.initialize(xx, winmidpoint, timeWindow.length());
     post.process(xx);
     post.finalize(xx);
 

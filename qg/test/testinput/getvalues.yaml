@@ -8,8 +8,9 @@ state:
   date: 2010-01-01T12:00:00Z
 variables: [x]
 locations:
-  window begin: 2010-01-01T00:00:00Z
-  window end: 2010-01-02T00:00:00Z
+  time window:
+    begin: 2010-01-01T00:00:00Z
+    end: 2010-01-02T00:00:00Z
   nrandom: 8
   lons: [-10.0, 12.0]
   lats: [35.0, 45.0]

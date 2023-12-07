@@ -138,10 +138,12 @@ class LinearizationError : public Application {
 
 // Set up start time, time window, and time resolution at which to compute linearization error
     util::DateTime time(x1.validTime());
-    const util::Duration forecastLength(config.getString("forecast length"));
-    const util::TimeWindow window(time, time + forecastLength);
+    eckit::LocalConfiguration timeWindowConfig;
+    timeWindowConfig.set("begin", time.toString());
+    timeWindowConfig.set("length", config.getString("forecast length"));
+    const util::TimeWindow timeWindow(timeWindowConfig);
     const util::Duration timeResolution(config.getString("time resolution"));
-    ASSERT(forecastLength % timeResolution == 0);
+    ASSERT(timeWindow.length() % timeResolution == 0);
 
 // Compute difference between two states, convert to linear model geometry
     Increment_ fdHigh(high, x1.variables(), time);
@@ -150,7 +152,7 @@ class LinearizationError : public Application {
     Log::test() << "fd at " << time << ":" << fd << std::endl;
 
 // Loop over steps of length timeResolution until window is complete
-    while (time < window.end()) {
+    while (time < timeWindow.end()) {
       time += timeResolution;
 
       // Forecast states from time to time + timeResolution using model

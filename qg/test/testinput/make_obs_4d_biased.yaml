@@ -9,8 +9,9 @@ model:
   name: QG
   tstep: PT1H
 forecast length: P1D
-window begin: 2010-01-01T00:00:00Z
-window length: P1D
+time window:
+  begin: 2010-01-01T00:00:00Z
+  length: P1D
 observations:
   observers:
   - obs operator:

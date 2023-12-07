@@ -1,7 +1,8 @@
 cost function:
   cost type: 4D-Var
-  window begin: 2010-01-01T00:00:00Z
-  window length: PT24H
+  time window:
+    begin: 2010-01-01T00:00:00Z
+    length: PT24H
   analysis variables: [x]
   geometry:
     nx: 40
@@ -88,8 +89,9 @@ variational:
       coefficients:
         update variables: [x]
         influence region size: 3
-        window length: PT24H
-        window begin: 2010-01-01T00:00:00Z
+        time window:
+          begin: 2010-01-01T00:00:00Z
+          length: PT24H
         input:
           base filepath: Data/hybrid_linear_model_coeffs
           one file per task: true
@@ -116,8 +118,9 @@ variational:
       coefficients:
         update variables: [x]
         influence region size: 3
-        window length: PT24H
-        window begin: 2010-01-01T00:00:00Z
+        time window:
+          begin: 2010-01-01T00:00:00Z
+          length: PT24H
         input:
           base filepath: Data/hybrid_linear_model_coeffs
           one file per task: true

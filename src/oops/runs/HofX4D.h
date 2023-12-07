@@ -58,10 +58,8 @@ class HofX4DParameters : public ApplicationParameters {
   typedef typename Geometry_::Parameters_ GeometryParameters_;
   typedef typename ModelAux_::Parameters_ ModelAuxParameters_;
 
-  /// Only observations taken at times lying in the (`window begin`, `window begin` + `window
-  /// length`] interval will be included in observation spaces.
-  RequiredParameter<util::DateTime> windowBegin{"window begin", this};
-  RequiredParameter<util::Duration> windowLength{"window length", this};
+  /// Options describing the assimilation time window.
+  RequiredParameter<eckit::LocalConfiguration> timeWindow{"time window", this};
 
   /// Options describing the observations and their treatment
   Parameter<ObserversParameters<MODEL, OBS>> observations{"observations", {}, this};
@@ -74,10 +72,6 @@ class HofX4DParameters : public ApplicationParameters {
 
   /// Whether to save the H(x) vector as ObsValues.
   Parameter<bool> makeObs{"make obs", false, this};
-
-  /// Window shift
-  /// Shift window backwards by 1s to include observations exactly at the beginning of the window.
-  Parameter<bool> shifting{"window shift", false, this};
 
   /// Forecast length.
   RequiredParameter<util::Duration> forecastLength{"forecast length", this};
@@ -125,11 +119,7 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
     params.deserialize(fullConfig);
 
 //  Setup observation window
-    const util::Duration winlen(fullConfig.getString("window length"));
-    const util::DateTime winbgn(fullConfig.getString("window begin"));
-    const util::DateTime winend(winbgn + winlen);
-    const util::TimeWindow timeWindow(winbgn, winend,
-                                      util::boolToWindowBound(params.shifting));
+    const util::TimeWindow timeWindow(fullConfig.getSubConfiguration("time window"));
     Log::info() << "HofX4D observation window: " << timeWindow << std::endl;
 
 //  Setup geometry

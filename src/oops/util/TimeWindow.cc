@@ -12,6 +12,21 @@
 
 namespace util {
 
+TimeWindow::TimeWindow(const eckit::LocalConfiguration & conf)
+  : winbgn_(util::DateTime(conf.getString("begin"))),
+    winend_(conf.has("length") ?
+            winbgn_ + util::Duration(conf.getString("length")) :
+            util::DateTime(conf.getString("end"))),
+    epoch_(util::DateTime(1970, 1, 1, 0, 0, 0)),
+    incBound_(stringToWindowBound(conf.getString("bound to include", "end")))
+{
+  if (conf.has("length") && conf.has("end")) {
+    throw eckit::UserError("The time window configuration must define either "
+                           "'length' or 'end', but not both.", Here());
+  }
+}
+
+// Private constructor for internal use only.
 TimeWindow::TimeWindow(const util::DateTime & winbgn,
                        const util::DateTime & winend,
                        const InclusiveWindowBound inclusiveBound)

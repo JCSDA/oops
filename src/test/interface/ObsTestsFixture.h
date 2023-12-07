@@ -47,12 +47,8 @@ class ObsTestsFixture : private boost::noncopyable {
 
  private:
   ObsTestsFixture(): comm_(oops::mpi::world()), timeWindow_(), ospaces_() {
-    const util::DateTime tbgn(TestEnvironment::config().getString("window begin"));
-    const util::DateTime tend(TestEnvironment::config().getString("window end"));
-    const bool winshift =
-      static_cast<bool>(TestEnvironment::config().getBool("window shift", false));
-    timeWindow_.reset(new util::TimeWindow(tbgn, tend, util::boolToWindowBound(winshift)));
-
+    timeWindow_.reset(new util::TimeWindow
+                      (TestEnvironment::config().getSubConfiguration("time window")));
     configs_ = TestEnvironment::config().getSubConfigurations("observations");
     eckit::LocalConfiguration obsconfig =
            TestEnvironment::config().getSubConfiguration("observations");

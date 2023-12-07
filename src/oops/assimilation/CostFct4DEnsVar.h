@@ -84,7 +84,7 @@ template<typename MODEL, typename OBS> class CostFct4DEnsVar : public CostFuncti
   size_t nsubwin_;
   size_t nsublocal_;
   size_t last_;
-  std::unique_ptr<util::TimeWindow> timeWindow_;
+  const util::TimeWindow timeWindow_;
   util::Duration subWinLength_;
   std::vector<util::DateTime> subWinTime_;
   std::vector<util::DateTime> subWinBgn_;
@@ -101,20 +101,15 @@ template<typename MODEL, typename OBS>
 CostFct4DEnsVar<MODEL, OBS>::CostFct4DEnsVar(const eckit::Configuration & conf,
                                              const eckit::mpi::Comm & comm)
   : CostFunction<MODEL, OBS>::CostFunction(),
+    timeWindow_(conf.getSubConfiguration("time window")),
     subWinLength_(conf.getString("subwindow")),
     subWinTime_(), subWinBgn_(), subWinEnd_(),
     resol_(), ctlvars_(conf, "analysis variables")
 {
   Log::trace() << "CostFct4DEnsVar::CostFct4DEnsVar start" << std::endl;
 
-  const util::Duration windowLength = util::Duration(conf.getString("window length"));
-  const util::DateTime windowBegin = util::DateTime(conf.getString("window begin"));
-  const bool shifting = static_cast<bool>(conf.getBool("window shift", false));
-  timeWindow_ = std::make_unique<util::TimeWindow>
-    (windowBegin, windowBegin + windowLength, util::boolToWindowBound(shifting));
-
-  nsubwin_ = timeWindow_->length().toSeconds() / subWinLength_.toSeconds() + 1;  // Not like WC
-  ASSERT(timeWindow_->length().toSeconds() == subWinLength_.toSeconds() * (int64_t)(nsubwin_ - 1));
+  nsubwin_ = timeWindow_.length().toSeconds() / subWinLength_.toSeconds() + 1;  // Not like WC
+  ASSERT(timeWindow_.length().toSeconds() == subWinLength_.toSeconds() * (int64_t)(nsubwin_ - 1));
 
 // Define sub-windows
   size_t ntasks = comm.size();
@@ -125,22 +120,22 @@ CostFct4DEnsVar<MODEL, OBS>::CostFct4DEnsVar(const eckit::Configuration & conf,
     nsublocal_ = 1;
     mysubwin = comm.rank() / (ntasks / nsubwin_);
     ASSERT(mysubwin < nsubwin_);
-    const util::DateTime mytime = timeWindow_->start() + mysubwin * subWinLength_;
+    const util::DateTime mytime = timeWindow_.start() + mysubwin * subWinLength_;
     subWinTime_.push_back(mytime);
     subWinBgn_.push_back(mytime - subWinLength_/2);
     subWinEnd_.push_back(mytime + subWinLength_/2);
-    if (mysubwin == 0) subWinBgn_[0] = timeWindow_->start();
-    if (mysubwin == nsubwin_ - 1) subWinEnd_[0] = timeWindow_->end();
+    if (mysubwin == 0) subWinBgn_[0] = timeWindow_.start();
+    if (mysubwin == nsubwin_ - 1) subWinEnd_[0] = timeWindow_.end();
   } else {
     nsublocal_ = nsubwin_;
     for (size_t jsub = 0; jsub < nsubwin_; ++jsub) {
-      const util::DateTime mytime = timeWindow_->start() + jsub * subWinLength_;
+      const util::DateTime mytime = timeWindow_.start() + jsub * subWinLength_;
       subWinTime_.push_back(mytime);
       subWinBgn_.push_back(mytime - subWinLength_/2);
       subWinEnd_.push_back(mytime + subWinLength_/2);
     }
-    subWinBgn_[0] = timeWindow_->start();
-    subWinEnd_[nsubwin_ - 1] = timeWindow_->end();
+    subWinBgn_[0] = timeWindow_.start();
+    subWinEnd_[nsubwin_ - 1] = timeWindow_.end();
   }
   last_ = nsublocal_ - 1;
 
@@ -172,7 +167,7 @@ CostJb4D<MODEL, OBS> * CostFct4DEnsVar<MODEL, OBS>::newJb(const eckit::Configura
                                                           const Geometry_ & resol) const {
   Log::trace() << "CostFct4DEnsVar::newJb" << std::endl;
   std::vector<util::DateTime> times;
-  for (util::DateTime jj = timeWindow_->start(); jj <= timeWindow_->end(); jj += subWinLength_) {
+  for (util::DateTime jj = timeWindow_.start(); jj <= timeWindow_.end(); jj += subWinLength_) {
     times.push_back(jj);
   }
   return new CostJb4D<MODEL, OBS>(times, jbConf, *commTime_, resol, ctlvars_);
@@ -184,7 +179,7 @@ template <typename MODEL, typename OBS>
 CostJo<MODEL, OBS> * CostFct4DEnsVar<MODEL, OBS>::newJo(const eckit::Configuration & joConf) const {
   Log::trace() << "CostFct4DEnsVar::newJo" << std::endl;
   return new CostJo<MODEL, OBS>(joConf, *commSpace_,
-                                timeWindow_->createSubWindow(subWinBgn_[0], subWinEnd_[last_]),
+                                timeWindow_.createSubWindow(subWinBgn_[0], subWinEnd_[last_]),
                                 *commTime_);
 }
 
@@ -198,8 +193,8 @@ CostTermBase<MODEL, OBS> * CostFct4DEnsVar<MODEL, OBS>::newJc(const eckit::Confi
     throw eckit::NotImplemented("CostFct4DEnsVar::newJc: no parallel Jc", Here());
   }
   const eckit::LocalConfiguration jcdfi(jcConf, "jcdfi");
-  const util::DateTime vt(timeWindow_->start() + timeWindow_->length()/2);
-  return new CostJcDFI<MODEL, OBS>(jcdfi, resol, vt, timeWindow_->length(), subWinLength_);
+  const util::DateTime vt(timeWindow_.start() + timeWindow_.length()/2);
+  return new CostJcDFI<MODEL, OBS>(jcdfi, resol, vt, timeWindow_.length(), subWinLength_);
 }
 
 // -----------------------------------------------------------------------------

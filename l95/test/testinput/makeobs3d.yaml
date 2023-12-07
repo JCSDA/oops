@@ -9,8 +9,9 @@ initial condition:
   filename: Data/truth.fc.2010-01-01T00:00:00Z.PT21H.l95
 forecast length: PT6H
 
-window begin: 2010-01-01T21:00:00Z
-window length: PT4H30M
+time window:
+  begin: 2010-01-01T21:00:00Z
+  length: PT4H30M
 observations:
   observers:
   - obs operator: {}

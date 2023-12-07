@@ -76,9 +76,11 @@ HybridLinearModel<MODEL>::HybridLinearModel(const Geometry_ & updateGeometry,
   Log::trace() << "HybridLinearModel<MODEL>::HybridLinearModel starting" << std::endl;
   // Set up simpleLinearModel_
   const eckit::LocalConfiguration slmConf(config, "simple linear model");
-  const util::DateTime wBgn(config.getSubConfiguration("coefficients").getString("window begin"));
+  const util::TimeWindow timeWindow(config.getSubConfiguration("coefficients").
+                                    getSubConfiguration("time window"));
   if (slmConf.getBool("residual form", false)) {
-    simpleLinearModel_ = std::make_unique<SLMResidualForm_>(slmConf, updateGeometry, vars_, wBgn);
+    simpleLinearModel_ = std::make_unique<SLMResidualForm_>(slmConf, updateGeometry, vars_,
+                                                            timeWindow.start());
   } else if (slmConf.has("geometry")) {
     simpleLinearModel_ = std::make_unique<SLMMultiresolution_>(slmConf, updateGeometry);
   } else {

@@ -226,7 +226,7 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
 
 //  Retrieve length of the assimilation window, to be used if background time-shifting is needed
     std::string linCostWinLength;
-    linCostConf.get("window length", linCostWinLength);
+    linCostConf.get("time window.length", linCostWinLength);
     util::Duration winLength(linCostWinLength);
 
 //  Initialize the control background

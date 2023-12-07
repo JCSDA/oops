@@ -22,8 +22,9 @@ hybrid linear model:
   coefficients:
     influence region size: 3
     update variables: [x]
-    window length: PT24H
-    window begin: 2010-01-01T00:00:00Z
+    time window:
+      begin: 2010-01-01T00:00:00Z
+      length: PT24H
     calculator:
       regularization:
         base value: 1e100

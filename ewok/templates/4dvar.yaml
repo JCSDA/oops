@@ -5,8 +5,9 @@
 
 cost function:
   cost type: $(cost_function)
-  window begin: '{{window_begin}}'
-  window length: $(window_length)
+  time window:
+    begin: '{{window_begin}}'
+    length: $(window_length)
   geometry:
     $(GEOMETRY)
   model:

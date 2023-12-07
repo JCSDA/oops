@@ -1,7 +1,8 @@
 cost function:
   cost type: 4D-Ens-Var
-  window begin: 2010-01-01T00:00:00Z
-  window length: PT12H
+  time window:
+    begin: 2010-01-01T00:00:00Z
+    length: PT12H
   subwindow: PT1H
   analysis variables: [x]
   background:

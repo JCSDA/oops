@@ -74,10 +74,10 @@ template<typename MODEL, typename OBS, class J> class CostPert : public J
 
     int iteration_ = 0;
     const eckit::Configuration & contConf_;
+    const util::TimeWindow timeWindow_;
     const eckit::Configuration & memConf_;
     const eckit::mpi::Comm & comm_;
     bool shiftTime_;
-    std::unique_ptr<util::TimeWindow> timeWindow_;
     std::unique_ptr<CostFct3DVar_> Jmem_;
     std::shared_ptr<CtrlVar_> xxMember_;
 };
@@ -89,16 +89,9 @@ CostPert<MODEL, OBS, J>::CostPert(const eckit::Configuration & controlConf,
                                   const eckit::Configuration & memberConf,
                                   const bool & shiftTime)
   :J(controlConf.getSubConfiguration("cost function"), comm), contConf_(controlConf),
+    timeWindow_(controlConf.getSubConfiguration("cost function.time window")),
     memConf_(memberConf), comm_(comm), shiftTime_(shiftTime), Jmem_(), xxMember_()
 {
-  const util::Duration windowLength = util::Duration(
-              controlConf.getSubConfiguration("cost function").getString("window length"));
-  const util::DateTime windowBegin = util::DateTime(
-              controlConf.getSubConfiguration("cost function").getString("window begin"));
-  const bool shifting = static_cast<bool>(
-              controlConf.getSubConfiguration("cost function").getBool("window shift", false));
-  timeWindow_ = std::make_unique<util::TimeWindow>
-    (windowBegin, windowBegin + windowLength, util::boolToWindowBound(shifting));
   Log::trace() << "CostPert::CostPert" << std::endl;
 }
 
@@ -143,7 +136,7 @@ double CostPert<MODEL, OBS, J>::evaluate(CtrlVar_ & fguess,
     this->addIncrement(xxPert, xxPertInc);
 
     if (shiftTime_) {
-        xxPert.state().updateTime(timeWindow_->length()/2);
+        xxPert.state().updateTime(timeWindow_.length()/2);
     }
 
     CtrlVar_ xxPertCopy(xxPert);
@@ -204,7 +197,7 @@ void CostPert<MODEL, OBS, J>::zeroAD(CtrlInc_ & ctrlInc) const {
 template<typename MODEL, typename OBS, class J>
 void CostPert<MODEL, OBS, J>::runNL(CtrlVar_ & ctrlVar, PostProcessor<State_>& post) const {
   Log::trace() << "CostPert::runNL pert start" << std::endl;
-  if (Jmem_ != nullptr && ctrlVar.state().validTime() != timeWindow_->start()) {
+  if (Jmem_ != nullptr && ctrlVar.state().validTime() != timeWindow_.start()) {
 //  Jmem_ calls runNL for the pert assimilation or if the control cost function is 3DVar
     Jmem_->runNL(ctrlVar, post);
   } else {

@@ -8,7 +8,11 @@
 #ifndef OOPS_UTIL_TIMEWINDOW_H_
 #define OOPS_UTIL_TIMEWINDOW_H_
 
+#include <string>
 #include <vector>
+
+#include "eckit/config/LocalConfiguration.h"
+#include "eckit/exception/Exceptions.h"
 
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
@@ -20,17 +24,21 @@ namespace util {
 /// when dealing with observation times.
 enum class InclusiveWindowBound{LOWER, UPPER};
 
-inline InclusiveWindowBound boolToWindowBound(const bool inclusiveLower) {
-  return inclusiveLower ? InclusiveWindowBound::LOWER : InclusiveWindowBound::UPPER;
+inline InclusiveWindowBound stringToWindowBound(const std::string & bound) {
+  if (bound == "end") {
+    return InclusiveWindowBound::UPPER;
+  } else if (bound == "begin") {
+    return InclusiveWindowBound::LOWER;
+  } else {
+    throw eckit::UserError("Invalid bound specified", Here());
+  }
 }
 
 /// \brief This class stores the assimilation window upper and lower bounds and
 /// provides several helper functions.
 class TimeWindow : public util::Printable {
  public:
-  TimeWindow(const util::DateTime & winbgn,
-             const util::DateTime & winend,
-             const InclusiveWindowBound inclusiveBound = InclusiveWindowBound::UPPER);
+  explicit TimeWindow(const eckit::LocalConfiguration & conf);
 
   /// \brief Return a new TimeWindow object spanning `midpoint` +/- `halfwidth`.
   /// The code adjusts the bounds of the new time window in order to ensure they
@@ -78,6 +86,11 @@ class TimeWindow : public util::Printable {
   void setEpoch(const util::DateTime &) const;
 
  private:
+  /// Constructor for internal use only.
+  TimeWindow(const util::DateTime & winbgn,
+             const util::DateTime & winend,
+             const InclusiveWindowBound inclusiveBound = InclusiveWindowBound::UPPER);
+
   /// \brief Provide information about the time window configuration.
   void print(std::ostream &) const;
 

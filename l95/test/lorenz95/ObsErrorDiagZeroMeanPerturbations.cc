@@ -47,6 +47,7 @@ CASE("test_obserrordiag_zeromeanpert") {
     const eckit::LocalConfiguration costFunctionConf(memberConf, "cost function");
     const std::vector<eckit::LocalConfiguration> obsConfs =
         costFunctionConf.getSubConfigurations("observations.observers");
+    const eckit::LocalConfiguration timeWindowConf(costFunctionConf, "time window");
     EXPECT_EQUAL(obsConfs.size(), 1);
 
     const eckit::LocalConfiguration obsErrorConf(obsConfs[0], "obs error");
@@ -58,10 +59,8 @@ CASE("test_obserrordiag_zeromeanpert") {
     lorenz95::ObsTableParameters obsSpaceParams;
     obsSpaceParams.deserialize(obsSpaceConf);
 
-    util::DateTime windowBegin(costFunctionConf.getString("window begin"));
-    util::Duration windowLength(costFunctionConf.getString("window length"));
     lorenz95::ObsTable obsSpace(obsSpaceParams, oops::mpi::world(),
-                                util::TimeWindow(windowBegin, windowBegin + windowLength),
+                                util::TimeWindow(timeWindowConf),
                                 oops::mpi::myself());
     obsSpace.getdb("ObsValue", originalObs);
     obsSpace.getdb("ObsError", obsErrors);

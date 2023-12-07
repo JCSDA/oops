@@ -8,8 +8,9 @@ model:
   name: L95
   tstep: PT1H30M
 forecast length: P2D
-window begin: 2010-01-01T03:00:00Z  # obs window starts 3 hr after forecast start
-window length: P1D                  # obs window ends before forecast ends
+time window:
+  begin: 2010-01-01T03:00:00Z  # obs window starts 3 hr after forecast start
+  length: P1D                  # obs window ends before forecast ends
 observations:
   observers:
   - obs space:

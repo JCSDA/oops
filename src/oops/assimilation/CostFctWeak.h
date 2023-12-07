@@ -85,7 +85,7 @@ template<typename MODEL, typename OBS> class CostFctWeak : public CostFunction<M
 
   size_t nsubwin_;
   size_t nsublocal_;
-  std::unique_ptr<util::TimeWindow> timeWindow_;
+  const util::TimeWindow timeWindow_;
   util::Duration subWinLength_;
   std::vector<util::DateTime> subWinBgn_;
   std::vector<util::DateTime> subWinEnd_;
@@ -103,6 +103,7 @@ template<typename MODEL, typename OBS>
 CostFctWeak<MODEL, OBS>::CostFctWeak(const eckit::Configuration & conf,
                                      const eckit::mpi::Comm & comm)
   : CostFunction<MODEL, OBS>::CostFunction(),
+    timeWindow_(conf.getSubConfiguration("time window")),
     subWinLength_(conf.getString("subwindow")),
     subWinBgn_(), subWinEnd_(),
     commSpace_(nullptr), commTime_(nullptr),
@@ -110,14 +111,8 @@ CostFctWeak<MODEL, OBS>::CostFctWeak(const eckit::Configuration & conf,
 {
   Log::trace() << "CostFctWeak::CostFctWeak start" << std::endl;
 
-  const util::Duration windowLength = util::Duration(conf.getString("window length"));
-  const util::DateTime windowBegin = util::DateTime(conf.getString("window begin"));
-  const bool shifting = static_cast<bool>(conf.getBool("window shift", false));
-  timeWindow_ = std::make_unique<util::TimeWindow>
-    (windowBegin, windowBegin + windowLength, util::boolToWindowBound(shifting));
-
-  nsubwin_ = timeWindow_->length().toSeconds() / subWinLength_.toSeconds();  // Not like 4D-En-Var
-  ASSERT(timeWindow_->length().toSeconds() == subWinLength_.toSeconds()*(int64_t)nsubwin_);
+  nsubwin_ = timeWindow_.length().toSeconds() / subWinLength_.toSeconds();  // Not like 4D-En-Var
+  ASSERT(timeWindow_.length().toSeconds() == subWinLength_.toSeconds()*(int64_t)nsubwin_);
 
 // Define sub-windows
   size_t ntasks = comm.size();
@@ -128,18 +123,18 @@ CostFctWeak<MODEL, OBS>::CostFctWeak(const eckit::Configuration & conf,
     nsublocal_ = 1;
     mysubwin = comm.rank() / (ntasks / nsubwin_);
     ASSERT(mysubwin < nsubwin_);
-    const util::DateTime mytime = timeWindow_->start() + mysubwin * subWinLength_;
+    const util::DateTime mytime = timeWindow_.start() + mysubwin * subWinLength_;
     subWinBgn_.push_back(mytime);
     subWinEnd_.push_back(mytime + subWinLength_);
   } else {
     nsublocal_ = nsubwin_;
     for (size_t jsub = 0; jsub < nsubwin_; ++jsub) {
-      const util::DateTime mytime = timeWindow_->start() + jsub * subWinLength_;
+      const util::DateTime mytime = timeWindow_.start() + jsub * subWinLength_;
       subWinBgn_.push_back(mytime);
       subWinEnd_.push_back(mytime + subWinLength_);
     }
-    ASSERT(subWinBgn_[0] == timeWindow_->start());
-    ASSERT(subWinEnd_[nsubwin_ - 1] == timeWindow_->end());
+    ASSERT(subWinBgn_[0] == timeWindow_.start());
+    ASSERT(subWinEnd_[nsubwin_ - 1] == timeWindow_.end());
     throw eckit::NotImplemented("CostFctWeak: non parallel 4D-En-Var not tested yet", Here());
   }
   ASSERT(subWinBgn_.size() == nsublocal_);
@@ -175,7 +170,7 @@ CostJbJq<MODEL, OBS> * CostFctWeak<MODEL, OBS>::newJb(const eckit::Configuration
                                                  const Geometry_ & resol) const {
   Log::trace() << "CostFctWeak::newJb start" << std::endl;
   std::vector<util::DateTime> times;
-  for (util::DateTime jj = timeWindow_->start(); jj < timeWindow_->end(); jj += subWinLength_) {
+  for (util::DateTime jj = timeWindow_.start(); jj < timeWindow_.end(); jj += subWinLength_) {
     times.push_back(jj);
   }
   return new CostJbJq<MODEL, OBS>(times, jbConf, *commTime_, resol, ctlvars_);
@@ -187,7 +182,7 @@ template <typename MODEL, typename OBS>
 CostJo<MODEL, OBS> * CostFctWeak<MODEL, OBS>::newJo(const eckit::Configuration & joConf) const {
   Log::trace() << "CostFctWeak::newJo" << std::endl;
   return new CostJo<MODEL, OBS>(joConf, *commSpace_,
-                                timeWindow_->createSubWindow(subWinBgn_[0],
+                                timeWindow_.createSubWindow(subWinBgn_[0],
                                                              subWinEnd_[nsublocal_ - 1]),
                                 *commTime_);
 }

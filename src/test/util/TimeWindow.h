@@ -20,16 +20,66 @@
 
 namespace test {
 
+  void testConstructor() {
+    // Set up time window using "begin", "length" and the default value of "bound to include".
+    const util::DateTime windowStart(2023, 1, 1, 0, 0, 0);
+    const util::Duration windowLength("P1D");
+    eckit::LocalConfiguration configBeginLength;
+    configBeginLength.set("begin", windowStart.toString());
+    configBeginLength.set("length", windowLength.toString());
+    const util::TimeWindow timeWindowBeginLength(configBeginLength);
+
+    // Set up time window using "begin", "length" and "bound to include" set to "begin".
+    configBeginLength.set("bound to include", "begin");
+    const util::TimeWindow timeWindowBeginLengthLower(configBeginLength);
+
+    // Set up time window using "begin", "length" and "bound to include" set to "end".
+    configBeginLength.set("bound to include", "end");
+    const util::TimeWindow timeWindowBeginLengthUpper(configBeginLength);
+
+    // Set up time window using "begin", "length" and an invalid value of "bound to include".
+    eckit::LocalConfiguration configBeginLengthInvalid;
+    configBeginLengthInvalid.set("begin", windowStart.toString());
+    configBeginLengthInvalid.set("length", windowLength.toString());
+    configBeginLengthInvalid.set("bound to include", "invalid");
+    EXPECT_THROWS(const util::TimeWindow timeWindowBeginLengthInvalid(configBeginLengthInvalid));
+
+    // Set up time window using "begin", "end" and the default value of "bound to include".
+    const util::DateTime windowEnd(2021, 2, 1, 0, 0, 0);
+    eckit::LocalConfiguration configBeginEnd;
+    configBeginEnd.set("begin", windowStart.toString());
+    configBeginEnd.set("end", windowEnd.toString());
+    const util::TimeWindow timeWindowBeginEnd(configBeginEnd);
+
+    // Set up time window using "begin", "end" and "bound to include" set to "begin".
+    configBeginEnd.set("bound to include", "begin");
+    const util::TimeWindow timeWindowBeginEndLower(configBeginEnd);
+
+    // Set up time window using "begin", "end" and "bound to include" set to "end".
+    configBeginEnd.set("bound to include", "end");
+    const util::TimeWindow timeWindowBeginEndUpper(configBeginEnd);
+
+    // Set up time window using "begin", "length" and "end", throwing an exception.
+    eckit::LocalConfiguration configBeginLengthEnd;
+    configBeginLengthEnd.set("begin", windowStart.toString());
+    configBeginLengthEnd.set("length", windowLength.toString());
+    configBeginLengthEnd.set("end", windowEnd.toString());
+    EXPECT_THROWS(const util::TimeWindow timeWindowBeginLengthEnd(configBeginLengthEnd));
+  }
+
   void testAccessors() {
     // Set up time window.
     const util::DateTime windowStart(2023, 1, 1, 0, 0, 0);
-    const util::DateTime windowEnd(2023, 1, 2, 0, 0, 0);
-    const util::TimeWindow timeWindow(windowStart, windowEnd);
+    const util::Duration windowLength("P1D");
+    eckit::LocalConfiguration config;
+    config.set("begin", windowStart.toString());
+    config.set("length", windowLength.toString());
+    const util::TimeWindow timeWindow(config);
 
     // Test routines that access information about the time window.
     const util::DateTime expectedWindowStart(windowStart);
-    const util::DateTime expectedWindowEnd(windowEnd);
-    const util::Duration expectedWindowLength(expectedWindowEnd - expectedWindowStart);
+    const util::Duration expectedWindowLength(windowLength);
+    const util::DateTime expectedWindowEnd(expectedWindowStart + expectedWindowLength);
     const util::DateTime expectedWindowMidpoint
       (expectedWindowStart + expectedWindowLength / 2);
 
@@ -38,10 +88,10 @@ namespace test {
     EXPECT(timeWindow.length() == expectedWindowLength);
     EXPECT(timeWindow.midpoint() == expectedWindowMidpoint);
 
-    // Create a TimeWindow object with an inclusive lower bound and repeat the tests.
+    // Configure the TimeWindow object to use an inclusive lower bound and repeat the tests.
     // Expect no difference in the results.
-    const util::TimeWindow timeWindowInclusiveLower(windowStart, windowEnd,
-                                                    util::InclusiveWindowBound::LOWER);
+    config.set("bound to include", "begin");
+    const util::TimeWindow timeWindowInclusiveLower(config);
     EXPECT(timeWindowInclusiveLower.start() == expectedWindowStart);
     EXPECT(timeWindowInclusiveLower.end() == expectedWindowEnd);
     EXPECT(timeWindowInclusiveLower.length() == expectedWindowLength);
@@ -51,8 +101,12 @@ namespace test {
   void testSubWindow() {
     // Set up time window.
     const util::DateTime windowStart(2023, 1, 1, 0, 0, 0);
-    const util::DateTime windowEnd(2023, 1, 2, 0, 0, 0);
-    const util::TimeWindow timeWindow(windowStart, windowEnd);
+    const util::Duration windowLength("P1D");
+    eckit::LocalConfiguration config;
+    config.set("begin", windowStart.toString());
+    config.set("length", windowLength.toString());
+
+    const util::TimeWindow timeWindow(config);
 
     // Sub-window midpoint.
     const util::DateTime midPoint(2023, 1, 1, 12, 0, 0);
@@ -83,10 +137,13 @@ namespace test {
     EXPECT(subWindowLarge.length() == timeWindow.length());
     EXPECT(subWindowLarge.midpoint() == timeWindow.midpoint());
 
-    // Create another sub-window spanning `subBegin`, `subEnd`.
+    // Create another sub-window spanning `subBegin`, `subBegin` + `subLength`.
     const util::DateTime subBegin(2023, 1, 1, 9, 0, 0);
-    const util::DateTime subEnd(2023, 1, 1, 15, 0, 0);
-    const util::TimeWindow subWindowBeginEnd(subBegin, subEnd);
+    const util::Duration subLength("PT6H");
+    eckit::LocalConfiguration configSubWindow;
+    configSubWindow.set("begin", subBegin.toString());
+    configSubWindow.set("length", subLength.toString());
+    const util::TimeWindow subWindowBeginEnd(configSubWindow);
     // Expect this sub-window to have the same size as the first one.
     EXPECT(subWindowBeginEnd.start() == subWindow.start());
     EXPECT(subWindowBeginEnd.end() == subWindow.end());
@@ -108,8 +165,11 @@ namespace test {
   void testMask() {
     // Set up time window.
     const util::DateTime windowStart(2023, 1, 1, 0, 0, 0);
-    const util::DateTime windowEnd(2023, 1, 2, 0, 0, 0);
-    const util::TimeWindow timeWindow(windowStart, windowEnd);
+    const util::Duration windowLength("P1D");
+    eckit::LocalConfiguration config;
+    config.set("begin", windowStart.toString());
+    config.set("length", windowLength.toString());
+    const util::TimeWindow timeWindow(config);
 
     // Observed DateTimes.
     const std::vector<util::DateTime> obsTimes
@@ -124,9 +184,9 @@ namespace test {
     const std::vector<bool> expectedMask({false, false, true, true, false});
     EXPECT(timeWindow.createTimeMask(obsTimes) == expectedMask);
 
-    // Create a TimeWindow object with an inclusive lower bound and repeat the test.
-    const util::TimeWindow timeWindowInclusiveLower(windowStart, windowEnd,
-                                                    util::InclusiveWindowBound::LOWER);
+    // Configure the TimeWindow object to use an inclusive lower bound and repeat the test.
+    config.set("bound to include", "begin");
+    const util::TimeWindow timeWindowInclusiveLower(config);
     const std::vector<bool> expectedMaskInclusiveLower
       ({false, true, true, false, false});
     EXPECT(timeWindowInclusiveLower.createTimeMask(obsTimes) ==
@@ -149,6 +209,10 @@ namespace test {
     timeWindowInclusiveLower.setEpoch(epoch);
     EXPECT(timeWindowInclusiveLower.createTimeMask(obsEpochTimes) ==
            expectedMaskInclusiveLower);
+  }
+
+  CASE("util/TimeWindow/constructor") {
+    testConstructor();
   }
 
   CASE("util/TimeWindow/accessors") {

@@ -104,11 +104,11 @@ LocationsQG::LocationsQG(const eckit::Configuration & config, const eckit::mpi::
   }
 
   /*! Now get times */
-  if (config.has("window end")) {
-    util::DateTime winbgn(config.getString("window begin"));
-    util::DateTime winend(config.getString("window end"));
-    util::Duration window_len(winend - winbgn);
-    util::Duration dt = window_len / nlocs;
+  if (config.has("time window")) {
+    const util::DateTime winbgn(config.getString("time window.begin"));
+    const util::DateTime winend(config.getString("time window.end"));
+    const util::Duration window_len(winend - winbgn);
+    const util::Duration dt = window_len / nlocs;
 
     times_.clear();
     for (unsigned int j=0; j < nlocs; ++j) {

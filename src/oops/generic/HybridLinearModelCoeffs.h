@@ -35,9 +35,6 @@ class HybridLinearModelCoeffsParameters : public Parameters {
  public:
   RequiredParameter<Variables> updateVars{"update variables", this};
   RequiredParameter<atlas::idx_t> influenceSize{"influence region size", this};
-  RequiredParameter<util::DateTime> windowBegin{"window begin", this};
-  RequiredParameter<util::Duration> windowLength{"window length", this};
-  Parameter<bool> shifting{"window shift", false, this};
   OptionalParameter<EnsembleParameters_> ensemble{"ensemble", this};
   OptionalParameter<CalculatorParameters_> calculator{"calculator", this};
   OptionalParameter<eckit::LocalConfiguration> input{"input", this};
@@ -78,7 +75,7 @@ class HybridLinearModelCoeffs {
   atlas::Field updateStencil_;
   std::unordered_map<std::string, std::vector<std::string>> coeffsFieldNames_;
   std::map<util::DateTime, atlas::FieldSet> coeffsSaver_;
-  std::unique_ptr<util::TimeWindow> timeWindow_;
+  const util::TimeWindow timeWindow_;
 };
 
 //------------------------------------------------------------------------------
@@ -93,7 +90,8 @@ HybridLinearModelCoeffs<MODEL>::HybridLinearModelCoeffs(
   nLevels_(updateGeometry.variableSizes(updateVars_)[0]),
   influenceSize_(config.getInt("influence region size")),
   updateStencil_("update stencil", atlas::array::make_datatype<int>(),
-                 atlas::array::make_shape(nLevels_, influenceSize_))
+                 atlas::array::make_shape(nLevels_, influenceSize_)),
+  timeWindow_(config.getSubConfiguration("time window"))
 {
   if (influenceSize_ % 2 == 0) {
     oops::Log::warning() << "HybridLinearModelCoeffs<MODEL>::HybridLinearModelCoeffs: "
@@ -101,11 +99,6 @@ HybridLinearModelCoeffs<MODEL>::HybridLinearModelCoeffs(
                             "influence regions will not be centred on point of interest";
   }
   params_.deserialize(config);
-  // Create time window
-  timeWindow_ = std::make_unique<util::TimeWindow>
-    (params_.windowBegin.value(),
-     params_.windowBegin.value() + params_.windowLength.value(),
-     util::boolToWindowBound(params_.shifting));
   // Set up storage for coefficients
   makeCoeffsSaver();
   // Set up stencil for applying coefficients
@@ -141,8 +134,8 @@ void HybridLinearModelCoeffs<MODEL>::makeCoeffsSaver() {
     coeffsFieldNames_.emplace(var, coeffsFieldNamesVar);
   }
   // Create Fields for coeffs at each time, using FunctionSpace from updateGeometry
-  util::DateTime time(timeWindow_->start());
-  while (time < timeWindow_->end()) {
+  util::DateTime time(timeWindow_.start());
+  while (time < timeWindow_.end()) {
     time += updateTstep_;
     atlas::FieldSet coeffsFSet;
     coeffsSaver_.emplace(time, coeffsFSet);
@@ -182,8 +175,8 @@ void HybridLinearModelCoeffs<MODEL>::generate(SimpleLinearModel_ & simpleLinearM
   HtlmEnsemble_ ensemble(*params_.ensemble.value(), simpleLinearModel, updateGeometry_, vars);
   HtlmCalculator_ calculator(*params_.calculator.value(), updateVars_, updateGeometry_,
                              influenceSize_, ensemble.size(), coeffsFieldNames_);
-  util::DateTime time(timeWindow_->start());
-  while (time < timeWindow_->end()) {
+  util::DateTime time(timeWindow_.start());
+  while (time < timeWindow_.end()) {
     time += updateTstep_;
     ensemble.step(updateTstep_, simpleLinearModel);
     calculator.setOfCoeffs(ensemble.getLinearEnsemble(), ensemble.getLinearErrors(),
@@ -211,8 +204,8 @@ void HybridLinearModelCoeffs<MODEL>::read() {
       fileVars.addMetaData(var + std::to_string(v), "levels", nLevels_);
     }
   }
-  util::DateTime time(timeWindow_->start());
-  while (time < timeWindow_->end()) {
+  util::DateTime time(timeWindow_.start());
+  while (time < timeWindow_.end()) {
     time += updateTstep_;
     const std::string filepath = baseFilepath + "_" + time.toStringIO();
     inputConfig.set("filepath", filepath);

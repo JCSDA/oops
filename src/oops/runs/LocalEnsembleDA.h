@@ -100,13 +100,8 @@ class LocalEnsembleDAParameters : public ApplicationParameters {
   typedef typename Geometry_::Parameters_       GeometryParameters_;
   typedef typename Increment_::WriteParameters_ IncrementWriteParameters_;
 
-  /// Only observations taken at times lying between `window begin` and `window begin` + `window
-  /// length` will be included in observation spaces.
-  /// If the `window shift` parameter is set to `true`, the lower bound is inclusive and
-  /// the upper bound is exclusive. If the parameter is `false`, the opposite occurs.
-  RequiredParameter<util::DateTime> windowBegin{"window begin", this};
-  RequiredParameter<util::Duration> windowLength{"window length", this};
-  Parameter<bool> shifting{"window shift", false, this};
+  /// Options describing the assimilation time window.
+  RequiredParameter<eckit::LocalConfiguration> timeWindow{"time window", this};
 
   /// A list whose elements determine treatment of observations from individual observation spaces.
   /// Note: current code changes this section; it isn't trivial to define this as Parameters for
@@ -197,10 +192,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     params.deserialize(fullConfig);
 
     //  Setup observation window
-    const util::DateTime winbgn = params.windowBegin;
-    const util::Duration winlen = params.windowLength;
-    const bool shifting = params.shifting;
-    const util::TimeWindow timeWindow(winbgn, winbgn + winlen, util::boolToWindowBound(shifting));
+    const util::TimeWindow timeWindow(fullConfig.getSubConfiguration("time window"));
     Log::info() << "Observation window: " << timeWindow << std::endl;
 
     // Setup geometry

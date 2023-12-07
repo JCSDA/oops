@@ -51,11 +51,7 @@ class GenHybridLinearModelCoeffs : public Application {
     HybridLinearModel_ hybridLinearModel(updateGeometry, htlmConf);
 
     if (!fullConfig.getSubConfiguration("test").empty()) {
-      const util::DateTime bgn(htlmConf.getString("coefficients.window begin"));   // bad
-      const util::Duration len(htlmConf.getString("coefficients.window length"));  // bad
-      const bool shifting =
-        static_cast<bool>(htlmConf.getBool("coefficients.window shift", false));
-      const util::TimeWindow timeWindow(bgn, bgn + len, util::boolToWindowBound(shifting));
+      const util::TimeWindow timeWindow(htlmConf.getSubConfiguration("coefficients.time window"));
       const Variables vars(fullConfig.getSubConfiguration("test"), "variables");
       Increment<MODEL> dx(updateGeometry, vars, timeWindow.start());
       dx.ones();
