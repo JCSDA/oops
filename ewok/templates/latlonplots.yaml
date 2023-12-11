@@ -8,4 +8,6 @@ resolution in degrees: $(plot_geom)
 variables to output: $(plot_variables)
 pressure levels in hPa: $(plot_levels)
 datapath: $(latlonworkdir)
-filename prefix: $(expid)
+date colons: false
+type: $(type)
+exp: $(expid)

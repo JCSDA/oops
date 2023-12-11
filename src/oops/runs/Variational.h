@@ -106,16 +106,13 @@ template <typename MODEL, typename OBS> class Variational : public Application {
     }
 
     if (finalConfig.has("increment to latlon")) {
-      eckit::LocalConfiguration incLatlonConf(finalConfig, "increment to latlon");
-      LatLonGridWriterParameters incLatlonParams;
-      incLatlonParams.deserialize(incLatlonConf);
+      const eckit::LocalConfiguration incLatlonConf(finalConfig, "increment to latlon");
 
       ControlVariable<MODEL, OBS> x_b(J->jb().getBackground());
-
       ControlIncrement<MODEL, OBS> dx(J->jb());
       dx.diff(xx, x_b);
 
-      const LatLonGridWriter<MODEL> latlon(incLatlonParams, dx.states().geometry());
+      const LatLonGridWriter<MODEL> latlon(incLatlonConf, dx.states().geometry());
       for (size_t jtime = 0; jtime < dx.states().size(); ++jtime) {
         latlon.interpolateAndWrite(dx.states()[jtime], xx.states()[jtime]);
       }
@@ -127,11 +124,9 @@ template <typename MODEL, typename OBS> class Variational : public Application {
     }
 
     if (finalConfig.has("analysis to latlon")) {
-      eckit::LocalConfiguration outLatlonConf(finalConfig, "analysis to latlon");
-      LatLonGridPostProcessorParameters outputLatlonParams;
-      outputLatlonParams.deserialize(outLatlonConf);
+      const eckit::LocalConfiguration anLatlonConf(finalConfig, "analysis to latlon");
       post.enrollProcessor(new LatLonGridPostProcessor<MODEL, State_>(
-            outputLatlonParams, xx.state().geometry() ));
+            anLatlonConf, xx.state().geometry() ));
     }
 
     J->evaluate(xx, finalConfig, post);

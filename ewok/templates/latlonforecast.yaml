@@ -7,6 +7,7 @@ local interpolator type: oops unstructured grid interpolator
 resolution in degrees: $(plot_geom)  
 variables to output: $(plot_variables) 
 pressure levels in hPa: $(plot_levels)
-frequency: $(forecast_output_frequency)
 datapath: $(latlonworkdir)
-filename prefix: $(expid).latlon.fc
+date colons: false
+type: fc
+exp: $(expid)

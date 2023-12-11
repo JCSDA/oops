@@ -41,66 +41,60 @@ template <typename MODEL> class StateToLatLonParameters : public ApplicationPara
   OOPS_CONCRETE_PARAMETERS(StateToLatLonParameters, ApplicationParameters)
   typedef State<MODEL>                   State_;
   typedef Geometry<MODEL>                Geometry_;
-  typedef LatLonGridWriterParameters LatLonGridWriterParameters_;
 
  public:
   typedef typename Geometry_::Parameters_   GeometryParameters_;
 
-  RequiredParameter<GeometryParameters_>         stateGeometry{"state geometry", this};
-  RequiredParameter<eckit::LocalConfiguration>   state{"state", this};
-  RequiredParameter<LatLonGridWriterParameters_> latLonInterp{"latlon interpolation", this};
+  RequiredParameter<GeometryParameters_>       stateGeometry{"state geometry", this};
+  RequiredParameter<eckit::LocalConfiguration> state{"state", this};
+  RequiredParameter<eckit::LocalConfiguration> latLonInterp{"latlon interpolation", this};
 };
 
 template <typename MODEL> class IncToLatLonParameters : public ApplicationParameters {
   OOPS_CONCRETE_PARAMETERS(IncToLatLonParameters, ApplicationParameters)
-
   typedef Increment<MODEL>               Increment_;
   typedef Geometry<MODEL>                Geometry_;
-  typedef LatLonGridWriterParameters LatLonGridWriterParameters_;
 
  public:
   typedef typename Increment_::ReadParameters_      IncrementParameters_;
   typedef typename Geometry_::Parameters_           GeometryParameters_;
 
-  RequiredParameter<GeometryParameters_>          incGeometry{"increment geometry", this};
-  RequiredParameter<Variables>                    vars{"variables", this};
-  RequiredParameter<util::DateTime>               date{"date", this};
-  RequiredParameter<IncrementParameters_>         increment{"increment", this};
-  RequiredParameter<LatLonGridWriterParameters_>  latLonInterp{"latlon interpolation", this};
+  RequiredParameter<GeometryParameters_>        incGeometry{"increment geometry", this};
+  RequiredParameter<Variables>                  vars{"variables", this};
+  RequiredParameter<util::DateTime>             date{"date", this};
+  RequiredParameter<IncrementParameters_>       increment{"increment", this};
+  RequiredParameter<eckit::LocalConfiguration>  latLonInterp{"latlon interpolation", this};
 };
 
 template <typename MODEL> class StateEnsToLatLonParameters : public ApplicationParameters {
   OOPS_CONCRETE_PARAMETERS(StateEnsToLatLonParameters, ApplicationParameters)
-
   typedef StateEnsembleParameters<MODEL> StateEnsembleParameters_;
-  typedef LatLonGridWriterParameters LatLonGridWriterParameters_;
   typedef Geometry<MODEL>                Geometry_;
+
  public:
   typedef typename Geometry_::Parameters_ GeometryParameters_;
 
-  RequiredParameter<StateEnsembleParameters_>    stateEnsemble{"states", this};
-  RequiredParameter<LatLonGridWriterParameters_> latLonInterp{"latlon interpolation", this};
-  RequiredParameter<GeometryParameters_>         stateGeometry{"state geometry", this};
+  RequiredParameter<GeometryParameters_>       stateGeometry{"state geometry", this};
+  RequiredParameter<StateEnsembleParameters_>  stateEnsemble{"states", this};
+  RequiredParameter<eckit::LocalConfiguration> latLonInterp{"latlon interpolation", this};
 };
 
 template <typename MODEL> class IncEnsToLatLonParameters : public ApplicationParameters {
   OOPS_CONCRETE_PARAMETERS(IncEnsToLatLonParameters, ApplicationParameters)
-
   typedef IncrementEnsembleParameters<MODEL> IncrementEnsembleParameters_;
-  typedef LatLonGridWriterParameters LatLonGridWriterParameters_;
   typedef Geometry<MODEL>                Geometry_;
+
  public:
   typedef typename Geometry_::Parameters_ GeometryParameters_;
 
-  RequiredParameter<IncrementEnsembleParameters_> incrementEnsemble{"increments", this};
-  RequiredParameter<LatLonGridWriterParameters_>  latLonInterp{"latlon interpolation", this};
   RequiredParameter<GeometryParameters_>          incrementGeometry{"increment geometry", this};
+  RequiredParameter<IncrementEnsembleParameters_> incrementEnsemble{"increments", this};
   RequiredParameter<Variables>                    incrementVariables{"increment variables", this};
+  RequiredParameter<eckit::LocalConfiguration>    latLonInterp{"latlon interpolation", this};
 };
 
 template <typename MODEL> class ConvertToLatLonParameters : public ApplicationParameters {
   OOPS_CONCRETE_PARAMETERS(ConvertToLatLonParameters, ApplicationParameters)
-
   typedef StateEnsToLatLonParameters<MODEL>       StateEnsToLatLonParameters_;
   typedef IncEnsToLatLonParameters<MODEL>         IncEnsToLatLonParameters_;
   typedef StateToLatLonParameters<MODEL>          StateToLatLonParameters_;
@@ -149,8 +143,9 @@ template <typename MODEL> class ConvertToLatLon : public Application {
       Geometry_ resol_(params.stateEnsToLatLon.value()->stateGeometry, this->getComm());
       StateEnsemble_ statesToInterp_(resol_, params.stateEnsToLatLon.value()->
                                                                  stateEnsemble.value());
-      const LatLonGridWriter_ latLonWriter_(params.stateEnsToLatLon.value()->latLonInterp.value(),
-                                                                                      resol_);
+      const eckit::LocalConfiguration latlonConf =
+        params.stateEnsToLatLon.value()->latLonInterp.value();
+      const LatLonGridWriter_ latLonWriter_(latlonConf, resol_);
       size_t numstates = statesToInterp_.size();
       for (size_t jm=0; jm < numstates; jm++) {
         latLonWriter_.interpolateAndWrite(statesToInterp_[jm]);
@@ -167,8 +162,9 @@ template <typename MODEL> class ConvertToLatLon : public Application {
       for (size_t jm=0; jm < numstates; jm++) {
         Geometry_ resol_(params.stateToLatLon.value()->at(jm).stateGeometry, this->getComm());
         State_ stateToInterp_(resol_, params.stateToLatLon.value()->at(jm).state.value());
-        const LatLonGridWriter_ latLonWriter_(params.stateToLatLon.value()->
-                                                          at(jm).latLonInterp.value(), resol_);
+        const eckit::LocalConfiguration latlonConf =
+          params.stateToLatLon.value()->at(jm).latLonInterp.value();
+        const LatLonGridWriter_ latLonWriter_(latlonConf, resol_);
         latLonWriter_.interpolateAndWrite(stateToInterp_);
         Log::test() << latLonWriter_ << std::endl;
       }
@@ -185,8 +181,9 @@ template <typename MODEL> class ConvertToLatLon : public Application {
         Increment_ incToInterp_(resol_, params.incToLatLon.value()->at(jm).vars.value(),
                                         params.incToLatLon.value()->at(jm).date.value());
         incToInterp_.read(params.incToLatLon.value()->at(jm).increment.value());
-        const LatLonGridWriter_ latLonWriter_(params.stateToLatLon.value()->
-                                               at(jm).latLonInterp.value(), resol_);
+        const eckit::LocalConfiguration latlonConf =
+          params.stateToLatLon.value()->at(jm).latLonInterp.value();
+        const LatLonGridWriter_ latLonWriter_(latlonConf, resol_);
         // This supports output on model levels only; to output on pressure levels would need to
         // read in a reference background from which to read the vertical pressure coordinate
         latLonWriter_.interpolateAndWrite(incToInterp_);
@@ -201,8 +198,9 @@ template <typename MODEL> class ConvertToLatLon : public Application {
       IncrementEnsemble_ incrementsToInterp_(resol_,
                             params.incEnsToLatLon.value()->incrementVariables.value(),
                             params.incEnsToLatLon.value()->incrementEnsemble.value());
-      const LatLonGridWriter_ latLonWriter_(params.incEnsToLatLon.value()->latLonInterp.value(),
-                                                                                        resol_);
+      const eckit::LocalConfiguration latlonConf =
+        params.incEnsToLatLon.value()->latLonInterp.value();
+      const LatLonGridWriter_ latLonWriter_(latlonConf, resol_);
       size_t numstates = incrementsToInterp_.size();
       for (size_t jm=0; jm < numstates; jm++) {
         // This supports output on model levels only; to output on pressure levels would need to

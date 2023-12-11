@@ -41,7 +41,7 @@ namespace oops {
   // eckit::LocalConfiguration, "x2"
 
 // Output configuration for regular lat-lon grid
-  // LatLonGridWriterParameters, "output on latlon grid"
+  // eckit::LocalConfiguration, "output on latlon grid"
   // bool, "write" (TODO: remove this once LatLonGridWriter works for QG)
 
 /// \brief Application for computing and writing fields of linearization error.
@@ -119,9 +119,8 @@ class LinearizationError : public Application {
     if (config.has("output on latlon grid")) {
       // LatLonGridWriter doesn't work for QG, so it is optional to allow testing in OOPS
       // TODO(Tom): make LatLonGridWriter work for QG
-      LatLonGridWriterParameters writerParams;
-      writerParams.deserialize(eckit::LocalConfiguration(config, "output on latlon grid"));
-      writer = std::make_unique<LatLonGridWriter_>(writerParams, high);
+      const eckit::LocalConfiguration latlonConf(config, "output on latlon grid");
+      writer = std::make_unique<LatLonGridWriter_>(latlonConf, high);
     }
 
 // Set up trajectory saver for use with x1 and empty post processor for x2
@@ -174,7 +173,9 @@ class LinearizationError : public Application {
 
       // Write to file on regular lat-lon grid
       // TODO(Tom): make LatLonGridWriter work for QG, then the next call won't have to be optional
-      if (writer) writer->interpolateAndWrite(error);
+      if (writer) {
+        writer->interpolateAndWrite(error);
+      }
     }
 
     util::printRunStats("LinearizationError end");

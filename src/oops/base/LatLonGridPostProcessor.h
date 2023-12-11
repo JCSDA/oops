@@ -9,24 +9,13 @@
 
 #include <string>
 
+#include "eckit/config/Configuration.h"
+
 #include "oops/base/Geometry.h"
 #include "oops/base/LatLonGridWriter.h"
 #include "oops/base/PostBase.h"
-#include "oops/util/parameters/Parameters.h"
 
 namespace oops {
-
-// -----------------------------------------------------------------------------
-
-class LatLonGridPostProcessorParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(LatLonGridPostProcessorParameters, Parameters)
-
- public:
-  // time steps at which the lat-lon grid data is written out
-  PostTimerParameters postTimer{this};
-  // output grid, fields, and file options
-  LatLonGridWriterParameters latlonWriter{this};
-};
 
 // -----------------------------------------------------------------------------
 
@@ -35,7 +24,7 @@ template <typename MODEL, typename FLDS>
 class LatLonGridPostProcessor : public PostBase<FLDS>, public LatLonGridWriter<MODEL> {
  public:
   explicit LatLonGridPostProcessor(
-      const LatLonGridPostProcessorParameters & parameters,
+      const eckit::Configuration & conf,
       const Geometry<MODEL> & sourceGeometry);
   ~LatLonGridPostProcessor() = default;
 
@@ -47,16 +36,17 @@ class LatLonGridPostProcessor : public PostBase<FLDS>, public LatLonGridWriter<M
 
 template <typename MODEL, typename FLDS>
 LatLonGridPostProcessor<MODEL, FLDS>::LatLonGridPostProcessor(
-    const LatLonGridPostProcessorParameters & parameters,
+    const eckit::Configuration & conf,
     const Geometry<MODEL> & sourceGeometry)
-: PostBase<FLDS>(parameters.postTimer),
-  LatLonGridWriter<MODEL>(parameters.latlonWriter, sourceGeometry) {}
+: PostBase<FLDS>(conf),
+  LatLonGridWriter<MODEL>(conf, sourceGeometry) {}
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename FLDS>
 void LatLonGridPostProcessor<MODEL, FLDS>::doProcessing(const FLDS & xx) {
-  this->interpolateAndWrite(xx);  // supports output on pressure levels for FLDS of State type only
+  // supports output on pressure levels for FLDS of State type only
+  this->interpolateAndWrite(xx);
 }
 
 // -----------------------------------------------------------------------------

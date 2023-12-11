@@ -102,8 +102,9 @@ template <typename MODEL> class Forecast : public Application {
     post.enrollProcessor(new StateWriter<State_>(outConfig));
 
     if (params.fcstConf.latlonGridOutput.value() != boost::none) {
-      post.enrollProcessor(new LatLonGridPostProcessor<MODEL, State_>(
-            params.fcstConf.latlonGridOutput.value().value(), resol));
+      eckit::LocalConfiguration latlonConfig = params.fcstConf.latlonGridOutput.value().value();
+      latlonConfig.set("date", bgndate.toString());
+      post.enrollProcessor(new LatLonGridPostProcessor<MODEL, State_>(latlonConfig, resol));
     }
 
 //  Run forecast
