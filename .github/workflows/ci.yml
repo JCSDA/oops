@@ -39,5 +39,8 @@ jobs:
             --entrypoint=/usr/local/src/oops-ci/build-and-test \
             --workdir=/usr/local/src/oops-ci/ \
             --volume $PWD/CI/meto:/usr/local/src/oops-ci \
-            'ngmssboxjediacr.azurecr.io/jedibase:alma9' && \
-          rm -fr ${{github.workspace}}/CI
+            'ngmssboxjediacr.azurecr.io/jedibase:alma9-revert'
+
+      - name: Cleanup workspace
+        working-directory: ${{github.workspace}}
+        run: rm -fr CI || true
