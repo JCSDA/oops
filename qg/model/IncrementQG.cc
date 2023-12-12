@@ -168,10 +168,6 @@ void IncrementQG::toFieldSet(atlas::FieldSet & fset) const {
   fields_->toFieldSet(fset);
 }
 // -----------------------------------------------------------------------------
-void IncrementQG::toFieldSetAD(const atlas::FieldSet & fset) {
-  fields_->toFieldSetAD(fset);
-}
-// -----------------------------------------------------------------------------
 void IncrementQG::fromFieldSet(const atlas::FieldSet & fset) {
   fields_->fromFieldSet(fset);
 }

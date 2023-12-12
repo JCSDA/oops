@@ -13,40 +13,8 @@
 #include <string>
 #include <vector>
 
-#include "atlas/field.h"
-#include "atlas/functionspace.h"
-
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
-// -----------------------------------------------------------------------------
-Resolution::Resolution(const eckit::Configuration & conf, const eckit::mpi::Comm & comm)
-  : resol_(conf.getInt("resol")), comm_(comm) {
-  ASSERT(comm_.size() == 1);
-
-  atlas::Field lonlat("lonlat", atlas::array::DataType::real64(),
-                      atlas::array::ArrayShape({resol_, 2}));
-  auto view = atlas::array::make_view<double, 2>(lonlat);
-  const double dx = 1.0 / static_cast<double>(resol_);
-  for (size_t jj = 0; jj < static_cast<size_t>(resol_); ++jj) {
-    view(jj, 0) = static_cast<double>(jj) * dx;
-    view(jj, 1) = 0.0;
-  }
-  functionSpace_ = atlas::functionspace::PointCloud(lonlat);
-}
-// -----------------------------------------------------------------------------
-Resolution::Resolution(const int resol) : resol_(resol), comm_(oops::mpi::myself()) {
-  ASSERT(comm_.size() == 1);
-
-  atlas::Field lonlat("lonlat", atlas::array::DataType::real64(),
-                      atlas::array::ArrayShape({resol_, 2}));
-  auto view = atlas::array::make_view<double, 2>(lonlat);
-  const double dx = 1.0 / static_cast<double>(resol_);
-  for (size_t jj = 0; jj < static_cast<size_t>(resol_); ++jj) {
-    view(jj, 0) = static_cast<double>(jj) * dx;
-    view(jj, 1) = 0.0;
-  }
-  functionSpace_ = atlas::functionspace::PointCloud(lonlat);
-}
 // -----------------------------------------------------------------------------
 Iterator Resolution::begin() const {
   return Iterator(*this, 0);

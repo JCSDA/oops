@@ -19,6 +19,8 @@
 
 #include "atlas/field.h"
 
+#include "eckit/exception/Exceptions.h"
+
 #include "lorenz95/FieldL95.h"
 #include "lorenz95/Resolution.h"
 
@@ -80,9 +82,12 @@ class IncrementL95 : public util::Printable,
   void random(const size_t & seed = 1);
 
 /// ATLAS
-  void toFieldSet(atlas::FieldSet &) const;
-  void toFieldSetAD(const atlas::FieldSet &);
-  void fromFieldSet(const atlas::FieldSet &);
+  void toFieldSet(atlas::FieldSet &) const {
+    throw eckit::NotImplemented("IncrementL95::toFieldSet not implemented", Here());
+  }
+  void fromFieldSet(const atlas::FieldSet &) {
+    throw eckit::NotImplemented("IncrementL95::fromFieldSet not implemented", Here());
+  }
 
 // Utilities
   void read(const eckit::Configuration &);

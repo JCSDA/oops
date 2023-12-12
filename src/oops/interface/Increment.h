@@ -169,12 +169,10 @@ class Increment : public oops::GeneralizedDepartures,
   /// For models that are not using ATLAS fieldsets for their own Increment data:
   /// - "toFieldSet" allocates the ATLAS fieldset based on the variables present in the Increment
   ///   and copies Increment data into the fieldset, including halo.
-  /// - "toFieldSetAD" adjoint of toFieldSet
   /// - "fromFieldSet" copies fieldset data back into the Increment (interior points only).
   /// For models that are using ATLAS fieldsets for their own Increment data, fields are shared from
   /// a fieldset to another. A working example is available with the QUENCH testbed of SABER.
   void toFieldSet(atlas::FieldSet &) const;
-  void toFieldSetAD(const atlas::FieldSet &);
   void fromFieldSet(const atlas::FieldSet &);
 
   /// Serialize and deserialize (used in 4DEnVar, weak-constraint 4DVar and Block-Lanczos minimizer)
@@ -508,16 +506,6 @@ void Increment<MODEL>::toFieldSet(atlas::FieldSet & fset) const {
   util::Timer timer(classname(), "toFieldSet");
   increment_->toFieldSet(fset);
   Log::trace() << "Increment<MODEL>::toFieldSet done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void Increment<MODEL>::toFieldSetAD(const atlas::FieldSet & fset) {
-  Log::trace() << "Increment<MODEL>::toFieldSetAD starting" << std::endl;
-  util::Timer timer(classname(), "toFieldSetAD");
-  increment_->toFieldSetAD(fset);
-  Log::trace() << "Increment<MODEL>::toFieldSetAD done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

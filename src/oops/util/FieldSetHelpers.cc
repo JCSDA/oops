@@ -98,13 +98,8 @@ atlas::FieldSet createRandomFieldSet(const eckit::mpi::Comm & comm,
       fs.gather(localGhost, globalGhost);
     } else if (fspace.type() == "NodeColumns") {
       // NodeColumns
-      const atlas::functionspace::CubedSphereNodeColumns fs(fspace);
-      fs.gather(localGhost, globalGhost);
-      /* TODO(??): have to assume the NodeColumns is CubedSphere here, cannot differentiate with
-         other NodeColumns from what is in the fspace.
       const atlas::functionspace::NodeColumns fs(fspace);
       fs.gather(localGhost, globalGhost);
-      */
     } else if (fspace.type() == "Spectral") {
       // Not needed
     } else {
@@ -258,13 +253,8 @@ atlas::FieldSet createRandomFieldSet(const eckit::mpi::Comm & comm,
         fs.scatter(globalField, field);
       } else if (fspace.type() == "NodeColumns") {
         // CubedSphere
-        const atlas::functionspace::CubedSphereNodeColumns fs(fspace);
-        fs.scatter(globalField, field);
-        /* TODO(??): have to assume the NodeColumns is CubedSphere here, cannot differentiate with
-           other NodeColumns from what is in fspace.
         const atlas::functionspace::NodeColumns fs(fspace);
         fs.scatter(globalField, field);
-        */
       } else if (fspace.type() == "Spectral") {
         const atlas::functionspace::Spectral fs(fspace);
         fs.scatter(globalField, field);
@@ -525,24 +515,24 @@ std::string getGridUid(const atlas::FunctionSpace & fspace) {
     return hash->digest();
   };
 
+  // FunctionSpaces tied to structure will have a grid so we can call fspace.grid.uid.
+  // But other FunctionSpaces may or may not have a grid, so we check and either use the grid
+  // or compute a custom UID from the coordinates.
   if (fspace.type() == "StructuredColumns") {
-    // StructuredColumns
     const atlas::functionspace::StructuredColumns fs(fspace);
     return fs.grid().uid();
-  } else if (fspace.type() == "NodeColumns") {
-    // CubedSphere
-    const atlas::functionspace::CubedSphereNodeColumns fs(fspace);
-    return fs.mesh().grid().uid();
-    /* TODO(??): have to assume the NodeColumns is CubedSphere here, cannot differentiate with
-       other NodeColumns from what is in fspace.
-    const atlas::functionspace::NodeColumns fs(fspace);
-    return fs.grid().uid();
-    */
-  } else if (fspace.type() == "PointCloud") {
-    return customUidFromLonLat(fspace);
   } else if (fspace.type() == "Spectral") {
     const atlas::functionspace::Spectral fs(fspace);
     return "Spectral" + std::to_string(fs.truncation());
+  } else if (fspace.type() == "NodeColumns") {
+    const atlas::functionspace::NodeColumns fs(fspace);
+    if (fs.mesh().grid()) {
+      return fs.mesh().grid().uid();
+    } else {
+      return customUidFromLonLat(fspace);
+    }
+  } else if (fspace.type() == "PointCloud") {
+    return customUidFromLonLat(fspace);
   } else {
     ABORT(fspace.type() + " function space not supported yet");
     return "";
@@ -888,21 +878,10 @@ void readFieldSet(const eckit::mpi::Comm & comm,
       }
     } else if (fspace.type() == "NodeColumns") {
       // NodeColumns
-      atlas::idx_t nb_nodes;
-
-      // CubedSphere
-      atlas::functionspace::CubedSphereNodeColumns fs(fspace);
-
-      // Get global number of nodes
-      nb_nodes = fs.nb_nodes_global();
-      /* TODO(??): have to assume the NodeColumns is CubedSphere here, cannot differentiate with
-         other NodeColumns from what is in fspace.
-      // Other NodeColumns
       atlas::functionspace::NodeColumns fs(fspace);
 
       // Get global number of nodes
-      nb_nodes = fs.nb_nodes_global();
-      */
+      const atlas::idx_t nb_nodes = fs.nb_nodes_global();
 
       if (comm.rank() == 0) {
         // NetCDF IDs
@@ -949,9 +928,7 @@ void readFieldSet(const eckit::mpi::Comm & comm,
       fs.scatter(globalData, fset);
     } else if (fspace.type() == "NodeColumns") {
       // NodeColumns
-
-      // CubedSphere
-      atlas::functionspace::CubedSphereNodeColumns fs(fspace);
+      atlas::functionspace::NodeColumns fs(fspace);
       fs.scatter(globalData, fset);
     }
 
@@ -1235,12 +1212,8 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
         if ((retval = nc_close(ncid))) ERR(retval);
       }
     } else if (fspace.type() == "NodeColumns") {
-      /* TODO(??): have to assume the NodeColumns is CubedSphere here, cannot differentiate with
-         other NodeColumns from what is in fspace.
-      */
-
-      // CubedSphere
-      atlas::functionspace::CubedSphereNodeColumns fs(fspace);
+      // NodeColumns
+      atlas::functionspace::NodeColumns fs(fspace);
 
       // Gather coordinates and data on main processor
       fs.gather(localData, globalData);

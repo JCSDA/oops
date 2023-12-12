@@ -53,13 +53,23 @@ template <typename MODEL> void testAtlasInterface() {
   std::unique_ptr<Geometry_> geom(new Geometry_(GeometryFixture<MODEL>::getParameters(),
                                                 oops::mpi::world(), oops::mpi::myself()));
 
+  // Test FunctionSpace
+  const atlas::FunctionSpace & functionspace = geom->functionSpace();
+  EXPECT(functionspace.type() != "PointCloud");  // expect FunctionSpace has a Mesh
+
+  // Use the FunctionSpace
+  const std::string uid = util::getGridUid(functionspace);
+
   // Test geometry FieldSet
+  const atlas::Field & lonlat = functionspace.lonlat();
   const atlas::FieldSet & fset = geom->fields();
 
-  // Fields have consistent size
+  // Fields have consistent size and associated FunctionSpace
   EXPECT(fset.size() >= 1);  // should have at least the "owned" field
   for (atlas::idx_t i = 0; i < fset.size(); ++i) {
     EXPECT(fset[i].rank() == 2);
+    EXPECT(fset[i].shape(0) == lonlat.shape(0));
+    EXPECT(fset[i].functionspace() == functionspace);
   }
 
   EXPECT(fset.has("owned"));

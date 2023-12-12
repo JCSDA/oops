@@ -75,36 +75,6 @@ void InterpolatorL95::applyAD(const oops::Variables &, IncrementL95 & dx,
 
 // -----------------------------------------------------------------------------
 
-void InterpolatorL95::apply(const oops::Variables &, const atlas::FieldSet & fset,
-                            const std::vector<bool> & mask,
-                            std::vector<double> & vals) const {
-  ASSERT(mask.size() == nout_);
-  vals.resize(nout_);
-  const auto & view = atlas::array::make_view<double, 2>(fset["field"]);
-  for (size_t jj = 0; jj < nout_; ++jj) {
-    if (mask[jj]) {
-      vals[jj] = view(ilocs_[jj], 0);
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-
-void InterpolatorL95::applyAD(const oops::Variables &, atlas::FieldSet & fset,
-                              const std::vector<bool> & mask,
-                              const std::vector<double> & vals) const {
-  ASSERT(mask.size() == nout_);
-  ASSERT(vals.size() == nout_);
-  auto view = atlas::array::make_view<double, 2>(fset["field"]);
-  for (size_t jj = 0; jj < nout_; ++jj) {
-    if (mask[jj]) {
-      view(ilocs_[jj], 0) += vals[jj];
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-
 void InterpolatorL95::print(std::ostream & os) const {
   os << "InterpolatorL95";
 }

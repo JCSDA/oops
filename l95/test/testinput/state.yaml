@@ -23,3 +23,5 @@ state test:
       mean: 8.0
       sinus: 2.0
   norm generated state: 8.12403840464
+
+test atlas interface: false

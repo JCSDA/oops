@@ -8,7 +8,7 @@
 
 module qg_geom_mod
 
-use atlas_module, only: atlas_field, atlas_fieldset, atlas_integer, atlas_real, atlas_functionspace_pointcloud
+use atlas_module, only: atlas_field, atlas_fieldset, atlas_integer, atlas_real, atlas_functionspace_nodecolumns
 use fckit_configuration_module, only: fckit_configuration
 use fckit_log_module,only: fckit_log
 use kinds
@@ -42,7 +42,7 @@ type :: qg_geom
   real(kind_real),allocatable :: bet(:)                  !< Beta coefficient
   real(kind_real),allocatable :: heat(:,:)               !< Heating term
   real(kind_real),allocatable :: ph_coeff                !< Perturbed Heating Coefficient
-  type(atlas_functionspace_pointcloud) :: afunctionspace !< Function space
+  type(atlas_functionspace_nodecolumns) :: afunctionspace !< Function space
 end type qg_geom
 
 #define LISTED_TYPE qg_geom
@@ -351,7 +351,7 @@ self%f_d = other%f_d
 self%bet = other%bet
 self%heat = other%heat
 self%ph_coeff=other%ph_coeff
-self%afunctionspace = atlas_functionspace_pointcloud(other%afunctionspace%c_ptr())
+self%afunctionspace = atlas_functionspace_nodecolumns(other%afunctionspace%c_ptr())
 
 end subroutine qg_geom_clone
 ! ------------------------------------------------------------------------------

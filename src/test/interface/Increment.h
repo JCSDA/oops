@@ -33,6 +33,7 @@
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
+#include "oops/util/FieldSetHelpers.h"
 #include "oops/util/Logger.h"
 #include "test/TestEnvironment.h"
 
@@ -196,6 +197,56 @@ template <typename MODEL> void testIncrementChangeResConstructorAD() {
   const double dot1 = dot_product(dx, dyOther);
   const double dot2 = dot_product(dxOther, dy);
   EXPECT(oops::is_close(dot1, dot2, Test_::test().getDouble("tolerance AD resolution change")));
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL> void testIncrementAtlasInterface() {
+  typedef IncrementFixture<MODEL>   Test_;
+  typedef oops::Increment<MODEL>    Increment_;
+
+  const bool testAtlas = TestEnvironment::config().getBool("test atlas interface", true);
+  if (!testAtlas) { return; }
+
+  const oops::Geometry<MODEL> & geom = Test_::resol();
+  const oops::Variables & vars = Test_::ctlvars();
+
+  Increment_ dx(geom, vars, Test_::time());
+  dx.random();
+
+  atlas::FieldSet fset{};
+  dx.toFieldSet(fset);
+
+  // Check Fields in FieldSet
+  EXPECT(fset.size() == vars.size());
+  for (size_t v = 0; v < vars.size(); ++v) {
+    const atlas::Field & f = fset[v];
+    EXPECT(f.valid());
+    EXPECT(f.functionspace() == geom.functionSpace());
+    EXPECT(!f.dirty());
+    EXPECT(f.rank() == 2);
+    EXPECT(f.shape(0) == geom.functionSpace().lonlat().shape(0));
+    EXPECT(f.datatype() == atlas::array::DataType::create<double>());
+  }
+
+  // Check haloExchange is no-op, i.e., halos are up-to-date
+  atlas::FieldSet fset2 = util::copyFieldSet(fset);
+  for (size_t v = 0; v < vars.size(); ++v) {
+    fset2[v].set_dirty();
+  }
+  fset2.haloExchange();
+  EXPECT(util::compareFieldSets(fset, fset2));
+
+  // Check fromFieldSet repopulates Increment in the same way
+  Increment_ dy(geom, vars, Test_::time());
+  dy.fromFieldSet(fset);
+  dx -= dy;
+  EXPECT(dx.norm() <= 1e-14);
+
+  // Go back to a FieldSet and compare FieldSets again:
+  atlas::FieldSet fset3{};
+  dy.toFieldSet(fset3);
+  EXPECT(util::compareFieldSets(fset, fset3));
 }
 
 // -----------------------------------------------------------------------------
@@ -554,6 +605,8 @@ class Increment : public oops::Test {
       { testIncrementChangeResConstructor<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementChangeResConstructorAD")
       { testIncrementChangeResConstructorAD<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/testIncrementAtlasInterface")
+      { testIncrementAtlasInterface<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/rmsByLevel")
       { testRmsByLevel<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementTriangle")

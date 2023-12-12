@@ -8,7 +8,7 @@
 
 module qg_geom_interface
 
-use atlas_module, only: atlas_fieldset, atlas_functionspace_pointcloud
+use atlas_module, only: atlas_fieldset, atlas_functionspace_nodecolumns
 use fckit_configuration_module, only: fckit_configuration
 use fckit_log_module,only: fckit_log
 use kinds
@@ -77,7 +77,7 @@ type(qg_geom),pointer :: self
 
 ! Interface
 call qg_geom_registry%get(c_key_self,self)
-self%afunctionspace = atlas_functionspace_pointcloud(c_afunctionspace)
+self%afunctionspace = atlas_functionspace_nodecolumns(c_afunctionspace)
 
 end subroutine qg_geom_set_functionspace_pointer_c
 ! ------------------------------------------------------------------------------

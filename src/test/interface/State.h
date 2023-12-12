@@ -30,6 +30,7 @@
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
+#include "oops/util/FieldSetHelpers.h"
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/IgnoreOtherParameters.h"
 #include "oops/util/parameters/OptionalParameter.h"
@@ -182,6 +183,61 @@ template <typename MODEL> void testStateConstructors() {
   EXPECT(oops::is_close(xx4.norm(), norm, tol));
   EXPECT(xx4.validTime() == vt);
   EXPECT(xx4.variables() == xx1->variables());
+}
+
+// -----------------------------------------------------------------------------
+/// \brief tests constructors and print method
+template <typename MODEL> void testStateAtlasInterface() {
+  typedef StateFixture<MODEL>   Test_;
+  typedef oops::State<MODEL>    State_;
+
+  const bool testAtlas = TestEnvironment::config().getBool("test atlas interface", true);
+  if (!testAtlas) { return; }
+
+  const oops::Geometry<MODEL> & geom = Test_::resol();
+
+  State_ xx(geom, Test_::test().statefile);
+  const oops::Variables & vars = xx.variables();
+
+  atlas::FieldSet fset{};
+  xx.toFieldSet(fset);
+
+  // Check Fields in FieldSet
+  EXPECT(fset.size() == vars.size());
+  for (size_t v = 0; v < vars.size(); ++v) {
+    const atlas::Field & f = fset[v];
+    EXPECT(f.valid());
+    EXPECT(f.functionspace() == geom.functionSpace());
+    EXPECT(!f.dirty());
+    EXPECT(f.rank() == 2);
+    EXPECT(f.shape(0) == geom.functionSpace().lonlat().shape(0));
+    EXPECT(f.datatype() == atlas::array::DataType::create<double>());
+  }
+
+  // Check haloExchange is no-op, i.e., halos are up-to-date
+  atlas::FieldSet fset2 = util::copyFieldSet(fset);
+  for (size_t v = 0; v < vars.size(); ++v) {
+    fset2[v].set_dirty();
+  }
+  fset2.haloExchange();
+  EXPECT(util::compareFieldSets(fset, fset2));
+
+  // Check fromFieldSet repopulates State in the same way
+  const util::DateTime t(Test_::test().date);
+  State_ yy(geom, vars, t);
+  yy.fromFieldSet(fset);
+
+  // How to check xx and yy are the same state?
+  // - They might not be, because States can include fields that aren't part of the atlas
+  //   FieldSet. These fields would be 0 in State yy, and they could be part of the norm
+  //   computation, so there's no guarantee that xx.norm() == yy.norm() should succeed.
+  // - Could compute an Increment dx = xx-yy and check its norm is ~0, but this would make
+  //   the State depend on the Increment.
+  //
+  // So, we skip this test. Instead, go back to a FieldSet and compare FieldSets:
+  atlas::FieldSet fset3{};
+  yy.toFieldSet(fset3);
+  EXPECT(util::compareFieldSets(fset, fset3));
 }
 
 // -----------------------------------------------------------------------------
@@ -450,6 +506,8 @@ class State : public oops::Test {
 
     ts.emplace_back(CASE("interface/State/testStateConstructors")
       { testStateConstructors<MODEL>(); });
+    ts.emplace_back(CASE("interface/State/testStateAtlasInterface")
+      { testStateAtlasInterface<MODEL>(); });
     ts.emplace_back(CASE("interface/State/testStateGeometry")
       { testStateGeometry<MODEL>(); });
     ts.emplace_back(CASE("interface/State/testStateAnalyticInitialCondition")

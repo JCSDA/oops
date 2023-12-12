@@ -1315,6 +1315,9 @@ do jvar=1,self%vars%nvars()
      enddo
    enddo
 
+   ! Set dirty to false; trivially true because serial model
+   call afield%set_dirty(.false.)
+
    ! Release pointer
    call afield%final()
 enddo

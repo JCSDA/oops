@@ -261,6 +261,7 @@ template<typename MODEL>
 void State<MODEL>::toFieldSet(atlas::FieldSet & fset) const {
   Log::trace() << "State<MODEL>::toFieldSet starting" << std::endl;
   util::Timer timer(classname(), "toFieldSet");
+  ASSERT(fset.empty());
   state_->toFieldSet(fset);
   Log::trace() << "State<MODEL>::toFieldSet done" << std::endl;
 }

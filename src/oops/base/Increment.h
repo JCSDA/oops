@@ -161,7 +161,8 @@ void Increment<MODEL>::synchronizeFieldsAD() {
   // TODO(JEDI core team): remove this method when accessors are fully implemented
   if (interface::Increment<MODEL>::fset_) {
     if (!interface::Increment<MODEL>::fset_->empty()) {
-      this->toFieldSetAD(interface::Increment<MODEL>::fset_->fieldSet());
+      interface::Increment<MODEL>::fset_->fieldSet()->adjointHaloExchange();
+      this->fromFieldSet(interface::Increment<MODEL>::fset_->fieldSet());
     }
   }
 }

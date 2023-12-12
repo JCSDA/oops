@@ -17,11 +17,14 @@
 #include <string>
 #include <vector>
 
+#include "atlas/field.h"
+
+#include "eckit/exception/Exceptions.h"
+
 #include "lorenz95/FieldL95.h"
 #include "lorenz95/Resolution.h"
 
 #include "oops/base/Variables.h"
-#include "oops/util/abor1_cpp.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
@@ -66,8 +69,12 @@ class StateL95 : public util::Printable,
   }
 
 /// ATLAS
-  void toFieldSet(atlas::FieldSet &) const;
-  void fromFieldSet(const atlas::FieldSet &);
+  void toFieldSet(atlas::FieldSet &) const {
+    throw eckit::NotImplemented("StateL95::toFieldSet not implemented", Here());
+  }
+  void fromFieldSet(const atlas::FieldSet &) {
+    throw eckit::NotImplemented("StateL95::fromFieldSet not implemented", Here());
+  }
 
   void read(const eckit::Configuration &);
   void write(const eckit::Configuration &) const;

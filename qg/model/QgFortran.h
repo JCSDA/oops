@@ -116,8 +116,6 @@ extern "C" {
   void qg_fields_lbc_f90(const F90flds &, int &);
   void qg_fields_to_fieldset_f90(const F90flds &,
                                  atlas::field::FieldSetImpl *);
-  void qg_fields_to_fieldset_ad_f90(const F90flds &,
-                                    const atlas::field::FieldSetImpl *);
   void qg_fields_from_fieldset_f90(const F90flds &,
                                    const atlas::field::FieldSetImpl *);
   void qg_fields_getvals_f90(const F90flds &, const oops::Variables &,

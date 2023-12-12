@@ -16,3 +16,5 @@ increment test:
 
 test:
   reference filename: testref/coupledincrement.test
+
+test atlas interface: false

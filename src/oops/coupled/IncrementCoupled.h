@@ -110,7 +110,6 @@ class IncrementCoupled : public util::Printable {
 
   /// ATLAS
   void toFieldSet(atlas::FieldSet &) const {throw eckit::NotImplemented(Here());}
-  void toFieldSetAD(const atlas::FieldSet &) {throw eckit::NotImplemented(Here());}
   void fromFieldSet(const atlas::FieldSet &) {throw eckit::NotImplemented(Here());}
 
   /// Accessor to the increment's valid time

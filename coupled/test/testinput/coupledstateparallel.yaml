@@ -41,3 +41,5 @@ state test:
 test:
   float relative tolerance: 1e-5
   reference filename: testref/coupledstate.test
+
+test atlas interface: false

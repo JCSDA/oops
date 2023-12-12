@@ -49,7 +49,6 @@ class StateCoupled : public util::Printable {
 
   /// ATLAS
   void toFieldSet(atlas::FieldSet &) const {ABORT("toFieldSet not implemented");}
-  void toFieldSetAD(const atlas::FieldSet &) {ABORT("toFieldSetAD not implemented");}
   void fromFieldSet(const atlas::FieldSet &) {ABORT("fromFieldSet not implemented");}
 
   /// Accessor to the state's valid time

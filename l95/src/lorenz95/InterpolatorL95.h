@@ -12,10 +12,6 @@
 
 #include "oops/util/Printable.h"
 
-namespace atlas {
-  class FieldSet;
-}
-
 namespace eckit {
   class Configuration;
 }
@@ -43,15 +39,6 @@ class InterpolatorL95 : public util::Printable {
              std::vector<double> &) const;
   void applyAD(const oops::Variables &, IncrementL95 &, const std::vector<bool> &,
                const std::vector<double> &) const;
-
-  void apply(const oops::Variables &, const atlas::FieldSet &,
-             const std::vector<bool> &, std::vector<double> &) const;
-  void applyAD(const oops::Variables &, atlas::FieldSet &,
-               const std::vector<bool> &, const std::vector<double> &) const;
-
-  // The methods bufferToFieldSet(AD) are not provided at this time: the L95 model is not used
-  // with SABER and cannot be plotted over the sphere, so there is currently no need for
-  // interpolating to an atlas::FieldSet.
 
  private:
   void print(std::ostream &) const;

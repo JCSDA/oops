@@ -17,8 +17,11 @@
 
 #include "atlas/field.h"
 #include "atlas/functionspace.h"
+
 #include "eckit/config/Configuration.h"
+
 #include "lorenz95/Iterator.h"
+
 #include "oops/base/Variables.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/Printable.h"
@@ -32,8 +35,11 @@ class Iterator;
 
 class Resolution : public util::Printable {
  public:
-  Resolution(const eckit::Configuration &, const eckit::mpi::Comm &);
-  explicit Resolution(const int resol);
+  Resolution(const eckit::Configuration & conf, const eckit::mpi::Comm & comm)
+    : resol_(conf.getInt("resol")), comm_(comm)
+    {ASSERT(comm_.size() == 1);}
+  explicit Resolution(const int resol) : resol_(resol), comm_(oops::mpi::myself())
+    {ASSERT(comm_.size() == 1);}
 
   int npoints() const {return resol_;}
 
@@ -44,15 +50,15 @@ class Resolution : public util::Printable {
   bool levelsAreTopDown() const {return true;}
   const eckit::mpi::Comm & getComm() const {return comm_;}
   void latlon(std::vector<double> &, std::vector<double> &, const bool) const;
-  const atlas::FunctionSpace & functionSpace() const {return functionSpace_;}
-  const atlas::FieldSet & fields() const {return nofields_;}
+  const atlas::FunctionSpace & functionSpace() const {return noFunctionSpace_;}
+  const atlas::FieldSet & fields() const {return noFields_;}
 
  private:
   void print(std::ostream & os) const {os << resol_;}
   const int resol_;
   const eckit::mpi::Comm & comm_;
-  atlas::FunctionSpace functionSpace_;
-  atlas::FieldSet nofields_;
+  atlas::FunctionSpace noFunctionSpace_;
+  atlas::FieldSet noFields_;
 };
 
 // -----------------------------------------------------------------------------
