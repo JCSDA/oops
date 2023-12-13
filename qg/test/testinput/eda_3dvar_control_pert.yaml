@@ -59,10 +59,11 @@ assimilation:
       online diagnostics:
         write increment: true
         increment:
-          datadir: Data
-          date: 2010-01-01T12:00:00Z
-          exp: eda_3dvar_control_pert.mem%mem_pad%
-          type: in
+          state component:
+            datadir: Data
+            date: 2010-01-01T12:00:00Z
+            exp: eda_3dvar_control_pert.mem%mem_pad%
+            type: in
       prints: {}
   final:
     diagnostics:
@@ -73,9 +74,10 @@ assimilation:
         ny: 20
         depths: [4500.0, 5500.0]
       output:
-        datadir: Data
-        exp: eda_3dvar_control_pert.mem%mem_pad%_full_increment
-        type: in
+        state component:
+          datadir: Data
+          exp: eda_3dvar_control_pert.mem%mem_pad%_full_increment
+          type: in
     prints: {}
   output:
     datadir: Data

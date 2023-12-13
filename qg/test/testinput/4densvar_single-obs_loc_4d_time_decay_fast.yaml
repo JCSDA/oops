@@ -104,11 +104,12 @@ final:
   increment:
     geometry: *geom
     output:
-      datadir: Data
-      date: 2010-01-01T12:00:00Z
-      exp: 4densvar_single-obs_loc_4d_time_decay_fast.increment
-      type: in
-      analysis variables: [x]
+      state component:
+        datadir: Data
+        date: 2010-01-01T12:00:00Z
+        exp: 4densvar_single-obs_loc_4d_time_decay_fast.increment
+        type: in
+        analysis variables: [x]
 output:
   datadir: Data
   exp: forecast

@@ -64,15 +64,16 @@ variational:
     online diagnostics:
       write increment: true
       increment:
-        states:
-        - datadir: Data
-          exp: 4dsaddlepoint.iter1
-          date: 2010-01-01T03:00:00Z
-          type: in
-        - datadir: Data
-          exp: 4dsaddlepoint.iter1
-          date: 2010-01-01T15:00:00Z
-          type: in
+        state component:
+          states:
+          - datadir: Data
+            exp: 4dsaddlepoint.iter1
+            date: 2010-01-01T03:00:00Z
+            type: in
+          - datadir: Data
+            exp: 4dsaddlepoint.iter1
+            date: 2010-01-01T15:00:00Z
+            type: in
   - ninner: 30
     gradient norm reduction: 1.0e-10
     geometry:
@@ -93,15 +94,16 @@ final:
     geometry:
       resol: 40
     output:
-      states:
-      - datadir: Data
-        date: 2010-01-01T03:00:00Z
-        exp: 4dsaddlepoint
-        type: in
-      - datadir: Data
-        date: 2010-01-01T15:00:00Z
-        exp: 4dsaddlepoint
-        type: in
+      state component:
+        states:
+        - datadir: Data
+          date: 2010-01-01T03:00:00Z
+          exp: 4dsaddlepoint
+          type: in
+        - datadir: Data
+          date: 2010-01-01T15:00:00Z
+          exp: 4dsaddlepoint
+          type: in
 output:
   datadir: Data
   exp: 4dsaddlepoint

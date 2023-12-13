@@ -231,9 +231,9 @@ void ControlIncrement<MODEL, OBS>::read(const eckit::Configuration & config) {
 // -----------------------------------------------------------------------------
 template<typename MODEL, typename OBS>
 void ControlIncrement<MODEL, OBS>::write(const eckit::Configuration & config) const {
-  increment_.write(config);
-  modbias_.write(config);
-  obsbias_.write(config);
+  increment_.write(config.getSubConfiguration("state component"));
+  modbias_.write(config.getSubConfiguration("model aux component"));
+  obsbias_.write(config.getSubConfiguration("obs aux component"));
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>

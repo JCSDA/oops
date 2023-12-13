@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2020 UCAR.
+ * (C) Crown Copyright 2023, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -70,7 +71,9 @@ void writeKrylovBasis(const eckit::Configuration & config,
       Log::info() << "Write Krylov Basis: starting: " << loop << std::endl;
 
       eckit::LocalConfiguration basisConf(diagConf, "krylov basis");
-      basisConf.set("iteration", loop);
+      eckit::LocalConfiguration basisStateConf(basisConf, "state component");
+      basisStateConf.set("iteration", loop);
+      basisConf.set("state component", basisStateConf);
 
       // write increment
       dx.write(basisConf);
@@ -127,7 +130,9 @@ void writeEigenvectors(const eckit::Configuration & diagConf,
       // Save the eigenvector
       if (diagConf.has("online diagnostics.eigenvector")) {
         eckit::LocalConfiguration basisConf(diagConf, "online diagnostics.eigenvector");
-        basisConf.set("iteration", ii);
+        eckit::LocalConfiguration basisStateConf(basisConf, "state component");
+        basisStateConf.set("iteration", ii);
+        basisConf.set("state component", basisStateConf);
         eigenz.write(basisConf);
       } else if (diagConf.has("online diagnostics.eigenvector to latlon")) {
         eckit::LocalConfiguration eigenLatlonConf(diagConf,

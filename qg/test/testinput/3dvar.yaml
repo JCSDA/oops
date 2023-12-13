@@ -70,10 +70,11 @@ variational:
     online diagnostics:
       write increment: true
       increment:
-        datadir: Data
-        date: 2010-01-01T12:00:00Z
-        exp: 3dvar.iter1
-        type: in
+        state component:
+          datadir: Data
+          date: 2010-01-01T12:00:00Z
+          exp: 3dvar.iter1
+          type: in
   - diagnostics:
       departures: ombg1
     gradient norm reduction: 1.0e-10
@@ -85,11 +86,12 @@ variational:
     online diagnostics:
       write increment: true
       increment:
-        datadir: Data
-        date: 2010-01-01T12:00:00Z
-        exp: 3dvar.iter2
-        type: in
-        analysis variables: [x]
+        state component:
+          datadir: Data
+          date: 2010-01-01T12:00:00Z
+          exp: 3dvar.iter2
+          type: in
+          analysis variables: [x]
 final:
   diagnostics:
     departures: oman
@@ -99,11 +101,12 @@ final:
       ny: 20
       depths: [4500.0, 5500.0]
     output:
-      datadir: Data
-      date: 2010-01-01T12:00:00Z
-      exp: 3dvar.increment
-      type: in
-      analysis variables: [x]
+      state component:
+        datadir: Data
+        date: 2010-01-01T12:00:00Z
+        exp: 3dvar.increment
+        type: in
+        analysis variables: [x]
 output:
   datadir: Data
   exp: 3dvar

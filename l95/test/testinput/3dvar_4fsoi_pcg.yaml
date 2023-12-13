@@ -39,10 +39,11 @@ variational:
     online diagnostics:
       write increment: true
       increment:
-        datadir: Data
-        date: 2010-01-02T00:00:00Z
-        exp: 3dvar_4fsoi_pcg.iter1
-        type: in
+        state component:
+          datadir: Data
+          date: 2010-01-02T00:00:00Z
+          exp: 3dvar_4fsoi_pcg.iter1
+          type: in
 final:
   diagnostics:
     departures: oman

@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2023, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -102,7 +103,7 @@ template <typename MODEL, typename OBS> class Variational : public Application {
       ControlIncrement<MODEL, OBS> dx(incGeom, dx_tmp);
       dx.diff(xx, x_b);
       const eckit::LocalConfiguration incOutConfig(incConfig, "output");
-      dx.states().write(incOutConfig);
+      dx.write(incOutConfig);
     }
 
     if (finalConfig.has("increment to latlon")) {

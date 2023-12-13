@@ -65,10 +65,11 @@ variational:
     online diagnostics:
       max eigenvectors: 5
       eigenvector:
-        datadir: Data
-        date: 2010-01-01T12:00:00Z
-        exp: 3dfgat.eigenvecs
-        type: krylov
+        state component:
+          datadir: Data
+          date: 2010-01-01T12:00:00Z
+          exp: 3dfgat.eigenvecs
+          type: krylov
   iterations:
   - ninner: 10
     gradient norm reduction: 1.0e-10

@@ -291,7 +291,7 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
                               dx.states().commTime());
       ControlIncrement<MODEL, OBS> dxOutput(incGeom, dx);
       const eckit::LocalConfiguration incOutConfig(incConfig, "output");
-      dxOutput.states().write(incOutConfig);
+      dxOutput.write(incOutConfig);
     }
 
 //  Compute final value of the cost function and, if an output configuration is specified,

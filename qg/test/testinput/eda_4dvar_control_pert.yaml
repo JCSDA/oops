@@ -86,10 +86,11 @@ assimilation:
       online diagnostics:
         write increment: true
         increment:
-          datadir: Data
-          date: 2010-01-01T12:00:00Z
-          exp: eda_4dvar_control_pert.mem%mem_pad%_iter0
-          type: in
+          state component:
+            datadir: Data
+            date: 2010-01-01T12:00:00Z
+            exp: eda_4dvar_control_pert.mem%mem_pad%_iter0
+            type: in
       prints: {}
     - geometry:
         nx: 40
@@ -108,10 +109,11 @@ assimilation:
       online diagnostics:
         write increment: true
         increment:
-          datadir: Data
-          date: 2010-01-01T12:00:00Z
-          exp: eda_4dvar_control_pert.mem%mem_pad%_iter1
-          type: in
+          state component:
+            datadir: Data
+            date: 2010-01-01T12:00:00Z
+            exp: eda_4dvar_control_pert.mem%mem_pad%_iter1
+            type: in
       prints: {}
   final:
     diagnostics:
@@ -122,9 +124,12 @@ assimilation:
         ny: 20
         depths: [4500.0, 5500.0]
       output:
-        datadir: Data
-        exp: eda_4dvar_control_pert.mem%mem_pad%_full_increment
-        type: in
+        state component:
+          datadir: Data
+          exp: eda_4dvar_control_pert.mem%mem_pad%_full_increment
+          type: in
+        obs aux component:
+          write increment: true
     prints: {}
   output:
     datadir: Data

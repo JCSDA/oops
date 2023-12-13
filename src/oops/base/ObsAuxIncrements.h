@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2017-2019 UCAR
+ * (C) Crown Copyright 2023, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -223,7 +224,12 @@ void ObsAuxIncrements<OBS>::read(const eckit::Configuration & conf) {
 template<typename OBS>
 void ObsAuxIncrements<OBS>::write(const eckit::Configuration & conf) const {
   Log::trace() << "ObsAuxIncrements<OBS>::write starting" << std::endl;
-  for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) auxs_[jobs]->write(conf);
+  const bool write = conf.getBool("write increment", false);
+  if (write) {
+    for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) {
+      auxs_[jobs]->write(conf);
+    }
+  }
   Log::trace() << "ObsAuxIncrements<OBS>::write done" << std::endl;
 }
 // -----------------------------------------------------------------------------
