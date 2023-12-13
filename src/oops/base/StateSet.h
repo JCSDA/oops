@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <memory>
 #include <ostream>
 #include <string>
 #include <vector>
@@ -92,7 +93,7 @@ StateSet<MODEL>::StateSet(const Geometry_ & resol, const StateSet & other)
 {
   Log::trace() << "StateSet::StateSet chres start" << std::endl;
   for (size_t jj = 0; jj < other.size(); ++jj) {
-    this->dataset().emplace_back(State_(resol, other[jj]));
+    this->dataset().emplace_back(std::make_unique<State_>(resol, other[jj]));
   }
   Log::trace() << "StateSet::StateSet chres done" << std::endl;
 }

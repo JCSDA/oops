@@ -103,6 +103,8 @@ oops/base/FieldSet3D.cc
 oops/base/FieldSet3D.h
 oops/base/FieldSet4D.cc
 oops/base/FieldSet4D.h
+oops/base/FieldSets.cc
+oops/base/FieldSets.h
 oops/base/ForecastParameters.h
 oops/base/GeneralizedDepartures.h
 oops/base/Geometry.h

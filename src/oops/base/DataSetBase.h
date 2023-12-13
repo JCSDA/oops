@@ -181,6 +181,7 @@ DataSetBase<DATA, GEOM> & DataSetBase<DATA, GEOM>::operator=(const DataSetBase<D
 template <typename DATA, typename GEOM>
 void DataSetBase<DATA, GEOM>::check_consistency() const {
   bool error = false;
+  if (ntimes_ == 0 && nmembers_ == 0) return;
   if (ntimes_ <= 0) {
     Log::error() << classname() << " error ntimes = " << ntimes_ << std::endl;
     error = true;

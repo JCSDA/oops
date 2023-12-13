@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <memory>
 #include <ostream>
 #include <string>
 #include <vector>
@@ -38,6 +39,10 @@ class IncrementSet : public DataSetBase< Increment<MODEL>, Geometry<MODEL> > {
                const eckit::mpi::Comm & commEns = oops::mpi::myself());
   IncrementSet(const IncrementSet &, const bool copy = true);
   IncrementSet(const Geometry_ &, const IncrementSet &);
+  IncrementSet(const Geometry_ &, const Variables &, const std::vector<util::DateTime> &,
+               const eckit::Configuration &,
+               const eckit::mpi::Comm & commTime = oops::mpi::myself(),
+               const eckit::mpi::Comm & commEns = oops::mpi::myself());
   IncrementSet(const Geometry_ &, const Variables &, States_ &, const bool clearStates = false);
   virtual ~IncrementSet() = default;
 
@@ -112,6 +117,37 @@ IncrementSet<MODEL>::IncrementSet(const Geometry_ & resol, const IncrementSet & 
   }
   this->check_consistency();
   Log::trace() << "IncrementSet::IncrementSet chres done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+IncrementSet<MODEL>::IncrementSet(const Geometry_ & resol, const Variables & vars,
+                                  const std::vector<util::DateTime> & times,
+                                  const eckit::Configuration & config,
+                                  const eckit::mpi::Comm & commTime,
+                                  const eckit::mpi::Comm & commEns)
+  : DataSetBase<Increment_, Geometry_>(commTime, commEns)
+{
+  Log::trace() << "IncrementSet::IncrementSet read start " << config << std::endl;
+
+  std::vector<eckit::LocalConfiguration> locals = this->configure(config);
+
+  size_t mytime = this->local_time_size() * commTime.rank();
+  size_t indx = 0;
+  for (size_t jm = 0; jm < this->local_ens_size(); ++jm) {
+    for (size_t jt = 0; jt < this->local_time_size(); ++jt) {
+      this->dataset().emplace_back(std::make_unique<Increment_>(resol,
+                                                    vars, times[mytime + jt]));
+      this->dataset().back()->read(locals.at(indx));
+      ++indx;
+    }
+  }
+
+  this->sync_times();
+  this->check_consistency();
+
+  Log::trace() << "IncrementSet::IncrementSet read done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

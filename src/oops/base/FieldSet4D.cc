@@ -38,7 +38,7 @@ FieldSet4D copyFieldSet4D(const FieldSet4D & other, const bool & shallow) {
 FieldSet4D::FieldSet4D(const std::vector<util::DateTime> & times,
                        const eckit::mpi::Comm & commTime,
                        const eckit::mpi::Comm & commGeom)
-  : DataSetBase<FieldSet3D, atlas::FunctionSpace>(times, commTime, {0}, oops::mpi::myself())
+  : FieldSets(times, commTime, {0}, oops::mpi::myself())
 {
   size_t mytime = this->local_time_size() * commTime.rank();
   for (size_t jj = 0; jj < this->local_time_size(); ++jj) {
@@ -49,10 +49,17 @@ FieldSet4D::FieldSet4D(const std::vector<util::DateTime> & times,
 // -----------------------------------------------------------------------------
 
 FieldSet4D::FieldSet4D(const FieldSet3D & fset3d)
-  : DataSetBase<FieldSet3D, atlas::FunctionSpace>({fset3d.validTime()}, oops::mpi::myself(),
-                                                  {0}, oops::mpi::myself())
+  : FieldSets({fset3d.validTime()}, oops::mpi::myself(), {0}, oops::mpi::myself())
 {
   this->dataset().push_back(std::make_unique<FieldSet3D>(fset3d));
+}
+
+// -----------------------------------------------------------------------------
+
+void FieldSet4D::deepCopy(const FieldSets & other, const size_t iens) {
+  for (size_t itime = 0; itime < this->size(); ++itime) {
+    (*this)[itime].deepCopy(other(itime, iens));
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -114,6 +121,18 @@ double FieldSet4D::dot_product_with(const FieldSet4D & other, const oops::Variab
   double zz = 0.0;
   for (size_t jj = 0; jj < this->size(); ++jj) {
     zz += (*this)[jj].dot_product_with(other[jj], vars);
+  }
+  this->commTime().allReduceInPlace(zz, eckit::mpi::Operation::SUM);
+  return zz;
+}
+
+// -----------------------------------------------------------------------------
+
+double FieldSet4D::dot_product_with(const FieldSets & other, const size_t iens,
+                                    const Variables & vars) const {
+  double zz = 0.0;
+  for (size_t itime = 0; itime < this->size(); ++itime) {
+    zz += (*this)[itime].dot_product_with(other(itime, iens), vars);
   }
   this->commTime().allReduceInPlace(zz, eckit::mpi::Operation::SUM);
   return zz;
