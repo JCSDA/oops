@@ -222,17 +222,20 @@ double DRPLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, Ctr
 
     betas_.push_back(beta);
 
-    // Compute the quadratic cost function
-    // J[du_{i}] = J[0] - 0.5 s_{i}^T Z_{i}^T r_{0}
-    // Jb[du_{i}] = Jb[0] + {gradJb}^T Z_{i} s_{i} + 0.5 s_{i}^T V_{i}^T Z_{i} s_{i}
-    double costJ = costJ0;
-
-    double costJb = costJ0Jb;
-    for (int jj = 0; jj < jiter+1; ++jj) {
-      costJ -= 0.5 * ss[jj] * dot_product(*zvecs_[jj], rr);
-      costJb += 0.5 * ss[jj] * dot_product(*vvecs_[jj], *zvecs_[jj]) * ss[jj];
-      costJb += ss[jj] * dot_product(gradJb, *zvecs_[jj]);
+    // Compute the solution at the current iterate
+    dx.zero();
+    dxh.zero();
+    for (unsigned int jj = 0; jj < ss.size(); ++jj) {
+      dx.axpy(ss[jj], *zvecs_[jj]);
+      dxh.axpy(ss[jj], *hvecs_[jj]);
     }
+
+    // Compute the quadratic cost function
+    // J[dx_{i}] = J[0] - 0.5 dx_{i}^T r_{0}
+    double costJ = costJ0 - 0.5 * dot_product(dx, rr);
+    // Jb[dx_{i}] = Jb[0] + dx_{i}^T gradJb + 0.5 dx_{i}^T f_{i}
+    double costJb = costJ0Jb + dot_product(dx, gradJb) + 0.5 * dot_product(dx, dxh);
+    // Jo[dx_{i}] + Jc[dx_{i}] = J[dx_{i}] - Jb[dx_{i}]
     double costJoJc = costJ - costJb;
 
     // Gradient norm in precond metric --> sqrt(r'z) --> beta * s_{i}
@@ -247,15 +250,6 @@ double DRPLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, Ctr
       Log::info() << "DRPLanczos: Achieved required reduction in residual norm." << std::endl;
       break;
     }
-  }
-
-  dx.zero();
-  dxh.zero();
-
-  // Calculate the solution (dxh = Binv dx)
-  for (unsigned int jj = 0; jj < ss.size(); ++jj) {
-    dx.axpy(ss[jj], *zvecs_[jj]);
-    dxh.axpy(ss[jj], *hvecs_[jj]);
   }
 
   // Compute and save the eigenvectors
