@@ -81,6 +81,7 @@ TlmQG.h
 fft_f.cc
 fft_f.h
 fft_mod.F90
+instantiateQgNormFactory.h
 instantiateQgLocalizationFactory.h
 qg_advect_q_mod.F90
 qg_change_var_interface.F90

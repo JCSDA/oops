@@ -1,6 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * (C) Crown Copyright 2023, the Met Office.
+ * (C) Crown Copyright 2023, the Met Office
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -33,6 +33,7 @@
 #include "oops/base/StateInfo.h"
 #include "oops/base/StateWriter.h"
 #include "oops/generic/instantiateLinearModelFactory.h"
+#include "oops/generic/instantiateNormFactory.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
@@ -53,6 +54,7 @@ template <typename MODEL, typename OBS> class Variational : public Application {
     instantiateCostFactory<MODEL, OBS>();
     instantiateCovarFactory<MODEL>();
     instantiateMinFactory<MODEL, OBS>();
+    instantiateNormFactory<MODEL>();
     instantiateObsErrorFactory<OBS>();
     instantiateObsFilterFactory<OBS>();
     instantiateLinearModelFactory<MODEL>();

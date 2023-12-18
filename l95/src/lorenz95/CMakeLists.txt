@@ -19,6 +19,7 @@ set( _l95_srcs
         IncrementL95.h
         InterpolatorL95.cc
         InterpolatorL95.h
+        instantiateL95NormFactory.h
         instantiateLocalizationFactory.h
         Iterator.cc
         Iterator.h

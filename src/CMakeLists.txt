@@ -133,6 +133,7 @@ oops/base/Localization.h
 oops/base/Model.h
 oops/base/ModelSpaceCovarianceBase.h
 oops/base/ModelSpaceCovarianceParametersBase.h
+oops/base/NormBase.h
 oops/base/ObsAuxControls.h
 oops/base/ObsAuxCovariances.h
 oops/base/ObsAuxIncrements.h
@@ -241,10 +242,12 @@ oops/generic/LocalInterpolatorBase.cc
 oops/generic/LocalInterpolatorBase.h
 oops/generic/instantiateLinearModelFactory.h
 oops/generic/instantiateModelFactory.h
+oops/generic/instantiateNormFactory.h
 oops/generic/instantiateObsErrorFactory.h
 oops/generic/LinearModelBase.h
 oops/generic/LocalizationBase.h
 oops/generic/ModelBase.h
+oops/generic/NormScalar.h
 oops/generic/ObsErrorDiag.h
 oops/generic/ObsErrorDiag.cc
 oops/generic/ObsErrorBase.h
@@ -477,6 +480,7 @@ test/assimilation/Vector3D.cc
 test/assimilation/Vector3D.h
 
 test/base/Fortran.h
+test/base/NormBase.h
 test/base/ObsErrorCovariance.h
 test/base/ObsLocalizations.h
 test/base/variables.F90

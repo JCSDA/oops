@@ -1,0 +1,15 @@
+geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+
+increment variables: ['x']
+
+norm test 1:
+  norm:
+    norm type: Different
+
+norm test 2:
+  norm:
+    norm type: Scalar
+    alpha: 2.0
