@@ -203,8 +203,9 @@ template <typename MODEL> void testStateAtlasInterface() {
   xx.toFieldSet(fset);
 
   // Check Fields in FieldSet
-  EXPECT(fset.size() == vars.size());
-  for (size_t v = 0; v < vars.size(); ++v) {
+  const int nvars = vars.size();
+  EXPECT(fset.size() == nvars);
+  for (int v = 0; v < nvars; ++v) {
     const atlas::Field & f = fset[v];
     EXPECT(f.valid());
     EXPECT(f.functionspace() == geom.functionSpace());
@@ -216,7 +217,7 @@ template <typename MODEL> void testStateAtlasInterface() {
 
   // Check haloExchange is no-op, i.e., halos are up-to-date
   atlas::FieldSet fset2 = util::copyFieldSet(fset);
-  for (size_t v = 0; v < vars.size(); ++v) {
+  for (int v = 0; v < nvars; ++v) {
     fset2[v].set_dirty();
   }
   fset2.haloExchange();

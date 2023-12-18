@@ -45,7 +45,6 @@ class LocalizationMatrixL95: public oops::interface::LocalizationBase<lorenz95::
   const unsigned int resol_;
   const double rscale_;
   std::vector<double> coefs_;
-  size_t timeRank_;
 };
 // -----------------------------------------------------------------------------
 }  // namespace lorenz95

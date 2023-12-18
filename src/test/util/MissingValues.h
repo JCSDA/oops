@@ -22,6 +22,7 @@ template <typename T>
 void testMissingValues()
 {
   const T missing = util::missingValue<T>();
+  (void)missing;  // silence an unused-variable warning
 }
 
 CASE("util/MissingValues/float") {

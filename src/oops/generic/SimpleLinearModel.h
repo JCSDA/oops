@@ -32,6 +32,8 @@ class SimpleLinearModel {
 
  public:
   SimpleLinearModel(const eckit::Configuration & config, const Geometry_ & updateGeometry);
+  virtual ~SimpleLinearModel() = default;
+
   virtual void forecastTL(Increment_ &, const ModelAuxInc_ &, const util::Duration &) const;
   virtual void forecastAD(Increment_ &, ModelAuxInc_ &, const util::Duration &) const;
   virtual void setUpTrajectorySaver(PostProcessor<State_> &, const ModelAuxCtl_ &);

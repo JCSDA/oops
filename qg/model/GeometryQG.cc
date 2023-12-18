@@ -51,8 +51,8 @@ GeometryQG::GeometryQG(const eckit::Configuration & conf,
   // QG grid is similar to an atlas longitude-shifted RegularLonLatGrid, or "Slon<NLON>x<NLAT>",
   // except that the mapping of points in the latitude direction isn't obviously reproducible.
   // So, import QG grid into atlas via MeshBuilder:
-  const size_t npoints = nx * ny;
-  const size_t ncells = nx * (ny - 1);
+  const int npoints = nx * ny;
+  const int ncells = nx * (ny - 1);
   std::vector<double> lons(npoints);
   std::vector<double> lats(npoints);
   std::vector<int> ghosts(npoints, 0);

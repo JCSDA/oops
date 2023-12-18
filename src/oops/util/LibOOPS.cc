@@ -98,9 +98,9 @@ void LibOOPS::initialise() {
 
   std::vector<int> iis(getEnvList("OOPS_INFO", std::vector<int>(1, 0)));
   if (rank_ == 0) info_ = true;  // INFO is always logged for rank 0
-  for (int iter = 0; iter < iis.size(); iter++) {
+  for (size_t iter = 0; iter < iis.size(); iter++) {
     if (iis[iter] < 0) info_ = true;
-    if (rank_ == iis[iter]) info_ = true;
+    if (static_cast<int>(rank_) == iis[iter]) info_ = true;
   }
   if (info_ && rank_ > 0) {
     preinfo_ += "[" + std::to_string(rank_) + "]";
