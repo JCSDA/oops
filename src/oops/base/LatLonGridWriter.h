@@ -427,6 +427,8 @@ LatLonGridWriter<MODEL>::LatLonGridWriter(
 
 template <typename MODEL>
 void LatLonGridWriter<MODEL>::interpolateAndWrite(const State<MODEL> & xx) const {
+  ASSERT(xx.geometry() == sourceGeometry_);
+
   const oops::VariableChange<MODEL> varchange(conf_, sourceGeometry_);
 
   oops::Variables vars_for_latlon_interp = vars_;
@@ -446,6 +448,10 @@ void LatLonGridWriter<MODEL>::interpolateAndWrite(const State<MODEL> & xx) const
 template <typename MODEL>
 void LatLonGridWriter<MODEL>::interpolateAndWrite(const Increment<MODEL> & dx,
                                                   const State<MODEL> & xx) const {
+  ASSERT(dx.geometry() == sourceGeometry_);
+  // Allow State xx to be at a different resolution, for use in Variational applications where the
+  // minimization and Increment are at a lower resolution than the background.
+
   const oops::VariableChange<MODEL> varchange(conf_, sourceGeometry_);
   oops::LinearVariableChange<MODEL> linvarchange(sourceGeometry_, conf_);
 
@@ -482,6 +488,8 @@ void LatLonGridWriter<MODEL>::interpolateAndWrite(const Increment<MODEL> & dx) c
                              "is not compatible with request for variable not in Increment.");
     }
   }
+
+  ASSERT(dx.geometry() == sourceGeometry_);
 
   interpolateAndWrite(dx.fieldSet().fieldSet(), dx.validTime());
 }

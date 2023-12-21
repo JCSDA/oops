@@ -18,6 +18,7 @@
 #include "oops/base/Variables.h"
 #include "oops/generic/AtlasInterpolator.h"
 #include "oops/generic/UnstructuredInterpolator.h"
+#include "oops/util/FieldSetHelpers.h"
 #include "oops/util/Logger.h"
 
 
@@ -33,6 +34,9 @@ GlobalInterpolator::GlobalInterpolator(
   : comm_(comm)
 {
   Log::trace() << "GlobalInterpolator::GlobalInterpolator start" << std::endl;
+
+  sourceGridUid_ = util::getGridUid(source_grid.functionSpace());
+  targetGridUid_ = util::getGridUid(target_fs);
 
   // Extract target coords
   const auto lonlat = atlas::array::make_view<double, 2>(target_fs.lonlat());
@@ -88,6 +92,10 @@ GlobalInterpolator::GlobalInterpolator(
 
 void GlobalInterpolator::apply(const atlas::FieldSet & source,
                                     atlas::FieldSet & target) const {
+  Log::trace() << "GlobalInterpolator::apply start" << std::endl;
+
+  ASSERT(util::getGridUid(source) == sourceGridUid_);
+  ASSERT(util::getGridUid(target) == targetGridUid_);
   ASSERT(source.field_names() == target.field_names());
   for (const auto & src_field : source) {
     const auto & tgt_field = target.field(src_field.name());
@@ -128,12 +136,18 @@ void GlobalInterpolator::apply(const atlas::FieldSet & source,
                                               recvinterp[jtask], target);
     }
   }
+
+  Log::trace() << "GlobalInterpolator::apply done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 void GlobalInterpolator::applyAD(atlas::FieldSet & source,
                                       const atlas::FieldSet & target) const {
+  Log::trace() << "GlobalInterpolator::applyAD start" << std::endl;
+
+  ASSERT(util::getGridUid(source) == sourceGridUid_);
+  ASSERT(util::getGridUid(target) == targetGridUid_);
   ASSERT(target.field_names() == source.field_names());
   for (const auto & tgt_field : target) {
     const auto & src_field = source.field(tgt_field.name());
@@ -180,6 +194,8 @@ void GlobalInterpolator::applyAD(atlas::FieldSet & source,
   for (auto & field : source) {
     field.metadata().set("dirty", "true");
   }
+
+  Log::trace() << "GlobalInterpolator::applyAD done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
