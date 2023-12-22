@@ -32,6 +32,7 @@
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/RequiredParameter.h"
+#include "oops/util/WorkflowUpdater.h"
 
 namespace oops {
 
@@ -106,6 +107,10 @@ template <typename MODEL> class Forecast : public Application {
       latlonConfig.set("date", bgndate.toString());
       post.enrollProcessor(new LatLonGridPostProcessor<MODEL, State_>(latlonConfig, resol));
     }
+
+    eckit::LocalConfiguration wflow;
+    wflow.set("frequency", "PT3H");
+    post.enrollProcessor(new WorkflowUpdater<State_>(wflow));
 
 //  Run forecast
     model.forecast(xx, moderr, fclength, post);

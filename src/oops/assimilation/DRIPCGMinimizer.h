@@ -28,6 +28,7 @@
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
 #include "oops/util/printRunStats.h"
+#include "oops/util/workflow.h"
 
 namespace oops {
 
@@ -148,6 +149,7 @@ double DRIPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_
   for (int jiter = 0; jiter < maxiter; ++jiter) {
     Log::info() << " DRIPCG Starting Iteration " << jiter+1 << std::endl;
     util::printRunStats("DRIPCG iteration " + std::to_string(jiter+1));
+    if (jiter < 5 || (jiter + 1) % 5 == 0) util::update_workflow_meter("iteration", jiter+1);
 
     if (jiter == 0) {
       pp = ss;

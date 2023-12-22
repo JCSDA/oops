@@ -24,6 +24,7 @@
 #include "oops/util/ObjectCountHelper.h"
 #include "oops/util/printRunStats.h"
 #include "oops/util/TimerHelper.h"
+#include "oops/util/workflow.h"
 
 #ifdef ENABLE_GPTL
 #include <gptl.h>
@@ -178,6 +179,8 @@ int Run::execute(const Application & app, const eckit::mpi::Comm & comm) {
       util::TimerHelper::start();
       util::ObjectCountHelper::start();
       util::printRunStats("Run start", true, comm);
+      if (config_->getBool("ecflow", false)) util::use_ecflow();
+      // Run application
       Log::info() << "Run: Starting " << app << std::endl;
       status = app.execute(*config_, validate_);
       Log::info() << std::endl << "Run: Finishing " << app << std::endl;

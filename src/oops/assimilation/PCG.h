@@ -17,6 +17,7 @@
 #include "oops/assimilation/MinimizerUtils.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
+#include "oops/util/workflow.h"
 
 namespace oops {
 
@@ -103,6 +104,7 @@ double PCG(VECTOR & x, const VECTOR & b,
   Log::info() << std::endl;
   for (int jiter = 0; jiter < maxiter; ++jiter) {
     Log::info() << " PCG Starting Iteration " << jiter+1 << std::endl;
+    if (jiter < 5 || (jiter + 1) % 5 == 0) util::update_workflow_meter("iteration", jiter+1);
 
     if (jiter == 0) {
       p  = s;

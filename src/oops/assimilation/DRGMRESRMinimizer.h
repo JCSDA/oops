@@ -25,6 +25,7 @@
 #include "oops/base/IdentityMatrix.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
+#include "oops/util/workflow.h"
 
 namespace oops {
 
@@ -112,6 +113,7 @@ double DRGMRESRMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlIn
   Log::info() << std::endl;
   for (int jiter = 0; jiter < maxiter; ++jiter) {
     Log::info() << " DRGMRESR Starting Iteration " << jiter+1 << std::endl;
+    if (jiter < 5 || (jiter + 1) % 5 == 0) util::update_workflow_meter("iteration", jiter+1);
 
     precond.multiply(rr, zh);  // returns zh as approxmate solve of (BA)zh = r
     B.multiply(zh, zz);        // x=B zh

@@ -18,6 +18,7 @@
 #include "oops/assimilation/TriDiagSolve.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
+#include "oops/util/workflow.h"
 
 namespace oops {
 
@@ -102,6 +103,7 @@ double PLanczos(VECTOR & xx, const VECTOR & bb,
   Log::info() << std::endl;
   while (jiter < maxiter) {
     Log::info() << " PLanczos Starting Iteration " << jiter+1 << std::endl;
+    if (jiter < 5 || (jiter + 1) % 5 == 0) util::update_workflow_meter("iteration", jiter+1);
 
     // w = A z - beta * vold
     A.multiply(zz, ww);     // w = A z

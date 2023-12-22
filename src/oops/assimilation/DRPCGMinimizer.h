@@ -29,6 +29,7 @@
 #include "oops/util/dot_product.h"
 #include "oops/util/formats.h"
 #include "oops/util/Logger.h"
+#include "oops/util/workflow.h"
 
 namespace oops {
 
@@ -167,6 +168,9 @@ double DRPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_
   Log::info() << std::endl;
   for (int jiter = 0; jiter < maxiter; ++jiter) {
     Log::info() << " DRPCG Starting Iteration " << jiter+1 << std::endl;
+    if (jiter < 5 || (jiter + 1) % 5 == 0 || jiter + 1 == maxiter) {
+      util::update_workflow_meter("iteration", jiter+1);
+    }
 
     if (jiter > 0) {
       // beta_{i} = r_{i+1}^T z_{i+1} / r_{i}^T z_{i}
@@ -233,6 +237,7 @@ double DRPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_
 
     if (normReduction < tolerance) {
       Log::info() << "DRPCG: Achieved required reduction in residual norm." << std::endl;
+      util::update_workflow_meter("iteration", jiter+1);
       break;
     }
 

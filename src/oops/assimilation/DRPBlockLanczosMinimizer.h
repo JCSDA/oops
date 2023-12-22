@@ -31,6 +31,7 @@
 #include "oops/util/dot_product.h"
 #include "oops/util/formats.h"
 #include "oops/util/Logger.h"
+#include "oops/util/workflow.h"
 
 namespace oops {
 
@@ -162,6 +163,7 @@ double DRPBlockLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh,
   for (int iiter = 0; iiter < maxiter && normReductionIter > tolerance; ++iiter) {
     Log::info() << "BlockBLanczos starting iteration " << iiter+1 << " for rank: " << mymember_
                 << std::endl;
+    if (iiter < 5 || (iiter + 1) % 5 == 0) util::update_workflow_meter("iteration", iiter+1);
 
     // Hessian application: w_i = v_i + HtRinvH * B*v_i = v_i + HtRinvH * z_i
     // --> new search directions

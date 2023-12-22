@@ -430,6 +430,9 @@ oops/util/TypeTraits.h
 oops/util/utilNamespaceDoc.h
 oops/util/wildcard.h
 oops/util/wildcard.cc
+oops/util/workflow.h
+oops/util/workflow.cc
+oops/util/WorkflowUpdater.h
 
 oops/util/parameters/ConfigurationParameter.cc
 oops/util/parameters/ConfigurationParameter.h
