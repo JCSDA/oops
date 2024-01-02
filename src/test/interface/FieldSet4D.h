@@ -211,7 +211,6 @@ template <typename MODEL> void testFieldSet4D() {
   // Multiply by zeroes shallow copy: both shallow copy and dx2 should now
   // be zero.
   dx2_sc *= dx2_dc;
-  std::cout << " TOTO " << dx2.norm() << " / " << dx2_sc.norm() << std::endl;
   EXPECT_EQUAL(dx2.norm(), 0.0);
   EXPECT_EQUAL(dx2_sc.norm(), 0.0);
 }
