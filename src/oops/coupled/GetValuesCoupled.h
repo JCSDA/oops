@@ -94,12 +94,16 @@ GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::GetValues(const eckit::Configurati
   std::vector<Variables> splitgeovars = splitVariables(geovars_, geom.geometry().variables());
   std::vector<Variables> splitlinvars = splitVariables(linvars_, geom.geometry().variables());
 
-  getvals1_ = std::make_unique<GetValues<MODEL1, OBS>>(conf.getSubConfiguration(MODEL1::name()),
-                               geom.geometry().geometry1(), timeWindow, locs, splitgeovars[0],
-                               splitlinvars[0]);
-  getvals2_ = std::make_unique<GetValues<MODEL2, OBS>>(conf.getSubConfiguration(MODEL2::name()),
-                               geom.geometry().geometry2(), timeWindow, locs, splitgeovars[1],
-                               splitlinvars[1]);
+  if (splitgeovars[0].size() > 0) {
+    getvals1_ = std::make_unique<GetValues<MODEL1, OBS>>(conf.getSubConfiguration(MODEL1::name()),
+                                 geom.geometry().geometry1(), timeWindow, locs, splitgeovars[0],
+                                 splitlinvars[0]);
+  }
+  if (splitgeovars[1].size() > 0) {
+    getvals2_ = std::make_unique<GetValues<MODEL2, OBS>>(conf.getSubConfiguration(MODEL2::name()),
+                                 geom.geometry().geometry2(), timeWindow, locs, splitgeovars[1],
+                                 splitlinvars[1]);
+  }
   Log::trace() << "GetValues::GetValues done" << std::endl;
 }
 
@@ -110,8 +114,8 @@ GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::GetValues(const eckit::Configurati
 template <typename MODEL1, typename MODEL2, typename OBS>
 void GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::initialize(const util::Duration & tstep) {
   Log::trace() << "GetValues::initialize start" << std::endl;
-  getvals1_->initialize(tstep);
-  getvals2_->initialize(tstep);
+  if (getvals1_) getvals1_->initialize(tstep);
+  if (getvals2_) getvals2_->initialize(tstep);
   Log::trace() << "GetValues::initialize done" << std::endl;
 }
 
@@ -119,8 +123,8 @@ void GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::initialize(const util::Durati
 template <typename MODEL1, typename MODEL2, typename OBS>
 void GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::process(const State_ & xx) {
   Log::trace() << "GetValues::process start" << std::endl;
-  getvals1_->process(xx.state().state1());
-  getvals2_->process(xx.state().state2());
+  if (getvals1_) getvals1_->process(xx.state().state1());
+  if (getvals2_) getvals2_->process(xx.state().state2());
   Log::trace() << "GetValues::process done" << std::endl;
 }
 
@@ -129,8 +133,8 @@ void GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::process(const State_ & xx) {
 template <typename MODEL1, typename MODEL2, typename OBS>
 void GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::finalize() {
   Log::trace() << "GetValues::finalize start" << std::endl;
-  getvals1_->finalize();
-  getvals2_->finalize();
+  if (getvals1_) getvals1_->finalize();
+  if (getvals2_) getvals2_->finalize();
   Log::trace() << "GetValues::finalize done" << std::endl;
 }
 
@@ -140,8 +144,8 @@ template <typename MODEL1, typename MODEL2, typename OBS>
 void GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::fillGeoVaLs(GeoVaLs_ & geovals) {
   Log::trace() << "GetValues::fillGeoVaLs start" << std::endl;
 
-  getvals1_->fillGeoVaLs(geovals);
-  getvals2_->fillGeoVaLs(geovals);
+  if (getvals1_) getvals1_->fillGeoVaLs(geovals);
+  if (getvals2_) getvals2_->fillGeoVaLs(geovals);
 
   Log::trace() << "GetValues::fillGeoVaLs done" << std::endl;
 }
