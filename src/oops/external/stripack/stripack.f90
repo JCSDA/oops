@@ -82,7 +82,7 @@ function indist(x,y) result(test)
 implicit none
 real(kind_real), intent(in) :: x !< First real
 real(kind_real), intent(in) :: y !< Second real
-real(kind_real), parameter ::rth = 1.0e-12
+real(kind_real), parameter ::rth = 1.0e-13
 logical :: test
 test = .true.
 if ((abs(x)>zero).or.(abs(y)>zero)) then
@@ -128,7 +128,7 @@ function small(x,y) result(test)
 implicit none
 real(kind_real), intent(in) :: x !< First real
 real(kind_real), intent(in) :: y !< Second real
-real(kind_real), parameter ::rth = 1.0e-12
+real(kind_real), parameter ::rth = 1.0e-13
 logical :: test
 test = abs(x)<rth*abs(y)
 end function small
