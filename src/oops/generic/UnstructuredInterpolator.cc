@@ -32,7 +32,6 @@
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
 #include "oops/external/stripack/stripack.h"
-#include "oops/util/FieldSetHelpers.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
 #include "oops/util/Timer.h"
@@ -100,7 +99,6 @@ void UnstructuredInterpolator::apply(const Variables & vars, const atlas::FieldS
   Log::trace() << "UnstructuredInterpolator::apply starting" << std::endl;
   util::Timer timer("oops::UnstructuredInterpolator", "apply");
 
-  ASSERT(util::getGridUid(fset) == util::getGridUid(geom_.functionSpace()));
   ASSERT(target_mask.size() == nout_);
 
   size_t nflds = 0;
@@ -157,7 +155,6 @@ void UnstructuredInterpolator::applyAD(const Variables & vars, atlas::FieldSet &
   Log::trace() << "UnstructuredInterpolator::applyAD starting" << std::endl;
   util::Timer timer("oops::UnstructuredInterpolator", "applyAD");
 
-  ASSERT(util::getGridUid(fset) == util::getGridUid(geom_.functionSpace()));
   ASSERT(target_mask.size() == nout_);
 
   std::vector<double>::const_iterator current = vals.begin();

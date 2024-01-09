@@ -13,7 +13,6 @@
 
 #include "oops/base/Variables.h"
 #include "oops/generic/AtlasInterpolator.h"
-#include "oops/util/FieldSetHelpers.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Timer.h"
 
@@ -128,8 +127,6 @@ void AtlasInterpolator::apply(const Variables& variables,
   Log::trace() << classname() + "::apply start" << std::endl;
   util::Timer timer(classname(), "apply");
 
-  ASSERT(util::getGridUid(sourceFieldSet) == util::getGridUid(sourceFunctionSpace_));
-
   // Resize targetFieldVec (just in case);
   targetFieldVec.resize(getTotalElements(variables, sourceFieldSet));
 
@@ -182,10 +179,9 @@ void AtlasInterpolator::applyAD(
     const Variables& variables, atlas::FieldSet& sourceFieldSet,
     const std::vector<bool>& mask,
     const std::vector<double>& targetFieldVec) const {
+
   Log::trace() << classname() + "::applyAD start" << std::endl;
   util::Timer timer(classname(), "applyAD");
-
-  ASSERT(util::getGridUid(sourceFieldSet) == util::getGridUid(sourceFunctionSpace_));
 
   // Exit if all mask elements are false.
   if (std::none_of(mask.cbegin(), mask.cend(),

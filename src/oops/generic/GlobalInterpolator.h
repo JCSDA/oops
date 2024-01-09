@@ -9,7 +9,6 @@
 
 #include <memory>
 #include <ostream>
-#include <string>
 #include <vector>
 
 #include "atlas/field.h"
@@ -41,8 +40,6 @@ class GlobalInterpolator : public util::Printable {
  private:
   void print(std::ostream &) const;
 
-  std::string sourceGridUid_;
-  std::string targetGridUid_;
   const eckit::mpi::Comm & comm_;
   std::vector<std::vector<size_t>> mytarget_index_by_task_;
   std::vector<std::unique_ptr<LocalInterpolatorBase>> interp_;
