@@ -44,8 +44,7 @@ class HtlmCalculator {
                  const Variables &,
                  const Geometry_ &,
                  const atlas::idx_t,
-                 const atlas::idx_t,
-                 const std::unordered_map<std::string, std::vector<std::string>> &);
+                 const atlas::idx_t);
   void setOfCoeffs(const IncrementEnsemble_ &, const IncrementEnsemble_ &, atlas::FieldSet &) const;
 
  private:
@@ -58,7 +57,6 @@ class HtlmCalculator {
   const atlas::idx_t nLevelsMinusInfluenceSize_;
   const atlas::idx_t ensembleSize_;
   const atlas::idx_t vectorSize_;
-  const std::unordered_map<std::string, std::vector<std::string>> & coeffsFieldNames_;
   mutable std::unordered_map<std::string, std::vector<double>> rmsVals_;
   std::unique_ptr<HtlmRegularization> regularization_;
 
@@ -75,18 +73,15 @@ class HtlmCalculator {
 //------------------------------------------------------------------------------
 
 template <typename MODEL>
-HtlmCalculator<MODEL>::HtlmCalculator(
-                 const Parameters_ & params,
-                 const Variables & updateVars,
-                 const Geometry_ & updateGeometry,
-                 const atlas::idx_t influenceSize,
-                 const atlas::idx_t ensembleSize,
-                 const std::unordered_map<std::string, std::vector<std::string>> & coeffsFieldNames)
+HtlmCalculator<MODEL>::HtlmCalculator(const Parameters_ & params,
+                                      const Variables & updateVars,
+                                      const Geometry_ & updateGeometry,
+                                      const atlas::idx_t influenceSize,
+                                      const atlas::idx_t ensembleSize)
 : params_(params), updateVars_(updateVars), nLocations_(updateGeometry.functionSpace().size()),
   nLevels_(updateGeometry.variableSizes(updateVars_)[0]), influenceSize_(influenceSize),
   halfInfluenceSize_(influenceSize_ / 2), nLevelsMinusInfluenceSize_(nLevels_ - influenceSize_),
-  ensembleSize_(ensembleSize), vectorSize_(influenceSize_ * updateVars_.size()),
-  coeffsFieldNames_(coeffsFieldNames) {
+  ensembleSize_(ensembleSize), vectorSize_(influenceSize_ * updateVars_.size()) {
   // Set up regularization
   if (params_.regularization.value().parts.value() == boost::none) {
     regularization_ = std::make_unique<HtlmRegularization>(params_.regularization.value());
@@ -151,9 +146,9 @@ void HtlmCalculator<MODEL>::computeVectorsAt(const atlas::idx_t i,
     const EigenVector coeffs = computeVector(svd, U, influenceMatrix, linearErrorVector,
                                              regularization_->getRegularizationValue(var, i, k));
     // Copy coeffs into FieldSet
+    auto coeffsFieldView = atlas::array::make_view<double, 3>(coeffsFSet[var]);
     for (auto x = 0; x < vectorSize_; x++) {
-      atlas::array::make_view<double, 2>(coeffsFSet[coeffsFieldNames_.at(var)[x]])(i, k)
-        = coeffs[x];
+      coeffsFieldView(i, k, x) = coeffs[x];
     }
   }
 }

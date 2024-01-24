@@ -63,9 +63,21 @@ void readFieldSet(const eckit::mpi::Comm &,
                   const eckit::Configuration &,
                   atlas::FieldSet &);
 
+void readRank3FieldSet(const atlas::FunctionSpace &,
+                       const std::vector<size_t> &,
+                       const std::vector<std::string> &,
+                       atlas::FieldSet &,
+                       const std::string &);
+
 void writeFieldSet(const eckit::mpi::Comm &,
                    const eckit::Configuration &,
                    const atlas::FieldSet &);
+
+void writeRank3FieldSet(const atlas::FieldSet &,
+                        const std::vector<std::string> &,
+                        const atlas::FunctionSpace &,
+                        const std::string &,
+                        const double &);
 
 atlas::FieldSet createFieldSet(const atlas::FunctionSpace &,
                                const oops::Variables &);
