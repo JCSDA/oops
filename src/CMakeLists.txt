@@ -123,7 +123,10 @@ oops/base/Increment4D.h
 oops/base/IncrementEnsemble.h
 oops/base/IncrementEnsemble4D.h
 oops/base/IncrementSet.h
+oops/base/Inflation.h
+oops/base/InflationBase.h
 oops/base/instantiateCovarFactory.h
+oops/base/instantiateInflationFactory.h
 oops/base/instantiateObsFilterFactory.h
 oops/base/LatLonGridPostProcessor.h
 oops/base/LatLonGridWriter.h
@@ -133,6 +136,7 @@ oops/base/Localization.h
 oops/base/Model.h
 oops/base/ModelSpaceCovarianceBase.h
 oops/base/ModelSpaceCovarianceParametersBase.h
+oops/base/MultiplicativeInflation.h
 oops/base/NormBase.h
 oops/base/ObsAuxControls.h
 oops/base/ObsAuxCovariances.h
@@ -168,6 +172,8 @@ oops/base/PostProcessorTLAD.h
 oops/base/PostTimer.cc
 oops/base/PostTimer.h
 oops/base/PostTimerParameters.h
+oops/base/RTPP.h
+oops/base/RTPS.h
 oops/base/SamplingMethodSelector.h
 oops/base/State.h
 oops/base/State4D.h
@@ -310,6 +316,7 @@ oops/runs/ConvertState.h
 oops/runs/ConvertToLatLon.h
 oops/runs/DiffStates.h
 oops/runs/EnsembleApplication.h
+oops/runs/EnsembleInflation.h
 oops/runs/EnsMeanAndVariance.h
 oops/runs/EnsRecenter.h
 oops/runs/ExternalDFI.h
@@ -321,8 +328,6 @@ oops/runs/HofX4D.h
 oops/runs/HybridGain.h
 oops/runs/LinearizationError.h
 oops/runs/LocalEnsembleDA.h
-oops/runs/RTPP.h
-oops/runs/RTPS.h
 oops/runs/Run.cc
 oops/runs/Run.h
 oops/runs/SqrtOfVertLoc.h

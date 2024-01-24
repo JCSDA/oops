@@ -69,6 +69,8 @@ list( APPEND qg_testinput
   testinput/ens_hofx_4.yaml
   testinput/ens_hofx_5.yaml
   testinput/ens_hofx.yaml
+  testinput/ens_infl_inc.yaml
+  testinput/ens_infl_states.yaml
   testinput/ens_mean_variance.yaml
   testinput/ens_recenter.yaml
   testinput/error_covariance.yaml
@@ -120,8 +122,6 @@ list( APPEND qg_testinput
   testinput/obs_aux_increment.yaml
   testinput/obs_aux_covariance.yaml
   testinput/obsvector.yaml
-  testinput/rtpp.yaml
-  testinput/rtps.yaml
   testinput/state.yaml
   testinput/truth.yaml
   testinput/truth_5level_pert_heat.yaml
@@ -180,6 +180,8 @@ list( APPEND qg_testoutput
   testoutput/eda_4dvar_control_pert.test
   testoutput/ens_forecast.test
   testoutput/ens_hofx.test
+  testoutput/ens_infl_inc.test
+  testoutput/ens_infl_states.test
   testoutput/ens_mean_variance.test
   testoutput/ens_recenter.test
   testoutput/forecast.test
@@ -202,8 +204,6 @@ list( APPEND qg_testoutput
   testoutput/make_obs_4d_biased.test
   testoutput/make_single-obs_3d.test
   testoutput/make_single-obs_4d_12h.test
-  testoutput/rtpp.test
-  testoutput/rtps.test
   testoutput/truth.test
   testoutput/truth_5level_pert_heat.test
   testoutput/uniform_field_hybrid.test
@@ -615,14 +615,14 @@ ecbuild_add_test( TARGET test_qg_uniform_field_inflation
                   ARGS testinput/uniform_field_inflation.yaml
                   COMMAND qg_forecast.x )
 
-ecbuild_add_test( TARGET test_qg_rtpp
-                  ARGS testinput/rtpp.yaml
-                  COMMAND  qg_rtpp.x
-                  TEST_DEPENDS test_qg_gen_ens_pert_B )
+ecbuild_add_test( TARGET test_qg_ens_inflation_inc
+                  ARGS testinput/ens_infl_inc.yaml
+                  COMMAND  qg_ensemble_inflation.x
+                  TEST_DEPENDS test_qg_gen_ens_pert_B test_qg_eda_3dvar_control_pert)
 
-ecbuild_add_test( TARGET test_qg_rtps
-                  ARGS testinput/rtps.yaml
-                  COMMAND  qg_rtps.x
+ecbuild_add_test( TARGET test_qg_ens_inflation_states
+                  ARGS testinput/ens_infl_states.yaml
+                  COMMAND  qg_ensemble_inflation.x
                   TEST_DEPENDS test_qg_gen_ens_pert_B test_qg_eda_4dvar)
 
 #####################################################################

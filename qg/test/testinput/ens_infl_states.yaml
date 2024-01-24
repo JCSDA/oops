@@ -22,13 +22,21 @@ analysis:
     filename: Data/mem003.eda_4dvar.an.2010-01-01T06:00:00Z.nc
   - date: *date
     filename: Data/mem004.eda_4dvar.an.2010-01-01T06:00:00Z.nc
-analysis variables: [x]
+analysis type: "state"
+inflation:
+  - method: RTPS
+    factor: 0.5
+  - method: RTPP
+    factor: 0.5
+  - method: Multiplicative
+    factors: [0.5]
+    levels: [1]
 output:
+  member pattern: %member%
   datadir: Data
   date: *date
-  exp: rtps.%{member}%
-  type: an
-factor: 0.5
+  exp: inflation.%member%
+  type: in
 
 test:
-  reference filename: testoutput/rtps.test
+  reference filename: testoutput/ens_infl_states.test

@@ -114,17 +114,11 @@ ecbuild_add_executable( TARGET  qg_hybridgain.x
                       )
 oops_output_json_schema( qg_hybridgain.x )
 
-ecbuild_add_executable( TARGET  qg_rtpp.x
-                        SOURCES qgRTPP.cc
+ecbuild_add_executable( TARGET  qg_ensemble_inflation.x
+                        SOURCES qgEnsembleInflation.cc
                         LIBS    qg
                       )
-oops_output_json_schema( qg_rtpp.x )
-
-ecbuild_add_executable( TARGET  qg_rtps.x
-                        SOURCES qgRTPS.cc
-                        LIBS    qg
-                      )
-oops_output_json_schema( qg_rtps.x )
+oops_output_json_schema( qg_ensemble_inflation.x )
 
 ecbuild_add_executable( TARGET  qg_linearization_error.x
                         SOURCES qgLinearizationError.cc

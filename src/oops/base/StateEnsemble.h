@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2019-2020 UCAR.
+ * (C) Crown copyright 2024, Met Office
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -204,7 +205,7 @@ StateEnsemble<MODEL>::StateEnsemble(const Geometry_ & resol,
 
   // Loop over all ensemble members
   for (size_t jj = 0; jj < nens; ++jj) {
-    states_.emplace_back(State_(resol, params.getStateConfig(jj, myrank)));
+    states_.emplace_back(resol, params.getStateConfig(jj, myrank));
   }
   Log::trace() << "StateEnsemble:contructor done" << std::endl;
 }
@@ -216,7 +217,7 @@ StateEnsemble<MODEL>::StateEnsemble(const State_ & copyState_, const size_t & en
   : states_(), geom_(copyState_.geometry()) {
     states_.reserve(ensSize_);
     for (size_t jj = 0; jj < ensSize_; ++jj) {
-    states_.emplace_back(State_(copyState_));
+    states_.emplace_back(copyState_);
   }
   Log::trace() << "StateEnsemble:contructor done" << std::endl;
 }

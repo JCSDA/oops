@@ -33,7 +33,6 @@ template<typename MODEL> class State4D : public StateSet<MODEL> {
 
  public:
   /// The arguments define all states in 4D and their resolution
-  State4D(const std::vector<util::DateTime> &, const eckit::mpi::Comm &);
   State4D(const Geometry_ &, const eckit::Configuration &,
           const eckit::mpi::Comm & commTime = oops::mpi::myself());
   State4D(const Geometry_ &, const State4D &);
@@ -46,15 +45,6 @@ template<typename MODEL> class State4D : public StateSet<MODEL> {
   std::string classname() const {return "State4D";}
 };
 
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-State4D<MODEL>::State4D(const std::vector<util::DateTime> & times, const eckit::mpi::Comm & comm)
-  : StateSet<MODEL>(times, comm)
-{
-  ASSERT(this->is_4d());
-  Log::trace() << "State4D constructed." << std::endl;
-}
 
 // -----------------------------------------------------------------------------
 
