@@ -102,7 +102,7 @@ class ModelSpaceCovarianceBase {
   bool fullInverse_ = false;
   int fullInverseIterations_;
   double fullInverseAccuracy_;
-  std::unique_ptr<LinearVariableChange_> linVarChg_;
+  std::vector<std::unique_ptr<LinearVariableChange_>> linVarChg_;
   std::unique_ptr<Variables> anaVars_;
   std::string timername_;
 };
@@ -333,9 +333,9 @@ ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(const Geometry_ & reso
       } else {
           anaVars_.reset(new Variables());
       }
-      linVarChg_ = std::make_unique<LinearVariableChange_>(resol, *variableChangeParms);
       for (size_t jt = 0; jt < fg.size(); ++jt) {
-        linVarChg_->changeVarTraj(fg[jt], *anaVars_);
+        linVarChg_.push_back(std::make_unique<LinearVariableChange_>(resol, *variableChangeParms));
+        linVarChg_[jt]->changeVarTraj(fg[jt], *anaVars_);
       }
   }
   Log::trace() << "ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase done" << std::endl;
@@ -359,9 +359,10 @@ void ModelSpaceCovarianceBase<MODEL>::randomize(Increment4D_ & dx) const {
   util::Timer timer(timername_, "randomize");
   // TODO(notguillaume): Generalize to non-square change of variable
   this->doRandomize(dx);
-  if (linVarChg_) {
+  if (linVarChg_.size() > 0) {
+    ASSERT(linVarChg_.size() == dx.size());
     for (size_t jt = 0; jt < dx.size(); ++jt) {
-      linVarChg_->changeVarTL(dx[jt], *anaVars_);
+      linVarChg_[jt]->changeVarTL(dx[jt], *anaVars_);
     }
   }
   Log::trace() << "ModelSpaceCovarianceBase<MODEL>::randomize done" << std::endl;
@@ -374,11 +375,12 @@ void ModelSpaceCovarianceBase<MODEL>::multiply(const Increment4D_ & dxi,
                                                Increment4D_ & dxo) const {
   Log::trace() << "ModelSpaceCovarianceBase<MODEL>::multiply starting" << std::endl;
   util::Timer timer(timername_, "multiply");
-  if (linVarChg_) {
+  if (linVarChg_.size() > 0) {
+    ASSERT(linVarChg_.size() == dxi.size());
     // Copy input increment and apply adjoint variable change (to control variables)
     Increment4D_ dxiTemp(dxi);
     for (size_t jt = 0; jt < dxiTemp.size(); ++jt) {
-      linVarChg_->changeVarAD(dxiTemp[jt], *BVars_);
+      linVarChg_[jt]->changeVarAD(dxiTemp[jt], *BVars_);
     }
 
     // Create temporary output increment
@@ -389,7 +391,7 @@ void ModelSpaceCovarianceBase<MODEL>::multiply(const Increment4D_ & dxi,
 
     // Apply control to analysis/model variable change
     for (size_t jt = 0; jt < dxoTemp.size(); ++jt) {
-      linVarChg_->changeVarTL(dxoTemp[jt], *anaVars_);
+      linVarChg_[jt]->changeVarTL(dxoTemp[jt], *anaVars_);
     }
     // Copy to output increment
     dxo = dxoTemp;
@@ -412,11 +414,12 @@ void ModelSpaceCovarianceBase<MODEL>::inverseMultiply(const Increment4D_ & dxi,
     dxo.zero();
     GMRESR(dxo, dxi, *this, Id, fullInverseIterations_, fullInverseAccuracy_);
   } else {
-    if (linVarChg_) {
+    if (linVarChg_.size() > 0) {
+      ASSERT(linVarChg_.size() == dxi.size());
       // Copy input increment and apply inverse variable change (K^{-1})
       Increment4D_ dxiTemp(dxi);
       for (size_t jt = 0; jt < dxiTemp.size(); ++jt) {
-        linVarChg_->changeVarInverseTL(dxiTemp[jt], *BVars_);
+        linVarChg_[jt]->changeVarInverseTL(dxiTemp[jt], *BVars_);
       }
 
       // Create temporary output increment
@@ -427,7 +430,7 @@ void ModelSpaceCovarianceBase<MODEL>::inverseMultiply(const Increment4D_ & dxi,
 
       // Apply adjoint inverse variable change (K^T^{-1})
       for (size_t jt = 0; jt < dxoTemp.size(); ++jt) {
-        linVarChg_->changeVarInverseAD(dxoTemp[jt], *anaVars_);
+        linVarChg_[jt]->changeVarInverseAD(dxoTemp[jt], *anaVars_);
       }
 
       // Copy to output increment

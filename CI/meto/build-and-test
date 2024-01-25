@@ -21,13 +21,12 @@ trap finally EXIT
 cd "${WORKD}"
 
 # -- Configure
-cmake -B . -S "${HERE}" -DCMAKE_BUILD_TYPE=Debug -DMPI_ARGS="--oversubscribe"
+cmake -B . -S "${HERE}" -DCMAKE_BUILD_TYPE=Release
 
 # -- Build
 cmake --build . -j "${NPROC}"
 
 # -- Test
-env OMPI_ALLOW_RUN_AS_ROOT=1 OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1 \
-    ctest -j "$NPROC" --output-on-failure --test-dir './oops'
+ctest -j "$NPROC" --output-on-failure --test-dir './oops'
 
 exit

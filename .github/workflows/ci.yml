@@ -5,9 +5,15 @@ on:
   pull_request:
     branches: [develop]
 
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/develop' }}
+
+
 jobs:
   build-and-test:
     if: github.repository_owner == 'JCSDA-internal'
+    name: gnu 11.3.1 (UKMO)
     runs-on: jedi-self-hosted-ext
     steps:
       - name: pre-submit cleanup
@@ -36,10 +42,13 @@ jobs:
         run: |
           az acr login --name ngmssboxjediacr
           docker run --rm \
+            --env OMPI_ALLOW_RUN_AS_ROOT=1 \
+            --env OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1 \
+            --env OMPI_MCA_rmaps_base_oversubscribe=1 \
             --entrypoint=/usr/local/src/oops-ci/build-and-test \
             --workdir=/usr/local/src/oops-ci/ \
             --volume $PWD/CI/meto:/usr/local/src/oops-ci \
-            'ngmssboxjediacr.azurecr.io/jedibase:alma9-revert'
+            'ngmssboxjediacr.azurecr.io/jedibase:gnu-11.3.1'
 
       - name: Cleanup workspace
         working-directory: ${{github.workspace}}
