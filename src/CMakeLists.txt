@@ -372,6 +372,8 @@ oops/util/FieldSetHelpers.h
 oops/util/FieldSetOperations.cc
 oops/util/FieldSetOperations.h
 oops/util/FloatCompare.h
+oops/util/FunctionSpaceHelpers.cc
+oops/util/FunctionSpaceHelpers.h
 oops/util/formats.h
 oops/util/gatherPrint.h
 oops/util/IntSetParser.cc
@@ -945,6 +947,17 @@ ecbuild_add_test( TARGET  test_util_arrayutil
 
 ecbuild_add_test( TARGET  test_util_fieldset_helpers_and_operations
                   SOURCES test/util/FieldSetHelpersAndOperations.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_functionspace_helpers
+                  SOURCES test/util/FunctionSpaceHelpers.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_functionspace_helpers_parallel
+                  MPI     2
+                  SOURCES test/util/FunctionSpaceHelpers.cc
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 
