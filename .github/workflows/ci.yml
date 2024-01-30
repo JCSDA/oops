@@ -13,42 +13,50 @@ concurrency:
 jobs:
   build-and-test:
     if: github.repository_owner == 'JCSDA-internal'
-    name: gnu 11.3.1 (UKMO)
+    name: gnu 11.4.1 (UKMO)
     runs-on: jedi-self-hosted-ext
+    env:
+      REPO: ${{ github.event.repository.name }}
+      PR: pr-${{ github.event.number }}
+
     steps:
-      - name: pre-submit cleanup
+      - name: Pre-submit cleanup
         run: |
-          ls -la ./
           rm -fr ./CI || true
           ls -la ./
-      - name: checkout current
-        uses: actions/checkout@v3
+      - name: Checkout ${{ env.REPO }}
+        uses: actions/checkout@v4
         with:
           path: CI/meto/oops
           repository: JCSDA-internal/oops
 
-      - name: initiate bundle
+      - name: Initiate bundle
         working-directory: CI/meto
         run: ln -sf oops/CI/meto/* .
 
-      - name: checkout jedicmake
-        uses: actions/checkout@v3
+      - name: Checkout jedicmake
+        uses: actions/checkout@v4
         with:
           path: CI/meto/jedicmake
           repository: JCSDA/jedi-cmake
-          submodules: true
+          submodules: recursive
 
-      - name: build and test
+      - name: Build and Test
+        env:
+          WORKDIR: /var/tmp/${{ env.REPO }}/${{ env.PR }}
+        shell: bash
         run: |
           az acr login --name ngmssboxjediacr
+
           docker run --rm \
+            --name ${REPO}_${PR}_${GITHUB_SHA::7} \
+            --volume $PWD/CI/meto:${WORKDIR} \
             --env OMPI_ALLOW_RUN_AS_ROOT=1 \
             --env OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1 \
             --env OMPI_MCA_rmaps_base_oversubscribe=1 \
-            --entrypoint=/usr/local/src/oops-ci/build-and-test \
-            --workdir=/usr/local/src/oops-ci/ \
-            --volume $PWD/CI/meto:/usr/local/src/oops-ci \
-            'ngmssboxjediacr.azurecr.io/jedibase:gnu-11.3.1'
+            --workdir=${WORKDIR} \
+            --entrypoint=${WORKDIR}/build-and-test \
+            'ngmssboxjediacr.azurecr.io/jedibase:alma9'
 
       - name: Cleanup workspace
         working-directory: ${{github.workspace}}
