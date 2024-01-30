@@ -12,14 +12,14 @@ background error:
   maximum_condition_number: 1.0e6
   standard_deviation: 8.0e6
   vertical_length_scale: 2787.0
-analysis variables: [x]
+analysis variables: [x, q]
 model:
   name: QG
   tstep: PT1H
 model aux control: {}
 linear model:
   update tstep: PT6H
-  variables: [x]
+  variables: [x, q]
   simple linear model:
     linear model:
       trajectory:
@@ -28,7 +28,7 @@ linear model:
       variable change: Identity
       name: QgTLM
   coefficients:
-    update variables: [x]
+    update variables: [q]
     influence region size: 3
     time window:
       length: PT24H

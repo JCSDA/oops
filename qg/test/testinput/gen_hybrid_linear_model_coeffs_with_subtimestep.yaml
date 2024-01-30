@@ -18,10 +18,10 @@ hybrid linear model:
       perturbed heating: 0.1
     residual form: true
   update tstep: PT6H
-  variables: [x]
+  variables: [x, q]
   coefficients:
     influence region size: 3
-    update variables: [x]
+    update variables: [x, q]
     time window:
       begin: 2010-01-01T00:00:00Z
       length: PT24H
@@ -60,5 +60,6 @@ hybrid linear model:
       one file per task: true
   name: HTLM
 test:
-  variables: [x]
+  variables: [x, q]
   reference filename: testoutput/gen_hybrid_linear_model_coeffs_with_subtimestep.test
+  float absolute tolerance: 1.0e-16
