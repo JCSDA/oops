@@ -101,7 +101,6 @@ template <typename MODEL> class IncrementFixture : private boost::noncopyable {
   std::unique_ptr<util::DateTime>  time_;
   std::unique_ptr<bool> skipAccumTest_;
   std::unique_ptr<bool> skipDiffTest_;
-  std::unique_ptr<bool> skipRmsByLevelTest_;
 };
 
 // =============================================================================
@@ -433,21 +432,20 @@ template <typename MODEL> void testIncrementAccum() {
 }
 
 // -----------------------------------------------------------------------------
-template <typename MODEL> void testRmsByLevel() {
+template <typename MODEL> void testIncrementRmsByVariableByLevel() {
   typedef IncrementFixture<MODEL>   Test_;
   typedef oops::Increment<MODEL>    Increment_;
 
-  // Option to skip test
-  const bool skipTest = Test_::test().getBool("skip rms by level test", false);
-  if (skipTest) {
-    oops::Log::warning() << "Skipping Increment.rmsByLevel test";
-    return;
-  } else {
-      Increment_ dx1(Test_::resol(), Test_::ctlvars(), Test_::time());
-      dx1.ones();
-      std::vector<double> vec = dx1.rmsByLevel(dx1.variables()[0]);
-      std::vector<double> referenceVec(vec.size(), 1.0);
-      EXPECT(vec == referenceVec);
+  if (Test_::skipAtlas()) return;
+
+  Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
+  dx.ones();
+  for (const auto & var : dx.variables().variables()) {
+    std::vector<double> local = dx.rmsByVariableByLevel(var, false);
+    std::vector<double> global = dx.rmsByVariableByLevel(var, true);
+    std::vector<double> reference(local.size(), 1.0);
+    EXPECT(local == reference);
+    EXPECT(global == reference);
   }
 }
 
@@ -608,8 +606,8 @@ class Increment : public oops::Test {
       { testIncrementChangeResConstructorAD<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementAtlasInterface")
       { testIncrementAtlasInterface<MODEL>(); });
-    ts.emplace_back(CASE("interface/Increment/rmsByLevel")
-      { testRmsByLevel<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/rmsByVariableByLevel")
+      { testIncrementRmsByVariableByLevel<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementTriangle")
       { testIncrementTriangle<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementOpPlusEq")

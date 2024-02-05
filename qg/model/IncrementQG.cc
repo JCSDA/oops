@@ -148,20 +148,6 @@ void IncrementQG::dirac(const eckit::Configuration & config) {
   }
 }
 // -----------------------------------------------------------------------------
-std::vector<double> IncrementQG::rmsByLevel(const std::string & var) const {
-  atlas::FieldSet incrField;
-  IncrementQG::toFieldSet(incrField);
-  const auto fieldView = atlas::array::make_view<double, 2>(incrField[var]);
-  std::vector<double> vect(fieldView.shape(1), 0.0);
-  for (atlas::idx_t k = 0; k < fieldView.shape(1); ++k) {
-      for (atlas::idx_t i = 0; i < fieldView.shape(0); ++i) {
-          vect[k]+=(fieldView(i, k))*(fieldView(i, k));
-      }
-      vect[k] = sqrt(vect[k]/fieldView.shape(0));
-  }
-  return vect;
-}
-// -----------------------------------------------------------------------------
 /// ATLAS FieldSet
 // -----------------------------------------------------------------------------
 void IncrementQG::toFieldSet(atlas::FieldSet & fset) const {

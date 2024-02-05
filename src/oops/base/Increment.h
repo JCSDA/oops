@@ -73,6 +73,10 @@ class Increment : public interface::Increment<MODEL> {
   void synchronizeFields();
   void synchronizeFieldsAD();
 
+  /// Compute root-mean-square by variable by level
+  /// For preconditioning HybridLinearModel coefficient calculation
+  std::vector<double> rmsByVariableByLevel(const std::string &, const bool) const;
+
  private:
   const Geometry_ & resol_;
 };
@@ -188,6 +192,37 @@ State<MODEL> & operator+=(State<MODEL> & xx, const Increment<MODEL> & dx) {
   xx.state() += dx.increment();
   Log::trace() << "operator+=(State, Increment) done" << std::endl;
   return xx;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+std::vector<double> Increment<MODEL>::rmsByVariableByLevel(const std::string & var,
+                                                           const bool global) const {
+  Log::trace() << "Increment<MODEL>::rmsByVariableByLevel starting" << std::endl;
+  util::Timer timer("oops::Increment", "rmsByVariableByLevel");
+  if (resol_.fields().empty()) {
+    ABORT("Increment<MODEL>::rmsByVariableByLevel: requires Atlas interface");
+  }
+  const auto ownedView = atlas::array::make_view<int, 2>(resol_.fields()["owned"]);
+  const auto fieldView = atlas::array::make_view<double, 2>(fieldSet()[var]);
+  std::vector<double> rms(fieldView.shape(1), 0.0);
+  for (atlas::idx_t k = 0; k < fieldView.shape(1); ++k) {
+    size_t nOwned = 0;
+    for (atlas::idx_t i = 0; i < fieldView.shape(0); ++i) {
+      if (ownedView(i, 0) > 0) {
+        ++nOwned;
+        rms[k] += fieldView(i, k) * fieldView(i, k);
+      }
+    }
+    if (global) {
+      resol_.getComm().allReduceInPlace(nOwned, eckit::mpi::sum());
+      resol_.getComm().allReduceInPlace(rms[k], eckit::mpi::sum());
+    }
+    rms[k] = sqrt(rms[k] / nOwned);
+  }
+  return rms;
+  Log::trace() << "Increment<MODEL>::rmsByVariableByLevel done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

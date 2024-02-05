@@ -86,7 +86,6 @@ class IncrementQG : public util::Printable,
   void schur_product_with(const IncrementQG &);
   void random();
   void dirac(const eckit::Configuration &);
-  std::vector<double> rmsByLevel(const std::string &) const;
 
 /// I/O and diagnostics
   void read(const eckit::Configuration &);

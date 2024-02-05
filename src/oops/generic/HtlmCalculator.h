@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "oops/base/IncrementEnsemble.h"
+#include "oops/generic/HtlmEnsemble.h"
 #include "oops/generic/HtlmRegularization.h"
 
 namespace oops {
@@ -25,7 +26,6 @@ class HtlmCalculatorParameters : public Parameters {
 
  public:
   Parameter<HtlmRegularizationParameters> regularization{"regularization", {}, this};
-  Parameter<bool> rmsScaling{"rms scaling", true, this};
 };
 
 //------------------------------------------------------------------------------
@@ -36,6 +36,7 @@ class HtlmCalculator {
   typedef Eigen::Matrix<double, Eigen::Dynamic, 1>                 EigenVector;
   typedef Geometry<MODEL>                                          Geometry_;
   typedef HtlmCalculatorParameters<MODEL>                          Parameters_;
+  typedef HtlmEnsemble<MODEL>                                      HtlmEnsemble_;
   typedef Increment<MODEL>                                         Increment_;
   typedef IncrementEnsemble<MODEL>                                 IncrementEnsemble_;
 
@@ -44,7 +45,7 @@ class HtlmCalculator {
                  const Variables &,
                  const Geometry_ &,
                  const atlas::idx_t,
-                 const atlas::idx_t);
+                 const HtlmEnsemble_ &);
   void setOfCoeffs(const IncrementEnsemble_ &, const IncrementEnsemble_ &, atlas::FieldSet &) const;
 
  private:
@@ -57,7 +58,7 @@ class HtlmCalculator {
   const atlas::idx_t nLevelsMinusInfluenceSize_;
   const atlas::idx_t ensembleSize_;
   const atlas::idx_t vectorSize_;
-  mutable std::unordered_map<std::string, std::vector<double>> rmsVals_;
+  std::unordered_map<std::string, std::vector<double>> rmsVals_;
   std::unique_ptr<HtlmRegularization> regularization_;
 
   void computeVectorsAt(const atlas::idx_t, const atlas::idx_t,
@@ -77,11 +78,16 @@ HtlmCalculator<MODEL>::HtlmCalculator(const Parameters_ & params,
                                       const Variables & updateVars,
                                       const Geometry_ & updateGeometry,
                                       const atlas::idx_t influenceSize,
-                                      const atlas::idx_t ensembleSize)
+                                      const HtlmEnsemble_ & ensemble)
 : params_(params), updateVars_(updateVars), nLocations_(updateGeometry.functionSpace().size()),
   nLevels_(updateGeometry.variableSizes(updateVars_)[0]), influenceSize_(influenceSize),
   halfInfluenceSize_(influenceSize_ / 2), nLevelsMinusInfluenceSize_(nLevels_ - influenceSize_),
-  ensembleSize_(ensembleSize), vectorSize_(influenceSize_ * updateVars_.size()) {
+  ensembleSize_(ensemble.size()), vectorSize_(influenceSize_ * updateVars_.size()) {
+  // Calculate root-mean-squared-by-variable-by-level scaling values for preconditioning
+  for (const auto & var : updateVars_.variables()) {
+    rmsVals_.emplace(var, ensemble.getLinearEnsemble()[0].rmsByVariableByLevel(var, false));
+    for (auto & val : rmsVals_.at(var)) if (val == 0.0) val = 1.0;  // avoid divide-by-zero
+  }
   // Set up regularization
   if (params_.regularization.value().parts.value() == boost::none) {
     regularization_ = std::make_unique<HtlmRegularization>(params_.regularization.value());
@@ -99,13 +105,6 @@ template<typename MODEL>
 void HtlmCalculator<MODEL>::setOfCoeffs(const IncrementEnsemble_ & linearEnsemble,
                                         const IncrementEnsemble_ & linearErrors,
                                         atlas::FieldSet & coeffsFSet) const {
-  // Calculate root-mean-squared-by-variable-by-level scaling values for preconditioning
-  if (params_.rmsScaling) {
-    rmsVals_.clear();
-    for (const auto & var : updateVars_.variables()) {
-      rmsVals_.emplace(var, linearEnsemble[0].rmsByLevel(var));
-    }
-  }
   // Loop over locations and levels
   for (auto i = 0; i < nLocations_; i++) {
     for (auto k = 0; k < nLevels_; k++) {
@@ -141,27 +140,25 @@ void HtlmCalculator<MODEL>::computeVectorsAt(const atlas::idx_t i,
     const EigenVector coeffs = computeVector(svd, U, influenceMatrix, linearErrorVector,
                                              regularization_->getRegularizationValue(var, i, k));
     // Copy coeffs into FieldSet
-    // Throughout, values are un-normalized if influenceMatrix was normalized
+    // Throughout, values are un-normalized to account for preconditioning in makeInfluenceMatrix
     auto coeffsFieldView = atlas::array::make_view<double, 3>(coeffsFSet[var]);
     for (size_t v = 0; v < updateVars_.size(); v++) {
       if (k >= halfInfluenceSize_ && k < nLevels_ - halfInfluenceSize_) {  // general case
         for (auto s = 0; s < influenceSize_; s++) {
-          coeffsFieldView(i, k, v * influenceSize_ + s) = (params_.rmsScaling) ?
-            coeffs[v * influenceSize_ + s] / rmsVals_.at(updateVars_[v])[k - halfInfluenceSize_ + s]
-            : coeffs[v * influenceSize_ + s];
+          coeffsFieldView(i, k, v * influenceSize_ + s)
+            = coeffs[v * influenceSize_ + s]
+              / rmsVals_.at(updateVars_[v])[k - halfInfluenceSize_ + s];
         }
       } else if (k < halfInfluenceSize_) {  // bottom of model
         for (auto s = 0; s < influenceSize_; s++) {
-          coeffsFieldView(i, k, v * influenceSize_ + s) = (params_.rmsScaling) ?
-            coeffs[v * influenceSize_ + s] / rmsVals_.at(updateVars_[v])[s]
-            : coeffs[v * influenceSize_ + s];
+          coeffsFieldView(i, k, v * influenceSize_ + s)
+            = coeffs[v * influenceSize_ + s] / rmsVals_.at(updateVars_[v])[s];
         }
       } else {  // top of model
         for (auto s = 0; s < influenceSize_; s++) {
-          coeffsFieldView(i, k, v * influenceSize_ + s) = (params_.rmsScaling) ?
-            coeffs[v * influenceSize_ + s]
-              / rmsVals_.at(updateVars_[v])[nLevels_ - influenceSize_ + s]
-            : coeffs[v * influenceSize_ + s];
+          coeffsFieldView(i, k, v * influenceSize_ + s)
+            = coeffs[v * influenceSize_ + s]
+              / rmsVals_.at(updateVars_[v])[nLevels_ - influenceSize_ + s];
         }
       }
     }
@@ -176,30 +173,27 @@ const typename HtlmCalculator<MODEL>::EigenMatrix HtlmCalculator<MODEL>::makeInf
                                                   const atlas::idx_t k,
                                                   const IncrementEnsemble_ & linearEnsemble) const {
   EigenMatrix influenceMatrix(vectorSize_, ensembleSize_);
-  // Throughout, values are (optionally) normalized by typical magnitudes (from rmsVals_) as a
-  // preconditioner for singular value decomposition
+  // Throughout, values are normalized by typical magnitudes (from rmsVals_) as preconditioning
   for (auto m = 0; m < ensembleSize_; m++) {
     for (size_t v = 0; v < updateVars_.size(); v++) {
       const auto linearEnsembleArray
         = atlas::array::make_view<double, 2>(linearEnsemble[m].fieldSet()[updateVars_[v]]);
       if (k >= halfInfluenceSize_ && k < nLevels_ - halfInfluenceSize_) {  // general case
         for (auto s = 0; s < influenceSize_; s++) {
-          influenceMatrix(v * influenceSize_ + s, m) = (params_.rmsScaling) ?
-            linearEnsembleArray(i, k - halfInfluenceSize_ + s)
-              / rmsVals_.at(updateVars_[v])[k - halfInfluenceSize_ + s]
-            : linearEnsembleArray(i, k - halfInfluenceSize_ + s);
+          influenceMatrix(v * influenceSize_ + s, m)
+            = linearEnsembleArray(i, k - halfInfluenceSize_ + s)
+              / rmsVals_.at(updateVars_[v])[k - halfInfluenceSize_ + s];
         }
       } else if (k < halfInfluenceSize_) {  // bottom of model
         for (auto s = 0; s < influenceSize_; s++) {
-          influenceMatrix(v * influenceSize_ + s, m) = (params_.rmsScaling) ?
-            linearEnsembleArray(i, s) / rmsVals_.at(updateVars_[v])[s] : linearEnsembleArray(i, s);
+          influenceMatrix(v * influenceSize_ + s, m)
+            = linearEnsembleArray(i, s) / rmsVals_.at(updateVars_[v])[s];
         }
       } else {  // top of model
         for (auto s = 0; s < influenceSize_; s++) {
-          influenceMatrix(v * influenceSize_ + s, m) = (params_.rmsScaling) ?
-            linearEnsembleArray(i, nLevels_ - influenceSize_ + s)
-              / rmsVals_.at(updateVars_[v])[nLevels_ - influenceSize_ + s]
-            : linearEnsembleArray(i, nLevels_ - influenceSize_ + s);
+          influenceMatrix(v * influenceSize_ + s, m)
+            = linearEnsembleArray(i, nLevels_ - influenceSize_ + s)
+              / rmsVals_.at(updateVars_[v])[nLevels_ - influenceSize_ + s];
         }
       }
     }

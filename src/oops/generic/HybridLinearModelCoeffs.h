@@ -20,7 +20,6 @@
 #include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/HtlmCalculator.h"
-#include "oops/generic/HtlmEnsemble.h"
 #include "oops/util/FieldSetHelpers.h"
 
 namespace oops {
@@ -162,7 +161,7 @@ void HybridLinearModelCoeffs<MODEL>::generate(SimpleLinearModel_ & simpleLinearM
                                               const Variables & vars) {
   HtlmEnsemble_ ensemble(*params_.ensemble.value(), simpleLinearModel, updateGeometry_, vars);
   HtlmCalculator_ calculator(*params_.calculator.value(), updateVars_, updateGeometry_,
-                             influenceSize_, ensemble.size());
+                             influenceSize_, ensemble);
   util::DateTime time(timeWindow_.start());
   while (time < timeWindow_.end()) {
     time += updateTstep_;

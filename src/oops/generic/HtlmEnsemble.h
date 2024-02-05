@@ -101,6 +101,7 @@ class HtlmEnsemble{
   void step(const util::Duration &, SimpleLinearModel_ &);
 
   IncrementEnsemble_ & getLinearEnsemble() {return linearEnsemble_;}
+  const IncrementEnsemble_ & getLinearEnsemble() const {return linearEnsemble_;}
   const IncrementEnsemble_ & getLinearErrors() const {return linearErrors_;}
   const size_t size() const {return ensembleSize_;}
 

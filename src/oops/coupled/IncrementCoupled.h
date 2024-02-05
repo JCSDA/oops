@@ -125,9 +125,6 @@ class IncrementCoupled : public util::Printable {
   void dirac(const eckit::Configuration &);
   void ones();
   double norm() const;
-  std::vector<double> rmsByLevel(const std::string &) const {
-    throw eckit::NotImplemented(Here());
-  }
 
   /// Randomize both components of the increment (assuming they are
   /// uncorrelated).
