@@ -28,6 +28,8 @@ LocalizationMatrixQG.h
 ModelBias.h
 ModelBiasCovariance.h
 ModelBiasIncrement.h
+ModelData.cc
+ModelData.h
 ModelQG.cc
 ModelQG.h
 ObsBias.cc

@@ -25,6 +25,7 @@ class ChangeVarTLADQG;
 class ModelBias;
 class ModelBiasIncrement;
 class ModelBiasCovariance;
+class ModelData;
 
 // copy of QgTraits with a different name for use with qg-qg
 // coupled applications
@@ -48,6 +49,7 @@ struct QgTraits2 {
   typedef qg::ModelBias             ModelAuxControl;
   typedef qg::ModelBiasIncrement    ModelAuxIncrement;
   typedef qg::ModelBiasCovariance   ModelAuxCovariance;
+  typedef qg::ModelData             ModelData;
 };
 
 }  // namespace qg

@@ -33,6 +33,8 @@ set( _l95_srcs
         ModelBiasCorrection.h
         ModelBiasCovariance.cc
         ModelBiasCovariance.h
+        ModelData.cc
+        ModelData.h
         ModelL95.h
         ModelL95.cc
         ModelTrajectory.cc

@@ -12,6 +12,7 @@
 #include <string>
 
 #include "oops/base/Geometry.h"
+#include "oops/base/Variables.h"
 
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
@@ -31,6 +32,7 @@ class ModelData : public  util::Printable,
 
  public:
   static const std::string classname() {return "oops::ModelData";}
+  static const Variables defaultVariables() {return ModelData_::defaultVariables();}
 
   explicit ModelData(const Geometry_ &);
   virtual ~ModelData();

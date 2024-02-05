@@ -22,8 +22,33 @@
 #include "oops/base/Geometry.h"
 #include "oops/base/Variables.h"
 #include "oops/coupled/UtilsCoupled.h"
+#include "oops/interface/ModelData.h"
 #include "oops/util/gatherPrint.h"
 #include "oops/util/Printable.h"
+
+// -----------------------------------------------------------------------------
+
+namespace detail {
+
+oops::Variables modelVariables(const std::string modelName,
+                               const oops::Variables & defaultModelVars,
+                               const eckit::Configuration & config)
+{
+  oops::Variables returnVars;
+  std::string includeVarsKey(modelName + " include variables");
+  if (config.has(includeVarsKey)) {
+    returnVars = oops::Variables(config.getStringVector(includeVarsKey));
+  } else {
+    std::string excludeVarsKey(modelName + " exclude variables");
+    returnVars = defaultModelVars;
+    if (config.has(excludeVarsKey)) {
+        returnVars -= oops::Variables(config.getStringVector(excludeVarsKey));
+    }
+  }
+  return returnVars;
+}
+
+}  // namespace detail
 
 namespace oops {
 
@@ -35,8 +60,6 @@ class GeometryCoupled : public util::Printable {
  public:
   static std::string name1() {return MODEL1::name();}
   static std::string name2() {return MODEL2::name();}
-  static std::string vars1() {return MODEL1::name() + " variables";}
-  static std::string vars2() {return MODEL2::name() + " variables";}
 
   GeometryCoupled(const eckit::Configuration &, const eckit::mpi::Comm &);
 
@@ -90,14 +113,22 @@ GeometryCoupled<MODEL1, MODEL2>::GeometryCoupled(const eckit::Configuration & co
   : geom1_(), geom2_(), vars_(2),
     commPrints_(nullptr), parallel_(config.getBool("parallel", false)), mymodel_(-1)
 {
-  if (config.has(vars1())) vars_[0] = Variables(config, vars1());
-  if (config.has(vars2())) vars_[1] = Variables(config, vars2());
+  vars_[0] = ::detail::modelVariables(name1(),
+                                      oops::ModelData<MODEL1>::defaultVariables(),
+                                      config);
+  vars_[1] = ::detail::modelVariables(name2(),
+                                      oops::ModelData<MODEL2>::defaultVariables(),
+                                      config);
   // check that the same variable isn't specified in both models' variables
   Variables commonvars = vars_[0];
   commonvars.intersection(vars_[1]);
   if (commonvars.size() > 0) {
-    throw eckit::BadParameter("Variables for different components of coupled "
-          "model can not overlap", Here());
+    std::string errMsg = "Coupled model variable lists have overlap. "
+                          "Use yaml to exclude these variables from one model:\n";
+    for (auto variableName : commonvars.variables()) {
+        errMsg += variableName + "\n";
+    }
+    throw eckit::BadParameter(errMsg, Here());
   }
   if (parallel_) {
     const int mytask = comm.rank();

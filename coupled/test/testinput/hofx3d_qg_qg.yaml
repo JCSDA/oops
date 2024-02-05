@@ -10,8 +10,8 @@ geometry:  # coupled geometry (qg and qg)
     nx: 40
     ny: 20
     depths: [4500.0, 5500.0]
-  QG variables: ['x','z']
-  QG 2 variables: ['u','v']
+  QG include variables: ['x','z']
+  QG 2 include variables: ['u','v']
 state:
   QG:
     date: 2010-01-01T06:00:00Z

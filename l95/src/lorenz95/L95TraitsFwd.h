@@ -29,6 +29,7 @@ class IdChangeVarTLADL95;
 class ModelBias;
 class ModelBiasCorrection;
 class ModelBiasCovariance;
+class ModelData;
 
 class NormGradientL95;
 
@@ -69,6 +70,7 @@ struct L95Traits {
   typedef lorenz95::ModelBias              ModelAuxControl;
   typedef lorenz95::ModelBiasCorrection    ModelAuxIncrement;
   typedef lorenz95::ModelBiasCovariance    ModelAuxCovariance;
+  typedef lorenz95::ModelData              ModelData;
 };
 
 struct L95ObsTraits {

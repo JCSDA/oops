@@ -27,6 +27,7 @@
 #include "oops/qg/ModelBias.h"
 #include "oops/qg/ModelBiasCovariance.h"
 #include "oops/qg/ModelBiasIncrement.h"
+#include "oops/qg/ModelData.h"
 #include "oops/qg/ObsBias.h"
 #include "oops/qg/ObsBiasCovariance.h"
 #include "oops/qg/ObsBiasIncrement.h"

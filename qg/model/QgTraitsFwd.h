@@ -29,6 +29,7 @@ class ChangeVarTLADQG;
 class ModelBias;
 class ModelBiasIncrement;
 class ModelBiasCovariance;
+class ModelData;
 
 class ObsSpaceQG;
 class ObsVecQG;
@@ -66,6 +67,7 @@ struct QgTraits {
   typedef qg::ModelBias             ModelAuxControl;
   typedef qg::ModelBiasIncrement    ModelAuxIncrement;
   typedef qg::ModelBiasCovariance   ModelAuxCovariance;
+  typedef qg::ModelData             ModelData;
 };
 
 struct QgObsTraits {
