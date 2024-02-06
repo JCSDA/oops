@@ -122,6 +122,7 @@ list( APPEND qg_testinput
   testinput/obs_aux_increment.yaml
   testinput/obs_aux_covariance.yaml
   testinput/obsvector.yaml
+  testinput/rescale_ens_perts.yaml
   testinput/state.yaml
   testinput/truth.yaml
   testinput/truth_5level_pert_heat.yaml
@@ -204,6 +205,7 @@ list( APPEND qg_testoutput
   testoutput/make_obs_4d_biased.test
   testoutput/make_single-obs_3d.test
   testoutput/make_single-obs_4d_12h.test
+  testoutput/rescale_ens_perts.test
   testoutput/truth.test
   testoutput/truth_5level_pert_heat.test
   testoutput/uniform_field_hybrid.test
@@ -625,6 +627,10 @@ ecbuild_add_test( TARGET test_qg_ens_inflation_states
                   COMMAND  qg_ensemble_inflation.x
                   TEST_DEPENDS test_qg_gen_ens_pert_B test_qg_eda_4dvar)
 
+ecbuild_add_test( TARGET test_qg_rescale_ens_perts
+                  ARGS testinput/rescale_ens_perts.yaml
+                  COMMAND  qg_rescale_ens_perts.x
+                  TEST_DEPENDS test_qg_4densvar_single-obs_no_loc)
 #####################################################################
 # other tests
 #####################################################################

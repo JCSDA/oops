@@ -307,6 +307,7 @@ oops/mpi/mpi.cc
 oops/mpi/mpi.h
 
 oops/runs/AddIncrement.h
+oops/runs/RescaleEnsPerts.h
 oops/runs/AdjointForecast.h
 oops/runs/Application.cc
 oops/runs/Application.h

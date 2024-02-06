@@ -1,0 +1,8 @@
+Sample Increments member 1 (time adjusted):
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=-5.585640690042123e+06, Max=1.0347045392145514e+07, RMS=2.875913333841924e+06
+Rescaled Perturbation Member 1:
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=-9.081851116237557e+05, Max=8.089677690933787e+05, RMS=2.286081111660961e+05
