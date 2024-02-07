@@ -747,18 +747,23 @@ void readFieldSet(const eckit::mpi::Comm & comm,
     filepath.append(commRank);
   }
 
+  // NetCDF file path
+  std::string ncfilepath = filepath;
+  ncfilepath.append(".");
+  ncfilepath.append(config.getString("netcdf extension", "nc"));
+
   // Clear local fieldset
   fset.clear();
 
   // Special case: FieldSet composed of rank 3 Fields
   // Currently supported only when reading one file per task
   int tempretval, tempncid;
-  if ((tempretval = nc_open((filepath + ".nc").c_str(), NC_NOWRITE, &tempncid))) ERR(tempretval);
+  if ((tempretval = nc_open(ncfilepath.c_str(), NC_NOWRITE, &tempncid))) ERR(tempretval);
   tempretval = nc_inq_att(tempncid, NC_GLOBAL, "rank 3 Fields", NULL, NULL);
   if (tempretval == NC_NOERR) {  // i.e. if flag exists
     if ((tempretval = nc_close(tempncid))) ERR(tempretval);
     ASSERT(oneFilePerTask);
-    readRank3FieldSet(fspace, variableSizes, vars, fset, filepath);
+    readRank3FieldSet(fspace, variableSizes, vars, fset, ncfilepath);
     return;
   }
   if ((tempretval = nc_close(tempncid))) ERR(tempretval);
@@ -782,9 +787,6 @@ void readFieldSet(const eckit::mpi::Comm & comm,
   if (oneFilePerTask) {
     // Case 1: one file per MPI task
 
-    // NetCDF file path
-    std::string ncfilepath = filepath;
-    ncfilepath.append(".nc");
     oops::Log::info() << "Info     : Reading file: " << ncfilepath << std::endl;
 
     // Open NetCDF file
@@ -855,10 +857,6 @@ void readFieldSet(const eckit::mpi::Comm & comm,
         // NetCDF IDs
         int ncid, retval, var_id[vars.size()];
 
-        // NetCDF file path
-        std::string ncfilepath = filepath;
-        ncfilepath.append(".");
-        ncfilepath.append(config.getString("netcdf extension", "nc"));
         oops::Log::info() << "Info     : Reading file: " << ncfilepath << std::endl;
 
         // Open NetCDF file
@@ -900,9 +898,6 @@ void readFieldSet(const eckit::mpi::Comm & comm,
         // NetCDF IDs
         int ncid, retval, var_id[vars.size()];
 
-        // NetCDF file path
-        std::string ncfilepath = filepath;
-        ncfilepath.append(".nc");
         oops::Log::info() << "Info     : Reading file: " << ncfilepath << std::endl;
 
         // Open NetCDF file
@@ -956,13 +951,13 @@ void readRank3FieldSet(const atlas::FunctionSpace & fspace,
                        const std::vector<size_t> & variableSizes,
                        const std::vector<std::string> & vars,
                        atlas::FieldSet & fset,
-                       const std::string & filepath) {
+                       const std::string & ncfilepath) {
   // Initialize NetCDF return value and IDs
   int retval, ncid, dimid, varid[vars.size()];
   size_t rank3Size;
 
-  oops::Log::info() << "Info     : Reading file: " << filepath + ".nc" << std::endl;
-  if ((retval = nc_open((filepath + ".nc").c_str(), NC_NOWRITE, &ncid))) ERR(retval);
+  oops::Log::info() << "Info     : Reading file: " << ncfilepath << std::endl;
+  if ((retval = nc_open(ncfilepath.c_str(), NC_NOWRITE, &ncid))) ERR(retval);
 
   for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
     // Get size of vector dimension
@@ -1049,6 +1044,11 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
     filepath.append(commRank);
   }
 
+  // NetCDF file path
+  std::string ncfilepath = filepath;
+  ncfilepath.append(".");
+  ncfilepath.append(config.getString("netcdf extension", "nc"));
+
   // Missing value
   const double msvalr = util::missingValue<double>();
 
@@ -1056,7 +1056,7 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
   // Currently supported only when writing one file per task
   if (fset.field(vars[0]).rank() == 3) {
     ASSERT(oneFilePerTask);
-    writeRank3FieldSet(fset, vars, fspace, filepath, msvalr);
+    writeRank3FieldSet(fset, vars, fspace, ncfilepath, msvalr);
     return;
   }
 
@@ -1067,9 +1067,6 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
   if (oneFilePerTask) {
     // Case 1: one file per MPI task
 
-    // NetCDF file path
-    std::string ncfilepath = filepath;
-    ncfilepath.append(".nc");
     oops::Log::info() << "Info     : Writing file: " << ncfilepath << std::endl;
 
     // Get number of nodes
@@ -1197,9 +1194,6 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
       fs.gather(localData, globalData);
 
       if (comm.rank() == 0) {
-        // NetCDF file path
-        std::string ncfilepath = filepath;
-        ncfilepath.append(".nc");
         oops::Log::info() << "Info     : Writing file: " << ncfilepath << std::endl;
 
         // Get grid
@@ -1304,9 +1298,6 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
       fs.gather(localData, globalData);
 
       if (comm.rank() == 0) {
-        // NetCDF file path
-        std::string ncfilepath = filepath;
-        ncfilepath.append(".nc");
         oops::Log::info() << "Info     : Writing file: " << ncfilepath << std::endl;
 
         // Get global number of nodes
@@ -1393,7 +1384,7 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
 void writeRank3FieldSet(const atlas::FieldSet & fset,
                         const std::vector<std::string> & vars,
                         const atlas::FunctionSpace & fspace,
-                        const std::string & filepath,
+                        const std::string & ncfilepath,
                         const double & msvalr) {
   // Initialize NetCDF return value and IDs
   int retval, ncid, nb_nodes_id, d1D_id[1], d3D_id[3], lon_id, lat_id,
@@ -1407,8 +1398,8 @@ void writeRank3FieldSet(const atlas::FieldSet & fset,
   }
 
   // Begin definition mode
-  oops::Log::info() << "Info     : Writing file: " << filepath + ".nc" << std::endl;
-  if ((retval = nc_create((filepath + ".nc").c_str(), NC_CLOBBER, &ncid))) ERR(retval);
+  oops::Log::info() << "Info     : Writing file: " << ncfilepath << std::endl;
+  if ((retval = nc_create(ncfilepath.c_str(), NC_CLOBBER, &ncid))) ERR(retval);
 
   // Create horizontal dimension, assign to dimension arrays
   if ((retval = nc_def_dim(ncid, "nb_nodes", nb_nodes, &nb_nodes_id))) ERR(retval);
