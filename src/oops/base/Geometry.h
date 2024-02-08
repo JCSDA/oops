@@ -97,11 +97,6 @@ class Geometry : public interface::Geometry<MODEL> {
   }
   ///@}
 
-  atlas::util::KDTree<size_t>::ValueList closestPoints(const double lat, const double lon,
-                                                       const int npoints) const {
-    return gdata_.closestPoints(lat, lon, npoints);
-  }
-
  private:
   const eckit::mpi::Comm * timeComm_;   /// pointer to the MPI communicator in time
   GeometryData gdata_;
@@ -153,9 +148,6 @@ template <typename MODEL>
 void Geometry<MODEL>::setTrees() {
   std::vector<double> lats;
   std::vector<double> lons;
-  this->latlon(lats, lons, true);
-  gdata_.setLocalTree(lats, lons);
-
   this->latlon(lats, lons, false);
   gdata_.setGlobalTree(lats, lons);
 }

@@ -7,12 +7,12 @@
 
 #pragma once
 
-#include <memory>
 #include <string>
 #include <vector>
 
 #include "atlas/field.h"
 #include "atlas/functionspace.h"
+#include "atlas/mesh.h"
 #include "atlas/util/Geometry.h"
 #include "atlas/util/KDTree.h"
 
@@ -21,10 +21,6 @@ namespace mpi {
 class Comm;
 }  // namespace mpi
 }  // namespace eckit
-
-namespace stripack {
-class Triangulation;
-}  // namespace stripack
 
 namespace oops {
 
@@ -35,10 +31,8 @@ class GeometryData {
   GeometryData(const atlas::FunctionSpace &, const atlas::FieldSet &,
                const bool, const eckit::mpi::Comm &);
 
-  ~GeometryData();  // defined in .cc file, where stripack::Triangulation is complete
+  ~GeometryData() = default;
 
-// Local tree requires lats and lons with halo
-  void setLocalTree(const std::vector<double> &, const std::vector<double> &);
 // Global tree requires lats and lons without halo
   void setGlobalTree(const std::vector<double> &, const std::vector<double> &);
 
@@ -46,7 +40,6 @@ class GeometryData {
   GeometryData & operator=(const GeometryData &) = delete;
 
   int closestTask(const double, const double) const;
-  atlas::util::KDTree<size_t>::ValueList closestPoints(const double, const double, const int) const;
 
   /// Identifies the three model grid points defining the triangle containing (lat,lon).
   ///
@@ -64,22 +57,19 @@ class GeometryData {
   bool levelsAreTopDown() const {return topdown_;}
 
  private:
+  void setMeshAndTriangulation();
+  void setLocalTree();
+
   atlas::FunctionSpace fspace_;
   atlas::FieldSet fset_;
   const eckit::mpi::Comm * comm_;
   bool topdown_;
 
+  atlas::Mesh mesh_;
+  std::vector<bool> firstTriangulationOfQuadsIsDelaunay_;
   const atlas::Geometry earth_;
-  atlas::util::IndexKDTree localTree_;
-  atlas::util::IndexKDTree globalTree_;
-  bool loctree_;
-  bool glotree_;
-
-  const atlas::Geometry unitsphere_;
-  std::vector<double> lats_;
-  std::vector<double> lons_;
-  // Triangulation is a bit expensive (and not valid for models like L95), so compute on demand
-  mutable std::unique_ptr<const stripack::Triangulation> triangulation_;
+  atlas::util::IndexKDTree globalNodeTree_;  // JEDI grid nodes = model cell-centers
+  atlas::util::IndexKDTree localCellCenterTree_;  // JEDI cell centers
 };
 
 // -----------------------------------------------------------------------------

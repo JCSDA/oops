@@ -31,7 +31,6 @@
 #include "oops/base/Increment.h"
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
-#include "oops/external/stripack/stripack.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
 #include "oops/util/Timer.h"
@@ -336,20 +335,19 @@ void UnstructuredInterpolator::computeUnmaskedInterpMatrix(
     indices = detail::permute_array(indices, permutation);
     baryCoords = detail::permute_array(baryCoords, permutation);
 
-    // STRIPACK produces unnormalized barycentric coords, so normalize
     double wsum = 0.0;
     for (size_t j = 0; j < nstencil_; ++j) {
       wsum += baryCoords[j];
+      ASSERT(baryCoords[j] >= 0.0 && baryCoords[j] <= 1.0);
     }
-    ASSERT(wsum > 0.0);
+    ASSERT(fabs(wsum - 1.0) < 1e-14);
 
     // Store indices and weights into InterpMatrix datastructure
     std::vector<size_t> & interp_is = interp_matrices_.at(unmaskedName_).stencils[jloc];
     std::vector<double> & interp_ws = interp_matrices_.at(unmaskedName_).weights[jloc];
     for (size_t j = 0; j < nstencil_; ++j) {
       interp_is[j] = indices[j];
-      interp_ws[j] = baryCoords[j] / wsum;
-      ASSERT(interp_ws[j] >= 0.0 && interp_ws[j] <= 1.0);
+      interp_ws[j] = baryCoords[j];
     }
   }
 }
