@@ -1,6 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * (C) Crown Copyright 2023, the Met Office.
+ * (C) Crown Copyright 2024, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -147,6 +147,10 @@ double DRPLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, Ctr
   // beta_{0} = sqrt( z_{0}^T r_{0} )
   double beta = sqrt(dot_product(zz, vv));
   const double beta0 = beta;
+  double normReduction = 1.0;
+
+  printNormReduction(0, beta0, normReduction);
+  printQuadraticCostFunction(0, costJ0, costJ0Jb, costJ0JoJc);
 
   // v_{1} = r_{0} / beta_{0}
   vv *= 1/beta;
@@ -161,8 +165,6 @@ double DRPLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, Ctr
   zvecs_.emplace_back(std::unique_ptr<CtrlInc_>(new CtrlInc_(zz)));
   // vvecs[0] = v_{1} ---> for re-orthogonalization
   vvecs_.emplace_back(std::unique_ptr<CtrlInc_>(new CtrlInc_(vv)));
-
-  double normReduction = 1.0;
 
   Log::info() << std::endl;
   for (int jiter = 0; jiter < maxiter; ++jiter) {

@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2024, the Met Office.
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -93,6 +94,8 @@ double FGMRES(VECTOR & x, const VECTOR & b,
   double bnrm2  = sqrt(dot_product(b, b));
   double rnrm2  = sqrt(dot_product(r, r));
   double normReduction = rnrm2 / bnrm2;
+
+  printNormReduction(0, rnrm2, normReduction);
 
   // Initialiaze (maxiter + 1) by maxiter matrix H
   H.resize(maxiter);

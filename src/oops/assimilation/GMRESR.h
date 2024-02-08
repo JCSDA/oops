@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2024, the Met Office.
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -79,6 +80,8 @@ double GMRESR(VECTOR & xx, const VECTOR & bb,
   double rrnorm = sqrt(dot_product(rr, rr));
   double cdotr = rrnorm;
   const double rrnorm0 = rrnorm;
+
+  printNormReduction(0, rrnorm, normReduction);
 
   if (rrnorm > smallres) {
     Log::info() << std::endl;

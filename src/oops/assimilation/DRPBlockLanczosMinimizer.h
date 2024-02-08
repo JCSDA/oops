@@ -1,6 +1,6 @@
 /*
  * (C) Copyright 2018 UCAR
- * (C) Crown Copyright 2023, the Met Office.
+ * (C) Crown Copyright 2024, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -153,6 +153,9 @@ double DRPBlockLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh,
 // -----------------------------------------------------------------------------------------------
   B.multiply(rr, zz);  // z_0 = B * r_0
   norm0 = sqrt(dot_product(zz, rr));
+
+  printNormReduction(0, norm0, normReduction);
+  printQuadraticCostFunction(0, costJ0Jb + costJ0JoJc, costJ0Jb, costJ0JoJc);
 
   // QR decomposition
   mqrgs(zz, vv, beta0, rr, gestag, CommGeo, temp1, temp2);  // [z_1, v_1, b0] = qr[r_0, v_0]

@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2024, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -139,6 +140,8 @@ double RPCGMinimizer<MODEL, OBS>::solve(Dual_ & vv, double & vvp, Dual_ & rr,
   double normReduction = 1.0;
   double dotw0r0 = dotwr;
   double dotwr_old = 0.0;
+
+  printNormReduction(0, sqrt(dotw0r0), normReduction);
 
   v = rr;
   v *= 1/sqrt(dotwr);

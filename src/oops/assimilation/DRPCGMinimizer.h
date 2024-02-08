@@ -1,6 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * (C) Crown Copyright 2023, the Met Office.
+ * (C) Crown Copyright 2024, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -160,6 +160,9 @@ double DRPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_
   double normReduction = 1.0;
   double rdots = dotRr0;
   double rdots_old = 0.0;
+
+  printNormReduction(0, sqrt(dotRr0), normReduction);
+  printQuadraticCostFunction(0, costJ0, costJ0Jb, costJ0JoJc);
 
   vvecs.push_back(rr);
   zvecs.push_back(zz);

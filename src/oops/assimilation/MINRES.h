@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2024, the Met Office.
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -88,6 +89,8 @@ double MINRES(VECTOR & x, const VECTOR & b,
   double normReduction = 1.0;
   double ynrm2 = sqrt(dot_product(y, y));
   double beta  = sqrt(dot_product(y, r));
+
+  printNormReduction(0, ynrm2, normReduction);
 
   double oldb = 0;
   double epsln = 0;

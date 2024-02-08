@@ -1,6 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * (C) Crown Copyright 2023, the Met Office.
+ * (C) Crown Copyright 2024, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -109,6 +109,8 @@ double DRGMRESRMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlIn
 
   double rrnorm0  = sqrt(dot_product(rr, rr));
   double normReduction = 1.0;
+
+  printNormReduction(0, rrnorm0, normReduction);
 
   Log::info() << std::endl;
   for (int jiter = 0; jiter < maxiter; ++jiter) {

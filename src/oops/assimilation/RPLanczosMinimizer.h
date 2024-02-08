@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2024, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -148,6 +149,9 @@ double RPLanczosMinimizer<MODEL, OBS>::solve(Dual_ & vv, double & vvp, Dual_ & r
   double normReduction = 1.0;
   double beta0 = sqrt(dot_product(rr, tt) + rrp*ttp);
   double beta = 0.0;
+
+  printNormReduction(0, beta0, normReduction);
+  printQuadraticCostFunction(0, costJ0, costJ0Jb, costJ0JoJc);
 
   vold.zero();
   v = rr;

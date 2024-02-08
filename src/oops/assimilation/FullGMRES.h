@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2024, the Met Office.
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -92,6 +93,8 @@ double FullGMRES(VECTOR & xx, const VECTOR & bb, const AMATRIX & A,
 
   double znrm2 = sqrt(dot_product(zz, zz));
   double normReduction = 1.0;
+
+  printNormReduction(0, znrm2, normReduction);
 
   zz *= 1/znrm2;
   VV.push_back(zz);

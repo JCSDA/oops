@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2024, the Met Office.
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -92,6 +93,8 @@ double PCG(VECTOR & x, const VECTOR & b,
   double normReduction = 1.0;
   double rdots = dotRr0;
   double rdots_old = 0.0;
+
+  printNormReduction(0, sqrt(rdots), normReduction);
 
   v = r;
   v  *= 1/sqrt(dotRr0);

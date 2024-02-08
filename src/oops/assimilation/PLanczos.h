@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2024, the Met Office.
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -91,6 +92,8 @@ double PLanczos(VECTOR & xx, const VECTOR & bb,
   double normReduction = 1.0;
   double beta0 = sqrt(dot_product(rr, zz));
   double beta = 0.0;
+
+  printNormReduction(0, beta0, normReduction);
 
   VECTOR vv(rr);
   vv  *= 1/beta0;
