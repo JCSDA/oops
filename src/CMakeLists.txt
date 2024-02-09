@@ -551,6 +551,7 @@ test/util/algorithms.h
 test/util/ConfigFunctions.h
 test/util/ConfigHelpers.h
 test/util/TimeWindow.h
+test/util/CompareStates.h
 )
 
 list (APPEND oops_fheader_files
