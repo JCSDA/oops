@@ -678,7 +678,7 @@ ecbuild_add_test( TARGET test_qg_3dvar_single-obs_hyb_field
                   OMP 2
                   ARGS testinput/3dvar_single-obs_hyb_field.yaml
                   COMMAND  qg_4dvar.x
-                  TEST_DEPENDS test_qg_forecast test_qg_make_single-obs_3d test_qg_gen_ens_pert_B )
+                  TEST_DEPENDS test_qg_forecast test_qg_make_single-obs_3d test_qg_gen_ens_pert_B test_qg_uniform_field_hybrid )
 
 ecbuild_add_test( TARGET test_qg_3dvar_single-obs_loc_3d
                   OMP 2
