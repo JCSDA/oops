@@ -28,7 +28,20 @@ using atlas::Point3;
 bool pointOutsideCircumcircle(const Point3 & point, const Point3 & a,
                               const Point3 & b, const Point3 & c) {
   atlas::PointXYZ center = Point3::cross(a, b) + Point3::cross(b, c) + Point3::cross(c, a);
-  center *= Point3::norm(a) / Point3::norm(center);  // scale center to lie on sphere
+  const double normA = Point3::norm(a);
+  const double normCenter = Point3::norm(center);
+
+  // Protect against the degenerate case where points coincide and the triangle has zero area.
+  // This can occur for grids with singularities. If the triangle has zero area, then the
+  // circumcircle is not well defined anyway, so we arbitrarily choose to return false. By
+  // returning early, we avoid a div-by-zero when re-scaling `center` below.
+  // Note: 0.5*norm(center) gives the triangle area; take sqrt to go back to linear units.
+  if (sqrt(0.5 * normCenter) < 1e-14 * normA) {
+    return false;
+  }
+
+  // Scale center to lie on sphere
+  center *= normA / normCenter;
 
   // Check if point is outside circumcircle by comparing chord distances from center
   const double chordPoint = Point3::distance(point, center);
@@ -40,7 +53,7 @@ bool checkFirstTriangulationIsDelaunay(const Point3 & p0, const Point3 & p1,
                                        const Point3 & p2, const Point3 & p3) {
   // First triangulation has triangles (p0,p1,p2) and (p2,p3,p0)
   // The Delaunay condition is that no other nodes lie in a triangle's circumcircle, so we check
-  // that p3 is NOT in circumcirle of (p0,p1,p2) AND that p1 is NOT in circumcirle or (p2,p3,p0).
+  // that p3 is NOT in circumcircle of (p0,p1,p2) AND that p1 is NOT in circumcircle of (p2,p3,p0).
   return pointOutsideCircumcircle(p3, p0, p1, p2) && pointOutsideCircumcircle(p1, p2, p3, p0);
 }
 }  // namespace detail
@@ -105,8 +118,19 @@ bool GeometryData::containingTriangleAndBarycentricCoords(const double lat, cons
     const atlas::Point3 b = makePoint3(cell, nodeB);
     const atlas::Point3 c = makePoint3(cell, nodeC);
     const atlas::interpolation::element::Triag3D tri(a, b, c);
+    const double sqrtArea = sqrt(tri.area());
+
+    // Protect against the degenerate case where points coincide and the triangle has zero area.
+    // This can occur for grids with singularities. If the triangle has zero area, we return early
+    // and make sure it does not contain the target point.
+    // Note: atlas computes XYZ mesh points using Earth geometry, so the 3D triangle lives on the
+    // Earth's surface. We take the sqrt to go back to linear units, and compare to Earth's radius.
+    if (sqrtArea < 1e-14 * earth_.radius()) {
+      return false;
+    }
+
     const atlas::interpolation::method::Ray ray(point);
-    const double edgeEpsilon = 1e-15 * sqrt(tri.area());
+    const double edgeEpsilon = 1e-15 * sqrtArea;
     const auto intersect = tri.intersects(ray, edgeEpsilon);
     if (intersect) {
       indices[0] = connectivity(cell, nodeA);
