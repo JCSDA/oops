@@ -37,6 +37,7 @@ class StateCoupled : public util::Printable {
   StateCoupled(const GeometryCoupled_ &, const Variables &, const util::DateTime &);
   StateCoupled(const GeometryCoupled_ &, const eckit::Configuration &);
   StateCoupled(const GeometryCoupled_ &, const StateCoupled &);
+  StateCoupled(const Variables &, const StateCoupled &);
   StateCoupled(const StateCoupled &);
   virtual ~StateCoupled();
   StateCoupled & operator=(const StateCoupled &);
@@ -148,6 +149,17 @@ StateCoupled<MODEL1, MODEL2>::StateCoupled(const GeometryCoupled_ & resol,
   if (other.xx1_) xx1_ = std::make_unique<State<MODEL1>>(resol.geometry1(), *other.xx1_);
   if (other.xx2_) xx2_ = std::make_unique<State<MODEL2>>(resol.geometry2(), *other.xx2_);
   Log::trace() << "StateCoupled::StateCoupled interpolated done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL1, typename MODEL2>
+StateCoupled<MODEL1, MODEL2>::StateCoupled(const oops::Variables & vars, const StateCoupled & other)
+  : StateCoupled(other) {
+  Log::trace() << "StateCoupled::StateCoupled varchange starting" << std::endl;
+  throw eckit::NotImplemented("StateCoupled::StateCoupled(const oops::Variables &,"
+    " const StateCoupled &) not implemented", Here());
+  Log::trace() << "StateCoupled::StateCoupled varchange done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

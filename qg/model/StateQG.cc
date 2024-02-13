@@ -75,6 +75,13 @@ StateQG::StateQG(const GeometryQG & resol, const StateQG & other)
   oops::Log::trace() << "StateQG::StateQG created by interpolation." << std::endl;
 }
 // -----------------------------------------------------------------------------
+StateQG::StateQG(const oops::Variables & vars, const StateQG & other)
+  : fields_(new FieldsQG(*other.fields_, vars))
+{
+  ASSERT(fields_);
+  oops::Log::trace() << "StateQG::StateQG created by copying selected variables." << std::endl;
+}
+// -----------------------------------------------------------------------------
 StateQG::StateQG(const StateQG & other)
   : fields_(new FieldsQG(*other.fields_))
 {

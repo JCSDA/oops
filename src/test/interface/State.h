@@ -24,6 +24,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "oops/base/Geometry.h"
+#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
 #include "oops/mpi/mpi.h"
@@ -40,20 +41,6 @@
 #include "test/TestEnvironment.h"
 
 namespace test {
-
-// -----------------------------------------------------------------------------
-
-/// Options used by testStateReadWrite().
-template <typename MODEL>
-class StateWriteReadParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(StateWriteReadParameters, Parameters)
-
- public:
-  /// Options used by the code writing the state to a file.
-  oops::RequiredParameter<eckit::LocalConfiguration> write{"state write", this};
-  /// Options used by the code reading the state back in.
-  oops::RequiredParameter<eckit::LocalConfiguration> read{"state read", this};
-};
 
 // -----------------------------------------------------------------------------
 
@@ -81,6 +68,12 @@ class StateTestParameters : public oops::Parameters {
   oops::OptionalParameter<double> normGeneratedState{"norm generated state", this};
 
   oops::OptionalParameter<eckit::LocalConfiguration> writeReadTest{"write then read test", this};
+
+  /// Flag indicating whether to run the test of the variable change State constructor
+  oops::Parameter<bool> testVarConstructor{"test variable change constructor", true, this};
+
+  /// Variables to pass to the variable change State constructor in the test
+  oops::OptionalParameter<oops::Variables> toVariables{"construct to variables", this};
 };
 
 // -----------------------------------------------------------------------------
@@ -183,6 +176,19 @@ template <typename MODEL> void testStateConstructors() {
   EXPECT(oops::is_close(xx4.norm(), norm, tol));
   EXPECT(xx4.validTime() == vt);
   EXPECT(xx4.variables() == xx1->variables());
+
+// Test State(const Variables &, const State &) constructor (unless told not to)
+  const bool testVarChangeConstructor = Test_::test().testVarConstructor.value();
+  if (testVarChangeConstructor)
+  {
+    EXPECT(Test_::test().toVariables.value() != boost::none);
+    const auto & toVars = Test_::test().toVariables.value().value();
+    EXPECT(toVars.size() > 0);
+    State_ xx5(toVars, *xx1);
+    EXPECT(xx5.norm() > 0.0);
+    EXPECT(xx5.validTime() == vt);
+    EXPECT(xx5.variables() == toVars);
+  }
 }
 
 // -----------------------------------------------------------------------------

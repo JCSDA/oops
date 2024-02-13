@@ -53,6 +53,7 @@ class StateL95 : public util::Printable,
   StateL95(const Resolution &, const oops::Variables &, const util::DateTime &);
   StateL95(const Resolution &, const eckit::Configuration &);
   StateL95(const Resolution &, const StateL95 &);
+  StateL95(const oops::Variables &, const StateL95 &);
   StateL95(const StateL95 &);
   virtual ~StateL95();
   StateL95 & operator=(const StateL95 &);

@@ -77,7 +77,6 @@ template<typename MODEL, typename OBS> class CostFctFGAT : public CostFunction<M
   const Geometry_ resol_;
   Model_ model_;
   const Variables ctlvars_;
-  std::unique_ptr<VarCha_> an2model_;
   mutable bool fgat_;
   State_ * hackBG_;
   State_ * hackFG_;
@@ -97,8 +96,6 @@ CostFctFGAT<MODEL, OBS>::CostFctFGAT(const eckit::Configuration & config,
     fgat_(false), hackBG_(nullptr), hackFG_(nullptr), saver_()
 {
   Log::trace() << "CostFctFGAT::CostFctFGAT start" << std::endl;
-
-  an2model_ = std::make_unique<VarCha_>(config.getSubConfiguration("variable change"), resol_);
 
   this->setupTerms(config);  // Background is read here
 
@@ -179,6 +176,7 @@ void CostFctFGAT<MODEL, OBS>::doLinearize(const Geometry_ & res, const eckit::Co
   std::vector<std::string> antime = {timeWindow_.midpoint().toString()};
   eckit::LocalConfiguration halfwin;
   halfwin.set("times", antime);
+  halfwin.set("variables", hackBG_->variables().variables());
   saver_.reset(new StateSaver<State_>(halfwin));
   pp.enrollProcessor(saver_);
 
@@ -191,8 +189,6 @@ template<typename MODEL, typename OBS>
 void CostFctFGAT<MODEL, OBS>::finishLinearize() {
   Log::trace() << "CostFctFGAT::finishLinearize start" << std::endl;
   ASSERT(saver_->getState().validTime() == timeWindow_.midpoint());
-  Variables anvars(hackBG_->variables());
-  an2model_->changeVarInverse(saver_->getState(), anvars);
   *hackBG_ = saver_->getState();
   *hackFG_ = saver_->getState();
   fgat_ = false;

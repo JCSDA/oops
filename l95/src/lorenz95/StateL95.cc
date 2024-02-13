@@ -68,6 +68,8 @@ StateL95::StateL95(const Resolution & resol, const StateL95 & xx)
   oops::Log::trace() << "StateL95::StateL95 created by interpolation." << std::endl;
 }
 // -----------------------------------------------------------------------------
+StateL95::StateL95(const oops::Variables & vars, const StateL95 & xx) : StateL95(xx) {}
+// -----------------------------------------------------------------------------
 StateL95::StateL95(const StateL95 & xx)
   : fld_(xx.fld_), time_(xx.time_), vars_(xx.vars_)
 {

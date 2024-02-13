@@ -49,6 +49,9 @@ class State : public interface::State<MODEL> {
   /// Copies \p other State, changing its resolution to \p geometry
   State(const Geometry_ & resol, const State & other);
 
+  /// Copies \p other State, changing its variables to \p vars
+  State(const Variables & vars, const State & other);
+
   State(const State &);
   State & operator=(const State &);
 
@@ -87,6 +90,13 @@ State<MODEL>::State(const Geometry_ & resol, const eckit::Configuration & conf) 
 template<typename MODEL>
 State<MODEL>::State(const Geometry_ & resol, const State & other) :
   interface::State<MODEL>(resol, other), resol_(resol)
+{}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+State<MODEL>::State(const Variables & vars, const State & other) :
+  interface::State<MODEL>(vars, other), resol_(other.resol_)
 {}
 
 // -----------------------------------------------------------------------------

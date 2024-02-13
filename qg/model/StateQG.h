@@ -47,6 +47,7 @@ class StateQG : public util::Printable,
   StateQG(const GeometryQG &, const oops::Variables &, const util::DateTime &);  // Is it used?
   StateQG(const GeometryQG &, const eckit::Configuration &);
   StateQG(const GeometryQG &, const StateQG &);
+  StateQG(const oops::Variables &, const StateQG &);
   StateQG(const StateQG &);
   virtual ~StateQG();
   StateQG & operator=(const StateQG &);
