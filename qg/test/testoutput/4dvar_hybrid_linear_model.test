@@ -4,7 +4,7 @@ CostJo   : Nonlinear Jo(Wind) = 3.9916238187509396e+02, nobs = 800, Jo/n = 4.989
 CostJo   : Nonlinear Jo(WSpeed) = 1.8218747524878518e+02, nobs = 400, Jo/n = 4.5546868812196295e-01, err = 1.2000000000000000e+01
 CostJcDFI: Nonlinear Jc = 1.3218776669033552e-02
 CostFunction: Nonlinear J = 9.9636504855020485e+02
-DRIPCGMinimizer: reduction in residual norm = 1.4768545888321680e-01
+DRPCGMinimizer: reduction in residual norm = 1.2098728168349955e-01
 CostFunction::addIncrement: Analysis: 
   Valid time: 2010-01-01T00:00:00Z
   Resolution = 40, 20, 5
@@ -17,7 +17,7 @@ CostJo   : Nonlinear Jo(Wind) = 3.9376614921185188e+02, nobs = 800, Jo/n = 4.922
 CostJo   : Nonlinear Jo(WSpeed) = 1.8174723471599063e+02, nobs = 400, Jo/n = 4.5436808678997659e-01, err = 1.2000000000000000e+01
 CostJcDFI: Nonlinear Jc = 4.1669412478059289e-02
 CostFunction: Nonlinear J = 9.8289989260527932e+02
-DRIPCGMinimizer: reduction in residual norm = 1.1665409843504999e-01
+DRPCGMinimizer: reduction in residual norm = 9.1523294869729890e-02
 CostFunction::addIncrement: Analysis: 
   Valid time: 2010-01-01T00:00:00Z
   Resolution = 40, 20, 5

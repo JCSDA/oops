@@ -31,7 +31,7 @@ cost function:
       obs operator: {}
 variational:
   minimizer:
-    algorithm: DRIPCG
+    algorithm: DRPCG
   iterations:
   - geometry:
       resol: 40

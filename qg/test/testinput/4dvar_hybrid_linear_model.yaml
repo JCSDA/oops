@@ -67,7 +67,7 @@ cost function:
       type: DolphChebyshev
 variational:
   minimizer:
-    algorithm: DRIPCG
+    algorithm: DRPCG
   iterations:
   - gradient norm reduction: 1.0e-10
     ninner: 10

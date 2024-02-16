@@ -63,7 +63,7 @@ cost function:
         obs type: WSpeed
 variational:
   minimizer:
-    algorithm: DRIPCG
+    algorithm: DRPCG
   iterations:
   - diagnostics:
       departures: ombg0

@@ -67,7 +67,7 @@ cost function:
         obs perturbations seed: 3
 variational:
   minimizer:
-    algorithm: DRIPCG
+    algorithm: DRPCG
   iterations:
   - diagnostics:
       departures: ombg

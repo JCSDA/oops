@@ -31,7 +31,7 @@ cost function:
 
 variational:
   minimizer:
-    algorithm: DRIPCG
+    algorithm: DRPCG
   iterations:
   - ninner: 10
     gradient norm reduction: 1e-10

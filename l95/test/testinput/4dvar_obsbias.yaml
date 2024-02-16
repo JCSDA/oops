@@ -41,7 +41,7 @@ cost function:
       cutoff: PT3H
 variational:
   minimizer:
-    algorithm: DRIPCG
+    algorithm: DRPCG
   iterations:
   - ninner: 20
     gradient norm reduction: 1e-10

@@ -3,7 +3,7 @@ CostJo   : Nonlinear Jo(Stream) = 7.8208865637018889e+03, nobs = 600, Jo/n = 1.3
 CostJo   : Nonlinear Jo(Wind) = 1.0656078435655625e+03, nobs = 600, Jo/n = 1.7760130726092707e+00, err = 6.0000000000000000e+00
 CostJo   : Nonlinear Jo(WSpeed) = 1.4432829246148532e+02, nobs = 300, Jo/n = 4.8109430820495108e-01, err = 1.2000000000000000e+01
 CostFunction: Nonlinear J = 9.0308226997289366e+03
-DRIPCGMinimizer: reduction in residual norm = 1.2121089686368951e-01
+DRPCGMinimizer: reduction in residual norm = 3.1224901542138937e-02
 CostFunction::addIncrement: Analysis: 
   Valid time: 2010-01-01T12:00:00Z
   Resolution = 40, 20, 2
@@ -15,7 +15,7 @@ CostJo   : Nonlinear Jo(Stream) = 4.8009225115465853e+02, nobs = 600, Jo/n = 8.0
 CostJo   : Nonlinear Jo(Wind) = 2.0272440801369737e+02, nobs = 600, Jo/n = 3.3787401335616229e-01, err = 6.0000000000000000e+00
 CostJo   : Nonlinear Jo(WSpeed) = 3.0359224135712445e+01, nobs = 300, Jo/n = 1.0119741378570815e-01, err = 1.2000000000000000e+01
 CostFunction: Nonlinear J = 7.4681398956021042e+02
-DRIPCGMinimizer: reduction in residual norm = 5.3991096955200246e-01
+DRPCGMinimizer: reduction in residual norm = 4.7867716546254124e-01
 CostFunction::addIncrement: Analysis: 
   Valid time: 2010-01-01T12:00:00Z
   Resolution = 40, 20, 2

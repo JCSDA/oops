@@ -78,7 +78,7 @@ cost function:
     depths: [4500.0, 5500.0]
 variational:
   minimizer:
-    algorithm: DRIPCG
+    algorithm: DRPCG
   iterations:
   - ninner: 10
     gradient norm reduction: 1.0e-10
