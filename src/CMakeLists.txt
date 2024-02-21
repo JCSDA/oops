@@ -182,6 +182,7 @@ oops/base/StateEnsemble4D.h
 oops/base/StateInfo.h
 oops/base/StateSaver.h
 oops/base/StateSet.h
+oops/base/StateSetSaver.h
 oops/base/StateWriter.h
 oops/base/TrajectorySaver.h
 oops/base/TrivialSamplingMethodSelector.h
@@ -312,6 +313,7 @@ oops/runs/ConvertState.h
 oops/runs/ConvertToLatLon.h
 oops/runs/DiffStates.h
 oops/runs/EnsembleApplication.h
+oops/runs/EnsembleGETKFApplication.h
 oops/runs/EnsembleInflation.h
 oops/runs/EnsMeanAndVariance.h
 oops/runs/EnsRecenter.h

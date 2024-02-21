@@ -329,17 +329,18 @@ void IncrementSet<MODEL>::schur_product_with(const IncrementSet<MODEL> & other) 
 template<typename MODEL>
 IncrementSet<MODEL> IncrementSet<MODEL>::ens_mean() const {
   Log::trace() << "IncrementSet::ens_mean start" << std::endl;
-  if (this->commEns().size() > 1) {
-    throw eckit::NotImplemented("IncrementSet::ens_mean not implemented for distributed ensembles",
-                                Here());
-  }
-
   IncrementSet<MODEL> mean(this->geometry(), this->variables(), this->times(), this->commTime());
   const double fact = 1.0 / static_cast<double>(this->ens_size());
   for (size_t jt = 0; jt < this->local_time_size(); ++jt) {
     for (size_t jm = 0; jm < this->local_ens_size(); ++jm) {
+      // get sum of values on local ensemble
       mean[jt] += (*this)(jt, jm);
     }
+    if (this->commEns().size() > 1) {
+      // sum up values across ensemble communicator
+      oops::mpi::allReduceInPlace(this->commEns(), mean[jt]);
+    }
+    // Divide by total number of members to get average
     mean[jt] *= fact;
   }
 

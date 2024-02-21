@@ -43,11 +43,13 @@ class StateSet : public DataSetBase< State<MODEL>, Geometry<MODEL> > {
   StateSet(const Geometry_ &, const eckit::Configuration &,
            const eckit::mpi::Comm & commTime = oops::mpi::myself(),
            const eckit::mpi::Comm & commEns = oops::mpi::myself());
+  // create a StateSet variable from a std::vector of State variables distributed
+  // across communicators
   StateSet(const Geometry_ &, const StateSet &);
   StateSet(const StateSet &) = default;
-  virtual ~StateSet() = default;
-
+  // Calculate the ensemble mean and return a new StateSet variable
   StateSet ens_mean() const;
+  virtual ~StateSet() = default;
 
  private:
   std::string classname() const {return "StateSet";}
@@ -74,8 +76,8 @@ StateSet<MODEL>::StateSet(const Geometry_ & resol,
   Log::trace() << "StateSet::StateSet" << std::endl;
 }
 
-// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 template<typename MODEL>
 StateSet<MODEL>::StateSet(const Geometry_ & resol, const eckit::Configuration & config,
                           const eckit::mpi::Comm & commTime, const eckit::mpi::Comm & commEns)
@@ -83,6 +85,7 @@ StateSet<MODEL>::StateSet(const Geometry_ & resol, const eckit::Configuration & 
 {
   Log::trace() << "StateSet::StateSet read start " << config << std::endl;
 
+// get vector of local configurations
   std::vector<eckit::LocalConfiguration> locals = this->configure(config);
 
   size_t indx = 0;
@@ -118,24 +121,35 @@ StateSet<MODEL>::StateSet(const Geometry_ & resol, const StateSet & other)
 template<typename MODEL>
 StateSet<MODEL> StateSet<MODEL>::ens_mean() const {
   Log::trace() << "StateSet::ens_mean start" << std::endl;
-  if (this->commEns().size() > 1) {
-    throw eckit::NotImplemented("StateSet::ens_mean not implemented for distributed ensembles",
-                                Here());
-  }
+  StateSet<MODEL> mean = StateSet<MODEL>(this->geometry(), (*this));
 
-  StateSet<MODEL> mean(this->geometry(), this->variables(), this->times(), this->commTime());
   const double fact = 1.0 / static_cast<double>(this->ens_size());
-  for (size_t jt = 0; jt < this->local_time_size(); ++jt) {
-    for (size_t jm = 0; jm < this->local_ens_size(); ++jm) {
-      mean(jt, 0).accumul(fact, (*this)(jt, jm));
-    }
-  }
 
+  for (size_t jt = 0; jt < this->local_time_size(); ++jt) {
+    size_t dataSize = (*this)(jt, 0).serialSize()-3;  // would be good to make this a method
+    // Put States from each local ensemble member in a vector
+    std::vector<std::vector<double> > zz(this->local_ens_size());
+    for (size_t jm = 0; jm < this->local_ens_size(); ++jm) {
+      // serialize local ensembles
+      (*this)(jt, jm).serialize(zz[jm]);
+    }
+
+// add up all the state values on the local communicator and put them in zz[0][:]
+    for (size_t jm = 1; jm < this->local_ens_size(); ++jm) {
+      for ( int i = 0; i < dataSize; ++i) zz[0][i] += zz[jm][i];
+    }
+    if (this->commEns().size() > 1) {
+      // if commEns > 1, then sum up across commEns communicators
+      this->commEns().allReduceInPlace(&(zz[0].front()), dataSize, eckit::mpi::Operation::SUM);
+    }
+    // Divide by total number of members to get average
+    for ( int i = 0; i < dataSize; ++i) zz[0][i] *= fact;
+
+// deserialize back to stateSet
+    size_t indx = 0;
+    mean[jt].deserialize(zz[0], indx);
+  }
   Log::trace() << "StateSet::ens_mean done" << std::endl;
   return mean;
 }
-
-// -----------------------------------------------------------------------------
-
-
 }  // namespace oops
