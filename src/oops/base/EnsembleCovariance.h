@@ -85,7 +85,7 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL>,
   void doInverseMultiply(const Increment4D_ &, Increment4D_ &) const override;
 
   std::unique_ptr<IncrementSet<MODEL>> ens_;
-  std::unique_ptr<LinearVariableChange_> ensTrans_;
+  std::vector<std::unique_ptr<LinearVariableChange_>> ensTrans_;
   Variables ensTransInputVars_;
   Variables ensTransOutputVars_;
   std::unique_ptr<Localization_> loc_;
@@ -119,7 +119,6 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Var
   if (conf.has("ensemble transform")) {
     // Create ensemble transform
     const auto & ensTransParams = *params.ensTrans.value();
-    ensTrans_.reset(new LinearVariableChange_(resol, ensTransParams));
 
     // Define localization variables as ensemble transform input variables
     // If missing, default is vars (ensemble variables)
@@ -135,8 +134,11 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Var
       ASSERT(ensTransOutputVars_ <= vars);
     }
 
-    // Set trajectory
-    ensTrans_->changeVarTraj(fg[0], ensTransOutputVars_);   // change var per time????????
+    // Set trajectories
+    for (size_t jt = 0; jt < fg.size(); ++jt) {
+      ensTrans_.push_back(std::make_unique<LinearVariableChange_>(resol, ensTransParams));
+      ensTrans_[jt]->changeVarTraj(fg[jt], ensTransOutputVars_);
+    }
   }
 
   if (conf.has("inflation value") || conf.has("inflation field")) {
@@ -152,6 +154,7 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Var
     const double inflationValue = conf.getDouble("inflation value", 1.0);
 
     // Loop over members
+    ASSERT(ens_->local_time_size() == fg.size());
     for (size_t jt = 0; jt < ens_->local_time_size(); ++jt) {
       for (size_t jm = 0; jm < ens_->local_ens_size(); ++jm) {
         // Apply local inflation
@@ -163,8 +166,8 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Var
         if (inflate) (*ens_)(jt, jm) *= inflationValue;
 
         // Apply ensemble transform inverse
-        if (ensTrans_) {
-          ensTrans_->changeVarInverseTL((*ens_)(jt, jm), ensTransInputVars_);
+        if (ensTrans_.size() > 0) {
+          ensTrans_[jt]->changeVarInverseTL((*ens_)(jt, jm), ensTransInputVars_);
         }
       }
     }
@@ -176,7 +179,7 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Var
     locconf.set("date", xb[0].validTime().toString());
     locconf.set("time rank", resol.timeComm().rank());
     oops::Variables locVars(vars);
-    if (ensTrans_) {
+    if (ensTrans_.size() > 0) {
       locVars -= ensTransOutputVars_;
       locVars += ensTransInputVars_;
     }
@@ -219,9 +222,10 @@ void EnsembleCovariance<MODEL>::doRandomize(Increment4D_ & dx) const {
   }
 
   // Ensemble transform
-  if (ensTrans_) {
+  if (ensTrans_.size() > 0) {
+    ASSERT(ensTrans_.size() == dx.local_time_size());
     for (size_t jt = 0; jt < dx.local_time_size(); ++jt) {
-      ensTrans_->changeVarTL(dx[jt], ensTransOutputVars_);
+      ensTrans_[jt]->changeVarTL(dx[jt], ensTransOutputVars_);
     }
   }
 
@@ -235,9 +239,10 @@ void EnsembleCovariance<MODEL>::doMultiply(const Increment4D_ & dxi, Increment4D
   Increment4D_ dxiTmp(dxi);
 
   // Ensemble transform adjoint
-  if (ensTrans_) {
+  if (ensTrans_.size() > 0) {
+    ASSERT(ensTrans_.size() == ens_->local_time_size());
     for (size_t jt = 0; jt < ens_->local_time_size(); ++jt) {
-      ensTrans_->changeVarAD(dxiTmp[jt], ensTransInputVars_);
+      ensTrans_[jt]->changeVarAD(dxiTmp[jt], ensTransInputVars_);
     }
   }
 
@@ -272,9 +277,9 @@ void EnsembleCovariance<MODEL>::doMultiply(const Increment4D_ & dxi, Increment4D
   }
 
   // Ensemble transform
-  if (ensTrans_) {
+  if (ensTrans_.size() > 0) {
     for (size_t jt = 0; jt < ens_->local_time_size(); ++jt) {
-      ensTrans_->changeVarTL(dxoTmp[jt], ensTransOutputVars_);
+      ensTrans_[jt]->changeVarTL(dxoTmp[jt], ensTransOutputVars_);
     }
   }
 
