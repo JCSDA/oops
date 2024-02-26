@@ -17,13 +17,9 @@
 #include <cstring>     // strerror
 #include <iostream>    // cout, cerr
 
-// The behavior of boost::stacktrace is controlled by preprocessor macros. See
-// https://www.boost.org/doc/libs/1_76_0/doc/html/stacktrace/configuration_and_build.html
-// for details. The correct libs and macros are set using CMake (in backtrace_deps.cmake).
-#include <boost/stacktrace.hpp>  // boost stacktraces
-
-#include "oops/util/abor1_cpp.h"  // ABORT macro
-#include "oops/util/Logger.h"     // required for oops::Log
+#include "oops/util/abor1_cpp.h"   // ABORT macro
+#include "oops/util/Logger.h"      // required for oops::Log
+#include "oops/util/Stacktrace.h"  // required for stacktrace_current
 
 void trap_sigfpe(const int);                    // user function traps SIGFPE
 void sigfpe_handler(int, siginfo_t *, void *);  // called when relevant SIGFPE occurs
@@ -99,7 +95,7 @@ void sigfpe_handler(int sig, siginfo_t *info, void *ucontext) {
   }
 
   if (do_abort) {
-    LOGIT_STDERR << boost::stacktrace::stacktrace() << std::endl;
+    LOGIT_STDERR << stacktrace_current() << std::endl;
     ABORT("A SIGFPE was encountered. If available, see frame #2 in the stacktrace for details.");
   }
 }

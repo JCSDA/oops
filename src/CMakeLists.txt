@@ -546,8 +546,14 @@ endif()
 # Stack traces on floating point exceptions
 include( backtrace_deps )
 
-target_link_libraries( ${PROJECT_NAME} PUBLIC ${OOPS_STACKTRACE_${OOPS_STACKTRACE_PROVIDER}_LIBS} )
-target_compile_definitions( ${PROJECT_NAME} PRIVATE ${OOPS_STACKTRACE_${OOPS_STACKTRACE_PROVIDER}_DEFS} )
+target_link_libraries( ${PROJECT_NAME} PUBLIC ${OOPS_STACKTRACE_LIBS_${OOPS_STACKTRACE_PROVIDER}} )
+target_compile_definitions( ${PROJECT_NAME} PRIVATE ${OOPS_STACKTRACE_DEFS_${OOPS_STACKTRACE_PROVIDER}} )
+# It's okay to link libbacktrace twice.
+# The first time may be set in CMAKE_REQUIRED_LIBRARIES - see cmake/backtrace_deps.cmake.
+# By using target_link_libraries, CMake knows to add this to the RPATH.
+if (STACKTRACE_PROVIDER MATCHES "backtrace")
+	target_link_libraries( ${PROJECT_NAME} PUBLIC backtrace)
+endif()
 
 #Configure include directory layout for build-tree to match install-tree
 set(OOPS_BUILD_DIR_INCLUDE_PATH ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/include)
