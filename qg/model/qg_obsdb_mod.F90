@@ -564,7 +564,7 @@ type(column_data),pointer :: jcol
 character(len=50) :: stime
 
 ! Create NetCDF file
-call ncerr(nf90_create(trim(self%fileout),or(nf90_clobber,nf90_netcdf4),ncid))
+call ncerr(nf90_create(trim(self%fileout),ior(nf90_clobber,nf90_netcdf4),ncid))
 
 ! Define dimensions
 call ncerr(nf90_def_dim(ncid,'nstrmax',50,nstrmax_id))

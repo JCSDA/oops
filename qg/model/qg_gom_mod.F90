@@ -686,7 +686,7 @@ filename = str
 call fckit_log%info('qg_gom_write_file: writing '//trim(filename))
 
 ! Create NetCDF file
-call ncerr(nf90_create(trim(filename)//'.nc',or(nf90_clobber,nf90_64bit_offset),ncid))
+call ncerr(nf90_create(trim(filename)//'.nc',ior(nf90_clobber,nf90_64bit_offset),ncid))
 
 ! Define dimensions
 call ncerr(nf90_def_dim(ncid,'nobs',self%nobs,nobs_id))

@@ -943,7 +943,7 @@ call fckit_log%info('qg_fields_write_file: writing '//trim(filename))
 call datetime_to_string(vdate,sdate)
 
 ! Create NetCDF file
-call ncerr(nf90_create(trim(filename),or(nf90_clobber,nf90_64bit_offset),ncid))
+call ncerr(nf90_create(trim(filename),ior(nf90_clobber,nf90_64bit_offset),ncid))
 
 ! Define dimensions
 call ncerr(nf90_def_dim(ncid,'nx',fld%geom%nx,nx_id))
