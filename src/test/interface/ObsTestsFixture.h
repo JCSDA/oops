@@ -32,8 +32,7 @@ class ObsTestsFixture : private boost::noncopyable {
 
  public:
   /// accessors to observation window
-  static const util::DateTime & tbgn() {return *getInstance().tbgn_;}
-  static const util::DateTime & tend() {return *getInstance().tend_;}
+  static const util::TimeWindow & timeWindow() {return *getInstance().timeWindow_;}
   /// accessor to a jj-th obs type config
   static eckit::LocalConfiguration & config(size_t jj) {return getInstance().configs_.at(jj);}
   /// accessor to a all obs spaces
@@ -43,18 +42,16 @@ class ObsTestsFixture : private boost::noncopyable {
   static void reset() {
     obspace().save();
     getInstance().ospaces_.reset();
-    getInstance().tend_.reset();
-    getInstance().tbgn_.reset();
+    getInstance().timeWindow_.reset();
   }
 
  private:
-  ObsTestsFixture(): comm_(oops::mpi::world()), tbgn_(), tend_(), ospaces_() {
-    tbgn_.reset(new util::DateTime(TestEnvironment::config().getString("window begin")));
-    tend_.reset(new util::DateTime(TestEnvironment::config().getString("window end")));
-    configs_ = TestEnvironment::config().getSubConfigurations("observations");
-    eckit::LocalConfiguration obsconfig =
-           TestEnvironment::config().getSubConfiguration("observations");
-    ospaces_.reset(new ObsSpaces_(obsconfig, comm_, *tbgn_, *tend_));
+  ObsTestsFixture(): comm_(oops::mpi::world()), timeWindow_(), ospaces_() {
+    const eckit::LocalConfiguration conf(TestEnvironment::config());
+    timeWindow_.reset(new util::TimeWindow(eckit::LocalConfiguration(conf, "time window")));
+    configs_ = conf.getSubConfigurations("observations");
+    eckit::LocalConfiguration obsconfig(conf, "observations");
+    ospaces_.reset(new ObsSpaces_(obsconfig, comm_, *timeWindow_));
   }
 
   ~ObsTestsFixture() {}
@@ -65,8 +62,7 @@ class ObsTestsFixture : private boost::noncopyable {
   }
 
   const eckit::mpi::Comm & comm_;
-  std::unique_ptr<const util::DateTime> tbgn_;
-  std::unique_ptr<const util::DateTime> tend_;
+  std::unique_ptr<const util::TimeWindow> timeWindow_;
   std::vector<eckit::LocalConfiguration> configs_;
   std::unique_ptr<ObsSpaces_> ospaces_;
 };

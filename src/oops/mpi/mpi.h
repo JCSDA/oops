@@ -12,6 +12,7 @@
 
 #include <Eigen/Dense>
 
+
 #include <string>
 #include <utility>
 #include <vector>
@@ -35,6 +36,8 @@ const eckit::mpi::Comm & world();
 
 /// Communicator with each MPI task by itself
 const eckit::mpi::Comm & myself();
+
+const eckit::mpi::Comm & clone(const eckit::mpi::Comm &);
 
 // ------------------------------------------------------------------------------------------------
 
@@ -60,6 +63,70 @@ void receive(const eckit::mpi::Comm & comm, SERIALIZABLE & recvobj,
   eckit::mpi::Status status = comm.receive(recvbuf.data(), sz, source, tag);
   size_t ii = 0;
   recvobj.deserialize(recvbuf, ii);
+  ASSERT(ii == sz);
+}
+
+// ------------------------------------------------------------------------------------------------
+
+template <typename SERIALIZABLE>
+void sendReceiveReplace(const eckit::mpi::Comm & comm, SERIALIZABLE & sendrecvobj,
+                        const int dest, const int sendtag, const int source, const int recvtag) {
+  util::Timer timer("oops::mpi", "sendReceiveReplace");
+  size_t sz = sendrecvobj.serialSize();
+  std::vector<double> sendrecvbuf;
+  sendrecvobj.serialize(sendrecvbuf);
+  eckit::mpi::Status status = comm.sendReceiveReplace(sendrecvbuf.data(), sz,
+                                                      dest, sendtag, source, recvtag);
+  size_t ii = 0;
+  sendrecvobj.deserialize(sendrecvbuf, ii);
+  ASSERT(ii == sz);
+}
+
+// ------------------------------------------------------------------------------------------------
+
+template <typename SERIALIZABLE>
+void broadcast(const eckit::mpi::Comm & comm, SERIALIZABLE & obj, const size_t root) {
+  util::Timer timer("oops::mpi", "broadcast");
+  size_t sz = obj.serialSize();
+  std::vector<double> buf;
+  if (comm.rank() == root) {
+    obj.serialize(buf);
+  } else {
+    buf.resize(sz);
+  }
+  comm.broadcast(buf, root);
+  size_t ii = 0;
+  obj.deserialize(buf, ii);
+  ASSERT(ii == sz);
+}
+
+// ------------------------------------------------------------------------------------------------
+
+template <typename SERIALIZABLE>
+void reduceInPlace(const eckit::mpi::Comm & comm, SERIALIZABLE & obj, const size_t root) {
+  util::Timer timer("oops::mpi", "reduceInPlace");
+  size_t sz = obj.serialSize();
+  std::vector<double> buf;
+  obj.serialize(buf);
+  comm.reduceInPlace(buf.data(), sz, eckit::mpi::sum(), root);
+  size_t ii = 0;
+  if (comm.rank() == root) {
+    obj.deserialize(buf, ii);
+    ASSERT(ii == sz);
+  }
+}
+
+// ------------------------------------------------------------------------------------------------
+
+template <typename SERIALIZABLE>
+void allReduceInPlace(const eckit::mpi::Comm & comm, SERIALIZABLE & obj) {
+  util::Timer timer("oops::mpi", "allReduceInPlace");
+  size_t sz = obj.serialSize();
+  std::vector<double> buf;
+  obj.serialize(buf);
+  comm.allReduceInPlace(buf.data(), sz, eckit::mpi::sum());
+  size_t ii = 0;
+  obj.deserialize(buf, ii);
   ASSERT(ii == sz);
 }
 
@@ -195,6 +262,58 @@ void allGatherv(const eckit::mpi::Comm & comm, std::vector<std::string> &x);
 /// On output, `x` is set to the sum of the values of `x` passed to this function
 /// on all ranks lower than the calling rank (and to 0 on rank 0).
 void exclusiveScan(const eckit::mpi::Comm &comm, size_t &x);
+
+// ------------------------------------------------------------------------------------------------
+// MPI broadcast utilities based on eckit broadcast.
+
+/// \brief broadcast a vector variable via the eckit broadcast
+/// \param comm eckit communicator group
+/// \param vectorVar vector for broadcasting
+/// \param root root rank for broadcasting
+template <typename VecType>
+void broadcastVector(const eckit::mpi::Comm & comm, std::vector<VecType> & vectorVar,
+                     const size_t root) {
+    // eckit broadcast support vectors, but you need to have the vectors identically
+    // sized on both sides before doing the broadcast. This routine will broadcast
+    // the vector size so the receiving end can resize properly.
+    int vecSize;
+    if (comm.rank() == root) {
+        vecSize = vectorVar.size();
+        comm.broadcast(vecSize, root);
+        comm.broadcast(vectorVar, root);
+    } else {
+        comm.broadcast(vecSize, root);
+        vectorVar.resize(vecSize);
+        comm.broadcast(vectorVar, root);
+    }
+}
+
+/// @brief broadcast a bool variable via the eckit broadcast
+/// @param comm eckit communicator group
+/// @param boolVar variable for broadcasting
+/// @param root root rank for broadcasting
+void broadcastBool(const eckit::mpi::Comm & comm, bool & boolVar, const size_t root);
+
+/// \brief broadcast a string variable via the eckit broadcast
+/// \param comm eckit communicator group
+/// \param stringVar string for broadcasting
+/// \param root root rank for broadcasting
+void broadcastString(const eckit::mpi::Comm & comm, std::string & stringVar, const size_t root);
+
+// ------------------------------------------------------------------------------------------------
+// MPI send/receive utilities based on eckit send/receive.
+
+/// \brief send a string variable via the eckit send
+/// \param comm eckit communicator group
+/// \param stringVar string for sending
+/// \param toRank rank we are sending to
+void sendString(const eckit::mpi::Comm & comm, const std::string & stringVar, const int toRank);
+
+/// \brief receive a string variable via the eckit receive
+/// \param comm eckit communicator group
+/// \param stringVar string for receiving
+/// \param fromRank rank we are receiving from
+void receiveString(const eckit::mpi::Comm & comm, std::string & stringVar, const int fromRank);
 
 }  // namespace mpi
 }  // namespace oops

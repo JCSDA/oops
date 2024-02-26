@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2020 UCAR.
+ * (C) Crown Copyright 2024, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -13,7 +14,7 @@
 namespace oops {
 
 void printNormReduction(int iteration, const double & grad, const double & norm) {
-  Log::info() << "  Gradient reduction (" << std::setw(2) << iteration << ") = "
+  Log::info() << "  Residual norm (" << std::setw(2) << iteration << ") = "
               << util::full_precision(grad) << std::endl
               << "  Norm reduction (" << std::setw(2) << iteration << ") = "
               << util::full_precision(norm) << std::endl << std::endl;

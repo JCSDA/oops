@@ -17,7 +17,7 @@ use duration_mod
 implicit none
 private
 public datetime, datetime_create, datetime_set, datetime_delete, &
-     & assignment(=), c_f_datetime, f_c_datetime, datetime_to_string, &
+     & assignment(=), c_f_datetime, f_c_datetime, datetime_to_string, datetime_to_string_io, &
      & operator(<), operator(<=), operator(>=), operator(>), &
      & datetime_update, datetime_diff, f_c_push_to_datetime_vector, &
      & datetime_to_ifs, datetime_from_ifs, datetime_to_YYYYMMDDhhmmss, &
@@ -168,6 +168,21 @@ call c_datetime_string(fdt%ptr, cstring)
 call c_f_string(cstring, fstring)
 
 end subroutine datetime_to_string
+
+!-------------------------------------------------------------------------------
+
+!> Get DateTime as string without : and -
+
+subroutine datetime_to_string_io(fdt, fstring)
+implicit none
+type(datetime), intent(in)      :: fdt
+character(len=*), intent(inout) :: fstring
+character(kind=c_char,len=1) :: cstring(17)
+
+call c_datetime_string_io(fdt%ptr, cstring)
+call c_f_string(cstring, fstring)
+
+end subroutine datetime_to_string_io
 
 !-------------------------------------------------------------------------------
 

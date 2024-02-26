@@ -4,7 +4,6 @@ initial condition:
   filename: Data/forecast.an.2010-01-01T00:00:00Z.l95
 model:
   name: Identity
-  state variables: [x]
   tstep: PT12H
 output:
   datadir: Data

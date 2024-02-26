@@ -1,7 +1,8 @@
 cost function:
   cost type: 3D-Var
-  window begin: 2010-01-01T21:00:00Z
-  window length: PT6H
+  time window:
+    begin: 2010-01-01T21:00:00Z
+    length: PT6H
   geometry:
     resol: 40
   analysis variables: [x]
@@ -14,26 +15,25 @@ cost function:
     length_scale: 1.0
     standard_deviation: 0.6
   observations:
+    obs perturbations: true
     observers:
     - obs error:
         covariance model: diagonal
-        random amplitude: 0.2
+        obs perturbations amplitude: 0.2
         zero-mean perturbations: true
         member: 2
         number of members: 4
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+          obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
         obsdataout:
-          engine:
-            obsfile: Data/mem002.eda_3dvar_zeromeanpert.2010-01-02T00:00:00Z.obt
+          obsfile: Data/mem002.eda_3dvar_zeromeanpert.2010-01-02T00:00:00Z.obt
         # Note: the same seed must be used for all members for the zero-mean perturbations option to work
         obs perturbations seed: 1
       obs operator: {}
 variational:
   minimizer:
-    algorithm: DRIPCG
+    algorithm: DRPCG
   iterations:
   - geometry:
       resol: 40
@@ -41,7 +41,6 @@ variational:
     gradient norm reduction: 1e-10
     diagnostics:
       departures: ombg
-    obs perturbations: true
   - geometry:
       resol: 40
     ninner: 10

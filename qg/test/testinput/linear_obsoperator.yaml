@@ -1,5 +1,6 @@
-window begin: 2010-01-01T00:00:00Z
-window end: 2010-01-02T00:00:00Z
+time window:
+  begin: 2010-01-01T00:00:00Z
+  end: 2010-01-02T00:00:00Z
 
 observations:
 - obs error:
@@ -8,8 +9,7 @@ observations:
     filename: Data/truth.obs4d_24h.stream.gom
   obs space:
     obsdatain:
-      engine:
-        obsfile: Data/truth.obs4d_24h.nc
+      obsfile: Data/truth.obs4d_24h.nc
     obs type: Stream
   obs operator:
     obs type: Stream
@@ -27,8 +27,7 @@ observations:
     filename: Data/truth.obs4d_24h.wind.gom
   obs space:
     obsdatain:
-      engine:
-        obsfile: Data/truth.obs4d_24h.nc
+      obsfile: Data/truth.obs4d_24h.nc
     obs type: Wind
   obs operator:
     obs type: Wind
@@ -46,8 +45,7 @@ observations:
     filename: Data/truth.obs4d_24h.wspeed.gom
   obs space:
     obsdatain:
-      engine:
-        obsfile: Data/truth.obs4d_24h.nc
+      obsfile: Data/truth.obs4d_24h.nc
     obs type: WSpeed
   obs operator:
     obs type: WSpeed

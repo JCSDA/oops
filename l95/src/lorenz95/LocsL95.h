@@ -29,7 +29,7 @@ namespace eckit {
 
 namespace lorenz95 {
 
-/// LocsL95 class to handle locations for L95 model.
+/// Implements the oops SampledLocations interface for the L95 obs type.
 class LocsL95 : public util::Printable,
                 private util::ObjectCounter<LocsL95> {
  public:

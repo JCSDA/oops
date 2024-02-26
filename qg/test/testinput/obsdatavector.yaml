@@ -1,0 +1,43 @@
+time window:
+  begin: 2010-01-01T00:00:00Z
+  end: 2010-01-02T00:00:00Z
+
+observations:
+- obs error:
+    covariance model: diagonal
+  obs space:
+    obsdatain:
+      obsfile: Data/truth.obs4d_24h.nc
+    obsdataout:
+      obsfile: Data/interface.obsdata4d_24h.nc
+    obs type: Stream
+  obs operator:
+    obs type: Stream
+  obs bias:
+    stream: -10.0
+    covariance:
+      stream: 2.0e7
+- obs error:
+    covariance model: diagonal
+  obs space:
+    obsdatain:
+      obsfile: Data/truth.obs4d_24h.nc
+    obsdataout:
+      obsfile: Data/interface.obsdata4d_24h.nc
+    obs type: Wind
+  obs operator:
+    obs type: Wind
+  obs bias:
+    uwind: 10.0
+    covariance:
+      uwind: 15.0
+- obs error:
+    covariance model: diagonal
+  obs space:
+    obsdatain:
+      obsfile: Data/truth.obs4d_24h.nc
+    obsdataout:
+      obsfile: Data/interface.obsdata4d_24h.nc
+    obs type: WSpeed
+  obs operator:
+    obs type: WSpeed

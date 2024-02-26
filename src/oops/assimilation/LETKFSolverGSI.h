@@ -19,6 +19,7 @@
 #include "oops/base/ObsErrors.h"
 
 namespace oops {
+  class Variables;
 
 /// Local Ensemble Tranform Kalman Filter solver using GSI GLETKF solver
 template <typename MODEL, typename OBS>
@@ -31,7 +32,7 @@ class LETKFSolverGSI : public LETKFSolver<MODEL, OBS> {
   typedef State4D<MODEL>            State4D_;
  public:
   LETKFSolverGSI(ObsSpaces_ &, const Geometry_ &, const eckit::Configuration &, size_t,
-                 const State4D_ &);
+                 const State4D_ &, const Variables &);
 
   /// Computes weights for ensemble update with local observations
   /// \param[in] omb      Observation departures (nlocalobs)
@@ -46,8 +47,8 @@ class LETKFSolverGSI : public LETKFSolver<MODEL, OBS> {
 template <typename MODEL, typename OBS>
 LETKFSolverGSI<MODEL, OBS>::LETKFSolverGSI(ObsSpaces_ & obspaces, const Geometry_ & geometry,
                                            const eckit::Configuration & config, size_t nens,
-                                           const State4D_ & xbmean)
-  : LETKFSolver<MODEL, OBS>(obspaces, geometry, config, nens, xbmean)
+                                           const State4D_ & xbmean, const Variables & incvars)
+  : LETKFSolver<MODEL, OBS>(obspaces, geometry, config, nens, xbmean, incvars)
 {
 }
 

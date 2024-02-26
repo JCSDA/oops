@@ -2,7 +2,18 @@ geometry:
   nx: 40
   ny: 20
   depths: [4500.0, 5500.0]
+other geometry:
+  nx: 20
+  ny: 10
+  depths: [5000.0]
 inc variables: [x]
 increment test:
  date: 2009-12-31T00:00:00Z
  skip atlas: 1
+ dirac:
+  date: 2009-12-31T00:00:00Z
+  ixdir: [20]
+  iydir: [10]
+  izdir: [1]
+  var: x
+ tolerance AD resolution change: 1.0e-14

@@ -1,7 +1,8 @@
 cost function:
   cost type: 3D-Var
-  window begin: 2010-01-01T21:00:00Z
-  window length: PT6H
+  time window:
+    begin: 2010-01-01T21:00:00Z
+    length: PT6H
   geometry:
     resol: 40
   analysis variables: [x]
@@ -18,8 +19,7 @@ cost function:
     - obs operator: {}
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/noobs.obt
+          obsfile: Data/noobs.obt
       obs error:
         covariance model: diagonal
 variational:

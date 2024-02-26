@@ -1,0 +1,32 @@
+#!/bin/bash
+set -euo pipefail
+
+finally() {
+    trap '' ERR
+    trap '' EXIT
+    if [[ -d "${WORKD:-}" ]]; then
+        cd /
+        rm -fr "${WORKD}"
+    fi
+}
+
+HERE="$(cd "$(dirname "$0")" && pwd)"
+THIS="$(basename "$0")"
+NPROC=${NPROC:-$(nproc)}
+WORKD="$(mktemp -d "${THIS}-XXXXXX" -t)"
+
+trap finally ERR
+trap finally EXIT
+
+cd "${WORKD}"
+
+# -- Configure
+cmake -B . -S "${HERE}" -DCMAKE_BUILD_TYPE=Release
+
+# -- Build
+cmake --build . -j "${NPROC}"
+
+# -- Test
+ctest -j "$NPROC" --output-on-failure --test-dir './oops'
+
+exit

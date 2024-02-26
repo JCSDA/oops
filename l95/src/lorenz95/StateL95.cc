@@ -15,13 +15,12 @@
 #include <string>
 #include <vector>
 
-#include "eckit/config/Configuration.h"
+#include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 
 #include "lorenz95/FieldL95.h"
 #include "lorenz95/GomL95.h"
 #include "lorenz95/IncrementL95.h"
-#include "lorenz95/LocsL95.h"
 #include "lorenz95/ModelBias.h"
 #include "lorenz95/ModelL95.h"
 #include "lorenz95/ModelTrajectory.h"
@@ -50,14 +49,14 @@ StateL95::StateL95(const Resolution & resol, const oops::Variables & vars,
   oops::Log::trace() << "StateL95::StateL95 created" << std::endl;
 }
 // -----------------------------------------------------------------------------
-StateL95::StateL95(const Resolution & resol, const Parameters_ & parameters)
-  : fld_(resol), time_(parameters.date), vars_({"x"})
+StateL95::StateL95(const Resolution & resol, const eckit::Configuration & conf)
+  : fld_(resol), time_(conf.getString("date")), vars_({"x"})
 {
-  oops::Log::trace() << "StateL95::StateL95 conf " << parameters << std::endl;
-  if (parameters.filename.value() != boost::none) {
-    this->read(parameters);
-  } else if (parameters.analyticInit.value() != boost::none) {
-    fld_.generate(*parameters.analyticInit.value());
+  oops::Log::trace() << "StateL95::StateL95 conf " << conf << std::endl;
+  if (conf.has("filename")) {
+    this->read(conf);
+  } else {
+    fld_.generate(eckit::LocalConfiguration(conf, "analytic init"));
   }
   oops::Log::trace() << "StateL95::StateL95 created and read in." << std::endl;
 }
@@ -68,6 +67,8 @@ StateL95::StateL95(const Resolution & resol, const StateL95 & xx)
   fld_ = xx.fld_;
   oops::Log::trace() << "StateL95::StateL95 created by interpolation." << std::endl;
 }
+// -----------------------------------------------------------------------------
+StateL95::StateL95(const oops::Variables & vars, const StateL95 & xx) : StateL95(xx) {}
 // -----------------------------------------------------------------------------
 StateL95::StateL95(const StateL95 & xx)
   : fld_(xx.fld_), time_(xx.time_), vars_(xx.vars_)
@@ -98,9 +99,9 @@ StateL95 & StateL95::operator+=(const IncrementL95 & dx) {
 // -----------------------------------------------------------------------------
 /// Utilities
 // -----------------------------------------------------------------------------
-void StateL95::read(const Parameters_ & parameters) {
-  std::string filename(parameters.filename.value().value());
-  sf::swapNameMember(parameters.member.value(), filename);
+void StateL95::read(const eckit::Configuration & config) {
+  std::string filename(config.getString("filename"));
+  sf::swapNameMember(config, filename);
   oops::Log::trace() << "StateL95::read opening " << filename << std::endl;
   std::ifstream fin(filename.c_str());
   if (!fin.is_open()) ABORT("StateL95::read: Error opening file: " + filename);
@@ -122,22 +123,21 @@ void StateL95::read(const Parameters_ & parameters) {
   oops::Log::trace() << "StateL95::read: file closed." << std::endl;
 }
 // -----------------------------------------------------------------------------
-void StateL95::write(const WriteParameters_ & parameters) const {
-  const std::string &dir = parameters.datadir;
-  const std::string &type = *parameters.type.value();
-  std::string filename = dir+"/"+*parameters.prefix.value();
+void StateL95::write(const eckit::Configuration & config) const {
+  const std::string dir = config.getString("datadir");
+  const std::string type = config.getString("type");
+  std::string filename = dir+"/"+config.getString("prefix");
 
   if (type == "krylov") {
-    if (parameters.iteration.value() == boost::none)
+    if (!config.has("iteration"))
       throw eckit::BadValue("'iteration' was not set in the parameters passed to write() "
                             "even though 'type' was set to '" + type + "'", Here());
-    const int &iter = *parameters.iteration.value();
+    const int iter = config.getInt("iteration");
     filename += "."+std::to_string(iter)+"."+time_.toString();
   }
 
   filename += ".l95";
-
-  sf::swapNameMember(parameters.member.value(), filename);
+  sf::swapNameMember(config, filename);
 
   oops::Log::trace() << "StateL95::write opening " << filename << std::endl;
   std::ofstream fout(filename.c_str());

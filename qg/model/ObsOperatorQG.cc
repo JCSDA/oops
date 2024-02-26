@@ -18,14 +18,16 @@
 #include "model/ObsOpBaseQG.h"
 #include "model/ObsSpaceQG.h"
 #include "model/ObsVecQG.h"
+#include "model/QgTraitsFwd.h"
+#include "oops/base/Locations.h"
 #include "oops/base/Variables.h"
 
 namespace qg {
 
 // -----------------------------------------------------------------------------
 
-ObsOperatorQG::ObsOperatorQG(const ObsSpaceQG & os, const Parameters_ & params)
-  : oper_(ObsOpFactory::create(os, params.config))
+ObsOperatorQG::ObsOperatorQG(const ObsSpaceQG & os, const eckit::Configuration & conf)
+  : oper_(ObsOpFactory::create(os, conf))
 {}
 
 // -----------------------------------------------------------------------------
@@ -47,7 +49,7 @@ const oops::Variables & ObsOperatorQG::requiredVars() const {
 
 // -----------------------------------------------------------------------------
 
-std::unique_ptr<LocationsQG> ObsOperatorQG::locations() const {
+ObsOperatorQG::Locations_ ObsOperatorQG::locations() const {
   return oper_->locations();
 }
 

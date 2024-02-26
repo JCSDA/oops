@@ -11,8 +11,6 @@
 #include <memory>
 #include <string>
 
-#include <boost/make_unique.hpp>
-
 #include "oops/generic/LinearModelBase.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
@@ -31,20 +29,6 @@ namespace interface {
 /// interface::LinearModelBase overrides oops::LinearModelBase methods to pass MODEL-specific
 /// implementations of State, Increment and ModelAuxIncrement to the MODEL-specific implementation
 /// of LinearModel.
-///
-/// Note: implementations of this interface can opt to extract their settings either from
-/// a Configuration object or from a subclass of LinearModelParametersBase.
-///
-/// In the former case, they should provide a constructor with the following signature:
-///
-///    LinearModelBase(const Geometry_ &, const eckit::Configuration &);
-///
-/// In the latter case, the implementer should first define a subclass of LinearModelParametersBase
-/// holding the settings of the linear model in question. The implementation of the LinearModelBase
-/// interface should then typedef `Parameters_` to the name of that subclass and provide a
-/// constructor with the following signature:
-///
-///    LinearModelBase(const Geometry_ &, const Parameters_ &);
 ///
 template <typename MODEL>
 class LinearModelBase : public oops::LinearModelBase<MODEL> {
@@ -108,26 +92,15 @@ class LinearModelBase : public oops::LinearModelBase<MODEL> {
 /// interface::LinearModelBase<MODEL>). Passes MODEL::Geometry to the constructor of T.
 template<class MODEL, class T>
 class LinearModelMaker : public LinearModelFactory<MODEL> {
- private:
-  /// Defined as T::Parameters_ if T defines a Parameters_ type; otherwise as
-  /// GenericLinearModelParameters.
-  typedef TParameters_IfAvailableElseFallbackType_t<T, GenericLinearModelParameters> Parameters_;
-
  public:
   typedef oops::Geometry<MODEL>   Geometry_;
 
   explicit LinearModelMaker(const std::string & name) : LinearModelFactory<MODEL>(name) {}
 
   oops::LinearModelBase<MODEL> * make(const Geometry_ & geom,
-                                      const LinearModelParametersBase & parameters) override {
+                                      const eckit::Configuration & config) override {
     Log::trace() << "interface::LinearModelBase<MODEL>::make starting" << std::endl;
-    const auto &stronglyTypedParameters = dynamic_cast<const Parameters_&>(parameters);
-    return new T(geom.geometry(),
-                 parametersOrConfiguration<HasParameters_<T>::value>(stronglyTypedParameters));
-  }
-
-  std::unique_ptr<LinearModelParametersBase> makeParameters() const override {
-    return boost::make_unique<Parameters_>();
+    return new T(geom.geometry(), config);
   }
 };
 

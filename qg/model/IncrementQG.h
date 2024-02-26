@@ -67,7 +67,7 @@ class IncrementQG : public util::Printable,
 
 /// Constructor, destructor
   IncrementQG(const GeometryQG &, const oops::Variables &, const util::DateTime &);
-  IncrementQG(const GeometryQG &, const IncrementQG &);
+  IncrementQG(const GeometryQG &, const IncrementQG &, const bool ad);
   IncrementQG(const IncrementQG &, const bool);
   IncrementQG(const IncrementQG &);
   virtual ~IncrementQG();
@@ -86,7 +86,6 @@ class IncrementQG : public util::Printable,
   void schur_product_with(const IncrementQG &);
   void random();
   void dirac(const eckit::Configuration &);
-  std::vector<double> rmsByLevel(const std::string &) const;
 
 /// I/O and diagnostics
   void read(const eckit::Configuration &);
@@ -98,7 +97,6 @@ class IncrementQG : public util::Printable,
 
 /// ATLAS FieldSet
   void toFieldSet(atlas::FieldSet &) const;
-  void toFieldSetAD(const atlas::FieldSet &);
   void fromFieldSet(const atlas::FieldSet &);
 
 /// Access to fields
@@ -119,14 +117,13 @@ class IncrementQG : public util::Printable,
   void serialize(std::vector<double> &) const override;
   void deserialize(const std::vector<double> &, size_t &) override;
 
-  const oops::Variables & variables() const {return vars_;}
+  const oops::Variables & variables() const {return fields_->variables();}
 
 /// Data
  private:
   void print(std::ostream &) const override;
   const bool lbc_ = false;
   std::unique_ptr<FieldsQG> fields_;
-  oops::Variables vars_;
 };
 // -----------------------------------------------------------------------------
 

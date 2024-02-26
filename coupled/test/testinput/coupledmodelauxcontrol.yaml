@@ -5,6 +5,7 @@ geometry:   # coupled geometry (QG and L95)
     depths: [4500.0, 5500.0]
   Lorenz 95:
     resol: 40
+  QG exclude variables: [x]
 model aux control: # coupled model bias (QG and L95)
   QG:
     {}                  # not implemented in QG

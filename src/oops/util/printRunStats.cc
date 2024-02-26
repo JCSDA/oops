@@ -21,7 +21,8 @@ namespace util {
 
 // -----------------------------------------------------------------------------
 
-void printRunStats(const std::string & name, const bool alltasks) {
+void printRunStats(const std::string & name, const bool alltasks,
+                   const eckit::mpi::Comm & comm) {
   size_t rssbyte = eckit::system::ResourceUsage().maxResidentSetSize();
   double rss = static_cast<double>(rssbyte);
 
@@ -29,11 +30,11 @@ void printRunStats(const std::string & name, const bool alltasks) {
   std::string unit = " Mb";
 
   if (alltasks) {
-    size_t ntasks = oops::mpi::world().size();
+    size_t ntasks = comm.size();
     std::vector<double> zss(ntasks);
-    oops::mpi::world().gather(rss, zss, 0);
+    comm.gather(rss, zss, 0);
 
-    if (oops::mpi::world().rank() == 0) {
+    if (comm.rank() == 0) {
       double rssmin = rss;
       double rssmax = rss;
       double rsstot = rss;
@@ -42,7 +43,6 @@ void printRunStats(const std::string & name, const bool alltasks) {
         if (zss[jj] > rssmax) rssmax = zss[jj];
         rsstot += zss[jj];
       }
-
       if (rsstot >= 1.0e+9) {factor = 1.0e+9; unit = " Gb";}
       oops::Log::stats() << std::left << std::setw(40) << name << " - Runtime: "
                          << std::fixed << std::right << std::setprecision(2)

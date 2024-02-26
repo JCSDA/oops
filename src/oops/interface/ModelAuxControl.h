@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2023, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -98,8 +99,10 @@ class ModelAuxControl : public util::Printable,
   void serialize(std::vector<double> &) const override {}
   void deserialize(const std::vector<double> &, size_t &) override {}
 
- private:
+  /// Assignment
   ModelAuxControl & operator=(const ModelAuxControl &);
+
+ private:
   void print(std::ostream &) const override;
   std::unique_ptr<ModelAuxControl_> aux_;
 };
@@ -108,23 +111,21 @@ class ModelAuxControl : public util::Printable,
 
 template<typename MODEL>
 ModelAuxControl<MODEL>::ModelAuxControl(const Geometry_ & resol,
-                                        const Parameters_ & parameters) : aux_()
-{
-  Log::trace() << "ModelAuxControl<MODEL>::ModelAuxControl starting" << std::endl;
-  util::Timer timer(classname(), "ModelAuxControl");
-  aux_.reset(new ModelAuxControl_(
-               resol.geometry(),
-               parametersOrConfiguration<HasParameters_<ModelAuxControl_>::value>(parameters)));
-  Log::trace() << "ModelAuxControl<MODEL>::ModelAuxControl done" << std::endl;
-}
+                                        const Parameters_ & parameters)
+  : ModelAuxControl(resol, parameters.toConfiguration())
+{}
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 ModelAuxControl<MODEL>::ModelAuxControl(const Geometry_ & resol,
-                                        const eckit::Configuration & conf)
-  : ModelAuxControl(resol, validateAndDeserialize<Parameters_>(conf))
-{}
+                                        const eckit::Configuration & conf) : aux_()
+{
+  Log::trace() << "ModelAuxControl<MODEL>::ModelAuxControl starting" << std::endl;
+  util::Timer timer(classname(), "ModelAuxControl");
+  aux_.reset(new ModelAuxControl_(resol.geometry(), conf));
+  Log::trace() << "ModelAuxControl<MODEL>::ModelAuxControl done" << std::endl;
+}
 
 // -----------------------------------------------------------------------------
 
@@ -189,6 +190,17 @@ double ModelAuxControl<MODEL>::norm() const {
   double zz = aux_->norm();
   Log::trace() << "ModelAuxControl<MODEL>::norm done" << std::endl;
   return zz;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+ModelAuxControl<MODEL> & ModelAuxControl<MODEL>::operator=(const ModelAuxControl & rhs) {
+  Log::trace() << "ModelAuxControl<MODEL>::operator= starting" << std::endl;
+  util::Timer timer(classname(), "operator=");
+  *aux_ = *rhs.aux_;
+  Log::trace() << "ModelAuxControl<MODEL>::operator= done" << std::endl;
+  return *this;
 }
 
 // -----------------------------------------------------------------------------

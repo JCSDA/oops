@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2024, the Met Office.
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -18,6 +19,7 @@
 #include "oops/assimilation/TriDiagSolve.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
+#include "oops/util/workflow.h"
 
 namespace oops {
 
@@ -91,6 +93,8 @@ double PLanczos(VECTOR & xx, const VECTOR & bb,
   double beta0 = sqrt(dot_product(rr, zz));
   double beta = 0.0;
 
+  printNormReduction(0, beta0, normReduction);
+
   VECTOR vv(rr);
   vv  *= 1/beta0;
   zz  *= 1/beta0;
@@ -102,6 +106,7 @@ double PLanczos(VECTOR & xx, const VECTOR & bb,
   Log::info() << std::endl;
   while (jiter < maxiter) {
     Log::info() << " PLanczos Starting Iteration " << jiter+1 << std::endl;
+    if (jiter < 5 || (jiter + 1) % 5 == 0) util::update_workflow_meter("iteration", jiter+1);
 
     // w = A z - beta * vold
     A.multiply(zz, ww);     // w = A z

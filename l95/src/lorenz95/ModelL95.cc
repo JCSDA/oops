@@ -28,9 +28,9 @@ static oops::interface::ModelMaker<L95Traits, ModelL95> makermodel_("L95");
 
 // -----------------------------------------------------------------------------
 
-ModelL95::ModelL95(const Resolution & resol, const ModelL95Parameters & params)
-  : resol_(resol), f_(params.f),
-    tstep_(params.tstep),
+ModelL95::ModelL95(const Resolution & resol, const eckit::Configuration & config)
+  : resol_(resol), f_(config.getDouble("f")),
+    tstep_(util::Duration(config.getString("tstep"))),
     dt_(tstep_.toSeconds()/432000.0), vars_({"x"})
 {
   oops::Log::info() << *this << std::endl;

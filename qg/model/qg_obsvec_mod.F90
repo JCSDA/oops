@@ -354,7 +354,7 @@ integer :: nval
 nval = self%nobs*self%nlev
 
 ! Get random values
-call qg_obsvec_random_i(c_odb,nval,self%values(1,1))
+if (nval.gt.0) call qg_obsvec_random_i(c_odb,nval,self%values(1,1))
 
 end subroutine qg_obsvec_random
 ! ------------------------------------------------------------------------------

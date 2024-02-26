@@ -9,16 +9,16 @@ model:
   name: QG
   tstep: PT1H
 forecast length: PT12H
-window begin: 2010-01-01T00:00:00Z
-window length: PT12H
+time window:
+  begin: 2010-01-01T00:00:00Z
+  length: PT12H
 observations:
   observers:
   - obs operator:
       obs type: Stream
     obs space:
       obsdataout:
-        engine:
-          obsfile: Data/truth.obs4d_12h.nc
+        obsfile: Data/truth.obs4d_12h.nc
       obs type: Stream
       generate:
         begin: PT2H
@@ -30,8 +30,7 @@ observations:
       obs type: Wind
     obs space:
       obsdataout:
-        engine:
-          obsfile: Data/truth.obs4d_12h.nc
+        obsfile: Data/truth.obs4d_12h.nc
       obs type: Wind
       generate:
         begin: PT1H
@@ -43,8 +42,7 @@ observations:
       obs type: WSpeed
     obs space:
       obsdataout:
-        engine:
-          obsfile: Data/truth.obs4d_12h.nc
+        obsfile: Data/truth.obs4d_12h.nc
       obs type: WSpeed
       generate:
         begin: PT1H

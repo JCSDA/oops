@@ -1,0 +1,42 @@
+RTPS Analysis Increment member 1:
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=-5.7093303305960394e+07, Max=5.8780255585600168e+07, RMS=2.2316433033914648e+07
+RTPS Analysis member 1:
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=-4.3471963846196938e+08, Max=1.0051659692321676e+08, RMS=1.6812983898243153e+08
+  Streamfunction LBC     :  Min=-4.0031613555457592e+08, Max=-0.0000000000000000e+00, RMS=2.0631821381632423e+08
+  Potential vorticity LBC:  Min=-6.7293786157197357e-04, Max=5.7902869607001021e-04, RMS=4.4639722241150535e-04
+RTPS Updated Analysis member 1:
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=-4.3455539744638872e+08, Max=1.0273807986765446e+08, RMS=1.6893794608264157e+08
+  Streamfunction LBC     :  Min=-4.0031613555457592e+08, Max=0.0000000000000000e+00, RMS=2.0631821381632423e+08
+  Potential vorticity LBC:  Min=-6.7293786157197357e-04, Max=5.7902869607001021e-04, RMS=4.4639722241150535e-04
+RTPS Updated Analysis Increment member 1:
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=-6.3124045819294840e+07, Max=6.7053499252500474e+07, RMS=2.1917316914692622e+07
+RTPP Analysis Increment member 1:
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=-6.3124045819294840e+07, Max=6.7053499252500474e+07, RMS=2.1917316914692622e+07
+RTPP Updated Analysis Increment member 1:
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=-3.7723328940949172e+07, Max=4.3691344416972004e+07, RMS=1.4842016442906484e+07
+Multiplicative Background member 1:
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=-4.4223815109333348e+08, Max=1.2417620485214923e+08, RMS=1.7584483249516368e+08
+  Streamfunction LBC     :  Min=-4.0031613555457592e+08, Max=-0.0000000000000000e+00, RMS=2.0631821381632423e+08
+  Potential vorticity LBC:  Min=-6.7293786157197357e-04, Max=5.7902869607001021e-04, RMS=4.4639722241150535e-04
+Multiplicative Analysis Increment member 1:
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=-3.7723328940949172e+07, Max=4.3691344416972004e+07, RMS=1.4842016442906484e+07
+Multiplicative Updated Analysis Increment member 1:
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=-4.6063857342062742e+07, Max=5.2243023141235456e+07, RMS=1.6731727717158407e+07

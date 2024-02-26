@@ -12,7 +12,6 @@
 #include <string>
 
 #include "oops/util/Printable.h"
-#include "IdChangeVarTLADL95Params.h"
 #include "L95Traits.h"
 
 // Forward declarations
@@ -34,10 +33,9 @@ namespace lorenz95 {
 
 class IdChangeVarTLADL95: public util::Printable {
  public:
-  typedef IdChangeVarTLADL95Params Parameters_;
   static const std::string classname() {return "lorenz95::IdChangeVarTLADL95";}
 
-  explicit IdChangeVarTLADL95(const Resolution &, const Parameters_ &) {}
+  explicit IdChangeVarTLADL95(const Resolution &, const eckit::Configuration &) {}
   ~IdChangeVarTLADL95() {}
 
 /// Perform linear transforms

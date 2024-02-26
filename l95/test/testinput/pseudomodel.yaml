@@ -3,7 +3,6 @@ geometry:
 model:
   name: PseudoModel
   tstep: PT3H
-  state variables: [x]
   states:
   - date: 2010-01-01T06:00:00Z
     filename: Data/truth.fc.2010-01-01T00:00:00Z.PT6H.l95

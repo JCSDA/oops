@@ -14,10 +14,11 @@
 #include "lorenz95/L95Traits.h"
 
 #include "oops/base/Variables.h"
-#include "oops/generic/ObsFilterParametersBase.h"
 #include "oops/interface/ObsFilterBase.h"
-#include "oops/util/parameters/OptionalParameter.h"
-#include "oops/util/parameters/RequiredParameter.h"
+
+namespace eckit {
+  class Configuration;
+}
 
 namespace lorenz95 {
   class GomL95;
@@ -26,35 +27,15 @@ namespace lorenz95 {
   class ObsDiags1D;
   class ObsVec1D;
 
-/// Parameters for L95 BackgroundCheck
-/// background check: all obs for which {|y-H(x)| < threshold} pass QC
-class BackgroundCheckParameters : public oops::ObsFilterParametersBase {
-  OOPS_CONCRETE_PARAMETERS(BackgroundCheckParameters, ObsFilterParametersBase)
-
- public:
-  /// threshold for background check
-  oops::RequiredParameter<double> threshold{"threshold", this};
-
-  /// optional inflation factor: if this parameter is present, obs error stddev
-  /// for obs that don't pass the check is multiplied by the specified factor.
-  /// Otherwise, obs that don't pass the check are rejected.
-  oops::OptionalParameter<double> inflation{"inflate obs error", this};
-};
-
 /// Simple background check: all obs for which {|y-H(x)| < threshold} pass QC
 class BackgroundCheck : public oops::interface::ObsFilterBase<L95ObsTraits> {
  public:
-  typedef BackgroundCheckParameters Parameters_;
-
-  BackgroundCheck(const ObsTable &, const Parameters_ &,
+  BackgroundCheck(const ObsTable &, const eckit::Configuration &,
                   std::shared_ptr<ObsData1D<int> >, std::shared_ptr<ObsData1D<float> >);
 
   void preProcess() override {}
   void priorFilter(const GomL95 &) override {}
-  void postFilter(const GomL95 &,
-                  const ObsVec1D &,
-                  const ObsVec1D &,
-                  const ObsDiags1D &) override;
+  void postFilter(const GomL95 &, const ObsVec1D &, const ObsVec1D &, const ObsDiags1D &) override;
   void checkFilterData(const oops::FilterStage filterStage) override {}
 
   oops::Variables requiredVars() const override {return novars_;}
@@ -64,10 +45,11 @@ class BackgroundCheck : public oops::interface::ObsFilterBase<L95ObsTraits> {
   void print(std::ostream & os) const override;
 
   const ObsTable & obsdb_;
-  Parameters_ options_;
   std::shared_ptr<ObsData1D<int> > qcflags_;   // QC flags
   std::shared_ptr<ObsData1D<float> > obserr_;  // obs error stddev
   const oops::Variables novars_;
+  const float threshold_;
+  const float inflation_;
 };
 
 }  // namespace lorenz95

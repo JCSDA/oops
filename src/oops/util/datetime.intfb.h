@@ -37,6 +37,13 @@ subroutine c_datetime_string(ptr, c_string) bind(C,name='datetime_string_f')
   character(kind=c_char,len=1), intent(inout) :: c_string(21)
 end subroutine c_datetime_string
 !-------------------------------------------------------------------------------
+subroutine c_datetime_string_io(ptr, c_string) bind(C,name='datetime_string_io_f')
+  use, intrinsic :: iso_c_binding
+  implicit none
+  type(c_ptr), value :: ptr
+  character(kind=c_char,len=1), intent(inout) :: c_string(17)
+end subroutine c_datetime_string_io
+!-------------------------------------------------------------------------------
 subroutine c_datetime_to_yyyymmddhhmmss(ptr, year, month, day, hour, minute, second) &
     bind(C,name='datetime_to_yyyymmddhhmmss_f')
   use, intrinsic :: iso_c_binding

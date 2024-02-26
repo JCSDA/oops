@@ -404,6 +404,27 @@ call qg_fields_change_resol(fld,rhs)
 
 end subroutine qg_fields_change_resol_c
 ! ------------------------------------------------------------------------------
+!> Change fields resolution (adjoint)
+subroutine qg_fields_change_resol_ad_c(c_key_fld,c_key_rhs) bind(c,name='qg_fields_change_resol_ad_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_fld !< Fields
+integer(c_int),intent(in) :: c_key_rhs !< Right-hand side
+
+! Local variables
+type(qg_fields),pointer :: fld,rhs
+
+! Interface
+call qg_fields_registry%get(c_key_fld,fld)
+call qg_fields_registry%get(c_key_rhs,rhs)
+
+! Call Fortran
+call qg_fields_change_resol_ad(fld,rhs)
+
+end subroutine qg_fields_change_resol_ad_c
+! ------------------------------------------------------------------------------
 !> Read fields from file
 subroutine qg_fields_read_file_c(c_key_fld,c_conf,c_dt) bind(c,name='qg_fields_read_file_f90')
 
@@ -585,28 +606,6 @@ afieldset = atlas_fieldset(c_afieldset)
 call qg_fields_to_fieldset(fld,afieldset)
 
 end subroutine qg_fields_to_fieldset_c
-! ------------------------------------------------------------------------------
-!> Convert fields to Fieldset (adjoint)
-subroutine qg_fields_to_fieldset_ad_c(c_key_fld,c_afieldset) bind (c,name='qg_fields_to_fieldset_ad_f90')
-
-implicit none
-
-! Passed variables
-integer(c_int),intent(in) :: c_key_fld      !< Fields
-type(c_ptr),intent(in),value :: c_afieldset !< FieldSet pointer
-
-! Local variables
-type(qg_fields),pointer :: fld
-type(atlas_fieldset) :: afieldset
-
-! Interface
-call qg_fields_registry%get(c_key_fld,fld)
-afieldset = atlas_fieldset(c_afieldset)
-
-! Call Fortran
-call qg_fields_to_fieldset_ad(fld,afieldset)
-
-end subroutine qg_fields_to_fieldset_ad_c
 ! ------------------------------------------------------------------------------
 !> Convert Fieldset to fields
 subroutine qg_fields_from_fieldset_c(c_key_fld,c_afieldset) bind (c,name='qg_fields_from_fieldset_f90')

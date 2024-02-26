@@ -34,14 +34,9 @@ namespace qg {
 static oops::interface::LinearModelMaker<QgTraits, TlmQG> makerQGTLM_("QgTLM");
 // -----------------------------------------------------------------------------
 TlmQG::TlmQG(const GeometryQG & resol, const eckit::Configuration & tlConf)
-  : keyConfig_(0), tstep_(), resol_(resol), traj_(),
-    lrmodel_(resol_,
-             oops::validateAndDeserialize<ModelQgParameters>(
-               eckit::LocalConfiguration(tlConf, "trajectory"))),
-    linvars_({"x"})
+  : keyConfig_(0), tstep_(util::Duration(tlConf.getString("tstep"))), resol_(resol), traj_(),
+    lrmodel_(resol_, eckit::LocalConfiguration(tlConf, "trajectory"))
 {
-  if (tlConf.has("tlm variables")) linvars_ = oops::Variables(tlConf, "tlm variables");
-  tstep_ = util::Duration(tlConf.getString("tstep"));
   qg_model_setup_f90(keyConfig_, tlConf);
 
   oops::Log::trace() << "TlmQG created" << std::endl;

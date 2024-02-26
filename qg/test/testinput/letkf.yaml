@@ -1,5 +1,6 @@
-window begin: &date_bgn 2010-01-01T00:00:00Z
-window length: PT12H
+time window:
+  begin: &date_bgn 2010-01-01T00:00:00Z
+  length: PT12H
 
 geometry:
   nx: 40
@@ -20,17 +21,17 @@ background:
     pattern: %mem%
     nmembers: 5
 
+increment variables: [x]
+
 observations:
   observers:
   - obs operator:
       obs type: Stream
     obs space:
       obsdatain:
-        engine:
-          obsfile: Data/truth.obs4d_12h.nc
+        obsfile: Data/truth.obs4d_12h.nc
       obsdataout:
-        engine:
-          obsfile: Data/letkf.obs4d_12h.nc
+        obsfile: Data/letkf.obs4d_12h.nc
       obs type: Stream
     obs error:
       covariance model: diagonal
@@ -41,11 +42,9 @@ observations:
       obs type: Wind
     obs space:
       obsdatain:
-        engine:
-          obsfile: Data/truth.obs4d_12h.nc
+        obsfile: Data/truth.obs4d_12h.nc
       obsdataout:
-        engine:
-          obsfile: Data/letkf.obs4d_12h.nc
+        obsfile: Data/letkf.obs4d_12h.nc
       obs type: Wind
     obs error:
       covariance model: diagonal
@@ -56,11 +55,9 @@ observations:
       obs type: WSpeed
     obs space:
       obsdatain:
-        engine:
-          obsfile: Data/truth.obs4d_12h.nc
+        obsfile: Data/truth.obs4d_12h.nc
       obsdataout:
-        engine:
-          obsfile: Data/letkf.obs4d_12h.nc
+        obsfile: Data/letkf.obs4d_12h.nc
       obs type: WSpeed
     obs error:
       covariance model: diagonal

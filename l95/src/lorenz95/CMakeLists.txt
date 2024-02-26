@@ -19,6 +19,7 @@ set( _l95_srcs
         IncrementL95.h
         InterpolatorL95.cc
         InterpolatorL95.h
+        instantiateL95NormFactory.h
         instantiateLocalizationFactory.h
         Iterator.cc
         Iterator.h
@@ -32,7 +33,8 @@ set( _l95_srcs
         ModelBiasCorrection.h
         ModelBiasCovariance.cc
         ModelBiasCovariance.h
-        ModelBiasCovarianceParameters.h
+        ModelData.cc
+        ModelData.h
         ModelL95.h
         ModelL95.cc
         ModelTrajectory.cc
@@ -44,7 +46,6 @@ set( _l95_srcs
         ObsBiasCorrection.h
         ObsBiasCovariance.cc
         ObsBiasCovariance.h
-        ObsBiasParameters.h
         ObsBiasPreconditioner.cc
         ObsBiasPreconditioner.h
         ObsDiags1D.h
@@ -54,7 +55,6 @@ set( _l95_srcs
         ObsLocGC99.h
         ObsLocBoxCar.cc
         ObsLocBoxCar.h
-        ObsLocParameters.h
         ObsTable.cc
         ObsTable.h
         ObsVec1D.cc
@@ -86,6 +86,4 @@ ecbuild_add_library( TARGET lorenz95
                      HEADER_DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/l95
                      LINKER_LANGUAGE CXX )
 
-#TODO: Reenable cxx_std_14 when supported by intel jedi-stack modules (jedi-stack #125)
-target_compile_features( lorenz95 PUBLIC cxx_std_11 )
 target_include_directories( lorenz95 PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..> )

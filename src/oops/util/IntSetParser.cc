@@ -56,36 +56,40 @@ int stringToChanNum(const std::string& str) {
 
 // -----------------------------------------------------------------------------
 
-/// Function to parse channels (supports commas for separating channels
-//  and channel ranges and dashes for channel ranges).
+/// Function to parse integers (supports commas for separating integers
+//  and integers ranges and dashes for integer ranges).
 //  For example: 1-5, 9, 13-45
 //  Returns a std::set, no need to sort or remove duplicates and find/insert are in log(n)
+//  Supports -1 as [-1] and not [0-1]; other negative integers are not parsed
 
 std::set<int> parseIntSet(const std::string & str) {
-  std::set<int> channels;
+  std::set<int> set_ints;
 
-// split string by commas to get individual channels or ranges
+// split string by commas to get individual integers or ranges
   std::vector<std::string> ranges = splitString(str, ',');
 
-  for (std::size_t irange = 0; irange < ranges.size(); irange++) {
-    // split the element by dashes (in case it is a range)
-    std::vector<std::string> range = splitString(ranges[irange], '-');
-    ASSERT((range.size() == 1) || (range.size() == 2));
-    // add a single channel
-    if (range.size() == 1) {
+  if (ranges == std::vector<std::string>(1, "-1")) {
+    set_ints.insert(-1);
+  } else {
+    for (std::size_t irange = 0; irange < ranges.size(); irange++) {
+      // split the element by dashes (in case it is a range)
+      std::vector<std::string> range = splitString(ranges[irange], '-');
+      ASSERT((range.size() == 1) || (range.size() == 2));
       // add a single channel
-      channels.insert(stringToChanNum(range[0]));
-    } else if (range.size() == 2) {
-      // add a range
-      int start = stringToChanNum(range[0]);
-      int stop  = stringToChanNum(range[1]);
-      for (int ch = start; ch <= stop; ch++) {
-        channels.insert(ch);
+      if (range.size() == 1) {
+        // add a single channel
+        set_ints.insert(stringToChanNum(range[0]));
+      } else if (range.size() == 2) {
+        // add a range
+        int start = stringToChanNum(range[0]);
+        int stop  = stringToChanNum(range[1]);
+        for (int ch = start; ch <= stop; ch++) {
+          set_ints.insert(ch);
+        }
       }
     }
   }
-
-  return channels;
+  return set_ints;
 }
 
 // -----------------------------------------------------------------------------

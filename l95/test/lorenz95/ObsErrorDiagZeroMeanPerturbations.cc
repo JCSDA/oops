@@ -19,6 +19,7 @@
 #include "oops/runs/Test.h"
 #include "oops/util/Expect.h"
 #include "oops/util/sqr.h"
+#include "oops/util/TimeWindow.h"
 #include "test/TestEnvironment.h"
 
 namespace test {
@@ -46,21 +47,18 @@ CASE("test_obserrordiag_zeromeanpert") {
     const eckit::LocalConfiguration costFunctionConf(memberConf, "cost function");
     const std::vector<eckit::LocalConfiguration> obsConfs =
         costFunctionConf.getSubConfigurations("observations.observers");
+    const eckit::LocalConfiguration timeWindowConf(costFunctionConf, "time window");
     EXPECT_EQUAL(obsConfs.size(), 1);
 
     const eckit::LocalConfiguration obsErrorConf(obsConfs[0], "obs error");
-    randomAmplitude = obsErrorConf.getDouble("random amplitude");
+    randomAmplitude = obsErrorConf.getDouble("obs perturbations amplitude");
 
     eckit::LocalConfiguration obsSpaceConf;
-    obsSpaceConf.set("obsdatain.engine.obsfile",
-        obsConfs[0].getString("obs space.obsdataout.engine.obsfile"));
-    lorenz95::ObsTableParameters obsSpaceParams;
-    obsSpaceParams.deserialize(obsSpaceConf);
+    obsSpaceConf.set("obsdatain.obsfile", obsConfs[0].getString("obs space.obsdataout.obsfile"));
 
-    util::DateTime windowBegin(costFunctionConf.getString("window begin"));
-    util::Duration windowLength(costFunctionConf.getString("window length"));
-    lorenz95::ObsTable obsSpace(obsSpaceParams, oops::mpi::world(),
-                                windowBegin, windowBegin + windowLength, oops::mpi::myself());
+    lorenz95::ObsTable obsSpace(obsSpaceConf, oops::mpi::world(),
+                                util::TimeWindow(timeWindowConf),
+                                oops::mpi::myself());
     obsSpace.getdb("ObsValue", originalObs);
     obsSpace.getdb("ObsError", obsErrors);
     obsSpace.getdb("EffectiveObsValue", perturbedObs);

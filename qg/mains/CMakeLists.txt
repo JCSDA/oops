@@ -30,11 +30,27 @@ ecbuild_add_executable( TARGET  qg_gen_ens_pert_B.x
                       )
 oops_output_json_schema( qg_gen_ens_pert_B.x )
 
+ecbuild_add_executable( TARGET  qg_gen_hybrid_linear_model_coeffs.x
+                        SOURCES qgGenHybridLinearModelCoeffs.cc
+                        LIBS    qg
+                      )
+oops_output_json_schema( qg_gen_hybrid_linear_model_coeffs.x )
+
 ecbuild_add_executable( TARGET  qg_4dvar.x
                         SOURCES qg4DVar.cc
                         LIBS    qg
                       )
+ecbuild_add_executable( TARGET  qg_rescale_ens_perts.x
+                        SOURCES qgRescaleEnsPerts.cc
+                        LIBS    qg
+                      )
 # TODO: oops_output_json_schema( qg_4dvar.x )
+
+ecbuild_add_executable( TARGET  qg_ControlPert.x
+                        SOURCES qgControlPert.cc
+                        LIBS    qg
+                      )
+# TODO: oops_output_json_schema( qg_ControlPert.x )
 
 ecbuild_add_executable( TARGET  qg_hofx.x
                         SOURCES qgHofX.cc
@@ -60,18 +76,6 @@ ecbuild_add_executable( TARGET  qg_addincrement.x
                       )
 oops_output_json_schema( qg_addincrement.x )
 
-ecbuild_add_executable( TARGET  qg_dirac.x
-                        SOURCES qgDirac.cc
-                        LIBS    qg
-                      )
-oops_output_json_schema( qg_dirac.x )
-
-ecbuild_add_executable( TARGET  qg_staticbinit.x
-                        SOURCES qgStaticBInit.cc
-                        LIBS    qg
-                      )
-oops_output_json_schema( qg_staticbinit.x )
-
 ecbuild_add_executable( TARGET  qg_eda.x
                         SOURCES qgEDA.cc
                         LIBS    qg
@@ -90,11 +94,11 @@ ecbuild_add_executable( TARGET  qg_convertincrement.x
                       )
 oops_output_json_schema( qg_convertincrement.x )
 
-ecbuild_add_executable( TARGET  qg_ens_variance.x
-                        SOURCES qgEnsVariance.cc
+ecbuild_add_executable( TARGET  qg_ens_mean_variance.x
+                        SOURCES qgEnsMeanVariance.cc
                         LIBS    qg
                       )
-oops_output_json_schema( qg_ens_variance.x )
+oops_output_json_schema( qg_ens_mean_variance.x )
 
 ecbuild_add_executable( TARGET  qg_letkf.x
                         SOURCES qgLETKF.cc
@@ -114,8 +118,14 @@ ecbuild_add_executable( TARGET  qg_hybridgain.x
                       )
 oops_output_json_schema( qg_hybridgain.x )
 
-ecbuild_add_executable( TARGET  qg_rtpp.x
-                        SOURCES qgRTPP.cc
+ecbuild_add_executable( TARGET  qg_ensemble_inflation.x
+                        SOURCES qgEnsembleInflation.cc
                         LIBS    qg
                       )
-oops_output_json_schema( qg_rtpp.x )
+oops_output_json_schema( qg_ensemble_inflation.x )
+
+ecbuild_add_executable( TARGET  qg_linearization_error.x
+                        SOURCES qgLinearizationError.cc
+                        LIBS    qg
+                      )
+# TODO: oops_output_json_schema( qg_linearization_error.x )

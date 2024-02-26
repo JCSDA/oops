@@ -10,6 +10,7 @@
 #include <memory>
 
 #include "atlas/array.h"
+#include "eckit/config/Configuration.h"
 #include "eckit/geometry/Point2.h"
 #include "eckit/geometry/Point3.h"
 #include "eckit/geometry/Sphere.h"
@@ -27,8 +28,8 @@ static oops::ObsLocalizationMaker<QgTraits, QgObsTraits, ObsLocQG> makerObsLoc_(
 
 // -----------------------------------------------------------------------------
 
-ObsLocQG::ObsLocQG(const Parameters_ & params, const ObsSpaceQG & obsdb)
-  : lengthscale_(params.lengthscale), obsdb_(obsdb)
+ObsLocQG::ObsLocQG(const eckit::Configuration & conf, const ObsSpaceQG & obsdb)
+  : lengthscale_(conf.getDouble("lengthscale")), obsdb_(obsdb)
 {
 }
 

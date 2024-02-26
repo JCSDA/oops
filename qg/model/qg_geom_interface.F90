@@ -8,7 +8,7 @@
 
 module qg_geom_interface
 
-use atlas_module, only: atlas_fieldset, atlas_functionspace_pointcloud
+use atlas_module, only: atlas_fieldset, atlas_functionspace_nodecolumns
 use fckit_configuration_module, only: fckit_configuration
 use fckit_log_module,only: fckit_log
 use kinds
@@ -77,13 +77,13 @@ type(qg_geom),pointer :: self
 
 ! Interface
 call qg_geom_registry%get(c_key_self,self)
-self%afunctionspace = atlas_functionspace_pointcloud(c_afunctionspace)
+self%afunctionspace = atlas_functionspace_nodecolumns(c_afunctionspace)
 
 end subroutine qg_geom_set_functionspace_pointer_c
 ! ------------------------------------------------------------------------------
-!> Fill extra fields
-subroutine qg_geom_fill_extra_fields_c(c_key_self,c_afieldset) &
- & bind(c,name='qg_geom_fill_extra_fields_f90')
+!> Fill geometry fields
+subroutine qg_geom_fill_geometry_fields_c(c_key_self,c_afieldset) &
+ & bind(c,name='qg_geom_fill_geometry_fields_f90')
 
 ! Passed variables
 integer(c_int),intent(in) :: c_key_self     !< Geometry
@@ -98,9 +98,9 @@ call qg_geom_registry%get(c_key_self,self)
 afieldset = atlas_fieldset(c_afieldset)
 
 ! Call Fortran
-call qg_geom_fill_extra_fields(self,afieldset)
+call qg_geom_fill_geometry_fields(self,afieldset)
 
-end subroutine qg_geom_fill_extra_fields_c
+end subroutine qg_geom_fill_geometry_fields_c
 ! ------------------------------------------------------------------------------
 !> Clone geometry
 subroutine qg_geom_clone_c(c_key_self,c_key_other) bind(c,name='qg_geom_clone_f90')

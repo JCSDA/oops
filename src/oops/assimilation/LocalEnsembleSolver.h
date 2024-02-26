@@ -32,6 +32,7 @@
 #include "oops/base/ObsLocalizations.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/State.h"
+#include "oops/base/State4D.h"
 #include "oops/base/StateEnsemble4D.h"
 #include "oops/generic/PseudoModelState4D.h"
 #include "oops/interface/GeometryIterator.h"
@@ -40,6 +41,7 @@
 #include "oops/util/Logger.h"
 
 namespace oops {
+  class Variables;
 
 /// \brief Base class for LETKF-type solvers
 template <typename MODEL, typename OBS>
@@ -56,10 +58,10 @@ class LocalEnsembleSolver {
   typedef Observations<OBS>           Observations_;
   typedef ObsLocalizations<MODEL, OBS> ObsLocalizations_;
   typedef ObsSpaces<OBS>              ObsSpaces_;
-  typedef State4D<MODEL>              State4D_;
   typedef StateEnsemble4D<MODEL>      StateEnsemble4D_;
   typedef PseudoModelState4D<MODEL>   PseudoModel_;
   typedef State<MODEL>                State_;
+  typedef State4D<MODEL>              State4D_;
   typedef Model<MODEL>                Model_;
   typedef ModelAuxControl<MODEL>      ModelAux_;
   typedef ObsDataVector<OBS, int>     ObsData_;
@@ -69,8 +71,11 @@ class LocalEnsembleSolver {
   static const std::string classname() {return "oops::LocalEnsembleSolver";}
 
   /// initialize solver with \p obspaces, \p geometry, full \p config and \p nens ensemble size
+  /// \p xbmean state is used if an implementation needs a reference state
+  /// solver will use a list of analysis variables specified in \p incvars
   LocalEnsembleSolver(ObsSpaces_ & obspaces, const Geometry_ & geometry,
-                      const eckit::Configuration & config, size_t nens, const State4D_ & xbmean);
+                      const eckit::Configuration & config, size_t nens, const State4D_ & xbmean,
+                      const Variables & incvars);
   virtual ~LocalEnsembleSolver() = default;
 
   /// computes ensemble H(\p xx), returns mean H(\p xx), saves as hofx \p iteration
@@ -108,6 +113,10 @@ class LocalEnsembleSolver {
                                            ///  computeHofX method
   LocalEnsembleSolverParameters options_;
 
+  const State4D_ & xbmean_;     ///< ensemble mean or a control member that will be used to
+                                ///  center the prior ensemble
+  const Variables incvars_;
+
  private:
   const eckit::LocalConfiguration obsconf_;  // configuration for observations
   const eckit::LocalConfiguration observersconf_;  // configuration for observations.observers
@@ -120,8 +129,10 @@ template <typename MODEL, typename OBS>
 LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
                                         const Geometry_ & geometry,
                                         const eckit::Configuration & config, size_t nens,
-                                        const State4D_ & xbmean)
+                                        const State4D_ & xbmean, const Variables & incvars)
   : geometry_(geometry), obspaces_(obspaces), omb_(obspaces_), Yb_(obspaces_, nens),
+    xbmean_(xbmean),
+    incvars_(incvars),
     obsconf_(config, "observations"),
     observersconf_(obsconf_, "observers"),
     obsloc_(observersconf_, obspaces_) {
@@ -198,6 +209,7 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(const StateEnsemb
 
   const size_t nens = ens_xx.size();
   ObsEnsemble_ obsens(obspaces_, nens);
+  Observations_ y_mean_xb(obspaces_);
 
   if (readFromDisk) {
     // read hofx from disk
@@ -206,6 +218,7 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(const StateEnsemb
       Log::test() << "H(x) for member " << jj+1 << ":" << std::endl << obsens[jj] << std::endl;
     }
     R_.reset(new ObsErrors_(observersconf_, obspaces_));
+    y_mean_xb.read("hofx_y_mean_xb"+std::to_string(iteration));
   } else {
     // compute and save H(x)
 
@@ -229,14 +242,11 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(const StateEnsemb
     }
 
     // Compute H(mean(Xb))
-    State4D_ xx_mean = ens_xx.mean();
-    Observations_ y_mean_xb(obspaces_);
-
     // set QC for the mean
     config.set("save qc", true);
     config.set("save obs errors", true);
 
-    computeHofX4D(config, xx_mean, y_mean_xb);
+    computeHofX4D(config, xbmean_, y_mean_xb);
 
     y_mean_xb.save("hofx_y_mean_xb"+std::to_string(iteration));
 
@@ -249,15 +259,23 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(const StateEnsemb
   // calculate H(x) ensemble mean
   Observations_ yb_mean(obsens.mean());
 
+  // treat the special case of nens=1
+  // default option: xbmean_=mean(xb) then yb_mean == y_mean_xb and action below is a tautology
+  // if use control member==true: xbmean_ was read from the controll member,
+  //                              then using H(xbmean_) is expected by downstream applications
+  if (nens == 1) {yb_mean = y_mean_xb;}
+
   // calculate H(x) ensemble perturbations
   for (size_t iens = 0; iens < nens; ++iens) {
     Yb_[iens] = obsens[iens] - yb_mean;
+    invVarR_->mask(Yb_[iens]);
     Yb_[iens].mask(*invVarR_);
   }
 
   // calculate obs departures and mask with qc flag
   Observations_ yobs(obspaces_, "ObsValue");
   omb_ = yobs - yb_mean;
+  invVarR_->mask(omb_);
   omb_.mask(*invVarR_);
 
   // return mean H(x)
@@ -326,14 +344,15 @@ class LocalEnsembleSolverFactory {
  public:
   static std::unique_ptr<LocalEnsembleSolver<MODEL, OBS>> create(ObsSpaces_ &, const Geometry_ &,
                                                         const eckit::Configuration &,
-                                                        size_t, const State4D_ &);
+                                                        size_t, const State4D_ &,
+                                                        const Variables &);
   virtual ~LocalEnsembleSolverFactory() = default;
  protected:
   explicit LocalEnsembleSolverFactory(const std::string &);
  private:
   virtual LocalEnsembleSolver<MODEL, OBS> * make(ObsSpaces_ &, const Geometry_ &,
                                         const eckit::Configuration &, size_t,
-                                        const State4D_ &) = 0;
+                                        const State4D_ &, const Variables &) = 0;
   static std::map < std::string, LocalEnsembleSolverFactory<MODEL, OBS> * > & getMakers() {
     static std::map < std::string, LocalEnsembleSolverFactory<MODEL, OBS> * > makers_;
     return makers_;
@@ -350,8 +369,8 @@ class LocalEnsembleSolverMaker : public LocalEnsembleSolverFactory<MODEL, OBS> {
 
   virtual LocalEnsembleSolver<MODEL, OBS> * make(ObsSpaces_ & obspaces, const Geometry_ & geometry,
                                         const eckit::Configuration & conf, size_t nens,
-                                        const State4D_ & xbmean)
-    { return new T(obspaces, geometry, conf, nens, xbmean); }
+                                        const State4D_ & xbmean, const Variables & incvars)
+    { return new T(obspaces, geometry, conf, nens, xbmean, incvars); }
  public:
   explicit LocalEnsembleSolverMaker(const std::string & name)
     : LocalEnsembleSolverFactory<MODEL, OBS>(name) {}
@@ -373,7 +392,7 @@ template <typename MODEL, typename OBS>
 std::unique_ptr<LocalEnsembleSolver<MODEL, OBS>>
 LocalEnsembleSolverFactory<MODEL, OBS>::create(ObsSpaces_ & obspaces, const Geometry_ & geometry,
                                   const eckit::Configuration & conf, size_t nens,
-                                  const State4D_ & xbmean) {
+                                  const State4D_ & xbmean, const Variables & incvars) {
   Log::trace() << "LocalEnsembleSolver<MODEL, OBS>::create starting" << std::endl;
   const std::string id = conf.getString("local ensemble DA.solver");
   typename std::map<std::string, LocalEnsembleSolverFactory<MODEL, OBS>*>::iterator
@@ -388,7 +407,7 @@ LocalEnsembleSolverFactory<MODEL, OBS>::create(ObsSpaces_ & obspaces, const Geom
     throw std::runtime_error(id + " does not exist in local ensemble solver factory.");
   }
   std::unique_ptr<LocalEnsembleSolver<MODEL, OBS>>
-    ptr(jloc->second->make(obspaces, geometry, conf, nens, xbmean));
+    ptr(jloc->second->make(obspaces, geometry, conf, nens, xbmean, incvars));
   Log::trace() << "LocalEnsembleSolver<MODEL, OBS>::create done" << std::endl;
   return ptr;
 }

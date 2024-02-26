@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2024, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -28,6 +29,7 @@
 #include "oops/util/dot_product.h"
 #include "oops/util/formats.h"
 #include "oops/util/Logger.h"
+#include "oops/util/workflow.h"
 
 namespace oops {
 
@@ -92,7 +94,7 @@ template<typename MODEL, typename OBS> class DRPCGMinimizer : public DRMinimizer
 
  private:
   double solve(CtrlInc_ &, CtrlInc_ &, CtrlInc_ &, const Bmat_ &, const HtRinvH_ &,
-               const double, const double, const int, const double) override;
+               const CtrlInc_ &, const double, const double, const int, const double) override;
   QNewtonLMP<CtrlInc_, Bmat_, Cmat_> lmp_;
 };
 
@@ -107,12 +109,14 @@ DRPCGMinimizer<MODEL, OBS>::DRPCGMinimizer(const eckit::Configuration & conf, co
 
 template<typename MODEL, typename OBS>
 double DRPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_ & rr,
-                                   const Bmat_ & B, const HtRinvH_ & HtRinvH,
-                                   const double costJ0Jb, const double costJ0JoJc,
-                                   const int maxiter, const double tolerance) {
-  // dx   increment
-  // dxh  B^{-1} dx
-  // rr   (sum B^{-1} dx_i^{b} +) G^T H^{-1} d
+                                         const Bmat_ & B, const HtRinvH_ & HtRinvH,
+                                         const CtrlInc_ & gradJb,
+                                         const double costJ0Jb, const double costJ0JoJc,
+                                         const int maxiter, const double tolerance) {
+  // dx      increment
+  // dxh     B^{-1} dx
+  // rr      (sum B^{-1} dx_i^{b} +) G^T H^{-1} d
+  // gradJb  sum B^{-1} dx_i^{b}
 
   CtrlInc_ qq(dxh);
   CtrlInc_ pp(dxh);
@@ -157,6 +161,9 @@ double DRPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_
   double rdots = dotRr0;
   double rdots_old = 0.0;
 
+  printNormReduction(0, sqrt(dotRr0), normReduction);
+  printQuadraticCostFunction(0, costJ0, costJ0Jb, costJ0JoJc);
+
   vvecs.push_back(rr);
   zvecs.push_back(zz);
   scals.push_back(1.0/dotRr0);
@@ -164,6 +171,9 @@ double DRPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_
   Log::info() << std::endl;
   for (int jiter = 0; jiter < maxiter; ++jiter) {
     Log::info() << " DRPCG Starting Iteration " << jiter+1 << std::endl;
+    if (jiter < 5 || (jiter + 1) % 5 == 0 || jiter + 1 == maxiter) {
+      util::update_workflow_meter("iteration", jiter+1);
+    }
 
     if (jiter > 0) {
       // beta_{i} = r_{i+1}^T z_{i+1} / r_{i}^T z_{i}
@@ -196,8 +206,8 @@ double DRPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_
     // Compute the quadratic cost function
     // J[dx_{i}] = J[0] - 0.5 dx_{i}^T r_{0}
     double costJ = costJ0 - 0.5 * dot_product(dx, r0);
-    // Jb[dx_{i}] = 0.5 dx_{i}^T f_{i}
-    double costJb = costJ0Jb + 0.5 * dot_product(dx, dxh);
+    // Jb[dx_{i}] = Jb[0] + dx_{i}^T gradJb + 0.5 dx_{i}^T f_{i}
+    double costJb = costJ0Jb + dot_product(dx, gradJb) + 0.5 * dot_product(dx, dxh);
     // Jo[dx_{i}] + Jc[dx_{i}] = J[dx_{i}] - Jb[dx_{i}]
     double costJoJc = costJ - costJb;
 
@@ -230,6 +240,7 @@ double DRPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_
 
     if (normReduction < tolerance) {
       Log::info() << "DRPCG: Achieved required reduction in residual norm." << std::endl;
+      util::update_workflow_meter("iteration", jiter+1);
       break;
     }
 

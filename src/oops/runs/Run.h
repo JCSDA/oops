@@ -15,7 +15,9 @@
 #include <string>
 
 #include "eckit/config/YAMLConfiguration.h"
+#include "eckit/mpi/Comm.h"
 #include "eckit/runtime/Main.h"
+#include "oops/mpi/mpi.h"
 #include "oops/util/Timer.h"
 
 namespace oops {
@@ -31,7 +33,7 @@ class Run : public eckit::Main {
  public:
   Run(int argc, char** argv);
   virtual ~Run();
-  int execute(const Application &);
+  int execute(const Application &, const eckit::mpi::Comm & comm = oops::mpi::world());
 
  protected:
   const eckit::Configuration & config() const {return *config_;}

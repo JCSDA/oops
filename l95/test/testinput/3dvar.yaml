@@ -1,7 +1,8 @@
 cost function:
   cost type: 3D-Var
-  window begin: 2010-01-01T21:00:00Z
-  window length: PT6H
+  time window:
+    begin: 2010-01-01T21:00:00Z
+    length: PT6H
   geometry:
     resol: 40
   analysis variables: [x]
@@ -18,16 +19,14 @@ cost function:
     - obs operator: {}
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+          obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
         obsdataout:
-          engine:
-            obsfile: Data/3dvar.2010-01-02T00:00:00Z.obt
+          obsfile: Data/3dvar.2010-01-02T00:00:00Z.obt
       obs error:
         covariance model: diagonal
 variational:
   minimizer:
-    algorithm: DRIPCG
+    algorithm: DRPCG
   iterations:
   - ninner: 10
     gradient norm reduction: 1e-10
@@ -38,10 +37,11 @@ variational:
     online diagnostics:
       write increment: true
       increment:
-        datadir: Data
-        date: 2010-01-02T00:00:00Z
-        exp: 3dvar.iter1
-        type: in
+        state component:
+          datadir: Data
+          date: 2010-01-02T00:00:00Z
+          exp: 3dvar.iter1
+          type: in
   - ninner: 10
     gradient norm reduction: 1e-10
     geometry:
@@ -49,17 +49,27 @@ variational:
     online diagnostics:
       write increment: true
       increment:
-        datadir: Data
-        date: 2010-01-02T00:00:00Z
-        exp: 3dvar.iter2
-        type: in
+        state component:
+          datadir: Data
+          date: 2010-01-02T00:00:00Z
+          exp: 3dvar.iter2
+          type: in
 final:
   diagnostics:
     departures: oman
+  increment:
+    geometry:
+      resol: 40
+    output:
+      state component:
+        datadir: Data
+        exp: 3dvar
+        date: 2010-01-02T00:00:00Z
+        type: in
 output:
   datadir: Data
   exp: 3dvar
-  steps: ["2010-01-02T00:00:00Z"]
+  times: ["2010-01-02T00:00:00Z"]
   type: an
 
 test:

@@ -16,8 +16,12 @@
 #include <iomanip>
 #include <limits>
 
+#include "eckit/config/Configuration.h"
+
+#include "lorenz95/L95Traits.h"
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/ObsTable.h"
+#include "oops/base/Locations.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Random.h"
@@ -29,18 +33,18 @@ class Variables;
 namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
-GomL95::GomL95(const LocsL95 & locs, const oops::Variables &, const std::vector<size_t> &)
-  : size_(locs.size()), locval_(size_, 0.0)
+GomL95::GomL95(const oops::Locations<L95ObsTraits> & locs,
+               const oops::Variables &, const std::vector<size_t> &)
+  : size_(locs.samplingMethod("x").sampledLocations().size()), locval_(size_, 0.0)
 {
   oops::Log::trace() << "GomL95::GomL95 done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 /*! Constructor with Configuration */
-GomL95::GomL95(const Parameters_ & params,
-               const ObsTable &, const oops::Variables &)
+GomL95::GomL95(const eckit::Configuration & conf, const ObsTable &, const oops::Variables &)
   : size_(0), locval_()
 {
-  this->read(params);
+  this->read(conf);
 }
 // -----------------------------------------------------------------------------
 GomL95 & GomL95::operator*=(const double & zz) {
@@ -93,22 +97,22 @@ double GomL95::dot_product_with(const GomL95 & gom) const {
   return zz;
 }
 // -----------------------------------------------------------------------------
-void GomL95::fill(const std::vector<size_t> & indx,
-                  const std::vector<double> & vals,
-                  const bool) {
-  ASSERT(indx.size() == vals.size());
-  for (size_t jj = 0; jj < vals.size(); ++jj) locval_[indx[jj]] = vals[jj];
+void GomL95::fill(const std::string &, const ConstVectorRef<size_t> &indx,
+                  const ConstMatrixRef<double> &vals, const bool) {
+  ASSERT(indx.size() == vals.rows());
+  ASSERT(vals.cols() == 1);
+  for (Eigen::Index jj = 0; jj < indx.size(); ++jj) locval_[indx[jj]] = vals(jj, 0);
 }
 // -----------------------------------------------------------------------------
-void GomL95::fillAD(const std::vector<size_t> & indx,
-                    std::vector<double> & vals,
-                    const bool) const {
-  ASSERT(indx.size() == vals.size());
-  for (size_t jj = 0; jj < vals.size(); ++jj) vals[jj] += locval_[indx[jj]];
+void GomL95::fillAD(const std::string &, const ConstVectorRef<size_t> &indx,
+                    MatrixRef<double> vals, const bool) const {
+  ASSERT(indx.size() == vals.rows());
+  ASSERT(vals.cols() == 1);
+  for (Eigen::Index jj = 0; jj < indx.size(); ++jj) vals(jj, 0) += locval_[indx[jj]];
 }
 // -----------------------------------------------------------------------------
-void GomL95::read(const Parameters_ & params) {
-  const std::string & filename = params.filename;
+void GomL95::read(const eckit::Configuration & conf) {
+  const std::string filename(conf.getString("filename"));
   oops::Log::trace() << "GomL95::read opening " << filename << std::endl;
   std::ifstream fin(filename.c_str());
   if (!fin.is_open()) ABORT("GomL95::read: Error opening file: " + filename);
@@ -127,8 +131,8 @@ void GomL95::read(const Parameters_ & params) {
   oops::Log::trace() << "GomL95::read: file closed." << std::endl;
 }
 // -----------------------------------------------------------------------------
-void GomL95::write(const Parameters_ & params) const {
-  const std::string & filename = params.filename;
+void GomL95::write(const eckit::Configuration & conf) const {
+  const std::string filename(conf.getString("filename"));
   oops::Log::trace() << "GomL95::write opening " << filename << std::endl;
   std::ofstream fout(filename.c_str());
   if (!fout.is_open()) ABORT("GomL95::write: Error opening file: " + filename);

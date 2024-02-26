@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2023, the Met Office.
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -17,8 +18,6 @@
 #include <boost/noncopyable.hpp>
 
 #include "oops/util/ObjectCounter.h"
-#include "oops/util/parameters/OptionalParameter.h"
-#include "oops/util/parameters/Parameters.h"
 #include "oops/util/Printable.h"
 
 namespace eckit {
@@ -30,13 +29,6 @@ namespace lorenz95 {
   class ModelBiasCorrection;
 
 // -----------------------------------------------------------------------------
-
-class ModelBiasParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(ModelBiasParameters, Parameters)
-
- public:
-  oops::OptionalParameter<double> bias{"bias", this};
-};
 
 /// Model error for Lorenz 95 model.
 /*!
@@ -51,15 +43,14 @@ class ModelBias : public util::Printable,
                   private boost::noncopyable,
                   private util::ObjectCounter<ModelBias> {
  public:
-  typedef ModelBiasParameters Parameters_;
-
   static const std::string classname() {return "lorenz95::ModelBias";}
 
-  ModelBias(const Resolution &, const Parameters_ &);
+  ModelBias(const Resolution &, const eckit::Configuration &);
   ModelBias(const Resolution &, const ModelBias &);
   ModelBias(const ModelBias &, const bool);
   ~ModelBias() {}
 
+  ModelBias & operator=(const ModelBias &);
   ModelBias & operator+=(const ModelBiasCorrection &);
 
   const double & bias() const {return bias_;}

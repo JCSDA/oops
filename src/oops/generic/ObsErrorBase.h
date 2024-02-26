@@ -216,7 +216,9 @@ std::unique_ptr<ObsErrorParametersBase> ObsErrorFactory<OBS>::createParameters(
   if (it == getMakers().end()) {
     throw std::runtime_error(name + " does not exist in obs error factory");
   }
-  return it->second->makeParameters();
+  std::unique_ptr<ObsErrorParametersBase> ptr(it->second->makeParameters());
+  Log::trace() << "ObsErrorFactory<OBS>::createParameters done" << std::endl;
+  return ptr;
 }
 
 // -----------------------------------------------------------------------------

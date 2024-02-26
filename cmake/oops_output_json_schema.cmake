@@ -17,21 +17,20 @@ if(nlohmann_json_FOUND AND nlohmann_json_schema_validator_FOUND)
       set( OOPS_JSON_SCHEMA_CMAKE_DIR "${CMAKE_CURRENT_LIST_DIR}" )
     endif()
     set( JSON_SCHEMA_DIR "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_SYSCONFDIR}" )
-    set( JSON_SCHEMA_GENERATOR_INPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/schemageneratorinputs" )
     file( MAKE_DIRECTORY ${JSON_SCHEMA_DIR} )
-    file( MAKE_DIRECTORY ${JSON_SCHEMA_GENERATOR_INPUT_DIR} )
-
-    set( JSON_SCHEMA_PATH "${JSON_SCHEMA_DIR}/${APP}.schema.json" ) # used by configure_file below
-    configure_file( "${OOPS_JSON_SCHEMA_CMAKE_DIR}/oops_output_json_schema_x.cmake.in"
-                    "${JSON_SCHEMA_GENERATOR_INPUT_DIR}/${APP}.cmake" )
-    add_custom_command( OUTPUT "${JSON_SCHEMA_DIR}/${APP}.schema.json"
-                        DEPENDS "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/${APP}"
-                                "${JSON_SCHEMA_GENERATOR_INPUT_DIR}/${APP}.cmake"
-                        COMMAND "${CMAKE_COMMAND}"
-                                -P "${JSON_SCHEMA_GENERATOR_INPUT_DIR}/${APP}.cmake" )
-    add_custom_target( "${APP}.schema.json"
-                       ALL
-                       DEPENDS "${JSON_SCHEMA_DIR}/${APP}.schema.json" )
+    set( DEPS "${APP}" )
+    file( GLOB plugin_yml_names "${CMAKE_BINARY_DIR}/share/plugins/*.yml" )
+    foreach( plugin_yml_name ${plugin_yml_names} )
+      get_filename_component( dep "${plugin_yml_name}" NAME_WLE )
+      list( APPEND DEPS "${dep}" )
+    endforeach()
+    add_custom_target(
+      "${APP}.schema.json"
+      ALL
+      COMMAND "${APP}" "--output-json-schema=${APP}.schema.json"
+      DEPENDS "${APP}"
+      WORKING_DIRECTORY "${JSON_SCHEMA_DIR}"
+    )
     install( FILES "${JSON_SCHEMA_DIR}/${APP}.schema.json" TYPE SYSCONF )
   endfunction()
 else()

@@ -8,15 +8,14 @@ model:
   name: L95
   tstep: PT1H30M
 forecast length: P1D
-window begin: 2010-01-01T03:00:00Z
-window length: P1D
+time window:
+  begin: 2010-01-01T03:00:00Z
+  length: P1D
 observations:
   observers:
   - obs space:
       obsdatain:
-        engine:
-          obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
+        obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
       obsdataout:
-        engine:
-          obsfile: Data/mem002.enshofx.2010-01-02T00:00:00Z.obt
+        obsfile: Data/mem002.enshofx.2010-01-02T00:00:00Z.obt
     obs operator: {}

@@ -23,19 +23,18 @@
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
-ObsBias::ObsBias(const ObsSpaceQG &, const Parameters_ & params)
-  : active_(false), geovars_(), hdiags_() {
-  oops::Log::info() << "ObsBias: conf = " << params << std::endl;
+ObsBias::ObsBias(const ObsSpaceQG &, const eckit::Configuration & conf)
+  : active_(false), geovars_(), hdiags_()
+{
+  oops::Log::info() << "ObsBias: conf = " << conf << std::endl;
   bias_.fill(0.0);
-  active_ = params.stream.value() != boost::none ||
-            params.uwind.value() != boost::none ||
-            params.vwind.value() != boost::none ||
-            params.wspeed.value() != boost::none;
+  active_ = conf.has("stream") || conf.has("uwind") ||
+            conf.has("vwind") || conf.has("wspeed");
   if (active_) {
-    if (params.stream.value() != boost::none) bias_[0] = *params.stream.value();
-    if (params.uwind.value() != boost::none)  bias_[1] = *params.uwind.value();
-    if (params.vwind.value() != boost::none)  bias_[2] = *params.vwind.value();
-    if (params.wspeed.value() != boost::none) bias_[3] = *params.wspeed.value();
+    if (conf.has("stream")) bias_[0] = conf.getDouble("stream");
+    if (conf.has("uwind"))  bias_[1] = conf.getDouble("uwind");
+    if (conf.has("vwind"))  bias_[2] = conf.getDouble("vwind");
+    if (conf.has("wspeed")) bias_[3] = conf.getDouble("wspeed");
     std::string strn = "";
     for (unsigned int jj = 0; jj < ObsBias::ntypes; ++jj) {
       if (jj > 0) strn += ", ";

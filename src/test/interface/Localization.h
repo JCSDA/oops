@@ -24,7 +24,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "oops/base/Geometry.h"
-#include "oops/base/Increment.h"
+#include "oops/base/Increment4D.h"
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/Localization.h"
 #include "oops/base/Variables.h"
@@ -48,6 +48,13 @@ template <typename MODEL> class LocalizationFixture : private boost::noncopyable
   static const util::DateTime  & time()         {return *getInstance().time_;}
   static const Localization_   & localization() {return *getInstance().local_;}
 
+  static void reset() {
+    getInstance().resol_.reset();
+    getInstance().ctlvars_.reset();
+    getInstance().time_.reset();
+    getInstance().local_.reset();
+  }
+
  private:
   static LocalizationFixture<MODEL>& getInstance() {
     static LocalizationFixture<MODEL> theLocalizationFixture;
@@ -63,13 +70,14 @@ template <typename MODEL> class LocalizationFixture : private boost::noncopyable
     time_.reset(new util::DateTime(TestEnvironment::config().getString("test date")));
 
 //  Setup the localization matrix
-    const eckit::LocalConfiguration conf(TestEnvironment::config(), "localization");
+    eckit::LocalConfiguration conf(TestEnvironment::config(), "localization");
+    conf.set("date", time_->toString());
     local_.reset(new Localization_(*resol_, *ctlvars_, conf));
 
     oops::Log::test() << "Testing localization: " << *local_ << std::endl;
   }
 
-  ~LocalizationFixture<MODEL>() {}
+  ~LocalizationFixture<MODEL>() = default;
 
   std::unique_ptr<const Geometry_>       resol_;
   std::unique_ptr<const oops::Variables> ctlvars_;
@@ -81,47 +89,50 @@ template <typename MODEL> class LocalizationFixture : private boost::noncopyable
 
 template <typename MODEL> void testLocalizationRandomize() {
   typedef LocalizationFixture<MODEL> Test_;
-  typedef oops::Increment<MODEL>     Increment_;
+  typedef oops::Increment4D<MODEL>   Increment_;
 
-  Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
+  Increment_ dx(Test_::resol(), Test_::ctlvars(), {Test_::time()});
 
   Test_::localization().randomize(dx);
-  EXPECT(dx.norm() > 0.0);
+  EXPECT(dx[0].norm() > 0.0);
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL> void testLocalizationZero() {
   typedef LocalizationFixture<MODEL> Test_;
-  typedef oops::Increment<MODEL>     Increment_;
+  typedef oops::Increment4D<MODEL>   Increment_;
 
-  Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
+  Increment_ dx(Test_::resol(), Test_::ctlvars(), {Test_::time()});
 
-  EXPECT(dx.norm() == 0.0);
+  EXPECT(dx[0].norm() == 0.0);
   Test_::localization().multiply(dx);
-  EXPECT(dx.norm() == 0.0);
+  EXPECT(dx[0].norm() == 0.0);
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL> void testLocalizationMultiply() {
   typedef LocalizationFixture<MODEL> Test_;
-  typedef oops::Increment<MODEL>     Increment_;
+  typedef oops::Increment4D<MODEL>   Increment_;
 
-  Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
+  Increment_ dx(Test_::resol(), Test_::ctlvars(), {Test_::time()});
   dx.random();
 
-  EXPECT(dx.norm() > 0.0);
+  EXPECT(dx[0].norm() > 0.0);
   Test_::localization().multiply(dx);
-  EXPECT(dx.norm() > 0.0);
+  EXPECT(dx[0].norm() > 0.0);
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL> class Localization : public oops::Test {
+  typedef LocalizationFixture<MODEL> Test_;
+
  public:
   Localization() {}
   virtual ~Localization() {}
+
  private:
   std::string testid() const override {return "test::Localization<" + MODEL::name() + ">";}
 
@@ -136,7 +147,7 @@ template <typename MODEL> class Localization : public oops::Test {
       { testLocalizationMultiply<MODEL>(); });
   }
 
-  void clear() const override {}
+  void clear() const override { Test_::reset(); }
 };
 
 // -----------------------------------------------------------------------------

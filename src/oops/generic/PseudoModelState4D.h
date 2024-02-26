@@ -48,9 +48,6 @@ class PseudoModelState4D : public ModelBase<MODEL> {
   /// model time step
   const util::Duration & timeResolution() const override {return tstep_;}
 
-  /// model variables
-  const oops::Variables & variables() const override {return vars_;}
-
  private:
   void print(std::ostream &) const override;
 
@@ -58,8 +55,6 @@ class PseudoModelState4D : public ModelBase<MODEL> {
   const State4D_ & state4d_;
   /// Model's time resolution
   util::Duration   tstep_;
-  /// Variables from 4D state
-  const oops::Variables vars_;
   /// Index of the current state
   mutable size_t currentstate_;
 };
@@ -69,7 +64,7 @@ class PseudoModelState4D : public ModelBase<MODEL> {
 template<typename MODEL>
 PseudoModelState4D<MODEL>::PseudoModelState4D(const State4D_ & state4d,
                                               const util::Duration & tstep)
-  : state4d_(state4d), tstep_(tstep), vars_(state4d.variables()) {
+  : state4d_(state4d), tstep_(tstep) {
   const std::vector<util::DateTime> validTimes = state4d_.validTimes();
   if (validTimes.size() > 1) tstep_ = validTimes[1] - validTimes[0];
   Log::trace() << "PseudoModelState4D<MODEL>::PseudoModelState4D done" << std::endl;

@@ -53,6 +53,15 @@ void datetime_string_f(const util::DateTime * dd, char cstr[21]) {
 
 // -----------------------------------------------------------------------------
 
+void datetime_string_io_f(const util::DateTime * dd, char cstr[17]) {
+  const std::string ss(dd->toStringIO());
+  ASSERT(ss.length() < 17);
+//  snprintf(cstr, sizeof(cstr), ss.c_str());
+  std::strcpy(cstr, ss.c_str());
+}
+
+// -----------------------------------------------------------------------------
+
 void datetime_to_yyyymmddhhmmss_f(const util::DateTime *dt,
                                   int & year, int & month, int & day,
                                   int & hour, int & minute, int & second) {

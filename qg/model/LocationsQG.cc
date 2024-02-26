@@ -104,11 +104,11 @@ LocationsQG::LocationsQG(const eckit::Configuration & config, const eckit::mpi::
   }
 
   /*! Now get times */
-  if (config.has("window end")) {
-    util::DateTime winbgn(config.getString("window begin"));
-    util::DateTime winend(config.getString("window end"));
-    util::Duration window_len(winend - winbgn);
-    util::Duration dt = window_len / nlocs;
+  if (config.has("time window")) {
+    const util::DateTime winbgn(config.getString("time window.begin"));
+    const util::DateTime winend(config.getString("time window.end"));
+    const util::Duration window_len(winend - winbgn);
+    const util::Duration dt = window_len / nlocs;
 
     times_.clear();
     for (unsigned int j=0; j < nlocs; ++j) {
@@ -133,7 +133,7 @@ LocationsQG::LocationsQG(const LocationsQG & other) {
 LocationsQG::LocationsQG(atlas::FieldSet & fields,
                          std::vector<util::DateTime> && times) {
   pointcloud_.reset(new atlas::functionspace::PointCloud(fields.field("lonlat")));
-  if (fields.has_field("altitude")) {
+  if (fields.has("altitude")) {
     altitude_.reset(new atlas::Field(fields.field("altitude")));
   } else {
     altitude_.reset(new atlas::Field(atlas::Field()));

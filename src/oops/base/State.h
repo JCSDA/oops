@@ -12,8 +12,9 @@
 #include <string>
 #include <vector>
 
-#include "oops/base/StateParametersND.h"
 #include "oops/interface/State.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Duration.h"
 #include "oops/util/gatherPrint.h"
 
 namespace oops {
@@ -35,22 +36,8 @@ class State : public interface::State<MODEL> {
   typedef Geometry<MODEL>                    Geometry_;
 
  public:
-  typedef typename interface::State<MODEL>::Parameters_ Parameters_;
-  typedef typename interface::State<MODEL>::WriteParameters_ WriteParameters_;
-
-  /// Configuration options of either a single 3D model state  or a set of 3D states valid at
-  /// different times, each used by a different member of the MPI communicator in time.
-  typedef StateParametersND<MODEL> ParametersND_;
-
   /// Constructor for specified \p resol, with \p vars, valid at \p time
   State(const Geometry_ & resol, const Variables & vars, const util::DateTime & time);
-
-  /// Constructor for specified \p resol and parameters \p params
-  ///
-  /// \param params
-  ///   Parameters of either a single 3D state or a set of 3D states with different validity times,
-  ///   to be used by different members of the MPI communicator in time
-  State(const Geometry_ & resol, const ParametersND_ & params);
 
   /// Constructor for specified \p resol and configuration \p conf
   ///
@@ -59,13 +46,11 @@ class State : public interface::State<MODEL> {
   ///   times, to be used by different members of the MPI communicator in time
   State(const Geometry_ & resol, const eckit::Configuration & conf);
 
-  /// Constructor for specified \p resol and parameters \p params
-  ///
-  /// \param params
-  ///   Parameters of a single 3D state
-  State(const Geometry_ & resol, const Parameters_ & params);
   /// Copies \p other State, changing its resolution to \p geometry
   State(const Geometry_ & resol, const State & other);
+
+  /// Copies \p other State, changing its variables to \p vars
+  State(const Variables & vars, const State & other);
 
   State(const State &);
   State & operator=(const State &);
@@ -73,23 +58,16 @@ class State : public interface::State<MODEL> {
   /// Accessor to geometry associated with this State
   const Geometry_ & geometry() const {return resol_;}
 
-  /// Accessors to the ATLAS fieldset
-  const atlas::FieldSet & fieldSet() const;
-  atlas::FieldSet & fieldSet();
+  /// Accessors to the FieldSet3D
+  const FieldSet3D & fieldSet() const;
+  FieldSet3D & fieldSet();
   void synchronizeFields();
-
-  /// Norm (used in tests)
-  double norm() const;
 
   /// Write
   void write(const eckit::Configuration &) const;
-  void write(const WriteParameters_ &) const;
 
  private:
   const Geometry_ & resol_;
-  const eckit::mpi::Comm * commTime_;  /// pointer to the MPI communicator in time
-
-  void print(std::ostream &) const override;
 };
 
 // =============================================================================
@@ -97,43 +75,35 @@ class State : public interface::State<MODEL> {
 template<typename MODEL>
 State<MODEL>::State(const Geometry_ & resol, const Variables & vars,
                     const util::DateTime & time) :
-  interface::State<MODEL>(resol, vars, time), resol_(resol), commTime_(&resol.timeComm())
-{}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-State<MODEL>::State(const Geometry_ & resol, const ParametersND_ & paramsND) :
-  // The call to at() will return the parameters of the 3D state to be used by the current MPI rank
-  State(resol, paramsND.at(resol.timeComm()))
-{}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-State<MODEL>::State(const Geometry_ & resol, const Parameters_ & params) :
-  interface::State<MODEL>(resol, params), resol_(resol), commTime_(&resol.timeComm())
+  interface::State<MODEL>(resol, vars, time), resol_(resol)
 {}
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 State<MODEL>::State(const Geometry_ & resol, const eckit::Configuration & conf) :
-  State(resol, validateAndDeserialize<ParametersND_>(conf))
+  interface::State<MODEL>(resol, conf), resol_(resol)
 {}
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 State<MODEL>::State(const Geometry_ & resol, const State & other) :
-  interface::State<MODEL>(resol, other), resol_(resol), commTime_(&resol.timeComm())
+  interface::State<MODEL>(resol, other), resol_(resol)
+{}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+State<MODEL>::State(const Variables & vars, const State & other) :
+  interface::State<MODEL>(vars, other), resol_(other.resol_)
 {}
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 State<MODEL>::State(const State & other) :
-  interface::State<MODEL>(other), resol_(other.resol_), commTime_(&resol_.timeComm())
+  interface::State<MODEL>(other), resol_(other.resol_)
 {}
 
 // -----------------------------------------------------------------------------
@@ -141,7 +111,6 @@ State<MODEL>::State(const State & other) :
 template<typename MODEL>
 State<MODEL> & State<MODEL>::operator=(const State & rhs) {
   ASSERT(resol_ == rhs.resol_);
-  ASSERT(commTime_ == rhs.commTime_);
   interface::State<MODEL>::operator=(rhs);
   return *this;
 }
@@ -149,33 +118,37 @@ State<MODEL> & State<MODEL>::operator=(const State & rhs) {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-const atlas::FieldSet & State<MODEL>::fieldSet() const {
-  if (interface::State<MODEL>::fset_.empty()) {
-    interface::State<MODEL>::fset_ = atlas::FieldSet();
-    this->toFieldSet(interface::State<MODEL>::fset_);
-    for (const auto & field : interface::State<MODEL>::fset_) {
+const FieldSet3D & State<MODEL>::fieldSet() const {
+  if (!interface::State<MODEL>::fset_) {
+    interface::State<MODEL>::fset_.reset(new FieldSet3D(this->validTime(), resol_.getComm()));
+  }
+  if (interface::State<MODEL>::fset_->empty()) {
+    this->toFieldSet(interface::State<MODEL>::fset_->fieldSet());
+    for (const auto & field : *interface::State<MODEL>::fset_) {
       ASSERT_MSG(field.rank() == 2,
                  "OOPS expects the model's State::toFieldSet method to return rank-2 fields,"
                  " but field " + field.name() + " has rank = " + std::to_string(field.rank()));
     }
   }
-  return interface::State<MODEL>::fset_;
+  return *interface::State<MODEL>::fset_;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-atlas::FieldSet & State<MODEL>::fieldSet() {
-  if (interface::State<MODEL>::fset_.empty()) {
-    interface::State<MODEL>::fset_ = atlas::FieldSet();
-    this->toFieldSet(interface::State<MODEL>::fset_);
-    for (const auto & field : interface::State<MODEL>::fset_) {
+FieldSet3D & State<MODEL>::fieldSet() {
+  if (!interface::State<MODEL>::fset_) {
+    interface::State<MODEL>::fset_.reset(new FieldSet3D(this->validTime(), resol_.getComm()));
+  }
+  if (interface::State<MODEL>::fset_->empty()) {
+    this->toFieldSet(interface::State<MODEL>::fset_->fieldSet());
+    for (const auto & field : *interface::State<MODEL>::fset_) {
       ASSERT_MSG(field.rank() == 2,
                  "OOPS expects the model's State::toFieldSet method to return rank-2 fields,"
                  " but field " + field.name() + " has rank = " + std::to_string(field.rank()));
     }
   }
-  return interface::State<MODEL>::fset_;
+  return *interface::State<MODEL>::fset_;
 }
 
 // -----------------------------------------------------------------------------
@@ -183,25 +156,17 @@ atlas::FieldSet & State<MODEL>::fieldSet() {
 template<typename MODEL>
 void State<MODEL>::synchronizeFields() {
   // TODO(JEDI core team): remove this method when accessors are fully implemented
-  ASSERT(!interface::State<MODEL>::fset_.empty());
-  this->fromFieldSet(interface::State<MODEL>::fset_);
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-double State<MODEL>::norm() const {
-  double zz = interface::State<MODEL>::norm();
-  zz *= zz;
-  commTime_->allReduceInPlace(zz, eckit::mpi::Operation::SUM);
-  zz = sqrt(zz);
-  return zz;
+  ASSERT(interface::State<MODEL>::fset_);
+  ASSERT(!interface::State<MODEL>::fset_->empty());
+  this->fromFieldSet(interface::State<MODEL>::fset_->fieldSet());
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 void State<MODEL>::write(const eckit::Configuration & conf) const {
+  const bool dateCols = conf.getBool("date colons", true);
+
   if (conf.has("type") && conf.has("exp") && !conf.has("prefix")) {
     const std::string type = conf.getString("type");
     std::string prefix = conf.getString("exp") + "." + type;
@@ -218,39 +183,30 @@ void State<MODEL>::write(const eckit::Configuration & conf) const {
         throw eckit::BadValue("'date' was not set in the parameters passed to write() "
                               "even though 'type' was set to '" + type + "'", Here());
       const util::DateTime antime(conf.getString("date"));
-      prefix += "." + antime.toString();
+      if (dateCols) {
+        prefix += "." + antime.toString();
+      } else {
+        prefix += "." + antime.toStringIO();
+      }
       const util::Duration step = this->validTime() - antime;
       prefix += "." + step.toString();
     }
 
     if (type == "an") {
-      prefix += "." + this->validTime().toString();
+      if (dateCols) {
+        prefix += "." + this->validTime().toString();
+      } else {
+        prefix += "." + this->validTime().toStringIO();
+      }
     }
 
     eckit::LocalConfiguration preconf(conf);
+    if (conf.has("date colons")) preconf.set("date colons", dateCols);
     preconf.set("prefix", prefix);
     interface::State<MODEL>::write(preconf);
+
   } else {
     interface::State<MODEL>::write(conf);
-  }
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void State<MODEL>::write(const WriteParameters_ & params) const {
-  eckit::LocalConfiguration conf = params.toConfiguration();
-  this->write(conf);
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void State<MODEL>::print(std::ostream & os) const {
-  if (commTime_->size() > 1) {
-    gatherPrint(os, this->state(), *commTime_);
-  } else {
-    os << this->state();
   }
 }
 

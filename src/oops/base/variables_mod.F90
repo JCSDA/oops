@@ -24,11 +24,14 @@ contains
 
   generic, public :: push_back => push_back_string, push_back_vector
 
+  procedure, public :: clear
+
   procedure, public :: nvars
   procedure, public :: variable
   procedure, public :: varlist
 
   procedure, public :: has
+  procedure, public :: find
 end type
 
 interface oops_variables
@@ -126,6 +129,15 @@ end subroutine push_back_vector
 
 !-------------------------------------------------------------------------------
 
+subroutine clear(this)
+  implicit none
+  class(oops_variables), intent(inout) :: this
+
+  call c_variables_clear(this%ptr)
+end subroutine clear
+
+!-------------------------------------------------------------------------------
+
 integer function nvars(this)
   implicit none
   class(oops_variables), intent(in) :: this
@@ -173,6 +185,7 @@ function varlist(this)
   enddo  
 
 end function varlist
+
 !-------------------------------------------------------------------------------
 
 logical function has(this, var)
@@ -189,5 +202,24 @@ logical function has(this, var)
   has = c_variables_has(this%ptr, c_var)
   deallocate(c_var)
 end function has
+
+!-------------------------------------------------------------------------------
+
+integer function find(this, var)
+  use iso_c_binding, only: c_char
+  use string_f_c_mod
+  implicit none
+
+  class(oops_variables), intent(in) :: this
+  character(*), intent(in) :: var
+
+  character(kind=c_char,len=1), allocatable :: c_var(:)
+
+  call f_c_string(trim(var), c_var)
+  find = c_variables_find(this%ptr, c_var)
+  ! Convert C to Fortran indexing
+  find = find + 1
+  deallocate(c_var)
+end function find
 
 end module oops_variables_mod

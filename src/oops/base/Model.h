@@ -52,21 +52,18 @@ class Model : public util::Printable,
  public:
   static const std::string classname() {return "oops::Model";}
 
-  Model(const Geometry_ &, const ModelParametersBase &);
   Model(const Geometry_ &, const eckit::Configuration &);
   explicit Model(std::unique_ptr<ModelBase_>);
   virtual ~Model();
 
   /// \brief Run the forecast from state \p xx for \p len time, with \p post postprocessors
   /// Does not need to be implemented in the models
-  void forecast(State_ & xx, const ModelAux_ &,
-                const util::Duration & len, PostProcessor<State_> & post) const;
+  void forecast(State_ & xx, const ModelAux_ &, const util::Duration & len,
+                PostProcessor<State_> & post) const;
 
   /// \brief Time step for running Model's forecast in oops (frequency with which the
-  /// State will be updated)
+  /// State will be used within oops)
   const util::Duration & timeResolution() const {return model_->timeResolution();}
-  /// \brief Model variables (only used in 4DVar)
-  const oops::Variables & variables() const {return model_->variables();}
 
  private:
   /// \brief Forecast initialization, called before every forecast run
@@ -85,22 +82,13 @@ class Model : public util::Printable,
 // =============================================================================
 
 template<typename MODEL>
-Model<MODEL>::Model(const Geometry_ & resol, const ModelParametersBase & params)
-  : model_()
-{
+Model<MODEL>::Model(const Geometry_ & resol, const eckit::Configuration & conf) : model_() {
   Log::trace() << "Model<MODEL>::Model starting" << std::endl;
   util::Timer timer(classname(), "Model");
-  Log::info() << "Model configuration is:" << params << std::endl;
-  model_.reset(ModelFactory<MODEL>::create(resol, params));
+  Log::info() << "Model configuration is:" << conf << std::endl;
+  model_.reset(ModelFactory<MODEL>::create(resol, conf));
   Log::trace() << "Model<MODEL>::Model done" << std::endl;
 }
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-Model<MODEL>::Model(const Geometry_ & resol, const eckit::Configuration & conf)
-  : Model(resol, validateAndDeserialize<ModelParametersWrapper<MODEL>>(conf).modelParameters)
-{}
 
 // -----------------------------------------------------------------------------
 

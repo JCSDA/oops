@@ -1,0 +1,14 @@
+Input increment:
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 40, 20, 2
+  Potential vorticity    :  Min=-3.3347670579048116e+38, Max=-3.3347670579048116e+38, RMS=3.3347670579048713e+38
+Trajectory state:
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 40, 20, 2
+  Streamfunction         :  Min=-4.4551699717964417e+08, Max=1.0419319810091341e+08, RMS=1.7642280418264917e+08
+  Streamfunction LBC     :  Min=-4.0031613555457592e+08, Max=-0.0000000000000000e+00, RMS=2.0631821381632423e+08
+  Potential vorticity LBC:  Min=-6.7293786157197357e-04, Max=5.7902869607001021e-04, RMS=4.4639722241150535e-04
+Output increment:
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 20, 10, 2
+  Streamfunction         :  Min=1.3801819558202667e+51, Max=4.1405458674608019e+51, RMS=3.1977359454668173e+51

@@ -13,7 +13,6 @@
 #include <string>
 #include <vector>
 
-#include "eckit/config/Configuration.h"
 #include "lorenz95/GomL95.h"
 #include "lorenz95/ObsBiasCorrection.h"
 #include "lorenz95/ObsVec1D.h"
@@ -24,7 +23,7 @@
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
 
-ObservationTLAD::ObservationTLAD(const ObsTable &, const Parameters_ &)
+ObservationTLAD::ObservationTLAD(const ObsTable &, const eckit::Configuration &)
   : inputs_(std::vector<std::string>{"x"})
 {}
 
@@ -45,10 +44,10 @@ void ObservationTLAD::simulateObsTL(const GomL95 & gom, ObsVec1D & ovec,
 
 void ObservationTLAD::simulateObsAD(GomL95 & gom, const ObsVec1D & ovec,
                                     ObsBiasCorrection & bias) const {
-  const double missing = util::missingValue(double());
+  const double missing = util::missingValue<double>();
   for (size_t jj = 0; jj < gom.size(); ++jj) {
     if (ovec[jj] != missing) {
-      gom[jj] = ovec[jj];
+      gom[jj] += ovec[jj];
       bias.value() += ovec[jj];
     }
   }

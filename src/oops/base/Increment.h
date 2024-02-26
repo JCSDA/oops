@@ -24,7 +24,6 @@
 #include "oops/interface/Increment.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"
-#include "oops/util/gatherPrint.h"
 #include "oops/util/Timer.h"
 
 namespace oops {
@@ -49,12 +48,14 @@ namespace oops {
 template <typename MODEL>
 class Increment : public interface::Increment<MODEL> {
   typedef Geometry<MODEL>            Geometry_;
+  typedef State<MODEL>               State_;
 
  public:
   /// Constructor for specified \p geometry, with \p variables, valid on \p date
   Increment(const Geometry_ & geometry, const Variables & variables, const util::DateTime & date);
   /// Copies \p other increment, changing its resolution to \p geometry
-  Increment(const Geometry_ & geometry, const Increment & other);
+  /// Uses adjoint resolution change if \p ad is true, though still to the target \p geometry
+  Increment(const Geometry_ & geometry, const Increment & other, const bool ad = false);
   /// Creates Increment with the same geometry and variables as \p other.
   /// Copies \p other if \p copy is true, otherwise creates zero increment
   Increment(const Increment & other, const bool copy = true);
@@ -64,30 +65,20 @@ class Increment : public interface::Increment<MODEL> {
   /// Accessor to geometry associated with this Increment
   const Geometry_ & geometry() const {return resol_;}
 
-  /// Accessor to the time communicator
-  const eckit::mpi::Comm & timeComm() const {return *timeComm_;}
+  void transfer_from_state(const State_ &);
 
-  /// Shift forward in time by \p dt
-  void shift_forward(const util::DateTime & dt);
-  /// Shift backward in time by \p dt
-  void shift_backward(const util::DateTime & dt);
-
-  /// Accessors to the ATLAS fieldset
-  const atlas::FieldSet & fieldSet() const;
-  atlas::FieldSet & fieldSet();
+  /// Accessors to the FieldSet3D
+  const FieldSet3D & fieldSet() const;
+  FieldSet3D & fieldSet();
   void synchronizeFields();
   void synchronizeFieldsAD();
 
-  /// dot product with the \p other increment
-  double dot_product_with(const Increment & other) const;
-  /// Norm for diagnostics
-  double norm() const;
+  /// Compute root-mean-square by variable by level
+  /// For preconditioning HybridLinearModel coefficient calculation
+  std::vector<double> rmsByVariableByLevel(const std::string &, const bool) const;
 
  private:
-  void print(std::ostream &) const override;
-
   const Geometry_ & resol_;
-  const eckit::mpi::Comm * timeComm_;  /// pointer to the MPI communicator in time
 };
 
 // -----------------------------------------------------------------------------
@@ -95,24 +86,21 @@ class Increment : public interface::Increment<MODEL> {
 template <typename MODEL>
 Increment<MODEL>::Increment(const Geometry_ & geometry, const Variables & variables,
                             const util::DateTime & date):
-  interface::Increment<MODEL>(geometry, variables, date), resol_(geometry),
-  timeComm_(&geometry.timeComm())
+  interface::Increment<MODEL>(geometry, variables, date), resol_(geometry)
 {}
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-Increment<MODEL>::Increment(const Geometry_ & geometry, const Increment & other):
-  interface::Increment<MODEL>(geometry, other), resol_(geometry),
-  timeComm_(other.timeComm_)
+Increment<MODEL>::Increment(const Geometry_ & geometry, const Increment & other, const bool ad):
+  interface::Increment<MODEL>(geometry, other, ad), resol_(geometry)
 {}
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
 Increment<MODEL>::Increment(const Increment & other, const bool copy):
-  interface::Increment<MODEL>(other, copy), resol_(other.resol_),
-  timeComm_(other.timeComm_)
+  interface::Increment<MODEL>(other, copy), resol_(other.resol_)
 {}
 
 // -----------------------------------------------------------------------------
@@ -120,7 +108,6 @@ Increment<MODEL>::Increment(const Increment & other, const bool copy):
 template<typename MODEL>
 Increment<MODEL> & Increment<MODEL>::operator=(const Increment & rhs) {
   ASSERT(resol_ == rhs.resol_);
-  ASSERT(timeComm_ == rhs.timeComm_);
   interface::Increment<MODEL>::operator=(rhs);
   return *this;
 }
@@ -128,101 +115,37 @@ Increment<MODEL> & Increment<MODEL>::operator=(const Increment & rhs) {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-double Increment<MODEL>::dot_product_with(const Increment & dx) const {
-  double zz = interface::Increment<MODEL>::dot_product_with(dx);
-  timeComm_->allReduceInPlace(zz, eckit::mpi::Operation::SUM);
-  return zz;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-double Increment<MODEL>::norm() const {
-  double zz = interface::Increment<MODEL>::norm();
-  zz *= zz;
-  timeComm_->allReduceInPlace(zz, eckit::mpi::Operation::SUM);
-  zz = sqrt(zz);
-  return zz;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void Increment<MODEL>::shift_forward(const util::DateTime & begin) {
-  Log::trace() << "Increment<MODEL>::Increment shift_forward starting" << std::endl;
-  static int tag = 159357;
-  size_t mytime = timeComm_->rank();
-
-// Send values of M.dx_i at end of my subwindow to next subwindow
-  if (mytime + 1 < timeComm_->size()) {
-    oops::mpi::send(*timeComm_, *this, mytime+1, tag);
+const FieldSet3D & Increment<MODEL>::fieldSet() const {
+  if (!interface::Increment<MODEL>::fset_) {
+    interface::Increment<MODEL>::fset_.reset(new FieldSet3D(this->validTime(), resol_.getComm()));
   }
-
-// Receive values at beginning of my subwindow from previous subwindow
-  if (mytime > 0) {
-    oops::mpi::receive(*timeComm_, *this, mytime-1, tag);
-  } else {
-    this->zero(begin);
-  }
-
-  ++tag;
-  Log::trace() << "Increment<MODEL>::Increment shift_forward done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void Increment<MODEL>::shift_backward(const util::DateTime & end) {
-  Log::trace() << "Increment<MODEL>::Increment shift_backward starting" << std::endl;
-  static int tag = 30951;
-  size_t mytime = timeComm_->rank();
-
-// Send values of dx_i at start of my subwindow to previous subwindow
-  if (mytime > 0) {
-    oops::mpi::send(*timeComm_, *this, mytime-1, tag);
-  }
-
-// Receive values at end of my subwindow from next subwindow
-  if (mytime + 1 < timeComm_->size()) {
-    oops::mpi::receive(*timeComm_, *this, mytime+1, tag);
-  } else {
-    this->zero(end);
-  }
-
-  ++tag;
-  Log::trace() << "Increment<MODEL>::Increment shift_backward done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-const atlas::FieldSet & Increment<MODEL>::fieldSet() const {
-  if (interface::Increment<MODEL>::fset_.empty()) {
-    interface::Increment<MODEL>::fset_ = atlas::FieldSet();
-    this->toFieldSet(interface::Increment<MODEL>::fset_);
-    for (const auto & field : interface::Increment<MODEL>::fset_) {
+  if (interface::Increment<MODEL>::fset_->empty()) {
+    this->toFieldSet(interface::Increment<MODEL>::fset_->fieldSet());
+    for (const auto & field : *interface::Increment<MODEL>::fset_) {
       ASSERT_MSG(field.rank() == 2,
                  "OOPS expects the model's Increment::toFieldSet method to return rank-2 fields,"
                  " but field " + field.name() + " has rank = " + std::to_string(field.rank()));
     }
   }
-  return interface::Increment<MODEL>::fset_;
+  return *interface::Increment<MODEL>::fset_;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-atlas::FieldSet & Increment<MODEL>::fieldSet() {
-  if (interface::Increment<MODEL>::fset_.empty()) {
-    interface::Increment<MODEL>::fset_ = atlas::FieldSet();
-    this->toFieldSet(interface::Increment<MODEL>::fset_);
-    for (const auto & field : interface::Increment<MODEL>::fset_) {
+FieldSet3D & Increment<MODEL>::fieldSet() {
+  if (!interface::Increment<MODEL>::fset_) {
+    interface::Increment<MODEL>::fset_.reset(new FieldSet3D(this->validTime(), resol_.getComm()));
+  }
+  if (interface::Increment<MODEL>::fset_->empty()) {
+    this->toFieldSet(interface::Increment<MODEL>::fset_->fieldSet());
+    for (const auto & field : *interface::Increment<MODEL>::fset_) {
       ASSERT_MSG(field.rank() == 2,
                  "OOPS expects the model's Increment::toFieldSet method to return rank-2 fields,"
                  " but field " + field.name() + " has rank = " + std::to_string(field.rank()));
     }
   }
-  return interface::Increment<MODEL>::fset_;
+  return *interface::Increment<MODEL>::fset_;
 }
 
 // -----------------------------------------------------------------------------
@@ -230,8 +153,9 @@ atlas::FieldSet & Increment<MODEL>::fieldSet() {
 template<typename MODEL>
 void Increment<MODEL>::synchronizeFields() {
   // TODO(JEDI core team): remove this method when accessors are fully implemented
-  ASSERT(!interface::Increment<MODEL>::fset_.empty());
-  this->fromFieldSet(interface::Increment<MODEL>::fset_);
+  ASSERT(interface::Increment<MODEL>::fset_);
+  ASSERT(!interface::Increment<MODEL>::fset_->empty());
+  this->fromFieldSet(interface::Increment<MODEL>::fset_->fieldSet());
 }
 
 // -----------------------------------------------------------------------------
@@ -239,23 +163,27 @@ void Increment<MODEL>::synchronizeFields() {
 template<typename MODEL>
 void Increment<MODEL>::synchronizeFieldsAD() {
   // TODO(JEDI core team): remove this method when accessors are fully implemented
-  if (!interface::Increment<MODEL>::fset_.empty()) {
-    this->toFieldSetAD(interface::Increment<MODEL>::fset_);
+  if (interface::Increment<MODEL>::fset_) {
+    if (!interface::Increment<MODEL>::fset_->empty()) {
+      interface::Increment<MODEL>::fset_->fieldSet()->adjointHaloExchange();
+      this->fromFieldSet(interface::Increment<MODEL>::fset_->fieldSet());
+    }
   }
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void Increment<MODEL>::print(std::ostream & os) const {
-  if (timeComm_->size() > 1) {
-    gatherPrint(os, this->increment(), *timeComm_);
-  } else {
-    os << this->increment();
-  }
+void Increment<MODEL>::transfer_from_state(const State_ & xx) {
+  // TODO(JEDI core team): this is inneficient, we should recode this method using fieldSets
+  // when those are fully implemented
+  State_ zz(xx);
+  zz.zero();
+  this->diff(xx, zz);
 }
 
 // -----------------------------------------------------------------------------
+
 /// Add on \p dx incrment to model state \p xx
 template <typename MODEL>
 State<MODEL> & operator+=(State<MODEL> & xx, const Increment<MODEL> & dx) {
@@ -266,6 +194,38 @@ State<MODEL> & operator+=(State<MODEL> & xx, const Increment<MODEL> & dx) {
   return xx;
 }
 
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+std::vector<double> Increment<MODEL>::rmsByVariableByLevel(const std::string & var,
+                                                           const bool global) const {
+  Log::trace() << "Increment<MODEL>::rmsByVariableByLevel starting" << std::endl;
+  util::Timer timer("oops::Increment", "rmsByVariableByLevel");
+  if (resol_.fields().empty()) {
+    ABORT("Increment<MODEL>::rmsByVariableByLevel: requires Atlas interface");
+  }
+  const auto ownedView = atlas::array::make_view<int, 2>(resol_.fields()["owned"]);
+  const auto fieldView = atlas::array::make_view<double, 2>(fieldSet()[var]);
+  std::vector<double> rms(fieldView.shape(1), 0.0);
+  for (atlas::idx_t k = 0; k < fieldView.shape(1); ++k) {
+    size_t nOwned = 0;
+    for (atlas::idx_t i = 0; i < fieldView.shape(0); ++i) {
+      if (ownedView(i, 0) > 0) {
+        ++nOwned;
+        rms[k] += fieldView(i, k) * fieldView(i, k);
+      }
+    }
+    if (global) {
+      resol_.getComm().allReduceInPlace(nOwned, eckit::mpi::sum());
+      resol_.getComm().allReduceInPlace(rms[k], eckit::mpi::sum());
+    }
+    rms[k] = sqrt(rms[k] / nOwned);
+  }
+  return rms;
+  Log::trace() << "Increment<MODEL>::rmsByVariableByLevel done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
 
 }  // namespace oops
 

@@ -30,7 +30,6 @@
 #include "model/FieldsQG.h"
 #include "model/GeometryQG.h"
 #include "model/GomQG.h"
-#include "model/LocationsQG.h"
 #include "model/ModelBiasIncrement.h"
 #include "model/StateQG.h"
 
@@ -41,26 +40,26 @@ namespace qg {
 // -----------------------------------------------------------------------------
 IncrementQG::IncrementQG(const GeometryQG & resol, const oops::Variables & vars,
                          const util::DateTime & vt)
-  : fields_(new FieldsQG(resol, vars, lbc_, vt)), vars_(vars)
+  : fields_(new FieldsQG(resol, vars, lbc_, vt))
 {
   fields_->zero();
   oops::Log::trace() << "IncrementQG constructed." << std::endl;
 }
 // -----------------------------------------------------------------------------
-IncrementQG::IncrementQG(const GeometryQG & resol, const IncrementQG & other)
-  : fields_(new FieldsQG(*other.fields_, resol)), vars_(other.vars_)
+IncrementQG::IncrementQG(const GeometryQG & resol, const IncrementQG & other, const bool ad)
+  : fields_(new FieldsQG(*other.fields_, resol, ad))
 {
   oops::Log::trace() << "IncrementQG constructed from other." << std::endl;
 }
 // -----------------------------------------------------------------------------
 IncrementQG::IncrementQG(const IncrementQG & other, const bool copy)
-  : fields_(new FieldsQG(*other.fields_, copy)), vars_(other.vars_)
+  : fields_(new FieldsQG(*other.fields_, copy))
 {
   oops::Log::trace() << "IncrementQG copy-created." << std::endl;
 }
 // -----------------------------------------------------------------------------
 IncrementQG::IncrementQG(const IncrementQG & other)
-  : fields_(new FieldsQG(*other.fields_)), vars_(other.vars_)
+  : fields_(new FieldsQG(*other.fields_))
 {
   oops::Log::trace() << "IncrementQG copy-created." << std::endl;
 }
@@ -135,32 +134,24 @@ void IncrementQG::random() {
 // -----------------------------------------------------------------------------
 void IncrementQG::dirac(const eckit::Configuration & config) {
   fields_->zero();
-  util::DateTime dd(config.getString("date"));
-  if (this->validTime() == dd) fields_->dirac(config);
-}
-// -----------------------------------------------------------------------------
-std::vector<double> IncrementQG::rmsByLevel(const std::string & var) const {
-  atlas::FieldSet incrField;
-  IncrementQG::toFieldSet(incrField);
-  const auto fieldView = atlas::array::make_view<double, 2>(incrField[var]);
-  std::vector<double> vect(fieldView.shape(1), 0.0);
-  for (atlas::idx_t k = 0; k < fieldView.shape(1); ++k) {
-      for (atlas::idx_t i = 0; i < fieldView.shape(0); ++i) {
-          vect[k]+=(fieldView(i, k))*(fieldView(i, k));
-      }
-      vect[k] = sqrt(vect[k]/fieldView.shape(0));
+  if (config.has("date")) {
+    util::DateTime dd(config.getString("date"));
+    if (this->validTime() == dd) fields_->dirac(config);
+  } else if (config.has("dates")) {
+    std::vector<std::string> dates(config.getStringVector("dates"));
+    for (const auto & date : dates) {
+      util::DateTime dd(date);
+      if (this->validTime() == dd) fields_->dirac(config);
+    }
+  } else {
+    ABORT("missing date or dates in dirac configuration");
   }
-  return vect;
 }
 // -----------------------------------------------------------------------------
 /// ATLAS FieldSet
 // -----------------------------------------------------------------------------
 void IncrementQG::toFieldSet(atlas::FieldSet & fset) const {
   fields_->toFieldSet(fset);
-}
-// -----------------------------------------------------------------------------
-void IncrementQG::toFieldSetAD(const atlas::FieldSet & fset) {
-  fields_->toFieldSetAD(fset);
 }
 // -----------------------------------------------------------------------------
 void IncrementQG::fromFieldSet(const atlas::FieldSet & fset) {

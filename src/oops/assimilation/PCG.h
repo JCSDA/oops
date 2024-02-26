@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2024, the Met Office.
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -17,6 +18,7 @@
 #include "oops/assimilation/MinimizerUtils.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
+#include "oops/util/workflow.h"
 
 namespace oops {
 
@@ -92,6 +94,8 @@ double PCG(VECTOR & x, const VECTOR & b,
   double rdots = dotRr0;
   double rdots_old = 0.0;
 
+  printNormReduction(0, sqrt(rdots), normReduction);
+
   v = r;
   v  *= 1/sqrt(dotRr0);
   z = s;
@@ -103,6 +107,7 @@ double PCG(VECTOR & x, const VECTOR & b,
   Log::info() << std::endl;
   for (int jiter = 0; jiter < maxiter; ++jiter) {
     Log::info() << " PCG Starting Iteration " << jiter+1 << std::endl;
+    if (jiter < 5 || (jiter + 1) % 5 == 0) util::update_workflow_meter("iteration", jiter+1);
 
     if (jiter == 0) {
       p  = s;

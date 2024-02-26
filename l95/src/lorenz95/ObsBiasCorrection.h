@@ -15,8 +15,6 @@
 #include <iostream>
 #include <vector>
 
-#include "lorenz95/ObsBiasParameters.h"
-
 #include "oops/util/Printable.h"
 #include "oops/util/Serializable.h"
 
@@ -33,11 +31,9 @@ namespace lorenz95 {
 class ObsBiasCorrection : public util::Printable,
                           public util::Serializable {
  public:
-  typedef ObsBiasParameters Parameters_;
-
 /// Constructor, destructor
   ObsBiasCorrection();
-  ObsBiasCorrection(const ObsTable &, const Parameters_ &);
+  ObsBiasCorrection(const ObsTable &, const eckit::Configuration &);
   ObsBiasCorrection(const ObsBiasCorrection &, const bool copy = true);
   ~ObsBiasCorrection() {}
 

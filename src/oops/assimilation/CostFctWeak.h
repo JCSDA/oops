@@ -29,48 +29,14 @@
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/State.h"
-#include "oops/base/StateParametersND.h"
 #include "oops/base/TrajectorySaver.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/LinearVariableChange.h"
-#include "oops/interface/VariableChange.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
-
-template <typename MODEL, typename OBS> class CostTermBase;
-
-/// Parameters for the Weak cost function
-template <typename MODEL, typename OBS>
-class CostFctWeakParameters : public CostFunctionParametersBase<MODEL, OBS> {
-  // This typedef prevents the macro below from choking on the 2 args of the templated type
-  typedef CostFunctionParametersBase<MODEL, OBS> CostFuntionParametersBase_;
-  OOPS_CONCRETE_PARAMETERS(CostFctWeakParameters, CostFuntionParametersBase_);
-
- public:
-  typedef ModelParametersWrapper<MODEL> ModelParameters_;
-  typedef StateParameters4D<MODEL>      StateParameters4D_;
-  typedef typename VariableChange<MODEL>::Parameters_  VariableChangeParameters_;
-
-  RequiredParameter<ModelParameters_> model{"model", "model", this};
-  RequiredParameter<util::Duration> subwindow{"subwindow", "length of assimilation subwindows",
-      this};
-
-  Parameter<VariableChangeParameters_> variableChange{"variable change",
-           "variable change from B matrix variables to model variables", {}, this};
-
-  // options for Jb term
-  RequiredParameter<StateParameters4D_> background{"background", "background state(s)", this};
-  // Currently `ModelSpaceCovarianceParametersWrapper` doesn't support multiple covariances for
-  // multiple models, so read this as a config.
-  RequiredParameter<eckit::LocalConfiguration> backgroundError{"background error",
-      "background error(s)", this};
-};
 
 /// Weak Constraint 4D-Var Cost Function
 /*!
@@ -88,13 +54,9 @@ template<typename MODEL, typename OBS> class CostFctWeak : public CostFunction<M
   typedef State<MODEL>                    State_;
   typedef Model<MODEL>                    Model_;
   typedef LinearModel<MODEL>              LinearModel_;
-  typedef VariableChange<MODEL>           VarCha_;
-  typedef LinearVariableChange<MODEL>     LinVarCha_;
 
  public:
-  typedef CostFctWeakParameters<MODEL, OBS> Parameters_;
-
-  CostFctWeak(const Parameters_ &, const eckit::mpi::Comm &);
+  CostFctWeak(const eckit::Configuration &, const eckit::mpi::Comm &);
   ~CostFctWeak() {}
 
   void runTLM(CtrlInc_ &, PostProcessorTLAD<MODEL> &,
@@ -109,96 +71,120 @@ template<typename MODEL, typename OBS> class CostFctWeak : public CostFunction<M
   void runADJ(CtrlInc_ &, const bool idModel = false) const;
   void runNL(CtrlVar_ &, PostProcessor<State_> &) const override;
 
+ protected:
+  const Geometry_ & geometry() const override {return *resol_;}
+
  private:
   void addIncr(CtrlVar_ &, const CtrlInc_ &, PostProcessor<Increment_> &) const override;
 
-  CostJbJq<MODEL>     * newJb(const eckit::Configuration &, const Geometry_ &,
-                              const CtrlVar_ &) const override;
-  CostJo<MODEL, OBS>       * newJo(const ObserversParameters<MODEL, OBS> &) const override;
+  CostJbJq<MODEL, OBS> * newJb(const eckit::Configuration &, const Geometry_ &) const override;
+  CostJo<MODEL, OBS>       * newJo(const eckit::Configuration &) const override;
   CostTermBase<MODEL, OBS> * newJc(const eckit::Configuration &, const Geometry_ &) const override;
-  void doLinearize(const Geometry_ &, const eckit::Configuration &,
-                   const CtrlVar_ &, const CtrlVar_ &,
+  void doLinearize(const Geometry_ &, const eckit::Configuration &, CtrlVar_ &, CtrlVar_ &,
                    PostProcessor<State_> &, PostProcessorTLAD<MODEL> &) override;
-  const Geometry_ & geometry() const override {return *resol_;}
 
-  util::Duration subWinLength_;
-  util::DateTime subWinBegin_;
-  util::DateTime subWinEnd_;
   size_t nsubwin_;
-  size_t mysubwin_;
+  size_t nsublocal_;
+  const util::TimeWindow timeWindow_;
+  util::Duration subWinLength_;
+  std::vector<util::DateTime> subWinBgn_;
+  std::vector<util::DateTime> subWinEnd_;
+  eckit::mpi::Comm * commSpace_;
+  eckit::mpi::Comm * commTime_;
   std::unique_ptr<const Geometry_> resol_;
   std::unique_ptr<Model_> model_;
   const Variables ctlvars_;
   std::shared_ptr<LinearModel_> tlm_;
-  std::unique_ptr<VarCha_> an2model_;
-  std::unique_ptr<LinVarCha_> inc2model_;
-  eckit::mpi::Comm * commSpace_;
-  eckit::mpi::Comm * commTime_;
 };
 
 // =============================================================================
 
 template<typename MODEL, typename OBS>
-CostFctWeak<MODEL, OBS>::CostFctWeak(const Parameters_ & params,
+CostFctWeak<MODEL, OBS>::CostFctWeak(const eckit::Configuration & conf,
                                      const eckit::mpi::Comm & comm)
-  : CostFunction<MODEL, OBS>::CostFunction(), resol_(), model_(),
-    ctlvars_(params.analysisVariables), tlm_(), an2model_(),
-    inc2model_(), commSpace_(nullptr), commTime_(nullptr)
+  : CostFunction<MODEL, OBS>::CostFunction(),
+    timeWindow_(conf.getSubConfiguration("time window")),
+    subWinLength_(conf.getString("subwindow")),
+    subWinBgn_(), subWinEnd_(),
+    commSpace_(nullptr), commTime_(nullptr),
+    resol_(), model_(), ctlvars_(conf, "analysis variables"), tlm_()
 {
-  const util::Duration windowLength = params.windowLength;
-  const util::DateTime windowBegin = params.windowBegin;
-  subWinLength_ = params.subwindow;
+  Log::trace() << "CostFctWeak::CostFctWeak start" << std::endl;
 
-  nsubwin_ = windowLength.toSeconds() / subWinLength_.toSeconds();
-  ASSERT(windowLength.toSeconds() == subWinLength_.toSeconds()*(int64_t)nsubwin_);
+  nsubwin_ = timeWindow_.length().toSeconds() / subWinLength_.toSeconds();  // Not like 4D-En-Var
+  ASSERT(timeWindow_.length().toSeconds() == subWinLength_.toSeconds()*(int64_t)nsubwin_);
 
+// Define sub-windows
   size_t ntasks = comm.size();
   ASSERT(ntasks % nsubwin_ == 0);
-  size_t myrank = comm.rank();
-  size_t ntaskpslot = ntasks / nsubwin_;
-  size_t mysubwin_ = myrank / ntaskpslot;
-
-// Define local sub-window
-  subWinBegin_ = windowBegin + mysubwin_ * subWinLength_;
-  subWinEnd_ = subWinBegin_ + subWinLength_;
+  size_t mysubwin = 0;
+  const bool parallel = conf.getBool("parallel subwindows", true);
+  if (parallel) {
+    nsublocal_ = 1;
+    mysubwin = comm.rank() / (ntasks / nsubwin_);
+    ASSERT(mysubwin < nsubwin_);
+    const util::DateTime mytime = timeWindow_.start() + mysubwin * subWinLength_;
+    subWinBgn_.push_back(mytime);
+    subWinEnd_.push_back(mytime + subWinLength_);
+  } else {
+    nsublocal_ = nsubwin_;
+    for (size_t jsub = 0; jsub < nsubwin_; ++jsub) {
+      const util::DateTime mytime = timeWindow_.start() + jsub * subWinLength_;
+      subWinBgn_.push_back(mytime);
+      subWinEnd_.push_back(mytime + subWinLength_);
+    }
+    ASSERT(subWinBgn_[0] == timeWindow_.start());
+    ASSERT(subWinEnd_[nsubwin_ - 1] == timeWindow_.end());
+    throw eckit::NotImplemented("CostFctWeak: non parallel 4D-En-Var not tested yet", Here());
+  }
+  ASSERT(subWinBgn_.size() == nsublocal_);
+  ASSERT(subWinEnd_.size() == nsublocal_);
 
 // Create a communicator for same sub-window, to be used for communications in space
-  std::string sgeom = "comm_geom_" + std::to_string(mysubwin_);
+  std::string sgeom = "comm_geom_" + std::to_string(mysubwin);
   char const *geomName = sgeom.c_str();
-  commSpace_ = &comm.split(mysubwin_, geomName);
+  commSpace_ = &comm.split(mysubwin, geomName);
 
 // Create a communicator for same local area, to be used for communications in time
   size_t myarea = commSpace_->rank();
   std::string stime = "comm_time_" + std::to_string(myarea);
   char const *timeName = stime.c_str();
   commTime_ = &comm.split(myarea, timeName);
-  ASSERT(commTime_->size() == nsubwin_);
+  ASSERT(commTime_->size() == (nsubwin_ / nsublocal_));
+  ASSERT(commTime_->size() * commSpace_->size() == comm.size());
 
 // Now can setup the rest
-  resol_.reset(new Geometry_(params.geometry, *commSpace_, *commTime_));
-  model_.reset(new Model_(*resol_, params.model.value().modelParameters));
-  an2model_.reset(new VarCha_(params.variableChange, *resol_));
-  this->setupTerms(params.toConfiguration());
+  resol_.reset(new Geometry_(eckit::LocalConfiguration(conf, "geometry"),
+                             *commSpace_, *commTime_));
+  model_.reset(new Model_(*resol_, eckit::LocalConfiguration(conf, "model")));
 
-  Log::trace() << "CostFctWeak constructed" << std::endl;
+  this->setupTerms(conf);
+
+  Log::trace() << "CostFctWeak::CostFctWeak done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-CostJbJq<MODEL> * CostFctWeak<MODEL, OBS>::newJb(const eckit::Configuration & jbConf,
-                                                 const Geometry_ & resol,
-                                                 const CtrlVar_ & xb) const {
-  return new CostJbJq<MODEL>(jbConf, *commTime_, resol, ctlvars_, xb.state());
+CostJbJq<MODEL, OBS> * CostFctWeak<MODEL, OBS>::newJb(const eckit::Configuration & jbConf,
+                                                 const Geometry_ & resol) const {
+  Log::trace() << "CostFctWeak::newJb start" << std::endl;
+  std::vector<util::DateTime> times;
+  for (util::DateTime jj = timeWindow_.start(); jj < timeWindow_.end(); jj += subWinLength_) {
+    times.push_back(jj);
+  }
+  return new CostJbJq<MODEL, OBS>(times, jbConf, *commTime_, resol, ctlvars_);
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-CostJo<MODEL, OBS> * CostFctWeak<MODEL, OBS>::newJo(
-    const ObserversParameters<MODEL, OBS> & joParams) const {
-  return new CostJo<MODEL, OBS>(joParams, *commSpace_,
-                                subWinBegin_, subWinEnd_, *commTime_);
+CostJo<MODEL, OBS> * CostFctWeak<MODEL, OBS>::newJo(const eckit::Configuration & joConf) const {
+  Log::trace() << "CostFctWeak::newJo" << std::endl;
+  return new CostJo<MODEL, OBS>(joConf, *commSpace_,
+                                timeWindow_.createSubWindow(subWinBgn_[0],
+                                                             subWinEnd_[nsublocal_ - 1]),
+                                *commTime_);
 }
 
 // -----------------------------------------------------------------------------
@@ -206,8 +192,13 @@ CostJo<MODEL, OBS> * CostFctWeak<MODEL, OBS>::newJo(
 template <typename MODEL, typename OBS>
 CostTermBase<MODEL, OBS> * CostFctWeak<MODEL, OBS>::newJc(const eckit::Configuration & jcConf,
                                                           const Geometry_ & resol) const {
+  Log::trace() << "CostFctWeak::newJc" << std::endl;
+  if (nsublocal_ > 1) {
+    throw eckit::NotImplemented("CostFctWeak::newJc: no Jc for multiple sub windows", Here());
+//  because cannot return more than 1 Jc for now
+  }
   const eckit::LocalConfiguration jcdfi(jcConf, "jcdfi");
-  const util::DateTime vt(subWinBegin_ + subWinLength_/2);
+  const util::DateTime vt(subWinBgn_[0] + subWinLength_/2);
   return new CostJcDFI<MODEL, OBS>(jcdfi, resol, vt, subWinLength_);
 }
 
@@ -215,14 +206,16 @@ CostTermBase<MODEL, OBS> * CostFctWeak<MODEL, OBS>::newJc(const eckit::Configura
 
 template <typename MODEL, typename OBS>
 void CostFctWeak<MODEL, OBS>::runNL(CtrlVar_ & xx, PostProcessor<State_> & post) const {
-  ASSERT(xx.state().validTime() == subWinBegin_);
+  Log::trace() << "CostFctWeak::runNL start" << std::endl;
+  ASSERT(xx.states().is_4d());
+  for (size_t jsub = 0; jsub < nsublocal_; ++jsub) {
+    ASSERT(xx.state(jsub).validTime() == subWinBgn_[jsub]);
 
-  Variables anvars(xx.state().variables());
-  an2model_->changeVar(xx.state(), model_->variables());
-  model_->forecast(xx.state(), xx.modVar(), subWinLength_, post);
-  an2model_->changeVarInverse(xx.state(), anvars);
+    model_->forecast(xx.state(jsub), xx.modVar(), subWinLength_, post);
 
-  ASSERT(xx.state().validTime() == subWinEnd_);
+    ASSERT(xx.state().validTime() == subWinEnd_[jsub]);
+  }
+  Log::trace() << "CostFctWeak::runNL done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -230,21 +223,16 @@ void CostFctWeak<MODEL, OBS>::runNL(CtrlVar_ & xx, PostProcessor<State_> & post)
 template<typename MODEL, typename OBS>
 void CostFctWeak<MODEL, OBS>::doLinearize(const Geometry_ & resol,
                                           const eckit::Configuration & innerConf,
-                                          const CtrlVar_ & bg, const CtrlVar_ & fg,
+                                          CtrlVar_ & bg, CtrlVar_ & fg,
                                           PostProcessor<State_> & pp,
                                           PostProcessorTLAD<MODEL> & pptraj) {
   Log::trace() << "CostFctWeak::doLinearize start" << std::endl;
+  ASSERT(bg.states().is_4d());
+  ASSERT(fg.states().is_4d());
+// Setup linear model (including trajectory)
   eckit::LocalConfiguration lmConf(innerConf, "linear model");
-  // Setup linear model (and trajectory)
   tlm_.reset(new LinearModel_(resol, lmConf));
   pp.enrollProcessor(new TrajectorySaver<MODEL>(lmConf, resol, fg.modVar(), tlm_, pptraj));
-
-  // Create variable change
-  std::unique_ptr<eckit::LocalConfiguration> lvcConf;
-  inc2model_.reset(new LinVarCha_(resol, innerConf.getSubConfiguration("linear variable change")));
-
-  // Trajecotry for linear variable change
-  inc2model_->changeVarTraj(fg.state(), tlm_->variables());
 
   Log::trace() << "CostFctWeak::doLinearize done" << std::endl;
 }
@@ -257,16 +245,16 @@ void CostFctWeak<MODEL, OBS>::runTLM(CtrlInc_ & dx,
                                      PostProcessor<Increment_> post,
                                      const bool idModel) const {
   Log::trace() << "CostFctWeak: runTLM start" << std::endl;
+  ASSERT(dx.states().is_4d());
+  for (size_t jsub = 0; jsub < nsublocal_; ++jsub) {
+    ASSERT(dx.state(jsub).validTime() == subWinBgn_[jsub]);
 
-  ASSERT(dx.state().validTime() == subWinBegin_);
+    Variables incvars = dx.state(jsub).variables();
+    tlm_->forecastTL(dx.state(jsub), dx.modVar(), subWinLength_, post, cost, idModel);
 
-  Variables incvars = dx.state().variables();
-
-  inc2model_->changeVarTL(dx.state(), tlm_->variables());
-  tlm_->forecastTL(dx.state(), dx.modVar(), subWinLength_, post, cost, idModel);
-  inc2model_->changeVarInverseTL(dx.state(), incvars);
-
-  ASSERT(dx.state().validTime() == subWinEnd_);
+    Log::info() << "CostFctWeak::runTLM: " << dx.state(jsub) << std::endl;
+    ASSERT(dx.state(jsub).validTime() == subWinEnd_[jsub]);
+  }
   Log::trace() << "CostFctWeak: runTLM done" << std::endl;
 }
 
@@ -274,30 +262,39 @@ void CostFctWeak<MODEL, OBS>::runTLM(CtrlInc_ & dx,
 
 template <typename MODEL, typename OBS>
 void CostFctWeak<MODEL, OBS>::runTLM(CtrlInc_ & dx, const bool idModel) const {
+  Log::trace() << "CostFctWeak: runTLM start" << std::endl;
+  ASSERT(dx.states().is_4d());
   PostProcessor<Increment_> post;
   PostProcessorTLAD<MODEL> cost;
 
-  ASSERT(dx.state().validTime() == subWinBegin_);
+  for (size_t jsub = 0; jsub < nsublocal_; ++jsub) {
+    ASSERT(dx.state(jsub).validTime() == subWinBgn_[jsub]);
 
-  Variables incvars = dx.state().variables();
-  if (idModel) {
-    dx.state().updateTime(subWinLength_);
-  } else {
-    inc2model_->changeVarTL(dx.state(), tlm_->variables());
-    tlm_->forecastTL(dx.state(), dx.modVar(), subWinLength_, post, cost);
-    inc2model_->changeVarInverseTL(dx.state(), incvars);
+    if (idModel) {
+      dx.state(jsub).updateTime(subWinLength_);
+    } else {
+      Variables incvars = dx.state(jsub).variables();
+      tlm_->forecastTL(dx.state(jsub), dx.modVar(), subWinLength_, post, cost);
+    }
+
+    Log::info() << "CostFctWeak::runTLM: " << dx.state(jsub) << std::endl;
+    ASSERT(dx.state(jsub).validTime() == subWinEnd_[jsub]);
   }
-
-  ASSERT(dx.state().validTime() == subWinEnd_);
+  Log::trace() << "CostFctWeak: runTLM done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
 void CostFctWeak<MODEL, OBS>::zeroAD(CtrlInc_ & dx) const {
-  dx.state().zero(subWinEnd_);
+  Log::trace() << "CostFctWeak::zeroAD start" << std::endl;
+  ASSERT(dx.states().is_4d());
+  for (size_t jsub = 0; jsub < nsublocal_; ++jsub) {
+    dx.state(jsub).zero(subWinEnd_[jsub]);
+  }
   dx.modVar().zero();
   dx.obsVar().zero();
+  Log::trace() << "CostFctWeak::zeroAD done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -308,15 +305,16 @@ void CostFctWeak<MODEL, OBS>::runADJ(CtrlInc_ & dx,
                                      PostProcessor<Increment_> post,
                                      const bool idModel) const {
   Log::trace() << "CostFctWeak: runADJ start" << std::endl;
+  ASSERT(dx.states().is_4d());
+  for (size_t jsub = 0; jsub < nsublocal_; ++jsub) {
+    ASSERT(dx.state(jsub).validTime() == subWinEnd_[jsub]);
 
-  ASSERT(dx.state().validTime() == subWinEnd_);
+    Variables incvars = dx.state(jsub).variables();
+    tlm_->forecastAD(dx.state(jsub), dx.modVar(), subWinLength_, post, cost, idModel);
 
-  Variables incvars = dx.state().variables();
-  inc2model_->changeVarInverseAD(dx.state(), tlm_->variables());
-  tlm_->forecastAD(dx.state(), dx.modVar(), subWinLength_, post, cost, idModel);
-  inc2model_->changeVarAD(dx.state(), incvars);
-
-  ASSERT(dx.state().validTime() == subWinBegin_);
+    Log::info() << "CostFctWeak::runADJ: " << dx.state(jsub) << std::endl;
+    ASSERT(dx.state().validTime() == subWinBgn_[jsub]);
+  }
   Log::trace() << "CostFctWeak: runADJ done" << std::endl;
 }
 
@@ -324,21 +322,25 @@ void CostFctWeak<MODEL, OBS>::runADJ(CtrlInc_ & dx,
 
 template <typename MODEL, typename OBS>
 void CostFctWeak<MODEL, OBS>::runADJ(CtrlInc_ & dx, const bool idModel) const {
+  Log::trace() << "CostFctWeak::runADJ start" << std::endl;
+  ASSERT(dx.states().is_4d());
   PostProcessor<Increment_> post;
   PostProcessorTLAD<MODEL> cost;
 
-  ASSERT(dx.state().validTime() == subWinEnd_);
+  for (size_t jsub = 0; jsub < nsublocal_; ++jsub) {
+    ASSERT(dx.state(jsub).validTime() == subWinEnd_[jsub]);
 
-  Variables incvars = dx.state().variables();
-  if (idModel) {
-    dx.state().updateTime(-subWinLength_);
-  } else {
-    inc2model_->changeVarInverseAD(dx.state(), tlm_->variables());
-    tlm_->forecastAD(dx.state(), dx.modVar(), subWinLength_, post, cost);
-    inc2model_->changeVarAD(dx.state(), incvars);
+    if (idModel) {
+      dx.state(jsub).updateTime(-subWinLength_);
+    } else {
+      Variables incvars = dx.state(jsub).variables();
+      tlm_->forecastAD(dx.state(jsub), dx.modVar(), subWinLength_, post, cost);
+    }
+
+    Log::info() << "CostFctWeak::runADJ: " << dx.state(jsub) << std::endl;
+    ASSERT(dx.state().validTime() == subWinBgn_[jsub]);
   }
-
-  ASSERT(dx.state().validTime() == subWinBegin_);
+  Log::trace() << "CostFctWeak::runADJ done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -346,7 +348,15 @@ void CostFctWeak<MODEL, OBS>::runADJ(CtrlInc_ & dx, const bool idModel) const {
 template<typename MODEL, typename OBS>
 void CostFctWeak<MODEL, OBS>::addIncr(CtrlVar_ & xx, const CtrlInc_ & dx,
                                       PostProcessor<Increment_> & post) const {
-  xx.state() += dx.state();
+  Log::trace() << "CostFctWeak::addIncr start" << std::endl;
+  ASSERT(xx.states().is_4d());
+  ASSERT(dx.states().is_4d());
+  for (size_t jsub = 0; jsub < nsublocal_; ++jsub) {
+    ASSERT(xx.state(jsub).validTime() == subWinBgn_[jsub]);
+    ASSERT(dx.state(jsub).validTime() == subWinBgn_[jsub]);
+  }
+  xx.states() += dx.states();
+  Log::trace() << "CostFctWeak::addIncr done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

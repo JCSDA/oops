@@ -8,17 +8,16 @@ model:
   name: L95
   tstep: PT1H30M
 forecast length: P2D
-window begin: 2010-01-01T03:00:00Z  # obs window starts 3 hr after forecast start
-window length: P1D                  # obs window ends before forecast ends
+time window:
+  begin: 2010-01-01T03:00:00Z  # obs window starts 3 hr after forecast start
+  length: P1D                  # obs window ends before forecast ends
 observations:
   observers:
   - obs space:
       obsdatain:
-        engine:
-          obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
+        obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
       obsdataout:
-        engine:
-          obsfile: Data/hofx.2010-01-02T00:00:00Z.obt
+        obsfile: Data/hofx.2010-01-02T00:00:00Z.obt
     get values:
       time interpolation: linear
     obs operator: {}

@@ -45,12 +45,10 @@ class ObsAuxIncrement : public util::Printable,
   typedef ObsAuxControl<OBS>                     ObsAuxControl_;
 
  public:
-  typedef typename ObsAuxIncrement_::Parameters_ Parameters_;
-
   static const std::string classname() {return "oops::ObsAuxIncrement";}
 
   /// Constructor for specified ObsSpace \p os and \p params
-  ObsAuxIncrement(const ObsSpace<OBS> & os, const Parameters_ & params);
+  ObsAuxIncrement(const ObsSpace<OBS> & os, const eckit::Configuration &);
   /// Copies \p other if \p copy is true, otherwise creates zero ObsAuxIncrement
   /// of the same size as \p other.
   ObsAuxIncrement(const ObsAuxIncrement & other, const bool copy = true);
@@ -107,11 +105,11 @@ ObsAuxControl<OBS> & operator+=(ObsAuxControl<OBS> & xx, const ObsAuxIncrement<O
 
 template<typename OBS>
 ObsAuxIncrement<OBS>::ObsAuxIncrement(const ObsSpace<OBS> & os,
-                                      const Parameters_ & params) : aux_()
+                                      const eckit::Configuration & config) : aux_()
 {
   Log::trace() << "ObsAuxIncrement<OBS>::ObsAuxIncrement starting" << std::endl;
   util::Timer timer(classname(), "ObsAuxIncrement");
-  aux_.reset(new ObsAuxIncrement_(os.obsspace(), params));
+  aux_.reset(new ObsAuxIncrement_(os.obsspace(), config));
   this->setObjectSize(aux_->serialSize()*sizeof(double));
   Log::trace() << "ObsAuxIncrement<OBS>::ObsAuxIncrement done" << std::endl;
 }

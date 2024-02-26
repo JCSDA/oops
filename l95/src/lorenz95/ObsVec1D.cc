@@ -25,14 +25,14 @@ namespace lorenz95 {
 // -----------------------------------------------------------------------------
 ObsVec1D::ObsVec1D(const ObsTable & ot,
                    const std::string & name)
-  : obsdb_(ot), data_(ot.nobs()), missing_(util::missingValue(missing_))
+  : obsdb_(ot), data_(ot.nobs()), missing_(util::missingValue<double>())
 {
   for (double & val : data_) { val = 0.0; }
   if (!name.empty()) obsdb_.getdb(name, data_);
 }
 // -----------------------------------------------------------------------------
 ObsVec1D::ObsVec1D(const ObsVec1D & other)
-  : obsdb_(other.obsdb_), data_(other.data_.size()), missing_(util::missingValue(missing_))
+  : obsdb_(other.obsdb_), data_(other.data_.size()), missing_(util::missingValue<double>())
 {
   data_ = other.data_;
 }
@@ -163,7 +163,7 @@ void ObsVec1D::mask(const ObsVec1D & mask) {
 }
 // -----------------------------------------------------------------------------
 ObsVec1D & ObsVec1D::operator=(const ObsData1D<float> & rhs) {
-  const float fmiss = util::missingValue(float());
+  const float fmiss = util::missingValue<float>();
   for (size_t jj = 0; jj < data_.size(); ++jj) {
     if (rhs[jj] == fmiss) {
       data_.at(jj) = missing_;

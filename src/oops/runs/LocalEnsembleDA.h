@@ -20,10 +20,12 @@
 #include "oops/base/Departures.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
+#include "oops/base/Increment4D.h"
 #include "oops/base/IncrementEnsemble4D.h"
 #include "oops/base/instantiateObsFilterFactory.h"
 #include "oops/base/Observations.h"
 #include "oops/base/ObsSpaces.h"
+#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/State4D.h"
 #include "oops/base/StateEnsemble4D.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
@@ -33,6 +35,7 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/printRunStats.h"
 
 
 namespace oops {
@@ -79,6 +82,9 @@ class LocalEnsembleDADriverParameters : public Parameters {
   Parameter<bool> doPostObs{"do posterior observer",
                   "controls whether H(x) is computed for the posterior (analysis) ensemble",
                   true, this};
+  Parameter<bool> useControlMember{"use control member",
+                  "use control member to center prior ensemble instead of the prior ensemble mean",
+                  false, this};
 };
 
 // -----------------------------------------------------------------------------
@@ -94,10 +100,8 @@ class LocalEnsembleDAParameters : public ApplicationParameters {
   typedef typename Geometry_::Parameters_       GeometryParameters_;
   typedef typename Increment_::WriteParameters_ IncrementWriteParameters_;
 
-  /// Only observations taken at times lying in the (`window begin`, `window begin` + `window
-  /// length`] interval will be included in observation spaces.
-  RequiredParameter<util::DateTime> windowBegin{"window begin", this};
-  RequiredParameter<util::Duration> windowLength{"window length", this};
+  /// Options describing the assimilation time window.
+  RequiredParameter<eckit::LocalConfiguration> timeWindow{"time window", this};
 
   /// A list whose elements determine treatment of observations from individual observation spaces.
   /// Note: current code changes this section; it isn't trivial to define this as Parameters for
@@ -113,8 +117,15 @@ class LocalEnsembleDAParameters : public ApplicationParameters {
   RequiredParameter<eckit::LocalConfiguration> background{"background",
           "ensemble of backgrounds", this};
 
+  OptionalParameter<Variables> incvars{"increment variables",
+          "analysis increment variables", this};
+
   RequiredParameter<eckit::LocalConfiguration> localEnsDA{"local ensemble DA",
           "local ensemble DA solver and its options", this};
+
+  /// Note: these Parameters have to be present if driver.useControlMember==true
+  OptionalParameter<eckit::LocalConfiguration> controlMember{"control member",
+          "control member that can be used insteead of the ensemble mean", this};
 
   /// Note: these Parameters have to be present if driver.savePostMean or driver.savePostEns
   /// are true.
@@ -150,6 +161,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
   typedef GeometryIterator<MODEL>          GeometryIterator_;
   typedef IncrementEnsemble4D<MODEL>       IncrementEnsemble4D_;
   typedef Increment<MODEL>                 Increment_;
+  typedef Increment4D<MODEL>               Increment4D_;
   typedef LocalEnsembleSolver<MODEL, OBS>  LocalSolver_;
   typedef ObsSpaces<OBS>                   ObsSpaces_;
   typedef Observations<OBS>                Observations_;
@@ -180,10 +192,8 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     params.deserialize(fullConfig);
 
     //  Setup observation window
-    const util::DateTime winbgn = params.windowBegin;
-    const util::Duration winlen = params.windowLength;
-    const util::DateTime winend(winbgn + winlen);
-    Log::info() << "Observation window from " << winbgn << " to " << winend << std::endl;
+    const util::TimeWindow timeWindow(fullConfig.getSubConfiguration("time window"));
+    Log::info() << "Observation window: " << timeWindow << std::endl;
 
     // Setup geometry
     const Geometry_ geometry(params.geometry, this->getComm());
@@ -198,19 +208,32 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
 
     // Setup observations
     const eckit::mpi::Comm & time = oops::mpi::myself();
-    ObsSpaces_ obsdb(obsConfig, this->getComm(), winbgn, winend, time);
+    ObsSpaces_ obsdb(obsConfig, this->getComm(), timeWindow, time);
     Observations_ yobs(obsdb, "ObsValue");
 
-    // Read all ensemble members and compute the mean
+    // Read all ensemble members and compute the ensemble mean
     StateEnsemble4D_ ens_xx(geometry, params.background);
     const size_t nens = ens_xx.size();
     const Variables statevars = ens_xx.variables();
+    Variables incvars;
+    if (params.incvars.value() == boost::none) {
+      incvars += statevars;
+    } else {
+      incvars += *params.incvars.value();
+    }
     State4D_ bkg_mean = ens_xx.mean();
+    // if control member is present use that instead of the ensemble mean
+    if (params.driver.value().useControlMember) {
+      State4D_ controlMember(geometry, *params.controlMember.value());
+      bkg_mean = controlMember;
+    }
+
+    util::printRunStats("LocalEnsembleDA before solver ctor");
 
     // set up solver
     std::unique_ptr<LocalSolver_> solver =
          LocalEnsembleSolverFactory<MODEL, OBS>::create(obsdb, geometry, fullConfig,
-                                                        nens, bkg_mean);
+                                                        nens, bkg_mean, incvars);
 
     // test prints for the prior ensemble
     bool do_test_prints = params.driver.value().doTestPrints;
@@ -220,13 +243,19 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
       }
     }
 
+    util::printRunStats("LocalEnsembleDA before computeHofX");
+
     // compute H(x)
     Observations_ yb_mean = solver->computeHofX(ens_xx, 0, params.driver.value().readHofX);
-    Log::test() << "H(x) ensemble background mean: " << std::endl << yb_mean << std::endl;
+    if (do_test_prints) {
+       Log::test() << "H(x) ensemble background mean: " << std::endl << yb_mean << std::endl;
+    }
 
     Departures_ ombg(yobs - yb_mean);
     ombg.save("ombg");
-    Log::test() << "background y - H(x): " << std::endl << ombg << std::endl;
+    if (do_test_prints) {
+       Log::test() << "background y - H(x): " << std::endl << ombg << std::endl;
+    }
 
     // quit early if running in observer-only mode
     if (params.driver.value().runObsOnly.value()) {
@@ -240,24 +269,38 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     }
 
     // calculate background ensemble perturbations
-    IncrementEnsemble4D_ bkg_pert(ens_xx, bkg_mean, statevars);
+    IncrementEnsemble4D_ bkg_pert(ens_xx, bkg_mean, incvars);
 
     // initialize empty analysis perturbations
-    IncrementEnsemble4D_ ana_pert(geometry, statevars, ens_xx[0].validTimes(), bkg_pert.size());
+    IncrementEnsemble4D_ ana_pert(geometry, incvars, ens_xx[0].validTimes(), bkg_pert.size());
 
     // run the solver at each gridpoint
     Log::info() << "Beginning core local solver..." << std::endl;
+    util::printRunStats("LocalEnsembleDA before solver", true);
     solver->measurementUpdate(bkg_pert, ana_pert);
-    Log::info() << "Local solver completed." << std::endl;
 
     // wait all tasks to finish their solution, so the timing for functions below reports
     // time which truly used (not from mpi_wait(), as all tasks need to sync before write).
     oops::mpi::world().barrier();
 
+    Log::info() << "Local solver completed." << std::endl;
+    util::printRunStats("LocalEnsembleDA after solver", true);
+
     // calculate final analysis states
-    for (size_t jj = 0; jj < nens; ++jj) {
-      ens_xx[jj] = bkg_mean;
-      ens_xx[jj] += ana_pert[jj];
+    if (incvars == statevars) {
+      for (size_t jj = 0; jj < nens; ++jj) {
+        ens_xx[jj] = bkg_mean;
+        ens_xx[jj] += ana_pert[jj];
+      }
+    } else {
+      Increment4D_ ana_increment(geometry, incvars, ens_xx[0].validTimes());
+      for (size_t jj = 0; jj < nens; ++jj) {
+        ana_increment = ana_pert[jj];
+        for (size_t itime = 0; itime < bkg_pert[jj].size(); ++itime) {
+          ana_increment[itime] -= bkg_pert[jj][itime];
+        }
+        ens_xx[jj] += ana_increment;
+      }
     }
 
     // save the posterior mean, ensemble, and ensemble of increments first
@@ -353,7 +396,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
 
     // save the posterior variance
     if (params.driver.value().savePostVar.value()) {
-      if (params.outputPriorVar.value() == boost::none) {
+      if (params.outputPostVar.value() == boost::none) {
         throw eckit::BadValue("`save posterior variance` is set to true, but "
                               "`output variance posterior` configuration not found.");
       }
@@ -380,7 +423,13 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
       Log::test() << "ombg RMS: " << ombg.rms() << std::endl
                 << "oman RMS: " << oman.rms() << std::endl;
     }
-    obsdb.save();
+
+    // Save the obsspace only if an hofx was calculated
+    // (either prior and/or posterior)
+    if ( !params.driver.value().readHofX.value() ||
+         params.driver.value().doPostObs.value()) {
+      obsdb.save();
+    }
 
     return 0;
   }

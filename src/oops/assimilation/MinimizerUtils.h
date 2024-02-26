@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2020 UCAR.
+ * (C) Crown Copyright 2023, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -15,6 +16,7 @@
 
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/HtRinvHMatrix.h"
+#include "oops/base/LatLonGridWriter.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
@@ -69,7 +71,9 @@ void writeKrylovBasis(const eckit::Configuration & config,
       Log::info() << "Write Krylov Basis: starting: " << loop << std::endl;
 
       eckit::LocalConfiguration basisConf(diagConf, "krylov basis");
-      basisConf.set("iteration", loop);
+      eckit::LocalConfiguration basisStateConf(basisConf, "state component");
+      basisStateConf.set("iteration", loop);
+      basisConf.set("state component", basisStateConf);
 
       // write increment
       dx.write(basisConf);
@@ -122,10 +126,25 @@ void writeEigenvectors(const eckit::Configuration & diagConf,
         temp *= eigenvecT.coeff(jj, nn - 1 - ii);
         eigenv += temp;
       }
+
       // Save the eigenvector
-      eckit::LocalConfiguration basisConf(diagConf, "online diagnostics.eigenvector");
-      basisConf.set("iteration", ii);
-      eigenz.write(basisConf);
+      if (diagConf.has("online diagnostics.eigenvector")) {
+        eckit::LocalConfiguration basisConf(diagConf, "online diagnostics.eigenvector");
+        eckit::LocalConfiguration basisStateConf(basisConf, "state component");
+        basisStateConf.set("iteration", ii);
+        basisConf.set("state component", basisStateConf);
+        eigenz.write(basisConf);
+      } else if (diagConf.has("online diagnostics.eigenvector to latlon")) {
+        eckit::LocalConfiguration eigenLatlonConf(diagConf,
+                    "online diagnostics.eigenvector to latlon");
+        eigenLatlonConf.set("filename prefix",
+              eigenLatlonConf.getString("filename prefix")+std::to_string(ii));
+        // Eigenvector context has no meaningful State; therefore can't provide latlon output on
+        // pressure levels. Check here that model levels were requested:
+        ASSERT(eigenLatlonConf.has("model levels") && !eigenLatlonConf.has("pressure levels"));
+        const LatLonGridWriter<MODEL> latlon(eigenLatlonConf, eigenz.geometry());
+        latlon.interpolateAndWrite(eigenz.state());
+      }
 
       // Verification that eigenz is an eigenvector:
       // A.eigenv = eigenv + HtRinvH.Beigenv = eigenv + HtRinvH.eigenz = lambda eigenv
@@ -136,6 +155,7 @@ void writeEigenvectors(const eckit::Configuration & diagConf,
       temp -= eigenv;
       Log::info() << "Eigenvalue " << ii+1 << " : " << eigenvalT.coeff(nn - 1 - ii) << std::endl;
       Log::info() << "Norm A*y-lambda*y = " << dot_product(temp, temp) << std::endl;
+      Log::info() << "Eigenvector " << ii+1 << " : " << eigenz << std::endl;
 
       Log::test() << "Eigenvalue " << ii+1 << " : " << eigenvalT.coeff(nn - 1 - ii) << std::endl;
       Log::test() << "Norm eigenvector = " << dot_product(eigenz, eigenz) << std::endl;

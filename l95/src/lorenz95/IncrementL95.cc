@@ -14,6 +14,7 @@
 #include <fstream>
 #include <string>
 
+#include "eckit/config/Configuration.h"
 #include "eckit/exception/Exceptions.h"
 
 #include "oops/base/LocalIncrement.h"
@@ -27,7 +28,6 @@
 #include "lorenz95/FieldL95.h"
 #include "lorenz95/GomL95.h"
 #include "lorenz95/Iterator.h"
-#include "lorenz95/LocsL95.h"
 #include "lorenz95/ModelBiasCorrection.h"
 #include "lorenz95/Resolution.h"
 #include "lorenz95/StateL95.h"
@@ -111,8 +111,8 @@ void IncrementL95::ones() {
   fld_.ones();
 }
 // -----------------------------------------------------------------------------
-void IncrementL95::dirac(const DiracParameters_ & params) {
-  fld_.dirac(params);
+void IncrementL95::dirac(const eckit::Configuration & conf) {
+  fld_.dirac(conf);
 }
 // -----------------------------------------------------------------------------
 void IncrementL95::axpy(const double & zz, const IncrementL95 & rhs,
@@ -130,8 +130,8 @@ void IncrementL95::schur_product_with(const IncrementL95 & rhs) {
   fld_.schur(rhs.fld_);
 }
 // -----------------------------------------------------------------------------
-void IncrementL95::random() {
-  fld_.random();
+void IncrementL95::random(const size_t & seed) {
+  fld_.random(seed);
 }
 // -----------------------------------------------------------------------------
 void IncrementL95::accumul(const double & zz, const StateL95 & xx) {
@@ -140,9 +140,9 @@ void IncrementL95::accumul(const double & zz, const StateL95 & xx) {
 // -----------------------------------------------------------------------------
 /// Utilities
 // -----------------------------------------------------------------------------
-void IncrementL95::read(const ReadParameters_ & params) {
-  std::string filename(params.filename);
-  sf::swapNameMember(params.member, filename);
+void IncrementL95::read(const eckit::Configuration & config) {
+  std::string filename(config.getString("filename"));
+  sf::swapNameMember(config, filename);
   oops::Log::trace() << "IncrementL95::read opening " << filename << std::endl;
   std::ifstream fin(filename.c_str());
   if (!fin.is_open()) ABORT("IncrementL95::read: Error opening file: " + filename);
@@ -154,7 +154,7 @@ void IncrementL95::read(const ReadParameters_ & params) {
   std::string stime;
   fin >> stime;
   const util::DateTime tt(stime);
-  const util::DateTime tc(params.date);
+  const util::DateTime tc(config.getString("date"));
   if (tc != tt) {
     ABORT("IncrementL95::read: date and data file inconsistent.");
   }
@@ -166,27 +166,25 @@ void IncrementL95::read(const ReadParameters_ & params) {
   oops::Log::trace() << "IncrementL95::read: file closed." << std::endl;
 }
 // -----------------------------------------------------------------------------
-void IncrementL95::write(const WriteParameters_ & params) const {
-  const std::string &dir = params.datadir;
-  const std::string &exp = params.exp;
-  const std::string &type = params.type;
+void IncrementL95::write(const eckit::Configuration & config) const {
+  const std::string dir = config.getString("datadir");
+  const std::string exp = config.getString("exp");
+  const std::string type = config.getString("type");
   std::string filename = dir+"/"+exp+"."+type;
 
   if (type == "krylov") {
-    if (params.iteration.value() == boost::none)
+    if (!config.has("iteration"))
       throw eckit::BadValue("'iteration' was not set in the parameters passed to write() "
                             "even though 'type' was set to '" + type + "'", Here());
-    const int &iter = *params.iteration.value();
+    const int iter = config.getInt("iteration");
     filename += "."+std::to_string(iter);
   }
 
-  if (params.date.value() == boost::none)
-    throw eckit::BadValue("'date' was not set in the parameters passed to write()", Here());
-  const util::DateTime &antime = *params.date.value();
+  const util::DateTime antime(config.getString("date"));
   filename += "."+antime.toString();
   const util::Duration step = time_ - antime;
   filename += "."+step.toString();
-  sf::swapNameMember(params.member, filename);
+  sf::swapNameMember(config, filename);
   filename += ".l95";
 
   oops::Log::trace() << "IncrementL95::write opening " << filename << std::endl;

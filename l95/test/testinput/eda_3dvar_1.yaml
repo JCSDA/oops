@@ -1,7 +1,8 @@
 cost function:
   cost type: 3D-Var
-  window begin: 2010-01-01T21:00:00Z
-  window length: PT6H
+  time window:
+    begin: 2010-01-01T21:00:00Z
+    length: PT6H
   geometry:
     resol: 40
   analysis variables: [x]
@@ -17,19 +18,15 @@ cost function:
     observers:
     - obs error:
         covariance model: diagonal
-        random amplitude: 0.2
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+          obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
         obsdataout:
-          engine:
-            obsfile: Data/mem001.eda_3dvar.2010-01-02T00:00:00Z.obt
-        obs perturbations seed: 1
+          obsfile: Data/mem001.eda_3dvar.2010-01-02T00:00:00Z.obt
       obs operator: {}
 variational:
   minimizer:
-    algorithm: DRIPCG
+    algorithm: DRPCG
   iterations:
   - geometry:
       resol: 40
@@ -37,7 +34,6 @@ variational:
     gradient norm reduction: 1e-10
     diagnostics:
       departures: ombg
-    obs perturbations: false
   - geometry:
       resol: 40
     ninner: 10

@@ -3,8 +3,9 @@ geometry:
   ny: 20
   depths: [4500.0, 5500.0]
 
-window begin: 2010-01-01T00:00:00Z
-window end: 2010-01-02T00:00:00Z
+time window:
+  begin: 2010-01-01T00:00:00Z
+  end: 2010-01-02T00:00:00Z
 
 observations:
 - geovals:
@@ -14,8 +15,7 @@ observations:
     norm: 6817614730.9630165
   obs space:
     obsdatain:
-      engine:
-        obsfile: Data/truth.obs4d_24h.nc
+      obsfile: Data/truth.obs4d_24h.nc
     obs type: Stream
 - geovals:
     filename: Data/truth.obs4d_24h.wind.gom
@@ -24,8 +24,7 @@ observations:
     norm: 1440.9708190018748
   obs space:
     obsdatain:
-      engine:
-        obsfile: Data/truth.obs4d_24h.nc
+      obsfile: Data/truth.obs4d_24h.nc
     obs type: Wind
 - geovals:
     filename: Data/truth.obs4d_24h.wspeed.gom
@@ -34,6 +33,5 @@ observations:
     norm: 1471.5548038687134
   obs space:
     obsdatain:
-      engine:
-        obsfile: Data/truth.obs4d_24h.nc
+      obsfile: Data/truth.obs4d_24h.nc
     obs type: WSpeed

@@ -43,16 +43,13 @@ class ExternalDFIParameters : public ApplicationParameters {
 
  public:
   typedef typename Geometry_::Parameters_     GeometryParameters_;
-  typedef ModelParametersWrapper<MODEL>       ModelParameters_;
-  typedef typename State_::Parameters_        StateParameters_;
   typedef typename ModelAux_::Parameters_     ModelAuxParameters_;
-  typedef StateWriterParameters<State<MODEL>> StateWriterParameters_;
 
   RequiredParameter<GeometryParameters_> geometry{"geometry",
                    "geometry for initial state", this};
-  RequiredParameter<StateParameters_> initialCondition{"initial condition",
+  RequiredParameter<eckit::LocalConfiguration> initialCondition{"initial condition",
                    "initial state parameters", this};
-  RequiredParameter<ModelParameters_> model{"model", "forecast model parameters", this};
+  RequiredParameter<eckit::LocalConfiguration> model{"model", "forecast model parameters", this};
   Parameter<ModelAuxParameters_> modelAuxControl{"model aux control",
                    "augmented model state", {}, this};
 
@@ -61,7 +58,7 @@ class ExternalDFIParameters : public ApplicationParameters {
 
   Parameter<PostTimerParameters> prints{"prints",
                    "options passed to the object writing out forecast fields", {}, this};
-  RequiredParameter<StateWriterParameters_> output{"output", "where to write output", this};
+  RequiredParameter<eckit::LocalConfiguration> output{"output", "where to write output", this};
 
   RequiredParameter<eckit::LocalConfiguration> dfi{"dfi", "DFI parameters", this};
 };
@@ -84,26 +81,38 @@ template <typename MODEL> class ExternalDFI : public Application {
     if (validate) params.validate(fullConfig);
     params.deserialize(fullConfig);
 
-    // Setup resolution, model, initial state, augmented state
+//  Setup Geometry
     const Geometry_ resol(params.geometry, this->getComm());
-    const Model_ model(resol, params.model.value().modelParameters);
-    State_ xx(resol, params.initialCondition);
-    const ModelAux_ moderr(resol, params.modelAuxControl);
+
+//  Setup Model
+    const eckit::LocalConfiguration modelConfig(fullConfig, "model");
+    const Model_ model(resol, modelConfig);
+
+//  Setup initial state
+    const eckit::LocalConfiguration initialConfig(fullConfig, "initial condition");
+    State_ xx(resol, initialConfig);
     Log::test() << "Initial state: " << xx << std::endl;
 
+//  Setup augmented state
+    const ModelAux_ moderr(resol, params.modelAuxControl);
+
 //  Setup times
-    const util::Duration fclength(params.forecastLength);
+    const util::Duration fclength(fullConfig.getString("forecast length"));
     const util::DateTime bgndate(xx.validTime());
     const util::DateTime enddate(bgndate + fclength);
     Log::info() << "Running forecast from " << bgndate << " to " << enddate << std::endl;
 
 //  Setup post-processing
     PostProcessor<State_> post;
-    post.enrollProcessor(new StateInfo<State_>("fc", params.prints));
+
+    eckit::LocalConfiguration prtConf;
+    fullConfig.get("prints", prtConf);
+    post.enrollProcessor(new StateInfo<State_>("fc", prtConf));
 
 //  Setup DFI
     PostProcessor<State_> pp(post);
-    const eckit::LocalConfiguration & dfiConf = params.dfi;
+
+    const eckit::LocalConfiguration dfiConf(fullConfig, "dfi");
     const util::Duration dfispan(dfiConf.getString("filter_span"));
     const util::DateTime dfitime(bgndate+dfispan/2);
     const Variables vars(dfiConf, "filtered variables");
@@ -119,7 +128,8 @@ template <typename MODEL> class ExternalDFI : public Application {
     Log::test() << "Filtered state: " << *xdfi << std::endl;
 
 //  Setup forecast outputs
-    post.enrollProcessor(new StateWriter<State_>(params.output));
+    const eckit::LocalConfiguration outConfig(fullConfig, "output");
+    post.enrollProcessor(new StateWriter<State_>(outConfig));
 
 //  Run forecast from initialized state
     const util::Duration fclen = fclength - dfispan/2;

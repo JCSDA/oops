@@ -1,0 +1,37 @@
+geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+initial condition:
+  date: 2010-01-01T00:00:00Z
+  filename: Data/truth.fc.2009-12-15T00:00:00Z.P17D.nc
+model:
+  name: QG
+  tstep: PT1H
+forecast length: PT6H
+time window:
+  begin: 2010-01-01T00:00:00Z
+  length: PT6H
+observations:
+  observers:
+  - obs operator:
+      obs type: Stream
+    obs space:
+      obsdataout:
+        obsfile: Data/truth.single-obs4d_12h.nc
+      obs type: Stream
+      generate:
+        begin: PT6H
+        nval: 1
+        obs locations:
+          lon: [30.0]
+          lat: [45.0]
+          z: [6000.0]
+        obs error: 4.0e6
+        obs period: PT1H
+make obs: true
+prints:
+  frequency: PT3H
+
+test:
+  reference filename: testoutput/make_single-obs_4d_12h.test

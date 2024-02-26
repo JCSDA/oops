@@ -27,6 +27,7 @@
 #include "lorenz95/ModelBias.h"
 #include "lorenz95/ModelBiasCorrection.h"
 #include "lorenz95/ModelBiasCovariance.h"
+#include "lorenz95/ModelData.h"
 #include "lorenz95/NormGradientL95.h"
 #include "lorenz95/ObsBias.h"
 #include "lorenz95/ObsBiasCorrection.h"

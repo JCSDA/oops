@@ -212,6 +212,17 @@ map_parameter_json_style_unquoted_keys:
   duration_or_string_to_duration_map_1: { day: PT14H, night: PT10H }
   float_or_int_to_float_map_2: 3.5
   duration_or_string_to_duration_map_2: PT12H
+map_parameter_empty:
+  # These parameters must be specified in the order the corresponding
+  # Parameter objects are declared in the C++ file; otherwise the
+  # serialization test, which isn't very sophisticated and simply relies
+  # on a string comparison, will fail.
+  int_to_float_map: {}
+  string_to_duration_map: {}
+  float_or_int_to_float_map_1: {}
+  duration_or_string_to_duration_map_1: {}
+  float_or_int_to_float_map_2: {}
+  duration_or_string_to_duration_map_2: {}
 set_int_single_number:
   set_int_parameter: 5
 set_int_range:

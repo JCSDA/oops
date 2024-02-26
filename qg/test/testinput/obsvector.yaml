@@ -1,16 +1,15 @@
-window begin: 2010-01-01T00:00:00Z
-window end: 2010-01-02T00:00:00Z
+time window:
+  begin: 2010-01-01T00:00:00Z
+  end: 2010-01-02T00:00:00Z
 
 observations:
 - obs error:
     covariance model: diagonal
   obs space:
     obsdatain:
-      engine:
-        obsfile: Data/truth.obs4d_24h.nc
+      obsfile: Data/truth.obs4d_24h.nc
     obsdataout:
-      engine:
-        obsfile: Data/interface.obs4d_24h.nc
+      obsfile: Data/interface.obsv4d_24h.nc
     obs type: Stream
   obs operator:
     obs type: Stream
@@ -23,11 +22,9 @@ observations:
     covariance model: diagonal
   obs space:
     obsdatain:
-      engine:
-        obsfile: Data/truth.obs4d_24h.nc
+      obsfile: Data/truth.obs4d_24h.nc
     obsdataout:
-      engine:
-        obsfile: Data/interface.obs4d_24h.nc
+      obsfile: Data/interface.obsv4d_24h.nc
     obs type: Wind
   obs operator:
     obs type: Wind
@@ -40,11 +37,9 @@ observations:
     covariance model: diagonal
   obs space:
     obsdatain:
-      engine:
-        obsfile: Data/truth.obs4d_24h.nc
+      obsfile: Data/truth.obs4d_24h.nc
     obsdataout:
-      engine:
-        obsfile: Data/interface.obs4d_24h.nc
+      obsfile: Data/interface.obsv4d_24h.nc
     obs type: WSpeed
   obs operator:
     obs type: WSpeed

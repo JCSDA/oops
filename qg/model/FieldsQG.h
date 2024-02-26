@@ -38,7 +38,6 @@ namespace eckit {
 }
 
 namespace oops {
-  class Variables;
   class LocalIncrement;
 }
 
@@ -56,7 +55,7 @@ class FieldsQG : public util::Printable,
 
 // Constructors and basic operators
   FieldsQG(const GeometryQG &, const oops::Variables &, const bool &, const util::DateTime &);
-  FieldsQG(const FieldsQG &, const GeometryQG &);
+  FieldsQG(const FieldsQG &, const GeometryQG &, const bool ad = false);
   FieldsQG(const FieldsQG &, const oops::Variables &);
   FieldsQG(const FieldsQG &, const bool);
   FieldsQG(const FieldsQG &);
@@ -82,7 +81,6 @@ class FieldsQG : public util::Printable,
 
 // ATLAS FieldSet
   void toFieldSet(atlas::FieldSet &) const;
-  void toFieldSetAD(const atlas::FieldSet &);
   void fromFieldSet(const atlas::FieldSet &);
 
 // Utilities
@@ -92,6 +90,7 @@ class FieldsQG : public util::Printable,
   double norm() const;
   std::shared_ptr<const GeometryQG> geometry() const {return geom_;}
   const oops::Variables & variables() const {return vars_;}
+  oops::Variables & variables() {return vars_;}
 
   const util::DateTime & time() const {return time_;}
   util::DateTime & time() {return time_;}
@@ -113,7 +112,7 @@ class FieldsQG : public util::Printable,
   void print(std::ostream &) const override;
   F90flds keyFlds_;
   std::shared_ptr<const GeometryQG> geom_;
-  const oops::Variables vars_;
+  oops::Variables vars_;
   const bool lbc_;
   util::DateTime time_;
 };

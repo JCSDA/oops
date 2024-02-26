@@ -10,15 +10,18 @@
 
 #include "lorenz95/ObservationL95.h"
 
+#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
-#include "eckit/config/Configuration.h"
 #include "lorenz95/GomL95.h"
+#include "lorenz95/L95TraitsFwd.h"
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/ObsBias.h"
 #include "lorenz95/ObsDiags1D.h"
 #include "lorenz95/ObsVec1D.h"
+#include "oops/base/Locations.h"
 #include "oops/base/Variables.h"
 #include "oops/util/Logger.h"
 
@@ -26,7 +29,7 @@
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
 
-ObservationL95::ObservationL95(const ObsTable & ot, const Parameters_ &)
+ObservationL95::ObservationL95(const ObsTable & ot, const eckit::Configuration &)
   : obsdb_(ot), inputs_(std::vector<std::string>{"x"})
 {}
 
@@ -45,8 +48,10 @@ void ObservationL95::simulateObs(const GomL95 & gom, ObsVec1D & ovec,
 
 // -----------------------------------------------------------------------------
 
-std::unique_ptr<LocsL95> ObservationL95::locations() const {
-  return std::unique_ptr<LocsL95>(new LocsL95(obsdb_.locations(), obsdb_.times()));
+oops::Locations<L95ObsTraits> ObservationL95::locations() const {
+  oops::SampledLocations<L95ObsTraits> sampledLocations(
+        std::make_unique<LocsL95>(obsdb_.locations(), obsdb_.times()));
+  return oops::Locations<L95ObsTraits>(std::move(sampledLocations));
 }
 
 // -----------------------------------------------------------------------------

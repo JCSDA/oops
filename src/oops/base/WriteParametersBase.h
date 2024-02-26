@@ -12,6 +12,7 @@
 
 #include "oops/util/parameters/ConfigurationParameter.h"
 #include "oops/util/parameters/OptionalParameter.h"
+#include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
 
 namespace oops {
@@ -25,13 +26,13 @@ class WriteParametersBase : public Parameters {
 
  public:
   /// Set the ensemble member index to \p mem.
-  void setMember(int mem);
+  void setMember(const int &);
 
   /// Set the validity date/time to \p d.
-  void setDate(const util::DateTime &d);
+  void setDate(const util::DateTime &);
 
   /// Set the Krylov solver iteration to \p it.
-  void setIteration(int it);
+  void setIteration(const int &);
 
   /// Type
   OptionalParameter<std::string> type{"type", this};
@@ -42,6 +43,9 @@ class WriteParametersBase : public Parameters {
   /// Ensemble member index.
   OptionalParameter<int> member{"member", this};
 
+  /// Ensemble member pattern.
+  OptionalParameter<std::string> memberPattern{"member pattern", this};
+
   /// Validity time.
   OptionalParameter<util::DateTime> date{"date", this};
 
@@ -50,6 +54,9 @@ class WriteParametersBase : public Parameters {
 
   /// Prefix for filenames
   OptionalParameter<std::string> prefix{"prefix", this};
+
+  /// IO format for the date in the filenames
+  Parameter<bool> dateCols{"date colons", true, this};
 };
 
 // -----------------------------------------------------------------------------

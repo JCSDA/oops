@@ -1,0 +1,128 @@
+cost function:
+  cost type: 4D-Var
+  time window:
+    begin: 2010-01-01T00:00:00Z
+    length: PT24H
+  analysis variables: [x]
+  geometry:
+    nx: 40
+    ny: 20
+    depths: [500, 1000, 1500, 3000, 4000]
+    perturbed heating: 0.1
+  model:
+    name: QG
+    tstep: PT15M
+  background:
+    date: 2010-01-01T00:00:00Z
+    filename: Data/forecast_5level_pert_heat.fc.2009-12-31T00:00:00Z.P1D.nc
+  background error:
+    covariance model: QgError
+    horizontal_length_scale: 2.2e6
+    maximum_condition_number: 1.0e6
+    standard_deviation: 1.8e7
+    vertical_length_scale: 15000.0
+  observations:
+    observers:
+    - obs error:
+        covariance model: diagonal
+      obs operator:
+        obs type: Stream
+      obs space:
+        obsdatain:
+          obsfile: Data/truth_5level_pert_heat.obs4d_24h.nc
+        obsdataout:
+          obsfile: Data/4dvar_hybrid_linear_model.obs4d_24h.nc
+        obs type: Stream
+    - obs error:
+        covariance model: diagonal
+      obs operator:
+        obs type: Wind
+      obs space:
+        obsdatain:
+          obsfile: Data/truth_5level_pert_heat.obs4d_24h.nc
+        obsdataout:
+          obsfile: Data/4dvar_hybrid_linear_model.obs4d_24h.nc
+        obs type: Wind
+    - obs error:
+        covariance model: diagonal
+      obs operator:
+        obs type: WSpeed
+      obs space:
+        obsdatain:
+          obsfile: Data/truth_5level_pert_heat.obs4d_24h.nc
+        obsdataout:
+          obsfile: Data/4dvar_hybrid_linear_model.obs4d_24h.nc
+        obs type: WSpeed
+  constraints:
+  - jcdfi:
+      filtered variables: [x]
+      alpha: 1.0e-13
+      cutoff: PT12H
+      type: DolphChebyshev
+variational:
+  minimizer:
+    algorithm: DRPCG
+  iterations:
+  - gradient norm reduction: 1.0e-10
+    ninner: 10
+    geometry:
+      nx: 40
+      ny: 20
+      depths: [500, 1000, 1500, 3000, 4000]
+      perturbed heating: 0.1
+    linear model:
+      simple linear model:
+        linear model:
+          trajectory:
+            tstep: PT30M
+          tstep: PT1H
+          variable change: Identity
+          name: QgTLM
+      update tstep: PT6H
+      variables: [x]
+      coefficients:
+        update variables: [x]
+        influence region size: 3
+        time window:
+          begin: 2010-01-01T00:00:00Z
+          length: PT24H
+        input:
+          base filepath: Data/hybrid_linear_model_coeffs
+          one file per task: true
+      name: HTLM
+    diagnostics:
+      departures: ombg
+  - gradient norm reduction: 1.0e-10
+    ninner: 15
+    geometry:
+      nx: 40
+      ny: 20
+      depths: [500, 1000, 1500, 3000, 4000]
+      perturbed heating: 0.1
+    linear model:
+      simple linear model:
+        linear model:
+          trajectory:
+            tstep: PT30M
+          tstep: PT1H
+          variable change: Identity
+          name: QgTLM
+      update tstep: PT6H
+      variables: [x]
+      coefficients:
+        update variables: [x]
+        influence region size: 3
+        time window:
+          begin: 2010-01-01T00:00:00Z
+          length: PT24H
+        input:
+          base filepath: Data/hybrid_linear_model_coeffs
+          one file per task: true
+      name: HTLM
+final:
+  diagnostics:
+    departures: oman
+  prints:
+    frequency: PT1H
+test:
+  reference filename: testoutput/4dvar_hybrid_linear_model.test

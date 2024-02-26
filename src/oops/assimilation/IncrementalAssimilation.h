@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2023, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -62,8 +63,9 @@ int IncrementalAssimilation(ControlVariable<MODEL, OBS> & xx, CostFunction<MODEL
       post.enrollProcessor(new StateInfo<State_>("traj", prtConfig));
     }
 
-//  Setup quadratic problem
-    J.linearize(xx, iterconfs[jouter], post);
+//  Evaluate cost function and setup quadratic problem
+    iterconfs[jouter].set("linearize", true);
+    J.evaluate(xx, iterconfs[jouter], post);
     util::printRunStats("IncrementalAssimilation linearize " + std::to_string(jouter));
 
 //  Minimization

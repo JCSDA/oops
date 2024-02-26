@@ -1,9 +1,10 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * 
+ * (C) Crown Copyright 2024, the Met Office.
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -23,6 +24,7 @@
 #include "oops/base/IdentityMatrix.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
+#include "oops/util/workflow.h"
 
 namespace oops {
 
@@ -77,6 +79,7 @@ template<typename MODEL, typename OBS> class RPCGMinimizer : public DualMinimize
 
  private:
   double solve(Dual_ &, double &, Dual_ &, const HBHt_ &, const Rinv_ &,
+               const double, const double,
                const int &, const double &, Dual_ &, const double &) override;
 };
 
@@ -85,6 +88,7 @@ template<typename MODEL, typename OBS> class RPCGMinimizer : public DualMinimize
 template<typename MODEL, typename OBS>
 double RPCGMinimizer<MODEL, OBS>::solve(Dual_ & vv, double & vvp, Dual_ & rr,
                                    const HBHt_ & HBHt, const Rinv_ & Rinv,
+                                   const double costJ0Jb, const double costJ0JoJc,
                                    const int & maxiter, const double & tolerance,
                                    Dual_ & dy, const double & sigma) {
   IdentityMatrix<Dual_> precond;
@@ -137,6 +141,8 @@ double RPCGMinimizer<MODEL, OBS>::solve(Dual_ & vv, double & vvp, Dual_ & rr,
   double dotw0r0 = dotwr;
   double dotwr_old = 0.0;
 
+  printNormReduction(0, sqrt(dotw0r0), normReduction);
+
   v = rr;
   v *= 1/sqrt(dotwr);
   vp = rrp;
@@ -159,6 +165,7 @@ double RPCGMinimizer<MODEL, OBS>::solve(Dual_ & vv, double & vvp, Dual_ & rr,
   Log::info() << std::endl;
   for (int jiter = 0; jiter < maxiter; ++jiter) {
     Log::info() << "RPCG Starting Iteration " << jiter+1 << std::endl;
+    if (jiter < 5 || (jiter + 1) % 5 == 0) util::update_workflow_meter("iteration", jiter+1);
 
     if (jiter > 0) {
       double beta = dotwr/dotwr_old;

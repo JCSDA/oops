@@ -14,6 +14,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Geometry.h"
+#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/State.h"
 #include "oops/interface/VariableChange.h"
 #include "oops/mpi/mpi.h"
@@ -34,11 +35,8 @@ template <typename MODEL> class ConvertStateStatesParameters : public Parameters
   typedef State<MODEL> State_;
 
  public:
-  typedef typename State_::Parameters_      StateParameters_;
-  typedef typename State_::WriteParameters_ WriteParameters_;
-
-  RequiredParameter<StateParameters_> input{"input", this};
-  RequiredParameter<WriteParameters_> output{"output", this};
+  RequiredParameter<eckit::LocalConfiguration> input{"input", this};
+  RequiredParameter<eckit::LocalConfiguration> output{"output", this};
 };
 
 /// Options controlling variable change in the ConvertState application.
@@ -109,12 +107,12 @@ template <typename MODEL> class ConvertState : public Application {
     oops::Variables varout;
     bool inverse = false;
     if (params.varChange.value() != boost::none) {
-       const auto & varchangeparams = *params.varChange.value();
-       if (varchangeparams.varChange.outputVariables.value() != boost::none) {
-          vc.reset(new VariableChange_(varchangeparams.varChange, resol2));
-          varout = *varchangeparams.varChange.outputVariables.value();
-          inverse = varchangeparams.doInverse;
-       }
+      eckit::LocalConfiguration chconf(params.varChange.value()->toConfiguration());
+      if (chconf.has("output variables")) {
+        vc.reset(new VariableChange_(chconf, resol2));
+        varout = Variables(chconf, "output variables");
+        inverse = chconf.getBool("do inverse", false);
+      }
     }
 
 //  List of input and output states
@@ -151,7 +149,8 @@ template <typename MODEL> class ConvertState : public Application {
       }
 
 //    Write state
-      xx.write(stateParams.output.value());
+      eckit::LocalConfiguration outconf(stateParams.toConfiguration(), "output");
+      xx.write(outconf);
 
       Log::test() << "Output state: " << xx << std::endl;
     }

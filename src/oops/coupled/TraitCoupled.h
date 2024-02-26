@@ -11,6 +11,7 @@
 
 #include "oops/coupled/AuxCoupledModel.h"
 #include "oops/coupled/GeometryCoupled.h"
+#include "oops/coupled/IncrementCoupled.h"
 #include "oops/coupled/StateCoupled.h"
 #include "oops/coupled/VariableChangeCoupled.h"
 
@@ -22,6 +23,7 @@ struct TraitCoupled {
   static std::string name() {return "Coupled";}
 
   typedef GeometryCoupled<MODEL1, MODEL2>           Geometry;
+  typedef IncrementCoupled<MODEL1, MODEL2>          Increment;
   typedef StateCoupled<MODEL1, MODEL2>              State;
   typedef AuxCoupledModel<MODEL1, MODEL2>           ModelAuxControl;
   typedef VariableChangeCoupled<MODEL1, MODEL2>     VariableChange;

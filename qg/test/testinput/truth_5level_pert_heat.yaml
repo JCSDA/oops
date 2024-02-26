@@ -1,0 +1,23 @@
+forecast length: P18D
+geometry:
+  nx: 40
+  ny: 20
+  depths: [500, 1000, 1500, 3000, 4000]
+  perturbed heating: 0.1
+initial condition:
+  date: 2009-12-15T00:00:00Z
+  read_from_file: 0
+model:
+  name: QG
+  tstep: PT10M
+output:
+  datadir: Data
+  date: 2009-12-15T00:00:00Z
+  exp: truth_5level_pert_heat
+  frequency: PT6H
+  type: fc
+prints:
+  frequency: PT3H
+test:
+  reference filename: testoutput/truth_5level_pert_heat.test
+  

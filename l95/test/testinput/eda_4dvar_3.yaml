@@ -1,7 +1,8 @@
 cost function:
   cost type: 4D-Var
-  window begin: 2010-01-01T03:00:00Z
-  window length: P1D
+  time window:
+    begin: 2010-01-01T03:00:00Z
+    length: P1D
   geometry:
     resol: 40
   model:
@@ -18,19 +19,18 @@ cost function:
     length_scale: 1.0
     standard_deviation: 0.6
   observations:
+    obs perturbations: true
     observers:
     - obs operator: {}
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
+          obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
         obsdataout:
-          engine:
-            obsfile: Data/mem003.eda_4dvar.2010-01-02T00:00:00Z.obt
+          obsfile: Data/mem003.eda_4dvar.2010-01-02T00:00:00Z.obt
         obs perturbations seed: 3
       obs error:
         covariance model: diagonal
-        random amplitude: 0.2
+        obs perturbations amplitude: 0.2
   constraints:
   - jcdfi:
       filtered variables: [x]
@@ -53,7 +53,6 @@ variational:
       name: L95TLM
     diagnostics:
       departures: ombg
-    obs perturbations: true
   - geometry:
       resol: 40
     ninner: 10

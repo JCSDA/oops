@@ -1,0 +1,68 @@
+geometry:
+  nx: 40
+  ny: 20
+  depths: [500, 1000, 1500, 3000, 4000]
+  perturbed heating: 0.1
+initial condition:
+  date: 2010-01-01T00:00:00Z
+  filename: Data/forecast_5level_pert_heat.fc.2009-12-31T00:00:00Z.P1D.nc
+background error:
+  covariance model: QgError
+  horizontal_length_scale: 1.0e6
+  maximum_condition_number: 1.0e6
+  standard_deviation: 8.0e6
+  vertical_length_scale: 2787.0
+analysis variables: [x, q]
+model:
+  name: QG
+  tstep: PT1H
+model aux control: {}
+linear model:
+  update tstep: PT1H
+  variables: [x, q]
+  simple linear model:
+    linear model:
+      trajectory:
+        tstep: PT30M
+      tstep: PT1H
+      variable change: Identity
+      name: QgTLM
+  coefficients:
+    update variables: [q]
+    influence region size: 3
+    time window:
+      length: PT24H
+      begin: 2010-01-01T00:00:00Z
+    calculator:
+    ensemble:
+      model:
+        name: QG
+        tstep: PT1H
+      model geometry:
+        nx: 40
+        ny: 20
+        depths: [500, 1000, 1500, 3000, 4000]
+        perturbed heating: 0.1
+      nonlinear control:
+        date: '2010-01-01T00:00:00Z'
+        filename: Data/forecast_5level_pert_heat.fc.2009-12-31T00:00:00Z.P1D.nc
+      nonlinear ensemble:
+        generate:
+          ensemble size: 3
+          background error:
+            covariance model: QgError
+            horizontal_length_scale: 1.0e6
+            maximum_condition_number: 1.0e6
+            standard_deviation: 8.0e6
+            vertical_length_scale: 2787.0
+            randomization_seed: 7
+          variables: [x]
+  name: HTLM
+linear model test:
+  forecast length: PT24H
+  iterations TL: 12
+  tolerance AD: 1.0e-12
+  tolerance TL: 1.0e-6
+time window:
+  begin: 2010-01-01T00:00:00Z
+  end: 2010-01-02T00:00:00Z

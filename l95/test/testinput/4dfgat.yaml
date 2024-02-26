@@ -1,0 +1,56 @@
+cost function:
+  cost type: 4D-Var
+  time window:
+    begin: 2010-01-01T21:00:00Z
+    length: PT6H
+  geometry:
+    resol: 40
+  model:
+    f: 8.0
+    name: L95
+    tstep: PT1H30M
+  analysis variables: [x]
+  background:
+    date: 2010-01-01T21:00:00Z
+    filename: Data/forecast.fc.2010-01-01T00:00:00Z.PT21H.l95
+  background error:
+    covariance model: L95Error
+    date: 2010-01-01T21:00:00Z
+    length_scale: 1.0
+    standard_deviation: 0.6
+  observations:
+    observers:
+    - obs error:
+        covariance model: diagonal
+      obs space:
+        obsdatain:
+          obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+        obsdataout:
+          obsfile: Data/3dfgat.2010-01-02T00:00:00Z.obt
+      obs operator: {}
+variational:
+  minimizer:
+    algorithm: DRPCG
+  iterations:
+  - geometry:
+      resol: 40
+    ninner: 10
+    gradient norm reduction: 1e-10
+    linear model:
+      name: Identity
+      variable change: Identity
+      tstep: PT6H
+    diagnostics:
+      departures: ombg
+final:
+  diagnostics:
+    departures: oman
+output:
+  datadir: Data
+  exp: 4dfgat
+  first: PT3H
+  frequency: PT6H
+  type: an
+
+test:
+  reference filename: testoutput/4dfgat.test

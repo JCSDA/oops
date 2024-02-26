@@ -24,3 +24,4 @@ state test:
   norm file: 195415162.30387616
   norm generated state: 148702024.11261204
   tolerance: 1.0e-08
+  construct to variables: [x]

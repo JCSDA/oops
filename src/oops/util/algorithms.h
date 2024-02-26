@@ -16,10 +16,10 @@ namespace util {
 /// \brief Returns the vector containing the results of calling the function `op` on each element
 /// of the vector `inputs`.
 template <typename Input, typename UnaryOperation>
-std::vector<typename std::result_of<UnaryOperation(const Input &)>::type> transformVector(
+std::vector<typename std::invoke_result<UnaryOperation, const Input &>::type> transformVector(
     const std::vector<Input> &inputs, const UnaryOperation &op)
 {
-  typedef typename std::result_of<UnaryOperation(const Input&)>::type Output;
+  typedef typename std::invoke_result<UnaryOperation, const Input&>::type Output;
   std::vector<Output> outputs;
   outputs.reserve(inputs.size());
   for (const Input &input : inputs)

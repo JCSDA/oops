@@ -14,19 +14,19 @@
 #include <string>
 #include <vector>
 
-#include "eckit/config/Configuration.h"
+#include "eckit/config/LocalConfiguration.h"
 #include "lorenz95/ObsBiasCorrection.h"
 #include "oops/util/Logger.h"
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-ObsBias::ObsBias(const ObsTable &, const Parameters_ & params)
+ObsBias::ObsBias(const ObsTable &, const eckit::Configuration & conf)
   : bias_(0.0), active_(false), geovars_(std::vector<std::string>{"x"}), hdiags_()
 {
-  oops::Log::trace() << "ObsBias::ObsBias conf is:" << params << std::endl;
-  if (params.bias.value() != boost::none) {
-    bias_ = *params.bias.value();
+  oops::Log::trace() << "ObsBias::ObsBias conf is:" << conf << std::endl;
+  if (conf.has("bias")) {
+    bias_ = conf.getDouble("bias");
     active_ = true;
     oops::Log::info() << "ObsBias::ObsBias created, bias = " << bias_ << std::endl;
   }

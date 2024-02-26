@@ -15,12 +15,14 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
+#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/State.h"
 #include "oops/interface/LinearVariableChange.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/RequiredParameter.h"
 
@@ -32,15 +34,27 @@ template <typename MODEL> class IncrementParameters : public Parameters {
 
  public:
   typedef typename Increment<MODEL>::ReadParameters_  ReadParameters_;
-  typedef typename Increment<MODEL>::WriteParameters_ WriteParameters_;
-  typedef typename State<MODEL>::Parameters_          StateParameters_;
 
   RequiredParameter<util::DateTime> date{"date", this};
   RequiredParameter<oops::Variables> inputVariables{"input variables", this};
   RequiredParameter<ReadParameters_> input{"input", this};
-  RequiredParameter<WriteParameters_> output{"output", this};
-  RequiredParameter<StateParameters_> trajectory{"trajectory", this};
+  RequiredParameter<eckit::LocalConfiguration> output{"output", this};
+  RequiredParameter<eckit::LocalConfiguration> trajectory{"trajectory", this};
 };
+
+/// Options controlling linear variable change
+template <typename MODEL> class LinearVarChangeParameters : public Parameters {
+  OOPS_CONCRETE_PARAMETERS(LinearVarChangeParameters, Parameters)
+  typedef typename LinearVariableChange<MODEL>::Parameters_ LinearVariableChangeParameters_;
+
+ public:
+  // parameters for linear variable change.
+  LinearVariableChangeParameters_ linearVarChange{this};
+  Parameter<bool> doInverse{"do inverse",
+                     "apply inverse linear variable change instead of linear variable change",
+                     false, this};
+};
+
 
 /// Top-level options taken by the ConvertIncrement application.
 template <typename MODEL> class ConvertIncrementParameters : public ApplicationParameters {
@@ -57,7 +71,8 @@ template <typename MODEL> class ConvertIncrementParameters : public ApplicationP
   RequiredParameter<GeometryParameters_> outputGeometry{"output geometry", this};
 
   /// Linear variable change.
-  RequiredParameter<eckit::LocalConfiguration> linearVarChange{"linear variable change", this};
+  OptionalParameter<LinearVarChangeParameters<MODEL>> linearVarChange{"linear variable change",
+                                                                      this};
 
   /// List of increments.
   RequiredParameter<std::vector<IncrementParameters_>> increments{"increments", this};
@@ -72,10 +87,9 @@ template <typename MODEL> class ConvertIncrement : public Application {
   typedef LinearVariableChange<MODEL>        LinearVariableChange_;
 
   typedef typename Increment<MODEL>::ReadParameters_  ReadParameters_;
-  typedef typename Increment<MODEL>::WriteParameters_ WriteParameters_;
   typedef IncrementParameters<MODEL>                  IncrementParameters_;
 
-  typedef ConvertIncrementParameters<MODEL>  Parameters_;
+  typedef ConvertIncrementParameters<MODEL>  ConvertIncrementParameters_;
 
  public:
 // -------------------------------------------------------------------------------------------------
@@ -86,7 +100,7 @@ template <typename MODEL> class ConvertIncrement : public Application {
 // -------------------------------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig, bool validate) const override {
 //  Deserialize parameters
-    Parameters_ params;
+    ConvertIncrementParameters_ params;
     if (validate) params.validate(fullConfig);
     params.deserialize(fullConfig);
 
@@ -94,13 +108,17 @@ template <typename MODEL> class ConvertIncrement : public Application {
     const Geometry_ resol1(params.inputGeometry, this->getComm());
     const Geometry_ resol2(params.outputGeometry, this->getComm());
 
-    // Setup change of variable
+// Setup change of variable
     std::unique_ptr<LinearVariableChange_> lvc;
     oops::Variables varout;
-    eckit::LocalConfiguration chvarconf = params.linearVarChange.value();
-    if (chvarconf.has("output variables")) {
-        lvc.reset(new LinearVariableChange_(resol2, chvarconf));
-        varout = oops::Variables(chvarconf, "output variables");
+    bool inverse = false;
+    if (params.linearVarChange.value() != boost::none) {
+        const auto & linearvarchangeparams = *params.linearVarChange.value();
+        inverse = linearvarchangeparams.doInverse;
+        if (linearvarchangeparams.linearVarChange.outputVariables.value() != boost::none) {
+           lvc.reset(new LinearVariableChange_(resol2, linearvarchangeparams.linearVarChange));
+           varout = *linearvarchangeparams.linearVarChange.outputVariables.value();
+        }
     }
 
 //  List of input and output increments
@@ -135,11 +153,15 @@ template <typename MODEL> class ConvertIncrement : public Application {
 
           // Create variable change
         lvc->changeVarTraj(xTrajBg, varout);
-        lvc->changeVarTL(dx, varout);
+        if (inverse) {
+          lvc->changeVarInverseTL(dx, varout);
+        } else {
+          lvc->changeVarTL(dx, varout);
+        }
       }
 
 //    Write state
-      const WriteParameters_ outputParams = incrementParams[jm].output;
+      const eckit::LocalConfiguration outputParams = incrementParams[jm].output;
       dx.write(outputParams);
 
       Log::test() << "Output increment: " << dx << std::endl;
@@ -148,12 +170,12 @@ template <typename MODEL> class ConvertIncrement : public Application {
   }
 // -----------------------------------------------------------------------------
   void outputSchema(const std::string & outputPath) const override {
-    Parameters_ params;
+    ConvertIncrementParameters_ params;
     params.outputSchema(outputPath);
   }
 // -----------------------------------------------------------------------------
   void validateConfig(const eckit::Configuration & fullConfig) const override {
-    Parameters_ params;
+    ConvertIncrementParameters_ params;
     params.validate(fullConfig);
   }
 // -------------------------------------------------------------------------------------------------

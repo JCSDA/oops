@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2021-2023 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -14,6 +15,7 @@
 #include <memory>
 #include <vector>
 
+#include "oops/assimilation/JqTerm.h"
 #include "oops/base/Increment.h"
 #include "oops/base/PostBaseTLAD.h"
 #include "oops/base/State.h"
@@ -32,16 +34,14 @@ template <typename MODEL>
 class JqTermTLAD : public PostBaseTLAD<MODEL> {
   typedef Increment<MODEL>           Increment_;
   typedef State<MODEL>               State_;
+  typedef JqTerm<MODEL>              JqTerm_;
 
  public:
   explicit JqTermTLAD(const eckit::mpi::Comm &);
   ~JqTermTLAD() {}
 
-  void clear() {xi_.reset();}
-// void computeModelErrorTraj(const State_ &, Increment_ &);  // not used
-  State_ & getMxi() const;
+  std::shared_ptr<JqTerm_> getJq() {return jq_;}
   void computeModelErrorTL(Increment_ &);
-
   void setupAD(const Increment_ & dx);
 
  private:
@@ -60,16 +60,14 @@ class JqTermTLAD : public PostBaseTLAD<MODEL> {
   void doLastAD(Increment_ &) override {}
 
   const eckit::mpi::Comm & commTime_;
-  std::unique_ptr<State_> xtraj_;
-  std::unique_ptr<Increment_> mxi_;
-  std::unique_ptr<Increment_> xi_;
+  std::shared_ptr<JqTerm_> jq_;
 };
 
 // =============================================================================
 
 template <typename MODEL>
 JqTermTLAD<MODEL>::JqTermTLAD(const eckit::mpi::Comm & comm)
-  : commTime_(comm), xtraj_(), mxi_(), xi_()
+  : commTime_(comm), jq_(new JqTerm_())
 {
   Log::trace() << "JqTermTLAD::JqTermTLAD" << std::endl;
 }
@@ -79,52 +77,8 @@ JqTermTLAD<MODEL>::JqTermTLAD(const eckit::mpi::Comm & comm)
 template <typename MODEL>
 void JqTermTLAD<MODEL>::doFinalizeTraj(const State_ & xx) {
   Log::trace() << "JqTermTLAD::doFinalizeTraj start" << std::endl;
-  xtraj_.reset(new State_(xx));
+  jq_->finalize(xx);
   Log::trace() << "JqTermTLAD::doFinalizeTraj done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-/*
-template <typename MODEL>
-void JqTermTLAD<MODEL>::computeModelErrorTraj(const State_ & fg, Increment_ & dx) {
-  Log::trace() << "JqTermTLAD::computeModelErrorTraj start" << std::endl;
-
-  static int tag = 83655;
-  size_t mytime = commTime_.rank();
-// Send values of M(x_i) at end of my subwindow to next subwindow
-  if (mytime + 1 < commTime_.size()) {
-    Log::debug() << "JqTermTLAD::computeModelErrorTraj: sending to " << mytime+1
-                 << " " << tag << std::endl;
-    oops::mpi::send(commTime_, fg, mytime+1, tag);
-    Log::debug() << "JqTermTLAD::computeModelErrorTraj: sent to " << mytime+1
-                 << " " << tag << std::endl;
-  }
-
-// Receive values at beginning of my subwindow from previous subwindow
-  if (mytime > 0) {
-    State_ mxi(fg);
-    Log::debug() << "JqTermTLAD::computeModelErrorTraj: receiving from " << mytime-1
-                 << " " << tag << std::endl;
-    oops::mpi::receive(commTime_, mxi, mytime-1, tag);
-    Log::debug() << "JqTermTLAD::computeModelErrorTraj: received from " << mytime-1
-                 << " " << tag << std::endl;
-
-//  Compute x_i - M(x_{i-1})
-    dx.diff(fg, mxi);
-  }
-  ++tag;
-  Log::trace() << "JqTermTLAD::computeModelErrorTraj done" << std::endl;
-}
-*/
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
-State<MODEL> & JqTermTLAD<MODEL>::getMxi() const {
-  Log::trace() << "JqTermTLAD::getMxi" << std::endl;
-// Retrieve M(x-i)
-  return *xtraj_;
 }
 
 // -----------------------------------------------------------------------------

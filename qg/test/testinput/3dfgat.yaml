@@ -1,7 +1,8 @@
 cost function:
-  cost type: 4D-Var
-  window begin: 2010-01-01T09:00:00Z
-  window length: PT6H
+  cost type: 3D-FGAT
+  time window:
+    begin: 2010-01-01T09:00:00Z
+    length: PT6H
   analysis variables: [x]
   geometry:
     nx: 40
@@ -28,11 +29,9 @@ cost function:
         obs type: Stream
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/truth.obs3d.nc
+          obsfile: Data/truth.obs3d.nc
         obsdataout:
-          engine:
-            obsfile: Data/3dfgat.obs3d.nc
+          obsfile: Data/3dfgat.obs3d.nc
         obs type: Stream
     - obs error:
         covariance model: diagonal
@@ -40,11 +39,9 @@ cost function:
         obs type: Wind
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/truth.obs3d.nc
+          obsfile: Data/truth.obs3d.nc
         obsdataout:
-          engine:
-            obsfile: Data/3dfgat.obs3d.nc
+          obsfile: Data/3dfgat.obs3d.nc
         obs type: Wind
     - obs error:
         covariance model: diagonal
@@ -52,22 +49,13 @@ cost function:
         obs type: WSpeed
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/truth.obs3d.nc
+          obsfile: Data/truth.obs3d.nc
         obsdataout:
-          engine:
-            obsfile: Data/3dfgat.obs3d.nc
+          obsfile: Data/3dfgat.obs3d.nc
         obs type: WSpeed
 variational:
   minimizer:
     algorithm: DRPLanczos
-    online diagnostics:
-      max eigenvectors: 5
-      eigenvector:
-        datadir: Data
-        date: 2010-01-01T12:00:00Z
-        exp: 3dfgat.eigenvecs
-        type: krylov
   iterations:
   - ninner: 10
     gradient norm reduction: 1.0e-10
@@ -75,11 +63,6 @@ variational:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
-    linear model:
-      name: Identity
-      tstep: PT6H
-      increment variables: ["x"]
-      variable change: Identity
     diagnostics:
       departures: ombg
 final:

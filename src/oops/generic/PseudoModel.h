@@ -8,39 +8,21 @@
 #ifndef OOPS_GENERIC_PSEUDOMODEL_H_
 #define OOPS_GENERIC_PSEUDOMODEL_H_
 
+#include <sstream>
 #include <string>
 #include <vector>
 
+#include "eckit/config/Configuration.h"
+
 #include "oops/base/Geometry.h"
-#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/ModelBase.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
-#include "oops/util/parameters/HasParameters_.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/ParametersOrConfiguration.h"
-#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
-
-/// Configuration options taken by the pseudo model.
-template <typename MODEL>
-class PseudoModelParameters : public ModelParametersBase {
-  OOPS_CONCRETE_PARAMETERS(PseudoModelParameters, ModelParametersBase)
-
- public:
-  typedef typename State<MODEL>::Parameters_ StateParameters_;
-
-  RequiredParameter<util::Duration> tstep{"tstep", "Time step", this};
-  RequiredParameter<Variables> stateVariables{"state variables", "List of model variables", this};
-  RequiredParameter<std::vector<StateParameters_>> states{
-    "states",
-    "List of configuration options used to initialize the model state at each time step",
-    this};
-};
 
 // -----------------------------------------------------------------------------
 
@@ -50,14 +32,11 @@ class PseudoModel : public ModelBase<MODEL> {
   typedef Geometry<MODEL>          Geometry_;
   typedef ModelAuxControl<MODEL>   ModelAux_;
   typedef State<MODEL>             State_;
-  typedef typename State<MODEL>::Parameters_ StateParameters_;
 
  public:
-  typedef PseudoModelParameters<MODEL> Parameters_;
-
   static const std::string classname() {return "oops::PseudoModel";}
 
-  PseudoModel(const Geometry_ &, const Parameters_ &);
+  PseudoModel(const Geometry_ &, const eckit::Configuration &);
 
 /// initialize forecast
   void initialize(State_ &) const override;
@@ -69,24 +48,20 @@ class PseudoModel : public ModelBase<MODEL> {
 /// model time step
   const util::Duration & timeResolution() const override {return tstep_;}
 
-/// model variables
-  const oops::Variables & variables() const override {return vars_;}
-
  private:
   void print(std::ostream &) const override;
   const util::Duration tstep_;
-  const oops::Variables vars_;
-  std::vector<StateParameters_> states_;
+  std::vector<eckit::LocalConfiguration> states_;
   mutable size_t currentstate_;
+  mutable util::DateTime previousTime_;
 };
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-PseudoModel<MODEL>::PseudoModel(const Geometry_ & resol, const Parameters_ & parameters)
-  : tstep_(parameters.tstep), vars_(parameters.stateVariables),
-    states_(parameters.states),
-    currentstate_(0) {
+PseudoModel<MODEL>::PseudoModel(const Geometry_ & resol, const eckit::Configuration & config)
+  : tstep_(config.getString("tstep")),
+    states_(config.getSubConfigurations("states")), currentstate_(0), previousTime_() {
   Log::trace() << "PseudoModel<MODEL>::PseudoModel done" << std::endl;
 }
 
@@ -104,7 +79,27 @@ template<typename MODEL>
 void PseudoModel<MODEL>::step(State_ & xx, const ModelAux_ & merr) const {
   Log::trace() << "PseudoModel<MODEL>:step Starting " << std::endl;
   xx.updateTime(tstep_);
-  xx.read(parametersOrConfiguration<HasParameters_<State<MODEL>>::value>(states_[currentstate_++]));
+  if (currentstate_ >= states_.size()) {
+    std::ostringstream msg;
+    msg << classname() << "::step mismatch between timestep and number of states: "
+        << currentstate_ << "/" << states_.size() << " tstep_ = " << tstep_ << std::endl;
+    throw eckit::UserError(msg.str(), Here());
+  }
+  xx.read(states_[currentstate_++]);
+
+  // Verify different states are separated by the timestep
+  if (currentstate_ != 1 && previousTime_ != xx.validTime()) {
+    const util::Duration timeStep = timeResolution();
+    if (xx.validTime() - previousTime_ != timeStep) {
+      std::ostringstream msg;
+      msg << classname() << "::step time step does not match time increment between states"
+          << " at " << previousTime_ << " and " << xx.validTime()
+          << " with time step " << timeStep << std::endl;
+      throw eckit::UserError(msg.str(), Here());
+    }
+  }
+  previousTime_ = xx.validTime();
+
   Log::trace() << "PseudoModel<MODEL>::step done" << std::endl;
 }
 

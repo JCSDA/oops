@@ -1,7 +1,8 @@
 cost function:
   cost type: 3D-Var
-  window begin: 2010-01-01T21:00:00Z
-  window length: PT6H
+  time window:
+    begin: 2010-01-01T21:00:00Z
+    length: PT6H
   geometry:
     resol: 40
   analysis variables: [x]
@@ -18,11 +19,9 @@ cost function:
     - obs operator: {}
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+          obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
         obsdataout:
-          engine:
-            obsfile: Data/3dvar_qc_filter_ordering_prepriorpost.2010-01-02T00:00:00Z.obt
+          obsfile: Data/3dvar_qc_filter_ordering_prepriorpost.2010-01-02T00:00:00Z.obt
       obs error:
         covariance model: diagonal
       # The Filter Stage Check acts differently at each stage.
@@ -36,7 +35,7 @@ cost function:
 
 variational:
   minimizer:
-    algorithm: DRIPCG
+    algorithm: DRPCG
   iterations:
   - ninner: 10
     gradient norm reduction: 1e-10

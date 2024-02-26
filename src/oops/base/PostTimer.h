@@ -19,6 +19,10 @@
 #include "oops/base/PostTimerParameters.h"
 #include "oops/util/DateTime.h"
 
+namespace eckit {
+  class Configuration;
+}
+
 namespace util {
   class Duration;
 }
@@ -35,6 +39,7 @@ namespace oops {
 class PostTimer : private boost::noncopyable {
  public:
   PostTimer();
+  explicit PostTimer(const eckit::Configuration &);
   explicit PostTimer(const PostTimerParameters &);
   PostTimer(const util::DateTime &, const util::DateTime &, const util::Duration &);
 
@@ -42,12 +47,14 @@ class PostTimer : private boost::noncopyable {
   bool itIsTime(const util::DateTime &);
 
  private:
-  PostTimerParameters options_;
   util::DateTime bgn_;
   util::DateTime end_;
   std::unique_ptr<util::DateTime> start_;
   std::unique_ptr<util::DateTime> finish_;
-  std::vector<util::DateTime> pptimes_;
+  util::Duration frequency_;
+  util::Duration first_;
+  std::vector<util::Duration> steps_;
+  std::vector<util::DateTime> times_;
 };
 
 // -----------------------------------------------------------------------------

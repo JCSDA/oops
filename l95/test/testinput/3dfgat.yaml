@@ -1,7 +1,8 @@
 cost function:
-  cost type: 4D-Var
-  window begin: 2010-01-01T21:00:00Z
-  window length: PT6H
+  cost type: 3D-FGAT
+  time window:
+    begin: 2010-01-01T21:00:00Z
+    length: PT6H
   geometry:
     resol: 40
   model:
@@ -14,7 +15,7 @@ cost function:
     filename: Data/forecast.fc.2010-01-01T00:00:00Z.PT21H.l95
   background error:
     covariance model: L95Error
-    date: 2010-01-01T21:00:00Z
+    date: 2010-01-02T00:00:00Z
     length_scale: 1.0
     standard_deviation: 0.6
   observations:
@@ -23,11 +24,9 @@ cost function:
         covariance model: diagonal
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+          obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
         obsdataout:
-          engine:
-            obsfile: Data/3dfgat.2010-01-02T00:00:00Z.obt
+          obsfile: Data/3dfgat.2010-01-02T00:00:00Z.obt
       obs operator: {}
 variational:
   minimizer:
@@ -37,21 +36,24 @@ variational:
       resol: 40
     ninner: 10
     gradient norm reduction: 1e-10
-    linear model:
-      name: Identity
-      increment variables: [x]
-      variable change: Identity
-      tstep: PT6H
     diagnostics:
       departures: ombg
 final:
   diagnostics:
     departures: oman
+  increment:
+    geometry:
+      resol: 40
+    output:
+      state component:
+        datadir: Data
+        exp: 3dfgat
+        date: 2010-01-02T00:00:00Z
+        type: in
 output:
   datadir: Data
   exp: 3dfgat
-  first: PT3H
-  frequency: PT6H
+  times: ["2010-01-02T00:00:00Z"]
   type: an
 
 test:

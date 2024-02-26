@@ -21,9 +21,9 @@
 #include "oops/assimilation/GMRESR.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/IdentityMatrix.h"
-#include "oops/base/Increment.h"
+#include "oops/base/Increment4D.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
-#include "oops/base/State.h"
+#include "oops/base/State4D.h"
 #include "oops/base/Variables.h"
 #include "oops/util/FieldSetOperations.h"
 #include "oops/util/Logger.h"
@@ -38,32 +38,31 @@ template <typename MODEL>
 class HybridCovariance : public ModelSpaceCovarianceBase<MODEL> {
   typedef Geometry<MODEL>            Geometry_;
   typedef Increment<MODEL>           Increment_;
-  typedef State<MODEL>               State_;
+  typedef Increment4D<MODEL>         Increment4D_;
+  typedef State4D<MODEL>             State4D_;
 
  public:
   HybridCovariance(const Geometry_ &, const Variables &,
-                   const eckit::Configuration &, const State_ &, const State_ &);
+                   const eckit::Configuration &, const State4D_ &, const State4D_ &);
   ~HybridCovariance();
 
  private:
-  void doRandomize(Increment_ &) const override;
-  void doMultiply(const Increment_ &, Increment_ &) const override;
-  void doInverseMultiply(const Increment_ &, Increment_ &) const override;
+  void doRandomize(Increment4D_ &) const override;
+  void doMultiply(const Increment4D_ &, Increment4D_ &) const override;
+  void doInverseMultiply(const Increment4D_ &, Increment4D_ &) const override;
 
-  std::vector< std::unique_ptr< ModelSpaceCovarianceBase<MODEL> > > Bcomponents_;
-  std::vector< std::string > weightTypes_;
-  std::vector< double > valueWeights_;
-  std::vector< Increment_ > incrementWeightsSqrt_;
+  std::vector<std::unique_ptr< ModelSpaceCovarianceBase<MODEL> > > Bcomponents_;
+  std::vector<std::string> weightTypes_;
+  std::vector<double> valueWeights_;
+  std::vector<Increment_> incrementWeightsSqrt_;
 };
 
-// =============================================================================
-
-/// Constructor, destructor
 // -----------------------------------------------------------------------------
+
 template<typename MODEL>
 HybridCovariance<MODEL>::HybridCovariance(const Geometry_ & resol, const Variables & vars,
                                           const eckit::Configuration & config,
-                                          const State_ & xb, const State_ & fg)
+                                          const State4D_ & xb, const State4D_ & fg)
   : ModelSpaceCovarianceBase<MODEL>(resol, config, xb, fg)
 {
   Log::trace() << "HybridCovariance::HybridCovariance start" << std::endl;
@@ -88,11 +87,11 @@ HybridCovariance<MODEL>::HybridCovariance(const Geometry_ & resol, const Variabl
     } else {
       // 3D weight read from a file
       weightTypes_.push_back("increment");
-      Increment_ weight(resol, vars, xb.validTime());
+      Increment_ weight(resol, vars, xb[0].validTime());
       weight.read(weightConf);
 
       // Compute weight square-root
-      util::FieldSetSqrt(weight.fieldSet());
+      weight.fieldSet().sqrt();
       weight.synchronizeFields();
       incrementWeightsSqrt_.push_back(weight);
     }
@@ -106,9 +105,9 @@ HybridCovariance<MODEL>::~HybridCovariance() {
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-void HybridCovariance<MODEL>::doMultiply(const Increment_ & dxi, Increment_ & dxo) const {
+void HybridCovariance<MODEL>::doMultiply(const Increment4D_ & dxi, Increment4D_ & dxo) const {
   dxo.zero();
-  Increment_ tmp(dxo);
+  Increment4D_ tmp(dxo);
   int valueIndex = 0;
   int incrementIndex = 0;
   for (size_t jcomp = 0; jcomp < Bcomponents_.size(); ++jcomp) {
@@ -118,10 +117,10 @@ void HybridCovariance<MODEL>::doMultiply(const Increment_ & dxi, Increment_ & dx
         valueIndex += 1;
      }
      if (weightTypes_[jcomp] == "increment") {
-        Increment_ tmp_dxi(dxi);
-        tmp_dxi.schur_product_with(incrementWeightsSqrt_[incrementIndex]);
+        Increment4D_ tmp_dxi(dxi);
+        tmp_dxi[0].schur_product_with(incrementWeightsSqrt_[incrementIndex]);
         Bcomponents_[jcomp]->multiply(tmp_dxi, tmp);
-        tmp.schur_product_with(incrementWeightsSqrt_[incrementIndex]);
+        tmp[0].schur_product_with(incrementWeightsSqrt_[incrementIndex]);
         incrementIndex += 1;
      }
      dxo += tmp;
@@ -129,16 +128,17 @@ void HybridCovariance<MODEL>::doMultiply(const Increment_ & dxi, Increment_ & dx
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-void HybridCovariance<MODEL>::doInverseMultiply(const Increment_ & dxi, Increment_ & dxo) const {
-  IdentityMatrix<Increment_> Id;
+void HybridCovariance<MODEL>::doInverseMultiply(const Increment4D_ & dxi,
+                                                Increment4D_ & dxo) const {
+  IdentityMatrix<Increment4D_> Id;
   dxo.zero();
   GMRESR(dxo, dxi, *this, Id, 10, 1.0e-3);
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL>
-void HybridCovariance<MODEL>::doRandomize(Increment_ & dx) const {
+void HybridCovariance<MODEL>::doRandomize(Increment4D_ & dx) const {
   dx.zero();
-  Increment_ tmp(dx);
+  Increment4D_ tmp(dx);
   int valueIndex = 0;
   int incrementIndex = 0;
   for (size_t jcomp = 0; jcomp < Bcomponents_.size(); ++jcomp) {
@@ -148,7 +148,7 @@ void HybridCovariance<MODEL>::doRandomize(Increment_ & dx) const {
         valueIndex += 1;
      }
      if (weightTypes_[jcomp] == "increment") {
-        tmp.schur_product_with(incrementWeightsSqrt_[incrementIndex]);
+        tmp[0].schur_product_with(incrementWeightsSqrt_[incrementIndex]);
         incrementIndex += 1;
      }
      dx += tmp;

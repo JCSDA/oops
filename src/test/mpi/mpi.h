@@ -247,6 +247,84 @@ CASE("mpi/mpi/exclusiveScan") {
   EXPECT_EQUAL(result, expectedResult);
 }
 // -----------------------------------------------------------------------------------------------
+CASE("mpi/mpi/broadcastBool") {
+  const eckit::mpi::Comm &comm = oops::mpi::world();
+  const size_t rank = comm.rank();
+
+  bool expectedResult = true;
+  bool result;
+  if (rank == 0) {
+    result = expectedResult;
+  } else {
+    result = false;
+  }
+  oops::mpi::broadcastBool(comm, result, 0);
+  EXPECT_EQUAL(result, expectedResult);
+}
+// -----------------------------------------------------------------------------------------------
+CASE("mpi/mpi/broadcastString") {
+  const eckit::mpi::Comm &comm = oops::mpi::world();
+  const size_t rank = comm.rank();
+
+  std::string expectedResult("Hello World");
+  std::string result;
+  if (rank == 0) {
+    result = expectedResult;
+  } else {
+    result = "NULL";
+  }
+  oops::mpi::broadcastString(comm, result, 0);
+  EXPECT_EQUAL(result, expectedResult);
+}
+// -----------------------------------------------------------------------------------------------
+CASE("mpi/mpi/broadcastVector<int>") {
+  const eckit::mpi::Comm &comm = oops::mpi::world();
+  const size_t rank = comm.rank();
+
+  std::vector<int> expectedResult = { 0, 1, 2, 3, 4, 5 };
+  std::vector<int> result;
+  if (rank == 0) {
+    result = expectedResult;
+  } else {
+    result = { 10, 20 , 30 , 40 };
+  }
+  oops::mpi::broadcastVector<int>(comm, result, 0);
+  EXPECT_EQUAL(result, expectedResult);
+}
+// -----------------------------------------------------------------------------------------------
+CASE("mpi/mpi/broadcastVector<char>") {
+  const eckit::mpi::Comm &comm = oops::mpi::world();
+  const size_t rank = comm.rank();
+
+  std::vector<char> expectedResult = { 'a' , 'b', 'c' };
+  std::vector<char> result;
+  if (rank == 0) {
+    result = expectedResult;
+  } else {
+    result = { 'x', 'y' , 'z' };
+  }
+  oops::mpi::broadcastVector<char>(comm, result, 0);
+  EXPECT_EQUAL(result, expectedResult);
+}
+// -----------------------------------------------------------------------------------------------
+CASE("mpi/mpi/sendReceiveString") {
+  const eckit::mpi::Comm &comm = oops::mpi::world();
+  const size_t rank = comm.rank();
+
+  std::string expectedResult("Hello World");
+  std::string result;
+  if (rank == 0) {
+    result = expectedResult;
+    for (size_t i = 1; i < comm.size(); ++i) {
+        oops::mpi::sendString(comm, result, i);
+    }
+  } else {
+    result = "NULL";
+    oops::mpi::receiveString(comm, result, 0);
+  }
+  EXPECT_EQUAL(result, expectedResult);
+}
+// -----------------------------------------------------------------------------------------------
 
 class Mpi : public oops::Test {
  private:

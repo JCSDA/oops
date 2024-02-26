@@ -1,7 +1,8 @@
 cost function:
   cost type: 4D-Var
-  window begin: 2010-01-01T03:00:00Z
-  window length: P1D
+  time window:
+    begin: 2010-01-01T03:00:00Z
+    length: P1D
   geometry:
     resol: 40
   model:
@@ -23,11 +24,9 @@ cost function:
         covariance model: diagonal
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
+          obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
         obsdataout:
-          engine:
-            obsfile: Data/4dvar_drpcg.2010-01-02T00:00:00Z.obt
+          obsfile: Data/4dvar_drpcg.2010-01-02T00:00:00Z.obt
       obs operator: {}
   constraints:
   - jcdfi:

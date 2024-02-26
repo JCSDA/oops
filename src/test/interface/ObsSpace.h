@@ -37,9 +37,9 @@ template <typename OBS> void testConstructor() {
   typedef ObsTestsFixture<OBS> Test_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    oops::Log::test() << "Testing ObsSpace: " << Test_::obspace()[jj] << std::endl;
-    EXPECT(Test_::obspace()[jj].windowStart() == Test_::tbgn());
-    EXPECT(Test_::obspace()[jj].windowEnd() ==   Test_::tend());
+    oops::Log::info() << "Testing ObsSpace: " << Test_::obspace()[jj] << std::endl;
+    EXPECT(Test_::obspace()[jj].windowStart() == Test_::timeWindow().start());
+    EXPECT(Test_::obspace()[jj].windowEnd() == Test_::timeWindow().end());
   }
 }
 
@@ -49,24 +49,27 @@ template <typename OBS> void testConstructor() {
 template <typename OBS> void testSubwindows() {
   typedef ObsTestsFixture<OBS>   Test_;
   typedef oops::ObsSpace<OBS>    ObsSpace_;
-  typedef typename ObsSpace_::Parameters_ ObsSpaceParameters_;
   typedef oops::ObsVector<OBS>   ObsVector_;
 
-  util::DateTime tmid = Test_::tbgn() + (Test_::tend()-Test_::tbgn())/2;
-  oops::Log::test() << "Testing subwindows: " << Test_::tbgn() << " to " << tmid << " and "
-                                              << tmid << " to " << Test_::tend() << std::endl;
+  const util::DateTime tbgn = Test_::timeWindow().start();
+  const util::DateTime tmid = Test_::timeWindow().midpoint();
+  const util::DateTime tend = Test_::timeWindow().end();
+  const util::TimeWindow subWin1 = Test_::timeWindow().createSubWindow(tbgn, tmid);
+  const util::TimeWindow subWin2 = Test_::timeWindow().createSubWindow(tmid, tend);
+  oops::Log::info() << "Testing subwindows: " << std::endl;
+  oops::Log::info() << subWin1 << std::endl;
+  oops::Log::info() << subWin2 << std::endl;
+
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     eckit::LocalConfiguration obsconfig(Test_::config(jj), "obs space");
-    ObsSpaceParameters_ obsparams;
-    obsparams.validateAndDeserialize(obsconfig);
-    ObsSpace_ obspace1(obsparams, oops::mpi::world(), Test_::tbgn(), tmid);
-    ObsSpace_ obspace2(obsparams, oops::mpi::world(), tmid, Test_::tend());
+    ObsSpace_ obspace1(obsconfig, oops::mpi::world(), subWin1);
+    ObsSpace_ obspace2(obsconfig, oops::mpi::world(), subWin2);
 
     /// Create ObsVectors for each of the ObsSpaces, to compare nobs
     ObsVector_ ovec(Test_::obspace()[jj]);
     ObsVector_ ovec1(obspace1);
     ObsVector_ ovec2(obspace2);
-    oops::Log::test() << Test_::obspace()[jj].obsname() << " nobs(all): " << ovec.nobs()
+    oops::Log::info() << Test_::obspace()[jj].obsname() << " nobs(all): " << ovec.nobs()
                       << " nobs(1st subwindow): " << ovec1.nobs()
                       << " nobs(2nd subwindow): " << ovec2.nobs() << std::endl;
     EXPECT_EQUAL(ovec1.nobs() + ovec2.nobs(), ovec.nobs());

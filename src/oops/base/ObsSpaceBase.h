@@ -16,25 +16,14 @@
 #include "eckit/mpi/Comm.h"
 
 #include "oops/util/DateTime.h"
-#include "oops/util/parameters/Parameter.h"
-#include "oops/util/parameters/Parameters.h"
 #include "oops/util/Printable.h"
+#include "oops/util/TimeWindow.h"
+
+namespace eckit {
+  class Configuration;
+}
 
 namespace oops {
-
-/// \brief Base class for configuration parameters of observation spaces.
-class ObsSpaceParametersBase : public oops::Parameters {
-  OOPS_ABSTRACT_PARAMETERS(ObsSpaceParametersBase, Parameters)
-
- public:
-  /// \brief An integer added to the seed used to initialize the random number generator
-  /// producing observation perturbations (if these are requested).
-  ///
-  /// The seed is a sum of this integer and terms derived from the position of the assimilation
-  /// window, the ensemble member index and the number of ObsSpaceBase instances created so far
-  /// during the lifetime of the program.
-  oops::Parameter<int> obsPerturbationsSeed{"obs perturbations seed", 0, this};
-};
 
 // -----------------------------------------------------------------------------
 /// Base class for observation spaces.
@@ -42,22 +31,23 @@ class ObsSpaceParametersBase : public oops::Parameters {
 class ObsSpaceBase : public util::Printable,
                      private boost::noncopyable {
  public:
-  ObsSpaceBase(const ObsSpaceParametersBase &, const eckit::mpi::Comm &,
-               const util::DateTime &, const util::DateTime &);
+  ObsSpaceBase(const eckit::Configuration &, const eckit::mpi::Comm &,
+               const util::TimeWindow &);
 
   virtual ~ObsSpaceBase() {}
 
 /// Access information
-  const util::DateTime & windowStart() const {return winbgn_;}
-  const util::DateTime & windowEnd() const {return winend_;}
+  util::DateTime windowStart() const {return timeWindow_.start();}
+  util::DateTime windowEnd() const {return timeWindow_.end();}
+  util::TimeWindow timeWindow() const {return timeWindow_;}
 
   int64_t getSeed() const {return seed_;}
 
  private:
   static int instances_;
 
-  const util::DateTime winbgn_;
-  const util::DateTime winend_;
+  const util::TimeWindow timeWindow_;
+
   int64_t seed_;
   const int instance_;
 };

@@ -1,0 +1,41 @@
+linear model geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+linear model:
+  name: QgTLM
+  tstep: PT15M
+  trajectory:
+    tstep: PT15M
+model aux increment: {}
+
+model geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+model:
+  name: QG
+  tstep: PT15M
+model aux control: {}
+
+forecast length: PT3H
+time resolution: PT1H
+
+x1:
+  date: 2010-01-01T00:00:00Z
+  filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D.nc
+x2:
+  date: 2010-01-01T00:00:00Z
+  filename: Data/4dvar_drplanczos_hybrid.an.2010-01-01T00:00:00Z.nc
+
+#TODO: make LatLonGridWriter work for QG
+#output on latlon grid:
+#  local interpolator type: oops unstructured grid interpolator
+#  resolution in degrees: 10.0
+#  variables to output: [x]
+#  model levels: [1]
+#  datapath: Data
+#  filename prefix: linearization-error
+
+test:
+  reference filename: testoutput/linearization_error.test

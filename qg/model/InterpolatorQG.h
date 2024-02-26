@@ -10,7 +10,13 @@
 #include <ostream>
 #include <vector>
 
+#include "oops/generic/UnstructuredInterpolator.h"
+#include "oops/util/abor1_cpp.h"
 #include "oops/util/Printable.h"
+
+namespace atlas {
+  class FieldSet;
+}
 
 namespace eckit {
   class Configuration;
@@ -41,12 +47,21 @@ class InterpolatorQG : public util::Printable {
   void applyAD(const oops::Variables &, IncrementQG &, const std::vector<bool> &,
                const std::vector<double> &) const;
 
+  // TODO(FH)
+  // The existence here of a masked FieldSet overload of apply(AD) means the oops::LocalInterpolator
+  // will select the FieldSet inteface in GetValues applications. The InterpolatorQG doesn't yet
+  // support the interface needed by other applications like GlobalInterpolator.
+  void apply(const oops::Variables &, const atlas::FieldSet &,
+             const std::vector<bool> &, std::vector<double> &) const;
+  void applyAD(const oops::Variables &, atlas::FieldSet &,
+               const std::vector<bool> &, const std::vector<double> &) const;
+
  private:
   void apply(const oops::Variables &, const FieldsQG &, const std::vector<bool> &,
              std::vector<double> &) const;
   void print(std::ostream &) const;
 
-  const size_t nlevs_;
+  const GeometryQG & grid_;;
   const size_t nlocs_;
   std::vector<double> locs_;
 };

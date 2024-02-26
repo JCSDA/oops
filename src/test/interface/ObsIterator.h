@@ -57,7 +57,7 @@ template <typename OBS> void testBasic() {
     EXPECT(iter1 != iter2);
 
     // At least test that nothing fails on print
-    oops::Log::test() << "ObsSpace::begin " << iter1 << std::endl;
+    oops::Log::info() << "ObsSpace::begin " << iter1 << std::endl;
 
     // loop over all points in iterator, compute number of those points, and compare
     // with reference

@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 
+#include "eckit/config/LocalConfiguration.h"
 #include "oops/base/ForecastParameters.h"
 #include "oops/base/Model.h"
 #include "oops/base/PostProcessor.h"
@@ -52,20 +53,16 @@ class AdjointForecastParameters : public ApplicationParameters {
   typedef ForecastADParameters<MODEL> ForecastADParameters_;
 
   /// Forecast parameters.
-  RequiredParameter<ForecastParameters_>
-    fcstConf{"forecast", this};
+  RequiredParameter<ForecastParameters_> fcstConf{"forecast", this};
 
   /// Forecast aspect parameters.
-  RequiredParameter<ForecastAspectParameters_>
-    fcstAspectConf{"forecast aspect", this};
+  RequiredParameter<ForecastAspectParameters_> fcstAspectConf{"forecast aspect", this};
 
   /// Linear forecast parameters.
-  RequiredParameter<ForecastTLParameters_>
-    linearFcstConf{"linear forecast", this};
+  RequiredParameter<ForecastTLParameters_> linearFcstConf{"linear forecast", this};
 
   /// Adjoint forecast parameters.
-  RequiredParameter<ForecastADParameters_>
-    adjointForecast{"adjoint forecast", this};
+  RequiredParameter<ForecastADParameters_> adjointForecast{"adjoint forecast", this};
 };
 
 // -----------------------------------------------------------------------------
@@ -99,8 +96,15 @@ template <typename MODEL> class AdjointForecast : public Application {
       (params.linearFcstConf.value().geometry, this->getComm());
     oops::instantiateLinearModelFactory<MODEL>();
     oops::PostProcessor<State_> post;
-    post.enrollProcessor(new StateInfo<State_>("fc", params.fcstConf.value().prints));
-    post.enrollProcessor(new StateWriter<State_>(params.fcstConf.value().output));
+
+    const eckit::LocalConfiguration fcConf(fullConfig, "forecast");
+    if (fcConf.has("prints")) {
+      const eckit::LocalConfiguration prtConfig(fcConf, "prints");
+      post.enrollProcessor(new StateInfo<State_>("fc", prtConfig));
+    }
+    const eckit::LocalConfiguration outConfig(fcConf, "output");
+    post.enrollProcessor(new StateWriter<State_>(outConfig));
+
     oops::PostProcessorTLAD<MODEL> pptraj;
     std::shared_ptr<LinearModel_> linearmodel_;
     linearmodel_.reset(
@@ -113,8 +117,8 @@ template <typename MODEL> class AdjointForecast : public Application {
     const Geometry_ fcstModelGeom(params.fcstConf.value().geometry, this->getComm());
 
     // Setup Model
-    const Model_ model(fcstModelGeom,
-      params.fcstConf.value().model.value().modelParameters);
+    eckit::LocalConfiguration fconf(fullConfig, "forecast");
+    const Model_ model(fcstModelGeom,  eckit::LocalConfiguration(fconf, "model"));
 
     // Setup initial state
     State_ xxf(fcstModelGeom, params.fcstConf.value().initialCondition);

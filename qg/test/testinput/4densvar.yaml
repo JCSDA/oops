@@ -1,8 +1,10 @@
 cost function:
   cost type: 4D-Ens-Var
-  window begin: 2010-01-01T00:00:00Z
-  window length: PT6H
+  time window:
+    begin: 2010-01-01T00:00:00Z
+    length: PT6H
   subwindow: PT1H
+  parallel subwindows: true
   analysis variables: [x]
   background:
     states:
@@ -55,11 +57,9 @@ cost function:
         obs type: Stream
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/truth.obs4d_12h.nc
+          obsfile: Data/truth.obs4d_12h.nc
         obsdataout:
-          engine:
-            obsfile: Data/4densvar.obs.nc
+          obsfile: Data/4densvar.obs.nc
         obs type: Stream
     - obs error:
         covariance model: diagonal
@@ -67,11 +67,9 @@ cost function:
         obs type: Wind
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/truth.obs4d_12h.nc
+          obsfile: Data/truth.obs4d_12h.nc
         obsdataout:
-          engine:
-            obsfile: Data/4densvar.obs.nc
+          obsfile: Data/4densvar.obs.nc
         obs type: Wind
     - obs error:
         covariance model: diagonal
@@ -79,11 +77,9 @@ cost function:
         obs type: WSpeed
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/truth.obs4d_12h.nc
+          obsfile: Data/truth.obs4d_12h.nc
         obsdataout:
-          engine:
-            obsfile: Data/4densvar.obs.nc
+          obsfile: Data/4densvar.obs.nc
         obs type: WSpeed
 #    constraints:
 #    - jcdfi:
@@ -120,9 +116,7 @@ final:
     frequency: PT1H
 output:
   datadir: Data
-  exp: forecast
-  first: PT0S
-  frequency: PT6H
+  exp: 4densvar
   type: an
 
 test:

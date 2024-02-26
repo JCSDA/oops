@@ -34,7 +34,9 @@ class LocalizationMatrixL95: public oops::interface::LocalizationBase<lorenz95::
  public:
   static const std::string classname() {return "lorenz95::LocalizationMatrixL95";}
 
-  LocalizationMatrixL95(const Resolution &, const oops::Variables &, const eckit::Configuration &);
+  LocalizationMatrixL95(const Resolution &,
+                        const oops::Variables &,
+                        const eckit::Configuration &);
   void randomize(IncrementL95 &) const override;
   void multiply(IncrementL95 &) const override;
 

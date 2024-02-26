@@ -56,12 +56,16 @@ namespace datefunctions {
 // -----------------------------------------------------------------------------
 
 uint64_t dateToJulian(const int year, const int month, const int day) {
-//  Compute the Julian Day number applying the following formula
+//  Compute the Julian Day number using the following formula
+//  from https://doi.org/10.1145/364096.364097
 //
 //  julian_day = ( 1461 * ( y + 4800 + ( m - 14 ) / 12 ) ) / 4 +
 //               ( 367 * ( m - 2 - 12 * ( ( m - 14 ) / 12 ) ) ) / 12 -
 //                   ( 3 * ( ( y + 4900 + ( m - 14 ) / 12 ) / 100 ) ) / 4 +
 //                     d - 32075
+  if (year == 0 && month == 0 && day == 0) {
+    return 0;
+  }
 
   if (!util::datefunctions::validYYYYMMDD(year, month, day)) {
     oops::Log::error() << "year=" << year << " month=" << month << " day=" << day << std::endl;
@@ -79,6 +83,8 @@ uint64_t dateToJulian(const int year, const int month, const int day) {
 // -----------------------------------------------------------------------------
 
 void julianToDate(const uint64_t julian, int & yy, int & mm, int & dd) {
+// Compute the year, month, and day from the Julian Day number
+// using the formula from https://doi.org/10.1145/364096.364097
   uint64_t l     = 0;
   uint64_t n     = 0;
   uint64_t i     = 0;
@@ -87,31 +93,41 @@ void julianToDate(const uint64_t julian, int & yy, int & mm, int & dd) {
   uint64_t month = 0;
   uint64_t year  = 0;
 
-// Modified Julian date
-
-  l = julian + static_cast<uint64_t>(68569);
-  n = (4 * l) / 146097;
-  l = l - (146097 * n + 3) / 4;
-  i = (4000 * (l + 1)) / 1461001;
-  l = l - (1461 * i) / 4 + 31;
-  j = (80 * l) / 2447;
-  day = l - (2447 * j) / 80;
-  l = j / 11;
-  month = j + 2 - (12 * l);
-  year = 100 * (n - 49) + i + l;
-  if (year <= static_cast<uint64_t>(std::numeric_limits<int>::max())) {
-    dd = static_cast<int>(day);
-    mm = static_cast<int>(month);
-    yy = static_cast<int>(year);
+  if (julian == 0) {
+    yy = 0;
+    mm = 0;
+    dd = 0;
   } else {
-    oops::Log::error() << "year=" << year << std::endl;
-    throw eckit::BadParameter("Year out of range");
+  // Modified Julian date
+
+    l = julian + static_cast<uint64_t>(68569);
+    n = (4 * l) / 146097;
+    l = l - (146097 * n + 3) / 4;
+    i = (4000 * (l + 1)) / 1461001;
+    l = l - (1461 * i) / 4 + 31;
+    j = (80 * l) / 2447;
+    day = l - (2447 * j) / 80;
+    l = j / 11;
+    month = j + 2 - (12 * l);
+    year = 100 * (n - 49) + i + l;
+    if (year <= static_cast<uint64_t>(std::numeric_limits<int>::max())) {
+      dd = static_cast<int>(day);
+      mm = static_cast<int>(month);
+      yy = static_cast<int>(year);
+    } else {
+      oops::Log::error() << "year=" << year << std::endl;
+      throw eckit::BadParameter("Year out of range");
+    }
   }
 }
 
 // -----------------------------------------------------------------------------
 
 int hmsToSeconds(const int hour, const int minute, const int second) {
+  if (hour == 0 && minute == 0 && second == 0) {
+    return 0;
+  }
+
   if (!util::datefunctions::validHhmmss(hour, minute, second)) {
     oops::Log::error() << "hour=" << hour << " minute=" << minute <<
                " second=" << second << std::endl;
@@ -123,18 +139,24 @@ int hmsToSeconds(const int hour, const int minute, const int second) {
 // -----------------------------------------------------------------------------
 
 void secondToHms(const int seconds, int & hh, int & mm, int & ss) {
-  const int secondsPerDay = 86400;
-
-  if (seconds >= 0 && seconds <= secondsPerDay) {
-    int local_sec = seconds;
-    hh = local_sec / 3600;
-    local_sec %= 3600;
-    mm = local_sec / 60;
-    local_sec %= 60;
-    ss = local_sec;
+  if (seconds == 0) {
+    hh = 0;
+    mm = 0;
+    ss = 0;
   } else {
-    oops::Log::error() << "seconds=" << seconds << std::endl;
-    throw eckit::BadParameter("seconds out of range");
+    const int secondsPerDay = 86400;
+
+    if (seconds >= 0 && seconds <= secondsPerDay) {
+      int local_sec = seconds;
+      hh = local_sec / 3600;
+      local_sec %= 3600;
+      mm = local_sec / 60;
+      local_sec %= 60;
+      ss = local_sec;
+    } else {
+      oops::Log::error() << "seconds=" << seconds << std::endl;
+      throw eckit::BadParameter("seconds out of range");
+    }
   }
 }
 
@@ -147,14 +169,19 @@ bool isLeapYear(const int year) {
 // -----------------------------------------------------------------------------
 
 bool validHhmmss(const int hour, const int minute, const int second) {
-  return hour   >= 0 && hour   <= 23 &&
-         minute >= 0 && minute <= 59 &&
-         second >= 0 && second <= 59;
+  return (hour   >= 0 && hour   <= 23 &&
+          minute >= 0 && minute <= 59 &&
+          second >= 0 && second <= 59) ||
+         (hour == 0 && minute == 0 && second == 0);
 }
 
 // -----------------------------------------------------------------------------
 
 bool validYYYYMMDD(const int year, const int month, const int day) {
+  if (year == 0 && month == 0 && day == 0) {
+    return true;
+  }
+
   bool good;
   good = year   >= 0 && year <= 9999 &&
          month  >= 1 && month  <= 12 &&

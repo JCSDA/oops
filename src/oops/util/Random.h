@@ -24,7 +24,7 @@
 namespace util {
 
 // -----------------------------------------------------------------------------
-/*! Base Class for generating compiler-indpependent random numbers
+/*! Base Class for generating compiler-independent random numbers
  *
  * \details The *Random* class and its derived classes are intended to provide
  * a compiler independent pseudo random number generator.  So, if you use the
@@ -66,7 +66,7 @@ class Random : public util::Printable {
 // -----------------------------------------------------------------------------
 /*! Class for generating uniformly-distributed random numbers
  *
- * \details *util::UniformDistribution* creates a vector of psedo-random real
+ * \details *util::UniformDistribution* creates a vector of pseudo-random real
  * numbers that are uniformly distributed across a specified interval of values.
  *
  * \param[in] N The size of the desired array (default 1)
@@ -116,7 +116,7 @@ class UniformDistribution : public Random<datatype> {
 // -----------------------------------------------------------------------------
 /*! Class for generating uniformly-distributed random integers
  *
- * \details *util::UniformIntDistribution* creates a vector of psedo-random integers
+ * \details *util::UniformIntDistribution* creates a vector of pseudo-random integers
  * that are uniformly distributed across a specified interval of values.
  *
  * \param[in] N The size of the desired array (default 1)
@@ -164,7 +164,7 @@ class UniformIntDistribution : public Random<datatype> {
 // ------------------------------------------------------------------------------
 /*! Class for generating Gaussian-distributed random numbers
  *
- * \details *util::NormalDistribution* creates a vector of psedo-random numbers
+ * \details *util::NormalDistribution* creates a vector of pseudo-random numbers
  * with a normal (Gaussian) distribution.
  *
  * \param[in] N The size of the desired array (default 1)
@@ -225,11 +225,11 @@ class NormalDistribution : public Random<datatype> {
  *  in the range to be shuffled.
  * \param[in] seed The seed to use for the random number generator upon first
  *            instantiation of the function (optional).  If omitted, a seed
- *            will be generated based on the calendar time.  This parameter is 
+ *            will be generated based on the calendar time.  This parameter is
  *            only used on the first instantiation of this class for a
  *            particular data type and/or if the **reset** flag is set to true.
  * \param[in] reset If this is set to **true** then this forces the generator
- *            to re-initilize itself with the specified seed.  Otherwise, the
+ *            to re-initialize itself with the specified seed.  Otherwise, the
  *            seed is only used on first instantiation (this is the default
  *            behavior).
  */

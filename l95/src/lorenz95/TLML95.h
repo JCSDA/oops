@@ -17,7 +17,6 @@
 
 #include <boost/noncopyable.hpp>
 
-#include "oops/base/Variables.h"
 #include "oops/interface/LinearModelBase.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
@@ -39,30 +38,14 @@ namespace lorenz95 {
   class FieldL95;
 
 // -----------------------------------------------------------------------------
-
-class TLML95Parameters : public oops::LinearModelParametersBase {
-  OOPS_CONCRETE_PARAMETERS(TLML95Parameters, LinearModelParametersBase)
-
- public:
-  oops::RequiredParameter<util::Duration> tstep{"tstep", this};
-  oops::RequiredParameter<ModelL95Parameters> trajectory{"trajectory", this};
-  // wsmigaj: This option in present in YAML files used in tests, but it isn't used either in
-  // TLML95 or on the oops::LinearModel interface. Leaving it in place in case it turns out it is
-  // used by some other fragment of code that loads the configuration of the linear model.
-  oops::OptionalParameter<std::string> variableChange{"variable change", this};
-};
-
-// -----------------------------------------------------------------------------
 /// Lorenz 95 linear model definition.
 
 class TLML95: public oops::interface::LinearModelBase<L95Traits>,
               private util::ObjectCounter<TLML95> {
  public:
-  typedef TLML95Parameters Parameters_;
-
   static const std::string classname() {return "lorenz95::TLML95";}
 
-  TLML95(const Resolution &, const Parameters_ &);
+  TLML95(const Resolution &, const eckit::Configuration &);
   ~TLML95();
 
 /// Model trajectory computation
@@ -79,7 +62,6 @@ class TLML95: public oops::interface::LinearModelBase<L95Traits>,
 
 /// Other utilities
   const util::Duration & timeResolution() const override {return tstep_;}
-  const oops::Variables & variables() const override {return vars_;}
 
  private:
   const ModelTrajectory * getTrajectory(const util::DateTime &) const;
@@ -96,7 +78,6 @@ class TLML95: public oops::interface::LinearModelBase<L95Traits>,
   const double dt_;
   std::map< util::DateTime, ModelTrajectory * > traj_;
   const ModelL95 lrmodel_;
-  const oops::Variables vars_;
 };
 
 // -----------------------------------------------------------------------------

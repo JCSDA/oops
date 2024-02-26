@@ -58,7 +58,6 @@ class LinearModel : public util::Printable,
  public:
   static const std::string classname() {return "oops::LinearModel";}
 
-  LinearModel(const Geometry_ &, const LinearModelParametersBase &);
   LinearModel(const Geometry_ &, const eckit::Configuration &);
   virtual ~LinearModel();
 
@@ -85,8 +84,6 @@ class LinearModel : public util::Printable,
   /// \brief Time step for running LinearModel's forecast in oops (frequency with which the
   /// State will be updated)
   const util::Duration & timeResolution() const {return linearmodel_->timeResolution();}
-  /// \brief LinearModel variables (only used in 4DVar)
-  const oops::Variables & variables() const {return linearmodel_->variables();}
 
  private:
   /// \brief Tangent linear forecast initialization, called before every run
@@ -112,23 +109,15 @@ class LinearModel : public util::Printable,
 // =============================================================================
 
 template<typename MODEL>
-LinearModel<MODEL>::LinearModel(const Geometry_ & resol, const LinearModelParametersBase & params)
+LinearModel<MODEL>::LinearModel(const Geometry_ & resol, const eckit::Configuration & config)
   : linearmodel_()
 {
   Log::trace() << "LinearModel<MODEL>::LinearModel starting" << std::endl;
   util::Timer timer(classname(), "LinearModel");
-  Log::info() << "LinearModel configuration is:" << params << std::endl;
-  linearmodel_.reset(LinearModelFactory<MODEL>::create(resol, params));
+  Log::info() << "LinearModel configuration is:" << config << std::endl;
+  linearmodel_.reset(LinearModelFactory<MODEL>::create(resol, config));
   Log::trace() << "LinearModel<MODEL>::LinearModel done" << std::endl;
 }
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-LinearModel<MODEL>::LinearModel(const Geometry_ & resol, const eckit::Configuration & conf)
-  : LinearModel(resol,
-            validateAndDeserialize<LinearModelParametersWrapper<MODEL>>(conf).linearModelParameters)
-{}
 
 // -----------------------------------------------------------------------------
 

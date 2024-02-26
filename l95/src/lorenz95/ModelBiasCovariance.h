@@ -16,7 +16,6 @@
 #include <boost/noncopyable.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
-#include "lorenz95/ModelBiasCovarianceParameters.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
@@ -31,12 +30,10 @@ class ModelBiasCovariance : public util::Printable,
                             private boost::noncopyable,
                             private util::ObjectCounter<ModelBiasCovariance> {
  public:
-  typedef ModelBiasCovarianceParameters Parameters_;
-
   static const std::string classname() {return "lorenz95::ModelBiasCovariance";}
 
 /// Constructor, destructor
-  ModelBiasCovariance(const Parameters_ &, const Resolution &);
+  ModelBiasCovariance(const eckit::Configuration &, const Resolution &);
   ~ModelBiasCovariance() {}
 
 /// Linear algebra operators
@@ -45,11 +42,11 @@ class ModelBiasCovariance : public util::Printable,
   void inverseMultiply(const ModelBiasCorrection &, ModelBiasCorrection &) const;
   void randomize(ModelBiasCorrection &) const;
 
-  const Parameters_ & config() const {return parameters_;}
+  const eckit::Configuration & config() const {return conf_;}
 
  private:
   void print(std::ostream &) const;
-  Parameters_ parameters_;
+  const eckit::LocalConfiguration conf_;
   double variance_;
   bool active_;
 };

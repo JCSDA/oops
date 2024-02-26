@@ -11,6 +11,8 @@
 #ifndef QG_MODEL_GOMQG_H_
 #define QG_MODEL_GOMQG_H_
 
+#include <Eigen/Core>
+
 #include <ostream>
 #include <string>
 #include <vector>
@@ -18,39 +20,40 @@
 #include "oops/base/Variables.h"
 
 #include "oops/util/ObjectCounter.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 #include "oops/util/Printable.h"
 
 #include "oops/qg/QgFortran.h"
 
 namespace oops {
+  template <typename OBS> class Locations;
   class Variables;
 }
 
 namespace qg {
-  class LocationsQG;
-
-/// \brief Parameters controlling a QG GeoVaLs read/write
-class GomQGParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(GomQGParameters, Parameters)
-
- public:
-  oops::RequiredParameter<std::string> filename{"filename", "filename for input and output",
-                                                this};
-};
+  struct QgObsTraits;
 
 /// GomQG class to handle local model values for QG model.
 
 class GomQG : public util::Printable,
               private util::ObjectCounter<GomQG> {
+  /// References to read-only or writable vector- or matrix-valued expressions.
+  ///
+  /// For example, an Eigen::Vector, Eigen::Matrix or an Eigen::Map (the latter can be used as a
+  /// view onto a chunk of memory stored in another container, such as a std::vector).
+  template <typename T>
+  using ConstVectorRef = Eigen::Ref<const Eigen::Vector<T, Eigen::Dynamic>>;
+  template <typename T>
+  using ConstMatrixRef = Eigen::Ref<const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>>;
+  template <typename T>
+  using MatrixRef = Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>>;
+
  public:
-  typedef GomQGParameters Parameters_;
+  typedef oops::Locations<QgObsTraits> Locations_;
 
   static const std::string classname() {return "qg::GomQG";}
 
-  GomQG(const LocationsQG &, const oops::Variables &, const std::vector<size_t> &);
-  GomQG(const Parameters_ &, const ObsSpaceQG &, const oops::Variables &);
+  GomQG(const Locations_ &, const oops::Variables &, const std::vector<size_t> &);
+  GomQG(const eckit::Configuration &, const ObsSpaceQG &, const oops::Variables &);
   explicit GomQG(const GomQG &);
 
   GomQG(): keyGom_(0) {}
@@ -68,19 +71,20 @@ class GomQG : public util::Printable,
   GomQG & operator-=(const GomQG &);
   GomQG & operator*=(const GomQG &);
   double dot_product_with(const GomQG &) const;
-  void read(const Parameters_ &);
-  void write(const Parameters_ &) const;
+  void read(const eckit::Configuration &);
+  void write(const eckit::Configuration &) const;
 
   const int & toFortran() const {return keyGom_;}
 
-  void fill(const std::vector<size_t> &, const std::vector<double> &, const bool);
-  void fillAD(const std::vector<size_t> &, std::vector<double> &, const bool) const;
+  void fill(const std::string &name, const ConstVectorRef<size_t> &indx,
+            const ConstMatrixRef<double> &vals, const bool levelsTopDown);
+  void fillAD(const std::string &name, const ConstVectorRef<size_t> &indx,
+              MatrixRef<double> vals, const bool levelsTopDown) const;
 
  private:
   void print(std::ostream &) const;
   F90gom keyGom_;
   oops::Variables vars_;
-  const LocationsQG * locs_;
 };
 
 }  // namespace qg

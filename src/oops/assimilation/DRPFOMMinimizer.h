@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2024, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -27,6 +28,7 @@
 #include "oops/assimilation/UpHessSolve.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
+#include "oops/util/workflow.h"
 
 namespace oops {
 
@@ -78,7 +80,7 @@ template<typename MODEL, typename OBS> class DRPFOMMinimizer : public DRMinimize
 
  private:
   double solve(CtrlInc_ &, CtrlInc_ &, CtrlInc_ &, const Bmat_ &, const HtRinvH_ &,
-               const double, const double, const int, const double) override;
+               const CtrlInc_ &, const double, const double, const int, const double) override;
 
   SpectralLMP<CtrlInc_, Cmat_> lmp_;
   // !!!!! Needs to be generalized for Hessenberg Matrix.
@@ -102,9 +104,10 @@ DRPFOMMinimizer<MODEL, OBS>::DRPFOMMinimizer(const eckit::Configuration & conf,
 
 template<typename MODEL, typename OBS>
 double DRPFOMMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_ & rr,
-                                     const Bmat_ & B, const HtRinvH_ & HtRinvH,
-                                     const double costJ0Jb, const double costJ0JoJc,
-                                     const int maxiter, const double tolerance) {
+                                          const Bmat_ & B, const HtRinvH_ & HtRinvH,
+                                          const CtrlInc_ & gradJb,
+                                          const double costJ0Jb, const double costJ0JoJc,
+                                          const int maxiter, const double tolerance) {
   // dx   increment
   // dxh  B^{-1} dx
   // rr   (sum B^{-1} dx_i^{b} +) G^T R^{-1} d
@@ -138,6 +141,10 @@ double DRPFOMMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc
   // beta_{0} = sqrt( z_{0}^T r_{0} )
   double beta = sqrt(dot_product(zz, vv));
   const double beta0 = beta;
+  double normReduction = 1.0;
+
+  printNormReduction(0, beta0, normReduction);
+  printQuadraticCostFunction(0, costJ0, costJ0Jb, costJ0JoJc);
 
   // v_{1} = r_{0} / beta_{0}
   vv *= 1/beta;
@@ -162,11 +169,10 @@ double DRPFOMMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc
     }
   }
 
-  double normReduction = 1.0;
-
   Log::info() << std::endl;
   for (int jiter = 0; jiter < maxiter; ++jiter) {
     Log::info() << "DRPFOM Starting Iteration " << jiter+1 << std::endl;
+    if (jiter < 5 || (jiter + 1) % 5 == 0) util::update_workflow_meter("iteration", jiter+1);
 
     // v_{i+1} = ( pr_{i} + H^T R^{-1} H z_{i} )
     HtRinvH.multiply(zz, vv);
@@ -220,15 +226,20 @@ double DRPFOMMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc
 
     betas_.push_back(beta);
 
-    // Compute the quadratic cost function
-    // J[du_{i}] = J[0] - 0.5 s_{i}^T Z_{i}^T r_{0}
-    // Jb[du_{i}] = 0.5 s_{i}^T V_{i}^T Z_{i} s_{i}
-    double costJ = costJ0;
-    double costJb = costJ0Jb;
-    for (int jj = 0; jj < jiter+1; ++jj) {
-      costJ -= 0.5 * ss[jj] * dot_product(*zvecs_[jj], rr);
-      costJb += 0.5 * ss[jj] * dot_product(*vvecs_[jj], *zvecs_[jj]) * ss[jj];
+    // Compute the solution at the current iterate
+    dx.zero();
+    dxh.zero();
+    for (unsigned int jj = 0; jj < ss.size(); ++jj) {
+      dx.axpy(ss[jj], *zvecs_[jj]);
+      dxh.axpy(ss[jj], *hvecs_[jj]);
     }
+
+    // Compute the quadratic cost function
+    // J[dx_{i}] = J[0] - 0.5 dx_{i}^T r_{0}
+    double costJ = costJ0 - 0.5 * dot_product(dx, rr);
+    // Jb[dx_{i}] = Jb[0] + dx_{i}^T gradJb + 0.5 dx_{i}^T f_{i}
+    double costJb = costJ0Jb + dot_product(dx, gradJb) + 0.5 * dot_product(dx, dxh);
+    // Jo[dx_{i}] + Jc[dx_{i}] = J[dx_{i}] - Jb[dx_{i}]
     double costJoJc = costJ - costJb;
 
     // Gradient norm in precond metric --> sqrt(r'z) --> beta * s_{i}
@@ -243,12 +254,6 @@ double DRPFOMMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc
       Log::info() << "DRPFOM: Achieved required reduction in residual norm." << std::endl;
       break;
     }
-  }
-
-  // Calculate the solution (dxh = Binv dx)
-  for (unsigned int jj = 0; jj < ss.size(); ++jj) {
-    dx.axpy(ss[jj], *zvecs_[jj]);
-    dxh.axpy(ss[jj], *hvecs_[jj]);
   }
 
   return normReduction;

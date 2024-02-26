@@ -1,0 +1,30 @@
+input geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+output geometry:
+  nx: 20
+  ny: 10
+  depths: [4500.0, 5500.0]
+linear variable change:
+  do inverse: true
+  input variables: [q]
+  output variables: [x]
+increments:
+- date: '2010-01-01T12:00:00Z'
+  input variables: [q]
+  input:
+    date: '2010-01-01T12:00:00Z'
+    filename: Data/difst.in.2010-01-01T12:00:00Z.nc
+    state variables: [q]
+  output:
+    date: '2010-01-01T12:00:00Z'
+    datadir: Data
+    exp: convertinc_inv
+    type: in
+  trajectory:
+    date: '2010-01-01T12:00:00Z'
+    filename: Data/mem002.eda_3dvar.an.2010-01-01T12:00:00Z.nc
+
+test:
+  reference filename: testoutput/convertincrement_inv.test

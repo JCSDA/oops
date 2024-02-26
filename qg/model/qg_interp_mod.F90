@@ -18,7 +18,7 @@ use qg_tools_mod
 implicit none
 
 private
-public :: qg_interp_trilinear, qg_interp_bilinear, qg_interp_bilinear_ad, &
+public :: qg_interp_trilinear, qg_interp_trilinear_ad, qg_interp_bilinear, qg_interp_bilinear_ad, &
         & qg_vert_interp, qg_vert_interp_ad, &
         & qg_interp_bicubic,qg_interp_bicubic_tl,qg_interp_bicubic_ad, &
         & find_x_indices,find_y_indices
@@ -78,6 +78,67 @@ p1 = (1.0-ay)*op1+ay*p1p1
 val = (1.0-az)*o+az*p1
 
 end subroutine qg_interp_trilinear
+! ------------------------------------------------------------------------------
+!> Trilinear interpolation (adjoint)
+subroutine qg_interp_trilinear_ad(geom,lon,lat,z,val,field)
+
+! Passed variables
+type(qg_geom),intent(in) :: geom                                !< Geometry
+real(kind_real),intent(in) :: lon                               !< Longitude
+real(kind_real),intent(in) :: lat                               !< Latitude
+real(kind_real),intent(in) :: z                                 !< Altitude
+real(kind_real),intent(in) :: val                               !< Value
+real(kind_real),intent(inout) :: field(geom%nx,geom%ny,geom%nz) !< Field
+
+! Local variables
+integer :: jxm1,jxo,jxp1,jxp2
+integer :: jym1,jyo,jyp1,jyp2
+integer :: jzo,jzp1
+real(kind_real) :: x,y
+real(kind_real) :: ax,ay,az
+real(kind_real) :: oo,op1,p1o,p1p1,o,p1
+
+! Convert lon/lat to x/y
+call lonlat_to_xy(lon,lat,x,y)
+
+! Find indices
+call find_x_indices(geom,x,jxm1,jxo,jxp1,jxp2,ax)
+call find_y_indices(geom,y,jym1,jyo,jyp1,jyp2,ay)
+call find_z_indices(geom,z,jzo,jzp1,az)
+
+! Extrapolate along y if needed
+if (jyo<1) then
+  ay = ay+real(jyo-1,kind_real)
+  jyo = 1
+  jyp1 = 2
+endif
+if (jyp1>geom%ny) then
+  ay = ay+real(jyp1-geom%ny,kind_real)
+  jyo = geom%ny-1
+  jyp1 = geom%ny
+endif
+
+! Interpolate along z (adjoint)
+o = (1.0-az)*val
+p1 = az*val
+
+! Interpolate along y (adjoint)
+op1 = (1.0-ay)*p1
+p1p1 = ay*p1
+oo = (1.0-ay)*o
+p1o = ay*o
+
+! Interpolate along x (adjoint)
+field(jxo,jyp1,jzp1) = field(jxo,jyp1,jzp1)+(1.0-ax)*p1p1
+field(jxp1,jyp1,jzp1) = field(jxp1,jyp1,jzp1)+ax*p1p1
+field(jxo,jyp1,jzo) = field(jxo,jyp1,jzo)+(1.0-ax)*p1o
+field(jxp1,jyp1,jzo) = field(jxp1,jyp1,jzo)+ax*p1o
+field(jxo,jyo,jzp1) = field(jxo,jyo,jzp1)+(1.0-ax)*op1
+field(jxp1,jyo,jzp1) = field(jxp1,jyo,jzp1)+ax*op1
+field(jxo,jyo,jzo) = field(jxo,jyo,jzo)+(1.0-ax)*oo
+field(jxp1,jyo,jzo) = field(jxp1,jyo,jzo)+ax*oo
+
+end subroutine qg_interp_trilinear_ad
 ! ------------------------------------------------------------------------------
 !> Bilinear interpolation
 subroutine qg_interp_bilinear(geom,lon,lat,field,val)

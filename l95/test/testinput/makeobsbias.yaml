@@ -9,14 +9,14 @@ initial condition:
   filename: Data/truth.fc.2010-01-01T00:00:00Z.PT3H.l95
 forecast length: P1D
 
-window begin: 2010-01-01T03:00:00Z
-window length: P1D
+time window:
+  begin: 2010-01-01T03:00:00Z
+  length: P1D
 observations:
   observers:
   - obs space:
       obsdataout:
-          engine:
-            obsfile: Data/biased.2010-01-02T00:00:00Z.obt
+        obsfile: Data/biased.2010-01-02T00:00:00Z.obt
       generate:
         obs_density: 20
         obs_error: 0.4

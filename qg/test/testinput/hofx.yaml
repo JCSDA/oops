@@ -9,8 +9,9 @@ model:
   name: QG
   tstep: PT1H
 forecast length: PT12H
-window begin: 2010-01-01T00:00:00Z
-window length: PT12H
+time window:
+  begin: 2010-01-01T00:00:00Z
+  length: PT12H
 observations:
   get values:
     variable change:
@@ -19,11 +20,9 @@ observations:
   observers:
   - obs space:
       obsdatain:
-        engine:
-          obsfile: Data/truth.obs4d_12h.nc
+        obsfile: Data/truth.obs4d_12h.nc
       obsdataout:
-        engine:
-          obsfile: Data/hofx.obs4d_12h.nc
+        obsfile: Data/hofx.obs4d_12h.nc
       obs type: Stream
     obs operator:
       obs type: Stream
@@ -31,11 +30,9 @@ observations:
       interpolation type: default_1
   - obs space:
       obsdatain:
-        engine:
-          obsfile: Data/truth.obs4d_12h.nc
+        obsfile: Data/truth.obs4d_12h.nc
       obsdataout:
-        engine:
-          obsfile: Data/hofx.obs4d_12h.nc
+        obsfile: Data/hofx.obs4d_12h.nc
       obs type: Wind
     obs operator:
       obs type: Wind
@@ -43,11 +40,9 @@ observations:
       interpolation type: default_2
   - obs space:
       obsdatain:
-        engine:
-          obsfile: Data/truth.obs4d_12h.nc
+        obsfile: Data/truth.obs4d_12h.nc
       obsdataout:
-        engine:
-          obsfile: Data/hofx.obs4d_12h.nc
+        obsfile: Data/hofx.obs4d_12h.nc
       obs type: WSpeed
     obs operator:
       obs type: WSpeed

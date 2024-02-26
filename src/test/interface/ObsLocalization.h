@@ -25,40 +25,10 @@
 #include "oops/interface/GeometryIterator.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
-#include "oops/util/parameters/Parameter.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 #include "test/interface/ObsTestsFixture.h"
 #include "test/TestEnvironment.h"
 
 namespace test {
-
-/// Options controlling reference grid points.
-class RefGridPointsParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(RefGridPointsParameters, oops::Parameters)
-
- public:
-  oops::RequiredParameter<std::vector<double>> lons{"lons", this};
-  oops::RequiredParameter<std::vector<double>> lats{"lats", this};
-  oops::RequiredParameter<std::vector<double>> depths{"depths", this};
-};
-
-/// Options controlling a single obs localization test.
-template <typename MODEL, typename OBS>
-class ObsLocTestParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(ObsLocTestParameters, oops::Parameters)
-
-  typedef oops::ObsLocalizationParametersWrapper<MODEL, OBS> ObsLocParameters;
- public:
-  /// options controlling obs localization
-  ObsLocParameters obsloc{this};
-  oops::RequiredParameter<RefGridPointsParameters> refgridpoint{"reference gridpoints",
-        "reference gridpoints", this};
-  oops::RequiredParameter<std::vector<size_t>> refnobs{"reference local nobs", this};
-  oops::RequiredParameter<std::vector<double>> refrms{"reference rms", this};
-  oops::Parameter<bool> printIterator{"print iterator", false, this};
-};
-
 
 /// \brief Tests ObsLocalization::computeLocalization method.
 /// \details Tests that for obs localization around specified in yaml Geometry points:
@@ -89,14 +59,13 @@ template <typename MODEL, typename OBS> void testObsLocalization() {
 
     for (size_t oli = 0; oli < obsLocConfigs.size(); ++oli) {
       // initialize obs-space localization
-      ObsLocTestParameters<MODEL, OBS> params;
-      params.validateAndDeserialize(obsLocConfigs[oli]);
+      eckit::LocalConfiguration locconf(obsLocConfigs[oli]);
 
       // read reference local nobs values and reference gridpoints
-      const std::vector<double> & lons = params.refgridpoint.value().lons;
-      const std::vector<double> & lats = params.refgridpoint.value().lats;
-      const std::vector<double> & depths = params.refgridpoint.value().depths;
-      const std::vector<size_t> & nobs_local_ref = params.refnobs;
+      const std::vector<double> lons = locconf.getDoubleVector("reference gridpoints.lons");
+      const std::vector<double> lats = locconf.getDoubleVector("reference gridpoints.lats");
+      const std::vector<double> depths = locconf.getDoubleVector("reference gridpoints.depths");
+      const std::vector<size_t> nobs_local_ref = locconf.getUnsignedVector("reference local nobs");
       ASSERT(lons.size() == lats.size());
       ASSERT(lons.size() == depths.size());
       ASSERT(lons.size() == nobs_local_ref.size());
@@ -105,9 +74,45 @@ template <typename MODEL, typename OBS> void testObsLocalization() {
       for (size_t jpoint = 0; jpoint < lons.size(); ++jpoint) {
         reference_points.emplace_back(lons[jpoint], lats[jpoint], depths[jpoint]);
       }
+      eckit::LocalConfiguration testconf;
+      testconf.set("localization method", locconf.getString("localization method"));
+      if (locconf.has("lengthscale"))
+        testconf.set("lengthscale", locconf.getDouble("lengthscale"));
+      if (locconf.has("soar horizontal decay"))
+        testconf.set("soar horizontal decay", locconf.getDouble("soar horizontal decay"));
+
+      if (locconf.has("apply log transformation"))
+        testconf.set("apply log transformation", locconf.getBool("apply log transformation"));
+      if (locconf.has("vertical lengthscale"))
+        testconf.set("vertical lengthscale", locconf.getInt("vertical lengthscale"));
+      if (locconf.has("ioda vertical coordinate"))
+        testconf.set("ioda vertical coordinate", locconf.getString("ioda vertical coordinate"));
+      if (locconf.has("ioda vertical coordinate group"))
+        testconf.set("ioda vertical coordinate group",
+                     locconf.getString("ioda vertical coordinate group"));
+      if (locconf.has("localization function"))
+        testconf.set("localization function", locconf.getString("localization function"));
+      if (locconf.has("assign constant vertical coordinate to obs"))
+        testconf.set("assign constant vertical coordinate to obs",
+                     locconf.getBool("assign constant vertical coordinate to obs"));
+      if (locconf.has("constant vertical coordinate value"))
+        testconf.set("constant vertical coordinate value",
+                     locconf.getDouble("constant vertical coordinate value"));
+
+      if (locconf.has("base value"))
+        testconf.set("base value", locconf.getDouble("base value"));
+      if (locconf.has("rossby mult"))
+        testconf.set("rossby mult", locconf.getDouble("rossby mult"));
+      if (locconf.has("min grid mult"))
+        testconf.set("min grid mult", locconf.getDouble("min grid mult"));
+      if (locconf.has("min value"))
+        testconf.set("min value", locconf.getDouble("min value"));
+      if (locconf.has("max value"))
+        testconf.set("max value", locconf.getDouble("max value"));
+
       std::unique_ptr<ObsLocalization_> obsloc =
-        oops::ObsLocalizationFactory<MODEL, OBS>::create(params.obsloc.obslocParameters, obspace);
-      oops::Log::test() << "Testing obs-space localization: " << *obsloc << std::endl;
+        oops::ObsLocalizationFactory<MODEL, OBS>::create(testconf, obspace);
+      oops::Log::info() << "Testing obs-space localization: " << *obsloc << std::endl;
 
       ObsVector_ locvector(obspace);
       ObsVector_ obsvector(obspace);
@@ -117,12 +122,6 @@ template <typename MODEL, typename OBS> void testObsLocalization() {
       std::vector<double> locvector_rms(nobs_local_ref.size(), 0);
       // loop over geometry points
       for (GeometryIterator_ ii = geometry.begin(); ii != geometry.end(); ++ii) {
-        // debug print to help decide which points to specify for reference
-        // set OOPS_DEBUG environment variable to -1 to see prints from all MPI tasks
-        if (params.printIterator.value()) {
-          oops::Log::debug() << "Iterating over " << std::setprecision(9) << ii << ": "
-                           << *ii << std::endl;
-        }
         // check if we need to test at this location (if there are any points in the
         // reference point list within 1e-5 of this locationn)
         const auto & it = std::find_if(reference_points.begin(), reference_points.end(),
@@ -133,11 +132,7 @@ template <typename MODEL, typename OBS> void testObsLocalization() {
           size_t index = it - reference_points.begin();
           locvector.ones();
           obsloc->computeLocalization(ii, locvector);
-          oops::Log::test() << "Obs localization with geometry iterator: " << ii << ": "
-                            << *ii << std::endl;
-          oops::Log::test() << "Localization values: " << locvector << std::endl;
-          oops::Log::test() << "Local vector nobs and reference: " << locvector.nobs() << ", "
-                            << nobs_local_ref[index] << std::endl;
+          oops::Log::info() << "Localization values: " << locvector << std::endl;
           oops::Log::debug() << "Local vector stats lat,lon,nobs,rms: " <<  *ii << ", "
                              << locvector.nobs() << ", " << locvector.rms() << std::endl;
 
@@ -147,7 +142,7 @@ template <typename MODEL, typename OBS> void testObsLocalization() {
           // apply localization to a vector of ones
           obsvector.ones();
           obsvector *= locvector;
-          oops::Log::test() << "Localization applied to local ObsVector of ones: " <<
+          oops::Log::info() << "Localization applied to local ObsVector of ones: " <<
                                obsvector << std::endl;
           // save localized vector rms to be tested later
           locvector_rms[index] = obsvector.rms();
@@ -163,7 +158,7 @@ template <typename MODEL, typename OBS> void testObsLocalization() {
       // Test that computed number of local obs is the same as reference
       EXPECT_EQUAL(nobs_local_ref, nobs_local);
       // check value of the rms is close to reference
-      const std::vector<double> & ref_locvector_rms = params.refrms;
+      const std::vector<double> ref_locvector_rms = locconf.getDoubleVector("reference rms");
       ASSERT(lons.size() == ref_locvector_rms.size());
       oops::Log::debug() << "reference RMS" << ref_locvector_rms << std::endl;
       oops::Log::debug() << "computed RMS" << locvector_rms << std::endl;

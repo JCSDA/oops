@@ -35,6 +35,11 @@ void variables_push_back_f(oops::Variables & vars, const char * vname) {
 }
 
 // -----------------------------------------------------------------------------
+void variables_clear_f(oops::Variables & vars) {
+  vars = oops::Variables();
+}
+
+// -----------------------------------------------------------------------------
 size_t variables_size_f(const oops::Variables & vars) {
   return vars.size();
 }
@@ -67,6 +72,11 @@ void variables_getvariable_f(const oops::Variables & vars, const size_t & jj,
 // -----------------------------------------------------------------------------
 bool variables_has_f(const oops::Variables & vars, const char * vname) {
   return vars.has(std::string(vname));
+}
+
+// -----------------------------------------------------------------------------
+int variables_find_f(const oops::Variables & vars, const char * vname) {
+  return vars.find(std::string(vname));
 }
 
 }  // namespace oops

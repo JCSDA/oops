@@ -12,7 +12,7 @@
 ################################################################################
 
 cmake_minimum_required( VERSION 3.12 )
-project( oops VERSION 1.4.0 LANGUAGES CXX Fortran )
+project( oops VERSION 1.9.0 LANGUAGES CXX Fortran )
 
 option(OPENMP "Build oops with OpenMP support" ON)
 
@@ -56,14 +56,14 @@ if(OPENMP)
   find_package( OpenMP REQUIRED COMPONENTS CXX Fortran )
 endif()
 find_package( MPI REQUIRED COMPONENTS C CXX Fortran )
-find_package( NetCDF REQUIRED COMPONENTS Fortran )
+find_package( NetCDF REQUIRED COMPONENTS C Fortran )
 find_package( Boost 1.64.0 REQUIRED )
-find_package( eckit 1.19.0 REQUIRED COMPONENTS MPI )
-find_package( fckit 0.9.5 REQUIRED )
+find_package( eckit 1.24.4 REQUIRED COMPONENTS MPI )
+find_package( fckit 0.11.0 REQUIRED )
 if(OpenMP_FOUND)
-    find_package( atlas 0.30.0 REQUIRED COMPONENTS OMP OMP_Fortran )
+    find_package( atlas 0.35.0 REQUIRED COMPONENTS OMP OMP_Fortran )
 else()
-    find_package( atlas 0.30.0 REQUIRED )
+    find_package( atlas 0.35.0 REQUIRED )
 endif()
 
 #Optional Dependencies
@@ -86,7 +86,6 @@ include( oops_output_json_schema )
 install(
   FILES
     "cmake/oops_output_json_schema.cmake"
-    "cmake/oops_output_json_schema_x.cmake.in"
   DESTINATION
     "${INSTALL_CMAKE_DIR}"
 )

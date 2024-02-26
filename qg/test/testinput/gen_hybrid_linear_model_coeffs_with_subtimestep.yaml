@@ -1,0 +1,65 @@
+update geometry:
+  nx: 40
+  ny: 20
+  depths: [500, 1000, 1500, 3000, 4000]
+  perturbed heating: 0.1
+hybrid linear model:
+  simple linear model:
+    linear model:
+      trajectory:
+        tstep: PT30M
+      tstep: PT1H
+      variable change: Identity
+      name: QgTLM
+    geometry:
+      nx: 40
+      ny: 20
+      depths: [500, 1000, 1500, 3000, 4000]
+      perturbed heating: 0.1
+    residual form: true
+  update tstep: PT6H
+  variables: [x, q]
+  coefficients:
+    influence region size: 3
+    update variables: [x, q]
+    time window:
+      begin: 2010-01-01T00:00:00Z
+      length: PT24H
+    calculator:
+      regularization:
+        base value: 1e100
+        parts:
+        - variables: [x]
+          levels: [0]
+          bounding lons: [60.0, 90.0]
+          bounding lats: [60.0, 90.0]
+          value: 0.0
+        - value: 0.0
+    ensemble:
+      model:
+        name: QG
+        tstep: PT1H
+      model geometry:
+        nx: 40
+        ny: 20
+        depths: [500, 1000, 1500, 3000, 4000]
+        perturbed heating: 0.1
+      nonlinear control:
+        date: '2010-01-01T00:00:00Z'
+        filename: Data/forecast_5level_pert_heat.fc.2009-12-31T00:00:00Z.P1D.nc
+      nonlinear ensemble:
+        read:
+          members from template:
+            template:
+              date: 2010-01-01T00:00:00Z
+              filename: Data/forecast_5level_pert_heat.ens.%mem%.2009-12-31T00:00:00Z.P1D.nc
+            pattern: %mem%
+            nmembers: 10
+    output:
+      base filepath: Data/hybrid_linear_model_coeffs
+      one file per task: true
+  name: HTLM
+test:
+  variables: [x, q]
+  reference filename: testoutput/gen_hybrid_linear_model_coeffs_with_subtimestep.test
+  float absolute tolerance: 1.0e-16

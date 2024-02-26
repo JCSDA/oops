@@ -6,4 +6,6 @@ inc variables: [x]
 increment test:
   date: 2010-01-01T03:00:00Z
   skip atlas: 1
-  skip rms by level test: 1
+  skip dirac test: 1
+
+test atlas interface: false

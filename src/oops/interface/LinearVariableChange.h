@@ -78,19 +78,20 @@ class LinearVariableChange {
 
 template<typename MODEL>
 LinearVariableChange<MODEL>::LinearVariableChange(const Geometry_ & resol,
-    const eckit::Configuration & conf)
-  :  LinearVariableChange<MODEL>::LinearVariableChange(resol,
-        validateAndDeserialize<Parameters_>(conf))
-{}
+                                                  const eckit::Configuration & conf) : chvar_() {
+  Log::trace() << "LinearVariableChange<MODEL>::LinearVariableChange starting" << std::endl;
+  util::Timer timer(classname(), "LinearVariableChange");
+  chvar_.reset(new LinearVariableChange_(resol.geometry(), conf));
+  Log::trace() << "LinearVariableChange<MODEL>::LinearVariableChange done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
 
 template<typename MODEL>
 LinearVariableChange<MODEL>::LinearVariableChange(const Geometry_ & resol,
-    const Parameters_ & parameters) : chvar_() {
-  Log::trace() << "LinearVariableChange<MODEL>::LinearVariableChange starting" << std::endl;
-  util::Timer timer(classname(), "LinearVariableChange");
-  chvar_.reset(new LinearVariableChange_(resol.geometry(), parameters));
-  Log::trace() << "LinearVariableChange<MODEL>::LinearVariableChange done" << std::endl;
-}
+                                                  const Parameters_ & parameters)
+  :  LinearVariableChange<MODEL>::LinearVariableChange(resol, parameters.toConfiguration())
+{}
 
 // -----------------------------------------------------------------------------
 

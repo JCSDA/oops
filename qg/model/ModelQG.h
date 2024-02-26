@@ -16,19 +16,18 @@
 #include <string>
 #include <vector>
 
-#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/ModelBase.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
-#include "oops/util/parameters/Parameter.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 
 #include "oops/qg/GeometryQG.h"
 #include "oops/qg/QgFortran.h"
 #include "oops/qg/QgTraits.h"
 
+namespace eckit {
+  class Configuration;
+}
 
 namespace qg {
   class ModelBias;
@@ -36,34 +35,14 @@ namespace qg {
   class StateQG;
 
 // -----------------------------------------------------------------------------
-
-class ModelQgParameters : public oops::ModelParametersBase {
-  OOPS_CONCRETE_PARAMETERS(ModelQgParameters, ModelParametersBase)
-
- public:
-  /// Model time step
-  oops::RequiredParameter<util::Duration> tstep{"tstep", this};
-
-  oops::Variables variables() const {
-  return oops::Variables({"x"});
-  }
-};
-
-
-// -----------------------------------------------------------------------------
-/// QG model definition.
-/*!
- *  QG nonlinear model definition and configuration parameters.
- */
+/// QG nonlinear model definition.
 
 class ModelQG: public oops::interface::ModelBase<QgTraits>,
                private util::ObjectCounter<ModelQG> {
  public:
-  typedef ModelQgParameters Parameters_;
-
   static const std::string classname() {return "qg::ModelQG";}
 
-  ModelQG(const GeometryQG &, const ModelQgParameters &);
+  ModelQG(const GeometryQG &, const eckit::Configuration &);
   ~ModelQG();
 
 /// Prepare model integration
@@ -77,15 +56,15 @@ class ModelQG: public oops::interface::ModelBase<QgTraits>,
   void finalize(StateQG &) const;
 
 /// Utilities
-  const util::Duration & timeResolution() const {return params_.tstep;}
+  const util::Duration & timeResolution() const {return tstep_;}
   const oops::Variables & variables() const {return vars_;}
 
  private:
   void print(std::ostream &) const;
   F90model keyConfig_;
-  ModelQgParameters params_;
+  const util::Duration tstep_;
   const GeometryQG geom_;
-  const oops::Variables vars_;
+  oops::Variables vars_;
 };
 // -----------------------------------------------------------------------------
 

@@ -16,14 +16,19 @@
 
 #include "lorenz95/ObsTable.h"
 
+namespace oops {
+  template <typename OBS> class Locations;
+}
+
 namespace lorenz95 {
-  class LocsL95;
+  struct L95ObsTraits;
 
 // -----------------------------------------------------------------------------
 
 class ObsDiags1D : public util::Printable {
  public:
-  ObsDiags1D(const ObsTable &, const LocsL95 &, const oops::Variables &) {}
+  ObsDiags1D(const ObsTable &, const oops::Locations<L95ObsTraits> &,
+             const oops::Variables &) {}
   ~ObsDiags1D() {}
 
 // I/O

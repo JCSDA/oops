@@ -931,6 +931,13 @@ void testMapParametersSerialization() {
   doTestSerialization<MyMapParameters>(conf);
 }
 
+void testEmptyMapParametersSerialization() {
+  // Tests serialization of empty maps.
+  const eckit::LocalConfiguration conf(TestEnvironment::config(),
+                                       "map_parameter_empty");
+  doTestSerialization<MyMapParameters>(conf);
+}
+
 // Parameters storing std::set<int> objects
 
 void testSetIntParameters() {
@@ -1848,6 +1855,10 @@ class Parameters : public oops::Test {
 
     ts.emplace_back(CASE("util/Parameters/mapParametersSerialization") {
                       testMapParametersSerialization();
+                    });
+
+    ts.emplace_back(CASE("util/Parameters/mapEmptyParametersSerialization") {
+                      testEmptyMapParametersSerialization();
                     });
 
     ts.emplace_back(CASE("util/Parameters/testSetIntParameters") {

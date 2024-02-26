@@ -1,5 +1,6 @@
-window begin: 2010-01-01T21:00:00Z
-window length: PT6H
+time window:
+  begin: 2010-01-01T21:00:00Z
+  length: PT6H
 
 geometry:
   resol: 40
@@ -15,6 +16,7 @@ background:
 
 driver:
   update obs config with geometry info: false
+  save prior mean: true
 
 observations:
   observers:
@@ -25,8 +27,7 @@ observations:
       lengthscale: .1
     obs space:
       obsdatain:
-        engine:
-          obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+        obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
     obs operator: {}
 
 local ensemble DA:
@@ -44,6 +45,12 @@ output:
   datadir: Data
   date: *date
   exp: getkf.%{member}%
+  type: an
+
+output mean prior:
+  datadir: Data
+  date: *date
+  exp: getkf.xbmean
   type: an
 
 test:

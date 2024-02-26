@@ -33,7 +33,7 @@ class ObsErrorDiagParameters : public ObsErrorParametersBase {
 
  public:
   /// perturbation amplitude multiplier
-  Parameter<double> pert{"random amplitude", 1.0, this};
+  Parameter<double> pert{"obs perturbations amplitude", 1.0, this};
 
   /// Set to true to constrain observation perturbations to have a zero ensemble mean.
   ///

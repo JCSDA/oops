@@ -14,28 +14,11 @@
 #include "eckit/config/Configuration.h"
 
 #include "oops/interface/ModelAuxControl.h"
-#include "oops/util/parameters/Parameter.h"
-#include "oops/util/parameters/Parameters.h"
 #include "oops/util/Printable.h"
 
 #include "oops/coupled/GeometryCoupled.h"
 
 namespace oops {
-
-/// Parameters for ModelAuxControl describing a coupled model bias
-template <typename MODEL1, typename MODEL2>
-class AuxCoupledModelParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(AuxCoupledModelParameters, Parameters)
-
-  typedef typename ModelAuxControl<MODEL1>::Parameters_ Parameters1_;
-  typedef typename ModelAuxControl<MODEL2>::Parameters_ Parameters2_;
-
- public:
-  /// Parameters for ModelAuxControl of MODEL1 and ModelAuxControl of MODEL2
-  Parameter<Parameters1_> modelaux1{MODEL1::name().c_str(), {}, this};
-  Parameter<Parameters2_> modelaux2{MODEL2::name().c_str(), {}, this};
-};
-
 
 // -----------------------------------------------------------------------------
 /// Implementation of the ModelAuxControl interface for a coupled model.
@@ -44,9 +27,7 @@ class AuxCoupledModel : public util::Printable {
   typedef GeometryCoupled<MODEL1, MODEL2>  GeometryCoupled_;
 
  public:
-  typedef AuxCoupledModelParameters<MODEL1, MODEL2> Parameters_;
-
-  AuxCoupledModel(const GeometryCoupled_ &, const Parameters_ &);
+  AuxCoupledModel(const GeometryCoupled_ &, const eckit::Configuration &);
   AuxCoupledModel(const GeometryCoupled_ &, const AuxCoupledModel &);
   AuxCoupledModel(const AuxCoupledModel &, const bool);
   ~AuxCoupledModel();
@@ -74,20 +55,22 @@ class AuxCoupledModel : public util::Printable {
 
 template<typename MODEL1, typename MODEL2>
 AuxCoupledModel<MODEL1, MODEL2>::AuxCoupledModel(const GeometryCoupled_ & geom,
-                                                 const Parameters_ & params)
+                                                 const eckit::Configuration & config)
   : geom_(new GeometryCoupled_(geom)), aux1_(), aux2_(), parallel_(geom.isParallel())
 {
-  Log::trace() << "AuxCoupledModel::AuxCoupledModel read starting" << std::endl;
+  Log::trace() << "AuxCoupledModel::AuxCoupledModel starting" << std::endl;
+  const eckit::LocalConfiguration conf1 = config.getSubConfiguration(MODEL1::name());;
+  const eckit::LocalConfiguration conf2 = config.getSubConfiguration(MODEL2::name());;
   if (parallel_) {
     if (geom.modelNumber() == 1) {
-      aux1_ = std::make_unique<ModelAuxControl<MODEL1>>(geom.geometry1(), params.modelaux1);
+      aux1_ = std::make_unique<ModelAuxControl<MODEL1>>(geom.geometry1(), conf1);
     }
     if (geom.modelNumber() == 2) {
-      aux2_ = std::make_unique<ModelAuxControl<MODEL2>>(geom.geometry2(), params.modelaux2);
+      aux2_ = std::make_unique<ModelAuxControl<MODEL2>>(geom.geometry2(), conf2);
     }
   } else {
-    aux1_ = std::make_unique<ModelAuxControl<MODEL1>>(geom.geometry1(), params.modelaux1);
-    aux2_ = std::make_unique<ModelAuxControl<MODEL2>>(geom.geometry2(), params.modelaux2);
+    aux1_ = std::make_unique<ModelAuxControl<MODEL1>>(geom.geometry1(), conf1);
+    aux2_ = std::make_unique<ModelAuxControl<MODEL2>>(geom.geometry2(), conf2);
   }
 
   Log::trace() << "AuxCoupledModel::AuxCoupledModel read done" << std::endl;

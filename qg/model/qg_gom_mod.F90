@@ -22,6 +22,7 @@ use qg_locs_mod
 use qg_projection_mod
 use qg_tools_mod
 use random_mod
+use string_f_c_mod
 
 implicit none
 private
@@ -40,7 +41,6 @@ type :: qg_gom
   real(kind_real), pointer :: z(:,:) => null()  !< Height values
   logical :: lalloc = .false.                   !< Allocation flag
   type(oops_variables) :: vars                  !< Variables
-  type(qg_locs) :: locs                         !< Locations of obs
   integer :: levs                               !< Number of levels
 end type qg_gom
 
@@ -60,21 +60,20 @@ contains
 #include "oops/util/linkedList_c.f"
 ! ------------------------------------------------------------------------------
 !> Setup GOM
-subroutine qg_gom_setup(self,locs,vars,levs)
+subroutine qg_gom_setup(self,npaths,vars,levs)
 
 implicit none
 
 ! Passed variables
 type(qg_gom),intent(inout) :: self      !< GOM
-type(qg_locs), intent(in)  :: locs      !< Locations of obs
+integer(c_int), intent(in) :: npaths    !< Number of interpolation paths
 type(oops_variables), intent(in) :: vars
 integer(c_int),intent(in)  :: levs
 
 ! Set attributes
 self%vars = vars
-call locs_copy(self%locs, locs)
 
-call qg_gom_alloc(self, locs%nlocs(), levs)
+call qg_gom_alloc(self, npaths, levs)
 
 end subroutine qg_gom_setup
 ! ------------------------------------------------------------------------------
@@ -148,91 +147,88 @@ if (self%vars%has('z')) self%z = other%z
 
 end subroutine qg_gom_copy
 ! ------------------------------------------------------------------------------
-subroutine qg_gom_fill(self, c_nloc, c_indx, c_nval, c_vals)
+subroutine qg_gom_fill(self, lvar, c_var, c_nloc, c_indx, c_nlev, c_vals)
 implicit none
 type(qg_gom), intent(inout) :: self
+integer(c_int), intent(in) :: lvar
+character(kind=c_char, len=1), intent(in) :: c_var(lvar+1)
 integer(c_int), intent(in) :: c_nloc
 integer(c_int), intent(in) :: c_indx(c_nloc)
-integer(c_int), intent(in) :: c_nval
-real(c_double), intent(in) :: c_vals(c_nval)
+integer(c_int), intent(in) :: c_nlev
+real(c_double), intent(in) :: c_vals(c_nloc, c_nlev)
 
 character(len=1024) :: fieldname
 real(kind_real),pointer :: gval(:,:)
-integer :: jvar, jlev, jloc, iloc, ii
+integer :: jlev, jloc, iloc, ii
 
 if (.not.self%lalloc) call abor1_ftn('qg_gom_fill: gom not allocated')
+if (self%levs /= c_nlev) call abor1_ftn('qg_gom_fillad: incorrect number of levels')
 
-ii = 0
-do jvar=1,self%vars%nvars()
-  fieldname = self%vars%variable(jvar)
-  select case (trim(fieldname))
-  case ('x')
-    gval => self%x(:,:)
-  case ('q')
-    gval => self%q(:,:)
-  case ('u')
-    gval => self%u(:,:)
-  case ('v')
-    gval => self%v(:,:)
-  case ('z')
-    gval => self%z(:,:)
-  case default
-    call abor1_ftn('qg_gom_fill: wrong variable')
-  endselect
+call c_f_string(c_var, fieldname)
 
-  do jlev = 1, self%levs
-    do jloc=1,c_nloc
-      iloc = c_indx(jloc)
-      ii = ii + 1
-      gval(jlev,iloc) = c_vals(ii)
-    enddo
+select case (trim(fieldname))
+case ('x')
+  gval => self%x(:,:)
+case ('q')
+  gval => self%q(:,:)
+case ('u')
+  gval => self%u(:,:)
+case ('v')
+  gval => self%v(:,:)
+case ('z')
+  gval => self%z(:,:)
+case default
+  call abor1_ftn('qg_gom_fill: wrong variable')
+endselect
+
+do jlev = 1, self%levs
+  do jloc=1,c_nloc
+    iloc = c_indx(jloc)
+    gval(jlev,iloc) = c_vals(jloc, jlev)
   enddo
 enddo
-if (ii /= c_nval) call abor1_ftn('qg_gom_fill: error size')
 
 end subroutine qg_gom_fill
 ! ------------------------------------------------------------------------------
-subroutine qg_gom_fillad(self, c_nloc, c_indx, c_nval, c_vals)
+subroutine qg_gom_fillad(self, lvar, c_var, c_nloc, c_indx, c_nlev, c_vals)
 implicit none
 type(qg_gom), intent(in) :: self
+integer(c_int), intent(in) :: lvar
+character(kind=c_char, len=1), intent(in) :: c_var(lvar+1)
 integer(c_int), intent(in) :: c_nloc
 integer(c_int), intent(in) :: c_indx(c_nloc)
-integer(c_int), intent(in) :: c_nval
-real(c_double), intent(inout) :: c_vals(c_nval)
+integer(c_int), intent(in) :: c_nlev
+real(c_double), intent(inout) :: c_vals(c_nloc, c_nlev)
 
 character(len=1024) :: fieldname
 real(kind_real),pointer :: gval(:,:)
-integer :: jvar, jlev, jloc, iloc, ii
+integer :: jlev, jloc, iloc
 
 if (.not.self%lalloc) call abor1_ftn('qg_gom_fillad: gom not allocated')
+if (self%levs /= c_nlev) call abor1_ftn('qg_gom_fillad: incorrect number of levels')
 
-ii = 0
-do jvar=1,self%vars%nvars()
-  fieldname = self%vars%variable(jvar)
-  select case (trim(fieldname))
-  case ('x')
-    gval => self%x(:,:)
-  case ('q')
-    gval => self%q(:,:)
-  case ('u')
-    gval => self%u(:,:)
-  case ('v')
-    gval => self%v(:,:)
-  case ('z')
-    gval => self%z(:,:)
-  case default
-    call abor1_ftn('qg_gom_fillad: wrong variable')
-  endselect
- 
-  do jlev = 1, self%levs  
-    do jloc=1,c_nloc
-      iloc = c_indx(jloc)
-      ii = ii + 1
-      c_vals(ii) = gval(jlev,iloc)
-    enddo
+call c_f_string(c_var, fieldname)
+select case (trim(fieldname))
+case ('x')
+  gval => self%x(:,:)
+case ('q')
+  gval => self%q(:,:)
+case ('u')
+  gval => self%u(:,:)
+case ('v')
+  gval => self%v(:,:)
+case ('z')
+  gval => self%z(:,:)
+case default
+  call abor1_ftn('qg_gom_fillad: wrong variable')
+endselect
+
+do jlev = 1, self%levs
+  do jloc=1,c_nloc
+    iloc = c_indx(jloc)
+    c_vals(jloc,jlev) = gval(jlev,iloc)
   enddo
 enddo
-if (ii /= c_nval) call abor1_ftn('qg_gom_fillad: error size')
 
 end subroutine qg_gom_fillad
 ! ------------------------------------------------------------------------------
@@ -690,7 +686,7 @@ filename = str
 call fckit_log%info('qg_gom_write_file: writing '//trim(filename))
 
 ! Create NetCDF file
-call ncerr(nf90_create(trim(filename)//'.nc',or(nf90_clobber,nf90_64bit_offset),ncid))
+call ncerr(nf90_create(trim(filename)//'.nc',ior(nf90_clobber,nf90_64bit_offset),ncid))
 
 ! Define dimensions
 call ncerr(nf90_def_dim(ncid,'nobs',self%nobs,nobs_id))

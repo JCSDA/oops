@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2023, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -21,6 +22,7 @@
 #include "oops/assimilation/ControlVariable.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
+#include "oops/base/Increment4D.h"
 #include "oops/base/ObsAuxIncrements.h"
 #include "oops/interface/ModelAuxIncrement.h"
 #include "oops/util/dot_product.h"
@@ -64,7 +66,6 @@ class ControlIncrement : public util::Printable,
 /// Constructor, destructor
   explicit ControlIncrement(const JbTotal_ &);
   ControlIncrement(const ControlIncrement &, const bool copy = true);
-  ControlIncrement(const ControlIncrement &, const eckit::Configuration &);
   ControlIncrement(const Geometry_ &, const ControlIncrement &);
   ~ControlIncrement();
 
@@ -89,8 +90,10 @@ class ControlIncrement : public util::Printable,
   const Geometry_ & geometry() const {return increment_.geometry();}
 
 /// Get state control variable
-  Increment_ & state() {return increment_;}
-  const Increment_ & state() const {return increment_;}
+  Increment_ & state(const size_t ii = 0) {return increment_[ii];}
+  const Increment_ & state(const size_t ii = 0) const {return increment_[ii];}
+  Increment4D<MODEL> & states() {return increment_;}
+  const Increment4D<MODEL> & states() const {return increment_;}
 
 /// Get augmented model control variable
   ModelAuxIncr_ & modVar() {return modbias_;}
@@ -111,21 +114,33 @@ class ControlIncrement : public util::Printable,
  private:
   void print(std::ostream &) const override;
 
-  Increment_  increment_;
+  Increment4D<MODEL>  increment_;
   ModelAuxIncr_ modbias_;   // not only for bias, better name?
   ObsAuxIncrs_  obsbias_;   // not only for bias, better name?
-  const util::DateTime windowBegin_;
-  const util::DateTime windowEnd_;
 };
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename OBS>
+ControlVariable<MODEL, OBS> & operator+=(ControlVariable<MODEL, OBS> & xx,
+                                    const ControlIncrement<MODEL, OBS> & dx) {
+  Log::trace() << "operator+=(ControlVariable, ControlIncrement) starting" << std::endl;
+  util::Timer timer("oops::ControlIncrement", "operator+=ControlVariable");
+  xx.state() += dx.state();
+  xx.modVar() += dx.modVar();
+  xx.obsVar() += dx.obsVar();
+  Log::trace() << "operator+=(ControlVariable, ControlIncrement) done" << std::endl;
+  return xx;
+}
 
 // =============================================================================
 
 template<typename MODEL, typename OBS>
 ControlIncrement<MODEL, OBS>::ControlIncrement(const JbTotal_ & jb)
-  : increment_(*jb.jbState().newStateIncrement()),  // not good, extra copy
-    modbias_(jb.resolution(), jb.jbModBias().config()),
-    obsbias_(jb.jbObsBias().obspaces(), jb.jbObsBias().config()),
-    windowBegin_(jb.windowBegin()), windowEnd_(jb.windowEnd())
+  : increment_(jb.jbState().geometry(), jb.jbState().variables(), jb.jbState().times(),
+                                                                  jb.jbState().comm()),
+    modbias_(jb.jbModBias().geometry(), jb.jbModBias().config()),
+    obsbias_(jb.jbObsBias().obspaces(), jb.jbObsBias().config())
 {
   this->setObjectSize(this->serialSize()*sizeof(double));
   Log::trace() << "ControlIncrement:ControlIncrement created." << std::endl;
@@ -133,18 +148,8 @@ ControlIncrement<MODEL, OBS>::ControlIncrement(const JbTotal_ & jb)
 // -----------------------------------------------------------------------------
 template<typename MODEL, typename OBS>
 ControlIncrement<MODEL, OBS>::ControlIncrement(const ControlIncrement & other, const bool copy)
-  : increment_(other.increment_, copy), modbias_(other.modbias_, copy),
-    obsbias_(other.obsbias_, copy), windowBegin_(other.windowBegin_), windowEnd_(other.windowEnd_)
-{
-  this->setObjectSize(this->serialSize()*sizeof(double));
-  Log::trace() << "ControlIncrement:ControlIncrement copied." << std::endl;
-}
-// -----------------------------------------------------------------------------
-template<typename MODEL, typename OBS>
-ControlIncrement<MODEL, OBS>::ControlIncrement(const ControlIncrement & other,
-                                               const eckit::Configuration & tlConf)
-  : increment_(other.increment_, tlConf), modbias_(other.modbias_, tlConf),
-    obsbias_(other.obsbias_, tlConf), windowBegin_(other.windowBegin_), windowEnd_(other.windowEnd_)
+  : increment_(other.increment_, copy),
+    modbias_(other.modbias_, copy), obsbias_(other.obsbias_, copy)
 {
   this->setObjectSize(this->serialSize()*sizeof(double));
   Log::trace() << "ControlIncrement:ControlIncrement copied." << std::endl;
@@ -153,8 +158,8 @@ ControlIncrement<MODEL, OBS>::ControlIncrement(const ControlIncrement & other,
 template<typename MODEL, typename OBS>
 ControlIncrement<MODEL, OBS>::ControlIncrement(const Geometry_ & geom,
                                                const ControlIncrement & other)
-  : increment_(geom, other.increment_), modbias_(other.modbias_, true),
-    obsbias_(other.obsbias_, true), windowBegin_(other.windowBegin_), windowEnd_(other.windowEnd_)
+  : increment_(geom, other.increment_),
+    modbias_(other.modbias_, true), obsbias_(other.obsbias_, true)
 {
   this->setObjectSize(this->serialSize()*sizeof(double));
   Log::trace() << "ControlIncrement:ControlIncrement copied." << std::endl;
@@ -165,7 +170,9 @@ ControlIncrement<MODEL, OBS>::~ControlIncrement() {}
 // -----------------------------------------------------------------------------
 template<typename MODEL, typename OBS>
 void ControlIncrement<MODEL, OBS>::diff(const CtrlVar_ & cvar1, const CtrlVar_ & cvar2) {
-  increment_.diff(cvar1.state(), cvar2.state());
+  increment_.diff(cvar1.states(), cvar2.states());
+  modbias_.diff(cvar1.modVar(), cvar2.modVar());
+  obsbias_.diff(cvar1.obsVar(), cvar2.obsVar());
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL, typename OBS> ControlIncrement<MODEL, OBS> &
@@ -216,16 +223,17 @@ void ControlIncrement<MODEL, OBS>::axpy(const double zz, const ControlIncrement 
 // -----------------------------------------------------------------------------
 template<typename MODEL, typename OBS>
 void ControlIncrement<MODEL, OBS>::read(const eckit::Configuration & config) {
-  increment_.read(config);
+  ASSERT(increment_.is_3d());  // for now
+  increment_[0].read(config);
   modbias_.read(config);
   obsbias_.read(config);
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL, typename OBS>
 void ControlIncrement<MODEL, OBS>::write(const eckit::Configuration & config) const {
-  increment_.write(config);
-  modbias_.write(config);
-  obsbias_.write(config);
+  increment_.write(config.getSubConfiguration("state component"));
+  modbias_.write(config.getSubConfiguration("model aux component"));
+  obsbias_.write(config.getSubConfiguration("obs aux component"));
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
@@ -252,7 +260,9 @@ void ControlIncrement<MODEL, OBS>::schur_product_with(const ControlIncrement & o
 template<typename MODEL, typename OBS>
 size_t ControlIncrement<MODEL, OBS>::serialSize() const {
   size_t ss = 0;
-  ss += increment_.serialSize();
+  for (size_t js = 0; js < increment_.size(); ++js) {
+    ss += increment_[js].serialSize();
+  }
   ss += modbias_.serialSize();
   ss += obsbias_.serialSize();
   return ss;
@@ -261,27 +271,31 @@ size_t ControlIncrement<MODEL, OBS>::serialSize() const {
 template<typename MODEL, typename OBS>
 void ControlIncrement<MODEL, OBS>::serialize(std::vector<double> & vec) const {
   vec.reserve(vec.size() + this->serialSize());  // allocate memory to avoid reallocations
-  increment_.serialize(vec);
+  for (size_t js = 0; js < increment_.size(); ++js) {
+    increment_[js].serialize(vec);
+  }
   modbias_.serialize(vec);
   obsbias_.serialize(vec);
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL, typename OBS>
 void ControlIncrement<MODEL, OBS>::deserialize(const std::vector<double> & vec, size_t & indx) {
-  increment_.deserialize(vec, indx);
+  for (size_t js = 0; js < increment_.size(); ++js) {
+    increment_[js].deserialize(vec, indx);
+  }
   modbias_.deserialize(vec, indx);
   obsbias_.deserialize(vec, indx);
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL, typename OBS>
 void ControlIncrement<MODEL, OBS>::shift_forward() {
-  increment_.shift_forward(windowBegin_);
+  increment_.shift_forward();
 // Probably needs some gathering of contributions for modbias_ and obsbias_
 }
 // -----------------------------------------------------------------------------
 template<typename MODEL, typename OBS>
 void ControlIncrement<MODEL, OBS>::shift_backward() {
-  increment_.shift_backward(windowEnd_);
+  increment_.shift_backward();
 // Probably needs some gathering of contributions for modbias_ and obsbias_
 }
 // -----------------------------------------------------------------------------

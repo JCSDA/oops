@@ -14,6 +14,7 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
+#include <regex>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -24,9 +25,9 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 
+#include "oops/mpi/mpi.h"
 #include "oops/util/LibOOPS.h"
 #include "oops/util/Logger.h"
-
 
 namespace oops {
 
@@ -94,7 +95,16 @@ namespace {
 void TestReference::initialise(const eckit::LocalConfiguration &conf)
 {
   initCheck_ = true;
+  std::string mpi_pattern, mpi_size;
+  if (conf.has("mpi pattern")) {
+    mpi_pattern = conf.getString("mpi pattern");
+    mpi_size = std::to_string(oops::mpi::world().size());
+  }
+
   refFile_ = conf.getString("reference filename");
+  if (conf.has("mpi pattern")) {
+    refFile_  = std::regex_replace(refFile_, std::regex(mpi_pattern), mpi_size);
+  }
   oops::Log::info() << "[TestReference] Comparing to reference file: " << refFile_ << std::endl;
 
   tolRelativeFloat_ = conf.getDouble("float relative tolerance", 1.0e-6);
@@ -108,12 +118,18 @@ void TestReference::initialise(const eckit::LocalConfiguration &conf)
 
   if (conf.has("log output filename")) {
     outputFile_ = conf.getString("log output filename");
+    if (conf.has("mpi pattern")) {
+      outputFile_  = std::regex_replace(outputFile_, std::regex(mpi_pattern), mpi_size);
+    }
     LibOOPS::instance().teeOutput(outputFile_);
     oops::Log::info() << "[TestReference] Saving Log output to: " << outputFile_ << std::endl;
   }
 
   if (conf.has("test output filename")) {
     testFile_ = conf.getString("test output filename");
+    if (conf.has("mpi pattern")) {
+      testFile_  = std::regex_replace(testFile_, std::regex(mpi_pattern), mpi_size);
+    }
     oops::Log::info() << "[TestReference] Saving Test output to: " << testFile_ << std::endl;
   }
 }

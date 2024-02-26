@@ -103,6 +103,7 @@ extern "C" {
   void qg_fields_add_incr_f90(const F90flds &, const F90flds &);
   void qg_fields_diff_incr_f90(const F90flds &, const F90flds &, const F90flds &);
   void qg_fields_change_resol_f90(const F90flds &, const F90flds &);
+  void qg_fields_change_resol_ad_f90(const F90flds &, const F90flds &);
   void qg_fields_read_file_f90(const F90flds &, const eckit::Configuration &,
                                util::DateTime &);
   void qg_fields_write_file_f90(const F90flds &, const eckit::Configuration &,
@@ -115,8 +116,6 @@ extern "C" {
   void qg_fields_lbc_f90(const F90flds &, int &);
   void qg_fields_to_fieldset_f90(const F90flds &,
                                  atlas::field::FieldSetImpl *);
-  void qg_fields_to_fieldset_ad_f90(const F90flds &,
-                                    const atlas::field::FieldSetImpl *);
   void qg_fields_from_fieldset_f90(const F90flds &,
                                    const atlas::field::FieldSetImpl *);
   void qg_fields_getvals_f90(const F90flds &, const oops::Variables &,
@@ -129,29 +128,13 @@ extern "C" {
   void qg_fields_deserialize_f90(const F90flds &, const int &, const double[], int &);
 
 // -----------------------------------------------------------------------------
-//  GetValues
-// -----------------------------------------------------------------------------
-  void qg_getvalues_interp_f90(const LocationsQG &, const F90flds &,
-                               const util::DateTime &,
-                               const util::DateTime &, const F90gom &);
-  void qg_getvalues_interp_traj_f90(const LocationsQG &, const F90flds &,
-                               const util::DateTime &,
-                               const util::DateTime &, const F90gom &);
-  void qg_getvalues_interp_tl_f90(const LocationsQG &, const F90flds &,
-                                  const util::DateTime &,
-                                  const util::DateTime &, const F90gom &);
-  void qg_getvalues_interp_ad_f90(const LocationsQG &, const F90flds &,
-                                  const util::DateTime &,
-                                  const util::DateTime &, const F90gom &);
-
-// -----------------------------------------------------------------------------
 //  Geometry
 // -----------------------------------------------------------------------------
   void qg_geom_setup_f90(F90geom &, const eckit::Configuration &);
   void qg_geom_set_lonlat_f90(const F90geom &, atlas::field::FieldSetImpl *);
   void qg_geom_set_functionspace_pointer_f90(const F90geom &,
                                                    atlas::functionspace::FunctionSpaceImpl *);
-  void qg_geom_fill_extra_fields_f90(const F90geom &, atlas::field::FieldSetImpl *);
+  void qg_geom_fill_geometry_fields_f90(const F90geom &, atlas::field::FieldSetImpl *);
   void qg_geom_clone_f90(F90geom &, const F90geom &);
   void qg_geom_info_f90(const F90geom &, int &, int &, int &, double &, double &);
   void qg_geom_delete_f90(F90geom &);
@@ -168,13 +151,25 @@ extern "C" {
   void qg_geom_iter_next_f90(const F90iter &);
 
 // -----------------------------------------------------------------------------
+//  Interpolation for getvalues via generic structures
+// -----------------------------------------------------------------------------
+  void qg_getvalues_interp_f90(const F90geom &, const atlas::field::FieldSetImpl *,
+                               const oops::Variables &, const int &, const double &,
+                               const int &, double &);
+  void qg_getvalues_interp_ad_f90(const F90geom &, atlas::field::FieldSetImpl *,
+                                  const oops::Variables &, const int &, const double &,
+                                  const int &, const double &);
+
+// -----------------------------------------------------------------------------
 //  Local Values (GOM)
 // -----------------------------------------------------------------------------
-  void qg_gom_setup_f90(F90gom &, const LocationsQG &, const oops::Variables &, const int &);
+  void qg_gom_setup_f90(F90gom &, const int &, const oops::Variables &, const int &);
   void qg_gom_create_f90(F90gom &);
   void qg_gom_delete_f90(F90gom &);
-  void qg_gom_fill_f90(const F90gom &, const int &, const int &, const int &, const double &);
-  void qg_gom_fillad_f90(const F90gom &, const int &, const int &, const int &, double &);
+  void qg_gom_fill_f90(const F90gom &, const int &, const char *, const int &, const int *,
+                       const int &, const double *);
+  void qg_gom_fillad_f90(const F90gom &, const int &, const char *, const int &, const int *,
+                         const int &, double *);
   void qg_gom_copy_f90(const F90gom &, const F90gom &);
   void qg_gom_zero_f90(const F90gom &);
   void qg_gom_abs_f90(const F90gom &);

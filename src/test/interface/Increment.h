@@ -33,6 +33,7 @@
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
+#include "oops/util/FieldSetHelpers.h"
 #include "oops/util/Logger.h"
 #include "test/TestEnvironment.h"
 
@@ -44,12 +45,13 @@ template <typename MODEL> class IncrementFixture : private boost::noncopyable {
   typedef oops::Geometry<MODEL>       Geometry_;
 
  public:
-  static const Geometry_            & resol()     {return *getInstance().resol_;}
-  static const oops::Variables      & ctlvars()   {return *getInstance().ctlvars_;}
-  static const util::DateTime       & time()      {return *getInstance().time_;}
-  static const double               & tolerance() {return getInstance().tolerance_;}
-  static const int                  & skipAtlas() {return getInstance().skipAtlas_;}
-  static const eckit::Configuration & test()      {return *getInstance().test_;}
+  static const Geometry_            & resol()      {return *getInstance().resol_;}
+  static const Geometry_            & otherResol() {return *getInstance().otherResol_;}
+  static const oops::Variables      & ctlvars()    {return *getInstance().ctlvars_;}
+  static const util::DateTime       & time()       {return *getInstance().time_;}
+  static const double               & tolerance()  {return getInstance().tolerance_;}
+  static const int                  & skipAtlas()  {return getInstance().skipAtlas_;}
+  static const eckit::Configuration & test()       {return *getInstance().test_;}
   static void reset() {
     getInstance().time_.reset();
     getInstance().ctlvars_.reset();
@@ -68,6 +70,12 @@ template <typename MODEL> class IncrementFixture : private boost::noncopyable {
     const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "geometry");
     resol_.reset(new Geometry_(resolConfig, oops::mpi::world()));
 
+    if (TestEnvironment::config().has("other geometry")) {
+      const eckit::LocalConfiguration otherResolConfig(TestEnvironment::config(), "other geometry");
+      otherResol_.reset(new Geometry_(otherResolConfig, oops::mpi::world()));
+      // Used to test adjoint resolution change
+    }
+
     ctlvars_.reset(new oops::Variables(TestEnvironment::config(), "inc variables"));
 
     const double tol_default = 1e-8;
@@ -85,6 +93,7 @@ template <typename MODEL> class IncrementFixture : private boost::noncopyable {
   ~IncrementFixture<MODEL>() {}
 
   std::unique_ptr<Geometry_>       resol_;
+  std::unique_ptr<Geometry_>       otherResol_;
   std::unique_ptr<oops::Variables> ctlvars_;
   std::unique_ptr<const eckit::LocalConfiguration> test_;
   double                           tolerance_;
@@ -92,7 +101,6 @@ template <typename MODEL> class IncrementFixture : private boost::noncopyable {
   std::unique_ptr<util::DateTime>  time_;
   std::unique_ptr<bool> skipAccumTest_;
   std::unique_ptr<bool> skipDiffTest_;
-  std::unique_ptr<bool> skipRmsByLevelTest_;
 };
 
 // =============================================================================
@@ -158,6 +166,87 @@ template <typename MODEL> void testIncrementChangeResConstructor() {
 
   // Check they are same. Should be replaced with change res and check they are different
   EXPECT(dx2.norm() == dx1.norm());
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL> void testIncrementChangeResConstructorAD() {
+  typedef IncrementFixture<MODEL>   Test_;
+  typedef oops::Increment<MODEL>    Increment_;
+
+  // Skip test if no tolerance provided
+  if (!Test_::test().has("tolerance AD resolution change")) {
+    oops::Log::warning() << "Skipping Increment AD resolution change test";
+    return;
+  }
+
+  Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
+  dx.random();
+  EXPECT(dx.norm() > 0.0);
+  Increment_ dxOther(Test_::otherResol(), dx);
+  EXPECT(dxOther.norm() > 0.0);
+
+  Increment_ dy(Test_::otherResol(), Test_::ctlvars(), Test_::time());
+  dy.random();
+  EXPECT(dy.norm() > 0);
+  Increment_ dyOther(Test_::resol(), dy, true);
+  EXPECT(dyOther.norm() > 0.0);
+
+  EXPECT(dx.norm() != dy.norm());
+  const double dot1 = dot_product(dx, dyOther);
+  const double dot2 = dot_product(dxOther, dy);
+  EXPECT(oops::is_close(dot1, dot2, Test_::test().getDouble("tolerance AD resolution change")));
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL> void testIncrementAtlasInterface() {
+  typedef IncrementFixture<MODEL>   Test_;
+  typedef oops::Increment<MODEL>    Increment_;
+
+  const bool testAtlas = TestEnvironment::config().getBool("test atlas interface", true);
+  if (!testAtlas) { return; }
+
+  const oops::Geometry<MODEL> & geom = Test_::resol();
+  const oops::Variables & vars = Test_::ctlvars();
+
+  Increment_ dx(geom, vars, Test_::time());
+  dx.random();
+
+  atlas::FieldSet fset{};
+  dx.toFieldSet(fset);
+
+  // Check Fields in FieldSet
+  const int nvars = vars.size();
+  EXPECT(fset.size() == nvars);
+  for (int v = 0; v < nvars; ++v) {
+    const atlas::Field & f = fset[v];
+    EXPECT(f.valid());
+    EXPECT(f.functionspace() == geom.functionSpace());
+    EXPECT(!f.dirty());
+    EXPECT(f.rank() == 2);
+    EXPECT(f.shape(0) == geom.functionSpace().lonlat().shape(0));
+    EXPECT(f.datatype() == atlas::array::DataType::create<double>());
+  }
+
+  // Check haloExchange is no-op, i.e., halos are up-to-date
+  atlas::FieldSet fset2 = util::copyFieldSet(fset);
+  for (int v = 0; v < nvars; ++v) {
+    fset2[v].set_dirty();
+  }
+  fset2.haloExchange();
+  EXPECT(util::compareFieldSets(fset, fset2));
+
+  // Check fromFieldSet repopulates Increment in the same way
+  Increment_ dy(geom, vars, Test_::time());
+  dy.fromFieldSet(fset);
+  dx -= dy;
+  EXPECT(dx.norm() <= 1e-14);
+
+  // Go back to a FieldSet and compare FieldSets again:
+  atlas::FieldSet fset3{};
+  dy.toFieldSet(fset3);
+  EXPECT(util::compareFieldSets(fset, fset3));
 }
 
 // -----------------------------------------------------------------------------
@@ -250,6 +339,30 @@ template <typename MODEL> void testIncrementZero() {
 
 // -----------------------------------------------------------------------------
 
+template <typename MODEL> void testIncrementDirac() {
+  typedef IncrementFixture<MODEL>   Test_;
+  typedef oops::Increment<MODEL>    Increment_;
+
+// Option to skip test
+  bool skipTest = Test_::test().getBool("skip dirac test", false);
+  if (skipTest) {
+    oops::Log::warning() << "Skipping Increment.dirac test";
+    return;
+  }
+
+  Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
+
+// test dirac
+  dx.dirac(Test_::test().getSubConfiguration("dirac"));
+  Increment_ dx2_minus_dx(dx);
+  dx2_minus_dx.schur_product_with(dx);
+  dx2_minus_dx -= dx;
+  EXPECT(dx.norm() > 0.0);
+  EXPECT(dx2_minus_dx.norm() == 0.0);
+}
+
+// -----------------------------------------------------------------------------
+
 template <typename MODEL> void testIncrementAxpy() {
   typedef IncrementFixture<MODEL>   Test_;
   typedef oops::Increment<MODEL>    Increment_;
@@ -319,21 +432,20 @@ template <typename MODEL> void testIncrementAccum() {
 }
 
 // -----------------------------------------------------------------------------
-template <typename MODEL> void testRmsByLevel() {
+template <typename MODEL> void testIncrementRmsByVariableByLevel() {
   typedef IncrementFixture<MODEL>   Test_;
   typedef oops::Increment<MODEL>    Increment_;
 
-  // Option to skip test
-  const bool skipTest = Test_::test().getBool("skip rms by level test", false);
-  if (skipTest) {
-    oops::Log::warning() << "Skipping Increment.rmsByLevel test";
-    return;
-  } else {
-      Increment_ dx1(Test_::resol(), Test_::ctlvars(), Test_::time());
-      dx1.ones();
-      std::vector<double> vec = dx1.rmsByLevel(dx1.variables()[0]);
-      std::vector<double> referenceVec(vec.size(), 1.0);
-      EXPECT(vec == referenceVec);
+  if (Test_::skipAtlas()) return;
+
+  Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
+  dx.ones();
+  for (const auto & var : dx.variables().variables()) {
+    std::vector<double> local = dx.rmsByVariableByLevel(var, false);
+    std::vector<double> global = dx.rmsByVariableByLevel(var, true);
+    std::vector<double> reference(local.size(), 1.0);
+    EXPECT(local == reference);
+    EXPECT(global == reference);
   }
 }
 
@@ -490,8 +602,12 @@ class Increment : public oops::Test {
       { testIncrementCopyBoolConstructor<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementChangeResConstructor")
       { testIncrementChangeResConstructor<MODEL>(); });
-    ts.emplace_back(CASE("interface/Increment/rmsByLevel")
-      { testRmsByLevel<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/testIncrementChangeResConstructorAD")
+      { testIncrementChangeResConstructorAD<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/testIncrementAtlasInterface")
+      { testIncrementAtlasInterface<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/rmsByVariableByLevel")
+      { testIncrementRmsByVariableByLevel<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementTriangle")
       { testIncrementTriangle<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementOpPlusEq")
@@ -506,6 +622,8 @@ class Increment : public oops::Test {
       { testIncrementDiff<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementZero")
       { testIncrementZero<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/testIncrementDirac")
+      { testIncrementDirac<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementTime")
       { testIncrementTime<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementSchur")

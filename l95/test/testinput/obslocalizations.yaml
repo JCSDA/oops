@@ -1,17 +1,16 @@
 geometry:
   resol: 40
 
-window begin: 2010-01-01T03:00:00Z
-window end: 2010-01-02T03:00:00Z
+time window:
+  begin: 2010-01-01T03:00:00Z
+  end: 2010-01-02T03:00:00Z
 
 observations:
 - obs space:
     obsdatain:
-      engine:
-        obsfile: Data/truth.2010-01-02T00:00:00Z.obt
+      obsfile: Data/truth.2010-01-02T00:00:00Z.obt
     obsdataout:
-      engine:
-        obsfile: Data/forecast.2010-01-02T00:00:00Z.obt
+      obsfile: Data/forecast.2010-01-02T00:00:00Z.obt
   obs localizations:
   - localization method: Gaspari-Cohn
     lengthscale: 0.19

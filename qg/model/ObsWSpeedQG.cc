@@ -14,10 +14,13 @@
 
 #include "eckit/config/Configuration.h"
 #include "model/GomQG.h"
+#include "model/LocationsQG.h"
 #include "model/ObsBias.h"
 #include "model/ObsSpaceQG.h"
 #include "model/ObsVecQG.h"
 #include "model/QgFortran.h"
+#include "model/QgTraitsFwd.h"
+#include "oops/base/Locations.h"
 #include "oops/base/Variables.h"
 #include "oops/util/Logger.h"
 
@@ -42,8 +45,9 @@ void ObsWSpeedQG::simulateObs(const GomQG & gom, ObsVecQG & ovec,
 
 // -----------------------------------------------------------------------------
 
-std::unique_ptr<LocationsQG> ObsWSpeedQG::locations() const {
-  return obsdb_.locations();
+ObsOpBaseQG::Locations_ ObsWSpeedQG::locations() const {
+  typedef oops::SampledLocations<QgObsTraits> SampledLocations_;
+  return Locations_(SampledLocations_(obsdb_.locations()));
 }
 
 // -----------------------------------------------------------------------------

@@ -31,6 +31,7 @@
 #include "oops/generic/UnstructuredInterpolator.h"
 #include "oops/runs/Test.h"
 #include "oops/util/Logger.h"
+#include "oops/util/missingValues.h"
 #include "oops/util/Random.h"
 
 #include "test/interface/GeometryFixture.h"
@@ -99,7 +100,7 @@ void testInterpolator(const bool testSourcePointMask) {
   }
   atlas::functionspace::PointCloud target_fs(target_points);
 
-  oops::UnstructuredInterpolator<MODEL> interpolator(config, *geom, target_lats, target_lons);
+  oops::UnstructuredInterpolator interpolator(config, *geom, target_lats, target_lons);
 
   // Test print method
   oops::Log::info() << "Interpolator created:\n" << interpolator << std::endl;
@@ -123,7 +124,7 @@ void testInterpolator(const bool testSourcePointMask) {
 
   // If testing with masks, two additional tasks:
   // 1. add interp_source_point_mask metadata to source_field
-  // 2. add mask field to Geometry.extraFields (we could use one of the "native" masks for MODEL,
+  // 2. add mask field to Geometry.fields() (we could use one of the "native" masks for MODEL,
   //    but this would make it very hard to write a generic test).
   if (testSourcePointMask) {
     source_field.metadata().set("interp_source_point_mask", "testmask");
@@ -135,7 +136,7 @@ void testInterpolator(const bool testSourcePointMask) {
       mask_view(jj, 0) = (source_lats[jj] >= 0.0 ? 1.0 : 0.0);
     }
     // Hackily cast away the constness so we can shove a mask into the geometry
-    const_cast<typename MODEL::Geometry &>(geom->geometry()).extraFields().add(mask);
+    const_cast<atlas::FieldSet &>(geom->geometry().fields()).add(mask);
 
     // We set the field values to a huge missingValue in the masked region, because this helps test
     // correctness at the boundaries of the mask. In detail: for stencils including masked and
@@ -146,7 +147,7 @@ void testInterpolator(const bool testSourcePointMask) {
     for (size_t jj = 0; jj < num_source; ++jj) {
       if (source_lats[jj] < 0.0) {
         for (size_t jlev = 0; jlev < nlev; ++jlev) {
-          infield(jj, jlev) = util::missingValue(double());
+          infield(jj, jlev) = util::missingValue<double>();
         }
       }
     }
@@ -180,7 +181,7 @@ void testInterpolator(const bool testSourcePointMask) {
     const double masked_tol = 100.0 * tolerance;
     for (size_t jlev = 0; jlev < nlev; ++jlev) {
       for (size_t jj = 0; jj < my_num_target; ++jj) {
-        if (target_vals[jj + my_num_target * jlev] == util::missingValue(double())) {
+        if (target_vals[jj + my_num_target * jlev] == util::missingValue<double>()) {
           // Interpolation should only return 'missing' when all inputs are masked.
           // In this test, this should only happen in southern hemisphere.
           EXPECT(target_lats[jj] < 0.0);
@@ -241,7 +242,7 @@ void testInterpolator(const bool testSourcePointMask) {
         }
       }
       for (size_t jj = 0; jj < my_num_target; ++jj) {
-        if (target_vals[jj + my_num_target * jlev] != util::missingValue(double())) {
+        if (target_vals[jj + my_num_target * jlev] != util::missingValue<double>()) {
           dot2 += target_vals[jj + my_num_target * jlev]
                   * target_vals_ad[jj + my_num_target * jlev];
         }

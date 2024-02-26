@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2019-2020 UCAR.
+ * (C) Crown copyright 2024, Met Office
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -13,10 +14,11 @@
 #include <vector>
 
 #include "oops/base/Accumulator.h"
+#include "oops/base/Increment.h"
 #include "oops/base/State.h"
-#include "oops/base/StateParametersND.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/ConfigFunctions.h"
+#include "oops/util/FieldSetOperations.h"
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
@@ -33,9 +35,9 @@ template <typename MODEL>
 class StateMemberTemplateParameters : public Parameters {
   OOPS_CONCRETE_PARAMETERS(StateMemberTemplateParameters, Parameters)
 
-  typedef StateParametersND<MODEL> Parameters_;
  public:
-  RequiredParameter<Parameters_> state{"template", "template to define a generic member", this};
+  RequiredParameter<eckit::LocalConfiguration> state{"template",
+                                                     "template to define a generic member", this};
   RequiredParameter<std::string> pattern{"pattern", "pattern to be replaced for members", this};
   RequiredParameter<size_t> nmembers{"nmembers", "number of members", this};
   Parameter<size_t> start{"start", "starting member index", 1, this};
@@ -43,32 +45,138 @@ class StateMemberTemplateParameters : public Parameters {
   Parameter<size_t> zpad{"zero padding", "zero padding", 0, this};
 };
 
+// -----------------------------------------------------------------------------
+
 /// Parameters for the ensemble of states.
 template <typename MODEL>
 class StateEnsembleParameters : public Parameters {
   OOPS_CONCRETE_PARAMETERS(StateEnsembleParameters, Parameters)
 
-  typedef StateParametersND<MODEL> Parameters_;
   typedef StateMemberTemplateParameters<MODEL> StateMemberTemplateParameters_;
  public:
-  OptionalParameter<std::vector<Parameters_>> states{"members",
+  OptionalParameter<std::vector<eckit::LocalConfiguration>> states{"members",
                    "members of the state ensemble", this};
   OptionalParameter<StateMemberTemplateParameters_> states_template{"members from template",
-                   "members of the state ensemble", this};
+                   "template to define members of the state ensemble", this};
+
+  /// Overridden to detect missing conditionally required parameters
+  using Parameters::deserialize;
+  void deserialize(util::CompositePath &path, const eckit::Configuration &config) override;
+
+  /// Get ensemble size
+  size_t size() const;
+
+  /// Get Increment parameters for a given ensemble index
+  eckit::LocalConfiguration getStateConfig(const size_t &, const size_t &) const;
 };
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+void StateEnsembleParameters<MODEL>::deserialize(util::CompositePath &path,
+                                                 const eckit::Configuration &config)
+{
+  Parameters::deserialize(path, config);
+
+  if (states.value() == boost::none && states_template.value() == boost::none) {
+    throw eckit::UserError(
+        path.path() +
+        ": both members and members from template are missing",
+        Here());
+  }
+  if (states.value() != boost::none && states_template.value() != boost::none) {
+    throw eckit::UserError(
+        path.path() +
+        ": both members and members from template are present",
+        Here());
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+size_t StateEnsembleParameters<MODEL>::size() const
+{
+  if (states.value() != boost::none) {
+    return states.value()->size();
+  } else {
+    return states_template.value()->nmembers.value();
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL>
+eckit::LocalConfiguration StateEnsembleParameters<MODEL>::getStateConfig(const size_t & ie,
+                                                                         const size_t & rank) const
+{
+  // Check ensemble size
+  if (ie >= this->size()) {
+    ABORT("StateEnsembleParameters: getStateConfig member index is too large");
+  }
+
+  if (states.value() != boost::none) {
+    // Explicit members
+    return (*states.value())[ie];
+  } else {
+    // Members template
+
+    // Template configuration
+    eckit::LocalConfiguration stateConf(states_template.value()->state.value());
+
+    // Get correct index
+    size_t count = states_template.value()->start;
+    for (size_t jj = 0; jj <= ie; ++jj) {
+      // Check for excluded members
+      while (std::count(states_template.value()->except.value().begin(),
+             states_template.value()->except.value().end(), count)) {
+        count += 1;
+      }
+
+      // Update counter
+      if (jj < ie) count += 1;
+    }
+
+    // Copy and update template configuration with pattern
+    eckit::LocalConfiguration memberConf(stateConf);
+
+    // Replace pattern recursively in the configuration
+    util::seekAndReplace(memberConf, states_template.value()->pattern,
+      count, states_template.value()->zpad);
+
+    if (memberConf.has("states")) {
+      std::vector<eckit::LocalConfiguration> confs = memberConf.getSubConfigurations("states");
+      ASSERT(rank < confs.size());
+      memberConf = confs[rank];
+    } else {
+      ASSERT(rank == 0);
+    }
+
+    return memberConf;
+  }
+}
+
+// -----------------------------------------------------------------------------
 
 /// \brief Ensemble of states
 template<typename MODEL> class StateEnsemble {
   typedef Geometry<MODEL>      Geometry_;
+  typedef Increment<MODEL>     Increment_;
   typedef State<MODEL>         State_;
   typedef StateEnsembleParameters<MODEL> StateEnsembleParameters_;
 
  public:
   /// Create ensemble of states
   StateEnsemble(const Geometry_ &, const StateEnsembleParameters_ &);
+  /// Create n copies of a state in an ensemble
+  StateEnsemble(const State_ &, const size_t &);
 
   /// Calculate ensemble mean
   State_ mean() const;
+
+  /// Calculate ensemble spread
+  Increment_ variance() const;
+  Increment_ stddev() const;
 
   /// Accessors
   size_t size() const { return states_.size(); }
@@ -80,6 +188,7 @@ template<typename MODEL> class StateEnsemble {
 
  private:
   std::vector<State_> states_;
+  const Geometry_ & geom_;
 };
 
 // ====================================================================================
@@ -87,57 +196,28 @@ template<typename MODEL> class StateEnsemble {
 template<typename MODEL>
 StateEnsemble<MODEL>::StateEnsemble(const Geometry_ & resol,
                                     const StateEnsembleParameters_ & params)
-  : states_() {
-  // Abort if both "members" and "members from template" are specified
-  if (params.states.value() != boost::none && params.states_template.value() != boost::none)
-    ABORT("StateEnsemble:contructor: both members and members from template are specified");
+  : states_(), geom_(resol) {
+  // Reserve memory to hold ensemble
+  const size_t nens = params.size();
+  states_.reserve(nens);
 
-  if (params.states.value() != boost::none) {
-    // Explicit members
+  const size_t myrank = resol.timeComm().rank();
 
-    // Reserve memory to hold ensemble
-    const size_t nens = params.states.value()->size();
-    states_.reserve(nens);
+  // Loop over all ensemble members
+  for (size_t jj = 0; jj < nens; ++jj) {
+    states_.emplace_back(resol, params.getStateConfig(jj, myrank));
+  }
+  Log::trace() << "StateEnsemble:contructor done" << std::endl;
+}
 
-    // Loop over all ensemble members
-    for (size_t jj = 0; jj < nens; ++jj) {
-      states_.emplace_back(State_(resol, (*params.states.value())[jj]));
-    }
-  } else if (params.states_template.value() != boost::none) {
-    // Members template
+// -----------------------------------------------------------------------------
 
-    // Template configuration
-    eckit::LocalConfiguration stateConf;
-    params.states_template.value()->state.value().serialize(stateConf);
-
-    // Reserve memory to hold ensemble
-    const size_t nens = params.states_template.value()->nmembers.value();
-    states_.reserve(nens);
-
-    // Loop over all ensemble members
-    size_t count = params.states_template.value()->start;
-    for (size_t jj = 0; jj < nens; ++jj) {
-      // Check for excluded members
-      while (std::count(params.states_template.value()->except.value().begin(),
-             params.states_template.value()->except.value().end(), count)) {
-        count += 1;
-      }
-
-      // Copy and update template configuration with pattern
-      eckit::LocalConfiguration memberConf(stateConf);
-
-      // Replace pattern recursively in the configuration
-      util::seekAndReplace(memberConf, params.states_template.value()->pattern,
-        count, params.states_template.value()->zpad);
-
-      // Read state
-      states_.emplace_back(State_(resol, memberConf));
-
-      // Update counter
-      count += 1;
-    }
-  } else {
-    ABORT("StateEnsemble:contructor: ensemble not specified");
+template<typename MODEL>
+StateEnsemble<MODEL>::StateEnsemble(const State_ & copyState_, const size_t & ensSize_)
+  : states_(), geom_(copyState_.geometry()) {
+    states_.reserve(ensSize_);
+    for (size_t jj = 0; jj < ensSize_; ++jj) {
+    states_.emplace_back(copyState_);
   }
   Log::trace() << "StateEnsemble:contructor done" << std::endl;
 }
@@ -156,6 +236,46 @@ State<MODEL> StateEnsemble<MODEL>::mean() const {
 
   Log::trace() << "StateEnsemble::mean done" << std::endl;
   return std::move(ensmean);
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+Increment<MODEL> StateEnsemble<MODEL>::variance() const {
+  ASSERT(states_.size() > 1);
+  // Ensemble mean
+  State<MODEL> ensmean = this->mean();
+
+  // Compute ensemble variance
+  Increment_ ensVar(geom_, this->variables(), ensmean.validTime());
+  ensVar.zero();
+
+  const double rr = 1.0/(static_cast<double>(states_.size()) - 1.0);
+  Increment_ pert(ensVar);
+  for (size_t iens = 0; iens < states_.size(); ++iens) {
+    pert.zero();
+    pert.diff(states_[iens], ensmean);
+    pert.schur_product_with(pert);
+    ensVar.axpy(rr, pert);
+  }
+
+  Log::trace() << "StateEnsemble:: variance done" << std::endl;
+  return ensVar;
+}
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+Increment<MODEL> StateEnsemble<MODEL>::stddev() const {
+  ASSERT(states_.size() > 1);
+  // Ensemble variance
+  Increment<MODEL> ensStdDev = this->variance();
+
+  // Compute ensemble standard deviation
+  ensStdDev.fieldSet().sqrt();
+  ensStdDev.synchronizeFields();
+
+  Log::trace() << "StateEnsemble:: standard deviation done" << std::endl;
+  return ensStdDev;
 }
 
 // -----------------------------------------------------------------------------

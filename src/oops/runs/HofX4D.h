@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/instantiateObsFilterFactory.h"
@@ -24,7 +25,6 @@
 #include "oops/base/Observations.h"
 #include "oops/base/Observers.h"
 #include "oops/base/ObsSpaces.h"
-#include "oops/base/ObsTypeParameters.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State.h"
 #include "oops/base/StateInfo.h"
@@ -38,6 +38,7 @@
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/RequiredParameter.h"
+#include "oops/util/TimeWindow.h"
 
 namespace oops {
 
@@ -54,17 +55,13 @@ class HofX4DParameters : public ApplicationParameters {
 
  public:
   typedef typename Geometry_::Parameters_ GeometryParameters_;
-  typedef ModelParametersWrapper<MODEL> ModelParameters_;
-  typedef typename State_::Parameters_ StateParameters_;
   typedef typename ModelAux_::Parameters_ ModelAuxParameters_;
 
-  /// Only observations taken at times lying in the (`window begin`, `window begin` + `window
-  /// length`] interval will be included in observation spaces.
-  RequiredParameter<util::DateTime> windowBegin{"window begin", this};
-  RequiredParameter<util::Duration> windowLength{"window length", this};
+  /// Options describing the assimilation time window.
+  RequiredParameter<eckit::LocalConfiguration> timeWindow{"time window", this};
 
   /// Options describing the observations and their treatment
-  Parameter<ObserversParameters<MODEL, OBS>> observations{"observations", {}, this};
+  RequiredParameter<eckit::LocalConfiguration> observations{"observations", this};
 
   /// Geometry parameters.
   RequiredParameter<GeometryParameters_> geometry{"geometry", this};
@@ -72,24 +69,17 @@ class HofX4DParameters : public ApplicationParameters {
   /// Options passed to the object writing out forecast fields.
   Parameter<PostTimerParameters> prints{"prints", {}, this};
 
-  /// Whether to perturb the H(x) vector before saving.
-  Parameter<bool> obsPerturbations{"obs perturbations", false, this};
-
   /// Whether to save the H(x) vector as ObsValues.
   Parameter<bool> makeObs{"make obs", false, this};
-
-  /// Window shift
-  /// Shift window backwards by 1s to include observations exactly at the beginning of the window.
-  Parameter<bool> shifting{"window shift", false, this};
 
   /// Forecast length.
   RequiredParameter<util::Duration> forecastLength{"forecast length", this};
 
   /// Model parameters.
-  RequiredParameter<ModelParameters_> model{"model", this};
+  RequiredParameter<eckit::LocalConfiguration> model{"model", this};
 
   /// Initial state parameters.
-  RequiredParameter<StateParameters_> initialCondition{"initial condition", this};
+  RequiredParameter<eckit::LocalConfiguration> initialCondition{"initial condition", this};
 
   /// Augmented model state.
   Parameter<ModelAuxParameters_> modelAuxControl{"model aux control", {}, this};
@@ -128,51 +118,51 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
     params.deserialize(fullConfig);
 
 //  Setup observation window
-    const util::Duration winlen = params.windowLength;
-    // window is shifted so that observations in the window
-    // obs_time >= winbgn && obs_time < winend are included.
-    // This is ensured by a time-shift at the lowest time-resolution of 1 second.
-    const util::Duration winshift = params.shifting ?
-          util::Duration("PT1S") : util::Duration("PT0S");
-    const util::DateTime winbgn = params.windowBegin.value() - winshift;
-    const util::DateTime winend(winbgn + winlen);
-    Log::info() << "Observation window from " << winbgn << " to " << winend << std::endl;
+    const util::TimeWindow timeWindow(fullConfig.getSubConfiguration("time window"));
+    Log::info() << "HofX4D observation window: " << timeWindow << std::endl;
 
 //  Setup geometry
     const Geometry_ geometry(params.geometry, this->getComm(), mpi::myself());
 
 //  Setup initial state
-    State_ xx(geometry, params.initialCondition);
+    const eckit::LocalConfiguration initialConfig(fullConfig, "initial condition");
+    State_ xx(geometry, initialConfig);
     Log::test() << "Initial state: " << xx << std::endl;
 
 //  Check that window specified for forecast is at least the same as obs window
-    const util::Duration fclength = params.forecastLength;
+    const util::Duration fclength(fullConfig.getString("forecast length"));
 
-    if (winbgn  + winshift < xx.validTime() || winend + winshift > xx.validTime() + fclength) {
+    if (timeWindow.start() < xx.validTime() ||
+        timeWindow.end() > xx.validTime() + fclength) {
         Log::error() << "Observation window can not be outside of forecast window." << std::endl;
-        Log::error() << "Obs window: " << winbgn << " to " << winend << std::endl;
-        Log::error() << "Forecast runs from: " << xx.validTime() << " for " <<
-                        fclength << std::endl;
+        Log::error() << "Obs window: " << timeWindow.start() << " to "
+                     << timeWindow.end() << std::endl;
+        Log::error() << "Forecast runs from: " << xx.validTime() << " for "
+                     << fclength << std::endl;
         throw eckit::BadValue("Observation window can not be outside of forecast window.");
     }
 
 //  Setup observations
-    const auto & observersParams = params.observations.value().observers.value();
-    ObsSpaces_ obspaces(obsSpaceParameters(observersParams), this->getComm(), winbgn, winend);
-    ObsAux_ obsaux(obspaces, obsAuxParameters(observersParams));
-    ObsErrors_ Rmat(obsErrorParameters(observersParams), obspaces);
+    const eckit::LocalConfiguration oConfig(fullConfig, "observations");
+    const eckit::LocalConfiguration obsConfig(oConfig, "observers");
+    ObsSpaces_ obspaces(obsConfig, this->getComm(), timeWindow);
+    ObsAux_ obsaux(obspaces, obsConfig);
+    ObsErrors_ Rmat(obsConfig, obspaces);
 
 //  Setup and initialize observer
     PostProcessor<State_> post;
-    Observers_ hofx(obspaces, observerParameters(observersParams),
-                    params.observations.value().getValues.value());
+    Observers_ hofx(obspaces, oConfig);
     hofx.initialize(geometry, obsaux, Rmat, post);
 
 //  Setup Model
-    const Model_ model(geometry, params.model.value().modelParameters);
+    const Model_ model(geometry, eckit::LocalConfiguration(fullConfig, "model"));
     ModelAux_ moderr(geometry, params.modelAuxControl);
 
-    post.enrollProcessor(new StateInfo<State_>("fc", params.prints));
+    eckit::LocalConfiguration prtConfig;
+    if (fullConfig.has("prints")) {
+      prtConfig = eckit::LocalConfiguration(fullConfig, "prints");
+    }
+    post.enrollProcessor(new StateInfo<State_>("fc", prtConfig));
 
 //  Run the model and compute H(x)
     model.forecast(xx, moderr, fclength, post);
@@ -185,13 +175,13 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
     Log::test() << "H(x): " << std::endl << yobs << "End H(x)" << std::endl;
 
 //  Perturb H(x) if needed
-    if (params.obsPerturbations) {
+    if (oConfig.getBool("obs perturbations", false)) {
       yobs.perturb(Rmat);
       Log::test() << "Perturbed H(x): " << std::endl << yobs << "End Perturbed H(x)" << std::endl;
     }
 
 //  Save H(x) as observations (if "make obs" == true)
-    if (params.makeObs) yobs.save("ObsValue");
+    if (fullConfig.getBool("make obs", false)) yobs.save("ObsValue");
     obspaces.save();
 
     return 0;

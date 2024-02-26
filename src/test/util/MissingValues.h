@@ -10,10 +10,8 @@
 
 #include <string>
 
-#include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "oops/../test/TestEnvironment.h"
-#include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/missingValues.h"
@@ -23,7 +21,8 @@ namespace test {
 template <typename T>
 void testMissingValues()
 {
-  T missing = util::missingValue(missing);
+  const T missing = util::missingValue<T>();
+  (void)missing;  // silence an unused-variable warning
 }
 
 CASE("util/MissingValues/float") {
@@ -46,12 +45,20 @@ CASE("util/MissingValues/int64_t") {
   testMissingValues<int64_t>();
 }
 
-CASE("util/MissingValues/DateTime") {
-  testMissingValues<util::DateTime>();
+CASE("util/MissingValues/bool") {
+  testMissingValues<bool>();
+}
+
+CASE("util/MissingValues/char") {
+  testMissingValues<char>();
 }
 
 CASE("util/MissingValues/std::string") {
   testMissingValues<std::string>();
+}
+
+CASE("util/MissingValues/DateTime") {
+  testMissingValues<util::DateTime>();
 }
 
 class MissingValues : public oops::Test {

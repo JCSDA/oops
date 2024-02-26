@@ -5,6 +5,7 @@ geometry:   # coupled geometry (QG and L95)
     depths: [4500.0, 5500.0]
   Lorenz 95:
     resol: 40
+  QG exclude variables: [x]
 state test:
   statefile:
     QG:
@@ -36,6 +37,9 @@ state test:
   norm file: 182665691.455
   tolerance: 1.e-3
   date: 2010-01-01T00:00:00Z
+  test variable change constructor: false
 
 test:
   reference filename: testref/coupledstate.test
+
+test atlas interface: false

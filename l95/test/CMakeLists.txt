@@ -11,8 +11,11 @@ list( APPEND l95_test_input
   testinput/3dvar_qc_obserr.yaml
   testinput/3dvar_qc_iterations.yaml
   testinput/3dfgat.yaml
+  testinput/4dfgat.yaml
   testinput/4densvar.yaml
+  testinput/4densvar_seq.yaml
   testinput/4densvar_hybrid.yaml
+  testinput/4densvar_static_crosstime.yaml
   testinput/4dforcing.yaml
   testinput/4dsaddlepoint.yaml
   testinput/4dvar_alpha.yaml
@@ -54,6 +57,11 @@ list( APPEND l95_test_input
   testinput/eda_3dvar_block_1.yaml
   testinput/eda_3dvar_block_2.yaml
   testinput/eda_3dvar_block.yaml
+  testinput/eda_3dvar_pff_1.yaml
+  testinput/eda_3dvar_pff_2.yaml
+  testinput/eda_3dvar_pff_3.yaml
+  testinput/eda_3dvar_pff_4.yaml
+  testinput/eda_3dvar_pff.yaml
   testinput/eda_3dvar_zeromeanpert_1.yaml
   testinput/eda_3dvar_zeromeanpert_2.yaml
   testinput/eda_3dvar_zeromeanpert_3.yaml
@@ -67,7 +75,6 @@ list( APPEND l95_test_input
   testinput/enshofx_3.yaml
   testinput/enshofx_4.yaml
   testinput/enshofx.yaml
-  testinput/ensvariance.yaml
   testinput/errorcovariance.yaml
   testinput/forecast.yaml
   testinput/forecast_pseudomodel.yaml
@@ -80,6 +87,7 @@ list( APPEND l95_test_input
   testinput/geovals.yaml
   testinput/getkf.yaml
   testinput/getkf_offline_hofx.yaml
+  testinput/getkf_offline_hofx_one_member.yaml
   testinput/getvalues.yaml
   testinput/hofx.yaml
   testinput/hofx_tinterp.yaml
@@ -137,9 +145,11 @@ list( APPEND l95_test_data
   truth.an.2010-01-01T00:00:00Z.l95
   truth.fc.2010-01-01T00:00:00Z.PT3H.l95
   truth.2010-01-02T00:00:00Z.obt
+  truth_static_crosstime.2010-01-01T09:00:00Z.obt
   simplifiedl95.fc.l95
   simplifiedl95.truth.obt
   noobs.obt
+  zero.an.2010-01-02T00:00:00Z.l95
 )
 
 list( APPEND l95_testoutput
@@ -155,8 +165,10 @@ list( APPEND l95_testoutput
   testoutput/3dvar_qc_obserr.test
   testoutput/3dvar_qc_iterations.test
   testoutput/3dfgat.test
+  testoutput/4dfgat.test
   testoutput/4densvar.test
   testoutput/4densvar_hybrid.test
+  testoutput/4densvar_static_crosstime.test
   testoutput/4dforcing.test
   testoutput/4dsaddlepoint.test
   testoutput/4dvar_alpha.test
@@ -188,11 +200,11 @@ list( APPEND l95_testoutput
   testoutput/eda_3dfgat.test
   testoutput/eda_3dvar.test
   testoutput/eda_3dvar_block.test
+  testoutput/eda_3dvar_pff.test
   testoutput/eda_3dvar_zeromeanpert.test
   testoutput/eda_3dvar_zeromeanpert_compare.test
   testoutput/eda_4dvar.test
   testoutput/enshofx.test
-  testoutput/ensvariance.test
   testoutput/forecast.test
   testoutput/forecast_pseudomodel.test
   testoutput/forecast_identitymodel.test
@@ -201,6 +213,7 @@ list( APPEND l95_testoutput
   testoutput/genenspert.test
   testoutput/getkf.test
   testoutput/getkf_offline_hofx.test
+  testoutput/getkf_offline_hofx_one_member.test
   testoutput/hofx.test
   testoutput/hofx_tinterp.test
   testoutput/hofx3d.test
@@ -524,11 +537,6 @@ ecbuild_add_test( TARGET test_l95_sqrtvertloc
                   COMMAND l95_sqrtofvertloc.x
                   ARGS testinput/sqrtvertloc.yaml )
 
-ecbuild_add_test( TARGET test_l95_ensvariance
-                  COMMAND l95_ens_variance.x
-                  ARGS testinput/ensvariance.yaml
-                  TEST_DEPENDS test_l95_genenspert )
-
 #####################################################################
 # 3d variational tests
 #####################################################################
@@ -581,6 +589,11 @@ ecbuild_add_test( TARGET test_l95_3dvar_qc_iterations
 ecbuild_add_test( TARGET test_l95_3dfgat
                   COMMAND l95_4dvar.x
                   ARGS testinput/3dfgat.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
+
+ecbuild_add_test( TARGET test_l95_4dfgat
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/4dfgat.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
 
 
@@ -680,6 +693,7 @@ ecbuild_add_test( TARGET test_l95_4dvar_drplzero
 
 #ecbuild_add_test( TARGET test_l95_4dforcing
 #                  COMMAND l95_4dvar.x
+#                  MPI 2
 #                  ARGS testinput/4dforcing.yaml
 #                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
 
@@ -715,10 +729,21 @@ ecbuild_add_test( TARGET test_l95_4densvar
                   ARGS testinput/4densvar.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d12h test_l95_genenspert )
 
+ecbuild_add_test( TARGET test_l95_4densvar_seq
+                  COMMAND l95_4dvar.x
+                  ARGS testinput/4densvar_seq.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d12h test_l95_genenspert )
+
 ecbuild_add_test( TARGET test_l95_4densvar_hybrid
                   COMMAND l95_4dvar.x
                   MPI 9
                   ARGS testinput/4densvar_hybrid.yaml
+                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d test_l95_genenspert )
+
+ecbuild_add_test( TARGET test_l95_4densvar_static_crosstime
+                  COMMAND l95_4dvar.x
+                  MPI 9
+                  ARGS testinput/4densvar_static_crosstime.yaml
                   TEST_DEPENDS test_l95_forecast test_l95_makeobs4d test_l95_genenspert )
 
 #####################################################################
@@ -752,6 +777,12 @@ ecbuild_add_test( TARGET test_l95_eda_3dvar_block
                   ARGS testinput/eda_3dvar_block.yaml
                   TEST_DEPENDS test_l95_genenspert test_l95_makeobs3d )
 
+ecbuild_add_test( TARGET test_l95_eda_3dvar_pff
+                  MPI 4
+                  COMMAND l95_eda.x
+                  ARGS testinput/eda_3dvar_pff.yaml
+                  TEST_DEPENDS test_l95_genenspert test_l95_makeobs3d )
+
 ecbuild_add_test( TARGET test_l95_eda_3dvar_zeromeanpert
                   MPI 4
                   COMMAND l95_eda.x
@@ -764,7 +795,7 @@ ecbuild_add_test( TARGET test_l95_eda_3dvar_zeromeanpert_compare
                   ARGS testinput/eda_3dvar_zeromeanpert_compare.yaml
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_eda_3dvar_zeromeanpert )
-
+                  
 #####################################################################
 # FSOI tests
 #####################################################################
@@ -849,6 +880,10 @@ ecbuild_add_test( TARGET test_l95_getkf_offline_hofx
                   ARGS testinput/getkf_offline_hofx.yaml
                   TEST_DEPENDS test_l95_hofx3d_for_getkf )
 
+ecbuild_add_test( TARGET test_l95_getkf_offline_hofx_one_member
+                  COMMAND l95_letkf.x
+                  ARGS testinput/getkf_offline_hofx_one_member.yaml
+                  TEST_DEPENDS test_l95_hofx3d_for_getkf test_l95_getkf )
 
 #####################################################################
 # tests of factory and parameters classes
@@ -857,11 +892,6 @@ ecbuild_add_test( TARGET test_l95_getkf_offline_hofx
 ecbuild_add_test( TARGET test_l95_linearmodelfactory
                   SOURCES lorenz95/LinearModelFactory.cc
                   ARGS "testinput/linearmodelfactory.yaml"
-                  LIBS lorenz95 )
-
-ecbuild_add_test( TARGET test_l95_obserrordiagparameters
-                  SOURCES lorenz95/ObsErrorDiagParameters.cc
-                  ARGS "testinput/obserrordiagparameters.yaml"
                   LIBS lorenz95 )
 
 #####################################################################

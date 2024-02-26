@@ -1,0 +1,56 @@
+cost function:
+  cost type: 3D-Var
+  time window:
+    begin: 2010-01-01T09:00:00Z
+    length: PT6H
+  analysis variables: [x]
+  geometry: &geom
+    nx: 40
+    ny: 20
+    depths: [4500.0, 5500.0]
+  background:
+    date: 2010-01-01T12:00:00Z
+    filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H.nc
+  background error:
+    covariance model: QgError
+    horizontal_length_scale: 2.2e6
+    maximum_condition_number: 1.0e6
+    standard_deviation: 1.8e7
+    vertical_length_scale: 15000.0
+  observations:
+    observers:
+    - obs error:
+        covariance model: diagonal
+      obs operator:
+        obs type: Stream
+      obs space:
+        obsdatain:
+          obsfile: Data/truth.single-obs3d.nc
+        obsdataout:
+          obsfile: Data/3dvar_single-obs_cov.obs3d.nc
+        obs type: Stream
+variational:
+  minimizer:
+    algorithm: PCG
+  iterations:
+  - gradient norm reduction: 1.0e-10
+    ninner: 1
+    geometry: *geom
+final:
+  increment:
+    geometry: *geom
+    output:
+      state component:
+        datadir: Data
+        date: 2010-01-01T12:00:00Z
+        exp: 3dvar_single-obs_cov.increment
+        type: in
+        analysis variables: [x]
+output:
+  datadir: Data
+  exp: 3dvar_single-obs_cov
+  frequency: PT6H
+  type: an
+
+test:
+  reference filename: testoutput/3dvar_single-obs_cov.test

@@ -1,0 +1,20 @@
+geometry:   # coupled geometry (QG and L95)
+  QG:
+    nx: 40
+    ny: 20
+    depths: [4500.0, 5500.0]
+  Lorenz 95:
+    resol: 40
+  QG exclude variables: [x]
+
+inc variables: [x]
+
+increment test:
+  date: 2010-01-01T00:00:00Z
+  skip atlas: 1
+  skip dirac test: 1
+
+test:
+  reference filename: testref/coupledincrement.test
+
+test atlas interface: false

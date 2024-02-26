@@ -33,18 +33,6 @@
 namespace oops {
 
 // -----------------------------------------------------------------------------
-/// Parameters describing a coupled model
-template <typename MODEL1, typename MODEL2>
-class ModelCoupledParameters : public ModelParametersBase {
-  OOPS_CONCRETE_PARAMETERS(ModelCoupledParameters, ModelParametersBase)
-  typedef ModelParametersWrapper<MODEL1> Parameters1_;
-  typedef ModelParametersWrapper<MODEL2> Parameters2_;
- public:
-  RequiredParameter<Parameters1_> model1{MODEL1::name().c_str(), this};
-  RequiredParameter<Parameters2_> model2{MODEL2::name().c_str(), this};
-};
-
-// -----------------------------------------------------------------------------
 /// Implementation of a two-model "coupled" model. The two models run
 /// sequentially and are not exchanging any information currently. The two models
 /// have to use the same time resolution.
@@ -55,8 +43,7 @@ class ModelCoupled : public interface::ModelBase<TraitCoupled<MODEL1, MODEL2>> {
   typedef StateCoupled<MODEL1, MODEL2>            StateCoupled_;
 
  public:
-  typedef ModelCoupledParameters<MODEL1, MODEL2>  Parameters_;
-  ModelCoupled(const GeometryCoupled_ &, const Parameters_ &);
+  ModelCoupled(const GeometryCoupled_ &, const eckit::Configuration &);
   ~ModelCoupled() = default;
 
   // Run the forecast
@@ -67,9 +54,6 @@ class ModelCoupled : public interface::ModelBase<TraitCoupled<MODEL1, MODEL2>> {
   // Information and diagnostics
   const util::Duration & timeResolution() const override {return tstep_;}
   void checkTimes(const StateCoupled_ &) const;
-  const Variables & variables() const override {
-    throw eckit::NotImplemented("ModelCoupled::variables", Here());
-  }
 
  private:
   void print(std::ostream &) const override;
@@ -86,26 +70,25 @@ class ModelCoupled : public interface::ModelBase<TraitCoupled<MODEL1, MODEL2>> {
 
 template <typename MODEL1, typename MODEL2>
 ModelCoupled<MODEL1, MODEL2>::ModelCoupled(const GeometryCoupled_ & geom,
-                                           const Parameters_ & params)
+                                           const eckit::Configuration & config)
   : tstep_(), geom_(new GeometryCoupled_(geom)), model1_(), model2_(),
     parallel_(geom.isParallel()) {
   Log::trace() << "ModelCoupled::ModelCoupled starting" << std::endl;
+  Log::debug() << "ModelCoupled::ModelCoupled config " << config << std::endl;
+  const eckit::LocalConfiguration conf1(config, MODEL1::name());
+  const eckit::LocalConfiguration conf2(config, MODEL2::name());
   if (parallel_) {
     if (geom.modelNumber() == 1) {
-      model1_.reset(ModelFactory<MODEL1>::create(geom.geometry1(),
-                    params.model1.value().modelParameters));
+      model1_.reset(ModelFactory<MODEL1>::create(geom.geometry1(), conf1));
       tstep_ = model1_->timeResolution();
     }
     if (geom.modelNumber() == 2) {
-      model2_.reset(ModelFactory<MODEL2>::create(geom.geometry2(),
-                    params.model2.value().modelParameters));
+      model2_.reset(ModelFactory<MODEL2>::create(geom.geometry2(), conf2));
       tstep_ = model2_->timeResolution();
     }
   } else {
-    model1_.reset(ModelFactory<MODEL1>::create(geom.geometry1(),
-                        params.model1.value().modelParameters));
-    model2_.reset(ModelFactory<MODEL2>::create(geom.geometry2(),
-                        params.model2.value().modelParameters));
+    model1_.reset(ModelFactory<MODEL1>::create(geom.geometry1(), conf1));
+    model2_.reset(ModelFactory<MODEL2>::create(geom.geometry2(), conf2));
     ASSERT(model1_->timeResolution() == model2_->timeResolution());
     tstep_ = model1_->timeResolution();
   }

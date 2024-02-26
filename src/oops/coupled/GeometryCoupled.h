@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2021-2021 UCAR
+ * (C) Copyright 2021-2023 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -10,40 +10,47 @@
 #include <memory>
 #include <ostream>
 #include <string>
-#include <tuple>
 #include <utility>
 #include <vector>
+
+#include "atlas/field.h"
+#include "atlas/functionspace.h"
 
 #include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
 
 #include "oops/base/Geometry.h"
+#include "oops/base/Variables.h"
+#include "oops/coupled/UtilsCoupled.h"
+#include "oops/interface/ModelData.h"
 #include "oops/util/gatherPrint.h"
-#include "oops/util/parameters/Parameter.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 #include "oops/util/Printable.h"
 
-namespace oops {
-
 // -----------------------------------------------------------------------------
-/// Parameters for Geometry describing a coupled model geometry
-template<class... MODELs>
-class GeometryCoupledParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(GeometryCoupledParameters, Parameters)
 
-  /// Type of tuples stored in the GeometryCoupledParameters
-  using RequiredParametersTupleT =
-        std::tuple<RequiredParameter<typename Geometry<MODELs>::Parameters_>...>;
-  /// Tuple that can be passed to the Parameter ctor
-  using RequiredParameterInit = std::tuple<const char *, Parameters *>;
+namespace detail {
 
- public:
-  /// Tuple of all Geometry Parameters.
-  RequiredParametersTupleT geometries{RequiredParameterInit(MODELs::name().c_str(), this) ... };
-  // Parameter to run the models sequentially or in parallel
-  Parameter<bool> parallel{"parallel", false, this};
-};
+oops::Variables modelVariables(const std::string modelName,
+                               const oops::Variables & defaultModelVars,
+                               const eckit::Configuration & config)
+{
+  oops::Variables returnVars;
+  std::string includeVarsKey(modelName + " include variables");
+  if (config.has(includeVarsKey)) {
+    returnVars = oops::Variables(config.getStringVector(includeVarsKey));
+  } else {
+    std::string excludeVarsKey(modelName + " exclude variables");
+    returnVars = defaultModelVars;
+    if (config.has(excludeVarsKey)) {
+        returnVars -= oops::Variables(config.getStringVector(excludeVarsKey));
+    }
+  }
+  return returnVars;
+}
+
+}  // namespace detail
+
+namespace oops {
 
 // -----------------------------------------------------------------------------
 
@@ -51,12 +58,21 @@ class GeometryCoupledParameters : public Parameters {
 template <typename MODEL1, typename MODEL2>
 class GeometryCoupled : public util::Printable {
  public:
-  typedef GeometryCoupledParameters<MODEL1, MODEL2> Parameters_;
+  static std::string name1() {return MODEL1::name();}
+  static std::string name2() {return MODEL2::name();}
 
-  GeometryCoupled(const Parameters_ &, const eckit::mpi::Comm &);
+  GeometryCoupled(const eckit::Configuration &, const eckit::mpi::Comm &);
 
   /// Accessor to the MPI communicator between models
   const eckit::mpi::Comm & getCommPairRanks() const {ASSERT(commPrints_); return *commPrints_;}
+
+  /// WARNING: This implementation is wrong because there are in general two communicators.
+  ///          It is provided for compile-time compatibility with oops interfaces, but will throw
+  ///          an exception if called as a reminder that the implementation is incorrect.
+  const eckit::mpi::Comm & getComm() const {
+    throw eckit::Exception("Called GeometryCoupled.getComm(), but this is just a stub");
+    return oops::mpi::world();
+  }
 
   /// Accessors to components of coupled geometry
   const Geometry<MODEL1> & geometry1() const {ASSERT(geom1_); return *geom1_;}
@@ -68,24 +84,53 @@ class GeometryCoupled : public util::Printable {
 
   void latlon(std::vector<double> &, std::vector<double> &, const bool) const {}
 
+  std::vector<size_t> variableSizes(const Variables & vars) const;
+
+  const std::vector<Variables> & variables() const {return vars_;}
+
+  bool levelsAreTopDown() const {return true;}
+  const atlas::FunctionSpace & functionSpace() const {return nospace_;}
+  const atlas::FieldSet & fields() const {return nofields_;}
+
  private:
   void print(std::ostream & os) const override;
 
   std::shared_ptr<Geometry<MODEL1>> geom1_;
   std::shared_ptr<Geometry<MODEL2>> geom2_;
+  std::vector<Variables> vars_;  ///< variables that model1 and model2 should provide
   eckit::mpi::Comm * commPrints_;
   bool parallel_;
   int mymodel_;
+  atlas::FunctionSpace nospace_;
+  atlas::FieldSet nofields_;
 };
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL1, typename MODEL2>
-GeometryCoupled<MODEL1, MODEL2>::GeometryCoupled(const Parameters_ & params,
+GeometryCoupled<MODEL1, MODEL2>::GeometryCoupled(const eckit::Configuration & config,
                                                  const eckit::mpi::Comm & comm)
-  : geom1_(), geom2_(), commPrints_(nullptr), parallel_(params.parallel.value()), mymodel_(-1)
+  : geom1_(), geom2_(), vars_(2),
+    commPrints_(nullptr), parallel_(config.getBool("parallel", false)), mymodel_(-1)
 {
-  if (params.parallel) {
+  vars_[0] = ::detail::modelVariables(name1(),
+                                      oops::ModelData<MODEL1>::defaultVariables(),
+                                      config);
+  vars_[1] = ::detail::modelVariables(name2(),
+                                      oops::ModelData<MODEL2>::defaultVariables(),
+                                      config);
+  // check that the same variable isn't specified in both models' variables
+  Variables commonvars = vars_[0];
+  commonvars.intersection(vars_[1]);
+  if (commonvars.size() > 0) {
+    std::string errMsg = "Coupled model variable lists have overlap. "
+                          "Use yaml to exclude these variables from one model:\n";
+    for (auto variableName : commonvars.variables()) {
+        errMsg += variableName + "\n";
+    }
+    throw eckit::BadParameter(errMsg, Here());
+  }
+  if (parallel_) {
     const int mytask = comm.rank();
     const int ntasks = comm.size();
     const int tasks_per_model = ntasks / 2;
@@ -94,16 +139,18 @@ GeometryCoupled<MODEL1, MODEL2>::GeometryCoupled(const Parameters_ & params,
     // This creates the communicators for each model, named comm_model_{model name}
     // The first half of the MPI tasks will go to MODEL1, and the second half to MODEL2
     std::string commNameStr;
-    if (mymodel_ == 1) commNameStr = "comm_model_" + MODEL1::name();
-    if (mymodel_ == 2) commNameStr = "comm_model_" + MODEL2::name();
+    if (mymodel_ == 1) commNameStr = "comm_model_" + name1();
+    if (mymodel_ == 2) commNameStr = "comm_model_" + name2();
     char const *commName = commNameStr.c_str();
     eckit::mpi::Comm & commModel = comm.split(mymodel_, commName);
 
     if (mymodel_ == 1) {
-      geom1_ = std::make_shared<Geometry<MODEL1>>(std::get<0>(params.geometries), commModel);
+      const eckit::LocalConfiguration conf1(config, name1());
+      geom1_ = std::make_shared<Geometry<MODEL1>>(conf1, commModel);
     }
     if (mymodel_ == 2) {
-      geom2_ = std::make_shared<Geometry<MODEL2>>(std::get<1>(params.geometries), commModel);
+      const eckit::LocalConfiguration conf2(config, name2());
+      geom2_ = std::make_shared<Geometry<MODEL2>>(conf2, commModel);
     }
 
 // This is creating Nprocs/2 new communicators, each of which pairs two processes:
@@ -115,9 +162,31 @@ GeometryCoupled<MODEL1, MODEL2>::GeometryCoupled(const Parameters_ & params,
     char const *commPrintsName = commPrintStr.c_str();
     commPrints_ = &comm.split(myrank, commPrintsName);
   } else {
-    geom1_ = std::make_shared<Geometry<MODEL1>>(std::get<0>(params.geometries), comm);
-    geom2_ = std::make_shared<Geometry<MODEL2>>(std::get<1>(params.geometries), comm);
+    const eckit::LocalConfiguration conf1(config, name1());
+    geom1_ = std::make_shared<Geometry<MODEL1>>(conf1, comm);
+    const eckit::LocalConfiguration conf2(config, name2());
+    geom2_ = std::make_shared<Geometry<MODEL2>>(conf2, comm);
   }
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL1, typename MODEL2>
+std::vector<size_t> GeometryCoupled<MODEL1, MODEL2>::variableSizes(const Variables & vars) const {
+  // decide what variables are provided by what model
+  std::vector<Variables> splitvars = splitVariables(vars, vars_);
+  const std::vector<size_t> reqvars1sizes = geom1_->variableSizes(splitvars[0]);
+  const std::vector<size_t> reqvars2sizes = geom2_->variableSizes(splitvars[1]);
+
+  std::vector<size_t> varsizes(vars.size());
+  for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
+    if (splitvars[0].has(vars[jvar])) {
+      varsizes[jvar] = reqvars1sizes[splitvars[0].find(vars[jvar])];
+    } else {
+      varsizes[jvar] = reqvars2sizes[splitvars[1].find(vars[jvar])];
+    }
+  }
+  return varsizes;
 }
 
 // -----------------------------------------------------------------------------

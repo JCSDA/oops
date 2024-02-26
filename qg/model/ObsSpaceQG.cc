@@ -36,29 +36,29 @@ int ObsSpaceQG::theObsFileCount_ = 0;
 
 // -----------------------------------------------------------------------------
 
-ObsSpaceQG::ObsSpaceQG(const Parameters_ & params, const eckit::mpi::Comm & comm,
-                       const util::DateTime & bgn, const util::DateTime & end,
+ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
+                       const util::TimeWindow & timeWindow,
                        const eckit::mpi::Comm & timeComm)
-  : oops::ObsSpaceBase(params, comm, bgn, end), obsname_(params.obsType),
-    winbgn_(bgn), winend_(end), obsvars_()
+  : oops::ObsSpaceBase(config, comm, timeWindow), obsname_(config.getString("obs type")),
+    timeWindow_(timeWindow), obsvars_()
 {
   typedef std::map< std::string, F90odb >::iterator otiter;
 
-  eckit::LocalConfiguration fileconf = params.toConfiguration();
+  eckit::LocalConfiguration fileconf(config);
   std::string ofin("-");
-  if (params.obsdatain.value() != boost::none) {
-    ofin = params.obsdatain.value()->engine.value().obsfile;
+  if (config.has("obsdatain")) {
+    ofin = config.getString("obsdatain.obsfile");
   }
   std::string ofout("-");
-  if (params.obsdataout.value() != boost::none) {
-    ofout = params.obsdataout.value()->engine.value().obsfile;
+  if (config.has("obsdataout")) {
+    ofout = config.getString("obsdataout.obsfile");
     if (timeComm.size() > 1) {
       std::ostringstream ss;
       ss << "_" << timeComm.rank();
       std::size_t found = ofout.find_last_of(".");
       if (found == std::string::npos) found = ofout.length();
       std::string fileout = ofout.insert(found, ss.str());
-      fileconf.set("obsdataout.engine.obsfile", fileout);
+      fileconf.set("obsdataout.obsfile", fileout);
     }
   }
   std::string ref = ofin + ofout;
@@ -66,11 +66,11 @@ ObsSpaceQG::ObsSpaceQG(const Parameters_ & params, const eckit::mpi::Comm & comm
     ABORT("Underspecified observation files.");
   }
 
-  ref = ref + bgn.toString() + end.toString();
+  ref = ref + timeWindow_.start().toString() + timeWindow_.end().toString();
   otiter it = theObsFileRegister_.find(ref);
   if ( it == theObsFileRegister_.end() ) {
     // Open new file
-    qg_obsdb_setup_f90(key_, fileconf, bgn, end);
+    qg_obsdb_setup_f90(key_, fileconf, timeWindow_.start(), timeWindow_.end());
     theObsFileRegister_[ref] = key_;
   } else {
     // File already open
@@ -90,24 +90,19 @@ ObsSpaceQG::ObsSpaceQG(const Parameters_ & params, const eckit::mpi::Comm & comm
   assimvars_ = obsvars_;
 
   //  Generate locations etc... if required
-  if (params.generate.value() != boost::none) {
-    const ObsGenerateParameters &gParams = *params.generate.value();
-    if ((gParams.obsDensity.value() == boost::none) &&
-        (gParams.obsLocs.value() == boost::none)) {
-      throw eckit::BadValue("Neither 'obs density' nor 'obs locations' are specified "
-                            "in the parameters of 'obs space.generate'", Here());
-    }
-    const util::Duration first(gParams.begin);
-    const util::DateTime start(winbgn_ + first);
-    const util::Duration freq(gParams.obsPeriod);
+  if (config.has("generate")) {
+    const eckit::LocalConfiguration gconf(config, "generate");
+    const util::Duration first(gconf.getString("begin"));
+    const util::DateTime start(timeWindow_.start() + first);
+    const util::Duration freq(gconf.getString("obs period"));
     int nobstimes = 0;
     util::DateTime now(start);
-    while (now <= winend_) {
+    while (now <= timeWindow_.end()) {
       ++nobstimes;
       now += freq;
     }
     int iobs;
-    qg_obsdb_generate_f90(key_, obsname_.size(), obsname_.c_str(), gParams.toConfiguration(),
+    qg_obsdb_generate_f90(key_, obsname_.size(), obsname_.c_str(), gconf,
                           start, freq, nobstimes, iobs);
   }
 }
@@ -147,7 +142,7 @@ std::unique_ptr<LocationsQG> ObsSpaceQG::locations() const {
   atlas::FieldSet fields;
   std::vector<util::DateTime> times;
   qg_obsdb_locations_f90(key_, obsname_.size(), obsname_.c_str(), fields.get(), times);
-  return std::unique_ptr<LocationsQG>(new LocationsQG(fields, std::move(times)));
+  return std::make_unique<LocationsQG>(fields, std::move(times));
 }
 
 // -----------------------------------------------------------------------------

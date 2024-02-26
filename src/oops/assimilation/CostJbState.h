@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2021-2023 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -12,15 +13,18 @@
 #define OOPS_ASSIMILATION_COSTJBSTATE_H_
 
 #include <memory>
+#include <vector>
 #include <boost/noncopyable.hpp>
 
 namespace oops {
-
-// Forward declaration
+  template<typename MODEL, typename OBS> class ControlVariable;
+  template<typename MODEL, typename OBS> class ControlIncrement;
   template<typename MODEL> class Geometry;
-  template<typename MODEL> class Increment;
-  template<typename MODEL> class State;
+  template<typename MODEL> class JqTerm;
   template<typename MODEL> class JqTermTLAD;
+  template<typename MODEL> class PostProcessor;
+  template<typename MODEL> class State;
+  template<typename MODEL> class State4D;
 
 // -----------------------------------------------------------------------------
 
@@ -30,10 +34,13 @@ namespace oops {
  * state part of the control variable.
  */
 
-template<typename MODEL> class CostJbState : private boost::noncopyable {
-  typedef Geometry<MODEL>            Geometry_;
-  typedef Increment<MODEL>           Increment_;
-  typedef State<MODEL>               State_;
+template<typename MODEL, typename OBS> class CostJbState : private boost::noncopyable {
+  typedef ControlIncrement<MODEL, OBS>  CtrlInc_;
+  typedef ControlVariable<MODEL, OBS>   CtrlVar_;
+  typedef Geometry<MODEL>               Geometry_;
+  typedef State4D<MODEL>                State_;
+  typedef JqTerm<MODEL>                 JqTerm_;
+  typedef JqTermTLAD<MODEL>             JqTLAD_;
 
  public:
 /// Constructor
@@ -42,36 +49,44 @@ template<typename MODEL> class CostJbState : private boost::noncopyable {
 /// Destructor
   virtual ~CostJbState() {}
 
+  virtual void setPostProc(PostProcessor<State<MODEL>> &) {}
+  virtual std::shared_ptr<JqTerm_> getJq() {return nullptr;}
+  virtual void setTime(const CtrlVar_ &) {}
+
 /// Get increment from state. This is usually first guess - background.
 /// The third state argument is M(x) at the end of the window/subwindows for
 /// computing the model error term (M(x_{i-1})-x_i) when active.
-  virtual void computeIncrement(const State_ &, const State_ &, const State_ &,
-                                Increment_ &) const = 0;
+  virtual void computeIncrement(const CtrlVar_ &, const CtrlVar_ &, const std::shared_ptr<JqTerm_>,
+                                CtrlInc_ &) const = 0;
 
 /// Linearize before the linear computations.
-  virtual void linearize(const State_ &, const Geometry_ &) = 0;
+  virtual void linearize(const CtrlVar_ &, const CtrlVar_ &, const Geometry_ &) = 0;
 
 /// Add Jb gradient.
-  virtual void addGradient(const Increment_ &, Increment_ &, Increment_ &) const = 0;
+  virtual void addGradient(const CtrlInc_ &, CtrlInc_ &, CtrlInc_ &) const = 0;
 
 /// Initialize Jq computations if needed.
-  virtual JqTermTLAD<MODEL> * initializeJqTLAD() const = 0;
+  virtual JqTLAD_ * initializeJqTLAD() const = 0;
 
 /// Finalize \f$ J_b\f$ after the TL run.
-  virtual JqTermTLAD<MODEL> * initializeJqTL() const = 0;
+  virtual JqTLAD_ * initializeJqTL() const = 0;
 
 /// Initialize \f$ J_b\f$ before the AD run.
-  virtual JqTermTLAD<MODEL> * initializeJqAD(const Increment_ &) const = 0;
+  virtual JqTLAD_ * initializeJqAD(const CtrlInc_ &) const = 0;
 
 /// Multiply by \f$ B\f$ and \f$ B^{-1}\f$.
-  virtual void Bmult(const Increment_ &, Increment_ &) const = 0;
-  virtual void Bminv(const Increment_ &, Increment_ &) const = 0;
+  virtual void Bmult(const CtrlInc_ &, CtrlInc_ &) const = 0;
+  virtual void Bminv(const CtrlInc_ &, CtrlInc_ &) const = 0;
 
 /// Randomize
-  virtual void randomize(Increment_ &) const = 0;
+  virtual void randomize(CtrlInc_ &) const = 0;
 
-/// Create new increment (set to 0).
-  virtual Increment_ * newStateIncrement() const = 0;
+/// Accessors to data for constructing a new increment.
+  virtual const Geometry_ & geometry() const = 0;
+  virtual const Variables & variables() const = 0;
+  virtual const std::vector<util::DateTime> & times() const = 0;
+  virtual const eckit::mpi::Comm & comm() const = 0;
+  virtual std::shared_ptr<State_> background() const = 0;
 };
 
 // -----------------------------------------------------------------------------

@@ -16,14 +16,20 @@
 
 #include "oops/qg/ObsSpaceQG.h"
 
+namespace oops {
+  template <typename OBS> class Locations;
+}
+
 namespace qg {
-  class LocationsQG;
+  struct QgObsTraits;
 
 // -----------------------------------------------------------------------------
 
 class ObsDiagsQG : public util::Printable {
  public:
-  ObsDiagsQG(const ObsSpaceQG &, const LocationsQG &, const oops::Variables &) {}
+  typedef oops::Locations<QgObsTraits> Locations_;
+
+  ObsDiagsQG(const ObsSpaceQG &, const Locations_ &, const oops::Variables &) {}
   ~ObsDiagsQG() {}
 
 // I/O

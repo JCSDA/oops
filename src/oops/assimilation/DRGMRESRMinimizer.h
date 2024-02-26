@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2024, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -24,6 +25,7 @@
 #include "oops/base/IdentityMatrix.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
+#include "oops/util/workflow.h"
 
 namespace oops {
 
@@ -81,16 +83,17 @@ template<typename MODEL, typename OBS> class DRGMRESRMinimizer : public DRMinimi
   ~DRGMRESRMinimizer() {}
  private:
   double solve(CtrlInc_ &, CtrlInc_ &, CtrlInc_ &, const Bmat_ &, const HtRinvH_ &,
-               const double, const double, const int, const double) override;
+               const CtrlInc_ &, const double, const double, const int, const double) override;
 };
 
 // =============================================================================
 
 template<typename MODEL, typename OBS>
 double DRGMRESRMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_ & rr,
-                                      const Bmat_ & B, const HtRinvH_ & HtRinvH,
-                                      const double costJ0Jb, const double costJ0JoJc,
-                                      const int maxiter, const double tolerance) {
+                                            const Bmat_ & B, const HtRinvH_ & HtRinvH,
+                                            const CtrlInc_ &,
+                                            const double costJ0Jb, const double costJ0JoJc,
+                                            const int maxiter, const double tolerance) {
   IdentityMatrix<CtrlInc_> precond;
   std::vector<CtrlInc_> c;
   std::vector<CtrlInc_> u;
@@ -107,9 +110,12 @@ double DRGMRESRMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlIn
   double rrnorm0  = sqrt(dot_product(rr, rr));
   double normReduction = 1.0;
 
+  printNormReduction(0, rrnorm0, normReduction);
+
   Log::info() << std::endl;
   for (int jiter = 0; jiter < maxiter; ++jiter) {
     Log::info() << " DRGMRESR Starting Iteration " << jiter+1 << std::endl;
+    if (jiter < 5 || (jiter + 1) % 5 == 0) util::update_workflow_meter("iteration", jiter+1);
 
     precond.multiply(rr, zh);  // returns zh as approxmate solve of (BA)zh = r
     B.multiply(zh, zz);        // x=B zh

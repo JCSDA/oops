@@ -89,7 +89,7 @@ character(len=:),allocatable :: str
 
 ! Input file
 if (f_conf%has("obsdatain")) then
-  call f_conf%get_or_die("obsdatain.engine.obsfile",str)
+  call f_conf%get_or_die("obsdatain.obsfile",str)
   fin = str
 else
   fin = ''
@@ -98,7 +98,7 @@ call fckit_log%info('qg_obsdb_setup: file in = '//trim(fin))
 
 ! Output file
 if (f_conf%has("obsdataout")) then
-  call f_conf%get_or_die("obsdataout.engine.obsfile",str)
+  call f_conf%get_or_die("obsdataout.obsfile",str)
   call swap_name_member(f_conf, str, 6)
 
   fout = str
@@ -474,6 +474,7 @@ do igrp=1,self%ngrp
     else
       inwindow(iobs) = .false.
     endif
+    call datetime_delete(tobs)
   enddo
 
   ! Allocation
@@ -535,6 +536,9 @@ do igrp=1,self%ngrp
   enddo
 
   ! Release memory
+  do iobs=1,nobs_in_grp
+    if (inwindow(iobs)) call datetime_delete(alltimes(iobs))
+  enddo
   deallocate(alltimes)
   deallocate(inwindow)
 enddo
@@ -560,7 +564,7 @@ type(column_data),pointer :: jcol
 character(len=50) :: stime
 
 ! Create NetCDF file
-call ncerr(nf90_create(trim(self%fileout),or(nf90_clobber,nf90_netcdf4),ncid))
+call ncerr(nf90_create(trim(self%fileout),ior(nf90_clobber,nf90_netcdf4),ncid))
 
 ! Define dimensions
 call ncerr(nf90_def_dim(ncid,'nstrmax',50,nstrmax_id))

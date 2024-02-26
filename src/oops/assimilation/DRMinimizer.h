@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2023, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -59,7 +60,7 @@ template<typename MODEL, typename OBS> class DRMinimizer : public Minimizer<MODE
  private:
   CtrlInc_ * doMinimize(const eckit::Configuration &) override;
   virtual double solve(CtrlInc_ &, CtrlInc_ &, CtrlInc_ &,
-                       const Bmat_ &, const HtRinvH_ &,
+                       const Bmat_ &, const HtRinvH_ &, const CtrlInc_ &,
                        const double, const double,
                        const int, const double) = 0;
 
@@ -130,7 +131,8 @@ DRMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
   const double costJ0JoJc = J_.getCostJoJc();
 
 // Solve the linear system
-  double reduc = this->solve(*dx, dxh, rhs, B, HtRinvH, costJ0Jb, costJ0JoJc, ninner, gnreduc);
+  double reduc = this->solve(*dx, dxh, rhs, B, HtRinvH, *gradJb_,
+                             costJ0Jb, costJ0JoJc, ninner, gnreduc);
 
   Log::test() << classname() << ": reduction in residual norm = " << reduc << std::endl;
   Log::info() << classname() << ": reduction in residual norm = " << reduc << std::endl;

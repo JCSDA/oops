@@ -1,0 +1,51 @@
+time window:
+  begin: 2010-01-01T00:00:00Z
+  length: PT12H
+geometry:  # coupled geometry (qg and qg)
+  QG:
+    nx: 40
+    ny: 20
+    depths: [4500.0, 5500.0]
+  QG 2:
+    nx: 40
+    ny: 20
+    depths: [4500.0, 5500.0]
+  QG include variables: ['x','z']
+  QG 2 include variables: ['u','v']
+state:
+  QG:
+    date: 2010-01-01T06:00:00Z
+    filename: ../../qg/test/Data/truth.fc.2009-12-15T00:00:00Z.P17DT6H.nc
+  QG 2:
+    date: 2010-01-01T06:00:00Z
+    filename: ../../qg/test/Data/truth.fc.2009-12-15T00:00:00Z.P17DT6H.nc
+observations:
+  observers:
+  - obs space:
+      obsdatain:
+        obsfile: ../../qg/test/Data/truth.obs4d_12h.nc
+      obsdataout:
+        obsfile: Data/hofx3d_qg_qg.obs4d_12h.nc
+      obs type: Stream
+    obs operator:
+      obs type: Stream
+  - obs space:
+      obsdatain:
+        obsfile: ../../qg/test/Data/truth.obs4d_12h.nc
+      obsdataout:
+        obsfile: Data/hofx3d_qg_qg.obs4d_12h.nc
+      obs type: Wind
+    obs operator:
+      obs type: Wind
+  - obs space:
+      obsdatain:
+        obsfile: ../../qg/test/Data/truth.obs4d_12h.nc
+      obsdataout:
+        obsfile: Data/hofx3d_qg_qg.obs4d_12h.nc
+      obs type: WSpeed
+    obs operator:
+      obs type: WSpeed
+
+test:
+  reference filename: testref/hofx3d_qg_qg.test
+  test output filename: hofx3d_qg_qg.out

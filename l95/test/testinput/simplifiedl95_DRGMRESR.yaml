@@ -1,7 +1,8 @@
 cost function:
   cost type: 3D-Var
-  window begin: 2010-01-01T00:00:00Z
-  window length: PT1H
+  time window:
+    begin: 2010-01-01T00:00:00Z
+    length: PT1H
   geometry:
     resol: 4
   analysis variables: [x]
@@ -18,14 +19,11 @@ cost function:
     - obs operator: {}
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/simplifiedl95.truth.obt
+          obsfile: Data/simplifiedl95.truth.obt
         obsdataout:
-          engine:
-            obsfile: Data/simplifiedl95.obt
+          obsfile: Data/simplifiedl95.obt
       obs error:
         covariance model: diagonal
-        random amplitude: 1.0
 variational:
   minimizer:
     algorithm: DRGMRESR
@@ -47,3 +45,4 @@ output:
 
 test:
   reference filename: testoutput/simplifiedl95_DRGMRESR.test
+  float absolute tolerance: 1.0e-16

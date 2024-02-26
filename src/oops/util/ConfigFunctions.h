@@ -14,6 +14,8 @@
 #include "eckit/config/Configuration.h"
 #include "eckit/config/LocalConfiguration.h"
 
+// ConfigFunctions are simple functions to manipulate eckit Configurations. These should be
+// simple operations not tied to OOPS/JEDI concepts.
 
 namespace util {
 
@@ -42,6 +44,10 @@ namespace util {
                       const std::string & value);
   void seekAndReplace(eckit::LocalConfiguration & config, const std::string & pattern,
                       const size_t & count, const size_t & zpad);
+
+  /// \brief Merge configurations
+  eckit::LocalConfiguration mergeConfigs(const eckit::Configuration & config1,
+                                         const eckit::Configuration & config2);
 }  // namespace util
 
 #endif  // OOPS_UTIL_CONFIGFUNCTIONS_H_

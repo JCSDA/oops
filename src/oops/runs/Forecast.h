@@ -14,8 +14,10 @@
 
 #include <string>
 
+#include "eckit/config/LocalConfiguration.h"
 #include "oops/base/ForecastParameters.h"
 #include "oops/base/Geometry.h"
+#include "oops/base/LatLonGridPostProcessor.h"
 #include "oops/base/Model.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State.h"
@@ -30,6 +32,7 @@
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
 #include "oops/util/parameters/RequiredParameter.h"
+#include "oops/util/WorkflowUpdater.h"
 
 namespace oops {
 
@@ -70,26 +73,44 @@ template <typename MODEL> class Forecast : public Application {
     const Geometry_ resol(params.fcstConf.geometry, this->getComm());
 
 //  Setup Model
-    const Model_ model(resol, params.fcstConf.model.value().modelParameters);
+    const Model_ model(resol, eckit::LocalConfiguration(fullConfig, "model"));
 
 //  Setup initial state
-    State_ xx(resol, params.fcstConf.initialCondition);
+    const eckit::LocalConfiguration initialConfig(fullConfig, "initial condition");
+    State_ xx(resol, initialConfig);
     Log::test() << "Initial state: " << xx << std::endl;
 
 //  Setup augmented state
     const ModelAux_ moderr(resol, params.fcstConf.modelAuxControl);
 
 //  Setup times
-    const util::Duration fclength = params.fcstConf.forecastLength;
+    const util::Duration fclength(fullConfig.getString("forecast length"));
     const util::DateTime bgndate(xx.validTime());
     const util::DateTime enddate(bgndate + fclength);
     Log::info() << "Running forecast from " << bgndate << " to " << enddate << std::endl;
 
 //  Setup forecast outputs
     PostProcessor<State_> post;
-    post.enrollProcessor(new StateInfo<State_>("fc", params.fcstConf.prints));
-//    params.output.date = bgndate;     DATE SHOULD BE SET HERE, NOT IN YAML
-    post.enrollProcessor(new StateWriter<State_>(params.fcstConf.output));
+
+    eckit::LocalConfiguration prtConfig;
+    if (fullConfig.has("prints")) {
+      prtConfig = eckit::LocalConfiguration(fullConfig, "prints");
+    }
+    post.enrollProcessor(new StateInfo<State_>("fc", prtConfig));
+
+    eckit::LocalConfiguration outConfig(fullConfig, "output");
+    outConfig.set("date", bgndate.toString());
+    post.enrollProcessor(new StateWriter<State_>(outConfig));
+
+    if (params.fcstConf.latlonGridOutput.value() != boost::none) {
+      eckit::LocalConfiguration latlonConfig = params.fcstConf.latlonGridOutput.value().value();
+      latlonConfig.set("date", bgndate.toString());
+      post.enrollProcessor(new LatLonGridPostProcessor<MODEL, State_>(latlonConfig, resol));
+    }
+
+    eckit::LocalConfiguration wflow;
+    wflow.set("frequency", "PT3H");
+    post.enrollProcessor(new WorkflowUpdater<State_>(wflow));
 
 //  Run forecast
     model.forecast(xx, moderr, fclength, post);

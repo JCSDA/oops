@@ -29,9 +29,13 @@ namespace eckit {
   class Configuration;
 }
 
+namespace oops {
+  template <typename OBS> class Locations;
+}
+
 namespace lorenz95 {
+  struct L95ObsTraits;
   class GomL95;
-  class LocsL95;
   class ObsBias;
   class ObsDiags1D;
   class ObsVec1D;
@@ -47,11 +51,9 @@ class ObservationL95 : public util::Printable,
                        private boost::noncopyable,
                        private util::ObjectCounter<ObservationL95> {
  public:
-  typedef ObservationL95Parameters Parameters_;
-
   static const std::string classname() {return "lorenz95::ObservationL95";}
 
-  ObservationL95(const ObsTable &, const Parameters_ &);
+  ObservationL95(const ObsTable &, const eckit::Configuration &);
   ~ObservationL95();
 
 // Obs Operators
@@ -59,7 +61,9 @@ class ObservationL95 : public util::Printable,
 
 // Other
   const oops::Variables & requiredVars() const {return inputs_;}
-  std::unique_ptr<LocsL95> locations() const;
+  oops::Locations<L95ObsTraits> locations() const;
+
+  void computeReducedVars(const oops::Variables &, GomL95 &) const {}
 
   const ObsTable & table() const {return obsdb_;}
 

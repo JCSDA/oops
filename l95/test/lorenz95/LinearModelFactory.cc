@@ -19,21 +19,6 @@
 
 namespace test {
 
-CASE("test_linearmodelparameterswrapper_valid_name") {
-  eckit::LocalConfiguration config(TestEnvironment::config(), "valid linear model name");
-  oops::LinearModelParametersWrapper<lorenz95::L95Traits> parameters;
-  EXPECT_NO_THROW(parameters.validateAndDeserialize(config));
-}
-
-CASE("test_linearmodelparameterswrapper_invalid_name") {
-  eckit::LocalConfiguration config(TestEnvironment::config(), "invalid linear model name");
-  oops::LinearModelParametersWrapper<lorenz95::L95Traits> parameters;
-  if (oops::Parameters::isValidationSupported())
-    EXPECT_THROWS_MSG(parameters.validate(config), "unrecognized enum value");
-  EXPECT_THROWS_MSG(parameters.deserialize(config),
-                    "does not exist in the linear model factory");
-}
-
 CASE("test_linearmodelfactory") {
   EXPECT_EQUAL(oops::LinearModelFactory<lorenz95::L95Traits>::getMakerNames(),
                std::vector<std::string>{"L95TLM"});

@@ -17,15 +17,15 @@ namespace interface {
 /// \brief Initializes GeoVaLs with analytic formula
 template <typename OBS>
 class AnalyticInitBase : public oops::AnalyticInitBase<OBS> {
-  typedef typename OBS::GeoVaLs       GeoVaLs_;
-  typedef typename OBS::Locations     Locations_;
+  typedef typename OBS::GeoVaLs          GeoVaLs_;
+  typedef typename OBS::SampledLocations SampledLocations_;
 
  public:
   // Overrides of oops::AnalyticInit methods, converting between oops interface classes and
   // OBS-specific classes operated upon by OBS-specific implementations of the AnalyticInit
   // interface.
-  void fillGeoVaLs(const Locations<OBS> & locs, GeoVaLs<OBS> & geovals) const final {
-    fillGeoVaLs(locs.locations(), geovals.geovals());
+  void fillGeoVaLs(const SampledLocations<OBS> & locs, GeoVaLs<OBS> & geovals) const final {
+    fillGeoVaLs(locs.sampledLocations(), geovals.geovals());
   }
 
 /*! \brief GeoVaLs Analytic Initialization
@@ -36,7 +36,7 @@ class AnalyticInitBase : public oops::AnalyticInitBase<OBS> {
  * formulae used for the State initialization (see test::TestStateInterpolation()
  * for further information).  This in turn requires information about the
  * vertical profile in addition to the latitude and longitude positional
- * information in the Locations object.  Currently, this information
+ * information in the SampledLocations object.  Currently, this information
  * about the vertical profile is obtained from an existing GeoVaLs object
  * (passed as *gvals*) that represents the output of the State::interpolate()
  * method.
@@ -46,7 +46,7 @@ class AnalyticInitBase : public oops::AnalyticInitBase<OBS> {
  *
  * \sa test::TestStateInterpolation()
  */
-  virtual void fillGeoVaLs(const Locations_ &, GeoVaLs_ &) const = 0;
+  virtual void fillGeoVaLs(const SampledLocations_ &, GeoVaLs_ &) const = 0;
 };
 
 }  // namespace interface

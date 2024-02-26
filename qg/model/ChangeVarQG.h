@@ -13,7 +13,6 @@
 
 #include "oops/qg/GeometryQG.h"
 #include "oops/util/Printable.h"
-#include "ChangeVarQGParameters.h"
 
 // Forward declarations
 namespace eckit {
@@ -32,10 +31,9 @@ namespace qg {
 
 class ChangeVarQG : public util::Printable {
  public:
-  typedef ChangeVarQGParameters Parameters_;
   static const std::string classname() {return "qg::ChangeVarQG";}
 
-  ChangeVarQG(const Parameters_ &, const GeometryQG &);
+  ChangeVarQG(const eckit::Configuration &, const GeometryQG &);
   ~ChangeVarQG();
 
 /// Perform transforms

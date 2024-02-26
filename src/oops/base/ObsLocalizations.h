@@ -56,15 +56,13 @@ ObsLocalizations<MODEL, OBS>::ObsLocalizations(const eckit::Configuration & conf
   std::vector<eckit::LocalConfiguration> obsconf = config.getSubConfigurations();
   //  loop over ob spaces
   for (size_t jj = 0; jj < obsconf.size(); ++jj) {
-    //  loop over obs localizations for the current obs space
+    //  retrieve a vector of obs localizations and loop over them
     std::vector<eckit::LocalConfiguration> obsLocConfigs =
                         obsconf[jj].getSubConfigurations("obs localizations");
     std::vector<std::unique_ptr<ObsLocalization_> > tmpVector;
     for (size_t oli = 0; oli < obsLocConfigs.size(); ++oli) {
-      ObsLocalizationParametersWrapper<MODEL, OBS> params;
-      params.validateAndDeserialize(obsLocConfigs[oli]);
       tmpVector.emplace_back(ObsLocalizationFactory<MODEL, OBS>::
-                             create(params.obslocParameters, obspaces[jj]));
+                             create(obsLocConfigs[oli], obspaces[jj]));
     }
     //  move a vector of unique pointers form temp array to vector of vectors
     local_.emplace_back(std::move(tmpVector));

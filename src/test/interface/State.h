@@ -24,12 +24,14 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "oops/base/Geometry.h"
+#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
+#include "oops/util/FieldSetHelpers.h"
 #include "oops/util/Logger.h"
 #include "oops/util/parameters/IgnoreOtherParameters.h"
 #include "oops/util/parameters/OptionalParameter.h"
@@ -42,41 +44,19 @@ namespace test {
 
 // -----------------------------------------------------------------------------
 
-/// Options used by testStateReadWrite().
-template <typename MODEL>
-class StateWriteReadParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(StateWriteReadParameters, Parameters)
-
- public:
-  typedef oops::State<MODEL>                State_;
-  typedef typename State_::Parameters_      StateParameters_;
-  typedef typename State_::WriteParameters_ StateWriteParameters_;
-
-  /// Options used by the code writing the state to a file.
-  oops::RequiredParameter<StateWriteParameters_> write{"state write", this};
-  /// Options used by the code reading the state back in.
-  oops::RequiredParameter<StateParameters_> read{"state read", this};
-};
-
-// -----------------------------------------------------------------------------
-
 /// Configuration of the state test.
 template <typename MODEL>
 class StateTestParameters : public oops::Parameters {
   OOPS_CONCRETE_PARAMETERS(StateTestParameters, Parameters)
 
  public:
-  typedef oops::State<MODEL>                 State_;
-  typedef StateWriteReadParameters<MODEL>    StateWriteReadParameters_;
-  typedef typename State_::Parameters_       StateParameters_;
-
   /// Relative tolerance of norm comparisons.
   oops::RequiredParameter<double> tolerance{"tolerance", this};
   /// Validity time for states loaded from a file and generated on the fly.
   oops::RequiredParameter<util::DateTime> date{"date", this};
 
   /// Configuration of the state loaded from a file.
-  oops::RequiredParameter<StateParameters_> statefile{"statefile", this};
+  oops::RequiredParameter<eckit::LocalConfiguration> statefile{"statefile", this};
   /// Expected norm of the state loaded from a file.
   oops::RequiredParameter<double> normFile{"norm file", this};
 
@@ -87,7 +67,13 @@ class StateTestParameters : public oops::Parameters {
   /// This option must be present if `state generate` is.
   oops::OptionalParameter<double> normGeneratedState{"norm generated state", this};
 
-  oops::OptionalParameter<StateWriteReadParameters_> writeReadTest{"write then read test", this};
+  oops::OptionalParameter<eckit::LocalConfiguration> writeReadTest{"write then read test", this};
+
+  /// Flag indicating whether to run the test of the variable change State constructor
+  oops::Parameter<bool> testVarConstructor{"test variable change constructor", true, this};
+
+  /// Variables to pass to the variable change State constructor in the test
+  oops::OptionalParameter<oops::Variables> toVariables{"construct to variables", this};
 };
 
 // -----------------------------------------------------------------------------
@@ -190,6 +176,75 @@ template <typename MODEL> void testStateConstructors() {
   EXPECT(oops::is_close(xx4.norm(), norm, tol));
   EXPECT(xx4.validTime() == vt);
   EXPECT(xx4.variables() == xx1->variables());
+
+// Test State(const Variables &, const State &) constructor (unless told not to)
+  const bool testVarChangeConstructor = Test_::test().testVarConstructor.value();
+  if (testVarChangeConstructor)
+  {
+    EXPECT(Test_::test().toVariables.value() != boost::none);
+    const auto & toVars = Test_::test().toVariables.value().value();
+    EXPECT(toVars.size() > 0);
+    State_ xx5(toVars, *xx1);
+    EXPECT(xx5.norm() > 0.0);
+    EXPECT(xx5.validTime() == vt);
+    EXPECT(xx5.variables() == toVars);
+  }
+}
+
+// -----------------------------------------------------------------------------
+/// \brief tests constructors and print method
+template <typename MODEL> void testStateAtlasInterface() {
+  typedef StateFixture<MODEL>   Test_;
+  typedef oops::State<MODEL>    State_;
+
+  const bool testAtlas = TestEnvironment::config().getBool("test atlas interface", true);
+  if (!testAtlas) { return; }
+
+  const oops::Geometry<MODEL> & geom = Test_::resol();
+
+  State_ xx(geom, Test_::test().statefile);
+  const oops::Variables & vars = xx.variables();
+
+  atlas::FieldSet fset{};
+  xx.toFieldSet(fset);
+
+  // Check Fields in FieldSet
+  const int nvars = vars.size();
+  EXPECT(fset.size() == nvars);
+  for (int v = 0; v < nvars; ++v) {
+    const atlas::Field & f = fset[v];
+    EXPECT(f.valid());
+    EXPECT(f.functionspace() == geom.functionSpace());
+    EXPECT(!f.dirty());
+    EXPECT(f.rank() == 2);
+    EXPECT(f.shape(0) == geom.functionSpace().lonlat().shape(0));
+    EXPECT(f.datatype() == atlas::array::DataType::create<double>());
+  }
+
+  // Check haloExchange is no-op, i.e., halos are up-to-date
+  atlas::FieldSet fset2 = util::copyFieldSet(fset);
+  for (int v = 0; v < nvars; ++v) {
+    fset2[v].set_dirty();
+  }
+  fset2.haloExchange();
+  EXPECT(util::compareFieldSets(fset, fset2));
+
+  // Check fromFieldSet repopulates State in the same way
+  const util::DateTime t(Test_::test().date);
+  State_ yy(geom, vars, t);
+  yy.fromFieldSet(fset);
+
+  // How to check xx and yy are the same state?
+  // - They might not be, because States can include fields that aren't part of the atlas
+  //   FieldSet. These fields would be 0 in State yy, and they could be part of the norm
+  //   computation, so there's no guarantee that xx.norm() == yy.norm() should succeed.
+  // - Could compute an Increment dx = xx-yy and check its norm is ~0, but this would make
+  //   the State depend on the Increment.
+  //
+  // So, we skip this test. Instead, go back to a FieldSet and compare FieldSets:
+  atlas::FieldSet fset3{};
+  yy.toFieldSet(fset3);
+  EXPECT(util::compareFieldSets(fset, fset3));
 }
 
 // -----------------------------------------------------------------------------
@@ -411,12 +466,14 @@ template <typename MODEL> void testStateReadWrite() {
   xx.zero();
 
   // Read input file
-  xx.read(Test_::test().statefile);
+  xx.read(Test_::test().statefile.value());
 
   // Check norm has its initial value
   EXPECT(xx.norm() == norm);
 
   if (Test_::test().writeReadTest.value() != boost::none) {
+    const eckit::LocalConfiguration testconf = Test_::test().toConfiguration();
+    const eckit::LocalConfiguration rwconf(testconf, "write then read test");
     // Modify state
     const double mult = 2.0;
     xx.accumul(mult, xx);
@@ -425,10 +482,12 @@ template <typename MODEL> void testStateReadWrite() {
     const double normout = xx.norm();
 
     // Write modified state to output file
-    xx.write(Test_::test().writeReadTest.value()->write);
+    const eckit::LocalConfiguration wconf(rwconf, "state write");
+    xx.write(wconf);
 
     // Read modified state from output file
-    State_ yy(Test_::resol(), Test_::test().writeReadTest.value()->read);
+    const eckit::LocalConfiguration rconf(rwconf, "state read");
+    State_ yy(Test_::resol(), rconf);
 
     // Check modified state norm has its expected value
     EXPECT(oops::is_close(yy.norm(), normout, tol));
@@ -454,6 +513,8 @@ class State : public oops::Test {
 
     ts.emplace_back(CASE("interface/State/testStateConstructors")
       { testStateConstructors<MODEL>(); });
+    ts.emplace_back(CASE("interface/State/testStateAtlasInterface")
+      { testStateAtlasInterface<MODEL>(); });
     ts.emplace_back(CASE("interface/State/testStateGeometry")
       { testStateGeometry<MODEL>(); });
     ts.emplace_back(CASE("interface/State/testStateAnalyticInitialCondition")

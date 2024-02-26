@@ -81,6 +81,12 @@ namespace mpi {
 
 // ------------------------------------------------------------------------------------------------
 
+const eckit::mpi::Comm & clone(const eckit::mpi::Comm & comm) {
+  return eckit::mpi::comm(comm.name().c_str());
+}
+
+// ------------------------------------------------------------------------------------------------
+
 const eckit::mpi::Comm & world() {
   return eckit::mpi::comm("world");
 }
@@ -180,6 +186,62 @@ void exclusiveScan(const eckit::mpi::Comm &comm, size_t &x) {
   std::vector<size_t> xs(comm.size());
   comm.allGather(x, xs.begin(), xs.end());
   x = std::accumulate(xs.begin(), xs.begin() + comm.rank(), 0);
+}
+
+// ------------------------------------------------------------------------------------------------
+void broadcastBool(const eckit::mpi::Comm & comm, bool & boolVar, const size_t root) {
+    // Send bool as int since eckit MPI broadcast doesn't accept bool
+    int tempInt;
+    if (comm.rank() == root) {
+        tempInt = static_cast<int>(boolVar);
+        comm.broadcast(tempInt, root);
+    } else {
+        comm.broadcast(tempInt, root);
+        boolVar = static_cast<bool>(tempInt);
+    }
+}
+
+void broadcastString(const eckit::mpi::Comm & comm, std::string & stringVar, const size_t root) {
+    std::vector<char> buffer;
+    if (comm.rank() == root) {
+        // Send string as vector of char since eckit MPI broadcast doesn't accept string
+        buffer.resize(stringVar.size() + 1);  // allow for trailing NULL
+        strncpy(buffer.data(), stringVar.data(), stringVar.size());
+        buffer[stringVar.size()] = '\0';      // make sure there is a trailing NULL
+        broadcastVector<char>(comm, buffer, root);
+    } else {
+        broadcastVector<char>(comm, buffer, root);
+        stringVar = buffer.data();
+    }
+}
+
+// ------------------------------------------------------------------------------------------------
+
+// MPI tag values for send/receive utilities
+static const int msgIsSize = 1;
+static const int msgIsData = 2;
+
+void sendString(const eckit::mpi::Comm & comm, const std::string & stringVar,
+                                               const int toRank)  {
+    // First send the string length, then send the string
+    int stringSize = stringVar.size();
+    std::vector<char> buffer(stringSize + 1);    // Allow for trailing NULL
+    strncpy(buffer.data(), stringVar.data(), stringSize);
+    buffer[stringSize] = '\0';
+    comm.send<int>(&stringSize, 1, toRank, msgIsSize);
+    comm.send<char>(buffer.data(), buffer.size(), toRank, msgIsData);
+}
+
+void receiveString(const eckit::mpi::Comm & comm, std::string & stringVar,
+                                                  const int fromRank) {
+    // First receive the string length, then receive the string
+    // The string will be coming in a vector of char
+    int stringSize;
+    comm.receive<int>(&stringSize, 1, fromRank, msgIsSize);
+    // Can't assign directly to a string.data() pointer (which is const);
+    std::vector<char> buffer(stringSize + 1);
+    comm.receive<char>(buffer.data(), buffer.size(), fromRank, msgIsData);
+    stringVar = buffer.data();
 }
 
 }  // namespace mpi

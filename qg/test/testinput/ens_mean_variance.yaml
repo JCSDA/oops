@@ -1,0 +1,34 @@
+ensemble:
+  members from template:
+    template:
+      date: 2010-01-01T12:00:00Z
+      filename: Data/forecast.ens.%mem%.2009-12-31T00:00:00Z.P1D.nc
+      state variables: [x,q]
+    pattern: %mem%
+    nmembers: 5
+
+geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+
+variance output:
+  datadir: Data
+  exp: variance
+  type: diag
+  date: 2010-01-01T00:00:00Z
+
+standard deviation output:
+  datadir: Data
+  exp: stddev
+  type: diag
+  date: 2010-01-01T00:00:00Z
+
+mean output:
+  datadir: Data
+  exp: mean
+  type: diag
+  date: 2010-01-01T00:00:00Z
+
+test:
+  reference filename: testoutput/ens_mean_variance.test

@@ -138,22 +138,20 @@ ModelAuxControl<MODEL> & operator+=(ModelAuxControl<MODEL> & xx,
 
 template<typename MODEL>
 ModelAuxIncrement<MODEL>::ModelAuxIncrement(const Geometry_ & resol,
-                                            const Parameters_ & parameters) : aux_()
-{
-  Log::trace() << "ModelAuxIncrement<MODEL>::ModelAuxIncrement starting" << std::endl;
-  util::Timer timer(classname(), "ModelAuxIncrement");
-  aux_.reset(new ModelAuxIncrement_(
-               resol.geometry(),
-               parametersOrConfiguration<HasParameters_<ModelAuxIncrement_>::value>(parameters)));
-  this->setObjectSize(aux_->serialSize()*sizeof(double));
-  Log::trace() << "ModelAuxIncrement<MODEL>::ModelAuxIncrement done" << std::endl;
-}
+                                            const Parameters_ & parameters)
+  : ModelAuxIncrement(resol, parameters.toConfiguration())
+{}
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 ModelAuxIncrement<MODEL>::ModelAuxIncrement(const Geometry_ & resol,
-                                            const eckit::Configuration & conf)
-  : ModelAuxIncrement(resol, validateAndDeserialize<Parameters_>(conf))
-{}
+                                            const eckit::Configuration & conf) : aux_()
+{
+  Log::trace() << "ModelAuxIncrement<MODEL>::ModelAuxIncrement starting" << std::endl;
+  util::Timer timer(classname(), "ModelAuxIncrement");
+  aux_.reset(new ModelAuxIncrement_(resol.geometry(), conf));
+  this->setObjectSize(aux_->serialSize()*sizeof(double));
+  Log::trace() << "ModelAuxIncrement<MODEL>::ModelAuxIncrement done" << std::endl;
+}
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 ModelAuxIncrement<MODEL>::ModelAuxIncrement(const ModelAuxIncrement & other,
@@ -168,22 +166,20 @@ ModelAuxIncrement<MODEL>::ModelAuxIncrement(const ModelAuxIncrement & other,
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 ModelAuxIncrement<MODEL>::ModelAuxIncrement(const ModelAuxIncrement & other,
-                                            const Parameters_ & parameters) : aux_()
-{
-  Log::trace() << "ModelAuxIncrement<MODEL>::ModelAuxIncrement interpolated starting" << std::endl;
-  util::Timer timer(classname(), "ModelAuxIncrement");
-  aux_.reset(new ModelAuxIncrement_(
-               *other.aux_,
-               parametersOrConfiguration<HasParameters_<ModelAuxIncrement_>::value>(parameters)));
-  this->setObjectSize(aux_->serialSize()*sizeof(double));
-  Log::trace() << "ModelAuxIncrement<MODEL>::ModelAuxIncrement interpolated done" << std::endl;
-}
+                                            const Parameters_ & parameters)
+  : ModelAuxIncrement(other, parameters.toConfiguration())
+{}
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 ModelAuxIncrement<MODEL>::ModelAuxIncrement(const ModelAuxIncrement & other,
-                                            const eckit::Configuration & conf)
-  : ModelAuxIncrement(other, validateAndDeserialize<Parameters_>(conf))
-{}
+                                            const eckit::Configuration & conf) : aux_()
+{
+  Log::trace() << "ModelAuxIncrement<MODEL>::ModelAuxIncrement interpolated starting" << std::endl;
+  util::Timer timer(classname(), "ModelAuxIncrement");
+  aux_.reset(new ModelAuxIncrement_(*other.aux_, conf));
+  this->setObjectSize(aux_->serialSize()*sizeof(double));
+  Log::trace() << "ModelAuxIncrement<MODEL>::ModelAuxIncrement interpolated done" << std::endl;
+}
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 ModelAuxIncrement<MODEL>::~ModelAuxIncrement() {

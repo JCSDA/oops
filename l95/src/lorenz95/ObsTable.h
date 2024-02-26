@@ -18,60 +18,18 @@
 #include <vector>
 
 #include "eckit/mpi/Comm.h"
+
 #include "oops/base/ObsSpaceBase.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
-#include "oops/util/parameters/OptionalParameter.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
+
+namespace eckit {
+  class Configuration;
+}
 
 namespace lorenz95 {
   class ObsIterator;
-
-// -----------------------------------------------------------------------------
-/// Contents of the `engine` YAML section.
-class ObsDataParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(ObsDataParameters, Parameters)
-
- public:
-  /// File path and file type
-  oops::RequiredParameter<std::string> obsfile{"obsfile", this};
-};
-// -----------------------------------------------------------------------------
-/// Contents of the `obsdatain` or `obsdataout` YAML section.
-class ObsEngineParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(ObsEngineParameters, Parameters)
-
- public:
-  /// File path.
-  oops::RequiredParameter<ObsDataParameters> engine{"engine", this};
-};
-// -----------------------------------------------------------------------------
-/// Options controlling generation of artificial observations.
-class ObsGenerateParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(ObsGenerateParameters, Parameters)
-
- public:
-  oops::RequiredParameter<util::Duration> obsFrequency{"obs_frequency", this};
-  /// Number of observations to generate in each time slot.
-  oops::RequiredParameter<int> obsDensity{"obs_density", this};
-  oops::RequiredParameter<double> obsError{"obs_error", this};
-};
-
-// -----------------------------------------------------------------------------
-/// \brief Configuration parameters for the L95 model's ObsSpace.
-class ObsTableParameters : public oops::ObsSpaceParametersBase {
-  OOPS_CONCRETE_PARAMETERS(ObsTableParameters, ObsSpaceParametersBase)
-
- public:
-  /// File from which to load observations.
-  oops::OptionalParameter<ObsEngineParameters> obsdatain{"obsdatain", this};
-  /// File to which to save observations and analysis.
-  oops::OptionalParameter<ObsEngineParameters> obsdataout{"obsdataout", this};
-  /// Options controlling generation of artificial observations.
-  oops::OptionalParameter<ObsGenerateParameters> generate{"generate", this};
-};
 
 // -----------------------------------------------------------------------------
 /// A Simple Observation Data Handler
@@ -84,10 +42,8 @@ class ObsTable : public oops::ObsSpaceBase,
  public:
   static const std::string classname() {return "lorenz95::ObsTable";}
 
-  typedef ObsTableParameters Parameters_;
-
-  ObsTable(const Parameters_ &, const eckit::mpi::Comm &,
-           const util::DateTime &, const util::DateTime &, const eckit::mpi::Comm &);
+  ObsTable(const eckit::Configuration &, const eckit::mpi::Comm &,
+           const util::TimeWindow &, const eckit::mpi::Comm &);
   ~ObsTable();
 
   void save() const;
@@ -100,7 +56,7 @@ class ObsTable : public oops::ObsSpaceBase,
   void getdb(const std::string &, std::vector<double> &) const;
 
   bool has(const std::string & col) const;
-  void generateDistribution(const ObsGenerateParameters & params);
+  void generateDistribution(const eckit::Configuration &);
   void random(std::vector<double> &) const;
   unsigned int nobs() const {return times_.size();}
   const std::vector<double> & locations() const { return locations_; }
@@ -119,14 +75,12 @@ class ObsTable : public oops::ObsSpaceBase,
   void otOpen(const std::string &);
   void otWrite(const std::string &) const;
 
-  const util::DateTime winbgn_;
-  const util::DateTime winend_;
-
   std::vector<util::DateTime> times_;
   std::vector<double> locations_;
   mutable std::map<std::string, std::vector<double> > data_;
 
   const eckit::mpi::Comm & comm_;
+  const util::TimeWindow timeWindow_;
   const oops::Variables obsvars_;
   const oops::Variables assimvars_;
   std::string nameIn_;

@@ -6,6 +6,7 @@ geometry:   # coupled geometry (QG and L95)
     depths: [4500.0, 5500.0]
   Lorenz 95:
     resol: 40
+  QG exclude variables: [x]
 state test:
   statefile:
     QG:
@@ -18,26 +19,29 @@ state test:
     state write:
       QG:
         datadir: Data
-        exp: coupled_state_test_qg
+        exp: coupled_state_test_qg_parallel
         type: fc
         date: 2010-01-01T00:00:00Z
       Lorenz 95:
         datadir: Data
-        exp: coupled_state_test_l95
+        exp: coupled_state_test_l95_parallel
         type: fc
         date: 2010-01-01T00:00:00Z
     state read:
       QG:
         date: 2010-01-01T00:00:00Z
-        filename: Data/coupled_state_test_qg.fc.2010-01-01T00:00:00Z.PT0S.nc
+        filename: Data/coupled_state_test_qg_parallel.fc.2010-01-01T00:00:00Z.PT0S.nc
       Lorenz 95:
         date: 2010-01-01T00:00:00Z
-        filename: Data/coupled_state_test_l95.fc.2010-01-01T00:00:00Z.PT0S.l95
+        filename: Data/coupled_state_test_l95_parallel.fc.2010-01-01T00:00:00Z.PT0S.l95
 
   norm file: 182665691.455
   tolerance: 1.e-3
   date: 2010-01-01T00:00:00Z
+  test variable change constructor: false
 
 test:
   float relative tolerance: 1e-5
   reference filename: testref/coupledstate.test
+
+test atlas interface: false

@@ -15,11 +15,13 @@
 #include <string>
 #include <boost/noncopyable.hpp>
 
-#include "lorenz95/ObsBiasParameters.h"
-
 #include "oops/base/Variables.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
+
+namespace eckit {
+  class Configuration;
+}
 
 namespace lorenz95 {
   class ObsBiasCorrection;
@@ -33,11 +35,9 @@ class ObsBias : public util::Printable,
                 private boost::noncopyable,
                 private util::ObjectCounter<ObsBias> {
  public:
-  typedef ObsBiasParameters Parameters_;
-
   static const std::string classname() {return "lorenz95::ObsBias";}
 
-  ObsBias(const ObsTable &, const Parameters_ &);
+  ObsBias(const ObsTable &, const eckit::Configuration &);
   ObsBias(const ObsBias &, const bool);
   ~ObsBias() {}
 
@@ -48,8 +48,8 @@ class ObsBias : public util::Printable,
   double & value() {return bias_;}
 
 /// I/O and diagnostics
-  void read(const Parameters_ &) {}
-  void write(const Parameters_ &) const {}
+  void read(const eckit::Configuration &) {}
+  void write(const eckit::Configuration &) const {}
   double norm() const {return std::abs(bias_);}
 
 /// Other

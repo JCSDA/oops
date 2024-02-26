@@ -11,6 +11,7 @@
 #include <memory>
 #include <string>
 
+#include "eckit/config/Configuration.h"
 #include "oops/base/State.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
@@ -35,10 +36,12 @@ class VariableChange : public util::Printable,
   typedef State<MODEL>                   State_;
 
  public:
-  typedef typename VariableChange_::Parameters_ Parameters_;
+  typedef TParameters_IfAvailableElseFallbackType_t<VariableChange_, GenericParameters>
+    Parameters_;
 
   static const std::string classname() {return "oops::VariableChange";}
 
+  VariableChange(const eckit::Configuration &, const Geometry_ &);
   VariableChange(const Parameters_ &, const Geometry_ &);
   virtual ~VariableChange();
   VariableChange(const VariableChange &) = delete;
@@ -60,14 +63,21 @@ class VariableChange : public util::Printable,
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-VariableChange<MODEL>::VariableChange(const Parameters_ & parameters, const Geometry_ & geometry)
+VariableChange<MODEL>::VariableChange(const eckit::Configuration & conf, const Geometry_ & geometry)
   : chvar_()
 {
   Log::trace() << "VariableChange<MODEL>::VariableChange starting" << std::endl;
   util::Timer timer(classname(), "VariableChange");
-  chvar_.reset(new VariableChange_(parameters, geometry.geometry()));
+  chvar_.reset(new VariableChange_(conf, geometry.geometry()));
   Log::trace() << "VariableChange<MODEL>::VariableChange done" << std::endl;
 }
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+VariableChange<MODEL>::VariableChange(const Parameters_ & parameters, const Geometry_ & geometry)
+  : VariableChange(parameters.toConfiguration(), geometry)
+{}
 
 // -----------------------------------------------------------------------------
 

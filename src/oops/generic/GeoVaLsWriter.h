@@ -10,6 +10,8 @@
 
 #include <memory>
 
+#include "eckit/config/LocalConfiguration.h"
+
 #include "oops/base/ObsVector.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/ObsFilterBase.h"
@@ -22,16 +24,6 @@
 
 namespace oops {
 
-/// \brief Parameters controlling GeoVaLsWriter
-template <typename OBS>
-class GeoVaLsWriterParameters : public ObsFilterParametersBase {
-  OOPS_CONCRETE_PARAMETERS(GeoVaLsWriterParameters, ObsFilterParametersBase)
-  // GeoVaLsWriter uses GeoVaLs Parameters (used in I/O)
-  typedef typename GeoVaLs<OBS>::Parameters_   GeoVaLsParameters_;
- public:
-  GeoVaLsParameters_ geovals{this};
-};
-
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
@@ -43,10 +35,8 @@ class GeoVaLsWriter : public ObsFilterBase<OBS> {
   template <typename DATA> using ObsDataPtr_ = std::shared_ptr<ObsDataVector<OBS, DATA> >;
 
  public:
-  typedef GeoVaLsWriterParameters<OBS> Parameters_;
-
-  GeoVaLsWriter(const ObsSpace_ &, const Parameters_ & params,
-                ObsDataPtr_<int>, ObsDataPtr_<float>): params_(params), novars_() {}
+  GeoVaLsWriter(const ObsSpace_ &, const eckit::Configuration & config,
+                ObsDataPtr_<int>, ObsDataPtr_<float>): config_(config), novars_() {}
   ~GeoVaLsWriter() = default;
 
   void preProcess() override {}
@@ -54,7 +44,7 @@ class GeoVaLsWriter : public ObsFilterBase<OBS> {
   void priorFilter(const GeoVaLs_ & gv) override {
     const double zz = sqrt(dot_product(gv, gv));
     Log::info() << "GeoVaLsWriter norm = " << zz << std::endl;
-    gv.write(params_.geovals);
+    gv.write(config_);
   }
 
   void postFilter(const GeoVaLs_ & gv,
@@ -69,7 +59,7 @@ class GeoVaLsWriter : public ObsFilterBase<OBS> {
   Variables requiredHdiagnostics() const override {return novars_;};
 
  private:
-  const Parameters_ params_;
+  const eckit::LocalConfiguration config_;
   const Variables novars_;  // could be used to determine what needs saving
 
   void print(std::ostream &) const override;
@@ -79,7 +69,7 @@ class GeoVaLsWriter : public ObsFilterBase<OBS> {
 
 template <typename OBS>
 void GeoVaLsWriter<OBS>::print(std::ostream & os) const {
-  os << "Filter outputting GeoVaLs" << params_;
+  os << "Filter outputting GeoVaLs" << config_;
 }
 
 // -----------------------------------------------------------------------------

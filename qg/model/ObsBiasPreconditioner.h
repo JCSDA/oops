@@ -14,7 +14,6 @@
 
 #include "model/ObsBias.h"
 #include "model/ObsBiasIncrement.h"
-#include "model/ObsBiasParameters.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
@@ -24,18 +23,16 @@ namespace qg {
 /// Class for VarBC preconditioner.
 
 class ObsBiasPreconditioner : public util::Printable,
-                          private boost::noncopyable,
-                          private util::ObjectCounter<ObsBiasPreconditioner> {
+                              private boost::noncopyable,
+                              private util::ObjectCounter<ObsBiasPreconditioner> {
  public:
-  typedef ObsBiasParameters Parameters_;
-
   static const std::string classname() {return "qg::ObsBiasPreconditioner";}
 
 /// Constructor, destructor
-  explicit ObsBiasPreconditioner(const std::array<double, ObsBias::ntypes>  &);
+  explicit ObsBiasPreconditioner(const std::array<double, ObsBias::ntypes> &);
 
 /// Linear algebra operators
-  void multiply(const ObsBiasIncrement & dx1, ObsBiasIncrement & dx2) const;
+  void multiply(const ObsBiasIncrement &, ObsBiasIncrement &) const;
 
  private:
   void print(std::ostream &) const {}

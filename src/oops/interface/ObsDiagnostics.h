@@ -16,16 +16,15 @@
 #include <boost/noncopyable.hpp>
 
 #include "oops/base/Variables.h"
-#include "oops/interface/Locations.h"
 #include "oops/interface/ObsSpace.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
-#include "oops/util/parameters/EmptyParameters.h"
-#include "oops/util/parameters/HasParameters_.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Timer.h"
 
 namespace oops {
+
+template <typename OBS> class Locations;
 
 // -----------------------------------------------------------------------------
 
@@ -38,14 +37,11 @@ class ObsDiagnostics : public util::Printable,
   typedef Locations<OBS>                 Locations_;
 
  public:
-  // fall back to EmptyParameters if none specified in ObsDiagnostics
-  typedef TParameters_IfAvailableElseFallbackType_t<ObsDiags_, EmptyParameters> Parameters_;
-
   static const std::string classname() {return "oops::ObsDiagnostics";}
 
   ObsDiagnostics(const ObsSpace_ &, const Locations_ &, const Variables &);
   // ctor used in the test for ObsFilters (not implemented in toy models)
-  ObsDiagnostics(const Parameters_ &, const ObsSpace_ &, const Variables &);
+  ObsDiagnostics(const eckit::Configuration &, const ObsSpace_ &, const Variables &);
 
   ~ObsDiagnostics();
 
@@ -63,22 +59,23 @@ class ObsDiagnostics : public util::Printable,
 
 // -----------------------------------------------------------------------------
 template <typename OBS>
-ObsDiagnostics<OBS>::ObsDiagnostics(const ObsSpace_ & os, const Locations_ & locs,
-                                      const Variables & vars) : diags_()
+ObsDiagnostics<OBS>::ObsDiagnostics(const ObsSpace_ & os,
+                                    const Locations_ & locations,
+                                    const Variables & vars) : diags_()
 {
   Log::trace() << "ObsDiagnostics<OBS>::ObsDiagnostics starting" << std::endl;
   util::Timer timer(classname(), "ObsDiagnostics");
-  diags_.reset(new ObsDiags_(os.obsspace(), locs.locations(), vars));
+  diags_.reset(new ObsDiags_(os.obsspace(), locations, vars));
   Log::trace() << "ObsDiagnostics<OBS>::ObsDiagnostics done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename OBS>
-ObsDiagnostics<OBS>::ObsDiagnostics(const Parameters_ & params, const ObsSpace_ & os,
-                                      const Variables & vars) : diags_()
+ObsDiagnostics<OBS>::ObsDiagnostics(const eckit::Configuration & config, const ObsSpace_ & os,
+                                    const Variables & vars) : diags_()
 {
   Log::trace() << "ObsDiagnostics<OBS>::ObsDiagnostics starting" << std::endl;
   util::Timer timer(classname(), "ObsDiagnostics");
-  diags_.reset(new ObsDiags_(params, os.obsspace(), vars));
+  diags_.reset(new ObsDiags_(config, os.obsspace(), vars));
   Log::trace() << "ObsDiagnostics<OBS>::ObsDiagnostics done" << std::endl;
 }
 // -----------------------------------------------------------------------------

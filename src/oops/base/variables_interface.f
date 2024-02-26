@@ -36,6 +36,15 @@ end subroutine c_variables_push_back
 
 !-------------------------------------------------------------------------------
 
+subroutine c_variables_clear(vars) bind(C, name='variables_clear_f')
+  use, intrinsic :: iso_c_binding
+  implicit none
+
+  type(c_ptr), value :: vars
+end subroutine c_variables_clear
+
+!-------------------------------------------------------------------------------
+
 integer(kind=c_size_t) function c_variables_size(vars) bind(C,name='variables_size_f')
   use, intrinsic :: iso_c_binding
   implicit none
@@ -75,6 +84,15 @@ logical*1 function c_variables_has(vars, str) bind(C, name='variables_has_f')
   character(kind=c_char,len=1), intent(in) :: str(*)
 end function c_variables_has
 
+!-------------------------------------------------------------------------------
+
+integer(c_int) function c_variables_find(vars, str) bind(C, name='variables_find_f')
+  use, intrinsic :: iso_c_binding
+  implicit none
+
+  type(c_ptr), value :: vars
+  character(kind=c_char,len=1), intent(in) :: str(*)
+end function c_variables_find
 !-------------------------------------------------------------------------------
 end interface
 !-------------------------------------------------------------------------------

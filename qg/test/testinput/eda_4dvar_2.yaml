@@ -1,7 +1,8 @@
 cost function:
   cost type: 4D-Var
-  window begin: 2010-01-01T00:00:00Z
-  window length: P1D
+  time window:
+    begin: 2010-01-01T00:00:00Z
+    length: P1D
   analysis variables: [x]
   geometry:
     nx: 40
@@ -20,49 +21,44 @@ cost function:
     standard_deviation: 1.8e7
     vertical_length_scale: 15000.0
   observations:
+    obs perturbations: true
     observers:
     - obs operator:
         obs type: Stream
       obs space:
         obs type: Stream
         obsdatain:
-          engine:
-            obsfile: Data/truth.obs4d_24h.nc
+          obsfile: Data/truth.obs4d_24h.nc
         obsdataout:
-          engine:
-            obsfile: Data/mem002.eda_4dvar.obs4d_24h.nc
+          obsfile: Data/mem002.eda_4dvar.obs4d_24h.nc
         obs perturbations seed: 2
       obs error:
         covariance model: diagonal
-        random amplitude: 0.4
+        obs perturbations amplitude: 0.4
     - obs operator:
         obs type: Wind
       obs space:
         obs type: Wind
         obsdatain:
-          engine:
-            obsfile: Data/truth.obs4d_24h.nc
+          obsfile: Data/truth.obs4d_24h.nc
         obsdataout:
-          engine:
-            obsfile: Data/mem002.eda_4dvar.obs4d_24h.nc
+          obsfile: Data/mem002.eda_4dvar.obs4d_24h.nc
         obs perturbations seed: 2
       obs error:
         covariance model: diagonal
-        random amplitude: 0.5
+        obs perturbations amplitude: 0.5
     - obs operator:
         obs type: WSpeed
       obs space:
         obs type: WSpeed
         obsdatain:
-          engine:
-            obsfile: Data/truth.obs4d_24h.nc
+          obsfile: Data/truth.obs4d_24h.nc
         obsdataout:
-          engine:
-            obsfile: Data/mem002.eda_4dvar.obs4d_24h.nc
+          obsfile: Data/mem002.eda_4dvar.obs4d_24h.nc
         obs perturbations seed: 2
       obs error:
         covariance model: diagonal
-        random amplitude: 0.2
+        obs perturbations amplitude: 0.2
   constraints:
   - jcdfi:
       filtered variables: [x]
@@ -89,7 +85,6 @@ variational:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
-    obs perturbations: true
   - diagnostics:
       departures: ombg1
     gradient norm reduction: 1.0e-10

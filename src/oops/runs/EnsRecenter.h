@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2019 UCAR
+ * (C) Copyright 2019-2023 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -16,9 +16,11 @@
 #include "oops/base/Increment.h"
 #include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/State.h"
+#include "oops/base/StateEnsemble.h"
 #include "oops/base/Variables.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
+#include "oops/util/ConfigHelpers.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/Parameter.h"
@@ -37,36 +39,35 @@ class EnsRecenterParameters : public ApplicationParameters {
 
  public:
   typedef typename Geometry_::Parameters_   GeometryParameters_;
-  typedef typename State_::Parameters_      StateParameters_;
-  typedef typename State_::WriteParameters_ StateWriteParameters_;
+  typedef StateEnsembleParameters<MODEL>    StateEnsembleParameters_;
 
   /// Geometry parameters.
   RequiredParameter<GeometryParameters_> geometry{"geometry", this};
 
   /// Central state parameters.
-  RequiredParameter<StateParameters_> center{"center", this};
+  RequiredParameter<eckit::LocalConfiguration> center{"center", this};
 
   /// Parameter controlling whether the center should be zeroed out
   Parameter<bool> zeroCenter{"zero center", false, this};
 
   /// Parameters describing ensemble states to be recentered
-  RequiredParameter<std::vector<StateParameters_>> ensemble{"ensemble", this};
+  RequiredParameter<StateEnsembleParameters_> ensemble{"ensemble", this};
 
   /// Variables to be recentered
   RequiredParameter<oops::Variables> recenterVars{"recenter variables", this};
 
   /// Parameters for ensemble mean output
-  OptionalParameter<StateWriteParameters_> ensmeanOutput{"ensemble mean output", this};
+  OptionalParameter<eckit::LocalConfiguration> ensmeanOutput{"ensemble meanoutput", this};
 
   /// Parameters for recentered ensemble output
-  RequiredParameter<StateWriteParameters_> recenteredOutput{"recentered output", this};
+  RequiredParameter<eckit::LocalConfiguration> recenteredOutput{"recentered output", this};
 };
 
 template <typename MODEL> class EnsRecenter : public Application {
   typedef Geometry<MODEL>   Geometry_;
   typedef Increment<MODEL>  Increment_;
   typedef State<MODEL>      State_;
-  typedef typename State_::WriteParameters_ StateWriteParameters_;
+  typedef StateEnsemble<MODEL> StateEnsemble_;
 
  public:
   // -----------------------------------------------------------------------------
@@ -95,32 +96,27 @@ template <typename MODEL> class EnsRecenter : public Application {
     unsigned nm = params.ensemble.value().size();
 
     // Compute ensemble mean
-    State_ ensmean(x_center);
-    ensmean.zero();
-    const double rk = 1.0/(static_cast<double>(nm));
-    for (unsigned jj = 0; jj < nm; ++jj) {
-      State_ x(resol, params.ensemble.value()[jj]);
-      ensmean.accumul(rk, x);
-      Log::test() << "Original member " << jj << " : " << x << std::endl;
-    }
+    const StateEnsemble_ stateEnsemble(resol, params.ensemble);
+
+    State_ ensmean = stateEnsemble.mean();
     Log::test() << "Ensemble mean: " << std::endl << ensmean << std::endl;
 
     // Optionally write the mean out
-    if (params.ensmeanOutput.value() != boost::none) {
-      ensmean.write(*params.ensmeanOutput.value());
+    if (fullConfig.has("ensemble meanoutput")) {
+      ensmean.write(eckit::LocalConfiguration(fullConfig, "ensemble meanoutput"));
     }
 
     // Recenter ensemble around central and save
     for (unsigned jj = 0; jj < nm; ++jj) {
-      State_ x(resol, params.ensemble.value()[jj]);
+      State_ x(resol, stateEnsemble[jj]);
       Increment_ pert(resol, params.recenterVars, x.validTime());
       pert.diff(x, ensmean);
       x = x_center;
       x += pert;
 
       // Save recentered member
-      StateWriteParameters_ recenteredOutput = params.recenteredOutput;
-      recenteredOutput.setMember(jj+1);
+      eckit::LocalConfiguration recenteredOutput = params.recenteredOutput;
+      util::setMember(recenteredOutput, jj+1);
       x.write(recenteredOutput);
       Log::test() << "Recentered member " << jj << " : " << x << std::endl;
     }

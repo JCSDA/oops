@@ -9,14 +9,18 @@
 
 #include <algorithm>
 #include <iostream>
+#include <memory>
 #include <set>
 #include <string>
 #include <unordered_set>
 #include <vector>
 
 #include "eckit/config/Configuration.h"
+#include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
+
 #include "eckit/types/Types.h"
+#include "eckit/utils/Hash.h"
 
 #include "oops/util/IntSetParser.h"
 #include "oops/util/Logger.h"
@@ -26,14 +30,14 @@ namespace oops {
 // -----------------------------------------------------------------------------
 
 Variables::Variables()
-  : convention_(""), vars_(0) {
+  : convention_(""), vars_(0), varMetaData_() {
   Log::trace() << "Variables::Variables" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 Variables::Variables(const eckit::Configuration & conf, const std::string & name)
-  : convention_(""), vars_(0), channels_(0) {
+  : convention_(""), vars_(0), channels_(0), varMetaData_() {
   Log::trace() << "Variables::Variables start " << conf << std::endl;
   std::vector<std::string> vars;
   if (!conf.get(name, vars)) {
@@ -58,9 +62,8 @@ Variables::Variables(const eckit::Configuration & conf, const std::string & name
 }
 
 // -----------------------------------------------------------------------------
-
 Variables::Variables(const std::vector<std::string> & vars, const std::string & conv)
-  : convention_(conv), vars_(vars) {
+  : convention_(conv), vars_(vars), varMetaData_() {
   Log::trace() << "Variables::Variables start " << vars << std::endl;
   Log::trace() << "Variables::Variables done" << std::endl;
 }
@@ -68,7 +71,7 @@ Variables::Variables(const std::vector<std::string> & vars, const std::string & 
 // -----------------------------------------------------------------------------
 
 Variables::Variables(const std::vector<std::string> & vars, const std::vector<int> & channels)
-  : convention_(""), vars_(0), channels_(channels) {
+  : convention_(""), vars_(0), channels_(channels), varMetaData_() {
   Log::trace() << "Variables::Variables start " << vars << " @ " << channels << std::endl;
   if (channels.empty()) {
     vars_ = vars;
@@ -84,8 +87,18 @@ Variables::Variables(const std::vector<std::string> & vars, const std::vector<in
 
 // -----------------------------------------------------------------------------
 
+Variables::Variables(const eckit::Configuration & conf, const std::vector<std::string> & vars)
+  : convention_(""), vars_(vars), varMetaData_(conf)
+{
+  Log::trace() << "Variables::Variables start " << vars << " @ " << conf << std::endl;
+  Log::trace() << "Variables::Variables done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
 Variables::Variables(const Variables & other)
-  : convention_(other.convention_), vars_(other.vars_), channels_(other.channels_)
+  : convention_(other.convention_), vars_(other.vars_), channels_(other.channels_),
+    varMetaData_(other.varMetaData_)
 {}
 
 // -----------------------------------------------------------------------------
@@ -104,6 +117,16 @@ Variables & Variables::operator+=(const Variables & rhs) {
   auto mchannel = std::stable_partition(channels_.begin(), channels_.end(),
         [&schannels](int const &channel) {return schannels.insert(channel).second;});
   channels_.erase(mchannel, channels_.end());
+
+  // this operation adds and updates the metadata in the object from the
+  // rhs object.
+  for (const std::string & var : rhs.varMetaData_.keys()) {
+    for (const std::string & key : rhs.varMetaData_.getSubConfiguration(var).keys()) {
+      int value(-1);
+      getVariableSubKeyValue(var, key, rhs.varMetaData_, value);
+      setVariableSubKeyValue(var, key, value, varMetaData_);
+    }
+  }
   return *this;
 }
 
@@ -136,9 +159,28 @@ bool Variables::operator==(const Variables & rhs) const {
       (vars_.size() != rhs.vars_.size())) {
     return false;
   } else {
+    // equivalence for the metadata is only held for the vars_list.
     std::vector<std::string> myvars = this->asCanonical();
     std::vector<std::string> othervars = rhs.asCanonical();
-    return myvars == othervars;
+    if (varMetaData_.empty()) {
+      return myvars == othervars;
+    } else {
+      for (const std::string & var : vars_) {
+        if ((!rhs.varMetaData_.has(var) && varMetaData_.has(var)) ||
+            (rhs.varMetaData_.has(var) && !varMetaData_.has(var))) {
+          return false;
+        } else if (rhs.varMetaData_.has(var) && varMetaData_.has(var)) {
+          std::unique_ptr<eckit::Hash> myhash(eckit::HashFactory::instance().build("md5"));
+          std::unique_ptr<eckit::Hash> rhshash(eckit::HashFactory::instance().build("md5"));
+          varMetaData_.getSubConfiguration(var).hash(*myhash);
+          rhs.varMetaData_.getSubConfiguration(var).hash(*rhshash);
+          if (!(myhash->digest() == rhshash->digest())) {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
   }
 }
 
@@ -161,17 +203,38 @@ bool Variables::operator<=(const Variables & rhs) const {
 }
 
 // -----------------------------------------------------------------------------
+void Variables::addMetaData(const std::string & varname,
+                            const std::string & keyname,
+                            const int & keyvalue) {
+  setVariableSubKeyValue(varname, keyname, keyvalue, varMetaData_);
+}
+
+// -----------------------------------------------------------------------------
 
 void Variables::intersection(const Variables & rhs) {
   ASSERT(convention_ == rhs.convention_);
-  ASSERT(channels_ == rhs.channels_);
+  if (this->size() * rhs.size() > 0) ASSERT(channels_.empty() == rhs.channels_.empty());
+
   std::vector<std::string> myvars = this->asCanonical();
   std::vector<std::string> othervars = rhs.asCanonical();
-
   std::vector<std::string> commonvars;
-  std::set_intersection(myvars.begin(), myvars.end(),
-                        othervars.begin(), othervars.end(), std::back_inserter(commonvars));
+  std::set_intersection(myvars.cbegin(), myvars.cend(),
+                        othervars.cbegin(), othervars.cend(), std::back_inserter(commonvars));
   vars_ = commonvars;
+
+  if (!commonvars.empty()) {
+    std::vector<int> mychannels = channels_;
+    std::vector<int> otherchannels = rhs.channels_;
+    std::sort(mychannels.begin(), mychannels.end());
+    std::sort(otherchannels.begin(), otherchannels.end());
+    std::vector<int> commonchannels;
+    std::set_intersection(mychannels.cbegin(), mychannels.cend(),
+                          otherchannels.cbegin(), otherchannels.cend(),
+                          std::back_inserter(commonchannels));
+    channels_ = commonchannels;
+  } else {
+    channels_.clear();
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -228,8 +291,41 @@ void Variables::print(std::ostream & os) const {
     os << vars_[jj];
   }
   if (!convention_.empty()) os << " (" << convention_ << ")";
+
+  if (!varMetaData_.empty()) os << " (" << varMetaData_ << ")";
 }
 
 // -----------------------------------------------------------------------------
 
+int Variables::getLevels(const std::string & fieldname) const {
+  int levels(-1);
+  getVariableSubKeyValue(fieldname, "levels",
+                         varMetaData_, levels);
+  return levels;
+}
+
+// -----------------------------------------------------------------------------
+
+void Variables::getVariableSubKeyValue(const std::string & varname,
+                                       const std::string & keyname,
+                                       const eckit::Configuration & variablesconf,
+                                       int & intvalue) const {
+  ASSERT(!variablesconf.empty());
+  ASSERT(variablesconf.has(varname));
+  ASSERT(variablesconf.getSubConfiguration(varname).has(keyname));
+  variablesconf.getSubConfiguration(varname).get(keyname, intvalue);
+}
+
+// -----------------------------------------------------------------------------
+
+void Variables::setVariableSubKeyValue(const std::string & varname,
+                                       const std::string & keyname,
+                                       const int & keyvalue,
+                                       eckit::LocalConfiguration & variableslconf) {
+  eckit::LocalConfiguration variablelconf =
+    variableslconf.has(varname) ? variableslconf.getSubConfiguration(varname) :
+                                  eckit::LocalConfiguration();
+  variablelconf.set(keyname, keyvalue);
+  variableslconf.set(varname, variablelconf);
+}
 }  // namespace oops

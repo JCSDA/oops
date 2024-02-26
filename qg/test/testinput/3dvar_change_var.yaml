@@ -1,7 +1,8 @@
 cost function:
   cost type: 3D-Var
-  window begin: 2010-01-01T09:00:00Z
-  window length: PT6H
+  time window:
+    begin: 2010-01-01T09:00:00Z
+    length: PT6H
   analysis variables: [q]
   geometry:
     nx: 40
@@ -28,11 +29,9 @@ cost function:
         obs type: Stream
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/truth.obs3d.nc
+          obsfile: Data/truth.obs3d.nc
         obsdataout:
-          engine:
-            obsfile: Data/3dvar_change_var.obs3d.nc
+          obsfile: Data/3dvar_change_var.obs3d.nc
         obs type: Stream
     - obs error:
         covariance model: diagonal
@@ -40,11 +39,9 @@ cost function:
         obs type: Wind
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/truth.obs3d.nc
+          obsfile: Data/truth.obs3d.nc
         obsdataout:
-          engine:
-            obsfile: Data/3dvar_change_var.obs3d.nc
+          obsfile: Data/3dvar_change_var.obs3d.nc
         obs type: Wind
     - obs error:
         covariance model: diagonal
@@ -52,15 +49,13 @@ cost function:
         obs type: WSpeed
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/truth.obs3d.nc
+          obsfile: Data/truth.obs3d.nc
         obsdataout:
-          engine:
-            obsfile: Data/3dvar_change_var.obs3d.nc
+          obsfile: Data/3dvar_change_var.obs3d.nc
         obs type: WSpeed
 variational:
   minimizer:
-    algorithm: DRIPCG
+    algorithm: DRPCG
   iterations:
   - diagnostics:
       departures: ombg0

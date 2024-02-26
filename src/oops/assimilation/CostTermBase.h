@@ -49,6 +49,7 @@ template<typename MODEL, typename OBS> class CostTermBase {
                            PostProc_ &) = 0;
 /// Finish computation of cost function term after nonlinear model integration
   virtual double computeCost() = 0;
+  virtual void printCostTestHack() = 0;
 
 /// Set post-processors for nonlinear model integration and save linearisation trajectory
   virtual void setPostProcTraj(const ControlVariable<MODEL, OBS> &, const eckit::Configuration &,

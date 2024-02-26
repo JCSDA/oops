@@ -11,13 +11,14 @@
 #include <memory>
 #include <ostream>
 
-#include "eckit/config/LocalConfiguration.h"
-
 #include "lorenz95/L95Traits.h"
 
 #include "oops/base/Variables.h"
-#include "oops/generic/ObsFilterParametersBase.h"
 #include "oops/interface/ObsFilterBase.h"
+
+namespace eckit {
+  class Configuration;
+}
 
 namespace lorenz95 {
   class GomL95;
@@ -36,9 +37,7 @@ class QCmanager : public oops::interface::ObsFilterBase<L95ObsTraits> {
 
   void preProcess() override {}
   void priorFilter(const GomL95 &) override {}
-  void postFilter(const GomL95 &,
-                  const ObsVec1D &,
-                  const ObsVec1D &,
+  void postFilter(const GomL95 &, const ObsVec1D &, const ObsVec1D &,
                   const ObsDiags1D &) override {}
   void checkFilterData(const oops::FilterStage filterStage) override {}
 

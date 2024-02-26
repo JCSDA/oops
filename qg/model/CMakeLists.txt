@@ -5,7 +5,6 @@ ChangeVarQG.cc
 ChangeVarQG.h
 ChangeVarTLADQG.cc
 ChangeVarTLADQG.h
-ErrorCovarianceParameters.h
 ErrorCovarianceQG.cc
 ErrorCovarianceQG.h
 FieldsQG.cc
@@ -29,11 +28,12 @@ LocalizationMatrixQG.h
 ModelBias.h
 ModelBiasCovariance.h
 ModelBiasIncrement.h
+ModelData.cc
+ModelData.h
 ModelQG.cc
 ModelQG.h
 ObsBias.cc
 ObsBias.h
-ObsBiasParameters.h
 ObsBiasCovariance.cc
 ObsBiasCovariance.h
 ObsBiasIncrement.cc
@@ -50,7 +50,6 @@ ObsOpBaseQG.cc
 ObsOpBaseQG.h
 ObsOpBaseTLAD.cc
 ObsOpBaseTLAD.h
-ObsOperatorParameters.h
 ObsOperatorQG.cc
 ObsOperatorQG.h
 ObsOperatorTLAD.cc
@@ -82,6 +81,7 @@ TlmQG.h
 fft_f.cc
 fft_f.h
 fft_mod.F90
+instantiateQgNormFactory.h
 instantiateQgLocalizationFactory.h
 qg_advect_q_mod.F90
 qg_change_var_interface.F90
@@ -100,6 +100,8 @@ qg_geom_interface.F90
 qg_geom_mod.F90
 qg_geom_iter_interface.F90
 qg_geom_iter_mod.F90
+qg_getvalues_interp_interface.F90
+qg_getvalues_interp_mod.F90
 qg_gom_interface.F90
 qg_gom_mod.F90
 qg_interp_mod.F90

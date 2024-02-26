@@ -31,9 +31,11 @@
 #include "oops/interface/GeometryIterator.h"
 #include "oops/util/ConfigFunctions.h"
 #include "oops/util/Logger.h"
+#include "oops/util/printRunStats.h"
 #include "oops/util/Timer.h"
 
 namespace oops {
+  class Variables;
 
 /*!
  * An implementation of the GETKF from Lei 2018 JAMES
@@ -63,7 +65,7 @@ class GETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
   /// Constructor (allocates Wa, wa, HZb_,
   /// saves options from the config, computes VerticalLocEV_)
   GETKFSolver(ObsSpaces_ &, const Geometry_ &, const eckit::Configuration &, size_t,
-              const State4D_ &);
+              const State4D_ &, const Variables &);
 
   Observations_ computeHofX(const StateEnsemble4D_ &, size_t, bool) override;
 
@@ -104,11 +106,11 @@ class GETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
 template <typename MODEL, typename OBS>
 GETKFSolver<MODEL, OBS>::GETKFSolver(ObsSpaces_ & obspaces, const Geometry_ & geometry,
                                 const eckit::Configuration & config, size_t nens,
-                                const State4D_ & xbmean)
-  : LocalEnsembleSolver<MODEL, OBS>(obspaces, geometry, config, nens, xbmean),
+                                const State4D_ & xbmean, const Variables & incvars)
+  : LocalEnsembleSolver<MODEL, OBS>(obspaces, geometry, config, nens, xbmean, incvars),
     nens_(nens), geometry_(geometry),
-    vertloc_(config.getSubConfiguration("local ensemble DA.vertical localization"), xbmean[0]),
-    neig_(vertloc_.neig()), nanal_(neig_*nens_), HZb_(obspaces, nanal_)
+    vertloc_(config.getSubConfiguration("local ensemble DA.vertical localization"), xbmean[0],
+    incvars), neig_(vertloc_.neig()), nanal_(neig_*nens_), HZb_(obspaces, nanal_)
 {
   // pre-allocate transformation matrices
   Wa_.resize(nanal_, nens);
@@ -130,6 +132,8 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
     Observations_ ytmp(yb_mean);
     size_t ii = 0;
     for (size_t iens = 0; iens < nens_; ++iens) {
+      Log::info() << " GETKFSolver::computeHofX starting ensemble member " << iens+1 << std::endl;
+      util::printRunStats("GETKFSolver read hofx");
       for (size_t ieig = 0; ieig < neig_; ++ieig) {
         ytmp.read("hofxm"+std::to_string(iteration)+"_"+std::to_string(ieig+1)+
                       "_"+std::to_string(iens+1));
@@ -139,14 +143,16 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
     }
   } else {
     // modulate ensemble of obs
-    State4D_ xx_mean(ens_xx.mean());
-    IncrementEnsemble4D_ dx(ens_xx, xx_mean, xx_mean[0].variables());
-    IncrementEnsemble4D_ Ztmp(geometry_, xx_mean[0].variables(), ens_xx[0].validTimes(), neig_);
+    IncrementEnsemble4D_ dx(ens_xx, this->xbmean_, this->incvars_);
+    IncrementEnsemble4D_ Ztmp(geometry_, this->incvars_,
+                              ens_xx[0].validTimes(), neig_);
     size_t ii = 0;
     for (size_t iens = 0; iens < nens_; ++iens) {
+      Log::info() << " GETKFSolver::computeHofX starting ensemble member " << iens+1 << std::endl;
+      util::printRunStats("GETKFSolver calculate hofx");
       vertloc_.modulateIncrement(dx[iens], Ztmp);
       for (size_t ieig = 0; ieig < neig_; ++ieig) {
-        State4D_ tmpState = xx_mean;
+        State4D_ tmpState = this->xbmean_;
         tmpState += Ztmp[ieig];
         Observations_ tmpObs(this->obspaces_);
         eckit::LocalConfiguration config;
@@ -250,6 +256,9 @@ void GETKFSolver<MODEL, OBS>::measurementUpdate(const IncrementEnsemble4D_ & bkg
   Departures_ locvector(this->obspaces_);
   locvector.ones();
   this->obsloc().computeLocalization(i, locvector);
+  for (size_t iens = 0; iens < nanal_; ++iens) {
+     (this->invVarR_)->mask(this->HZb_[iens]);
+  }
   locvector.mask(*(this->invVarR_));
   Eigen::VectorXd local_omb_vec = this->omb_.packEigen(locvector);
 

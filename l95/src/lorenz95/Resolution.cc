@@ -9,6 +9,7 @@
  */
 
 #include "lorenz95/Resolution.h"
+
 #include <string>
 #include <vector>
 

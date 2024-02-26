@@ -35,7 +35,6 @@ class DiffStatesParameters : public ApplicationParameters {
 
  public:
   typedef typename Geometry<MODEL>::Parameters_ GeometryParameters_;
-  typedef typename State<MODEL>::Parameters_ StateParameters_;
   typedef typename Increment<MODEL>::WriteParameters_ IncrementWriteParameters_;
 
   /// State geometry parameters.
@@ -45,10 +44,10 @@ class DiffStatesParameters : public ApplicationParameters {
   RequiredParameter<GeometryParameters_> incGeometryConf{"increment geometry", this};
 
   /// First state parameters.
-  RequiredParameter<StateParameters_> stateConf1{"state1", this};
+  RequiredParameter<eckit::LocalConfiguration> stateConf1{"state1", this};
 
   /// Second state parameters (to take away from the first).
-  RequiredParameter<StateParameters_> stateConf2{"state2", this};
+  RequiredParameter<eckit::LocalConfiguration> stateConf2{"state2", this};
 
   /// Output increment parameters.
   RequiredParameter<IncrementWriteParameters_> outputConfig{"output", this};

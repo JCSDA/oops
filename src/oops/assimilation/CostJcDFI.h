@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2023, the Met Office
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -21,6 +22,7 @@
 #include "oops/base/DolphChebyshev.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
+#include "oops/base/NormBase.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/State.h"
@@ -31,6 +33,7 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/missingValues.h"
 
 namespace oops {
 
@@ -46,6 +49,7 @@ template<typename MODEL, typename OBS> class CostJcDFI : public CostTermBase<MOD
   typedef ControlVariable<MODEL, OBS>   CtrlVar_;
   typedef Geometry<MODEL>               Geometry_;
   typedef Increment<MODEL>              Increment_;
+  typedef NormBase<MODEL>               Norm_;
   typedef State<MODEL>                  State_;
   typedef PostProcessor<State_>         PostProc_;
   typedef PostProcessorTLAD<MODEL>      PostProcTLAD_;
@@ -61,6 +65,7 @@ template<typename MODEL, typename OBS> class CostJcDFI : public CostTermBase<MOD
 /// Nonlinear Jc DFI computation
   void setPostProc(const CtrlVar_ &, const eckit::Configuration &, PostProc_ &) override;
   double computeCost() override;
+  void printCostTestHack() override;
 
 /// Linearization trajectory for Jc DFI computation
   void setPostProcTraj(const CtrlVar_ &, const eckit::Configuration &,
@@ -94,7 +99,7 @@ template<typename MODEL, typename OBS> class CostJcDFI : public CostTermBase<MOD
  private:
   util::DateTime vt_;
   util::Duration span_;
-  double alpha_;
+  std::unique_ptr<Norm_> norm_;
   std::unique_ptr<WeightingFct> wfct_;
   std::unique_ptr<Increment_> gradFG_;
   const Geometry_ & resol_;
@@ -104,6 +109,7 @@ template<typename MODEL, typename OBS> class CostJcDFI : public CostTermBase<MOD
   mutable std::shared_ptr<WeightedDiff<MODEL, Increment_, State_> > filter_;
   mutable std::shared_ptr<WeightedDiffTLAD<MODEL> > ftlad_;
   Variables vars_;
+  double zhack_;
 };
 
 // =============================================================================
@@ -112,10 +118,18 @@ template<typename MODEL, typename OBS>
 CostJcDFI<MODEL, OBS>::CostJcDFI(const eckit::Configuration & conf, const Geometry_ & resol,
                                  const util::DateTime & vt, const util::Duration & span,
                                  const util::Duration & tstep)
-  : vt_(vt), span_(span), alpha_(0), wfct_(), gradFG_(),
-    resol_(resol), tstep_(tstep), tlres_(), tlstep_(), filter_(), vars_(conf, "filtered variables")
+  : vt_(vt), span_(span), norm_(), wfct_(), gradFG_(),
+    resol_(resol), tstep_(tstep), tlres_(), tlstep_(), filter_(),
+    vars_(conf, "filtered variables"), zhack_(util::missingValue<double>())
 {
-  alpha_ = conf.getDouble("alpha");
+  if (conf.has("norm type")) {
+    norm_.reset(NormFactory<MODEL>::create(conf));
+  } else {
+    eckit::LocalConfiguration tempConf;
+    tempConf.set("norm type", "Scalar");
+    if (conf.has("alpha")) tempConf.set("alpha", conf.getDouble("alpha"));
+    norm_.reset(NormFactory<MODEL>::create(tempConf));
+  }
   if (conf.has("ftime")) vt_ = util::DateTime(conf.getString("ftime"));
   if (conf.has("span")) span_ = util::Duration(conf.getString("span"));
 //  wfct_.reset(WeightFactory::create(config)); YT
@@ -137,12 +151,25 @@ void CostJcDFI<MODEL, OBS>::setPostProc(const CtrlVar_ &, const eckit::Configura
 
 template<typename MODEL, typename OBS>
 double CostJcDFI<MODEL, OBS>::computeCost() {
-  double zz = 0.5 * alpha_;
+  double zz = 0.5;
   std::unique_ptr<Increment_> dx(filter_->releaseDiff());
-  zz *= dot_product(*dx, *dx);
+  std::unique_ptr<Increment_> dxTemp(new Increment_(*dx));
+  norm_->multiplyMatrix(*dx);
+  zz *= dot_product(*dx, *dxTemp);
   Log::info() << "CostJcDFI: Nonlinear Jc = " << zz << std::endl;
-  Log::test() << "CostJcDFI: Nonlinear Jc = " << zz << std::endl;
+// TEMPORARY HACK START
+//  Log::test() << "CostJcDFI: Nonlinear Jc = " << zz << std::endl;
+  zhack_ = zz;
+// TEMPORARY HACK END
   return zz;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL, typename OBS>
+void CostJcDFI<MODEL, OBS>::printCostTestHack() {
+  Log::test() << "CostJcDFI: Nonlinear Jc = " << zhack_ << std::endl;
+  zhack_ = util::missingValue<double>();
 }
 
 // -----------------------------------------------------------------------------
@@ -161,7 +188,7 @@ void CostJcDFI<MODEL, OBS>::setPostProcTraj(const CtrlVar_ &, const eckit::Confi
 template<typename MODEL, typename OBS>
 void CostJcDFI<MODEL, OBS>::computeCostTraj() {
   gradFG_.reset(ftlad_->releaseDiff());
-  *gradFG_ *= alpha_;
+  norm_->multiplyMatrix(*gradFG_);
 }
 
 // -----------------------------------------------------------------------------
@@ -201,8 +228,7 @@ std::unique_ptr<GeneralizedDepartures>
 CostJcDFI<MODEL, OBS>::multiplyCovar(const GeneralizedDepartures & dv1) const {
   const Increment_ & dx1 = dynamic_cast<const Increment_ &>(dv1);
   std::unique_ptr<Increment_> dx2(new Increment_(dx1));
-  const double za = 1.0/alpha_;
-  *dx2 *= za;
+  norm_->multiplyMatrixInverse(*dx2);
   return std::move(dx2);
 }
 
@@ -213,7 +239,7 @@ std::unique_ptr<GeneralizedDepartures>
 CostJcDFI<MODEL, OBS>::multiplyCoInv(const GeneralizedDepartures & dv1) const {
   const Increment_ & dx1 = dynamic_cast<const Increment_ &>(dv1);
   std::unique_ptr<Increment_> dx2(new Increment_(dx1));
-  *dx2 *= alpha_;
+  norm_->multiplyMatrix(*dx2);
   return std::move(dx2);
 }
 

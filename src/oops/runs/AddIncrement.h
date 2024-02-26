@@ -52,20 +52,18 @@ class AddIncrementParameters : public ApplicationParameters {
  public:
   typedef typename Geometry_::Parameters_ GeometryParameters_;
   typedef IncrementParameters<MODEL> IncrementParameters_;
-  typedef typename State_::Parameters_ StateParameters_;
-  typedef typename State_::WriteParameters_ StateWriteParameters_;
 
   RequiredParameter<GeometryParameters_> stateGeometry{
     "state geometry", "State resolution", this};
   RequiredParameter<GeometryParameters_> incrementGeometry{
     "increment geometry", "Increment resolution", this};
 
-  RequiredParameter<StateParameters_> state{
+  RequiredParameter<eckit::LocalConfiguration> state{
     "state", "State to be incremented", this};
   RequiredParameter<IncrementParameters_> increment{
     "increment", "Increment to add to state", this};
 
-  RequiredParameter<StateWriteParameters_> output{
+  RequiredParameter<eckit::LocalConfiguration> output{
     "output", "Where to write the output", this};
 };
 
@@ -120,7 +118,7 @@ template <typename MODEL> class AddIncrement : public Application {
     xx += dx;
 
 //  Write state
-    xx.write(params.output);
+    xx.write(eckit::LocalConfiguration(fullConfig, "output"));
 
     Log::test() << "State plus increment: " << xx << std::endl;
 

@@ -32,6 +32,7 @@
 #include "oops/util/missingValues.h"
 #include "oops/util/Random.h"
 #include "oops/util/stringFunctions.h"
+#include "oops/util/TimeWindow.h"
 
 namespace sf = util::stringfunctions;
 
@@ -39,24 +40,25 @@ namespace sf = util::stringfunctions;
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
 
-ObsTable::ObsTable(const Parameters_ & params, const eckit::mpi::Comm & comm,
-                   const util::DateTime & bgn, const util::DateTime & end,
+ObsTable::ObsTable(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
+                   const util::TimeWindow & timeWindow,
                    const eckit::mpi::Comm & timeComm)
-  : oops::ObsSpaceBase(params, comm, bgn, end), winbgn_(bgn), winend_(end), comm_(timeComm),
-    obsvars_(), assimvars_()
+  : oops::ObsSpaceBase(config, comm, timeWindow), comm_(timeComm),
+    timeWindow_(timeWindow), obsvars_(), assimvars_()
 {
   oops::Log::trace() << "ObsTable::ObsTable starting" << std::endl;
-  if (params.obsdatain.value() != boost::none) {
-    nameIn_ = params.obsdatain.value()->engine.value().obsfile;
+  if (config.has("obsdatain")) {
+    nameIn_ = config.getString("obsdatain.obsfile");
     otOpen(nameIn_);
   }
   //  Generate locations etc... if required
-  if (params.generate.value() != boost::none) {
-    generateDistribution(*params.generate.value());
+  if (config.has("generate")) {
+    const eckit::LocalConfiguration gconf(config, "generate");
+    generateDistribution(gconf);
   }
-  if (params.obsdataout.value() != boost::none) {
-    nameOut_ = params.obsdataout.value()->engine.value().obsfile;
-    sf::swapNameMember(params.toConfiguration(), nameOut_);
+  if (config.has("obsdataout")) {
+    nameOut_ = config.getString("obsdataout.obsfile");
+    sf::swapNameMember(config, nameOut_);
   }
   oops::Log::trace() << "ObsTable::ObsTable created nobs = " << nobs() << std::endl;
 }
@@ -83,8 +85,8 @@ bool ObsTable::has(const std::string & col) const {
 
 void ObsTable::putdb(const std::string & col, const std::vector<int> & vec) const {
   std::vector<double> tmp(vec.size());
-  int intmiss = util::missingValue(int());
-  double doublemiss = util::missingValue(double());
+  const int intmiss = util::missingValue<int>();
+  const double doublemiss = util::missingValue<double>();
   for (size_t jobs = 0; jobs < vec.size(); ++jobs) {
     if (vec[jobs] == intmiss) {
       tmp[jobs] = doublemiss;
@@ -99,8 +101,8 @@ void ObsTable::putdb(const std::string & col, const std::vector<int> & vec) cons
 
 void ObsTable::putdb(const std::string & col, const std::vector<float> & vec) const {
   std::vector<double> tmp(vec.size());
-  float floatmiss = util::missingValue(float());
-  double doublemiss = util::missingValue(double());
+  const float floatmiss = util::missingValue<float>();
+  const double doublemiss = util::missingValue<double>();
   for (size_t jobs = 0; jobs < vec.size(); ++jobs) {
     if (vec[jobs] == floatmiss) {
       tmp[jobs] = doublemiss;
@@ -128,8 +130,8 @@ void ObsTable::putdb(const std::string & col, const std::vector<double> & vec) c
 void ObsTable::getdb(const std::string & col, std::vector<int> & vec) const {
   std::vector<double> tmp;
   this->getdb(col, tmp);
-  int intmiss = util::missingValue(int());
-  double doublemiss = util::missingValue(double());
+  const int intmiss = util::missingValue<int>();
+  const double doublemiss = util::missingValue<double>();
   vec.resize(nobs());
   for (size_t jobs = 0; jobs < nobs(); ++jobs) {
     if (tmp[jobs] == doublemiss) {
@@ -145,8 +147,8 @@ void ObsTable::getdb(const std::string & col, std::vector<int> & vec) const {
 void ObsTable::getdb(const std::string & col, std::vector<float> & vec) const {
   std::vector<double> tmp;
   this->getdb(col, tmp);
-  float floatmiss = util::missingValue(float());
-  double doublemiss = util::missingValue(double());
+  const float floatmiss = util::missingValue<float>();
+  const double doublemiss = util::missingValue<double>();
   vec.resize(nobs());
   for (size_t jobs = 0; jobs < nobs(); ++jobs) {
     if (tmp[jobs] == doublemiss) {
@@ -173,22 +175,22 @@ void ObsTable::getdb(const std::string & col, std::vector<double> & vec) const {
 
 // -----------------------------------------------------------------------------
 
-void ObsTable::generateDistribution(const ObsGenerateParameters & params) {
+void ObsTable::generateDistribution(const eckit::Configuration & config) {
   oops::Log::trace() << "ObsTable::generateDistribution starting" << std::endl;
 
-  const util::Duration &freq = params.obsFrequency;
+  const util::Duration freq(config.getString("obs_frequency"));
 
   int nobstimes = 0;
   // observations at the beginning of the window are never included (only
   // observations from (winbgn, winend] are used, so we'll start with
   // winbgn_ + freq
-  util::DateTime now = winbgn_ + freq;
-  while (now <= winend_) {
+  util::DateTime now = timeWindow_.start() + freq;
+  while (now <= timeWindow_.end()) {
     ++nobstimes;
     now += freq;
   }
 
-  const unsigned int nobs_locations = params.obsDensity;
+  const unsigned int nobs_locations = config.getInt("obs_density");
   const unsigned int nobs = nobs_locations*nobstimes;
   double dx = 1.0/static_cast<double>(nobs_locations);
 
@@ -196,8 +198,8 @@ void ObsTable::generateDistribution(const ObsGenerateParameters & params) {
   locations_.resize(nobs);
 
   unsigned int iobs = 0;
-  now = winbgn_ + freq;
-  while (now <= winend_) {
+  now = timeWindow_.start() + freq;
+  while (now <= timeWindow_.end()) {
     for (unsigned int jobs = 0; jobs < nobs_locations; ++jobs) {
       double xpos = jobs*dx;
       // For single obs case ensure the obs is in the middle
@@ -211,7 +213,7 @@ void ObsTable::generateDistribution(const ObsGenerateParameters & params) {
   ASSERT(iobs == nobs);
 
 // Generate obs error
-  const double err = params.obsError;
+  const double err = config.getDouble("obs_error");
   std::vector<double> obserr(nobs);
   for (unsigned int jj = 0; jj < nobs; ++jj) {
     obserr[jj] = err;
@@ -263,7 +265,7 @@ void ObsTable::otOpen(const std::string & filename) {
     std::string sss;
     fin >> sss;
     util::DateTime ttt(sss);
-    bool inside = ttt > winbgn_ && ttt <= winend_;
+    bool inside = ttt > timeWindow_.start() && ttt <= timeWindow_.end();
 
     if (inside) times_.push_back(ttt);
     double loc;
@@ -349,7 +351,7 @@ ObsIterator ObsTable::end() const {
 // -----------------------------------------------------------------------------
 
 void ObsTable::print(std::ostream & os) const {
-  os << "ObsTable: assimilation window = " << winbgn_ << " to " << winend_ << std::endl;
+  os << "ObsTable: assimilation window = " << timeWindow_ << std::endl;
   os << "ObsTable: file in = " << nameIn_ << ", file out = " << nameOut_;
 }
 

@@ -1,7 +1,8 @@
 cost function:
   cost type: 4D-Var
-  window begin: 2010-01-01T00:00:00Z
-  window length: PT24H
+  time window:
+    begin: 2010-01-01T00:00:00Z
+    length: PT24H
   analysis variables: [x]
   geometry:
     nx: 40
@@ -27,11 +28,9 @@ cost function:
         obs type: Stream
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/truth.obs4d_24h.nc
+          obsfile: Data/truth.obs4d_24h.nc
         obsdataout:
-          engine:
-            obsfile: Data/4dvar_drpfom.obs4d_24h.nc
+          obsfile: Data/4dvar_drpfom.obs4d_24h.nc
         obs type: Stream
     - obs error:
         covariance model: diagonal
@@ -39,11 +38,9 @@ cost function:
         obs type: Wind
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/truth.obs4d_24h.nc
+          obsfile: Data/truth.obs4d_24h.nc
         obsdataout:
-          engine:
-            obsfile: Data/4dvar_drpfom.obs4d_24h.nc
+          obsfile: Data/4dvar_drpfom.obs4d_24h.nc
         obs type: Wind
     - obs error:
         covariance model: diagonal
@@ -51,11 +48,9 @@ cost function:
         obs type: WSpeed
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/truth.obs4d_24h.nc
+          obsfile: Data/truth.obs4d_24h.nc
         obsdataout:
-          engine:
-            obsfile: Data/4dvar_drpfom.obs4d_24h.nc
+          obsfile: Data/4dvar_drpfom.obs4d_24h.nc
         obs type: WSpeed
   constraints:
   - jcdfi:

@@ -1,0 +1,117 @@
+cost function:
+  cost type: 4D-Ens-Var
+  time window:
+    begin: 2010-01-01T00:00:00Z
+    length: PT12H
+  subwindow: PT1H
+  analysis variables: [x]
+  background:
+    states:
+    - date: 2010-01-01T00:00:00Z
+      filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D.nc
+    - date: 2010-01-01T01:00:00Z
+      filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT1H.nc
+    - date: 2010-01-01T02:00:00Z
+      filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT2H.nc
+    - date: 2010-01-01T03:00:00Z
+      filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT3H.nc
+    - date: 2010-01-01T04:00:00Z
+      filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT4H.nc
+    - date: 2010-01-01T05:00:00Z
+      filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT5H.nc
+    - date: 2010-01-01T06:00:00Z
+      filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT6H.nc
+    - date: 2010-01-01T00:00:00Z
+      filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT7H.nc
+    - date: 2010-01-01T01:00:00Z
+      filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT8H.nc
+    - date: 2010-01-01T02:00:00Z
+      filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT9H.nc
+    - date: 2010-01-01T03:00:00Z
+      filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT10H.nc
+    - date: 2010-01-01T04:00:00Z
+      filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT11H.nc
+    - date: 2010-01-01T05:00:00Z
+      filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H.nc
+  background error:
+    covariance model: ensemble
+    localization:
+      communication mode: aggressive
+      horizontal_length_scale: 2.0e6
+      localization method: QG
+      maximum_condition_number: 1.0e6
+      standard_deviation: 1.0
+      vertical_length_scale: 3694.0
+    members from template:
+      template:
+        states:
+        - date: 2010-01-01T00:00:00Z
+          filename: Data/forecast.ens.%mem%.2009-12-31T00:00:00Z.P1D.nc
+        - date: 2010-01-01T01:00:00Z
+          filename: Data/forecast.ens.%mem%.2009-12-31T00:00:00Z.P1DT1H.nc
+        - date: 2010-01-01T02:00:00Z
+          filename: Data/forecast.ens.%mem%.2009-12-31T00:00:00Z.P1DT2H.nc
+        - date: 2010-01-01T03:00:00Z
+          filename: Data/forecast.ens.%mem%.2009-12-31T00:00:00Z.P1DT3H.nc
+        - date: 2010-01-01T04:00:00Z
+          filename: Data/forecast.ens.%mem%.2009-12-31T00:00:00Z.P1DT4H.nc
+        - date: 2010-01-01T05:00:00Z
+          filename: Data/forecast.ens.%mem%.2009-12-31T00:00:00Z.P1DT5H.nc
+        - date: 2010-01-01T06:00:00Z
+          filename: Data/forecast.ens.%mem%.2009-12-31T00:00:00Z.P1DT6H.nc
+        - date: 2010-01-01T07:00:00Z
+          filename: Data/forecast.ens.%mem%.2009-12-31T00:00:00Z.P1DT7H.nc
+        - date: 2010-01-01T08:00:00Z
+          filename: Data/forecast.ens.%mem%.2009-12-31T00:00:00Z.P1DT8H.nc
+        - date: 2010-01-01T09:00:00Z
+          filename: Data/forecast.ens.%mem%.2009-12-31T00:00:00Z.P1DT9H.nc
+        - date: 2010-01-01T10:00:00Z
+          filename: Data/forecast.ens.%mem%.2009-12-31T00:00:00Z.P1DT10H.nc
+        - date: 2010-01-01T11:00:00Z
+          filename: Data/forecast.ens.%mem%.2009-12-31T00:00:00Z.P1DT11H.nc
+        - date: 2010-01-01T12:00:00Z
+          filename: Data/forecast.ens.%mem%.2009-12-31T00:00:00Z.P1DT12H.nc
+      pattern: %mem%
+      nmembers: 10
+  observations:
+    observers:
+    - obs error:
+        covariance model: diagonal
+      obs operator:
+        obs type: Stream
+      obs space:
+        obsdatain:
+          obsfile: Data/truth.single-obs4d_12h.nc
+        obsdataout:
+          obsfile: Data/4densvar_single-obs_loc_4d_aggressive.obs.nc
+        obs type: Stream
+  geometry: &geom
+    nx: 40
+    ny: 20
+    depths: [4500.0, 5500.0]
+variational:
+  minimizer:
+    algorithm: PCG
+  iterations:
+  - gradient norm reduction: 1.0e-10
+    ninner: 1
+    geometry: *geom
+final:
+  increment:
+    geometry: *geom
+    output:
+      state component:
+        datadir: Data
+        date: 2010-01-01T12:00:00Z
+        exp: 4densvar_single-obs_loc_4d_aggressive.increment
+        type: in
+        analysis variables: [x]
+output:
+  datadir: Data
+  exp: forecast
+  first: PT0S
+  frequency: PT6H
+  type: an
+
+test:
+  reference filename: testoutput/4densvar_single-obs_loc_4d.test

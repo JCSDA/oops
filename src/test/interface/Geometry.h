@@ -22,6 +22,7 @@
 #include "oops/base/Geometry.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
+#include "oops/util/FieldSetHelpers.h"
 #include "oops/util/Logger.h"
 #include "test/interface/GeometryFixture.h"
 #include "test/TestEnvironment.h"
@@ -42,6 +43,50 @@ template <typename MODEL> void testConstructor() {
 }
 
 // -----------------------------------------------------------------------------
+/// \brief Tests constructor and print method
+template <typename MODEL> void testAtlasInterface() {
+  typedef oops::Geometry<MODEL>        Geometry_;
+
+  const bool testAtlas = TestEnvironment::config().getBool("test atlas interface", true);
+  if (!testAtlas) { return; }
+
+  std::unique_ptr<Geometry_> geom(new Geometry_(GeometryFixture<MODEL>::getParameters(),
+                                                oops::mpi::world(), oops::mpi::myself()));
+
+  // Test FunctionSpace
+  const atlas::FunctionSpace & functionspace = geom->functionSpace();
+  EXPECT(functionspace.type() != "PointCloud");  // expect FunctionSpace has a Mesh
+
+  // Use the FunctionSpace
+  const std::string uid = util::getGridUid(functionspace);
+
+  // Test geometry FieldSet
+  const atlas::Field & lonlat = functionspace.lonlat();
+  const atlas::FieldSet & fset = geom->fields();
+
+  // Fields have consistent size and associated FunctionSpace
+  EXPECT(fset.size() >= 1);  // should have at least the "owned" field
+  for (atlas::idx_t i = 0; i < fset.size(); ++i) {
+    EXPECT(fset[i].rank() == 2);
+    EXPECT(fset[i].shape(0) == lonlat.shape(0));
+    EXPECT(fset[i].functionspace() == functionspace);
+  }
+
+  EXPECT(fset.has("owned"));
+  EXPECT(fset.field("owned").shape(1) == 1);
+  EXPECT(fset.field("owned").datatype() == atlas::array::DataType::create<int>());
+
+  if (fset.has("area")) {
+    EXPECT(fset.field("area").shape(1) == 1);
+    EXPECT(fset.field("area").datatype() == atlas::array::DataType::create<double>());
+  }
+  if (fset.has("vert_coord")) {
+    EXPECT(fset.field("vert_coord").shape(1) >= 1);
+    EXPECT(fset.field("vert_coord").datatype() == atlas::array::DataType::create<double>());
+  }
+}
+
+// -----------------------------------------------------------------------------
 template <typename MODEL> class Geometry : public oops::Test {
  public:
   Geometry() {}
@@ -54,6 +99,8 @@ template <typename MODEL> class Geometry : public oops::Test {
 
     ts.emplace_back(CASE("interface/Geometry/testConstructor")
       { testConstructor<MODEL>(); });
+    ts.emplace_back(CASE("interface/Geometry/testAtlasInterface")
+      { testAtlasInterface<MODEL>(); });
   }
 
   void clear() const override {}

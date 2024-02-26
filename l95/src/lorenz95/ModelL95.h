@@ -20,8 +20,6 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 #include "oops/util/Printable.h"
 
 #include "lorenz95/L95Traits.h"
@@ -35,26 +33,12 @@ namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
 
-class ModelL95Parameters : public oops::ModelParametersBase {
-  OOPS_CONCRETE_PARAMETERS(ModelL95Parameters, ModelParametersBase)
-
- public:
-  oops::RequiredParameter<util::Duration> tstep{"tstep", this};
-  oops::RequiredParameter<double> f{"f", this};
-};
-
-/// Lorenz 95 model configuration and computations.
-
-// -----------------------------------------------------------------------------
-
 class ModelL95 : public oops::interface::ModelBase<L95Traits>,
                  private util::ObjectCounter<ModelL95> {
  public:
-  typedef ModelL95Parameters Parameters_;
-
   static const std::string classname() {return "lorenz95::ModelL95";}
 
-  ModelL95(const Resolution &, const ModelL95Parameters &);
+  ModelL95(const Resolution &, const eckit::Configuration &);
   ~ModelL95();
 
 // Run the forecast

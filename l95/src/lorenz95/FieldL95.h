@@ -15,41 +15,17 @@
 #include <string>
 #include <vector>
 
-#include "oops/util/parameters/OptionalParameter.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Serializable.h"
 
+namespace eckit {
+  class Configuration;
+}
+
 namespace lorenz95 {
 // Forward declarations
-  class LocsL95;
   class GomL95;
   class Resolution;
-
-// -----------------------------------------------------------------------------
-/// \brief Parameters passed to the FieldL95::dirac() method.
-class FieldL95DiracParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(FieldL95DiracParameters, Parameters)
-
- public:
-  /// \brief Indices of grid nodes where the field is to be set to 1. It will be set to 0
-  /// everywhere else.
-  oops::RequiredParameter<std::vector<int>> ixdir{"ixdir", this};
-};
-
-// -----------------------------------------------------------------------------
-/// \brief Parameters accepted by FieldL95::generate().
-class Field95GenerateParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(Field95GenerateParameters, Parameters)
-
- public:
-  oops::OptionalParameter<double> mean{"mean", this};
-  oops::OptionalParameter<double> sinus{"sinus", this};
-  oops::OptionalParameter<int> dirac{"dirac", this};
-  /// Currently unused, but included for compatibility with AnalyticInitParameters.
-  oops::OptionalParameter<std::string> method{"method", this};
-};
 
 // -----------------------------------------------------------------------------
 /// Class to represent fields for the L95 model
@@ -67,7 +43,7 @@ class FieldL95 : public util::Printable,
 /// Linear algebra
   void zero();
   void ones();
-  void dirac(const FieldL95DiracParameters &);
+  void dirac(const eckit::Configuration &);
   FieldL95 & operator=(const FieldL95 &);
   FieldL95 & operator+=(const FieldL95 &);
   FieldL95 & operator-=(const FieldL95 &);
@@ -76,8 +52,8 @@ class FieldL95 : public util::Printable,
   void axpy(const double &, const FieldL95 &);
   double dot_product_with(const FieldL95 &) const;
   void schur(const FieldL95 &);
-  void random();
-  void generate(const Field95GenerateParameters &);
+  void random(const size_t &);
+  void generate(const eckit::Configuration &);
 
 /// Utilities
   void read(std::ifstream &);

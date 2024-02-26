@@ -18,26 +18,24 @@
 #include <sstream>
 #include <string>
 
+#include "eckit/config/LocalConfiguration.h"
 #include "model/ObsBiasIncrement.h"
 #include "model/ObsBiasPreconditioner.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Random.h"
 
-
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
-ObsBiasCovariance::ObsBiasCovariance(const ObsSpaceQG &, const Parameters_ & params)
-{
+ObsBiasCovariance::ObsBiasCovariance(const ObsSpaceQG &, const eckit::Configuration & conf) {
+  const eckit::LocalConfiguration covconf = conf.getSubConfiguration("covariance");
+
   std::array<double, ObsBias::ntypes> zz;
   zz.fill(0.0);
-  if (params.covariance.value() != boost::none) {
-    const ObsBiasCovarianceParameters& covparams = *params.covariance.value();
-    if (covparams.stream.value() != boost::none) zz[0] = *covparams.stream.value();
-    if (covparams.uwind.value() != boost::none)  zz[1] = *covparams.uwind.value();
-    if (covparams.vwind.value() != boost::none)  zz[2] = *covparams.vwind.value();
-    if (covparams.wspeed.value() != boost::none) zz[3] = *covparams.wspeed.value();
-  }
+  if (covconf.has("stream")) zz[0] = covconf.getDouble("stream");
+  if (covconf.has("uwind"))  zz[1] = covconf.getDouble("uwind");
+  if (covconf.has("vwind"))  zz[2] = covconf.getDouble("vwind");
+  if (covconf.has("wspeed")) zz[3] = covconf.getDouble("wspeed");
   std::string strn = "";
   for (unsigned int jj = 0; jj < ObsBias::ntypes; ++jj) {
     if (jj > 0) strn += ", ";

@@ -17,8 +17,6 @@
 #include <sstream>
 #include <string>
 
-#include "eckit/exception/Exceptions.h"
-
 namespace util {
 
 // -----------------------------------------------------------------------------
@@ -256,18 +254,6 @@ void Duration::operator-=(const Duration & other) {
 
 // -----------------------------------------------------------------------------
 
-void Duration::operator*=(const int kk) {
-  seconds_ *= kk;
-}
-
-// -----------------------------------------------------------------------------
-
-void Duration::operator/=(const int kk) {
-  seconds_ /= kk;
-}
-
-// -----------------------------------------------------------------------------
-
 Duration operator+ (const Duration & d1, const Duration & d2) {
   Duration sum(d1);
   sum += d2;
@@ -281,31 +267,5 @@ Duration operator- (const Duration & d1, const Duration & d2) {
   sum -= d2;
   return sum;
 }
-
-// -----------------------------------------------------------------------------
-
-Duration operator* (const int kk, const Duration & dd) {
-  Duration res(dd);
-  res *= kk;
-  return res;
-}
-
-// -----------------------------------------------------------------------------
-
-Duration operator* (const Duration & dd, const int kk) {
-  Duration res(dd);
-  res *= kk;
-  return res;
-}
-
-// -----------------------------------------------------------------------------
-
-Duration operator/ (const Duration & dd, const int kk) {
-  Duration res(dd);
-  res /= kk;
-  return res;
-}
-
-// -----------------------------------------------------------------------------
 
 }  // namespace util

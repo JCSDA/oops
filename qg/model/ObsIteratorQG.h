@@ -22,11 +22,16 @@
 namespace qg {
 
 /// Iterator over all observations
-class ObsIteratorQG: public std::iterator<std::forward_iterator_tag,
-                                       eckit::geometry::Point3>,
+class ObsIteratorQG:
                    public util::Printable,
                    private util::ObjectCounter<ObsIteratorQG> {
  public:
+  typedef ptrdiff_t difference_type;
+  typedef std::forward_iterator_tag iterator_catergory;
+  typedef eckit::geometry::Point3 value_type;
+  typedef eckit::geometry::Point3& reference;
+  typedef eckit::geometry::Point3* pointer;
+
   static const std::string classname() {return "qg::ObsIteratorQG";}
 
   ObsIteratorQG(const ObsIteratorQG &);
@@ -34,10 +39,9 @@ class ObsIteratorQG: public std::iterator<std::forward_iterator_tag,
 
   bool operator==(const ObsIteratorQG &) const;
   bool operator!=(const ObsIteratorQG &) const;
-
   /// return location of current observation
   eckit::geometry::Point3 operator*() const;
-
+  // pre-increment operator
   ObsIteratorQG& operator++();
 
  private:

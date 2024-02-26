@@ -7,11 +7,11 @@
 
 #include "model/QgTraits.h"
 #include "oops/runs/Run.h"
-#include "test/interface/Locations.h"
+#include "test/interface/SampledLocations.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  test::Locations<qg::QgObsTraits> tests;
+  test::SampledLocations<qg::QgObsTraits> tests;
   return run.execute(tests);
 }
 
