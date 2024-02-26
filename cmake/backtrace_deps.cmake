@@ -117,7 +117,7 @@ message( STATUS "Using this provider for stacktraces: ${OOPS_STACKTRACE_PROVIDER
 
 # Small bit of extra logic to ensure that libbacktrace always is linked wherever necessary.
 # See src/CMakeLists.txt for usage.
-if (STACKTRACE_PROVIDER MATCHES "backtrace")
+if (OOPS_STACKTRACE_PROVIDER MATCHES "backtrace")
 	if (backtrace_is_static)
 		add_library(backtrace STATIC IMPORTED)
 	else()

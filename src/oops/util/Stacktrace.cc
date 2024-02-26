@@ -9,6 +9,10 @@
 #  include <boost/stacktrace.hpp>
 #endif
 
+#include <iostream>
+#include <sstream>
+#include <string>
+
 #include "oops/util/Stacktrace.h"
 
 namespace util {

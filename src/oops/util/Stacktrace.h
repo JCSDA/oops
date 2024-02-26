@@ -15,7 +15,7 @@
 namespace util {
 
 /// @brief This is a basic backport of C++23's stacktrace feature using boost.
-///   The boost code is wrapped in an opaque structure that is hidden from the rest of the system.
+/// @returns A string with the current stacktrace.
 std::string stacktrace_current();
 
 }  // namespace util
