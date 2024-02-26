@@ -7,8 +7,7 @@ observations:
     covariance model: diagonal
   obs space:
     obsdatain:
-      engine:
-        obsfile: Data/truth.obs4d_24h.nc
+      obsfile: Data/truth.obs4d_24h.nc
     obs type: Stream
   obs bias:
     stream: -10.0
@@ -21,8 +20,7 @@ observations:
     covariance model: diagonal
   obs space:
     obsdatain:
-      engine:
-        obsfile: Data/truth.obs4d_24h.nc
+      obsfile: Data/truth.obs4d_24h.nc
     obs type: Wind
   obs bias:
     uwind: 10.0
@@ -35,6 +33,5 @@ observations:
     covariance model: diagonal
   obs space:
     obsdatain:
-      engine:
-        obsfile: Data/truth.obs4d_24h.nc
+      obsfile: Data/truth.obs4d_24h.nc
     obs type: WSpeed

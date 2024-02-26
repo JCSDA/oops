@@ -59,8 +59,6 @@ class GeoVaLs : public util::Printable,
   using MatrixRef = Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>>;
 
  public:
-  typedef typename GeoVaLs_::Parameters_ Parameters_;
-
   static const std::string classname() {return "oops::GeoVaLs";}
 
   /// \brief Allocate GeoVaLs to store variables \p vars interpolated along sets of paths sampling
@@ -85,7 +83,7 @@ class GeoVaLs : public util::Printable,
   ///   Observation space.
   /// \brief vars
   ///   Names of the variables whose values should be loaded.
-  GeoVaLs(const Parameters_ & params, const ObsSpace_ & obspace, const Variables & vars);
+  GeoVaLs(const eckit::Configuration &, const ObsSpace_ & obspace, const Variables & vars);
   GeoVaLs(const GeoVaLs &);
 
   ~GeoVaLs();
@@ -105,8 +103,8 @@ class GeoVaLs : public util::Printable,
   GeoVaLs & operator-=(const GeoVaLs &);
   GeoVaLs & operator*=(const GeoVaLs &);
   double dot_product_with(const GeoVaLs &) const;
-  void read(const Parameters_ &);
-  void write(const Parameters_ &) const;
+  void read(const eckit::Configuration &);
+  void write(const eckit::Configuration &) const;
 
   /// \brief Set the values of a given variable along specified interpolation paths.
   ///
@@ -146,12 +144,12 @@ GeoVaLs<OBS>::GeoVaLs(const Locations_ & locations, const Variables & vars,
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-  GeoVaLs<OBS>::GeoVaLs(const Parameters_ & params,
+  GeoVaLs<OBS>::GeoVaLs(const eckit::Configuration & config,
                         const ObsSpace_ & ospace, const Variables & vars)
   : gvals_() {
   Log::trace() << "GeoVaLs<OBS>::GeoVaLs read starting" << std::endl;
   util::Timer timer(classname(), "GeoVaLs");
-  gvals_.reset(new GeoVaLs_(params, ospace.obsspace(), vars));
+  gvals_.reset(new GeoVaLs_(config, ospace.obsspace(), vars));
   Log::trace() << "GeoVaLs<OBS>::GeoVaLs read done" << std::endl;
 }
 
@@ -312,20 +310,20 @@ void GeoVaLs<OBS>::fillAD(const std::string & name,
 // -----------------------------------------------------------------------------
 
 template<typename OBS>
-void GeoVaLs<OBS>::read(const Parameters_ & params) {
+void GeoVaLs<OBS>::read(const eckit::Configuration & config) {
   Log::trace() << "GeoVaLs<OBS>::read starting" << std::endl;
   util::Timer timer(classname(), "read");
-  gvals_->read(params);
+  gvals_->read(config);
   Log::trace() << "GeoVaLs<OBS>::read done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename OBS>
-void GeoVaLs<OBS>::write(const Parameters_ & params) const {
+void GeoVaLs<OBS>::write(const eckit::Configuration & config) const {
   Log::trace() << "GeoVaLs<OBS>::write starting" << std::endl;
   util::Timer timer(classname(), "write");
-  gvals_->write(params);
+  gvals_->write(config);
   Log::trace() << "GeoVaLs<OBS>::write done" << std::endl;
 }
 

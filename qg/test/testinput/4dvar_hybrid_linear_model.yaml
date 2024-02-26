@@ -29,11 +29,9 @@ cost function:
         obs type: Stream
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/truth_5level_pert_heat.obs4d_24h.nc
+          obsfile: Data/truth_5level_pert_heat.obs4d_24h.nc
         obsdataout:
-          engine:
-            obsfile: Data/4dvar_hybrid_linear_model.obs4d_24h.nc
+          obsfile: Data/4dvar_hybrid_linear_model.obs4d_24h.nc
         obs type: Stream
     - obs error:
         covariance model: diagonal
@@ -41,11 +39,9 @@ cost function:
         obs type: Wind
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/truth_5level_pert_heat.obs4d_24h.nc
+          obsfile: Data/truth_5level_pert_heat.obs4d_24h.nc
         obsdataout:
-          engine:
-            obsfile: Data/4dvar_hybrid_linear_model.obs4d_24h.nc
+          obsfile: Data/4dvar_hybrid_linear_model.obs4d_24h.nc
         obs type: Wind
     - obs error:
         covariance model: diagonal
@@ -53,11 +49,9 @@ cost function:
         obs type: WSpeed
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/truth_5level_pert_heat.obs4d_24h.nc
+          obsfile: Data/truth_5level_pert_heat.obs4d_24h.nc
         obsdataout:
-          engine:
-            obsfile: Data/4dvar_hybrid_linear_model.obs4d_24h.nc
+          obsfile: Data/4dvar_hybrid_linear_model.obs4d_24h.nc
         obs type: WSpeed
   constraints:
   - jcdfi:

@@ -16,6 +16,8 @@
 #include <iomanip>
 #include <limits>
 
+#include "eckit/config/Configuration.h"
+
 #include "lorenz95/L95Traits.h"
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/ObsTable.h"
@@ -39,10 +41,10 @@ GomL95::GomL95(const oops::Locations<L95ObsTraits> & locs,
 }
 // -----------------------------------------------------------------------------
 /*! Constructor with Configuration */
-GomL95::GomL95(const Parameters_ & params, const ObsTable &, const oops::Variables &)
+GomL95::GomL95(const eckit::Configuration & conf, const ObsTable &, const oops::Variables &)
   : size_(0), locval_()
 {
-  this->read(params);
+  this->read(conf);
 }
 // -----------------------------------------------------------------------------
 GomL95 & GomL95::operator*=(const double & zz) {
@@ -109,8 +111,8 @@ void GomL95::fillAD(const std::string &, const ConstVectorRef<size_t> &indx,
   for (Eigen::Index jj = 0; jj < indx.size(); ++jj) vals(jj, 0) += locval_[indx[jj]];
 }
 // -----------------------------------------------------------------------------
-void GomL95::read(const Parameters_ & params) {
-  const std::string & filename = params.filename;
+void GomL95::read(const eckit::Configuration & conf) {
+  const std::string filename(conf.getString("filename"));
   oops::Log::trace() << "GomL95::read opening " << filename << std::endl;
   std::ifstream fin(filename.c_str());
   if (!fin.is_open()) ABORT("GomL95::read: Error opening file: " + filename);
@@ -129,8 +131,8 @@ void GomL95::read(const Parameters_ & params) {
   oops::Log::trace() << "GomL95::read: file closed." << std::endl;
 }
 // -----------------------------------------------------------------------------
-void GomL95::write(const Parameters_ & params) const {
-  const std::string & filename = params.filename;
+void GomL95::write(const eckit::Configuration & conf) const {
+  const std::string filename(conf.getString("filename"));
   oops::Log::trace() << "GomL95::write opening " << filename << std::endl;
   std::ofstream fout(filename.c_str());
   if (!fout.is_open()) ABORT("GomL95::write: Error opening file: " + filename);

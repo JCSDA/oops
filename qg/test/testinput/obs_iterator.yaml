@@ -7,8 +7,7 @@ observations:
     covariance model: diagonal
   obs space:
     obsdatain:
-      engine:
-        obsfile: Data/truth.obs4d_24h.nc
+      obsfile: Data/truth.obs4d_24h.nc
     obs type: Stream
   obs iterator test:
     tolerance: 1.0e-6
@@ -21,8 +20,7 @@ observations:
     covariance model: diagonal
   obs space:
     obsdatain:
-      engine:
-        obsfile: Data/truth.obs4d_24h.nc
+      obsfile: Data/truth.obs4d_24h.nc
     obs type: Wind
   obs iterator test:
     tolerance: 1.0e-6
@@ -35,8 +33,7 @@ observations:
     covariance model: diagonal
   obs space:
     obsdatain:
-      engine:
-        obsfile: Data/truth.obs4d_24h.nc
+      obsfile: Data/truth.obs4d_24h.nc
     obs type: WSpeed
   obs iterator test:
     tolerance: 1.0e-6

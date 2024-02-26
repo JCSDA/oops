@@ -16,48 +16,15 @@
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include "eckit/testing/Test.h"
-#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/runs/Test.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
-#include "oops/util/parameters/IgnoreOtherParameters.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 #include "test/interface/ObsTestsFixture.h"
 #include "test/TestEnvironment.h"
 
 namespace test {
-
-/// \brief Parameters controlling some of the GeoVaLs test options
-template <typename OBS>
-class GeoVaLsTestOptionsParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(GeoVaLsTestOptionsParameters, Parameters)
- public:
-  oops::RequiredParameter<oops::Variables> vars{"state variables",
-                         "variables for GeoVaLs", this};
-  oops::RequiredParameter<double> refnorm{"norm",
-                         "reference norm for the GeoVaLs test", this};
-};
-
-/// \brief Parameters loaded from the input YAML file and used by GeoVaLs test
-template <typename OBS>
-class GeoVaLsTestParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(GeoVaLsTestParameters, Parameters)
-
- public:
-  typedef typename oops::GeoVaLs<OBS>::Parameters_ GeoVaLsParameters_;
-
-  oops::RequiredParameter<GeoVaLsParameters_> geovals{"geovals",
-                         "Group of parameters controlling the tested geovals", this};
-  oops::RequiredParameter<GeoVaLsTestOptionsParameters<OBS>> geovalstest{"geovals test",
-                         "Group of parameters controlling test options", this};
-  /// \brief Don't treat the presence of other parameter groups as an error (this makes it
-  /// possible to reuse a single YAML file in tests of implementations of multiple oops interfaces).
-  oops::IgnoreOtherParameters ignoreOthers{this};
-};
-
 
 // -----------------------------------------------------------------------------
 /// \brief Tests test-constructor and print method
@@ -66,10 +33,10 @@ template <typename OBS> void testConstructor() {
   typedef oops::GeoVaLs<OBS>    GeoVaLs_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    GeoVaLsTestParameters<OBS> params;
-    params.validateAndDeserialize(Test_::config(jj));
-    std::unique_ptr<GeoVaLs_> geovals(new GeoVaLs_(params.geovals, Test_::obspace()[jj],
-                                                   params.geovalstest.value().vars));
+    const eckit::LocalConfiguration testconf(Test_::config(jj), "geovals test");
+    const oops::Variables vars(testconf, "state variables");
+    const eckit::LocalConfiguration geoconf(Test_::config(jj), "geovals");
+    std::unique_ptr<GeoVaLs_> geovals(new GeoVaLs_(geoconf, Test_::obspace()[jj], vars));
     EXPECT(geovals.get());
     oops::Log::info() << "Testing GeoVaLs: " << *geovals << std::endl;
     geovals.reset();
@@ -86,10 +53,10 @@ template <typename OBS> void testUtils() {
   const double tol = 1e-6;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    GeoVaLsTestParameters<OBS> params;
-    params.validateAndDeserialize(Test_::config(jj));
-    GeoVaLs_ gval(params.geovals, Test_::obspace()[jj],
-                  params.geovalstest.value().vars);
+    const eckit::LocalConfiguration testconf(Test_::config(jj), "geovals test");
+    const oops::Variables vars(testconf, "state variables");
+    const eckit::LocalConfiguration geoconf(Test_::config(jj), "geovals");
+    GeoVaLs_ gval(geoconf, Test_::obspace()[jj], vars);
 
     const double zz = dot_product(gval, gval);
 
@@ -163,11 +130,12 @@ template <typename OBS> void testRead() {
 
   const double tol = 1.0e-9;
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    GeoVaLsTestParameters<OBS> params;
-    params.validateAndDeserialize(Test_::config(jj));
-    GeoVaLs_ gval(params.geovals, Test_::obspace()[jj], params.geovalstest.value().vars);
+    const eckit::LocalConfiguration testconf(Test_::config(jj), "geovals test");
+    const oops::Variables vars(testconf, "state variables");
+    const eckit::LocalConfiguration geoconf(Test_::config(jj), "geovals");
+    GeoVaLs_ gval(geoconf, Test_::obspace()[jj], vars);
 
-    const double xx = params.geovalstest.value().refnorm;
+    const double xx = testconf.getDouble("norm");
     const double zz = sqrt(dot_product(gval, gval));
 
     oops::Log::debug() << "xx: " << std::fixed << std::setprecision(8) << xx << std::endl;

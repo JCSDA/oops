@@ -29,11 +29,9 @@ assimilation:
           obs type: Stream
         obs space:
           obsdatain:
-            engine:
-              obsfile: Data/truth.obs4d_24h.nc
+            obsfile: Data/truth.obs4d_24h.nc
           obsdataout:
-            engine:
-              obsfile: Data/mem%mem_pad%.eda_4dvar_control_pert.obs4d_24h.nc
+            obsfile: Data/mem%mem_pad%.eda_4dvar_control_pert.obs4d_24h.nc
           obs type: Stream
       - obs error:
           covariance model: diagonal
@@ -41,11 +39,9 @@ assimilation:
           obs type: Wind
         obs space:
           obsdatain:
-            engine:
-              obsfile: Data/truth.obs4d_24h.nc
+            obsfile: Data/truth.obs4d_24h.nc
           obsdataout:
-            engine:
-              obsfile: Data/mem%mem_pad%.eda_4dvar_control_pert.obs4d_24h.nc
+            obsfile: Data/mem%mem_pad%.eda_4dvar_control_pert.obs4d_24h.nc
           obs type: Wind
       - obs error:
           covariance model: diagonal
@@ -53,11 +49,9 @@ assimilation:
           obs type: WSpeed
         obs space:
           obsdatain:
-            engine:
-              obsfile: Data/truth.obs4d_24h.nc
+            obsfile: Data/truth.obs4d_24h.nc
           obsdataout:
-            engine:
-              obsfile: Data/mem%mem_pad%.eda_4dvar_control_pert.obs4d_24h.nc
+            obsfile: Data/mem%mem_pad%.eda_4dvar_control_pert.obs4d_24h.nc
           obs type: WSpeed
     constraints:
     - jcdfi:

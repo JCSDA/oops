@@ -43,11 +43,9 @@ class ObsSpace : public util::Printable,
   typedef GeometryIterator<OBS>           ObsIterator_;
 
  public:
-  typedef typename ObsSpace_::Parameters_ Parameters_;
-
   static const std::string classname() {return "oops::ObsSpace";}
 
-  ObsSpace(const Parameters_ &, const eckit::mpi::Comm &,
+  ObsSpace(const eckit::Configuration &, const eckit::mpi::Comm &,
            const util::TimeWindow &,
            const eckit::mpi::Comm & time = oops::mpi::myself());
   ~ObsSpace();
@@ -88,14 +86,14 @@ class ObsSpace : public util::Printable,
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-ObsSpace<OBS>::ObsSpace(const Parameters_ & params,
+ObsSpace<OBS>::ObsSpace(const eckit::Configuration & config,
                         const eckit::mpi::Comm & comm,
                         const util::TimeWindow & timeWindow,
                         const eckit::mpi::Comm & time) : obsdb_(), time_(time) {
   Log::trace() << "ObsSpace<OBS>::ObsSpace starting" << std::endl;
   util::Timer timer(classname(), "ObsSpace");
   size_t init = eckit::system::ResourceUsage().maxResidentSetSize();
-  obsdb_.reset(new ObsSpace_(params, comm, timeWindow, time));
+  obsdb_.reset(new ObsSpace_(config, comm, timeWindow, time));
   size_t current = eckit::system::ResourceUsage().maxResidentSetSize();
   this->setObjectSize(current - init);
   Log::trace() << "ObsSpace<OBS>::ObsSpace done" << std::endl;

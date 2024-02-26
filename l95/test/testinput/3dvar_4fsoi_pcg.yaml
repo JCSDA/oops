@@ -19,11 +19,9 @@ cost function:
     - obs operator: {}
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+          obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
         obsdataout:
-          engine:
-            obsfile: Data/3dvar_4fsoi_pcg.2010-01-02T00:00:00Z.obt
+          obsfile: Data/3dvar_4fsoi_pcg.2010-01-02T00:00:00Z.obt
       obs error:
         covariance model: diagonal
 variational:

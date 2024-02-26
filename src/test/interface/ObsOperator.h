@@ -41,21 +41,17 @@ namespace test {
 
 /// \brief Options used to configure a test simulating observations from a single obs space
 /// using a particular ObsOperator.
-template <typename OBS>
-class ObsTypeParameters : public oops::ObsTypeParametersBase<OBS> {
-  typedef oops::ObsTypeParametersBase<OBS> Base;
-  OOPS_CONCRETE_PARAMETERS(ObsTypeParameters, Base)
-
-  typedef typename oops::GeoVaLs<OBS>::Parameters_ GeoVaLsParameters_;
-
- public:
-  /// Overridden to perform some extra checks that can't currently be done by the JSON schema
-  /// validator.
-  void deserialize(util::CompositePath &path, const eckit::Configuration &config) override;
+class ObsTypeParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(ObsTypeParameters, Parameters)
 
  public:
   /// Options used to load GeoVaLs from a file.
-  oops::RequiredParameter<GeoVaLsParameters_> geovals{"geovals", this};
+  oops::RequiredParameter<eckit::LocalConfiguration> geovals{"geovals", this};
+  oops::RequiredParameter<eckit::LocalConfiguration> obsop{"obs operator", this};
+  oops::OptionalParameter<eckit::LocalConfiguration> linobsop{"linear obs operator", this};
+  oops::OptionalParameter<eckit::LocalConfiguration> obsbias{"obs bias", this};
+  oops::OptionalParameter<eckit::LocalConfiguration> obserror{"obs error", this};
+  oops::RequiredParameter<eckit::LocalConfiguration> obspace{"obs space", this};
 
   // One of these parameters must be set.
   oops::OptionalParameter<std::string> expectConstructorToThrow{
@@ -84,33 +80,7 @@ class ObsTypeParameters : public oops::ObsTypeParametersBase<OBS> {
 
 // -----------------------------------------------------------------------------
 
-template <typename OBS>
-void ObsTypeParameters<OBS>::deserialize(util::CompositePath &path,
-                                         const eckit::Configuration &config) {
-  Base::deserialize(path, config);
-
-  if (tolerance.value() == boost::none &&
-      expectConstructorToThrow.value() == boost::none &&
-      expectSimulateObsToThrow.value() == boost::none) {
-    throw eckit::UserError(path.path() +
-                           ": At least one of the 'tolerance', "
-                           "'expect constructor to throw exception with message' and "
-                           "'expect simulateObs to throw exception with message' options "
-                           "must be set");
-  }
-
-  if (tolerance.value() != boost::none && vectorRef.value() == boost::none &&
-      normRef.value() == boost::none && rmsRef.value() == boost::none) {
-    throw eckit::UserError(path.path() +
-                           ": If the 'tolerance' option is set, one of the 'vector ref', "
-                           "'norm ref' and 'rms ref' options must be set as well");
-  }
-}
-
-// -----------------------------------------------------------------------------
-
 /// \brief Top-level options taken by the ObsOperator test.
-template <typename OBS>
 class TestParameters : public oops::Parameters {
   OOPS_CONCRETE_PARAMETERS(TestParameters, Parameters)
 
@@ -120,7 +90,7 @@ class TestParameters : public oops::Parameters {
 
   /// Each element of this list configures an observation space and an operator whose capability
   /// of simulating observations from this space is to be tested.
-  oops::Parameter<std::vector<ObsTypeParameters<OBS>>> observations{"observations", {}, this};
+  oops::Parameter<std::vector<ObsTypeParameters>> observations{"observations", {}, this};
 };
 
 // -----------------------------------------------------------------------------
@@ -128,28 +98,26 @@ class TestParameters : public oops::Parameters {
 /// \brief tests constructor and print method
 template <typename OBS> void testConstructor() {
   typedef oops::ObsOperator<OBS>             ObsOperator_;
-  typedef typename ObsOperator_::Parameters_ ObsOperatorParameters_;
-  typedef ObsTypeParameters<OBS>             ObsTypeParameters_;
+  typedef ObsTypeParameters                  ObsTypeParameters_;
   typedef ObsTestsFixture<OBS>               Test_;
-  typedef TestParameters<OBS>                TestParameters_;
+  typedef TestParameters                     TestParameters_;
 
   TestParameters_ testParams;
   testParams.validateAndDeserialize(TestEnvironment::config());
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     const ObsTypeParameters_ &obsTypeParams = testParams.observations.value()[jj];
-    const ObsOperatorParameters_ &obsOpParams = obsTypeParams.observer.obsOperator.value();
+    const eckit::LocalConfiguration & obsOpConf = obsTypeParams.obsop.value();
     if (obsTypeParams.expectConstructorToThrow.value() == boost::none) {
-      auto hop = std::make_unique<ObsOperator_>(Test_::obspace()[jj], obsOpParams);;
+      auto hop = std::make_unique<ObsOperator_>(Test_::obspace()[jj], obsOpConf);;
       EXPECT(hop.get());
       oops::Log::info() << "Testing ObsOperator: " << *hop << std::endl;
       hop.reset();
       EXPECT(!hop.get());
     } else {
       // The constructor is expected to throw an exception containing the specified string.
-      const std::string &expectedMessage =
-          *obsTypeParams.expectConstructorToThrow.value();
-      EXPECT_THROWS_MSG(ObsOperator_(Test_::obspace()[jj], obsOpParams),
+      const std::string &expectedMessage = *obsTypeParams.expectConstructorToThrow.value();
+      EXPECT_THROWS_MSG(ObsOperator_(Test_::obspace()[jj], obsOpConf),
                         expectedMessage.c_str());
     }
   }
@@ -162,26 +130,29 @@ template <typename OBS> void testSimulateObs() {
   typedef oops::ObsDiagnostics<OBS>    ObsDiags_;
   typedef oops::ObsAuxControl<OBS>     ObsAuxCtrl_;
   typedef oops::ObsOperator<OBS>       ObsOperator_;
-  typedef ObsTypeParameters<OBS>       ObsTypeParameters_;
+  typedef ObsTypeParameters            ObsTypeParameters_;
   typedef oops::ObsVector<OBS>         ObsVector_;
   typedef ObsTestsFixture<OBS>         Test_;
-  typedef TestParameters<OBS>          TestParameters_;
+  typedef TestParameters               TestParameters_;
 
   TestParameters_ testParams;
   testParams.validateAndDeserialize(TestEnvironment::config());
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     const ObsTypeParameters_ &obsTypeParams = testParams.observations.value()[jj];
+    const eckit::LocalConfiguration obsConf = obsTypeParams.toConfiguration();
 
     if (obsTypeParams.expectConstructorToThrow.value() != boost::none)
       continue;
 
     // initialize observation operator (set variables requested from the model,
     // variables simulated by the observation operator, other init)
-    ObsOperator_ hop(Test_::obspace()[jj], obsTypeParams.observer.obsOperator);
+    const eckit::LocalConfiguration obsOpConf(obsConf, "obs operator");
+    ObsOperator_ hop(Test_::obspace()[jj], obsOpConf);
 
     // initialize bias correction
-    const ObsAuxCtrl_ ybias(Test_::obspace()[jj], obsTypeParams.obsBias);
+    const eckit::LocalConfiguration bconf = obsConf.getSubConfiguration("obs bias");
+    const ObsAuxCtrl_ ybias(Test_::obspace()[jj], bconf);
 
     // initialize geovals
     oops::Variables hopvars = hop.requiredVars();
@@ -208,8 +179,7 @@ template <typename OBS> void testSimulateObs() {
     if (obsTypeParams.expectSimulateObsToThrow.value() != boost::none) {
       // The simulateObs method is expected to throw an exception
       // containing the specified string.
-      const std::string expectedMessage =
-        *obsTypeParams.expectSimulateObsToThrow.value();
+      const std::string expectedMessage = *obsTypeParams.expectSimulateObsToThrow.value();
       EXPECT_THROWS_MSG(hop.simulateObs(gval, hofx, ybias, bias, diags),
                         expectedMessage.c_str());
       continue;
@@ -244,10 +214,6 @@ template <typename OBS> void testSimulateObs() {
       // else compare h(x) norm to the norm from the config
       const double zz = hofx.rms();
       const double xx = *obsTypeParams.rmsRef.value();
-
-      oops::Log::debug() << "zz: " << std::fixed << std::setprecision(8) << zz << std::endl;
-      oops::Log::debug() << "xx: " << std::fixed << std::setprecision(8) << xx << std::endl;
-
       EXPECT(oops::is_close(xx, zz, tol));
     }
   }
@@ -258,15 +224,9 @@ template <typename OBS> void testSimulateObs() {
 template <typename OBS>
 class ObsOperator : public oops::Test {
   typedef ObsTestsFixture<OBS> Test_;
-
  public:
-  ObsOperator() {
-    // Needed because oops::ObsTypeParametersBase contains obs error parameters.
-    oops::instantiateObsErrorFactory<OBS>();
-  }
-
+  ObsOperator() {}
   virtual ~ObsOperator() {}
-
  private:
   std::string testid() const override {return "test::ObsOperator<" + OBS::name() + ">";}
 

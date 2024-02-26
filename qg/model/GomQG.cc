@@ -12,6 +12,7 @@
 
 #include <iomanip>
 
+#include "eckit/config/Configuration.h"
 #include "model/LocationsQG.h"
 #include "model/ObsSpaceQG.h"
 #include "model/QgFortran.h"
@@ -24,8 +25,7 @@
 namespace qg {
 
 // -----------------------------------------------------------------------------
-GomQG::GomQG(const Locations_ & locs,
-             const oops::Variables & vars,
+GomQG::GomQG(const Locations_ & locs, const oops::Variables & vars,
              const std::vector<size_t> & sizes):
   vars_(vars)
 {
@@ -40,12 +40,12 @@ GomQG::GomQG(const Locations_ & locs,
 // -----------------------------------------------------------------------------
 /*! QG GeoVaLs Constructor with Config */
 
-GomQG::GomQG(const Parameters_ & params, const ObsSpaceQG & ospace,
-             const oops::Variables & vars):
+  GomQG::GomQG(const eckit::Configuration & config,
+               const ObsSpaceQG & ospace, const oops::Variables & vars):
   vars_(vars)
 {
   qg_gom_create_f90(keyGom_);
-  qg_gom_read_file_f90(keyGom_, vars_, params.toConfiguration());
+  qg_gom_read_file_f90(keyGom_, vars_, config);
 }
 // -----------------------------------------------------------------------------
 // Copy constructor
@@ -132,12 +132,12 @@ void GomQG::fillAD(const std::string &name, const ConstVectorRef<size_t> &indx,
   qg_gom_fillad_f90(keyGom_, name.size(), name.data(), npts, findx.data(), nlev, vals.data());
 }
 // -----------------------------------------------------------------------------
-void GomQG::read(const Parameters_ & params) {
-  qg_gom_read_file_f90(keyGom_, vars_, params.toConfiguration());
+void GomQG::read(const eckit::Configuration & config) {
+  qg_gom_read_file_f90(keyGom_, vars_, config);
 }
 // -----------------------------------------------------------------------------
-void GomQG::write(const Parameters_ & params) const {
-  qg_gom_write_file_f90(keyGom_, params.toConfiguration());
+void GomQG::write(const eckit::Configuration & config) const {
+  qg_gom_write_file_f90(keyGom_, config);
 }
 // -----------------------------------------------------------------------------
 void GomQG::print(std::ostream & os) const {

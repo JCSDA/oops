@@ -30,7 +30,7 @@ class AnalyticInit : private util::ObjectCounter<AnalyticInit<OBS> > {
   static const std::string classname() {return "oops::AnalyticInit";}
 
   /// constructor (parameters)
-  explicit AnalyticInit(const AnalyticInitParametersBase &);
+  explicit AnalyticInit(const eckit::Configuration &);
 
   /// destructor and copy/move constructors/assignments
   ~AnalyticInit();
@@ -49,10 +49,10 @@ class AnalyticInit : private util::ObjectCounter<AnalyticInit<OBS> > {
 // -----------------------------------------------------------------------------
 
 template<typename OBS>
-AnalyticInit<OBS>::AnalyticInit(const AnalyticInitParametersBase & params) {
+AnalyticInit<OBS>::AnalyticInit(const eckit::Configuration & config) {
   Log::trace() << "AnalyticInit<OBS>::AnalyticInit starting" << std::endl;
   util::Timer timer(classname(), "AnalyticInit");
-  analytic_ = AnalyticInitFactory<OBS>::create(params);
+  analytic_ = AnalyticInitFactory<OBS>::create(config);
   Log::trace() << "AnalyticInit<OBS>::AnalyticInit done" << std::endl;
 }
 

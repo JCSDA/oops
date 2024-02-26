@@ -47,11 +47,10 @@ class ObsTestsFixture : private boost::noncopyable {
 
  private:
   ObsTestsFixture(): comm_(oops::mpi::world()), timeWindow_(), ospaces_() {
-    timeWindow_.reset(new util::TimeWindow
-                      (TestEnvironment::config().getSubConfiguration("time window")));
-    configs_ = TestEnvironment::config().getSubConfigurations("observations");
-    eckit::LocalConfiguration obsconfig =
-           TestEnvironment::config().getSubConfiguration("observations");
+    const eckit::LocalConfiguration conf(TestEnvironment::config());
+    timeWindow_.reset(new util::TimeWindow(eckit::LocalConfiguration(conf, "time window")));
+    configs_ = conf.getSubConfigurations("observations");
+    eckit::LocalConfiguration obsconfig(conf, "observations");
     ospaces_.reset(new ObsSpaces_(obsconfig, comm_, *timeWindow_));
   }
 

@@ -59,14 +59,11 @@ class ObsOperator : public ObsOperatorBase<OBS>,
   typedef ObsSpace<OBS>              ObsSpace_;
 
  public:
-  /// A subclass of oops::Parameters holding the configuration settings of the operator.
-  typedef typename ObsOperator_::Parameters_ Parameters_;
-
   static const std::string classname() {return "oops::ObsOperator";}
 
   /// Set up observation operator for the \p obsspace observations, with
   /// parameters defined in \p parameters
-  ObsOperator(const ObsSpace_ & obsspace, const Parameters_ & parameters);
+  ObsOperator(const ObsSpace_ & obsspace, const eckit::Configuration &);
   ~ObsOperator();
 
   /// Compute forward operator \p y = ObsOperator (\p x).
@@ -128,12 +125,12 @@ class ObsOperator : public ObsOperatorBase<OBS>,
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-ObsOperator<OBS>::ObsOperator(const ObsSpace_ & os, const Parameters_ & parameters)
+ObsOperator<OBS>::ObsOperator(const ObsSpace_ & os, const eckit::Configuration & config)
   : name_("oops::ObsOperator::"+os.obsname()), oper_()
 {
   Log::trace() << "ObsOperator<OBS>::ObsOperator starting" << std::endl;
   util::Timer timer(name_, "ObsOperator");
-  oper_.reset(new ObsOperator_(os.obsspace(), parameters));
+  oper_.reset(new ObsOperator_(os.obsspace(), config));
   Log::trace() << "ObsOperator<OBS>::ObsOperator done" << std::endl;
 }
 
@@ -151,8 +148,8 @@ ObsOperator<OBS>::~ObsOperator() {
 
 template <typename OBS>
 void ObsOperator<OBS>::simulateObs(const GeoVaLs_ & gvals, ObsVector_ & yy,
-                                     const ObsAuxControl_ & aux, ObsVector_ & ybias,
-                                     ObsDiags_ & ydiag) const {
+                                   const ObsAuxControl_ & aux, ObsVector_ & ybias,
+                                   ObsDiags_ & ydiag) const {
   Log::trace() << "ObsOperator<OBS>::simulateObs starting" << std::endl;
   util::Timer timer(name_, "simulateObs");
   oper_->simulateObs(gvals.geovals(), yy.obsvector(), aux.obsauxcontrol(), ybias.obsvector(),

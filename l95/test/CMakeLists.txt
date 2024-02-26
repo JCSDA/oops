@@ -894,11 +894,6 @@ ecbuild_add_test( TARGET test_l95_linearmodelfactory
                   ARGS "testinput/linearmodelfactory.yaml"
                   LIBS lorenz95 )
 
-ecbuild_add_test( TARGET test_l95_obserrordiagparameters
-                  SOURCES lorenz95/ObsErrorDiagParameters.cc
-                  ARGS "testinput/obserrordiagparameters.yaml"
-                  LIBS lorenz95 )
-
 #####################################################################
 # tests with simplified L95
 #####################################################################

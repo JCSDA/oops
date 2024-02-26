@@ -20,11 +20,9 @@ cost function:
         covariance model: diagonal
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+          obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
         obsdataout:
-          engine:
-            obsfile: Data/mem001.eda_3dvar_block.2010-01-02T00:00:00Z.obt
+          obsfile: Data/mem001.eda_3dvar_block.2010-01-02T00:00:00Z.obt
       obs operator: {}
 variational:
   minimizer:

@@ -24,11 +24,9 @@ cost function:
     - obs operator: {}
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
+          obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
         obsdataout:
-          engine:
-            obsfile: Data/mem003.eda_4dvar.2010-01-02T00:00:00Z.obt
+          obsfile: Data/mem003.eda_4dvar.2010-01-02T00:00:00Z.obt
         obs perturbations seed: 3
       obs error:
         covariance model: diagonal

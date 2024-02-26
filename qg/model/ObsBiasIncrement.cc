@@ -23,16 +23,15 @@
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
-ObsBiasIncrement::ObsBiasIncrement(const ObsSpaceQG &, const Parameters_ & params)
+ObsBiasIncrement::ObsBiasIncrement(const ObsSpaceQG &, const eckit::Configuration & conf)
   : bias_(ObsBias::ntypes, 0.0), active_(ObsBias::ntypes, false)
 {
-  if (params.covariance.value() != boost::none) {
-    const ObsBiasCovarianceParameters& covparams = *params.covariance.value();
-    active_[0] = (covparams.stream.value() != boost::none);
-    active_[1] = (covparams.uwind.value() != boost::none);
-    active_[2] = (covparams.vwind.value() != boost::none);
-    active_[3] = (covparams.wspeed.value() != boost::none);
-  }
+  const eckit::LocalConfiguration covconf = conf.getSubConfiguration("covariance");
+
+  active_[0] = covconf.has("stream");
+  active_[1] = covconf.has("uwind");
+  active_[2] = covconf.has("vwind");
+  active_[3] = covconf.has("wspeed");
   bool on = false;
   std::string strn = "";
   for (unsigned int jj = 0; jj < ObsBias::ntypes; ++jj) {

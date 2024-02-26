@@ -79,10 +79,8 @@ ObsAuxCovariances<OBS>::ObsAuxCovariances(const ObsSpaces_ & odb,
   std::vector<eckit::LocalConfiguration> obsconf = conf.getSubConfigurations();
   for (std::size_t jobs = 0; jobs < obsconf.size(); ++jobs) {
     eckit::LocalConfiguration obsauxconf = obsconf[jobs].getSubConfiguration("obs bias");
-    typename ObsAuxCovariance_::Parameters_ obsauxparams;
-    obsauxparams.validateAndDeserialize(obsauxconf);
     cov_.push_back(
-       std::unique_ptr<ObsAuxCovariance_>(new ObsAuxCovariance_(odb[jobs], obsauxparams)));
+       std::unique_ptr<ObsAuxCovariance_>(new ObsAuxCovariance_(odb[jobs], obsauxconf)));
   }
   Log::trace() << "ObsAuxCovariances<OBS>::ObsAuxCovariances done" << std::endl;
 }
@@ -170,9 +168,7 @@ void ObsAuxCovariances<OBS>::write(const eckit::Configuration & conf) const {
   ASSERT(obsconfs.size() == cov_.size());
   for (std::size_t jobs = 0; jobs < cov_.size(); ++jobs) {
     eckit::LocalConfiguration obsauxconf = obsconfs[jobs].getSubConfiguration("obs bias");
-    typename ObsAuxCovariance_::Parameters_ params;
-    params.validateAndDeserialize(obsauxconf);
-    if (params.covariance.value() != boost::none) cov_[jobs]->write(params);
+    cov_[jobs]->write(obsauxconf);
   }
   Log::trace() << "ObsAuxCovariances<OBS>::write done" << std::endl;
 }

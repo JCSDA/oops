@@ -20,7 +20,6 @@
 
 #include "oops/base/Variables.h"
 #include "oops/util/ObjectCounter.h"
-#include "oops/util/parameters/Parameters.h"
 #include "oops/util/Printable.h"
 
 // Forward declarations
@@ -36,14 +35,6 @@ namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
 
-/// (Empty) parameters controlling the observation operator for the Lorenz 95 model.
-class ObservationL95Parameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(ObservationL95Parameters, Parameters);
-  // No parameters needed.
-};
-
-// -----------------------------------------------------------------------------
-
 /// Observation for Lorenz 95 model.
 /*!
  *  ObservationTLAD defines the linearized ObsOperator for Lorenz 95 model.
@@ -53,11 +44,9 @@ class ObservationTLAD : public util::Printable,
                         private boost::noncopyable,
                         private util::ObjectCounter<ObservationTLAD> {
  public:
-  typedef ObservationL95Parameters Parameters_;
-
   static const std::string classname() {return "lorenz95::ObservationTLAD";}
 
-  ObservationTLAD(const ObsTable &, const Parameters_ &);
+  ObservationTLAD(const ObsTable &, const eckit::Configuration &);
 
 // Obs Operators
   void setTrajectory(const GomL95 &, const ObsBias &);

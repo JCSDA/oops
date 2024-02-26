@@ -386,15 +386,15 @@ std::unique_ptr<GeneralizedDepartures> CostJo<MODEL, OBS>::newGradientFG() const
 
 template<typename MODEL, typename OBS>
 void CostJo<MODEL, OBS>::setObsPert() {
-  ObserversParameters<MODEL, OBS> joparams{};
-  joparams.deserialize(conf_);
+  std::vector<eckit::LocalConfiguration> subconfs =
+      eckit::LocalConfiguration(conf_, "observers").getSubConfigurations();
 //  Reset the observation operators to be the linear observation operators contained in *linObsTLAD,
 //  wrapped inside ObsOperatorPert
   std::vector<std::unique_ptr<ObsOperatorBase_>> obsOpBases_;
-  for (std::size_t ii = 0; ii < obspaces_.size(); ++ii) {
-    obsOpBases_.push_back(std::make_unique<ObsOperatorPert_>(obspaces_[ii],
-                                    observerParameters(joparams.observers.value())[ii].obsOperator,
-                                    (*obstlad_)[ii].linObsOp(), true));
+  for (std::size_t jj = 0; jj < obspaces_.size(); ++jj) {
+    const eckit::LocalConfiguration obsconf(subconfs[jj], "obs operator");
+    obsOpBases_.push_back(std::make_unique<ObsOperatorPert_>(obspaces_[jj], obsconf,
+                                                             (*obstlad_)[jj].linObsOp(), true));
   }
   observers_->resetObsOp(std::move(obsOpBases_));
   yobs_.reset(new Observations_(this->obspaces(), ""));

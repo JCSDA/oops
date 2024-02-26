@@ -24,7 +24,6 @@
 #include "oops/base/Observer.h"
 #include "oops/base/ObsOperatorBase.h"
 #include "oops/base/ObsSpaces.h"
-#include "oops/base/ObsTypeParameters.h"
 #include "oops/base/ObsVector.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State.h"
@@ -45,7 +44,7 @@ class ObserversParameters : public oops::Parameters {
 
  public:
   Parameter<bool> obsPerturbations{"obs perturbations", false, this};
-  Parameter<std::vector<ObsTypeParameters<OBS>>> observers{"observers", {}, this};
+  Parameter<eckit::LocalConfiguration> observers{"observers", {}, this};
   Parameter<GetValuesParameters<MODEL>> getValues{"get values", {}, this};
 };
 

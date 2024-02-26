@@ -46,11 +46,9 @@ cost function:
         obs type: Stream
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/truth.single-obs3d.nc
+          obsfile: Data/truth.single-obs3d.nc
         obsdataout:
-          engine:
-            obsfile: Data/3dvar_single-obs_hyb_value.obs3d.nc
+          obsfile: Data/3dvar_single-obs_hyb_value.obs3d.nc
         obs type: Stream
 variational:
   minimizer:

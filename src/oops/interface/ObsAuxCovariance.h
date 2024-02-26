@@ -46,12 +46,10 @@ class ObsAuxCovariance : public util::Printable,
   typedef ObsAuxPreconditioner<OBS>               ObsAuxPreconditioner_;
 
  public:
-  typedef typename ObsAuxCovariance_::Parameters_ Parameters_;
-
   static const std::string classname() {return "oops::ObsAuxCovariance";}
 
   /// Constructor for specified ObsSpace \p os and \p params
-  ObsAuxCovariance(const ObsSpace<OBS> & os, const Parameters_ & params);
+  ObsAuxCovariance(const ObsSpace<OBS> & os, const eckit::Configuration &);
   /// Destructor (defined explicitly for timing and tracing)
   ~ObsAuxCovariance();
 
@@ -67,7 +65,7 @@ class ObsAuxCovariance : public util::Printable,
   ObsAuxPreconditioner_ preconditioner() const;
 
   /// Write this ObsAuxCovariance out to file
-  void write(const Parameters_ &) const;
+  void write(const eckit::Configuration &) const;
 
  private:
   void print(std::ostream &) const;
@@ -78,11 +76,11 @@ class ObsAuxCovariance : public util::Printable,
 
 template<typename OBS>
 ObsAuxCovariance<OBS>::ObsAuxCovariance(const ObsSpace<OBS> & os,
-                                          const Parameters_ & params) : cov_()
+                                        const eckit::Configuration & config) : cov_()
 {
   Log::trace() << "ObsAuxCovariance<OBS>::ObsAuxCovariance starting" << std::endl;
   util::Timer timer(classname(), "ObsAuxCovariance");
-  cov_.reset(new ObsAuxCovariance_(os.obsspace(), params));
+  cov_.reset(new ObsAuxCovariance_(os.obsspace(), config));
   Log::trace() << "ObsAuxCovariance<OBS>::ObsAuxCovariance done" << std::endl;
 }
 
@@ -121,7 +119,7 @@ void ObsAuxCovariance<OBS>::multiply(const ObsAuxIncrement_ & dx1, ObsAuxIncreme
 
 template<typename OBS>
 void ObsAuxCovariance<OBS>::inverseMultiply(const ObsAuxIncrement_ & dx1,
-                                              ObsAuxIncrement_ & dx2) const {
+                                            ObsAuxIncrement_ & dx2) const {
   Log::trace() << "ObsAuxCovariance<OBS>::inverseMultiply starting" << std::endl;
   util::Timer timer(classname(), "inverseMultiply");
   cov_->inverseMultiply(dx1.obsauxincrement(), dx2.obsauxincrement());
@@ -141,10 +139,10 @@ void ObsAuxCovariance<OBS>::randomize(ObsAuxIncrement_ & dx) const {
 // -----------------------------------------------------------------------------
 
 template<typename OBS>
-void ObsAuxCovariance<OBS>::write(const Parameters_ & params) const {
+void ObsAuxCovariance<OBS>::write(const eckit::Configuration & config) const {
   Log::trace() << "ObsAuxCovariance<OBS>::write starting" << std::endl;
   util::Timer timer(classname(), "write");
-  cov_->write(params);
+  cov_->write(config);
   Log::trace() << "ObsAuxCovariance<OBS>::write done" << std::endl;
 }
 // -----------------------------------------------------------------------------

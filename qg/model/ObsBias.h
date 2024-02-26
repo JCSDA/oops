@@ -16,10 +16,13 @@
 #include <string>
 #include <boost/noncopyable.hpp>
 
-#include "model/ObsBiasParameters.h"
 #include "oops/base/Variables.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
+
+namespace eckit {
+  class Configuration;
+}
 
 namespace qg {
   class ObsBiasIncrement;
@@ -33,12 +36,10 @@ class ObsBias : public util::Printable,
                 private boost::noncopyable,
                 private util::ObjectCounter<ObsBias> {
  public:
-  typedef ObsBiasParameters Parameters_;
-
   static const unsigned int ntypes = 4;
   static const std::string classname() {return "qg::ObsBias";}
 
-  ObsBias(const ObsSpaceQG &, const Parameters_ &);
+  ObsBias(const ObsSpaceQG &, const eckit::Configuration &);
   ObsBias(const ObsBias &, const bool);
   ~ObsBias() {}
 
@@ -46,8 +47,8 @@ class ObsBias : public util::Printable,
   ObsBias & operator=(const ObsBias &);
 
 /// I/O and diagnostics
-  void read(const Parameters_ &) {}
-  void write(const Parameters_ &) const {}
+  void read(const eckit::Configuration &) {}
+  void write(const eckit::Configuration &) const {}
   double norm() const;
 
   const double & operator[](const unsigned int ii) const {return bias_[ii];}

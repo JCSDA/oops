@@ -26,11 +26,9 @@ assimilation:
           obs type: Stream
         obs space:
           obsdatain:
-            engine:
-              obsfile: Data/truth.obs3d.nc
+            obsfile: Data/truth.obs3d.nc
           obsdataout:
-            engine:
-              obsfile: Data/mem%mem_pad%.eda_3dvar_control_pert.obs3d.nc
+            obsfile: Data/mem%mem_pad%.eda_3dvar_control_pert.obs3d.nc
           obs type: Stream
       - obs error:
           covariance model: diagonal
@@ -38,11 +36,9 @@ assimilation:
           obs type: Wind
         obs space:
           obsdatain:
-            engine:
-              obsfile: Data/truth.obs3d.nc
+            obsfile: Data/truth.obs3d.nc
           obsdataout:
-            engine:
-              obsfile: Data/mem%mem_pad%.eda_3dvar_control_pert.obs3d.nc
+            obsfile: Data/mem%mem_pad%.eda_3dvar_control_pert.obs3d.nc
           obs type: Wind
   variational:
     minimizer:

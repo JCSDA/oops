@@ -18,9 +18,11 @@
 #include <vector>
 
 #include "oops/util/ObjectCounter.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 #include "oops/util/Printable.h"
+
+namespace eckit {
+  class Configuration;
+}
 
 namespace oops {
   class Variables;
@@ -30,15 +32,6 @@ namespace oops {
 namespace lorenz95 {
   struct L95ObsTraits;
   class ObsTable;
-
-/// \brief Parameters controlling a Lorenz95 GeoVaLs read/write
-class GomL95Parameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(GomL95Parameters, Parameters)
-
- public:
-  oops::RequiredParameter<std::string> filename{"filename", "filename for input and output",
-                                                this};
-};
 
 
 /// GomL95 class to handle State values at obs locations for L95 model.
@@ -56,13 +49,11 @@ class GomL95 : public util::Printable,
   using MatrixRef = Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>>;
 
  public:
-  typedef GomL95Parameters Parameters_;
-
   static const std::string classname() {return "lorenz95::GomL95";}
 
   GomL95(const oops::Locations<L95ObsTraits> & locs,
          const oops::Variables & vars, const std::vector<size_t> & sizes);
-  GomL95(const Parameters_ &, const ObsTable &, const oops::Variables & vars);
+  GomL95(const eckit::Configuration &, const ObsTable &, const oops::Variables &);
 
   void zero();
   void random();
@@ -73,8 +64,8 @@ class GomL95 : public util::Printable,
   GomL95 & operator-=(const GomL95 &);
   GomL95 & operator*=(const GomL95 &);
   double dot_product_with(const GomL95 &) const;
-  void read(const Parameters_ &);
-  void write(const Parameters_ &) const;
+  void read(const eckit::Configuration &);
+  void write(const eckit::Configuration &) const;
   void print(std::ostream &) const;
 
   size_t size() const {return size_;}

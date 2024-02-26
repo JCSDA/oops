@@ -93,15 +93,13 @@ ObserverTLAD<MODEL, OBS>::ObserverTLAD(const ObsSpace_ & obsdb, const Parameters
   : parameters_(params), obspace_(obsdb), hopVars_(), hopVarSizes_(),
     hop_(obspace_, parameters_.obsOperator),
     hoptlad_(obspace_,
-             params.linearObsOperator.value() != boost::none ?
-               params.linearObsOperator.value().value() :
                // Hack: when "linear obs operator" is not specified in the input file, reinterpret
                //       the entry for "obs operator" as a linear obs operator option. In the long
                //       term, we need a design that either,
                //       - allows constructing LinearObsOperator from either set of Parameters, or
                //       - merges the two sets of Parameters so this switch can be removed
-               validateAndDeserialize<typename LinearObsOperator_::Parameters_>(
-                   params.obsOperator.value().toConfiguration())),
+             params.linearObsOperator.value() != boost::none ?
+               params.linearObsOperator.value().value() : params.obsOperator.value()),
     getvals_(),
     timeWindow_(obsdb.timeWindow()),
     ybias_(nullptr), init_(false)

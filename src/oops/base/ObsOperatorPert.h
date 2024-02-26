@@ -53,16 +53,12 @@ class ObsOperatorPert : public ObsOperatorBase<OBS>,
   typedef ObsSpace<OBS>              ObsSpace_;
 
  public:
-  /// A subclass of oops::Parameters holding the configuration settings of the non-linear
-  /// obs operator.
-  typedef typename ObsOperator_::Parameters_ Parameters_;
-
   static const std::string classname() {return "oops::ObsOperatorPert";}
 
   /// Set up \p linoper under the guise of a regular observation operator.
   /// A regular obs operator also needs to be created with \p obsspace and \p parameters
   /// in order to access the Locations.
-  ObsOperatorPert(const ObsSpace_ & obsspace, const Parameters_ & parameters,
+  ObsOperatorPert(const ObsSpace_ & obsspace, const eckit::Configuration &,
                   const LinObsOperator_ & linoper, bool trajSet = false);
   ~ObsOperatorPert();
 
@@ -96,13 +92,13 @@ class ObsOperatorPert : public ObsOperatorBase<OBS>,
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-ObsOperatorPert<OBS>::ObsOperatorPert(const ObsSpace_ & obsspace, const Parameters_ & parameters,
+ObsOperatorPert<OBS>::ObsOperatorPert(const ObsSpace_ & obsspace, const eckit::Configuration & conf,
                                       const LinObsOperator_ & linoper, bool trajSet)
   : name_("oops::ObsOperatorPert::"+obsspace.obsname()), linOper_(linoper), trajectorySet(trajSet)
 {
   Log::trace() << "ObsOperatorPert<OBS>::ObsOperatorPert starting" << std::endl;
   util::Timer timer(name_, "ObsOperatorPert");
-  oper_.reset(new ObsOperator_(obsspace, parameters));
+  oper_.reset(new ObsOperator_(obsspace, conf));
   Log::trace() << "ObsOperatorPert<OBS>::ObsOperatorPert done" << std::endl;
 }
 
@@ -126,7 +122,7 @@ void ObsOperatorPert<OBS>::simulateObs(const GeoVaLs_ & gvals, ObsVector_ & yy,
   Log::trace() << "ObsOperatorPert<OBS>::simulateObs starting" << std::endl;
   util::Timer timer(name_, "simulateObs");
   ObsAuxControl_ auxcopy(aux, false);
-  ObsAuxIncrement_ auxInc(auxcopy.obspace(), auxcopy.params());
+  ObsAuxIncrement_ auxInc(auxcopy.obspace(), auxcopy.config());
   auxInc.diff(aux, auxcopy);    // In UFO implementation, auxInc does not include coefficients
                                 // for static BC predictors but only variational ones
   linOper_.simulateObsTL(gvals, yy, auxInc);

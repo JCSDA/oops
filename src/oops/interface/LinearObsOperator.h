@@ -51,14 +51,11 @@ class LinearObsOperator : public util::Printable,
   typedef ObsVector<OBS>           ObsVector_;
 
  public:
-  /// A subclass of oops::Parameters holding the configuration settings of the operator.
-  typedef typename LinearObsOper_::Parameters_ Parameters_;
-
   static const std::string classname() {return "oops::LinearObsOperator";}
 
   /// Set up TL and AD of observation operator for the \p obsspace observations, with
   /// parameters defined in \p parameters.
-  LinearObsOperator(const ObsSpace_ & obsspace, const Parameters_ & parameters);
+  LinearObsOperator(const ObsSpace_ & obsspace, const eckit::Configuration &);
   ~LinearObsOperator();
 
   /// Sets up the trajectory for future calls of simulateObsTL or simulateObsAD.
@@ -107,12 +104,12 @@ class LinearObsOperator : public util::Printable,
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-LinearObsOperator<OBS>::LinearObsOperator(const ObsSpace_ & os, const Parameters_ & parameters)
+LinearObsOperator<OBS>::LinearObsOperator(const ObsSpace_ & os, const eckit::Configuration & config)
   : name_("oops::LinearObsOper::"+os.obsname()), oper_()
 {
   Log::trace() << "LinearObsOperator<OBS>::LinearObsOperator starting" << std::endl;
   util::Timer timer(name_, "LinearObsOperator");
-  oper_.reset(new LinearObsOper_(os.obsspace(), parameters));
+  oper_.reset(new LinearObsOper_(os.obsspace(), config));
   Log::trace() << "LinearObsOperator<OBS>::LinearObsOperator done" << std::endl;
 }
 

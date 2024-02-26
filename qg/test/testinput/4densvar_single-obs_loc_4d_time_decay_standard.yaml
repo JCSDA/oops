@@ -83,11 +83,9 @@ cost function:
         obs type: Stream
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/truth.single-obs4d_12h.nc
+          obsfile: Data/truth.single-obs4d_12h.nc
         obsdataout:
-          engine:
-            obsfile: Data/4densvar_single-obs_loc_4d_time_decay_standard.obs.nc
+          obsfile: Data/4densvar_single-obs_loc_4d_time_decay_standard.obs.nc
         obs type: Stream
   geometry: &geom
     nx: 40

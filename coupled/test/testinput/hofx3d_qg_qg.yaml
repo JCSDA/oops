@@ -23,31 +23,25 @@ observations:
   observers:
   - obs space:
       obsdatain:
-        engine:
-          obsfile: ../../qg/test/Data/truth.obs4d_12h.nc
+        obsfile: ../../qg/test/Data/truth.obs4d_12h.nc
       obsdataout:
-        engine:
-          obsfile: Data/hofx3d_qg_qg.obs4d_12h.nc
+        obsfile: Data/hofx3d_qg_qg.obs4d_12h.nc
       obs type: Stream
     obs operator:
       obs type: Stream
   - obs space:
       obsdatain:
-        engine:
-          obsfile: ../../qg/test/Data/truth.obs4d_12h.nc
+        obsfile: ../../qg/test/Data/truth.obs4d_12h.nc
       obsdataout:
-        engine:
-          obsfile: Data/hofx3d_qg_qg.obs4d_12h.nc
+        obsfile: Data/hofx3d_qg_qg.obs4d_12h.nc
       obs type: Wind
     obs operator:
       obs type: Wind
   - obs space:
       obsdatain:
-        engine:
-          obsfile: ../../qg/test/Data/truth.obs4d_12h.nc
+        obsfile: ../../qg/test/Data/truth.obs4d_12h.nc
       obsdataout:
-        engine:
-          obsfile: Data/hofx3d_qg_qg.obs4d_12h.nc
+        obsfile: Data/hofx3d_qg_qg.obs4d_12h.nc
       obs type: WSpeed
     obs operator:
       obs type: WSpeed

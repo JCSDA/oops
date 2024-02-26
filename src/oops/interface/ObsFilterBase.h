@@ -59,14 +59,9 @@ class ObsFilterBase : public oops::ObsFilterBase<OBS> {
     this->priorFilter(gv.geovals());
   }
 
-  void postFilter(const GeoVaLs<OBS> & gv,
-                  const oops::ObsVector<OBS> &ov,
-                  const oops::ObsVector<OBS> &bv,
-                  const ObsDiagnostics<OBS> &dv) final {
-    this->postFilter(gv.geovals(),
-                     ov.obsvector(),
-                     bv.obsvector(),
-                     dv.obsdiagnostics());
+  void postFilter(const GeoVaLs<OBS> & gv, const oops::ObsVector<OBS> &ov,
+                  const oops::ObsVector<OBS> &bv, const ObsDiagnostics<OBS> &dv) final {
+    this->postFilter(gv.geovals(), ov.obsvector(), bv.obsvector(), dv.obsdiagnostics());
   }
 
   // The methods below need to be overridden in subclasses (along with preProcess(), requiredVars()
@@ -88,9 +83,7 @@ class ObsFilterBase : public oops::ObsFilterBase<OBS> {
   ///   Bias of departure produced by the observation operator.
   /// \param dv
   ///   Observation diagnostics produced by the observation operator.
-  virtual void postFilter(const GeoVaLs_ & gv,
-                          const ObsVector_ &ov,
-                          const ObsVector_ &bv,
+  virtual void postFilter(const GeoVaLs_ & gv, const ObsVector_ &ov, const ObsVector_ &bv,
                           const ObsDiags_ &dv) = 0;
 
   /// \brief Check the required filter data are present prior to running this filter.

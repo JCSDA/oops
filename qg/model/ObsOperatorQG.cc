@@ -26,8 +26,8 @@ namespace qg {
 
 // -----------------------------------------------------------------------------
 
-ObsOperatorQG::ObsOperatorQG(const ObsSpaceQG & os, const Parameters_ & params)
-  : oper_(ObsOpFactory::create(os, params.config))
+ObsOperatorQG::ObsOperatorQG(const ObsSpaceQG & os, const eckit::Configuration & conf)
+  : oper_(ObsOpFactory::create(os, conf))
 {}
 
 // -----------------------------------------------------------------------------

@@ -42,11 +42,8 @@ template <typename OBS>
 class ObserverParameters : public Parameters {
   OOPS_CONCRETE_PARAMETERS(ObserverParameters, Parameters)
 
-  typedef typename OBS::ObsOperator::Parameters_ ObsOperatorParameters_;
-  typedef typename OBS::LinearObsOperator::Parameters_ LinearObsOperatorParameters_;
-
  public:
-  oops::RequiredParameter<ObsOperatorParameters_> obsOperator{"obs operator", this};
+  oops::RequiredParameter<eckit::LocalConfiguration> obsOperator{"obs operator", this};
   // Options used to configure filters.
   ObsFiltersParameters<OBS> filtersParameters{this};
   oops::Parameter<eckit::LocalConfiguration> getValues{
@@ -57,8 +54,7 @@ class ObserverParameters : public Parameters {
   // to simplify the transition to Parameters. Ultimately, it will likely be a cleaner design to
   // separate out the options into ObserverParameters and ObserverTLADParameters.
   oops::Parameter<bool> monitoringOnly{"monitoring only", false, this};
-  oops::OptionalParameter<LinearObsOperatorParameters_> linearObsOperator{"linear obs operator",
-      this};
+  oops::OptionalParameter<eckit::LocalConfiguration> linearObsOperator{"linear obs operator", this};
 };
 
 // -----------------------------------------------------------------------------

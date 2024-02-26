@@ -7,7 +7,7 @@
 
 #include "oops/base/ObsSpaceBase.h"
 
-#include "eckit/config/LocalConfiguration.h"
+#include "eckit/config/Configuration.h"
 #include "eckit/exception/Exceptions.h"
 
 #include "oops/util/DateTime.h"
@@ -21,7 +21,7 @@ namespace oops {
 int ObsSpaceBase::instances_ = 0;
 // -----------------------------------------------------------------------------
 
-ObsSpaceBase::ObsSpaceBase(const ObsSpaceParametersBase & params, const eckit::mpi::Comm & comm,
+ObsSpaceBase::ObsSpaceBase(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
                            const util::TimeWindow & timeWindow)
   : timeWindow_(timeWindow), instance_(++instances_) {
   // Determine seed for random number generator that is reproducible when re-running
@@ -32,7 +32,7 @@ ObsSpaceBase::ObsSpaceBase(const ObsSpaceParametersBase & params, const eckit::m
   seed_ = dt.toSeconds();
 
   // Won't repeat if more seconds between analysis cycles than members in EDA
-  seed_ += params.obsPerturbationsSeed;
+  seed_ += config.getInt("obs perturbations seed", 0);
 
   //           31622400 seconds max in 1 year
   //        12197962800 seed at this step for 2010-01-01T03:00:00Z

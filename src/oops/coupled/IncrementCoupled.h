@@ -19,7 +19,6 @@
 
 #include "oops/base/Increment.h"
 #include "oops/base/Variables.h"
-#include "oops/base/WriteParametersBase.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/parameters/Parameters.h"
@@ -31,58 +30,6 @@
 
 namespace oops {
 
-
-// -----------------------------------------------------------------------------
-/// Parameters for the Increment describing how to input a coupled model increment
-template<class... MODELs>
-class IncrementCoupledReadParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(IncrementCoupledReadParameters, Parameters)
-
-  /// Type of tuples stored in the IncrementCoupledParameters
-  using RequiredParametersTupleT =
-        std::tuple<RequiredParameter<typename Increment<MODELs>::ReadParameters_>...>;
-  /// Tuple that can be passed to the Parameter ctor
-  using RequiredParameterInit = std::tuple<const char *, Parameters *>;
-
- public:
-  /// Tuple of all Increment Parameters.
-  RequiredParametersTupleT increments{RequiredParameterInit(MODELs::name().c_str(), this) ... };
-};
-
-// -----------------------------------------------------------------------------
-/// Parameters for the Increment describing how to output a coupled model increment
-template<class... MODELs>
-class IncrementCoupledWriteParameters : public WriteParametersBase {
-  OOPS_CONCRETE_PARAMETERS(IncrementCoupledWriteParameters, WriteParametersBase)
-
-  /// Type of tuples stored in the IncrementCoupledWriteParameters
-  using RequiredParametersTupleT =
-        std::tuple<RequiredParameter<typename Increment<MODELs>::WriteParameters_>...>;
-  /// Tuple that can be passed to the Parameter ctor
-  using RequiredParameterInit = std::tuple<const char *, Parameters *>;
-
- public:
-  /// Tuple of all Write increment Parameters.
-  RequiredParametersTupleT increments{RequiredParameterInit(MODELs::name().c_str(), this) ... };
-};
-
-// -----------------------------------------------------------------------------
-/// Parameters for the Increment dirac input
-template<class... MODELs>
-class IncrementCoupledDiracParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(IncrementCoupledDiracParameters, Parameters)
-
-  /// Type of tuples stored in the IncrementCoupledDiracParameters
-  using RequiredParametersTupleT =
-        std::tuple<RequiredParameter<typename Increment<MODELs>::DiracParameters_>...>;
-  /// Tuple that can be passed to the Parameter ctor
-  using RequiredParameterInit = std::tuple<const char *, Parameters *>;
-
- public:
-  /// Tuple of all Write increment Parameters.
-  RequiredParametersTupleT increments{RequiredParameterInit(MODELs::name().c_str(), this) ... };
-};
-
 // -----------------------------------------------------------------------------
 /// Coupled model increment
 template <typename MODEL1, typename MODEL2>
@@ -91,10 +38,6 @@ class IncrementCoupled : public util::Printable {
   typedef StateCoupled<MODEL1, MODEL2>     StateCoupled_;
 
  public:
-  typedef IncrementCoupledReadParameters<MODEL1, MODEL2>  ReadParameters_;
-  typedef IncrementCoupledWriteParameters<MODEL1, MODEL2> WriteParameters_;
-  typedef IncrementCoupledDiracParameters<MODEL1, MODEL2> DiracParameters_;
-
   /// Constructor, destructor
   IncrementCoupled(const GeometryCoupled_ &, const Variables &, const util::DateTime &);
   IncrementCoupled(const GeometryCoupled_ &, const IncrementCoupled &, const bool ad = false);
@@ -155,6 +98,8 @@ class IncrementCoupled : public util::Printable {
   void deserialize(const std::vector<double> & buf, size_t & ii);
 
  private:
+  static std::string name1() {return MODEL1::name();}
+  static std::string name2() {return MODEL2::name();}
   void print(std::ostream &) const;
   std::shared_ptr<const GeometryCoupled_> geom_;
   std::unique_ptr<Increment<MODEL1>> dx1_;
@@ -241,10 +186,14 @@ void IncrementCoupled<MODEL1, MODEL2>::diff(const StateCoupled_ & xx1,
 template<typename MODEL1, typename MODEL2>
 void IncrementCoupled<MODEL1, MODEL2>::read(const eckit::Configuration & config) {
   Log::trace() << "IncrementCoupled::read starting" << std::endl;
-  ReadParameters_ params;
-  params.deserialize(config);
-  if (dx1_) dx1_->read(std::get<0>(params.increments).value().toConfiguration());
-  if (dx2_) dx2_->read(std::get<1>(params.increments).value().toConfiguration());
+  if (dx1_) {
+    const eckit::LocalConfiguration conf1(config, name1());
+    dx1_->read(conf1);
+  }
+  if (dx2_) {
+    const eckit::LocalConfiguration conf2(config, name2());
+    dx2_->read(conf2);
+  }
   Log::trace() << "IncrementCoupled::read done" << std::endl;
 }
 
@@ -253,10 +202,14 @@ void IncrementCoupled<MODEL1, MODEL2>::read(const eckit::Configuration & config)
 template<typename MODEL1, typename MODEL2>
 void IncrementCoupled<MODEL1, MODEL2>::write(const eckit::Configuration & config) const {
   Log::trace() << "IncrementCoupled::write starting" << std::endl;
-  WriteParameters_ params;
-  params.deserialize(config);
-  if (dx1_) dx1_->write(std::get<0>(params.increments).value().toConfiguration());
-  if (dx2_) dx2_->write(std::get<1>(params.increments).value().toConfiguration());
+  if (dx1_) {
+    const eckit::LocalConfiguration conf1(config, name1());
+    dx1_->write(conf1);
+  }
+  if (dx2_) {
+    const eckit::LocalConfiguration conf2(config, name2());
+    dx2_->write(conf2);
+  }
   Log::trace() << "IncrementCoupled::write done" << std::endl;
 }
 
@@ -265,10 +218,14 @@ void IncrementCoupled<MODEL1, MODEL2>::write(const eckit::Configuration & config
 template<typename MODEL1, typename MODEL2>
 void IncrementCoupled<MODEL1, MODEL2>::dirac(const eckit::Configuration & config) {
   Log::trace() << "IncrementCoupled::dirac starting" << std::endl;
-  DiracParameters_ params;
-  params.deserialize(config);
-  if (dx1_) dx1_->dirac(std::get<0>(params.increments).value().toConfiguration());
-  if (dx2_) dx2_->dirac(std::get<1>(params.increments).value().toConfiguration());
+  if (dx1_) {
+    const eckit::LocalConfiguration conf1(config, name1());
+    dx1_->dirac(conf1);
+  }
+  if (dx2_) {
+    const eckit::LocalConfiguration conf2(config, name2());
+    dx2_->dirac(conf2);
+  }
   Log::trace() << "IncrementCoupled::dirac done" << std::endl;
 }
 

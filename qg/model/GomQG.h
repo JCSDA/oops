@@ -20,8 +20,6 @@
 #include "oops/base/Variables.h"
 
 #include "oops/util/ObjectCounter.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 #include "oops/util/Printable.h"
 
 #include "oops/qg/QgFortran.h"
@@ -33,15 +31,6 @@ namespace oops {
 
 namespace qg {
   struct QgObsTraits;
-
-/// \brief Parameters controlling a QG GeoVaLs read/write
-class GomQGParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(GomQGParameters, Parameters)
-
- public:
-  oops::RequiredParameter<std::string> filename{"filename", "filename for input and output",
-                                                this};
-};
 
 /// GomQG class to handle local model values for QG model.
 
@@ -59,14 +48,12 @@ class GomQG : public util::Printable,
   using MatrixRef = Eigen::Ref<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>>;
 
  public:
-  typedef GomQGParameters Parameters_;
   typedef oops::Locations<QgObsTraits> Locations_;
 
   static const std::string classname() {return "qg::GomQG";}
 
-  GomQG(const Locations_ & locs,
-        const oops::Variables & vars, const std::vector<size_t> & sizes);
-  GomQG(const Parameters_ & params, const ObsSpaceQG & ospace, const oops::Variables & vars);
+  GomQG(const Locations_ &, const oops::Variables &, const std::vector<size_t> &);
+  GomQG(const eckit::Configuration &, const ObsSpaceQG &, const oops::Variables &);
   explicit GomQG(const GomQG &);
 
   GomQG(): keyGom_(0) {}
@@ -84,8 +71,8 @@ class GomQG : public util::Printable,
   GomQG & operator-=(const GomQG &);
   GomQG & operator*=(const GomQG &);
   double dot_product_with(const GomQG &) const;
-  void read(const Parameters_ &);
-  void write(const Parameters_ &) const;
+  void read(const eckit::Configuration &);
+  void write(const eckit::Configuration &) const;
 
   const int & toFortran() const {return keyGom_;}
 

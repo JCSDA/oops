@@ -16,7 +16,6 @@
 #include <string>
 #include <boost/noncopyable.hpp>
 
-#include "lorenz95/ObsBiasParameters.h"
 #include "lorenz95/ObsBiasPreconditioner.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -36,12 +35,10 @@ class ObsBiasCovariance : public util::Printable,
                           private boost::noncopyable,
                           private util::ObjectCounter<ObsBiasCovariance> {
  public:
-  typedef ObsBiasParameters Parameters_;
-
   static const std::string classname() {return "lorenz95::ObsBiasCovariance";}
 
 /// Constructor, destructor
-  ObsBiasCovariance(const ObsTable &, const Parameters_ &);
+  ObsBiasCovariance(const ObsTable &, const eckit::Configuration &);
   ~ObsBiasCovariance() {}
 
 /// Linear algebra operators
@@ -52,7 +49,7 @@ class ObsBiasCovariance : public util::Printable,
   std::unique_ptr<ObsBiasPreconditioner> preconditioner() const;
 
   /// I/O and diagnostics
-  void write(const Parameters_ &) const {}
+  void write(const eckit::Configuration &) const {}
   bool active() const {return active_;}
 
  private:

@@ -40,25 +40,25 @@ namespace sf = util::stringfunctions;
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
 
-ObsTable::ObsTable(const Parameters_ & params, const eckit::mpi::Comm & comm,
+ObsTable::ObsTable(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
                    const util::TimeWindow & timeWindow,
                    const eckit::mpi::Comm & timeComm)
-  : oops::ObsSpaceBase(params, comm, timeWindow), comm_(timeComm),
-    timeWindow_(timeWindow),
-    obsvars_(), assimvars_()
+  : oops::ObsSpaceBase(config, comm, timeWindow), comm_(timeComm),
+    timeWindow_(timeWindow), obsvars_(), assimvars_()
 {
   oops::Log::trace() << "ObsTable::ObsTable starting" << std::endl;
-  if (params.obsdatain.value() != boost::none) {
-    nameIn_ = params.obsdatain.value()->engine.value().obsfile;
+  if (config.has("obsdatain")) {
+    nameIn_ = config.getString("obsdatain.obsfile");
     otOpen(nameIn_);
   }
   //  Generate locations etc... if required
-  if (params.generate.value() != boost::none) {
-    generateDistribution(*params.generate.value());
+  if (config.has("generate")) {
+    const eckit::LocalConfiguration gconf(config, "generate");
+    generateDistribution(gconf);
   }
-  if (params.obsdataout.value() != boost::none) {
-    nameOut_ = params.obsdataout.value()->engine.value().obsfile;
-    sf::swapNameMember(params.toConfiguration(), nameOut_);
+  if (config.has("obsdataout")) {
+    nameOut_ = config.getString("obsdataout.obsfile");
+    sf::swapNameMember(config, nameOut_);
   }
   oops::Log::trace() << "ObsTable::ObsTable created nobs = " << nobs() << std::endl;
 }
@@ -175,10 +175,10 @@ void ObsTable::getdb(const std::string & col, std::vector<double> & vec) const {
 
 // -----------------------------------------------------------------------------
 
-void ObsTable::generateDistribution(const ObsGenerateParameters & params) {
+void ObsTable::generateDistribution(const eckit::Configuration & config) {
   oops::Log::trace() << "ObsTable::generateDistribution starting" << std::endl;
 
-  const util::Duration &freq = params.obsFrequency;
+  const util::Duration freq(config.getString("obs_frequency"));
 
   int nobstimes = 0;
   // observations at the beginning of the window are never included (only
@@ -190,7 +190,7 @@ void ObsTable::generateDistribution(const ObsGenerateParameters & params) {
     now += freq;
   }
 
-  const unsigned int nobs_locations = params.obsDensity;
+  const unsigned int nobs_locations = config.getInt("obs_density");
   const unsigned int nobs = nobs_locations*nobstimes;
   double dx = 1.0/static_cast<double>(nobs_locations);
 
@@ -213,7 +213,7 @@ void ObsTable::generateDistribution(const ObsGenerateParameters & params) {
   ASSERT(iobs == nobs);
 
 // Generate obs error
-  const double err = params.obsError;
+  const double err = config.getDouble("obs_error");
   std::vector<double> obserr(nobs);
   for (unsigned int jj = 0; jj < nobs; ++jj) {
     obserr[jj] = err;

@@ -15,7 +15,6 @@
 #include <utility>
 #include <vector>
 
-#include "eckit/config/Configuration.h"
 #include "lorenz95/GomL95.h"
 #include "lorenz95/L95TraitsFwd.h"
 #include "lorenz95/LocsL95.h"
@@ -30,7 +29,7 @@
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
 
-ObservationL95::ObservationL95(const ObsTable & ot, const Parameters_ &)
+ObservationL95::ObservationL95(const ObsTable & ot, const eckit::Configuration &)
   : obsdb_(ot), inputs_(std::vector<std::string>{"x"})
 {}
 

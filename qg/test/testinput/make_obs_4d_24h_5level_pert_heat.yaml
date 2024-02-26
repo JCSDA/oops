@@ -22,8 +22,7 @@ observations:
       covariance model: diagonal
     obs space:
       obsdataout:
-        engine:
-          obsfile: Data/truth_5level_pert_heat.obs4d_24h.nc
+        obsfile: Data/truth_5level_pert_heat.obs4d_24h.nc
       obs type: Stream
       generate:
         begin: PT3H
@@ -40,8 +39,7 @@ observations:
       covariance model: diagonal
     obs space:
       obsdataout:
-        engine:
-          obsfile: Data/truth_5level_pert_heat.obs4d_24h.nc
+        obsfile: Data/truth_5level_pert_heat.obs4d_24h.nc
       obs type: Wind
       generate:
         begin: PT6H
@@ -58,8 +56,7 @@ observations:
       covariance model: diagonal
     obs space:
       obsdataout:
-        engine:
-          obsfile: Data/truth_5level_pert_heat.obs4d_24h.nc
+        obsfile: Data/truth_5level_pert_heat.obs4d_24h.nc
       obs type: WSpeed
       generate:
         begin: PT3H

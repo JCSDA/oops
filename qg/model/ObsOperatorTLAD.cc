@@ -23,8 +23,8 @@ namespace qg {
 
 // -----------------------------------------------------------------------------
 
-ObsOperatorTLAD::ObsOperatorTLAD(const ObsSpaceQG & os, const Parameters_ & params)
-  : oper_(ObsOpTLADFactory::create(os, params.config))
+ObsOperatorTLAD::ObsOperatorTLAD(const ObsSpaceQG & os, const eckit::Configuration & conf)
+  : oper_(ObsOpTLADFactory::create(os, conf))
 {}
 
 // -----------------------------------------------------------------------------

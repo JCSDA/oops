@@ -13,7 +13,6 @@
 #include <iostream>
 #include <string>
 
-#include "eckit/config/Configuration.h"
 #include "eckit/config/LocalConfiguration.h"
 #include "lorenz95/ObsBias.h"
 #include "oops/util/Logger.h"
@@ -21,12 +20,12 @@
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-ObsBiasCorrection::ObsBiasCorrection(const ObsTable &, const Parameters_ & params)
+ObsBiasCorrection::ObsBiasCorrection(const ObsTable &, const eckit::Configuration & conf)
   : bias_(0.0), active_(false)
 {
-  if (params.covariance.value() != boost::none &&
-      params.covariance.value()->standardDeviation.value() != boost::none) {
-    active_ = true;
+  if (conf.has("covariance")) {
+    const eckit::LocalConfiguration covconf(conf, "covariance");
+    active_ = covconf.has("standard_deviation");
   }
   if (active_) {oops::Log::trace() << "ObsBiasCorrection::ObsBiasCorrection created." << std::endl;}
 }

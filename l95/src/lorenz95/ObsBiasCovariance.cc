@@ -14,7 +14,7 @@
 #include <iostream>
 #include <string>
 
-#include "eckit/config/Configuration.h"
+#include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 
 #include "lorenz95/ObsBiasCorrection.h"
@@ -24,16 +24,18 @@
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
-ObsBiasCovariance::ObsBiasCovariance(const ObsTable &, const Parameters_ & params)
+ObsBiasCovariance::ObsBiasCovariance(const ObsTable &, const eckit::Configuration & conf)
   : variance_(0.0), active_(false)
 {
-  if (params.covariance.value() != boost::none &&
-      params.covariance.value()->standardDeviation.value() != boost::none) {
-    active_ = true;
-    const double zz = *params.covariance.value()->standardDeviation.value();
-    variance_ = zz * zz;
-    ASSERT(variance_ > 0.0);
-    oops::Log::info() << "ObsBiasCovariance variance = " << variance_ << std::endl;
+  if (conf.has("covariance")) {
+    const eckit::LocalConfiguration covconf(conf, "covariance");
+    if (covconf.has("standard_deviation")) {
+      active_ = true;
+      const double zz = covconf.getDouble("standard_deviation");
+      variance_ = zz * zz;
+      ASSERT(variance_ > 0.0);
+      oops::Log::info() << "ObsBiasCovariance variance = " << variance_ << std::endl;
+    }
   }
 }
 // -----------------------------------------------------------------------------

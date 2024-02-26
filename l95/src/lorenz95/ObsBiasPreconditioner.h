@@ -13,7 +13,6 @@
 #include <boost/noncopyable.hpp>
 
 #include "lorenz95/ObsBiasCorrection.h"
-#include "lorenz95/ObsBiasParameters.h"
 
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -27,8 +26,6 @@ class ObsBiasPreconditioner : public util::Printable,
                           private boost::noncopyable,
                           private util::ObjectCounter<ObsBiasPreconditioner> {
  public:
-  typedef ObsBiasParameters Parameters_;
-
   static const std::string classname() {return "lorenz95::ObsBiasPreconditioner";}
 
 /// Constructor

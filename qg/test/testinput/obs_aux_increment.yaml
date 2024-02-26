@@ -7,11 +7,9 @@ observations:
     covariance model: diagonal
   obs space:
     obsdatain:
-      engine:
-        obsfile: Data/truth.obs4d_24h.nc
+      obsfile: Data/truth.obs4d_24h.nc
     obsdataout:
-      engine:
-        obsfile: Data/interface.obsincr4d_24h.nc
+      obsfile: Data/interface.obsincr4d_24h.nc
     obs type: Stream
   obs operator:
     obs type: Stream
@@ -23,11 +21,9 @@ observations:
     covariance model: diagonal
   obs space:
     obsdatain:
-      engine:
-        obsfile: Data/truth.obs4d_24h.nc
+      obsfile: Data/truth.obs4d_24h.nc
     obsdataout:
-      engine:
-        obsfile: Data/interface.obsincr4d_24h.nc
+      obsfile: Data/interface.obsincr4d_24h.nc
     obs type: Wind
   obs operator:
     obs type: Wind
@@ -39,11 +35,9 @@ observations:
     covariance model: diagonal
   obs space:
     obsdatain:
-      engine:
-        obsfile: Data/truth.obs4d_24h.nc
+      obsfile: Data/truth.obs4d_24h.nc
     obsdataout:
-      engine:
-        obsfile: Data/interface.obsincr4d_24h.nc
+      obsfile: Data/interface.obsincr4d_24h.nc
     obs type: WSpeed
   obs operator:
     obs type: WSpeed

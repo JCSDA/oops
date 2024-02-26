@@ -27,11 +27,9 @@ cost function:
       obs space:
         obs type: Stream
         obsdatain:
-          engine:
-            obsfile: Data/truth.obs4d_24h.nc
+          obsfile: Data/truth.obs4d_24h.nc
         obsdataout:
-          engine:
-            obsfile: Data/mem001.eda_4dvar.obs4d_24h.nc
+          obsfile: Data/mem001.eda_4dvar.obs4d_24h.nc
       obs error:
         covariance model: diagonal
     - obs operator:
@@ -39,11 +37,9 @@ cost function:
       obs space:
         obs type: Wind
         obsdatain:
-          engine:
-            obsfile: Data/truth.obs4d_24h.nc
+          obsfile: Data/truth.obs4d_24h.nc
         obsdataout:
-          engine:
-            obsfile: Data/mem001.eda_4dvar.obs4d_24h.nc
+          obsfile: Data/mem001.eda_4dvar.obs4d_24h.nc
       obs error:
         covariance model: diagonal
     - obs operator:
@@ -51,11 +47,9 @@ cost function:
       obs space:
         obs type: WSpeed
         obsdatain:
-          engine:
-            obsfile: Data/truth.obs4d_24h.nc
+          obsfile: Data/truth.obs4d_24h.nc
         obsdataout:
-          engine:
-            obsfile: Data/mem001.eda_4dvar.obs4d_24h.nc
+          obsfile: Data/mem001.eda_4dvar.obs4d_24h.nc
       obs error:
         covariance model: diagonal
   constraints:

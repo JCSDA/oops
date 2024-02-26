@@ -15,8 +15,7 @@ observations:
     norm: 6817614730.9630165
   obs space:
     obsdatain:
-      engine:
-        obsfile: Data/truth.obs4d_24h.nc
+      obsfile: Data/truth.obs4d_24h.nc
     obs type: Stream
 - geovals:
     filename: Data/truth.obs4d_24h.wind.gom
@@ -25,8 +24,7 @@ observations:
     norm: 1440.9708190018748
   obs space:
     obsdatain:
-      engine:
-        obsfile: Data/truth.obs4d_24h.nc
+      obsfile: Data/truth.obs4d_24h.nc
     obs type: Wind
 - geovals:
     filename: Data/truth.obs4d_24h.wspeed.gom
@@ -35,6 +33,5 @@ observations:
     norm: 1471.5548038687134
   obs space:
     obsdatain:
-      engine:
-        obsfile: Data/truth.obs4d_24h.nc
+      obsfile: Data/truth.obs4d_24h.nc
     obs type: WSpeed

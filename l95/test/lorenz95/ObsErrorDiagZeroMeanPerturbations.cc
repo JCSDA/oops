@@ -54,12 +54,9 @@ CASE("test_obserrordiag_zeromeanpert") {
     randomAmplitude = obsErrorConf.getDouble("obs perturbations amplitude");
 
     eckit::LocalConfiguration obsSpaceConf;
-    obsSpaceConf.set("obsdatain.engine.obsfile",
-        obsConfs[0].getString("obs space.obsdataout.engine.obsfile"));
-    lorenz95::ObsTableParameters obsSpaceParams;
-    obsSpaceParams.deserialize(obsSpaceConf);
+    obsSpaceConf.set("obsdatain.obsfile", obsConfs[0].getString("obs space.obsdataout.obsfile"));
 
-    lorenz95::ObsTable obsSpace(obsSpaceParams, oops::mpi::world(),
+    lorenz95::ObsTable obsSpace(obsSpaceConf, oops::mpi::world(),
                                 util::TimeWindow(timeWindowConf),
                                 oops::mpi::myself());
     obsSpace.getdb("ObsValue", originalObs);

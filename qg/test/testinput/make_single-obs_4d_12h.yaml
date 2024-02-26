@@ -18,8 +18,7 @@ observations:
       obs type: Stream
     obs space:
       obsdataout:
-        engine:
-          obsfile: Data/truth.single-obs4d_12h.nc
+        obsfile: Data/truth.single-obs4d_12h.nc
       obs type: Stream
       generate:
         begin: PT6H

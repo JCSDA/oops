@@ -159,7 +159,6 @@ template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
   typedef oops::AnalyticInit<OBS>         AnalyticInit_;
   typedef oops::VariableChange<MODEL>     VariableChange_;
   typedef typename VariableChange_::Parameters_ VariableChangeParameters_;
-  typedef oops::AnalyticInitParametersWrapper<OBS> Parameters_;
   typedef oops::State<MODEL>              State_;
   typedef oops::GeoVaLs<OBS>              GeoVaLs_;
   typedef oops::GetValues<MODEL, OBS>     GetValues_;
@@ -195,9 +194,7 @@ template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
   // Fill GeoVaLs with exact values
   GeoVaLs_ ref(gval);
   const eckit::LocalConfiguration analyticConf(confgen, "analytic init");
-  Parameters_ anparams;
-  anparams.validateAndDeserialize(analyticConf);
-  AnalyticInit_ init(anparams.analyticInitParameters);
+  AnalyticInit_ init(analyticConf);
   init.fillGeoVaLs(Test_::sampledLocations(), ref);
 
   EXPECT(ref.rms() > 0.0);

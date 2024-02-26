@@ -14,11 +14,12 @@
 #include <string>
 #include <vector>
 
+#include "eckit/config/LocalConfiguration.h"
+
 #include "oops/base/ObsSpaces.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/util/ConfigFunctions.h"
 #include "oops/util/Logger.h"
-#include "oops/util/parameters/Parameters.h"
 #include "oops/util/Printable.h"
 
 namespace oops {
@@ -32,13 +33,12 @@ class ObsAuxControls : public util::Printable,
                        public util::Serializable {
   typedef ObsAuxControl<OBS>       ObsAuxControl_;
   typedef ObsSpaces<OBS>           ObsSpaces_;
-  typedef typename ObsAuxControl_::Parameters_ Parameters_;
 
  public:
   static const std::string classname() {return "oops::ObsAuxControls";}
 
   ObsAuxControls(const ObsSpaces_ &, const eckit::Configuration &);
-  ObsAuxControls(const ObsSpaces_ &, const std::vector<Parameters_> &);
+  ObsAuxControls(const ObsSpaces_ &, const std::vector<eckit::Configuration> &);
   explicit ObsAuxControls(const ObsAuxControls &, const bool copy = true);
   ~ObsAuxControls();
 
@@ -68,25 +68,31 @@ class ObsAuxControls : public util::Printable,
 
 template<typename OBS>
 ObsAuxControls<OBS>::ObsAuxControls(const ObsSpaces_ & odb,
-                                    const std::vector<Parameters_> & params)
+                                    const std::vector<eckit::Configuration> & configs)
   : auxs_(0)
 {
-  ASSERT(odb.size() == params.size());
-  for (std::size_t jobs = 0; jobs < params.size(); ++jobs) {
-    auxs_.push_back(
-      std::unique_ptr<ObsAuxControl_>(new ObsAuxControl_(odb[jobs], params[jobs])));
+  Log::trace() << "ObsAuxControls<OBS>::ObsAuxControls vect start" << std::endl;
+  ASSERT(odb.size() == configs.size());
+  for (std::size_t jobs = 0; jobs < configs.size(); ++jobs) {
+    auxs_.push_back(std::unique_ptr<ObsAuxControl_>(new ObsAuxControl_(odb[jobs], configs[jobs])));
   }
+  Log::trace() << "ObsAuxControls<OBS>::ObsAuxControls vect done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename OBS>
 ObsAuxControls<OBS>::ObsAuxControls(const ObsSpaces_ & odb, const eckit::Configuration & conf)
-  : ObsAuxControls(odb,
-                   // Split conf into subconfigurations, extract the "obs bias" section from each
-                   // of them, then validate and deserialize that section into a Parameters_ object
-                   validateAndDeserialize<Parameters_>(util::vectoriseAndFilter(conf, "obs bias")))
-{}
+  : auxs_(0)
+{
+  Log::trace() << "ObsAuxControls<OBS>::ObsAuxControls start" << std::endl;
+  std::vector<eckit::LocalConfiguration> obsconf = conf.getSubConfigurations();
+  for (std::size_t jobs = 0; jobs < obsconf.size(); ++jobs) {
+    eckit::LocalConfiguration obsauxconf = obsconf[jobs].getSubConfiguration("obs bias");
+    auxs_.push_back(std::unique_ptr<ObsAuxControl_>(new ObsAuxControl_(odb[jobs], obsauxconf)));
+  }
+  Log::trace() << "ObsAuxControls<OBS>::ObsAuxControls done" << std::endl;
+}
 
 // -----------------------------------------------------------------------------
 
@@ -115,14 +121,12 @@ ObsAuxControls<OBS>::~ObsAuxControls() {
 template<typename OBS>
 void ObsAuxControls<OBS>::read(const eckit::Configuration & conf) {
   Log::trace() << "ObsAuxControls<OBS>::read starting" << std::endl;
-  std::vector<eckit::LocalConfiguration> obsconfs =
-      conf.getSubConfigurations("observations.observers");
+  const eckit::LocalConfiguration oconf(conf, "observations");
+  std::vector<eckit::LocalConfiguration> obsconfs = oconf.getSubConfigurations("observers");
   ASSERT(obsconfs.size() == auxs_.size());
   for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) {
     eckit::LocalConfiguration obsauxconf = obsconfs[jobs].getSubConfiguration("obs bias");
-    Parameters_ params;
-    params.validateAndDeserialize(obsauxconf);
-    auxs_[jobs]->read(params);
+    auxs_[jobs]->read(obsauxconf);
   }
   Log::trace() << "ObsAuxControls<OBS>::read done" << std::endl;
 }
@@ -132,14 +136,12 @@ void ObsAuxControls<OBS>::read(const eckit::Configuration & conf) {
 template<typename OBS>
 void ObsAuxControls<OBS>::write(const eckit::Configuration & conf) const {
   Log::trace() << "ObsAuxControls<OBS>::write starting" << std::endl;
-  std::vector<eckit::LocalConfiguration> obsconfs =
-      conf.getSubConfigurations("observations.observers");
+  const eckit::LocalConfiguration oconf(conf, "observations");
+  std::vector<eckit::LocalConfiguration> obsconfs = oconf.getSubConfigurations("observers");
   ASSERT(obsconfs.size() == auxs_.size());
   for (std::size_t jobs = 0; jobs < auxs_.size(); ++jobs) {
     eckit::LocalConfiguration obsauxconf = obsconfs[jobs].getSubConfiguration("obs bias");
-    Parameters_ params;
-    params.validateAndDeserialize(obsauxconf);
-    auxs_[jobs]->write(params);
+    auxs_[jobs]->write(obsauxconf);
   }
   Log::trace() << "ObsAuxControls<OBS>::write done" << std::endl;
 }

@@ -51,21 +51,17 @@ class LinearObsOperatorTestParameters : public oops::Parameters {
 
 /// \brief Options used to configure a test simulating observations from a single obs space
 /// using a particular LinearObsOperator.
-template <typename OBS>
-class ObsTypeParameters : public oops::ObsTypeParametersBase<OBS> {
-  typedef oops::ObsTypeParametersBase<OBS> Base;
-  OOPS_CONCRETE_PARAMETERS(ObsTypeParameters, Base)
-
-  typedef typename oops::GeoVaLs<OBS>::Parameters_ GeoVaLsParameters_;
-
- public:
-  /// Overridden to perform some extra checks that can't currently be done by the JSON schema
-  /// validator.
-  void deserialize(util::CompositePath &path, const eckit::Configuration &config) override;
+class ObsTypeParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(ObsTypeParameters, Parameters)
 
  public:
   /// Options used to load GeoVaLs from a file.
-  oops::RequiredParameter<GeoVaLsParameters_> geovals{"geovals", this};
+  oops::RequiredParameter<eckit::LocalConfiguration> geovals{"geovals", this};
+  oops::OptionalParameter<eckit::LocalConfiguration> obsBias{"obs bias", this};
+  oops::RequiredParameter<eckit::LocalConfiguration> obsSpace{"obs space", this};
+  oops::RequiredParameter<eckit::LocalConfiguration> obsOper{"obs operator", this};
+  oops::OptionalParameter<eckit::LocalConfiguration> obsError{"obs error", this};
+  oops::OptionalParameter<eckit::LocalConfiguration> obsOperLin{"linear obs operator", this};
 
   // One of these parameters must be set.
   oops::OptionalParameter<std::string> expectConstructorToThrow{
@@ -96,34 +92,7 @@ class ObsTypeParameters : public oops::ObsTypeParametersBase<OBS> {
 
 // -----------------------------------------------------------------------------
 
-template <typename OBS>
-void ObsTypeParameters<OBS>::deserialize(util::CompositePath &path,
-                                         const eckit::Configuration &config) {
-  Base::deserialize(path, config);
-
-  if (linearObsOperatorTest.value() == boost::none &&
-      expectConstructorToThrow.value() == boost::none &&
-      expectSetTrajectoryToThrow.value() == boost::none &&
-      expectSimulateObsToThrow.value() == boost::none &&
-      // If none of the options above are set, the two options below must both be set to ensure we
-      // don't try to access the value of linearObsOperatorTest either from the TL or AD tests
-      (expectSimulateObsTLToThrow.value() == boost::none ||
-       expectSimulateObsADToThrow.value() == boost::none)) {
-    throw eckit::UserError(path.path() +
-                           ": At least one of the 'tolerance', "
-                           "'expect constructor to throw exception with message' and "
-                           "'expect setTrajectory to throw exception with message' and "
-                           "'expect simulateObs to throw exception with message' and "
-                           "'expect simulateObsTL to throw exception with message' and "
-                           "'expect simulateObsAD to throw exception with message' options "
-                           "must be set");
-  }
-}
-
-// -----------------------------------------------------------------------------
-
 /// \brief Top-level options taken by the LinearObsOperator test.
-template <typename OBS>
 class TestParameters : public oops::Parameters {
   OOPS_CONCRETE_PARAMETERS(TestParameters, Parameters)
 
@@ -133,20 +102,17 @@ class TestParameters : public oops::Parameters {
 
   /// Each element of this list configures an observation space and an operator whose capability
   /// of simulating observations from this space is to be tested.
-  oops::Parameter<std::vector<ObsTypeParameters<OBS>>> observations{"observations", {}, this};
+  oops::Parameter<std::vector<ObsTypeParameters>> observations{"observations", {}, this};
 };
 
 // -----------------------------------------------------------------------------
 
 /// \brief Extract linear obs operator parameters from the 'linear obs operator' YAML option
 /// if present or from the 'obs operator' option otherwise.
-template <typename OBS>
-typename oops::LinearObsOperator<OBS>::Parameters_ linearObsOperatorParameters(
-    const ObsTypeParameters<OBS> &obsTypeParameters)
-{
-  typedef typename oops::LinearObsOperator<OBS>::Parameters_ LinearObsOperatorParameters_;
-  if (obsTypeParameters.observer.linearObsOperator.value() != boost::none)
-    return *obsTypeParameters.observer.linearObsOperator.value();
+eckit::LocalConfiguration linearObsOperatorParameters(const ObsTypeParameters &obsTypeParameters) {
+  eckit::LocalConfiguration oconf = obsTypeParameters.toConfiguration();
+  if (oconf.has("linear obs operator"))
+    return eckit::LocalConfiguration(oconf, "linear obs operator");
   else
     // [Comment copied from ObserverTLAD.h]
     // Hack: when "linear obs operator" is not specified in the input file, reinterpret
@@ -154,25 +120,23 @@ typename oops::LinearObsOperator<OBS>::Parameters_ linearObsOperatorParameters(
     //       term, we need a design that either,
     //       - allows constructing LinearObsOperator from either set of Parameters, or
     //       - merges the two sets of Parameters so this switch can be removed
-    return oops::validateAndDeserialize<LinearObsOperatorParameters_>(
-        obsTypeParameters.observer.obsOperator.value().toConfiguration());
+    return eckit::LocalConfiguration(oconf, "obs operator");
 }
 
 // -----------------------------------------------------------------------------
 /// \brief tests constructor and print method
 template <typename OBS> void testConstructor() {
   typedef oops::LinearObsOperator<OBS>             LinearObsOperator_;
-  typedef typename LinearObsOperator_::Parameters_ LinearObsOperatorParameters_;
-  typedef ObsTypeParameters<OBS>                   ObsTypeParameters_;
+  typedef ObsTypeParameters                        ObsTypeParameters_;
   typedef ObsTestsFixture<OBS>                     Test_;
-  typedef TestParameters<OBS>                      TestParameters_;
+  typedef TestParameters                           TestParameters_;
 
   TestParameters_ testParams;
   testParams.validateAndDeserialize(TestEnvironment::config());
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     const ObsTypeParameters_ &obsTypeParams = testParams.observations.value()[jj];
-    const LinearObsOperatorParameters_ linobsopparams = linearObsOperatorParameters(obsTypeParams);
+    const eckit::LocalConfiguration linobsopparams = linearObsOperatorParameters(obsTypeParams);
 
     if (obsTypeParams.expectConstructorToThrow.value() == boost::none) {
       std::unique_ptr<LinearObsOperator_> linobsop(
@@ -194,14 +158,14 @@ template <typename OBS> void testConstructor() {
 
 template <typename OBS> void testLinearity() {
   typedef ObsTestsFixture<OBS>         Test_;
-  typedef TestParameters<OBS>          TestParameters_;
+  typedef TestParameters               TestParameters_;
   typedef oops::GeoVaLs<OBS>           GeoVaLs_;
   typedef oops::ObsAuxControl<OBS>     ObsAuxCtrl_;
   typedef oops::ObsAuxIncrement<OBS>   ObsAuxIncr_;
   typedef oops::ObsAuxCovariance<OBS>  ObsAuxCov_;
   typedef oops::ObsOperator<OBS>       ObsOperator_;
   typedef oops::LinearObsOperator<OBS> LinearObsOperator_;
-  typedef ObsTypeParameters<OBS>       ObsTypeParameters_;
+  typedef ObsTypeParameters            ObsTypeParameters_;
   typedef oops::ObsVector<OBS>         ObsVector_;
 
   const double zero = 0.0;
@@ -219,16 +183,19 @@ template <typename OBS> void testLinearity() {
         obsTypeParams.expectSimulateObsTLToThrow.value() != boost::none)
       continue;
 
+    const eckit::LocalConfiguration oconf = obsTypeParams.toConfiguration();
+    const eckit::LocalConfiguration oopconf(oconf, "obs operator");
     // initialize observation operator (set variables requested from the model,
     // variables simulated by the observation operator, other init)
-    ObsOperator_ hop(Test_::obspace()[jj], obsTypeParams.observer.obsOperator);
+    ObsOperator_ hop(Test_::obspace()[jj], oopconf);
     // initialize TL/AD observation operator (set model variables for Jacobian),
     // other init)
     LinearObsOperator_ hoptl(Test_::obspace()[jj], linearObsOperatorParameters(obsTypeParams));
 
     // initialize obs bias
-    const ObsAuxCtrl_ ybias(Test_::obspace()[jj], obsTypeParams.obsBias);
-    ObsAuxIncr_ ybinc(Test_::obspace()[jj], obsTypeParams.obsBias);
+    const eckit::LocalConfiguration bconf = oconf.getSubConfiguration("obs bias");
+    const ObsAuxCtrl_ ybias(Test_::obspace()[jj], bconf);
+    ObsAuxIncr_ ybinc(Test_::obspace()[jj], bconf);
 
     // initialize geovals
     oops::Variables hopvars = hop.requiredVars();
@@ -240,7 +207,7 @@ template <typename OBS> void testLinearity() {
     hop.computeReducedVars(reducedHopvars, gval);
 
      // initialize Obs. Bias Covariance
-    const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], obsTypeParams.obsBias);
+    const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], bconf);
 
     // set trajectory for TL/AD to be the geovals from the file
     hoptl.setTrajectory(gval, ybias);
@@ -280,14 +247,14 @@ template <typename OBS> void testLinearity() {
 
 template <typename OBS> void testAdjoint() {
   typedef ObsTestsFixture<OBS> Test_;
-  typedef TestParameters<OBS>          TestParameters_;
+  typedef TestParameters               TestParameters_;
   typedef oops::GeoVaLs<OBS>           GeoVaLs_;
   typedef oops::ObsOperator<OBS>       ObsOperator_;
   typedef oops::LinearObsOperator<OBS> LinearObsOperator_;
   typedef oops::ObsAuxControl<OBS>     ObsAuxCtrl_;
   typedef oops::ObsAuxIncrement<OBS>   ObsAuxIncr_;
   typedef oops::ObsAuxCovariance<OBS>  ObsAuxCov_;
-  typedef ObsTypeParameters<OBS>       ObsTypeParameters_;
+  typedef ObsTypeParameters            ObsTypeParameters_;
   typedef oops::ObsVector<OBS>         ObsVector_;
 
   const double zero = 0.0;
@@ -304,21 +271,24 @@ template <typename OBS> void testAdjoint() {
         obsTypeParams.expectSimulateObsADToThrow.value() != boost::none)
       continue;
 
+    const eckit::LocalConfiguration oconf = obsTypeParams.toConfiguration();
+    const eckit::LocalConfiguration oopconf(oconf, "obs operator");
     // initialize observation operator (set variables requested from the model,
     // variables simulated by the observation operator, other init)
-    ObsOperator_ hop(Test_::obspace()[jj], obsTypeParams.observer.obsOperator);
+    ObsOperator_ hop(Test_::obspace()[jj], oopconf);
     // initialize TL/AD observation operator (set model variables for Jacobian),
     // other init)
     LinearObsOperator_ hoptl(Test_::obspace()[jj], linearObsOperatorParameters(obsTypeParams));
 
     const double tol = obsTypeParams.linearObsOperatorTest.value()->toleranceAD;
     // initialize bias correction
-    const ObsAuxCtrl_ ybias(Test_::obspace()[jj], obsTypeParams.obsBias);
-    ObsAuxIncr_ ybinc1(Test_::obspace()[jj], obsTypeParams.obsBias);  // TL
-    ObsAuxIncr_ ybinc2(Test_::obspace()[jj], obsTypeParams.obsBias);  // AD
+    const eckit::LocalConfiguration bconf = oconf.getSubConfiguration("obs bias");
+    const ObsAuxCtrl_ ybias(Test_::obspace()[jj], bconf);
+    ObsAuxIncr_ ybinc1(Test_::obspace()[jj], bconf);
+    ObsAuxIncr_ ybinc2(Test_::obspace()[jj], bconf);
 
     // initialize Obs. Bias Covariance
-    const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], obsTypeParams.obsBias);
+    const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], bconf);
 
     // initialize geovals
     oops::Variables hopvars = hop.requiredVars();
@@ -370,7 +340,7 @@ template <typename OBS> void testAdjoint() {
 template <typename OBS> void testTangentLinear() {
   // Test  ||(hop(x+alpha*dx)-hop(x)) - hoptl(alpha*dx)|| < tol
   typedef ObsTestsFixture<OBS>         Test_;
-  typedef TestParameters<OBS>          TestParameters_;
+  typedef TestParameters               TestParameters_;
   typedef oops::GeoVaLs<OBS>           GeoVaLs_;
   typedef oops::ObsDiagnostics<OBS>    ObsDiags_;
   typedef oops::ObsAuxControl<OBS>     ObsAuxCtrl_;
@@ -378,7 +348,7 @@ template <typename OBS> void testTangentLinear() {
   typedef oops::ObsAuxCovariance<OBS>  ObsAuxCov_;
   typedef oops::ObsOperator<OBS>       ObsOperator_;
   typedef oops::LinearObsOperator<OBS> LinearObsOperator_;
-  typedef ObsTypeParameters<OBS>       ObsTypeParameters_;
+  typedef ObsTypeParameters            ObsTypeParameters_;
   typedef oops::ObsVector<OBS>         ObsVector_;
 
   TestParameters_ testParams;
@@ -392,9 +362,11 @@ template <typename OBS> void testTangentLinear() {
         obsTypeParams.expectSimulateObsTLToThrow.value() != boost::none)
       continue;
 
+    const eckit::LocalConfiguration oconf = obsTypeParams.toConfiguration();
+    const eckit::LocalConfiguration oopconf(oconf, "obs operator");
     // initialize observation operator (set variables requested from the model,
     // variables simulated by the observation operator, other init)
-    ObsOperator_ hop(Test_::obspace()[jj], obsTypeParams.observer.obsOperator);
+    ObsOperator_ hop(Test_::obspace()[jj], oopconf);
     // initialize TL/AD observation operator (set model variables for Jacobian),
     // other init)
     LinearObsOperator_ hoptl(Test_::obspace()[jj], linearObsOperatorParameters(obsTypeParams));
@@ -404,11 +376,12 @@ template <typename OBS> void testTangentLinear() {
     const int iter = obsTypeParams.linearObsOperatorTest.value()->iterationsTL;
 
     // initialize obs bias from file
-    const ObsAuxCtrl_ ybias0(Test_::obspace()[jj], obsTypeParams.obsBias);
-    ObsAuxCtrl_ ybias(Test_::obspace()[jj], obsTypeParams.obsBias);
+    const eckit::LocalConfiguration bconf = oconf.getSubConfiguration("obs bias");
+    const ObsAuxCtrl_ ybias0(Test_::obspace()[jj], bconf);
+    ObsAuxCtrl_ ybias(Test_::obspace()[jj], bconf);
 
     // initialize Obs. Bias Covariance
-    const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], obsTypeParams.obsBias);
+    const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], bconf);
 
     // initialize geovals
     oops::Variables hopvars = hop.requiredVars();
@@ -443,7 +416,7 @@ template <typename OBS> void testTangentLinear() {
     const oops::Variables hoptlvars = hoptl.requiredVars();
     GeoVaLs_ dx(obsTypeParams.geovals, Test_::obspace()[jj], hoptlvars);
     dx.random();
-    ObsAuxIncr_ ybinc(Test_::obspace()[jj], obsTypeParams.obsBias);
+    ObsAuxIncr_ ybinc(Test_::obspace()[jj], bconf);
     Bobsbias.randomize(ybinc);
 
     // scale dx by x0
@@ -479,14 +452,14 @@ template <typename OBS> void testTangentLinear() {
 
 template <typename OBS> void testException() {
   typedef ObsTestsFixture<OBS>         Test_;
-  typedef TestParameters<OBS>          TestParameters_;
+  typedef TestParameters               TestParameters_;
   typedef oops::GeoVaLs<OBS>           GeoVaLs_;
   typedef oops::ObsOperator<OBS>       ObsOperator_;
   typedef oops::LinearObsOperator<OBS> LinearObsOperator_;
   typedef oops::ObsAuxControl<OBS>     ObsAuxCtrl_;
   typedef oops::ObsAuxIncrement<OBS>   ObsAuxIncr_;
   typedef oops::ObsAuxCovariance<OBS>  ObsAuxCov_;
-  typedef ObsTypeParameters<OBS>       ObsTypeParameters_;
+  typedef ObsTypeParameters            ObsTypeParameters_;
   typedef oops::ObsVector<OBS>         ObsVector_;
 
   TestParameters_ testParams;
@@ -498,11 +471,14 @@ template <typename OBS> void testException() {
       continue;
 
     // Set up objects prior to throwing exceptions.
-    ObsOperator_ hop(Test_::obspace()[jj], obsTypeParams.observer.obsOperator);
+    const eckit::LocalConfiguration oconf = obsTypeParams.toConfiguration();
+    const eckit::LocalConfiguration oopconf(oconf, "obs operator");
+    ObsOperator_ hop(Test_::obspace()[jj], oopconf);
     LinearObsOperator_ hoptl(Test_::obspace()[jj], linearObsOperatorParameters(obsTypeParams));
-    const ObsAuxCtrl_ ybias(Test_::obspace()[jj], obsTypeParams.obsBias);
-    ObsAuxIncr_ ybinc(Test_::obspace()[jj], obsTypeParams.obsBias);
-    const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], obsTypeParams.obsBias);
+    const eckit::LocalConfiguration bconf = oconf.getSubConfiguration("obs bias");
+    const ObsAuxCtrl_ ybias(Test_::obspace()[jj], bconf);
+    ObsAuxIncr_ ybinc(Test_::obspace()[jj], bconf);
+    const ObsAuxCov_ Bobsbias(Test_::obspace()[jj], bconf);
     oops::Variables hopvars = hop.requiredVars();
     oops::Variables reducedHopvars = ybias.requiredVars();
     hopvars += reducedHopvars;

@@ -19,7 +19,6 @@
 #include "oops/base/Observations.h"
 #include "oops/base/Observers.h"
 #include "oops/base/ObsSpaces.h"
-#include "oops/base/ObsTypeParameters.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
@@ -51,7 +50,7 @@ class HofX3DParameters : public ApplicationParameters {
   RequiredParameter<eckit::LocalConfiguration> timeWindow{"time window", this};
 
   /// Options describing the observations and their treatment
-  Parameter<ObserversParameters<MODEL, OBS>> observations{"observations", {}, this};
+  RequiredParameter<eckit::LocalConfiguration> observations{"observations", this};
 
   /// Geometry parameters.
   RequiredParameter<GeometryParameters_> geometry{"geometry", this};
@@ -98,10 +97,11 @@ template <typename MODEL, typename OBS> class HofX3D : public Application {
     Log::info() << "HofX3D observation window: " << timeWindow << std::endl;
 
 //  Setup geometry
-    const Geometry_ geometry(params.geometry, this->getComm(), oops::mpi::myself());
+    const Geometry_ geometry(params.geometry, this->getComm(), mpi::myself());
 
 //  Setup state
-    State_ xx(geometry, params.initialCondition);
+    const eckit::LocalConfiguration initialConfig(fullConfig, "state");
+    State_ xx(geometry, initialConfig);
     Log::test() << "State: " << xx << std::endl;
 
 //  Check that state is inside the obs window
@@ -113,15 +113,15 @@ template <typename MODEL, typename OBS> class HofX3D : public Application {
     }
 
 //  Setup observations
-    const auto & observersParams = params.observations.value().observers.value();
-    ObsSpaces_ obspaces(obsSpaceParameters(observersParams), this->getComm(), timeWindow);
-    ObsAux_ obsaux(obspaces, obsAuxParameters(observersParams));
-    ObsErrors_ Rmat(obsErrorParameters(observersParams), obspaces);
+    const eckit::LocalConfiguration oConfig(fullConfig, "observations");
+    const eckit::LocalConfiguration obsConfig(oConfig, "observers");
+    ObsSpaces_ obspaces(obsConfig, this->getComm(), timeWindow);
+    ObsAux_ obsaux(obspaces, obsConfig);
+    ObsErrors_ Rmat(obsConfig, obspaces);
 
 //  Setup and initialize observer
     PostProcessor<State_> post;
-    Observers_ hofx(obspaces, observerParameters(observersParams),
-                    params.observations.value().getValues.value());
+    Observers_ hofx(obspaces, oConfig);
     hofx.initialize(geometry, obsaux, Rmat, post);
 
 //  Compute H(x)
@@ -136,13 +136,13 @@ template <typename MODEL, typename OBS> class HofX3D : public Application {
     Log::test() << "H(x): " << std::endl << yobs << "End H(x)" << std::endl;
 
 //  Perturb H(x) if needed
-    if (params.observations.value().obsPerturbations) {
+    if (oConfig.getBool("obs perturbations", false)) {
       yobs.perturb(Rmat);
       Log::test() << "Perturbed H(x): " << std::endl << yobs << "End Perturbed H(x)" << std::endl;
     }
 
 //  Save H(x) as observations (if "make obs" == true)
-    if (params.makeObs) yobs.save("ObsValue");
+    if (fullConfig.getBool("make obs", false)) yobs.save("ObsValue");
     obspaces.save();
 
     return 0;

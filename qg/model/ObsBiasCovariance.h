@@ -18,11 +18,13 @@
 #include <boost/noncopyable.hpp>
 
 #include "model/ObsBias.h"
-#include "model/ObsBiasParameters.h"
 #include "model/ObsBiasPreconditioner.h"
 #include "oops/util/ObjectCounter.h"
-#include "oops/util/parameters/GenericParameters.h"
 #include "oops/util/Printable.h"
+
+namespace eckit {
+  class Configuration;
+}
 
 namespace qg {
   class ObsBias;
@@ -35,12 +37,10 @@ class ObsBiasCovariance : public util::Printable,
                           private boost::noncopyable,
                           private util::ObjectCounter<ObsBiasCovariance> {
  public:
-  typedef ObsBiasParameters Parameters_;
-
   static const std::string classname() {return "qg::ObsBiasCovariance";}
 
 /// Constructor, destructor
-  ObsBiasCovariance(const ObsSpaceQG &, const Parameters_ &);
+  ObsBiasCovariance(const ObsSpaceQG &, const eckit::Configuration &);
   ~ObsBiasCovariance() {}
 
 /// Linear algebra operators
@@ -52,10 +52,8 @@ class ObsBiasCovariance : public util::Printable,
   std::unique_ptr<ObsBiasPreconditioner> preconditioner() const;
 
 /// I/O and diagnostics
-  void write(const Parameters_ &) const {}
+  void write(const eckit::Configuration &) const {}
   bool active(const unsigned int ii) const {return variance_[ii] > 0.0;}
-
-
 
  private:
   void print(std::ostream &) const;

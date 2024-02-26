@@ -32,12 +32,10 @@ class ObsTypeParametersBase : public Parameters {
   OOPS_ABSTRACT_PARAMETERS(ObsTypeParametersBase, Parameters)
 
  public:
-  typedef typename ObsAuxControl<OBS>::Parameters_ ObsAuxControlParameters_;
   typedef ObsErrorParametersWrapper<OBS> ObsErrorParameters_;
-  typedef typename ObsSpace<OBS>::Parameters_ ObsSpaceParameters_;
 
   /// Options used to configure the observation space.
-  oops::RequiredParameter<ObsSpaceParameters_> obsSpace{"obs space", this};
+  oops::RequiredParameter<eckit::LocalConfiguration> obsSpace{"obs space", this};
 
   /// Options used to configure the observation operator, observation filters and GetValues.
   ObserverParameters<OBS> observer{this};
@@ -46,7 +44,7 @@ class ObsTypeParametersBase : public Parameters {
   oops::Parameter<ObsErrorParameters_> obsError{"obs error", {}, this};
 
   /// Options used to configure bias correction.
-  oops::Parameter<ObsAuxControlParameters_> obsBias{"obs bias", {}, this};
+  oops::Parameter<eckit::LocalConfiguration> obsBias{"obs bias", {}, this};
 };
 
 // -----------------------------------------------------------------------------

@@ -18,8 +18,7 @@ observations:
       obs type: Stream
     obs space:
       obsdataout:
-        engine:
-          obsfile: Data/truth.obs3d.nc
+        obsfile: Data/truth.obs3d.nc
       obs type: Stream
       generate:
         begin: PT10H
@@ -31,8 +30,7 @@ observations:
       obs type: Wind
     obs space:
       obsdataout:
-        engine:
-          obsfile: Data/truth.obs3d.nc
+        obsfile: Data/truth.obs3d.nc
       obs type: Wind
       generate:
         begin: PT11H
@@ -44,8 +42,7 @@ observations:
       obs type: WSpeed
     obs space:
       obsdataout:
-        engine:
-          obsfile: Data/truth.obs3d.nc
+        obsfile: Data/truth.obs3d.nc
       obs type: WSpeed
       generate:
         begin: PT10H

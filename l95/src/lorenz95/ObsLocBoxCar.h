@@ -10,10 +10,11 @@
 
 #include <ostream>
 
+#include "eckit/config/Configuration.h"
+
 #include "oops/base/ObsLocalizationBase.h"
 
 #include "lorenz95/L95Traits.h"
-#include "lorenz95/ObsLocParameters.h"
 
 namespace lorenz95 {
 // Forward declarations
@@ -24,9 +25,7 @@ namespace lorenz95 {
 /// Observation space localization for BoxCar function
 class ObsLocBoxCar: public oops::ObsLocalizationBase<L95Traits, L95ObsTraits> {
  public:
-  typedef ObsLocParameters Parameters_;
-
-  ObsLocBoxCar(const Parameters_ &, const ObsTable &);
+  ObsLocBoxCar(const eckit::Configuration &, const ObsTable &);
 
   /// compute localization and update localization values in \p locfactor
   /// (missing value is for obs outside of localization)

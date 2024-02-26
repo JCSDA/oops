@@ -23,11 +23,9 @@ cost function:
     - obs operator: {}
       obs space:
         obsdatain:
-          engine:
-            obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
+          obsfile: Data/truth4d.2010-01-02T00:00:00Z.obt
         obsdataout:
-          engine:
-            obsfile: Data/4dvar_rpcg.2010-01-02T00:00:00Z.obt
+          obsfile: Data/4dvar_rpcg.2010-01-02T00:00:00Z.obt
       obs error:
         covariance model: diagonal
   constraints:
