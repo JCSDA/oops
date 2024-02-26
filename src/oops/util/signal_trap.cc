@@ -34,12 +34,8 @@
 // exceptions that cause an abort, and then use the CMake WILL_FAIL test property to catch
 // the abort.
 
-// The behavior of boost::stacktrace is controlled by preprocessor macros. See
-// https://www.boost.org/doc/libs/1_76_0/doc/html/stacktrace/configuration_and_build.html
-// for details. The correct libs and macros are set using CMake (in backtrace_deps.cmake).
-#include <boost/stacktrace.hpp>
-
 #include "oops/util/abor1_cpp.h"
+#include "oops/util/Stacktrace.h"
 
 namespace util {
 
@@ -250,7 +246,7 @@ void trap_sigfpe(const int abortFlag) {
 
 //------------------------------------------------------------------------
 void sigfpe_abort() {
-    std::cerr << std::endl << boost::stacktrace::stacktrace() << std::endl;
+    std::cerr << std::endl << stacktrace_current() << std::endl;
     ABORT("Trapped a floating point exception");
 }
 
