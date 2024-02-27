@@ -11,6 +11,7 @@
 #include <exception>
 #include <iostream>
 #include <memory>
+#include <string>
 
 namespace util {
 
@@ -29,7 +30,8 @@ std::string stacktrace_current();
 ///   ultimately derive from std::exception, including the eckit-related ones.
 /// @param e is the exception.
 /// @param out is the output stream.
-/// @param level denotes current depth in the stack. Used because unwind_exception_stack is a recursive function.
+/// @param level denotes current depth in the stack. Used because
+///   unwind_exception_stack is a recursive function.
 void unwind_exception_stack(const std::exception& e, std::ostream& out = std::cerr, int level = 0);
 
 }  // namespace util
