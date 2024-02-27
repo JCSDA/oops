@@ -28,4 +28,16 @@ std::string stacktrace_current() {
 #endif
 }
 
+void unwind_exception_stack(const std::exception& e, std::ostream& out, int level) {
+  out << "Exception: level: " << level << "\n" << e.what() << std::endl;
+  try {
+    std::rethrow_if_nested(e);
+  } catch (const std::exception& f) {
+    unwind_exception_stack(f, out, level + 1);
+  } catch (...) {
+    out << "exception: level: " << level
+        << "\n\tException at this level is not derived from std::exception." << std::endl;
+  }
+}
+
 }  // end namespace util
