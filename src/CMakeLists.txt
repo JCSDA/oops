@@ -329,6 +329,7 @@ oops/runs/LocalEnsembleDA.h
 oops/runs/Run.cc
 oops/runs/Run.h
 oops/runs/SqrtOfVertLoc.h
+oops/runs/TemplatedEnsembleApplication.h
 oops/runs/Test.h
 oops/runs/Variational.h
 

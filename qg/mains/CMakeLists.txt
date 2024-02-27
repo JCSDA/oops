@@ -129,3 +129,8 @@ ecbuild_add_executable( TARGET  qg_linearization_error.x
                         LIBS    qg
                       )
 # TODO: oops_output_json_schema( qg_linearization_error.x )
+
+ecbuild_add_executable( TARGET  qg_templated_eda.x
+                        SOURCES qgTemplatedEDA.cc
+                        LIBS    qg
+                      )

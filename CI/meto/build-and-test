@@ -27,6 +27,6 @@ cmake -B . -S "${HERE}" -DCMAKE_BUILD_TYPE=Release
 cmake --build . -j "${NPROC}"
 
 # -- Test
-ctest -j "$NPROC" --output-on-failure --test-dir './oops'
+ctest --test-dir './oops' --output-on-failure
 
 exit

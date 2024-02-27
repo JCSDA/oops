@@ -45,6 +45,7 @@ list( APPEND qg_testinput
   testinput/eda_3dfgat_2.yaml
   testinput/eda_3dfgat_3.yaml
   testinput/eda_3dfgat_4.yaml
+  testinput/eda_3dfgat_with_member_template.yaml
   testinput/eda_3dfgat.yaml
   testinput/eda_3dvar_2.yaml
   testinput/eda_3dvar.yaml
@@ -174,6 +175,7 @@ list( APPEND qg_testoutput
   testoutput/4densvar_single-obs_loc_4d_time_decay.test
   testoutput/4densvar_single-obs_no_loc.test
   testoutput/eda_3dfgat.test
+  testoutput/eda_3dfgat_with_member_template.test
   testoutput/eda_3dvar.test
   testoutput/eda_3dvar_block.test
   testoutput/eda_3dvar_control_pert.test
@@ -884,6 +886,13 @@ ecbuild_add_test( TARGET test_qg_eda_3dfgat
                   MPI    4
                   COMMAND ${CMAKE_BINARY_DIR}/bin/qg_eda.x
                   ARGS testinput/eda_3dfgat.yaml
+                  DEPENDS qg_eda.x
+                  TEST_DEPENDS test_qg_forecast test_qg_make_obs_3d )
+
+ecbuild_add_test( TARGET test_qg_eda_3dfgat_with_member_template
+                  MPI    4
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/qg_templated_eda.x
+                  ARGS testinput/eda_3dfgat_with_member_template.yaml
                   DEPENDS qg_eda.x
                   TEST_DEPENDS test_qg_forecast test_qg_make_obs_3d )
 
