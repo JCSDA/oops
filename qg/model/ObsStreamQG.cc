@@ -38,7 +38,8 @@ ObsStreamQG::ObsStreamQG(const ObsSpaceQG & odb, const eckit::Configuration & co
 // -----------------------------------------------------------------------------
 
 void ObsStreamQG::simulateObs(const GomQG & gom, ObsVecQG & ovec,
-                              const ObsBias & bias) const {
+                              const ObsBias & bias,
+                              const QCFlags_ & qc_flags) const {
   qg_stream_equiv_f90(obsdb_.toFortran(), gom.toFortran(), ovec.toFortran(), bias.stream());
 }
 

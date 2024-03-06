@@ -17,11 +17,10 @@
 #include "eckit/config/Configuration.h"
 
 #include "oops/base/Variables.h"
+#include "oops/qg/ObsDataQG.h"
+#include "oops/qg/ObsSpaceQG.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Printable.h"
-
-#include "oops/qg/ObsSpaceQG.h"
-
 
 namespace oops {
 template <typename OBS> class Locations;
@@ -39,12 +38,14 @@ struct QgObsTraits;
 class ObsOpBaseQG : public util::Printable,
                     private boost::noncopyable {
  public:
+  typedef ObsDataQG<int>  QCFlags_;
   typedef oops::Locations<QgObsTraits> Locations_;
 
   ObsOpBaseQG() = default;
 
 /// Obs Operator
-  virtual void simulateObs(const GomQG &, ObsVecQG &, const ObsBias &) const = 0;
+  virtual void simulateObs(const GomQG &, ObsVecQG &, const ObsBias &,
+                           const QCFlags_ &) const = 0;
 
 /// Other
   virtual const oops::Variables & requiredVars() const = 0;  // Required from Model

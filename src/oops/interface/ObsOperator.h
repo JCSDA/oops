@@ -22,6 +22,7 @@
 #include "oops/base/ObsVector.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
+#include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsDiagnostics.h"
 #include "oops/interface/ObsSpace.h"
 #include "oops/util/Logger.h"
@@ -57,6 +58,7 @@ class ObsOperator : public ObsOperatorBase<OBS>,
   typedef ObsAuxControl<OBS>         ObsAuxControl_;
   typedef ObsVector<OBS>             ObsVector_;
   typedef ObsSpace<OBS>              ObsSpace_;
+  typedef ObsDataVector<OBS, int>    ObsDataInt_;
 
  public:
   static const std::string classname() {return "oops::ObsOperator";}
@@ -78,7 +80,9 @@ class ObsOperator : public ObsOperatorBase<OBS>,
   ///                      operator
   /// \param[out] obsdiags   additional diagnostics output from computing obs operator that is not
   ///                        used in the assimilation, and can be used by ObsFilters.
+  /// \param[in] qc_flags  quality control flags
   void simulateObs(const GeoVaLs_ & x_int, ObsVector_ & y, const ObsAuxControl_ & obsaux,
+                   const ObsDataInt_ & qc_flags,
                    ObsVector_ & obsbias, ObsDiags_ & obsdiags) const;
 
   /// Variables required from the model State to compute the obs operator.
@@ -148,12 +152,15 @@ ObsOperator<OBS>::~ObsOperator() {
 
 template <typename OBS>
 void ObsOperator<OBS>::simulateObs(const GeoVaLs_ & gvals, ObsVector_ & yy,
-                                   const ObsAuxControl_ & aux, ObsVector_ & ybias,
-                                   ObsDiags_ & ydiag) const {
+                                     const ObsAuxControl_ & aux,
+                                     const ObsDataInt_ & qc_flags,
+                                     ObsVector_ & ybias,
+                                     ObsDiags_ & ydiag) const {
   Log::trace() << "ObsOperator<OBS>::simulateObs starting" << std::endl;
   util::Timer timer(name_, "simulateObs");
-  oper_->simulateObs(gvals.geovals(), yy.obsvector(), aux.obsauxcontrol(), ybias.obsvector(),
-                     ydiag.obsdiagnostics());
+  oper_->simulateObs(gvals.geovals(), yy.obsvector(), aux.obsauxcontrol(),
+                     qc_flags.obsdatavector(),
+                     ybias.obsvector(), ydiag.obsdiagnostics());
   Log::trace() << "ObsOperator<OBS>::simulateObs done" << std::endl;
 }
 

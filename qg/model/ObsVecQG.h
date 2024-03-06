@@ -33,8 +33,8 @@ class ObsVecQG : public util::Printable,
  public:
   static const std::string classname() {return "qg::ObsVecQG";}
 
-  ObsVecQG(const ObsSpaceQG &,
-           const std::string & name = "");
+  explicit ObsVecQG(const ObsSpaceQG &,
+           const std::string & name = std::string());
   ObsVecQG(const ObsVecQG &);
   ~ObsVecQG();
 

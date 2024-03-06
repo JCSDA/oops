@@ -13,6 +13,7 @@
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/LinearObsOperator.h"
 #include "oops/interface/ObsAuxControl.h"
+#include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsDiagnostics.h"
 #include "oops/interface/ObsSpace.h"
 
@@ -37,11 +38,13 @@ class ObsOperatorBase {
   typedef ObsAuxControl<OBS>         ObsAuxControl_;
   typedef ObsVector<OBS>             ObsVector_;
   typedef ObsSpace<OBS>              ObsSpace_;
+  typedef ObsDataVector<OBS, int>    ObsDataInt_;
 
  public:
   virtual ~ObsOperatorBase() {}
 
   virtual void simulateObs(const GeoVaLs_ & x_int, ObsVector_ & y, const ObsAuxControl_ & obsaux,
+                           const ObsDataInt_ & qc_flags,
                            ObsVector_ & obsbias, ObsDiags_ & obsdiags) const = 0;
 
   /// Variables required from the model State to compute obs operator. These variables

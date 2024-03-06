@@ -14,9 +14,8 @@
 #include <string>
 
 #include "oops/base/Variables.h"
-#include "oops/util/ObjectCounter.h"
-
 #include "oops/qg/ObsOpBaseTLAD.h"
+#include "oops/util/ObjectCounter.h"
 
 // Forward declarations
 namespace eckit {
@@ -36,14 +35,17 @@ namespace qg {
 class ObsStreamTLAD : public ObsOpBaseTLAD,
                       private util::ObjectCounter<ObsStreamTLAD> {
  public:
+  typedef ObsDataQG<int> QCFlags_;
   static const std::string classname() {return "qg::ObsStreamTLAD";}
 
   ObsStreamTLAD(const ObsSpaceQG &, const eckit::Configuration &);
 
 // Obs Operators
   void setTrajectory(const GomQG &, const ObsBias &) override;
-  void simulateObsTL(const GomQG &, ObsVecQG &, const ObsBiasIncrement &) const override;
-  void simulateObsAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &) const override;
+  void simulateObsTL(const GomQG &, ObsVecQG &, const ObsBiasIncrement &,
+                     const QCFlags_ &) const override;
+  void simulateObsAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &,
+                     const QCFlags_ &) const override;
 
 // Other
   const oops::Variables & requiredVars() const override {return varin_;}

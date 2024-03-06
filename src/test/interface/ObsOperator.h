@@ -109,7 +109,7 @@ template <typename OBS> void testConstructor() {
     const ObsTypeParameters_ &obsTypeParams = testParams.observations.value()[jj];
     const eckit::LocalConfiguration & obsOpConf = obsTypeParams.obsop.value();
     if (obsTypeParams.expectConstructorToThrow.value() == boost::none) {
-      auto hop = std::make_unique<ObsOperator_>(Test_::obspace()[jj], obsOpConf);;
+      auto hop = std::make_unique<ObsOperator_>(Test_::obspace()[jj], obsOpConf);
       EXPECT(hop.get());
       oops::Log::info() << "Testing ObsOperator: " << *hop << std::endl;
       hop.reset();
@@ -137,7 +137,6 @@ template <typename OBS> void testSimulateObs() {
 
   TestParameters_ testParams;
   testParams.validateAndDeserialize(TestEnvironment::config());
-
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     const ObsTypeParameters_ &obsTypeParams = testParams.observations.value()[jj];
     const eckit::LocalConfiguration obsConf = obsTypeParams.toConfiguration();
@@ -147,6 +146,11 @@ template <typename OBS> void testSimulateObs() {
 
     // initialize observation operator (set variables requested from the model,
     // variables simulated by the observation operator, other init)
+
+    oops::ObsDataVector<OBS, int> qc_flags(
+      Test_::obspace()[jj],
+      Test_::obspace()[jj].obsvariables(),
+      std::string());
     const eckit::LocalConfiguration obsOpConf(obsConf, "obs operator");
     ObsOperator_ hop(Test_::obspace()[jj], obsOpConf);
 
@@ -180,11 +184,11 @@ template <typename OBS> void testSimulateObs() {
       // The simulateObs method is expected to throw an exception
       // containing the specified string.
       const std::string expectedMessage = *obsTypeParams.expectSimulateObsToThrow.value();
-      EXPECT_THROWS_MSG(hop.simulateObs(gval, hofx, ybias, bias, diags),
+      EXPECT_THROWS_MSG(hop.simulateObs(gval, hofx, ybias, qc_flags, bias, diags),
                         expectedMessage.c_str());
       continue;
     } else {
-      hop.simulateObs(gval, hofx, ybias, bias, diags);
+      hop.simulateObs(gval, hofx, ybias, qc_flags, bias, diags);
     }
     hofx.save("hofx");
     bias.save("ObsBias");

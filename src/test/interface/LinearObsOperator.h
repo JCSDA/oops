@@ -171,7 +171,6 @@ template <typename OBS> void testLinearity() {
   const double zero = 0.0;
   const double coef = 3.14;
   const double tol = 1.0e-11;
-
   TestParameters_ testParams;
   testParams.validateAndDeserialize(TestEnvironment::config());
 
@@ -191,6 +190,10 @@ template <typename OBS> void testLinearity() {
     // initialize TL/AD observation operator (set model variables for Jacobian),
     // other init)
     LinearObsOperator_ hoptl(Test_::obspace()[jj], linearObsOperatorParameters(obsTypeParams));
+
+    oops::ObsDataVector<OBS, int> qc_flags(
+      Test_::obspace()[jj],
+      Test_::obspace()[jj].obsvariables());
 
     // initialize obs bias
     const eckit::LocalConfiguration bconf = oconf.getSubConfiguration("obs bias");
@@ -222,13 +225,13 @@ template <typename OBS> void testLinearity() {
     // test rms(H * (dx, ybinc)) = 0, when dx = 0
     dx.zero();
     ybinc.zero();
-    hoptl.simulateObsTL(dx, dy1, ybinc);
+    hoptl.simulateObsTL(dx, dy1, ybinc, qc_flags);
     EXPECT(dy1.rms() == zero);
 
     // test rms(H * (dx, ybinc)) > 0, when dx is random
     dx.random();
     Bobsbias.randomize(ybinc);
-    hoptl.simulateObsTL(dx, dy1, ybinc);
+    hoptl.simulateObsTL(dx, dy1, ybinc, qc_flags);
     EXPECT(dy1.rms() > zero);
 
     // test k * H * (dx, ybinc) ~ H * (k*dx, k*ybinc)
@@ -236,7 +239,7 @@ template <typename OBS> void testLinearity() {
     dx  *= coef;
     ybinc *= coef;
     ObsVector_ dy2(Test_::obspace()[jj]);
-    hoptl.simulateObsTL(dx, dy2, ybinc);
+    hoptl.simulateObsTL(dx, dy2, ybinc, qc_flags);
 
     dy2 -= dy1;
     EXPECT(dy2.rms() / dy1.rms() < tol);
@@ -256,7 +259,6 @@ template <typename OBS> void testAdjoint() {
   typedef oops::ObsAuxCovariance<OBS>  ObsAuxCov_;
   typedef ObsTypeParameters            ObsTypeParameters_;
   typedef oops::ObsVector<OBS>         ObsVector_;
-
   const double zero = 0.0;
 
   TestParameters_ testParams;
@@ -271,6 +273,10 @@ template <typename OBS> void testAdjoint() {
         obsTypeParams.expectSimulateObsADToThrow.value() != boost::none)
       continue;
 
+    oops::ObsDataVector<OBS, int> qc_flags(
+      Test_::obspace()[jj],
+      Test_::obspace()[jj].obsvariables(),
+      std::string());
     const eckit::LocalConfiguration oconf = obsTypeParams.toConfiguration();
     const eckit::LocalConfiguration oopconf(oconf, "obs operator");
     // initialize observation operator (set variables requested from the model,
@@ -312,7 +318,7 @@ template <typename OBS> void testAdjoint() {
     dx1.random();
     EXPECT(dot_product(dx1, dx1) > zero);  //  BOOST_REQUIRE
     Bobsbias.randomize(ybinc1);
-    hoptl.simulateObsTL(dx1, dy1, ybinc1);
+    hoptl.simulateObsTL(dx1, dy1, ybinc1, qc_flags);
     EXPECT(dot_product(dy1, dy1) > zero);
 
     // calculate (dx2, ybinc2) = HT dy2 (with random dy2)
@@ -320,7 +326,7 @@ template <typename OBS> void testAdjoint() {
     EXPECT(dot_product(dy2, dy2) > zero);  //  BOOST_REQUIRE
     dx2.zero();
     ybinc2.zero();
-    hoptl.simulateObsAD(dx2, dy2, ybinc2);
+    hoptl.simulateObsAD(dx2, dy2, ybinc2, qc_flags);
     EXPECT(dot_product(dx2, dx2) > zero);
 
     const double zz1 = dot_product(dx1, dx2) + dot_product(ybinc1, ybinc2);
@@ -350,7 +356,6 @@ template <typename OBS> void testTangentLinear() {
   typedef oops::LinearObsOperator<OBS> LinearObsOperator_;
   typedef ObsTypeParameters            ObsTypeParameters_;
   typedef oops::ObsVector<OBS>         ObsVector_;
-
   TestParameters_ testParams;
   testParams.validateAndDeserialize(TestEnvironment::config());
 
@@ -402,6 +407,12 @@ template <typename OBS> void testTangentLinear() {
     ObsVector_ y2(Test_::obspace()[jj]);
     ObsVector_ y3(Test_::obspace()[jj]);
     ObsVector_ bias(Test_::obspace()[jj]);
+
+    oops::ObsDataVector<OBS, int> qc_flags(
+      Test_::obspace()[jj],
+      Test_::obspace()[jj].obsvariables(),
+      std::string());
+
     bias.zero();
 
     // create obsdatavector to hold diags
@@ -410,7 +421,7 @@ template <typename OBS> void testTangentLinear() {
     ObsDiags_ ydiag(Test_::obspace()[jj], hop.locations(), diagvars);
 
     // y1 = hop(x0, ybias0)
-    hop.simulateObs(x0, y1, ybias0, bias, ydiag);
+    hop.simulateObs(x0, y1, ybias0, qc_flags, bias, ydiag);
 
     // randomize dx and ybinc
     const oops::Variables hoptlvars = hoptl.requiredVars();
@@ -434,10 +445,10 @@ template <typename OBS> void testTangentLinear() {
       bias.zero();
 
       // y2 = hop(x0+alpha*dx, ybias0+alpha*ybinc)
-      hop.simulateObs(x, y2, ybias, bias, ydiag);
+      hop.simulateObs(x, y2, ybias, qc_flags, bias, ydiag);
       y2 -= y1;
       // y3 = hoptl(alpha*dx, alpha*ybinc)
-      hoptl.simulateObsTL(dx, y3, ybinc);
+      hoptl.simulateObsTL(dx, y3, ybinc, qc_flags);
       y2 -= y3;
 
       double test_norm = y2.rms();
@@ -470,6 +481,11 @@ template <typename OBS> void testException() {
     if (obsTypeParams.expectConstructorToThrow.value() != boost::none)
       continue;
 
+    oops::ObsDataVector<OBS, int> qc_flags(
+      Test_::obspace()[jj],
+      Test_::obspace()[jj].obsvariables(),
+      std::string());
+
     // Set up objects prior to throwing exceptions.
     const eckit::LocalConfiguration oconf = obsTypeParams.toConfiguration();
     const eckit::LocalConfiguration oopconf(oconf, "obs operator");
@@ -498,7 +514,6 @@ template <typename OBS> void testException() {
       // before simulateObsTL and simulateObsAD.
       continue;
     }
-
     if (obsTypeParams.expectSimulateObsTLToThrow.value() != boost::none) {
       hoptl.setTrajectory(gval, ybias);
       ObsVector_ dy1(Test_::obspace()[jj]);
@@ -508,7 +523,7 @@ template <typename OBS> void testException() {
       // The simulateObsTL method is expected to throw an exception
       // containing the specified string.
       const std::string expectedMessage = *obsTypeParams.expectSimulateObsTLToThrow.value();
-      EXPECT_THROWS_MSG(hoptl.simulateObsTL(dx1, dy1, ybinc),
+      EXPECT_THROWS_MSG(hoptl.simulateObsTL(dx1, dy1, ybinc, qc_flags),
                         expectedMessage.c_str());
     }
 
@@ -523,7 +538,7 @@ template <typename OBS> void testException() {
       // The simulateObsAD method is expected to throw an exception
       // containing the specified string.
       const std::string expectedMessage = *obsTypeParams.expectSimulateObsADToThrow.value();
-      EXPECT_THROWS_MSG(hoptl.simulateObsAD(dx2, dy2, ybinc),
+      EXPECT_THROWS_MSG(hoptl.simulateObsAD(dx2, dy2, ybinc, qc_flags),
                         expectedMessage.c_str());
     }
   }

@@ -39,7 +39,8 @@ ObsWindQG::ObsWindQG(const ObsSpaceQG & odb, const eckit::Configuration & config
 // -----------------------------------------------------------------------------
 
 void ObsWindQG::simulateObs(const GomQG & gom, ObsVecQG & ovec,
-                            const ObsBias & bias) const {
+                            const ObsBias & bias,
+                            const QCFlags_ & qc_flags) const {
   qg_wind_equiv_f90(obsdb_.toFortran(), gom.toFortran(), ovec.toFortran(), bias.wind());
 }
 

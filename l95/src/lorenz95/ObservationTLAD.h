@@ -16,8 +16,8 @@
 
 #include <boost/noncopyable.hpp>
 
+#include "lorenz95/ObsData1D.h"
 #include "lorenz95/ObsTable.h"
-
 #include "oops/base/Variables.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -44,14 +44,17 @@ class ObservationTLAD : public util::Printable,
                         private boost::noncopyable,
                         private util::ObjectCounter<ObservationTLAD> {
  public:
+  typedef ObsData1D<int> QCFlags_;
   static const std::string classname() {return "lorenz95::ObservationTLAD";}
 
   ObservationTLAD(const ObsTable &, const eckit::Configuration &);
 
 // Obs Operators
   void setTrajectory(const GomL95 &, const ObsBias &);
-  void simulateObsTL(const GomL95 &, ObsVec1D &, const ObsBiasCorrection &) const;
-  void simulateObsAD(GomL95 &, const ObsVec1D &, ObsBiasCorrection &) const;
+  void simulateObsTL(const GomL95 &, ObsVec1D &, const ObsBiasCorrection &,
+                     const QCFlags_ &) const;
+  void simulateObsAD(GomL95 &, const ObsVec1D &, ObsBiasCorrection &,
+                     const QCFlags_ &) const;
 
 // Other
   const oops::Variables & requiredVars() const {return inputs_;}

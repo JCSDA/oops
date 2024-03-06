@@ -41,14 +41,14 @@ void ObsStreamTLAD::setTrajectory(const GomQG &, const ObsBias &) {}
 // -----------------------------------------------------------------------------
 
 void ObsStreamTLAD::simulateObsTL(const GomQG & gom, ObsVecQG & ovec,
-                                  const ObsBiasIncrement & bias) const {
+                                  const ObsBiasIncrement & bias, const QCFlags_ & qc_flags) const {
   qg_stream_equiv_tl_f90(obsdb_.toFortran(), gom.toFortran(), ovec.toFortran(), bias.stream());
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsStreamTLAD::simulateObsAD(GomQG & gom, const ObsVecQG & ovec,
-                                  ObsBiasIncrement & bias) const {
+                                  ObsBiasIncrement & bias, const QCFlags_ & qc_flags) const {
   qg_stream_equiv_ad_f90(obsdb_.toFortran(), gom.toFortran(), ovec.toFortran(), bias.stream());
 }
 

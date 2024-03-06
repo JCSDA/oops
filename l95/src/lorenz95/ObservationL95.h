@@ -17,9 +17,9 @@
 
 #include <boost/noncopyable.hpp>
 
+#include "lorenz95/ObsData1D.h"
 #include "lorenz95/ObservationTLAD.h"
 #include "lorenz95/ObsTable.h"
-
 #include "oops/base/Variables.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -39,8 +39,6 @@ namespace lorenz95 {
   class ObsBias;
   class ObsDiags1D;
   class ObsVec1D;
-
-/// Observation for Lorenz 95 model.
 /*!
  *  ObservationL95 defines ObsOperator for Lorenz 95 model.
  */
@@ -51,13 +49,16 @@ class ObservationL95 : public util::Printable,
                        private boost::noncopyable,
                        private util::ObjectCounter<ObservationL95> {
  public:
+  typedef ObsData1D<int> QCFlags_;
+
   static const std::string classname() {return "lorenz95::ObservationL95";}
 
   ObservationL95(const ObsTable &, const eckit::Configuration &);
   ~ObservationL95();
 
 // Obs Operators
-  void simulateObs(const GomL95 &, ObsVec1D &, const ObsBias &, ObsVec1D &, ObsDiags1D &) const;
+  void simulateObs(const GomL95 &, ObsVec1D &, const ObsBias &,
+                   const QCFlags_ &, ObsVec1D &, ObsDiags1D &) const;
 
 // Other
   const oops::Variables & requiredVars() const {return inputs_;}

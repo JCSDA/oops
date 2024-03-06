@@ -78,7 +78,6 @@ class Observer {
   typedef ObsVector<OBS>               ObsVector_;
   typedef ObsDataVector<OBS, float>    ObsDataVector_;
 
-
  public:
 /// \brief Initializes ObsOperators, Locations, and QC data
   Observer(const ObsSpace_ & obspace, const Parameters_ & params,
@@ -216,7 +215,7 @@ void Observer<MODEL, OBS>::finalize(ObsVector_ & yobsim) {
   ybias.zero();
 
   /// Compute H(x)
-  obsop_->simulateObs(geovals, yobsim, *biascoeff_, ybias, ydiags);
+  obsop_->simulateObs(geovals, yobsim, *biascoeff_, *qcflags_, ybias, ydiags);
 
   /// Call posterior filters
   filters_->postFilter(geovals, yobsim, ybias, ydiags);
@@ -231,7 +230,7 @@ void Observer<MODEL, OBS>::finalize(ObsVector_ & yobsim) {
   if (iterconf_->has("iteration")) siter = iterconf_->getString("iteration");
 
   if (iterconf_->getBool("save qc", true)) {
-    const std::string qcname  = "EffectiveQC" + siter;
+    const std::string qcname = "EffectiveQC" + siter;
     qcflags_->save(qcname);
   }
   if (iterconf_->getBool("save hofx", true)) {

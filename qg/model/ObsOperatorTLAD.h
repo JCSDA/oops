@@ -16,6 +16,7 @@
 
 #include <boost/noncopyable.hpp>
 
+#include "oops/qg/ObsDataQG.h"
 #include "oops/util/Printable.h"
 
 // Forward declarations
@@ -40,13 +41,19 @@ namespace qg {
 class ObsOperatorTLAD : public util::Printable,
                         private boost::noncopyable {
  public:
+  typedef ObsDataQG<int> QCFlags_;
+
+
   ObsOperatorTLAD(const ObsSpaceQG &, const eckit::Configuration &);
+
   ~ObsOperatorTLAD();
 
 /// Obs Operator
   void setTrajectory(const GomQG &, const ObsBias &);
-  void simulateObsTL(const GomQG &, ObsVecQG &, const ObsBiasIncrement &) const;
-  void simulateObsAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &) const;
+  void simulateObsTL(const GomQG &, ObsVecQG &, const ObsBiasIncrement &,
+                     const QCFlags_ &) const;
+  void simulateObsAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &,
+                     const QCFlags_ &) const;
 
 /// Other
   const oops::Variables & requiredVars() const;  // Required inputs requiredVars from Model

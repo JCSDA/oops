@@ -50,6 +50,7 @@ class ObserverTLAD {
   typedef ObsSpace<OBS>                ObsSpace_;
   typedef ObsVector<OBS>               ObsVector_;
   typedef ObserverParameters<OBS>      Parameters_;
+  typedef ObsDataVector<OBS, int>      ObsDataInt_;
 
  public:
   ObserverTLAD(const ObsSpace_ &, const Parameters_ &);
@@ -84,6 +85,7 @@ class ObserverTLAD {
   std::unique_ptr<Locations_> locations_;
   util::TimeWindow timeWindow_;
   const ObsAuxCtrl_ *           ybias_;
+  ObsDataInt_ qc_flags_;       // QC flags (should not be a pointer)
   bool init_;
 };
 
@@ -102,7 +104,7 @@ ObserverTLAD<MODEL, OBS>::ObserverTLAD(const ObsSpace_ & obsdb, const Parameters
                params.linearObsOperator.value().value() : params.obsOperator.value()),
     getvals_(),
     timeWindow_(obsdb.timeWindow()),
-    ybias_(nullptr), init_(false)
+    ybias_(nullptr), qc_flags_(obsdb, obsdb.obsvariables()), init_(false)
 {
   Log::trace() << "ObserverTLAD::ObserverTLAD" << std::endl;
 }
@@ -178,7 +180,7 @@ void ObserverTLAD<MODEL, OBS>::finalizeTL(const ObsAuxIncr_ & ybiastl, ObsVector
   }
 
   // Compute linear H(x)
-  hoptlad_.simulateObsTL(geovals, ydeptl, ybiastl);
+  hoptlad_.simulateObsTL(geovals, ydeptl, ybiastl, qc_flags_);
 
   Log::trace() << "ObserverTLAD::finalizeTL done" << std::endl;
 }
@@ -190,9 +192,9 @@ void ObserverTLAD<MODEL, OBS>::initializeAD(const ObsVector_ & ydepad, ObsAuxInc
   GeoVaLs_ geovals(*locations_, hoptlad_.requiredVars(), hoptladVarSizes_);
 
   // Compute adjoint of H(x)
-  hoptlad_.simulateObsAD(geovals, ydepad, ybiasad);
-
+  hoptlad_.simulateObsAD(geovals, ydepad, ybiasad, qc_flags_);
   // GeoVaLs forcing to GetValues
+
   for (size_t m = 0; m < getvals_.size(); ++m) {
     getvals_[m]->fillGeoVaLsAD(geovals);
   }

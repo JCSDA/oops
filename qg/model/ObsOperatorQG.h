@@ -16,6 +16,8 @@
 
 #include <boost/noncopyable.hpp>
 
+#include "model/ObsDataQG.h"
+
 #include "oops/base/Variables.h"
 #include "oops/util/Printable.h"
 
@@ -43,12 +45,14 @@ class ObsOperatorQG : public util::Printable,
                       private boost::noncopyable {
  public:
   typedef oops::Locations<QgObsTraits> Locations_;
+  typedef ObsDataQG<int> QCFlags_;
 
   ObsOperatorQG(const ObsSpaceQG &, const eckit::Configuration &);
   ~ObsOperatorQG();
 
 /// Obs Operator
-  void simulateObs(const GomQG &, ObsVecQG &, const ObsBias &, ObsVecQG &, ObsDiagsQG &) const;
+  void simulateObs(const GomQG &, ObsVecQG &, const ObsBias &,
+                   const QCFlags_ &, ObsVecQG &, ObsDiagsQG &) const;
 
 /// Other
   const oops::Variables & requiredVars() const;  // Required input vars from Model

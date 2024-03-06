@@ -18,6 +18,7 @@
 #include "oops/base/Variables.h"
 #include "oops/util/ObjectCounter.h"
 
+#include "oops/qg/ObsDataQG.h"
 #include "oops/qg/ObsOpBaseQG.h"
 #include "oops/qg/ObsSpaceQG.h"
 #include "oops/qg/QgTraits.h"
@@ -39,11 +40,12 @@ class ObsStreamQG : public ObsOpBaseQG,
                     private util::ObjectCounter<ObsStreamQG> {
  public:
   static const std::string classname() {return "qg::ObsStreamQG";}
-
+  typedef ObsDataQG<int> QCFlags_;
   ObsStreamQG(const ObsSpaceQG &, const eckit::Configuration &);
 
 // Obs Operator
-  void simulateObs(const GomQG &, ObsVecQG &, const ObsBias &) const override;
+  void simulateObs(const GomQG &, ObsVecQG &, const ObsBias &,
+                   const QCFlags_ &) const override;
 
 // Other
   const oops::Variables & requiredVars() const override {return varin_;}

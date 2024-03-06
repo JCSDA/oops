@@ -39,12 +39,14 @@ namespace qg {
 class ObsWSpeedQG : public ObsOpBaseQG,
                     private util::ObjectCounter<ObsWSpeedQG> {
  public:
+  typedef ObsDataQG<int> QCFlags_;
+
   static const std::string classname() {return "qg::ObsWSpeedQG";}
 
   ObsWSpeedQG(const ObsSpaceQG &, const eckit::Configuration &);
 
 // Obs Operator
-  void simulateObs(const GomQG &, ObsVecQG &, const ObsBias &) const override;
+  void simulateObs(const GomQG &, ObsVecQG &, const ObsBias &, const QCFlags_ &) const override;
 
 // Other
   const oops::Variables & requiredVars() const override {return varin_;}

@@ -45,7 +45,8 @@ void ObsWSpeedTLAD::setTrajectory(const GomQG & gom, const ObsBias &) {
 // -----------------------------------------------------------------------------
 
 void ObsWSpeedTLAD::simulateObsTL(const GomQG & gom, ObsVecQG & ovec,
-                                  const ObsBiasIncrement & bias) const {
+                                  const ObsBiasIncrement & bias,
+                                  const QCFlags_ & qc_flags) const {
   qg_wspeed_equiv_tl_f90(obsdb_.toFortran(), gom.toFortran(), ovec.toFortran(),
                          traj_, bias.wspd());
 }
@@ -53,7 +54,8 @@ void ObsWSpeedTLAD::simulateObsTL(const GomQG & gom, ObsVecQG & ovec,
 // -----------------------------------------------------------------------------
 
 void ObsWSpeedTLAD::simulateObsAD(GomQG & gom, const ObsVecQG & ovec,
-                                  ObsBiasIncrement & bias) const {
+                                  ObsBiasIncrement & bias,
+                                  const QCFlags_ & qc_flags) const {
   qg_wspeed_equiv_ad_f90(obsdb_.toFortran(), gom.toFortran(), ovec.toFortran(),
                          traj_, bias.wspd());
 }

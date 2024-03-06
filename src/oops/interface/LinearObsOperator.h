@@ -20,6 +20,7 @@
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsAuxIncrement.h"
+#include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsSpace.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
@@ -49,6 +50,7 @@ class LinearObsOperator : public util::Printable,
   typedef ObsAuxIncrement<OBS>     ObsAuxIncrement_;
   typedef ObsSpace<OBS>            ObsSpace_;
   typedef ObsVector<OBS>           ObsVector_;
+  typedef ObsDataVector<OBS, int>  ObsDataInt_;
 
  public:
   static const std::string classname() {return "oops::LinearObsOperator";}
@@ -75,8 +77,10 @@ class LinearObsOperator : public util::Printable,
   ///                      locations.
   /// \param[out] dy       output of the TL obs operator.
   /// \param[in]  dobsaux: additional input to the TL obs operator, e.g. perturbation to bias
-  ///                      coefficients or obs operator parameters.
-  void simulateObsTL(const GeoVaLs_ & dx, ObsVector_ & dy, const ObsAuxIncrement_ & dobsaux) const;
+  ///                      coefficients or obs operator parameters
+  /// \param[in] qc_flags quality control flags
+  void simulateObsTL(const GeoVaLs_ & dx, ObsVector_ & dy, const ObsAuxIncrement_ & dobsaux,
+                     const ObsDataInt_ & qc_flags) const;
   /// Apply adjoint of the observation operator linearized around the trajectory that was
   /// passed to setTrajectory method (which is always called before simulateObsAD).
   /// \param[out] dx       output of the AD obs operator, Increment interpolated to observations
@@ -84,8 +88,9 @@ class LinearObsOperator : public util::Printable,
   /// \param[in]  dy       input of the AD obs operator, perturbation to the ObsVector.
   /// \param[out] dobsaux  additional output of the AD obs operator, e.g. perturbation to bias
   ///                      coefficients or obs operator parameters.
-  void simulateObsAD(GeoVaLs_ & dx, const ObsVector_ & dy, ObsAuxIncrement_ & dobsaux) const;
-
+  /// \param[in] qc_flags quality control flags
+  void simulateObsAD(GeoVaLs_ & dx, const ObsVector_ & dy, ObsAuxIncrement_ & dobsaux,
+                     const ObsDataInt_ & qc_flags) const;
   /// Variables required from the model Increment to compute TL or AD of the obs operator.
   /// These variables will be provided in GeoVaLs passed to simulateObsTL and simulateObsAD.
   /// Note: these Variables may be different from variables returned by ObsOperator::requiredVars(),
@@ -137,10 +142,12 @@ void LinearObsOperator<OBS>::setTrajectory(const GeoVaLs_ & gvals, const ObsAuxC
 
 template <typename OBS>
 void LinearObsOperator<OBS>::simulateObsTL(const GeoVaLs_ & gvals, ObsVector_ & yy,
-                                             const ObsAuxIncrement_ & aux) const {
+                                             const ObsAuxIncrement_ & aux,
+                                             const ObsDataInt_ & qc_flags) const {
   Log::trace() << "LinearObsOperator<OBS>::simulateObsTL starting" << std::endl;
   util::Timer timer(name_, "simulateObsTL");
-  oper_->simulateObsTL(gvals.geovals(), yy.obsvector(), aux.obsauxincrement());
+  oper_->simulateObsTL(gvals.geovals(), yy.obsvector(), aux.obsauxincrement(),
+                       qc_flags.obsdatavector());
   Log::trace() << "LinearObsOperator<OBS>::simulateObsTL done" << std::endl;
 }
 
@@ -148,10 +155,12 @@ void LinearObsOperator<OBS>::simulateObsTL(const GeoVaLs_ & gvals, ObsVector_ & 
 
 template <typename OBS>
 void LinearObsOperator<OBS>::simulateObsAD(GeoVaLs_ & gvals, const ObsVector_ & yy,
-                                             ObsAuxIncrement_ & aux) const {
+                                             ObsAuxIncrement_ & aux,
+                                             const ObsDataInt_ & qc_flags) const {
   Log::trace() << "LinearObsOperator<OBS>::simulateObsAD starting" << std::endl;
   util::Timer timer(name_, "simulateObsAD");
-  oper_->simulateObsAD(gvals.geovals(), yy.obsvector(), aux.obsauxincrement());
+  oper_->simulateObsAD(gvals.geovals(), yy.obsvector(), aux.obsauxincrement(),
+                       qc_flags.obsdatavector());
   Log::trace() << "LinearObsOperator<OBS>::simulateObsAD done" << std::endl;
 }
 

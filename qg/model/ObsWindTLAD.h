@@ -36,14 +36,17 @@ namespace qg {
 class ObsWindTLAD : public ObsOpBaseTLAD,
                     private util::ObjectCounter<ObsWindTLAD> {
  public:
+  typedef ObsOpBaseTLAD::QCFlags_ QCFlags_;
   static const std::string classname() {return "qg::ObsWindTLAD";}
 
   ObsWindTLAD(const ObsSpaceQG &, const eckit::Configuration &);
 
 // Obs Operators
   void setTrajectory(const GomQG &, const ObsBias &) override;
-  void simulateObsTL(const GomQG &, ObsVecQG &, const ObsBiasIncrement &) const override;
-  void simulateObsAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &) const override;
+  void simulateObsTL(const GomQG &, ObsVecQG &, const ObsBiasIncrement &,
+                     const QCFlags_ &) const override;
+  void simulateObsAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &,
+                     const QCFlags_ &) const override;
 
 // Other
   const oops::Variables & requiredVars() const override {return varin_;}

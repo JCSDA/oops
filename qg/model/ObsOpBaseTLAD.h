@@ -16,12 +16,12 @@
 #include "eckit/config/Configuration.h"
 
 #include "oops/base/Variables.h"
+#include "oops/qg/ObsDataQG.h"
+#include "oops/qg/ObsSpaceQG.h"
+#include "oops/qg/QgTraitsFwd.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
-
-#include "oops/qg/ObsSpaceQG.h"
-
 namespace qg {
 class GomQG;
 class ObsBias;
@@ -34,12 +34,15 @@ class ObsVecQG;
 class ObsOpBaseTLAD : public util::Printable,
                       private boost::noncopyable {
  public:
+  typedef ObsDataQG<int> QCFlags_;
   ObsOpBaseTLAD() = default;
 
 /// Obs Operator
   virtual void setTrajectory(const GomQG &, const ObsBias &) = 0;
-  virtual void simulateObsTL(const GomQG &, ObsVecQG &, const ObsBiasIncrement &) const = 0;
-  virtual void simulateObsAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &) const = 0;
+  virtual void simulateObsTL(const GomQG &, ObsVecQG &, const ObsBiasIncrement &,
+                             const QCFlags_ &) const = 0;
+  virtual void simulateObsAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &,
+                             const QCFlags_ &) const = 0;
 
 /// Other
   virtual const oops::Variables & requiredVars() const = 0;  // Required from Model

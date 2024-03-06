@@ -37,8 +37,9 @@ ObsOperatorQG::~ObsOperatorQG() {}
 // -----------------------------------------------------------------------------
 
 void ObsOperatorQG::simulateObs(const GomQG & gvals, ObsVecQG & yy, const ObsBias & bias,
+                                const QCFlags_ & qc_flags,
                                 ObsVecQG &, ObsDiagsQG &) const {
-  oper_->simulateObs(gvals, yy, bias);
+  oper_->simulateObs(gvals, yy, bias, qc_flags);
 }
 
 // -----------------------------------------------------------------------------

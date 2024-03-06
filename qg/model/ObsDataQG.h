@@ -33,7 +33,8 @@ class ObsDataQG : public util::Printable,
  public:
   static const std::string classname() {return "qg::ObsDataQG";}
 
-  ObsDataQG(const ObsSpaceQG &, const oops::Variables &, const std::string &);
+  explicit ObsDataQG(const ObsSpaceQG &, const oops::Variables &,
+                     const std::string &);
   ObsDataQG(const ObsDataQG &);
   explicit ObsDataQG(const ObsVecQG &);
   ~ObsDataQG() {}
@@ -54,7 +55,6 @@ class ObsDataQG : public util::Printable,
   const ObsVecQG & vect() const {return data_;}
  private:
   void print(std::ostream &) const;
-
   ObsVecQG data_;
 };
 //-----------------------------------------------------------------------------

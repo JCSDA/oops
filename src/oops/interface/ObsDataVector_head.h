@@ -36,7 +36,8 @@ class ObsDataVector : public util::Printable,
   /// Constructor for specified ObsSpace \p os, with \p variables. If the group \p name is
   /// specified, the data is read from ObsSpace for specified variables and group.
   /// Otherwise ObsDataVector is allocated for specified variables and filled with zeros.
-  ObsDataVector(const ObsSpace<OBS> & os, const Variables & vars, const std::string name = "");
+  ObsDataVector(const ObsSpace<OBS> & os, const Variables & vars,
+                         const std::string name = "");
   /// Copy constructor from \p other
   ObsDataVector(const ObsDataVector & other);
   /// Constructor from \p other ObsVector. ObsDataVector is created with variables from ObsVector

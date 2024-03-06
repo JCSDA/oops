@@ -51,6 +51,7 @@ class ObsOperatorPert : public ObsOperatorBase<OBS>,
   typedef ObsOperator<OBS>           ObsOperator_;
   typedef ObsVector<OBS>             ObsVector_;
   typedef ObsSpace<OBS>              ObsSpace_;
+  typedef ObsDataVector<OBS, int>    ObsDataInt_;
 
  public:
   static const std::string classname() {return "oops::ObsOperatorPert";}
@@ -68,7 +69,9 @@ class ObsOperatorPert : public ObsOperatorBase<OBS>,
   /// \param[out] y        result of computing obs operator on \p x.
   /// \param[in]  obsaux   additional input for computing H(x), e.g. bias correction coefficients
   ///                      or obs operator parameters.
+  /// \params[in] qc_flags   quality control flags
   void simulateObs(const GeoVaLs_ & x_int, ObsVector_ & y, const ObsAuxControl_ & obsaux,
+                   const ObsDataInt_ & qc_flags,
                    ObsVector_ &, ObsDiags_ &) const;
 
   /// Variables required from the model Increment (under the guise of a State) to compute
@@ -116,7 +119,9 @@ ObsOperatorPert<OBS>::~ObsOperatorPert() {
 
 template <typename OBS>
 void ObsOperatorPert<OBS>::simulateObs(const GeoVaLs_ & gvals, ObsVector_ & yy,
-                                       const ObsAuxControl_ & aux, ObsVector_ &,
+                                       const ObsAuxControl_ & aux,
+                                       const ObsDataInt_ & qc_flags,
+                                       ObsVector_ &,
                                        ObsDiags_ &) const {
   ASSERT(trajectorySet);
   Log::trace() << "ObsOperatorPert<OBS>::simulateObs starting" << std::endl;
@@ -125,7 +130,7 @@ void ObsOperatorPert<OBS>::simulateObs(const GeoVaLs_ & gvals, ObsVector_ & yy,
   ObsAuxIncrement_ auxInc(auxcopy.obspace(), auxcopy.config());
   auxInc.diff(aux, auxcopy);    // In UFO implementation, auxInc does not include coefficients
                                 // for static BC predictors but only variational ones
-  linOper_.simulateObsTL(gvals, yy, auxInc);
+  linOper_.simulateObsTL(gvals, yy, auxInc, qc_flags);
   Log::trace() << "ObsOperatorPert<OBS>::simulateObs done" << std::endl;
 }
 
@@ -171,3 +176,4 @@ void ObsOperatorPert<OBS>::print(std::ostream & os) const {
 }  // namespace oops
 
 #endif  // OOPS_BASE_OBSOPERATORPERT_H_
+
