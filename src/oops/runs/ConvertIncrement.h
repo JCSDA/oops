@@ -108,16 +108,12 @@ template <typename MODEL> class ConvertIncrement : public Application {
     const Geometry_ resol1(params.inputGeometry, this->getComm());
     const Geometry_ resol2(params.outputGeometry, this->getComm());
 
-// Setup change of variable
-    std::unique_ptr<LinearVariableChange_> lvc;
-    oops::Variables varout;
-    bool inverse = false;
-    if (params.linearVarChange.value() != boost::none) {
-        const auto & linearvarchangeparams = *params.linearVarChange.value();
-        inverse = linearvarchangeparams.doInverse;
-        if (linearvarchangeparams.linearVarChange.outputVariables.value() != boost::none) {
-           lvc.reset(new LinearVariableChange_(resol2, linearvarchangeparams.linearVarChange));
-           varout = *linearvarchangeparams.linearVarChange.outputVariables.value();
+// Check if there is a change of variable defined in Parameters
+    bool lvcDefined = false;
+    auto linVarChangeParams = params.linearVarChange.value();
+    if (linVarChangeParams != boost::none) {
+        if (linVarChangeParams->linearVarChange.outputVariables.value() != boost::none) {
+            lvcDefined = true;
         }
     }
 
@@ -146,17 +142,19 @@ template <typename MODEL> class ConvertIncrement : public Application {
       Increment_ dx(resol2, dxi);
 
 //    Variable transform
-      if (lvc) {
+      if (lvcDefined) {
         State_ xTrajBg(resol1, incrementParams[jm].trajectory);
         ASSERT(xTrajBg.validTime() == dx.validTime());  // Check time is consistent
         Log::test() << "Trajectory state: " << xTrajBg << std::endl;
 
-          // Create variable change
-        lvc->changeVarTraj(xTrajBg, varout);
-        if (inverse) {
-          lvc->changeVarInverseTL(dx, varout);
+        // Create variable change
+        LinearVariableChange_ lvc(resol2, linVarChangeParams->linearVarChange);
+        auto & varout = *linVarChangeParams->linearVarChange.outputVariables.value();
+        lvc.changeVarTraj(xTrajBg, varout);
+        if (linVarChangeParams->doInverse) {
+          lvc.changeVarInverseTL(dx, varout);
         } else {
-          lvc->changeVarTL(dx, varout);
+          lvc.changeVarTL(dx, varout);
         }
       }
 
