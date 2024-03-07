@@ -109,6 +109,10 @@ template <typename MODEL, typename OBS> void testObsLocalization() {
         testconf.set("min value", locconf.getDouble("min value"));
       if (locconf.has("max value"))
         testconf.set("max value", locconf.getDouble("max value"));
+      if (locconf.has("search method"))
+        testconf.set("search method", locconf.getString("search method"));
+      if (locconf.has("distance type"))
+        testconf.set("distance type", locconf.getString("distance type"));
 
       std::unique_ptr<ObsLocalization_> obsloc =
         oops::ObsLocalizationFactory<MODEL, OBS>::create(testconf, obspace);
