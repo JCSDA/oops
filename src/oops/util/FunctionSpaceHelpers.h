@@ -7,7 +7,10 @@
 
 #pragma once
 
+#include <vector>
+
 namespace atlas {
+namespace grid { class Distribution; }
 namespace grid { class Partitioner; }
 class Grid;
 class Mesh;
@@ -32,6 +35,15 @@ void setupFunctionSpace(const eckit::mpi::Comm & comm,
     atlas::Mesh & mesh,
     atlas::FunctionSpace & functionspace,
     atlas::FieldSet & fieldset);
+
+// -----------------------------------------------------------------------------
+
+// Define a distribution and a mesh from a custom partition
+void setupStructuredMeshWithCustomPartition(const eckit::mpi::Comm &,
+    const atlas::Grid &,
+    const std::vector<int> &,
+    atlas::grid::Distribution &,
+    atlas::Mesh &);
 
 // -----------------------------------------------------------------------------
 

@@ -50,7 +50,7 @@ class GeometryData {
 // Accessors
   const atlas::FunctionSpace & functionSpace() const {return fspace_;}
   const atlas::FieldSet & fieldSet() const {return fset_;}
-  const eckit::mpi::Comm & comm() const {return *comm_;}
+  const eckit::mpi::Comm & comm() const {return comm_;}
 
   bool has(const std::string & name) const {return fset_.has(name);}
   const atlas::Field & getField(const std::string & name) const {return fset_.field(name);}
@@ -62,7 +62,7 @@ class GeometryData {
 
   atlas::FunctionSpace fspace_;
   atlas::FieldSet fset_;
-  const eckit::mpi::Comm * comm_;
+  const eckit::mpi::Comm & comm_;
   bool topdown_;
 
   atlas::Mesh mesh_;
