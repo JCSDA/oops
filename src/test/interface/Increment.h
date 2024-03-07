@@ -235,7 +235,7 @@ template <typename MODEL> void testIncrementAtlasInterface() {
     fset2[v].set_dirty();
   }
   fset2.haloExchange();
-  EXPECT(util::compareFieldSets(fset, fset2));
+  EXPECT(util::compareFieldSets(geom.getComm(), fset, fset2));
 
   // Check fromFieldSet repopulates Increment in the same way
   Increment_ dy(geom, vars, Test_::time());
@@ -246,7 +246,7 @@ template <typename MODEL> void testIncrementAtlasInterface() {
   // Go back to a FieldSet and compare FieldSets again:
   atlas::FieldSet fset3{};
   dy.toFieldSet(fset3);
-  EXPECT(util::compareFieldSets(fset, fset3));
+  EXPECT(util::compareFieldSets(geom.getComm(), fset, fset3));
 }
 
 // -----------------------------------------------------------------------------

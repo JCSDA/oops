@@ -19,6 +19,8 @@
 
 namespace util {
 
+enum class ToleranceType {absolute, relative, normalized_absolute};
+
 // -----------------------------------------------------------------------------
 
 atlas::FieldSet createFieldSet(const atlas::FunctionSpace &,
@@ -45,6 +47,25 @@ void shareFields(const atlas::FieldSet &, atlas::FieldSet &);
 atlas::FieldSet shareFields(const atlas::FieldSet &);
 void removeFieldsFromFieldSet(atlas::FieldSet &,
                               const std::vector<std::string> &);
+
+/// Depending on toltype it will compare the values of two fieldsets
+/// and output boolean true if the difference is smaller than the tolerance allowed.
+/// There are 3 different tolerance conditions:
+/// Tolerance::absolute (default) - assumes that the difference is smaller than a
+///                    prescribed value (like 1e-4) for all values and all fields.
+/// Tolerance::normalized_absolute (similar to Tolerance::absolute but the fixed tolerance
+///                                 value is multiplied by the absolute maximum value on
+///                                 the PE for each field and model level)
+/// Tolerance::relative - each value in the fieldset is compared element-wise.
+///                       To be true the absolute difference between two values is the same
+///                       or less than the maximum absolute value of the two values multiplied
+///                       by the tolerance value.
+bool compareFieldSets(const eckit::mpi::Comm & comm,
+                      const atlas::FieldSet & fset1,
+                      const atlas::FieldSet & fset2,
+                      const double & tol = 1.0e-12,
+                      const ToleranceType & toltype = ToleranceType::absolute);
+
 bool compareFieldSets(const atlas::FieldSet &,
                       const atlas::FieldSet &,
                       const double & tol = 1.0e-12,

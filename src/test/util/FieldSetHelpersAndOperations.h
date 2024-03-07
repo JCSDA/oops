@@ -129,8 +129,8 @@ CASE("util/FieldSetHelpersAndOperations/StructuredColumns") {
   EXPECT(oops::is_close(dp1sqrt, dp1, 1.0e-12));
 
   // Compare FieldSets
-  EXPECT(util::compareFieldSets(fset1, fset1copy));
-  EXPECT_NOT(util::compareFieldSets(fset1, fset2));
+  EXPECT(util::compareFieldSets(comm, fset1, fset1copy));
+  EXPECT_NOT(util::compareFieldSets(comm, fset1, fset2));
 
   // FieldSet norm
   const double norm1 = util::normFieldSet(fset1, vars.variables(), comm);
@@ -150,7 +150,7 @@ CASE("util/FieldSetHelpersAndOperations/StructuredColumns") {
   util::readFieldSet(comm, fspace, vars, lconf, smoothfset2);
 
   // Compare smooth FieldSets
-  EXPECT(util::compareFieldSets(smoothfset1, smoothfset2));
+  EXPECT(util::compareFieldSets(comm, smoothfset1, smoothfset2));
 
   // Write to file (one file per task)
   lconf.set("one file per task", true);
@@ -160,7 +160,7 @@ CASE("util/FieldSetHelpersAndOperations/StructuredColumns") {
   util::readFieldSet(comm, fspace, vars, lconf, smoothfset2);
 
   // Compare smooth FieldSets
-  EXPECT(util::compareFieldSets(smoothfset1, smoothfset2));
+  EXPECT(util::compareFieldSets(comm, smoothfset1, smoothfset2));
 }
 
 CASE("util/FieldSetHelpersAndOperations/NodeColumns") {
@@ -205,7 +205,7 @@ CASE("util/FieldSetHelpersAndOperations/NodeColumns") {
   util::readFieldSet(comm, fspace, vars, lconf, fset2);
 
   // Compare smooth FieldSets
-  EXPECT(util::compareFieldSets(fset1, fset2));
+  EXPECT(util::compareFieldSets(comm, fset1, fset2));
 
   // Write to file (one file per task)
   lconf.set("one file per task", true);
@@ -215,7 +215,7 @@ CASE("util/FieldSetHelpersAndOperations/NodeColumns") {
   util::readFieldSet(comm, fspace, vars, lconf, fset2);
 
   // Compare smooth FieldSets
-  EXPECT(util::compareFieldSets(fset1, fset2));
+  EXPECT(util::compareFieldSets(comm, fset1, fset2));
 }
 
 CASE("util/FieldSetHelpersAndOperations/PointCloud") {
@@ -262,7 +262,7 @@ CASE("util/FieldSetHelpersAndOperations/PointCloud") {
   util::readFieldSet(comm, fspace, vars, lconf, fset2);
 
   // Compare smooth FieldSets
-  EXPECT(util::compareFieldSets(fset1, fset2));
+  EXPECT(util::compareFieldSets(comm, fset1, fset2));
 }
 
 class FieldSetHelpersAndOperations : public oops::Test {

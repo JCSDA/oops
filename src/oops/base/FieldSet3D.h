@@ -18,6 +18,7 @@
 
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
+#include "oops/util/FieldSetHelpers.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Serializable.h"
 
@@ -109,7 +110,7 @@ class FieldSet3D : public util::Serializable,
   void removeFields(const Variables & vars);
   bool compare_with(const FieldSet3D &,
                     const double & tol = 1.0e-12,
-                    const bool & absolute = true) const;
+                    const util::ToleranceType & tolType = util::ToleranceType::absolute) const;
   std::vector<std::string> field_names() const {return fset_.field_names();}
   size_t size() const {return fset_.size();}
   bool empty() const {return fset_.empty();}

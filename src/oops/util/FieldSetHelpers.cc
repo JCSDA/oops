@@ -17,6 +17,7 @@
 #include "atlas/field.h"
 #include "atlas/util/function/VortexRollup.h"
 
+#include "eckit/exception/Exceptions.h"
 #include "eckit/utils/Hash.h"
 
 #include "oops/util/abor1_cpp.h"
@@ -437,11 +438,11 @@ void removeFieldsFromFieldSet(atlas::FieldSet & fset,
 }
 
 // -----------------------------------------------------------------------------
-
-bool compareFieldSets(const atlas::FieldSet & fset1,
+bool compareFieldSets(const eckit::mpi::Comm & comm,
+                      const atlas::FieldSet & fset1,
                       const atlas::FieldSet & fset2,
                       const double & tol,
-                      const bool & absolute) {
+                      const ToleranceType & tolType) {
   oops::Log::trace() << "compareFieldSets starting" << std::endl;
 
   // Initialize flag
@@ -453,7 +454,18 @@ bool compareFieldSets(const atlas::FieldSet & fset1,
   std::sort(field_names1.begin(), field_names1.end());
   std::sort(field_names2.begin(), field_names2.end());
   sameFieldSets = (field_names1 == field_names2);
-  if (!sameFieldSets) return sameFieldSets;
+  if (!sameFieldSets) {
+    oops::Log::info() << "compareFieldSets fieldsets do not have the same fields "
+                      << ": fieldset 1 fieldnames = " << field_names1
+                      << "; fieldset 2 fieldnames = " << field_names2
+                      << std::endl;
+    return sameFieldSets;
+  }
+
+  // Either we add a field to the fieldset what defines the owned data
+  // (assuming that the owned data is the same for all fields in the fieldset)
+  // or use the ghost field associated with the functionspace of each field.
+  const bool useFieldOwned = (fset1.has("owned") ? true : false);
 
   for (const auto & field1 : fset1) {
     // Get second field
@@ -461,8 +473,130 @@ bool compareFieldSets(const atlas::FieldSet & fset1,
 
     // Compare function spaces
     sameFieldSets = (field1.functionspace().type() == field2.functionspace().type());
-    if (!sameFieldSets) return sameFieldSets;
+    if (!sameFieldSets) {
+      oops::Log::info() << "compareFieldSets field "
+                        << field1.name()
+                        << " does not have the same functionspace "
+                        << ": fieldset 1 functionspace type = " << field1.functionspace().type()
+                        << "; fieldset 2 functionspace type = " << field2.functionspace().type()
+                        << std::endl;
+      return sameFieldSets;
+    }
 
+    // Compare fields shapes
+    sameFieldSets = (field1.shape() == field2.shape());
+    if (!sameFieldSets) {
+      oops::Log::info() << "compareFieldSets field "
+                        << field1.name()
+                        << " does not have the same field shapes "
+                        << ": fieldset 1 field shape = " << field1.shape()
+                        << "; fieldset 2 field shape = " << field2.shape()
+                        << std::endl;
+      return sameFieldSets;
+    }
+
+    // Compare data
+    if (field1.rank() == 2) {
+      auto view1 = atlas::array::make_view<double, 2>(field1);
+      auto view2 = atlas::array::make_view<double, 2>(field2);
+
+      std::vector<int> mask(view1.shape(0), 0);
+      if (field1.functionspace().type() != "Spectral") {
+        if (useFieldOwned) {
+          const auto ownedView =
+            atlas::array::make_view<int, 1>(fset1["owned"]);
+          for (atlas::idx_t jnode = 0; jnode < field1.shape(0); ++jnode) {
+            mask[jnode] = (ownedView(jnode) == 1 ? 0 : 1);
+          }
+        } else {
+          const auto ghostView =
+            atlas::array::make_view<int, 1>(field1.functionspace().ghost());
+          for (atlas::idx_t jnode = 0; jnode < field1.shape(0); ++jnode) {
+            mask[jnode] = ghostView(jnode);
+          }
+        }
+      }
+
+      std::vector<double> maxByLevelOnPE(field1.shape(1), 0.0);
+      if (tolType == ToleranceType::normalized_absolute) {
+        for (atlas::idx_t jnode = 0; jnode < field1.shape(0); ++jnode) {
+          for (atlas::idx_t jlevel = 0; jlevel < field1.shape(1); ++jlevel) {
+            if (mask[jnode] == 0) {
+              double val = std::max(std::abs(view1(jnode, jlevel)), std::abs(view2(jnode, jlevel)));
+              maxByLevelOnPE[jlevel] = val > maxByLevelOnPE[jlevel] ? val : maxByLevelOnPE[jlevel];
+            }
+          }
+        }
+      }
+
+      for (atlas::idx_t jnode = 0; jnode < field1.shape(0); ++jnode) {
+        for (atlas::idx_t jlevel = 0; jlevel < field1.shape(1); ++jlevel) {
+          if (mask[jnode] == 0) {
+            const double tolerance = (tolType == ToleranceType::normalized_absolute ?
+                                      maxByLevelOnPE[jlevel] * tol :
+                                      tol);
+            if (tolType == ToleranceType::relative) {
+              sameFieldSets = oops::is_close_relative(view1(jnode, jlevel),
+                                                      view2(jnode, jlevel),
+                                                      tolerance);
+            } else {
+              sameFieldSets = oops::is_close_absolute(view1(jnode, jlevel),
+                                                      view2(jnode, jlevel),
+                                                      tolerance);
+            }
+
+            if (!sameFieldSets) {
+              oops::Log::info() << "CompareFieldSet failed with ";
+              switch (tolType) {
+                case ToleranceType::absolute :
+                  oops::Log::info() << "absolute";   break;
+                case ToleranceType::normalized_absolute :
+                  oops::Log::info() << "normalized absolute"; break;
+                case ToleranceType::relative :
+                  oops::Log::info() << "relative"; break;
+              }
+              oops::Log::info() << " tolerance for "
+                << "; name : " << field1.name() <<  "; processor element : " << comm.rank()
+                << "; jnode : " << jnode << ";  jlevel : " << jlevel
+                << "; tolerance : "<< tolerance
+                << "; field value 1 : " << view1(jnode, jlevel)
+                << "; field value 2 : " << view2(jnode, jlevel)
+                << std::endl;
+              return sameFieldSets;
+            }
+          }
+        }
+      }
+    } else {
+      ABORT("compareFieldSets: wrong rank");
+    }
+  }
+
+  // Comparison successful!
+  return sameFieldSets;
+}
+
+bool compareFieldSets(const atlas::FieldSet & fset1,
+                      const atlas::FieldSet & fset2,
+                      const double & tol,
+                      const bool & absolute) {
+  oops::Log::trace() << "compareFieldSets starting" << std::endl;
+  // Initialize flag
+  bool sameFieldSets = true;
+  // Compare FieldSets content
+  std::vector<std::string> field_names1 = fset1.field_names();
+  std::vector<std::string> field_names2 = fset2.field_names();
+  std::sort(field_names1.begin(), field_names1.end());
+  std::sort(field_names2.begin(), field_names2.end());
+  sameFieldSets = (field_names1 == field_names2);
+  if (!sameFieldSets) return sameFieldSets;
+
+  for (const auto & field1 : fset1) {
+    // Get second field
+    atlas::Field field2 = fset2.field(field1.name());
+    // Compare function spaces
+    sameFieldSets = (field1.functionspace().type() == field2.functionspace().type());
+    if (!sameFieldSets) return sameFieldSets;
     // Compare fields shapes
     sameFieldSets = (field1.shape() == field2.shape());
     if (!sameFieldSets) return sameFieldSets;
@@ -487,7 +621,6 @@ bool compareFieldSets(const atlas::FieldSet & fset1,
       ABORT("compareFieldSets: wrong rank");
     }
   }
-
   // Comparison successful!
   return sameFieldSets;
 }

@@ -370,8 +370,8 @@ void FieldSet3D::removeFields(const Variables & vars) {
 
 bool FieldSet3D::compare_with(const FieldSet3D & other,
                               const double & tol,
-                              const bool & absolute) const {
-  return util::compareFieldSets(fset_, other.fset_, tol, absolute);
+                              const util::ToleranceType & tolType) const {
+  return util::compareFieldSets(comm_, fset_, other.fset_, tol, tolType);
 }
 
 // -----------------------------------------------------------------------------

@@ -227,7 +227,7 @@ template <typename MODEL> void testStateAtlasInterface() {
     fset2[v].set_dirty();
   }
   fset2.haloExchange();
-  EXPECT(util::compareFieldSets(fset, fset2));
+  EXPECT(util::compareFieldSets(geom.getComm(), fset, fset2));
 
   // Check fromFieldSet repopulates State in the same way
   const util::DateTime t(Test_::test().date);
@@ -244,7 +244,7 @@ template <typename MODEL> void testStateAtlasInterface() {
   // So, we skip this test. Instead, go back to a FieldSet and compare FieldSets:
   atlas::FieldSet fset3{};
   yy.toFieldSet(fset3);
-  EXPECT(util::compareFieldSets(fset, fset3));
+  EXPECT(util::compareFieldSets(geom.getComm(), fset, fset3));
 }
 
 // -----------------------------------------------------------------------------
