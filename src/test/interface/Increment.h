@@ -1,6 +1,7 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
  * (C) Copyright 2020 UCAR.
+ * (C) Crown Copyright 2024, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -527,6 +528,30 @@ template <typename MODEL> void testIncrementDiff() {
 
   // Compare difference with -= operator
   EXPECT(diff1.norm() == diff2.norm());
+
+  // --
+  // Check that the signedness of the operator is correct.
+  // diff = x1 - x2
+  // Therefore, performing diff = 0 - 1, should equal -1.
+  // In the incorrect case where diff = x2 - x1, this will be equal to 1.
+  State_ zero(Test_::resol(), Test_::ctlvars(), Test_::time());
+  zero.zero();
+
+  State_ one(Test_::resol(), Test_::ctlvars(), Test_::time());
+  one.zero();
+  // Need to add `1` to the `one` state.
+  Increment_ dOne(Test_::resol(), Test_::ctlvars(), Test_::time());
+  dOne.ones();
+  one += dOne;
+
+  Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
+  dx.diff(zero, one);
+
+  // Generic test that the diff operator has the correct sign.
+  // dx should be `-1`, therefore dx += dOne should be 0.
+  dx += dOne;
+  // Therefore, dx.norm() should be equal to 0, if the operator is implemented correctly.
+  EXPECT(dx.norm() <= 1e-14);
 }
 
 // -----------------------------------------------------------------------------
