@@ -415,6 +415,8 @@ oops/util/RandomField.h
 oops/util/Range.h
 oops/util/ScalarOrMap.h
 oops/util/Serializable.h
+oops/util/Stacktrace.h
+oops/util/Stacktrace.cc
 oops/util/signal_trap.h
 oops/util/signal_trap.cc
 oops/util/sqr.h
@@ -627,8 +629,13 @@ endif()
 # Stack traces on floating point exceptions
 include( backtrace_deps )
 
-target_link_libraries( ${PROJECT_NAME} PUBLIC ${OOPS_STACKTRACE_${OOPS_STACKTRACE_PROVIDER}_LIBS} )
-target_compile_definitions( ${PROJECT_NAME} PRIVATE ${OOPS_STACKTRACE_${OOPS_STACKTRACE_PROVIDER}_DEFS} )
+# By using target_link_libraries on a CMake target, CMake knows to add this to the RPATH.
+# We effectively link to link libbacktrace twice in this case, but that's okay.
+if (OOPS_STACKTRACE_PROVIDER MATCHES "backtrace")
+	target_link_libraries( ${PROJECT_NAME} PUBLIC backtrace)
+endif()
+target_link_libraries( ${PROJECT_NAME} PUBLIC ${OOPS_STACKTRACE_LIBS_${OOPS_STACKTRACE_PROVIDER}} )
+target_compile_definitions( ${PROJECT_NAME} PRIVATE ${OOPS_STACKTRACE_DEFS_${OOPS_STACKTRACE_PROVIDER}} )
 
 #Configure include directory layout for build-tree to match install-tree
 set(OOPS_BUILD_DIR_INCLUDE_PATH ${CMAKE_BINARY_DIR}/${PROJECT_NAME}/include)
@@ -793,6 +800,11 @@ set_property( TEST test_util_signal_trap_fpe_invalid_op PROPERTY WILL_FAIL TRUE 
 # the expected outcome is for the test program to successfully complete.
 ecbuild_add_test( TARGET  test_util_signal_trap_fpe_valid_op
                   SOURCES test/util/signal_trap_fpe_valid_op.cc
+                  LIBS    oops)
+
+# This test asks for a stacktrace. It should never fail.
+ecbuild_add_test( TARGET  test_util_stacktrace
+                  SOURCES test/util/Stacktrace.cc
                   LIBS    oops)
 
 ecbuild_add_test( TARGET  test_util_random

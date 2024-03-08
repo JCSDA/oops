@@ -23,6 +23,7 @@
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCountHelper.h"
 #include "oops/util/printRunStats.h"
+#include "oops/util/Stacktrace.h"
 #include "oops/util/TimerHelper.h"
 #include "oops/util/workflow.h"
 
@@ -196,11 +197,13 @@ int Run::execute(const Application & app, const eckit::mpi::Comm & comm) {
     Log::error() << e.what() << " caught in "  << Here() << std::endl;
     Log::error() << "Exception: " << app << " terminating..." << std::endl;
     eckit::Exception::exceptionStack(eckit::Log::error(), true);
+    util::unwind_exception_stack(e, eckit::Log::error());
   }
   catch(const std::exception & e) {
     status = 1;
     Log::error() << "Exception: " << e.what() << std::endl;
     Log::error() << "Exception: " << app << " terminating..." << std::endl;
+    util::unwind_exception_stack(e, eckit::Log::error());
   }
   catch(...) {
     status = 1;
