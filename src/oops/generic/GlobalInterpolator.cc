@@ -92,7 +92,7 @@ void GlobalInterpolator::apply(const atlas::FieldSet & source,
   for (const auto & src_field : source) {
     const auto & tgt_field = target.field(src_field.name());
     ASSERT(src_field.rank() == tgt_field.rank());
-    ASSERT(src_field.levels() == tgt_field.levels());
+    ASSERT(src_field.shape(1) == tgt_field.shape(1));
   }
 
   // For a simple interface, construct variables from all fields in fieldset
@@ -103,7 +103,7 @@ void GlobalInterpolator::apply(const atlas::FieldSet & source,
     if (rank == 1) {
       nvars += 1;
     } else {
-      nvars += field.levels();
+      nvars += field.shape(1);
     }
     vars.push_back(field.name());
   }
@@ -138,7 +138,7 @@ void GlobalInterpolator::applyAD(atlas::FieldSet & source,
   for (const auto & tgt_field : target) {
     const auto & src_field = source.field(tgt_field.name());
     ASSERT(tgt_field.rank() == src_field.rank());
-    ASSERT(tgt_field.levels() == src_field.levels());
+    ASSERT(tgt_field.shape(1) == src_field.shape(1));
   }
 
   // For a simple interface, construct variables from all fields in fieldset
@@ -149,7 +149,7 @@ void GlobalInterpolator::applyAD(atlas::FieldSet & source,
     if (rank == 1) {
       nvars += 1;
     } else {
-      nvars += field.levels();
+      nvars += field.shape(1);
     }
     vars.push_back(field.name());
   }

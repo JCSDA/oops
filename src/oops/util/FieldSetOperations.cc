@@ -393,7 +393,7 @@ void addZeroFieldToFieldSet(const std::string & fldname,
       (fset[template_name].rank() == 2)) {
     atlas::Field t = fset[template_name].functionspace().createField<double>(
       atlas::option::name(fldname) |
-      atlas::option::levels(fset[template_name].levels()));
+      atlas::option::levels(fset[template_name].shape(1)));
     t.haloExchange();
     atlas::array::make_view<double, 2>(t).assign(0.0);
     fset.add(t);

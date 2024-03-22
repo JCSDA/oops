@@ -103,7 +103,7 @@ void UnstructuredInterpolator::apply(const Variables & vars, const atlas::FieldS
   size_t nflds = 0;
   for (size_t jf = 0; jf < vars.size(); ++jf) {
     const std::string & fname = vars[jf];
-    nflds += fset.field(fname).levels();
+    nflds += fset.field(fname).shape(1);
   }
   vals.resize(nout_ * nflds);
 

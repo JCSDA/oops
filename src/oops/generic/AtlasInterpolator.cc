@@ -264,7 +264,7 @@ atlas::FieldSet AtlasInterpolator::createTargetFields(
 
     // Configure field using sourceField properties.
     const auto targetConfig = atlas::option::name(sourceField.name()) |
-                              atlas::option::levels(sourceField.levels()) |
+                              atlas::option::levels(sourceField.shape(1)) |
                               atlas::option::variables(sourceField.variables());
 
     auto targetField = targetFieldSet.add(

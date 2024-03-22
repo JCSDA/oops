@@ -105,7 +105,7 @@ void writerForPressures(const atlas::FieldSet & fset,
 
   // Write fields
   for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
-    ASSERT(nz == static_cast<size_t>(fset.field(vars[jvar]).levels()));
+    ASSERT(nz == static_cast<size_t>(fset.field(vars[jvar]).shape(1)));
     auto varView = atlas::array::make_view<double, 2>(fset[vars[jvar]]);
     double values[nlats][nlons][nz];
     for (size_t k = 0; k < nz; ++k) {
@@ -149,7 +149,7 @@ void writerForLevels(const atlas::FieldSet & fset,
 
   // More checks on levels
   for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
-    const size_t var_levs = fset.field(vars[jvar]).levels();
+    const size_t var_levs = fset.field(vars[jvar]).shape(1);
     if (!isSurfaceVar.at(vars[jvar])) {
       ASSERT(var_levs == static_cast<size_t>(nz));
     } else {
@@ -219,7 +219,7 @@ void writerForLevels(const atlas::FieldSet & fset,
 
   // Write fields
   for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
-    const size_t var_levs = fset.field(vars[jvar]).levels();
+    const size_t var_levs = fset.field(vars[jvar]).shape(1);
     auto varView = atlas::array::make_view<double, 2>(fset[vars[jvar]]);
     double values[nlats][nlons][var_levs];
     for (size_t k = 0; k < var_levs; ++k) {
@@ -501,7 +501,7 @@ void LatLonGridWriter<MODEL>::interpolateAndWrite(const atlas::FieldSet & fsetIn
   oops::Variables upperAirVars = vars_;
   for (const auto & var : vars_.variables()) {
     ASSERT(fsetInput.has(var));
-    const size_t levels = fsetInput.field(var).levels();
+    const size_t levels = fsetInput.field(var).shape(1);
     // Assume any var that comes from the model with a single level is a surface variable
     isSurfaceVar.insert({var, (levels == 1)});
     if (levels > 1) {
@@ -581,7 +581,7 @@ void LatLonGridWriter<MODEL>::interpolateAndWrite(const atlas::FieldSet & fsetIn
   oops::Variables vars_for_latlon_interp = vars_;
   if (pressureLevels_ && haveUpperAirVars) {
     ASSERT(fsetInput.has("air_pressure"));
-    ASSERT(static_cast<size_t>(fsetInput.field("air_pressure").levels()) == nModelLevels);
+    ASSERT(static_cast<size_t>(fsetInput.field("air_pressure").shape(1)) == nModelLevels);
     ASSERT(!vars_.has("air_pressure"));
     vars_for_latlon_interp.push_back("air_pressure");
   }
@@ -591,7 +591,7 @@ void LatLonGridWriter<MODEL>::interpolateAndWrite(const atlas::FieldSet & fsetIn
     fset.add(field);
 
     const std::string name = field.name();
-    const size_t levels = field.levels();
+    const size_t levels = field.shape(1);
     const atlas::Field fieldLatLon = targetFunctionSpace_->createField<double>(
         atlas::option::name(name) | atlas::option::levels(levels));
     fsetLatLon.add(fieldLatLon);
@@ -735,7 +735,7 @@ void LatLonGridWriter<MODEL>::interpolateToPressureLevels(const atlas::FieldSet 
   // Allocate multi-level (upper-air) fields in target FieldSet for vertical interpolation
   // (Do nothing for single-level (surface) fields, those are handled in model levels
   for (auto & f : fsetLatLon) {
-    if (f.levels() > 1) {
+    if (f.shape(1) > 1) {
       const std::string & name = f.name();
       const atlas::Field field = targetFunctionSpace_->createField<double>(
           atlas::option::name(name) | atlas::option::levels(nPressureLevels));
@@ -750,7 +750,7 @@ void LatLonGridWriter<MODEL>::interpolateToPressureLevels(const atlas::FieldSet 
 
     // Apply matrix to each multi-level field
     for (auto & f : fsetLatLon) {
-      if (f.levels() > 1) {
+      if (f.shape(1) > 1) {
         // Interpolate data from full-levels field to new subset-of-levels field
         const auto fullview = atlas::array::make_view<double, 2>(f);
         auto view = atlas::array::make_view<double, 2>(fsetPressureLevels.field(f.name()));
@@ -780,7 +780,7 @@ void LatLonGridWriter<MODEL>::trimToModelLevels(const atlas::FieldSet & fsetLatL
 
   for (auto & f : fsetLatLon) {
     // For single-level (typically = surface) fields, copy directly
-    if (f.levels() == 1) {
+    if (f.shape(1) == 1) {
       fsetModelLevels.add(f);
     } else {
       // Make new Field with fewer levels
