@@ -138,11 +138,6 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
     char const *commAreaName = commAreaNameStr.c_str();
     eckit::mpi::Comm & commArea = this->getComm().split(myarea, commAreaName);
 
-//  Each member (including control member) uses a different configuration
-    eckit::LocalConfiguration memberConf(fullConfig, "assimilation");
-    util::seekAndReplace(memberConf, patternWithPad, mymember, patternLength);
-    util::seekAndReplace(memberConf, patternNoPad, std::to_string(mymember));
-
 //  Retrieve cost function type for control member, to determine whether certain variables in
 //  the DA for the Pert members need to be time-shifted
     eckit::LocalConfiguration linCostConf(controlConf, "cost function");
@@ -151,6 +146,16 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
     std::string linCostName;
     linCostConf.get("cost type", linCostName);
     const bool shiftTime = !(linCostName == "3D-Var");
+
+//  Each member (including control member) uses a different configuration
+    eckit::LocalConfiguration memberConf(fullConfig, "assimilation");
+    if (shiftTime) {
+      eckit::LocalConfiguration pertBgConf(fullConfig, "midwindow backgrounds");
+      memberConf.set("cost function.background", pertBgConf);
+    }
+    util::seekAndReplace(memberConf, patternWithPad, mymember, patternLength);
+    util::seekAndReplace(memberConf, patternNoPad, std::to_string(mymember));
+
 
 //  Check that the control member's cost function is one that uses CostJb3D in the state part
 //  of the Jb term, since the Pert members' cost function doesn't currently support other options
@@ -193,11 +198,12 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
       cfConf.set("geometry", geomConf);
 
       // Set the nominal "obs perturbations seed" for every ObsSpace to be the member index
-      // Obs perturbations are not set to true as the control obs should not be perturbed
+      // Obs perturbations are set to false as the control obs should not be perturbed
       // Instead, CostPert will call to perturb them when setting up pert assimilation
       std::vector<eckit::LocalConfiguration> observersConf;
       cfConf.get("observations.observers", observersConf);
       for (unsigned int j = 0; j < observersConf.size(); ++j) {
+        observersConf[j].set("obs perturbations", false);
         observersConf[j].set("obs space.obs perturbations seed", mymember);
       }
       // Set the controlConf and cfConf to have the pert member obs configuration
@@ -313,25 +319,27 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
                 << iouter << " iterations." << std::endl;
 
 
-//  Retrieve the ensemble members' (full-field) background state by adding xxPert, converted
-//  into a ControlIncrement object valid at the same time as xxMemAnalysis, to xxMemAnalysis;
-//  then add the Pert increment (time-shifted to the beginning of the window if necessary)
-//  to give an intermediate analysis state (which itself has no physical relevance)
+//  Retrieve the ensemble members' (full-field) background state by converting xxPert back
+//  into a ControlIncrement object valid at the middle of the window. This is then added
+//  to xxMemAnalysis (the control background for the pert members). In the call to addIncrement,
+//  if the control background is valid at the start of the window, it is set equal to its
+//  mid window state. We then add the Pert increment to give an intermediate analysis state
+//  (which itself has no physical relevance)
     if (mymember > 0) {
       ControlIncrement<MODEL, OBS> xxPertInc(J->jb());
       ControlVariable<MODEL, OBS> xxEmpty(xxPert, false);
       xxPertInc.diff(xxPert, xxEmpty);
-      if (shiftTime) xxPertInc.state().updateTime(-winLength/2);
       J->addIncrement(xxMemAnalysis, xxPertInc);
-      if (shiftTime) dx.state().updateTime(-winLength/2);
       J->addIncrement(xxMemAnalysis, dx);
     }
 
 //  The following computations can only be performed if the control member's DA is run
     if (!params.runPertsOnly.value()) {
-//    Add the control member's analysis increment; this returns the analysis state for all
-//    members including the control member
+//    Add the control member's analysis increment (time-shifted to the middle of the window if
+//    necessary - not ideal);.
+//    This returns the analysis state for all members including the control member
       ControlIncrement<MODEL, OBS> dxControl(dx);
+      if (shiftTime && mymember > 0) dxControl.state().updateTime(winLength/2);
       oops::mpi::broadcast(commArea, dxControl, 0);
       J->addIncrement(xxMemAnalysis, dxControl);
 

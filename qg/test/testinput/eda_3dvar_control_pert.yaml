@@ -11,7 +11,7 @@ assimilation:
       depths: [4500.0, 5500.0]
     background:
       date: 2010-01-01T12:00:00Z
-      filename: Data/forecast.ens.%mem%.2009-12-31T00:00:00Z.P1DT12H.nc
+      filename: Data/forecast.ens.__mem__.2009-12-31T00:00:00Z.P1DT12H.nc
     background error:
       covariance model: QgError
       horizontal_length_scale: 2.2e6
@@ -28,7 +28,7 @@ assimilation:
           obsdatain:
             obsfile: Data/truth.obs3d.nc
           obsdataout:
-            obsfile: Data/mem%mem_pad%.eda_3dvar_control_pert.obs3d.nc
+            obsfile: Data/mem__mem_pad__.eda_3dvar_control_pert.obs3d.nc
           obs type: Stream
       - obs error:
           covariance model: diagonal
@@ -38,7 +38,7 @@ assimilation:
           obsdatain:
             obsfile: Data/truth.obs3d.nc
           obsdataout:
-            obsfile: Data/mem%mem_pad%.eda_3dvar_control_pert.obs3d.nc
+            obsfile: Data/mem__mem_pad__.eda_3dvar_control_pert.obs3d.nc
           obs type: Wind
   variational:
     minimizer:
@@ -58,7 +58,7 @@ assimilation:
           state component:
             datadir: Data
             date: 2010-01-01T12:00:00Z
-            exp: eda_3dvar_control_pert.mem%mem_pad%
+            exp: eda_3dvar_control_pert.mem__mem_pad__
             type: in
       prints: {}
   final:
@@ -72,17 +72,17 @@ assimilation:
       output:
         state component:
           datadir: Data
-          exp: eda_3dvar_control_pert.mem%mem_pad%_full_increment
+          exp: eda_3dvar_control_pert.mem__mem_pad___full_increment
           type: in
     prints: {}
   output:
     datadir: Data
-    exp: mem%mem_pad%.eda_3dvar_control_pert
+    exp: mem__mem_pad__.eda_3dvar_control_pert
     type: an
 
 template:
-  pattern with zero padding: %mem_pad%
-  pattern without zero padding: %mem%
+  pattern with zero padding: __mem_pad__
+  pattern without zero padding: __mem__
   number of pert members: 4
   first pert member index: 1
   run pert members only: false

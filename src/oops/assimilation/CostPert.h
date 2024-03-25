@@ -25,6 +25,7 @@
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/State.h"
+#include "oops/base/StateSaver.h"
 #include "oops/base/TrajectorySaver.h"
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
@@ -80,6 +81,8 @@ template<typename MODEL, typename OBS, class J> class CostPert : public J
     bool shiftTime_;
     std::unique_ptr<CostFct3DVar_> Jmem_;
     std::shared_ptr<CtrlVar_> xxMember_;
+    State_ * hackBG_;
+    std::shared_ptr<StateSaver<State_>> saver_;
 };
 // =============================================================================
 
@@ -90,7 +93,8 @@ CostPert<MODEL, OBS, J>::CostPert(const eckit::Configuration & controlConf,
                                   const bool & shiftTime)
   :J(controlConf.getSubConfiguration("cost function"), comm), contConf_(controlConf),
     timeWindow_(controlConf.getSubConfiguration("cost function.time window")),
-    memConf_(memberConf), comm_(comm), shiftTime_(shiftTime), Jmem_(), xxMember_()
+    memConf_(memberConf), comm_(comm), shiftTime_(shiftTime), Jmem_(), xxMember_(),
+    hackBG_(nullptr), saver_()
 {
   Log::trace() << "CostPert::CostPert" << std::endl;
 }
@@ -110,11 +114,22 @@ double CostPert<MODEL, OBS, J>::evaluate(CtrlVar_ & fguess,
                                          const eckit::Configuration & innerConf,
                                          PostProcessor<State_> post) {
   if (iteration_ == 0) {
+    PostProcessor<State_> postControl(post);
     std::vector<eckit::LocalConfiguration> iterconfs;
     contConf_.get("variational.iterations", iterconfs);
     iterconfs[0].set("linearize", true);
     iterconfs[0].set("iteration", 0);
-    J::evaluate(fguess, iterconfs[0], post);
+    CtrlVar_ xxControl(this->jb().getBackground());
+    if (shiftTime_) {
+      hackBG_ = &xxControl.state();
+      std::vector<std::string> antime = {timeWindow_.midpoint().toString()};
+      eckit::LocalConfiguration halfwin;
+      halfwin.set("times", antime);
+      halfwin.set("variables", hackBG_->variables().variables());
+      saver_.reset(new StateSaver<State_>(halfwin));
+      postControl.enrollProcessor(saver_);
+    }
+    J::evaluate(fguess, iterconfs[0], postControl);
 
 //  Set up the ensemble member background
 //  Need shared pointers to State4D, ModelAuxControl & ObsAuxControl
@@ -131,13 +146,15 @@ double CostPert<MODEL, OBS, J>::evaluate(CtrlVar_ & fguess,
 
 //  Change background to be the difference between the ensemble member and the control
     CtrlInc_ xxPertInc(this->jb());
-    xxPertInc.diff(*xxMember_, this->jb().getBackground());
-    CtrlVar_ xxPert(*xxMember_, false);
-    this->addIncrement(xxPert, xxPertInc);
 
     if (shiftTime_) {
-        xxPert.state().updateTime(timeWindow_.length()/2);
+      xxPertInc.state().updateTime(timeWindow_.length()/2);
+      *hackBG_ = saver_->getState();    // the state component of xxControl is updated via hackBG_
     }
+
+    xxPertInc.diff(*xxMember_, xxControl);
+    CtrlVar_ xxPert(*xxMember_, false);
+    this->addIncrement(xxPert, xxPertInc);
 
     CtrlVar_ xxPertCopy(xxPert);
     this->getNonConstJb()->getBackground() = xxPertCopy;
@@ -222,6 +239,15 @@ void CostPert<MODEL, OBS, J>::addIncr(CtrlVar_ & xx, const CtrlInc_ & dx,
     xx.state().synchronizeFields();
   } else {
     Log::trace() << "CostPert::addIncr removes out of bounds values" << std::endl;
+    ASSERT(dx.state().validTime() == timeWindow_.midpoint());
+    // If the state passed in is valid at the start of the window,
+    // but the increment is valid at the middle, the state is then set to be
+    // equal to the mid window control member state. This works because the control
+    // member is the only member that could have a state valid at the start of the window
+    // and so avoids repeating the model integration. Note that the state will be valid at the
+    // middle of the window following the call to addIncr.
+    if (xx.state().validTime() == timeWindow_.start()) xx.state() = saver_->getState();
+    ASSERT(xx.state().validTime() == timeWindow_.midpoint());
     xx.state() += dx.state();
   }
   Log::trace() << "CostPert::addIncr done" << std::endl;
