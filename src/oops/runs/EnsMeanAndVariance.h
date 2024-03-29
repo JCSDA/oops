@@ -91,7 +91,6 @@ template <typename MODEL> class EnsMeanAndVariance : public Application {
     const StateEnsemble_ stateEnsemble(resol, params.ensembleConfig);
     const State_ ensmean = stateEnsemble.mean();
     const Increment_ sigb2 = stateEnsemble.variance();
-    const Increment_ sigb = stateEnsemble.stddev();
 
 //  Write mean to file
     if (fullConfig.has("mean output"))
@@ -115,17 +114,23 @@ template <typename MODEL> class EnsMeanAndVariance : public Application {
     }
     Log::test() << "Variance: " << std::endl << sigb2 << std::endl;
 
-//  Write standard deviation to file
-    if (params.outputStdDevConfig.value() != boost::none)
+//  Compute and write standard deviation to file, if it was requested
+//  The std dev is computed via a generic atlas algorithm; computing it only when requested allows
+//  this executable to work with model interfaces with non-conforming atlas interfaces.
+    if ((params.outputStdDevConfig.value() != boost::none)
+        || (params.outputStdDevConfigLL.value() != boost::none)) {
+      const Increment_ sigb = stateEnsemble.stddev();
+
+      if (params.outputStdDevConfig.value() != boost::none) {
         sigb.write(params.outputStdDevConfig.value().value());
-
-    if (params.outputStdDevConfigLL.value() != boost::none) {
-      const eckit::LocalConfiguration latlonConf = params.outputStdDevConfigLL.value().value();
-      const LatLonGridWriter<MODEL> latlon(latlonConf, resol);
-      latlon.interpolateAndWrite(sigb, ensmean);
+      }
+      if (params.outputStdDevConfigLL.value() != boost::none) {
+        const eckit::LocalConfiguration latlonConf = params.outputStdDevConfigLL.value().value();
+        const LatLonGridWriter<MODEL> latlon(latlonConf, resol);
+        latlon.interpolateAndWrite(sigb, ensmean);
+      }
+      Log::test() << "Standard Deviation: " << std::endl << sigb << std::endl;
     }
-    Log::test() << "Standard Deviation: " << std::endl << sigb << std::endl;
-
 
     return 0;
   }
