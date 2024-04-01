@@ -103,6 +103,8 @@ class DateTime : public util::Serializable {
   void serialize(std::vector<double> &) const override;
   void deserialize(const std::vector<double> &, size_t &) override;
 
+  void failIfUnset(const bool quiet = false) const;
+
  private:
 // -- Copy allowed
 // DateTime(const DateTime&); -- default shallow copy is OK
@@ -113,7 +115,6 @@ class DateTime : public util::Serializable {
   void set(const std::string &);
 
   void addSeconds(const int64_t &);
-  void failIfUnset() const;
 
 // -- Members
 

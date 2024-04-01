@@ -314,9 +314,11 @@ bool DateTime::operator>=(const DateTime& other) const {
 
 // -----------------------------------------------------------------------------
 
-void DateTime::failIfUnset() const {
+void DateTime::failIfUnset(const bool quiet) const {
   if (date_ == 0 && time_ == -1) {
-    throw eckit::BadValue("DateTime was default-constructed and never set");
+    // Quiet constructor does not exist for eckit::BadValue, so use base class
+    throw eckit::Exception("BadValue: DateTime was default-constructed and never set", Here(),
+                           quiet);
   }
 }
 

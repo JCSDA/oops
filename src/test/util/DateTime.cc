@@ -74,7 +74,7 @@ namespace {
 
   CASE("test_uninitialized_date") {
     util::DateTime d1;
-    EXPECT_THROWS_AS(d1.toString(), eckit::BadValue);
+    EXPECT_THROWS_AS(d1.toString(), eckit::Exception);
   }
 
 // -----------------------------------------------------------------------------

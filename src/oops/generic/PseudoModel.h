@@ -10,6 +10,7 @@
 
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "eckit/config/Configuration.h"
@@ -19,6 +20,7 @@
 #include "oops/base/Variables.h"
 #include "oops/generic/ModelBase.h"
 #include "oops/interface/ModelAuxControl.h"
+#include "oops/util/abor1_cpp.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 
@@ -51,17 +53,32 @@ class PseudoModel : public ModelBase<MODEL> {
  private:
   void print(std::ostream &) const override;
   const util::Duration tstep_;
-  std::vector<eckit::LocalConfiguration> states_;
-  mutable size_t currentstate_;
-  mutable util::DateTime previousTime_;
+  std::unordered_map<int, std::vector<eckit::LocalConfiguration>> runs_;
+  mutable std::unordered_map<int, size_t> currentState_;
+  mutable std::unordered_map<int, util::DateTime> previousTime_;
+  mutable int currentID_;
 };
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
 PseudoModel<MODEL>::PseudoModel(const Geometry_ & resol, const eckit::Configuration & config)
-  : tstep_(config.getString("tstep")),
-    states_(config.getSubConfigurations("states")), currentstate_(0), previousTime_() {
+: tstep_(config.getString("tstep")) {
+  if (config.has("multiple runs")) {
+    for (const auto& run : config.getSubConfigurations("multiple runs")) {
+      const int ID = run.getInt("ID");
+      runs_.emplace(ID, run.getSubConfigurations("states"));
+      currentState_.emplace(ID, 0);
+      previousTime_.emplace(ID, util::DateTime());
+    }
+  } else if (config.has("states")) {
+    const int ID = config.getInt("ID", -1);
+    runs_.emplace(ID, config.getSubConfigurations("states"));
+    currentState_.emplace(ID, 0);
+    previousTime_.emplace(ID, util::DateTime());
+  } else {
+    ABORT("PseudoModel<MODEL>::PseudoModel: unsupported configuration");
+  }
   Log::trace() << "PseudoModel<MODEL>::PseudoModel done" << std::endl;
 }
 
@@ -69,7 +86,24 @@ PseudoModel<MODEL>::PseudoModel(const Geometry_ & resol, const eckit::Configurat
 
 template<typename MODEL>
 void PseudoModel<MODEL>::initialize(State_ & xx) const {
-  currentstate_ = 0;
+  Log::trace() << "PseudoModel<MODEL>::initialize starting" << std::endl;
+  currentID_ = xx.ID();
+
+  // Discern whether the forecast is starting from the initial condition
+  try {
+    previousTime_.at(currentID_).failIfUnset(true);
+  }
+  // If it is, set previousTime_ to the valid time of the initial condition
+  catch (eckit::Exception&) {
+    previousTime_.at(currentID_) = xx.validTime();
+  }
+
+  // Check whether forecast is being restarted from initial condition before finishing
+  if (xx.validTime() < previousTime_.at(currentID_)) {
+    // If it is, reinitialise previousTime_ and currentState_
+    previousTime_.at(currentID_) = xx.validTime();
+    currentState_.at(currentID_) = 0;
+  }
   Log::trace() << "PseudoModel<MODEL>::initialize done" << std::endl;
 }
 
@@ -77,29 +111,30 @@ void PseudoModel<MODEL>::initialize(State_ & xx) const {
 
 template<typename MODEL>
 void PseudoModel<MODEL>::step(State_ & xx, const ModelAux_ & merr) const {
-  Log::trace() << "PseudoModel<MODEL>:step Starting " << std::endl;
-  xx.updateTime(tstep_);
-  if (currentstate_ >= states_.size()) {
+  Log::trace() << "PseudoModel<MODEL>::step starting" << std::endl;
+  // Check that number of steps called for has not exceeded number of State configurations available
+  if (currentState_.at(currentID_) >= runs_.at(currentID_).size()) {
     std::ostringstream msg;
-    msg << classname() << "::step mismatch between timestep and number of states: "
-        << currentstate_ << "/" << states_.size() << " tstep_ = " << tstep_ << std::endl;
+    msg << classname() << "::step: number of steps called for (" << currentState_.at(currentID_)
+        << ") has exceeded number of State configurations available ("
+        << runs_.at(currentID_).size() << ")" << std::endl;
     throw eckit::UserError(msg.str(), Here());
   }
-  xx.read(states_[currentstate_++]);
 
-  // Verify different states are separated by the timestep
-  if (currentstate_ != 1 && previousTime_ != xx.validTime()) {
-    const util::Duration timeStep = timeResolution();
-    if (xx.validTime() - previousTime_ != timeStep) {
-      std::ostringstream msg;
-      msg << classname() << "::step time step does not match time increment between states"
-          << " at " << previousTime_ << " and " << xx.validTime()
-          << " with time step " << timeStep << std::endl;
-      throw eckit::UserError(msg.str(), Here());
-    }
+  xx.updateTime(tstep_);
+  xx.read(runs_.at(currentID_)[currentState_.at(currentID_)++]);  // currentState_ post-incremented
+
+  // Check that time difference between previous State and current State matches tstep_
+  // (i.e. that configuration passed to State::read() was for a State at the correct time)
+  if (xx.validTime() - previousTime_.at(currentID_) != tstep_) {
+    std::ostringstream msg;
+    msg << classname() << "::step: time difference between previous state ("
+        << previousTime_.at(currentID_) << ") and current state (" << xx.validTime()
+        << ") does not match tstep_ (" << tstep_ << ")" << std::endl;
+    throw eckit::UserError(msg.str(), Here());
   }
-  previousTime_ = xx.validTime();
 
+  previousTime_.at(currentID_) = xx.validTime();
   Log::trace() << "PseudoModel<MODEL>::step done" << std::endl;
 }
 
@@ -107,6 +142,12 @@ void PseudoModel<MODEL>::step(State_ & xx, const ModelAux_ & merr) const {
 
 template<typename MODEL>
 void PseudoModel<MODEL>::finalize(State_ & xx) const {
+  Log::trace() << "PseudoModel<MODEL>::finalize starting" << std::endl;
+  // If forecast has reached final State configuration, reinitialise variables ready for reforecast
+  if (currentState_.at(currentID_) == runs_.at(currentID_).size()) {
+    currentState_.at(currentID_) = 0;
+    previousTime_.at(currentID_) = util::DateTime();
+  }
   Log::trace() << "PseudoModel<MODEL>::finalize done" << std::endl;
 }
 

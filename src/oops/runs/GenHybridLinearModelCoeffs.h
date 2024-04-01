@@ -11,6 +11,8 @@
 #include <string>
 
 #include "oops/generic/HybridLinearModel.h"
+#include "oops/generic/instantiateLinearModelFactory.h"
+#include "oops/generic/instantiateModelFactory.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 
@@ -40,7 +42,10 @@ class GenHybridLinearModelCoeffs : public Application {
 
  public:
   explicit GenHybridLinearModelCoeffs(const eckit::mpi::Comm & comm = oops::mpi::world())
-  : Application(comm) {}
+  : Application(comm) {
+    instantiateLinearModelFactory<MODEL>();
+    instantiateModelFactory<MODEL>();
+  }
 
   virtual ~GenHybridLinearModelCoeffs() = default;
 

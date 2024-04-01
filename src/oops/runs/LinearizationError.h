@@ -14,6 +14,8 @@
 #include "oops/base/LinearModel.h"
 #include "oops/base/Model.h"
 #include "oops/base/TrajectorySaver.h"
+#include "oops/generic/instantiateLinearModelFactory.h"
+#include "oops/generic/instantiateModelFactory.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/printRunStats.h"
@@ -95,7 +97,10 @@ class LinearizationError : public Application {
 
  public:
   explicit LinearizationError(const eckit::mpi::Comm & comm = oops::mpi::world())
-  : Application(comm) {}
+  : Application(comm) {
+    instantiateLinearModelFactory<MODEL>();
+    instantiateModelFactory<MODEL>();
+  }
 
   virtual ~LinearizationError() = default;
 
