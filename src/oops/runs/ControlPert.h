@@ -339,8 +339,8 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
 //    necessary - not ideal);.
 //    This returns the analysis state for all members including the control member
       ControlIncrement<MODEL, OBS> dxControl(dx);
-      if (shiftTime && mymember > 0) dxControl.state().updateTime(winLength/2);
       oops::mpi::broadcast(commArea, dxControl, 0);
+      if (shiftTime && mymember > 0) dxControl.state().updateTime(winLength/2);
       J->addIncrement(xxMemAnalysis, dxControl);
 
 //    Save the ensemble members' analysis trajectory (or state) if an output configuration
