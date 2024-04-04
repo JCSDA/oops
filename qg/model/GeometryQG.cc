@@ -96,6 +96,7 @@ GeometryQG::GeometryQG(const eckit::Configuration & conf,
                                         remote_indices, remote_index_base, partitions,
                                         tri_boundary_nodes, tri_global_indices,
                                         quad_boundary_nodes, quad_global_indices, config);
+  // Don't call build_halo: QG is a serial model so there are no halos
   functionSpace_ = atlas::functionspace::NodeColumns(mesh, config);
 
   // Set function space pointer in Fortran

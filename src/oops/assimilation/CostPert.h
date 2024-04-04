@@ -235,7 +235,6 @@ void CostPert<MODEL, OBS, J>::addIncr(CtrlVar_ & xx, const CtrlInc_ & dx,
     Log::trace() << "CostPert::addIncr doesn't exclude out of bounds values" << std::endl;
     atlas::FieldSet fset = xx.state().fieldSet().fieldSet();
     util::addFieldSets(fset, dx.state().fieldSet().fieldSet());
-    xx.state().fromFieldSet(fset);
     xx.state().synchronizeFields();
   } else {
     Log::trace() << "CostPert::addIncr removes out of bounds values" << std::endl;

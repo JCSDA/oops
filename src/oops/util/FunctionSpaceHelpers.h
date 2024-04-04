@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2024 UCAR
+ * (C) Crown Copyright 2024 Met Office
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -7,7 +8,12 @@
 
 #pragma once
 
+#include <utility>
 #include <vector>
+
+#include "atlas/functionspace.h"
+
+#include "oops/util/Logger.h"
 
 namespace atlas {
 namespace grid { class Distribution; }
@@ -24,6 +30,23 @@ class Configuration;
 }  // namespace eckit
 
 namespace util {
+
+/// \brief procedure to call a functor for a given concrete implementation
+///        of a function space type
+template<typename Functor>
+void executeFunc(const atlas::FunctionSpace & fspace, const Functor & functor) {
+  if (atlas::functionspace::NodeColumns(fspace)) {
+    functor(atlas::functionspace::CubedSphereNodeColumns(fspace));
+  } else if (atlas::functionspace::StructuredColumns(fspace)) {
+    functor(atlas::functionspace::StructuredColumns(fspace));
+  } else {
+    oops::Log::error() << "ERROR - a functor call failed "
+                          "(function space type not allowed)" << std::endl;
+    throw std::runtime_error("a functor call failed");
+  }
+}
+
+atlas::idx_t getSizeOwned(const atlas::FunctionSpace & fspace);
 
 // -----------------------------------------------------------------------------
 

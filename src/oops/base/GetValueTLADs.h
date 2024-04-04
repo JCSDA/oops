@@ -99,6 +99,10 @@ void GetValueTLADs<MODEL, OBS>::doProcessingTraj(const State_ & xx) {
   State_ zz(xx);
   chvar.changeVar(zz, geovars_);
 
+  // Optimization: if underlying interpolations are done using the atlas representation of the
+  // model data, then call FieldSet::haloExchange before entering the loop over obs types:
+  PreProcessHelper<MODEL>::preProcessModelData(zz);
+
   for (GetValPtr_ getval : getvals_) getval->process(zz);
 
   CVarPtr_ cvtlad(new LinearVariableChange<MODEL>(xx.geometry(), chvarconf));
@@ -132,7 +136,12 @@ void GetValueTLADs<MODEL, OBS>::doProcessingTL(const Increment_ & dx) {
   Increment_ dz(dx);
   chvartlad_[now]->changeVarTL(dz, linvars_);
 
+  // Optimization: if underlying interpolations are done using the atlas representation of the
+  // model data, then call FieldSet::haloExchange before entering the loop over obs types:
+  PreProcessHelper<MODEL>::preProcessModelData(dz);
+
   for (GetValPtr_ getval : getvals_) getval->processTL(dz);
+
   Log::trace() << "GetValueTLADs::doProcessingTL done" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -164,7 +173,11 @@ void GetValueTLADs<MODEL, OBS>::doProcessingAD(Increment_ & dx) {
     getval->processAD(dz);
   }
 
-  dz.synchronizeFieldsAD();  // includes adjoint of halo update
+  // Optimization: if underlying interpolations are done using the atlas representation of the
+  // model data, then call FieldSet::adjointHaloExchange after exiting the loop over obs types:
+  PreProcessHelper<MODEL>::preProcessModelDataAD(dz);
+
+  dz.synchronizeFields();
 
   chvartlad_[now]->changeVarAD(dz, dx.variables());
   dx += dz;

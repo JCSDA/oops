@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2024 UCAR
+ * (C) Crown Copyright 2024 Met Office
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -23,6 +24,13 @@
 #include "oops/util/abor1_cpp.h"
 
 namespace util {
+
+
+atlas::idx_t getSizeOwned(const atlas::FunctionSpace & fspace) {
+  atlas::idx_t size_owned;
+  executeFunc(fspace, [&](const auto& fspace){size_owned = fspace.sizeOwned();});
+  return size_owned;
+}
 
 // -----------------------------------------------------------------------------
 

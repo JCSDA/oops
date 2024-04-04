@@ -69,6 +69,8 @@ atlas::FieldSet createFieldSet(const atlas::FunctionSpace & fspace,
     view.assign(initalizationValue);
   }
 
+  fset.set_dirty(false);  // initialization to constant produces up-to-date halos
+
   // Return FieldSet
   return fset;
 }
@@ -270,10 +272,7 @@ atlas::FieldSet createRandomFieldSet(const eckit::mpi::Comm & comm,
     }
   }
 
-  if (fspace.type() != "Spectral") {
-    // Halo exchange
-    fset.haloExchange();
-  }
+  fset.set_dirty();  // code is too complicated, mark dirty to be safe
 
   // Return FieldSet
   return fset;
@@ -318,6 +317,7 @@ atlas::FieldSet createSmoothFieldSet(const eckit::mpi::Comm & comm,
         }
       }
     }
+    fset.set_dirty();  // code is too complicated, mark dirty to be safe
     return fset;
   }
 
@@ -338,6 +338,8 @@ atlas::FieldSet createSmoothFieldSet(const eckit::mpi::Comm & comm,
         }
       }
     }
+
+    fset.set_dirty(false);  // smooth function will be up-to-date at ghost points
 
     // Set metadata for interpolation type
     field.metadata().set("interp_type", "default");
@@ -897,6 +899,7 @@ void readFieldSet(const eckit::mpi::Comm & comm,
     if ((tempretval = nc_close(tempncid))) ERR(tempretval);
     ASSERT(oneFilePerTask);
     readRank3FieldSet(fspace, variableSizes, vars, fset, ncfilepath);
+    fset.set_dirty();  // code is too complicated, mark dirty to be safe
     return;
   }
   if ((tempretval = nc_close(tempncid))) ERR(tempretval);
@@ -957,11 +960,6 @@ void readFieldSet(const eckit::mpi::Comm & comm,
 
     // Close file
     if ((retval = nc_close(ncid))) ERR(retval);
-
-    if (fspace.type() != "PointCloud") {
-      // Exchange halo
-      fset.haloExchange();
-    }
   } else {
     // Case 2: one file for all MPI tasks
 
@@ -1072,10 +1070,9 @@ void readFieldSet(const eckit::mpi::Comm & comm,
       atlas::functionspace::NodeColumns fs(fspace);
       fs.scatter(globalData, fset);
     }
-
-    // Exchange halo
-    fset.haloExchange();
   }
+
+  fset.set_dirty();  // code is too complicated, mark dirty to be safe
 }
 
 // -----------------------------------------------------------------------------
@@ -1136,10 +1133,6 @@ void readRank3FieldSet(const atlas::FunctionSpace & fspace,
   }
 
   if ((retval = nc_close(ncid))) ERR(retval);
-
-  if (fspace.type() != "PointCloud") {
-    fset.haloExchange();
-  }
 }
 
 // -----------------------------------------------------------------------------

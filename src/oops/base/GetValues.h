@@ -37,7 +37,6 @@
 
 namespace oops {
 
-
 /// \brief Detect if \c MODEL defines \c LocalInterpolator.
 ///
 /// If it does, HasInterpolator_ will be defined as std::true_type, otherwise as std::false_type.
@@ -85,6 +84,94 @@ template<typename MODEL>
 using TModelInterpolator_IfAvailableElseGenericInterpolator_t =
 typename TModelInterpolator_IfAvailableElseGenericInterpolator<MODEL,
                                       HasInterpolator_<MODEL>::value>::type;
+
+// -----------------------------------------------------------------------------
+
+// PreProcessModel provides a specialization that handles models whose model-specific interpolator
+// acts on atlas::FieldSets (there we call the atlas halo exchanges), and a default case that
+// handles models whose interpolator acts on model States and Increments (no-op).
+template <typename MODEL, typename = cpp17::void_t<>>
+struct PreProcessModel {
+  static void preProcessModelData(const oops::State<MODEL> & state) { return; }
+  static void preProcessModelData(const oops::Increment<MODEL> & increment) { return; }
+  static void preProcessModelDataAD(const oops::Increment<MODEL> & increment) { return; }
+};
+template <typename MODEL>
+struct PreProcessModel<MODEL, cpp17::void_t<
+           decltype(std::declval<typename MODEL::LocalInterpolator>().
+               apply(std::declval<oops::Variables>(),
+                 std::declval<atlas::FieldSet>(),
+                 std::declval<std::vector<bool>>(),
+                 std::declval<std::vector<double>&>()))>> {
+  static void preProcessModelData(const oops::State<MODEL> & state) {
+    const atlas::FieldSet & fset = state.fieldSet().fieldSet();
+    fset.haloExchange();
+  }
+  static void preProcessModelData(const oops::Increment<MODEL> & increment) {
+    const atlas::FieldSet & fset = increment.fieldSet().fieldSet();
+    fset.haloExchange();
+  }
+  static void preProcessModelDataAD(const oops::Increment<MODEL> & increment) {
+    const atlas::FieldSet & fset = increment.fieldSet().fieldSet();
+    fset.adjointHaloExchange();
+    fset.set_dirty();
+  }
+};
+
+// Switch between two pre-process implementations depending on whether the MODEL is using a
+// specific interpolator or is falling back to the generic UnstructuredInterpolator.
+template <typename MODEL, bool HasInterpolator>
+struct PreProcessModelOrGeneric;
+// This `false` specialization handles the oops UnstructuredInterpolator which works on generic
+// data in atlas::FielSets; in this case we call the atlas halo exchange.
+template <typename MODEL>
+struct PreProcessModelOrGeneric<MODEL, false> {
+  static void preProcessModelData(const oops::State<MODEL> & state) {
+    const atlas::FieldSet & fset = state.fieldSet().fieldSet();
+    fset.haloExchange();
+  }
+  static void preProcessModelData(const oops::Increment<MODEL> & increment) {
+    const atlas::FieldSet & fset = increment.fieldSet().fieldSet();
+    fset.haloExchange();
+  }
+  static void preProcessModelDataAD(const oops::Increment<MODEL> & increment) {
+    const atlas::FieldSet & fset = increment.fieldSet().fieldSet();
+    fset.adjointHaloExchange();
+    fset.set_dirty();
+  }
+};
+// This `true` specialization handles model-specific interpolators; we forward to another level of
+// helper to switch between model-specific interpolators acting on atlas vs on model-specific data.
+template <typename MODEL>
+struct PreProcessModelOrGeneric<MODEL, true> {
+  static void preProcessModelData(const oops::State<MODEL> & state) {
+    PreProcessModel<MODEL>::preProcessModelData(state);
+  }
+  static void preProcessModelData(const oops::Increment<MODEL> & increment) {
+    PreProcessModel<MODEL>::preProcessModelData(increment);
+  }
+  static void preProcessModelDataAD(const oops::Increment<MODEL> & increment) {
+    PreProcessModel<MODEL>::preProcessModelDataAD(increment);
+  }
+};
+
+// PreProcessHelper selects whether to preprocess the model State or Increment before passing it to
+// the interpolator. This allows for calling an atlas haloExchange only in the case where the
+// interpolator has an atlas-based apply method. See the similar logic within the LocalInterpolator
+// itself; we duplicate this logic here because we want to keep the LocalInterpolator free of MPI.
+template <typename MODEL>
+struct PreProcessHelper {
+  static void preProcessModelData(const oops::State<MODEL> & state) {
+    PreProcessModelOrGeneric<MODEL, HasInterpolator_<MODEL>::value>::preProcessModelData(state);
+  }
+  static void preProcessModelData(const oops::Increment<MODEL> & increment) {
+    PreProcessModelOrGeneric<MODEL, HasInterpolator_<MODEL>::value>::preProcessModelData(increment);
+  }
+  static void preProcessModelDataAD(const oops::Increment<MODEL> & increment) {
+    PreProcessModelOrGeneric<MODEL, HasInterpolator_<MODEL>::value>::preProcessModelDataAD(
+        increment);
+  }
+};
 
 // -----------------------------------------------------------------------------
 

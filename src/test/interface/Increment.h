@@ -224,30 +224,34 @@ template <typename MODEL> void testIncrementAtlasInterface() {
     const atlas::Field & f = fset[v];
     EXPECT(f.valid());
     EXPECT(f.functionspace() == geom.functionSpace());
-    EXPECT(!f.dirty());
     EXPECT(f.rank() == 2);
     EXPECT(f.shape(0) == geom.functionSpace().lonlat().shape(0));
     EXPECT(f.datatype() == atlas::array::DataType::create<double>());
   }
 
-  // Check haloExchange is no-op, i.e., halos are up-to-date
-  atlas::FieldSet fset2 = util::copyFieldSet(fset);
-  for (int v = 0; v < nvars; ++v) {
-    fset2[v].set_dirty();
+
+  // Now set FieldSet halos to zero, then check going from FieldSet to model to FieldSet gives
+  // back identically the same data. This checks the owned data passes correctly through the
+  // system, and checks the halos are passed or reset correctly in the relevant context.
+  // We use the "ghost" field (not "owned"), because we only want to zero data that would
+  // live on another MPI task.
+  auto ghost = atlas::array::make_view<int, 1>(geom.functionSpace().ghost());
+  for (int var = 0; var < nvars; ++var) {
+    auto view = atlas::array::make_view<double, 2>(fset[var]);
+    for (size_t jnode = 0; jnode < view.shape(0); ++jnode) {
+      if (ghost(jnode) == 1) {
+        for (size_t jlev = 0; jlev < view.shape(1); ++jlev) {
+          view(jnode, jlev) = 0.0;
+        }
+      }
+    }
   }
-  fset2.haloExchange();
+  dx.zero();
+  dx.fromFieldSet(fset);
+  atlas::FieldSet fset2{};
+  dx.toFieldSet(fset2);
+
   EXPECT(util::compareFieldSets(geom.getComm(), fset, fset2));
-
-  // Check fromFieldSet repopulates Increment in the same way
-  Increment_ dy(geom, vars, Test_::time());
-  dy.fromFieldSet(fset);
-  dx -= dy;
-  EXPECT(dx.norm() <= 1e-14);
-
-  // Go back to a FieldSet and compare FieldSets again:
-  atlas::FieldSet fset3{};
-  dy.toFieldSet(fset3);
-  EXPECT(util::compareFieldSets(geom.getComm(), fset, fset3));
 }
 
 // -----------------------------------------------------------------------------

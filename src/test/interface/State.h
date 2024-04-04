@@ -215,36 +215,33 @@ template <typename MODEL> void testStateAtlasInterface() {
     const atlas::Field & f = fset[v];
     EXPECT(f.valid());
     EXPECT(f.functionspace() == geom.functionSpace());
-    EXPECT(!f.dirty());
     EXPECT(f.rank() == 2);
     EXPECT(f.shape(0) == geom.functionSpace().lonlat().shape(0));
     EXPECT(f.datatype() == atlas::array::DataType::create<double>());
   }
 
-  // Check haloExchange is no-op, i.e., halos are up-to-date
-  atlas::FieldSet fset2 = util::copyFieldSet(fset);
-  for (int v = 0; v < nvars; ++v) {
-    fset2[v].set_dirty();
+  // Now set FieldSet halos to zero, then check going from FieldSet to model to FieldSet gives
+  // back identically the same data. This checks the owned data passes correctly through the
+  // system, and checks the halos are passed or reset correctly in the relevant context.
+  // We use the "ghost" field (not "owned"), because we only want to zero data that would
+  // live on another MPI task.
+  auto ghost = atlas::array::make_view<int, 1>(geom.functionSpace().ghost());
+  for (int var = 0; var < nvars; ++var) {
+    auto view = atlas::array::make_view<double, 2>(fset[var]);
+    for (size_t jnode = 0; jnode < view.shape(0); ++jnode) {
+      if (ghost(jnode) == 1) {
+        for (size_t jlev = 0; jlev < view.shape(1); ++jlev) {
+          view(jnode, jlev) = 0.0;
+        }
+      }
+    }
   }
-  fset2.haloExchange();
+  xx.zero();
+  xx.fromFieldSet(fset);
+  atlas::FieldSet fset2{};
+  xx.toFieldSet(fset2);
+
   EXPECT(util::compareFieldSets(geom.getComm(), fset, fset2));
-
-  // Check fromFieldSet repopulates State in the same way
-  const util::DateTime t(Test_::test().date);
-  State_ yy(geom, vars, t);
-  yy.fromFieldSet(fset);
-
-  // How to check xx and yy are the same state?
-  // - They might not be, because States can include fields that aren't part of the atlas
-  //   FieldSet. These fields would be 0 in State yy, and they could be part of the norm
-  //   computation, so there's no guarantee that xx.norm() == yy.norm() should succeed.
-  // - Could compute an Increment dx = xx-yy and check its norm is ~0, but this would make
-  //   the State depend on the Increment.
-  //
-  // So, we skip this test. Instead, go back to a FieldSet and compare FieldSets:
-  atlas::FieldSet fset3{};
-  yy.toFieldSet(fset3);
-  EXPECT(util::compareFieldSets(geom.getComm(), fset, fset3));
 }
 
 // -----------------------------------------------------------------------------

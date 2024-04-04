@@ -32,6 +32,24 @@ namespace util {
 
 namespace oops {
 
+/// PreProcessHelper template specialization for coupled traits: delegate to unspecialized template
+/// for each model component.
+template <typename MODEL1, typename MODEL2>
+struct PreProcessHelper<TraitCoupled<MODEL1, MODEL2>> {
+  static void preProcessModelData(const State<TraitCoupled<MODEL1, MODEL2>> & state) {
+    PreProcessHelper<MODEL1>::preProcessModelData(state.state().state1());
+    PreProcessHelper<MODEL2>::preProcessModelData(state.state().state2());
+  }
+  static void preProcessModelData(const Increment<TraitCoupled<MODEL1, MODEL2>> & increment) {
+    PreProcessHelper<MODEL1>::preProcessModelData(increment.increment().increment1());
+    PreProcessHelper<MODEL2>::preProcessModelData(increment.increment().increment2());
+  }
+  static void preProcessModelDataAD(const Increment<TraitCoupled<MODEL1, MODEL2>> & increment) {
+    PreProcessHelper<MODEL1>::preProcessModelDataAD(increment.increment().increment1());
+    PreProcessHelper<MODEL2>::preProcessModelDataAD(increment.increment().increment2());
+  }
+};
+
 /// GetValues template specialization for coupled traits
 template <typename MODEL1, typename MODEL2, typename OBS>
 class GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>:

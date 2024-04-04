@@ -1315,7 +1315,7 @@ do jvar=1,self%vars%nvars()
      enddo
    enddo
 
-   ! Set dirty to false; trivially true because serial model
+   ! Set dirty to false: QG is a serial model so there are no halos
    call afield%set_dirty(.false.)
 
    ! Release pointer

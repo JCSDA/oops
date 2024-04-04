@@ -56,11 +56,11 @@ CASE("util/FieldSetHelpersAndOperations/StructuredColumns") {
   for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
     dp1_fields += util::dotProductFields(fset1.field(vars[jvar]), fset1.field(vars[jvar]), comm);
   }
-  EXPECT(oops::is_close(dp1, 5640.50122292, 1.0e-12));
+  EXPECT(oops::is_close(dp1, 4847.0108495214099, 1.0e-12));
   EXPECT(oops::is_close(dp1_fields, dp1, 1.0e-12));
   atlas::FieldSet fset2 = util::createRandomFieldSet(comm, fspace, vars);
   const double dp2 = util::dotProductFieldSets(fset2, fset2, vars.variables(), comm);
-  EXPECT(oops::is_close(dp2, 5546.6627708858978, 1.0e-12));
+  EXPECT(oops::is_close(dp2, 4781.9168848947493, 1.0e-12));
 
   // Copy FieldSet
   atlas::FieldSet fset1copy = util::copyFieldSet(fset1);
@@ -114,13 +114,13 @@ CASE("util/FieldSetHelpersAndOperations/StructuredColumns") {
   atlas::FieldSet fset1sq = util::copyFieldSet(fset1);
   util::multiplyFieldSets(fset1sq, fset1);
   const double dp1sq = util::dotProductFieldSets(fset1sq, fset1sq, vars.variables(), comm);
-  EXPECT(oops::is_close(dp1sq, 17050.525704646639, 1.0e-12));
+  EXPECT(oops::is_close(dp1sq, 14547.678754560922, 1.0e-12));
 
   // Divide FieldSets
   atlas::FieldSet fset1div = util::copyFieldSet(fset1);
   util::divideFieldSets(fset1div, fset2);
   const double dp1div = util::dotProductFieldSets(fset1div, fset1div, vars.variables(), comm);
-  EXPECT(oops::is_close(dp1div, 591417953.9186399, 1.0e-12));
+  EXPECT(oops::is_close(dp1div, 580254127.51943386, 1.0e-12));
 
   // FieldSet square-root
   atlas::FieldSet fset1sqrt = util::copyFieldSet(fset1sq);
@@ -138,7 +138,6 @@ CASE("util/FieldSetHelpersAndOperations/StructuredColumns") {
 
   // Create smooth Fieldset
   atlas::FieldSet smoothfset1 = util::createSmoothFieldSet(comm, fspace, vars);
-  smoothfset1.haloExchange();
   atlas::FieldSet smoothfset2;
 
   // Write to file
@@ -186,10 +185,10 @@ CASE("util/FieldSetHelpersAndOperations/NodeColumns") {
   // Create random fields
   atlas::FieldSet fset1 = util::createRandomFieldSet(comm, fspace, vars);
   const double dp1 = util::dotProductFieldSets(fset1, fset1, vars.variables(), comm);
-  EXPECT(oops::is_close(dp1, 10135.544564309557, 1.0e-12));
+  EXPECT(oops::is_close(dp1, 8042.1225385500084, 1.0e-12));
   atlas::FieldSet fset2 = util::createRandomFieldSet(comm, fspace, vars);
   const double dp2 = util::dotProductFieldSets(fset2, fset2, vars.variables(), comm);
-  EXPECT(oops::is_close(dp2, 10129.286186156089, 1.0e-12));
+  EXPECT(oops::is_close(dp2, 8005.6287719995034, 1.0e-12));
 
   // Get grid UID
   std::string uid = util::getGridUid(fspace);

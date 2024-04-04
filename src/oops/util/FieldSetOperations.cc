@@ -37,6 +37,8 @@ void zeroFieldSet(atlas::FieldSet & fset) {
     }
   }
 
+  fset.set_dirty(false);
+
   oops::Log::trace() << "zeroFieldSet done" << std::endl;
 }
 
@@ -64,6 +66,9 @@ void addFieldSets(atlas::FieldSet & fset,
     } else {
       ABORT("addFieldSets: wrong rank");
     }
+
+    // If either term in the sum is out-of-date, then the result will be out-of-date
+    field.set_dirty(field.dirty() || addField.dirty());
   }
 
   oops::Log::trace() << "addFieldSets done" << std::endl;
@@ -93,6 +98,9 @@ void subtractFieldSets(atlas::FieldSet & fset,
     } else {
       ABORT("subFieldSets: wrong rank");
     }
+
+    // If either term in the subtraction is out-of-date, then the result will be out-of-date
+    field.set_dirty(field.dirty() || subField.dirty());
   }
 
   oops::Log::trace() << "subFieldSets done" << std::endl;
@@ -145,6 +153,9 @@ void multiplyFieldSets(atlas::FieldSet & fset,
     } else {
       ABORT("multiplyFieldSets: wrong rank");
     }
+
+    // If either term in the product is out-of-date, then the result will be out-of-date
+    field.set_dirty(field.dirty() || mulField.dirty());
   }
 
   oops::Log::trace() << "multiplyFieldSets done" << std::endl;
@@ -153,8 +164,7 @@ void multiplyFieldSets(atlas::FieldSet & fset,
 // -----------------------------------------------------------------------------
 
 double dotProductFieldsLocal(const atlas::Field & field1,
-                             const atlas::Field & field2,
-                             const bool & includeHalo) {
+                             const atlas::Field & field2) {
   oops::Log::trace() << "dotProductFieldsLocal starting" << std::endl;
   ASSERT(field1.name() == field2.name());
   // Compute dot product
@@ -212,7 +222,7 @@ double dotProductFieldsLocal(const atlas::Field & field1,
     } else {
       const auto ghostView = atlas::array::make_view<int, 1>(field1.functionspace().ghost());
       for (atlas::idx_t jnode = 0; jnode < field1.shape(0); ++jnode) {
-        if (includeHalo || (ghostView(jnode) == 0)) {
+        if (ghostView(jnode) == 0) {
           for (atlas::idx_t jlevel = 0; jlevel < field1.shape(1); ++jlevel) {
             if (view1(jnode, jlevel) != util::missingValue<double>()
               && view2(jnode, jlevel) != util::missingValue<double>()) {
@@ -235,9 +245,8 @@ double dotProductFieldsLocal(const atlas::Field & field1,
 
 double dotProductFields(const atlas::Field & field1,
                         const atlas::Field & field2,
-                        const eckit::mpi::Comm & comm,
-                        const bool & includeHalo) {
-  double dp = dotProductFieldsLocal(field1, field2, includeHalo);
+                        const eckit::mpi::Comm & comm) {
+  double dp = dotProductFieldsLocal(field1, field2);
   // Allreduce
   comm.allReduceInPlace(dp, eckit::mpi::sum());
   return dp;
@@ -248,8 +257,7 @@ double dotProductFields(const atlas::Field & field1,
 double dotProductFieldSets(const atlas::FieldSet & fset1,
                            const atlas::FieldSet & fset2,
                            const std::vector<std::string> & vars,
-                           const eckit::mpi::Comm & comm,
-                           const bool & includeHalo) {
+                           const eckit::mpi::Comm & comm) {
   oops::Log::trace() << "dotProductFieldSets starting" << std::endl;
 
   // Compute dot product
@@ -257,7 +265,7 @@ double dotProductFieldSets(const atlas::FieldSet & fset1,
   for (const auto & var : vars) {
     // Check fields presence
     if (fset1.has(var) && fset2.has(var)) {
-      dp += dotProductFieldsLocal(fset1.field(var), fset2.field(var), includeHalo);
+      dp += dotProductFieldsLocal(fset1.field(var), fset2.field(var));
     }
   }
   // Allreduce
@@ -272,7 +280,7 @@ double dotProductFieldSets(const atlas::FieldSet & fset1,
 
 double normField(const atlas::Field & field,
                  const eckit::mpi::Comm & comm) {
-  return std::sqrt(dotProductFields(field, field, comm, false));
+  return std::sqrt(dotProductFields(field, field, comm));
 }
 
 // -----------------------------------------------------------------------------
@@ -280,7 +288,7 @@ double normField(const atlas::Field & field,
 double normFieldSet(const atlas::FieldSet & fset,
                     const std::vector<std::string> & vars,
                     const eckit::mpi::Comm & comm) {
-  return std::sqrt(dotProductFieldSets(fset, fset, vars, comm, false));
+  return std::sqrt(dotProductFieldSets(fset, fset, vars, comm));
 }
 
 // -----------------------------------------------------------------------------
@@ -303,7 +311,10 @@ void divideFieldSets(atlas::FieldSet & fset,
         for (int jlevel = 0; jlevel < field.shape(1); ++jlevel) {
           if (std::abs(divView(jnode, jlevel)) > 0.0) {
             view(jnode, jlevel) /= divView(jnode, jlevel);
-          } else {
+          } else if (std::abs(view(jnode, jlevel)) > 0.0) {
+            // If the numerator is 0, then it's ok for the denominator to be 0; this is probably
+            // a case of 0/0 in the halo, and we opt to return 0 (i.e., no change to the field).
+            // If the numerator is finite (= this else branch), this is a divide-by-zero error:
             ABORT("divideFieldSets: divide by zero");
           }
         }
@@ -311,6 +322,9 @@ void divideFieldSets(atlas::FieldSet & fset,
     } else {
       ABORT("divideFieldSets: wrong rank");
     }
+
+    // If either term in the division is out-of-date, then the result will be out-of-date
+    field.set_dirty(field.dirty() || divField.dirty());
   }
 
   oops::Log::trace() << "divideFieldSets done" << std::endl;
@@ -351,6 +365,9 @@ void divideFieldSets(atlas::FieldSet & fset,
     } else {
       ABORT("divideFieldSets with mask: wrong rank");
     }
+
+    // If either term in the division is out-of-date, then the result will be out-of-date
+    field.set_dirty(field.dirty() || divField.dirty());
   }
 
   oops::Log::trace() << "divideFieldSets with mask done" << std::endl;

@@ -110,6 +110,8 @@ void GlobalInterpolator::apply(const atlas::FieldSet & source,
 
   const size_t ntasks = comm_.size();
 
+  source.haloExchange();
+
   std::vector<std::vector<double>> locinterp(ntasks);
   for (size_t jtask = 0; jtask < ntasks; ++jtask) {
     interp_[jtask]->apply(vars, source, locinterp[jtask]);
@@ -176,10 +178,8 @@ void GlobalInterpolator::applyAD(atlas::FieldSet & source,
     interp_[jtask]->applyAD(vars, source, locinterp[jtask]);
   }
 
-  // Set dirty flag
-  for (auto & field : source) {
-    field.metadata().set("dirty", "true");
-  }
+  source.adjointHaloExchange();
+  source.set_dirty();
 }
 
 // -----------------------------------------------------------------------------

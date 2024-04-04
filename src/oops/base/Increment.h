@@ -71,7 +71,6 @@ class Increment : public interface::Increment<MODEL> {
   const FieldSet3D & fieldSet() const;
   FieldSet3D & fieldSet();
   void synchronizeFields();
-  void synchronizeFieldsAD();
 
   /// Compute root-mean-square by variable by level
   /// For preconditioning HybridLinearModel coefficient calculation
@@ -153,21 +152,9 @@ FieldSet3D & Increment<MODEL>::fieldSet() {
 template<typename MODEL>
 void Increment<MODEL>::synchronizeFields() {
   // TODO(JEDI core team): remove this method when accessors are fully implemented
-  ASSERT(interface::Increment<MODEL>::fset_);
-  ASSERT(!interface::Increment<MODEL>::fset_->empty());
-  this->fromFieldSet(interface::Increment<MODEL>::fset_->fieldSet());
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void Increment<MODEL>::synchronizeFieldsAD() {
-  // TODO(JEDI core team): remove this method when accessors are fully implemented
   if (interface::Increment<MODEL>::fset_) {
-    if (!interface::Increment<MODEL>::fset_->empty()) {
-      interface::Increment<MODEL>::fset_->fieldSet()->adjointHaloExchange();
-      this->fromFieldSet(interface::Increment<MODEL>::fset_->fieldSet());
-    }
+    ASSERT(!interface::Increment<MODEL>::fset_->empty());
+    this->fromFieldSet(interface::Increment<MODEL>::fset_->fieldSet());
   }
 }
 
