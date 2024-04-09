@@ -10,9 +10,9 @@
 #include <memory>
 #include <string>
 
-#include "oops/base/LatLonGridWriter.h"
 #include "oops/base/LinearModel.h"
 #include "oops/base/Model.h"
+#include "oops/base/StructuredGridWriter.h"
 #include "oops/base/TrajectorySaver.h"
 #include "oops/generic/instantiateLinearModelFactory.h"
 #include "oops/generic/instantiateModelFactory.h"
@@ -43,8 +43,8 @@ namespace oops {
   // eckit::LocalConfiguration, "x2"
 
 // Output configuration for regular lat-lon grid
-  // eckit::LocalConfiguration, "output on latlon grid"
-  // bool, "write" (TODO: remove this once LatLonGridWriter works for QG)
+  // eckit::LocalConfiguration, "output on structured grid"
+  // bool, "write" (TODO: remove this once StructuredGridWriter works for QG)
 
 /// \brief Application for computing and writing fields of linearization error.
 ///
@@ -86,7 +86,7 @@ template <typename MODEL>
 class LinearizationError : public Application {
   typedef Geometry<MODEL>             Geometry_;
   typedef Increment<MODEL>            Increment_;
-  typedef LatLonGridWriter<MODEL>     LatLonGridWriter_;
+  typedef StructuredGridWriter<MODEL>     StructuredGridWriter_;
   typedef LinearModel<MODEL>          LinearModel_;
   typedef Model<MODEL>                Model_;
   typedef ModelAuxControl<MODEL>      ModelAuxControl_;
@@ -119,13 +119,13 @@ class LinearizationError : public Application {
     const Model_ model(high, config.getSubConfiguration("model"));
     const ModelAuxControl_ mAuxCtl(high, config.getSubConfiguration("model aux control"));
 
-// Set up LatLonGridWriter
-    std::unique_ptr<LatLonGridWriter_> writer;
+// Set up StructuredGridWriter
+    std::unique_ptr<StructuredGridWriter_> writer;
     if (config.has("output on latlon grid")) {
-      // LatLonGridWriter doesn't work for QG, so it is optional to allow testing in OOPS
-      // TODO(Tom): make LatLonGridWriter work for QG
+      // StructuredGridWriter doesn't work for QG, so it is optional to allow testing in OOPS
+      // TODO(Tom): make StructuredGridWriter work for QG
       const eckit::LocalConfiguration latlonConf(config, "output on latlon grid");
-      writer = std::make_unique<LatLonGridWriter_>(latlonConf, high);
+      writer = std::make_unique<StructuredGridWriter_>(latlonConf, high);
     }
 
 // Set up trajectory saver for use with x1 and empty post processor for x2
@@ -177,7 +177,8 @@ class LinearizationError : public Application {
       Log::test() << "error at " << time << ":" << error << std::endl;
 
       // Write to file on regular lat-lon grid
-      // TODO(Tom): make LatLonGridWriter work for QG, then the next call won't have to be optional
+      // TODO(Tom): make StructuredGridWriter work for QG,
+      // then the next call won't have to be optional
       if (writer) {
         writer->interpolateAndWrite(error);
       }

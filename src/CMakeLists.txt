@@ -128,8 +128,6 @@ oops/base/InflationBase.h
 oops/base/instantiateCovarFactory.h
 oops/base/instantiateInflationFactory.h
 oops/base/instantiateObsFilterFactory.h
-oops/base/LatLonGridPostProcessor.h
-oops/base/LatLonGridWriter.h
 oops/base/LinearModel.h
 oops/base/LinearVariableChangeParametersBase.h
 oops/base/Localization.h
@@ -184,6 +182,8 @@ oops/base/StateSaver.h
 oops/base/StateSet.h
 oops/base/StateSetSaver.h
 oops/base/StateWriter.h
+oops/base/StructuredGridPostProcessor.h
+oops/base/StructuredGridWriter.h
 oops/base/TrajectorySaver.h
 oops/base/TrivialSamplingMethodSelector.h
 oops/base/WriteParametersBase.cc
@@ -310,7 +310,7 @@ oops/runs/Application.h
 oops/runs/ControlPert.h
 oops/runs/ConvertIncrement.h
 oops/runs/ConvertState.h
-oops/runs/ConvertToLatLon.h
+oops/runs/ConvertToStructuredGrid.h
 oops/runs/DiffStates.h
 oops/runs/EnsembleApplication.h
 oops/runs/EnsembleGETKFApplication.h

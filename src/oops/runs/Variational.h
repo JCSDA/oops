@@ -26,12 +26,12 @@
 #include "oops/base/Increment.h"
 #include "oops/base/instantiateCovarFactory.h"
 #include "oops/base/instantiateObsFilterFactory.h"
-#include "oops/base/LatLonGridPostProcessor.h"
-#include "oops/base/LatLonGridWriter.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State.h"
 #include "oops/base/StateInfo.h"
 #include "oops/base/StateWriter.h"
+#include "oops/base/StructuredGridPostProcessor.h"
+#include "oops/base/StructuredGridWriter.h"
 #include "oops/generic/instantiateLinearModelFactory.h"
 #include "oops/generic/instantiateNormFactory.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
@@ -108,14 +108,14 @@ template <typename MODEL, typename OBS> class Variational : public Application {
       dx.write(incOutConfig);
     }
 
-    if (finalConfig.has("increment to latlon")) {
-      const eckit::LocalConfiguration incLatlonConf(finalConfig, "increment to latlon");
+    if (finalConfig.has("increment to structured grid")) {
+      const eckit::LocalConfiguration incLatlonConf(finalConfig, "increment to structured grid");
 
       ControlVariable<MODEL, OBS> x_b(J->jb().getBackground());
       ControlIncrement<MODEL, OBS> dx(J->jb());
       dx.diff(xx, x_b);
 
-      const LatLonGridWriter<MODEL> latlon(incLatlonConf, dx.states().geometry());
+      const StructuredGridWriter<MODEL> latlon(incLatlonConf, dx.states().geometry());
       for (size_t jtime = 0; jtime < dx.states().size(); ++jtime) {
         latlon.interpolateAndWrite(dx.states()[jtime], xx.states()[jtime]);
       }
@@ -126,9 +126,9 @@ template <typename MODEL, typename OBS> class Variational : public Application {
       post.enrollProcessor(new StateInfo<State_>("final", prtConfig));
     }
 
-    if (finalConfig.has("analysis to latlon")) {
-      const eckit::LocalConfiguration anLatlonConf(finalConfig, "analysis to latlon");
-      post.enrollProcessor(new LatLonGridPostProcessor<MODEL, State_>(
+    if (finalConfig.has("analysis to structured grid")) {
+      const eckit::LocalConfiguration anLatlonConf(finalConfig, "analysis to structured grid");
+      post.enrollProcessor(new StructuredGridPostProcessor<MODEL, State_>(
             anLatlonConf, xx.state().geometry() ));
     }
 

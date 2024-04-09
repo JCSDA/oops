@@ -17,12 +17,12 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/ForecastParameters.h"
 #include "oops/base/Geometry.h"
-#include "oops/base/LatLonGridPostProcessor.h"
 #include "oops/base/Model.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State.h"
 #include "oops/base/StateInfo.h"
 #include "oops/base/StateWriter.h"
+#include "oops/base/StructuredGridPostProcessor.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
@@ -102,10 +102,10 @@ template <typename MODEL> class Forecast : public Application {
     outConfig.set("date", bgndate.toString());
     post.enrollProcessor(new StateWriter<State_>(outConfig));
 
-    if (params.fcstConf.latlonGridOutput.value() != boost::none) {
-      eckit::LocalConfiguration latlonConfig = params.fcstConf.latlonGridOutput.value().value();
-      latlonConfig.set("date", bgndate.toString());
-      post.enrollProcessor(new LatLonGridPostProcessor<MODEL, State_>(latlonConfig, resol));
+    if (params.fcstConf.structuredGridOutput.value() != boost::none) {
+      eckit::LocalConfiguration structConfig = params.fcstConf.structuredGridOutput.value().value();
+      structConfig.set("date", bgndate.toString());
+      post.enrollProcessor(new StructuredGridPostProcessor<MODEL, State_>(structConfig, resol));
     }
 
     eckit::LocalConfiguration wflow;

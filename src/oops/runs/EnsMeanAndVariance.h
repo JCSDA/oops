@@ -17,10 +17,10 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
-#include "oops/base/LatLonGridWriter.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State.h"
 #include "oops/base/StateEnsemble.h"
+#include "oops/base/StructuredGridWriter.h"
 #include "oops/base/Variables.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
@@ -52,14 +52,16 @@ class EnsMeanAndVarianceParameters : public ApplicationParameters {
   /// Output increment parameters for variance.
   OptionalParameter<IncrementWriteParameters_> outputStdDevConfig{"standard deviation output",
                                                  this};
-  OptionalParameter<eckit::LocalConfiguration> outputStdDevConfigLL{"standard deviation to latlon",
-                                                 this};
+  OptionalParameter<eckit::LocalConfiguration> outputStdDevConfigLL
+                  {"standard deviation to structured grid", this};
   OptionalParameter<IncrementWriteParameters_> outputVarConfig{"variance output", this};
-  OptionalParameter<eckit::LocalConfiguration> outputVarConfigLL{"ensvariance to latlon", this};
+  OptionalParameter<eckit::LocalConfiguration> outputVarConfigLL
+                  {"ensvariance to structured grid", this};
 
   /// Output state parameters for mean.
   OptionalParameter<eckit::LocalConfiguration> outputMeanConfig{"mean output", this};
-  OptionalParameter<eckit::LocalConfiguration> outputMeanConfigLL{"ensmean to latlon", this};
+  OptionalParameter<eckit::LocalConfiguration> outputMeanConfigLL
+                   {"ensmean to structured grid", this};
 };
 
 // -----------------------------------------------------------------------------
@@ -98,7 +100,7 @@ template <typename MODEL> class EnsMeanAndVariance : public Application {
 
     if (params.outputMeanConfigLL.value() != boost::none) {
       const eckit::LocalConfiguration latlonConf = params.outputMeanConfigLL.value().value();
-      const LatLonGridWriter<MODEL> latlon(latlonConf, resol);
+      const StructuredGridWriter<MODEL> latlon(latlonConf, resol);
       latlon.interpolateAndWrite(ensmean);
     }
     Log::test() << "Mean: " << std::endl << ensmean << std::endl;
@@ -109,7 +111,7 @@ template <typename MODEL> class EnsMeanAndVariance : public Application {
 
     if (params.outputVarConfigLL.value() != boost::none) {
       const eckit::LocalConfiguration latlonConf = params.outputVarConfigLL.value().value();
-      const LatLonGridWriter<MODEL> latlon(latlonConf, resol);
+      const StructuredGridWriter<MODEL> latlon(latlonConf, resol);
       latlon.interpolateAndWrite(sigb2, ensmean);
     }
     Log::test() << "Variance: " << std::endl << sigb2 << std::endl;
@@ -126,7 +128,7 @@ template <typename MODEL> class EnsMeanAndVariance : public Application {
       }
       if (params.outputStdDevConfigLL.value() != boost::none) {
         const eckit::LocalConfiguration latlonConf = params.outputStdDevConfigLL.value().value();
-        const LatLonGridWriter<MODEL> latlon(latlonConf, resol);
+        const StructuredGridWriter<MODEL> latlon(latlonConf, resol);
         latlon.interpolateAndWrite(sigb, ensmean);
       }
       Log::test() << "Standard Deviation: " << std::endl << sigb << std::endl;

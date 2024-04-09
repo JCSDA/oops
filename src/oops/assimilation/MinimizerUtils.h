@@ -16,7 +16,7 @@
 
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/HtRinvHMatrix.h"
-#include "oops/base/LatLonGridWriter.h"
+#include "oops/base/StructuredGridWriter.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
@@ -134,15 +134,15 @@ void writeEigenvectors(const eckit::Configuration & diagConf,
         basisStateConf.set("iteration", ii);
         basisConf.set("state component", basisStateConf);
         eigenz.write(basisConf);
-      } else if (diagConf.has("online diagnostics.eigenvector to latlon")) {
+      } else if (diagConf.has("online diagnostics.eigenvector to structured grid")) {
         eckit::LocalConfiguration eigenLatlonConf(diagConf,
-                    "online diagnostics.eigenvector to latlon");
+                    "online diagnostics.eigenvector to structured grid");
         eigenLatlonConf.set("filename prefix",
               eigenLatlonConf.getString("filename prefix")+std::to_string(ii));
-        // Eigenvector context has no meaningful State; therefore can't provide latlon output on
+        // Eigenvector context has no meaningful State; therefore can't provide regular output on
         // pressure levels. Check here that model levels were requested:
         ASSERT(eigenLatlonConf.has("model levels") && !eigenLatlonConf.has("pressure levels"));
-        const LatLonGridWriter<MODEL> latlon(eigenLatlonConf, eigenz.geometry());
+        const StructuredGridWriter<MODEL> latlon(eigenLatlonConf, eigenz.geometry());
         latlon.interpolateAndWrite(eigenz.state());
       }
 

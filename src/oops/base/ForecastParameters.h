@@ -10,7 +10,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Geometry.h"
-#include "oops/base/LatLonGridPostProcessor.h"
+#include "oops/base/StructuredGridPostProcessor.h"
 #include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
@@ -45,7 +45,8 @@ template <typename MODEL> class ForecastParameters : public Parameters {
 
   /// Where to write the output.
   RequiredParameter<eckit::LocalConfiguration> output{"output", this};
-  OptionalParameter<eckit::LocalConfiguration> latlonGridOutput{"forecast to latlon", this};
+  OptionalParameter<eckit::LocalConfiguration> structuredGridOutput
+                   {"forecast to structured grid", this};
 
   /// Options passed to the object writing out forecast fields.
   Parameter<eckit::LocalConfiguration> prints{"prints", eckit::LocalConfiguration(), this};

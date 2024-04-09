@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2022-2023 UCAR
+ * (C) Copyright 2022-2024 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -64,7 +64,7 @@ void writerForPressures(const atlas::FieldSet & fset,
 
   // NetCDF file path
   std::string ncfilepath = filepathprefix;
-  ncfilepath.append(".latlon.pressureLevels.nc");
+  ncfilepath.append(".pressureLevels.nc");
   oops::Log::info() << "Writing file: " << ncfilepath << std::endl;
 
   // Create NetCDF file
@@ -164,7 +164,7 @@ void writerForLevels(const atlas::FieldSet & fset,
 
   // NetCDF file path
   std::string ncfilepath = filepathprefix;
-  ncfilepath.append(".latlon.modelLevels.nc");
+  ncfilepath.append(".modelLevels.nc");
   oops::Log::info() << "Writing file: " << ncfilepath << std::endl;
 
   // Create NetCDF file
@@ -267,16 +267,29 @@ std::vector<size_t> mergeLevels(const std::optional<std::vector<size_t>> modelLe
 
 // -----------------------------------------------------------------------------
 
-/// Outputs model fields interpolated to a uniform lat-lon grid, optionally also interpolated to
+/// Outputs model fields interpolated to a uniform structured grid, optionally also interpolated to
 /// pressure levels. This is useful for plotting model fields and for diagnostic computations.
 ///
-/// The output grid spacing is specified via the yaml key "resolution in degrees". The output grid
+/// Currently two structured grids are supported: LatLon and regular Gaussian
+///
+/// The structured grid type is specified via the YAML key "grid type"
+/// which accepts either "latlon" or "regular gaussian".
+///
+/// For LatLon, the output grid spacing is specified via one of two ways.
+/// First, for the YAML key "resolution in degrees". The output grid
 /// will be an atlas "LN" latlon grid with (2N+1) latitude (incl both poles) and 4N longitude
 /// samples. N will be determined so that the resolution at the/ equator is equal to, or slightly
 /// finer than, the requested resolution.
 ///
-/// The LatLonGridWriter can output a list of requested fields onto a list of requested levels,
-/// either pressure levels or model levels. Usage of levels is as follows:
+/// Additionally, one can specify "number of latitude gridpoints" in the YAML
+/// to represent N in the equation described above.
+///
+/// For a regular Gaussian grid, a user must specify "number of latitude gridpoints" in the YAML.
+/// The output grid will be an atlas "GN" Gaussian grid with 2N latitude and 4N longitude samples.
+///
+/// The StructuredGridWriter can output a list of requested fields
+/// onto a list of requested pressure levels, all model levels, or just
+/// the bottom model level. Usage of levels is as follows:
 ///
 /// - if only surface fields are requested, then there is no need to request output levels; if any
 ///   are specified they will be ignored.
@@ -284,19 +297,17 @@ std::vector<size_t> mergeLevels(const std::optional<std::vector<size_t>> modelLe
 ///   model levels for the output. This can be done via any combination of options
 ///   - "pressure levels in hPa" to give a list of pressure levels; levels should be ordered
 ///     bottom-to-top, i.e., in decreasing pressure order
-///   - "model levels" to give a list of model levels; levels should be ordered bottom-to-top
+///   - "all model levels" is a boolean, that if true, will request all model levels
 ///   - "bottom model level" to request output at the bottom model level. This option is partly
-///     redundant with "model levels", but allows the user to request the commonly-used lowest
-///     level without needing to know the details of the indexing of model levels. If this is used
-///     in conjuction with "model levels", the bottom level requested by this option will be
-///     prepended to the model level list from the "model levels" option. If both options are
-///     requesting the bottom level, it will only be printed once into the output file.
+///     redundant with "all model levels", but allows the user to request the commonly-used lowest
+///     level without needing to interpolate and write all levels.
 ///   If more than one of these options is requested, then the union of the levels (both pressure
 ///   and model levels) will be output.
 /// - a mix of surface and upper-air fields can be requested.
 ///
-/// The LatLonGridWriter applies a VariableChange or LinearVariableChange to the provided State or
-/// Increment before interpolations. This is currently not user-specifiable -- the MODEL's default
+/// The StructuredGridWriter applies a VariableChange or LinearVariableChange to the provided
+/// State or Increment before interpolations.
+/// This is currently not user-specifiable -- the MODEL's default
 /// variable change is called. In most cases this variable change can compute fields of interest.
 /// Control over this variable change can be added in the future.
 ///
@@ -307,15 +318,15 @@ std::vector<size_t> mergeLevels(const std::optional<std::vector<size_t>> modelLe
 /// Results are written to one or two NetCDF files: one file for pressure-level output, and another
 /// for model-level output. Surface fields are written into the model-level file. Output is written
 /// into files named:
-/// - <datapath>/<prefix>.<date>.latlon.{pressure,model}Levels.nc               if prefix given
-/// - <datapath>/<exp>.<type>.<member>.<date>.latlon.{pressure,model}Levels.nc  otherwise
+/// - <datapath>/<prefix>.<date>.<grid>.{pressure,model}Levels.nc               if prefix given
+/// - <datapath>/<exp>.<type>.<member>.<date>.<grid>.{pressure,model}Levels.nc  otherwise
 template <typename MODEL>
-class LatLonGridWriter : public util::Printable  {
+class StructuredGridWriter : public util::Printable  {
  public:
-  explicit LatLonGridWriter(
+  explicit StructuredGridWriter(
       const eckit::Configuration & conf,
       const Geometry<MODEL> & sourceGeometry);
-  ~LatLonGridWriter() = default;
+  ~StructuredGridWriter() = default;
 
 
   /// Writes data from xx, optionally interpolated to pressure levels
@@ -333,9 +344,9 @@ class LatLonGridWriter : public util::Printable  {
 
  private:
   void interpolateAndWrite(const atlas::FieldSet & fset, const util::DateTime & t) const;
-  void interpolateToPressureLevels(const atlas::FieldSet & fsetLatLon,
+  void interpolateToPressureLevels(const atlas::FieldSet & fsetStructured,
                                    atlas::FieldSet & fsetPressureLevels) const;
-  void trimToModelLevels(const atlas::FieldSet & fsetLatLon, atlas::FieldSet & fsetModelLevels,
+  void trimToModelLevels(const atlas::FieldSet & fsetStructured, atlas::FieldSet & fsetModelLevels,
                          const std::vector<size_t> targetLevels,
                          const size_t nModelLevels) const;
 
@@ -354,12 +365,14 @@ class LatLonGridWriter : public util::Printable  {
   size_t gridRes_;
   std::optional<std::vector<double>> pressureLevels_;
   std::optional<std::vector<size_t>> modelLevels_;
+  bool writeAllLevels_;
+  std::string outGridType_;
 };
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-LatLonGridWriter<MODEL>::LatLonGridWriter(
+StructuredGridWriter<MODEL>::StructuredGridWriter(
     const eckit::Configuration & conf,
     const Geometry<MODEL> & sourceGeometry
     )
@@ -371,8 +384,8 @@ LatLonGridWriter<MODEL>::LatLonGridWriter(
   modelLevelsAreTopDown_(sourceGeometry.levelsAreTopDown())
 {
   // Sanity check any provided level options. It's fine to request none, but in this case only
-  // surface fields may be output; the LatLonGridWriter will check this in the interpolate method
-  // and may error there.
+  // surface fields may be output; the StructuredGridWriter will check this
+  // in the interpolate method and may error there.
   if (conf.has("pressure levels in hPa")) {
     pressureLevels_ = conf.getDoubleVector("pressure levels in hPa");
     ASSERT(pressureLevels_->size() > 0);
@@ -386,38 +399,58 @@ LatLonGridWriter<MODEL>::LatLonGridWriter(
       }
     }
   }
-  if (conf.has("model levels")) {
-    modelLevels_ = conf.getUnsignedVector("model levels");
-    ASSERT(modelLevels_->size() > 0);
-    // Check levels requested are in bottom-to-top order
-    for (size_t lev = 1; lev < modelLevels_->size(); ++lev) {
-      const size_t modelLevel = (*modelLevels_)[lev];
-      const size_t modelLevelPrevious = (*modelLevels_)[lev - 1];
-      if (modelLevelsAreTopDown_) {
-        ASSERT(modelLevel < modelLevelPrevious);
-      } else {
-        ASSERT(modelLevel > modelLevelPrevious);
-      }
-    }
+
+  writeAllLevels_ = false;
+  if (conf.has("all model levels")) {
+    writeAllLevels_ = conf.getBool("all model levels");
   }
 
-  // Goal: find number of grid points on a 90deg arc giving the requested resolution or higher.
-  //       N will be used to construct an atlas LN latlon grid with (2N+1) lats and 4N lons.
-  const double resolDegrees = conf.getDouble("resolution in degrees");
-  ASSERT(resolDegrees > 0.0 && resolDegrees < 90.0);
-  const double ratio = 90.0 / resolDegrees;
-  const auto isNearlyInt = [](const double x) { return fabs(round(x) - x) < 1.e-6; };
-  gridRes_ = static_cast<size_t>(isNearlyInt(ratio) ? round(ratio) : ceil(ratio));
+  if (writeAllLevels_ && bottomLevel_) {
+    throw eckit::BadValue("Cannot request both only the lowest model level and all levels.");
+  }
 
+  // read in grid type
+  outGridType_ = conf.getString("grid type");
+
+  // check for valid/supported grid types
+  if (outGridType_ != "latlon" && outGridType_ != "regular gaussian") {
+    throw eckit::BadValue("StructuredGridWriter grid type specified not supported.");
+  }
+
+  if (conf.has("resolution in degrees")) {
+    ASSERT(outGridType_ == "latlon");  // only latlon supports specifying res in degrees.
+    // Goal: find number of grid points on a 90deg arc giving the requested resolution or higher.
+    //       N will be used to construct an atlas LN latlon grid with (2N+1) lats and 4N lons.
+    const double resolDegrees = conf.getDouble("resolution in degrees");
+    ASSERT(resolDegrees > 0.0 && resolDegrees < 90.0);
+    const double ratio = 90.0 / resolDegrees;
+    const auto isNearlyInt = [](const double x) { return fabs(round(x) - x) < 1.e-6; };
+    gridRes_ = static_cast<size_t>(isNearlyInt(ratio) ? round(ratio) : ceil(ratio));
+  } else if (conf.has("number of latitude gridpoints")) {
+    gridRes_ = conf.getUnsigned("number of latitude gridpoints");
+  } else {
+      throw eckit::Exception("Output resolution not specified for StructuredGridWriter.");
+  }
+
+  // Set up the target Atlas grid
   // Want final results on rank 0 only, so use atlas's serial partitioner to assign all grid points
   // to mpi rank 0.
-  const std::string atlasGridName = "L" + std::to_string(gridRes_);
-  const atlas::RegularLonLatGrid grid(atlasGridName);
+  std::string atlasGridName;
+  if (outGridType_ == "latlon") {
+    // LatLon Grid
+    atlasGridName = "L" + std::to_string(gridRes_);
+  } else if (outGridType_ == "regular gaussian") {
+    // Regular Gaussian Grid
+    atlasGridName = "F" + std::to_string(gridRes_);
+  } else {
+      throw eckit::Exception("StructuredGridWriter only supports options for grid type of "
+                           "'latlon' and 'regular gaussian'");
+  }
+  const atlas::Grid grid(atlasGridName);
   eckit::LocalConfiguration serialPartConf{};
   serialPartConf.set("partition", 0);
   const atlas::grid::Partitioner part("serial", serialPartConf);
   targetFunctionSpace_.reset(new atlas::functionspace::StructuredColumns(grid, part));
-
   interp_.reset(new oops::GlobalInterpolator(conf,
         sourceGeometry.generic(), *targetFunctionSpace_,
         sourceGeometry.getComm()));
@@ -426,7 +459,7 @@ LatLonGridWriter<MODEL>::LatLonGridWriter(
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void LatLonGridWriter<MODEL>::interpolateAndWrite(const State<MODEL> & xx) const {
+void StructuredGridWriter<MODEL>::interpolateAndWrite(const State<MODEL> & xx) const {
   const oops::VariableChange<MODEL> varchange(conf_, sourceGeometry_);
 
   oops::Variables vars_for_latlon_interp = vars_;
@@ -444,7 +477,7 @@ void LatLonGridWriter<MODEL>::interpolateAndWrite(const State<MODEL> & xx) const
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void LatLonGridWriter<MODEL>::interpolateAndWrite(const Increment<MODEL> & dx,
+void StructuredGridWriter<MODEL>::interpolateAndWrite(const Increment<MODEL> & dx,
                                                   const State<MODEL> & xx) const {
   const oops::VariableChange<MODEL> varchange(conf_, sourceGeometry_);
   oops::LinearVariableChange<MODEL> linvarchange(sourceGeometry_, conf_);
@@ -469,16 +502,18 @@ void LatLonGridWriter<MODEL>::interpolateAndWrite(const Increment<MODEL> & dx,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void LatLonGridWriter<MODEL>::interpolateAndWrite(const Increment<MODEL> & dx) const {
+void StructuredGridWriter<MODEL>::interpolateAndWrite(const Increment<MODEL> & dx) const {
   // Sanity check: can't call this interface if output on pressure levels was requested
   if (pressureLevels_) {
-    throw eckit::Exception("Writing an Increment to latlon without an available background State "
-                           "is not compatible with request for output on pressure levels.");
+    throw eckit::Exception("Writing an Increment to a structured grid without an available "
+                           "background State is not compatible with request for output "
+                           "on pressure levels.");
   }
   // Sanity check: no background, so can't perform variable change
   for (const auto & v : vars_.variables()) {
     if (!dx.variables().has(v)) {
-      throw eckit::Exception("Writing an Increment to latlon without an available background State "
+      throw eckit::Exception("Writing an Increment to a structured grid "
+                             "without an available background State "
                              "is not compatible with request for variable not in Increment.");
     }
   }
@@ -489,7 +524,7 @@ void LatLonGridWriter<MODEL>::interpolateAndWrite(const Increment<MODEL> & dx) c
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void LatLonGridWriter<MODEL>::interpolateAndWrite(const atlas::FieldSet & fsetInput,
+void StructuredGridWriter<MODEL>::interpolateAndWrite(const atlas::FieldSet & fsetInput,
                                                   const util::DateTime & t) const {
   // First, some prep work with variables and levels
   size_t nModelLevels = 0;
@@ -521,8 +556,8 @@ void LatLonGridWriter<MODEL>::interpolateAndWrite(const atlas::FieldSet & fsetIn
   //  indicating surface vs upper-air fields, we could simplify this logic a bit.)
   // To output upper-air variables, at least one kind of level must be requested
   if (haveUpperAirVars) {
-    ASSERT_MSG(pressureLevels_ || modelLevels_ || bottomLevel_,
-               "LatLonGridWriter requires pressure and/or model levels to be requested when "
+    ASSERT_MSG(pressureLevels_ || bottomLevel_ || writeAllLevels_,
+               "StructuredGridWriter requires pressure and/or model levels to be requested when "
                "upper-air fields are specified");
   }
 
@@ -569,6 +604,13 @@ void LatLonGridWriter<MODEL>::interpolateAndWrite(const atlas::FieldSet & fsetIn
       prefix = conf_.getString("prefix") + "." + t.toStringIO();
     }
   }
+
+  // Determine file name prefix for each grid type
+  if (outGridType_ == "latlon") {
+    prefix += ".latlon";
+  } else if (outGridType_ == "regular gaussian") {
+    prefix += ".gaussian";
+  }
   const std::string filepathprefix = conf_.getString("datapath", ".") + "/" + prefix;
 
   // Prepare interpolation source and target FieldSets
@@ -576,7 +618,7 @@ void LatLonGridWriter<MODEL>::interpolateAndWrite(const atlas::FieldSet & fsetIn
   //   (with the addition of air pressure if output is requested on pressure levels...)
   // - target should be initialized to match source
   atlas::FieldSet fset;
-  atlas::FieldSet fsetLatLon;
+  atlas::FieldSet fsetStructured;
 
   oops::Variables vars_for_latlon_interp = vars_;
   if (pressureLevels_ && haveUpperAirVars) {
@@ -592,15 +634,15 @@ void LatLonGridWriter<MODEL>::interpolateAndWrite(const atlas::FieldSet & fsetIn
 
     const std::string name = field.name();
     const size_t levels = field.shape(1);
-    const atlas::Field fieldLatLon = targetFunctionSpace_->createField<double>(
+    const atlas::Field fieldStructured = targetFunctionSpace_->createField<double>(
         atlas::option::name(name) | atlas::option::levels(levels));
-    fsetLatLon.add(fieldLatLon);
+    fsetStructured.add(fieldStructured);
   }
 
   // Interpolate input data to lat-lon grid
-  interp_->apply(fset, fsetLatLon);
+  interp_->apply(fset, fsetStructured);
 
-  // Note that fsetLatLon lives on rank-0 only, so from here we can do the vertical processing
+  // Note that fsetStructured lives on rank-0 only, so from here we can do the vertical processing
   // and the writing exclusively on rank 0.
   if (comm_.rank() != 0) return;
 
@@ -618,24 +660,28 @@ void LatLonGridWriter<MODEL>::interpolateAndWrite(const atlas::FieldSet & fsetIn
   // Handle output on pressure levels: vertical interpolation then writing
   if (pressureLevels_ && haveUpperAirVars) {
     atlas::FieldSet fsetPressureLevels;
-    interpolateToPressureLevels(fsetLatLon, fsetPressureLevels);
+    interpolateToPressureLevels(fsetStructured, fsetPressureLevels);
 
     detail::writerForPressures(fsetPressureLevels, upperAirVars, *pressureLevels_,
                                filepathprefix, lats, lons);
   }
 
   // Handle output on model levels: trimming to requested level then writing
-  if (modelLevels_ || bottomLevel_) {
-    // If needed, add bottom level to model levels
-    const std::vector<size_t> targetLevels = detail::mergeLevels(modelLevels_, bottomLevel_,
-                                                                 modelLevelsAreTopDown_,
-                                                                 nModelLevels);
-
+  if (bottomLevel_ || writeAllLevels_) {
     atlas::FieldSet fsetModelLevels;
-    trimToModelLevels(fsetLatLon, fsetModelLevels, targetLevels, nModelLevels);
-
+    std::vector<size_t> targetLevels;
+    if (writeAllLevels_) {
+      for (int i = 0; i < nModelLevels; ++i) { targetLevels.push_back(i); }
+      fsetModelLevels = fsetStructured;
+    } else {
+      // If needed, add bottom level to model levels
+      targetLevels = detail::mergeLevels(modelLevels_, bottomLevel_,
+                                        modelLevelsAreTopDown_, nModelLevels);
+      trimToModelLevels(fsetStructured, fsetModelLevels, targetLevels, nModelLevels);
+    }
     detail::writerForLevels(fsetModelLevels, vars_, targetLevels, isSurfaceVar,
                             filepathprefix, lats, lons);
+
   } else {
     // Once we are here, we know that
     // - any upper-air fields were written on either pressure or model levels in branches above
@@ -649,7 +695,7 @@ void LatLonGridWriter<MODEL>::interpolateAndWrite(const atlas::FieldSet & fsetIn
       oops::Variables varsForSurface{};
       for (const auto & kv : isSurfaceVar) {
         if (kv.second) {
-          fsetSurface.add(fsetLatLon.field(kv.first));
+          fsetSurface.add(fsetStructured.field(kv.first));
           varsForSurface.push_back(kv.first);
         }
       }
@@ -666,8 +712,8 @@ void LatLonGridWriter<MODEL>::interpolateAndWrite(const atlas::FieldSet & fsetIn
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void LatLonGridWriter<MODEL>::interpolateToPressureLevels(const atlas::FieldSet & fsetLatLon,
-    atlas::FieldSet & fsetPressureLevels) const
+void StructuredGridWriter<MODEL>::interpolateToPressureLevels(
+    const atlas::FieldSet & fsetStructured, atlas::FieldSet & fsetPressureLevels) const
 {
   ASSERT(pressureLevels_);
   ASSERT(fsetPressureLevels.empty());
@@ -679,7 +725,7 @@ void LatLonGridWriter<MODEL>::interpolateToPressureLevels(const atlas::FieldSet 
   std::vector<double> interp_ws(2 * nPressureLevels);
   std::vector<bool> pressure_level_above_ground(nPressureLevels);
 
-  const auto & p = atlas::array::make_view<double, 2>(fsetLatLon.field("air_pressure"));
+  const auto & p = atlas::array::make_view<double, 2>(fsetStructured.field("air_pressure"));
   const size_t lastlev = p.shape(1) - 1;  // index for last source level
 
   // Sanity-check ordering of levels: top-down has pressure increasing along 2nd dimension:
@@ -734,7 +780,7 @@ void LatLonGridWriter<MODEL>::interpolateToPressureLevels(const atlas::FieldSet 
 
   // Allocate multi-level (upper-air) fields in target FieldSet for vertical interpolation
   // (Do nothing for single-level (surface) fields, those are handled in model levels
-  for (auto & f : fsetLatLon) {
+  for (auto & f : fsetStructured) {
     if (f.shape(1) > 1) {
       const std::string & name = f.name();
       const atlas::Field field = targetFunctionSpace_->createField<double>(
@@ -749,7 +795,7 @@ void LatLonGridWriter<MODEL>::interpolateToPressureLevels(const atlas::FieldSet 
     computeVertInterpMatrix(i);
 
     // Apply matrix to each multi-level field
-    for (auto & f : fsetLatLon) {
+    for (auto & f : fsetStructured) {
       if (f.shape(1) > 1) {
         // Interpolate data from full-levels field to new subset-of-levels field
         const auto fullview = atlas::array::make_view<double, 2>(f);
@@ -771,14 +817,14 @@ void LatLonGridWriter<MODEL>::interpolateToPressureLevels(const atlas::FieldSet 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void LatLonGridWriter<MODEL>::trimToModelLevels(const atlas::FieldSet & fsetLatLon,
+void StructuredGridWriter<MODEL>::trimToModelLevels(const atlas::FieldSet & fsetStructured,
                                                 atlas::FieldSet & fsetModelLevels,
                                                 const std::vector<size_t> targetLevels,
                                                 const size_t nModelLevels) const
 {
   const size_t nTargetLevels = targetLevels.size();
 
-  for (auto & f : fsetLatLon) {
+  for (auto & f : fsetStructured) {
     // For single-level (typically = surface) fields, copy directly
     if (f.shape(1) == 1) {
       fsetModelLevels.add(f);
@@ -805,9 +851,9 @@ void LatLonGridWriter<MODEL>::trimToModelLevels(const atlas::FieldSet & fsetLatL
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-void LatLonGridWriter<MODEL>::print(std::ostream & os) const
+void StructuredGridWriter<MODEL>::print(std::ostream & os) const
 {
-  os << "LatLonGridWriter::<" << MODEL::name() << ">" << std::endl;
+  os << "StructuredGridWriter::<" << MODEL::name() << ">" << std::endl;
   os << "Grid Resolution: " << gridRes_ << std::endl;
   os << "Variables: " << vars_ << std::endl;
   os << "Output on Levels:";
@@ -818,16 +864,12 @@ void LatLonGridWriter<MODEL>::print(std::ostream & os) const
     }
     os << ")";
   }
-  if (modelLevels_) {
+  if (writeAllLevels_) {
     if (pressureLevels_) os << " and";
-    os << " Model Levels = (";
-    for (size_t lev = 0; lev < modelLevels_->size(); ++lev) {
-      os << (*modelLevels_)[lev] << ",";
-    }
-    os << ")";
+    os << " All Model Levels";
   }
   if (bottomLevel_) {
-    if (pressureLevels_ || modelLevels_) os << " and";
+    if (pressureLevels_ || writeAllLevels_) os << " and";
     os << " Bottom Model Level";
   }
   os << std::endl;

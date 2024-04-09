@@ -17,11 +17,11 @@
 #include "oops/base/ForecastParameters.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/IncrementSet.h"
-#include "oops/base/LatLonGridPostProcessor.h"
 #include "oops/base/Model.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateSet.h"
 #include "oops/base/StateSetSaver.h"
+#include "oops/base/StructuredGridPostProcessor.h"
 
 #include "eckit/config/YAMLConfiguration.h"
 #include "eckit/exception/Exceptions.h"
