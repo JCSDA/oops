@@ -74,7 +74,7 @@ class State : public util::Printable,
   void updateTime(const util::Duration & dt) {state_->updateTime(dt);}
 
   /// Get run ID (used for generic PseudoModel class, set to -1 if not needed)
-  int ID() const {return ID_;}
+  size_t ID() const {return ID_;}
   /// Read this State from file
   void read(const eckit::Configuration &);
   /// Write this State out to file
@@ -107,7 +107,7 @@ class State : public util::Printable,
 
  private:
   std::unique_ptr<State_> state_;
-  int ID_;
+  size_t ID_;
   void print(std::ostream &) const override;
 
  protected:
@@ -119,7 +119,7 @@ class State : public util::Printable,
 template<typename MODEL>
 State<MODEL>::State(const Geometry_ & resol, const Variables & vars,
                     const util::DateTime & time)
-  : state_(), ID_(-1)
+  : state_(), ID_(0)
 {
   Log::trace() << "State<MODEL>::State starting" << std::endl;
   util::Timer timer(classname(), "State");
@@ -132,10 +132,11 @@ State<MODEL>::State(const Geometry_ & resol, const Variables & vars,
 
 template<typename MODEL>
 State<MODEL>::State(const Geometry_ & resol, const eckit::Configuration & config)
-  : state_(), ID_(config.getInt("ID", -1))
+  : state_(), ID_(config.getUnsigned("ID", 0))
 {
   Log::trace() << "State<MODEL>::State read starting" << std::endl;
   util::Timer timer(classname(), "State");
+  ASSERT(ID_ >= 0);
   state_.reset(new State_(resol.geometry(), config));
   this->setObjectSize(state_->serialSize()*sizeof(double));
   Log::trace() << "State<MODEL>::State read done" << std::endl;
@@ -145,7 +146,7 @@ State<MODEL>::State(const Geometry_ & resol, const eckit::Configuration & config
 
 template<typename MODEL>
 State<MODEL>::State(const Geometry_ & resol, const State & other)
-  : state_(), ID_(-1)
+  : state_(), ID_(0)
 {
   Log::trace() << "State<MODEL>::State interpolated starting" << std::endl;
   util::Timer timer(classname(), "State");
@@ -158,7 +159,7 @@ State<MODEL>::State(const Geometry_ & resol, const State & other)
 
 template<typename MODEL>
 State<MODEL>::State(const Variables & vars, const State & other)
-  : state_()
+  : state_(), ID_(0)
 {
   Log::trace() << "State<MODEL>::State variables starting" << std::endl;
   util::Timer timer(classname(), "State");
@@ -209,7 +210,10 @@ template<typename MODEL>
 void State<MODEL>::read(const eckit::Configuration & conf) {
   Log::trace() << "State<MODEL>::read starting" << std::endl;
   util::Timer timer(classname(), "read");
-  if (ID_ == -1) ID_ = conf.getInt("ID", -1);
+  if (ID_ == 0) {
+    ID_ = conf.getUnsigned("ID", 0);
+    ASSERT(ID_ >= 0);
+  }
   state_->read(conf);
   Log::trace() << "State<MODEL>::read done" << std::endl;
 }

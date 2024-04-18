@@ -98,12 +98,12 @@ class DateTime : public util::Serializable {
   bool operator>=(const DateTime&) const;
   std::size_t timestamp() const;
 
+  bool isSet() const;
+
   // Serialize and deserialize
   size_t serialSize() const override;
   void serialize(std::vector<double> &) const override;
   void deserialize(const std::vector<double> &, size_t &) override;
-
-  void failIfUnset(const bool quiet = false) const;
 
  private:
 // -- Copy allowed
@@ -115,6 +115,7 @@ class DateTime : public util::Serializable {
   void set(const std::string &);
 
   void addSeconds(const int64_t &);
+  void failIfUnset() const;
 
 // -- Members
 
