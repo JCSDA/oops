@@ -41,6 +41,7 @@ void setupFunctionSpace(const eckit::mpi::Comm & comm,
     atlas::Mesh & mesh,
     atlas::FunctionSpace & functionSpace,
     atlas::FieldSet & fieldset) {
+  oops::Log::trace() << "setupFunctionSpace starting" << std::endl;
   // Set up atlas MPI
   eckit::mpi::setCommDefault(comm.name().c_str());
 
@@ -83,6 +84,11 @@ void setupFunctionSpace(const eckit::mpi::Comm & comm,
       // Create functionspace from partitioner
       functionSpace = atlas::functionspace::StructuredColumns(grid, partitioner,
                                                               atlas::option::halo(halo));
+
+      // Using atlas::mpi::Scope in the call to atlas::functionspace::StructuredColumns
+      // may have reverted the default communicator to the world communicator.
+      // We set back the default communicator to `comm` to fix this.
+      eckit::mpi::setCommDefault(comm.name().c_str());
 
       // Create mesh from partitioner
       mesh = atlas::MeshGenerator("structured").generate(grid, partitioner);
@@ -153,6 +159,7 @@ void setupFunctionSpace(const eckit::mpi::Comm & comm,
   }
 
   fieldset.add(owned);
+  oops::Log::trace() << "setupFunctionSpace done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

@@ -29,9 +29,7 @@
 
 namespace test {
 
-CASE("util/FunctionSpaceHelpers/StructuredColumnsLonLat") {
-  const eckit::mpi::Comm & comm = oops::mpi::world();
-
+void testStructuredColumnsLonLat(const eckit::mpi::Comm & comm) {
   eckit::LocalConfiguration config;
   config.set("function space", "StructuredColumns");
   config.set("grid.type", "regular_lonlat");
@@ -54,9 +52,20 @@ CASE("util/FunctionSpaceHelpers/StructuredColumnsLonLat") {
   EXPECT(fieldset.has("owned"));
 }
 
-CASE("util/FunctionSpaceHelpers/StructuredColumnsGaussian") {
+CASE("util/FunctionSpaceHelpers/StructuredColumnsLonLat") {
   const eckit::mpi::Comm & comm = oops::mpi::world();
+  testStructuredColumnsLonLat(comm);
 
+  if (comm.size() == 2) {
+    const std::string commName = "subcommunicator";
+    comm.split(comm.rank(), commName.c_str());
+    testStructuredColumnsLonLat(eckit::mpi::comm(commName.c_str()));
+    eckit::mpi::setCommDefault(comm.name().c_str());
+    eckit::mpi::deleteComm(commName.c_str());
+  }
+}
+
+void testStructuredColumnsGaussian(const eckit::mpi::Comm & comm) {
   eckit::LocalConfiguration config;
   config.set("function space", "StructuredColumns");
   config.set("grid.type", "regular_gaussian");
@@ -79,9 +88,20 @@ CASE("util/FunctionSpaceHelpers/StructuredColumnsGaussian") {
   EXPECT(fieldset.has("owned"));
 }
 
-CASE("util/FunctionSpaceHelpers/StructuredColumnsRegional") {
+CASE("util/FunctionSpaceHelpers/StructuredColumnsGaussian") {
   const eckit::mpi::Comm & comm = oops::mpi::world();
+  testStructuredColumnsGaussian(comm);
 
+  if (comm.size() == 2) {
+    const std::string commName = "subcommunicator";
+    comm.split(comm.rank(), commName.c_str());
+    testStructuredColumnsGaussian(eckit::mpi::comm(commName.c_str()));
+    eckit::mpi::setCommDefault(comm.name().c_str());
+    eckit::mpi::deleteComm(commName.c_str());
+  }
+}
+
+void testStructuredColumnsRegional(const eckit::mpi::Comm & comm) {
   eckit::LocalConfiguration config;
   config.set("function space", "StructuredColumns");
   config.set("grid.type", "regional");
@@ -117,9 +137,20 @@ CASE("util/FunctionSpaceHelpers/StructuredColumnsRegional") {
   EXPECT(fieldset.has("owned"));
 }
 
-CASE("util/FunctionSpaceHelpers/NodeColumnsCubedSphere") {
+CASE("util/FunctionSpaceHelpers/StructuredColumnsRegional") {
   const eckit::mpi::Comm & comm = oops::mpi::world();
+  testStructuredColumnsRegional(comm);
 
+  if (comm.size() == 2) {
+    const std::string commName = "subcommunicator";
+    comm.split(comm.rank(), commName.c_str());
+    testStructuredColumnsRegional(eckit::mpi::comm(commName.c_str()));
+    eckit::mpi::setCommDefault(comm.name().c_str());
+    eckit::mpi::deleteComm(commName.c_str());
+  }
+}
+
+void testNodeColumnsCubedSphere(const eckit::mpi::Comm & comm) {
   eckit::LocalConfiguration config;
   config.set("function space", "NodeColumns");
   config.set("grid.name", "CS-LFR-12");
@@ -147,9 +178,20 @@ CASE("util/FunctionSpaceHelpers/NodeColumnsCubedSphere") {
   EXPECT(fieldset.has("owned"));
 }
 
-CASE("util/FunctionSpaceHelpers/NodeColumnsUnstructured") {
+CASE("util/FunctionSpaceHelpers/NodeColumnsCubedSphere") {
   const eckit::mpi::Comm & comm = oops::mpi::world();
+  testNodeColumnsCubedSphere(comm);
 
+  if (comm.size() == 2) {
+    const std::string commName = "subcommunicator";
+    comm.split(comm.rank(), commName.c_str());
+    testNodeColumnsCubedSphere(eckit::mpi::comm(commName.c_str()));
+    eckit::mpi::setCommDefault(comm.name().c_str());
+    eckit::mpi::deleteComm(commName.c_str());
+  }
+}
+
+void testNodeColumnsUnstructured(const eckit::mpi::Comm & comm) {
   eckit::LocalConfiguration config;
   config.set("function space", "NodeColumns");
   config.set("grid.type", "unstructured");
@@ -171,6 +213,19 @@ CASE("util/FunctionSpaceHelpers/NodeColumnsUnstructured") {
   EXPECT(partitioner.type() == "equal_regions");
   EXPECT(functionspace.type() == "NodeColumns");
   EXPECT(fieldset.has("owned"));
+}
+
+CASE("util/FunctionSpaceHelpers/NodeColumnsUnstructured") {
+  const eckit::mpi::Comm & comm = oops::mpi::world();
+  testNodeColumnsUnstructured(comm);
+
+  if (comm.size() == 2) {
+    const std::string commName = "subcommunicator";
+    comm.split(comm.rank(), commName.c_str());
+    testNodeColumnsUnstructured(eckit::mpi::comm(commName.c_str()));
+    eckit::mpi::setCommDefault(comm.name().c_str());
+    eckit::mpi::deleteComm(commName.c_str());
+  }
 }
 
 class FunctionSpaceHelpers : public oops::Test {
