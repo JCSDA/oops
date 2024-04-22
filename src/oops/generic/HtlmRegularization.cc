@@ -55,8 +55,8 @@ HtlmRegularizationPart::HtlmRegularizationPart(const HtlmRegularizationPartParam
 
 //--------------------------------------------------------------------------------------------------
 
-const bool HtlmRegularizationPart::allOfAAreInRangeOfB(const std::pair<double, double> & A,
-                                                       const std::pair<double, double> & B) const {
+bool HtlmRegularizationPart::allOfAAreInRangeOfB(const std::pair<double, double> & A,
+                                                 const std::pair<double, double> & B) const {
   return (A.first >= B.first && A.first <= B.second)
           && (A.second >= B.first && A.second <= B.second);
 }
@@ -103,9 +103,9 @@ const double & HtlmRegularizationComponentDependent::getRegularizationValue(
 
 //--------------------------------------------------------------------------------------------------
 
-const bool HtlmRegularizationComponentDependent::AIsInRangeOfB(
-                                                          const double A,
-                                                          const std::pair<double, double> & B) const
+bool HtlmRegularizationComponentDependent::AIsInRangeOfB(
+                                                     const double A,
+                                                     const std::pair<double, double> & B) const
 {
   return !((std::min(B.first, B.second) > A)
            || (A > std::max(B.first, B.second)));

@@ -103,7 +103,7 @@ class HtlmEnsemble{
   IncrementEnsemble_ & getLinearEnsemble() {return linearEnsemble_;}
   const IncrementEnsemble_ & getLinearEnsemble() const {return linearEnsemble_;}
   const IncrementEnsemble_ & getLinearErrors() const {return linearErrors_;}
-  const size_t size() const {return ensembleSize_;}
+  size_t size() const {return ensembleSize_;}
 
  private:
   const Geometry_ & updateGeometry_;

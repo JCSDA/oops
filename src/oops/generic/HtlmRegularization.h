@@ -50,9 +50,9 @@ class HtlmRegularizationPart {
 
  private:
   template <typename T>
-  const bool AIsSubsetOfB(std::vector<T>, std::vector<T>) const;
-  const bool allOfAAreInRangeOfB(const std::pair<double, double> &,
-                                 const std::pair<double, double> &) const;
+  bool AIsSubsetOfB(std::vector<T>, std::vector<T>) const;
+  bool allOfAAreInRangeOfB(const std::pair<double, double> &,
+                           const std::pair<double, double> &) const;
 
   static const std::pair<double, double> limitsLon;
   static const std::pair<double, double> limitsLat;
@@ -107,8 +107,8 @@ class HtlmRegularizationComponentDependent : public HtlmRegularization {
 
  private:
   template <typename T>
-  const bool AIsInB(const T &, const std::vector<T> &) const;
-  const bool AIsInRangeOfB(const double, const std::pair<double, double> &) const;
+  bool AIsInB(const T &, const std::vector<T> &) const;
+  bool AIsInRangeOfB(const double, const std::pair<double, double> &) const;
   void applyPart(const HtlmRegularizationPart &, atlas::FieldSet &);
 
   const size_t nLevels_;
@@ -119,7 +119,7 @@ class HtlmRegularizationComponentDependent : public HtlmRegularization {
 //--------------------------------------------------------------------------------------------------
 
 template <typename T>
-const bool HtlmRegularizationPart::AIsSubsetOfB(std::vector<T> A, std::vector<T> B) const {
+bool HtlmRegularizationPart::AIsSubsetOfB(std::vector<T> A, std::vector<T> B) const {
   std::sort(A.begin(), A.end());
   std::sort(B.begin(), B.end());
   return std::includes(B.begin(), B.end(), A.begin(), A.end());
@@ -128,7 +128,7 @@ const bool HtlmRegularizationPart::AIsSubsetOfB(std::vector<T> A, std::vector<T>
 //--------------------------------------------------------------------------------------------------
 
 template <typename T>
-const bool HtlmRegularizationComponentDependent::AIsInB(const T & A,
+bool HtlmRegularizationComponentDependent::AIsInB(const T & A,
                                                         const std::vector<T> & B) const {
   return std::find(B.begin(), B.end(), A) != B.end();
 }
