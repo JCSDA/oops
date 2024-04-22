@@ -14,13 +14,20 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
-#include <regex>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <typeinfo>
 #include <utility>
 #include <vector>
+
+#if USE_BOOST_REGEX
+#include <boost/regex.hpp>
+#define REGEX_NAMESPACE boost
+#else
+#include <regex>
+#define REGEX_NAMESPACE std
+#endif
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
@@ -103,7 +110,9 @@ void TestReference::initialise(const eckit::LocalConfiguration &conf)
 
   refFile_ = conf.getString("reference filename");
   if (conf.has("mpi pattern")) {
-    refFile_  = std::regex_replace(refFile_, std::regex(mpi_pattern), mpi_size);
+    refFile_  = REGEX_NAMESPACE::regex_replace(refFile_,
+                                               REGEX_NAMESPACE::regex(mpi_pattern),
+                                               mpi_size);
   }
   oops::Log::info() << "[TestReference] Comparing to reference file: " << refFile_ << std::endl;
 
@@ -119,7 +128,9 @@ void TestReference::initialise(const eckit::LocalConfiguration &conf)
   if (conf.has("log output filename")) {
     outputFile_ = conf.getString("log output filename");
     if (conf.has("mpi pattern")) {
-      outputFile_  = std::regex_replace(outputFile_, std::regex(mpi_pattern), mpi_size);
+      outputFile_  = REGEX_NAMESPACE::regex_replace(outputFile_,
+                                                    REGEX_NAMESPACE::regex(mpi_pattern),
+                                                    mpi_size);
     }
     LibOOPS::instance().teeOutput(outputFile_);
     oops::Log::info() << "[TestReference] Saving Log output to: " << outputFile_ << std::endl;
@@ -128,7 +139,9 @@ void TestReference::initialise(const eckit::LocalConfiguration &conf)
   if (conf.has("test output filename")) {
     testFile_ = conf.getString("test output filename");
     if (conf.has("mpi pattern")) {
-      testFile_  = std::regex_replace(testFile_, std::regex(mpi_pattern), mpi_size);
+      testFile_  = REGEX_NAMESPACE::regex_replace(testFile_,
+                                                  REGEX_NAMESPACE::regex(mpi_pattern),
+                                                  mpi_size);
     }
     oops::Log::info() << "[TestReference] Saving Test output to: " << testFile_ << std::endl;
   }

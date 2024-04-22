@@ -8,7 +8,14 @@
 
 #include <algorithm>  // std::replace
 #include <iomanip>
+
+#if USE_BOOST_REGEX
+#include <boost/regex.hpp>
+#define REGEX_NAMESPACE boost
+#else
 #include <regex>
+#define REGEX_NAMESPACE std
+#endif
 
 #include "eckit/exception/Exceptions.h"
 #include "oops/util/dateFunctions.h"
@@ -42,9 +49,9 @@ PartialDateTime::PartialDateTime(std::string const &datetime_string) {
   // Determine suitability of string format
   std::string expression = R"(^([0-9]{4}|\*{4})-([0-9]{2}|\*{2})-([0-9]{2}|\*{2}))"
                            R"(T([0-9]{2}|\*{2}):([0-9]{2}|\*{2}):([0-9]{2}|\*{2})Z$)";
-  static const std::regex regex(expression);
-  std::smatch matches;
-  if (!std::regex_match(datetime_string, matches, regex))
+  static const REGEX_NAMESPACE::regex regex(expression);
+  REGEX_NAMESPACE::smatch matches;
+  if (!REGEX_NAMESPACE::regex_match(datetime_string, matches, regex))
       throw eckit::BadParameter("Partial date-time string '" + datetime_string +
                                 "' is not of the expected format '" + expression + "'");
 
