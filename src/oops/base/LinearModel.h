@@ -59,6 +59,7 @@ class LinearModel : public util::Printable,
   static const std::string classname() {return "oops::LinearModel";}
 
   LinearModel(const Geometry_ &, const eckit::Configuration &);
+  explicit LinearModel(std::unique_ptr<LinearModelBase_>);
   virtual ~LinearModel();
 
   /// \brief Run the linear forecast from increment \p dx for \p len time, with \p post
@@ -117,6 +118,15 @@ LinearModel<MODEL>::LinearModel(const Geometry_ & resol, const eckit::Configurat
   Log::info() << "LinearModel configuration is:" << config << std::endl;
   linearmodel_.reset(LinearModelFactory<MODEL>::create(resol, config));
   Log::trace() << "LinearModel<MODEL>::LinearModel done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+LinearModel<MODEL>::LinearModel(std::unique_ptr<LinearModelBase_> linearmodel)
+  : linearmodel_(std::move(linearmodel))
+{
+  Log::trace() << "LinearModel<MODEL>::LinearModel created" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

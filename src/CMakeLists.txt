@@ -255,6 +255,7 @@ oops/generic/ObsErrorDiag.cc
 oops/generic/ObsErrorBase.h
 oops/generic/ObsFilterBase.h
 oops/generic/ObsFilterParametersBase.h
+oops/generic/PseudoLinearModelIncrement4D.h
 oops/generic/PseudoModel.h
 oops/generic/PseudoModelState4D.h
 oops/generic/SimpleLinearModel.h

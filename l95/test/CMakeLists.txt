@@ -97,6 +97,7 @@ list( APPEND l95_test_input
   testinput/increment.yaml
   testinput/letkf_gsi.yaml
   testinput/letkf.yaml
+  testinput/letkf_linearobserver.yaml
   testinput/letkf_noobs.yaml
   testinput/letkf_qc.yaml
   testinput/linearmodel.yaml
@@ -874,6 +875,11 @@ ecbuild_add_test( TARGET test_l95_hofx3d_for_getkf
                   COMMAND l95_letkf.x
                   ARGS testinput/hofx3d_for_getkf.yaml
                   TEST_DEPENDS test_l95_letkf )
+
+ecbuild_add_test( TARGET test_l95_letkf_linearobserver
+                  COMMAND l95_letkf.x
+                  ARGS testinput/letkf_linearobserver.yaml
+                  TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
 
 ecbuild_add_test( TARGET test_l95_getkf_offline_hofx
                   COMMAND l95_letkf.x

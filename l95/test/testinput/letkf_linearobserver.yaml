@@ -1,0 +1,86 @@
+time window:
+  begin: 2010-01-01T21:00:00Z
+  length: PT6H
+
+geometry:
+  resol: 40
+
+# use 3D for middle of the window
+background:
+  members from template:
+    template:
+      date: &date 2010-01-02T00:00:00Z
+      filename: Data/forecast.ens.%mem%.2010-01-01T00:00:00Z.P1D.l95
+    pattern: %mem%
+    nmembers: 5
+
+observations:
+  observers:
+  - obs error:
+      covariance model: diagonal
+    obs localizations:
+      - localization method: Gaspari-Cohn
+        lengthscale: .1
+    obs space:
+      obsdatain:
+        obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+      obsdataout:
+        obsfile: Data/letkf.2010-01-02T00:00:00Z.obt
+    obs operator: {}
+
+driver:
+  save prior mean: true
+  save posterior mean: true
+  save posterior mean increment: true
+  save posterior ensemble increments: true
+  save prior variance: true
+  save posterior variance: true
+  update obs config with geometry info: false
+
+local ensemble DA:
+  solver: LETKF
+  use linear observer: true
+  inflation:
+    rtps: 0.5
+    rtpp: 0.5
+    mult: 1.1
+
+output:
+  datadir: Data
+  date: *date
+  exp: letkf.%{member}%
+  type: an
+
+output increment:
+  datadir: Data
+  date: *date
+  exp: letkf.increment.%{member}%
+  type: an
+
+output ensemble increments:
+  datadir: Data
+  date: *date
+  exp: letkf.increment.%{member}%
+  type: an
+
+output mean prior:
+  datadir: Data
+  date: *date
+  exp: letkf.xbmean.%{member}%
+  type: an
+
+output variance prior:
+  datadir: Data
+  date: *date
+  exp: letkf.xbvar.%{member}%
+  type: an
+
+output variance posterior:
+  datadir: Data
+  date: *date
+  exp: letkf.xavar.%{member}%
+  type: an
+
+test:
+  reference filename: testoutput/letkf.test
+  test output filename: testoutput/letkf_linearobserver.out

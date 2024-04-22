@@ -27,6 +27,8 @@ observations:
     obs space:
       obsdatain:
         obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+      obsdataout:
+        obsfile: Data/letkf_qc.2010-01-02T00:00:00Z.obt
     obs operator: {}
     obs filters:
     - filter: Background Check
@@ -47,3 +49,4 @@ output:
 
 test:
   reference filename: testoutput/letkf_qc.test
+  test output filename: testoutput/letkf_qc.out

@@ -57,6 +57,9 @@ class LocalEnsembleSolverParameters : public Parameters {
   OOPS_CONCRETE_PARAMETERS(LocalEnsembleSolverParameters, Parameters)
  public:
   Parameter<LocalEnsembleSolverInflationParameters> infl{"local ensemble DA.inflation", {}, this};
+  Parameter<bool> useLinearObserver{"local ensemble DA.use linear observer",
+                  "controls whether compute HofX linear",
+                  false, this};
 };
 
 // -----------------------------------------------------------------------------

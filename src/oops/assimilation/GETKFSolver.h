@@ -51,10 +51,23 @@ class GETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
   typedef DeparturesEnsemble<OBS>     DeparturesEnsemble_;
   typedef Geometry<MODEL>             Geometry_;
   typedef GeometryIterator<MODEL>     GeometryIterator_;
+  typedef Increment<MODEL>            Increment_;
+  typedef Increment4D<MODEL>          Increment4D_;
   typedef IncrementEnsemble4D<MODEL>  IncrementEnsemble4D_;
+  typedef LinearModel<MODEL>          LinearModel_;
+  typedef Model<MODEL>                Model_;
+  typedef ModelAuxControl<MODEL>      ModelAux_;
+  typedef ModelAuxIncrement<MODEL>    ModelAuxInc_;
+  typedef ObsAuxControls<OBS>         ObsAux_;
+  typedef ObsAuxIncrements<OBS>       ObsAuxInc_;
   typedef ObsEnsemble<OBS>            ObsEnsemble_;
   typedef Observations<OBS>           Observations_;
+  typedef Observers<MODEL, OBS>       Observers_;
+  typedef ObserversTLAD<MODEL, OBS>   ObserversTLAD_;
   typedef ObsSpaces<OBS>              ObsSpaces_;
+  typedef PseudoModelState4D<MODEL>   PseudoModel_;
+  typedef PseudoLinearModelIncrement4D<MODEL> PseudoLinearModel_;
+  typedef State<MODEL>                State_;
   typedef State4D<MODEL>              State4D_;
   typedef StateEnsemble4D<MODEL>      StateEnsemble4D_;
   typedef VerticalLocEV<MODEL>        VerticalLocEV_;
@@ -123,6 +136,11 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
                                                        size_t iteration, bool readFromFile) {
   util::Timer timer(classname(), "computeHofX");
 
+  ModelAux_ moderr(geometry_, eckit::LocalConfiguration());
+  ModelAuxInc_  moderrinc(geometry_, eckit::LocalConfiguration());
+  ObsAux_  obsaux(this->obspaces_, this->observersconf_);
+  ObsAuxInc_  obsauxinc(this->obspaces_, this->observersconf_);
+
   // compute/read H(x) for the original ensemble members
   // also computes omb_
   Observations_ yb_mean =
@@ -142,28 +160,91 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
       }
     }
   } else {
+    const util::Duration default_tstep = (this->obspaces_.windowEnd()
+                                        - this->obspaces_.windowStart()) * 2;
+    const std::vector<util::DateTime> times = ens_xx[0].validTimes();
+    const util::Duration flength = times[times.size()-1] - times[0];
+
+    // Setup PseudoLinearModelIncrement4D to run on ensemble perturbation
+    Increment4D_ dx(geometry_, ens_xx[0].variables(), times);
+
     // modulate ensemble of obs
-    IncrementEnsemble4D_ dx(ens_xx, this->xbmean_, this->incvars_);
-    IncrementEnsemble4D_ Ztmp(geometry_, this->incvars_,
-                              ens_xx[0].validTimes(), neig_);
+    IncrementEnsemble4D_ Ztmp(geometry_, this->incvars_, times, neig_);
+    eckit::LocalConfiguration config;
+    config.set("save hofx", false);
+    config.set("save qc", false);
+    config.set("save obs errors", false);
     size_t ii = 0;
-    for (size_t iens = 0; iens < nens_; ++iens) {
-      Log::info() << " GETKFSolver::computeHofX starting ensemble member " << iens+1 << std::endl;
-      util::printRunStats("GETKFSolver calculate hofx");
-      vertloc_.modulateIncrement(dx[iens], Ztmp);
-      for (size_t ieig = 0; ieig < neig_; ++ieig) {
-        State4D_ tmpState = this->xbmean_;
-        tmpState += Ztmp[ieig];
-        Observations_ tmpObs(this->obspaces_);
-        eckit::LocalConfiguration config;
-        config.set("save hofx", false);
-        config.set("save qc", false);
-        config.set("save obs errors", false);
-        this->computeHofX4D(config, tmpState, tmpObs);
-        HZb_[ii] = tmpObs - yb_mean;
-        tmpObs.save("hofxm"+std::to_string(iteration)+"_"+std::to_string(ieig+1)+
-                      "_"+std::to_string(iens+1));
-        ii = ii + 1;
+
+    if (this->useLinearObserver()) {
+      // Setup pseudo model to run on ensemble mean
+      Observations_ yy_mean(yb_mean);
+      State_ init_xx = this->xbmean_[0];
+      std::unique_ptr<PseudoModel_> pseudomodel(new PseudoModel_(this->xbmean_, default_tstep));
+      const Model_ model(std::move(pseudomodel));
+
+      // setup postprocessors and nonlinear observers for the "nonlinear" model run on the mean
+      PostProcessor<State_> post;
+      PostProcessorTLAD<MODEL> posttraj;
+      Observers_ hofx(this->obspaces_, this->obsconf_);
+
+      // setup postprocessors and linear observers for the "linear" model run on the ensemble
+      // perturbations
+      PostProcessor<Increment_> posttl;
+      PostProcessorTLAD<MODEL> posttrajtl;
+      ObserversTLAD_ linear_hofx(this->obspaces_, this->obsconf_.getSubConfiguration("observers"));
+
+      // add linearized H(x) to the nonlinear model postprocessor
+      linear_hofx.initializeTraj(this->geometry_, obsaux, posttraj);
+      // create TrajectorySaver with hofx_linear, and enroll in post
+      post.enrollProcessor(new TrajectorySaver<MODEL>(eckit::LocalConfiguration(),
+                                                  this->geometry_, posttraj));
+      // run nonlinear model on the ensemble mean, compute nonlinear H(x_mean)
+      hofx.initialize(this->geometry_, obsaux, *this->R_, post, config);
+      model.forecast(init_xx, moderr, flength, post);
+      hofx.finalize(yy_mean);
+      linear_hofx.finalizeTraj();
+
+      // add linearized H(x) to the linear model postprocessor
+      linear_hofx.initializeTL(posttrajtl);
+      for (size_t iens = 0; iens < ens_xx.size(); ++iens) {
+        Log::info() << " GETKFSolver::computeHofX starting ensemble member " << iens+1 << std::endl;
+        util::printRunStats("GETKFSolver calculate hofx");
+
+        dx.diff(ens_xx[iens], this->xbmean_);
+        vertloc_.modulateIncrement(dx, Ztmp);
+
+        for (size_t ieig = 0; ieig < neig_; ++ieig) {
+          std::unique_ptr<PseudoLinearModel_> pseudolinearmodel =
+               std::make_unique<PseudoLinearModel_>(Ztmp[ieig], default_tstep);
+          const LinearModel_ linear_model(std::move(pseudolinearmodel));
+        // run linear model on the ensemble perturbation, compute linear H*dx
+          Increment_ init_dx = Ztmp[ieig][0];
+          linear_model.forecastTL(init_dx, moderrinc, flength, posttl, posttrajtl);
+          linear_hofx.finalizeTL(obsauxinc, HZb_[ii]);
+          Observations_ tmpObs(yy_mean);
+          tmpObs += HZb_[ii];
+          tmpObs.save("hofxm"+std::to_string(iteration)+"_"+std::to_string(ieig+1)+
+                        "_"+std::to_string(iens+1));
+          ii = ii + 1;
+        }
+      }
+    } else {
+      for (size_t iens = 0; iens < nens_; ++iens) {
+        Log::info() << " GETKFSolver::computeHofX starting ensemble member " << iens+1 << std::endl;
+        util::printRunStats("GETKFSolver calculate hofx");
+        dx.diff(ens_xx[iens], this->xbmean_);
+        vertloc_.modulateIncrement(dx, Ztmp);
+        for (size_t ieig = 0; ieig < neig_; ++ieig) {
+          State4D_ tmpState = this->xbmean_;
+          tmpState += Ztmp[ieig];
+          Observations_ tmpObs(this->obspaces_);
+          this->computeHofX4DNonLinear(config, tmpState, tmpObs);
+          HZb_[ii] = tmpObs - yb_mean;
+          tmpObs.save("hofxm"+std::to_string(iteration)+"_"+std::to_string(ieig+1)+
+                        "_"+std::to_string(iens+1));
+          ii = ii + 1;
+        }
       }
     }
   }
