@@ -493,6 +493,7 @@ test/assimilation/TriDiagSolve.h
 test/assimilation/Vector3D.cc
 test/assimilation/Vector3D.h
 
+test/base/FieldSets.h
 test/base/Fortran.h
 test/base/NormBase.h
 test/base/ObsErrorCovariance.h
@@ -578,15 +579,16 @@ endfunction(CREATE_SYMLINK)
 
 # oops test input files
 list( APPEND oops_test_input
-  test/testinput/random.yaml
-  test/testinput/pushstringvector.yaml
-  test/testinput/variables.yaml
-  test/testinput/parameters.yaml
   test/testinput/empty.yaml
-  test/testinput/mpi.yaml
-  test/testinput/spectrallmp.yaml
+  test/testinput/fieldsets.yaml
   test/testinput/fft_multiple.yaml
   test/testinput/hello.yaml
+  test/testinput/mpi.yaml
+  test/testinput/parameters.yaml
+  test/testinput/pushstringvector.yaml
+  test/testinput/random.yaml
+  test/testinput/spectrallmp.yaml
+  test/testinput/variables.yaml
 )
 # oops test output files
 list( APPEND oops_test_output
@@ -958,6 +960,11 @@ ecbuild_add_test( TARGET  test_util_arrayutil
                   MPI     2
                   SOURCES test/util/ArrayUtil.cc
                   ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_base_fieldsets
+                  SOURCES test/base/FieldSets.cc
+                  ARGS    "test/testinput/fieldsets.yaml"
                   LIBS    oops )
 
 ecbuild_add_test( TARGET  test_util_fieldset_helpers_and_operations

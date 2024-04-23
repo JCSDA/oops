@@ -27,7 +27,15 @@ class FieldSets : public DataSetBase<FieldSet3D, atlas::FunctionSpace> {
   template<typename MODEL> FieldSets(const IncrementSet<MODEL> &);
 
   FieldSets(const std::vector<util::DateTime> &, const eckit::mpi::Comm &,
-                     const std::vector<int> &, const eckit::mpi::Comm &);
+            const std::vector<int> &, const eckit::mpi::Comm &);
+
+  FieldSets(const atlas::FunctionSpace &,
+            const Variables &,
+            const std::vector<util::DateTime> &,
+            const eckit::Configuration &,
+            const eckit::mpi::Comm &,
+            const eckit::mpi::Comm & = oops::mpi::myself(),
+            const eckit::mpi::Comm & = oops::mpi::myself());
 
   /// @brief  Multiplies each FieldSet3D in this FieldSets with the \p other.
   FieldSets & operator*=(const oops::FieldSet3D & other);

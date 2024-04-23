@@ -1,0 +1,37 @@
+functionspace:
+  function space: StructuredColumns
+  grid:
+    type: regular_lonlat
+    N: 10
+  halo: 1
+
+date: &date '2010-01-01T12:00:00Z'
+
+variables: &vars
+- var1
+- var2
+- var3
+
+variable sizes:
+- 2
+- 3
+- 5
+
+input output members 1:
+  members:
+  - date: *date
+    filepath: fieldsets_mb1_F10
+    variables: *vars
+  - date: *date
+    filepath: fieldsets_mb2_F10
+    variables: *vars
+
+input output members 2:
+  date: *date
+  members from template:
+    pattern: '%MEM%'
+    nmembers: 2
+    template:
+      date: *date
+      filepath: fieldsets_mb%MEM%_F10
+      variables: *vars
