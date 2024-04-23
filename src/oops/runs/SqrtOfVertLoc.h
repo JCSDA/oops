@@ -268,14 +268,13 @@ template <typename MODEL> class SqrtOfVertLoc : public Application {
     averageEigenSpectrum *= 1/static_cast<double>(numberOfPointsOnThisPE);
 
 //  Compute average eigen spectrum accross all PEs
-    std::vector<int> totalNumberOfPoints(1);
-    totalNumberOfPoints[0] = numberOfPointsOnThisPE;
-    mpiComm.allReduceInPlace(&totalNumberOfPoints[0], 1, eckit::mpi::sum());
+    int totalNumberOfPoints = numberOfPointsOnThisPE;
+    mpiComm.allReduceInPlace(totalNumberOfPoints, eckit::mpi::sum());
 
     if (numberOfPointsOnThisPE > 0) {
       averageEigenSpectrum = averageEigenSpectrum*
                              static_cast<double>(numberOfPointsOnThisPE)/
-                             static_cast<double>(totalNumberOfPoints[0]);
+                             static_cast<double>(totalNumberOfPoints);
     } else {
       averageEigenSpectrum *= 0;
     }
