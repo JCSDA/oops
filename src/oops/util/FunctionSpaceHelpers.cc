@@ -68,8 +68,8 @@ void setupFunctionSpace(const eckit::mpi::Comm & comm,
     const size_t halo = config.getUnsigned("halo", 0);
     if (noPointOnLastTask && (comm.size() > 1)) {
       // Create distribution from partitioner
-      std::vector<int>partition(grid.size());
-      partitioner.partition(grid, &partition[0]);
+      std::vector<int> partition(grid.size());
+      partitioner.partition(grid, partition.data());
 
       // Create distribution and mesh
       atlas::grid::Distribution distribution;
@@ -79,7 +79,6 @@ void setupFunctionSpace(const eckit::mpi::Comm & comm,
       // Create functionspace from distribution
       functionSpace = atlas::functionspace::StructuredColumns(grid, distribution,
                                                               atlas::option::halo(halo));
-
     } else {
       // Create functionspace from partitioner
       functionSpace = atlas::functionspace::StructuredColumns(grid, partitioner,

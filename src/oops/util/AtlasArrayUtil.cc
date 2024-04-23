@@ -163,10 +163,10 @@ void atlasArrayReadData(
     const int & varID,
     atlas::array::ArrayView<double, 1> & arrayInOut) {
   int retval;
-  double zvar[dimSizes[0]];
+  std::vector<double> zvar(dimSizes[0]);
 
   if ((retval = nc_get_var_double(netcdfGeneralIDs[0],
-                                  varID, &zvar[0]))) ERR1(retval);
+                                  varID, zvar.data()))) ERR1(retval);
 
   for (idx_t t = 0; t < static_cast<idx_t>(dimSizes[0]); ++t) {
     arrayInOut(t) = zvar[t];
@@ -180,14 +180,14 @@ void atlasArrayReadData(
     const int & varID,
     atlas::array::ArrayView<double, 2> & arrayInOut) {
   int retval;
-  double zvar[dimSizes[0]][dimSizes[1]];
+  std::vector<double> zvar(dimSizes[0] * dimSizes[1]);
 
   if ((retval = nc_get_var_double(netcdfGeneralIDs[0],
-                                  varID, &zvar[0][0]))) ERR1(retval);
+                                  varID, zvar.data()))) ERR1(retval);
 
   for (idx_t t = 0; t < static_cast<idx_t>(dimSizes[0]); ++t) {
     for (idx_t t1 = 0; t1 < static_cast<idx_t>(dimSizes[1]); ++t1) {
-      arrayInOut(t, t1) = zvar[t][t1];
+      arrayInOut(t, t1) = zvar[t*dimSizes[1] + t1];
     }
   }
 }
@@ -198,15 +198,15 @@ void atlasArrayReadData(
     const int & varID,
     atlas::array::ArrayView<double, 3> & arrayInOut) {
   int retval;
-  double zvar[dimSizes[0]][dimSizes[1]][dimSizes[2]];
+  std::vector<double> zvar(dimSizes[0] * dimSizes[1] * dimSizes[2]);
 
   if ((retval = nc_get_var_double(netcdfGeneralIDs[0],
-                                  varID, &zvar[0][0][0]))) ERR1(retval);
+                                  varID, zvar.data()))) ERR1(retval);
 
   for (idx_t t = 0; t < static_cast<idx_t>(dimSizes[0]); ++t) {
     for (idx_t t1 = 0; t1 < static_cast<idx_t>(dimSizes[1]); ++t1) {
       for (idx_t t2 = 0; t2 < static_cast<idx_t>(dimSizes[2]); ++t2) {
-        arrayInOut(t, t1, t2) = zvar[t][t1][t2];
+        arrayInOut(t, t1, t2) = zvar[t*dimSizes[1]*dimSizes[2] + t1*dimSizes[2] + t2];
       }
     }
   }
@@ -219,10 +219,10 @@ void atlasArrayReadData(
     const int & varID,
     atlas::array::ArrayView<int, 1> & arrayInOut) {
   int retval;
-  int zvar[dimSizes[0]];
+  std::vector<int> zvar(dimSizes[0]);
 
   if ((retval = nc_get_var_int(netcdfGeneralIDs[0],
-                               varID, &zvar[0]))) ERR1(retval);
+                               varID, zvar.data()))) ERR1(retval);
 
   for (idx_t t = 0; t < static_cast<idx_t>(dimSizes[0]); ++t) {
     arrayInOut(t) = zvar[t];
@@ -235,12 +235,12 @@ void atlasArrayWriteData(
     const int & varID,
     atlas::array::ArrayView<const double, 1> & arrayIn) {
   int retval;
-  double zvar[arrayIn.shape()[0]];
+  std::vector<double> zvar(arrayIn.shape()[0]);
   for (idx_t t = 0; t < arrayIn.shape()[0]; ++t) {
     zvar[t] = arrayIn(t);
   }
 
-  if ((retval = nc_put_var_double(netcdfGeneralIDs[0], varID, &zvar[0]))) ERR1(retval);
+  if ((retval = nc_put_var_double(netcdfGeneralIDs[0], varID, zvar.data()))) ERR1(retval);
 }
 
 
@@ -249,14 +249,14 @@ void atlasArrayWriteData(
     const int & varID,
     atlas::array::ArrayView<const double, 2> & arrayIn) {
   int retval;
-  double zvar[arrayIn.shape()[0]][arrayIn.shape()[1]];
+  std::vector<double> zvar(arrayIn.shape()[0] * arrayIn.shape()[1]);
   for (idx_t t = 0; t < arrayIn.shape()[0]; ++t) {
     for (idx_t t1 = 0; t1 < arrayIn.shape()[1]; ++t1) {
-      zvar[t][t1] = arrayIn(t, t1);
+      zvar[t*arrayIn.shape()[1] + t1] = arrayIn(t, t1);
     }
   }
 
-  if ((retval = nc_put_var_double(netcdfGeneralIDs[0], varID, &zvar[0][0]))) ERR1(retval);
+  if ((retval = nc_put_var_double(netcdfGeneralIDs[0], varID, zvar.data()))) ERR1(retval);
 }
 
 void atlasArrayWriteData(
@@ -264,16 +264,17 @@ void atlasArrayWriteData(
     const int & varID,
     atlas::array::ArrayView<const double, 3> & arrayIn) {
   int retval;
-  double zvar[arrayIn.shape()[0]][arrayIn.shape()[1]][arrayIn.shape()[2]];
+  std::vector<double> zvar(arrayIn.shape()[0] * arrayIn.shape()[1] * arrayIn.shape()[2]);
   for (idx_t t = 0; t < arrayIn.shape()[0]; ++t) {
     for (idx_t t1 = 0; t1 < arrayIn.shape()[1]; ++t1) {
       for (idx_t t2 = 0; t2 < arrayIn.shape()[2]; ++t2) {
-        zvar[t][t1][t2] = arrayIn(t, t1, t2);
+        zvar[t*arrayIn.shape()[1]*arrayIn.shape()[2] + t1*arrayIn.shape()[2] + t2] =
+          arrayIn(t, t1, t2);
       }
     }
   }
 
-  if ((retval = nc_put_var_double(netcdfGeneralIDs[0], varID, &zvar[0][0][0]))) ERR1(retval);
+  if ((retval = nc_put_var_double(netcdfGeneralIDs[0], varID, zvar.data()))) ERR1(retval);
 }
 
 void atlasArrayWriteData(
@@ -281,12 +282,12 @@ void atlasArrayWriteData(
     const int & varID,
     atlas::array::ArrayView<const int, 1> & arrayIn) {
   int retval;
-  int zvar[arrayIn.shape()[0]];
+  std::vector<int> zvar(arrayIn.shape()[0]);
   for (idx_t t = 0; t < arrayIn.shape()[0]; ++t) {
       zvar[t] = arrayIn(t);
   }
 
-  if ((retval = nc_put_var_int(netcdfGeneralIDs[0], varID, &zvar[0]))) ERR1(retval);
+  if ((retval = nc_put_var_int(netcdfGeneralIDs[0], varID, zvar.data()))) ERR1(retval);
 }
 
 

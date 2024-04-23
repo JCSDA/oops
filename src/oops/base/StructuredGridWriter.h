@@ -107,15 +107,15 @@ void writerForPressures(const atlas::FieldSet & fset,
   for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
     ASSERT(nz == static_cast<size_t>(fset.field(vars[jvar]).shape(1)));
     auto varView = atlas::array::make_view<double, 2>(fset[vars[jvar]]);
-    double values[nlats][nlons][nz];
-    for (size_t k = 0; k < nz; ++k) {
-      for (size_t j = 0; j < nlats; ++j) {
-        for (size_t i = 0; i < nlons; ++i) {
-          values[j][i][k] = varView(j*nlons+i, k);
+    std::vector<double> values(nlats*nlons*nz);
+    for (size_t j = 0; j < nlats; ++j) {
+      for (size_t i = 0; i < nlons; ++i) {
+        for (size_t k = 0; k < nz; ++k) {
+          values[j*nlons*nz + i*nz + k] = varView(j*nlons + i, k);
         }
       }
     }
-    check_nc_code(nc_put_var_double(ncid, field_vid[jvar], &values[0][0][0]));
+    check_nc_code(nc_put_var_double(ncid, field_vid[jvar], values.data()));
   }
 
   // Close file
@@ -221,15 +221,15 @@ void writerForLevels(const atlas::FieldSet & fset,
   for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
     const size_t var_levs = fset.field(vars[jvar]).shape(1);
     auto varView = atlas::array::make_view<double, 2>(fset[vars[jvar]]);
-    double values[nlats][nlons][var_levs];
-    for (size_t k = 0; k < var_levs; ++k) {
-      for (size_t j = 0; j < nlats; ++j) {
-        for (size_t i = 0; i < nlons; ++i) {
-          values[j][i][k] = varView(j*nlons+i, k);
+    std::vector<double> values(nlats*nlons*var_levs);
+    for (size_t j = 0; j < nlats; ++j) {
+      for (size_t i = 0; i < nlons; ++i) {
+        for (size_t k = 0; k < var_levs; ++k) {
+          values[j*nlons*var_levs + i*var_levs + k] = varView(j*nlons + i, k);
         }
       }
     }
-    check_nc_code(nc_put_var_double(ncid, field_vid[jvar], &values[0][0][0]));
+    check_nc_code(nc_put_var_double(ncid, field_vid[jvar], values.data()));
   }
 
   // Close file

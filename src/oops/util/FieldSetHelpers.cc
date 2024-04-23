@@ -942,8 +942,8 @@ void readFieldSet(const eckit::mpi::Comm & comm,
 
     for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
       // Read data
-      double zvar[nb_nodes][variableSizes[jvar]];
-      if ((retval = nc_get_var_double(ncid, var_id[jvar], &zvar[0][0]))) ERR(retval);
+      std::vector<double> zvar(nb_nodes * variableSizes[jvar]);
+      if ((retval = nc_get_var_double(ncid, var_id[jvar], zvar.data()))) ERR(retval);
 
       // Copy data
       auto varView = atlas::array::make_view<double, 2>(fset[vars[jvar]]);
@@ -951,7 +951,7 @@ void readFieldSet(const eckit::mpi::Comm & comm,
       for (atlas::idx_t jnode = 0; jnode < fset.field(vars[jvar]).shape(0); ++jnode) {
         if (ghostView(jnode) == 0) {
           for (size_t k = 0; k < variableSizes[jvar]; ++k) {
-            varView(jnode, k) = zvar[inode][k];
+            varView(jnode, k) = zvar[inode*variableSizes[jvar] + k];
           }
           ++inode;
         }
@@ -1000,8 +1000,8 @@ void readFieldSet(const eckit::mpi::Comm & comm,
 
         for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
           // Read data
-          double zvar[variableSizes[jvar]][ny][nx];
-          if ((retval = nc_get_var_double(ncid, var_id[jvar], &zvar[0][0][0]))) ERR(retval);
+          std::vector<double> zvar(variableSizes[jvar] * ny * nx);
+          if ((retval = nc_get_var_double(ncid, var_id[jvar], zvar.data()))) ERR(retval);
 
           // Copy data
           auto varView = atlas::array::make_view<double, 2>(globalData[vars[jvar]]);
@@ -1009,7 +1009,7 @@ void readFieldSet(const eckit::mpi::Comm & comm,
             for (atlas::idx_t j = 0; j < ny; ++j) {
               for (atlas::idx_t i = 0; i < grid.nx(ny-1-j); ++i) {
                 atlas::gidx_t gidx = grid.index(i, ny-1-j);
-                varView(gidx, k) = zvar[k][j][i];
+                varView(gidx, k) = zvar[k*ny*nx + j*nx + i];
               }
             }
           }
@@ -1041,14 +1041,14 @@ void readFieldSet(const eckit::mpi::Comm & comm,
 
         for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
           // Read data
-          double zvar[nb_nodes][variableSizes[jvar]];
-          if ((retval = nc_get_var_double(ncid, var_id[jvar], &zvar[0][0]))) ERR(retval);
+          std::vector<double> zvar(nb_nodes * variableSizes[jvar]);
+          if ((retval = nc_get_var_double(ncid, var_id[jvar], zvar.data()))) ERR(retval);
 
           // Copy data
           auto varView = atlas::array::make_view<double, 2>(globalData[vars[jvar]]);
           for (size_t k = 0; k < variableSizes[jvar]; ++k) {
             for (atlas::idx_t i = 0; i < nb_nodes; ++i) {
-              varView(i, k) = zvar[i][k];
+              varView(i, k) = zvar[i*variableSizes[jvar] + k];
             }
           }
         }
@@ -1115,7 +1115,7 @@ void readRank3FieldSet(const atlas::FunctionSpace & fspace,
   for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
     // Read data into array
     std::vector<double> zvar(nb_nodes * variableSizes[jvar] * rank3Size);
-    if ((retval = nc_get_var_double(ncid, varid[jvar], &zvar.data()[0]))) ERR(retval);
+    if ((retval = nc_get_var_double(ncid, varid[jvar], zvar.data()))) ERR(retval);
     // Copy data to Field
     auto varView = atlas::array::make_view<double, 3>(fset[vars[jvar]]);
     size_t inode = 0;
@@ -1243,37 +1243,37 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
 
     // Copy coordinates
     const auto lonlatView = atlas::array::make_view<double, 2>(fspace.lonlat());
-    double zlon[nb_nodes][1];
-    double zlat[nb_nodes][1];
+    std::vector<double> zlon(nb_nodes);
+    std::vector<double> zlat(nb_nodes);
     size_t inode = 0;
     for (atlas::idx_t jnode = 0; jnode < fset.field(vars[0]).shape(0); ++jnode) {
       if (ghostView(jnode) == 0) {
-        zlon[inode][0] = lonlatView(jnode, 0);
-        zlat[inode][0] = lonlatView(jnode, 1);
+        zlon[inode] = lonlatView(jnode, 0);
+        zlat[inode] = lonlatView(jnode, 1);
         ++inode;
       }
     }
 
     // Write coordinates
-    if ((retval = nc_put_var_double(ncid, lon_id, &zlon[0][0]))) ERR(retval);
-    if ((retval = nc_put_var_double(ncid, lat_id, &zlat[0][0]))) ERR(retval);
+    if ((retval = nc_put_var_double(ncid, lon_id, zlon.data()))) ERR(retval);
+    if ((retval = nc_put_var_double(ncid, lat_id, zlat.data()))) ERR(retval);
 
     for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
       // Copy data
       const auto varView = atlas::array::make_view<double, 2>(fset.field(vars[jvar]));
-      double zvar[nb_nodes][fset.field(vars[jvar]).shape(1)];
+      std::vector<double> zvar(nb_nodes * varView.shape(1));
       inode = 0;
-      for (atlas::idx_t jnode = 0; jnode < fset.field(vars[0]).shape(0); ++jnode) {
+      for (atlas::idx_t jnode = 0; jnode < varView.shape(0); ++jnode) {
         if (ghostView(jnode) == 0) {
-          for (atlas::idx_t k = 0; k < fset.field(vars[jvar]).shape(1); ++k) {
-            zvar[inode][k] = varView(jnode, k);
+          for (atlas::idx_t k = 0; k < varView.shape(1); ++k) {
+            zvar[inode*varView.shape(1) + k] = varView(jnode, k);
           }
           ++inode;
         }
       }
 
       // Write data
-      if ((retval = nc_put_var_double(ncid, var_id[jvar], &zvar[0][0]))) ERR(retval);
+      if ((retval = nc_put_var_double(ncid, var_id[jvar], zvar.data()))) ERR(retval);
     }
 
     // Close file
@@ -1378,39 +1378,40 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
         // Copy coordinates
         auto lonViewGlobal = atlas::array::make_view<double, 1>(globalData.field("lon"));
         auto latViewGlobal = atlas::array::make_view<double, 1>(globalData.field("lat"));
-        double zlon[ny][nx];
-        double zlat[ny][nx];
+        std::vector<double> zlon(ny*nx);
+        std::vector<double> zlat(ny*nx);
         for (atlas::idx_t j = 0; j < ny; ++j) {
-          for (atlas::idx_t i = 0; i < nx; ++i) {
-            zlon[j][i] = msvalr;
-            zlat[j][i] = msvalr;
-          }
           for (atlas::idx_t i = 0; i < grid.nx(ny-1-j); ++i) {
             atlas::gidx_t gidx = grid.index(i, ny-1-j);
-            zlon[j][i] = lonViewGlobal(gidx);
-            zlat[j][i] = latViewGlobal(gidx);
+            zlon[j*nx + i] = lonViewGlobal(gidx);
+            zlat[j*nx + i] = latViewGlobal(gidx);
+          }
+          // Fill i in range grid.nx(ny-1-j) <= i < nx with missing values
+          for (atlas::idx_t i = grid.nx(ny-1-j); i < nx; ++i) {
+            zlon[j*nx + i] = msvalr;
+            zlat[j*nx + i] = msvalr;
           }
         }
 
         // Write coordinates
-        if ((retval = nc_put_var_double(ncid, lon_id, &zlon[0][0]))) ERR(retval);
-        if ((retval = nc_put_var_double(ncid, lat_id, &zlat[0][0]))) ERR(retval);
+        if ((retval = nc_put_var_double(ncid, lon_id, zlon.data()))) ERR(retval);
+        if ((retval = nc_put_var_double(ncid, lat_id, zlat.data()))) ERR(retval);
 
         for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
           // Copy data
           auto varView = atlas::array::make_view<double, 2>(globalData[vars[jvar]]);
-          double zvar[fset.field(vars[jvar]).shape(1)][ny][nx];
+          std::vector<double> zvar(fset.field(vars[jvar]).shape(1) * ny * nx);
           for (atlas::idx_t k = 0; k < fset.field(vars[jvar]).shape(1); ++k) {
             for (atlas::idx_t j = 0; j < ny; ++j) {
               for (atlas::idx_t i = 0; i < grid.nx(ny-1-j); ++i) {
                 atlas::gidx_t gidx = grid.index(i, ny-1-j);
-                zvar[k][j][i] = varView(gidx, k);
+                zvar[k*ny*nx + j*nx + i] = varView(gidx, k);
               }
             }
           }
 
           // Write data
-          if ((retval = nc_put_var_double(ncid, var_id[jvar], &zvar[0][0][0]))) ERR(retval);
+          if ((retval = nc_put_var_double(ncid, var_id[jvar], zvar.data()))) ERR(retval);
         }
 
         // Close file
@@ -1471,29 +1472,29 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
         // Copy coordinates
         auto lonViewGlobal = atlas::array::make_view<double, 1>(globalData.field("lon"));
         auto latViewGlobal = atlas::array::make_view<double, 1>(globalData.field("lat"));
-        double zlon[nb_nodes][1];
-        double zlat[nb_nodes][1];
+        std::vector<double> zlon(nb_nodes);
+        std::vector<double> zlat(nb_nodes);
         for (atlas::idx_t i = 0; i < nb_nodes; ++i) {
-          zlon[i][0] = lonViewGlobal(i);
-          zlat[i][0] = latViewGlobal(i);
+          zlon[i] = lonViewGlobal(i);
+          zlat[i] = latViewGlobal(i);
         }
 
         // Write coordinates
-        if ((retval = nc_put_var_double(ncid, lon_id, &zlon[0][0]))) ERR(retval);
-        if ((retval = nc_put_var_double(ncid, lat_id, &zlat[0][0]))) ERR(retval);
+        if ((retval = nc_put_var_double(ncid, lon_id, zlon.data()))) ERR(retval);
+        if ((retval = nc_put_var_double(ncid, lat_id, zlat.data()))) ERR(retval);
 
         for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
           // Copy data
           auto varView = atlas::array::make_view<double, 2>(globalData[vars[jvar]]);
-          double zvar[nb_nodes][fset.field(vars[jvar]).shape(1)];
+          std::vector<double> zvar(nb_nodes * fset.field(vars[jvar]).shape(1));
           for (atlas::idx_t k = 0; k < fset.field(vars[jvar]).shape(1); ++k) {
             for (atlas::idx_t i = 0; i < nb_nodes; ++i) {
-              zvar[i][k] = varView(i, k);
+              zvar[i*fset.field(vars[jvar]).shape(1) + k] = varView(i, k);
             }
           }
 
           // Write data
-          if ((retval = nc_put_var_double(ncid, var_id[jvar], &zvar[0][0]))) ERR(retval);
+          if ((retval = nc_put_var_double(ncid, var_id[jvar], zvar.data()))) ERR(retval);
         }
 
         // Close file
@@ -1566,18 +1567,18 @@ void writeRank3FieldSet(const atlas::FieldSet & fset,
 
   // Copy coordinates from FunctionSpace and write to file
   const auto lonlatView = atlas::array::make_view<double, 2>(fspace.lonlat());
-  double zlon[nb_nodes][1];
-  double zlat[nb_nodes][1];
+  std::vector<double> zlon(nb_nodes);
+  std::vector<double> zlat(nb_nodes);
   size_t inode = 0;
   for (atlas::idx_t jnode = 0; jnode < fset.field(vars[0]).shape(0); ++jnode) {
     if (ghostView(jnode) == 0) {
-      zlon[inode][0] = lonlatView(jnode, 0);
-      zlat[inode][0] = lonlatView(jnode, 1);
+      zlon[inode] = lonlatView(jnode, 0);
+      zlat[inode] = lonlatView(jnode, 1);
       ++inode;
     }
   }
-  if ((retval = nc_put_var_double(ncid, lon_id, &zlon[0][0]))) ERR(retval);
-  if ((retval = nc_put_var_double(ncid, lat_id, &zlat[0][0]))) ERR(retval);
+  if ((retval = nc_put_var_double(ncid, lon_id, zlon.data()))) ERR(retval);
+  if ((retval = nc_put_var_double(ncid, lat_id, zlat.data()))) ERR(retval);
 
   for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
     // Copy data from Field
@@ -1597,7 +1598,7 @@ void writeRank3FieldSet(const atlas::FieldSet & fset,
       }
     }
     // Write data to file
-    if ((retval = nc_put_var_double(ncid, var_id[jvar], &zvar.data()[0]))) ERR(retval);
+    if ((retval = nc_put_var_double(ncid, var_id[jvar], zvar.data()))) ERR(retval);
   }
 
   if ((retval = nc_close(ncid))) ERR(retval);
