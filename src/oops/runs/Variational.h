@@ -47,6 +47,8 @@ namespace oops {
 template <typename MODEL, typename OBS> class Variational : public Application {
   typedef Increment<MODEL>           Increment_;
   typedef State<MODEL>               State_;
+  typedef Model<MODEL>                 Model_;
+  typedef ModelAuxControl<MODEL>       ModelAux_;
 
  public:
 // -----------------------------------------------------------------------------
@@ -136,6 +138,46 @@ template <typename MODEL, typename OBS> class Variational : public Application {
 
 //  Save ObsAux
     xx.obsVar().write(cfConf);
+
+    if (finalConfig.has("forecast from analysis")) {
+      const eckit::LocalConfiguration fcFromAnConf(finalConfig, "forecast from analysis");
+
+      //  Setup Model
+      const Model_ model(xx.state().geometry(), eckit::LocalConfiguration(fcFromAnConf, "model"));
+
+      //  Setup augmented state
+      const ModelAux_ moderr(xx.state().geometry(),
+                            eckit::LocalConfiguration(fcFromAnConf, "model aux control"));
+
+      //  Setup times
+      const util::Duration fclength(fcFromAnConf.getString("forecast length"));
+      const util::DateTime bgndate(xx.state().validTime());
+      const util::DateTime enddate(bgndate + fclength);
+      Log::info() << "Running forecast from " << bgndate << " to " << enddate << std::endl;
+
+      //  Setup forecast outputs
+      PostProcessor<State_> post;
+
+      eckit::LocalConfiguration prtConfig;
+      if (fcFromAnConf.has("prints")) {
+        prtConfig = eckit::LocalConfiguration(fcFromAnConf, "prints");
+        post.enrollProcessor(new StateInfo<State_>("fc", prtConfig));
+      }
+
+      eckit::LocalConfiguration outConfig;
+      if (fcFromAnConf.has("output")) {
+        outConfig = eckit::LocalConfiguration(fcFromAnConf, "output");
+        outConfig.set("date", bgndate.toString());
+        post.enrollProcessor(new StateWriter<State_>(outConfig));
+      }
+      //  Run forecast
+
+      Log::test() << "Inital state: " << xx.state() << std::endl;
+
+      model.forecast(xx.state(), moderr, fclength, post);
+
+      Log::test() << "Final state: " << xx.state() << std::endl;
+    }
 
     util::printRunStats("Variational end");
     Log::trace() << "Variational: execute done" << std::endl;

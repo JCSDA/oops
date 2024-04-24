@@ -1,0 +1,126 @@
+cost function:
+  cost type: 3D-Var
+  time window:
+    begin: 2010-01-01T09:00:00Z
+    length: PT6H
+  analysis variables: [x]
+  geometry:
+    nx: 40
+    ny: 20
+    depths: [4500.0, 5500.0]
+  background:
+    date: 2010-01-01T12:00:00Z
+    filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H.nc
+  background error:
+    covariance model: QgError
+    horizontal_length_scale: 2.2e6
+    maximum_condition_number: 1.0e6
+    standard_deviation: 1.8e7
+    vertical_length_scale: 15000.0
+  observations:
+    observers:
+    - obs error:
+        covariance model: diagonal
+      obs operator:
+        obs type: Stream
+      obs space:
+        obsdatain:
+          obsfile: Data/truth.obs3d.nc
+        obsdataout:
+          obsfile: Data/3dvar.obs3d.nc
+        obs type: Stream
+    - obs error:
+        covariance model: diagonal
+      obs operator:
+        obs type: Wind
+      obs space:
+        obsdatain:
+          obsfile: Data/truth.obs3d.nc
+        obsdataout:
+          obsfile: Data/3dvar.obs3d.nc
+        obs type: Wind
+    - obs error:
+        covariance model: diagonal
+      obs operator:
+        obs type: WSpeed
+      obs space:
+        obsdatain:
+          obsfile: Data/truth.obs3d.nc
+        obsdataout:
+          obsfile: Data/3dvar.obs3d.nc
+        obs type: WSpeed
+variational:
+  minimizer:
+    algorithm: DRPCG
+  iterations:
+  - diagnostics:
+      departures: ombg0
+    gradient norm reduction: 1.0e-10
+    ninner: 10
+    geometry:
+      nx: 20
+      ny: 10
+      depths: [4500.0, 5500.0]
+    online diagnostics:
+      write increment: true
+      increment:
+        state component:
+          datadir: Data
+          date: 2010-01-01T12:00:00Z
+          exp: 3dvar.iter1
+          type: in
+  - diagnostics:
+      departures: ombg1
+    gradient norm reduction: 1.0e-10
+    ninner: 10
+    geometry:
+      nx: 40
+      ny: 20
+      depths: [4500.0, 5500.0]
+    online diagnostics:
+      write increment: true
+      increment:
+        state component:
+          datadir: Data
+          date: 2010-01-01T12:00:00Z
+          exp: 3dvar.iter2
+          type: in
+          analysis variables: [x]
+output:
+  datadir: Data
+  exp: 3dvar
+  frequency: PT6H
+  type: an
+final:
+  diagnostics:
+    departures: oman
+  increment:
+    geometry:
+      nx: 40
+      ny: 20
+      depths: [4500.0, 5500.0]
+    output:
+      state component:
+        datadir: Data
+        date: 2010-01-01T12:00:00Z
+        exp: 3dvar.increment
+        type: in
+        analysis variables: [x]
+  forecast from analysis:
+    forecast length: P2D
+    model:
+      name: QG
+      tstep: PT1H
+    output:
+      datadir: Data
+      exp: forecast_from_an
+      frequency: P1D
+      type: fc
+    prints:
+      frequency: PT3H
+    model aux control: {}
+
+
+test:
+  reference filename: testoutput/3dvar_fc_from_an.test
+  test output filename: testoutput/3dvar_fc_from_an.test.out
