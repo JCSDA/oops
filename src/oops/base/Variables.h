@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/exception/Exceptions.h"
 
 #include "oops/util/Printable.h"
 
@@ -62,10 +63,6 @@ class Variables : public util::Printable {
   bool operator!=(const Variables &) const;
   bool operator<=(const Variables &) const;
 
-  void addMetaData(const std::string & varname,
-                   const std::string & keyname,
-                   const int & keyvalue);
-
   bool has(const std::string &) const;
 
   size_t find(const std::string &) const;
@@ -80,6 +77,17 @@ class Variables : public util::Printable {
   void push_back(const std::string &);
   void sort();
 
+  // Metadata
+  bool hasMetaData(const std::string & varname,
+                   const std::string & keyname) const;
+  template<typename T>
+  void addMetaData(const std::string & varname,
+                   const std::string & keyname,
+                   const T & keyvalue);
+  template<typename T>
+  T getMetaData(const std::string & varname,
+                const std::string & keyname) const;
+  // TODO(Later): might be replaced with getMetaData<int>(varname, "levels")
   int getLevels(const std::string &) const;
 
  private:
@@ -88,14 +96,16 @@ class Variables : public util::Printable {
   /// returns sorted variable names
   std::vector<std::string> asCanonical() const;
 
+  template<typename T>
   void getVariableSubKeyValue(const std::string & varname,
                               const std::string & keyname,
                               const eckit::Configuration & conf,
-                              int & intvalue) const;
+                              T & keyvalue) const;
 
+  template<typename T>
   void setVariableSubKeyValue(const std::string & varname,
                               const std::string & keyname,
-                              const int & keyvalue,
+                              const T & keyvalue,
                               eckit::LocalConfiguration & lconf);
 
   std::string convention_;
@@ -103,6 +113,52 @@ class Variables : public util::Printable {
   std::vector<int> channels_;        // channel indices
   eckit::LocalConfiguration varMetaData_;
 };
+
+// -----------------------------------------------------------------------------
+
+template<typename T>
+void Variables::addMetaData(const std::string & varname,
+                            const std::string & keyname,
+                            const T & keyvalue) {
+  setVariableSubKeyValue(varname, keyname, keyvalue, varMetaData_);
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename T>
+T Variables::getMetaData(const std::string & varname,
+                         const std::string & keyname) const {
+  T keyvalue;
+  getVariableSubKeyValue(varname, keyname, varMetaData_, keyvalue);
+  return keyvalue;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename T>
+void Variables::getVariableSubKeyValue(const std::string & varname,
+                                       const std::string & keyname,
+                                       const eckit::Configuration & variablesconf,
+                                       T & keyvalue) const {
+  ASSERT(!variablesconf.empty());
+  ASSERT(variablesconf.has(varname));
+  ASSERT(variablesconf.getSubConfiguration(varname).has(keyname));
+  variablesconf.getSubConfiguration(varname).get(keyname, keyvalue);
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename T>
+void Variables::setVariableSubKeyValue(const std::string & varname,
+                                       const std::string & keyname,
+                                       const T & keyvalue,
+                                       eckit::LocalConfiguration & variableslconf) {
+  eckit::LocalConfiguration variablelconf =
+    variableslconf.has(varname) ? variableslconf.getSubConfiguration(varname) :
+                                  eckit::LocalConfiguration();
+  variablelconf.set(keyname, keyvalue);
+  variableslconf.set(varname, variablelconf);
+}
 
 // -----------------------------------------------------------------------------
 

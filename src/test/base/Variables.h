@@ -67,10 +67,16 @@ void testConstructor() {
     oops::Variables other(std::vector<std::string>({"var1", "var2", "var3"}));
     other.addMetaData("var2", "levels", 20);
     other.addMetaData("var3", "levels", 30);
+    other.addMetaData("var2", "test_double", 2.0);
+    other.addMetaData("var3", "test_double", 3.0);
+    other.addMetaData("var2", "test_string", "2");
+    other.addMetaData("var3", "test_string", "3");
     oops::Log::info() << "variables local config: " << other << std::endl;
 
-    // Testing .variablesMetaData()
+    // Testing .variablesMetaData(), .hasMetadata() and .getMetaData()
     int modelLevels(0);
+    double modelDouble(0.0);
+    std::string modelString("0");
     std::vector<std::string> confKeys(other.variablesMetaData().keys());
     std::vector<std::string> refKeys{"var2", "var3"};
     EXPECT(confKeys == refKeys);
@@ -78,8 +84,17 @@ void testConstructor() {
     eckit::LocalConfiguration confOut(other.variablesMetaData());
     int i(0);
     for (const std::string& s : other.variablesMetaData().keys()) {
+      EXPECT(other.hasMetaData(s, "levels"));
       modelLevels = other.getLevels(s);
       EXPECT_EQUAL(modelLevels, (i + 2) * 10);
+      modelLevels = other.getMetaData<int>(s, "levels");
+      EXPECT_EQUAL(modelLevels, (i + 2) * 10);
+      EXPECT(other.hasMetaData(s, "test_double"));
+      modelDouble = other.getMetaData<double>(s, "test_double");
+      EXPECT_EQUAL(modelDouble, static_cast<double>(i + 2));
+      EXPECT(other.hasMetaData(s, "test_string"));
+      modelString = other.getMetaData<std::string>(s, "test_string");
+      EXPECT_EQUAL(modelString, std::to_string(i + 2));
       ++i;
     }
   }

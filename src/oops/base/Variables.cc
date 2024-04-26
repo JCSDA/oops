@@ -17,7 +17,6 @@
 
 #include "eckit/config/Configuration.h"
 #include "eckit/config/LocalConfiguration.h"
-#include "eckit/exception/Exceptions.h"
 
 #include "eckit/types/Types.h"
 #include "eckit/utils/Hash.h"
@@ -121,11 +120,8 @@ Variables & Variables::operator+=(const Variables & rhs) {
   // this operation adds and updates the metadata in the object from the
   // rhs object.
   for (const std::string & var : rhs.varMetaData_.keys()) {
-    for (const std::string & key : rhs.varMetaData_.getSubConfiguration(var).keys()) {
-      int value(-1);
-      getVariableSubKeyValue(var, key, rhs.varMetaData_, value);
-      setVariableSubKeyValue(var, key, value, varMetaData_);
-    }
+    eckit::LocalConfiguration varConf = rhs.varMetaData_.getSubConfiguration(var);
+    varMetaData_.set(var, varConf);
   }
   return *this;
 }
@@ -200,13 +196,6 @@ bool Variables::operator<=(const Variables & rhs) const {
     is_in_rhs = is_in_rhs && rhs.has(vars_[jj]);
   }
   return is_in_rhs;
-}
-
-// -----------------------------------------------------------------------------
-void Variables::addMetaData(const std::string & varname,
-                            const std::string & keyname,
-                            const int & keyvalue) {
-  setVariableSubKeyValue(varname, keyname, keyvalue, varMetaData_);
 }
 
 // -----------------------------------------------------------------------------
@@ -297,6 +286,20 @@ void Variables::print(std::ostream & os) const {
 
 // -----------------------------------------------------------------------------
 
+bool Variables::hasMetaData(const std::string & varname,
+                            const std::string & keyname) const {
+  bool has = false;
+  if (!varMetaData_.empty()) {
+    if (varMetaData_.has(varname)) {
+      has = varMetaData_.getSubConfiguration(varname).has(keyname);
+    }
+  }
+  return has;
+}
+
+
+// -----------------------------------------------------------------------------
+
 int Variables::getLevels(const std::string & fieldname) const {
   int levels(-1);
   getVariableSubKeyValue(fieldname, "levels",
@@ -304,28 +307,4 @@ int Variables::getLevels(const std::string & fieldname) const {
   return levels;
 }
 
-// -----------------------------------------------------------------------------
-
-void Variables::getVariableSubKeyValue(const std::string & varname,
-                                       const std::string & keyname,
-                                       const eckit::Configuration & variablesconf,
-                                       int & intvalue) const {
-  ASSERT(!variablesconf.empty());
-  ASSERT(variablesconf.has(varname));
-  ASSERT(variablesconf.getSubConfiguration(varname).has(keyname));
-  variablesconf.getSubConfiguration(varname).get(keyname, intvalue);
-}
-
-// -----------------------------------------------------------------------------
-
-void Variables::setVariableSubKeyValue(const std::string & varname,
-                                       const std::string & keyname,
-                                       const int & keyvalue,
-                                       eckit::LocalConfiguration & variableslconf) {
-  eckit::LocalConfiguration variablelconf =
-    variableslconf.has(varname) ? variableslconf.getSubConfiguration(varname) :
-                                  eckit::LocalConfiguration();
-  variablelconf.set(keyname, keyvalue);
-  variableslconf.set(varname, variablelconf);
-}
 }  // namespace oops
