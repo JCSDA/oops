@@ -97,7 +97,9 @@ void Increment4D<MODEL>::dirac(const eckit::Configuration & conf) {
     ASSERT(this->time_size() == confs.size());
     for (size_t jt = 0; jt < this->local_time_size(); ++jt) {
       const size_t it = this->commTime().rank() * this->local_time_size() + jt;
-      if (!confs[it].empty()) {
+      if (confs[it].empty()) {
+        (*this)[jt].zero();
+      } else {
         (*this)[jt].dirac(confs[it]);
       }
     }
