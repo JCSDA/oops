@@ -433,8 +433,6 @@ StructuredGridWriter<MODEL>::StructuredGridWriter(
   }
 
   // Set up the target Atlas grid
-  // Want final results on rank 0 only, so use atlas's serial partitioner to assign all grid points
-  // to mpi rank 0.
   std::string atlasGridName;
   if (outGridType_ == "latlon") {
     // LatLon Grid
@@ -447,10 +445,16 @@ StructuredGridWriter<MODEL>::StructuredGridWriter(
                            "'latlon' and 'regular gaussian'");
   }
   const atlas::Grid grid(atlasGridName);
-  eckit::LocalConfiguration serialPartConf{};
-  serialPartConf.set("partition", 0);
-  const atlas::grid::Partitioner part("serial", serialPartConf);
-  targetFunctionSpace_.reset(new atlas::functionspace::StructuredColumns(grid, part));
+
+  // Make a custom serial distribution where all points live on rank 0
+  // (No need to override default MPI comm, because we use manual distribution)
+  std::vector<int> zeros(grid.size(), 0);
+  const atlas::grid::Distribution dist(comm_.size(), grid.size(), zeros.data());
+
+  eckit::LocalConfiguration atlas_conf;
+  atlas_conf.set("mpi_comm", comm_.name());
+  targetFunctionSpace_.reset(new atlas::functionspace::StructuredColumns(grid, dist, atlas_conf));
+
   interp_.reset(new oops::GlobalInterpolator(conf,
         sourceGeometry.generic(), *targetFunctionSpace_,
         sourceGeometry.getComm()));
