@@ -36,7 +36,7 @@ ObsWindTLAD::ObsWindTLAD(const ObsSpaceQG & odb, const eckit::Configuration & co
 
 // -----------------------------------------------------------------------------
 
-void ObsWindTLAD::setTrajectory(const GomQG &, const ObsBias &) {}
+void ObsWindTLAD::setTrajectory(const GomQG &, const ObsBias &, const QCFlags_ &) {}
 
 // -----------------------------------------------------------------------------
 

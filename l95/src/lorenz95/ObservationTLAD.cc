@@ -29,7 +29,7 @@ ObservationTLAD::ObservationTLAD(const ObsTable &, const eckit::Configuration &)
 
 // -----------------------------------------------------------------------------
 
-void ObservationTLAD::setTrajectory(const GomL95 &, const ObsBias &) {}
+void ObservationTLAD::setTrajectory(const GomL95 &, const ObsBias &, const QCFlags_ &) {}
 
 // -----------------------------------------------------------------------------
 

@@ -69,7 +69,8 @@ class LinearObsOperator : public util::Printable,
   /// \param[in]  obsaux   additional obs operator input, used in the minimization
   ///                      in Variational DA, e.g. bias correction coefficients or obs operator
   ///                      parameters.
-  void setTrajectory(const GeoVaLs_ & x0, const ObsAuxControl_ & obsaux);
+  void setTrajectory(const GeoVaLs_ & x0, const ObsAuxControl_ & obsaux,
+                     const ObsDataInt_ & qc_flags);
 
   /// Apply tangent-linear of the observation operator linearized around the trajectory that was
   /// passed to setTrajectory method (which is always called before simulateObsTL).
@@ -131,10 +132,12 @@ LinearObsOperator<OBS>::~LinearObsOperator() {
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-void LinearObsOperator<OBS>::setTrajectory(const GeoVaLs_ & gvals, const ObsAuxControl_ & aux) {
+void LinearObsOperator<OBS>::setTrajectory(const GeoVaLs_ & gvals, const ObsAuxControl_ & aux,
+                                           const ObsDataInt_ & qc_flags) {
   Log::trace() << "LinearObsOperator<OBS>::setTrajectory starting" << std::endl;
   util::Timer timer(name_, "setTrajectory");
-  oper_->setTrajectory(gvals.geovals(), aux.obsauxcontrol());
+  oper_->setTrajectory(gvals.geovals(), aux.obsauxcontrol(),
+                       qc_flags.obsdatavector());
   Log::trace() << "LinearObsOperator<OBS>::setTrajectory done" << std::endl;
 }
 

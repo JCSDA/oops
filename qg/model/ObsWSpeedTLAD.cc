@@ -37,7 +37,7 @@ ObsWSpeedTLAD::ObsWSpeedTLAD(const ObsSpaceQG & odb, const eckit::Configuration 
 
 // -----------------------------------------------------------------------------
 
-void ObsWSpeedTLAD::setTrajectory(const GomQG & gom, const ObsBias &) {
+void ObsWSpeedTLAD::setTrajectory(const GomQG & gom, const ObsBias &, const QCFlags_ &) {
   qg_wspeed_settraj_f90(obsdb_.toFortran(), gom.toFortran(), traj_);
   oops::Log::trace() << "ObsWSpeedTLAD trajectory was set " << traj_ << std::endl;
 }

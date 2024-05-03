@@ -161,7 +161,7 @@ void ObserverTLAD<MODEL, OBS>::finalizeTraj() {
   hop_.computeReducedVars(reducedVars, geovals);
 
   /// Set linearization trajectory for H(x)
-  hoptlad_.setTrajectory(geovals, *ybias_);
+  hoptlad_.setTrajectory(geovals, *ybias_, qc_flags_);
 
   init_ = false;
   Log::trace() << "ObserverTLAD::finalizeTraj done" << std::endl;

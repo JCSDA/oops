@@ -49,7 +49,8 @@ class ObsOperatorTLAD : public util::Printable,
   ~ObsOperatorTLAD();
 
 /// Obs Operator
-  void setTrajectory(const GomQG &, const ObsBias &);
+  void setTrajectory(const GomQG &, const ObsBias &,
+                     const QCFlags_ &);
   void simulateObsTL(const GomQG &, ObsVecQG &, const ObsBiasIncrement &,
                      const QCFlags_ &) const;
   void simulateObsAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &,

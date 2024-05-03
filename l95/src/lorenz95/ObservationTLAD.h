@@ -50,7 +50,8 @@ class ObservationTLAD : public util::Printable,
   ObservationTLAD(const ObsTable &, const eckit::Configuration &);
 
 // Obs Operators
-  void setTrajectory(const GomL95 &, const ObsBias &);
+  void setTrajectory(const GomL95 &, const ObsBias &,
+                     const QCFlags_ &);
   void simulateObsTL(const GomL95 &, ObsVec1D &, const ObsBiasCorrection &,
                      const QCFlags_ &) const;
   void simulateObsAD(GomL95 &, const ObsVec1D &, ObsBiasCorrection &,

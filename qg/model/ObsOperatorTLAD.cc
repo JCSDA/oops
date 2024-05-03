@@ -33,8 +33,9 @@ ObsOperatorTLAD::~ObsOperatorTLAD() {}
 
 // -----------------------------------------------------------------------------
 
-void ObsOperatorTLAD::setTrajectory(const GomQG & gvals, const ObsBias & bias) {
-  oper_->setTrajectory(gvals, bias);
+void ObsOperatorTLAD::setTrajectory(const GomQG & gvals, const ObsBias & bias,
+                                    const QCFlags_ & qc_flags) {
+  oper_->setTrajectory(gvals, bias, qc_flags);
 }
 
 // -----------------------------------------------------------------------------

@@ -42,7 +42,8 @@ class ObsWindTLAD : public ObsOpBaseTLAD,
   ObsWindTLAD(const ObsSpaceQG &, const eckit::Configuration &);
 
 // Obs Operators
-  void setTrajectory(const GomQG &, const ObsBias &) override;
+  void setTrajectory(const GomQG &, const ObsBias &,
+                     const QCFlags_ &) override;
   void simulateObsTL(const GomQG &, ObsVecQG &, const ObsBiasIncrement &,
                      const QCFlags_ &) const override;
   void simulateObsAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &,

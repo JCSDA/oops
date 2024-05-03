@@ -36,7 +36,7 @@ ObsStreamTLAD::ObsStreamTLAD(const ObsSpaceQG & odb, const eckit::Configuration 
 
 // -----------------------------------------------------------------------------
 
-void ObsStreamTLAD::setTrajectory(const GomQG &, const ObsBias &) {}
+void ObsStreamTLAD::setTrajectory(const GomQG &, const ObsBias &, const QCFlags_ &) {}
 
 // -----------------------------------------------------------------------------
 
