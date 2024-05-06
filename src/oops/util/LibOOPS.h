@@ -55,6 +55,7 @@ class LibOOPS : public eckit::system::Library {
 
   std::string gitsha1(unsigned int count) const override;
 
+  bool initialised_;
   mutable std::unique_ptr<eckit::Channel> infoChannel_;
   mutable std::unique_ptr<eckit::Channel> debugChannel_;
 
