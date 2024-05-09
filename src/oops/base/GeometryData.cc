@@ -84,6 +84,7 @@ GeometryData::GeometryData(const atlas::FunctionSpace & fspace, const atlas::Fie
 
   setMeshAndTriangulation();
   setLocalTree();
+  setGlobalTree();
 }
 
 // -----------------------------------------------------------------------------
@@ -199,50 +200,64 @@ bool GeometryData::containingTriangleAndBarycentricCoords(const double lat, cons
 
 // -----------------------------------------------------------------------------
 
-// Global tree requires lats and lons without halo
-void GeometryData::setGlobalTree(const std::vector<double> & lats,
-                                 const std::vector<double> & lons) {
+void GeometryData::setGlobalTree() {
   ASSERT(globalNodeTree_.empty());
   util::Timer timer("oops::GeometryData", "setGlobalTree");
-  const size_t ntasks = comm_.size();
 
-// Local latitudes and longitudes
-  const size_t sizel = lats.size();
-  std::vector<double> latlon(2*sizel);
-  for (size_t jj = 0; jj < sizel; ++jj) {
-    latlon[2*jj]   = lats[jj];
-    latlon[2*jj+1] = lons[jj];
-  }
+  // Count number of owned points
+  const auto lonlat_view = atlas::array::make_view<double, 2>(fspace_.lonlat());
+  const auto ghost_view = atlas::array::make_view<int, 1>(fspace_.ghost());
+  const size_t nb_owned = [&ghost_view]() {
+    int result = 0;
+    for (size_t jj = 0; jj < ghost_view.shape(0); ++jj) {
+      if (ghost_view(jj) == 0) {
+        ++result;
+      }
+    }
+    return result;
+  }();
 
-// Collect global grid lats and lons
-  std::vector<size_t> sizes(ntasks);
-  comm_.allGather(sizel, sizes.begin(), sizes.end());
-
-  size_t sizeg = 0;
-  for (size_t jtask = 0; jtask < ntasks; ++jtask) sizeg += sizes[jtask];
-
-  std::vector<double> latlon_global(2*sizeg);
-  mpi::allGatherv(comm_, latlon, latlon_global);
-
-// Arrange coordinates and task index for kd-tree
-  std::vector<double> latglo(sizeg), longlo(sizeg);
-  std::vector<int> taskindx(sizeg);
-  size_t jglo = 0;
-  for (size_t jtask = 0; jtask < ntasks; ++jtask) {
-    for (size_t jj = 0; jj < sizes[jtask]; ++jj) {
-      latglo[jglo] = latlon_global[2*jglo];
-      longlo[jglo] = latlon_global[2*jglo+1];
-      taskindx[jglo] = jtask;
-      ++jglo;
+  // Copy owned points into local buffer
+  std::vector<double> lonlat(2 * nb_owned);
+  size_t counter = 0;
+  for (size_t jj = 0; jj < ghost_view.shape(0); ++jj) {
+    if (ghost_view(jj) == 0) {
+      lonlat[2 * counter] = lonlat_view(jj, 0);
+      lonlat[2 * counter + 1] = lonlat_view(jj, 1);
+      ++counter;
     }
   }
-  ASSERT(jglo == sizeg);
+  ASSERT(counter == nb_owned);
 
-// Create global kd-tree
-  globalNodeTree_.build(longlo, latglo, taskindx);
+  // Collect global grid lats and lons
+  const size_t nb_tasks = comm_.size();
+  std::vector<size_t> sizes(nb_tasks);
+  comm_.allGather(nb_owned, sizes.begin(), sizes.end());
 
-  Log::info() << "GeometryData: Global tree size = " << globalNodeTree_.size()
-              << ", footprint = " << globalNodeTree_.footprint() << std::endl;
+  size_t nb_global = 0;
+  for (size_t jtask = 0; jtask < nb_tasks; ++jtask) {
+    nb_global += sizes[jtask];
+  }
+
+  std::vector<double> lonlat_global(2 * nb_global);
+  mpi::allGatherv(comm_, lonlat, lonlat_global);
+
+  // Arrange coordinates and task index for kd-tree
+  std::vector<atlas::PointLonLat> nodes(nb_global);
+  std::vector<int> tasks(nb_global);
+  counter = 0;
+  for (size_t jtask = 0; jtask < nb_tasks; ++jtask) {
+    for (size_t jj = 0; jj < sizes[jtask]; ++jj) {
+      nodes[counter] = atlas::PointLonLat(lonlat_global[2 * counter],
+                                          lonlat_global[2 * counter + 1]);
+      tasks[counter] = jtask;
+      ++counter;
+    }
+  }
+  ASSERT(counter == nb_global);
+
+  // Create global kd-tree
+  globalNodeTree_.build(nodes, tasks);
 }
 
 // -----------------------------------------------------------------------------

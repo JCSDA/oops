@@ -101,9 +101,6 @@ class Geometry : public util::Printable,
   /// Accessor to the geometry fields
   const atlas::FieldSet & fields() const {return geom_->fields();}
 
-  /// Accessor to the latitude/longitude vectors
-  void latlon(std::vector<double> &, std::vector<double> &, const bool) const;
-
   /// Accessor to MODEL::Geometry, used in the other interface classes in oops.
   /// Does not need to be implemented.
   const Geometry_ & geometry() const {return *this->geom_;}
@@ -202,18 +199,6 @@ GeometryIterator<MODEL> Geometry<MODEL>::end() const {
   util::Timer timer(classname(), "end");
   Log::trace() << "Geometry<MODEL>::end done" << std::endl;
   return GeometryIterator_(geom_->end());
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
-void Geometry<MODEL>::latlon(std::vector<double> & lats, std::vector<double> & lons,
-                             const bool halo) const {
-  Log::trace() << "Geometry<MODEL>::latlon starting" << std::endl;
-  util::Timer timer(classname(), "latlon");
-  geom_->latlon(lats, lons, halo);
-  ASSERT(lats.size() == lons.size());
-  Log::trace() << "Geometry<MODEL>::latlon done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

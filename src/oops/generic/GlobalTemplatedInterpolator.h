@@ -48,10 +48,6 @@ class GlobalInterpolator : public util::Printable {
   typedef typename SelectInterp<MODEL>::type Interp_;
 
  public:
-  GlobalInterpolator(const eckit::Configuration &,
-                     const typename MODEL::Geometry &,
-                     const typename MODEL::Geometry &,
-                     const eckit::mpi::Comm &);
   // Constructor used when interpolating to random locations for testing
   GlobalInterpolator(const eckit::Configuration &,
                      const Geometry_ &,
@@ -74,31 +70,6 @@ class GlobalInterpolator : public util::Printable {
   std::vector<std::vector<size_t>> mytarget_index_by_task_;
   std::vector<std::unique_ptr<Interp_>> interp_;
 };
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
-GlobalInterpolator<MODEL>::GlobalInterpolator(
-    const eckit::Configuration & config,
-    const typename MODEL::Geometry & source_grid,
-    const typename MODEL::Geometry & target_grid,
-    const eckit::mpi::Comm & comm)
-  : comm_(comm)
-{
-  Log::trace() << "GlobalInterpolator::GlobalInterpolator start" << std::endl;
-
-  // Extract target coords
-  std::vector<double> target_lats{};
-  std::vector<double> target_lons{};
-  target_grid.latlon(target_lats, target_lons, false);
-
-  // Wrap the input MODEL::Geometry in a generic oops::Geometry. This exposes the functionality
-  // of the oops wrapper, which we need in constructing the interpolator.
-  const Geometry_ oops_source_grid(std::make_shared<typename MODEL::Geometry>(source_grid));
-  setupInterpolators(config, oops_source_grid, target_lats, target_lons);
-
-  Log::trace() << "GlobalInterpolator::GlobalInterpolator done" << std::endl;
-}
 
 // -----------------------------------------------------------------------------
 

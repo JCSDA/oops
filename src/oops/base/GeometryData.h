@@ -33,9 +33,6 @@ class GeometryData {
 
   ~GeometryData() = default;
 
-// Global tree requires lats and lons without halo
-  void setGlobalTree(const std::vector<double> &, const std::vector<double> &);
-
   GeometryData(const GeometryData &) = delete;
   GeometryData & operator=(const GeometryData &) = delete;
 
@@ -57,6 +54,7 @@ class GeometryData {
   bool levelsAreTopDown() const {return topdown_;}
 
  private:
+  void setGlobalTree();
   void setMeshAndTriangulation();
   void setLocalTree();
 

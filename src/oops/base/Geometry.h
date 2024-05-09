@@ -100,8 +100,6 @@ class Geometry : public interface::Geometry<MODEL> {
  private:
   const eckit::mpi::Comm * timeComm_;   /// pointer to the MPI communicator in time
   GeometryData gdata_;
-
-  void setTrees();
 };
 
 // -----------------------------------------------------------------------------
@@ -112,10 +110,7 @@ Geometry<MODEL>::Geometry(const eckit::Configuration & config,
   interface::Geometry<MODEL>(config, geometry),
   timeComm_(&time),
   gdata_(this->geom_->functionSpace(), this->geom_->fields(),
-         this->geom_->levelsAreTopDown(), geometry)
-{
-  this->setTrees();
-}
+         this->geom_->levelsAreTopDown(), geometry) {}
 
 // -----------------------------------------------------------------------------
 
@@ -125,10 +120,7 @@ Geometry<MODEL>::Geometry(const Parameters_ & parameters,
   interface::Geometry<MODEL>(parameters, geometry),
   timeComm_(&time),
   gdata_(this->geom_->functionSpace(), this->geom_->fields(),
-         this->geom_->levelsAreTopDown(), geometry)
-{
-  this->setTrees();
-}
+         this->geom_->levelsAreTopDown(), geometry) {}
 
 // -----------------------------------------------------------------------------
 
@@ -137,20 +129,7 @@ Geometry<MODEL>::Geometry(std::shared_ptr<const Geometry_> ptr):
   interface::Geometry<MODEL>(ptr),
   timeComm_(&oops::mpi::myself()),
   gdata_(this->geom_->functionSpace(), this->geom_->fields(),
-         this->geom_->levelsAreTopDown(), oops::mpi::world())
-{
-  this->setTrees();
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL>
-void Geometry<MODEL>::setTrees() {
-  std::vector<double> lats;
-  std::vector<double> lons;
-  this->latlon(lats, lons, false);
-  gdata_.setGlobalTree(lats, lons);
-}
+         this->geom_->levelsAreTopDown(), oops::mpi::world()) {}
 
 // -----------------------------------------------------------------------------
 

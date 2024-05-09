@@ -64,8 +64,6 @@ class GeometryQG : public util::Printable,
 
   std::vector<size_t> variableSizes(const oops::Variables & vars) const;
 
-  void latlon(std::vector<double> &, std::vector<double> &, const bool) const;
-
  private:
   GeometryQG & operator=(const GeometryQG &);
   void print(std::ostream &) const;

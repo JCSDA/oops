@@ -106,17 +106,17 @@ void testInterpolator(const bool testSourcePointMask) {
   oops::Log::info() << "Interpolator created:\n" << interpolator << std::endl;
 
   // Initialize the source FieldSet with a smooth function
-  std::vector<double> source_lats{};
-  std::vector<double> source_lons{};
-  geom->latlon(source_lats, source_lons, true);  // include halo
-  const size_t num_source = source_lats.size();
   const atlas::FunctionSpace & source_fs = geom->functionSpace();
+  const auto source_lonlat = atlas::array::make_view<double, 2>(source_fs.lonlat());
+  const size_t num_source = source_lonlat.shape(0);
   atlas::Field source_field = source_fs->createField<double>(name(varname) | levels(nlev));
   source_field.metadata().set("interp_type", "default");
   auto source_view = make_view<double, 2>(source_field);
   for (size_t jj = 0; jj < num_source; ++jj) {
+    const double lon = source_lonlat(jj, 0);
+    const double lat = source_lonlat(jj, 1);
     for (size_t jlev = 0; jlev < nlev; ++jlev) {
-      source_view(jj, jlev) = testfunc(source_lons[jj], source_lats[jj], jlev, nlev);
+      source_view(jj, jlev) = testfunc(lon, lat, jlev, nlev);
     }
   }
   atlas::FieldSet source_fields;
@@ -133,7 +133,8 @@ void testInterpolator(const bool testSourcePointMask) {
     atlas::Field mask = source_fs->createField<double>(name("testmask") | levels(1));
     auto mask_view = make_view<double, 2>(mask);
     for (size_t jj = 0; jj < num_source; ++jj) {
-      mask_view(jj, 0) = (source_lats[jj] >= 0.0 ? 1.0 : 0.0);
+      const double lat = source_lonlat(jj, 1);
+      mask_view(jj, 0) = (lat >= 0.0 ? 1.0 : 0.0);
     }
     // Hackily cast away the constness so we can shove a mask into the geometry
     const_cast<atlas::FieldSet &>(geom->geometry().fields()).add(mask);
@@ -145,7 +146,8 @@ void testInterpolator(const bool testSourcePointMask) {
     // the interpolation result, then the huge missing value will leak through and signal a bug.
     auto infield = make_view<double, 2>(source_field);
     for (size_t jj = 0; jj < num_source; ++jj) {
-      if (source_lats[jj] < 0.0) {
+      const double lat = source_lonlat(jj, 1);
+      if (lat < 0.0) {
         for (size_t jlev = 0; jlev < nlev; ++jlev) {
           infield(jj, jlev) = util::missingValue<double>();
         }
@@ -237,7 +239,8 @@ void testInterpolator(const bool testSourcePointMask) {
   } else {
     for (size_t jlev = 0; jlev < nlev; ++jlev) {
       for (size_t jj = 0; jj < num_source; ++jj) {
-        if (source_lats[jj] >= 0.0) {
+        const double lat = source_lonlat(jj, 1);
+        if (lat >= 0.0) {
           dot1 += source_view(jj, jlev) * source_ad_view(jj, jlev);
         }
       }

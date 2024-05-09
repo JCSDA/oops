@@ -34,15 +34,5 @@ std::vector<size_t> Resolution::variableSizes(const oops::Variables & vars) cons
   return sizes;
 }
 // -----------------------------------------------------------------------------
-void Resolution::latlon(std::vector<double> & lats, std::vector<double> & lons, const bool) const {
-  const double dx = 1.0 / static_cast<double>(resol_);
-  lats.resize(resol_);
-  lons.resize(resol_);
-  for (size_t jj = 0; jj < (size_t)resol_; ++jj) {
-    lons[jj] = static_cast<double>(jj) * dx;
-    lats[jj] = 0.0;
-  }
-}
-// -----------------------------------------------------------------------------
 
 }  // namespace lorenz95

@@ -142,17 +142,6 @@ GeometryQGIterator GeometryQG::end() const {
   return GeometryQGIterator(*this, nx*ny+1);
 }
 // -------------------------------------------------------------------------------------------------
-void GeometryQG::latlon(std::vector<double> & lats, std::vector<double> & lons, const bool) const {
-  const auto lonlat = atlas::array::make_view<double, 2>(functionSpace_.lonlat());
-  const size_t npts = functionSpace_.size();
-  lats.resize(npts);
-  lons.resize(npts);
-  for (size_t jj = 0; jj < npts; ++jj) {
-    lats[jj] = lonlat(jj, 1);
-    lons[jj] = lonlat(jj, 0);
-  }
-}
-// -------------------------------------------------------------------------------------------------
 std::vector<double> GeometryQG::verticalCoord(std::string & vcUnits) const {
   // returns vertical coordinate in untis of vcUnits
   int nx = 0;

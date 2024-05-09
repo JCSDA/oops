@@ -102,11 +102,9 @@ void testInterpolator() {
   oops::Log::info() << "Interpolator created:\n" << interpolator << std::endl;
 
   // Initialize the source FieldSet with a smooth function
-  std::vector<double> source_lats{};
-  std::vector<double> source_lons{};
-  geom->latlon(source_lats, source_lons, true);  // include halo
-  const size_t num_source = source_lats.size();
   const atlas::FunctionSpace & source_fs = geom->functionSpace();
+  const auto source_lonlat = atlas::array::make_view<double, 2>(source_fs.lonlat());
+  const size_t num_source = source_lonlat.shape(0);
   atlas::Field source_field = source_fs->createField<double>(name(varname) | levels(nlev));
   source_field.metadata().set("interp_type", "default");
   const size_t rank = source_field.rank();
@@ -114,13 +112,17 @@ void testInterpolator() {
   if (rank == 1) {
     auto source_view = make_view<double, 1>(source_field);
     for (size_t jj = 0; jj < num_source; ++jj) {
-      source_view(jj) = testfunc(source_lons[jj], source_lats[jj], 0, nlev);
+      const double lon = source_lonlat(jj, 0);
+      const double lat = source_lonlat(jj, 1);
+      source_view(jj) = testfunc(lon, lat, 0, nlev);
     }
   } else {
     auto source_view = make_view<double, 2>(source_field);
     for (size_t jj = 0; jj < num_source; ++jj) {
       for (size_t jlev = 0; jlev < nlev; ++jlev) {
-        source_view(jj, jlev) = testfunc(source_lons[jj], source_lats[jj], jlev, nlev);
+        const double lon = source_lonlat(jj, 0);
+        const double lat = source_lonlat(jj, 1);
+        source_view(jj, jlev) = testfunc(lon, lat, jlev, nlev);
       }
     }
   }
