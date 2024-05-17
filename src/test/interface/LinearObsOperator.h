@@ -17,6 +17,7 @@
 
 #include "eckit/testing/Test.h"
 #include "oops/base/ObsTypeParameters.h"
+#include "oops/base/ObsVariables.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
 #include "oops/interface/LinearObsOperator.h"
@@ -416,7 +417,7 @@ template <typename OBS> void testTangentLinear() {
     bias.zero();
 
     // create obsdatavector to hold diags
-    oops::Variables diagvars;
+    oops::ObsVariables diagvars;
     diagvars += ybias0.requiredHdiagnostics();
     ObsDiags_ ydiag(Test_::obspace()[jj], hop.locations(), diagvars);
 
@@ -500,7 +501,7 @@ template <typename OBS> void testException() {
     hopvars += reducedHopvars;
     GeoVaLs_ gval(obsTypeParams.geovals, Test_::obspace()[jj], hopvars);
     hop.computeReducedVars(reducedHopvars, gval);
-    oops::Variables diagvars;
+    oops::ObsVariables diagvars;
     diagvars += ybias.requiredHdiagnostics();
     const oops::Variables hoptlvars = hoptl.requiredVars();
 

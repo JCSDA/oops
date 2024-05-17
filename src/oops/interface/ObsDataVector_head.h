@@ -18,7 +18,7 @@
 namespace oops {
   template <typename OBS> class ObsSpace;
   template <typename OBS> class ObsVector;
-  class Variables;
+  class ObsVariables;
 
 // -----------------------------------------------------------------------------
 /// \brief ObsDataVector is a vector templated on data type, in the observation space
@@ -36,7 +36,7 @@ class ObsDataVector : public util::Printable,
   /// Constructor for specified ObsSpace \p os, with \p variables. If the group \p name is
   /// specified, the data is read from ObsSpace for specified variables and group.
   /// Otherwise ObsDataVector is allocated for specified variables and filled with zeros.
-  ObsDataVector(const ObsSpace<OBS> & os, const Variables & vars,
+  ObsDataVector(const ObsSpace<OBS> & os, const ObsVariables & vars,
                          const std::string name = "");
   /// Copy constructor from \p other
   ObsDataVector(const ObsDataVector & other);

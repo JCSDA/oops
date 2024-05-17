@@ -160,7 +160,11 @@ oops/base/ObsSpaceBase.cc
 oops/base/ObsSpaceBase.h
 oops/base/ObsSpaces.h
 oops/base/ObsTypeParameters.h
+oops/base/ObsVariables.cc
+oops/base/ObsVariables.h
 oops/base/ObsVector.h
+oops/base/ParameterTraitsObsVariables.cc
+oops/base/ParameterTraitsObsVariables.h
 oops/base/ParameterTraitsVariables.cc
 oops/base/ParameterTraitsVariables.h
 oops/base/PostBase.h
@@ -192,8 +196,13 @@ oops/base/VariableChangeParametersBase.h
 oops/base/variables_f.cc
 oops/base/variables_f.h
 oops/base/variables_mod.F90
+oops/base/obsvariables_f.cc
+oops/base/obsvariables_f.h
+oops/base/obsvariables_mod.F90
 oops/base/Variables.cc
 oops/base/Variables.h
+oops/base/VariablesBase.cc
+oops/base/VariablesBase.h
 oops/base/WeightedDiff.h
 oops/base/WeightedDiffTLAD.h
 oops/base/WeightedMean.h
@@ -783,6 +792,11 @@ set_tests_properties(test_oops_base_dummy_run_h PROPERTIES
 
 ecbuild_add_test( TARGET  test_oops_base_variables
                   SOURCES test/base/Variables.cc
+                  ARGS    "test/testinput/variables.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_oops_base_obsvariables
+                  SOURCES test/base/ObsVariables.cc
                   ARGS    "test/testinput/variables.yaml"
                   LIBS    oops )
 

@@ -15,6 +15,7 @@
 #include <string>
 #include <boost/noncopyable.hpp>
 
+#include "oops/base/ObsVariables.h"
 #include "oops/base/Variables.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -54,14 +55,14 @@ class ObsBias : public util::Printable,
 
 /// Other
   const oops::Variables & requiredVars() const {return geovars_;}
-  const oops::Variables & requiredHdiagnostics() const {return hdiags_;}
+  const oops::ObsVariables & requiredHdiagnostics() const {return hdiags_;}
 
  private:
   void print(std::ostream &) const;
   double bias_;
   bool active_;
   const oops::Variables geovars_;
-  const oops::Variables hdiags_;
+  const oops::ObsVariables hdiags_;
 };
 
 // -----------------------------------------------------------------------------

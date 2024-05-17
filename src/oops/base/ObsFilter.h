@@ -11,6 +11,7 @@
 #include <memory>
 #include <string>
 
+#include "oops/base/ObsVariables.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/ObsFilterBase.h"
 #include "oops/util/Logger.h"
@@ -97,7 +98,7 @@ class ObsFilter : public util::Printable,
   Variables requiredVars() const;
 
   /// \brief Return the list of observation diagnostics required by this filter.
-  Variables requiredHdiagnostics() const;
+  ObsVariables requiredHdiagnostics() const;
 
  private:
   void print(std::ostream &) const override;
@@ -178,7 +179,7 @@ Variables ObsFilter<OBS>::requiredVars() const {
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-Variables ObsFilter<OBS>::requiredHdiagnostics() const {
+ObsVariables ObsFilter<OBS>::requiredHdiagnostics() const {
   Log::trace() << "ObsFilter<OBS>::requiredHdiagnostics" << std::endl;
   return ofilt_->requiredHdiagnostics();
 }

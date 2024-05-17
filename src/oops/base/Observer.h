@@ -23,6 +23,7 @@
 #include "oops/base/ObserverUtils.h"
 #include "oops/base/ObsFilters.h"
 #include "oops/base/ObsOperatorBase.h"
+#include "oops/base/ObsVariables.h"
 #include "oops/base/ObsVector.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
@@ -202,7 +203,7 @@ void Observer<MODEL, OBS>::finalize(ObsVector_ & yobsim) {
   filters_->priorFilter(geovals);
 
   /// Setup diagnostics
-  Variables vars;
+  ObsVariables vars;
   vars += filters_->requiredHdiagnostics();
   vars += biascoeff_->requiredHdiagnostics();
   // The current interface makes it possible to assign different location sampling methods not only

@@ -12,8 +12,8 @@
 #include <ostream>
 #include <string>
 
+#include "oops/base/ObsVariables.h"
 #include "oops/base/ObsVector.h"
-#include "oops/base/Variables.h"
 #include "oops/interface/ObsSpace.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Timer.h"
@@ -25,7 +25,7 @@ namespace oops {
 // -----------------------------------------------------------------------------
 template <typename OBS, typename DATATYPE>
 ObsDataVector<OBS, DATATYPE>::ObsDataVector(const ObsSpace<OBS> & os,
-                                            const Variables & vars, const std::string name)
+                                            const ObsVariables & vars, const std::string name)
   : data_()
 {
   Log::trace() << "ObsDataVector<OBS, DATATYPE>::ObsDataVector starting" << std::endl;

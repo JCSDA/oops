@@ -15,6 +15,7 @@
 
 #include "lorenz95/L95Traits.h"
 
+#include "oops/base/ObsVariables.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/ObsFilterBase.h"
 
@@ -41,11 +42,12 @@ class FinalCheck : public oops::interface::ObsFilterBase<L95ObsTraits> {
   void checkFilterData(const oops::FilterStage filterStage) override {}
 
   oops::Variables requiredVars() const override {return novars_;}
-  oops::Variables requiredHdiagnostics() const override {return novars_;}
+  oops::ObsVariables requiredHdiagnostics() const override {return noobsvars_;}
 
  private:
   void print(std::ostream &) const override {}
   const oops::Variables novars_;
+  const oops::ObsVariables noobsvars_;
 };
 
 }  // namespace lorenz95

@@ -11,7 +11,7 @@
 #include <ostream>
 #include <string>
 
-#include "oops/base/Variables.h"
+#include "oops/base/ObsVariables.h"
 #include "oops/util/Printable.h"
 
 #include "oops/qg/ObsSpaceQG.h"
@@ -29,7 +29,7 @@ class ObsDiagsQG : public util::Printable {
  public:
   typedef oops::Locations<QgObsTraits> Locations_;
 
-  ObsDiagsQG(const ObsSpaceQG &, const Locations_ &, const oops::Variables &) {}
+  ObsDiagsQG(const ObsSpaceQG &, const Locations_ &, const oops::ObsVariables &) {}
   ~ObsDiagsQG() {}
 
 // I/O

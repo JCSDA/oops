@@ -22,7 +22,7 @@
 #include "eckit/mpi/Comm.h"
 
 #include "oops/base/ObsSpaceBase.h"
-#include "oops/base/Variables.h"
+#include "oops/base/ObsVariables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/TimeWindow.h"
 
@@ -62,10 +62,10 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
   int nobs() const;
 
   /// return variables to be processed
-  const oops::Variables & obsvariables() const { return obsvars_; }
+  const oops::ObsVariables & obsvariables() const { return obsvars_; }
 
   /// return variables simulated by ObsOperators
-  const oops::Variables & assimvariables() const { return assimvars_; }
+  const oops::ObsVariables & assimvariables() const { return assimvars_; }
 
   /// observation type
   const std::string & obsname() const {return obsname_;}
@@ -84,8 +84,8 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
   mutable F90odb key_;               // pointer to Fortran structure
   const std::string obsname_;        // corresponds with obstype
   const util::TimeWindow timeWindow_;      // window for the observations
-  oops::Variables assimvars_;          // variables simulated by ObsOperators
-  oops::Variables obsvars_;          // variables that are observed
+  oops::ObsVariables assimvars_;          // variables simulated by ObsOperators
+  oops::ObsVariables obsvars_;          // variables that are observed
 
   // defines mapping for Fortran structures
   static std::map < std::string, F90odb > theObsFileRegister_;

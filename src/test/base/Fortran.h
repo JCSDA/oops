@@ -9,10 +9,13 @@
 #ifndef TEST_BASE_FORTRAN_H_
 #define TEST_BASE_FORTRAN_H_
 
-#include <cstdint>
-#include <string>
-#include <vector>
-#include "eckit/config/Configuration.h"
+namespace eckit {
+  class Configuration;
+}
+
+namespace oops {
+  class Variables;
+}
 
 namespace test {
 

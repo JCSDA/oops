@@ -23,6 +23,7 @@
 #include "oops/util/Timer.h"
 
 namespace oops {
+  class ObsVariables;
   class Variables;
 
 // -----------------------------------------------------------------------------
@@ -66,7 +67,7 @@ class ObsAuxControl : public util::Printable,
   /// Return required inputs variables from Model
   const Variables & requiredVars() const;
   /// Return required observations diagnostics
-  const Variables & requiredHdiagnostics() const;
+  const ObsVariables & requiredHdiagnostics() const;
 
   /// Assign operator from other ObsAuxControl \p rhs
   ObsAuxControl & operator=(const ObsAuxControl & rhs);
@@ -156,7 +157,7 @@ const Variables & ObsAuxControl<OBS>::requiredVars() const {
 // -----------------------------------------------------------------------------
 
 template<typename OBS>
-const Variables & ObsAuxControl<OBS>::requiredHdiagnostics() const {
+const ObsVariables & ObsAuxControl<OBS>::requiredHdiagnostics() const {
   Log::trace() << "ObsAuxControl<OBS>::requiredHdiagnostics starting" << std::endl;
   util::Timer timer(classname(), "requiredHdiagnostics");
   Log::trace() << "ObsAuxControl<OBS>::requiredHdiagnostics done" << std::endl;

@@ -19,6 +19,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "oops/base/ObsTypeParameters.h"
+#include "oops/base/ObsVariables.h"
 #include "oops/base/ObsVector.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
@@ -175,7 +176,7 @@ template <typename OBS> void testSimulateObs() {
     bias.zero();
 
     // create diagnostics to hold HofX diags
-    oops::Variables diagvars;
+    oops::ObsVariables diagvars;
     diagvars += ybias.requiredHdiagnostics();
     ObsDiags_ diags(Test_::obspace()[jj], hop.locations(), diagvars);
 

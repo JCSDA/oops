@@ -16,6 +16,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/ObsFilter.h"
+#include "oops/base/ObsVariables.h"
 #include "oops/base/ObsVector.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
@@ -91,7 +92,7 @@ class ObsFilters : public util::Printable,
                   const ObsDiags_ &);
 
   Variables requiredVars() const {return geovars_;}
-  Variables requiredHdiagnostics() const {return diagvars_;}
+  ObsVariables requiredHdiagnostics() const {return diagvars_;}
 
  private:
   void print(std::ostream &) const override;
@@ -110,7 +111,7 @@ class ObsFilters : public util::Printable,
   // List of filters which have been designated to run at the post stage .
   std::vector<ObsFilter_> postFilters_;
   Variables geovars_;
-  Variables diagvars_;
+  ObsVariables diagvars_;
   ObsDataPtr_ qcflags_;
   ObsDataVector_ & obserrfilter_;
   std::shared_ptr<ObsDataVector<OBS, float> > obserrtmp_;

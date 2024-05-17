@@ -13,6 +13,7 @@
 
 #include "lorenz95/L95Traits.h"
 
+#include "oops/base/ObsVariables.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/ObsFilterParametersBase.h"
 #include "oops/interface/ObsFilterBase.h"
@@ -45,7 +46,7 @@ class FilterStageCheck : public oops::interface::ObsFilterBase<lorenz95::L95ObsT
   void checkFilterData(const oops::FilterStage filterStage) override {}
 
   oops::Variables requiredVars() const override {return novars_;}
-  oops::Variables requiredHdiagnostics() const override {return novars_;}
+  oops::ObsVariables requiredHdiagnostics() const override {return noobsvars_;}
 
  private:
   void print(std::ostream & os) const override;
@@ -55,6 +56,7 @@ class FilterStageCheck : public oops::interface::ObsFilterBase<lorenz95::L95ObsT
   std::shared_ptr<lorenz95::ObsData1D<int> > qcflags_;   // QC flags
   std::shared_ptr<lorenz95::ObsData1D<float> > obserr_;  // obs error stddev
   const oops::Variables novars_;
+  const oops::ObsVariables noobsvars_;
 };
 
 }  // namespace test

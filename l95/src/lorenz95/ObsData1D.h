@@ -16,7 +16,7 @@
 
 #include "eckit/exception/Exceptions.h"
 
-#include "oops/base/Variables.h"
+#include "oops/base/ObsVariables.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
 #include "oops/util/ObjectCounter.h"
@@ -36,7 +36,7 @@ class ObsData1D : public util::Printable,
  public:
   static const std::string classname() {return "lorenz95::ObsData1D";}
 
-  ObsData1D(const ObsTable &, const oops::Variables &, const std::string &);
+  ObsData1D(const ObsTable &, const oops::ObsVariables &, const std::string &);
   ObsData1D(const ObsData1D &);
   explicit ObsData1D(const ObsVec1D &);
   ~ObsData1D() {}
@@ -64,7 +64,7 @@ class ObsData1D : public util::Printable,
 //-----------------------------------------------------------------------------
 
 template<typename DATATYPE>
-ObsData1D<DATATYPE>::ObsData1D(const ObsTable & ot, const oops::Variables &,
+ObsData1D<DATATYPE>::ObsData1D(const ObsTable & ot, const oops::ObsVariables &,
                                const std::string & name)
   : obsdb_(ot), data_(ot.nobs())
 {

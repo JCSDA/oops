@@ -15,7 +15,7 @@
 
 #include <boost/noncopyable.hpp>
 
-#include "oops/base/Variables.h"
+#include "oops/base/ObsVariables.h"
 #include "oops/interface/ObsSpace.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
@@ -39,9 +39,9 @@ class ObsDiagnostics : public util::Printable,
  public:
   static const std::string classname() {return "oops::ObsDiagnostics";}
 
-  ObsDiagnostics(const ObsSpace_ &, const Locations_ &, const Variables &);
+  ObsDiagnostics(const ObsSpace_ &, const Locations_ &, const ObsVariables &);
   // ctor used in the test for ObsFilters (not implemented in toy models)
-  ObsDiagnostics(const eckit::Configuration &, const ObsSpace_ &, const Variables &);
+  ObsDiagnostics(const eckit::Configuration &, const ObsSpace_ &, const ObsVariables &);
 
   ~ObsDiagnostics();
 
@@ -61,7 +61,7 @@ class ObsDiagnostics : public util::Printable,
 template <typename OBS>
 ObsDiagnostics<OBS>::ObsDiagnostics(const ObsSpace_ & os,
                                     const Locations_ & locations,
-                                    const Variables & vars) : diags_()
+                                    const ObsVariables & vars) : diags_()
 {
   Log::trace() << "ObsDiagnostics<OBS>::ObsDiagnostics starting" << std::endl;
   util::Timer timer(classname(), "ObsDiagnostics");
@@ -71,7 +71,7 @@ ObsDiagnostics<OBS>::ObsDiagnostics(const ObsSpace_ & os,
 // -----------------------------------------------------------------------------
 template <typename OBS>
 ObsDiagnostics<OBS>::ObsDiagnostics(const eckit::Configuration & config, const ObsSpace_ & os,
-                                    const Variables & vars) : diags_()
+                                    const ObsVariables & vars) : diags_()
 {
   Log::trace() << "ObsDiagnostics<OBS>::ObsDiagnostics starting" << std::endl;
   util::Timer timer(classname(), "ObsDiagnostics");

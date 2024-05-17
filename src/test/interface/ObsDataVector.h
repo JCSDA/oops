@@ -16,8 +16,8 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
+#include "oops/base/ObsVariables.h"
 #include "oops/base/ObsVector.h"
-#include "oops/base/Variables.h"
 #include "oops/interface/ObsDataVector.h"
 #include "oops/runs/Test.h"
 #include "oops/util/dot_product.h"
@@ -33,7 +33,7 @@ template <typename OBS> void testConstructors() {
   typedef oops::ObsDataVector<OBS, float>  ObsDataVector_;
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    oops::Variables vars(Test_::obspace()[jj].obsvariables());
+    oops::ObsVariables vars(Test_::obspace()[jj].obsvariables());
     std::unique_ptr<ObsDataVector_> odv1(new ObsDataVector_(Test_::obspace()[jj], vars));
     EXPECT(odv1.get());
 

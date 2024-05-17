@@ -35,31 +35,16 @@ void testConstructor() {
   EXPECT(vars.get());
 
   {
-    const std::vector<std::string> varnames{"bt", "emiss"};
-    const std::vector<int> channels{1, 2, 3, 4};
-    std::unique_ptr<oops::Variables> other(new oops::Variables(varnames, channels));
-    EXPECT(other.get());
-    const std::vector<std::string> expectedVariables{"bt_1", "bt_2", "bt_3", "bt_4",
-                                                     "emiss_1", "emiss_2", "emiss_3", "emiss_4"};
-    EXPECT(other->variables() == expectedVariables);
-    EXPECT(other->channels() == channels);
-  }
-
-  {
-    const std::vector<std::string> varnames{"bt", "emiss"};
-    const std::vector<int> channels{};
-    std::unique_ptr<oops::Variables> other(new oops::Variables(varnames, channels));
+    const std::vector<std::string> varnames{"air_temperature", "air_pressure"};
+    std::unique_ptr<oops::Variables> other(new oops::Variables(varnames));
     EXPECT(other.get());
     EXPECT(other->variables() == varnames);
-    EXPECT(other->channels() == channels);
   }
 
   {
     const std::vector<std::string> varnames{};
-    const std::vector<int> channels{};
     oops::Variables other(TestEnvironment::config(), "empty variables");
     EXPECT(other.variables() == varnames);
-    EXPECT(other.channels() == channels);
   }
 
   {
@@ -161,7 +146,7 @@ void testArithmeticOperators() {
   // Check on removing other string
   oops::Variables varsStartRemoveStr(varsStartStr);
   oops::Variables varsFinalRemoveStr(varsFinalStr);
-  varsStartRemoveStr -= "var3";
+  varsStartRemoveStr -= std::string{"var3"};
   EXPECT(varsStartRemoveStr == varsFinalRemoveStr);
 
   // Check on adding other Variables object
@@ -170,11 +155,6 @@ void testArithmeticOperators() {
   oops::Variables varsAdd(varsAddRemStr);
   varsStartAddVars += varsAdd;
   EXPECT(varsStartAddVars == varsFinalAddVars);
-
-  // Check we get exception if we subtract vars with channels
-  oops::Variables varsStartChnnl(varsStartStr);
-  oops::Variables varsWithChannels{varsAddRemStr, std::vector<int>{1}};
-  EXPECT_THROWS_AS(varsStartChnnl -= varsWithChannels, eckit::NotImplemented);
 }
 
 // -----------------------------------------------------------------------------
@@ -264,12 +244,6 @@ void testIntersection() {
   oops::Variables b({"b"});
   oops::Variables ba({"b", "a"});
   oops::Variables de({"d", "e"});
-  oops::Variables de12({"d", "e"}, std::vector<int>{1, 2});
-  oops::Variables ed21({"e", "d"}, std::vector<int>{2, 1});
-  oops::Variables de1({"d", "e"}, std::vector<int>{1});
-  oops::Variables d12({"d"}, std::vector<int>{1, 2});
-  oops::Variables b1({"b"}, std::vector<int>{1});
-  oops::Variables d1({"d"}, std::vector<int>{1});
 
   oops::Variables test = empty;
   test.intersection(empty);
@@ -305,33 +279,6 @@ void testIntersection() {
 
   test = de;
   test.intersection(acb);
-  EXPECT(test == empty);
-
-  test = de12;
-  test.intersection(b1);
-  EXPECT(test == empty);
-
-  test = de12;
-  test.intersection(d1);
-  EXPECT(test == d1);
-
-  test = de12;
-  test.intersection(ed21);
-  EXPECT(test == de12);
-
-  test = de12;
-  test.intersection(de1);
-  EXPECT(test == de1);
-
-  test = de12;
-  test.intersection(d12);
-  EXPECT(test == d12);
-
-  test = de12;
-  EXPECT_THROWS(test.intersection(de));
-
-  test = de12;
-  test.intersection(empty);
   EXPECT(test == empty);
 }
 

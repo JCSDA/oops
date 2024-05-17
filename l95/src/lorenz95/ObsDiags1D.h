@@ -11,7 +11,7 @@
 #include <ostream>
 #include <string>
 
-#include "oops/base/Variables.h"
+#include "oops/base/ObsVariables.h"
 #include "oops/util/Printable.h"
 
 #include "lorenz95/ObsTable.h"
@@ -28,7 +28,7 @@ namespace lorenz95 {
 class ObsDiags1D : public util::Printable {
  public:
   ObsDiags1D(const ObsTable &, const oops::Locations<L95ObsTraits> &,
-             const oops::Variables &) {}
+             const oops::ObsVariables &) {}
   ~ObsDiags1D() {}
 
 // I/O

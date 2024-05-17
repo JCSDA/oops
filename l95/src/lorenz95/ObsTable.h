@@ -20,7 +20,7 @@
 #include "eckit/mpi/Comm.h"
 
 #include "oops/base/ObsSpaceBase.h"
-#include "oops/base/Variables.h"
+#include "oops/base/ObsVariables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
 
@@ -61,8 +61,8 @@ class ObsTable : public oops::ObsSpaceBase,
   unsigned int nobs() const {return times_.size();}
   const std::vector<double> & locations() const { return locations_; }
   const std::vector<util::DateTime> & times() const { return times_; }
-  const oops::Variables & obsvariables() const { return obsvars_; }
-  const oops::Variables & assimvariables() const { return assimvars_; }
+  const oops::ObsVariables & obsvariables() const { return obsvars_; }
+  const oops::ObsVariables & assimvariables() const { return assimvars_; }
   const std::string & obsname() const {return obsname_;}
 
   /// iterator to the first observation
@@ -81,8 +81,8 @@ class ObsTable : public oops::ObsSpaceBase,
 
   const eckit::mpi::Comm & comm_;
   const util::TimeWindow timeWindow_;
-  const oops::Variables obsvars_;
-  const oops::Variables assimvars_;
+  const oops::ObsVariables obsvars_;
+  const oops::ObsVariables assimvars_;
   std::string nameIn_;
   std::string nameOut_;
   const std::string obsname_ = "Lorenz 95";

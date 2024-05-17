@@ -22,6 +22,8 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "oops/../test/TestEnvironment.h"
+#include "oops/base/ObsVariables.h"
+#include "oops/base/ParameterTraitsObsVariables.h"
 #include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/Variables.h"
 #include "oops/runs/Test.h"
@@ -116,6 +118,7 @@ class MyParametersBase : public oops::Parameters {
   oops::Parameter<std::pair<int, std::string>> pairParameters{"pair_parameters",
                                                               {10, "apples up on top"}, this};
   oops::Parameter<std::vector<RangeParameters>> rangeParameters{"range_parameters", {}, this};
+  oops::Parameter<oops::ObsVariables> obsVariablesParameter{"obs_variables_parameter", {}, this};
   oops::Parameter<oops::Variables> variablesParameter{"variables_parameter", {}, this};
   oops::Parameter<std::set<int>> setIntParameter{"set_int_parameter", {}, this};
   oops::Parameter<AnyOf_> anyOfParameter{
@@ -165,8 +168,17 @@ class MyMapParameters : public oops::Parameters {
 class VariablesParameters : public oops::Parameters {
   OOPS_CONCRETE_PARAMETERS(VariablesParameters, Parameters)
  public:
-  oops::Parameter<oops::Variables> filterVariables{"filter_variables", {}, this};
-  oops::Parameter<oops::Variables> operatorVariables{"operator_variables", {}, this};
+  oops::Parameter<oops::Variables> incVariables{"increment_variables", {}, this};
+  oops::Parameter<oops::Variables> stateVariables{"state_variables", {}, this};
+};
+
+// Class required by tests checking ObsVariables-valued parameters
+
+class ObsVariablesParameters : public oops::Parameters {
+  OOPS_CONCRETE_PARAMETERS(ObsVariablesParameters, Parameters)
+ public:
+  oops::Parameter<oops::ObsVariables> filterVariables{"filter_variables", {}, this};
+  oops::Parameter<oops::ObsVariables> operatorVariables{"operator_variables", {}, this};
 };
 
 // Classes required to test support for polymorphic parameters.
@@ -255,6 +267,7 @@ class DescriptiveParameters : public oops::Parameters {
 
 class MyParametersWithDefaultValues : public oops::Parameters {
   OOPS_CONCRETE_PARAMETERS(MyParametersWithDefaultValues, Parameters)
+
  public:
   oops::Parameter<float> floatParameter{"float_parameter", 1.5f, this};
   oops::Parameter<int> intParameter{"int_parameter", 2, this};
@@ -267,12 +280,17 @@ class MyParametersWithDefaultValues : public oops::Parameters {
     "duration_parameter", util::Duration("P1D"), this};
   oops::Parameter<util::PartialDateTime> partDateTimeParameter{
     "part_date_time_parameter", util::PartialDateTime(2021, -1, 25, 0, 0, 0), this};
-  oops::Parameter<oops::Variables> variablesParameter{
-    "variables_parameter",
-    oops::Variables(
-      std::vector<std::string>({"air_temperature", "air_pressure"}),
+  oops::Parameter<oops::ObsVariables> obsVariablesParameter{
+    "obs_variables_parameter",
+    oops::ObsVariables(
+      std::vector<std::string>({"airTemperature", "pressure"}),
       std::vector<int>({5, 6, 7})),
     this};
+  oops::Parameter<oops::Variables> variablesParameter{
+    "variables_parameter",
+    oops::Variables(std::vector<std::string>({"air_temperature", "air_pressure"})),
+    this};
+
   oops::PolymorphicParameter<DeviceTypeDependentParameters, DeviceFactory>
     deviceOne{"type", "screen", this};
 };
@@ -490,6 +508,7 @@ void testDefaultValues() {
   EXPECT(params.pairParameters.value().first == 10);
   EXPECT(params.pairParameters.value().second == "apples up on top");
   EXPECT(params.rangeParameters.value().empty());
+  EXPECT(params.obsVariablesParameter.value() == oops::ObsVariables());
   EXPECT(params.variablesParameter.value() == oops::Variables());
   EXPECT(params.setIntParameter.value() == std::set<int>());
   EXPECT(params.anyOfParameter.value().as<std::vector<int>>() == std::vector<int>({10, 20}));
@@ -520,6 +539,7 @@ void testDefaultValues() {
   EXPECT(params.pairParameters.value().first == 10);
   EXPECT(params.pairParameters.value().second == "apples up on top");
   EXPECT(params.rangeParameters.value().empty());
+  EXPECT(params.obsVariablesParameter.value() == oops::ObsVariables());
   EXPECT(params.variablesParameter.value() == oops::Variables());
   EXPECT(params.setIntParameter.value() == std::set<int>());
   EXPECT(params.anyOfParameter.value().as<std::vector<int>>() == std::vector<int>({10, 20}));
@@ -562,8 +582,10 @@ void testCorrectValues() {
   EXPECT(params.rangeParameters.value()[0].maxParameter == 10.0f);
   EXPECT(params.rangeParameters.value()[1].minParameter == 11.0f);
   EXPECT(params.rangeParameters.value()[1].maxParameter == 12.0f);
+  EXPECT(params.obsVariablesParameter.value() ==
+         oops::ObsVariables({"u", "v"}, std::vector<int>({5, 6, 7})));
   EXPECT(params.variablesParameter.value() ==
-         oops::Variables({"u", "v"}, std::vector<int>({5, 6, 7})));
+         oops::Variables({"air_temperature", "air_pressure"}));
   EXPECT(params.setIntParameter.value() == std::set<int>({2, 4, 5, 6, 8}));
   EXPECT(params.anyOfParameter.value().as<std::string>() == "dog");
   EXPECT(params.optAnyOfParameter.value() != boost::none);
@@ -1069,78 +1091,78 @@ void testParametersWithDefaultValues() {
   EXPECT(polyOjsStr.find("\"default\": \"screen\"") != std::string::npos);
 }
 
-// Parameters storing Variables objects
+// Parameters storing ObsVariables objects
 
-void testVariablesDeserializationWithoutChannels() {
-  VariablesParameters params;
+void testObsVariablesDeserializationWithoutChannels() {
+  ObsVariablesParameters params;
   const eckit::LocalConfiguration conf(TestEnvironment::config(), "variables_without_channels");
   EXPECT_NO_THROW(params.validate(conf));
   params.deserialize(conf);
 
-  const oops::Variables expectedFilterVariables(conf, "filter_variables");
-  const oops::Variables expectedOperatorVariables(conf, "operator_variables");
+  const oops::ObsVariables expectedFilterVariables(conf, "filter_variables");
+  const oops::ObsVariables expectedOperatorVariables(conf, "operator_variables");
 
   EXPECT_EQUAL(params.filterVariables.value(), expectedFilterVariables);
   EXPECT_EQUAL(params.operatorVariables.value(), expectedOperatorVariables);
 }
 
-void testVariablesDeserializationWithChannels() {
-  VariablesParameters params;
+void testObsVariablesDeserializationWithChannels() {
+  ObsVariablesParameters params;
   const eckit::LocalConfiguration conf(TestEnvironment::config(), "variables_with_channels");
   EXPECT_NO_THROW(params.validate(conf));
   params.deserialize(conf);
 
-  const oops::Variables expectedFilterVariables(conf, "filter_variables");
-  const oops::Variables expectedOperatorVariables(conf, "operator_variables");
+  const oops::ObsVariables expectedFilterVariables(conf, "filter_variables");
+  const oops::ObsVariables expectedOperatorVariables(conf, "operator_variables");
 
   EXPECT_EQUAL(params.filterVariables.value(), expectedFilterVariables);
   EXPECT_EQUAL(params.operatorVariables.value(), expectedOperatorVariables);
 }
 
-void testVariablesSerializationWithoutChannels() {
-  VariablesParameters params;
+void testObsVariablesSerializationWithoutChannels() {
+  ObsVariablesParameters params;
   const eckit::LocalConfiguration conf(TestEnvironment::config(), "variables_without_channels");
-  doTestSerialization<VariablesParameters>(conf);
+  doTestSerialization<ObsVariablesParameters>(conf);
 }
 
-void testVariablesSerializationWithChannels() {
+void testObsVariablesSerializationWithChannels() {
   const eckit::LocalConfiguration conf(TestEnvironment::config(), "variables_with_channels");
-  doTestSerialization<VariablesParameters>(conf);
+  doTestSerialization<ObsVariablesParameters>(conf);
 }
 
-void testCompositeVariablesSerialization() {
-  // Variable objects containing variables that don't share the same channel suffixes
+void testCompositeObsVariablesSerialization() {
+  // ObsVariable objects containing variables that don't share the same channel suffixes
   // cannot be represented by a single Configuration object.
   {
-    oops::Variables var1({"air_temperature", "air_pressure"}, std::vector<int>({5, 6, 7}));
-    oops::Variables var2({"relative_humidity"}, std::vector<int>({1, 2, 3}));
+    oops::ObsVariables var1({"air_temperature", "air_pressure"}, std::vector<int>({5, 6, 7}));
+    oops::ObsVariables var2({"relative_humidity"}, std::vector<int>({1, 2, 3}));
     var1 += var2;
 
     eckit::LocalConfiguration conf;
-    EXPECT_THROWS(oops::ParameterTraits<oops::Variables>::set(conf, "name", var1));
+    EXPECT_THROWS(oops::ParameterTraits<oops::ObsVariables>::set(conf, "name", var1));
   }
 
   // Case with some variables having channel suffixes and others not
   {
-    oops::Variables var1({"air_temperature", "air_pressure"}, std::vector<int>({5, 6, 7}));
+    oops::ObsVariables var1({"air_temperature", "air_pressure"}, std::vector<int>({5, 6, 7}));
     // var2 won't have channels
     const eckit::LocalConfiguration helperConf(TestEnvironment::config(),
                                                "variables_without_channels");
-    oops::Variables var2(helperConf, "operator_variables");
+    oops::ObsVariables var2(helperConf, "operator_variables");
     var1 += var2;
 
     eckit::LocalConfiguration conf;
-    EXPECT_THROWS(oops::ParameterTraits<oops::Variables>::set(conf, "name", var1));
+    EXPECT_THROWS(oops::ParameterTraits<oops::ObsVariables>::set(conf, "name", var1));
   }
 
   // Case with all variables having the same channel suffixes
   {
-    oops::Variables var1({"air_temperature", "air_pressure"}, std::vector<int>({5, 6, 7}));
-    oops::Variables var2({"relative_humidity"}, std::vector<int>({5, 6, 7}));
+    oops::ObsVariables var1({"air_temperature", "air_pressure"}, std::vector<int>({5, 6, 7}));
+    oops::ObsVariables var2({"relative_humidity"}, std::vector<int>({5, 6, 7}));
     var1 += var2;
 
     eckit::LocalConfiguration conf;
-    EXPECT_NO_THROW(oops::ParameterTraits<oops::Variables>::set(conf, "name", var1));
+    EXPECT_NO_THROW(oops::ParameterTraits<oops::ObsVariables>::set(conf, "name", var1));
   }
 }
 
@@ -1873,20 +1895,20 @@ class Parameters : public oops::Test {
                       testParametersWithDefaultValues();
                     });
 
-    ts.emplace_back(CASE("util/Parameters/testVariablesDeserializationWithoutChannels") {
-                      testVariablesDeserializationWithoutChannels();
+    ts.emplace_back(CASE("util/Parameters/testObsVariablesDeserializationWithoutChannels") {
+                      testObsVariablesDeserializationWithoutChannels();
                     });
-    ts.emplace_back(CASE("util/Parameters/testVariablesDeserializationWithChannels") {
-                      testVariablesDeserializationWithChannels();
+    ts.emplace_back(CASE("util/Parameters/testObsVariablesDeserializationWithChannels") {
+                      testObsVariablesDeserializationWithChannels();
                     });
-    ts.emplace_back(CASE("util/Parameters/testVariablesSerializationWithoutChannels") {
-                      testVariablesSerializationWithoutChannels();
+    ts.emplace_back(CASE("util/Parameters/testObsVariablesSerializationWithoutChannels") {
+                      testObsVariablesSerializationWithoutChannels();
                     });
-    ts.emplace_back(CASE("util/Parameters/testVariablesSerializationWithChannels") {
-                      testVariablesSerializationWithChannels();
+    ts.emplace_back(CASE("util/Parameters/testObsVariablesSerializationWithChannels") {
+                      testObsVariablesSerializationWithChannels();
                     });
-    ts.emplace_back(CASE("util/Parameters/testCompositeVariablesSerialization") {
-                      testCompositeVariablesSerialization();
+    ts.emplace_back(CASE("util/Parameters/testCompositeObsVariablesSerialization") {
+                      testCompositeObsVariablesSerialization();
                     });
 
     ts.emplace_back(CASE("util/Parameters/testPolymorphicParametersDeserialization") {

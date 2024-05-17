@@ -15,6 +15,7 @@
 
 #include <boost/noncopyable.hpp>
 
+#include "oops/base/ObsVariables.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/ObsFilterParametersBase.h"
 #include "oops/util/AssociativeContainers.h"
@@ -109,7 +110,7 @@ class ObsFilterBase : public util::Printable,
   virtual Variables requiredVars() const = 0;
 
   /// \brief Return the list of observation diagnostics required by this filter.
-  virtual Variables requiredHdiagnostics() const = 0;
+  virtual ObsVariables requiredHdiagnostics() const = 0;
 };
 
 // =============================================================================

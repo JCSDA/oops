@@ -12,6 +12,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 
+#include "oops/base/ObsVariables.h"
 #include "oops/base/ObsVector.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/ObsFilterBase.h"
@@ -56,12 +57,12 @@ class GeoVaLsWriter : public ObsFilterBase<OBS> {
   void checkFilterData(const FilterStage filterStage) override {}
 
   Variables requiredVars() const override {return novars_;};
-  Variables requiredHdiagnostics() const override {return novars_;};
+  ObsVariables requiredHdiagnostics() const override {return noobsvars_;};
 
  private:
   const eckit::LocalConfiguration config_;
   const Variables novars_;  // could be used to determine what needs saving
-
+  const ObsVariables noobsvars_;
   void print(std::ostream &) const override;
 };
 

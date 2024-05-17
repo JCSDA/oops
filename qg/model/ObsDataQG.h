@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 
-#include "oops/base/Variables.h"
+#include "oops/base/ObsVariables.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -33,7 +33,7 @@ class ObsDataQG : public util::Printable,
  public:
   static const std::string classname() {return "qg::ObsDataQG";}
 
-  explicit ObsDataQG(const ObsSpaceQG &, const oops::Variables &,
+  explicit ObsDataQG(const ObsSpaceQG &, const oops::ObsVariables &,
                      const std::string &);
   ObsDataQG(const ObsDataQG &);
   explicit ObsDataQG(const ObsVecQG &);
@@ -60,7 +60,7 @@ class ObsDataQG : public util::Printable,
 //-----------------------------------------------------------------------------
 
 template<typename DATATYPE>
-ObsDataQG<DATATYPE>::ObsDataQG(const ObsSpaceQG & os, const oops::Variables & var,
+ObsDataQG<DATATYPE>::ObsDataQG(const ObsSpaceQG & os, const oops::ObsVariables & var,
                                const std::string & name): data_(os, name) {
 }
 // -----------------------------------------------------------------------------
