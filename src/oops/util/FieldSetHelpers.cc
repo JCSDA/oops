@@ -27,7 +27,7 @@
 #include "oops/util/missingValues.h"
 #include "oops/util/RandomField.h"
 
-#define ERR(e) {ABORT(nc_strerror(e));}
+#define ERR(e, msg) {std::string s(nc_strerror(e)); ABORT(s + " : " + msg);}
 
 namespace util {
 
@@ -893,16 +893,18 @@ void readFieldSet(const eckit::mpi::Comm & comm,
   // Special case: FieldSet composed of rank 3 Fields
   // Currently supported only when reading one file per task
   int tempretval, tempncid;
-  if ((tempretval = nc_open(ncfilepath.c_str(), NC_NOWRITE, &tempncid))) ERR(tempretval);
+  if ((tempretval = nc_open(ncfilepath.c_str(), NC_NOWRITE, &tempncid))) {
+    ERR(tempretval, ncfilepath);
+  }
   tempretval = nc_inq_att(tempncid, NC_GLOBAL, "rank 3 Fields", NULL, NULL);
   if (tempretval == NC_NOERR) {  // i.e. if flag exists
-    if ((tempretval = nc_close(tempncid))) ERR(tempretval);
+    if ((tempretval = nc_close(tempncid))) ERR(tempretval, ncfilepath);
     ASSERT(oneFilePerTask);
     readRank3FieldSet(fspace, variableSizes, vars, fset, ncfilepath);
     fset.set_dirty();  // code is too complicated, mark dirty to be safe
     return;
   }
-  if ((tempretval = nc_close(tempncid))) ERR(tempretval);
+  if ((tempretval = nc_close(tempncid))) ERR(tempretval, ncfilepath);
 
   // Create local fieldset
   for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
@@ -926,11 +928,11 @@ void readFieldSet(const eckit::mpi::Comm & comm,
     oops::Log::info() << "Info     : Reading file: " << ncfilepath << std::endl;
 
     // Open NetCDF file
-    if ((retval = nc_open(ncfilepath.c_str(), NC_NOWRITE, &ncid))) ERR(retval);
+    if ((retval = nc_open(ncfilepath.c_str(), NC_NOWRITE, &ncid))) ERR(retval, ncfilepath);
 
     // Get variables
     for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
-      if ((retval = nc_inq_varid(ncid, vars[jvar].c_str(), &var_id[jvar]))) ERR(retval);
+      if ((retval = nc_inq_varid(ncid, vars[jvar].c_str(), &var_id[jvar]))) ERR(retval, vars[jvar]);
     }
 
     // Get number of nodes
@@ -943,7 +945,7 @@ void readFieldSet(const eckit::mpi::Comm & comm,
     for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
       // Read data
       std::vector<double> zvar(nb_nodes * variableSizes[jvar]);
-      if ((retval = nc_get_var_double(ncid, var_id[jvar], zvar.data()))) ERR(retval);
+      if ((retval = nc_get_var_double(ncid, var_id[jvar], zvar.data()))) ERR(retval, vars[jvar]);
 
       // Copy data
       auto varView = atlas::array::make_view<double, 2>(fset[vars[jvar]]);
@@ -959,7 +961,7 @@ void readFieldSet(const eckit::mpi::Comm & comm,
     }
 
     // Close file
-    if ((retval = nc_close(ncid))) ERR(retval);
+    if ((retval = nc_close(ncid))) ERR(retval, ncfilepath);
   } else {
     // Case 2: one file for all MPI tasks
 
@@ -991,17 +993,21 @@ void readFieldSet(const eckit::mpi::Comm & comm,
         oops::Log::info() << "Info     : Reading file: " << ncfilepath << std::endl;
 
         // Open NetCDF file
-        if ((retval = nc_open(ncfilepath.c_str(), NC_NOWRITE, &ncid))) ERR(retval);
+        if ((retval = nc_open(ncfilepath.c_str(), NC_NOWRITE, &ncid))) ERR(retval, ncfilepath);
 
         // Get variables
         for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
-          if ((retval = nc_inq_varid(ncid, vars[jvar].c_str(), &var_id[jvar]))) ERR(retval);
+          if ((retval = nc_inq_varid(ncid, vars[jvar].c_str(), &var_id[jvar]))) {
+            ERR(retval, vars[jvar]);
+          }
         }
 
         for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
           // Read data
           std::vector<double> zvar(variableSizes[jvar] * ny * nx);
-          if ((retval = nc_get_var_double(ncid, var_id[jvar], zvar.data()))) ERR(retval);
+          if ((retval = nc_get_var_double(ncid, var_id[jvar], zvar.data()))) {
+            ERR(retval, vars[jvar]);
+          }
 
           // Copy data
           auto varView = atlas::array::make_view<double, 2>(globalData[vars[jvar]]);
@@ -1016,7 +1022,7 @@ void readFieldSet(const eckit::mpi::Comm & comm,
         }
 
         // Close file
-        if ((retval = nc_close(ncid))) ERR(retval);
+        if ((retval = nc_close(ncid))) ERR(retval, ncfilepath);
       }
     } else if (fspace.type() == "NodeColumns") {
       // NodeColumns
@@ -1032,17 +1038,21 @@ void readFieldSet(const eckit::mpi::Comm & comm,
         oops::Log::info() << "Info     : Reading file: " << ncfilepath << std::endl;
 
         // Open NetCDF file
-        if ((retval = nc_open(ncfilepath.c_str(), NC_NOWRITE, &ncid))) ERR(retval);
+        if ((retval = nc_open(ncfilepath.c_str(), NC_NOWRITE, &ncid))) ERR(retval, ncfilepath);
 
         // Get variables
         for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
-          if ((retval = nc_inq_varid(ncid, vars[jvar].c_str(), &var_id[jvar]))) ERR(retval);
+          if ((retval = nc_inq_varid(ncid, vars[jvar].c_str(), &var_id[jvar]))) {
+            ERR(retval, vars[jvar]);
+          }
         }
 
         for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
           // Read data
           std::vector<double> zvar(nb_nodes * variableSizes[jvar]);
-          if ((retval = nc_get_var_double(ncid, var_id[jvar], zvar.data()))) ERR(retval);
+          if ((retval = nc_get_var_double(ncid, var_id[jvar], zvar.data()))) {
+            ERR(retval, vars[jvar]);
+          }
 
           // Copy data
           auto varView = atlas::array::make_view<double, 2>(globalData[vars[jvar]]);
@@ -1054,7 +1064,7 @@ void readFieldSet(const eckit::mpi::Comm & comm,
         }
 
         // Close file
-        if ((retval = nc_close(ncid))) ERR(retval);
+        if ((retval = nc_close(ncid))) ERR(retval, ncfilepath);
       }
     } else {
       ABORT(fspace.type() + " function space not supported yet");
@@ -1087,13 +1097,13 @@ void readRank3FieldSet(const atlas::FunctionSpace & fspace,
   size_t rank3Size;
 
   oops::Log::info() << "Info     : Reading file: " << ncfilepath << std::endl;
-  if ((retval = nc_open(ncfilepath.c_str(), NC_NOWRITE, &ncid))) ERR(retval);
+  if ((retval = nc_open(ncfilepath.c_str(), NC_NOWRITE, &ncid))) ERR(retval, ncfilepath);
 
   for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
     // Get size of vector dimension
     const std::string nvName = "nv_" + vars[jvar];
-    if ((retval = nc_inq_dimid(ncid, nvName.c_str(), &dimid))) ERR(retval);
-    if ((retval = nc_inq_dimlen(ncid, dimid, &rank3Size))) ERR(retval);
+    if ((retval = nc_inq_dimid(ncid, nvName.c_str(), &dimid))) ERR(retval, nvName);
+    if ((retval = nc_inq_dimlen(ncid, dimid, &rank3Size))) ERR(retval, nvName);
     // Initialise Field
     atlas::Field field = fspace.createField<double>(
       atlas::option::name(vars[jvar])
@@ -1102,7 +1112,7 @@ void readRank3FieldSet(const atlas::FunctionSpace & fspace,
     auto view = atlas::array::make_view<double, 3>(field);
     view.assign(0.0);
     fset.add(field);
-    if ((retval = nc_inq_varid(ncid, vars[jvar].c_str(), &varid[jvar]))) ERR(retval);
+    if ((retval = nc_inq_varid(ncid, vars[jvar].c_str(), &varid[jvar]))) ERR(retval, vars[jvar]);
   }
 
   // Get number of nodes
@@ -1115,7 +1125,7 @@ void readRank3FieldSet(const atlas::FunctionSpace & fspace,
   for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
     // Read data into array
     std::vector<double> zvar(nb_nodes * variableSizes[jvar] * rank3Size);
-    if ((retval = nc_get_var_double(ncid, varid[jvar], zvar.data()))) ERR(retval);
+    if ((retval = nc_get_var_double(ncid, varid[jvar], zvar.data()))) ERR(retval, vars[jvar]);
     // Copy data to Field
     auto varView = atlas::array::make_view<double, 3>(fset[vars[jvar]]);
     size_t inode = 0;
@@ -1132,7 +1142,7 @@ void readRank3FieldSet(const atlas::FunctionSpace & fspace,
     }
   }
 
-  if ((retval = nc_close(ncid))) ERR(retval);
+  if ((retval = nc_close(ncid))) ERR(retval, ncfilepath);
 }
 
 // -----------------------------------------------------------------------------
@@ -1205,39 +1215,43 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
     // Definition mode
 
     // Create NetCDF file
-    if ((retval = nc_create(ncfilepath.c_str(), NC_CLOBBER, &ncid))) ERR(retval);
+    if ((retval = nc_create(ncfilepath.c_str(), NC_CLOBBER, &ncid))) ERR(retval, ncfilepath);
 
     // Create horizontal dimension
-    if ((retval = nc_def_dim(ncid, "nb_nodes", nb_nodes, &nb_nodes_id))) ERR(retval);
+    if ((retval = nc_def_dim(ncid, "nb_nodes", nb_nodes, &nb_nodes_id))) ERR(retval, "nb_nodes");
 
     // Dimensions arrays, horizontal part
     d1D_id[0] = nb_nodes_id;
     d2D_id[0] = nb_nodes_id;
 
     // Define coordinates
-    if ((retval = nc_def_var(ncid, "lon", NC_DOUBLE, 1, d1D_id, &lon_id))) ERR(retval);
-    if ((retval = nc_def_var(ncid, "lat", NC_DOUBLE, 1, d1D_id, &lat_id))) ERR(retval);
+    if ((retval = nc_def_var(ncid, "lon", NC_DOUBLE, 1, d1D_id, &lon_id))) ERR(retval, "lon");
+    if ((retval = nc_def_var(ncid, "lat", NC_DOUBLE, 1, d1D_id, &lat_id))) ERR(retval, "lat");
 
     for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
       // Create vertical dimension
       std::string nzName = "nz_" + vars[jvar];
       if ((retval = nc_def_dim(ncid, nzName.c_str(), fset.field(vars[jvar]).shape(1),
-        &nz_id[jvar]))) ERR(retval);
+        &nz_id[jvar]))) {
+        ERR(retval, nzName);
+      }
 
       // Dimensions array, vertical part
       d2D_id[1] = nz_id[jvar];
 
       // Define variable
-      if ((retval = nc_def_var(ncid, vars[jvar].c_str(), NC_DOUBLE, 2, d2D_id,
-        &var_id[jvar]))) ERR(retval);
+      if ((retval = nc_def_var(ncid, vars[jvar].c_str(), NC_DOUBLE, 2, d2D_id, &var_id[jvar]))) {
+        ERR(retval, vars[jvar]);
+      }
 
       // Add missing value metadata
-      if ((retval = nc_put_att_double(ncid, var_id[jvar], "_FillValue", NC_DOUBLE, 1,
-        &msvalr))) ERR(retval);
+      if ((retval = nc_put_att_double(ncid, var_id[jvar], "_FillValue", NC_DOUBLE, 1, &msvalr))) {
+        ERR(retval, vars[jvar]);
+      }
     }
 
     // End definition mode
-    if ((retval = nc_enddef(ncid))) ERR(retval);
+    if ((retval = nc_enddef(ncid))) ERR(retval, ncfilepath);
 
     // Data mode
 
@@ -1255,8 +1269,8 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
     }
 
     // Write coordinates
-    if ((retval = nc_put_var_double(ncid, lon_id, zlon.data()))) ERR(retval);
-    if ((retval = nc_put_var_double(ncid, lat_id, zlat.data()))) ERR(retval);
+    if ((retval = nc_put_var_double(ncid, lon_id, zlon.data()))) ERR(retval, "lon");
+    if ((retval = nc_put_var_double(ncid, lat_id, zlat.data()))) ERR(retval, "lat");
 
     for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
       // Copy data
@@ -1273,11 +1287,11 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
       }
 
       // Write data
-      if ((retval = nc_put_var_double(ncid, var_id[jvar], zvar.data()))) ERR(retval);
+      if ((retval = nc_put_var_double(ncid, var_id[jvar], zvar.data()))) ERR(retval, vars[jvar]);
     }
 
     // Close file
-    if ((retval = nc_close(ncid))) ERR(retval);
+    if ((retval = nc_close(ncid))) ERR(retval, ncfilepath);
   } else {
     // Case 2: one file for all MPI tasks
 
@@ -1332,11 +1346,11 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
         // Definition mode
 
         // Create NetCDF file
-        if ((retval = nc_create(ncfilepath.c_str(), NC_CLOBBER, &ncid))) ERR(retval);
+        if ((retval = nc_create(ncfilepath.c_str(), NC_CLOBBER, &ncid))) ERR(retval, ncfilepath);
 
         // Create dimensions
-        if ((retval = nc_def_dim(ncid, "nx", nx, &nx_id))) ERR(retval);
-        if ((retval = nc_def_dim(ncid, "ny", ny, &ny_id))) ERR(retval);
+        if ((retval = nc_def_dim(ncid, "nx", nx, &nx_id))) ERR(retval, "nx");
+        if ((retval = nc_def_dim(ncid, "ny", ny, &ny_id))) ERR(retval, "ny");
 
         // Dimensions arrays, horizontal part
         d2D_id[0] = ny_id;
@@ -1345,33 +1359,41 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
         d3D_id[2] = nx_id;
 
         // Define coordinates
-        if ((retval = nc_def_var(ncid, "lon", NC_DOUBLE, 2, d2D_id, &lon_id))) ERR(retval);
-        if ((retval = nc_def_var(ncid, "lat", NC_DOUBLE, 2, d2D_id, &lat_id))) ERR(retval);
-        if ((retval = nc_put_att_double(ncid, lon_id, "_FillValue", NC_DOUBLE, 1, &msvalr)))
-          ERR(retval);
-        if ((retval = nc_put_att_double(ncid, lat_id, "_FillValue", NC_DOUBLE, 1, &msvalr)))
-          ERR(retval);
+        if ((retval = nc_def_var(ncid, "lon", NC_DOUBLE, 2, d2D_id, &lon_id))) ERR(retval, "lon");
+        if ((retval = nc_def_var(ncid, "lat", NC_DOUBLE, 2, d2D_id, &lat_id))) ERR(retval, "lat");
+        if ((retval = nc_put_att_double(ncid, lon_id, "_FillValue", NC_DOUBLE, 1, &msvalr))) {
+          ERR(retval, "lon");
+        }
+        if ((retval = nc_put_att_double(ncid, lat_id, "_FillValue", NC_DOUBLE, 1, &msvalr))) {
+          ERR(retval, "lat");
+        }
 
         for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
           // Create vertical dimension
           std::string nzName = "nz_" + vars[jvar];
           if ((retval = nc_def_dim(ncid, nzName.c_str(), fset.field(vars[jvar]).shape(1),
-            &nz_id[jvar]))) ERR(retval);
+            &nz_id[jvar]))) {
+            ERR(retval, nzName);
+          }
 
           // Dimensions array, vertical part
           d3D_id[0] = nz_id[jvar];
 
           // Define variable
           if ((retval = nc_def_var(ncid, vars[jvar].c_str(), NC_DOUBLE, 3, d3D_id,
-            &var_id[jvar]))) ERR(retval);
+            &var_id[jvar]))) {
+            ERR(retval, vars[jvar]);
+          }
 
           // Add missing value metadata
           if ((retval = nc_put_att_double(ncid, var_id[jvar], "_FillValue", NC_DOUBLE, 1,
-            &msvalr))) ERR(retval);
+            &msvalr))) {
+            ERR(retval, vars[jvar]);
+          }
         }
 
         // End definition mode
-        if ((retval = nc_enddef(ncid))) ERR(retval);
+        if ((retval = nc_enddef(ncid))) ERR(retval, ncfilepath);
 
         // Data mode
 
@@ -1394,8 +1416,8 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
         }
 
         // Write coordinates
-        if ((retval = nc_put_var_double(ncid, lon_id, zlon.data()))) ERR(retval);
-        if ((retval = nc_put_var_double(ncid, lat_id, zlat.data()))) ERR(retval);
+        if ((retval = nc_put_var_double(ncid, lon_id, zlon.data()))) ERR(retval, "lon");
+        if ((retval = nc_put_var_double(ncid, lat_id, zlat.data()))) ERR(retval, "lat");
 
         for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
           // Copy data
@@ -1411,11 +1433,13 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
           }
 
           // Write data
-          if ((retval = nc_put_var_double(ncid, var_id[jvar], zvar.data()))) ERR(retval);
+          if ((retval = nc_put_var_double(ncid, var_id[jvar], zvar.data()))) {
+            ERR(retval, vars[jvar]);
+          }
         }
 
         // Close file
-        if ((retval = nc_close(ncid))) ERR(retval);
+        if ((retval = nc_close(ncid))) ERR(retval, ncfilepath);
       }
     } else if (fspace.type() == "NodeColumns") {
       // NodeColumns
@@ -1433,39 +1457,47 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
         // Definition mode
 
         // Create NetCDF file
-        if ((retval = nc_create(ncfilepath.c_str(), NC_CLOBBER, &ncid))) ERR(retval);
+        if ((retval = nc_create(ncfilepath.c_str(), NC_CLOBBER, &ncid))) ERR(retval, ncfilepath);
 
         // Create dimensions
-        if ((retval = nc_def_dim(ncid, "nb_nodes", nb_nodes, &nb_nodes_id))) ERR(retval);
+        if ((retval = nc_def_dim(ncid, "nb_nodes", nb_nodes, &nb_nodes_id))) {
+          ERR(retval, "nb_nodes");
+        }
 
         // Dimensions arrays, horizontal part
         d1D_id[0] = nb_nodes_id;
         d2D_id[0] = nb_nodes_id;
 
         // Define coordinates
-        if ((retval = nc_def_var(ncid, "lon", NC_DOUBLE, 1, d1D_id, &lon_id))) ERR(retval);
-        if ((retval = nc_def_var(ncid, "lat", NC_DOUBLE, 1, d1D_id, &lat_id))) ERR(retval);
+        if ((retval = nc_def_var(ncid, "lon", NC_DOUBLE, 1, d1D_id, &lon_id))) ERR(retval, "lon");
+        if ((retval = nc_def_var(ncid, "lat", NC_DOUBLE, 1, d1D_id, &lat_id))) ERR(retval, "lat");
 
         for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
           // Create vertical dimension
           std::string nzName = "nz_" + vars[jvar];
           if ((retval = nc_def_dim(ncid, nzName.c_str(), fset.field(vars[jvar]).shape(1),
-            &nz_id[jvar]))) ERR(retval);
+            &nz_id[jvar]))) {
+            ERR(retval, nzName);
+          }
 
           // Dimensions array, vertical part
           d2D_id[1] = nz_id[jvar];
 
           // Define variable
           if ((retval = nc_def_var(ncid, vars[jvar].c_str(), NC_DOUBLE, 2, d2D_id,
-            &var_id[jvar]))) ERR(retval);
+            &var_id[jvar]))) {
+            ERR(retval, vars[jvar]);
+          }
 
           // Add missing value metadata
           if ((retval = nc_put_att_double(ncid, var_id[jvar], "_FillValue", NC_DOUBLE, 1,
-            &msvalr))) ERR(retval);
+            &msvalr))) {
+            ERR(retval, vars[jvar]);
+          }
         }
 
         // End definition mode
-        if ((retval = nc_enddef(ncid))) ERR(retval);
+        if ((retval = nc_enddef(ncid))) ERR(retval, ncfilepath);
 
         // Data mode
 
@@ -1480,8 +1512,8 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
         }
 
         // Write coordinates
-        if ((retval = nc_put_var_double(ncid, lon_id, zlon.data()))) ERR(retval);
-        if ((retval = nc_put_var_double(ncid, lat_id, zlat.data()))) ERR(retval);
+        if ((retval = nc_put_var_double(ncid, lon_id, zlon.data()))) ERR(retval, "lon");
+        if ((retval = nc_put_var_double(ncid, lat_id, zlat.data()))) ERR(retval, "lat");
 
         for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
           // Copy data
@@ -1494,11 +1526,13 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
           }
 
           // Write data
-          if ((retval = nc_put_var_double(ncid, var_id[jvar], zvar.data()))) ERR(retval);
+          if ((retval = nc_put_var_double(ncid, var_id[jvar], zvar.data()))) {
+            ERR(retval, vars[jvar]);
+          }
         }
 
         // Close file
-        if ((retval = nc_close(ncid))) ERR(retval);
+        if ((retval = nc_close(ncid))) ERR(retval, ncfilepath);
       }
     } else {
       ABORT(fspace.type() + " function space not supported yet");
@@ -1526,44 +1560,51 @@ void writeRank3FieldSet(const atlas::FieldSet & fset,
 
   // Begin definition mode
   oops::Log::info() << "Info     : Writing file: " << ncfilepath << std::endl;
-  if ((retval = nc_create(ncfilepath.c_str(), NC_CLOBBER, &ncid))) ERR(retval);
+  if ((retval = nc_create(ncfilepath.c_str(), NC_CLOBBER, &ncid))) ERR(retval, ncfilepath);
 
   // Create horizontal dimension, assign to dimension arrays
-  if ((retval = nc_def_dim(ncid, "nb_nodes", nb_nodes, &nb_nodes_id))) ERR(retval);
+  if ((retval = nc_def_dim(ncid, "nb_nodes", nb_nodes, &nb_nodes_id))) ERR(retval, "nb_nodes");
   d1D_id[0] = nb_nodes_id;
   d3D_id[0] = nb_nodes_id;
 
   // Define coordinates
-  if ((retval = nc_def_var(ncid, "lon", NC_DOUBLE, 1, d1D_id, &lon_id))) ERR(retval);
-  if ((retval = nc_def_var(ncid, "lat", NC_DOUBLE, 1, d1D_id, &lat_id))) ERR(retval);
+  if ((retval = nc_def_var(ncid, "lon", NC_DOUBLE, 1, d1D_id, &lon_id))) ERR(retval, "lon");
+  if ((retval = nc_def_var(ncid, "lat", NC_DOUBLE, 1, d1D_id, &lat_id))) ERR(retval, "lat");
 
   for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
     // Create vertical dimension, assign to dimension array
     std::string nzName = "nz_" + vars[jvar];
-    if ((retval = nc_def_dim(ncid, nzName.c_str(), fset.field(vars[jvar]).shape(1), &nz_id[jvar])))
-      ERR(retval);
+    if ((retval = nc_def_dim(ncid, nzName.c_str(), fset.field(vars[jvar]).shape(1),
+      &nz_id[jvar]))) {
+      ERR(retval, nzName);
+    }
     d3D_id[1] = nz_id[jvar];
 
     // Create vector dimension, assign to dimension array
     std::string nvName = "nv_" + vars[jvar];
     if ((retval = nc_def_dim(ncid, nvName.c_str(), fset.field(vars[jvar]).shape(2),
-      &nv_id[jvar]))) ERR(retval);
+      &nv_id[jvar]))) {
+      ERR(retval, nvName);
+    }
     d3D_id[2] = nv_id[jvar];
 
     // Define variable
-    if ((retval = nc_def_var(ncid, vars[jvar].c_str(), NC_DOUBLE, 3, d3D_id, &var_id[jvar])))
-      ERR(retval);
+    if ((retval = nc_def_var(ncid, vars[jvar].c_str(), NC_DOUBLE, 3, d3D_id, &var_id[jvar]))) {
+      ERR(retval, vars[jvar]);
+    }
 
     // Add missing value metadata
-    if ((retval = nc_put_att_double(ncid, var_id[jvar], "_FillValue", NC_DOUBLE, 1, &msvalr)))
-      ERR(retval);
+    if ((retval = nc_put_att_double(ncid, var_id[jvar], "_FillValue", NC_DOUBLE, 1, &msvalr))) {
+      ERR(retval, vars[jvar]);
+    }
   }
 
   // Add global flag attribute denoting rank 3 Fields and end definition mode
   int flag = 1;
-  if ((retval = nc_put_att_int(ncid, NC_GLOBAL, "rank 3 Fields", NC_INT, 1, &flag)))
-    ERR(retval);
-  if ((retval = nc_enddef(ncid))) ERR(retval);
+  if ((retval = nc_put_att_int(ncid, NC_GLOBAL, "rank 3 Fields", NC_INT, 1, &flag))) {
+    ERR(retval, ncfilepath);
+  }
+  if ((retval = nc_enddef(ncid))) ERR(retval, ncfilepath);
 
   // Copy coordinates from FunctionSpace and write to file
   const auto lonlatView = atlas::array::make_view<double, 2>(fspace.lonlat());
@@ -1577,8 +1618,8 @@ void writeRank3FieldSet(const atlas::FieldSet & fset,
       ++inode;
     }
   }
-  if ((retval = nc_put_var_double(ncid, lon_id, zlon.data()))) ERR(retval);
-  if ((retval = nc_put_var_double(ncid, lat_id, zlat.data()))) ERR(retval);
+  if ((retval = nc_put_var_double(ncid, lon_id, zlon.data()))) ERR(retval, "lon");
+  if ((retval = nc_put_var_double(ncid, lat_id, zlat.data()))) ERR(retval, "lat");
 
   for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
     // Copy data from Field
@@ -1598,10 +1639,10 @@ void writeRank3FieldSet(const atlas::FieldSet & fset,
       }
     }
     // Write data to file
-    if ((retval = nc_put_var_double(ncid, var_id[jvar], zvar.data()))) ERR(retval);
+    if ((retval = nc_put_var_double(ncid, var_id[jvar], zvar.data()))) ERR(retval, vars[jvar]);
   }
 
-  if ((retval = nc_close(ncid))) ERR(retval);
+  if ((retval = nc_close(ncid))) ERR(retval, ncfilepath);
 }
 
 // -----------------------------------------------------------------------------
