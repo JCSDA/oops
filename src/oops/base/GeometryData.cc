@@ -209,7 +209,7 @@ void GeometryData::setGlobalTree() {
   const auto ghost_view = atlas::array::make_view<int, 1>(fspace_.ghost());
   const size_t nb_owned = [&ghost_view]() {
     int result = 0;
-    for (size_t jj = 0; jj < ghost_view.shape(0); ++jj) {
+    for (atlas::idx_t jj = 0; jj < ghost_view.shape(0); ++jj) {
       if (ghost_view(jj) == 0) {
         ++result;
       }
@@ -220,7 +220,7 @@ void GeometryData::setGlobalTree() {
   // Copy owned points into local buffer
   std::vector<double> lonlat(2 * nb_owned);
   size_t counter = 0;
-  for (size_t jj = 0; jj < ghost_view.shape(0); ++jj) {
+  for (atlas::idx_t jj = 0; jj < ghost_view.shape(0); ++jj) {
     if (ghost_view(jj) == 0) {
       lonlat[2 * counter] = lonlat_view(jj, 0);
       lonlat[2 * counter + 1] = lonlat_view(jj, 1);

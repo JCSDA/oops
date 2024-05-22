@@ -228,9 +228,9 @@ template <typename MODEL> void testStateAtlasInterface() {
   auto ghost = atlas::array::make_view<int, 1>(geom.functionSpace().ghost());
   for (int var = 0; var < nvars; ++var) {
     auto view = atlas::array::make_view<double, 2>(fset[var]);
-    for (size_t jnode = 0; jnode < view.shape(0); ++jnode) {
+    for (atlas::idx_t jnode = 0; jnode < view.shape(0); ++jnode) {
       if (ghost(jnode) == 1) {
-        for (size_t jlev = 0; jlev < view.shape(1); ++jlev) {
+        for (atlas::idx_t jlev = 0; jlev < view.shape(1); ++jlev) {
           view(jnode, jlev) = 0.0;
         }
       }

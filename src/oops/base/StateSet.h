@@ -136,14 +136,14 @@ StateSet<MODEL> StateSet<MODEL>::ens_mean() const {
 
 // add up all the state values on the local communicator and put them in zz[0][:]
     for (size_t jm = 1; jm < this->local_ens_size(); ++jm) {
-      for ( int i = 0; i < dataSize; ++i) zz[0][i] += zz[jm][i];
+      for ( size_t i = 0; i < dataSize; ++i) zz[0][i] += zz[jm][i];
     }
     if (this->commEns().size() > 1) {
       // if commEns > 1, then sum up across commEns communicators
       this->commEns().allReduceInPlace(&(zz[0].front()), dataSize, eckit::mpi::Operation::SUM);
     }
     // Divide by total number of members to get average
-    for ( int i = 0; i < dataSize; ++i) zz[0][i] *= fact;
+    for ( size_t i = 0; i < dataSize; ++i) zz[0][i] *= fact;
 
 // deserialize back to stateSet
     size_t indx = 0;

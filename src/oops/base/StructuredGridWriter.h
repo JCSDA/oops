@@ -675,7 +675,7 @@ void StructuredGridWriter<MODEL>::interpolateAndWrite(const atlas::FieldSet & fs
     atlas::FieldSet fsetModelLevels;
     std::vector<size_t> targetLevels;
     if (writeAllLevels_) {
-      for (int i = 0; i < nModelLevels; ++i) { targetLevels.push_back(i); }
+      for (size_t i = 0; i < nModelLevels; ++i) { targetLevels.push_back(i); }
       fsetModelLevels = fsetStructured;
     } else {
       // If needed, add bottom level to model levels
