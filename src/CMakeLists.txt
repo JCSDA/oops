@@ -994,14 +994,18 @@ ecbuild_add_test( TARGET  test_util_fieldset_subcommunicators
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 
+ecbuild_add_executable(
+  TARGET  test_oops_util_functionspace_helpers
+  SOURCES test/util/FunctionSpaceHelpers.cc
+  LIBS oops
+)
 ecbuild_add_test( TARGET  test_util_functionspace_helpers
-                  SOURCES test/util/FunctionSpaceHelpers.cc
+                  COMMAND test_oops_util_functionspace_helpers
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
-
 ecbuild_add_test( TARGET  test_util_functionspace_helpers_parallel
+                  COMMAND test_oops_util_functionspace_helpers
                   MPI     2
-                  SOURCES test/util/FunctionSpaceHelpers.cc
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 
