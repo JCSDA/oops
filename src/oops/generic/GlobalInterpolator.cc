@@ -7,6 +7,8 @@
 
 #include "oops/generic/GlobalInterpolator.h"
 
+#include <string>
+
 #include "atlas/field.h"
 #include "atlas/functionspace.h"
 #include "atlas/util/Geometry.h"
@@ -34,26 +36,29 @@ GlobalInterpolator::GlobalInterpolator(
 {
   Log::trace() << "GlobalInterpolator::GlobalInterpolator start" << std::endl;
 
-  // Extract target coords
-  const auto lonlat = atlas::array::make_view<double, 2>(target_fs.lonlat());
-  const size_t npts = target_fs->size();
-  std::vector<double> target_lats(npts);
-  std::vector<double> target_lons(npts);
-  for (size_t jj = 0; jj < npts; ++jj) {
-    target_lats[jj] = lonlat(jj, 1);
-    target_lons[jj] = lonlat(jj, 0);
-    if (target_lons[jj] < 0.0) target_lons[jj] += 360.0;
+  const std::string interp_type = config.getString("local interpolator type");
+  if (interp_type != "atlas interpolator"
+      && interp_type != "oops unstructured grid interpolator") {
+    throw eckit::BadParameter("Unknown local interpolator type: " + interp_type);
   }
 
-  // Exchange target coords, find targets to be interpolated on this task
   const size_t ntasks = comm_.size();
   mytarget_index_by_task_.resize(ntasks);
   std::vector<std::vector<double>> mytarget_latlon_by_task(ntasks);
-  for (size_t jt = 0; jt < npts; ++jt) {
-    const size_t itask = source_grid.closestTask(target_lats[jt], target_lons[jt]);
-    mytarget_index_by_task_[itask].push_back(jt);
-    mytarget_latlon_by_task[itask].push_back(target_lats[jt]);
-    mytarget_latlon_by_task[itask].push_back(target_lons[jt]);
+
+  // Extract target coordinates, find which task will be responsible for interpolating to each one
+  const auto lonlat = atlas::array::make_view<double, 2>(target_fs.lonlat());
+  const auto ghost = atlas::array::make_view<int, 1>(target_fs.ghost());
+  for (size_t jj = 0; jj < lonlat.shape(0); ++jj) {
+    if (ghost(jj) == 0) {
+      double lon = lonlat(jj, 0);
+      if (lon < 0.0) lon += 360.0;
+      const double lat = lonlat(jj, 1);
+      const size_t itask = source_grid.closestTask(lat, lon);
+      mytarget_index_by_task_[itask].push_back(jj);
+      mytarget_latlon_by_task[itask].push_back(lat);
+      mytarget_latlon_by_task[itask].push_back(lon);
+    }
   }
 
   std::vector<std::vector<double>> mylocs_latlon_by_task(ntasks);
@@ -71,13 +76,11 @@ GlobalInterpolator::GlobalInterpolator(
       ii += 2;
     }
     ASSERT(mylocs_latlon_by_task[jtask].size() == ii);
-    if (config.getString("local interpolator type") == "atlas interpolator") {
+
+    if (interp_type == "atlas interpolator") {
       interp_[jtask].reset(new AtlasInterpolator(config, source_grid, lats, lons));
-    } else if (config.getString("local interpolator type") ==
-               "oops unstructured grid interpolator") {
+    } else if (interp_type == "oops unstructured grid interpolator") {
       interp_[jtask].reset(new UnstructuredInterpolator(config, source_grid, lats, lons));
-    } else {
-      throw eckit::BadParameter("Unknown local interpolator type");
     }
   }
 
@@ -130,6 +133,8 @@ void GlobalInterpolator::apply(const atlas::FieldSet & source,
                                               recvinterp[jtask], target);
     }
   }
+
+  target.set_dirty();
 }
 
 // -----------------------------------------------------------------------------
