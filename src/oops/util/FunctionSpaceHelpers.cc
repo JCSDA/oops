@@ -15,6 +15,7 @@
 #include "atlas/grid.h"
 #include "atlas/grid/Partitioner.h"
 #include "atlas/mesh.h"
+#include "atlas/mesh/actions/BuildHalo.h"
 #include "atlas/meshgenerator.h"
 
 #include "eckit/config/Configuration.h"
@@ -60,12 +61,13 @@ void setupFunctionSpace(const eckit::mpi::Comm & comm,
     partitioner = atlas::grid::Partitioner(partitionerName);
   }
 
+  const int halo = config.getInt("halo", 0);
+
   // Set up FunctionSpace (and Mesh)
   const std::string functionSpaceName = config.getString("function space");
   if (functionSpaceName == "StructuredColumns") {
     ASSERT(gridType != "unstructured");
 
-    const size_t halo = config.getUnsigned("halo", 0);
     if (noPointOnLastTask && (comm.size() > 1)) {
       // Create distribution from partitioner
       std::vector<int> partition(grid.size());
@@ -80,6 +82,9 @@ void setupFunctionSpace(const eckit::mpi::Comm & comm,
       functionSpace = atlas::functionspace::StructuredColumns(grid, distribution,
                                                               atlas::option::halo(halo));
     } else {
+      // Create mesh from partitioner
+      mesh = atlas::MeshGenerator("structured").generate(grid, partitioner);
+
       // Create functionspace from partitioner
       functionSpace = atlas::functionspace::StructuredColumns(grid, partitioner,
                                                               atlas::option::halo(halo));
@@ -88,10 +93,25 @@ void setupFunctionSpace(const eckit::mpi::Comm & comm,
       // may have reverted the default communicator to the world communicator.
       // We set back the default communicator to `comm` to fix this.
       eckit::mpi::setCommDefault(comm.name().c_str());
-
-      // Create mesh from partitioner
-      mesh = atlas::MeshGenerator("structured").generate(grid, partitioner);
     }
+
+    // At this point, we have a mesh from the StructuredMeshGenerator that doesn't include a halo.
+    // One can add a halo via action::build_mesh, but BEWARE several critical caveats:
+    // 1. The halo added by build_halo is structured DIFFERENTLY than the halo in the
+    //    StructuredColumns FunctionSpace. In other words: `fspace_.lonlat()` will be a different
+    //    set of points from `mesh.nodes().lonlat()` -- the same owned points in the same order,
+    //    but (in general) a different set of ghost points in a different order. Therefore, one
+    //    CANNOT use a mesh-based computation to determine an index into the FunctionSpace/FieldSet,
+    //    without first creating a mapping between the two halos.
+    //    See https://github.com/JCSDA-internal/oops/issues/2621
+    // 2. If the StructuredColumns FunctionSpace is global, then the build_halo action will NOT
+    //    produce the expected halo surrounding every MPI partition -- in particular, it will not
+    //    produce halos bridging the lon=0 meridian. It is not clear (as of atlas 0.37) if this is
+    //    a bug or a feature, but the upshot is that for a global StructuredColumns the mesh halo
+    //    is not complete and therefore likely unusable.
+    //    See https://github.com/ecmwf/atlas/issues/200
+    // To reduce the risk of incorrectly using the halos in the case of a structured mesh, we keep
+    // the mesh halo-free for now.
 
     // Bugfix for regional grids
     // It seems that the content of lonlat for a regional function space is actually the xy
@@ -101,7 +121,7 @@ void setupFunctionSpace(const eckit::mpi::Comm & comm,
       auto lonlat = atlas::array::make_view<double, 2>(functionSpace.lonlat());
       double lonlatPoint[] = {0, 0};
       const atlas::functionspace::StructuredColumns fs(functionSpace);
-      const atlas::StructuredGrid grid = fs.grid();
+      const atlas::StructuredGrid & grid = fs.grid();
       const auto view_i = atlas::array::make_view<int, 1>(fs.index_i());
       const auto view_j = atlas::array::make_view<int, 1>(fs.index_j());
       for (int jj = 0; jj < fs.size(); ++jj) {
@@ -113,12 +133,14 @@ void setupFunctionSpace(const eckit::mpi::Comm & comm,
   } else if (functionSpaceName == "NodeColumns") {
     if (grid.name().compare(0, 2, std::string{"CS"}) == 0) {
       // NodeColumns from a CubedSphere grid/mesh
-      mesh = atlas::MeshGenerator("cubedsphere_dual").generate(grid, partitioner);
+      mesh = atlas::MeshGenerator("cubedsphere_dual",
+                                  atlas::option::halo(halo)).generate(grid, partitioner);
       functionSpace = atlas::functionspace::CubedSphereNodeColumns(mesh);
     } else {
       // NodeColumns from an unstructured grid after triangulation
       // Regular or Structured grids could be supported with extra code
       mesh = atlas::MeshGenerator("delaunay").generate(grid, partitioner);
+      atlas::mesh::actions::build_halo(mesh, halo);
       functionSpace = atlas::functionspace::NodeColumns(mesh);
     }
   } else if (functionSpaceName == "PointCloud") {

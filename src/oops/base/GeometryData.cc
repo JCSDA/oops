@@ -273,7 +273,7 @@ void GeometryData::setMeshAndTriangulation() {
     mesh_ = nodecolumns.mesh();
   } else if (fspace_.type() == "StructuredColumns") {
     const atlas::functionspace::StructuredColumns structuredcolumns(fspace_);
-    const atlas::Grid & grid = structuredcolumns.grid();
+    const atlas::StructuredGrid & grid = structuredcolumns.grid();
     if (fspace_.distribution() == "custom") {
       // Gather global partition field on root processor
       atlas::Field globalPartition = fspace_.createField<int>(
@@ -301,6 +301,24 @@ void GeometryData::setMeshAndTriangulation() {
       const atlas::StructuredMeshGenerator gen(grid.meshgenerator());
       mesh_ = gen(grid, atlas::grid::Partitioner(fspace_.distribution()));
     }
+
+    // At this point, we have a mesh from the StructuredMeshGenerator that doesn't include a halo.
+    // One can add a halo via action::build_mesh, but BEWARE several critical caveats:
+    // 1. The halo added by build_halo is structured DIFFERENTLY than the halo in the
+    //    StructuredColumns FunctionSpace. In other words: `fspace_.lonlat()` will be a different
+    //    set of points from `mesh.nodes().lonlat()` -- the same owned points in the same order,
+    //    but (in general) a different set of ghost points in a different order. Therefore, one
+    //    CANNOT use a mesh-based computation to determine an index into the FunctionSpace/FieldSet,
+    //    without first creating a mapping between the two halos.
+    //    See https://github.com/JCSDA-internal/oops/issues/2621
+    // 2. If the StructuredColumns FunctionSpace is global, then the build_halo action will NOT
+    //    produce the expected halo surrounding every MPI partition -- in particular, it will not
+    //    produce halos bridging the lon=0 meridian. It is not clear (as of atlas 0.37) if this is
+    //    a bug or a feature, but the upshot is that for a global StructuredColumns the mesh halo
+    //    is not complete and therefore likely unusable.
+    //    See https://github.com/ecmwf/atlas/issues/200
+    // To reduce the risk of incorrectly using the halos in the case of a structured mesh, we keep
+    // the mesh halo-free for now.
   } else {
     ABORT(fspace_.type() + " function space not supported yet");
   }
