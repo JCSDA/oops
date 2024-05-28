@@ -38,8 +38,18 @@ class Diffusion :  private util::ObjectCounter<Diffusion>  {
     VerticalOnly  ///< Only vertical diffusion is used
   };
 
+  // derived grid geometry
+  struct DerivedGeom;
+
   /// Initialize the geometry used by the diffusion operator.
-  explicit Diffusion(const oops::GeometryData &);
+  /// @param derivedGeom if provided, the derived geometry will not be recalculated.
+  explicit Diffusion(const oops::GeometryData &,
+                     const std::shared_ptr<DerivedGeom> & derivedGeom = nullptr);
+
+  /// Calculate the derived geometry needed by Diffusion. This typically only
+  /// needs to be done once for a given geometry, and can be shared among
+  /// multiple Diffusion classes
+  static std::shared_ptr<DerivedGeom> calculateDerivedGeom(const oops::GeometryData &);
 
   /// Set the parameters used by the diffusion operator.
   /// TODO(Travis) currently this is only taking the hz and vt scales, but will
@@ -66,18 +76,7 @@ class Diffusion :  private util::ObjectCounter<Diffusion>  {
 
  private:
   const oops::GeometryData & geom_;
-
-  // derived grid geometry
-  // TODO(Travis) the derived grid geometry should be moved to a single struct,
-  // and a Diffusion copy constructor added so that the derived geometry does
-  // not have to be recalculated every time.
-  atlas::Field inv_area_;
-  struct EdgeGeom {
-    size_t nodeA, nodeB;  // The two atlas nodes that this edge connects.
-    double edgeLength;  // length between 2 atlas mesh nodes (i.e. between two model grid centers)
-    double aspectRatio;  // edgeLength divided by  length of the perpendicular atlas cell centers
-  };
-  std::vector<EdgeGeom> edgeGeom_;
+  std::shared_ptr<DerivedGeom> derivedGeom_;
 
   // horizontal diffusion parameters
   int niterHz_ = -1;  // number of iterations for horizontal diffusion, or -1 if off
