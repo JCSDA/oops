@@ -9,7 +9,7 @@ observations:
     obsdatain:
       obsfile: Data/truth.2010-01-02T00:00:00Z.obt
     obsdataout:
-      obsfile: Data/forecast.2010-01-02T00:00:00Z.obt
+      obsfile: Data/forecast-obs_iterator.2010-01-02T00:00:00Z.obt
   obs iterator test:
     tolerance: 0.0
     reference nlocs: 160

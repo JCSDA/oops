@@ -12,7 +12,7 @@ observations:
     obsdatain:
       obsfile: Data/truth.2010-01-02T00:00:00Z.obt
     obsdataout:
-      obsfile: Data/forecast.2010-01-02T00:00:00Z.obt
+      obsfile: Data/forecast-obslocalization.2010-01-02T00:00:00Z.obt
   obs localizations:
   - localization method: Gaspari-Cohn
     lengthscale: 0.19

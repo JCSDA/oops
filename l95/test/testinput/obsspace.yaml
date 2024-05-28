@@ -8,7 +8,7 @@ observations:
     obsdatain:
       obsfile: Data/truth.2010-01-02T00:00:00Z.obt
     obsdataout:
-      obsfile: Data/forecast.2010-01-02T00:00:00Z.obt
+      obsfile: Data/forecast-obsspace.2010-01-02T00:00:00Z.obt
   obs operator: {}
   obs bias:
     bias: 0.3
