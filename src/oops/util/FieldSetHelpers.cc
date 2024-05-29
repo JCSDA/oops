@@ -12,12 +12,14 @@
 #include <algorithm>
 #include <cmath>
 #include <memory>
+#include <tuple>
 
 #include "atlas/array.h"
 #include "atlas/field.h"
 #include "atlas/util/function/VortexRollup.h"
 
 #include "eckit/exception/Exceptions.h"
+#include "eckit/mpi/Comm.h"
 #include "eckit/utils/Hash.h"
 
 #include "oops/util/abor1_cpp.h"
@@ -699,13 +701,18 @@ std::string getGridUid(const atlas::FieldSet & fset) {
 }
 
 // -----------------------------------------------------------------------------
-
-void printDiagValues(const eckit::mpi::Comm & timeComm,
-                     const eckit::mpi::Comm & comm,
-                     const atlas::FunctionSpace & fspace,
-                     const atlas::FieldSet & dataFset,
-                     const atlas::FieldSet & diagFset) {
-  oops::Log::trace() << "printDiagValues starting" << std::endl;
+std::tuple< std::vector<double>,
+            std::vector<double>,
+            std::vector<size_t>,
+            std::vector<size_t>,
+            std::vector<double>,
+            std::vector<size_t>>
+extractUnityPoints(const eckit::mpi::Comm & timeComm,
+                   const eckit::mpi::Comm & comm,
+                   const atlas::FunctionSpace & fspace,
+                   const atlas::FieldSet & dataFset,
+                   const atlas::FieldSet & diagFset) {
+  oops::Log::trace() << "extractUnityPoints starting" << std::endl;
 
   // Pull out local values of lon/lat/data where diag is unity
   std::vector<double> locLons;
@@ -729,7 +736,7 @@ void printDiagValues(const eckit::mpi::Comm & timeComm,
           // Diagnostic point found
           locLons.push_back(lonlatView(jnode, 0));
           locLats.push_back(lonlatView(jnode, 1));
-          locLevs.push_back(jlevel+1);
+          locLevs.push_back(jlevel);
           locSubWindows.push_back(timeComm.rank());
           locValues.push_back(dataView(jnode, jlevel));
           locFieldIndex.push_back(counter);
@@ -794,6 +801,22 @@ void printDiagValues(const eckit::mpi::Comm & timeComm,
       }
     }
   }
+  oops::Log::trace() << "extractUnityPoints about to exit..." << std::endl;
+  return std::tuple(lons, lats, levs, subWindows, values, fieldIndex);
+}
+
+// -----------------------------------------------------------------------------
+void printDiagValues(const eckit::mpi::Comm & timeComm,
+                     const eckit::mpi::Comm & comm,
+                     const atlas::FunctionSpace & fspace,
+                     const atlas::FieldSet & dataFset,
+                     const atlas::FieldSet & diagFset) {
+  oops::Log::trace() << "printDiagValues starting" << std::endl;
+
+  // Pull out values of lons, lats, levs where diagFset is unity.
+  // Values are gathered on root MPI task w.r.t. geometry communicator.
+  auto[lons, lats, levs, subWindows, values, fieldIndex]
+          = extractUnityPoints(timeComm, comm, fspace, dataFset, diagFset);
 
   // Gather global values onto root MPI task (w.r.t. time communicator, hence 't' prefix)
   if (comm.rank() == 0) {
@@ -838,7 +861,7 @@ void printDiagValues(const eckit::mpi::Comm & timeComm,
                               << std::fixed << std::setprecision(5)
                               << ", at (longitude, latitude, vertical index) point ("
                               << lonsOnRoot[i] << ", " << latsOnRoot[i]
-                              << ", " << levsOnRoot[i] << "): "
+                              << ", " << levsOnRoot[i] + 1 << "): "
                               << std::scientific << std::setprecision(16)
                               << valuesOnRoot[i] << std::endl;
           }

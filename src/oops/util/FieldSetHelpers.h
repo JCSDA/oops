@@ -8,6 +8,7 @@
 #pragma once
 
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "atlas/field.h"
@@ -72,6 +73,21 @@ bool compareFieldSets(const atlas::FieldSet &,
                       const bool & absolute = true);
 std::string getGridUid(const atlas::FunctionSpace &);
 std::string getGridUid(const atlas::FieldSet &);
+
+/// Extract coordinates and values of Field points in dataFieldSet at indices
+/// where the corresponding Field point in diagFieldSet is unity
+std::tuple< std::vector<double>,
+            std::vector<double>,
+            std::vector<size_t>,
+            std::vector<size_t>,
+            std::vector<double>,
+            std::vector<size_t>>
+extractUnityPoints(const eckit::mpi::Comm &,
+                   const eckit::mpi::Comm &,
+                   const atlas::FunctionSpace &,
+                   const atlas::FieldSet & dataFieldSet,
+                   const atlas::FieldSet & diagFieldSet);
+
 void printDiagValues(const eckit::mpi::Comm &,
                      const eckit::mpi::Comm &,
                      const atlas::FunctionSpace &,
