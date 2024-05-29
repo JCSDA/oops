@@ -93,9 +93,8 @@ void LibOOPS::initialise() {
   std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
   char nowstr[100];
   std::strftime(nowstr, sizeof(nowstr), "%F %T (UTC%z)", std::localtime(&now));
-  Log::info() << "OOPS Starting " << nowstr << std::endl;
-
   rank_ = oops::mpi::world().rank();
+  if (rank_ == 0) Log::info() << "OOPS Starting " << nowstr << std::endl;
 
   std::vector<int> iis(getEnvList("OOPS_INFO", std::vector<int>(1, 0)));
   if (rank_ == 0) info_ = true;  // INFO is always logged for rank 0
