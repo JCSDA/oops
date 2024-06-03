@@ -341,7 +341,13 @@ atlas::FieldSet createSmoothFieldSet(const eckit::mpi::Comm & comm,
       }
     }
 
-    fset.set_dirty(false);  // smooth function will be up-to-date at ghost points
+    // As of atlas 0.37, the vortex_rollup function is not single-valued at the "across the pole"
+    // ghost points that atlas sets up for structured grids. The function will have different
+    // values at (lon,lat) = (lon,91) vs (lon+180,89), even though these two coordinates describe
+    // the same point on the sphere. Therefore, we must perform a halo exchange to correctly fill
+    // the halo regions for structured grids.
+    // For simplicity we just do the halo exchange for all grids...
+    fset.set_dirty(true);
 
     // Set metadata for interpolation type
     field.metadata().set("interp_type", "default");
