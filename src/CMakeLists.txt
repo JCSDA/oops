@@ -545,6 +545,8 @@ test/interface/VariableChange.h
 test/mpi/mpi.h
 
 test/generic/fft_multiple.h
+test/generic/GlobalInterpolator.h
+test/generic/LocalInterpolator.h
 test/generic/PseudoModelState4D.h
 test/generic/VerticalLocEV.h
 
@@ -590,6 +592,8 @@ endfunction(CREATE_SYMLINK)
 
 # oops test input files
 list( APPEND oops_test_input
+  test/testinput/atlas_global_interpolator.yaml
+  test/testinput/atlas_interpolator.yaml
   test/testinput/empty.yaml
   test/testinput/fieldsets.yaml
   test/testinput/fft_multiple.yaml
@@ -599,6 +603,8 @@ list( APPEND oops_test_input
   test/testinput/pushstringvector.yaml
   test/testinput/random.yaml
   test/testinput/spectrallmp.yaml
+  test/testinput/unstructured_global_interpolator.yaml
+  test/testinput/unstructured_interpolator.yaml
   test/testinput/variables.yaml
 )
 # oops test output files
@@ -842,6 +848,46 @@ ecbuild_add_test( TARGET  test_util_parameters
                   SOURCES test/base/Parameters.cc
                   ARGS    "test/testinput/parameters.yaml"
                   LIBS    oops )
+
+ecbuild_add_executable(
+  TARGET  test_oops_generic_local_interpolator
+  SOURCES test/generic/LocalInterpolator.cc
+  LIBS oops
+)
+ecbuild_add_test( TARGET  test_generic_atlas_interpolator
+                  COMMAND test_oops_generic_local_interpolator
+                  ARGS    "test/testinput/atlas_interpolator.yaml"
+                  LIBS    oops eckit )
+ecbuild_add_test( TARGET  test_generic_unstructured_interpolator
+                  COMMAND test_oops_generic_local_interpolator
+                  ARGS    "test/testinput/unstructured_interpolator.yaml"
+                  LIBS    oops eckit )
+
+ecbuild_add_executable(
+  TARGET  test_oops_generic_global_interpolator
+  SOURCES test/generic/GlobalInterpolator.cc
+  LIBS oops
+)
+ecbuild_add_test( TARGET  test_generic_atlas_global_interpolator
+                  COMMAND test_oops_generic_global_interpolator
+                  ARGS    "test/testinput/atlas_global_interpolator.yaml"
+                  LIBS    oops eckit )
+# TODO: fix hang in AtlasInterpolator on multiple MPI ranks
+#       see https://github.com/JCSDA-internal/oops/issues/2664
+#ecbuild_add_test( TARGET  test_generic_atlas_global_interpolator_parallel
+#                  COMMAND test_oops_generic_global_interpolator
+#                  MPI     4
+#                  ARGS    "test/testinput/atlas_global_interpolator.yaml"
+#                  LIBS    oops eckit )
+ecbuild_add_test( TARGET  test_generic_unstructured_global_interpolator
+                  COMMAND test_oops_generic_global_interpolator
+                  ARGS    "test/testinput/unstructured_global_interpolator.yaml"
+                  LIBS    oops eckit )
+ecbuild_add_test( TARGET  test_generic_unstructured_global_interpolator_parallel
+                  COMMAND test_oops_generic_global_interpolator
+                  MPI     4
+                  ARGS    "test/testinput/unstructured_global_interpolator.yaml"
+                  LIBS    oops eckit )
 
 ecbuild_add_test( TARGET  test_generic_gc99
                   SOURCES test/generic/gc99.cc

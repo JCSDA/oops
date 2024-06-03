@@ -1,0 +1,86 @@
+
+# TODO: re-enable after fixing structured halo indexing
+#       see https://github.com/JCSDA-internal/oops/issues/2621
+#Case0_FromStructuredGaussian:
+#  source grid:
+#    function space: StructuredColumns
+#    grid:
+#      type: regular_gaussian
+#      N: 15
+#    halo: 1
+#  target points:
+#    number: &number_target_points 1000
+#  global interpolator:
+#    local interpolator type: oops unstructured grid interpolator
+#  tolerance interpolation: 5e-3
+
+Case1_FromGaussian:
+  source grid:
+    function space: NodeColumns
+    grid:
+      type: regular_gaussian
+      N: 15
+    halo: 1
+  target points:
+    # Note: for testing grid/interpolator developments, increasing this number by 100x or more
+    # produces a more robust test because it will catch more edge cases in the target location.
+    number: &number_target_points 1000
+    # TODO: re-enable global patch
+    #       for now, exclude polar regions
+    #       see https://github.com/JCSDA-internal/oops/issues/2633
+    latitude bounds: [-65., 65.]
+  global interpolator:
+    local interpolator type: oops unstructured grid interpolator
+  tolerance interpolation: 5e-3
+
+Case2_FromCubedSphere:
+  source grid:
+    function space: NodeColumns
+    grid:
+      name: CS-LFR-15
+    # TODO: why does UnstructuredInterp only work when cubed-sphere halo is 0?
+    halo: 0
+  target points:
+    number: *number_target_points
+  global interpolator:
+    local interpolator type: oops unstructured grid interpolator
+  tolerance interpolation: 5e-3
+
+Case3_FromUnstructured:
+  source grid:
+    function space: NodeColumns
+    build unstructured grid from named grid:
+      name: CS-LFR-15
+    halo: 1
+  target points:
+    number: *number_target_points
+  global interpolator:
+    local interpolator type: oops unstructured grid interpolator
+  tolerance interpolation: 5e-3
+
+# TODO: re-enable after fixing structured halo indexing
+#       see https://github.com/JCSDA-internal/oops/issues/2621
+#Case4_FromRegionalLatLon:
+#  source grid:
+#    function space: StructuredColumns
+#    grid:
+#      type: regional
+#      nx: 40
+#      ny: 40
+#      dx: 20000
+#      dy: 20000
+#      y_numbering: -1
+#      lonlat(centre): [60., 2.]
+#      projection:
+#        type: lambert_conformal_conic
+#        longitude0: 60.
+#        latitude0: 2.
+#    halo: 1
+#    partitioner: checkerboard
+#  target points:
+#    number: *number_target_points
+#    longitude bounds: [57., 63.]
+#    latitude bounds: [-1., 5.]
+#  global interpolator:
+#    local interpolator type: oops unstructured grid interpolator
+#  tolerance interpolation: 5e-3

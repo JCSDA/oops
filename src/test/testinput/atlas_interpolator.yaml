@@ -1,0 +1,95 @@
+
+Case0_FromStructuredGaussian:
+  source grid:
+    function space: StructuredColumns
+    grid:
+      type: regular_gaussian
+      N: 15
+    halo: 1
+  local interpolator:
+    local interpolator type: atlas interpolator
+    interpolation method:
+      type: structured-linear2D
+      adjoint: true
+  target points:
+    # Note: for testing grid/interpolator developments, increasing this number by 100x or more
+    # produces a more robust test because it will catch more edge cases in the target location.
+    number: &number_target_points 1000
+  tolerance interpolation: 5e-3
+
+Case1_FromGaussian:
+  source grid:
+    function space: NodeColumns
+    grid:
+      type: regular_gaussian
+      N: 15
+    halo: 1
+  local interpolator:
+    local interpolator type: atlas interpolator
+    interpolation method:
+      type: finite-element
+      adjoint: true
+  target points:
+    number: *number_target_points
+  tolerance interpolation: 5e-3
+
+Case2_FromCubedSphere:
+  source grid:
+    function space: NodeColumns
+    grid:
+      name: CS-LFR-15
+    halo: 0
+  local interpolator:
+    local interpolator type: atlas interpolator
+    interpolation method:
+      type: cubedsphere-bilinear
+      adjoint: true
+  target points:
+    number: *number_target_points
+  tolerance interpolation: 5e-3
+
+Case3_FromUnstructured:
+  source grid:
+    function space: NodeColumns
+    build unstructured grid from named grid:
+      name: CS-LFR-15
+    halo: 1
+  local interpolator:
+    local interpolator type: atlas interpolator
+    interpolation method:
+      type: finite-element
+      adjoint: true
+  target points:
+    number: *number_target_points
+  tolerance interpolation: 5e-3
+
+Case4_FromRegionalLatLon:
+  source grid:
+    function space: StructuredColumns
+    grid:
+      type: regional
+      nx: 40
+      ny: 40
+      dx: 20000
+      dy: 20000
+      y_numbering: -1
+      lonlat(centre): [60., 2.]
+      projection:
+        type: lambert_conformal_conic
+        longitude0: 60.
+        latitude0: 2.
+    halo: 1
+  local interpolator:
+    local interpolator type: atlas interpolator
+    interpolation method:
+      # Atlas provides few interpolation methods for regional grids:
+      # - structured methods rely on global grid
+      # - unstructured methods don't work with structured grids
+      type: k-nearest-neighbours
+      k-nearest-neighbours: 5
+      adjoint: true
+  target points:
+    number: *number_target_points
+    longitude bounds: [57., 63.]
+    latitude bounds: [-1., 5.]
+  tolerance interpolation: 5e-3
