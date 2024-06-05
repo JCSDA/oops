@@ -166,7 +166,7 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
     const util::Duration flength = times[times.size()-1] - times[0];
 
     // Setup PseudoLinearModelIncrement4D to run on ensemble perturbation
-    Increment4D_ dx(geometry_, ens_xx[0].variables(), times);
+    Increment4D_ dx(geometry_, this->incvars_, times);
 
     // modulate ensemble of obs
     IncrementEnsemble4D_ Ztmp(geometry_, this->incvars_, times, neig_);
