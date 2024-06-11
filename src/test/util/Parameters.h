@@ -585,7 +585,7 @@ void testCorrectValues() {
   EXPECT(params.obsVariablesParameter.value() ==
          oops::ObsVariables({"u", "v"}, std::vector<int>({5, 6, 7})));
   EXPECT(params.variablesParameter.value() ==
-         oops::Variables({"air_temperature", "air_pressure"}));
+         oops::Variables(std::vector<std::string>{"air_temperature", "air_pressure"}));
   EXPECT(params.setIntParameter.value() == std::set<int>({2, 4, 5, 6, 8}));
   EXPECT(params.anyOfParameter.value().as<std::string>() == "dog");
   EXPECT(params.optAnyOfParameter.value() != boost::none);

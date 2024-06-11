@@ -8,16 +8,16 @@
 #ifndef OOPS_BASE_TRIVIALSAMPLINGMETHODSELECTOR_H_
 #define OOPS_BASE_TRIVIALSAMPLINGMETHODSELECTOR_H_
 
-#include <string>
-
 #include "oops/base/SamplingMethodSelector.h"
 
 namespace oops {
 
+class Variable;
+
 /// \brief Selects sampling method #0 for all variables.
 class TrivialSamplingMethodSelector : public SamplingMethodSelector {
  public:
-  size_t methodIndex(const std::string &/*varName*/) const override { return 0; }
+  size_t methodIndex(const Variable &/*varName*/) const override { return 0; }
 };
 
 }  // namespace oops

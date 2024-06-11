@@ -102,14 +102,14 @@ void UnstructuredInterpolator::apply(const Variables & vars, const atlas::FieldS
 
   size_t nflds = 0;
   for (size_t jf = 0; jf < vars.size(); ++jf) {
-    const std::string & fname = vars[jf];
+    const std::string & fname = vars[jf].name();
     nflds += fset.field(fname).shape(1);
   }
   vals.resize(nout_ * nflds);
 
   auto current = vals.begin();
   for (size_t jf = 0; jf < vars.size(); ++jf) {
-    const std::string & fname = vars[jf];
+    const std::string & fname = vars[jf].name();
     atlas::Field & fld = fset.field(fname);  // const in principle, but intel can't compile that
 
     const std::string interp_type = fld.metadata().get<std::string>("interp_type");
@@ -158,7 +158,7 @@ void UnstructuredInterpolator::applyAD(const Variables & vars, atlas::FieldSet &
 
   std::vector<double>::const_iterator current = vals.begin();
   for (size_t jf = 0; jf < vars.size(); ++jf) {
-    const std::string & fname = vars[jf];
+    const std::string & fname = vars[jf].name();
     atlas::Field & fld = fset.field(fname);
 
 //    const std::string interp_type = fld.metadata().get<std::string>("interp_type");

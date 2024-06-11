@@ -199,6 +199,8 @@ oops/base/variables_mod.F90
 oops/base/obsvariables_f.cc
 oops/base/obsvariables_f.h
 oops/base/obsvariables_mod.F90
+oops/base/Variable.cc
+oops/base/Variable.h
 oops/base/Variables.cc
 oops/base/Variables.h
 oops/base/VariablesBase.cc

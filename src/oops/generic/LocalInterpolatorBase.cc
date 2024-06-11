@@ -32,7 +32,7 @@ void LocalInterpolatorBase::bufferToFieldSet(const Variables & vars,
   auto current = buffer.begin();
 
   for (size_t jf = 0; jf < vars.size(); ++jf) {
-    const std::string & fname = vars[jf];
+    const std::string & fname = vars[jf].name();
     atlas::Field & field = target.field(fname);
 
     atlas::array::ArrayView<double, 2> view = atlas::array::make_view<double, 2>(field);
@@ -65,7 +65,7 @@ void LocalInterpolatorBase::bufferToFieldSetAD(const Variables & vars,
   auto current = buffer.begin();
 
   for (size_t jf = 0; jf < vars.size(); ++jf) {
-    const std::string & fname = vars[jf];
+    const std::string & fname = vars[jf].name();
     atlas::Field & field = target.field(fname);  // const in principle, but intel can't compile that
 
     const atlas::array::ArrayView<double, 2> view = atlas::array::make_view<double, 2>(field);

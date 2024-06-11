@@ -57,21 +57,29 @@ void testFieldSets() {
   const std::vector<util::DateTime> dates({date});
 
   // Create two random oops FieldSet3D
-  oops::Variables vars(config.getStringVector("variables"));
+  std::vector<std::string> varnames(config.getStringVector("variables"));
   std::vector<std::size_t> varSizes(config.getUnsignedVector("variable sizes"));
-  for (size_t ivar = 0; ivar < vars.size(); ivar++) {
-    vars.addMetaData(vars[ivar], "levels", varSizes[ivar]);
+  oops::Variables vars;
+  for (size_t ivar = 0; ivar < varnames.size(); ivar++) {
+    eckit::LocalConfiguration conf;
+    conf.set("levels", varSizes[ivar]);
+    vars.push_back(oops::Variable(varnames[ivar], conf));
   }
 
+  oops::Log::info() << "before init" << std::endl;
   oops::FieldSet3D fset1(date, commGeom);
+  oops::Log::info() << "before rand" << std::endl;
   fset1.randomInit(functionspace, vars);
+  oops::Log::info() << "before init" << std::endl;
   oops::FieldSet3D fset2(date, commGeom);
+  oops::Log::info() << "before rand" << std::endl;
   fset2.randomInit(functionspace, vars);
 
   // Write to file
   const auto ioConfig = config.getSubConfiguration("input output members 1");
   const auto members = ioConfig.getSubConfigurations("members");
   ASSERT(members.size() == 2);
+  oops::Log::info() << "before write" << std::endl;
   fset1.write(members[0]);
   fset2.write(members[1]);
 

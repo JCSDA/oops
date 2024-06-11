@@ -80,6 +80,9 @@ class FieldSet3D : public util::Serializable,
   atlas::Field & operator[](const int & fieldIndex) {return fset_[fieldIndex];}
   const atlas::Field & operator[](const std::string & fieldName) const {return fset_[fieldName];}
   atlas::Field & operator[](const std::string & fieldName) {return fset_[fieldName];}
+  const atlas::Field & operator[](const Variable & var) const {return fset_[var.name()];}
+  atlas::Field & operator[](const Variable & var) {return fset_[var.name()];}
+
 
   /// Arithmetic operations
   void zero();

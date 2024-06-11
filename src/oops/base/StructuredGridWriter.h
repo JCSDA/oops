@@ -90,7 +90,8 @@ void writerForPressures(const atlas::FieldSet & fset,
   int field_dids[3] = {lat_did, lon_did, lev_did};
   const double missing = util::missingValue<double>();
   for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
-    check_nc_code(nc_def_var(ncid, vars[jvar].c_str(), NC_DOUBLE, 3, field_dids, &field_vid[jvar]));
+    check_nc_code(
+        nc_def_var(ncid, vars[jvar].name().c_str(), NC_DOUBLE, 3, field_dids, &field_vid[jvar]));
     check_nc_code(
         nc_put_att_double(ncid, field_vid[jvar], "missing_value", NC_DOUBLE, 1, &missing));
   }
@@ -105,8 +106,8 @@ void writerForPressures(const atlas::FieldSet & fset,
 
   // Write fields
   for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
-    ASSERT(nz == static_cast<size_t>(fset.field(vars[jvar]).shape(1)));
-    auto varView = atlas::array::make_view<double, 2>(fset[vars[jvar]]);
+    ASSERT(nz == static_cast<size_t>(fset.field(vars[jvar].name()).shape(1)));
+    auto varView = atlas::array::make_view<double, 2>(fset[vars[jvar].name()]);
     std::vector<double> values(nlats*nlons*nz);
     for (size_t j = 0; j < nlats; ++j) {
       for (size_t i = 0; i < nlons; ++i) {
@@ -125,7 +126,7 @@ void writerForPressures(const atlas::FieldSet & fset,
 void writerForLevels(const atlas::FieldSet & fset,
                      const Variables & vars,
                      const std::optional<std::vector<size_t>> & modelLevels,
-                     const std::unordered_map<std::string, bool> isSurfaceVar,
+                     const std::unordered_map<Variable, bool> isSurfaceVar,
                      const std::string & filepathprefix,
                      const std::vector<double> & lats,
                      const std::vector<double> & lons) {
@@ -133,9 +134,9 @@ void writerForLevels(const atlas::FieldSet & fset,
   // Note we can't use the number of levels from the FieldSet's Fields, because those have been
   // trimmed to the output levels, which could be 1 level even for an upper-air field.
   const bool haveSurfaceFields = std::any_of(isSurfaceVar.begin(), isSurfaceVar.end(),
-      [&](const auto & kv) {return kv.second && fset.has(kv.first);});
+      [&](const auto & kv) {return kv.second && fset.has(kv.first.name());});
   const bool haveUpperAirFields = std::any_of(isSurfaceVar.begin(), isSurfaceVar.end(),
-      [&](const auto & kv) {return !kv.second && fset.has(kv.first);});
+      [&](const auto & kv) {return !kv.second && fset.has(kv.first.name());});
 
   // Check levels are provided if there are upper-air fields
   if (haveUpperAirFields) {
@@ -149,7 +150,7 @@ void writerForLevels(const atlas::FieldSet & fset,
 
   // More checks on levels
   for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
-    const size_t var_levs = fset.field(vars[jvar]).shape(1);
+    const size_t var_levs = fset.field(vars[jvar].name()).shape(1);
     if (!isSurfaceVar.at(vars[jvar])) {
       ASSERT(var_levs == static_cast<size_t>(nz));
     } else {
@@ -197,7 +198,8 @@ void writerForLevels(const atlas::FieldSet & fset,
   const double missing = util::missingValue<double>();
   for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
     field_dids[2] = (isSurfaceVar.at(vars[jvar]) ? sfc_did : lev_did);
-    check_nc_code(nc_def_var(ncid, vars[jvar].c_str(), NC_DOUBLE, 3, field_dids, &field_vid[jvar]));
+    check_nc_code(
+        nc_def_var(ncid, vars[jvar].name().c_str(), NC_DOUBLE, 3, field_dids, &field_vid[jvar]));
     check_nc_code(
         nc_put_att_double(ncid, field_vid[jvar], "missing_value", NC_DOUBLE, 1, &missing));
   }
@@ -219,8 +221,8 @@ void writerForLevels(const atlas::FieldSet & fset,
 
   // Write fields
   for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
-    const size_t var_levs = fset.field(vars[jvar]).shape(1);
-    auto varView = atlas::array::make_view<double, 2>(fset[vars[jvar]]);
+    const size_t var_levs = fset.field(vars[jvar].name()).shape(1);
+    auto varView = atlas::array::make_view<double, 2>(fset[vars[jvar].name()]);
     std::vector<double> values(nlats*nlons*var_levs);
     for (size_t j = 0; j < nlats; ++j) {
       for (size_t i = 0; i < nlons; ++i) {
@@ -514,7 +516,7 @@ void StructuredGridWriter<MODEL>::interpolateAndWrite(const Increment<MODEL> & d
                            "on pressure levels.");
   }
   // Sanity check: no background, so can't perform variable change
-  for (const auto & v : vars_.variables()) {
+  for (const auto & v : vars_) {
     if (!dx.variables().has(v)) {
       throw eckit::Exception("Writing an Increment to a structured grid "
                              "without an available background State "
@@ -536,11 +538,11 @@ void StructuredGridWriter<MODEL>::interpolateAndWrite(const atlas::FieldSet & fs
   // may still want to distinguish surface variables from upper-air variables even if we've
   // interpolated upper-air variables to a single level, resulting in every variable having one
   // level.
-  std::unordered_map<std::string, bool> isSurfaceVar = {};
+  std::unordered_map<Variable, bool> isSurfaceVar = {};
   oops::Variables upperAirVars = vars_;
-  for (const auto & var : vars_.variables()) {
-    ASSERT(fsetInput.has(var));
-    const size_t levels = fsetInput.field(var).shape(1);
+  for (const auto & var : vars_) {
+    ASSERT(fsetInput.has(var.name()));
+    const size_t levels = fsetInput.field(var.name()).shape(1);
     // Assume any var that comes from the model with a single level is a surface variable
     isSurfaceVar.insert({var, (levels == 1)});
     if (levels > 1) {
@@ -632,8 +634,8 @@ void StructuredGridWriter<MODEL>::interpolateAndWrite(const atlas::FieldSet & fs
     vars_for_latlon_interp.push_back("air_pressure");
   }
 
-  for (const auto & var : vars_for_latlon_interp.variables()) {
-    const auto & field = fsetInput.field(var);
+  for (const auto & var : vars_for_latlon_interp) {
+    const auto & field = fsetInput.field(var.name());
     fset.add(field);
 
     const std::string name = field.name();
@@ -699,7 +701,7 @@ void StructuredGridWriter<MODEL>::interpolateAndWrite(const atlas::FieldSet & fs
       oops::Variables varsForSurface{};
       for (const auto & kv : isSurfaceVar) {
         if (kv.second) {
-          fsetSurface.add(fsetStructured.field(kv.first));
+          fsetSurface.add(fsetStructured.field(kv.first.name()));
           varsForSurface.push_back(kv.first);
         }
       }

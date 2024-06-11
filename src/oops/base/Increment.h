@@ -74,7 +74,7 @@ class Increment : public interface::Increment<MODEL> {
 
   /// Compute root-mean-square by variable by level
   /// For preconditioning HybridLinearModel coefficient calculation
-  std::vector<double> rmsByVariableByLevel(const std::string &, const bool) const;
+  std::vector<double> rmsByVariableByLevel(const Variable &, const bool) const;
 
  private:
   const Geometry_ & resol_;
@@ -184,7 +184,7 @@ State<MODEL> & operator+=(State<MODEL> & xx, const Increment<MODEL> & dx) {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL>
-std::vector<double> Increment<MODEL>::rmsByVariableByLevel(const std::string & var,
+std::vector<double> Increment<MODEL>::rmsByVariableByLevel(const Variable & var,
                                                            const bool global) const {
   Log::trace() << "Increment<MODEL>::rmsByVariableByLevel starting" << std::endl;
   util::Timer timer("oops::Increment", "rmsByVariableByLevel");
@@ -192,7 +192,7 @@ std::vector<double> Increment<MODEL>::rmsByVariableByLevel(const std::string & v
     ABORT("Increment<MODEL>::rmsByVariableByLevel: requires Atlas interface");
   }
   const auto ownedView = atlas::array::make_view<int, 2>(resol_.fields()["owned"]);
-  const auto fieldView = atlas::array::make_view<double, 2>(fieldSet()[var]);
+  const auto fieldView = atlas::array::make_view<double, 2>(fieldSet()[var.name()]);
   std::vector<double> rms(fieldView.shape(1), 0.0);
   for (atlas::idx_t k = 0; k < fieldView.shape(1); ++k) {
     size_t nOwned = 0;

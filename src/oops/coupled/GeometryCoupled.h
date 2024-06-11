@@ -123,8 +123,8 @@ GeometryCoupled<MODEL1, MODEL2>::GeometryCoupled(const eckit::Configuration & co
   if (commonvars.size() > 0) {
     std::string errMsg = "Coupled model variable lists have overlap. "
                           "Use yaml to exclude these variables from one model:\n";
-    for (auto variableName : commonvars.variables()) {
-        errMsg += variableName + "\n";
+    for (auto variable : commonvars) {
+        errMsg += variable.name() + "\n";
     }
     throw eckit::BadParameter(errMsg, Here());
   }

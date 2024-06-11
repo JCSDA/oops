@@ -22,6 +22,7 @@
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/ObsTable.h"
 #include "oops/base/Locations.h"
+#include "oops/base/Variable.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Random.h"
@@ -35,7 +36,7 @@ namespace lorenz95 {
 // -----------------------------------------------------------------------------
 GomL95::GomL95(const oops::Locations<L95ObsTraits> & locs,
                const oops::Variables &, const std::vector<size_t> &)
-  : size_(locs.samplingMethod("x").sampledLocations().size()), locval_(size_, 0.0)
+  : size_(locs.samplingMethod(oops::Variable("x")).sampledLocations().size()), locval_(size_, 0.0)
 {
   oops::Log::trace() << "GomL95::GomL95 done" << std::endl;
 }
@@ -97,14 +98,14 @@ double GomL95::dot_product_with(const GomL95 & gom) const {
   return zz;
 }
 // -----------------------------------------------------------------------------
-void GomL95::fill(const std::string &, const ConstVectorRef<size_t> &indx,
+void GomL95::fill(const oops::Variable &, const ConstVectorRef<size_t> &indx,
                   const ConstMatrixRef<double> &vals, const bool) {
   ASSERT(indx.size() == vals.rows());
   ASSERT(vals.cols() == 1);
   for (Eigen::Index jj = 0; jj < indx.size(); ++jj) locval_[indx[jj]] = vals(jj, 0);
 }
 // -----------------------------------------------------------------------------
-void GomL95::fillAD(const std::string &, const ConstVectorRef<size_t> &indx,
+void GomL95::fillAD(const oops::Variable &, const ConstVectorRef<size_t> &indx,
                     MatrixRef<double> vals, const bool) const {
   ASSERT(indx.size() == vals.rows());
   ASSERT(vals.cols() == 1);

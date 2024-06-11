@@ -41,20 +41,18 @@ CASE("util/FieldSetHelpersAndOperations/StructuredColumns") {
   atlas::functionspace::StructuredColumns fspace(grid, distribution, atlas::option::halo(1));
 
   // Variables
-  std::vector<std::string> varnames({"var1", "var2"});
-  eckit::LocalConfiguration metaml2, metaml4, variablesconf;
+  eckit::LocalConfiguration metaml2, metaml4;
   metaml2.set("levels", 2);
   metaml4.set("levels", 4);
-  variablesconf.set(varnames[0], metaml2);
-  variablesconf.set(varnames[1], metaml4);
-  oops::Variables vars(variablesconf, varnames);
+  oops::Variables vars({oops::Variable("var1", metaml2), oops::Variable("var2", metaml4)});
 
   // Create random fields
   atlas::FieldSet fset1 = util::createRandomFieldSet(comm, fspace, vars);
   const double dp1 = util::dotProductFieldSets(fset1, fset1, vars.variables(), comm);
   double dp1_fields = 0.0;
   for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
-    dp1_fields += util::dotProductFields(fset1.field(vars[jvar]), fset1.field(vars[jvar]), comm);
+    dp1_fields += util::dotProductFields(fset1.field(vars[jvar].name()),
+                                         fset1.field(vars[jvar].name()), comm);
   }
   EXPECT(oops::is_close(dp1, 4847.0108495214099, 1.0e-12));
   EXPECT(oops::is_close(dp1_fields, dp1, 1.0e-12));
@@ -174,13 +172,10 @@ CASE("util/FieldSetHelpersAndOperations/NodeColumns") {
   atlas::functionspace::CubedSphereNodeColumns fspace(mesh);
 
   // Variables
-  std::vector<std::string> varnames({"var1", "var2"});
-  eckit::LocalConfiguration metaml2, metaml4, variablesconf;
+  eckit::LocalConfiguration metaml2, metaml4;
   metaml2.set("levels", 2);
   metaml4.set("levels", 4);
-  variablesconf.set(varnames[0], metaml2);
-  variablesconf.set(varnames[1], metaml4);
-  oops::Variables vars(variablesconf, varnames);
+  oops::Variables vars({oops::Variable("var1", metaml2), oops::Variable("var2", metaml4)});
 
   // Create random fields
   atlas::FieldSet fset1 = util::createRandomFieldSet(comm, fspace, vars);
@@ -230,13 +225,10 @@ CASE("util/FieldSetHelpersAndOperations/PointCloud") {
   atlas::functionspace::PointCloud fspace(grid);
 
   // Variables
-  std::vector<std::string> varnames({"var1", "var2"});
-  eckit::LocalConfiguration metaml2, metaml4, variablesconf;
+  eckit::LocalConfiguration metaml2, metaml4;
   metaml2.set("levels", 2);
   metaml4.set("levels", 4);
-  variablesconf.set(varnames[0], metaml2);
-  variablesconf.set(varnames[1], metaml4);
-  oops::Variables vars(variablesconf, varnames);
+  oops::Variables vars({oops::Variable("var1", metaml2), oops::Variable("var2", metaml4)});
 
   // Create random fields
   atlas::FieldSet fset1 = util::createRandomFieldSet(comm, fspace, vars);

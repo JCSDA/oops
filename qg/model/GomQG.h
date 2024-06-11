@@ -26,6 +26,7 @@
 
 namespace oops {
   template <typename OBS> class Locations;
+  class Variable;
   class Variables;
 }
 
@@ -76,9 +77,9 @@ class GomQG : public util::Printable,
 
   const int & toFortran() const {return keyGom_;}
 
-  void fill(const std::string &name, const ConstVectorRef<size_t> &indx,
+  void fill(const oops::Variable &name, const ConstVectorRef<size_t> &indx,
             const ConstMatrixRef<double> &vals, const bool levelsTopDown);
-  void fillAD(const std::string &name, const ConstVectorRef<size_t> &indx,
+  void fillAD(const oops::Variable &name, const ConstVectorRef<size_t> &indx,
               MatrixRef<double> vals, const bool levelsTopDown) const;
 
  private:

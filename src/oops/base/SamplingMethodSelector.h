@@ -8,9 +8,9 @@
 #ifndef OOPS_BASE_SAMPLINGMETHODSELECTOR_H_
 #define OOPS_BASE_SAMPLINGMETHODSELECTOR_H_
 
-#include <string>
-
 namespace oops {
+
+class Variable;
 
 /// \brief Maps each model variable and ObsDiagnostic to the observation location sampling method
 /// producing the set of paths along which this variable should be interpolated.
@@ -19,7 +19,7 @@ class SamplingMethodSelector {
   virtual ~SamplingMethodSelector() {}
 
   /// \brief Returns the index of the sampling method to be used for the variable `varName`.
-  virtual size_t methodIndex(const std::string &varName) const = 0;
+  virtual size_t methodIndex(const Variable &varName) const = 0;
 };
 
 }  // namespace oops

@@ -112,24 +112,26 @@ double GomQG::dot_product_with(const GomQG & other) const {
   return zz;
 }
 // -----------------------------------------------------------------------------
-void GomQG::fill(const std::string &name, const ConstVectorRef<size_t> &indx,
+void GomQG::fill(const oops::Variable &var, const ConstVectorRef<size_t> &indx,
                  const ConstMatrixRef<double> &vals, const bool) {
   const size_t npts = indx.size();
   const size_t nlev = vals.cols();
   std::vector<int> findx(indx.size());
   for (Eigen::Index jj = 0; jj < indx.size(); ++jj) findx[jj] = indx[jj] + 1;
 
-  qg_gom_fill_f90(keyGom_, name.size(), name.data(), npts, findx.data(), nlev, vals.data());
+  qg_gom_fill_f90(keyGom_, var.name().size(), var.name().data(), npts,
+                  findx.data(), nlev, vals.data());
 }
 // -----------------------------------------------------------------------------
-void GomQG::fillAD(const std::string &name, const ConstVectorRef<size_t> &indx,
+void GomQG::fillAD(const oops::Variable &var, const ConstVectorRef<size_t> &indx,
                    MatrixRef<double> vals, const bool) const {
   const size_t npts = indx.size();
   const size_t nlev = vals.cols();
   std::vector<int> findx(indx.size());
   for (Eigen::Index jj = 0; jj < indx.size(); ++jj) findx[jj] = indx[jj] + 1;
 
-  qg_gom_fillad_f90(keyGom_, name.size(), name.data(), npts, findx.data(), nlev, vals.data());
+  qg_gom_fillad_f90(keyGom_, var.name().size(), var.name().data(), npts,
+                    findx.data(), nlev, vals.data());
 }
 // -----------------------------------------------------------------------------
 void GomQG::read(const eckit::Configuration & config) {

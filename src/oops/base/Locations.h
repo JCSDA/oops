@@ -9,12 +9,12 @@
 #define OOPS_BASE_LOCATIONS_H_
 
 #include <memory>
-#include <string>
 #include <utility>
 #include <vector>
 
 #include "oops/base/SamplingMethodSelector.h"
 #include "oops/base/TrivialSamplingMethodSelector.h"
+#include "oops/base/Variable.h"
 #include "oops/interface/SampledLocations.h"
 
 namespace oops {
@@ -65,13 +65,13 @@ class Locations {
   const SampledLocations_& samplingMethod(size_t i) const { return sampledLocations_.at(i); }
 
   /// \brief Returns the set of paths along which the variable `varName` should be interpolated.
-  const SampledLocations_& samplingMethod(const std::string &varName) const {
+  const SampledLocations_& samplingMethod(const Variable &varName) const {
     return sampledLocations_[samplingMethodIndex(varName)];
   }
 
   /// \brief Returns the index of the location sampling method defining the set of paths along
   /// which the variable `varName` should be interpolated.
-  size_t samplingMethodIndex(const std::string &varName) const {
+  size_t samplingMethodIndex(const Variable &varName) const {
     const size_t result = selector_->methodIndex(varName);
     ASSERT(result < sampledLocations_.size());
     return result;

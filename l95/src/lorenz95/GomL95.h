@@ -25,6 +25,7 @@ namespace eckit {
 }
 
 namespace oops {
+  class Variable;
   class Variables;
   template <typename OBS> class Locations;
 }
@@ -72,9 +73,9 @@ class GomL95 : public util::Printable,
   const double & operator[](const int ii) const {return locval_[ii];}
   double & operator[](const int ii) {return locval_[ii];}
 
-  void fill(const std::string &name, const ConstVectorRef<size_t> &indx,
+  void fill(const oops::Variable &name, const ConstVectorRef<size_t> &indx,
             const ConstMatrixRef<double> &vals, const bool levelsTopDown);
-  void fillAD(const std::string &name, const ConstVectorRef<size_t> &indx,
+  void fillAD(const oops::Variable &name, const ConstVectorRef<size_t> &indx,
               MatrixRef<double> vals, const bool levelsTopDow) const;
 
  private:

@@ -445,7 +445,7 @@ template <typename MODEL> void testIncrementRmsByVariableByLevel() {
 
   Increment_ dx(Test_::resol(), Test_::ctlvars(), Test_::time());
   dx.ones();
-  for (const auto & var : dx.variables().variables()) {
+  for (const auto & var : dx.variables()) {
     std::vector<double> local = dx.rmsByVariableByLevel(var, false);
     std::vector<double> global = dx.rmsByVariableByLevel(var, true);
     std::vector<double> reference(local.size(), 1.0);

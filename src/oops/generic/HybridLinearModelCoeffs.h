@@ -127,9 +127,9 @@ void HybridLinearModelCoeffs<MODEL>::makeCoeffsSaver() {
     time += updateTstep_;
     atlas::FieldSet coeffsFSet;
     coeffsSaver_.emplace(time, coeffsFSet);
-    for (const auto & var : updateVars_.variables()) {
+    for (const auto & var : updateVars_) {
       coeffsSaver_.at(time).add(updateGeometry_.functionSpace().template createField<double>(
-        atlas::option::name(var) | atlas::option::levels(nLevels_) |
+        atlas::option::name(var.name()) | atlas::option::levels(nLevels_) |
         atlas::option::vector(influenceSize_ * updateVars_.size())));
     }
   }
@@ -190,6 +190,7 @@ void HybridLinearModelCoeffs<MODEL>::read() {
     time += updateTstep_;
     const std::string filepath = baseFilepath + "_" + time.toStringIO();
     inputConfig.set("filepath", filepath);
+    // TODO(someone): when updateVars_ have levels, replace by the call taking vars
     util::readFieldSet(updateGeometry_.getComm(), updateGeometry_.functionSpace(), nLevelsAll,
                        updateVars_.variables(), inputConfig, coeffsSaver_.at(time));
   }
@@ -220,11 +221,11 @@ void HybridLinearModelCoeffs<MODEL>::updateIncTL(Increment_ & dx) const {
     std::fill(updateVals.begin(), updateVals.end(), 0.0);
     // Calculate update values
     for (size_t v = 0; v < updateVars_.size(); v++) {
-      auto coeffsView
-        = atlas::array::make_view<double, 3>(coeffsSaver_.at(dx.validTime())[updateVars_[v]]);
+      auto coeffsView  = atlas::array::make_view<double, 3>(
+           coeffsSaver_.at(dx.validTime())[updateVars_[v].name()]);
       for (auto k = 0; k < nLevels_; k++) {
         for (size_t v2 = 0; v2 < updateVars_.size(); v2++) {
-          auto dxArray = atlas::array::make_view<double, 2>(dxFSet[updateVars_[v2]]);
+          auto dxArray = atlas::array::make_view<double, 2>(dxFSet[updateVars_[v2].name()]);
           for (auto s = 0; s < influenceSize_; s++) {
             updateVals[k + v * nLevels_]
               += coeffsView(i, k, v2 * influenceSize_ + s) * dxArray(i, updateStencilArray(k, s));
@@ -234,7 +235,7 @@ void HybridLinearModelCoeffs<MODEL>::updateIncTL(Increment_ & dx) const {
     }
     // Update column
     for (size_t v = 0; v < updateVars_.size(); v++) {
-      auto dxArray = atlas::array::make_view<double, 2>(dxFSet[updateVars_[v]]);
+      auto dxArray = atlas::array::make_view<double, 2>(dxFSet[updateVars_[v].name()]);
       for (auto k = 0; k < nLevels_; k++) {
         dxArray(i, k) += updateVals[k + v * nLevels_];
       }
@@ -256,18 +257,18 @@ void HybridLinearModelCoeffs<MODEL>::updateIncAD(Increment_ & dx) const {
     std::fill(updateVals.begin(), updateVals.end(), 0.0);
     // Adjoint of "Update column"
     for (size_t v = 0; v < updateVars_.size(); v++) {
-      auto dxArray = atlas::array::make_view<double, 2>(dxFSet[updateVars_[v]]);
+      auto dxArray = atlas::array::make_view<double, 2>(dxFSet[updateVars_[v].name()]);
       for (auto k = 0; k < nLevels_; k++) {
         updateVals[k + v * nLevels_] += dxArray(i, k);
       }
     }
     // Adjoint of "Calculate update values"
     for (size_t v = 0; v < updateVars_.size(); v++) {
-      auto coeffsView
-        = atlas::array::make_view<double, 3>(coeffsSaver_.at(dx.validTime())[updateVars_[v]]);
+      auto coeffsView = atlas::array::make_view<double, 3>(
+           coeffsSaver_.at(dx.validTime())[updateVars_[v].name()]);
       for (auto k = 0; k < nLevels_; k++) {
         for (size_t v2 = 0; v2 < updateVars_.size(); v2++) {
-          auto dxArray = atlas::array::make_view<double, 2>(dxFSet[updateVars_[v2]]);
+          auto dxArray = atlas::array::make_view<double, 2>(dxFSet[updateVars_[v2].name()]);
           for (auto s = 0; s < influenceSize_; s++) {
             dxArray(i, updateStencilArray(k, s))
               += coeffsView(i, k, v2 * influenceSize_ + s) * updateVals[k + v * nLevels_];

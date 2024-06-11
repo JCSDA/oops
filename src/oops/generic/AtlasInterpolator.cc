@@ -62,8 +62,8 @@ template <typename Functor, typename VecIt>
 void fieldSetToVector(const Variables& variables, const std::vector<bool>& mask,
                       atlas::FieldSet& targetFieldSet, VecIt TargetFieldVecIt,
                       const Functor& dataCopy) {
-  for (const auto& variable : variables.variables()) {
-    auto targetField = targetFieldSet[variable];
+  for (const auto& variable : variables) {
+    auto targetField = targetFieldSet[variable.name()];
 
     switch (targetField.rank()) {
       case 1: {
@@ -151,8 +151,8 @@ void AtlasInterpolator::apply(const Variables& variables,
 
   // Perform interpolation.
   const auto interpVars = createInterpVariables(variables);
-  for (const auto& variable : interpVars.variables()) {
-    interp.execute(tempSourceFieldSet[variable], targetFieldSet[variable]);
+  for (const auto& variable : interpVars) {
+    interp.execute(tempSourceFieldSet[variable.name()], targetFieldSet[variable.name()]);
   }
 
   // Post-process fields.
@@ -211,9 +211,9 @@ void AtlasInterpolator::applyAD(
 
   // Interpolation adjoint.
   const auto interpVars = createInterpVariables(variables);
-  for (const auto& variable : interpVars.variables()) {
-    interp.execute_adjoint(tempSourceFieldSet[variable],
-                           targetFieldSet[variable]);
+  for (const auto& variable : interpVars) {
+    interp.execute_adjoint(tempSourceFieldSet[variable.name()],
+                           targetFieldSet[variable.name()]);
   }
 
   // Pre-process fields.
@@ -246,8 +246,8 @@ atlas::FieldSet AtlasInterpolator::copySourceFields(
   auto copiedSourceFieldSet = atlas::FieldSet{};
 
   // Create new field set based on variables.
-  for (const auto& variable : variables.variables()) {
-    copiedSourceFieldSet.add(sourceFieldSet[variable]);
+  for (const auto& variable : variables) {
+    copiedSourceFieldSet.add(sourceFieldSet[variable.name()]);
   }
   return copiedSourceFieldSet;
 }
@@ -258,9 +258,9 @@ atlas::FieldSet AtlasInterpolator::createTargetFields(
   auto targetFieldSet = atlas::FieldSet{};
 
   // Make new target fields which match source fields.
-  for (const auto& variable : variables.variables()) {
+  for (const auto& variable : variables) {
     // Get source field.
-    const auto& sourceField = sourceFieldSet[variable];
+    const auto& sourceField = sourceFieldSet[variable.name()];
 
     // Configure field using sourceField properties.
     const auto targetConfig = atlas::option::name(sourceField.name()) |
@@ -342,8 +342,8 @@ size_t AtlasInterpolator::getTotalElements(
   size_t totalElements = 0;
 
   // Loop over fields.
-  for (const auto& variable : variables.variables()) {
-    const auto field = sourceFields[variable];
+  for (const auto& variable : variables) {
+    const auto field = sourceFields[variable.name()];
 
     size_t elementsPerLocation = 1;
     // Loop over outer elements of field shape (excluding dim 0, the number of

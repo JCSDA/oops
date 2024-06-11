@@ -47,7 +47,7 @@ size_t variables_size_f(const oops::Variables & vars) {
 // -----------------------------------------------------------------------------
 void variables_getvariablelength_f(const oops::Variables & vars, const size_t & jj,
                                    size_t & lcvarname) {
-  std::string varname = vars[jj];
+  std::string varname = vars[jj].name();
   lcvarname = varname.size();
 }
 
@@ -55,7 +55,7 @@ void variables_getvariablelength_f(const oops::Variables & vars, const size_t & 
 void variables_getvariable_f(const oops::Variables & vars, const size_t & jj,
                              size_t & lcvarname, const size_t & lfvarname,
                              char * cvarname) {
-  std::string varname = vars[jj];
+  std::string varname = vars[jj].name();
   lcvarname = varname.size();
   /* lfvarname is the length of the string in Fortran, which must be allocated
      by the Fortran calling routine.  In order to pass varname to Fortran it is

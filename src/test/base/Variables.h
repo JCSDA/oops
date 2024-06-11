@@ -49,39 +49,18 @@ void testConstructor() {
 
   {
     // Fixture
-    oops::Variables other(std::vector<std::string>({"var1", "var2", "var3"}));
-    other.addMetaData("var2", "levels", 20);
-    other.addMetaData("var3", "levels", 30);
-    other.addMetaData("var2", "test_double", 2.0);
-    other.addMetaData("var3", "test_double", 3.0);
-    other.addMetaData("var2", "test_string", "2");
-    other.addMetaData("var3", "test_string", "3");
+    oops::Variable var1("var1");
+    eckit::LocalConfiguration conf2;
+    conf2.set("levels", 20);
+    conf2.set("test_double", 2.0);
+    conf2.set("test_string", "2");
+    oops::Variable var2("var2", conf2);
+    oops::Variable var3("var3",
+                        oops::VariableMetaData(oops::VerticalStagger::INTERFACE,
+                                               oops::ModelDataType::Int32),
+                        30);
+    oops::Variables other({var1, var2, var3});
     oops::Log::info() << "variables local config: " << other << std::endl;
-
-    // Testing .variablesMetaData(), .hasMetadata() and .getMetaData()
-    int modelLevels(0);
-    double modelDouble(0.0);
-    std::string modelString("0");
-    std::vector<std::string> confKeys(other.variablesMetaData().keys());
-    std::vector<std::string> refKeys{"var2", "var3"};
-    EXPECT(confKeys == refKeys);
-
-    eckit::LocalConfiguration confOut(other.variablesMetaData());
-    int i(0);
-    for (const std::string& s : other.variablesMetaData().keys()) {
-      EXPECT(other.hasMetaData(s, "levels"));
-      modelLevels = other.getLevels(s);
-      EXPECT_EQUAL(modelLevels, (i + 2) * 10);
-      modelLevels = other.getMetaData<int>(s, "levels");
-      EXPECT_EQUAL(modelLevels, (i + 2) * 10);
-      EXPECT(other.hasMetaData(s, "test_double"));
-      modelDouble = other.getMetaData<double>(s, "test_double");
-      EXPECT_EQUAL(modelDouble, static_cast<double>(i + 2));
-      EXPECT(other.hasMetaData(s, "test_string"));
-      modelString = other.getMetaData<std::string>(s, "test_string");
-      EXPECT_EQUAL(modelString, std::to_string(i + 2));
-      ++i;
-    }
   }
 
   vars.reset();
@@ -116,17 +95,89 @@ void testFortranInterface() {
   test_vars_interface_f(TestEnvironment::config(), vars);
 
   // test content of variable list
-  std::vector<std::string> vars_check = TestEnvironment::config().getStringVector("test variables");
+  std::vector<std::string> vars_check_string
+                                      = TestEnvironment::config().getStringVector("test variables");
+  oops::Variables vars_check_variables(vars_check_string);
 
   // The fortran routine tests the push_back_vector method, with the variables
   // from the config file, as well as the push of a single variable name.
   // So, if both were successful, vars should contain one extra item in
   // the variable list
-  EXPECT(vars.size() ==  vars_check.size()+1);
+  EXPECT(vars.size() ==  vars_check_variables.size()+1);
 
-  for (std::size_t jvar = 0; jvar < vars_check.size(); ++jvar) {
-    EXPECT(vars[jvar] == vars_check[jvar]);
+  for (std::size_t jvar = 0; jvar < vars_check_variables.size(); ++jvar) {
+    EXPECT(vars[jvar].name() == vars_check_variables[jvar].name());
   }
+}
+
+// -----------------------------------------------------------------------------
+
+void testVariableConstructorAndEqualsComparison() {
+  std::vector<std::string> varsStartStr{"var1", "var2", "var3"};
+  oops::Variable var1NoLevels("var1");
+  EXPECT(var1NoLevels.name() == "var1");
+  EXPECT(var1NoLevels.getLevels() == -1);
+  EXPECT(var1NoLevels.stagger() == oops::defaultVerticalStagger);
+  EXPECT(var1NoLevels.dataType() == oops::defaultDataType);
+
+  oops::Variable var1WithSetMetadata("var1",
+                                     oops::VariableMetaData(oops::VerticalStagger::INTERFACE,
+                                                            oops::ModelDataType::Int32));
+  EXPECT(var1WithSetMetadata.getLevels() == -1);
+  EXPECT(var1WithSetMetadata.stagger() == oops::VerticalStagger::INTERFACE);
+  EXPECT(var1WithSetMetadata.dataType() == oops::ModelDataType::Int32);
+
+  oops::Variable var1With10Levels("var1", oops::VariableMetaData(), 10);
+  EXPECT(var1With10Levels.getLevels() == 10);
+  EXPECT(var1With10Levels.stagger() == oops::defaultVerticalStagger);
+  EXPECT(var1With10Levels.dataType() == oops::defaultDataType);
+
+  oops::Variable var1With20Levels("var1", eckit::LocalConfiguration().set("levels", 20));
+  EXPECT(var1With20Levels.getLevels() == 20);
+  EXPECT(var1With20Levels.stagger() == oops::defaultVerticalStagger);
+  EXPECT(var1With20Levels.dataType() == oops::defaultDataType);
+
+  oops::Variable var2("var2");
+
+  EXPECT(var1NoLevels.metaData() != var1WithSetMetadata.metaData());
+  EXPECT(var1With10Levels.metaData() == var1With20Levels.metaData());
+  EXPECT(var1NoLevels != var1WithSetMetadata);
+  EXPECT(var1NoLevels == var1With10Levels);  // levels are ignored in this comparison
+  EXPECT(var1With10Levels != var1With20Levels);  // levels are not ignored in this comparison
+  EXPECT(var1NoLevels != var2);
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void testPushBack() {
+  oops::Variables vars;
+  oops::Variable var1("var1");
+  oops::Variable var2("var2");
+  oops::Variable var3("var3");
+  oops::Variable var1WithSetMetadata("var1",
+                                     oops::VariableMetaData(oops::VerticalStagger::INTERFACE,
+                                                            oops::ModelDataType::Int32));
+  oops::Variable var2With10Levels("var2", oops::VariableMetaData(), 10);
+
+  vars.push_back(var1);
+  vars.push_back(var2);
+  vars.push_back(var3);
+  vars.push_back(var1WithSetMetadata);
+
+  EXPECT(vars.size() == 4);
+  EXPECT(vars[0].name() == "var1");
+  EXPECT(vars[1].name() == "var2");
+  EXPECT(vars[2].name() == "var3");
+  EXPECT(vars[3].name() == "var1");
+  EXPECT(vars[1].getLevels() == -1);
+
+  // Test that adding the same variable twice does not change the size
+  vars.push_back(var1);
+  EXPECT(vars.size() == 4);
+  // Test that adding the "same" variable with levels set updates the levels
+  vars.push_back(var2With10Levels);
+  EXPECT(vars.size() == 4);
+  EXPECT(vars[1].getLevels() == 10);
 }
 
 // -----------------------------------------------------------------------------
@@ -146,7 +197,7 @@ void testArithmeticOperators() {
   // Check on removing other string
   oops::Variables varsStartRemoveStr(varsStartStr);
   oops::Variables varsFinalRemoveStr(varsFinalStr);
-  varsStartRemoveStr -= std::string{"var3"};
+  varsStartRemoveStr -= oops::Variable{"var3"};
   EXPECT(varsStartRemoveStr == varsFinalRemoveStr);
 
   // Check on adding other Variables object
@@ -161,15 +212,20 @@ void testArithmeticOperators() {
 
 void testMetaDataArithmeticOperators() {
   // Fixture
-  oops::Variables vars(std::vector<std::string>{"var1", "var2", "var3"});
-  for (auto & i : std::vector<int>{1, 2, 3}) {
-    std::string var("var" + std::to_string(i));
-    vars.addMetaData(var, "levels", i * 10);
+  oops::Variables vars;
+  for (const auto & i : std::vector<int>{1, 2, 3}) {
+    const std::string var("var" + std::to_string(i));
+    eckit::LocalConfiguration conf;
+    conf.set("levels", i * 10);
+    vars.push_back(oops::Variable(var, conf));
   }
+
   oops::Variables varsCopy(vars);
 
-  oops::Variables var1(std::vector<std::string>{"var1"});
-  var1.addMetaData("var1", "levels", 10);
+  oops::Variables var1;
+  eckit::LocalConfiguration conf;
+  conf.set("levels", 10);
+  var1.push_back(oops::Variable("var1", conf));
 
   oops::Log::info() << "vars lconf = " << vars << std::endl;
   vars -= var1;
@@ -178,7 +234,10 @@ void testMetaDataArithmeticOperators() {
   // check -= string
   oops::Variables vars23(vars);
   oops::Variables vars123(varsCopy);
-  vars123 -= std::string{"var1"};
+
+  eckit::LocalConfiguration conf1;
+  conf1.set("levels", 10);
+  vars123 -= oops::Variable{"var1", conf1};
   oops::Log::info() << "vars23 = " << vars23 << std::endl;
   oops::Log::info() << "vars123 = " << vars123 << std::endl;
   EXPECT(vars123 == vars23);
@@ -191,9 +250,9 @@ void testMetaDataArithmeticOperators() {
 // -----------------------------------------------------------------------------
 /// \brief tests Variables::operator== and operator!=
 void testEquality() {
-  oops::Variables abc({"a", "b", "c"});
-  oops::Variables acb({"a", "c", "b"});
-  oops::Variables ba({"b", "a"});
+  oops::Variables abc(std::vector<std::string>{"a", "b", "c"});
+  oops::Variables acb(std::vector<std::string>{"a", "c", "b"});
+  oops::Variables ba(std::vector<std::string>{"b", "a"});
 
   EXPECT(abc == acb);
   EXPECT(!(abc != acb));
@@ -204,26 +263,32 @@ void testEquality() {
 // -----------------------------------------------------------------------------
 /// \brief tests Variables::operator== and operator!=
 void testEqualityWithMetaData() {
-  oops::Variables vars123(std::vector<std::string>{"var1", "var2", "var3"});
-  for (auto & i : std::vector<int>{1, 2, 3}) {
-    std::string var("var" + std::to_string(i));
-    vars123.addMetaData(var, "levels", i * 10);
+  oops::Variables vars123;
+  for (const auto & i : std::vector<int>{1, 2, 3}) {
+    const std::string var("var" + std::to_string(i));
+    eckit::LocalConfiguration conf;
+    conf.set("levels", i * 10);
+    vars123.push_back(oops::Variable(var, conf));
   }
 
   oops::Log::info() << "vars123 = " << vars123 << std::endl;
 
-  oops::Variables vars213(std::vector<std::string>{"var2", "var1", "var3"});
-  for (auto & i : std::vector<int>{2, 1, 3}) {
-    std::string var("var" + std::to_string(i));
-    vars213.addMetaData(var, "levels", i * 10);
+  oops::Variables vars213;
+  for (const auto & i : std::vector<int>{2, 1, 3}) {
+    const std::string var("var" + std::to_string(i));
+    eckit::LocalConfiguration conf;
+    conf.set("levels", i * 10);
+    vars213.push_back(oops::Variable(var, conf));
   }
 
   oops::Log::info() << "vars213 = " << vars213 << std::endl;
 
-  oops::Variables vars213SameMeta(std::vector<std::string>{"var2", "var1", "var3"});
+  oops::Variables vars213SameMeta;
   for (auto & i : std::vector<int>{2, 1, 3}) {
-    std::string var("var" + std::to_string(i));
-    vars213SameMeta.addMetaData(var, "levels", 30);
+    const std::string var("var" + std::to_string(i));
+    eckit::LocalConfiguration conf;
+    conf.set("levels", 30);
+    vars213SameMeta.push_back(oops::Variable(var, conf));
   }
 
   oops::Log::info() << "vars213 same meta = " << vars213SameMeta << std::endl;
@@ -240,10 +305,10 @@ void testEqualityWithMetaData() {
 /// \brief tests Variables::intersection (also uses operator=)
 void testIntersection() {
   oops::Variables empty;
-  oops::Variables acb({"a", "c", "b"});
+  oops::Variables acb(std::vector<std::string>{"a", "c", "b"});
   oops::Variables b({"b"});
-  oops::Variables ba({"b", "a"});
-  oops::Variables de({"d", "e"});
+  oops::Variables ba(std::vector<std::string>{"b", "a"});
+  oops::Variables de(std::vector<std::string>{"d", "e"});
 
   oops::Variables test = empty;
   test.intersection(empty);
@@ -311,6 +376,10 @@ class Variables : public oops::Test {
       { testEqualityWithMetaData(); });
     ts.emplace_back(CASE("Variables/testIntersection")
       { testIntersection(); });
+    ts.emplace_back(CASE("Variables/testVariableConstructorAndEqualsComparison")
+      { testVariableConstructorAndEqualsComparison(); });
+    ts.emplace_back(CASE("Variables/testPushBack")
+      { testPushBack(); });
   }
 
   void clear() const override {}

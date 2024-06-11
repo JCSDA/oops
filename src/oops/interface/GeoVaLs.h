@@ -20,6 +20,7 @@
 #include <boost/noncopyable.hpp>
 
 #include "oops/base/Locations.h"
+#include "oops/base/Variable.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/ObsSpace.h"
 #include "oops/util/ObjectCounter.h"
@@ -119,10 +120,10 @@ class GeoVaLs : public util::Printable,
   /// \param levelTopDown
   ///   True if each row of `vals` contains variable values at model levels ordered from top to
   ///   bottom, false if they are ordered from bottom to top.
-  void fill(const std::string &name, const ConstVectorRef<size_t> &indx,
+  void fill(const Variable &name, const ConstVectorRef<size_t> &indx,
             const ConstMatrixRef<double> &vals, const bool levelsTopDown);
   /// \brief Adjoint of fill().
-  void fillAD(const std::string &name, const ConstVectorRef<size_t> &indx,
+  void fillAD(const Variable &name, const ConstVectorRef<size_t> &indx,
               MatrixRef<double> vals, const bool levelsTopDown) const;
 
  private:
@@ -284,7 +285,7 @@ void GeoVaLs<OBS>::random() {
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-void GeoVaLs<OBS>::fill(const std::string &name, const ConstVectorRef<size_t> &indx,
+void GeoVaLs<OBS>::fill(const Variable &name, const ConstVectorRef<size_t> &indx,
                         const ConstMatrixRef<double> &vals, const bool levelsTopDown) {
   Log::trace() << "GeoVaLs<OBS>::fill starting" << std::endl;
   util::Timer timer(classname(), "fill");
@@ -296,7 +297,7 @@ void GeoVaLs<OBS>::fill(const std::string &name, const ConstVectorRef<size_t> &i
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-void GeoVaLs<OBS>::fillAD(const std::string & name,
+void GeoVaLs<OBS>::fillAD(const Variable & name,
                           const Eigen::Ref<const Eigen::VectorX<size_t>> &indx,
                           Eigen::Ref<Eigen::MatrixXd> vals,
                           const bool levelsTopDown) const {

@@ -19,11 +19,12 @@ namespace {
 
   CASE("test_split_existent") {
     using oops::Variables;
+    using oops::Variable;
     using oops::splitVariables;
     typedef std::vector<Variables> VariablesVec;
 
-    Variables vars1({"a", "b"});
-    Variables vars2({"c", "d"});
+    Variables vars1(std::vector<std::string>{"a", "b"});
+    Variables vars2(std::vector<std::string>{"c", "d"});
     VariablesVec available({vars1, vars2});
 
     VariablesVec result;
@@ -37,20 +38,21 @@ namespace {
     expected = VariablesVec({Variables({"a"}), Variables()});
     EXPECT(result == expected);
 
-    result = splitVariables(Variables({"b", "a"}), available);
-    expected = VariablesVec({Variables({"a", "b"}), Variables()});
+    result = splitVariables(Variables(std::vector<std::string>{"b", "a"}), available);
+    expected = VariablesVec({Variables(std::vector<std::string>{"a", "b"}), Variables()});
     EXPECT(result == expected);
 
     result = splitVariables(Variables({"d"}), available);
     expected = VariablesVec({Variables(), Variables({"d"})});
     EXPECT(result == expected);
 
-    result = splitVariables(Variables({"d", "a"}), available);
+    result = splitVariables(Variables(std::vector<std::string>{"d", "a"}), available);
     expected = VariablesVec({Variables({"a"}), Variables({"d"})});
     EXPECT(result == expected);
 
-    result = splitVariables(Variables({"d", "a", "b", "c"}), available);
-    expected = VariablesVec({Variables({"a", "b"}), Variables({"c", "d"})});
+    result = splitVariables(Variables(std::vector<std::string>{"d", "a", "b", "c"}), available);
+    expected = VariablesVec({Variables(std::vector<std::string>{"a", "b"}),
+                             Variables(std::vector<std::string>{"c", "d"})});
     EXPECT(result == expected);
   }
 
@@ -61,13 +63,14 @@ namespace {
     using oops::splitVariables;
     typedef std::vector<Variables> VariablesVec;
 
-    Variables vars1({"a", "b"});
-    Variables vars2({"c", "d"});
+    Variables vars1(std::vector<std::string>{"a", "b"});
+    Variables vars2(std::vector<std::string>{"c", "d"});
     VariablesVec available({vars1, vars2});
 
     EXPECT_THROWS(splitVariables(Variables({"e"}), available));
-    EXPECT_THROWS(splitVariables(Variables({"a", "d", "e"}), available));
-    EXPECT_THROWS(splitVariables(Variables({"a", "b", "c", "d", "e"}), available));
+    EXPECT_THROWS(splitVariables(Variables(std::vector<std::string>{"a", "d", "e"}), available));
+    EXPECT_THROWS(splitVariables(Variables(std::vector<std::string>{"a", "b", "c", "d", "e"}),
+                  available));
   }
 
 // -----------------------------------------------------------------------------
@@ -77,15 +80,16 @@ namespace {
     using oops::splitVariables;
     typedef std::vector<Variables> VariablesVec;
 
-    Variables vars1({"a", "b"});
-    Variables vars2({"c", "d", "a"});
+    Variables vars1(std::vector<std::string>{"a", "b"});
+    Variables vars2(std::vector<std::string>{"c", "d", "a"});
     Variables vars3({"e"});
     VariablesVec available({vars1, vars2});
 
     EXPECT_THROWS(splitVariables(Variables(), available));
     EXPECT_THROWS(splitVariables(Variables({"a"}), available));
-    EXPECT_THROWS(splitVariables(Variables({"a", "b", "c", "d"}), available));
-    EXPECT_THROWS(splitVariables(Variables({"a", "b", "c", "d", "e"}),
+    EXPECT_THROWS(splitVariables(Variables(std::vector<std::string>{"a", "b", "c", "d"}),
+                  available));
+    EXPECT_THROWS(splitVariables(Variables(std::vector<std::string>{"a", "b", "c", "d", "e"}),
                                  VariablesVec({vars1, vars2, vars3})));
   }
 

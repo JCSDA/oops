@@ -114,7 +114,6 @@ atlas::FieldSet createRandomFieldSet(const eckit::mpi::Comm & comm,
 
   // Create FieldSet
   atlas::FieldSet fset = createFieldSet(fspace, variableSizes, vars);
-
   for (auto & field : fset) {
     // Get field owned size
     size_t n = 0;
@@ -1679,8 +1678,8 @@ void writeRank3FieldSet(const atlas::FieldSet & fset,
 atlas::FieldSet createFieldSet(const atlas::FunctionSpace & fspace,
                                const oops::Variables & vars) {
   std::vector<size_t> variableSizes;
-  for (const std::string & var : vars.variables()) {
-    variableSizes.push_back(vars.getLevels(var));
+  for (const auto & var : vars) {
+    variableSizes.push_back(var.getLevels());
   }
   return createFieldSet(fspace, variableSizes, vars.variables());
 }
@@ -1691,8 +1690,8 @@ atlas::FieldSet createFieldSet(const atlas::FunctionSpace & fspace,
                                const oops::Variables & vars,
                                const double & initalizationValue) {
   std::vector<size_t> variableSizes;
-  for (const std::string & var : vars.variables()) {
-    variableSizes.push_back(vars.getLevels(var));
+  for (const auto & var : vars) {
+    variableSizes.push_back(var.getLevels());
   }
   return createFieldSet(fspace, variableSizes, vars.variables(), initalizationValue);
 }
@@ -1703,8 +1702,8 @@ atlas::FieldSet createRandomFieldSet(const eckit::mpi::Comm & comm,
                                      const atlas::FunctionSpace & fspace,
                                      const oops::Variables & vars) {
   std::vector<size_t> variableSizes;
-  for (const std::string & var : vars.variables()) {
-    variableSizes.push_back(vars.getLevels(var));
+  for (const auto & var : vars) {
+    variableSizes.push_back(var.getLevels());
   }
   return createRandomFieldSet(comm, fspace, variableSizes, vars.variables());
 }
@@ -1715,8 +1714,8 @@ atlas::FieldSet createSmoothFieldSet(const eckit::mpi::Comm & comm,
                                      const atlas::FunctionSpace & fspace,
                                      const oops::Variables & vars) {
   std::vector<size_t> variableSizes;
-  for (const std::string & var : vars.variables()) {
-    variableSizes.push_back(vars.getLevels(var));
+  for (const auto & var : vars) {
+    variableSizes.push_back(var.getLevels());
   }
   return createSmoothFieldSet(comm, fspace, variableSizes, vars.variables());
 }
@@ -1729,8 +1728,8 @@ void readFieldSet(const eckit::mpi::Comm & comm,
                   const eckit::Configuration & config,
                   atlas::FieldSet & fset) {
   std::vector<size_t> variableSizes;
-  for (const std::string & var : vars.variables()) {
-    variableSizes.push_back(vars.getLevels(var));
+  for (const auto & var : vars) {
+    variableSizes.push_back(var.getLevels());
   }
   readFieldSet(comm, fspace, variableSizes, vars.variables(), config, fset);
 }

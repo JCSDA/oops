@@ -58,7 +58,7 @@ class HtlmCalculator {
   const atlas::idx_t nLevelsMinusInfluenceSize_;
   const atlas::idx_t ensembleSize_;
   const atlas::idx_t vectorSize_;
-  std::unordered_map<std::string, std::vector<double>> rmsVals_;
+  std::unordered_map<Variable, std::vector<double>> rmsVals_;
   std::unique_ptr<HtlmRegularization> regularization_;
 
   void computeVectorsAt(const atlas::idx_t, const atlas::idx_t,
@@ -84,7 +84,7 @@ HtlmCalculator<MODEL>::HtlmCalculator(const Parameters_ & params,
   halfInfluenceSize_(influenceSize_ / 2), nLevelsMinusInfluenceSize_(nLevels_ - influenceSize_),
   ensembleSize_(ensemble.size()), vectorSize_(influenceSize_ * updateVars_.size()) {
   // Calculate root-mean-squared-by-variable-by-level scaling values for preconditioning
-  for (const auto & var : updateVars_.variables()) {
+  for (const auto & var : updateVars_) {
     rmsVals_.emplace(var, ensemble.getLinearEnsemble()[0].rmsByVariableByLevel(var, false));
     for (auto & val : rmsVals_.at(var)) if (val == 0.0) val = 1.0;  // avoid divide-by-zero
   }
@@ -129,19 +129,20 @@ void HtlmCalculator<MODEL>::computeVectorsAt(const atlas::idx_t i,
                                               Eigen::ComputeFullU);
   const auto U = svd.matrixU();
   // Loop over variables
-  for (const auto & var : updateVars_.variables()) {
+  for (const auto & var : updateVars_) {
     // Copy linearError for var at i, k into an EigenVector
     EigenVector linearErrorVector(ensembleSize_);
     for (auto m = 0; m < ensembleSize_; m++) {
       linearErrorVector(m, 0)
-        = atlas::array::make_view<double, 2>(linearErrors[m].fieldSet()[var])(i, k);
+        = atlas::array::make_view<double, 2>(linearErrors[m].fieldSet()[var.name()])(i, k);
     }
     // Compute vector of coeffs for var at i, k
+    // TODO(someone): change regularization to use variables
     const EigenVector coeffs = computeVector(svd, U, influenceMatrix, linearErrorVector,
-                                             regularization_->getRegularizationValue(var, i, k));
+                                      regularization_->getRegularizationValue(var.name(), i, k));
     // Copy coeffs into FieldSet
     // Throughout, values are un-normalized to account for preconditioning in makeInfluenceMatrix
-    auto coeffsFieldView = atlas::array::make_view<double, 3>(coeffsFSet[var]);
+    auto coeffsFieldView = atlas::array::make_view<double, 3>(coeffsFSet[var.name()]);
     for (size_t v = 0; v < updateVars_.size(); v++) {
       if (k >= halfInfluenceSize_ && k < nLevels_ - halfInfluenceSize_) {  // general case
         for (auto s = 0; s < influenceSize_; s++) {
@@ -177,7 +178,7 @@ const typename HtlmCalculator<MODEL>::EigenMatrix HtlmCalculator<MODEL>::makeInf
   for (auto m = 0; m < ensembleSize_; m++) {
     for (size_t v = 0; v < updateVars_.size(); v++) {
       const auto linearEnsembleArray
-        = atlas::array::make_view<double, 2>(linearEnsemble[m].fieldSet()[updateVars_[v]]);
+        = atlas::array::make_view<double, 2>(linearEnsemble[m].fieldSet()[updateVars_[v].name()]);
       if (k >= halfInfluenceSize_ && k < nLevels_ - halfInfluenceSize_) {  // general case
         for (auto s = 0; s < influenceSize_; s++) {
           influenceMatrix(v * influenceSize_ + s, m)
