@@ -120,6 +120,34 @@ template <typename MODEL> void testVariableChangeInverse() {
 
 // -------------------------------------------------------------------------------------------------
 
+template <typename MODEL> void testVariableChange() {
+  typedef VariableChangeFixture<MODEL>   Test_;
+  typedef oops::State<MODEL>             State_;
+  typedef oops::VariableChange<MODEL>    VariableChange_;
+
+  // Loop over all variable changes
+  for (std::size_t jj = 0; jj < Test_::confs().size(); ++jj) {
+    // Construct variable change
+    const eckit::LocalConfiguration changeVarConfig(Test_::confs()[jj], "variable change");
+    VariableChange_ changevar(changeVarConfig, Test_::resol());
+
+    oops::Log::test() << "Testing VariableChange: " << changevar << std::endl;
+
+    // Create state with input variables
+    const eckit::LocalConfiguration initialConfig(Test_::confs()[jj], "state");
+    State_ xx(Test_::resol(), initialConfig);
+    oops::Log::test() << "State before variable change: " << xx << std::endl;
+
+    // Change variables and print output state
+    oops::Variables varout(changeVarConfig, "output variables");
+    oops::Log::test() << "Change of variables to " << varout.variables() << std::endl;
+    changevar.changeVar(xx, varout);
+    oops::Log::test() << "State after variable change: " << xx << std::endl;
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
 template <typename MODEL> void testVariableChangeParametersValidName() {
   typedef VariableChangeFixture<MODEL> Test_;
   typedef oops::VariableChange<MODEL>  VariableChange_;
@@ -149,6 +177,8 @@ template <typename MODEL> class VariableChange : public oops::Test {
     //
     // ts.emplace_back(CASE("interface/VariableChange/testVariableChangeInverse")
     //   { testVariableChangeInverse<MODEL>(); });
+    ts.emplace_back(CASE("interface/VariableChange/testVariableChange")
+      { testVariableChange<MODEL>(); });
     ts.emplace_back(CASE("interface/VariableChange/testVariableChangeParametersValidName")
       { testVariableChangeParametersValidName<MODEL>(); });
   }

@@ -28,7 +28,8 @@ if [[ $target_pr =~ '#' ]]; then
 fi
 target_pr=${target_pr//$'\r'}  # remove those pesky invisible EOL characters
 target_branch=$(gh pr list --search "$target_pr" \
-                --json number,headRefName -q '.[].headRefName')
+                --json number,headRefName \
+                -q ".[]|select(.number|contains($target_pr))|.headRefName")
 git fetch origin "pull/${target_pr}/head:${target_branch}"
 gh pr checkout "$target_pr"
 echo "-- Switched to $(git branch --show-current)"

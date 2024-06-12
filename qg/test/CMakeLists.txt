@@ -216,6 +216,7 @@ list( APPEND qg_testoutput
   testoutput/truth_5level_pert_heat.test
   testoutput/uniform_field_hybrid.test
   testoutput/uniform_field_inflation.test
+  testoutput/variable_change.test
 )
 
 # Create data directory for test input and symlink all files

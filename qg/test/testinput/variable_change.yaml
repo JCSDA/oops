@@ -36,3 +36,6 @@ variable change tests:
     date: 2009-12-31T00:00:00Z
     filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
   tolerance inverse: 1.0e-8
+
+test:
+  reference filename: testoutput/variable_change.test
