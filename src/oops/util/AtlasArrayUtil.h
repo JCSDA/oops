@@ -1,5 +1,5 @@
 /*
- * (C) Crown Copyright 2023 Met Office
+ * (C) Crown Copyright 2023-2024 Met Office
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -12,10 +12,13 @@
 #include <type_traits>
 #include <vector>
 
+#include "eckit/config/LocalConfiguration.h"
+#include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
 
 #include "atlas/array.h"
 
+#include "oops/base/Variables.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/missingValues.h"
 
@@ -73,6 +76,23 @@ void scatter(const eckit::mpi::Comm & comm,
              const std::size_t & root,
              atlas::array::ArrayView<Value, 3> & arrayInOut);
 
+template<typename T>
+T getAttributeValue(const eckit::LocalConfiguration & conf,
+                    const std::string & varname,
+                    const std::string & attname);
+
+template<typename T>
+void setAttribute(eckit::LocalConfiguration & conf, const std::string & varname,
+                  const std::string & attname, const std::string & atttype,
+                  const T & attvalue);
+
+std::vector<std::string> getAttributeNames(const eckit::LocalConfiguration & conf,
+                                           const std::string & varname);
+
+std::string getAttributeType(const eckit::LocalConfiguration & conf,
+                             const std::string & varname,
+                             const std::string & attname);
+
 /// \brief - creates the header in the written NetCDF file
 ///        - assumes that we have the:
 ///        - netcdf file path (ncfilepath)
@@ -86,8 +106,9 @@ void atlasArrayWriteHeader(
     const std::string & ncfilepath,
     const std::vector<std::string> & dimNames,
     const std::vector<atlas::idx_t> & dimSizes,
-    const std::vector<std::string> & variableNames,
+    const oops::Variables & variables,
     const std::vector<std::vector<std::string>> & dimNamesForEveryVar,
+    const eckit::LocalConfiguration & conf,
     std::vector<int> & netcdfGeneralIDs,
     std::vector<int> & netcdfDimIDs,
     std::vector<int> & netcdfVarIDs,
@@ -100,8 +121,9 @@ void atlasArrayInquire(
     const std::string & ncfilepath,
     std::vector<std::string> & dimNames,
     std::vector<atlas::idx_t> & dimSizes,
-    std::vector<std::string> & variableNames,
+    oops::Variables & variables,
     std::vector<std::vector<std::string>> & dimNamesForEveryVar,
+    eckit::LocalConfiguration & globalMetaData,
     std::vector<int> & netcdfGeneralIDs,
     std::vector<int> & netcdfDimIDs,
     std::vector<int> & netcdfVarIDs,
@@ -360,6 +382,58 @@ void scatter(
       }
     }
   }
+}
+
+template<typename T>
+T getAttributeValue(const eckit::LocalConfiguration & conf,
+                    const std::string & varname,
+                    const std::string & attname) {
+  std::vector<eckit::LocalConfiguration> aconfs = conf.has(varname) ?
+    conf.getSubConfigurations(varname) : std::vector<eckit::LocalConfiguration>();
+
+  int attidx(-1);
+  eckit::LocalConfiguration atconf;
+  T value;
+  for (std::size_t i = 0; i < aconfs.size(); ++i) {
+    if (aconfs[i].has(attname)) {
+      aconfs[i].get(attname, atconf);
+      atconf.get("value", value);
+      attidx = i;
+    }
+  }
+  if (attidx == -1) {
+    // Error trap
+    throw eckit::BadValue("attribute name " + attname + " is not found in variable "
+                          + varname + " metadata.", Here());
+  }
+  return value;
+}
+
+template<typename T>
+void setAttribute(eckit::LocalConfiguration & conf, const std::string & varname,
+                  const std::string & attname, const std::string & atttype,
+                  const T & attvalue) {
+  eckit::LocalConfiguration atconf;
+  eckit::LocalConfiguration aconf;
+  atconf.set("type", atttype);
+  atconf.set("value", attvalue);
+  aconf.set(attname, atconf);
+
+  std::vector<eckit::LocalConfiguration> aconfs = conf.has(varname) ?
+    conf.getSubConfigurations(varname) : std::vector<eckit::LocalConfiguration>();
+
+  int attidx(-1);
+  for (std::size_t i = 0; i < aconfs.size(); ++i) {
+    if (aconfs[i].has(attname)) {
+      aconfs[i].set(attname, atconf);
+      attidx = i;
+    }
+  }
+  if (attidx == -1) {
+    aconfs.push_back(aconf);
+  }
+
+  conf.set(varname, aconfs);
 }
 
 }  // namespace util

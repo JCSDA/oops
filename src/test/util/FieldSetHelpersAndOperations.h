@@ -48,6 +48,7 @@ CASE("util/FieldSetHelpersAndOperations/StructuredColumns") {
 
   // Create random fields
   atlas::FieldSet fset1 = util::createRandomFieldSet(comm, fspace, vars);
+  fset1.haloExchange();
   const double dp1 = util::dotProductFieldSets(fset1, fset1, vars.variables(), comm);
   double dp1_fields = 0.0;
   for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
@@ -57,6 +58,7 @@ CASE("util/FieldSetHelpersAndOperations/StructuredColumns") {
   EXPECT(oops::is_close(dp1, 4847.0108495214099, 1.0e-12));
   EXPECT(oops::is_close(dp1_fields, dp1, 1.0e-12));
   atlas::FieldSet fset2 = util::createRandomFieldSet(comm, fspace, vars);
+  fset2.haloExchange();
   const double dp2 = util::dotProductFieldSets(fset2, fset2, vars.variables(), comm);
   EXPECT(oops::is_close(dp2, 4781.9168848947493, 1.0e-12));
 

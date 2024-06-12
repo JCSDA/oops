@@ -632,7 +632,7 @@ target_sources( ${PROJECT_NAME} PRIVATE ${oops_test_src_files})
 install( DIRECTORY test DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/oops FILES_MATCHING PATTERN "*.h")
 
 if(OpenMP_FOUND)
-    target_link_libraries( ${PROJECT_NAME} PUBLIC OpenMP::OpenMP_Fortran OpenMP::OpenMP_CXX )
+  target_link_libraries( ${PROJECT_NAME} PUBLIC OpenMP::OpenMP_Fortran OpenMP::OpenMP_CXX )
 endif()
 
 # Mark Boost as a system library to silence compiler warnings from Boost headers
@@ -647,7 +647,7 @@ target_link_libraries( ${PROJECT_NAME} PUBLIC fckit )
 target_link_libraries( ${PROJECT_NAME} PUBLIC atlas_f )
 target_link_libraries( ${PROJECT_NAME} PUBLIC Boost::boost )
 if ( GPTL_FOUND )
-	target_link_libraries( ${PROJECT_NAME} PUBLIC GPTL::GPTL )
+  target_link_libraries( ${PROJECT_NAME} PUBLIC GPTL::GPTL )
 endif()
 
 # Stack traces on floating point exceptions
@@ -656,7 +656,7 @@ include( backtrace_deps )
 # By using target_link_libraries on a CMake target, CMake knows to add this to the RPATH.
 # We effectively link to link libbacktrace twice in this case, but that's okay.
 if (OOPS_STACKTRACE_PROVIDER MATCHES "backtrace")
-	target_link_libraries( ${PROJECT_NAME} PUBLIC backtrace)
+    target_link_libraries( ${PROJECT_NAME} PUBLIC backtrace)
 endif()
 target_link_libraries( ${PROJECT_NAME} PUBLIC ${OOPS_STACKTRACE_LIBS_${OOPS_STACKTRACE_PROVIDER}} )
 target_compile_definitions( ${PROJECT_NAME} PRIVATE ${OOPS_STACKTRACE_DEFS_${OOPS_STACKTRACE_PROVIDER}} )
