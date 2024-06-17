@@ -35,7 +35,6 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/nemo-feedback" EXCLUDE_FROM_ALL)
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/orca-jedi")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/ops-um-jedi")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/jjtests")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/lfric-lite-jedi")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/lfric-jedi")
 
 enable_testing()
