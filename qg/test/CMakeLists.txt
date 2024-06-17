@@ -83,6 +83,7 @@ list( APPEND qg_testinput
   testinput/gen_ens_pert_B.yaml
   testinput/gen_ens_pert_B_5level_pert_heat.yaml
   testinput/gen_hybrid_linear_model_coeffs_pseudo.yaml
+  testinput/gen_hybrid_linear_model_coeffs_pseudo_multimodel_multigeometry.yaml
   testinput/gen_hybrid_linear_model_coeffs_with_subtimestep.yaml
   testinput/geometry_iterator.yaml
   testinput/geometry.yaml
@@ -578,6 +579,12 @@ ecbuild_add_test( TARGET test_qg_gen_ens_pert_B_5level_pert_heat
 ecbuild_add_test( TARGET test_qg_gen_hybrid_linear_model_coeffs_pseudo
                   OMP 2
                   ARGS testinput/gen_hybrid_linear_model_coeffs_pseudo.yaml
+                  COMMAND  qg_gen_hybrid_linear_model_coeffs.x
+                  TEST_DEPENDS test_qg_forecast_5level_pert_heat test_qg_gen_ens_pert_B_5level_pert_heat )
+
+ecbuild_add_test( TARGET test_qg_gen_hybrid_linear_model_coeffs_pseudo_multimodel_multigeometry
+                  OMP 2
+                  ARGS testinput/gen_hybrid_linear_model_coeffs_pseudo_multimodel_multigeometry.yaml
                   COMMAND  qg_gen_hybrid_linear_model_coeffs.x
                   TEST_DEPENDS test_qg_forecast_5level_pert_heat test_qg_gen_ens_pert_B_5level_pert_heat )
 

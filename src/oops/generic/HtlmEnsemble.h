@@ -69,6 +69,8 @@ class HtlmEnsembleParameters : public Parameters {
  public:
   RequiredParameter<eckit::LocalConfiguration> model{"model", this};
   RequiredParameter<GeometryParameters_> modelGeometry{"model geometry", this};
+  OptionalParameter<eckit::LocalConfiguration> modelForEnsemble{"model for ensemble", this};
+  OptionalParameter<GeometryParameters_> geometryForEnsemble{"geometry for ensemble", this};
   RequiredParameter<eckit::LocalConfiguration> nonlinearControl{"nonlinear control", this};
   RequiredParameter<NonlinearEnsembleParameters_> nonlinearEnsemble{"nonlinear ensemble", this};
 };
@@ -107,10 +109,13 @@ class HtlmEnsemble{
 
  private:
   const Geometry_ & updateGeometry_;
-  const Geometry_ modelGeometry_;
-  const Model_ model_;
+  std::shared_ptr<Geometry_> controlGeometry_;
+  std::shared_ptr<Geometry_> ensembleGeometry_;
+  std::shared_ptr<Model_> modelControl_;
+  std::shared_ptr<Model_> modelEnsemble_;
   State4D_ nonlinearControl_;
   StateEnsemble_ nonlinearEnsemble_;
+  std::unique_ptr<State_> spareStateEnsembleGeometry_;
   const size_t ensembleSize_;
   IncrementEnsemble_ nonlinearDifferences_;
   IncrementEnsemble_ linearEnsemble_;
@@ -129,17 +134,27 @@ HtlmEnsemble<MODEL>::HtlmEnsemble(const Parameters_ & params,
                                   const Geometry_ & updateGeometry,
                                   const Variables & vars)
 : updateGeometry_(updateGeometry),
-  modelGeometry_(params.modelGeometry.value(), updateGeometry_.getComm()),
-  model_(modelGeometry_, eckit::LocalConfiguration(params.toConfiguration(), "model")),
-  nonlinearControl_(modelGeometry_, params.nonlinearControl.value()),
+  controlGeometry_(std::make_shared<Geometry_>(
+    params.modelGeometry.value(), updateGeometry_.getComm())),
+  ensembleGeometry_(params.geometryForEnsemble.value() != boost::none
+    ? std::make_shared<Geometry_>(*params.geometryForEnsemble.value(), updateGeometry_.getComm())
+    : controlGeometry_),
+  modelControl_(std::make_shared<Model_>(
+    *controlGeometry_, eckit::LocalConfiguration(params.toConfiguration(), "model"))),
+  modelEnsemble_(params.modelForEnsemble.value() != boost::none ? std::make_shared<Model_>(
+    *ensembleGeometry_, eckit::LocalConfiguration(params.toConfiguration(), "model for ensemble"))
+    : modelControl_),
+  nonlinearControl_(*controlGeometry_, params.nonlinearControl.value()),
   nonlinearEnsemble_(params.nonlinearEnsemble.value().fromFile.value() != boost::none ?
-    StateEnsemble_(modelGeometry_, *params.nonlinearEnsemble.value().fromFile.value()) :
+    StateEnsemble_(*ensembleGeometry_, *params.nonlinearEnsemble.value().fromFile.value()) :
     StateEnsemble_(nonlinearControl_[0],
                    (*params.nonlinearEnsemble.value().fromCovar.value()).ensembleSize.value())),
+  spareStateEnsembleGeometry_(controlGeometry_ == ensembleGeometry_ ?
+    nullptr : std::make_unique<State_>(*ensembleGeometry_, nonlinearControl_[0])),
   ensembleSize_(nonlinearEnsemble_.size()),
-  nonlinearDifferences_(modelGeometry_, vars,  nonlinearControl_[0].validTime(), ensembleSize_),
+  nonlinearDifferences_(*ensembleGeometry_, vars,  nonlinearControl_[0].validTime(), ensembleSize_),
   linearEnsemble_(updateGeometry_, vars, nonlinearControl_[0].validTime(), ensembleSize_),
-  linearErrors_(linearEnsemble_), maux_(modelGeometry_, eckit::LocalConfiguration()),
+  linearErrors_(linearEnsemble_), maux_(*ensembleGeometry_, eckit::LocalConfiguration()),
   mauxinc_(updateGeometry_, eckit::LocalConfiguration())
 {
   Log::trace() << "HtlmEnsemble<MODEL>::HtlmEnsemble() starting" << std::endl;
@@ -151,19 +166,21 @@ HtlmEnsemble<MODEL>::HtlmEnsemble(const Parameters_ & params,
     const CovarianceParameters_ & covParams
       = pertParams.backgroundError.value().covarianceParameters;
     std::unique_ptr<CovarianceBase_> Bmat(CovarianceFactory_::create(
-      modelGeometry_, vars, covParams, nonlinearControl_, nonlinearControl_));
-    Increment4D_ dx(modelGeometry_, vars, nonlinearControl_.times());
+      *ensembleGeometry_, vars, covParams, nonlinearControl_, nonlinearControl_));
+    Increment4D_ dx(*ensembleGeometry_, vars, nonlinearControl_.times());
     for (size_t m = 0; m < ensembleSize_; m++) {
       Bmat->randomize(dx);
       nonlinearEnsemble_[m] += dx[0];
     }
   }
   // Set up linearEnsemble_ initial conditions
-  Increment_ linearEnsembleMemberModelGeometry(modelGeometry_, vars,
-                                               nonlinearControl_[0].validTime());
+  Increment_ linearEnsembleMemberEnsembleGeometry(*ensembleGeometry_, vars,
+                                                  nonlinearControl_[0].validTime());
   for (size_t m = 0; m < ensembleSize_; m++) {
-    linearEnsembleMemberModelGeometry.diff(nonlinearControl_[0], nonlinearEnsemble_[m]);
-    linearEnsemble_[m] = Increment_(updateGeometry_, linearEnsembleMemberModelGeometry);
+    linearEnsembleMemberEnsembleGeometry.diff(
+      controlGeometry_ == ensembleGeometry_ ? nonlinearControl_[0] : *spareStateEnsembleGeometry_,
+      nonlinearEnsemble_[m]);
+    linearEnsemble_[m] = Increment_(updateGeometry_, linearEnsembleMemberEnsembleGeometry);
   }
   // Set up a TrajectorySaver for simpleLinearModel_
   simpleLinearModel.setUpTrajectorySaver(trajectorySaver_, maux_);
@@ -176,11 +193,16 @@ template<typename MODEL>
 void HtlmEnsemble<MODEL>::step(const util::Duration & tstep,
                                SimpleLinearModel_ & simpleLinearModel) {
   Log::trace() << "HtlmEnsemble<MODEL>::step() starting" << std::endl;
-  model_.forecast(nonlinearControl_[0], maux_, tstep, trajectorySaver_);
+  modelControl_->forecast(nonlinearControl_[0], maux_, tstep, trajectorySaver_);
+  if (controlGeometry_ != ensembleGeometry_) {
+    *spareStateEnsembleGeometry_ = State_(*ensembleGeometry_, nonlinearControl_[0]);
+  }
   for (size_t m = 0; m < ensembleSize_; m++) {
-    model_.forecast(nonlinearEnsemble_[m], maux_, tstep, emptyPp_);
+    modelEnsemble_->forecast(nonlinearEnsemble_[m], maux_, tstep, emptyPp_);
     nonlinearDifferences_[m].updateTime(tstep);
-    nonlinearDifferences_[m].diff(nonlinearControl_[0], nonlinearEnsemble_[m]);
+    nonlinearDifferences_[m].diff(
+      controlGeometry_ == ensembleGeometry_ ? nonlinearControl_[0] : *spareStateEnsembleGeometry_,
+      nonlinearEnsemble_[m]);
     linearErrors_[m] = Increment_(updateGeometry_, nonlinearDifferences_[m]);
     simpleLinearModel.forecastTL(linearEnsemble_[m], mauxinc_, tstep);
     linearErrors_[m] -= linearEnsemble_[m];
