@@ -139,10 +139,29 @@ template <typename MODEL> class GenEnsPertB : public Application {
     std::unique_ptr<CovarianceBase_> Bmat(CovarianceFactory_::create(
                                             resol, vars, covarParams, xx, xx));
 
+    if (fullConfig.getBool("include control", false)) {
+//    Save control as ensemble member 0
+      State_ xp(xx[0]);
+
+//    Setup forecast outputs
+      PostProcessor<State_> post;
+
+      eckit::LocalConfiguration outConfig(fullConfig, "output");
+      util::setMember(outConfig, 0);
+
+      post.enrollProcessor(new StateWriter<State_>(outConfig));
+
+//    Run forecast
+      model.forecast(xp, moderr, fclength, post);
+      Log::test() << " Control Member final state: " << xp << std::endl;
+    }
+
 //  Generate perturbed states
-    Increment4D_ dx(resol, vars, xx.times());
     const int members = fullConfig.getInt("members");
     for (int jm = 0; jm < members; ++jm) {
+//    Initial incremental state
+      Increment4D_ dx(resol, vars, xx.times());
+
 //    Generate pertubation
       Bmat->randomize(dx);
 
@@ -163,22 +182,6 @@ template <typename MODEL> class GenEnsPertB : public Application {
       Log::test() << "Member " << jm << " final state: " << xp << std::endl;
     }
 
-    if (fullConfig.getBool("include control", false)) {
-//    Save control as ensemble member 0
-      State_ xp(xx[0]);
-
-//    Setup forecast outputs
-      PostProcessor<State_> post;
-
-      eckit::LocalConfiguration outConfig(fullConfig, "output");
-      util::setMember(outConfig, 0);
-
-      post.enrollProcessor(new StateWriter<State_>(outConfig));
-
-//    Run forecast
-      model.forecast(xp, moderr, fclength, post);
-      Log::test() << " Control Member final state: " << xp << std::endl;
-    }
     return 0;
   }
 // -----------------------------------------------------------------------------
