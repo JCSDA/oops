@@ -217,6 +217,13 @@ double CostFunction<MODEL, OBS>::evaluate(CtrlVar_ & fguess,
                                           PostProcessor<State_> post) {
   const bool linearize = innerConf.getBool("linearize", false);
   Log::trace() << "CostFunction::evaluate start, linearize = " << linearize << std::endl;
+
+// Setup terms of cost function
+  jb_->setPostProc(fguess, innerConf, post);
+  for (size_t jj = 0; jj < jterms_.size(); ++jj) {
+    jterms_[jj]->setPostProc(fguess, innerConf, post);
+  }
+
   if (linearize) {
 //  Inner loop resolution
     const eckit::LocalConfiguration resConf(innerConf, "geometry");
@@ -232,12 +239,6 @@ double CostFunction<MODEL, OBS>::evaluate(CtrlVar_ & fguess,
 
 //  Setup specific linearization if needed (including TLM)
     this->doLinearize(*lowres_.back(), innerConf, jb_->getBackground(), fguess, post, pptraj);
-  }
-
-// Setup terms of cost function
-  jb_->setPostProc(fguess, innerConf, post);
-  for (size_t jj = 0; jj < jterms_.size(); ++jj) {
-    jterms_[jj]->setPostProc(fguess, innerConf, post);
   }
 
 // Run NL model
