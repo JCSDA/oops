@@ -80,7 +80,7 @@ class ObsOperatorPert : public ObsOperatorBase<OBS>,
   /// Locations used for computing GeoVaLs that will be passed to simulateObs.
   Locations_ locations() const;
 
-  void computeReducedVars(const oops::Variables & vars, GeoVaLs_ & gvals) const;
+  void computeReducedVars(const oops::Variables & vars, GeoVaLs_ & gvals) const {}
 
  private:
   /// Print, used for logging
@@ -154,15 +154,6 @@ Locations<OBS> ObsOperatorPert<OBS>::locations() const {
 
 // -----------------------------------------------------------------------------
 
-template <typename OBS>
-void ObsOperatorPert<OBS>::computeReducedVars(const oops::Variables & vars,
-                                              GeoVaLs_ & gvals) const {
-  Log::trace() << "ObsOperator<OBS>::computeReducedVars starting" << std::endl;
-  util::Timer timer(name_, "computeReducedVars");
-  oper_->computeReducedVars(vars, gvals);
-}
-
-// -----------------------------------------------------------------------------
 template<typename OBS>
 void ObsOperatorPert<OBS>::print(std::ostream & os) const {
   Log::trace() << "ObsOperatorPert<OBS>::print starting" << std::endl;

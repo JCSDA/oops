@@ -63,11 +63,11 @@ class ObserversTLAD {
 
 /// Accessors
   ObserverTLAD_ & operator[](const std::size_t ii) {return *observers_.at(ii);}
+  const std::shared_ptr<GetValueTLADs_> & posts() {return posts_;}
 
  private:
   static std::vector<ObserverParameters_> convertToParameters(const eckit::Configuration &config);
 
- private:
   std::vector<std::unique_ptr<ObserverTLAD_>>  observers_;
   std::shared_ptr<GetValueTLADs_> posts_;
   util::DateTime winbgn_;

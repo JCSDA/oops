@@ -160,7 +160,7 @@ double CostPert<MODEL, OBS, J>::evaluate(CtrlVar_ & fguess,
     this->getNonConstJb()->getBackground() = xxPertCopy;
 //  Set the obs operator to the linear obs operator
 //  Perturb zero-valued obs ready for the pert member
-    this->getNonConstJo()->setObsPert();
+    this->getNonConstJo()->setObsPert(xxPertInc.state().variables());
 
 //  Set up pert member 3DVar cost function
 //  Runs 3DVar methods using pointers to the Jb & Jo already set up
@@ -231,7 +231,7 @@ template<typename MODEL, typename OBS, class J>
 void CostPert<MODEL, OBS, J>::addIncr(CtrlVar_ & xx, const CtrlInc_ & dx,
                                       PostProcessor<Increment_>& post) const {
   Log::trace() << "CostPert::addIncr start" << std::endl;
-  if (iteration_ <= 1) {
+  if (iteration_ == 0) {
     Log::trace() << "CostPert::addIncr doesn't exclude out of bounds values" << std::endl;
     atlas::FieldSet fset = xx.state().fieldSet().fieldSet();
     util::addFieldSets(fset, dx.state().fieldSet().fieldSet());

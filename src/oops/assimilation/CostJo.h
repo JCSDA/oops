@@ -25,7 +25,7 @@
 #include "oops/assimilation/CostTermBase.h"
 #include "oops/base/Departures.h"
 #include "oops/base/Geometry.h"
-#include "oops/base/GetValuePosts.h"
+#include "oops/base/GetValueTLADs.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observers.h"
@@ -58,7 +58,7 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   typedef Departures<OBS>               Departures_;
   typedef Observations<OBS>             Observations_;
   typedef Geometry<MODEL>               Geometry_;
-  typedef GetValuePosts<MODEL, OBS>     GetValuePosts_;
+  typedef GetValueTLADs<MODEL, OBS>     GetValueTLADs_;
   typedef State<MODEL>                  State_;
   typedef ObsErrors<OBS>                ObsErrors_;
   typedef ObsSpaces<OBS>                ObsSpaces_;
@@ -110,7 +110,7 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   /// Return gradient at first guess ie \f$ R^{-1} {\cal H}(x^t ) - y\f$.
   std::unique_ptr<GeneralizedDepartures> newGradientFG() const override;
 
-  void setObsPert();
+  void setObsPert(const Variables &);
 
   /// Reset obs operator trajectory.
   void resetLinearization() override;
@@ -385,18 +385,19 @@ std::unique_ptr<GeneralizedDepartures> CostJo<MODEL, OBS>::newGradientFG() const
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-void CostJo<MODEL, OBS>::setObsPert() {
+void CostJo<MODEL, OBS>::setObsPert(const Variables & incVars) {
   std::vector<eckit::LocalConfiguration> subconfs =
       eckit::LocalConfiguration(conf_, "observers").getSubConfigurations();
+
 //  Reset the observation operators to be the linear observation operators contained in *linObsTLAD,
 //  wrapped inside ObsOperatorPert
-  std::vector<std::unique_ptr<ObsOperatorBase_>> obsOpBases_;
+  std::vector<std::unique_ptr<ObsOperatorBase_>> obsOpBases;
   for (std::size_t jj = 0; jj < obspaces_.size(); ++jj) {
     const eckit::LocalConfiguration obsconf(subconfs[jj], "obs operator");
-    obsOpBases_.push_back(std::make_unique<ObsOperatorPert_>(obspaces_[jj], obsconf,
+    obsOpBases.push_back(std::make_unique<ObsOperatorPert_>(obspaces_[jj], obsconf,
                                                              (*obstlad_)[jj].linObsOp(), true));
   }
-  observers_->resetObsOp(std::move(obsOpBases_));
+  observers_->resetObsPert(std::move(obsOpBases), obstlad_->posts(), incVars);
   yobs_.reset(new Observations_(this->obspaces(), ""));
   // Perturb observations according to obs error statistics and save to output file
   yobs_->perturb(Rmat_);

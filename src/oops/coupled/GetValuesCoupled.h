@@ -89,6 +89,7 @@ class GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>:
 /// Variables that will be required from the State and Increment
   const Variables & linearVariables() const {return linvars_;}
   const Variables & requiredVariables() const {return geovars_;}
+  const bool useMethodsTL() const {return false;}
 
  private:
   const Variables geovars_;   /// Variables needed from both models

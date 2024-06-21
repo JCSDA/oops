@@ -151,10 +151,7 @@ void ObserverTLAD<MODEL, OBS>::finalizeTraj() {
   ASSERT(init_);
 
   // Fill geovals
-  GeoVaLs_ geovals(*locations_, hopVars_, hopVarSizes_);
-  for (size_t m = 0; m < getvals_.size(); ++m) {
-    getvals_[m]->fillGeoVaLs(geovals);
-  }
+  GeoVaLs_ geovals = makeAndFillGeoVaLs(*locations_, hopVars_, hopVarSizes_, getvals_);
 
   // Compute the reduced representation of the GeoVaLs for which it's been requested
   oops::Variables reducedVars = ybias_->requiredVars();
@@ -172,12 +169,8 @@ void ObserverTLAD<MODEL, OBS>::finalizeTL(const ObsAuxIncr_ & ybiastl, ObsVector
   Log::trace() << "ObserverTLAD::finalizeTL start" << std::endl;
 
   // TODO(wsmigaj): should we allow linear operators to require also *reduced* GeoVaLs?
-  GeoVaLs_ geovals(*locations_, hoptlad_.requiredVars(), hoptladVarSizes_);
-
-  // Fill GeoVaLs
-  for (size_t m = 0; m < getvals_.size(); ++m) {
-    getvals_[m]->fillGeoVaLsTL(geovals);
-  }
+  GeoVaLs_ geovals = makeAndFillGeoVaLs(*locations_, hoptlad_.requiredVars(),
+                                        hoptladVarSizes_, getvals_);
 
   // Compute linear H(x)
   hoptlad_.simulateObsTL(geovals, ydeptl, ybiastl, qc_flags_);

@@ -104,6 +104,24 @@ std::vector<std::shared_ptr<GetValues<MODEL, OBS>>> makeGetValuesVector(
   return getvalues;
 }
 
+template <typename MODEL, typename OBS>
+GeoVaLs<OBS> makeAndFillGeoVaLs(
+    const Locations<OBS> & locations,
+    const Variables & vars, const std::vector<size_t> & varsizes,
+    std::vector<std::shared_ptr<GetValues<MODEL, OBS>>> getvals) {
+
+  GeoVaLs<OBS> geovals(locations, vars, varsizes);
+  for (size_t m = 0; m < getvals.size(); ++m) {
+    if (getvals[m]->useMethodsTL()) {
+      getvals[m]->fillGeoVaLsTL(geovals);
+    } else {
+      getvals[m]->fillGeoVaLs(geovals);
+    }
+  }
+
+  return geovals;
+}
+
 }  // namespace oops
 
 #endif  // OOPS_BASE_OBSERVERUTILS_H_

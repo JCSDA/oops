@@ -45,7 +45,8 @@ class GetValuePosts : public PostBase<State<MODEL>> {
 /// \brief Saves Locations and Variables to be processed
   explicit GetValuePosts(const GetValuesParameters<MODEL> &);
 
-  void append(GetValuePtr_);
+  virtual void append(GetValuePtr_);
+  virtual void clear();
 
  private:
 /// \brief initialization before model run: sets up GetValues and allocate GeoVaLs
@@ -80,6 +81,15 @@ void GetValuePosts<MODEL, OBS>::append(GetValuePtr_ getval) {
 
 // -----------------------------------------------------------------------------
 
+template <typename MODEL, typename OBS>
+void GetValuePosts<MODEL, OBS>::clear() {
+  Log::trace() << "GetValuePosts::clear start" << std::endl;
+  getvals_.clear();
+  geovars_ = Variables();
+  Log::trace() << "GetValuePosts::clear done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
 void GetValuePosts<MODEL, OBS>::doInitialize(const State_ &, const util::DateTime &,
                                              const util::Duration & tstep) {

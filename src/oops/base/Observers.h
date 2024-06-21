@@ -17,7 +17,9 @@
 #include "eckit/config/LocalConfiguration.h"
 
 #include "oops/base/Geometry.h"
+#include "oops/base/GetValuePerts.h"
 #include "oops/base/GetValuePosts.h"
+#include "oops/base/GetValueTLADs.h"
 #include "oops/base/ObsAuxControls.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
@@ -55,8 +57,10 @@ class ObserversParameters : public oops::Parameters {
 template <typename MODEL, typename OBS>
 class Observers {
   typedef Geometry<MODEL>               Geometry_;
-  typedef GetValues<MODEL, OBS> GetValues_;
+  typedef GetValues<MODEL, OBS>         GetValues_;
+  typedef GetValuePerts<MODEL, OBS>     GetValuePerts_;
   typedef GetValuePosts<MODEL, OBS>     GetValuePosts_;
+  typedef GetValueTLADs<MODEL, OBS>     GetValueTLADs_;
   typedef GetValuesParameters<MODEL>    GetValuesParameters_;
   typedef ObsAuxControls<OBS>           ObsAuxCtrls_;
   typedef ObsErrors<OBS>                ObsErrors_;
@@ -87,7 +91,8 @@ class Observers {
 /// \brief Computes H(x) from the filled in GeoVaLs
   void finalize(Observations_ &);
 
-  void resetObsOp(std::vector<std::unique_ptr<ObsOperatorBase_>>);
+  void resetObsPert(std::vector<std::unique_ptr<ObsOperatorBase_>>,
+                    const std::shared_ptr<GetValueTLADs_> &, const Variables &);
 
  private:
   static std::vector<ObserverParameters_> convertToParameters(const eckit::Configuration &config);
@@ -96,6 +101,7 @@ class Observers {
  private:
   std::vector<std::unique_ptr<Observer_>>  observers_;
   GetValuesParameters_ getValuesParams_;
+  std::shared_ptr<GetValuePosts_> posts_;
 };
 
 // -----------------------------------------------------------------------------
@@ -105,7 +111,7 @@ Observers<MODEL, OBS>::Observers(const ObsSpaces_ & obspaces,
                                  const std::vector<ObserverParameters_> & params,
                                  const GetValuesParameters_ & getValuesParams,
                                  std::vector<std::unique_ptr<ObsOperatorBase_>> obsOpBases)
-  : observers_(), getValuesParams_(getValuesParams)
+  : observers_(), getValuesParams_(getValuesParams), posts_(new GetValuePosts_(getValuesParams_))
 {
   Log::trace() << "Observers<MODEL, OBS>::Observers start" << std::endl;
   if (obsOpBases.size() != obspaces.size()) obsOpBases.resize(obspaces.size());
@@ -136,14 +142,14 @@ void Observers<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrls
                                        const eckit::Configuration & conf) {
   Log::trace() << "Observers<MODEL, OBS>::initialize start" << std::endl;
 
-  std::shared_ptr<GetValuePosts_> posts(new GetValuePosts_(getValuesParams_));
+  posts_->clear();
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
     std::vector<std::shared_ptr<GetValues_>> getvalues =
         observers_[jj]->initialize(geom, obsaux[jj], Rmat[jj], conf);
     for (std::shared_ptr<GetValues_> &gv : getvalues)
-      posts->append(std::move(gv));
+      posts_->append(std::move(gv));
   }
-  pp.enrollProcessor(posts);
+  pp.enrollProcessor(posts_);
 
   Log::trace() << "Observers<MODEL, OBS>::initialize done" << std::endl;
 }
@@ -164,11 +170,15 @@ void Observers<MODEL, OBS>::finalize(Observations_ & yobs) {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-void Observers<MODEL, OBS>::resetObsOp(std::vector<std::unique_ptr<ObsOperatorBase_>> obsOpBases) {
+void Observers<MODEL, OBS>::resetObsPert(std::vector<std::unique_ptr<ObsOperatorBase_>> obsOpBases,
+                                       const std::shared_ptr<GetValueTLADs_> & getValTLs,
+                                       const Variables & vars) {
   oops::Log::trace() << "Observers<MODEL, OBS>::resetObsOp start" << std::endl;
 
+  posts_.reset(new GetValuePerts_(getValuesParams_, getValTLs, vars));
+  int index = 0;
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
-    observers_[jj]->resetObsOp(std::move(obsOpBases[jj]));
+    index = observers_[jj]->resetObsPert(std::move(obsOpBases[jj]), getValTLs, index);
   }
 
   oops::Log::trace() << "Observers<MODEL, OBS>::resetObsOp done" << std::endl;

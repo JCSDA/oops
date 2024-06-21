@@ -1,26 +1,31 @@
 midwindow backgrounds:
   date: 2010-01-01T12:00:00Z
   filename: Data/forecast.ens.__mem__.2009-12-31T00:00:00Z.P1DT12H.nc
+  state variables: [x, q]
 assimilation:
   cost function:
     cost type: 4D-Var     # Cost function for the control member (Pert members always use 3D-Var)
     time window:
       begin: 2010-01-01T00:00:00Z
       length: P1D
-    analysis variables: [x]
+    analysis variables: [q]
     geometry:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
     background:
       date: 2010-01-01T00:00:00Z
-      filename: Data/forecast.ens.__mem__.2009-12-31T00:00:00Z.P1D.nc
+      filename: Data/forecast.ens.0.2009-12-31T00:00:00Z.P1D.nc
+      state variables: [x, q]
     background error:
       covariance model: QgError
       horizontal_length_scale: 2.2e6
       maximum_condition_number: 1.0e6
       standard_deviation: 1.8e7
       vertical_length_scale: 15000.0
+      linear variable change:
+        input variables:  [x]  # Background error model variables (control variables)
+        output variables: [q]
     model:
       name: QG
       tstep: PT1H
@@ -36,6 +41,10 @@ assimilation:
           obsdataout:
             obsfile: Data/mem__mem_pad__.eda_4dvar_control_pert.obs4d_24h.nc
           obs type: Stream
+        obs bias:
+          stream: -10.0
+          covariance:
+            stream: 2.0e7
       - obs error:
           covariance model: diagonal
         obs operator:

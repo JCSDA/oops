@@ -215,6 +215,7 @@ class GetValues : private util::ObjectCounter<GetValues<MODEL, OBS> > {
 /// Variables that will be required from the State and Increment
   const Variables & linearVariables() const {return linvars_;}
   const Variables & requiredVariables() const {return geovars_;}
+  const bool & useMethodsTL() const {return geovalsTL_;}
 
  private:
 /// time-interpolation helper: adds contribution from this time to running total
@@ -250,6 +251,7 @@ class GetValues : private util::ObjectCounter<GetValues<MODEL, OBS> > {
   bool doLinearTimeInterpolation_;     /// set true when linear time interpolation
                                        /// needs to be done for this run
   std::vector<size_t> recv_tasks_;
+  bool geovalsTL_ = false;
 };
 
 // -----------------------------------------------------------------------------
@@ -535,6 +537,7 @@ void GetValues<MODEL, OBS>::initializeTL(const util::Duration & tstep) {
     locinterp_[jtask].resize(obs_times_by_task_[jtask].size() * linsizes_, missing);
   }
   hslot_ = tstep/2;
+  geovalsTL_ = true;
   Log::trace() << "GetValues::initializeTL done" << std::endl;
 }
 
@@ -645,6 +648,7 @@ void GetValues<MODEL, OBS>::fillGeoVaLsTL(GeoVaLs_ & geovals) {
   }
   send_req_.clear();
   locinterp_.clear();
+  geovalsTL_ = false;
 
   Log::trace() << "GetValues::fillGeoVaLsTL done" << std::endl;
 }

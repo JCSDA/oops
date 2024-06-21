@@ -41,6 +41,8 @@ class GetValueTLADs : public PostBaseTLAD<MODEL> {
 
   void append(GetValPtr_);
 
+  GetValPtr_ & operator[](const std::size_t ii) {return getvals_[ii];}
+
  private:
 // Methods
   void doInitializeTraj(const State_ &, const util::DateTime &, const util::Duration &) override;
@@ -78,7 +80,9 @@ void GetValueTLADs<MODEL, OBS>::append(GetValPtr_ getval) {
   linvars_ += getval->linearVariables();
   Log::trace() << "GetValuePosts::append done" << std::endl;
 }
+
 // -----------------------------------------------------------------------------
+
 template <typename MODEL, typename OBS>
 void GetValueTLADs<MODEL, OBS>::doInitializeTraj(const State_ &, const util::DateTime &,
                                                  const util::Duration & tstep) {

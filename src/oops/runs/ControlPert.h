@@ -314,23 +314,25 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
     }
 
 //  Compute final value of the cost function and, if an output configuration is specified,
-//  save the control member's analysis trajectory (or state)
+//  save the analysis trajectory (or state). For control member ONLY.
     PostProcessor<State_> post;
-    if (mymember == 0 && memberConf.has("output")) {
-      const eckit::LocalConfiguration outConfig(memberConf, "output");
-      post.enrollProcessor(new StateWriter<State_>(outConfig));
-      finalConfig.set("iteration", iouter);
+    if (mymember == 0) {
+      if (memberConf.has("output")) {
+        const eckit::LocalConfiguration outConfig(memberConf, "output");
+        post.enrollProcessor(new StateWriter<State_>(outConfig));
+        finalConfig.set("iteration", iouter);
+      }
+      if (finalConfig.has("analysis to structured grid")) {
+         const eckit::LocalConfiguration anLatlonConf(finalConfig, "analysis to structured grid");
+         post.enrollProcessor(new StructuredGridPostProcessor<MODEL, State_>(
+               anLatlonConf, xxMember.state().geometry() ));
+       }
+      if (finalConfig.has("prints")) {
+        const eckit::LocalConfiguration prtConfig(finalConfig, "prints");
+        post.enrollProcessor(new StateInfo<State_>("final", prtConfig));
+      }
+      J->evaluate(xxMember, finalConfig, post);
     }
-    if (mymember == 0 && finalConfig.has("analysis to structured grid")) {
-       const eckit::LocalConfiguration anLatlonConf(finalConfig, "analysis to structured grid");
-       post.enrollProcessor(new StructuredGridPostProcessor<MODEL, State_>(
-             anLatlonConf, xxMember.state().geometry() ));
-     }
-    if (finalConfig.has("prints")) {
-      const eckit::LocalConfiguration prtConfig(finalConfig, "prints");
-      post.enrollProcessor(new StateInfo<State_>("final", prtConfig));
-    }
-    J->evaluate(xxMember, finalConfig, post);
     Log::info() << "ControlPert: member " << mymember << " incremental assimilation done; "
                 << iouter << " iterations." << std::endl;
 

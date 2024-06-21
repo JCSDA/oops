@@ -1722,15 +1722,15 @@ do iz=1,self%geom%nz
         index = index+1
       endif
       if (allocated(self%q)) then
-        self%x(ix,iy,iz) = vect_fld(index)
+        self%q(ix,iy,iz) = vect_fld(index)
         index = index+1
       endif
       if (allocated(self%u)) then
-        self%x(ix,iy,iz) = vect_fld(index)
+        self%u(ix,iy,iz) = vect_fld(index)
         index = index+1
       endif
       if (allocated(self%v)) then
-        self%x(ix,iy,iz) = vect_fld(index)
+        self%v(ix,iy,iz) = vect_fld(index)
         index = index+1
       endif
     enddo

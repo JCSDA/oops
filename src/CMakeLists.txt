@@ -110,6 +110,7 @@ oops/base/GeneralizedDepartures.h
 oops/base/Geometry.h
 oops/base/GeometryData.cc
 oops/base/GeometryData.h
+oops/base/GetValuePerts.h
 oops/base/GetValuePosts.h
 oops/base/GetValues.h
 oops/base/GetValueTLADs.h
