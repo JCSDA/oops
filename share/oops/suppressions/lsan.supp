@@ -1,0 +1,10 @@
+leak:libopen-pal
+leak:libomp
+leak:libmpi_gnu
+leak:libnetcdf
+leak:libnetcdff
+leak:libhdf5
+leak:MPI_Init
+leak:MPI_Group_incl
+leak:MPI_Cart_create
+leak:MPI_Allreduce

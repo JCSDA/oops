@@ -93,6 +93,7 @@ install(
 ## Sources
 add_subdirectory( src )
 add_subdirectory( tools )
+add_subdirectory( share )
 
 if( ENABLE_OOPS_DOC )
     add_subdirectory( docs )
