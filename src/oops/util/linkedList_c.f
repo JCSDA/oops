@@ -97,21 +97,6 @@ subroutine remove_(self,key)
  return
 end subroutine
 
-!> Finalize the linked list, deallocate all nodes
-subroutine finalize_(self)
- class(registry_t), intent(inout) :: self
- type(node_t), pointer :: current
- type(node_t), pointer :: next
-
- !sweep the linked list and deallocate all nodes
- next => self%head
- do while(associated(next))
-  current => next
-  next => next%next
-  deallocate(current)
- enddo
-end subroutine
-
 !> linkedlist generic setup
 subroutine registry_setup_(self, c_key_self, ptr)
   class(registry_t), intent(inout) :: self

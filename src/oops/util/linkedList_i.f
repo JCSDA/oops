@@ -24,7 +24,6 @@ type :: registry_t
 
 contains
   procedure :: init => init_
-  procedure :: finalize => finalize_
   procedure :: add => add_
   procedure :: get => get_
   procedure :: remove => remove_
