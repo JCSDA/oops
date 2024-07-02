@@ -87,9 +87,11 @@ template <typename MODEL, typename OBS> class Variational : public Application {
 
 //  Save analysis and final diagnostics
     PostProcessor<State_> post;
+    bool runLastEvaluate = false;
     if (fullConfig.has("output")) {
       const eckit::LocalConfiguration outConfig(fullConfig, "output");
       post.enrollProcessor(new StateWriter<State_>(outConfig));
+      runLastEvaluate = true;
     }
 
     eckit::LocalConfiguration finalConfig(fullConfig, "final");
@@ -126,15 +128,19 @@ template <typename MODEL, typename OBS> class Variational : public Application {
     if (finalConfig.has("prints")) {
       const eckit::LocalConfiguration prtConfig(finalConfig, "prints");
       post.enrollProcessor(new StateInfo<State_>("final", prtConfig));
+      runLastEvaluate = true;
     }
 
     if (finalConfig.has("analysis to structured grid")) {
       const eckit::LocalConfiguration anLatlonConf(finalConfig, "analysis to structured grid");
       post.enrollProcessor(new StructuredGridPostProcessor<MODEL, State_>(
             anLatlonConf, xx.state().geometry() ));
+      runLastEvaluate = true;
     }
 
-    J->evaluate(xx, finalConfig, post);
+    if (runLastEvaluate || finalConfig.has("forecast from analysis")) {
+      J->evaluate(xx, finalConfig, post);
+    }
 
 //  Save ObsAux
     xx.obsVar().write(cfConf);

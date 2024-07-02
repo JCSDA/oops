@@ -317,21 +317,27 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
 //  save the analysis trajectory (or state). For control member ONLY.
     PostProcessor<State_> post;
     if (mymember == 0) {
+      bool runLastEvaluate = false;
       if (memberConf.has("output")) {
         const eckit::LocalConfiguration outConfig(memberConf, "output");
         post.enrollProcessor(new StateWriter<State_>(outConfig));
         finalConfig.set("iteration", iouter);
+        runLastEvaluate = true;
       }
       if (finalConfig.has("analysis to structured grid")) {
          const eckit::LocalConfiguration anLatlonConf(finalConfig, "analysis to structured grid");
          post.enrollProcessor(new StructuredGridPostProcessor<MODEL, State_>(
                anLatlonConf, xxMember.state().geometry() ));
+        runLastEvaluate = true;
        }
       if (finalConfig.has("prints")) {
         const eckit::LocalConfiguration prtConfig(finalConfig, "prints");
         post.enrollProcessor(new StateInfo<State_>("final", prtConfig));
+        runLastEvaluate = true;
       }
-      J->evaluate(xxMember, finalConfig, post);
+      if (runLastEvaluate) {
+        J->evaluate(xxMember, finalConfig, post);
+      }
     }
     Log::info() << "ControlPert: member " << mymember << " incremental assimilation done; "
                 << iouter << " iterations." << std::endl;
