@@ -208,8 +208,8 @@ std::vector<double> Increment<MODEL>::rmsByVariableByLevel(const Variable & var,
     }
     rms[k] = sqrt(rms[k] / nOwned);
   }
-  return rms;
   Log::trace() << "Increment<MODEL>::rmsByVariableByLevel done" << std::endl;
+  return rms;
 }
 
 // -----------------------------------------------------------------------------
