@@ -1,0 +1,62 @@
+time window:
+  begin: 2010-01-01T21:00:00Z
+  length: PT6H
+
+geometry:
+  resol: 40
+
+# use 3D for middle of the window
+background:
+  members from template:
+    template:
+      date: &date 2010-01-02T00:00:00Z
+      filename: Data/forecast.ens.%mem%.2010-01-01T00:00:00Z.P1D.l95
+    pattern: %mem%
+    nmembers: 5
+
+driver:
+  update obs config with geometry info: false
+  save prior mean: true
+
+observations:
+  observers:
+  - obs error:
+      covariance model: diagonal
+    obs localizations:
+    - localization method: Gaspari-Cohn
+      lengthscale: .1
+    obs space:
+      obsdatain:
+        obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+      obsdataout:
+        obsfile: Data/getkf_lo.2010-01-02T00:00:00Z.obt
+    obs operator: {}
+
+local ensemble DA:
+  solver: GETKF
+  use linear observer: true
+  vertical localization:
+    fraction of retained variance: .99
+    lengthscale: 10
+    lengthscale units: bogus
+  inflation:
+    rtps: 0.5
+    rtpp: 0.5
+    mult: 1.0
+
+output:
+  datadir: Data
+  date: *date
+  exp: getkf.%{member}%
+  type: an
+
+output mean prior:
+  datadir: Data
+  date: *date
+  exp: getkf.xbmean
+  type: an
+
+test:
+  reference filename: testoutput/getkf.test
+  test output filename: testoutput/getkf_linearobserver.test.out
+  float relative tolerance: 1.5e-3

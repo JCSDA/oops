@@ -411,7 +411,12 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     // than LETKF background/analysis perturbations.
     // hence one might not expect that oman and omaf are comparable
     if (params.driver.value().doPostObs.value()) {
-      Observations_ ya_mean = solver->computeHofX(ens_xx, 1, false);
+      // need to create a posterior solver that stores ana_mean internally.
+      // This is needed if linear observer is used, because it is linearized arround this mean
+      std::unique_ptr<LocalSolver_> posteriorSolver =
+         LocalEnsembleSolverFactory<MODEL, OBS>::create(obsdb, geometry, fullConfig,
+                                                        nens, ana_mean, incvars);
+      Observations_ ya_mean = posteriorSolver->computeHofX(ens_xx, 1, false);
       Log::test() << "H(x) ensemble analysis mean: " << std::endl << ya_mean << std::endl;
 
       // calculate analysis obs departures

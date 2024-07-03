@@ -86,6 +86,7 @@ list( APPEND l95_test_input
   testinput/geometry_iterator.yaml
   testinput/geovals.yaml
   testinput/getkf.yaml
+  testinput/getkf_linearobserver.yaml
   testinput/getkf_offline_hofx.yaml
   testinput/getkf_offline_hofx_one_member.yaml
   testinput/getvalues.yaml
@@ -869,6 +870,11 @@ ecbuild_add_test( TARGET test_l95_letkf_gsi
 ecbuild_add_test( TARGET test_l95_getkf
                   COMMAND l95_letkf.x
                   ARGS testinput/getkf.yaml
+                  TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+
+ecbuild_add_test( TARGET test_l95_getkf_linearobserver
+                  COMMAND l95_letkf.x
+                  ARGS testinput/getkf_linearobserver.yaml
                   TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
 
 ecbuild_add_test( TARGET test_l95_hofx3d_for_getkf
