@@ -1052,9 +1052,14 @@ ecbuild_add_test( TARGET  test_util_functionspace_helpers
                   COMMAND test_oops_util_functionspace_helpers
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
-ecbuild_add_test( TARGET  test_util_functionspace_helpers_parallel
+ecbuild_add_test( TARGET  test_util_functionspace_helpers_p2
                   COMMAND test_oops_util_functionspace_helpers
                   MPI     2
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+ecbuild_add_test( TARGET  test_util_functionspace_helpers_p4
+                  COMMAND test_oops_util_functionspace_helpers
+                  MPI     4
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 

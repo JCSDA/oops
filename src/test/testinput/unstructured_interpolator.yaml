@@ -13,10 +13,9 @@ Case0_FromStructuredGaussian:
     # produces a more robust test because it will catch more edge cases in the target location.
     number: &number_target_points 1000
     # TODO: re-enable global patch
-    #       for now, exclude anything near a halo (bounds below will work for serial only!)
-    #       see https://github.com/JCSDA-internal/oops/issues/2631
-    longitude bounds: [10., 350.]
-    latitude bounds: [-80., 80.]
+    #       for now, exclude polar regions
+    #       see https://github.com/JCSDA-internal/oops/issues/2633
+    latitude bounds: [-65., 65.]
   test with simple source-point mask: true
   tolerance interpolation: 5e-3
 

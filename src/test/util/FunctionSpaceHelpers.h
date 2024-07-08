@@ -26,8 +26,33 @@
 #include "oops/util/Expect.h"
 #include "oops/util/FieldSetHelpers.h"
 #include "oops/util/FunctionSpaceHelpers.h"
+#include "oops/util/missingValues.h"
 
 namespace test {
+
+// Test of StructuredMeshToStructuredColumnsIndexMap class
+// Loop over every mesh point (including halo), and check it is mapped either to,
+// - the same point (=> same lon,lat) in the function space, OR
+// - to a missing value, denoting a mesh point that is not in the function space (on this MPI task)
+void testIndexMapper(const atlas::Mesh & mesh, const atlas::FunctionSpace & fs) {
+  const atlas::functionspace::StructuredColumns structuredcolumns(fs);
+  if (structuredcolumns) {
+    // check every mesh point is mapped to the same coordinate, or is not mapped
+    auto fs_lonlat = atlas::array::make_view<double, 2>(structuredcolumns.lonlat());
+    auto mesh_lonlat = atlas::array::make_view<double, 2>(mesh.nodes().lonlat());
+
+    util::StructuredMeshToStructuredColumnsIndexMap map{};
+    map.initialize(mesh, structuredcolumns);
+
+    for (atlas::idx_t imesh = 0; imesh < mesh_lonlat.shape(0); ++imesh) {
+      const atlas::idx_t ifs = map(imesh);
+      if (ifs != util::missingValue<atlas::idx_t>()) {
+        EXPECT(mesh_lonlat(imesh, 0) == fs_lonlat(ifs, 0));
+        EXPECT(mesh_lonlat(imesh, 1) == fs_lonlat(ifs, 1));
+      }
+    }
+  }
+}
 
 void testStructuredColumnsLonLat(const eckit::mpi::Comm & comm) {
   eckit::LocalConfiguration config;
@@ -50,13 +75,15 @@ void testStructuredColumnsLonLat(const eckit::mpi::Comm & comm) {
   EXPECT(partitioner.type() == "equal_regions");
   EXPECT(functionspace.type() == "StructuredColumns");
   EXPECT(fieldset.has("owned"));
+
+  testIndexMapper(mesh, functionspace);
 }
 
 CASE("util/FunctionSpaceHelpers/StructuredColumnsLonLat") {
   const eckit::mpi::Comm & comm = oops::mpi::world();
   testStructuredColumnsLonLat(comm);
 
-  if (comm.size() == 2) {
+  if (comm.size() > 1) {
     const std::string commName = "subcommunicator";
     comm.split(comm.rank(), commName.c_str());
     testStructuredColumnsLonLat(eckit::mpi::comm(commName.c_str()));
@@ -86,13 +113,15 @@ void testStructuredColumnsGaussian(const eckit::mpi::Comm & comm) {
   EXPECT(partitioner.type() == "equal_regions");
   EXPECT(functionspace.type() == "StructuredColumns");
   EXPECT(fieldset.has("owned"));
+
+  testIndexMapper(mesh, functionspace);
 }
 
 CASE("util/FunctionSpaceHelpers/StructuredColumnsGaussian") {
   const eckit::mpi::Comm & comm = oops::mpi::world();
   testStructuredColumnsGaussian(comm);
 
-  if (comm.size() == 2) {
+  if (comm.size() > 1) {
     const std::string commName = "subcommunicator";
     comm.split(comm.rank(), commName.c_str());
     testStructuredColumnsGaussian(eckit::mpi::comm(commName.c_str()));
@@ -124,24 +153,21 @@ void testStructuredColumnsRegional(const eckit::mpi::Comm & comm) {
 
   util::setupFunctionSpace(comm, config, grid, partitioner, mesh, functionspace, fieldset);
 
-  std::cout << grid.type() << std::endl;
-  std::cout << grid.name() << std::endl;
-  std::cout << grid.uid() << std::endl;
-  std::cout << partitioner.type() << std::endl;
-  std::cout << functionspace.type() << std::endl;
   EXPECT(grid.type() == "structured");  // NB: not "regional" !
   EXPECT(grid.name() == "structured");
   EXPECT(grid.uid() == "60797064f97ff3149d4814f6105028d5");
   EXPECT(partitioner.type() == "checkerboard");
   EXPECT(functionspace.type() == "StructuredColumns");
   EXPECT(fieldset.has("owned"));
+
+  testIndexMapper(mesh, functionspace);
 }
 
 CASE("util/FunctionSpaceHelpers/StructuredColumnsRegional") {
   const eckit::mpi::Comm & comm = oops::mpi::world();
   testStructuredColumnsRegional(comm);
 
-  if (comm.size() == 2) {
+  if (comm.size() > 1) {
     const std::string commName = "subcommunicator";
     comm.split(comm.rank(), commName.c_str());
     testStructuredColumnsRegional(eckit::mpi::comm(commName.c_str()));
@@ -165,11 +191,6 @@ void testNodeColumnsCubedSphere(const eckit::mpi::Comm & comm) {
 
   util::setupFunctionSpace(comm, config, grid, partitioner, mesh, functionspace, fieldset);
 
-  std::cout << grid.type() << std::endl;
-  std::cout << grid.name() << std::endl;
-  std::cout << grid.uid() << std::endl;
-  std::cout << partitioner.type() << std::endl;
-  std::cout << functionspace.type() << std::endl;
   EXPECT(grid.type() == "cubedsphere");
   EXPECT(grid.name() == "CS-LFR-12");
   EXPECT(grid.uid() == "8aa0b472107ce06c53b5c760886b9fb1");
@@ -182,7 +203,7 @@ CASE("util/FunctionSpaceHelpers/NodeColumnsCubedSphere") {
   const eckit::mpi::Comm & comm = oops::mpi::world();
   testNodeColumnsCubedSphere(comm);
 
-  if (comm.size() == 2) {
+  if (comm.size() > 1) {
     const std::string commName = "subcommunicator";
     comm.split(comm.rank(), commName.c_str());
     testNodeColumnsCubedSphere(eckit::mpi::comm(commName.c_str()));
@@ -219,7 +240,7 @@ CASE("util/FunctionSpaceHelpers/NodeColumnsUnstructured") {
   const eckit::mpi::Comm & comm = oops::mpi::world();
   testNodeColumnsUnstructured(comm);
 
-  if (comm.size() == 2) {
+  if (comm.size() > 1) {
     const std::string commName = "subcommunicator";
     comm.split(comm.rank(), commName.c_str());
     testNodeColumnsUnstructured(eckit::mpi::comm(commName.c_str()));
