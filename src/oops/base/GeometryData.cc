@@ -107,6 +107,19 @@ GeometryData::GeometryData(const atlas::FunctionSpace & fspace, const atlas::Fie
     is_atlas_structured_columns_ = true;
     const atlas::functionspace::StructuredColumns structuredcolumns(fspace_);
     indexMapper_.initialize(mesh_, structuredcolumns);
+
+    const atlas::RegularGrid rg(structuredcolumns.grid());
+    if (rg) {
+      // Save regular grid nx for pole correction
+      regular_grid_nx_ = rg.nx();
+    }
+
+  } else if (fspace_.type() == "NodeColumns") {
+    const atlas::RegularGrid rg(mesh_.grid());
+    if (rg) {
+      // Save regular grid nx for pole correction
+      regular_grid_nx_ = rg.nx();
+    }
   }
 }
 
@@ -209,18 +222,39 @@ bool GeometryData::containingTriangleAndBarycentricCoords(const double lat, cons
     }
   };
 
+  // The number of cells to check depends on how the search pattern interacts with the mesh
+  const int nb_cells_to_check = [&]() {
+    // Default case: check the 8 closest cells, following the atlas unstructured interpolator
+    int nb_to_check = 8;
+    // Special case: in a regular grid, we expect the convergence of grid lines at the pole will
+    // lead to highly-deformed cells (quads or tris). This makes it necessary to search through more
+    // cells than the default case to guarantee finding the cell containing the target point, which
+    // in turn makes our proximity-based search inefficient. If this expanded search does become a
+    // bottleneck, an alternative search pattern in polar regions should be considered; perhaps
+    // using cell-to-cell connectivity to search through neighbors of neighbors.
+    if (regular_grid_nx_ > 0) {
+      // Scale number of cells by the aspect ratio of the grid cells, which is approximately given
+      // by the compression of the const-longitude lines towards the pole:
+      const double max_to_check = 2.0 * regular_grid_nx_;  // arbitrary max: 2 bands of cells
+      const double deg2rad = M_PI / 180.0;
+      const double compression = 1.0 / abs(cos(deg2rad * lat));
+      // Apply scaling factor and check against max; we do this as floating-point math, because if
+      // the target lat is close to a pole, then the compression will be huge and integers overflow.
+      const double nb_scaled_and_bounded = std::min(nb_to_check * compression, max_to_check);
+      nb_to_check = static_cast<int>(nb_scaled_and_bounded);
+    }
+    return std::min(nb_to_check, static_cast<int>(localCellCenterTree_.size()));
+  }();
+
   // Find cell that contains target point
   atlas::PointLonLat pll(lon, lat);
   pll.normalise();
   atlas::Point3 p;
   earth_.lonlat2xyz(pll, p);
 
-  // We check the 8 closest cells, following the example of the atlas unstructured interpolator
-  const int nb_cells_to_check = std::min(8, mesh_.cells().size());
-  const auto list = localCellCenterTree_.closestPoints(p, nb_cells_to_check);
-
   bool success = false;
 
+  const auto list = localCellCenterTree_.closestPoints(p, nb_cells_to_check);
   for (const auto & item : list) {
     const int cell = item.payload();
     const int nb_cols = connectivity.cols(cell);

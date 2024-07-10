@@ -10,10 +10,6 @@ Case0_FromStructuredGaussian:
     # Note: for testing grid/interpolator developments, increasing this number by 100x or more
     # produces a more robust test because it will catch more edge cases in the target location.
     number: &number_target_points 1000
-    # TODO: re-enable global patch
-    #       for now, exclude polar regions
-    #       see https://github.com/JCSDA-internal/oops/issues/2633
-    latitude bounds: [-65., 65.]
   global interpolator:
     local interpolator type: oops unstructured grid interpolator
   tolerance interpolation: 5e-3
@@ -27,10 +23,6 @@ Case1_FromGaussian:
     halo: 1
   target points:
     number: *number_target_points
-    # TODO: re-enable global patch
-    #       for now, exclude polar regions
-    #       see https://github.com/JCSDA-internal/oops/issues/2633
-    latitude bounds: [-65., 65.]
   global interpolator:
     local interpolator type: oops unstructured grid interpolator
   tolerance interpolation: 5e-3

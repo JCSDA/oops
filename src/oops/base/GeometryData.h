@@ -75,6 +75,9 @@ class GeometryData {
   // interpolation stencil computation onto the FunctionSpace indices used to read FieldSet data.
   bool is_atlas_structured_columns_ = false;
   util::StructuredMeshToStructuredColumnsIndexMap indexMapper_;
+  // When the grid is regular (in either StructuredColumns or NodeColumns), we need to look through
+  // more triangles at the poles to account for grid deformation.
+  int regular_grid_nx_ = -1;
 };
 
 // -----------------------------------------------------------------------------
