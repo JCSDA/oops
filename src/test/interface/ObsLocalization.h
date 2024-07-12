@@ -181,7 +181,6 @@ template <typename MODEL, typename OBS> class ObsLocalization : public oops::Tes
   typedef ObsTestsFixture<OBS> Test_;
 
  public:
-  ObsLocalization() = default;
   virtual ~ObsLocalization() = default;
 
  private:

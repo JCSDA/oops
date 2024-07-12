@@ -135,7 +135,6 @@ template <typename MODEL> void testChangeRes() {
 template <typename MODEL>
 class ModelAuxControl : public oops::Test {
  public:
-  ModelAuxControl() {}
   virtual ~ModelAuxControl() {}
  private:
   std::string testid() const override {return "test::ModelAuxControl<" + MODEL::name() + ">";}

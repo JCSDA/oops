@@ -499,7 +499,6 @@ template <typename MODEL> void testStateReadWrite() {
 template <typename MODEL>
 class State : public oops::Test {
  public:
-  State() {}
   virtual ~State() {StateFixture<MODEL>::reset();}
 
  private:

@@ -367,7 +367,6 @@ template <typename MODEL, typename OBS> void testGetValuesAdjoint() {
 template <typename MODEL, typename OBS>
 class GetValues : public oops::Test {
  public:
-  GetValues() {}
   virtual ~GetValues() {GetValuesFixture<MODEL, OBS>::reset();}
 
  private:

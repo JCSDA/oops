@@ -368,7 +368,6 @@ template <typename MODEL> void testLinearModelAdjoint() {
 template <typename MODEL>
 class LinearModel : public oops::Test {
  public:
-  LinearModel() {}
   virtual ~LinearModel() {LinearModelFixture<MODEL>::reset();}
 
  private:

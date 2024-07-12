@@ -192,7 +192,6 @@ void testIntersection() {
 
 class ObsVariables : public oops::Test {
  public:
-  ObsVariables() {}
   virtual ~ObsVariables() {}
 
  private:

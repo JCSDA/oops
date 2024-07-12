@@ -552,7 +552,9 @@ class LinearObsOperator : public oops::Test {
   typedef ObsTestsFixture<OBS> Test_;
 
  public:
-  LinearObsOperator() {
+  explicit LinearObsOperator(const eckit::mpi::Comm & comm = oops::mpi::world()) :
+    oops::Test(comm)
+  {
     // Needed because oops::ObsTypeParametersBase contains obs error parameters.
     oops::instantiateObsErrorFactory<OBS>();
   }

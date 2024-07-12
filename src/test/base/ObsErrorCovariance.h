@@ -206,7 +206,6 @@ class ObsErrorCovariance : public oops::Test {
   typedef ObsTestsFixture<OBS>     Test_;
 
  public:
-  ObsErrorCovariance() {}
   virtual ~ObsErrorCovariance() {}
 
  private:

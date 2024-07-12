@@ -346,7 +346,6 @@ class ObsVector : public oops::Test {
   typedef ObsTestsFixture<OBS> Test_;
 
  public:
-  ObsVector() {}
   virtual ~ObsVector() {}
 
  private:

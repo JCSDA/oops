@@ -85,7 +85,6 @@ template <typename MODEL> void testPseudoModelState4D() {
 template <typename MODEL>
 class PseudoModelState4D : public oops::Test {
  public:
-  PseudoModelState4D() = default;
   virtual ~PseudoModelState4D() = default;
  private:
   std::string testid() const override {return "test::PseudoModelState4D<" + MODEL::name() + ">";}

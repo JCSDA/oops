@@ -108,7 +108,6 @@ template <typename MODEL> void testConstructor() {
 template <typename MODEL>
 class ModelAuxCovariance : public oops::Test {
  public:
-  ModelAuxCovariance() {}
   virtual ~ModelAuxCovariance() {}
  private:
   std::string testid() const override {return "test::ModelAuxCovariance<" + MODEL::name() + ">";}

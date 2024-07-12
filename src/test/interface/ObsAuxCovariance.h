@@ -56,7 +56,6 @@ template <typename OBS>
 class ObsAuxCovariance : public oops::Test {
   typedef ObsTestsFixture<OBS>  Test_;
  public:
-  ObsAuxCovariance() {}
   virtual ~ObsAuxCovariance() {}
  private:
   std::string testid() const override {return "test::ObsAuxCovariance<" + OBS::name() + ">";}

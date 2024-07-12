@@ -82,7 +82,6 @@ class ObsDataVector : public oops::Test {
   typedef ObsTestsFixture<OBS> Test_;
 
  public:
-  ObsDataVector() {}
   virtual ~ObsDataVector() {}
 
  private:

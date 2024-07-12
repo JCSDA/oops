@@ -184,7 +184,6 @@ void testInterpolatorFromConfig(eckit::LocalConfiguration config) {
 
 class GlobalInterpolator : public oops::Test {
  public:
-  GlobalInterpolator() {}
   virtual ~GlobalInterpolator() {}
 
  private:

@@ -212,7 +212,6 @@ void test04() {
 
 class FFTTestsBatch : public oops::Test {
  public:
-  FFTTestsBatch() {}
   virtual ~FFTTestsBatch() {}
 
  private:

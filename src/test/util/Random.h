@@ -141,7 +141,6 @@ void testFortranRandom() {
 
 class Random : public oops::Test {
  public:
-  Random() {}
   virtual ~Random() {}
 
  private:

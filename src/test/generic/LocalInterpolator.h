@@ -273,7 +273,6 @@ void testInterpolatorFromConfig(eckit::LocalConfiguration config) {
 
 class LocalInterpolator : public oops::Test {
  public:
-  LocalInterpolator() {}
   virtual ~LocalInterpolator() {}
 
  private:

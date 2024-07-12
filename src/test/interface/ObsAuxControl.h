@@ -79,7 +79,6 @@ template <typename OBS>
 class ObsAuxControl : public oops::Test {
   typedef ObsTestsFixture<OBS> Test_;
  public:
-  ObsAuxControl() {}
   virtual ~ObsAuxControl() {}
  private:
   std::string testid() const override {return "test::ObsAuxControl<" + OBS::name() + ">";}

@@ -351,7 +351,6 @@ void testIntersection() {
 
 class Variables : public oops::Test {
  public:
-  Variables() {}
   virtual ~Variables() {}
 
  private:
