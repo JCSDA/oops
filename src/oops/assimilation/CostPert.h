@@ -160,7 +160,7 @@ double CostPert<MODEL, OBS, J>::evaluate(CtrlVar_ & fguess,
     this->getNonConstJb()->getBackground() = xxPertCopy;
 //  Set the obs operator to the linear obs operator
 //  Perturb zero-valued obs ready for the pert member
-    this->getNonConstJo()->setObsPert(xxPertInc.state().variables());
+    this->getNonConstJo()->setObsPert(xxPertInc.state().geometry(), xxPertInc.state().variables());
 
 //  Set up pert member 3DVar cost function
 //  Runs 3DVar methods using pointers to the Jb & Jo already set up

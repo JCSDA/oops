@@ -91,7 +91,7 @@ class Observers {
 /// \brief Computes H(x) from the filled in GeoVaLs
   void finalize(Observations_ &);
 
-  void resetObsPert(std::vector<std::unique_ptr<ObsOperatorBase_>>,
+  void resetObsPert(const Geometry_ &, std::vector<std::unique_ptr<ObsOperatorBase_>>,
                     const std::shared_ptr<GetValueTLADs_> &, const Variables &);
 
  private:
@@ -170,15 +170,16 @@ void Observers<MODEL, OBS>::finalize(Observations_ & yobs) {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-void Observers<MODEL, OBS>::resetObsPert(std::vector<std::unique_ptr<ObsOperatorBase_>> obsOpBases,
-                                       const std::shared_ptr<GetValueTLADs_> & getValTLs,
-                                       const Variables & vars) {
+void Observers<MODEL, OBS>::resetObsPert(const Geometry_ & geom,
+                                         std::vector<std::unique_ptr<ObsOperatorBase_>> obsOpBases,
+                                         const std::shared_ptr<GetValueTLADs_> & getValTLs,
+                                         const Variables & vars) {
   oops::Log::trace() << "Observers<MODEL, OBS>::resetObsOp start" << std::endl;
 
   posts_.reset(new GetValuePerts_(getValuesParams_, getValTLs, vars));
   int index = 0;
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
-    index = observers_[jj]->resetObsPert(std::move(obsOpBases[jj]), getValTLs, index);
+    index = observers_[jj]->resetObsPert(geom, std::move(obsOpBases[jj]), getValTLs, index);
   }
 
   oops::Log::trace() << "Observers<MODEL, OBS>::resetObsOp done" << std::endl;

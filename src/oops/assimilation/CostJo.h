@@ -110,7 +110,7 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   /// Return gradient at first guess ie \f$ R^{-1} {\cal H}(x^t ) - y\f$.
   std::unique_ptr<GeneralizedDepartures> newGradientFG() const override;
 
-  void setObsPert(const Variables &);
+  void setObsPert(const Geometry_ &, const Variables &);
 
   /// Reset obs operator trajectory.
   void resetLinearization() override;
@@ -385,7 +385,7 @@ std::unique_ptr<GeneralizedDepartures> CostJo<MODEL, OBS>::newGradientFG() const
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-void CostJo<MODEL, OBS>::setObsPert(const Variables & incVars) {
+void CostJo<MODEL, OBS>::setObsPert(const Geometry_ & geom, const Variables & incVars) {
   std::vector<eckit::LocalConfiguration> subconfs =
       eckit::LocalConfiguration(conf_, "observers").getSubConfigurations();
 
@@ -397,7 +397,7 @@ void CostJo<MODEL, OBS>::setObsPert(const Variables & incVars) {
     obsOpBases.push_back(std::make_unique<ObsOperatorPert_>(obspaces_[jj], obsconf,
                                                              (*obstlad_)[jj].linObsOp(), true));
   }
-  observers_->resetObsPert(std::move(obsOpBases), obstlad_->posts(), incVars);
+  observers_->resetObsPert(geom, std::move(obsOpBases), obstlad_->posts(), incVars);
   yobs_.reset(new Observations_(this->obspaces(), ""));
   // Perturb observations according to obs error statistics and save to output file
   yobs_->perturb(Rmat_);
