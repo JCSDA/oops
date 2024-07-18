@@ -42,9 +42,11 @@ namespace oops {
   // eckit::LocalConfiguration, "x1"
   // eckit::LocalConfiguration, "x2"
 
-// Output configuration for regular lat-lon grid
+// Output configuration for native grid
+  // eckit::LocalConfiguration, "output"
+
+// Output configuration for regular structured grid
   // eckit::LocalConfiguration, "output on structured grid"
-  // bool, "write" (TODO: remove this once StructuredGridWriter works for QG)
 
 /// \brief Application for computing and writing fields of linearization error.
 ///
@@ -81,7 +83,7 @@ namespace oops {
 /// by the time resolution specified.
 ///
 /// The computation can be done either at the linear model geometry or the model geometry, and
-/// written to file on the native grid, a regular lat-lon grid, or both.
+/// written to file on the native grid, a structured grid (such as lat-lon), or both.
 template <typename MODEL>
 class LinearizationError : public Application {
   typedef Geometry<MODEL>             Geometry_;
@@ -121,11 +123,9 @@ class LinearizationError : public Application {
 
 // Set up StructuredGridWriter
     std::unique_ptr<StructuredGridWriter_> writer;
-    if (config.has("output on latlon grid")) {
-      // StructuredGridWriter doesn't work for QG, so it is optional to allow testing in OOPS
-      // TODO(Tom): make StructuredGridWriter work for QG
-      const eckit::LocalConfiguration latlonConf(config, "output on latlon grid");
-      writer = std::make_unique<StructuredGridWriter_>(latlonConf, high);
+    if (config.has("output on structured grid")) {
+      const eckit::LocalConfiguration structGridConf(config, "output on structured grid");
+      writer = std::make_unique<StructuredGridWriter_>(structGridConf, high);
     }
 
 // Set up trajectory saver for use with x1 and empty post processor for x2
@@ -176,11 +176,14 @@ class LinearizationError : public Application {
       error -= fdHigh;
       Log::test() << "error at " << time << ":" << error << std::endl;
 
-      // Write to file on regular lat-lon grid
-      // TODO(Tom): make StructuredGridWriter work for QG,
-      // then the next call won't have to be optional
+      // Write to file on structured  grid
       if (writer) {
         writer->interpolateAndWrite(error);
+      }
+      // Write to file on native grid.
+      if (config.has("output")) {
+         const eckit::LocalConfiguration outConfig(config, "output");
+         error.write(outConfig);
       }
     }
 

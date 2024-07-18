@@ -28,14 +28,10 @@ x2:
   date: 2010-01-01T00:00:00Z
   filename: Data/4dvar_drplanczos_hybrid.an.2010-01-01T00:00:00Z.nc
 
-#TODO: make LatLonGridWriter work for QG
-#output on latlon grid:
-#  local interpolator type: oops unstructured grid interpolator
-#  resolution in degrees: 10.0
-#  variables to output: [x]
-#  model levels: [1]
-#  datapath: Data
-#  filename prefix: linearization-error
+output:
+  datadir: Data
+  exp: lin_err 
+  type: in    
 
 test:
   reference filename: testoutput/linearization_error.test
