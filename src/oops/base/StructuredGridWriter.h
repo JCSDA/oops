@@ -280,7 +280,7 @@ std::vector<size_t> mergeLevels(const std::optional<std::vector<size_t>> modelLe
 /// For LatLon, the output grid spacing is specified via one of two ways.
 /// First, for the YAML key "resolution in degrees". The output grid
 /// will be an atlas "LN" latlon grid with (2N+1) latitude (incl both poles) and 4N longitude
-/// samples. N will be determined so that the resolution at the/ equator is equal to, or slightly
+/// samples. N will be determined so that the resolution at the equator is equal to, or slightly
 /// finer than, the requested resolution.
 ///
 /// Additionally, one can specify "number of latitude gridpoints" in the YAML
@@ -444,7 +444,7 @@ StructuredGridWriter<MODEL>::StructuredGridWriter(
     atlasGridName = "F" + std::to_string(gridRes_);
   } else {
       throw eckit::Exception("StructuredGridWriter only supports options for grid type of "
-                           "'latlon' and 'regular gaussian'");
+                              "'latlon' and 'regular gaussian'");
   }
   const atlas::Grid grid(atlasGridName);
 
@@ -468,14 +468,14 @@ template <typename MODEL>
 void StructuredGridWriter<MODEL>::interpolateAndWrite(const State<MODEL> & xx) const {
   const oops::VariableChange<MODEL> varchange(conf_, sourceGeometry_);
 
-  oops::Variables vars_for_latlon_interp = vars_;
+  oops::Variables vars_for_interp = vars_;
   if (pressureLevels_) {
     ASSERT(!vars_.has("air_pressure"));
-    vars_for_latlon_interp.push_back("air_pressure");
+    vars_for_interp.push_back("air_pressure");
   }
 
   State<MODEL> tmp_xx = xx;
-  varchange.changeVar(tmp_xx, vars_for_latlon_interp);
+  varchange.changeVar(tmp_xx, vars_for_interp);
 
   interpolateAndWrite(tmp_xx.fieldSet().fieldSet(), xx.validTime());
 }
@@ -626,15 +626,15 @@ void StructuredGridWriter<MODEL>::interpolateAndWrite(const atlas::FieldSet & fs
   atlas::FieldSet fset;
   atlas::FieldSet fsetStructured;
 
-  oops::Variables vars_for_latlon_interp = vars_;
+  oops::Variables vars_for_interp = vars_;
   if (pressureLevels_ && haveUpperAirVars) {
     ASSERT(fsetInput.has("air_pressure"));
     ASSERT(static_cast<size_t>(fsetInput.field("air_pressure").shape(1)) == nModelLevels);
     ASSERT(!vars_.has("air_pressure"));
-    vars_for_latlon_interp.push_back("air_pressure");
+    vars_for_interp.push_back("air_pressure");
   }
 
-  for (const auto & var : vars_for_latlon_interp) {
+  for (const auto & var : vars_for_interp) {
     const auto & field = fsetInput.field(var.name());
     fset.add(field);
 
@@ -645,7 +645,7 @@ void StructuredGridWriter<MODEL>::interpolateAndWrite(const atlas::FieldSet & fs
     fsetStructured.add(fieldStructured);
   }
 
-  // Interpolate input data to lat-lon grid
+  // Interpolate input data to structured grid
   interp_->apply(fset, fsetStructured);
 
   // Note that fsetStructured lives on rank-0 only, so from here we can do the vertical processing
