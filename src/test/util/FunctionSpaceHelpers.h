@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <string>
 #include <utility>
 #include <vector>
@@ -125,6 +126,46 @@ CASE("util/FunctionSpaceHelpers/StructuredColumnsGaussian") {
     const std::string commName = "subcommunicator";
     comm.split(comm.rank(), commName.c_str());
     testStructuredColumnsGaussian(eckit::mpi::comm(commName.c_str()));
+    eckit::mpi::setCommDefault(comm.name().c_str());
+    eckit::mpi::deleteComm(commName.c_str());
+  }
+}
+
+void testStructuredColumnsGaussianCustomDistribution(const eckit::mpi::Comm & comm) {
+  eckit::LocalConfiguration config;
+  config.set("function space", "StructuredColumns");
+  config.set("grid.type", "regular_gaussian");
+  config.set("grid.N", 10);
+  config.set("halo", 0);
+  config.set("no point on last task", true);
+
+  atlas::Grid grid{};
+  atlas::grid::Partitioner partitioner{};
+  atlas::Mesh mesh{};
+  atlas::FunctionSpace functionspace{};
+  atlas::FieldSet fieldset{};
+
+  util::setupFunctionSpace(comm, config, grid, partitioner, mesh, functionspace, fieldset);
+
+  EXPECT(grid.type() == "structured");
+  EXPECT(grid.name() == "F10");
+  EXPECT(grid.uid() == "2734f1f878e2e047d290b3a578fc2927");
+  EXPECT(partitioner.type() == "equal_regions");
+  EXPECT(partitioner.nb_partitions() == std::max(2ul, comm.size()) - 1);
+  EXPECT(functionspace.type() == "StructuredColumns");
+  EXPECT(fieldset.has("owned"));
+
+  testIndexMapper(mesh, functionspace);
+}
+
+CASE("util/FunctionSpaceHelpers/StructuredColumnsGaussianCustomDistribution") {
+  const eckit::mpi::Comm & comm = oops::mpi::world();
+  testStructuredColumnsGaussianCustomDistribution(comm);
+
+  if (comm.size() > 1) {
+    const std::string commName = "subcommunicator";
+    comm.split(comm.rank(), commName.c_str());
+    testStructuredColumnsGaussianCustomDistribution(eckit::mpi::comm(commName.c_str()));
     eckit::mpi::setCommDefault(comm.name().c_str());
     eckit::mpi::deleteComm(commName.c_str());
   }

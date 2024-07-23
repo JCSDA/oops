@@ -177,13 +177,23 @@ void setupFunctionSpace(const eckit::mpi::Comm & comm,
     ASSERT(gridType != "unstructured");
 
     if (noPointOnLastTask && (comm.size() > 1)) {
+      // Empirically, the atlas calls used here to create a custom distribution do NOT work when
+      // requesting halos -- the function space constructor segfaults. If it becomes necessary to
+      // use halos with the custom distribution, more investigation of the atlas interface may be
+      // needed.
+      if (halo > 0) {
+        throw eckit::BadParameter(
+            "Setting up a FunctionSpace with option `no point on last task` and with halos"
+            " is currently not supported",
+            Here());
+      }
+
       // Create distribution from partitioner
       std::vector<int> partition(grid.size());
       partitioner.partition(grid, partition.data());
 
       // Create distribution and mesh
       atlas::grid::Distribution distribution;
-      atlas::Mesh mesh;
       setupStructuredMeshWithCustomPartition(comm, grid, partition, distribution, mesh);
 
       // Create functionspace from distribution
@@ -301,20 +311,22 @@ void setupStructuredMeshWithCustomPartition(const eckit::mpi::Comm & comm,
     ++nb_cells[partition[jj]];
   }
 
-  // Get number of task with points (effective size) and mapping
-  size_t effectiveSize = 0;
-  std::vector<size_t> mapping(comm.size());
+  // Get number of effective partitions (= number of tasks that own cells) and mapping from each
+  // MPI rank to the effective partition number
+  const int invalid_partition = comm.size() + 1;
+  size_t nb_effective_partitions = 0;
+  std::vector<size_t> effective_partition(comm.size(), invalid_partition);
   for (size_t jt = 0; jt < comm.size(); ++jt) {
     if (nb_cells[jt] > 0) {
-      mapping[jt] = effectiveSize;
-      ++effectiveSize;
+      effective_partition[jt] = nb_effective_partitions;
+      ++nb_effective_partitions;
     }
   }
 
   // Create mesh from distribution
   atlas::util::Config meshConfig(grid.meshgenerator());
-  meshConfig.set("part", mapping[comm.rank()]);
-  meshConfig.set("nb_parts", effectiveSize);
+  meshConfig.set("part", effective_partition[comm.rank()]);
+  meshConfig.set("nb_parts", nb_effective_partitions);
   meshConfig.set("mpi_comm", comm.name());
   const atlas::StructuredMeshGenerator gen(meshConfig);
   mesh = gen(grid, distribution);
