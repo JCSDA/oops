@@ -637,12 +637,6 @@ void StructuredGridWriter<MODEL>::interpolateAndWrite(const atlas::FieldSet & fs
   for (const auto & var : vars_for_interp) {
     const auto & field = fsetInput.field(var.name());
     fset.add(field);
-
-    const std::string name = field.name();
-    const size_t levels = field.shape(1);
-    const atlas::Field fieldStructured = targetFunctionSpace_->createField<double>(
-        atlas::option::name(name) | atlas::option::levels(levels));
-    fsetStructured.add(fieldStructured);
   }
 
   // Interpolate input data to structured grid

@@ -117,18 +117,13 @@ void testGlobalInterpolator(
   atlas::FieldSet source_fields;
   source_fields.add(source_field);
 
-  // Set up the target FieldSet
-  atlas::FieldSet target_fields;
-  const atlas::Field target_field = target_fs.createField<double>(name(varname)
-                                                                  | levels(nb_levels));
-  target_fields.add(target_field);
-
   // Interpolate
+  atlas::FieldSet target_fields;
   interpolator.apply(source_fields, target_fields);
 
   // Test whether interpolation error falls within tolerance
   const double tolerance = config.getDouble("tolerance interpolation");
-  auto target_view = make_view<double, 2>(target_field);
+  auto target_view = make_view<double, 2>(target_fields.field(varname));
   for (size_t jj = 0; jj < nb_target; ++jj) {
     for (size_t jlev = 0; jlev < nb_levels; ++jlev) {
       EXPECT(oops::is_close_absolute(
@@ -146,11 +141,8 @@ void testGlobalInterpolator(
   const atlas::FieldSet target_fields_ad = util::createRandomFieldSet(
       comm, target_fs, varSizes, vars.variables());
 
-  // Set up a FieldSet for the adjoint result on source grid
-  atlas::FieldSet source_fields_ad = util::createFieldSet(
-      source_fs, varSizes, vars.variables(), 0.0);
-
   // Apply interpolator adjoint
+  atlas::FieldSet source_fields_ad;
   interpolator.applyAD(source_fields_ad, target_fields_ad);
 
   // Check adjoint

@@ -32,7 +32,7 @@ GlobalInterpolator::GlobalInterpolator(
     const GeometryData & source_grid,
     const atlas::FunctionSpace & target_fs,
     const eckit::mpi::Comm & comm)
-  : comm_(comm)
+  : comm_(comm), source_fs_(source_grid.functionSpace()), target_fs_(target_fs)
 {
   Log::trace() << "GlobalInterpolator::GlobalInterpolator start" << std::endl;
 
@@ -47,8 +47,8 @@ GlobalInterpolator::GlobalInterpolator(
   std::vector<std::vector<double>> mytarget_latlon_by_task(ntasks);
 
   // Extract target coordinates, find which task will be responsible for interpolating to each one
-  const auto lonlat = atlas::array::make_view<double, 2>(target_fs.lonlat());
-  const auto ghost = atlas::array::make_view<int, 1>(target_fs.ghost());
+  const auto lonlat = atlas::array::make_view<double, 2>(target_fs_.lonlat());
+  const auto ghost = atlas::array::make_view<int, 1>(target_fs_.ghost());
   for (size_t jj = 0; jj < lonlat.shape(0); ++jj) {
     if (ghost(jj) == 0) {
       double lon = lonlat(jj, 0);
@@ -90,12 +90,24 @@ GlobalInterpolator::GlobalInterpolator(
 // -----------------------------------------------------------------------------
 
 void GlobalInterpolator::apply(const atlas::FieldSet & source,
-                                    atlas::FieldSet & target) const {
-  ASSERT(source.field_names() == target.field_names());
-  for (const auto & src_field : source) {
-    const auto & tgt_field = target.field(src_field.name());
-    ASSERT(src_field.rank() == tgt_field.rank());
-    ASSERT(src_field.shape(1) == tgt_field.shape(1));
+                               atlas::FieldSet & target) const {
+  if (target.empty()) {
+    // Allocate target Fields to match source
+    for (const auto & src_field : source) {
+      atlas::Field tgt_field = target_fs_.createField<double>(
+          atlas::option::name(src_field.name()) | atlas::option::levels(src_field.levels()));
+      tgt_field.metadata() = src_field.metadata();
+      target.add(tgt_field);
+    }
+  } else {
+    // Verify target Fields correctly allocated
+    ASSERT(target.field_names() == source.field_names());
+    for (const auto & src_field : source) {
+      const auto & tgt_field = target.field(src_field.name());
+      ASSERT(tgt_field.rank() == src_field.rank());
+      ASSERT(tgt_field.shape(0) == target_fs_.size());
+      ASSERT(tgt_field.shape(1) == src_field.shape(1));
+    }
   }
 
   // For a simple interface, construct variables from all fields in fieldset
@@ -140,12 +152,26 @@ void GlobalInterpolator::apply(const atlas::FieldSet & source,
 // -----------------------------------------------------------------------------
 
 void GlobalInterpolator::applyAD(atlas::FieldSet & source,
-                                      const atlas::FieldSet & target) const {
-  ASSERT(target.field_names() == source.field_names());
-  for (const auto & tgt_field : target) {
-    const auto & src_field = source.field(tgt_field.name());
-    ASSERT(tgt_field.rank() == src_field.rank());
-    ASSERT(tgt_field.shape(1) == src_field.shape(1));
+                                 const atlas::FieldSet & target) const {
+  if (source.empty()) {
+    // Allocate source Fields to match target, and zero before adjoint accumulation
+    for (const auto & tgt_field : target) {
+      atlas::Field src_field = source_fs_.createField<double>(
+          atlas::option::name(tgt_field.name()) | atlas::option::levels(tgt_field.levels()));
+      src_field.metadata() = tgt_field.metadata();
+      auto src_view = atlas::array::make_view<double, 2>(src_field);
+      src_view.assign(0.0);
+      source.add(src_field);
+    }
+  } else {
+    // Verify source Fields correctly allocated
+    ASSERT(source.field_names() == target.field_names());
+    for (const auto & tgt_field : target) {
+      const auto & src_field = source.field(tgt_field.name());
+      ASSERT(src_field.rank() == tgt_field.rank());
+      ASSERT(src_field.shape(0) == source_fs_.size());
+      ASSERT(src_field.shape(1) == tgt_field.shape(1));
+    }
   }
 
   // For a simple interface, construct variables from all fields in fieldset
