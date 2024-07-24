@@ -524,25 +524,40 @@ void Diffusion::multiplyHzTL(atlas::Field & field) const {
 
   const auto inv_area = atlas::array::make_view<double, 1>(derivedGeom_->inv_area);
   auto fieldVal = atlas::array::make_view<double, 2>(field);
-  std::vector<double> flux(edgeGeom.size(), 0.0);
+  std::vector<double> flux(edgeGeom.size()*field.shape(1), 0.0);
+  int fluxIdx;
 
   for (atlas::idx_t itr = 0; itr < niterHz_/2; itr++) {
     field.haloExchange();
 
-    for (atlas::idx_t level = 0; level < field.shape(1); level++) {
-      // calculate diffusive flux at each edge. khdtLevels is the level to pull
-      // khdt from, this code will work with either a 3D khdt field or a 2D khdt
-      // field.
-      const atlas::idx_t khdtLevel = std::min(level, khdtLevels_-1);
-      for (size_t e = 0; e < edgeGeom.size(); e++) {
-        const double dv = fieldVal(edgeGeom[e].nodeA, level) - fieldVal(edgeGeom[e].nodeB, level);
-        flux[e] = (edgeGeom[e].aspectRatio * dv) * khdt_[e][khdtLevel];
-      }
+    // NOTE: for efficiency with Atlas, the following loops are ordered here so
+    // that we loop over the edges first, then the levels.
 
-      // time-step the diffusion terms
+    // calculate the diffusive flux at each edge.
+    fluxIdx = 0;
+    for (size_t e = 0; e < edgeGeom.size(); e++) {
+      const auto nodeA = edgeGeom[e].nodeA;
+      const auto nodeB = edgeGeom[e].nodeB;
+      const auto edgeAR = edgeGeom[e].aspectRatio;
+
+      for (atlas::idx_t level = 0; level < field.shape(1); level++) {
+        // khdtLevels is the level to pull khdt from, this code will work with
+        // either a 3D khdt field or a 2D khdt field.
+        const atlas::idx_t khdtLevel = std::min(level, khdtLevels_-1);
+        const double dv = fieldVal(nodeA, level) - fieldVal(nodeB, level);
+        flux[fluxIdx++] = (edgeAR * dv) * khdt_[e][khdtLevel];
+      }
+    }
+
+    // time-step the diffusion terms.
+    fluxIdx = 0;
       for (size_t e = 0; e < edgeGeom.size(); e++) {
-        fieldVal(edgeGeom[e].nodeA, level) -= inv_area(edgeGeom[e].nodeA) * flux[e];
-        fieldVal(edgeGeom[e].nodeB, level) += inv_area(edgeGeom[e].nodeB) * flux[e];
+      const auto nodeA = edgeGeom[e].nodeA;
+      const auto nodeB = edgeGeom[e].nodeB;
+
+      for (atlas::idx_t level = 0; level < field.shape(1); level++) {
+        fieldVal(nodeA, level) -= inv_area(nodeA) * flux[fluxIdx];
+        fieldVal(nodeB, level) += inv_area(nodeB) * flux[fluxIdx++];
       }
     }
 
@@ -563,7 +578,8 @@ void Diffusion::multiplyHzAD(atlas::Field & field) const {
   const auto & ghost = atlas::array::make_view<int, 1>(fs.ghost());
   auto fieldVal = atlas::array::make_view<double, 2>(field);
 
-  std::vector<double> flux(edgeGeom.size(), 0.0);
+  std::vector<double> flux(edgeGeom.size()*field.shape(1), 0.0);
+  int fluxIdx;
 
   // init halo to zero
   for (atlas::idx_t i = 0; i < fs.size(); i++) {
@@ -575,23 +591,34 @@ void Diffusion::multiplyHzAD(atlas::Field & field) const {
   }
 
   for (int itr = 0; itr < niterHz_/2; itr++) {
-    for (int level = 0; level < field.shape(1); level++) {
-      // adjoint time-step the diffusion terms
-      for (size_t e = 0; e < edgeGeom.size(); e++) {
-        flux[e] += inv_area(edgeGeom[e].nodeB) * fieldVal(edgeGeom[e].nodeB, level)
-                  -inv_area(edgeGeom[e].nodeA) * fieldVal(edgeGeom[e].nodeA, level);
-      }
+    // NOTE: for efficiency with Atlas, the loops are ordered here so that we
+    // loop over the edges first, then the levels.
 
-      // Adjoint calculate diffusive flux at each edge. khdtLevels is the level
-      // to pull khdt from, this code will work with either a 3D khdt field or a
-      // 2D khdt field.
-      const int khdtLevel = std::min(level, khdtLevels_-1);
-      for (size_t e = 0; e < edgeGeom.size(); e++) {
-        fieldVal(edgeGeom[e].nodeA, level) += edgeGeom[e].aspectRatio
-                                               * khdt_[e][khdtLevel] * flux[e];
-        fieldVal(edgeGeom[e].nodeB, level) -= edgeGeom[e].aspectRatio
-                                               * khdt_[e][khdtLevel] * flux[e];
-        flux[e] = 0.0;
+    // adjoint time-step the diffusion terms
+    fluxIdx = 0;
+    for (size_t e = 0; e < edgeGeom.size(); e++) {
+      const auto nodeA = edgeGeom[e].nodeA;
+      const auto nodeB = edgeGeom[e].nodeB;
+      for (int level = 0; level < field.shape(1); level++) {
+        flux[fluxIdx++] = inv_area(nodeB) * fieldVal(nodeB, level)
+                         -inv_area(nodeA) * fieldVal(nodeA, level);
+      }
+    }
+
+    // Adjoint calculate diffusive flux at each edge.
+    fluxIdx = 0;
+    for (size_t e = 0; e < edgeGeom.size(); e++) {
+      const auto nodeA = edgeGeom[e].nodeA;
+      const auto nodeB = edgeGeom[e].nodeB;
+      const auto edgeAR = edgeGeom[e].aspectRatio;
+
+      for (int level = 0; level < field.shape(1); level++) {
+        // khdtLevels is the level to pull khdt from, this code will work with
+        // either a 3D khdt field or a 2D khdt field.
+        const int khdtLevel = std::min(level, khdtLevels_-1);
+        const auto dv = edgeAR * khdt_[e][khdtLevel] * flux[fluxIdx++];
+        fieldVal(nodeA, level) += dv;
+        fieldVal(nodeB, level) -= dv;
       }
     }
 
