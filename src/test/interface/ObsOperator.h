@@ -230,6 +230,7 @@ template <typename OBS>
 class ObsOperator : public oops::Test {
   typedef ObsTestsFixture<OBS> Test_;
  public:
+  using oops::Test::Test;
   virtual ~ObsOperator() {}
  private:
   std::string testid() const override {return "test::ObsOperator<" + OBS::name() + ">";}

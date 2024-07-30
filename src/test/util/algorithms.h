@@ -34,6 +34,8 @@ CASE("util/Algorithms/transformVector") {
 }
 
 class Algorithms : public oops::Test {
+ public:
+  using oops::Test::Test;
  private:
   std::string testid() const override { return "test::algorithms"; }
   void register_tests() const override {}

@@ -256,6 +256,7 @@ template <typename MODEL> void testLinearVarChangeParametersValidName() {
 template <typename MODEL>
 class LinearVariableChange : public oops::Test {
  public:
+  using oops::Test::Test;
   virtual ~LinearVariableChange() {LinearVariableChangeFixture<MODEL>::reset();}
 
  private:

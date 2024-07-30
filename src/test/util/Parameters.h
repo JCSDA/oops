@@ -1785,6 +1785,9 @@ void testHasParameters_() {
 
 
 class Parameters : public oops::Test {
+ public:
+  using oops::Test::Test;
+
  private:
   std::string testid() const override {return "test::Parameters";}
 

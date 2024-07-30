@@ -73,6 +73,8 @@ CASE("util/AssociativeContainers/keysOfNonemptyMap") {
 }
 
 class AssociativeContainers : public oops::Test {
+ public:
+  using oops::Test::Test;
  private:
   std::string testid() const override {return "test::AssociativeContainers";}
 

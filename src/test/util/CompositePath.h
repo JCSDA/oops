@@ -48,6 +48,8 @@ CASE("util/CompositePath/compositePath") {
 }
 
 class CompositePath : public oops::Test {
+ public:
+  using oops::Test::Test;
  private:
   std::string testid() const override {return "test::CompositePath";}
 

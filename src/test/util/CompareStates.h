@@ -147,6 +147,7 @@ template <typename MODEL> void testCompareStates() {
 template <typename MODEL>
 class CompareStates : public oops::Test {
  public:
+  using oops::Test::Test;
   virtual ~CompareStates() {CompareStatesFixture<MODEL>::reset();}
 
  private:

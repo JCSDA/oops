@@ -81,6 +81,8 @@ namespace test {
   }
 
   class SolveMatrixEquation : public oops::Test {
+   public:
+    using oops::Test::Test;
    private:
     std::string testid() const override {return "test::SolveMatrixEquation";}
     void register_tests() const override {}

@@ -327,6 +327,8 @@ CASE("mpi/mpi/sendReceiveString") {
 // -----------------------------------------------------------------------------------------------
 
 class Mpi : public oops::Test {
+ public:
+  using oops::Test::Test;
  private:
   std::string testid() const override {return "test::mpi::mpi";}
 

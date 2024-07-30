@@ -145,8 +145,8 @@ template <typename MODEL, typename OBS> class ObsLocalizations : public oops::Te
   typedef ObsTestsFixture<OBS> Test_;
 
  public:
+  using oops::Test::Test;
   virtual ~ObsLocalizations() = default;
-
  private:
   std::string testid() const override {return "test::ObsLocalizations<" + MODEL::name() + ","
                                                + OBS::name() + ">";}

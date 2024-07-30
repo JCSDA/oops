@@ -162,6 +162,7 @@ template <typename MODEL> void testVariableChangeParametersValidName() {
 // -------------------------------------------------------------------------------------------------
 template <typename MODEL> class VariableChange : public oops::Test {
  public:
+  using oops::Test::Test;
   virtual ~VariableChange() {VariableChangeFixture<MODEL>::reset();}
  private:
   std::string testid() const override {return "test::VariableChange<" + MODEL::name() + ">";}

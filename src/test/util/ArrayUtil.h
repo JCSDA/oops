@@ -790,6 +790,7 @@ void test_write_read_multiple() {
 
 class ArrayUtil : public oops::Test{
  public:
+  using oops::Test::Test;
   virtual ~ArrayUtil() {}
 
  private:

@@ -155,6 +155,8 @@ CASE("util/ConfigFunctions/mergeConfigs") {
 }
 
 class ConfigFunctions : public oops::Test {
+ public:
+  using oops::Test::Test;
  private:
   std::string testid() const override {return "test::ConfigFunctions";}
 

@@ -110,6 +110,7 @@ template <typename MODEL> void testGetSetLocal() {
 
 template <typename MODEL> class GeometryIterator : public oops::Test {
  public:
+  using oops::Test::Test;
   virtual ~GeometryIterator() {IncrementFixture<MODEL>::reset();}
 
  private:

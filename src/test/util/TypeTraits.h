@@ -31,6 +31,8 @@ CASE("util/TypeTraits/any_is_same") {
 }
 
 class TypeTraits : public oops::Test {
+ public:
+  using oops::Test::Test;
  private:
   std::string testid() const override {return "test::TypeTraits";}
 

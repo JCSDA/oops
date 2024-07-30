@@ -218,6 +218,7 @@ template <typename MODEL> void testCovarianceFactoryGetMakerNames() {
 template <typename MODEL>
 class ErrorCovariance : public oops::Test  {
  public:
+  using oops::Test::Test;
   virtual ~ErrorCovariance() {ErrorCovarianceFixture<MODEL>::reset();}
 
  private:

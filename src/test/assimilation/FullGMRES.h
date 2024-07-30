@@ -58,6 +58,8 @@ namespace test {
   }
 
   class FullGMRES : public oops::Test {
+   public:
+    using oops::Test::Test;
    private:
     std::string testid() const override {return "test::FullGMRES";}
     void register_tests() const override {}

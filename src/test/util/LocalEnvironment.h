@@ -72,6 +72,8 @@ CASE("util/LocalEnvironment/exceptionSafety") {
 }
 
 class LocalEnvironment : public oops::Test {
+ public:
+  using oops::Test::Test;
  private:
   std::string testid() const override {return "test::LocalEnvironment";}
 

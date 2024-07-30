@@ -89,6 +89,7 @@ template <typename MODEL> void testAtlasInterface() {
 // -----------------------------------------------------------------------------
 template <typename MODEL> class Geometry : public oops::Test {
  public:
+  using oops::Test::Test;
   virtual ~Geometry() {}
  private:
   std::string testid() const override {return "test::Geometry<" + MODEL::name() + ">";}

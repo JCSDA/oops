@@ -261,6 +261,7 @@ void testInterpolator(const bool testSourcePointMask) {
 template <typename MODEL>
 class UnstructuredInterpolator : public oops::Test {
  public:
+  using oops::Test::Test;
   virtual ~UnstructuredInterpolator() {}
 
  private:

@@ -256,6 +256,8 @@ CASE("util/IsAnyPointInVolumeInterior/shiftedCloseToCylinderSurface") {
 }
 
 class IsAnyPointInVolumeInterior : public oops::Test {
+ public:
+  using oops::Test::Test;
  private:
   std::string testid() const override {return "ufo::test::IsAnyPointInVolumeInterior";}
 

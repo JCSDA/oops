@@ -126,6 +126,8 @@ CASE("util/FieldSetSubCommunicators/NodeColumns") {
 };
 
 class FieldSetSubCommunicators: public oops::Test {
+ public:
+  using oops::Test::Test;
  private:
   std::string testid() const override {return "test::FieldSetSubCommunicators";}
 

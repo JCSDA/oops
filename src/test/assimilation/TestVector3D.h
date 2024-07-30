@@ -67,6 +67,8 @@ namespace test {
   }
 
   class TestVector3D : public oops::Test {
+   public:
+    using oops::Test::Test;
    private:
     std::string testid() const override {return "test::TestVector3D";}
     void register_tests() const override {}

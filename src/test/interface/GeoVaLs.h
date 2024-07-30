@@ -151,6 +151,7 @@ template <typename OBS>
 class GeoVaLs : public oops::Test {
   typedef ObsTestsFixture<OBS> Test_;
  public:
+  using oops::Test::Test;
   virtual ~GeoVaLs() {}
  private:
   std::string testid() const override {return "test::GeoVaLs<" + OBS::name() + ">";}

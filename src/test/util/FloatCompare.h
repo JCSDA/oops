@@ -236,6 +236,8 @@ CASE("util/FloatComparisons/are_all_close_absolute/double") {
 }
 
 class FloatCompare : public oops::Test {
+ public:
+  using oops::Test::Test;
  private:
   std::string testid() const override {return "test::FloatCompare";}
 

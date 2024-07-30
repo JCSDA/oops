@@ -265,6 +265,7 @@ class ObsAuxIncrement : public oops::Test {
   typedef ObsTestsFixture<OBS> Test_;
 
  public:
+  using oops::Test::Test;
   virtual ~ObsAuxIncrement() {}
 
  private:

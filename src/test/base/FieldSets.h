@@ -108,6 +108,7 @@ void testFieldSets() {
 
 class FieldSets : public oops::Test {
  public:
+  using oops::Test::Test;
   virtual ~FieldSets() = default;
 
  private:

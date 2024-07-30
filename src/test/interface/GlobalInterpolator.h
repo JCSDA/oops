@@ -247,6 +247,7 @@ void testInterpolator() {
 template <typename MODEL>
 class GlobalInterpolator : public oops::Test {
  public:
+  using oops::Test::Test;
   virtual ~GlobalInterpolator() {}
 
  private:

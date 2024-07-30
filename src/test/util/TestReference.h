@@ -97,6 +97,8 @@ CASE("util/TestReference") {
 }  // CASE("util/TestReference")
 
 class TestReference : public oops::Test {
+ public:
+  using oops::Test::Test;
  private:
   std::string testid() const override {return "test::TestReference";}
   void register_tests() const override {}

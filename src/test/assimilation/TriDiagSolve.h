@@ -90,6 +90,8 @@ namespace test {
   }
 
   class TriDiagSolve : public oops::Test {
+   public:
+    using oops::Test::Test;
    private:
     std::string testid() const override {return "test::TriDiagSolve";}
     void register_tests() const override {}

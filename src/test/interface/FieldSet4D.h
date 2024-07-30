@@ -220,6 +220,7 @@ template <typename MODEL> void testFieldSet4D() {
 template <typename MODEL>
 class FieldSet4D : public oops::Test {
  public:
+  using oops::Test::Test;
   virtual ~FieldSet4D() = default;
 
  private:
