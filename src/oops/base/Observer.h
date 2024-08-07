@@ -92,7 +92,7 @@ class Observer {
                                                       ObsError_ &, const eckit::Configuration &);
 
 /// \brief Computes H(x) from the filled in GeoVaLs
-  void finalize(ObsVector_ &);
+  void finalize(ObsVector_ &, ObsDataInt_ &);
 
   int resetObsPert(const Geometry_ &, std::unique_ptr<ObsOperatorBase_>,
                    const std::shared_ptr<GetValueTLADs_> &, int &);
@@ -189,7 +189,7 @@ Observer<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrl_ & bia
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-void Observer<MODEL, OBS>::finalize(ObsVector_ & yobsim) {
+void Observer<MODEL, OBS>::finalize(ObsVector_ & yobsim, ObsDataInt_ & qcflags) {
   oops::Log::trace() << "Observer<MODEL, OBS>::finalize start" << std::endl;
   ASSERT(initialized_);
 
@@ -250,6 +250,9 @@ void Observer<MODEL, OBS>::finalize(ObsVector_ & yobsim) {
   }
 
   Log::info() << "Observer::finalize QC = " << *qcflags_ << std::endl;
+
+  // Copy qc flags to pass out
+  qcflags = *qcflags_;
 
   initialized_ = false;
   Log::trace() << "Observer<MODEL, OBS>::finalize done" << std::endl;

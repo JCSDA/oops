@@ -36,6 +36,7 @@
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/State.h"
+#include "oops/interface/ObsDataVector.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
@@ -60,6 +61,7 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   typedef Geometry<MODEL>               Geometry_;
   typedef GetValueTLADs<MODEL, OBS>     GetValueTLADs_;
   typedef State<MODEL>                  State_;
+  typedef ObsDataVector<OBS, int>       ObsDataInt_;
   typedef ObsErrors<OBS>                ObsErrors_;
   typedef ObsSpaces<OBS>                ObsSpaces_;
   typedef Observers<MODEL, OBS>         Observers_;
@@ -126,6 +128,7 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   std::unique_ptr<Observations_> yobs_;
   ObsErrors_ Rmat_;
   std::unique_ptr<Observers_> observers_;
+  std::vector<ObsDataInt_> qcflags_;
   bool firstOuterLoop_;
 
   /// Jo Gradient at first guess : \f$ R^{-1} (H(x_{fg})-y_{obs}) \f$.
@@ -151,6 +154,10 @@ CostJo<MODEL, OBS>::CostJo(const eckit::Configuration & joConf, const eckit::mpi
     observers_(), gradFG_(), obstlad_(), currentConf_()
 {
   observers_.reset(new Observers_(obspaces_, joConf));
+  for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
+    ObsDataInt_ qcflags(obspaces_[jj], obspaces_[jj].obsvariables());
+    qcflags_.push_back(qcflags);
+  }
   Log::trace() << "CostJo::CostJo" << std::endl;
 }
 
@@ -183,7 +190,7 @@ double CostJo<MODEL, OBS>::computeCost() {
 
   // Obs, simulated obs and departures (held here for nice prints and diagnostics)
   Observations_ yeqv(obspaces_);
-  observers_->finalize(yeqv);
+  observers_->finalize(yeqv, qcflags_);
   if (firstOuterLoop_) {
     yobs_.reset(new Observations_(obspaces_, "ObsValue"));
     Log::info() << "CostJo Observations: " << *yobs_ << std::endl;
@@ -295,7 +302,7 @@ void CostJo<MODEL, OBS>::setPostProcTraj(const CtrlVar_ & xx, const eckit::Confi
 
 template<typename MODEL, typename OBS>
 void CostJo<MODEL, OBS>::computeCostTraj() {
-  obstlad_->finalizeTraj();
+  obstlad_->finalizeTraj(qcflags_);
   Log::trace() << "CostJo::computeCostTraj done" << std::endl;
 }
 

@@ -41,6 +41,7 @@
 #include "oops/generic/PseudoModelState4D.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/interface/ModelAuxControl.h"
+#include "oops/interface/ObsDataVector.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 
@@ -59,6 +60,7 @@ class LocalEnsembleSolver {
   typedef IncrementEnsemble4D<MODEL>  IncrementEnsemble4D_;
   typedef ObsAuxControls<OBS>         ObsAux_;
   typedef ObsAuxIncrements<OBS>       ObsAuxInc_;
+  typedef ObsDataVector<OBS, int>     ObsDataInt_;
   typedef ObsEnsemble<OBS>            ObsEnsemble_;
   typedef ObsErrors<OBS>              ObsErrors_;
   typedef Observations<OBS>           Observations_;
@@ -139,7 +141,8 @@ class LocalEnsembleSolver {
 
  private:
   bool useLinearObserver_;
-  ObsLocalizations_ obsloc_;      ///< observation space localization
+  ObsLocalizations_ obsloc_;          ///< observation space localization
+  std::vector<ObsDataInt_> qcflags_;  ///< quality control flags
 };
 
 // -----------------------------------------------------------------------------
@@ -178,6 +181,10 @@ LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
   } else {
     Log::info() << "RTPS inflation is not applied rtpsCoeff is out of bounds (0,1], rtpsCoeff="
                 << inflopt.rtps << std::endl;
+  }
+  for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
+    ObsDataInt_ qcflags(obspaces_[jj], obspaces_[jj].obsvariables());
+    qcflags_.push_back(qcflags);
   }
 }
 
@@ -254,11 +261,13 @@ void LocalEnsembleSolver<MODEL, OBS>::computeHofX4DLinear(const eckit::Configura
   post.enrollProcessor(new TrajectorySaver<MODEL>(eckit::LocalConfiguration(),
                                                   geometry_, posttraj));
 
-  // run nonlinear model on the ensemble mean, compute nonlinear H(x_mean)
+  // run nonlinear model on the ensemble mean
   hofx.initialize(geometry_, obsaux, *R_, post, config);
   model.forecast(init_xx, moderr, flength, post);
-  hofx.finalize(yy_mean);
-  linear_hofx.finalizeTraj();
+
+  // compute nonlinear H(x_mean)
+  hofx.finalize(yy_mean, qcflags_);
+  linear_hofx.finalizeTraj(qcflags_);
 
   // add linearized H(x) to the linear model postprocessor
   linear_hofx.initializeTL(posttrajtl);
@@ -392,7 +401,7 @@ void LocalEnsembleSolver<MODEL, OBS>::computeHofX4DNonLinear(const eckit::Config
 
   hofx.initialize(geometry_, obsaux, *R_, post, config);
   model.forecast(init_xx, moderr, flength, post);
-  hofx.finalize(yy);
+  hofx.finalize(yy, qcflags_);
 }
 
 // -----------------------------------------------------------------------------

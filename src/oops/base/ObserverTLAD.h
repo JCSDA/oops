@@ -25,6 +25,7 @@
 #include "oops/interface/LinearObsOperator.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsAuxIncrement.h"
+#include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsOperator.h"
 #include "oops/interface/ObsSpace.h"
 #include "oops/util/DateTime.h"
@@ -57,7 +58,7 @@ class ObserverTLAD {
   ~ObserverTLAD() {}
 
   std::vector<std::shared_ptr<GetValues_>> initializeTraj(const Geometry_ &, const ObsAuxCtrl_ &);
-  void finalizeTraj();
+  void finalizeTraj(const ObsDataInt_ &);
 
   void finalizeTL(const ObsAuxIncr_ &, ObsVector_ &);
 
@@ -146,12 +147,15 @@ ObserverTLAD<MODEL, OBS>::initializeTraj(const Geometry_ & geom, const ObsAuxCtr
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
-void ObserverTLAD<MODEL, OBS>::finalizeTraj() {
+void ObserverTLAD<MODEL, OBS>::finalizeTraj(const ObsDataInt_ & qcflags) {
   Log::trace() << "ObserverTLAD::finalizeTraj start" << std::endl;
   ASSERT(init_);
 
   // Fill geovals
   GeoVaLs_ geovals = makeAndFillGeoVaLs(*locations_, hopVars_, hopVarSizes_, getvals_);
+
+  // Copy qc flags to private variable
+  qc_flags_ = qcflags;
 
   // Compute the reduced representation of the GeoVaLs for which it's been requested
   oops::Variables reducedVars = ybias_->requiredVars();

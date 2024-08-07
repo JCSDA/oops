@@ -22,6 +22,7 @@
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
+#include "oops/interface/ObsDataVector.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
@@ -69,6 +70,7 @@ template <typename MODEL, typename OBS> class HofX3D : public Application {
   typedef Geometry<MODEL>            Geometry_;
   typedef ObsAuxControls<OBS>        ObsAux_;
   typedef Observations<OBS>          Observations_;
+  typedef ObsDataVector<OBS, int>    ObsDataInt_;
   typedef ObsErrors<OBS>             ObsErrors_;
   typedef Observers<MODEL, OBS>      Observers_;
   typedef ObsSpaces<OBS>             ObsSpaces_;
@@ -131,7 +133,12 @@ template <typename MODEL, typename OBS> class HofX3D : public Application {
 
 //  Get observations from observer
     Observations_ yobs(obspaces);
-    hofx.finalize(yobs);
+    std::vector<ObsDataInt_> qcflags;
+    for (size_t jj = 0; jj < obspaces.size(); ++jj) {
+      ObsDataInt_ qc(obspaces[jj], obspaces[jj].obsvariables());
+      qcflags.push_back(qc);
+    }
+    hofx.finalize(yobs, qcflags);
     Log::info() << "H(x): " << std::endl << yobs << "End H(x)" << std::endl;
     Log::test() << "H(x): " << std::endl << yobs << "End H(x)" << std::endl;
 

@@ -27,6 +27,7 @@
 #include "oops/base/ObserverTLAD.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessorTLAD.h"
+#include "oops/interface/ObsDataVector.h"
 #include "oops/util/DateTime.h"
 
 namespace oops {
@@ -43,6 +44,7 @@ class ObserversTLAD {
   typedef Observations<OBS>           Observations_;
   typedef ObsAuxControls<OBS>         ObsAuxCtrls_;
   typedef ObsAuxIncrements<OBS>       ObsAuxIncrs_;
+  typedef ObsDataVector<OBS, int>     ObsDataInt_;
   typedef ObserverParameters<OBS>     ObserverParameters_;
   typedef ObserverTLAD<MODEL, OBS>    ObserverTLAD_;
   typedef ObsSpaces<OBS>              ObsSpaces_;
@@ -53,7 +55,7 @@ class ObserversTLAD {
   ObserversTLAD(const ObsSpaces_ &, const eckit::Configuration &);
 
   void initializeTraj(const Geometry_ &, const ObsAuxCtrls_ &, PostProcTLAD_ &);
-  void finalizeTraj();
+  void finalizeTraj(const std::vector<ObsDataInt_> &);
 
   void initializeTL(PostProcTLAD_ &);
   void finalizeTL(const ObsAuxIncrs_ &, Departures_ &);
@@ -114,10 +116,10 @@ void ObserversTLAD<MODEL, OBS>::initializeTraj(const Geometry_ & geom, const Obs
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
-void ObserversTLAD<MODEL, OBS>::finalizeTraj() {
+void ObserversTLAD<MODEL, OBS>::finalizeTraj(const std::vector<ObsDataInt_> & qcflags) {
   Log::trace() << "ObserversTLAD<MODEL, OBS>::finalizeTraj start" << std::endl;
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
-    if (observers_[jj]) observers_[jj]->finalizeTraj();
+    if (observers_[jj]) observers_[jj]->finalizeTraj(qcflags[jj]);
   }
   Log::trace() << "ObserversTLAD<MODEL, OBS>::finalizeTraj done" << std::endl;
 }

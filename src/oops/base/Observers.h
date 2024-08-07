@@ -29,6 +29,7 @@
 #include "oops/base/ObsVector.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State.h"
+#include "oops/interface/ObsDataVector.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
@@ -63,6 +64,7 @@ class Observers {
   typedef GetValueTLADs<MODEL, OBS>     GetValueTLADs_;
   typedef GetValuesParameters<MODEL>    GetValuesParameters_;
   typedef ObsAuxControls<OBS>           ObsAuxCtrls_;
+  typedef ObsDataVector<OBS, int>       ObsDataInt_;
   typedef ObsErrors<OBS>                ObsErrors_;
   typedef Observations<OBS>             Observations_;
   typedef Observer<MODEL, OBS>          Observer_;
@@ -89,7 +91,7 @@ class Observers {
                   PostProc_ &, const eckit::Configuration & = eckit::LocalConfiguration());
 
 /// \brief Computes H(x) from the filled in GeoVaLs
-  void finalize(Observations_ &);
+  void finalize(Observations_ &, std::vector<ObsDataInt_> &);
 
   void resetObsPert(const Geometry_ &, std::vector<std::unique_ptr<ObsOperatorBase_>>,
                     const std::shared_ptr<GetValueTLADs_> &, const Variables &);
@@ -157,11 +159,11 @@ void Observers<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrls
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-void Observers<MODEL, OBS>::finalize(Observations_ & yobs) {
+void Observers<MODEL, OBS>::finalize(Observations_ & yobs, std::vector<ObsDataInt_> & qcflags) {
   oops::Log::trace() << "Observers<MODEL, OBS>::finalize start" << std::endl;
 
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
-    observers_[jj]->finalize(yobs[jj]);
+    observers_[jj]->finalize(yobs[jj], qcflags[jj]);
   }
 
   oops::Log::trace() << "Observers<MODEL, OBS>::finalize done" << std::endl;

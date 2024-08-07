@@ -29,6 +29,7 @@
 #include "oops/base/StateEnsemble4D.h"
 #include "oops/generic/VerticalLocEV.h"
 #include "oops/interface/GeometryIterator.h"
+#include "oops/interface/ObsDataVector.h"
 #include "oops/util/ConfigFunctions.h"
 #include "oops/util/Logger.h"
 #include "oops/util/printRunStats.h"
@@ -60,6 +61,7 @@ class GETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
   typedef ModelAuxIncrement<MODEL>    ModelAuxInc_;
   typedef ObsAuxControls<OBS>         ObsAux_;
   typedef ObsAuxIncrements<OBS>       ObsAuxInc_;
+  typedef ObsDataVector<OBS, int>     ObsDataInt_;
   typedef ObsEnsemble<OBS>            ObsEnsemble_;
   typedef Observations<OBS>           Observations_;
   typedef Observers<MODEL, OBS>       Observers_;
@@ -199,11 +201,17 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
       // create TrajectorySaver with hofx_linear, and enroll in post
       post.enrollProcessor(new TrajectorySaver<MODEL>(eckit::LocalConfiguration(),
                                                   this->geometry_, posttraj));
-      // run nonlinear model on the ensemble mean, compute nonlinear H(x_mean)
+      // run nonlinear model on the ensemble mean
       hofx.initialize(this->geometry_, obsaux, *this->R_, post, config);
       model.forecast(init_xx, moderr, flength, post);
-      hofx.finalize(yy_mean);
-      linear_hofx.finalizeTraj();
+      // compute nonlinear H(x_mean)
+      std::vector<ObsDataInt_> qcflags;
+      for (size_t jj = 0; jj < this->obspaces_.size(); ++jj) {
+        ObsDataInt_ qc(this->obspaces_[jj], this->obspaces_[jj].obsvariables());
+        qcflags.push_back(qc);
+      }
+      hofx.finalize(yy_mean, qcflags);
+      linear_hofx.finalizeTraj(qcflags);
 
       // add linearized H(x) to the linear model postprocessor
       linear_hofx.initializeTL(posttrajtl);
