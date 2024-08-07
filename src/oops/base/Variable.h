@@ -58,16 +58,29 @@ enum class ModelDataType {
 
 static const ModelDataType defaultDataType = ModelDataType::Real64;
 
+//-------------------------------------------------------------------------------------
+// Enum type for model variable domain
+// If altering the set of domain types, make sure to update the variableDomainToString function in
+// Variable.cc
+enum class ModelVariableDomain {
+    Atmosphere,
+    Ocean,
+    Land};
+
+static const ModelVariableDomain defaultVariableDomain = ModelVariableDomain::Atmosphere;
+
 // -----------------------------------------------------------------------------
 class VariableMetaData : public util::Printable {
  public:
   static std::string staggerToString(const VerticalStagger & stagger);
   static std::string dataTypeToString(const ModelDataType & type);
+  static std::string variableDomainToString(const ModelVariableDomain & domain);
 
   explicit VariableMetaData(const VariableMetaData &) = default;
   explicit VariableMetaData(VariableMetaData &&) = default;
   VariableMetaData(const VerticalStagger & stagger = defaultVerticalStagger,
-                   const ModelDataType & type = defaultDataType);
+                   const ModelDataType & type = defaultDataType,
+                   const ModelVariableDomain & domain = defaultVariableDomain);
   explicit VariableMetaData(const std::string &);
   VariableMetaData& operator=(const VariableMetaData &) = default;
   VariableMetaData& operator=(VariableMetaData &&) = default;
@@ -79,10 +92,12 @@ class VariableMetaData : public util::Printable {
 
   const VerticalStagger & stagger() const {return stagger_;}
   const ModelDataType & dataType() const {return dataType_;}
+  const ModelVariableDomain & domain() const {return domain_;}
 
  private:
   VerticalStagger stagger_;
   ModelDataType dataType_;
+  ModelVariableDomain domain_;
 };
 
 // -----------------------------------------------------------------------------

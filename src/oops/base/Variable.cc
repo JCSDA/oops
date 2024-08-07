@@ -25,15 +25,17 @@
 namespace oops {
 
 // -----------------------------------------------------------------------------
-VariableMetaData::VariableMetaData(const VerticalStagger & stagger, const ModelDataType & type)
-  : stagger_(stagger), dataType_(type) {}
+VariableMetaData::VariableMetaData(const VerticalStagger & stagger, const ModelDataType & type,
+                                   const ModelVariableDomain & domain)
+  : stagger_(stagger), dataType_(type), domain_(domain) {}
 
 // -----------------------------------------------------------------------------
 VariableMetaData::VariableMetaData(const std::string & name) {
   // Parse the name to get the stagger and data type
-  // For now, just set the stagger to default and data type to float
+  // For now, just set the stagger to default, data type to double, and domain to atmosphere
   stagger_ = defaultVerticalStagger;
   dataType_ = defaultDataType;
+  domain_ = defaultVariableDomain;
 }
 
 // -----------------------------------------------------------------------------
@@ -62,8 +64,21 @@ std::string VariableMetaData::dataTypeToString(const ModelDataType & type) {
 
 // -----------------------------------------------------------------------------
 
+std::string VariableMetaData::variableDomainToString(const ModelVariableDomain & domain) {
+  switch (domain) {
+    case ModelVariableDomain::Atmosphere: return "atmosphere";
+    case ModelVariableDomain::Ocean: return "ocean";
+    case ModelVariableDomain::Land: return "land";
+    return "unknown model variable domain: " + std::to_string(static_cast<int>(domain));
+  }
+}
+
+// -----------------------------------------------------------------------------
+
 bool VariableMetaData::operator==(const VariableMetaData & rhs) const {
-  return (stagger_ == rhs.stagger_ && dataType_ == rhs.dataType_);
+  return (stagger_  == rhs.stagger_ &&
+          dataType_ == rhs.dataType_ &&
+          domain_   == rhs.domain_);
 }
 
 // -----------------------------------------------------------------------------
@@ -76,7 +91,8 @@ bool VariableMetaData::operator!=(const VariableMetaData & rhs) const {
 
 void VariableMetaData::print(std::ostream & os) const {
   os << "Stagger: " << staggerToString(stagger_) << ", "
-     << "Data type: " << dataTypeToString(dataType_);
+     << "Data type: " << dataTypeToString(dataType_) << ", "
+     << "Domain: " << variableDomainToString(domain_);
 }
 
 // -----------------------------------------------------------------------------
