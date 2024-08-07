@@ -19,6 +19,17 @@ void printNormReduction(int iteration, const double & grad, const double & norm)
               << util::full_precision(norm) << std::endl << std::endl;
 }
 
+void printNormAndCostReduction(int iteration, const double & grad, const double & norm, const double & cost, const double & reduc) {
+  Log::info() << "  Residual norm (" << std::setw(2) << iteration << ")           = "
+              << util::full_precision(grad) << std::endl
+              << "  Relative norm reduction (" << std::setw(2) << iteration << ") = "
+              << util::full_precision(norm) << std::endl
+              << "  Cost function (" << std::setw(2) << iteration << ")           = "
+              << util::full_precision(cost) << std::endl
+              << "  Absolute cost reduction (" << std::setw(2) << iteration << ") = "
+              << util::full_precision(reduc) << std::endl << std::endl;
+}
+
 void printQuadraticCostFunction(int iteration, const double & costJ,
                                 const double & costJb, const double & costJoJc) {
   Log::info() << "  Quadratic cost function: J   (" << std::setw(2) << iteration << ") = "

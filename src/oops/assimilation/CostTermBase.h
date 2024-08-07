@@ -77,6 +77,12 @@ template<typename MODEL, typename OBS> class CostTermBase {
   virtual std::unique_ptr<GeneralizedDepartures>
     multiplyCoInv(const GeneralizedDepartures &) const = 0;
 
+/// Multiply by symmetric square-root of covariance (or weight) matrix and its inverse.
+  virtual std::unique_ptr<GeneralizedDepartures>
+    multiplyCovarSqrt(const GeneralizedDepartures &) const = 0;
+  virtual std::unique_ptr<GeneralizedDepartures>
+    multiplyCoInvSqrt(const GeneralizedDepartures &) const = 0;
+
 /// Provide new dual space vector (for example a Departure for Jo).
   virtual std::unique_ptr<GeneralizedDepartures> newDualVector() const = 0;
 

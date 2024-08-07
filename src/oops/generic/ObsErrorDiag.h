@@ -14,6 +14,7 @@
 
 #include <sstream>
 #include <string>
+#include <stdexcept>
 
 #include "eckit/config/Configuration.h"
 #include "oops/base/ObsVector.h"
@@ -85,6 +86,12 @@ class ObsErrorDiag : public ObsErrorBase<OBS> {
 /// Multiply a Departure by \f$R^{-1}\f$
   void inverseMultiply(ObsVector_ &) const override;
 
+/// Multiply a Departure by \f$R^{1/2}\f$
+  void sqrtMultiply(ObsVector_ &) const override;
+
+/// Multiply a Departure by \f$R^{-1/2}\f$
+  void invSqrtMultiply(ObsVector_ &) const override;
+
 /// Generate random perturbation
   void randomize(ObsVector_ &) const override;
 
@@ -147,6 +154,20 @@ void ObsErrorDiag<OBS>::multiply(ObsVector_ & dy) const {
 template<typename OBS>
 void ObsErrorDiag<OBS>::inverseMultiply(ObsVector_ & dy) const {
   dy *= inverseVariance_;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename OBS>
+void ObsErrorDiag<OBS>::sqrtMultiply(ObsVector_ & dy) const {
+  dy *= stddev_;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename OBS>
+void ObsErrorDiag<OBS>::invSqrtMultiply(ObsVector_ & dy) const {
+  dy /= stddev_;
 }
 
 // -----------------------------------------------------------------------------

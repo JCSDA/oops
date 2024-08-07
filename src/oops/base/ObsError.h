@@ -45,6 +45,11 @@ class ObsError : public util::Printable,
   /// Multiply a Departure \p dy by \f$R^{-1}\f$.
   void inverseMultiply(ObsVector_ & dy) const;
 
+  /// Multiply a Departure \p dy by \f$R^{1/2}\f$.
+  void sqrtMultiply(ObsVector_ & dy) const;
+  /// Multiply a Departure \p dy by \f$R^{-1/2}\f$.
+  void invSqrtMultiply(ObsVector_ & dy) const;
+
   /// Generate a random perturbation in \p dy.
   void randomize(ObsVector_ & dy) const;
 
@@ -115,6 +120,26 @@ void ObsError<OBS>::inverseMultiply(ObsVector_ & dy) const {
   util::Timer timer(classname(), "inverseMultiply");
   err_->inverseMultiply(dy);
   Log::trace() << "ObsError<OBS>::inverseMultiply done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+void ObsError<OBS>::sqrtMultiply(ObsVector_ & dy) const {
+  Log::trace() << "ObsError<OBS>::sqrtMultiply starting" << std::endl;
+  util::Timer timer(classname(), "sqrtMultiply");
+  err_->sqrtMultiply(dy);
+  Log::trace() << "ObsError<OBS>::sqrtMultiply done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+void ObsError<OBS>::invSqrtMultiply(ObsVector_ & dy) const {
+  Log::trace() << "ObsError<OBS>::invSqrtMultiply starting" << std::endl;
+  util::Timer timer(classname(), "invSqrtMultiply");
+  err_->invSqrtMultiply(dy);
+  Log::trace() << "ObsError<OBS>::invSqrtMultiply done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

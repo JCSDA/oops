@@ -13,6 +13,7 @@
 
 #include <memory>
 #include <utility>
+#include <stdexcept>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/assimilation/ControlIncrement.h"
@@ -81,6 +82,14 @@ template<typename MODEL, typename OBS> class CostJcDFI : public CostTermBase<MOD
     multiplyCovar(const GeneralizedDepartures &) const override;
   std::unique_ptr<GeneralizedDepartures>
     multiplyCoInv(const GeneralizedDepartures &) const override;
+
+/// Multiply by \f$ C^{1/2}\f$ and \f$ C^{-1/2}\f$. Not implemented
+/// for this class, but declared here in order to conform with the
+/// CostTermBase interface.
+  std::unique_ptr<GeneralizedDepartures>
+    multiplyCovarSqrt(const GeneralizedDepartures &) const override;
+  std::unique_ptr<GeneralizedDepartures>
+    multiplyCoInvSqrt(const GeneralizedDepartures &) const override;
 
 /// Provide new increment.
   std::unique_ptr<GeneralizedDepartures> newDualVector() const override;
@@ -214,6 +223,28 @@ CostJcDFI<MODEL, OBS>::multiplyCoInv(const GeneralizedDepartures & dv1) const {
   const Increment_ & dx1 = dynamic_cast<const Increment_ &>(dv1);
   std::unique_ptr<Increment_> dx2(new Increment_(dx1));
   *dx2 *= alpha_;
+  return std::move(dx2);
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL, typename OBS>
+std::unique_ptr<GeneralizedDepartures>
+CostJcDFI<MODEL, OBS>::multiplyCovarSqrt(const GeneralizedDepartures & dv1) const {
+  const Increment_ & dx1 = dynamic_cast<const Increment_ &>(dv1);
+  std::unique_ptr<Increment_> dx2(new Increment_(dx1));
+  std::runtime_error("oops::CostJcDFI<MODEL, OBS>::multiplyCovarSqrt(const oops::GeneralizedDepartures & dv1) has not been implemeneted.");
+  return std::move(dx2);
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL, typename OBS>
+std::unique_ptr<GeneralizedDepartures>
+CostJcDFI<MODEL, OBS>::multiplyCoInvSqrt(const GeneralizedDepartures & dv1) const {
+  const Increment_ & dx1 = dynamic_cast<const Increment_ &>(dv1);
+  std::unique_ptr<Increment_> dx2(new Increment_(dx1));
+  std::runtime_error("oops::CostJcDFI<MODEL, OBS>::multiplyCoInvSqrt(const oops::GeneralizedDepartures & dv1) has not been implemeneted.");
   return std::move(dx2);
 }
 

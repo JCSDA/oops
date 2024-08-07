@@ -69,6 +69,7 @@ oops/assimilation/PLanczosMinimizer.h
 oops/assimilation/PMatrix.h
 oops/assimilation/PrimalMinimizer.h
 oops/assimilation/QNewtonLMP.h
+oops/assimilation/QuadratureRules.h
 oops/assimilation/RinvHMatrix.h
 oops/assimilation/RinvMatrix.h
 oops/assimilation/rotmat.h
@@ -79,6 +80,7 @@ oops/assimilation/SaddlePointMatrix.h
 oops/assimilation/SaddlePointMinimizer.h
 oops/assimilation/SaddlePointPrecondMatrix.h
 oops/assimilation/SaddlePointVector.h
+oops/assimilation/SLCG.h
 oops/assimilation/SpectralLMP.h
 oops/assimilation/TriDiagSolve.h
 oops/assimilation/TriDiagSpectrum.h
@@ -411,8 +413,12 @@ test/assimilation/SolveMatrixEquation.h
 test/assimilation/SpectralLMP.h
 test/assimilation/TestVector3D.h
 test/assimilation/TriDiagSolve.h
+test/assimilation/Vector2D.cc
+test/assimilation/Vector2D.h
 test/assimilation/Vector3D.cc
 test/assimilation/Vector3D.h
+test/assimilation/Vector4D.cc
+test/assimilation/Vector4D.h
 
 test/base/Fortran.h
 test/base/ObsErrorCovariance.h
@@ -860,6 +866,12 @@ ecbuild_add_test( TARGET  test_assimilation_tridiagsolve
                   SOURCES test/assimilation/TriDiagSolve.cc
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
+
+ecbuild_add_executable(
+  TARGET  test_oops_quad_utils.x
+  SOURCES test/assimilation/QuadratureUtilities.cc
+  LIBS oops
+)
 
 if( HAVE_FCTEST )
 

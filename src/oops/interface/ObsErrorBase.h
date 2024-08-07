@@ -53,6 +53,14 @@ class ObsErrorBase : public oops::ObsErrorBase<OBS> {
     this->inverseMultiply(dy.obsvector());
   }
 
+  void sqrtMultiply(oops::ObsVector<OBS> &dy) const final {
+    this->sqrtMultiply(dy.obsvector());
+  }
+
+  void invSqrtMultiply(oops::ObsVector<OBS> &dy) const final {
+    this->invSqrtMultiply(dy.obsvector());
+  }
+
   void randomize(oops::ObsVector<OBS> &dy) const final {
     this->randomize(dy.obsvector());
   }
@@ -78,6 +86,12 @@ class ObsErrorBase : public oops::ObsErrorBase<OBS> {
 
   /// Multiply a Departure \p dy by \f$R^{-1}\f$.
   virtual void inverseMultiply(ObsVector_ &dy) const = 0;
+
+  /// Multiply a Departure \p dy by \f$R^{1/2}\f$.
+  virtual void sqrtMultiply(ObsVector_ &dy) const = 0;
+
+  /// Multiply a Departure \p dy by \f$R^{-1/2}\f$.
+  virtual void invSqrtMultiply(ObsVector_ &dy) const = 0;
 
   /// Generate a random perturbation in \p dy.
   virtual void randomize(ObsVector_ &dy) const = 0;

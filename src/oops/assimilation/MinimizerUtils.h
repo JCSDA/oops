@@ -22,6 +22,10 @@ namespace oops {
 /// Prints to Log::info gradient reduction \p grad and normalized gradient reduction \p norm
 /// for iteration \p iteration
 void printNormReduction(int iteration, const double & grad, const double & norm);
+/// Prints to Log::info gradient reduction \p grad, normalized gradient reduction \p norm,
+/// conjugate gradient cost function \p cost, and absolute cost reduction \p reduc.
+void printNormAndCostReduction(int iteration, const double & grad, const double & norm,
+            const double & cost, const double & reduc);
 /// Prints to Log::info cost function values for \p costJ, \p costJb, \p costJoJc for
 /// iteration \p iteration
 void printQuadraticCostFunction(int iteration, const double & costJ, const double & costJb,

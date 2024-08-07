@@ -51,6 +51,11 @@ class ObsErrors : public util::Printable,
 /// Multiply a Departure by \f$R^{-1}\f$
   void inverseMultiply(Departures_ &) const;
 
+/// Multiply a Departure by \f$R^{1/2}\f$
+  void sqrtMultiply(Departures_ &) const;
+/// Multiply a Departure by \f$R^{-1/2}\f$
+  void invSqrtMultiply(Departures_ &) const;
+
 /// Generate random perturbation
   void randomize(Departures_ &) const;
 
@@ -106,6 +111,24 @@ template <typename OBS>
 void ObsErrors<OBS>::inverseMultiply(Departures_ & dy) const {
   for (size_t jj = 0; jj < err_.size(); ++jj) {
     err_[jj].inverseMultiply(dy[jj]);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+void ObsErrors<OBS>::sqrtMultiply(Departures_ & dy) const {
+  for (size_t jj = 0; jj < err_.size(); ++jj) {
+    err_[jj].sqrtMultiply(dy[jj]);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+void ObsErrors<OBS>::invSqrtMultiply(Departures_ & dy) const {
+  for (size_t jj = 0; jj < err_.size(); ++jj) {
+    err_[jj].invSqrtMultiply(dy[jj]);
   }
 }
 
