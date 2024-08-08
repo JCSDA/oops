@@ -59,6 +59,7 @@ template<typename MODEL, typename OBS> class Minimizer : private boost::noncopya
   void tlmTaylorTest(const H_ &);
 
   void tlmPropagTest(const eckit::Configuration & config, const CtrlInc_ &);
+  void outputAMinusB(const eckit::Configuration & config, CtrlInc_ controlInc);
 
   const CostFct_ & J_;
   int outerIteration_;
@@ -77,6 +78,7 @@ Minimizer<MODEL, OBS>::minimize(const eckit::Configuration & config) {
 
   // Minimize
   ControlIncrement<MODEL, OBS> * dx = this->doMinimize(config);
+  this->outputAMinusB(config, *dx);
 
   // Write increment
   writeIncrement(config, *dx, outerIteration_);
@@ -210,6 +212,18 @@ void Minimizer<MODEL, OBS>::tlmPropagTest(const eckit::Configuration & config,
       // print log
       Log::info() << std::endl << "TLM Propagation Test: done." << std::endl;
     }
+  }
+}
+
+template<typename MODEL, typename OBS>
+void Minimizer<MODEL, OBS>::outputAMinusB(const eckit::Configuration & config,
+                                          CtrlInc_ controlInc) {
+  if (config.getBool("output a minus b", false)) {
+    const auto H = HMatrix<MODEL, OBS>(J_);
+    DualVector<MODEL, OBS> aMinusB;
+    H.multiply(controlInc, aMinusB);
+    const std::string depName = "output_a_minus_b" + std::to_string(outerIteration_);
+    aMinusB.saveDep(depName);
   }
 }
 

@@ -69,6 +69,7 @@ variational:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
+    output a minus b: true
   - diagnostics:
       departures: ombg1
     gradient norm reduction: 1.0e-10
@@ -77,6 +78,7 @@ variational:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
+    output a minus b: true
 final:
   diagnostics:
     departures: oman
