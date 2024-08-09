@@ -475,7 +475,8 @@ ecbuild_add_test( TARGET test_l95_forecast
 
 ecbuild_add_test( TARGET test_l95_forecast_pseudomodel
                   COMMAND l95_forecast.x
-                  ARGS testinput/forecast_pseudomodel.yaml )
+                  ARGS testinput/forecast_pseudomodel.yaml
+                  TEST_DEPENDS test_l95_forecast )
 
 ecbuild_add_test( TARGET test_l95_forecast_identitymodel
                   COMMAND l95_forecast.x
