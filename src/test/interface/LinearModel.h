@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2024, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -88,18 +89,29 @@ template <typename MODEL> class LinearModelFixture : private boost::noncopyable 
     getInstance().test_.reset();
   }
 
- private:
-  static LinearModelFixture<MODEL>& getInstance() {
-    static LinearModelFixture<MODEL> theLinearModelFixture;
+  /// \brief Returns the instance of the LinearModelFixture.
+  /// \detail The first call requires a pointer to the MPI communicator,
+  ///         in order to initialise the Geometry.
+  static LinearModelFixture<MODEL>& getInstance(
+      const eckit::mpi::Comm * const comm_setter = nullptr) {
+    // Create instance using the communicator.
+    static LinearModelFixture<MODEL> theLinearModelFixture([=]() -> const eckit::mpi::Comm & {
+      ASSERT_MSG(comm_setter != nullptr,
+                 "LinearModelFixture::getInstance: ERROR: MPI communicator required on"
+                 " the first call to `getInstance`.");
+      return *comm_setter;
+    }());
+
     return theLinearModelFixture;
   }
 
-  LinearModelFixture<MODEL>() {
+ private:
+  explicit LinearModelFixture<MODEL>(const eckit::mpi::Comm & comm) {
     test_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "linear model test"));
     const util::Duration len(test_->getString("forecast length"));
 
     const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "geometry");
-    resol_.reset(new Geometry_(resolConfig, oops::mpi::world()));
+    resol_.reset(new Geometry_(resolConfig, comm));
 
     ctlvars_.reset(new oops::Variables(TestEnvironment::config(), "analysis variables"));
 
@@ -373,6 +385,21 @@ class LinearModel : public oops::Test {
 
  private:
   std::string testid() const override {return "test::LinearModel<" + MODEL::name() + ">";}
+
+  // Override the base-class execute method to set up the LinearModelFixture by
+  // calling getInstance() with the MPI commuicator required on the first call.
+  // This requires that the TestEnvironment is set up beforehand.
+  // Then, continue with the base-class method.
+  int execute(const eckit::Configuration & globalConf, bool validate) const override {
+    typedef LinearModelFixture<MODEL> Test_;
+
+    TestEnvironment::getInstance().setup(globalConf);
+
+    // Initialise the LinearModelFixture singleton with the communicator.
+    Test_::getInstance(&getComm());
+
+    return oops::Test::execute(globalConf, validate);
+  }
 
   void register_tests() const override {
     std::vector<eckit::testing::Test>& ts = eckit::testing::specification();
