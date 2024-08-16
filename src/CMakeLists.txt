@@ -683,7 +683,11 @@ target_include_directories(${PROJECT_NAME} INTERFACE
 
 if (${nlohmann_json_FOUND} AND ${nlohmann_json_schema_validator_FOUND})
   message(STATUS "[OOPS] JSON Schema Validator activated.")
-  target_link_libraries( oops PRIVATE nlohmann_json nlohmann_json_schema_validator )
+  if (TARGET nlohmann_json_schema_validator)
+    target_link_libraries( oops PRIVATE nlohmann_json nlohmann_json_schema_validator )
+  else()
+    target_link_libraries( oops PRIVATE nlohmann_json nlohmann_json_schema_validator::validator )
+  endif()
   target_compile_definitions( oops PRIVATE OOPS_HAVE_NLOHMANN_JSON_SCHEMA_VALIDATOR )
 endif()
 

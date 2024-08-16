@@ -43,7 +43,7 @@ namespace {
 /// readable.
 class ValidationErrorHandler : public nlohmann::json_schema::basic_error_handler {
  private:
-  void error(const nlohmann::json_pointer<nlohmann::basic_json<>> &pointer,
+  void error(const nlohmann::json::json_pointer &pointer,
              const nlohmann::json &instance,
              const std::string &message) override {
     // The base class implementation sets an internal flag indicating validation failure
@@ -84,7 +84,7 @@ class ValidationErrorHandler : public nlohmann::json_schema::basic_error_handler
   }
 
   /// Return the path to the given JSON node
-  std::string getPath(const nlohmann::json_pointer<nlohmann::basic_json<>> &pointer) {
+  std::string getPath(const nlohmann::json::json_pointer &pointer) {
     std::string path = pointer.to_string();
     if (path.empty()) {
       // The json_pointer::to_string() method returns an empty string if the pointer refers to
