@@ -50,6 +50,7 @@ void writerForPressures(const atlas::FieldSet & fset,
                         const Variables & vars,
                         const std::vector<double> & pressureLevels,
                         const std::string & filepathprefix,
+                        const bool writeDoubles,
                         const std::vector<double> & lats,
                         const std::vector<double> & lons) {
   // Get sizes
@@ -61,6 +62,7 @@ void writerForPressures(const atlas::FieldSet & fset,
   int ncid;  // file ID
   int lat_did, lon_did, lev_did;  // dim IDs
   int lat_vid, lon_vid, lev_vid, field_vid[vars.size()];  // var IDs
+  int ncvartype;  // float or double
 
   // NetCDF file path
   std::string ncfilepath = filepathprefix;
@@ -68,7 +70,7 @@ void writerForPressures(const atlas::FieldSet & fset,
   oops::Log::info() << "Writing file: " << ncfilepath << std::endl;
 
   // Create NetCDF file
-  check_nc_code(nc_create(ncfilepath.c_str(), NC_CLOBBER, &ncid));
+  check_nc_code(nc_create(ncfilepath.c_str(), NC_CLOBBER | NC_NETCDF4, &ncid));
   // Warning: the output here does not in general conform to the CF conventions, but we fake it
   //          via this netcdf attribute to allow METplus to handle certain regridding operations.
   check_nc_code(nc_put_att_text(ncid, NC_GLOBAL, "Conventions", strlen("CF-1"), "CF-1"));
@@ -86,14 +88,21 @@ void writerForPressures(const atlas::FieldSet & fset,
   check_nc_code(nc_def_var(ncid, "pressure_levels", NC_DOUBLE, 1, &lev_did, &lev_vid));
   check_nc_code(nc_put_att_text(ncid, lev_vid, "units", strlen("hPa"), "hPa"));
 
+  // Define netCDF variable type
+  if (writeDoubles) {
+    ncvartype = NC_DOUBLE;
+  } else {
+    ncvartype = NC_FLOAT;
+  }
+
   // Define variables
   int field_dids[3] = {lat_did, lon_did, lev_did};
   const double missing = util::missingValue<double>();
   for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
     check_nc_code(
-        nc_def_var(ncid, vars[jvar].name().c_str(), NC_DOUBLE, 3, field_dids, &field_vid[jvar]));
+        nc_def_var(ncid, vars[jvar].name().c_str(), ncvartype, 3, field_dids, &field_vid[jvar]));
     check_nc_code(
-        nc_put_att_double(ncid, field_vid[jvar], "missing_value", NC_DOUBLE, 1, &missing));
+        nc_put_att_double(ncid, field_vid[jvar], "missing_value", ncvartype, 1, &missing));
   }
 
   // End definition mode
@@ -128,6 +137,7 @@ void writerForLevels(const atlas::FieldSet & fset,
                      const std::optional<std::vector<size_t>> & modelLevels,
                      const std::unordered_map<Variable, bool> isSurfaceVar,
                      const std::string & filepathprefix,
+                     const bool writeDoubles,
                      const std::vector<double> & lats,
                      const std::vector<double> & lons) {
   // Check if FieldSet has surface or upper-air fields.
@@ -162,6 +172,7 @@ void writerForLevels(const atlas::FieldSet & fset,
   int ncid;  // file ID
   int lat_did, lon_did, lev_did, sfc_did;  // dim IDs
   int lat_vid, lon_vid, lev_vid, field_vid[vars.size()];  // var IDs
+  int ncvartype;  // float or double
 
   // NetCDF file path
   std::string ncfilepath = filepathprefix;
@@ -169,7 +180,7 @@ void writerForLevels(const atlas::FieldSet & fset,
   oops::Log::info() << "Writing file: " << ncfilepath << std::endl;
 
   // Create NetCDF file
-  check_nc_code(nc_create(ncfilepath.c_str(), NC_CLOBBER, &ncid));
+  check_nc_code(nc_create(ncfilepath.c_str(), NC_CLOBBER | NC_NETCDF4, &ncid));
   // Warning: the output here does not in general conform to the CF conventions, but we fake it
   //          via this netcdf attribute to allow METplus to handle certain regridding operations.
   check_nc_code(nc_put_att_text(ncid, NC_GLOBAL, "Conventions", strlen("CF-1"), "CF-1"));
@@ -182,6 +193,13 @@ void writerForLevels(const atlas::FieldSet & fset,
   }
   if (haveSurfaceFields) {
     check_nc_code(nc_def_dim(ncid, "dummy_surface_levels", 1, &sfc_did));
+  }
+
+  // Define netCDF variable type
+  if (writeDoubles) {
+    ncvartype = NC_DOUBLE;
+  } else {
+    ncvartype = NC_FLOAT;
   }
 
   // Define coordinates
@@ -199,9 +217,9 @@ void writerForLevels(const atlas::FieldSet & fset,
   for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
     field_dids[2] = (isSurfaceVar.at(vars[jvar]) ? sfc_did : lev_did);
     check_nc_code(
-        nc_def_var(ncid, vars[jvar].name().c_str(), NC_DOUBLE, 3, field_dids, &field_vid[jvar]));
+        nc_def_var(ncid, vars[jvar].name().c_str(), ncvartype, 3, field_dids, &field_vid[jvar]));
     check_nc_code(
-        nc_put_att_double(ncid, field_vid[jvar], "missing_value", NC_DOUBLE, 1, &missing));
+        nc_put_att_double(ncid, field_vid[jvar], "missing_value", ncvartype, 1, &missing));
   }
 
   // End definition mode
@@ -369,6 +387,7 @@ class StructuredGridWriter : public util::Printable  {
   std::optional<std::vector<size_t>> modelLevels_;
   bool writeAllLevels_;
   std::string outGridType_;
+  bool writeDoubles_;
 };
 
 // -----------------------------------------------------------------------------
@@ -409,6 +428,18 @@ StructuredGridWriter<MODEL>::StructuredGridWriter(
 
   if (writeAllLevels_ && bottomLevel_) {
     throw eckit::BadValue("Cannot request both only the lowest model level and all levels.");
+  }
+
+  writeDoubles_ = true;
+  if (conf.has("write precision")) {
+    std::string write_precision = conf.getString("write precision");
+    if (write_precision == "float") {
+      writeDoubles_ = false;
+    } else if (write_precision == "double") {
+      writeDoubles_ = true;
+    } else {
+      throw eckit::BadValue("write precision must be either 'float' or 'double'");
+    }
   }
 
   // read in grid type
@@ -663,7 +694,7 @@ void StructuredGridWriter<MODEL>::interpolateAndWrite(const atlas::FieldSet & fs
     interpolateToPressureLevels(fsetStructured, fsetPressureLevels);
 
     detail::writerForPressures(fsetPressureLevels, upperAirVars, *pressureLevels_,
-                               filepathprefix, lats, lons);
+                               filepathprefix, writeDoubles_, lats, lons);
   }
 
   // Handle output on model levels: trimming to requested level then writing
@@ -680,7 +711,7 @@ void StructuredGridWriter<MODEL>::interpolateAndWrite(const atlas::FieldSet & fs
       trimToModelLevels(fsetStructured, fsetModelLevels, targetLevels, nModelLevels);
     }
     detail::writerForLevels(fsetModelLevels, vars_, targetLevels, isSurfaceVar,
-                            filepathprefix, lats, lons);
+                            filepathprefix, writeDoubles_, lats, lons);
 
   } else {
     // Once we are here, we know that
@@ -702,7 +733,7 @@ void StructuredGridWriter<MODEL>::interpolateAndWrite(const atlas::FieldSet & fs
       ASSERT(varsForSurface.size() >= 1);
 
       detail::writerForLevels(fsetSurface, varsForSurface, modelLevels_, isSurfaceVar,
-                              filepathprefix, lats, lons);
+                              filepathprefix, writeDoubles_, lats, lons);
     }
     // No else-branch needed: the absence of surface fields implies upper-air fields, and we
     // checked above that if upper-air fields are requested than at least some level is requested.
