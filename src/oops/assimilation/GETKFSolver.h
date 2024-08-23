@@ -23,6 +23,7 @@
 #include "oops/base/Geometry.h"
 #include "oops/base/IncrementEnsemble4D.h"
 #include "oops/base/ObsEnsemble.h"
+#include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/State4D.h"
@@ -63,6 +64,7 @@ class GETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
   typedef ObsAuxIncrements<OBS>       ObsAuxInc_;
   typedef ObsDataVector<OBS, int>     ObsDataInt_;
   typedef ObsEnsemble<OBS>            ObsEnsemble_;
+  typedef ObsErrors<OBS>              ObsErrors_;
   typedef Observations<OBS>           Observations_;
   typedef Observers<MODEL, OBS>       Observers_;
   typedef ObserversTLAD<MODEL, OBS>   ObserversTLAD_;
@@ -143,11 +145,13 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
   ObsAux_  obsaux(this->obspaces_, this->observersconf_);
   ObsAuxInc_  obsauxinc(this->obspaces_, this->observersconf_);
 
-  // compute/read H(x) for the original ensemble members
-  // also computes omb_
-  Observations_ yb_mean =
-            LocalEnsembleSolver<MODEL, OBS>::computeHofX(ens_xx, iteration, readFromFile);
+  Observations_ yb_mean(this->obspaces_);
+
   if (readFromFile) {
+    // compute/read H(x) for the original ensemble members
+    // also computes omb_
+    yb_mean = LocalEnsembleSolver<MODEL, OBS>::computeHofX(ens_xx, iteration, readFromFile);
+
     // read modulated ensemble
     Observations_ ytmp(yb_mean);
     size_t ii = 0;
@@ -176,11 +180,13 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
     config.set("save hofx", false);
     config.set("save qc", false);
     config.set("save obs errors", false);
+    config.set("iteration", std::to_string(iteration));
     size_t ii = 0;
 
     if (this->useLinearObserver()) {
+      this->R_.reset(new ObsErrors_(this->observersconf_, this->obspaces_));
+
       // Setup pseudo model to run on ensemble mean
-      Observations_ yy_mean(yb_mean);
       State_ init_xx = this->xbmean_[0];
       std::unique_ptr<PseudoModel_> pseudomodel(new PseudoModel_(this->xbmean_, default_tstep));
       const Model_ model(std::move(pseudomodel));
@@ -210,8 +216,33 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
         ObsDataInt_ qc(this->obspaces_[jj], this->obspaces_[jj].obsvariables());
         qcflags.push_back(qc);
       }
-      hofx.finalize(yy_mean, qcflags);
+      hofx.finalize(yb_mean, qcflags);
       linear_hofx.finalizeTraj(qcflags);
+
+      // for linear H, yb_mean==y_mean_xb
+      Observations_ y_mean_xb(yb_mean);
+
+      // set QC for the mean
+      config.set("save qc", true);
+      config.set("save obs errors", true);
+      y_mean_xb.save("hofx_y_mean_xb"+std::to_string(iteration));
+
+      // QC flags and Obs errors are set to that of the H(mean(Xb))
+      this->R_->save("ObsError");
+      // set inverse variances
+      this->invVarR_.reset(new Departures_(this->R_->inverseVariance()));
+
+      // mask H(x) ensemble perturbations
+      for (size_t iens = 0; iens < ens_xx.size(); ++iens) {
+        this->invVarR_->mask(this->Yb_[iens]);
+        this->Yb_[iens].mask(*this->invVarR_);
+      }
+
+      // calculate obs departures and mask with qc flag
+      Observations_ yobs(this->obspaces_, "ObsValue");
+      this->omb_ = yobs - yb_mean;
+      this->invVarR_->mask(this->omb_);
+      this->omb_.mask(*this->invVarR_);
 
       // add linearized H(x) to the linear model postprocessor
       linear_hofx.initializeTL(posttrajtl);
@@ -220,17 +251,32 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
         util::printRunStats("GETKFSolver calculate hofx");
 
         dx.diff(ens_xx[iens], this->xbmean_);
-        vertloc_.modulateIncrement(dx, Ztmp);
 
+        // observe original member
+        Increment_ init_dx = dx[0];
+        std::unique_ptr<PseudoLinearModel_> pseudolinearmodel =
+           std::make_unique<PseudoLinearModel_>(dx, default_tstep);
+        const LinearModel_ linear_model(std::move(pseudolinearmodel));
+        // run linear model on the ensemble perturbation, compute linear H*dx
+        linear_model.forecastTL(init_dx, moderrinc, flength, posttl, posttrajtl);
+        linear_hofx.finalizeTL(obsauxinc, this->Yb_[iens]);
+
+        Observations_ tmpObs(yb_mean);
+        tmpObs += this->Yb_[iens];
+        Log::test() << "H(x) for member " << iens+1 << ":" << std::endl << tmpObs << std::endl;
+        tmpObs.save("hofx"+std::to_string(iteration)+"_"+std::to_string(iens+1));
+
+        // observe modulated members
+        vertloc_.modulateIncrement(dx, Ztmp);
         for (size_t ieig = 0; ieig < neig_; ++ieig) {
           std::unique_ptr<PseudoLinearModel_> pseudolinearmodel =
                std::make_unique<PseudoLinearModel_>(Ztmp[ieig], default_tstep);
           const LinearModel_ linear_model(std::move(pseudolinearmodel));
-        // run linear model on the ensemble perturbation, compute linear H*dx
+          // run linear model on the ensemble perturbation, compute linear H*dx
           Increment_ init_dx = Ztmp[ieig][0];
           linear_model.forecastTL(init_dx, moderrinc, flength, posttl, posttrajtl);
           linear_hofx.finalizeTL(obsauxinc, HZb_[ii]);
-          Observations_ tmpObs(yy_mean);
+          Observations_ tmpObs(yb_mean);
           tmpObs += HZb_[ii];
           tmpObs.save("hofxm"+std::to_string(iteration)+"_"+std::to_string(ieig+1)+
                         "_"+std::to_string(iens+1));
@@ -238,6 +284,10 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
         }
       }
     } else {
+      // compute/read H(x) for the original ensemble members
+      // also computes omb_
+      yb_mean = LocalEnsembleSolver<MODEL, OBS>::computeHofX(ens_xx, iteration, readFromFile);
+
       for (size_t iens = 0; iens < nens_; ++iens) {
         Log::info() << " GETKFSolver::computeHofX starting ensemble member " << iens+1 << std::endl;
         util::printRunStats("GETKFSolver calculate hofx");

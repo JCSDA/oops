@@ -355,7 +355,7 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofXLinear(
   //                              then using H(xbmean_) is expected by downstream applications
   if (nens == 1) {yb_mean = y_mean_xb;}
 
-  // calculate H(x) ensemble perturbations
+  // mask H(x) ensemble perturbations
   for (size_t iens = 0; iens < nens; ++iens) {
     invVarR_->mask(Yb_[iens]);
     Yb_[iens].mask(*invVarR_);
