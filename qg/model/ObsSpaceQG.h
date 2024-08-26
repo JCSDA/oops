@@ -75,6 +75,10 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
   /// iterator to the observation past-the-last
   ObsIteratorQG end() const;
 
+  /// Append new obs
+  void append(const std::string & appendDir);
+
+
   /// interface with Fortran
   const F90odb & toFortran() const {return key_;}
 

@@ -47,6 +47,7 @@ class ObsTable : public oops::ObsSpaceBase,
   ~ObsTable();
 
   void save() const;
+  void append(const std::string & appendDir);
 
   void putdb(const std::string &, const std::vector<int> &) const;
   void putdb(const std::string &, const std::vector<float> &) const;

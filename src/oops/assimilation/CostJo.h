@@ -20,6 +20,7 @@
 #include <boost/noncopyable.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/exception/Exceptions.h"
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/ControlVariable.h"
 #include "oops/assimilation/CostTermBase.h"
@@ -117,6 +118,9 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   /// Reset obs operator trajectory.
   void resetLinearization() override;
 
+  /// Append new observations
+  void appendObs(const eckit::Configuration & appendConfig);
+
   /// Accessors
   const ObsSpaces_ & obspaces() const {return obspaces_;}
 
@@ -126,10 +130,9 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   const eckit::LocalConfiguration conf_;
   ObsSpaces_ obspaces_;
   std::unique_ptr<Observations_> yobs_;
-  ObsErrors_ Rmat_;
+  std::unique_ptr<ObsErrors_> Rmat_;
   std::unique_ptr<Observers_> observers_;
   std::vector<ObsDataInt_> qcflags_;
-  bool firstOuterLoop_;
 
   /// Jo Gradient at first guess : \f$ R^{-1} (H(x_{fg})-y_{obs}) \f$.
   std::unique_ptr<Departures_> gradFG_;
@@ -150,10 +153,10 @@ CostJo<MODEL, OBS>::CostJo(const eckit::Configuration & joConf, const eckit::mpi
                            const eckit::mpi::Comm & ctime)
   : conf_(joConf),
     obspaces_(eckit::LocalConfiguration(joConf, "observers"), comm, timeWindow, ctime),
-    Rmat_(eckit::LocalConfiguration(joConf, "observers"), obspaces_),
-    observers_(), gradFG_(), obstlad_(), currentConf_()
+    yobs_(), Rmat_(), observers_(), gradFG_(), obstlad_(), currentConf_()
 {
   observers_.reset(new Observers_(obspaces_, joConf));
+  Rmat_.reset(new ObsErrors_(eckit::LocalConfiguration(joConf, "observers"), obspaces_));
   for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
     ObsDataInt_ qcflags(obspaces_[jj], obspaces_[jj].obsvariables());
     qcflags_.push_back(qcflags);
@@ -177,8 +180,7 @@ void CostJo<MODEL, OBS>::setPostProc(const CtrlVar_ & xx, const eckit::Configura
   Log::trace() << "CostJo::setPostProc start" << std::endl;
   gradFG_.reset();
   currentConf_.reset(new eckit::LocalConfiguration(conf));
-  firstOuterLoop_ = !yobs_;
-  observers_->initialize(xx.state().geometry(), xx.obsVar(), Rmat_, pp, conf);
+  observers_->initialize(xx.state().geometry(), xx.obsVar(), *Rmat_, pp, conf);
   Log::trace() << "CostJo::setPostProc done" << std::endl;
 }
 
@@ -187,16 +189,18 @@ void CostJo<MODEL, OBS>::setPostProc(const CtrlVar_ & xx, const eckit::Configura
 template<typename MODEL, typename OBS>
 double CostJo<MODEL, OBS>::computeCost() {
   Log::trace() << "CostJo::computeCost start" << std::endl;
+  bool firstOuterLoop = !yobs_;
 
   // Obs, simulated obs and departures (held here for nice prints and diagnostics)
   Observations_ yeqv(obspaces_);
   observers_->finalize(yeqv, qcflags_);
-  if (firstOuterLoop_) {
+
+  if (firstOuterLoop) {
     yobs_.reset(new Observations_(obspaces_, "ObsValue"));
     Log::info() << "CostJo Observations: " << *yobs_ << std::endl;
     if (conf_.getBool("obs perturbations", false)) {
       // Perturb observations according to obs error statistics and save to output file
-      yobs_->perturb(Rmat_);
+      yobs_->perturb(*Rmat_);
       Log::info() << "Perturbed observations: " << *yobs_ << std::endl;
       yobs_->save("EffectiveObsValue");
     }
@@ -213,7 +217,7 @@ double CostJo<MODEL, OBS>::computeCost() {
 
   // Gradient at first guess (to define inner loop rhs)
   gradFG_.reset(new Departures_(ydep));
-  Rmat_.inverseMultiply(*gradFG_);
+  Rmat_->inverseMultiply(*gradFG_);
 
   // Print diagnostics
   Log::info() << "Jo Observations:" << std::endl << *yobs_
@@ -225,7 +229,7 @@ double CostJo<MODEL, OBS>::computeCost() {
   Log::info() << "Jo Bias Corrected Departures:" << std::endl << ydep
           << "End Jo Bias Corrected Departures"  << std::endl;
 
-  Log::info() << "Jo Observations Errors:" << std::endl << Rmat_
+  Log::info() << "Jo Observations Errors:" << std::endl << *Rmat_
           << "End Jo Observations Errors"  << std::endl;
 
   // Print Jo table
@@ -268,7 +272,7 @@ double CostJo<MODEL, OBS>::printJo(size_t jj, Departures_ & ydep, std::ostream &
 
   if (nobs > 0) {
     zz = 0.5 * dot_product(ydep[jj], (*gradFG_)[jj]);
-    const double err = Rmat_[jj].getRMSE();
+    const double err = (*Rmat_)[jj].getRMSE();
     os << zz << ", nobs = " << nobs << ", Jo/n = " << zz/nobs << ", err = " << err;
   } else {
     os << zz << " --- No Observations";
@@ -356,7 +360,7 @@ std::unique_ptr<GeneralizedDepartures>
 CostJo<MODEL, OBS>::multiplyCovar(const GeneralizedDepartures & v1) const {
   Log::trace() << "CostJo::multiplyCovar start" << std::endl;
   std::unique_ptr<Departures_> y1(new Departures_(dynamic_cast<const Departures_ &>(v1)));
-  Rmat_.multiply(*y1);
+  Rmat_->multiply(*y1);
   return std::move(y1);
 }
 
@@ -367,7 +371,7 @@ std::unique_ptr<GeneralizedDepartures>
 CostJo<MODEL, OBS>::multiplyCoInv(const GeneralizedDepartures & v1) const {
   Log::trace() << "CostJo::multiplyCoInv start" << std::endl;
   std::unique_ptr<Departures_> y1(new Departures_(dynamic_cast<const Departures_ &>(v1)));
-  Rmat_.inverseMultiply(*y1);
+  Rmat_->inverseMultiply(*y1);
   return std::move(y1);
 }
 
@@ -407,7 +411,7 @@ void CostJo<MODEL, OBS>::setObsPert(const Geometry_ & geom, const Variables & in
   observers_->resetObsPert(geom, std::move(obsOpBases), obstlad_->posts(), incVars);
   yobs_.reset(new Observations_(this->obspaces(), ""));
   // Perturb observations according to obs error statistics and save to output file
-  yobs_->perturb(Rmat_);
+  yobs_->perturb(*Rmat_);
   Log::info() << "Perturbed observations: " << *yobs_ << std::endl;
   yobs_->save("EffectiveObsValue");
 }
@@ -419,6 +423,39 @@ void CostJo<MODEL, OBS>::resetLinearization() {
   Log::trace() << "CostJo::resetLinearization start" << std::endl;
   obstlad_.reset();
   Log::trace() << "CostJo::resetLinearization done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL, typename OBS>
+void CostJo<MODEL, OBS>::appendObs(const eckit::Configuration & appendConfig) {
+  Log::trace() << "CostJo::appendObs start" << std::endl;
+
+  if (conf_.getBool("obs perturbations", false)) {
+    throw eckit::NotImplemented("CostJo: appending to perturbed obs not implemented yet", Here());
+  }
+
+  if (!yobs_) {
+    ABORT("CostJo::appendObs: Should not append obs in the first outer loop.");
+  }
+
+  observers_.reset();
+  Rmat_.reset();
+  qcflags_.clear();
+  gradFG_.reset();
+  yobs_.reset();
+
+  obspaces_.appendObs(appendConfig);
+
+  yobs_.reset(new Observations_(obspaces_, "ObsValue"));
+  observers_.reset(new Observers_(obspaces_, conf_));
+  Rmat_.reset(new ObsErrors_(eckit::LocalConfiguration(conf_, "observers"), obspaces_));
+  for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
+    ObsDataInt_ qcflags(obspaces_[jj], obspaces_[jj].obsvariables());
+    qcflags_.push_back(qcflags);
+  }
+
+  Log::trace() << "CostJo::appendObs done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

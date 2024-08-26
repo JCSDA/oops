@@ -76,6 +76,9 @@ class ObsSpace : public util::Printable,
 // Save to file
   void save() const;
 
+// Append new obs
+  void append(const std::string & appendDir);
+
  private:
   void print(std::ostream &) const;
 
@@ -117,6 +120,16 @@ void ObsSpace<OBS>::save() const {
   util::Timer timer(classname(), "save");
   obsdb_->save();
   Log::trace() << "ObsSpace<OBS>::save done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+void ObsSpace<OBS>::append(const std::string & appendDir) {
+  Log::trace() << "ObsSpace<OBS>::append starting" << std::endl;
+  util::Timer timer(classname(), "append");
+  obsdb_->append(appendDir);
+  Log::trace() << "ObsSpace<OBS>::append done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

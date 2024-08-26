@@ -341,6 +341,12 @@ void ObsTable::otWrite(const std::string & filename) const {
 }
 
 // -----------------------------------------------------------------------------
+
+void ObsTable::append(const std::string & appendDir) {
+  throw eckit::NotImplemented("ObsTable::append() is not implemented.", Here());
+}
+
+// -----------------------------------------------------------------------------
 ObsIterator ObsTable::begin() const {
   return ObsIterator(locations_, 0);
 }

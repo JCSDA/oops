@@ -154,6 +154,10 @@ int ObsSpaceQG::nobs() const {
 }
 // -----------------------------------------------------------------------------
 
+void ObsSpaceQG::append(const std::string & appendDir) {
+  throw eckit::NotImplemented("ObsSpaceQG::append() is not implemented.", Here());
+}
+
 // -----------------------------------------------------------------------------
 ObsIteratorQG ObsSpaceQG::begin() const {
   return ObsIteratorQG(*this->locations(), 0);

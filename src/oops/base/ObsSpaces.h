@@ -49,6 +49,9 @@ class ObsSpaces : public util::Printable,
 /// Save files
   void save() const;
 
+/// Append new obs
+  void appendObs(const eckit::Configuration & appendConfig);
+
 /// Access
   std::size_t size() const {return spaces_.size();}
   ObsSpace_ & operator[](const std::size_t ii) {return *spaces_.at(ii);}
@@ -106,6 +109,16 @@ void ObsSpaces<OBS>::print(std::ostream & os) const {
   for (std::size_t jj = 0; jj < spaces_.size(); ++jj) {
     os << *spaces_[jj];
   }
+}
+
+template<typename OBS>
+void ObsSpaces<OBS>::appendObs(const eckit::Configuration & appendConfig) {
+  Log::trace() << "ObsSpaces::appendObs start" << std::endl;
+  std::string appendDir = appendConfig.getString("obs append directory");
+  for (std::size_t jj = 0; jj < spaces_.size(); ++jj) {
+    spaces_[jj]->append(appendDir);
+  }
+  Log::trace() << "ObsSpaces::appendObs done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
