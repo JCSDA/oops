@@ -92,8 +92,7 @@ template <typename MODEL> class AdjointForecast : public Application {
     params.deserialize(fullConfig);
 
     // Create the linear model
-    const Geometry_ adjointForecastModelGeometry
-      (params.linearFcstConf.value().geometry, this->getComm());
+    const Geometry_ geomAD(params.linearFcstConf.value().geometry, this->getComm());
     oops::instantiateLinearModelFactory<MODEL>();
     oops::PostProcessor<State_> post;
 
@@ -107,33 +106,32 @@ template <typename MODEL> class AdjointForecast : public Application {
 
     oops::PostProcessorTLAD<MODEL> pptraj;
     std::shared_ptr<LinearModel_> linearmodel_;
-    linearmodel_.reset(
-      new LinearModel_(adjointForecastModelGeometry, params.linearFcstConf.value().model));
+    linearmodel_.reset(new LinearModel_(geomAD, params.linearFcstConf.value().model));
 
     // Generate the model trajectory
     // -----------------------------
 
     // Setup resolution
-    const Geometry_ fcstModelGeom(params.fcstConf.value().geometry, this->getComm());
+    const Geometry_ geomNL(params.fcstConf.value().geometry, this->getComm());
 
     // Setup Model
     eckit::LocalConfiguration fconf(fullConfig, "forecast");
-    const Model_ model(fcstModelGeom,  eckit::LocalConfiguration(fconf, "model"));
+    const Model_ model(geomNL, eckit::LocalConfiguration(fconf, "model"));
 
     // Setup initial state
-    State_ xxf(fcstModelGeom, params.fcstConf.value().initialCondition);
+    State_ xxf(geomNL, params.fcstConf.value().initialCondition);
     Log::test() << "Initial state: " << xxf << std::endl;
 
     // Setup augmented state
-    const ModelAux_ moderr(fcstModelGeom, params.fcstConf.value().modelAuxControl);
+    const eckit::LocalConfiguration auxConf = fcConf.getSubConfiguration("model aux control");
+    const ModelAux_ moderr(geomNL, auxConf);
 
     // Forecast length
-    const util::Duration fclength = params.fcstConf.value().forecastLength;
+    const util::Duration fclength(fcConf.getString("forecast length"));
 
     // Run forecast to get the trajectory
     post.enrollProcessor(new oops::TrajectorySaver<MODEL>
-      (params.linearFcstConf.value().model, adjointForecastModelGeometry,
-      moderr, linearmodel_, pptraj));
+      (params.linearFcstConf.value().model, geomAD, moderr, linearmodel_, pptraj));
     model.forecast(xxf, moderr, fclength, post);
     Log::test() << "Forecast state: " << xxf << std::endl;
 
@@ -170,7 +168,7 @@ template <typename MODEL> class AdjointForecast : public Application {
     }
 
     // Setup augmented state for TLAD
-    ModelAuxIncr_ admaux(verificationGeom, params.adjointForecast.value().modelAuxIncrement);
+    ModelAuxIncr_ admaux(verificationGeom, auxConf);
 
     // Run ADM forecast
     linearmodel_->forecastAD(dx, admaux, fclength);

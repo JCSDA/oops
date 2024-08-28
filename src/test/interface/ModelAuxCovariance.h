@@ -40,13 +40,12 @@ class TestParameters : public oops::Parameters {
 
  public:
   typedef typename oops::Geometry<MODEL>::Parameters_ GeometryParameters_;
-  typedef typename oops::ModelAuxCovariance<MODEL>::Parameters_ ModelAuxCovarianceParameters_;
 
   /// \brief Group of parameters controlling the tested model's geometry.
   oops::RequiredParameter<GeometryParameters_> geometry{"geometry", this};
   /// \brief Group of parameters controlling the tested implementation of the ModelAuxCovariance
   /// interface.
-  oops::RequiredParameter<ModelAuxCovarianceParameters_> modelAuxError{"model aux error", this};
+  oops::RequiredParameter<eckit::LocalConfiguration> modelAuxError{"model aux error", this};
   /// \brief Don't treat the presence of other parameter groups as an error (this makes it
   /// possible to reuse a single YAML file in tests of implementations of multiple oops interfaces).
   oops::IgnoreOtherParameters ignoreOthers{this};
@@ -59,7 +58,7 @@ template <typename MODEL> class ModelAuxCovarianceFixture : private boost::nonco
   typedef TestParameters<MODEL>           TestParameters_;
 
  public:
-  static const typename Covariance_::Parameters_ & parameters() {return getInstance().parameters_;}
+  static const eckit::LocalConfiguration & config() {return getInstance().config_;}
   static const Geometry_    & resol()  {return *getInstance().resol_;}
 
  private:
@@ -72,15 +71,14 @@ template <typename MODEL> class ModelAuxCovarianceFixture : private boost::nonco
     TestParameters_ parameters;
     parameters.validateAndDeserialize(TestEnvironment::config());
 
-    parameters_ = parameters.modelAuxError;
-
+    config_ = eckit::LocalConfiguration(TestEnvironment::config(), "model aux error");
     resol_.reset(new Geometry_(parameters.geometry, oops::mpi::world()));
   }
 
   ~ModelAuxCovarianceFixture() {}
 
-  typename Covariance_::Parameters_ parameters_;
-  std::unique_ptr<Geometry_>     resol_;
+  eckit::LocalConfiguration config_;
+  std::unique_ptr<Geometry_> resol_;
 };
 
 // -----------------------------------------------------------------------------
@@ -89,7 +87,7 @@ template <typename MODEL> void testConstructor() {
   typedef ModelAuxCovarianceFixture<MODEL>   Test_;
   typedef oops::ModelAuxCovariance<MODEL>    Covariance_;
 
-  std::unique_ptr<Covariance_> cov(new Covariance_(Test_::parameters(), Test_::resol()));
+  std::unique_ptr<Covariance_> cov(new Covariance_(Test_::config(), Test_::resol()));
   EXPECT(cov.get());
   oops::Log::test() << "Testing ModelAuxCovariance: " << *cov << std::endl;
   cov.reset();

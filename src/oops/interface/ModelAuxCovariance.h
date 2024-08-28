@@ -24,10 +24,6 @@
 #include "oops/interface/ModelAuxIncrement.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
-#include "oops/util/parameters/GenericParameters.h"
-#include "oops/util/parameters/HasParameters_.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/ParametersOrConfiguration.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Timer.h"
 
@@ -39,19 +35,6 @@ namespace oops {
 /// This class calls the model's implementation of ModelAuxCovariance.
 // -----------------------------------------------------------------------------
 
-/// Note: implementations of this interface can opt to extract their settings either from
-/// a Configuration object or from a subclass of Parameters.
-///
-/// In the former case, they should provide a constructor with the following signature:
-///
-///    ModelAuxCovariance(const eckit::Configuration &, const Geometry_ &);
-///
-/// In the latter case, the implementer should first define a subclass of Parameters holding the
-/// settings of the ModelAuxCovariance implementation in question. That implementation should then
-/// typedef `Parameters_` to the name of that subclass and provide a constructor with the following
-/// signature:
-///
-///    ModelAuxCovariance(const Parameters_ &, const Geometry_ &);
 template <typename MODEL>
 class ModelAuxCovariance : public util::Printable,
                            private boost::noncopyable,
@@ -62,14 +45,8 @@ class ModelAuxCovariance : public util::Printable,
   typedef ModelAuxIncrement<MODEL>    ModelAuxIncrement_;
 
  public:
-  /// Set to ModelAuxControl_::Parameters_ if ModelAuxCovariance_ provides a type called Parameters_
-  /// and to GenericParameters (a thin wrapper of an eckit::LocalConfiguration object) if not.
-  typedef TParameters_IfAvailableElseFallbackType_t<ModelAuxCovariance_, GenericParameters>
-    Parameters_;
-
   static const std::string classname() {return "oops::ModelAuxCovariance";}
 
-  ModelAuxCovariance(const Parameters_ &, const Geometry_ &);
   ModelAuxCovariance(const eckit::Configuration &, const Geometry_ &);
   /// Destructor (defined explicitly for timing and tracing)
   ~ModelAuxCovariance();
@@ -83,33 +60,12 @@ class ModelAuxCovariance : public util::Printable,
   /// randomize the values in the ModelAuxIncrement
   void randomize(ModelAuxIncrement_ &) const;
 
-  /// \brief Returns an instance of Parameters_ (or a const reference to one) encapsulating the
-  /// configuration of cov_.
-  typename std::conditional<HasParameters_<ModelAuxCovariance_>::value,
-                            const Parameters_ &, Parameters_>::type config() const {
-    // In "new-style" implementations of the interface (which define a type called Parameters_),
-    // cov_->config() will return a const reference to a ModelAuxControl_::Parameters_ object
-    // stored in cov_; toParameters() will then simply return the same reference. In "old-style"
-    // implementations (which don't define a type called Parameters_), cov_->config() will return a
-    // const reference to an eckit::Configuration object; toParameters() will then deserialize it
-    // into a GenericParameters object and return that object.
-    return toParameters<Parameters_>(cov_->config());
-  }
-
  private:
   void print(std::ostream &) const;
   std::unique_ptr<ModelAuxCovariance_> cov_;
 };
 
 // =============================================================================
-
-template<typename MODEL>
-ModelAuxCovariance<MODEL>::ModelAuxCovariance(const Parameters_ & parameters,
-                                              const Geometry_ & resol)
-  : ModelAuxCovariance(parameters.toConfiguration(), resol)
-{}
-
-// -----------------------------------------------------------------------------
 
 template<typename MODEL>
 ModelAuxCovariance<MODEL>::ModelAuxCovariance(const eckit::Configuration & conf,

@@ -56,7 +56,6 @@ class HofX4DParameters : public ApplicationParameters {
 
  public:
   typedef typename Geometry_::Parameters_ GeometryParameters_;
-  typedef typename ModelAux_::Parameters_ ModelAuxParameters_;
 
   /// Options describing the assimilation time window.
   RequiredParameter<eckit::LocalConfiguration> timeWindow{"time window", this};
@@ -83,7 +82,8 @@ class HofX4DParameters : public ApplicationParameters {
   RequiredParameter<eckit::LocalConfiguration> initialCondition{"initial condition", this};
 
   /// Augmented model state.
-  Parameter<ModelAuxParameters_> modelAuxControl{"model aux control", {}, this};
+  Parameter<eckit::LocalConfiguration> modelAuxControl{"model aux control",
+                                                       eckit::LocalConfiguration(), this};
 };
 
 // -----------------------------------------------------------------------------
@@ -158,12 +158,9 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
 
 //  Setup Model
     const Model_ model(geometry, eckit::LocalConfiguration(fullConfig, "model"));
-    ModelAux_ moderr(geometry, params.modelAuxControl);
+    ModelAux_ moderr(geometry, fullConfig.getSubConfiguration("model aux control"));
 
-    eckit::LocalConfiguration prtConfig;
-    if (fullConfig.has("prints")) {
-      prtConfig = eckit::LocalConfiguration(fullConfig, "prints");
-    }
+    const eckit::LocalConfiguration prtConfig = fullConfig.getSubConfiguration("prints");
     post.enrollProcessor(new StateInfo<State_>("fc", prtConfig));
 
 //  Run the model and compute H(x)

@@ -43,18 +43,16 @@ class ExternalDFIParameters : public ApplicationParameters {
 
  public:
   typedef typename Geometry_::Parameters_     GeometryParameters_;
-  typedef typename ModelAux_::Parameters_     ModelAuxParameters_;
 
   RequiredParameter<GeometryParameters_> geometry{"geometry",
                    "geometry for initial state", this};
   RequiredParameter<eckit::LocalConfiguration> initialCondition{"initial condition",
                    "initial state parameters", this};
   RequiredParameter<eckit::LocalConfiguration> model{"model", "forecast model parameters", this};
-  Parameter<ModelAuxParameters_> modelAuxControl{"model aux control",
-                   "augmented model state", {}, this};
+  Parameter<eckit::LocalConfiguration> modelAuxControl{"model aux control",
+                   "augmented model state", eckit::LocalConfiguration(), this};
 
-  RequiredParameter<util::Duration> forecastLength{"forecast length",
-                   "forecast length", this};
+  RequiredParameter<util::Duration> forecastLength{"forecast length", "forecast length", this};
 
   Parameter<PostTimerParameters> prints{"prints",
                    "options passed to the object writing out forecast fields", {}, this};
@@ -94,7 +92,7 @@ template <typename MODEL> class ExternalDFI : public Application {
     Log::test() << "Initial state: " << xx << std::endl;
 
 //  Setup augmented state
-    const ModelAux_ moderr(resol, params.modelAuxControl);
+    const ModelAux_ moderr(resol, fullConfig.getSubConfiguration("model aux control"));
 
 //  Setup times
     const util::Duration fclength(fullConfig.getString("forecast length"));
@@ -104,9 +102,7 @@ template <typename MODEL> class ExternalDFI : public Application {
 
 //  Setup post-processing
     PostProcessor<State_> post;
-
-    eckit::LocalConfiguration prtConf;
-    fullConfig.get("prints", prtConf);
+    eckit::LocalConfiguration prtConf = fullConfig.getSubConfiguration("prints");
     post.enrollProcessor(new StateInfo<State_>("fc", prtConf));
 
 //  Setup DFI

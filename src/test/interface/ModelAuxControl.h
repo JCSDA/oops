@@ -41,13 +41,12 @@ class TestParameters : public oops::Parameters {
 
  public:
   typedef typename oops::Geometry<MODEL>::Parameters_ GeometryParameters_;
-  typedef typename oops::ModelAuxControl<MODEL>::Parameters_ ModelAuxControlParameters_;
 
   /// \brief Group of parameters controlling the tested model's geometry.
   oops::RequiredParameter<GeometryParameters_> geometry{"geometry", this};
   /// \brief Group of parameters controlling the tested implementation of the ModelAuxControl
   /// interface.
-  oops::RequiredParameter<ModelAuxControlParameters_> modelAuxControl{"model aux control", this};
+  oops::RequiredParameter<eckit::LocalConfiguration> modelAuxControl{"model aux control", this};
   /// \brief Don't treat the presence of other parameter groups as an error (this makes it
   /// possible to reuse a single YAML file in tests of implementations of multiple oops interfaces).
   oops::IgnoreOtherParameters ignoreOthers{this};
@@ -60,7 +59,7 @@ template <typename MODEL> class ModelAuxControlFixture : private boost::noncopya
   typedef TestParameters<MODEL>        TestParameters_;
 
  public:
-  static const typename ModelAux_::Parameters_ & parameters() {return getInstance().parameters_;}
+  static const eckit::Configuration & config() {return getInstance().config_;}
   static const Geometry_    & resol()  {return *getInstance().resol_;}
 
  private:
@@ -74,13 +73,13 @@ template <typename MODEL> class ModelAuxControlFixture : private boost::noncopya
     parameters.validateAndDeserialize(TestEnvironment::config());
 
     resol_.reset(new Geometry_(parameters.geometry, oops::mpi::world()));
-    parameters_ = parameters.modelAuxControl;
+    config_ = eckit::LocalConfiguration(TestEnvironment::config(), "model aux control");
   }
 
   ~ModelAuxControlFixture() {}
 
-  typename ModelAux_::Parameters_ parameters_;
-  std::unique_ptr<Geometry_>     resol_;
+  eckit::LocalConfiguration config_;
+  std::unique_ptr<Geometry_> resol_;
 };
 
 // -----------------------------------------------------------------------------
@@ -89,7 +88,7 @@ template <typename MODEL> void testConstructor() {
   typedef ModelAuxControlFixture<MODEL>   Test_;
   typedef oops::ModelAuxControl<MODEL>    ModelAux_;
 
-  std::unique_ptr<ModelAux_> bias(new ModelAux_(Test_::resol(), Test_::parameters()));
+  std::unique_ptr<ModelAux_> bias(new ModelAux_(Test_::resol(), Test_::config()));
   EXPECT(bias.get());
   oops::Log::test() << "Testing ModelAuxControl: " << *bias << std::endl;
   bias.reset();
@@ -102,7 +101,7 @@ template <typename MODEL> void testCopyConstructor() {
   typedef ModelAuxControlFixture<MODEL>   Test_;
   typedef oops::ModelAuxControl<MODEL>    ModelAux_;
 
-  std::unique_ptr<ModelAux_> bias(new ModelAux_(Test_::resol(), Test_::parameters()));
+  std::unique_ptr<ModelAux_> bias(new ModelAux_(Test_::resol(), Test_::config()));
 
   std::unique_ptr<ModelAux_> other(new ModelAux_(*bias));
   EXPECT(other.get());
@@ -119,7 +118,7 @@ template <typename MODEL> void testChangeRes() {
   typedef ModelAuxControlFixture<MODEL>   Test_;
   typedef oops::ModelAuxControl<MODEL>    ModelAux_;
 
-  std::unique_ptr<ModelAux_> bias(new ModelAux_(Test_::resol(), Test_::parameters()));
+  std::unique_ptr<ModelAux_> bias(new ModelAux_(Test_::resol(), Test_::config()));
 
   std::unique_ptr<ModelAux_> other(new ModelAux_(Test_::resol(), *bias));
   EXPECT(other.get());

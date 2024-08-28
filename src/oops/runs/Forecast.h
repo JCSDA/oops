@@ -81,7 +81,7 @@ template <typename MODEL> class Forecast : public Application {
     Log::test() << "Initial state: " << xx << std::endl;
 
 //  Setup augmented state
-    const ModelAux_ moderr(resol, params.fcstConf.modelAuxControl);
+    const ModelAux_ moderr(resol, fullConfig.getSubConfiguration("model aux control"));
 
 //  Setup times
     const util::Duration fclength(fullConfig.getString("forecast length"));
@@ -92,10 +92,7 @@ template <typename MODEL> class Forecast : public Application {
 //  Setup forecast outputs
     PostProcessor<State_> post;
 
-    eckit::LocalConfiguration prtConfig;
-    if (fullConfig.has("prints")) {
-      prtConfig = eckit::LocalConfiguration(fullConfig, "prints");
-    }
+    eckit::LocalConfiguration prtConfig = fullConfig.getSubConfiguration("prints");
     post.enrollProcessor(new StateInfo<State_>("fc", prtConfig));
 
     eckit::LocalConfiguration outConfig(fullConfig, "output");

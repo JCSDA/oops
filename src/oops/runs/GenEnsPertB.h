@@ -47,7 +47,6 @@ template <typename MODEL> class GenEnsPertBParameters : public ApplicationParame
   typedef typename Geometry<MODEL>::Parameters_        GeometryParameters_;
   typedef State<MODEL>                                 State_;
   typedef ModelAuxControl<MODEL>                       ModelAux_;
-  typedef typename ModelAux_::Parameters_              ModelAuxParameters_;
 
   /// Geometry parameters.
   RequiredParameter<GeometryParameters_> geometry{"geometry", this};
@@ -59,7 +58,8 @@ template <typename MODEL> class GenEnsPertBParameters : public ApplicationParame
   RequiredParameter<eckit::LocalConfiguration> initialCondition{"initial condition", this};
 
   /// Augmented model state.
-  Parameter<ModelAuxParameters_> modelAuxControl{"model aux control", {}, this};
+  Parameter<eckit::LocalConfiguration> modelAuxControl{"model aux control",
+                                                       eckit::LocalConfiguration(), this};
 
   /// Forecast length.
   RequiredParameter<util::Duration> forecastLength{"forecast length", this};
@@ -122,7 +122,7 @@ template <typename MODEL> class GenEnsPertB : public Application {
     Log::test() << "Initial state: " << xx << std::endl;
 
 //  Setup augmented state
-    const ModelAux_ moderr(resol, params.modelAuxControl);
+    const ModelAux_ moderr(resol, fullConfig.getSubConfiguration("model aux control"));
 
 //  Setup times
     const util::Duration fclength(fullConfig.getString("forecast length"));

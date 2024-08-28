@@ -164,22 +164,17 @@ class EnsembleForecastApplication : public Application {
   void executeForecast(const Geometry_ & resol,
       const eckit::Configuration & fullConfig,
       bool validate, PostProcessor<State_> & post) const {
-//  Deserialize parameters
-    ForecastAppParameters_ params;
-    if (validate) params.validate(fullConfig);
-    params.deserialize(fullConfig);
-
 //  Setup Model
     Log::info() << "Forecast:setting up model" << std::endl;
     const Model_ model(resol, eckit::LocalConfiguration(fullConfig, "model"));
 
 //  Setup initial state
-    State_ xx(resol, params.fcstConf.initialCondition);
+    State_ xx(resol, eckit::LocalConfiguration(fullConfig, "initial condition"));
 
 //  Setup augmented state
-    const ModelAux_ moderr(resol, params.fcstConf.modelAuxControl);
+    const ModelAux_ moderr(resol, fullConfig.getSubConfiguration("model aux control"));
 
-    const util::Duration fclength = params.fcstConf.forecastLength;
+    const util::Duration fclength(fullConfig.getString("forecast length"));
     const util::DateTime bgndate(xx.validTime());
     const util::DateTime enddate(bgndate + fclength);
 
