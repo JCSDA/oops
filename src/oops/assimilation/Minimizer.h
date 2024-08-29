@@ -53,6 +53,7 @@ template<typename MODEL, typename OBS> class Minimizer : private boost::noncopya
   void adjTests(const eckit::Configuration &);
   void adjModelTest(const Ht_ &, const H_ &);
   void adjObsTest(const Ht_ &, const H_ &);
+  void adjGeneralizedObsOpTest(const Ht_ &, const H_ &);
 
   void tlmTests(const eckit::Configuration &);
   void tlmApproxTest(const H_ &);
@@ -125,6 +126,7 @@ void Minimizer<MODEL, OBS>::adjTests(const eckit::Configuration & config) {
     const eckit::LocalConfiguration onlineDiag(config, "online diagnostics");
     bool runAdjTlmTest    = onlineDiag.getBool("adj tlm test", false);
     bool runAdjObsTest    = onlineDiag.getBool("adj obs test", false);
+    bool runAdjGeneralizedObsOpTest = onlineDiag.getBool("adj generalized obs op test", false);
 
     const H_  H(J_);
     const Ht_ Ht(J_);
@@ -135,6 +137,8 @@ void Minimizer<MODEL, OBS>::adjTests(const eckit::Configuration & config) {
 
     // Obs adjoint test
     if (runAdjObsTest) this->adjObsTest(Ht, H);
+
+    if (runAdjGeneralizedObsOpTest) this->adjGeneralizedObsOpTest(Ht, H);
   }
 }
 
@@ -322,6 +326,7 @@ void Minimizer<MODEL, OBS>::adjModelTest(const Ht_ & Ht,
   Ht.multiply(dummy, mtdx2, false);
 
 // calculate FWD < M dx1, dx2 >
+  dx2.state().updateTime(mdx1.state().validTime() - dx1.state().validTime());
   double adj_tst_fwd = dot_product(mdx1, dx2);
 
 // calculate BWD < dx1, Mt dx2 >
@@ -354,25 +359,59 @@ void Minimizer<MODEL, OBS>::adjObsTest(const Ht_ & Ht,
 
 // randomize increments
   J_.jb().randomize(dx1);
+  CtrlInc_ dx1Copy(dx1);
   J_.jb().randomize(dx2);
 
 // run TL
   H.multiply(dx1, hdx1, true);
   H.multiply(dx2, hdx2, true);
+  Dual_ hdx2Copy(hdx2);
 
 // run ADJ
   J_.zeroAD(hthdx2);
   Ht.multiply(hdx2, hthdx2, true);
 
 // calculate FWD < H dx1, hdx2 >
-  double adj_tst_fwd = dot_product(hdx1, hdx2);
+  double adj_tst_fwd = dot_product(hdx1, hdx2Copy);
 
 // calculate BWD < dx1, Ht hdx2 >
-  double adj_tst_bwd = dot_product(dx1, hthdx2);
+  double adj_tst_bwd = dot_product(dx1Copy, hthdx2);
 
 // print results
   Log::info() << "Obs Adjoint Test: " << outerIteration_ << std::endl
               << util::PrintAdjTest(adj_tst_fwd, adj_tst_bwd, "H")
+              << std::endl << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL, typename OBS>
+void Minimizer<MODEL, OBS>::adjGeneralizedObsOpTest(const Ht_ & Ht, const H_ & H) {
+  // Random vector in model space at initial time
+  CtrlInc_ dxCopy(J_.jb());
+  J_.jb().randomize(dxCopy);
+
+  // Random vector in observation space at initial time
+  CtrlInc_ dxDummy(J_.jb());
+  J_.jb().randomize(dxDummy);
+  Dual_ dyCopy;
+  H.multiply(dxDummy, dyCopy, false);
+
+  // Initialize terms of adjoint test of G
+  CtrlInc_ dx(dxCopy);
+  Dual_ Gdx;
+  Dual_ dy(dyCopy);
+  CtrlInc_ Gtdy(J_.jb());
+  Gtdy.state().updateTime(dxDummy.state().validTime() - dx.state().validTime());;
+
+  // Compute terms
+  H.multiply(dxCopy, Gdx, false);
+  Ht.multiply(dyCopy, Gtdy, false);
+  double adj_tst_fwd = dot_product(Gdx, dy);
+  double adj_tst_bwd = dot_product(dx, Gtdy);
+
+  Log::info() << "Generalized Obs Op Adjoint Test: " << outerIteration_ << std::endl
+              << util::PrintAdjTest(adj_tst_fwd, adj_tst_bwd, "G")
               << std::endl << std::endl;
 }
 

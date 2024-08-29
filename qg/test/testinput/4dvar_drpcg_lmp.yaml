@@ -77,8 +77,9 @@ variational:
       name: QgTLM
     ninner: 10
     online diagnostics:
-      adj obs test: false
-      adj tlm test: false
+      adj obs test: true
+      adj tlm test: true
+      adj generalized obs op test: true
       online adj test: true
       tlm approx test: false
       tlm propag test: false
