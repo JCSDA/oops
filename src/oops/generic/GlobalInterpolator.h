@@ -61,6 +61,8 @@ class GlobalInterpolator : public util::Printable {
 
   std::vector<std::vector<size_t>> mytarget_index_by_task_;
   std::vector<std::unique_ptr<LocalInterpolatorBase>> interp_;
+  std::vector<int> mytarget_counts_;
+  std::vector<int> mylocal_counts_;
 };
 
 

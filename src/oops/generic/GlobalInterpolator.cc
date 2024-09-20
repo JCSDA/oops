@@ -7,6 +7,7 @@
 
 #include "oops/generic/GlobalInterpolator.h"
 
+#include <algorithm>
 #include <string>
 
 #include "atlas/field.h"
@@ -21,6 +22,90 @@
 #include "oops/generic/AtlasInterpolator.h"
 #include "oops/generic/UnstructuredInterpolator.h"
 #include "oops/util/Logger.h"
+
+namespace {
+  template<typename T>
+  std::vector<T> flatten(const std::vector<std::vector<T>>& v) {
+    size_t size = 0;
+    for (const auto& inner : v) {
+      size += inner.size();
+    }
+    std::vector<T> flat(size);
+    size_t start = 0;
+    for (auto const & inner : v) {
+      std::copy(inner.begin(), inner.end(), flat.begin() + start);
+      start += inner.size();
+    }
+    return flat;
+  }
+
+  template<typename T, typename IndexTy>
+  std::vector<std::vector<T>> expand(const std::vector<T>& v, const std::vector<IndexTy>& sizes) {
+    std::vector<std::vector<T>> expanded;
+    expanded.reserve(sizes.size());
+    IndexTy start = 0;
+    for (const auto size : sizes) {
+      expanded.emplace_back(v.begin() + start, v.begin() + start + size);
+      start += size;
+    }
+    return expanded;
+  }
+
+  template<typename T>
+  std::vector<T> scale(const std::vector<T>& v, T scale) {
+    std::vector<T> scaled(v.size());
+    std::transform(v.begin(), v.end(), scaled.begin(),
+      [scale](const auto& x) { return x * scale; });
+    return scaled;
+  }
+
+  std::vector<int> displsFromCounts(const std::vector<int>& counts) {
+    std::vector<int> displs(counts.size());
+    displs[0] = 0;
+    std::partial_sum(counts.begin(), counts.end() - 1, displs.begin() + 1);
+    return displs;
+  }
+
+  template<typename T>
+  bool hasGivenSizes(const std::vector<std::vector<T>>& v, std::vector<int> test) {
+    ASSERT(v.size() == test.size());
+    auto testit = test.cbegin();
+    return std::all_of(v.begin(), v.end(), [&testit](const auto& inner) {
+        const auto is_same_size = inner.size() == static_cast<size_t>(*testit);
+        ++testit;
+        return is_same_size;
+      });
+  }
+
+  template<typename T>
+  std::vector<std::vector<T>> redistribute(
+      const eckit::mpi::Comm& comm,
+      const std::vector<std::vector<T>>& senddata,
+      const std::vector<int>& sendcounts,
+      const std::vector<int>& recvcounts,
+      const int vec)
+  {
+    ASSERT(comm.size() == senddata.size() &&
+           senddata.size() == sendcounts.size() &&
+           sendcounts.size() == recvcounts.size());
+
+    const auto sendcounts_v = scale(sendcounts, static_cast<int>(vec));
+    ASSERT(hasGivenSizes(senddata, sendcounts_v));
+    const auto recvcounts_v = scale(recvcounts, static_cast<int>(vec));
+    const auto senddispls_v = displsFromCounts(sendcounts_v);
+    const auto recvdispls_v = displsFromCounts(recvcounts_v);
+    const auto recvcnt_v = recvdispls_v.back() + recvcounts_v.back();
+
+    const auto sendbuf = flatten(senddata);
+    std::vector<double> recvbuf(recvcnt_v);
+
+    comm.allToAllv(sendbuf.data(), sendcounts_v.data(), senddispls_v.data(),
+                   recvbuf.data(), recvcounts_v.data(), recvdispls_v.data());
+
+    const auto recvdata = expand(recvbuf, recvcounts_v);
+    return recvdata;
+  }
+}  // namespace
 
 
 namespace oops {
@@ -63,6 +148,14 @@ GlobalInterpolator::GlobalInterpolator(
 
   std::vector<std::vector<double>> mylocs_latlon_by_task(ntasks);
   comm_.allToAll(mytarget_latlon_by_task, mylocs_latlon_by_task);
+
+  // Infer mytarget/mylocal count info for use in alltoallv calls
+  mytarget_counts_.resize(ntasks);
+  mylocal_counts_.resize(ntasks);
+  for (size_t i = 0; i < ntasks; ++i) {
+    mytarget_counts_[i] = mytarget_latlon_by_task[i].size() / 2;
+    mylocal_counts_[i] = mylocs_latlon_by_task[i].size() / 2;
+  }
 
   interp_.resize(ntasks);
   for (size_t jtask = 0; jtask < ntasks; ++jtask) {
@@ -114,12 +207,7 @@ void GlobalInterpolator::apply(const atlas::FieldSet & source,
   size_t nvars = 0;
   oops::Variables vars{};
   for (const auto & field : source) {
-    const size_t rank = field.rank();
-    if (rank == 1) {
-      nvars += 1;
-    } else {
-      nvars += field.shape(1);
-    }
+    nvars += (field.rank() == 1) ? 1 : field.shape(1);
     vars.push_back(field.name());
   }
 
@@ -127,22 +215,22 @@ void GlobalInterpolator::apply(const atlas::FieldSet & source,
 
   source.haloExchange();
 
-  std::vector<std::vector<double>> locinterp(ntasks);
+  std::vector<std::vector<double>> mylocal_interp(ntasks);
   for (size_t jtask = 0; jtask < ntasks; ++jtask) {
-    interp_[jtask]->apply(vars, source, locinterp[jtask]);
+    interp_[jtask]->apply(vars, source, mylocal_interp[jtask]);
   }
 
   // Gather results across MPI ranks
-  std::vector<std::vector<double>> recvinterp(ntasks);
-  comm_.allToAll(locinterp, recvinterp);
+  const auto mytarget_interp = redistribute(comm_, mylocal_interp, mylocal_counts_,
+                                            mytarget_counts_, nvars);
 
   // Copy data from vector<double> to atlas::FieldSet
   for (size_t jtask = 0; jtask < ntasks; ++jtask) {
     const size_t nvals = mytarget_index_by_task_[jtask].size() * nvars;
-    ASSERT(recvinterp[jtask].size() == nvals);
+    ASSERT(mytarget_interp[jtask].size() == nvals);
     if (nvals > 0) {
       LocalInterpolatorBase::bufferToFieldSet(vars, mytarget_index_by_task_[jtask],
-                                              recvinterp[jtask], target);
+                                              mytarget_interp[jtask], target);
     }
   }
 
@@ -178,35 +266,30 @@ void GlobalInterpolator::applyAD(atlas::FieldSet & source,
   size_t nvars = 0;
   oops::Variables vars{};
   for (const auto & field : target) {
-    const size_t rank = field.rank();
-    if (rank == 1) {
-      nvars += 1;
-    } else {
-      nvars += field.shape(1);
-    }
+    nvars += (field.rank() == 1) ? 1 : field.shape(1);
     vars.push_back(field.name());
   }
 
   const size_t ntasks = comm_.size();
 
   // (Adjoint of) Copy data from vector<double> to atlas::FieldSet
-  std::vector<std::vector<double>> recvinterp(ntasks);
+  std::vector<std::vector<double>> mytarget_interp(ntasks);
   for (size_t jtask = 0; jtask < ntasks; ++jtask) {
     const size_t nvals = mytarget_index_by_task_[jtask].size() * nvars;
-    recvinterp[jtask].resize(nvals, 0.0);
+    mytarget_interp[jtask].resize(nvals, 0.0);
     if (nvals > 0) {
       LocalInterpolatorBase::bufferToFieldSetAD(vars, mytarget_index_by_task_[jtask],
-                                                recvinterp[jtask], target);
+                                                mytarget_interp[jtask], target);
     }
   }
 
   // (Adjoint of) Gather results across MPI ranks
-  std::vector<std::vector<double>> locinterp(ntasks);
-  comm_.allToAll(recvinterp, locinterp);
+  const auto mylocal_interp = redistribute(comm_, mytarget_interp, mytarget_counts_,
+                                           mylocal_counts_, nvars);
 
   // (Adjoint of) Interpolate
   for (size_t jtask = 0; jtask < ntasks; ++jtask) {
-    interp_[jtask]->applyAD(vars, source, locinterp[jtask]);
+    interp_[jtask]->applyAD(vars, source, mylocal_interp[jtask]);
   }
 
   source.adjointHaloExchange();
