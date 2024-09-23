@@ -136,7 +136,6 @@ void readFieldSet(const eckit::mpi::Comm &,
                   const eckit::Configuration &,
                   atlas::FieldSet &);
 
-
 // -----------------------------------------------------------------------------
 
 }  // namespace util
