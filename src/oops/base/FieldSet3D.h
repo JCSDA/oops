@@ -68,6 +68,7 @@ class FieldSet3D : public util::Serializable,
   const Variables & variables() const;
   /// @brief Return valid time
   const util::DateTime validTime() const {return validTime_;}
+  util::DateTime & validTime() {return validTime_;}
   /// @brief Return communicator
   const eckit::mpi::Comm & commGeom() const {return comm_;}
   /// @brief Return atlas::FieldSet
@@ -134,7 +135,7 @@ class FieldSet3D : public util::Serializable,
   void print(std::ostream &) const override;
 
   atlas::FieldSet fset_;
-  const util::DateTime validTime_;
+  util::DateTime validTime_;
   const eckit::mpi::Comm & comm_;
   std::string name_;
   mutable oops::Variables vars_;
