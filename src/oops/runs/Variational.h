@@ -87,15 +87,17 @@ template <typename MODEL, typename OBS> class Variational : public Application {
 
 //  Save analysis and final diagnostics
     PostProcessor<State_> post;
-    bool runLastEvaluate = false;
+    bool runLastEvaluate = fullConfig.getBool("final j evaluation", true);
+
     if (fullConfig.has("output")) {
       const eckit::LocalConfiguration outConfig(fullConfig, "output");
       post.enrollProcessor(new StateWriter<State_>(outConfig));
       runLastEvaluate = true;
     }
 
-    eckit::LocalConfiguration finalConfig(fullConfig, "final");
+    eckit::LocalConfiguration finalConfig = fullConfig.getSubConfiguration("final");
     finalConfig.set("iteration", iouter);
+    finalConfig.set("total iterations", iouter);
 
 //  Save increment if desired
     if (finalConfig.has("increment")) {
@@ -177,11 +179,8 @@ template <typename MODEL, typename OBS> class Variational : public Application {
         post.enrollProcessor(new StateWriter<State_>(outConfig));
       }
       //  Run forecast
-
-      Log::test() << "Inital state: " << xx.state() << std::endl;
-
+      Log::test() << "Initial state: " << xx.state() << std::endl;
       model.forecast(xx.state(), moderr, fclength, post);
-
       Log::test() << "Final state: " << xx.state() << std::endl;
     }
 

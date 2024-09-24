@@ -32,17 +32,12 @@ variational:
     gradient norm reduction: 1e-10
     geometry:
       resol: 40
-    diagnostics:
-      departures: ombg
     fsoi:
       increment test: true
       increment test tolerance: 1.0e-6
       input forecast sensitivity:
         date: 2010-01-02T00:00:00Z
         filename: Data/3dvar_4fsoi_dripcg.iter1.in.2010-01-02T00:00:00Z.PT0S.l95
-final:
-  diagnostics:
-    departures: oman
 output:
   datadir: Data
   exp: fsoi_3dvar_dripcg

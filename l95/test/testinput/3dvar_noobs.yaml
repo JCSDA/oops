@@ -30,15 +30,10 @@ variational:
     gradient norm reduction: 1e-10
     geometry:
       resol: 40
-    diagnostics:
-      departures: ombg
   - ninner: 10
     gradient norm reduction: 1e-10
     geometry:
       resol: 40
-final:
-  diagnostics:
-    departures: oman
 output:
   datadir: Data
   exp: 3dvar_noobs

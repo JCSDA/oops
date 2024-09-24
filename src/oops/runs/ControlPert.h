@@ -287,6 +287,7 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
 
 //  Retrieve individual members' configurations for the final run of J->evaluate
     eckit::LocalConfiguration finalConfig(memberConf, "final");
+    finalConfig.set("total iterations", iouter);
 
 //  Set the iteration count (so that the correct QC information can be retrieved from the ODB
 //  in ufo::ObsBiasCovariance::linearize), and update the member's configuration accordingly

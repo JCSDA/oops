@@ -57,8 +57,6 @@ variational:
         f: 8.0
         tstep: PT1H30M
       variable change: Identity
-    diagnostics:
-      departures: ombg
     online diagnostics:
       write increment: true
       increment:
@@ -84,8 +82,6 @@ variational:
         tstep: PT1H30M
       variable change: Identity
 final:
-  diagnostics:
-    departures: oman
   prints:
     frequency: PT1H30M
   increment:

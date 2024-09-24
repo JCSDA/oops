@@ -43,11 +43,6 @@ variational:
       name: Identity
       variable change: Identity
       tstep: PT6H
-    diagnostics:
-      departures: ombg
-final:
-  diagnostics:
-    departures: oman
 output:
   datadir: Data
   exp: eda_3dfgat.mem002

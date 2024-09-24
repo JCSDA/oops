@@ -63,11 +63,6 @@ variational:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
-    diagnostics:
-      departures: ombg
-final:
-  diagnostics:
-    departures: oman
 output:
   datadir: Data
   exp: 3dfgat

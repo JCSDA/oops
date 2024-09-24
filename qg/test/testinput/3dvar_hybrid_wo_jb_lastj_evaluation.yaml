@@ -81,24 +81,28 @@ variational:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
-    diagnostics:
-      departures: ombg0
   - ninner: 10
     gradient norm reduction: 1.0e-10
     geometry:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
-    diagnostics:
-      departures: ombg1
+
 final:
-  diagnostics:
-    departures: oman
-output:
-  datadir: Data
-  exp: 3dvar_nojb_eval
-  frequency: PT6H
-  type: an
+  increment:
+    geometry:
+      nx: 40
+      ny: 20
+      depths: [4500.0, 5500.0]
+    output:
+      state component:
+        datadir: Data
+        date: 2010-01-01T12:00:00Z
+        exp: 3dvar_nojb_eval
+        type: in
+        analysis variables: [x]
+
+final j evaluation: false
 
 test:
-  reference filename: testoutput/3dvar_hybrid_wo_jb_evaluation.test
+  reference filename: testoutput/3dvar_hybrid_wo_jb_lastj_evaluation.test

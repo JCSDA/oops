@@ -90,8 +90,6 @@ variational:
           base filepath: Data/hybrid_linear_model_coeffs
           one file per task: true
       name: HTLM
-    diagnostics:
-      departures: ombg
   - gradient norm reduction: 1.0e-10
     ninner: 15
     geometry:
@@ -120,8 +118,6 @@ variational:
           one file per task: true
       name: HTLM
 final:
-  diagnostics:
-    departures: oman
   prints:
     frequency: PT1H
 test:

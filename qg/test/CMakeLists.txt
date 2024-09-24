@@ -5,7 +5,7 @@ list( APPEND qg_testinput
   testinput/3dvar_fc_from_an.yaml
   testinput/3dvar_full_inverse.yaml
   testinput/3dvar_hybrid.yaml
-  testinput/3dvar_hybrid_wo_jb_evaluation.yaml
+  testinput/3dvar_hybrid_wo_jb_lastj_evaluation.yaml
   testinput/3dfgat.yaml
   testinput/4dfgat.yaml
   testinput/4densvar.yaml
@@ -144,7 +144,7 @@ list( APPEND qg_testoutput
   testoutput/3dvar_change_var.test
   testoutput/3dvar_full_inverse.test
   testoutput/3dvar_hybrid.test
-  testoutput/3dvar_hybrid_wo_jb_evaluation.test
+  testoutput/3dvar_hybrid_wo_jb_lastj_evaluation.test
   testoutput/3dfgat.test
   testoutput/4dfgat.test
   testoutput/4densvar.test
@@ -802,9 +802,9 @@ ecbuild_add_test( TARGET test_qg_3dvar_hybrid
                   COMMAND  qg_4dvar.x
                   TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_3d )
 
-ecbuild_add_test( TARGET test_qg_3dvar_hybrid_wo_jb_evaluation
+ecbuild_add_test( TARGET test_qg_3dvar_hybrid_wo_jb_lastj_evaluation
                   OMP 2
-                  ARGS testinput/3dvar_hybrid_wo_jb_evaluation.yaml
+                  ARGS testinput/3dvar_hybrid_wo_jb_lastj_evaluation.yaml
                   COMMAND  qg_4dvar.x
                   TEST_DEPENDS test_qg_forecast test_qg_gen_ens_pert_B test_qg_make_obs_3d )
 

@@ -75,11 +75,6 @@ variational:
       name: Identity
       tstep: PT6H
       variable change: Identity
-    diagnostics:
-      departures: ombg
-final:
-  diagnostics:
-    departures: oman
 output:
   datadir: Data
   exp: 4dfgat

@@ -36,11 +36,7 @@ variational:
       resol: 40
     ninner: 10
     gradient norm reduction: 1e-10
-    diagnostics:
-      departures: ombg
 final:
-  diagnostics:
-    departures: oman
   increment:
     geometry:
       resol: 40

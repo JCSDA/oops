@@ -53,9 +53,7 @@ variational:
   minimizer:
     algorithm: DRPCG
   iterations:
-  - diagnostics:
-      departures: ombg0
-    gradient norm reduction: 1.0e-10
+  - gradient norm reduction: 1.0e-10
     ninner: 10
     geometry:
       nx: 20
@@ -69,9 +67,7 @@ variational:
           date: 2010-01-01T12:00:00Z
           exp: 3dvar.iter1
           type: in
-  - diagnostics:
-      departures: ombg1
-    gradient norm reduction: 1.0e-10
+  - gradient norm reduction: 1.0e-10
     ninner: 10
     geometry:
       nx: 40
@@ -92,8 +88,6 @@ output:
   frequency: PT6H
   type: an
 final:
-  diagnostics:
-    departures: oman
   increment:
     geometry:
       nx: 40

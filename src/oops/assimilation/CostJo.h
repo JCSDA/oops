@@ -190,6 +190,8 @@ template<typename MODEL, typename OBS>
 double CostJo<MODEL, OBS>::computeCost() {
   Log::trace() << "CostJo::computeCost start" << std::endl;
   bool firstOuterLoop = !yobs_;
+  bool lastOuterLoop =
+    (currentConf_->getInt("iteration") == currentConf_->getInt("total iterations"));
 
   // Obs, simulated obs and departures (held here for nice prints and diagnostics)
   Observations_ yeqv(obspaces_);
@@ -208,12 +210,12 @@ double CostJo<MODEL, OBS>::computeCost() {
 
   // Compute observations departures and save to output file
   Departures_ ydep(yeqv - *yobs_);
-  if (currentConf_->has("diagnostics.departures")) {
-    const std::string depname = currentConf_->getString("diagnostics.departures");
-    Departures_ minusydep = ydep;
-    minusydep *= (-1.0);
-    minusydep.save(depname);
-  }
+  const std::string depname = firstOuterLoop ? "ombg"
+                            : lastOuterLoop  ? "oman"
+                            : "innov" + currentConf_->getString("iteration");
+  Departures_ minusydep = ydep;
+  minusydep *= (-1.0);
+  minusydep.save(depname);
 
   // Gradient at first guess (to define inner loop rhs)
   gradFG_.reset(new Departures_(ydep));

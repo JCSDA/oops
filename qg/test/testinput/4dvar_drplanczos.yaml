@@ -83,8 +83,6 @@ variational:
         tstep: PT1H
       tstep: PT1H
       variable change: Identity
-    diagnostics:
-      departures: ombg0
   - ninner: 10
     gradient norm reduction: 1.0e-10
     geometry:
@@ -97,11 +95,7 @@ variational:
         tstep: PT1H
       tstep: PT1H
       variable change: Identity
-    diagnostics:
-      departures: ombg1
 final:
-  diagnostics:
-    departures: oman
   prints:
     frequency: PT1H
 output:

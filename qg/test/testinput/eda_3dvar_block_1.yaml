@@ -54,25 +54,18 @@ variational:
     algorithm: DRPBlockLanczos
     members: 4
   iterations:
-  - diagnostics:
-      departures: ombg0
-    gradient norm reduction: 0.2
+  - gradient norm reduction: 0.2
     ninner: 10
     geometry:
       nx: 20
       ny: 10
       depths: [4500.0, 5500.0]
-  - diagnostics:
-      departures: ombg1
-    gradient norm reduction: 0.2
+  - gradient norm reduction: 0.2
     ninner: 10
     geometry:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
-final:
-  diagnostics:
-    departures: oman
 output:
   datadir: Data
   exp: mem001.block_eda_3dvar

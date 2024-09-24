@@ -51,8 +51,6 @@ variational:
       tstep: PT1H30M
       variable change: Identity
       name: L95TLM
-    diagnostics:
-      departures: ombg
   - geometry:
       resol: 40
     ninner: 10
@@ -65,8 +63,6 @@ variational:
       variable change: Identity
       name: L95TLM
 final:
-  diagnostics:
-    departures: oman
   prints:
     frequency: PT1H30M
 output:

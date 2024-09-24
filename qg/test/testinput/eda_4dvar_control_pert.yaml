@@ -87,8 +87,6 @@ assimilation:
         tstep: PT1H
         variable change: Identity
         name: QgTLM
-      diagnostics:
-        departures: ombg0
       online diagnostics:
         write increment: true
         increment:
@@ -110,8 +108,6 @@ assimilation:
         tstep: PT1H
         variable change: Identity
         name: QgTLM
-      diagnostics:
-        departures: ombg1
       online diagnostics:
         write increment: true
         increment:
@@ -122,8 +118,6 @@ assimilation:
             type: in
       prints: {}
   final:
-    diagnostics:
-      departures: oman
     increment:
       geometry:
         nx: 40

@@ -39,15 +39,10 @@ variational:
       resol: 40
     ninner: 10
     gradient norm reduction: 1e-10
-    diagnostics:
-      departures: ombg
   - geometry:
       resol: 40
     ninner: 10
     gradient norm reduction: 1e-10
-final:
-  diagnostics:
-    departures: oman
 output:
   datadir: Data
   exp: eda_3dvar_zeromeanpert.mem002

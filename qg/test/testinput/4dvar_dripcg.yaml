@@ -74,8 +74,6 @@ variational:
       tstep: PT1H
       variable change: Identity
       name: QgTLM
-    diagnostics:
-      departures: ombg
   - gradient norm reduction: 1.0e-10
     ninner: 15
     geometry:
@@ -89,8 +87,6 @@ variational:
       variable change: Identity
       name: QgTLM
 final:
-  diagnostics:
-    departures: oman
   prints:
     frequency: PT1H
 output:

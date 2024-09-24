@@ -72,9 +72,7 @@ variational:
   minimizer:
     algorithm: DRPCG
   iterations:
-  - diagnostics:
-      departures: ombg
-    gradient norm reduction: 1.0e-10
+  - gradient norm reduction: 1.0e-10
     linear model:
       trajectory:
         tstep: PT1H
@@ -99,8 +97,6 @@ variational:
       ny: 20
       depths: [4500.0, 5500.0]
 final:
-  diagnostics:
-    departures: oman
   prints:
     frequency: PT1H
 output:

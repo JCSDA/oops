@@ -32,11 +32,6 @@ variational:
     gradient norm reduction: 1e-10
     geometry:
       resol: 4
-    diagnostics:
-      departures: ombg
-final:
-  diagnostics:
-    departures: oman
 output:
   datadir: Data
   exp: simplifiedl95_DRPCG

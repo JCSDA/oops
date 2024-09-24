@@ -32,8 +32,6 @@ variational:
     gradient norm reduction: 1e-10
     geometry:
       resol: 40
-    diagnostics:
-      departures: ombg
     online diagnostics:
       write increment: true
       increment:
@@ -55,8 +53,6 @@ variational:
           exp: 3dvar.iter2
           type: in
 final:
-  diagnostics:
-    departures: oman
   increment:
     geometry:
       resol: 40

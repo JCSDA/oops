@@ -41,8 +41,6 @@ variational:
       name: identity
       variable change: Identity
       tstep: PT0H
-    diagnostics:
-      departures: ombg
   - ninner: 10
     gradient norm reduction: 1e-10
     geometry:
@@ -51,9 +49,6 @@ variational:
       name: identity
       variable change: Identity
       tstep: PT0H
-final:
-  diagnostics:
-    departures: oman
 output:
   datadir: Data
   exp: 3dvar_qc_obserr

@@ -71,9 +71,7 @@ template yaml:
     minimizer:
       algorithm: DRIPCG
     iterations:
-    - diagnostics:
-        departures: ombg
-      gradient norm reduction: 1.0e-10
+    - gradient norm reduction: 1.0e-10
       linear model:
         tstep: PT6H
         variable change: Identity
@@ -84,9 +82,6 @@ template yaml:
         nx: 40
         ny: 20
         depths: [4500.0, 5500.0]
-  final:
-    diagnostics:
-      departures: oman
   output:
     datadir: Data
     exp: mem%MEM_PAD%.eda_3dfgat_templated

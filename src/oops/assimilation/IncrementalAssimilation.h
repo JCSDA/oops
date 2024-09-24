@@ -51,6 +51,8 @@ int IncrementalAssimilation(ControlVariable<MODEL, OBS> & xx, CostFunction<MODEL
 
   for (unsigned jouter = 0; jouter < nouter; ++jouter) {
     iterconfs[jouter].set("iteration", static_cast<int>(jouter));
+    iterconfs[jouter].set("total iterations", static_cast<int>(nouter));
+
 //  Get configuration for current outer iteration
     Log::info() << "IncrementalAssimilation: Configuration for outer iteration "
                 << jouter << ":" << std::endl << iterconfs[jouter] << std::endl;
@@ -60,6 +62,7 @@ int IncrementalAssimilation(ControlVariable<MODEL, OBS> & xx, CostFunction<MODEL
     if (iterconfs[jouter].has("obs append directory")) {
       J.appendObs(iterconfs[jouter]);
     }
+
 //  Setup for the trajectory run
     PostProcessor<State_> post;
     if (iterconfs[jouter].has("prints")) {

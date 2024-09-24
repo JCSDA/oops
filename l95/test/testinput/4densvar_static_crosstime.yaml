@@ -60,8 +60,6 @@ variational:
     geometry:
       resol: 40
 final:
-  diagnostics:
-    departures: oman
   prints:
     frequency: PT1H30M
 output:

@@ -119,6 +119,7 @@ double CostPert<MODEL, OBS, J>::evaluate(CtrlVar_ & fguess,
     contConf_.get("variational.iterations", iterconfs);
     iterconfs[0].set("linearize", true);
     iterconfs[0].set("iteration", 0);
+    iterconfs[0].set("total iterations", innerConf.getInt("total iterations"));
     CtrlVar_ xxControl(this->jb().getBackground());
     if (shiftTime_) {
       hackBG_ = &xxControl.state();

@@ -27,7 +27,7 @@ CostJo   : Nonlinear Jo(Stream) = 4.9307009249531421e+02, nobs = 600, Jo/n = 8.2
 CostJo   : Nonlinear Jo(Wind) = 3.0209185144583489e+02, nobs = 600, Jo/n = 5.0348641907639147e-01, err = 6.0000000000000000e+00
 CostJo   : Nonlinear Jo(WSpeed) = 4.5862644937655119e+01, nobs = 300, Jo/n = 1.5287548312551708e-01, err = 1.2000000000000000e+01
 CostFunction: Nonlinear J = 9.3892562097931727e+02
-Inital state:
+Initial state:
   Valid time: 2010-01-01T12:00:00Z
   Resolution = 40, 20, 2
   Streamfunction         :  Min=-4.4548513804547495e+08, Max=1.0364806263554393e+08, RMS=1.7646585797121182e+08

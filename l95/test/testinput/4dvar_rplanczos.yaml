@@ -37,9 +37,7 @@ variational:
   minimizer:
     algorithm: RPLanczos
   iterations:
-  - diagnostics:
-      departures: ombg
-    gradient norm reduction: 1e-10
+  - gradient norm reduction: 1e-10
     linear model:
       trajectory:
         f: 8.0
@@ -62,8 +60,6 @@ variational:
     geometry:
       resol: 40
 final:
-  diagnostics:
-    departures: oman
   prints:
     frequency: PT1H30M
 output:

@@ -50,8 +50,6 @@ assimilation:
         depths: [4500.0, 5500.0]
       ninner: 10
       gradient norm reduction: 1.0e-10
-      diagnostics:
-        departures: ombg0
       online diagnostics:
         write increment: true
         increment:
@@ -62,8 +60,6 @@ assimilation:
             type: in
       prints: {}
   final:
-    diagnostics:
-      departures: oman
     increment:
       geometry:
         nx: 40
