@@ -1,7 +1,7 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
  * (C) Copyright 2021-2023 UCAR
- * (C) Crown Copyright 2023, the Met Office.
+ * (C) Crown Copyright 2024, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -89,11 +89,10 @@ template<typename MODEL, typename OBS> class CostFunction : private boost::nonco
 /// Access \f$ J_b\f$
   const JbTotal_ & jb() const {return *jb_;}
 /// Access terms of the cost function other than \f$ J_b\f$
-  const CostBase_ & jterm(const size_t ii) const {return *(jterms_.at(ii));}
   const CostJo_ & jo() const {return *jo_;}
-  size_t nterms() const {return jterms_.size();}
-  double getCostJb() const {return costJb_;}
-  double getCostJoJc() const {return costJoJc_;}
+  virtual const CostBase_ & jterm(const size_t ii) const {return *(jterms_.at(ii));}
+  virtual size_t nterms() const {return jterms_.size();}
+  virtual double getCostJoJc() const {return costJoJc_;}
 
  protected:
   void setupTerms(const eckit::Configuration &);

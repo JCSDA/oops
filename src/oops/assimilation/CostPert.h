@@ -1,5 +1,5 @@
 /*
- * (C) Crown Copyright 2023, the Met Office.
+ * (C) Crown Copyright 2024, the Met Office.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -46,6 +46,7 @@ template<typename MODEL, typename OBS, class J> class CostPert : public J
     typedef ControlVariable<MODEL, OBS>     CtrlVar_;
     typedef CostFct3DVar<MODEL, OBS>        CostFct3DVar_;
     typedef CostFunction<MODEL, OBS>        CostFct_;
+    typedef CostTermBase<MODEL, OBS>        CostBase_;
     typedef Geometry<MODEL>                 Geometry_;
     typedef ModelAuxControl<MODEL>          ModelAuxControl_;
     typedef ObsAuxControls<OBS>             ObsAuxControls_;
@@ -69,6 +70,10 @@ template<typename MODEL, typename OBS, class J> class CostPert : public J
     void runNL(CtrlVar_ &, PostProcessor<State_>&) const override;
 
     void resetLinearization() override {}
+
+    const CostBase_ & jterm(const size_t ii) const override {return Jmem_->jterm(ii);}
+    size_t nterms() const override {return Jmem_->nterms();}
+    double getCostJoJc() const override {return Jmem_->getCostJoJc();}
 
  private:
     void addIncr(CtrlVar_ &, const CtrlInc_ &, PostProcessor<Increment_> &) const override;
