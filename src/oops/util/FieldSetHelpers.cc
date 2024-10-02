@@ -1015,6 +1015,9 @@ void readFieldSet(const eckit::mpi::Comm & comm,
         atlas::idx_t nx = grid.nxmax();
         atlas::idx_t ny = grid.ny();
 
+        // Get latitude direction in file
+        const bool latSouthToNorth = config.getBool("latitude south to north", true);
+
         oops::Log::info() << "Info     : Reading file: " << ncfilepath << std::endl;
 
         // Open NetCDF file
@@ -1038,8 +1041,9 @@ void readFieldSet(const eckit::mpi::Comm & comm,
           auto varView = atlas::array::make_view<double, 2>(globalData[vars[jvar]]);
           for (size_t k = 0; k < variableSizes[jvar]; ++k) {
             for (atlas::idx_t j = 0; j < ny; ++j) {
-              for (atlas::idx_t i = 0; i < grid.nx(ny-1-j); ++i) {
-                atlas::gidx_t gidx = grid.index(i, ny-1-j);
+              const atlas::idx_t jj = latSouthToNorth ? ny-1-j : j;
+              for (atlas::idx_t i = 0; i < grid.nx(jj); ++i) {
+                atlas::gidx_t gidx = grid.index(i, jj);
                 varView(gidx, k) = zvar[k*ny*nx + j*nx + i];
               }
             }
@@ -1365,6 +1369,9 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
         atlas::idx_t nx = grid.nxmax();
         atlas::idx_t ny = grid.ny();
 
+        // Get latitude direction in file
+        const bool latSouthToNorth = config.getBool("latitude south to north", true);
+
         // Definition mode
 
         // Create NetCDF file
@@ -1425,13 +1432,14 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
         std::vector<double> zlon(ny*nx);
         std::vector<double> zlat(ny*nx);
         for (atlas::idx_t j = 0; j < ny; ++j) {
-          for (atlas::idx_t i = 0; i < grid.nx(ny-1-j); ++i) {
-            atlas::gidx_t gidx = grid.index(i, ny-1-j);
+          const atlas::idx_t jj = latSouthToNorth ? ny-1-j : j;
+          for (atlas::idx_t i = 0; i < grid.nx(jj); ++i) {
+            atlas::gidx_t gidx = grid.index(i, jj);
             zlon[j*nx + i] = lonViewGlobal(gidx);
             zlat[j*nx + i] = latViewGlobal(gidx);
           }
-          // Fill i in range grid.nx(ny-1-j) <= i < nx with missing values
-          for (atlas::idx_t i = grid.nx(ny-1-j); i < nx; ++i) {
+          // Fill i in range grid.nx(jj) <= i < nx with missing values
+          for (atlas::idx_t i = grid.nx(jj); i < nx; ++i) {
             zlon[j*nx + i] = msvalr;
             zlat[j*nx + i] = msvalr;
           }
@@ -1447,8 +1455,9 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
           std::vector<double> zvar(fset.field(vars[jvar]).shape(1) * ny * nx);
           for (atlas::idx_t k = 0; k < fset.field(vars[jvar]).shape(1); ++k) {
             for (atlas::idx_t j = 0; j < ny; ++j) {
-              for (atlas::idx_t i = 0; i < grid.nx(ny-1-j); ++i) {
-                atlas::gidx_t gidx = grid.index(i, ny-1-j);
+            const atlas::idx_t jj = latSouthToNorth ? ny-1-j : j;
+              for (atlas::idx_t i = 0; i < grid.nx(jj); ++i) {
+                atlas::gidx_t gidx = grid.index(i, jj);
                 zvar[k*ny*nx + j*nx + i] = varView(gidx, k);
               }
             }
