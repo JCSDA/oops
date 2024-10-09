@@ -460,10 +460,12 @@ void test_write_read_multiple() {
   oops::Variables variables;
   for (const std::string & name :
        std::vector<std::string>{"double_1", "double_2", "double_3", "int_1"}) {
-    oops::VariableMetaData varMeta =
-      (name.compare(0, 3, "int") == 0 ?
-      oops::VariableMetaData(oops::VerticalStagger::CENTER, oops::ModelDataType::Int32) :
-      oops::VariableMetaData(oops::VerticalStagger::CENTER, oops::ModelDataType::Real64));
+    oops::VariableMetaData varMeta;
+    if ( name.compare(0, 3, "int") == 0 ) {
+      varMeta = oops::VariableMetaData(oops::VerticalStagger::CENTER, oops::ModelDataType::Int32);
+    } else {
+      varMeta = oops::VariableMetaData(oops::VerticalStagger::CENTER, oops::ModelDataType::Real64);
+    }
     variables.push_back(oops::Variable(name, varMeta));
   }
 
