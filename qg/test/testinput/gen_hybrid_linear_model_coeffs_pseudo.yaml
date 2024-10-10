@@ -27,13 +27,13 @@ hybrid linear model:
         tstep: PT1H
         multiple runs:
         - ID: 0
-          states:
-          - date: 2010-01-01T01:00:00Z
-            filename: Data/forecast_5level_pert_heat.fc.2009-12-31T00:00:00Z.P1DT1H.nc
-          - date: 2010-01-01T02:00:00Z
-            filename: Data/forecast_5level_pert_heat.fc.2009-12-31T00:00:00Z.P1DT2H.nc
-          - date: 2010-01-01T03:00:00Z
-            filename: Data/forecast_5level_pert_heat.fc.2009-12-31T00:00:00Z.P1DT3H.nc
+          states from template:
+            template:
+              filename: Data/forecast_5level_pert_heat.fc.2009-12-31T00:00:00Z.P1DT%hour%H.nc
+            pattern: %hour%
+            start: 1
+            start datetime: 2010-01-01T01:00:00Z
+            number of states: 3
         - ID: 1
           states:
           - date: 2010-01-01T01:00:00Z

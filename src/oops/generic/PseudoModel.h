@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
+#include "oops/util/ConfigFunctions.h"
 
 #include "oops/base/Geometry.h"
 #include "oops/base/State.h"
@@ -26,6 +27,199 @@
 namespace oops {
 
 // -----------------------------------------------------------------------------
+/// \brief Configuration handling for ensemble states from template.
+class MultipleStateTemplateConfigValidator {
+ public:
+  explicit MultipleStateTemplateConfigValidator(eckit::LocalConfiguration stateTemplateConf) {
+    // template to define a generic state
+    config.set("template", stateTemplateConf.getSubConfiguration("template"));
+    // Starting state datetime for the first state
+    config.set("start datetime", stateTemplateConf.getString("start datetime"));
+    // total number of states in the list after excluding certain values
+    config.set("number of states", stateTemplateConf.getUnsigned("number of states"));
+
+    // pattern to be replaced by a padded integer for each state
+    if (stateTemplateConf.has("pattern")) {
+      config.set("pattern", stateTemplateConf.getString("pattern"));
+    }
+
+    // starting state padded integer value for the first state
+    config.set("start", size_t(1));
+    if (stateTemplateConf.has("start")) {
+      config.set("start", stateTemplateConf.getUnsigned("start"));
+    }
+    // list of excluded state pattern values
+    config.set("except", std::vector<size_t>{});
+    if (stateTemplateConf.has("except")) {
+      config.set("except", stateTemplateConf.getUnsignedVector("except"));
+    }
+
+    // zero padding
+    config.set("zero padding", size_t(0));
+    if (stateTemplateConf.has("zero padding")) {
+      config.set("zero padding", stateTemplateConf.getUnsigned("zero padding"));
+    }
+  }
+
+  /// \brief Get State parameters for a given index
+  eckit::LocalConfiguration indexToStateConfig(const size_t & stateConfIndex,
+      const util::Duration tstep) const {
+    // Get correct index
+    size_t patternValue = this->config.getUnsigned("start");
+    util::DateTime dateTimeValue(this->config.getString("start datetime"));
+    std::vector<size_t> except(this->config.getUnsignedVector("except"));
+    for (size_t jj = 0; jj <= stateConfIndex; ++jj) {
+      // Check for excluded states
+      while (std::count(except.begin(), except.end(), patternValue)) {
+        patternValue += 1;
+      }
+      // Update patternValue
+      if (jj < stateConfIndex) {
+        patternValue += 1;
+        dateTimeValue += tstep;
+      }
+    }
+
+    // Copy and update template configuration with the current pattern value and date
+    eckit::LocalConfiguration stateConf(this->config.getSubConfiguration("template"));
+    stateConf.set("date", dateTimeValue.toString());
+    if (this->config.has("pattern")) {
+      std::string pattern(this->config.getString("pattern"));
+      util::seekAndReplace(stateConf, pattern, patternValue,
+                           this->config.getUnsigned("zero padding"));
+    }
+
+    return stateConf;
+  }
+
+ private:
+  eckit::LocalConfiguration config;
+};
+
+// -----------------------------------------------------------------------------
+/// \brief Configuration handling for  a list of states.
+class MultipleStateConfigValidator {
+ public:
+  explicit MultipleStateConfigValidator(eckit::LocalConfiguration multipleStateConf) {
+    // list of the states in the grouping
+    if (multipleStateConf.has("states")) {
+      config.set("states", multipleStateConf.getSubConfigurations("states"));
+    }
+    // template to define states of the list of multiple states
+    if (multipleStateConf.has("states from template")) {
+      config.set("states from template",
+          multipleStateConf.getSubConfiguration("states from template"));
+    }
+    // run identifier
+    config.set("ID", 0);
+    if (multipleStateConf.has("ID")) {
+      config.set("ID", multipleStateConf.getUnsigned("ID"));
+    }
+
+    if (!config.has("states") && !config.has("states from template")) {
+      throw eckit::UserError(
+          "MultipleStateConfigValidator: both 'states' and 'states from template' are missing",
+          Here());
+    }
+    if (config.has("states") && config.has("states from template")) {
+      throw eckit::UserError(
+          "MultipleStateConfigValidator: both 'states' and 'states from template' are present",
+          Here());
+    }
+  }
+
+  /// Get number of states in the parameter list
+  size_t size() const
+  {
+    if (this->config.has("states")) {
+      return this->config.getSubConfigurations("states").size();
+    }
+    auto templateConfig = this->config.getSubConfiguration("states from template");
+    return templateConfig.getUnsigned("number of states");
+  }
+
+  /// Get State parameters for a given index
+  eckit::LocalConfiguration getStateConfig(const size_t & stateConfIndex,
+      const util::Duration tstep) const {
+    // Check number of states
+    if (stateConfIndex >= this->size()) {
+      throw eckit::UserError(
+                "MultipleStateConfigValidator::getStateConfig index argument is too large",
+                Here());
+    }
+
+    if (this->config.has("states")) {
+      // Explicit states
+      auto statesConfigs = this->config.getSubConfigurations("states");
+      return statesConfigs[stateConfIndex];
+    }
+    MultipleStateTemplateConfigValidator validator{
+      this->config.getSubConfiguration("states from template")
+    };
+    return validator.indexToStateConfig(stateConfIndex, tstep);
+  }
+
+  const eckit::LocalConfiguration & get() const {return this->config;}
+
+ private:
+  eckit::LocalConfiguration config;
+};
+
+// -----------------------------------------------------------------------------
+/// \brief Configuration handling for a pseudomodel (contains either a list of states,
+///        or multiple runs).
+class PseudoModelConfigValidator {
+ public:
+  explicit PseudoModelConfigValidator(eckit::LocalConfiguration pseudoModelConf) {
+    // list of the states in the grouping
+    if (pseudoModelConf.has("states")) {
+      config.set("states", pseudoModelConf.getSubConfigurations("states"));
+    }
+    // template to define states of the list of multiple states
+    if (pseudoModelConf.has("states from template")) {
+      config.set("states from template",
+        pseudoModelConf.getSubConfiguration("states from template"));
+    }
+    // list of the runs in the Pseudo-model
+    if (pseudoModelConf.has("multiple runs")) {
+      config.set("multiple runs",
+        pseudoModelConf.getSubConfigurations("multiple runs"));
+    }
+
+    // Name of the model type
+    if (pseudoModelConf.getString("name") != "PseudoModel") {
+        throw eckit::UserError(
+            "PseudoModelConfigValidator: 'name' is not 'PseudoModel' for this PseudoModel"
+            " configuration.",
+            Here());
+    }
+    config.set("name", "PseudoModel");
+    // time step between the states in a run
+    config.set("tstep", pseudoModelConf.getString("tstep"));
+
+    if (!config.has("states")
+        && !config.has("states from template")
+        && !config.has("multiple runs")) {
+      throw eckit::UserError(
+          "PseudoModelConfigValidator: 'states', 'states from template', and 'multiple runs'"
+          " parameters are all missing. At least one must be specified.",
+          Here());
+    }
+    if (config.has("states") && config.has("states from template")) {
+      throw eckit::UserError(
+          "PseudoModelConfigValidator: both states and states from template parameters are"
+          " present. Only one or the other should be specified.",
+          Here());
+    }
+  }
+
+  const eckit::LocalConfiguration & get() const {return this->config;}
+
+ private:
+  eckit::LocalConfiguration config;
+};
+
+// -----------------------------------------------------------------------------
 
 ///  Generic implementation of the pseudo model (steps through time by reading states)
 template <typename MODEL>
@@ -37,7 +231,7 @@ class PseudoModel : public ModelBase<MODEL> {
  public:
   static const std::string classname() {return "oops::PseudoModel";}
 
-  PseudoModel(const Geometry_ &, const eckit::Configuration &);
+  PseudoModel(const Geometry_ & resol, const eckit::Configuration & config);
 
 /// initialize forecast
   void initialize(State_ &) const override;
@@ -63,21 +257,35 @@ class PseudoModel : public ModelBase<MODEL> {
 template<typename MODEL>
 PseudoModel<MODEL>::PseudoModel(const Geometry_ & resol, const eckit::Configuration & config)
 : tstep_(config.getString("tstep")) {
-  if (config.has("multiple runs")) {
-    std::vector<eckit::LocalConfiguration> configs(config.getSubConfigurations("multiple runs"));
+  PseudoModelConfigValidator validator(eckit::LocalConfiguration{config});
+  auto validatedConfig = validator.get();
+  if (validatedConfig.has("multiple runs")) {
+    // add multiple runs
+    auto runConfigs = validatedConfig.getSubConfigurations("multiple runs");
     size_t IDChecker(0);
-    for (const auto& run : configs) {
-      ASSERT(run.getUnsigned("ID") == IDChecker++);
-      runs_.push_back(run.getSubConfigurations("states"));
+    for (const auto & runConfig : runConfigs) {
+      MultipleStateConfigValidator runValidator(runConfig);
+      auto validatedRunConfig = runValidator.get();
+      ASSERT(validatedRunConfig.getUnsigned("ID") == IDChecker++);
+      std::vector<eckit::LocalConfiguration> runStates;
+      for (size_t iState = 0; iState < runValidator.size(); ++iState) {
+        runStates.emplace_back(runValidator.getStateConfig(iState, tstep_));
+      }
+      runs_.emplace_back(runStates);
       currentState_.push_back(0);
       previousTime_.push_back(util::DateTime());
     }
-  } else if (config.has("states")) {
-    runs_.push_back(config.getSubConfigurations("states"));
+  } else if (validatedConfig.has("states") ||
+             validatedConfig.has("states from template")) {
+    // add only a single list of states
+    MultipleStateConfigValidator runValidator(eckit::LocalConfiguration{config});
+    std::vector<eckit::LocalConfiguration> runStates;
+    for (size_t iState = 0; iState < runValidator.size(); ++iState) {
+      runStates.emplace_back(runValidator.getStateConfig(iState, tstep_));
+    }
+    runs_.emplace_back(runStates);
     currentState_.push_back(0);
     previousTime_.push_back(util::DateTime());
-  } else {
-    ABORT("PseudoModel<MODEL>::PseudoModel: unsupported configuration");
   }
   Log::trace() << "PseudoModel<MODEL>::PseudoModel done" << std::endl;
 }
@@ -106,7 +314,8 @@ void PseudoModel<MODEL>::initialize(State_ & xx) const {
 template<typename MODEL>
 void PseudoModel<MODEL>::step(State_ & xx, const ModelAux_ & merr) const {
   Log::trace() << "PseudoModel<MODEL>::step starting" << std::endl;
-  // Check that number of steps called for has not exceeded number of State configurations available
+  // Check that number of steps called for has not exceeded number of State
+  // configurations available
   if (currentState_[currentID_] >= runs_[currentID_].size()) {
     std::ostringstream msg;
     msg << classname() << "::step: number of steps called for (" << currentState_[currentID_]
@@ -137,7 +346,8 @@ void PseudoModel<MODEL>::step(State_ & xx, const ModelAux_ & merr) const {
 template<typename MODEL>
 void PseudoModel<MODEL>::finalize(State_ & xx) const {
   Log::trace() << "PseudoModel<MODEL>::finalize starting" << std::endl;
-  // If forecast has reached final State configuration, reinitialise variables ready for reforecast
+  // If forecast has reached final State configuration, reinitialise variables
+  // ready for reforecast
   if (currentState_[currentID_] == runs_[currentID_].size()) {
     currentState_[currentID_] = 0;
     previousTime_[currentID_] = util::DateTime();
