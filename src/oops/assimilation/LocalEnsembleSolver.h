@@ -255,6 +255,9 @@ void LocalEnsembleSolver<MODEL, OBS>::computeHofX4DLinear(const eckit::Configura
   PostProcessorTLAD<MODEL> posttrajtl;
   ObserversTLAD_ linear_hofx(obspaces_, obsconf_.getSubConfiguration("observers"));
 
+  // initialize nonlinear model postprocessor
+  hofx.initialize(geometry_, obsaux, *R_, post, config);
+
   // add linearized H(x) to the nonlinear model postprocessor
   linear_hofx.initializeTraj(geometry_, obsaux, posttraj);
   // create TrajectorySaver with hofx_linear, and enroll in post
@@ -262,7 +265,6 @@ void LocalEnsembleSolver<MODEL, OBS>::computeHofX4DLinear(const eckit::Configura
                                                   geometry_, posttraj));
 
   // run nonlinear model on the ensemble mean
-  hofx.initialize(geometry_, obsaux, *R_, post, config);
   model.forecast(init_xx, moderr, flength, post);
 
   // compute nonlinear H(x_mean)

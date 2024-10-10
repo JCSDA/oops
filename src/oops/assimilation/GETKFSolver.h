@@ -202,13 +202,15 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
       PostProcessorTLAD<MODEL> posttrajtl;
       ObserversTLAD_ linear_hofx(this->obspaces_, this->obsconf_.getSubConfiguration("observers"));
 
+      // initialize nonlinear model postprocessor
+      hofx.initialize(this->geometry_, obsaux, *this->R_, post, config);
+
       // add linearized H(x) to the nonlinear model postprocessor
       linear_hofx.initializeTraj(this->geometry_, obsaux, posttraj);
       // create TrajectorySaver with hofx_linear, and enroll in post
       post.enrollProcessor(new TrajectorySaver<MODEL>(eckit::LocalConfiguration(),
                                                   this->geometry_, posttraj));
       // run nonlinear model on the ensemble mean
-      hofx.initialize(this->geometry_, obsaux, *this->R_, post, config);
       model.forecast(init_xx, moderr, flength, post);
       // compute nonlinear H(x_mean)
       std::vector<ObsDataInt_> qcflags;
