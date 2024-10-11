@@ -10,7 +10,8 @@
 
 module datetime_mod
 
-use, intrinsic :: iso_c_binding
+use, intrinsic :: iso_c_binding, only: c_ptr, c_null_ptr, c_int, &
+     & c_int64_t, c_char, c_associated
 use string_f_c_mod  ! TODO: replace with fckit equivalent (in fckit_c_interop_module)
 use duration_mod
 

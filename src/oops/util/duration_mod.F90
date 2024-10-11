@@ -10,7 +10,7 @@
 
 module duration_mod
 
-use, intrinsic :: iso_c_binding
+use, intrinsic :: iso_c_binding, only: c_ptr, c_int64_t, c_char
 use string_f_c_mod
 
 implicit none
