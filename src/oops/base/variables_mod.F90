@@ -11,7 +11,7 @@ use iso_c_binding, only: c_ptr
 implicit none
 
 public :: oops_variables
-integer, parameter, private :: MAXVARLEN = 100
+integer, parameter, private :: MAXVARLEN = 110
 
 type oops_variables
 private
