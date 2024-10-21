@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+#include "oops/base/GetValuePosts.h"
 #include "oops/base/GetValues.h"
 #include "oops/base/Increment.h"
 #include "oops/base/PostBaseTLAD.h"
@@ -37,7 +38,8 @@ class GetValueTLADs : public PostBaseTLAD<MODEL> {
   typedef std::unique_ptr<LinearVariableChange<MODEL>> CVarPtr_;
 
  public:
-  GetValueTLADs(const util::DateTime &, const util::DateTime &);
+  GetValueTLADs(const GetValuesParameters<MODEL> &,
+                const util::DateTime &, const util::DateTime &);
 
   void append(GetValPtr_);
 
@@ -62,12 +64,15 @@ class GetValueTLADs : public PostBaseTLAD<MODEL> {
   Variables linvars_;
   std::vector<GetValPtr_> getvals_;
   std::map<util::DateTime, CVarPtr_> chvartlad_;
+  GetValuesParameters<MODEL> params_;
 };
 
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
-GetValueTLADs<MODEL, OBS>::GetValueTLADs(const util::DateTime & bgn, const util::DateTime & end)
-  : PostBaseTLAD<MODEL>(bgn, end), geovars_(), linvars_(), getvals_(), chvartlad_()
+GetValueTLADs<MODEL, OBS>::GetValueTLADs(const GetValuesParameters<MODEL> & params,
+              const util::DateTime & bgn, const util::DateTime & end)
+  : PostBaseTLAD<MODEL>(bgn, end), geovars_(), linvars_(), getvals_(), chvartlad_(),
+    params_(params)
 {
   Log::trace() << "GetValueTLADs::GetValueTLADs" << std::endl;
 }
@@ -95,10 +100,7 @@ template <typename MODEL, typename OBS>
 void GetValueTLADs<MODEL, OBS>::doProcessingTraj(const State_ & xx) {
   Log::trace() << "GetValueTLADs::doProcessingTraj start" << std::endl;
 
-  eckit::LocalConfiguration chvarconf;
-  VariableChangeParameters_ params;
-  params.validateAndDeserialize(chvarconf);
-  VariableChange_ chvar(params, xx.geometry());
+  VariableChange_ chvar(params_.variableChange.value(), xx.geometry());
 
   State_ zz(xx);
   chvar.changeVar(zz, geovars_);
@@ -109,7 +111,8 @@ void GetValueTLADs<MODEL, OBS>::doProcessingTraj(const State_ & xx) {
 
   for (GetValPtr_ getval : getvals_) getval->process(zz);
 
-  CVarPtr_ cvtlad(new LinearVariableChange<MODEL>(xx.geometry(), chvarconf));
+  CVarPtr_ cvtlad(new LinearVariableChange<MODEL>(xx.geometry(),
+                  params_.variableChange.value().toConfiguration()));
   cvtlad->changeVarTraj(xx, linvars_);
   chvartlad_[xx.validTime()] = std::move(cvtlad);
 

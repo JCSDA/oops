@@ -253,7 +253,7 @@ void LocalEnsembleSolver<MODEL, OBS>::computeHofX4DLinear(const eckit::Configura
   // perturbations
   PostProcessor<Increment_> posttl;
   PostProcessorTLAD<MODEL> posttrajtl;
-  ObserversTLAD_ linear_hofx(obspaces_, obsconf_.getSubConfiguration("observers"));
+  ObserversTLAD_ linear_hofx(obspaces_, obsconf_);
 
   // initialize nonlinear model postprocessor
   hofx.initialize(geometry_, obsaux, *R_, post, config);

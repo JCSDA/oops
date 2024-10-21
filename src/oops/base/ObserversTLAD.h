@@ -41,6 +41,7 @@ class ObserversTLAD {
   typedef GeoVaLs<OBS>                GeoVaLs_;
   typedef GetValues<MODEL, OBS>       GetValues_;
   typedef GetValueTLADs<MODEL, OBS>   GetValueTLADs_;
+  typedef GetValuesParameters<MODEL>  GetValuesParameters_;
   typedef Observations<OBS>           Observations_;
   typedef ObsAuxControls<OBS>         ObsAuxCtrls_;
   typedef ObsAuxIncrements<OBS>       ObsAuxIncrs_;
@@ -51,7 +52,8 @@ class ObserversTLAD {
   typedef PostProcessorTLAD<MODEL>    PostProcTLAD_;
 
  public:
-  ObserversTLAD(const ObsSpaces_ &, const std::vector<ObserverParameters<OBS>> &);
+  ObserversTLAD(const ObsSpaces_ &, const std::vector<ObserverParameters<OBS>> &,
+                const GetValuesParameters_ &);
   ObserversTLAD(const ObsSpaces_ &, const eckit::Configuration &);
 
   void initializeTraj(const Geometry_ &, const ObsAuxCtrls_ &, PostProcTLAD_ &);
@@ -69,18 +71,22 @@ class ObserversTLAD {
 
  private:
   static std::vector<ObserverParameters_> convertToParameters(const eckit::Configuration &config);
+  static GetValuesParameters_ extractGetValuesParameters(const eckit::Configuration & config);
 
   std::vector<std::unique_ptr<ObserverTLAD_>>  observers_;
   std::shared_ptr<GetValueTLADs_> posts_;
   util::DateTime winbgn_;
   util::DateTime winend_;
+  GetValuesParameters_ getValuesParams_;
 };
 
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
 ObserversTLAD<MODEL, OBS>::ObserversTLAD(const ObsSpaces_ & obspaces,
-                                         const std::vector<ObserverParameters<OBS>> & obsParams)
-  : observers_(), winbgn_(obspaces.windowStart()), winend_(obspaces.windowEnd())
+                                         const std::vector<ObserverParameters<OBS>> & obsParams,
+                                         const GetValuesParameters_ & getValuesParams)
+  : observers_(), winbgn_(obspaces.windowStart()), winend_(obspaces.windowEnd()),
+    getValuesParams_(getValuesParams)
 {
   Log::trace() << "ObserversTLAD<MODEL, OBS>::ObserversTLAD start" << std::endl;
   for (size_t jj = 0; jj < obspaces.size(); ++jj) {
@@ -95,7 +101,9 @@ ObserversTLAD<MODEL, OBS>::ObserversTLAD(const ObsSpaces_ & obspaces,
 template <typename MODEL, typename OBS>
 ObserversTLAD<MODEL, OBS>::ObserversTLAD(const ObsSpaces_ & obspaces,
                                          const eckit::Configuration & config)
-  : ObserversTLAD(obspaces, convertToParameters(config))
+  : ObserversTLAD(obspaces,
+                  convertToParameters(config.getSubConfiguration("observers")),
+                  extractGetValuesParameters(config.getSubConfiguration("get values")))
 //  : ObserversTLAD(obspaces, convertToParameters(config.getSubConfiguration("observers")))
 {}
 
@@ -104,7 +112,7 @@ template <typename MODEL, typename OBS>
 void ObserversTLAD<MODEL, OBS>::initializeTraj(const Geometry_ & geom, const ObsAuxCtrls_ & ybias,
                                                PostProcTLAD_ & pp) {
   Log::trace() << "ObserversTLAD<MODEL, OBS>::initializeTraj start" << std::endl;
-  posts_.reset(new GetValueTLADs_(winbgn_, winend_));
+  posts_.reset(new GetValueTLADs_(getValuesParams_, winbgn_, winend_));
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
     if (observers_[jj]) {
       for (std::shared_ptr<GetValues_> &getvalues : observers_[jj]->initializeTraj(geom, ybias[jj]))
@@ -206,6 +214,16 @@ std::vector<ObserverParameters<OBS>> ObserversTLAD<MODEL, OBS>::convertToParamet
 
   Log::trace() << "ObserversTLAD<MODEL, OBS>::convertToParameters done" << std::endl;
 
+  return parameters;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename OBS>
+GetValuesParameters<MODEL> ObserversTLAD<MODEL, OBS>::extractGetValuesParameters(
+    const eckit::Configuration & config) {
+  GetValuesParameters<MODEL> parameters{};
+  parameters.deserialize(config);
   return parameters;
 }
 

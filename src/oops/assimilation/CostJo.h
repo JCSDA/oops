@@ -299,7 +299,7 @@ template<typename MODEL, typename OBS>
 void CostJo<MODEL, OBS>::setPostProcTraj(const CtrlVar_ & xx, const eckit::Configuration & conf,
                                          const Geometry_ & lowres, PostProcTLAD_ & pptraj) {
   Log::trace() << "CostJo::setPostProcTraj start" << std::endl;
-  obstlad_.reset(new ObserversTLAD_(obspaces_, eckit::LocalConfiguration(conf_, "observers")));
+  obstlad_.reset(new ObserversTLAD_(obspaces_, conf_));
   obstlad_->initializeTraj(lowres, xx.obsVar(), pptraj);
   Log::trace() << "CostJo::setPostProcTraj done" << std::endl;
 }

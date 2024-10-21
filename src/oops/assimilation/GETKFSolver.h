@@ -200,7 +200,7 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
       // perturbations
       PostProcessor<Increment_> posttl;
       PostProcessorTLAD<MODEL> posttrajtl;
-      ObserversTLAD_ linear_hofx(this->obspaces_, this->obsconf_.getSubConfiguration("observers"));
+      ObserversTLAD_ linear_hofx(this->obspaces_, this->obsconf_);
 
       // initialize nonlinear model postprocessor
       hofx.initialize(this->geometry_, obsaux, *this->R_, post, config);
