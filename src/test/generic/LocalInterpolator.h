@@ -124,10 +124,10 @@ void testLocalInterpolator(
   source_fields.add(source_field);
 
   // If testing with masks, two additional tasks:
-  // 1. add interp_source_point_mask metadata to source_field
+  // 1. add mask metadata to source_field
   // 2. add mask field to Geometry.fields()
   if (testSourcePointMask) {
-    source_field.metadata().set("interp_source_point_mask", "test_mask");
+    source_field.metadata().set("mask", "test_mask");
 
     // A simple mask for generic testing: mask = 0 in southern hemisphere; 1 in northern hemisphere
     atlas::Field mask = source_fs.createField<double>(name("test_mask") | levels(1));
@@ -207,7 +207,7 @@ void testLocalInterpolator(
   auto source_ad_view = make_view<double, 2>(source_field_ad);
   source_ad_view.assign(0.0);  // initialize before adjoint accumulation
   if (testSourcePointMask) {
-    source_field_ad.metadata().set("interp_source_point_mask", "test_mask");
+    source_field_ad.metadata().set("mask", "test_mask");
   }
   source_fields_ad.add(source_field_ad);
 

@@ -116,13 +116,13 @@ void UnstructuredInterpolator::apply(const Variables & vars, const atlas::FieldS
     ASSERT(interp_type == "default" || interp_type == "integer" || interp_type == "nearest");
 
     // Mask is optional -- no metadata signals unmasked interpolation
-    // Warning: if the model code typoes the name of the metadata field "interp_source_point_mask",
+    // Warning: if the model code typoes the name of the metadata field "mask",
     // then the code below will silently skip the masking and proceed with unmasked interpolation.
     // Requiring the mask metadata to be always present would increase robustness, but would require
     // all models to adapt.
     std::string maskName = unmaskedName_;
-    if (fld.metadata().has("interp_source_point_mask")) {
-      maskName = fld.metadata().get<std::string>("interp_source_point_mask");
+    if (fld.metadata().has("mask")) {
+      maskName = fld.metadata().get<std::string>("mask");
       ASSERT(geom_.has(maskName));
       const atlas::Field & source_mask_fld = geom_.getField(maskName);
       ASSERT(source_mask_fld.shape(0) == fld.shape(0));
@@ -167,8 +167,8 @@ void UnstructuredInterpolator::applyAD(const Variables & vars, atlas::FieldSet &
 
     // Mask is optional -- no metadata signals unmasked interpolation
     std::string maskName = unmaskedName_;
-    if (fld.metadata().has("interp_source_point_mask")) {
-      maskName = fld.metadata().get<std::string>("interp_source_point_mask");
+    if (fld.metadata().has("mask")) {
+      maskName = fld.metadata().get<std::string>("mask");
       ASSERT(geom_.has(maskName));
       const atlas::Field & source_mask_fld = geom_.getField(maskName);
       ASSERT(source_mask_fld.shape(0) == fld.shape(0));

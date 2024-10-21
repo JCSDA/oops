@@ -123,11 +123,11 @@ void testInterpolator(const bool testSourcePointMask) {
   source_fields.add(source_field);
 
   // If testing with masks, two additional tasks:
-  // 1. add interp_source_point_mask metadata to source_field
+  // 1. add mask metadata to source_field
   // 2. add mask field to Geometry.fields() (we could use one of the "native" masks for MODEL,
   //    but this would make it very hard to write a generic test).
   if (testSourcePointMask) {
-    source_field.metadata().set("interp_source_point_mask", "testmask");
+    source_field.metadata().set("mask", "testmask");
 
     // A simple mask for generic testing: mask = 0 in southern hemisphere; 1 in northern hemisphere
     atlas::Field mask = source_fs->createField<double>(name("testmask") | levels(1));
@@ -217,7 +217,7 @@ void testInterpolator(const bool testSourcePointMask) {
     }
   }
   if (testSourcePointMask) {
-    source_field_ad.metadata().set("interp_source_point_mask", "testmask");
+    source_field_ad.metadata().set("mask", "testmask");
   }
   source_fields_ad.add(source_field_ad);
 
