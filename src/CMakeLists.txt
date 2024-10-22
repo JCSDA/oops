@@ -128,7 +128,6 @@ oops/base/Inflation.h
 oops/base/InflationBase.h
 oops/base/instantiateCovarFactory.h
 oops/base/instantiateInflationFactory.h
-oops/base/instantiateObsFilterFactory.h
 oops/base/LinearModel.h
 oops/base/LinearVariableChangeParametersBase.h
 oops/base/Localization.h
@@ -150,8 +149,6 @@ oops/base/Observers.h
 oops/base/ObserversTLAD.h
 oops/base/ObserverTLAD.h
 oops/base/ObserverUtils.h
-oops/base/ObsFilter.h
-oops/base/ObsFilters.h
 oops/base/ObsLocalizationBase.h
 oops/base/ObsLocalizationParametersBase.h
 oops/base/ObsLocalizations.h
@@ -242,7 +239,6 @@ oops/generic/fft_spectral2gpoint_f.F90
 oops/generic/gc99.h
 oops/generic/gc99.cc
 oops/generic/gc99_mod.F90
-oops/generic/GeoVaLsWriter.h
 oops/generic/GlobalInterpolator.cc
 oops/generic/GlobalInterpolator.h
 oops/generic/GlobalTemplatedInterpolator.h
@@ -267,8 +263,6 @@ oops/generic/NormScalar.h
 oops/generic/ObsErrorDiag.h
 oops/generic/ObsErrorDiag.cc
 oops/generic/ObsErrorBase.h
-oops/generic/ObsFilterBase.h
-oops/generic/ObsFilterParametersBase.h
 oops/generic/PseudoLinearModelIncrement4D.h
 oops/generic/PseudoModel.h
 oops/generic/PseudoModelState4D.h
@@ -306,7 +300,7 @@ oops/interface/ObsDataVector.h
 oops/interface/ObsDataVector_head.h
 oops/interface/ObsDiagnostics.h
 oops/interface/ObsErrorBase.h
-oops/interface/ObsFilterBase.h
+oops/interface/ObsFilter.h
 oops/interface/ObsOperator.h
 oops/interface/ObsSpace.h
 oops/interface/ObsVector.h

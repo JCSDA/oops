@@ -45,6 +45,7 @@ class ObsBiasCorrection;
 class ObsBiasCovariance;
 class ObsBiasPreconditioner;
 class ObsDiags1D;
+class ObsFilter;
 
 class GomL95;
 class LocsL95;
@@ -88,6 +89,7 @@ struct L95ObsTraits {
   typedef lorenz95::ObsBiasCovariance      ObsAuxCovariance;
   typedef lorenz95::ObsBiasPreconditioner  ObsAuxPreconditioner;
   typedef lorenz95::ObsDiags1D             ObsDiagnostics;
+  typedef lorenz95::ObsFilter              ObsFilter;
 
   typedef lorenz95::GomL95                 GeoVaLs;
   typedef lorenz95::LocsL95                SampledLocations;

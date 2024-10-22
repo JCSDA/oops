@@ -9,8 +9,6 @@ ErrorCovarianceQG.cc
 ErrorCovarianceQG.h
 FieldsQG.cc
 FieldsQG.h
-FinalCheck.cc
-FinalCheck.h
 GeometryQG.cc
 GeometryQG.h
 GeometryQGIterator.cc
@@ -42,6 +40,8 @@ ObsBiasPreconditioner.cc
 ObsBiasPreconditioner.h
 ObsDataQG.h
 ObsDiagsQG.h
+ObsFilter.cc
+ObsFilter.h
 ObsIteratorQG.cc
 ObsIteratorQG.h
 ObsLocQG.cc
@@ -70,8 +70,6 @@ ObsWindQG.cc
 ObsWindQG.h
 ObsWindTLAD.cc
 ObsWindTLAD.h
-QCmanager.cc
-QCmanager.h
 QgFortran.h
 QgTraits.h
 StateQG.cc

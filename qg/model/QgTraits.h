@@ -34,6 +34,7 @@
 #include "oops/qg/ObsBiasPreconditioner.h"
 #include "oops/qg/ObsDataQG.h"
 #include "oops/qg/ObsDiagsQG.h"
+#include "oops/qg/ObsFilter.h"
 #include "oops/qg/ObsIteratorQG.h"
 #include "oops/qg/ObsOperatorQG.h"
 #include "oops/qg/ObsOperatorTLAD.h"

@@ -24,8 +24,7 @@ cost function:
           obsfile: Data/3dvar_qc.2010-01-02T00:00:00Z.obt
       obs error:
         covariance model: diagonal
-      obs filters:
-      - filter: Background Check
+      obs filtering:
         threshold: 1.3
 
 variational:

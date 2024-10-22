@@ -18,7 +18,6 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 #include "oops/base/Geometry.h"
-#include "oops/base/instantiateObsFilterFactory.h"
 #include "oops/base/Model.h"
 #include "oops/base/ObsAuxControls.h"
 #include "oops/base/ObsErrors.h"
@@ -108,7 +107,6 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
 // -----------------------------------------------------------------------------
   explicit HofX4D(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {
     instantiateObsErrorFactory<OBS>();
-    instantiateObsFilterFactory<OBS>();
   }
 // -----------------------------------------------------------------------------
   virtual ~HofX4D() = default;

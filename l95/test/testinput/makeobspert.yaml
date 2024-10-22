@@ -25,8 +25,8 @@ observations:
     obs operator: {}
     obs error:
       covariance model: diagonal
-    obs filters:
-    - filter: GOMsaver
+    obs filtering:
+      save geovals: true
       filename: Data/gom.l95
 make obs: true
 

@@ -22,7 +22,6 @@
 #include "oops/base/Increment.h"
 #include "oops/base/Increment4D.h"
 #include "oops/base/IncrementEnsemble4D.h"
-#include "oops/base/instantiateObsFilterFactory.h"
 #include "oops/base/Observations.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/ParameterTraitsVariables.h"
@@ -176,7 +175,6 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
   explicit LocalEnsembleDA(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {
     instantiateLocalEnsembleSolverFactory<MODEL, OBS>();
     instantiateObsErrorFactory<OBS>();
-    instantiateObsFilterFactory<OBS>();
   }
 
 // -----------------------------------------------------------------------------

@@ -21,7 +21,6 @@
 #include "oops/assimilation/instantiateCostFactory.h"
 #include "oops/assimilation/instantiateMinFactory.h"
 #include "oops/base/instantiateCovarFactory.h"
-#include "oops/base/instantiateObsFilterFactory.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State.h"
 #include "oops/base/StateInfo.h"
@@ -85,7 +84,6 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
     instantiateMinFactory<MODEL, OBS>();
     instantiateNormFactory<MODEL>();
     instantiateObsErrorFactory<OBS>();
-    instantiateObsFilterFactory<OBS>();
     instantiateLinearModelFactory<MODEL>();
   }
 // -----------------------------------------------------------------------------

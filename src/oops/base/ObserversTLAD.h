@@ -196,6 +196,9 @@ std::vector<ObserverParameters<OBS>> ObserversTLAD<MODEL, OBS>::convertToParamet
                          eckit::LocalConfiguration(subconfig, "linear obs operator"));
 
     // Optional keys
+    eckit::LocalConfiguration filterConfig;
+    if (subconfig.get("obs filtering", filterConfig))
+      observerConfig.set("obs filtering", filterConfig);
     std::vector<eckit::LocalConfiguration> filterConfigs;
     if (subconfig.get("obs filters", filterConfigs))
       observerConfig.set("obs filters", filterConfigs);

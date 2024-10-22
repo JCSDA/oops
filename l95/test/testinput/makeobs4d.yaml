@@ -22,8 +22,8 @@ observations:
         obs_error: 0.4
         obs_frequency: PT3H
     obs operator: {}
-    obs filters:
-    - filter: GOMsaver
+    obs filtering:
+      save geovals: true
       filename: Data/gom.l95
 make obs: true
 

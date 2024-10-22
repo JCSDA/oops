@@ -30,8 +30,7 @@ observations:
       obsdataout:
         obsfile: Data/letkf_qc.2010-01-02T00:00:00Z.obt
     obs operator: {}
-    obs filters:
-    - filter: Background Check
+    obs filtering:
       threshold: 3.0
 
 local ensemble DA:

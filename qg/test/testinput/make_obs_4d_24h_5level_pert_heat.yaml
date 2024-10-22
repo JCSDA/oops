@@ -30,8 +30,8 @@ observations:
         obs density: 100
         obs error: 4.0e6
         obs period: PT3H
-    obs filters:
-    - filter: GOMsaver
+    obs filtering:
+      save geovals: true
       filename: Data/truth_5level_pert_heat.obs4d_24h.stream.gom
   - obs operator:
       obs type: Wind
@@ -47,8 +47,8 @@ observations:
         obs density: 100
         obs error: 6.0
         obs period: PT6H
-    obs filters:
-    - filter: GOMsaver
+    obs filtering:
+      save geovals: true
       filename: Data/truth_5level_pert_heat.obs4d_24h.wind.gom
   - obs operator:
       obs type: WSpeed
@@ -64,8 +64,8 @@ observations:
         obs density: 100
         obs error: 12.0
         obs period: PT6H
-    obs filters:
-    - filter: GOMsaver
+    obs filtering:
+      save geovals: true
       filename: Data/truth_5level_pert_heat.obs4d_24h.wspeed.gom
 make obs: true
 prints:

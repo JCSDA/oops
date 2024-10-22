@@ -22,7 +22,6 @@
 #include "oops/base/Locations.h"
 #include "oops/base/ObsError.h"
 #include "oops/base/ObserverUtils.h"
-#include "oops/base/ObsFilters.h"
 #include "oops/base/ObsOperatorBase.h"
 #include "oops/base/ObsVariables.h"
 #include "oops/base/ObsVector.h"
@@ -31,6 +30,7 @@
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsDataVector.h"
 #include "oops/interface/ObsDiagnostics.h"
+#include "oops/interface/ObsFilter.h"
 #include "oops/interface/ObsOperator.h"
 #include "oops/interface/ObsSpace.h"
 #include "oops/util/Logger.h"
@@ -40,14 +40,48 @@
 
 namespace oops {
 
+/// Configuration options for the ObsFilters.
+class ObsFiltersParameters : public Parameters {
+  OOPS_CONCRETE_PARAMETERS(ObsFiltersParameters, Parameters)
+
+ public:
+  /// Options used to configure observation filters for toy models
+  oops::OptionalParameter<eckit::LocalConfiguration> obsFilter{"obs filtering",
+                  this};
+
+  /// Options used to configure observation filters whose stage of operation
+  /// (pre, prior or post) is determined automatically.
+  oops::OptionalParameter<eckit::LocalConfiguration> obsFilters{"obs filters",
+                  this};
+
+  /// Options used to configure observation pre filters.
+  /// These filters are called before GetValues.
+  /// Both GeoVaLs and H(x) are unavailable.
+  oops::OptionalParameter<eckit::LocalConfiguration> obsPreFilters{"obs pre filters",
+                  this};
+
+  /// Options used to configure observation filters.
+  /// These filters are called after GetValues and before the observation operator.
+  /// GeoVaLs are available and H(x) is unavailable.
+  oops::OptionalParameter<eckit::LocalConfiguration> obsPriorFilters{"obs prior filters",
+                  this};
+
+  /// Options used to configure observation filters.
+  /// These filters are called after the observation operator.
+  ///  Both GeoVaLs and H(x) are available.
+  oops::OptionalParameter<eckit::LocalConfiguration> obsPostFilters{"obs post filters",
+                  this};
+};
+
 template <typename OBS>
 class ObserverParameters : public Parameters {
   OOPS_CONCRETE_PARAMETERS(ObserverParameters, Parameters)
 
  public:
   oops::RequiredParameter<eckit::LocalConfiguration> obsOperator{"obs operator", this};
-  // Options used to configure filters.
-  ObsFiltersParameters<OBS> filtersParameters{this};
+  // Options used to configure filter.
+  ObsFiltersParameters filtersParameters{this};
+
   oops::Parameter<eckit::LocalConfiguration> getValues{
     "get values", eckit::LocalConfiguration(), this};
 
@@ -61,7 +95,7 @@ class ObserverParameters : public Parameters {
 
 // -----------------------------------------------------------------------------
 
-/// \brief Computes observation operator, applying bias correction and QC filters
+/// \brief Computes observation operator, applying bias correction and QC filter
 template <typename MODEL, typename OBS>
 class Observer {
   typedef Geometry<MODEL>              Geometry_;
@@ -74,7 +108,7 @@ class Observer {
   typedef ObsDiagnostics<OBS>          ObsDiags_;
   typedef ObsError<OBS>                ObsError_;
   typedef ObserverParameters<OBS>      Parameters_;
-  typedef ObsFilters<OBS>              ObsFilters_;
+  typedef ObsFilter<OBS>               ObsFilter_;
   typedef ObsOperator<OBS>             ObsOperator_;
   typedef ObsOperatorBase<OBS>         ObsOperatorBase_;
   typedef ObsSpace<OBS>                ObsSpace_;
@@ -86,7 +120,7 @@ class Observer {
   Observer(const ObsSpace_ & obspace, const Parameters_ & params,
            std::unique_ptr<ObsOperatorBase_> obsOpBase = nullptr);
 
-/// \brief Initializes variables, obs bias, obs filters (could be different for
+/// \brief Initializes variables, obs bias, obs filter (could be different for
 /// different iterations
   std::vector<std::shared_ptr<GetValues_>> initialize(const Geometry_ &, const ObsAuxCtrl_ &,
                                                       ObsError_ &, const eckit::Configuration &);
@@ -108,8 +142,8 @@ class Observer {
   std::unique_ptr<Locations_>       locations_;     // Obs locations
   const ObsAuxCtrl_ *               biascoeff_;     // bias coefficients
   ObsError_ *                       Rmat_;          // Obs error covariance
-  std::unique_ptr<ObsFilters_>      filters_;       // QC filters
-  std::unique_ptr<ObsDataVector_>   obserrfilter_;  // Obs error std dev for processed variables
+  std::unique_ptr<ObsFilter_>       filter_;        // QC filter
+  std::shared_ptr<ObsDataVector_>   obserrfilter_;  // Obs error std dev for processed variables
   // Instances of GetValues. Each receives a list of model variables and a set of paths along which
   // these variables should be interpolated. The interpolated values are stored in a single GeoVaLs
   // object (shared between all instances of GetValues).
@@ -125,7 +159,7 @@ template <typename MODEL, typename OBS>
 Observer<MODEL, OBS>::Observer(const ObsSpace_ & obspace, const Parameters_ & params,
                                std::unique_ptr<ObsOperatorBase_> obsOpBase)
   : parameters_(params), obspace_(obspace), obsop_(),
-    biascoeff_(nullptr), filters_(), qcflags_(), initialized_(false)
+    biascoeff_(nullptr), filter_(), qcflags_(), initialized_(false)
 {
   Log::trace() << "Observer::Observer start" << std::endl;
   /// Set up observation operators
@@ -150,18 +184,18 @@ Observer<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrl_ & bia
   biascoeff_ = &biascoeff;
   Rmat_ = &R;
 
-  // Set up QC filters and run preprocess
+  // Set up QC filter and run preprocess
   const int iterfilt = iterconf_->getInt("iteration", 0);
-  filters_.reset(new ObsFilters_(obspace_,
-                                 parameters_.filtersParameters,
-                                 qcflags_, *obserrfilter_, iterfilt));
-  filters_->preProcess();
+  filter_.reset(new ObsFilter_(obspace_,
+                               parameters_.filtersParameters.toConfiguration(),
+                               qcflags_, obserrfilter_, iterfilt));
+  filter_->preProcess();
 
   if (!initialized_) {
 // Get the list of required variables
     oops::Variables geovars = obsop_->requiredVars();
     geovars += biascoeff_->requiredVars();
-    geovars += filters_->requiredVars();
+    geovars += filter_->requiredVars();
 
 // Get the observation locations and their discretizations
     locations_ = std::make_unique<Locations_>(obsop_->locations());
@@ -198,15 +232,15 @@ void Observer<MODEL, OBS>::finalize(ObsVector_ & yobsim, ObsDataInt_ & qcflags) 
 
   // Compute the reduced representation of the GeoVaLs for which it's been requested
   oops::Variables reducedVars = biascoeff_->requiredVars();
-  reducedVars += filters_->requiredVars();
+  reducedVars += filter_->requiredVars();
   obsop_->computeReducedVars(reducedVars, geovals);
 
-  /// Call prior filters
-  filters_->priorFilter(geovals);
+  /// Call prior filter
+  filter_->priorFilter(geovals);
 
   /// Setup diagnostics
   ObsVariables vars;
-  vars += filters_->requiredHdiagnostics();
+  vars += filter_->requiredHdiagnostics();
   vars += biascoeff_->requiredHdiagnostics();
   // The current interface makes it possible to assign different location sampling methods not only
   // to GeoVaLs, but also to ObsDiagnostics. We could simplify things and assume there'll always
@@ -220,10 +254,11 @@ void Observer<MODEL, OBS>::finalize(ObsVector_ & yobsim, ObsDataInt_ & qcflags) 
   /// Compute H(x)
   obsop_->simulateObs(geovals, yobsim, *biascoeff_, *qcflags_, ybias, ydiags);
 
-  /// Call posterior filters
-  filters_->postFilter(geovals, yobsim, ybias, ydiags);
+  /// Call posterior filter
+  filter_->postFilter(geovals, yobsim, ybias, ydiags);
+  obserrfilter_->mask(*qcflags_);
 
-  // Update R with obs errors that filters might have updated
+  // Update R with obs errors that filter might have updated
   ObsVector_ obserr(Rmat_->obserrors());
   obserr = *obserrfilter_;
   Rmat_->update(obserr);

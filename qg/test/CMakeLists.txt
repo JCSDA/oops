@@ -108,7 +108,6 @@ list( APPEND qg_testinput
   testinput/make_obs_4d_12h.yaml
   testinput/make_obs_4d_24h.yaml
   testinput/make_obs_4d_24h_5level_pert_heat.yaml
-  testinput/make_obs_4d_24h_filter_ordering.yaml
   testinput/make_obs_4d_biased.yaml
   testinput/make_single-obs_3d.yaml
   testinput/make_single-obs_4d_12h.yaml
@@ -208,7 +207,6 @@ list( APPEND qg_testoutput
   testoutput/make_obs_4d_12h.test
   testoutput/make_obs_4d_24h.test
   testoutput/make_obs_4d_24h_5level_pert_heat.test
-  testoutput/make_obs_4d_24h_filter_ordering.test
   testoutput/make_obs_4d_biased.test
   testoutput/make_single-obs_3d.test
   testoutput/make_single-obs_4d_12h.test
@@ -269,12 +267,6 @@ ecbuild_add_test( TARGET test_qg_make_obs_4d_24h_5level_pert_heat
                   ARGS testinput/make_obs_4d_24h_5level_pert_heat.yaml
                   COMMAND  qg_hofx.x
                   TEST_DEPENDS test_qg_truth_5level_pert_heat )
-
-ecbuild_add_test( TARGET test_qg_make_obs_4d_24h_filter_ordering
-                  OMP 2
-                  ARGS testinput/make_obs_4d_24h_filter_ordering.yaml
-                  COMMAND  qg_hofx.x
-                  TEST_DEPENDS test_qg_truth )
 
 #####################################################################
 # interface tests

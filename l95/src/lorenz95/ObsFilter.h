@@ -5,8 +5,8 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef LORENZ95_BACKGROUNDCHECK_H_
-#define LORENZ95_BACKGROUNDCHECK_H_
+#ifndef LORENZ95_OBSFILTER_H_
+#define LORENZ95_OBSFILTER_H_
 
 #include <memory>
 #include <ostream>
@@ -15,7 +15,6 @@
 
 #include "oops/base/ObsVariables.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/ObsFilterBase.h"
 
 namespace eckit {
   class Configuration;
@@ -28,19 +27,21 @@ namespace lorenz95 {
   class ObsDiags1D;
   class ObsVec1D;
 
-/// Simple background check: all obs for which {|y-H(x)| < threshold} pass QC
-class BackgroundCheck : public oops::interface::ObsFilterBase<L95ObsTraits> {
+/// ObsFilter includes optional:
+/// - simple background check: all obs for which {|y-H(x)| < threshold} pass QC
+/// - geovals saver
+class ObsFilter : public util::Printable {
  public:
-  BackgroundCheck(const ObsTable &, const eckit::Configuration &,
-                  std::shared_ptr<ObsData1D<int> >, std::shared_ptr<ObsData1D<float> >);
+  ObsFilter(const ObsTable &, const eckit::Configuration &,
+                  std::shared_ptr<ObsData1D<int> >, std::shared_ptr<ObsData1D<float> >,
+                  const int iteration = 0);
 
-  void preProcess() override {}
-  void priorFilter(const GomL95 &) override {}
-  void postFilter(const GomL95 &, const ObsVec1D &, const ObsVec1D &, const ObsDiags1D &) override;
-  void checkFilterData(const oops::FilterStage filterStage) override {}
+  void preProcess() {}
+  void priorFilter(const GomL95 &);
+  void postFilter(const GomL95 &, const ObsVec1D &, const ObsVec1D &, const ObsDiags1D &);
 
-  oops::Variables requiredVars() const override {return novars_;}
-  oops::ObsVariables requiredHdiagnostics() const override {return noobsvars_;}
+  oops::Variables requiredVars() const {return novars_;}
+  oops::ObsVariables requiredHdiagnostics() const {return noobsvars_;}
 
  private:
   void print(std::ostream & os) const override;
@@ -50,10 +51,13 @@ class BackgroundCheck : public oops::interface::ObsFilterBase<L95ObsTraits> {
   std::shared_ptr<ObsData1D<float> > obserr_;  // obs error stddev
   const oops::Variables novars_;
   const oops::ObsVariables noobsvars_;
+  const eckit::LocalConfiguration config_;
   const float threshold_;
   const float inflation_;
+  const bool bgCheck_;
+  const bool saveGeoVaLs_;
 };
 
 }  // namespace lorenz95
 
-#endif  // LORENZ95_BACKGROUNDCHECK_H_
+#endif  // LORENZ95_OBSFILTER_H_

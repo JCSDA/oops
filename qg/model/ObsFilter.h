@@ -1,12 +1,12 @@
 /*
- * (C) Copyright 2017-2018 UCAR
+ * (C) Crown Copyright 2021, Met Office
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
  */
 
-#ifndef QG_MODEL_QCMANAGER_H_
-#define QG_MODEL_QCMANAGER_H_
+#ifndef QG_MODEL_OBSFILTER_H_
+#define QG_MODEL_OBSFILTER_H_
 
 #include <memory>
 #include <ostream>
@@ -17,7 +17,6 @@
 
 #include "oops/base/ObsVariables.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/ObsFilterBase.h"
 #include "oops/util/Printable.h"
 
 namespace qg {
@@ -27,29 +26,31 @@ namespace qg {
   class ObsSpaceQG;
   class ObsVecQG;
 
-class QCmanager : public oops::interface::ObsFilterBase<QgObsTraits> {
+/// @brief ObsFilter is an optional GeoVaLs saver
+class ObsFilter : public util::Printable {
  public:
-  QCmanager(const ObsSpaceQG &, const eckit::Configuration &,
-            std::shared_ptr<ObsDataQG<int> >, std::shared_ptr<ObsDataQG<float> >): novars_() {}
-  ~QCmanager() {}
+  ObsFilter(const ObsSpaceQG &, const eckit::Configuration &,
+            std::shared_ptr<ObsDataQG<int> >, std::shared_ptr<ObsDataQG<float> >,
+            const int iteration = 0);
 
-  void preProcess() override {}
-  void priorFilter(const GomQG &) override {}
+  void preProcess() {}
+  void priorFilter(const GomQG &);
   void postFilter(const GomQG &,
                   const ObsVecQG &,
                   const ObsVecQG &,
-                  const ObsDiagsQG &) override {}
-  void checkFilterData(const oops::FilterStage filterStage) override {}
+                  const ObsDiagsQG &) {}
 
-  oops::Variables requiredVars() const override {return novars_;}
-  oops::ObsVariables requiredHdiagnostics() const override {return noobsvars_;}
+  oops::Variables requiredVars() const {return novars_;}
+  oops::ObsVariables requiredHdiagnostics() const {return noobsvars_;}
 
  private:
   void print(std::ostream &) const override {}
   const oops::Variables novars_;
   const oops::ObsVariables noobsvars_;
+  const eckit::LocalConfiguration config_;
+  const bool saveGeoVaLs_;
 };
 
 }  // namespace qg
 
-#endif  // QG_MODEL_QCMANAGER_H_
+#endif  // QG_MODEL_OBSFILTER_H_

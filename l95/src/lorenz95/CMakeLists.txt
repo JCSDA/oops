@@ -1,14 +1,10 @@
 set( _l95_srcs
         AnalyticInit.cc
         AnalyticInit.h
-        BackgroundCheck.cc
-        BackgroundCheck.h
         ErrorCovarianceL95.cc
         ErrorCovarianceL95.h
         FieldL95.cc
         FieldL95.h
-        FinalCheck.cc
-        FinalCheck.h
         GomL95.cc
         GomL95.h
         GomL95.cc
@@ -49,6 +45,8 @@ set( _l95_srcs
         ObsBiasPreconditioner.cc
         ObsBiasPreconditioner.h
         ObsDiags1D.h
+        ObsFilter.cc
+        ObsFilter.h
         ObsIterator.cc
         ObsIterator.h
         ObsLocGC99.cc
@@ -64,8 +62,6 @@ set( _l95_srcs
         ObservationL95.h
         ObservationTLAD.cc
         ObservationTLAD.h
-        QCmanager.cc
-        QCmanager.h
         Resolution.cc
         Resolution.h
         StateL95.cc
@@ -75,12 +71,8 @@ set( _l95_srcs
         LocalizationMatrixL95.cc
         LocalizationMatrixL95.h )
 
-set( _l95_test_srcs
-  ../../test/lorenz95/FilterStageCheck.cc
-  ../../test/lorenz95/FilterStageCheck.h )
-
 ecbuild_add_library( TARGET lorenz95
-                     SOURCES ${_l95_srcs} ${_l95_test_srcs}
+                     SOURCES ${_l95_srcs}
                      PUBLIC_LIBS oops
                      INSTALL_HEADERS LISTED
                      HEADER_DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/l95

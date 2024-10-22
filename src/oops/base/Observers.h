@@ -31,6 +31,7 @@
 #include "oops/base/State.h"
 #include "oops/interface/ObsDataVector.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/Parameters.h"
 
 namespace oops {
 
@@ -209,6 +210,9 @@ std::vector<ObserverParameters<OBS>> Observers<MODEL, OBS>::convertToParameters(
     observerConfig.set("obs operator", eckit::LocalConfiguration(subconfig, "obs operator"));
 
     // Optional keys
+    eckit::LocalConfiguration filterConfig;
+    if (subconfig.get("obs filtering", filterConfig))
+      observerConfig.set("obs filtering", filterConfig);
     std::vector<eckit::LocalConfiguration> filterConfigs;
     if (subconfig.get("obs filters", filterConfigs))
       observerConfig.set("obs filters", filterConfigs);

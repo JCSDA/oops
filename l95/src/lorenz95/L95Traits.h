@@ -37,6 +37,7 @@
 #include "lorenz95/ObsDiags1D.h"
 #include "lorenz95/ObservationL95.h"
 #include "lorenz95/ObservationTLAD.h"
+#include "lorenz95/ObsFilter.h"
 #include "lorenz95/ObsIterator.h"
 #include "lorenz95/ObsTable.h"
 #include "lorenz95/ObsVec1D.h"
