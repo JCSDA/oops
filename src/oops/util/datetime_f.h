@@ -36,6 +36,8 @@ extern "C" {
   void datetime_update_f(util::DateTime *, const int64_t &);
   void push_to_datetime_vector_f(std::vector<util::DateTime> *,
                                  util::DateTime *);
+  void datetime_format_string_f(const char str[], util::DateTime *,
+                                char newstr[], const int & bufrsize);
 }
 
 }  // namespace util

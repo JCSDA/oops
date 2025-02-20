@@ -71,6 +71,10 @@ class DateTime : public util::Serializable {
   // Convert the datetime to two integers: YYYYMMDD and hhmmss
   void toYYYYMMDDhhmmss(int & YYYYMMDD, int & hhmmss) const;
 
+  // Convert the datetime to padded strings of integers, year, month, day, hour, minute, second
+  void toYYYYMMDDhhmmss(std::string & year, std::string & month, std::string & day,
+                        std::string & hour, std::string & minute, std::string & second) const;
+
   // Convert the datetime to seconds since Jan 1 of the year
   //
   // Performance note: this method is not optimized for large numbers of calls in the same year,
@@ -104,6 +108,9 @@ class DateTime : public util::Serializable {
   size_t serialSize() const override;
   void serialize(std::vector<double> &) const override;
   void deserialize(const std::vector<double> &, size_t &) override;
+
+  // Method to format a string with datetime
+  std::string formatString(const std::string &) const;
 
  private:
 // -- Copy allowed

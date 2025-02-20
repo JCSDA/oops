@@ -116,4 +116,16 @@ void push_to_datetime_vector_f(std::vector<util::DateTime> *vec,
   }
 // -----------------------------------------------------------------------------
 
+void datetime_format_string_f(const char str[], util::DateTime * dd,
+                              char newstr[], const int & bufsize) {
+  const std::string s(str);
+  std::string n;
+  n = dd->formatString(s);
+  strncpy(newstr, n.c_str(), bufsize);
+  newstr[bufsize - 1] = '\0';  // null termination
+}
+
+// -----------------------------------------------------------------------------
+
+
 }  // namespace util

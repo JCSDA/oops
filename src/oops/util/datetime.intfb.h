@@ -94,5 +94,14 @@ subroutine c_push_to_datetime_vector(c_times, c_dt) bind(C,name='push_to_datetim
   type(c_ptr), value :: c_times, c_dt
 end subroutine c_push_to_datetime_vector
 !-------------------------------------------------------------------------------
+subroutine c_datetime_format_string(str, ptr, newstr, size_buf) bind(C,name='datetime_format_string_f')
+  use, intrinsic :: iso_c_binding
+  implicit none
+  character(kind=c_char, len=1), intent(in) :: str(2048)
+  character(kind=c_char, len=1), intent(in) :: newstr(2048)
+  integer(c_int), intent(in) :: size_buf
+  type(c_ptr), value :: ptr
+end subroutine c_datetime_format_string
+!-------------------------------------------------------------------------------
 end interface
 !-------------------------------------------------------------------------------

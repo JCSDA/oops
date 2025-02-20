@@ -22,7 +22,7 @@ public datetime, datetime_create, datetime_set, datetime_delete, &
      & operator(<), operator(<=), operator(>=), operator(>), &
      & datetime_update, datetime_diff, f_c_push_to_datetime_vector, &
      & datetime_to_ifs, datetime_from_ifs, datetime_to_YYYYMMDDhhmmss, &
-     & datetime_seconds_since_jan1
+     & datetime_seconds_since_jan1, datetime_format_string
 
 !>  Derived type encapsulating a C++ DateTime pointer.
 
@@ -308,6 +308,31 @@ subroutine f_c_push_to_datetime_vector(c_times, dt)
   type(datetime), intent(in)  :: dt
   call c_push_to_datetime_vector(c_times, dt%ptr)
 end subroutine f_c_push_to_datetime_vector
+
+!-------------------------------------------------------------------------------
+!> Format a string
+
+subroutine datetime_format_string(fstring, self)
+implicit none
+type(datetime), intent(inout) :: self
+character(len=*), intent(inout)  :: fstring
+character(kind=c_char,len=1), allocatable :: cstring(:)
+character(kind=c_char,len=1) :: cstring_new(2048)
+integer(kind=c_int) :: bufsize = 2048
+character(len=2048) :: fstring_new
+
+! Check that fstring is not too long
+if (len(trim(fstring)) > bufsize) &
+  call abor1_ftn('datetime_format_string: fstring too long')
+
+call f_c_string(trim(fstring), cstring)
+call c_datetime_format_string(cstring, self%ptr, cstring_new, bufsize)
+call c_f_string(cstring_new, fstring_new)
+
+! Replace incoming string
+fstring = trim(fstring_new)
+
+end subroutine datetime_format_string
 
 end module datetime_mod
 

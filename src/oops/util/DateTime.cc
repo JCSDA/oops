@@ -16,6 +16,7 @@
 #include <iomanip>
 #include <istream>
 #include <limits>
+#include <regex>
 #include <sstream>
 #include <string>
 
@@ -172,6 +173,38 @@ void DateTime::toYYYYMMDDhhmmss(int & YYYYMMDD, int & hhmmss) const {
   toYYYYMMDDhhmmss(year, month, day, hour, minute, second);
   YYYYMMDD = (year * 10000) + (month * 100) + day;
   hhmmss = (hour * 10000) + (minute * 100) + second;
+}
+
+// -----------------------------------------------------------------------------
+
+void DateTime::toYYYYMMDDhhmmss(std::string & year, std::string & month,
+                                std::string & day, std::string & hour,
+                                std::string & minute, std::string & second) const {
+  int yearInt;
+  int monthInt;
+  int dayInt;
+  int hourInt;
+  int minuteInt;
+  int secondInt;
+
+  this->toYYYYMMDDhhmmss(yearInt, monthInt, dayInt, hourInt, minuteInt, secondInt);
+
+  // Convert year integer to string
+  year = std::to_string(yearInt);
+
+  // Convert others to string with padding
+  std::ostringstream oss;
+
+  oss.str(""); oss << std::setw(2) << std::setfill('0') << monthInt;
+  month = oss.str();
+  oss.str(""); oss << std::setw(2) << std::setfill('0') << dayInt;
+  day = oss.str();
+  oss.str(""); oss << std::setw(2) << std::setfill('0') << hourInt;
+  hour = oss.str();
+  oss.str(""); oss << std::setw(2) << std::setfill('0') << minuteInt;
+  minute = oss.str();
+  oss.str(""); oss << std::setw(2) << std::setfill('0') << secondInt;
+  second = oss.str();
 }
 
 // -----------------------------------------------------------------------------
@@ -354,6 +387,34 @@ void DateTime::deserialize(const std::vector<double> & vect, size_t & current) {
 /// To use a date as key in a boost::map
 std::size_t hash_value(const util::DateTime& d) {
   return d.timestamp();
+}
+
+// -----------------------------------------------------------------------------
+std::string DateTime::formatString(const std::string & templatedString) const {
+  failIfUnset();
+
+  // Get datetime as integers for
+  // ----------------------------
+  std::string year;
+  std::string month;
+  std::string day;
+  std::string hour;
+  std::string minute;
+  std::string second;
+  this->toYYYYMMDDhhmmss(year, month, day, hour, minute, second);
+
+  // Copy the incoming string
+  std::string newStr = templatedString;
+
+  // Use regex_replace to replace the strings
+  newStr = std::regex_replace(newStr, std::regex("%Y"), year);
+  newStr = std::regex_replace(newStr, std::regex("%m"), month);
+  newStr = std::regex_replace(newStr, std::regex("%d"), day);
+  newStr = std::regex_replace(newStr, std::regex("%H"), hour);
+  newStr = std::regex_replace(newStr, std::regex("%M"), minute);
+  newStr = std::regex_replace(newStr, std::regex("%S"), second);
+
+  return newStr;
 }
 
 // -----------------------------------------------------------------------------

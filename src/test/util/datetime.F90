@@ -1,8 +1,8 @@
 ! (C) Copyright 2009-2016 ECMWF.
 !
 ! This software is licensed under the terms of the Apache Licence Version 2.0
-! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
-! In applying this licence, ECMWF does not waive the privileges and immunities 
+! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+! In applying this licence, ECMWF does not waive the privileges and immunities
 ! granted to it by virtue of its status as an intergovernmental organisation nor
 ! does it submit to any jurisdiction.
 
@@ -288,6 +288,26 @@ TEST(test_datetime_seconds_since_jan1)
   ! Below, the number 138 comes from the number of elapsed days before May 18th,
   ! which was the 139th day of 2020
   CHECK_EQUAL(seconds_since_jan1, 45 + 27 * 60 + 3 * 3600 + 138 * 86400)
+END_TEST
+
+!> Test format string
+TEST(format_string)
+  use datetime_mod
+  implicit none
+  character(len=20) :: fstring
+  type(datetime) :: fdt
+  integer :: seconds_since_jan1
+  character(len=1024) :: filename_to_resolve
+
+  fstring="2020-05-18T03:27:45Z"
+  call datetime_create(fstring, fdt)
+
+  ! Set (for example) a filename to be changes
+  filename_to_resolve = "file_%Y%m%dT%H%M%S.nc4"
+  call datetime_format_string(fdt, filename_to_resolve)
+
+  ! Check that the filename was resolved
+  CHECK_EQUAL(trim(filename_to_resolve), "file_20200518T032745.nc4")
 END_TEST
 
 END_TESTSUITE

@@ -1,9 +1,9 @@
 /*
  * (C) Copyright 2009-2020 ECMWF.
- * 
+ *
  * This software is licensed under the terms of the Apache Licence Version 2.0
- * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
- * In applying this licence, ECMWF does not waive the privileges and immunities 
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ * In applying this licence, ECMWF does not waive the privileges and immunities
  * granted to it by virtue of its status as an intergovernmental organisation nor
  * does it submit to any jurisdiction.
  */
@@ -171,6 +171,16 @@ namespace {
     util::DateTime d4(2011, 9, 16, 9, 0, 0);
     EXPECT((d4 - longDur).toString() == "1066-10-14T09:00:00Z");
     EXPECT((d4 + longDur).toString() == "2956-08-18T09:00:00Z");
+  }
+
+// -----------------------------------------------------------------------------
+
+  CASE("format_string") {
+    std::string s1("2011-09-16T13:55:20Z");
+    util::DateTime d1(s1);
+    std::string filename("file_%Y%m%dT%H%M%S.nc4");
+    std::string expected("file_20110916T135520.nc4");
+    EXPECT(d1.formatString(filename) == expected);
   }
 
 // -----------------------------------------------------------------------------
