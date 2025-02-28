@@ -1,6 +1,48 @@
-files:
-  - "testinput/ens_forecast_1.yaml"
-  - "testinput/ens_forecast_2.yaml"
+members:
+  # Forecast (member 1)
+  # -------------------
+  - forecast length: P2D
+    initial condition:
+      date: 2009-12-31T00:00:00Z
+      filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
+    model:
+      name: QG
+      tstep: PT1H
+    output:
+      datadir: Data
+      date: 2009-12-31T00:00:00Z
+      exp: mem001.ensforecast
+      steps: ["PT1H", "PT4H", "PT34H", "PT35H"]
+      type: fc
+    prints:
+      frequency: PT3H
+    geometry:
+      nx: 40
+      ny: 20
+      depths: [4500.0, 5500.0]
+
+  # Forecast (member 2)
+  # -------------------
+  - forecast length: P2D
+    initial condition:
+      date: 2009-12-31T00:00:00Z
+      filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
+    model:
+      name: QG
+      tstep: PT1H
+    output:
+      datadir: Data
+      date: 2009-12-31T00:00:00Z
+      exp: mem002.ensforecast
+      times: ["2009-12-31T00:00:00Z", "2009-12-31T04:00:00Z",
+              "2010-01-01T08:00:00Z", "2010-01-01T12:00:00Z"]
+      type: fc
+    prints:
+      frequency: PT3H
+    geometry:
+      nx: 40
+      ny: 20
+      depths: [4500.0, 5500.0]
 
 test:
   reference filename: testoutput/ens_forecast.test

@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2018-2020 UCAR
+ * (C) Copyright 2018-2025 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -17,30 +17,13 @@
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/Logger.h"
-#include "oops/util/parameters/Parameter.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
 
 // -----------------------------------------------------------------------------
 
-/// \brief Top-level options taken by the EnsembleApplication application.
-template <typename APP>
-class EnsembleApplicationParameters : public ApplicationParameters {
-  OOPS_CONCRETE_PARAMETERS(EnsembleApplicationParameters, ApplicationParameters)
-
- public:
-  /// Parameters containing a list of YAML files for each ensemble member to be processed.
-  RequiredParameter<std::vector<std::string>> files{"files", this};
-};
-
-// -----------------------------------------------------------------------------
-
 template <typename APP>
 class EnsembleApplication : public Application {
-  typedef EnsembleApplicationParameters<APP> EnsembleApplicationParameters_;
-
  public:
 // -----------------------------------------------------------------------------
   explicit EnsembleApplication(const eckit::mpi::Comm & comm = oops::mpi::world()) :
@@ -49,17 +32,31 @@ class EnsembleApplication : public Application {
   virtual ~EnsembleApplication() {}
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const override {
-//  Deserialize parameters
-    EnsembleApplicationParameters_ params;
-    params.deserialize(fullConfig);
+//  Assert that the config does not contain both files and members
+    if (fullConfig.has("files") && fullConfig.has("members")) {
+      throw eckit::BadParameter("EnsembleApplication: 'files' and 'members' "
+                                "cannot be specified at the same time", Here());
+    }
 
-//  Get the list of YAML files
-    const std::vector<std::string> &files = params.files.value();
-
-    Log::info() << "EnsembleApplication YAML files:" << files << std::endl;
+//  Get the list of configurations
+    std::vector<eckit::LocalConfiguration> memberConfigs;
+    if (fullConfig.has("files")) {
+      // Read the configurations from the files
+      for (const std::string &file : fullConfig.getStringVector("files")) {
+        const eckit::PathName yamlPathFile(file);
+        const eckit::YAMLConfiguration memberConfig(yamlPathFile);
+        memberConfigs.push_back(eckit::LocalConfiguration(memberConfig));
+      }
+    } else if (fullConfig.has("members")) {
+      // Copy the configurations from the members
+      memberConfigs = fullConfig.getSubConfigurations("members");
+    } else {
+      throw eckit::BadParameter("EnsembleApplication: either 'files' or 'members' "
+                                "must be specified in the configuration", Here());
+    }
 
 //  Get the MPI partition
-    const int nmembers = files.size();
+    const int nmembers = memberConfigs.size();
     const int ntasks = this->getComm().size();
     const int mytask = this->getComm().rank();
     const int tasks_per_member = ntasks / nmembers;
@@ -76,12 +73,9 @@ class EnsembleApplication : public Application {
     char const *commName = commNameStr.c_str();
     eckit::mpi::Comm & commMember = this->getComm().split(mymember, commName);
 
-//  Each member uses a different configuration:
-    eckit::PathName confPath = files[mymember-1];
-    eckit::YAMLConfiguration memberConf(confPath);
-
+//  Run each member with the corresponding configuration:
     APP ensapp(commMember);
-    return ensapp.execute(memberConf);
+    return ensapp.execute(memberConfigs[mymember-1]);
   }
 // -----------------------------------------------------------------------------
  private:

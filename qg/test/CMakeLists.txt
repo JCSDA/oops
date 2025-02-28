@@ -62,8 +62,6 @@ list( APPEND qg_testinput
   testinput/eda_4dvar_4.yaml
   testinput/eda_4dvar.yaml
   testinput/eda_4dvar_control_pert.yaml
-  testinput/ens_forecast_1.yaml
-  testinput/ens_forecast_2.yaml
   testinput/ens_forecast.yaml
   testinput/ens_hofx_1.yaml
   testinput/ens_hofx_2.yaml
