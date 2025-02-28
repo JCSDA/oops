@@ -37,10 +37,10 @@ class StateSetSaver : public PostBase<State<MODEL> > {
 
  private:
   const Geometry_ & resol_;
-  const std::vector<util::DateTime> & times_;
   const eckit::mpi::Comm & commTime_;
-  const std::vector<int> & ens_;
   const eckit::mpi::Comm & commEns_;
+  const std::vector<util::DateTime> & times_;
+  const std::vector<int> & ens_;
   std::unique_ptr<StateSet_ > States_;
   size_t stateIndex_ = 0;
   bool initialized_ = false;

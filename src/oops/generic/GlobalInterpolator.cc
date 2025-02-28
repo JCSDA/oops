@@ -134,7 +134,7 @@ GlobalInterpolator::GlobalInterpolator(
   // Extract target coordinates, find which task will be responsible for interpolating to each one
   const auto lonlat = atlas::array::make_view<double, 2>(target_fs_.lonlat());
   const auto ghost = atlas::array::make_view<int, 1>(target_fs_.ghost());
-  for (size_t jj = 0; jj < lonlat.shape(0); ++jj) {
+  for (size_t jj = 0; jj < static_cast<size_t>(lonlat.shape(0)); ++jj) {
     if (ghost(jj) == 0) {
       double lon = lonlat(jj, 0);
       if (lon < 0.0) lon += 360.0;

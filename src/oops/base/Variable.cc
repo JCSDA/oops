@@ -58,8 +58,8 @@ std::string VariableMetaData::dataTypeToString(const ModelDataType & type) {
     case ModelDataType::Real32: return "real32";
     case ModelDataType::Real64: return "real64";
     case ModelDataType::UInt64: return "uint64";
-    return "unknown data type: " + std::to_string(static_cast<int>(type));
   }
+  return "unknown data type: " + std::to_string(static_cast<int>(type));
 }
 
 // -----------------------------------------------------------------------------
@@ -69,8 +69,8 @@ std::string VariableMetaData::variableDomainToString(const ModelVariableDomain &
     case ModelVariableDomain::Atmosphere: return "atmosphere";
     case ModelVariableDomain::Ocean: return "ocean";
     case ModelVariableDomain::Land: return "land";
-    return "unknown model variable domain: " + std::to_string(static_cast<int>(domain));
   }
+  return "unknown model variable domain: " + std::to_string(static_cast<int>(domain));
 }
 
 // -----------------------------------------------------------------------------

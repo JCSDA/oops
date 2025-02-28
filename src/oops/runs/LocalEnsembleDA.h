@@ -483,10 +483,8 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     // Get the MPI partition
 
     eckit::LocalConfiguration inlineParams = fullConfig.getSubConfiguration("inline parameters");
-    const bool HofXOnly = inlineParams.getBool("Compute HofX Only");
     const std::vector<std::string> &files = inlineParams.getStringVector("Forecast configuration");
     const int batchSize = inlineParams.getInt("forecast batch size");
-    const int zpad = inlineParams.getInt("zero padding");
     const std::string pattern = inlineParams.getString("output file pattern");
 
     const int nmembers = files.size();
@@ -516,7 +514,6 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     std::string patchNameStr = "patch_member_" + std::to_string(subrank);
     char const *patchName = patchNameStr.c_str();
     eckit::mpi::Comm & patchMember = this->getComm().split(subrank, patchName);
-    const int subpatch = patchMember.rank();
 
     Log::info() << "size of patchMember/ENS comm is " << patchMember.size() << std::endl;
     //  Each member uses a different configuration:

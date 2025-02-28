@@ -151,7 +151,7 @@ void testStructuredColumnsGaussianCustomDistribution(const eckit::mpi::Comm & co
   EXPECT(grid.name() == "F10");
   EXPECT(grid.uid() == "2734f1f878e2e047d290b3a578fc2927");
   EXPECT(partitioner.type() == "equal_regions");
-  EXPECT(partitioner.nb_partitions() == std::max(2ul, comm.size()) - 1);
+  EXPECT(static_cast<size_t>(partitioner.nb_partitions()) == std::max(2ul, comm.size()) - 1);
   EXPECT(functionspace.type() == "StructuredColumns");
   EXPECT(fieldset.has("owned"));
 
