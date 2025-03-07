@@ -1,0 +1,4 @@
+ETKF:
+  nobs: 10000
+  nens: 50
+  neig: 20
