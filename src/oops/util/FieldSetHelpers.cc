@@ -15,21 +15,20 @@
 #include <tuple>
 
 #include "atlas/array.h"
-#include "atlas/field.h"
 #include "atlas/util/function/VortexRollup.h"
 
 #include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
 #include "eckit/utils/Hash.h"
 
-#include "oops/util/abor1_cpp.h"
 #include "oops/util/FieldSetOperations.h"
 #include "oops/util/FloatCompare.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
 #include "oops/util/RandomField.h"
 
-#define ERR(e, msg) {std::string s(nc_strerror(e)); ABORT(s + " : " + msg);}
+#define ERR(e, msg) {std::string s(nc_strerror(e)); \
+  throw eckit::Exception(s + " : " + msg, Here());}
 
 namespace util {
 
@@ -108,7 +107,7 @@ atlas::FieldSet createRandomFieldSet(const eckit::mpi::Comm & comm,
     } else if (fspace.type() == "Spectral") {
       // Not needed
     } else {
-      ABORT(fspace.type() + " function space not supported yet");
+      throw eckit::Exception(fspace.type() + " function space not supported yet", Here());
     }
   }
 
@@ -263,7 +262,7 @@ atlas::FieldSet createRandomFieldSet(const eckit::mpi::Comm & comm,
         const atlas::functionspace::Spectral fs(fspace);
         fs.scatter(globalField, field);
       } else {
-        ABORT(fspace.type() + " function space not supported yet");
+        throw eckit::Exception(fspace.type() + " function space not supported yet", Here());
       }
     }
 
@@ -375,7 +374,7 @@ void copyFieldSet(const atlas::FieldSet & otherFset, atlas::FieldSet & fset) {
         }
       }
     } else {
-      ABORT("copyFieldSet: wrong rank");
+      throw eckit::Exception("copyFieldSet: wrong rank", Here());
     }
 
     // Copy metadata
@@ -384,6 +383,9 @@ void copyFieldSet(const atlas::FieldSet & otherFset, atlas::FieldSet & fset) {
     // Add field
     fset.add(field);
   }
+
+  // Copy fieldset name
+  fset.name() = otherFset.name();
 }
 
 // -----------------------------------------------------------------------------
@@ -577,7 +579,7 @@ bool compareFieldSets(const eckit::mpi::Comm & comm,
         }
       }
     } else {
-      ABORT("compareFieldSets: wrong rank");
+      throw eckit::Exception("compareFieldSets: wrong rank", Here());
     }
   }
 
@@ -627,7 +629,7 @@ bool compareFieldSets(const atlas::FieldSet & fset1,
         }
       }
     } else {
-      ABORT("compareFieldSets: wrong rank");
+      throw eckit::Exception("compareFieldSets: wrong rank", Here());
     }
   }
   // Comparison successful!
@@ -676,7 +678,7 @@ std::string getGridUid(const atlas::FunctionSpace & fspace) {
   } else if (fspace.type() == "PointCloud") {
     return customUidFromLonLat(fspace);
   } else {
-    ABORT(fspace.type() + " function space not supported yet");
+    throw eckit::Exception(fspace.type() + " function space not supported yet", Here());
     return "";
   }
 }
@@ -693,7 +695,7 @@ std::string getGridUid(const atlas::FieldSet & fset) {
     // Check that other fields have the same UID
     for (const auto & field : fset) {
       if (getGridUid(field.functionspace()) != uid) {
-        ABORT("All fields should have the same grid");
+        throw eckit::Exception("All fields should have the same grid", Here());
       }
     }
 
@@ -1132,7 +1134,7 @@ void readFieldSet(const eckit::mpi::Comm & comm,
         if ((retval = nc_close(ncid))) ERR(retval, ncfilepath);
       }
     } else {
-      ABORT(fspace.type() + " function space not supported yet");
+      throw eckit::Exception(fspace.type() + " function space not supported yet", Here());
     }
 
     // Scatter data from main processor
@@ -1614,7 +1616,7 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
         if ((retval = nc_close(ncid))) ERR(retval, ncfilepath);
       }
     } else {
-      ABORT(fspace.type() + " function space not supported yet");
+      throw eckit::Exception(fspace.type() + " function space not supported yet", Here());
     }
   }
 }
