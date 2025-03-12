@@ -31,7 +31,7 @@ namespace test {
   };
 
   void compareWeights(const Eigen::VectorXf & wa, const Eigen::VectorXf & wa_f,
-                      const Eigen::VectorXf & Wa, const Eigen::VectorXf & Wa_f) {
+                      const Eigen::MatrixXf & Wa, const Eigen::MatrixXf & Wa_f) {
     for (int i = 0; i < wa.rows(); ++i) {
       EXPECT(oops::is_close_absolute(wa(i), wa_f(i), 1.0e-6f));
     }
