@@ -350,6 +350,33 @@ void GeometryData::setGlobalTree() {
   }
   ASSERT(counter == nb_global);
 
+  // Hacky step:
+  // When the source grid is singular and has multiple coinciding grid points, (e.g., a regular
+  // latlon grid at the poles), then many nodes of globalNodeTree_ will be at the same physical
+  // location, and the KD-tree no longer becomes useful for proximity-based search. Thus, we need
+  // to slightly spread out degenerate grid points. Because this is (so far) a rare scenario in
+  // JEDI, and because it's unclear how to correctly handle degenerate points in full generality,
+  // we write code below to address specific pathological cases.
+  //
+  // Pathological case of a structured grid with degenerate points at the poles -- shift points
+  // away from the poles by a small amount:
+  if (fspace_.type() == "StructuredColumns") {
+    const atlas::functionspace::StructuredColumns structuredcolumns(fspace_);
+    const atlas::RegularGrid rg(structuredcolumns.grid());
+    if (rg) {
+      const double eps_check = 1e-14;
+      const double shift = 1e-6;  // large epsilon to be robust to trigonometry
+      for (auto & lonlat : nodes) {
+        double & lat = lonlat[1];
+        if (abs(lat - 90.0) < eps_check) {
+          lat = (90.0 - shift);
+        } else if (abs(lat + 90.0) < eps_check) {
+          lat = -(90.0 - shift);
+        }
+      }
+    }
+  }
+
   // Create global kd-tree
   globalNodeTree_.build(nodes, tasks);
 }
