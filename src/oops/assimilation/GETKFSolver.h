@@ -42,9 +42,9 @@ namespace oops {
 /*!
  * An implementation of the GETKF from Lei 2018 JAMES
  *
- * Lei, L., Whitaker, J. S., & Bishop, C. ( 2018). Improving assimilation 
- * of radiance observations by implementing model space localization in an 
- * ensemble Kalman filter. Journal of Advances in Modeling Earth Systems, 10, 
+ * Lei, L., Whitaker, J. S., & Bishop, C. ( 2018). Improving assimilation
+ * of radiance observations by implementing model space localization in an
+ * ensemble Kalman filter. Journal of Advances in Modeling Earth Systems, 10,
  * 3221– 3232. https://doi.org/10.1029/2018MS001468
  */
 template <typename MODEL, typename OBS>
@@ -311,6 +311,10 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
       }
     }
   }
+  for (size_t iens = 0; iens < nanal_; ++iens) {
+    (this->invVarR_)->mask(this->HZb_[iens]);
+    this->HZb_[iens].mask(*(this->invVarR_));
+  }
   return yb_mean;
 }
 
@@ -440,9 +444,6 @@ void GETKFSolver<MODEL, OBS>::measurementUpdate(const IncrementEnsemble4D_ & bkg
   Departures_ locvector(this->obspaces_);
   locvector.ones();
   this->obsloc().computeLocalization(i, locvector);
-  for (size_t iens = 0; iens < nanal_; ++iens) {
-     (this->invVarR_)->mask(this->HZb_[iens]);
-  }
   locvector.mask(*(this->invVarR_));
   const Eigen::VectorXd local_omb_vec = this->omb_.packEigen(locvector);
 
