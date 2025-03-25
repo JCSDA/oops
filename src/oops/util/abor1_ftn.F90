@@ -13,7 +13,7 @@
 subroutine abor1_ftn(cderror)
 use, intrinsic :: iso_c_binding, only: c_char
 use string_f_c_mod
-#ifdef NAG
+#ifdef NAGFOR
 use f90_unix_proc, only: exit
 #endif
 implicit none
