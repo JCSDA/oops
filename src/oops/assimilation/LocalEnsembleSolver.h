@@ -100,7 +100,7 @@ class LocalEnsembleSolver {
   Observations_ computeHofXNonLinear(const StateEnsemble4D_ & xx, size_t iteration,
                       bool readFromDisk);
 
-  /// update background ensemble \p bg to analysis ensemble \p for all points on this PE
+  /// update background ensemble \p bg to analysis ensemble \p an for all points on this PE
   virtual void measurementUpdate(const IncrementEnsemble4D_ & bg, IncrementEnsemble4D_ & an);
 
   /// update background ensemble \p bg to analysis ensemble \p an at a grid point location \p i
@@ -130,8 +130,8 @@ class LocalEnsembleSolver {
   DeparturesEnsemble_ Yb_;        ///< ensemble perturbations in the observation space;
                                   ///  set in computeHofX method
   std::unique_ptr<ObsErrors_>   R_;        ///< observation errors, set in computeHofX method
-  std::unique_ptr<Departures_> invVarR_;   ///< inverse observation error variance; set in
-                                           ///  computeHofX method
+  std::unique_ptr<Departures_> invVarR_;   ///< inverse observation error variance for assimilated
+                                           ///< observations; set in computeHofX method
   LocalEnsembleSolverParameters options_;
 
   const StateSet_ & xbmean_;     ///< ensemble mean or a control member that will be used to
@@ -139,6 +139,21 @@ class LocalEnsembleSolver {
   const Variables incvars_;
   const eckit::LocalConfiguration obsconf_;  // configuration for observations
   const eckit::LocalConfiguration observersconf_;  // configuration for observations.observers
+
+  /// Create a mask that excludes observations which will not be assimilated (e.g. failed QC) using
+  /// a single ensemble member.
+  void initializeAssimilatedMask() {
+    // Inverse variances have missing values where obs have failed QC, though R_
+    // is only valid for a single ensemble member
+    invVarR_ = std::make_unique<Departures_>(R_->inverseVariance());
+  }
+  /// Update departures for assimilated observations by masking with \p mask
+  /// (e.g. nonzero QC flags or missing obs) - should only be done in the
+  /// computeHofX method.
+  void updateAssimilatedMask(const Departures_ & mask) { invVarR_->mask(mask); }
+  /// Apply the assimilated mask to a departures vector \p dep - missing values
+  /// in the mask will become missing in the departures.
+  void applyAssimilatedMask(Departures_ & dep) const { dep.mask(*invVarR_); }
 
  private:
   bool useLinearObserver_;
@@ -348,8 +363,7 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofXLinear(
     // QC flags and Obs errors are set to that of the H(mean(Xb))
     R_->save("ObsError");
   }
-  // set inverse variances
-  invVarR_.reset(new Departures_(R_->inverseVariance()));
+  initializeAssimilatedMask();
 
   // calculate H(x) ensemble mean
   Observations_ yb_mean(obsens.mean());
@@ -360,20 +374,23 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofXLinear(
   //                              then using H(xbmean_) is expected by downstream applications
   if (nens == 1) {yb_mean = y_mean_xb;}
 
-  // mask H(x) ensemble perturbations
+  // mask H(x) ensemble perturbations - i.e. make sure that obs that have
+  // failed QC on one ensemble member fail for all (this is for the case where
+  // different QC procedures are done on different ensemble members)
   for (size_t iens = 0; iens < nens; ++iens) {
     if (readFromDisk) {
       Yb_[iens] = obsens[iens] - yb_mean;
     }
-    invVarR_->mask(Yb_[iens]);
-    Yb_[iens].mask(*invVarR_);
+    updateAssimilatedMask(Yb_[iens]);
+    applyAssimilatedMask(Yb_[iens]);
   }
 
-  // calculate obs departures and mask with qc flag
+  // calculate obs departures
   Observations_ yobs(obspaces_, "ObsValue");
   omb_ = yobs - yb_mean;
-  invVarR_->mask(omb_);
-  omb_.mask(*invVarR_);
+  // Need to mask out any missing departures as well as those that have failed QC
+  updateAssimilatedMask(omb_);
+  applyAssimilatedMask(omb_);
 
   // return mean H(x)
   return yb_mean;
@@ -470,8 +487,7 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofXNonLinear(
     // QC flags and Obs errors are set to that of the H(mean(Xb))
     R_->save("ObsError");
   }
-  // set inverse variances
-  invVarR_.reset(new Departures_(R_->inverseVariance()));
+  initializeAssimilatedMask();
 
   // calculate H(x) ensemble mean
   Observations_ yb_mean(obsens.mean());
@@ -482,18 +498,21 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofXNonLinear(
   //                              then using H(xbmean_) is expected by downstream applications
   if (nens == 1) {yb_mean = y_mean_xb;}
 
-  // calculate H(x) ensemble perturbations
+  // mask H(x) ensemble perturbations - i.e. make sure that obs that have
+  // failed QC on one ensemble member fail for all (this is for the case where
+  // different QC procedures are done on different ensemble members)
   for (size_t iens = 0; iens < nens; ++iens) {
     Yb_[iens] = obsens[iens] - yb_mean;
-    invVarR_->mask(Yb_[iens]);
-    Yb_[iens].mask(*invVarR_);
+    updateAssimilatedMask(Yb_[iens]);
+    applyAssimilatedMask(Yb_[iens]);
   }
 
-  // calculate obs departures and mask with qc flag
+  // calculate obs departures
   Observations_ yobs(obspaces_, "ObsValue");
   omb_ = yobs - yb_mean;
-  invVarR_->mask(omb_);
-  omb_.mask(*invVarR_);
+  // Need to mask out any missing departures as well as those that have failed QC
+  updateAssimilatedMask(omb_);
+  applyAssimilatedMask(omb_);
 
   // return mean H(x)
   return yb_mean;

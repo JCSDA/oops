@@ -199,7 +199,7 @@ void GETKFSolverPert<MODEL, OBS>::measurementUpdate(const IncrementEnsemble4D_ &
   Departures_ locvector(this->obspaces_);
   locvector.ones();
   this->obsloc().computeLocalization(i, locvector);
-  locvector.mask(*(this->invVarR_));
+  this->applyAssimilatedMask(locvector);
   const Eigen::VectorXd local_omb_vec = this->omb_.packEigen(locvector);
 
   if (local_omb_vec.size() == 0) {
