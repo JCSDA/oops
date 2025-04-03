@@ -430,7 +430,6 @@ void test_write_read_double_1D() {
     }
 
     util::atlasArrayReadData(netcdfGeneralIDs,
-                             dimSizes,
                              netcdfVarIDs[0],
                              f2view);
     int retval;
@@ -713,26 +712,22 @@ void test_write_read_multiple() {
         if (fld.shape().size() == 1) {
           auto fview = atlas::array::make_view<double, 1>(fld);
           util::atlasArrayReadData(netcdfGeneralIDs,
-                                   dimSizesForEveryVar[t],
                                    netcdfVarIDs[t],
                                    fview);
         } else if (fld.shape().size() == 2) {
           auto fview = atlas::array::make_view<double, 2>(fld);
           util::atlasArrayReadData(netcdfGeneralIDs,
-                                   dimSizesForEveryVar[t],
                                    netcdfVarIDs[t],
                                    fview);
         } else if (fld.shape().size() == 3) {
           auto fview = atlas::array::make_view<double, 3>(fld);
           util::atlasArrayReadData(netcdfGeneralIDs,
-                                   dimSizesForEveryVar[t],
                                    netcdfVarIDs[t],
                                    fview);
         }
       } else if (fld.datatype().str() == "int32") {
         auto fview = atlas::array::make_view<int, 1>(fld);
         util::atlasArrayReadData(netcdfGeneralIDs,
-                                 dimSizesForEveryVar[t],
                                  netcdfVarIDs[t],
                                  fview);
       }

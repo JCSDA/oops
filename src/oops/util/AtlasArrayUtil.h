@@ -129,57 +129,19 @@ void atlasArrayInquire(
     std::vector<int> & netcdfVarIDs,
     std::vector<std::vector<int>> & netcdf_dim_varIDs);
 
-/// \brief - reads variable data that is 1 dimensional and of double type
+/// \brief - reads variable data that is Rank-dimensional and of Value type
+template <typename Value, int Rank>
 void atlasArrayReadData(
     const std::vector<int> & netcdfGeneralIDs,
-    const std::vector<atlas::idx_t> & dimSizes,
     const int & varID,
-    atlas::array::ArrayView<double, 1> & arrayInOut);
+    atlas::array::ArrayView<Value, Rank> & arrayInOut);
 
-/// \brief - reads variable data that is 2 dimensional and of double type
-void atlasArrayReadData(
-    const std::vector<int> & netcdfGeneralIDs,
-    const std::vector<atlas::idx_t> & dimSizes,
-    const int & varID,
-    atlas::array::ArrayView<double, 2> & arrayInOut);
-
-/// \brief - reads variable data that is 3 dimensional and of double type
-void atlasArrayReadData(
-    const std::vector<int> & netcdfGeneralIDs,
-    const std::vector<atlas::idx_t> & dimSizes,
-    const int & varID,
-    atlas::array::ArrayView<double, 3> & arrayInOut);
-
-/// \brief - reads variable data that is 1 dimensional and of integer type
-void atlasArrayReadData(
-    const std::vector<int> & netcdfGeneralIDs,
-    const std::vector<atlas::idx_t> & dimSizes,
-    const int & varID,
-    atlas::array::ArrayView<int, 1> & arrayInOut);
-
-/// \brief - writes variable data that is 1 dimensional and of double type
+/// \brief - writes variable data that is Rank-dimensional and of Value type
+template <typename Value, int Rank>
 void atlasArrayWriteData(
     const std::vector<int> & netcdfGeneralIDs,
     const int & varID,
-    atlas::array::ArrayView<const double, 1> & arrayIn);
-
-/// \brief - writes variable data that is 2 dimensional and of double type
-void atlasArrayWriteData(
-    const std::vector<int> & netcdfGeneralIDs,
-    const int & varID,
-    atlas::array::ArrayView<const double, 2> & arrayIn);
-
-/// \brief - writes variable data that is 3 dimensional and of double type
-void atlasArrayWriteData(
-    const std::vector<int> & netcdfGeneralIDs,
-    const int & varID,
-    atlas::array::ArrayView<const double, 3> & arrayIn);
-
-/// \brief - writes variable data that is 3 dimensional and of integer type
-void atlasArrayWriteData(
-    const std::vector<int> & netcdfGeneralIDs,
-    const int & varID,
-    atlas::array::ArrayView<const int, 1> & arrayIn);
+    atlas::array::ArrayView<const Value, Rank> & arrayIn);
 
 //-----------------------------------------------------------------------------
 // Implementation
@@ -434,6 +396,22 @@ void setAttribute(eckit::LocalConfiguration & conf, const std::string & varname,
   }
 
   conf.set(varname, aconfs);
+}
+
+template <typename Value, int Rank>
+void atlasArrayReadData(const std::vector<int> & netcdfGeneralIDs,
+                        const int & varID,
+                        atlas::array::ArrayView<Value, Rank> & arrayInOut) {
+  int retval;
+  if ((retval = nc_get_var(netcdfGeneralIDs[0], varID, arrayInOut.data()))) ERR1(retval);
+}
+
+template <typename Value, int Rank>
+void atlasArrayWriteData(const std::vector<int> & netcdfGeneralIDs,
+                         const int & varID,
+                         atlas::array::ArrayView<const Value, Rank> & arrayIn) {
+  int retval;
+  if ((retval = nc_put_var(netcdfGeneralIDs[0], varID, arrayIn.data()))) ERR1(retval);
 }
 
 }  // namespace util
