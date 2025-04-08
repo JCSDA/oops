@@ -31,6 +31,8 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
 
+#include "oops/util/FieldSetOperations.h"
+
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------
@@ -112,6 +114,13 @@ void FieldsQG::zero(const util::DateTime & time) {
 // -----------------------------------------------------------------------------
 void FieldsQG::ones() {
   qg_fields_ones_f90(keyFlds_);
+}
+// -----------------------------------------------------------------------------
+void FieldsQG::sqrt() {
+  atlas::FieldSet fields;
+  toFieldSet(fields);
+  util::sqrtFieldSet(fields);
+  fromFieldSet(fields);
 }
 // -----------------------------------------------------------------------------
 void FieldsQG::axpy(const double & zz, const FieldsQG & rhs) {

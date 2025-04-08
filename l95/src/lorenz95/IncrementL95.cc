@@ -111,6 +111,10 @@ void IncrementL95::ones() {
   fld_.ones();
 }
 // -----------------------------------------------------------------------------
+void IncrementL95::sqrt() {
+  fld_.sqrt();
+}
+// -----------------------------------------------------------------------------
 void IncrementL95::dirac(const eckit::Configuration & conf) {
   fld_.dirac(conf);
 }

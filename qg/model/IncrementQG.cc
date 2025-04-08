@@ -110,6 +110,10 @@ void IncrementQG::ones() {
   fields_->ones();
 }
 // -----------------------------------------------------------------------------
+void IncrementQG::sqrt() {
+  fields_->sqrt();
+}
+// -----------------------------------------------------------------------------
 void IncrementQG::axpy(const double & zz, const IncrementQG & dx,
                        const bool check) {
   ASSERT(!check || this->validTime() == dx.validTime());

@@ -455,6 +455,47 @@ template <typename MODEL> void testIncrementRmsByVariableByLevel() {
 }
 
 // -----------------------------------------------------------------------------
+template <typename MODEL> void testIncrementSqrt() {
+  typedef IncrementFixture<MODEL>   Test_;
+  typedef oops::Increment<MODEL>    Increment_;
+
+  // create Increment to test sqrt function error trap catches negative elements
+  Increment_ dx_neg(Test_::resol(), Test_::ctlvars(), Test_::time());
+  dx_neg.ones();
+  dx_neg *= -1;
+
+  EXPECT_THROWS_AS(dx_neg.sqrt(), eckit::Exception);
+
+
+  // create Increment to test sqrt function doesn't throw exception on zero elements
+  Increment_ dx_zero(Test_::resol(), Test_::ctlvars(), Test_::time());
+  dx_zero.zero();
+  dx_zero.sqrt();
+
+  EXPECT(dx_zero.norm() == 0.0);
+
+
+  // create Increment to check the square root function works on positive elements
+  Increment_ dx1(Test_::resol(), Test_::ctlvars(), Test_::time());
+  dx1.ones();
+  dx1 *= 2.0;
+
+  // make a copy of increment to compare against
+  Increment_ dx2(dx1);
+
+  // multiply increment dx1 by 2
+  dx1 *= 2.0;
+  // square root the elements in dx1 to get back to 2
+  dx1.sqrt();
+
+  // if the sqrt function works correctly, the result dx2 - dx1 should be zero
+  // and therefore dx2.norm() should be equal to 0.
+  dx2 -= dx1;
+
+  EXPECT(dx2.norm() == 0.0);
+}
+
+// -----------------------------------------------------------------------------
 
 template <typename MODEL> void testIncrementSerialize() {
   typedef IncrementFixture<MODEL>   Test_;
@@ -637,6 +678,8 @@ class Increment : public oops::Test {
       { testIncrementAtlasInterface<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/rmsByVariableByLevel")
       { testIncrementRmsByVariableByLevel<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/testIncrementSqrt")
+      { testIncrementSqrt<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementTriangle")
       { testIncrementTriangle<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementOpPlusEq")

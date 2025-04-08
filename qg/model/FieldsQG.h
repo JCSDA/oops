@@ -64,6 +64,7 @@ class FieldsQG : public util::Printable,
   void zero();
   void zero(const util::DateTime &);
   void ones();
+  void sqrt();
   FieldsQG & operator=(const FieldsQG &);
   FieldsQG & operator+=(const FieldsQG &);
   FieldsQG & operator-=(const FieldsQG &);

@@ -81,6 +81,7 @@ class Increment : public oops::GeneralizedDepartures,
   void zero(const util::DateTime & date);
   /// Set this Increment to ones (used in tests)
   void ones();
+  void sqrt();
   /// Set Increment according to the configuration (used in Dirac application)
   void dirac(const eckit::Configuration &);
 
@@ -248,6 +249,17 @@ void Increment<MODEL>::ones() {
   if (fset_) fset_->clear();
   increment_->ones();
   Log::trace() << "Increment<MODEL>::ones done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::sqrt() {
+  Log::trace() << "Increment<MODEL>::sqrt starting" << std::endl;
+  util::Timer timer(classname(), "sqrt");
+  if (fset_) fset_->clear();
+  increment_->sqrt();
+  Log::trace() << "Increment<MODEL>::sqrt done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

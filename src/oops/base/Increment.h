@@ -226,7 +226,7 @@ std::vector<double> Increment<MODEL>::rmsByVariableByLevel(const Variable & var,
 
   // calculate rms. Note that we need to check for divide by zero
   for (atlas::idx_t k = 0; k < field.shape(1); ++k) {
-    rms[k] = nOwned == 0 ? 0.0 : sqrt(rms[k] / nOwned);
+    rms[k] = nOwned == 0 ? 0.0 : std::sqrt(rms[k] / nOwned);
   }
   Log::trace() << "Increment<MODEL>::rmsByVariableByLevel done" << std::endl;
   return rms;

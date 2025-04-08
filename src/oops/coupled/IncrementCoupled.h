@@ -69,6 +69,9 @@ class IncrementCoupled : public util::Printable {
   void ones();
   double norm() const;
 
+  /// square root both components of the increment
+  void sqrt();
+
   /// Randomize both components of the increment (assuming they are
   /// uncorrelated).
   void random();
@@ -337,6 +340,13 @@ void IncrementCoupled<MODEL1, MODEL2>::ones() {
 
 // -----------------------------------------------------------------------------
 
+template<typename MODEL1, typename MODEL2>
+void IncrementCoupled<MODEL1, MODEL2>::sqrt() {
+  if (dx1_) dx1_->sqrt();
+  if (dx2_) dx2_->sqrt();
+}
+
+// -----------------------------------------------------------------------------
 template<typename MODEL1, typename MODEL2>
 void IncrementCoupled<MODEL1, MODEL2>::accumul(const double & zz, const StateCoupled_ & other) {
   if (dx1_) dx1_->accumul(zz, other.state1());

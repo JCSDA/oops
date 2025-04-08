@@ -61,6 +61,14 @@ void FieldL95::ones() {
   for (int jj = 0; jj < resol_; ++jj) x_[jj] = 1.0;
 }
 // -----------------------------------------------------------------------------
+void FieldL95::sqrt() {
+  for (int jj = 0; jj < resol_; ++jj) {
+    if (x_[jj] < 0) throw eckit::Exception("FieldL95::sqrt(): element at index "
+                                           + std::to_string(jj) + " is negative");
+    x_[jj] = std::sqrt(x_[jj]);
+  }
+}
+// -----------------------------------------------------------------------------
 void FieldL95::dirac(const eckit::Configuration & config) {
 // Get Diracs position
   std::vector<int> ixdir(config.getIntVector("ixdir"));
@@ -161,7 +169,7 @@ void FieldL95::write(std::ofstream & fout) const {
 double FieldL95::rms() const {
   double zz = 0.0;
   for (int jj = 0; jj < resol_; ++jj) zz += x_[jj] * x_[jj];
-  zz = sqrt(zz/resol_);
+  zz = std::sqrt(zz/resol_);
   return zz;
 }
 // -----------------------------------------------------------------------------

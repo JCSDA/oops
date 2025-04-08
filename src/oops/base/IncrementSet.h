@@ -374,8 +374,7 @@ IncrementSet<MODEL> IncrementSet<MODEL>::ens_stddev() const {
     stddev[jt].axpy(rr, pert);
     }
     // Square root to get standard deviation
-    stddev[jt].fieldSet().sqrt();
-    stddev[jt].synchronizeFields();
+    stddev[jt].sqrt();
   }
 
   Log::trace() << "StateSet::stddev done" << std::endl;

@@ -71,6 +71,7 @@ class IncrementL95 : public util::Printable,
   void zero();
   void zero(const util::DateTime &);
   void ones();
+  void sqrt();
   void dirac(const eckit::Configuration &);
   IncrementL95 & operator =(const IncrementL95 &);
   IncrementL95 & operator+=(const IncrementL95 &);
