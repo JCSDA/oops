@@ -56,7 +56,7 @@ int Test::execute(const eckit::Configuration & config) const {
 
 // Generate the argc and argv arguments for unit_test_main(...)
   int argc = 1;
-  char * argv[argc];
+  std::vector<char*> argv(argc);
   char dummy[] = "abcde";
   argv[0] = dummy;
 
@@ -64,7 +64,7 @@ int Test::execute(const eckit::Configuration & config) const {
   Log::trace() << "Registering the unit tests" << std::endl;
   register_tests();
   Log::trace() << "Running the unit tests" << std::endl;
-  int result = eckit::testing::run_tests(argc, argv, false);
+  int result = eckit::testing::run_tests(argc, argv.data(), false);
   Log::trace() << "Finished running the unit tests" << std::endl;
   Log::error() << "Finished running the unit tests, result = " << result << std::endl;
 

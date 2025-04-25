@@ -6,6 +6,7 @@
 module netcdf_utils_mod
 
 use netcdf
+use abor1_mod
 
 implicit none
 private

@@ -10,6 +10,14 @@
 
 !> Prints an error message and stops the execution.
 
+module abor1_mod
+
+implicit none
+private
+public abor1_ftn
+
+contains
+
 subroutine abor1_ftn(cderror)
 use, intrinsic :: iso_c_binding, only: c_char
 use string_f_c_mod
@@ -36,3 +44,6 @@ call abor1_cpp(c_string)
 call exit(1) ! just in case!!!
 
 end subroutine abor1_ftn
+
+end module abor1_mod
+

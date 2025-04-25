@@ -52,6 +52,8 @@ endif()
 
 if( CMAKE_CXX_COMPILER_ID MATCHES "GNU" )
   include( compiler_flags_GNU_CXX )
+elseif( CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM" )
+  include( compiler_flags_Intel_LLVM_CXX )
 elseif( CMAKE_CXX_COMPILER_ID MATCHES "Intel" )
   include( compiler_flags_Intel_CXX )
 elseif( CMAKE_CXX_COMPILER_ID MATCHES "XL" )

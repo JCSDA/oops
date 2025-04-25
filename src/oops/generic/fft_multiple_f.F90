@@ -8,7 +8,6 @@
 
 !--
 
-
 subroutine fft_gp2spe(ds_mfft, size_mfft, no_seq, no_el_seq) bind(c)
 
   use iso_c_binding
@@ -18,6 +17,7 @@ subroutine fft_gp2spe(ds_mfft, size_mfft, no_seq, no_el_seq) bind(c)
   !--
 
   implicit none
+  external fft_gpoint2spectral_f
 
   !--
 
@@ -52,6 +52,7 @@ subroutine fft_spe2gp(ds_mfft, size_mfft, no_seq, no_el_seq) bind(c)
   !--
 
   implicit none
+  external fft_spectral2gpoint_f
 
   !--
 

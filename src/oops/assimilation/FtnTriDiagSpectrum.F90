@@ -15,8 +15,11 @@ subroutine tridiagev(nn, diag, subd, eval, evec) bind(c,name='FtnTriDiagSpectrum
 
 use iso_c_binding
 use kinds
+use abor1_mod
 
 implicit none
+external dsteqr
+
 integer(c_int), intent(in) :: nn              !< Size of matrix
 real(c_double), intent(in) :: diag(nn)        !< Diagonal elements
 real(c_double), intent(in) :: subd(nn-1)      !< Sub-diagonal elements
