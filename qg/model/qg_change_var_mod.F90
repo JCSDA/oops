@@ -17,6 +17,7 @@ use qg_fields_mod
 use oops_variables_mod
 
 implicit none
+external abor1_ftn
 
 private
 public :: qg_change_var_registry

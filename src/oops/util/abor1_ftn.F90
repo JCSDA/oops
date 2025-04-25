@@ -10,13 +10,13 @@
 
 !> Prints an error message and stops the execution.
 
-module abor1_mod
+!module abor1_mod
 
-implicit none
-private
-public abor1_ftn
+!implicit none
+!private
+!public abor1_ftn
 
-contains
+!contains
 
 subroutine abor1_ftn(cderror)
 use, intrinsic :: iso_c_binding, only: c_char
@@ -45,5 +45,5 @@ call exit(1) ! just in case!!!
 
 end subroutine abor1_ftn
 
-end module abor1_mod
+!end module abor1_mod
 

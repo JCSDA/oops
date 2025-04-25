@@ -26,6 +26,7 @@ use random_mod
 use string_f_c_mod
 
 implicit none
+external abor1_ftn
 
 private
 public :: qg_obsdb

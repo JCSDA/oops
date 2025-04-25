@@ -12,6 +12,7 @@ use kinds
 use qg_constants_mod
 
 implicit none
+external abor1_ftn
 
 private
 public :: xy_to_lonlat,lonlat_to_xy

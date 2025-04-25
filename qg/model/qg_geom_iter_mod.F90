@@ -13,6 +13,7 @@ use kinds
 use qg_geom_mod
 
 implicit none
+external abor1_ftn
 
 private
 public :: qg_geom_iter

@@ -13,10 +13,10 @@ use fckit_configuration_module, only: fckit_configuration
 use, intrinsic :: iso_c_binding
 use kinds
 use random_mod
-use abor1_mod
 use fckit_log_module, only : fckit_log
 
 implicit none
+external abor1_ftn
 private
 
 integer, parameter :: max_string = 800

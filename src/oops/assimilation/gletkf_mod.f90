@@ -21,7 +21,6 @@ module letkf
 !$$$
 
 use iso_c_binding
-use abor1_mod
 
 implicit none
 
@@ -124,7 +123,7 @@ subroutine letkf_core(nobsl,hxens,hxens_orig,dep,wts_ensmean,wts_ensperts,&
 !$$$ end documentation block
 
 implicit none
-external dgemm, dsyevd, sgemm, ssyevd
+external dgemm, dsyevd, sgemm, ssyevd, abor1_ftn
 
 integer(i_kind), intent(in) :: nobsl,nanals,neigv
 real(r_kind),dimension(nobsl),intent(in ) :: rdiaginv_loc

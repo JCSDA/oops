@@ -14,9 +14,9 @@ use, intrinsic :: iso_c_binding
 use kinds
 use oops_variables_mod
 use fckit_log_module, only : fckit_log
-use abor1_mod
 
 implicit none
+external abor1_ftn
 private
 
 integer, parameter :: var_length = 10

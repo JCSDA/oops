@@ -19,6 +19,7 @@ use qg_obsvec_mod
 use oops_variables_mod
 
 implicit none
+external abor1_ftn
 
 private
 public :: qg_wspeed_equiv,qg_wspeed_equiv_tl,qg_wspeed_equiv_ad, &

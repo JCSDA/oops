@@ -12,7 +12,7 @@ set( CMAKE_CXX_FLAGS_RELEASE     "-O3" )
 # DEBUG FLAGS
 ####################################################################
 
-set( CMAKE_CXX_FLAGS_DEBUG       "-O0 -g -ffp-exception-behavior=strict -ftrapping-math" )
+set( CMAKE_CXX_FLAGS_DEBUG       "-O0 -g -ffp-exception-behavior=strict -ftrapping-math -Wall" )
 
 ####################################################################
 # RELEASE WITH DEBUG INFO (DEFAULT)

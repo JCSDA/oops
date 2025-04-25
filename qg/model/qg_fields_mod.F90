@@ -32,6 +32,7 @@ use qg_tools_mod
 use random_mod
 
 implicit none
+external abor1_ftn
 
 private
 public :: rseed

@@ -17,6 +17,7 @@ use netcdf
 use qg_constants_mod
 
 implicit none
+external abor1_ftn
 
 private
 public :: genfilename,ncerr,baroclinic_instability,large_vortices

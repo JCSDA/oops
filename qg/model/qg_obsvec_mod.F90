@@ -15,6 +15,7 @@ use missing_values_mod
 use random_mod
 
 implicit none
+external abor1_ftn
 
 private
 public :: qg_obsvec

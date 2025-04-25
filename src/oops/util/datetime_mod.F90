@@ -14,7 +14,6 @@ use, intrinsic :: iso_c_binding, only: c_ptr, c_null_ptr, c_int, &
      & c_int64_t, c_char, c_associated
 use string_f_c_mod  ! TODO: replace with fckit equivalent (in fckit_c_interop_module)
 use duration_mod
-use abor1_mod
 
 implicit none
 private
@@ -63,6 +62,7 @@ contains
 subroutine datetime_create(fstring, self)
 use fckit_log_module, only : fckit_log
 implicit none
+external abor1_ftn
 type(datetime), intent(out)  :: self
 character(len=*), intent(in) :: fstring
 character(kind=c_char,len=1), allocatable :: cstring(:)
@@ -87,6 +87,7 @@ end subroutine datetime_create
 
 subroutine datetime_delete(self)
 implicit none
+external abor1_ftn
 type(datetime), intent(inout) :: self
 
 if (c_associated(self%ptr)) then
@@ -315,6 +316,7 @@ end subroutine f_c_push_to_datetime_vector
 
 subroutine datetime_format_string(fstring, self)
 implicit none
+external abor1_ftn
 type(datetime), intent(inout) :: self
 character(len=*), intent(inout)  :: fstring
 character(kind=c_char,len=1), allocatable :: cstring(:)
