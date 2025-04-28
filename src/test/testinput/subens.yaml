@@ -1,0 +1,107 @@
+test cases:
+# KGO cases
+- test case:
+    name: Contiguous
+    subensemble splitter:
+      number of subensembles: 3
+      splitting method: Contiguous
+    location of ones: [2, 3, 4, 5]
+    excluded members: [0, 1]
+
+- test case:
+    name: Random, no seed
+    subensemble splitter:
+      number of subensembles: 3
+      splitting method: Random
+    location of ones: [0, 1, 4, 5]
+    excluded members: [2, 3]
+
+- test case:
+    name: Random, seeded
+    subensemble splitter:
+      number of subensembles: 3
+      splitting method: Random
+      random seed: 2
+    location of ones: [1, 3, 4, 5]
+    excluded members: [0, 2]
+
+- test case:
+    name: Contiguous (modulated)
+    number of eigenvalues: 2
+    subensemble splitter:
+      number of subensembles: 3
+      splitting method: Contiguous
+    location of ones: [4, 5, 6, 7, 8, 9, 10, 11]
+    excluded members: [0, 1]
+
+- test case:
+    name: Random, no seed (modulated)
+    number of eigenvalues: 2
+    subensemble splitter:
+      number of subensembles: 3
+      splitting method: Random
+      random seed: 0
+    location of ones: [0, 1, 2, 3, 8, 9, 10, 11]
+    excluded members: [2, 3]
+
+- test case:
+    name: Random, seeded (modulated)
+    number of eigenvalues: 2
+    subensemble splitter:
+      number of subensembles: 3
+      splitting method: Random
+      random seed: 2
+    location of ones: [2, 3, 6, 7, 8, 9, 10, 11]
+    excluded members: [0, 2]
+
+# Error handling cases
+- test case:
+    name: Invalid number of eigenvalues
+    number of eigenvalues: 0
+    subensemble splitter:
+      number of subensembles: 3
+    expectExceptionWithMessage: neig cannot be less than 1
+
+- test case:
+    name: Too few subensembles
+    subensemble splitter:
+      number of subensembles: 0
+    expectExceptionWithMessage: nsubens out of bounds, must be in the closed interval [1, nens]
+
+- test case:
+    name: Too many subensembles
+    subensemble splitter:
+      number of subensembles: 7
+    expectExceptionWithMessage: nsubens out of bounds, must be in the closed interval [1, nens]
+
+- test case:
+    name: Does not divide
+    subensemble splitter:
+      number of subensembles: 4
+    expectExceptionWithMessage: nens not divisible by nsubens
+
+- test case:
+    name: Invalid splitting method
+    subensemble splitter:
+      number of subensembles: 3
+      splitting method: Surprise me
+    expectExceptionWithMessage: Splitting method not implemented
+
+- test case:
+    name: Excluded subensemble too large
+    subensemble splitter:
+      number of subensembles: 3
+    excluded subensemble: 3
+    expectExceptionWithMessage: Excluded subensemble is not in the valid interval [0, nsubens)
+
+# Testing application of projection
+- test case:
+    name: Unmodulated projection demo
+    subensemble splitter:
+      number of subensembles: 3
+
+- test case:
+    name: Modulated projection demo
+    number of eigenvalues: 2
+    subensemble splitter:
+      number of subensembles: 3

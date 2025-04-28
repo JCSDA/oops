@@ -88,6 +88,8 @@ oops/assimilation/SaddlePointMinimizer.h
 oops/assimilation/SaddlePointPrecondMatrix.h
 oops/assimilation/SaddlePointVector.h
 oops/assimilation/SpectralLMP.h
+oops/assimilation/SubensembleSplitter.cc
+oops/assimilation/SubensembleSplitter.h
 oops/assimilation/TriDiagSolve.h
 oops/assimilation/TriDiagSpectrum.h
 oops/assimilation/UpHessSolve.h
@@ -594,6 +596,7 @@ list( APPEND oops_test_input
   test/testinput/pushstringvector.yaml
   test/testinput/random.yaml
   test/testinput/spectrallmp.yaml
+  test/testinput/subens.yaml
   test/testinput/unstructured_global_interpolator.yaml
   test/testinput/unstructured_interpolator.yaml
   test/testinput/variables.yaml
@@ -1038,6 +1041,11 @@ ecbuild_add_test( TARGET  test_assimilation_solvematrixequation
 ecbuild_add_test( TARGET  test_assimilation_spectrallmp
                   SOURCES test/assimilation/SpectralLMP.cc
                   ARGS    "test/testinput/spectrallmp.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_assimilation_subensemble_splitter
+                  SOURCES test/assimilation/SubensembleSplitter.cc
+                  ARGS    "test/testinput/subens.yaml"
                   LIBS    oops )
 
 ecbuild_add_test( TARGET  test_assimilation_testvector3d
