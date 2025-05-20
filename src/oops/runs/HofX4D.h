@@ -28,6 +28,8 @@
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State.h"
 #include "oops/base/StateInfo.h"
+#include "oops/base/StateWriter.h"
+#include "oops/base/StructuredGridPostProcessor.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/ObsDataVector.h"
@@ -81,13 +83,14 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
 
 //  Check that window specified for forecast is at least the same as obs window
     const util::Duration fclength(fullConfig.getString("forecast length"));
+    const util::DateTime bgndate(xx.validTime());
 
-    if (timeWindow.start() < xx.validTime() ||
-        timeWindow.end() > xx.validTime() + fclength) {
+    if (timeWindow.start() < bgndate ||
+        timeWindow.end() > bgndate + fclength) {
         Log::error() << "Observation window can not be outside of forecast window." << std::endl;
         Log::error() << "Obs window: " << timeWindow.start() << " to "
                      << timeWindow.end() << std::endl;
-        Log::error() << "Forecast runs from: " << xx.validTime() << " for "
+        Log::error() << "Forecast runs from: " << bgndate << " for "
                      << fclength << std::endl;
         throw eckit::BadValue("Observation window can not be outside of forecast window.");
     }
@@ -110,6 +113,18 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
 
     const eckit::LocalConfiguration prtConfig = fullConfig.getSubConfiguration("prints");
     post.enrollProcessor(new StateInfo<State_>("fc", prtConfig));
+
+//  Setup forecast outputs if requested
+    if (fullConfig.has("output")) {
+      eckit::LocalConfiguration outConfig(fullConfig, "output");
+      outConfig.set("date", bgndate.toString());
+      post.enrollProcessor(new StateWriter<State_>(outConfig));
+    }
+    if (fullConfig.has("forecast to structured grid")) {
+      eckit::LocalConfiguration structConfig(fullConfig, "forecast to structured grid");
+      structConfig.set("date", bgndate.toString());
+      post.enrollProcessor(new StructuredGridPostProcessor<MODEL, State_>(structConfig, geometry));
+    }
 
 //  Run the model and compute H(x)
     model.forecast(xx, moderr, fclength, post);

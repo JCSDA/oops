@@ -50,6 +50,10 @@ observations:
       interpolation type: default_3
 prints:
   frequency: PT3H
-
+output:
+  datadir: Data
+  exp: forecast.hofx4d
+  frequency: PT1H
+  type: fc
 test:
   reference filename: testoutput/hofx.test
