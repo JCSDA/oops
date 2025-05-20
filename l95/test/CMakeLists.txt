@@ -38,6 +38,7 @@ list( APPEND l95_test_input
   testinput/addincrement.yaml
   testinput/addincrement_scaled.yaml
   testinput/adjointforecast.yaml
+  testinput/departuresensemble.yaml
   testinput/diffstates.yaml
   testinput/eda_3dfgat_1.yaml
   testinput/eda_3dfgat_2.yaml
@@ -291,6 +292,11 @@ ecbuild_add_test( TARGET test_l95_makeobs4d
 #####################################################################
 # interface tests
 #####################################################################
+ecbuild_add_test( TARGET test_l95_departuresensemble
+                 SOURCES executables/TestDeparturesEnsemble.cc
+                 ARGS "testinput/departuresensemble.yaml"
+                  LIBS lorenz95
+                  TEST_DEPENDS test_l95_truth )
 
 ecbuild_add_test( TARGET test_l95_geometry
                   SOURCES executables/TestGeometry.cc

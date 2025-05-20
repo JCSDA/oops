@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2020 UCAR.
+ * (C) Copyright 2020-2025 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -97,8 +97,8 @@ class GETKFSolver : public LocalEnsembleSolver<MODEL, OBS> {
   ///                     (nens*neig, nlocalobs)
   /// \param[in] YbOrig   Ensemble perturbations for the members to be updated (nens, nlocalobs)
   /// \param[in] invvarR  Inverse of observation error variances (nlocalobs)
-  void computeWeights(const Eigen::VectorXd & omb, const Eigen::MatrixXd & Yb,
-                      const Eigen::MatrixXd & YbOrig, const Eigen::VectorXd & invvarR);
+  void computeWeights(const Eigen::VectorXd & omb, const Eigen::MatrixXf & Yb_f,
+                      const Eigen::MatrixXf & YbOrig_f, const Eigen::VectorXd & invvarR);
 
   /// Applies weights and adds posterior inflation
   void applyWeights(const IncrementEnsemble4D_ &, IncrementEnsemble4D_ &,
@@ -164,7 +164,7 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
       for (size_t ieig = 0; ieig < neig_; ++ieig) {
         ytmp.read("hofxm"+std::to_string(iteration)+"_"+std::to_string(ieig+1)+
                       "_"+std::to_string(iens+1));
-        HZb_[ii] = ytmp - yb_mean;
+        HZb_.setData(ii, ytmp - yb_mean);
         ii = ii + 1;
       }
     }
@@ -239,9 +239,13 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
       // mask H(x) ensemble perturbations - i.e. make sure that obs that have
       // failed QC on one ensemble member fail for all (this is for the case where
       // different QC procedures are done on different ensemble members)
+      Departures_ tmpDeps(this->obspaces_);
       for (size_t iens = 0; iens < ens_xx.size(); ++iens) {
-        this->updateAssimilatedMask(this->Yb_[iens]);
-        this->applyAssimilatedMask(this->Yb_[iens]);
+        tmpDeps.zero();
+        tmpDeps = this->Yb_.getData(iens);
+        this->updateAssimilatedMask(tmpDeps);
+        this->applyAssimilatedMask(tmpDeps);
+        this->Yb_.setData(iens, tmpDeps);
       }
 
       // calculate obs departures
@@ -256,6 +260,7 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
       for (size_t iens = 0; iens < ens_xx.size(); ++iens) {
         Log::info() << " GETKFSolver::computeHofX starting ensemble member " << iens+1 << std::endl;
         util::printRunStats("GETKFSolver calculate hofx");
+        tmpDeps.zero();
 
         dx.diff(ens_xx[iens], this->xbmean_);
 
@@ -266,10 +271,11 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
         const LinearModel_ linear_model(std::move(pseudolinearmodel));
         // run linear model on the ensemble perturbation, compute linear H*dx
         linear_model.forecastTL(init_dx, moderrinc, flength, posttl, posttrajtl);
-        linear_hofx.finalizeTL(obsauxinc, this->Yb_[iens]);
+        linear_hofx.finalizeTL(obsauxinc, tmpDeps);
+        (this->Yb_).setData(iens, tmpDeps);
 
         Observations_ tmpObs(yb_mean);
-        tmpObs += this->Yb_[iens];
+        tmpObs += this->Yb_.getData(iens);
         Log::test() << "H(x) for member " << iens+1 << ":" << std::endl << tmpObs << std::endl;
         tmpObs.save("hofx"+std::to_string(iteration)+"_"+std::to_string(iens+1));
 
@@ -282,9 +288,10 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
           // run linear model on the ensemble perturbation, compute linear H*dx
           Increment_ init_dx = Ztmp[ieig][0];
           linear_model.forecastTL(init_dx, moderrinc, flength, posttl, posttrajtl);
-          linear_hofx.finalizeTL(obsauxinc, HZb_[ii]);
+          linear_hofx.finalizeTL(obsauxinc, tmpDeps);
+          HZb_.setData(ii, tmpDeps);
           Observations_ tmpObs(yb_mean);
-          tmpObs += HZb_[ii];
+          tmpObs += HZb_.getData(ii);
           tmpObs.save("hofxm"+std::to_string(iteration)+"_"+std::to_string(ieig+1)+
                         "_"+std::to_string(iens+1));
           ii = ii + 1;
@@ -305,7 +312,7 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
           tmpState += Ztmp[ieig];
           Observations_ tmpObs(this->obspaces_);
           this->computeHofX4DNonLinear(config, tmpState, tmpObs);
-          HZb_[ii] = tmpObs - yb_mean;
+          HZb_.setData(ii, tmpObs - yb_mean);
           tmpObs.save("hofxm"+std::to_string(iteration)+"_"+std::to_string(ieig+1)+
                         "_"+std::to_string(iens+1));
           ii = ii + 1;
@@ -314,9 +321,13 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
     }
   }
   // Update mask again, this time for the modulated ensemble members
+  Departures_ tmpDeps(this->obspaces_);
   for (size_t iens = 0; iens < nanal_; ++iens) {
-    this->updateAssimilatedMask(HZb_[iens]);
-    this->applyAssimilatedMask(HZb_[iens]);
+    tmpDeps.zero();
+    tmpDeps = this->HZb_.getData(iens);
+    this->updateAssimilatedMask(tmpDeps);
+    this->applyAssimilatedMask(tmpDeps);
+    this->HZb_.setData(iens, tmpDeps);
   }
   return yb_mean;
 }
@@ -325,8 +336,8 @@ Observations<OBS> GETKFSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & 
 
 template <typename MODEL, typename OBS>
 void GETKFSolver<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
-                                             const Eigen::MatrixXd & Yb,
-                                             const Eigen::MatrixXd & YbOrig,
+                                             const Eigen::MatrixXf & Yb_f,
+                                             const Eigen::MatrixXf & YbOrig_f,
                                              const Eigen::VectorXd & R_invvar) {
   // compute transformation matrix, save in Wa_, wa_
   // Yb(nobs,neig*nens), YbOrig(nobs,nens)
@@ -336,8 +347,6 @@ void GETKFSolver<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
 
   // cast eigen<double> to eigen<float>
   const Eigen::VectorXf dy_f = dy.cast<float>();
-  const Eigen::MatrixXf Yb_f = Yb.cast<float>();
-  const Eigen::MatrixXf YbOrig_f = YbOrig.cast<float>();
   const Eigen::VectorXf R_invvar_f = R_invvar.cast<float>();
 
   Eigen::MatrixXf Wa_f(nanal_, this->nens_);
@@ -457,13 +466,13 @@ void GETKFSolver<MODEL, OBS>::measurementUpdate(const IncrementEnsemble4D_ & bkg
   } else {
     // if obs are present do normal KF update
     // get local Yb & HZ
-    const Eigen::MatrixXd local_Yb_mat = this->Yb_.packEigen(locvector);
-    const Eigen::MatrixXd local_HZ_mat = this->HZb_.packEigen(locvector);
+    const Eigen::MatrixXf local_Yb_mat_f = this->Yb_.packEigen(locvector);
+    const Eigen::MatrixXf local_HZ_mat_f = this->HZb_.packEigen(locvector);
     // create local obs errors and apply localization
     const Eigen::VectorXd localization = locvector.packEigen(locvector);
     const Eigen::VectorXd local_invVarR_vec = this->invVarR_->packEigen(locvector).array()
                                               * localization.array();
-    computeWeights(local_omb_vec, local_HZ_mat, local_Yb_mat, local_invVarR_vec);
+    computeWeights(local_omb_vec, local_HZ_mat_f, local_Yb_mat_f, local_invVarR_vec);
     applyWeights(bkg_pert, ana_pert, i);
   }
 }

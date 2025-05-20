@@ -54,8 +54,8 @@ class GETKFSolverPert : public GETKFSolver<MODEL, OBS> {
   ///                  (nens, nlocalobs)
   /// \param[in] HZb   Modulated ensemble hofx perturbations (nens*neig, nlocalobs)
   /// \param[in] invVarR  Inverse of observation error variances (nlocalobs)
-  void computeWeights(const Eigen::VectorXd & omb, const Eigen::MatrixXd & OmbPert,
-                      const Eigen::MatrixXd & HZb, const Eigen::VectorXd & invVarR);
+  void computeWeights(const Eigen::VectorXd & omb, const Eigen::MatrixXf & OmbPert_f,
+                      const Eigen::MatrixXf & HZb_f, const Eigen::VectorXd & invVarR);
 
   /// Applies weights and adds posterior inflation
   void applyWeights(const IncrementEnsemble4D_ &, IncrementEnsemble4D_ &,
@@ -91,20 +91,23 @@ Observations<OBS> GETKFSolverPert<MODEL, OBS>::computeHofX(const StateEnsemble4D
   // generate observation perturbations with zero mean and
   // store in Yb_ observation perturbations minus original ensemble hofx
   // perturbations to be consistent with omb used in Kalman gain calculation
-  Departures_ ypertDepTmp(this->obspaces_);
+  Departures_ pertDepTmp(this->obspaces_);
   Departures_ ypertDepSum(this->obspaces_);
 
   ypertDepSum.zero();
   for (size_t iens = 0; iens < (this->nens_); ++iens) {
-    ypertDepTmp.zero();
-    (*(this->R_)).randomize(ypertDepTmp);
-    (this->Yb_)[iens] *= -1;
-    (this->Yb_)[iens] += ypertDepTmp;
-    ypertDepSum += ypertDepTmp;
+    pertDepTmp.zero();
+    (*(this->R_)).randomize(pertDepTmp);
+    ypertDepSum += pertDepTmp;
+    pertDepTmp -= (this->Yb_).getData(iens);
+    (this->Yb_).setData(iens, pertDepTmp);
   }
 
   for (size_t iens = 0; iens < (this->nens_); ++iens) {
-    (this->Yb_)[iens].axpy(-1.0/(this->nens_), ypertDepSum);
+    pertDepTmp.zero();
+    pertDepTmp = (this->Yb_).getData(iens);
+    pertDepTmp.axpy(-1.0/(this->nens_), ypertDepSum);
+    (this->Yb_).setData(iens, pertDepTmp);
   }
 
   return yb_mean;
@@ -114,8 +117,8 @@ Observations<OBS> GETKFSolverPert<MODEL, OBS>::computeHofX(const StateEnsemble4D
 
 template <typename MODEL, typename OBS>
 void GETKFSolverPert<MODEL, OBS>::computeWeights(const Eigen::VectorXd & omb,
-                                                 const Eigen::MatrixXd & OmbPert,
-                                                 const Eigen::MatrixXd & HZb,
+                                                 const Eigen::MatrixXf & OmbPert_f,
+                                                 const Eigen::MatrixXf & HZb_f,
                                                  const Eigen::VectorXd & invVarR) {
   // compute transformation matrix, save in Wa_
   // uses C++ eigen interface
@@ -124,8 +127,6 @@ void GETKFSolverPert<MODEL, OBS>::computeWeights(const Eigen::VectorXd & omb,
   const float infl = inflopt.mult;
 
   const Eigen::VectorXf omb_f = omb.cast<float>();
-  const Eigen::MatrixXf OmbPert_f = OmbPert.cast<float>();
-  const Eigen::MatrixXf HZb_f = HZb.cast<float>();
   const Eigen::VectorXf invVarR_f = invVarR.cast<float>();
 
   // fill in the work matrix
@@ -211,13 +212,13 @@ void GETKFSolverPert<MODEL, OBS>::measurementUpdate(const IncrementEnsemble4D_ &
     // get local Yb, HZb
     // (this->Yb_) stores obs. perturbations minus
     // original ensemble hofx perturbations
-    const Eigen::MatrixXd local_OmbPert_mat = (this->Yb_).packEigen(locvector);
-    const Eigen::MatrixXd local_HZb_mat = (this->HZb_).packEigen(locvector);
+    const Eigen::MatrixXf local_OmbPert_mat_f = (this->Yb_).packEigen(locvector);
+    const Eigen::MatrixXf local_HZb_mat_f = (this->HZb_).packEigen(locvector);
     // create local obs errors and apply localization
     const Eigen::VectorXd localization = locvector.packEigen(locvector);
     const Eigen::VectorXd local_invVarR_vec = (this->invVarR_)->packEigen(locvector).array()
                                               * localization.array();
-    computeWeights(local_omb_vec, local_OmbPert_mat, local_HZb_mat, local_invVarR_vec);
+    computeWeights(local_omb_vec, local_OmbPert_mat_f, local_HZb_mat_f, local_invVarR_vec);
     applyWeights(bkg_pert, ana_pert, i);
   }
 }

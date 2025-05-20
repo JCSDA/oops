@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2025 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -70,6 +71,10 @@ class Departures : public GeneralizedDepartures {
 /// Return number of departures (excluding departures that are masked out)
   size_t nobs() const;
   size_t serialSize() const;
+/// Return a vector of serial size at each obsspace
+  std::vector<size_t> serialSizes() const;
+/// Return the indices of non-masked out elements in ObsVector at each ObsSpace
+  std::vector<std::vector<size_t>> maskAndSerialIndices(const Departures &) const;
 
 /// Mask out departures where the passed in qc flags are > 0
   void mask(ObsDataVec_<int>);
@@ -212,6 +217,27 @@ size_t Departures<OBS>::serialSize() const {
     serialSize += dep_[jj].serialSize();
   }
   return serialSize;
+}
+// -----------------------------------------------------------------------------
+template<typename OBS>
+std::vector<size_t> Departures<OBS>::serialSizes() const {
+  std::vector<size_t> sizevec(dep_.size());
+  for (size_t jj = 0; jj < dep_.size(); ++jj) {
+    sizevec[jj] = dep_[jj].serialSize();
+  }
+  return sizevec;
+}
+// -----------------------------------------------------------------------------
+template<typename OBS>
+std::vector<std::vector<size_t>> Departures<OBS>::maskAndSerialIndices(const Departures & mask)
+const {
+  std::vector<std::vector<size_t>> indices;
+  indices.reserve(dep_.size());
+  for (size_t jj = 0; jj < dep_.size(); ++jj) {
+    std::vector<size_t> indtmp = dep_[jj].maskAndSerialIndices(mask[jj]);
+    indices.emplace_back(indtmp);
+  }
+  return indices;
 }
 // -----------------------------------------------------------------------------
 template<typename OBS>

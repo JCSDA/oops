@@ -93,18 +93,23 @@ Observations<OBS> LETKFSolverPert<MODEL, OBS>::computeHofX(const StateEnsemble4D
 
   // generate observation perturbations with zero mean and
   // compute observation perturbations minus ensemble hofx perturbations
+  Departures_ pertDepTmp(this->obspaces_);
   Departures_ ypertDepSum(this->obspaces_);
 
   ypertDepSum.zero();
   for (size_t iens = 0; iens < (this->nens_); ++iens) {
-    OmbPertDepEns_[iens].zero();
-    (*(this->R_)).randomize(OmbPertDepEns_[iens]);
-    ypertDepSum += OmbPertDepEns_[iens];
+    pertDepTmp.zero();
+    (*(this->R_)).randomize(pertDepTmp);
+    ypertDepSum += pertDepTmp;
+    pertDepTmp -= (this->Yb_).getData(iens);
+    OmbPertDepEns_.setData(iens, pertDepTmp);
   }
 
   for (size_t iens = 0; iens < (this->nens_); ++iens) {
-    OmbPertDepEns_[iens].axpy(-1.0/(this->nens_), ypertDepSum);
-    OmbPertDepEns_[iens] -= (this->Yb_)[iens];
+    pertDepTmp.zero();
+    pertDepTmp = OmbPertDepEns_.getData(iens);
+    pertDepTmp.axpy(-1.0/(this->nens_), ypertDepSum);
+    OmbPertDepEns_.setData(iens, pertDepTmp);
   }
 
   return yb_mean;
@@ -133,8 +138,10 @@ void LETKFSolverPert<MODEL, OBS>::measurementUpdate(const IncrementEnsemble4D_ &
   } else {
     // if obs are present do normal KF update
     // create local OmbPert, Yb
-    const Eigen::MatrixXd local_OmbPert_mat = OmbPertDepEns_.packEigen(locvector);
-    const Eigen::MatrixXd local_Yb_mat = this->Yb_.packEigen(locvector);
+    Eigen::MatrixXf local_OmbPert_mat_f = OmbPertDepEns_.packEigen(locvector);
+    Eigen::MatrixXf local_Yb_mat_f = this->Yb_.packEigen(locvector);
+    const Eigen::MatrixXd local_OmbPert_mat = local_OmbPert_mat_f.cast<double>();
+    const Eigen::MatrixXd local_Yb_mat = local_Yb_mat_f.cast<double>();
     // create local obs errors and apply localization
     const Eigen::VectorXd localization = locvector.packEigen(locvector);
     const Eigen::VectorXd local_invVarR_vec = this->invVarR_->packEigen(locvector).array()

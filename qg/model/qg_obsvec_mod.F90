@@ -1,5 +1,5 @@
 ! (C) Copyright 2009-2016 ECMWF.
-! (C) Copyright 2017-2019 UCAR.
+! (C) Copyright 2017-2025 UCAR.
 !
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -23,7 +23,8 @@ public :: qg_obsvec_setup,qg_obsvec_clone,qg_obsvec_delete,qg_obsvec_copy,qg_obs
         & qg_obsvec_settomissing_ith,qg_obsvec_ones,qg_obsvec_mask,qg_obsvec_mask_with_missing, &
         & qg_obsvec_mul_scal,qg_obsvec_add,qg_obsvec_sub,qg_obsvec_mul,qg_obsvec_div, &
         & qg_obsvec_axpy,qg_obsvec_invert,qg_obsvec_random,qg_obsvec_dotprod,qg_obsvec_stats, &
-        & qg_obsvec_size,qg_obsvec_nobs,qg_obsvec_nobs_withmask,qg_obsvec_get_withmask
+        & qg_obsvec_size,qg_obsvec_nobs,qg_obsvec_nobs_withmask,qg_obsvec_get_withmask, &
+        & qg_obsvec_getindices_withmask, qg_obsvec_serialize, qg_obsvec_deserialize
 ! ------------------------------------------------------------------------------
 interface
   subroutine qg_obsvec_random_i(odb,nn,zz) bind(c,name='qg_obsvec_random_f')
@@ -485,5 +486,91 @@ enddo
 
 end subroutine qg_obsvec_get_withmask
 
+! ------------------------------------------------------------------------------
+!> Get non-missing indices from observation vector into vals array
+subroutine qg_obsvec_getindices_withmask(self,obsmask,inds,ninds)
+
+implicit none
+
+! Passed variables
+type(qg_obsvec),intent(in) :: self !< Observation vector
+type(qg_obsvec),intent(in) :: obsmask !< mask
+integer,intent(in) :: ninds        !< Number of non-missing values
+integer, dimension(ninds), intent(out) :: inds!< returned indices
+
+integer :: jobs, jlev, jval, jind
+
+jval = 1
+! index is set to start at 0
+jind = 0
+! Loop over values
+do jobs=1,self%nobs
+  do jlev=1,self%nlev
+    if ((self%values(jlev, jobs) /= self%missing) .and.           &
+        (obsmask%values(jlev, jobs) /= obsmask%missing)) then
+      if (jval > ninds) call abor1_ftn('qg_obsvec_getindices: inconsistent vector size')
+      inds(jval) = jind
+      jval = jval + 1
+    endif
+    jind = jind + 1
+  enddo
+enddo
+
+end subroutine qg_obsvec_getindices_withmask
+
+! ------------------------------------------------------------------------------
+! Serialize observation vector
+subroutine qg_obsvec_serialize(self,vals,nvals)
+
+implicit none
+
+! Passed variables
+type(qg_obsvec),intent(in) :: self            !< Observation vector
+integer,intent(in) :: nvals                   !< Number of non-missing values
+real(kind_real), intent(inout) :: vals(nvals) !< returned value
+
+integer :: jobs, jlev, ind
+
+ind = 0
+! Loop over values
+do jobs=1,self%nobs
+  do jlev=1,self%nlev
+      ind = ind + 1
+      if (ind > nvals) call abor1_ftn('qg_obsvec_serialize: inconsistent vector size')
+      vals(ind) = self%values(jlev, jobs)
+  enddo
+enddo
+
+end subroutine qg_obsvec_serialize
+! ------------------------------------------------------------------------------
+! Deserialize observation vector
+subroutine qg_obsvec_deserialize(self,vals,nvals,ind)
+
+implicit none
+
+! Passed variables
+type(qg_obsvec),intent(inout) :: self       !< Observation vector
+integer,intent(in) :: nvals                 !< Number of non-missing values
+real(kind_real),intent(in) :: vals(nvals)   !< Obs value
+integer,intent(inout) :: ind                !< Starting index for deserialization
+
+integer :: jobs, jlev
+
+! Loop over values
+do jobs=1,self%nobs
+  do jlev=1,self%nlev
+      ind = ind + 1
+      if (ind > nvals) call abor1_ftn('qg_obsvec_deserialize: inconsistent vector size')
+      self%values(jlev, jobs) = vals(ind)
+  enddo
+enddo
+
+! Return index
+! Note: Observation vector size is 2 more than observation number
+!       e.g., (kobs = size(self%values) + 2),
+!       so returned index is (ind + 2).
+ind = ind + 2
+
+end subroutine qg_obsvec_deserialize
 ! ------------------------------------------------------------------------------
 end module qg_obsvec_mod

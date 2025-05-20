@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2020 UCAR.
+ * (C) Copyright 2020-2025 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -291,6 +291,7 @@ void LocalEnsembleSolver<MODEL, OBS>::computeHofX4DLinear(const eckit::Configura
 
   // add linearized H(x) to the linear model postprocessor
   linear_hofx.initializeTL(posttrajtl);
+  Departures_ tmpDeps(this->obspaces_);
   for (size_t jens = 0; jens < xx.size(); ++jens) {
     // Setup PseudoLinearModelIncrement4D to run on ensemble perturbation
     Increment4D_ dx(geometry_, xx[jens].variables(), times);
@@ -301,9 +302,10 @@ void LocalEnsembleSolver<MODEL, OBS>::computeHofX4DLinear(const eckit::Configura
     const LinearModel_ linear_model(std::move(pseudolinearmodel));
     // run linear model on the ensemble perturbation, compute linear H*dx
     linear_model.forecastTL(init_dx, moderrinc, flength, posttl, posttrajtl);
-    linear_hofx.finalizeTL(obsauxinc, Yb_[jens]);
+    linear_hofx.finalizeTL(obsauxinc, tmpDeps);
+    Yb_.setData(jens, tmpDeps);
     yy[jens] = yy_mean;
-    yy[jens] += Yb_[jens];
+    yy[jens] += Yb_.getData(jens);
   }
 }
 
@@ -374,15 +376,20 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofXLinear(
   //                              then using H(xbmean_) is expected by downstream applications
   if (nens == 1) {yb_mean = y_mean_xb;}
 
+  // mask H(x) ensemble perturbations
+  Departures_ tmpDeps(this->obspaces_);
   // mask H(x) ensemble perturbations - i.e. make sure that obs that have
   // failed QC on one ensemble member fail for all (this is for the case where
   // different QC procedures are done on different ensemble members)
   for (size_t iens = 0; iens < nens; ++iens) {
+    tmpDeps.zero();
     if (readFromDisk) {
-      Yb_[iens] = obsens[iens] - yb_mean;
+      Yb_.setData(iens, obsens[iens] - yb_mean);
     }
-    updateAssimilatedMask(Yb_[iens]);
-    applyAssimilatedMask(Yb_[iens]);
+    tmpDeps = Yb_.getData(iens);
+    updateAssimilatedMask(tmpDeps);
+    applyAssimilatedMask(tmpDeps);
+    Yb_.setData(iens, tmpDeps);
   }
 
   // calculate obs departures
@@ -501,10 +508,14 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofXNonLinear(
   // mask H(x) ensemble perturbations - i.e. make sure that obs that have
   // failed QC on one ensemble member fail for all (this is for the case where
   // different QC procedures are done on different ensemble members)
+  Departures_ tmpDeps(this->obspaces_);
   for (size_t iens = 0; iens < nens; ++iens) {
-    Yb_[iens] = obsens[iens] - yb_mean;
-    updateAssimilatedMask(Yb_[iens]);
-    applyAssimilatedMask(Yb_[iens]);
+    tmpDeps.zero();
+    Yb_.setData(iens, obsens[iens] - yb_mean);
+    tmpDeps = Yb_.getData(iens);
+    updateAssimilatedMask(tmpDeps);
+    applyAssimilatedMask(tmpDeps);
+    Yb_.setData(iens, tmpDeps);
   }
 
   // calculate obs departures

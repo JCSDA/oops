@@ -1,0 +1,12 @@
+time window:
+  begin: 2010-01-01T03:00:00Z
+  end: 2010-01-02T03:00:00Z
+
+observations:
+- obs space:
+    obsdatain:
+      obsfile: Data/truth.2010-01-02T00:00:00Z.obt
+
+- obs space:
+    obsdatain:
+      obsfile: Data/truth_static_crosstime.2010-01-01T09:00:00Z.obt

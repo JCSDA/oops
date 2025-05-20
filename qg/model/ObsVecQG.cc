@@ -1,6 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * (C) Copyright 2017-2021 UCAR.
+ * (C) Copyright 2017-2025 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -10,6 +10,7 @@
  */
 
 #include <math.h>
+#include <algorithm>
 #include <sstream>
 
 #include "oops/util/Logger.h"
@@ -131,12 +132,39 @@ void ObsVecQG::save(const std::string & name) const {
   obsdb_.putdb(name, keyOvec_);
 }
 // -----------------------------------------------------------------------------
+void ObsVecQG::serialize(std::vector<double> & values) const {
+  int nn;
+  qg_obsvec_size_f90(keyOvec_, nn);
+  std::vector<double> newvalues(nn);
+  qg_obsvec_serialize_f90(keyOvec_, newvalues.data(), newvalues.size());
+  values.reserve(values.size() + nn);
+  values.insert(values.end(), newvalues.begin(), newvalues.end());
+}
+// -----------------------------------------------------------------------------
+void ObsVecQG::deserialize(const std::vector<double> & values, size_t & ind) {
+  int indInt = static_cast<int>(ind);
+  qg_obsvec_deserialize_f90(keyOvec_, values.data(), static_cast<int>(values.size()), indInt);
+  ind = static_cast<size_t>(indInt);
+}
+// -----------------------------------------------------------------------------
 void ObsVecQG::maskAndSerialize(const ObsVecQG & mask, std::vector<double> & values) const {
   int nobs;
   qg_obsvec_nobs_withmask_f90(keyOvec_, mask.toFortran(), nobs);
   std::vector<double> newvalues(nobs);
   qg_obsvec_get_withmask_f90(keyOvec_, mask.toFortran(), newvalues.data(), newvalues.size());
   values.insert(values.end(), newvalues.begin(), newvalues.end());
+}
+// -----------------------------------------------------------------------------
+std::vector<size_t> ObsVecQG::maskAndSerialIndices(const ObsVecQG & mask) const {
+  int nobs;
+  qg_obsvec_nobs_withmask_f90(keyOvec_, mask.toFortran(), nobs);
+  std::vector<size_t> indices(nobs);
+  std::vector<int> indices_int(nobs);
+  qg_obsvec_getindices_withmask_f90(keyOvec_, mask.toFortran(),
+                                    indices_int.data(), indices_int.size());
+  std::transform(indices_int.begin(), indices_int.end(), indices.begin(),
+                   [](int ele) { return static_cast<size_t>(ele); });
+  return indices;
 }
 // -----------------------------------------------------------------------------
 void ObsVecQG::read(const std::string & name) {
@@ -188,7 +216,6 @@ size_t ObsVecQG::size() const {
   size_t nobs(iobs);
   return nobs;
 }
-
 // -----------------------------------------------------------------------------
 size_t ObsVecQG::serialSize() const {
   return this->size();

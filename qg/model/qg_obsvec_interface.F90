@@ -1,5 +1,5 @@
 ! (C) Copyright 2009-2016 ECMWF.
-! (C) Copyright 2017-2021 UCAR.
+! (C) Copyright 2017-2025 UCAR.
 !
 ! This software is licensed under the terms of the Apache Licence Version 2.0
 ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -502,5 +502,73 @@ call qg_obsvec_get_withmask(self,mask,vals,nvals)
 
 end subroutine qg_obsvec_get_withmask_c
 
+! ------------------------------------------------------------------------------
+!> Get indices of all non-masked out observation values
+subroutine qg_obsvec_getindices_withmask_c(c_key_self,c_key_mask,inds,ninds) bind(c,name='qg_obsvec_getindices_withmask_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_self !< Observation vector
+integer(c_int),intent(in) :: c_key_mask !< Mask
+integer(c_int),intent(in) :: ninds      !< number of obs
+integer(c_int),intent(out),dimension(ninds) :: inds  !< ob. indices
+
+! Local vector
+type(qg_obsvec),pointer :: self, mask
+
+! Interface
+call qg_obsvec_registry%get(c_key_self,self)
+call qg_obsvec_registry%get(c_key_mask,mask)
+
+! Call Fortran
+call qg_obsvec_getindices_withmask(self,mask,inds,ninds)
+
+end subroutine qg_obsvec_getindices_withmask_c
+
+! ------------------------------------------------------------------------------
+! Serialize observation vector including missing values
+subroutine qg_obsvec_serialize_c(c_key_self,vals,nvals) bind(c,name='qg_obsvec_serialize_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_self !< Observation vector
+integer(c_int),intent(in) :: nvals      !< number of obs
+real(c_double),intent(out),dimension(nvals) :: vals  !< ob. values
+
+! Local vector
+type(qg_obsvec),pointer :: self
+
+! Interface
+call qg_obsvec_registry%get(c_key_self,self)
+
+! Call Fortran
+call qg_obsvec_serialize(self,vals,nvals)
+
+end subroutine qg_obsvec_serialize_c
+
+! ------------------------------------------------------------------------------
+!> Deserialize observation vector
+subroutine qg_obsvec_deserialize_c(c_key_self,vals,nvals,ind) bind(c,name='qg_obsvec_deserialize_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_self   !< Observation vector
+integer(c_int),intent(in) :: nvals        !< number of obs
+real(c_double),intent(in) :: vals(nvals)  !< ob. values
+integer(c_int), intent(inout):: ind       !< Index
+
+! Local vector
+type(qg_obsvec),pointer :: self
+
+! Interface
+call qg_obsvec_registry%get(c_key_self,self)
+
+! Call Fortran
+call qg_obsvec_deserialize(self,vals,nvals,ind)
+
+end subroutine qg_obsvec_deserialize_c
 ! ------------------------------------------------------------------------------
 end module qg_obsvec_interface

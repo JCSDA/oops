@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2025 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -44,7 +45,10 @@ class ObsVec1D : public util::Printable,
   ObsVec1D & operator*= (const ObsVec1D &);
   ObsVec1D & operator/= (const ObsVec1D &);
 
+  void serialize(std::vector<double> &) const;
+  void deserialize(const std::vector<double> &, size_t &);
   void maskAndSerialize(const ObsVec1D &, std::vector<double> &) const;
+  std::vector<size_t> maskAndSerialIndices(const ObsVec1D &) const;
 
   size_t size() const {return data_.size();}
   size_t serialSize() const {return data_.size();}

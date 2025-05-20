@@ -1,6 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * (C) Copyright 2017-2019 UCAR.
+ * (C) Copyright 2017-2025 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -245,11 +245,18 @@ extern "C" {
   void qg_obsvec_stats_f90(const F90ovec &, double &, double &, double &);
   void qg_obsvec_nobs_f90(const F90ovec &, int &);
   void qg_obsvec_size_f90(const F90ovec &, int &);
+  /// Serialize observation vector including missing values
+  void qg_obsvec_serialize_f90(const F90ovec &, double * data, const int & nobs);
+  /// Deserialize observation vector
+  void qg_obsvec_deserialize_f90(const F90ovec &, const double * data,
+                                 const int & nobs, int & index);
   /// fill \p data (size \p nobs) with all non-masked out (non-missing) values
   void qg_obsvec_get_withmask_f90(const F90ovec &, const F90ovec & mask_key,
                                   double * data, const int & nobs);
+  /// fill \p indices (size \p nobs) with indices of all non-masked out (non-missing) values
+  void qg_obsvec_getindices_withmask_f90(const F90ovec &, const F90ovec & mask_key,
+                                  int * indices, const int & nobs);
   void qg_obsvec_nobs_withmask_f90(const F90ovec &, const F90ovec & mask_key, int &);
-
 
 // -----------------------------------------------------------------------------
 //  Streamfunction observations

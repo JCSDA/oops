@@ -1,6 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * (C) Copyright 2017-2019 UCAR.
+ * (C) Copyright 2017-2025 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -45,7 +45,10 @@ class ObsVecQG : public util::Printable,
   ObsVecQG & operator*= (const ObsVecQG &);
   ObsVecQG & operator/= (const ObsVecQG &);
 
+  void serialize(std::vector<double> &) const;
+  void deserialize(const std::vector<double> &, size_t &);
   void maskAndSerialize(const ObsVecQG &, std::vector<double> &) const;
+  std::vector<size_t> maskAndSerialIndices(const ObsVecQG &) const;
   size_t size() const;
   size_t serialSize() const;
 

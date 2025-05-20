@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2025 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -69,10 +70,16 @@ class ObsVector : public util::Printable,
   ObsVector & operator/= (const ObsVector &);
   /// Add \p zz * \p rhs to the ObsVector.
   void axpy(const double & zz, const ObsVector & rhs);
+  /// Serialize observations local to this MPI task into a \p values vector
+  void serialize(std::vector<double> & values) const;
+  /// Deserialize observations local to this MPI task into a \p values vector
+  void deserialize(const std::vector<double> & values, size_t & index);
 
   /// Serialize observations local to this MPI task into a \p values vector
   /// (excluding vector elements that are masked out: where \p mask is a missing value)
   void maskAndSerialize(const ObsVector & mask, std::vector<double> & values) const;
+  /// Return serial indices of valid observations from maskAndSerialize
+  std::vector<size_t> maskAndSerialIndices(const ObsVector & mask) const;
 
   /// Zero out this ObsVector
   void zero();
@@ -338,6 +345,22 @@ std::string ObsVector<OBS>::info(const std::string & grep,
 }
 // -----------------------------------------------------------------------------
 template <typename OBS>
+void ObsVector<OBS>::serialize(std::vector<double> & values) const {
+  Log::trace() << "ObsVector<OBS>::serialize starting " << std::endl;
+  util::Timer timer(classname(), "serialize");
+  data_->serialize(values);
+  Log::trace() << "ObsVector<OBS>::serialize done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
+void ObsVector<OBS>::deserialize(const std::vector<double> & values, size_t & index) {
+  Log::trace() << "ObsVector<OBS>::deserialize starting " << std::endl;
+  util::Timer timer(classname(), "deserialize");
+  data_->deserialize(values, index);
+  Log::trace() << "ObsVector<OBS>::deserialize done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
 void ObsVector<OBS>::save(const std::string & name) const {
   Log::trace() << "ObsVector<OBS>::save starting " << name << std::endl;
   util::Timer timer(classname(), "save");
@@ -355,6 +378,16 @@ void  ObsVector<OBS>::maskAndSerialize(const ObsVector & mask, std::vector<doubl
   data_->maskAndSerialize(mask.obsvector(), values);
 
   Log::trace() << "ObsVector<OBS>::maskAndSerialize done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
+std::vector<size_t>  ObsVector<OBS>::maskAndSerialIndices(const ObsVector & mask) const {
+  Log::trace() << "ObsVector<OBS>::maskAndSerialIndices starting " << std::endl;
+  util::Timer timer(classname(), "maskAndSerialIndices");
+
+  return data_->maskAndSerialIndices(mask.obsvector());
+
+  Log::trace() << "ObsVector<OBS>::maskAndSerialIndices done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename OBS>

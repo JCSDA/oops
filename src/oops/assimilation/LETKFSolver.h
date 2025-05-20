@@ -1,5 +1,5 @@
 /*
- * (C) Copyright 2020 UCAR.
+ * (C) Copyright 2020-2025 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -129,7 +129,8 @@ void LETKFSolver<MODEL, OBS>::measurementUpdate(const IncrementEnsemble4D_ & bkg
   } else {
     // if obs are present do normal KF update
     // create local Yb
-    const Eigen::MatrixXd local_Yb_mat = this->Yb_.packEigen(locvector);
+    Eigen::MatrixXf local_Yb_mat_f = this->Yb_.packEigen(locvector);
+    const Eigen::MatrixXd local_Yb_mat = local_Yb_mat_f.cast<double>();
     // create local obs errors and apply localization
     const Eigen::VectorXd localization = locvector.packEigen(locvector);
     const Eigen::VectorXd local_invVarR_vec = this->invVarR_->packEigen(locvector).array()

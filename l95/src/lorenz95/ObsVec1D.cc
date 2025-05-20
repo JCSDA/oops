@@ -1,6 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
- * (C) Copyright 2020-2020 UCAR.
+ * (C) Copyright 2020-2025 UCAR.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -180,6 +180,18 @@ void ObsVec1D::save(const std::string & name) const {
   obsdb_.putdb(name, data_);
 }
 // -----------------------------------------------------------------------------
+void ObsVec1D::serialize(std::vector<double> & values) const {
+  values.reserve(values.size() + data_.size());
+  values.insert(values.end(), data_.begin(), data_.end());
+}
+// -----------------------------------------------------------------------------
+void ObsVec1D::deserialize(const std::vector<double> & values, size_t & index) {
+  for (size_t ii = 0; ii < data_.size(); ++ii) {
+    data_[ii] = values[index];
+    ++index;
+  }
+}
+// -----------------------------------------------------------------------------
 void ObsVec1D::maskAndSerialize(const ObsVec1D & mask, std::vector<double> & values) const {
   values.reserve(values.size() + data_.size());
   for (size_t jj = 0; jj < data_.size(); ++jj) {
@@ -187,6 +199,18 @@ void ObsVec1D::maskAndSerialize(const ObsVec1D & mask, std::vector<double> & val
       values.push_back(data_[jj]);
     }
   }
+}
+// -----------------------------------------------------------------------------
+std::vector<size_t> ObsVec1D::maskAndSerialIndices(const ObsVec1D & mask) const {
+  ASSERT(data_.size() == mask.size());
+  std::vector<size_t> indices;
+  indices.reserve(data_.size());
+  for (size_t jj = 0; jj < data_.size(); ++jj) {
+    if ((data_[jj] != missing_) && (mask[jj] != missing_)) {
+      indices.push_back(jj);
+    }
+  }
+  return indices;
 }
 // -----------------------------------------------------------------------------
 void ObsVec1D::read(const std::string & name) {
