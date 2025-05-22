@@ -67,6 +67,7 @@ class ObsVec1D : public util::Printable,
   double dot_product_with(const ObsVec1D &) const;
   double rms() const;
   void mask(const ObsVec1D &);
+  void mask(const ObsData1D<int> &);
   void readAppended(const std::string &);
   ObsVec1D & operator= (const ObsData1D<float> &);
 

@@ -66,6 +66,7 @@ class ObsVecQG : public util::Printable,
   double dot_product_with(const ObsVecQG &) const;
   double rms() const;
   void mask(const ObsVecQG &);
+  void mask(const ObsDataQG<int> &);
   void readAppended(const std::string &);
   ObsVecQG & operator=(const ObsDataQG<float> &);
 

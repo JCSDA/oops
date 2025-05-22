@@ -243,7 +243,7 @@ const {
 template<typename OBS>
 void Departures<OBS>::mask(ObsDataVec_<int> qcflags) {
   for (size_t ii = 0; ii < dep_.size(); ++ii) {
-    dep_[ii].mask(*qcflags[ii]);
+    dep_[ii].mask(qcflags[ii]);
   }
 }
 // -----------------------------------------------------------------------------

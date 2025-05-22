@@ -164,6 +164,14 @@ void ObsVec1D::mask(const ObsVec1D & mask) {
   }
 }
 // -----------------------------------------------------------------------------
+void ObsVec1D::mask(const ObsData1D<int> & mask) {
+  for (size_t jj = 0; jj < data_.size(); ++jj) {
+    if (mask[jj] > 0) {
+      data_.at(jj) = missing_;
+    }
+  }
+}
+// -----------------------------------------------------------------------------
 ObsVec1D & ObsVec1D::operator=(const ObsData1D<float> & rhs) {
   const float fmiss = util::missingValue<float>();
   for (size_t jj = 0; jj < data_.size(); ++jj) {

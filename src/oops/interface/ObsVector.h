@@ -96,6 +96,8 @@ class ObsVector : public util::Printable,
   double rms() const;
   /// Mask out elements of the vector where \p mask is a missing value
   void mask(const ObsVector & mask);
+  /// Mask out elements of the vector where \p mask is > 0 (e.g. for QC flags)
+  void mask(const ObsDataVector<OBS, int> & mask);
   /// Assignment operator from \p rhs ObsDataVector<OBS, float>
   ObsVector & operator =(const ObsDataVector<OBS, float> & rhs);
 
@@ -288,6 +290,14 @@ void ObsVector<OBS>::mask(const ObsVector & mask) {
   util::Timer timer(classname(), "mask(ObsVector)");
   data_->mask(mask.obsvector());
   Log::trace() << "ObsVector<OBS>::mask(ObsVector) done" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
+void ObsVector<OBS>::mask(const ObsDataVector<OBS, int> & mask) {
+  Log::trace() << "ObsVector<OBS>::mask(ObsDataVector) starting" << std::endl;
+  util::Timer timer(classname(), "mask(ObsDataVector)");
+  data_->mask(mask.obsdatavector());
+  Log::trace() << "ObsVector<OBS>::mask(ObsDataVector) done" << std::endl;
 }
 // -----------------------------------------------------------------------------
 template <typename OBS>

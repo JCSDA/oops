@@ -128,6 +128,10 @@ void ObsVecQG::mask(const ObsVecQG & mask) {
   qg_obsvec_mask_with_missing_f90(keyOvec_, mask.toFortran());
 }
 // -----------------------------------------------------------------------------
+void ObsVecQG::mask(const ObsDataQG<int> & mask) {
+  qg_obsvec_mask_f90(keyOvec_, mask.toFortran());
+}
+// -----------------------------------------------------------------------------
 void ObsVecQG::save(const std::string & name) const {
   obsdb_.putdb(name, keyOvec_);
 }
