@@ -385,9 +385,10 @@ std::vector<size_t>  ObsVector<OBS>::maskAndSerialIndices(const ObsVector & mask
   Log::trace() << "ObsVector<OBS>::maskAndSerialIndices starting " << std::endl;
   util::Timer timer(classname(), "maskAndSerialIndices");
 
-  return data_->maskAndSerialIndices(mask.obsvector());
+  auto result = data_->maskAndSerialIndices(mask.obsvector());
 
   Log::trace() << "ObsVector<OBS>::maskAndSerialIndices done" << std::endl;
+  return result;
 }
 // -----------------------------------------------------------------------------
 template <typename OBS>
