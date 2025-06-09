@@ -29,6 +29,10 @@ atlas::FieldSet createFieldSet(const atlas::FunctionSpace &,
                                const std::vector<std::string> &);
 atlas::FieldSet createFieldSet(const atlas::FunctionSpace &,
                                const std::vector<size_t> &,
+                               const std::vector<size_t> &,
+                               const std::vector<std::string> &);
+atlas::FieldSet createFieldSet(const atlas::FunctionSpace &,
+                               const std::vector<size_t> &,
                                const std::vector<std::string> &,
                                const double &);
 atlas::FieldSet createRandomFieldSet(const eckit::mpi::Comm &,
@@ -39,6 +43,11 @@ atlas::FieldSet createRandomFieldSet(const eckit::mpi::Comm &,
 /// Useful for testing interpolation.
 atlas::FieldSet createSmoothFieldSet(const eckit::mpi::Comm &,
                                      const atlas::FunctionSpace &,
+                                     const std::vector<size_t> &,
+                                     const std::vector<std::string> &);
+atlas::FieldSet createSmoothFieldSet(const eckit::mpi::Comm &,
+                                     const atlas::FunctionSpace &,
+                                     const std::vector<size_t> &,
                                      const std::vector<size_t> &,
                                      const std::vector<std::string> &);
 
