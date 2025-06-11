@@ -119,7 +119,7 @@ void DeparturesEnsemble<OBS>::setData(const size_t imem,
 template<typename OBS>
 Departures<OBS> DeparturesEnsemble<OBS>::getData(const size_t imem) const {
   Departures_ dep(obsdb_);
-  const Eigen::VectorXd valvec_eigen = ensemblePerturbs_.row(imem).cast<double>();
+  const Eigen::VectorXd valvec_eigen = ensemblePerturbs_.row(imem).template cast<double>();
   std::vector<double> valvec(valvec_eigen.data(),
                              valvec_eigen.data() + valvec_eigen.size());
   size_t istart = 0;
