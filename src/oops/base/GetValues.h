@@ -10,6 +10,7 @@
 #include <Eigen/Core>
 
 #include <algorithm>
+#include <limits>
 #include <memory>
 #include <numeric>
 #include <string>
@@ -308,6 +309,22 @@ GetValues<MODEL, OBS>::GetValues(const eckit::Configuration & conf, const Geomet
     myobs_locs_by_task[itask].push_back(obslats[jobs]);
     myobs_locs_by_task[itask].push_back(obslons[jobs]);
     obstimes[jobs].serialize(myobs_locs_by_task[itask]);
+  }
+
+// Verify that an exception will not be thrown in the underlying eckit code.
+  const std::string errorMessageSize =
+    "The product of (the number of observation locations) and "
+    "(the sum, over all model variables, of the number of levels in each GeoVaL) "
+    "on this MPI rank is larger than the maximum integer, which will trigger an assertion "
+    "in the underlying MPI communication code. One way to mitigate this is to reduce the "
+    "number of locations on each MPI rank, either by increasing the number of "
+    "ranks available or reducing the size of the input data set. "
+    "Another way is to request fewer model variables.";
+  const size_t maxSizeForCommunication = static_cast<size_t>(std::numeric_limits<int>::max());
+  for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
+    if (myobs_index_by_task_[jtask].size() * varsizes_ >= maxSizeForCommunication) {
+      throw eckit::UserError(errorMessageSize, Here());
+    }
   }
 
   std::vector<std::vector<double>> mylocs_by_task(ntasks_);
