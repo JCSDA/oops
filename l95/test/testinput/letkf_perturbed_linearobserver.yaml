@@ -41,7 +41,7 @@ driver:
   update obs config with geometry info: false
 
 local ensemble DA:
-  solver: Perturbed LETKF
+  solver: Stochastic LETKF
   use linear observer: true
   inflation:
     rtps: 0.5

@@ -19,6 +19,7 @@
 #include "eckit/testing/Test.h"
 
 #include "oops/../test/TestEnvironment.h"
+#include "oops/assimilation/ETKFLinearAlgebra.h"
 #include "oops/assimilation/gletkfInterface.h"
 #include "oops/assimilation/LETKFSolver.h"
 #include "oops/runs/Test.h"
@@ -30,14 +31,14 @@ namespace test {
     return std::chrono::duration_cast<std::chrono::milliseconds>(tB - tA).count();
   };
 
-  void compareWeights(const Eigen::VectorXf & wa, const Eigen::VectorXf & wa_f,
-                      const Eigen::MatrixXf & Wa, const Eigen::MatrixXf & Wa_f) {
+  void compareWeights(const Eigen::VectorXd & wa, const Eigen::VectorXd & wa_d,
+                      const Eigen::MatrixXd & Wa, const Eigen::MatrixXd & Wa_d) {
     for (int i = 0; i < wa.rows(); ++i) {
-      EXPECT(oops::is_close_absolute(wa(i), wa_f(i), 1.0e-6f));
+      EXPECT(oops::is_close_absolute(wa(i), wa_d(i), 1.0e-6));
     }
     for (int i = 0; i < Wa.rows(); ++i) {
       for (int j = 0; j < Wa.cols(); ++j) {
-        EXPECT(oops::is_close_absolute(Wa(i, j), Wa_f(i, j), 1.0e-5f));
+        EXPECT(oops::is_close_absolute(Wa(i, j), Wa_d(i, j), 1.0e-5));
       }
     }
   }
@@ -45,42 +46,15 @@ namespace test {
   void LETKF(const int nobs, const int nens) {
     srand(1);
 
-    const Eigen::VectorXf dy_f = Eigen::VectorXf::Random(nobs);
-    const Eigen::MatrixXf Yb_f = Eigen::MatrixXf::Random(nens, nobs);
-    const Eigen::VectorXf diagInvR_f = Eigen::VectorXf::LinSpaced(nobs, 1.0, nobs);
+    const Eigen::VectorXd dy = Eigen::VectorXd::Random(nobs);
+    const Eigen::MatrixXf Yb = Eigen::MatrixXf::Random(nens, nobs);
+    const Eigen::VectorXd invVarR = Eigen::VectorXd::LinSpaced(nobs, 1.0, nobs);
+    Eigen::VectorXd wa(nens);
+    Eigen::MatrixXd Wa(nens, nens);
 
     // Eigen implementation
 
-    const auto tE0 = std::chrono::system_clock::now();
-
-    // work = Y^T R^-1 Y + (nens-1)/infl I
-    Eigen::MatrixXf work = Yb_f * (diagInvR_f.asDiagonal() * Yb_f.transpose());
-    work.diagonal() += Eigen::VectorXf::Constant(nens, nens - 1);
-
-    const auto tE1 = std::chrono::system_clock::now();
-
-    // eigenvalues and eigenvectors of the above matrix
-    const Eigen::SelfAdjointEigenSolver<Eigen::MatrixXf> es(work);
-    const Eigen::VectorXf eival = es.eigenvalues().real();
-    const Eigen::MatrixXf eivec = es.eigenvectors().real();
-
-    const auto tE2 = std::chrono::system_clock::now();
-
-    // Pa = [ Yb^T R^-1 Yb + (nens-1)/infl I ] ^-1
-    work = eivec * eival.cwiseInverse().asDiagonal() * eivec.transpose();
-
-    const auto tE3 = std::chrono::system_clock::now();
-
-    // Wa = sqrt[(nens-1) Pa]
-    const Eigen::MatrixXf Wa =
-      eivec *
-      ((nens - 1) * eival.array().inverse()).sqrt().matrix().asDiagonal() *
-      eivec.transpose();
-
-    // wa = Pa Yb^T R^-1 dy
-    const Eigen::VectorXf wa = work * (Yb_f * (diagInvR_f.asDiagonal() * dy_f));
-
-    const auto tE4 = std::chrono::system_clock::now();
+    const auto times = oops::detLETKF_computeWeights(dy, Yb, invVarR, (nens - 1) / 1.0, wa, Wa);
 
     // LAPACK implementation
 
@@ -95,19 +69,26 @@ namespace test {
 
     const auto tL0 = std::chrono::system_clock::now();
 
+    // cast eigen<double> to eigen<float>
+    const Eigen::VectorXf dy_f = dy.cast<float>();
+    const Eigen::VectorXf invVarR_f = invVarR.cast<float>();
+
     oops::letkf_core_f90(nobs,
-                         Yb_f.data(),
-                         Yb_f.data(),
+                         Yb.data(),
+                         Yb.data(),
                          dy_f.data(),
                          wa_f.data(),
                          Wa_f.data(),
-                         diagInvR_f.data(),
+                         invVarR_f.data(),
                          nens,
                          neig,
                          getkf_inflation,
                          denkf,
                          getkf,
                          infl);
+
+    const Eigen::VectorXd wa_d = wa_f.cast<double>();
+    const Eigen::MatrixXd Wa_d = Wa_f.cast<double>();
 
     const auto tL1 = std::chrono::system_clock::now();
 
@@ -117,18 +98,18 @@ namespace test {
     oops::Log::info() << "LETKF timing (ms)" << std::endl;
     oops::Log::info() << std::endl;
     oops::Log::info() << "Eigen:" << std::endl;
-    oops::Log::info() << " compute Y^T R^-1 Y: " << timeDifference(tE0, tE1) << std::endl;
-    oops::Log::info() << " eigendecomposition: " << timeDifference(tE1, tE2) << std::endl;
-    oops::Log::info() << " compute Pa: " << timeDifference(tE2, tE3) << std::endl;
-    oops::Log::info() << " compute weights: " << timeDifference(tE3, tE4) << std::endl;
-    oops::Log::info() << "Eigen total: " << timeDifference(tE0, tE4) << std::endl;
+    oops::Log::info() << " compute Y^T R^-1 Y: " << timeDifference(times[0], times[1]) << std::endl;
+    oops::Log::info() << " eigendecomposition: " << timeDifference(times[1], times[2]) << std::endl;
+    oops::Log::info() << " compute Pa: " << timeDifference(times[2], times[3]) << std::endl;
+    oops::Log::info() << " compute weights: " << timeDifference(times[3], times[4]) << std::endl;
+    oops::Log::info() << "Eigen total: " << timeDifference(times[0], times[4]) << std::endl;
     oops::Log::info() << std::endl;
     oops::Log::info() << "LAPACK total: " << timeDifference(tL0, tL1) << std::endl;
     oops::Log::info() << std::endl;
 
     // Compare the weights produced by the two implementations
 
-    compareWeights(wa, wa_f, Wa, Wa_f);
+    compareWeights(wa, wa_d, Wa, Wa_d);
   }
 
   void GETKF(const int nobs, const int nens, const int neig) {
@@ -136,70 +117,15 @@ namespace test {
 
     const int nana = nens * neig;
     constexpr float infl = 1.0;
-    const Eigen::VectorXf dy_f = Eigen::VectorXf::Random(nobs);
-    const Eigen::MatrixXf YbOrig_f = Eigen::MatrixXf::Random(nens, nobs);
+    const Eigen::VectorXd dy = Eigen::VectorXd::Random(nobs);
+    const Eigen::MatrixXf YbOrig = Eigen::MatrixXf::Random(nens, nobs);
     // modulated ensemble
-    const Eigen::MatrixXf Yb_f = Eigen::MatrixXf::Random(nana, nobs);
-    const Eigen::VectorXf diagInvR_f = Eigen::VectorXf::LinSpaced(nobs, 1.0, nobs);
+    const Eigen::MatrixXf Yb = Eigen::MatrixXf::Random(nana, nobs);
+    const Eigen::VectorXd invVarR = Eigen::VectorXd::LinSpaced(nobs, 1.0, nobs);
+    Eigen::VectorXd wa(nana);
+    Eigen::MatrixXd Wa(nana, nens);
 
-    // Eigen implementation
-
-    const auto tE0 = std::chrono::system_clock::now();
-
-    // Identity
-    const Eigen::VectorXf I = Eigen::VectorXf::Constant(nana, 1.0);
-
-    // Yb R^-1
-    const Eigen::MatrixXf YbRinv = Yb_f * diagInvR_f.asDiagonal();
-
-    const auto tE1 = std::chrono::system_clock::now();
-
-    // Yb R^-1 Yb^T + (nens - 1) I / infl
-    const Eigen::MatrixXf YbRinvYbpI =
-      YbRinv * Yb_f.transpose() +
-      I.asDiagonal().toDenseMatrix() * (nens - 1) / infl;
-
-    const auto tE2 = std::chrono::system_clock::now();
-
-    // Eigendecomposition
-    const Eigen::SelfAdjointEigenSolver<Eigen::MatrixXf> es(YbRinvYbpI);
-    const Eigen::VectorXf eival = es.eigenvalues().real();
-    const Eigen::MatrixXf eivec = es.eigenvectors().real();
-
-    const auto tE3 = std::chrono::system_clock::now();
-
-    // Pa = [Yb R^-1 Yb^T + (nens - 1)/infl I]^-1
-    const Eigen::MatrixXf Pa =
-      eivec * eival.cwiseInverse().asDiagonal() * eivec.transpose();
-
-    const auto tE4 = std::chrono::system_clock::now();
-
-    // wa_f = Pa Yb R^-1 dy
-    const Eigen::VectorXf wa = Pa * (YbRinv * dy_f);
-
-    const auto tE5 = std::chrono::system_clock::now();
-
-    // Normalisation
-    const float norm = 1.0 / (nens - 1.0);
-
-    // (I - Gamma^{-1/2} / (nens - 1)) * (Gamma - (nens - 1) I / rho)
-    const Eigen::VectorXf diag = (I - (norm * eival).cwiseInverse().cwiseSqrt()).
-      cwiseProduct((eival - I / (infl * norm)).cwiseInverse());
-
-    // C ((I - Gamma^{-1/2} / (nens - 1)) * (Gamma - (nens - 1) I / rho)) C^T
-    const Eigen::MatrixXf scaledCCT = eivec * diag.asDiagonal() * eivec.transpose();
-
-    const auto tE6 = std::chrono::system_clock::now();
-
-    // Yb R^-1 YbOrig^T
-    const Eigen::MatrixXf YbRinvYbOrig = YbRinv * YbOrig_f.transpose();
-
-    const auto tE7 = std::chrono::system_clock::now();
-
-    // Wa_f
-    const Eigen::MatrixXf Wa = -scaledCCT * YbRinvYbOrig;
-
-    const auto tE8 = std::chrono::system_clock::now();
+    const auto times = oops::detGETKF_computeWeights(dy, Yb, YbOrig, invVarR, infl, wa, Wa);
 
     // LAPACK implementation
 
@@ -212,13 +138,19 @@ namespace test {
 
     const auto tL0 = std::chrono::system_clock::now();
 
+    // cast eigen<double> to eigen<float>
+    const Eigen::VectorXf dy_f = dy.cast<float>();
+    const Eigen::MatrixXf Yb_f = Yb.cast<float>();
+    const Eigen::MatrixXf YbOrig_f = YbOrig.cast<float>();
+    const Eigen::VectorXf invVarR_f = invVarR.cast<float>();
+
     oops::letkf_core_f90(nobs,
                          Yb_f.data(),
                          YbOrig_f.data(),
                          dy_f.data(),
                          wa_f.data(),
                          Wa_f.data(),
-                         diagInvR_f.data(),
+                         invVarR_f.data(),
                          nana,
                          neig,
                          getkf_inflation,
@@ -227,6 +159,9 @@ namespace test {
                          infl);
     const auto tL1 = std::chrono::system_clock::now();
 
+    const Eigen::VectorXd wa_d = wa_f.cast<double>();
+    const Eigen::MatrixXd Wa_d = Wa_f.cast<double>();
+
     // Timing information
 
     oops::Log::info() << std::endl;
@@ -234,15 +169,14 @@ namespace test {
     oops::Log::info() << std::endl;
 
     oops::Log::info() << "Eigen:" << std::endl;
-    oops::Log::info() << " compute Y^T R^-1: " << timeDifference(tE0, tE1) << std::endl;
-    oops::Log::info() << " compute Y^T R^-1 Y + I: " << timeDifference(tE1, tE2) << std::endl;
-    oops::Log::info() << " eigendecomposition: " << timeDifference(tE2, tE3) << std::endl;
-    oops::Log::info() << " compute Pa: " << timeDifference(tE3, tE4) << std::endl;
-    oops::Log::info() << " compute wa: " << timeDifference(tE4, tE5) << std::endl;
-    oops::Log::info() << " compute scaled C C^T: " << timeDifference(tE5, tE6) << std::endl;
-    oops::Log::info() << " compute Yb R^-1 YbOrig: " << timeDifference(tE6, tE7) << std::endl;
-    oops::Log::info() << " compute Wa: " << timeDifference(tE7, tE8) << std::endl;
-    oops::Log::info() << "Eigen total: " << timeDifference(tE0, tE8) << std::endl;
+    oops::Log::info() << " compute Y^T R^-1: " << timeDifference(times[0], times[1]) << std::endl;
+    oops::Log::info() << " compute Y^T R^-1 Y + I: " << timeDifference(times[1], times[2])
+                      << std::endl;
+    oops::Log::info() << " eigendecomposition: " << timeDifference(times[2], times[3]) << std::endl;
+    oops::Log::info() << " compute Pa: " << timeDifference(times[3], times[4]) << std::endl;
+    oops::Log::info() << " compute wa: " << timeDifference(times[4], times[5]) << std::endl;
+    oops::Log::info() << " compute Wa: " << timeDifference(times[5], times[6]) << std::endl;
+    oops::Log::info() << "Eigen total: " << timeDifference(times[0], times[6]) << std::endl;
     oops::Log::info() << std::endl;
 
     oops::Log::info() << "LAPACK total: " << timeDifference(tL0, tL1) << std::endl;
@@ -250,7 +184,7 @@ namespace test {
 
     // Compare the weights produced by the two implementations
 
-    compareWeights(wa, wa_f, Wa, Wa_f);
+    compareWeights(wa, wa_d, Wa, Wa_d);
   }
 
   void test_ETKF(const eckit::LocalConfiguration & conf) {

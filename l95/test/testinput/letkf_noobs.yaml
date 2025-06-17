@@ -30,7 +30,7 @@ observations:
     obs operator: {}
 
 local ensemble DA:
-  solver: LETKF
+  solver: Deterministic LETKF
   inflation:
     rtps: 0.5
     rtpp: 0.5

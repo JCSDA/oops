@@ -48,7 +48,7 @@
 namespace oops {
   class Variables;
 
-/// \brief Base class for LETKF-type solvers
+/// \brief Base class for local ensemble solvers
 template <typename MODEL, typename OBS>
 class LocalEnsembleSolver {
   typedef Observers<MODEL, OBS>       Observers_;
@@ -104,15 +104,16 @@ class LocalEnsembleSolver {
   virtual void measurementUpdate(const IncrementEnsemble4D_ & bg, IncrementEnsemble4D_ & an);
 
   /// update background ensemble \p bg to analysis ensemble \p an at a grid point location \p i
-  virtual void measurementUpdate(const IncrementEnsemble4D_ & bg,
-                                 const GeometryIterator_ & i, IncrementEnsemble4D_ & an) = 0;
+  virtual void measurementUpdate(const Eigen::VectorXd &,
+                                 const Eigen::VectorXd &,
+                                 const Departures_ &,
+                                 const IncrementEnsemble4D_ &,
+                                 const GeometryIterator_ &,
+                                 IncrementEnsemble4D_ &) = 0;
 
   /// copy \p an[\p i] = \p bg[\p i] (e.g. when there are no local observations to update state)
   virtual void copyLocalIncrement(const IncrementEnsemble4D_ & bg,
                                   const GeometryIterator_ & i, IncrementEnsemble4D_ & an) const;
-
-  /// apply posterior inflation to a local ensemble
-  void posteriorInflation(const Eigen::MatrixXd & Xb, Eigen::MatrixXd & Xa) const;
 
   /// compute H(x) based on 4D state \p xx and put the result into \p yy. Also sets up
   /// R_ based on the QC filters run during H(x)
@@ -121,7 +122,7 @@ class LocalEnsembleSolver {
   void computeHofX4DNonLinear(const eckit::Configuration &, const StateSet_ &, Observations_ &);
   /// accessor to obs localizations
   const ObsLocalizations_ & obsloc() const {return obsloc_;}
-  bool useLinearObserver() { return useLinearObserver_; }
+  bool useLinearObserver() const { return useLinearObserver_; }
 
  protected:
   const Geometry_  & geometry_;   ///< Geometry associated with the updated states
@@ -130,8 +131,8 @@ class LocalEnsembleSolver {
   DeparturesEnsemble_ Yb_;        ///< ensemble perturbations in the observation space;
                                   ///  set in computeHofX method
   std::unique_ptr<ObsErrors_>   R_;        ///< observation errors, set in computeHofX method
-  std::unique_ptr<Departures_> invVarR_;   ///< inverse observation error variance for assimilated
-                                           ///< observations; set in computeHofX method
+  std::unique_ptr<Departures_> invVarR_;   ///< inverse observation error variance; set in
+                                           ///  computeHofX method
   LocalEnsembleSolverParameters options_;
 
   const StateSet_ & xbmean_;     ///< ensemble mean or a control member that will be used to
@@ -165,9 +166,11 @@ class LocalEnsembleSolver {
 
 template <typename MODEL, typename OBS>
 LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
-                                        const Geometry_ & geometry,
-                                        const eckit::Configuration & config, size_t nens,
-                                        const StateSet_ & xbmean, const Variables & incvars)
+                                                     const Geometry_ & geometry,
+                                                     const eckit::Configuration & config,
+                                                     size_t nens,
+                                                     const StateSet_ & xbmean,
+                                                     const Variables & incvars)
   : geometry_(geometry),
     obspaces_(obspaces),
     omb_(obspaces_),
@@ -208,13 +211,35 @@ LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
 
 template <typename MODEL, typename OBS>
 void LocalEnsembleSolver<MODEL, OBS>::measurementUpdate
-        (const IncrementEnsemble4D_ & bg, IncrementEnsemble4D_ & an) {
-    for (GeometryIterator_ i = geometry_.begin(); i != geometry_.end(); ++i) {
-      measurementUpdate(bg, i, an);
+(const IncrementEnsemble4D_ & bkg_pert, IncrementEnsemble4D_ & ana_pert) {
+  for (GeometryIterator_ i = geometry_.begin(); i != geometry_.end(); ++i) {
+    // create the local subset of observations
+    Departures_ locvector(this->obspaces_);
+    locvector.ones();
+    this->obsloc().computeLocalization(i, locvector);
+    this->applyAssimilatedMask(locvector);
+    const Eigen::VectorXd local_omb_vec = this->omb_.packEigen(locvector);
+    const Eigen::VectorXd localization = locvector.packEigen(locvector);
+    const Eigen::VectorXd local_invVarR_vec =
+      this->invVarR_->packEigen(locvector).array() * localization.array();
+    if (local_omb_vec.size() == 0) {
+      // no obs. so no need to update Wa_ and wa_
+      // ana_pert[i] = bkg_pert[i]
+      this->copyLocalIncrement(bkg_pert,
+                               i,
+                               ana_pert);
+    } else {
+      this->measurementUpdate(local_omb_vec,
+                              local_invVarR_vec,
+                              locvector,
+                              bkg_pert,
+                              i,
+                              ana_pert);
     }
+  }
 }
-// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
 Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & ens_xx,
@@ -547,43 +572,7 @@ void LocalEnsembleSolver<MODEL, OBS>::copyLocalIncrement(const IncrementEnsemble
 
 // -----------------------------------------------------------------------------
 
-template <typename MODEL, typename OBS>
-void LocalEnsembleSolver<MODEL, OBS>::posteriorInflation(
-                                  const Eigen::MatrixXd & Xb, Eigen::MatrixXd & Xa) const {
-    const size_t nens = Xa.cols();
-    const LocalEnsembleSolverInflationParameters & inflopt = options_.infl;
-
-    // RTPP inflation
-    if (inflopt.doRtpp()) {
-      Xa = (1-inflopt.rtpp)*Xa+inflopt.rtpp*Xb;
-    }
-
-    // RTPS inflation
-    const double eps = DBL_EPSILON;
-    if (inflopt.doRtps()) {
-      // posterior spread
-      Eigen::ArrayXd asprd = Xa.array().square().rowwise().sum()/(nens-1);
-      asprd = asprd.sqrt();
-      asprd = (asprd < eps).select(eps, asprd);  // avoid nan overflow for vars with no spread
-
-      // prior spread
-      Eigen::ArrayXd fsprd = Xb.array().square().rowwise().sum()/(nens-1);
-      fsprd = fsprd.sqrt();
-      fsprd = (fsprd < eps).select(eps, fsprd);
-
-      // rtps inflation factor
-      Eigen::ArrayXd rtpsInfl = inflopt.rtps*((fsprd-asprd)/asprd) + 1;
-      rtpsInfl = (rtpsInfl < inflopt.rtpsInflMin()).select(inflopt.rtpsInflMin(), rtpsInfl);
-      rtpsInfl = (rtpsInfl > inflopt.rtpsInflMax()).select(inflopt.rtpsInflMax(), rtpsInfl);
-
-      // inflate perturbation matrix
-      Xa.array().colwise() *= rtpsInfl;
-    }
-}
-
-// =============================================================================
-
-/// \brief factory for LETKF solvers
+/// \brief factory for LocalEnsembleSolver solvers
 template <typename MODEL, typename OBS>
 class LocalEnsembleSolverFactory {
   typedef Geometry<MODEL>           Geometry_;
@@ -647,7 +636,8 @@ LocalEnsembleSolverFactory<MODEL, OBS>::create(ObsSpaces_ & obspaces, const Geom
     jloc = getMakers().find(id);
   if (jloc == getMakers().end()) {
     Log::error() << id << " does not exist in local ensemble solver factory." << std::endl;
-    Log::error() << "LETKF solver Factory has " << getMakers().size() << " elements:" << std::endl;
+    Log::error() << "Local ensemble solver factory has "
+                 << getMakers().size() << " elements:" << std::endl;
     for (typename std::map<std::string, LocalEnsembleSolverFactory<MODEL, OBS>*>::const_iterator
          jj = getMakers().begin(); jj != getMakers().end(); ++jj) {
        Log::error() << "A " << jj->first << " LocalEnsembleSolver" << std::endl;

@@ -31,7 +31,7 @@ observations:
     obs operator: {}
 
 local ensemble DA:
-  solver: GETKF
+  solver: Deterministic GETKF
   vertical localization:
     fraction of retained variance: .99
     lengthscale: 10

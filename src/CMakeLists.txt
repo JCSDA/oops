@@ -32,6 +32,8 @@ oops/assimilation/DRPFOMMinimizer.h
 oops/assimilation/DRPLanczosMinimizer.h
 oops/assimilation/DualMinimizer.h
 oops/assimilation/DualVector.h
+oops/assimilation/ETKFLinearAlgebra.cc
+oops/assimilation/ETKFLinearAlgebra.h
 oops/assimilation/FGMRES.h
 oops/assimilation/FGMRESMinimizer.h
 oops/assimilation/FtnTriDiagSpectrum.F90
@@ -60,7 +62,6 @@ oops/assimilation/LBGMRESRMinimizer.h
 oops/assimilation/LBHessianMatrix.h
 oops/assimilation/LBMinimizer.h
 oops/assimilation/LETKFSolver.h
-oops/assimilation/LETKFSolverGSI.h
 oops/assimilation/LETKFSolverPert.h
 oops/assimilation/LocalEnsembleSolverParameters.h
 oops/assimilation/LocalEnsembleSolver.h
