@@ -201,42 +201,16 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateEnsembl
     size_t ii = 0;
 
     if (this->useLinearObserver()) {
-      this->R_.reset(new ObsErrors_(this->observersconf_, this->obspaces_));
-
-      // Setup pseudo model to run on ensemble mean
-      State_ init_xx = this->xbmean_[0];
-      std::unique_ptr<PseudoModel_> pseudomodel(new PseudoModel_(this->xbmean_, default_tstep));
-      const Model_ model(std::move(pseudomodel));
-
-      // setup postprocessors and nonlinear observers for the "nonlinear" model run on the mean
-      PostProcessor<State_> post;
-      PostProcessorTLAD<MODEL> posttraj;
-      Observers_ hofx(this->obspaces_, this->obsconf_);
-
-      // setup postprocessors and linear observers for the "linear" model run on the ensemble
-      // perturbations
-      PostProcessor<Increment_> posttl;
-      PostProcessorTLAD<MODEL> posttrajtl;
-      ObserversTLAD_ linear_hofx(this->obspaces_, this->obsconf_);
-
-      // initialize nonlinear model postprocessor
-      hofx.initialize(this->geometry_, obsaux, *this->R_, post, config);
-
-      // add linearized H(x) to the nonlinear model postprocessor
-      linear_hofx.initializeTraj(this->geometry_, obsaux, posttraj);
-      // create TrajectorySaver with hofx_linear, and enroll in post
-      post.enrollProcessor(new TrajectorySaver<MODEL>(eckit::LocalConfiguration(),
-                                                  this->geometry_, posttraj));
-      // run nonlinear model on the ensemble mean
-      model.forecast(init_xx, moderr, flength, post);
-      // compute nonlinear H(x_mean)
       std::vector<ObsDataInt_> qcflags;
       for (size_t jj = 0; jj < this->obspaces_.size(); ++jj) {
         ObsDataInt_ qc(this->obspaces_[jj], this->obspaces_[jj].obsvariables());
         qcflags.push_back(qc);
       }
-      hofx.finalize(yb_mean, qcflags);
-      linear_hofx.finalizeTraj(qcflags);
+      // set up postprocessors for the linear model run on ensemble perturbations
+      PostProcessor<Increment_> posttl;
+      PostProcessorTLAD<MODEL> posttrajtl;
+
+      this->computeHofX4D(config, this->xbmean_, yb_mean, flength, default_tstep, obsaux, moderr);
 
       // for linear H, yb_mean==y_mean_xb
       Observations_ y_mean_xb(yb_mean);
@@ -270,7 +244,8 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateEnsembl
       this->applyAssimilatedMask(this->omb_);
 
       // add linearized H(x) to the linear model postprocessor
-      linear_hofx.initializeTL(posttrajtl);
+      this->linear_hofx_->initializeTL(posttrajtl);
+
       for (size_t iens = 0; iens < ens_xx.size(); ++iens) {
         Log::info() << " DeterministicGETKF::computeHofX starting ensemble member "
                     << iens+1 << std::endl;
@@ -278,19 +253,12 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateEnsembl
         Log::info() << " GETKFSolver::computeHofX starting ensemble member " << iens+1 << std::endl;
         util::printRunStats("GETKFSolver calculate hofx");
         tmpDeps.zero();
-
+        // Setup PseudoLinearModelIncrement4D to run on ensemble perturbation
         dx.diff(ens_xx[iens], this->xbmean_);
-
-        // observe original member
-        Increment_ init_dx = dx[0];
-        std::unique_ptr<PseudoLinearModel_> pseudolinearmodel =
-           std::make_unique<PseudoLinearModel_>(dx, default_tstep);
-        const LinearModel_ linear_model(std::move(pseudolinearmodel));
-        // run linear model on the ensemble perturbation, compute linear H*dx
-        linear_model.forecastTL(init_dx, moderrinc, flength, posttl, posttrajtl);
-        linear_hofx.finalizeTL(obsauxinc, tmpDeps);
+        // Approximate H(x) using linearized model and linearized observer
+        this->applyLinearToPerturbations(dx, flength, default_tstep, obsauxinc, moderrinc,
+                                      posttl, posttrajtl, tmpDeps);
         (this->Yb_).setData(iens, tmpDeps);
-
         Observations_ tmpObs(yb_mean);
         tmpObs += this->Yb_.getData(iens);
         Log::test() << "H(x) for member " << iens+1 << ":" << std::endl << tmpObs << std::endl;
@@ -299,13 +267,8 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateEnsembl
         // observe modulated members
         vertloc_.modulateIncrement(dx, Ztmp);
         for (size_t ieig = 0; ieig < neig_; ++ieig) {
-          std::unique_ptr<PseudoLinearModel_> pseudolinearmodel =
-               std::make_unique<PseudoLinearModel_>(Ztmp[ieig], default_tstep);
-          const LinearModel_ linear_model(std::move(pseudolinearmodel));
-          // run linear model on the ensemble perturbation, compute linear H*dx
-          Increment_ init_dx = Ztmp[ieig][0];
-          linear_model.forecastTL(init_dx, moderrinc, flength, posttl, posttrajtl);
-          linear_hofx.finalizeTL(obsauxinc, tmpDeps);
+          this->applyLinearToPerturbations(Ztmp[ieig], flength, default_tstep, obsauxinc, moderrinc,
+                                           posttl, posttrajtl, tmpDeps);
           HZb_.setData(ii, tmpDeps);
           Observations_ tmpObs(yb_mean);
           tmpObs += HZb_.getData(ii);
@@ -329,7 +292,7 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateEnsembl
           StateSet_ tmpState = this->xbmean_;
           tmpState += Ztmp[ieig];
           Observations_ tmpObs(this->obspaces_);
-          this->computeHofX4DNonLinear(config, tmpState, tmpObs);
+          this->computeHofX4D(config, tmpState, tmpObs, flength, default_tstep, obsaux, moderr);
           HZb_.setData(ii, tmpObs - yb_mean);
           tmpObs.save("hofxm"+std::to_string(iteration)+"_"+std::to_string(ieig+1)+
                         "_"+std::to_string(iens+1));
