@@ -14,6 +14,7 @@ use qg_geom_mod
 use qg_interp_mod
 
 implicit none
+external abor1_ftn
 
 private
 public :: qg_getvalues_interp, qg_getvalues_interp_ad

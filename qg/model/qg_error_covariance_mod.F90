@@ -21,6 +21,7 @@ use qg_geom_mod
 use random_mod
 
 implicit none
+external abor1_ftn, dsyev, dsymv
 
 private
 public :: qg_error_covariance_config

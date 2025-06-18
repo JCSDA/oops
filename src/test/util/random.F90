@@ -16,6 +16,7 @@ use random_mod
 use fckit_log_module, only : fckit_log
 
 implicit none
+external abor1_ftn
 private
 
 integer, parameter :: max_string = 800

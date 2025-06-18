@@ -62,6 +62,7 @@ contains
 subroutine datetime_create(fstring, self)
 use fckit_log_module, only : fckit_log
 implicit none
+external abor1_ftn
 type(datetime), intent(out)  :: self
 character(len=*), intent(in) :: fstring
 character(kind=c_char,len=1), allocatable :: cstring(:)
@@ -86,6 +87,7 @@ end subroutine datetime_create
 
 subroutine datetime_delete(self)
 implicit none
+external abor1_ftn
 type(datetime), intent(inout) :: self
 
 if (c_associated(self%ptr)) then
@@ -314,6 +316,7 @@ end subroutine f_c_push_to_datetime_vector
 
 subroutine datetime_format_string(fstring, self)
 implicit none
+external abor1_ftn
 type(datetime), intent(inout) :: self
 character(len=*), intent(inout)  :: fstring
 character(kind=c_char,len=1), allocatable :: cstring(:)

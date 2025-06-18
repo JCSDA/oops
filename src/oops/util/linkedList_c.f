@@ -50,6 +50,7 @@ subroutine get_(self,key,ptr)
  type (LISTED_TYPE), pointer   :: ptr
 
  type(node_t), pointer :: next
+ external abor1_ftn
 
  !note that the list starts from self%head%next
  next => self%head

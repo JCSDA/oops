@@ -17,6 +17,9 @@ use iso_c_binding
 use kinds
 
 implicit none
+external dsteqr
+external abor1_ftn
+
 integer(c_int), intent(in) :: nn              !< Size of matrix
 real(c_double), intent(in) :: diag(nn)        !< Diagonal elements
 real(c_double), intent(in) :: subd(nn-1)      !< Sub-diagonal elements

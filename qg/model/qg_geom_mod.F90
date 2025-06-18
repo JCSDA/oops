@@ -17,6 +17,7 @@ use qg_constants_mod
 use qg_projection_mod
 
 implicit none
+external abor1_ftn, dgeev, dgetrf, dgetri
 
 private
 public :: qg_geom

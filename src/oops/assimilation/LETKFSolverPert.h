@@ -64,8 +64,8 @@ class StochasticLETKF : public DeterministicLETKF<MODEL, OBS> {
                               const Eigen::VectorXd & invVarR);
 
   /// Applies weights and adds posterior inflation
-  virtual void applyWeights(const IncrementEnsemble4D_ &, IncrementEnsemble4D_ &,
-                            const GeometryIterator_ &);
+  void applyWeights(const IncrementEnsemble4D_ &, IncrementEnsemble4D_ &,
+                    const GeometryIterator_ &) override;
 
  private:
   // departure ensemble object of observation perturbations

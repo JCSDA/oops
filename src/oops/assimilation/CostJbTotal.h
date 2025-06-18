@@ -105,8 +105,8 @@ template<typename MODEL, typename OBS> class CostJbTotal {
   const JbState_ & jbState() const {return *jb_;}
   const JbModelAux_ & jbModBias() const {return jbModBias_;}
   const JbObsAux_ & jbObsBias() const {return *jbObsBias_;}
-  const util::DateTime & windowBegin() const {return timeWindow_.start();}
-  const util::DateTime & windowEnd()   const {return timeWindow_.end();}
+  const util::DateTime windowBegin() const {return timeWindow_.start();}
+  const util::DateTime windowEnd()   const {return timeWindow_.end();}
 /// continuous DA update
   void applyContDaUpdate(const eckit::Configuration &, std::vector<util::DateTime> &);
 

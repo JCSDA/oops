@@ -16,6 +16,7 @@ use qg_projection_mod
 use qg_tools_mod
 
 implicit none
+external abor1_ftn
 
 private
 public :: qg_interp_trilinear, qg_interp_trilinear_ad, qg_interp_bilinear, qg_interp_bilinear_ad, &

@@ -16,6 +16,7 @@ use oops_variables_mod
 use fckit_log_module, only : fckit_log
 
 implicit none
+external abor1_ftn
 private
 
 integer, parameter :: var_length = 10

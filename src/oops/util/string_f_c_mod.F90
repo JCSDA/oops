@@ -9,12 +9,13 @@
 !> Convert Fortran strings to/from C++
 
 module string_f_c_mod
-
 use, intrinsic :: iso_c_binding, only : c_char, c_null_char, c_horizontal_tab
 
 implicit none
 private
 public f_c_string, c_f_string, f_c_push_string_vector
+
+external abor1_ftn
 
 !-------------------------------------------------------------------------------
 interface

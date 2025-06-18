@@ -8,6 +8,7 @@ module netcdf_utils_mod
 use netcdf
 
 implicit none
+external abor1_ftn
 private
 public nccheck
 

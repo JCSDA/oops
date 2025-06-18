@@ -61,7 +61,9 @@ void writerForPressures(const atlas::FieldSet & fset,
   // NetCDF IDs
   int ncid;  // file ID
   int lat_did, lon_did, lev_did;  // dim IDs
-  int lat_vid, lon_vid, lev_vid, field_vid[vars.size()];  // var IDs
+  int lat_vid, lon_vid, lev_vid;  // var IDs
+  std::vector<int> field_vid(vars.size());  // var IDs
+
   int ncvartype;  // float or double
 
   // NetCDF file path
@@ -170,8 +172,9 @@ void writerForLevels(const atlas::FieldSet & fset,
 
   // NetCDF IDs
   int ncid;  // file ID
-  int lat_did, lon_did, lev_did, sfc_did;  // dim IDs
-  int lat_vid, lon_vid, lev_vid, field_vid[vars.size()];  // var IDs
+  int lat_did, lon_did, lev_did, sfc_did;   // dim IDs
+  int lat_vid, lon_vid, lev_vid;            // var IDs
+  std::vector<int> field_vid(vars.size());  // var IDs
   int ncvartype;  // float or double
 
   // NetCDF file path

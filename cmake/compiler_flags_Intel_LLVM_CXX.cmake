@@ -1,11 +1,3 @@
-# (C) Copyright 2009-2016 ECMWF.
-# 
-# This software is licensed under the terms of the Apache Licence Version 2.0
-# which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
-# In applying this licence, ECMWF does not waive the privileges and immunities 
-# granted to it by virtue of its status as an intergovernmental organisation nor
-# does it submit to any jurisdiction.
-
 ####################################################################
 # FLAGS COMMON TO ALL BUILD TYPES
 ####################################################################
@@ -14,35 +6,37 @@
 # RELEASE FLAGS
 ####################################################################
 
-set( CMAKE_Fortran_FLAGS_RELEASE "-O3 -ip -unroll -inline -no-heap-arrays" )
+set( CMAKE_CXX_FLAGS_RELEASE     "-O3" )
 
 ####################################################################
 # DEBUG FLAGS
 ####################################################################
 
-set( CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g -check bounds -traceback -warn -heap-arrays -fpe-all=0 -fpe:0 -check all -warn all" )
+set( CMAKE_CXX_FLAGS_DEBUG       "-O0 -g -ffp-exception-behavior=strict -ftrapping-math -Wall" )
+
+####################################################################
+# RELEASE WITH DEBUG INFO (DEFAULT)
+####################################################################
+
+set( CMAKE_CXX_FLAGS_RELWITHDEBINFO  "-O2 -g -DNDEBUG" )
 
 ####################################################################
 # BIT REPRODUCIBLE FLAGS
 ####################################################################
 
-set( CMAKE_Fortran_FLAGS_BIT     "-O2 -ip -ipo -unroll -inline -no-heap-arrays" )
+set( CMAKE_CXX_FLAGS_BIT         "-O2" )
 
 ####################################################################
 # LINK FLAGS
 ####################################################################
 
-set( CMAKE_Fortran_LINK_FLAGS    "" )
+set( CMAKE_CXX_LINK_FLAGS        "" )
 
 ####################################################################
 # FLAGS FOR AUTOPROFILING
 ####################################################################
 
-set( Fortran_AUTOPROFILING_FLAGS        "-finstrument-functions" )
+set( CXX_AUTOPROFILING_FLAGS        "-finstrument-functions" )
 
 ####################################################################
 
-# Meaning of flags
-# ----------------
-# todo
-  

@@ -13,6 +13,7 @@
 #include <cmath>
 #include <memory>
 #include <tuple>
+#include <vector>
 
 #include "atlas/array.h"
 #include "atlas/util/function/VortexRollup.h"
@@ -1040,7 +1041,8 @@ void readFieldSet(const eckit::mpi::Comm & comm,
   }
 
   // NetCDF IDs
-  int ncid, retval, var_id[vars.size()];
+  int ncid, retval;
+  std::vector<int> var_id(vars.size());
 
   if (oneFilePerTask) {
     // Case 1: one file per MPI task
@@ -1232,7 +1234,8 @@ void readRank3FieldSet(const atlas::FunctionSpace & fspace,
                        const std::string & ncfilepath,
                        const bool & checkDims) {
   // Initialize NetCDF return value and IDs
-  int retval, ncid, dimid, varid[vars.size()];
+  int retval, ncid, dimid;
+  std::vector<int> varid(vars.size());
   size_t rank3Size;
 
   oops::Log::info() << "Info     : Reading file: " << ncfilepath << std::endl;
@@ -1341,8 +1344,9 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
   }
 
   // NetCDF IDs
-  int retval, ncid, nx_id, ny_id, nb_nodes_id, nz_id[vars.size()],
-    d1D_id[1], d2D_id[2], d3D_id[3], lon_id, lat_id, var_id[vars.size()];
+  int retval, ncid, nx_id, ny_id, nb_nodes_id,
+    d1D_id[1], d2D_id[2], d3D_id[3], lon_id, lat_id;
+  std::vector<int> var_id(vars.size()), nz_id(vars.size());
 
   if (oneFilePerTask) {
     // Case 1: one file per MPI task
@@ -1700,8 +1704,8 @@ void writeRank3FieldSet(const atlas::FieldSet & fset,
                         const std::string & ncfilepath,
                         const double & msvalr) {
   // Initialize NetCDF return value and IDs
-  int retval, ncid, nb_nodes_id, d1D_id[1], d3D_id[3], lon_id, lat_id,
-    nz_id[vars.size()], nv_id[vars.size()], var_id[vars.size()];
+  int retval, ncid, nb_nodes_id, d1D_id[1], d3D_id[3], lon_id, lat_id;
+  std::vector<int> nz_id(vars.size()), nv_id(vars.size()), var_id(vars.size());
 
   // Get number of nodes
   size_t nb_nodes = 0;
