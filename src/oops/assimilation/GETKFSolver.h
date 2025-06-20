@@ -57,6 +57,7 @@ class DeterministicGETKF : public LocalEnsembleSolver<MODEL, OBS> {
   typedef Increment<MODEL>            Increment_;
   typedef Increment4D<MODEL>          Increment4D_;
   typedef IncrementEnsemble4D<MODEL>  IncrementEnsemble4D_;
+  typedef IncrementSet<MODEL>         IncrementSet_;
   typedef LinearModel<MODEL>          LinearModel_;
   typedef Model<MODEL>                Model_;
   typedef ModelAuxControl<MODEL>      ModelAux_;
@@ -95,9 +96,9 @@ class DeterministicGETKF : public LocalEnsembleSolver<MODEL, OBS> {
   void measurementUpdate(const Eigen::VectorXd &,
                          const Eigen::VectorXd &,
                          const Departures_ &,
-                         const IncrementEnsemble4D_ &,
+                         const IncrementSet_ &,
                          const GeometryIterator_ &,
-                         IncrementEnsemble4D_ &) override;
+                         IncrementSet_ &) override;
 
  protected:
   Eigen::MatrixXd Wa_;  // transformation matrix for ens. perts. Xa_=Xf*Wa
@@ -118,15 +119,15 @@ class DeterministicGETKF : public LocalEnsembleSolver<MODEL, OBS> {
   ///                     (nens*neig, nlocalobs)
   /// \param[in] YbOrig   Ensemble perturbations for the members to be updated (nens, nlocalobs)
   /// \param[in] invVarR  Inverse of observation error variances (nlocalobs)
-  void computeWeights(const Eigen::VectorXd & omb,
-                      const Eigen::MatrixXf & Yb,
-                      const Eigen::MatrixXf & YbOrig,
-                      const Eigen::VectorXd & invVarR);
+  virtual void computeWeights(const Eigen::VectorXd & omb,
+                              const Eigen::MatrixXf & Yb,
+                              const Eigen::MatrixXf & YbOrig,
+                              const Eigen::VectorXd & invVarR);
 
   /// Applies weights and adds posterior inflation
-  void applyWeights(const IncrementEnsemble4D_ &,
-                    IncrementEnsemble4D_ &,
-                    const GeometryIterator_ &);
+  virtual void applyWeights(const IncrementSet_ &,
+                            IncrementSet_ &,
+                            const GeometryIterator_ &);
 };
 
 // -----------------------------------------------------------------------------
@@ -357,8 +358,8 @@ void DeterministicGETKF<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-void DeterministicGETKF<MODEL, OBS>::applyWeights(const IncrementEnsemble4D_ & bkg_pert,
-                                                  IncrementEnsemble4D_ & ana_pert,
+void DeterministicGETKF<MODEL, OBS>::applyWeights(const IncrementSet_ & bkg_pert,
+                                                  IncrementSet_ & ana_pert,
                                                   const GeometryIterator_ & i) {
   util::Timer timer(classname(), "applyWeights");
 
@@ -377,9 +378,9 @@ template <typename MODEL, typename OBS>
 void DeterministicGETKF<MODEL, OBS>::measurementUpdate(const Eigen::VectorXd & local_omb_vec,
                                                        const Eigen::VectorXd & local_invVarR_vec,
                                                        const Departures_ & locvector,
-                                                       const IncrementEnsemble4D_ & bkg_pert,
+                                                       const IncrementSet_ & bkg_pert,
                                                        const GeometryIterator_ & i,
-                                                       IncrementEnsemble4D_ & ana_pert) {
+                                                       IncrementSet_ & ana_pert) {
   const Eigen::MatrixXf local_Yb_mat_f = this->Yb_.packEigen(locvector);
   const Eigen::MatrixXf local_HZ_mat_f = this->HZb_.packEigen(locvector);
   this->computeWeights(local_omb_vec, local_HZ_mat_f, local_Yb_mat_f, local_invVarR_vec);

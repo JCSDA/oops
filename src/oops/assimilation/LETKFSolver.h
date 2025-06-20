@@ -20,7 +20,7 @@
 #include "oops/base/Departures.h"
 #include "oops/base/DeparturesEnsemble.h"
 #include "oops/base/Geometry.h"
-#include "oops/base/IncrementEnsemble4D.h"
+#include "oops/base/IncrementSet.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/ObsLocalizations.h"
 #include "oops/base/ObsSpaces.h"
@@ -48,7 +48,7 @@ class DeterministicLETKF : public LocalEnsembleSolver<MODEL, OBS> {
   typedef DeparturesEnsemble<OBS>     DeparturesEnsemble_;
   typedef Geometry<MODEL>             Geometry_;
   typedef GeometryIterator<MODEL>     GeometryIterator_;
-  typedef IncrementEnsemble4D<MODEL>  IncrementEnsemble4D_;
+  typedef IncrementSet<MODEL>         IncrementSet_;
   typedef ObsErrors<OBS>              ObsErrors_;
   typedef ObsLocalizations<MODEL, OBS> ObsLocalizations_;
   typedef ObsSpaces<OBS>              ObsSpaces_;
@@ -68,9 +68,9 @@ class DeterministicLETKF : public LocalEnsembleSolver<MODEL, OBS> {
   void measurementUpdate(const Eigen::VectorXd &,
                          const Eigen::VectorXd &,
                          const Departures_ &,
-                         const IncrementEnsemble4D_ &,
+                         const IncrementSet_ &,
                          const GeometryIterator_ &,
-                         IncrementEnsemble4D_ &) override;
+                         IncrementSet_ &) override;
 
  protected:
   /// Computes weights for ensemble update with local observations
@@ -78,13 +78,13 @@ class DeterministicLETKF : public LocalEnsembleSolver<MODEL, OBS> {
   /// \param[in] Yb       Ensemble perturbations (nens, nlocalobs)
   /// \param[in] invVarR  Inverse of observation error variances (nlocalobs)
 
-  virtual void computeWeights(const Eigen::VectorXd & omb,
+  void computeWeights(const Eigen::VectorXd & omb,
                               const Eigen::MatrixXf & Yb,
                               const Eigen::VectorXd & invVarR);
 
   /// Applies weights and adds posterior inflation
-  virtual void applyWeights(const IncrementEnsemble4D_ &,
-                            IncrementEnsemble4D_ &,
+  virtual void applyWeights(const IncrementSet_ &,
+                            IncrementSet_ &,
                             const GeometryIterator_ &);
 
   Eigen::MatrixXd Wa_;  // transformation matrix for ens. perts. Xa=Xf*Wa
@@ -123,9 +123,9 @@ template <typename MODEL, typename OBS>
 void DeterministicLETKF<MODEL, OBS>::measurementUpdate(const Eigen::VectorXd & local_omb_vec,
                                                        const Eigen::VectorXd & local_invVarR_vec,
                                                        const Departures_ & locvector,
-                                                       const IncrementEnsemble4D_ & bkg_pert,
+                                                       const IncrementSet_ & bkg_pert,
                                                        const GeometryIterator_ & i,
-                                                       IncrementEnsemble4D_ & ana_pert) {
+                                                       IncrementSet_ & ana_pert) {
   const Eigen::MatrixXf local_Yb_mat_f = this->Yb_.packEigen(locvector);
   this->computeWeights(local_omb_vec, local_Yb_mat_f, local_invVarR_vec);
   this->applyWeights(bkg_pert, ana_pert, i);
@@ -174,8 +174,8 @@ void DeterministicLETKF<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-void DeterministicLETKF<MODEL, OBS>::applyWeights(const IncrementEnsemble4D_ & bkg_pert,
-                                                  IncrementEnsemble4D_ & ana_pert,
+void DeterministicLETKF<MODEL, OBS>::applyWeights(const IncrementSet_ & bkg_pert,
+                                                  IncrementSet_ & ana_pert,
                                                   const GeometryIterator_ & i) {
   util::Timer timer(classname(), "applyWeights");
 

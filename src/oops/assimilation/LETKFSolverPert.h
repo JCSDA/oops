@@ -29,7 +29,7 @@ class StochasticLETKF : public DeterministicLETKF<MODEL, OBS> {
   typedef Geometry<MODEL>             Geometry_;
   typedef GeometryIterator<MODEL>     GeometryIterator_;
   typedef Observations<OBS>           Observations_;
-  typedef IncrementEnsemble4D<MODEL>  IncrementEnsemble4D_;
+  typedef IncrementSet<MODEL>         IncrementSet_;
   typedef ObsSpaces<OBS>              ObsSpaces_;
   typedef StateSet<MODEL>             StateSet_;
   typedef StateEnsemble4D<MODEL>      StateEnsemble4D_;
@@ -47,9 +47,9 @@ class StochasticLETKF : public DeterministicLETKF<MODEL, OBS> {
   void measurementUpdate(const Eigen::VectorXd &,
                          const Eigen::VectorXd &,
                          const Departures_ &,
-                         const IncrementEnsemble4D_ &,
+                         const IncrementSet_ &,
                          const GeometryIterator_ &,
-                         IncrementEnsemble4D_ &) override;
+                         IncrementSet_ &) override;
 
  private:
   /// Computes weights for ensemble update with local observations
@@ -58,13 +58,13 @@ class StochasticLETKF : public DeterministicLETKF<MODEL, OBS> {
   ///                     (nens, nlocalobs)
   /// \param[in] Yb       Ensemble hofx perturbations (nens, nlocalobs)
   /// \param[in] invVarR  Inverse of observation error variances (nlocalobs)
-  virtual void computeWeights(const Eigen::VectorXd & omb,
-                              const Eigen::MatrixXf & OmbPert,
-                              const Eigen::MatrixXf & Yb,
-                              const Eigen::VectorXd & invVarR);
+  void computeWeights(const Eigen::VectorXd & omb,
+                      const Eigen::MatrixXf & OmbPert,
+                      const Eigen::MatrixXf & Yb,
+                      const Eigen::VectorXd & invVarR);
 
   /// Applies weights and adds posterior inflation
-  void applyWeights(const IncrementEnsemble4D_ &, IncrementEnsemble4D_ &,
+  void applyWeights(const IncrementSet_ &, IncrementSet_ &,
                     const GeometryIterator_ &) override;
 
  private:
@@ -128,9 +128,9 @@ template <typename MODEL, typename OBS>
 void StochasticLETKF<MODEL, OBS>::measurementUpdate(const Eigen::VectorXd & local_omb_vec,
                                                     const Eigen::VectorXd & local_invVarR_vec,
                                                     const Departures_ & locvector,
-                                                    const IncrementEnsemble4D_ & bkg_pert,
+                                                    const IncrementSet_ & bkg_pert,
                                                     const GeometryIterator_ & i,
-                                                    IncrementEnsemble4D_ & ana_pert) {
+                                                    IncrementSet_ & ana_pert) {
   const Eigen::MatrixXf local_OmbPert_mat_f = OmbPertDepEns_.packEigen(locvector);
   const Eigen::MatrixXf local_Yb_mat_f = this->Yb_.packEigen(locvector);
   this->computeWeights(local_omb_vec, local_OmbPert_mat_f, local_Yb_mat_f, local_invVarR_vec);
@@ -156,8 +156,8 @@ void StochasticLETKF<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-void StochasticLETKF<MODEL, OBS>::applyWeights(const IncrementEnsemble4D_ & bkg_pert,
-                                               IncrementEnsemble4D_ & ana_pert,
+void StochasticLETKF<MODEL, OBS>::applyWeights(const IncrementSet_ & bkg_pert,
+                                               IncrementSet_ & ana_pert,
                                                const GeometryIterator_ & i) {
   util::Timer timer(classname(), "applyWeights");
 

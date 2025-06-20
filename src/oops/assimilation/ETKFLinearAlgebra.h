@@ -252,7 +252,7 @@ namespace oops {
                             const LocalEnsembleSolverInflationParameters & inflopt,
                             const VerticalLocEV<MODEL> * const vertLoc = nullptr) {
     // Loop through analysis times.
-    for (size_t itime = 0; itime < bkg_pert[0].size(); ++itime) {
+    for (size_t itime = 0; itime < bkg_pert.time_size(); ++itime) {
       // Original Xb.
       Eigen::MatrixXd Xb;
       bkg_pert.packEigen(Xb, geomIter, itime);
@@ -302,7 +302,7 @@ namespace oops {
                             const LocalEnsembleSolverInflationParameters & inflopt,
                             const VerticalLocEV<MODEL> * const vertLoc = nullptr) {
     // Loop through analysis times.
-    for (size_t itime = 0; itime < bkg_pert[0].size(); ++itime) {
+    for (size_t itime = 0; itime < bkg_pert.time_size(); ++itime) {
       // Original Xb.
       Eigen::MatrixXd Xb;
       bkg_pert.packEigen(Xb, geomIter, itime);

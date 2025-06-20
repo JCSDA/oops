@@ -22,8 +22,6 @@
 #include "oops/base/Departures.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
-#include "oops/base/Increment4D.h"
-#include "oops/base/IncrementEnsemble4D.h"
 #include "oops/base/Observations.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/ParameterTraitsVariables.h"
@@ -167,9 +165,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
   typedef Departures<OBS>                  Departures_;
   typedef Geometry<MODEL>                  Geometry_;
   typedef GeometryIterator<MODEL>          GeometryIterator_;
-  typedef IncrementEnsemble4D<MODEL>       IncrementEnsemble4D_;
   typedef Increment<MODEL>                 Increment_;
-  typedef Increment4D<MODEL>               Increment4D_;
   typedef IncrementSet<MODEL>              IncrementSet_;
   typedef LocalEnsembleSolver<MODEL, OBS>  LocalSolver_;
   typedef ObsSpaces<OBS>                   ObsSpaces_;
@@ -220,7 +216,6 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     //  Setup observation window
     const util::TimeWindow timeWindow(fullConfig.getSubConfiguration("time window"));
     Log::info() << "Observation window: " << timeWindow << std::endl;
-
 
     // Get observations configuration
     const eckit::LocalConfiguration observationsConfig = params.observations;
@@ -291,15 +286,20 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
       Log::test() << "Background mean :" << bkg_mean << std::endl;
     }
 
+    std::vector<int> members(nens);
+    std::iota(members.begin(), members.end(), 0);
+
     // calculate background ensemble perturbations
-    IncrementEnsemble4D_ bkg_pert(ens_xx, bkg_mean, incvars);
+    IncrementSet_ bkg_pert(ens_xx, bkg_mean, incvars, members);
 
     // initialize empty analysis perturbations
-    IncrementEnsemble4D_ ana_pert(*geometry, incvars, ens_xx[0].validTimes(), bkg_pert.size());
+    IncrementSet_ ana_pert(*geometry, incvars, ens_xx[0].validTimes(), ens_xx[0].commTime(),
+                           members);
 
     // run the solver at each gridpoint
     Log::info() << "Beginning core local solver..." << std::endl;
     util::printRunStats("LocalEnsembleDA before solver", true);
+
     solver->measurementUpdate(bkg_pert, ana_pert);
 
     // wait all tasks to finish their solution, so the timing for functions below reports
@@ -308,21 +308,22 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
 
     Log::info() << "Local solver completed." << std::endl;
     util::printRunStats("LocalEnsembleDA after solver", true);
-
     // calculate final analysis states
     if (incvars == statevars) {
       for (size_t jj = 0; jj < nens; ++jj) {
         ens_xx[jj] = bkg_mean;
-        ens_xx[jj] += ana_pert[jj];
+          for (size_t itime = 0; itime < ana_pert.time_size(); ++itime) {
+            ens_xx[jj][itime] += ana_pert(itime, jj);
+          }
       }
     } else {
-      Increment4D_ ana_increment(*geometry, incvars, ens_xx[0].validTimes());
+      Increment_ ana_inc(*geometry, incvars, ens_xx[0].validTimes()[0]);
       for (size_t jj = 0; jj < nens; ++jj) {
-        ana_increment = ana_pert[jj];
-        for (size_t itime = 0; itime < bkg_pert[jj].size(); ++itime) {
-          ana_increment[itime] -= bkg_pert[jj][itime];
+        for (size_t itime = 0; itime < bkg_pert.time_size(); ++itime) {
+          ana_inc = ana_pert(itime, jj);
+          ana_inc -= bkg_pert(itime, jj);
+          ens_xx[jj][itime] += ana_inc;
         }
-        ens_xx[jj] += ana_increment;
       }
     }
 
@@ -339,9 +340,9 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
       eckit::LocalConfiguration output = *params.outputPostEnsInc.value();
       for (size_t jj = 0; jj < nens; ++jj) {
         util::setMember(output, jj+1);
-        for (size_t itime = 0; itime < ana_pert[0].size(); ++itime) {
-          Increment_ ana_increment(ana_pert[jj][itime], true);
-          ana_increment -= bkg_pert[jj][itime];
+        for (size_t itime = 0; itime < ana_pert.time_size(); ++itime) {
+          Increment_ ana_increment(ana_pert(itime, jj), true);
+          ana_increment -= bkg_pert(itime, jj);
           ana_increment.write(output);
         }
       }
@@ -396,7 +397,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
       eckit::LocalConfiguration output = *params.outputPostMeanInc.value();
       util::setMember(output, 0);
       for (size_t itime = 0; itime < ana_mean.size(); ++itime) {
-        Increment_ ana_increment(ana_pert[0][itime], false);
+        Increment_ ana_increment(ana_pert(itime, 0), false);
         ana_increment.diff(ana_mean[itime], bkg_mean[itime]);
         ana_increment.write(output);
         if (do_test_prints) {
@@ -651,34 +652,19 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     }
   }
 
-  void saveVariance(const eckit::LocalConfiguration & params, const IncrementEnsemble4D_ & perts,
+  void saveVariance(const eckit::LocalConfiguration & params, const IncrementSet_ & perts,
                     const bool do_test_prints, const std::string & strOut) const {
-    // save and optionaly print varaince of an IncrementEnsemble4D_ object
-    size_t nens = perts.size();
-    const double ncVar = 1.0/(static_cast<double>(nens) - 1.0);
-    const double ncMean = 1.0/(static_cast<double>(nens));
-    for (size_t itime = 0; itime < perts[0].size(); ++itime) {
-      // compute the mean
-      Increment_ mean(perts[0][itime], false);
-      for (size_t iens = 0; iens < nens; ++iens) {
-         mean += perts[iens][itime];
+      // save and optionally print variance of an IncrementSet_ object
+      IncrementSet_ stddev = perts.ens_stddev();
+      for (size_t itime = 0; itime < perts.time_size(); ++itime) {
+          Increment_ var = stddev(itime, 0);
+          var.schur_product_with(var);
+          // write to disk and do test prints
+          var.write(params);
+          if (do_test_prints) {
+            Log::test() << strOut << var << std::endl;
+          }
       }
-      mean *= ncMean;
-      // remove the mean from the ensemble and accumulate sum of squares
-      Increment_ var(perts[0][itime], false);
-      for (size_t iens = 0; iens < nens; ++iens) {
-        Increment_ tmp(perts[iens][itime], true);
-        tmp -= mean;
-        tmp.schur_product_with(tmp);
-        var += tmp;
-      }
-      var *= ncVar;
-      // write to disk and do test prints
-      var.write(params);
-      if (do_test_prints) {
-        Log::test() << strOut << var << std::endl;
-      }
-    }
   }
 
 // -----------------------------------------------------------------------------

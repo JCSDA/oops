@@ -22,6 +22,7 @@
 #include "oops/base/Increment4D.h"
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/IncrementEnsemble4D.h"
+#include "oops/base/IncrementSet.h"
 #include "oops/base/LocalIncrement.h"
 #include "oops/generic/gc99.h"
 #include "oops/interface/GeometryIterator.h"
@@ -71,6 +72,7 @@ class VerticalLocEV: public util::Printable,
   typedef Increment4D<MODEL>         Increment4D_;
   typedef IncrementEnsemble<MODEL>   IncrementEnsemble_;
   typedef IncrementEnsemble4D<MODEL> IncrementEnsemble4D_;
+  typedef IncrementSet<MODEL>        IncrementSet_;
   typedef State<MODEL>               State_;
 
  public:
@@ -83,6 +85,8 @@ class VerticalLocEV: public util::Printable,
 
 // modulate an incrementEnsemble at a {gridPoint, timeSlice}
   Eigen::MatrixXd modulateIncrement(const IncrementEnsemble4D_ &,
+                                    const GeometryIterator_ &, size_t) const;
+  Eigen::MatrixXd modulateIncrement(const IncrementSet_ &,
                                     const GeometryIterator_ &, size_t) const;
 
 // returns number of retained eigen modes
@@ -364,10 +368,50 @@ Eigen::MatrixXd VerticalLocEV<MODEL>::modulateIncrement(
       for (size_t iv=0; iv < nv; ++iv) {
          Z(iv, ii) = EvecRepl[iv]*etmp2[iv];
       }
-      ii += 1;
+      ++ii;
     }
   }
   return Z;
+}
+
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+Eigen::MatrixXd VerticalLocEV<MODEL>::modulateIncrement(
+                                  const IncrementSet_ & incrs,
+                                  const GeometryIterator_ & gi,
+                                  size_t itime) const {
+    // modulate an increment at grid point
+
+    size_t nv = 0;
+    std::vector<double> EvecRepl;
+    if (EVsStoredAs3D_) {
+        nv = (*sqrtVertLoc_)[0].getLocal(gi).getVals().size();
+    } else {
+        EvecRepl = replicateEigenVector(0);
+        nv = EvecRepl.size();
+    }
+    size_t nens = incrs.ens_size();
+
+    Eigen::MatrixXd Z(nv, neig_*nens);
+    std::vector<double> etmp2(nv);
+
+    size_t ii = 0;
+    for (size_t iens=0; iens < nens; ++iens) {
+        etmp2 =  incrs(itime, iens).getLocal(gi).getVals();
+        for (size_t ieig=0; ieig < neig_; ++ieig) {
+            if (EVsStoredAs3D_) {
+                EvecRepl = (*sqrtVertLoc_)[ieig].getLocal(gi).getVals();
+            } else {
+                EvecRepl = replicateEigenVector(ieig);
+            }
+            // modulate and assign
+            for (size_t iv=0; iv < nv; ++iv) {
+                Z(iv, ii) = EvecRepl[iv]*etmp2[iv];
+            }
+            ++ii;
+        }
+    }
+    return Z;
 }
 
 // -----------------------------------------------------------------------------

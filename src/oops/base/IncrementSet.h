@@ -16,7 +16,9 @@
 #include "oops/base/DataSetBase.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
+#include "oops/base/StateEnsemble4D.h"
 #include "oops/base/StateSet.h"
+#include "oops/interface/GeometryIterator.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
@@ -29,9 +31,11 @@ namespace oops {
 
 template<typename MODEL>
 class IncrementSet : public DataSetBase< Increment<MODEL>, Geometry<MODEL> > {
-  typedef Geometry<MODEL>     Geometry_;
-  typedef Increment<MODEL>    Increment_;
-  typedef StateSet<MODEL>     States_;
+  typedef Geometry<MODEL>            Geometry_;
+  typedef GeometryIterator<MODEL>    GeometryIterator_;
+  typedef Increment<MODEL>           Increment_;
+  typedef StateEnsemble4D<MODEL>     StateEnsemble4D_;
+  typedef StateSet<MODEL>            States_;
 
  public:
   IncrementSet(const Geometry_ &, const Variables &, const std::vector<util::DateTime> &,
@@ -46,6 +50,8 @@ class IncrementSet : public DataSetBase< Increment<MODEL>, Geometry<MODEL> > {
                const eckit::mpi::Comm & commEns = oops::mpi::myself());
   IncrementSet(const Geometry_ &, const Variables &, const States_ &);
   IncrementSet(const Geometry_ &, const Variables &, States_ &, const bool clearStates = false);
+  IncrementSet(const StateEnsemble4D_ &, const States_ &, const Variables &,
+               const std::vector<int> &);
   virtual ~IncrementSet() = default;
 
   void zero();
@@ -58,6 +64,10 @@ class IncrementSet : public DataSetBase< Increment<MODEL>, Geometry<MODEL> > {
   void schur_product_with(const IncrementSet &);
 
   void diff(const States_ &, const States_ &);
+
+  /// Eigen interface
+  void packEigen(Eigen::MatrixXd &, const GeometryIterator_ &, const size_t &) const;
+  void setEigen(const Eigen::MatrixXd &, const GeometryIterator_ &, const size_t &);
 
   IncrementSet ens_mean() const;
   IncrementSet ens_stddev() const;
@@ -204,6 +214,20 @@ IncrementSet<MODEL>::IncrementSet(const Geometry_ & resol, const Variables & var
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
+IncrementSet<MODEL>::IncrementSet(const StateEnsemble4D_ &ens, const States_ &mean,
+                                  const Variables &vars, const std::vector<int> &members)
+    : IncrementSet(ens[0].geometry(), vars, ens[0].times(),
+                   ens[0].commTime(), members) {
+    for (size_t itime = 0; itime < this->time_size(); ++itime) {
+        for (size_t iens = 0; iens < this->ens_size(); ++iens) {
+            (*this)(itime, iens).diff(ens[iens][itime], mean[itime]);
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
 void IncrementSet<MODEL>::diff(const States_ & xx1, const States_ & xx2) {
 //  this->check_consistency(xx1);
 //  this->check_consistency(xx2);
@@ -327,6 +351,45 @@ void IncrementSet<MODEL>::schur_product_with(const IncrementSet<MODEL> & other) 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
+void IncrementSet<MODEL>::packEigen(Eigen::MatrixXd &X,
+                                    const GeometryIterator_ &gi,
+                                    const size_t & itime) const
+{
+  const size_t ngp = (*this)(itime, 0).getLocal(gi).getVals().size();
+  X.resize(ngp, this->ens_size());
+  for (size_t iens = 0; iens < this->ens_size(); ++iens) {
+    const LocalIncrement gp = (*this)(itime, iens).getLocal(gi);
+    const std::vector<double> tmp1 = gp.getVals();
+    for (size_t iv = 0; iv < ngp; ++iv) {
+      X(iv, iens) = tmp1[iv];
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void IncrementSet<MODEL>::setEigen(const Eigen::MatrixXd & X,
+                                          const GeometryIterator_ & gi,
+                                          const size_t & itime)
+{
+    LocalIncrement gptmp = (*this)(itime, 0).getLocal(gi);
+    std::vector<double> tmp = gptmp.getVals();
+    const size_t ngp = tmp.size();
+
+    for (size_t iens=0; iens < this->ens_size(); ++iens) {
+        for (size_t iv=0; iv < ngp; ++iv) {
+            tmp[iv] = X(iv, iens);
+        }
+        gptmp.setVals(tmp);
+        (*this)(itime, iens).setLocal(gptmp, gi);
+    }
+}
+
+// -----------------------------------------------------------------------------
+
+
+template<typename MODEL>
 IncrementSet<MODEL> IncrementSet<MODEL>::ens_mean() const {
   Log::trace() << "IncrementSet::ens_mean start" << std::endl;
   IncrementSet<MODEL> mean(this->geometry(), this->variables(), this->times(), this->commTime());
@@ -377,7 +440,7 @@ IncrementSet<MODEL> IncrementSet<MODEL>::ens_stddev() const {
     stddev[jt].sqrt();
   }
 
-  Log::trace() << "StateSet::stddev done" << std::endl;
+  Log::trace() << "IncrementSet::ens_stddev done" << std::endl;
   return stddev;
 }
 

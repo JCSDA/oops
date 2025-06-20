@@ -33,7 +33,7 @@ class StochasticGETKF : public DeterministicGETKF<MODEL, OBS> {
   typedef ObsSpaces<OBS>              ObsSpaces_;
   typedef StateSet<MODEL>             StateSet_;
   typedef StateEnsemble4D<MODEL>      StateEnsemble4D_;
-  typedef IncrementEnsemble4D<MODEL>  IncrementEnsemble4D_;
+  typedef IncrementSet<MODEL>         IncrementSet_;
   typedef VerticalLocEV<MODEL>        VerticalLocEV_;
 
  public:
@@ -48,9 +48,9 @@ class StochasticGETKF : public DeterministicGETKF<MODEL, OBS> {
   void measurementUpdate(const Eigen::VectorXd &,
                          const Eigen::VectorXd &,
                          const Departures_ &,
-                         const IncrementEnsemble4D_ &,
+                         const IncrementSet_ &,
                          const GeometryIterator_ &,
-                         IncrementEnsemble4D_ &) override;
+                         IncrementSet_ &) override;
 
  private:
   /// Computes weights for ensemble update with local observations
@@ -62,11 +62,12 @@ class StochasticGETKF : public DeterministicGETKF<MODEL, OBS> {
   void computeWeights(const Eigen::VectorXd & omb,
                       const Eigen::MatrixXf & OmbPert_f,
                       const Eigen::MatrixXf & HZb_f,
-                      const Eigen::VectorXd & invVarR);
+                      const Eigen::VectorXd & invVarR) override;
 
   /// Applies weights and adds posterior inflation
-  void applyWeights(const IncrementEnsemble4D_ &, IncrementEnsemble4D_ &,
-                    const GeometryIterator_ &);
+  void applyWeights(const IncrementSet_ &,
+                    IncrementSet_ &,
+                    const GeometryIterator_ &) override;
 
  private:
   // parameters
@@ -75,6 +76,7 @@ class StochasticGETKF : public DeterministicGETKF<MODEL, OBS> {
 };
 
 // -----------------------------------------------------------------------------
+
 template <typename MODEL, typename OBS>
 StochasticGETKF<MODEL, OBS>::StochasticGETKF(ObsSpaces_ & obspaces, const Geometry_ & geometry,
                                              const eckit::Configuration & config, size_t nens,
@@ -87,6 +89,7 @@ StochasticGETKF<MODEL, OBS>::StochasticGETKF(ObsSpaces_ & obspaces, const Geomet
 }
 
 // -----------------------------------------------------------------------------
+
 template <typename MODEL, typename OBS>
 Observations<OBS> StochasticGETKF<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & ens_xx,
                                                            size_t iteration, bool readFromFile) {
@@ -136,9 +139,10 @@ void StochasticGETKF<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
 }
 
 // -----------------------------------------------------------------------------
+
 template <typename MODEL, typename OBS>
-void StochasticGETKF<MODEL, OBS>::applyWeights(const IncrementEnsemble4D_ & bkg_pert,
-                                               IncrementEnsemble4D_ & ana_pert,
+void StochasticGETKF<MODEL, OBS>::applyWeights(const IncrementSet_ & bkg_pert,
+                                               IncrementSet_ & ana_pert,
                                                const GeometryIterator_ & i) {
   util::Timer timer(classname(), "applyWeights");
 
@@ -151,15 +155,14 @@ void StochasticGETKF<MODEL, OBS>::applyWeights(const IncrementEnsemble4D_ & bkg_
 }
 
 // -----------------------------------------------------------------------------
-// -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
 void StochasticGETKF<MODEL, OBS>::measurementUpdate(const Eigen::VectorXd & local_omb_vec,
                                                     const Eigen::VectorXd & local_invVarR_vec,
                                                     const Departures_ & locvector,
-                                                    const IncrementEnsemble4D_ & bkg_pert,
+                                                    const IncrementSet_ & bkg_pert,
                                                     const GeometryIterator_ & i,
-                                                    IncrementEnsemble4D_ & ana_pert) {
+                                                    IncrementSet_ & ana_pert) {
   const Eigen::MatrixXf local_OmbPert_mat_f = (this->Yb_).packEigen(locvector);
   const Eigen::MatrixXf local_HZb_mat_f = (this->HZb_).packEigen(locvector);
   this->computeWeights(local_omb_vec, local_OmbPert_mat_f, local_HZb_mat_f, local_invVarR_vec);

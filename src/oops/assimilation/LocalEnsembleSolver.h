@@ -22,7 +22,7 @@
 #include "oops/base/Departures.h"
 #include "oops/base/DeparturesEnsemble.h"
 #include "oops/base/Geometry.h"
-#include "oops/base/IncrementEnsemble4D.h"
+#include "oops/base/IncrementSet.h"
 #include "oops/base/LinearModel.h"
 #include "oops/base/Model.h"
 #include "oops/base/ObsAuxControls.h"
@@ -57,7 +57,7 @@ class LocalEnsembleSolver {
   typedef DeparturesEnsemble<OBS>     DeparturesEnsemble_;
   typedef Geometry<MODEL>             Geometry_;
   typedef GeometryIterator<MODEL>     GeometryIterator_;
-  typedef IncrementEnsemble4D<MODEL>  IncrementEnsemble4D_;
+  typedef IncrementSet<MODEL>         IncrementSet_;
   typedef ObsAuxControls<OBS>         ObsAux_;
   typedef ObsAuxIncrements<OBS>       ObsAuxInc_;
   typedef ObsDataVector<OBS, int>     ObsDataInt_;
@@ -96,19 +96,21 @@ class LocalEnsembleSolver {
                       bool readFromDisk);
 
   /// update background ensemble \p bg to analysis ensemble \p an for all points on this PE
-  virtual void measurementUpdate(const IncrementEnsemble4D_ & bg, IncrementEnsemble4D_ & an);
+  virtual void measurementUpdate(const IncrementSet_ & bg,
+                                 IncrementSet_ & an);
 
   /// update background ensemble \p bg to analysis ensemble \p an at a grid point location \p i
   virtual void measurementUpdate(const Eigen::VectorXd &,
                                  const Eigen::VectorXd &,
                                  const Departures_ &,
-                                 const IncrementEnsemble4D_ &,
+                                 const IncrementSet_ &,
                                  const GeometryIterator_ &,
-                                 IncrementEnsemble4D_ &) = 0;
+                                 IncrementSet_ &) = 0;
 
   /// copy \p an[\p i] = \p bg[\p i] (e.g. when there are no local observations to update state)
-  virtual void copyLocalIncrement(const IncrementEnsemble4D_ & bg,
-                                  const GeometryIterator_ & i, IncrementEnsemble4D_ & an) const;
+  virtual void copyLocalIncrement(const IncrementSet_ & bg,
+                                  const GeometryIterator_ & i,
+                                  IncrementSet_ & an) const;
 
   /// apply posterior inflation to a local ensemble
   void posteriorInflation(const Eigen::MatrixXd & Xb, Eigen::MatrixXd & Xa) const;
@@ -230,7 +232,7 @@ LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
 
 template <typename MODEL, typename OBS>
 void LocalEnsembleSolver<MODEL, OBS>::measurementUpdate
-(const IncrementEnsemble4D_ & bkg_pert, IncrementEnsemble4D_ & ana_pert) {
+(const IncrementSet_ & bkg_pert, IncrementSet_ & ana_pert) {
   for (GeometryIterator_ i = geometry_.begin(); i != geometry_.end(); ++i) {
     // create the local subset of observations
     Departures_ locvector(this->obspaces_);
@@ -484,14 +486,14 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-void LocalEnsembleSolver<MODEL, OBS>::copyLocalIncrement(const IncrementEnsemble4D_ & bkg_pert,
+void LocalEnsembleSolver<MODEL, OBS>::copyLocalIncrement(const IncrementSet_ & bkg_pert,
                                                          const GeometryIterator_ & i,
-                                                         IncrementEnsemble4D_ & ana_pert) const {
+                                                         IncrementSet_ & ana_pert) const {
   // ana_pert[i]=bkg_pert[i]
-  for (size_t itime=0; itime < bkg_pert[0].size(); ++itime) {
-    for (size_t iens=0; iens < bkg_pert.size(); ++iens) {
-      LocalIncrement gp = bkg_pert[iens][itime].getLocal(i);
-      ana_pert[iens][itime].setLocal(gp, i);
+  for (size_t itime=0; itime < bkg_pert.time_size(); ++itime) {
+    for (size_t iens=0; iens < bkg_pert.ens_size(); ++iens) {
+      LocalIncrement gp = bkg_pert(itime, iens).getLocal(i);
+      ana_pert(itime, iens).setLocal(gp, i);
     }
   }
 }
