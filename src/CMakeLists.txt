@@ -159,7 +159,6 @@ oops/base/ObsOperatorPert.h
 oops/base/ObsSpaceBase.cc
 oops/base/ObsSpaceBase.h
 oops/base/ObsSpaces.h
-oops/base/ObsTypeParameters.h
 oops/base/ObsVariables.cc
 oops/base/ObsVariables.h
 oops/base/ObsVector.h

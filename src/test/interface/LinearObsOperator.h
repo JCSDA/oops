@@ -16,7 +16,6 @@
 
 
 #include "eckit/testing/Test.h"
-#include "oops/base/ObsTypeParameters.h"
 #include "oops/base/ObsVariables.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
