@@ -163,6 +163,10 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateEnsembl
   ObsAuxInc_  obsauxinc(this->obspaces_, this->observersconf_);
 
   Observations_ yb_mean(this->obspaces_);
+  Departures_ tmpDeps(this->obspaces_);
+
+  // Initialize R_ anew for each iteration
+  this->R_.reset(new ObsErrors_(this->observersconf_, this->obspaces_));
 
   if (readFromFile) {
     // compute/read H(x) for the original ensemble members
@@ -189,60 +193,39 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateEnsembl
     const std::vector<util::DateTime> times = ens_xx[0].validTimes();
     const util::Duration flength = times[times.size()-1] - times[0];
 
-    // Setup PseudoLinearModelIncrement4D to run on ensemble perturbation
     Increment4D_ dx(geometry_, this->incvars_, times);
-
-    // modulate ensemble of obs
     IncrementEnsemble4D_ Ztmp(geometry_, this->incvars_, times, neig_);
-    eckit::LocalConfiguration config;
-    config.set("save hofx", false);
-    config.set("save qc", false);
-    config.set("save obs errors", false);
-    config.set("iteration", std::to_string(iteration));
-    size_t ii = 0;
 
+    size_t ii = 0;
     if (this->useLinearObserver()) {
-      std::vector<ObsDataInt_> qcflags;
-      for (size_t jj = 0; jj < this->obspaces_.size(); ++jj) {
-        ObsDataInt_ qc(this->obspaces_[jj], this->obspaces_[jj].obsvariables());
-        qcflags.push_back(qc);
-      }
       // set up postprocessors for the linear model run on ensemble perturbations
       PostProcessor<Increment_> posttl;
       PostProcessorTLAD<MODEL> posttrajtl;
 
-      this->computeHofX4D(config, this->xbmean_, yb_mean, flength, default_tstep, obsaux, moderr);
+      // save QC filters, obs bias, ob errors for the mean (H(x) is saved separately)
+      eckit::LocalConfiguration config;
+      config.set("save hofx", false);
+      config.set("save qc", true);
+      config.set("save obs errors", true);
+      config.set("save obs bias", true);
+      config.set("iteration", std::to_string(iteration));
+
+      this->computeHofX4D(config, this->xbmean_, yb_mean, flength, default_tstep, obsaux, moderr,
+                          *this->R_, this->qcflags_);
 
       // for linear H, yb_mean==y_mean_xb
       Observations_ y_mean_xb(yb_mean);
-
-      // set QC for the mean
-      config.set("save qc", true);
-      config.set("save obs errors", true);
       y_mean_xb.save("hofx_y_mean_xb"+std::to_string(iteration));
 
       // QC flags and Obs errors are set to that of the H(mean(Xb))
       this->R_->save("ObsError");
       this->initializeAssimilatedMask();
 
-      // mask H(x) ensemble perturbations - i.e. make sure that obs that have
-      // failed QC on one ensemble member fail for all (this is for the case where
-      // different QC procedures are done on different ensemble members)
-      Departures_ tmpDeps(this->obspaces_);
-      for (size_t iens = 0; iens < ens_xx.size(); ++iens) {
-        tmpDeps.zero();
-        tmpDeps = this->Yb_.getData(iens);
-        this->updateAssimilatedMask(tmpDeps);
-        this->applyAssimilatedMask(tmpDeps);
-        this->Yb_.setData(iens, tmpDeps);
-      }
-
       // calculate obs departures
       Observations_ yobs(this->obspaces_, "ObsValue");
       this->omb_ = yobs - yb_mean;
       // Need to mask out any missing departures as well as those that have failed QC
       this->updateAssimilatedMask(this->omb_);
-      this->applyAssimilatedMask(this->omb_);
 
       // add linearized H(x) to the linear model postprocessor
       this->linear_hofx_->initializeTL(posttrajtl);
@@ -283,6 +266,23 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateEnsembl
       // also computes omb_
       yb_mean = LocalEnsembleSolver<MODEL, OBS>::computeHofX(ens_xx, iteration, readFromFile);
 
+      // don't save QC filters, obs bias, ob errors, h(x) for the modulated ensemble members
+      eckit::LocalConfiguration config;
+      config.set("save hofx", false);
+      config.set("save qc", false);
+      config.set("save obs errors", false);
+      config.set("save obs bias", false);
+      config.set("iteration", std::to_string(iteration));
+
+      // use temporary objects for QC flags and obs errors for the modulated ensemble
+      // members to avoid overwriting the ones from the mean H(x) calculation
+      std::vector<ObsDataInt_> qcflags;
+      for (size_t jobs = 0; jobs < this->obspaces_.size(); ++jobs) {
+        ObsDataInt_ flags(this->obspaces_[jobs], this->obspaces_[jobs].obsvariables());
+        qcflags.push_back(flags);
+      }
+      ObsErrors_ Rmat(this->observersconf_, this->obspaces_);
+      // compute H(x) for the modulated ensemble members
       for (size_t iens = 0; iens < nens_; ++iens) {
         Log::info() << " DeterministicGETKF::computeHofX starting ensemble member "
                     << iens+1 << std::endl;
@@ -293,8 +293,13 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateEnsembl
           StateSet_ tmpState = this->xbmean_;
           tmpState += Ztmp[ieig];
           Observations_ tmpObs(this->obspaces_);
-          this->computeHofX4D(config, tmpState, tmpObs, flength, default_tstep, obsaux, moderr);
-          HZb_.setData(ii, tmpObs - yb_mean);
+          this->computeHofX4D(config, tmpState, tmpObs, flength, default_tstep, obsaux, moderr,
+                              Rmat, qcflags);
+          // mask H(x) ensemble perturbations - i.e. make sure that obs that have
+          // failed QC on one ensemble member fail for all
+          Departures_ tmpDep = tmpObs - yb_mean;
+          this->updateAssimilatedMask(tmpDep);
+          HZb_.setData(ii, tmpDep);
           tmpObs.save("hofxm"+std::to_string(iteration)+"_"+std::to_string(ieig+1)+
                         "_"+std::to_string(iens+1));
           ii = ii + 1;
@@ -302,15 +307,17 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateEnsembl
       }
     }
   }
-  // Update mask again, this time for the modulated ensemble members
-  Departures_ tmpDeps(this->obspaces_);
+
+  // Apply the assimilated mask to the H(x) ensemble perturbations and mean
+  // departures
+  this->applyAssimilatedMask(this->omb_);
   for (size_t iens = 0; iens < nanal_; ++iens) {
     tmpDeps.zero();
     tmpDeps = this->HZb_.getData(iens);
-    this->updateAssimilatedMask(tmpDeps);
     this->applyAssimilatedMask(tmpDeps);
     this->HZb_.setData(iens, tmpDeps);
   }
+
   return yb_mean;
 }
 

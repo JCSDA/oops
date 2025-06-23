@@ -125,9 +125,10 @@ class LocalEnsembleSolver {
   Departures_ omb_;               ///< obs - mean(H(x)); set in computeHofX method
   DeparturesEnsemble_ Yb_;        ///< ensemble perturbations in the observation space;
                                   ///< set in computeHofX method
-  std::unique_ptr<ObsErrors_>   R_;        ///< observation errors, set in computeHofX method
+  std::unique_ptr<ObsErrors_>  R_;         ///< observation errors, set in computeHofX method
   std::unique_ptr<Departures_> invVarR_;   ///< inverse observation error variance for assimilated
-                                           ///< observations; set in computeHofX method
+                                           ///< observations; set in initializeAssimilatedMask
+  std::vector<ObsDataInt_> qcflags_;  ///< quality control flags
   std::unique_ptr<ObserversTLAD_> linear_hofx_;  ///< linear observer
   LocalEnsembleSolverParameters options_;
 
@@ -156,7 +157,8 @@ class LocalEnsembleSolver {
   /// linearized about the background state \p xx (cf \ref applyLinearToPerturbations).
   void computeHofX4D(const eckit::Configuration & config, const StateSet_ & xx, Observations_ & yy,
                      const util::Duration & flength, const util::Duration & default_tstep,
-                     const ObsAux_ & obsaux, const ModelAux_ & moderr);
+                     const ObsAux_ & obsaux, const ModelAux_ & moderr,
+                     ObsErrors_ & R, std::vector<ObsDataInt_> & qcflags);
   /// Runs a linear model on 4D perturbations from the ensemble mean ( \p xx - \ref xbmean_ ) and
   /// applies a linearized observation operator \ref linear_hofx_ to background departures in the
   /// ensemble \ref Yb_ at ensemble index \p iens .
@@ -173,14 +175,13 @@ class LocalEnsembleSolver {
                                   const PostProcessorTLAD<MODEL> & posttrajtl,
                                   Departures_ & tmpDeps);
   /// Read pre-calculated HofX \p y_mean_xb from disk for each observation ensemble member \p obsens
-  /// of size \p nens at \p iteration. Also resets \p R.
+  /// of size \p nens at \p iteration.
   void readHofX(ObsEnsemble_ & obsens, const size_t nens, const size_t iteration,
-                std::unique_ptr<ObsErrors_> & R, Observations_ & y_mean_xb);
+                Observations_ & y_mean_xb);
 
  private:
   bool useLinearObserver_;
   ObsLocalizations_ obsloc_;          ///< observation space localization
-  std::vector<ObsDataInt_> qcflags_;  ///< quality control flags
 };
 
 // -----------------------------------------------------------------------------
@@ -268,10 +269,9 @@ void LocalEnsembleSolver<MODEL, OBS>::computeHofX4D(const eckit::Configuration &
                                                     const util::Duration & flength,
                                                     const util::Duration & default_tstep,
                                                     const ObsAux_ & obsaux,
-                                                    const ModelAux_ & moderr) {
-  // Does R_.reseet need too be in this method?
-  R_.reset(new ObsErrors_(this->observersconf_, this->obspaces_));
-
+                                                    const ModelAux_ & moderr,
+                                                    ObsErrors_ & Rmat,
+                                                    std::vector<ObsDataInt_> & qcflags) {
   // Setup pseudo model to run on ensemble mean
   State_ init_xx = xx[0];
   std::unique_ptr<PseudoModel_> pseudomodel(new PseudoModel_(xx, default_tstep));
@@ -282,7 +282,7 @@ void LocalEnsembleSolver<MODEL, OBS>::computeHofX4D(const eckit::Configuration &
   Observers_ hofx(this->obspaces_, this->obsconf_);
 
   // initialize nonlinear model postprocessor
-  hofx.initialize(this->geometry_, obsaux, *this->R_, post, config);
+  hofx.initialize(this->geometry_, obsaux, Rmat, post, config);
 
   if (useLinearObserver()) {
     // Set up linear observer
@@ -300,11 +300,11 @@ void LocalEnsembleSolver<MODEL, OBS>::computeHofX4D(const eckit::Configuration &
   model.forecast(init_xx, moderr, flength, post);
 
   // compute nonlinear H(x)
-  hofx.finalize(yy, qcflags_);
+  hofx.finalize(yy, qcflags);
 
   if (useLinearObserver()) {
     // set the background state to linearise H about.
-    linear_hofx_->finalizeTraj(qcflags_);
+    linear_hofx_->finalizeTraj(qcflags);
   }
 }
 // -----------------------------------------------------------------------------
@@ -328,13 +328,11 @@ void LocalEnsembleSolver<MODEL, OBS>::applyLinearToPerturbations(
 template <typename MODEL, typename OBS>
 void LocalEnsembleSolver<MODEL, OBS>::readHofX(ObsEnsemble_ & obsens, const size_t nens,
                                                const size_t iteration,
-                                               std::unique_ptr<ObsErrors_> & R,
                                                Observations_ & y_mean_xb) {
   for (size_t jj = 0; jj < nens; ++jj) {
     obsens[jj].read("hofx"+std::to_string(iteration)+"_"+std::to_string(jj+1));
     Log::test() << "H(x) for member " << jj+1 << ":" << std::endl << obsens[jj] << std::endl;
   }
-  R.reset(new ObsErrors_(observersconf_, obspaces_));
   y_mean_xb.read("hofx_y_mean_xb"+std::to_string(iteration));
 }
 
@@ -352,24 +350,17 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(
   ObsEnsemble_ obsens(obspaces_, nens);
   Observations_ y_mean_xb(obspaces_);
 
+  // Initialize R_ anew for each iteration
+  R_.reset(new ObsErrors_(this->observersconf_, this->obspaces_));
+
   if (readFromDisk) {
-    readHofX(obsens, nens, iteration, R_, y_mean_xb);
+    readHofX(obsens, nens, iteration, y_mean_xb);
     initializeAssimilatedMask();
   } else {
     // compute and save H(x)
 
-    // save QC filters and ob errors to be used for all other members
-    // do not save H(X) (saved explicitly below)
-    eckit::LocalConfiguration config;
-
-    // Compute H(mean(Xb))
-    // set QC for the mean
-    config.set("save qc", true);
-    config.set("save obs errors", true);
-
     std::vector<util::DateTime> times =
         useLinearObserver() ? ens_xx[0].validTimes() : xbmean_.validTimes();
-
     util::Duration flength = times[times.size() - 1] - times[0];
     // default_tstep = 2*observation window is passed to PseudoModel as the default
     // pseudomodel time step. It is only used when StateSet has a single state, to enable
@@ -387,12 +378,19 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(
     PostProcessor<Increment_> posttl;
     PostProcessorTLAD<MODEL> posttrajtl;
 
+    // save QC filters, obs bias, ob errors for H(mean(Xb) (H(x_i) are saved separately)
+    eckit::LocalConfiguration config;
+    config.set("save hofx", false);
+    config.set("save qc", true);
+    config.set("save obs errors", true);
+    config.set("save obs bias", true);
+    config.set("iteration", std::to_string(iteration));
+
     // run the model forecast on the background ensemble mean and optionally linearise the observer
-    // about this trajectory.
-    computeHofX4D(config, xbmean_, y_mean_xb, flength, default_tstep, obsaux, moderr);
-
+    // about this trajectory. save obs errors and qc flags for H(mean(Xb))
+    computeHofX4D(config, xbmean_, y_mean_xb, flength, default_tstep, obsaux, moderr,
+                  *R_, qcflags_);
     y_mean_xb.save("hofx_y_mean_xb"+std::to_string(iteration));
-
     // QC flags and Obs errors are set to that of the H(mean(Xb))
     R_->save("ObsError");
     initializeAssimilatedMask();
@@ -401,17 +399,25 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(
     // if run computeHofX4D several times with save hofx on,
     // the hofx will be overwritten,
     // unless each time specifying iteration differently in the passed config.
-    // TODO(someone): this needs to be revisited so the flags are saved for the mean.
     config.set("save hofx", false);
     config.set("save qc", false);
     config.set("save obs errors", false);
-    config.set("iteration", std::to_string(iteration));
+    config.set("save obs bias", false);
 
     // add linearized H(x) to the linear model postprocessor
     if (useLinearObserver()) {
       linear_hofx_->initializeTL(posttrajtl);
     }
     Departures_ tmpDeps(this->obspaces_);
+
+    // use temporary objects for QC flags and obs errors for ensemble members
+    // to avoid overwriting the ones from the H(mean(Xb)) calculation
+    std::vector<ObsDataInt_> qcflags;
+    for (size_t jobs = 0; jobs < obspaces_.size(); ++jobs) {
+      ObsDataInt_ flags(obspaces_[jobs], obspaces_[jobs].obsvariables());
+      qcflags.push_back(flags);
+    }
+    ObsErrors_ Rmat(observersconf_, obspaces_);
 
     for (size_t jj = 0; jj < nens; ++jj) {
       if (useLinearObserver()) {
@@ -423,7 +429,7 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(
         // linearized observer. Firstly, apply the linearized obs operator to this ensemble member's
         // background perturbation from the ensemble mean.
         applyLinearToPerturbations(dx, flength, default_tstep, obsauxinc, moderrinc, posttl,
-                                posttrajtl, tmpDeps);
+                                   posttrajtl, tmpDeps);
         // Secondly, add this to the ensemble mean in observation space (calculated with the
         // nonlinear obs operator) giving the approximate H(x_i)
         Yb_.setData(jj, tmpDeps);
@@ -439,7 +445,8 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(
         const ModelAuxInc_  moderrinc(geometry_, eckit::LocalConfiguration());
         const ObsAux_  obsaux(obspaces_, observersconf_);
         const ObsAuxInc_  obsauxinc(obspaces_, observersconf_);
-        computeHofX4D(config, ens_xx[jj], obsens[jj], flength, default_tstep, obsaux, moderr);
+        computeHofX4D(config, ens_xx[jj], obsens[jj], flength, default_tstep, obsaux, moderr,
+                      Rmat, qcflags);
       }
       Log::test() << "H(x) for member " << jj+1 << ":" << std::endl << obsens[jj] << std::endl;
       obsens[jj].save("hofx"+std::to_string(iteration)+"_"+std::to_string(jj+1));
@@ -454,30 +461,33 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(
   //                              then using H(xbmean_) is expected by downstream applications
   if (nens == 1) {yb_mean = y_mean_xb;}
 
-  // mask H(x) ensemble perturbations
-  Departures_ tmpDeps(this->obspaces_);
-  // mask H(x) ensemble perturbations - i.e. make sure that obs that have
-  // failed QC on one ensemble member fail for all (this is for the case where
-  // different QC procedures are done on different ensemble members)
-  for (size_t iens = 0; iens < Yb_.size(); ++iens) {
-    tmpDeps.zero();
-    if (readFromDisk || (!useLinearObserver())) {
-      // Calculating observation ensemble perturbations when either HofX is read in or a non-linear
-      // observer is used. When a linear observer is used, observation ensemble perturbations are
-      // implicitly calculated in this method.
-      Yb_.setData(iens, obsens[iens] - yb_mean);
-    }
-    tmpDeps = Yb_.getData(iens);
-    updateAssimilatedMask(tmpDeps);
-    applyAssimilatedMask(tmpDeps);
-    Yb_.setData(iens, tmpDeps);
-  }
-
   // calculate obs departures
   Observations_ yobs(obspaces_, "ObsValue");
   omb_ = yobs - yb_mean;
   // Need to mask out any missing departures as well as those that have failed QC
   updateAssimilatedMask(omb_);
+
+  // Calculating observation ensemble perturbations when either HofX is read in or a non-linear
+  // observer is used. When a linear observer is used, observation ensemble perturbations are
+  // implicitly calculated.
+  // Also make sure that obs that have missing values in one ensemble member fail for all
+  // (this is for the case where different QC procedures are done on different
+  // ensemble members).
+  Departures_ tmpDeps(this->obspaces_);
+  if (readFromDisk || (!useLinearObserver())) {
+    for (size_t iens = 0; iens < Yb_.size(); ++iens) {
+      tmpDeps = obsens[iens] - yb_mean;
+      updateAssimilatedMask(tmpDeps);
+      Yb_.setData(iens, tmpDeps);
+    }
+  }
+  // apply assimilated mask to the observation ensemble perturbations
+  for (size_t iens = 0; iens < Yb_.size(); ++iens) {
+    tmpDeps = Yb_.getData(iens);
+    applyAssimilatedMask(tmpDeps);
+    Yb_.setData(iens, tmpDeps);
+  }
+  // apply assimilated mask to the mean departures
   applyAssimilatedMask(omb_);
 
   // return mean H(x)
