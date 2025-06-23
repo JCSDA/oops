@@ -627,6 +627,9 @@ if(OpenMP_FOUND)
   target_link_libraries( ${PROJECT_NAME} PUBLIC OpenMP::OpenMP_Fortran OpenMP::OpenMP_CXX )
 endif()
 
+# Mark Eigen3 as a system library to silence compiler warnings from Eigen headers
+target_include_directories( ${PROJECT_NAME} SYSTEM PUBLIC ${EIGEN3_INCLUDE_DIR} )
+
 # Mark Boost as a system library to silence compiler warnings from Boost headers
 target_include_directories( ${PROJECT_NAME} SYSTEM PUBLIC ${Boost_INCLUDE_DIRS} )
 

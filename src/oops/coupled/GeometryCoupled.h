@@ -71,7 +71,6 @@ class GeometryCoupled : public util::Printable {
   ///          an exception if called as a reminder that the implementation is incorrect.
   const eckit::mpi::Comm & getComm() const {
     throw eckit::Exception("Called GeometryCoupled.getComm(), but this is just a stub");
-    return oops::mpi::world();
   }
 
   /// Accessors to components of coupled geometry

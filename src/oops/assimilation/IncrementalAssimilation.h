@@ -46,7 +46,7 @@ int IncrementalAssimilation(ControlVariable<MODEL, OBS> & xx, CostFunction<MODEL
 
 // Setup minimizer
   eckit::LocalConfiguration minConf(config, "minimizer");
-  minConf.set("nouter", static_cast<const int>(nouter));
+  minConf.set("nouter", static_cast<int>(nouter));
   std::unique_ptr<Minimizer_> minim(MinFactory<MODEL, OBS>::create(minConf, J));
 
   for (unsigned jouter = 0; jouter < nouter; ++jouter) {

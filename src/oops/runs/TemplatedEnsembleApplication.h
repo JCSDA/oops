@@ -79,7 +79,6 @@ class TemplatedEnsembleApplication : public Application {
     const auto memberConf = fillInTemplate(memberTemplate, templatingInformation, mymember);
     APP ensapp(commMember);
     return ensapp.execute(memberConf);
-    return 1;
   }
 
 // -----------------------------------------------------------------------------
