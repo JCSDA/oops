@@ -9,6 +9,7 @@
 #define OOPS_ASSIMILATION_LOCALENSEMBLESOLVERPARAMETERS_H_
 
 #include "oops/util/parameters/NumericConstraints.h"
+#include "oops/util/parameters/OptionalParameter.h"
 #include "oops/util/parameters/Parameter.h"
 #include "oops/util/parameters/Parameters.h"
 
@@ -60,6 +61,10 @@ class LocalEnsembleSolverParameters : public Parameters {
   Parameter<bool> useLinearObserver{"local ensemble DA.use linear observer",
                   "controls whether compute HofX linear",
                   false, this};
+  OptionalParameter<int> unperturbedIdx{"local ensemble DA.unperturbed obs ensemble member index",
+                                        "Index of ensemble member (zero indexed) where "
+                                        "observations are not perturbed in stochastic filters",
+                                        this, {minConstraint(0)}};
 };
 
 // -----------------------------------------------------------------------------

@@ -105,16 +105,26 @@ Observations<OBS> StochasticLETKF<MODEL, OBS>::computeHofX(const StateEnsemble4D
   ypertDepSum.zero();
   for (size_t iens = 0; iens < (this->nens_); ++iens) {
     pertDepTmp.zero();
-    (*(this->R_)).randomize(pertDepTmp);
+    if (static_cast<int>(iens) != this->unperturbedIdx_) {
+      // Get perturbations dy_i (zero for unperturbed member)
+      (*(this->R_)).randomize(pertDepTmp);
+    }
+    // Sum the perturbations for calculating the mean perturbation mean(dy_j)
+    // forall j in ens later.
     ypertDepSum += pertDepTmp;
+    // Now pertDepTmp = dy_i - Y_i
+    //                = dy_i - (H(x_i) - mean(H(x_j))) forall j in ens
     pertDepTmp -= (this->Yb_).getData(iens);
+    // Temporary storage in OmbPertDepEns_[i]
     OmbPertDepEns_.setData(iens, pertDepTmp);
   }
 
   for (size_t iens = 0; iens < (this->nens_); ++iens) {
     pertDepTmp.zero();
     pertDepTmp = OmbPertDepEns_.getData(iens);
+    // Subtract mean(dy_j) from dy_i - Y_i
     pertDepTmp.axpy(-1.0/(this->nens_), ypertDepSum);
+    // Now OmbPertDepEns_[i] = dy_i - Y_i - mean(dy_j) forall j in ens
     OmbPertDepEns_.setData(iens, pertDepTmp);
   }
 

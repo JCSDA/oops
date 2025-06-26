@@ -131,6 +131,8 @@ class LocalEnsembleSolver {
   std::vector<ObsDataInt_> qcflags_;  ///< quality control flags
   std::unique_ptr<ObserversTLAD_> linear_hofx_;  ///< linear observer
   LocalEnsembleSolverParameters options_;
+  int unperturbedIdx_;  ///< For stochastic filters: ensemble member index where obs are
+                        ///< (optionally) unperturbed
 
   const StateSet_ & xbmean_;     ///< ensemble mean or a control member that will be used to
                                  ///< center the prior ensemble
@@ -206,6 +208,19 @@ LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
 
   options_.deserialize(config);
   useLinearObserver_ = this->options_.useLinearObserver;
+  if (this->options_.unperturbedIdx.value() == boost::none) {
+    unperturbedIdx_ = -1;  // no unperturbed member
+  } else {
+    unperturbedIdx_ = this->options_.unperturbedIdx.value().value();
+    if (unperturbedIdx_ < 0 || unperturbedIdx_ >= static_cast<int>(nens)) {
+      const std::string e = "unperturbed obs ensemble member index out of bounds " +
+                            std::to_string(unperturbedIdx_) + " for ensemble size " +
+                            std::to_string(nens) + "\nMust be in the closed interval [0, " +
+                            std::to_string(nens - 1) + "]";
+      oops::Log::error() << e << std::endl;
+      throw eckit::BadParameter(e);
+    }
+  }
   const LocalEnsembleSolverInflationParameters & inflopt = this->options_.infl;
   Log::info() << "Multiplicative inflation will be applied with multCoeff=" <<
                  inflopt.mult << std::endl;

@@ -85,6 +85,7 @@ list( APPEND l95_test_input
   testinput/getkf_cpp.yaml
   testinput/getkf_linearobserver.yaml
   testinput/getkf_perturbed_linearobserver.yaml
+  testinput/getkf_perturbed_unpert_member.yaml
   testinput/getkf_offline_hofx.yaml
   testinput/getkf_offline_hofx_one_member.yaml
   testinput/getvalues.yaml
@@ -98,6 +99,7 @@ list( APPEND l95_test_input
   testinput/letkf.yaml
   testinput/letkf_linearobserver.yaml
   testinput/letkf_perturbed_linearobserver.yaml
+  testinput/letkf_perturbed_unpert_member.yaml
   testinput/letkf_noobs.yaml
   testinput/letkf_qc.yaml
   testinput/linearmodel.yaml
@@ -209,6 +211,7 @@ list( APPEND l95_testoutput
   testoutput/genenspert.test
   testoutput/getkf.test
   testoutput/getkf_perturbed_linearobserver.test
+  testoutput/getkf_perturbed_unpert4.test
   testoutput/getkf_offline_hofx.test
   testoutput/getkf_offline_hofx_one_member.test
   testoutput/hofx.test
@@ -217,6 +220,7 @@ list( APPEND l95_testoutput
   testoutput/hofx3d_for_getkf.test
   testoutput/letkf.test
   testoutput/letkf_perturbed_linearobserver.test
+  testoutput/letkf_perturbed_unpert4.test
   testoutput/letkf_noobs.test
   testoutput/letkf_qc.test
   testoutput/letkf_gsi.test
@@ -774,7 +778,7 @@ ecbuild_add_test( TARGET test_l95_eda_3dvar_zeromeanpert_compare
                   ARGS testinput/eda_3dvar_zeromeanpert_compare.yaml
                   LIBS lorenz95
                   TEST_DEPENDS test_l95_eda_3dvar_zeromeanpert )
-                  
+
 #####################################################################
 # FSOI tests
 #####################################################################
@@ -864,6 +868,11 @@ ecbuild_add_test( TARGET test_l95_getkf_perturbed_linearobserver
                   ARGS testinput/getkf_perturbed_linearobserver.yaml
                   TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
 
+ecbuild_add_test( TARGET test_l95_getkf_perturbed_unpert_member
+                  COMMAND l95_letkf.x
+                  ARGS testinput/getkf_perturbed_unpert_member.yaml
+                  TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+
 ecbuild_add_test( TARGET test_l95_hofx3d_for_getkf
                   COMMAND l95_letkf.x
                   ARGS testinput/hofx3d_for_getkf.yaml
@@ -877,6 +886,11 @@ ecbuild_add_test( TARGET test_l95_letkf_linearobserver
 ecbuild_add_test( TARGET test_l95_letkf_perturbed_linearobserver
                   COMMAND l95_letkf.x
                   ARGS testinput/letkf_perturbed_linearobserver.yaml
+                  TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+
+ecbuild_add_test( TARGET test_l95_letkf_perturbed_unpert_member
+                  COMMAND l95_letkf.x
+                  ARGS testinput/letkf_perturbed_unpert_member.yaml
                   TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
 
 ecbuild_add_test( TARGET test_l95_getkf_offline_hofx
