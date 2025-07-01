@@ -1,5 +1,5 @@
-CostJb   : Nonlinear Jb = 0.0000000000000000e+00
 CostJo   : Nonlinear Jo(Lorenz 95) = 1.0032734286406445e+03, nobs = 120, Jo/n = 8.3606119053387040e+00, err = 4.0000000596046387e-01
+CostJb   : Nonlinear Jb = 0.0000000000000000e+00
 CostFunction: Nonlinear J = 1.0032734286406445e+03
    Norm reduction all members ( 1) = 2.2611246413146999e-01, 2.4607858218138590e-01
    Quadratic cost function all members: J ( 1) = 1.5790425160879681e+02, 1.8661490481274211e+02
@@ -25,8 +25,8 @@ DRPBlockLanczosMinimizer: reduction in residual norm = 5.8739664039733457e-04
 CostFunction::addIncrement: Analysis: 
  Valid time: 2010-01-02T00:00:00Z
  Min=6.7736404557112531e+00, Max=9.0086074116267341e+00, Average=8.0056024881884031e+00
-CostJb   : Nonlinear Jb = 9.7339391856854988e+01
 CostJo   : Nonlinear Jo(Lorenz 95) = 1.5378644000806579e+01, nobs = 120, Jo/n = 1.2815536667338817e-01, err = 4.0000000596046387e-01
+CostJb   : Nonlinear Jb = 9.7339391856854988e+01
 CostFunction: Nonlinear J = 1.1271803585766156e+02
    Norm reduction all members ( 1) = 6.0320910569443920e-01, 5.3115494329707946e-01
    Quadratic cost function all members: J ( 1) = 1.1271772595677018e+02, 1.2003087005628028e+02
@@ -52,6 +52,6 @@ DRPBlockLanczosMinimizer: reduction in residual norm = 3.1963274445363909e-03
 CostFunction::addIncrement: Analysis: 
  Valid time: 2010-01-02T00:00:00Z
  Min=6.7719322403775370e+00, Max=9.0091219467353056e+00, Average=8.0057195522758260e+00
-CostJb   : Nonlinear Jb = 9.7341865419036864e+01
 CostJo   : Nonlinear Jo(Lorenz 95) = 1.5375510835927765e+01, nobs = 120, Jo/n = 1.2812925696606470e-01, err = 4.0000000596046387e-01
+CostJb   : Nonlinear Jb = 9.7341865419036864e+01
 CostFunction: Nonlinear J = 1.1271737625496463e+02

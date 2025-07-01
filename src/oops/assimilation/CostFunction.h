@@ -264,11 +264,6 @@ double CostFunction<MODEL, OBS>::evaluate(CtrlVar_ & fguess,
 // Cost function value (Jb)
   costJb_ = jb_->computeCost();  // Should be after linearization because requires B
 
-// Print cost function for test (hack so we can update references separately)
-  for (size_t jj = 0; jj < jterms_.size(); ++jj) {
-    jterms_[jj]->printCostTestHack();
-  }
-
   double zzz = costJb_ + costJoJc_;
   Log::info() << "CostFunction: Nonlinear J = " << zzz << std::endl;
   Log::test() << "CostFunction: Nonlinear J = " << zzz << std::endl;

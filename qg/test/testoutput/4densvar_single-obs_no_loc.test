@@ -1,5 +1,5 @@
-CostJb   : Nonlinear Jb = 0.0000000000000000e+00
 CostJo   : Nonlinear Jo(Stream) = 1.6963126518428666e+00, nobs = 1, Jo/n = 1.6963126518428666e+00, err = 4.0000000000000000e+06
+CostJb   : Nonlinear Jb = 0.0000000000000000e+00
 CostFunction: Nonlinear J = 1.6963126518428666e+00
 PCGMinimizer: reduction in residual norm = 9.6110347616728194e-05
 CostFunction::addIncrement: Analysis: 
@@ -68,6 +68,6 @@ CostFunction::addIncrement: Analysis:
   Streamfunction         :  Min=-4.3154706936131322e+08, Max=9.3580023725711301e+07, RMS=1.6786508483419856e+08
   Streamfunction LBC     :  Min=-4.0031613555457592e+08, Max=-0.0000000000000000e+00, RMS=2.0631821381632423e+08
   Potential vorticity LBC:  Min=-6.7293786157197357e-04, Max=5.7902869607001021e-04, RMS=4.4639722241150535e-04
-CostJb   : Nonlinear Jb = 9.7509355196797445e-02
 CostJo   : Nonlinear Jo(Stream) = 6.3601978291492516e-03, nobs = 1, Jo/n = 6.3601978291492516e-03, err = 4.0000000000000000e+06
+CostJb   : Nonlinear Jb = 9.7509355196797445e-02
 CostFunction: Nonlinear J = 1.0386955302594669e-01

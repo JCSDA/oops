@@ -66,7 +66,6 @@ template<typename MODEL, typename OBS> class CostJcDFI : public CostTermBase<MOD
 /// Nonlinear Jc DFI computation
   void setPostProc(const CtrlVar_ &, const eckit::Configuration &, PostProc_ &) override;
   double computeCost() override;
-  void printCostTestHack() override;
 
 /// Linearization trajectory for Jc DFI computation
   void setPostProcTraj(const CtrlVar_ &, const eckit::Configuration &,
@@ -113,7 +112,6 @@ template<typename MODEL, typename OBS> class CostJcDFI : public CostTermBase<MOD
   mutable std::shared_ptr<WeightedDiff<MODEL, Increment_, State_> > filter_;
   mutable std::shared_ptr<WeightedDiffTLAD<MODEL> > ftlad_;
   Variables vars_;
-  double zhack_;
 };
 
 // =============================================================================
@@ -122,8 +120,7 @@ template<typename MODEL, typename OBS>
 CostJcDFI<MODEL, OBS>::CostJcDFI(const eckit::Configuration & conf, const Geometry_ & resol,
                                  const util::TimeWindow & timeWindow, const util::Duration & tstep)
   : timeWindow_(timeWindow), vt_(), span_(), norm_(), wfct_(), gradFG_(),
-    resol_(resol), tstep_(tstep), tlres_(), filter_(),
-    vars_(conf, "filtered variables"), zhack_(util::missingValue<double>())
+    resol_(resol), tstep_(tstep), tlres_(), filter_(), vars_(conf, "filtered variables")
 {
   vt_ = timeWindow_.midpoint();
   span_ = timeWindow_.length();
@@ -162,19 +159,8 @@ double CostJcDFI<MODEL, OBS>::computeCost() {
   norm_->multiplyMatrix(*dx);
   zz *= dot_product(*dx, *dxTemp);
   Log::info() << "CostJcDFI: Nonlinear Jc = " << zz << std::endl;
-// TEMPORARY HACK START
-//  Log::test() << "CostJcDFI: Nonlinear Jc = " << zz << std::endl;
-  zhack_ = zz;
-// TEMPORARY HACK END
+  Log::test() << "CostJcDFI: Nonlinear Jc = " << zz << std::endl;
   return zz;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL, typename OBS>
-void CostJcDFI<MODEL, OBS>::printCostTestHack() {
-  Log::test() << "CostJcDFI: Nonlinear Jc = " << zhack_ << std::endl;
-  zhack_ = util::missingValue<double>();
 }
 
 // -----------------------------------------------------------------------------
