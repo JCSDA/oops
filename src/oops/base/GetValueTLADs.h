@@ -170,7 +170,6 @@ void GetValueTLADs<MODEL, OBS>::doProcessingAD(Increment_ & dx) {
   Log::trace() << "GetValueTLADs::doProcessingAD start" << std::endl;
   const util::DateTime now = dx.validTime();
   ASSERT(chvartlad_.find(now) != chvartlad_.end());
-
   Increment_ dz(dx.geometry(), linvars_, dx.validTime());
   dz.zero();
 
@@ -182,7 +181,9 @@ void GetValueTLADs<MODEL, OBS>::doProcessingAD(Increment_ & dx) {
   // model data, then call FieldSet::adjointHaloExchange after exiting the loop over obs types:
   PreProcessHelper<MODEL>::preProcessModelDataAD(dz);
 
-  dz.synchronizeFields();
+  // Increment::synchronizeFields checks that the fields are not empty
+  // If all obs spaces are in monitoring only, dz may be empty (linvars_ are empty)
+  if (linvars_.size() > 0) dz.synchronizeFields();
 
   chvartlad_[now]->changeVarAD(dz, dx.variables());
   dx += dz;

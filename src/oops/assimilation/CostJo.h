@@ -227,9 +227,15 @@ double CostJo<MODEL, OBS>::computeCost() {
 
   // Print Jo table
   double zjo = 0.0;
+
+  std::vector<eckit::LocalConfiguration> subconfs =
+      eckit::LocalConfiguration(conf_, "observers").getSubConfigurations();
   for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
     zjo += this->printJo(jj, ydep, Log::info());
     this->printJo(jj, ydep, Log::test());
+    if (subconfs[jj].getBool("monitoring only", false)) {
+      (*gradFG_)[jj].zero();
+    }
   }
 
   Log::info() << "CostJo   : Nonlinear Jo = " << zjo << std::endl;
@@ -255,7 +261,6 @@ double CostJo<MODEL, OBS>::printJo(size_t jj, Departures_ & ydep, std::ostream &
   } else {
     os << zz << " --- No Observations";
   }
-
   std::vector<eckit::LocalConfiguration> subconfs =
       eckit::LocalConfiguration(conf_, "observers").getSubConfigurations();
   if (subconfs[jj].getBool("monitoring only", false)) {
