@@ -380,6 +380,8 @@ oops/util/FieldSetSubCommunicators.h
 oops/util/FloatCompare.h
 oops/util/FunctionSpaceHelpers.cc
 oops/util/FunctionSpaceHelpers.h
+oops/util/for_each.cc
+oops/util/for_each.h
 oops/util/formats.h
 oops/util/gatherPrint.h
 oops/util/IntSetParser.cc
@@ -1058,6 +1060,12 @@ ecbuild_add_test( TARGET  test_assimilation_testvector3d
 
 ecbuild_add_test( TARGET  test_assimilation_tridiagsolve
                   SOURCES test/assimilation/TriDiagSolve.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_for_each
+                  OMP 2
+                  SOURCES test/util/for_each.cc
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 
