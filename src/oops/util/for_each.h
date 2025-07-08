@@ -173,7 +173,9 @@ void for_each_value(
         "Excluding halo values is not implemented for non-contiguous halos.", Here());
   } else {
     const bool include_halo = range == IndexRange::include_halo;
-    const auto[iStart, iEnd] = details::getContiguousHorizontalIndexSpace(firstField, include_halo);
+    const auto range_pair = details::getContiguousHorizontalIndexSpace(firstField, include_halo);
+    const atlas::idx_t iStart = range_pair.first;
+    const atlas::idx_t iEnd = range_pair.second;
     const atlas::idx_t jMax = firstField.shape(1);
     if (pattern == ExecutionPattern::parallel) {
       #pragma omp parallel for collapse(2)
@@ -241,7 +243,9 @@ void for_each_column(
         "Excluding halo values is not implemented for non-contiguous halos.", Here());
   } else {
     const bool include_halo = range == IndexRange::include_halo;
-    const auto[iStart, iEnd] = details::getContiguousHorizontalIndexSpace(firstField, include_halo);
+    const auto range_pair = details::getContiguousHorizontalIndexSpace(firstField, include_halo);
+    const atlas::idx_t iStart = range_pair.first;
+    const atlas::idx_t iEnd = range_pair.second;
     if (pattern == ExecutionPattern::parallel) {
       #pragma omp parallel for
       for (atlas::idx_t i = iStart; i < iEnd; ++i) {
