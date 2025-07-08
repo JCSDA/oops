@@ -249,6 +249,22 @@ bool GeometryData::containingTriangleAndBarycentricCoords(const double lat, cons
     return std::min(nb_to_check, static_cast<int>(localCellCenterTree_.size()));
   }();
 
+  // Sort the list of cells returned by KD-tree. The list is already sorted by distance,
+  // sort only equidistant points by payload (cell index).
+  const auto sortOnlyTies = [](auto & list) {
+    auto first = list.begin();
+    while (first != list.end()) {
+      auto rangeEnd = std::find_if(first, list.end(),
+                [d = first->distance()](const auto & x) { return x.distance() != d; });
+      if (std::distance(first, rangeEnd) > 1) {
+        std::sort(first, rangeEnd, [](const auto & a, const auto & b) {
+                                   return a.payload() < b.payload();
+                                   });
+      }
+      first = rangeEnd;
+    }
+  };
+
   // Find cell that contains target point
   atlas::PointLonLat pll(lon, lat);
   pll.normalise();
@@ -257,7 +273,11 @@ bool GeometryData::containingTriangleAndBarycentricCoords(const double lat, cons
 
   bool success = false;
 
-  const auto list = localCellCenterTree_.closestPoints(p, nb_cells_to_check);
+  auto list = localCellCenterTree_.closestPoints(p, nb_cells_to_check);
+  // The list is already sorted by distance, now sort only equidistant points by
+  // payload (cell index). This ensures that the order is deterministic and results are
+  // reproducible with different MPI layouts.
+  sortOnlyTies(list);
   for (const auto & item : list) {
     const int cell = item.payload();
     const int nb_cols = connectivity.cols(cell);
