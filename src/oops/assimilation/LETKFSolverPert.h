@@ -114,7 +114,7 @@ Observations<OBS> StochasticLETKF<MODEL, OBS>::computeHofX(const StateEnsemble4D
     ypertDepSum += pertDepTmp;
     // Now pertDepTmp = dy_i - Y_i
     //                = dy_i - (H(x_i) - mean(H(x_j))) forall j in ens
-    pertDepTmp -= (this->Yb_).getData(iens);
+    pertDepTmp -= (this->Yb_)->getData(iens);
     // Temporary storage in OmbPertDepEns_[i]
     OmbPertDepEns_.setData(iens, pertDepTmp);
   }
@@ -142,7 +142,7 @@ void StochasticLETKF<MODEL, OBS>::measurementUpdate(const Eigen::VectorXd & loca
                                                     const GeometryIterator_ & i,
                                                     IncrementSet_ & ana_pert) {
   const Eigen::MatrixXf local_OmbPert_mat_f = OmbPertDepEns_.packEigen(locvector);
-  const Eigen::MatrixXf local_Yb_mat_f = this->Yb_.packEigen(locvector);
+  const Eigen::MatrixXf local_Yb_mat_f = (this->Yb_)->packEigen(locvector);
   this->computeWeights(local_omb_vec, local_OmbPert_mat_f, local_Yb_mat_f, local_invVarR_vec);
   this->applyWeights(bkg_pert, ana_pert, i);
 }

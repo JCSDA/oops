@@ -126,7 +126,7 @@ void DeterministicLETKF<MODEL, OBS>::measurementUpdate(const Eigen::VectorXd & l
                                                        const IncrementSet_ & bkg_pert,
                                                        const GeometryIterator_ & i,
                                                        IncrementSet_ & ana_pert) {
-  const Eigen::MatrixXf local_Yb_mat_f = this->Yb_.packEigen(locvector);
+  const Eigen::MatrixXf local_Yb_mat_f = (this->Yb_)->packEigen(locvector);
   this->computeWeights(local_omb_vec, local_Yb_mat_f, local_invVarR_vec);
   this->applyWeights(bkg_pert, ana_pert, i);
 }

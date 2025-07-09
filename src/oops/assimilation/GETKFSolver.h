@@ -26,6 +26,7 @@
 #include "oops/base/ObsEnsemble.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
+#include "oops/base/ObsLocalizations.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/StateEnsemble4D.h"
 #include "oops/base/StateSet.h"
@@ -70,6 +71,7 @@ class DeterministicGETKF : public LocalEnsembleSolver<MODEL, OBS> {
   typedef Observations<OBS>           Observations_;
   typedef Observers<MODEL, OBS>       Observers_;
   typedef ObserversTLAD<MODEL, OBS>   ObserversTLAD_;
+  typedef ObsLocalizations<MODEL, OBS> ObsLocalizations_;
   typedef ObsSpaces<OBS>              ObsSpaces_;
   typedef PseudoModelState4D<MODEL>   PseudoModel_;
   typedef PseudoLinearModelIncrement4D<MODEL> PseudoLinearModel_;
@@ -110,7 +112,7 @@ class DeterministicGETKF : public LocalEnsembleSolver<MODEL, OBS> {
   size_t nanal_;
   bool fortranETKF_;
 
-  DeparturesEnsemble_ HZb_;
+  std::unique_ptr<DeparturesEnsemble_> HZb_;
 
  private:
   /// Computes weights for ensemble update with local observations
@@ -143,8 +145,7 @@ DeterministicGETKF<MODEL, OBS>::DeterministicGETKF(ObsSpaces_ & obspaces,
     nens_(nens), geometry_(geometry),
     vertloc_(config.getSubConfiguration("local ensemble DA.vertical localization"), xbmean[0],
     incvars), neig_(vertloc_.neig()), nanal_(neig_*nens_),
-    fortranETKF_(config.getBool("local ensemble DA.fortran ETKF", true)),
-    HZb_(obspaces, nanal_)
+    fortranETKF_(config.getBool("local ensemble DA.fortran ETKF", true))
 {
   // pre-allocate transformation matrices
   Wa_.resize(nanal_, nens);
@@ -173,6 +174,9 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateEnsembl
     // also computes omb_
     yb_mean = LocalEnsembleSolver<MODEL, OBS>::computeHofX(ens_xx, iteration, readFromFile);
 
+    // initialize HZb_
+    HZb_ = std::make_unique<DeparturesEnsemble_>(this->obspaces_, nanal_);
+
     // read modulated ensemble
     Observations_ ytmp(yb_mean);
     size_t ii = 0;
@@ -183,7 +187,7 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateEnsembl
       for (size_t ieig = 0; ieig < neig_; ++ieig) {
         ytmp.read("hofxm"+std::to_string(iteration)+"_"+std::to_string(ieig+1)+
                       "_"+std::to_string(iens+1));
-        HZb_.setData(ii, ytmp - yb_mean);
+        HZb_->setData(ii, ytmp - yb_mean);
         ii = ii + 1;
       }
     }
@@ -221,6 +225,11 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateEnsembl
       this->R_->save("ObsError");
       this->initializeAssimilatedMask();
 
+      // initialize Yb_, obsloc_, and HZb_
+      this->Yb_ = std::make_unique<DeparturesEnsemble_>(this->obspaces_, nens_);
+      this->obsloc_ = std::make_unique<ObsLocalizations_>(this->observersconf_, this->obspaces_);
+      HZb_ = std::make_unique<DeparturesEnsemble_>(this->obspaces_, nanal_);
+
       // calculate obs departures
       Observations_ yobs(this->obspaces_, "ObsValue");
       this->omb_ = yobs - yb_mean;
@@ -242,9 +251,9 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateEnsembl
         // Approximate H(x) using linearized model and linearized observer
         this->applyLinearToPerturbations(dx, flength, default_tstep, obsauxinc, moderrinc,
                                       posttl, posttrajtl, tmpDeps);
-        (this->Yb_).setData(iens, tmpDeps);
+        (this->Yb_)->setData(iens, tmpDeps);
         Observations_ tmpObs(yb_mean);
-        tmpObs += this->Yb_.getData(iens);
+        tmpObs += (this->Yb_)->getData(iens);
         Log::test() << "H(x) for member " << iens+1 << ":" << std::endl << tmpObs << std::endl;
         tmpObs.save("hofx"+std::to_string(iteration)+"_"+std::to_string(iens+1));
 
@@ -253,9 +262,9 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateEnsembl
         for (size_t ieig = 0; ieig < neig_; ++ieig) {
           this->applyLinearToPerturbations(Ztmp[ieig], flength, default_tstep, obsauxinc, moderrinc,
                                            posttl, posttrajtl, tmpDeps);
-          HZb_.setData(ii, tmpDeps);
+          HZb_->setData(ii, tmpDeps);
           Observations_ tmpObs(yb_mean);
-          tmpObs += HZb_.getData(ii);
+          tmpObs += HZb_->getData(ii);
           tmpObs.save("hofxm"+std::to_string(iteration)+"_"+std::to_string(ieig+1)+
                         "_"+std::to_string(iens+1));
           ii = ii + 1;
@@ -265,6 +274,9 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateEnsembl
       // compute/read H(x) for the original ensemble members
       // also computes omb_
       yb_mean = LocalEnsembleSolver<MODEL, OBS>::computeHofX(ens_xx, iteration, readFromFile);
+
+      // initialize HZb_
+      HZb_ = std::make_unique<DeparturesEnsemble_>(this->obspaces_, nanal_);
 
       // don't save QC filters, obs bias, ob errors, h(x) for the modulated ensemble members
       eckit::LocalConfiguration config;
@@ -299,7 +311,7 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateEnsembl
           // failed QC on one ensemble member fail for all
           Departures_ tmpDep = tmpObs - yb_mean;
           this->updateAssimilatedMask(tmpDep);
-          HZb_.setData(ii, tmpDep);
+          HZb_->setData(ii, tmpDep);
           tmpObs.save("hofxm"+std::to_string(iteration)+"_"+std::to_string(ieig+1)+
                         "_"+std::to_string(iens+1));
           ii = ii + 1;
@@ -313,9 +325,9 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateEnsembl
   this->applyAssimilatedMask(this->omb_);
   for (size_t iens = 0; iens < nanal_; ++iens) {
     tmpDeps.zero();
-    tmpDeps = this->HZb_.getData(iens);
+    tmpDeps = (this->HZb_)->getData(iens);
     this->applyAssimilatedMask(tmpDeps);
-    this->HZb_.setData(iens, tmpDeps);
+    (this->HZb_)->setData(iens, tmpDeps);
   }
 
   return yb_mean;
@@ -388,8 +400,8 @@ void DeterministicGETKF<MODEL, OBS>::measurementUpdate(const Eigen::VectorXd & l
                                                        const IncrementSet_ & bkg_pert,
                                                        const GeometryIterator_ & i,
                                                        IncrementSet_ & ana_pert) {
-  const Eigen::MatrixXf local_Yb_mat_f = this->Yb_.packEigen(locvector);
-  const Eigen::MatrixXf local_HZ_mat_f = this->HZb_.packEigen(locvector);
+  const Eigen::MatrixXf local_Yb_mat_f = (this->Yb_)->packEigen(locvector);
+  const Eigen::MatrixXf local_HZ_mat_f = (this->HZb_)->packEigen(locvector);
   this->computeWeights(local_omb_vec, local_HZ_mat_f, local_Yb_mat_f, local_invVarR_vec);
   this->applyWeights(bkg_pert, ana_pert, i);
 }

@@ -116,18 +116,18 @@ Observations<OBS> StochasticGETKF<MODEL, OBS>::computeHofX(const StateEnsemble4D
     ypertDepSum += pertDepTmp;
     // Now pertDepTmp = dy_i - Y_i
     //                = dy_i - (H(x_i) - mean(H(x_j))) forall j in ens
-    pertDepTmp -= (this->Yb_).getData(iens);
+    pertDepTmp -= (this->Yb_)->getData(iens);
     // Temporary storage in Yb_[i]
-    (this->Yb_).setData(iens, pertDepTmp);
+    (this->Yb_)->setData(iens, pertDepTmp);
   }
 
   for (size_t iens = 0; iens < (this->nens_); ++iens) {
     pertDepTmp.zero();
-    pertDepTmp = (this->Yb_).getData(iens);
+    pertDepTmp = (this->Yb_)->getData(iens);
     // Subtract mean(dy_j) from dy_i - Y_i
     pertDepTmp.axpy(-1.0/(this->nens_), ypertDepSum);
     // Now Yb_[i] = dy_i - Y_i - mean(dy_j) forall j in ens
-    (this->Yb_).setData(iens, pertDepTmp);
+    (this->Yb_)->setData(iens, pertDepTmp);
   }
 
   return yb_mean;
@@ -173,8 +173,8 @@ void StochasticGETKF<MODEL, OBS>::measurementUpdate(const Eigen::VectorXd & loca
                                                     const IncrementSet_ & bkg_pert,
                                                     const GeometryIterator_ & i,
                                                     IncrementSet_ & ana_pert) {
-  const Eigen::MatrixXf local_OmbPert_mat_f = (this->Yb_).packEigen(locvector);
-  const Eigen::MatrixXf local_HZb_mat_f = (this->HZb_).packEigen(locvector);
+  const Eigen::MatrixXf local_OmbPert_mat_f = (this->Yb_)->packEigen(locvector);
+  const Eigen::MatrixXf local_HZb_mat_f = (this->HZb_)->packEigen(locvector);
   this->computeWeights(local_omb_vec, local_OmbPert_mat_f, local_HZb_mat_f, local_invVarR_vec);
   this->applyWeights(bkg_pert, ana_pert, i);
 }

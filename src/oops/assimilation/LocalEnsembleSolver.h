@@ -116,15 +116,15 @@ class LocalEnsembleSolver {
   void posteriorInflation(const Eigen::MatrixXd & Xb, Eigen::MatrixXd & Xa) const;
 
   /// accessor to obs localizations
-  const ObsLocalizations_ & obsloc() const {return obsloc_;}
+  const ObsLocalizations_ & obsloc() const {return *obsloc_;}
   bool useLinearObserver() const { return useLinearObserver_; }
 
  protected:
   const Geometry_  & geometry_;   ///< Geometry associated with the updated states
   const ObsSpaces_ & obspaces_;   ///< ObsSpaces used in the update
   Departures_ omb_;               ///< obs - mean(H(x)); set in computeHofX method
-  DeparturesEnsemble_ Yb_;        ///< ensemble perturbations in the observation space;
-                                  ///< set in computeHofX method
+  std::unique_ptr<DeparturesEnsemble_> Yb_;   ///< ensemble perturbations in the observation space;
+                                              ///< set in computeHofX method
   std::unique_ptr<ObsErrors_>  R_;         ///< observation errors, set in computeHofX method
   std::unique_ptr<Departures_> invVarR_;   ///< inverse observation error variance for assimilated
                                            ///< observations; set in initializeAssimilatedMask
@@ -139,6 +139,7 @@ class LocalEnsembleSolver {
   const Variables incvars_;
   const eckit::LocalConfiguration obsconf_;  ///< configuration for observations
   const eckit::LocalConfiguration observersconf_;  ///< configuration for observations.observers
+  std::unique_ptr<ObsLocalizations_> obsloc_;          ///< observation space localization
 
   /// Create a mask that excludes observations which will not be assimilated (e.g. failed QC) using
   /// a single ensemble member.
@@ -183,7 +184,6 @@ class LocalEnsembleSolver {
 
  private:
   bool useLinearObserver_;
-  ObsLocalizations_ obsloc_;          ///< observation space localization
 };
 
 // -----------------------------------------------------------------------------
@@ -198,12 +198,10 @@ LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
   : geometry_(geometry),
     obspaces_(obspaces),
     omb_(obspaces_),
-    Yb_(obspaces_, nens),
     xbmean_(xbmean),
     incvars_(incvars),
     obsconf_(config, "observations"),
-    observersconf_(obsconf_, "observers"),
-    obsloc_(observersconf_, obspaces_) {
+    observersconf_(obsconf_, "observers") {
   // initialize and print options
 
   options_.deserialize(config);
@@ -359,8 +357,6 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(
                                                    bool readFromDisk) {
   util::Timer timer(classname(), "computeHofX");
 
-  ASSERT(ens_xx.size() == Yb_.size());
-
   const size_t nens = ens_xx.size();
   ObsEnsemble_ obsens(obspaces_, nens);
   Observations_ y_mean_xb(obspaces_);
@@ -419,8 +415,11 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(
     config.set("save obs errors", false);
     config.set("save obs bias", false);
 
-    // add linearized H(x) to the linear model postprocessor
     if (useLinearObserver()) {
+      // initialize Yb_ and obsloc_
+      Yb_ = std::make_unique<DeparturesEnsemble_>(obspaces_, nens);
+      obsloc_ = std::make_unique<ObsLocalizations_>(observersconf_, obspaces_);
+      // add linearized H(x) to the linear model postprocessor
       linear_hofx_->initializeTL(posttrajtl);
     }
     Departures_ tmpDeps(this->obspaces_);
@@ -447,9 +446,9 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(
                                    posttrajtl, tmpDeps);
         // Secondly, add this to the ensemble mean in observation space (calculated with the
         // nonlinear obs operator) giving the approximate H(x_i)
-        Yb_.setData(jj, tmpDeps);
+        Yb_->setData(jj, tmpDeps);
         obsens[jj] = y_mean_xb;
-        obsens[jj] += Yb_.getData(jj);
+        obsens[jj] += Yb_->getData(jj);
       } else {
         // These are recalculated for each ensemble member
         times = ens_xx[jj].validTimes();
@@ -490,17 +489,20 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(
   // ensemble members).
   Departures_ tmpDeps(this->obspaces_);
   if (readFromDisk || (!useLinearObserver())) {
-    for (size_t iens = 0; iens < Yb_.size(); ++iens) {
+    // initialize Yb_ and obsloc_
+    Yb_ = std::make_unique<DeparturesEnsemble_>(obspaces_, nens);
+    obsloc_ = std::make_unique<ObsLocalizations_>(observersconf_, obspaces_);
+    for (size_t iens = 0; iens < Yb_->size(); ++iens) {
       tmpDeps = obsens[iens] - yb_mean;
       updateAssimilatedMask(tmpDeps);
-      Yb_.setData(iens, tmpDeps);
+      Yb_->setData(iens, tmpDeps);
     }
   }
   // apply assimilated mask to the observation ensemble perturbations
-  for (size_t iens = 0; iens < Yb_.size(); ++iens) {
-    tmpDeps = Yb_.getData(iens);
+  for (size_t iens = 0; iens < Yb_->size(); ++iens) {
+    tmpDeps = Yb_->getData(iens);
     applyAssimilatedMask(tmpDeps);
-    Yb_.setData(iens, tmpDeps);
+    Yb_->setData(iens, tmpDeps);
   }
   // apply assimilated mask to the mean departures
   applyAssimilatedMask(omb_);
