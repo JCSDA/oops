@@ -329,6 +329,7 @@ oops/runs/GenHybridLinearModelCoeffs.h
 oops/runs/HofX3D.h
 oops/runs/HofX4D.h
 oops/runs/HybridGain.h
+oops/runs/InterpolateStateBetweenModels.h
 oops/runs/LinearizationError.h
 oops/runs/LocalEnsembleDA.h
 oops/runs/Run.cc
