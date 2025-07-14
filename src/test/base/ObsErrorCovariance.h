@@ -40,7 +40,6 @@ class ObsErrorTestParameters : public oops::Parameters {
 template <typename OBS> void testConstructor() {
   typedef ObsTestsFixture<OBS>                 Test_;
   typedef oops::ObsError<OBS>                  Covar_;
-  typedef oops::ObsErrorParametersWrapper<OBS> Parameters_;
 
   oops::instantiateObsErrorFactory<OBS>();
 
@@ -49,9 +48,7 @@ template <typename OBS> void testConstructor() {
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
     const eckit::LocalConfiguration rconf(conf[jj], "obs error");
-    Parameters_ rparams;
-    rparams.validateAndDeserialize(rconf);
-    std::unique_ptr<Covar_> R = std::make_unique<Covar_>(rparams.obsErrorParameters,
+    std::unique_ptr<Covar_> R = std::make_unique<Covar_>(rconf,
                                                          Test_::obspace()[jj]);
     EXPECT(R.get());
     oops::Log::info() << "Testing ObsError: " << *R << std::endl;
@@ -67,7 +64,6 @@ template <typename OBS> void testConstructor() {
 template <typename OBS> void testReader() {
   typedef ObsTestsFixture<OBS>                 Test_;
   typedef oops::ObsError<OBS>                  Covar_;
-  typedef oops::ObsErrorParametersWrapper<OBS> Parameters_;
   typedef oops::ObsVector<OBS>                 ObsVector_;
 
   oops::instantiateObsErrorFactory<OBS>();
@@ -81,15 +77,11 @@ template <typename OBS> void testReader() {
         oops::Log::info() << name + ": Test Reader not found" << std::endl;
         continue;
     }
-    const eckit::LocalConfiguration errconf(conf[jj], "obs error test");
-    ObsErrorTestParameters testParams;
-    testParams.validateAndDeserialize(errconf);
+    const eckit::LocalConfiguration testConf(conf[jj], "obs error test");
 
-    if (testParams.testReader.value()) {
+      if (testConf.getBool("test reader")) {
         const eckit::LocalConfiguration rconf(conf[jj], "obs error");
-        Parameters_ rparams;
-        rparams.validateAndDeserialize(rconf);
-        Covar_ R(rparams.obsErrorParameters, Test_::obspace()[jj]);
+        Covar_ R(rconf, Test_::obspace()[jj]);
 
         // Read in obs vector from Obsvalues , this will be a unit vector e.g [1, 0, 0]
         ObsVector_ unit(Test_::obspace()[jj], "ObsValue");
@@ -99,7 +91,7 @@ template <typename OBS> void testReader() {
         std::vector<double> unitVec;
         unit.maskAndSerialize(mask, unitVec);
         oops::Log::info() << "Column of R matrix: " << std::endl << unitVec << std::endl;
-        std::vector<float> refVec = testParams.refVec.value().value();
+        std::vector<float> refVec = testConf.getFloatVector("reference");
 
         // unitVec after Multiplication with R should equal reference vector
         for (size_t i = 0; i < unitVec.size(); i++) {
@@ -114,7 +106,6 @@ template <typename OBS> void testReader() {
 template <typename OBS> void testMultiplies() {
   typedef ObsTestsFixture<OBS>                 Test_;
   typedef oops::ObsError<OBS>                  Covar_;
-  typedef oops::ObsErrorParametersWrapper<OBS> Parameters_;
   typedef oops::ObsVector<OBS>                 ObsVector_;
 
   oops::instantiateObsErrorFactory<OBS>();
@@ -126,9 +117,7 @@ template <typename OBS> void testMultiplies() {
     ObsVector_ obserr(Test_::obspace()[jj], "ObsError");
 
     const eckit::LocalConfiguration rconf(conf[jj], "obs error");
-    Parameters_ rparams;
-    rparams.validateAndDeserialize(rconf);
-    Covar_ R(rparams.obsErrorParameters, Test_::obspace()[jj]);
+    Covar_ R(rconf, Test_::obspace()[jj]);
 
     // RMSE should be equal to the rms that was read from the file
     EXPECT(oops::is_close(R.getRMSE(), obserr.rms(), 1.e-10));
@@ -162,7 +151,6 @@ template <typename OBS> void testMultiplies() {
 template <typename OBS> void testAccessors() {
   typedef ObsTestsFixture<OBS>                 Test_;
   typedef oops::ObsError<OBS>                  Covar_;
-  typedef oops::ObsErrorParametersWrapper<OBS> Parameters_;
   typedef oops::ObsVector<OBS>                 ObsVector_;
 
   oops::instantiateObsErrorFactory<OBS>();
@@ -174,9 +162,7 @@ template <typename OBS> void testAccessors() {
     ObsVector_ obserr(Test_::obspace()[jj], "ObsError");
 
     const eckit::LocalConfiguration rconf(conf[jj], "obs error");
-    Parameters_ rparams;
-    rparams.validateAndDeserialize(rconf);
-    Covar_ R(rparams.obsErrorParameters, Test_::obspace()[jj]);
+    Covar_ R(rconf, Test_::obspace()[jj]);
 
     ObsVector_ dy(R.obserrors());
     oops::Log::info() << "ObsError: " << dy << std::endl;

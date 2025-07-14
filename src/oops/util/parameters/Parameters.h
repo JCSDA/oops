@@ -138,6 +138,8 @@ class Parameters : public ParameterBase, public util::Printable {
 
   void print(std::ostream &os) const override;
 
+  std::vector<ParameterBase*> children_;
+
  public:
   /// \brief Return a unique_ptr to a clone of this object.
   std::unique_ptr<Parameters> clone() const {
@@ -192,9 +194,6 @@ class Parameters : public ParameterBase, public util::Printable {
   eckit::LocalConfiguration toConfiguration() const;
 
   ObjectJsonSchema jsonSchema() const override;
-
- private:
-  std::vector<ParameterBase*> children_;
 };
 
 /// \brief Deserialize the configuration \p config into a new instance of \c ParametersType

@@ -32,13 +32,12 @@ class ObsErrors : public util::Printable,
                   private boost::noncopyable {
   typedef Departures<OBS>                Departures_;
   typedef ObsError<OBS>                  ObsError_;
-  typedef ObsErrorParametersWrapper<OBS> Parameters_;
   typedef ObsSpaces<OBS>                 ObsSpaces_;
 
  public:
   static const std::string classname() {return "oops::ObsErrors";}
 
-  ObsErrors(const std::vector<Parameters_> &, const ObsSpaces_ &);
+  ObsErrors(const std::vector<eckit::LocalConfiguration> &, const ObsSpaces_ &);
   ObsErrors(const eckit::Configuration &, const ObsSpaces_ &);
 
 /// Accessor and size
@@ -69,15 +68,15 @@ class ObsErrors : public util::Printable,
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-ObsErrors<OBS>::ObsErrors(const std::vector<Parameters_> & params,
+ObsErrors<OBS>::ObsErrors(const std::vector<eckit::LocalConfiguration> & obsConfs,
                           const ObsSpaces_ & os) : err_(), os_(os) {
-  ASSERT(params.empty() || params.size() == os.size());
-  const Parameters_ defaultParam;
+  ASSERT(obsConfs.empty() || obsConfs.size() == os.size());
+  const eckit::LocalConfiguration defaultObsConf;
 
   err_.reserve(os.size());
   for (size_t jj = 0; jj < os.size(); ++jj) {
-    const Parameters_ & param = params.empty() ? defaultParam : params[jj];
-    err_.emplace_back(param.obsErrorParameters, os_[jj]);
+    const eckit::LocalConfiguration & obsConf = obsConfs.empty() ? defaultObsConf : obsConfs[jj];
+    err_.emplace_back(obsConf, os_[jj]);
   }
 }
 
@@ -91,11 +90,11 @@ ObsErrors<OBS>::ObsErrors(const eckit::Configuration & config, const ObsSpaces_ 
   ASSERT(subconfigs.size() == os.size());
   err_.reserve(os.size());
   for (size_t jj = 0; jj < os.size(); ++jj) {
-    Parameters_ param;
+    eckit::LocalConfiguration obsConf;
     if (subconfigs[jj].has("obs error")) {
-      param.deserialize(subconfigs[jj].getSubConfiguration("obs error"));
+      obsConf = subconfigs[jj].getSubConfiguration("obs error");
     }
-    err_.emplace_back(param.obsErrorParameters, os_[jj]);
+    err_.emplace_back(obsConf, os_[jj]);
   }
 }
 
