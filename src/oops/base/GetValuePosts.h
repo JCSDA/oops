@@ -31,6 +31,8 @@ class GetValuesParameters : public oops::Parameters {
  public:
   Parameter<eckit::LocalConfiguration> variableChange{"variable change",
                                                       eckit::LocalConfiguration(), this};
+  Parameter<eckit::LocalConfiguration> linearvariableChange{"linear variable change",
+                                                      eckit::LocalConfiguration(), this};
 };
 
 /// \brief Fills GeoVaLs with requested variables at requested locations during model run
