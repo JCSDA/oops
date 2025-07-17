@@ -167,10 +167,10 @@ void testInterpolator(const bool testSourcePointMask) {
   const size_t my_num_target = target_lons.size();
   const double tolerance = config.getDouble("tolerance interpolation");
   if (!testSourcePointMask) {
-    for (size_t jlev = 0; jlev < nlev; ++jlev) {
-      for (size_t jj = 0; jj < my_num_target; ++jj) {
+    for (size_t jj = 0; jj < my_num_target; ++jj) {
+      for (size_t jlev = 0; jlev < nlev; ++jlev) {
         EXPECT(oops::is_close_absolute(
-                 target_vals[jj + my_num_target * jlev],
+                 target_vals[nlev * jj + jlev],
                  testfunc(target_lons[jj], target_lats[jj], jlev, nlev),
                  tolerance));
       }
@@ -182,15 +182,15 @@ void testInterpolator(const bool testSourcePointMask) {
     // field to huge missingValue above wherever it should be masked out, this way any errors
     // in the mask will contribute huge values and will exceed the test tolerance.
     const double masked_tol = 100.0 * tolerance;
-    for (size_t jlev = 0; jlev < nlev; ++jlev) {
-      for (size_t jj = 0; jj < my_num_target; ++jj) {
-        if (target_vals[jj + my_num_target * jlev] == util::missingValue<double>()) {
+    for (size_t jj = 0; jj < my_num_target; ++jj) {
+      for (size_t jlev = 0; jlev < nlev; ++jlev) {
+        if (target_vals[nlev * jj + jlev] == util::missingValue<double>()) {
           // Interpolation should only return 'missing' when all inputs are masked.
           // In this test, this should only happen in southern hemisphere.
           EXPECT(target_lats[jj] < 0.0);
         } else {
           EXPECT(oops::is_close_absolute(
-                   target_vals[jj + my_num_target * jlev],
+                   target_vals[nlev * jj + jlev],
                    testfunc(target_lons[jj], target_lats[jj], jlev, nlev),
                    masked_tol));
         }
@@ -212,8 +212,8 @@ void testInterpolator(const bool testSourcePointMask) {
   atlas::FieldSet source_fields_ad;
   atlas::Field source_field_ad = source_fs.createField<double>(name(varname) | levels(nlev));
   auto source_ad_view = make_view<double, 2>(source_field_ad);
-  for (size_t jlev = 0; jlev < nlev; ++jlev) {
-    for (size_t jj = 0; jj < num_source; ++jj) {
+  for (size_t jj = 0; jj < num_source; ++jj) {
+    for (size_t jlev = 0; jlev < nlev; ++jlev) {
       source_ad_view(jj, jlev) = 0.0;
     }
   }
@@ -229,26 +229,29 @@ void testInterpolator(const bool testSourcePointMask) {
   double dot1 = 0.0;
   double dot2 = 0.0;
   if (!testSourcePointMask) {
-    for (size_t jlev = 0; jlev < nlev; ++jlev) {
-      for (size_t jj = 0; jj < num_source; ++jj) {
+    for (size_t jj = 0; jj < num_source; ++jj) {
+      for (size_t jlev = 0; jlev < nlev; ++jlev) {
         dot1 += source_view(jj, jlev) * source_ad_view(jj, jlev);
       }
-      for (size_t jj = 0; jj < my_num_target; ++jj) {
-        dot2 += target_vals[jj + my_num_target * jlev] * target_vals_ad[jj + my_num_target * jlev];
+    }
+    for (size_t jj = 0; jj < my_num_target; ++jj) {
+      for (size_t jlev = 0; jlev < nlev; ++jlev) {
+        dot2 += target_vals[nlev * jj + jlev] * target_vals_ad[nlev * jj + jlev];
       }
     }
   } else {
-    for (size_t jlev = 0; jlev < nlev; ++jlev) {
-      for (size_t jj = 0; jj < num_source; ++jj) {
-        const double lat = source_lonlat(jj, 1);
-        if (lat >= 0.0) {
+    for (size_t jj = 0; jj < num_source; ++jj) {
+      const double lat = source_lonlat(jj, 1);
+      if (lat >= 0.0) {
+        for (size_t jlev = 0; jlev < nlev; ++jlev) {
           dot1 += source_view(jj, jlev) * source_ad_view(jj, jlev);
         }
       }
-      for (size_t jj = 0; jj < my_num_target; ++jj) {
-        if (target_vals[jj + my_num_target * jlev] != util::missingValue<double>()) {
-          dot2 += target_vals[jj + my_num_target * jlev]
-                  * target_vals_ad[jj + my_num_target * jlev];
+    }
+    for (size_t jj = 0; jj < my_num_target; ++jj) {
+      for (size_t jlev = 0; jlev < nlev; ++jlev) {
+        if (target_vals[nlev * jj + jlev] != util::missingValue<double>()) {
+          dot2 += target_vals[nlev * jj + jlev] * target_vals_ad[nlev * jj + jlev];
         }
       }
     }

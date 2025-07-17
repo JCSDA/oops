@@ -4,15 +4,16 @@
 // This software is licensed under the terms of the Apache Licence Version 2.0
 // which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 
+#include "oops/generic/AtlasInterpolator.h"
+
 #include <iostream>
+#include <numeric>
 #include <string>
 
+#include "atlas/field/FieldSet.h"
 #include "atlas/util/Point.h"
-
 #include "eckit/exception/Exceptions.h"
-
 #include "oops/base/Variables.h"
-#include "oops/generic/AtlasInterpolator.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Timer.h"
 
@@ -21,70 +22,103 @@ namespace oops {
 // Helper structs and functions
 namespace {
 
-// Recursive ForEach to visit elements of masked vector with
-// atlas::ArrayView<Value, Rank>.
-// Note: This iterates over array_view(i, j, k) in i varies fastest order.
-template <int Rank, int Dim = Rank>
-struct ForEach {
-  template <typename Value, typename Functor, typename VecIt, typename... Idxs>
-  static void apply(const std::vector<bool>& mask,
-                    atlas::array::ArrayView<Value, Rank>& targetFieldView,
-                    VecIt& targetFieldVecIt, const Functor& dataCopy,
-                    Idxs... idxs) {
-    // Iterate over dimension Dim of array.
-    for (atlas::idx_t idx = 0; idx < targetFieldView.shape(Dim - 1); ++idx) {
-      ForEach<Rank, Dim - 1>::apply(mask, targetFieldView, targetFieldVecIt,
-                                    dataCopy, idx, idxs...);
-    }
-  }
-};
-
-// End recursion when Dim == 1
-template <int Rank>
-struct ForEach<Rank, 1> {
-  template <typename Value, typename Functor, typename VecIt, typename... Idxs>
-  static void apply(const std::vector<bool>& mask,
-                    atlas::array::ArrayView<Value, Rank>& targetFieldView,
-                    VecIt& targetFieldVecIt, const Functor& dataCopy,
-                    Idxs... idxs) {
-    // Iterate over mask and call functor.
-    atlas::idx_t idx = 0;
-    for (const auto& maskElem : mask) {
-      if (maskElem) {
-        dataCopy(targetFieldView(idx++, idxs...), *targetFieldVecIt);
+// Non-owning view to the vector that populates GeoVals.
+template <typename VectorT>
+class MaskedVectorView {
+ public:
+  MaskedVectorView(const Variables& variables,
+                   const std::vector<bool>& locationMask, VectorT& dataVector)
+      : variables_(variables),
+        locationMask_(locationMask),
+        dataVector_(dataVector) {
+    // Create a location lookup table based on locationMask_.
+    auto locationIdx = size_t{0};
+    for (const auto& isTrue : locationMask_) {
+      if (isTrue) {
+        locationIndices_.push_back(locationIdx);
       }
-      ++targetFieldVecIt;
+      ++locationIdx;
+    }
+
+    // Calculate the vector element displacement for each variable.
+    variableDisplacements.reserve(variables_.size() + 1);
+    variableDisplacements.push_back(0);
+    std::inclusive_scan(
+        variables_.begin(), variables_.end(),
+        std::back_inserter(variableDisplacements),
+        [&](size_t tot, Variable variables) {
+          const auto numLevels = variables.getLevels();
+          if (numLevels < 0) {
+            throw eckit::BadValue("Variable " + variables.name() +
+                                      " has an invalid number of levels: " +
+                                      std::to_string(numLevels),
+                                  Here());
+          }
+          return tot + numLevels * locationMask_.size();
+        },
+        size_t{0});
+
+    // Last displacement should be the total size of data vector.
+    if constexpr (!std::is_const_v<VectorT>) {
+      dataVector_.resize(variableDisplacements.back());
+    } else {
+      if (variableDisplacements.back() != dataVector_.size()) {
+        throw eckit::BadValue(
+            "Data vector size does not match variable displacements.", Here());
+      }
     }
   }
+
+  auto operator()(const Variable& variable) const {
+    const auto variableIdx = variables_.find(variable);
+    if (variableIdx == variables_.size()) {
+      throw eckit::BadValue(
+          "Variable " + variable.name() + " not found in variables.", Here());
+    }
+    const auto numLevels = variables_[variableIdx].getLevels();
+    const auto dataBeginIdx = variableDisplacements[variableIdx];
+
+    return [dataBeginIdx, numLevels, this](size_t locationIdx) {
+      const auto locationBeginIdx =
+          dataBeginIdx + locationIndices_[locationIdx] * numLevels;
+
+      return [locationBeginIdx, this](size_t levelIdx) -> decltype(auto) {
+        return dataVector_[locationBeginIdx + levelIdx];
+      };
+    };
+  }
+
+ private:
+  const Variables& variables_;
+  const std::vector<bool>& locationMask_;
+  VectorT& dataVector_;
+  std::vector<size_t> locationIndices_{};
+  std::vector<size_t> variableDisplacements{};
 };
 
-template <typename Functor, typename VecIt>
+template <typename Functor, typename VectorT>
 void fieldSetToVector(const Variables& variables, const std::vector<bool>& mask,
-                      atlas::FieldSet& targetFieldSet, VecIt TargetFieldVecIt,
-                      const Functor& dataCopy) {
-  for (const auto& variable : variables) {
-    auto targetField = targetFieldSet[variable.name()];
+                      atlas::FieldSet& targetFieldSet,
+                      VectorT& targetFieldVector, const Functor& dataCopy) {
+  // Add level information to variables.
+  auto variablesWithLevels = variables;
+  for (auto& variable : variablesWithLevels) {
+    variable.setLevels(targetFieldSet[variable.name()].shape(1));
+  }
 
-    switch (targetField.rank()) {
-      case 1: {
-        auto targetFieldView = atlas::array::make_view<double, 1>(targetField);
-        ForEach<1>::apply(mask, targetFieldView, TargetFieldVecIt, dataCopy);
-        break;
-      }
-      case 2: {
-        auto targetFieldView = atlas::array::make_view<double, 2>(targetField);
-        ForEach<2>::apply(mask, targetFieldView, TargetFieldVecIt, dataCopy);
-        break;
-      }
-      case 3: {
-        auto targetFieldView = atlas::array::make_view<double, 3>(targetField);
-        ForEach<3>::apply(mask, targetFieldView, TargetFieldVecIt, dataCopy);
-        break;
-      }
-      default: {
-        const auto errMsg = "No implementation for rank " +
-                            std::to_string(targetField.rank()) + " fields.";
-        eckit::NotImplemented(errMsg, Here());
+  auto vectorView =
+      MaskedVectorView<VectorT>(variablesWithLevels, mask, targetFieldVector);
+
+  for (const auto& variable : variablesWithLevels) {
+    auto targetField = targetFieldSet[variable.name()];
+    auto targetFieldView = atlas::array::make_view<double, 2>(targetField);
+
+    auto vectorViewVariable = vectorView(variable);
+
+    for (atlas::idx_t loc = 0; loc < targetFieldView.shape(0); ++loc) {
+      auto vectorViewLocation = vectorViewVariable(loc);
+      for (atlas::idx_t lev = 0; lev < targetFieldView.shape(1); ++lev) {
+        dataCopy(targetFieldView(loc, lev), vectorViewLocation(lev));
       }
     }
   }
@@ -97,7 +131,6 @@ AtlasInterpolator::AtlasInterpolator(const eckit::Configuration& conf,
                                      const std::vector<double>& targetLons)
     : sourceFunctionSpace_{geomData.functionSpace()},
       interpMethod_{conf.getSubConfiguration("interpolation method")} {
-
   Log::trace() << classname() + "::AtlasInterpolator start" << std::endl;
   util::Timer timer(classname(), "AtlasInterpolator");
 
@@ -127,9 +160,6 @@ void AtlasInterpolator::apply(const Variables& variables,
   Log::trace() << classname() + "::apply start" << std::endl;
   util::Timer timer(classname(), "apply");
 
-  // Resize targetFieldVec (just in case);
-  targetFieldVec.resize(getTotalElements(variables, sourceFieldSet));
-
   // Get atlas interpolation object.
   const auto& interp = getInterp(mask);
 
@@ -145,19 +175,22 @@ void AtlasInterpolator::apply(const Variables& variables,
 
   // Perform interpolation.
   const auto interpVars = createInterpVariables(variables);
+  auto interpSource = atlas::FieldSet{};
+  auto interpTarget = atlas::FieldSet{};
   for (const auto& variable : interpVars) {
-    interp.execute(tempSourceFieldSet[variable.name()], targetFieldSet[variable.name()]);
+    interpSource.add(tempSourceFieldSet[variable.name()]);
+    interpTarget.add(targetFieldSet[variable.name()]);
   }
+  interp.execute(interpSource, interpTarget);
 
   // Post-process fields.
   postProcessFields(targetFieldSet, mask);
 
   // Copy targetFieldSet to vector.
-  const auto dataCopy = [](const double & fieldElem, double & vecElem)->void {
+  const auto dataCopy = [](const double& fieldElem, double& vecElem) -> void {
     vecElem = fieldElem;
   };
-  fieldSetToVector(variables, mask, targetFieldSet, targetFieldVec.begin(),
-                   dataCopy);
+  fieldSetToVector(variables, mask, targetFieldSet, targetFieldVec, dataCopy);
 
   Log::trace() << classname() + "::apply done" << std::endl;
 }
@@ -173,7 +206,6 @@ void AtlasInterpolator::applyAD(
     const Variables& variables, atlas::FieldSet& sourceFieldSet,
     const std::vector<bool>& mask,
     const std::vector<double>& targetFieldVec) const {
-
   Log::trace() << classname() + "::applyAD start" << std::endl;
   util::Timer timer(classname(), "applyAD");
 
@@ -188,21 +220,23 @@ void AtlasInterpolator::applyAD(
       createTargetFields(variables, interp.target(), tempSourceFieldSet);
 
   // Copy vector to targetFieldSet.
-  const auto dataCopy = [](double & fieldElem, const double & vecElem)->void {
+  const auto dataCopy = [](double& fieldElem, const double& vecElem) -> void {
     fieldElem += vecElem;
   };
-  fieldSetToVector(variables, mask, targetFieldSet, targetFieldVec.cbegin(),
-                   dataCopy);
+  fieldSetToVector(variables, mask, targetFieldSet, targetFieldVec, dataCopy);
 
   // Post-process fields.
   postProcessFieldsAD(targetFieldSet, mask);
 
   // Interpolation adjoint.
   const auto interpVars = createInterpVariables(variables);
+  auto interpSource = atlas::FieldSet{};
+  auto interpTarget = atlas::FieldSet{};
   for (const auto& variable : interpVars) {
-    interp.execute_adjoint(tempSourceFieldSet[variable.name()],
-                           targetFieldSet[variable.name()]);
+    interpSource.add(tempSourceFieldSet[variable.name()]);
+    interpTarget.add(targetFieldSet[variable.name()]);
   }
+  interp.execute_adjoint(interpSource, interpTarget);
 
   // Pre-process fields.
   preProcessFieldsAD(tempSourceFieldSet);
@@ -214,8 +248,8 @@ void AtlasInterpolator::preProcessFields(atlas::FieldSet& sourceFields) const {
   // Do nothing in base class.
 }
 
-void AtlasInterpolator::preProcessFieldsAD(atlas::FieldSet& sourceFields)
-    const {
+void AtlasInterpolator::preProcessFieldsAD(
+    atlas::FieldSet& sourceFields) const {
   // Do nothing in base class.
 }
 
@@ -324,26 +358,5 @@ const atlas::Interpolation& AtlasInterpolator::getInterp(
 }
 
 void AtlasInterpolator::print(std::ostream& os) const { os << classname(); }
-
-size_t AtlasInterpolator::getTotalElements(
-    const Variables& variables, const atlas::FieldSet& sourceFields) const {
-  size_t totalElements = 0;
-
-  // Loop over fields.
-  for (const auto& variable : variables) {
-    const auto field = sourceFields[variable.name()];
-
-    size_t elementsPerLocation = 1;
-    // Loop over outer elements of field shape (excluding dim 0, the number of
-    // source functionspace points).
-    for (atlas::idx_t dim = 1; dim < field.rank(); ++dim) {
-      elementsPerLocation *= field.shape(dim);
-    }
-    totalElements += elementsPerLocation;
-  }
-  totalElements *= targetLonLats_.size();
-
-  return totalElements;
-}
 
 }  // namespace oops

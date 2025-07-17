@@ -224,7 +224,7 @@ class GetValues : private util::ObjectCounter<GetValues<MODEL, OBS> > {
  private:
 /// time-interpolation helper: adds contribution from this time to running total
   void incInterpValues(const util::DateTime &, const std::vector<bool> &,
-                       const size_t &, const std::vector<double> &);
+                       const size_t, const std::vector<double> &);
 
 
   util::Duration hslot_;    /// Half time slot
@@ -378,7 +378,7 @@ void GetValues<MODEL, OBS>::initialize(const util::Duration & tstep) {
 template <typename MODEL, typename OBS>
 void GetValues<MODEL, OBS>::incInterpValues(
                     const util::DateTime & tCurrent, const std::vector<bool> & mask,
-                    const size_t & jtask,
+                    const size_t jtask,
                     const std::vector<double> & tmplocinterp)
 {
   Log::trace() << "GetValues::incInterpValues start" << std::endl;
@@ -390,39 +390,58 @@ void GetValues<MODEL, OBS>::incInterpValues(
   const util::DateTime tNext = tCurrent + hslot_;
   const double dt = static_cast<double>(hslot_.toSeconds());
 
-// Compute and add time weighted contribution from the input interpolated values.
-  double timeWeight = 0;
-  const size_t nObs = obs_times_by_task_[jtask].size();
-  for (size_t jp = 0; jp < nObs; ++jp) {
-    size_t valuesIndex = jp;
-    if (mask[jp]) {
-      const util::DateTime & obCurrentTime = obs_times_by_task_[jtask][jp];
-      const bool isCurrentTime = obCurrentTime == tCurrent;
-      const bool isFirst = obCurrentTime > tCurrent;
-      if (!isCurrentTime && isFirst) {
-        timeWeight =
-          static_cast<double>((tNext - obCurrentTime).toSeconds())/dt;
-      } else if (!isCurrentTime && !isFirst) {
-        timeWeight =
-          static_cast<double>((obCurrentTime - tPrevious).toSeconds())/dt;
-      }
-      for (size_t jf = 0; jf < geovars_.size(); ++jf) {
-        for (size_t jlev = 0; jlev < geovarsSizes_[jf]; ++jlev) {
-          if (tmplocinterp[valuesIndex] == missing) {
-            locinterp_[jtask][valuesIndex] = missing;
+// Compute and add time weighted contribution from the input interpolated values
+  auto lhs_ptr = locinterp_[jtask].begin();
+  auto rhs_ptr = tmplocinterp.begin();
+  const int nb_obs = obs_times_by_task_[jtask].size();
+  for (size_t jf = 0; jf < geovars_.size(); ++jf) {
+    const int nb_levs = geovarsSizes_[jf];
+    const auto shape = atlas::array::ArrayShape{nb_obs, nb_levs};
+
+    // Get array views into interpolation results
+    atlas::array::Array* lhs_array = atlas::array::Array::wrap<double>(&*lhs_ptr, shape);
+    auto lhs = atlas::array::make_view<double, 2>(*lhs_array);
+    // Horrible cast to allow a standard ArrayView<double> from a const std::vector
+    atlas::array::Array* rhs_array = atlas::array::Array::wrap<double>(
+        const_cast<double*>(&*rhs_ptr), shape);
+    auto rhs = atlas::array::make_view<double, 2>(*rhs_array);
+
+    for (int jloc = 0; jloc < nb_obs; ++jloc) {
+      if (mask[jloc]) {
+        // Compute time-interpolation weights
+        const util::DateTime & obCurrentTime = obs_times_by_task_[jtask][jloc];
+        const bool isCurrentTime = (obCurrentTime == tCurrent);
+        const bool isFirst = (obCurrentTime > tCurrent);
+        double timeWeight = 0.;
+        if (!isCurrentTime) {
+          timeWeight = isFirst ?
+            static_cast<double>((tNext - obCurrentTime).toSeconds())/dt :
+            static_cast<double>((obCurrentTime - tPrevious).toSeconds())/dt;
+        }
+
+        for (int jlev = 0; jlev < nb_levs; ++jlev) {
+          if (rhs(jloc, jlev) == missing) {
+            lhs(jloc, jlev) = missing;
           } else if (isCurrentTime) {
-            locinterp_[jtask][valuesIndex] = tmplocinterp[valuesIndex];
+            lhs(jloc, jlev) = rhs(jloc, jlev);
           } else if (isFirst) {
-            locinterp_[jtask][valuesIndex] = tmplocinterp[valuesIndex]*timeWeight;
-          } else if (locinterp_[jtask][valuesIndex] != missing) {
-            // Don't linearly interpolate missing data
-            locinterp_[jtask][valuesIndex] += tmplocinterp[valuesIndex]*timeWeight;
+            lhs(jloc, jlev) = rhs(jloc, jlev) * timeWeight;
+          } else if (lhs(jloc, jlev) != missing) {
+            // Don't interpolate missing values
+            lhs(jloc, jlev) += rhs(jloc, jlev) * timeWeight;
           }
-          valuesIndex += nObs;
         }
       }
     }
+
+    const int step = nb_obs * nb_levs;
+    std::advance(lhs_ptr, step);
+    std::advance(rhs_ptr, step);
   }
+
+  ASSERT(lhs_ptr == locinterp_[jtask].end());
+  ASSERT(rhs_ptr == tmplocinterp.end());
+
   Log::trace() << "GetValues::incInterpValues done" << std::endl;
 }
 
@@ -513,19 +532,18 @@ void GetValues<MODEL, OBS>::fillGeoVaLs(GeoVaLs_ & geovals) {
     // Create non-owning views ("maps") into the interpolation results.
     const Eigen::Map<const Eigen::VectorX<size_t>> indices(myobs_index_by_task_[itask].data(),
                                                            myobs_index_by_task_[itask].size());
-    // Each column contains the values of a single variable at a single level and all locations
-    // with indices 'indices'. The columns are ordered first by level and then by variable.
-    const Eigen::Map<const Eigen::MatrixXd> values(recvinterp_[itask].data(),
-                                                   myobs_index_by_task_[itask].size(), varsizes_);
 
-    size_t colOffset = 0;
+    auto offset = recvinterp_[itask].begin();
     for (size_t jvar = 0; jvar < geovars_.size(); ++jvar) {
       const size_t numLevels = geovarsSizes_[jvar];
-      geovals.fill(geovars_[jvar], indices, values.middleCols(colOffset, numLevels),
-                   this->levelsTopDown_);
-      colOffset += numLevels;
+      const size_t numLocs = myobs_index_by_task_[itask].size();
+      // Each column contains the values of a single variable at a single level and all locations
+      // with indices 'indices'. The columns are ordered first by level and then by variable.
+      const Eigen::Map<const Eigen::MatrixXd> values(&*offset, numLevels, numLocs);
+      geovals.fill(geovars_[jvar], indices, values, this->levelsTopDown_);
+      std::advance(offset, numLevels * numLocs);
     }
-    ASSERT(colOffset == varsizes_);
+    ASSERT(offset == recvinterp_[itask].end());
   }
   recv_req_.clear();
   recv_tasks_.clear();
@@ -642,19 +660,18 @@ void GetValues<MODEL, OBS>::fillGeoVaLsTL(GeoVaLs_ & geovals) {
     // Create non-owning views ("maps") into the interpolation results.
     const Eigen::Map<const Eigen::VectorX<size_t>> indices(myobs_index_by_task_[itask].data(),
                                                            myobs_index_by_task_[itask].size());
-    // Each column contains the values of a single variable at a single level and all locations
-    // with indices 'indices'. The columns are ordered first by level and then by variable.
-    const Eigen::Map<const Eigen::MatrixXd> values(recvinterp_[itask].data(),
-                                                   myobs_index_by_task_[itask].size(), linsizes_);
 
-    size_t colOffset = 0;
+    auto offset = recvinterp_[itask].begin();
     for (size_t jvar = 0; jvar < linvars_.size(); ++jvar) {
       const size_t numLevels = linvarsSizes_[jvar];
-      geovals.fill(linvars_[jvar], indices, values.middleCols(colOffset, numLevels),
-                   this->levelsTopDown_);
-      colOffset += numLevels;
+      const size_t numLocs = myobs_index_by_task_[itask].size();
+      // Each column contains the values of a single variable at a single level and all locations
+      // with indices 'indices'. The columns are ordered first by level and then by variable.
+      const Eigen::Map<const Eigen::MatrixXd> values(&*offset, numLevels, numLocs);
+      geovals.fill(linvars_[jvar], indices, values, this->levelsTopDown_);
+      std::advance(offset, numLevels * numLocs);
     }
-    ASSERT(colOffset == linsizes_);
+    ASSERT(offset == recvinterp_[itask].end());
   }
   recv_req_.clear();
   recv_tasks_.clear();
@@ -774,18 +791,18 @@ void GetValues<MODEL, OBS>::fillGeoVaLsAD(const GeoVaLs_ & geovals) {
       // Create non-owning views ("maps") into the interpolation results.
       const Eigen::Map<const Eigen::VectorX<size_t>> indices(myobs_index_by_task_[jtask].data(),
                                                              myobs_index_by_task_[jtask].size());
-      // Each column contains the values of a single variable at a single level and all locations
-      // with indices 'indices'. The columns are ordered first by level and then by variable.
-      Eigen::Map<Eigen::MatrixXd> values(recvinterp_[jtask].data(),
-                                         myobs_index_by_task_[jtask].size(), linsizes_);
-      size_t colOffset = 0;
+
+      auto offset = recvinterp_[jtask].begin();
       for (size_t jvar = 0; jvar < linvars_.size(); ++jvar) {
         const size_t numLevels = linvarsSizes_[jvar];
-        geovals.fillAD(linvars_[jvar], indices, values.middleCols(colOffset, numLevels),
-                       this->levelsTopDown_);
-        colOffset += numLevels;
+        const size_t numLocs = myobs_index_by_task_[jtask].size();
+        // Each column contains the values of a single variable at a single level and all locations
+        // with indices 'indices'. The columns are ordered first by level and then by variable.
+        Eigen::Map<Eigen::MatrixXd> values(&*offset, numLevels, numLocs);
+        geovals.fillAD(linvars_[jvar], indices, values, this->levelsTopDown_);
+        std::advance(offset, numLevels * numLocs);
       }
-      ASSERT(colOffset == linsizes_);
+      ASSERT(offset == recvinterp_[jtask].end());
 
       recv_req_.push_back(comm_.iSend(recvinterp_[jtask].data(), nrecv, jtask, tag_));
     }

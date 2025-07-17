@@ -138,10 +138,19 @@ void UnstructuredInterpolator::apply(const Variables & vars, const atlas::FieldS
     // Get interpolation matrix for this mask
     const auto & interpMatrix = interp_matrices_.at(maskName);
 
-    const atlas::array::ArrayView<double, 2> fldin = atlas::array::make_view<double, 2>(fld);
-    for (size_t jlev = 0; jlev < static_cast<size_t>(fldin.shape(1)); ++jlev) {
-      this->applyPerLevel(interpMatrix, interp_type, target_mask, fldin, current, jlev);
-    }
+    // Get array views into source Field and target vector
+    const auto source = atlas::array::make_view<double, 2>(fld);
+    const auto vals_shape =
+        atlas::array::ArrayShape{static_cast<int>(nout_), source.shape(1)};
+    atlas::array::Array* vals_array = atlas::array::Array::wrap<double>(&*current, vals_shape);
+    auto target = atlas::array::make_view<double, 2>(*vals_array);
+
+    // Interpolate
+    this->doApply(interpMatrix, interp_type, target_mask, source, target);
+
+    // Advance iterator to next variable without vals
+    const int vals_step = nout_ * source.shape(1);
+    std::advance(current, vals_step);
   }
   Log::trace() << "UnstructuredInterpolator::apply done" << std::endl;
 }
@@ -184,31 +193,47 @@ void UnstructuredInterpolator::applyAD(const Variables & vars, atlas::FieldSet &
     // Get interpolation matrix for this mask
     const auto & interpMatrix = interp_matrices_.at(maskName);
 
-    atlas::array::ArrayView<double, 2> fldin = atlas::array::make_view<double, 2>(fld);
-    for (size_t jlev = 0; jlev < static_cast<size_t>(fldin.shape(1)); ++jlev) {
-      this->applyPerLevelAD(interpMatrix, interp_type, target_mask, fldin, current, jlev);
-    }
+    // Get array views into source Field and target vector
+    auto source = atlas::array::make_view<double, 2>(fld);
+    const auto vals_shape =
+        atlas::array::ArrayShape{static_cast<int>(nout_), source.shape(1)};
+    // Horrible cast to allow a standard ArrayView<double> from a const std::vector
+    const atlas::array::Array* vals_array = atlas::array::Array::wrap<double>(
+        const_cast<double*>(&*current), vals_shape);
+    const auto target = atlas::array::make_view<double, 2>(*vals_array);
+
+    // Interpolate
+    this->doApplyAD(interpMatrix, interp_type, target_mask, source, target);
+
+    // Advance iterator to next variable without vals
+    const int vals_step = nout_ * source.shape(1);
+    std::advance(current, vals_step);
   }
   Log::trace() << "UnstructuredInterpolator::applyAD done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
-void UnstructuredInterpolator::applyPerLevel(
+void UnstructuredInterpolator::doApply(
     const InterpMatrix & interpMatrix,
     const std::string & interp_type,
     const std::vector<bool> & target_mask,
-    const atlas::array::ArrayView<double, 2> & gridin,
-    std::vector<double>::iterator & gridout, const size_t & ilev) const {
+    const atlas::array::ArrayView<double, 2> & source,
+    atlas::array::ArrayView<double, 2> & target) const {
+  const int nb_levels = source.shape(1);
   for (size_t jloc = 0; jloc < nout_; ++jloc) {
     if (target_mask[jloc]) {
-      *gridout = 0.0;
-
-      // Edge case: no valid stencil to interpolate to this target => return missingValue
-      if (!interpMatrix.targetHasValidStencil[jloc]) {
-        *gridout = util::missingValue<double>();
-        ++gridout;
-        continue;
+      // Set the location column to zero before interpolating.
+      // If there is no valid stencil for this location, set to missing.
+      if (interpMatrix.targetHasValidStencil[jloc]) {
+        for (int jlev = 0; jlev < nb_levels; ++jlev) {
+          target(jloc, jlev) = 0.;
+        }
+      } else {
+        for (int jlev = 0; jlev < nb_levels; ++jlev) {
+          target(jloc, jlev) = util::missingValue<double>();
+        }
+        continue;  // invalid stencil, so exit early
       }
 
       const std::vector<size_t> & interp_is = interpMatrix.stencils[jloc];
@@ -216,57 +241,61 @@ void UnstructuredInterpolator::applyPerLevel(
 
       if (interp_type == "default") {
         for (size_t jj = 0; jj < nstencil_; ++jj) {
-          *gridout += interp_ws[jj] * gridin(interp_is[jj], ilev);
+          for (int jlev = 0; jlev < nb_levels; ++jlev) {
+            target(jloc, jlev) += interp_ws[jj] * source(interp_is[jj], jlev);
+          }
         }
-      } else if (interp_type == "integer") {
-        // Find which integer value has largest weight in the stencil. We do this by taking two
-        // passes through the (usually short) data: first to identify range of values, then to
-        // determine weights for each integer.
-        // Note that a std::map would be shorter to code, because it would avoid needing to find
-        // the range of possible integer values, but vectors are almost always much more efficient.
-        int minval = std::numeric_limits<int>().max();
-        int maxval = std::numeric_limits<int>().min();
-        for (size_t jj = 0; jj < nstencil_; ++jj) {
-          minval = std::min(minval, static_cast<int>(std::round(gridin(interp_is[jj], ilev))));
-          maxval = std::max(maxval, static_cast<int>(std::round(gridin(interp_is[jj], ilev))));
-        }
-        std::vector<double> int_weights(maxval - minval + 1, 0.0);
-        for (size_t jj = 0; jj < nstencil_; ++jj) {
-          const int this_int = std::round(gridin(interp_is[jj], ilev));
-          int_weights[this_int - minval] += interp_ws[jj];
-        }
-        *gridout = minval + std::distance(int_weights.begin(),
-            std::max_element(int_weights.begin(), int_weights.end()));
       } else if (interp_type == "nearest") {
         // Return value from closest unmasked source point
         for (size_t jj = 0; jj < nstencil_; ++jj) {
           if (interp_ws[jj] > 1.0e-9) {  // use a small tolerance to allow for roundoff in weights
-            *gridout = gridin(interp_is[jj], ilev);
+            for (int jlev = 0; jlev < nb_levels; ++jlev) {
+              target(jloc, jlev) = source(interp_is[jj], jlev);
+            }
             break;
           }
+        }
+      } else if (interp_type == "integer") {
+        // Use with caution: this is a slow and nonlinear "voting" scheme.
+        // The scheme finds which integer value has largest weight across the interpolation
+        // stencil. This is done by taking two passes through the (usually short) data: first to
+        // identify the range of the exisitng values, then to determine weights for each integer.
+        // TODO(core team): this is fv3-jedi specific code that needs to be removed from oops.
+        for (int jlev = 0; jlev < nb_levels; ++jlev) {
+          int minval = std::numeric_limits<int>().max();
+          int maxval = std::numeric_limits<int>().min();
+          for (int jj = 0; jj < nstencil_; ++jj) {
+            minval = std::min(minval, static_cast<int>(std::round(source(interp_is[jj], jlev))));
+            maxval = std::max(maxval, static_cast<int>(std::round(source(interp_is[jj], jlev))));
+          }
+          std::vector<double> int_weights(maxval - minval + 1, 0.0);
+          for (size_t jj = 0; jj < nstencil_; ++jj) {
+            const int this_int = std::round(source(interp_is[jj], jlev));
+            int_weights[this_int - minval] += interp_ws[jj];
+          }
+          target(jloc, jlev) = minval + std::distance(int_weights.begin(),
+              std::max_element(int_weights.begin(), int_weights.end()));
         }
       } else {
         throw eckit::BadValue("Unknown interpolation type");
       }
     }
-    ++gridout;
   }
 }
 
 // -----------------------------------------------------------------------------
 
-void UnstructuredInterpolator::applyPerLevelAD(
+void UnstructuredInterpolator::doApplyAD(
     const InterpMatrix & interpMatrix,
     const std::string & interp_type,
     const std::vector<bool> & target_mask,
-    atlas::array::ArrayView<double, 2> & gridin,
-    std::vector<double>::const_iterator & gridout,
-    const size_t & ilev) const {
+    atlas::array::ArrayView<double, 2> & source,
+    const atlas::array::ArrayView<double, 2> & target) const {
+  const int nb_levels = source.shape(1);
   for (size_t jloc = 0; jloc < nout_; ++jloc) {
     if (target_mask[jloc]) {
-      // (Adjoint of) No valid stencil to interpolate to this target => return missingValue
+      // (Adjoint of) If there is no valid stencil for this location, set to missing.
       if (!interpMatrix.targetHasValidStencil[jloc]) {
-        ++gridout;
         continue;
       }
 
@@ -275,23 +304,26 @@ void UnstructuredInterpolator::applyPerLevelAD(
 
       if (interp_type == "default") {
         for (size_t jj = 0; jj < nstencil_; ++jj) {
-          gridin(interp_is[jj], ilev) += interp_ws[jj] * *gridout;
+          for (int jlev = 0; jlev < nb_levels; ++jlev) {
+            source(interp_is[jj], jlev) += interp_ws[jj] * target(jloc, jlev);
+          }
         }
-      } else if (interp_type == "integer") {
-        throw eckit::BadValue("No adjoint for integer interpolation");
       } else if (interp_type == "nearest") {
         // (Adjoint of) Return value from closest unmasked source point
         for (size_t jj = 0; jj < nstencil_; ++jj) {
           if (interp_ws[jj] > 1.0e-9) {  // use a small tolerance to allow for roundoff in weights
-            gridin(interp_is[jj], ilev) += *gridout;
+            for (int jlev = 0; jlev < nb_levels; ++jlev) {
+              source(interp_is[jj], jlev) += target(jloc, jlev);
+            }
             break;
           }
         }
+      } else if (interp_type == "integer") {
+        throw eckit::BadValue("No adjoint for integer interpolation");
       } else {
         throw eckit::BadValue("Unknown interpolation type");
       }
     }
-    ++gridout;
   }
 }
 

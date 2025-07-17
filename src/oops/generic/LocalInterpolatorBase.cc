@@ -39,8 +39,8 @@ void LocalInterpolatorBase::bufferToFieldSet(const Variables & vars,
     const size_t field_size = view.shape(0);
     const size_t num_levels = view.shape(1);
     ASSERT(buffer_chunk_size <= field_size);
-    for (size_t jlev = 0; jlev < num_levels; ++jlev) {
-      for (size_t ji = 0; ji < buffer_chunk_size; ++ji, ++current) {
+    for (size_t ji = 0; ji < buffer_chunk_size; ++ji) {
+      for (size_t jlev = 0; jlev < num_levels; ++jlev, ++current) {
         const size_t index = buffer_indices[ji];
         ASSERT(static_cast<size_t>(std::distance(buffer_start, current)) < buffer_size);
         view(index, jlev) = *current;
@@ -72,8 +72,8 @@ void LocalInterpolatorBase::bufferToFieldSetAD(const Variables & vars,
     const size_t field_size = view.shape(0);
     const size_t num_levels = view.shape(1);
     ASSERT(buffer_chunk_size <= field_size);
-    for (size_t jlev = 0; jlev < num_levels; ++jlev) {
-      for (size_t ji = 0; ji < buffer_chunk_size; ++ji, ++current) {
+    for (size_t ji = 0; ji < buffer_chunk_size; ++ji) {
+      for (size_t jlev = 0; jlev < num_levels; ++jlev, ++current) {
         const size_t index = buffer_indices[ji];
         ASSERT(static_cast<size_t>(std::distance(buffer_start, current)) < buffer_size);
         *current += view(index, jlev);

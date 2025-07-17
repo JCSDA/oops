@@ -100,16 +100,16 @@ double GomL95::dot_product_with(const GomL95 & gom) const {
 // -----------------------------------------------------------------------------
 void GomL95::fill(const oops::Variable &, const ConstVectorRef<size_t> &indx,
                   const ConstMatrixRef<double> &vals, const bool) {
-  ASSERT(indx.size() == vals.rows());
-  ASSERT(vals.cols() == 1);
-  for (Eigen::Index jj = 0; jj < indx.size(); ++jj) locval_[indx[jj]] = vals(jj, 0);
+  ASSERT(indx.size() == vals.cols());
+  ASSERT(vals.rows() == 1);
+  for (Eigen::Index jj = 0; jj < indx.size(); ++jj) locval_[indx[jj]] = vals(0, jj);
 }
 // -----------------------------------------------------------------------------
 void GomL95::fillAD(const oops::Variable &, const ConstVectorRef<size_t> &indx,
                     MatrixRef<double> vals, const bool) const {
-  ASSERT(indx.size() == vals.rows());
-  ASSERT(vals.cols() == 1);
-  for (Eigen::Index jj = 0; jj < indx.size(); ++jj) vals(jj, 0) += locval_[indx[jj]];
+  ASSERT(indx.size() == vals.cols());
+  ASSERT(vals.rows() == 1);
+  for (Eigen::Index jj = 0; jj < indx.size(); ++jj) vals(0, jj) += locval_[indx[jj]];
 }
 // -----------------------------------------------------------------------------
 void GomL95::read(const eckit::Configuration & conf) {

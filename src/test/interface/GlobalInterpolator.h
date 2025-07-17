@@ -149,8 +149,8 @@ void testInterpolator() {
     }
   } else {
     auto target_view = make_view<double, 2>(target_field);
-    for (size_t jlev = 0; jlev < nlev; ++jlev) {
-      for (size_t jj = 0; jj < num_target; ++jj) {
+    for (size_t jj = 0; jj < num_target; ++jj) {
+      for (size_t jlev = 0; jlev < nlev; ++jlev) {
         EXPECT(oops::is_close_absolute(
                  target_view(jj, jlev),
                  testfunc(lons[jj], lats[jj], jlev, nlev),
@@ -174,7 +174,7 @@ void testInterpolator() {
     auto target_ad_view = make_view<double, 2>(target_field_ad);
     for (size_t jj = 0; jj < num_target; ++jj) {
       for (size_t jlev = 0; jlev < nlev; ++jlev) {
-        target_ad_view(jj, jlev) = random_field[jj + num_target * jlev];
+        target_ad_view(jj, jlev) = random_field[nlev * jj + jlev];
       }
     }
   }
@@ -192,8 +192,8 @@ void testInterpolator() {
     }
   } else {
     auto source_ad_view = make_view<double, 2>(source_field_ad);
-    for (size_t jlev = 0; jlev < nlev; ++jlev) {
-      for (size_t jj = 0; jj < num_source; ++jj) {
+    for (size_t jj = 0; jj < num_source; ++jj) {
+      for (size_t jlev = 0; jlev < nlev; ++jlev) {
         source_ad_view(jj, jlev) = 0.0;
       }
     }
@@ -222,11 +222,13 @@ void testInterpolator() {
     const auto source_ad_view = make_view<double, 2>(source_field_ad);
     const auto target_ad_view = make_view<double, 2>(target_field_ad);
     const auto target_view = make_view<double, 2>(target_field);
-    for (size_t jlev = 0; jlev < nlev; ++jlev) {
-      for (size_t jj = 0; jj < num_source; ++jj) {
+    for (size_t jj = 0; jj < num_source; ++jj) {
+      for (size_t jlev = 0; jlev < nlev; ++jlev) {
         dot1 += source_view(jj, jlev) * source_ad_view(jj, jlev);
       }
-      for (size_t jj = 0; jj < num_target; ++jj) {
+    }
+    for (size_t jj = 0; jj < num_target; ++jj) {
+      for (size_t jlev = 0; jlev < nlev; ++jlev) {
         dot2 += target_view(jj, jlev) * target_ad_view(jj, jlev);
       }
     }

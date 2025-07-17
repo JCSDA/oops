@@ -114,7 +114,7 @@ class GeoVaLs : public util::Printable,
   /// \param indx
   ///   Path indices.
   /// \param vals
-  ///   Matrix whose `i`th row contains the values of the variable `name` along the interpolation
+  ///   Matrix whose `i`th column contains the values of the variable `name` along the interpolation
   ///   path with index `indx[i]`, ordered from top to bottom if `levelsTopDown` is `true` and
   ///   from bottom to top otherwise.
   /// \param levelTopDown
@@ -289,7 +289,7 @@ void GeoVaLs<OBS>::fill(const Variable &name, const ConstVectorRef<size_t> &indx
                         const ConstMatrixRef<double> &vals, const bool levelsTopDown) {
   Log::trace() << "GeoVaLs<OBS>::fill starting" << std::endl;
   util::Timer timer(classname(), "fill");
-  ASSERT(indx.size() == vals.rows());
+  ASSERT(indx.size() == vals.cols());
   gvals_->fill(name, indx, vals, levelsTopDown);
   Log::trace() << "GeoVaLs<OBS>::fill done" << std::endl;
 }
@@ -303,7 +303,7 @@ void GeoVaLs<OBS>::fillAD(const Variable & name,
                           const bool levelsTopDown) const {
   Log::trace() << "GeoVaLs<OBS>::fillAD starting" << std::endl;
   util::Timer timer(classname(), "fillAD");
-  ASSERT(indx.size() == vals.rows());
+  ASSERT(indx.size() == vals.cols());
   gvals_->fillAD(name, indx, vals, levelsTopDown);
   Log::trace() << "GeoVaLs<OBS>::fillAD done" << std::endl;
 }

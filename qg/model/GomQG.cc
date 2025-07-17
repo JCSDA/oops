@@ -114,9 +114,10 @@ double GomQG::dot_product_with(const GomQG & other) const {
 // -----------------------------------------------------------------------------
 void GomQG::fill(const oops::Variable &var, const ConstVectorRef<size_t> &indx,
                  const ConstMatrixRef<double> &vals, const bool) {
+  ASSERT(indx.size() == vals.cols());
   const size_t npts = indx.size();
-  const size_t nlev = vals.cols();
-  std::vector<int> findx(indx.size());
+  const size_t nlev = vals.rows();
+  std::vector<int> findx(npts);
   for (Eigen::Index jj = 0; jj < indx.size(); ++jj) findx[jj] = indx[jj] + 1;
 
   qg_gom_fill_f90(keyGom_, var.name().size(), var.name().data(), npts,
@@ -125,9 +126,10 @@ void GomQG::fill(const oops::Variable &var, const ConstVectorRef<size_t> &indx,
 // -----------------------------------------------------------------------------
 void GomQG::fillAD(const oops::Variable &var, const ConstVectorRef<size_t> &indx,
                    MatrixRef<double> vals, const bool) const {
+  ASSERT(indx.size() == vals.cols());
   const size_t npts = indx.size();
-  const size_t nlev = vals.cols();
-  std::vector<int> findx(indx.size());
+  const size_t nlev = vals.rows();
+  std::vector<int> findx(npts);
   for (Eigen::Index jj = 0; jj < indx.size(); ++jj) findx[jj] = indx[jj] + 1;
 
   qg_gom_fillad_f90(keyGom_, var.name().size(), var.name().data(), npts,

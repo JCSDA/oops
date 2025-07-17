@@ -82,16 +82,16 @@ class UnstructuredInterpolator : public LocalInterpolatorBase,
     std::vector<std::vector<double>> weights;
   };
 
-  void applyPerLevel(const InterpMatrix &,
-                     const std::string &,
-                     const std::vector<bool> &,
-                     const atlas::array::ArrayView<double, 2> &,
-                     std::vector<double>::iterator &, const size_t &) const;
-  void applyPerLevelAD(const InterpMatrix &,
-                       const std::string &,
-                       const std::vector<bool> &,
-                       atlas::array::ArrayView<double, 2> &,
-                       std::vector<double>::const_iterator &, const size_t &) const;
+  void doApply(const InterpMatrix &,
+               const std::string &,
+               const std::vector<bool> &,
+               const atlas::array::ArrayView<double, 2> &,
+               atlas::array::ArrayView<double, 2> &) const;
+  void doApplyAD(const InterpMatrix &,
+                 const std::string &,
+                 const std::vector<bool> &,
+                 atlas::array::ArrayView<double, 2> &,
+                 const atlas::array::ArrayView<double, 2> &) const;
   void print(std::ostream &) const override;
 
   void computeUnmaskedInterpMatrix(std::vector<double>, std::vector<double>) const;

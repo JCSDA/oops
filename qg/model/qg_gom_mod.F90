@@ -157,14 +157,14 @@ character(kind=c_char, len=1), intent(in) :: c_var(lvar+1)
 integer(c_int), intent(in) :: c_nloc
 integer(c_int), intent(in) :: c_indx(c_nloc)
 integer(c_int), intent(in) :: c_nlev
-real(c_double), intent(in) :: c_vals(c_nloc, c_nlev)
+real(c_double), intent(in) :: c_vals(c_nlev, c_nloc)
 
 character(len=1024) :: fieldname
 real(kind_real),pointer :: gval(:,:)
 integer :: jlev, jloc, iloc, ii
 
 if (.not.self%lalloc) call abor1_ftn('qg_gom_fill: gom not allocated')
-if (self%levs /= c_nlev) call abor1_ftn('qg_gom_fillad: incorrect number of levels')
+if (self%levs /= c_nlev) call abor1_ftn('qg_gom_fill: incorrect number of levels')
 
 call c_f_string(c_var, fieldname)
 
@@ -183,11 +183,9 @@ case default
   call abor1_ftn('qg_gom_fill: wrong variable')
 endselect
 
-do jlev = 1, self%levs
-  do jloc=1,c_nloc
-    iloc = c_indx(jloc)
-    gval(jlev,iloc) = c_vals(jloc, jlev)
-  enddo
+do jloc=1, c_nloc
+  iloc = c_indx(jloc)
+  gval(:,iloc) = c_vals(:,jloc)
 enddo
 
 end subroutine qg_gom_fill
@@ -200,7 +198,7 @@ character(kind=c_char, len=1), intent(in) :: c_var(lvar+1)
 integer(c_int), intent(in) :: c_nloc
 integer(c_int), intent(in) :: c_indx(c_nloc)
 integer(c_int), intent(in) :: c_nlev
-real(c_double), intent(inout) :: c_vals(c_nloc, c_nlev)
+real(c_double), intent(inout) :: c_vals(c_nlev, c_nloc)
 
 character(len=1024) :: fieldname
 real(kind_real),pointer :: gval(:,:)
@@ -225,11 +223,9 @@ case default
   call abor1_ftn('qg_gom_fillad: wrong variable')
 endselect
 
-do jlev = 1, self%levs
-  do jloc=1,c_nloc
-    iloc = c_indx(jloc)
-    c_vals(jloc,jlev) = gval(jlev,iloc)
-  enddo
+do jloc=1, c_nloc
+  iloc = c_indx(jloc)
+  c_vals(:,jloc) = gval(:,iloc)
 enddo
 
 end subroutine qg_gom_fillad

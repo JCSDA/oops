@@ -73,18 +73,14 @@ void InterpolatorQG::apply(const oops::Variables & vars, const FieldsQG & flds,
 
   qg_fields_getvals_f90(flds.toFortran(), vars, nout, locs[0], nvals, tmp[0]);
 
-  // Reorder data: tmp is levels-varies-fastest, want locs-varies-fastest
-  size_t ival = 0;
+  // Restructure data: fill unmasked array values with masked data from tmp
+  size_t itmp = 0;
   for (size_t jv = 0; jv < vars.size(); ++jv) {
-    const size_t jvStart = jv * nlevs * nout;
-    for (size_t jl = 0; jl < nlevs; ++jl) {
-      size_t itmp = jvStart + jl;
-      for (size_t jj = 0; jj < nlocs_; ++jj) {
-        if (mask[jj]) {
-          values[ival] = tmp[itmp];
-          itmp += nlevs;
+    for (size_t jj = 0; jj < nlocs_; ++jj) {
+      if (mask[jj]) {
+        for (size_t jl = 0; jl < nlevs; ++jl, ++itmp) {
+          values[jv * nlocs_ * nlevs + jj * nlevs + jl] = tmp[itmp];
         }
-        ++ival;
       }
     }
   }
@@ -111,18 +107,14 @@ void InterpolatorQG::applyAD(const oops::Variables & vars, IncrementQG & dx,
   const size_t nvals = vars.size() * nlevs * nout;
   std::vector<double> tmp(nvals);
 
-  // (Adjoint of) Reorder data: tmp is levels-varies-fastest, want locs-varies-fastest
-  size_t ival = 0;
+  // (Adjoint of) Restructure data: fill unmasked array values with masked data from tmp
+  size_t itmp = 0;
   for (size_t jv = 0; jv < vars.size(); ++jv) {
-    const size_t jvStart = jv * nlevs * nout;
-    for (size_t jl = 0; jl < nlevs; ++jl) {
-      size_t itmp = jvStart + jl;
-      for (size_t jj = 0; jj < nlocs_; ++jj) {
-        if (mask[jj]) {
-          tmp[itmp] = values[ival];
-          itmp += nlevs;
+    for (size_t jj = 0; jj < nlocs_; ++jj) {
+      if (mask[jj]) {
+        for (size_t jl = 0; jl < nlevs; ++jl, ++itmp) {
+          tmp[itmp] = values[jv * nlocs_ * nlevs + jj * nlevs + jl];
         }
-        ++ival;
       }
     }
   }
@@ -153,18 +145,14 @@ void InterpolatorQG::apply(const oops::Variables & vars, const atlas::FieldSet &
 
   qg_getvalues_interp_f90(grid_.toFortran(), fset.get(), vars, nout, locs[0], nvals, tmp[0]);
 
-  // Reorder data: tmp is levels-varies-fastest, want locs-varies-fastest
-  size_t ival = 0;
+  // Restructure data: fill unmasked array values with masked data from tmp
+  size_t itmp = 0;
   for (size_t jv = 0; jv < vars.size(); ++jv) {
-    const size_t jvStart = jv * nlevs * nout;
-    for (size_t jl = 0; jl < nlevs; ++jl) {
-      size_t itmp = jvStart + jl;
-      for (size_t jj = 0; jj < nlocs_; ++jj) {
-        if (mask[jj]) {
-          values[ival] = tmp[itmp];
-          itmp += nlevs;
+    for (size_t jj = 0; jj < nlocs_; ++jj) {
+      if (mask[jj]) {
+        for (size_t jl = 0; jl < nlevs; ++jl, ++itmp) {
+          values[jv * nlocs_ * nlevs + jj * nlevs + jl] = tmp[itmp];
         }
-        ++ival;
       }
     }
   }
@@ -191,18 +179,14 @@ void InterpolatorQG::applyAD(const oops::Variables & vars, atlas::FieldSet & fse
   const size_t nvals = vars.size() * nlevs * nout;
   std::vector<double> tmp(nvals);
 
-  // (Adjoint of) Reorder data: tmp is levels-varies-fastest, want locs-varies-fastest
-  size_t ival = 0;
+  // (Adjoint of) Restructure data: fill unmasked array values with masked data from tmp
+  size_t itmp = 0;
   for (size_t jv = 0; jv < vars.size(); ++jv) {
-    const size_t jvStart = jv * nlevs * nout;
-    for (size_t jl = 0; jl < nlevs; ++jl) {
-      size_t itmp = jvStart + jl;
-      for (size_t jj = 0; jj < nlocs_; ++jj) {
-        if (mask[jj]) {
-          tmp[itmp] = values[ival];
-          itmp += nlevs;
+    for (size_t jj = 0; jj < nlocs_; ++jj) {
+      if (mask[jj]) {
+        for (size_t jl = 0; jl < nlevs; ++jl, ++itmp) {
+          tmp[itmp] = values[jv * nlocs_ * nlevs + jj * nlevs + jl];
         }
-        ++ival;
       }
     }
   }

@@ -164,10 +164,10 @@ void testLocalInterpolator(
   // Test whether interpolation error falls within tolerance
   const double tolerance = config.getDouble("tolerance interpolation");
   if (!testSourcePointMask) {
-    for (size_t jlev = 0; jlev < nb_levels; ++jlev) {
-      for (size_t jj = 0; jj < nb_target; ++jj) {
+    for (size_t jj = 0; jj < nb_target; ++jj) {
+      for (size_t jlev = 0; jlev < nb_levels; ++jlev) {
         EXPECT(oops::is_close_absolute(
-                 target_vals[jj + nb_target * jlev],
+                 target_vals[nb_levels * jj + jlev],
                  smooth_function(target_lons[jj], target_lats[jj], jlev, nb_levels),
                  tolerance));
       }
@@ -179,15 +179,15 @@ void testLocalInterpolator(
     // field to huge missingValue above wherever it should be masked out, this way any errors
     // in the mask will contribute huge values and will exceed the test tolerance.
     const double masked_tol = 100.0 * tolerance;
-    for (size_t jlev = 0; jlev < nb_levels; ++jlev) {
-      for (size_t jj = 0; jj < nb_target; ++jj) {
-        if (target_vals[jj + nb_target * jlev] == util::missingValue<double>()) {
+    for (size_t jj = 0; jj < nb_target; ++jj) {
+      for (size_t jlev = 0; jlev < nb_levels; ++jlev) {
+        if (target_vals[nb_levels * jj + jlev] == util::missingValue<double>()) {
           // Interpolation should only return 'missing' when all inputs are masked.
           // In this test, this should only happen in southern hemisphere.
           EXPECT(target_lats[jj] < 0.0);
         } else {
           EXPECT(oops::is_close_absolute(
-                   target_vals[jj + nb_target * jlev],
+                   target_vals[nb_levels * jj + jlev],
                    smooth_function(target_lons[jj], target_lats[jj], jlev, nb_levels),
                    masked_tol));
         }
@@ -218,26 +218,30 @@ void testLocalInterpolator(
   double dot1 = 0.0;
   double dot2 = 0.0;
   if (!testSourcePointMask) {
-    for (size_t jlev = 0; jlev < nb_levels; ++jlev) {
-      for (size_t jj = 0; jj < nb_source; ++jj) {
+    for (size_t jj = 0; jj < nb_source; ++jj) {
+      for (size_t jlev = 0; jlev < nb_levels; ++jlev) {
         dot1 += source_view(jj, jlev) * source_ad_view(jj, jlev);
       }
-      for (size_t jj = 0; jj < nb_target; ++jj) {
-        dot2 += target_vals[jj + nb_target * jlev] * target_vals_ad[jj + nb_target * jlev];
+    }
+    for (size_t jj = 0; jj < nb_target; ++jj) {
+      for (size_t jlev = 0; jlev < nb_levels; ++jlev) {
+        dot2 += target_vals[nb_levels * jj + jlev] * target_vals_ad[nb_levels * jj + jlev];
       }
     }
   } else {
-    for (size_t jlev = 0; jlev < nb_levels; ++jlev) {
-      for (size_t jj = 0; jj < nb_source; ++jj) {
-        const double lat = source_lonlat(jj, 1);
-        if (lat >= 0.0) {
+    for (size_t jj = 0; jj < nb_source; ++jj) {
+      const double lat = source_lonlat(jj, 1);
+      if (lat >= 0.0) {
+        for (size_t jlev = 0; jlev < nb_levels; ++jlev) {
           dot1 += source_view(jj, jlev) * source_ad_view(jj, jlev);
         }
       }
-      for (size_t jj = 0; jj < nb_target; ++jj) {
-        if (target_vals[jj + nb_target * jlev] != util::missingValue<double>()) {
-          dot2 += target_vals[jj + nb_target * jlev]
-                  * target_vals_ad[jj + nb_target * jlev];
+    }
+    for (size_t jj = 0; jj < nb_target; ++jj) {
+      for (size_t jlev = 0; jlev < nb_levels; ++jlev) {
+        if (target_vals[nb_levels * jj + jlev] != util::missingValue<double>()) {
+          dot2 += target_vals[nb_levels * jj + jlev]
+                  * target_vals_ad[nb_levels * jj + jlev];
         }
       }
     }
