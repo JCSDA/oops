@@ -213,7 +213,7 @@ template<typename MODEL>
 State<MODEL> & State<MODEL>::operator=(const State & rhs) {
   Log::trace() << "State<MODEL>::operator= starting" << std::endl;
   util::Timer timer(classname(), "operator=");
-  if (fset_) fset_->clear();
+  if (fset_) fset_.reset();
   *state_ = *rhs.state_;
   Log::trace() << "State<MODEL>::operator= done" << std::endl;
   return *this;
