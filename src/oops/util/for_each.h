@@ -178,7 +178,10 @@ void for_each_value(
     const atlas::idx_t iEnd = range_pair.second;
     const atlas::idx_t jMax = firstField.shape(1);
     if (pattern == ExecutionPattern::parallel) {
+      // Disable OpenMP parallelization for old Intel compilers to avoid compiler errors
+#ifndef __INTEL_COMPILER
       #pragma omp parallel for collapse(2)
+#endif
       for (atlas::idx_t i = iStart; i < iEnd; ++i) {
         for (atlas::idx_t j = 0; j < jMax; ++j) {
           std::apply([&](auto&&... views) { f(views(i, j)...); }, viewsTuple);
@@ -247,7 +250,10 @@ void for_each_column(
     const atlas::idx_t iStart = range_pair.first;
     const atlas::idx_t iEnd = range_pair.second;
     if (pattern == ExecutionPattern::parallel) {
+      // Disable OpenMP parallelization for old Intel compilers to avoid compiler errors
+#ifndef __INTEL_COMPILER
       #pragma omp parallel for
+#endif
       for (atlas::idx_t i = iStart; i < iEnd; ++i) {
         std::apply([&](auto&&... views) {
           f(views.slice(i, atlas::array::Range::all())...);
