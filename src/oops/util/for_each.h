@@ -152,7 +152,321 @@ getContiguousHorizontalIndexSpace(const AtlasField& f, bool include_halo) {
   }
 }
 
+class ComputeSpectralCoefficientIndex {
+ public:
+  ComputeSpectralCoefficientIndex(
+    atlas::array::LocalView<const int, 1> zonal_wavenumbers,
+    int truncation)
+    : prefix_sum(zonal_wavenumbers.size() + 1),
+      prefix_sum_view(atlas::array::make_view<int, 1>(prefix_sum))
+  {
+    prefix_sum_view.assign(0);
+    for (int jm = 0; jm < zonal_wavenumbers.size(); ++jm) {
+      prefix_sum_view(jm + 1) = prefix_sum_view(jm) + ((truncation + 1) - zonal_wavenumbers(jm));
+    }
+  }
+
+  std::pair<atlas::idx_t, atlas::idx_t> operator()(int n, int jm, int m) {
+    auto index = prefix_sum_view[jm] + (n - m);
+    auto real_index = index * 2;
+    auto imag_index = index * 2 + 1;
+    return std::make_pair(real_index, imag_index);
+  }
+ private:
+  atlas::array::ArrayT<int> prefix_sum;
+  atlas::array::ArrayView<int, 1> prefix_sum_view;
+};
+
 }  // namespace details
+
+struct IndexSpace1D {
+  atlas::idx_t start;
+  atlas::idx_t end;
+};
+
+struct IndexSpace2D {
+  IndexSpace1D i;
+  IndexSpace1D j;
+
+  IndexSpace2D(atlas::idx_t i_start, atlas::idx_t i_end,
+               atlas::idx_t j_start, atlas::idx_t j_end)
+    : i{i_start, i_end}, j{j_start, j_end} {}
+
+  IndexSpace2D(IndexSpace1D i_range, IndexSpace1D j_range)
+    : i(i_range), j(j_range) {}
+};
+
+struct IndexSpace3D {
+  IndexSpace1D i;
+  IndexSpace1D j;
+  IndexSpace1D k;
+
+  IndexSpace3D(atlas::idx_t i_start, atlas::idx_t i_end,
+               atlas::idx_t j_start, atlas::idx_t j_end,
+               atlas::idx_t k_start, atlas::idx_t k_end)
+    : i{i_start, i_end}, j{j_start, j_end}, k{k_start, k_end} {}
+
+  IndexSpace3D(IndexSpace1D i_range, IndexSpace1D j_range, IndexSpace1D k_range)
+    : i(i_range), j(j_range), k(k_range) {}
+};
+
+class IndexSpaceSpectral1D {
+ public:
+  explicit IndexSpaceSpectral1D(const atlas::functionspace::Spectral& sp)
+    : zonal_wavenumbers_(sp.zonal_wavenumbers()),
+      truncation_(sp.truncation()) {}
+
+  atlas::array::LocalView<const int, 1> zonal_wavenumbers() const { return zonal_wavenumbers_; }
+  int zonal_wavenumbers(int jm) const { return zonal_wavenumbers_(jm); }
+  int truncation() const { return truncation_; }
+
+ private:
+  atlas::array::LocalView<const int, 1> zonal_wavenumbers_;
+  int truncation_;
+};
+
+IndexSpace1D make_index_space_1d(IndexRange range, const atlas::Field& field);
+
+IndexSpace2D make_index_space_2d(IndexRange range, const atlas::Field& field);
+
+IndexSpace3D make_index_space_3d(IndexRange range, const atlas::Field& field);
+
+IndexSpaceSpectral1D make_index_space_spectral_1d(const atlas::Field& field);
+
+template <typename Functor>
+void for_each_index(
+  ExecutionPattern pattern,
+  IndexSpace1D range,
+  Functor&& f) {
+  if (pattern == ExecutionPattern::parallel) {
+      // Disable OpenMP parallelization for old Intel compilers to avoid compiler errors
+#ifndef __INTEL_COMPILER
+    #pragma omp parallel for
+#endif
+    for (atlas::idx_t i = range.start; i < range.end; ++i) {
+      f(i);
+    }
+  } else if (pattern == ExecutionPattern::serial) {
+    for (atlas::idx_t i = range.start; i < range.end; ++i) {
+      f(i);
+    }
+  } else {
+    throw eckit::BadParameter("Unknown execution pattern.", Here());
+  }
+}
+
+template <typename Functor>
+void for_each_index(
+  IndexSpace1D range,
+  Functor&& f) {
+  auto pattern = details::getDefaultForEachExecutionPattern();
+  for_each_index(pattern, range, std::forward<Functor>(f));
+}
+
+template <typename Functor>
+void for_each_index(
+  ExecutionPattern pattern,
+  IndexSpace2D range,
+  Functor&& f) {
+  if (pattern == ExecutionPattern::parallel) {
+      // Disable OpenMP parallelization for old Intel compilers to avoid compiler errors
+#ifndef __INTEL_COMPILER
+    #pragma omp parallel for collapse(2)
+#endif
+    for (atlas::idx_t i = range.i.start; i < range.i.end; ++i) {
+      for (atlas::idx_t j = range.j.start; j < range.j.end; ++j) {
+        f(i, j);
+      }
+    }
+  } else if (pattern == ExecutionPattern::serial) {
+    for (atlas::idx_t i = range.i.start; i < range.i.end; ++i) {
+      for (atlas::idx_t j = range.j.start; j < range.j.end; ++j) {
+        f(i, j);
+      }
+    }
+  } else {
+    throw eckit::BadParameter("Unknown execution pattern.", Here());
+  }
+}
+
+template <typename Functor>
+void for_each_index(
+  IndexSpace2D range,
+  Functor&& f) {
+  auto pattern = details::getDefaultForEachExecutionPattern();
+  for_each_index(pattern, range, std::forward<Functor>(f));
+}
+
+template <typename Functor>
+void for_each_index(
+  ExecutionPattern pattern,
+  IndexSpace3D range,
+  Functor&& f) {
+  if (pattern == ExecutionPattern::parallel) {
+      // Disable OpenMP parallelization for old Intel compilers to avoid compiler errors
+#ifndef __INTEL_COMPILER
+    #pragma omp parallel for collapse(3)
+#endif
+    for (atlas::idx_t i = range.i.start; i < range.i.end; ++i) {
+      for (atlas::idx_t j = range.j.start; j < range.j.end; ++j) {
+        for (atlas::idx_t k = range.k.start; k < range.k.end; ++k) {
+          f(i, j, k);
+        }
+      }
+    }
+  } else if (pattern == ExecutionPattern::serial) {
+    for (atlas::idx_t i = range.i.start; i < range.i.end; ++i) {
+      for (atlas::idx_t j = range.j.start; j < range.j.end; ++j) {
+        for (atlas::idx_t k = range.k.start; k < range.k.end; ++k) {
+          f(i, j, k);
+        }
+      }
+    }
+  } else {
+    throw eckit::BadParameter("Unknown execution pattern.", Here());
+  }
+}
+
+template <typename Functor>
+void for_each_index(
+  IndexSpace3D range,
+  Functor&& f) {
+  auto pattern = details::getDefaultForEachExecutionPattern();
+  for_each_index(pattern, range, std::forward<Functor>(f));
+}
+
+// The functor provided to this overload should have the following type:
+//   (atlas::idx_t i, atlas::idx_t n, atlas::idx_t m) -> void
+// where:
+//   - i is the "flattened" index of the spectral coefficients. In Atlas recall that
+//     spectral fields are stored in 2D arrays of "real" values where the first axis
+//     is an ordering over the spectral coefficients and the second axis is the levels.
+//     Furthermore, because the spectral coefficients are complex numbers, the real and imaginary
+//     parts of each coefficient are stored in consecutive indices. The flattened index i is the
+//     linear index into the parts of the coefficients. I.e. suppose `f` is a spectral field,
+//     and i is even, then f(i, j) = Re(a^m_n) and f(i+1, j) = Im(a^m_n), where a^m_n is the
+//     i/2th spectral coefficient on level j.
+//   - n, the total wavenumber (degree) of the i/2th spectral coefficient.
+//   - m, the zonal wavenumber (order)  of the i/2th spectral coefficient.
+//
+// This overload iterates over all spectral coefficients defined by the provided
+// IndexSpaceSpectral1D, calling the functor for both the real and imaginary parts
+// of each coefficient, passing the corresponding flattened index, n, and m. If you
+// wish to restrict the iteration space, one can add appropriate if-conditions within
+// the functor.
+template <
+  typename Functor,
+  std::enable_if_t<
+    std::is_invocable_v<
+      Functor, atlas::idx_t, atlas::idx_t, atlas::idx_t>
+    , int
+  > = 0
+>
+void for_each_index(
+  ExecutionPattern pattern,
+  IndexSpaceSpectral1D range,
+  Functor&& f) {
+  if (pattern == ExecutionPattern::parallel) {
+    details::ComputeSpectralCoefficientIndex compute_index(
+      range.zonal_wavenumbers(), range.truncation());
+
+    const int nb_zonal_wavenumbers{static_cast<int>(range.zonal_wavenumbers().size())};
+      // Disable OpenMP parallelization for old Intel compilers to avoid compiler errors
+#ifndef __INTEL_COMPILER
+    #pragma omp parallel for
+#endif
+    for (int jm = 0; jm < nb_zonal_wavenumbers; ++jm) {
+      const int m = range.zonal_wavenumbers(jm);
+      for (atlas::idx_t n = m; n <= range.truncation(); ++n) {
+        auto[real_index, imag_index] = compute_index(n, jm, m);
+        f(real_index, n, m);
+        f(imag_index, n, m);
+      }
+    }
+  } else if (pattern == ExecutionPattern::serial) {
+    atlas::idx_t index = 0;
+    const int nb_zonal_wavenumbers{static_cast<int>(range.zonal_wavenumbers().size())};
+    for (int jm = 0; jm < nb_zonal_wavenumbers; ++jm) {
+        const int m = range.zonal_wavenumbers(jm);
+        for (atlas::idx_t n = m; n <= range.truncation(); ++n) {
+          f(index, n, m);
+          f(index + 1, n, m);
+          index += 2;
+        }
+    }
+  } else {
+    throw eckit::BadParameter("Unknown execution pattern.", Here());
+  }
+}
+
+// The functor provided to this overload should have the following type:
+//   (atlas::idx_t i_real, atlas::idx_t i_imag atlas::idx_t n, atlas::idx_t m) -> void
+// where:
+//   - i_real, the index of the real part of the i_real/2th spectral coefficient.
+//   - i_imag, the index of the imaginary part of the i_real/2th spectral coefficient.
+//             Note, i_imag == i_real + 1.
+//   - n, the total wavenumber (degree) of the i_real/2th spectral coefficient.
+//   - m, the zonal wavenumber (order)  of the i_real/2th spectral coefficient.
+//
+// This overload iterates over all spectral coefficients defined by the provided
+// IndexSpaceSpectral1D, calling the functor for both the real and imaginary parts
+// of each coefficient, passing the corresponding flattened i_real, i_imag, n, and m.
+// If you wish to restrict the iteration space, one can add appropriate if-conditions
+// within the functor.
+template <
+  typename Functor,
+  std::enable_if_t<
+    std::is_invocable_v<
+      Functor, atlas::idx_t, atlas::idx_t, atlas::idx_t, atlas::idx_t>
+    , int
+  > = 0
+>
+void for_each_index(
+  ExecutionPattern pattern,
+  IndexSpaceSpectral1D range,
+  Functor&& f) {
+  if (pattern == ExecutionPattern::parallel) {
+    details::ComputeSpectralCoefficientIndex compute_index(
+      range.zonal_wavenumbers(), range.truncation());
+
+    const int nb_zonal_wavenumbers{static_cast<int>(range.zonal_wavenumbers().size())};
+      // Disable OpenMP parallelization for old Intel compilers to avoid compiler errors
+#ifndef __INTEL_COMPILER
+    #pragma omp parallel for
+#endif
+    for (int jm = 0; jm < nb_zonal_wavenumbers; ++jm) {
+      const int m = range.zonal_wavenumbers(jm);
+      for (atlas::idx_t n = m; n <= range.truncation(); ++n) {
+        auto[real_index, imag_index] = compute_index(n, jm, m);
+        f(real_index, imag_index, n, m);
+      }
+    }
+  } else if (pattern == ExecutionPattern::serial) {
+    atlas::idx_t index = 0;
+    const int nb_zonal_wavenumbers{static_cast<int>(range.zonal_wavenumbers().size())};
+    for (int jm = 0; jm < nb_zonal_wavenumbers; ++jm) {
+        const int m = range.zonal_wavenumbers(jm);
+        for (atlas::idx_t n = m; n <= range.truncation(); ++n) {
+          f(index, index + 1, n, m);
+          index += 2;
+        }
+    }
+  } else {
+    throw eckit::BadParameter("Unknown execution pattern.", Here());
+  }
+}
+
+// The functor provided to this overload should have one of the following types:
+// (atlas::idx_t i, atlas::idx_t n, atlas::idx_t m) -> void
+// (atlas::idx_t i_real, atlas::idx_t i_imag, atlas::idx_t n, atlas::idx_t m) -> void
+// See the above overloads for details on the parameters.
+template <typename Functor>
+void for_each_index(
+  IndexSpaceSpectral1D range,
+  Functor&& f) {
+  auto pattern = details::getDefaultForEachExecutionPattern();
+  for_each_index(pattern, range, std::forward<Functor>(f));
+}
 
 template <typename Functor, typename... Fields>
 void for_each_value(
