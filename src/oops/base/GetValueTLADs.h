@@ -37,8 +37,7 @@ class GetValueTLADs : public PostBaseTLAD<MODEL> {
   typedef std::unique_ptr<LinearVariableChange<MODEL>> CVarPtr_;
 
  public:
-  GetValueTLADs(const GetValuesParameters<MODEL> &,
-                const util::DateTime &, const util::DateTime &);
+  GetValueTLADs(const eckit::Configuration &, const util::DateTime &, const util::DateTime &);
 
   void append(GetValPtr_);
 
@@ -68,10 +67,10 @@ class GetValueTLADs : public PostBaseTLAD<MODEL> {
 
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
-GetValueTLADs<MODEL, OBS>::GetValueTLADs(const GetValuesParameters<MODEL> & params,
+GetValueTLADs<MODEL, OBS>::GetValueTLADs(const eckit::Configuration & conf,
               const util::DateTime & bgn, const util::DateTime & end)
   : PostBaseTLAD<MODEL>(bgn, end), geovars_(), linvars_(), getvals_(), chvartlad_(),
-    cvConf_(params.variableChange.value())
+    cvConf_(conf.getSubConfiguration("variable change"))
 {
   Log::trace() << "GetValueTLADs::GetValueTLADs" << std::endl;
 }

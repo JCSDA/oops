@@ -23,7 +23,6 @@
 #include "oops/base/Geometry.h"
 #include "oops/base/IdentityMatrix.h"
 #include "oops/base/Increment4D.h"
-#include "oops/base/IncrementEnsemble.h"
 #include "oops/base/Localization.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/State4D.h"

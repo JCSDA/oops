@@ -41,19 +41,15 @@ class ObserversTLAD {
   typedef GeoVaLs<OBS>                GeoVaLs_;
   typedef GetValues<MODEL, OBS>       GetValues_;
   typedef GetValueTLADs<MODEL, OBS>   GetValueTLADs_;
-  typedef GetValuesParameters<MODEL>  GetValuesParameters_;
   typedef Observations<OBS>           Observations_;
   typedef ObsAuxControls<OBS>         ObsAuxCtrls_;
   typedef ObsAuxIncrements<OBS>       ObsAuxIncrs_;
   typedef ObsDataVector<OBS, int>     ObsDataInt_;
-  typedef ObserverParameters<OBS>     ObserverParameters_;
   typedef ObserverTLAD<MODEL, OBS>    ObserverTLAD_;
   typedef ObsSpaces<OBS>              ObsSpaces_;
   typedef PostProcessorTLAD<MODEL>    PostProcTLAD_;
 
  public:
-  ObserversTLAD(const ObsSpaces_ &, const std::vector<ObserverParameters<OBS>> &,
-                const GetValuesParameters_ &);
   ObserversTLAD(const ObsSpaces_ &, const eckit::Configuration &);
 
   void initializeTraj(const Geometry_ &, const ObsAuxCtrls_ &, PostProcTLAD_ &);
@@ -70,49 +66,38 @@ class ObserversTLAD {
   const std::shared_ptr<GetValueTLADs_> & posts() {return posts_;}
 
  private:
-  static std::vector<ObserverParameters_> convertToParameters(const eckit::Configuration &config);
-  static GetValuesParameters_ extractGetValuesParameters(const eckit::Configuration & config);
-
+  std::vector<eckit::LocalConfiguration> obsconfs_;
   std::vector<std::unique_ptr<ObserverTLAD_>>  observers_;
   std::shared_ptr<GetValueTLADs_> posts_;
   util::DateTime winbgn_;
   util::DateTime winend_;
-  GetValuesParameters_ getValuesParams_;
+  eckit::LocalConfiguration getValuesConf_;
 };
 
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
 ObserversTLAD<MODEL, OBS>::ObserversTLAD(const ObsSpaces_ & obspaces,
-                                         const std::vector<ObserverParameters<OBS>> & obsParams,
-                                         const GetValuesParameters_ & getValuesParams)
-  : observers_(), winbgn_(obspaces.windowStart()), winend_(obspaces.windowEnd()),
-    getValuesParams_(getValuesParams)
+                                         const eckit::Configuration & config)
+  : obsconfs_(config.getSubConfigurations("observers")),
+    observers_(), winbgn_(obspaces.windowStart()), winend_(obspaces.windowEnd()),
+    getValuesConf_(config.getSubConfiguration("get values"))
 {
   Log::trace() << "ObserversTLAD<MODEL, OBS>::ObserversTLAD start" << std::endl;
   for (size_t jj = 0; jj < obspaces.size(); ++jj) {
-    const bool passive = obsParams[jj].monitoringOnly;
+    const bool passive = obsconfs_[jj].getBool("monitoring only", false);
     std::unique_ptr<ObserverTLAD_> tmp;
-    if (!passive) tmp.reset(new ObserverTLAD_(obspaces[jj], obsParams[jj]));
+    if (!passive) tmp.reset(new ObserverTLAD_(obspaces[jj], obsconfs_[jj]));
     observers_.push_back(std::move(tmp));
   }
   Log::trace() << "ObserversTLAD<MODEL, OBS>::ObserversTLAD done" << std::endl;
 }
-// -----------------------------------------------------------------------------
-template <typename MODEL, typename OBS>
-ObserversTLAD<MODEL, OBS>::ObserversTLAD(const ObsSpaces_ & obspaces,
-                                         const eckit::Configuration & config)
-  : ObserversTLAD(obspaces,
-                  convertToParameters(config.getSubConfiguration("observers")),
-                  extractGetValuesParameters(config.getSubConfiguration("get values")))
-//  : ObserversTLAD(obspaces, convertToParameters(config.getSubConfiguration("observers")))
-{}
 
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
 void ObserversTLAD<MODEL, OBS>::initializeTraj(const Geometry_ & geom, const ObsAuxCtrls_ & ybias,
                                                PostProcTLAD_ & pp) {
   Log::trace() << "ObserversTLAD<MODEL, OBS>::initializeTraj start" << std::endl;
-  posts_.reset(new GetValueTLADs_(getValuesParams_, winbgn_, winend_));
+  posts_.reset(new GetValueTLADs_(getValuesConf_, winbgn_, winend_));
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
     if (observers_[jj]) {
       for (std::shared_ptr<GetValues_> &getvalues : observers_[jj]->initializeTraj(geom, ybias[jj]))
@@ -168,67 +153,6 @@ void ObserversTLAD<MODEL, OBS>::finalizeAD() {
   Log::trace() << "ObserversTLAD<MODEL, OBS>::finalizeAD done" << std::endl;
 }
 // -----------------------------------------------------------------------------
-
-template <typename MODEL, typename OBS>
-std::vector<ObserverParameters<OBS>> ObserversTLAD<MODEL, OBS>::convertToParameters(
-    const eckit::Configuration &config) {
-  Log::trace() << "ObserversTLAD<MODEL, OBS>::convertToParameters start" << std::endl;
-  Log::trace() << "ObserversTLAD::convertToParameters conf " << config << std::endl;
-
-  std::vector<eckit::LocalConfiguration> subconfigs = config.getSubConfigurations();
-  Log::trace() << "ObserversTLAD::convertToParameters size " << subconfigs.size() << std::endl;
-  std::vector<ObserverParameters<OBS>> parameters(subconfigs.size());
-  for (size_t i = 0; i < subconfigs.size(); ++i) {
-    const eckit::LocalConfiguration &subconfig = subconfigs[i];
-
-    // 'subconfig' will, in general, contain options irrelevant to the observer (e.g. 'obs space').
-    // So we need to extract the relevant parts into a new Configuration object, 'observerConfig',
-    // before validation and deserialization. Otherwise validation might fail.
-
-    eckit::LocalConfiguration observerConfig;
-
-    // Required keys
-    observerConfig.set("obs operator", eckit::LocalConfiguration(subconfig, "obs operator"));
-    observerConfig.set("monitoring only", subconfig.getBool("monitoring only", false));
-
-    if (subconfig.has("linear obs operator"))
-      observerConfig.set("linear obs operator",
-                         eckit::LocalConfiguration(subconfig, "linear obs operator"));
-
-    // Optional keys
-    eckit::LocalConfiguration filterConfig;
-    if (subconfig.get("obs filtering", filterConfig))
-      observerConfig.set("obs filtering", filterConfig);
-    std::vector<eckit::LocalConfiguration> filterConfigs;
-    if (subconfig.get("obs filters", filterConfigs))
-      observerConfig.set("obs filters", filterConfigs);
-    if (subconfig.get("obs pre filters", filterConfigs))
-      observerConfig.set("obs pre filters", filterConfigs);
-    if (subconfig.get("obs prior filters", filterConfigs))
-      observerConfig.set("obs prior filters", filterConfigs);
-    if (subconfig.get("obs post filters", filterConfigs))
-      observerConfig.set("obs post filters", filterConfigs);
-    eckit::LocalConfiguration getValuesConfig;
-    if (subconfig.get("get values", getValuesConfig))
-      observerConfig.set("get values", getValuesConfig);
-
-    parameters[i].deserialize(observerConfig);
-  }
-
-  Log::trace() << "ObserversTLAD<MODEL, OBS>::convertToParameters done" << std::endl;
-
-  return parameters;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL, typename OBS>
-GetValuesParameters<MODEL> ObserversTLAD<MODEL, OBS>::extractGetValuesParameters(
-    const eckit::Configuration & config) {
-  GetValuesParameters<MODEL> parameters{};
-  parameters.deserialize(config);
-  return parameters;
-}
 
 }  // namespace oops
 

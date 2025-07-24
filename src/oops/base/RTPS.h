@@ -15,7 +15,6 @@
 #include "oops/base/Increment.h"
 #include "oops/base/IncrementSet.h"
 #include "oops/base/InflationBase.h"
-#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/State.h"
 #include "oops/base/StateSet.h"
 #include "oops/mpi/mpi.h"
@@ -24,12 +23,6 @@
 #include "oops/util/Logger.h"
 
 namespace oops {
-
-class RTPSParameters : public InflationParameters {
-  OOPS_CONCRETE_PARAMETERS(RTPSParameters, InflationParameters);
- public:
-    RequiredParameter<double> factor{"factor", this};
-};
 
 /// \brief Application for relaxation to prior spread (RTPS) inflation
 ///
@@ -56,8 +49,7 @@ template <typename MODEL> class RTPS : public InflationBase<MODEL> {
   typedef StateSet<MODEL>                   StateSet_;
 
  public:
-  typedef RTPSParameters                    Parameters_;
-  RTPS(const Parameters_ &, const Geometry_ &,
+  RTPS(const eckit::Configuration &, const Geometry_ &,
        const StateSet_ &, const Variables &);
 
   void doInflation(IncrementSet_ &) override;
@@ -70,9 +62,9 @@ template <typename MODEL> class RTPS : public InflationBase<MODEL> {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-RTPS<MODEL>::RTPS(const Parameters_ & params, const Geometry_ & geom,
-                 const StateSet_ & bens, const Variables & vars)
-  : InflationBase<MODEL>(geom, bens, vars), factor_(params.factor.value())
+RTPS<MODEL>::RTPS(const eckit::Configuration & conf, const Geometry_ & geom,
+                  const StateSet_ & bens, const Variables & vars)
+  : InflationBase<MODEL>(geom, bens, vars), factor_(conf.getDouble("factor"))
 {
   Log::trace() << "RTPS::set up RTPS" << std::endl;
 }

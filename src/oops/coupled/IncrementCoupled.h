@@ -21,8 +21,6 @@
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 #include "oops/util/Printable.h"
 
 #include "oops/coupled/GeometryCoupled.h"

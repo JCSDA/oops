@@ -15,23 +15,14 @@
 #include "oops/base/Geometry.h"
 #include "oops/base/IncrementSet.h"
 #include "oops/base/StateSet.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
-
-class InflationParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(InflationParameters, Parameters);
- public:
-    RequiredParameter<std::string> method{"method", this};
-};
 
 template<typename MODEL>
 class InflationBase {
     typedef Geometry<MODEL>                   Geometry_;
     typedef IncrementSet<MODEL>               IncrementSet_;
     typedef StateSet<MODEL>                   StateSet_;
-    typedef InflationParameters               Parameters_;
 
  public:
   InflationBase(const Geometry_ &,
@@ -108,15 +99,11 @@ InflationBase<MODEL>* InflationFactory<MODEL>::create(const eckit::LocalConfigur
 
 template<class MODEL, class T>
 class InflationMaker : public InflationFactory<MODEL> {
-  typedef typename T::Parameters_ Parameters_;
-
   InflationBase<MODEL> * make(const eckit::LocalConfiguration & config,
                               const Geometry<MODEL> & geom,
                               const StateSet<MODEL> & bens,
                               const Variables & vars) override {
-    Parameters_ params;
-    params.deserialize(config);
-    return new T(params, geom, bens, vars);
+    return new T(config, geom, bens, vars);
   }
 
  public:

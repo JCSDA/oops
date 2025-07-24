@@ -22,9 +22,6 @@
 #include "oops/interface/ObsSpace.h"
 #include "oops/util/AssociativeContainers.h"
 #include "oops/util/Logger.h"
-#include "oops/util/parameters/Parameter.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/PolymorphicParameter.h"
 #include "oops/util/Printable.h"
 
 namespace oops {

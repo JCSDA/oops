@@ -19,7 +19,6 @@
 #include "oops/base/Increment.h"
 #include "oops/base/IncrementSet.h"
 #include "oops/base/InflationBase.h"
-#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/State.h"
 #include "oops/base/StateSet.h"
 #include "oops/mpi/mpi.h"
@@ -29,14 +28,6 @@
 #include "oops/util/Logger.h"
 
 namespace oops {
-
-class MultiplicativeParameters : public InflationParameters{
-  OOPS_CONCRETE_PARAMETERS(MultiplicativeParameters, InflationParameters);
- public:
-    OptionalParameter<double> factor{"factor", this};
-    OptionalParameter<std::vector<double>> levels{"levels", this};
-    OptionalParameter<std::vector<double>> factors{"factors", this};
-};
 
 /// \brief Class for scaling the analysis perturbation by a factor
 ///
@@ -76,8 +67,7 @@ template <typename MODEL> class MultiplicativeInflation : public InflationBase<M
   typedef StateSet<MODEL>                   StateSet_;
 
  public:
-  typedef MultiplicativeParameters          Parameters_;
-  MultiplicativeInflation(const Parameters_ &, const Geometry_ &,
+  MultiplicativeInflation(const eckit::Configuration &, const Geometry_ &,
                           const StateSet_ &, const Variables &);
 
   void doInflation(IncrementSet_ &) override;
@@ -87,17 +77,18 @@ template <typename MODEL> class MultiplicativeInflation : public InflationBase<M
   void inflateByLevel(IncrementSet_ &);
   void inflateByLevel(StateSet_ &);
   void interpolateFactors(std::vector<double> &, atlas::FieldSet &);
-  const Parameters_ params_;
+
+  eckit::LocalConfiguration conf_;
 };
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-MultiplicativeInflation<MODEL>::MultiplicativeInflation(const Parameters_ & params,
+MultiplicativeInflation<MODEL>::MultiplicativeInflation(const eckit::Configuration & conf,
                                                         const Geometry_ & geom,
                                                         const StateSet_ & bens,
                                                         const Variables & vars)
-  : InflationBase<MODEL>(geom, bens, vars), params_(params)
+  : InflationBase<MODEL>(geom, bens, vars), conf_(conf)
 {
   Log::trace() << "MultiplicativeInflation::set up MultiplicativeInflation" << std::endl;
 }
@@ -106,18 +97,16 @@ MultiplicativeInflation<MODEL>::MultiplicativeInflation(const Parameters_ & para
 
 template<typename MODEL>
 void MultiplicativeInflation<MODEL>::doInflation(IncrementSet_ & anEns) {
-    Log::test() << "Multiplicative Background member 1:" << this->background()[0] << std::endl;
-    Log::test() << "Multiplicative Analysis Increment member 1:" << anEns[0] << std::endl;
+  Log::test() << "Multiplicative Background member 1:" << this->background()[0] << std::endl;
+  Log::test() << "Multiplicative Analysis Increment member 1:" << anEns[0] << std::endl;
 
-  if (params_.levels.value() != boost::none && params_.factors.value() != boost::none &&
-      params_.factor.value() == boost::none) {
+  if (conf_.has("levels") && conf_.has("factors") && !conf_.has("factor")) {
     Log::trace() << "MultiplicativeInflation::Increment inflate by level starting" << std::endl;
     this->inflateByLevel(anEns);
     Log::trace() << "MultiplicativeInflation::Increment inflation by level done" << std::endl;
-  } else if (params_.factor.value() != boost::none && params_.levels.value() == boost::none &&
-             params_.factors.value() == boost::none) {
+  } else if (conf_.has("factor") && !conf_.has("levels") && !conf_.has("factors")) {
     Log::trace() << "MultiplicativeInflation::Increment inflate all levels starting" << std::endl;
-    const double & factor =  *params_.factor.value();
+    const double factor =  conf_.getDouble("factor");
     StateSet_ bgMean = this->background().ens_mean();
     IncrementSet_ anMean = anEns.ens_mean();
 
@@ -146,15 +135,13 @@ void MultiplicativeInflation<MODEL>::doInflation(StateSet_ & anEns) {
   Log::test() << "Multiplicative Background member 1:" << this->background()[0] << std::endl;
   Log::test() << "Multiplicative Analysis member 1:" << anEns[0] << std::endl;
 
-  if (params_.levels.value() != boost::none && params_.factors.value() != boost::none &&
-      params_.factor.value() == boost::none) {
+  if (conf_.has("levels") && conf_.has("factors") && !conf_.has("factor")) {
     Log::trace() << "MultiplicativeInflation::State inflate by level starting" << std::endl;
     this->inflateByLevel(anEns);
     Log::trace() << "MultiplicativeInflation::State inflate by level done" << std::endl;
-  } else if (params_.factor.value() != boost::none && params_.levels.value() == boost::none &&
-             params_.factors.value() == boost::none) {
+  } else if (conf_.has("factor") && !conf_.has("levels") && !conf_.has("factors")) {
     Log::trace() << "MultiplicativeInflation::State inflate all levels starting" << std::endl;
-    double factor = *params_.factor.value();
+    const double factor =  conf_.getDouble("factor");
     // calculate ensemble mean
     StateSet_ an_mean = anEns.ens_mean();
 
@@ -249,8 +236,8 @@ template<typename MODEL>
 void MultiplicativeInflation<MODEL>::interpolateFactors(std::vector<double> & factors,
                                                         atlas::FieldSet & fieldset) {
   Log::trace() << "MultiplicativeInflation::interpolateFactors starting" << std::endl;
-  std::vector<double> levels = *params_.levels.value();
-  std::vector<double> values = *params_.factors.value();
+  std::vector<double> levels = conf_.getDoubleVector("levels");
+  std::vector<double> values = conf_.getDoubleVector("factors");
   std::size_t nlevels = fieldset[0].shape(1);
 
   ASSERT(levels.size() == values.size());

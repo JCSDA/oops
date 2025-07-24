@@ -15,7 +15,6 @@
 #include "oops/base/Increment.h"
 #include "oops/base/IncrementSet.h"
 #include "oops/base/InflationBase.h"
-#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/State.h"
 #include "oops/base/StateSet.h"
 #include "oops/mpi/mpi.h"
@@ -24,13 +23,6 @@
 #include "oops/util/Logger.h"
 
 namespace oops {
-
-class RTPPParameters : public InflationParameters {
-  OOPS_CONCRETE_PARAMETERS(RTPPParameters, InflationParameters);
-
- public:
-    RequiredParameter<double> factor{"factor", this};
-};
 
 /// \brief Application for relaxation to prior perturbation (RTPP) inflation
 ///
@@ -65,9 +57,7 @@ template <typename MODEL> class RTPP : public InflationBase<MODEL> {
   typedef StateSet<MODEL>                   StateSet_;
 
  public:
-  typedef RTPPParameters                    Parameters_;
-  RTPP(const Parameters_ &, const Geometry_ &,
-       const StateSet_ &, const Variables &);
+  RTPP(const eckit::Configuration &, const Geometry_ &, const StateSet_ &, const Variables &);
 
   void doInflation(IncrementSet_ &) override;
   void doInflation(StateSet_ &) override;
@@ -79,9 +69,9 @@ template <typename MODEL> class RTPP : public InflationBase<MODEL> {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-RTPP<MODEL>::RTPP(const Parameters_ & params, const Geometry_ & geom,
-                 const StateSet_ & bens, const Variables & vars)
-  : InflationBase<MODEL>(geom, bens, vars), factor_(params.factor.value())
+RTPP<MODEL>::RTPP(const eckit::Configuration & conf, const Geometry_ & geom,
+                  const StateSet_ & bens, const Variables & vars)
+  : InflationBase<MODEL>(geom, bens, vars), factor_(conf.getDouble("factor"))
 {
   Log::trace() << "RTPP::set up RTPP" << std::endl;
 }

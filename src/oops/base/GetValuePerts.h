@@ -37,7 +37,7 @@ class GetValuePerts : public GetValuePosts<MODEL, OBS> {
 
  public:
 /// \brief Saves Locations and Variables to be processed
-  GetValuePerts(const GetValuesParameters<MODEL> &, const std::shared_ptr<GetValueTLADs_> &,
+  GetValuePerts(const eckit::Configuration &, const std::shared_ptr<GetValueTLADs_> &,
                 const Variables &);
 
   void append(GetValuePtr_) override {};
@@ -56,10 +56,10 @@ class GetValuePerts : public GetValuePosts<MODEL, OBS> {
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-GetValuePerts<MODEL, OBS>::GetValuePerts(const GetValuesParameters<MODEL>& params,
+GetValuePerts<MODEL, OBS>::GetValuePerts(const eckit::Configuration & conf,
                                          const std::shared_ptr<GetValueTLADs_> & getValueTLADs,
                                          const Variables & incVars)
-  : GetValuePosts_(params), getValTL_(), incVars_(incVars)
+  : GetValuePosts_(conf), getValTL_(), incVars_(incVars)
 {
   getValTL_ = getValueTLADs;
   Log::trace() << "GetValuePerts::GetValuePerts" << std::endl;
