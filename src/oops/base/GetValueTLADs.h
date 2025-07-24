@@ -64,6 +64,7 @@ class GetValueTLADs : public PostBaseTLAD<MODEL> {
   std::vector<GetValPtr_> getvals_;
   std::map<util::DateTime, CVarPtr_> chvartlad_;
   const eckit::LocalConfiguration cvConf_;
+  const eckit::LocalConfiguration linearcvConf_;
 };
 
 // -----------------------------------------------------------------------------
@@ -71,7 +72,7 @@ template <typename MODEL, typename OBS>
 GetValueTLADs<MODEL, OBS>::GetValueTLADs(const GetValuesParameters<MODEL> & params,
               const util::DateTime & bgn, const util::DateTime & end)
   : PostBaseTLAD<MODEL>(bgn, end), geovars_(), linvars_(), getvals_(), chvartlad_(),
-    cvConf_(params.variableChange.value())
+    linearcvConf_(params.linearvariableChange.value()),cvConf_(params.variableChange.value())
 {
   Log::trace() << "GetValueTLADs::GetValueTLADs" << std::endl;
 }
@@ -110,7 +111,7 @@ void GetValueTLADs<MODEL, OBS>::doProcessingTraj(const State_ & xx) {
 
   for (GetValPtr_ getval : getvals_) getval->process(zz);
 
-  CVarPtr_ cvtlad(new LinearVariableChange<MODEL>(xx.geometry(), cvConf_));
+  CVarPtr_ cvtlad(new LinearVariableChange<MODEL>(xx.geometry(), linearcvConf_));
   cvtlad->changeVarTraj(xx, linvars_);
   chvartlad_[xx.validTime()] = std::move(cvtlad);
 
