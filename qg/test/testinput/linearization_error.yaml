@@ -33,5 +33,10 @@ output:
   exp: lin_err 
   type: in    
 
+output fd:
+  datadir: Data
+  exp: lin_err_fd
+  type: in    
+
 test:
   reference filename: testoutput/linearization_error.test

@@ -48,6 +48,12 @@ namespace oops {
 // Output configuration for regular structured grid
   // eckit::LocalConfiguration, "output on structured grid"
 
+// TLM forecast output configuration for native grid
+  // eckit::LocalConfiguration, "output fd"
+
+// TLM forecast output configuration for regular structured grid
+  // eckit::LocalConfiguration, "output fd on structured grid"
+
 /// \brief Application for computing and writing fields of linearization error.
 ///
 /// \details Linearization error for a linear model L with respect to a nonlinear model N is defined
@@ -84,6 +90,9 @@ namespace oops {
 ///
 /// The computation can be done either at the linear model geometry or the model geometry, and
 /// written to file on the native grid, a structured grid (such as lat-lon), or both.
+///
+/// The TLM forecasted fields are referred to as "fd" for "finite difference, and can also be
+/// written to file.
 template <typename MODEL>
 class LinearizationError : public Application {
   typedef Geometry<MODEL>             Geometry_;
@@ -126,6 +135,11 @@ class LinearizationError : public Application {
     if (config.has("output on structured grid")) {
       const eckit::LocalConfiguration structGridConf(config, "output on structured grid");
       writer = std::make_unique<StructuredGridWriter_>(structGridConf, high);
+    }
+    std::unique_ptr<StructuredGridWriter_> writerFd;
+    if (config.has("output fd on structured grid")) {
+      const eckit::LocalConfiguration structGridFdConf(config, "output fd on structured grid");
+      writerFd = std::make_unique<StructuredGridWriter_>(structGridFdConf, low);
     }
 
 // Set up trajectory saver for use with x1 and empty post processor for x2
@@ -180,10 +194,17 @@ class LinearizationError : public Application {
       if (writer) {
         writer->interpolateAndWrite(error);
       }
+      if (writerFd) {
+        writerFd->interpolateAndWrite(fd);
+      }
       // Write to file on native grid.
       if (config.has("output")) {
          const eckit::LocalConfiguration outConfig(config, "output");
          error.write(outConfig);
+      }
+      if (config.has("output fd")) {
+         const eckit::LocalConfiguration outFdConfig(config, "output fd");
+         fd.write(outFdConfig);
       }
     }
 
