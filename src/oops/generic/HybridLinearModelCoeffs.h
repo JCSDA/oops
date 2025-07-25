@@ -21,6 +21,8 @@
 #include "oops/base/Variables.h"
 #include "oops/generic/HtlmCalculator.h"
 #include "oops/util/FieldSetHelpers.h"
+#include "oops/util/ParallelFieldSetIO.h"
+#include "oops/util/Timer.h"
 
 namespace oops {
 
@@ -52,6 +54,7 @@ class HybridLinearModelCoeffs {
   typedef SimpleLinearModel<MODEL>                    SimpleLinearModel_;
 
   HybridLinearModelCoeffs(const eckit::Configuration &, const Geometry_ &, const util::Duration &);
+  static const std::string classname() {return "oops::HybridLinearModelCoeffs";}
   void obtain(SimpleLinearModel_ &, const Variables &);
   void updateIncTL(Increment_ &) const;
   void updateIncAD(Increment_ &) const;
@@ -115,6 +118,9 @@ void HybridLinearModelCoeffs<MODEL>::obtain(SimpleLinearModel_ & simpleLinearMod
   } else {
     ABORT("HybridLinearModelCoeffs<MODEL>::obtain(): no source of coefficients");
   }
+  if (params_.output.value() != boost::none) {
+    write();
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -173,26 +179,35 @@ void HybridLinearModelCoeffs<MODEL>::generate(SimpleLinearModel_ & simpleLinearM
       updateIncTL(ensemble.getLinearEnsemble()[m]);
     }
   }
-  if (params_.output.value() != boost::none) {
-    write();
-  }
 }
 
 //------------------------------------------------------------------------------
 
 template<typename MODEL>
 void HybridLinearModelCoeffs<MODEL>::read() {
+  util::Timer timer(classname(), "read");
   const std::vector<size_t> nLevelsAll(updateVars_.size(), nLevels_);
   eckit::LocalConfiguration inputConfig(*params_.input.value());
   const std::string baseFilepath = inputConfig.getString("base filepath");
   util::DateTime time(timeWindow_.start());
-  while (time < timeWindow_.end()) {
-    time += updateTstep_;
-    const std::string filepath = baseFilepath + "_" + time.toStringIO();
-    inputConfig.set("filepath", filepath);
-    // TODO(someone): when updateVars_ have levels, replace by the call taking vars
-    util::readFieldSet(updateGeometry_.getComm(), updateGeometry_.functionSpace(), nLevelsAll,
-                       updateVars_.variables(), inputConfig, coeffsSaver_.at(time));
+  if (inputConfig.getBool("legacy", true)) {
+    while (time < timeWindow_.end()) {
+      time += updateTstep_;
+      const std::string filepath = baseFilepath + "_" + time.toStringIO();
+      inputConfig.set("filepath", filepath);
+      // TODO(someone): when updateVars_ have levels, replace by the call taking vars
+      util::readFieldSet(updateGeometry_.getComm(), updateGeometry_.functionSpace(), nLevelsAll,
+                         updateVars_.variables(), inputConfig, coeffsSaver_.at(time));
+    }
+  } else {
+    util::ParallelFieldSetIO io(updateGeometry_.functionSpace(),
+                                inputConfig.getString("grid name"),
+                                util::ParallelFieldSetIO::Mode::Read);
+    while (time < timeWindow_.end()) {
+      time += updateTstep_;
+      const std::string filepath = baseFilepath + "_" + time.toStringIO() + ".nc";
+      io.read(coeffsSaver_.at(time), filepath);
+    }
   }
 }
 
@@ -200,12 +215,23 @@ void HybridLinearModelCoeffs<MODEL>::read() {
 
 template<typename MODEL>
 void HybridLinearModelCoeffs<MODEL>::write() const {
+  util::Timer timer(classname(), "write");
   eckit::LocalConfiguration outputConfig(*params_.output.value());
   const std::string baseFilepath = outputConfig.getString("base filepath");
-  for (const auto & element : coeffsSaver_) {
-    const std::string filepath = baseFilepath + "_" + element.first.toStringIO();
-    outputConfig.set("filepath", filepath);
-    util::writeFieldSet(updateGeometry_.getComm(), outputConfig, element.second);
+  if (outputConfig.getBool("legacy", true)) {
+    for (const auto & element : coeffsSaver_) {
+      const std::string filepath = baseFilepath + "_" + element.first.toStringIO();
+      outputConfig.set("filepath", filepath);
+      util::writeFieldSet(updateGeometry_.getComm(), outputConfig, element.second);
+    }
+  } else {
+    util::ParallelFieldSetIO io(updateGeometry_.functionSpace(),
+                                outputConfig.getString("grid name"),
+                                util::ParallelFieldSetIO::Mode::Write);
+    for (const auto & element : coeffsSaver_) {
+      const std::string filepath = baseFilepath + "_" + element.first.toStringIO() + ".nc";
+      io.write(element.second, filepath);
+    }
   }
 }
 

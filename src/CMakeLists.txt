@@ -410,6 +410,8 @@ oops/util/netcdf_utils_mod.f90
 oops/util/ObjectCounter.h
 oops/util/ObjectCountHelper.cc
 oops/util/ObjectCountHelper.h
+oops/util/ParallelFieldSetIO.cc
+oops/util/ParallelFieldSetIO.h
 oops/util/Printable.h
 oops/util/PrintAdjTest.h
 oops/util/printRunStats.cc
@@ -568,6 +570,7 @@ test/util/ConfigFunctions.h
 test/util/ConfigHelpers.h
 test/util/TimeWindow.h
 test/util/CompareStates.h
+test/util/ParallelFieldSetIO.h
 )
 
 list (APPEND oops_fheader_files
@@ -595,6 +598,7 @@ list( APPEND oops_test_input
   test/testinput/hello.yaml
   test/testinput/mpi.yaml
   test/testinput/parameters.yaml
+  test/testinput/parallelfieldsetio.yaml
   test/testinput/pushstringvector.yaml
   test/testinput/random.yaml
   test/testinput/spectrallmp.yaml
@@ -1001,6 +1005,25 @@ ecbuild_add_test( TARGET  test_util_fieldset_subcommunicators
                   MPI     2
                   SOURCES test/util/FieldSetSubCommunicators.cc
                   ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_parallelfieldsetio_1PE
+                  SOURCES test/util/ParallelFieldSetIO.cc
+                  ARGS    "test/testinput/parallelfieldsetio.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_parallelfieldsetio_2PE
+                  MPI     2
+                  SOURCES test/util/ParallelFieldSetIO.cc
+                  ARGS    "test/testinput/parallelfieldsetio.yaml"
+                  DEPENDS test_util_parallelfieldsetio_1PE
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_parallelfieldsetio_3PE
+                  MPI     3
+                  SOURCES test/util/ParallelFieldSetIO.cc
+                  ARGS    "test/testinput/parallelfieldsetio.yaml"
+                  DEPENDS test_util_parallelfieldsetio_1PE
                   LIBS    oops )
 
 ecbuild_add_executable(

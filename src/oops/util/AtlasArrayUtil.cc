@@ -76,7 +76,9 @@ void atlasArrayWriteHeader(
     std::vector<int> & netcdfGeneralIDs,
     std::vector<int> & netcdfDimIDs,
     std::vector<int> & netcdfVarIDs,
-    std::vector<std::vector<int>> & netcdfDimVarIDs) {
+    std::vector<std::vector<int>> & netcdfDimVarIDs,
+    const bool parallel,
+    const eckit::mpi::Comm& comm) {
   netcdfGeneralIDs.clear();
   netcdfDimIDs.clear();
   netcdfVarIDs.clear();
@@ -89,7 +91,14 @@ void atlasArrayWriteHeader(
   const double msvd(::util::missingValue<double>());
   const int32_t msvi(::util::missingValue<int32_t>());
 
-  if ((retval = nc_create(ncfilepath.c_str(), NC_NETCDF4, &ncid))) ERR1(retval);
+  if (parallel && comm.size() > 1) {
+    const eckit::mpi::Parallel& pComm = dynamic_cast<const eckit::mpi::Parallel&>(comm);
+    const MPI_Comm& rawComm = pComm.MPIComm();
+    if ((retval = nc_create_par(
+      ncfilepath.c_str(), NC_NETCDF4, rawComm, MPI_INFO_NULL, &ncid))) ERR1(retval);
+  } else {
+    if ((retval = nc_create(ncfilepath.c_str(), NC_NETCDF4, &ncid))) ERR1(retval);
+  }
 
   const std::vector<std::string> attnames =
     util::getAttributeNames(conf, "global metadata");
@@ -162,7 +171,6 @@ void atlasArrayWriteHeader(
     netcdfDimVarIDs.push_back(dimVarIDs);
 
     int varID;
-
     if (variables[i].dataType() == oops::ModelDataType::Real64) {
       if ((retval = nc_def_var(netcdfGeneralIDs[0],
                                variables[i].name().c_str(),
@@ -191,7 +199,6 @@ void atlasArrayWriteHeader(
     } else {
       throw eckit::UserError("datatype currently not supported", Here());
     }
-
     const std::vector<std::string> varAttnames = util::getAttributeNames(conf, variables[i].name());
     for (const std::string & attname : varAttnames) {
       const std::string type =
@@ -242,7 +249,9 @@ void atlasArrayInquire(
     std::vector<int> & netcdfGeneralIDs,
     std::vector<int> & netcdfDimIDs,
     std::vector<int> & netcdfVarIDs,
-    std::vector<std::vector<int>> & netcdfDimVarIDs) {
+    std::vector<std::vector<int>> & netcdfDimVarIDs,
+    const bool parallel,
+    const eckit::mpi::Comm& comm) {
   dimNames.clear();
   dimSizes.clear();
   oops::Variables variablesWork;
@@ -255,14 +264,20 @@ void atlasArrayInquire(
   int ncid, retval, ndims, nvars, ngatts, unlimdimid;
 
   // Open NetCDF file
-  if ((retval = nc_open(ncfilepath.c_str(), NC_NOWRITE, &ncid))) ERR1(retval);
+  if (parallel && comm.size() > 1) {
+    const eckit::mpi::Parallel& pComm = dynamic_cast<const eckit::mpi::Parallel&>(comm);
+    const MPI_Comm& rawComm = pComm.MPIComm();
+    if ((retval = nc_open_par(
+      ncfilepath.c_str(), NC_NOWRITE, rawComm, MPI_INFO_NULL, &ncid))) ERR1(retval);
+  } else {
+    if ((retval = nc_open(ncfilepath.c_str(), NC_NOWRITE, &ncid))) ERR1(retval);
+  }
   netcdfGeneralIDs.push_back(ncid);
 
   // Look at dataset
   if ((retval = nc_inq(netcdfGeneralIDs[0], &ndims, &nvars, &ngatts, &unlimdimid))) ERR1(retval);
 
   std::vector<nc_type> nctypes(ngatts, 0);
-
 
   // Populate the global Configuration header
   // Assume all metadata is in string format.

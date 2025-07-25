@@ -8,6 +8,7 @@
 #pragma once
 
 #include <netcdf.h>
+#include <netcdf_par.h>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -15,8 +16,10 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
+#include "eckit/mpi/Parallel.h"
 
 #include "atlas/array.h"
+#include "atlas/parallel/mpi/mpi.h"
 
 #include "oops/base/Variables.h"
 #include "oops/util/abor1_cpp.h"
@@ -112,7 +115,9 @@ void atlasArrayWriteHeader(
     std::vector<int> & netcdfGeneralIDs,
     std::vector<int> & netcdfDimIDs,
     std::vector<int> & netcdfVarIDs,
-    std::vector<std::vector<int>> & netcdf_dim_varIDs);
+    std::vector<std::vector<int>> & netcdf_dim_varIDs,
+    const bool parallel = false,
+    const eckit::mpi::Comm& comm = atlas::mpi::comm());
 
 /// \brief - interrogates the header of a written NetCDF file
 ///        - assumes that we have the:
@@ -127,7 +132,9 @@ void atlasArrayInquire(
     std::vector<int> & netcdfGeneralIDs,
     std::vector<int> & netcdfDimIDs,
     std::vector<int> & netcdfVarIDs,
-    std::vector<std::vector<int>> & netcdf_dim_varIDs);
+    std::vector<std::vector<int>> & netcdf_dim_varIDs,
+    const bool parallel = false,
+    const eckit::mpi::Comm& comm = atlas::mpi::comm());
 
 /// \brief - reads variable data that is Rank-dimensional and of Value type
 template <typename Value, int Rank>
@@ -136,11 +143,29 @@ void atlasArrayReadData(
     const int & varID,
     atlas::array::ArrayView<Value, Rank> & arrayInOut);
 
+/// \brief - reads variable data that is Rank-dimensional and of Value type, in parallel
+template <typename Value, int Rank>
+void atlasArrayReadData(
+    const std::vector<int> & netcdfGeneralIDs,
+    const int & varID,
+    const std::vector<size_t> & starts,
+    const std::vector<size_t> & counts,
+    atlas::array::ArrayView<Value, Rank> & arrayInOut);
+
 /// \brief - writes variable data that is Rank-dimensional and of Value type
 template <typename Value, int Rank>
 void atlasArrayWriteData(
     const std::vector<int> & netcdfGeneralIDs,
     const int & varID,
+    atlas::array::ArrayView<const Value, Rank> & arrayIn);
+
+/// \brief - writes variable data that is Rank-dimensional and of Value type, in parallel
+template <typename Value, int Rank>
+void atlasArrayWriteData(
+    const std::vector<int> & netcdfGeneralIDs,
+    const int & varID,
+    const std::vector<size_t> & starts,
+    const std::vector<size_t> & counts,
     atlas::array::ArrayView<const Value, Rank> & arrayIn);
 
 //-----------------------------------------------------------------------------
@@ -407,11 +432,43 @@ void atlasArrayReadData(const std::vector<int> & netcdfGeneralIDs,
 }
 
 template <typename Value, int Rank>
+void atlasArrayReadData(const std::vector<int> & netcdfGeneralIDs,
+                        const int & varID,
+                        const std::vector<size_t> & starts,
+                        const std::vector<size_t> & counts,
+                        atlas::array::ArrayView<Value, Rank> & arrayInOut) {
+  if (atlas::mpi::comm().size() == 1) {
+    atlasArrayReadData(netcdfGeneralIDs, varID, arrayInOut);
+    return;
+  }
+  int retval;
+  if ((retval = nc_var_par_access(netcdfGeneralIDs[0], varID, NC_COLLECTIVE))) ERR1(retval);
+  if ((retval = nc_get_vara(
+    netcdfGeneralIDs[0], varID, starts.data(), counts.data(), arrayInOut.data()))) ERR1(retval);
+}
+
+template <typename Value, int Rank>
 void atlasArrayWriteData(const std::vector<int> & netcdfGeneralIDs,
                          const int & varID,
                          atlas::array::ArrayView<const Value, Rank> & arrayIn) {
   int retval;
   if ((retval = nc_put_var(netcdfGeneralIDs[0], varID, arrayIn.data()))) ERR1(retval);
+}
+
+template <typename Value, int Rank>
+void atlasArrayWriteData(const std::vector<int> & netcdfGeneralIDs,
+                         const int & varID,
+                         const std::vector<size_t> & starts,
+                         const std::vector<size_t> & counts,
+                         atlas::array::ArrayView<const Value, Rank> & arrayIn) {
+  if (atlas::mpi::comm().size() == 1) {
+    atlasArrayWriteData(netcdfGeneralIDs, varID, arrayIn);
+    return;
+  }
+  int retval;
+  if ((retval = nc_var_par_access(netcdfGeneralIDs[0], varID, NC_COLLECTIVE))) ERR1(retval);
+  if ((retval = nc_put_vara(
+    netcdfGeneralIDs[0], varID, starts.data(), counts.data(), arrayIn.data()))) ERR1(retval);
 }
 
 }  // namespace util

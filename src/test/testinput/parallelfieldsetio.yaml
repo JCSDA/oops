@@ -1,0 +1,58 @@
+datadir: test/testoutput
+test configurations:
+- grid:
+    name: S5x4
+  partitioner: checkerboard
+  function space: NodeColumns
+  halo: 2
+  nfields: 2
+  rank 2 sizes: [4, 5]
+  rank 3 sizes: [3, 1]
+- grid:
+    name: O8
+  partitioner: regular_bands
+  function space: StructuredColumns
+  halo: 3
+  nfields: 1
+  rank 2 sizes: [1]
+  rank 3 sizes: [0]
+- grid:
+    name: CS-LFR-2
+  partitioner: equal_regions
+  function space: NodeColumns
+  halo: 0
+  nfields: 1
+  rank 2 sizes: [0]
+  rank 3 sizes: [1]
+- grid:
+    name: N16
+  partitioner: equal_regions
+  function space: NodeColumns
+  halo: 2
+  nfields: 1
+  rank 2 sizes: [2]
+  rank 3 sizes: [2]
+- grid:
+    name: H3
+  partitioner: equal_regions
+  function space: NodeColumns
+  halo: 2
+  nfields: 1
+  rank 2 sizes: [1]
+  rank 3 sizes: [1]
+- grid:
+    name: S6x6
+  partitioner: regular_bands
+  function space: StructuredColumns
+  halo: 3
+  nfields: 1
+  rank 2 sizes: [3]
+  rank 3 sizes: [2]
+- grid:
+    name: F10
+  partitioner: equal_regions
+  function space: StructuredColumns
+  halo: 1
+  nfields: 2
+  rank 2 sizes: [3, 2]
+  rank 3 sizes: [2, 3]
