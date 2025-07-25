@@ -87,6 +87,7 @@ list( APPEND qg_testinput
   testinput/geometry.yaml
   testinput/geovals.yaml
   testinput/getvalues.yaml
+  testinput/getkf.yaml
   testinput/hofx.yaml
   testinput/hofx_tinterp.yaml
   testinput/hofx3d.yaml
@@ -194,6 +195,7 @@ list( APPEND qg_testoutput
   testoutput/gen_ens_pert_B_5level_pert_heat.test
   testoutput/gen_hybrid_linear_model_coeffs_pseudo.test
   testoutput/gen_hybrid_linear_model_coeffs_with_subtimestep.test
+  testoutput/getkf.test
   testoutput/hofx.test
   testoutput/hofx_tinterp.test
   testoutput/hofx3d.test
@@ -975,11 +977,17 @@ ecbuild_add_test( TARGET test_qg_convertincrement_inv
                   TEST_DEPENDS test_qg_diffstates )
 
 #####################################################################
-# LETKF tests
+# ETKF tests
 #####################################################################
 
 ecbuild_add_test( TARGET test_qg_letkf
                   ARGS testinput/letkf.yaml
-                  COMMAND  qg_letkf.x
+                  COMMAND  qg_etkf.x
                   OMP 2
-                  TEST_DEPENDS test_qg_make_obs_3d test_qg_gen_ens_pert_B )
+                  TEST_DEPENDS test_qg_make_obs_4d test_qg_gen_ens_pert_B )
+
+ecbuild_add_test( TARGET test_qg_getkf
+                  ARGS testinput/getkf.yaml
+                  COMMAND  qg_etkf.x
+                  OMP 2
+                  TEST_DEPENDS test_qg_make_obs_4d test_qg_gen_ens_pert_B )

@@ -11,6 +11,6 @@
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  oops::LocalEnsembleDA<qg::QgTraits, qg::QgObsTraits> letkf;
-  return run.execute(letkf);
+  oops::LocalEnsembleDA<qg::QgTraits, qg::QgObsTraits> etkf;
+  return run.execute(etkf);
 }

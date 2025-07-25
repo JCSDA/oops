@@ -1,0 +1,92 @@
+time window:
+  begin: &date_bgn 2010-01-01T00:00:00Z
+  length: PT12H
+
+geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+
+# update (and use for H(x)) one state at 00Z
+background:
+  members from template:
+    template:
+      date: *date_bgn
+      filename: Data/forecast.ens.%mem%.2009-12-31T00:00:00Z.P1D.nc
+    pattern: %mem%
+    nmembers: 10
+
+increment variables: [x]
+
+observations:
+  observers:
+  - obs operator:
+      obs type: Stream
+    obs space:
+      obsdatain:
+        obsfile: Data/truth.obs4d_12h.nc
+      obsdataout:
+        obsfile: Data/getkf.obs4d_12h.nc
+      obs type: Stream
+    obs error:
+      covariance model: diagonal
+    obs localizations:
+    - localization method: Heaviside
+      lengthscale: 5e6
+  - obs operator:
+      obs type: Wind
+    obs space:
+      obsdatain:
+        obsfile: Data/truth.obs4d_12h.nc
+      obsdataout:
+        obsfile: Data/getkf.obs4d_12h.nc
+      obs type: Wind
+    obs error:
+      covariance model: diagonal
+    obs localizations:
+    - localization method: Heaviside
+      lengthscale: 5e6
+  - obs operator:
+      obs type: WSpeed
+    obs space:
+      obsdatain:
+        obsfile: Data/truth.obs4d_12h.nc
+      obsdataout:
+        obsfile: Data/getkf.obs4d_12h.nc
+      obs type: WSpeed
+    obs error:
+      covariance model: diagonal
+    obs localizations:
+    - localization method: Heaviside
+      lengthscale: 5e6
+
+driver:
+  update obs config with geometry info: false
+
+local ensemble DA:
+  solver: Deterministic GETKF
+  fortran ETKF: false
+  vertical localization:
+    fraction of retained variance: .99
+    lengthscale units: levels
+    lengthscale: 1000
+  inflation:
+    rtps: 0.5
+    rtpp: 0.5
+    mult: 1.0
+
+output:
+  datadir: Data
+  date: *date_bgn
+  exp: getkf.%{member}%
+  type: an
+
+output:
+  datadir: Data
+  date: *date_bgn
+  exp: getkf.bgn.%{member}%
+  type: an
+
+test:
+  reference filename: testoutput/getkf.test
+  float relative tolerance: 1.5e-3

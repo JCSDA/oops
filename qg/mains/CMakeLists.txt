@@ -82,8 +82,8 @@ ecbuild_add_executable( TARGET  qg_ens_mean_variance.x
                         LIBS    qg
                       )
 
-ecbuild_add_executable( TARGET  qg_letkf.x
-                        SOURCES qgLETKF.cc
+ecbuild_add_executable( TARGET  qg_etkf.x
+                        SOURCES qgETKF.cc
                         LIBS    qg
                       )
 
