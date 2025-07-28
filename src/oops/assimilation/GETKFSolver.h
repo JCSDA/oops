@@ -343,8 +343,7 @@ void DeterministicGETKF<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
   // compute transformation matrix, save in Wa_, wa_
   // Yb(nobs,neig*nens), YbOrig(nobs,nens)
   util::Timer timer(classname(), "computeWeights");
-  const LocalEnsembleSolverInflationParameters & inflopt = this->options_.infl;
-  const float infl = inflopt.mult;
+  const double infl = this->inflopt_.getDouble("mult", 1.0);
 
   Eigen::MatrixXf Wa_f(nanal_, this->nens_);
   Eigen::VectorXf wa_f(nanal_);
@@ -387,7 +386,7 @@ void DeterministicGETKF<MODEL, OBS>::applyWeights(const IncrementSet_ & bkg_pert
                                     i,
                                     this->wa_,
                                     this->Wa_,
-                                    this->options_.infl,
+                                    this->inflopt_,
                                     &(vertloc_));
 }
 

@@ -242,17 +242,21 @@ namespace oops {
 
   void ETKF_posteriorInflation(const Eigen::MatrixXd & Xb,
                                Eigen::MatrixXd & Xa,
-                               const LocalEnsembleSolverInflationParameters & inflopt) {
+                               const eckit::Configuration & inflopt) {
     const size_t nens = Xa.cols();
 
     // RTPP inflation
-    if (inflopt.doRtpp()) {
-      Xa = (1 - inflopt.rtpp) * Xa + inflopt.rtpp * Xb;
+    const double rtpp = inflopt.getDouble("rtpp", 0.0);
+    const double rtps = inflopt.getDouble("rtps", 0.0);
+    if (rtpp > 0.0 && rtpp <= 1.0) {
+      Xa = (1 - rtpp) * Xa + rtpp * Xb;
     }
 
     // RTPS inflation
     const double eps = DBL_EPSILON;
-    if (inflopt.doRtps()) {
+    const double rtpsInflMin = 1.0;
+    const double rtpsInflMax = 1e30;
+    if (rtps > 0.0 && rtps <= 1.0) {
       // posterior spread
       Eigen::ArrayXd asprd = Xa.array().square().rowwise().sum()/(nens - 1);
       asprd = asprd.sqrt();
@@ -264,9 +268,9 @@ namespace oops {
       fsprd = (fsprd < eps).select(eps, fsprd);
 
       // RTPS inflation factor
-      Eigen::ArrayXd rtpsInfl = inflopt.rtps * ((fsprd - asprd)/asprd) + 1;
-      rtpsInfl = (rtpsInfl < inflopt.rtpsInflMin()).select(inflopt.rtpsInflMin(), rtpsInfl);
-      rtpsInfl = (rtpsInfl > inflopt.rtpsInflMax()).select(inflopt.rtpsInflMax(), rtpsInfl);
+      Eigen::ArrayXd rtpsInfl = rtps * ((fsprd - asprd)/asprd) + 1;
+      rtpsInfl = (rtpsInfl < rtpsInflMin).select(rtpsInflMin, rtpsInfl);
+      rtpsInfl = (rtpsInfl > rtpsInflMax).select(rtpsInflMax, rtpsInfl);
 
       // inflate perturbation matrix
       Xa.array().colwise() *= rtpsInfl;

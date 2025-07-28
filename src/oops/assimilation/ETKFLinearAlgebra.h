@@ -14,7 +14,8 @@
 #include <tuple>
 #include <vector>
 
-#include "oops/assimilation/LocalEnsembleSolverParameters.h"
+#include "eckit/config/Configuration.h"
+
 #include "oops/generic/VerticalLocEV.h"
 
 namespace oops {
@@ -231,7 +232,7 @@ namespace oops {
   ///   Xa [passed by reference]: Output state in model space.
   void ETKF_posteriorInflation(const Eigen::MatrixXd &,
                                Eigen::MatrixXd &,
-                               const LocalEnsembleSolverInflationParameters &);
+                               const eckit::Configuration &);
 
   /// \brief Perform stochastic ensemble transform.
   /// \details
@@ -249,7 +250,7 @@ namespace oops {
                             IncSet & ana_pert,
                             const GeomIt & geomIter,
                             const Eigen::MatrixXd & Wa,
-                            const LocalEnsembleSolverInflationParameters & inflopt,
+                            const eckit::Configuration & inflopt,
                             const VerticalLocEV<MODEL> * const vertLoc = nullptr) {
     // Loop through analysis times.
     for (size_t itime = 0; itime < bkg_pert.time_size(); ++itime) {
@@ -299,7 +300,7 @@ namespace oops {
                             const GeomIt & geomIter,
                             const Eigen::VectorXd & wa,
                             const Eigen::MatrixXd & Wa,
-                            const LocalEnsembleSolverInflationParameters & inflopt,
+                            const eckit::Configuration & inflopt,
                             const VerticalLocEV<MODEL> * const vertLoc = nullptr) {
     // Loop through analysis times.
     for (size_t itime = 0; itime < bkg_pert.time_size(); ++itime) {

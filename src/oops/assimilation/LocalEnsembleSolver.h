@@ -18,7 +18,6 @@
 
 #include "eckit/config/Configuration.h"
 #include "eckit/config/LocalConfiguration.h"
-#include "oops/assimilation/LocalEnsembleSolverParameters.h"
 #include "oops/base/Departures.h"
 #include "oops/base/DeparturesEnsemble.h"
 #include "oops/base/Geometry.h"
@@ -130,7 +129,7 @@ class LocalEnsembleSolver {
                                            ///< observations; set in initializeAssimilatedMask
   std::vector<ObsDataInt_> qcflags_;  ///< quality control flags
   std::unique_ptr<ObserversTLAD_> linear_hofx_;  ///< linear observer
-  LocalEnsembleSolverParameters options_;
+  eckit::LocalConfiguration inflopt_;
   int unperturbedIdx_;  ///< For stochastic filters: ensemble member index where obs are
                         ///< (optionally) unperturbed
 
@@ -198,18 +197,16 @@ LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
   : geometry_(geometry),
     obspaces_(obspaces),
     omb_(obspaces_),
+    inflopt_(config.getSubConfiguration("local ensemble DA.inflation")),
     xbmean_(xbmean),
     incvars_(incvars),
     obsconf_(config, "observations"),
     observersconf_(obsconf_, "observers") {
   // initialize and print options
 
-  options_.deserialize(config);
-  useLinearObserver_ = this->options_.useLinearObserver;
-  if (this->options_.unperturbedIdx.value() == boost::none) {
-    unperturbedIdx_ = -1;  // no unperturbed member
-  } else {
-    unperturbedIdx_ = this->options_.unperturbedIdx.value().value();
+  useLinearObserver_ = config.getBool("local ensemble DA.use linear observer", false);
+  if (config.has("local ensemble DA.unperturbed obs ensemble member index")) {
+    unperturbedIdx_ = config.getInt("local ensemble DA.unperturbed obs ensemble member index");
     if (unperturbedIdx_ < 0 || unperturbedIdx_ >= static_cast<int>(nens)) {
       const std::string e = "unperturbed obs ensemble member index out of bounds " +
                             std::to_string(unperturbedIdx_) + " for ensemble size " +
@@ -218,23 +215,26 @@ LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
       oops::Log::error() << e << std::endl;
       throw eckit::BadParameter(e);
     }
+  } else {
+    unperturbedIdx_ = -1;  // no unperturbed member
   }
-  const LocalEnsembleSolverInflationParameters & inflopt = this->options_.infl;
   Log::info() << "Multiplicative inflation will be applied with multCoeff=" <<
-                 inflopt.mult << std::endl;
-  if (inflopt.doRtpp()) {
+                 inflopt_.getDouble("mult", 1.0) << std::endl;
+  const double rtpp = inflopt_.getDouble("rtpp", 0.0);
+  const double rtps = inflopt_.getDouble("rtps", 0.0);
+  if (rtpp > 0.0 && rtpp <= 1.0) {
       Log::info() << "RTPP inflation will be applied with rtppCoeff=" <<
-                    inflopt.rtpp << std::endl;
+                    rtpp << std::endl;
   } else {
       Log::info() << "RTPP inflation is not applied rtppCoeff is out of bounds (0,1], rtppCoeff="
-                  << inflopt.rtpp << std::endl;
+                  << rtpp << std::endl;
   }
-  if (inflopt.doRtps()) {
+  if (rtps > 0.0 && rtps <= 1.0) {
     Log::info() << "RTPS inflation will be applied with rtpsCoeff=" <<
-                    inflopt.rtps << std::endl;
+                    rtps << std::endl;
   } else {
     Log::info() << "RTPS inflation is not applied rtpsCoeff is out of bounds (0,1], rtpsCoeff="
-                << inflopt.rtps << std::endl;
+                << rtps << std::endl;
   }
   for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
     ObsDataInt_ qcflags(obspaces_[jj], obspaces_[jj].obsvariables());

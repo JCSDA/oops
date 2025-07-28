@@ -157,8 +157,7 @@ void StochasticLETKF<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
   // compute transformation matrix, save in Wa_
   // implements perturbed observation version of LETKF from Hunt et al. 2007
   util::Timer timer(classname(), "computeWeights");
-  const LocalEnsembleSolverInflationParameters & inflopt = this->options_.infl;
-  const double infl = inflopt.mult;
+  const double infl = this->inflopt_.getDouble("mult", 1.0);
 
   oops::stoETKF_computeWeights(dy, Yb, YbOrig, invVarR, infl, this->Wa_);
 }
@@ -175,7 +174,7 @@ void StochasticLETKF<MODEL, OBS>::applyWeights(const IncrementSet_ & bkg_pert,
                                     ana_pert,
                                     i,
                                     this->Wa_,
-                                    this->options_.infl);
+                                    this->inflopt_);
 }
 
 // -----------------------------------------------------------------------------

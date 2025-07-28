@@ -142,8 +142,7 @@ void StochasticGETKF<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
                                                  const Eigen::VectorXd & invVarR) {
   // compute transformation matrix, save in Wa_
   util::Timer timer(classname(), "computeWeights");
-  const LocalEnsembleSolverInflationParameters & inflopt = this->options_.infl;
-  const float infl = inflopt.mult;
+  const double infl = this->inflopt_.getDouble("mult", 1.0);
 
   oops::stoETKF_computeWeights(dy, Yb, YbOrig, invVarR, infl, this->Wa_);
 }
@@ -160,7 +159,7 @@ void StochasticGETKF<MODEL, OBS>::applyWeights(const IncrementSet_ & bkg_pert,
                                     ana_pert,
                                     i,
                                     this->Wa_,
-                                    this->options_.infl,
+                                    this->inflopt_,
                                     &(this->vertloc_));
 }
 
