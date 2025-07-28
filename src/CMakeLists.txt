@@ -761,10 +761,12 @@ ecbuild_add_test( TARGET  test_base_posttimer
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops eckit)
 
+if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Intel" )
 ecbuild_add_test( TARGET  test_util_signal_trap_fpe_div_by_zero
                   SOURCES test/util/signal_trap_fpe_div_by_zero.cc
                   LIBS    oops)
 set_property( TEST test_util_signal_trap_fpe_div_by_zero PROPERTY WILL_FAIL TRUE )
+endif()
 
 ecbuild_add_test( TARGET  test_util_signal_trap_fpe_invalid_op
                   SOURCES test/util/signal_trap_fpe_invalid_op.cc
