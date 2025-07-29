@@ -26,41 +26,8 @@
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
-#include "oops/util/parameters/OptionalParameter.h"
-#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
-
-// -----------------------------------------------------------------------------
-
-/// \brief Top-level options taken by the EnsMeanAndVariance application.
-template <typename MODEL>
-class EnsMeanAndVarianceParameters : public ApplicationParameters {
-  OOPS_CONCRETE_PARAMETERS(EnsMeanAndVarianceParameters, ApplicationParameters)
-
- public:
-  typedef StateEnsembleParameters<MODEL>                  StateEnsembleParameters_;
-
-  /// Geometry parameters.
-  RequiredParameter<eckit::LocalConfiguration> resolConfig{"geometry", this};
-
-  /// Ensemble parameters.
-  RequiredParameter<StateEnsembleParameters_> ensembleConfig{"ensemble", this};
-
-  /// Output increment parameters for variance.
-  OptionalParameter<eckit::LocalConfiguration> outputStdDevConfig{"standard deviation output",
-                                                 this};
-  OptionalParameter<eckit::LocalConfiguration> outputStdDevConfigLL
-                  {"standard deviation to structured grid", this};
-  OptionalParameter<eckit::LocalConfiguration> outputVarConfig{"variance output", this};
-  OptionalParameter<eckit::LocalConfiguration> outputVarConfigLL
-                  {"ensvariance to structured grid", this};
-
-  /// Output state parameters for mean.
-  OptionalParameter<eckit::LocalConfiguration> outputMeanConfig{"mean output", this};
-  OptionalParameter<eckit::LocalConfiguration> outputMeanConfigLL
-                   {"ensmean to structured grid", this};
-};
 
 // -----------------------------------------------------------------------------
 
@@ -69,7 +36,6 @@ template <typename MODEL> class EnsMeanAndVariance : public Application {
   typedef Increment<MODEL>                         Increment_;
   typedef State<MODEL>                             State_;
   typedef StateEnsemble<MODEL>                     StateEnsemble_;
-  typedef EnsMeanAndVarianceParameters<MODEL>      EnsMeanAndVarianceParameters_;
 
  public:
   // -----------------------------------------------------------------------------
@@ -79,15 +45,12 @@ template <typename MODEL> class EnsMeanAndVariance : public Application {
   virtual ~EnsMeanAndVariance() {}
   // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const override {
-//  Deserialize parameters
-    EnsMeanAndVarianceParameters_ params;
-    params.deserialize(fullConfig);
-
 //  Setup Geometry
-    const Geometry_ resol(params.resolConfig, this->getComm());
+    const Geometry_ resol(eckit::LocalConfiguration(fullConfig, "geometry"), this->getComm());
 
 //  Setup ensemble of states
-    const StateEnsemble_ stateEnsemble(resol, params.ensembleConfig);
+    eckit::LocalConfiguration ensConf(fullConfig, "ensemble");
+    const StateEnsemble_ stateEnsemble(resol, ensConf);
     const State_ ensmean = stateEnsemble.mean();
     const Increment_ sigb2 = stateEnsemble.variance();
 
@@ -95,19 +58,19 @@ template <typename MODEL> class EnsMeanAndVariance : public Application {
     if (fullConfig.has("mean output"))
       ensmean.write(eckit::LocalConfiguration(fullConfig, "mean output"));
 
-    if (params.outputMeanConfigLL.value() != boost::none) {
-      const eckit::LocalConfiguration latlonConf = params.outputMeanConfigLL.value().value();
+    if (fullConfig.has("ensmean to structured grid")) {
+      const eckit::LocalConfiguration latlonConf(fullConfig, "ensmean to structured grid");
       const StructuredGridWriter<MODEL> latlon(latlonConf, resol);
       latlon.interpolateAndWrite(ensmean);
     }
     Log::test() << "Mean: " << std::endl << ensmean << std::endl;
 
 //  Write variance to file
-    if (params.outputVarConfig.value() != boost::none)
-        sigb2.write(params.outputVarConfig.value().value());
+    if (fullConfig.has("variance output"))
+      sigb2.write(eckit::LocalConfiguration(fullConfig, "variance output"));
 
-    if (params.outputVarConfigLL.value() != boost::none) {
-      const eckit::LocalConfiguration latlonConf = params.outputVarConfigLL.value().value();
+    if (fullConfig.has("ensvariance to structured grid")) {
+      const eckit::LocalConfiguration latlonConf(fullConfig, "ensvariance to structured grid");
       const StructuredGridWriter<MODEL> latlon(latlonConf, resol);
       latlon.interpolateAndWrite(sigb2, ensmean);
     }
@@ -116,15 +79,16 @@ template <typename MODEL> class EnsMeanAndVariance : public Application {
 //  Compute and write standard deviation to file, if it was requested
 //  The std dev is computed via a generic atlas algorithm; computing it only when requested allows
 //  this executable to work with model interfaces with non-conforming atlas interfaces.
-    if ((params.outputStdDevConfig.value() != boost::none)
-        || (params.outputStdDevConfigLL.value() != boost::none)) {
+    if (fullConfig.has("standard deviation output")
+        || fullConfig.has("standard deviation to structured grid")) {
       const Increment_ sigb = stateEnsemble.stddev();
 
-      if (params.outputStdDevConfig.value() != boost::none) {
-        sigb.write(params.outputStdDevConfig.value().value());
+      if (fullConfig.has("standard deviation output")) {
+        sigb.write(eckit::LocalConfiguration(fullConfig, "standard deviation output"));
       }
-      if (params.outputStdDevConfigLL.value() != boost::none) {
-        const eckit::LocalConfiguration latlonConf = params.outputStdDevConfigLL.value().value();
+      if (fullConfig.has("standard deviation to structured grid")) {
+        const eckit::LocalConfiguration latlonConf(fullConfig,
+                                                   "standard deviation to structured grid");
         const StructuredGridWriter<MODEL> latlon(latlonConf, resol);
         latlon.interpolateAndWrite(sigb, ensmean);
       }

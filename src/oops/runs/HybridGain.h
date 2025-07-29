@@ -20,53 +20,8 @@
 #include "oops/runs/Application.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/ConfigHelpers.h"
-#include "oops/util/parameters/OptionalParameter.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
-
-class HybridWeightsParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(HybridWeightsParameters, Parameters);
-
- public:
-  /// Weight applied to the control member.
-  RequiredParameter<double> control{"control", this};
-
-  /// Weight applied to the ensemble mean.
-  RequiredParameter<double> ensemble{"ensemble", this};
-};
-
-/// Options taken by the HybridGain application.
-template <typename MODEL> class HybridGainParameters : public ApplicationParameters {
-  OOPS_CONCRETE_PARAMETERS(HybridGainParameters, ApplicationParameters);
-
- public:
-  /// Geometry parameters.
-  RequiredParameter<eckit::LocalConfiguration> geometry{"geometry", this};
-
-  /// Hybrid weights.
-  RequiredParameter<HybridWeightsParameters> hybridWeights{"hybrid weights", this};
-
-  /// Hybrid type.
-  RequiredParameter<std::string> hybridType{"hybrid type", this};
-
-  /// Control state parameters.
-  RequiredParameter<eckit::LocalConfiguration> control{"control", this};
-
-  /// Ensemble mean posterior.
-  RequiredParameter<eckit::LocalConfiguration>
-      ensembleMeanPosterior{"ensemble mean posterior", this};
-
-  /// Ensemble mean prior, required if hybrid type is "average increment".
-  OptionalParameter<eckit::LocalConfiguration> ensembleMeanPrior{"ensemble mean prior", this};
-
-  /// List of ensemble states.
-  RequiredParameter<std::vector<eckit::LocalConfiguration>> ensemble{"ensemble", this};
-
-  /// Output parameter for recentered state
-  RequiredParameter<eckit::LocalConfiguration> recenteredOutput{"recentered output", this};
-};
 
 // -----------------------------------------------------------------------------
 
@@ -75,8 +30,6 @@ template <typename MODEL> class HybridGain : public Application {
   typedef Increment<MODEL>                  Increment_;
   typedef State<MODEL>                      State_;
 
-  typedef HybridGainParameters<MODEL>  HybridGainParameters_;
-
  public:
   // -----------------------------------------------------------------------------
   explicit HybridGain(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {}
@@ -84,27 +37,24 @@ template <typename MODEL> class HybridGain : public Application {
   virtual ~HybridGain() {}
   // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const override {
-    // Deserialize parameters
-    HybridGainParameters_ params;
-    params.deserialize(fullConfig);
-
     // Setup Geometry
-    const Geometry_ resol(params.geometry, this->getComm());
+    const Geometry_ resol(eckit::LocalConfiguration(fullConfig, "geometry"), this->getComm());
 
     // Read averaging weights
-    const double alphaControl = params.hybridWeights.value().control;
-    const double alphaEnsemble = params.hybridWeights.value().ensemble;
+    const double alphaControl = fullConfig.getDouble("hybrid weights.control");
+    const double alphaEnsemble = fullConfig.getDouble("hybrid weights.ensemble");
 
     // Read hybrid type
-    const std::string hybridType = params.hybridType;
+    const std::string hybridType = fullConfig.getString("hybrid type");
 
     // Get control state
-    const State_ xaControl(resol, params.control);
+    const State_ xaControl(resol, eckit::LocalConfiguration(fullConfig, "control"));
     Log::test() << "Control: " << std::endl << xaControl << std::endl;
     const Variables vars = xaControl.variables();
 
     // Get posterior ensemble mean
-    const State_ xaEmeanPost(resol, params.ensembleMeanPosterior);
+    const State_ xaEmeanPost(resol,
+                             eckit::LocalConfiguration(fullConfig, "ensemble mean posterior"));
     Log::test() << "Ensemble mean posterior: " << std::endl << xaEmeanPost << std::endl;
 
     // Compute new center
@@ -115,7 +65,7 @@ template <typename MODEL> class HybridGain : public Application {
       // a1+a2 have to equal to 1
 
       // Check we don't have an unused option:
-      if (params.ensembleMeanPrior.value() != boost::none) {
+      if (fullConfig.has("ensemble mean prior")) {
         throw eckit::BadValue("The HybridGain application expects the option 'ensemble mean prior' "
                               "to be set only when 'hybrid type' is 'average increment', but this "
                               "option was provided with 'average analysis'.");
@@ -131,14 +81,15 @@ template <typename MODEL> class HybridGain : public Application {
       // Note: a1+a2 no longer need to add to one
 
       // Check we got the necessary option:
-      if (params.ensembleMeanPrior.value() == boost::none) {
+      if (!fullConfig.has("ensemble mean prior")) {
         throw eckit::BadValue("The HybridGain application expects the option 'ensemble mean prior' "
                               "to be set when 'hybrid type' is 'average increment', but this "
                               "option was not provided.");
       }
 
       // Get prior ensemble mean
-      const State_ xfEmeanPrior(resol, params.ensembleMeanPrior.value().value());
+      const State_ xfEmeanPrior(resol,
+                                eckit::LocalConfiguration(fullConfig, "ensemble mean prior"));
       Log::test() << "Ensemble mean prior: " << std::endl << xfEmeanPrior << std::endl;
       // compute ensemble mean increment
       Increment_ pertEns(resol, vars, xaControl.validTime());
@@ -157,25 +108,25 @@ template <typename MODEL> class HybridGain : public Application {
     }
 
     // Output new center
-    eckit::LocalConfiguration centeredOutput = params.recenteredOutput;
+    eckit::LocalConfiguration centeredOutput(fullConfig, "recentered output");
     util::setMember(centeredOutput, 0);
     xNewCenter.write(centeredOutput);
     Log::test() << "new center : " << xNewCenter << std::endl;
 
     // Get ensemble parameters
-    const std::vector<eckit::LocalConfiguration>& ensParams = params.ensemble;
-    const int nens = ensParams.size();
+    std::vector<eckit::LocalConfiguration> ensConf = fullConfig.getSubConfigurations("ensemble");
+    const int nens = ensConf.size();
 
     // Recenter ensemble around new center and save
     for (int jj = 0; jj < nens; ++jj) {
-      State_ x(resol, ensParams[jj]);
+      State_ x(resol, ensConf[jj]);
       Increment_ pert(resol, vars, x.validTime());
       pert.diff(x, xaEmeanPost);
       x = xNewCenter;
       x += pert;
 
       // Save recentered member
-      eckit::LocalConfiguration recenteredOutput = params.recenteredOutput;
+      eckit::LocalConfiguration recenteredOutput(fullConfig, "recentered output");
       util::setMember(recenteredOutput, jj+1);
       x.write(recenteredOutput);
       Log::test() << "Recentered member " << jj << " : " << x << std::endl;

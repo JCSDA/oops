@@ -17,7 +17,6 @@
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
 #include "oops/base/IncrementEnsemble.h"
-#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/State.h"
 #include "oops/base/StateEnsemble.h"
 #include "oops/base/StructuredGridWriter.h"
@@ -28,83 +27,10 @@
 #include "oops/util/ConfigFunctions.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
-#include "oops/util/parameters/OptionalParameter.h"
-#include "oops/util/parameters/Parameter.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
 
 // -----------------------------------------------------------------------------
-
-template <typename MODEL> class StateToStructuredGridParameters : public ApplicationParameters {
-  OOPS_CONCRETE_PARAMETERS(StateToStructuredGridParameters, ApplicationParameters)
-  typedef State<MODEL>                   State_;
-  typedef Geometry<MODEL>                Geometry_;
-
- public:
-  RequiredParameter<eckit::LocalConfiguration> stateGeometry{"state geometry", this};
-  RequiredParameter<eckit::LocalConfiguration> state{"state", this};
-  RequiredParameter<eckit::LocalConfiguration> structuredGridInterp
-                   {"structured grid interpolation", this};
-};
-
-template <typename MODEL> class IncToStructuredGridParameters : public ApplicationParameters {
-  OOPS_CONCRETE_PARAMETERS(IncToStructuredGridParameters, ApplicationParameters)
-  typedef Increment<MODEL>               Increment_;
-  typedef Geometry<MODEL>                Geometry_;
-
- public:
-  RequiredParameter<eckit::LocalConfiguration>  incGeometry{"increment geometry", this};
-  RequiredParameter<Variables>                  vars{"variables", this};
-  RequiredParameter<util::DateTime>             date{"date", this};
-  RequiredParameter<eckit::LocalConfiguration>  increment{"increment", this};
-  RequiredParameter<eckit::LocalConfiguration>  structuredGridInterp
-                   {"structured grid interpolation", this};
-};
-
-template <typename MODEL> class StateEnsToStructuredGridParameters : public ApplicationParameters {
-  OOPS_CONCRETE_PARAMETERS(StateEnsToStructuredGridParameters, ApplicationParameters)
-  typedef StateEnsembleParameters<MODEL> StateEnsembleParameters_;
-  typedef Geometry<MODEL>                Geometry_;
-
- public:
-  RequiredParameter<eckit::LocalConfiguration> stateGeometry{"state geometry", this};
-  RequiredParameter<StateEnsembleParameters_>  stateEnsemble{"states", this};
-  RequiredParameter<eckit::LocalConfiguration> structuredGridInterp
-                   {"structured grid interpolation", this};
-};
-
-template <typename MODEL> class IncEnsToStructuredGridParameters : public ApplicationParameters {
-  OOPS_CONCRETE_PARAMETERS(IncEnsToStructuredGridParameters, ApplicationParameters)
-  typedef IncrementEnsembleParameters<MODEL> IncrementEnsembleParameters_;
-  typedef Geometry<MODEL>                Geometry_;
-
- public:
-  RequiredParameter<eckit::LocalConfiguration>    incrementGeometry{"increment geometry", this};
-  RequiredParameter<IncrementEnsembleParameters_> incrementEnsemble{"increments", this};
-  RequiredParameter<Variables>                    incrementVariables{"increment variables", this};
-  RequiredParameter<eckit::LocalConfiguration>    structuredGridInterp
-                   {"structured grid interpolation", this};
-};
-
-template <typename MODEL> class ConvertToStructuredGridParameters : public ApplicationParameters {
-  OOPS_CONCRETE_PARAMETERS(ConvertToStructuredGridParameters, ApplicationParameters)
-  typedef StateEnsToStructuredGridParameters<MODEL>       StateEnsToStructuredGridParameters_;
-  typedef IncEnsToStructuredGridParameters<MODEL>         IncEnsToStructuredGridParameters_;
-  typedef StateToStructuredGridParameters<MODEL>          StateToStructuredGridParameters_;
-  typedef IncToStructuredGridParameters<MODEL>            IncToStructuredGridParameters_;
-
- public:
-  OptionalParameter<StateEnsToStructuredGridParameters_>
-                   stateEnsToStructuredGrid{"state ensemble to structured grid", this};
-  OptionalParameter<IncEnsToStructuredGridParameters_>
-                   incEnsToStructuredGrid{"increment ensemble to structured grid", this};
-  OptionalParameter<std::vector<StateToStructuredGridParameters_>>
-                   stateToStructuredGrid{"states to structured grid", this};
-  OptionalParameter<std::vector<IncToStructuredGridParameters_>>
-                   incToStructuredGrid{"increments to structured grid", this};
-};
 
 template <typename MODEL> class ConvertToStructuredGrid : public Application {
   typedef Geometry<MODEL>                           Geometry_;
@@ -113,9 +39,7 @@ template <typename MODEL> class ConvertToStructuredGrid : public Application {
   typedef Increment<MODEL>                          Increment_;
   typedef IncrementEnsemble<MODEL>                  IncrementEnsemble_;
   typedef std::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
-  typedef StructuredGridWriter<MODEL>                   StructuredGridGridWriter_;
-
-  typedef ConvertToStructuredGridParameters<MODEL>          ConvertToStructuredGridParameters_;
+  typedef StructuredGridWriter<MODEL>               StructuredGridGridWriter_;
 
  public:
 // -----------------------------------------------------------------------------
@@ -125,20 +49,15 @@ template <typename MODEL> class ConvertToStructuredGrid : public Application {
   virtual ~ConvertToStructuredGrid() {}
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const override {
-//  Deserialize parameters
-    ConvertToStructuredGridParameters_ params;
-    params.deserialize(fullConfig);
-
-// -----------------------------------------------------------------------------
-
 //  Interpolate state ensemble if provided
-    if (params.stateEnsToStructuredGrid.value() != boost::none) {
+    const eckit::LocalConfiguration stateEns =
+        fullConfig.getSubConfiguration("state ensemble to structured grid");
+    if (!stateEns.empty()) {
       Log::info() << "Interpolating State Ensemble" << std::endl;
-      Geometry_ resol_(params.stateEnsToStructuredGrid.value()->stateGeometry, this->getComm());
-      StateEnsemble_ statesToInterp_(resol_, params.stateEnsToStructuredGrid.value()->
-                                                                 stateEnsemble.value());
-      const eckit::LocalConfiguration structuredgridConf =
-        params.stateEnsToStructuredGrid.value()->structuredGridInterp.value();
+      Geometry_ resol_(eckit::LocalConfiguration(stateEns, "state geometry"), this->getComm());
+      eckit::LocalConfiguration statesConf(stateEns, "states");
+      StateEnsemble_ statesToInterp_(resol_, statesConf);
+      const eckit::LocalConfiguration structuredgridConf(stateEns, "structured grid interpolation");
       const StructuredGridGridWriter_ structuredGridWriter_(structuredgridConf, resol_);
       size_t numstates = statesToInterp_.size();
       for (size_t jm=0; jm < numstates; jm++) {
@@ -150,15 +69,15 @@ template <typename MODEL> class ConvertToStructuredGrid : public Application {
 // -----------------------------------------------------------------------------
 
 //  Interpolate individual states if provided
-    if (params.stateToStructuredGrid.value() != boost::none) {
-      Log::info() << "Interpolating Individual State(s) " << std::endl;
-      size_t numstates = params.stateToStructuredGrid.value()->size();
-      for (size_t jm=0; jm < numstates; jm++) {
-        Geometry_ resol_(params.stateToStructuredGrid.value()->at(jm).stateGeometry,
+    if (fullConfig.has("states to structured grid")) {
+      const std::vector<eckit::LocalConfiguration> statesConf =
+          fullConfig.getSubConfigurations("states to structured grid");
+      for (size_t jm=0; jm < statesConf.size(); jm++) {
+        Geometry_ resol_(eckit::LocalConfiguration(statesConf.at(jm), "state geometry"),
                          this->getComm());
-        State_ stateToInterp_(resol_, params.stateToStructuredGrid.value()->at(jm).state.value());
-        const eckit::LocalConfiguration structuredgridConf =
-          params.stateToStructuredGrid.value()->at(jm).structuredGridInterp.value();
+        State_ stateToInterp_(resol_, eckit::LocalConfiguration(statesConf.at(jm), "state"));
+        const eckit::LocalConfiguration structuredgridConf(statesConf.at(jm),
+                                                           "structured grid interpolation");
         const StructuredGridGridWriter_ structuredGridWriter_(structuredgridConf, resol_);
         structuredGridWriter_.interpolateAndWrite(stateToInterp_);
         Log::test() << structuredGridWriter_ << std::endl;
@@ -168,16 +87,18 @@ template <typename MODEL> class ConvertToStructuredGrid : public Application {
 // -----------------------------------------------------------------------------
 
 //  Interpolate individual increments if provided
-    if (params.incToStructuredGrid.value() != boost::none) {
-      Log::info() << "Interpolating Individual Increment(s)" << std::endl;
-      size_t numstates = params.incToStructuredGrid.value()->size();
-      for (size_t jm=0; jm < numstates; jm++) {
-        Geometry_ resol_(params.incToStructuredGrid.value()->at(jm).incGeometry, this->getComm());
-        Increment_ incToInterp_(resol_, params.incToStructuredGrid.value()->at(jm).vars.value(),
-                                        params.incToStructuredGrid.value()->at(jm).date.value());
-        incToInterp_.read(params.incToStructuredGrid.value()->at(jm).increment.value());
-        const eckit::LocalConfiguration structuredgridConf =
-          params.stateToStructuredGrid.value()->at(jm).structuredGridInterp.value();
+    if (fullConfig.has("increments to structured grid")) {
+      const std::vector<eckit::LocalConfiguration> incsConf =
+          fullConfig.getSubConfigurations("increments to structured grid");
+      for (size_t jm=0; jm < incsConf.size(); jm++) {
+        Geometry_ resol_(eckit::LocalConfiguration(incsConf.at(jm), "increment geometry"),
+                         this->getComm());
+        const Variables vars(incsConf[jm], "variables");
+        const util::DateTime tt(incsConf[jm].getString("date"));
+        Increment_ incToInterp_(resol_, vars, tt);
+        incToInterp_.read(eckit::LocalConfiguration(incsConf.at(jm), "increment"));
+        const eckit::LocalConfiguration structuredgridConf(incsConf.at(jm),
+                                                           "structured grid interpolation");
         const StructuredGridGridWriter_ structuredGridWriter_(structuredgridConf, resol_);
         // This supports output on model levels only; to output on pressure levels would need to
         // read in a reference background from which to read the vertical pressure coordinate
@@ -185,16 +106,18 @@ template <typename MODEL> class ConvertToStructuredGrid : public Application {
         Log::test() << structuredGridWriter_ << std::endl;
       }
     }
+
 // -----------------------------------------------------------------------------
 
-    if (params.incEnsToStructuredGrid.value() != boost::none) {
+    const eckit::LocalConfiguration incEns =
+        fullConfig.getSubConfiguration("increment ensemble to structured grid");
+    if (!incEns.empty()) {
       Log::info() << "Interpolating Increment Ensemble" << std::endl;
-      Geometry_ resol_(params.incEnsToStructuredGrid.value()->incrementGeometry, this->getComm());
-      IncrementEnsemble_ incrementsToInterp_(resol_,
-                            params.incEnsToStructuredGrid.value()->incrementVariables.value(),
-                            params.incEnsToStructuredGrid.value()->incrementEnsemble.value());
-      const eckit::LocalConfiguration structuredgridConf =
-        params.incEnsToStructuredGrid.value()->structuredGridInterp.value();
+      Geometry_ resol_(eckit::LocalConfiguration(incEns, "increment geometry"), this->getComm());
+      const Variables vars(incEns, "increment variables");
+      eckit::LocalConfiguration incsConf(incEns, "increments");
+      IncrementEnsemble_ incrementsToInterp_(resol_, vars, incsConf);
+      const eckit::LocalConfiguration structuredgridConf(incEns, "structured grid interpolation");
       const StructuredGridGridWriter_ structuredGridWriter_(structuredgridConf, resol_);
       size_t numstates = incrementsToInterp_.size();
       for (size_t jm=0; jm < numstates; jm++) {

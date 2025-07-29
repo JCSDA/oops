@@ -29,6 +29,10 @@
 #include "oops/util/dot_product.h"
 #include "oops/util/Expect.h"
 #include "oops/util/Logger.h"
+#include "oops/util/parameters/OptionalParameter.h"
+#include "oops/util/parameters/Parameter.h"
+#include "oops/util/parameters/Parameters.h"
+#include "oops/util/parameters/RequiredParameter.h"
 #include "test/interface/ObsTestsFixture.h"
 #include "test/TestEnvironment.h"
 

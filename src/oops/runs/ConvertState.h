@@ -14,62 +14,20 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Geometry.h"
-#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/State.h"
 #include "oops/interface/VariableChange.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/Logger.h"
-#include "oops/util/parameters/OptionalParameter.h"
-#include "oops/util/parameters/Parameter.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
 
-// -------------------------------------------------------------------------------------------------
-// -------------------------------------------------------------------------------------------------
-
-template <typename MODEL> class ConvertStateStatesParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(ConvertStateStatesParameters, Parameters)
-  typedef State<MODEL> State_;
-
- public:
-  RequiredParameter<eckit::LocalConfiguration> input{"input", this};
-  RequiredParameter<eckit::LocalConfiguration> output{"output", this};
-};
-
-// -------------------------------------------------------------------------------------------------
-// -------------------------------------------------------------------------------------------------
-
-/// Options taken by the ConvertState application.
-template <typename MODEL> class ConvertStateParameters : public ApplicationParameters {
-  OOPS_CONCRETE_PARAMETERS(ConvertStateParameters, ApplicationParameters)
-  typedef Geometry<MODEL> Geometry_;
-
- public:
-  /// Input Geometry parameters.
-  RequiredParameter<eckit::LocalConfiguration> inputGeometry{"input geometry", this};
-
-  /// Output Geometry parameters.
-  RequiredParameter<eckit::LocalConfiguration> outputGeometry{"output geometry", this};
-
-  /// Variable change parameters (and option to do inverse).
-  OptionalParameter<eckit::LocalConfiguration> varChange{"variable change", this};
-
-  /// States to be converted
-  RequiredParameter<std::vector<ConvertStateStatesParameters<MODEL>>> states{"states", this};
-};
-
-// -------------------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------------------
 
 template <typename MODEL> class ConvertState : public Application {
   typedef Geometry<MODEL>               Geometry_;
   typedef State<MODEL>                  State_;
   typedef VariableChange<MODEL>         VariableChange_;
-  typedef ConvertStateParameters<MODEL> ConvertStateParameters_;
-  typedef ConvertStateStatesParameters<MODEL> ConvertStateStatesParameters_;
 
  public:
 // -------------------------------------------------------------------------------------------------
@@ -78,40 +36,35 @@ template <typename MODEL> class ConvertState : public Application {
   virtual ~ConvertState() {}
 // -------------------------------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const override {
-//  Deserialize parameters
-    ConvertStateParameters_ params;
-    params.deserialize(fullConfig);
-
 //  Setup resolution for input and output
-    const Geometry_ resol1(params.inputGeometry, this->getComm());
-    const Geometry_ resol2(params.outputGeometry, this->getComm());
+    const Geometry_ resol1(eckit::LocalConfiguration(fullConfig, "input geometry"),
+                           this->getComm());
+    const Geometry_ resol2(eckit::LocalConfiguration(fullConfig, "output geometry"),
+                           this->getComm());
 
     // Setup change of variable
     std::unique_ptr<VariableChange_> vc;
     oops::Variables varout;
     bool inverse = false;
-    if (params.varChange.value() != boost::none) {
-      eckit::LocalConfiguration chconf(params.varChange.value().value());
-      if (chconf.has("output variables")) {
-        vc.reset(new VariableChange_(chconf, resol2));
-        varout = Variables(chconf, "output variables");
-        inverse = chconf.getBool("do inverse", false);
-      }
+    const eckit::LocalConfiguration chconf = fullConfig.getSubConfiguration("variable change");
+    if (chconf.has("output variables")) {
+      vc.reset(new VariableChange_(chconf, resol2));
+      varout = Variables(chconf, "output variables");
+      inverse = chconf.getBool("do inverse", false);
     }
 
 //  List of input and output states
-    const int nstates = params.states.value().size();
+    const std::vector<eckit::LocalConfiguration> stateConfs =
+        fullConfig.getSubConfigurations("states");
+    const int nstates = stateConfs.size();
 
 //  Loop over states
     for (int jm = 0; jm < nstates; ++jm) {
-//    Read current state parameters
-      const ConvertStateStatesParameters_ stateParams = params.states.value()[jm];
-
 //    Print output
       Log::info() << "Converting state " << jm+1 << " of " << nstates << std::endl;
 
 //    Read state
-      State_ xxi(resol1, stateParams.input.value());
+      State_ xxi(resol1, eckit::LocalConfiguration(stateConfs[jm], "input"));
       Log::test() << "Input state: " << xxi << std::endl;
 
 //    Copy and change resolution
@@ -133,7 +86,7 @@ template <typename MODEL> class ConvertState : public Application {
       }
 
 //    Write state
-      eckit::LocalConfiguration outconf(stateParams.toConfiguration(), "output");
+      eckit::LocalConfiguration outconf(stateConfs[jm], "output");
       xx.write(outconf);
 
       Log::test() << "Output state: " << xx << std::endl;

@@ -186,6 +186,7 @@ template<typename MODEL> class IncrementEnsemble {
                     const Geometry_ &, const Variables &, const util::DateTime &);
   /// \brief construct ensemble of perturbations by reading them from disk
   IncrementEnsemble(const Geometry_ &, const Variables &, const IncrementEnsembleParameters_ &);
+  IncrementEnsemble(const Geometry_ &, const Variables &, eckit::Configuration &);
   /// \brief construct ensemble of perturbations by reading two state ensembles (one member at a
   //         time) and taking the  difference of each set of pairs
   IncrementEnsemble(const Geometry_ &, const Variables &, const StateEnsembleParameters_ &,
@@ -285,6 +286,33 @@ IncrementEnsemble<MODEL>::IncrementEnsemble(const Geometry_ & resol,
                                             const IncrementEnsembleParameters_ & params)
   : ensemblePerturbs_()
 {
+  // Datetime for ensemble
+  util::DateTime time = params.date;
+
+  // Reserve memory to hold ensemble
+  const size_t nens = params.size();
+  ensemblePerturbs_.reserve(nens);
+
+  // Loop over all ensemble members
+  for (size_t jj = 0; jj < nens; ++jj) {
+    Increment_ dx(resol, vars, time);
+    dx.read(params.getIncrementParameters(jj));
+    ensemblePerturbs_.emplace_back(std::move(dx));
+  }
+  Log::trace() << "IncrementEnsemble:contructor (by reading increment ensemble) done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+IncrementEnsemble<MODEL>::IncrementEnsemble(const Geometry_ & resol,
+                                            const Variables & vars,
+                                            eckit::Configuration & conf)
+  : ensemblePerturbs_()
+{
+  IncrementEnsembleParameters_ params;
+  params.deserialize(conf);
+
   // Datetime for ensemble
   util::DateTime time = params.date;
 

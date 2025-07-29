@@ -21,34 +21,8 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
-
-// -----------------------------------------------------------------------------
-
-/// \brief Top-level options taken by the DiffStates application.
-template <typename MODEL>
-class DiffStatesParameters : public ApplicationParameters {
-  OOPS_CONCRETE_PARAMETERS(DiffStatesParameters, ApplicationParameters)
-
- public:
-  /// State geometry parameters.
-  RequiredParameter<eckit::LocalConfiguration> stateGeometryConf{"state geometry", this};
-
-  /// Increment geometry parameters.
-  RequiredParameter<eckit::LocalConfiguration> incGeometryConf{"increment geometry", this};
-
-  /// First state parameters.
-  RequiredParameter<eckit::LocalConfiguration> stateConf1{"state1", this};
-
-  /// Second state parameters (to take away from the first).
-  RequiredParameter<eckit::LocalConfiguration> stateConf2{"state2", this};
-
-  /// Output increment parameters.
-  RequiredParameter<eckit::LocalConfiguration> outputConfig{"output", this};
-};
 
 // -----------------------------------------------------------------------------
 
@@ -57,8 +31,6 @@ template <typename MODEL> class DiffStates : public Application {
   typedef State<MODEL>     State_;
   typedef Increment<MODEL> Increment_;
 
-  typedef DiffStatesParameters<MODEL> DiffStatesParameters_;
-
  public:
 // -----------------------------------------------------------------------------
   explicit DiffStates(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {}
@@ -66,20 +38,18 @@ template <typename MODEL> class DiffStates : public Application {
   virtual ~DiffStates() {}
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const override {
-//  Deserialize parameters
-    DiffStatesParameters_ params;
-    params.deserialize(fullConfig);
-
 //  Setup resolutions
-    const Geometry_ stateGeometry(params.stateGeometryConf, this->getComm());
-    const Geometry_ incGeometry(params.incGeometryConf, this->getComm());
+    const Geometry_ stateGeometry(eckit::LocalConfiguration(fullConfig, "state geometry"),
+                                  this->getComm());
+    const Geometry_ incGeometry(eckit::LocalConfiguration(fullConfig, "increment geometry"),
+                                this->getComm());
 
 //  Read first state
-    State_ xx1(stateGeometry, params.stateConf1);
+    State_ xx1(stateGeometry, eckit::LocalConfiguration(fullConfig, "state1"));
     Log::test() << "Input state 1: " << xx1 << std::endl;
 
 //  Read second state (to take away from the first)
-    State_ xx2(stateGeometry, params.stateConf2);
+    State_ xx2(stateGeometry, eckit::LocalConfiguration(fullConfig, "state2"));
     Log::test() << "Input state 2: " << xx2 << std::endl;
 
 //  Assertions on two states
@@ -90,7 +60,7 @@ template <typename MODEL> class DiffStates : public Application {
     dx.diff(xx1, xx2);
 
 //  Write increment
-    dx.write(params.outputConfig);
+    dx.write(eckit::LocalConfiguration(fullConfig, "output"));
 
     Log::test() << "Output increment: " << dx << std::endl;
 

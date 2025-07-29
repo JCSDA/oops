@@ -14,7 +14,6 @@
 
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
-#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/State.h"
 #include "oops/base/StateEnsemble.h"
 #include "oops/base/Variables.h"
@@ -22,45 +21,8 @@
 #include "oops/runs/Application.h"
 #include "oops/util/ConfigHelpers.h"
 #include "oops/util/DateTime.h"
-#include "oops/util/parameters/OptionalParameter.h"
-#include "oops/util/parameters/Parameter.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
-
-/// \brief Top-level options taken by the EnsRecenter application.
-template <typename MODEL>
-class EnsRecenterParameters : public ApplicationParameters {
-  OOPS_CONCRETE_PARAMETERS(EnsRecenterParameters, ApplicationParameters)
-
-  typedef Geometry<MODEL> Geometry_;
-  typedef State<MODEL> State_;
-
- public:
-  typedef StateEnsembleParameters<MODEL>    StateEnsembleParameters_;
-
-  /// Geometry parameters.
-  RequiredParameter<eckit::LocalConfiguration> geometry{"geometry", this};
-
-  /// Central state parameters.
-  RequiredParameter<eckit::LocalConfiguration> center{"center", this};
-
-  /// Parameter controlling whether the center should be zeroed out
-  Parameter<bool> zeroCenter{"zero center", false, this};
-
-  /// Parameters describing ensemble states to be recentered
-  RequiredParameter<StateEnsembleParameters_> ensemble{"ensemble", this};
-
-  /// Variables to be recentered
-  RequiredParameter<oops::Variables> recenterVars{"recenter variables", this};
-
-  /// Parameters for ensemble mean output
-  OptionalParameter<eckit::LocalConfiguration> ensmeanOutput{"ensemble meanoutput", this};
-
-  /// Parameters for recentered ensemble output
-  RequiredParameter<eckit::LocalConfiguration> recenteredOutput{"recentered output", this};
-};
 
 template <typename MODEL> class EnsRecenter : public Application {
   typedef Geometry<MODEL>   Geometry_;
@@ -75,26 +37,20 @@ template <typename MODEL> class EnsRecenter : public Application {
   virtual ~EnsRecenter() {}
   // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const override {
-    // Deserialize parameters
-    EnsRecenterParameters<MODEL> params;
-    params.deserialize(fullConfig);
-
     // Setup Geometry
-    const Geometry_ resol(params.geometry.value(), this->getComm());
+    const Geometry_ resol(eckit::LocalConfiguration(fullConfig, "geometry"), this->getComm());
 
     // Get central state
-    State_ x_center(resol, params.center.value());
+    State_ x_center(resol, eckit::LocalConfiguration(fullConfig, "center"));
 
     // Optionally zero the center
-    if (params.zeroCenter) {
+    if (fullConfig.getBool("zero center", false)) {
       x_center.zero();
     }
 
-    // Get ensemble size
-    unsigned nm = params.ensemble.value().size();
-
     // Compute ensemble mean
-    const StateEnsemble_ stateEnsemble(resol, params.ensemble);
+    eckit::LocalConfiguration ensConf(fullConfig, "ensemble");
+    const StateEnsemble_ stateEnsemble(resol, ensConf);
 
     State_ ensmean = stateEnsemble.mean();
     Log::test() << "Ensemble mean: " << std::endl << ensmean << std::endl;
@@ -105,15 +61,16 @@ template <typename MODEL> class EnsRecenter : public Application {
     }
 
     // Recenter ensemble around central and save
-    for (unsigned jj = 0; jj < nm; ++jj) {
+    Variables vars(fullConfig, "recenter variables");
+    for (unsigned jj = 0; jj < stateEnsemble.size(); ++jj) {
       State_ x(resol, stateEnsemble[jj]);
-      Increment_ pert(resol, params.recenterVars, x.validTime());
+      Increment_ pert(resol, vars, x.validTime());
       pert.diff(x, ensmean);
       x = x_center;
       x += pert;
 
       // Save recentered member
-      eckit::LocalConfiguration recenteredOutput = params.recenteredOutput;
+      eckit::LocalConfiguration recenteredOutput(fullConfig, "recentered output");
       util::setMember(recenteredOutput, jj+1);
       x.write(recenteredOutput);
       Log::test() << "Recentered member " << jj << " : " << x << std::endl;

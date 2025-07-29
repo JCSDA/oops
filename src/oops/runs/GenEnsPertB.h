@@ -22,7 +22,6 @@
 #include "oops/base/instantiateCovarFactory.h"
 #include "oops/base/Model.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
-#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State.h"
 #include "oops/base/State4D.h"
@@ -38,46 +37,6 @@
 
 namespace oops {
 
-/// Options taken by the GenEnsPertB application.
-template <typename MODEL> class GenEnsPertBParameters : public ApplicationParameters {
-  OOPS_CONCRETE_PARAMETERS(GenEnsPertBParameters, ApplicationParameters)
-
- public:
-  typedef State<MODEL>                                 State_;
-  typedef ModelAuxControl<MODEL>                       ModelAux_;
-
-  /// Geometry parameters.
-  RequiredParameter<eckit::LocalConfiguration> geometry{"geometry", this};
-
-  /// Model parameters.
-  RequiredParameter<eckit::LocalConfiguration> model{"model", this};
-
-  /// Initial state parameters.
-  RequiredParameter<eckit::LocalConfiguration> initialCondition{"initial condition", this};
-
-  /// Augmented model state.
-  Parameter<eckit::LocalConfiguration> modelAuxControl{"model aux control",
-                                                       eckit::LocalConfiguration(), this};
-
-  /// Forecast length.
-  RequiredParameter<util::Duration> forecastLength{"forecast length", this};
-
-  /// List of variables to perturb.
-  RequiredParameter<Variables> perturbedVariables{"perturbed variables", this};
-
-  /// Background error covariance model.
-  RequiredParameter<eckit::LocalConfiguration> backgroundError{"background error", this};
-
-  /// Size of the perturbed ensemble to generate.
-  RequiredParameter<int> members{"members", this};
-
-  /// Where to write the output.
-  RequiredParameter<eckit::LocalConfiguration> output{"output", this};
-
-  /// Whether to include the control as member zero
-  Parameter<bool> includeControl{"include control", false, this};
-};
-
 // -----------------------------------------------------------------------------
 
 template <typename MODEL> class GenEnsPertB : public Application {
@@ -91,8 +50,6 @@ template <typename MODEL> class GenEnsPertB : public Application {
   typedef State<MODEL>                              State_;
   typedef State4D<MODEL>                            State4D_;
 
-  typedef GenEnsPertBParameters<MODEL>              GenEnsPertBParameters_;
-
  public:
 // -----------------------------------------------------------------------------
   explicit GenEnsPertB(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {
@@ -102,12 +59,9 @@ template <typename MODEL> class GenEnsPertB : public Application {
   virtual ~GenEnsPertB() {}
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const override {
-//  Deserialize parameters
-    GenEnsPertBParameters_ params;
-    params.deserialize(fullConfig);
-
 //  Setup resolution
-    const Geometry_ resol(params.geometry, this->getComm(), oops::mpi::myself());
+    const Geometry_ resol(eckit::LocalConfiguration(fullConfig, "geometry"),
+                          this->getComm(), oops::mpi::myself());
 
 //  Setup Model
     const eckit::LocalConfiguration modelConfig(fullConfig, "model");

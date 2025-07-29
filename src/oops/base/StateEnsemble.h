@@ -168,6 +168,7 @@ template<typename MODEL> class StateEnsemble {
 
  public:
   /// Create ensemble of states
+  StateEnsemble(const Geometry_ &, eckit::Configuration &);
   StateEnsemble(const Geometry_ &, const StateEnsembleParameters_ &);
   /// Create n copies of a state in an ensemble
   StateEnsemble(const State_ &, const size_t &);
@@ -193,6 +194,27 @@ template<typename MODEL> class StateEnsemble {
 };
 
 // ====================================================================================
+
+template<typename MODEL>
+StateEnsemble<MODEL>::StateEnsemble(const Geometry_ & resol, eckit::Configuration & conf)
+  : states_(), geom_(resol) {
+  // Reserve memory to hold ensemble
+  StateEnsembleParameters_ params;
+  params.deserialize(conf);
+
+  const size_t nens = params.size();
+  states_.reserve(nens);
+
+  const size_t myrank = resol.timeComm().rank();
+
+  // Loop over all ensemble members
+  for (size_t jj = 0; jj < nens; ++jj) {
+    states_.emplace_back(resol, params.getStateConfig(jj, myrank));
+  }
+  Log::trace() << "StateEnsemble:contructor done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
 
 template<typename MODEL>
 StateEnsemble<MODEL>::StateEnsemble(const Geometry_ & resol,

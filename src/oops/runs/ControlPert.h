@@ -34,42 +34,9 @@
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Logger.h"
-#include "oops/util/parameters/Parameters.h"
 #include "oops/util/printRunStats.h"
 
 namespace oops {
-
-// -----------------------------------------------------------------------------
-
-/// \brief Top-level options taken by the ControlPert application.
-class ControlPertTemplateParameters : public ApplicationParameters {
-  OOPS_CONCRETE_PARAMETERS(ControlPertTemplateParameters, ApplicationParameters)
-
- public:
-  /// Template pattern in the \param member template file, to be substituted by the individual
-  /// ensemble members' indices left-padded with zeros (subject to \param max number of digits
-  /// in member index).
-  RequiredParameter<std::string> patternWithPad{"pattern with zero padding", this};
-
-  /// Template pattern in the \param member template file, to be substituted by the individual
-  /// ensemble members' indices without zero-padding.
-  RequiredParameter<std::string> patternNoPad{"pattern without zero padding", this};
-
-  /// Number of Pert members being run in this executable.
-  RequiredParameter<int> nPertMembers{"number of pert members", this};
-
-  /// Member index for the first Pert member that is run in this executable; for example,
-  /// if \param nmembers = 4 and \param first pert member index = 17, then the ensemble members
-  /// for this run have indices 17, 18, 19 and 20.
-  Parameter<int> firstPertMemberIndex{"first pert member index", 1, this};
-
-  /// Maximum number of digits in the ensemble members' indices (the default choice of 3 digits
-  /// means that ensemble member indices cannot exceed 999).
-  Parameter<int> memberIndexMaxDigits{"max number of digits in member index", 3, this};
-
-  /// Boolean determining whether to run variational DA for the Pert members only.
-  Parameter<bool> runPertsOnly{"run pert members only", false, this};
-};
 
 // -----------------------------------------------------------------------------
 
@@ -93,33 +60,30 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
     Log::trace() << "ControlPert: execute start" << std::endl;
     util::printRunStats("ControlPert start");
 
-//  Deserialize parameters
-    ControlPertTemplateParameters params;
-    eckit::LocalConfiguration templateConf(fullConfig, "template");
-    params.deserialize(templateConf);
-
 //  Retrieve control member configuration (for linearization)
+    eckit::LocalConfiguration tempConf(fullConfig, "template");
+    const std::string patternWithPad = tempConf.getString("pattern with zero padding");
+    const std::string patternNoPad = tempConf.getString("pattern without zero padding");
+    const int patternLength = tempConf.getInt("max number of digits in member index", 3);
     eckit::LocalConfiguration controlConf(fullConfig, "assimilation");
-    const std::string & patternWithPad = params.patternWithPad.value();
-    const std::string & patternNoPad = params.patternNoPad.value();
-    const int patternLength = params.memberIndexMaxDigits.value();
     util::seekAndReplace(controlConf, patternWithPad, 0, patternLength);
     util::seekAndReplace(controlConf, patternNoPad, std::to_string(0));
 
 //  Get the MPI partition
-    const int nPertMembers = params.nPertMembers.value();
-    const int nmembers = params.runPertsOnly.value() ? nPertMembers : nPertMembers + 1;
-    const int firstPertMember = params.firstPertMemberIndex.value();
+    const int nPertMembers = tempConf.getInt("number of pert members");
+    const bool pertonly = tempConf.getBool("run pert members only", false);
+    const int nmembers = pertonly ? nPertMembers : nPertMembers + 1;
+    const int firstPertMember = fullConfig.getInt("first pert member index", 1);
     const int lastPertMember = firstPertMember - 1 + nPertMembers;
     const int ntasks = this->getComm().size();
     const int mytask = this->getComm().rank();
     const int tasks_per_member = ntasks / nmembers;
-    const int mymember = params.runPertsOnly.value() ?
+    const int mymember = pertonly ?
                              firstPertMember + mytask / tasks_per_member :
                              ((mytask < tasks_per_member) ?
                                    0 : firstPertMember - 1 + mytask / tasks_per_member);
     Log::info() << "Running members "
-                << (params.runPertsOnly.value() ? "" : "0 (control member) and ")
+                << (pertonly ? "" : "0 (control member) and ")
                 << firstPertMember << " to " << lastPertMember << ", handled by " << ntasks
                 << " MPI tasks and " << tasks_per_member << " MPI tasks per member." << std::endl;
 
@@ -356,7 +320,7 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
     }
 
 //  The following computations can only be performed if the control member's DA is run
-    if (!params.runPertsOnly.value()) {
+    if (!pertonly) {
 //    Add the control member's analysis increment (time-shifted to the middle of the window if
 //    necessary - not ideal);.
 //    This returns the analysis state for all members including the control member

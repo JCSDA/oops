@@ -32,29 +32,13 @@
 #include "oops/runs/Forecast.h"
 
 #include "oops/util/Logger.h"
-#include "oops/util/parameters/Parameter.h"
-#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
 
 // -----------------------------------------------------------------------------
 
-/// \brief Top-level options taken by the EnsembleForecastApplication application.
-template <typename APP>
-class EnsembleForecastApplicationParameters : public ApplicationParameters {
-  OOPS_CONCRETE_PARAMETERS(EnsembleForecastApplicationParameters, ApplicationParameters)
-
- public:
-  /// Parameters containing a list of YAML files for each ensemble member to be processed.
-  RequiredParameter<std::vector<std::string>> files{"files", this};
-  RequiredParameter<int> batch{"batch", this};
-};
-
-// -----------------------------------------------------------------------------
-
 template <typename APP, typename MODEL>
 class EnsembleForecastApplication : public Application {
-  typedef EnsembleForecastApplicationParameters<APP> EnsembleForecastApplicationParameters_;
   typedef Geometry<MODEL>              Geometry_;
   typedef Model<MODEL>                 Model_;
   typedef ModelAuxControl<MODEL>       ModelAux_;
@@ -70,15 +54,10 @@ class EnsembleForecastApplication : public Application {
   virtual ~EnsembleForecastApplication() {}
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const override {
-//  Deserialize parameters
-    EnsembleForecastApplicationParameters_ params;
-    params.deserialize(fullConfig);
-
-
 //  Get the list of YAML files
-    const std::vector<std::string> &files = params.files.value();
-    const int batchsize = params.batch.value();
-    Log::info() << "params are here " << params << std::endl;
+    const std::vector<std::string> files = fullConfig.getStringVector("files");
+    const int batchsize = fullConfig.getInt("batch");
+    Log::info() << "params are here " << fullConfig << std::endl;
     Log::info() << "EnsembleForecastApplication YAML files:" << files << std::endl;
 
 //  Get the MPI partition

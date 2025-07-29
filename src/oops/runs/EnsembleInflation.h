@@ -18,62 +18,14 @@
 #include "oops/base/Inflation.h"
 #include "oops/base/InflationBase.h"
 #include "oops/base/instantiateInflationFactory.h"
-#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/State.h"
 #include "oops/base/StateSet.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/FieldSetOperations.h"
 #include "oops/util/Logger.h"
-#include "oops/util/parameters/OptionalParameter.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
-
-enum class AnalysisType {
-  STATE, INCREMENT
-};
-
-struct AnalysisTypeParameterTraitsHelper {
-  typedef AnalysisType EnumType;
-  static constexpr char enumTypeName[] = "AnalysisType";
-  static constexpr util::NamedEnumerator<AnalysisType> namedValues[] = {
-    { AnalysisType::STATE, "state" },
-    { AnalysisType::INCREMENT, "increment" }
-  };
-};
-
-template <>
-struct ParameterTraits<AnalysisType> :
-  public EnumParameterTraits<AnalysisTypeParameterTraitsHelper>
-{};
-
-constexpr char AnalysisTypeParameterTraitsHelper::enumTypeName[];
-constexpr util::NamedEnumerator<AnalysisType> AnalysisTypeParameterTraitsHelper::namedValues[];
-
-/// Options taken by the EnsembleInflation application.
-template <typename MODEL> class EnsembleInflationParameters : public ApplicationParameters {
-  OOPS_CONCRETE_PARAMETERS(EnsembleInflationParameters, ApplicationParameters);
-
-  typedef Geometry<MODEL> Geometry_;
-  typedef State<MODEL> State_;
-
- public:
-  RequiredParameter<eckit::LocalConfiguration> geometry{
-      "geometry", "Geometry parameters", this};
-  RequiredParameter<eckit::LocalConfiguration> background{
-      "background", "Background ensemble states config", this};
-  RequiredParameter<eckit::LocalConfiguration> analysis{
-      "analysis", "Analysis ensemble config", this};
-  OptionalParameter<Variables> analysisVariables{"analysis variables",
-      "required input when the analysis type is increment, not required for state", this};
-  RequiredParameter<AnalysisType> analysisType{"analysis type", this};
-  RequiredParameter<eckit::LocalConfiguration> inflation{"inflation", this};
-  RequiredParameter<eckit::LocalConfiguration> output{
-      "output", "analysis mean and ensemble members output", this};
-};
-
 
 template <typename MODEL> class EnsembleInflation : public Application {
   typedef Geometry<MODEL>                   Geometry_;
@@ -81,7 +33,6 @@ template <typename MODEL> class EnsembleInflation : public Application {
   typedef IncrementSet<MODEL>               IncrementSet_;
   typedef State<MODEL>                      State_;
   typedef StateSet<MODEL>                   StateSet_;
-
 
  public:
 // -----------------------------------------------------------------------------
@@ -98,31 +49,29 @@ template <typename MODEL> class EnsembleInflation : public Application {
 // -----------------------------------------------------------------------------
 
   int execute(const eckit::Configuration & fullConfig) const override {
-    EnsembleInflationParameters<MODEL> params;
-    params.deserialize(fullConfig);
-
     // Setup geometry
-    const Geometry_ geometry(params.geometry, this->getComm(), oops::mpi::myself());
+    const Geometry_ geometry(eckit::LocalConfiguration(fullConfig, "geometry"),
+                             this->getComm(), oops::mpi::myself());
 
     // Read all background ensemble members
-    StateSet_ bgens(geometry, params.background);
+    StateSet_ bgens(geometry, eckit::LocalConfiguration(fullConfig, "background"));
 
     // Get inflation subconfigurations
-    eckit::LocalConfiguration infConf = params.inflation;
+    eckit::LocalConfiguration infConf(fullConfig, "inflation");
     std::vector<eckit::LocalConfiguration> subconfigs = infConf.getSubConfigurations();
 
     // Carry out inflation depending on whether analysis is in the form of increments or states
-    if (params.analysisType.value() == AnalysisType::STATE) {
-      Inflation<MODEL, StateSet_> inflation(params.analysis, geometry, bgens);
+    eckit::LocalConfiguration anConf(fullConfig, "analysis");
+    if (fullConfig.getString("analysis type") == "state") {
+      Inflation<MODEL, StateSet_> inflation(anConf, geometry, bgens);
       inflation.calculate(subconfigs);
-      inflation.save(params.output);
+      inflation.save(eckit::LocalConfiguration(fullConfig, "output"));
     } else {
-      ASSERT(params.analysisVariables.value() != boost::none);
       // Setup analysis variables
-      Variables anvars = *params.analysisVariables.value();
-      Inflation<MODEL, IncrementSet_> inflation(params.analysis, geometry, bgens, anvars);
+      Variables anvars(fullConfig, "analysis variables");
+      Inflation<MODEL, IncrementSet_> inflation(anConf, geometry, bgens, anvars);
       inflation.calculate(subconfigs);
-      inflation.save(params.output);
+      inflation.save(eckit::LocalConfiguration(fullConfig, "output"));
     }
     return 0;
 }

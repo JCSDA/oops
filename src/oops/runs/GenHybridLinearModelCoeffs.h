@@ -18,15 +18,6 @@
 
 namespace oops {
 
-/// Options taken by the GenHybridLinearModelCoeffs application.
-template <typename MODEL>
-class GenHybridLinearModelCoeffsParameters : public ApplicationParameters {
-  OOPS_CONCRETE_PARAMETERS(GenHybridLinearModelCoeffsParameters, ApplicationParameters);
- public:
-  RequiredParameter<eckit::LocalConfiguration> hybridLinearModel{"hybrid linear model", this};
-  RequiredParameter<eckit::LocalConfiguration> updateGeometry{"update geometry", this};
-};
-
 /// \brief Application for generating and writing HybridLinearModel coefficients ahead of 4D-Var.
 ///
 /// \details An application that instantiates a HybridLinearModel with the configuration and update
@@ -36,7 +27,6 @@ class GenHybridLinearModelCoeffsParameters : public ApplicationParameters {
 
 template <typename MODEL>
 class GenHybridLinearModelCoeffs : public Application {
-  typedef GenHybridLinearModelCoeffsParameters<MODEL>    Parameters_;
   typedef Geometry<MODEL>                                Geometry_;
   typedef HybridLinearModel<MODEL>                       HybridLinearModel_;
 

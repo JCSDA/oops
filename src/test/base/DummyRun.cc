@@ -11,22 +11,14 @@
 #include "oops/runs/Application.h"
 #include "oops/runs/Run.h"
 #include "oops/util/Logger.h"
-#include "oops/util/parameters/RequiredParameter.h"
 
 namespace test {
-  class DummyAppParameters : public oops::ApplicationParameters {
-    OOPS_CONCRETE_PARAMETERS(DummyAppParameters, ApplicationParameters);
-   public:
-    oops::RequiredParameter<std::string> hello{"hello", "Who to greet?", this};
-  };
   class DummyApp: public oops::Application {
    public:
     explicit DummyApp(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {}
     virtual ~DummyApp() = default;
     int execute(const eckit::Configuration & fullConfig) const override {
-      DummyAppParameters params;
-      params.deserialize(fullConfig);
-      std::string hello_str = params.hello;
+      std::string hello_str = fullConfig.getString("hello");
       oops::Log::info() << "hello " << hello_str << std::endl;
       return 0;
     }

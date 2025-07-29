@@ -24,7 +24,6 @@
 #include "oops/base/Increment.h"
 #include "oops/base/Observations.h"
 #include "oops/base/ObsSpaces.h"
-#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/StateEnsemble4D.h"
 #include "oops/base/StateSet.h"
 #include "oops/base/StateSetSaver.h"
@@ -43,123 +42,6 @@
 namespace oops {
 
 // -----------------------------------------------------------------------------
-/// \brief Options controlling output and observer for LocalEnsembleDA application.
-class LocalEnsembleDADriverParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(LocalEnsembleDADriverParameters, Parameters)
-
- public:
-  Parameter<bool> updateObsConfig{"update obs config with geometry info",
-                  "controls whether observations config needs to be updated with information "
-                  "about geometry distribution",
-                  true, this};
-  Parameter<bool> doTestPrints{"do test prints",
-                  "controls whether additional output is printed to test stream",
-                  true, this};
-  Parameter<bool> readHofX{"read HX from disk",
-                  "controls whether H(x) is read or computed", false, this};
-  Parameter<bool> runObsOnly{"run as observer only",
-                  "controls whether only observer is run, or observer and solver",
-                  false, this};
-  Parameter<bool> savePostMean{"save posterior mean",
-                  "controls whether posterior (analysis) ensemble mean is saved",
-                  false, this};
-  Parameter<bool> savePostEns{"save posterior ensemble",
-                  "controls whether posterior (analysis) ensemble is saved",
-                  true, this};
-  Parameter<bool> savePriorMean{"save prior mean",
-                  "controls whether prior (background) ensemble mean is saved",
-                  false, this};
-  Parameter<bool> savePostMeanInc{"save posterior mean increment",
-                  "controls whether posterior (analysis) mean ensemble increment is saved",
-                  false, this};
-  Parameter<bool> savePostEnsInc{"save posterior ensemble increments",
-                  "controls whether posterior (analysis) increments are saved",
-                  false, this};
-  Parameter<bool> savePriorVar{"save prior variance",
-                  "controls whether prior (background) ensemble variance is saved",
-                  false, this};
-  Parameter<bool> savePostVar{"save posterior variance",
-                  "controls whether posterior (analysis) ensemble variance is saved",
-                  false, this};
-  Parameter<bool> doPostObs{"do posterior observer",
-                  "controls whether H(x) is computed for the posterior (analysis) ensemble",
-                  true, this};
-  Parameter<bool> useControlMember{"use control member",
-                  "use control member to center prior ensemble instead of the prior ensemble mean",
-                  false, this};
-};
-
-// -----------------------------------------------------------------------------
-/// \brief Top-level options taken by the LocalEnsembleDA application.
-template <typename MODEL>
-class LocalEnsembleDAParameters : public ApplicationParameters {
-  OOPS_CONCRETE_PARAMETERS(LocalEnsembleDAParameters, ApplicationParameters)
-
-  typedef Geometry<MODEL>  Geometry_;
-  typedef Increment<MODEL> Increment_;
-
- public:
-  /// Options describing the assimilation time window.
-  RequiredParameter<eckit::LocalConfiguration> timeWindow{"time window", this};
-
-  /// A list whose elements determine treatment of observations from individual observation spaces.
-  /// Note: current code changes this section; it isn't trivial to define this as Parameters for
-  /// now.
-  RequiredParameter<eckit::LocalConfiguration> observations{"observations", this};
-
-  RequiredParameter<eckit::LocalConfiguration> geometry{"geometry",
-          "geometry used for all of the ensemble members and increments", this};
-
-  Parameter<LocalEnsembleDADriverParameters> driver{"driver",
-          "options controlling output and observer runs", {}, this};
-
-  RequiredParameter<eckit::LocalConfiguration> background{"background",
-          "ensemble of backgrounds", this};
-
-  OptionalParameter<Variables> incvars{"increment variables",
-          "analysis increment variables", this};
-
-  OptionalParameter<eckit::LocalConfiguration> inlineVars{"inline parameters",
-          "parameters for running inline forecasts", this};
-
-  Parameter<bool> runInline{"Run Inline",
-          "Inline", false, this};
-
-  RequiredParameter<eckit::LocalConfiguration> localEnsDA{"local ensemble DA",
-          "local ensemble DA solver and its options", this};
-
-  /// Note: these Parameters have to be present if driver.useControlMember==true
-  OptionalParameter<eckit::LocalConfiguration> controlMember{"control member",
-          "control member that can be used insteead of the ensemble mean", this};
-
-  /// Note: these Parameters have to be present if driver.savePostMean or driver.savePostEns
-  /// are true.
-  OptionalParameter<eckit::LocalConfiguration> output{"output",
-          "parameters for posterior mean and ensemble output", this};
-
-  /// Note: these Parameters have to be present if driver.savePriorMean is true.
-  OptionalParameter<eckit::LocalConfiguration> outputPriorMean{"output mean prior",
-         "parameters for prior mean output", this};
-
-  /// Note: these Parameters have to be present if driver.savePostMeanInc is true.
-  OptionalParameter<eckit::LocalConfiguration> outputPostMeanInc{"output increment",
-         "parameters for posterior mean increment output", this};
-
-  /// Note: these Parameters have to be present if driver.savePostEnsInc is true.
-  OptionalParameter<eckit::LocalConfiguration> outputPostEnsInc{"output ensemble increments",
-         "parameters for posterior ensemble increments output", this};
-
-  /// Note: these Parameters have to be present if driver.savePriorVar is true.
-  OptionalParameter<eckit::LocalConfiguration> outputPriorVar{"output variance prior",
-         "parameters for prior variance output", this};
-
-  /// Note: these Parameters have to be present if driver.savePostVar is true.
-  OptionalParameter<eckit::LocalConfiguration> outputPostVar{"output variance posterior",
-         "parameters for posterior variance output", this};
-};
-
-// -----------------------------------------------------------------------------
-// -----------------------------------------------------------------------------
 /// \brief Application for local ensemble data assimilation
 template <typename MODEL, typename OBS> class LocalEnsembleDA : public Application {
   typedef Departures<OBS>                  Departures_;
@@ -175,7 +57,6 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
   typedef StateSet<MODEL>                  StateSet_;
   typedef State<MODEL>                     State_;
   typedef StateEnsemble4D<MODEL>           StateEnsemble4D_;
-  typedef LocalEnsembleDAParameters<MODEL> LocalEnsembleDAParameters_;
 
  public:
 // -----------------------------------------------------------------------------
@@ -192,23 +73,19 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
 // -----------------------------------------------------------------------------
 
   int execute(const eckit::Configuration & fullConfig) const override {
-    // Deserialize parameters
-    LocalEnsembleDAParameters_ params;
-    params.deserialize(fullConfig);
-
     std::unique_ptr<Geometry_> geometry;
-
 
     // Instantiate ens_xx depending on whether we are running inline or not
     auto ens_xx = [&] {
-      if (params.runInline.value() == false) {
-        geometry = std::make_unique<Geometry_>(params.geometry, this->getComm());
-        auto object = StateEnsemble4D_(*geometry, params.background);
+      if (fullConfig.getBool("Run Inline", false)) {
+        std::vector<StateSet_> localVec = localizeEnsembleFC(fullConfig, geometry);
+        auto object = StateEnsemble4D_(localVec, 0);
         return object;
       } else {
-        std::vector<StateSet_> localVec = localizeEnsembleFC(fullConfig, params,
-            geometry);
-        auto object = StateEnsemble4D_(localVec, 0);
+        geometry = std::make_unique<Geometry_>(eckit::LocalConfiguration(fullConfig, "geometry"),
+                                               this->getComm());
+        auto object = StateEnsemble4D_(*geometry, eckit::LocalConfiguration(fullConfig,
+                                                                            "background"));
         return object;
       }
     }();
@@ -218,12 +95,13 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     Log::info() << "Observation window: " << timeWindow << std::endl;
 
     // Get observations configuration
-    const eckit::LocalConfiguration observationsConfig = params.observations;
+    const eckit::LocalConfiguration observationsConfig(fullConfig, "observations");
     eckit::LocalConfiguration obsConfig = observationsConfig.getSubConfiguration("observers");
 
     // if any of the obs. spaces uses Halo distribution it will need to know the geometry
     // of the local grid on this PE
-    if (params.driver.value().updateObsConfig) updateConfigWithPatchGeometry(*geometry, obsConfig);
+    if (fullConfig.getBool("driver.update obs config with geometry info", true))
+        updateConfigWithPatchGeometry(*geometry, obsConfig);
 
     // Setup observations
     const eckit::mpi::Comm & time = oops::mpi::myself();
@@ -233,15 +111,15 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     const size_t nens = ens_xx.size();
     const Variables statevars = ens_xx.variables();
     Variables incvars;
-    if (params.incvars.value() == boost::none) {
-      incvars += statevars;
+    if (fullConfig.has("increment variables")) {
+      incvars += Variables(fullConfig, "increment variables");
     } else {
-      incvars += *params.incvars.value();
+      incvars += statevars;
     }
     StateSet_ bkg_mean = ens_xx.mean();
     // if control member is present use that instead of the ensemble mean
-    if (params.driver.value().useControlMember) {
-      StateSet_ controlMember(*geometry, *params.controlMember.value());
+    if (fullConfig.getBool("driver.use control member", false)) {
+      StateSet_ controlMember(*geometry, eckit::LocalConfiguration(fullConfig, "control member"));
       bkg_mean = controlMember;
     }
 
@@ -253,7 +131,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
                                                         nens, bkg_mean, incvars);
 
     // test prints for the prior ensemble
-    bool do_test_prints = params.driver.value().doTestPrints;
+    bool do_test_prints = fullConfig.getBool("driver.do test prints", true);
     if (do_test_prints) {
       for (size_t jj = 0; jj < nens; ++jj) {
         Log::test() << "Initial state for member " << jj+1 << ":" << ens_xx[jj] << std::endl;
@@ -264,7 +142,8 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
 
     // compute H(x)
     Observations_ yobs(obsdb, "ObsValue");
-    Observations_ yb_mean = solver->computeHofX(ens_xx, 0, params.driver.value().readHofX);
+    Observations_ yb_mean = solver->computeHofX(ens_xx, 0,
+                              fullConfig.getBool("driver.read HX from disk", false));
     if (do_test_prints) {
        Log::test() << "H(x) ensemble background mean: " << std::endl << yb_mean << std::endl;
     }
@@ -276,7 +155,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     }
 
     // quit early if running in observer-only mode
-    if (params.driver.value().runObsOnly.value()) {
+    if (fullConfig.getBool("driver.run as observer only", false)) {
       obsdb.save();
       return 0;
     }
@@ -331,13 +210,13 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     // (since they are needed for the next cycle)
 
     // save the posterior ensemble increments
-    if (params.driver.value().savePostEnsInc.value()) {
-      if (params.outputPostEnsInc.value() == boost::none) {
+    if (fullConfig.getBool("driver.save posterior ensemble increments", false)) {
+      if (!fullConfig.has("output ensemble increments")) {
         throw eckit::BadValue(
           "`save posterior ensemble increment` is set to true, but `output ensemble increments` "
           "configuration not found.");
       }
-      eckit::LocalConfiguration output = *params.outputPostEnsInc.value();
+      eckit::LocalConfiguration output(fullConfig, "output ensemble increments");
       for (size_t jj = 0; jj < nens; ++jj) {
         util::setMember(output, jj+1);
         for (size_t itime = 0; itime < ana_pert.time_size(); ++itime) {
@@ -353,23 +232,23 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     if (do_test_prints) {
       Log::test() << "Analysis mean :" << ana_mean << std::endl;
     }
-    if (params.driver.value().savePostMean.value()) {
-      if (params.output.value() == boost::none) {
+    if (fullConfig.getBool("driver.save posterior mean", false)) {
+      if (!fullConfig.has("output")) {
         throw eckit::BadValue("`save posterior mean` is set to true, but `output` "
                               "configuration not found.");
       }
-      eckit::LocalConfiguration outConfig = *params.output.value();
+      eckit::LocalConfiguration outConfig(fullConfig, "output");
       outConfig.set("member", 0);
       ana_mean.write(outConfig);
     }
 
     // save the posterior ensemble
-    if (params.driver.value().savePostEns.value()) {
-      if (params.output.value() == boost::none) {
+    if (fullConfig.getBool("driver.save posterior ensemble", true)) {
+      if (!fullConfig.has("output")) {
         throw eckit::BadValue("`save posterior ensemble` is set to true, but `output` "
                               "configuration not found.");
       }
-      eckit::LocalConfiguration outConfig = *params.output.value();
+      eckit::LocalConfiguration outConfig(fullConfig, "output");
       for (size_t jj = 0; jj < nens; ++jj) {
         outConfig.set("member", jj+1);
         ens_xx[jj].write(outConfig);
@@ -378,23 +257,23 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
 
     // below is the diagnostic output -----------------------------
     // save the background mean
-    if (params.driver.value().savePriorMean.value()) {
-      if (params.outputPriorMean.value() == boost::none) {
+    if (fullConfig.getBool("driver.save prior mean", false)) {
+      if (!fullConfig.has("output mean prior")) {
         throw eckit::BadValue("`save prior mean` is set to true, but `output mean prior` "
                               "configuration not found.");
       }
-      eckit::LocalConfiguration outConfig = *params.outputPriorMean.value();
+      eckit::LocalConfiguration outConfig(fullConfig, "output mean prior");
       outConfig.set("member", 0);
       bkg_mean.write(outConfig);
     }
 
     // save the analysis mean increment
-    if (params.driver.value().savePostMeanInc.value()) {
-      if (params.outputPostMeanInc.value() == boost::none) {
+    if (fullConfig.getBool("driver.save posterior mean increment", false)) {
+      if (!fullConfig.has("output increment")) {
         throw eckit::BadValue("`save posterior mean increment` is set to true, but "
                               "`output increment` configuration not found.");
       }
-      eckit::LocalConfiguration output = *params.outputPostMeanInc.value();
+      eckit::LocalConfiguration output(fullConfig, "output increment");
       util::setMember(output, 0);
       for (size_t itime = 0; itime < ana_mean.size(); ++itime) {
         Increment_ ana_increment(ana_pert(itime, 0), false);
@@ -407,24 +286,24 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     }
 
     // save the prior variance
-    if (params.driver.value().savePriorVar.value()) {
-      if (params.outputPriorVar.value() == boost::none) {
+    if (fullConfig.getBool("driver.save prior variance", false)) {
+      if (!fullConfig.has("output variance prior")) {
         throw eckit::BadValue("`save prior variance` is set to true, but `output variance prior` "
                               "configuration not found.");
       }
-      eckit::LocalConfiguration output = *params.outputPriorVar.value();
+      eckit::LocalConfiguration output(fullConfig, "output variance prior");
       util::setMember(output, 0);
       std::string strOut("Forecast variance :");
       saveVariance(output, bkg_pert, do_test_prints, strOut);
     }
 
     // save the posterior variance
-    if (params.driver.value().savePostVar.value()) {
-      if (params.outputPostVar.value() == boost::none) {
+    if (fullConfig.getBool("driver.save posterior variance", false)) {
+      if (!fullConfig.has("output variance posterior")) {
         throw eckit::BadValue("`save posterior variance` is set to true, but "
                               "`output variance posterior` configuration not found.");
       }
-      eckit::LocalConfiguration output = *params.outputPostVar.value();
+      eckit::LocalConfiguration output(fullConfig, "output variance posterior");
       util::setMember(output, 0);
       std::string strOut("Analysis variance :");
       saveVariance(output, ana_pert, do_test_prints, strOut);
@@ -434,7 +313,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     // note: if H(X) is read from file, it might have used different time slots for observation
     // than LETKF background/analysis perturbations.
     // hence one might not expect that oman and omaf are comparable
-    if (params.driver.value().doPostObs.value()) {
+    if (fullConfig.getBool("driver.do posterior observer", true)) {
       // need to create a posterior solver that stores ana_mean internally.
       // This is needed if linear observer is used, because it is linearized arround this mean
       std::unique_ptr<LocalSolver_> posteriorSolver =
@@ -455,8 +334,8 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
 
     // Save the obsspace only if an hofx was calculated
     // (either prior and/or posterior)
-    if ( !params.driver.value().readHofX.value() ||
-         params.driver.value().doPostObs.value()) {
+    if (!fullConfig.getBool("driver.read HX from disk", false) ||
+        fullConfig.getBool("driver.do posterior observer", true)) {
       obsdb.save();
     }
 
@@ -466,7 +345,6 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
 // -----------------------------------------------------------------------------
 
   std::vector<StateSet_> localizeEnsembleFC(const eckit::Configuration & fullConfig,
-          LocalEnsembleDAParameters_ & params,
           std::unique_ptr<Geometry_> & DAgeometry) const {
   // This function creates a DA geometry that has the same resolution as the forecast geometry, but
   // is decomposed into patches that are N times smaller than the forecast geometry, where N is the
@@ -484,7 +362,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     // Get the MPI partition
 
     eckit::LocalConfiguration inlineParams = fullConfig.getSubConfiguration("inline parameters");
-    const std::vector<std::string> &files = inlineParams.getStringVector("Forecast configuration");
+    const std::vector<std::string> files = inlineParams.getStringVector("Forecast configuration");
     const int batchSize = inlineParams.getInt("forecast batch size");
     const std::string pattern = inlineParams.getString("output file pattern");
 

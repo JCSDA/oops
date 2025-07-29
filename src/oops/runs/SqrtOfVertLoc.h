@@ -23,7 +23,6 @@
 #include "oops/base/IncrementEnsemble.h"
 #include "oops/base/instantiateCovarFactory.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
-#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/interface/State.h"
@@ -31,37 +30,9 @@
 #include "oops/runs/Application.h"
 #include "oops/util/ConfigHelpers.h"
 #include "oops/util/Logger.h"
-#include "oops/util/parameters/OptionalParameter.h"
-#include "oops/util/parameters/Parameter.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
 
-template <typename MODEL> class SqrtOfVertLocParameters : public ApplicationParameters {
-  OOPS_CONCRETE_PARAMETERS(SqrtOfVertLocParameters, ApplicationParameters)
-
- public:
-  Parameter<double> truncationTolerance{"truncation tolerance", 1.0, this};
-
-  RequiredParameter<eckit::LocalConfiguration> geometry{"geometry", "geometry parameters", this};
-  RequiredParameter<eckit::LocalConfiguration>
-        background{"background", "background parameters", this};
-
-  RequiredParameter<Variables> perturbedVariables{"perturbed variables",
-        "list of variables to perturb", this};
-
-  RequiredParameter<eckit::LocalConfiguration> backgroundError{"background error",
-        "background error covariance model", this};
-
-  RequiredParameter<size_t> samples{"number of random samples", this};
-  OptionalParameter<size_t> maxNeigOutput{"max neig output",
-        "maximum number of eigenvectors to output", this};
-
-  RequiredParameter<eckit::LocalConfiguration> output{"output",
-        "where to write the output", this};
-  Parameter<bool> printTestEachMember{"print test for each member", true, this};
-};
 /* -----------------------------------------------------------------------------
 *  @brief this program computes sqrt of the vertical correlation in B
 *  this is done for each grid point by computing the eigen value problem
@@ -77,7 +48,6 @@ template <typename MODEL> class SqrtOfVertLoc : public Application {
   typedef IncrementEnsemble<MODEL>   IncrementEnsemble_;
   typedef State4D<MODEL>             State4D_;
   typedef ModelSpaceCovarianceBase<MODEL>   ModelSpaceCovariance_;
-  typedef SqrtOfVertLocParameters<MODEL>    Parameters_;
 
  public:
 // -----------------------------------------------------------------------------
@@ -88,19 +58,16 @@ template <typename MODEL> class SqrtOfVertLoc : public Application {
   virtual ~SqrtOfVertLoc() = default;
 // -----------------------------------------------------------------------------
   int execute(const eckit::Configuration & fullConfig) const override {
-    Parameters_ params;
-    params.deserialize(fullConfig);
-
-    const double truncationTolerance = params.truncationTolerance;
+    const double truncationTolerance = fullConfig.getDouble("truncation tolerance", 1.0);
 
 //  Setup geometry and background
-    const Geometry_ geometry(params.geometry, this->getComm());
+    const Geometry_ geometry(eckit::LocalConfiguration(fullConfig, "geometry"), this->getComm());
     const State4D_ xx(geometry, eckit::LocalConfiguration(fullConfig, "background"));
     Log::test() << "Background: " << xx << std::endl;
     ASSERT(xx.is_3d());
 
 //  Setup variables
-    const Variables & vars = params.perturbedVariables;
+    const Variables vars(fullConfig, "perturbed variables");
 
 //  Setup B matrix
     const eckit::LocalConfiguration covConf(fullConfig, "background error");
@@ -108,12 +75,9 @@ template <typename MODEL> class SqrtOfVertLoc : public Application {
       Bmat(CovarianceFactory<MODEL>::create(geometry, vars, covConf, xx, xx));
 
 //  Retrieve vertical eigenvectors from B
-    const size_t samples = params.samples;
+    const size_t samples = fullConfig.getInt("number of random samples");
     IncrementEnsemble_ perts(geometry, vars, xx[0].validTime(), samples);
-    size_t maxNeigOutput = samples;
-    if (params.maxNeigOutput.value() != boost::none) {
-      maxNeigOutput = *params.maxNeigOutput.value();
-    }
+    size_t maxNeigOutput = fullConfig.getInt("max neig output", samples);
     size_t truncatedNeig = getVerticalEigenVectors(*Bmat, geometry, perts,
                            truncationTolerance, maxNeigOutput);
 
@@ -141,11 +105,11 @@ template <typename MODEL> class SqrtOfVertLoc : public Application {
 
 //  Output columns of sqrt(B)
     for (size_t jm = 0; jm < truncatedNeig; ++jm) {
-      eckit::LocalConfiguration outParams = params.output;
-      util::setMember(outParams, jm + 1);
+      eckit::LocalConfiguration outConf(fullConfig, "output");
+      util::setMember(outConf, jm + 1);
       perts[jm].schur_product_with(sumOfSquares);  //  Scale eigen vectors
-      perts[jm].write(outParams);
-      if (params.printTestEachMember) {
+      perts[jm].write(outConf);
+      if (fullConfig.getBool("print test for each member", true)) {
         Log::test() << "Columns of sqrt(B) " << jm << perts[jm] << std::endl;
       }
     }

@@ -28,13 +28,6 @@
 
 namespace test {
 
-class ObsErrorTestParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(ObsErrorTestParameters, Parameters)
- public:
-  oops::Parameter<bool> testReader{"test reader", false, this};
-  oops::OptionalParameter<std::vector<float>> refVec{"reference", this};
-};
-
 // -----------------------------------------------------------------------------
 /// Tests creation and destruction of ObsErrorCovariances
 template <typename OBS> void testConstructor() {

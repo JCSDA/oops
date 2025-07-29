@@ -17,38 +17,13 @@
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
 #include "oops/base/IncrementSet.h"
-#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/ConfigHelpers.h"
 #include "oops/util/FieldSetOperations.h"
 #include "oops/util/Logger.h"
-#include "oops/util/parameters/OptionalParameter.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
-
-/// Options taken by the RescaleEnsPerts application.
-template <typename MODEL> class RescaleEnsPertsParameters : public ApplicationParameters {
-  OOPS_CONCRETE_PARAMETERS(RescaleEnsPertsParameters, ApplicationParameters);
-
-  typedef Geometry<MODEL> Geometry_;
-  typedef Increment<MODEL> Increment_;
-
- public:
-  RequiredParameter<eckit::LocalConfiguration> geometry{
-      "geometry", "Geometry parameters", this};
-  RequiredParameter<std::vector<eckit::LocalConfiguration>> sample{
-      "sample increments", "Sample of archived analysis increments", this};
-  RequiredParameter<std::vector<util::DateTime>> sampleDates{
-      "sample dates", "vector of dates corresponding to each increment in the sample", this};
-  RequiredParameter<Variables> variables{"variables", this};
-  RequiredParameter<eckit::LocalConfiguration> output{
-      "output", "analysis mean and ensemble members output", this};
-  RequiredParameter<util::DateTime> validTime{"valid time", this};
-  RequiredParameter<double> factor{"factor", this};
-};
 
 // -----------------------------------------------------------------------------
 /// Application to carry out the rescaling of ensemble perturbations around the sample mean.
@@ -86,17 +61,17 @@ template <typename MODEL> class RescaleEnsPerts : public Application {
   int execute(const eckit::Configuration & fullConfig) const override {
     Log::trace() << "RescaleEnsPerts: execute start" << std::endl;
 
-    RescaleEnsPertsParameters<MODEL> params;
-    params.deserialize(fullConfig);
-
     // Setup geometry
-    const Geometry_ geometry(params.geometry, this->getComm(), oops::mpi::myself());
+    const Geometry_ geometry(eckit::LocalConfiguration(fullConfig, "geometry"),
+                             this->getComm(), oops::mpi::myself());
 
     // Setup empty set of increments
-    Variables vars = params.variables.value();
+    Variables vars(fullConfig, "variables");
     std::vector<util::DateTime> ensTime(1);
-    ensTime[0] = params.validTime;
-    int rank = params.sample.value().size();
+    ensTime[0] = util::DateTime(fullConfig.getString("valid time"));
+    std::vector<eckit::LocalConfiguration>
+                 sampleConfs(fullConfig.getSubConfigurations("sample increments"));
+    int rank = sampleConfs.size();
     std::vector<int> ensVector(rank);
     std::iota(ensVector.begin(), ensVector.end(), 0);
     IncrementSet_ increments(geometry, vars, ensTime, oops::mpi::myself(), ensVector);
@@ -104,24 +79,25 @@ template <typename MODEL> class RescaleEnsPerts : public Application {
     // Loop over each increment, temporarily changing the valid times
     // Read in each increment with its corresponding time
     // Update the time back to the valid ensemble time
+    std::vector<std::string> sampleDates = fullConfig.getStringVector("sample dates");
     for (int jj = 0; jj < rank; ++jj) {
-      const util::Duration timeDiff = ensTime[0] - params.sampleDates.value()[jj];
+      const util::Duration timeDiff = ensTime[0] - util::DateTime(sampleDates[jj]);
       increments[jj].updateTime(-timeDiff);
-      increments[jj].read(params.sample.value()[jj]);
+      increments[jj].read(sampleConfs[jj]);
       increments[jj].updateTime(timeDiff);
     }
     Log::test() << "Sample Increments member 1 (time adjusted): " << increments[0] << std::endl;
 
     IncrementSet_ sampleMean = increments.ens_mean();
-    double factor = params.factor.value();
+    double factor = fullConfig.getDouble("factor");
     increments -= sampleMean;
     increments *= factor;
 
     Log::test() << "Rescaled Perturbation Member 1: " << increments[0] << std::endl;
     for (int jj = 0; jj < rank; ++jj) {
-      eckit::LocalConfiguration writeParams = params.output;
-      util::setMember(writeParams, jj);
-      increments[jj].write(writeParams);
+      eckit::LocalConfiguration writeConf(fullConfig, "output");
+      util::setMember(writeConf, jj);
+      increments[jj].write(writeConf);
     }
 
   return 0;
