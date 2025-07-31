@@ -362,7 +362,7 @@ CASE("Test for_each_index with 2D StructuredColumn fields excluding halos") {
   assert_ghost_values_equal(1., viewC, mesh_ghost);
 }
 
-CASE("Test for_each_value with 2D fields using serial backend") {
+CASE("Test for_each_index with 2D fields using serial backend") {
   auto fs = fixture_fs_structuredcolumns();
 
   auto fieldA = create_iota_field(fs);
@@ -385,7 +385,7 @@ CASE("Test for_each_value with 2D fields using serial backend") {
   assert_all_values_equal(viewTest, viewC);
 }
 
-CASE("Test for_each_value with 3D fields using default backend") {
+CASE("Test for_each_index with 3D fields using default backend") {
   auto fs = fixture_fs_structuredcolumns();
 
   auto fieldA = fs.createField<double>(atlas::option::name("vector") | atlas::option::variables(2));
@@ -399,12 +399,12 @@ CASE("Test for_each_value with 3D fields using default backend") {
   auto viewC = atlas::array::make_view<double, 3>(fieldC);
   auto viewTest = atlas::array::make_view<double, 3>(fieldTest);
 
-  for (atlas::idx_t k = 0; k < viewA.shape(0); ++k) {
+  for (atlas::idx_t i = 0; i < viewA.shape(0); ++i) {
     for (atlas::idx_t j = 0; j < viewA.shape(1); ++j) {
-      for (atlas::idx_t i = 0; i < viewA.shape(2); ++i) {
-        double iota = i + (j * viewA.shape(2)) + (k * viewA.shape(1) * viewA.shape(2));
-        viewA(k, j, i) = iota;
-        viewB(k, j, i) = iota;
+      for (atlas::idx_t k = 0; k < viewA.shape(2); ++k) {
+        double iota = k + (j * viewA.shape(2)) + (i * viewA.shape(1) * viewA.shape(2));
+        viewA(i, j, k) = iota;
+        viewB(i, j, k) = iota;
       }
     }
   }
@@ -417,16 +417,16 @@ CASE("Test for_each_value with 3D fields using default backend") {
       viewC(i, j, k) = viewA(i, j, k) - viewB(i, j, k);
     });
 
-  for (atlas::idx_t k = 0; k < viewA.shape(0); ++k) {
+  for (atlas::idx_t i = 0; i < viewA.shape(0); ++i) {
     for (atlas::idx_t j = 0; j < viewA.shape(1); ++j) {
-      for (atlas::idx_t i = 0; i < viewA.shape(2); ++i) {
+      for (atlas::idx_t k = 0; k < viewA.shape(2); ++k) {
         EXPECT_EQUAL(viewC(i, j, k), viewTest(i, j, k));
       }
     }
   }
 }
 
-CASE("Test for_each_value with 3D fields using serial backend") {
+CASE("Test for_each_index with 3D fields using serial backend") {
   auto fs = fixture_fs_structuredcolumns();
 
   auto fieldA = fs.createField<double>(atlas::option::name("vector") | atlas::option::variables(2));
@@ -440,12 +440,12 @@ CASE("Test for_each_value with 3D fields using serial backend") {
   auto viewC = atlas::array::make_view<double, 3>(fieldC);
   auto viewTest = atlas::array::make_view<double, 3>(fieldTest);
 
-  for (atlas::idx_t k = 0; k < viewA.shape(0); ++k) {
+  for (atlas::idx_t i = 0; i < viewA.shape(0); ++i) {
     for (atlas::idx_t j = 0; j < viewA.shape(1); ++j) {
-      for (atlas::idx_t i = 0; i < viewA.shape(2); ++i) {
-        double iota = i + (j * viewA.shape(2)) + (k * viewA.shape(1) * viewA.shape(2));
-        viewA(k, j, i) = iota;
-        viewB(k, j, i) = iota;
+      for (atlas::idx_t k = 0; k < viewA.shape(2); ++k) {
+        double iota = k + (j * viewA.shape(2)) + (i * viewA.shape(1) * viewA.shape(2));
+        viewA(i, j, k) = iota;
+        viewB(i, j, k) = iota;
       }
     }
   }
@@ -459,16 +459,16 @@ CASE("Test for_each_value with 3D fields using serial backend") {
       viewC(i, j, k) = viewA(i, j, k) - viewB(i, j, k);
     });
 
-  for (atlas::idx_t k = 0; k < viewA.shape(0); ++k) {
+  for (atlas::idx_t i = 0; i < viewA.shape(0); ++i) {
     for (atlas::idx_t j = 0; j < viewA.shape(1); ++j) {
-      for (atlas::idx_t i = 0; i < viewA.shape(2); ++i) {
+      for (atlas::idx_t k = 0; k < viewA.shape(2); ++k) {
         EXPECT_EQUAL(viewC(i, j, k), viewTest(i, j, k));
       }
     }
   }
 }
 
-CASE("Test for_each_value with 3D fields using parallel backend") {
+CASE("Test for_each_index with 3D fields using parallel backend") {
   auto fs = fixture_fs_structuredcolumns();
 
   auto fieldA = fs.createField<double>(atlas::option::name("vector") | atlas::option::variables(2));
@@ -482,12 +482,12 @@ CASE("Test for_each_value with 3D fields using parallel backend") {
   auto viewC = atlas::array::make_view<double, 3>(fieldC);
   auto viewTest = atlas::array::make_view<double, 3>(fieldTest);
 
-  for (atlas::idx_t k = 0; k < viewA.shape(0); ++k) {
+  for (atlas::idx_t i = 0; i < viewA.shape(0); ++i) {
     for (atlas::idx_t j = 0; j < viewA.shape(1); ++j) {
-      for (atlas::idx_t i = 0; i < viewA.shape(2); ++i) {
-        double iota = i + (j * viewA.shape(2)) + (k * viewA.shape(1) * viewA.shape(2));
-        viewA(k, j, i) = iota;
-        viewB(k, j, i) = iota;
+      for (atlas::idx_t k = 0; k < viewA.shape(2); ++k) {
+        double iota = k + (j * viewA.shape(2)) + (i * viewA.shape(1) * viewA.shape(2));
+        viewA(i, j, k) = iota;
+        viewB(i, j, k) = iota;
       }
     }
   }
@@ -504,13 +504,13 @@ CASE("Test for_each_value with 3D fields using parallel backend") {
   const auto mesh_ghost = atlas::array::make_view<int, 1>(
     fieldC.functionspace().ghost());
 
-  for (atlas::idx_t k = 0; k < viewA.shape(0); ++k) {
+  for (atlas::idx_t i = 0; i < viewA.shape(0); ++i) {
     for (atlas::idx_t j = 0; j < viewA.shape(1); ++j) {
-      for (atlas::idx_t i = 0; i < viewA.shape(2); ++i) {
-        if (mesh_ghost(k) > 0) {
-          EXPECT_EQUAL(1., viewC(k, j, i));
+      for (atlas::idx_t k = 0; k < viewA.shape(2); ++k) {
+        if (mesh_ghost(i) > 0) {
+          EXPECT_EQUAL(1., viewC(i, j, k));
         } else {
-          EXPECT_EQUAL(viewTest(k, j, i), viewC(k, j, i));
+          EXPECT_EQUAL(viewTest(i, j, k), viewC(i, j, k));
         }
       }
     }
