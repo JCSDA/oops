@@ -289,26 +289,16 @@ CASE("Test for_each_value with 2D NodeColumn fields excluding halos") {
   auto viewC = atlas::array::make_view<double, 2>(fieldC);
   auto viewTest = atlas::array::make_view<double, 2>(fieldTest);
 
-  // TODO(adamsl): remove false branch when Atlas version >= 0.43.0
-  if constexpr (util::details::has_halo_member_v<atlas::Field>) {
-    util::for_each_value(
-      util::IndexRange::exclude_halo,
-      [](const double& a, const double& b, double& c) { c = a - b; },
-      fieldA, fieldB, fieldC);
+  util::for_each_value(
+    util::IndexRange::exclude_halo,
+    [](const double& a, const double& b, double& c) { c = a - b; },
+    fieldA, fieldB, fieldC);
 
-    const auto mesh_ghost = atlas::array::make_view<int, 1>(
-      fieldC.functionspace().ghost());
+  const auto mesh_ghost = atlas::array::make_view<int, 1>(
+    fieldC.functionspace().ghost());
 
-    assert_owned_values_equal(viewTest, viewC, mesh_ghost);
-    assert_ghost_values_equal(1., viewC, mesh_ghost);
-  } else {
-    EXPECT_THROWS_AS(
-      util::for_each_value(
-        util::IndexRange::exclude_halo,
-        [](const double& a, const double& b, double& c) { c = a - b; },
-        fieldA, fieldB, fieldC),
-      eckit::NotImplemented);
-  }
+  assert_owned_values_equal(viewTest, viewC, mesh_ghost);
+  assert_ghost_values_equal(1., viewC, mesh_ghost);
 }
 
 CASE("Test for_each_index with 2D StructuredColumn fields excluding halos") {

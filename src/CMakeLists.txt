@@ -423,6 +423,8 @@ oops/util/Random.h
 oops/util/random.intfb.h
 oops/util/RandomField.h
 oops/util/Range.h
+oops/util/reduction.cc
+oops/util/reduction.h
 oops/util/ScalarOrMap.h
 oops/util/Serializable.h
 oops/util/Stacktrace.h
@@ -1090,6 +1092,12 @@ ecbuild_add_test( TARGET  test_assimilation_tridiagsolve
 ecbuild_add_test( TARGET  test_util_for_each
                   OMP 2
                   SOURCES test/util/for_each.cc
+                  ARGS    "test/testinput/empty.yaml"
+                  LIBS    oops )
+
+ecbuild_add_test( TARGET  test_util_reduction
+                  OMP 2
+                  SOURCES test/util/reduction.cc
                   ARGS    "test/testinput/empty.yaml"
                   LIBS    oops )
 
