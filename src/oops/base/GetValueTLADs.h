@@ -74,6 +74,7 @@ GetValueTLADs<MODEL, OBS>::GetValueTLADs(const GetValuesParameters<MODEL> & para
   : PostBaseTLAD<MODEL>(bgn, end), geovars_(), linvars_(), getvals_(), chvartlad_(),
     linearcvConf_(params.linearvariableChange.value()),cvConf_(params.variableChange.value())
 {
+  Log::trace() << "GetValueTLADs::GetValueTLADs clt linarcvConf_ " <<linearcvConf_ <<std::endl;
   Log::trace() << "GetValueTLADs::GetValueTLADs" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -83,6 +84,8 @@ void GetValueTLADs<MODEL, OBS>::append(GetValPtr_ getval) {
   getvals_.push_back(getval);
   geovars_ += getval->requiredVariables();
   linvars_ += getval->linearVariables();
+  Log::trace() << "GetValuePosts::append start geovars_ " <<geovars_<< std::endl;
+  Log::trace() << "GetValuePosts::append start linvars_ " <<linvars_<< std::endl;
   Log::trace() << "GetValuePosts::append done" << std::endl;
 }
 
@@ -171,6 +174,7 @@ void GetValueTLADs<MODEL, OBS>::doProcessingAD(Increment_ & dx) {
   Log::trace() << "GetValueTLADs::doProcessingAD start" << std::endl;
   const util::DateTime now = dx.validTime();
   ASSERT(chvartlad_.find(now) != chvartlad_.end());
+  Log::trace() << "GetValueTLADs::doProcessingAD linearvars" <<linvars_<<std::endl;
   Increment_ dz(dx.geometry(), linvars_, dx.validTime());
   dz.zero();
 

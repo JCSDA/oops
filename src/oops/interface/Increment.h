@@ -155,6 +155,7 @@ Increment<MODEL>::Increment(const Geometry_ & resol, const Variables & vars,
 {
   Log::trace() << "Increment<MODEL>::Increment starting" << std::endl;
   util::Timer timer(classname(), "Increment");
+  Log::trace() << "Increment<MODEL>::Increment vars " <<vars<< std::endl;
   increment_.reset(new Increment_(resol.geometry(), vars, time));
   this->setObjectSize(increment_->serialSize()*sizeof(double));
   Log::trace() << "Increment<MODEL>::Increment done" << std::endl;

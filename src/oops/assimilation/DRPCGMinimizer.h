@@ -172,14 +172,17 @@ double DRPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_
   scals.push_back(1.0/dotRr0);
 
   Log::info() << std::endl;
+  Log::trace() << " DRPCG Starting Iteration0 0.0dxh" <<dxh<<  std::endl;
   for (int jiter = 0; jiter < maxiter; ++jiter) {
     Log::info() << " DRPCG Starting Iteration " << jiter+1 << std::endl;
+    Log::trace() << " DRPCG Starting Iteration0 " << jiter << std::endl;
 
     if (jiter < 5 || (jiter + 1) % 5 == 0 || jiter + 1 == maxiter) {
       util::update_workflow_meter("iteration", jiter+1);
       util::printRunStats("DRPCG iteration " + std::to_string(jiter+1));
     }
 
+    Log::trace() << " DRPCG Starting Iteration0 1" << jiter << std::endl;
     if (jiter > 0) {
       // beta_{i} = r_{i+1}^T z_{i+1} / r_{i}^T z_{i}
       double beta = rdots/rdots_old;
@@ -193,6 +196,8 @@ double DRPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_
       hh += pr;
     }
 
+   Log::trace() << " DRPCG Starting Iteration0 0.7pp" <<pp<< jiter << std::endl;
+   Log::trace() << " DRPCG Starting Iteration0 0.7qq" <<qq<< jiter << std::endl;
     // q_{i} = h_{i} + H^T R^{-1} H p_{i}
     HtRinvH.multiply(pp, qq);
     qq += hh;
@@ -202,10 +207,16 @@ double DRPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_
     double alpha = rdots/rho;
 
     // dx_{i+1} = dx_{i} + alpha * p_{i}
+    Log::trace() << " DRPCG Starting Iteration0 1.9dx" <<dx<< jiter << std::endl;
+    Log::trace() << " DRPCG Starting Iteration0 1.9pp" <<pp<< jiter << std::endl;
     dx.axpy(alpha, pp);
     // dxh_{i+1} = dxh_{i} + alpha * h_{i} ! for diagnosing Jb
+    Log::trace() << " DRPCG Starting Iteration0 1.9hh" <<hh<< jiter << std::endl;
     dxh.axpy(alpha, hh);
+    Log::trace() << " DRPCG Starting Iteration0 1.9dxh" <<dxh<< jiter << std::endl;
     // r_{i+1} = r_{i} - alpha * q_{i}
+    Log::trace() << " DRPCG Starting Iteration0 1.9qq" <<qq<< jiter << std::endl;
+    Log::trace() << " DRPCG Starting Iteration0 1.9rr" <<rr<< jiter << std::endl;
     rr.axpy(-alpha, qq);
 
     // Compute the quadratic cost function
@@ -215,6 +226,7 @@ double DRPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_
     double costJb = costJ0Jb + dot_product(dx, gradJb) + 0.5 * dot_product(dx, dxh);
     // Jo[dx_{i}] + Jc[dx_{i}] = J[dx_{i}] - Jb[dx_{i}]
     double costJoJc = costJ - costJb;
+    Log::trace() << " DRPCG Starting Iteration0 2.0rr" <<rr<< jiter << std::endl;
 
     // Re-orthogonalization
     for (int jj = 0; jj < jiter; ++jj) {
@@ -222,9 +234,19 @@ double DRPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_
       rr.axpy(-proj, vvecs[jj]);
     }
 
+    Log::trace() << " DRPCG Starting Iteration0 2.5" << jiter << std::endl;
+    Log::trace() << " DRPCG Starting Iteration0 2.5pr" <<pr<< jiter << std::endl;
+    Log::trace() << " DRPCG Starting Iteration0 2.5rr" <<rr<< jiter << std::endl;
     // z_{i+1} = B LMP r_{i+1}
     lmp_.multiply(rr, pr);
+    Log::trace() << " DRPCG Starting Iteration0 3pr" << jiter << std::endl;
+    Log::trace() << pr << jiter << std::endl;
+    Log::trace() << " DRPCG Starting Iteration0 3zz" << jiter << std::endl;
+    Log::trace() << zz << jiter << std::endl;
+
+    Log::trace() << " DRPCG Starting Iteration0 3Before tothink B.multiply" << jiter << std::endl;
     B.multiply(pr, zz);
+    Log::trace() << " DRPCG Starting Iteration0 3after B.multiply" << jiter << std::endl;
 
     // r_{i}^T z_{i}
     rdots_old = rdots;

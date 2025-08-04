@@ -280,7 +280,8 @@ double CostFunction<MODEL, OBS>::evaluate(CtrlVar_ & fguess,
 
 template<typename MODEL, typename OBS>
 void CostFunction<MODEL, OBS>::computeGradientFG(CtrlInc_ & grad) const {
-  Log::trace() << "CostFunction::computeGradientFG start" << std::endl;
+  Log::trace() << "CostFunction::computeGradientFG start clt" << std::endl;
+  Log::trace() << "CostFunction::computeGradientFG start clt grad.var " << grad.state().variables()<<std::endl;
   PostProcessor<Increment_> pp;
   PostProcessorTLAD<MODEL> costad;
   this->zeroAD(grad);
@@ -290,7 +291,9 @@ void CostFunction<MODEL, OBS>::computeGradientFG(CtrlInc_ & grad) const {
     jterms_[jj]->computeCostAD(tmp, grad, costad);
   }
 
+  Log::trace() << "CostFunction::computeGradientFG start clt  beforerunADJ grad  " << grad.state().variables()<<std::endl;
   this->runADJ(grad, costad, pp);
+  Log::trace() << "CostFunction::computeGradientFG start clt afterunADJ grad  " << grad.state().variables()<<std::endl;
 
   for (size_t jj = 0; jj < jterms_.size(); ++jj) {
     jterms_[jj]->setPostProcAD();

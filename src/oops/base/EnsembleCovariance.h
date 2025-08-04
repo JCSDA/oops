@@ -89,6 +89,11 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Var
   ens_.reset(new IncrementSet<MODEL>(resol, vars, tmp, true));
   *ens_ -= ens_->ens_mean();
 
+ for (size_t i = 0; i < ens_->size(); ++i) {  //cltthink
+     auto member = (*ens_)[i];
+     Log::trace()<<"EnsembleCovariance::EnsembleCovariance start ith dx "<<i <<" "<<member<<std::endl;
+}
+
   // Setup ensemble transform
   if (conf.has("ensemble transform")) {
     const eckit::LocalConfiguration confEns(conf, "ensemble transform");
@@ -159,6 +164,7 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Var
     }
     loc_.reset(new Localization_(resol, locVars, locconf));
   }
+  Log::trace() << "EnsembleCovariance::EnsembleCovariance vars " <<vars<< std::endl;
 
   size_t current = eckit::system::ResourceUsage().maxResidentSetSize();
   this->setObjectSize(current - init);

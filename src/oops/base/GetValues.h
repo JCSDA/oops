@@ -690,6 +690,7 @@ template <typename MODEL, typename OBS>
 void GetValues<MODEL, OBS>::processAD(Increment_ & dx) {
   Log::trace() << "GetValues::processAD start" << std::endl;
   util::Timer timer("oops::GetValues", "processAD");
+  Log::trace() << "GetValues::processAD startclt variables " <<dx.variables()<< std::endl;
 
   for (size_t jtask = 0; jtask < ntasks_; ++jtask) {
 //  Mask obs outside time slot

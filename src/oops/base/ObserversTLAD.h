@@ -112,6 +112,7 @@ template <typename MODEL, typename OBS>
 void ObserversTLAD<MODEL, OBS>::initializeTraj(const Geometry_ & geom, const ObsAuxCtrls_ & ybias,
                                                PostProcTLAD_ & pp) {
   Log::trace() << "ObserversTLAD<MODEL, OBS>::initializeTraj start" << std::endl;
+  Log::trace() << "ObserversTLAD<MODEL, OBS>::initializeTraj clt params " << getValuesParams_<<std::endl;
   posts_.reset(new GetValueTLADs_(getValuesParams_, winbgn_, winend_));
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
     if (observers_[jj]) {

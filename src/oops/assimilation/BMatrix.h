@@ -16,6 +16,7 @@
 #include "oops/assimilation/ControlIncrement.h"
 #include "oops/assimilation/CostFunction.h"
 #include "oops/base/ObsAuxCovariances.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 
@@ -33,7 +34,13 @@ template<typename MODEL, typename OBS> class BMatrix : private boost::noncopyabl
  public:
   explicit BMatrix(const CostFct_ & j): j_(j) {}
   void multiply(const CtrlInc_ & x, CtrlInc_ & bx) const {
+//tothink
+    Log::trace() << "BMatrix:: multiply  start" <<std::endl;
+    Log::trace() << "BMatrix:: multiply  start bx " <<bx<<std::endl;
+    Log::trace() << "BMatrix:: multiply  start const x " <<x<<std::endl;
     j_.jb().multiplyB(x, bx);
+    Log::trace() << "BMatrix:: multiply  start after bx " <<bx<<std::endl;
+    Log::trace() << "BMatrix:: multiply  start after const x " <<x<<std::endl;
   }
 
   /// Return ObsBias block of control variable error covariances
