@@ -399,11 +399,12 @@ void GetValues<MODEL, OBS>::incInterpValues(
     const auto shape = atlas::array::ArrayShape{nb_obs, nb_levs};
 
     // Get array views into interpolation results
-    atlas::array::Array* lhs_array = atlas::array::Array::wrap<double>(&*lhs_ptr, shape);
+    std::unique_ptr<atlas::array::Array> lhs_array(
+        atlas::array::Array::wrap<double>(&*lhs_ptr, shape));
     auto lhs = atlas::array::make_view<double, 2>(*lhs_array);
     // Horrible cast to allow a standard ArrayView<double> from a const std::vector
-    atlas::array::Array* rhs_array = atlas::array::Array::wrap<double>(
-        const_cast<double*>(&*rhs_ptr), shape);
+    std::unique_ptr<atlas::array::Array> rhs_array(
+        atlas::array::Array::wrap<double>(const_cast<double*>(&*rhs_ptr), shape));
     auto rhs = atlas::array::make_view<double, 2>(*rhs_array);
 
     for (int jloc = 0; jloc < nb_obs; ++jloc) {

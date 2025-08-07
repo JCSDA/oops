@@ -142,7 +142,8 @@ void UnstructuredInterpolator::apply(const Variables & vars, const atlas::FieldS
     const auto source = atlas::array::make_view<double, 2>(fld);
     const auto vals_shape =
         atlas::array::ArrayShape{static_cast<int>(nout_), source.shape(1)};
-    atlas::array::Array* vals_array = atlas::array::Array::wrap<double>(&*current, vals_shape);
+    std::unique_ptr<atlas::array::Array> vals_array(
+        atlas::array::Array::wrap<double>(&*current, vals_shape));
     auto target = atlas::array::make_view<double, 2>(*vals_array);
 
     // Interpolate
@@ -198,8 +199,8 @@ void UnstructuredInterpolator::applyAD(const Variables & vars, atlas::FieldSet &
     const auto vals_shape =
         atlas::array::ArrayShape{static_cast<int>(nout_), source.shape(1)};
     // Horrible cast to allow a standard ArrayView<double> from a const std::vector
-    const atlas::array::Array* vals_array = atlas::array::Array::wrap<double>(
-        const_cast<double*>(&*current), vals_shape);
+    const std::unique_ptr<atlas::array::Array> vals_array(
+        atlas::array::Array::wrap<double>(const_cast<double*>(&*current), vals_shape));
     const auto target = atlas::array::make_view<double, 2>(*vals_array);
 
     // Interpolate
