@@ -25,22 +25,36 @@ static int nested_timers = 0;  // Only non-nested timers count towards measured 
 // -----------------------------------------------------------------------------
 
 Timer::Timer(const std::string & class_name, const std::string & method_name)
-    : name_(class_name + "::" + method_name), start_()
+    : name_(class_name + "::" + method_name), start_(), stopped_(false)
 {
   ++nested_timers;
   start_ = ClockT::now();
+  // create a new node in timer tree
+  TimerHelper::setCurrentTree(TimerHelper::getCurrentTree()->goDown(name_));
+}
+
+void Timer::stop() {
+  if (!stopped_) {
+    stopped_ = true;
+    std::chrono::duration<double, std::milli> dt = ClockT::now() - start_;  // elapsed millisecs
+    --nested_timers;
+    // A top-level timer is created (when nested_timers == 0) in TimerHelper::start() for total time.
+    // To count measured time (and establish timer coverage), we sum times from the timers 1 level
+    // below this top-level timer. More-deeply nested timers would duplicate time if included.
+    const bool include_timer_in_sum = (nested_timers == 1);
+    TimerHelper::add(name_, dt.count(), include_timer_in_sum);
+    // time will be added in tree strcture anyway
+    TimerHelper::getCurrentTree()->addTime(dt.count());
+    TimerHelper::setCurrentTree(TimerHelper::getCurrentTree()->goUp());
+  }
 }
 
 // -----------------------------------------------------------------------------
 
 Timer::~Timer() {
-  std::chrono::duration<double, std::milli> dt = ClockT::now() - start_;  // elapsed millisecs
-  --nested_timers;
-  // A top-level timer is created (when nested_timers == 0) in TimerHelper::start() for total time.
-  // To count measured time (and establish timer coverage), we sum times from the timers 1 level
-  // below this top-level timer. More-deeply nested timers would duplicate time if included.
-  const bool include_timer_in_sum = (nested_timers == 1);
-  TimerHelper::add(name_, dt.count(), include_timer_in_sum);
+  if (!stopped_) {
+    stop();
+  }
 }
 
 // -----------------------------------------------------------------------------

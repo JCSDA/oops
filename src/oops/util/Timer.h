@@ -28,9 +28,12 @@ class Timer {
 
   Timer(const Timer&) = delete;  // Non-copyable
 
+  void stop();
+
  private:
   std::string name_;
   TimeT start_;
+  bool stopped_;
 };
 
 // -----------------------------------------------------------------------------
