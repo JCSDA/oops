@@ -22,6 +22,7 @@
 #include "oops/interface/VariableChange.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
+#include "oops/util/Timer.h"
 
 namespace oops {
 
@@ -105,7 +106,9 @@ void GetValueTLADs<MODEL, OBS>::doProcessingTraj(const State_ & xx) {
 
   // Optimization: if underlying interpolations are done using the atlas representation of the
   // model data, then call FieldSet::haloExchange before entering the loop over obs types:
+  std::unique_ptr<util::Timer> timer(new util::Timer("oops::GetValueTLADs", "preProcessModelData"));
   PreProcessHelper<MODEL>::preProcessModelData(zz);
+  timer.reset();
 
   for (GetValPtr_ getval : getvals_) getval->process(zz);
 
@@ -142,7 +145,9 @@ void GetValueTLADs<MODEL, OBS>::doProcessingTL(const Increment_ & dx) {
 
   // Optimization: if underlying interpolations are done using the atlas representation of the
   // model data, then call FieldSet::haloExchange before entering the loop over obs types:
+  std::unique_ptr<util::Timer> timer(new util::Timer("oops::GetValueTLADs", "preProcessModelData"));
   PreProcessHelper<MODEL>::preProcessModelData(dz);
+  timer.reset();
 
   for (GetValPtr_ getval : getvals_) getval->processTL(dz);
 
@@ -178,7 +183,9 @@ void GetValueTLADs<MODEL, OBS>::doProcessingAD(Increment_ & dx) {
 
   // Optimization: if underlying interpolations are done using the atlas representation of the
   // model data, then call FieldSet::adjointHaloExchange after exiting the loop over obs types:
+  std::unique_ptr<util::Timer> timer(new util::Timer("oops::GetValueTLADs", "preProcessModelData"));
   PreProcessHelper<MODEL>::preProcessModelDataAD(dz);
+  timer.reset();
 
   // Increment::synchronizeFields checks that the fields are not empty
   // If all obs spaces are in monitoring only, dz may be empty (linvars_ are empty)

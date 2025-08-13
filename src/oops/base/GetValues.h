@@ -358,6 +358,7 @@ GetValues<MODEL, OBS>::GetValues(const eckit::Configuration & conf, const Geomet
 template <typename MODEL, typename OBS>
 void GetValues<MODEL, OBS>::initialize(const util::Duration & tstep) {
   Log::trace() << "GetValues::initialize start" << std::endl;
+  util::Timer timer("oops::GetValues", "initialize");
   const double missing = util::missingValue<double>();
   ASSERT(locinterp_.empty());
 
@@ -569,6 +570,7 @@ void GetValues<MODEL, OBS>::fillGeoVaLs(GeoVaLs_ & geovals) {
 template <typename MODEL, typename OBS>
 void GetValues<MODEL, OBS>::initializeTL(const util::Duration & tstep) {
   Log::trace() << "GetValues::initializeTL start" << std::endl;
+  util::Timer timer("oops::GetValues", "initializeTL");
   const double missing = util::missingValue<double>();
   ASSERT(locinterp_.empty());
   locinterp_.resize(ntasks_);
@@ -698,6 +700,7 @@ void GetValues<MODEL, OBS>::fillGeoVaLsTL(GeoVaLs_ & geovals) {
 template <typename MODEL, typename OBS>
 void GetValues<MODEL, OBS>::initializeAD() {
   Log::trace() << "GetValues::initializeAD start" << std::endl;
+  util::Timer timer("oops::GetValues", "initializeAD");
   locinterp_.clear();
   Log::trace() << "GetValues::initializeAD done" << std::endl;
 }

@@ -94,7 +94,7 @@ void TimerHelper::print(std::ostream & os) const {
      << std::setw(18) << std::right << "time/call (ms)" << std::endl;
   for (cit jt = timers_.begin(); jt != timers_.end(); ++jt) {
     int icount = counts_.at(jt->first);
-    os << std::setw(52) << std::left << jt->first
+    os << std::setw(52) << std::left << jt->first.substr(0, 51)
        << ": " << std::setw(12) << std::right << std::fixed << std::setprecision(2) << jt->second
        << std::setw(8) << icount
        << std::setw(18) << std::right << std::fixed << std::setprecision(4) << jt->second/icount
@@ -169,10 +169,11 @@ void TimerHelper::print(std::ostream & os) const {
     for (std::map<std::string, std::array<double, 3>>::iterator jt = stats.begin();
          jt != stats.end(); ++jt) {
 //    Only print for contributions greater than 0.1% of total
-      if ((jt->first.substr(0, 6) == "oops::") || (jt->first.substr(0, 6) == "util::")) {
+      if ((jt->first.substr(0, 6) == "oops::") || (jt->first.substr(0, 6) == "util::") ||
+          (jt->first.substr(0, 7) == "saber::")) {
         double avg = jt->second[2]/ntasks;
         if (avg / total > 0.001)
-          os << std::setw(52) << std::left << jt->first << ": "
+          os << std::setw(52) << std::left << jt->first.substr(0, 51) << ": "
              << std::setw(12) << std::right << std::fixed << std::setprecision(2)
              << std::setw(12) << jt->second[0]
              << std::setw(12) << jt->second[1]

@@ -21,6 +21,7 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
+#include "oops/util/Timer.h"
 
 namespace oops {
 
@@ -102,7 +103,9 @@ void GetValuePosts<MODEL, OBS>::doProcessing(const State_ & xx) {
 
   // Optimization: if underlying interpolations are done using the atlas representation of the
   // model data, then call FieldSet::haloExchange before entering the loop over obs types:
+  std::unique_ptr<util::Timer> timer(new util::Timer("oops::GetValuePosts", "preProcessModelData"));
   PreProcessHelper<MODEL>::preProcessModelData(zz);
+  timer.reset();
 
   for (GetValuePtr_ getval : getvals_) getval->process(zz);
 
