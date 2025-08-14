@@ -8,6 +8,7 @@
 #ifndef OOPS_BASE_PARAMETERTRAITSVARIABLES_H_
 #define OOPS_BASE_PARAMETERTRAITSVARIABLES_H_
 
+#include <algorithm>
 #include <string>
 #include <vector>
 
