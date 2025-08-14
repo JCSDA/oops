@@ -76,6 +76,7 @@ class HybridLinearModelCoeffs {
   atlas::Field updateStencil_;
   std::map<util::DateTime, atlas::FieldSet> coeffsSaver_;
   const util::TimeWindow timeWindow_;
+  const std::vector<atlas::idx_t> owned_;
 };
 
 //------------------------------------------------------------------------------
@@ -91,12 +92,20 @@ HybridLinearModelCoeffs<MODEL>::HybridLinearModelCoeffs(
   influenceSize_(config.getInt("influence region size")),
   updateStencil_("update stencil", atlas::array::make_datatype<int>(),
                  atlas::array::make_shape(nLevels_, influenceSize_)),
-  timeWindow_(config.getSubConfiguration("time window"))
+  timeWindow_(config.getSubConfiguration("time window")),
+  owned_([&]() {
+    std::vector<atlas::idx_t> owned;
+    const auto ownedView = atlas::array::make_view<int, 2>(updateGeometry_.fields()["owned"]);
+    for (auto i = 0; i < nLocations_; i++) {
+      if (ownedView(i, 0) > 0) owned.push_back(i);
+    }
+    return owned;
+  }())
 {
   if (influenceSize_ % 2 == 0) {
-    oops::Log::warning() << "HybridLinearModelCoeffs<MODEL>::HybridLinearModelCoeffs: "
-                            "influence region size is not an odd number;"
-                            "influence regions will not be centred on point of interest";
+    ABORT("HybridLinearModelCoeffs<MODEL>::HybridLinearModelCoeffs: "
+          "influence region size is not an odd number;"
+          "influence regions will not be centred on point of interest");
   }
   params_.deserialize(config);
   // Set up storage for coefficients
@@ -135,7 +144,7 @@ void HybridLinearModelCoeffs<MODEL>::makeCoeffsSaver() {
     coeffsSaver_.emplace(time, coeffsFSet);
     for (const auto & var : updateVars_) {
       coeffsSaver_.at(time).add(updateGeometry_.functionSpace().template createField<double>(
-        atlas::option::name(var.name()) | atlas::option::levels(nLevels_) |
+        atlas::option::halo(0) | atlas::option::name(var.name()) | atlas::option::levels(nLevels_) |
         atlas::option::vector(influenceSize_ * updateVars_.size())));
     }
   }
@@ -167,7 +176,7 @@ void HybridLinearModelCoeffs<MODEL>::generate(SimpleLinearModel_ & simpleLinearM
                                               const Variables & vars) {
   HtlmEnsemble_ ensemble(*params_.ensemble.value(), simpleLinearModel, updateGeometry_, vars);
   HtlmCalculator_ calculator(*params_.calculator.value(), updateVars_, updateGeometry_,
-                             influenceSize_, ensemble);
+                             influenceSize_, ensemble, owned_);
   util::DateTime time(timeWindow_.start());
   while (time < timeWindow_.end()) {
     time += updateTstep_;
@@ -243,7 +252,7 @@ void HybridLinearModelCoeffs<MODEL>::updateIncTL(Increment_ & dx) const {
   const auto updateStencilArray = atlas::array::make_view<int, 2>(updateStencil_);
   atlas::FieldSet & dxFSet = dx.fieldSet().fieldSet();
   std::vector<double> updateVals(nLevels_ * updateVars_.size());
-  for (auto i = 0; i < nLocations_; i++) {
+  for (auto i : owned_) {
     std::fill(updateVals.begin(), updateVals.end(), 0.0);
     // Calculate update values
     for (size_t v = 0; v < updateVars_.size(); v++) {
@@ -279,7 +288,7 @@ void HybridLinearModelCoeffs<MODEL>::updateIncAD(Increment_ & dx) const {
   const auto updateStencilArray = atlas::array::make_view<int, 2>(updateStencil_);
   atlas::FieldSet & dxFSet = dx.fieldSet().fieldSet();
   std::vector<double> updateVals(nLevels_ * updateVars_.size());
-  for (auto i = 0; i < nLocations_; i++) {
+  for (auto i : owned_) {
     std::fill(updateVals.begin(), updateVals.end(), 0.0);
     // Adjoint of "Update column"
     for (size_t v = 0; v < updateVars_.size(); v++) {

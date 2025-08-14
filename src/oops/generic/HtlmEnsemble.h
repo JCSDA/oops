@@ -11,6 +11,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "oops/base/Increment4D.h"
 #include "oops/base/IncrementEnsemble.h"
@@ -97,6 +98,7 @@ class HtlmEnsemble{
   static const std::string classname() {return "oops::HtlmEnsemble";}
 
   HtlmEnsemble(const Parameters_ &, SimpleLinearModel_ &, const Geometry_ &, const Variables &);
+  atlas::FieldSet getRmsVals(const Variables &, const atlas::idx_t) const;
   void step(const util::Duration &, SimpleLinearModel_ &);
 
   IncrementEnsemble_ & getLinearEnsemble() {return linearEnsemble_;}
@@ -181,6 +183,23 @@ HtlmEnsemble<MODEL>::HtlmEnsemble(const Parameters_ & params,
   // Set up a TrajectorySaver for simpleLinearModel_
   simpleLinearModel.setUpTrajectorySaver(trajectorySaver_, maux_);
   Log::trace() << "HtlmEnsemble<MODEL>::HtlmEnsemble() done" << std::endl;
+}
+
+//------------------------------------------------------------------------------
+
+template<typename MODEL>
+atlas::FieldSet HtlmEnsemble<MODEL>::getRmsVals(const Variables & updateVars,
+                                                const atlas::idx_t nLevels) const {
+  atlas::FieldSet rmsVals;
+  for (const auto & var : updateVars) {
+    std::vector<double> rmsVar = linearEnsemble_[0].rmsByVariableByLevel(var, false);
+    rmsVals.add(atlas::Field(
+      var.name(), atlas::array::make_datatype<double>(), atlas::array::make_shape(nLevels)));
+    auto rmsView = atlas::array::make_view<double, 1>(rmsVals[var.name()]);
+    // Avoid divide-by-zero
+    for (atlas::idx_t k = 0; k < nLevels; k++) rmsView[k] = (rmsVar[k]) ? rmsVar[k] : 1.0;
+  }
+  return rmsVals;
 }
 
 //------------------------------------------------------------------------------
