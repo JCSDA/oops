@@ -23,12 +23,19 @@ double gc99(const double & distnorm) {
   if (distnorm < 0.5) {
     gc99value = -8.0*pow(distnorm, 5.0)+8.0*pow(distnorm, 4.0)+5.0*pow(distnorm, 3.0)-
                 20.0/3.0*pow(distnorm, 2.0)+1.0;
+  } else if (distnorm < 0.99) {
+    gc99value = 8.0/3.0*pow(distnorm, 5.0)-8.0*pow(distnorm, 4.0)+5.0*pow(distnorm, 3.0)+
+                20.0/3.0*pow(distnorm, 2.0)-10.0*distnorm+4.0-1.0/(3.0*distnorm);
   } else if (distnorm < 1.0) {
     gc99value = 8.0/3.0*pow(distnorm, 5.0)-8.0*pow(distnorm, 4.0)+5.0*pow(distnorm, 3.0)+
                 20.0/3.0*pow(distnorm, 2.0)-10.0*distnorm+4.0-1.0/(3.0*distnorm);
+    if (gc99value <= 0) {
+      gc99value = DBL_EPSILON;
+    }
   } else {
     gc99value = DBL_EPSILON;
   }
+
   return gc99value;
 }
 }  // namespace oops
