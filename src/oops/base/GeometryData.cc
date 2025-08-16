@@ -240,7 +240,7 @@ bool GeometryData::containingTriangleAndBarycentricCoords(const double lat, cons
       // by the compression of the const-longitude lines towards the pole:
       const double max_to_check = 2.0 * regular_grid_nx_;  // arbitrary max: 2 bands of cells
       const double deg2rad = M_PI / 180.0;
-      const double compression = 1.0 / abs(cos(deg2rad * lat));
+      const double compression = 1.0 / std::max(std::abs(std::cos(deg2rad * lat)), 1e-14);
       // Apply scaling factor and check against max; we do this as floating-point math, because if
       // the target lat is close to a pole, then the compression will be huge and integers overflow.
       const double nb_scaled_and_bounded = std::min(nb_to_check * compression, max_to_check);
@@ -388,9 +388,9 @@ void GeometryData::setGlobalTree() {
       const double shift = 1e-6;  // large epsilon to be robust to trigonometry
       for (auto & lonlat : nodes) {
         double & lat = lonlat[1];
-        if (abs(lat - 90.0) < eps_check) {
+        if (std::abs(lat - 90.0) < eps_check) {
           lat = (90.0 - shift);
-        } else if (abs(lat + 90.0) < eps_check) {
+        } else if (std::abs(lat + 90.0) < eps_check) {
           lat = -(90.0 - shift);
         }
       }
