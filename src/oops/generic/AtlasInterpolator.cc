@@ -41,22 +41,19 @@ class MaskedVectorView {
     }
 
     // Calculate the vector element displacement for each variable.
-    variableDisplacements.reserve(variables_.size() + 1);
-    variableDisplacements.push_back(0);
-    std::inclusive_scan(
-        variables_.begin(), variables_.end(),
-        std::back_inserter(variableDisplacements),
-        [&](size_t tot, Variable variables) {
-          const auto numLevels = variables.getLevels();
-          if (numLevels < 0) {
-            throw eckit::BadValue("Variable " + variables.name() +
-                                      " has an invalid number of levels: " +
-                                      std::to_string(numLevels),
-                                  Here());
-          }
-          return tot + numLevels * locationMask_.size();
-        },
-        size_t{0});
+    variableDisplacements.resize(variables_.size() + 1);
+    variableDisplacements.at(0) = 0;
+    auto it = variables_.begin();
+    for (size_t i = 0; i < variables_.size(); ++i, ++it) {
+        const size_t levels = it->getLevels();
+        if (levels < 0) {
+            throw eckit::BadValue("Variable " + it->name() +
+                                  " has an invalid number of levels: " +
+                                  std::to_string(levels), Here());
+        }
+        variableDisplacements.at(i + 1) =
+            variableDisplacements.at(i) + levels * locationMask_.size();
+    }
 
     // Last displacement should be the total size of data vector.
     if constexpr (!std::is_const_v<VectorT>) {
