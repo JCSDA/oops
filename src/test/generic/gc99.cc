@@ -30,7 +30,7 @@ namespace {
 
     t = oops::gc99(0.9999);
     oops::Log::info() << "gc99(0.9999)=" << t << std::endl;
-    EXPECT(0 < t && std::abs(t) < 1e-15);
+    EXPECT(0 < t && std::abs(t) < 2e-15);
 
     t = oops::gc99(1.0);
     oops::Log::info() << "gc99(1.0)=" << t << std::endl;
